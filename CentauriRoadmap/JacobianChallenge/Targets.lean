@@ -10,8 +10,11 @@ are **building the tower here** in `Centauri/AlgebraicGeometry/` rather than wai
 As each layer makes the next layer's *types* expressible in `Centauri/`, state that
 layer's milestones here with `sorry` (human-owned roadmap territory, so `sorry` is
 allowed) and hand them to the AIs to discharge — starting with Layer A (the Picard
-group and the degree map) and building up to `noncomputable def Jacobian` and the
-universal property of the Abel–Jacobi map.
+group and the degree map) and building up to `noncomputable def JacobianVariety` and
+the universal property of the Abel–Jacobi map.
+
+Note the name clash flagged in `README.md`: Mathlib's `WeierstrassCurve.Jacobian`
+means Jacobian *coordinates*, not the Jacobian *variety* — use `JacobianVariety`.
 -/
 
 namespace CentauriRoadmap.JacobianChallenge
