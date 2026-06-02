@@ -1,56 +1,32 @@
-# Centauri
+# Proxima Centauri
 
-An *AIs-welcome* Lean 4 library downstream of [Mathlib](https://github.com/leanprover-community/mathlib4).
+Let's do lots of maths.
 
-The name is a centaur: human-plus-AI. Humans hold the reins — roadmaps, CI, and
-review — while AIs supply the horsepower, writing and reviewing the mathematics.
-It is also the nearest star: the reachable frontier just downstream of Mathlib.
+Humans own the roadmap, which is written mostly in markdown and a small amount of Lean, and changes to the roadmap are made via human-reviewed pull requests.
 
-## Governance: who owns what
+AIs own the code, initiating pull requests and shepherding these pull requests through an AI-driven review process.
 
-The directory layout *is* the governance boundary.
+Humans can raise issues against the code, and leave implementation (and review) to AIs.
+
+## Division of labour
 
 | Path | Owner | Contents |
 | --- | --- | --- |
-| `Centauri/` | **AIs** | All the Lean mathematics. **No `sorry`.** |
-| `CentauriRoadmap/` | **humans** | Roadmaps (`README.md`) and target signatures (`Targets.lean`, where `sorry` is allowed — these are goals, not proofs). |
+| `Centauri/` | **AIs** | All the Lean mathematics. |
+| `CentauriRoadmap/` | **humans** | Roadmaps in markdown, and sample Lean files where `sorry` is allowed. |
 | `CentauriReview/` | **humans** | Review rubrics and (eventually) review bots. |
 | `.github/`, `lakefile.toml`, `lean-toolchain`, `lake-manifest.json` | **humans** | The rules of the game and the machinery that enforces them. |
 
-This split has teeth, not just prose:
+This division is managed via the `CODEOWERS` file and branch protection rules.
+The `main` branch is always green, and does not allow `sorry` or any axioms (including `native_decide`).
 
-- **CODEOWNERS** (`.github/CODEOWNERS`) makes every path human-reviewed by default;
-  AI author accounts only ever gain code-owner standing over `Centauri/`.
-- **Branch protection** on `main` requires a passing CI run and code-owner review,
-  and forbids direct pushes and force-pushes.
-- **CI** (`.github/workflows/ci.yml`) builds against pinned Mathlib and enforces two
-  invariants on `Centauri/`: it contains no `sorry`/`admit`/`sorryAx`, and it does
-  not `import` the roadmap/review trees (so it cannot inherit sorried goals). The
-  two `lean_lib` targets are a build convenience; this import guard is the real
-  trust boundary.
+## Mathlib dependency
 
-### Rights matrix
+For now we depend on Mathlib's `master` branch. AIs are encouraged to make PRs that bump the pin to new commits on the `master` branch, and fix any resulting problems in the library.
 
-- **AI accounts** may author PR branches touching **only `Centauri/`**. They may not
-  edit CI/CODEOWNERS, administer the repo, push to `main`, or approve human-path PRs.
-  AI peer-approval is allowed on `Centauri/` PRs once `ai-authors` is populated.
-- **Humans** approve all human-governed PRs, own the roadmap and review machinery,
-  and retain admin and merge rights.
+From Proxima Centauri's point of view, Mathlib is a long way away, so we don't plan around close coordination: if you're missing something in Mathlib that you need, just build it here. (This includes needing material from Mathlib PRs; it's fine to just vendor it here with appropriate attribution, there's no need to wait.)
 
-## Mathlib dependency, and our stance toward it
-
-Pinned to Mathlib **master** (`lakefile.toml` requires `rev = "master"`; the exact
-commit is recorded in `lake-manifest.json`). Human stewards re-pin to known-good
-commits over time. `lean-toolchain` tracks the pinned Mathlib's toolchain.
-
-**We do not wait on Mathlib.** Upstreaming is slow and uncertain — PRs sit open for
-months or close unmerged — so Centauri treats Mathlib as a stable foundation to build
-*on*, not a queue to block *behind*. If a prerequisite we need is not in Mathlib, we
-build it **here** and keep going. When a roadmap target depends on material that lives
-only in an open or closed Mathlib PR, the rule is: copy that material into `Centauri/`
-(sorry-free, attributed), and continue on top of it. If it later lands upstream, a
-steward can delete our copy and re-pin — but nothing in this library is ever paused
-waiting for that to happen.
+Conversely, we don't anticipate actively pushing material from Proxima Centauri to Mathlib, even though we aspire to review standards here that are even higher than those at Mathlib. Mathlib contributors are of course welcome to adopt, curate, and modify material from Proxima Centauri, and submit it to Mathlib themselves. Everything here is Apache licensed.
 
 ## Building
 
@@ -61,8 +37,8 @@ lake build
 
 ## Roadmaps
 
-The initial targets live under `CentauriRoadmap/`:
+Some initial example roadmaps live under `CentauriRoadmap/`:
 
 1. [Universal covers](CentauriRoadmap/UniversalCovers/README.md)
-2. [The Jacobian challenge](CentauriRoadmap/JacobianChallenge/README.md) (Christian Merten's AG version)
-3. [Reductive algebraic groups](CentauriRoadmap/ReductiveGroups/README.md) (paved: Hopf algebras *and* group objects)
+2. [The Jacobian challenge](CentauriRoadmap/JacobianChallenge/README.md) 
+3. [Reductive algebraic groups](CentauriRoadmap/ReductiveGroups/README.md) 
