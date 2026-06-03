@@ -13,4 +13,7 @@ namespace TauCeti
 /-- A tiny sanity check that the library compiles against Mathlib. -/
 theorem hello : 1 + 1 = 2 := by norm_num
 
+/-- Throwaway: exercise the sandboxed PR build. -/
+theorem prBuildCheck : 0 < 23 := by norm_num
+
 end TauCeti
