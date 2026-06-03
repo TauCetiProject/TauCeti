@@ -55,3 +55,5 @@ lake build
 The roadmaps live in the [TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap)
 repo: universal covers, the Jacobian challenge, reductive algebraic groups, and partial
 differential equations. When asked to work here, read the roadmap first (see `AGENTS.md`).
+
+<!-- overlay infra test -->
