@@ -1,0 +1,156 @@
+name: pr-build
+
+# Builds untrusted PR code in a TRUSTED, base-branch-defined workflow. A PR cannot change what
+# runs here (pull_request_target uses the base definition). PR code executes ONLY under landrun,
+# offline, with no secrets and no token in reach. The `build` commit status posted to the PR head
+# SHA is the required check that gates merge.
+#
+# workflow_dispatch is for testing the build/sandbox logic from a branch before this is on main
+# (pull_request_target itself only runs from the default branch).
+
+on:
+  # v1 is dispatch-only so the build/sandbox logic can be proven on main before going live.
+  # The `pull_request_target` trigger (below) is added in a follow-up once tested + security-reviewed.
+  # pull_request_target:
+  #   types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr: { description: "PR number to build (testing)", required: true, type: string }
+
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: pr-build-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    env:
+      LANDRUN_SHA256: 645178e3239cd33760560834e50efea0864183a2a8a82faf199760dffee6dd71
+      LANDRUN_VER: v0.1.14
+    steps:
+      # --- Trusted setup: no PR code runs in any step until the landrun build phase ---
+      - name: Resolve PR head
+        id: pr
+        env: { GH_TOKEN: ${{ github.token }} }
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            NUM='${{ github.event.pull_request.number }}'
+            SHA='${{ github.event.pull_request.head.sha }}'
+            REPO='${{ github.event.pull_request.head.repo.full_name }}'
+          else
+            NUM='${{ inputs.pr }}'
+            SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.sha)
+            REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
+          fi
+          echo "num=$NUM"   >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA"   >> "$GITHUB_OUTPUT"
+          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+          echo "Building PR #$NUM @ $SHA from $REPO"
+
+      - name: Checkout base (trusted)
+        uses: actions/checkout@v4
+        with:
+          path: base
+          persist-credentials: false
+
+      - name: Checkout PR head (untrusted, no credentials)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr.outputs.repo }}
+          ref: ${{ steps.pr.outputs.sha }}
+          path: pr
+          persist-credentials: false
+
+      - name: Infra-change guard (mathlib rev + toolchain must match base)
+        # If the PR changes the Mathlib pin or the toolchain, the trusted offline build can't
+        # validate it; such infra PRs are sent to a human instead of auto-built/sandbox-built.
+        run: |
+          mrev() { jq -r '.packages[] | select(.name=="mathlib") | .rev' "$1/lake-manifest.json"; }
+          base_rev=$(mrev base); pr_rev=$(mrev pr)
+          base_tc=$(cat base/lean-toolchain); pr_tc=$(cat pr/lean-toolchain)
+          echo "mathlib base=$base_rev pr=$pr_rev ; toolchain base=$base_tc pr=$pr_tc"
+          if [ "$base_rev" != "$pr_rev" ] || [ "$base_tc" != "$pr_tc" ]; then
+            echo "INFRA_PR=1" >> "$GITHUB_ENV"
+            echo "::warning::PR changes the Mathlib pin or toolchain; needs human review (not sandbox-built)."
+          fi
+
+      - name: Import-boundary guard (TauCeti/ ⊬ roadmap/review)
+        run: |
+          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(TauCetiRoadmap|TauCetiReview)\b' pr/TauCeti/; then
+            echo "::error::TauCeti/ must not import TauCetiRoadmap or TauCetiReview"
+            exit 1
+          fi
+
+      - name: Install elan (trusted)
+        run: |
+          curl -sSfL https://elan.lean-lang.org/elan-init.sh -o elan-init.sh
+          chmod +x elan-init.sh && ./elan-init.sh -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Install landrun (pinned + checksum) and self-test (fail closed)
+        run: |
+          curl -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/Zouuup/landrun/releases/download/${LANDRUN_VER}/landrun-linux-amd64" -o landrun
+          echo "${LANDRUN_SHA256}  landrun" | sha256sum -c -
+          install -m 0755 landrun "$HOME/.local/bin/landrun" 2>/dev/null || { mkdir -p "$HOME/.local/bin"; install -m 0755 landrun "$HOME/.local/bin/landrun"; }
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+          landrun --version || true
+          # Prove the sandbox actually enforces before we trust it with PR code.
+          set +e
+          landrun --rox /usr --rox /etc --rw /dev --env PATH -- bash -c 'echo ok' >/dev/null 2>&1; ok=$?
+          landrun --rox /usr --rox /etc --rw /dev --env PATH -- bash -c 'echo x > /etc/landrun-probe' >/dev/null 2>&1; wr=$?
+          landrun --rox /usr --rox /etc --rw /dev --env PATH -- bash -c 'curl -sS --max-time 8 https://example.com >/dev/null' >/dev/null 2>&1; net=$?
+          set -e
+          echo "self-test: run=$ok write-denied=$([ $wr -ne 0 ] && echo yes || echo NO) net-denied=$([ $net -ne 0 ] && echo yes || echo NO)"
+          if [ $ok -ne 0 ] || [ $wr -eq 0 ] || [ $net -eq 0 ]; then
+            echo "::error::landrun is not enforcing (run=$ok write=$wr net=$net); refusing to run PR code"
+            exit 1
+          fi
+
+      - name: Fetch Mathlib via the trusted base checkout (network; no PR code)
+        if: ${{ env.INFRA_PR != '1' }}
+        run: ( cd base && lake exe cache get )
+
+      - name: Stage trusted deps into the PR tree
+        if: ${{ env.INFRA_PR != '1' }}
+        run: |
+          cp -a base/.lake pr/.lake
+          mkdir -p pr/.lake/tmp
+
+      - name: Build PR under landrun (offline, writes confined to pr/.lake)
+        id: build
+        if: ${{ env.INFRA_PR != '1' }}
+        shell: bash
+        run: |
+          export PATH="$HOME/.local/bin:$HOME/.elan/bin:$PATH"
+          landrun --rox /usr --rox /etc --rw /dev \
+            --rox "$HOME/.elan" --rox "$PWD/pr" --rw "$PWD/pr/.lake" \
+            --env PATH --env HOME --env CI \
+            -- bash -euxo pipefail -c '
+              cd pr
+              export TMPDIR="$PWD/.lake/tmp"
+              lake build
+              lake exe axioms
+            '
+
+      - name: Report build status to the PR head commit
+        if: always()
+        env: { GH_TOKEN: ${{ github.token }} }
+        run: |
+          if [ "${{ env.INFRA_PR }}" = "1" ]; then
+            state=failure; desc="infra change (mathlib/toolchain) — needs human review"
+          elif [ "${{ steps.build.outcome }}" = "success" ]; then
+            state=success; desc="sandboxed build + axiom audit passed"
+          else
+            state=failure; desc="sandboxed build or axiom audit failed"
+          fi
+          gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.sha }}" \
+            -f state="$state" -f context="build" -f description="$desc" \
+            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "posted build=$state ($desc) to ${{ steps.pr.outputs.sha }}"
+          [ "$state" = "success" ]
