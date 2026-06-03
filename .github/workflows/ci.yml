@@ -24,15 +24,6 @@ jobs:
             exit 1
           fi
 
-      # No sorries in the AI-owned library. (The #print axioms allowlist audit
-      # is a planned TauCetiReview/ follow-up; this is the cheap textual guard.)
-      - name: No-sorry guard (TauCeti/ is sorry-free)
-        run: |
-          if grep -rIn -E '\b(sorry|admit|sorryAx)\b' TauCeti/; then
-            echo "::error::TauCeti/ must not contain sorry / admit / sorryAx"
-            exit 1
-          fi
-
       - name: Build
         uses: leanprover/lean-action@v1
         with:
@@ -45,3 +36,10 @@ jobs:
           # is ~2.4 GB; saving and restoring it costs ~40s per run, far more than
           # the ~6s `lake exe cache get` it would save. Net win to leave it off.
           use-github-cache: false
+
+      # Axiom audit (replaces the old textual no-sorry grep). Inspects the built
+      # TauCeti environment and rejects any axiom outside {propext, Classical.choice,
+      # Quot.sound} — catching sorry/admit (sorryAx), native_decide (Lean.ofReduceBool),
+      # and home-rolled axioms, including ones reaching in through imports.
+      - name: Axiom audit (TauCeti/ uses only allowlisted axioms)
+        run: lake exe axioms

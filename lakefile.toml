@@ -7,10 +7,21 @@ git = "https://github.com/leanprover-community/mathlib4"
 rev = "master"
 
 # AI-owned: all the mathematics. No sorries (enforced in CI).
+# Glob all submodules so `lake build` builds every TauCeti/*.lean — including any not yet
+# imported from the root — so the axiom audit (which enumerates the source tree) can import
+# them, and an orphaned/broken module fails the build.
 [[lean_lib]]
 name = "TauCeti"
+globs = ["TauCeti.*"]
 
 # Human-owned: roadmaps and target signatures. Sorries are allowed here:
 # these are goals, not proofs. `TauCeti` may not import this library (CI guard).
 [[lean_lib]]
 name = "TauCetiRoadmap"
+
+# Human-owned governance: the axiom-allowlist audit (`lake exe axioms`). Inspects the
+# built `TauCeti` environment and rejects any axiom outside the standard allowlist
+# (catches sorry, native_decide, and home-rolled axioms). Run in CI after the build.
+[[lean_exe]]
+name = "axioms"
+root = "TauCetiReview.Axioms"

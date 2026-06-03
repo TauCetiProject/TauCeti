@@ -10,23 +10,24 @@ be mechanized (is this the right abstraction? is the statement faithful to inten
 ## Status
 
 - `rubric.md`: the initial human-review rubric (skeleton).
+- `Axioms.lean`: the axiom-allowlist audit, run in CI as `lake exe axioms`.
 - Review bots: TBD.
 
 ## Already mechanized in CI (`.github/workflows/ci.yml`)
 
 - Builds against pinned Mathlib.
-- `TauCeti/` is free of `sorry` / `admit` / `sorryAx`.
+- **Axiom-allowlist audit** (`Axioms.lean`, `lake exe axioms`): inspects the built
+  `TauCeti` environment and asserts every declaration *defined in `TauCeti`* depends only
+  on the allowlist `propext`, `Classical.choice`, `Quot.sound`. Because it reads the
+  kernel environment, not source text, it catches what a grep cannot: `sorry`/`admit`
+  (as `sorryAx`), `native_decide` (as `Lean.ofReduceBool`), and any home-rolled `axiom`,
+  including ones reaching in through imports. This subsumes the old textual no-sorry guard.
 - `TauCeti/` does not import the roadmap/review trees (so it cannot inherit sorried
   goals, the real trust boundary, since the two-`lean_lib` split alone is only build
   convenience).
 
 ## Planned checks (to migrate from rubric → CI)
 
-- **`#print axioms` allowlist audit.** Assert every `TauCeti/` declaration depends
-  only on an allowlist (`propext`, `Classical.choice`, `Quot.sound`). This catches
-  what grep cannot: `sorryAx` reaching in through imports, `native_decide`'s
-  `Lean.ofReduceBool`, and any home-rolled `axiom`, all in one required check. This is the
-  most important planned upgrade.
 - **Statement faithfulness.** A lockfile pinning the expected *type* of each roadmap
   milestone, with CI failing if a claimed solution's signature drifts from it, so
   "prove milestone X" can't be won by weakening the statement.
