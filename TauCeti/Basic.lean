@@ -13,4 +13,7 @@ namespace TauCeti
 /-- A tiny sanity check that the library compiles against Mathlib. -/
 theorem hello : 1 + 1 = 2 := by norm_num
 
+/-- Throwaway: confirm codex quota restored + live review path. -/
+theorem quotaCheck : 0 < 13 := by norm_num
+
 end TauCeti
