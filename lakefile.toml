@@ -13,6 +13,7 @@ rev = "master"
 [[lean_lib]]
 name = "TauCeti"
 globs = ["TauCeti.*"]
+leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFile = 1000, weak.linter.style.longFileDefValue = 1000, weak.linter.style.header = false, warningAsError = true }
 
 # Human-owned: roadmaps and target signatures. Sorries are allowed here:
 # these are goals, not proofs. `TauCeti` may not import this library (CI guard).
