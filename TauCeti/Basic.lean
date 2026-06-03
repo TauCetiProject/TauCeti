@@ -13,4 +13,7 @@ namespace TauCeti
 /-- A tiny sanity check that the library compiles against Mathlib. -/
 theorem hello : 1 + 1 = 2 := by norm_num
 
+/-- live go-live test (throwaway; scope will block) -/
+theorem goliveCheck : 0 < 31 := by norm_num
+
 end TauCeti
