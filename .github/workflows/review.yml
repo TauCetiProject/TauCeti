@@ -29,9 +29,18 @@ jobs:
       - id: r
         env:
           GH_TOKEN: ${{ github.token }}
+          # Pass attacker-controlled comment text via env, never inline, to avoid shell injection.
+          COMMENT_BODY: ${{ github.event.comment.body }}
         run: |
           if [ "${{ github.event_name }}" = "issue_comment" ]; then
-            echo "pr=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+            # Exact command only: some line of the comment must be exactly "/review"
+            # (optional surrounding whitespace). A "/review" mentioned in prose or quoted
+            # text does not trigger a paid review.
+            if printf '%s' "$COMMENT_BODY" | grep -qxE '[[:space:]]*/review[[:space:]]*'; then
+              echo "pr=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+            else
+              echo "comment contains '/review' but not as an exact command; skipping"
+            fi
           else
             pr="${{ github.event.workflow_run.pull_requests[0].number }}"
             if [ -z "$pr" ]; then
