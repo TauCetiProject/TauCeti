@@ -1,7 +1,7 @@
 import Mathlib
 
 /-!
-# Universal covers — target signatures
+# Universal covers: target signatures
 
 The narrative roadmap is in `README.md`. Mathlib already has the covering-space,
 lifting, fundamental-groupoid, and homotopy-group toolkit; what is missing is the
@@ -14,7 +14,7 @@ to discharge in `Centauri/`. The natural first new theorem (Stage 1) is
 
   `Deck (UniversalCover.proj x₀) ≃* FundamentalGroup X x₀`
 
-(possibly up to `ᵐᵒᵖ` — pin the action/composition convention first).
+(possibly up to `ᵐᵒᵖ`; pin the action/composition convention first).
 -/
 
 namespace CentauriRoadmap.UniversalCovers

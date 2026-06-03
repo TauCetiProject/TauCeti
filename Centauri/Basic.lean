@@ -5,7 +5,7 @@ import Mathlib.Tactic
 
 Placeholder module so the `Centauri` library builds before any mathematics has
 landed. Replace/extend with real content. This library must stay free of unfinished
-proofs and trust escape hatches — CI rejects them (see `CentauriReview/`).
+proofs and trust escape hatches; CI rejects them (see `CentauriReview/`).
 -/
 
 namespace Centauri

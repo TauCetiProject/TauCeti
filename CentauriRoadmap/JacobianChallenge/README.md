@@ -4,7 +4,7 @@ Background: Kevin Buzzard's "Jacobian challenge" (Zulip
 [#Autoformalization > Jacobian challenge](https://leanprover.zulipchat.com/#narrow/channel/417987-Autoformalization/topic/Jacobian.20challenge)),
 in the **algebraic-geometry formulation due to Christian Merten**. The challenge is
 designed with **checks along the way**, so a construction that satisfies them all has to
-have the definitions right — the point is autoformalizing *definitions*, not just
+have the definitions right; the point is autoformalizing *definitions*, not just
 discharging `sorry`s.
 
 **We are not waiting for Mathlib.** The prerequisite stack (scheme-theoretic divisors,
@@ -48,34 +48,34 @@ regular + connected ⇒ irreducible). A chosen `k`-rational point `x₀`. The Ja
 
 ## Inventory: what Mathlib master gives us (consume)
 
-- **Morphism properties** — `Mathlib/AlgebraicGeometry/Morphisms/*`: `Proper`, `Smooth`,
-  `Separated`, `Flat`, `FiniteType`, `FinitePresentation`, `ClosedImmersion`, `Etale`, … —
+- **Morphism properties**, `Mathlib/AlgebraicGeometry/Morphisms/*`: `Proper`, `Smooth`,
+  `Separated`, `Flat`, `FiniteType`, `FinitePresentation`, `ClosedImmersion`, `Etale`, …,
   every adjective for "smooth proper curve", plus the flat/proper/fp hypotheses the
   relative theory needs.
-- **Geometric conditions** — `Mathlib/AlgebraicGeometry/Geometrically/{Connected,Integral}.lean`.
-- **Affine Picard / class groups** — `Mathlib/RingTheory/PicardGroup.lean` (`CommRing.Pic`)
+- **Geometric conditions**: `Mathlib/AlgebraicGeometry/Geometrically/{Connected,Integral}.lean`.
+- **Affine Picard / class groups**: `Mathlib/RingTheory/PicardGroup.lean` (`CommRing.Pic`)
   and `ClassGroup.equivPic`. Useful *algebraic ingredients for affine charts*; they are
   **not** a direct foundation for the global Picard scheme (the work is invertible sheaves
   as locally free sheaves, gluing, and descent).
-- **General sheaf cohomology on a site** — `Mathlib/CategoryTheory/Sites/SheafCohomology/{Basic,Cech,MayerVietoris}.lean`,
-  `Mathlib/AlgebraicGeometry/Sites/BigZariski.lean`. ⚠ Abstract only — **coherent-sheaf
+- **General sheaf cohomology on a site**: `Mathlib/CategoryTheory/Sites/SheafCohomology/{Basic,Cech,MayerVietoris}.lean`,
+  `Mathlib/AlgebraicGeometry/Sites/BigZariski.lean`. ⚠ Abstract only: **coherent-sheaf
   cohomology of schemes** (finiteness, base change, the curve's `H⁰/H¹`) is **not** here
   (Layers B–C).
-- **Rigidity** — `Mathlib/AlgebraicGeometry/Group/Abelian.lean`: a proper group scheme is
+- **Rigidity**, `Mathlib/AlgebraicGeometry/Group/Abelian.lean`: a proper group scheme is
   commutative. Use it for general abelian-variety API; note `Pic⁰` is commutative *directly*
   (tensor product of line bundles), so rigidity is not needed for that.
-- **`Proj` / projective space** — `Mathlib/AlgebraicGeometry/ProjectiveSpectrum/*`.
-- **Genus-1 ingredients** — `Mathlib/AlgebraicGeometry/EllipticCurve/*`: the group law on
+- **`Proj` / projective space**: `Mathlib/AlgebraicGeometry/ProjectiveSpectrum/*`.
+- **Genus-1 ingredients**, `Mathlib/AlgebraicGeometry/EllipticCurve/*`: the group law on
   the points of an elliptic curve is built in `EllipticCurve/Affine/Point.lean` **through
   the class group** (`ClassGroup.mk W.FunctionField (XYIdeal' …)`), i.e. the divisor-class /
   `Pic⁰` description in genus 1. This is a **reconciliation target and a template**, *not*
-  a scheme-level `Jac(E) ≅ E` — that statement still has to be built.
+  a scheme-level `Jac(E) ≅ E`; that statement still has to be built.
 
 ## Inventory: what is missing (build here)
 
 Scheme-theoretic Weil/Cartier **divisors** and the divisor ↔ line-bundle dictionary; the
 **degree** map and **Pic⁰**; **coherent-sheaf cohomology** with **finiteness, Serre
-duality, Riemann–Roch** over `k`; the **relative** theory — proper-flat pushforward,
+duality, Riemann–Roch** over `k`; the **relative** theory, i.e. proper-flat pushforward,
 **cohomology and base change / semicontinuity / Grauert**, relative effective Cartier
 divisors; the **Picard functor**, its **rigidification** (Poincaré bundle) and
 **representability**, and `Pic⁰` with its **properness/projectivity**; **abelian varieties**
@@ -91,7 +91,7 @@ Codex's recommended dependency order, refined. Each layer is self-contained math
 worth having on its own. As a layer makes the next one's *types* expressible, state those
 milestones in `Targets.lean` (with `sorry`) and hand them to the AIs.
 
-### Layer A — line bundles, divisors, Picard group, degree
+### Layer A, line bundles, divisors, Picard group, degree
 - **Invertible sheaves** on a scheme; the **Picard group** `Pic X` under `⊗`.
 - **Divisors on a curve:** Weil divisors `⊕_x ℤ` and Cartier divisors; the dictionaries
   `Cartier ≃ line bundles` and (smooth curve) `Weil ≃ Cartier`; principal divisors;
@@ -101,7 +101,7 @@ milestones in `Targets.lean` (with `sorry`) and hand them to the AIs.
   characteristic*, **not** the degree. Then `Pic⁰ X = ker deg` (as an abstract group; the
   *functorial* `Pic⁰` is defined in Layer D).
 
-### Layer B — coherent cohomology over `k`: genus, Riemann–Roch, Serre duality
+### Layer B, coherent cohomology over `k`: genus, Riemann–Roch, Serre duality
 - **Coherent sheaves** and cohomology `Hⁱ(X, ℱ)`: acyclicity of affines, Čech ≃ derived on
   a separated scheme, **finite-dimensionality for proper `X/k`**, vanishing above dimension
   (`H²= 0` on a curve).
@@ -109,47 +109,47 @@ milestones in `Targets.lean` (with `sorry`) and hand them to the AIs.
   duality** with the **relative dualizing sheaf** `ω_{X/k}`: `Hⁱ(L) ≅ H^{1−i}(ω_{X/k} ⊗ L⁻¹)*`
   and `deg ω_{X/k} = 2g − 2`.
 
-### Layer C — relative coherent cohomology and base change
+### Layer C, relative coherent cohomology and base change
 The part that the classical "Sym^g" story quietly relies on, so it comes *before* Picard.
 - Proper-flat-finitely-presented pushforward of coherent sheaves; **flat base change**;
   **cohomology and base change / semicontinuity** (Grauert), and the theorem on formal
   functions if following Grothendieck's Picard-scheme proof.
 - **Relative effective Cartier divisors** and **symmetric powers** `Symᵈ X` (smooth
-  projective for a smooth curve) — the geometric input to the Abel maps.
+  projective for a smooth curve): the geometric input to the Abel maps.
 
-### Layer D — the relative Picard functor and the Jacobian scheme
+### Layer D, the relative Picard functor and the Jacobian scheme
 - **The functor.** For `f : X → Spec k` proper, flat, finitely presented with
   geometrically integral fibres (so `f_*𝒪_X = 𝒪` universally), `Pic_{X/k}` is the **fppf
-  sheafification** of `T ↦ Pic(X_T)/Pic(T)`. Keep the three notions distinct — Picard
-  *stack* vs *functor/sheaf* vs *rigidified functor* — and record the obstruction
+  sheafification** of `T ↦ Pic(X_T)/Pic(T)`. Keep the three notions distinct (Picard
+  *stack* vs *functor/sheaf* vs *rigidified functor*), and record the obstruction
   (`Br`-flavoured) between `Pic(X_T)/Pic(T)` and `Pic_{X/k}(T)`. The section `x₀`
   **rigidifies** it (line bundles trivialized along `x₀,T`; the **Poincaré bundle**) and
   removes that obstruction.
 - **`Pic⁰`** = the degree-0 **open-and-closed component** of the relative Picard scheme
   once it exists (before representability: the subfunctor of line bundles of degree 0 on
-  every geometric fibre — mind local constancy of degree in flat families).
-- **Representability — the crux** (both routes hide heavy infrastructure; neither is "easy"):
+  every geometric fibre; mind local constancy of degree in flat families).
+- **Representability, the crux** (both routes hide heavy infrastructure; neither is "easy"):
   1. **Symmetric powers / Abel maps.** `AJ_d : Symᵈ X → Pic^d`, `D ↦ 𝒪_X(D)`, normalized to
      `Pic⁰` by `D ↦ 𝒪_X(D − d·x₀)`; for `d = g` this is birational and surjective over `k̄`.
      Using it to *construct* `Jac` needs Layer C (Symᵈ existence/smoothness, relative
-     effective divisors, semicontinuity, cohomology-and-base-change, descent) — it does
+     effective divisors, semicontinuity, cohomology-and-base-change, descent); it does
      *not* directly "yield" `Jac` by itself.
   2. **General Picard scheme** of a projective variety (Hilbert/Grothendieck), then
      specialize. Even heavier.
 - **Properness/projectivity** of `Pic⁰` (not merely representability).
 
-### Layer E — abelian varieties
+### Layer E, abelian varieties
 - **Abelian variety** = smooth, proper, geometrically connected group scheme over `k`;
   basic API, **`dim`**. Commutativity is automatic (rigidity, `Group/Abelian.lean`).
 - **Tangent space** `T₀ Pic⁰ ≅ H¹(X, 𝒪_X)`, hence `dim (Jac X) = g`.
 - **The theorem of the cube/square**, the **dual abelian variety**, **polarizations** (the
   theta divisor gives `Jac` a principal polarization), and `[n]` as an isogeny. (These are
-  *not* needed for the group law on `Pic⁰`, which is tensor product — they belong here, with
+  *not* needed for the group law on `Pic⁰`, which is tensor product; they belong here, with
   the dual/polarization theory, not at the construction step.)
-- **Characteristic `p`:** `p`-torsion is non-étale, isogenies can be inseparable — avoid
+- **Characteristic `p`:** `p`-torsion is non-étale, isogenies can be inseparable; avoid
   hidden perfect-field assumptions.
 
-### Layer F — Abel–Jacobi and the universal property
+### Layer F, Abel–Jacobi and the universal property
 - The **Abel–Jacobi morphism** `aj : X ⟶ Jac X`, `x₀ ↦ 0` (the `d = 1` Abel map).
 - **Universal property (precise):** for every abelian variety `A` and pointed morphism
   `f : (X, x₀) → (A, 0)`, there is a **unique homomorphism of abelian varieties**
@@ -179,13 +179,13 @@ A finished construction must pass sanity checks that rule out vacuous definition
 
 ## References
 
-- R. Hartshorne, *Algebraic Geometry* — Ch. II (sheaves, divisors), III (cohomology,
+- R. Hartshorne, *Algebraic Geometry*: Ch. II (sheaves, divisors), III (cohomology,
   incl. III.12 cohomology and base change), IV (curves, Riemann–Roch).
-- Q. Liu, *Algebraic Geometry and Arithmetic Curves* — curves, models, Picard.
+- Q. Liu, *Algebraic Geometry and Arithmetic Curves*: curves, models, Picard.
 - J. S. Milne, *Abelian Varieties* and *Jacobian Varieties* (in Cornell–Silverman,
-  *Arithmetic Geometry*) — the construction and universal property.
-- D. Mumford, *Abelian Varieties* — theorem of the cube/square, dual variety, polarizations.
-- Bosch–Lütkebohmert–Raynaud, *Néron Models*, Ch. 8–9 — the Picard functor and its
+  *Arithmetic Geometry*): the construction and universal property.
+- D. Mumford, *Abelian Varieties*: theorem of the cube/square, dual variety, polarizations.
+- Bosch–Lütkebohmert–Raynaud, *Néron Models*, Ch. 8–9: the Picard functor and its
   representability.
 - The Stacks Project: *Picard schemes of curves* (tag 0B95), *Divisors* (tag 01WP),
   *Cohomology and base change* (tag 0B91), *Quot/Hilbert and Picard functors* (tag 0D04).

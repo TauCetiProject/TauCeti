@@ -10,7 +10,7 @@ rev = "master"
 [[lean_lib]]
 name = "Centauri"
 
-# Human-owned: roadmaps and target signatures. Sorries are allowed here —
+# Human-owned: roadmaps and target signatures. Sorries are allowed here:
 # these are goals, not proofs. `Centauri` may not import this library (CI guard).
 [[lean_lib]]
 name = "CentauriRoadmap"

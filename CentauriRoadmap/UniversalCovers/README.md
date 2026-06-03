@@ -21,46 +21,46 @@ Decide a **basepoint policy up front**, because the classification theorems are 
 to it: distinguish *pointed* covers (with a chosen lift `e₀` of the basepoint) from
 *unpointed* covers, and build the API for basepoint change along a path, conjugation of
 subgroups under basepoint change, and isomorphism of covers over `X`. Also fix a
-left/right convention for path concatenation and deck-map composition early — several
+left/right convention for path concatenation and deck-map composition early; several
 target isomorphisms below are only correct up to `ᵐᵒᵖ` depending on it.
 
 ## What Mathlib already has (consume)
 
 - **Covering maps:** `Mathlib/Topology/Covering/Basic.lean` (`IsCoveringMap`,
   `IsCoveringMapOn`), and **quotient covering maps** `…/Covering/Quotient.lean`
-  (`IsQuotientCoveringMap`, properly-discontinuous/free `SMul` results) — reuse these for
+  (`IsQuotientCoveringMap`, properly-discontinuous/free `SMul` results); reuse these for
   `UniversalCover/H` instead of re-deriving quotient-cover facts.
-- **Lifting:** `Mathlib/Topology/Homotopy/Lifting.lean` — path lifting *and* **general
+- **Lifting:** `Mathlib/Topology/Homotopy/Lifting.lean`, with path lifting *and* **general
   homotopy lifting** `IsCoveringMap.liftHomotopy : C(I × A, E)` for an arbitrary parameter
   space `A`, the `monodromy_theorem`, the **monodromy functor**
   `IsCoveringMap.monodromyFunctor : FundamentalGroupoid X ⥤ Type _`, and the **lifting
   criterion** (two forms; see Stage 2).
-- **Fundamental groupoid / group:** `Mathlib/AlgebraicTopology/FundamentalGroupoid/*`
-  — `FundamentalGroupoid`, `FundamentalGroup`, homotopy-invariance/functoriality
+- **Fundamental groupoid / group:** `Mathlib/AlgebraicTopology/FundamentalGroupoid/*`,
+  covering `FundamentalGroupoid`, `FundamentalGroup`, homotopy-invariance/functoriality
   (`InducedMaps.lean`: `homotopicMapsNatIso`, `equivOfHomotopyEquiv`), `SimplyConnected`.
 - **Homotopy groups:** `Mathlib/Topology/Homotopy/HomotopyGroup.lean` (`Ω^N`,
   `HomotopyGroup`) and `Mathlib/Topology/Covering/HomotopyGroup.lean`.
 - **Galois-category abstraction:** `Mathlib/CategoryTheory/Galois/IsFundamentalgroup.lean`
-  (`IsFundamentalGroup`, `toAutMulEquiv : G ≃* Aut F`) — an alternative lens on the
+  (`IsFundamentalGroup`, `toAutMulEquiv : G ≃* Aut F`), an alternative lens on the
   classification, via fibre functors.
 - **Circle:** `Mathlib/Topology/Covering/AddCircle.lean`
-  (`isCoveringMap_coe : IsCoveringMap ((↑) : 𝕜 → AddCircle p)`) — `ℝ` covers `S¹`.
+  (`isCoveringMap_coe : IsCoveringMap ((↑) : 𝕜 → AddCircle p)`): `ℝ` covers `S¹`.
 
 ## What is missing (port / build here)
 
 - [mathlib4#31576](https://github.com/leanprover-community/mathlib4/pull/31576)
-  (*the homotopy-class fibres are discrete*) — **closed, unmerged**.
+  (*the homotopy-class fibres are discrete*): **closed, unmerged**.
 - [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292)
-  (*universal cover construction*) — open, depends on the closed #31576.
+  (*universal cover construction*): open, depends on the closed #31576.
 - [mathlib4#40135](https://github.com/leanprover-community/mathlib4/pull/40135)
-  (*Deck transformation group*) — open.
+  (*Deck transformation group*): open.
 
 Plus, on top of these: the subgroup ↔ cover Galois correspondence, regular covers and the
 deck group `N(H)/H`, and the higher-homotopy API.
 
 ---
 
-## Stage 0 — port the foundations into `Centauri/`
+## Stage 0: port the foundations into `Centauri/`
 
 Bring the existing, human-written construction into this library, sorry-free; credit the
 original authors and source PR in each file.
@@ -69,7 +69,7 @@ original authors and source PR in each file.
    connected and locally path-connected, the **fibres** of "based paths modulo
    endpoint-preserving homotopy" over a fixed endpoint are **discrete** (this is what
    makes `proj` a covering map and gives the sheet decomposition). Note: the total space
-   is *not* discrete in general — only the fibres are. This died upstream, so it lives
+   is *not* discrete in general; only the fibres are. This died upstream, so it lives
    here.
 2. **The based-path space and the cover** (from #38292), under
    `[PathConnectedSpace X] [LocPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]`:
@@ -87,18 +87,18 @@ original authors and source PR in each file.
    `ContinuousConstSMul` instances; subgroup transfer gives `Deck p` its `Group`,
    `MulAction E`, `FaithfulSMul E`, `ContinuousConstSMul E`.
 
-## Stage 1 — close out the universal cover
+## Stage 1: close out the universal cover
 
-5. **`Deck(proj) ≃* π₁(X, x₀)`.** The bridge between Stage 0.3 and 0.4. Once it lands,
+5. **`Deck(proj) ≃* π₁(X, x₀)`.** The isomorphism connecting Stage 0.3 and 0.4. Once it lands,
    `UniversalCover x₀ / π₁(X, x₀) ≃ X` follows (via Mathlib's `IsQuotientCoveringMap`).
    ⚠ Convention check first: depending on the chosen left/right action and deck-map
    composition order, the correct statement may be
    `Deck(proj) ≃* (FundamentalGroup X x₀)ᵐᵒᵖ`. Pin the convention before stating the
    target.
 
-## Stage 2 — lifting criterion and Galois correspondence
+## Stage 2: lifting criterion and Galois correspondence
 
-6. **General lifting criterion — already in Mathlib.** Consume
+6. **General lifting criterion, already in Mathlib.** Consume
    `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`
    (`Mathlib/Topology/Homotopy/Lifting.lean`). State it in its Lean-shaped form, with the
    real hypotheses: `[PathConnectedSpace A] [LocPathConnectedSpace A]`, basepoints
@@ -109,7 +109,7 @@ original authors and source PR in each file.
    basepoint `⟦e₀⟧` is a *pointed* connected cover; prove `p_*(π₁(–)) = H` for that
    pointed cover. Separately, prove how the recovered subgroup transforms (by conjugacy)
    under basepoint change. With (6) this is the existence half of the correspondence.
-8. **Galois correspondence — get the bookkeeping right.** Two distinct theorems:
+8. **Galois correspondence: get the bookkeeping right.** Two distinct theorems:
    - **pointed** connected covers of `(X, x₀)` (with chosen lift `e₀`) ↔ **subgroups** of
      `π₁(X, x₀)`;
    - **unpointed** connected covers ↔ **conjugacy classes** of subgroups.
@@ -124,9 +124,9 @@ original authors and source PR in each file.
      `Galois/IsFundamentalgroup`), with disconnected covers as functors out of the
      fundamental groupoid. Worth paving as a second route.
 
-## Stage 3 — higher homotopy
+## Stage 3: higher homotopy
 
-Cube/homotopy lifting is **not** the obstacle — Mathlib's `IsCoveringMap.liftHomotopy`
+Cube/homotopy lifting is **not** the obstacle; Mathlib's `IsCoveringMap.liftHomotopy`
 already lifts `C(I × A, E)` for arbitrary `A`. The real prerequisites are the
 higher-homotopy-group API:
 
@@ -137,19 +137,19 @@ higher-homotopy-group API:
 10. **`p_* : π_n(X̃) ≅ π_n(X)` for `n ≥ 2`**, any cover. With (9) and Mathlib's homotopy
     lifting, the proof mirrors the `π₁` injectivity argument with `S^n` for `S^1`.
 
-## Stage 4 — applications
+## Stage 4: applications
 
 11. `π_n(S¹) = 0` for `n ≥ 2` (universal cover `ℝ` is contractible).
 12. `π₁(S¹) ≅ ℤ`, built from `AddCircle.isCoveringMap_coe` (`ℝ → S¹`) and deck
     transformations. (Mathlib has the covering map but, as far as the pin shows, not the
-    `π₁ ≅ ℤ` statement — so this is an application target, not a reconciliation.)
+    `π₁ ≅ ℤ` statement, so this is an application target, not a reconciliation.)
 13. `π_n(Tᵏ)`, `π₁(RPⁿ)`, `K(G, 1)` spaces.
 
 ## Ordering
 
-Stage 0 first — a careful port that unblocks everything. Then Stage 1 (5), then Stage 2
+Stage 0 first: a careful port that unblocks everything. Then Stage 1 (5), then Stage 2
 (7)/(8); the basepoint/conjugacy bookkeeping is the subtle part there, not the topology.
 Stage 3 is a larger, separable track, but lighter than it looks now that homotopy lifting
-is available — the cost is the `π_n` API, not lifting. As each milestone's prerequisite
+is available; the cost is the `π_n` API, not lifting. As each milestone's prerequisite
 *types* exist in `Centauri/`, state the milestone in `Targets.lean` (with `sorry`) and
 hand it to the AIs to discharge.

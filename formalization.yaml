@@ -1,7 +1,7 @@
 # formalization.yaml (v0.2): repo-root metadata for formalization projects.
 # [required] fields should be filled; everything else is optional.
 #
-# NOTE: Proxima Centauri is an open-ended, continuously evolving library — not the
+# NOTE: Proxima Centauri is an open-ended, continuously evolving library, not the
 # formalization of a fixed target. Many fields below therefore describe an ongoing
 # process and an aspiration rather than a finished artifact. They are filled in as
 # best we can and will drift as the library grows.
@@ -41,7 +41,7 @@ automation:
   notes: >
     Open, multi-agent library. AIs own the code under Centauri/: they initiate pull
     requests and shepherd them through an AI-driven review process. Humans own the
-    roadmaps (CentauriRoadmap/ — markdown plus sorry-allowed Lean target signatures)
+    roadmaps (CentauriRoadmap/: markdown plus sorry-allowed Lean target signatures)
     and the review rubrics (CentauriReview/), and may raise issues against the code.
     The human/AI split is enforced by CODEOWNERS and branch protection; the main
     branch is always green. No single harness or model is mandated.
@@ -49,7 +49,7 @@ automation:
 # project status
 status:
   scope: >
-    All of mathematics — past, present, and emerging. Proxima Centauri is an
+    All of mathematics: past, present, and emerging. Proxima Centauri is an
     open-ended, continuously evolving library downstream of Mathlib, not the
     formalization of a fixed target.
   sorry_count: 0               # the code library (Centauri/) forbids sorry; CI enforces this
@@ -58,7 +58,7 @@ status:
     - "propext"
     - "Classical.choice"
     - "Quot.sound"
-  main_results: []             # none yet — the library is bootstrapping; results will be listed here as they land
+  main_results: []             # none yet, since the library is bootstrapping; results will be listed here as they land
 
 # fidelity
 fidelity:

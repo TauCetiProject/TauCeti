@@ -42,3 +42,4 @@ Some initial example roadmaps live under `CentauriRoadmap/`:
 1. [Universal covers](CentauriRoadmap/UniversalCovers/README.md)
 2. [The Jacobian challenge](CentauriRoadmap/JacobianChallenge/README.md) 
 3. [Reductive algebraic groups](CentauriRoadmap/ReductiveGroups/README.md) 
+4. [Partial differential equations](CentauriRoadmap/PDE/README.md)

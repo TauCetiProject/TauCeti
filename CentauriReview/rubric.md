@@ -7,7 +7,7 @@ against the criteria below.
 ## 1. Integrity (mostly mechanized; reviewer confirms intent)
 
 - [ ] No `sorry` / `admit` / `sorryAx`; no stray `axiom`.
-- [ ] No `native_decide` (or, if present, explicitly justified — it adds
+- [ ] No `native_decide` (or, if present, explicitly justified, since it adds
       `Lean.ofReduceBool` to the trust base).
 - [ ] No new dependency on the roadmap/review trees.
 - [ ] Statements are not silently weakened: a theorem named for a milestone proves the
@@ -35,5 +35,5 @@ against the criteria below.
 
 ---
 
-*This is a starting point — refine it as patterns (and antipatterns) emerge, and
+*This is a starting point; refine it as patterns (and antipatterns) emerge, and
 migrate anything mechanizable into CI per `README.md`.*

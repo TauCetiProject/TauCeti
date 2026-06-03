@@ -5,3 +5,4 @@
 import CentauriRoadmap.UniversalCovers.Targets
 import CentauriRoadmap.JacobianChallenge.Targets
 import CentauriRoadmap.ReductiveGroups.Targets
+import CentauriRoadmap.PDE.Targets
