@@ -265,3 +265,18 @@ parabolic API before the full root-data classification exists: another reason to
 - J. C. Jantzen, *Representations of Algebraic Groups*.
 - B. Conrad, *Reductive Group Schemes* (SGA3 exposition); **SGA3**, Exposé XIX.
 - B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups* (relative theory).
+
+## Acknowledgements
+
+This roadmap builds directly on earlier discussions on the [Lean
+Zulip](https://leanprover.zulipchat.com/), and would not have been possible without them:
+
+- [#Is there code for X? > Algebraic groups](https://leanprover.zulipchat.com/#narrow/channel/217875-Is%20there%20code%20for%20X%3F/topic/Algebraic%20groups)
+  (Michael Rothgang, Bryan Gin-ge Chen, Yaël Dillies), on the Hopf / group-scheme
+  dictionary and the convolution-product work in mathlib4#39281.
+- [#maths > class and def (p-adic reps)](https://leanprover.zulipchat.com/#narrow/channel/116395-maths/topic/class%20and%20def%20%28p-adic%20reps%29)
+  (Kevin Buzzard, Shurui Liu, Stepan Nesterov), discussing the dynamic-parabolics /
+  BN-pair approach and the downstream p-adic-representation consumers cited above.
+
+Thanks to everyone who contributed to these discussions, and for the recurring Zulip
+guidance on keeping typeclass assumptions unbundled.

@@ -1,7 +1,7 @@
 # Roadmap: the Jacobian challenge (Christian Merten's AG version)
 
 Background: Kevin Buzzard's "Jacobian challenge" (Zulip
-[#Autoformalization > Jacobian challenge](https://leanprover.zulipchat.com/#narrow/channel/417987-Autoformalization/topic/Jacobian.20challenge)),
+[#Autoformalization > Jacobian challenge](https://leanprover.zulipchat.com/#narrow/channel/583336-Autoformalization/topic/Jacobian.20challenge)),
 in the **algebraic-geometry formulation due to Christian Merten**. The challenge is
 designed with **checks along the way**, so a construction that satisfies them all has to
 have the definitions right; the point is autoformalizing *definitions*, not just
@@ -196,3 +196,16 @@ Large by design, expanded **iteratively**. Build Layer A, then B, … ; as each 
 the next layer's *types* expressible, state that layer's milestones in `Targets.lean` (with
 `sorry`) and hand them to the AIs to discharge in `TauCeti/`. Nothing here blocks on
 upstream Mathlib.
+
+## Acknowledgements
+
+This roadmap builds directly on earlier discussions on the [Lean
+Zulip](https://leanprover.zulipchat.com/), and would not have been possible without them:
+
+- [#Autoformalization > Jacobian challenge](https://leanprover.zulipchat.com/#narrow/channel/583336-Autoformalization/topic/Jacobian%20challenge),
+  where Kevin Buzzard posed the original Jacobian challenge.
+- Private project discussions with Christian Merten, Matthew Ballard, Adam Topaz,
+  Fabian Glöckle, and Jack McCarthy; the algebraic-geometry reformulation this roadmap
+  follows is due to Christian Merten.
+
+Thanks to everyone who contributed to these discussions.

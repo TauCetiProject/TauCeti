@@ -380,3 +380,19 @@ the long pole that Lane E's regularity depends on. Lane E is the deep core of th
 roadmap, and Lane F and the stretch goals come last. As each lane makes the next one's
 *types* expressible in `TauCeti/`, state those milestones in `Targets.lean` (with
 `sorry`) and hand them to the AIs to discharge. Nothing here blocks on upstream Mathlib.
+
+## Acknowledgements
+
+This roadmap builds directly on earlier discussions on the [Lean
+Zulip](https://leanprover.zulipchat.com/), and would not have been possible without them:
+
+- [#AI authored projects > De Giorgi–Nash–Moser](https://leanprover.zulipchat.com/#narrow/channel/583339-AI%20authored%20projects/topic/De%20Giorgi%E2%80%93Nash%E2%80%93Moser),
+  the De Giorgi–Nash–Moser formalization experiment that informed this roadmap's headline
+  regularity target, with Filippo A. E. Nuccio, Przemek Chojecki, and others.
+- [#mathlib4 > PDE Theory](https://leanprover.zulipchat.com/#narrow/channel/287929-mathlib4/topic/PDE%20Theory)
+  (Anatole Dedecker, Michael Rothgang, Filippo A. E. Nuccio, Aditya Ramabadran), scoping
+  the PDE theory to build on top of Mathlib's analysis stack.
+- [#new members > elliptic PDEs](https://leanprover.zulipchat.com/#narrow/channel/113489-new%20members/topic/elliptic%20PDEs),
+  discussing prerequisites for formalizing elliptic PDEs.
+
+Thanks to everyone who contributed to these discussions.
