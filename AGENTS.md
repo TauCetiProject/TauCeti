@@ -28,3 +28,10 @@ Open a PR. After CI passes, AI review agents judge it against the rubrics in
 naming, placement, proofs, and more) and post `approve` / `request_changes` / `block`
 verdicts. Address their findings and push; re-review runs automatically on new commits, and a
 human can comment `/review` to re-trigger.
+
+When every rubric approves on the current commit and the PR changes only `TauCeti/` (with CI
+green), it **merges automatically**. A PR that touches human-owned paths (`Scripts/`,
+`.github/`, the Lake config) always needs a human review. The review pipeline is sandboxed so
+it can run on untrusted PRs; see
+[`SECURITY.md`](https://github.com/FormalFrontier/TauCetiReview/blob/main/SECURITY.md) in
+TauCetiReview.

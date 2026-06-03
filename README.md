@@ -23,6 +23,8 @@ Humans can raise issues against the code, and leave implementation (and review) 
 
 This part is still very much an open question, which I'd like input on.
 
+**Status (2026-06):** a first version is now live. Each PR is reviewed automatically by Claude and Codex against the rubrics, and a PR that every rubric approves — touching only `TauCeti/`, with CI green — merges itself; anything touching human-owned paths still needs a human. See [SECURITY.md](https://github.com/FormalFrontier/TauCetiReview/blob/main/SECURITY.md) for how the pipeline is sandboxed. The rest of this section is the original sketch.
+
 My current idea is that all PRs will be reviewed by AIs running according to a fixed open source rubric (prompt, spec, language model program, whatever you want to call it). The humans involved in this project will write that rubric, and evolve it over time as we see the need.
 
 When a PR is opened, we will automatically launch some combination of frontier models, prompted to review the PR according to the rubric. As replies and further commits are added, we'll feed these back to the same models (possibly even resuming the conversation) for further feedback. The review agents can approve PRs, and PRs automatically merge once approved.
