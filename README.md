@@ -2,23 +2,35 @@
 
 Let's do lots of maths.
 
-Humans own the roadmap for this repository, which is written mostly in markdown and a small amount of Lean. Changes to the roadmap are made via human-reviewed pull requests.
+Humans own the roadmap, which lives in the
+[TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap) repo (mostly markdown, a
+small amount of Lean); changes to it are made via human-reviewed pull requests there.
 
-AIs own the code, initiating pull requests and shepherding these pull requests through an AI-driven review process.
+AIs own the code in this repo, initiating pull requests and shepherding them through an
+AI-driven review process.
 
 Humans can raise issues against the code, and leave implementation (and review) to AIs.
+
+## The three repositories
+
+- **TauCeti** (this repo) — the AI-authored Lean mathematics.
+- **[TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap)** — the human-controlled
+  roadmaps that direct the work.
+- **[TauCetiReview](https://github.com/FormalFrontier/TauCetiReview)** — the review rubrics and
+  the machinery that runs review.
+
+(The roadmaps and review rubrics previously lived in `TauCetiRoadmap/` and `TauCetiReview/`
+directories here; they now have their own repos.)
 
 ## Division of labour
 
 | Path | Owner | Contents |
 | --- | --- | --- |
 | `TauCeti/` | **AIs** | All the Lean mathematics. |
-| `TauCetiRoadmap/` | **humans** | Roadmaps in markdown, and sample Lean files where `sorry` is allowed. |
-| `TauCetiReview/` | **humans** | Review rubrics and (eventually) review bots. |
-| `.github/`, `lakefile.toml`, `lean-toolchain`, `lake-manifest.json` | **humans** | The rules of the game and the machinery that enforces them. |
+| `Scripts/`, `.github/`, `lakefile.toml`, `lean-toolchain`, `lake-manifest.json` | **humans** | The rules of the game and the machinery that enforces them (including the axiom audit). |
 
 This division is managed via the `CODEOWNERS` file and branch protection rules.
-The `main` branch is always green: it contains no `sorry`, and no axioms beyond the standard `propext`, `Classical.choice`, and `Quot.sound`; in particular, no `native_decide`. This is enforced in CI by an axiom audit (`lake exe axioms`; see `TauCetiReview/`).
+The `main` branch is always green: it contains no `sorry`, and no axioms beyond the standard `propext`, `Classical.choice`, and `Quot.sound`; in particular, no `native_decide`. This is enforced in CI by an axiom audit (`lake exe axioms`; see `Scripts/Axioms.lean`).
 
 ## Review
 
@@ -51,9 +63,6 @@ lake build
 
 ## Roadmaps
 
-Some initial example roadmaps live under `TauCetiRoadmap/`:
-
-1. [Universal covers](TauCetiRoadmap/UniversalCovers/README.md)
-2. [The Jacobian challenge](TauCetiRoadmap/JacobianChallenge/README.md) 
-3. [Reductive algebraic groups](TauCetiRoadmap/ReductiveGroups/README.md) 
-4. [Partial differential equations](TauCetiRoadmap/PDE/README.md)
+The roadmaps live in the [TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap)
+repo: universal covers, the Jacobian challenge, reductive algebraic groups, and partial
+differential equations. When asked to work here, read the roadmap first (see `AGENTS.md`).

@@ -18,12 +18,12 @@ project:
 
 # sources - what was formalized.
 # Tau Ceti has no single fixed source. Its specification is its own
-# human-authored, human-reviewed roadmaps under TauCetiRoadmap/, which play the role
+# human-authored, human-reviewed roadmaps in the TauCetiRoadmap repo, which play the role
 # of blueprints and themselves cite the mathematical literature.
 sources:                       # [required] list of sources
   - title: "Tau Ceti roadmaps (human-curated)"   # [required]
     authors: ["Tau Ceti human stewards"]         # [required]
-    id: "https://github.com/FormalFrontier/TauCeti/tree/main/TauCetiRoadmap"  # [required]
+    id: "https://github.com/FormalFrontier/TauCetiRoadmap"  # [required]
     type: "blueprint"
     license: "Apache-2.0"
     author_contacted: "n/a"
@@ -41,8 +41,8 @@ automation:
   notes: >
     Open, multi-agent library. AIs own the code under TauCeti/: they initiate pull
     requests and shepherd them through an AI-driven review process. Humans own the
-    roadmaps (TauCetiRoadmap/: markdown plus sorry-allowed Lean target signatures)
-    and the review rubrics (TauCetiReview/), and may raise issues against the code.
+    roadmaps (the TauCetiRoadmap repo: markdown plus sorry-allowed Lean target signatures)
+    and the review rubrics (the TauCetiReview repo), and may raise issues against the code.
     The human/AI split is enforced by CODEOWNERS and branch protection; the main
     branch is always green. No single harness or model is mandated.
 
@@ -73,10 +73,10 @@ review:
   status: "agent-reviewed"     # [required] intended process: AI peer review against human-authored rubrics
   reviewers:
     - "AI author agents (peer review of code PRs)"
-    - "Human stewards (rubrics in TauCetiReview/; review of roadmap PRs)"
+    - "Human stewards (rubrics in the TauCetiReview repo; review of roadmap PRs)"
   notes: >
     Code PRs into TauCeti/ are peer-reviewed by AI agents against rubrics authored by
-    humans (TauCetiReview/). Merging requires a green CI run (build against pinned
+    humans (the TauCetiReview repo). Merging requires a green CI run (build against pinned
     Mathlib; no sorry/admit/sorryAx in TauCeti/; and TauCeti/ may not import the
     roadmap/review trees) plus code-owner review, enforced by branch protection.
     Human-governed paths are human-reviewed. The library is bootstrapping, so little
@@ -85,8 +85,8 @@ review:
 # alignment - how source statements map to formal declarations.
 alignment:
   note: >
-    The human-authored roadmaps under TauCetiRoadmap/ are the closest thing to a
+    The human-authored roadmaps in the TauCetiRoadmap repo are the closest thing to a
     blueprint. Each roadmap (e.g. UniversalCovers, JacobianChallenge, ReductiveGroups)
     states its goals as sorry-allowed signatures in its Targets.lean; the matching
     sorry-free development lives (or will live) under TauCeti/.
-  roadmaps: "https://github.com/FormalFrontier/TauCeti/tree/main/TauCetiRoadmap"
+  roadmaps: "https://github.com/FormalFrontier/TauCetiRoadmap"
