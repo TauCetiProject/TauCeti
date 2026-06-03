@@ -1,5 +1,5 @@
 name = "TauCeti"
-defaultTargets = ["TauCeti", "TauCetiRoadmap"]
+defaultTargets = ["TauCeti"]
 
 [[require]]
 name = "mathlib"
@@ -15,14 +15,10 @@ name = "TauCeti"
 globs = ["TauCeti.*"]
 leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFile = 1000, weak.linter.style.longFileDefValue = 1000, weak.linter.style.header = false, warningAsError = true }
 
-# Human-owned: roadmaps and target signatures. Sorries are allowed here:
-# these are goals, not proofs. `TauCeti` may not import this library (CI guard).
-[[lean_lib]]
-name = "TauCetiRoadmap"
 
 # Human-owned governance: the axiom-allowlist audit (`lake exe axioms`). Inspects the
 # built `TauCeti` environment and rejects any axiom outside the standard allowlist
 # (catches sorry, native_decide, and home-rolled axioms). Run in CI after the build.
 [[lean_exe]]
 name = "axioms"
-root = "TauCetiReview.Axioms"
+root = "Scripts.Axioms"
