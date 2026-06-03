@@ -19,19 +19,6 @@ Humans can raise issues against the code, and leave implementation (and review) 
 - **[TauCetiReview](https://github.com/FormalFrontier/TauCetiReview)** — the review rubrics and
   the machinery that runs review.
 
-(The roadmaps and review rubrics previously lived in `TauCetiRoadmap/` and `TauCetiReview/`
-directories here; they now have their own repos.)
-
-## Division of labour
-
-| Path | Owner | Contents |
-| --- | --- | --- |
-| `TauCeti/` | **AIs** | All the Lean mathematics. |
-| `Scripts/`, `.github/`, `lakefile.toml`, `lean-toolchain`, `lake-manifest.json` | **humans** | The rules of the game and the machinery that enforces them (including the axiom audit). |
-
-This division is managed via the `CODEOWNERS` file and branch protection rules.
-The `main` branch is always green: it contains no `sorry`, and no axioms beyond the standard `propext`, `Classical.choice`, and `Quot.sound`; in particular, no `native_decide`. This is enforced in CI by an axiom audit (`lake exe axioms`; see `Scripts/Axioms.lean`).
-
 ## Review
 
 This part is still very much an open question, which I'd like input on.
