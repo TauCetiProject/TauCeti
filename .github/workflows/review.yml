@@ -56,4 +56,5 @@ jobs:
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
+      enable_automerge: true
     secrets: inherit
