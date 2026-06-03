@@ -153,3 +153,15 @@ Stage 3 is a larger, separable track, but lighter than it looks now that homotop
 is available; the cost is the `π_n` API, not lifting. As each milestone's prerequisite
 *types* exist in `TauCeti/`, state the milestone in `Targets.lean` (with `sorry`) and
 hand it to the AIs to discharge.
+
+## Acknowledgements
+
+This roadmap builds directly on earlier discussions on the [Lean
+Zulip](https://leanprover.zulipchat.com/), and would not have been possible without them:
+
+- [#Is there code for X? > Universal cover of a topological space](https://leanprover.zulipchat.com/#narrow/channel/217875-Is%20there%20code%20for%20X%3F/topic/Universal%20cover%20of%20a%20topological%20space)
+  (Laura Monk, Kim Morrison, Michael Rothgang, Damiano Testa, and others), where the
+  universal-cover work was consolidated into mathlib4#38292.
+
+Thanks to everyone who contributed to that discussion, and to the authors of
+mathlib4#31576, mathlib4#38292, and mathlib4#40135.
