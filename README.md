@@ -21,13 +21,13 @@ Humans can raise issues against the code, and leave implementation (and review) 
 
 ## Review
 
-Review is entirely driven by AIs. These operate according to a fixed open source rubric. The human write the rubric, and update it as the project evolves.
+Review is entirely driven by AIs. These operate according to a fixed open source rubric. Humans write the rubric, and update it as the project evolves.
 
-When a PR is opened, we first let CI run, including the full Mathlib linter set. Once CI passes, we can automatically start reviews, which are posted, along with "block", "changes requested", or "approval" status.
+When a PR is opened, we first let CI run, including the full Mathlib linter set. Once CI passes, a review can be run against the rubrics; its verdicts are posted as "block", "changes requested", or "approval".
 
 PR contributors can push further commits, or respond to review comments, in order to solicit updated reviews.
 
-We've built the infrastructure to run these review, but for now they *do not* fire automatically. You can comment `/review` on a PR to obtain a review.
+We've built the infrastructure to fire these reviews automatically on each PR (and on a `/review` comment), but it is currently switched off. For now, reviews are run from the command line.
 
 You can also run the same review yourself from the command line, on your own Claude and/or Codex subscription instead of the project's metered API budget, using the `tauceti-review` tool in [TauCetiReview](https://github.com/FormalFrontier/TauCetiReview). With [uv](https://docs.astral.sh/uv/):
 
