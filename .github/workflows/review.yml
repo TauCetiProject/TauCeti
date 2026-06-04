@@ -6,6 +6,8 @@ on:
     types: [completed]
   issue_comment:
     types: [created]
+  pull_request_review_comment:
+    types: [created]
 
 permissions:
   contents: read
@@ -14,7 +16,9 @@ permissions:
 jobs:
   resolve:
     runs-on: ubuntu-latest
-    # Fire after the sandboxed pr-build succeeds, or on a `/review` comment from an authorized user.
+    # Fire after the sandboxed pr-build succeeds, on a `/review` comment, or on an author's reply
+    # in a review thread (the reply flow re-runs only that rubric). Replies by the review bot are
+    # ignored so the bot never re-triggers itself.
     if: >
       (github.event_name == 'workflow_run'
         && github.event.workflow_run.conclusion == 'success'
@@ -23,8 +27,14 @@ jobs:
         && github.event.issue.pull_request != null
         && contains(github.event.comment.body, '/review')
         && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+      || (github.event_name == 'pull_request_review_comment'
+        && github.event.comment.user.login != 'tauceti-review-bot[bot]'
+        && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
     outputs:
       pr: ${{ steps.r.outputs.pr }}
+      mode: ${{ steps.r.outputs.mode }}
+      reply_rubric: ${{ steps.r.outputs.reply_rubric }}
+      reply_comment_id: ${{ steps.r.outputs.reply_comment_id }}
     steps:
       - id: r
         env:
@@ -40,6 +50,22 @@ jobs:
               echo "pr=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
             else
               echo "comment contains '/review' but not as an exact command; skipping"
+            fi
+          elif [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
+            # An author reply in a rubric thread re-runs only that rubric. GitHub points every
+            # reply's in_reply_to_id at the thread's root comment; that root carries a hidden
+            # <!--tauceti-rubric:NAME--> marker we wrote. A comment outside such a thread is ignored.
+            ROOT="${{ github.event.comment.in_reply_to_id }}"
+            [ -z "$ROOT" ] && ROOT="${{ github.event.comment.id }}"
+            BODY=$(gh api "repos/${{ github.repository }}/pulls/comments/$ROOT" --jq '.body' 2>/dev/null || true)
+            RUBRIC=$(printf '%s' "$BODY" | sed -n 's/.*tauceti-rubric:\([a-z][a-z-]*\).*/\1/p' | head -1)
+            if [ -n "$RUBRIC" ]; then
+              echo "pr=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+              echo "mode=reply" >> "$GITHUB_OUTPUT"
+              echo "reply_rubric=$RUBRIC" >> "$GITHUB_OUTPUT"
+              echo "reply_comment_id=${{ github.event.comment.id }}" >> "$GITHUB_OUTPUT"
+            else
+              echo "review comment is not in a Tau Ceti rubric thread; skipping"
             fi
           else
             pr="${{ github.event.workflow_run.pull_requests[0].number }}"
@@ -57,4 +83,7 @@ jobs:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
       enable_automerge: true
+      mode: ${{ needs.resolve.outputs.mode }}
+      reply_rubric: ${{ needs.resolve.outputs.reply_rubric }}
+      reply_comment_id: ${{ needs.resolve.outputs.reply_comment_id }}
     secrets: inherit
