@@ -17,8 +17,10 @@ jobs:
   resolve:
     runs-on: ubuntu-latest
     # Fire after the sandboxed pr-build succeeds, on a `/review` comment, or on an author's reply
-    # in a review thread (the reply flow re-runs only that rubric). Replies by the review bot are
-    # ignored so the bot never re-triggers itself.
+    # in a review thread (the reply flow re-runs only that rubric). The PR author may always
+    # contest on their own PR (the review-comment webhook reports author_association by *public*
+    # org membership, so a private member's reply arrives as NONE — the author clause covers it).
+    # Replies by the review bot are ignored so the bot never re-triggers itself.
     if: >
       (github.event_name == 'workflow_run'
         && github.event.workflow_run.conclusion == 'success'
@@ -29,7 +31,8 @@ jobs:
         && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
       || (github.event_name == 'pull_request_review_comment'
         && github.event.comment.user.login != 'tauceti-review-bot[bot]'
-        && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+        && (contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+          || github.event.comment.user.login == github.event.pull_request.user.login))
     outputs:
       pr: ${{ steps.r.outputs.pr }}
       mode: ${{ steps.r.outputs.mode }}
