@@ -17,22 +17,22 @@ jobs:
   resolve:
     runs-on: ubuntu-latest
     # Fire after the sandboxed pr-build succeeds, on a `/review` comment, or on an author's reply
-    # in a review thread (the reply flow re-runs only that rubric). The PR author may always
-    # contest on their own PR (the review-comment webhook reports author_association by *public*
-    # org membership, so a private member's reply arrives as NONE — the author clause covers it).
-    # Replies by the review bot are ignored so the bot never re-triggers itself.
+    # in a review thread (the reply flow re-runs only that rubric). The job-level `if` filters only
+    # by event type and excludes the bot; ALL authorization happens inside the step. We do not gate
+    # on `author_association` here because the pull_request_review_comment webhook reports it by
+    # *public* org membership, so a private member's reply arrives as NONE and the job would be
+    # silently skipped with no logs. Authorizing in-job (repository permission API, with the PR
+    # author and author_association as fallbacks) is reliable regardless of membership visibility
+    # and leaves an explicit accept/reject in the log.
     if: >
       (github.event_name == 'workflow_run'
         && github.event.workflow_run.conclusion == 'success'
         && github.event.workflow_run.event == 'pull_request_target')
       || (github.event_name == 'issue_comment'
         && github.event.issue.pull_request != null
-        && contains(github.event.comment.body, '/review')
-        && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+        && contains(github.event.comment.body, '/review'))
       || (github.event_name == 'pull_request_review_comment'
-        && github.event.comment.user.login != 'tauceti-review-bot[bot]'
-        && (contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
-          || github.event.comment.user.login == github.event.pull_request.user.login))
+        && github.event.comment.user.login != 'tauceti-review-bot[bot]')
     outputs:
       pr: ${{ steps.r.outputs.pr }}
       mode: ${{ steps.r.outputs.mode }}
@@ -44,23 +44,45 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           # Pass attacker-controlled comment text via env, never inline, to avoid shell injection.
           COMMENT_BODY: ${{ github.event.comment.body }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
         run: |
-          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+          set -euo pipefail
+          actor=$(jq -r '.sender.login // ""' "$GITHUB_EVENT_PATH")
+          assoc=$(jq -r '.comment.author_association // ""' "$GITHUB_EVENT_PATH")
+          # Authorized iff the actor has write+ access to the repo. The permission API returns the
+          # effective role regardless of public/private membership; if that call cannot be made
+          # (token scope), fall back to the webhook's author_association so /review never regresses.
+          authorized() {
+            local perm
+            perm=$(gh api "repos/$REPO/collaborators/$actor/permission" --jq '.permission' 2>/dev/null || echo "")
+            case "$perm" in admin|write|maintain) return 0 ;; esac
+            case "$assoc" in OWNER|MEMBER|COLLABORATOR) return 0 ;; esac
+            return 1
+          }
+          if [ "$EVENT" = "issue_comment" ]; then
             # Exact command only: some line of the comment must be exactly "/review"
-            # (optional surrounding whitespace). A "/review" mentioned in prose or quoted
-            # text does not trigger a paid review.
-            if printf '%s' "$COMMENT_BODY" | grep -qxE '[[:space:]]*/review[[:space:]]*'; then
+            # (optional surrounding whitespace). A "/review" mentioned in prose does not trigger.
+            if ! printf '%s' "$COMMENT_BODY" | grep -qxE '[[:space:]]*/review[[:space:]]*'; then
+              echo "comment contains '/review' but not as an exact command; skipping"; exit 0
+            fi
+            if authorized; then
               echo "pr=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
             else
-              echo "comment contains '/review' but not as an exact command; skipping"
+              echo "unauthorized /review by $actor; skipping"
             fi
-          elif [ "${{ github.event_name }}" = "pull_request_review_comment" ]; then
-            # An author reply in a rubric thread re-runs only that rubric. GitHub points every
-            # reply's in_reply_to_id at the thread's root comment; that root carries a hidden
-            # <!--tauceti-rubric:NAME--> marker we wrote. A comment outside such a thread is ignored.
+          elif [ "$EVENT" = "pull_request_review_comment" ]; then
+            # An author reply in a rubric thread re-runs only that rubric. The PR author may always
+            # contest on their own PR; anyone else needs write+ access.
+            pr_author=$(jq -r '.pull_request.user.login // ""' "$GITHUB_EVENT_PATH")
+            if [ "$actor" != "$pr_author" ] && ! authorized; then
+              echo "unauthorized review-comment reply by $actor; skipping"; exit 0
+            fi
+            # GitHub points every reply's in_reply_to_id at the thread's root comment; that root
+            # carries a hidden <!--tauceti-rubric:NAME--> marker we wrote. Outside such a thread: ignore.
             ROOT="${{ github.event.comment.in_reply_to_id }}"
-            [ -z "$ROOT" ] && ROOT="${{ github.event.comment.id }}"
-            BODY=$(gh api "repos/${{ github.repository }}/pulls/comments/$ROOT" --jq '.body' 2>/dev/null || true)
+            if [ -z "$ROOT" ]; then ROOT="${{ github.event.comment.id }}"; fi
+            BODY=$(gh api "repos/$REPO/pulls/comments/$ROOT" --jq '.body' 2>/dev/null || true)
             RUBRIC=$(printf '%s' "$BODY" | sed -n 's/.*tauceti-rubric:\([a-z][a-z-]*\).*/\1/p' | head -1)
             if [ -n "$RUBRIC" ]; then
               echo "pr=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
@@ -73,7 +95,7 @@ jobs:
           else
             pr="${{ github.event.workflow_run.pull_requests[0].number }}"
             if [ -z "$pr" ]; then
-              pr=$(gh api "repos/${{ github.repository }}/commits/${{ github.event.workflow_run.head_sha }}/pulls" --jq '.[0].number // empty')
+              pr=$(gh api "repos/$REPO/commits/${{ github.event.workflow_run.head_sha }}/pulls" --jq '.[0].number // empty')
             fi
             echo "pr=$pr" >> "$GITHUB_OUTPUT"
           fi
