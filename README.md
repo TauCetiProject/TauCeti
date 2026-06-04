@@ -4,7 +4,7 @@ Let's do lots of maths.
 
 Humans own the roadmap, which lives in the
 [TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap) repo (mostly markdown, a
-small amount of Lean); changes to it are made via human-reviewed pull requests there.
+small amount of Lean); changes are made via human-reviewed pull requests there.
 
 AIs own the code in this repo, initiating pull requests and shepherding them through an
 AI-driven review process.
@@ -21,17 +21,28 @@ Humans can raise issues against the code, and leave implementation (and review) 
 
 ## Review
 
-This part is still very much an open question, which I'd like input on.
+Review is entirely driven by AIs. These operate according to a fixed open source rubric. The human write the rubric, and update it as the project evolves.
 
-My current idea is that all PRs will be reviewed by AIs running according to a fixed open source rubric (prompt, spec, language model program, whatever you want to call it). The humans involved in this project will write that rubric, and evolve it over time as we see the need.
+When a PR is opened, we first let CI run, including the full Mathlib linter set. Once CI passes, we can automatically start reviews, which are posted, along with "block", "changes requested", or "approval" status.
 
-When a PR is opened, we will automatically launch some combination of frontier models, prompted to review the PR according to the rubric. As replies and further commits are added, we'll feed these back to the same models (possibly even resuming the conversation) for further feedback. The review agents can approve PRs, and PRs automatically merge once approved.
+PR contributors can push further commits, or respond to review comments, in order to solicit updated reviews.
 
-The rubric will be **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". We'll name specific antipatterns to look for. We'll likely need to avoid letting a frontier model review itself.
+We've built the infrastructure to run these review, but for now they *do not* fire automatically. You can comment `/review` on a PR to obtain a review.
 
-I suspect there should be multiple rubrics covering different aspects of review, and merging requires approval from everyone (or perhaps a soft cutoff for more subjective aspects of review).
+You can also run the same review yourself from the command line, on your own Claude and/or Codex subscription instead of the project's metered API budget, using the `tauceti-review` tool in [TauCetiReview](https://github.com/FormalFrontier/TauCetiReview). With [uv](https://docs.astral.sh/uv/):
 
-These review agents' token costs will be covered by some combination of philanthropic donations (in money or in kind), and perhaps eventually on a "billable hours" basis for significant contributors. That is, industrial or academic groups making significant pull requests should expect to donate tokens sufficient to power the review bots in proportion to their contributions. Likely small scale contributions can be reviewed "for free" out of this pool.
+```bash
+# print the verdicts for PR #42, posting nothing:
+uvx --from git+https://github.com/FormalFrontier/TauCetiReview tauceti-review 42
+# add --post to publish the scoreboard and per-rubric threads, as you:
+uvx --from git+https://github.com/FormalFrontier/TauCetiReview tauceti-review 42 --post
+```
+
+It runs the identical engine and rubrics CI uses, in a clean room that ignores your personal editor configuration so the review stays reproducible. See [REVIEWING.md](https://github.com/FormalFrontier/TauCetiReview/blob/main/REVIEWING.md) for prerequisites, flags, and the contest/re-review flow.
+
+The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/FormalFrontier/TauCetiReview/tree/main/rubrics). We'll update these as we see what is most useful!
+
+Eventually, these review agents' token costs will be covered by some combination of philanthropic donations (in money or in kind), and perhaps eventually a "billable hours" basis for significant contributors. That is, industrial or academic groups making significant pull requests should expect to donate tokens sufficient to power the review bots in proportion to their contributions. Likely small scale contributions can be reviewed "for free" out of this pool.
 
 ## Mathlib dependency
 
