@@ -69,21 +69,21 @@ lemma mapsTo_fiber_symm (φ : Deck p) (b : B) :
 
 /-- A deck transformation restricts to a homeomorphism of every fibre of the projection,
 the restriction of its underlying homeomorphism along `Homeomorph.subtype`. -/
-def fiberEquiv (φ : Deck p) (b : B) : p ⁻¹' {b} ≃ₜ p ⁻¹' {b} :=
+def fiberHomeomorph (φ : Deck p) (b : B) : p ⁻¹' {b} ≃ₜ p ⁻¹' {b} :=
   φ.1.subtype fun e => by simp [Set.mem_preimage, eq_comm, map_proj]
 
 /-- On points, the fibre homeomorphism induced by a deck transformation is just evaluation
 of that transformation. -/
 @[simp]
-lemma fiberEquiv_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
-    (fiberEquiv φ b e : E) = φ.1 e.1 :=
+lemma fiberHomeomorph_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
+    (fiberHomeomorph φ b e : E) = φ.1 e.1 :=
   rfl
 
 /-- On points, the inverse fibre homeomorphism induced by a deck transformation is
 evaluation of the inverse homeomorphism. -/
 @[simp]
-lemma fiberEquiv_symm_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
-    ((fiberEquiv φ b).symm e : E) = φ.1.symm e.1 :=
+lemma fiberHomeomorph_symm_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
+    ((fiberHomeomorph φ b).symm e : E) = φ.1.symm e.1 :=
   rfl
 
 /-- On points, the action of a deck transformation is evaluation of its underlying
