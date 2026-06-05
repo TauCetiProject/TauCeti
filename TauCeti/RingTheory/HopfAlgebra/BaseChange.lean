@@ -23,6 +23,43 @@ open Coalgebra
 
 namespace TauCeti
 
+namespace BialgHom
+
+variable {k A B : Type*} [CommSemiring k] [Semiring A] [Semiring B]
+variable [HopfAlgebra k A] [HopfAlgebra k B]
+
+/-- A bialgebra homomorphism between Hopf algebras commutes with the antipode, as an equality of
+linear maps. -/
+lemma antipode_comp (f : A →ₐc[k] B) :
+    (HopfAlgebra.antipode k : B →ₗ[k] B).comp (f : A →ₗ[k] B) =
+      (f : A →ₗ[k] B).comp (HopfAlgebra.antipode k : A →ₗ[k] A) := by
+  let u : A →ₗ[k] B := f
+  change (HopfAlgebra.antipode k : B →ₗ[k] B).comp u =
+    u.comp (HopfAlgebra.antipode k : A →ₗ[k] A)
+  apply WithConv.toConv_injective
+  exact left_inv_eq_right_inv (a := WithConv.toConv u)
+    (b := WithConv.toConv ((HopfAlgebra.antipode k : B →ₗ[k] B).comp u))
+    (c := WithConv.toConv (u.comp (HopfAlgebra.antipode k : A →ₗ[k] A)))
+    (by
+      ext x
+      rw [(ℛ k x).convMul_apply, LinearMap.convOne_apply]
+      simpa [u, Coalgebra.Repr.induced, Algebra.smul_def,
+        CoalgHomClass.counit_comp_apply f x]
+        using HopfAlgebra.sum_antipode_mul_eq_smul ((ℛ k x).induced f))
+    (by
+      ext x
+      rw [(ℛ k x).convMul_apply, LinearMap.convOne_apply]
+      simpa [u, Algebra.smul_def, map_sum, map_mul, AlgHomClass.commutes f]
+        using congr_arg f (HopfAlgebra.sum_mul_antipode_eq_smul (ℛ k x)))
+
+/-- A bialgebra homomorphism between Hopf algebras preserves the antipode. -/
+@[simp]
+lemma map_antipode (f : A →ₐc[k] B) (a : A) :
+    f (HopfAlgebraStruct.antipode k a) = HopfAlgebraStruct.antipode k (f a) := by
+  exact LinearMap.congr_fun (antipode_comp f).symm a
+
+end BialgHom
+
 namespace HopfAlgebra
 
 variable (k K A : Type*) [CommSemiring k] [CommSemiring K] [Semiring A]
@@ -60,13 +97,6 @@ section CoalgebraStructOperations
 
 variable [Algebra k A] [CoalgebraStruct k A]
 
-/-- The counit on scalar extension evaluates on a pure tensor by multiplying the two counits. -/
-@[simp]
-lemma counit_tmul (r : K) (a : A) :
-    Coalgebra.counit (R := K) (r ⊗ₜ[k] a : HopfAlgebra.baseChange k K A) =
-      Coalgebra.counit (R := k) a • Coalgebra.counit (R := K) r := by
-  rw [TensorProduct.counit_tmul]
-
 /-- The counit of the canonical inclusion is obtained by extending scalars from `k` to `K`. -/
 @[simp]
 lemma counit_includeRight (a : A) :
@@ -74,15 +104,6 @@ lemma counit_includeRight (a : A) :
         (includeRight (k := k) (K := K) a : HopfAlgebra.baseChange k K A) =
       algebraMap k K (Coalgebra.counit (R := k) a) := by
   simp [Algebra.smul_def]
-
-/-- The comultiplication on scalar extension is the tensor product comultiplication on pure
-tensors, followed by the tensor-tensor interchange map. -/
-@[simp]
-lemma comul_tmul (r : K) (a : A) :
-    Coalgebra.comul (R := K) (r ⊗ₜ[k] a : HopfAlgebra.baseChange k K A) =
-      TensorProduct.AlgebraTensorModule.tensorTensorTensorComm k K k K K K A A
-        (Coalgebra.comul (R := K) r ⊗ₜ[k] Coalgebra.comul (R := k) a) := by
-  rw [TensorProduct.comul_tmul]
 
 end CoalgebraStructOperations
 
@@ -201,31 +222,6 @@ section HopfMap
 variable [HopfAlgebra k A]
 variable {B : Type*} [Semiring B] [HopfAlgebra k B]
 
-/-- A bialgebra homomorphism between Hopf algebras preserves the antipode. -/
-private lemma bialgHom_antipode_apply (f : A →ₐc[k] B) (a : A) :
-    f (HopfAlgebraStruct.antipode k a) = HopfAlgebraStruct.antipode k (f a) := by
-  let u : A →ₗ[k] B := f
-  change u ((HopfAlgebra.antipode k : A →ₗ[k] A) a) =
-    (HopfAlgebra.antipode k : B →ₗ[k] B) (u a)
-  have hlinear : (HopfAlgebra.antipode k : B →ₗ[k] B).comp u =
-      u.comp (HopfAlgebra.antipode k : A →ₗ[k] A) := by
-    apply WithConv.toConv_injective
-    exact left_inv_eq_right_inv (a := WithConv.toConv u)
-      (b := WithConv.toConv ((HopfAlgebra.antipode k : B →ₗ[k] B).comp u))
-      (c := WithConv.toConv (u.comp (HopfAlgebra.antipode k : A →ₗ[k] A)))
-      (by
-        ext x
-        rw [(ℛ k x).convMul_apply, LinearMap.convOne_apply]
-        simpa [u, Coalgebra.Repr.induced, Algebra.smul_def,
-          CoalgHomClass.counit_comp_apply f x]
-          using HopfAlgebra.sum_antipode_mul_eq_smul ((ℛ k x).induced f))
-      (by
-        ext x
-        rw [(ℛ k x).convMul_apply, LinearMap.convOne_apply]
-        simpa [u, Algebra.smul_def, map_sum, map_mul, AlgHomClass.commutes f]
-          using congr_arg f (HopfAlgebra.sum_mul_antipode_eq_smul (ℛ k x)))
-  exact LinearMap.congr_fun hlinear.symm a
-
 /-- Scalar extension of a bialgebra homomorphism between Hopf algebras preserves antipodes. -/
 @[simp]
 lemma map_antipode (f : A →ₐc[k] B) (x : HopfAlgebra.baseChange k K A) :
@@ -233,7 +229,7 @@ lemma map_antipode (f : A →ₐc[k] B) (x : HopfAlgebra.baseChange k K A) :
       HopfAlgebraStruct.antipode K (map (K := K) f x) := by
   induction x using TensorProduct.induction_on with
   | zero => simp
-  | tmul r a => simp [bialgHom_antipode_apply f a]
+  | tmul r a => simp [TauCeti.BialgHom.map_antipode f a]
   | add x y hx hy =>
       rw [map_add, map_add, map_add, hx, hy]
       exact (map_add (HopfAlgebraStruct.antipode K) (map (K := K) f x) (map (K := K) f y)).symm
