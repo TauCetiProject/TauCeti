@@ -62,6 +62,21 @@ lemma map_antipode (f : A →ₐc[k] B) (a : A) :
 
 end BialgHom
 
+namespace TensorProduct
+
+variable {R S A B : Type*} [CommSemiring R] [CommSemiring S] [Semiring A] [Semiring B]
+variable [Algebra R S] [HopfAlgebra R A] [HopfAlgebra S B] [Algebra R B] [IsScalarTower R S B]
+
+/-- The antipode on a tensor product of Hopf algebras applies the antipode in each factor on
+pure tensors. -/
+@[simp]
+lemma antipode_tmul (b : B) (a : A) :
+    HopfAlgebraStruct.antipode S (b ⊗ₜ[R] a : B ⊗[R] A) =
+      HopfAlgebraStruct.antipode S b ⊗ₜ[R] HopfAlgebraStruct.antipode R a := by
+  simp [_root_.TensorProduct.antipode_def]
+
+end TensorProduct
+
 namespace Bialgebra.TensorProduct
 
 variable {R S A B : Type*} [CommSemiring R] [CommSemiring S] [Semiring A] [Semiring B]
@@ -164,7 +179,7 @@ variable [HopfAlgebra k A]
 lemma antipode_tmul (r : K) (a : A) :
     HopfAlgebraStruct.antipode K (r ⊗ₜ[k] a : HopfAlgebra.baseChange k K A) =
       HopfAlgebraStruct.antipode K r ⊗ₜ[k] HopfAlgebraStruct.antipode k a := by
-  simp [TensorProduct.antipode_def]
+  exact TauCeti.TensorProduct.antipode_tmul r a
 
 /-- The antipode commutes with the canonical inclusion into the scalar extension. -/
 @[simp]
@@ -250,12 +265,7 @@ variable {B : Type*} [Semiring B] [HopfAlgebra k B]
 lemma map_antipode (f : A →ₐc[k] B) (x : HopfAlgebra.baseChange k K A) :
     map (K := K) f (HopfAlgebraStruct.antipode K x) =
       HopfAlgebraStruct.antipode K (map (K := K) f x) := by
-  induction x using TensorProduct.induction_on with
-  | zero => simp
-  | tmul r a => simp [TauCeti.BialgHom.map_antipode f a]
-  | add x y hx hy =>
-      rw [map_add, map_add, map_add, hx, hy]
-      exact (map_add (HopfAlgebraStruct.antipode K) (map (K := K) f x) (map (K := K) f y)).symm
+  exact TauCeti.BialgHom.map_antipode (map (K := K) f) x
 
 end HopfMap
 
