@@ -16,16 +16,22 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 
 Declarations from the universal-cover work in
 [mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292) (Kim Morrison) that
-are not yet in the pinned Mathlib.
+are not yet in the pinned Mathlib. Several supporting declarations also come from
+[mathlib4#31449](https://github.com/leanprover-community/mathlib4/pull/31449) (Kim Morrison).
+
+When the pinned Mathlib advances past these upstream declarations, this shim should be removed
+declaration-by-declaration in the same bump PR that switches downstream imports to Mathlib's
+versions.
 -/
 
-@[expose] public section
+public section
 
 open scoped unitInterval
 open Topology Set
 
 namespace unitInterval
 /-- The midpoint of the unit interval. -/
+@[expose]
 noncomputable def half : I := ⟨1 / 2, by constructor <;> linarith⟩
 
 @[simp]
@@ -68,6 +74,10 @@ theorem IsPathConnected.exists_path {X : Type*} [TopologicalSpace X] {a b : X} {
 namespace Path
 variable {X : Type*} [TopologicalSpace X]
 
+/-- Restrict a path whose image lies in a subset to a path in the corresponding subtype.
+The source and target are the given subtype endpoints, and coercing the restricted path back to
+`X` recovers the original path pointwise. -/
+@[expose]
 def codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val) (hmem : ∀ t, γ t ∈ s) :
     Path x y where
   toFun := s.codRestrict γ hmem
@@ -134,6 +144,7 @@ variable {X : Type*} [TopologicalSpace X] {x y : X}
 
 /-- Extract a subpath from `γ` on the interval `[a, b]`. This is `γ` reparametrised via
 `Set.Icc.convexComb a b`, i.e. `t ↦ a + t (b - a)`. -/
+@[expose]
 def subpathOn (γ : Path x y) (a b : unitInterval) : Path (γ a) (γ b) where
   toFun t := γ (convexComb a b t)
   source' := by simp

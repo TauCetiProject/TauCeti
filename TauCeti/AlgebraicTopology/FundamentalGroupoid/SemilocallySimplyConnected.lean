@@ -61,7 +61,7 @@ variable {X : Type*} [TopologicalSpace X]
 /-- A space is semilocally simply connected at `x` if `x` has a neighborhood `U` such that
 the map from `π₁(U, base)` to `π₁(X, base)` induced by the inclusion is trivial for all
 basepoints in `U`. Equivalently, every loop in `U` is nullhomotopic in `X`. -/
-@[expose] public def SemilocallySimplyConnectedAt (x : X) : Prop :=
+public def SemilocallySimplyConnectedAt (x : X) : Prop :=
   ∃ U ∈ 𝓝 x, ∀ (base : U),
     (FundamentalGroup.map (⟨Subtype.val, continuous_subtype_val⟩ : C(U, X)) base).range = ⊥
 
@@ -73,6 +73,8 @@ public theorem SemilocallySimplyConnectedAt.of_simplyConnected [SimplyConnectedS
     ext
     exact Subsingleton.elim (α := Path.Homotopic.Quotient base.val base.val) _ _⟩
 
+/-- Characterization of `SemilocallySimplyConnectedAt x` by open neighborhoods whose loops are
+nullhomotopic in the ambient space. -/
 public theorem semilocallySimplyConnectedAt_iff {x : X} :
     SemilocallySimplyConnectedAt x ↔
     ∃ U : Set X, IsOpen U ∧ x ∈ U ∧
@@ -149,7 +151,7 @@ variable {s t : Set X} {x : X}
 
 /-- A space is semilocally simply connected on `s` if it is semilocally simply connected
 at every point of `s`. -/
-@[expose] public def SemilocallySimplyConnectedOn (s : Set X) : Prop :=
+public def SemilocallySimplyConnectedOn (s : Set X) : Prop :=
   ∀ x ∈ s, SemilocallySimplyConnectedAt x
 
 public theorem SemilocallySimplyConnectedOn.at (h : SemilocallySimplyConnectedOn s) (hx : x ∈ s) :
@@ -231,23 +233,35 @@ homotopic (so path homotopy classes are determined by endpoints).
 
 This is `semilocallySimplyConnectedSpace_iff_paths.mp` repackaged with the
 `IsPathHomotopyTrivial` abstraction, which is the form most downstream users consume. -/
-public theorem exists_pathHomotopyTrivial_neighborhood [SemilocallySimplyConnectedSpace X] (x : X) :
+public theorem SemilocallySimplyConnectedAt.exists_pathHomotopyTrivial_neighborhood {x : X}
+    (h : SemilocallySimplyConnectedAt x) :
     ∃ U : Set X, IsOpen U ∧ x ∈ U ∧ IsPathHomotopyTrivial U :=
-  semilocallySimplyConnectedSpace_iff_paths.mp ‹_› x
+  semilocallySimplyConnectedAt_iff_paths.mp h
+
+public theorem exists_pathHomotopyTrivial_neighborhood [SemilocallySimplyConnectedSpace X] (x : X) :
+    ∃ U : Set X, IsOpen U ∧ x ∈ U ∧ IsPathHomotopyTrivial U := by
+  have hx := SemilocallySimplyConnectedAt.of_semilocallySimplyConnectedSpace x
+  exact hx.exists_pathHomotopyTrivial_neighborhood
 
 /-- An SLSC neighborhood can be chosen to be path-connected. In a locally path-connected space,
 we can use the path component of x in an SLSC neighborhood V to get a neighborhood that is both
 open, path-connected, and has the SLSC property (paths with same endpoints in U are homotopic). -/
-public theorem exists_pathConnected_slsc_neighborhood [SemilocallySimplyConnectedSpace X]
-    [LocPathConnectedSpace X] (x : X) :
+public theorem SemilocallySimplyConnectedAt.exists_pathConnected_slsc_neighborhood
+    [LocPathConnectedSpace X] {x : X} (h : SemilocallySimplyConnectedAt x) :
     ∃ U : Set X, IsOpen U ∧ x ∈ U ∧ IsPathConnected U ∧ IsPathHomotopyTrivial U := by
   -- Take the path component of `x` in any SLSC neighborhood `V`. It is open by local
   -- path-connectedness, path-connected by construction, and inherits SLSC from `V` by
   -- composing the range subsets through `pathComponentIn_subset : pathComponentIn V x ⊆ V`.
-  obtain ⟨V, hV_open, hx_in_V, hV_slsc⟩ := exists_pathHomotopyTrivial_neighborhood x
+  obtain ⟨V, hV_open, hx_in_V, hV_slsc⟩ := h.exists_pathHomotopyTrivial_neighborhood
   refine ⟨pathComponentIn V x, hV_open.pathComponentIn x, mem_pathComponentIn_self hx_in_V,
     isPathConnected_pathComponentIn hx_in_V, fun _ _ p q hp hq ↦ ?_⟩
   exact hV_slsc p q (hp.trans pathComponentIn_subset) (hq.trans pathComponentIn_subset)
+
+public theorem exists_pathConnected_slsc_neighborhood [SemilocallySimplyConnectedSpace X]
+    [LocPathConnectedSpace X] (x : X) :
+    ∃ U : Set X, IsOpen U ∧ x ∈ U ∧ IsPathConnected U ∧ IsPathHomotopyTrivial U := by
+  have hx := SemilocallySimplyConnectedAt.of_semilocallySimplyConnectedSpace x
+  exact hx.exists_pathConnected_slsc_neighborhood
 
 /-! ### Tube data structures -/
 
@@ -289,7 +303,7 @@ Consists of:
   - At endpoints: V[0] ⊆ U[0], V[n] ⊆ U[n-1]
   - At interior points: V[j] ⊆ U[j-1] ∩ U[j]
 - All required properties (openness, path-connectivity, SLSC conditions) -/
-public structure TubeData (X : Type*) [TopologicalSpace X] (x y : X) (n : ℕ) where
+public structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
   /-- Segment neighborhoods -/
   U : Fin n → Set X
   /-- Point neighborhoods at ALL partition points (including endpoints) -/
@@ -312,7 +326,7 @@ This means:
 1. γ stays in the segment neighborhoods U[i] on each interval [t[i], t[i+1]]
 2. γ passes through the point neighborhoods V[j] at ALL partition points -/
 public structure PathInTube {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
-    (γ : Path x y) (part : IntervalPartition n) (T : TubeData X x y n) : Prop where
+    (γ : Path x y) (part : IntervalPartition n) (T : TubeData X n) : Prop where
   /-- γ stays in the segment neighborhoods U[i] on each interval [t[i], t[i+1]] -/
   stays_in_U : ∀ i (s : unitInterval),
     (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) → γ s ∈ T.U i
@@ -321,7 +335,7 @@ public structure PathInTube {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
 
 /-- If γ is in a tube, then its subpath on segment i has range in U[i]. -/
 public lemma PathInTube.subpathOn_range_subset {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
-    {γ : Path x y} {part : IntervalPartition n} {T : TubeData X x y n}
+    {γ : Path x y} {part : IntervalPartition n} {T : TubeData X n}
     (hγ : PathInTube γ part T) (i : Fin n) :
     Set.range (γ.subpathOn (part.t i.castSucc) (part.t i.succ)) ⊆ T.U i := by
   intro z hz
@@ -334,7 +348,7 @@ public lemma PathInTube.subpathOn_range_subset {X : Type*} [TopologicalSpace X] 
 
 /-- Convert TubeData with partition to the set of paths in the tube -/
 @[expose] public def TubeData.toSet {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
-    (part : IntervalPartition n) (T : TubeData X x y n) : Set (Path x y) :=
+    (part : IntervalPartition n) (T : TubeData X n) : Set (Path x y) :=
   {γ | PathInTube γ part T}
 
 /-- Given segment neighborhoods covering each subpath of `γ`, construct the vertex neighborhoods
@@ -394,7 +408,7 @@ such that γ stays in the tube. This uses compactness of the path's image and th
 Lebesgue number lemma. -/
 public theorem Path.exists_partition_in_slsc_neighborhoods [SemilocallySimplyConnectedSpace X]
     [LocPathConnectedSpace X] {x y : X} (γ : Path x y) :
-    ∃ (n : ℕ) (part : IntervalPartition n) (T : TubeData X x y n), PathInTube γ part T := by
+    ∃ (n : ℕ) (part : IntervalPartition n) (T : TubeData X n), PathInTube γ part T := by
   -- Apply the generic partition lemma with the property:
   -- "U is path-connected and paths in U with same endpoints are homotopic"
   obtain ⟨n, t, h_mono, h_start, h_end, h_partition⟩ := γ.exists_partition_with_property
@@ -412,7 +426,7 @@ public theorem Path.exists_partition_in_slsc_neighborhoods [SemilocallySimplyCon
     t_last := h_end
   }
   -- Construct TubeData
-  let T : TubeData X x y n := {
+  let T : TubeData X n := {
     U := U
     V := V
     U_open := hU_open
@@ -431,10 +445,10 @@ This follows from the compact-open topology: it's a finite intersection of:
 1. Sets {γ' | γ' maps [t i, t i+1] into U i} (open by compact-open topology)
 2. Sets {γ' | γ'(t j) ∈ V[j]} (open by continuity of evaluation) -/
 public theorem TubeData.isOpen {x y : X} {n : ℕ}
-    (part : IntervalPartition n) (T : TubeData X x y n) :
-    IsOpen (T.toSet part) := by
+    (part : IntervalPartition n) (T : TubeData X n) :
+    IsOpen (T.toSet (x := x) (y := y) part) := by
   -- The tube is the intersection of two conditions
-  have : T.toSet part =
+  have : T.toSet (x := x) (y := y) part =
     {γ' : Path x y | ∀ i (s : unitInterval),
       (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) → γ' s ∈ T.U i} ∩
     {γ' : Path x y | ∀ j, γ' (part.t j) ∈ T.V j} := by
@@ -576,7 +590,7 @@ Given a path `p : Path x y`, we show that its homotopy class `{p' | Path.Homotop
    Since every point in `H(p)` has an open neighborhood contained in `H(p)`, the set `H(p)`
    is open.
 
-6. **Discrete topology** (`discreteTopology`):
+6. **Discrete topology** (`Path.Homotopic.Quotient.instDiscreteTopology`):
    In the quotient `Path.Homotopic.Quotient x y`, singletons `{⟦p⟧}` correspond to homotopy
    classes `H(p)` under the quotient map. By step 5, `H(p)` is open, so its image `{⟦p⟧}` is
    open in the quotient topology. Since every singleton is open, the quotient has discrete
@@ -593,7 +607,7 @@ which is the key to constructing universal covers.
 (the neighborhoods of the adjacent segments). The rungs at the endpoints (α_0 and α_n) are
 constant paths since γ and γ' share endpoints. -/
 public theorem Path.exists_rung_paths {x y : X} {n : ℕ} (γ γ' : Path x y)
-    (part : IntervalPartition n) (T : TubeData X x y n)
+    (part : IntervalPartition n) (T : TubeData X n)
     (hγ : PathInTube γ part T) (hγ' : PathInTube γ' part T) :
     ∃ α : (i : Fin (n + 1)) → Path (γ (part.t i)) (γ' (part.t i)),
       (∀ (i : Fin n), Set.range (α i.castSucc) ⊆ T.U i ∧ Set.range (α i.succ) ⊆ T.U i) := by
@@ -850,7 +864,7 @@ This is the main result that combines all the previous lemmas:
 2. For each segment, apply segment_rung_homotopy to get γ_i·α_{i+1} ≃ α_i·γ'_i
 3. Use paste_segment_homotopies to get γ ≃ γ' by telescoping cancellation -/
 public theorem Path.tube_subset_homotopy_class {x y : X} {n : ℕ}
-    (γ : Path x y) (part : IntervalPartition n) (T : TubeData X x y n)
+    (γ : Path x y) (part : IntervalPartition n) (T : TubeData X n)
     (hγ : PathInTube γ part T)
     (γ' : Path x y) (hγ' : PathInTube γ' part T) :
     Path.Homotopic γ' γ := by
