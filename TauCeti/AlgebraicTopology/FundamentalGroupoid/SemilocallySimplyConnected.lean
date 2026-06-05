@@ -777,11 +777,11 @@ theorem Path.paste_segment_homotopies {x y y' : X} {n : ℕ}
 /-- A loop in an SLSC neighborhood is null-homotopic if its range lies in that neighborhood. -/
 public theorem Path.nullhomotopic_of_range_subset_slsc {x : X} (γ : Path x x)
     (U : Set X) (hU : IsPathHomotopyTrivial U)
-    (hxU : x ∈ U) (hγU : Set.range γ ⊆ U) :
+    (hγU : Set.range γ ⊆ U) :
     Path.Homotopic γ (Path.refl x) :=
   hU.apply γ (Path.refl x) hγU <| by
     rintro _ ⟨_, rfl⟩
-    simpa using hxU
+    simpa [γ.source] using hγU ⟨0, rfl⟩
 
 private theorem Path.first_rung_nullhomotopic_of_range_subset_slsc
     {x y y' : X} {n : ℕ}
@@ -795,10 +795,7 @@ private theorem Path.first_rung_nullhomotopic_of_range_subset_slsc
     Path.Homotopic α₀ (Path.refl x) := by
   intro α₀
   apply Path.nullhomotopic_of_range_subset_slsc α₀ U₀ hU₀
-  · have : (α 0) 0 = x := by simp [(α 0).source, part.t_zero, γ.source]
-    rw [← this]
-    exact h_α₀_in_U₀ ⟨0, rfl⟩
-  · simpa only [α₀, Path.cast_coe] using h_α₀_in_U₀
+  simpa only [α₀, Path.cast_coe] using h_α₀_in_U₀
 
 private theorem Path.last_rung_nullhomotopic_of_range_subset_slsc
     {x y : X} {n : ℕ}
@@ -812,10 +809,7 @@ private theorem Path.last_rung_nullhomotopic_of_range_subset_slsc
     Path.Homotopic αₙ (Path.refl y) := by
   intro αₙ
   apply Path.nullhomotopic_of_range_subset_slsc αₙ Uₙ hUₙ
-  · have : (α (Fin.last n)) 0 = y := by simp [(α (Fin.last n)).source, part.t_last]
-    rw [← this]
-    exact h_αₙ_in_Uₙ ⟨0, rfl⟩
-  · simpa only [αₙ, Path.cast_coe] using h_αₙ_in_Uₙ
+  simpa only [αₙ, Path.cast_coe] using h_αₙ_in_Uₙ
 
 /-- One-sided specialization of `paste_segment_homotopies` that kills the source loop.
 
@@ -918,9 +912,7 @@ public theorem Path.tube_subset_homotopy_class {x y : X} {n : ℕ}
     obtain ⟨ρ, hρ_V, hρ⟩ := Path.tube_subset_homotopy_class_source γ part T hγ γ' hγ'
     have hρ_null : Path.Homotopic ρ (Path.refl y) := by
       apply Path.nullhomotopic_of_range_subset_slsc ρ (T.U i_last) (T.U_slsc i_last)
-      · rw [← ρ.source]
-        exact T.V_right_subset i_last (hρ_V ⟨0, rfl⟩)
-      · exact hρ_V.trans (T.V_right_subset i_last)
+      exact hρ_V.trans (T.V_right_subset i_last)
     have hdrop : Path.Homotopic (γ.trans ρ) γ :=
       Path.Homotopic.trans_right_of_nullhomotopic (γ₀ := γ) hρ_null
     exact hρ.symm.trans hdrop

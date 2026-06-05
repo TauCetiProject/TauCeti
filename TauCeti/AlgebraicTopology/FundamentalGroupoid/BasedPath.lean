@@ -252,12 +252,12 @@ public theorem continuous_initialSegmentFamily_uncurry {a b : X} (γ : Path a b)
     initialSegmentFamily γ t s = γ.extend (min (s : ℝ) t) := by
   simp [initialSegmentFamily, Path.truncate, max_eq_left s.2.1]
 
-public theorem initialSegmentFamily_zero {a b : X} (γ : Path a b) :
+@[simp] public theorem initialSegmentFamily_zero {a b : X} (γ : Path a b) :
     initialSegmentFamily γ 0 = (Path.refl a).cast rfl (by simp) := by
   ext s
   simp [initialSegmentFamily_apply, γ.extend_zero, Path.refl, min_eq_right s.2.1]
 
-public theorem initialSegmentFamily_one {a b : X} (γ : Path a b) :
+@[simp] public theorem initialSegmentFamily_one {a b : X} (γ : Path a b) :
     initialSegmentFamily γ 1 = γ.cast rfl (by simp) := by
   ext s
   simp [initialSegmentFamily_apply, min_eq_left s.2.2, γ.extend_apply s.2]
@@ -497,8 +497,10 @@ public theorem joinedIn_endpoint_preimage_of_homotopic (x₀ : X) {y : X} {U : S
 /-- Appending a path that stays inside `U` moves a based path within the same path component of
 the endpoint preimage of `U`. -/
 public theorem joinedIn_preimage_of_append {U : Set X} {z : X} (γ : BasedPath x₀)
-    (hγU : endpoint γ ∈ U) (δ : Path (endpoint γ) z) (hδU : Set.range δ ⊆ U) :
+    (δ : Path (endpoint γ) z) (hδU : Set.range δ ⊆ U) :
     JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) γ (append γ δ) := by
+  have hγU : endpoint γ ∈ U := by
+    simpa [δ.source] using hδU ⟨0, rfl⟩
   let γrefl : Path (endpoint γ) (endpoint γ) := Path.refl (endpoint γ)
   have h_start :
       JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) γ (append γ γrefl) := by
@@ -512,11 +514,18 @@ public theorem joinedIn_preimage_of_append {U : Set X} {z : X} (γ : BasedPath x
       toFun := fun t ↦ append γ (Path.initialSegmentFamily δ t)
       continuous_toFun := continuous_append_initialSegmentFamily γ δ
       source' := by
-        simpa [γrefl] using!
-          congrArg (append γ) (Path.initialSegmentFamily_zero δ)
+        rw [Path.initialSegmentFamily_zero]
+        ext s
+        change (γ.toPath.trans ((Path.refl (endpoint γ)).cast _ _)) s =
+          (γ.toPath.trans γrefl) s
+        rw [Path.trans_apply, Path.trans_apply]
+        split_ifs <;> simp only [γrefl, Path.cast_coe]
       target' := by
-        simpa using!
-          congrArg (append γ) (Path.initialSegmentFamily_one δ) }
+        rw [Path.initialSegmentFamily_one]
+        ext s
+        change (γ.toPath.trans (δ.cast _ _)) s = (γ.toPath.trans δ) s
+        rw [Path.trans_apply, Path.trans_apply]
+        split_ifs <;> simp only [Path.cast_coe] }
     refine ⟨η, fun t ↦ ?_⟩
     -- `η` is a let-bound path, so expose its definitional value before using endpoint API.
     change endpoint (append γ (Path.initialSegmentFamily δ t)) ∈ U
@@ -680,7 +689,7 @@ public theorem exists_open_nhd_pathComponent_preimage
         rw [hV'_last_eq]
         exact hV'_sub_U)
     -- Join `α` to `append α ρ_final`, then deform `append α ρ_final` to `β` via `h_paste`.
-    refine (joinedIn_preimage_of_append α hα ρ_final hρ_final_range).trans ?_
+    refine (joinedIn_preimage_of_append α ρ_final hρ_final_range).trans ?_
     obtain ⟨γ, hγ⟩ :=
       (joinedIn_endpoint_preimage_of_homotopic (x₀ := x₀) (U := ({endpoint β} : Set X))
         (show endpoint β ∈ ({endpoint β} : Set X) from rfl)
@@ -792,13 +801,12 @@ to a free homotopy of paths in `X` whose endpoint trace is a loop in `U`, which 
 the SLSC hypothesis. -/
 public theorem toPath_homotopic_of_joinedIn_slsc
     {U : Set X} (hU_slsc : IsPathHomotopyTrivial U)
-    {α β : BasedPath x₀} (hα_end : endpoint α ∈ U)
+    {α β : BasedPath x₀}
     (heq : endpoint α = endpoint β)
     (hAB : JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) α β) :
     Path.Homotopic (α.toPath.cast rfl heq.symm) β.toPath := by
   obtain ⟨F, hF_U⟩ := hAB
   set v : X := endpoint β with hv_def
-  have hv : v ∈ U := heq ▸ hα_end
   -- Uncurry F to get a continuous map (t, s) ↦ (F t).1 s.
   have hFv_cont : Continuous (fun ts : I × I ↦ (F ts.1).1 ts.2) := by
     have h1 : Continuous (fun t : I ↦ ((F t).1 : C(I, X))) :=
@@ -807,6 +815,8 @@ public theorem toPath_homotopic_of_joinedIn_slsc
   -- The endpoint-trace loop `L : Path v v`.
   have hF0_eq : (F (0 : I)).1 = α.1 := congrArg Subtype.val F.source
   have hF1_eq : (F (1 : I)).1 = β.1 := congrArg Subtype.val F.target
+  have hv : v ∈ U := by
+    simpa [v, hv_def, endpoint_def, hF1_eq] using hF_U 1
   let L : Path v v :=
     { toFun := fun t ↦ (F t).1 1
       continuous_toFun := by
