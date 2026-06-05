@@ -64,13 +64,32 @@ jobs:
             echo "::warning::PR changes paths outside TauCeti/ (infra) — not sandbox-built; needs human review"
           fi
 
-      - name: Checkout base (trusted)
+      - name: Diff-size guard — cap total diff at 1000 lines (max of additions, deletions)
         if: ${{ env.INFRA != '1' }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          # GitHub's own line counts for the PR, taking the larger of the two sides (so a pure
+          # addition and an equal-sized pure deletion are treated the same). A diff this large
+          # overruns the review agents' context/budget, so route it to a human instead of
+          # sandbox-building and reviewing it. Counts come from the trusted API, not PR code.
+          meta=$(gh api "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}")
+          add=$(echo "$meta" | jq '.additions')
+          del=$(echo "$meta" | jq '.deletions')
+          big=$add; [ "$del" -gt "$add" ] && big=$del
+          echo "additions=$add deletions=$del max=$big (limit 1000)"
+          if [ "$big" -gt 1000 ]; then
+            echo "TOOBIG=1"        >> "$GITHUB_ENV"
+            echo "BIGLINES=$big"   >> "$GITHUB_ENV"
+            echo "::warning::PR diff too large (max(+$add,-$del)=$big > 1000 lines) — split it into smaller PRs or merge by hand; not sandbox-built / reviewed"
+          fi
+
+      - name: Checkout base (trusted)
+        if: ${{ env.INFRA != '1' && env.TOOBIG != '1' }}
         uses: actions/checkout@v4
         with: { path: base, persist-credentials: false }
 
       - name: Checkout PR head (untrusted, no credentials)
-        if: ${{ env.INFRA != '1' }}
+        if: ${{ env.INFRA != '1' && env.TOOBIG != '1' }}
         uses: actions/checkout@v4
         with:
           repository: ${{ steps.pr.outputs.repo }}
@@ -79,7 +98,7 @@ jobs:
           persist-credentials: false
 
       - name: Overlay PR TauCeti/ onto the trusted base (reject symlinks)
-        if: ${{ env.INFRA != '1' }}
+        if: ${{ env.INFRA != '1' && env.TOOBIG != '1' }}
         run: |
           # No symlinks in the untrusted sources (avoid read/write escapes via the build tree).
           if find pr/TauCeti -type l -print | grep -q .; then
@@ -90,21 +109,21 @@ jobs:
           cp -a pr/TauCeti base/TauCeti
 
       - name: Import-boundary guard (TauCeti/ ⊬ roadmap/review)
-        if: ${{ env.INFRA != '1' }}
+        if: ${{ env.INFRA != '1' && env.TOOBIG != '1' }}
         run: |
           if grep -rIn -E '^[[:space:]]*import[[:space:]]+(TauCetiRoadmap|TauCetiReview)\b' base/TauCeti/; then
             echo "::error::TauCeti/ must not import TauCetiRoadmap or TauCetiReview"; exit 1
           fi
 
       - name: Install elan (trusted)
-        if: ${{ env.INFRA != '1' }}
+        if: ${{ env.INFRA != '1' && env.TOOBIG != '1' }}
         run: |
           curl -sSfL https://elan.lean-lang.org/elan-init.sh -o elan-init.sh
           chmod +x elan-init.sh && ./elan-init.sh -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
       - name: Install landrun (pinned + checksum) and self-test (fail closed)
-        if: ${{ env.INFRA != '1' }}
+        if: ${{ env.INFRA != '1' && env.TOOBIG != '1' }}
         run: |
           curl -sSL -H "Accept: application/octet-stream" \
             "https://github.com/Zouuup/landrun/releases/download/${LANDRUN_VER}/landrun-linux-amd64" -o landrun
@@ -127,12 +146,12 @@ jobs:
           fi
 
       - name: Fetch Mathlib with the trusted base config (network; no PR code)
-        if: ${{ env.INFRA != '1' }}
+        if: ${{ env.INFRA != '1' && env.TOOBIG != '1' }}
         run: ( cd base && lake exe cache get ) && mkdir -p base/.lake/tmp
 
       - name: Build (trusted config + overlaid TauCeti/) under landrun, offline
         id: build
-        if: ${{ env.INFRA != '1' }}
+        if: ${{ env.INFRA != '1' && env.TOOBIG != '1' }}
         run: |
           export PATH="$HOME/.local/bin:$HOME/.elan/bin:$PATH"
           landrun --rox /usr --rox /etc \
@@ -152,6 +171,8 @@ jobs:
         run: |
           if [ "${{ env.INFRA }}" = "1" ]; then
             state=failure; desc="changes outside TauCeti/ — human review + merge required"
+          elif [ "${{ env.TOOBIG }}" = "1" ]; then
+            state=failure; desc="diff too large (max(+,-)=${{ env.BIGLINES }} lines > 1000) — split into smaller PRs or merge by hand"
           elif [ "${{ steps.build.outcome }}" = "success" ]; then
             state=success; desc="sandboxed build + axiom audit passed (trusted config)"
           else
