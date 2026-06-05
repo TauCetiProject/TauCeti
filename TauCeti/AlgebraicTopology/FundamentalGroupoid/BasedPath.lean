@@ -149,7 +149,7 @@ based path within a path component of `endpoint ⁻¹' U`. -/
 to land at `u`; the only hypothesis required is `a ≤ 1` (for `a < 0` the source is clamped
 through `Path.extend`). This is the "compressed tail" piece used by `deformTerminal` to splice
 a new endpoint path onto `γ` while preserving its image on `[0, a]`. -/
-@[expose] public noncomputable def terminalTail {u : X} (γ : BasedPath x₀)
+public noncomputable def terminalTail {u : X} (γ : BasedPath x₀)
     (hu : endpoint γ = u) (a : ℝ) (ha1 : a ≤ 1) :
     Path (γ.toPath.extend a) u :=
   (γ.toPath.truncateOfLE (t₀ := a) (t₁ := 1) ha1).cast rfl
@@ -157,7 +157,7 @@ a new endpoint path onto `γ` while preserving its image on `[0, a]`. -/
 
 /-- Replace the terminal interval of a based path by first traversing a compressed tail of the
 original path and then a new endpoint path. -/
-@[expose] public noncomputable def deformTerminal {u v : X} (γ : BasedPath x₀)
+public noncomputable def deformTerminal {u v : X} (γ : BasedPath x₀)
     (hu : endpoint γ = u)
     (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) : BasedPath x₀ := by
   let tail : Path (γ.toPath.extend a) u := terminalTail γ hu a (by linarith)
@@ -633,6 +633,16 @@ public theorem exists_open_nhd_pathComponent_preimage
     induction j using Fin.lastCases with
     | last => rw [hV'_last_eq, hα_at_last]; exact hα_V'
     | cast k => rw [hV'_castSucc_eq]; exact hα_tube.passes_through_V _
+  let T' : TubeData X (n' + 1) := {
+    U := T.U
+    V := V'
+    U_open := T.U_open
+    U_slsc := T.U_slsc
+    V_open := hV'_open_all
+    V_pathConn := hV'_pathConn_all
+    V_left_subset := fun i ↦ (hV'_sub_TV i.castSucc).trans (T.V_left_subset i)
+    V_right_subset := fun i ↦ (hV'_sub_TV i.succ).trans (T.V_right_subset i)
+  }
   -- The neighborhood `N` of `α`: based paths satisfying the refined tube conditions.
   set N : Set (BasedPath x₀) := {β : BasedPath x₀ |
       (∀ (i : Fin (n' + 1)) (s : I),
@@ -655,49 +665,17 @@ public theorem exists_open_nhd_pathComponent_preimage
       have h1 : β.1 (part.t (Fin.last (n' + 1))) ∈ V' (Fin.last (n' + 1)) := hβ_passes _
       rw [hV'_last_eq] at h1
       exact hV'_sub_U (by simpa [part.t_last] using! h1)
-    -- Rung paths in `V' j`.
-    choose ρ hρ_range using fun j : Fin (n' + 2) ↦
-      (hV'_pathConn_all j).exists_path (hα_passes_V' j) (hβ_passes j)
-    -- Rectangle homotopies on each segment.
-    have h_rectangles : ∀ i : Fin (n' + 1),
-        Path.Homotopic
-          ((α.toPath.subpathOn (part.t i.castSucc) (part.t i.succ)).trans (ρ i.succ))
-          ((ρ i.castSucc).trans
-            (β.toPath.subpathOn (part.t i.castSucc) (part.t i.succ))) := by
-      intro i
-      have hab : (part.t i.castSucc : ℝ) ≤ part.t i.succ :=
-        part.mono i.castSucc_lt_succ.le
-      have hα_sub :
-          Set.range (α.toPath.subpathOn (part.t i.castSucc) (part.t i.succ)) ⊆ T.U i :=
-        hα_tube.subpathOn_range_subset i
-      have hβ_sub :
-          Set.range (β.toPath.subpathOn (part.t i.castSucc) (part.t i.succ)) ⊆ T.U i := by
-        rintro _ ⟨t, rfl⟩
-        simp only [Path.subpathOn_apply]
-        exact hβ_stays i _ ⟨Set.Icc.le_convexComb hab t, Set.Icc.convexComb_le hab t⟩
-      have hρ_cast : Set.range (ρ i.castSucc) ⊆ T.U i := by
-        refine (hρ_range _).trans ?_
-        rw [hV'_castSucc_eq]; exact T.V_left_subset i
-      have hρ_succ : Set.range (ρ i.succ) ⊆ T.U i :=
-        (hρ_range _).trans ((hV'_sub_TV _).trans (T.V_right_subset i))
-      exact Path.segment_rung_homotopy (T.U i) (T.U_slsc i)
-        _ _ _ _ hα_sub hβ_sub hρ_cast hρ_succ
-    -- Paste the segment homotopies; use `T.U 0` as the enclosing SLSC neighborhood.
-    have h_paste :=
-      Path.paste_segment_homotopies_slsc_source α.toPath β.toPath part ρ h_rectangles
-        (T.U ⟨0, Nat.succ_pos n'⟩) (T.U_slsc ⟨0, Nat.succ_pos n'⟩)
-        ((hρ_range 0).trans (by
-          have h_zero : (0 : Fin (n' + 2)) =
-              (⟨0, Nat.succ_pos n'⟩ : Fin (n' + 1)).castSucc := rfl
-          rw [h_zero, hV'_castSucc_eq]
-          exact T.V_left_subset ⟨0, Nat.succ_pos n'⟩))
-    -- Package the final rung as a path from `endpoint α` to `endpoint β`.
-    have hβ_at_last : β.toPath (part.t (Fin.last (n' + 1))) = endpoint β := by
-      rw [part.t_last]; exact β.toPath.target
-    let ρ_final : Path (endpoint α) (endpoint β) :=
-      (ρ (Fin.last (n' + 1))).cast hα_at_last.symm hβ_at_last.symm
+    have hβ_tube : PathInTube β.toPath part T' :=
+      ⟨hβ_stays, hβ_passes⟩
+    have hα_tube' : PathInTube α.toPath part T' :=
+      ⟨hα_tube.stays_in_U, hα_passes_V'⟩
+    obtain ⟨ρ_final, hρ_final_range_V, h_paste⟩ :=
+      Path.tube_subset_homotopy_class_source α.toPath part T' hα_tube' β.toPath hβ_tube
     have hρ_final_range : Set.range ρ_final ⊆ U :=
-      (hρ_range (Fin.last (n' + 1))).trans (by rw [hV'_last_eq]; exact hV'_sub_U)
+      hρ_final_range_V.trans (by
+        change V' (Fin.last (n' + 1)) ⊆ U
+        rw [hV'_last_eq]
+        exact hV'_sub_U)
     -- Join `α` to `append α ρ_final`, then deform `append α ρ_final` to `β` via `h_paste`.
     refine (joinedIn_preimage_of_append α hα ρ_final hρ_final_range).trans ?_
     obtain ⟨γ, hγ⟩ :=
@@ -830,7 +808,7 @@ public theorem toPath_homotopic_of_joinedIn_slsc
       source' := by rw [hF0_eq]; exact heq
       target' := by rw [hF1_eq]; rfl }
   have hL_refl : L.Homotopic (Path.refl v) :=
-    hU_slsc L (Path.refl v) (by rintro _ ⟨t, rfl⟩; exact hF_U t) (by
+    hU_slsc.apply L (Path.refl v) (by rintro _ ⟨t, rfl⟩; exact hF_U t) (by
       rintro _ ⟨_, rfl⟩; simpa using! hv)
   -- Cast α.toPath to target `v`.
   let α' : Path x₀ v := α.toPath.cast rfl heq.symm

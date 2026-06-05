@@ -144,7 +144,6 @@ variable {X : Type*} [TopologicalSpace X] {x y : X}
 
 /-- Extract a subpath from `γ` on the interval `[a, b]`. This is `γ` reparametrised via
 `Set.Icc.convexComb a b`, i.e. `t ↦ a + t (b - a)`. -/
-@[expose]
 def subpathOn (γ : Path x y) (a b : unitInterval) : Path (γ a) (γ b) where
   toFun t := γ (convexComb a b t)
   source' := by simp
