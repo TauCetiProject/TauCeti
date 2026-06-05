@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Kim Morrison
 -/
 import Mathlib.Algebra.Group.Subgroup.Actions
-import TauCeti.Topology.Algebra.Homeomorph
+import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!
 # Deck transformations
@@ -19,9 +19,7 @@ transformations via path lifting (when `p` is a covering map of a path-connected
 locally path-connected base) belong to follow-up files.
 
 This is ported from the Mathlib draft
-[#40135](https://github.com/leanprover-community/mathlib4/pull/40135) by Kim Morrison. It builds
-on the tautological `Homeomorph.applyMulAction`, which is not yet in the pinned Mathlib and so
-lives in `TauCeti.Topology.Algebra.Homeomorph`.
+[#40135](https://github.com/leanprover-community/mathlib4/pull/40135) by Kim Morrison.
 
 ## Main definitions
 
@@ -29,9 +27,8 @@ lives in `TauCeti.Topology.Algebra.Homeomorph`.
 
 ## Main results
 
-* `Deck p` is a `Group`, acts on `E` via `MulAction`, the action is faithful and
-  continuous in the second variable; these all follow automatically from the
-  `Subgroup`-action transfers together with `Homeomorph.applyMulAction`.
+* `Deck p` is a `Group`, acts on `E` via `MulAction`, and the action is faithful and
+  continuous in the second variable.
 * `Deck.proj_smul`: deck transformations commute with `p`.
 -/
 
@@ -50,6 +47,20 @@ def Deck (p : E → X) : Subgroup (E ≃ₜ E) where
 namespace Deck
 
 variable {p : E → X}
+
+/-- A deck transformation acts on the total space by evaluating its underlying
+homeomorphism. -/
+instance : MulAction (Deck p) E where
+  smul h e := (h : E ≃ₜ E) e
+  one_smul _ := rfl
+  mul_smul _ _ _ := rfl
+
+/-- The scalar action of a deck transformation is evaluation. -/
+@[simp]
+protected theorem smul_def (h : Deck p) (e : E) : h • e = (h : E ≃ₜ E) e := rfl
+
+/-- The action of `Deck p` on `E` is faithful. -/
+instance : FaithfulSMul (Deck p) E := ⟨fun h ↦ Subtype.ext (Homeomorph.ext h)⟩
 
 /-- Membership in `Deck p` means commuting with the projection map `p`. -/
 theorem mem_iff {h : E ≃ₜ E} : h ∈ Deck p ↔ p ∘ h = p := Iff.rfl
