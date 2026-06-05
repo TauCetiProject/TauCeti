@@ -26,8 +26,6 @@ This file is adapted from the Mathlib draft
 * `BasedPath x₀`: the compact-open space of based paths out of `x₀`.
 * `BasedPath.endpoint`, `BasedPath.toPath`, `BasedPath.ofPath`, `BasedPath.append`:
   basic API for operating on based paths.
-* `BasedPath.deformTerminal`: a reparameterisation that traverses a compressed tail of the
-  original path and then a new path from its endpoint.
 * `Path.initialSegmentFamily`: the family `t ↦ γ|_[0, t]` of initial segments of a path.
 
 ## Main results
@@ -36,8 +34,8 @@ This file is adapted from the Mathlib draft
   locally path-connected.
 * `BasedPath.joinedIn_preimage_of_append`: appending a path inside `U` moves a based path
   within the same path component of `endpoint ⁻¹' U`.
-* `BasedPath.exists_open_nhd_pathComponent_preimage`: in a globally semilocally simply connected,
-  locally path-connected space, every based path landing in an open set `U` has an open
+* `BasedPath.exists_open_nhd_pathComponent_preimage`: when semilocal simple connectivity holds
+  along a based path, every based path landing in an open set `U` has an open
   neighbourhood of based paths joined to it inside `endpoint ⁻¹' U`.
 * `BasedPath.isOpen_pathComponent_preimage`: in a semilocally simply connected, locally
   path-connected space, path components of `endpoint ⁻¹' U` (for good `U`) are open.
@@ -153,7 +151,7 @@ based path within a path component of `endpoint ⁻¹' U`. -/
 to land at `u`; the only hypothesis required is `a ≤ 1` (for `a < 0` the source is clamped
 through `Path.extend`). This is the "compressed tail" piece used by `deformTerminal` to splice
 a new endpoint path onto `γ` while preserving its image on `[0, a]`. -/
-public noncomputable def terminalTail {u : X} (γ : BasedPath x₀)
+private noncomputable def terminalTail {u : X} (γ : BasedPath x₀)
     (hu : endpoint γ = u) (a : ℝ) (ha1 : a ≤ 1) :
     Path (γ.toPath.extend a) u :=
   (γ.toPath.truncateOfLE (t₀ := a) (t₁ := 1) ha1).cast rfl
@@ -161,7 +159,7 @@ public noncomputable def terminalTail {u : X} (γ : BasedPath x₀)
 
 /-- Replace the terminal interval of a based path by first traversing a compressed tail of the
 original path and then a new endpoint path. -/
-public noncomputable def deformTerminal {u v : X} (γ : BasedPath x₀)
+private noncomputable def deformTerminal {u v : X} (γ : BasedPath x₀)
     (hu : endpoint γ = u)
     (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) : BasedPath x₀ := by
   let tail : Path (γ.toPath.extend a) u := terminalTail γ hu a (by linarith)
@@ -186,27 +184,27 @@ public noncomputable def deformTerminal {u v : X} (γ : BasedPath x₀)
     (hf_cont.comp continuous_subtype_val), ?_⟩
   simpa [f, ha, endpoint_def] using! γ.toPath.source
 
-public theorem deformTerminal_apply_of_le {u v : X} (γ : BasedPath x₀) (hu : endpoint γ = u)
+private theorem deformTerminal_apply_of_le {u v : X} (γ : BasedPath x₀) (hu : endpoint γ = u)
     (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1)
     (t : I) (ht : (t : ℝ) ≤ a) :
     (deformTerminal γ hu δ ha hab hb).1 t = γ.toPath.extend t := by
   simp [deformTerminal, endpoint_def, ht]
 
-public theorem deformTerminal_apply_of_lt_of_le {u v : X} (γ : BasedPath x₀)
+private theorem deformTerminal_apply_of_lt_of_le {u v : X} (γ : BasedPath x₀)
     (hu : endpoint γ = u) (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1)
     (t : I) (hta : a < (t : ℝ)) (htb : (t : ℝ) ≤ b) :
     (deformTerminal γ hu δ ha hab hb).1 t =
       (terminalTail γ hu a (by linarith)).extend (((t : ℝ) - a) / (b - a)) := by
   simp [deformTerminal, endpoint_def, not_le_of_gt hta, htb]
 
-public theorem deformTerminal_apply_of_lt {u v : X} (γ : BasedPath x₀) (hu : endpoint γ = u)
+private theorem deformTerminal_apply_of_lt {u v : X} (γ : BasedPath x₀) (hu : endpoint γ = u)
     (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1)
     (t : I) (ht : b < (t : ℝ)) :
     (deformTerminal γ hu δ ha hab hb).1 t = δ.extend (((t : ℝ) - b) / (1 - b)) := by
   simp [deformTerminal, endpoint_def, not_le_of_gt (lt_trans hab ht), not_le_of_gt ht]
 
 /-- The endpoint of `deformTerminal γ hu δ ha hab hb` is the endpoint of `δ`. -/
-public theorem endpoint_deformTerminal {u v : X} (γ : BasedPath x₀) (hu : endpoint γ = u)
+private theorem endpoint_deformTerminal {u v : X} (γ : BasedPath x₀) (hu : endpoint γ = u)
     (δ : Path u v) {a b : ℝ} (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) :
     endpoint (deformTerminal γ hu δ ha hab hb) = v := by
   simp only [endpoint_def]
@@ -589,20 +587,19 @@ theorem isOpen_refined_tubeNeighborhood
 
 /-- Variable-endpoint tube/component theorem.
 
-In a semilocally simply connected, locally path-connected space, if `α : BasedPath x₀` has
-endpoint in an open set `U`, then `α` has an open neighborhood `N` in `BasedPath x₀` such that
-every element of `N` has endpoint in `U` and lies in the same path component of `endpoint ⁻¹' U`
-as `α`. -/
+In a locally path-connected space, if semilocal simple connectivity holds along `α.toPath` and
+`α : BasedPath x₀` has endpoint in an open set `U`, then `α` has an open neighborhood `N` in
+`BasedPath x₀` such that every element of `N` has endpoint in `U` and lies in the same path
+component of `endpoint ⁻¹' U` as `α`. -/
 public theorem exists_open_nhd_pathComponent_preimage
-    [SemilocallySimplyConnectedSpace X] [LocPathConnectedSpace X]
-    {U : Set X} (hU_open : IsOpen U)
-    (α : BasedPath x₀) (hα : endpoint α ∈ U) :
+    [LocPathConnectedSpace X] {U : Set X} (hU_open : IsOpen U)
+    (α : BasedPath x₀) (hslsc : SemilocallySimplyConnectedOn (Set.range α.toPath))
+    (hα : endpoint α ∈ U) :
     ∃ N : Set (BasedPath x₀), IsOpen N ∧ α ∈ N ∧
       N ⊆ endpoint (x₀ := x₀) ⁻¹' U ∧
       ∀ β ∈ N, JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) α β := by
   classical
-  obtain ⟨n, part, T, hα_tube⟩ := α.toPath.exists_partition_in_slsc_neighborhoods
-    (SemilocallySimplyConnectedOn.of_semilocallySimplyConnectedSpace (Set.range α.toPath))
+  obtain ⟨n, part, T, hα_tube⟩ := α.toPath.exists_partition_in_slsc_neighborhoods hslsc
   -- Rule out `n = 0`; the rest of the proof assumes `n = n' + 1`.
   match n, part, T, hα_tube with
   | 0, part, _, _ => exact isEmptyElim part
@@ -700,7 +697,10 @@ public theorem isOpen_pathComponent_preimage
   intro β hβ
   have hβ_end_U : endpoint β ∈ U := hβ.target_mem
   obtain ⟨N, hN_open, hβ_N, _, hN_joined⟩ :=
-    exists_open_nhd_pathComponent_preimage hU_open β hβ_end_U
+    exists_open_nhd_pathComponent_preimage hU_open
+      β
+      (SemilocallySimplyConnectedOn.of_semilocallySimplyConnectedSpace (Set.range β.toPath))
+      hβ_end_U
   refine mem_nhds_iff.mpr ⟨N, ?_, hN_open, hβ_N⟩
   intro γ hγ_N
   exact hβ.trans (hN_joined γ hγ_N)

@@ -366,7 +366,7 @@ public lemma PathInTube.subpathOn_range_subset {X : Type*} [TopologicalSpace X] 
     (part : IntervalPartition n) (T : TubeData X n) : Set (Path x y) :=
   {γ | PathInTube γ part T}
 
-public theorem TubeData.mem_toSet_iff {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
+@[simp] public theorem TubeData.mem_toSet_iff {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
     (part : IntervalPartition n) (T : TubeData X n) (γ : Path x y) :
     γ ∈ T.toSet part ↔ PathInTube γ part T :=
   Iff.rfl
@@ -618,7 +618,7 @@ which is the key to constructing universal covers.
 "rung" paths α_i from γ(t_i) to γ'(t_i), where each rung αᵢ lies in neighborhoods Uᵢ₋₁ and Uᵢ
 (the neighborhoods of the adjacent segments). The rungs at the endpoints (α_0 and α_n) are
 constant paths since γ and γ' share endpoints. -/
-public theorem Path.exists_rung_paths {x y y' : X} {n : ℕ} (γ : Path x y) (γ' : Path x y')
+theorem Path.exists_rung_paths {x y y' : X} {n : ℕ} (γ : Path x y) (γ' : Path x y')
     (part : IntervalPartition n) (T : TubeData X n)
     (hγ : PathInTube γ part T) (hγ' : PathInTube γ' part T) :
     ∃ α : (i : Fin (n + 1)) → Path (γ (part.t i)) (γ' (part.t i)),
@@ -644,7 +644,7 @@ public theorem Path.exists_rung_paths {x y y' : X} {n : ℕ} (γ : Path x y) (γ
 homotopic to α_i · γ'_i (down the current rung then along γ'). Both paths lie entirely in
 the SLSC neighborhood U_i, and since they share endpoints, the SLSC property implies they
 are homotopic. This is the crucial "rectangle" homotopy for each segment. -/
-public theorem Path.segment_rung_homotopy {a b c d : X} (U : Set X)
+theorem Path.segment_rung_homotopy {a b c d : X} (U : Set X)
     (hU : IsPathHomotopyTrivial U)
     (γ : Path a b) (γ' : Path c d) (α_start : Path a c) (α_end : Path b d)
     (hγ : Set.range γ ⊆ U) (hγ' : Set.range γ' ⊆ U)
@@ -686,7 +686,7 @@ Since part.t 0 = 0 and part.t (Fin.last n) = 1:
 
 When the initial loop is null-homotopic, this identifies `γ'` with `γ` followed by the final
 rung. If the final rung is also null-homotopic, we recover γ ≃ γ'. -/
-public theorem Path.paste_segment_homotopies {x y y' : X} {n : ℕ}
+theorem Path.paste_segment_homotopies {x y y' : X} {n : ℕ}
     (γ : Path x y) (γ' : Path x y') (part : IntervalPartition n)
     (α : (i : Fin (n + 1)) → Path (γ (part.t i)) (γ' (part.t i)))
     (h_rectangles : ∀ (i : Fin n),
@@ -823,7 +823,7 @@ Given the same rectangle homotopies, plus:
 - U₀ is an SLSC neighborhood containing the range of α 0
 
 Then `γ'` is homotopic to `γ` followed by the final rung. -/
-public theorem Path.paste_segment_homotopies_slsc_source {x y y' : X} {n : ℕ}
+theorem Path.paste_segment_homotopies_slsc_source {x y y' : X} {n : ℕ}
     (γ : Path x y) (γ' : Path x y')
     (part : IntervalPartition n)
     (α : (i : Fin (n + 1)) → Path (γ (part.t i)) (γ' (part.t i)))
@@ -878,7 +878,7 @@ public theorem Path.tube_subset_homotopy_class_source {x y y' : X} {n : ℕ}
           (hα_ranges ⟨0, Nat.succ_pos n'⟩).1
 
 /-- Two-sided specialization of `paste_segment_homotopies` killing both endpoint loops. -/
-public theorem Path.paste_segment_homotopies_slsc {x y : X} {n : ℕ} (γ γ' : Path x y)
+theorem Path.paste_segment_homotopies_slsc {x y : X} {n : ℕ} (γ γ' : Path x y)
     (part : IntervalPartition n)
     (α : (i : Fin (n + 1)) → Path (γ (part.t i)) (γ' (part.t i)))
     (h_rectangles : ∀ (i : Fin n),
@@ -926,20 +926,19 @@ public theorem Path.tube_subset_homotopy_class {x y : X} {n : ℕ}
     exact hρ.symm.trans hdrop
 
 /--
-In an SLSC locally path-connected space, every path p has an open tubular neighborhood
-contained in its homotopy class.
+If semilocal simple connectivity holds along `p` in a locally path-connected space, then `p`
+has an open tubular neighborhood contained in its homotopy class.
 
 This shows that the SLSC property gives us not just any open set around p, but specifically
 an open set where ALL paths are homotopic to p. This is what makes homotopy classes open.
 -/
 public theorem Path.exists_open_tubular_neighborhood_in_homotopy_class
-    [SemilocallySimplyConnectedSpace X] [LocPathConnectedSpace X]
-    {x y : X} (p : Path x y) :
+    [LocPathConnectedSpace X] {x y : X} (p : Path x y)
+    (hslsc : SemilocallySimplyConnectedOn (Set.range p)) :
     ∃ (T : Set (Path x y)), IsOpen T ∧ p ∈ T ∧ T ⊆ {p' | Path.Homotopic p' p} := by
   -- Step 1: Get partition and SLSC neighborhoods
   obtain ⟨n, part, T_data, hp_in_tube⟩ :=
-    p.exists_partition_in_slsc_neighborhoods
-      (SemilocallySimplyConnectedOn.of_semilocallySimplyConnectedSpace (Set.range p))
+    p.exists_partition_in_slsc_neighborhoods hslsc
   -- Step 2: The tube T is just T_data.toSet part
   refine ⟨T_data.toSet part, ?_, ?_, ?_⟩
   · -- Show T is open
@@ -961,6 +960,7 @@ public theorem Path.isOpen_setOf_homotopic [SemilocallySimplyConnectedSpace X]
   intro q hq
   obtain ⟨T, hT_open, hqT, hT_subset⟩ :=
     exists_open_tubular_neighborhood_in_homotopy_class q
+      (SemilocallySimplyConnectedOn.of_semilocallySimplyConnectedSpace (Set.range q))
   rw [mem_nhds_iff]
   refine ⟨T, fun p' hp' ↦ (hT_subset hp').trans hq, hT_open, hqT⟩
 
