@@ -25,6 +25,7 @@ the reductive-groups roadmap Layer 0 target "R-points as a group" and its follow
 * `AlgHom.mapDomain_id` and `AlgHom.mapDomain_comp`: identity and composition laws.
 * `AlgHom.mapValue_mapDomain`: pre-composition in the coordinate algebra commutes with
   post-composition in the value algebra.
+* `AlgHom.mapDomain_inv_apply`: pointwise inverse formula after pre-composition.
 
 The convolution-preservation proof reuses Mathlib's
 `AlgHom.convMul_comp_bialgHom_distrib`, from `Mathlib.RingTheory.Bialgebra.Convolution`.
@@ -40,8 +41,8 @@ variable {R H₁ H₂ H₃ A B : Type*} [CommSemiring R]
 
 section Bialgebra
 
-variable [CommSemiring H₁] [CommSemiring H₂] [CommSemiring H₃]
-variable [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂] [_root_.Bialgebra R H₃]
+variable [CommSemiring H₁] [Semiring H₂]
+variable [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂]
 variable [CommSemiring A] [Algebra R A]
 
 /-- Contravariant functoriality of convolution algebra homomorphisms in the source
@@ -64,9 +65,15 @@ lemma mapDomain_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] 
     mapDomain φ f = toConv (f.ofConv.comp (φ : H₁ →ₐ[R] H₂)) := rfl
 
 /-- Pointwise form of `mapDomain_apply`. -/
-@[simp]
 lemma mapDomain_apply_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] A)) (h : H₁) :
     mapDomain φ f h = f.ofConv (φ h) := rfl
+
+end Bialgebra
+
+section BialgebraId
+
+variable [CommSemiring H₁] [_root_.Bialgebra R H₁]
+variable [CommSemiring A] [Algebra R A]
 
 /-- Pre-composition by the identity bialgebra morphism is the identity map on the
 convolution monoid. -/
@@ -77,6 +84,14 @@ lemma mapDomain_id :
   refine MonoidHom.ext fun f => ?_
   rw [mapDomain_apply, BialgHom.id_toAlgHom, AlgHom.comp_id, toConv_ofConv,
     MonoidHom.id_apply]
+
+end BialgebraId
+
+section BialgebraComp
+
+variable [CommSemiring H₁] [CommSemiring H₂] [Semiring H₃]
+variable [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂] [_root_.Bialgebra R H₃]
+variable [CommSemiring A] [Algebra R A]
 
 /-- Pre-composition by a composite bialgebra morphism is the composite of the corresponding
 pre-composition maps. -/
@@ -91,6 +106,12 @@ lemma mapDomain_comp (ψ : H₂ →ₐc[R] H₃) (φ : H₁ →ₐc[R] H₂) :
   rw [MonoidHom.comp_apply, mapDomain_apply, mapDomain_apply, mapDomain_apply,
     toConv_ofConv, BialgHom.comp_toAlgHom, AlgHom.comp_assoc]
 
+end BialgebraComp
+
+section BialgebraMapValue
+
+variable [CommSemiring H₁] [Semiring H₂] [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂]
+variable [CommSemiring A] [Algebra R A]
 variable [CommSemiring B] [Algebra R B]
 
 /-- Pre-composition in the coordinate bialgebra commutes with post-composition in the value
@@ -106,21 +127,22 @@ lemma mapValue_mapDomain (φ : H₁ →ₐc[R] H₂) (χ : A →ₐ[R] B) :
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply, mapDomain_apply, mapValue_apply,
     mapDomain_apply, mapValue_apply, toConv_ofConv, toConv_ofConv, AlgHom.comp_assoc]
 
-end Bialgebra
+end BialgebraMapValue
 
 section Hopf
 
-variable [CommSemiring H₁] [CommSemiring H₂]
+variable [CommSemiring H₁] [Semiring H₂]
 variable [_root_.HopfAlgebra R H₁] [_root_.HopfAlgebra R H₂]
 variable [CommSemiring A] [Algebra R A]
 
 /-- The inverse in the target convolution group is transported by `mapDomain` pointwise as
 pre-composition with the bialgebra morphism. The group homomorphism statement follows from
 `mapDomain` being a `MonoidHom`; this lemma records the concrete formula used at points. -/
-@[simp]
 lemma mapDomain_inv_apply (φ : H₁ →ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] A)) (h : H₁) :
     mapDomain (H₁ := H₁) (H₂ := H₂) φ (f⁻¹ : WithConv (H₂ →ₐ[R] A)) h =
-      f.ofConv (HopfAlgebra.antipode R (φ h)) := rfl
+      f.ofConv (HopfAlgebra.antipode R (φ h)) := by
+  rw [mapDomain_apply_apply]
+  exact convInv_apply f (φ h)
 
 end Hopf
 
