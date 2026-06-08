@@ -16,7 +16,8 @@ subgroup `Deck p` will be the deck transformation group.
 The action of `Deck p` on the total space is inherited, by subgroup transfer, from the
 tautological action of the ambient homeomorphism group `E ≃ₜ E` on `E`
 (`TauCeti.Homeomorph.applyMulAction`). Each deck transformation preserves `p`, hence
-preserves every fibre of `p`.
+preserves every fibre of `p`. Restricting to a fixed fibre is compatible with the group
+operation, so each fibre carries the induced action of the deck group.
 
 ## References
 
@@ -84,6 +85,83 @@ evaluation of the inverse homeomorphism. -/
 @[simp]
 lemma fiberHomeomorph_symm_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
     ((fiberHomeomorph φ b).symm e : E) = φ.1.symm e.1 :=
+  rfl
+
+/-- The identity deck transformation restricts to the identity homeomorphism on each fibre. -/
+@[simp]
+lemma fiberHomeomorph_one (b : B) :
+    fiberHomeomorph (1 : Deck p) b = Homeomorph.refl (p ⁻¹' {b}) := by
+  ext e
+  rfl
+
+/-- Restricting deck transformations to a fibre respects multiplication. -/
+@[simp]
+lemma fiberHomeomorph_mul (φ ψ : Deck p) (b : B) :
+    fiberHomeomorph (φ * ψ) b = fiberHomeomorph φ b * fiberHomeomorph ψ b := by
+  ext e
+  rfl
+
+/-- Restricting deck transformations to a fibre respects inverse. -/
+@[simp]
+lemma fiberHomeomorph_inv (φ : Deck p) (b : B) :
+    fiberHomeomorph φ⁻¹ b = (fiberHomeomorph φ b)⁻¹ := by
+  ext e
+  rfl
+
+/-- Restricting deck transformations to a fibre respects division. -/
+@[simp]
+lemma fiberHomeomorph_div (φ ψ : Deck p) (b : B) :
+    fiberHomeomorph (φ / ψ) b = fiberHomeomorph φ b / fiberHomeomorph ψ b := by
+  ext e
+  rfl
+
+/-- Restriction to a fixed fibre, as a monoid homomorphism from deck transformations to
+homeomorphisms of that fibre. This records the composition convention used by the deck group:
+the restriction of `φ * ψ` is the composite of the restriction of `φ` with the restriction of
+`ψ`. -/
+def fiberHomeomorphHom (b : B) : Deck p →* p ⁻¹' {b} ≃ₜ p ⁻¹' {b} where
+  toFun φ := fiberHomeomorph φ b
+  map_one' := fiberHomeomorph_one b
+  map_mul' φ ψ := fiberHomeomorph_mul φ ψ b
+
+/-- The monoid homomorphism to homeomorphisms of a fibre is restriction of deck
+transformations. -/
+@[simp]
+lemma fiberHomeomorphHom_apply (b : B) (φ : Deck p) :
+    fiberHomeomorphHom (p := p) b φ = fiberHomeomorph φ b :=
+  rfl
+
+/-- A deck transformation acts on each fibre by restricting its underlying homeomorphism. -/
+instance fiberMulAction (b : B) : MulAction (Deck p) (p ⁻¹' {b}) where
+  smul φ e := fiberHomeomorph φ b e
+  one_smul e := by
+    ext
+    rfl
+  mul_smul φ ψ e := by
+    ext
+    rfl
+
+/-- On points of a fibre, the induced fibre action is evaluation of the underlying
+homeomorphism. -/
+@[simp]
+lemma fiber_smul_eq_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
+    (φ • e : E) = φ.1 e.1 :=
+  rfl
+
+/-- The induced action on a fibre agrees with the restricted homeomorphism. -/
+@[simp]
+lemma fiber_smul_eq_fiberHomeomorph (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
+    φ • e = fiberHomeomorph φ b e :=
+  rfl
+
+/-- Evaluating deck transformations at a point of a fibre, with codomain kept in that fibre. -/
+def evalFiber (b : B) (e : p ⁻¹' {b}) : Deck p → p ⁻¹' {b} :=
+  fun φ => φ • e
+
+/-- Evaluating at a point of a fibre is the induced fibre action. -/
+@[simp]
+lemma evalFiber_apply (b : B) (e : p ⁻¹' {b}) (φ : Deck p) :
+    evalFiber (p := p) b e φ = φ • e :=
   rfl
 
 /-- On points, the action of a deck transformation is evaluation of its underlying
