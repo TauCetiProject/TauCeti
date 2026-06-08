@@ -41,7 +41,7 @@ namespace HopfAlgebra
 
 universe u v w
 
-variable {R : Type u} [CommRing R] {H : Type v} [Ring H] [_root_.HopfAlgebra R H]
+variable {R : Type u} [CommRing R] {H : Type v} [Semiring H] [_root_.HopfAlgebra R H]
 
 /-- The group of `A`-points of the affine group object represented by a Hopf algebra `H`.
 
@@ -64,20 +64,6 @@ lemma mapPoints_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     mapPoints (H := H) φ f = toConv (φ.hom.comp f.ofConv) :=
   rfl
 
-/-- The identity element of the group of `A`-points is the counit of the Hopf algebra,
-followed by the structure map `R → A`. -/
-@[simp]
-lemma points_one_apply {A : CommAlgCat.{w} R} (h : H) :
-    ((1 : points (H := H) A).ofConv) h = algebraMap R A (Coalgebra.counit h) :=
-  AlgHom.convOne_apply h
-
-/-- Multiplication in the group of `A`-points is convolution along the comultiplication of
-the Hopf algebra. -/
-lemma points_mul_apply {A : CommAlgCat.{w} R} (f g : points (H := H) A) (h : H) :
-    ((f * g).ofConv) h =
-      Algebra.TensorProduct.lift f.ofConv g.ofConv (fun _ _ ↦ .all ..) (Coalgebra.comul h) :=
-  AlgHom.convMul_apply f g h
-
 /-- The map on points sends the identity point to the identity point. -/
 @[simp]
 lemma mapPoints_one {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
@@ -98,16 +84,12 @@ lemma mapPoints_inv {A B : CommAlgCat.{w} R} (φ : A ⟶ B) (f : points (H := H)
 @[simp]
 lemma mapPoints_id (A : CommAlgCat.{w} R) :
     mapPoints (H := H) (𝟙 A) = 𝟙 (points (H := H) A) := by
-  change GrpCat.ofHom (AlgHom.mapValue (H := H) (AlgHom.id R A)) =
-    GrpCat.ofHom (MonoidHom.id (WithConv (H →ₐ[R] A)))
-  rw [AlgHom.mapValue_id]
+  simp only [mapPoints, CommAlgCat.hom_id, AlgHom.mapValue_id, GrpCat.ofHom_id]
 
 /-- `mapPoints` preserves composition of morphisms of value algebras. -/
 lemma mapPoints_comp {A B C : CommAlgCat.{w} R} (φ : A ⟶ B) (ψ : B ⟶ C) :
     mapPoints (H := H) (φ ≫ ψ) = mapPoints (H := H) φ ≫ mapPoints (H := H) ψ := by
-  change GrpCat.ofHom (AlgHom.mapValue (H := H) (ψ.hom.comp φ.hom)) =
-    GrpCat.ofHom ((AlgHom.mapValue (H := H) ψ.hom).comp (AlgHom.mapValue (H := H) φ.hom))
-  rw [AlgHom.mapValue_comp]
+  simp only [mapPoints, CommAlgCat.hom_comp, AlgHom.mapValue_comp, GrpCat.ofHom_comp]
 
 /-- The functor of points of the affine group object represented by a Hopf algebra.
 
@@ -131,13 +113,6 @@ lemma pointsFunctor_map {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (pointsFunctor (H := H)).map φ = mapPoints (H := H) φ :=
   rfl
 
-/-- On points, `pointsFunctor.map φ` sends `f` to `φ ∘ f`. -/
-@[simp]
-lemma pointsFunctor_map_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
-    (f : (pointsFunctor (H := H)).obj A) :
-    (pointsFunctor (H := H)).map φ f = toConv (φ.hom.comp f.ofConv) :=
-  rfl
-
 /-- The pointwise value of the image of an `A`-point under `pointsFunctor.map φ`. -/
 @[simp]
 lemma pointsFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
@@ -145,31 +120,6 @@ lemma pointsFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (((pointsFunctor (H := H)).map φ f : WithConv (H →ₐ[R] B)).ofConv) h =
       φ.hom (f.ofConv h) :=
   rfl
-
-/-- The functorial map on points sends the identity point to the identity point. -/
-@[simp]
-lemma pointsFunctor_map_one {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
-    (pointsFunctor (H := H)).map φ (1 : (pointsFunctor (H := H)).obj A) = 1 :=
-  mapPoints_one (H := H) φ
-
-/-- The functorial map on points preserves multiplication of points. -/
-lemma pointsFunctor_map_mul {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
-    (f g : (pointsFunctor (H := H)).obj A) :
-    (pointsFunctor (H := H)).map φ (f * g) =
-      (pointsFunctor (H := H)).map φ f * (pointsFunctor (H := H)).map φ g :=
-  mapPoints_mul (H := H) φ f g
-
-/-- The functorial map on points preserves inverses of points. -/
-lemma pointsFunctor_map_inv {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
-    (f : (pointsFunctor (H := H)).obj A) :
-    (pointsFunctor (H := H)).map φ f⁻¹ = ((pointsFunctor (H := H)).map φ f)⁻¹ :=
-  mapPoints_inv (H := H) φ f
-
-/-- The inverse in the group of `A`-points is given by post-composition with the antipode. -/
-@[simp]
-lemma points_inv_apply {A : CommAlgCat.{w} R} (f : points (H := H) A) (h : H) :
-    f⁻¹ h = f.ofConv (antipode R h) :=
-  AlgHom.convInv_apply f h
 
 end HopfAlgebra
 
