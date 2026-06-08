@@ -96,16 +96,6 @@ the restriction of its underlying homeomorphism along `Homeomorph.subtype`. -/
 def fiberHomeomorph (φ : Deck p) (b : B) : p ⁻¹' {b} ≃ₜ p ⁻¹' {b} :=
   φ.1.subtype fun e => by simp [Set.mem_preimage, eq_comm, map_proj]
 
-/-- A deck transformation sends a point in a fibre to a point in the same fibre. -/
-def smulFiber (φ : Deck p) {b : B} (e : p ⁻¹' {b}) : p ⁻¹' {b} :=
-  fiberHomeomorph φ b e
-
-/-- The fibre action is induced by the ambient deck action on points. -/
-@[simp]
-lemma smulFiber_coe (φ : Deck p) {b : B} (e : p ⁻¹' {b}) :
-    (smulFiber φ e : E) = φ • e.1 :=
-  rfl
-
 /-- On points, the fibre homeomorphism induced by a deck transformation is just evaluation
 of that transformation. -/
 @[simp]
@@ -124,21 +114,22 @@ lemma fiberHomeomorph_symm_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
 @[simp]
 lemma fiberHomeomorph_one (b : B) : fiberHomeomorph (1 : Deck p) b = 1 := by
   ext e
-  rfl
+  simp only [fiberHomeomorph_apply, Subgroup.coe_one, Homeomorph.one_apply]
 
 /-- Restriction of deck transformations to a fibre preserves composition. -/
 @[simp]
 lemma fiberHomeomorph_mul (φ ψ : Deck p) (b : B) :
     fiberHomeomorph (φ * ψ) b = fiberHomeomorph φ b * fiberHomeomorph ψ b := by
   ext e
-  rfl
+  simp only [fiberHomeomorph_apply, Subgroup.coe_mul, Homeomorph.mul_apply]
 
 /-- Restriction of deck transformations to a fibre preserves inverses. -/
 @[simp]
 lemma fiberHomeomorph_inv (φ : Deck p) (b : B) :
     fiberHomeomorph φ⁻¹ b = (fiberHomeomorph φ b)⁻¹ := by
   ext e
-  rfl
+  simp only [fiberHomeomorph_apply, fiberHomeomorph_symm_apply, Subgroup.coe_inv,
+    Homeomorph.inv_apply]
 
 /-- Restricting deck transformations to a fixed fibre, as a monoid homomorphism. -/
 def fiberMulHom (p : E → B) (b : B) : Deck p →* p ⁻¹' {b} ≃ₜ p ⁻¹' {b} where
@@ -148,7 +139,6 @@ def fiberMulHom (p : E → B) (b : B) : Deck p →* p ⁻¹' {b} ≃ₜ p ⁻¹'
 
 /-- The monoid homomorphism to a fibre homeomorphism evaluates as the restricted deck
 transformation. -/
-@[simp]
 lemma fiberMulHom_apply (b : B) (φ : Deck p) (e : p ⁻¹' {b}) :
     (fiberMulHom p b φ e : E) = φ.1 e.1 :=
   rfl
