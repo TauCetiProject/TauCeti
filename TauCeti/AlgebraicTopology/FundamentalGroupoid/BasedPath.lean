@@ -288,6 +288,8 @@ at `t = 1` it is `γ` itself. Joint continuity in `t` is `continuous_initialSegm
 @[simp] public theorem toPath_initialSegmentFamily {x₀ : X} (γ : BasedPath x₀) (t : I) :
     (γ.initialSegmentFamily t).toPath =
       (γ.toPath.initialSegmentFamily t).cast rfl (γ.toPath.initialSegmentFamily t).target := by
+  -- The wrapper is endpoint-indexed, so expose its definitional `ofPath` value before using
+  -- the public `toPath_ofPath` normal form.
   change (ofPath (γ.toPath.initialSegmentFamily t)).toPath =
     (γ.toPath.initialSegmentFamily t).cast rfl (γ.toPath.initialSegmentFamily t).target
   exact toPath_ofPath (γ.toPath.initialSegmentFamily t)
@@ -484,6 +486,8 @@ public theorem isOpenMap_endpoint [LocPathConnectedSpace X] (x₀ : X) :
 
 variable {x₀ : X}
 
+/-- Endpoint-preserving homotopic paths to a point `y ∈ U` give joined based paths inside the
+endpoint preimage of `U`. -/
 public theorem joinedIn_endpoint_preimage_of_homotopic (x₀ : X) {y : X} {U : Set X}
     (hy : y ∈ U) {p q : Path x₀ y} (h : Path.Homotopic p q) :
     JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) (ofPath p) (ofPath q) := by
@@ -531,6 +535,8 @@ public theorem joinedIn_preimage_of_append {U : Set X} {z : X} (γ : BasedPath x
       source' := by
         rw [Path.initialSegmentFamily_zero]
         ext s
+        -- The endpoint casts come from `Path.initialSegmentFamily_zero`; expose the appended
+        -- path values so `Path.cast_coe` can remove them pointwise.
         change (γ.toPath.trans ((Path.refl (endpoint γ)).cast _ _)) s =
           (γ.toPath.trans γrefl) s
         rw [Path.trans_apply, Path.trans_apply]
@@ -538,6 +544,8 @@ public theorem joinedIn_preimage_of_append {U : Set X} {z : X} (γ : BasedPath x
       target' := by
         rw [Path.initialSegmentFamily_one]
         ext s
+        -- As above, the final segment differs only by endpoint casts introduced by the
+        -- initial-segment normal form.
         change (γ.toPath.trans (δ.cast _ _)) s = (γ.toPath.trans δ) s
         rw [Path.trans_apply, Path.trans_apply]
         split_ifs <;> simp only [Path.cast_coe] }
@@ -623,7 +631,8 @@ public theorem exists_open_nhd_pathComponent_preimage
       N ⊆ endpoint (x₀ := x₀) ⁻¹' U ∧
       ∀ β ∈ N, JoinedIn (endpoint (x₀ := x₀) ⁻¹' U) α β := by
   classical
-  obtain ⟨n, part, T, hα_tube⟩ := α.toPath.exists_partition_in_slsc_neighborhoods hslsc
+  obtain ⟨n, part, T, hα_tube⟩ :=
+    α.toPath.exists_partition_in_pathHomotopyTrivial_neighborhoods hslsc
   -- Rule out `n = 0`; the rest of the proof assumes `n = n' + 1`.
   match n, part, T, hα_tube with
   | 0, part, _, _ => exact isEmptyElim part
@@ -731,7 +740,8 @@ public theorem isOpen_pathComponent_preimage
 
 section joinedInSLSC
 
-/-! Reparametrisation helpers for `toPath_homotopic_of_joinedIn_slsc` (private to this section). -/
+/-! Reparametrisation helpers for
+`toPath_homotopic_of_joinedIn_pathHomotopyTrivial` (private to this section). -/
 
 private def joinedInSLSC_uReal (ts : ℝ × ℝ) : ℝ :=
   ts.1 + max 0 (2 * ts.2 - 1) * (1 - ts.1)
@@ -814,7 +824,7 @@ end joinedInSLSC
 This is the heart of the sheet-injectivity argument: a path in the based-path space descends
 to a free homotopy of paths in `X` whose endpoint trace is a loop in `U`, which is killed by
 the SLSC hypothesis. -/
-public theorem toPath_homotopic_of_joinedIn_slsc
+public theorem toPath_homotopic_of_joinedIn_pathHomotopyTrivial
     {U : Set X} (hU_slsc : IsPathHomotopyTrivial U)
     {α β : BasedPath x₀}
     (heq : endpoint α = endpoint β)
