@@ -3,7 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.RingTheory.Bialgebra.Convolution
-import Mathlib.RingTheory.HopfAlgebra.Basic
+import TauCeti.Algebra.AlgebraicGroup.HopfAlgebra
 
 /-!
 # Convolution groups of algebra homomorphisms out of a Hopf algebra
@@ -53,23 +53,6 @@ Yaël Dillies, Michał Mrugała and Yunzhou Xie in Mathlib.
 open Coalgebra HopfAlgebra TensorProduct WithConv
 
 namespace TauCeti
-
-namespace HopfAlgebra
-
-variable {R H : Type*} [CommSemiring R] [Semiring H] [_root_.HopfAlgebra R H]
-
-/-- The antipode is a left convolution inverse of the identity in the convolution ring of
-linear maps: `S * id = 1`. This is a restatement of the antipode axiom
-`HopfAlgebra.mul_antipode_rTensor_comul`. -/
-lemma antipode_convMul_id :
-    (toConv (antipode R) : WithConv (H →ₗ[R] H)) * toConv LinearMap.id = 1 := by
-  refine WithConv.ext ?_
-  ext h
-  simp only [LinearMap.convMul_apply, LinearMap.convOne_apply,
-    ← LinearMap.rTensor_def]
-  exact mul_antipode_rTensor_comul_apply h
-
-end HopfAlgebra
 
 namespace AlgHom
 
