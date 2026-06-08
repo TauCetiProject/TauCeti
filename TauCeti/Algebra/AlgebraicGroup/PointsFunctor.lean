@@ -65,7 +65,6 @@ lemma mapPoints_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
   rfl
 
 /-- The map on points sends the identity point to the identity point. -/
-@[simp]
 lemma mapPoints_one {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     mapPoints (H := H) φ (1 : points (H := H) A) = 1 := by
   exact (mapPoints (H := H) φ).hom.map_one
@@ -102,13 +101,11 @@ noncomputable def pointsFunctor : CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   map_comp φ ψ := mapPoints_comp (H := H) φ ψ
 
 /-- The object part of `pointsFunctor` is the convolution group of algebra homomorphisms. -/
-@[simp]
 lemma pointsFunctor_obj (A : CommAlgCat.{w} R) :
     (pointsFunctor (H := H)).obj A = GrpCat.of (WithConv (H →ₐ[R] A)) :=
   rfl
 
 /-- The morphism part of `pointsFunctor` is post-composition in the value algebra. -/
-@[simp]
 lemma pointsFunctor_map {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (pointsFunctor (H := H)).map φ = mapPoints (H := H) φ :=
   rfl
@@ -116,7 +113,7 @@ lemma pointsFunctor_map {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
 /-- The pointwise value of the image of an `A`-point under `pointsFunctor.map φ`. -/
 @[simp]
 lemma pointsFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
-    (f : (pointsFunctor (H := H)).obj A) (h : H) :
+    (f : WithConv (H →ₐ[R] A)) (h : H) :
     (((pointsFunctor (H := H)).map φ f : WithConv (H →ₐ[R] B)).ofConv) h =
       φ.hom (f.ofConv h) :=
   rfl
