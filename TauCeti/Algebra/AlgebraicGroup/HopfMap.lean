@@ -132,7 +132,7 @@ end BialgebraMapValue
 section Hopf
 
 variable [CommSemiring H₁] [Semiring H₂]
-variable [_root_.HopfAlgebra R H₁] [_root_.HopfAlgebra R H₂]
+variable [_root_.Bialgebra R H₁] [_root_.HopfAlgebra R H₂]
 variable [CommSemiring A] [Algebra R A]
 
 /-- The inverse in the target convolution group is transported by `mapDomain` pointwise as
