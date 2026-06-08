@@ -48,6 +48,28 @@ noncomputable def pointsFunctor (R : Type u) (H : Type v) [CommRing R] [Semiring
 namespace pointsFunctor
 
 variable {R : Type u} {H : Type v} [CommRing R] [Semiring H] [_root_.HopfAlgebra R H]
+variable {A B : CommAlgCat.{w} R}
+
+/-- The morphism induced by a bundled commutative algebra map is `AlgHom.mapValue`. -/
+@[simp]
+lemma map_hom (φ : A ⟶ B) :
+    (pointsFunctor R H).map φ = GrpCat.ofHom (AlgHom.mapValue (H := H) φ.hom) :=
+  rfl
+
+/-- Pointwise, the points functor acts by post-composition with a bundled morphism. -/
+@[simp]
+lemma map_apply (φ : A ⟶ B) (f : TauCeti.Bialgebra.AlgPoints R H A) :
+    (pointsFunctor R H).map φ f =
+      TauCeti.Bialgebra.AlgPoints.ofHom (φ.hom.comp f.hom) :=
+  rfl
+
+/-- Pointwise on `H`, the points functor applies the bundled value-algebra morphism. -/
+@[simp]
+lemma map_apply_apply (φ : A ⟶ B) (f : TauCeti.Bialgebra.AlgPoints R H A) (h : H) :
+    ((pointsFunctor R H).map φ f : TauCeti.Bialgebra.AlgPoints R H B).hom h =
+      φ.hom (f.hom h) :=
+  rfl
+
 variable {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
 
 /-- Evaluating the points functor at `A` gives the convolution group of `A`-points. -/
@@ -60,7 +82,8 @@ lemma obj_of :
 /-- The morphism induced by an algebra map on the points functor is `AlgHom.mapValue`. -/
 @[simp]
 lemma map_ofHom_hom (φ : A →ₐ[R] B) :
-    ((pointsFunctor R H).map (CommAlgCat.ofHom φ)).hom = AlgHom.mapValue (H := H) φ :=
+    (pointsFunctor R H).map (CommAlgCat.ofHom φ) =
+      GrpCat.ofHom (AlgHom.mapValue (H := H) φ) :=
   rfl
 
 /-- Pointwise, the points functor acts by post-composition. -/

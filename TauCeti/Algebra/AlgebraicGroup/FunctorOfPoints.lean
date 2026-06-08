@@ -248,6 +248,7 @@ lemma one_hom_apply (h : H) :
   AlgHom.convOne_apply h
 
 /-- Pointwise, multiplication of points is convolution along the comultiplication. -/
+@[simp]
 lemma mul_hom_apply (f g : AlgPoints R H A) (h : H) :
     (f * g).hom h =
       Algebra.TensorProduct.lift f.hom g.hom (fun _ _ => .all ..) (comul h) :=
