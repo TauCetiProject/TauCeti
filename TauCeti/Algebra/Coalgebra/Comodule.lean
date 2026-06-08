@@ -50,8 +50,8 @@ class Comodule (R : Type u) (C : Type v) (M : Type w) [CommSemiring R]
   coassoc :
     TensorProduct.assoc R M C C ∘ₗ coact.rTensor C ∘ₗ coact =
       Coalgebra.comul.lTensor M ∘ₗ coact
-  /-- The counit law for the right coaction. -/
-  counit :
+  /-- The right counit law for the coaction. -/
+  lTensor_counit_comp_coact :
     Coalgebra.counit.lTensor M ∘ₗ coact = (TensorProduct.mk R M R).flip 1
 
 namespace Comodule
@@ -83,7 +83,7 @@ theorem coassoc_apply (m : M) :
 theorem coact_counit :
     Coalgebra.counit.lTensor M ∘ₗ (coact (R := R) (C := C) (M := M)) =
       (TensorProduct.mk R M R).flip 1 :=
-  Comodule.counit
+  Comodule.lTensor_counit_comp_coact
 
 /-- The counit law of the coaction, evaluated at a vector. -/
 @[simp]
@@ -97,7 +97,13 @@ coalgebra comultiplication. -/
 instance instSelf : Comodule R C C where
   coact := Coalgebra.comul
   coassoc := Coalgebra.coassoc
-  counit := Coalgebra.lTensor_counit_comp_comul
+  lTensor_counit_comp_coact := Coalgebra.lTensor_counit_comp_comul
+
+/-- The coaction of the regular right comodule is the coalgebra comultiplication. -/
+@[simp]
+theorem instSelf_coact :
+    coact (R := R) (C := C) (M := C) = Coalgebra.comul :=
+  rfl
 
 /-- A morphism of right comodules over a fixed coalgebra. -/
 structure Hom (R : Type u) (C : Type v) (M : Type w) (N : Type x) [CommSemiring R]
@@ -111,7 +117,9 @@ structure Hom (R : Type u) (C : Type v) (M : Type w) (N : Type x) [CommSemiring 
 
 namespace Hom
 
-variable {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+variable {P Q : Type*}
+variable [AddCommMonoid P] [Module R P] [Comodule R C P]
+variable [AddCommMonoid Q] [Module R Q] [Comodule R C Q]
 
 instance funLike : FunLike (Hom R C M N) M N where
   coe f := f.toLinearMap
@@ -188,13 +196,17 @@ def comp (g : Hom R C N P) (f : Hom R C M N) : Hom R C M P where
 @[simp]
 theorem id_comp (f : Hom R C M N) : comp (id R C N) f = f := by
   ext m
-  change f.toLinearMap m = f.toLinearMap m
-  rfl
+  simp
 
 @[simp]
 theorem comp_id (f : Hom R C M N) : comp f (id R C M) = f := by
   ext m
-  change f.toLinearMap m = f.toLinearMap m
+  simp
+
+@[simp]
+theorem comp_assoc (h : Hom R C P Q) (g : Hom R C N P) (f : Hom R C M N) :
+    comp (comp h g) f = comp h (comp g f) := by
+  ext m
   rfl
 
 end Hom
