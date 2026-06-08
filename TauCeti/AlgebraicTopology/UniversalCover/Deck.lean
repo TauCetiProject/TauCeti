@@ -133,13 +133,7 @@ lemma fiberHomeomorphHom_apply (b : B) (φ : Deck p) :
 
 /-- A deck transformation acts on each fibre by restricting its underlying homeomorphism. -/
 instance fiberMulAction (b : B) : MulAction (Deck p) (p ⁻¹' {b}) where
-  smul φ e := fiberHomeomorph φ b e
-  one_smul e := by
-    ext
-    rfl
-  mul_smul φ ψ e := by
-    ext
-    rfl
+  __ := MulAction.compHom _ (fiberHomeomorphHom (p := p) b)
 
 /-- On points of a fibre, the induced fibre action is evaluation of the underlying
 homeomorphism. -/
@@ -149,19 +143,8 @@ lemma fiber_smul_eq_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
   rfl
 
 /-- The induced action on a fibre agrees with the restricted homeomorphism. -/
-@[simp]
 lemma fiber_smul_eq_fiberHomeomorph (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
     φ • e = fiberHomeomorph φ b e :=
-  rfl
-
-/-- Evaluating deck transformations at a point of a fibre, with codomain kept in that fibre. -/
-def evalFiber (b : B) (e : p ⁻¹' {b}) : Deck p → p ⁻¹' {b} :=
-  fun φ => φ • e
-
-/-- Evaluating at a point of a fibre is the induced fibre action. -/
-@[simp]
-lemma evalFiber_apply (b : B) (e : p ⁻¹' {b}) (φ : Deck p) :
-    evalFiber (p := p) b e φ = φ • e :=
   rfl
 
 /-- On points, the action of a deck transformation is evaluation of its underlying
