@@ -67,22 +67,20 @@ lemma ext {D E : WeilDivisor X} (h : ∀ x, coeff D x = coeff E x) : D = E :=
   Finsupp.ext h
 
 /-- The prime/point divisor supported at a single point with coefficient `1`. -/
-noncomputable def ofPoint [DecidableEq X] (x : X) : WeilDivisor X :=
+noncomputable def ofPoint (x : X) : WeilDivisor X :=
   Finsupp.single x 1
 
 @[simp]
-lemma coeff_ofPoint_self [DecidableEq X] (x : X) : coeff (ofPoint x) x = 1 := by
-  simp [coeff, ofPoint]
+lemma coeff_ofPoint_self (x : X) : coeff (ofPoint x) x = 1 :=
+  Finsupp.single_eq_same
 
 @[simp]
-lemma coeff_ofPoint_of_ne [DecidableEq X] {x y : X} (h : y ≠ x) :
-    coeff (ofPoint x) y = 0 := by
-  simp [coeff, ofPoint, h]
+lemma coeff_ofPoint_of_ne {x y : X} (h : y ≠ x) : coeff (ofPoint x) y = 0 :=
+  Finsupp.single_eq_of_ne h
 
 @[simp]
-lemma support_ofPoint [DecidableEq X] (x : X) : (ofPoint x).support = {x} := by
-  ext y
-  by_cases h : y = x <;> simp [ofPoint, h]
+lemma support_ofPoint (x : X) : (ofPoint x).support = {x} :=
+  Finsupp.support_single x one_ne_zero
 
 /-- A divisor is effective when every coefficient is nonnegative. -/
 def IsEffective (D : WeilDivisor X) : Prop :=
@@ -107,12 +105,12 @@ lemma IsEffective.nsmul {D : WeilDivisor X} (hD : IsEffective D) (n : ℕ) :
   simpa [IsEffective, coeff] using nsmul_nonneg (hD x) n
 
 @[simp]
-lemma isEffective_ofPoint [DecidableEq X] (x : X) : IsEffective (ofPoint x) := by
+lemma isEffective_ofPoint (x : X) : IsEffective (ofPoint x) := by
   intro y
   by_cases h : y = x
   · subst h
-    simp
-  · simp [coeff_ofPoint_of_ne h]
+    norm_num [coeff_ofPoint_self]
+  · rw [coeff_ofPoint_of_ne h]
 
 /-- Effective Weil divisors form an additive submonoid of the group of all Weil divisors. -/
 def effectiveSubmonoid (X : Type*) : AddSubmonoid (WeilDivisor X) where
@@ -125,7 +123,7 @@ def effectiveSubmonoid (X : Type*) : AddSubmonoid (WeilDivisor X) where
 @[simp]
 lemma mem_effectiveSubmonoid (D : WeilDivisor X) :
     D ∈ effectiveSubmonoid X ↔ IsEffective D :=
-  show IsEffective D ↔ IsEffective D from Iff.rfl
+  Iff.rfl
 
 /-- Push forward a formal divisor along a map of point sets by summing coefficients over
 fibres.  Geometric pushforward of Weil divisors will specialize this once the relevant point
@@ -148,9 +146,9 @@ lemma pushForward_add (f : X → Y) (D E : WeilDivisor X) :
   map_add (pushForward f) D E
 
 @[simp]
-lemma pushForward_ofPoint [DecidableEq X] [DecidableEq Y] (f : X → Y) (x : X) :
+lemma pushForward_ofPoint (f : X → Y) (x : X) :
     pushForward f (ofPoint x) = ofPoint (f x) := by
-  simp [pushForward, ofPoint]
+  simp [pushForward, ofPoint, Finsupp.mapDomain_single]
 
 @[simp]
 lemma pushForward_id : pushForward (fun x : X => x) = AddMonoidHom.id (WeilDivisor X) := by
@@ -187,8 +185,8 @@ lemma degree_sub (D E : WeilDivisor X) : degree (D - E) = degree D - degree E :=
   map_sub degree D E
 
 @[simp]
-lemma degree_ofPoint [DecidableEq X] (x : X) : degree (ofPoint x) = 1 := by
-  simp [degree, ofPoint]
+lemma degree_ofPoint (x : X) : degree (ofPoint x) = 1 := by
+  simp [degree, ofPoint, Finsupp.degree_single]
 
 @[simp]
 lemma degree_pushForward (f : X → Y) (D : WeilDivisor X) :
@@ -225,9 +223,9 @@ lemma weightedDegree_sub (w : X → ℤ) (D E : WeilDivisor X) :
   map_sub (weightedDegree w) D E
 
 @[simp]
-lemma weightedDegree_ofPoint [DecidableEq X] (w : X → ℤ) (x : X) :
+lemma weightedDegree_ofPoint (w : X → ℤ) (x : X) :
     weightedDegree w (ofPoint x) = w x := by
-  simp [weightedDegree, ofPoint]
+  simp [weightedDegree, ofPoint, Finsupp.linearCombination_single]
 
 lemma weightedDegree_pushForward (wY : Y → ℤ) (f : X → Y) (D : WeilDivisor X) :
     weightedDegree wY (pushForward f D) = weightedDegree (wY ∘ f) D := by
