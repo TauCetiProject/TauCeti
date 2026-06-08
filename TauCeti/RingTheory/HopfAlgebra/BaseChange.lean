@@ -148,12 +148,6 @@ lemma counit_includeRight (a : A) :
       algebraMap k K (Coalgebra.counit (R := k) a) := by
   simp [Algebra.smul_def]
 
-end CoalgebraStructOperations
-
-section CoalgebraOperations
-
-variable [Algebra k A] [Coalgebra k A]
-
 /-- The comultiplication of the canonical inclusion is the scalar extension of the
 comultiplication of the original coalgebra. -/
 @[simp]
@@ -168,7 +162,7 @@ lemma comul_includeRight (a : A) :
   simp [← (ℛ k a).eq,
     TensorProduct.AlgebraTensorModule.tensorTensorTensorComm_tmul, TensorProduct.tmul_sum]
 
-end CoalgebraOperations
+end CoalgebraStructOperations
 
 section HopfOperations
 
