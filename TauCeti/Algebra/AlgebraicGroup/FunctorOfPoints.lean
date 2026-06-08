@@ -42,6 +42,8 @@ as inverse.
 * `AlgHom.mapValue`: post-composition with `φ : A →ₐ[R] B` as a monoid homomorphism of
   convolution monoids, with `AlgHom.mapValue_id`, `AlgHom.mapValue_comp` recording its
   functoriality in the value algebra.
+* `Bialgebra.AlgPoints`: a named type for `A`-points of a bialgebra, with constructor
+  `Bialgebra.AlgPoints.ofHom` and eliminator `Bialgebra.AlgPoints.hom`.
 
 ## References
 
@@ -196,5 +198,51 @@ noncomputable instance instCommGroup : CommGroup (WithConv (H →ₐ[R] A)) wher
 end CommHopf
 
 end AlgHom
+
+namespace Bialgebra
+
+universe u v w
+
+variable (R : Type u) (H : Type v) [CommSemiring R] [Semiring H] [_root_.Bialgebra R H]
+
+/-- The `A`-points represented by a bialgebra `H` over `R`.
+
+This is the type of `R`-algebra homomorphisms `H →ₐ[R] A`, equipped with the convolution
+monoid structure. When `H` is a Hopf algebra this monoid is the convolution group used by
+`HopfAlgebra.pointsFunctor`. The source algebra `H` is allowed to be noncommutative here; for
+the usual affine group-scheme interpretation one later adds commutativity of `H` so that
+`Spec H` exists as an affine scheme over `R`. -/
+abbrev AlgPoints (R : Type u) (H : Type v) [CommSemiring R] [Semiring H]
+    [_root_.Bialgebra R H] (A : Type w) [CommSemiring A] [Algebra R A] :
+    Type (max v w) :=
+  WithConv (H →ₐ[R] A)
+
+namespace AlgPoints
+
+variable {R : Type u} {H : Type v} [CommSemiring R] [Semiring H] [_root_.Bialgebra R H]
+variable {A : Type w} [CommSemiring A] [Algebra R A]
+
+/-- Build a point from an algebra homomorphism out of the representing bialgebra. -/
+abbrev ofHom (f : H →ₐ[R] A) : AlgPoints R H A :=
+  toConv f
+
+/-- The underlying algebra homomorphism of a point of a bialgebra. -/
+abbrev hom (f : AlgPoints R H A) : H →ₐ[R] A :=
+  f.ofConv
+
+/-- Building a point from an algebra homomorphism and taking its underlying homomorphism
+recovers the original algebra homomorphism. -/
+@[simp]
+lemma ofHom_hom (f : H →ₐ[R] A) : (ofHom f : AlgPoints R H A).hom = f :=
+  rfl
+
+/-- A point is recovered from its underlying algebra homomorphism. -/
+@[simp]
+lemma ofHom_hom_self (f : AlgPoints R H A) : ofHom f.hom = f :=
+  rfl
+
+end AlgPoints
+
+end Bialgebra
 
 end TauCeti
