@@ -139,13 +139,13 @@ def fiberMulHom (p : E → B) (b : B) : Deck p →* p ⁻¹' {b} ≃ₜ p ⁻¹'
 
 /-- The monoid homomorphism to a fibre homeomorphism evaluates as the restricted deck
 transformation. -/
-lemma fiberMulHom_apply (b : B) (φ : Deck p) (e : p ⁻¹' {b}) :
+lemma fiberMulHom_apply_coe (b : B) (φ : Deck p) (e : p ⁻¹' {b}) :
     (fiberMulHom p b φ e : E) = φ.1 e.1 :=
   rfl
 
 /-- The monoid homomorphism to a fibre homeomorphism is definitionally the fibre restriction. -/
 @[simp]
-lemma fiberMulHom_coe (b : B) (φ : Deck p) : fiberMulHom p b φ = fiberHomeomorph φ b :=
+lemma fiberMulHom_apply (b : B) (φ : Deck p) : fiberMulHom p b φ = fiberHomeomorph φ b :=
   rfl
 
 -- `FaithfulSMul (Deck p) E` and `ContinuousConstSMul (Deck p) E` are inherited from the generic
