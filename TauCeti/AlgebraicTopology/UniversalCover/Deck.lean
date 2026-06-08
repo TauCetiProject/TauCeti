@@ -121,7 +121,6 @@ lemma fiberHomeomorph_symm_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
 @[simp]
 lemma fiberHomeomorph_one (b : B) : fiberHomeomorph (1 : Deck p) b = 1 := by
   ext e
-  change (fiberHomeomorph (1 : Deck p) b e : E) = e.1
   simp only [fiberHomeomorph_apply, OneMemClass.coe_one, Homeomorph.one_apply]
 
 /-- The fibre homeomorphism induced by a product of deck transformations is the product of
@@ -130,7 +129,6 @@ the induced fibre homeomorphisms. -/
 lemma fiberHomeomorph_mul (φ ψ : Deck p) (b : B) :
     fiberHomeomorph (φ * ψ) b = fiberHomeomorph φ b * fiberHomeomorph ψ b := by
   ext e
-  change (fiberHomeomorph (φ * ψ) b e : E) = φ.1 (ψ.1 e.1)
   simp only [fiberHomeomorph_apply, Subgroup.coe_mul, Homeomorph.mul_apply]
 
 /-- The induced action of deck transformations on one fibre, as a group homomorphism to the
