@@ -7,11 +7,11 @@ import Mathlib.Algebra.Category.Grp.Basic
 import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 
 /-!
-# The functor of points of a Hopf algebra
+# The functor of points of a commutative Hopf algebra
 
-For a Hopf algebra `H` over a commutative ring `R`, the `A`-points of the affine group
-scheme represented by `H` are the `R`-algebra homomorphisms `H →ₐ[R] A`, equipped with the
-convolution group structure. This file packages that construction as a functor
+For a commutative Hopf algebra `H` over a commutative ring `R`, the `A`-points of the affine
+group scheme represented by `H` are the `R`-algebra homomorphisms `H →ₐ[R] A`, equipped with
+the convolution group structure. This file packages that construction as a functor
 
 `CommAlgCat R ⥤ GrpCat`.
 
@@ -21,14 +21,14 @@ needed to use those groups as the functor-of-points view in the reductive-groups
 
 ## Main definitions
 
-* `HopfAlgebra.pointsFunctor`: the functor sending a commutative `R`-algebra `A` to the
-  convolution group on `H →ₐ[R] A`.
+* `HopfAlgebra.pointsFunctor`: for a commutative Hopf algebra `H`, the functor sending a
+  commutative `R`-algebra `A` to the convolution group on `H →ₐ[R] A`.
 
 ## References
 
 This advances the Tau Ceti reductive-groups roadmap, Layer 0, "R-points as a group":
-the points of a Hopf algebra are functorial in commutative value algebras and form a group
-by convolution.
+the points of a commutative Hopf algebra are functorial in commutative value algebras and form
+a group by convolution.
 -/
 
 open CategoryTheory WithConv
@@ -39,9 +39,9 @@ namespace HopfAlgebra
 
 universe u v w
 
-variable (R : Type u) [CommRing R] (H : Type v) [Semiring H] [_root_.HopfAlgebra R H]
+variable (R : Type u) [CommRing R] (H : Type v) [CommRing H] [_root_.HopfAlgebra R H]
 
-/-- The functor of points of the affine group represented by a Hopf algebra `H`.
+/-- The functor of points of the affine group represented by a commutative Hopf algebra `H`.
 
 It sends a commutative `R`-algebra `A` to the convolution group on algebra homomorphisms
 `H →ₐ[R] A`, and sends an algebra map `A ⟶ B` to post-composition with that map. -/
