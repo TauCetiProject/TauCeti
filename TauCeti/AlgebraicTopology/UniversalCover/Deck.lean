@@ -100,15 +100,17 @@ lemma smul_eq_apply (φ : Deck p) (e : E) : φ • e = φ.1 e :=
 -- `FaithfulSMul (Deck p) E` and `ContinuousConstSMul (Deck p) E` are inherited from the generic
 -- subgroup instances in `TauCeti.Topology.Algebra.HomeomorphAction`; `Deck p` is a `Subgroup`.
 
-variable {F : Type*} [TopologicalSpace F] {q : F → B}
+variable {F : Type*} {q : F → B}
 
-/-- The compatibility condition for the inverse of a homeomorphism of total spaces over a
-common base. -/
-lemma projection_symm_eq (e : E ≃ₜ F) (h : ∀ x, q (e x) = p x) (y : F) :
+omit [TopologicalSpace E] in
+/-- The compatibility condition for the inverse of an equivalence over a common base. -/
+lemma projection_symm_eq (e : E ≃ F) (h : ∀ x, q (e x) = p x) (y : F) :
     p (e.symm y) = q y := by
   calc
     p (e.symm y) = q (e (e.symm y)) := (h (e.symm y)).symm
     _ = q y := by simp
+
+variable [TopologicalSpace F]
 
 /-- Conjugating by a homeomorphism of total spaces over the same base sends deck
 transformations of `p` to deck transformations of `q`. -/
@@ -119,7 +121,7 @@ def conj (e : E ≃ₜ F) (h : ∀ x, q (e x) = p x) (φ : Deck p) : Deck q wher
       q (((e.symm.trans φ.1).trans e) y) = q (e (φ.1 (e.symm y))) := rfl
       _ = p (φ.1 (e.symm y)) := h (φ.1 (e.symm y))
       _ = p (e.symm y) := map_proj φ (e.symm y)
-      _ = q y := projection_symm_eq e h y
+      _ = q y := projection_symm_eq (e : E ≃ F) h y
 
 /-- The underlying map of the conjugated deck transformation. -/
 @[simp]
@@ -152,7 +154,7 @@ lemma conj_mul (e : E ≃ₜ F) (h : ∀ x, q (e x) = p x) (φ ψ : Deck p) :
 conjugation. This is the deck-group invariance under isomorphism of covers. -/
 def conjMulEquiv (e : E ≃ₜ F) (h : ∀ x, q (e x) = p x) : Deck p ≃* Deck q where
   toFun := conj e h
-  invFun := conj e.symm (projection_symm_eq e h)
+  invFun := conj e.symm (projection_symm_eq (e : E ≃ F) h)
   left_inv φ := by
     ext x
     simp [conj]
@@ -178,7 +180,7 @@ lemma conjMulEquiv_apply_coe (e : E ≃ₜ F) (h : ∀ x, q (e x) = p x) (φ : D
 conjugation by the inverse homeomorphism. -/
 @[simp]
 lemma conjMulEquiv_symm_apply (e : E ≃ₜ F) (h : ∀ x, q (e x) = p x) (ψ : Deck q) :
-    (conjMulEquiv e h).symm ψ = conj e.symm (projection_symm_eq e h) ψ :=
+    (conjMulEquiv e h).symm ψ = conj e.symm (projection_symm_eq (e : E ≃ F) h) ψ :=
   rfl
 
 /-- Pointwise form of `Deck.conjMulEquiv_symm_apply`. -/
