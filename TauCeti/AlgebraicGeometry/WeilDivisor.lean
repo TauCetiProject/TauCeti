@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Data.Finsupp.Weight
+import Mathlib.Data.Finsupp.Order
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
@@ -128,37 +129,58 @@ lemma mem_effectiveSubmonoid (D : WeilDivisor X) :
 /-- Push forward a formal divisor along a map of point sets by summing coefficients over
 fibres.  Geometric pushforward of Weil divisors will specialize this once the relevant point
 maps and residue-degree factors are available. -/
-noncomputable def pushForward (f : X → Y) : WeilDivisor X →+ WeilDivisor Y :=
+noncomputable def pushforward (f : X → Y) : WeilDivisor X →+ WeilDivisor Y :=
   (Finsupp.lmapDomain ℤ ℤ f).toAddMonoidHom
 
 @[simp]
-lemma pushForward_apply (f : X → Y) (D : WeilDivisor X) :
-    pushForward f D = D.mapDomain f :=
+lemma pushforward_apply (f : X → Y) (D : WeilDivisor X) :
+    pushforward f D = D.mapDomain f :=
   rfl
 
-@[simp]
-lemma pushForward_zero (f : X → Y) : pushForward f (0 : WeilDivisor X) = 0 :=
-  map_zero (pushForward f)
+lemma coeff_pushforward [DecidableEq Y] (f : X → Y) (D : WeilDivisor X) (y : Y) :
+    coeff (pushforward f D) y = ∑ x ∈ D.support with f x = y, coeff D x := by
+  rcases em (y ∈ Set.range f) with ⟨x, rfl⟩ | hy
+  · simp [coeff, Finsupp.mapDomain_apply_eq_sum]
+  · rw [coeff, pushforward_apply, Finsupp.mapDomain_notin_range]
+    · refine (Finset.sum_eq_zero fun x hx => ?_).symm
+      rw [Finset.mem_filter] at hx
+      exact (hy ⟨x, hx.2⟩).elim
+    · exact hy
 
 @[simp]
-lemma pushForward_add (f : X → Y) (D E : WeilDivisor X) :
-    pushForward f (D + E) = pushForward f D + pushForward f E :=
-  map_add (pushForward f) D E
+lemma pushforward_zero (f : X → Y) : pushforward f (0 : WeilDivisor X) = 0 :=
+  map_zero (pushforward f)
 
 @[simp]
-lemma pushForward_ofPoint (f : X → Y) (x : X) :
-    pushForward f (ofPoint x) = ofPoint (f x) := by
-  simp [pushForward, ofPoint, Finsupp.mapDomain_single]
+lemma pushforward_add (f : X → Y) (D E : WeilDivisor X) :
+    pushforward f (D + E) = pushforward f D + pushforward f E :=
+  map_add (pushforward f) D E
 
 @[simp]
-lemma pushForward_id : pushForward (fun x : X => x) = AddMonoidHom.id (WeilDivisor X) := by
+lemma pushforward_ofPoint (f : X → Y) (x : X) :
+    pushforward f (ofPoint x) = ofPoint (f x) := by
+  simp [pushforward, ofPoint, Finsupp.mapDomain_single]
+
+@[simp]
+lemma pushforward_id : pushforward (fun x : X => x) = AddMonoidHom.id (WeilDivisor X) := by
   ext D x
-  simp [pushForward, coeff]
+  simp [pushforward, coeff]
 
-lemma pushForward_comp (g : Y → Z) (f : X → Y) :
-    pushForward (g ∘ f) = (pushForward g).comp (pushForward f) := by
+lemma pushforward_comp (g : Y → Z) (f : X → Y) :
+    pushforward (g ∘ f) = (pushforward g).comp (pushforward f) := by
   ext D z
-  simp [pushForward, Function.comp_def]
+  simp [pushforward, Function.comp_def]
+
+lemma IsEffective.pushforward {D : WeilDivisor X} (hD : IsEffective D) (f : X → Y) :
+    IsEffective (pushforward f D) := by
+  classical
+  intro y
+  rw [coeff_pushforward]
+  exact Finset.sum_nonneg fun x _ => hD x
+
+lemma pushforward_mem_effectiveSubmonoid {D : WeilDivisor X} (hD : D ∈ effectiveSubmonoid X)
+    (f : X → Y) : pushforward f D ∈ effectiveSubmonoid Y :=
+  hD.pushforward f
 
 /-- The unweighted degree of a Weil divisor, summing its coefficients.  On a curve over a
 non-algebraically-closed field, use `weightedDegree` with residue-field degrees instead. -/
@@ -189,9 +211,9 @@ lemma degree_ofPoint (x : X) : degree (ofPoint x) = 1 := by
   simp [degree, ofPoint, Finsupp.degree_single]
 
 @[simp]
-lemma degree_pushForward (f : X → Y) (D : WeilDivisor X) :
-    degree (pushForward f D) = degree D := by
-  simp [degree, pushForward, Finsupp.degree_mapDomain]
+lemma degree_pushforward (f : X → Y) (D : WeilDivisor X) :
+    degree (pushforward f D) = degree D := by
+  simp [degree, pushforward, Finsupp.degree_mapDomain]
 
 /-- The weighted degree of a Weil divisor against an integer-valued weight on points.
 
@@ -227,12 +249,12 @@ lemma weightedDegree_ofPoint (w : X → ℤ) (x : X) :
     weightedDegree w (ofPoint x) = w x := by
   simp [weightedDegree, ofPoint, Finsupp.linearCombination_single]
 
-lemma weightedDegree_pushForward (wY : Y → ℤ) (f : X → Y) (D : WeilDivisor X) :
-    weightedDegree wY (pushForward f D) = weightedDegree (wY ∘ f) D := by
-  simp [weightedDegree, pushForward, Finsupp.linearCombination_mapDomain]
+lemma weightedDegree_pushforward (wY : Y → ℤ) (f : X → Y) (D : WeilDivisor X) :
+    weightedDegree wY (pushforward f D) = weightedDegree (wY ∘ f) D := by
+  simp [weightedDegree, pushforward, Finsupp.linearCombination_mapDomain]
 
 @[simp]
-lemma weightedDegree_one (D : WeilDivisor X) :
+lemma weightedDegree_one_eq_degree (D : WeilDivisor X) :
     weightedDegree (fun _ : X => (1 : ℤ)) D = degree D := by
   rw [weightedDegree_apply, degree_apply]
   simp [Finsupp.sum]
