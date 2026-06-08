@@ -31,58 +31,51 @@ namespace TauCeti
 
 namespace HopfAlgebra
 
-universe u
+universe u v w
 
-variable {R H : Type u} [CommRing R] [Semiring H] [_root_.HopfAlgebra R H]
+variable {R : Type u} {H : Type v} [CommRing R] [Semiring H] [_root_.HopfAlgebra R H]
 
 /-- The convolution group of `A`-valued points of a Hopf algebra `H` over `R`.
 
 An element of `points H A` is an `R`-algebra homomorphism `H →ₐ[R] A`; multiplication is
 convolution, the identity is the counit, and inverse is post-composition with the antipode.
 -/
-abbrev points (H : Type u) [Semiring H] [_root_.HopfAlgebra R H] (A : CommAlgCat.{u} R) :
-    Type u :=
+abbrev points (H : Type v) [Semiring H] [_root_.HopfAlgebra R H] (A : CommAlgCat.{w} R) :
+    Type (max v w) :=
   WithConv (H →ₐ[R] A)
-
-noncomputable instance instGroupPoints (A : CommAlgCat.{u} R) : Group (points (R := R) H A) :=
-  inferInstanceAs (Group (WithConv (H →ₐ[R] A)))
 
 /-- The group-valued functor of points of a Hopf algebra.
 
 For a commutative `R`-algebra `A`, its value is the convolution group of algebra
 homomorphisms `H →ₐ[R] A`.  A morphism `A ⟶ B` acts by post-composition. -/
-noncomputable def pointsFunctor (H : Type u) [Semiring H] [_root_.HopfAlgebra R H] :
-    CommAlgCat.{u} R ⥤ GrpCat.{u} where
+noncomputable def pointsFunctor (H : Type v) [Semiring H] [_root_.HopfAlgebra R H] :
+    CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj A := GrpCat.of (points (R := R) H A)
   map {A B} φ := GrpCat.ofHom (TauCeti.AlgHom.mapValue (H := H) φ.hom)
   map_id A := by
     refine GrpCat.ext fun f => ?_
-    change TauCeti.AlgHom.mapValue (H := H) (AlgHom.id R A) f = f
-    rw [TauCeti.AlgHom.mapValue_id]
-    rfl
+    exact congrFun (congrArg DFunLike.coe (TauCeti.AlgHom.mapValue_id (H := H) (A := A))) f
   map_comp {A B C} φ ψ := by
     refine GrpCat.ext fun f => ?_
-    change TauCeti.AlgHom.mapValue (H := H) (ψ.hom.comp φ.hom) f =
-      TauCeti.AlgHom.mapValue (H := H) ψ.hom (TauCeti.AlgHom.mapValue (H := H) φ.hom f)
-    rw [TauCeti.AlgHom.mapValue_comp]
-    rfl
+    exact congrFun
+      (congrArg DFunLike.coe (TauCeti.AlgHom.mapValue_comp (H := H) ψ.hom φ.hom)) f
 
 /-- The functor of points sends `A` to the convolution group of algebra maps `H →ₐ[R] A`. -/
 @[simp]
-lemma pointsFunctor_obj (A : CommAlgCat.{u} R) :
+lemma pointsFunctor_obj (A : CommAlgCat.{w} R) :
     (pointsFunctor (R := R) H).obj A = GrpCat.of (points (R := R) H A) :=
   rfl
 
 /-- The functor of points sends a map of value algebras to post-composition. -/
 @[simp]
-lemma pointsFunctor_map {A B : CommAlgCat.{u} R} (φ : A ⟶ B) :
+lemma pointsFunctor_map {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (pointsFunctor (R := R) H).map φ =
       GrpCat.ofHom (TauCeti.AlgHom.mapValue (H := H) φ.hom) :=
   rfl
 
 /-- Pointwise, the functor of points acts on morphisms by post-composition. -/
 @[simp]
-lemma pointsFunctor_map_apply {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
+lemma pointsFunctor_map_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (f : (pointsFunctor (R := R) H).obj A) :
     ((pointsFunctor (R := R) H).map φ f : WithConv (H →ₐ[R] B)) =
       toConv (φ.hom.comp f.ofConv) :=
@@ -90,7 +83,7 @@ lemma pointsFunctor_map_apply {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
 
 /-- Evaluation after applying the functor of points is ordinary post-composition. -/
 @[simp]
-lemma pointsFunctor_map_apply_apply {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
+lemma pointsFunctor_map_apply_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (f : (pointsFunctor (R := R) H).obj A) (h : H) :
     ((pointsFunctor (R := R) H).map φ f : WithConv (H →ₐ[R] B)).ofConv h =
       φ.hom (f.ofConv h) :=
@@ -98,33 +91,27 @@ lemma pointsFunctor_map_apply_apply {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
 
 /-- The points functor sends identity morphisms to identity maps. -/
 @[simp]
-lemma pointsFunctor_map_id (A : CommAlgCat.{u} R) :
+lemma pointsFunctor_map_id (A : CommAlgCat.{w} R) :
     (pointsFunctor (R := R) H).map (𝟙 A) =
       𝟙 ((pointsFunctor (R := R) H).obj A) :=
   (pointsFunctor (R := R) H).map_id A
 
 /-- The points functor sends composition of value-algebra maps to composition of group maps. -/
 @[simp]
-lemma pointsFunctor_map_comp {A B C : CommAlgCat.{u} R} (φ : A ⟶ B) (ψ : B ⟶ C) :
+lemma pointsFunctor_map_comp {A B C : CommAlgCat.{w} R} (φ : A ⟶ B) (ψ : B ⟶ C) :
     (pointsFunctor (R := R) H).map (φ ≫ ψ) =
       (pointsFunctor (R := R) H).map φ ≫ (pointsFunctor (R := R) H).map ψ :=
   (pointsFunctor (R := R) H).map_comp φ ψ
 
-/-- The identity element of `points H A` is the counit followed by `algebraMap R A`. -/
-@[simp]
-lemma points_one_apply (A : CommAlgCat.{u} R) (h : H) :
-    (1 : points (R := R) H A) h = algebraMap R A (Coalgebra.counit h) :=
-  rfl
-
-/-- The inverse in `points H A` is post-composition with the Hopf-algebra antipode. -/
-@[simp]
-lemma points_inv_apply (A : CommAlgCat.{u} R) (f : points (R := R) H A) (h : H) :
-    f⁻¹ h = f.ofConv (antipode R h) :=
-  TauCeti.AlgHom.convInv_apply f h
+/-- Multiplication in `points H A` is the convolution product. -/
+lemma points_mul_apply (A : CommAlgCat.{w} R) (f g : points (R := R) H A) (h : H) :
+    (f * g) h =
+      Algebra.TensorProduct.lift f.ofConv g.ofConv (fun _ _ => .all ..) (Coalgebra.comul h) :=
+  AlgHom.convMul_apply f g h
 
 /-- The map on points preserves convolution products. -/
 @[simp]
-lemma pointsFunctor_map_mul {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
+lemma pointsFunctor_map_mul {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (f g : (pointsFunctor (R := R) H).obj A) :
     (pointsFunctor (R := R) H).map φ (f * g) =
       (pointsFunctor (R := R) H).map φ f * (pointsFunctor (R := R) H).map φ g :=
@@ -132,13 +119,13 @@ lemma pointsFunctor_map_mul {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
 
 /-- The map on points preserves the identity point. -/
 @[simp]
-lemma pointsFunctor_map_one {A B : CommAlgCat.{u} R} (φ : A ⟶ B) :
+lemma pointsFunctor_map_one {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     (pointsFunctor (R := R) H).map φ (1 : (pointsFunctor (R := R) H).obj A) = 1 :=
   map_one (TauCeti.AlgHom.mapValue (H := H) φ.hom)
 
 /-- The map on points preserves inverses. -/
 @[simp]
-lemma pointsFunctor_map_inv {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
+lemma pointsFunctor_map_inv {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (f : (pointsFunctor (R := R) H).obj A) :
     (pointsFunctor (R := R) H).map φ f⁻¹ =
       ((pointsFunctor (R := R) H).map φ f)⁻¹ :=
@@ -146,7 +133,7 @@ lemma pointsFunctor_map_inv {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
 
 /-- The map on points preserves quotients in the convolution group. -/
 @[simp]
-lemma pointsFunctor_map_div {A B : CommAlgCat.{u} R} (φ : A ⟶ B)
+lemma pointsFunctor_map_div {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     (f g : (pointsFunctor (R := R) H).obj A) :
     (pointsFunctor (R := R) H).map φ (f / g) =
       (pointsFunctor (R := R) H).map φ f / (pointsFunctor (R := R) H).map φ g :=
