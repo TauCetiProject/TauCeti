@@ -15,11 +15,11 @@ chosen total-space homeomorphism.
 
 ## Main definitions
 
-* `TauCeti.Deck.conjHomeomorph`: if `h : E ≃ₜ F` satisfies `q (h e) = p e`, then
+* `TauCeti.Deck.conjMulEquiv`: if `h : E ≃ₜ F` satisfies `q (h e) = p e`, then
   conjugation by `h` gives `Deck p ≃* Deck q`.
-* `TauCeti.Deck.conjHomeomorphRefl`: the identity over-base homeomorphism induces the
+* `TauCeti.Deck.conjMulEquivRefl`: the identity over-base homeomorphism induces the
   identity deck-group equivalence.
-* `TauCeti.Deck.conjHomeomorphTrans`: conjugating along a composite over-base
+* `TauCeti.Deck.conjMulEquivTrans`: conjugating along a composite over-base
   homeomorphism is the composite of the conjugation equivalences.
 
 ## References
@@ -42,110 +42,126 @@ lemma map_symm_eq_of_map_eq (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (f : F
     p (h.symm f) = q f := by
   rw [← hpq (h.symm f), h.apply_symm_apply]
 
-/-- The homeomorphism obtained by conjugating an end-homeomorphism by `h`. This is the
-underlying total-space homeomorphism used by `Deck.conjHomeomorph`. -/
-def conjUnderlying (h : E ≃ₜ F) (φ : E ≃ₜ E) : F ≃ₜ F :=
+/-- The homeomorphism obtained by conjugating an end-homeomorphism by `h`. -/
+private def conjHomeomorph (h : E ≃ₜ F) (φ : E ≃ₜ E) : F ≃ₜ F :=
   (h.symm.trans φ).trans h
 
 /-- Conjugating by the identity homeomorphism leaves an end-homeomorphism unchanged. -/
 @[simp]
-lemma conjUnderlying_refl (φ : E ≃ₜ E) :
-    conjUnderlying (Homeomorph.refl E) φ = φ := by
+private lemma conjHomeomorph_refl (φ : E ≃ₜ E) :
+    conjHomeomorph (Homeomorph.refl E) φ = φ := by
   ext e
-  simp [conjUnderlying]
+  simp [conjHomeomorph]
 
-/-- Conjugation by a homeomorphism is evaluation by `h`, then `φ`, then `h.symm`, in the
-expected order for a map `F → F`. -/
+/-- Conjugation by a homeomorphism evaluates by `h.symm`, then `φ`, then `h`. -/
 @[simp]
-lemma conjUnderlying_apply (h : E ≃ₜ F) (φ : E ≃ₜ E) (f : F) :
-    conjUnderlying h φ f = h (φ (h.symm f)) := by
+private lemma conjHomeomorph_apply (h : E ≃ₜ F) (φ : E ≃ₜ E) (f : F) :
+    conjHomeomorph h φ f = h (φ (h.symm f)) := by
   rfl
 
 /-- The inverse of a conjugated homeomorphism is the conjugate of the inverse. -/
 @[simp]
-lemma conjUnderlying_symm (h : E ≃ₜ F) (φ : E ≃ₜ E) :
-    (conjUnderlying h φ).symm = conjUnderlying h φ.symm := by
+private lemma conjHomeomorph_symm (h : E ≃ₜ F) (φ : E ≃ₜ E) :
+    (conjHomeomorph h φ).symm = conjHomeomorph h φ.symm := by
   ext f
-  simp [conjUnderlying]
+  simp [conjHomeomorph]
 
 /-- Conjugation sends the identity homeomorphism to the identity homeomorphism. -/
 @[simp]
-lemma conjUnderlying_one (h : E ≃ₜ F) :
-    conjUnderlying h 1 = 1 := by
+private lemma conjHomeomorph_one (h : E ≃ₜ F) :
+    conjHomeomorph h 1 = 1 := by
   ext f
-  simp [conjUnderlying]
+  simp [conjHomeomorph]
 
 /-- Conjugation sends composition of homeomorphisms to composition of the conjugates. -/
 @[simp]
-lemma conjUnderlying_mul (h : E ≃ₜ F) (φ ψ : E ≃ₜ E) :
-    conjUnderlying h (φ * ψ) = conjUnderlying h φ * conjUnderlying h ψ := by
+private lemma conjHomeomorph_mul (h : E ≃ₜ F) (φ ψ : E ≃ₜ E) :
+    conjHomeomorph h (φ * ψ) = conjHomeomorph h φ * conjHomeomorph h ψ := by
   ext f
-  simp [conjUnderlying, Homeomorph.mul_apply]
+  simp [conjHomeomorph, Homeomorph.mul_apply]
 
 /-- Conjugating twice is the same as conjugating by the composite homeomorphism. -/
 @[simp]
-lemma conjUnderlying_trans (h : E ≃ₜ F) (k : F ≃ₜ G) (φ : E ≃ₜ E) :
-    conjUnderlying k (conjUnderlying h φ) = conjUnderlying (h.trans k) φ := by
+private lemma conjHomeomorph_trans (h : E ≃ₜ F) (k : F ≃ₜ G) (φ : E ≃ₜ E) :
+    conjHomeomorph k (conjHomeomorph h φ) = conjHomeomorph (h.trans k) φ := by
   ext g
-  simp [conjUnderlying]
+  simp [conjHomeomorph]
+
+/-- Conjugation by a homeomorphism as a multiplicative equivalence of homeomorphism groups. -/
+private def conjHomeomorphMulEquiv (h : E ≃ₜ F) : (E ≃ₜ E) ≃* (F ≃ₜ F) where
+  toFun := conjHomeomorph h
+  invFun := conjHomeomorph h.symm
+  left_inv φ := by
+    ext e
+    simp [conjHomeomorph]
+  right_inv ψ := by
+    ext f
+    simp [conjHomeomorph]
+  map_mul' φ ψ := by
+    ext f
+    simp [conjHomeomorph, Homeomorph.mul_apply]
 
 /-- Conjugation by an over-base homeomorphism sends deck transformations to deck
 transformations. -/
-lemma conjUnderlying_mem_deck (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : Deck p) :
-    conjUnderlying h φ.1 ∈ Deck q := by
+private lemma conjHomeomorph_mem_deck (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : Deck p) :
+    conjHomeomorph h φ.1 ∈ Deck q := by
   intro f
   calc
-    q (conjUnderlying h φ.1 f) = q (h (φ.1 (h.symm f))) := rfl
+    q (conjHomeomorph h φ.1 f) = q (h (φ.1 (h.symm f))) := rfl
     _ = p (φ.1 (h.symm f)) := hpq _
     _ = p (h.symm f) := map_proj φ _
     _ = q f := map_symm_eq_of_map_eq h hpq f
 
+/-- The image of a deck group under over-base conjugation is the deck group over the target. -/
+private lemma map_conjHomeomorphMulEquiv_deck (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) :
+    (Deck p).map (conjHomeomorphMulEquiv h : (E ≃ₜ E) →* (F ≃ₜ F)) = Deck q := by
+  ext φ
+  constructor
+  · rintro ⟨ψ, hψ, rfl⟩
+    exact conjHomeomorph_mem_deck h hpq ⟨ψ, hψ⟩
+  · intro hφ
+    refine ⟨conjHomeomorph h.symm φ, ?_, ?_⟩
+    · exact conjHomeomorph_mem_deck h.symm (map_symm_eq_of_map_eq h hpq) ⟨φ, hφ⟩
+    · ext f
+      simp [conjHomeomorph, conjHomeomorphMulEquiv]
+
 /-- An isomorphism of maps over the same base identifies their deck transformation groups
 by conjugation on the total spaces. -/
-def conjHomeomorph (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) : Deck p ≃* Deck q where
-  toFun φ := ⟨conjUnderlying h φ.1, conjUnderlying_mem_deck h hpq φ⟩
-  invFun ψ := ⟨conjUnderlying h.symm ψ.1,
-    conjUnderlying_mem_deck h.symm (map_symm_eq_of_map_eq h hpq) ψ⟩
-  left_inv φ := by
-    ext e
-    simp [conjUnderlying]
-  right_inv ψ := by
-    ext f
-    simp [conjUnderlying]
-  map_mul' φ ψ := by
-    ext f
-    simp [conjUnderlying, Homeomorph.mul_apply]
+def conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) : Deck p ≃* Deck q :=
+  (conjHomeomorphMulEquiv h).subgroupMap (Deck p) |>.trans <|
+    MulEquiv.subgroupCongr (map_conjHomeomorphMulEquiv_deck h hpq)
 
-/-- The deck transformation produced by `conjHomeomorph` evaluates by conjugation. -/
+/-- The deck transformation produced by `conjMulEquiv` evaluates by conjugation. -/
 @[simp]
-lemma conjHomeomorph_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
+lemma conjMulEquiv_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (φ : Deck p) (f : F) :
-    ((conjHomeomorph h hpq φ).1 f) = h (φ.1 (h.symm f)) := by
+    ((conjMulEquiv h hpq φ).1 f) = h (φ.1 (h.symm f)) := by
   rfl
 
-/-- The inverse equivalence of `conjHomeomorph` is conjugation by the inverse
+/-- The inverse equivalence of `conjMulEquiv` is conjugation by the inverse
 homeomorphism. -/
 @[simp]
-lemma conjHomeomorph_symm_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
+lemma conjMulEquiv_symm_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (ψ : Deck q) (e : E) :
-    (((conjHomeomorph h hpq).symm ψ).1 e) = h.symm (ψ.1 (h e)) := by
+    (((conjMulEquiv h hpq).symm ψ).1 e) = h.symm (ψ.1 (h e)) := by
   rfl
 
 /-- Conjugating deck transformations along the identity over-base homeomorphism gives the
 identity deck-group equivalence. -/
 @[simp]
-lemma conjHomeomorphRefl :
-    conjHomeomorph (Homeomorph.refl E) (p := p) (q := p) (fun _ => rfl) =
+lemma conjMulEquivRefl :
+    conjMulEquiv (Homeomorph.refl E) (p := p) (q := p) (fun _ => rfl) =
       MulEquiv.refl (Deck p) := by
   ext φ e
   simp
 
 /-- Conjugating along a composite over-base homeomorphism is the composite of the two
 conjugation equivalences. -/
-lemma conjHomeomorphTrans (h : E ≃ₜ F) (k : F ≃ₜ G)
+@[simp]
+lemma conjMulEquivTrans (h : E ≃ₜ F) (k : F ≃ₜ G)
     (hpq : ∀ e, q (h e) = p e) (hqr : ∀ f, r (k f) = q f) :
-    conjHomeomorph (h.trans k) (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) =
-      (conjHomeomorph h hpq).trans (conjHomeomorph k hqr) := by
+    conjMulEquiv (h.trans k) (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) =
+      (conjMulEquiv h hpq).trans (conjMulEquiv k hqr) := by
   ext φ g
   simp
 
