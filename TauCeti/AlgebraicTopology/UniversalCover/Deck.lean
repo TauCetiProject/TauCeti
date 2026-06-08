@@ -70,17 +70,33 @@ lemma mapsTo_fiber_symm (φ : Deck p) (b : B) :
   rw [← map_proj φ (φ.1.symm e), Homeomorph.apply_symm_apply]
   exact he
 
-/-- A deck transformation maps each fibre of the projection onto itself. -/
-lemma image_fiber (φ : Deck p) (b : B) : φ.1 '' (p ⁻¹' {b}) = p ⁻¹' {b} := by
+/-- A deck transformation maps the preimage of a set in the base onto itself. -/
+@[simp]
+lemma image_preimage (φ : Deck p) (s : Set B) : φ.1 '' (p ⁻¹' s) = p ⁻¹' s := by
   refine Set.Subset.antisymm ?_ ?_
-  · exact Set.image_subset_iff.mpr (mapsTo_fiber φ b)
   · intro e he
-    exact ⟨φ.1.symm e, mapsTo_fiber_symm φ b he, Homeomorph.apply_symm_apply φ.1 e⟩
+    rcases he with ⟨e, he, rfl⟩
+    simpa only [Set.mem_preimage, map_proj] using he
+  · intro e he
+    refine ⟨φ.1.symm e, ?_, Homeomorph.apply_symm_apply φ.1 e⟩
+    rw [Set.mem_preimage, ← map_proj φ (φ.1.symm e), Homeomorph.apply_symm_apply]
+    exact he
+
+/-- The preimage of the preimage of a set in the base under a deck transformation is itself. -/
+@[simp]
+lemma preimage_preimage (φ : Deck p) (s : Set B) : φ.1 ⁻¹' (p ⁻¹' s) = p ⁻¹' s := by
+  ext e
+  simp only [Set.mem_preimage, map_proj]
+
+/-- A deck transformation maps each fibre of the projection onto itself. -/
+@[simp]
+lemma image_fiber (φ : Deck p) (b : B) : φ.1 '' (p ⁻¹' {b}) = p ⁻¹' {b} := by
+  simpa only using image_preimage (p := p) φ ({b} : Set B)
 
 /-- The preimage of a fibre under a deck transformation is that fibre. -/
+@[simp]
 lemma preimage_fiber (φ : Deck p) (b : B) : φ.1 ⁻¹' (p ⁻¹' {b}) = p ⁻¹' {b} := by
-  ext e
-  simp only [Set.mem_preimage, Set.mem_singleton_iff, map_proj]
+  simpa only using preimage_preimage (p := p) φ ({b} : Set B)
 
 /-- A deck transformation restricts to a homeomorphism of every fibre of the projection,
 the restriction of its underlying homeomorphism along `Homeomorph.subtype`. -/
@@ -103,8 +119,10 @@ lemma fiberHomeomorph_symm_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
 
 /-- The identity deck transformation induces the identity homeomorphism on every fibre. -/
 @[simp]
-lemma fiberHomeomorph_one (b : B) : fiberHomeomorph (1 : Deck p) b = 1 :=
-  rfl
+lemma fiberHomeomorph_one (b : B) : fiberHomeomorph (1 : Deck p) b = 1 := by
+  ext e
+  change (fiberHomeomorph (1 : Deck p) b e : E) = e.1
+  simp only [fiberHomeomorph_apply, OneMemClass.coe_one, Homeomorph.one_apply]
 
 /-- The fibre homeomorphism induced by a product of deck transformations is the product of
 the induced fibre homeomorphisms. -/
@@ -112,7 +130,8 @@ the induced fibre homeomorphisms. -/
 lemma fiberHomeomorph_mul (φ ψ : Deck p) (b : B) :
     fiberHomeomorph (φ * ψ) b = fiberHomeomorph φ b * fiberHomeomorph ψ b := by
   ext e
-  rfl
+  change (fiberHomeomorph (φ * ψ) b e : E) = φ.1 (ψ.1 e.1)
+  simp only [fiberHomeomorph_apply, Subgroup.coe_mul, Homeomorph.mul_apply]
 
 /-- The induced action of deck transformations on one fibre, as a group homomorphism to the
 homeomorphism group of that fibre. -/
