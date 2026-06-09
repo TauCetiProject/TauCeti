@@ -39,7 +39,7 @@ This is the zero-order carrier for future Hölder spaces.  It deliberately store
 `BoundedContinuousFunction`, so boundedness and continuity are inherited from Mathlib while
 the Hölder control is provided by `MemHolder`. -/
 structure HolderMap (α : Type*) (β : Type*) [MetricSpace α] [NormedAddCommGroup β]
-    [NormedSpace ℝ β] (r : ℝ≥0) where
+    (r : ℝ≥0) where
   /-- The underlying bounded continuous map. -/
   toBoundedContinuousFunction : α →ᵇ β
   /-- The underlying function has a finite `r`-Hölder constant. -/
@@ -47,7 +47,7 @@ structure HolderMap (α : Type*) (β : Type*) [MetricSpace α] [NormedAddCommGro
 
 namespace HolderMap
 
-variable [MetricSpace α] [NormedAddCommGroup β] [NormedSpace ℝ β] {r : ℝ≥0}
+variable [MetricSpace α] [NormedAddCommGroup β] {r : ℝ≥0}
 
 instance : CoeFun (HolderMap α β r) fun _ => α → β :=
   ⟨fun f => f.toBoundedContinuousFunction⟩
@@ -127,24 +127,22 @@ noncomputable instance : Neg (HolderMap α β r) where
   neg f :=
     { toBoundedContinuousFunction := -f.toBCF
       memHolder' := by
-        simpa [BoundedContinuousFunction.coe_neg] using
-          (f.memHolder.smul (c := (-1 : ℝ))) }
+        obtain ⟨C, hC⟩ := f.memHolder
+        exact ⟨C, by
+          intro x y
+          simpa [BoundedContinuousFunction.coe_neg] using hC x y⟩ }
 
 @[simp]
 lemma neg_apply (f : HolderMap α β r) (x : α) : (-f) x = -f x :=
   rfl
 
 noncomputable instance : Sub (HolderMap α β r) where
-  sub f g :=
-    { toBoundedContinuousFunction := f.toBCF - g.toBCF
-      memHolder' := by
-        simpa [sub_eq_add_neg] using f.memHolder.add
-          (by
-            simpa using g.memHolder.smul (c := (-1 : ℝ))) }
+  sub f g := f + -g
 
 @[simp]
-lemma sub_apply (f g : HolderMap α β r) (x : α) : (f - g) x = f x - g x :=
-  rfl
+lemma sub_apply (f g : HolderMap α β r) (x : α) : (f - g) x = f x - g x := by
+  change (f + -g : HolderMap α β r) x = f x - g x
+  simp [sub_eq_add_neg]
 
 noncomputable instance [SeminormedRing 𝕜] [Module 𝕜 β] [ContinuousConstSMul 𝕜 β]
     [IsBoundedSMul 𝕜 β] :
@@ -164,11 +162,7 @@ lemma smul_apply [SeminormedRing 𝕜] [Module 𝕜 β] [ContinuousConstSMul �
 /-- Restrict a bundled Hölder map to a subtype.  This is the form used for maps on a domain
 `Ω`, represented as functions on the type `Ω`. -/
 noncomputable def restrict (f : HolderMap α β r) (s : Set α) : HolderMap s β r where
-  toBoundedContinuousFunction :=
-    BoundedContinuousFunction.ofNormedAddCommGroup (fun x : s => f x)
-      (show Continuous (fun x : s => f x) from f.continuous.comp continuous_subtype_val)
-      ‖f.toBCF‖ fun x =>
-        f.toBCF.norm_coe_le_norm x
+  toBoundedContinuousFunction := f.toBCF.restrict s
   memHolder' := by
     exact ⟨nnHolderNorm r (f : α → β),
       HolderWith.restrict_iff.mpr (f.holderWith.holderOnWith s)⟩
@@ -234,14 +228,51 @@ lemma holderSize_zero : holderSize (0 : HolderMap α β r) = 0 := by
   rw [holderSize, hsup, hholder]
   norm_num
 
+/-- The sup norm is subadditive on bundled Hölder maps. -/
+lemma supNorm_add_le (f g : HolderMap α β r) :
+    supNorm (f + g) ≤ f.supNorm + g.supNorm := by
+  rw [supNorm, supNorm, supNorm]
+  exact norm_add_le f.toBCF g.toBCF
+
+/-- Scalar multiplication grows the sup norm by at most the scalar norm. -/
+lemma supNorm_smul_le [SeminormedRing 𝕜] [Module 𝕜 β] [ContinuousConstSMul 𝕜 β]
+    [IsBoundedSMul 𝕜 β] (c : 𝕜) (f : HolderMap α β r) :
+    supNorm (c • f) ≤ ‖c‖ * f.supNorm := by
+  rw [supNorm, supNorm]
+  exact norm_smul_le c f.toBCF
+
+/-- The Hölder seminorm is subadditive on bundled Hölder maps. -/
 lemma holderSeminorm_add_le (f g : HolderMap α β r) :
     holderSeminorm (f + g) ≤ f.holderSeminorm + g.holderSeminorm := by
   exact f.memHolder.nnHolderNorm_add_le g.memHolder
 
+/-- Scalar multiplication scales the Hölder seminorm by `‖c‖₊`. -/
 lemma holderSeminorm_smul [NormedRing 𝕜] [Module 𝕜 β] [ContinuousConstSMul 𝕜 β]
     [NormSMulClass 𝕜 β] [IsBoundedSMul 𝕜 β] (c : 𝕜) (f : HolderMap α β r) :
     holderSeminorm (c • f) = ‖c‖₊ * f.holderSeminorm := by
   exact f.memHolder.nnHolderNorm_smul c
+
+/-- The zero-order Hölder size is subadditive on bundled Hölder maps. -/
+lemma holderSize_add_le (f g : HolderMap α β r) :
+    holderSize (f + g) ≤ f.holderSize + g.holderSize := by
+  rw [holderSize, holderSize, holderSize]
+  have hsup := supNorm_add_le f g
+  have hholder := holderSeminorm_add_le f g
+  have hholder_real :
+      ((f + g).holderSeminorm : ℝ) ≤ f.holderSeminorm + g.holderSeminorm := by
+    exact_mod_cast hholder
+  linarith
+
+/-- Scalar multiplication grows the zero-order Hölder size by at most the scalar norm. -/
+lemma holderSize_smul_le [NormedRing 𝕜] [Module 𝕜 β] [ContinuousConstSMul 𝕜 β]
+    [NormSMulClass 𝕜 β] [IsBoundedSMul 𝕜 β] (c : 𝕜) (f : HolderMap α β r) :
+    holderSize (c • f) ≤ ‖c‖ * f.holderSize := by
+  rw [holderSize, holderSize]
+  have hsup := supNorm_smul_le c f
+  have hholder := holderSeminorm_smul c f
+  rw [hholder]
+  simp only [NNReal.coe_mul, coe_nnnorm]
+  nlinarith [f.holderSeminorm_nonneg, norm_nonneg c]
 
 end HolderMap
 
