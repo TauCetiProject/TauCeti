@@ -33,10 +33,8 @@ section Uniqueness
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 variable {B : V →L[ℝ] V →L[ℝ] ℝ}
 
-/-- A coercive bilinear variational equation with zero right-hand side has only the zero
-solution. -/
-lemma eq_zero_of_forall_apply_eq_zero (hB : IsCoercive B) {u : V}
-    (hu : ∀ v, B u v = 0) :
+/-- A vector whose coercive bilinear form vanishes on the diagonal is zero. -/
+lemma eq_zero_of_apply_self_eq_zero (hB : IsCoercive B) {u : V} (hu : B u u = 0) :
     u = 0 := by
   rcases hB with ⟨C, C_pos, hcoercive⟩
   rw [← norm_eq_zero, ← mul_self_eq_zero, ← mul_right_inj' C_pos.ne', mul_zero,
@@ -44,17 +42,23 @@ lemma eq_zero_of_forall_apply_eq_zero (hB : IsCoercive B) {u : V}
   refine le_antisymm ?_ ?_
   · calc
       C * ‖u‖ * ‖u‖ ≤ B u u := hcoercive u
-      _ = 0 := hu u
+      _ = 0 := hu
   · positivity
+
+/-- A coercive bilinear variational equation with zero right-hand side has only the zero
+solution. -/
+lemma eq_zero_of_forall_apply_eq_zero (hB : IsCoercive B) {u : V}
+    (hu : ∀ v, B u v = 0) :
+    u = 0 :=
+  eq_zero_of_apply_self_eq_zero hB (hu u)
 
 /-- Two vectors satisfying the same variational equation are equal. -/
 lemma eq_of_forall_apply_eq_of_forall_apply_eq (hB : IsCoercive B) {f : V → ℝ}
     {u₁ u₂ : V} (hu₁ : ∀ v, B u₁ v = f v) (hu₂ : ∀ v, B u₂ v = f v) :
     u₁ = u₂ := by
   rw [← sub_eq_zero]
-  refine eq_zero_of_forall_apply_eq_zero hB ?_
-  intro v
-  simp [hu₁ v, hu₂ v]
+  refine eq_zero_of_apply_self_eq_zero hB ?_
+  simp [hu₁ (u₁ - u₂), hu₂ (u₁ - u₂)]
 
 end Uniqueness
 
