@@ -74,40 +74,17 @@ lemma fiberOrbitClass_smul (φ : Deck p) (e : p ⁻¹' {b}) :
 orientation useful for rewriting hypotheses. -/
 lemma fiberOrbitClass_eq_of_mem_orbit {e e' : p ⁻¹' {b}}
     (h : e' ∈ MulAction.orbit (Deck p) e) :
-    fiberOrbitClass e' = fiberOrbitClass e :=
-  (fiberOrbitClass_eq_iff_mem_orbit e' e).mpr h
+    fiberOrbitClass e' = fiberOrbitClass e := by
+  have hmem : e' ∈ (fiberOrbitClass e).orbit := by
+    simpa [fiberOrbitClass_eq_mk, MulAction.orbitRel.Quotient.orbit_mk] using h
+  exact MulAction.orbitRel.Quotient.mem_orbit.mp hmem
 
 /-- An over-base homeomorphism identifies deck-orbit quotients of corresponding fibres. -/
 def fiberOrbitQuotientEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (b : B) :
-    FiberOrbitQuotient p b ≃ FiberOrbitQuotient q b where
-  toFun :=
-    Quotient.map' (fiberMap h hpq b) fun e e' hee' => by
-      rw [MulAction.orbitRel_apply] at hee' ⊢
-      exact (mem_orbit_fiberMap_iff h hpq e' e).mpr hee'
-  invFun :=
-    Quotient.map' (fiberMap h.symm (map_symm_eq_of_map_eq h hpq) b) fun f f' hff' => by
-      rw [MulAction.orbitRel_apply] at hff' ⊢
-      exact (mem_orbit_fiberMap_iff h.symm (map_symm_eq_of_map_eq h hpq) f' f).mpr hff'
-  left_inv := by
-    intro x
-    refine Quotient.inductionOn' x ?_
-    intro e
-    simp only [Quotient.map'_mk'']
-    have heq :
-        fiberMap h.symm (map_symm_eq_of_map_eq h hpq) b (fiberMap h hpq b e) = e := by
-      rw [← fiberMap_symm (h := h) (hpq := hpq) (b := b)]
-      exact (fiberMap h hpq b).left_inv e
-    exact congrArg Quotient.mk'' heq
-  right_inv := by
-    intro y
-    refine Quotient.inductionOn' y ?_
-    intro f
-    simp only [Quotient.map'_mk'']
-    have hff :
-        fiberMap h hpq b (fiberMap h.symm (map_symm_eq_of_map_eq h hpq) b f) = f := by
-      rw [← fiberMap_symm (h := h) (hpq := hpq) (b := b)]
-      exact (fiberMap h hpq b).right_inv f
-    exact congrArg Quotient.mk'' hff
+    FiberOrbitQuotient p b ≃ FiberOrbitQuotient q b :=
+  Quotient.congr (fiberMap h hpq b).toEquiv fun e e' => by
+    rw [MulAction.orbitRel_apply, MulAction.orbitRel_apply]
+    exact (mem_orbit_fiberMap_iff h hpq e' e).symm
 
 /-- The induced equivalence on fibre-orbit quotients sends the class of a point to the class
 of its transported point. -/
@@ -133,12 +110,24 @@ lemma fiberOrbitQuotientEquiv_symm_apply (h : E ≃ₜ F) (hpq : ∀ e, q (h e) 
 /-- The identity over-base homeomorphism induces the identity on fibre-orbit quotients. -/
 @[simp]
 lemma fiberOrbitQuotientEquiv_refl :
-    fiberOrbitQuotientEquiv (Homeomorph.refl E) (p := p) (q := p) (fun _ => rfl) b =
+    fiberOrbitQuotientEquiv (Homeomorph.refl E) (p := p) (q := p)
+        (fun e => by rfl) b =
       Equiv.refl (FiberOrbitQuotient p b) := by
   ext x
   refine Quotient.inductionOn' x ?_
   intro e
-  rfl
+  calc
+    fiberOrbitQuotientEquiv (Homeomorph.refl E) (p := p) (q := p)
+        (fun e => by rfl) b (Quotient.mk'' e) =
+        fiberOrbitClass
+          (fiberMap (Homeomorph.refl E) (p := p) (q := p)
+            (fun e => by rfl) b e) := by
+      simpa [fiberOrbitClass_eq_mk] using
+        (fiberOrbitQuotientEquiv_apply (Homeomorph.refl E)
+          (p := p) (q := p) (fun e => by rfl) (b := b) e)
+    _ = (Equiv.refl (FiberOrbitQuotient p b)) (Quotient.mk'' e) := by
+      rw [fiberMap_refl]
+      rfl
 
 /-- Fibre-orbit quotient equivalences compose as the underlying over-base homeomorphisms
 compose. -/
@@ -150,7 +139,25 @@ lemma fiberOrbitQuotientEquiv_trans (h : E ≃ₜ F) (k : F ≃ₜ G)
   ext x
   refine Quotient.inductionOn' x ?_
   intro e
-  rfl
+  calc
+    fiberOrbitQuotientEquiv (h.trans k) (fun e => by rw [Homeomorph.trans_apply, hqr, hpq])
+        b (Quotient.mk'' e) =
+        fiberOrbitClass
+          (fiberMap (h.trans k) (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) b e) := by
+      simpa [fiberOrbitClass_eq_mk] using
+        (fiberOrbitQuotientEquiv_apply (h.trans k)
+          (p := p) (q := r) (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) (b := b) e)
+    _ = fiberOrbitClass (fiberMap k hqr b (fiberMap h hpq b e)) := by
+      rw [← fiberMap_trans (h := h) (k := k) (p := p) (q := q) (r := r)
+        (hpq := hpq) (hqr := hqr) (b := b)]
+      rfl
+    _ = fiberOrbitQuotientEquiv k hqr b (fiberOrbitClass (fiberMap h hpq b e)) := by
+      simpa [fiberOrbitClass_eq_mk] using
+        (fiberOrbitQuotientEquiv_apply k hqr (b := b) (fiberMap h hpq b e)).symm
+    _ = ((fiberOrbitQuotientEquiv h hpq b).trans (fiberOrbitQuotientEquiv k hqr b))
+        (Quotient.mk'' e) := by
+      rw [Equiv.trans_apply]
+      congr 1
 
 /-- Regularity can be read from the orbit quotients of the fibre actions: the map is
 surjective, and each fibre has at most one deck orbit. -/
