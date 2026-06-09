@@ -19,8 +19,8 @@ of the deck action on each fibre.
 ## Main declarations
 
 * `TauCeti.Deck.orbitQuotientToBase`: the map `E / Deck p → B` induced by `p`.
-* `TauCeti.Deck.orbitQuotientEquivBase`: for a regular deck action, `E / Deck p` is
-  equivalent to the base.
+* `TauCeti.Deck.IsRegular.orbitQuotientEquivBase`: for a regular deck action,
+  `E / Deck p` is equivalent to the base.
 
 ## References
 
@@ -55,21 +55,6 @@ lemma orbitQuotientToBase_mk (e : E) :
       p e :=
   rfl
 
-/-- The orbit quotient map is surjective exactly when the original projection map is
-surjective. -/
-lemma orbitQuotientToBase_surjective_iff :
-    Function.Surjective (orbitQuotientToBase p) ↔ Function.Surjective p := by
-  constructor
-  · intro h b
-    rcases h b with ⟨x, hx⟩
-    revert hx
-    refine Quotient.inductionOn' x ?_
-    intro e hx
-    exact ⟨e, by simpa [orbitQuotientToBase_mk] using hx⟩
-  · intro hp b
-    rcases hp b with ⟨e, he⟩
-    exact ⟨Quotient.mk'' e, by simpa [orbitQuotientToBase_mk] using he⟩
-
 /-- If deck orbits are exactly fibres of `p`, the orbit quotient map to the base is
 injective. -/
 lemma orbitQuotientToBase_injective_of_exists_apply_eq
@@ -86,14 +71,60 @@ lemma orbitQuotientToBase_injective_of_exists_apply_eq
             ⟨φ⁻¹, by
               have hinv : φ.1.symm e' = e := by
                 rw [← hφ, Homeomorph.symm_apply_apply]
-              simpa [smul_eq_apply] using hinv⟩
+              have hsmul : (φ⁻¹ : Deck p) • e' = φ.1.symm e' := rfl
+              change (φ⁻¹ : Deck p) • e' = e
+              exact hsmul.trans hinv⟩
+
+/-- An over-base homeomorphism identifies the corresponding deck-orbit quotients. -/
+def orbitQuotientEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) :
+    MulAction.orbitRel.Quotient (Deck p) E ≃ MulAction.orbitRel.Quotient (Deck q) F where
+  toFun := Quotient.map' h fun e e' hee' => by
+    rw [MulAction.orbitRel_apply] at hee' ⊢
+    rcases hee' with ⟨φ, hφ⟩
+    refine ⟨conjMulEquiv h hpq φ, ?_⟩
+    have hφ' : φ • e' = e := hφ
+    rw [smul_eq_apply] at hφ'
+    change (conjMulEquiv h hpq φ) • h e' = h e
+    rw [smul_eq_apply, conjMulEquiv_apply_coe, h.symm_apply_apply, ← hφ']
+  invFun := Quotient.map' h.symm fun f f' hff' => by
+    rw [MulAction.orbitRel_apply] at hff' ⊢
+    rcases hff' with ⟨ψ, hψ⟩
+    refine ⟨(conjMulEquiv h hpq).symm ψ, ?_⟩
+    have hψ' : ψ • f' = f := hψ
+    rw [smul_eq_apply] at hψ'
+    change ((conjMulEquiv h hpq).symm ψ) • h.symm f' = h.symm f
+    rw [smul_eq_apply, conjMulEquiv_symm_apply_coe, h.apply_symm_apply, ← hψ']
+  left_inv x := by
+    induction x using Quotient.inductionOn' with
+    | h e => simp [Quotient.map'_mk'']
+  right_inv x := by
+    induction x using Quotient.inductionOn' with
+    | h f => simp [Quotient.map'_mk'']
+
+/-- The over-base equivalence on orbit quotients evaluates on representatives by the
+homeomorphism. -/
+@[simp]
+lemma orbitQuotientEquiv_mk (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : E) :
+    orbitQuotientEquiv h hpq
+      (Quotient.mk'' e : MulAction.orbitRel.Quotient (Deck p) E) =
+        (Quotient.mk'' (h e) : MulAction.orbitRel.Quotient (Deck q) F) :=
+  rfl
+
+/-- The inverse over-base equivalence on orbit quotients evaluates on representatives by the
+inverse homeomorphism. -/
+@[simp]
+lemma orbitQuotientEquiv_symm_mk (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (f : F) :
+    (orbitQuotientEquiv h hpq).symm
+      (Quotient.mk'' f : MulAction.orbitRel.Quotient (Deck q) F) =
+        (Quotient.mk'' (h.symm f) : MulAction.orbitRel.Quotient (Deck p) E) :=
+  rfl
 
 namespace IsRegular
 
 /-- For a regular deck action, the map from deck-orbit quotient to the base is surjective. -/
 lemma orbitQuotientToBase_surjective (hreg : IsRegular p) :
     Function.Surjective (orbitQuotientToBase p) :=
-  orbitQuotientToBase_surjective_iff.mpr hreg.1
+  Quotient.lift_surjective p _ hreg.1
 
 /-- For a regular deck action, the map from deck-orbit quotient to the base is injective. -/
 lemma orbitQuotientToBase_injective (hreg : IsRegular p) :
@@ -116,30 +147,30 @@ lemma orbitQuotientEquivBase_mk (hreg : IsRegular p) (e : E) :
       (Quotient.mk'' e : MulAction.orbitRel.Quotient (Deck p) E) = p e :=
   rfl
 
-/-- The inverse of the orbit-quotient equivalence chooses a deck orbit over the requested
-base point. -/
-@[simp]
-lemma orbitQuotientEquivBase_apply_symm (hreg : IsRegular p)
-    (x : MulAction.orbitRel.Quotient (Deck p) E) :
-    hreg.orbitQuotientEquivBase.symm (hreg.orbitQuotientEquivBase x) = x :=
-  hreg.orbitQuotientEquivBase.left_inv x
-
-/-- Applying the orbit-quotient equivalence after its inverse gives back the base point. -/
-@[simp]
-lemma orbitQuotientEquivBase_symm_apply (hreg : IsRegular p) (b : B) :
-    hreg.orbitQuotientEquivBase (hreg.orbitQuotientEquivBase.symm b) = b :=
-  hreg.orbitQuotientEquivBase.right_inv b
-
 /-- Transporting a regular deck action along an over-base homeomorphism is compatible with
 the corresponding orbit-quotient equivalences. -/
 lemma orbitQuotientEquivBase_conj (hreg : IsRegular p) (h : E ≃ₜ F)
+    (hpq : ∀ e, q (h e) = p e) (x : MulAction.orbitRel.Quotient (Deck p) E) :
+    (hreg.conj h hpq).orbitQuotientEquivBase
+      (orbitQuotientEquiv h hpq x) = hreg.orbitQuotientEquivBase x := by
+  induction x using Quotient.inductionOn' with
+  | h e =>
+      rw [orbitQuotientEquiv_mk, orbitQuotientEquivBase_mk, orbitQuotientEquivBase_mk]
+      exact hpq e
+
+/-- Representative form of compatibility between over-base homeomorphisms and the regular
+orbit-quotient equivalences. -/
+@[simp]
+lemma orbitQuotientEquivBase_conj_mk (hreg : IsRegular p) (h : E ≃ₜ F)
     (hpq : ∀ e, q (h e) = p e) (f : F) :
     (hreg.conj h hpq).orbitQuotientEquivBase
       (Quotient.mk'' f : MulAction.orbitRel.Quotient (Deck q) F) =
         hreg.orbitQuotientEquivBase
           (Quotient.mk'' (h.symm f) : MulAction.orbitRel.Quotient (Deck p) E) := by
-  rw [orbitQuotientEquivBase_mk, orbitQuotientEquivBase_mk]
-  exact (map_symm_eq_of_map_eq h hpq f).symm
+  rw [← orbitQuotientEquiv_symm_mk h hpq f,
+    ← hreg.orbitQuotientEquivBase_conj h hpq ((orbitQuotientEquiv h hpq).symm
+      (Quotient.mk'' f : MulAction.orbitRel.Quotient (Deck q) F)),
+    (orbitQuotientEquiv h hpq).apply_symm_apply]
 
 end IsRegular
 
