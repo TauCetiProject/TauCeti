@@ -27,6 +27,18 @@ Stage 0.4, and the shape of the construction in Kim Morrison's mathlib4#40135.
 
 namespace TauCeti
 
+variable {G α : Type*} [Group G] [MulAction G α]
+
+/-- If two group elements send a point to the same point, then `h⁻¹ * g` stabilizes that
+point. -/
+lemma inv_mul_mem_stabilizer_of_smul_eq {x : α} {g h : G} (hgh : g • x = h • x) :
+    h⁻¹ * g ∈ MulAction.stabilizer G x := by
+  rw [MulAction.mem_stabilizer_iff]
+  calc
+    (h⁻¹ * g) • x = h⁻¹ • g • x := by rw [mul_smul]
+    _ = h⁻¹ • h • x := by rw [hgh]
+    _ = x := by rw [inv_smul_smul]
+
 variable {E B : Type*} [TopologicalSpace E] (p : E → B)
 
 /-- The deck transformations of a map `p : E → B`, as the subgroup of homeomorphisms of `E`
@@ -73,28 +85,6 @@ the restriction of its underlying homeomorphism along `Homeomorph.subtype`. -/
 def fiberHomeomorph (φ : Deck p) (b : B) : p ⁻¹' {b} ≃ₜ p ⁻¹' {b} :=
   φ.1.subtype fun e => by simp [Set.mem_preimage, eq_comm, map_proj]
 
-/-- The fibre homeomorphism induced by the identity deck transformation is the identity. -/
-@[simp]
-lemma fiberHomeomorph_one (b : B) : fiberHomeomorph (1 : Deck p) b = 1 := by
-  ext e
-  rfl
-
-/-- The fibre homeomorphism induced by a product of deck transformations is the product of
-the induced fibre homeomorphisms. -/
-@[simp]
-lemma fiberHomeomorph_mul (φ ψ : Deck p) (b : B) :
-    fiberHomeomorph (φ * ψ) b = fiberHomeomorph φ b * fiberHomeomorph ψ b := by
-  ext e
-  rfl
-
-/-- The fibre homeomorphism induced by an inverse deck transformation is the inverse of the
-induced fibre homeomorphism. -/
-@[simp]
-lemma fiberHomeomorph_inv (φ : Deck p) (b : B) :
-    fiberHomeomorph φ⁻¹ b = (fiberHomeomorph φ b)⁻¹ := by
-  ext e
-  rfl
-
 /-- On points, the fibre homeomorphism induced by a deck transformation is just evaluation
 of that transformation. -/
 @[simp]
@@ -109,9 +99,36 @@ lemma fiberHomeomorph_symm_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
     ((fiberHomeomorph φ b).symm e : E) = φ.1.symm e.1 :=
   rfl
 
+/-- The fibre homeomorphism induced by the identity deck transformation is the identity. -/
+@[simp]
+lemma fiberHomeomorph_one (b : B) : fiberHomeomorph (1 : Deck p) b = 1 := by
+  ext e
+  simp only [fiberHomeomorph_apply, OneMemClass.coe_one, Homeomorph.one_apply]
+
+/-- The fibre homeomorphism induced by a product of deck transformations is the product of
+the induced fibre homeomorphisms. -/
+@[simp]
+lemma fiberHomeomorph_mul (φ ψ : Deck p) (b : B) :
+    fiberHomeomorph (φ * ψ) b = fiberHomeomorph φ b * fiberHomeomorph ψ b := by
+  ext e
+  simp only [fiberHomeomorph_apply, Subgroup.coe_mul, Homeomorph.mul_apply]
+
+/-- The fibre homeomorphism induced by an inverse deck transformation is the inverse of the
+induced fibre homeomorphism. -/
+@[simp]
+lemma fiberHomeomorph_inv (φ : Deck p) (b : B) :
+    fiberHomeomorph φ⁻¹ b = (fiberHomeomorph φ b)⁻¹ := by
+  ext e
+  calc
+    ((fiberHomeomorph φ⁻¹ b e : p ⁻¹' {b}) : E) = (φ.1⁻¹) e.1 := by
+      rw [fiberHomeomorph_apply, InvMemClass.coe_inv]
+    _ = φ.1.symm e.1 := Homeomorph.inv_apply φ.1 e.1
+    _ = (((fiberHomeomorph φ b)⁻¹ e : p ⁻¹' {b}) : E) := by
+      rw [Homeomorph.inv_apply, fiberHomeomorph_symm_apply]
+
 /-- Restricting deck transformations to a fibre is a monoid homomorphism into the
-homeomorphism group of that fibre. This is the algebraic form of the deck action on a
-single sheet over the base point. -/
+homeomorphism group of that fibre. This is the algebraic form of restricting the deck
+action to the fibre over `b`. -/
 def fiberHomeomorphMonoidHom (b : B) : Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b}) where
   toFun φ := fiberHomeomorph φ b
   map_one' := fiberHomeomorph_one b
@@ -128,11 +145,14 @@ transformations. -/
 instance fiberMulAction (b : B) : MulAction (Deck p) (p ⁻¹' {b}) where
   smul φ e := fiberHomeomorph φ b e
   one_smul e := by
-    ext
-    rfl
+    apply Subtype.ext
+    change ((fiberHomeomorph (1 : Deck p) b e : p ⁻¹' {b}) : E) = e.1
+    simp only [fiberHomeomorph_apply, OneMemClass.coe_one, Homeomorph.one_apply]
   mul_smul φ ψ e := by
-    ext
-    rfl
+    apply Subtype.ext
+    change ((fiberHomeomorph (φ * ψ) b e : p ⁻¹' {b}) : E) =
+      ((fiberHomeomorph φ b (fiberHomeomorph ψ b e) : p ⁻¹' {b}) : E)
+    simp only [fiberHomeomorph_apply, Subgroup.coe_mul, Homeomorph.mul_apply]
 
 /-- The action of a deck transformation on a point in a fibre is just evaluation of the
 underlying homeomorphism. -/
@@ -157,8 +177,7 @@ instance fiberContinuousConstSMul (b : B) : ContinuousConstSMul (Deck p) (p ⁻�
   ⟨fun φ => (fiberHomeomorph φ b).continuous⟩
 
 /-- Evaluation at a chosen point of a fibre, as a map from deck transformations to that
-fibre. For a connected covering space this map is the usual way to identify deck
-transformations with their value on one lift. -/
+fibre. -/
 def evalAtFiber {b : B} (e : p ⁻¹' {b}) : Deck p → p ⁻¹' {b} :=
   fun φ => φ • e
 
@@ -184,17 +203,6 @@ lemma mem_fiber_stabilizer_iff {b : B} (e : p ⁻¹' {b}) (φ : Deck p) :
     exact Subtype.ext_iff.mp h
   · intro h
     exact Subtype.ext h
-
-/-- If two deck transformations have the same value at a fibre point, then their quotient
-fixes that point. -/
-lemma div_mem_stabilizer_of_smul_eq {b : B} {e : p ⁻¹' {b}} {φ ψ : Deck p}
-    (h : φ • e = ψ • e) : ψ⁻¹ * φ ∈ MulAction.stabilizer (Deck p) e := by
-  rw [mem_fiber_stabilizer_iff]
-  calc
-    ((ψ⁻¹ * φ : Deck p) : E ≃ₜ E) e.1 = ψ.1.symm (φ.1 e.1) := rfl
-    _ = ψ.1.symm (ψ.1 e.1) := by
-      rw [show φ.1 e.1 = ψ.1 e.1 from Subtype.ext_iff.mp h]
-    _ = e.1 := Homeomorph.symm_apply_apply ψ.1 e.1
 
 /-- On points, the action of a deck transformation is evaluation of its underlying
 homeomorphism. The action itself is inherited, by subgroup transfer, from the tautological
