@@ -5,5 +5,6 @@
 -- grows, import the submodules of `TauCeti/` here.
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
 import TauCeti.Algebra.Coalgebra.ComoduleCat
+import TauCeti.AlgebraicGeometry.WeilDivisor
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
 import TauCeti.Basic
