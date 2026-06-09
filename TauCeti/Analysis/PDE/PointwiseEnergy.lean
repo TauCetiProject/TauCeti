@@ -28,10 +28,23 @@ material; once they exist, these lemmas are the coefficient-matrix facts used un
   bound gives Mathlib's `IsCoercive`.
 * `TauCeti.PDE.pointwiseEnergy_isCoercive_of_uniformlyEllipticOn`: uniform ellipticity at a
   point gives coercivity of the corresponding pointwise energy form.
-* `TauCeti.PDE.pointwiseEnergy_one`: the identity coefficient is the usual inner product.
+* `TauCeti.PDE.pointwiseEnergy_one_apply`: the identity coefficient is the usual inner product.
 -/
 
 namespace TauCeti
+
+namespace IsCoercive
+
+/-- A positive diagonal lower bound is the basic constructor for Mathlib's `IsCoercive`. -/
+lemma of_lower_bound {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    (B : E →L[ℝ] E →L[ℝ] ℝ) {lam : ℝ} (hlam : 0 < lam)
+    (h : ∀ u, lam * ‖u‖ ^ 2 ≤ B u u) : IsCoercive B := by
+  refine ⟨lam, hlam, fun u => ?_⟩
+  calc
+    lam * ‖u‖ * ‖u‖ = lam * ‖u‖ ^ 2 := by ring
+    _ ≤ B u u := h u
+
+end IsCoercive
 
 namespace PDE
 
@@ -44,38 +57,27 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 /-- The algebraic bilinear form `η, ξ ↦ ηᵀ A ξ` associated to a coefficient matrix.
 
 This is the pointwise integrand of the principal part of a divergence-form energy form. -/
-def pointwiseEnergyLinear (A : Matrix n n ℝ) :
+private def pointwiseEnergyLinear (A : Matrix n n ℝ) :
     EuclideanSpace ℝ n →ₗ[ℝ] EuclideanSpace ℝ n →ₗ[ℝ] ℝ :=
   (Matrix.toBilin' A).comp (EuclideanSpace.equiv n ℝ).toLinearMap
     (EuclideanSpace.equiv n ℝ).toLinearMap
+
+@[simp]
+private lemma pointwiseEnergyLinear_apply (A : Matrix n n ℝ)
+    (η ξ : EuclideanSpace ℝ n) :
+    pointwiseEnergyLinear A η ξ = η ⬝ᵥ (A *ᵥ ξ) := by
+  simp [pointwiseEnergyLinear, EuclideanSpace.equiv, Matrix.toBilin'_apply',
+    PiLp.coe_continuousLinearEquiv]
 
 /-- The pointwise energy form `η, ξ ↦ ηᵀ A ξ` as a continuous bilinear form.
 
 The continuity bound is supplied explicitly because the PDE roadmap tracks the upper ellipticity
 constant `Λ` separately from the lower ellipticity constant `λ`. -/
-def pointwiseEnergyOfBound (A : Matrix n n ℝ) (C : ℝ)
-  (hC : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ C * ‖η‖ * ‖ξ‖) :
-    EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
-  (pointwiseEnergyLinear A).mkContinuous₂ C fun η ξ => by
-    simpa [pointwiseEnergyLinear, EuclideanSpace.equiv, Matrix.toBilin'_apply',
-      PiLp.coe_continuousLinearEquiv, Real.norm_eq_abs] using hC η ξ
-
-/-- The value of `pointwiseEnergyOfBound` is the matrix expression `ηᵀ A ξ`. -/
-@[simp]
-lemma pointwiseEnergyOfBound_apply (A : Matrix n n ℝ) (C : ℝ)
-    (hC : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ C * ‖η‖ * ‖ξ‖)
-    (η ξ : EuclideanSpace ℝ n) :
-    pointwiseEnergyOfBound A C hC η ξ = η ⬝ᵥ (A *ᵥ ξ) :=
-  by
-    simp [pointwiseEnergyOfBound, pointwiseEnergyLinear, EuclideanSpace.equiv,
-      Matrix.toBilin'_apply', PiLp.coe_continuousLinearEquiv]
-
-/-- A coefficient matrix satisfying a bilinear upper bound gives a continuous pointwise energy
-form. This abbreviation is the main constructor used by uniformly elliptic coefficients. -/
-abbrev pointwiseEnergy (A : Matrix n n ℝ) {C : ℝ}
+def pointwiseEnergy (A : Matrix n n ℝ) {C : ℝ}
     (hC : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ C * ‖η‖ * ‖ξ‖) :
     EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
-  pointwiseEnergyOfBound A C hC
+  (pointwiseEnergyLinear A).mkContinuous₂ C fun η ξ => by
+    simpa [Real.norm_eq_abs] using hC η ξ
 
 /-- The value of `pointwiseEnergy` is the matrix expression `ηᵀ A ξ`. -/
 @[simp]
@@ -83,15 +85,15 @@ lemma pointwiseEnergy_apply (A : Matrix n n ℝ) {C : ℝ}
     (hC : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ C * ‖η‖ * ‖ξ‖)
     (η ξ : EuclideanSpace ℝ n) :
     pointwiseEnergy A hC η ξ = η ⬝ᵥ (A *ᵥ ξ) :=
-  pointwiseEnergyOfBound_apply A C hC η ξ
+  by
+    simp [pointwiseEnergy]
 
 /-- The operator norm of the pointwise energy form is controlled by the supplied upper bound. -/
-lemma norm_pointwiseEnergyOfBound_le (A : Matrix n n ℝ) {C : ℝ} (hC_nonneg : 0 ≤ C)
+lemma norm_pointwiseEnergy_le (A : Matrix n n ℝ) {C : ℝ} (hC_nonneg : 0 ≤ C)
     (hC : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ C * ‖η‖ * ‖ξ‖) :
-    ‖pointwiseEnergyOfBound A C hC‖ ≤ C :=
+    ‖pointwiseEnergy A hC‖ ≤ C :=
   LinearMap.mkContinuous₂_norm_le (pointwiseEnergyLinear A) hC_nonneg fun η ξ => by
-    simpa [pointwiseEnergyLinear, EuclideanSpace.equiv, Matrix.toBilin'_apply',
-      PiLp.coe_continuousLinearEquiv, Real.norm_eq_abs] using hC η ξ
+    simpa [Real.norm_eq_abs] using hC η ξ
 
 /-- A pointwise lower quadratic-form bound gives coercivity of the associated continuous
 bilinear form, in Mathlib's `IsCoercive` sense used by Lax--Milgram. -/
@@ -100,10 +102,9 @@ lemma pointwiseEnergy_isCoercive_of_lower_bound (A : Matrix n n ℝ) {lam C : �
     (hlower : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ (A.toQuadraticForm' ξ))
     (hupper : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ C * ‖η‖ * ‖ξ‖) :
     IsCoercive (pointwiseEnergy A hupper) := by
-  refine ⟨lam, hlam, fun ξ => ?_⟩
+  refine IsCoercive.of_lower_bound (pointwiseEnergy A hupper) hlam fun ξ => ?_
   calc
-    lam * ‖ξ‖ * ‖ξ‖ = lam * ‖ξ‖ ^ 2 := by ring
-    _ ≤ A.toQuadraticForm' ξ := hlower ξ
+    lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ := hlower ξ
     _ = pointwiseEnergy A hupper ξ ξ := by
       simp [toQuadraticForm'_eq_dotProduct]
 
@@ -116,7 +117,8 @@ lemma pointwiseEnergy_isCoercive_of_uniformlyEllipticOn {X : Type*} {Ω : Set X}
     (h.upper_bound hx)
 
 /-- The identity coefficient's pointwise energy form is the real inner product. -/
-lemma pointwiseEnergy_one (hC : ∀ η ξ : EuclideanSpace ℝ n,
+@[simp]
+lemma pointwiseEnergy_one_apply (hC : ∀ η ξ : EuclideanSpace ℝ n,
     |η ⬝ᵥ ((1 : Matrix n n ℝ) *ᵥ ξ)| ≤ 1 * ‖η‖ * ‖ξ‖)
     (η ξ : EuclideanSpace ℝ n) :
     pointwiseEnergy (1 : Matrix n n ℝ) hC η ξ = inner ℝ η ξ := by
@@ -136,20 +138,13 @@ lemma pointwiseEnergy_one_bound (η ξ : EuclideanSpace ℝ n) :
   simpa [EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm] using
     abs_real_inner_le_norm η ξ
 
-/-- The canonical continuous pointwise energy form of the Laplacian coefficient. -/
-abbrev laplacianPointwiseEnergy :
-    EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
-  pointwiseEnergy (1 : Matrix n n ℝ) pointwiseEnergy_one_bound
-
-/-- The Laplacian pointwise energy is the real inner product. -/
-lemma laplacianPointwiseEnergy_apply (η ξ : EuclideanSpace ℝ n) :
-    laplacianPointwiseEnergy η ξ = inner ℝ η ξ :=
-  pointwiseEnergy_one pointwiseEnergy_one_bound η ξ
-
-/-- The Laplacian pointwise energy is coercive, the model hypothesis for Lax--Milgram. -/
-lemma laplacianPointwiseEnergy_isCoercive :
-    IsCoercive (laplacianPointwiseEnergy (n := n)) :=
-  pointwiseEnergy_one_isCoercive pointwiseEnergy_one_bound
+/-- The identity-coefficient pointwise energy is Mathlib's continuous inner product. -/
+lemma pointwiseEnergy_one_eq_innerSL :
+    pointwiseEnergy (1 : Matrix n n ℝ) pointwiseEnergy_one_bound =
+      (innerSL ℝ : EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ) := by
+  ext η ξ
+  rw [pointwiseEnergy_one_apply]
+  rfl
 
 end
 
