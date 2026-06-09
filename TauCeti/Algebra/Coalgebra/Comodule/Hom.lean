@@ -58,15 +58,19 @@ instance instSMul : SMul R (Hom R C M N) where
         ext m
         simp [TensorProduct.map_smul_left, map_coact_apply] }
 
+/-- The zero comodule morphism has the zero linear map underneath. -/
 @[simp]
 theorem zero_toLinearMap : (0 : Hom R C M N).toLinearMap = 0 :=
   rfl
 
+/-- Addition of comodule morphisms is addition of the underlying linear maps. -/
 @[simp]
 theorem add_toLinearMap (f g : Hom R C M N) :
     (f + g).toLinearMap = f.toLinearMap + g.toLinearMap :=
   rfl
 
+/-- Scalar multiplication of comodule morphisms is scalar multiplication of the underlying
+linear maps. -/
 @[simp]
 theorem smul_toLinearMap (r : R) (f : Hom R C M N) :
     (r • f).toLinearMap = r • f.toLinearMap :=
@@ -110,6 +114,9 @@ instance instAddCommMonoid : AddCommMonoid (Hom R C M N) where
   add_comm f g := by
     ext m
     simp [add_comm]
+  -- These fields verify that the custom primitive `SMul ℕ` instance agrees with the
+  -- `AddCommMonoid` nsmul convention. Unfolding it exposes definitional equalities, after
+  -- which the successor case only differs by commutativity of pointwise addition.
   nsmul_zero f := by
     ext m
     rw [show ((0 : ℕ) • f : Hom R C M N) = 0 from rfl]
@@ -141,6 +148,8 @@ theorem nsmul_apply (n : ℕ) (f : Hom R C M N) (m : M) :
   | succ n ih =>
       rw [succ_nsmul, add_apply, ih, succ_nsmul]
 
+/-- Natural-number scalar multiplication of comodule morphisms is natural-number scalar
+multiplication of the underlying linear maps. -/
 @[simp]
 theorem nsmul_toLinearMap (n : ℕ) (f : Hom R C M N) :
     (n • f).toLinearMap = n • f.toLinearMap := by
@@ -156,6 +165,7 @@ theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → Hom R C M N) (m : M) 
   | empty => simp
   | insert i s hi ih => simp [hi, ih]
 
+/-- Finite sums of comodule morphisms are finite sums of the underlying linear maps. -/
 @[simp]
 theorem sum_toLinearMap {ι : Type*} (s : Finset ι) (f : ι → Hom R C M N) :
     (∑ i ∈ s, f i).toLinearMap = ∑ i ∈ s, (f i).toLinearMap := by
