@@ -10,5 +10,6 @@ import TauCeti.AlgebraicGeometry.WeilDivisor
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.FiberTransport
+import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
 import TauCeti.Analysis.PDE.UniformEllipticity
 import TauCeti.Basic
