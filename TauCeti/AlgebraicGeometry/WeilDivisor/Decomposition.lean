@@ -78,7 +78,7 @@ namespace AddMonoidHom
 /-- Additive homomorphisms send the positive-minus-negative decomposition to the same
 subtraction identity in the codomain. -/
 lemma map_posPart_sub_map_negPart {α β : Type*}
-    [AddCommGroup α] [LinearOrder α] [AddLeftMono α] [AddCommGroup β]
+    [AddGroup α] [Lattice α] [AddLeftMono α] [AddGroup β]
     (φ : α →+ β) (a : α) :
     φ a⁺ - φ a⁻ = φ a := by
   simpa only [map_sub] using congrArg φ (_root_.posPart_sub_negPart a)
