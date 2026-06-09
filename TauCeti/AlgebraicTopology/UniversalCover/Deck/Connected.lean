@@ -49,12 +49,6 @@ theorem eq_of_smul_eq_smul [PreconnectedSpace E] (hp : IsCoveringMap p) (φ ψ :
     (h : φ • e = ψ • e) : φ = ψ :=
   eq_of_apply_eq hp φ ψ (by simpa only [smul_eq_apply] using h)
 
-/-- On a covering map with preconnected total space, a deck transformation that fixes one point
-under the ambient action is the identity. -/
-theorem eq_one_of_smul_eq_self [PreconnectedSpace E] (hp : IsCoveringMap p) (φ : Deck p) {e : E}
-    (h : φ • e = e) : φ = 1 :=
-  eq_one_of_apply_eq_self hp φ (by simpa only [smul_eq_apply] using h)
-
 /-- The deck action on the total space of a preconnected covering is cancellative. -/
 theorem isCancelSMul [PreconnectedSpace E] (hp : IsCoveringMap p) : IsCancelSMul (Deck p) E where
   right_cancel' φ ψ _ h := eq_of_smul_eq_smul hp φ ψ h
@@ -75,18 +69,6 @@ theorem eq_of_fiberHomeomorph_apply_eq [PreconnectedSpace E] (hp : IsCoveringMap
     (φ ψ : Deck p) {e : p ⁻¹' {b}} (h : fiberHomeomorph φ b e = fiberHomeomorph ψ b e) :
     φ = ψ :=
   eq_of_fiber_smul_eq_fiber_smul hp φ ψ (by simpa using h)
-
-/-- A deck transformation of a preconnected covering that fixes one point of a fibre is the
-identity. -/
-theorem eq_one_of_fiber_smul_eq_self [PreconnectedSpace E] (hp : IsCoveringMap p)
-    (φ : Deck p) {e : p ⁻¹' {b}} (h : φ • e = e) : φ = 1 :=
-  eq_of_fiber_smul_eq_fiber_smul hp φ 1 (by simpa using h)
-
-/-- A deck transformation of a preconnected covering whose restricted fibre homeomorphism fixes
-one point is the identity. -/
-theorem eq_one_of_fiberHomeomorph_apply_eq_self [PreconnectedSpace E] (hp : IsCoveringMap p)
-    (φ : Deck p) {e : p ⁻¹' {b}} (h : fiberHomeomorph φ b e = e) : φ = 1 :=
-  eq_one_of_fiber_smul_eq_self hp φ (by simpa using h)
 
 /-- The induced deck action on a fibre of a preconnected covering is cancellative. -/
 theorem fiber_isCancelSMul [PreconnectedSpace E] (hp : IsCoveringMap p) :
