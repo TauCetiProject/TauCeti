@@ -323,8 +323,8 @@ lemma uniformlyEllipticOn_const_one_one (Ω : Set X) :
 /-- An isotropic scalar coefficient field is uniformly elliptic when its scalar coefficient
 lies between the lower and upper constants.
 
-This packages the common model `a(x) = c(x) I`: the lower bound is `λ ≤ c(x)`, and the
-bilinear upper bound follows from `c(x) ≤ Λ` together with Cauchy--Schwarz. -/
+This packages the common model `a(x) = c(x) I`: if `λ ≤ c x ≤ Λ` on `Ω`, then `c x • 1`
+satisfies the lower quadratic bound and the bilinear upper bound with constants `λ` and `Λ`. -/
 lemma uniformlyEllipticOn_smul_one (Ω : Set X) (c : X → ℝ) {lam Lam : ℝ}
     (hlam : 0 < lam) (hlamLam : lam ≤ Lam)
     (hbound : ∀ ⦃x⦄, x ∈ Ω → lam ≤ c x ∧ c x ≤ Lam) :
