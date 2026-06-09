@@ -84,15 +84,9 @@ lemma selfAdjointPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm) :
   rw [selfAdjointPart_apply, hA.apply]
   ring
 
-/-- The self-adjoint and skew-adjoint parts add back to the original matrix. -/
-@[simp]
-lemma selfAdjointPart_add_skewAdjointPart (A : Matrix n n ℝ) :
-    (selfAdjointPart ℝ A : Matrix n n ℝ) + (skewAdjointPart ℝ A : Matrix n n ℝ) = A :=
-  StarModule.selfAdjointPart_add_skewAdjointPart ℝ A
-
 /-- A matrix and its transpose have the same diagonal bilinear form. -/
-lemma dotProduct_transpose_mulVec_self [Fintype n] (A : Matrix n n ℝ)
-    (ξ : n → ℝ) :
+lemma dotProduct_transpose_mulVec_self [Fintype n] [NonUnitalCommSemiring R]
+    (A : Matrix n n R) (ξ : n → R) :
     ξ ⬝ᵥ (Aᵀ *ᵥ ξ) = ξ ⬝ᵥ (A *ᵥ ξ) := by
   simpa using _root_.Matrix.dotProduct_transpose_mulVec (A := A) ξ ξ
 
