@@ -24,6 +24,8 @@ with each of these fibre-orbit quotients being a subsingleton.
 
 * `TauCeti.Deck.FiberOrbitQuotient`: the deck-orbit quotient of one fibre.
 * `TauCeti.Deck.fiberOrbitClass`: the quotient map from a fibre to its deck orbit.
+* `TauCeti.Deck.fiberOrbitClass_eq_iff`: equality of fibre-orbit classes is membership in
+  the same deck orbit.
 * `TauCeti.Deck.fiberOrbitQuotientEquiv`: fibre-orbit quotients are invariant under an
   over-base homeomorphism.
 * `TauCeti.Deck.isRegular_iff_surjective_subsingleton_fiberOrbitQuotient`: regularity is
@@ -56,6 +58,13 @@ def fiberOrbitClass (e : p ⁻¹' {b}) : FiberOrbitQuotient p b :=
 lemma fiberOrbitClass_eq_mk (e : p ⁻¹' {b}) :
     fiberOrbitClass e = (Quotient.mk'' e : FiberOrbitQuotient p b) :=
   rfl
+
+/-- Two fibre points have the same deck-orbit class exactly when they lie in the same deck
+orbit. This uses the orientation of `MulAction.orbitRel_apply`: the left point is a member of
+the orbit of the right point. -/
+lemma fiberOrbitClass_eq_iff (e e' : p ⁻¹' {b}) :
+    fiberOrbitClass e = fiberOrbitClass e' ↔ e ∈ MulAction.orbit (Deck p) e' := by
+  rw [fiberOrbitClass_eq_mk, fiberOrbitClass_eq_mk, Quotient.eq'', MulAction.orbitRel_apply]
 
 /-- An over-base homeomorphism identifies deck-orbit quotients of corresponding fibres. -/
 def fiberOrbitQuotientEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (b : B) :
