@@ -2,7 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Bialgebra.Convolution
+import Mathlib.RingTheory.Bialgebra.Hom
 import Mathlib.RingTheory.HopfAlgebra.Basic
 
 /-!
@@ -40,6 +40,7 @@ variable {R H : Type*} [CommSemiring R] [Semiring H] [_root_.HopfAlgebra R H]
 /-- The antipode is a left convolution inverse of the identity in the convolution ring of
 linear maps: `S * id = 1`. This is a restatement of the antipode axiom
 `HopfAlgebra.mul_antipode_rTensor_comul`. -/
+@[simp]
 lemma antipode_convMul_id :
     (toConv (antipode R) : WithConv (H →ₗ[R] H)) * toConv LinearMap.id = 1 := by
   refine WithConv.ext ?_
@@ -51,6 +52,7 @@ lemma antipode_convMul_id :
 /-- The antipode is a right convolution inverse of the identity in the convolution ring of
 linear maps: `id * S = 1`. This is a restatement of the antipode axiom
 `HopfAlgebra.mul_antipode_lTensor_comul`. -/
+@[simp]
 lemma id_convMul_antipode :
     (toConv LinearMap.id : WithConv (H →ₗ[R] H)) * toConv (antipode R) = 1 := by
   refine WithConv.ext ?_
@@ -68,6 +70,7 @@ variable [Semiring A] [Semiring B] [_root_.HopfAlgebra R A] [_root_.HopfAlgebra 
 
 /-- A bialgebra morphism between Hopf algebras commutes with the antipodes, as a statement
 about underlying linear maps. -/
+@[simp]
 theorem toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
     φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A)) =
       (HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap := by
@@ -79,6 +82,9 @@ theorem toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
   have hg_left : g * f = 1 := by
     refine WithConv.ofConv_injective ?_
     dsimp [g, f]
+    -- `algHom_comp_convMul_distrib` is stated after applying an algebra hom to a
+    -- convolution product. The definitions of `BialgHom.toAlgHom`, `LinearMap.comp`, and
+    -- `WithConv.ofConv` reduce this goal to that exact shape.
     change
       (toConv ((φ : A →ₐ[R] B).toLinearMap.comp (HopfAlgebra.antipode R (A := A))) *
           toConv ((φ : A →ₐ[R] B).toLinearMap.comp LinearMap.id)).ofConv =
@@ -91,6 +97,8 @@ theorem toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
   have hh_right : f * h = 1 := by
     refine WithConv.ofConv_injective ?_
     dsimp [f, h]
+    -- Dually, `convMul_comp_coalgHom_distrib` is stated before wrapping the two composed
+    -- linear maps with `toConv`; unfolding the coalgebra-hom coercion gives that form.
     change
       (toConv ((toConv (LinearMap.id : B →ₗ[R] B)).ofConv.comp
             (φ : A →ₗc[R] B).toLinearMap) *
@@ -113,10 +121,25 @@ theorem toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
   exact WithConv.toConv_injective h_eq
 
 /-- A bialgebra morphism between Hopf algebras commutes with the antipodes, pointwise. -/
+@[simp]
 theorem map_antipode (φ : A →ₐc[R] B) (a : A) :
     φ (HopfAlgebra.antipode R a) = HopfAlgebra.antipode R (φ a) :=
   LinearMap.congr_fun (toLinearMap_comp_antipode φ) a
 
 end BialgHom
+
+namespace BialgHomClass
+
+variable {R A B F : Type*} [CommSemiring R]
+variable [Semiring A] [Semiring B] [_root_.HopfAlgebra R A] [_root_.HopfAlgebra R B]
+variable [FunLike F A B] [BialgHomClass F R A B]
+
+/-- A bialgebra-hom-like map between Hopf algebras commutes with the antipodes, pointwise. -/
+@[simp]
+theorem map_antipode (φ : F) (a : A) :
+    φ (HopfAlgebra.antipode R a) = HopfAlgebra.antipode R (φ a) :=
+  BialgHom.map_antipode (φ : A →ₐc[R] B) a
+
+end BialgHomClass
 
 end TauCeti
