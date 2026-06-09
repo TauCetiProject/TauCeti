@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Algebra.Category.CommBialgCat
+import Mathlib.Algebra.Category.HopfAlgCat.Basic
 import TauCeti.Algebra.AlgebraicGroup.HopfMap
 import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
 
@@ -23,12 +24,15 @@ coordinate Hopf algebras acts on points by pre-composition.
 * `CommHopfAlgCat`: the category of commutative Hopf algebras over `R`.
 * `CommHopfAlgCat.mapPointsFunctor`: a coordinate morphism `H ⟶ K` induces a natural
   transformation from the points functor of `K` to the points functor of `H`.
-* `CommHopfAlgCat.pointsFunctorFunctor`: the contravariant functor
+* `CommHopfAlgCat.pointsFunctor`: the contravariant functor
   `(CommHopfAlgCat R)ᵒᵖ ⥤ CommAlgCat R ⥤ GrpCat`.
 
 ## References
 
-This uses Mathlib's convolution monoid and bialgebra morphism API, in particular
+The bundled-category and forgetful-functor skeleton for `CommHopfAlgCat` follows Mathlib's
+`Mathlib.Algebra.Category.HopfAlgCat.Basic` and
+`Mathlib.Algebra.Category.CommBialgCat`. The points functoriality uses Mathlib's
+convolution monoid and bialgebra morphism API, in particular
 `AlgHom.convMul_comp_bialgHom_distrib` from
 `Mathlib.RingTheory.Bialgebra.Convolution`, through the Tau Ceti wrapper
 `AlgHom.mapDomain`.
@@ -42,12 +46,14 @@ universe u v w
 
 variable (R : Type u) [CommRing R]
 
+set_option backward.privateInPublic true in
 /-- The category of commutative Hopf algebras over a commutative ring `R`.
 
 Objects are commutative rings carrying a Hopf-algebra structure over `R`; morphisms are
 bialgebra morphisms. A bialgebra morphism between Hopf algebras automatically preserves the
 antipode, by `BialgHom.map_antipode`, so no extra field is needed in the morphism type. -/
 structure CommHopfAlgCat where
+  private mk ::
   /-- The underlying carrier type. -/
   carrier : Type v
   [commRing : CommRing carrier]
@@ -63,6 +69,8 @@ instance : CoeSort (CommHopfAlgCat.{u, v} R) (Type v) :=
 variable {R}
 
 variable (R) in
+set_option backward.privateInPublic true in
+set_option backward.privateInPublic.warn false in
 /-- Construct a bundled commutative Hopf algebra from the usual unbundled typeclasses. -/
 abbrev of (H : Type v) [CommRing H] [_root_.HopfAlgebra R H] : CommHopfAlgCat.{u, v} R where
   carrier := H
@@ -128,6 +136,12 @@ instance hasForgetToCommBialgCat :
     { obj H := CommBialgCat.of R H
       map φ := CommBialgCat.ofHom φ.toBialgHom }
 
+instance hasForgetToHopfAlgCat :
+    HasForget₂ (CommHopfAlgCat.{u, v} R) (_root_.HopfAlgCat.{v} R) where
+  forget₂ :=
+    { obj H := _root_.HopfAlgCat.of R H
+      map φ := _root_.HopfAlgCat.ofHom φ.toBialgHom }
+
 @[simp]
 lemma forget₂_commBialgCat_obj (H : CommHopfAlgCat.{u, v} R) :
     (forget₂ (CommHopfAlgCat.{u, v} R) (CommBialgCat.{v} R)).obj H =
@@ -138,6 +152,18 @@ lemma forget₂_commBialgCat_obj (H : CommHopfAlgCat.{u, v} R) :
 lemma forget₂_commBialgCat_map {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
     (forget₂ (CommHopfAlgCat.{u, v} R) (CommBialgCat.{v} R)).map φ =
       CommBialgCat.ofHom φ.toBialgHom :=
+  rfl
+
+@[simp]
+lemma forget₂_hopfAlgCat_obj (H : CommHopfAlgCat.{u, v} R) :
+    (forget₂ (CommHopfAlgCat.{u, v} R) (_root_.HopfAlgCat.{v} R)).obj H =
+      _root_.HopfAlgCat.of R H :=
+  rfl
+
+@[simp]
+lemma forget₂_hopfAlgCat_map {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
+    (forget₂ (CommHopfAlgCat.{u, v} R) (_root_.HopfAlgCat.{v} R)).map φ =
+      _root_.HopfAlgCat.ofHom φ.toBialgHom :=
   rfl
 
 /-- A morphism of coordinate commutative Hopf algebras induces a natural transformation
@@ -177,8 +203,8 @@ lemma mapPointsFunctor_id (H : CommHopfAlgCat.{u, v} R) :
       𝟙 (HopfAlgebra.pointsFunctor (R := R) (H := H) :
         CommAlgCat.{w} R ⥤ GrpCat.{max v w}) := by
   ext A f
-  apply WithConv.ext
-  ext h
+  change (AlgHom.mapDomain (H₁ := H) (H₂ := H) (A := A) (BialgHom.id R H)) f = f
+  rw [AlgHom.mapDomain_id]
   rfl
 
 /-- `mapPointsFunctor` sends coordinate-algebra composition to reverse composition of natural
@@ -187,8 +213,11 @@ lemma mapPointsFunctor_comp {H K L : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) (ψ
     mapPointsFunctor (φ ≫ ψ) =
       mapPointsFunctor ψ ≫ mapPointsFunctor φ := by
   ext A f
-  apply WithConv.ext
-  ext h
+  change (AlgHom.mapDomain (H₁ := H) (H₂ := L) (A := A)
+      (ψ.toBialgHom.comp φ.toBialgHom)) f =
+    (AlgHom.mapDomain (H₁ := H) (H₂ := K) (A := A) φ.toBialgHom)
+      ((AlgHom.mapDomain (H₁ := K) (H₂ := L) (A := A) ψ.toBialgHom) f)
+  rw [AlgHom.mapDomain_comp]
   rfl
 
 /-- The contravariant functor assigning to a commutative Hopf algebra its group-valued
@@ -197,35 +226,36 @@ functor of points.
 A coordinate Hopf algebra `H` is sent to the functor `A ↦ WithConv (H →ₐ[R] A)`. A morphism
 `φ : H ⟶ K` is sent contravariantly to the natural transformation that pre-composes
 `K`-points by `φ`. -/
-noncomputable def pointsFunctorFunctor :
+noncomputable def pointsFunctor :
     (CommHopfAlgCat.{u, v} R)ᵒᵖ ⥤ CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj H := HopfAlgebra.pointsFunctor (R := R) (H := H.unop)
   map φ := mapPointsFunctor φ.unop
   map_id H := mapPointsFunctor_id (R := R) H.unop
   map_comp φ ψ := mapPointsFunctor_comp (R := R) ψ.unop φ.unop
 
-/-- The object part of `pointsFunctorFunctor` is the points functor of the underlying
-commutative Hopf algebra. -/
-lemma pointsFunctorFunctor_obj (H : (CommHopfAlgCat.{u, v} R)ᵒᵖ) :
-    (pointsFunctorFunctor (R := R)).obj H =
+/-- The object part of `pointsFunctor` is the points functor of the underlying commutative
+Hopf algebra. -/
+lemma pointsFunctor_obj (H : (CommHopfAlgCat.{u, v} R)ᵒᵖ) :
+    (pointsFunctor (R := R)).obj H =
       HopfAlgebra.pointsFunctor (R := R) (H := H.unop) :=
   rfl
 
-/-- The morphism part of `pointsFunctorFunctor` is pre-composition in the coordinate
-commutative Hopf algebra. -/
-lemma pointsFunctorFunctor_map {H K : (CommHopfAlgCat.{u, v} R)ᵒᵖ} (φ : H ⟶ K) :
-    (pointsFunctorFunctor (R := R)).map φ =
+/-- The morphism part of `pointsFunctor` is pre-composition in the coordinate commutative
+Hopf algebra. -/
+lemma pointsFunctor_map {H K : (CommHopfAlgCat.{u, v} R)ᵒᵖ} (φ : H ⟶ K) :
+    (pointsFunctor (R := R)).map φ =
       mapPointsFunctor φ.unop :=
   rfl
 
-/-- Pointwise form of the morphism part of `pointsFunctorFunctor`. -/
+/-- Pointwise form of the morphism part of `pointsFunctor`. -/
 @[simp]
-lemma pointsFunctorFunctor_map_app_apply_apply {H K : (CommHopfAlgCat.{u, v} R)ᵒᵖ}
+lemma pointsFunctor_map_app_apply_apply {H K : (CommHopfAlgCat.{u, v} R)ᵒᵖ}
     (φ : H ⟶ K) (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := H.unop) A) (h : K.unop) :
-    ((((pointsFunctorFunctor (R := R)).map φ).app A f).ofConv) h =
-      f.ofConv (φ.unop.toBialgHom h) :=
-  rfl
+    ((((pointsFunctor (R := R)).map φ).app A f).ofConv) h =
+      f.ofConv (φ.unop.toBialgHom h) := by
+  rw [pointsFunctor_map]
+  exact mapPointsFunctor_app_apply_apply (R := R) φ.unop A f h
 
 end CommHopfAlgCat
 
