@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Algebra.Category.ModuleCat.Semi
+import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
 import TauCeti.Algebra.Coalgebra.Comodule.Hom
 
 /-!
@@ -299,6 +300,14 @@ theorem comp_zero {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
     f ≫ (0 : N ⟶ P) = 0 := by
   ext m
   rfl
+
+/-- `ComoduleCat` has the standard categorical zero morphisms. -/
+instance hasZeroMorphisms :
+    CategoryTheory.Limits.HasZeroMorphisms (ComoduleCat.{u, v, w} R C) where
+  zero := inferInstance
+  comp_zero := fun f P => ComoduleCat.comp_zero (R := R) (C := C) (P := P) f
+  zero_comp := fun M {N P} f => ComoduleCat.zero_comp (R := R) (C := C) (M := M) (N := N)
+    (P := P) f
 
 /-- The forgetful functor from comodules to their underlying semimodules. -/
 instance hasForgetToSemimodule : HasForget₂ (ComoduleCat.{u, v, w} R C) (SemimoduleCat.{w} R) where
