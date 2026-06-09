@@ -212,6 +212,36 @@ lemma restrict_apply (f : HolderMap α β r) (s : Set α) (x : s) :
     f.restrict s x = f x :=
   rfl
 
+@[simp]
+lemma restrict_zero (s : Set α) : (0 : HolderMap α β r).restrict s = 0 := by
+  ext x
+  simp
+
+@[simp]
+lemma restrict_add (f g : HolderMap α β r) (s : Set α) :
+    (f + g).restrict s = f.restrict s + g.restrict s := by
+  ext x
+  simp
+
+@[simp]
+lemma restrict_neg (f : HolderMap α β r) (s : Set α) :
+    (-f).restrict s = -f.restrict s := by
+  ext x
+  simp
+
+@[simp]
+lemma restrict_sub (f g : HolderMap α β r) (s : Set α) :
+    (f - g).restrict s = f.restrict s - g.restrict s := by
+  ext x
+  simp
+
+@[simp]
+lemma restrict_smul [SeminormedRing 𝕜] [Module 𝕜 β] [IsBoundedSMul 𝕜 β]
+    (c : 𝕜) (f : HolderMap α β r) (s : Set α) :
+    (c • f).restrict s = c • f.restrict s := by
+  ext x
+  simp
+
 /-- The sup norm of the underlying bounded continuous map. -/
 noncomputable def supNorm (f : HolderMap α β r) : ℝ :=
   ‖f.toBCF‖
