@@ -41,6 +41,59 @@ instance continuousConstSMul [ContinuousConstSMul R M] (s : SubMulAction R M) :
     ((continuous_const_smul r).comp continuous_subtype_val).subtype_mk fun x =>
       s.smul_mem r x.2
 
+variable {G : Type*} [Group G] [MulAction G M] [ContinuousConstSMul G M]
+
+/-- An invariant subset of a continuous group action inherits a homeomorphism from each
+group element. -/
+def homeomorph (s : SubMulAction G M) (g : G) : s ≃ₜ s where
+  toFun x := g • x
+  invFun x := g⁻¹ • x
+  left_inv x := by simp
+  right_inv x := by simp
+  continuous_toFun := continuous_const_smul g
+  continuous_invFun := continuous_const_smul g⁻¹
+
+/-- The homeomorphism of an invariant subset induced by a group element acts by scalar
+multiplication. -/
+@[simp]
+lemma homeomorph_apply (s : SubMulAction G M) (g : G) (x : s) :
+    homeomorph s g x = g • x :=
+  rfl
+
+/-- The underlying permutation of the homeomorphism induced on an invariant subset is the
+permutation coming from the inherited action. -/
+lemma homeomorph_toEquiv (s : SubMulAction G M) (g : G) :
+    (homeomorph s g).toEquiv = MulAction.toPerm g :=
+  rfl
+
+/-- The identity group element induces the identity homeomorphism on an invariant subset. -/
+@[simp]
+lemma homeomorph_one (s : SubMulAction G M) :
+    homeomorph s (1 : G) = 1 := by
+  ext x
+  simp
+
+/-- The homeomorphism induced by a product is the product of the induced homeomorphisms. -/
+@[simp]
+lemma homeomorph_mul (s : SubMulAction G M) (g h : G) :
+    homeomorph s (g * h) = homeomorph s g * homeomorph s h := by
+  ext x
+  simp [mul_smul]
+
+/-- Restriction of a continuous group action to an invariant subset, as a homomorphism into
+the homeomorphism group of that subset. -/
+def homeomorphHom (s : SubMulAction G M) : G →* (s ≃ₜ s) where
+  toFun := homeomorph s
+  map_one' := homeomorph_one s
+  map_mul' := homeomorph_mul s
+
+/-- The restriction homomorphism sends a group element to its induced homeomorphism of the
+invariant subset. -/
+@[simp]
+lemma homeomorphHom_apply (s : SubMulAction G M) (g : G) :
+    homeomorphHom s g = homeomorph s g :=
+  rfl
+
 end SubMulAction
 
 variable {E B : Type*} [TopologicalSpace E] (p : E → B)
@@ -131,54 +184,51 @@ lemma coe_fiber_smul (φ : Deck p) {b : B} (e : p ⁻¹' {b}) :
   rw [smul_eq_apply]
 
 /-- A deck transformation restricts to a homeomorphism of every fibre of the projection,
-the restriction of its underlying homeomorphism along `Homeomorph.subtype`. -/
+as a special case of the homeomorphism induced on an invariant subset. -/
 def fiberHomeomorph (φ : Deck p) (b : B) : p ⁻¹' {b} ≃ₜ p ⁻¹' {b} :=
-  φ.1.subtype fun e => by simp [Set.mem_preimage, eq_comm, map_proj]
+  SubMulAction.homeomorph (fiberSubMulAction (p := p) b) φ
 
 /-- On points, the fibre homeomorphism induced by a deck transformation is just evaluation
 of that transformation. -/
 @[simp]
 lemma fiberHomeomorph_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
-    (fiberHomeomorph φ b e : E) = φ.1 e.1 :=
-  rfl
+    (fiberHomeomorph φ b e : E) = φ.1 e.1 := by
+  rw [fiberHomeomorph]
+  change ((φ • e : p ⁻¹' {b}) : E) = φ.1 e.1
+  exact coe_fiber_smul φ e
 
 /-- On points, the inverse fibre homeomorphism induced by a deck transformation is
 evaluation of the inverse homeomorphism. -/
 @[simp]
 lemma fiberHomeomorph_symm_apply (φ : Deck p) (b : B) (e : p ⁻¹' {b}) :
-    ((fiberHomeomorph φ b).symm e : E) = φ.1.symm e.1 :=
-  rfl
+    ((fiberHomeomorph φ b).symm e : E) = φ.1.symm e.1 := by
+  rw [fiberHomeomorph]
+  change ((φ⁻¹ • e : p ⁻¹' {b}) : E) = (φ⁻¹ : Deck p).1 e.1
+  exact coe_fiber_smul (φ⁻¹) e
 
 /-- The fibre homeomorphism induced by a deck transformation is the permutation coming from
 the induced fibre action. -/
 lemma fiberHomeomorph_toEquiv (φ : Deck p) (b : B) :
-    (fiberHomeomorph φ b).toEquiv = MulAction.toPerm φ := by
-  ext e
-  calc
-    ↑((fiberHomeomorph φ b).toEquiv e) = φ.1 e.1 := rfl
-    _ = ↑((MulAction.toPerm φ) e) := (coe_fiber_smul φ e).symm
+    (fiberHomeomorph φ b).toEquiv = MulAction.toPerm φ :=
+  SubMulAction.homeomorph_toEquiv (fiberSubMulAction (p := p) b) φ
 
 /-- The identity deck transformation restricts to the identity on each fibre. -/
 @[simp]
 lemma fiberHomeomorph_one (b : B) :
-    fiberHomeomorph (p := p) (1 : Deck p) b = 1 := by
-  ext e
-  simp [fiberHomeomorph_apply]
+    fiberHomeomorph (p := p) (1 : Deck p) b = 1 :=
+  SubMulAction.homeomorph_one (fiberSubMulAction (p := p) b)
 
 /-- Restricting a product of deck transformations to a fibre is the product of the
 restrictions. -/
 @[simp]
 lemma fiberHomeomorph_mul (φ ψ : Deck p) (b : B) :
-    fiberHomeomorph (φ * ψ) b = fiberHomeomorph φ b * fiberHomeomorph ψ b := by
-  ext e
-  simp [fiberHomeomorph_apply, Homeomorph.mul_apply]
+    fiberHomeomorph (φ * ψ) b = fiberHomeomorph φ b * fiberHomeomorph ψ b :=
+  SubMulAction.homeomorph_mul (fiberSubMulAction (p := p) b) φ ψ
 
 /-- Restriction of deck transformations to a fixed fibre, as a homomorphism into the
 homeomorphism group of that fibre. -/
-def fiberHomeomorphHom (b : B) : Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b}) where
-  toFun φ := fiberHomeomorph φ b
-  map_one' := fiberHomeomorph_one b
-  map_mul' φ ψ := fiberHomeomorph_mul φ ψ b
+def fiberHomeomorphHom (b : B) : Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b}) :=
+  SubMulAction.homeomorphHom (fiberSubMulAction (p := p) b)
 
 /-- The fibre restriction homomorphism sends a deck transformation to its induced
 homeomorphism of that fibre. -/
