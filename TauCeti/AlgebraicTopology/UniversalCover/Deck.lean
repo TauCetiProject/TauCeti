@@ -94,6 +94,7 @@ lemma smul_eq_apply (φ : Deck p) (e : E) : φ • e = φ.1 e :=
   rfl
 
 /-- Applying the inverse deck transformation is evaluation of the inverse homeomorphism. -/
+@[simp]
 lemma inv_smul_eq_symm_apply (φ : Deck p) (e : E) : (φ⁻¹ : Deck p) • e = φ.1.symm e :=
   rfl
 
