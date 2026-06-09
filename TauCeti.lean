@@ -8,6 +8,7 @@ import TauCeti.Algebra.Coalgebra.ComoduleCat
 import TauCeti.AlgebraicGeometry.WeilDivisor
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
+import TauCeti.AlgebraicTopology.UniversalCover.Deck.FiberTransport
 import TauCeti.Analysis.PDE.SymmetricPart
 import TauCeti.Analysis.PDE.UniformEllipticity
 import TauCeti.Basic
