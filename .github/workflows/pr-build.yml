@@ -52,14 +52,19 @@ jobs:
           echo "repo=$REPO" >> "$GITHUB_OUTPUT"
           echo "Building PR #$NUM @ $SHA from $REPO"
 
-      - name: Scope guard — PR must touch only TauCeti/ (from the trusted GitHub file list)
+      - name: Scope guard — PR must touch only TauCeti/ or the root TauCeti.lean (from the trusted GitHub file list)
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           files=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" --jq '.[].filename')
           echo "changed files:"; echo "$files"
+          # The root aggregator TauCeti.lean is allowed alongside TauCeti/: it holds
+          # only `import TauCeti.*` lines (so new modules can be made reachable from
+          # the root), it is overlaid into the sandbox below, and the import-boundary
+          # guard covers it. Everything else outside TauCeti/ (lakefile, Scripts/,
+          # .github/) stays trusted-base-only and routes to a human.
           if [ -z "$files" ]; then
             echo "INFRA=1" >> "$GITHUB_ENV"; echo "::warning::no files / unable to list — routing to human"
-          elif echo "$files" | grep -vqE '^TauCeti/'; then
+          elif echo "$files" | grep -vqE '^TauCeti/|^TauCeti\.lean$'; then
             echo "INFRA=1" >> "$GITHUB_ENV"
             echo "::warning::PR changes paths outside TauCeti/ (infra) — not sandbox-built; needs human review"
           fi
@@ -78,7 +83,7 @@ jobs:
           path: pr
           persist-credentials: false
 
-      - name: Overlay PR TauCeti/ onto the trusted base (reject symlinks)
+      - name: Overlay PR TauCeti/ and root TauCeti.lean onto the trusted base (reject symlinks)
         if: ${{ env.INFRA != '1' }}
         run: |
           # No symlinks in the untrusted sources (avoid read/write escapes via the build tree).
@@ -88,11 +93,17 @@ jobs:
           test -d pr/TauCeti && test ! -L pr/TauCeti
           rm -rf base/TauCeti
           cp -a pr/TauCeti base/TauCeti
+          # Overlay the root aggregator too (it is a regular file of imports, never a
+          # symlink). Only if the PR actually ships one; otherwise keep the base copy.
+          if [ -e pr/TauCeti.lean ]; then
+            test ! -L pr/TauCeti.lean || { echo "::error::TauCeti.lean must not be a symlink"; exit 1; }
+            cp -a pr/TauCeti.lean base/TauCeti.lean
+          fi
 
-      - name: Import-boundary guard (TauCeti/ ⊬ roadmap/review)
+      - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
         if: ${{ env.INFRA != '1' }}
         run: |
-          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(TauCetiRoadmap|TauCetiReview)\b' base/TauCeti/; then
+          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(TauCetiRoadmap|TauCetiReview)\b' base/TauCeti/ base/TauCeti.lean; then
             echo "::error::TauCeti/ must not import TauCetiRoadmap or TauCetiReview"; exit 1
           fi
 
