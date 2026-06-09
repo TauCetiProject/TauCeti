@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.Normed.Operator.Bilinear
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.QuadraticForm.Basic
@@ -35,8 +36,12 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   predicate.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
+* `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
+  bound controls the operator norm of the attached matrix bilinear form.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
   the bilinear form attached to a uniformly elliptic coefficient field.
+* `TauCeti.PDE.UniformlyEllipticOn.opNorm_matrixBilinearForm_le`: pointwise operator-norm
+  boundedness of the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.uniformlyEllipticOn_smul_one`: scalar, isotropic coefficient fields are
   uniformly elliptic when their scalar coefficient lies between the ellipticity constants.
 
@@ -134,6 +139,29 @@ lemma norm_matrixBilinearForm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
     ‖matrixBilinearForm A η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ := by
   simpa [Real.norm_eq_abs] using hA η ξ
 
+/-- A pointwise bilinear upper bound controls the operator norm of the bundled matrix
+bilinear form.
+
+This is the matrix-coefficient specialization of Mathlib's
+`ContinuousLinearMap.opNorm_le_bound₂`. -/
+lemma matrixBilinearForm_opNorm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
+    (hLam_nonneg : 0 ≤ Lam)
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖) :
+    ‖matrixBilinearForm A‖ ≤ Lam := by
+  refine (matrixBilinearForm A).opNorm_le_bound₂ hLam_nonneg ?_
+  intro η ξ
+  exact norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
+
+/-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
+matrix bilinear form. -/
+lemma matrixBilinearForm_apply_norm_le_of_upper_bound {A : Matrix n n ℝ} {Lam R S : ℝ}
+    (hLam_nonneg : 0 ≤ Lam)
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    {η ξ : EuclideanSpace ℝ n} (hη : ‖η‖ ≤ R) (hξ : ‖ξ‖ ≤ S) :
+    ‖matrixBilinearForm A η ξ‖ ≤ Lam * R * S :=
+  (matrixBilinearForm A).le_of_opNorm₂_le_of_le
+    (matrixBilinearForm_opNorm_le_of_upper_bound A hLam_nonneg hA) hη hξ
+
 /-- A scalar multiple of the identity has operator integrand bounded by any upper bound for
 the absolute value of the scalar. -/
 lemma abs_dotProduct_smul_one_mulVec_le_of_abs_le {c Lam : ℝ} (hc : |c| ≤ Lam)
@@ -219,6 +247,10 @@ lemma pos (h : UniformlyEllipticOn Ω a lam Lam) : 0 < lam :=
 lemma le (h : UniformlyEllipticOn Ω a lam Lam) : lam ≤ Lam :=
   h.2.1
 
+/-- The upper ellipticity constant is nonnegative. -/
+lemma upper_nonneg (h : UniformlyEllipticOn Ω a lam Lam) : 0 ≤ Lam :=
+  h.pos.le.trans h.le
+
 /-- The lower quadratic-form bound supplied by uniform ellipticity. -/
 @[grind =>]
 lemma lower_bound (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)
@@ -281,6 +313,24 @@ lemma norm_point_matrixBilinearForm_le (h : UniformlyEllipticOn Ω a lam Lam) {x
     (hx : x ∈ Ω) (η ξ : EuclideanSpace ℝ n) :
     ‖matrixBilinearForm (a x) η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ :=
   norm_matrixBilinearForm_le_of_upper_bound (a x) (h.upper_bound hx) η ξ
+
+/-- At every point of the domain, uniform ellipticity bounds the operator norm of the
+attached matrix bilinear form by the upper ellipticity constant. -/
+@[grind =>]
+lemma opNorm_matrixBilinearForm_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X}
+    (hx : x ∈ Ω) :
+    ‖matrixBilinearForm (a x)‖ ≤ Lam :=
+  matrixBilinearForm_opNorm_le_of_upper_bound (a x) h.upper_nonneg (h.upper_bound hx)
+
+/-- Uniform ellipticity gives a radius-restricted pointwise bound for the coefficient
+integrand. -/
+@[grind =>]
+lemma norm_point_matrixBilinearForm_le_mul_of_norm_le
+    (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) {R S : ℝ}
+    {η ξ : EuclideanSpace ℝ n} (hη : ‖η‖ ≤ R) (hξ : ‖ξ‖ ≤ S) :
+    ‖matrixBilinearForm (a x) η ξ‖ ≤ Lam * R * S :=
+  (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le
+    (h.opNorm_matrixBilinearForm_le hx) hη hξ
 
 /-- At every point of the domain, uniform ellipticity gives coercivity of the attached matrix
 bilinear form. -/
