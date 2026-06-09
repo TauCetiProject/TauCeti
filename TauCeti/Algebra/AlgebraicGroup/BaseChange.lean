@@ -184,8 +184,8 @@ lemma mapPoints_baseChangePointsIso_inv_apply (φ : R →ₐ[K] S)
       φ (f.ofConv (1 ⊗ₜ[k] h)) := by
   rw [GrpCat.comp_apply]
   rw [baseChangePointsIso_inv_apply]
-  rw [TauCeti.HopfAlgebra.mapPoints, GrpCat.ofHom_apply, AlgHom.mapValue_apply]
-  rfl
+  rw [TauCeti.HopfAlgebra.mapPoints_apply_apply]
+  simp only [CommAlgCat.hom_ofHom]
 
 /-- Pointwise form of first restricting by the inverse base-change isomorphism and then
 post-composing the value algebra. -/
@@ -198,9 +198,7 @@ lemma baseChangePointsIso_inv_mapPoints_apply (φ : R →ₐ[K] S)
             (CommAlgCat.ofHom (φ.restrictScalars k))) f).ofConv) h =
       φ (f.ofConv (1 ⊗ₜ[k] h)) := by
   rw [GrpCat.comp_apply]
-  rw [TauCeti.HopfAlgebra.mapPoints, GrpCat.ofHom_apply, AlgHom.mapValue_apply]
-  rw [ofConv_toConv]
-  simp only [AlgHom.coe_comp, Function.comp_apply, CommAlgCat.hom_ofHom]
+  rw [TauCeti.HopfAlgebra.mapPoints_apply_apply]
   rw [baseChangePointsIso_inv_apply]
   rfl
 
@@ -215,11 +213,9 @@ lemma baseChangePointsIso_hom_mapPoints_apply (φ : R →ₐ[K] S)
             (CommAlgCat.ofHom φ)) f).ofConv) (1 ⊗ₜ[k] h) =
       φ (f.ofConv h) := by
   rw [GrpCat.comp_apply]
-  rw [TauCeti.HopfAlgebra.mapPoints, GrpCat.ofHom_apply, AlgHom.mapValue_apply]
-  rw [ofConv_toConv]
-  simp only [AlgHom.coe_comp, Function.comp_apply, CommAlgCat.hom_ofHom]
+  rw [TauCeti.HopfAlgebra.mapPoints_apply_apply]
   rw [baseChangePointsIso_hom_apply_tmul]
-  simp only [one_smul]
+  simp only [CommAlgCat.hom_ofHom, one_smul]
 
 /-- Pointwise form of first post-composing the value algebra and then applying the forward
 base-change isomorphism. -/
@@ -233,10 +229,8 @@ lemma mapPoints_baseChangePointsIso_hom_apply (φ : R →ₐ[K] S)
       φ (f.ofConv h) := by
   rw [GrpCat.comp_apply]
   rw [baseChangePointsIso_hom_apply_tmul]
-  rw [TauCeti.HopfAlgebra.mapPoints, GrpCat.ofHom_apply, AlgHom.mapValue_apply]
-  rw [ofConv_toConv]
-  simp only [CommAlgCat.hom_ofHom, one_smul]
-  rfl
+  rw [TauCeti.HopfAlgebra.mapPoints_apply_apply]
+  simp only [CommAlgCat.hom_ofHom, AlgHom.coe_restrictScalars', one_smul]
 
 /-- Base change of points is natural in the value algebra.
 
