@@ -19,7 +19,7 @@ deck transformations on individual fibres rather than only on the total space.
 
 * `TauCeti.Deck.fiberHomeomorphHom`: the homomorphism
   `Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b})`.
-* `TauCeti.Deck.fiberMulAction`: the induced action of `Deck p` on the fibre over `b`.
+* `TauCeti.Deck.instFiberMulAction`: the induced action of `Deck p` on the fibre over `b`.
 
 ## References
 
@@ -115,20 +115,9 @@ lemma fiberHomeomorph_zpow (φ : Deck p) (n : ℤ) :
     fiberHomeomorph (φ ^ n) b = fiberHomeomorph φ b ^ n := by
   exact (fiberHomeomorphHom p b).map_zpow φ n
 
-/-- The action of deck transformations on the fibre over `b`, obtained by restricting the
-ambient action on the total space. -/
-abbrev fiberMulAction (p : E → B) (b : B) : MulAction (Deck p) (p ⁻¹' {b}) where
-  smul φ e := fiberHomeomorphHom p b φ e
-  one_smul e := by
-    ext
-    rfl
-  mul_smul φ ψ e := by
-    ext
-    rfl
-
 /-- Deck transformations act on each fibre by restricting their action on the total space. -/
 instance instFiberMulAction : MulAction (Deck p) (p ⁻¹' {b}) :=
-  fiberMulAction p b
+  MulAction.compHom (p ⁻¹' {b}) (fiberHomeomorphHom p b)
 
 /-- The fibre action is evaluation of the fibre homeomorphism. -/
 @[simp]
@@ -145,15 +134,23 @@ lemma fiber_smul_coe (φ : Deck p) (e : p ⁻¹' {b}) :
 
 /-- The projection value of a point in the fibre is unchanged after the restricted deck
 action. -/
-lemma fiber_smul_mem (φ : Deck p) (e : p ⁻¹' {b}) :
+lemma map_fiber_smul (φ : Deck p) (e : p ⁻¹' {b}) :
     p (φ • e : E) = b := by
   exact (φ • e).2
+
+/-- The restricted deck action keeps points in the fibre over `b`. -/
+@[simp]
+lemma fiber_smul_mem (φ : Deck p) (e : p ⁻¹' {b}) :
+    (φ • e : E) ∈ p ⁻¹' {b} := by
+  exact map_fiber_smul φ e
 
 /-- The restricted fibre action agrees with the ambient action on the total space after
 coercing out of the fibre subtype. -/
 lemma fiber_smul_coe_eq_smul (φ : Deck p) (e : p ⁻¹' {b}) :
     (φ • e : E) = φ • (e : E) := by
-  rfl
+  trans φ.1 e.1
+  · exact fiber_smul_coe φ e
+  · exact (smul_eq_apply φ (e : E)).symm
 
 end Deck
 
