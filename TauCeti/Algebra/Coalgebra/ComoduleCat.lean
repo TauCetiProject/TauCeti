@@ -29,6 +29,8 @@ products, duals, and the Hopf-algebra specialization can be added on top.
 
 This is the categorical packaging of the standard right-comodule definition, added for
 Layer 1 of the Tau Ceti reductive-groups roadmap: "Comodules over a coalgebra/Hopf algebra".
+The bundled-category API follows the pattern of `Mathlib.Algebra.Category.CoalgCat.Basic` and
+`Mathlib.LinearAlgebra.QuadraticForm.QuadraticModuleCat`.
 -/
 
 open CategoryTheory
@@ -38,7 +40,7 @@ namespace TauCeti
 universe u v w
 
 variable (R : Type u) [CommRing R]
-variable (C : Type v) [AddCommGroup C] [Module R C] [Coalgebra R C]
+variable (C : Type v) [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
 /-- The category of right comodules over a fixed `R`-coalgebra `C`. -/
 structure ComoduleCat extends ModuleCat.{w} R where
@@ -97,6 +99,42 @@ abbrev ofHom {M N : Type w} [AddCommGroup M] [Module R M] [Comodule R C M]
     [AddCommGroup N] [Module R N] [Comodule R C N] (f : Comodule.Hom R C M N) :
     of R C M ⟶ of R C N :=
   f
+
+/-- Turning an unbundled comodule morphism into a categorical morphism and back is the identity. -/
+@[simp]
+theorem hom_ofHom {M N : Type w} [AddCommGroup M] [Module R M] [Comodule R C M]
+    [AddCommGroup N] [Module R N] [Comodule R C N] (f : Comodule.Hom R C M N) :
+    ConcreteCategory.hom (C := ComoduleCat R C) (ofHom (R := R) (C := C) f) = f :=
+  rfl
+
+/-- Turning a categorical morphism into an unbundled comodule morphism and back is the identity. -/
+@[simp]
+theorem ofHom_hom {M N : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
+    ofHom (R := R) (C := C) (ConcreteCategory.hom (C := ComoduleCat R C) f) = f :=
+  rfl
+
+/-- The categorical identity is the bundled form of the identity comodule morphism. -/
+@[simp]
+theorem ofHom_id {M : Type w} [AddCommGroup M] [Module R M] [Comodule R C M] :
+    ofHom (R := R) (C := C) (Comodule.Hom.id R C M) = 𝟙 (of R C M) :=
+  rfl
+
+/-- Categorical composition is the bundled form of composition of comodule morphisms. -/
+@[simp]
+theorem ofHom_comp {M N P : Type w} [AddCommGroup M] [Module R M] [Comodule R C M]
+    [AddCommGroup N] [Module R N] [Comodule R C N]
+    [AddCommGroup P] [Module R P] [Comodule R C P] (f : Comodule.Hom R C M N)
+    (g : Comodule.Hom R C N P) :
+    ofHom (R := R) (C := C) (Comodule.Hom.comp g f) =
+      ofHom (R := R) (C := C) f ≫ ofHom (R := R) (C := C) g :=
+  rfl
+
+/-- The bundled form of a comodule morphism applies as the original morphism. -/
+@[simp]
+theorem ofHom_apply {M N : Type w} [AddCommGroup M] [Module R M] [Comodule R C M]
+    [AddCommGroup N] [Module R N] [Comodule R C N] (f : Comodule.Hom R C M N) (m : M) :
+    ofHom (R := R) (C := C) f m = f m :=
+  rfl
 
 /-- The underlying linear map of a `ComoduleCat` morphism. -/
 abbrev homLinearMap {M N : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) : M →ₗ[R] N :=
