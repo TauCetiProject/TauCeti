@@ -3,7 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.RingTheory.Bialgebra.Convolution
-import TauCeti.Algebra.AlgebraicGroup.HopfAlgebra
+import TauCeti.Algebra.HopfAlgebra
 
 /-!
 # Convolution groups of algebra homomorphisms out of a Hopf algebra

@@ -68,6 +68,60 @@ namespace BialgHom
 variable {R A B : Type*} [CommSemiring R]
 variable [Semiring A] [Semiring B] [_root_.HopfAlgebra R A] [_root_.HopfAlgebra R B]
 
+/-- The coalgebra-hom projection of a bialgebra hom has the same underlying linear map as the
+bialgebra hom itself. -/
+private lemma toCoalgHom_toLinearMap (φ : A →ₐc[R] B) :
+    (φ.toCoalgHom : A →ₗ[R] B) = φ.toLinearMap :=
+  rfl
+
+/-- Applying an algebra homomorphism to a convolution product, oriented so it rewrites the
+`WithConv.ofConv` shape arising from bialgebra morphism composition. -/
+private lemma algHom_comp_convMul_ofConv (φ : A →ₐc[R] B) (f g : A →ₗ[R] A) :
+    (toConv (φ.toLinearMap.comp f) *
+          toConv (φ.toLinearMap.comp g)).ofConv =
+      φ.toLinearMap.comp (toConv f * toConv g).ofConv := by
+  change
+    (toConv ((φ : A →ₐ[R] B).toLinearMap.comp f) *
+          toConv ((φ : A →ₐ[R] B).toLinearMap.comp g)).ofConv =
+      (φ : A →ₐ[R] B).toLinearMap.comp (toConv f * toConv g).ofConv
+  simpa using
+    (LinearMap.algHom_comp_convMul_distrib (φ : A →ₐ[R] B) (toConv f) (toConv g)).symm
+
+/-- Precomposing a convolution product with a coalgebra homomorphism, oriented so it rewrites
+the `WithConv.ofConv` shape arising from bialgebra morphism composition. -/
+private lemma convMul_comp_coalgHom_ofConv (f g : B →ₗ[R] B) (φ : A →ₐc[R] B) :
+    (toConv (f.comp φ.toLinearMap) *
+          toConv (g.comp φ.toLinearMap)).ofConv =
+      (toConv f * toConv g).ofConv.comp φ.toLinearMap := by
+  change
+    (toConv (f.comp (φ : A →ₗc[R] B).toLinearMap) *
+          toConv (g.comp (φ : A →ₗc[R] B).toLinearMap)).ofConv =
+      (toConv f * toConv g).ofConv.comp (φ : A →ₗc[R] B).toLinearMap
+  simpa using
+    (LinearMap.convMul_comp_coalgHom_distrib (toConv f) (toConv g)
+      (φ : A →ₗc[R] B)).symm
+
+/-- Applying a bialgebra homomorphism to the convolution product `S * id`, in the exact
+normal form used in the antipode-preservation proof. -/
+private lemma algHom_comp_antipode_id_ofConv (φ : A →ₐc[R] B) :
+    (toConv (φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A))) *
+          toConv φ.toLinearMap).ofConv =
+      φ.toLinearMap.comp
+        (toConv (HopfAlgebra.antipode R (A := A)) * toConv LinearMap.id).ofConv := by
+  have h := algHom_comp_convMul_ofConv φ (HopfAlgebra.antipode R (A := A)) LinearMap.id
+  simpa only [LinearMap.comp_id] using h
+
+/-- Precomposing the convolution product `id * S` with a bialgebra homomorphism, in the
+exact normal form used in the antipode-preservation proof. -/
+private lemma id_antipode_comp_coalgHom_ofConv (φ : A →ₐc[R] B) :
+    (toConv φ.toLinearMap *
+          toConv ((HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap)).ofConv =
+      (toConv LinearMap.id * toConv (HopfAlgebra.antipode R (A := B))).ofConv.comp
+        φ.toLinearMap := by
+  have h := convMul_comp_coalgHom_ofConv (LinearMap.id : B →ₗ[R] B)
+    (HopfAlgebra.antipode R (A := B)) φ
+  simpa only [LinearMap.id_comp] using h
+
 /-- A bialgebra morphism between Hopf algebras commutes with the antipodes, as a statement
 about underlying linear maps. -/
 @[simp]
@@ -82,32 +136,16 @@ theorem toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
   have hg_left : g * f = 1 := by
     refine WithConv.ofConv_injective ?_
     dsimp [g, f]
-    -- `algHom_comp_convMul_distrib` is stated after applying an algebra hom to a
-    -- convolution product. The definitions of `BialgHom.toAlgHom`, `LinearMap.comp`, and
-    -- `WithConv.ofConv` reduce this goal to that exact shape.
-    change
-      (toConv ((φ : A →ₐ[R] B).toLinearMap.comp (HopfAlgebra.antipode R (A := A))) *
-          toConv ((φ : A →ₐ[R] B).toLinearMap.comp LinearMap.id)).ofConv =
-        (1 : WithConv (A →ₗ[R] B)).ofConv
-    rw [← LinearMap.algHom_comp_convMul_distrib (φ : A →ₐ[R] B)
-      (toConv (HopfAlgebra.antipode R (A := A))) (toConv LinearMap.id)]
+    rw [toCoalgHom_toLinearMap φ]
+    rw [algHom_comp_antipode_id_ofConv φ]
     rw [HopfAlgebra.antipode_convMul_id]
     ext a
     exact (φ : A →ₐ[R] B).commutes (Coalgebra.counit a)
   have hh_right : f * h = 1 := by
     refine WithConv.ofConv_injective ?_
     dsimp [f, h]
-    -- Dually, `convMul_comp_coalgHom_distrib` is stated before wrapping the two composed
-    -- linear maps with `toConv`; unfolding the coalgebra-hom coercion gives that form.
-    change
-      (toConv ((toConv (LinearMap.id : B →ₗ[R] B)).ofConv.comp
-            (φ : A →ₗc[R] B).toLinearMap) *
-          toConv ((toConv (HopfAlgebra.antipode R (A := B))).ofConv.comp
-            (φ : A →ₗc[R] B).toLinearMap)).ofConv =
-        (1 : WithConv (A →ₗ[R] B)).ofConv
-    rw [← LinearMap.convMul_comp_coalgHom_distrib
-      (toConv (LinearMap.id : B →ₗ[R] B)) (toConv (HopfAlgebra.antipode R (A := B)))
-      (φ : A →ₗc[R] B)]
+    rw [toCoalgHom_toLinearMap φ]
+    rw [id_antipode_comp_coalgHom_ofConv φ]
     rw [HopfAlgebra.id_convMul_antipode]
     ext a
     exact congr_arg (algebraMap R B) (CoalgHomClass.counit_comp_apply φ a)
