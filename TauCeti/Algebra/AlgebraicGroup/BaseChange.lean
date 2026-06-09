@@ -174,6 +174,70 @@ section Naturality
 variable [CommRing R] [CommRing S] [Algebra K R] [Algebra K S] [Algebra k R] [Algebra k S]
   [IsScalarTower k K R] [IsScalarTower k K S]
 
+omit [Algebra k R] [IsScalarTower k K R] in
+/-- Pointwise form of the inverse base-change naturality square. -/
+lemma mapPoints_baseChangePointsIso_inv_apply (φ : R →ₐ[K] S)
+    (f : TauCeti.HopfAlgebra.points (R := K) (H := K ⊗[k] H) (CommAlgCat.of K R))
+    (h : H) :
+    (((TauCeti.HopfAlgebra.mapPoints (R := K) (H := K ⊗[k] H) (CommAlgCat.ofHom φ) ≫
+          (baseChangePointsIso (k := k) (K := K) (H := H) (R := S)).inv) f).ofConv) h =
+      φ (f.ofConv (1 ⊗ₜ[k] h)) := by
+  rw [GrpCat.comp_apply]
+  rw [baseChangePointsIso_inv_apply]
+  rw [TauCeti.HopfAlgebra.mapPoints, GrpCat.ofHom_apply, AlgHom.mapValue_apply]
+  rfl
+
+/-- Pointwise form of first restricting by the inverse base-change isomorphism and then
+post-composing the value algebra. -/
+@[simp]
+lemma baseChangePointsIso_inv_mapPoints_apply (φ : R →ₐ[K] S)
+    (f : TauCeti.HopfAlgebra.points (R := K) (H := K ⊗[k] H) (CommAlgCat.of K R))
+    (h : H) :
+    ((((baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).inv ≫
+          TauCeti.HopfAlgebra.mapPoints (R := k) (H := H)
+            (CommAlgCat.ofHom (φ.restrictScalars k))) f).ofConv) h =
+      φ (f.ofConv (1 ⊗ₜ[k] h)) := by
+  rw [GrpCat.comp_apply]
+  rw [TauCeti.HopfAlgebra.mapPoints, GrpCat.ofHom_apply, AlgHom.mapValue_apply]
+  rw [ofConv_toConv]
+  simp only [AlgHom.coe_comp, Function.comp_apply, CommAlgCat.hom_ofHom]
+  rw [baseChangePointsIso_inv_apply]
+  rfl
+
+omit [Algebra k S] [IsScalarTower k K S] in
+/-- Pointwise form of first applying the forward base-change isomorphism and then
+post-composing the value algebra. -/
+@[simp]
+lemma baseChangePointsIso_hom_mapPoints_apply (φ : R →ₐ[K] S)
+    (f : TauCeti.HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k R)) (h : H) :
+    ((((baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom ≫
+          TauCeti.HopfAlgebra.mapPoints (R := K) (H := K ⊗[k] H)
+            (CommAlgCat.ofHom φ)) f).ofConv) (1 ⊗ₜ[k] h) =
+      φ (f.ofConv h) := by
+  rw [GrpCat.comp_apply]
+  rw [TauCeti.HopfAlgebra.mapPoints, GrpCat.ofHom_apply, AlgHom.mapValue_apply]
+  rw [ofConv_toConv]
+  simp only [AlgHom.coe_comp, Function.comp_apply, CommAlgCat.hom_ofHom]
+  rw [baseChangePointsIso_hom_apply_tmul]
+  simp only [one_smul]
+
+/-- Pointwise form of first post-composing the value algebra and then applying the forward
+base-change isomorphism. -/
+@[simp]
+lemma mapPoints_baseChangePointsIso_hom_apply (φ : R →ₐ[K] S)
+    (f : TauCeti.HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k R)) (h : H) :
+    (((TauCeti.HopfAlgebra.mapPoints (R := k) (H := H)
+            (CommAlgCat.ofHom (φ.restrictScalars k)) ≫
+          (baseChangePointsIso (k := k) (K := K) (H := H) (R := S)).hom) f).ofConv)
+        (1 ⊗ₜ[k] h) =
+      φ (f.ofConv h) := by
+  rw [GrpCat.comp_apply]
+  rw [baseChangePointsIso_hom_apply_tmul]
+  rw [TauCeti.HopfAlgebra.mapPoints, GrpCat.ofHom_apply, AlgHom.mapValue_apply]
+  rw [ofConv_toConv]
+  simp only [CommAlgCat.hom_ofHom, one_smul]
+  rfl
+
 /-- Base change of points is natural in the value algebra.
 
 Post-composing an `R`-valued point with a `K`-algebra map `R →ₐ[K] S` commutes with first
@@ -181,23 +245,12 @@ transporting points across the base-change isomorphism. -/
 lemma mapPoints_baseChangePointsIso_inv (φ : R →ₐ[K] S) :
     TauCeti.HopfAlgebra.mapPoints (R := K) (H := K ⊗[k] H) (CommAlgCat.ofHom φ) ≫
         (baseChangePointsIso (k := k) (K := K) (H := H) (R := S)).inv =
-      (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).inv ≫
+        (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).inv ≫
         TauCeti.HopfAlgebra.mapPoints (R := k) (H := H)
           (CommAlgCat.ofHom (φ.restrictScalars k)) := by
   ext f h
-  -- `ext` for the bundled group morphisms reduces the statement to equality of the
-  -- underlying algebra maps, whose values are exposed by the pointwise API.
-  change (((baseChangePointsIso (k := k) (K := K) (H := H) (R := S)).inv
-      (TauCeti.HopfAlgebra.mapPoints (R := K) (H := K ⊗[k] H)
-        (CommAlgCat.ofHom φ) f)).ofConv h) =
-    ((TauCeti.HopfAlgebra.mapPoints (R := k) (H := H)
-      (CommAlgCat.ofHom (φ.restrictScalars k))
-      ((baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).inv f)).ofConv h)
-  rw [baseChangePointsIso_inv_apply]
-  rw [TauCeti.HopfAlgebra.mapPoints_apply_apply]
-  rw [TauCeti.HopfAlgebra.mapPoints_apply_apply]
-  rw [baseChangePointsIso_inv_apply]
-  rfl
+  rw [mapPoints_baseChangePointsIso_inv_apply]
+  rw [baseChangePointsIso_inv_mapPoints_apply]
 
 /-- Forward naturality form of `baseChangePointsIso` in the value algebra. -/
 lemma baseChangePointsIso_hom_mapPoints (φ : R →ₐ[K] S) :
@@ -207,20 +260,10 @@ lemma baseChangePointsIso_hom_mapPoints (φ : R →ₐ[K] S) :
           (CommAlgCat.ofHom (φ.restrictScalars k)) ≫
         (baseChangePointsIso (k := k) (K := K) (H := H) (R := S)).hom := by
   ext f h
-  -- The target is a base-changed point; after `ext`, evaluation at `1 ⊗ₜ[k] h`
-  -- is the stable definitional form supplied by the pointwise simp lemmas below.
-  change ((TauCeti.HopfAlgebra.mapPoints (R := K) (H := K ⊗[k] H)
-      (CommAlgCat.ofHom φ)
-      ((baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom f)).ofConv
-      (1 ⊗ₜ[k] h)) =
-    (((baseChangePointsIso (k := k) (K := K) (H := H) (R := S)).hom
-      (TauCeti.HopfAlgebra.mapPoints (R := k) (H := H)
-        (CommAlgCat.ofHom (φ.restrictScalars k)) f)).ofConv (1 ⊗ₜ[k] h))
-  rw [TauCeti.HopfAlgebra.mapPoints_apply_apply]
-  rw [baseChangePointsIso_hom_apply_tmul]
-  rw [baseChangePointsIso_hom_apply_tmul]
-  rw [TauCeti.HopfAlgebra.mapPoints_apply_apply]
-  simp only [CommAlgCat.hom_ofHom, AlgHom.coe_restrictScalars', one_smul]
+  simp only [AlgHom.coe_comp, AlgHom.coe_restrictScalars', Function.comp_apply,
+    Algebra.TensorProduct.includeRight_apply]
+  rw [baseChangePointsIso_hom_mapPoints_apply]
+  rw [mapPoints_baseChangePointsIso_hom_apply]
 
 end Naturality
 
