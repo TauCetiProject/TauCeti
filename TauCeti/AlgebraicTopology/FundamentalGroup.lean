@@ -18,6 +18,7 @@ open FundamentalGroup
 variable {X : Type*} [TopologicalSpace X] {x : X}
 
 /-- The identity element of the fundamental group is represented by the constant path. -/
+@[simp]
 lemma fundamentalGroup_toPath_one :
     (1 : FundamentalGroup X x).toPath = Path.Homotopic.Quotient.refl x :=
   by
@@ -38,6 +39,7 @@ lemma fundamentalGroup_toPath_one :
 The fundamental group is the endomorphism group of a fundamental-groupoid object, so
 multiplication follows categorical endomorphism multiplication. On path homotopy classes this
 means `γ * δ` is represented by first traversing `δ`, then `γ`. -/
+@[simp]
 lemma fundamentalGroup_toPath_mul (γ δ : FundamentalGroup X x) :
     (γ * δ).toPath = Path.Homotopic.Quotient.trans δ.toPath γ.toPath :=
   by
