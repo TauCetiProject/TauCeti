@@ -270,6 +270,22 @@ theorem comp_add {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) (g h : N ⟶ 
   ext m
   rfl
 
+/-- Composition in `ComoduleCat` is compatible with scalar multiplication in the left
+morphism. -/
+@[simp]
+theorem smul_comp {M N P : ComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) (g : N ⟶ P) :
+    (r • f) ≫ g = r • (f ≫ g) := by
+  ext m
+  exact map_smul g.toLinearMap r (f m)
+
+/-- Composition in `ComoduleCat` is compatible with scalar multiplication in the right
+morphism. -/
+@[simp]
+theorem comp_smul {M N P : ComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) (g : N ⟶ P) :
+    f ≫ (r • g) = r • (f ≫ g) := by
+  ext m
+  rfl
+
 /-- Composing the zero morphism on the left gives the zero morphism. -/
 @[simp]
 theorem zero_comp {M N P : ComoduleCat.{u, v, w} R C} (f : N ⟶ P) :
