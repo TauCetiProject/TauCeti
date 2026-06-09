@@ -75,24 +75,18 @@ set_option backward.privateInPublic.warn false in
 abbrev of (H : Type v) [CommRing H] [_root_.HopfAlgebra R H] : CommHopfAlgCat.{u, v} R where
   carrier := H
 
-/-- Morphisms of commutative Hopf algebras are bialgebra morphisms. -/
-@[ext]
-structure Hom (H K : CommHopfAlgCat.{u, v} R) where
-  /-- The underlying bialgebra morphism. -/
-  toBialgHom' : H →ₐc[R] K
-
 instance category : Category (CommHopfAlgCat.{u, v} R) where
-  Hom H K := Hom H K
-  id H := ⟨BialgHom.id R H⟩
-  comp φ ψ := ⟨ψ.toBialgHom'.comp φ.toBialgHom'⟩
+  Hom H K := CommBialgCat.of R H ⟶ CommBialgCat.of R K
+  id H := 𝟙 (CommBialgCat.of R H)
+  comp φ ψ := φ ≫ ψ
 
 instance concreteCategory :
     ConcreteCategory (CommHopfAlgCat.{u, v} R) (fun H K => H →ₐc[R] K) where
-  hom φ := φ.toBialgHom'
-  ofHom φ := ⟨φ⟩
+  hom φ := φ.hom
+  ofHom φ := CommBialgCat.ofHom φ
 
 /-- Turn a morphism in `CommHopfAlgCat` back into a bialgebra morphism. -/
-abbrev Hom.toBialgHom {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) : H →ₐc[R] K :=
+abbrev toBialgHom {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) : H →ₐc[R] K :=
   ConcreteCategory.hom (C := CommHopfAlgCat R) φ
 
 /-- Typecheck a bialgebra morphism as a morphism in `CommHopfAlgCat`. -/
@@ -105,28 +99,28 @@ abbrev ofHom {H K : Type v} [CommRing H] [CommRing K]
 morphisms are equal. -/
 @[ext]
 lemma hom_ext {H K : CommHopfAlgCat.{u, v} R} {φ ψ : H ⟶ K}
-    (h : φ.toBialgHom = ψ.toBialgHom) : φ = ψ :=
-  Hom.ext h
+    (h : toBialgHom φ = toBialgHom ψ) : φ = ψ :=
+  CommBialgCat.hom_ext h
 
 @[simp]
 lemma toBialgHom_id {H : CommHopfAlgCat.{u, v} R} :
-    (𝟙 H : H ⟶ H).toBialgHom = BialgHom.id R H :=
+    toBialgHom (𝟙 H : H ⟶ H) = BialgHom.id R H :=
   rfl
 
 @[simp]
 lemma toBialgHom_comp {H K L : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) (ψ : K ⟶ L) :
-    (φ ≫ ψ).toBialgHom = ψ.toBialgHom.comp φ.toBialgHom :=
+    toBialgHom (φ ≫ ψ) = (toBialgHom ψ).comp (toBialgHom φ) :=
   rfl
 
 @[simp]
 lemma ofHom_toBialgHom {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
-    ofHom φ.toBialgHom = φ :=
+    ofHom (toBialgHom φ) = φ :=
   rfl
 
 @[simp]
 lemma toBialgHom_ofHom {H K : Type v} [CommRing H] [CommRing K]
     [_root_.HopfAlgebra R H] [_root_.HopfAlgebra R K] (φ : H →ₐc[R] K) :
-    (ofHom (R := R) φ).toBialgHom = φ :=
+    toBialgHom (ofHom (R := R) φ) = φ :=
   rfl
 
 /-- The forgetful functor from commutative Hopf algebras to commutative bialgebras. -/
@@ -134,13 +128,13 @@ instance hasForgetToCommBialgCat :
     HasForget₂ (CommHopfAlgCat.{u, v} R) (CommBialgCat.{v} R) where
   forget₂ :=
     { obj H := CommBialgCat.of R H
-      map φ := CommBialgCat.ofHom φ.toBialgHom }
+      map φ := φ }
 
 instance hasForgetToHopfAlgCat :
     HasForget₂ (CommHopfAlgCat.{u, v} R) (_root_.HopfAlgCat.{v} R) where
   forget₂ :=
     { obj H := _root_.HopfAlgCat.of R H
-      map φ := _root_.HopfAlgCat.ofHom φ.toBialgHom }
+      map φ := _root_.HopfAlgCat.ofHom (toBialgHom φ) }
 
 @[simp]
 lemma forget₂_commBialgCat_obj (H : CommHopfAlgCat.{u, v} R) :
@@ -151,7 +145,7 @@ lemma forget₂_commBialgCat_obj (H : CommHopfAlgCat.{u, v} R) :
 @[simp]
 lemma forget₂_commBialgCat_map {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
     (forget₂ (CommHopfAlgCat.{u, v} R) (CommBialgCat.{v} R)).map φ =
-      CommBialgCat.ofHom φ.toBialgHom :=
+      φ :=
   rfl
 
 @[simp]
@@ -163,7 +157,7 @@ lemma forget₂_hopfAlgCat_obj (H : CommHopfAlgCat.{u, v} R) :
 @[simp]
 lemma forget₂_hopfAlgCat_map {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
     (forget₂ (CommHopfAlgCat.{u, v} R) (_root_.HopfAlgCat.{v} R)).map φ =
-      _root_.HopfAlgCat.ofHom φ.toBialgHom :=
+      _root_.HopfAlgCat.ofHom (toBialgHom φ) :=
   rfl
 
 /-- A morphism of coordinate commutative Hopf algebras induces a natural transformation
@@ -175,25 +169,25 @@ noncomputable def mapPointsFunctor {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K
     HopfAlgebra.pointsFunctor (R := R) (H := K) ⟶
       HopfAlgebra.pointsFunctor (R := R) (H := H) where
   app A := GrpCat.ofHom
-    (AlgHom.mapDomain (H₁ := H) (H₂ := K) (A := A) φ.toBialgHom)
+    (AlgHom.mapDomain (H₁ := H) (H₂ := K) (A := A) (toBialgHom φ))
   naturality {A B} ψ := by
     simp only [HopfAlgebra.pointsFunctor_map, HopfAlgebra.mapPoints]
-    exact GrpCat.hom_ext (AlgHom.mapValue_mapDomain φ.toBialgHom ψ.hom)
+    exact GrpCat.hom_ext (AlgHom.mapValue_mapDomain (toBialgHom φ) ψ.hom)
 
 /-- On points, `mapPointsFunctor φ` is pre-composition with `φ`. -/
 @[simp]
 lemma mapPointsFunctor_app_apply {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K)
     (A : CommAlgCat.{w} R) (f : HopfAlgebra.points (R := R) (H := K) A) :
     (mapPointsFunctor φ).app A f =
-      toConv (f.ofConv.comp (φ.toBialgHom : H →ₐ[R] K)) := by
-  exact AlgHom.mapDomain_apply (A := A) φ.toBialgHom f
+      toConv (f.ofConv.comp (toBialgHom φ : H →ₐ[R] K)) := by
+  exact AlgHom.mapDomain_apply (A := A) (toBialgHom φ) f
 
 /-- Pointwise form of `mapPointsFunctor_app_apply`. -/
 @[simp]
 lemma mapPointsFunctor_app_apply_apply {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K)
     (A : CommAlgCat.{w} R) (f : HopfAlgebra.points (R := R) (H := K) A) (h : H) :
-    (((mapPointsFunctor φ).app A f).ofConv) h = f.ofConv (φ.toBialgHom h) := by
-  exact AlgHom.mapDomain_apply_apply (A := A) φ.toBialgHom f h
+    (((mapPointsFunctor φ).app A f).ofConv) h = f.ofConv (toBialgHom φ h) := by
+  exact AlgHom.mapDomain_apply_apply (A := A) (toBialgHom φ) f h
 
 /-- `mapPointsFunctor` sends the identity coordinate morphism to the identity natural
 transformation. -/
@@ -203,9 +197,7 @@ lemma mapPointsFunctor_id (H : CommHopfAlgCat.{u, v} R) :
       𝟙 (HopfAlgebra.pointsFunctor (R := R) (H := H) :
         CommAlgCat.{w} R ⥤ GrpCat.{max v w}) := by
   ext A f
-  change (AlgHom.mapDomain (H₁ := H) (H₂ := H) (A := A) (BialgHom.id R H)) f = f
-  rw [AlgHom.mapDomain_id]
-  rfl
+  simp
 
 /-- `mapPointsFunctor` sends coordinate-algebra composition to reverse composition of natural
 transformations. -/
@@ -213,12 +205,7 @@ lemma mapPointsFunctor_comp {H K L : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) (ψ
     mapPointsFunctor (φ ≫ ψ) =
       mapPointsFunctor ψ ≫ mapPointsFunctor φ := by
   ext A f
-  change (AlgHom.mapDomain (H₁ := H) (H₂ := L) (A := A)
-      (ψ.toBialgHom.comp φ.toBialgHom)) f =
-    (AlgHom.mapDomain (H₁ := H) (H₂ := K) (A := A) φ.toBialgHom)
-      ((AlgHom.mapDomain (H₁ := K) (H₂ := L) (A := A) ψ.toBialgHom) f)
-  rw [AlgHom.mapDomain_comp]
-  rfl
+  simp [mapPointsFunctor_app_apply, AlgHom.comp_assoc]
 
 /-- The contravariant functor assigning to a commutative Hopf algebra its group-valued
 functor of points.
@@ -253,7 +240,7 @@ lemma pointsFunctor_map_app_apply_apply {H K : (CommHopfAlgCat.{u, v} R)ᵒᵖ}
     (φ : H ⟶ K) (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := H.unop) A) (h : K.unop) :
     ((((pointsFunctor (R := R)).map φ).app A f).ofConv) h =
-      f.ofConv (φ.unop.toBialgHom h) := by
+      f.ofConv (toBialgHom φ.unop h) := by
   rw [pointsFunctor_map]
   exact mapPointsFunctor_app_apply_apply (R := R) φ.unop A f h
 
