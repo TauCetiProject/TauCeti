@@ -2,7 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.GroupTheory.GroupAction.Quotient
+import Mathlib.GroupTheory.GroupAction.Basic
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.FiberTransport
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
 
@@ -70,12 +70,6 @@ lemma fiberOrbitClass_smul (φ : Deck p) (e : p ⁻¹' {b}) :
   rw [fiberOrbitClass_eq_iff_mem_orbit]
   exact MulAction.mem_orbit _ φ
 
-/-- Membership in the orbit represented by a fibre-orbit class. -/
-lemma mem_orbit_fiberOrbitClass_iff (e e' : p ⁻¹' {b}) :
-    e' ∈ MulAction.orbitRel.Quotient.orbit (fiberOrbitClass e) ↔
-      fiberOrbitClass e' = fiberOrbitClass e := by
-  exact MulAction.orbitRel.Quotient.mem_orbit
-
 /-- The fibre-orbit class of a deck transform of a point is the original class, in the
 orientation useful for rewriting hypotheses. -/
 lemma fiberOrbitClass_eq_of_mem_orbit {e e' : p ⁻¹' {b}}
@@ -98,24 +92,22 @@ def fiberOrbitQuotientEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (b : B
     intro x
     refine Quotient.inductionOn' x ?_
     intro e
-    change Quotient.mk'' ((fiberMap h.symm (map_symm_eq_of_map_eq h hpq) b)
-        (fiberMap h hpq b e)) = Quotient.mk'' e
+    simp only [Quotient.map'_mk'']
     have heq :
-        (fiberMap h.symm (map_symm_eq_of_map_eq h hpq) b) (fiberMap h hpq b e) = e := by
-      ext
-      simp
+        fiberMap h.symm (map_symm_eq_of_map_eq h hpq) b (fiberMap h hpq b e) = e := by
+      rw [← fiberMap_symm (h := h) (hpq := hpq) (b := b)]
+      exact (fiberMap h hpq b).left_inv e
     exact congrArg Quotient.mk'' heq
   right_inv := by
     intro y
     refine Quotient.inductionOn' y ?_
     intro f
-    change Quotient.mk'' ((fiberMap h hpq b)
-        (fiberMap h.symm (map_symm_eq_of_map_eq h hpq) b f)) = Quotient.mk'' f
-    have heq :
-        (fiberMap h hpq b) (fiberMap h.symm (map_symm_eq_of_map_eq h hpq) b f) = f := by
-      ext
-      simp
-    exact congrArg Quotient.mk'' heq
+    simp only [Quotient.map'_mk'']
+    have hff :
+        fiberMap h hpq b (fiberMap h.symm (map_symm_eq_of_map_eq h hpq) b f) = f := by
+      rw [← fiberMap_symm (h := h) (hpq := hpq) (b := b)]
+      exact (fiberMap h hpq b).right_inv f
+    exact congrArg Quotient.mk'' hff
 
 /-- The induced equivalence on fibre-orbit quotients sends the class of a point to the class
 of its transported point. -/
@@ -133,7 +125,10 @@ lemma fiberOrbitQuotientEquiv_symm_apply (h : E ≃ₜ F) (hpq : ∀ e, q (h e) 
     (f : q ⁻¹' {b}) :
     (fiberOrbitQuotientEquiv h hpq b).symm (fiberOrbitClass f) =
       fiberOrbitClass ((fiberMap h hpq b).symm f) := by
-  rfl
+  simp only [fiberOrbitQuotientEquiv, fiberOrbitClass_eq_mk]
+  exact congrArg Quotient.mk''
+    (congrArg (fun g : q ⁻¹' {b} ≃ₜ p ⁻¹' {b} => g f)
+      (fiberMap_symm (h := h) (hpq := hpq) (b := b))).symm
 
 /-- The identity over-base homeomorphism induces the identity on fibre-orbit quotients. -/
 @[simp]
