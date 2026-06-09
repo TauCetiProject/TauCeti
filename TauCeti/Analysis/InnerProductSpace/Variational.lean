@@ -48,8 +48,8 @@ lemma eq_zero_of_forall_apply_eq_zero (hB : IsCoercive B) {u : V}
   · positivity
 
 /-- Two vectors satisfying the same variational equation are equal. -/
-lemma eq_of_forall_apply_eq_of_forall_apply_eq (hB : IsCoercive B) {ℓ : StrongDual ℝ V}
-    {u₁ u₂ : V} (hu₁ : ∀ v, B u₁ v = ℓ v) (hu₂ : ∀ v, B u₂ v = ℓ v) :
+lemma eq_of_forall_apply_eq_of_forall_apply_eq (hB : IsCoercive B) {f : V → ℝ}
+    {u₁ u₂ : V} (hu₁ : ∀ v, B u₁ v = f v) (hu₂ : ∀ v, B u₂ v = f v) :
     u₁ = u₂ := by
   rw [← sub_eq_zero]
   refine eq_zero_of_forall_apply_eq_zero hB ?_
