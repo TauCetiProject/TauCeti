@@ -6,6 +6,7 @@
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 import TauCeti.Algebra.Coalgebra.Comodule.Hom
+import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 import TauCeti.Algebra.Coalgebra.ComoduleCat
 import TauCeti.AlgebraicGeometry.WeilDivisor
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected
