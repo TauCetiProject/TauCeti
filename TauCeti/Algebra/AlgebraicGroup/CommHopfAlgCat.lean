@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Algebra.Category.CommBialgCat
 import Mathlib.Algebra.Category.HopfAlgCat.Basic
+import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 import TauCeti.Algebra.AlgebraicGroup.HopfMap
 import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
 
@@ -44,63 +45,56 @@ namespace TauCeti
 
 universe u v w
 
-variable (R : Type u) [CommRing R]
+/-- The object property on `HopfAlgCat R` selecting commutative Hopf algebras. -/
+def commHopfAlgProperty (R : Type u) [CommRing R] :
+    ObjectProperty (_root_.HopfAlgCat.{v} R) :=
+  fun H => ∀ x y : H, x * y = y * x
 
-set_option backward.privateInPublic true in
 /-- The category of commutative Hopf algebras over a commutative ring `R`.
 
-Objects are commutative rings carrying a Hopf-algebra structure over `R`; morphisms are
-bialgebra morphisms. A bialgebra morphism between Hopf algebras automatically preserves the
-antipode, by `BialgHom.map_antipode`, so no extra field is needed in the morphism type. -/
-structure CommHopfAlgCat where
-  private mk ::
-  /-- The underlying carrier type. -/
-  carrier : Type v
-  [commRing : CommRing carrier]
-  [hopfAlgebra : _root_.HopfAlgebra R carrier]
-
-attribute [instance] CommHopfAlgCat.commRing CommHopfAlgCat.hopfAlgebra
+This is the full subcategory of Mathlib's `HopfAlgCat R` on objects whose multiplication is
+commutative. Morphisms are therefore the existing `HopfAlgCat` morphisms, i.e. bialgebra
+morphisms. A bialgebra morphism between Hopf algebras automatically preserves the antipode, by
+`BialgHom.map_antipode`, so no extra field is needed in the morphism type. -/
+abbrev CommHopfAlgCat (R : Type u) [CommRing R] :=
+  (commHopfAlgProperty (R := R)).FullSubcategory
 
 namespace CommHopfAlgCat
 
-instance : CoeSort (CommHopfAlgCat.{u, v} R) (Type v) :=
-  ⟨CommHopfAlgCat.carrier⟩
+variable {R : Type u} [CommRing R]
 
-variable {R}
+instance : CoeSort (CommHopfAlgCat.{u, v} R) (Type v) :=
+  ⟨fun H => H.obj⟩
+
+instance commRing (H : CommHopfAlgCat.{u, v} R) : CommRing H :=
+  CommRing.mk H.property
+
+instance hopfAlgebra (H : CommHopfAlgCat.{u, v} R) : _root_.HopfAlgebra R H :=
+  inferInstanceAs (_root_.HopfAlgebra R H.obj)
 
 variable (R) in
-set_option backward.privateInPublic true in
 set_option backward.privateInPublic.warn false in
 /-- Construct a bundled commutative Hopf algebra from the usual unbundled typeclasses. -/
-abbrev of (H : Type v) [CommRing H] [_root_.HopfAlgebra R H] : CommHopfAlgCat.{u, v} R where
-  carrier := H
-
-instance category : Category (CommHopfAlgCat.{u, v} R) where
-  Hom H K := CommBialgCat.of R H ⟶ CommBialgCat.of R K
-  id H := 𝟙 (CommBialgCat.of R H)
-  comp φ ψ := φ ≫ ψ
-
-instance concreteCategory :
-    ConcreteCategory (CommHopfAlgCat.{u, v} R) (fun H K => H →ₐc[R] K) where
-  hom φ := φ.hom
-  ofHom φ := CommBialgCat.ofHom φ
+abbrev of (H : Type v) [CommRing H] [_root_.HopfAlgebra R H] : CommHopfAlgCat.{u, v} R :=
+  ⟨_root_.HopfAlgCat.of R H, fun x y => mul_comm x y⟩
 
 /-- Turn a morphism in `CommHopfAlgCat` back into a bialgebra morphism. -/
 abbrev toBialgHom {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) : H →ₐc[R] K :=
-  ConcreteCategory.hom (C := CommHopfAlgCat R) φ
+  φ.hom.toBialgHom
 
 /-- Typecheck a bialgebra morphism as a morphism in `CommHopfAlgCat`. -/
 abbrev ofHom {H K : Type v} [CommRing H] [CommRing K]
     [_root_.HopfAlgebra R H] [_root_.HopfAlgebra R K] (φ : H →ₐc[R] K) :
     of R H ⟶ of R K :=
-  ConcreteCategory.ofHom (C := CommHopfAlgCat R) φ
+  ObjectProperty.homMk (_root_.HopfAlgCat.ofHom φ)
 
 /-- Two morphisms of commutative Hopf algebras are equal when their underlying bialgebra
 morphisms are equal. -/
 @[ext]
 lemma hom_ext {H K : CommHopfAlgCat.{u, v} R} {φ ψ : H ⟶ K}
     (h : toBialgHom φ = toBialgHom ψ) : φ = ψ :=
-  CommBialgCat.hom_ext h
+  ObjectProperty.hom_ext (P := commHopfAlgProperty R)
+    (_root_.HopfAlgCat.hom_ext φ.hom ψ.hom h)
 
 @[simp]
 lemma toBialgHom_id {H : CommHopfAlgCat.{u, v} R} :
@@ -128,13 +122,11 @@ instance hasForgetToCommBialgCat :
     HasForget₂ (CommHopfAlgCat.{u, v} R) (CommBialgCat.{v} R) where
   forget₂ :=
     { obj H := CommBialgCat.of R H
-      map φ := φ }
+      map φ := CommBialgCat.ofHom (toBialgHom φ) }
 
 instance hasForgetToHopfAlgCat :
     HasForget₂ (CommHopfAlgCat.{u, v} R) (_root_.HopfAlgCat.{v} R) where
-  forget₂ :=
-    { obj H := _root_.HopfAlgCat.of R H
-      map φ := _root_.HopfAlgCat.ofHom (toBialgHom φ) }
+  forget₂ := (commHopfAlgProperty (R := R)).ι
 
 @[simp]
 lemma forget₂_commBialgCat_obj (H : CommHopfAlgCat.{u, v} R) :
@@ -145,19 +137,19 @@ lemma forget₂_commBialgCat_obj (H : CommHopfAlgCat.{u, v} R) :
 @[simp]
 lemma forget₂_commBialgCat_map {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
     (forget₂ (CommHopfAlgCat.{u, v} R) (CommBialgCat.{v} R)).map φ =
-      φ :=
+      CommBialgCat.ofHom (toBialgHom φ) :=
   rfl
 
 @[simp]
 lemma forget₂_hopfAlgCat_obj (H : CommHopfAlgCat.{u, v} R) :
     (forget₂ (CommHopfAlgCat.{u, v} R) (_root_.HopfAlgCat.{v} R)).obj H =
-      _root_.HopfAlgCat.of R H :=
+      H.obj :=
   rfl
 
 @[simp]
 lemma forget₂_hopfAlgCat_map {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
     (forget₂ (CommHopfAlgCat.{u, v} R) (_root_.HopfAlgCat.{v} R)).map φ =
-      _root_.HopfAlgCat.ofHom (toBialgHom φ) :=
+      φ.hom :=
   rfl
 
 /-- A morphism of coordinate commutative Hopf algebras induces a natural transformation
