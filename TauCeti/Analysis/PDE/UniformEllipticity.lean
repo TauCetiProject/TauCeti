@@ -215,13 +215,15 @@ lemma of_bounds (hlam : 0 < lam) (hlamLam : lam ≤ Lam)
 
 /-- At every point of the domain, uniform ellipticity gives a norm bound for the attached
 matrix bilinear form. -/
+@[grind =>]
 lemma norm_point_matrixBilinearForm_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X}
     (hx : x ∈ Ω) (η ξ : EuclideanSpace ℝ n) :
     ‖matrixBilinearForm (a x) η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ :=
   norm_matrixBilinearForm_le_of_upper_bound (a x) (h.upper_bound hx) η ξ
 
-/-- At every point of the domain, uniform ellipticity gives coercivity of the attached
-matrix bilinear form with coercivity constant `λ`. -/
+/-- At every point of the domain, uniform ellipticity gives coercivity of the attached matrix
+bilinear form. -/
+@[grind =>]
 lemma isCoercive_matrixBilinearForm (h : UniformlyEllipticOn Ω a lam Lam) {x : X}
     (hx : x ∈ Ω) :
     IsCoercive (matrixBilinearForm (a x)) :=
