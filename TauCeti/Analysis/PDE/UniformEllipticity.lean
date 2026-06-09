@@ -164,8 +164,11 @@ lemma selfAdjointPart (h : UniformlyEllipticOn Ω a lam Lam) :
   refine of_bounds h.pos h.le (fun {x} hx ξ => ?_) (fun {x} hx η ξ => ?_)
   · rw [TauCeti.Matrix.toQuadraticForm'_selfAdjointPart]
     exact h.lower_bound hx ξ
-  · rw [TauCeti.Matrix.selfAdjointPart_eq,
-      smul_mulVec, dotProduct_smul, add_mulVec, dotProduct_add]
+  · have hself :
+        (_root_.selfAdjointPart ℝ (a x) : Matrix n n ℝ) = (2 : ℝ)⁻¹ • (a x + (a x)ᵀ) := by
+      ext i j
+      simp
+    rw [hself, smul_mulVec, dotProduct_smul, add_mulVec, dotProduct_add]
     set C : ℝ := Lam * ‖η‖ * ‖ξ‖
     have hA : |η ⬝ᵥ (a x *ᵥ ξ)| ≤ C := h.upper_bound hx η ξ
     have hAT : |η ⬝ᵥ ((a x)ᵀ *ᵥ ξ)| ≤ C := h.upper_bound_transpose hx η ξ
