@@ -7,25 +7,24 @@ import Mathlib.Algebra.Star.Module
 import Mathlib.LinearAlgebra.Matrix.Symmetric
 
 /-!
-# Symmetric parts of PDE coefficient matrices
+# Self-adjoint parts of PDE coefficient matrices
 
 For a real divergence-form coefficient matrix `A`, the quadratic expression
-`ξᵀ A ξ` only depends on the symmetric part `(A + Aᵀ) / 2`. This file records that
-bookkeeping in the explicit-constant API from `TauCeti.Analysis.PDE.UniformEllipticity`.
+`ξᵀ A ξ` only depends on Mathlib's self-adjoint part `(A + Aᵀ) / 2`. This file
+records that bookkeeping in the explicit-constant API from
+`TauCeti.Analysis.PDE.UniformEllipticity`.
 
-The main result is `UniformlyEllipticOn.symmetricPart`: a uniformly elliptic, possibly
-nonsymmetric coefficient field has a symmetric part that is uniformly elliptic with the
-same constants. This is a small prerequisite for the PDE roadmap's energy-form and
-Lax--Milgram lane, where coercivity comes from the symmetric quadratic part while
-boundedness still controls the full bilinear form.
+The main result is `UniformlyEllipticOn.selfAdjointPart`: a uniformly elliptic, possibly
+nonsymmetric coefficient field has a self-adjoint part that is uniformly elliptic with the
+same constants. This is a small prerequisite for the PDE roadmap's energy-form and Lax--Milgram
+lane, where coercivity comes from the symmetric quadratic part while boundedness still controls
+the full bilinear form.
 
 ## Main declarations
 
-* `TauCeti.PDE.symmetricPart`: Mathlib's self-adjoint part, specialized to real matrices.
-* `TauCeti.PDE.skewPart`: Mathlib's skew-adjoint part, specialized to real matrices.
-* `TauCeti.PDE.toQuadraticForm'_symmetricPart`: symmetrization preserves `ξᵀ A ξ`.
-* `TauCeti.PDE.UniformlyEllipticOn.symmetricPart`: uniform ellipticity descends to the
-  symmetric part with unchanged constants.
+* `TauCeti.PDE.toQuadraticForm'_selfAdjointPart`: symmetrization preserves `ξᵀ A ξ`.
+* `TauCeti.PDE.UniformlyEllipticOn.selfAdjointPart`: uniform ellipticity descends to Mathlib's
+  self-adjoint part with unchanged constants.
 -/
 
 namespace TauCeti
@@ -36,108 +35,92 @@ open Matrix
 
 variable {X n : Type*} [Fintype n] [DecidableEq n]
 
-/-- The symmetric part `(A + Aᵀ) / 2` of a real matrix. -/
-noncomputable def symmetricPart (A : Matrix n n ℝ) : Matrix n n ℝ :=
-  selfAdjointPart ℝ A
-
-/-- The skew-symmetric part `(A - Aᵀ) / 2` of a real matrix. -/
-noncomputable def skewPart (A : Matrix n n ℝ) : Matrix n n ℝ :=
-  skewAdjointPart ℝ A
-
 omit [Fintype n] [DecidableEq n] in
-/-- The symmetric part is Mathlib's self-adjoint part, coerced back to matrices. -/
-lemma symmetricPart_def (A : Matrix n n ℝ) :
-    symmetricPart A = (selfAdjointPart ℝ A : Matrix n n ℝ) :=
-  rfl
-
-omit [Fintype n] [DecidableEq n] in
-/-- The skew-symmetric part is Mathlib's skew-adjoint part, coerced back to matrices. -/
-lemma skewPart_def (A : Matrix n n ℝ) :
-    skewPart A = (skewAdjointPart ℝ A : Matrix n n ℝ) :=
-  rfl
-
-omit [Fintype n] [DecidableEq n] in
-/-- The symmetric part of a real matrix, written with transpose. -/
-lemma symmetricPart_eq (A : Matrix n n ℝ) :
-    symmetricPart A = (2 : ℝ)⁻¹ • (A + Aᵀ) := by
-  rw [symmetricPart, selfAdjointPart_apply_coe, Matrix.star_eq_conjTranspose,
+/-- Mathlib's self-adjoint part of a real matrix, written with transpose. -/
+lemma selfAdjointPart_eq (A : Matrix n n ℝ) :
+    (selfAdjointPart ℝ A : Matrix n n ℝ) = (2 : ℝ)⁻¹ • (A + Aᵀ) := by
+  rw [selfAdjointPart_apply_coe, Matrix.star_eq_conjTranspose,
     Matrix.conjTranspose_eq_transpose_of_trivial]
   simp [invOf_eq_inv]
 
 omit [Fintype n] [DecidableEq n] in
-/-- The skew-symmetric part of a real matrix, written with transpose. -/
-lemma skewPart_eq (A : Matrix n n ℝ) :
-    skewPart A = (2 : ℝ)⁻¹ • (A - Aᵀ) := by
-  rw [skewPart, skewAdjointPart_apply_coe, Matrix.star_eq_conjTranspose,
+/-- Mathlib's skew-adjoint part of a real matrix, written with transpose. -/
+lemma skewAdjointPart_eq (A : Matrix n n ℝ) :
+    (skewAdjointPart ℝ A : Matrix n n ℝ) = (2 : ℝ)⁻¹ • (A - Aᵀ) := by
+  rw [skewAdjointPart_apply_coe, Matrix.star_eq_conjTranspose,
     Matrix.conjTranspose_eq_transpose_of_trivial]
   simp [invOf_eq_inv]
 
 omit [Fintype n] [DecidableEq n] in
-/-- Entrywise formula for the symmetric part of a real matrix. -/
-lemma symmetricPart_apply (A : Matrix n n ℝ) (i j : n) :
-    symmetricPart A i j = (2 : ℝ)⁻¹ * (A i j + A j i) := by
-  rw [symmetricPart_eq]
+/-- Entrywise formula for Mathlib's self-adjoint part of a real matrix. -/
+lemma selfAdjointPart_apply (A : Matrix n n ℝ) (i j : n) :
+    (selfAdjointPart ℝ A : Matrix n n ℝ) i j = (2 : ℝ)⁻¹ * (A i j + A j i) := by
+  rw [selfAdjointPart_eq]
   simp [smul_eq_mul]
 
 omit [Fintype n] [DecidableEq n] in
-/-- Entrywise formula for the skew-symmetric part of a real matrix. -/
-lemma skewPart_apply (A : Matrix n n ℝ) (i j : n) :
-    skewPart A i j = (2 : ℝ)⁻¹ * (A i j - A j i) := by
-  rw [skewPart_eq]
+/-- Entrywise formula for Mathlib's skew-adjoint part of a real matrix. -/
+lemma skewAdjointPart_apply (A : Matrix n n ℝ) (i j : n) :
+    (skewAdjointPart ℝ A : Matrix n n ℝ) i j = (2 : ℝ)⁻¹ * (A i j - A j i) := by
+  rw [skewAdjointPart_eq]
   simp [smul_eq_mul]
 
 omit [Fintype n] [DecidableEq n] in
-/-- The symmetric part is symmetric. -/
-lemma symmetricPart_isSymm (A : Matrix n n ℝ) : (symmetricPart A).IsSymm := by
-  rw [symmetricPart_eq]
+/-- Mathlib's self-adjoint part of a real matrix is symmetric. -/
+lemma isSymm_selfAdjointPart (A : Matrix n n ℝ) :
+    ((selfAdjointPart ℝ A : Matrix n n ℝ)).IsSymm := by
+  rw [selfAdjointPart_eq]
   exact (Matrix.isSymm_add_transpose_self A).smul (2 : ℝ)⁻¹
 
 omit [Fintype n] [DecidableEq n] in
-/-- The transpose of the skew part is its negative. -/
-lemma skewPart_transpose (A : Matrix n n ℝ) : (skewPart A)ᵀ = -skewPart A := by
+/-- The transpose of Mathlib's skew-adjoint part is its negative. -/
+lemma skewAdjointPart_transpose (A : Matrix n n ℝ) :
+    ((skewAdjointPart ℝ A : Matrix n n ℝ))ᵀ = -(skewAdjointPart ℝ A : Matrix n n ℝ) := by
   ext i j
-  simp [skewPart_apply, sub_eq_add_neg]
-  ring_nf
+  simp [sub_eq_add_neg]
 
 omit [Fintype n] [DecidableEq n] in
-/-- A symmetric matrix is fixed by taking the symmetric part. -/
+/-- A symmetric real matrix is fixed by Mathlib's self-adjoint part. -/
 @[simp]
-lemma Matrix.IsSymm.symmetricPart_eq_self {A : Matrix n n ℝ} (hA : A.IsSymm) :
-    symmetricPart A = A := by
+lemma Matrix.IsSymm.coe_selfAdjointPart_eq_self {A : Matrix n n ℝ} (hA : A.IsSymm) :
+    (selfAdjointPart ℝ A : Matrix n n ℝ) = A := by
   ext i j
-  rw [symmetricPart_apply]
+  rw [selfAdjointPart_apply]
   have hji : A j i = A i j := hA.apply i j
   rw [hji]
   ring
 
 omit [Fintype n] [DecidableEq n] in
-/-- A symmetric matrix has zero skew-symmetric part. -/
+/-- A symmetric real matrix has zero skew-adjoint part. -/
 @[simp]
-lemma Matrix.IsSymm.skewPart_eq_zero {A : Matrix n n ℝ} (hA : A.IsSymm) :
-    skewPart A = 0 := by
+lemma Matrix.IsSymm.coe_skewAdjointPart_eq_zero {A : Matrix n n ℝ} (hA : A.IsSymm) :
+    (skewAdjointPart ℝ A : Matrix n n ℝ) = 0 := by
   ext i j
-  rw [skewPart_apply]
+  rw [skewAdjointPart_apply]
   have hji : A j i = A i j := hA.apply i j
   rw [hji]
   simp
 
 omit [Fintype n] [DecidableEq n] in
-/-- Taking the symmetric part is idempotent. -/
+/-- Taking Mathlib's self-adjoint part is idempotent after coercion back to matrices. -/
 @[simp]
-lemma symmetricPart_symmetricPart (A : Matrix n n ℝ) :
-    symmetricPart (symmetricPart A) = symmetricPart A :=
-  Matrix.IsSymm.symmetricPart_eq_self (symmetricPart_isSymm A)
+lemma selfAdjointPart_selfAdjointPart (A : Matrix n n ℝ) :
+    (selfAdjointPart ℝ (selfAdjointPart ℝ A : Matrix n n ℝ) : Matrix n n ℝ) =
+      (selfAdjointPart ℝ A : Matrix n n ℝ) :=
+  Matrix.IsSymm.coe_selfAdjointPart_eq_self (isSymm_selfAdjointPart A)
 
 omit [Fintype n] [DecidableEq n] in
-/-- The skew-symmetric part of the symmetric part is zero. -/
+/-- The skew-adjoint part of the self-adjoint part is zero after coercion back to matrices. -/
 @[simp]
-lemma skewPart_symmetricPart (A : Matrix n n ℝ) : skewPart (symmetricPart A) = 0 :=
-  Matrix.IsSymm.skewPart_eq_zero (symmetricPart_isSymm A)
+lemma skewAdjointPart_selfAdjointPart (A : Matrix n n ℝ) :
+    (skewAdjointPart ℝ (selfAdjointPart ℝ A : Matrix n n ℝ) : Matrix n n ℝ) = 0 :=
+  Matrix.IsSymm.coe_skewAdjointPart_eq_zero (isSymm_selfAdjointPart A)
 
 omit [Fintype n] [DecidableEq n] in
-/-- A matrix is the sum of its symmetric and skew-symmetric parts. -/
+/-- A matrix is the sum of its self-adjoint and skew-adjoint parts. -/
 @[simp]
-lemma symmetricPart_add_skewPart (A : Matrix n n ℝ) : symmetricPart A + skewPart A = A := by
+lemma selfAdjointPart_add_skewAdjointPart (A : Matrix n n ℝ) :
+    (selfAdjointPart ℝ A : Matrix n n ℝ) + (skewAdjointPart ℝ A : Matrix n n ℝ) = A := by
   exact StarModule.selfAdjointPart_add_skewAdjointPart ℝ A
 
 /-- Transposing a real matrix does not change its quadratic form. -/
@@ -149,20 +132,21 @@ lemma toQuadraticForm'_transpose (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n
 
 /-- The skew-symmetric part has zero quadratic form. -/
 @[simp]
-lemma toQuadraticForm'_skewPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
-    (skewPart A).toQuadraticForm' ξ = 0 := by
-  have htranspose := toQuadraticForm'_transpose (skewPart A) ξ
-  rw [skewPart_transpose] at htranspose
+lemma toQuadraticForm'_skewAdjointPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
+    (skewAdjointPart ℝ A : Matrix n n ℝ).toQuadraticForm' ξ = 0 := by
+  have htranspose := toQuadraticForm'_transpose (skewAdjointPart ℝ A : Matrix n n ℝ) ξ
+  rw [skewAdjointPart_transpose] at htranspose
   have hneg :
-      (-skewPart A).toQuadraticForm' ξ = - (skewPart A).toQuadraticForm' ξ := by
-    simpa using toQuadraticForm'_smul (-1 : ℝ) (skewPart A) ξ
+      (-(skewAdjointPart ℝ A : Matrix n n ℝ)).toQuadraticForm' ξ =
+        - (skewAdjointPart ℝ A : Matrix n n ℝ).toQuadraticForm' ξ := by
+    simpa using toQuadraticForm'_smul (-1 : ℝ) (skewAdjointPart ℝ A : Matrix n n ℝ) ξ
   linarith
 
 /-- The symmetric part has the same quadratic form as the original matrix. -/
 @[simp]
-lemma toQuadraticForm'_symmetricPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
-    (symmetricPart A).toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
-  rw [symmetricPart_eq, toQuadraticForm'_smul, toQuadraticForm'_eq_dotProduct,
+lemma toQuadraticForm'_selfAdjointPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
+    (selfAdjointPart ℝ A : Matrix n n ℝ).toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
+  rw [selfAdjointPart_eq, toQuadraticForm'_smul, toQuadraticForm'_eq_dotProduct,
     toQuadraticForm'_eq_dotProduct]
   simp only [add_mulVec, dotProduct_add]
   have htranspose : ξ ⬝ᵥ (Aᵀ *ᵥ ξ) = ξ ⬝ᵥ (A *ᵥ ξ) :=
@@ -173,28 +157,30 @@ lemma toQuadraticForm'_symmetricPart (A : Matrix n n ℝ) (ξ : EuclideanSpace �
 /-- On the diagonal, the bilinear form attached to the symmetric part agrees with the
 bilinear form attached to the original matrix. -/
 @[simp]
-lemma matrixBilinearForm_symmetricPart_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
-    matrixBilinearForm (symmetricPart A) ξ ξ = matrixBilinearForm A ξ ξ := by
-  rw [matrixBilinearForm_self, matrixBilinearForm_self, toQuadraticForm'_symmetricPart]
+lemma matrixBilinearForm_selfAdjointPart_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm (selfAdjointPart ℝ A : Matrix n n ℝ) ξ ξ =
+      matrixBilinearForm A ξ ξ := by
+  rw [matrixBilinearForm_self, matrixBilinearForm_self, toQuadraticForm'_selfAdjointPart]
 
 /-- The bilinear form attached to the symmetric part is the average of the two transposed
 placements of the original bilinear form. -/
-lemma matrixBilinearForm_symmetricPart_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
-    matrixBilinearForm (symmetricPart A) η ξ =
+lemma matrixBilinearForm_selfAdjointPart_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm (selfAdjointPart ℝ A : Matrix n n ℝ) η ξ =
       (2 : ℝ)⁻¹ * (matrixBilinearForm A η ξ + matrixBilinearForm A ξ η) := by
-  rw [symmetricPart_eq, matrixBilinearForm_smul_apply, matrixBilinearForm_apply,
+  classical
+  rw [selfAdjointPart_eq, matrixBilinearForm_smul_apply, matrixBilinearForm_apply,
     matrixBilinearForm_apply, matrixBilinearForm_apply]
   rw [add_mulVec, dotProduct_add, Matrix.dotProduct_transpose_mulVec]
 
 omit [DecidableEq n] in
-/-- If a matrix bilinear form is bounded by `Λ`, then the symmetric part is bounded by the
+/-- If a matrix bilinear form is bounded by `Λ`, then the self-adjoint part is bounded by the
 same `Λ`. -/
-lemma abs_dotProduct_symmetricPart_mulVec_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
+lemma abs_dotProduct_selfAdjointPart_mulVec_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
     (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
     (η ξ : EuclideanSpace ℝ n) :
-    |η ⬝ᵥ (symmetricPart A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
+    |η ⬝ᵥ ((selfAdjointPart ℝ A : Matrix n n ℝ) *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
   classical
-  rw [← matrixBilinearForm_apply, matrixBilinearForm_symmetricPart_apply]
+  rw [← matrixBilinearForm_apply, matrixBilinearForm_selfAdjointPart_apply]
   have hηξ : |matrixBilinearForm A η ξ| ≤ Lam * ‖η‖ * ‖ξ‖ := by
     simpa using hA η ξ
   have hξη : |matrixBilinearForm A ξ η| ≤ Lam * ‖ξ‖ * ‖η‖ := by
@@ -219,12 +205,13 @@ variable {Ω : Set X} {a : X → Matrix n n ℝ} {lam Lam : ℝ}
 
 /-- Taking the pointwise symmetric part preserves uniform ellipticity with the same
 constants. -/
-lemma symmetricPart (h : UniformlyEllipticOn Ω a lam Lam) :
-    UniformlyEllipticOn Ω (fun x => symmetricPart (a x)) lam Lam := by
+lemma selfAdjointPart (h : UniformlyEllipticOn Ω a lam Lam) :
+    UniformlyEllipticOn Ω (fun x => (selfAdjointPart ℝ (a x) : Matrix n n ℝ)) lam Lam := by
   refine UniformlyEllipticOn.of_bounds h.pos h.le (fun {x} hx ξ => ?_)
     (fun {x} hx η ξ => ?_)
-  · simpa using h.lower_bound hx ξ
-  · exact abs_dotProduct_symmetricPart_mulVec_le_of_upper_bound (a x) (h.upper_bound hx) η ξ
+  · rw [toQuadraticForm'_selfAdjointPart]
+    exact h.lower_bound hx ξ
+  · exact abs_dotProduct_selfAdjointPart_mulVec_le_of_upper_bound (a x) (h.upper_bound hx) η ξ
 
 end UniformlyEllipticOn
 
