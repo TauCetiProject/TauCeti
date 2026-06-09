@@ -50,6 +50,14 @@ instance instAdd : Add (Hom R C M N) where
         ext m
         simp [TensorProduct.map_add_left, map_coact_apply] }
 
+/-- Scalar multiplication of right-comodule morphisms, defined pointwise. -/
+instance instSMul : SMul R (Hom R C M N) where
+  smul r f :=
+    { toLinearMap := r • f.toLinearMap
+      map_coact := by
+        ext m
+        simp [TensorProduct.map_smul_left, map_coact_apply] }
+
 @[simp]
 theorem zero_toLinearMap : (0 : Hom R C M N).toLinearMap = 0 :=
   rfl
@@ -57,6 +65,11 @@ theorem zero_toLinearMap : (0 : Hom R C M N).toLinearMap = 0 :=
 @[simp]
 theorem add_toLinearMap (f g : Hom R C M N) :
     (f + g).toLinearMap = f.toLinearMap + g.toLinearMap :=
+  rfl
+
+@[simp]
+theorem smul_toLinearMap (r : R) (f : Hom R C M N) :
+    (r • f).toLinearMap = r • f.toLinearMap :=
   rfl
 
 /-- The zero comodule morphism evaluates to zero. -/
@@ -69,11 +82,18 @@ theorem zero_apply (m : M) : (0 : Hom R C M N) m = 0 :=
 theorem add_apply (f g : Hom R C M N) (m : M) : (f + g) m = f m + g m :=
   rfl
 
+/-- Scalar multiplication of comodule morphisms is pointwise scalar multiplication. -/
+@[simp]
+theorem smul_apply (r : R) (f : Hom R C M N) (m : M) : (r • f) m = r • f m :=
+  rfl
+
 /-- Natural-number scalar multiplication of comodule morphisms, defined by repeated
 pointwise addition. -/
 instance instNSMul : SMul ℕ (Hom R C M N) where
   smul n f := n.rec 0 fun _ g => f + g
 
+/-- Comodule morphisms form an additive commutative monoid under pointwise zero, addition,
+and natural-number scalar multiplication. -/
 instance instAddCommMonoid : AddCommMonoid (Hom R C M N) where
   zero := 0
   add := (· + ·)
@@ -92,12 +112,23 @@ instance instAddCommMonoid : AddCommMonoid (Hom R C M N) where
     simp [add_comm]
   nsmul_zero f := by
     ext m
-    change (0 : Hom R C M N) m = 0
-    rfl
+    rw [show ((0 : ℕ) • f : Hom R C M N) = 0 from rfl]
   nsmul_succ n f := by
     ext m
-    change (f + n • f) m = (n • f + f) m
+    rw [show (Nat.succ n • f : Hom R C M N) = f + n • f from rfl]
     rw [add_apply, add_apply, add_comm]
+
+private def toLinearMapAddMonoidHom : Hom R C M N →+ M →ₗ[R] N where
+  toFun f := f.toLinearMap
+  map_zero' := zero_toLinearMap
+  map_add' := add_toLinearMap
+
+/-- Comodule morphisms form an `R`-module under pointwise scalar multiplication. -/
+instance instModule : Module R (Hom R C M N) :=
+  fast_instance%
+  Function.Injective.module R toLinearMapAddMonoidHom (fun f g h => by
+    ext m
+    exact LinearMap.congr_fun h m) fun _ _ => smul_toLinearMap _ _
 
 /-- Natural-number scalar multiplication of comodule morphisms is pointwise. -/
 @[simp]
@@ -110,6 +141,12 @@ theorem nsmul_apply (n : ℕ) (f : Hom R C M N) (m : M) :
   | succ n ih =>
       rw [succ_nsmul, add_apply, ih, succ_nsmul]
 
+@[simp]
+theorem nsmul_toLinearMap (n : ℕ) (f : Hom R C M N) :
+    (n • f).toLinearMap = n • f.toLinearMap := by
+  ext m
+  simp
+
 /-- Finite sums of comodule morphisms are evaluated pointwise. -/
 @[simp]
 theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → Hom R C M N) (m : M) :
@@ -119,20 +156,26 @@ theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → Hom R C M N) (m : M) 
   | empty => simp
   | insert i s hi ih => simp [hi, ih]
 
+@[simp]
+theorem sum_toLinearMap {ι : Type*} (s : Finset ι) (f : ι → Hom R C M N) :
+    (∑ i ∈ s, f i).toLinearMap = ∑ i ∈ s, (f i).toLinearMap := by
+  ext m
+  simp
+
 section Comp
 
 variable {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
 
 /-- Composition of comodule morphisms is additive in the left argument. -/
 @[simp]
-theorem comp_add (g h : Hom R C N P) (f : Hom R C M N) :
+theorem add_comp (g h : Hom R C N P) (f : Hom R C M N) :
     comp (g + h) f = comp g f + comp h f := by
   ext m
   rfl
 
 /-- Composition of comodule morphisms is additive in the right argument. -/
 @[simp]
-theorem add_comp (g : Hom R C N P) (f h : Hom R C M N) :
+theorem comp_add (g : Hom R C N P) (f h : Hom R C M N) :
     comp g (f + h) = comp g f + comp g h := by
   ext m
   exact map_add g.toLinearMap (f m) (h m)

@@ -82,6 +82,15 @@ instance category : Category (ComoduleCat.{u, v, w} R C) where
   id M := Comodule.Hom.id R C M
   comp f g := Comodule.Hom.comp g f
 
+instance homZero (M N : ComoduleCat.{u, v, w} R C) : Zero (M ⟶ N) :=
+  inferInstanceAs (Zero (Comodule.Hom R C M N))
+
+instance homAdd (M N : ComoduleCat.{u, v, w} R C) : Add (M ⟶ N) :=
+  inferInstanceAs (Add (Comodule.Hom R C M N))
+
+instance homAddCommMonoid (M N : ComoduleCat.{u, v, w} R C) : AddCommMonoid (M ⟶ N) :=
+  inferInstanceAs (AddCommMonoid (Comodule.Hom R C M N))
+
 /-- `ComoduleCat` is concrete, with concrete morphisms the bundled comodule morphisms. -/
 instance concreteCategory :
     ConcreteCategory (ComoduleCat.{u, v, w} R C)
@@ -169,6 +178,58 @@ theorem id_apply (M : ComoduleCat.{u, v, w} R C) (m : M) :
 theorem comp_apply {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) (g : N ⟶ P)
     (m : M) :
     (f ≫ g) m = g (f m) :=
+  rfl
+
+/-- The zero morphism has the zero linear map underneath. -/
+@[simp]
+theorem toLinearMap_zero (M N : ComoduleCat.{u, v, w} R C) :
+    (0 : M ⟶ N).toLinearMap = 0 :=
+  rfl
+
+/-- Addition of morphisms is addition of the underlying linear maps. -/
+@[simp]
+theorem toLinearMap_add {M N : ComoduleCat.{u, v, w} R C} (f g : M ⟶ N) :
+    (f + g).toLinearMap = f.toLinearMap + g.toLinearMap :=
+  rfl
+
+/-- The zero morphism acts as the zero function. -/
+@[simp]
+theorem zero_apply {M N : ComoduleCat.{u, v, w} R C} (m : M) :
+    (0 : M ⟶ N) m = 0 :=
+  rfl
+
+/-- Addition of morphisms acts by pointwise addition. -/
+@[simp]
+theorem add_apply {M N : ComoduleCat.{u, v, w} R C} (f g : M ⟶ N) (m : M) :
+    (f + g) m = f m + g m :=
+  rfl
+
+/-- Composition in `ComoduleCat` is additive in the left morphism. -/
+@[simp]
+theorem add_comp {M N P : ComoduleCat.{u, v, w} R C} (f g : M ⟶ N) (h : N ⟶ P) :
+    (f + g) ≫ h = f ≫ h + g ≫ h := by
+  ext m
+  exact map_add h.toLinearMap (f m) (g m)
+
+/-- Composition in `ComoduleCat` is additive in the right morphism. -/
+@[simp]
+theorem comp_add {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) (g h : N ⟶ P) :
+    f ≫ (g + h) = f ≫ g + f ≫ h := by
+  ext m
+  rfl
+
+/-- Composing the zero morphism on the left gives the zero morphism. -/
+@[simp]
+theorem zero_comp {M N P : ComoduleCat.{u, v, w} R C} (f : N ⟶ P) :
+    (0 : M ⟶ N) ≫ f = 0 := by
+  ext m
+  exact map_zero f.toLinearMap
+
+/-- Composing the zero morphism on the right gives the zero morphism. -/
+@[simp]
+theorem comp_zero {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
+    f ≫ (0 : N ⟶ P) = 0 := by
+  ext m
   rfl
 
 /-- The forgetful functor from comodules to their underlying semimodules. -/
