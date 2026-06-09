@@ -17,6 +17,13 @@ This is a small prerequisite for the universal-covers roadmap Stage 2: the point
 unpointed cover correspondences need to track deck transformations through their action on a
 chosen fibre, and regular-cover statements use the fact that a deck transformation of a
 connected cover cannot fix a point unless it is the identity.
+
+## Main declarations
+
+* `TauCeti.Deck.orbitMap_injective`: evaluation at a fibre point is injective on deck
+  transformations of a preconnected covering.
+* `TauCeti.Deck.deckEquivFiberOfSurjective`: if that evaluation map is also surjective, it
+  identifies the deck group with the chosen fibre.
 -/
 
 namespace TauCeti
@@ -102,6 +109,59 @@ transformations to that fibre has trivial kernel. -/
 theorem fiberHomeomorphHom_ker_eq_bot [PreconnectedSpace E] (hp : IsCoveringMap p)
     [Nonempty (p ⁻¹' {b})] : MonoidHom.ker (fiberHomeomorphHom p b) = ⊥ :=
   (MonoidHom.ker_eq_bot_iff (fiberHomeomorphHom p b)).mpr (fiberHomeomorphHom_injective hp)
+
+/-- Evaluation at a point in a fibre is injective for a preconnected covering. -/
+lemma orbitMap_injective [PreconnectedSpace E] (hp : IsCoveringMap p) (e : p ⁻¹' {b}) :
+    Function.Injective fun φ : Deck p => φ • e := by
+  intro φ ψ hφψ
+  exact eq_of_fiber_smul_eq_fiber_smul hp φ ψ hφψ
+
+/-- For a preconnected covering whose orbit map at the chosen fibre point is surjective,
+evaluation at that point identifies the deck group with that fibre.
+
+This is the simply-transitive fibre action package used later when regular covers are
+compared with normal subgroups and normalizer quotients. -/
+noncomputable def deckEquivFiberOfSurjective [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : Deck p => φ • e) :
+    Deck p ≃ p ⁻¹' {b} :=
+  Equiv.ofBijective (fun φ : Deck p => φ • e)
+    ⟨orbitMap_injective hp e, hsurj⟩
+
+/-- The local equivalence from deck transformations to a fibre evaluates a deck
+transformation at the chosen fibre point. -/
+@[simp]
+lemma deckEquivFiberOfSurjective_apply [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : Deck p => φ • e) (φ : Deck p) :
+    deckEquivFiberOfSurjective hp e hsurj φ = φ • e :=
+  rfl
+
+/-- On underlying points, the local deck-to-fibre equivalence is evaluation of the
+underlying homeomorphism. -/
+@[simp]
+lemma deckEquivFiberOfSurjective_apply_coe [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : Deck p => φ • e) (φ : Deck p) :
+    (deckEquivFiberOfSurjective hp e hsurj φ : E) = φ.1 e.1 := by
+  rw [deckEquivFiberOfSurjective_apply]
+  exact fiber_smul_coe φ e
+
+/-- The inverse of `deckEquivFiberOfSurjective` is characterized by the deck transformation it
+returns: it sends the chosen fibre point to the requested fibre point. -/
+@[simp]
+lemma deckEquivFiberOfSurjective_symm_smul [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : Deck p => φ • e)
+    (e' : p ⁻¹' {b}) :
+    (deckEquivFiberOfSurjective hp e hsurj).symm e' • e = e' :=
+  (deckEquivFiberOfSurjective hp e hsurj).apply_symm_apply e'
+
+/-- On underlying points, the inverse of `deckEquivFiberOfSurjective` sends the chosen point to
+the requested point. -/
+@[simp]
+lemma deckEquivFiberOfSurjective_symm_apply_coe [PreconnectedSpace E]
+    (hp : IsCoveringMap p) (e : p ⁻¹' {b})
+    (hsurj : Function.Surjective fun φ : Deck p => φ • e) (e' : p ⁻¹' {b}) :
+    (((deckEquivFiberOfSurjective hp e hsurj).symm e').1 e.1 : E) = e'.1 := by
+  simpa [fiber_smul_coe] using
+    congrArg Subtype.val (deckEquivFiberOfSurjective_symm_smul hp e hsurj e')
 
 end Fiber
 
