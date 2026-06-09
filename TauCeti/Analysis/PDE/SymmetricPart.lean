@@ -79,28 +79,6 @@ lemma skewAdjointPart_transpose (A : Matrix n n ℝ) :
   ext i j
   simp [sub_eq_add_neg]
 
-omit [Fintype n] [DecidableEq n] in
-/-- A symmetric real matrix is fixed by Mathlib's self-adjoint part. -/
-@[simp]
-lemma Matrix.IsSymm.coe_selfAdjointPart_eq_self {A : Matrix n n ℝ} (hA : A.IsSymm) :
-    (selfAdjointPart ℝ A : Matrix n n ℝ) = A := by
-  ext i j
-  rw [selfAdjointPart_apply]
-  have hji : A j i = A i j := hA.apply i j
-  rw [hji]
-  ring
-
-omit [Fintype n] [DecidableEq n] in
-/-- A symmetric real matrix has zero skew-adjoint part. -/
-@[simp]
-lemma Matrix.IsSymm.coe_skewAdjointPart_eq_zero {A : Matrix n n ℝ} (hA : A.IsSymm) :
-    (skewAdjointPart ℝ A : Matrix n n ℝ) = 0 := by
-  ext i j
-  rw [skewAdjointPart_apply]
-  have hji : A j i = A i j := hA.apply i j
-  rw [hji]
-  simp
-
 /-- Transposing a real matrix does not change its quadratic form. -/
 @[simp]
 lemma toQuadraticForm'_transpose (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
