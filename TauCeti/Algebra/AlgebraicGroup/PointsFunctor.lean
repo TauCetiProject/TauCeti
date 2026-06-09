@@ -64,6 +64,13 @@ lemma mapPoints_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
     mapPoints (H := H) φ f = toConv (φ.hom.comp f.ofConv) :=
   rfl
 
+/-- Pointwise form of the map on points induced by post-composition. -/
+@[simp]
+lemma mapPoints_apply_apply {A B : CommAlgCat.{w} R} (φ : A ⟶ B)
+    (f : points (H := H) A) (h : H) :
+    ((mapPoints (H := H) φ f).ofConv) h = φ.hom (f.ofConv h) :=
+  rfl
+
 /-- The map on points sends the identity point to the identity point. -/
 lemma mapPoints_one {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     mapPoints (H := H) φ (1 : points (H := H) A) = 1 := by

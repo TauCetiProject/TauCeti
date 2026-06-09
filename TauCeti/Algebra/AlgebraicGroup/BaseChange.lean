@@ -121,9 +121,9 @@ namespace HopfAlgebra
 
 open CategoryTheory
 
-universe u v
+universe u v w
 
-variable {k K R S : Type u} {H : Type v} [CommRing k]
+variable {k : Type u} {K R S : Type v} {H : Type w} [CommRing k]
   [CommRing K] [Semiring H] [Algebra k K] [_root_.HopfAlgebra k H]
 
 section PointsIso
@@ -185,10 +185,16 @@ lemma mapPoints_baseChangePointsIso_inv (φ : R →ₐ[K] S) :
         TauCeti.HopfAlgebra.mapPoints (R := k) (H := H)
           (CommAlgCat.ofHom (φ.restrictScalars k)) := by
   ext f h
-  simp only [GrpCat.hom_comp, MonoidHom.coe_comp, Function.comp_apply, GrpCat.hom_ofHom,
-    mapPoints, AlgHom.mapValue_apply, baseChangePointsIso, MulEquiv.toGrpIso_inv,
-    MulEquiv.coe_toMonoidHom, AlgHom.baseChangePointsMulEquiv_symm_apply,
-    AlgHom.coe_comp, CommAlgCat.hom_ofHom]
+  change (((baseChangePointsIso (k := k) (K := K) (H := H) (R := S)).inv
+      (TauCeti.HopfAlgebra.mapPoints (R := K) (H := K ⊗[k] H)
+        (CommAlgCat.ofHom φ) f)).ofConv h) =
+    ((TauCeti.HopfAlgebra.mapPoints (R := k) (H := H)
+      (CommAlgCat.ofHom (φ.restrictScalars k))
+      ((baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).inv f)).ofConv h)
+  rw [baseChangePointsIso_inv_apply]
+  rw [mapPoints_apply_apply]
+  rw [mapPoints_apply_apply]
+  rw [baseChangePointsIso_inv_apply]
   rfl
 
 /-- Forward naturality form of `baseChangePointsIso` in the value algebra. -/
@@ -199,11 +205,18 @@ lemma baseChangePointsIso_hom_mapPoints (φ : R →ₐ[K] S) :
           (CommAlgCat.ofHom (φ.restrictScalars k)) ≫
         (baseChangePointsIso (k := k) (K := K) (H := H) (R := S)).hom := by
   ext f h
-  simp only [GrpCat.hom_comp, MonoidHom.coe_comp, Function.comp_apply, GrpCat.hom_ofHom,
-    mapPoints, AlgHom.mapValue_apply, baseChangePointsIso, MulEquiv.toGrpIso_hom,
-    MulEquiv.coe_toMonoidHom, AlgHom.baseChangePointsMulEquiv_apply_ofConv,
-    Algebra.TensorProduct.includeRight_apply, AlgHom.liftEquiv_tmul, AlgHom.coe_comp,
-    CommAlgCat.hom_ofHom, AlgHom.coe_restrictScalars', one_smul]
+  change ((TauCeti.HopfAlgebra.mapPoints (R := K) (H := K ⊗[k] H)
+      (CommAlgCat.ofHom φ)
+      ((baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom f)).ofConv
+      (1 ⊗ₜ[k] h)) =
+    (((baseChangePointsIso (k := k) (K := K) (H := H) (R := S)).hom
+      (TauCeti.HopfAlgebra.mapPoints (R := k) (H := H)
+        (CommAlgCat.ofHom (φ.restrictScalars k)) f)).ofConv (1 ⊗ₜ[k] h))
+  rw [mapPoints_apply_apply]
+  rw [baseChangePointsIso_hom_apply_tmul]
+  rw [baseChangePointsIso_hom_apply_tmul]
+  rw [mapPoints_apply_apply]
+  simp only [CommAlgCat.hom_ofHom, AlgHom.coe_restrictScalars', one_smul]
 
 end Naturality
 
