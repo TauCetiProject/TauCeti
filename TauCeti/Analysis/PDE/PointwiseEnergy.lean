@@ -24,8 +24,6 @@ material; once they exist, these lemmas are the coefficient-matrix facts used un
 
 ## Main declarations
 
-* `TauCeti.PDE.toSesqForm_toEuclideanCLM_apply`: Mathlib's matrix sesquilinear form is
-  `ηᵀ A ξ`.
 * `TauCeti.PDE.toSesqForm_toEuclideanCLM_isCoercive_of_lower_bound`: a pointwise lower
   quadratic bound gives Mathlib's `IsCoercive`.
 * `TauCeti.PDE.toSesqForm_toEuclideanCLM_isCoercive_of_uniformlyEllipticOn`: uniform
@@ -46,9 +44,7 @@ noncomputable section
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- The value of Mathlib's matrix sesquilinear form is the expression `ηᵀ A ξ`. -/
-@[simp]
-lemma toSesqForm_toEuclideanCLM_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+private lemma toSesqForm_toEuclideanCLM_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
     (ContinuousLinearMap.toSesqForm (Matrix.toEuclideanCLM (𝕜 := ℝ) A) η) ξ =
       η ⬝ᵥ (A *ᵥ ξ) := by
   exact Matrix.inner_toEuclideanCLM A η ξ
