@@ -2,8 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+import Mathlib.Algebra.Category.Grp.Basic
+import Mathlib.CategoryTheory.Iso
 import Mathlib.RingTheory.Bialgebra.TensorProduct
+import Mathlib.RingTheory.HopfAlgebra.TensorProduct
+import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
 
 /-!
 # Base change of bialgebra points
@@ -23,6 +26,8 @@ instance and `AlgHom.liftEquiv`.
 
 * `TauCeti.AlgHom.baseChangePointsMulEquiv`: the convolution monoid isomorphism between
   `A →ₐ[k] R` and `K ⊗[k] A →ₐ[K] R`.
+* `TauCeti.HopfAlgebra.baseChangePointsIso`: the same equivalence, packaged as an
+  isomorphism of the group-valued points of a Hopf algebra.
 
 ## References
 
@@ -111,5 +116,112 @@ lemma baseChangePointsMulEquiv_symm_apply (f : WithConv (K ⊗[k] A →ₐ[K] R)
   rfl
 
 end AlgHom
+
+namespace HopfAlgebra
+
+open CategoryTheory
+
+universe u
+
+variable {k K H R S : Type u} [CommRing k] [CommRing K] [CommRing H]
+  [Algebra k K] [_root_.HopfAlgebra k H]
+
+section PointsIso
+
+variable [CommRing R] [Algebra K R] [Algebra k R] [IsScalarTower k K R]
+
+/-- Base change of Hopf-algebra points, as an isomorphism of groups.
+
+For a Hopf algebra `H` over `k`, a `k`-algebra `K`, and a commutative `K`-algebra `R`, this
+identifies `k`-algebra maps `H →ₐ[k] R` with `K`-algebra maps `K ⊗[k] H →ₐ[K] R`. The
+group structures on both sides are the convolution groups of points. -/
+noncomputable def baseChangePointsIso :
+    TauCeti.HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k R) ≅
+      TauCeti.HopfAlgebra.points (R := K) (H := K ⊗[k] H) (CommAlgCat.of K R) :=
+  (AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := H) (R := R)).toGrpIso
+
+/-- The underlying multiplicative equivalence of `baseChangePointsIso` is
+`AlgHom.baseChangePointsMulEquiv`. -/
+lemma baseChangePointsIso_groupIsoToMulEquiv :
+    (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).groupIsoToMulEquiv =
+      AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := H) (R := R) :=
+  rfl
+
+/-- Under `baseChangePointsIso`, a point `f : H →ₐ[k] R` is sent to
+`s ⊗ h ↦ s • f h`. -/
+@[simp]
+lemma baseChangePointsIso_hom_apply_tmul
+    (f : TauCeti.HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k R)) (s : K)
+    (h : H) :
+    (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom f (s ⊗ₜ[k] h) =
+      s • f.ofConv h :=
+  rfl
+
+/-- The inverse of `baseChangePointsIso` restricts a base-changed point along
+`h ↦ 1 ⊗ h`. -/
+@[simp]
+lemma baseChangePointsIso_inv_apply
+    (f : TauCeti.HopfAlgebra.points (R := K) (H := K ⊗[k] H) (CommAlgCat.of K R))
+    (h : H) :
+    (((baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).inv f).ofConv) h =
+      f.ofConv (1 ⊗ₜ[k] h) :=
+  rfl
+
+/-- `baseChangePointsIso` sends the identity point to the identity point. -/
+@[simp]
+lemma baseChangePointsIso_hom_one :
+    (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom
+        (1 : TauCeti.HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k R)) =
+      1 :=
+  (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom.hom.map_one
+
+/-- `baseChangePointsIso` preserves multiplication of points. -/
+lemma baseChangePointsIso_hom_mul
+    (f g : TauCeti.HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k R)) :
+    (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom (f * g) =
+      (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom f *
+        (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom g :=
+  (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom.hom.map_mul f g
+
+/-- `baseChangePointsIso` preserves inverses of points. -/
+lemma baseChangePointsIso_hom_inv
+    (f : TauCeti.HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k R)) :
+    (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom f⁻¹ =
+      ((baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom f)⁻¹ :=
+  (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom.hom.map_inv f
+
+end PointsIso
+
+section Naturality
+
+variable [CommRing R] [CommRing S] [Algebra K R] [Algebra K S] [Algebra k R] [Algebra k S]
+  [IsScalarTower k K R] [IsScalarTower k K S]
+
+/-- Base change of points is natural in the value algebra.
+
+Post-composing an `R`-valued point with a `K`-algebra map `R →ₐ[K] S` commutes with first
+transporting points across the base-change isomorphism. -/
+lemma mapPoints_baseChangePointsIso_hom (φ : R →ₐ[K] S) :
+    TauCeti.HopfAlgebra.mapPoints (R := K) (H := K ⊗[k] H) (CommAlgCat.ofHom φ) ≫
+        (baseChangePointsIso (k := k) (K := K) (H := H) (R := S)).inv =
+      (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).inv ≫
+        TauCeti.HopfAlgebra.mapPoints (R := k) (H := H)
+          (CommAlgCat.ofHom (φ.restrictScalars k)) := by
+  ext f h
+  simp [baseChangePointsIso, mapPoints]
+
+/-- Forward naturality form of `baseChangePointsIso` in the value algebra. -/
+lemma baseChangePointsIso_hom_mapPoints (φ : R →ₐ[K] S) :
+    (baseChangePointsIso (k := k) (K := K) (H := H) (R := R)).hom ≫
+        TauCeti.HopfAlgebra.mapPoints (R := K) (H := K ⊗[k] H) (CommAlgCat.ofHom φ) =
+      TauCeti.HopfAlgebra.mapPoints (R := k) (H := H)
+          (CommAlgCat.ofHom (φ.restrictScalars k)) ≫
+        (baseChangePointsIso (k := k) (K := K) (H := H) (R := S)).hom := by
+  ext f h
+  simp [baseChangePointsIso, mapPoints]
+
+end Naturality
+
+end HopfAlgebra
 
 end TauCeti
