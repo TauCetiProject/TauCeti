@@ -106,7 +106,7 @@ lemma norm_matrixBilinearForm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
 
 /-- A pointwise quadratic lower bound makes the associated matrix bilinear form coercive in
 Mathlib's Lax--Milgram sense. -/
-lemma matrixBilinearForm_isCoercive_of_lower_bound (A : Matrix n n ℝ) {lam : ℝ}
+lemma isCoercive_matrixBilinearForm_of_lower_bound (A : Matrix n n ℝ) {lam : ℝ}
     (hlam : 0 < lam)
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) :
     IsCoercive (matrixBilinearForm A) := by
@@ -115,9 +115,9 @@ lemma matrixBilinearForm_isCoercive_of_lower_bound (A : Matrix n n ℝ) {lam : �
   simpa [sq, pow_two, mul_assoc] using hA ξ
 
 /-- The identity matrix bilinear form is coercive with constant `1`. -/
-lemma matrixBilinearForm_one_isCoercive :
+lemma isCoercive_matrixBilinearForm_one :
     IsCoercive (matrixBilinearForm (1 : Matrix n n ℝ)) := by
-  refine matrixBilinearForm_isCoercive_of_lower_bound (1 : Matrix n n ℝ) zero_lt_one ?_
+  refine isCoercive_matrixBilinearForm_of_lower_bound (1 : Matrix n n ℝ) zero_lt_one ?_
   intro ξ
   simp
 
@@ -225,7 +225,7 @@ matrix bilinear form with coercivity constant `λ`. -/
 lemma isCoercive_matrixBilinearForm (h : UniformlyEllipticOn Ω a lam Lam) {x : X}
     (hx : x ∈ Ω) :
     IsCoercive (matrixBilinearForm (a x)) :=
-  matrixBilinearForm_isCoercive_of_lower_bound (a x) h.pos (h.lower_bound hx)
+  isCoercive_matrixBilinearForm_of_lower_bound (a x) h.pos (h.lower_bound hx)
 
 end UniformlyEllipticOn
 
