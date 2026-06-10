@@ -73,6 +73,4 @@ differential equations. When asked to work here, read the roadmap first (see `AG
 
 <p align="center">
   <img src="assets/tauceti-collaboration.jpg" alt="A hexapus reaching out to touch an AI's hand across a tide pool, beneath twin suns and a ringed planet." width="900">
-  <br>
-  <em>Humans chart the course; the hexapus does the maths.</em>
 </p>
