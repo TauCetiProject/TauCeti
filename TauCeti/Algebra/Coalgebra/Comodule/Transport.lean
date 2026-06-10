@@ -52,6 +52,14 @@ def transportCoact (e : M ≃ₗ[R] N) : N →ₗ[R] N ⊗[R] C :=
   TensorProduct.map e.toLinearMap LinearMap.id ∘ₗ coact (R := R) (C := C) (M := M) ∘ₗ
     e.symm.toLinearMap
 
+/-- The transported coaction evaluates as `(e ⊗ id) (ρ (e.symm n))`. -/
+@[simp]
+theorem transportCoact_apply (e : M ≃ₗ[R] N) (n : N) :
+    transportCoact (R := R) (C := C) (M := M) (N := N) e n =
+      TensorProduct.map e.toLinearMap LinearMap.id
+        (coact (R := R) (C := C) (M := M) (e.symm n)) :=
+  rfl
+
 private theorem assoc_rTensor_transportCoact (e : M ≃ₗ[R] N) (t : M ⊗[R] C) :
     TensorProduct.assoc R N C C
         ((transportCoact (R := R) (C := C) (M := M) (N := N) e).rTensor C
