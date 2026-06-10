@@ -46,8 +46,8 @@ variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
 namespace Hom
 
-/-- The canonical morphism from the one-dimensional comodule attached to a group-like element
-`g` into the regular comodule, sending `r` to `r • g`. -/
+/-- The canonical morphism from the group-like comodule on `R` attached to `g` into the
+regular comodule, sending `r` to `r • g`. -/
 def groupLikeToRegular (g : GroupLike R C) :
     letI : Comodule R C R := groupLike (R := R) (C := C) (M := R) g
     Hom R C R C := by
@@ -86,7 +86,7 @@ section Bialgebra
 
 variable {R : Type u} {C : Type v} [CommSemiring R] [Semiring C] [Bialgebra R C]
 
-/-- The canonical morphism from the trivial one-dimensional comodule to the regular comodule
+/-- The canonical morphism from the trivial comodule on `R` to the regular comodule
 of a bialgebra, induced by the unit map `R → C`. -/
 def trivialToRegular :
     letI : Comodule R C R := trivial (R := R) (C := C) (M := R)
@@ -146,8 +146,7 @@ section GroupLike
 
 variable {R C : Type u} [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
-/-- The categorical morphism from a group-like one-dimensional comodule into the regular
-comodule. -/
+/-- The categorical morphism from the group-like comodule on `R` into the regular comodule. -/
 abbrev groupLikeToRegular (g : GroupLike R C) :
     letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
     of R C R ⟶ regular R C :=
