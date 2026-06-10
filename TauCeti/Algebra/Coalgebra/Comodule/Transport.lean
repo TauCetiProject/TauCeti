@@ -60,6 +60,14 @@ theorem transportCoact_apply (e : M ≃ₗ[R] N) (n : N) :
         (coact (R := R) (C := C) (M := M) (e.symm n)) :=
   rfl
 
+/-- Transporting along the identity linear equivalence leaves the coaction unchanged. -/
+@[simp]
+theorem transportCoact_refl :
+    transportCoact (R := R) (C := C) (M := M) (N := M) (LinearEquiv.refl R M) =
+      coact (R := R) (C := C) (M := M) := by
+  ext m
+  simp [transportCoact]
+
 private theorem assoc_rTensor_transportCoact (e : M ≃ₗ[R] N) (t : M ⊗[R] C) :
     TensorProduct.assoc R N C C
         ((transportCoact (R := R) (C := C) (M := M) (N := N) e).rTensor C
@@ -159,6 +167,20 @@ theorem transport_coact_apply (e : M ≃ₗ[R] N) (n : N) :
       TensorProduct.map e.toLinearMap LinearMap.id
         (coact (R := R) (C := C) (M := M) (e.symm n)) :=
   rfl
+
+variable {P : Type y} [AddCommMonoid P] [Module R P]
+
+/-- Transported coactions compose in the linear equivalence. -/
+@[simp]
+theorem transportCoact_trans (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) :
+    transportCoact (R := R) (C := C) (M := M) (N := P) (e.trans f) =
+      letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+      transportCoact (R := R) (C := C) (M := N) (N := P) f :=
+  by
+    ext p
+    dsimp [transportCoact]
+    rw [TensorProduct.map_map]
+    congr
 
 variable {M' : Type y} {N' : Type z}
 variable [AddCommMonoid M'] [Module R M'] [Comodule R C M']
