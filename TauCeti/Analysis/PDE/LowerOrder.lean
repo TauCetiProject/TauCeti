@@ -23,8 +23,9 @@ weak-derivative Sobolev spaces are available.
 
 ## Main declarations
 
-* `TauCeti.PDE.LowerOrderBoundedOn`: explicit bounds for drift and mass coefficients on a
-  domain.
+* `TauCeti.PDE.DriftBoundedOn`, `TauCeti.PDE.MassBoundedOn`: explicit separate bounds for
+  drift and mass coefficients on a domain.
+* `TauCeti.PDE.LowerOrderBoundedOn`: the bundled lower-order bounds.
 * `TauCeti.PDE.NonnegMassOn`: nonnegative bounded mass coefficients.
 * `TauCeti.PDE.driftForm`, `TauCeti.PDE.massForm`: named pointwise lower-order forms.
 -/
@@ -61,72 +62,49 @@ lemma massForm_apply (c u v : ℝ) :
     ContinuousLinearMap.mul_apply', smul_eq_mul]
   ring
 
-/-- Bounded lower-order coefficients on a domain, with explicit constants.
+/-- Bounded drift coefficients on a domain, with an explicit constant. -/
+def DriftBoundedOn (Ω : Set X) (b : X → EuclideanSpace ℝ n) (beta : ℝ) : Prop :=
+  0 ≤ beta ∧ ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta
 
-`LowerOrderBoundedOn Ω b c beta gamma` means that on `Ω`, the drift coefficient vector
-has norm at most `beta` and the mass coefficient has absolute value at most `gamma`. -/
-def LowerOrderBoundedOn (Ω : Set X) (b : X → EuclideanSpace ℝ n) (c : X → ℝ)
-    (beta gamma : ℝ) : Prop :=
-  0 ≤ beta ∧ 0 ≤ gamma ∧
-    ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta ∧ ‖c x‖ ≤ gamma
-
-/-- Characteristic restatement of bounded lower-order coefficients. -/
-lemma lowerOrderBoundedOn_iff {Ω : Set X} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
-    {beta gamma : ℝ} :
-    LowerOrderBoundedOn Ω b c beta gamma ↔
-      0 ≤ beta ∧ 0 ≤ gamma ∧
-        ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta ∧ ‖c x‖ ≤ gamma :=
+/-- Characteristic restatement of bounded drift coefficients. -/
+lemma driftBoundedOn_iff {Ω : Set X} {b : X → EuclideanSpace ℝ n} {beta : ℝ} :
+    DriftBoundedOn Ω b beta ↔
+      0 ≤ beta ∧ ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta :=
   Iff.rfl
 
-namespace LowerOrderBoundedOn
+namespace DriftBoundedOn
 
-variable {Ω Ω' : Set X} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
-variable {beta gamma beta' gamma' : ℝ}
+variable {Ω Ω' : Set X} {b : X → EuclideanSpace ℝ n} {beta beta' : ℝ}
 
 /-- The drift bound is nonnegative. -/
 @[grind →]
-lemma beta_nonneg (h : LowerOrderBoundedOn Ω b c beta gamma) : 0 ≤ beta :=
+lemma beta_nonneg (h : DriftBoundedOn Ω b beta) : 0 ≤ beta :=
   h.1
-
-/-- The mass bound is nonnegative. -/
-@[grind →]
-lemma gamma_nonneg (h : LowerOrderBoundedOn Ω b c beta gamma) : 0 ≤ gamma :=
-  h.2.1
 
 /-- The pointwise drift coefficient bound. -/
 @[grind =>]
-lemma drift_bound (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X} (hx : x ∈ Ω) :
+lemma bound (h : DriftBoundedOn Ω b beta) {x : X} (hx : x ∈ Ω) :
     ‖b x‖ ≤ beta :=
-  (h.2.2 hx).1
+  h.2 hx
 
-/-- The pointwise mass coefficient bound. -/
-@[grind =>]
-lemma mass_bound (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X} (hx : x ∈ Ω) :
-    ‖c x‖ ≤ gamma :=
-  (h.2.2 hx).2
+/-- Restricting the domain preserves bounded drift coefficients. -/
+lemma mono_set (h : DriftBoundedOn Ω b beta) (hΩ : Ω' ⊆ Ω) :
+    DriftBoundedOn Ω' b beta :=
+  ⟨h.beta_nonneg, fun {_} hx => h.bound (hΩ hx)⟩
 
-/-- Restricting the domain preserves bounded lower-order coefficients. -/
-lemma mono_set (h : LowerOrderBoundedOn Ω b c beta gamma) (hΩ : Ω' ⊆ Ω) :
-    LowerOrderBoundedOn Ω' b c beta gamma :=
-  ⟨h.beta_nonneg, h.gamma_nonneg, fun {_} hx => h.2.2 (hΩ hx)⟩
-
-/-- Increasing either bound preserves bounded lower-order coefficients. -/
-lemma mono_constants (h : LowerOrderBoundedOn Ω b c beta gamma)
-    (hbeta : beta ≤ beta') (hgamma : gamma ≤ gamma') :
-    LowerOrderBoundedOn Ω b c beta' gamma' :=
-  ⟨h.beta_nonneg.trans hbeta, h.gamma_nonneg.trans hgamma,
-    fun {_} hx => ⟨(h.drift_bound hx).trans hbeta, (h.mass_bound hx).trans hgamma⟩⟩
+/-- Increasing the bound preserves bounded drift coefficients. -/
+lemma mono_constant (h : DriftBoundedOn Ω b beta) (hbeta : beta ≤ beta') :
+    DriftBoundedOn Ω b beta' :=
+  ⟨h.beta_nonneg.trans hbeta, fun {_} hx => (h.bound hx).trans hbeta⟩
 
 /-- Constructor from separate side conditions and pointwise bounds. -/
-lemma of_bounds (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma)
-    (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)
-    (hc : ∀ ⦃x⦄, x ∈ Ω → ‖c x‖ ≤ gamma) :
-    LowerOrderBoundedOn Ω b c beta gamma :=
-  ⟨hbeta, hgamma, fun {_} hx => ⟨hb hx, hc hx⟩⟩
+lemma of_bound (hbeta : 0 ≤ beta) (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta) :
+    DriftBoundedOn Ω b beta :=
+  ⟨hbeta, hb⟩
 
-/-- Pointwise boundedness of the drift form supplied by bounded lower-order coefficients. -/
+/-- Pointwise boundedness of the drift form supplied by a drift coefficient bound. -/
 @[grind =>]
-lemma norm_driftForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
+lemma norm_driftForm_le (h : DriftBoundedOn Ω b beta) {x : X}
     (hx : x ∈ Ω) (u : ℝ) (ξ : EuclideanSpace ℝ n) :
     ‖driftForm (b x) u ξ‖ ≤ beta * ‖u‖ * ‖ξ‖ := by
   rw [driftForm_apply, norm_mul]
@@ -136,31 +114,73 @@ lemma norm_driftForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
       exact norm_inner_le_norm (b x) ξ
     _ ≤ (beta * ‖ξ‖) * ‖u‖ := by
       gcongr
-      exact h.drift_bound hx
+      exact h.bound hx
     _ = beta * ‖u‖ * ‖ξ‖ := by ring
 
-/-- Operator-norm boundedness of the drift form supplied by bounded lower-order coefficients. -/
+/-- Operator-norm boundedness of the drift form supplied by a drift coefficient bound. -/
 @[grind =>]
-lemma opNorm_driftForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
+lemma opNorm_driftForm_le (h : DriftBoundedOn Ω b beta) {x : X}
     (hx : x ∈ Ω) :
     ‖driftForm (b x)‖ ≤ beta := by
   rw [driftForm, ContinuousLinearMap.norm_smulRightL, innerSL_apply_norm]
-  exact h.drift_bound hx
+  exact h.bound hx
 
-/-- Pointwise boundedness of the mass form supplied by bounded lower-order coefficients. -/
+end DriftBoundedOn
+
+/-- Bounded mass coefficients on a domain, with an explicit constant. -/
+def MassBoundedOn (Ω : Set X) (c : X → ℝ) (gamma : ℝ) : Prop :=
+  0 ≤ gamma ∧ ∀ ⦃x⦄, x ∈ Ω → ‖c x‖ ≤ gamma
+
+/-- Characteristic restatement of bounded mass coefficients. -/
+lemma massBoundedOn_iff {Ω : Set X} {c : X → ℝ} {gamma : ℝ} :
+    MassBoundedOn Ω c gamma ↔
+      0 ≤ gamma ∧ ∀ ⦃x⦄, x ∈ Ω → ‖c x‖ ≤ gamma :=
+  Iff.rfl
+
+namespace MassBoundedOn
+
+variable {Ω Ω' : Set X} {c : X → ℝ} {gamma gamma' : ℝ}
+
+/-- The mass bound is nonnegative. -/
+@[grind →]
+lemma gamma_nonneg (h : MassBoundedOn Ω c gamma) : 0 ≤ gamma :=
+  h.1
+
+/-- The pointwise mass coefficient bound. -/
 @[grind =>]
-lemma norm_massForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
+lemma bound (h : MassBoundedOn Ω c gamma) {x : X} (hx : x ∈ Ω) :
+    ‖c x‖ ≤ gamma :=
+  h.2 hx
+
+/-- Restricting the domain preserves bounded mass coefficients. -/
+lemma mono_set (h : MassBoundedOn Ω c gamma) (hΩ : Ω' ⊆ Ω) :
+    MassBoundedOn Ω' c gamma :=
+  ⟨h.gamma_nonneg, fun {_} hx => h.bound (hΩ hx)⟩
+
+/-- Increasing the bound preserves bounded mass coefficients. -/
+lemma mono_constant (h : MassBoundedOn Ω c gamma) (hgamma : gamma ≤ gamma') :
+    MassBoundedOn Ω c gamma' :=
+  ⟨h.gamma_nonneg.trans hgamma, fun {_} hx => (h.bound hx).trans hgamma⟩
+
+/-- Constructor from separate side conditions and pointwise bounds. -/
+lemma of_bound (hgamma : 0 ≤ gamma) (hc : ∀ ⦃x⦄, x ∈ Ω → ‖c x‖ ≤ gamma) :
+    MassBoundedOn Ω c gamma :=
+  ⟨hgamma, hc⟩
+
+/-- Pointwise boundedness of the mass form supplied by a mass coefficient bound. -/
+@[grind =>]
+lemma norm_massForm_le (h : MassBoundedOn Ω c gamma) {x : X}
     (hx : x ∈ Ω) (u v : ℝ) :
     ‖massForm (c x) u v‖ ≤ gamma * ‖u‖ * ‖v‖ := by
   rw [massForm_apply, norm_mul, norm_mul]
   calc
     ‖c x‖ * ‖u‖ * ‖v‖ ≤ gamma * ‖u‖ * ‖v‖ := by
       gcongr
-      exact h.mass_bound hx
+      exact h.bound hx
 
-/-- Operator-norm boundedness of the mass form supplied by bounded lower-order coefficients. -/
+/-- Operator-norm boundedness of the mass form supplied by a mass coefficient bound. -/
 @[grind =>]
-lemma opNorm_massForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
+lemma opNorm_massForm_le (h : MassBoundedOn Ω c gamma) {x : X}
     (hx : x ∈ Ω) :
     ‖massForm (c x)‖ ≤ gamma := by
   calc
@@ -171,7 +191,107 @@ lemma opNorm_massForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
       gcongr
       exact ContinuousLinearMap.opNorm_mul_le ℝ ℝ
     _ = ‖c x‖ := by ring
-    _ ≤ gamma := h.mass_bound hx
+    _ ≤ gamma := h.bound hx
+
+end MassBoundedOn
+
+/-- Bounded lower-order coefficients on a domain, with explicit constants.
+
+`LowerOrderBoundedOn Ω b c beta gamma` means that on `Ω`, the drift coefficient vector
+has norm at most `beta` and the mass coefficient has absolute value at most `gamma`. -/
+def LowerOrderBoundedOn (Ω : Set X) (b : X → EuclideanSpace ℝ n) (c : X → ℝ)
+    (beta gamma : ℝ) : Prop :=
+  DriftBoundedOn Ω b beta ∧ MassBoundedOn Ω c gamma
+
+/-- Characteristic restatement of bounded lower-order coefficients. -/
+lemma lowerOrderBoundedOn_iff {Ω : Set X} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
+    {beta gamma : ℝ} :
+    LowerOrderBoundedOn Ω b c beta gamma ↔
+      DriftBoundedOn Ω b beta ∧ MassBoundedOn Ω c gamma :=
+  Iff.rfl
+
+namespace LowerOrderBoundedOn
+
+variable {Ω Ω' : Set X} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
+variable {beta gamma beta' gamma' : ℝ}
+
+/-- The drift bound is nonnegative. -/
+@[grind →]
+lemma beta_nonneg (h : LowerOrderBoundedOn Ω b c beta gamma) : 0 ≤ beta :=
+  h.1.beta_nonneg
+
+/-- The mass bound is nonnegative. -/
+@[grind →]
+lemma gamma_nonneg (h : LowerOrderBoundedOn Ω b c beta gamma) : 0 ≤ gamma :=
+  h.2.gamma_nonneg
+
+/-- The bundled drift coefficient bound. -/
+lemma drift_boundedOn (h : LowerOrderBoundedOn Ω b c beta gamma) :
+    DriftBoundedOn Ω b beta :=
+  h.1
+
+/-- The bundled mass coefficient bound. -/
+lemma mass_boundedOn (h : LowerOrderBoundedOn Ω b c beta gamma) :
+    MassBoundedOn Ω c gamma :=
+  h.2
+
+/-- The pointwise drift coefficient bound. -/
+@[grind =>]
+lemma drift_bound (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X} (hx : x ∈ Ω) :
+    ‖b x‖ ≤ beta :=
+  h.1.bound hx
+
+/-- The pointwise mass coefficient bound. -/
+@[grind =>]
+lemma mass_bound (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X} (hx : x ∈ Ω) :
+    ‖c x‖ ≤ gamma :=
+  h.2.bound hx
+
+/-- Restricting the domain preserves bounded lower-order coefficients. -/
+lemma mono_set (h : LowerOrderBoundedOn Ω b c beta gamma) (hΩ : Ω' ⊆ Ω) :
+    LowerOrderBoundedOn Ω' b c beta gamma :=
+  ⟨h.1.mono_set hΩ, h.2.mono_set hΩ⟩
+
+/-- Increasing either bound preserves bounded lower-order coefficients. -/
+lemma mono_constants (h : LowerOrderBoundedOn Ω b c beta gamma)
+    (hbeta : beta ≤ beta') (hgamma : gamma ≤ gamma') :
+    LowerOrderBoundedOn Ω b c beta' gamma' :=
+  ⟨h.1.mono_constant hbeta, h.2.mono_constant hgamma⟩
+
+/-- Constructor from separate side conditions and pointwise bounds. -/
+lemma of_bounds (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma)
+    (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)
+    (hc : ∀ ⦃x⦄, x ∈ Ω → ‖c x‖ ≤ gamma) :
+    LowerOrderBoundedOn Ω b c beta gamma :=
+  ⟨DriftBoundedOn.of_bound hbeta hb, MassBoundedOn.of_bound hgamma hc⟩
+
+/-- Convenience pointwise drift-form bound from bundled lower-order bounds. -/
+@[grind =>]
+lemma norm_driftForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
+    (hx : x ∈ Ω) (u : ℝ) (ξ : EuclideanSpace ℝ n) :
+    ‖driftForm (b x) u ξ‖ ≤ beta * ‖u‖ * ‖ξ‖ :=
+  h.drift_boundedOn.norm_driftForm_le hx u ξ
+
+/-- Convenience operator-norm drift-form bound from bundled lower-order bounds. -/
+@[grind =>]
+lemma opNorm_driftForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
+    (hx : x ∈ Ω) :
+    ‖driftForm (b x)‖ ≤ beta :=
+  h.drift_boundedOn.opNorm_driftForm_le hx
+
+/-- Convenience pointwise mass-form bound from bundled lower-order bounds. -/
+@[grind =>]
+lemma norm_massForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
+    (hx : x ∈ Ω) (u v : ℝ) :
+    ‖massForm (c x) u v‖ ≤ gamma * ‖u‖ * ‖v‖ :=
+  h.mass_boundedOn.norm_massForm_le hx u v
+
+/-- Convenience operator-norm mass-form bound from bundled lower-order bounds. -/
+@[grind =>]
+lemma opNorm_massForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
+    (hx : x ∈ Ω) :
+    ‖massForm (c x)‖ ≤ gamma :=
+  h.mass_boundedOn.opNorm_massForm_le hx
 
 end LowerOrderBoundedOn
 
@@ -213,7 +333,7 @@ lemma norm_bound (h : NonnegMassOn Ω c gamma) {x : X} (hx : x ∈ Ω) :
 
 /-- The mass form associated to a nonnegative mass coefficient is nonnegative on the diagonal. -/
 @[grind =>]
-lemma nonneg_massForm_self (h : NonnegMassOn Ω c gamma) {x : X} (hx : x ∈ Ω) (u : ℝ) :
+lemma massForm_self_nonneg (h : NonnegMassOn Ω c gamma) {x : X} (hx : x ∈ Ω) (u : ℝ) :
     0 ≤ massForm (c x) u u := by
   rw [massForm_apply, mul_assoc]
   exact mul_nonneg (h.nonneg hx) (mul_self_nonneg u)
