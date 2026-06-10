@@ -4,6 +4,7 @@
 -- `TauCetiRoadmap` or `TauCetiReview` (both enforced in CI). As the library
 -- grows, import the submodules of `TauCeti/` here.
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
+import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 import TauCeti.Algebra.Coalgebra.Comodule.Finite
 import TauCeti.Algebra.Coalgebra.Comodule.Hom
