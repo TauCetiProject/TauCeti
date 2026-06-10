@@ -20,6 +20,8 @@ unfolding the definition of a comodule.
 * `TauCeti.Comodule.transportHom`: transport a comodule morphism across linear equivalences on
   source and target.
 * `TauCeti.ComoduleCat.transport`: the bundled comodule obtained by transport.
+* `TauCeti.ComoduleCat.transportIso`: the bundled isomorphism from the original comodule to
+  its transport.
 
 ## References
 
@@ -193,6 +195,61 @@ theorem transportHom_apply (eM : M ≃ₗ[R] N) (eN : M' ≃ₗ[R] N') (f : Hom 
       eN (f (eM.symm n)) :=
   rfl
 
+/-- The forward morphism from a comodule to its transport along a linear equivalence. -/
+def transportToHom (e : M ≃ₗ[R] N) :
+    letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+    Hom R C M N :=
+  letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+  { toLinearMap := e.toLinearMap
+    map_coact := by
+      ext m
+      simp [transportCoact] }
+
+/-- The inverse morphism from a transported comodule back to the original comodule. -/
+def transportInvHom (e : M ≃ₗ[R] N) :
+    letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+    Hom R C N M :=
+  letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+  { toLinearMap := e.symm.toLinearMap
+    map_coact := by
+      ext n
+      dsimp [transportCoact]
+      induction coact (R := R) (C := C) (M := M) (e.symm n)
+        using TensorProduct.induction_on with
+      | zero => simp
+      | tmul m c => simp
+      | add x y hx hy => simp [hx, hy] }
+
+/-- The forward transport morphism has the original linear equivalence underneath. -/
+@[simp]
+theorem transportToHom_toLinearMap (e : M ≃ₗ[R] N) :
+    letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+    (transportToHom (R := R) (C := C) (M := M) (N := N) e).toLinearMap =
+      e.toLinearMap := by
+  rfl
+
+/-- The inverse transport morphism has the inverse linear equivalence underneath. -/
+@[simp]
+theorem transportInvHom_toLinearMap (e : M ≃ₗ[R] N) :
+    letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+    (transportInvHom (R := R) (C := C) (M := M) (N := N) e).toLinearMap =
+      e.symm.toLinearMap := by
+  rfl
+
+/-- Pointwise form of `transportToHom_toLinearMap`. -/
+@[simp]
+theorem transportToHom_apply (e : M ≃ₗ[R] N) (m : M) :
+    letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+    transportToHom (R := R) (C := C) (M := M) (N := N) e m = e m := by
+  rfl
+
+/-- Pointwise form of `transportInvHom_toLinearMap`. -/
+@[simp]
+theorem transportInvHom_apply (e : M ≃ₗ[R] N) (n : N) :
+    letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
+    transportInvHom (R := R) (C := C) (M := M) (N := N) e n = e.symm n := by
+  rfl
+
 end Comodule
 
 namespace ComoduleCat
@@ -212,6 +269,45 @@ def transport (e : M ≃ₗ[R] N) : ComoduleCat.{u, v, x} R C where
 theorem transport_coact (e : M ≃ₗ[R] N) :
     Comodule.coact (R := R) (C := C) (M := transport R C e) =
       Comodule.transportCoact (R := R) (C := C) (M := M) (N := N) e :=
+  rfl
+
+variable {N₀ : Type w} [AddCommMonoid N₀] [Module R N₀]
+
+/-- The categorical isomorphism from a comodule to its transport along a linear equivalence. -/
+def transportIso (e : M ≃ₗ[R] N₀) : of R C M ≅ transport R C e where
+  hom := Comodule.transportToHom (R := R) (C := C) (M := M) (N := N₀) e
+  inv := Comodule.transportInvHom (R := R) (C := C) (M := M) (N := N₀) e
+  hom_inv_id := by
+    ext m
+    change e.symm (e m) = m
+    simp
+  inv_hom_id := by
+    ext n
+    change e (e.symm n) = n
+    simp
+
+/-- The transport isomorphism has the original linear equivalence as its forward map. -/
+@[simp]
+theorem transportIso_hom_toLinearMap (e : M ≃ₗ[R] N₀) :
+    ((transportIso (R := R) (C := C) e).hom).toLinearMap = e.toLinearMap :=
+  Comodule.transportToHom_toLinearMap (R := R) (C := C) (M := M) (N := N₀) e
+
+/-- The transport isomorphism has the inverse linear equivalence as its inverse map. -/
+@[simp]
+theorem transportIso_inv_toLinearMap (e : M ≃ₗ[R] N₀) :
+    ((transportIso (R := R) (C := C) e).inv).toLinearMap = e.symm.toLinearMap :=
+  Comodule.transportInvHom_toLinearMap (R := R) (C := C) (M := M) (N := N₀) e
+
+/-- The forward map of the transport isomorphism applies as the original linear equivalence. -/
+@[simp]
+theorem transportIso_hom_apply (e : M ≃ₗ[R] N₀) (m : M) :
+    (transportIso (R := R) (C := C) e).hom m = e m :=
+  rfl
+
+/-- The inverse map of the transport isomorphism applies as the inverse linear equivalence. -/
+@[simp]
+theorem transportIso_inv_apply (e : M ≃ₗ[R] N₀) (n : N₀) :
+    (transportIso (R := R) (C := C) e).inv n = e.symm n :=
   rfl
 
 end ComoduleCat
