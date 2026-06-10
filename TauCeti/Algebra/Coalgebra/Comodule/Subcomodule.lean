@@ -40,47 +40,54 @@ variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 
 /-- The image of `P ⊗ C` in `M ⊗ C` induced by the inclusion of a submodule `P ≤ M`. -/
 def submoduleCoactionRange (P : Submodule R M) : Submodule R (M ⊗[R] C) :=
-  LinearMap.range (TensorProduct.map P.subtype (LinearMap.id (R := R) (M := C)))
+  LinearMap.range (P.subtype.rTensor C)
 
 omit [Coalgebra R C] [Comodule R C M] in
+/-- Membership in the coaction range means being the image of some tensor in `P ⊗ C`. -/
 @[simp]
 theorem mem_submoduleCoactionRange (P : Submodule R M) (x : M ⊗[R] C) :
     x ∈ submoduleCoactionRange (R := R) (C := C) P ↔
       ∃ y : P ⊗[R] C,
-        TensorProduct.map P.subtype (LinearMap.id (R := R) (M := C)) y = x :=
+        P.subtype.rTensor C y = x :=
   LinearMap.mem_range
 
-/-- A submodule of a right comodule is a subcomodule if the coaction of every element factors
-through `P ⊗ C → M ⊗ C`. -/
+/-- A submodule of a right comodule is a subcomodule if the image of its coaction lies in the
+range of `P ⊗ C → M ⊗ C`. -/
 def IsSubcomodule (P : Submodule R M) : Prop :=
-  ∀ ⦃m : M⦄, m ∈ P →
-    Comodule.coact (R := R) (C := C) (M := M) m ∈
-      submoduleCoactionRange (R := R) (C := C) P
+  P.map (Comodule.coact (R := R) (C := C) (M := M)) ≤
+    LinearMap.range (P.subtype.rTensor C)
 
 /-- A subcomodule of a right comodule, bundled as a coaction-stable submodule. -/
-abbrev Subcomodule (R : Type u) (C : Type v) (M : Type w) [CommSemiring R]
+structure Subcomodule (R : Type u) (C : Type v) (M : Type w) [CommSemiring R]
     [AddCommMonoid C] [Module R C] [Coalgebra R C] [AddCommMonoid M] [Module R M]
-    [Comodule R C M] :=
-  { P : Submodule R M // IsSubcomodule (R := R) (C := C) (M := M) P }
+    [Comodule R C M] where
+  /-- The underlying submodule. -/
+  toSubmodule : Submodule R M
+  /-- The underlying submodule is stable under the coaction. -/
+  isSubcomodule : IsSubcomodule (R := R) (C := C) (M := M) toSubmodule
 
+/-- The elementwise characterization of `IsSubcomodule`: the coaction of every element of `P`
+is represented by an element of `P ⊗ C`. -/
 theorem isSubcomodule_iff (P : Submodule R M) :
     IsSubcomodule (R := R) (C := C) (M := M) P ↔
       ∀ ⦃m : M⦄, m ∈ P →
         ∃ y : P ⊗[R] C,
-          TensorProduct.map P.subtype (LinearMap.id (R := R) (M := C)) y =
-            Comodule.coact (R := R) (C := C) (M := M) m := by
-  simp [IsSubcomodule]
+          P.subtype.rTensor C y = Comodule.coact (R := R) (C := C) (M := M) m := by
+  constructor
+  · intro hP m hm
+    exact (mem_submoduleCoactionRange (R := R) (C := C) P _).mp (hP ⟨m, hm, rfl⟩)
+  · intro hP x hx
+    rcases hx with ⟨m, hm, rfl⟩
+    exact (mem_submoduleCoactionRange (R := R) (C := C) P _).mpr (hP hm)
 
 namespace Subcomodule
 
-/-- Bundle a coaction-stable submodule as a subcomodule. -/
-def mk (P : Submodule R M) (hP : IsSubcomodule (R := R) (C := C) (M := M) P) :
-    Subcomodule R C M :=
-  ⟨P, hP⟩
-
-/-- The underlying submodule of a subcomodule. -/
-def toSubmodule (P : Subcomodule R C M) : Submodule R M :=
-  P.1
+@[ext]
+theorem ext {P Q : Subcomodule R C M} (h : P.toSubmodule = Q.toSubmodule) : P = Q := by
+  cases P
+  cases Q
+  cases h
+  rfl
 
 @[simp]
 theorem toSubmodule_mk (P : Submodule R M)
@@ -88,21 +95,11 @@ theorem toSubmodule_mk (P : Submodule R M)
     toSubmodule (mk (R := R) (C := C) (M := M) P hP) = P :=
   rfl
 
-/-- The stability proof carried by a subcomodule. -/
-theorem isSubcomodule (P : Subcomodule R C M) :
-    IsSubcomodule (R := R) (C := C) (M := M) P.toSubmodule :=
-  P.property
-
-@[simp]
-theorem mem_toSubmodule (P : Subcomodule R C M) (m : M) :
-    m ∈ P.toSubmodule ↔ m ∈ P.1 :=
-  Iff.rfl
-
 /-- The coaction of an element of a subcomodule factors through `P ⊗ C`. -/
 theorem coact_mem (P : Subcomodule R C M) ⦃m : M⦄ (hm : m ∈ P.toSubmodule) :
     Comodule.coact (R := R) (C := C) (M := M) m ∈
       submoduleCoactionRange (R := R) (C := C) P.toSubmodule :=
-  P.property hm
+  P.isSubcomodule ⟨m, hm, rfl⟩
 
 end Subcomodule
 
