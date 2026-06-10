@@ -307,7 +307,8 @@ lemma nonnegMassOn_iff {Ω : Set X} {c : X → ℝ} {gamma : ℝ} :
 
 namespace NonnegMassOn
 
-variable {Ω Ω' : Set X} {c : X → ℝ} {gamma gamma' : ℝ}
+variable {Ω Ω' : Set X} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
+variable {beta gamma gamma' : ℝ}
 
 /-- The mass bound is nonnegative. -/
 @[grind →]
@@ -349,11 +350,22 @@ lemma mono_constant (h : NonnegMassOn Ω c gamma) (hgamma : gamma ≤ gamma') :
   ⟨h.gamma_nonneg.trans hgamma,
     fun {_} hx => ⟨h.nonneg hx, (h.upper_bound hx).trans hgamma⟩⟩
 
+/-- Nonnegative bounded mass coefficients are bounded mass coefficients. -/
+lemma mass_boundedOn (h : NonnegMassOn Ω c gamma) :
+    MassBoundedOn Ω c gamma :=
+  MassBoundedOn.of_bound h.gamma_nonneg fun {_} hx => h.norm_bound hx
+
+/-- A drift bound and nonnegative bounded mass coefficient produce lower-order bounds. -/
+lemma lowerOrderBoundedOn (h : NonnegMassOn Ω c gamma)
+    (hb : DriftBoundedOn (n := n) Ω b beta) :
+    LowerOrderBoundedOn Ω b c beta gamma :=
+  ⟨hb, h.mass_boundedOn⟩
+
 /-- Nonnegative bounded mass coefficients produce lower-order bounds with zero drift. -/
 lemma lowerOrderBoundedOn_zero_drift (h : NonnegMassOn Ω c gamma) :
     LowerOrderBoundedOn Ω (fun _ => (0 : EuclideanSpace ℝ n)) c 0 gamma :=
-  LowerOrderBoundedOn.of_bounds le_rfl h.gamma_nonneg
-    (fun {_} _ => by simp) (fun {_} hx => h.norm_bound hx)
+  h.lowerOrderBoundedOn
+    (DriftBoundedOn.of_bound (n := n) le_rfl fun {_} _ => by simp)
 
 end NonnegMassOn
 
