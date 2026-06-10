@@ -88,6 +88,7 @@ lemma toSesqForm_toEuclideanCLM_isCoercive_of_lower_bound (A : Matrix n n ℝ) {
   exact isCoercive_matrixBilinearForm_of_lower_bound A hlam hlower
 
 /-- Uniform ellipticity at a point gives coercivity of the pointwise energy form. -/
+@[grind =>]
 lemma toSesqForm_toEuclideanCLM_isCoercive_of_uniformlyEllipticOn {X : Type*} {Ω : Set X}
     {a : X → Matrix n n ℝ} {lam Lam : ℝ} (h : UniformlyEllipticOn Ω a lam Lam)
     {x : X} (hx : x ∈ Ω) :
@@ -96,6 +97,7 @@ lemma toSesqForm_toEuclideanCLM_isCoercive_of_uniformlyEllipticOn {X : Type*} {�
 
 /-- Uniform ellipticity at a point gives the operator-norm upper bound for Mathlib's matrix
 sesquilinear form. -/
+@[grind =>]
 lemma norm_toSesqForm_toEuclideanCLM_le_of_uniformlyEllipticOn {X : Type*} {Ω : Set X}
     {a : X → Matrix n n ℝ} {lam Lam : ℝ} (h : UniformlyEllipticOn Ω a lam Lam)
     {x : X} (hx : x ∈ Ω) :
