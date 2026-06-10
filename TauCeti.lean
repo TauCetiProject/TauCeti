@@ -19,6 +19,7 @@ import TauCeti.Algebra.Coalgebra.Comodule.Zero
 import TauCeti.Algebra.Coalgebra.ComoduleCat
 import TauCeti.Algebra.Coalgebra.Subcoalgebra
 import TauCeti.Algebra.Coalgebra.Subcoalgebra.GroupLike
+import TauCeti.Algebra.Coalgebra.Subcoalgebra.Lattice
 import TauCeti.AlgebraicGeometry.WeilDivisor
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
