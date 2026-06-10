@@ -10,18 +10,18 @@ import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 
 This file packages the regular right comodule of a coalgebra as a bundled object of
 `ComoduleCat`, and, when the coalgebra is finitely generated as a module, as an object of
-`FGComoduleCat`. It also records the canonical morphism from the one-dimensional comodule
-attached to a group-like element into the regular comodule.
+`FGComoduleCat`. It also records the canonical morphism from the group-like comodule on
+the rank-one free module `R` into the regular comodule.
 
 This is Layer 1 infrastructure for the Tau Ceti reductive-groups roadmap target
 "Comodules over a coalgebra/Hopf algebra", specifically the regular-representation part of
-the finite-dimensional comodule category.
+the finitely generated comodule category.
 
 ## Main definitions
 
 * `TauCeti.ComoduleCat.regular`: the bundled regular right comodule.
 * `TauCeti.Comodule.Hom.groupLikeToRegular`: the map `r ↦ r • g` from the group-like
-  one-dimensional comodule into the regular comodule.
+  comodule on `R` into the regular comodule.
 * `TauCeti.Comodule.Hom.trivialToRegular`: the bialgebraic special case `g = 1`.
 * `TauCeti.FGComoduleCat.regular`: the regular comodule as a finitely generated comodule,
   when the underlying coalgebra is finitely generated as an `R`-module.
@@ -60,6 +60,7 @@ def groupLikeToRegular (g : GroupLike R C) :
         simp [LinearMap.toSpanSingleton_apply, TensorProduct.smul_tmul] }
 
 /-- The underlying linear map of `groupLikeToRegular g` sends `r` to `r • g`. -/
+@[simp]
 theorem groupLikeToRegular_toLinearMap (g : GroupLike R C) :
     letI : Comodule R C R := groupLike (R := R) (C := C) (M := R) g
     (groupLikeToRegular (R := R) (C := C) g).toLinearMap =
@@ -67,6 +68,7 @@ theorem groupLikeToRegular_toLinearMap (g : GroupLike R C) :
   rfl
 
 /-- The morphism `groupLikeToRegular g` sends `r` to `r • g`. -/
+@[simp]
 theorem groupLikeToRegular_apply (g : GroupLike R C) (r : R) :
     letI : Comodule R C R := groupLike (R := R) (C := C) (M := R) g
     groupLikeToRegular (R := R) (C := C) g r = r • (g : C) :=
@@ -82,7 +84,7 @@ namespace Hom
 
 section Bialgebra
 
-variable {R C : Type u} [CommSemiring R] [Semiring C] [Bialgebra R C]
+variable {R : Type u} {C : Type v} [CommSemiring R] [Semiring C] [Bialgebra R C]
 
 /-- The canonical morphism from the trivial one-dimensional comodule to the regular comodule
 of a bialgebra, induced by the unit map `R → C`. -/
@@ -92,6 +94,7 @@ def trivialToRegular :
   groupLikeToRegular (R := R) (C := C) (1 : GroupLike R C)
 
 /-- The underlying linear map of `trivialToRegular` is `Algebra.linearMap R C`. -/
+@[simp]
 theorem trivialToRegular_toLinearMap :
     letI : Comodule R C R := trivial (R := R) (C := C) (M := R)
     (trivialToRegular (R := R) (C := C)).toLinearMap = Algebra.linearMap R C := by
@@ -99,14 +102,14 @@ theorem trivialToRegular_toLinearMap :
   exact LinearMap.toSpanSingleton_one_eq_algebraLinearMap
 
 /-- The morphism `trivialToRegular` sends `r` to `algebraMap R C r`. -/
+@[simp]
 theorem trivialToRegular_apply (r : R) :
     letI : Comodule R C R := trivial (R := R) (C := C) (M := R)
     trivialToRegular (R := R) (C := C) r = algebraMap R C r :=
   by
     letI : Comodule R C R := trivial (R := R) (C := C) (M := R)
-    change (trivialToRegular (R := R) (C := C)).toLinearMap r = algebraMap R C r
-    rw [trivialToRegular_toLinearMap]
-    exact Algebra.linearMap_apply R C r
+    rw [← Algebra.linearMap_apply R C r]
+    exact LinearMap.congr_fun (trivialToRegular_toLinearMap (R := R) (C := C)) r
 
 end Bialgebra
 
@@ -151,6 +154,7 @@ abbrev groupLikeToRegular (g : GroupLike R C) :
   Comodule.Hom.groupLikeToRegular (R := R) (C := C) g
 
 /-- The bundled morphism `groupLikeToRegular g` sends `r` to `r • g`. -/
+@[simp]
 theorem groupLikeToRegular_apply (g : GroupLike R C) (r : R) :
     letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
     groupLikeToRegular (R := R) (C := C) g r = r • (g : C) :=
@@ -167,6 +171,7 @@ abbrev trivialToRegular : trivial R C ⟶ regular R C :=
   Comodule.Hom.trivialToRegular (R := R) (C := C)
 
 /-- The bundled morphism `trivialToRegular` sends `r` to `algebraMap R C r`. -/
+@[simp]
 theorem trivialToRegular_apply (r : R) :
     trivialToRegular (R := R) (C := C) r = algebraMap R C r :=
   Comodule.Hom.trivialToRegular_apply (R := R) (C := C) r
