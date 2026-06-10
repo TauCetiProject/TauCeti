@@ -5,6 +5,7 @@
 -- grows, import the submodules of `TauCeti/` here.
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
+import TauCeti.Algebra.Coalgebra.Comodule.Finite
 import TauCeti.Algebra.Coalgebra.Comodule.Hom
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient
 import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
