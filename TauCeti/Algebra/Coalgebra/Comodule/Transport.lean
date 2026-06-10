@@ -205,8 +205,7 @@ theorem transportHom_id (e : M ≃ₗ[R] N) :
   by
     letI : Comodule R C N := Transport (R := R) (C := C) (M := M) (N := N) e
     ext n
-    change e ((Comodule.Hom.id R C M) (e.symm n)) = (Comodule.Hom.id R C N) n
-    rw [Comodule.Hom.id_apply, Comodule.Hom.id_apply]
+    rw [transportHom_apply, Comodule.Hom.id_apply, Comodule.Hom.id_apply]
     exact e.apply_symm_apply n
 
 variable {P : Type*} {P' : Type*}
@@ -232,15 +231,7 @@ theorem transportHom_comp (eM : M ≃ₗ[R] N) (eM' : M' ≃ₗ[R] N') (eP : P �
     letI : Comodule R C N' := Transport (R := R) (C := C) (M := M') (N := N') eM'
     letI : Comodule R C P' := Transport (R := R) (C := C) (M := P) (N := P') eP
     ext n
-    change eP ((Comodule.Hom.comp g f) (eM.symm n)) =
-      (Comodule.Hom.comp
-        (transportHom (R := R) (C := C) (M := M') (M' := P) (N := N') (N' := P')
-          eM' eP g)
-        (transportHom (R := R) (C := C) (M := M) (M' := M') (N := N) (N' := N')
-          eM eM' f)) n
-    rw [Comodule.Hom.comp_apply, Comodule.Hom.comp_apply]
-    rw [transportHom_apply, transportHom_apply]
-    simp
+    simp [transportHom_apply, Comodule.Hom.comp_apply]
 
 /-- The forward morphism from a comodule to its transport along a linear equivalence. -/
 def transportToHom (e : M ≃ₗ[R] N) :
@@ -324,14 +315,8 @@ variable {N₀ : Type w} [AddCommMonoid N₀] [Module R N₀]
 def transportIso (e : M ≃ₗ[R] N₀) : of R C M ≅ transport R C e where
   hom := Comodule.transportToHom (R := R) (C := C) (M := M) (N := N₀) e
   inv := Comodule.transportInvHom (R := R) (C := C) (M := M) (N := N₀) e
-  hom_inv_id := by
-    ext m
-    change e.symm (e m) = m
-    simp
-  inv_hom_id := by
-    ext n
-    change e (e.symm n) = n
-    simp
+  hom_inv_id := Comodule.Hom.ext fun m => e.symm_apply_apply m
+  inv_hom_id := Comodule.Hom.ext fun n => e.apply_symm_apply n
 
 /-- The transport isomorphism has the original linear equivalence as its forward map. -/
 @[simp]
