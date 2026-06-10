@@ -15,10 +15,8 @@ and zeroth-order mass coefficient as separate named hypotheses.  The principal m
 coefficient lives in `TauCeti.Analysis.PDE.UniformEllipticity`; this file records the
 pointwise explicit bounds for the lower-order terms
 
-* `u ↦ b(x) · ∇u`, represented using
-  `ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ n) ℝ (innerSL ℝ (b x))`;
-* `u ↦ c(x) u`, represented in the weak form using
-  `c x • ContinuousLinearMap.mul ℝ ℝ`.
+* `u ↦ b(x) · ∇u`, represented by `driftForm (b x)`;
+* `u ↦ c(x) u`, represented in the weak form by `massForm (c x)`.
 
 These are only pointwise finite-dimensional estimates, later integrated over `Ω` once the
 weak-derivative Sobolev spaces are available.
@@ -28,6 +26,7 @@ weak-derivative Sobolev spaces are available.
 * `TauCeti.PDE.LowerOrderBoundedOn`: explicit bounds for drift and mass coefficients on a
   domain.
 * `TauCeti.PDE.NonnegMassOn`: nonnegative bounded mass coefficients.
+* `TauCeti.PDE.driftForm`, `TauCeti.PDE.massForm`: named pointwise lower-order forms.
 -/
 
 namespace TauCeti
@@ -37,6 +36,30 @@ namespace PDE
 open scoped InnerProductSpace
 
 variable {X n : Type*} [Fintype n]
+
+/-- The pointwise first-order drift form `(u, ξ) ↦ ⟪b, ξ⟫ u`. -/
+noncomputable def driftForm (b : EuclideanSpace ℝ n) :
+    ℝ →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
+  ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ n) ℝ (innerSL ℝ b)
+
+/-- The pointwise zeroth-order mass form `(u, v) ↦ c u v`. -/
+noncomputable def massForm (c : ℝ) : ℝ →L[ℝ] ℝ →L[ℝ] ℝ :=
+  c • ContinuousLinearMap.mul ℝ ℝ
+
+/-- Applying the drift form is the scalar product with the drift coefficient times `u`. -/
+@[simp]
+lemma driftForm_apply (b : EuclideanSpace ℝ n) (u : ℝ) (ξ : EuclideanSpace ℝ n) :
+    driftForm b u ξ = ⟪b, ξ⟫_ℝ * u := by
+  rw [driftForm, ContinuousLinearMap.smulRightL_apply_apply,
+    ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, smul_eq_mul]
+
+/-- Applying the mass form is multiplication by the mass coefficient. -/
+@[simp]
+lemma massForm_apply (c u v : ℝ) :
+    massForm c u v = c * u * v := by
+  rw [massForm, ContinuousLinearMap.smul_apply, ContinuousLinearMap.smul_apply,
+    ContinuousLinearMap.mul_apply', smul_eq_mul]
+  ring
 
 /-- Bounded lower-order coefficients on a domain, with explicit constants.
 
@@ -105,10 +128,8 @@ lemma of_bounds (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma)
 @[grind =>]
 lemma norm_driftForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
     (hx : x ∈ Ω) (u : ℝ) (ξ : EuclideanSpace ℝ n) :
-    ‖ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ n) ℝ (innerSL ℝ (b x)) u ξ‖ ≤
-      beta * ‖u‖ * ‖ξ‖ := by
-  rw [ContinuousLinearMap.smulRightL_apply_apply, ContinuousLinearMap.smulRight_apply,
-    innerSL_apply_apply, smul_eq_mul, norm_mul]
+    ‖driftForm (b x) u ξ‖ ≤ beta * ‖u‖ * ‖ξ‖ := by
+  rw [driftForm_apply, norm_mul]
   calc
     ‖⟪b x, ξ⟫_ℝ‖ * ‖u‖ ≤ (‖b x‖ * ‖ξ‖) * ‖u‖ := by
       gcongr
@@ -122,31 +143,30 @@ lemma norm_driftForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
 @[grind =>]
 lemma opNorm_driftForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
     (hx : x ∈ Ω) :
-    ‖ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ n) ℝ (innerSL ℝ (b x))‖ ≤ beta := by
-  rw [ContinuousLinearMap.norm_smulRightL, innerSL_apply_norm]
+    ‖driftForm (b x)‖ ≤ beta := by
+  rw [driftForm, ContinuousLinearMap.norm_smulRightL, innerSL_apply_norm]
   exact h.drift_bound hx
 
 /-- Pointwise boundedness of the mass form supplied by bounded lower-order coefficients. -/
 @[grind =>]
 lemma norm_massForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
     (hx : x ∈ Ω) (u v : ℝ) :
-    ‖(c x • ContinuousLinearMap.mul ℝ ℝ) u v‖ ≤ gamma * ‖u‖ * ‖v‖ := by
-  rw [ContinuousLinearMap.smul_apply, ContinuousLinearMap.smul_apply,
-    ContinuousLinearMap.mul_apply', smul_eq_mul, norm_mul, norm_mul]
+    ‖massForm (c x) u v‖ ≤ gamma * ‖u‖ * ‖v‖ := by
+  rw [massForm_apply, norm_mul, norm_mul]
   calc
-    ‖c x‖ * (‖u‖ * ‖v‖) ≤ gamma * (‖u‖ * ‖v‖) := by
+    ‖c x‖ * ‖u‖ * ‖v‖ ≤ gamma * ‖u‖ * ‖v‖ := by
       gcongr
       exact h.mass_bound hx
-    _ = gamma * ‖u‖ * ‖v‖ := by ring
 
 /-- Operator-norm boundedness of the mass form supplied by bounded lower-order coefficients. -/
 @[grind =>]
 lemma opNorm_massForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
     (hx : x ∈ Ω) :
-    ‖c x • ContinuousLinearMap.mul ℝ ℝ‖ ≤ gamma := by
+    ‖massForm (c x)‖ ≤ gamma := by
   calc
-    ‖c x • ContinuousLinearMap.mul ℝ ℝ‖ ≤ ‖c x‖ * ‖ContinuousLinearMap.mul ℝ ℝ‖ :=
-      ContinuousLinearMap.opNorm_smul_le (c x) (ContinuousLinearMap.mul ℝ ℝ)
+    ‖massForm (c x)‖ ≤ ‖c x‖ * ‖ContinuousLinearMap.mul ℝ ℝ‖ := by
+      rw [massForm]
+      exact ContinuousLinearMap.opNorm_smul_le (c x) (ContinuousLinearMap.mul ℝ ℝ)
     _ ≤ ‖c x‖ * 1 := by
       gcongr
       exact ContinuousLinearMap.opNorm_mul_le ℝ ℝ
