@@ -57,6 +57,13 @@ def IsSubcomodule (P : Submodule R M) : Prop :=
   P.map (Comodule.coact (R := R) (C := C) (M := M)) ≤
     LinearMap.range (P.subtype.rTensor C)
 
+/-- Definitional restatement of `IsSubcomodule` using the named coaction range. -/
+theorem isSubcomodule_def (P : Submodule R M) :
+    IsSubcomodule (R := R) (C := C) (M := M) P ↔
+      P.map (Comodule.coact (R := R) (C := C) (M := M)) ≤
+        submoduleCoactionRange (R := R) (C := C) P :=
+  Iff.rfl
+
 /-- A subcomodule of a right comodule, bundled as a coaction-stable submodule. -/
 structure Subcomodule (R : Type u) (C : Type v) (M : Type w) [CommSemiring R]
     [AddCommMonoid C] [Module R C] [Coalgebra R C] [AddCommMonoid M] [Module R M]
