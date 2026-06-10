@@ -2,8 +2,8 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.CategoryTheory.Limits.Shapes.ZeroObjects
-import TauCeti.Algebra.Coalgebra.ComoduleCat
+import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
+import TauCeti.Algebra.Coalgebra.Comodule.Finite
 
 /-!
 # The zero comodule
@@ -15,20 +15,22 @@ representation category, it needs the standard zero object compatible with the e
 morphisms.
 
 The zero comodule is the unique coaction on `PUnit`. We expose it both unbundled and bundled,
-and register a zero-object instance for `ComoduleCat`.
+and register zero-object instances for `ComoduleCat` and `FGComoduleCat`.
 
 ## Main declarations
 
 * `TauCeti.Comodule.instPUnit`: the zero right comodule on `PUnit`.
 * `TauCeti.ComoduleCat.zero`: the bundled zero comodule.
 * `HasZeroObject (ComoduleCat R C)`.
+* `HasZeroObject (FGComoduleCat R C)`.
 
 ## References
 
 The construction is the standard zero object in the category of comodules; see Sweedler,
 *Hopf Algebras*, Chapter 2. It supplies an additive-category prerequisite for
 `TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1, "Comodules over a coalgebra/Hopf
-algebra".
+algebra". The proof that a subsingleton bundled comodule is zero follows Mathlib's
+`SemimoduleCat.isZero_of_subsingleton` / `ModuleCat.isZero_of_subsingleton` pattern.
 -/
 
 open CategoryTheory CategoryTheory.Limits
@@ -102,16 +104,34 @@ theorem isZero_of_subsingleton (M : ComoduleCat.{u, v, w} R C) [Subsingleton M] 
 instance hasZeroObject : HasZeroObject (ComoduleCat.{u, v, w} R C) :=
   ⟨⟨zero R C, isZero_of_subsingleton (R := R) (C := C) (zero R C)⟩⟩
 
-/-- Every morphism out of the zero comodule is the zero morphism. -/
-theorem zero_hom_ext (M : ComoduleCat.{u, v, w} R C) (f : zero R C ⟶ M) : f = 0 := by
-  ext x
-  rw [Subsingleton.elim x (0 : zero R C)]
-  exact map_zero f.toLinearMap
-
-/-- Every morphism into the zero comodule is the zero morphism. -/
-theorem hom_zero_ext (M : ComoduleCat.{u, v, w} R C) (f : M ⟶ zero R C) : f = 0 := by
-  ext x
+/-- The finite-generation property contains the zero comodule. -/
+instance isFG_containsZero : (isFG (R := R) (C := C)).ContainsZero where
+  exists_zero :=
+    ⟨zero R C, isZero_of_subsingleton (R := R) (C := C) (zero R C),
+      show Module.Finite R (zero R C) from inferInstance⟩
 
 end ComoduleCat
+
+namespace FGComoduleCat
+
+variable (R : Type u) (C : Type v)
+variable [CommSemiring R]
+variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
+
+/-- The bundled finitely generated zero right comodule. -/
+abbrev zero : FGComoduleCat.{u, v, w} R C :=
+  ⟨ComoduleCat.zero R C, show Module.Finite R (ComoduleCat.zero R C) from inferInstance⟩
+
+/-- The ambient comodule underlying the finitely generated zero comodule is the zero comodule. -/
+@[simp]
+theorem zero_obj :
+    (zero R C : FGComoduleCat.{u, v, w} R C).obj = ComoduleCat.zero R C :=
+  rfl
+
+/-- The category of finitely generated right comodules has a zero object. -/
+instance hasZeroObject : HasZeroObject (FGComoduleCat.{u, v, w} R C) :=
+  inferInstance
+
+end FGComoduleCat
 
 end TauCeti
