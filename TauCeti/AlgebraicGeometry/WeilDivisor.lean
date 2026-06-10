@@ -107,6 +107,7 @@ lemma IsEffective.nsmul {D : WeilDivisor X} (hD : IsEffective D) (n : ℕ) :
   intro x
   simpa [IsEffective, coeff] using nsmul_nonneg (hD x) n
 
+/-- A nonzero effective divisor has some point with positive coefficient. -/
 lemma IsEffective.exists_pos_coeff_of_ne_zero {D : WeilDivisor X} (hD : IsEffective D)
     (hD0 : D ≠ 0) : ∃ x, 0 < coeff D x := by
   classical
@@ -347,7 +348,7 @@ lemma degree_coe_degreeZeroSubgroup (D : degreeZeroSubgroup X) :
   D.property
 
 /-- An effective divisor lying in the unweighted degree-zero subgroup is zero. -/
-lemma isEffective_coe_degreeZeroSubgroup_eq_zero {D : degreeZeroSubgroup X}
+lemma coe_degreeZeroSubgroup_eq_zero_of_isEffective {D : degreeZeroSubgroup X}
     (hD : IsEffective (D : WeilDivisor X)) : (D : WeilDivisor X) = 0 :=
   hD.eq_zero_of_degree_eq_zero (degree_coe_degreeZeroSubgroup D)
 
@@ -465,7 +466,7 @@ lemma weightedDegree_coe_weightedDegreeZeroSubgroup (w : X → ℤ)
 
 /-- For strictly positive weights, an effective divisor lying in the weighted degree-zero
 subgroup is zero. -/
-lemma isEffective_coe_weightedDegreeZeroSubgroup_eq_zero {w : X → ℤ} (hw : ∀ x, 0 < w x)
+lemma coe_weightedDegreeZeroSubgroup_eq_zero_of_isEffective {w : X → ℤ} (hw : ∀ x, 0 < w x)
     {D : weightedDegreeZeroSubgroup w} (hD : IsEffective (D : WeilDivisor X)) :
     (D : WeilDivisor X) = 0 :=
   hD.eq_zero_of_weightedDegree_eq_zero_of_pos hw
