@@ -107,6 +107,16 @@ lemma IsEffective.nsmul {D : WeilDivisor X} (hD : IsEffective D) (n : ℕ) :
   intro x
   simpa [IsEffective, coeff] using nsmul_nonneg (hD x) n
 
+/-- A nonzero effective divisor has some point with positive coefficient. -/
+lemma IsEffective.exists_pos_coeff_of_ne_zero {D : WeilDivisor X} (hD : IsEffective D)
+    (hD0 : D ≠ 0) : ∃ x, 0 < coeff D x := by
+  classical
+  by_contra h
+  push Not at h
+  apply hD0
+  ext x
+  exact le_antisymm (h x) (hD x)
+
 @[simp]
 lemma isEffective_ofPoint (x : X) : IsEffective (ofPoint x) := by
   intro y
@@ -255,11 +265,69 @@ lemma weightedDegree_pushforward (wY : Y → ℤ) (f : X → Y) (D : WeilDivisor
     weightedDegree wY (pushforward f D) = weightedDegree (wY ∘ f) D := by
   simp [weightedDegree, pushforward, Finsupp.linearCombination_mapDomain]
 
+/-- An effective divisor has nonnegative weighted degree when all weights are nonnegative. -/
+lemma IsEffective.weightedDegree_nonneg {w : X → ℤ} (hw : ∀ x, 0 ≤ w x)
+    {D : WeilDivisor X} (hD : IsEffective D) : 0 ≤ weightedDegree w D := by
+  rw [weightedDegree_apply]
+  exact Finsupp.sum_nonneg fun x _ => mul_nonneg (hD x) (hw x)
+
+/-- With strictly positive weights, an effective divisor has weighted degree zero iff it is
+zero. -/
+lemma IsEffective.weightedDegree_eq_zero_iff_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
+    {D : WeilDivisor X} (hD : IsEffective D) :
+    weightedDegree w D = 0 ↔ D = 0 := by
+  constructor
+  · intro hdeg
+    by_contra hD0
+    obtain ⟨x, hxpos⟩ := hD.exists_pos_coeff_of_ne_zero hD0
+    have hsum_pos : 0 < D.sum fun y n => n * w y := by
+      exact Finsupp.sum_pos' (fun y _ => mul_nonneg (hD y) (le_of_lt (hw y)))
+        ⟨x, Finsupp.mem_support_iff.mpr (ne_of_gt hxpos), mul_pos hxpos (hw x)⟩
+    rw [← weightedDegree_apply] at hsum_pos
+    exact (ne_of_gt hsum_pos) hdeg
+  · intro h
+    simp [h]
+
+/-- With strictly positive weights, an effective divisor of weighted degree zero is zero. -/
+lemma IsEffective.eq_zero_of_weightedDegree_eq_zero_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
+    {D : WeilDivisor X} (hD : IsEffective D) (hdeg : weightedDegree w D = 0) : D = 0 :=
+  (hD.weightedDegree_eq_zero_iff_of_pos hw).mp hdeg
+
+/-- With strictly positive weights, a nonzero effective divisor has positive weighted degree. -/
+lemma IsEffective.weightedDegree_pos_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
+    {D : WeilDivisor X} (hD : IsEffective D) (hD0 : D ≠ 0) :
+    0 < weightedDegree w D := by
+  exact lt_of_le_of_ne (hD.weightedDegree_nonneg fun x => le_of_lt (hw x)) fun h =>
+    hD0 ((hD.weightedDegree_eq_zero_iff_of_pos hw).mp h.symm)
+
 @[simp]
 lemma weightedDegree_one_eq_degree (D : WeilDivisor X) :
     weightedDegree (fun _ : X => (1 : ℤ)) D = degree D := by
   rw [weightedDegree_apply, degree_apply]
   simp [Finsupp.sum]
+
+/-- An effective divisor has nonnegative degree. -/
+lemma IsEffective.degree_nonneg {D : WeilDivisor X} (hD : IsEffective D) :
+    0 ≤ degree D := by
+  simpa [weightedDegree_one_eq_degree D] using
+    hD.weightedDegree_nonneg (w := fun _ : X => (1 : ℤ)) fun _ => zero_le_one
+
+/-- An effective divisor has degree zero iff it is zero. -/
+lemma IsEffective.degree_eq_zero_iff {D : WeilDivisor X} (hD : IsEffective D) :
+    degree D = 0 ↔ D = 0 := by
+  simpa [weightedDegree_one_eq_degree D] using
+    hD.weightedDegree_eq_zero_iff_of_pos (w := fun _ : X => (1 : ℤ)) fun _ => zero_lt_one
+
+/-- An effective divisor of degree zero is zero. -/
+lemma IsEffective.eq_zero_of_degree_eq_zero {D : WeilDivisor X} (hD : IsEffective D)
+    (hdeg : degree D = 0) : D = 0 :=
+  (hD.degree_eq_zero_iff).mp hdeg
+
+/-- A nonzero effective divisor has positive degree. -/
+lemma IsEffective.degree_pos {D : WeilDivisor X} (hD : IsEffective D) (hD0 : D ≠ 0) :
+    0 < degree D := by
+  simpa [weightedDegree_one_eq_degree D] using
+    hD.weightedDegree_pos_of_pos (w := fun _ : X => (1 : ℤ)) (fun _ => zero_lt_one) hD0
 
 /-- The subgroup of divisors of unweighted degree zero.
 
@@ -278,6 +346,11 @@ lemma mem_degreeZeroSubgroup (D : WeilDivisor X) :
 lemma degree_coe_degreeZeroSubgroup (D : degreeZeroSubgroup X) :
     degree (D : WeilDivisor X) = 0 :=
   D.property
+
+/-- An effective divisor lying in the unweighted degree-zero subgroup is zero. -/
+lemma coe_degreeZeroSubgroup_eq_zero_of_isEffective {D : degreeZeroSubgroup X}
+    (hD : IsEffective (D : WeilDivisor X)) : (D : WeilDivisor X) = 0 :=
+  hD.eq_zero_of_degree_eq_zero (degree_coe_degreeZeroSubgroup D)
 
 /-- The formal divisor `[x] - [y]`, a basic source of degree-zero divisors. -/
 noncomputable def pointDifference (x y : X) : WeilDivisor X :=
@@ -390,6 +463,14 @@ lemma mem_weightedDegreeZeroSubgroup (w : X → ℤ) (D : WeilDivisor X) :
 lemma weightedDegree_coe_weightedDegreeZeroSubgroup (w : X → ℤ)
     (D : weightedDegreeZeroSubgroup w) : weightedDegree w (D : WeilDivisor X) = 0 :=
   D.property
+
+/-- For strictly positive weights, an effective divisor lying in the weighted degree-zero
+subgroup is zero. -/
+lemma coe_weightedDegreeZeroSubgroup_eq_zero_of_isEffective {w : X → ℤ} (hw : ∀ x, 0 < w x)
+    {D : weightedDegreeZeroSubgroup w} (hD : IsEffective (D : WeilDivisor X)) :
+    (D : WeilDivisor X) = 0 :=
+  hD.eq_zero_of_weightedDegree_eq_zero_of_pos hw
+    (weightedDegree_coe_weightedDegreeZeroSubgroup w D)
 
 @[simp]
 lemma pointDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x y : X}

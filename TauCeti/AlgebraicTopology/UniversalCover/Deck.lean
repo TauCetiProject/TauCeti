@@ -93,6 +93,11 @@ action of `E ≃ₜ E` on `E`. -/
 lemma smul_eq_apply (φ : Deck p) (e : E) : φ • e = φ.1 e :=
   rfl
 
+/-- Applying the inverse deck transformation is evaluation of the inverse homeomorphism. -/
+@[simp]
+lemma inv_smul_eq_symm_apply (φ : Deck p) (e : E) : (φ⁻¹ : Deck p) • e = φ.1.symm e :=
+  rfl
+
 -- `FaithfulSMul (Deck p) E` and `ContinuousConstSMul (Deck p) E` are inherited from the generic
 -- subgroup instances in `TauCeti.Topology.Algebra.HomeomorphAction`; `Deck p` is a `Subgroup`.
 

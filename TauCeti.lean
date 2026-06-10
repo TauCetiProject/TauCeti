@@ -6,6 +6,8 @@
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 import TauCeti.Algebra.Coalgebra.Comodule.Hom
+import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
+import TauCeti.Algebra.Coalgebra.Comodule.Transport
 import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 import TauCeti.Algebra.Coalgebra.ComoduleCat
 import TauCeti.AlgebraicGeometry.WeilDivisor
@@ -13,6 +15,8 @@ import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.FiberOrbit
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.FiberTransport
+import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
+import TauCeti.Analysis.PDE.LowerOrder
 import TauCeti.Analysis.PDE.UniformEllipticity
 import TauCeti.Basic

@@ -44,6 +44,8 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   boundedness of the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.uniformlyEllipticOn_smul_one`: scalar, isotropic coefficient fields are
   uniformly elliptic when their scalar coefficient lies between the ellipticity constants.
+* `TauCeti.PDE.UniformlyEllipticOn.add_nonneg`: adding a nonnegative bounded
+  coefficient field preserves the lower ellipticity constant and adds upper constants.
 
 The vectors are `EuclideanSpace ℝ n`, matching the roadmap's bounded open subsets of
 `ℝⁿ`; this type is reducibly a finite `L²` product, so Mathlib's matrix-vector API applies
@@ -111,6 +113,13 @@ lemma toQuadraticForm'_smul_one (c : ℝ) (ξ : EuclideanSpace ℝ n) :
     (c • (1 : Matrix n n ℝ)).toQuadraticForm' ξ = c * ‖ξ‖ ^ 2 := by
   rw [toQuadraticForm'_smul, toQuadraticForm'_one]
 
+/-- Matrix quadratic forms are additive in the coefficient matrix. -/
+@[simp]
+lemma toQuadraticForm'_add (A B : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
+    (A + B).toQuadraticForm' ξ = A.toQuadraticForm' ξ + B.toQuadraticForm' ξ := by
+  rw [toQuadraticForm'_eq_dotProduct, toQuadraticForm'_eq_dotProduct,
+    toQuadraticForm'_eq_dotProduct, add_mulVec, dotProduct_add]
+
 /-- Matrix bilinear forms are linear in scalar multiplication of the coefficient matrix. -/
 @[simp]
 lemma matrixBilinearForm_smul_apply (c : ℝ) (A : Matrix n n ℝ)
@@ -118,6 +127,13 @@ lemma matrixBilinearForm_smul_apply (c : ℝ) (A : Matrix n n ℝ)
     matrixBilinearForm (c • A) η ξ = c * matrixBilinearForm A η ξ := by
   rw [matrixBilinearForm_apply, matrixBilinearForm_apply, smul_mulVec, dotProduct_smul]
   simp [smul_eq_mul]
+
+/-- Matrix bilinear forms are additive in the coefficient matrix. -/
+@[simp]
+lemma matrixBilinearForm_add_apply (A B : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm (A + B) η ξ = matrixBilinearForm A η ξ + matrixBilinearForm B η ξ := by
+  rw [matrixBilinearForm_apply, matrixBilinearForm_apply, matrixBilinearForm_apply,
+    add_mulVec, dotProduct_add]
 
 /-- The matrix bilinear form associated to `c • 1` is `c` times the Euclidean dot product. -/
 @[simp]
@@ -185,6 +201,29 @@ lemma norm_matrixBilinearForm_smul_one_le_of_abs_le {c Lam : ℝ} (hc : |c| ≤ 
     ‖matrixBilinearForm (c • (1 : Matrix n n ℝ)) η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ :=
   norm_matrixBilinearForm_le_of_upper_bound (c • (1 : Matrix n n ℝ))
     (abs_dotProduct_smul_one_mulVec_le_of_abs_le hc) η ξ
+
+omit [DecidableEq n] in
+/-- Adding two pointwise bilinear upper bounds adds the constants. -/
+lemma abs_dotProduct_add_mulVec_le {A B : Matrix n n ℝ} {Lam Mu : ℝ}
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (hB : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (B *ᵥ ξ)| ≤ Mu * ‖η‖ * ‖ξ‖)
+    (η ξ : EuclideanSpace ℝ n) :
+    |η ⬝ᵥ ((A + B) *ᵥ ξ)| ≤ (Lam + Mu) * ‖η‖ * ‖ξ‖ := by
+  rw [add_mulVec, dotProduct_add]
+  calc
+    |η ⬝ᵥ (A *ᵥ ξ) + η ⬝ᵥ (B *ᵥ ξ)|
+        ≤ |η ⬝ᵥ (A *ᵥ ξ)| + |η ⬝ᵥ (B *ᵥ ξ)| := abs_add_le _ _
+    _ ≤ Lam * ‖η‖ * ‖ξ‖ + Mu * ‖η‖ * ‖ξ‖ := add_le_add (hA η ξ) (hB η ξ)
+    _ = (Lam + Mu) * ‖η‖ * ‖ξ‖ := by ring
+
+/-- Adding a nonnegative quadratic form preserves a lower quadratic bound. -/
+lemma lower_bound_toQuadraticForm'_add {A B : Matrix n n ℝ} {lam : ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hB : ∀ ξ : EuclideanSpace ℝ n, 0 ≤ B.toQuadraticForm' ξ)
+    (ξ : EuclideanSpace ℝ n) :
+    lam * ‖ξ‖ ^ 2 ≤ (A + B).toQuadraticForm' ξ := by
+  rw [toQuadraticForm'_add]
+  exact (hA ξ).trans (le_add_of_nonneg_right (hB ξ))
 
 /-- A pointwise quadratic lower bound makes the associated matrix bilinear form coercive in
 Mathlib's Lax--Milgram sense. -/
@@ -339,6 +378,44 @@ lemma isCoercive_matrixBilinearForm (h : UniformlyEllipticOn Ω a lam Lam) {x : 
     (hx : x ∈ Ω) :
     IsCoercive (matrixBilinearForm (a x)) :=
   isCoercive_matrixBilinearForm_of_lower_bound (a x) h.pos (h.lower_bound hx)
+
+/-- Adding a pointwise nonnegative bounded coefficient field preserves uniform ellipticity.
+
+The lower ellipticity constant is unchanged, while the upper bilinear-form constant is
+increased by the upper bound for the perturbation. This is the pointwise matrix estimate
+used when an energy form is split into a uniformly elliptic principal part plus a
+nonnegative bounded perturbation. -/
+lemma add_nonneg (h : UniformlyEllipticOn Ω a lam Lam) {b : X → Matrix n n ℝ}
+    {Mu : ℝ} (hMu : 0 ≤ Mu)
+    (hb_nonneg : ∀ ⦃x⦄, x ∈ Ω → ∀ ξ : EuclideanSpace ℝ n,
+      0 ≤ (b x).toQuadraticForm' ξ)
+    (hb_upper : ∀ ⦃x⦄, x ∈ Ω → ∀ η ξ : EuclideanSpace ℝ n,
+      |η ⬝ᵥ (b x *ᵥ ξ)| ≤ Mu * ‖η‖ * ‖ξ‖) :
+    UniformlyEllipticOn Ω (fun x => a x + b x) lam (Lam + Mu) := by
+  refine UniformlyEllipticOn.of_bounds h.pos ?_ (fun {x} hx ξ => ?_)
+    (fun {x} hx η ξ => ?_)
+  · exact h.le.trans (le_add_of_nonneg_right hMu)
+  · exact lower_bound_toQuadraticForm'_add (h.lower_bound hx) (hb_nonneg hx) ξ
+  · exact abs_dotProduct_add_mulVec_le (h.upper_bound hx) (hb_upper hx) η ξ
+
+/-- Adding a bounded nonnegative scalar multiple of the identity preserves uniform
+ellipticity, with the upper constant increased by the scalar bound. -/
+lemma add_smul_one (h : UniformlyEllipticOn Ω a lam Lam) {c : X → ℝ} {Mu : ℝ}
+    (hMu : 0 ≤ Mu) (hc_nonneg : ∀ ⦃x⦄, x ∈ Ω → 0 ≤ c x)
+    (hc_upper : ∀ ⦃x⦄, x ∈ Ω → c x ≤ Mu) :
+    UniformlyEllipticOn Ω (fun x => a x + c x • (1 : Matrix n n ℝ)) lam (Lam + Mu) := by
+  refine h.add_nonneg hMu (fun {x} hx ξ => ?_) (fun {x} hx η ξ => ?_)
+  · simp only [toQuadraticForm'_smul_one]
+    exact mul_nonneg (hc_nonneg hx) (sq_nonneg ‖ξ‖)
+  · have hcx_abs : |c x| ≤ Mu := by
+      simpa [abs_of_nonneg (hc_nonneg hx)] using hc_upper hx
+    exact abs_dotProduct_smul_one_mulVec_le_of_abs_le hcx_abs η ξ
+
+/-- Adding a constant nonnegative scalar multiple of the identity preserves uniform
+ellipticity, with the upper constant increased by that scalar. -/
+lemma add_const_smul_one (h : UniformlyEllipticOn Ω a lam Lam) {c : ℝ} (hc : 0 ≤ c) :
+    UniformlyEllipticOn Ω (fun x => a x + c • (1 : Matrix n n ℝ)) lam (Lam + c) :=
+  h.add_smul_one hc (fun {_} _ => hc) (fun {_} _ => le_rfl)
 
 end UniformlyEllipticOn
 
