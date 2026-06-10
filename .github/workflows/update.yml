@@ -1,0 +1,101 @@
+name: Update Dependencies
+
+# Keeps the mathlib pin moving using the leanprover-community/downstream-reports
+# composite actions (TauCeti is registered as a downstream there). Daily behavior:
+#   - mathlib compatible: open/update a single "bump to last-known-good" PR.
+#   - mathlib incompatible: open a tracking issue naming the first-known-bad mathlib
+#     commit, plus a fix PR pinned at that commit (a ready-made branch to fix in
+#     place — not for merging as-is), and close the LKG bump PR until resolved.
+# PRs and pushes use the tauceti-review-bot App token so pr-build/review trigger
+# normally. Bump PRs touch the Lake config (human-owned), so a human merges them.
+
+on:
+  schedule:
+  - cron: "0 17 * * *"
+  workflow_dispatch:
+
+env:
+  LKG_BRANCH: hopscotch/lkg-bump
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: FormalFrontier
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      # Suppress the LKG bump while a regression is active: the only open PR
+      # should be the fix one pinned at the first-known-bad commit.
+      - name: Check whether an incompatibility is reported
+        id: fkb
+        uses: leanprover-community/downstream-reports/.github/actions/query-latest@main
+        with:
+          query-type: first-known-bad
+
+      - name: Bump to latest mathlib
+        id: bump
+        if: steps.fkb.outputs.commit == ''
+        uses: leanprover-community/downstream-reports/.github/actions/bump-to-latest@main
+
+      - name: Open or update PR
+        if: steps.fkb.outputs.commit == '' && steps.bump.outputs.updated == 'true'
+        uses: leanprover-community/downstream-reports/.github/actions/open-bump-pr@main
+        with:
+          branch: ${{ env.LKG_BRANCH }}
+          title: "chore: ${{ steps.bump.outputs.pr-title }}"
+          message: ${{ steps.bump.outputs.bump-description }}
+          commit-message: ${{ steps.bump.outputs.commit-message }}
+          token: ${{ steps.app-token.outputs.token }}
+          git-user-name: tauceti-review-bot[bot]
+          git-user-email: 290224625+tauceti-review-bot[bot]@users.noreply.github.com
+
+  open-issue:
+    runs-on: ubuntu-latest
+    needs: bump
+    permissions:
+      issues: write
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: FormalFrontier
+
+      - uses: actions/checkout@v4
+
+      - name: Open or update incompatibility issue and fix PR
+        id: track
+        uses: leanprover-community/downstream-reports/.github/actions/track-incompatibility@main
+        with:
+          open-pr: true
+          token: ${{ steps.app-token.outputs.token }}
+          git-user-name: tauceti-review-bot[bot]
+          git-user-email: 290224625+tauceti-review-bot[bot]@users.noreply.github.com
+
+      - name: Close the LKG bump PR while a fix PR is open
+        if: steps.track.outputs.pr-action == 'created' || steps.track.outputs.pr-action == 'noop-existing'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FKB_PR: ${{ steps.track.outputs.pr-number }}
+        run: |
+          set -euo pipefail
+          lkg_pr=$(gh pr list --state open --head "$LKG_BRANCH" --json number --jq '.[0].number // empty')
+          if [ -z "$lkg_pr" ]; then
+            echo "No open LKG bump PR; nothing to close."
+            exit 0
+          fi
+          gh pr close "$lkg_pr" --comment "Closing in favor of #${FKB_PR}: TauCeti is currently incompatible with the latest mathlib, so attention should go to the PR pinned at the first-known-bad commit. A new last-known-good bump PR will be opened automatically once the incompatibility is resolved."

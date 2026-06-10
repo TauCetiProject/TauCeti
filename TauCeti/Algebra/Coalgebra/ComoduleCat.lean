@@ -3,7 +3,8 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Algebra.Category.ModuleCat.Semi
-import TauCeti.Algebra.Coalgebra.Comodule
+import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
+import TauCeti.Algebra.Coalgebra.Comodule.Hom
 
 /-!
 # The category of comodules over a coalgebra
@@ -81,6 +82,27 @@ instance category : Category (ComoduleCat.{u, v, w} R C) where
   Hom M N := Hom R C M N
   id M := Comodule.Hom.id R C M
   comp f g := Comodule.Hom.comp g f
+
+/-- The zero structure on categorical morphisms is the zero comodule morphism. -/
+instance homZero (M N : ComoduleCat.{u, v, w} R C) : Zero (M ⟶ N) :=
+  inferInstanceAs (Zero (Comodule.Hom R C M N))
+
+/-- Addition of categorical morphisms is pointwise addition of comodule morphisms. -/
+instance homAdd (M N : ComoduleCat.{u, v, w} R C) : Add (M ⟶ N) :=
+  inferInstanceAs (Add (Comodule.Hom R C M N))
+
+/-- Categorical morphisms form an additive commutative monoid under pointwise operations. -/
+instance homAddCommMonoid (M N : ComoduleCat.{u, v, w} R C) : AddCommMonoid (M ⟶ N) :=
+  inferInstanceAs (AddCommMonoid (Comodule.Hom R C M N))
+
+/-- Scalar multiplication of categorical morphisms is pointwise scalar multiplication of
+comodule morphisms. -/
+instance homSMul (M N : ComoduleCat.{u, v, w} R C) : SMul R (M ⟶ N) :=
+  inferInstanceAs (SMul R (Comodule.Hom R C M N))
+
+/-- Categorical morphisms form an `R`-module under pointwise operations. -/
+instance homModule (M N : ComoduleCat.{u, v, w} R C) : Module R (M ⟶ N) :=
+  inferInstanceAs (Module R (Comodule.Hom R C M N))
 
 /-- `ComoduleCat` is concrete, with concrete morphisms the bundled comodule morphisms. -/
 instance concreteCategory :
@@ -170,6 +192,122 @@ theorem comp_apply {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) (g : N ⟶ 
     (m : M) :
     (f ≫ g) m = g (f m) :=
   rfl
+
+/-- The zero morphism has the zero linear map underneath. -/
+@[simp]
+theorem toLinearMap_zero (M N : ComoduleCat.{u, v, w} R C) :
+    (0 : M ⟶ N).toLinearMap = 0 :=
+  rfl
+
+/-- Addition of morphisms is addition of the underlying linear maps. -/
+@[simp]
+theorem toLinearMap_add {M N : ComoduleCat.{u, v, w} R C} (f g : M ⟶ N) :
+    (f + g).toLinearMap = f.toLinearMap + g.toLinearMap :=
+  rfl
+
+/-- Natural-number scalar multiplication of morphisms is natural-number scalar multiplication
+of the underlying linear maps. -/
+@[simp]
+theorem toLinearMap_nsmul {M N : ComoduleCat.{u, v, w} R C} (n : ℕ) (f : M ⟶ N) :
+    (n • f).toLinearMap = n • f.toLinearMap :=
+  Comodule.Hom.nsmul_toLinearMap n f
+
+/-- Scalar multiplication of morphisms is scalar multiplication of the underlying linear maps. -/
+@[simp]
+theorem toLinearMap_smul {M N : ComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) :
+    (r • f).toLinearMap = r • f.toLinearMap :=
+  rfl
+
+/-- Finite sums of morphisms are finite sums of the underlying linear maps. -/
+@[simp]
+theorem toLinearMap_sum {ι : Type*} {M N : ComoduleCat.{u, v, w} R C} (s : Finset ι)
+    (f : ι → (M ⟶ N)) :
+    (∑ i ∈ s, f i).toLinearMap = ∑ i ∈ s, (f i).toLinearMap :=
+  Comodule.Hom.sum_toLinearMap s f
+
+/-- The zero morphism acts as the zero function. -/
+@[simp]
+theorem zero_apply {M N : ComoduleCat.{u, v, w} R C} (m : M) :
+    (0 : M ⟶ N) m = 0 :=
+  rfl
+
+/-- Addition of morphisms acts by pointwise addition. -/
+@[simp]
+theorem add_apply {M N : ComoduleCat.{u, v, w} R C} (f g : M ⟶ N) (m : M) :
+    (f + g) m = f m + g m :=
+  rfl
+
+/-- Natural-number scalar multiplication of morphisms acts by pointwise natural-number scalar
+multiplication. -/
+@[simp]
+theorem nsmul_apply {M N : ComoduleCat.{u, v, w} R C} (n : ℕ) (f : M ⟶ N) (m : M) :
+    (n • f) m = n • f m :=
+  Comodule.Hom.nsmul_apply n f m
+
+/-- Scalar multiplication of morphisms acts by pointwise scalar multiplication. -/
+@[simp]
+theorem smul_apply {M N : ComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) (m : M) :
+    (r • f) m = r • f m :=
+  rfl
+
+/-- Finite sums of morphisms act by pointwise finite sums. -/
+@[simp]
+theorem sum_apply {ι : Type*} {M N : ComoduleCat.{u, v, w} R C} (s : Finset ι)
+    (f : ι → (M ⟶ N)) (m : M) :
+    (∑ i ∈ s, f i) m = ∑ i ∈ s, f i m :=
+  Comodule.Hom.sum_apply s f m
+
+/-- Composition in `ComoduleCat` is additive in the left morphism. -/
+@[simp]
+theorem add_comp {M N P : ComoduleCat.{u, v, w} R C} (f g : M ⟶ N) (h : N ⟶ P) :
+    (f + g) ≫ h = f ≫ h + g ≫ h := by
+  ext m
+  exact map_add h.toLinearMap (f m) (g m)
+
+/-- Composition in `ComoduleCat` is additive in the right morphism. -/
+@[simp]
+theorem comp_add {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) (g h : N ⟶ P) :
+    f ≫ (g + h) = f ≫ g + f ≫ h := by
+  ext m
+  rfl
+
+/-- Composition in `ComoduleCat` is compatible with scalar multiplication in the left
+morphism. -/
+@[simp]
+theorem smul_comp {M N P : ComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) (g : N ⟶ P) :
+    (r • f) ≫ g = r • (f ≫ g) := by
+  ext m
+  exact map_smul g.toLinearMap r (f m)
+
+/-- Composition in `ComoduleCat` is compatible with scalar multiplication in the right
+morphism. -/
+@[simp]
+theorem comp_smul {M N P : ComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) (g : N ⟶ P) :
+    f ≫ (r • g) = r • (f ≫ g) := by
+  ext m
+  rfl
+
+/-- Composing the zero morphism on the left gives the zero morphism. -/
+@[simp]
+theorem zero_comp {M N P : ComoduleCat.{u, v, w} R C} (f : N ⟶ P) :
+    (0 : M ⟶ N) ≫ f = 0 := by
+  ext m
+  exact map_zero f.toLinearMap
+
+/-- Composing the zero morphism on the right gives the zero morphism. -/
+@[simp]
+theorem comp_zero {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
+    f ≫ (0 : N ⟶ P) = 0 := by
+  ext m
+  rfl
+
+/-- `ComoduleCat` has the standard categorical zero morphisms. -/
+instance hasZeroMorphisms :
+    CategoryTheory.Limits.HasZeroMorphisms (ComoduleCat.{u, v, w} R C) where
+  zero := inferInstance
+  comp_zero := fun f P => ComoduleCat.comp_zero (R := R) (C := C) (P := P) f
+  zero_comp := fun M {N P} f => ComoduleCat.zero_comp (R := R) (C := C) (M := M) (N := N)
+    (P := P) f
 
 /-- The forgetful functor from comodules to their underlying semimodules. -/
 instance hasForgetToSemimodule : HasForget₂ (ComoduleCat.{u, v, w} R C) (SemimoduleCat.{w} R) where

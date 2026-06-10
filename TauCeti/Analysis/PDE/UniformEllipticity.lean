@@ -3,7 +3,11 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.Normed.Operator.Bilinear
+import Mathlib.Analysis.Normed.Operator.NormedSpace
+import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.QuadraticForm.Basic
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 
 /-!
 # Uniform ellipticity for divergence-form PDE coefficients
@@ -30,6 +34,16 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   predicate.
 * `TauCeti.PDE.UniformlyEllipticOn.mono_set`: restriction to a smaller domain preserves the
   predicate.
+* `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
+  a coefficient matrix.
+* `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
+  bound controls the operator norm of the attached matrix bilinear form.
+* `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
+  the bilinear form attached to a uniformly elliptic coefficient field.
+* `TauCeti.PDE.UniformlyEllipticOn.opNorm_matrixBilinearForm_le`: pointwise operator-norm
+  boundedness of the bilinear form attached to a uniformly elliptic coefficient field.
+* `TauCeti.PDE.uniformlyEllipticOn_smul_one`: scalar, isotropic coefficient fields are
+  uniformly elliptic when their scalar coefficient lies between the ellipticity constants.
 
 The vectors are `EuclideanSpace ℝ n`, matching the roadmap's bounded open subsets of
 `ℝⁿ`; this type is reducibly a finite `L²` product, so Mathlib's matrix-vector API applies
@@ -56,6 +70,145 @@ lemma toQuadraticForm'_one (ξ : EuclideanSpace ℝ n) :
     (1 : Matrix n n ℝ).toQuadraticForm' ξ = ‖ξ‖ ^ 2 := by
   rw [toQuadraticForm'_eq_dotProduct, one_mulVec]
   simpa [dotProduct, sq] using (EuclideanSpace.real_norm_sq_eq ξ).symm
+
+omit [DecidableEq n] in
+/-- The continuous bilinear form attached to a real matrix on Euclidean space.
+
+For a coefficient matrix `A`, this is the pointwise weak-form integrand
+`(η, ξ) ↦ ηᵀ A ξ`. It is bundled as a continuous bilinear map so it can feed directly into
+Mathlib's bounded-bilinear-form and Lax--Milgram APIs once the corresponding Sobolev spaces
+are available. -/
+noncomputable def matrixBilinearForm (A : Matrix n n ℝ) :
+    EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
+  (A.toBilin'.comp (EuclideanSpace.equiv n ℝ).toLinearMap
+    (EuclideanSpace.equiv n ℝ).toLinearMap).toContinuousBilinearMap
+
+/-- The matrix bilinear form is the dot-product expression `ηᵀ A ξ`. -/
+@[simp]
+lemma matrixBilinearForm_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm A η ξ = η ⬝ᵥ (A *ᵥ ξ) := by
+  rw [matrixBilinearForm, LinearMap.toContinuousBilinearMap_apply,
+    LinearMap.BilinForm.comp_apply, Matrix.toBilin'_apply']
+  rfl
+
+/-- The matrix bilinear form associated to the identity matrix is the Euclidean dot product. -/
+@[simp]
+lemma matrixBilinearForm_one_apply (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm (1 : Matrix n n ℝ) η ξ = η ⬝ᵥ ξ := by
+  rw [matrixBilinearForm_apply, one_mulVec]
+
+/-- Matrix quadratic forms are linear in scalar multiplication of the coefficient matrix. -/
+@[simp]
+lemma toQuadraticForm'_smul (c : ℝ) (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
+    (c • A).toQuadraticForm' ξ = c * A.toQuadraticForm' ξ := by
+  rw [toQuadraticForm'_eq_dotProduct, toQuadraticForm'_eq_dotProduct, smul_mulVec,
+    dotProduct_smul]
+  simp [smul_eq_mul]
+
+/-- The scalar identity matrix has quadratic form `c ‖ξ‖²`. -/
+@[simp]
+lemma toQuadraticForm'_smul_one (c : ℝ) (ξ : EuclideanSpace ℝ n) :
+    (c • (1 : Matrix n n ℝ)).toQuadraticForm' ξ = c * ‖ξ‖ ^ 2 := by
+  rw [toQuadraticForm'_smul, toQuadraticForm'_one]
+
+/-- Matrix bilinear forms are linear in scalar multiplication of the coefficient matrix. -/
+@[simp]
+lemma matrixBilinearForm_smul_apply (c : ℝ) (A : Matrix n n ℝ)
+    (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm (c • A) η ξ = c * matrixBilinearForm A η ξ := by
+  rw [matrixBilinearForm_apply, matrixBilinearForm_apply, smul_mulVec, dotProduct_smul]
+  simp [smul_eq_mul]
+
+/-- The matrix bilinear form associated to `c • 1` is `c` times the Euclidean dot product. -/
+@[simp]
+lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm (c • (1 : Matrix n n ℝ)) η ξ = c * (η ⬝ᵥ ξ) := by
+  rw [matrixBilinearForm_smul_apply, matrixBilinearForm_one_apply]
+
+/-- The quadratic part of the matrix bilinear form is the matrix quadratic form. -/
+@[simp]
+lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
+  rw [matrixBilinearForm_apply, toQuadraticForm'_eq_dotProduct]
+
+/-- A pointwise bilinear upper bound gives the corresponding norm estimate for the bundled
+continuous bilinear form. -/
+lemma norm_matrixBilinearForm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (η ξ : EuclideanSpace ℝ n) :
+    ‖matrixBilinearForm A η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ := by
+  simpa [Real.norm_eq_abs] using hA η ξ
+
+/-- A pointwise bilinear upper bound controls the operator norm of the bundled matrix
+bilinear form.
+
+This is the matrix-coefficient specialization of Mathlib's
+`ContinuousLinearMap.opNorm_le_bound₂`. -/
+lemma matrixBilinearForm_opNorm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
+    (hLam_nonneg : 0 ≤ Lam)
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖) :
+    ‖matrixBilinearForm A‖ ≤ Lam := by
+  refine (matrixBilinearForm A).opNorm_le_bound₂ hLam_nonneg ?_
+  intro η ξ
+  exact norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
+
+/-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
+matrix bilinear form. -/
+lemma matrixBilinearForm_apply_norm_le_of_upper_bound {A : Matrix n n ℝ} {Lam R S : ℝ}
+    (hLam_nonneg : 0 ≤ Lam)
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    {η ξ : EuclideanSpace ℝ n} (hη : ‖η‖ ≤ R) (hξ : ‖ξ‖ ≤ S) :
+    ‖matrixBilinearForm A η ξ‖ ≤ Lam * R * S :=
+  (matrixBilinearForm A).le_of_opNorm₂_le_of_le
+    (matrixBilinearForm_opNorm_le_of_upper_bound A hLam_nonneg hA) hη hξ
+
+/-- A scalar multiple of the identity has operator integrand bounded by any upper bound for
+the absolute value of the scalar. -/
+lemma abs_dotProduct_smul_one_mulVec_le_of_abs_le {c Lam : ℝ} (hc : |c| ≤ Lam)
+    (η ξ : EuclideanSpace ℝ n) :
+    |η ⬝ᵥ ((c • (1 : Matrix n n ℝ)) *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
+  rw [smul_mulVec, one_mulVec, dotProduct_smul]
+  simp only [smul_eq_mul, abs_mul]
+  calc
+    |c| * |η ⬝ᵥ ξ| ≤ |c| * (‖η‖ * ‖ξ‖) := by
+      gcongr
+      simpa [EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm] using
+        abs_real_inner_le_norm η ξ
+    _ ≤ Lam * ‖η‖ * ‖ξ‖ := by
+      have hnorm : 0 ≤ ‖η‖ * ‖ξ‖ := mul_nonneg (norm_nonneg _) (norm_nonneg _)
+      simpa [mul_assoc] using mul_le_mul_of_nonneg_right hc hnorm
+
+/-- A scalar multiple of the identity has operator integrand bounded by any upper bound for
+the absolute value of the scalar. -/
+lemma norm_matrixBilinearForm_smul_one_le_of_abs_le {c Lam : ℝ} (hc : |c| ≤ Lam)
+    (η ξ : EuclideanSpace ℝ n) :
+    ‖matrixBilinearForm (c • (1 : Matrix n n ℝ)) η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ :=
+  norm_matrixBilinearForm_le_of_upper_bound (c • (1 : Matrix n n ℝ))
+    (abs_dotProduct_smul_one_mulVec_le_of_abs_le hc) η ξ
+
+/-- A pointwise quadratic lower bound makes the associated matrix bilinear form coercive in
+Mathlib's Lax--Milgram sense. -/
+lemma isCoercive_matrixBilinearForm_of_lower_bound (A : Matrix n n ℝ) {lam : ℝ}
+    (hlam : 0 < lam)
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) :
+    IsCoercive (matrixBilinearForm A) := by
+  refine ⟨lam, hlam, fun ξ => ?_⟩
+  rw [matrixBilinearForm_self]
+  simpa [sq, pow_two, mul_assoc] using hA ξ
+
+/-- The identity matrix bilinear form is coercive with constant `1`. -/
+lemma isCoercive_matrixBilinearForm_one :
+    IsCoercive (matrixBilinearForm (1 : Matrix n n ℝ)) := by
+  refine isCoercive_matrixBilinearForm_of_lower_bound (1 : Matrix n n ℝ) zero_lt_one ?_
+  intro ξ
+  simp
+
+/-- A positive scalar multiple of the identity matrix gives a coercive bilinear form. -/
+lemma isCoercive_matrixBilinearForm_smul_one {c : ℝ} (hc : 0 < c) :
+    IsCoercive (matrixBilinearForm (c • (1 : Matrix n n ℝ))) := by
+  refine isCoercive_matrixBilinearForm_of_lower_bound (c • (1 : Matrix n n ℝ)) hc ?_
+  intro ξ
+  simp
 
 /-- Uniform ellipticity and boundedness with explicit constants on a domain.
 
@@ -93,6 +246,10 @@ lemma pos (h : UniformlyEllipticOn Ω a lam Lam) : 0 < lam :=
 @[grind →]
 lemma le (h : UniformlyEllipticOn Ω a lam Lam) : lam ≤ Lam :=
   h.2.1
+
+/-- The upper ellipticity constant is nonnegative. -/
+lemma upper_nonneg (h : UniformlyEllipticOn Ω a lam Lam) : 0 ≤ Lam :=
+  h.pos.le.trans h.le
 
 /-- The lower quadratic-form bound supplied by uniform ellipticity. -/
 @[grind =>]
@@ -149,6 +306,40 @@ lemma of_bounds (hlam : 0 < lam) (hlamLam : lam ≤ Lam)
     UniformlyEllipticOn Ω a lam Lam :=
   ⟨hlam, hlamLam, fun {_} hx => ⟨hbounds hx, hupper hx⟩⟩
 
+/-- At every point of the domain, uniform ellipticity gives a norm bound for the attached
+matrix bilinear form. -/
+@[grind =>]
+lemma norm_point_matrixBilinearForm_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X}
+    (hx : x ∈ Ω) (η ξ : EuclideanSpace ℝ n) :
+    ‖matrixBilinearForm (a x) η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ :=
+  norm_matrixBilinearForm_le_of_upper_bound (a x) (h.upper_bound hx) η ξ
+
+/-- At every point of the domain, uniform ellipticity bounds the operator norm of the
+attached matrix bilinear form by the upper ellipticity constant. -/
+@[grind =>]
+lemma opNorm_matrixBilinearForm_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X}
+    (hx : x ∈ Ω) :
+    ‖matrixBilinearForm (a x)‖ ≤ Lam :=
+  matrixBilinearForm_opNorm_le_of_upper_bound (a x) h.upper_nonneg (h.upper_bound hx)
+
+/-- Uniform ellipticity gives a radius-restricted pointwise bound for the coefficient
+integrand. -/
+@[grind =>]
+lemma norm_point_matrixBilinearForm_le_mul_of_norm_le
+    (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) {R S : ℝ}
+    {η ξ : EuclideanSpace ℝ n} (hη : ‖η‖ ≤ R) (hξ : ‖ξ‖ ≤ S) :
+    ‖matrixBilinearForm (a x) η ξ‖ ≤ Lam * R * S :=
+  (matrixBilinearForm (a x)).le_of_opNorm₂_le_of_le
+    (h.opNorm_matrixBilinearForm_le hx) hη hξ
+
+/-- At every point of the domain, uniform ellipticity gives coercivity of the attached matrix
+bilinear form. -/
+@[grind =>]
+lemma isCoercive_matrixBilinearForm (h : UniformlyEllipticOn Ω a lam Lam) {x : X}
+    (hx : x ∈ Ω) :
+    IsCoercive (matrixBilinearForm (a x)) :=
+  isCoercive_matrixBilinearForm_of_lower_bound (a x) h.pos (h.lower_bound hx)
+
 end UniformlyEllipticOn
 
 /-- The constant identity coefficient field is uniformly elliptic with any constants
@@ -175,6 +366,37 @@ lemma uniformlyEllipticOn_const_one (Ω : Set X) {lam Lam : ℝ} (hlam : 0 < lam
 lemma uniformlyEllipticOn_const_one_one (Ω : Set X) :
     UniformlyEllipticOn Ω (fun _ => (1 : Matrix n n ℝ)) 1 1 :=
   uniformlyEllipticOn_const_one Ω zero_lt_one le_rfl le_rfl
+
+/-- An isotropic scalar coefficient field is uniformly elliptic when its scalar coefficient
+lies between the lower and upper constants.
+
+This packages the common model `a(x) = c(x) I`: if `λ ≤ c x ≤ Λ` on `Ω`, then `c x • 1`
+satisfies the lower quadratic bound and the bilinear upper bound with constants `λ` and `Λ`. -/
+lemma uniformlyEllipticOn_smul_one (Ω : Set X) (c : X → ℝ) {lam Lam : ℝ}
+    (hlam : 0 < lam) (hlamLam : lam ≤ Lam)
+    (hbound : ∀ ⦃x⦄, x ∈ Ω → lam ≤ c x ∧ c x ≤ Lam) :
+    UniformlyEllipticOn Ω (fun x => c x • (1 : Matrix n n ℝ)) lam Lam := by
+  refine UniformlyEllipticOn.of_bounds hlam hlamLam (fun {x} hx ξ => ?_)
+    (fun {x} hx η ξ => ?_)
+  · simp only [toQuadraticForm'_smul_one]
+    exact mul_le_mul_of_nonneg_right (hbound hx).1 (sq_nonneg ‖ξ‖)
+  · have hcx_nonneg : 0 ≤ c x := hlam.le.trans (hbound hx).1
+    have hcx_abs : |c x| ≤ Lam := by simpa [abs_of_nonneg hcx_nonneg] using (hbound hx).2
+    exact abs_dotProduct_smul_one_mulVec_le_of_abs_le hcx_abs η ξ
+
+/-- A constant positive isotropic coefficient field is uniformly elliptic with matching
+lower and upper constants. -/
+lemma uniformlyEllipticOn_const_smul_one_self (Ω : Set X) {c : ℝ} (hc : 0 < c) :
+    UniformlyEllipticOn Ω (fun _ => c • (1 : Matrix n n ℝ)) c c :=
+  uniformlyEllipticOn_smul_one Ω (fun _ => c) hc le_rfl (fun {_} _ => ⟨le_rfl, le_rfl⟩)
+
+/-- A constant isotropic coefficient field is uniformly elliptic for any explicit constants
+`λ ≤ c ≤ Λ` with `0 < λ`. -/
+lemma uniformlyEllipticOn_const_smul_one (Ω : Set X) {c lam Lam : ℝ} (hlam : 0 < lam)
+    (hlamc : lam ≤ c) (hcLam : c ≤ Lam) :
+    UniformlyEllipticOn Ω (fun _ => c • (1 : Matrix n n ℝ)) lam Lam :=
+  uniformlyEllipticOn_smul_one Ω (fun _ => c) hlam (hlamc.trans hcLam)
+    (fun {_} _ => ⟨hlamc, hcLam⟩)
 
 end PDE
 
