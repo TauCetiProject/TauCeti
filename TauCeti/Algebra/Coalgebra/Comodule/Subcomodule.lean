@@ -12,8 +12,7 @@ coaction factors through the tensor product of the submodule with the coalgebra.
 
 The reductive-groups roadmap asks for finite-dimensional subcomodules and the fundamental
 theorem of comodules. This file supplies the first small piece of that infrastructure:
-the stability predicate, the bundled subtype of stable submodules, and the top and bottom
-subcomodules.
+the stability predicate and the bundled subtype of stable submodules.
 
 ## Main definitions
 
@@ -43,6 +42,14 @@ variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 def submoduleCoactionRange (P : Submodule R M) : Submodule R (M ⊗[R] C) :=
   LinearMap.range (TensorProduct.map P.subtype (LinearMap.id (R := R) (M := C)))
 
+omit [Coalgebra R C] [Comodule R C M] in
+@[simp]
+theorem mem_submoduleCoactionRange (P : Submodule R M) (x : M ⊗[R] C) :
+    x ∈ submoduleCoactionRange (R := R) (C := C) P ↔
+      ∃ y : P ⊗[R] C,
+        TensorProduct.map P.subtype (LinearMap.id (R := R) (M := C)) y = x :=
+  LinearMap.mem_range
+
 /-- A submodule of a right comodule is a subcomodule if the coaction of every element factors
 through `P ⊗ C → M ⊗ C`. -/
 def IsSubcomodule (P : Submodule R M) : Prop :=
@@ -56,6 +63,14 @@ abbrev Subcomodule (R : Type u) (C : Type v) (M : Type w) [CommSemiring R]
     [Comodule R C M] :=
   { P : Submodule R M // IsSubcomodule (R := R) (C := C) (M := M) P }
 
+theorem isSubcomodule_iff (P : Submodule R M) :
+    IsSubcomodule (R := R) (C := C) (M := M) P ↔
+      ∀ ⦃m : M⦄, m ∈ P →
+        ∃ y : P ⊗[R] C,
+          TensorProduct.map P.subtype (LinearMap.id (R := R) (M := C)) y =
+            Comodule.coact (R := R) (C := C) (M := M) m := by
+  simp [IsSubcomodule]
+
 namespace Subcomodule
 
 /-- Bundle a coaction-stable submodule as a subcomodule. -/
@@ -68,7 +83,7 @@ def toSubmodule (P : Subcomodule R C M) : Submodule R M :=
   P.1
 
 @[simp]
-theorem mk_toSubmodule (P : Submodule R M)
+theorem toSubmodule_mk (P : Submodule R M)
     (hP : IsSubcomodule (R := R) (C := C) (M := M) P) :
     toSubmodule (mk (R := R) (C := C) (M := M) P hP) = P :=
   rfl
@@ -84,24 +99,10 @@ theorem mem_toSubmodule (P : Subcomodule R C M) (m : M) :
   Iff.rfl
 
 /-- The coaction of an element of a subcomodule factors through `P ⊗ C`. -/
-theorem map_coact (P : Subcomodule R C M) ⦃m : M⦄ (hm : m ∈ P.toSubmodule) :
+theorem coact_mem (P : Subcomodule R C M) ⦃m : M⦄ (hm : m ∈ P.toSubmodule) :
     Comodule.coact (R := R) (C := C) (M := M) m ∈
       submoduleCoactionRange (R := R) (C := C) P.toSubmodule :=
   P.property hm
-
-/-- Membership in the underlying submodule is closed under zero. -/
-theorem zero_mem (P : Subcomodule R C M) : (0 : M) ∈ P.toSubmodule :=
-  P.toSubmodule.zero_mem
-
-/-- Membership in the underlying submodule is closed under addition. -/
-theorem add_mem (P : Subcomodule R C M) ⦃m n : M⦄ (hm : m ∈ P.toSubmodule)
-    (hn : n ∈ P.toSubmodule) : m + n ∈ P.toSubmodule :=
-  P.toSubmodule.add_mem hm hn
-
-/-- Membership in the underlying submodule is closed under scalar multiplication. -/
-theorem smul_mem (P : Subcomodule R C M) (r : R) ⦃m : M⦄
-    (hm : m ∈ P.toSubmodule) : r • m ∈ P.toSubmodule :=
-  P.toSubmodule.smul_mem r hm
 
 end Subcomodule
 
