@@ -456,6 +456,15 @@ theorem isoToLinearEquiv_isoOfLinearEquiv {M N : ComoduleCat.{u, v, w} R C}
   ext m
   rfl
 
+/-- Rebuilding a comodule isomorphism from its induced linear equivalence recovers the original
+isomorphism. -/
+@[simp]
+theorem isoOfLinearEquiv_isoToLinearEquiv {M N : ComoduleCat.{u, v, w} R C} (i : M ≅ N) :
+    isoOfLinearEquiv (R := R) (C := C) (isoToLinearEquiv (R := R) (C := C) i)
+      (by simp [i.hom.map_coact]) = i := by
+  ext m
+  rfl
+
 end ComoduleCat
 
 end TauCeti
