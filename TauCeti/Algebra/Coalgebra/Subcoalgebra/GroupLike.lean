@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.RingTheory.Coalgebra.GroupLike
+import Mathlib.RingTheory.Finiteness.Basic
 import TauCeti.Algebra.Coalgebra.Subcoalgebra
 
 /-!
@@ -120,17 +121,17 @@ theorem mem_groupLikeSpan {g : GroupLike R C} {c : C} :
   rw [← mem_toSubmodule, groupLikeSpan_toSubmodule, Submodule.mem_span_singleton]
 
 /-- A subcoalgebra spanned by a finite set of group-like elements is finitely generated. -/
-theorem groupLikeSetSpan_isFinite (s : Set (GroupLike R C)) (hs : s.Finite) :
+theorem groupLikeSetSpan_finite (s : Set (GroupLike R C)) (hs : s.Finite) :
     Module.Finite R (groupLikeSetSpan (R := R) (C := C) s).toSubmodule := by
   rw [groupLikeSetSpan_toSubmodule]
   exact Module.Finite.span_of_finite R (hs.image ((↑) : GroupLike R C → C))
 
 /-- The underlying submodule of the subcoalgebra spanned by one group-like element is finitely
 generated. -/
-instance groupLikeSpan_isFinite (g : GroupLike R C) :
+instance groupLikeSpan_finite (g : GroupLike R C) :
     Module.Finite R (groupLikeSpan (R := R) (C := C) g).toSubmodule := by
   rw [groupLikeSpan]
-  exact groupLikeSetSpan_isFinite (R := R) (C := C) {g} (Set.finite_singleton g)
+  exact groupLikeSetSpan_finite (R := R) (C := C) {g} (Set.finite_singleton g)
 
 end Subcoalgebra
 
