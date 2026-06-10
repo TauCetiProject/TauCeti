@@ -2,6 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.GroupTheory.GroupAction.Basic
 import Mathlib.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -19,7 +20,6 @@ covering-space hypotheses are involved.
 
 ## Main declarations
 
-* `TauCeti.subgroupOrbitClass`: the quotient map from `X` to its `H`-orbit quotient.
 * `TauCeti.normalizerOrbitEquiv`: a normalizer element acts as a permutation of
   `X / H`.
 * `TauCeti.normalizerOrbitHom`: the corresponding homomorphism
@@ -40,23 +40,13 @@ namespace TauCeti
 
 variable {G X : Type*} [Group G] [MulAction G X] (H : Subgroup G)
 
-/-- The orbit class of a point under the restricted action of a subgroup. -/
-def subgroupOrbitClass (x : X) : MulAction.orbitRel.Quotient H X :=
-  Quotient.mk'' x
-
-/-- The subgroup-orbit quotient map sends a point to its own class. -/
-@[simp]
-lemma subgroupOrbitClass_eq_mk (x : X) :
-    subgroupOrbitClass H x = (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) :=
-  rfl
-
-/-- Two points have the same subgroup-orbit class exactly when they lie in the same subgroup
+/-- Two quotient representatives are equal exactly when they lie in the same subgroup
 orbit. This uses the orientation of `MulAction.orbitRel_apply`: the left point is a member of
 the orbit of the right point. -/
-lemma subgroupOrbitClass_eq_iff (x y : X) :
-    subgroupOrbitClass H x = subgroupOrbitClass H y ↔ x ∈ MulAction.orbit H y := by
-  rw [subgroupOrbitClass_eq_mk, subgroupOrbitClass_eq_mk, Quotient.eq'',
-    MulAction.orbitRel_apply]
+lemma orbitRel_quotient_mk_eq_iff (x y : X) :
+    (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) = Quotient.mk'' y ↔
+      x ∈ MulAction.orbit H y := by
+  rw [Quotient.eq'', MulAction.orbitRel_apply]
 
 /-- A normalizer element preserves the orbit relation of the restricted `H`-action. -/
 lemma normalizer_smul_orbitRel_iff (n : Subgroup.normalizer (H : Set G)) (x y : X) :
@@ -94,7 +84,7 @@ noncomputable def normalizerOrbitEquiv (n : Subgroup.normalizer (H : Set G)) :
 /-- On representatives, the normalizer action on the orbit quotient is the ambient action. -/
 @[simp]
 lemma normalizerOrbitEquiv_mk (n : Subgroup.normalizer (H : Set G)) (x : X) :
-    normalizerOrbitEquiv H n (subgroupOrbitClass H x) =
+    normalizerOrbitEquiv H n (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((n : G) • x) :=
   rfl
 
@@ -114,7 +104,7 @@ noncomputable def normalizerOrbitHom :
 /-- On representatives, the normalizer homomorphism acts by the ambient action. -/
 @[simp]
 lemma normalizerOrbitHom_apply_mk (n : Subgroup.normalizer (H : Set G)) (x : X) :
-    normalizerOrbitHom H n (subgroupOrbitClass H x) =
+    normalizerOrbitHom H n (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((n : G) • x) :=
   rfl
 
@@ -151,7 +141,7 @@ noncomputable instance normalizerQuotientMulAction :
 @[simp]
 lemma normalizerQuotientOrbitHom_mk (n : Subgroup.normalizer (H : Set G)) (x : X) :
     normalizerQuotientOrbitHom H (QuotientGroup.mk n)
-        (subgroupOrbitClass H x) =
+        (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((n : G) • x) := by
   rw [normalizerQuotientOrbitHom, QuotientGroup.lift_mk]
   rfl
@@ -161,8 +151,14 @@ lemma normalizerQuotientOrbitHom_mk (n : Subgroup.normalizer (H : Set G)) (x : X
 lemma normalizerQuotient_smul_mk (n : Subgroup.normalizer (H : Set G)) (x : X) :
     (QuotientGroup.mk n :
         Subgroup.normalizer (H : Set G) ⧸ H.subgroupOf (Subgroup.normalizer (H : Set G))) •
-        subgroupOrbitClass H x =
-      Quotient.mk'' ((n : G) • x) :=
-  rfl
+        (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
+      Quotient.mk'' ((n : G) • x) := by
+  rw [show
+    (QuotientGroup.mk n :
+        Subgroup.normalizer (H : Set G) ⧸ H.subgroupOf (Subgroup.normalizer (H : Set G))) •
+        (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
+      normalizerQuotientOrbitHom H (QuotientGroup.mk n)
+        (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) from rfl]
+  exact normalizerQuotientOrbitHom_mk H n x
 
 end TauCeti
