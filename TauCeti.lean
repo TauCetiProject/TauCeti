@@ -12,6 +12,7 @@ import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient
 import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
 import TauCeti.Algebra.Coalgebra.Comodule.Transport
 import TauCeti.Algebra.Coalgebra.Comodule.Trivial
+import TauCeti.Algebra.Coalgebra.Comodule.Zero
 import TauCeti.Algebra.Coalgebra.ComoduleCat
 import TauCeti.AlgebraicGeometry.WeilDivisor
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected
