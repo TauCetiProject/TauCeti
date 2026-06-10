@@ -121,15 +121,35 @@ lemma orbitQuotientEquiv_symm_mk (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (
         (Quotient.mk'' (h.symm f) : MulAction.orbitRel.Quotient (Deck p) E) :=
   rfl
 
+/-- If deck transformations act transitively on each fibre of `p`, the map from the
+deck-orbit quotient to the base is injective. -/
+lemma orbitQuotientToBase_injective_of_exists_apply_eq
+    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : Deck p, φ.1 e = e') :
+    Function.Injective (orbitQuotientToBase p) := by
+  exact (Setoid.lift_injective_iff_ker_eq_of_le
+    (r := MulAction.orbitRel (Deck p) E) (f := p)
+    (fun _ _ h => eq_proj_of_orbitRel h)).mpr
+      (orbitRel_eq_ker_of_exists_apply_eq hpoint).symm
+
+/-- If deck transformations act transitively on each fibre of `p`, two points have the same
+deck-orbit quotient class exactly when they have the same projection. -/
+lemma orbitQuotient_mk_eq_mk_iff_of_exists_apply_eq
+    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : Deck p, φ.1 e = e') (e e' : E) :
+    (Quotient.mk'' e : MulAction.orbitRel.Quotient (Deck p) E) = Quotient.mk'' e' ↔
+      p e = p e' := by
+  constructor
+  · intro h
+    simpa only [orbitQuotientToBase_mk] using congr_arg (orbitQuotientToBase p) h
+  · intro h
+    apply orbitQuotientToBase_injective_of_exists_apply_eq hpoint
+    simpa only [orbitQuotientToBase_mk] using h
+
 namespace IsRegular
 
 /-- For a regular deck action, the map from deck-orbit quotient to the base is injective. -/
 lemma orbitQuotientToBase_injective (hreg : IsRegular p) :
     Function.Injective (orbitQuotientToBase p) := by
-  exact (Setoid.lift_injective_iff_ker_eq_of_le
-    (r := MulAction.orbitRel (Deck p) E) (f := p)
-    (fun _ _ h => eq_proj_of_orbitRel h)).mpr
-      (orbitRel_eq_ker_of_exists_apply_eq (isRegular_iff_exists_apply_eq.mp hreg).2).symm
+  exact orbitQuotientToBase_injective_of_exists_apply_eq (isRegular_iff_exists_apply_eq.mp hreg).2
 
 /-- A regular deck action identifies the quotient of the total space by deck orbits with the
 base. -/
@@ -160,12 +180,8 @@ they have the same projection. -/
 lemma orbitQuotient_mk_eq_mk_iff (hreg : IsRegular p) (e e' : E) :
     (Quotient.mk'' e : MulAction.orbitRel.Quotient (Deck p) E) = Quotient.mk'' e' ↔
       p e = p e' := by
-  constructor
-  · intro h
-    simpa only [orbitQuotientToBase_mk] using congr_arg (orbitQuotientToBase p) h
-  · intro h
-    apply hreg.orbitQuotientToBase_injective
-    simpa only [orbitQuotientToBase_mk] using h
+  exact orbitQuotient_mk_eq_mk_iff_of_exists_apply_eq
+    (isRegular_iff_exists_apply_eq.mp hreg).2 e e'
 
 /-- Transporting a regular deck action along an over-base homeomorphism is compatible with
 the corresponding orbit-quotient equivalences. -/
