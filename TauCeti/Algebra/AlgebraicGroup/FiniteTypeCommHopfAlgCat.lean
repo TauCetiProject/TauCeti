@@ -48,6 +48,13 @@ def finiteTypeCommHopfAlgProperty (R : Type u) [CommRing R] :
     ObjectProperty (CommHopfAlgCat.{u, v} R) :=
   fun H => Algebra.FiniteType R H
 
+/-- Membership in the finite-type commutative Hopf algebra object property. -/
+@[simp]
+lemma finiteTypeCommHopfAlgProperty_iff {R : Type u} [CommRing R]
+    (H : CommHopfAlgCat.{u, v} R) :
+    finiteTypeCommHopfAlgProperty R H ↔ Algebra.FiniteType R H :=
+  Iff.rfl
+
 /-- The category of finite-type commutative Hopf algebras over a commutative ring `R`.
 
 This is the full subcategory of `CommHopfAlgCat R` on objects whose underlying commutative
