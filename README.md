@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/header.png" alt="Tau Ceti — Let's do lots of maths." width="820">
+</p>
+
 # Tau Ceti
 
 Let's do lots of maths.
@@ -64,3 +68,11 @@ lake build
 The roadmaps live in the [TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap)
 repo: universal covers, the Jacobian challenge, reductive algebraic groups, and partial
 differential equations. When asked to work here, read the roadmap first (see `AGENTS.md`).
+
+---
+
+<p align="center">
+  <img src="assets/tauceti-collaboration.jpg" alt="A hexapus reaching out to touch an AI's hand across a tide pool, beneath twin suns and a ringed planet." width="900">
+  <br>
+  <em>Humans chart the course; the hexapus does the maths.</em>
+</p>
