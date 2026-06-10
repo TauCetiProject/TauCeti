@@ -9,7 +9,7 @@ import TauCeti.Algebra.Coalgebra.Subcoalgebra
 # Subcoalgebras spanned by group-like elements
 
 This file defines the subcoalgebra spanned by a set of group-like elements, together with the
-singleton span and finite-generation instance used by the finite-subcoalgebra API.
+singleton span and `Module.Finite` instances for the underlying submodules.
 -/
 
 open scoped TensorProduct
@@ -39,7 +39,7 @@ def groupLikeSetSpan (s : Set (GroupLike R C)) : Subcoalgebra R C :=
         rcases hx with ⟨g, hg, rfl⟩
         have hgD : (g : C) ∈ D := Submodule.subset_span ⟨g, hg, rfl⟩
         refine ⟨⟨g, hgD⟩ ⊗ₜ[R] ⟨g, hgD⟩, ?_⟩
-        change (g : C) ⊗ₜ[R] (g : C) = Coalgebra.comul (R := R) (A := C) (g : C)
+        rw [TensorProduct.map_tmul]
         exact g.isGroupLikeElem_val.comul_eq_tmul_self.symm
       · exact ⟨0, by simp⟩
       · intro x y hx hy hx' hy'
@@ -60,10 +60,39 @@ theorem groupLikeSetSpan_toSubmodule (s : Set (GroupLike R C)) :
       Submodule.span R ((↑) '' s : Set C) :=
   rfl
 
+@[simp]
 theorem mem_groupLikeSetSpan {s : Set (GroupLike R C)} {c : C} :
     c ∈ groupLikeSetSpan (R := R) (C := C) s ↔
       c ∈ Submodule.span R ((↑) '' s : Set C) :=
   Iff.rfl
+
+/-- A group-like element in the generating set belongs to the subcoalgebra it spans. -/
+theorem groupLike_mem_groupLikeSetSpan {s : Set (GroupLike R C)} {g : GroupLike R C}
+    (hg : g ∈ s) :
+    (g : C) ∈ groupLikeSetSpan (R := R) (C := C) s := by
+  rw [mem_groupLikeSetSpan]
+  exact Submodule.subset_span ⟨g, hg, rfl⟩
+
+/-- Universal property for subcoalgebras spanned by a set of group-like elements. -/
+theorem groupLikeSetSpan_le {s : Set (GroupLike R C)} {D : Subcoalgebra R C} :
+    groupLikeSetSpan (R := R) (C := C) s ≤ D ↔ ∀ g ∈ s, (g : C) ∈ D := by
+  constructor
+  · intro h g hg
+    exact h (groupLike_mem_groupLikeSetSpan (R := R) (C := C) hg)
+  · intro h c hc
+    rw [mem_groupLikeSetSpan] at hc
+    rw [← mem_toSubmodule]
+    have hspan : ((↑) '' s : Set C) ⊆ D.toSubmodule := by
+      rintro _ ⟨g, hg, rfl⟩
+      exact (mem_toSubmodule).2 (h g hg)
+    exact (Submodule.span_le.2 hspan) hc
+
+/-- Monotonicity of the subcoalgebra spanned by a set of group-like elements. -/
+theorem groupLikeSetSpan_mono {s t : Set (GroupLike R C)} (hst : s ⊆ t) :
+    groupLikeSetSpan (R := R) (C := C) s ≤ groupLikeSetSpan (R := R) (C := C) t := by
+  rw [groupLikeSetSpan_le]
+  intro g hg
+  exact groupLike_mem_groupLikeSetSpan (R := R) (C := C) (hst hg)
 
 /-- The subcoalgebra spanned by a group-like element. -/
 def groupLikeSpan (g : GroupLike R C) : Subcoalgebra R C :=
@@ -81,20 +110,27 @@ theorem groupLikeSpan_toSubmodule (g : GroupLike R C) :
 @[simp]
 theorem groupLike_mem_groupLikeSpan (g : GroupLike R C) :
     (g : C) ∈ groupLikeSpan (R := R) (C := C) g := by
-  change (g : C) ∈ (groupLikeSpan (R := R) (C := C) g).toSubmodule
-  rw [groupLikeSpan_toSubmodule]
+  rw [← mem_toSubmodule, groupLikeSpan_toSubmodule]
   exact Submodule.mem_span_singleton_self (g : C)
 
 /-- Membership in the subcoalgebra spanned by a group-like element. -/
+@[simp]
 theorem mem_groupLikeSpan {g : GroupLike R C} {c : C} :
     c ∈ groupLikeSpan (R := R) (C := C) g ↔ ∃ r : R, r • (g : C) = c := by
   rw [← mem_toSubmodule, groupLikeSpan_toSubmodule, Submodule.mem_span_singleton]
 
-/-- The subcoalgebra spanned by a group-like element is finite. -/
+/-- A subcoalgebra spanned by a finite set of group-like elements is finitely generated. -/
+theorem groupLikeSetSpan_isFinite (s : Set (GroupLike R C)) (hs : s.Finite) :
+    Module.Finite R (groupLikeSetSpan (R := R) (C := C) s).toSubmodule := by
+  rw [groupLikeSetSpan_toSubmodule]
+  exact Module.Finite.span_of_finite R (hs.image ((↑) : GroupLike R C → C))
+
+/-- The underlying submodule of the subcoalgebra spanned by one group-like element is finitely
+generated. -/
 instance groupLikeSpan_isFinite (g : GroupLike R C) :
     Module.Finite R (groupLikeSpan (R := R) (C := C) g).toSubmodule := by
-  rw [groupLikeSpan_toSubmodule]
-  exact Module.Finite.of_fg (Submodule.fg_span_singleton (g : C))
+  rw [groupLikeSpan]
+  exact groupLikeSetSpan_isFinite (R := R) (C := C) {g} (Set.finite_singleton g)
 
 end Subcoalgebra
 

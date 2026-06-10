@@ -182,10 +182,6 @@ instance : OrderBot (Subcoalgebra R C) where
     rw [hc]
     exact zero_mem D
 
-/-- The zero subcoalgebra is finite. -/
-instance bot_isFinite : Module.Finite R ((⊥ : Subcoalgebra R C).toSubmodule) :=
-  inferInstanceAs (Module.Finite R (⊥ : Submodule R C))
-
 end Subcoalgebra
 
 end TauCeti
