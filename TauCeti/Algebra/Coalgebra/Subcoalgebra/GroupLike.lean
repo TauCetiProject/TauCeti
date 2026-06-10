@@ -100,6 +100,12 @@ theorem groupLikeSetSpan_mono {s t : Set (GroupLike R C)} (hst : s ⊆ t) :
 def groupLikeSpan (g : GroupLike R C) : Subcoalgebra R C :=
   groupLikeSetSpan (R := R) (C := C) {g}
 
+/-- Universal property for the subcoalgebra spanned by one group-like element. -/
+theorem groupLikeSpan_le {g : GroupLike R C} {D : Subcoalgebra R C} :
+    groupLikeSpan (R := R) (C := C) g ≤ D ↔ (g : C) ∈ D := by
+  rw [groupLikeSpan, groupLikeSetSpan_le]
+  simp
+
 @[simp]
 theorem groupLikeSpan_toSubmodule (g : GroupLike R C) :
     (groupLikeSpan (R := R) (C := C) g).toSubmodule = R ∙ (g : C) := by
