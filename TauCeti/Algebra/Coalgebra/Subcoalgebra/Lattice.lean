@@ -2,26 +2,28 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Finiteness.Lattice
+import Mathlib.RingTheory.Finiteness.Basic
 import TauCeti.Algebra.Coalgebra.Subcoalgebra
 
 /-!
-# Binary joins of subcoalgebras
+# Joins of subcoalgebras
 
-This file adds the binary join operation on the lightweight `Subcoalgebra` structure. The join
-of two subcoalgebras has underlying submodule `D.toSubmodule ⊔ E.toSubmodule`; the
-comultiplication is stable because `Δ` is linear and each tensor square maps into the tensor
-square of the larger submodule.
+This file adds suprema to the lightweight `Subcoalgebra` structure. The supremum of a family
+of subcoalgebras has underlying submodule the supremum of the underlying submodules; the
+comultiplication is stable because `Δ` is linear, every element of a submodule supremum is a
+finite sum of elements from the summands, and each tensor square maps into the tensor square
+of the larger submodule.
 
 This is a small Layer 1 prerequisite for the reductive-groups roadmap target on
 finite-dimensional subcoalgebras: finite sums of finite subcoalgebras remain finite.
 
 ## Main declarations
 
-* `Subcoalgebra.instSemilatticeSup`: binary joins of subcoalgebras.
-* `Subcoalgebra.sup_toSubmodule`, `Subcoalgebra.mem_sup`: characteristic API for joins.
-* `Subcoalgebra.sup_finite`, `Subcoalgebra.finset_sup_finite`: finite generation is
-  preserved by finite joins.
+* `Subcoalgebra.instCompleteSemilatticeSup`: arbitrary suprema of subcoalgebras.
+* `Subcoalgebra.iSup_toSubmodule`, `Subcoalgebra.sup_toSubmodule`, `Subcoalgebra.mem_sup`:
+  characteristic API for joins.
+* `Subcoalgebra.iSup_finite`, `Subcoalgebra.sup_finite`, `Subcoalgebra.finset_sup_finite`:
+  finite generation is preserved by finite joins.
 -/
 
 open scoped TensorProduct
@@ -55,10 +57,29 @@ private lemma comul_mem_sup (D E : Subcoalgebra R C) {c : C}
   rcases Submodule.mem_sup.1 hc with ⟨d, hd, e, he, rfl⟩
   rw [LinearMap.map_add]
   exact add_mem
-    (tensorSquare_range_mono (show D.toSubmodule ≤ D.toSubmodule ⊔ E.toSubmodule from
-      le_sup_left) (D.comul_mem hd))
-    (tensorSquare_range_mono (show E.toSubmodule ≤ D.toSubmodule ⊔ E.toSubmodule from
-      le_sup_right) (E.comul_mem he))
+    (tensorSquare_range_mono
+      (P := D.toSubmodule) (Q := D.toSubmodule ⊔ E.toSubmodule) le_sup_left
+      (D.comul_mem hd))
+    (tensorSquare_range_mono
+      (P := E.toSubmodule) (Q := D.toSubmodule ⊔ E.toSubmodule) le_sup_right
+      (E.comul_mem he))
+
+private lemma comul_mem_sSup (S : Set (Subcoalgebra R C)) {c : C}
+    (hc : c ∈ ⨆ D : S, (D : Subcoalgebra R C).toSubmodule) :
+    Coalgebra.comul (R := R) (A := C) c ∈
+      LinearMap.range
+        (TensorProduct.map (⨆ D : S, (D : Subcoalgebra R C).toSubmodule).subtype
+          (⨆ D : S, (D : Subcoalgebra R C).toSubmodule).subtype) := by
+  classical
+  rw [Submodule.mem_iSup_iff_exists_finsupp] at hc
+  rcases hc with ⟨f, hf, rfl⟩
+  rw [Finsupp.sum, map_sum]
+  exact Submodule.sum_mem _ fun D _ =>
+    tensorSquare_range_mono
+      (P := (D : Subcoalgebra R C).toSubmodule)
+      (Q := ⨆ D : S, (D : Subcoalgebra R C).toSubmodule)
+      (le_iSup (fun D : S => (D : Subcoalgebra R C).toSubmodule) D)
+      (D.1.comul_mem (hf D))
 
 /-- The join of two subcoalgebras has underlying submodule the join of the underlying
 submodules. -/
@@ -68,6 +89,15 @@ instance instMax : Max (Subcoalgebra R C) where
       comul_mem' := by
         intro c hc
         exact comul_mem_sup D E hc }
+
+/-- The supremum of a set of subcoalgebras has underlying submodule the supremum of the
+underlying submodules. -/
+instance instSupSet : SupSet (Subcoalgebra R C) where
+  sSup S :=
+    { carrier := ⨆ D : S, (D : Subcoalgebra R C).toSubmodule
+      comul_mem' := by
+        intro c hc
+        exact comul_mem_sSup S hc }
 
 /-- The underlying submodule of the join is the join of the underlying submodules. -/
 @[simp]
@@ -102,9 +132,42 @@ theorem sup_le {D E F : Subcoalgebra R C} (hD : D ≤ F) (hE : E ≤ F) :
   rcases hc with ⟨d, hd, e, he, rfl⟩
   exact add_mem (hD hd) (hE he)
 
+/-- Subcoalgebras form a semilattice under the join whose carrier is the supremum of the
+underlying submodules. -/
 instance instSemilatticeSup : SemilatticeSup (Subcoalgebra R C) :=
   SemilatticeSup.mk (fun D E => D ⊔ E) le_sup_left le_sup_right
     (fun _ _ _ => sup_le)
+
+/-- The underlying submodule of a supremum of a set of subcoalgebras is the supremum of the
+underlying submodules indexed by that set. -/
+@[simp]
+theorem sSup_toSubmodule (S : Set (Subcoalgebra R C)) :
+    (sSup S).toSubmodule = ⨆ D : S, (D : Subcoalgebra R C).toSubmodule :=
+  rfl
+
+/-- The underlying submodule of a supremum of subcoalgebras is the supremum of the
+underlying submodules. -/
+@[simp]
+theorem iSup_toSubmodule {ι : Sort*} (D : ι → Subcoalgebra R C) :
+    (⨆ i, D i).toSubmodule = ⨆ i, (D i).toSubmodule := by
+  rw [iSup, sSup_toSubmodule]
+  ext c
+  simp [Submodule.mem_iSup]
+
+/-- Subcoalgebras have arbitrary suprema, computed on underlying submodules. -/
+instance instCompleteSemilatticeSup : CompleteSemilatticeSup (Subcoalgebra R C) where
+  sSup := sSup
+  isLUB_sSup S :=
+    ⟨fun D hD c hc => by
+      rw [← mem_toSubmodule, sSup_toSubmodule]
+      exact Submodule.mem_iSup_of_mem ⟨D, hD⟩ ((mem_toSubmodule).2 hc),
+    fun D hD c hc => by
+      rw [← mem_toSubmodule, sSup_toSubmodule] at hc
+      rw [← mem_toSubmodule]
+      have hle : (⨆ E : S, (E : Subcoalgebra R C).toSubmodule) ≤ D.toSubmodule := by
+        refine iSup_le fun E : S => ?_
+        exact toSubmodule_le_toSubmodule.2 (hD E.2)
+      exact hle hc⟩
 
 /-- The join of finitely generated subcoalgebras is finitely generated as an `R`-module. -/
 theorem sup_finite (D E : Subcoalgebra R C)
@@ -132,17 +195,24 @@ theorem finset_sup_toSubmodule (s : Finset ι) (D : ι → Subcoalgebra R C) :
   | insert a s _ ih =>
       rw [Finset.sup_insert, sup_toSubmodule, ih, Finset.sup_insert]
 
-/-- A subcoalgebra in a finite family is contained in the finite join of the family. -/
-theorem le_finset_sup {s : Finset ι} {D : ι → Subcoalgebra R C} {i : ι} (hi : i ∈ s) :
-    D i ≤ s.sup D := by
-  exact Finset.le_sup hi
+/-- Membership in a finite join of subcoalgebras. -/
+theorem mem_finset_sup {s : Finset ι} {D : ι → Subcoalgebra R C} {c : C} :
+    c ∈ s.sup D ↔ ∃ μ : ∀ i, (D i).toSubmodule, (∑ i ∈ s, (μ i : C)) = c := by
+  rw [← mem_toSubmodule, finset_sup_toSubmodule]
+  simpa only [Finset.sup_eq_iSup] using
+    (Submodule.mem_iSup_finset_iff_exists_sum (fun i => (D i).toSubmodule) c)
 
-/-- To prove a finite join of subcoalgebras is contained in a subcoalgebra, prove containment
-for each member of the finite family. -/
-theorem finset_sup_le {s : Finset ι} {D : ι → Subcoalgebra R C} {E : Subcoalgebra R C}
-    (hD : ∀ i ∈ s, D i ≤ E) :
-    s.sup D ≤ E := by
-  exact Finset.sup_le hD
+/-- A finite supremum of finitely generated subcoalgebras is finitely generated as an
+`R`-module. -/
+theorem iSup_finite [Finite ι] (D : ι → Subcoalgebra R C)
+    (hD : ∀ i, Module.Finite R (D i).toSubmodule) :
+    Module.Finite R (⨆ i, D i).toSubmodule := by
+  classical
+  cases nonempty_fintype ι
+  rw [iSup_toSubmodule, Module.Finite.iff_fg]
+  simpa [Finset.sup_eq_iSup] using
+    Submodule.fg_finset_sup Finset.univ (fun i => (D i).toSubmodule)
+      fun i _ => Module.Finite.iff_fg.mp (hD i)
 
 /-- A finite join of finitely generated subcoalgebras is finitely generated as an
 `R`-module. -/
