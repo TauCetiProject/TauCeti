@@ -13,18 +13,18 @@ import Mathlib.Analysis.Normed.Operator.Mul
 The divergence-form roadmap keeps the principal elliptic coefficient, first-order drift,
 and zeroth-order mass coefficient as separate named hypotheses.  The principal matrix
 coefficient lives in `TauCeti.Analysis.PDE.UniformEllipticity`; this file records the
-pointwise bundled forms and explicit bounds for the lower-order terms
+pointwise explicit bounds for the lower-order terms
 
-* `u ↦ b(x) · ∇u`, represented here by `driftForm b`;
-* `u ↦ c(x) u`, represented in the weak form by `massForm c`.
+* `u ↦ b(x) · ∇u`, represented using
+  `ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ n) ℝ (innerSL ℝ (b x))`;
+* `u ↦ c(x) u`, represented in the weak form using
+  `c x • ContinuousLinearMap.mul ℝ ℝ`.
 
-These are only pointwise continuous bilinear maps.  They are the finite-dimensional
-estimates later integrated over `Ω` once the weak-derivative Sobolev spaces are available.
+These are only pointwise finite-dimensional estimates, later integrated over `Ω` once the
+weak-derivative Sobolev spaces are available.
 
 ## Main declarations
 
-* `TauCeti.PDE.driftForm`: the continuous bilinear map `(u, ξ) ↦ u * ⟪b, ξ⟫`.
-* `TauCeti.PDE.massForm`: the continuous bilinear map `(u, v) ↦ c * u * v`.
 * `TauCeti.PDE.LowerOrderBoundedOn`: explicit bounds for drift and mass coefficients on a
   domain.
 * `TauCeti.PDE.NonnegMassOn`: nonnegative bounded mass coefficients.
@@ -37,110 +37,6 @@ namespace PDE
 open scoped InnerProductSpace
 
 variable {X n : Type*} [Fintype n]
-
-/-- The pointwise first-order drift form `(u, ξ) ↦ u * ⟪b, ξ⟫`.
-
-In a weak formulation this is the integrand modelling a lower-order term such as
-`bᵢ ∂ᵢu v`, after one scalar argument represents the test function and the vector argument
-represents the gradient. -/
-noncomputable def driftForm (b : EuclideanSpace ℝ n) :
-    ℝ →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
-  ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ n) ℝ (innerSL ℝ b)
-
-/-- The drift form is the expected scalar times dot-product expression. -/
-@[simp]
-lemma driftForm_apply (b : EuclideanSpace ℝ n) (u : ℝ) (ξ : EuclideanSpace ℝ n) :
-    driftForm b u ξ = u * ⟪b, ξ⟫_ℝ := by
-  simp [driftForm]
-  ring
-
-/-- The pointwise drift form is linear under scalar multiplication of the coefficient vector. -/
-@[simp]
-lemma driftForm_smul_apply (a : ℝ) (b : EuclideanSpace ℝ n) (u : ℝ)
-    (ξ : EuclideanSpace ℝ n) :
-    driftForm (a • b) u ξ = a * driftForm b u ξ := by
-  rw [driftForm_apply, driftForm_apply, real_inner_smul_left]
-  ring
-
-/-- A norm bound for the pointwise drift form in terms of the coefficient norm. -/
-lemma norm_driftForm_apply_le (b : EuclideanSpace ℝ n) (u : ℝ) (ξ : EuclideanSpace ℝ n) :
-    ‖driftForm b u ξ‖ ≤ ‖b‖ * ‖u‖ * ‖ξ‖ := by
-  rw [driftForm_apply, norm_mul]
-  calc
-    ‖u‖ * ‖⟪b, ξ⟫_ℝ‖ ≤ ‖u‖ * (‖b‖ * ‖ξ‖) := by
-      gcongr
-      exact norm_inner_le_norm b ξ
-    _ = ‖b‖ * ‖u‖ * ‖ξ‖ := by ring
-
-/-- A bound on the coefficient norm gives the corresponding pointwise drift estimate. -/
-lemma norm_driftForm_apply_le_of_norm_le {b : EuclideanSpace ℝ n} {beta : ℝ}
-    (hb : ‖b‖ ≤ beta) (u : ℝ) (ξ : EuclideanSpace ℝ n) :
-    ‖driftForm b u ξ‖ ≤ beta * ‖u‖ * ‖ξ‖ := by
-  exact (norm_driftForm_apply_le b u ξ).trans <| by
-    gcongr
-
-/-- The operator norm of the drift form is bounded by the coefficient norm. -/
-lemma opNorm_driftForm_le (b : EuclideanSpace ℝ n) :
-    ‖driftForm b‖ ≤ ‖b‖ := by
-  rw [driftForm, ContinuousLinearMap.norm_smulRightL, innerSL_apply_norm]
-
-/-- A bound on the coefficient norm bounds the operator norm of the drift form. -/
-lemma opNorm_driftForm_le_of_norm_le {b : EuclideanSpace ℝ n} {beta : ℝ}
-    (hb : ‖b‖ ≤ beta) :
-    ‖driftForm b‖ ≤ beta :=
-  (opNorm_driftForm_le b).trans hb
-
-/-- The pointwise zeroth-order mass form `(u, v) ↦ c * u * v`. -/
-noncomputable def massForm (c : ℝ) : ℝ →L[ℝ] ℝ →L[ℝ] ℝ :=
-  c • ContinuousLinearMap.mul ℝ ℝ
-
-/-- The mass form is the expected product expression. -/
-@[simp]
-lemma massForm_apply (c u v : ℝ) :
-    massForm c u v = c * u * v := by
-  simp [massForm]
-  ring
-
-/-- The zero mass coefficient gives the zero pointwise mass form. -/
-@[simp]
-lemma massForm_zero_apply (u v : ℝ) :
-    massForm 0 u v = 0 := by
-  simp [massForm_apply]
-
-/-- The mass form is additive in the coefficient. -/
-@[simp]
-lemma massForm_add_apply (c d u v : ℝ) :
-    massForm (c + d) u v = massForm c u v + massForm d u v := by
-  simp [massForm_apply]
-  ring
-
-/-- The mass form is linear under scalar multiplication of the coefficient. -/
-@[simp]
-lemma massForm_mul_apply (a c u v : ℝ) :
-    massForm (a * c) u v = a * massForm c u v := by
-  simp [massForm_apply]
-  ring
-
-/-- A norm bound for the pointwise mass form in terms of the coefficient absolute value. -/
-lemma norm_massForm_apply_le (c u v : ℝ) :
-    ‖massForm c u v‖ ≤ ‖c‖ * ‖u‖ * ‖v‖ := by
-  rw [massForm_apply, norm_mul, norm_mul, mul_assoc]
-
-/-- A bound on the coefficient absolute value gives the corresponding pointwise mass estimate. -/
-lemma norm_massForm_apply_le_of_norm_le {c gamma : ℝ} (hc : ‖c‖ ≤ gamma) (u v : ℝ) :
-    ‖massForm c u v‖ ≤ gamma * ‖u‖ * ‖v‖ := by
-  exact (norm_massForm_apply_le c u v).trans <| by
-    gcongr
-
-/-- The operator norm of the mass form is bounded by the coefficient absolute value. -/
-lemma opNorm_massForm_le (c : ℝ) :
-    ‖massForm c‖ ≤ ‖c‖ :=
-  (massForm c).opNorm_le_bound₂ (norm_nonneg c) (norm_massForm_apply_le c)
-
-/-- A bound on the coefficient absolute value bounds the operator norm of the mass form. -/
-lemma opNorm_massForm_le_of_norm_le {c gamma : ℝ} (hc : ‖c‖ ≤ gamma) :
-    ‖massForm c‖ ≤ gamma :=
-  (opNorm_massForm_le c).trans hc
 
 /-- Bounded lower-order coefficients on a domain, with explicit constants.
 
@@ -209,29 +105,53 @@ lemma of_bounds (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma)
 @[grind =>]
 lemma norm_driftForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
     (hx : x ∈ Ω) (u : ℝ) (ξ : EuclideanSpace ℝ n) :
-    ‖driftForm (b x) u ξ‖ ≤ beta * ‖u‖ * ‖ξ‖ :=
-  norm_driftForm_apply_le_of_norm_le (h.drift_bound hx) u ξ
+    ‖ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ n) ℝ (innerSL ℝ (b x)) u ξ‖ ≤
+      beta * ‖u‖ * ‖ξ‖ := by
+  rw [ContinuousLinearMap.smulRightL_apply_apply, ContinuousLinearMap.smulRight_apply,
+    innerSL_apply_apply, smul_eq_mul, norm_mul]
+  calc
+    ‖⟪b x, ξ⟫_ℝ‖ * ‖u‖ ≤ (‖b x‖ * ‖ξ‖) * ‖u‖ := by
+      gcongr
+      exact norm_inner_le_norm (b x) ξ
+    _ ≤ (beta * ‖ξ‖) * ‖u‖ := by
+      gcongr
+      exact h.drift_bound hx
+    _ = beta * ‖u‖ * ‖ξ‖ := by ring
 
 /-- Operator-norm boundedness of the drift form supplied by bounded lower-order coefficients. -/
 @[grind =>]
 lemma opNorm_driftForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
     (hx : x ∈ Ω) :
-    ‖driftForm (b x)‖ ≤ beta :=
-  PDE.opNorm_driftForm_le_of_norm_le (h.drift_bound hx)
+    ‖ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ n) ℝ (innerSL ℝ (b x))‖ ≤ beta := by
+  rw [ContinuousLinearMap.norm_smulRightL, innerSL_apply_norm]
+  exact h.drift_bound hx
 
 /-- Pointwise boundedness of the mass form supplied by bounded lower-order coefficients. -/
 @[grind =>]
 lemma norm_massForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
     (hx : x ∈ Ω) (u v : ℝ) :
-    ‖massForm (c x) u v‖ ≤ gamma * ‖u‖ * ‖v‖ :=
-  norm_massForm_apply_le_of_norm_le (h.mass_bound hx) u v
+    ‖(c x • ContinuousLinearMap.mul ℝ ℝ) u v‖ ≤ gamma * ‖u‖ * ‖v‖ := by
+  rw [ContinuousLinearMap.smul_apply, ContinuousLinearMap.smul_apply,
+    ContinuousLinearMap.mul_apply', smul_eq_mul, norm_mul, norm_mul]
+  calc
+    ‖c x‖ * (‖u‖ * ‖v‖) ≤ gamma * (‖u‖ * ‖v‖) := by
+      gcongr
+      exact h.mass_bound hx
+    _ = gamma * ‖u‖ * ‖v‖ := by ring
 
 /-- Operator-norm boundedness of the mass form supplied by bounded lower-order coefficients. -/
 @[grind =>]
 lemma opNorm_massForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
     (hx : x ∈ Ω) :
-    ‖massForm (c x)‖ ≤ gamma :=
-  PDE.opNorm_massForm_le_of_norm_le (h.mass_bound hx)
+    ‖c x • ContinuousLinearMap.mul ℝ ℝ‖ ≤ gamma := by
+  calc
+    ‖c x • ContinuousLinearMap.mul ℝ ℝ‖ ≤ ‖c x‖ * ‖ContinuousLinearMap.mul ℝ ℝ‖ :=
+      ContinuousLinearMap.opNorm_smul_le (c x) (ContinuousLinearMap.mul ℝ ℝ)
+    _ ≤ ‖c x‖ * 1 := by
+      gcongr
+      exact ContinuousLinearMap.opNorm_mul_le ℝ ℝ
+    _ = ‖c x‖ := by ring
+    _ ≤ gamma := h.mass_bound hx
 
 end LowerOrderBoundedOn
 
