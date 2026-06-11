@@ -16,10 +16,10 @@ inclusions `M → M × N`, `N → M × N` are comodule morphisms, and the univer
 the product and the coproduct hold, so `M × N` is simultaneously the product and the coproduct
 of `M` and `N`: a direct sum of comodules.
 
-Together with the zero object (`TauCeti.Algebra.Coalgebra.Comodule.Zero`) and the preadditive
-structure (`TauCeti.Algebra.Coalgebra.Comodule.Preadditive`) this supplies the binary-biproduct
-ingredient of the (finite-dimensional) comodule representation category called for in Layer 1
-of the reductive-groups roadmap.
+This file stays at the unbundled `Comodule.Hom` level. The bundled `ComoduleCat`
+product/coproduct/biproduct instances for the finite-dimensional representation category are a
+separate categorical layer; the maps and uniqueness lemmas here are the prerequisite
+unbundled product/coproduct API.
 
 ## Main definitions
 
@@ -35,7 +35,7 @@ of the reductive-groups roadmap.
 ## References
 
 This is the standard direct sum of comodules; see for example Sweedler, *Hopf Algebras*,
-Chapter 2. It supplies a binary-biproduct prerequisite for
+Chapter 2. It supplies an unbundled product/coproduct prerequisite for
 `TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1, "Comodules over a coalgebra/Hopf
 algebra". It reuses Mathlib's `TensorProduct.assoc` associativity coherence and the
 `rTensor`/`lTensor` calculus from `Mathlib.LinearAlgebra.TensorProduct.Map`.
