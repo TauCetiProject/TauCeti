@@ -175,12 +175,9 @@ theorem map_iSup {ι : Sort*} (f : C →ₗc[R] D) (A : ι → Subcoalgebra R C)
 theorem map_finset_sup {ι : Type*} (s : Finset ι) (f : C →ₗc[R] D)
     (A : ι → Subcoalgebra R C) :
     (s.sup A).map f = s.sup fun i => (A i).map f := by
-  classical
-  ext d
-  rw [← mem_toSubmodule, map_toSubmodule, finset_sup_toSubmodule, Finset.sup_eq_iSup,
-    Submodule.map_iSup]
-  simp_rw [Submodule.map_iSup, ← map_toSubmodule f]
-  rw [← Finset.sup_eq_iSup, ← finset_sup_toSubmodule, mem_toSubmodule]
+  induction s using Finset.cons_induction with
+  | empty => rw [Finset.sup_empty, Finset.sup_empty, map_bot]
+  | cons i s hi ih => rw [Finset.sup_cons, Finset.sup_cons, map_sup, ih]
 
 /-- The image of a finitely generated subcoalgebra is finitely generated as an `R`-module. -/
 theorem map_finite (f : C →ₗc[R] D) (A : Subcoalgebra R C)
