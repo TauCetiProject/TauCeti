@@ -81,6 +81,11 @@ theorem smul_toLinearMap (r : R) (f : Hom R C M N) :
 theorem zero_apply (m : M) : (0 : Hom R C M N) m = 0 :=
   rfl
 
+/-- Every comodule morphism sends zero to zero. -/
+@[simp]
+theorem apply_zero (f : Hom R C M N) : f (0 : M) = 0 :=
+  map_zero f.toLinearMap
+
 /-- Addition of comodule morphisms is pointwise addition. -/
 @[simp]
 theorem add_apply (f g : Hom R C M N) (m : M) : (f + g) m = f m + g m :=
