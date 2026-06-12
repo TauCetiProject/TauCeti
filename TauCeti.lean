@@ -37,4 +37,5 @@ import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
 import TauCeti.Analysis.PDE.LowerOrder
 import TauCeti.Analysis.PDE.UniformEllipticity
 import TauCeti.Basic
+import TauCeti.NumberTheory.EffectiveBounds.IdealCount
 import TauCeti.NumberTheory.Multiquadratic.SquareClass
