@@ -2,7 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.NumberField.Discriminant.Basic
+import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 import Mathlib.RingTheory.Trace.Basic
 
 /-!
@@ -20,7 +20,9 @@ square is rational but which is itself irrational has trace zero.
 
 ## Main results
 
-* `TauCeti.NumberField.trace_eq_zero_of_sq_ratCast`: `x² ∈ ℚ`, `x ∉ ℚ` ⟹ `Tr x = 0`.
+* `TauCeti.trace_eq_zero_of_sq_algebraMap_of_not_mem_range`: `x² ∈ F`, `x ∉ F` ⟹ `Tr x = 0`.
+* `TauCeti.NumberField.trace_eq_zero_of_sq_ratCast_of_not_mem_range`: the number-field
+  specialization.
 * `TauCeti.NumberField.abs_discr_le_of_basis_isIntegral`: `|d_K| ≤ |disc b|` for an
   integral basis `b`.
 
@@ -35,42 +37,51 @@ statements hold over an arbitrary number field.
 
 open Polynomial Module
 
-namespace TauCeti.NumberField
+namespace TauCeti
 
-/-- In a number field, an element `x` with `x² ∈ ℚ` but `x ∉ ℚ` has trace zero: its minimal
-polynomial is `X² - r`, whose subleading coefficient vanishes. -/
-theorem trace_eq_zero_of_sq_ratCast {K : Type*} [Field K] [NumberField K] {x : K} {r : ℚ}
-    (hx2 : x ^ 2 = algebraMap ℚ K r) (hx : x ∉ (algebraMap ℚ K).range) :
-    Algebra.trace ℚ K x = 0 := by
+/-- In a finite field extension, an element outside the base field whose square lies in the
+base field has trace zero. -/
+theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] [Field L]
+    [Algebra F L] [FiniteDimensional F L] {x : L} {r : F}
+    (hx2 : x ^ 2 = algebraMap F L r) (hx : x ∉ (algebraMap F L).range) :
+    Algebra.trace F L x = 0 := by
   have hmonic : (X ^ 2 - C r).Monic := Polynomial.monic_X_pow_sub_C r (by norm_num)
-  have haeval : aeval x (X ^ 2 - C r : ℚ[X]) = 0 := by simp [hx2]
-  have hdvd : minpoly ℚ x ∣ (X ^ 2 - C r) := minpoly.dvd ℚ x haeval
-  have hint : IsIntegral ℚ x := Algebra.IsIntegral.isIntegral x
-  have hne : (X ^ 2 - C r : ℚ[X]) ≠ 0 := Polynomial.X_pow_sub_C_ne_zero (by norm_num) r
-  have hdeg2 : (minpoly ℚ x).natDegree = 2 := by
-    have hle : (minpoly ℚ x).natDegree ≤ 2 := by
+  have haeval : aeval x (X ^ 2 - C r : F[X]) = 0 := by simp [hx2]
+  have hdvd : minpoly F x ∣ (X ^ 2 - C r) := minpoly.dvd F x haeval
+  have hint : IsIntegral F x := Algebra.IsIntegral.isIntegral x
+  have hne : (X ^ 2 - C r : F[X]) ≠ 0 := Polynomial.X_pow_sub_C_ne_zero (by norm_num) r
+  have hdeg2 : (minpoly F x).natDegree = 2 := by
+    have hle : (minpoly F x).natDegree ≤ 2 := by
       have := Polynomial.natDegree_le_of_dvd hdvd hne
       simpa [Polynomial.natDegree_X_pow_sub_C] using this
-    have hge : 2 ≤ (minpoly ℚ x).natDegree := by
+    have hge : 2 ≤ (minpoly F x).natDegree := by
       by_contra h
       rw [not_le] at h
-      interval_cases hh : (minpoly ℚ x).natDegree
+      interval_cases hh : (minpoly F x).natDegree
       · exact (minpoly.natDegree_pos hint).ne' hh
       · exact hx (minpoly.natDegree_eq_one_iff.mp hh)
     omega
-  have heq : minpoly ℚ x = X ^ 2 - C r :=
+  have heq : minpoly F x = X ^ 2 - C r :=
     (Polynomial.eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint) hmonic hdvd
       (by rw [hdeg2, Polynomial.natDegree_X_pow_sub_C])).symm
   rw [trace_eq_finrank_mul_minpoly_nextCoeff, heq]
-  have hnc : (X ^ 2 - C r : ℚ[X]).nextCoeff = 0 := by
+  have hnc : (X ^ 2 - C r : F[X]).nextCoeff = 0 := by
     rw [Polynomial.nextCoeff_of_natDegree_pos
       (by rw [Polynomial.natDegree_X_pow_sub_C]; norm_num)]
     simp [Polynomial.coeff_X_pow]
   rw [hnc]; simp
 
+namespace NumberField
+
+/-- In a number field, an irrational element whose square is rational has trace zero. -/
+theorem trace_eq_zero_of_sq_ratCast_of_not_mem_range {K : Type*} [Field K] [NumberField K]
+    {x : K} {r : ℚ} (hx2 : x ^ 2 = algebraMap ℚ K r)
+    (hx : x ∉ (algebraMap ℚ K).range) :
+    Algebra.trace ℚ K x = 0 :=
+  TauCeti.trace_eq_zero_of_sq_algebraMap_of_not_mem_range hx2 hx
+
 /-- If `b` is a `ℚ`-basis of a number field `K` consisting of algebraic integers, then
-`|d_K| ≤ |disc b|`. The discriminant of any basis of integers is `(index)² · d_K` with the
-index a nonzero integer, so `|disc b| = index² · |d_K| ≥ |d_K|`. -/
+`|d_K| ≤ |disc b|`. -/
 theorem abs_discr_le_of_basis_isIntegral {K : Type*} [Field K] [NumberField K]
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℚ K)
     (hb : ∀ i, IsIntegral ℤ (b i)) :
