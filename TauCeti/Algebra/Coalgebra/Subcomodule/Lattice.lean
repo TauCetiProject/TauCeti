@@ -26,8 +26,7 @@ subcomodules: finite sums of finite subcomodules remain finite.
 * `Subcomodule.sup_toSubmodule`, `Subcomodule.mem_sup`: characteristic API for binary joins.
 * `Subcomodule.iSup_finite`, `Subcomodule.sup_finite`, `Subcomodule.finset_sup_finite`:
   finite generation is preserved by finite joins.
-* `Subcomodule.map_sup`, `Subcomodule.map_iSup`, `Subcomodule.map_finite`: images preserve
-  joins and finite generation.
+* `Subcomodule.map_sup`, `Subcomodule.map_iSup`: images preserve joins.
 
 ## References
 
@@ -228,15 +227,12 @@ theorem mem_finset_sup {s : Finset ι} {N : ι → Subcomodule R C M} {m : M} :
 
 /-- A finite supremum of finitely generated subcomodules is finitely generated as an
 `R`-module. -/
-theorem iSup_finite [Finite ι] (N : ι → Subcomodule R C M)
+theorem iSup_finite {ι : Sort*} [Finite ι] (N : ι → Subcomodule R C M)
     (hN : ∀ i, Module.Finite R (N i).toSubmodule) :
     Module.Finite R (⨆ i, N i).toSubmodule := by
-  classical
-  cases nonempty_fintype ι
   rw [iSup_toSubmodule, Module.Finite.iff_fg]
-  simpa [Finset.sup_eq_iSup] using
-    Submodule.fg_finset_sup Finset.univ (fun i => (N i).toSubmodule)
-      fun i _ => Module.Finite.iff_fg.mp (hN i)
+  exact Submodule.fg_iSup (fun i => (N i).toSubmodule)
+    fun i => Module.Finite.iff_fg.mp (hN i)
 
 /-- A finite join of finitely generated subcomodules is finitely generated as an
 `R`-module. -/
@@ -277,12 +273,6 @@ theorem map_finset_sup (s : Finset ι) (f : Comodule.Hom R C M M')
   induction s using Finset.cons_induction with
   | empty => rw [Finset.sup_empty, Finset.sup_empty, map_bot]
   | cons i s hi ih => rw [Finset.sup_cons, Finset.sup_cons, map_sup, ih]
-
-/-- The image of a finitely generated subcomodule is finitely generated as an `R`-module. -/
-theorem map_finite (f : Comodule.Hom R C M M') (N : Subcomodule R C M)
-    [Module.Finite R N.toSubmodule] : Module.Finite R (N.map f).toSubmodule := by
-  rw [map_toSubmodule]
-  infer_instance
 
 end Map
 

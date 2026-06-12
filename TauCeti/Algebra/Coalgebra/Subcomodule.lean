@@ -2,6 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.RingTheory.Finiteness.Basic
 import TauCeti.Algebra.Coalgebra.Comodule
 
 /-!
@@ -231,6 +232,12 @@ submodule. -/
 theorem map_toSubmodule (A : Subcomodule R C M) (f : Comodule.Hom R C M N) :
     (A.map f).toSubmodule = A.toSubmodule.map f.toLinearMap :=
   rfl
+
+/-- The image of a finitely generated subcomodule is finitely generated as an `R`-module. -/
+theorem map_finite (f : Comodule.Hom R C M N) (A : Subcomodule R C M)
+    [Module.Finite R A.toSubmodule] : Module.Finite R (A.map f).toSubmodule := by
+  rw [map_toSubmodule]
+  infer_instance
 
 /-- Membership in the image subcomodule. -/
 theorem mem_map {A : Subcomodule R C M} {f : Comodule.Hom R C M N} {n : N} :
