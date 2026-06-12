@@ -370,6 +370,14 @@ theorem cofree_toSemimoduleCat :
     (cofree R C M).toSemimoduleCat = SemimoduleCat.of R (M ⊗[R] C) :=
   rfl
 
+/-- The coaction on the bundled cofree comodule is `id ⊗ Δ` followed by reassociation. -/
+@[simp]
+theorem cofree_coact :
+    letI := Comodule.cofree R C M
+    Comodule.coact (R := R) (C := C) (M := cofree R C M)
+      = (TensorProduct.assoc R M C C).symm.toLinearMap ∘ₗ Coalgebra.comul.lTensor M :=
+  rfl
+
 /-- The coaction on the bundled cofree comodule on a simple tensor is
 `m ⊗ c ↦ ∑ (m ⊗ c₁) ⊗ c₂`. -/
 @[simp]
