@@ -8,9 +8,9 @@ import Mathlib.RingTheory.Ideal.Maps
 /-!
 # Hopf ideals
 
-This file defines Hopf ideals in a commutative Hopf algebra over a commutative ring. A Hopf
-ideal is an ideal `I` whose comultiplication lands in `I ⊗ H + H ⊗ I`, whose counit vanishes
-on `I`, and which is stable under the antipode.
+This file defines Hopf ideals in a Hopf algebra over a commutative semiring. A Hopf ideal is
+an ideal `I` whose comultiplication lands in `I ⊗ H + H ⊗ I`, whose counit vanishes on `I`,
+and which is stable under the antipode.
 
 This is a small Layer 3 prerequisite for the reductive-groups roadmap target
 "Hopf ideals ↔ closed subgroup schemes": closed subgroup schemes of an affine group scheme
@@ -19,7 +19,7 @@ must satisfy exactly these Hopf-ideal closure conditions.
 
 ## Main definitions
 
-* `TauCeti.HopfIdeal`: a Hopf ideal of a commutative Hopf algebra.
+* `TauCeti.HopfIdeal`: a Hopf ideal in a Hopf algebra over a commutative semiring.
 * `TauCeti.HopfIdeal.leftTensorIdeal` and `TauCeti.HopfIdeal.rightTensorIdeal`: the two
   summands `I ⊗ H` and `H ⊗ I` inside `H ⊗ H`.
 * `⊥ : HopfIdeal R H`: the zero Hopf ideal.
@@ -125,9 +125,9 @@ end HopfIdeal
 end TensorIdeals
 
 variable (R : Type u) (H : Type v)
-variable [CommRing R] [CommRing H] [HopfAlgebra R H]
+variable [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 
-/-- A Hopf ideal in a commutative Hopf algebra.
+/-- A Hopf ideal in a Hopf algebra over a commutative semiring.
 
 The comultiplication condition is stated in the ambient tensor product algebra as
 `Δ(I) ⊆ I ⊗ H + H ⊗ I`. The quotient Hopf algebra will be added separately once the needed
