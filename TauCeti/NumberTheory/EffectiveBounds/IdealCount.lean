@@ -155,61 +155,6 @@ def encodeIdeal (I : Ideal (𝓞 F)) (i : Fin (Module.finrank ℚ F)) : ℕ :=
     (ratBelow F P) ^ ((normalizedFactors I).count P)
 
 /-
-[foundational] The rational prime below a nonzero prime ideal is prime.
--/
-omit [NumberField F] in
-theorem ratBelow_prime {P : Ideal (𝓞 F)} (hP : P.IsPrime) (hP0 : P ≠ ⊥) :
-    (ratBelow F P).Prime := by
-  obtain ⟨g, hg⟩ : ∃ g : ℤ, Ideal.span {g} = Ideal.under ℤ P ∧ g ≠ 0 ∧ Prime g := by
-    obtain ⟨g, hg⟩ : ∃ g : ℤ, Ideal.span {g} = Ideal.under ℤ P ∧ g ≠ 0 := by
-      have h_nonzero : Ideal.under ℤ P ≠ ⊥ := Ideal.under_ne_bot (A := ℤ) hP0
-      obtain ⟨ g, hg ⟩ := IsPrincipalIdealRing.principal ( under ℤ P );
-      exact ⟨ g, hg.symm, by aesop ⟩;
-    have h_prime : Ideal.IsPrime (Ideal.span {g}) := by
-      grind +suggestions;
-    rw [ Ideal.span_singleton_prime ] at h_prime <;> aesop;
-  convert Int.prime_iff_natAbs_prime.mp hg.2.2 using 1;
-  convert Ideal.absNorm_span_singleton g;
-  · exact hg.1.symm ▸ rfl;
-  · simp +decide [ Algebra.norm ]
-
-/-
-[foundational] `under ℤ P` is a nonzero ideal of `ℤ`.
--/
-omit [NumberField F] in
-theorem under_ne_bot {P : Ideal (𝓞 F)} (_hP : P.IsPrime) (hP0 : P ≠ ⊥) :
-    Ideal.under ℤ P ≠ ⊥ :=
-  Ideal.under_ne_bot (A := ℤ) hP0
-
-/-
-[foundational] The rational prime below `P` is at most `absNorm P`.
--/
-theorem ratBelow_le_absNorm {P : Ideal (𝓞 F)} (hP : P.IsPrime) (hP0 : P ≠ ⊥) :
-    ratBelow F P ≤ Ideal.absNorm P := by
-  obtain ⟨g, hg⟩ : ∃ g : ℤ, Ideal.span {g} = Ideal.under ℤ P ∧ g.natAbs.Prime := by
-    have hJ_prime : Ideal.IsPrime (Ideal.under ℤ P) := by
-      grind +suggestions;
-    have hJ_nonzero : Ideal.under ℤ P ≠ ⊥ := under_ne_bot F hP hP0
-    obtain ⟨g, hg⟩ : ∃ g : ℤ, Ideal.under ℤ P = Ideal.span {g} :=
-      Submodule.IsPrincipal.principal (Ideal.under ℤ P)
-    have hg0 : g ≠ 0 := by
-      rintro rfl
-      exact hJ_nonzero (hg.trans (Ideal.span_singleton_eq_bot.mpr rfl))
-    have hgp : Prime g := (Ideal.span_singleton_prime hg0).mp (hg ▸ hJ_prime)
-    exact ⟨g, hg.symm, Int.prime_iff_natAbs_prime.mp hgp⟩
-  have h_norm : absNorm P = Int.natAbs g ^ (Ideal.inertiaDeg (Ideal.span {g}) P) := by
-    convert Ideal.absNorm_eq_pow_inertiaDeg P ( show Prime g from ?_ ) using 1;
-    · constructor ; aesop;
-    · rw [ Int.prime_iff_natAbs_prime ] ; aesop;
-  have h_ratBelow : ratBelow F P = Int.natAbs g := by
-    have := congr_arg ( fun I => Ideal.absNorm I ) hg.1; norm_num at this; aesop;
-  rw [h_norm]
-  refine le_trans ?_ (Nat.pow_le_pow_right hg.2.pos
-    (show 1 ≤ Ideal.inertiaDeg (Ideal.span {g}) P from ?_))
-  · norm_num [h_ratBelow]
-  · contrapose! hP0; aesop
-
-/-
 [foundational] `P` belongs to the finite set of primes above the rational
 prime below it.
 -/
@@ -222,7 +167,7 @@ theorem mem_primesOverFinset_under {P : Ideal (𝓞 F)} (hP : P.IsPrime) (hP0 : 
     · exact hP;
     · constructor;
       rfl;
-  · exact under_ne_bot F hP hP0
+  · exact Ideal.under_ne_bot (A := ℤ) hP0
 
 /-
 [foundational] The coordinate of a nonzero prime ideal is `< [F:ℚ]`.
@@ -230,7 +175,7 @@ theorem mem_primesOverFinset_under {P : Ideal (𝓞 F)} (hP : P.IsPrime) (hP0 : 
 theorem primeCoord_lt {P : Ideal (𝓞 F)} (hP : P.IsPrime) (hP0 : P ≠ ⊥) :
     primeCoord F P < Module.finrank ℚ F := by
   have hmax : (Ideal.under ℤ P).IsMaximal :=
-    Ideal.IsPrime.isMaximal (IsPrime.under ℤ P) (under_ne_bot F hP hP0)
+    Ideal.IsPrime.isMaximal (IsPrime.under ℤ P) (Ideal.under_ne_bot (A := ℤ) hP0)
   calc primeCoord F P
       < (IsDedekindDomain.primesOverFinset (Ideal.under ℤ P) (𝓞 F)).toList.length := by
         rw [primeCoord]
@@ -238,7 +183,7 @@ theorem primeCoord_lt {P : Ideal (𝓞 F)} (hP : P.IsPrime) (hP0 : P ≠ ⊥) :
           (Finset.mem_toList.mpr (mem_primesOverFinset_under F hP hP0))
     _ = (IsDedekindDomain.primesOverFinset (Ideal.under ℤ P) (𝓞 F)).card := Finset.length_toList _
     _ ≤ Module.finrank ℚ F :=
-        Ideal.card_primesOverFinset_le_finrank (𝓞 F) ℚ F (under_ne_bot F hP hP0)
+        Ideal.card_primesOverFinset_le_finrank (𝓞 F) ℚ F (Ideal.under_ne_bot (A := ℤ) hP0)
 
 /-
 [foundational] `ratBelow` injectivity: equal `ratBelow` means the primes lie
@@ -252,8 +197,8 @@ theorem under_eq_of_ratBelow_eq {P Q : Ideal (𝓞 F)} (hP : P.IsPrime) (hP0 : P
   have hr'' : ∀ {J : Ideal ℤ}, J ≠ ⊥ → J.IsPrime → J = Ideal.span {(Ideal.absNorm J : ℤ)} := by
     simp_all +decide
   haveI := hP; haveI := hQ
-  rw [hr'' (under_ne_bot F hP hP0) (IsPrime.under ℤ P),
-    hr'' (under_ne_bot F hQ hQ0) (IsPrime.under ℤ Q), hr']
+  rw [hr'' (Ideal.under_ne_bot (A := ℤ) hP0) (IsPrime.under ℤ P),
+    hr'' (Ideal.under_ne_bot (A := ℤ) hQ0) (IsPrime.under ℤ Q), hr']
 
 /-
 [foundational] Two nonzero primes over the same rational prime with the same
@@ -293,7 +238,9 @@ theorem encodeIdeal_pos {I : Ideal (𝓞 F)} (hI : I ≠ ⊥)
   refine Finset.prod_pos fun P hP => ?_
   rw [Finset.mem_filter, Multiset.mem_toFinset] at hP
   have hPp := isPrime_of_mem_normalizedFactors F hI hP.1
-  exact pow_pos (ratBelow_prime F hPp.1 hPp.2).pos _
+  haveI := hPp.1
+  haveI : NeZero P := ⟨hPp.2⟩
+  exact pow_pos (by simpa [ratBelow] using (Nat.absNorm_under_prime P).pos) _
 
 /-
 Regrouping: the product of all coordinates is the product over all prime
@@ -334,7 +281,8 @@ theorem prod_encodeIdeal_le_absNorm {I : Ideal (𝓞 F)} (hI : I ≠ ⊥) :
   refine le_trans ?_ h_prod_le
   gcongr with Q hQ
   have hQp := isPrime_of_mem_normalizedFactors F hI (Multiset.mem_toFinset.mp hQ)
-  exact ratBelow_le_absNorm F hQp.1 hQp.2
+  exact Nat.le_of_dvd (Nat.pos_iff_ne_zero.mpr (Ideal.absNorm_eq_zero_iff.not.mpr hQp.2))
+    (by simpa [ratBelow] using Int.absNorm_under_dvd_absNorm Q)
 
 /-
 Recovery: the multiplicity of a prime `P` in `I` is the `ratBelow P`-adic
@@ -346,14 +294,18 @@ theorem count_eq_padicValNat {I : Ideal (𝓞 F)} (hI : I ≠ ⊥) {P : Ideal (�
       padicValNat (ratBelow F P)
         (encodeIdeal F I ⟨primeCoord F P, primeCoord_lt F hP hP0⟩) := by
   classical
-  have hpp : (ratBelow F P).Prime := ratBelow_prime F hP hP0
+  haveI := hP
+  haveI : NeZero P := ⟨hP0⟩
+  have hpp : (ratBelow F P).Prime := by simpa [ratBelow] using Nat.absNorm_under_prime P
   have hfact : ∀ Q ∈ (normalizedFactors I).toFinset.filter
       (fun Q => primeCoord F Q = primeCoord F P),
       (ratBelow F Q) ^ ((normalizedFactors I).count Q) ≠ 0 := by
     intro Q hQ
     rw [Finset.mem_filter, Multiset.mem_toFinset] at hQ
     have hQp := isPrime_of_mem_normalizedFactors F hI hQ.1
-    exact pow_ne_zero _ (ratBelow_prime F hQp.1 hQp.2).pos.ne'
+    haveI := hQp.1
+    haveI : NeZero Q := ⟨hQp.2⟩
+    exact pow_ne_zero _ (by simpa [ratBelow] using (Nat.absNorm_under_prime Q).pos.ne')
   rw [eq_comm, ← Nat.factorization_def _ hpp]
   simp only [encodeIdeal]
   rw [Nat.factorization_prod hfact]
@@ -366,7 +318,10 @@ theorem count_eq_padicValNat {I : Ideal (𝓞 F)} (hI : I ≠ ⊥) {P : Ideal (�
     have hQp := isPrime_of_mem_normalizedFactors F hI hQ.1
     have hrb : ratBelow F Q ≠ ratBelow F P := fun h =>
       hQP (prime_eq_of_coord_eq F hQp.1 hQp.2 hP hP0 h hQ.2)
-    rw [(ratBelow_prime F hQp.1 hQp.2).factorization_pow, Finsupp.single_apply]
+    haveI := hQp.1
+    haveI : NeZero Q := ⟨hQp.2⟩
+    have hQbelow : (ratBelow F Q).Prime := by simpa [ratBelow] using Nat.absNorm_under_prime Q
+    rw [hQbelow.factorization_pow, Finsupp.single_apply]
     simp [hrb]
   · intro hPnot
     rw [Finset.mem_filter, Multiset.mem_toFinset] at hPnot
