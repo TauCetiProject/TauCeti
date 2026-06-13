@@ -116,8 +116,7 @@ theorem sqrtTower_sq_mem (root : ℕ → L) (d : ℕ → K)
   rw [hroot j]
   exact (sqrtTower (K := K) root n).algebraMap_mem (d j)
 
-/-- If one listed root already lies in a stage, adjoining it does not change that stage. -/
-theorem sqrtTower_sup_adjoin_eq_of_mem (root : ℕ → L) {n : ℕ}
+private theorem sqrtTower_sup_adjoin_eq_of_mem (root : ℕ → L) {n : ℕ}
     (hroot : root n ∈ sqrtTower (K := K) root n) :
     sqrtTower (K := K) root n ⊔ IntermediateField.adjoin K {root n}
       = sqrtTower (K := K) root n := by
