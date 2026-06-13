@@ -9,6 +9,7 @@ import TauCeti.Algebra.Coalgebra.Comodule.Cofree
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 import TauCeti.Algebra.Coalgebra.Comodule.Finite
 import TauCeti.Algebra.Coalgebra.Comodule.FiniteCorestrict
+import TauCeti.Algebra.Coalgebra.Comodule.FinitePreadditive
 import TauCeti.Algebra.Coalgebra.Comodule.FiniteTrivial
 import TauCeti.Algebra.Coalgebra.Comodule.Hom
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient
