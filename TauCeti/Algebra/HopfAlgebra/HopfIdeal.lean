@@ -81,6 +81,28 @@ theorem includeRight_mem_rightTensorIdeal {I : Ideal H} {x : H} (hx : x ∈ I) :
       rightTensorIdeal (R := R) (H := H) I :=
   Ideal.mem_map_of_mem _ hx
 
+/-- A pure tensor `x ⊗ₜ y` with `x ∈ I` lies in `I ⊗ H`. -/
+theorem tmul_mem_leftTensorIdeal {I : Ideal H} {x : H} (hx : x ∈ I) (y : H) :
+    x ⊗ₜ[R] y ∈ leftTensorIdeal (R := R) (H := H) I := by
+  have h : x ⊗ₜ[R] y =
+      Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H) y *
+        Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H) x := by
+    rw [Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply,
+      Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+  rw [h]
+  exact Ideal.mul_mem_left _ _ (includeLeft_mem_leftTensorIdeal (R := R) (H := H) hx)
+
+/-- A pure tensor `x ⊗ₜ y` with `y ∈ I` lies in `H ⊗ I`. -/
+theorem tmul_mem_rightTensorIdeal {I : Ideal H} (x : H) {y : H} (hy : y ∈ I) :
+    x ⊗ₜ[R] y ∈ rightTensorIdeal (R := R) (H := H) I := by
+  have h : x ⊗ₜ[R] y =
+      Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H) x *
+        Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H) y := by
+    rw [Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply,
+      Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+  rw [h]
+  exact Ideal.mul_mem_left _ _ (includeRight_mem_rightTensorIdeal (R := R) (H := H) hy)
+
 theorem mem_leftTensorIdeal {I : Ideal H} {x : H ⊗[R] H} :
     x ∈ leftTensorIdeal (R := R) (H := H) I ↔
       x ∈ Ideal.map
