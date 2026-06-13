@@ -85,9 +85,9 @@ theorem signPattern_injective (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
   exact hgen
 
 omit [Finite ι] in
-/-- A generator is not equal to its own negation (the radicand is a nonzero non-square). -/
+/-- A generator is not equal to its own negation (the radicand is nonzero). -/
 theorem gen_ne_neg [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
-    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) (i : ι) :
+    (i : ι) (hd : d i ≠ 0) :
     gen (K := K) root i ≠ -gen root i := by
   intro h
   have hcoe : root i = -root i := by simpa using congrArg Subtype.val h
@@ -100,9 +100,7 @@ theorem gen_ne_neg [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L 
   have hd0 : d i = 0 := by
     have hh : algebraMap K L (d i) = 0 := by rw [← hroot i, hr0]; ring
     exact (map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective K L)).mp hh
-  refine hindep {i} ⟨i, Finset.mem_singleton_self i⟩ ?_
-  rw [Finset.prod_singleton, hd0]
-  exact ⟨0, by ring⟩
+  exact hd hd0
 
 omit [Finite ι] in
 /-- The sign is `0` exactly where the automorphism fixes the generator. -/
@@ -165,7 +163,10 @@ noncomputable def galoisGroupEquiv [NeZero (2 : K)]
     IsSplittingField.finiteDimensional _ (definingPolynomial d)
   haveI := isGalois hroot
   letI := Fintype.ofFinite ι
-  refine MulEquiv.ofBijective (signHom root hroot (fun i => gen_ne_neg hroot hindep i)) ?_
+  have hd : ∀ i, d i ≠ 0 := fun i hd0 =>
+    hindep {i} ⟨i, Finset.mem_singleton_self i⟩
+      (by rw [Finset.prod_singleton, hd0]; exact ⟨0, by ring⟩)
+  refine MulEquiv.ofBijective (signHom root hroot (fun i => gen_ne_neg hroot i (hd i))) ?_
   rw [Fintype.bijective_iff_injective_and_card]
   refine ⟨signPattern_injective hroot, ?_⟩
   rw [← Nat.card_eq_fintype_card (α := adjoin K (Set.range root) ≃ₐ[K] _),
