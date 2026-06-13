@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Algebra.Group.Subgroup.Even
 import Mathlib.GroupTheory.Schreier
-import Mathlib.Tactic
+import Mathlib.Tactic.NormNum
 
 /-!
 # The index of powers in a finitely generated commutative group
@@ -41,7 +41,7 @@ private theorem index_powMonoidHom_range_le_of_closure_eq_top {G : Type*} [CommG
   have hpow : ∀ q : G ⧸ H, q ^ n = 1 := fun q =>
     QuotientGroup.induction_on q fun g => by
       rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
-      exact ⟨g, rfl⟩
+      exact ⟨g, by rw [powMonoidHom_apply]⟩
   have hcard : Nat.card (G ⧸ H) ∣ n ^ Group.rank (G ⧸ H) :=
     card_dvd_exponent_pow_rank' (G ⧸ H) hpow
   have hrank : Group.rank (G ⧸ H) ≤ S.card :=
@@ -54,7 +54,7 @@ private theorem index_powMonoidHom_range_le_of_closure_eq_top {G : Type*} [CommG
 
 /-- In a commutative group, Mathlib's subgroup of squares agrees with the range of the
 squaring homomorphism. -/
-theorem square_eq_powMonoidHom_two_range {G : Type*} [CommGroup G] :
+private theorem square_eq_powMonoidHom_two_range {G : Type*} [CommGroup G] :
     Subgroup.square G = (powMonoidHom 2 : G →* G).range := by
   ext g
   rw [Subgroup.mem_square, MonoidHom.mem_range]
