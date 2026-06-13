@@ -7,8 +7,8 @@ import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
 /-!
 # Quadratic normal forms in intermediate fields
 
-This file contains a small normal-form lemma for adjoining one element whose square already
-lies in an intermediate field.
+This file contains a small normal-form lemma, in characteristic not two, for adjoining one
+element whose square already lies in an intermediate field.
 -/
 
 open IntermediateField
@@ -28,8 +28,8 @@ theorem mem_sup_adjoin_sq_of_exists {F : IntermediateField K L} {x y : L}
   exact add_mem (hF ha)
     (mul_mem (hF hb) (hx (IntermediateField.mem_adjoin_of_mem K (Set.mem_singleton x))))
 
-/-- If `x² ∈ F`, every element of `F ⊔ K⟮x⟯` has the form `a + b * x` with
-`a, b ∈ F`. -/
+/-- If `x² ∈ F` and the extension field has characteristic not two, every element of
+`F ⊔ K⟮x⟯` has the form `a + b * x` with `a, b ∈ F`. -/
 theorem exists_add_mul_of_mem_sup_adjoin_sq {F : IntermediateField K L} {x : L}
     (hx2 : x ^ 2 ∈ F) [NeZero (2 : L)] {y : L}
     (hy : y ∈ F ⊔ IntermediateField.adjoin K {x}) :
@@ -97,16 +97,16 @@ theorem exists_add_mul_of_mem_sup_adjoin_sq {F : IntermediateField K L} {x : L}
       exact ⟨0, 1, zero_mem F, one_mem F, by simp⟩
   exact hle hy
 
-/-- If `x² ∈ F`, every element of `F ⊔ K⟮x⟯` has the form `a + b * x` with
-`a, b ∈ F`. -/
+/-- If `x² ∈ F` and the extension field has characteristic not two, every element of
+`F ⊔ K⟮x⟯` has the form `a + b * x` with `a, b ∈ F`. -/
 theorem mem_sup_adjoin_sq {F : IntermediateField K L} {x : L}
     (hx2 : x ^ 2 ∈ F) [NeZero (2 : L)] {y : L}
     (hy : y ∈ F ⊔ IntermediateField.adjoin K {x}) :
     ∃ a b : L, a ∈ F ∧ b ∈ F ∧ y = a + b * x :=
   exists_add_mul_of_mem_sup_adjoin_sq hx2 hy
 
-/-- Membership in `F ⊔ K⟮x⟯`, for `x² ∈ F`, is equivalent to having the form
-`a + b * x` with `a, b ∈ F`. -/
+/-- Membership in `F ⊔ K⟮x⟯`, for `x² ∈ F` in characteristic not two, is equivalent to
+having the form `a + b * x` with `a, b ∈ F`. -/
 theorem mem_sup_adjoin_sq_iff {F : IntermediateField K L} {x : L}
     (hx2 : x ^ 2 ∈ F) [NeZero (2 : L)] {y : L} :
     y ∈ F ⊔ IntermediateField.adjoin K {x} ↔
