@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
+import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
 # Quadratic normal forms in intermediate fields
@@ -121,5 +122,58 @@ theorem mem_sup_adjoin_sq {F : IntermediateField K L} {x : L}
     y ∈ F ⊔ IntermediateField.adjoin K {x} ↔
       ∃ a b : L, a ∈ F ∧ b ∈ F ∧ y = a + b * x :=
   ⟨exists_add_mul_of_mem_sup_adjoin_sq hx2, mem_sup_adjoin_sq_of_exists⟩
+
+/-- If `x² ∈ F` but `x ∉ F`, then `x` has degree exactly two over `F`: its minimal polynomial
+divides `X² - x²`, has degree at most two, and is not linear since `x ∉ F`. -/
+theorem finrank_adjoin_simple_eq_two_of_sq_mem_notMem (F : IntermediateField K L) {x : L}
+    (hx2 : x ^ 2 ∈ F) (hxF : x ∉ F) :
+    Module.finrank F (IntermediateField.adjoin F {x}) = 2 := by
+  have hx2_int : IsIntegral F (x ^ 2) := by
+    simpa using isIntegral_algebraMap (R := F) (A := L) (x := (⟨x ^ 2, hx2⟩ : F))
+  have hx_int : IsIntegral F x := IsIntegral.of_pow (by norm_num : 0 < 2) hx2_int
+  have hfin := IntermediateField.adjoin.finrank hx_int
+  have hle : (minpoly F x).natDegree ≤ 2 := by
+    have hroot : Polynomial.aeval x
+        ((Polynomial.X : Polynomial F) ^ 2 - Polynomial.C ⟨x ^ 2, hx2⟩) = 0 := by simp
+    have hdvd : minpoly F x ∣ ((Polynomial.X : Polynomial F) ^ 2 - Polynomial.C ⟨x ^ 2, hx2⟩) :=
+      minpoly.dvd F x hroot
+    have hpoly_ne :
+        ((Polynomial.X : Polynomial F) ^ 2 - Polynomial.C ⟨x ^ 2, hx2⟩) ≠ 0 := by
+      intro hzero; have hdeg := congrArg Polynomial.natDegree hzero; norm_num at hdeg
+    exact (Polynomial.natDegree_le_of_dvd hdvd hpoly_ne).trans_eq (by simp)
+  have hpos : 0 < (minpoly F x).natDegree := minpoly.natDegree_pos hx_int
+  have hne1 : (minpoly F x).natDegree ≠ 1 := by
+    intro hdeg1
+    have hfin1 : Module.finrank F (IntermediateField.adjoin F {x}) = 1 := by
+      simpa [hfin] using hdeg1
+    have hxbot : x ∈ (⊥ : IntermediateField F L) :=
+      (IntermediateField.finrank_adjoin_simple_eq_one_iff).mp hfin1
+    rw [IntermediateField.mem_bot] at hxbot
+    obtain ⟨y, hy⟩ := hxbot
+    exact hxF (hy ▸ y.2)
+  omega
+
+/-- If `x² ∈ F` but `x ∉ F`, then adjoining `x` doubles the degree:
+`[F ⊔ K⟮x⟯ : K] = 2 · [F : K]`. -/
+theorem finrank_sup_adjoin_simple_eq_mul_two (F : IntermediateField K L) {x : L}
+    (hx2 : x ^ 2 ∈ F) (hxF : x ∉ F) :
+    Module.finrank K ((F ⊔ IntermediateField.adjoin K {x}) : IntermediateField K L)
+      = Module.finrank K F * 2 := by
+  have hL : (IntermediateField.adjoin F {x}).restrictScalars K
+      = F ⊔ IntermediateField.adjoin K {x} :=
+    IntermediateField.restrictScalars_adjoin_eq_sup K F ({x} : Set L)
+  have hfinL : Module.finrank F (IntermediateField.adjoin F {x}) = 2 :=
+    finrank_adjoin_simple_eq_two_of_sq_mem_notMem F hx2 hxF
+  let e : ((IntermediateField.adjoin F {x}).restrictScalars K) ≃ₗ[K]
+      (IntermediateField.adjoin F {x}) :=
+    { toFun := fun y => ⟨(y : L), y.2⟩, invFun := fun y => ⟨(y : L), y.2⟩
+      left_inv := fun _ => rfl, right_inv := fun _ => rfl
+      map_add' := fun _ _ => rfl, map_smul' := fun _ _ => rfl }
+  calc Module.finrank K ((F ⊔ IntermediateField.adjoin K {x}) : IntermediateField K L)
+      = Module.finrank K ((IntermediateField.adjoin F {x}).restrictScalars K) := by rw [hL]
+    _ = Module.finrank K (IntermediateField.adjoin F {x}) := e.finrank_eq
+    _ = Module.finrank K F * Module.finrank F (IntermediateField.adjoin F {x}) := by
+        rw [Module.finrank_mul_finrank]
+    _ = Module.finrank K F * 2 := by rw [hfinL]
 
 end TauCeti.IntermediateField
