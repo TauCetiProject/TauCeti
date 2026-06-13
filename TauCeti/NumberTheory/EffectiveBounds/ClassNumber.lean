@@ -74,10 +74,10 @@ theorem classNumber_le_bound (F : Type*) [Field F] [NumberField F] :
       convert mul_le_mul_of_nonneg_left h_simp (abs_nonneg (discr F : ℝ)) using 1; ring
     refine le_trans (mul_le_mul_of_nonneg_right (mul_le_of_le_one_right (by positivity) ?_)
       (by positivity)) ?_
-    · exact pow_le_one₀ (by positivity) (div_le_one_of_le₀ (mod_cast Nat.recOn
-        (Module.finrank ℚ F) (by norm_num) fun n ihn => by
-          rw [Nat.factorial_succ, pow_succ']
-          exact le_trans (Nat.mul_le_mul_left _ ihn) (by gcongr; linarith)) (by positivity))
+    · have h_factorial_le_pow : ((Module.finrank ℚ F).factorial : ℝ) ≤
+          (Module.finrank ℚ F : ℝ) ^ Module.finrank ℚ F := by
+        exact_mod_cast Nat.factorial_le_pow (Module.finrank ℚ F)
+      exact pow_le_one₀ (by positivity) (div_le_one_of_le₀ h_factorial_le_pow (by positivity))
     · have h_pi_le_two : (4 : ℝ) / Real.pi ≤ 2 := by
         rw [div_le_iff₀] <;> linarith [Real.pi_gt_three]
       have h_four : (4 : ℝ) = 2 ^ 2 := by norm_num
