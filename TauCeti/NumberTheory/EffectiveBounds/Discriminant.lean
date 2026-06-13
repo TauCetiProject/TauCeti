@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 
 /-!
-# An effective discriminant bound from an integral basis
+# An effective discriminant bound from a basis of algebraic integers
 
 For a number field `K`, the discriminant of any `ℚ`-basis consisting of algebraic integers
 is a nonzero-integer-square multiple of the field discriminant `d_K`, so it bounds `|d_K|`
@@ -18,8 +18,8 @@ matching Minkowski lower bound).
 
 ## Main results
 
-* `TauCeti.NumberField.abs_discr_le_of_basis_isIntegral`: `|d_K| ≤ |disc b|` for an
-  integral basis `b`.
+* `TauCeti.NumberField.abs_discr_le_of_basis_isIntegral`: `|d_K| ≤ |disc b|` for a
+  `ℚ`-basis `b` consisting of algebraic integers.
 
 ## Provenance
 

@@ -12,9 +12,8 @@ This file collects reusable trace facts for finite field extensions.
 
 ## Main results
 
-* `TauCeti.trace_eq_zero_of_sq_algebraMap_of_not_mem_range`: `x² ∈ F`, `x ∉ F` ⟹ `Tr x = 0`.
 * `TauCeti.NumberField.trace_eq_zero_of_sq_ratCast_of_not_mem_range`: the number-field
-  specialization.
+  helper saying that `x² ∈ ℚ`, `x ∉ ℚ` implies `Tr x = 0`.
 
 ## Provenance
 
@@ -30,7 +29,7 @@ namespace TauCeti
 
 /-- In a finite field extension, an element outside the base field whose square lies in the
 base field has trace zero. -/
-theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] [Field L]
+private theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] [Field L]
     [Algebra F L] [FiniteDimensional F L] {x : L} {r : F}
     (hx2 : x ^ 2 = algebraMap F L r) (hx : x ∉ (algebraMap F L).range) :
     Algebra.trace F L x = 0 := by
