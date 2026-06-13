@@ -111,12 +111,4 @@ theorem mem_sup_adjoin_sq {F : IntermediateField K L} {x : L}
       ∃ a b : L, a ∈ F ∧ b ∈ F ∧ y = a + b * x :=
   ⟨exists_add_mul_of_mem_sup_adjoin_sq hx2, mem_sup_adjoin_sq_of_exists⟩
 
-/-- Membership in `F ⊔ K⟮x⟯`, for `x² ∈ F`, is equivalent to having the form `a + b * x`
-with `a, b ∈ F`. -/
-theorem mem_sup_adjoin_sq_iff {F : IntermediateField K L} {x : L}
-    (hx2 : x ^ 2 ∈ F) {y : L} :
-    y ∈ F ⊔ IntermediateField.adjoin K {x} ↔
-      ∃ a b : L, a ∈ F ∧ b ∈ F ∧ y = a + b * x :=
-  mem_sup_adjoin_sq hx2
-
 end TauCeti.IntermediateField
