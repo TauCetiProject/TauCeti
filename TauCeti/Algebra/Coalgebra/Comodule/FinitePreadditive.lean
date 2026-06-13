@@ -46,12 +46,6 @@ variable {R : Type u} [CommRing R]
 variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable {M N P : FGComoduleCat.{u, v, w} R C}
 
-/-- The zero morphism of finitely generated comodules has the zero ambient comodule morphism
-underneath. -/
-@[simp]
-theorem hom_zero_hom : (0 : M ⟶ N).hom = 0 :=
-  rfl
-
 /-- Addition of finitely generated comodule morphisms is addition of the ambient comodule
 morphisms. -/
 @[simp]
@@ -119,11 +113,6 @@ theorem sub_apply (f g : M ⟶ N) (m : M) : (f - g) m = f m - g m := by
   change (f - g).hom m = f.hom m - g.hom m
   rw [hom_sub_hom]
   exact ComoduleCat.sub_apply (R := R) (C := C) f.hom g.hom m
-
-/-- The inclusion into all comodules sends zero morphisms to zero morphisms. -/
-@[simp]
-theorem incl_map_zero : (incl (R := R) (C := C)).map (0 : M ⟶ N) = 0 :=
-  rfl
 
 end FGComoduleCat
 
