@@ -2,7 +2,6 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 import TauCeti.Algebra.Coalgebra.Comodule.Finite
 import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
 
@@ -12,16 +11,15 @@ import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
 This file makes the preadditive structure on the category of finitely generated right
 comodules over a coalgebra over a commutative ring available from a finite-comodule import.
 The category is a full subcategory of all comodules, so Mathlib transfers the preadditive
-structure from `ComoduleCat`, and the inclusion into all comodules is additive.
+structure from `ComoduleCat`.
 
 It also records concrete simp lemmas computing the zero, addition, negation, and subtraction of
 finitely generated comodule morphisms through the underlying ambient comodule morphism `.hom`,
 and pointwise on elements, so downstream code never has to unfold the full-subcategory transfer.
 
 This is a small Layer 1 prerequisite for the reductive-groups roadmap's finite-dimensional
-representation category: additive hom-sets and an additive inclusion functor are needed before
-tensor products, duals, and Tannakian reconstruction can be built on finitely generated
-comodules.
+representation category: additive hom-sets are needed before tensor products, duals, and
+Tannakian reconstruction can be built on finitely generated comodules.
 
 ## Main declarations
 
@@ -37,8 +35,7 @@ This supplies additive-category bookkeeping for
 `TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1 target "Comodules over a coalgebra/Hopf
 algebra": the finite-dimensional comodule category should have additive hom-sets before the
 rigid monoidal representation category is developed. The transfer mechanism is Mathlib's
-`ObjectProperty.FullSubcategory` preadditive instance, and the additive inclusion is Mathlib's
-`CategoryTheory.fullSubcategoryInclusion_additive`.
+`ObjectProperty.FullSubcategory` preadditive instance.
 -/
 
 open CategoryTheory
