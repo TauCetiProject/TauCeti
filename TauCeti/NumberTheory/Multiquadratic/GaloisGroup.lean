@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Data.ZMod.Basic
 import Mathlib.FieldTheory.Galois.Basic
-import Mathlib.Tactic
 import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.Multiquadratic.Galois
 
@@ -150,6 +149,12 @@ noncomputable def signHom (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
   toFun σ := Multiplicative.ofAdd (signPattern root σ)
   map_one' := by simp
   map_mul' σ τ := by simp [signPattern_mul hroot hne, ofAdd_add]
+
+omit [Finite ι] in
+@[simp] theorem signHom_apply (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (hne : ∀ i, gen (K := K) root i ≠ -gen root i)
+    (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :
+    signHom root hroot hne σ = Multiplicative.ofAdd (signPattern root σ) := rfl
 
 /-- **For square-class independent radicands, the Galois group of a multiquadratic field is
 `(ℤ/2)ⁿ`.** -/

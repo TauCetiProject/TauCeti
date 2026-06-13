@@ -6,7 +6,6 @@ import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.FieldTheory.Normal.Basic
 import Mathlib.FieldTheory.SeparableClosure
 import Mathlib.GroupTheory.Exponent
-import Mathlib.Tactic
 
 /-!
 # A multiquadratic field is Galois
