@@ -120,29 +120,10 @@ theorem sub_apply (f g : M ⟶ N) (m : M) : (f - g) m = f m - g m := by
   rw [hom_sub_hom]
   exact ComoduleCat.sub_apply (R := R) (C := C) f.hom g.hom m
 
-/-- Composition in the finite-comodule category is additive in the left argument. -/
-@[simp]
-theorem comp_add (f : M ⟶ N) (g h : N ⟶ P) : f ≫ (g + h) = f ≫ g + f ≫ h :=
-  CategoryTheory.Preadditive.comp_add M N P f g h
-
-/-- Composition in the finite-comodule category is additive in the right argument. -/
-@[simp]
-theorem add_comp (f g : M ⟶ N) (h : N ⟶ P) : (f + g) ≫ h = f ≫ h + g ≫ h :=
-  CategoryTheory.Preadditive.add_comp M N P f g h
-
 /-- The inclusion into all comodules sends zero morphisms to zero morphisms. -/
 @[simp]
 theorem incl_map_zero : (incl (R := R) (C := C)).map (0 : M ⟶ N) = 0 :=
   rfl
-
-/-- The inclusion into all comodules sends sums of morphisms to sums of morphisms. -/
-@[simp]
-theorem incl_map_add (f g : M ⟶ N) :
-    (incl (R := R) (C := C)).map (f + g) =
-      (incl (R := R) (C := C)).map f + (incl (R := R) (C := C)).map g :=
-  CategoryTheory.Functor.map_add
-    (incl (R := R) (C := C) : FGComoduleCat.{u, v, w} R C ⥤
-    ComoduleCat.{u, v, w} R C)
 
 end FGComoduleCat
 
