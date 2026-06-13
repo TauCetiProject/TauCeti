@@ -135,6 +135,8 @@ quotient coalgebra API is available. -/
 structure HopfIdeal where
   /-- The underlying ideal. -/
   carrier : Ideal H
+  /-- The underlying ideal is two-sided. -/
+  isTwoSided' : carrier.IsTwoSided
   /-- The comultiplication of an element of the ideal lies in `I ⊗ H + H ⊗ I`. -/
   comul_mem' :
     ∀ ⦃x : H⦄, x ∈ carrier →
@@ -155,9 +157,9 @@ instance : SetLike (HopfIdeal R H) H where
   coe I := I.carrier
   coe_injective' I J h := by
     cases I with
-    | mk carrier hcomul hcounit hantipode =>
+    | mk carrier htwo hcomul hcounit hantipode =>
     cases J with
-    | mk carrier' hcomul' hcounit' hantipode' =>
+    | mk carrier' htwo' hcomul' hcounit' hantipode' =>
     congr
     exact SetLike.ext' h
 
@@ -174,6 +176,9 @@ instance : PartialOrder (HopfIdeal R H) :=
 /-- The underlying ideal of a Hopf ideal. -/
 def toIdeal (I : HopfIdeal R H) : Ideal H :=
   I.carrier
+
+instance (I : HopfIdeal R H) : I.toIdeal.IsTwoSided :=
+  I.isTwoSided'
 
 @[simp]
 theorem mem_carrier {I : HopfIdeal R H} {x : H} : x ∈ I.carrier ↔ x ∈ I :=
@@ -200,7 +205,7 @@ theorem ext {I J : HopfIdeal R H} (h : ∀ x : H, x ∈ I ↔ x ∈ J) : I = J :
   SetLike.ext h
 
 /-- Constructor from an ideal and the three Hopf-ideal closure conditions. -/
-def ofIdeal (I : Ideal H)
+def ofIdeal (I : Ideal H) [I.IsTwoSided]
     (hcomul :
       ∀ ⦃x : H⦄, x ∈ I →
         Coalgebra.comul (R := R) x ∈
@@ -209,17 +214,18 @@ def ofIdeal (I : Ideal H)
     (hantipode : ∀ ⦃x : H⦄, x ∈ I → HopfAlgebra.antipode R x ∈ I) :
     HopfIdeal R H where
   carrier := I
+  isTwoSided' := inferInstance
   comul_mem' := hcomul
   counit_eq_zero' := hcounit
   antipode_mem' := hantipode
 
 @[simp]
-theorem ofIdeal_carrier (I : Ideal H) (hcomul hcounit hantipode) :
+theorem ofIdeal_carrier (I : Ideal H) [I.IsTwoSided] (hcomul hcounit hantipode) :
     (ofIdeal (R := R) (H := H) I hcomul hcounit hantipode).carrier = I :=
   rfl
 
 @[simp]
-theorem mem_ofIdeal {I : Ideal H} {hcomul hcounit hantipode} {x : H} :
+theorem mem_ofIdeal {I : Ideal H} [I.IsTwoSided] {hcomul hcounit hantipode} {x : H} :
     x ∈ ofIdeal (R := R) (H := H) I hcomul hcounit hantipode ↔ x ∈ I :=
   Iff.rfl
 
@@ -240,10 +246,16 @@ theorem antipode_mem (I : HopfIdeal R H) {x : H} (hx : x ∈ I) :
     HopfAlgebra.antipode R x ∈ I :=
   I.antipode_mem' hx
 
+/-- A Hopf ideal absorbs multiplication on the right as well as on the left. -/
+theorem mul_mem_right (I : HopfIdeal R H) {x : H} (hx : x ∈ I) (y : H) :
+    x * y ∈ I :=
+  I.toIdeal.mul_mem_right y hx
+
 /-- The zero ideal as a Hopf ideal. -/
 instance instBot : Bot (HopfIdeal R H) where
   bot :=
     { carrier := ⊥
+      isTwoSided' := inferInstance
       comul_mem' := by
         intro x hx
         rw [Ideal.mem_bot] at hx
