@@ -8,8 +8,10 @@ import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 /-!
 # Quadratic normal forms in intermediate fields
 
-This file contains a small normal-form lemma for adjoining one element whose square already
-lies in an intermediate field.
+This file contains normal-form lemmas for adjoining one element whose square already lies in an
+intermediate field, together with the corresponding quadratic finrank and degree-doubling API.
+The finrank lemmas live here because they combine the normal form with intermediate-field
+scalar restriction for one quadratic tower step.
 
 ## Provenance
 
@@ -152,19 +154,6 @@ theorem finrank_adjoin_simple_eq_two_of_sq_mem_notMem (F : IntermediateField K L
     exact hxF (hy ▸ y.2)
   omega
 
-/-- The identity linear equivalence between an intermediate field and its scalar restriction.
-
-The two intermediate fields have the same carrier by `IntermediateField.coe_restrictScalars`;
-only the scalar action changes from `F` to the base field `K`. -/
-def restrictScalarsLinearEquiv (F : IntermediateField K L) (E : IntermediateField F L) :
-    E.restrictScalars K ≃ₗ[K] E where
-  toFun y := ⟨(y : L), y.2⟩
-  invFun y := ⟨(y : L), y.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
 /-- If `x² ∈ F` but `x ∉ F`, then adjoining `x` doubles the degree:
 `[F ⊔ K⟮x⟯ : K] = 2 · [F : K]`. -/
 theorem finrank_sup_adjoin_simple_eq_mul_two (F : IntermediateField K L) {x : L}
@@ -178,9 +167,9 @@ theorem finrank_sup_adjoin_simple_eq_mul_two (F : IntermediateField K L) {x : L}
     finrank_adjoin_simple_eq_two_of_sq_mem_notMem F hx2 hxF
   calc Module.finrank K ((F ⊔ IntermediateField.adjoin K {x}) : IntermediateField K L)
       = Module.finrank K ((IntermediateField.adjoin F {x}).restrictScalars K) := by rw [hL]
-    _ = Module.finrank K (IntermediateField.adjoin F {x}) :=
-        (restrictScalarsLinearEquiv F (IntermediateField.adjoin F {x})).finrank_eq
     _ = Module.finrank K F * Module.finrank F (IntermediateField.adjoin F {x}) := by
+        change Module.finrank K (IntermediateField.adjoin F {x}) =
+          Module.finrank K F * Module.finrank F (IntermediateField.adjoin F {x})
         rw [Module.finrank_mul_finrank]
     _ = Module.finrank K F * 2 := by rw [hfinL]
 
