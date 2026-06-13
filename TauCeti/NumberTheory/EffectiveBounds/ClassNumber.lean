@@ -1,0 +1,90 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+import Mathlib.NumberTheory.NumberField.ClassNumber
+import TauCeti.NumberTheory.EffectiveBounds.IdealCount
+
+/-!
+# An effective class-number bound
+
+For a number field `F` of degree `n`, the class number is bounded by
+
+`h_F ≤ |d_F| · 4ⁿ`.
+
+By Mathlib's Minkowski bound (`NumberField.exists_ideal_in_class_of_norm_le`) every ideal
+class contains an integral ideal of norm at most `(4/π)^s · (n!/nⁿ) · √|d_F| ≤ √|d_F|`, so the
+classes inject into the ideals of norm `≤ √|d_F|`, of which there are at most `|d_F| · 2ⁿ` by
+`card_ideal_absNorm_le`.
+
+## Main result
+
+* `TauCeti.NumberField.classNumber_le_bound`: `h_F ≤ |d_F| · 4^[F:ℚ]`.
+
+## Provenance
+
+Migrated from
+[kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the
+formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture.
+-/
+
+open _root_.NumberField
+
+namespace TauCeti.NumberField
+
+/-- **Class number bound.** The class number of a number field `F` is at most
+`|discr F| * 4 ^ [F : ℚ]`. -/
+theorem classNumber_le_bound (F : Type*) [Field F] [NumberField F] :
+    (NumberField.classNumber F : ℝ) ≤
+      |(NumberField.discr F : ℝ)| * 4 ^ Module.finrank ℚ F := by
+  have := @NumberField.exists_ideal_in_class_of_norm_le F _ _
+  choose f hf using this
+  have h_card : (Set.ncard (Set.image (fun C => (f C : Ideal (𝓞 F))) Set.univ)) ≤
+      (4 / Real.pi) ^ (2 * InfinitePlace.nrComplexPlaces F) *
+        ((Module.finrank ℚ F).factorial / (Module.finrank ℚ F) ^ Module.finrank ℚ F) ^ 2 *
+        |(discr F : ℝ)| * 2 ^ Module.finrank ℚ F := by
+    have h_card : (Set.ncard {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ (Ideal.absNorm I : ℝ) ≤
+        (4 / Real.pi) ^ InfinitePlace.nrComplexPlaces F *
+          ((Module.finrank ℚ F).factorial / (Module.finrank ℚ F) ^ Module.finrank ℚ F *
+            Real.sqrt |(discr F : ℝ)|)}) ≤
+        (4 / Real.pi) ^ (2 * InfinitePlace.nrComplexPlaces F) *
+          ((Module.finrank ℚ F).factorial / (Module.finrank ℚ F) ^ Module.finrank ℚ F) ^ 2 *
+          |(discr F : ℝ)| * 2 ^ Module.finrank ℚ F := by
+      convert card_ideal_absNorm_le F _ |>.2 using 1
+      · ring_nf; norm_num [Real.sq_sqrt <| abs_nonneg _]
+      · refine le_trans ?_ (hf 1 |>.2)
+        exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Ideal.absNorm_ne_zero_of_nonZeroDivisors _)
+    refine le_trans ?_ h_card
+    gcongr
+    · convert card_ideal_absNorm_le F _ |>.1 using 1
+      refine le_trans ?_ (hf 1 |>.2)
+      exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Ideal.absNorm_ne_zero_of_nonZeroDivisors _)
+    · simp only [Set.image_univ]
+      exact Set.range_subset_iff.mpr fun C =>
+        ⟨by intro h; simpa [h] using f C |>.2, hf C |>.2⟩
+  refine le_trans ?_ (h_card.trans ?_)
+  · rw [Set.ncard_image_of_injective _ fun x y hxy => ?_, Set.ncard_univ]
+    · norm_num [classNumber]
+    · have := hf x; have := hf y; aesop
+  · -- Simplify the right-hand side of the inequality.
+    suffices h_simp : (4 / Real.pi) ^ (2 * InfinitePlace.nrComplexPlaces F) *
+        ((Module.finrank ℚ F).factorial / (Module.finrank ℚ F) ^ Module.finrank ℚ F) ^ 2 *
+        2 ^ Module.finrank ℚ F ≤ 4 ^ Module.finrank ℚ F by
+      convert mul_le_mul_of_nonneg_left h_simp (abs_nonneg (discr F : ℝ)) using 1; ring
+    refine le_trans (mul_le_mul_of_nonneg_right (mul_le_of_le_one_right (by positivity) ?_)
+      (by positivity)) ?_
+    · have h_factorial_le_pow : ((Module.finrank ℚ F).factorial : ℝ) ≤
+          (Module.finrank ℚ F : ℝ) ^ Module.finrank ℚ F := by
+        exact_mod_cast Nat.factorial_le_pow (Module.finrank ℚ F)
+      exact pow_le_one₀ (by positivity) (div_le_one_of_le₀ h_factorial_le_pow (by positivity))
+    · have h_pi_le_two : (4 : ℝ) / Real.pi ≤ 2 := by
+        rw [div_le_iff₀] <;> linarith [Real.pi_gt_three]
+      have h_four : (4 : ℝ) = 2 ^ 2 := by norm_num
+      refine le_trans (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (by positivity)
+        h_pi_le_two _)
+        (by positivity)) ?_
+      rw [h_four, ← pow_mul, ← pow_add]
+      gcongr <;> norm_num
+      have := NumberField.InfinitePlace.card_add_two_mul_card_eq_rank F; linarith
+
+end TauCeti.NumberField

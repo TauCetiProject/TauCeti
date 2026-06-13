@@ -27,6 +27,7 @@ import TauCeti.Algebra.Coalgebra.Subcoalgebra.Map
 import TauCeti.Algebra.Coalgebra.Subcoalgebra.RegularSubcomodule
 import TauCeti.Algebra.Coalgebra.Subcomodule
 import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
+import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.AlgebraicGeometry.WeilDivisor
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
@@ -37,8 +38,10 @@ import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
 import TauCeti.Analysis.PDE.LowerOrder
 import TauCeti.Analysis.PDE.UniformEllipticity
 import TauCeti.Basic
-import TauCeti.NumberTheory.EffectiveBounds.UnitSquares
-import TauCeti.Algebra.Group.PowMonoidHom
+import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.FieldTheory.Trace
+import TauCeti.NumberTheory.EffectiveBounds.ClassNumber
 import TauCeti.NumberTheory.EffectiveBounds.Discriminant
 import TauCeti.NumberTheory.EffectiveBounds.IdealCount
+import TauCeti.NumberTheory.EffectiveBounds.UnitSquares
+import TauCeti.NumberTheory.Multiquadratic.SquareClass

@@ -142,7 +142,7 @@ open _root_.NumberField Ideal IsDedekindDomain UniqueFactorizationMonoid
 
 noncomputable section
 
-variable (F : Type) [Field F] [NumberField F]
+variable (F : Type*) [Field F] [NumberField F]
 
 /-- The norm of the rational prime below a prime ideal `P` of `𝓞 F`. -/
 private def absNormUnder (P : Ideal (𝓞 F)) : ℕ := Ideal.absNorm (Ideal.under ℤ P)
@@ -373,7 +373,7 @@ open _root_.NumberField in
 one coordinate and contributes `absNorm (Ideal.under ℤ P) ^ count` there; the coordinate
 product is bounded by `Ideal.absNorm I`, and injectivity follows by recovering each count
 from a `padicValNat`. -/
-private theorem ideal_ncard_le_prodLeTuples_ncard (F : Type) [Field F] [NumberField F]
+private theorem ideal_ncard_le_prodLeTuples_ncard (F : Type*) [Field F] [NumberField F]
     {X : ℝ} :
     {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ (Ideal.absNorm I : ℝ) ≤ X}.ncard ≤
       (prodLeTuples (Module.finrank ℚ F) X).ncard := by
@@ -391,7 +391,7 @@ private theorem ideal_ncard_le_prodLeTuples_ncard (F : Type) [Field F] [NumberFi
 open _root_.NumberField in
 /-- In any number field `F`, the set of nonzero integral ideals with norm at most `X` is
 finite, and for `X ≥ 1` its cardinality is at most `X² * 2^[F:ℚ]`. -/
-theorem card_ideal_absNorm_le (F : Type) [Field F] [NumberField F]
+theorem card_ideal_absNorm_le (F : Type*) [Field F] [NumberField F]
     {X : ℝ} (hX : 1 ≤ X) :
     {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ (Ideal.absNorm I : ℝ) ≤ X}.Finite ∧
       (({I : Ideal (𝓞 F) | I ≠ ⊥ ∧ (Ideal.absNorm I : ℝ) ≤ X}.ncard : ℝ)) ≤
