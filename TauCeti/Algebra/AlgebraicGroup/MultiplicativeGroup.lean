@@ -1,0 +1,173 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+
+/-!
+# The multiplicative group example
+
+This file records the functor-of-points calculation for the multiplicative group. Mathlib
+already equips the Laurent polynomial algebra `R[T;T⁻¹]` with its Hopf algebra structure,
+where `T n` is group-like and the antipode sends `T n` to `T (-n)`. We package the resulting
+`R`-points of `Spec R[T;T⁻¹]`: for every commutative `R`-algebra `A`, convolution points
+`R[T;T⁻¹] →ₐ[R] A` are multiplicatively equivalent to units of `A`.
+
+This is a worked-example check for the reductive-groups roadmap Layer 0 target "R-points as a
+group" and the listed example `𝔾_m`.
+
+## Main declarations
+
+* `TauCeti.MultiplicativeGroup.point`: the point corresponding to a unit of `A`.
+* `TauCeti.MultiplicativeGroup.pointEquiv`: algebra maps from `R[T;T⁻¹]` to `A` are
+  equivalent to units of `A`.
+* `TauCeti.MultiplicativeGroup.pointsMulEquiv`: the same equivalence as a multiplicative
+  equivalence from the convolution group to `Aˣ`.
+
+## References
+
+The Hopf algebra structure and Laurent polynomial evaluation API are from Mathlib's
+`Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra` and `Mathlib.Algebra.Polynomial.Laurent`,
+building on Amelia Livingston's monoid-algebra Hopf algebra formalization.
+-/
+
+open WithConv
+open scoped LaurentPolynomial
+
+namespace TauCeti
+
+universe u v
+
+namespace MultiplicativeGroup
+
+variable {R : Type u} {A : Type v}
+variable [CommSemiring R] [CommSemiring A] [Algebra R A]
+
+/-- The `R[T;T⁻¹]`-point of the multiplicative group corresponding to a unit of the value
+algebra. It sends `T n` to `u ^ n`. -/
+noncomputable def point (u : Aˣ) : R[T;T⁻¹] →ₐ[R] A :=
+  { LaurentPolynomial.eval₂ (algebraMap R A) u with
+    commutes' := LaurentPolynomial.eval₂_C (algebraMap R A) u }
+
+/-- The point associated to a unit sends `T n` to `u ^ n`. -/
+@[simp]
+theorem point_T (u : Aˣ) (n : ℤ) :
+    point (R := R) (A := A) u (LaurentPolynomial.T n) = (u ^ n).val :=
+  LaurentPolynomial.eval₂_T (algebraMap R A) u n
+
+/-- The point associated to a unit sends constants through the algebra map. -/
+@[simp]
+theorem point_C (u : Aˣ) (r : R) :
+    point (R := R) (A := A) u (LaurentPolynomial.C r) = algebraMap R A r :=
+  LaurentPolynomial.eval₂_C (algebraMap R A) u r
+
+/-- The unit of `A` obtained by evaluating an `R[T;T⁻¹]`-point at `T`. -/
+noncomputable def unitOfPoint (f : R[T;T⁻¹] →ₐ[R] A) : Aˣ where
+  val := f (LaurentPolynomial.T 1)
+  inv := f (LaurentPolynomial.T (-1))
+  val_inv := by
+    rw [← map_mul, ← LaurentPolynomial.T_add, show (1 : ℤ) + (-1) = 0 by omega,
+      LaurentPolynomial.T_zero, map_one]
+  inv_val := by
+    rw [← map_mul, ← LaurentPolynomial.T_add, show (-1 : ℤ) + 1 = 0 by omega,
+      LaurentPolynomial.T_zero, map_one]
+
+/-- Evaluating `unitOfPoint f` as an element of `A` gives the value of `f` on `T`. -/
+@[simp]
+theorem unitOfPoint_val (f : R[T;T⁻¹] →ₐ[R] A) :
+    (unitOfPoint f : A) = f (LaurentPolynomial.T 1) :=
+  rfl
+
+/-- The inverse of `unitOfPoint f` is the value of `f` on `T⁻¹`. -/
+@[simp]
+theorem unitOfPoint_inv (f : R[T;T⁻¹] →ₐ[R] A) :
+    ↑(unitOfPoint f)⁻¹ = f (LaurentPolynomial.T (-1)) :=
+  rfl
+
+/-- The point-to-unit construction inverts `point`. -/
+@[simp]
+theorem unitOfPoint_point (u : Aˣ) : unitOfPoint (point (R := R) (A := A) u) = u := by
+  ext
+  simp
+
+private theorem point_unitOfPoint_single (f : R[T;T⁻¹] →ₐ[R] A) (n : ℤ) :
+    (unitOfPoint f ^ n).val = f (LaurentPolynomial.T n) := by
+  induction n using Int.induction_on with
+  | zero => simp
+  | succ n ih =>
+      rw [show n + 1 = n + (1 : ℤ) by rfl, zpow_add, zpow_one, Units.val_mul, ih,
+        unitOfPoint_val, ← map_mul, ← LaurentPolynomial.T_add]
+  | pred n ih =>
+      have ih' : ↑((unitOfPoint f ^ (n : ℤ))⁻¹) = f (LaurentPolynomial.T (-(n : ℤ))) := by
+        simpa [zpow_neg] using ih
+      have hinv : ↑(unitOfPoint f ^ (-1 : ℤ)) = f (LaurentPolynomial.T (-1)) := by
+        simp [zpow_neg, unitOfPoint_inv (R := R) (A := A) f]
+      rw [show -(n : ℤ) - 1 = -(n : ℤ) + (-1 : ℤ) by omega, zpow_add, zpow_neg,
+        Units.val_mul, ih', hinv, ← map_mul, ← LaurentPolynomial.T_add]
+
+/-- The unit-to-point construction inverts `unitOfPoint`. -/
+@[simp]
+theorem point_unitOfPoint (f : R[T;T⁻¹] →ₐ[R] A) :
+    point (R := R) (A := A) (unitOfPoint f) = f := by
+  apply AddMonoidAlgebra.algHom_ext
+  intro n
+  have hT : AddMonoidAlgebra.single n (1 : R) = LaurentPolynomial.T n := rfl
+  rw [hT, point_T]
+  exact point_unitOfPoint_single (R := R) (A := A) f n
+
+/-- Algebra maps out of `R[T;T⁻¹]` are the same as units of the value algebra. -/
+noncomputable def pointEquiv : (R[T;T⁻¹] →ₐ[R] A) ≃ Aˣ where
+  toFun := unitOfPoint
+  invFun := point (R := R) (A := A)
+  left_inv := point_unitOfPoint
+  right_inv := unitOfPoint_point
+
+/-- The equivalence sends a point to its value on `T`. -/
+@[simp]
+theorem pointEquiv_apply (f : R[T;T⁻¹] →ₐ[R] A) :
+    pointEquiv (R := R) (A := A) f = unitOfPoint f :=
+  rfl
+
+/-- The inverse equivalence sends a unit to the corresponding evaluation map. -/
+@[simp]
+theorem pointEquiv_symm_apply (u : Aˣ) :
+    (pointEquiv (R := R) (A := A)).symm u = point (R := R) (A := A) u :=
+  rfl
+
+/-- Evaluating a product of convolution points at `T` multiplies their values at `T`. -/
+private theorem unitOfPoint_mul (f g : WithConv (R[T;T⁻¹] →ₐ[R] A)) :
+    unitOfPoint ((f * g).ofConv) = unitOfPoint f.ofConv * unitOfPoint g.ofConv := by
+  ext
+  rw [unitOfPoint_val, Units.val_mul]
+  simp only [unitOfPoint_val]
+  rw [AlgHom.convMul_apply]
+  simp
+
+/-- The functor of points of the multiplicative group is the unit group of the value algebra.
+
+The source is the convolution group of `R`-algebra maps out of `R[T;T⁻¹]`; the target is the
+ordinary unit group of `A`. -/
+noncomputable def pointsMulEquiv : WithConv (R[T;T⁻¹] →ₐ[R] A) ≃* Aˣ where
+  toFun f := unitOfPoint f.ofConv
+  invFun u := toConv (point (R := R) (A := A) u)
+  left_inv f := by
+    exact congrArg toConv (point_unitOfPoint (R := R) (A := A) f.ofConv)
+  right_inv := unitOfPoint_point
+  map_mul' := unitOfPoint_mul
+
+/-- The multiplicative equivalence sends a convolution point to its value on `T`. -/
+@[simp]
+theorem pointsMulEquiv_apply (f : WithConv (R[T;T⁻¹] →ₐ[R] A)) :
+    pointsMulEquiv (R := R) (A := A) f = unitOfPoint f.ofConv :=
+  rfl
+
+/-- The inverse multiplicative equivalence sends a unit to the corresponding point. -/
+@[simp]
+theorem pointsMulEquiv_symm_apply (u : Aˣ) :
+    (pointsMulEquiv (R := R) (A := A)).symm u = toConv (point (R := R) (A := A) u) :=
+  rfl
+
+end MultiplicativeGroup
+
+end TauCeti
