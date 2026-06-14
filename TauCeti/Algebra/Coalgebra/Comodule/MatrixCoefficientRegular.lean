@@ -62,7 +62,7 @@ theorem regular_matrixCoefficientSet_eq_univ :
   exact ⟨fun _ => Set.mem_univ c, fun _ => mem_regular_matrixCoefficientSet (R := R) (C := C) c⟩
 
 /-- A submodule contains all regular-comodule matrix coefficients iff it is top. -/
-theorem regular_matrixCoefficientSubmodule_le_iff {P : Submodule R C} :
+theorem regular_matrixCoefficientSubmodule_le_iff_eq_top {P : Submodule R C} :
     matrixCoefficientSubmodule (R := R) (C := C) (M := C) ≤ P ↔ P = ⊤ := by
   constructor
   · intro hP
@@ -106,7 +106,7 @@ section Algebra
 variable [Semiring C] [Algebra R C] [Coalgebra R C]
 
 /-- A subalgebra contains all regular-comodule matrix coefficients iff it is top. -/
-theorem regular_matrixCoefficientSubalgebra_le_iff {S : Subalgebra R C} :
+theorem regular_matrixCoefficientSubalgebra_le_iff_eq_top {S : Subalgebra R C} :
     matrixCoefficientSubalgebra (R := R) (C := C) (M := C) ≤ S ↔ S = ⊤ := by
   constructor
   · intro hS
