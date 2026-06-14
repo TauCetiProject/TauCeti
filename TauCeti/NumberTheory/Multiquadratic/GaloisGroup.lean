@@ -124,21 +124,46 @@ omit [Finite ι] in
   funext i; exact signPattern_eq_zero _ _ rfl
 
 omit [Finite ι] in
+private theorem signed_pow_add_mul (x : adjoin K (Set.range root)) (a b : ZMod 2) :
+    (-1 : adjoin K (Set.range root)) ^ b.val * ((-1) ^ a.val * x)
+      = (-1) ^ (a + b).val * x := by
+  fin_cases a <;> fin_cases b
+  · change (-1 : adjoin K (Set.range root)) ^ 0 * ((-1) ^ 0 * x) = (-1) ^ 0 * x
+    simp
+  · change (-1 : adjoin K (Set.range root)) ^ 1 * ((-1) ^ 0 * x) = (-1) ^ 1 * x
+    simp
+  · change (-1 : adjoin K (Set.range root)) ^ 0 * ((-1) ^ 1 * x) = (-1) ^ 1 * x
+    simp
+  · change (-1 : adjoin K (Set.range root)) ^ 1 * ((-1) ^ 1 * x) = (-1) ^ 0 * x
+    simp
+
+omit [Finite ι] in
+private theorem aut_mul_gen_eq_signPattern_add
+    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (σ τ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι) :
+    (σ * τ) (gen root i)
+      = (-1) ^ (signPattern root σ i + signPattern root τ i).val * gen root i := by
+  rw [AlgEquiv.mul_apply, aut_gen_eq_signPattern hroot τ i, map_mul, map_pow, map_neg,
+    map_one, aut_gen_eq_signPattern hroot σ i]
+  exact signed_pow_add_mul (gen root i) (signPattern root σ i) (signPattern root τ i)
+
+omit [Finite ι] in
 /-- Pointwise composition rule for sign patterns. -/
 theorem signPattern_mul_apply (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (σ τ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι) :
     signPattern root (σ * τ) i = signPattern root σ i + signPattern root τ i := by
   by_cases hne : gen (K := K) root i ≠ -gen root i
-  · rcases aut_gen_eq_self_or_eq_neg hroot τ i with hτ | hτ <;>
-      rcases aut_gen_eq_self_or_eq_neg hroot σ i with hσ | hσ
-    · rw [signPattern_eq_zero _ _ (by rw [AlgEquiv.mul_apply, hτ, hσ]),
-        signPattern_eq_zero _ _ hσ, signPattern_eq_zero _ _ hτ]; decide
-    · rw [signPattern_eq_one _ _ hne (by rw [AlgEquiv.mul_apply, hτ, hσ]),
-        signPattern_eq_one _ _ hne hσ, signPattern_eq_zero _ _ hτ]; decide
-    · rw [signPattern_eq_one _ _ hne (by rw [AlgEquiv.mul_apply, hτ, map_neg, hσ]),
-        signPattern_eq_zero _ _ hσ, signPattern_eq_one _ _ hne hτ]; decide
-    · rw [signPattern_eq_zero _ _ (by rw [AlgEquiv.mul_apply, hτ, map_neg, hσ, neg_neg]),
-        signPattern_eq_one _ _ hne hσ, signPattern_eq_one _ _ hne hτ]; decide
+  · have hmul := aut_mul_gen_eq_signPattern_add hroot σ τ i
+    generalize hsum : signPattern root σ i + signPattern root τ i = s
+    fin_cases s
+    · refine signPattern_eq_zero _ _ ?_
+      rw [hmul, hsum]
+      change (-1 : adjoin K (Set.range root)) ^ 0 * gen root i = gen root i
+      simp
+    · refine signPattern_eq_one _ _ hne ?_
+      rw [hmul, hsum]
+      change (-1 : adjoin K (Set.range root)) ^ 1 * gen root i = -gen root i
+      simp
   · have hself : gen (K := K) root i = -gen root i := of_not_not hne
     have hsign : ∀ υ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root),
         signPattern root υ i = 0 := by
