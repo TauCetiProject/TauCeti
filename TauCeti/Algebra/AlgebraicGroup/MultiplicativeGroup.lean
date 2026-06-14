@@ -96,7 +96,7 @@ private theorem point_unitOfPoint_single (f : R[T;T⁻¹] →ₐ[R] A) (n : ℤ)
   induction n using Int.induction_on with
   | zero => simp
   | succ n ih =>
-      rw [show n + 1 = n + (1 : ℤ) by rfl, zpow_add, zpow_one, Units.val_mul, ih,
+      rw [zpow_add, zpow_one, Units.val_mul, ih,
         unitOfPoint_val, ← map_mul, ← LaurentPolynomial.T_add]
   | pred n ih =>
       have ih' : ↑((unitOfPoint f ^ (n : ℤ))⁻¹) = f (LaurentPolynomial.T (-(n : ℤ))) := by
@@ -112,8 +112,9 @@ theorem point_unitOfPoint (f : R[T;T⁻¹] →ₐ[R] A) :
     point (R := R) (A := A) (unitOfPoint f) = f := by
   apply AddMonoidAlgebra.algHom_ext
   intro n
-  have hT : AddMonoidAlgebra.single n (1 : R) = LaurentPolynomial.T n := rfl
-  rw [hT, point_T]
+  -- `AddMonoidAlgebra.single n 1` is `LaurentPolynomial.T n`; rewrite via the public lemma
+  -- `single_eq_C_mul_T` rather than relying on the bare definitional unfolding of `T`.
+  rw [LaurentPolynomial.single_eq_C_mul_T, map_one, one_mul, point_T]
   exact point_unitOfPoint_single (R := R) (A := A) f n
 
 /-- Algebra maps out of `R[T;T⁻¹]` are the same as units of the value algebra. -/
