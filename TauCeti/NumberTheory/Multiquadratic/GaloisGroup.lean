@@ -125,6 +125,7 @@ omit [Finite ι] in
 
 omit [Finite ι] in
 /-- The sign pattern is additive: it is a group homomorphism to `ι → ℤ/2`. -/
+@[simp]
 theorem signPattern_mul (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (σ τ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :
     signPattern root (σ * τ) = signPattern root σ + signPattern root τ := by
@@ -172,6 +173,13 @@ omit [Finite ι] in
     (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :
     signHom root hroot σ = Multiplicative.ofAdd (signPattern root σ) := rfl
 
+omit [Finite ι] in
+/-- The sign-pattern homomorphism is injective. -/
+theorem signHom_injective (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
+    Function.Injective (signHom (K := K) root hroot) := by
+  intro σ τ h
+  exact signPattern_injective hroot (Multiplicative.ofAdd.injective (by simpa using h))
+
 /-- **For square-class independent radicands, the Galois group of a multiquadratic field is
 `(ℤ/2)ⁿ`.** -/
 noncomputable def galoisGroupEquiv [NeZero (2 : K)]
@@ -186,7 +194,7 @@ noncomputable def galoisGroupEquiv [NeZero (2 : K)]
   letI := Fintype.ofFinite ι
   refine MulEquiv.ofBijective (signHom root hroot) ?_
   rw [Fintype.bijective_iff_injective_and_card]
-  refine ⟨signPattern_injective hroot, ?_⟩
+  refine ⟨signHom_injective hroot, ?_⟩
   rw [← Nat.card_eq_fintype_card (α := adjoin K (Set.range root) ≃ₐ[K] _),
     IsGalois.card_aut_eq_finrank K (adjoin K (Set.range root)),
     finrank_adjoin_range hroot hindep]
