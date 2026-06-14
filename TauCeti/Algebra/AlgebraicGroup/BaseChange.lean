@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 import Mathlib.RingTheory.Bialgebra.TensorProduct
+import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 
 /-!
 # Base change of bialgebra points
@@ -23,6 +24,10 @@ instance and `AlgHom.liftEquiv`.
 
 * `TauCeti.AlgHom.baseChangePointsMulEquiv`: the convolution monoid isomorphism between
   `A →ₐ[k] R` and `K ⊗[k] A →ₐ[K] R`.
+* `TauCeti.HopfAlgebra.baseChangeAntipode_tmul`: the antipode of the base-changed Hopf
+  algebra acts on pure tensors by `s ⊗ a ↦ s ⊗ S a`.
+* `TauCeti.HopfAlgebra.baseChangePointsGroupEquiv`: the same base-change identification,
+  registered in the Hopf section as an isomorphism of convolution groups.
 
 ## References
 
@@ -111,5 +116,92 @@ lemma baseChangePointsMulEquiv_symm_apply (f : WithConv (K ⊗[k] A →ₐ[K] R)
   rfl
 
 end AlgHom
+
+namespace HopfAlgebra
+
+variable {k K A R : Type*} [CommSemiring k] [CommSemiring K] [CommSemiring A]
+  [CommSemiring R] [Algebra k K] [_root_.HopfAlgebra k A] [Algebra K R] [Algebra k R]
+  [IsScalarTower k K R]
+
+/-- The antipode on the base-changed Hopf algebra `K ⊗[k] A` sends a pure tensor
+`s ⊗ a` to `s ⊗ S a`. -/
+@[simp]
+lemma baseChangeAntipode_tmul (s : K) (a : A) :
+    antipode K (A := K ⊗[k] A) (s ⊗ₜ[k] a) =
+      s ⊗ₜ[k] antipode k a := by
+  simp [TensorProduct.antipode_def]
+
+/-- Base change of Hopf-algebra points is an isomorphism of convolution groups.
+
+This is the Hopf-level form of `AlgHom.baseChangePointsMulEquiv`: for a commutative
+`K`-algebra `R`, an `R`-point of the base-changed Hopf algebra `K ⊗[k] A` is the same as
+a `k`-algebra map `A →ₐ[k] R`, and the identification respects convolution, identity, and
+inverse. -/
+noncomputable def baseChangePointsGroupEquiv :
+    WithConv (A →ₐ[k] R) ≃* WithConv (K ⊗[k] A →ₐ[K] R) :=
+  AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)
+
+/-- The base-change group isomorphism sends `f` to `s ⊗ a ↦ s • f a`. -/
+@[simp]
+lemma baseChangePointsGroupEquiv_apply_ofConv (f : WithConv (A →ₐ[k] R)) :
+    (baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R) f).ofConv =
+      AlgHom.liftEquiv k K A R f.ofConv :=
+  rfl
+
+/-- The inverse base-change group isomorphism is restriction along `a ↦ 1 ⊗ a`. -/
+@[simp]
+lemma baseChangePointsGroupEquiv_symm_ofConv (f : WithConv (K ⊗[k] A →ₐ[K] R)) :
+    ((baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R)).symm f).ofConv =
+      (AlgHom.liftEquiv k K A R).symm f.ofConv :=
+  rfl
+
+/-- The base-change group isomorphism sends `f` to `s ⊗ a ↦ s • f a`. -/
+@[simp]
+lemma baseChangePointsGroupEquiv_apply_tmul (f : WithConv (A →ₐ[k] R)) (s : K) (a : A) :
+    baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R) f (s ⊗ₜ[k] a) =
+      s • f.ofConv a :=
+  rfl
+
+/-- The inverse of the base-change group isomorphism restricts along `a ↦ 1 ⊗ a`. -/
+@[simp]
+lemma baseChangePointsGroupEquiv_symm_apply (f : WithConv (K ⊗[k] A →ₐ[K] R)) (a : A) :
+    ((baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R)).symm f).ofConv a =
+      f.ofConv (1 ⊗ₜ[k] a) :=
+  rfl
+
+/-- Base change of Hopf-algebra points preserves convolution inverses. -/
+@[simp]
+lemma baseChangePointsGroupEquiv_apply_inv (f : WithConv (A →ₐ[k] R)) :
+    baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R) f⁻¹ =
+      (baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R) f)⁻¹ :=
+  map_inv (baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R)) f
+
+/-- Pointwise inverse formula after base change: on a pure tensor `s ⊗ a`, the inverse point
+has value `s • f (S a)`. -/
+@[simp]
+lemma baseChangePointsGroupEquiv_apply_inv_tmul (f : WithConv (A →ₐ[k] R)) (s : K) (a : A) :
+    baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R) f⁻¹ (s ⊗ₜ[k] a) =
+      s • f.ofConv (antipode k a) := by
+  rw [baseChangePointsGroupEquiv_apply_inv, AlgHom.convInv_apply]
+  simp
+
+/-- Pulling back a base-changed point and then inverting is the same as inverting and then
+pulling back. -/
+@[simp]
+lemma baseChangePointsGroupEquiv_symm_apply_inv (f : WithConv (K ⊗[k] A →ₐ[K] R)) :
+    (baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R)).symm f⁻¹ =
+      ((baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R)).symm f)⁻¹ :=
+  map_inv (baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R)).symm f
+
+/-- Pointwise inverse formula after restricting a base-changed point along `a ↦ 1 ⊗ a`. -/
+@[simp]
+lemma baseChangePointsGroupEquiv_symm_apply_inv_apply
+    (f : WithConv (K ⊗[k] A →ₐ[K] R)) (a : A) :
+    ((baseChangePointsGroupEquiv (k := k) (K := K) (A := A) (R := R)).symm f⁻¹).ofConv a =
+      f.ofConv (1 ⊗ₜ[k] antipode k a) := by
+  rw [baseChangePointsGroupEquiv_symm_apply_inv, AlgHom.convInv_apply]
+  rfl
+
+end HopfAlgebra
 
 end TauCeti
