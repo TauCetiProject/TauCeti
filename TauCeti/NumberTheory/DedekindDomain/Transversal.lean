@@ -1,0 +1,177 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+import Mathlib.Algebra.BigOperators.Associated
+import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+import Mathlib.RingTheory.Ideal.Maps
+import Mathlib.Tactic
+
+/-!
+# Conjugate-transversal ideal families in a Dedekind domain
+
+Let `σ` be a ring automorphism of a Dedekind domain `R` and `S` a finite set of nonzero prime
+ideals, packaged as `IsDedekindDomain.HeightOneSpectrum R`, on which `σ` acts as a
+fixed-point-free involution. Pairing each prime with its conjugate `σ p ≠ p`, the product of
+one prime from each pair gives many ideals `A`, each satisfying
+`A * σ A = ∏ p ∈ S, p.asIdeal`.
+
+This is the combinatorial core behind counting the ideals `𝔄` with `𝔄 · σ 𝔄` a fixed product of
+split primes — the engine of the prime-splitting layer of the multiquadratic roadmap.
+
+## Main results
+
+* `TauCeti.DedekindDomain.exists_transversal_family`: the family of
+  `≥ 2 ^ (S.card / 2)` ideals.
+
+## Provenance
+
+Migrated from
+[kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization
+of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture, where it counted
+the conjugate-product ideals over primes `p ≡ 1 (mod 4)` in a concrete CM field.
+-/
+
+attribute [local instance] Classical.propDecidable
+
+namespace TauCeti.DedekindDomain
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+
+include R
+
+/-- A nonzero prime ideal of a Dedekind domain does not divide a finite product of nonzero
+prime ideals unless it equals one of the factors. -/
+private theorem isPrime_not_dvd_prod (p : IsDedekindDomain.HeightOneSpectrum R)
+    {T : Finset (IsDedekindDomain.HeightOneSpectrum R)} (hpT : p ∉ T) :
+    ¬ p.asIdeal ∣ ∏ q ∈ T, q.asIdeal := by
+  haveI := p.isPrime
+  have hpprime : Prime p.asIdeal := p.prime
+  rw [Prime.dvd_finsetProd_iff hpprime]
+  rintro ⟨q, hqT, hpq⟩
+  have heq : q.asIdeal = p.asIdeal := q.isMaximal.eq_of_le p.isMaximal.ne_top (Ideal.le_of_dvd hpq)
+  exact hpT (IsDedekindDomain.HeightOneSpectrum.ext heq ▸ hqT)
+
+/-- **Conjugate-transversal ideal family.** For a fixed-point-free involution `σ` of a finite set
+`S` of height-one primes of a Dedekind domain, there are at least `2 ^ (S.card / 2)` ideals `A`
+with `A * σ A = ∏ p ∈ S, p.asIdeal`. -/
+theorem exists_transversal_family (σ : R ≃+* R)
+    (S : Finset (IsDedekindDomain.HeightOneSpectrum R))
+    (hinv : ∀ p ∈ S, IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ p ∈ S)
+    (hinvol : ∀ p ∈ S,
+      IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ
+        (IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ p) = p)
+    (hfree : ∀ p ∈ S, IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ p ≠ p) :
+    ∃ G : Finset (Ideal R), 2 ^ (S.card / 2) ≤ G.card ∧
+      ∀ A ∈ G, A * Ideal.map σ A = ∏ p ∈ S, p.asIdeal := by
+  induction S using Finset.strongInduction with
+  | _ S ih =>
+  rcases S.eq_empty_or_nonempty with rfl | hS
+  · refine ⟨{1}, by simp, fun A hA => ?_⟩
+    rw [Finset.mem_singleton.mp hA, Finset.prod_empty, one_mul, Ideal.one_eq_top, Ideal.map_top]
+  obtain ⟨p, hpS⟩ := hS
+  set q := IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ p with hqdef
+  have hqS : q ∈ S := hinv p hpS
+  have hpq : q ≠ p := hfree p hpS
+  have hqIdeal : q.asIdeal = Ideal.map σ p.asIdeal := by
+    rw [hqdef]
+    ext x
+    simp [IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv]
+  have hp0 : p.asIdeal ≠ ⊥ := p.ne_bot
+  have hpprime : p.asIdeal.IsPrime := p.isPrime
+  have hpair : ({p, q} : Finset (IsDedekindDomain.HeightOneSpectrum R)) ⊆ S := by
+    intro x hx; rcases Finset.mem_insert.mp hx with rfl | hx
+    · exact hpS
+    · rw [Finset.mem_singleton.mp hx]; exact hqS
+  set S' := S \ {p, q} with hS'def
+  have hS'sub : S' ⊂ S := by
+    refine Finset.sdiff_ssubset hpair ?_
+    exact ⟨p, Finset.mem_insert_self _ _⟩
+  -- The subset `S'` still satisfies all the hypotheses.
+  have hmem' : ∀ {x}, x ∈ S' → x ∈ S := fun hx => (Finset.mem_sdiff.mp hx).1
+  obtain ⟨G', hcard', hprod'⟩ := ih S' hS'sub
+    (fun x hx => by
+      have hxS := hmem' hx
+      have hxnotpair :
+          x ∉ ({p, q} : Finset (IsDedekindDomain.HeightOneSpectrum R)) :=
+        (Finset.mem_sdiff.mp hx).2
+      refine Finset.mem_sdiff.mpr ⟨hinv x hxS, ?_⟩
+      rw [Finset.mem_insert, Finset.mem_singleton]
+      rintro (h | h)
+      · -- `σ x = p` forces `x = σ p = q`, but `x ∉ {p, q}`.
+        refine hxnotpair ?_
+        rw [Finset.mem_insert, Finset.mem_singleton]
+        exact Or.inr <| calc
+          x = IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ
+              (IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ x) :=
+            (hinvol x hxS).symm
+          _ = IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ p := by rw [h]
+          _ = q := hqdef.symm
+      · -- `σ x = q = σ p` forces `x = p`, but `x ∉ {p, q}`.
+        refine hxnotpair ?_
+        rw [Finset.mem_insert, Finset.mem_singleton]
+        exact Or.inl <| calc
+          x = IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ
+              (IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ x) :=
+            (hinvol x hxS).symm
+          _ = IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ q := by rw [h]
+          _ = IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ
+              (IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ p) := by rw [hqdef]
+          _ = p := hinvol p hpS)
+    (fun x hx => hinvol x (hmem' hx)) (fun x hx => hfree x (hmem' hx))
+  -- The product over `S` factors through the conjugate pair we removed.
+  have hprodS :
+      ∏ x ∈ S, x.asIdeal = (∏ x ∈ S', x.asIdeal) * p.asIdeal * q.asIdeal := by
+    rw [hS'def, ← Finset.prod_sdiff hpair, Finset.prod_pair hpq.symm, mul_assoc]
+  have hcardS : S'.card = S.card - 2 := by
+    have h := Finset.card_sdiff_add_card_eq_card hpair
+    rw [Finset.card_pair hpq.symm] at h
+    rw [hS'def]; omega
+  have hpS' : p ∉ S' := fun h => (Finset.mem_sdiff.mp h).2 (Finset.mem_insert_self _ _)
+  refine ⟨(G'.image (· * p.asIdeal)) ∪ (G'.image (· * q.asIdeal)), ?_, ?_⟩
+  · -- The two images are disjoint and each has the size of `G'`.
+    have hinjp : Function.Injective (· * p.asIdeal : Ideal R → Ideal R) :=
+      fun a b h => mul_right_cancel₀ hp0 h
+    have hinjq : Function.Injective (· * q.asIdeal : Ideal R → Ideal R) :=
+      fun a b h => mul_right_cancel₀ q.ne_bot h
+    have hdisj : Disjoint (G'.image (· * p.asIdeal)) (G'.image (· * q.asIdeal)) := by
+      rw [Finset.disjoint_left]
+      rintro A hAp hAq
+      obtain ⟨a, ha, rfl⟩ := Finset.mem_image.mp hAp
+      obtain ⟨b, hb, hab⟩ := Finset.mem_image.mp hAq
+      -- `a * p = b * q` forces `p ∣ b`, hence `p ∣ ∏ S'`, a contradiction.
+      have hpdvd : p.asIdeal ∣ b := by
+        have hpdvd' : p.asIdeal ∣ b * q.asIdeal := hab.symm ▸ dvd_mul_left p.asIdeal a
+        rcases ((Ideal.prime_iff_isPrime hp0).mpr hpprime).dvd_or_dvd hpdvd' with h | h
+        · exact h
+        · exact absurd (q.isMaximal.eq_of_le p.isMaximal.ne_top (Ideal.le_of_dvd h))
+            (fun hpqIdeal => hpq (IsDedekindDomain.HeightOneSpectrum.ext hpqIdeal))
+      exact isPrime_not_dvd_prod p hpS'
+        (hprod' b hb ▸ dvd_mul_of_dvd_left hpdvd (Ideal.map σ b))
+    rw [Finset.card_union_of_disjoint hdisj, Finset.card_image_of_injective _ hinjp,
+      Finset.card_image_of_injective _ hinjq]
+    have h2 : 2 ≤ S.card := Finset.one_lt_card.mpr ⟨p, hpS, q, hqS, hpq.symm⟩
+    calc 2 ^ (S.card / 2) = 2 * 2 ^ (S.card / 2 - 1) := by
+            rw [← pow_succ', Nat.sub_add_cancel (Nat.one_le_div_iff (by norm_num) |>.mpr h2)]
+      _ ≤ 2 * 2 ^ (S'.card / 2) := by
+            gcongr
+            · norm_num
+            · rw [hcardS]; omega
+      _ ≤ G'.card + G'.card := by omega
+  · rintro A hA
+    rw [Finset.mem_union] at hA
+    rcases hA with hA | hA
+    · obtain ⟨a, ha, rfl⟩ := Finset.mem_image.mp hA
+      rw [Ideal.map_mul, ← hqIdeal, hprodS, ← hprod' a ha]; ring
+    · obtain ⟨a, ha, rfl⟩ := Finset.mem_image.mp hA
+      have hmapq : Ideal.map σ q.asIdeal = p.asIdeal := by
+        have hσq :
+            (IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv σ q).asIdeal =
+              Ideal.map σ q.asIdeal := by
+          ext x
+          simp [IsDedekindDomain.HeightOneSpectrum.equivOfRingEquiv]
+        rw [← hσq]
+        exact congr_arg IsDedekindDomain.HeightOneSpectrum.asIdeal (hinvol p hpS)
+      rw [Ideal.map_mul, hmapq, hprodS, ← hprod' a ha]; ring
+
+end TauCeti.DedekindDomain
