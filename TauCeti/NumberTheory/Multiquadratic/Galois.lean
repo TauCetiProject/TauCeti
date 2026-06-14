@@ -71,6 +71,7 @@ noncomputable def gen (root : ι → L) (i : ι) : adjoin K (Set.range root) :=
   ⟨root i, subset_adjoin _ _ ⟨i, rfl⟩⟩
 
 omit [Finite ι] in
+/-- Coercing the `i`-th generator of `K(rootᵢ : i)` back to `L` gives `root i`. -/
 @[simp] theorem coe_gen (i : ι) : (gen (K := K) root i : L) = root i := rfl
 
 omit [Finite ι] in
@@ -90,7 +91,7 @@ private theorem adjoin_gen_eq_top :
 
 omit [Finite ι] in
 /-- The generator squares to its radicand (in `M`). -/
-theorem gen_sq (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) (i : ι) :
+@[simp] theorem gen_sq (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) (i : ι) :
     gen (K := K) root i ^ 2 = algebraMap K (adjoin K (Set.range root)) (d i) := by
   apply Subtype.ext
   rw [IntermediateField.coe_pow, coe_gen, IntermediateField.coe_algebraMap_apply]
