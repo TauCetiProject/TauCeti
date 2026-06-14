@@ -67,11 +67,11 @@ noncomputable def unitOfPoint (f : R[T;T⁻¹] →ₐ[R] A) : Aˣ where
   val := f (LaurentPolynomial.T 1)
   inv := f (LaurentPolynomial.T (-1))
   val_inv := by
-    rw [← map_mul, ← LaurentPolynomial.T_add, show (1 : ℤ) + (-1) = 0 by omega,
-      LaurentPolynomial.T_zero, map_one]
+    rw [← map_mul, ← LaurentPolynomial.T_add]
+    norm_num
   inv_val := by
-    rw [← map_mul, ← LaurentPolynomial.T_add, show (-1 : ℤ) + 1 = 0 by omega,
-      LaurentPolynomial.T_zero, map_one]
+    rw [← map_mul, ← LaurentPolynomial.T_add]
+    norm_num
 
 /-- Evaluating `unitOfPoint f` as an element of `A` gives the value of `f` on `T`. -/
 @[simp]
@@ -103,8 +103,8 @@ private theorem point_unitOfPoint_single (f : R[T;T⁻¹] →ₐ[R] A) (n : ℤ)
         simpa [zpow_neg] using ih
       have hinv : ↑(unitOfPoint f ^ (-1 : ℤ)) = f (LaurentPolynomial.T (-1)) := by
         simp [zpow_neg, unitOfPoint_inv (R := R) (A := A) f]
-      rw [show -(n : ℤ) - 1 = -(n : ℤ) + (-1 : ℤ) by omega, zpow_add, zpow_neg,
-        Units.val_mul, ih', hinv, ← map_mul, ← LaurentPolynomial.T_add]
+      rw [sub_eq_add_neg, zpow_add, zpow_neg, Units.val_mul, ih', hinv, ← map_mul,
+        ← LaurentPolynomial.T_add]
 
 /-- The unit-to-point construction inverts `unitOfPoint`. -/
 @[simp]
