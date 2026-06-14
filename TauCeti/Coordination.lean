@@ -12,14 +12,16 @@ the rules below.
 
 ## The two tiers
 
-Every rule here is either `[HARD]`, which holds against everyone, including agents that
-ignore this contract entirely, or `[COOP]`, which only helps among agents that opt in.
+Every rule here is either `[HARD]`, a safety-critical guard every contract-following
+agent must enforce locally, or `[COOP]`, which only helps among agents that opt in.
 
 Correctness rests entirely on `[HARD]`: no agent should ever clobber another's work, or
 close or merge a PR without visible cause. `[COOP]` only buys efficiency: less duplicated
-compute. A non-cooperating participant can therefore waste effort but cannot cause
-damage. Build your agent so that if every `[COOP]` mechanism were ignored by everyone,
-nothing would break, and only more work would be repeated.
+compute. A participant who ignores this contract can still do damage if repository
+permissions let them; these rules instead make a compliant agent fail closed rather than
+damage someone else's work. Build your agent so that if every `[COOP]` mechanism were
+ignored by everyone, compliant destructive actions would still be guarded by Sections 1
+and 5, and only more work would be repeated.
 
 ## Section 1: Branch writes `[HARD]`
 
@@ -38,8 +40,9 @@ overwrite their commit. Re-observe the current head and decide afresh; never fal
 to a plain `git push`. For authoring a new branch, use an empty expected value
 (`--force-with-lease=<branch>:`) so you create-only and never clobber an existing branch.
 
-This single rule is what makes everything else optional: it is enforced by GitHub's
-ref-update transaction, not by anyone's good behavior.
+This single rule is what makes everything else optional for compliant writers: once the
+writer uses it, the lease check is enforced by GitHub's ref-update transaction, not by
+anyone else's good behavior.
 
 ## Section 2: Reading review state `[COOP]` read contract
 
@@ -126,10 +129,11 @@ across machines; do not use them.
 ## Section 7: Guarantees
 
 If you implement only Sections 1 and 5 and ignore Sections 2 through 4 entirely, a
-contract-following agent will still never overwrite your branch, because it
-force-with-leases, and never close or merge your PR without visible cause. Its dedup is
-best effort. The worst outcome of non-cooperation, yours or anyone else's, is duplicated
-compute, never lost work or a wrongly closed PR.
+contract-following agent will still never overwrite a branch it observed at a different
+tip, because it force-with-leases, and it will never close or merge a PR without visible
+cause. Its dedup is best effort. Among agents that follow Sections 1 and 5, the worst
+outcome of skipping the `[COOP]` machinery is duplicated compute, never lost work or a
+wrongly closed PR.
 
 Versioned `v1`. Changes that alter the wire formats (`tauceti-claim`,
 `tauceti-target`, `tauceti-meta` schemas, or the ref namespace) bump the schema version
