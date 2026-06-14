@@ -41,6 +41,7 @@ import TauCeti.Analysis.PDE.UniformEllipticity
 import TauCeti.Basic
 import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.FieldTheory.Trace
+import TauCeti.NumberTheory.DedekindDomain.Transversal
 import TauCeti.NumberTheory.EffectiveBounds.ClassNumber
 import TauCeti.NumberTheory.EffectiveBounds.Discriminant
 import TauCeti.NumberTheory.EffectiveBounds.IdealCount
@@ -48,4 +49,3 @@ import TauCeti.NumberTheory.EffectiveBounds.UnitSquares
 import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.Multiquadratic.Galois
 import TauCeti.NumberTheory.Multiquadratic.SquareClass
-import TauCeti.NumberTheory.Multiquadratic.Transversal
