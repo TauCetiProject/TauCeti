@@ -124,13 +124,10 @@ omit [Finite ι] in
   funext i; exact signPattern_eq_zero _ _ rfl
 
 omit [Finite ι] in
-/-- The sign pattern is additive: it is a group homomorphism to `ι → ℤ/2`. -/
-@[simp]
-theorem signPattern_mul (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
-    (σ τ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :
-    signPattern root (σ * τ) = signPattern root σ + signPattern root τ := by
-  funext i
-  rw [Pi.add_apply]
+/-- Pointwise composition rule for sign patterns. -/
+theorem signPattern_mul_apply (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (σ τ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι) :
+    signPattern root (σ * τ) i = signPattern root σ i + signPattern root τ i := by
   by_cases hne : gen (K := K) root i ≠ -gen root i
   · rcases aut_gen_eq_self_or_eq_neg hroot τ i with hτ | hτ <;>
       rcases aut_gen_eq_self_or_eq_neg hroot σ i with hσ | hσ
@@ -142,21 +139,24 @@ theorem signPattern_mul (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
         signPattern_eq_zero _ _ hσ, signPattern_eq_one _ _ hne hτ]; decide
     · rw [signPattern_eq_zero _ _ (by rw [AlgEquiv.mul_apply, hτ, map_neg, hσ, neg_neg]),
         signPattern_eq_one _ _ hne hσ, signPattern_eq_one _ _ hne hτ]; decide
-  · have hne : gen (K := K) root i = -gen root i := of_not_not hne
-    have hσ : signPattern root σ i = 0 := by
-      rcases aut_gen_eq_self_or_eq_neg hroot σ i with h | h
+  · have hself : gen (K := K) root i = -gen root i := of_not_not hne
+    have hsign : ∀ υ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root),
+        signPattern root υ i = 0 := by
+      intro υ
+      rcases aut_gen_eq_self_or_eq_neg hroot υ i with h | h
       · exact signPattern_eq_zero _ _ h
-      · exact signPattern_eq_zero _ _ (h.trans hne.symm)
-    have hτ : signPattern root τ i = 0 := by
-      rcases aut_gen_eq_self_or_eq_neg hroot τ i with h | h
-      · exact signPattern_eq_zero _ _ h
-      · exact signPattern_eq_zero _ _ (h.trans hne.symm)
-    have hστ : signPattern root (σ * τ) i = 0 := by
-      rcases aut_gen_eq_self_or_eq_neg hroot (σ * τ) i with h | h
-      · exact signPattern_eq_zero _ _ h
-      · exact signPattern_eq_zero _ _ (h.trans hne.symm)
-    rw [hστ, hσ, hτ]
+      · exact signPattern_eq_zero _ _ (h.trans hself.symm)
+    rw [hsign (σ * τ), hsign σ, hsign τ]
     decide
+
+omit [Finite ι] in
+/-- The sign pattern is additive: it is a group homomorphism to `ι → ℤ/2`. -/
+@[simp]
+theorem signPattern_mul (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (σ τ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :
+    signPattern root (σ * τ) = signPattern root σ + signPattern root τ := by
+  funext i
+  exact signPattern_mul_apply hroot σ τ i
 
 variable (root) in
 /-- The Galois group of `M / K` maps to the sign patterns `(ℤ/2)ⁱ`. -/
@@ -180,19 +180,15 @@ theorem signHom_injective (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
   intro σ τ h
   exact signPattern_injective hroot (Multiplicative.ofAdd.injective (by simpa using h))
 
-/-- **For square-class independent radicands, the Galois group of a multiquadratic field is
-`(ℤ/2)ⁿ`.** -/
-noncomputable def galoisGroupEquiv [NeZero (2 : K)]
+private theorem signHom_bijective [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
-    (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) ≃*
-      Multiplicative (ι → ZMod 2) := by
+    Function.Bijective (signHom (K := K) root hroot) := by
   haveI := isSplittingField hroot
   haveI : FiniteDimensional K (adjoin K (Set.range root)) :=
     IsSplittingField.finiteDimensional _ (definingPolynomial d)
   haveI := isGalois hroot
   letI := Fintype.ofFinite ι
-  refine MulEquiv.ofBijective (signHom root hroot) ?_
   rw [Fintype.bijective_iff_injective_and_card]
   refine ⟨signHom_injective hroot, ?_⟩
   rw [← Nat.card_eq_fintype_card (α := adjoin K (Set.range root) ≃ₐ[K] _),
@@ -200,14 +196,22 @@ noncomputable def galoisGroupEquiv [NeZero (2 : K)]
     finrank_adjoin_range hroot hindep]
   simp [ZMod.card]
 
+/-- **For square-class independent radicands, the Galois group of a multiquadratic field is
+`(ℤ/2)ⁿ`.** -/
+noncomputable def galoisGroupEquiv [NeZero (2 : K)]
+    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
+    (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) ≃*
+      Multiplicative (ι → ZMod 2) := by
+  exact MulEquiv.ofBijective (signHom root hroot) (signHom_bijective hroot hindep)
+
 /-- The Galois-group equivalence sends an automorphism to its multiplicative sign pattern. -/
 @[simp] theorem galoisGroupEquiv_apply [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
     (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :
     galoisGroupEquiv hroot hindep σ = Multiplicative.ofAdd (signPattern root σ) := by
-  rw [galoisGroupEquiv]
-  rfl
+  rw [galoisGroupEquiv, MulEquiv.ofBijective_apply, signHom_apply]
 
 /-- The inverse of `galoisGroupEquiv` realizes a sign pattern `ε` as the automorphism sending each
 generator `rootᵢ` to `(-1)^(εᵢ) · rootᵢ`. -/
