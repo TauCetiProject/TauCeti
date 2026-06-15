@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
 import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup
 
 /-!
 # The diagonalizable group and its character functor of points
@@ -252,6 +253,31 @@ theorem multiplicativeGroupPointsMulEquiv_symm_apply (u : Aˣ) :
     (multiplicativeGroupPointsMulEquiv (R := R) (A := A)).symm u =
       toConv (point (zpowersMulHom Aˣ u)) :=
   rfl
+
+/-- Evaluating `AddMonoidAlgebra.toMultiplicativeAlgEquiv` on the Laurent generator `T n`:
+it sends `T n` to the group-like `single (ofAdd n) 1` of `R[Multiplicative ℤ]`. -/
+private theorem toMultiplicativeAlgEquiv_T (n : ℤ) :
+    AddMonoidAlgebra.toMultiplicativeAlgEquiv (R := R) R ℤ (LaurentPolynomial.T n) =
+      MonoidAlgebra.single (Multiplicative.ofAdd n) 1 := by
+  simp only [AddMonoidAlgebra.toMultiplicativeAlgEquiv, AlgEquiv.coe_mk,
+    AddMonoidAlgebra.toMultiplicative, Equiv.coe_fn_mk,
+    LaurentPolynomial.T, Finsupp.mapDomain_single]
+
+/-- The `D(Multiplicative ℤ)` functor of points agrees with the Laurent-polynomial multiplicative
+group `𝔾ₘ` of `TauCeti.MultiplicativeGroup`: precomposing a point with the algebra equivalence
+`AddMonoidAlgebra.toMultiplicativeAlgEquiv` between `R[T;T⁻¹]` and `R[Multiplicative ℤ]` carries
+`multiplicativeGroupPointsMulEquiv` to `TauCeti.MultiplicativeGroup.pointsMulEquiv`, so the two
+presentations of `𝔾ₘ` give the same unit of `A`. -/
+theorem multiplicativeGroupPointsMulEquiv_eq
+    (f : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)) :
+    multiplicativeGroupPointsMulEquiv f =
+      MultiplicativeGroup.pointsMulEquiv
+        (toConv (f.ofConv.comp (AddMonoidAlgebra.toMultiplicativeAlgEquiv R ℤ).toAlgHom)) := by
+  ext
+  rw [multiplicativeGroupPointsMulEquiv_apply, MultiplicativeGroup.pointsMulEquiv_apply,
+    ofConv_toConv, charOfPoint_apply_coe, MultiplicativeGroup.unitOfPoint_val, AlgHom.comp_apply]
+  congr 1
+  exact (toMultiplicativeAlgEquiv_T 1).symm
 
 end DiagonalizableGroup
 
