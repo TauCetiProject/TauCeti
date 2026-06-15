@@ -54,14 +54,15 @@ namespace Subcoalgebra
 
 variable {R C}
 
-instance : SetLike (Subcoalgebra R C) C :=
-  ⟨fun D => D.carrier, fun D E h => by
+instance : SetLike (Subcoalgebra R C) C where
+  coe D := D.carrier
+  coe_injective D E h := by
     cases D with
     | mk carrier hD =>
     cases E with
     | mk carrier' hE =>
     congr
-    exact SetLike.ext' h⟩
+    exact SetLike.ext' h
 
 instance : AddSubmonoidClass (Subcoalgebra R C) C where
   add_mem {D} := D.carrier.add_mem

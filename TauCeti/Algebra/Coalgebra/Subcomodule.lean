@@ -62,14 +62,15 @@ namespace Subcomodule
 
 variable {R C M}
 
-instance : SetLike (Subcomodule R C M) M :=
-  ⟨fun N => N.carrier, fun N P h => by
+instance : SetLike (Subcomodule R C M) M where
+  coe N := N.carrier
+  coe_injective N P h := by
     cases N with
     | mk carrier hN =>
     cases P with
     | mk carrier' hP =>
     congr
-    exact SetLike.ext' h⟩
+    exact SetLike.ext' h
 
 instance : AddSubmonoidClass (Subcomodule R C M) M where
   add_mem {N} := N.carrier.add_mem
