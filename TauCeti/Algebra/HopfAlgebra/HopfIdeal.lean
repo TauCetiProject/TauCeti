@@ -223,15 +223,14 @@ namespace HopfIdeal
 
 variable {R H}
 
-instance : SetLike (HopfIdeal R H) H where
-  coe I := I.carrier
-  coe_injective' I J h := by
+instance : SetLike (HopfIdeal R H) H :=
+  ⟨fun I => I.carrier, fun I J h => by
     cases I with
     | mk carrier htwo hcomul hcounit hantipode =>
     cases J with
     | mk carrier' htwo' hcomul' hcounit' hantipode' =>
     congr
-    exact SetLike.ext' h
+    exact SetLike.ext' h⟩
 
 instance : AddSubmonoidClass (HopfIdeal R H) H where
   add_mem {I} := I.carrier.add_mem

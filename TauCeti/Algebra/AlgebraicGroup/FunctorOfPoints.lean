@@ -72,8 +72,8 @@ private noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
     (by simp only [LinearMap.coe_comp, Function.comp_apply, antipode_one, f.toLinearMap_apply,
       map_one])
     fun x y => by
-      simp only [LinearMap.coe_comp, Function.comp_apply, antipode_mul, f.toLinearMap_apply,
-        map_mul]
+      simp only [LinearMap.coe_comp, Function.comp_apply, HopfAlgebra.antipode_mul_antidistrib,
+        f.toLinearMap_apply, map_mul]
       rw [mul_comm]
 
 private lemma toLinearMap_antipodeComp (f : H →ₐ[R] A) :

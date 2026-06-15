@@ -116,14 +116,13 @@ variable {P Q : Type*}
 variable [AddCommMonoid P] [Module R P] [Comodule R C P]
 variable [AddCommMonoid Q] [Module R Q] [Comodule R C Q]
 
-instance funLike : FunLike (Hom R C M N) M N where
-  coe f := f.toLinearMap
-  coe_injective' f g h := by
+instance funLike : FunLike (Hom R C M N) M N :=
+  ⟨fun f => f.toLinearMap, fun f g h => by
     have hlin : f.toLinearMap = g.toLinearMap := LinearMap.ext fun m => congr_fun h m
     cases f
     cases g
     cases hlin
-    rfl
+    rfl⟩
 
 /-- See Note [custom simps projection]. -/
 def Simps.apply (f : Hom R C M N) : M → N :=
