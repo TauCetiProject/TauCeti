@@ -131,6 +131,14 @@ lemma baseChange_antipode_tmul (s : K) (a : A) :
       s ⊗ₜ[k] antipode k a := by
   simp [TensorProduct.antipode_def]
 
+end HopfAlgebra
+
+namespace AlgHom
+
+variable {k K A R : Type*} [CommSemiring k] [CommSemiring K] [Semiring A]
+  [CommSemiring R] [Algebra k K] [_root_.HopfAlgebra k A] [Algebra K R] [Algebra k R]
+  [IsScalarTower k K R]
+
 /-- Pointwise inverse formula after base change: on a pure tensor `s ⊗ a`, the convolution
 inverse of a base-changed point has value `s • f (S a)`.
 
@@ -139,20 +147,20 @@ The `≃*` `AlgHom.baseChangePointsMulEquiv` is automatically a group isomorphis
 is written in the `(e f)⁻¹` normal form produced by the simp lemma `map_inv`. -/
 @[simp]
 lemma baseChangePointsMulEquiv_inv_apply_tmul (f : WithConv (A →ₐ[k] R)) (s : K) (a : A) :
-    (AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f)⁻¹ (s ⊗ₜ[k] a) =
+    (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f)⁻¹ (s ⊗ₜ[k] a) =
       s • f.ofConv (antipode k a) := by
-  rw [AlgHom.convInv_apply, baseChange_antipode_tmul,
-    AlgHom.baseChangePointsMulEquiv_apply_tmul]
+  rw [convInv_apply, HopfAlgebra.baseChange_antipode_tmul,
+    baseChangePointsMulEquiv_apply_tmul]
 
 /-- Pointwise inverse formula after restricting a base-changed point along `a ↦ 1 ⊗ a`:
 the inverse of `(e.symm f)` has value `f (1 ⊗ S a)` at `a`. The inverse is written in the
 `(e.symm f)⁻¹` normal form produced by the simp lemma `map_inv`. -/
 @[simp]
 lemma baseChangePointsMulEquiv_symm_inv_apply (f : WithConv (K ⊗[k] A →ₐ[K] R)) (a : A) :
-    (((AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm f)⁻¹).ofConv a =
+    (((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm f)⁻¹).ofConv a =
       f.ofConv (1 ⊗ₜ[k] antipode k a) := by
-  rw [AlgHom.convInv_apply, AlgHom.baseChangePointsMulEquiv_symm_apply]
+  rw [convInv_apply, baseChangePointsMulEquiv_symm_apply]
 
-end HopfAlgebra
+end AlgHom
 
 end TauCeti
