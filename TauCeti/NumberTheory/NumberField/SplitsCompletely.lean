@@ -7,13 +7,10 @@ import Mathlib.NumberTheory.RamificationInertia.Galois
 /-!
 # A counting criterion for a prime to split completely in a Galois number field
 
-For a finite Galois extension of Dedekind domains, a nonzero maximal ideal `P` of the base
-splits completely — meaning there are exactly `Nat.card G` primes above `P` — if and only if
-`P` is unramified with residue degree one. For a finite Galois extension of number fields
-`L / K`, this says that a prime `P` of `𝓞 K` splits completely — meaning there are exactly
-`[L : K]` primes of `𝓞 L` above `P` — if and only if `P` is
-unramified with residue degree one, i.e. both the ramification index `e` and the inertia degree
-`f` (which are common to all primes above `P`, the extension being Galois) equal `1`.
+For a finite Galois number field `K / ℚ`, a rational prime `p` splits completely — meaning
+there are exactly `[K : ℚ]` primes of `𝓞 K` above `p` — if and only if `p` is unramified with
+residue degree one, i.e. both the ramification index `e` and the inertia degree `f` (which are
+common to all primes above `p`, the extension being Galois) equal `1`.
 
 This is the count form of the fundamental identity `(#primes) · e · f = [L : K]`: with the
 product fixed at `[L : K]`, the number of primes is maximal exactly when `e = f = 1`. The
@@ -23,10 +20,6 @@ off from residues.
 
 ## Main results
 
-* `TauCeti.NumberField.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`: the
-  Dedekind-domain criterion for an explicit Galois group.
-* `TauCeti.NumberField.ncard_primesOver_eq_finrank_iff_of_isGalois`: a prime of a Dedekind
-  base for a Galois number-field extension splits completely iff `e = 1 ∧ f = 1`.
 * `TauCeti.NumberField.ncard_primesOver_eq_finrank_iff`: the rational-prime specialization.
 
 ## Provenance
@@ -40,10 +33,7 @@ open NumberField Ideal Module
 
 namespace TauCeti.NumberField
 
-/-- In a finite Galois extension of Dedekind domains, a nonzero maximal ideal of the base
-splits completely (there are `Nat.card G` primes above it) iff its ramification index and
-inertia degree are both `1`. -/
-theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*} [CommRing A]
+private theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*} [CommRing A]
     [IsDedekindDomain A] [CommRing B] [IsDedekindDomain B] [Algebra A B] [Module.Finite A B]
     [IsTorsionFree A B] (G : Type*) [Group G] [Finite G] [MulSemiringAction G B]
     [IsGaloisGroup G A B] (P : Ideal A) [P.IsMaximal] (hP : P ≠ ⊥) :
@@ -63,10 +53,7 @@ theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*} [CommRing
 variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
-/-- In a finite Galois extension of number fields, a prime of a Dedekind base splits completely
-(there are `[L : K]` primes above it) iff its ramification index and inertia degree are both
-`1`. -/
-theorem ncard_primesOver_eq_finrank_iff_of_isGalois {A : Type*} [CommRing A]
+private theorem ncard_primesOver_eq_finrank_iff_of_isGalois {A : Type*} [CommRing A]
     [IsDedekindDomain A] [Algebra A (𝓞 L)] [Module.Finite A (𝓞 L)]
     [IsTorsionFree A (𝓞 L)] [IsGaloisGroup Gal(L/K) A (𝓞 L)] (P : Ideal A)
     [P.IsMaximal] (hP : P ≠ ⊥) :
