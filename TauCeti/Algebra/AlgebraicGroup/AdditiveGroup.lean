@@ -2,8 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Bialgebra.SymmetricAlgebra
-import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+import Mathlib.RingTheory.Bialgebra.Convolution
 import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra
 
 /-!
@@ -30,9 +29,8 @@ group"), in the same spirit as the multiplicative group `𝔾ₘ`.
 ## References
 
 The symmetric-algebra Hopf structure is supplied by
-`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra`. The convolution group of points and the
-antipode-driven inverse are Tau Ceti's `TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints`, on top
-of the Mathlib convolution monoid.
+`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra`, on top of Mathlib's symmetric-algebra
+bialgebra and convolution monoid APIs.
 -/
 
 open Coalgebra HopfAlgebra SymmetricAlgebra WithConv
