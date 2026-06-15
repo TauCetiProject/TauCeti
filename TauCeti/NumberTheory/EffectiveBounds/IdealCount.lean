@@ -279,9 +279,10 @@ private theorem prod_encodeIdeal_le_absNorm {I : Ideal (𝓞 F)} (hI : I ≠ ⊥
           simp
       | insert P s hPs ih =>
           rw [Finset.prod_insert hPs, Finset.prod_insert hPs, map_mul, ih, map_pow]
-    convert h_prod_le.le using 2;
-    convert ( Ideal.prod_normalizedFactors_eq_self hI ) |> Eq.symm;
-    rw [ Finset.prod_multiset_count ];
+    have hI_eq : ∏ P ∈ (normalizedFactors I).toFinset,
+        P ^ ((normalizedFactors I).count P) = I := by
+      rw [← Finset.prod_multiset_count, Ideal.prod_normalizedFactors_eq_self hI]
+    exact le_of_eq (h_prod_le.trans (by rw [hI_eq]))
   refine le_trans ?_ h_prod_le
   gcongr with Q hQ
   have hQ0 : Q ≠ ⊥ := ne_zero_of_mem_normalizedFactors (Multiset.mem_toFinset.mp hQ)

@@ -3,6 +3,7 @@
 -- Everything reachable from here must be sorry-free, and must not import
 -- `TauCetiRoadmap` or `TauCetiReview` (both enforced in CI). As the library
 -- grows, import the submodules of `TauCeti/` here.
+import TauCeti.Algebra.AlgebraicGroup.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
 import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup
@@ -10,6 +11,7 @@ import TauCeti.Algebra.Coalgebra.Comodule.Cofree
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 import TauCeti.Algebra.Coalgebra.Comodule.Finite
 import TauCeti.Algebra.Coalgebra.Comodule.FiniteCorestrict
+import TauCeti.Algebra.Coalgebra.Comodule.FiniteCofree
 import TauCeti.Algebra.Coalgebra.Comodule.FinitePreadditive
 import TauCeti.Algebra.Coalgebra.Comodule.FiniteTrivial
 import TauCeti.Algebra.Coalgebra.Comodule.Hom
@@ -52,5 +54,7 @@ import TauCeti.NumberTheory.EffectiveBounds.IdealCount
 import TauCeti.NumberTheory.EffectiveBounds.UnitSquares
 import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.Multiquadratic.Galois
+import TauCeti.NumberTheory.Multiquadratic.GaloisGroup
 import TauCeti.NumberTheory.Multiquadratic.SquareClass
+import TauCeti.NumberTheory.NumberField.QuadraticSplitting
 import TauCeti.NumberTheory.NumberField.SplitsCompletely

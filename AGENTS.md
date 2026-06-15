@@ -18,8 +18,12 @@ roadmap first, rather than building it here.
   Mathlib linter set (style, file length, no `maxHeartbeats` overrides). Do not try to disable
   these.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
-- `TauCeti/` is the only place code goes; everything else (`Scripts/`, `.github/`, the Lake
-  config) is human-owned.
+- `TauCeti/` is the only place code goes. `Scripts/`, `.github/`, and the lakefile
+  (`lakefile.toml`/`lakefile.lean`) are human-owned. The two Lake *pins* —
+  `lake-manifest.json` and `lean-toolchain` — are an exception: a **forward-only** bump of
+  them (Mathlib moving forward on the branch the lakefile nominates, with the toolchain moving
+  monotonically forward) is machine-validated by the `bump-guard` check and is welcome, but
+  never edit the lakefile or move a pin backward.
 
 ## How review works
 
@@ -30,8 +34,10 @@ verdicts. Address their findings and push; re-review runs automatically on new c
 human can comment `/review` to re-trigger.
 
 When every rubric approves on the current commit and the PR changes only `TauCeti/` (with CI
-green), it **merges automatically**. A PR that touches human-owned paths (`Scripts/`,
-`.github/`, the Lake config) always needs a human review. The review pipeline is sandboxed so
-it can run on untrusted PRs; see
+green), it **merges automatically**. A PR that *also* changes `lake-manifest.json` and/or
+`lean-toolchain` can auto-merge too, but only once the `bump-guard` check confirms it is a
+forward-only bump and the sandboxed build passes against the new pins. A PR that touches any
+other human-owned path (`Scripts/`, `.github/`, the lakefile) always needs a human review. The
+review pipeline is sandboxed so it can run on untrusted PRs; see
 [`SECURITY.md`](https://github.com/FormalFrontier/TauCetiReview/blob/main/SECURITY.md) in
 TauCetiReview.

@@ -2,6 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.LinearAlgebra.DFinsupp
 import Mathlib.RingTheory.HopfAlgebra.Basic
 import Mathlib.RingTheory.Ideal.Maps
 
@@ -23,12 +24,17 @@ must satisfy exactly these Hopf-ideal closure conditions.
 * `TauCeti.HopfIdeal.leftTensorIdeal` and `TauCeti.HopfIdeal.rightTensorIdeal`: the two
   summands `I ⊗ H` and `H ⊗ I` inside `H ⊗ H`.
 * `⊥ : HopfIdeal R H`: the zero Hopf ideal.
+* `I ⊔ J : HopfIdeal R H`: the sum of two Hopf ideals.
+* `sSup S : HopfIdeal R H` and `⨆ i, I i : HopfIdeal R H`: arbitrary suprema of Hopf ideals,
+  with underlying ideal the supremum of the underlying ideals.
 
 ## References
 
 This follows the standard Hopf-algebra definition of a Hopf ideal; see Sweedler,
 *Hopf Algebras*, Chapter 1. The formalization uses Mathlib's Hopf-algebra and tensor-product
-ideal API.
+ideal API. The arbitrary-supremum lattice construction follows the local pattern from
+`TauCeti.Algebra.Coalgebra.Subcoalgebra.Lattice` and
+`TauCeti.Algebra.Coalgebra.Subcomodule.Lattice`.
 -/
 
 open scoped TensorProduct
@@ -128,6 +134,48 @@ theorem rightTensorIdeal_le_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
       I ≤ Ideal.comap
         (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom J := by
   exact Ideal.map_le_iff_le_comap
+
+/-- The construction `I ↦ I ⊗ H` is monotone. -/
+theorem leftTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
+    leftTensorIdeal (R := R) (H := H) I ≤ leftTensorIdeal (R := R) (H := H) J :=
+  Ideal.map_mono hIJ
+
+/-- The construction `I ↦ H ⊗ I` is monotone. -/
+theorem rightTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
+    rightTensorIdeal (R := R) (H := H) I ≤ rightTensorIdeal (R := R) (H := H) J :=
+  Ideal.map_mono hIJ
+
+/-- The construction `I ↦ I ⊗ H` distributes over arbitrary suprema of ideals. -/
+@[simp]
+theorem leftTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
+    leftTensorIdeal (R := R) (H := H) (⨆ i, I i) =
+      ⨆ i, leftTensorIdeal (R := R) (H := H) (I i) :=
+  Ideal.map_iSup
+    (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I
+
+/-- The construction `I ↦ H ⊗ I` distributes over arbitrary suprema of ideals. -/
+@[simp]
+theorem rightTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
+    rightTensorIdeal (R := R) (H := H) (⨆ i, I i) =
+      ⨆ i, rightTensorIdeal (R := R) (H := H) (I i) :=
+  Ideal.map_iSup
+    (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I
+
+/-- The construction `I ↦ I ⊗ H` distributes over joins of ideals. -/
+@[simp]
+theorem leftTensorIdeal_sup (I J : Ideal H) :
+    leftTensorIdeal (R := R) (H := H) (I ⊔ J) =
+      leftTensorIdeal (R := R) (H := H) I ⊔ leftTensorIdeal (R := R) (H := H) J :=
+  Ideal.map_sup
+    (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I J
+
+/-- The construction `I ↦ H ⊗ I` distributes over joins of ideals. -/
+@[simp]
+theorem rightTensorIdeal_sup (I J : Ideal H) :
+    rightTensorIdeal (R := R) (H := H) (I ⊔ J) =
+      rightTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) J :=
+  Ideal.map_sup
+    (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I J
 
 theorem le_leftTensorIdeal_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
     J ≤ leftTensorIdeal (R := R) (H := H) I ↔
@@ -309,6 +357,170 @@ instance : OrderBot (HopfIdeal R H) where
     rw [mem_bot] at hx
     rw [hx]
     exact zero_mem I
+
+/-- The sum of two Hopf ideals is a Hopf ideal. -/
+instance instMax : Max (HopfIdeal R H) where
+  max I J :=
+    { carrier := I.toIdeal ⊔ J.toIdeal
+      isTwoSided' := by
+        refine ⟨fun {x} b hx => ?_⟩
+        rcases Submodule.mem_sup.mp hx with ⟨y, hy, z, hz, rfl⟩
+        rw [add_mul]
+        exact Submodule.add_mem_sup (I.mul_mem_right hy b) (J.mul_mem_right hz b)
+      comul_mem' := by
+        intro x hx
+        rcases Submodule.mem_sup.mp hx with ⟨y, hy, z, hz, rfl⟩
+        rw [map_add]
+        refine add_mem ?_ ?_
+        · exact
+            (sup_le_sup
+                (leftTensorIdeal_mono (R := R) (H := H) (I := I.toIdeal)
+                  (J := I.toIdeal ⊔ J.toIdeal) le_sup_left)
+                (rightTensorIdeal_mono (R := R) (H := H) (I := I.toIdeal)
+                  (J := I.toIdeal ⊔ J.toIdeal) le_sup_left))
+              (I.comul_mem hy)
+        · exact
+            (sup_le_sup
+                (leftTensorIdeal_mono (R := R) (H := H) (I := J.toIdeal)
+                  (J := I.toIdeal ⊔ J.toIdeal) le_sup_right)
+                (rightTensorIdeal_mono (R := R) (H := H) (I := J.toIdeal)
+                  (J := I.toIdeal ⊔ J.toIdeal) le_sup_right))
+              (J.comul_mem hz)
+      counit_eq_zero' := by
+        intro x hx
+        rcases Submodule.mem_sup.mp hx with ⟨y, hy, z, hz, rfl⟩
+        simp [I.counit_eq_zero hy, J.counit_eq_zero hz]
+      antipode_mem' := by
+        intro x hx
+        rcases Submodule.mem_sup.mp hx with ⟨y, hy, z, hz, rfl⟩
+        rw [map_add]
+        exact Submodule.add_mem_sup (I.antipode_mem hy) (J.antipode_mem hz) }
+
+/-- The underlying ideal of the join of two Hopf ideals is the join of their underlying
+ideals. -/
+@[simp]
+theorem sup_toIdeal (I J : HopfIdeal R H) : (I ⊔ J).toIdeal = I.toIdeal ⊔ J.toIdeal :=
+  rfl
+
+/-- Membership in the join of two Hopf ideals. -/
+theorem mem_sup {I J : HopfIdeal R H} {x : H} :
+    x ∈ I ⊔ J ↔ ∃ y ∈ I, ∃ z ∈ J, y + z = x := by
+  rw [← mem_toIdeal, sup_toIdeal, Submodule.mem_sup]
+  rfl
+
+/-- Hopf ideals form a semilattice under ideal sum, with `⊔` given by the sum
+construction. -/
+instance instSemilatticeSup : SemilatticeSup (HopfIdeal R H) where
+  sup := (· ⊔ ·)
+  le_sup_left I J := by
+    intro x hx
+    exact Ideal.mem_sup_left hx
+  le_sup_right I J := by
+    intro x hx
+    exact Ideal.mem_sup_right hx
+  sup_le I J K hIK hJK := by
+    intro x hx
+    rcases Submodule.mem_sup.mp hx with ⟨y, hy, z, hz, rfl⟩
+    exact add_mem (hIK hy) (hJK hz)
+
+private theorem sSup_isTwoSided (S : Set (HopfIdeal R H)) :
+    (⨆ I : S, (I : HopfIdeal R H).toIdeal).IsTwoSided := by
+  classical
+  refine ⟨fun {x} b hx => ?_⟩
+  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+  rcases hx with ⟨f, hf, rfl⟩
+  rw [Finsupp.sum, Finset.sum_mul]
+  exact Submodule.sum_mem _ fun I _ =>
+    Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).mul_mem_right (hf I) b)
+
+private theorem comul_mem_sSup (S : Set (HopfIdeal R H)) {x : H}
+    (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
+    Coalgebra.comul (R := R) x ∈
+      leftTensorIdeal (R := R) (H := H) (⨆ I : S, (I : HopfIdeal R H).toIdeal) ⊔
+        rightTensorIdeal (R := R) (H := H) (⨆ I : S, (I : HopfIdeal R H).toIdeal) := by
+  classical
+  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+  rcases hx with ⟨f, hf, rfl⟩
+  rw [Finsupp.sum, map_sum]
+  refine Submodule.sum_mem _ fun I _ => ?_
+  exact sup_le_sup
+    (leftTensorIdeal_mono (R := R) (H := H)
+      (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
+    (rightTensorIdeal_mono (R := R) (H := H)
+      (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
+    ((I : HopfIdeal R H).comul_mem (hf I))
+
+private theorem counit_eq_zero_sSup (S : Set (HopfIdeal R H)) {x : H}
+    (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
+    Coalgebra.counit (R := R) x = 0 := by
+  classical
+  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+  rcases hx with ⟨f, hf, rfl⟩
+  rw [Finsupp.sum, map_sum]
+  exact Finset.sum_eq_zero fun I _ => (I : HopfIdeal R H).counit_eq_zero (hf I)
+
+private theorem antipode_mem_sSup (S : Set (HopfIdeal R H)) {x : H}
+    (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
+    HopfAlgebra.antipode R x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal := by
+  classical
+  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+  rcases hx with ⟨f, hf, rfl⟩
+  rw [Finsupp.sum, map_sum]
+  exact Submodule.sum_mem _ fun I _ =>
+    Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).antipode_mem (hf I))
+
+/-- The supremum of a set of Hopf ideals has underlying ideal the supremum of the underlying
+ideals. -/
+instance instSupSet : SupSet (HopfIdeal R H) where
+  sSup S :=
+    { carrier := ⨆ I : S, (I : HopfIdeal R H).toIdeal
+      isTwoSided' := sSup_isTwoSided S
+      comul_mem' := fun _ hx => comul_mem_sSup S hx
+      counit_eq_zero' := fun _ hx => counit_eq_zero_sSup S hx
+      antipode_mem' := fun _ hx => antipode_mem_sSup S hx }
+
+/-- The underlying ideal of a supremum of a set of Hopf ideals is the supremum of the
+underlying ideals indexed by that set. -/
+@[simp]
+theorem sSup_toIdeal (S : Set (HopfIdeal R H)) :
+    (sSup S).toIdeal = ⨆ I : S, (I : HopfIdeal R H).toIdeal :=
+  rfl
+
+/-- Membership in the supremum of a set of Hopf ideals. -/
+theorem mem_sSup {S : Set (HopfIdeal R H)} {x : H} :
+    x ∈ sSup S ↔
+      ∃ f : S →₀ H, (∀ I : S, f I ∈ (I : HopfIdeal R H)) ∧ f.sum (fun _ y => y) = x := by
+  rw [← mem_toIdeal, sSup_toIdeal]
+  exact Submodule.mem_iSup_iff_exists_finsupp (fun I : S => (I : HopfIdeal R H).toIdeal) x
+
+/-- The underlying ideal of a supremum of a family of Hopf ideals is the supremum of the
+underlying ideals. -/
+@[simp]
+theorem iSup_toIdeal {ι : Sort*} (I : ι → HopfIdeal R H) :
+    (⨆ i, I i).toIdeal = ⨆ i, (I i).toIdeal := by
+  rw [iSup, sSup_toIdeal]
+  ext x
+  simp [Submodule.mem_iSup]
+
+/-- Membership in the supremum of a family of Hopf ideals. -/
+theorem mem_iSup {ι : Type*} {I : ι → HopfIdeal R H} {x : H} :
+    x ∈ ⨆ i, I i ↔ ∃ f : ι →₀ H, (∀ i, f i ∈ I i) ∧ f.sum (fun _ y => y) = x := by
+  rw [← mem_toIdeal, iSup_toIdeal]
+  exact Submodule.mem_iSup_iff_exists_finsupp (fun i => (I i).toIdeal) x
+
+/-- Hopf ideals have arbitrary suprema, computed on underlying ideals. -/
+instance instCompleteSemilatticeSup : CompleteSemilatticeSup (HopfIdeal R H) where
+  sSup := sSup
+  isLUB_sSup S :=
+    ⟨fun I hI x hx => by
+      rw [← mem_toIdeal, sSup_toIdeal]
+      exact Submodule.mem_iSup_of_mem ⟨I, hI⟩ ((mem_toIdeal).2 hx),
+    fun I hI x hx => by
+      rw [← mem_toIdeal, sSup_toIdeal] at hx
+      rw [← mem_toIdeal]
+      have hle : (⨆ J : S, (J : HopfIdeal R H).toIdeal) ≤ I.toIdeal :=
+        iSup_le fun J : S => toIdeal_le_toIdeal.2 (hI J.2)
+      exact hle hx⟩
 
 end HopfIdeal
 

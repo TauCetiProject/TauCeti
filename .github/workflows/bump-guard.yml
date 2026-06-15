@@ -1,0 +1,86 @@
+name: bump-guard
+
+# Validates that a PR's change to lake-manifest.json / lean-toolchain is a safe,
+# machine-checkable *forward* bump (mathlib moved forward on the branch nominated
+# in lakefile.toml; transitive pins derived from mathlib; toolchain monotonic and
+# consistent), and posts a `bump-guard` commit status. This status is what lets
+# pr-build build, and the review auto-merge accept, a manifest/toolchain-only PR
+# without a human — see Scripts/check-bump.sh for the full contract.
+#
+# Runs in a TRUSTED, base-defined workflow (pull_request_target): the validator is
+# always the base's Scripts/check-bump.sh, run against the base config and the PR's
+# (text-only) lean-toolchain/lake-manifest.json/lakefile. It executes NONE of the
+# PR's code — only reads two files and queries the trusted mathlib repo via gh api.
+# A PR that changes neither file passes trivially, so the check is uniformly present.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      pr: { description: "PR number to validate", required: true, type: string }
+
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: bump-guard-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve PR head
+        id: pr
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+            NUM='${{ github.event.pull_request.number }}'
+            SHA='${{ github.event.pull_request.head.sha }}'
+            REPO='${{ github.event.pull_request.head.repo.full_name }}'
+          else
+            NUM='${{ inputs.pr }}'
+            SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.sha)
+            REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
+          fi
+          echo "num=$NUM"   >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA"   >> "$GITHUB_OUTPUT"
+          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+          echo "Validating PR #$NUM @ $SHA from $REPO"
+
+      - name: Checkout base (trusted — the validator and base config)
+        uses: actions/checkout@v4
+        with: { path: base, persist-credentials: false }
+
+      - name: Checkout PR head (untrusted, no credentials — read as text only)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr.outputs.repo }}
+          ref: ${{ steps.pr.outputs.sha }}
+          path: pr
+          persist-credentials: false
+
+      - name: Validate forward-only bump (trusted base validator)
+        id: guard
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          # The base copy of the script and base config are trusted; only the
+          # PR's lean-toolchain/lake-manifest.json/lakefile.* are read from pr/.
+          bash base/Scripts/check-bump.sh base pr
+
+      - name: Report bump-guard status to the PR head commit
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          if [ "${{ steps.guard.outcome }}" = "success" ]; then
+            state=success; desc="forward-only Lake-pin / toolchain bump (or no pin change)"
+          else
+            state=failure; desc="manifest/toolchain change is not a validated forward bump — needs human review"
+          fi
+          gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.sha }}" \
+            -f state="$state" -f context="bump-guard" -f description="$desc" \
+            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "posted bump-guard=$state ($desc) to ${{ steps.pr.outputs.sha }}"
+          [ "$state" = "success" ]
