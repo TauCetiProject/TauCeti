@@ -25,8 +25,8 @@ off from residues.
 
 * `TauCeti.NumberField.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`: the
   Dedekind-domain criterion for an explicit Galois group.
-* `TauCeti.NumberField.ncard_primesOver_eq_finrank_iff_of_isGalois`: a prime of the base
-  number field splits completely iff `e = 1 ∧ f = 1`.
+* `TauCeti.NumberField.ncard_primesOver_eq_finrank_iff_of_isGalois`: a prime of a Dedekind
+  base for a Galois number-field extension splits completely iff `e = 1 ∧ f = 1`.
 * `TauCeti.NumberField.ncard_primesOver_eq_finrank_iff`: the rational-prime specialization.
 
 ## Provenance
@@ -63,11 +63,13 @@ theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*} [CommRing
 variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
-/-- In a finite Galois extension of number fields, a prime of the base splits completely
+/-- In a finite Galois extension of number fields, a prime of a Dedekind base splits completely
 (there are `[L : K]` primes above it) iff its ramification index and inertia degree are both
 `1`. -/
-theorem ncard_primesOver_eq_finrank_iff_of_isGalois (P : Ideal (𝓞 K)) [P.IsMaximal]
-    (hP : P ≠ ⊥) :
+theorem ncard_primesOver_eq_finrank_iff_of_isGalois {A : Type*} [CommRing A]
+    [IsDedekindDomain A] [Algebra A (𝓞 L)] [Module.Finite A (𝓞 L)]
+    [IsTorsionFree A (𝓞 L)] [IsGaloisGroup Gal(L/K) A (𝓞 L)] (P : Ideal A)
+    [P.IsMaximal] (hP : P ≠ ⊥) :
     (primesOver P (𝓞 L)).ncard = finrank K L ↔
       P.ramificationIdxIn (𝓞 L) = 1 ∧ P.inertiaDegIn (𝓞 L) = 1 := by
   have h := ncard_primesOver_eq_natCard_iff_of_isGaloisGroup (B := 𝓞 L) Gal(L/K) P hP
@@ -87,9 +89,7 @@ theorem ncard_primesOver_eq_finrank_iff (K : Type*) [Field K] [NumberField K] [I
   haveI : (span {(p : ℤ)}).IsPrime :=
     (Ideal.span_singleton_prime hpne).mpr (Nat.prime_iff_prime_int.mp (Fact.out : p.Prime))
   haveI : (span {(p : ℤ)}).IsMaximal := Ideal.IsPrime.isMaximal ‹_› hp0
-  have h := ncard_primesOver_eq_natCard_iff_of_isGaloisGroup (B := 𝓞 K) Gal(K/ℚ)
-    (span {(p : ℤ)}) hp0
-  rw [IsGaloisGroup.card_eq_finrank Gal(K/ℚ) ℚ K] at h
+  have h := ncard_primesOver_eq_finrank_iff_of_isGalois ℚ K (A := ℤ) (span {(p : ℤ)}) hp0
   exact h
 
 end TauCeti.NumberField
