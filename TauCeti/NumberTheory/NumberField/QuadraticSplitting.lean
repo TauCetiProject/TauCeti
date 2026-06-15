@@ -2,7 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.FieldTheory.KummerExtension
+import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.NumberTheory.NumberField.Ideal.KummerDedekind
 import Mathlib.RingTheory.Discriminant
@@ -66,8 +66,10 @@ private theorem not_dvd_exponent_of_minpoly_quadratic {θ : 𝓞 K} {d : ℤ}
     have hfinrank : Module.finrank ℚ K = 2 := pb.finrank.trans hdim
     have haeval : (aeval pb.gen) ((X : ℚ[X]) ^ 2 - C ((d : ℤ) : ℚ)).derivative
         = algebraMap ℚ K 2 * pb.gen := by
+      -- `derivative_X_pow` leaves the exponent as `2 - 1`; reduce it to `1` so `pow_one` applies.
+      have hsub : (2 : ℕ) - 1 = 1 := by norm_num
       rw [derivative_sub, derivative_C, sub_zero, derivative_X_pow, map_mul, aeval_C, map_pow,
-        aeval_X, show (2 : ℕ) - 1 = 1 from rfl, pow_one]
+        aeval_X, hsub, pow_one]
       norm_num
     have hdiscr : Algebra.discr ℚ pb.basis = ((4 * d : ℤ) : ℚ) := by
       rw [Algebra.discr_powerBasis_eq_norm, hmin', haeval, map_mul,
