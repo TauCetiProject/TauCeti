@@ -70,9 +70,16 @@ jobs:
             git config user.email "290224625+tauceti-review-bot[bot]@users.noreply.github.com"
             git add TauCeti.lean
             git commit -m "chore: sync TauCeti.lean import aggregator (mk_all)" >/dev/null
-            git push "https://x-access-token:${APP_TOKEN}@github.com/${{ github.repository }}.git" \
-              "HEAD:${{ steps.pr.outputs.ref }}"
-            state=success; desc="auto-synced TauCeti.lean aggregator (pushed a fix commit)"
+            # A plain (non-force) push: if it is rejected, the branch moved under us (a concurrent
+            # push from the worker) — do NOT clobber it; bail without posting, the next push's
+            # synchronize event re-runs this and re-syncs from the new head.
+            if git push "https://x-access-token:${APP_TOKEN}@github.com/${{ github.repository }}.git" \
+                 "HEAD:${{ steps.pr.outputs.ref }}"; then
+              state=success; desc="auto-synced TauCeti.lean aggregator (pushed a fix commit)"
+            else
+              echo "::warning::aggregator-fix push rejected (branch moved); will re-sync on the next event"
+              exit 0
+            fi
           else
             state=failure; desc="TauCeti.lean aggregator out of date and PR is from a fork — run Scripts/mk_all.sh and push"
           fi
