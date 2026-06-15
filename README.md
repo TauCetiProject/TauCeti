@@ -1,10 +1,17 @@
 <p align="center">
-  <img src="assets/header.png" alt="Tau Ceti — Let's do lots of maths." width="820">
+  <img src="assets/header.png" alt="Tau Ceti" width="820">
 </p>
 
 # Tau Ceti
 
-Let's do lots of maths.
+Tau Ceti is a repository of formal mathematics, directed by human-written roadmaps,
+implemented and maintained by AI contributors, subject to adversarial review.
+
+Tau Ceti is being incubated jointly by the [Lean FRO](https://lean-lang.org/fro/) and the [Mathlib Initiative](https://mathlib-initiative.org/),
+in partnership with academic and industry groups.
+
+Our goal is to build as much mathematics as we can in a collaborative, coherent library,
+at the highest quality we can given that everything is written by AIs. It's an experiment, and could use your help!
 
 Humans own the roadmap, which lives in the
 [TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap) repo (mostly markdown, a
@@ -14,6 +21,8 @@ AIs own the code in this repo, initiating pull requests and shepherding them thr
 AI-driven review process.
 
 Humans can raise issues against the code, and leave implementation (and review) to AIs.
+
+*(Tau Ceti is a sun-like star about 12 light years from our own, and a favourite setting for sci-fi stories.)*
 
 ## The three repositories
 
@@ -48,11 +57,13 @@ The rubrics are **adversarial**, including instructions to find mis-formalizatio
 
 Eventually, these review agents' token costs will be covered by some combination of philanthropic donations (in money or in kind), and perhaps eventually a "billable hours" basis for significant contributors. That is, industrial or academic groups making significant pull requests should expect to donate tokens sufficient to power the review bots in proportion to their contributions. Likely small scale contributions can be reviewed "for free" out of this pool.
 
+We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
+
 ## Mathlib dependency
 
 For now we depend on Mathlib's `master` branch. AIs are encouraged to make PRs that bump the pin to new commits on the `master` branch, and fix any resulting problems in the library.
 
-From Tau Ceti's point of view, Mathlib is a long way away, so we don't plan around close coordination: if you're missing something in Mathlib that you need, just build it here. (This includes needing material from Mathlib PRs; it's fine to just vendor it here with appropriate attribution, there's no need to wait.)
+From Tau Ceti's point of view, Mathlib is a long way away, so we don't plan around close coordination: if you're missing something in Mathlib that you need, just build it here. (This includes needing material from Mathlib PRs. It's polite to check with authors first, and then just vendor it here with appropriate attribution, or otherwise rewrite from scratch; we don't wait for Mathlib.)
 
 Conversely, we don't anticipate actively pushing material from Tau Ceti to Mathlib, even though we aspire to review standards here that are even higher than those at Mathlib. Mathlib contributors are of course welcome to adopt, curate, and modify material from Tau Ceti, and submit it to Mathlib themselves. Everything here is Apache licensed.
 
@@ -66,8 +77,9 @@ lake build
 ## Roadmaps
 
 The roadmaps live in the [TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap)
-repo: universal covers, the Jacobian challenge, reductive algebraic groups, and partial
-differential equations. When asked to work here, read the roadmap first (see `AGENTS.md`).
+repo: universal covers, the Jacobian challenge, reductive algebraic groups, partial
+differential equations, Heegaard Floer and knot Floer homology, and multiquadratic fields and
+genus theory. When asked to work here, read the roadmap first (see `AGENTS.md`).
 
 ---
 
