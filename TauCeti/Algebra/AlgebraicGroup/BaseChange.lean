@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+import TauCeti.Algebra.HopfAlgebra
 import Mathlib.RingTheory.Bialgebra.TensorProduct
 
 /-!
@@ -17,18 +18,22 @@ the convolution groups of points.
 
 This is the algebraic-group-facing form of the ReductiveGroups roadmap item "Base change.
 `K ⊗[k] A` as a Hopf algebra over `K`"; it builds on Mathlib's tensor-product bialgebra
-instance and `AlgHom.liftEquiv`.
+instance, Mathlib's tensor-product Hopf algebra antipode formula, and `AlgHom.liftEquiv`.
 
 ## Main definitions
 
 * `TauCeti.AlgHom.baseChangePointsMulEquiv`: the convolution monoid isomorphism between
-  `A →ₐ[k] R` and `K ⊗[k] A →ₐ[K] R`.
+  `A →ₐ[k] R` and `K ⊗[k] A →ₐ[K] R`. When `A` is a Hopf algebra these are convolution
+  groups, so this is automatically an isomorphism of groups.
+* `TauCeti.AlgHom.baseChangePointsMulEquiv_inv_apply_tmul` and
+  `TauCeti.AlgHom.baseChangePointsMulEquiv_symm_inv_apply`: pointwise formulas for
+  convolution inverses of base-changed points.
 
 ## References
 
-The tensor-product bialgebra structure and algebra base-change adjunction used here are
-from Mathlib, respectively `Mathlib.RingTheory.Bialgebra.TensorProduct` and
-`AlgHom.liftEquiv`.
+The tensor-product bialgebra and Hopf-algebra structures and algebra base-change adjunction
+used here are from Mathlib, respectively `Mathlib.RingTheory.Bialgebra.TensorProduct`,
+`Mathlib.RingTheory.HopfAlgebra.TensorProduct`, and `AlgHom.liftEquiv`.
 -/
 
 open Coalgebra HopfAlgebra TensorProduct WithConv
@@ -109,6 +114,34 @@ lemma baseChangePointsMulEquiv_symm_apply (f : WithConv (K ⊗[k] A →ₐ[K] R)
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm f).ofConv a =
       f.ofConv (1 ⊗ₜ[k] a) :=
   rfl
+
+end AlgHom
+
+namespace AlgHom
+
+variable {k K A R : Type*} [CommSemiring k] [CommSemiring K] [Semiring A]
+  [CommSemiring R] [Algebra k K] [_root_.HopfAlgebra k A] [Algebra K R] [Algebra k R]
+  [IsScalarTower k K R]
+
+/-- Pointwise inverse formula after base change: on a pure tensor `s ⊗ a`, the convolution
+inverse of a base-changed point has value `s • f (S a)`.
+
+The `≃*` `AlgHom.baseChangePointsMulEquiv` is automatically a group isomorphism here, since
+`A` is a Hopf algebra; this records the value of an inverse point on pure tensors. -/
+@[simp]
+lemma baseChangePointsMulEquiv_inv_apply_tmul (f : WithConv (A →ₐ[k] R)) (s : K) (a : A) :
+    (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f)⁻¹ (s ⊗ₜ[k] a) =
+      s • f.ofConv (antipode k a) := by
+  rw [convInv_apply, HopfAlgebra.baseChange_antipode_tmul,
+    baseChangePointsMulEquiv_apply_tmul]
+
+/-- Pointwise inverse formula after restricting a base-changed point along `a ↦ 1 ⊗ a`:
+the inverse of `(e.symm f)` has value `f (1 ⊗ S a)` at `a`. -/
+@[simp]
+lemma baseChangePointsMulEquiv_symm_inv_apply (f : WithConv (K ⊗[k] A →ₐ[K] R)) (a : A) :
+    (((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm f)⁻¹).ofConv a =
+      f.ofConv (1 ⊗ₜ[k] antipode k a) := by
+  rw [convInv_apply, baseChangePointsMulEquiv_symm_apply]
 
 end AlgHom
 
