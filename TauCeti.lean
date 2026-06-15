@@ -44,6 +44,7 @@ import TauCeti.Analysis.PDE.UniformEllipticity
 import TauCeti.Basic
 import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.FieldTheory.Trace
+import TauCeti.NumberTheory.DedekindDomain.RamificationInertia
 import TauCeti.NumberTheory.DedekindDomain.Transversal
 import TauCeti.NumberTheory.EffectiveBounds.ClassNumber
 import TauCeti.NumberTheory.EffectiveBounds.Discriminant

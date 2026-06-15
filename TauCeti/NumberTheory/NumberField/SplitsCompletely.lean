@@ -2,7 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.RamificationInertia.Galois
+import TauCeti.NumberTheory.DedekindDomain.RamificationInertia
 
 /-!
 # A counting criterion for a prime to split completely in a Galois number field
@@ -33,23 +33,6 @@ open NumberField Ideal Module
 
 namespace TauCeti.NumberField
 
-private theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*} [CommRing A]
-    [IsDedekindDomain A] [CommRing B] [IsDedekindDomain B] [Algebra A B] [Module.Finite A B]
-    [IsTorsionFree A B] (G : Type*) [Group G] [Finite G] [MulSemiringAction G B]
-    [IsGaloisGroup G A B] (P : Ideal A) [P.IsMaximal] (hP : P ≠ ⊥) :
-    (primesOver P B).ncard = Nat.card G ↔
-      P.ramificationIdxIn B = 1 ∧ P.inertiaDegIn B = 1 := by
-  have h_main := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn hP B G
-  have hG : 0 < Nat.card G := Nat.card_pos
-  constructor
-  · intro hn
-    rw [hn] at h_main
-    have hef : P.ramificationIdxIn B * P.inertiaDegIn B = 1 :=
-      Nat.eq_of_mul_eq_mul_left hG (by rw [mul_one]; exact h_main)
-    exact mul_eq_one.mp hef
-  · rintro ⟨he, hf⟩
-    simpa [he, hf] using h_main
-
 variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
@@ -59,7 +42,8 @@ private theorem ncard_primesOver_eq_finrank_iff_of_isGalois {A : Type*} [CommRin
     [P.IsMaximal] (hP : P ≠ ⊥) :
     (primesOver P (𝓞 L)).ncard = finrank K L ↔
       P.ramificationIdxIn (𝓞 L) = 1 ∧ P.inertiaDegIn (𝓞 L) = 1 := by
-  have h := ncard_primesOver_eq_natCard_iff_of_isGaloisGroup (B := 𝓞 L) Gal(L/K) P hP
+  have h := TauCeti.DedekindDomain.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup
+    (B := 𝓞 L) Gal(L/K) P hP
   rw [IsGaloisGroup.card_eq_finrank Gal(L/K) K L] at h
   exact h
 
