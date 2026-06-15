@@ -2,7 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib
+import Mathlib.FieldTheory.KummerExtension
+import Mathlib.NumberTheory.LegendreSymbol.Basic
+import Mathlib.NumberTheory.NumberField.Ideal.KummerDedekind
+import Mathlib.RingTheory.Discriminant
 
 /-!
 # The prime-splitting law for a quadratic field
@@ -39,7 +42,7 @@ variable {K : Type*} [Field K] [NumberField K]
 
 /-- **Conductor bound.** If `θ` generates `K` and has minimal polynomial `X² - d`, then an odd
 prime not dividing `d` does not divide the conductor exponent of `θ`. -/
-theorem not_dvd_exponent_of_minpoly_quadratic {θ : 𝓞 K} {d : ℤ}
+private theorem not_dvd_exponent_of_minpoly_quadratic {θ : 𝓞 K} {d : ℤ}
     (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2)
     (hcop : ¬ (p : ℤ) ∣ d) : ¬ p ∣ exponent θ := by
@@ -76,7 +79,7 @@ theorem not_dvd_exponent_of_minpoly_quadratic {θ : 𝓞 K} {d : ℤ}
     rw [hdiscr, hgenθ] at key
     -- `key : ((4d:ℤ):ℚ) • (b:K) ∈ adjoin ℤ {(θ:K)}`; bridge back into `𝓞 K`.
     let f : (𝓞 K) →ₐ[ℤ] K := IsScalarTower.toAlgHom ℤ (𝓞 K) K
-    have hfθ : f θ = (θ : K) := rfl
+    have hfθ : f θ = (θ : K) := by rw [IsScalarTower.coe_toAlgHom']
     have hAmap : (Algebra.adjoin ℤ {θ}).map f = Algebra.adjoin ℤ {(θ : K)} := by
       rw [← Algebra.adjoin_image, Set.image_singleton, hfθ]
     have himg : ((4 * d : ℤ) : ℚ) • (b : K) = f (algebraMap ℤ (𝓞 K) (4 * d) * b) := by
@@ -108,7 +111,7 @@ theorem not_dvd_exponent_of_minpoly_quadratic {θ : 𝓞 K} {d : ℤ}
 omit [NumberField K] in
 /-- **Factor count mod p.** `X² - d` has two monic irreducible factors mod `p` (for `p` odd,
 `p ∤ d`) iff `d` is a square mod `p`. -/
-theorem card_monicFactorsMod_quadratic {θ : 𝓞 K} {d : ℤ}
+private theorem card_monicFactorsMod_quadratic_iff {θ : 𝓞 K} {d : ℤ}
     (hmin : minpoly ℤ θ = X ^ 2 - C d) {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2)
     (hcop : ¬ (p : ℤ) ∣ d) :
     (monicFactorsMod θ p).card = 2 ↔ legendreSym p d = 1 := by
@@ -153,7 +156,7 @@ residue mod `p`. This is the `n = 1` case of the multiquadratic prime-splitting 
 theorem quadratic_ncard_primesOver_iff {θ : 𝓞 K} {d : ℤ}
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) (hcop : ¬ (p : ℤ) ∣ d) :
-    Nat.card (primesOver (span {(p : ℤ)}) (𝓞 K)) = finrank ℚ K ↔ legendreSym p d = 1 := by
+    (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔ legendreSym p d = 1 := by
   have hp := not_dvd_exponent_of_minpoly_quadratic hmin hgen hodd hcop
   have hintθℚ : IsIntegral ℚ (θ : K) := θ.isIntegral_coe.tower_top
   have hfr : finrank ℚ K = 2 := by
@@ -163,10 +166,10 @@ theorem quadratic_ncard_primesOver_iff {θ : 𝓞 K} {d : ℤ}
       minpoly.isIntegrallyClosed_eq_field_fractions ℚ K (IsIntegralClosure.isIntegral ℤ K θ),
       hmin, Polynomial.map_sub, Polynomial.map_pow, map_X, Polynomial.map_C,
       natDegree_X_pow_sub_C]
-  have hcard : Nat.card (primesOver (span {(p : ℤ)}) (𝓞 K)) = (monicFactorsMod θ p).card := by
-    rw [Nat.card_congr (primesOverSpanEquivMonicFactorsMod hp)]
+  have hcard : (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = (monicFactorsMod θ p).card := by
+    rw [← Nat.card_coe_set_eq, Nat.card_congr (primesOverSpanEquivMonicFactorsMod hp)]
     exact Nat.card_eq_finsetCard _
   rw [hcard, hfr]
-  exact card_monicFactorsMod_quadratic hmin hodd hcop
+  exact card_monicFactorsMod_quadratic_iff hmin hodd hcop
 
 end TauCeti.NumberField
