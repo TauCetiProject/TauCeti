@@ -58,7 +58,7 @@ lemma driftForm_apply (b : EuclideanSpace ℝ n) (u : ℝ) (ξ : EuclideanSpace 
 @[simp]
 lemma massForm_apply (c u v : ℝ) :
     massForm c u v = c * u * v := by
-  rw [massForm, ContinuousLinearMap.smul_apply, ContinuousLinearMap.smul_apply,
+  rw [massForm, smul_apply, smul_apply,
     ContinuousLinearMap.mul_apply', smul_eq_mul]
   ring
 
