@@ -37,8 +37,6 @@ group `𝔾ₘ`.
   characters `G →* Aˣ`.
 * `TauCeti.DiagonalizableGroup.pointsMulEquiv`: the same equivalence as a multiplicative
   equivalence from the convolution group of points to the character group.
-* `TauCeti.DiagonalizableGroup.multiplicativeGroupPointsMulEquiv`: the `G = Multiplicative ℤ`
-  specialization, identifying the points with `Aˣ`.
 
 ## References
 
@@ -176,21 +174,6 @@ theorem pointsMulEquiv_apply (f : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
 @[simp]
 theorem pointsMulEquiv_symm_apply (χ : G →* Aˣ) :
     (pointsMulEquiv (R := R) (A := A) (G := G)).symm χ = toConv (point χ) :=
-  rfl
-
-/-- The `G = Multiplicative ℤ` specialization recovers the multiplicative group `𝔾ₘ` on the
-group-algebra presentation `R[Multiplicative ℤ]`: its convolution group of points is the unit
-group `Aˣ`, identifying a character of `Multiplicative ℤ` with its value on the generator. -/
-noncomputable def multiplicativeGroupPointsMulEquiv :
-    WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) ≃* Aˣ :=
-  (pointsMulEquiv (R := R) (A := A)).trans (zpowersMulHom Aˣ).symm
-
-/-- The multiplicative-group equivalence sends a point to its value on the generator `T = 1`. -/
-@[simp]
-theorem multiplicativeGroupPointsMulEquiv_apply
-    (f : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)) :
-    multiplicativeGroupPointsMulEquiv (R := R) (A := A) f =
-      charOfPoint f.ofConv (Multiplicative.ofAdd 1) :=
   rfl
 
 end DiagonalizableGroup
