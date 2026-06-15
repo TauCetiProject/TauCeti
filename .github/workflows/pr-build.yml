@@ -195,7 +195,13 @@ jobs:
             echo "::error::landrun not enforcing (run=$ok write=$wr shm=$shm net=$net); refusing to run PR code"; exit 1
           fi
 
-      - name: Fetch Mathlib with the trusted base config (network; no PR code)
+      # `lake exe cache get` runs the `cache` exe built from the pinned Mathlib, unsandboxed,
+      # with network (to download oleans) but deliberately NO token in env. For a normal PR that
+      # is the trusted base Mathlib. For a validated bump it is the PR's Mathlib pin — which
+      # bump-guard proved is a *forward commit on Mathlib's own master* (same repo, never a fork),
+      # so the code run here is still trusted Mathlib master under the project's "track master"
+      # policy; only the PR's TauCeti/ code stays untrusted and runs solely under landrun below.
+      - name: Fetch Mathlib with the (bump-validated) config (network, no token; no PR code)
         if: ${{ env.INFRA != '1' }}
         run: ( cd base && lake exe cache get ) && mkdir -p base/.lake/tmp
 

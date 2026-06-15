@@ -12,11 +12,16 @@
 #
 #   1. lakefile.toml / lakefile.lean are byte-identical to base (lakefile edits
 #      stay human-owned; they change which branch/dep is even nominated).
-#   2. The nominated require (mathlib) keeps its url + inputRev (master), and its
-#      new rev is a *descendant of the old rev* AND *on inputRev's history* — a
-#      genuine forward move on the nominated branch (via the GitHub compare API).
-#   3. Every other git pin equals mathlib's OWN lake-manifest at the new rev, so
-#      transitive deps can't be re-pointed independently of the trusted mathlib.
+#   2. The nominated require (mathlib) is the ONLY package named "mathlib", is a
+#      `git` package pinned to a 40-hex commit SHA, keeps its url + inputRev
+#      (master), and its new rev is a *descendant of the old rev* AND *on
+#      inputRev's history* — a genuine forward move on the nominated branch (via
+#      the GitHub compare API; the SHA requirement makes the compared revs
+#      immutable, so what we validate is exactly what Lake will resolve and build).
+#   3. The PR manifest's package set, MINUS mathlib, is EXACTLY mathlib's own
+#      lake-manifest at the new rev, field-for-field (type/url/rev/inputRev) — no
+#      package added, removed, renamed, retyped (e.g. a `path` dep), duplicated, or
+#      re-pointed independently of the trusted mathlib.
 #   4. lean-toolchain moves monotonically forward on the leanprover/lean4 channel
 #      AND equals mathlib's lean-toolchain at the new rev.
 #
@@ -48,31 +53,39 @@ for f in lakefile.toml lakefile.lean; do
 done
 
 # --- helpers ------------------------------------------------------------------
-# Emit "name<TAB>url<TAB>rev<TAB>inputRev" for every git package in a manifest.
-manifest_git() {
-  python3 - "$1" <<'PY'
-import json,sys
-m=json.load(open(sys.argv[1]))
-for p in m.get("packages",[]):
-    if p.get("type")=="git":
-        print("\t".join([p.get("name",""),
-                         (p.get("url") or "").rstrip("/").removesuffix(".git"),
-                         p.get("rev",""), p.get("inputRev") or ""]))
-PY
-}
 # owner/repo slug from a github url
 slug() { sed -E 's#^https?://github.com/##; s#/$##; s#\.git$##' <<<"$1"; }
 
-BASE_GIT="$(manifest_git "$BASE/lake-manifest.json")" || fail "cannot parse base lake-manifest.json"
-PR_GIT="$(manifest_git "$PR/lake-manifest.json")"     || fail "cannot parse PR lake-manifest.json"
+# Print "url<TAB>rev<TAB>inputRev" for THE mathlib package in <file>, after asserting:
+# exactly one package named mathlib, of type git, with a 40-hex commit-SHA rev. Any
+# violation prints "ERROR: ..." and exits 1 (so the caller can `|| fail`).
+mathlib_of() {
+  python3 - "$1" <<'PY'
+import json,sys,re
+try:
+    m=json.load(open(sys.argv[1]))
+except Exception as e:
+    print(f"ERROR: cannot parse manifest: {e}"); sys.exit(1)
+pkgs=m.get("packages",[])
+names=[p.get("name") for p in pkgs]
+dups=sorted({n for n in names if names.count(n)>1})
+if dups: print(f"ERROR: duplicate package names in manifest: {dups}"); sys.exit(1)
+ml=[p for p in pkgs if p.get("name")=="mathlib"]
+if len(ml)!=1: print(f"ERROR: expected exactly one 'mathlib' package, found {len(ml)}"); sys.exit(1)
+p=ml[0]
+if p.get("type")!="git": print(f"ERROR: mathlib package is not type git (got {p.get('type')!r})"); sys.exit(1)
+rev=p.get("rev") or ""
+if not re.fullmatch(r"[0-9a-f]{40}", rev): print(f"ERROR: mathlib rev {rev!r} is not a 40-hex commit SHA"); sys.exit(1)
+url=(p.get("url") or "").rstrip("/")
+if url.endswith(".git"): url=url[:-4]
+print("\t".join([url, rev, p.get("inputRev") or ""]))
+PY
+}
 
-# --- locate mathlib in both manifests -----------------------------------------
-ml_base="$(awk -F'\t' '$1=="mathlib"{print; exit}' <<<"$BASE_GIT")"
-ml_pr="$(awk   -F'\t' '$1=="mathlib"{print; exit}' <<<"$PR_GIT")"
-[ -n "$ml_base" ] || fail "no mathlib git package in base manifest"
-[ -n "$ml_pr" ]   || fail "no mathlib git package in PR manifest"
-IFS=$'\t' read -r _ ML_URL_B ML_REV_B ML_IR_B <<<"$ml_base"
-IFS=$'\t' read -r _ ML_URL_P ML_REV_P ML_IR_P <<<"$ml_pr"
+ml_base="$(mathlib_of "$BASE/lake-manifest.json")" || fail "base manifest: ${ml_base#ERROR: }"
+ml_pr="$(mathlib_of   "$PR/lake-manifest.json")"   || fail "PR manifest: ${ml_pr#ERROR: }"
+IFS=$'\t' read -r ML_URL_B ML_REV_B ML_IR_B <<<"$ml_base"
+IFS=$'\t' read -r ML_URL_P ML_REV_P ML_IR_P <<<"$ml_pr"
 
 [ "$ML_URL_B" = "$ML_URL_P" ] || fail "mathlib url changed ($ML_URL_B -> $ML_URL_P) — repo swap is human-owned"
 [ "$ML_IR_B"  = "$ML_IR_P"  ] || fail "mathlib inputRev (nominated branch) changed ($ML_IR_B -> $ML_IR_P) — human-owned"
@@ -81,8 +94,8 @@ ML_SLUG="$(slug "$ML_URL_P")"
 # --- 2. mathlib moved forward on the nominated branch -------------------------
 if [ "$ML_REV_B" = "$ML_REV_P" ]; then
   # mathlib pin unchanged: then NOTHING in the manifest may change (the rest is derived from it).
-  if [ "$BASE_GIT" != "$PR_GIT" ]; then
-    fail "mathlib rev unchanged but other manifest pins changed — not a derived bump"
+  if ! diff -q "$BASE/lake-manifest.json" "$PR/lake-manifest.json" >/dev/null 2>&1; then
+    fail "mathlib rev unchanged but the manifest changed — not a derived bump"
   fi
   echo "bump-guard: mathlib pin unchanged."
 else
@@ -101,21 +114,48 @@ else
   echo "bump-guard: mathlib $ML_REV_B -> $ML_REV_P is a forward move on '$ML_IR_P'."
 fi
 
-# --- 3. every other pin equals mathlib's own manifest at the new rev ----------
+# --- 3. the rest of the manifest is EXACTLY mathlib's own manifest at the new rev
 ML_MANIFEST="$(gh api "repos/$ML_SLUG/contents/lake-manifest.json?ref=$ML_REV_P" --jq '.content' 2>/dev/null | base64 -d)" \
   || fail "cannot fetch mathlib lake-manifest.json at $ML_REV_P"
-ML_GIT="$(manifest_git <(printf '%s' "$ML_MANIFEST"))" || fail "cannot parse mathlib manifest at $ML_REV_P"
+ML_TMP="$(mktemp)"; trap 'rm -f "$ML_TMP"' EXIT
+printf '%s' "$ML_MANIFEST" > "$ML_TMP"
 
-while IFS=$'\t' read -r name url rev inputrev; do
-  [ -z "$name" ] && continue
-  [ "$name" = "mathlib" ] && continue
-  ml_line="$(awk -F'\t' -v n="$name" '$1==n{print; exit}' <<<"$ML_GIT")"
-  [ -n "$ml_line" ] || fail "PR pins git dep '$name' that mathlib@$ML_REV_P does not depend on"
-  IFS=$'\t' read -r _ m_url m_rev _ <<<"$ml_line"
-  [ "$url" = "$m_url" ] || fail "dep '$name' url ($url) != mathlib's ($m_url) — not a derived pin"
-  [ "$rev" = "$m_rev" ] || fail "dep '$name' rev ($rev) != mathlib@$ML_REV_P's ($m_rev) — not a derived pin"
-done <<<"$PR_GIT"
-echo "bump-guard: all transitive pins match mathlib@$ML_REV_P."
+derived_msg="$(python3 - "$PR/lake-manifest.json" "$ML_TMP" <<'PY'
+import json,sys,re
+def norm_url(u):
+    u=(u or "").rstrip("/")
+    return u[:-4] if u.endswith(".git") else u
+def load(p):
+    return json.load(open(p)).get("packages",[])
+pr, ml = load(sys.argv[1]), load(sys.argv[2])
+
+def tup(p):  # the identity we require to match, field-for-field
+    return (p.get("type"), norm_url(p.get("url")), p.get("rev"), p.get("inputRev"))
+
+# PR manifest: no dup names, every package is git pinned to a 40-hex SHA.
+prnames=[p.get("name") for p in pr]
+dups=sorted({n for n in prnames if prnames.count(n)>1})
+if dups: print(f"duplicate package names in PR manifest: {dups}"); sys.exit(1)
+for p in pr:
+    if p.get("type")!="git":
+        print(f"PR pins non-git package '{p.get('name')}' (type {p.get('type')!r}); only git deps derived from mathlib are allowed"); sys.exit(1)
+    if not re.fullmatch(r"[0-9a-f]{40}", p.get("rev") or ""):
+        print(f"PR dep '{p.get('name')}' rev is not a 40-hex commit SHA"); sys.exit(1)
+
+# The PR's deps, minus mathlib, must be EXACTLY mathlib's own deps — same names, same fields.
+pr_by  = {p.get("name"): p for p in pr if p.get("name")!="mathlib"}
+ml_by  = {p.get("name"): p for p in ml}
+only_pr = sorted(set(pr_by) - set(ml_by))
+only_ml = sorted(set(ml_by) - set(pr_by))
+if only_pr: print(f"PR pins deps mathlib@new does not depend on: {only_pr}"); sys.exit(1)
+if only_ml: print(f"PR is missing deps mathlib@new depends on: {only_ml}"); sys.exit(1)
+for n in pr_by:
+    if tup(pr_by[n]) != tup(ml_by[n]):
+        print(f"dep '{n}' does not match mathlib@new (PR {tup(pr_by[n])} vs mathlib {tup(ml_by[n])})"); sys.exit(1)
+print("OK")
+PY
+)" || fail "${derived_msg:-transitive pins do not match mathlib@$ML_REV_P}"
+echo "bump-guard: all transitive pins match mathlib@$ML_REV_P exactly."
 
 # --- 4. toolchain: monotonic forward AND consistent with mathlib --------------
 TC_B="$(tr -d '[:space:]' <"$BASE/lean-toolchain" 2>/dev/null)"
@@ -124,17 +164,17 @@ TC_P="$(tr -d '[:space:]' <"$PR/lean-toolchain" 2>/dev/null)"
 [ -n "$TC_P" ] || fail "cannot read PR lean-toolchain"
 
 if [ "$TC_B" != "$TC_P" ]; then
-  python3 - "$TC_B" "$TC_P" <<'PY' || exit 1
+  tc_msg="$(python3 - "$TC_B" "$TC_P" <<'PY'
 import re,sys
 def parse(t):
     m=re.fullmatch(r"leanprover/lean4:v(\d+)\.(\d+)\.(\d+)(?:-rc(\d+))?", t)
-    if not m: sys.exit(f"BUMP-GUARD: FAIL — toolchain '{t}' is not a leanprover/lean4 vX.Y.Z[-rcN] release")
+    if not m: print(f"toolchain '{t}' is not a leanprover/lean4 vX.Y.Z[-rcN] release"); sys.exit(1)
     x,y,z,rc=m.groups()
-    # a final release outranks any rc of the same X.Y.Z
-    return (int(x),int(y),int(z), int(rc) if rc is not None else float("inf"))
+    return (int(x),int(y),int(z), int(rc) if rc is not None else float("inf"))  # release > any rc of same X.Y.Z
 b,p=parse(sys.argv[1]),parse(sys.argv[2])
-if p < b: sys.exit(f"BUMP-GUARD: FAIL — toolchain moved backward ({sys.argv[1]} -> {sys.argv[2]})")
+if p < b: print(f"toolchain moved backward ({sys.argv[1]} -> {sys.argv[2]})"); sys.exit(1)
 PY
+  )" || fail "${tc_msg:-toolchain is not a monotonic forward release}"
 fi
 
 ML_TC="$(gh api "repos/$ML_SLUG/contents/lean-toolchain?ref=$ML_REV_P" --jq '.content' 2>/dev/null | base64 -d | tr -d '[:space:]')" \
