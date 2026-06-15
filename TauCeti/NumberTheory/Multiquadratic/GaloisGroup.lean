@@ -42,7 +42,8 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L] {ι : Type*} [Finite ι
   {d : ι → K} {root : ι → L}
 
 variable (root) in
-/-- The sign pattern of an automorphism: `0` where it fixes a generator, `1` where it negates. -/
+/-- The sign pattern of an automorphism: `0` where it fixes a generator and `1` otherwise.
+When `gen root i ≠ -gen root i`, the `1` case says that the automorphism negates the generator. -/
 noncomputable def signPattern
     (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι) : ZMod 2 :=
   if σ (gen root i) = gen root i then 0 else 1
