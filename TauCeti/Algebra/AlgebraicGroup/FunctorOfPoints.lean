@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.RingTheory.Bialgebra.Convolution
+import Mathlib.RingTheory.HopfAlgebra.Convolution
 import TauCeti.Algebra.HopfAlgebra
 
 /-!
@@ -65,15 +66,15 @@ variable [Semiring H] [_root_.HopfAlgebra R H] [CommSemiring A] [Algebra R A]
 /-- Post-composition of an algebra homomorphism `f : H →ₐ[R] A` with the antipode `S` of
 `H`, as an `R`-algebra homomorphism `H →ₐ[R] A`. Its underlying linear map is
 `f.toLinearMap ∘ₗ HopfAlgebra.antipode R`. This is well-defined even when `H` is
-noncommutative: `S` is an antihomomorphism (`HopfAlgebra.antipode_mul`), and `A` is
+noncommutative: `S` is an antihomomorphism (`HopfAlgebra.antipode_mul_antidistrib`), and `A` is
 commutative, so `f ∘ S` is a homomorphism. -/
 private noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
   AlgHom.ofLinearMap (f.toLinearMap ∘ₗ antipode R)
     (by simp only [LinearMap.coe_comp, Function.comp_apply, antipode_one, f.toLinearMap_apply,
       map_one])
     fun x y => by
-      simp only [LinearMap.coe_comp, Function.comp_apply, antipode_mul, f.toLinearMap_apply,
-        map_mul]
+      simp only [LinearMap.coe_comp, Function.comp_apply, antipode_mul_antidistrib,
+        f.toLinearMap_apply, map_mul]
       rw [mul_comm]
 
 private lemma toLinearMap_antipodeComp (f : H →ₐ[R] A) :

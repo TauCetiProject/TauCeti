@@ -64,7 +64,7 @@ variable {R C M}
 
 instance : SetLike (Subcomodule R C M) M where
   coe N := N.carrier
-  coe_injective' N P h := by
+  coe_injective N P h := by
     cases N with
     | mk carrier hN =>
     cases P with

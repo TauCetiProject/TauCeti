@@ -56,7 +56,7 @@ variable {R C}
 
 instance : SetLike (Subcoalgebra R C) C where
   coe D := D.carrier
-  coe_injective' D E h := by
+  coe_injective D E h := by
     cases D with
     | mk carrier hD =>
     cases E with

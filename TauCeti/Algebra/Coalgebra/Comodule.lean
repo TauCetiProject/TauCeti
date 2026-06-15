@@ -118,7 +118,7 @@ variable [AddCommMonoid Q] [Module R Q] [Comodule R C Q]
 
 instance funLike : FunLike (Hom R C M N) M N where
   coe f := f.toLinearMap
-  coe_injective' f g h := by
+  coe_injective f g h := by
     have hlin : f.toLinearMap = g.toLinearMap := LinearMap.ext fun m => congr_fun h m
     cases f
     cases g

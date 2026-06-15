@@ -225,7 +225,7 @@ variable {R H}
 
 instance : SetLike (HopfIdeal R H) H where
   coe I := I.carrier
-  coe_injective' I J h := by
+  coe_injective I J h := by
     cases I with
     | mk carrier htwo hcomul hcounit hantipode =>
     cases J with
