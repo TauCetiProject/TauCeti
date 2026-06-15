@@ -145,6 +145,7 @@ private theorem comul_single_one (g : G) :
 /-- A convolution product of points, evaluated on the group-like `single x 1`, is the product
 of the two values: convolution restricted to group-like elements is pointwise multiplication.
 This is the reusable fact behind `charOfPoint_convMul`. -/
+@[simp]
 theorem convMul_ofConv_single_one (f g : WithConv (MonoidAlgebra R G →ₐ[R] A)) (x : G) :
     (f * g).ofConv (MonoidAlgebra.single x 1) =
       f.ofConv (MonoidAlgebra.single x 1) * g.ofConv (MonoidAlgebra.single x 1) := by
