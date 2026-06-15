@@ -7,8 +7,11 @@ import Mathlib.NumberTheory.RamificationInertia.Galois
 /-!
 # A counting criterion for a prime to split completely in a Galois number field
 
-For a finite Galois extension of number fields `L / K`, a prime `P` of `𝓞 K` splits completely
-— meaning there are exactly `[L : K]` primes of `𝓞 L` above `P` — if and only if `P` is
+For a finite Galois extension of Dedekind domains, a nonzero maximal ideal `P` of the base
+splits completely — meaning there are exactly `Nat.card G` primes above `P` — if and only if
+`P` is unramified with residue degree one. For a finite Galois extension of number fields
+`L / K`, this says that a prime `P` of `𝓞 K` splits completely — meaning there are exactly
+`[L : K]` primes of `𝓞 L` above `P` — if and only if `P` is
 unramified with residue degree one, i.e. both the ramification index `e` and the inertia degree
 `f` (which are common to all primes above `P`, the extension being Galois) equal `1`.
 
@@ -20,6 +23,8 @@ off from residues.
 
 ## Main results
 
+* `TauCeti.NumberField.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`: the
+  Dedekind-domain criterion for an explicit Galois group.
 * `TauCeti.NumberField.ncard_primesOver_eq_finrank_iff_of_isGalois`: a prime of the base
   number field splits completely iff `e = 1 ∧ f = 1`.
 * `TauCeti.NumberField.ncard_primesOver_eq_finrank_iff`: the rational-prime specialization.
@@ -35,6 +40,26 @@ open NumberField Ideal Module
 
 namespace TauCeti.NumberField
 
+/-- In a finite Galois extension of Dedekind domains, a nonzero maximal ideal of the base
+splits completely (there are `Nat.card G` primes above it) iff its ramification index and
+inertia degree are both `1`. -/
+theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*} [CommRing A]
+    [IsDedekindDomain A] [CommRing B] [IsDedekindDomain B] [Algebra A B] [Module.Finite A B]
+    [IsTorsionFree A B] (G : Type*) [Group G] [Finite G] [MulSemiringAction G B]
+    [IsGaloisGroup G A B] (P : Ideal A) [P.IsMaximal] (hP : P ≠ ⊥) :
+    (primesOver P B).ncard = Nat.card G ↔
+      P.ramificationIdxIn B = 1 ∧ P.inertiaDegIn B = 1 := by
+  have h_main := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn hP B G
+  have hG : 0 < Nat.card G := Nat.card_pos
+  constructor
+  · intro hn
+    rw [hn] at h_main
+    have hef : P.ramificationIdxIn B * P.inertiaDegIn B = 1 :=
+      Nat.eq_of_mul_eq_mul_left hG (by rw [mul_one]; exact h_main)
+    exact mul_eq_one.mp hef
+  · rintro ⟨he, hf⟩
+    simpa [he, hf] using h_main
+
 variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
@@ -45,17 +70,9 @@ theorem ncard_primesOver_eq_finrank_iff_of_isGalois (P : Ideal (𝓞 K)) [P.IsMa
     (hP : P ≠ ⊥) :
     (primesOver P (𝓞 L)).ncard = finrank K L ↔
       P.ramificationIdxIn (𝓞 L) = 1 ∧ P.inertiaDegIn (𝓞 L) = 1 := by
-  have h_main := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn hP (𝓞 L) Gal(L/K)
-  rw [IsGaloisGroup.card_eq_finrank Gal(L/K) K L] at h_main
-  have hF : 0 < finrank K L := finrank_pos
-  constructor
-  · intro hn
-    rw [hn] at h_main
-    have hef : P.ramificationIdxIn (𝓞 L) * P.inertiaDegIn (𝓞 L) = 1 :=
-      Nat.eq_of_mul_eq_mul_left hF (by rw [mul_one]; exact h_main)
-    exact mul_eq_one.mp hef
-  · rintro ⟨he, hf⟩
-    simpa [he, hf] using h_main
+  have h := ncard_primesOver_eq_natCard_iff_of_isGaloisGroup (B := 𝓞 L) Gal(L/K) P hP
+  rw [IsGaloisGroup.card_eq_finrank Gal(L/K) K L] at h
+  exact h
 
 /-- In a Galois number field, a rational prime `p` splits completely (there are `[K : ℚ]` primes
 of `𝓞 K` above `p`) iff its ramification index and inertia degree are both `1`. -/
@@ -70,17 +87,9 @@ theorem ncard_primesOver_eq_finrank_iff (K : Type*) [Field K] [NumberField K] [I
   haveI : (span {(p : ℤ)}).IsPrime :=
     (Ideal.span_singleton_prime hpne).mpr (Nat.prime_iff_prime_int.mp (Fact.out : p.Prime))
   haveI : (span {(p : ℤ)}).IsMaximal := Ideal.IsPrime.isMaximal ‹_› hp0
-  have h_main := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn hp0 (𝓞 K) Gal(K/ℚ)
-  rw [IsGaloisGroup.card_eq_finrank Gal(K/ℚ) ℚ K] at h_main
-  have hF : 0 < finrank ℚ K := finrank_pos
-  constructor
-  · intro hn
-    rw [hn] at h_main
-    have hef : (span {(p : ℤ)}).ramificationIdxIn (𝓞 K) *
-        (span {(p : ℤ)}).inertiaDegIn (𝓞 K) = 1 :=
-      Nat.eq_of_mul_eq_mul_left hF (by rw [mul_one]; exact h_main)
-    exact mul_eq_one.mp hef
-  · rintro ⟨he, hf⟩
-    simpa [he, hf] using h_main
+  have h := ncard_primesOver_eq_natCard_iff_of_isGaloisGroup (B := 𝓞 K) Gal(K/ℚ)
+    (span {(p : ℤ)}) hp0
+  rw [IsGaloisGroup.card_eq_finrank Gal(K/ℚ) ℚ K] at h
+  exact h
 
 end TauCeti.NumberField
