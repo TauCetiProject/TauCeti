@@ -32,7 +32,9 @@ must satisfy exactly these Hopf-ideal closure conditions.
 
 This follows the standard Hopf-algebra definition of a Hopf ideal; see Sweedler,
 *Hopf Algebras*, Chapter 1. The formalization uses Mathlib's Hopf-algebra and tensor-product
-ideal API.
+ideal API. The arbitrary-supremum lattice construction follows the local pattern from
+`TauCeti.Algebra.Coalgebra.Subcoalgebra.Lattice` and
+`TauCeti.Algebra.Coalgebra.Subcomodule.Lattice`.
 -/
 
 open scoped TensorProduct
