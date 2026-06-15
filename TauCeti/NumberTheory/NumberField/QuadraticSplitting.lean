@@ -40,6 +40,13 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- The minimal polynomial of `θ` over `ℚ` is `X² - d`, obtained from its minimal polynomial
+over `ℤ` by base change along `ℤ → ℚ`. -/
+private theorem minpoly_rat_quadratic {θ : 𝓞 K} {d : ℤ} (hmin : minpoly ℤ θ = X ^ 2 - C d) :
+    minpoly ℚ (θ : K) = X ^ 2 - C ((d : ℤ) : ℚ) := by
+  rw [minpoly.isIntegrallyClosed_eq_field_fractions ℚ K (IsIntegralClosure.isIntegral ℤ K θ), hmin]
+  simp [Polynomial.map_sub, Polynomial.map_pow]
+
 /-- **Conductor bound.** If `θ` generates `K` and has minimal polynomial `X² - d`, then an odd
 prime not dividing `d` does not divide the conductor exponent of `θ`. -/
 private theorem not_dvd_exponent_of_minpoly_quadratic {θ : 𝓞 K} {d : ℤ}
@@ -54,10 +61,8 @@ private theorem not_dvd_exponent_of_minpoly_quadratic {θ : 𝓞 K} {d : ℤ}
     have hintθℚ : IsIntegral ℚ (θ : K) := hintθℤ.tower_top
     let pb : PowerBasis ℚ K := PowerBasis.ofAdjoinEqTop' hintθℚ hgen
     have hgenθ : pb.gen = (θ : K) := PowerBasis.ofAdjoinEqTop'_gen hintθℚ hgen
-    have hminθℤ : IsIntegral ℤ θ := IsIntegralClosure.isIntegral ℤ K θ
     have hmin' : minpoly ℚ pb.gen = X ^ 2 - C ((d : ℤ) : ℚ) := by
-      rw [hgenθ, minpoly.isIntegrallyClosed_eq_field_fractions ℚ K hminθℤ, hmin]
-      simp [Polynomial.map_sub, Polynomial.map_pow]
+      rw [hgenθ]; exact minpoly_rat_quadratic hmin
     have hdim : pb.dim = 2 := by
       rw [← pb.natDegree_minpoly, hmin', natDegree_X_pow_sub_C]
     have hnormθ : Algebra.norm ℚ pb.gen = -((d : ℤ) : ℚ) := by
@@ -164,10 +169,7 @@ theorem ncard_primesOver_quadratic_iff {θ : 𝓞 K} {d : ℤ}
   have hfr : finrank ℚ K = 2 := by
     rw [(PowerBasis.ofAdjoinEqTop' hintθℚ hgen).finrank,
       ← (PowerBasis.ofAdjoinEqTop' hintθℚ hgen).natDegree_minpoly,
-      PowerBasis.ofAdjoinEqTop'_gen,
-      minpoly.isIntegrallyClosed_eq_field_fractions ℚ K (IsIntegralClosure.isIntegral ℤ K θ),
-      hmin, Polynomial.map_sub, Polynomial.map_pow, map_X, Polynomial.map_C,
-      natDegree_X_pow_sub_C]
+      PowerBasis.ofAdjoinEqTop'_gen, minpoly_rat_quadratic hmin, natDegree_X_pow_sub_C]
   have hcard : (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = (monicFactorsMod θ p).card := by
     rw [← Nat.card_coe_set_eq, Nat.card_congr (primesOverSpanEquivMonicFactorsMod hp)]
     exact Nat.card_eq_finsetCard _
