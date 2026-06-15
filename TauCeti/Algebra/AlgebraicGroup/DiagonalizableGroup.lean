@@ -22,9 +22,10 @@ inverse `f (single g⁻¹ 1)`), and a character `χ` is sent to the algebra map 
 `MonoidAlgebra.lift`.
 
 Specializing to `G = Multiplicative ℤ` recovers the multiplicative group `𝔾ₘ` on the
-group-algebra presentation `R[Multiplicative ℤ]`: its points are `Aˣ`
-(`multiplicativeGroupPointsMulEquiv`), since a character of `Multiplicative ℤ` is its value on
-the generator (`zpowersMulHom`).
+group-algebra presentation `R[Multiplicative ℤ]`: algebra maps out of `R[Multiplicative ℤ]`
+are `Aˣ` (`multiplicativeGroupPointEquiv`), since a character of `Multiplicative ℤ` is its
+value on the generator (`zpowersMulHom`), and this matches the canonical Laurent-polynomial
+`𝔾ₘ` of `TauCeti.MultiplicativeGroup` (`multiplicativeGroupPointEquiv_eq`).
 
 This is a worked-example check for the reductive-groups roadmap (Layer 4, "diagonalizable
 groups and groups of multiplicative type: the anti-equivalence `M ↦ D(M) = Spec k[M]`", and
@@ -39,8 +40,10 @@ group `𝔾ₘ`.
   characters `G →* Aˣ`.
 * `TauCeti.DiagonalizableGroup.pointsMulEquiv`: the same equivalence as a multiplicative
   equivalence from the convolution group of points to the character group.
-* `TauCeti.DiagonalizableGroup.multiplicativeGroupPointsMulEquiv`: the `G = Multiplicative ℤ`
-  specialization, identifying the points of `D(Multiplicative ℤ) = 𝔾ₘ` with `Aˣ`.
+* `TauCeti.DiagonalizableGroup.multiplicativeGroupPointEquiv`: the `G = Multiplicative ℤ`
+  specialization, identifying algebra maps out of `R[Multiplicative ℤ]` (the points of
+  `D(Multiplicative ℤ) = 𝔾ₘ`) with `Aˣ`, shown to agree with the canonical Laurent-polynomial
+  `𝔾ₘ` of `TauCeti.MultiplicativeGroup` by `multiplicativeGroupPointEquiv_eq`.
 
 ## References
 
@@ -232,28 +235,6 @@ theorem multiplicativeGroupPointEquiv_symm_apply (u : Aˣ) :
     (multiplicativeGroupPointEquiv (R := R) (A := A)).symm u = point (zpowersMulHom Aˣ u) :=
   rfl
 
-/-- The functor of points of `𝔾ₘ`, presented as `D(Multiplicative ℤ)`, is the unit group of the
-value algebra: the convolution group of `R`-algebra maps out of `R[Multiplicative ℤ]` is `Aˣ`. -/
-noncomputable def multiplicativeGroupPointsMulEquiv :
-    WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) ≃* Aˣ :=
-  pointsMulEquiv.trans (zpowersMulHom Aˣ).symm
-
-/-- The multiplicative equivalence sends a convolution point to its value on the generator. -/
-@[simp]
-theorem multiplicativeGroupPointsMulEquiv_apply
-    (f : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)) :
-    multiplicativeGroupPointsMulEquiv (R := R) (A := A) f =
-      charOfPoint f.ofConv (Multiplicative.ofAdd 1) :=
-  rfl
-
-/-- The inverse multiplicative equivalence sends a unit to the point of the character
-`n ↦ u ^ n`. -/
-@[simp]
-theorem multiplicativeGroupPointsMulEquiv_symm_apply (u : Aˣ) :
-    (multiplicativeGroupPointsMulEquiv (R := R) (A := A)).symm u =
-      toConv (point (zpowersMulHom Aˣ u)) :=
-  rfl
-
 /-- Evaluating `AddMonoidAlgebra.toMultiplicativeAlgEquiv` on the Laurent generator `T n`:
 it sends `T n` to the group-like `single (ofAdd n) 1` of `R[Multiplicative ℤ]`. -/
 private theorem toMultiplicativeAlgEquiv_T (n : ℤ) :
@@ -264,17 +245,19 @@ private theorem toMultiplicativeAlgEquiv_T (n : ℤ) :
     LaurentPolynomial.T, Finsupp.mapDomain_single]
 
 /-- The `D(Multiplicative ℤ)` functor of points agrees with the Laurent-polynomial multiplicative
-group `𝔾ₘ` of `TauCeti.MultiplicativeGroup`: precomposing a point with the algebra equivalence
-`AddMonoidAlgebra.toMultiplicativeAlgEquiv` between `R[T;T⁻¹]` and `R[Multiplicative ℤ]` carries
-`multiplicativeGroupPointsMulEquiv` to `TauCeti.MultiplicativeGroup.pointsMulEquiv`, so the two
-presentations of `𝔾ₘ` give the same unit of `A`. -/
-theorem multiplicativeGroupPointsMulEquiv_eq
+group `𝔾ₘ` of `TauCeti.MultiplicativeGroup`: the unit of `A` that `multiplicativeGroupPointEquiv`
+reads off a point of `D(Multiplicative ℤ)` is the one `TauCeti.MultiplicativeGroup.pointsMulEquiv`
+assigns to that point precomposed with the algebra equivalence
+`AddMonoidAlgebra.toMultiplicativeAlgEquiv` between `R[T;T⁻¹]` and `R[Multiplicative ℤ]`, so the
+two presentations of `𝔾ₘ` give the same unit of `A`. This directs users of the `𝔾ₘ` functor of
+points to the canonical `TauCeti.MultiplicativeGroup` API. -/
+theorem multiplicativeGroupPointEquiv_eq
     (f : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)) :
-    multiplicativeGroupPointsMulEquiv f =
+    multiplicativeGroupPointEquiv f.ofConv =
       MultiplicativeGroup.pointsMulEquiv
         (toConv (f.ofConv.comp (AddMonoidAlgebra.toMultiplicativeAlgEquiv R ℤ).toAlgHom)) := by
   ext
-  rw [multiplicativeGroupPointsMulEquiv_apply, MultiplicativeGroup.pointsMulEquiv_apply,
+  rw [multiplicativeGroupPointEquiv_apply, MultiplicativeGroup.pointsMulEquiv_apply,
     ofConv_toConv, charOfPoint_apply_coe, MultiplicativeGroup.unitOfPoint_val, AlgHom.comp_apply]
   congr 1
   exact (toMultiplicativeAlgEquiv_T 1).symm
