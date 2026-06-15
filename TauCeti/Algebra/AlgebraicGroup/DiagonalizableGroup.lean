@@ -100,7 +100,8 @@ theorem charOfPoint_apply_coe (f : MonoidAlgebra R G →ₐ[R] A) (g : G) :
 @[simp]
 theorem charOfPoint_apply_inv_coe (f : MonoidAlgebra R G →ₐ[R] A) (g : G) :
     (↑(charOfPoint f g)⁻¹ : A) = f (MonoidAlgebra.single g⁻¹ 1) :=
-  rfl
+  (congrArg (fun u : Aˣ => (u : A)) ((charOfPoint f).map_inv g)).symm.trans
+    (charOfPoint_apply_coe f g⁻¹)
 
 /-- Reading off the character of the point of `χ` recovers `χ`. -/
 @[simp]
@@ -118,11 +119,8 @@ theorem point_charOfPoint (f : MonoidAlgebra R G →ₐ[R] A) :
   rw [point_single_one, charOfPoint_apply_coe]
 
 /-- Algebra maps out of `R[G]` are the same as characters `G →* Aˣ` of `G`. -/
-noncomputable def pointEquiv : (MonoidAlgebra R G →ₐ[R] A) ≃ (G →* Aˣ) where
-  toFun := charOfPoint
-  invFun := point
-  left_inv := point_charOfPoint
-  right_inv := charOfPoint_point
+noncomputable def pointEquiv : (MonoidAlgebra R G →ₐ[R] A) ≃ (G →* Aˣ) :=
+  (MonoidAlgebra.lift R A G).symm.trans MonoidHom.toHomUnitsMulEquiv.toEquiv
 
 /-- The equivalence sends a point to the character read off from it. -/
 @[simp]
@@ -154,11 +152,24 @@ theorem convMul_ofConv_single_one (f g : WithConv (MonoidAlgebra R G →ₐ[R] A
 
 /-- Reading off characters turns the convolution product of points into the pointwise
 product of characters. -/
+@[simp]
 theorem charOfPoint_convMul (f g : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
     charOfPoint ((f * g).ofConv) = charOfPoint f.ofConv * charOfPoint g.ofConv := by
   ext x
   rw [charOfPoint_apply_coe, MonoidHom.mul_apply, Units.val_mul, charOfPoint_apply_coe,
     charOfPoint_apply_coe, convMul_ofConv_single_one]
+
+variable {B : Type*} [CommSemiring B] [Algebra R B]
+
+/-- Reading off characters is natural in the value algebra: post-composing a point with an
+`R`-algebra map sends the associated character through the induced map on units. -/
+@[simp]
+theorem charOfPoint_mapValue (φ : A →ₐ[R] B)
+    (f : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
+    charOfPoint ((AlgHom.mapValue (H := MonoidAlgebra R G) φ f).ofConv) =
+      (Units.map φ.toMonoidHom).comp (charOfPoint f.ofConv) := by
+  ext x
+  simp
 
 /-- The functor of points of the diagonalizable group `D(G)` is the character group `G →* Aˣ`.
 
@@ -176,6 +187,16 @@ noncomputable def pointsMulEquiv : WithConv (MonoidAlgebra R G →ₐ[R] A) ≃*
 theorem pointsMulEquiv_apply (f : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := A) (G := G) f = charOfPoint f.ofConv :=
   rfl
+
+/-- The multiplicative point equivalence is natural in the value algebra. -/
+@[simp]
+theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
+    (f : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
+    pointsMulEquiv (R := R) (A := B) (G := G)
+        (AlgHom.mapValue (H := MonoidAlgebra R G) φ f) =
+      (Units.map φ.toMonoidHom).comp
+        (pointsMulEquiv (R := R) (A := A) (G := G) f) := by
+  rw [pointsMulEquiv_apply, pointsMulEquiv_apply, charOfPoint_mapValue]
 
 /-- The inverse multiplicative equivalence sends a character to the point extending it. -/
 @[simp]
