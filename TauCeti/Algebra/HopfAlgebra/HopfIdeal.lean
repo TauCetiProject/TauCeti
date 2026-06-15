@@ -141,6 +141,7 @@ theorem rightTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
   Ideal.map_mono hIJ
 
 /-- The construction `I ↦ I ⊗ H` distributes over joins of ideals. -/
+@[simp]
 theorem leftTensorIdeal_sup (I J : Ideal H) :
     leftTensorIdeal (R := R) (H := H) (I ⊔ J) =
       leftTensorIdeal (R := R) (H := H) I ⊔ leftTensorIdeal (R := R) (H := H) J :=
@@ -148,6 +149,7 @@ theorem leftTensorIdeal_sup (I J : Ideal H) :
     (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I J
 
 /-- The construction `I ↦ H ⊗ I` distributes over joins of ideals. -/
+@[simp]
 theorem rightTensorIdeal_sup (I J : Ideal H) :
     rightTensorIdeal (R := R) (H := H) (I ⊔ J) =
       rightTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) J :=
@@ -373,6 +375,8 @@ instance instMax : Max (HopfIdeal R H) where
         rw [map_add]
         exact Submodule.add_mem_sup (I.antipode_mem hy) (J.antipode_mem hz) }
 
+/-- The underlying ideal of the join of two Hopf ideals is the join of their underlying
+ideals. -/
 @[simp]
 theorem sup_toIdeal (I J : HopfIdeal R H) : (I ⊔ J).toIdeal = I.toIdeal ⊔ J.toIdeal :=
   rfl
@@ -383,7 +387,9 @@ theorem mem_sup {I J : HopfIdeal R H} {x : H} :
   rw [← mem_toIdeal, sup_toIdeal, Submodule.mem_sup]
   rfl
 
-instance : SemilatticeSup (HopfIdeal R H) where
+/-- Hopf ideals form a semilattice under ideal sum, with `⊔` given by the sum
+construction. -/
+instance instSemilatticeSup : SemilatticeSup (HopfIdeal R H) where
   sup := (· ⊔ ·)
   le_sup_left I J := by
     intro x hx
