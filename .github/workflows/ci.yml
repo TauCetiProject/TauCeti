@@ -25,6 +25,11 @@ jobs:
             exit 1
           fi
 
+      # Backstop: PRs are auto-synced by mk-all.yml, so main should never drift; this
+      # catches a direct push to main that left the aggregator out of date.
+      - name: Aggregator check (TauCeti.lean imports every module, sorted)
+        run: bash Scripts/mk_all.sh --check
+
       - name: Build
         uses: leanprover/lean-action@v1
         with:

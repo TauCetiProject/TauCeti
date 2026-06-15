@@ -1,0 +1,82 @@
+name: mk-all
+
+# Keep the root aggregator TauCeti.lean importing every TauCeti/ module, sorted.
+# On every PR this regenerates it with the TRUSTED base Scripts/mk_all.sh (which only
+# lists filenames — it runs none of the PR's code) and, if it drifted:
+#   - same-repo PR branch  -> auto-commit the fix and push it (the worker's PRs land here);
+#   - fork PR              -> fail the `mk-all` check with instructions (we can't push to a fork).
+# The push uses the GitHub App token (not GITHUB_TOKEN, whose pushes don't re-trigger CI), so
+# the corrected head gets a fresh build/review; the next mk-all run finds it in sync and stops.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  statuses: write
+
+concurrency:
+  group: mk-all-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: App token (its pushes re-trigger CI; GITHUB_TOKEN's do not)
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: FormalFrontier
+
+      - name: Resolve PR head
+        id: pr
+        run: |
+          echo "sha=${{ github.event.pull_request.head.sha }}"            >> "$GITHUB_OUTPUT"
+          echo "ref=${{ github.event.pull_request.head.ref }}"            >> "$GITHUB_OUTPUT"
+          echo "headrepo=${{ github.event.pull_request.head.repo.full_name }}" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
+            echo "same=1" >> "$GITHUB_OUTPUT"; else echo "same=0" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Checkout base (trusted — the generator script)
+        uses: actions/checkout@v4
+        with: { path: base, persist-credentials: false }
+
+      - name: Checkout PR head (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr.outputs.headrepo }}
+          ref: ${{ steps.pr.outputs.sha }}
+          path: pr
+          persist-credentials: false
+
+      - name: Regenerate the aggregator with the trusted base script
+        run: bash base/Scripts/mk_all.sh pr
+
+      - name: Sync the aggregator — push the fix for a same-repo PR, fail for a fork
+        id: sync
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          cd pr
+          if git diff --quiet -- TauCeti.lean; then
+            state=success; desc="TauCeti.lean aggregator is in sync"
+          elif [ "${{ steps.pr.outputs.same }}" = "1" ]; then
+            git config user.name  "tauceti-review-bot[bot]"
+            git config user.email "290224625+tauceti-review-bot[bot]@users.noreply.github.com"
+            git add TauCeti.lean
+            git commit -m "chore: sync TauCeti.lean import aggregator (mk_all)" >/dev/null
+            git push "https://x-access-token:${APP_TOKEN}@github.com/${{ github.repository }}.git" \
+              "HEAD:${{ steps.pr.outputs.ref }}"
+            state=success; desc="auto-synced TauCeti.lean aggregator (pushed a fix commit)"
+          else
+            state=failure; desc="TauCeti.lean aggregator out of date and PR is from a fork — run Scripts/mk_all.sh and push"
+          fi
+          gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.sha }}" \
+            -f state="$state" -f context="mk-all" -f description="$desc"
+          echo "mk-all=$state ($desc)"
+          [ "$state" = "success" ]
