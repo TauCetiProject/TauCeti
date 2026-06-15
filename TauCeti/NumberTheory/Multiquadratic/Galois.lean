@@ -81,7 +81,7 @@ omit [Finite ι] in
 
 omit [Finite ι] in
 /-- The generators generate `M` as its own top field. -/
-private theorem adjoin_gen_eq_top :
+theorem adjoin_gen_eq_top :
     IntermediateField.adjoin K (Set.range (gen (K := K) root)) = ⊤ := by
   refine IntermediateField.map_injective (adjoin K (Set.range root)).val ?_
   have hmaptop : (⊤ : IntermediateField K (adjoin K (Set.range root))).map

@@ -100,6 +100,7 @@ theorem signPattern_eq_one
 
 omit [Finite ι] in
 /-- The sign is `1` iff the automorphism negates a generator that differs from its negation. -/
+@[simp]
 theorem signPattern_eq_one_iff (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι)
     (hne : gen (K := K) root i ≠ -gen root i) :
