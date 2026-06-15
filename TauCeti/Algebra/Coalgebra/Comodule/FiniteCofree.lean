@@ -10,8 +10,8 @@ import TauCeti.Algebra.Coalgebra.Comodule.Finite
 # Finitely generated cofree comodules
 
 This file lifts the cofree right comodule `M ⊗[R] C` to the finitely generated comodule
-category when both the coefficient module `M` and the coalgebra `C` are finitely generated
-over `R`. It is the finite-category version of `ComoduleCat.cofree`.
+category when the tensor-product carrier is finitely generated over `R`. It is the
+finite-category version of `ComoduleCat.cofree`.
 
 This is Layer 1 infrastructure for the Tau Ceti reductive-groups roadmap target
 "Comodules over a coalgebra/Hopf algebra": the finite-dimensional representation category
@@ -21,15 +21,17 @@ the embedding theorem can be developed.
 ## Main definitions
 
 * `TauCeti.FGComoduleCat.cofree`: the cofree comodule as a finitely generated object.
-* `TauCeti.FGComoduleCat.cofreeMap`: functoriality in the finite coefficient module.
+* `TauCeti.FGComoduleCat.cofreeMap`: functoriality between finite cofree objects.
+* `TauCeti.FGComoduleCat.cofreeLift`: the finite-category form of the cofree lifting map.
+* `TauCeti.FGComoduleCat.cofreeEquiv`: the cofree universal property in `FGComoduleCat`.
 * `TauCeti.FGComoduleCat.incl_cofree`: forgetting the finite cofree comodule gives the
   ambient cofree comodule.
 
 ## References
 
 The cofree-comodule construction follows Sweedler, *Hopf Algebras*, Chapter 2, as in
-`TauCeti.Algebra.Coalgebra.Comodule.Cofree`. The finite-generation proof reuses Mathlib's
-`Module.Finite.tensorProduct`.
+`TauCeti.Algebra.Coalgebra.Comodule.Cofree`. When the coefficient module and coalgebra are
+finitely generated, the finite-generation proof reuses Mathlib's `Module.Finite.tensorProduct`.
 -/
 
 open CategoryTheory
@@ -43,16 +45,15 @@ namespace FGComoduleCat
 
 variable (R : Type u) (C : Type v)
 variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
-variable [Module.Finite R C]
-variable {M : Type w} [AddCommMonoid M] [Module R M] [Module.Finite R M]
-variable {N : Type w} [AddCommMonoid N] [Module R N] [Module.Finite R N]
+variable {M : Type w} [AddCommMonoid M] [Module R M] [Module.Finite R (M ⊗[R] C)]
+variable {N : Type w} [AddCommMonoid N] [Module R N] [Module.Finite R (N ⊗[R] C)]
 
-/-- The cofree right `C`-comodule on a finitely generated module, bundled as an object of
-`FGComoduleCat`.
+/-- The cofree right `C`-comodule with finitely generated tensor-product carrier, bundled as an
+object of `FGComoduleCat`.
 
 The underlying module is `M ⊗[R] C`, with coaction `id ⊗ Δ` followed by reassociation. -/
 noncomputable abbrev cofree (M : Type w) [AddCommMonoid M] [Module R M]
-    [Module.Finite R M] : FGComoduleCat.{u, v, max w v} R C :=
+    [Module.Finite R (M ⊗[R] C)] : FGComoduleCat.{u, v, max w v} R C :=
   letI := Comodule.cofree R C M
   of (R := R) (C := C) (M ⊗[R] C)
 
@@ -102,7 +103,7 @@ theorem forget₂_semimoduleCat_cofree_obj :
       SemimoduleCat.of R (M ⊗[R] C) :=
   rfl
 
-/-- Functoriality of finite cofree comodules in the finite coefficient module.
+/-- Functoriality of finite cofree comodules in the coefficient module.
 
 An `R`-linear map `f : M → N` induces the comodule morphism `f ⊗ id`. -/
 noncomputable abbrev cofreeMap (f : M →ₗ[R] N) :
@@ -138,12 +139,60 @@ theorem cofreeMap_id :
 
 /-- The finite cofree construction preserves composition of coefficient-module maps. -/
 @[simp]
-theorem cofreeMap_comp {P : Type w} [AddCommMonoid P] [Module R P] [Module.Finite R P]
-    (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
+theorem cofreeMap_comp {P : Type w} [AddCommMonoid P] [Module R P]
+    [Module.Finite R (P ⊗[R] C)] (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
     cofreeMap (R := R) (C := C) (g.comp f) =
       cofreeMap (R := R) (C := C) f ≫ cofreeMap (R := R) (C := C) g := by
   ext x
   simp
+
+variable {P : FGComoduleCat.{u, v, max w v} R C}
+
+/-- The finite-category cofree lift of an `R`-linear map from a finite comodule to the
+coefficient module. -/
+noncomputable abbrev cofreeLift (P : FGComoduleCat.{u, v, max w v} R C) (g : P →ₗ[R] M) :
+    P ⟶ cofree (R := R) (C := C) M :=
+  letI := Comodule.cofree R C M
+  ObjectProperty.homMk
+    (ComoduleCat.ofHom (R := R) (C := C) (Comodule.Hom.cofreeLift (C := C) g))
+
+/-- `cofreeLift g` acts as `(g ⊗ id) ∘ ρ_P`. -/
+@[simp]
+theorem cofreeLift_apply (g : P →ₗ[R] M) (p : P) :
+    cofreeLift (R := R) (C := C) P g p =
+      g.rTensor C (Comodule.coact (R := R) (C := C) (M := P) p) :=
+  letI := Comodule.cofree R C M
+  rfl
+
+/-- The finite-category cofree universal property. -/
+noncomputable def cofreeEquiv (P : FGComoduleCat.{u, v, max w v} R C) :
+    (P ⟶ cofree (R := R) (C := C) M) ≃ (P →ₗ[R] M) := by
+  letI := Comodule.cofree R C M
+  exact
+    { toFun φ := Comodule.Hom.cofreeEquiv (R := R) (C := C) (M := M) (P := P) φ.hom
+      invFun g := cofreeLift (R := R) (C := C) P g
+      left_inv φ := by
+        apply ObjectProperty.hom_ext
+        exact (Comodule.Hom.cofreeEquiv (R := R) (C := C) (M := M) (P := P)).left_inv φ.hom
+      right_inv g :=
+        (Comodule.Hom.cofreeEquiv (R := R) (C := C) (M := M) (P := P)).right_inv g }
+
+/-- The forward direction of the finite cofree adjunction sends a comodule morphism to the
+`R`-linear map obtained by applying the counit to the `C` factor. -/
+@[simp]
+theorem cofreeEquiv_apply (φ : P ⟶ cofree (R := R) (C := C) M) :
+    cofreeEquiv (R := R) (C := C) (M := M) P φ =
+      letI := Comodule.cofree R C M
+      Comodule.Hom.cofreeEquiv (R := R) (C := C) (M := M) (P := P) φ.hom := by
+  letI := Comodule.cofree R C M
+  rfl
+
+/-- The inverse direction of the finite cofree adjunction is `cofreeLift`. -/
+@[simp]
+theorem cofreeEquiv_symm_apply (g : P →ₗ[R] M) :
+    (cofreeEquiv (R := R) (C := C) (M := M) P).symm g =
+      cofreeLift (R := R) (C := C) P g :=
+  rfl
 
 end FGComoduleCat
 
