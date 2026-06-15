@@ -3,7 +3,6 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.RingTheory.Bialgebra.Convolution
-import Mathlib.RingTheory.HopfAlgebra.Convolution
 import TauCeti.Algebra.HopfAlgebra
 
 /-!
@@ -73,8 +72,8 @@ private noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
     (by simp only [LinearMap.coe_comp, Function.comp_apply, antipode_one, f.toLinearMap_apply,
       map_one])
     fun x y => by
-      simp only [LinearMap.coe_comp, Function.comp_apply, antipode_mul_antidistrib,
-        f.toLinearMap_apply, map_mul]
+      simp only [LinearMap.coe_comp, Function.comp_apply, antipode_mul, f.toLinearMap_apply,
+        map_mul]
       rw [mul_comm]
 
 private lemma toLinearMap_antipodeComp (f : H →ₐ[R] A) :
