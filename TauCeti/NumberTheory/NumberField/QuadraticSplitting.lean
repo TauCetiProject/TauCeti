@@ -26,7 +26,7 @@ multiquadratic roadmap).
 
 ## Main results
 
-* `TauCeti.NumberField.quadratic_ncard_primesOver_iff`: the quadratic splitting law.
+* `TauCeti.NumberField.ncard_primesOver_quadratic_iff`: the quadratic splitting law.
 
 ## Provenance
 
@@ -155,7 +155,7 @@ private theorem card_monicFactorsMod_quadratic_iff {θ : 𝓞 K} {d : ℤ}
 /-- **The quadratic splitting law.** For `K = ℚ(√d)` (`θ` a square root of the integer `d`
 generating `K`) and an odd prime `p ∤ d`, `p` splits completely in `K` iff `d` is a quadratic
 residue mod `p`. This is the `n = 1` case of the multiquadratic prime-splitting law. -/
-theorem quadratic_ncard_primesOver_iff {θ : 𝓞 K} {d : ℤ}
+theorem ncard_primesOver_quadratic_iff {θ : 𝓞 K} {d : ℤ}
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) (hcop : ¬ (p : ℤ) ∣ d) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔ legendreSym p d = 1 := by
