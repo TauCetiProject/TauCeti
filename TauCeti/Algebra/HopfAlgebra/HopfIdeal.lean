@@ -145,6 +145,22 @@ theorem rightTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
     rightTensorIdeal (R := R) (H := H) I ≤ rightTensorIdeal (R := R) (H := H) J :=
   Ideal.map_mono hIJ
 
+/-- The construction `I ↦ I ⊗ H` distributes over arbitrary suprema of ideals. -/
+@[simp]
+theorem leftTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
+    leftTensorIdeal (R := R) (H := H) (⨆ i, I i) =
+      ⨆ i, leftTensorIdeal (R := R) (H := H) (I i) :=
+  Ideal.map_iSup
+    (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I
+
+/-- The construction `I ↦ H ⊗ I` distributes over arbitrary suprema of ideals. -/
+@[simp]
+theorem rightTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
+    rightTensorIdeal (R := R) (H := H) (⨆ i, I i) =
+      ⨆ i, rightTensorIdeal (R := R) (H := H) (I i) :=
+  Ideal.map_iSup
+    (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I
+
 /-- The construction `I ↦ I ⊗ H` distributes over joins of ideals. -/
 @[simp]
 theorem leftTensorIdeal_sup (I J : Ideal H) :
