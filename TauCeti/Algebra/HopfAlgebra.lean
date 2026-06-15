@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.RingTheory.Bialgebra.Hom
 import Mathlib.RingTheory.HopfAlgebra.Basic
+import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 
 /-!
 # Hopf algebra morphisms
@@ -18,6 +19,8 @@ antipode. We prove that here by the usual convolution-inverse uniqueness argumen
 * `TauCeti.HopfAlgebra.antipode_convMul_id` and
   `TauCeti.HopfAlgebra.id_convMul_antipode`: the antipode is respectively a left and right
   convolution inverse of the identity linear map.
+* `TauCeti.TensorProduct.antipode_tmul`: the antipode on a tensor product of Hopf algebras
+  acts componentwise on pure tensors.
 * `BialgHom.toLinearMap_comp_antipode` and `BialgHom.map_antipode`: a bialgebra morphism
   between Hopf algebras commutes with the antipodes.
 
@@ -27,15 +30,41 @@ This supplies a formal prerequisite for the Tau Ceti reductive-groups roadmap, L
 "the functor of points and the three-way dictionary": morphisms in the Hopf-algebra model
 must respect the inverse map in the affine group-scheme model. The proof uses Mathlib's
 convolution product on linear maps, due to Yaël Dillies, Michał Mrugała and Yunzhou Xie.
+The tensor-product antipode formula uses Mathlib's
+`Mathlib.RingTheory.HopfAlgebra.TensorProduct`, specifically `TensorProduct.antipode_def`.
 -/
 
 open Coalgebra HopfAlgebra TensorProduct WithConv
 
 namespace TauCeti
 
+namespace TensorProduct
+
+variable {R S A B : Type*} [CommSemiring R] [CommSemiring S] [Semiring A] [Semiring B]
+  [Algebra R S] [_root_.HopfAlgebra R A] [_root_.HopfAlgebra S B] [Algebra R B]
+  [IsScalarTower R S B]
+
+/-- The antipode on a tensor product of Hopf algebras acts componentwise on pure tensors. -/
+@[simp]
+lemma antipode_tmul (b : B) (a : A) :
+    antipode S (A := B ⊗[R] A) (b ⊗ₜ[R] a) =
+      antipode S b ⊗ₜ[R] antipode R a := by
+  simp [_root_.TensorProduct.antipode_def]
+
+end TensorProduct
+
 namespace HopfAlgebra
 
 variable {R H : Type*} [CommSemiring R] [Semiring H] [_root_.HopfAlgebra R H]
+
+/-- The antipode on the base-changed Hopf algebra `K ⊗[k] A` sends a pure tensor
+`s ⊗ a` to `s ⊗ S a`. -/
+@[simp]
+lemma baseChange_antipode_tmul {k K A : Type*} [CommSemiring k] [CommSemiring K]
+    [Semiring A] [Algebra k K] [_root_.HopfAlgebra k A] (s : K) (a : A) :
+    antipode K (A := K ⊗[k] A) (s ⊗ₜ[k] a) =
+      s ⊗ₜ[k] antipode k a := by
+  simp
 
 /-- The antipode is a left convolution inverse of the identity in the convolution ring of
 linear maps: `S * id = 1`. This is a restatement of the antipode axiom
