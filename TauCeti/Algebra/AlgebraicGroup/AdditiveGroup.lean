@@ -9,10 +9,10 @@ import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra
 /-!
 # The additive group
 
-The group scheme `Spec (SymmetricAlgebra R M)` is the **additive (vector) group** on `M`. Its
-functor of points is computed here: for a commutative `R`-algebra `A`, the
-convolution group of `R`-algebra maps `SymmetricAlgebra R M →ₐ[R] A` is the additive group of
-`R`-linear maps `M →ₗ[R] A`, with convolution corresponding to addition. Taking `M = R`
+The affine scheme `Spec (SymmetricAlgebra R M)` is the **additive (vector) group** on `M`.
+Its functor of points is computed here: for a commutative `R`-algebra `A`, the
+convolution monoid of `R`-algebra maps `SymmetricAlgebra R M →ₐ[R] A` is the additive monoid
+of `R`-linear maps `M →ₗ[R] A`, with convolution corresponding to addition. Taking `M = R`
 recovers the one-dimensional additive group `𝔾ₐ = Spec R[X]`, whose `A`-valued points are
 `(A, +)`; the `R`-points are this construction specialized to `A = R`.
 
@@ -22,10 +22,10 @@ group"), in the same spirit as the multiplicative group `𝔾ₘ`.
 
 ## Main declarations
 
-* `TauCeti.AdditiveGroup.pointsMulEquiv`: the convolution group of points
-  `SymmetricAlgebra R M →ₐ[R] A` is the additive group `M →ₗ[R] A`.
-* `TauCeti.AdditiveGroup.gaPointsMulEquiv`: the group of `A`-valued points of `𝔾ₐ` over `R`
-  is the additive group of `A`.
+* `TauCeti.AdditiveGroup.pointsMulEquiv`: the convolution monoid of points
+  `SymmetricAlgebra R M →ₐ[R] A` is the additive monoid `M →ₗ[R] A`.
+* `TauCeti.AdditiveGroup.gaPointsMulEquiv`: the monoid of `A`-valued points of `𝔾ₐ` over `R`
+  is the additive monoid of `A`.
 
 ## References
 
@@ -46,11 +46,11 @@ universe u v w
 
 section Points
 
-variable {R : Type u} [CommRing R] {M : Type v} [AddCommMonoid M] [Module R M]
-variable {A : Type w} [CommRing A] [Algebra R A]
+variable {R : Type u} [CommSemiring R] {M : Type v} [AddCommMonoid M] [Module R M]
+variable {A : Type w} [CommSemiring A] [Algebra R A]
 
 /-- **The functor of points of the additive group.** For a commutative `R`-algebra `A`, the
-convolution group of `R`-algebra maps out of `SymmetricAlgebra R M` is the additive group of
+convolution monoid of `R`-algebra maps out of `SymmetricAlgebra R M` is the additive monoid of
 `R`-linear maps `M →ₗ[R] A`: a point `F` corresponds to the linear map `x ↦ F (ι x)`, and
 convolution of points corresponds to addition of linear maps. -/
 noncomputable def pointsMulEquiv :
@@ -91,10 +91,10 @@ end Points
 
 section Ga
 
-variable {R : Type u} [CommRing R] {A : Type w} [CommRing A] [Algebra R A]
+variable {R : Type u} [CommSemiring R] {A : Type w} [CommSemiring A] [Algebra R A]
 
 /-- **The one-dimensional additive group** `𝔾ₐ = Spec (SymmetricAlgebra R R)`. Specializing the
-vector group to `M = R`, the group of `A`-valued points over `R` is the additive group
+vector group to `M = R`, the monoid of `A`-valued points over `R` is the additive monoid
 `(A, +)`. -/
 noncomputable def gaPointsMulEquiv :
     WithConv (SymmetricAlgebra R R →ₐ[R] A) ≃* Multiplicative A :=

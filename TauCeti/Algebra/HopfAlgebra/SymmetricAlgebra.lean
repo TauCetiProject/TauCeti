@@ -16,9 +16,10 @@ antipode is the algebra map sending each `ι x` to `-ι x`.
 
 ## Main declarations
 
-* `TauCeti.SymmetricAlgebra.antipodeHom`: the antipode `ι x ↦ -ι x`, as an algebra map.
 * `TauCeti.SymmetricAlgebra.instHopfAlgebra`: the Hopf algebra structure on
   `SymmetricAlgebra R M` over a commutative ring `R`.
+* `TauCeti.SymmetricAlgebra.antipode_ι`: the Hopf antipode sends each generator to its
+  negative.
 * `TauCeti.SymmetricAlgebra.lift_symm_apply`: the inverse of `SymmetricAlgebra.lift`
   evaluates an algebra map at generators.
 * `TauCeti.SymmetricAlgebra.convMul_apply_ι`: convolution of algebra maps evaluates on
@@ -46,11 +47,12 @@ variable (R : Type u) [CommRing R] (M : Type v) [AddCommMonoid M] [Module R M]
 
 /-- The antipode of the symmetric-algebra Hopf algebra: the `R`-algebra map sending each
 generator `ι x` to `-ι x`. -/
-noncomputable def antipodeHom : _root_.SymmetricAlgebra R M →ₐ[R] _root_.SymmetricAlgebra R M :=
+private noncomputable def antipodeHom :
+    _root_.SymmetricAlgebra R M →ₐ[R] _root_.SymmetricAlgebra R M :=
   _root_.SymmetricAlgebra.lift (-(_root_.SymmetricAlgebra.ι R M))
 
 @[simp]
-theorem antipodeHom_ι (x : M) :
+private theorem antipodeHom_ι (x : M) :
     antipodeHom R M (_root_.SymmetricAlgebra.ι R M x) =
       -(_root_.SymmetricAlgebra.ι R M x) := by
   simp [antipodeHom]
@@ -68,6 +70,7 @@ noncomputable instance instHopfAlgebra : HopfAlgebra R (_root_.SymmetricAlgebra 
       simp [_root_.SymmetricAlgebra.comul_ι, _root_.SymmetricAlgebra.algebraMapInv_ι,
         Algebra.TensorProduct.lift_tmul])
 
+/-- The Hopf-algebra antipode on a symmetric algebra sends each generator `ι x` to `-ι x`. -/
 @[simp]
 theorem antipode_ι (x : M) :
     antipode R (_root_.SymmetricAlgebra.ι R M x) = -(_root_.SymmetricAlgebra.ι R M x) :=
