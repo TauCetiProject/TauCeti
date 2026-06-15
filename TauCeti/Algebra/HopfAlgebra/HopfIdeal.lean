@@ -377,10 +377,11 @@ instance instMax : Max (HopfIdeal R H) where
 theorem sup_toIdeal (I J : HopfIdeal R H) : (I ⊔ J).toIdeal = I.toIdeal ⊔ J.toIdeal :=
   rfl
 
-@[simp]
+/-- Membership in the join of two Hopf ideals. -/
 theorem mem_sup {I J : HopfIdeal R H} {x : H} :
-    x ∈ I ⊔ J ↔ x ∈ I.toIdeal ⊔ J.toIdeal :=
-  Iff.rfl
+    x ∈ I ⊔ J ↔ ∃ y ∈ I, ∃ z ∈ J, y + z = x := by
+  rw [← mem_toIdeal, sup_toIdeal, Submodule.mem_sup]
+  rfl
 
 instance : SemilatticeSup (HopfIdeal R H) where
   sup := (· ⊔ ·)
