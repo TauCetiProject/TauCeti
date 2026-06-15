@@ -54,14 +54,10 @@ variable {R : Type u} {H : Type v}
 variable [CommRing R] [CommRing H] [HopfAlgebra R H]
 variable (I : HopfIdeal R H)
 
-/-- The quotient algebra map `H →ₐ[R] H ⧸ I`. -/
-noncomputable abbrev mkₐ : H →ₐ[R] H ⧸ I.toIdeal :=
-  Ideal.Quotient.mkₐ R I.toIdeal
-
 /-- The tensor square of the quotient map, `H ⊗ H →ₐ[R] (H ⧸ I) ⊗ (H ⧸ I)`. -/
 private noncomputable abbrev mkₐ₂ :
     H ⊗[R] H →ₐ[R] (H ⧸ I.toIdeal) ⊗[R] (H ⧸ I.toIdeal) :=
-  Algebra.TensorProduct.map (mkₐ I) (mkₐ I)
+  Algebra.TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal) (Ideal.Quotient.mkₐ R I.toIdeal)
 
 /-- The tensor square of the quotient map kills `I ⊗ H + H ⊗ I`. -/
 private theorem leSup_le_ker_mkₐ₂ :
@@ -98,19 +94,22 @@ noncomputable def quotientCounitAlgHom : (H ⧸ I.toIdeal) →ₐ[R] R :=
 
 @[simp]
 theorem quotientComulAlgHom_mk (h : H) :
-    quotientComulAlgHom I (mkₐ I h)
-      = Algebra.TensorProduct.map (mkₐ I) (mkₐ I) (Coalgebra.comul h) := by
+    quotientComulAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h)
+      = Algebra.TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal)
+        (Ideal.Quotient.mkₐ R I.toIdeal) (Coalgebra.comul h) := by
   rw [quotientComulAlgHom, Ideal.Quotient.liftₐ_apply, Ideal.Quotient.mkₐ_eq_mk,
     Ideal.Quotient.lift_mk, AlgHom.coe_toRingHom, AlgHom.comp_apply, Bialgebra.comulAlgHom_apply]
 
 @[simp]
 theorem quotientCounitAlgHom_mk (h : H) :
-    quotientCounitAlgHom I (mkₐ I h) = Coalgebra.counit (R := R) h := by
+    quotientCounitAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h) =
+      Coalgebra.counit (R := R) h := by
   rw [quotientCounitAlgHom, Ideal.Quotient.liftₐ_apply, Ideal.Quotient.mkₐ_eq_mk,
     Ideal.Quotient.lift_mk, AlgHom.coe_toRingHom, Bialgebra.counitAlgHom_apply]
 
 /-- The underlying linear quotient map `H →ₗ[R] H ⧸ I`. -/
-private noncomputable abbrev mkL : H →ₗ[R] H ⧸ I.toIdeal := (mkₐ I).toLinearMap
+private noncomputable abbrev mkL : H →ₗ[R] H ⧸ I.toIdeal :=
+  (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
 
 private theorem mkL_surjective : Function.Surjective (mkL I) :=
   Ideal.Quotient.mkₐ_surjective R I.toIdeal
@@ -118,9 +117,11 @@ private theorem mkL_surjective : Function.Surjective (mkL I) :=
 private theorem comul_mkL_apply (h : H) :
     (quotientComulAlgHom I).toLinearMap (mkL I h)
       = TensorProduct.map (mkL I) (mkL I) (Coalgebra.comul h) := by
-  change quotientComulAlgHom I (mkₐ I h) = _
+  change quotientComulAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h) = _
   rw [quotientComulAlgHom_mk]
-  exact LinearMap.congr_fun (Algebra.TensorProduct.toLinearMap_map (mkₐ I) (mkₐ I)) _
+  exact LinearMap.congr_fun
+    (Algebra.TensorProduct.toLinearMap_map (Ideal.Quotient.mkₐ R I.toIdeal)
+      (Ideal.Quotient.mkₐ R I.toIdeal)) _
 
 /-- The quotient comultiplication intertwines `mkL` with the comultiplication of `H`. -/
 private theorem comul_comp_mkL :
@@ -133,7 +134,7 @@ private theorem comul_comp_mkL :
 private theorem counit_comp_mkL :
     (quotientCounitAlgHom I).toLinearMap ∘ₗ mkL I = Coalgebra.counit (R := R) := by
   ext h
-  change quotientCounitAlgHom I (mkₐ I h) = _
+  change quotientCounitAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h) = _
   rw [quotientCounitAlgHom_mk]
 
 /-- A linear map out of the quotient is determined by its precomposition with `mkL`. -/
@@ -171,17 +172,19 @@ noncomputable instance instCoalgebraQuotient : Coalgebra R (H ⧸ I.toIdeal) whe
     simp only [LinearMap.comp_apply, LinearMap.flip_apply, TensorProduct.mk_apply,
       LinearMap.rTensor_tmul]
 
-/-- The comultiplication on the quotient, evaluated on a class `mkₐ h`. -/
+/-- The comultiplication on the quotient, evaluated on a quotient class. -/
 @[simp]
 theorem comul_mk (h : H) :
-    Coalgebra.comul (R := R) (mkₐ I h)
-      = TensorProduct.map (mkₐ I).toLinearMap (mkₐ I).toLinearMap (Coalgebra.comul h) :=
+    Coalgebra.comul (R := R) (Ideal.Quotient.mkₐ R I.toIdeal h)
+      = TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
+        (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap (Coalgebra.comul h) :=
   comul_mkL_apply I h
 
-/-- The counit on the quotient, evaluated on a class `mkₐ h`. -/
+/-- The counit on the quotient, evaluated on a quotient class. -/
 @[simp]
 theorem counit_mk (h : H) :
-    Coalgebra.counit (R := R) (mkₐ I h) = Coalgebra.counit (R := R) h :=
+    Coalgebra.counit (R := R) (Ideal.Quotient.mkₐ R I.toIdeal h) =
+      Coalgebra.counit (R := R) h :=
   quotientCounitAlgHom_mk I h
 
 /-- The bialgebra structure on the quotient: the descended comultiplication and counit are
@@ -196,14 +199,16 @@ noncomputable instance instBialgebraQuotient : Bialgebra R (H ⧸ I.toIdeal) :=
 /-- The antipode of the quotient, as an `R`-algebra homomorphism descended from `H` (valid since
 `H` is commutative, where the antipode is an algebra homomorphism). -/
 noncomputable def quotientAntipodeAlgHom : (H ⧸ I.toIdeal) →ₐ[R] H ⧸ I.toIdeal :=
-  Ideal.Quotient.liftₐ I.toIdeal ((mkₐ I).comp (HopfAlgebra.antipodeAlgHom R H)) <| by
+  Ideal.Quotient.liftₐ I.toIdeal
+    ((Ideal.Quotient.mkₐ R I.toIdeal).comp (HopfAlgebra.antipodeAlgHom R H)) <| by
     intro x hx
     rw [AlgHom.comp_apply, HopfAlgebra.antipodeAlgHom_apply]
     exact Ideal.Quotient.eq_zero_iff_mem.mpr (I.antipode_mem (mem_toIdeal.mp hx))
 
 @[simp]
 theorem quotientAntipodeAlgHom_mk (h : H) :
-    quotientAntipodeAlgHom I (mkₐ I h) = mkₐ I (HopfAlgebra.antipode R h) := by
+    quotientAntipodeAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h) =
+      Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R h) := by
   simp only [quotientAntipodeAlgHom, Ideal.Quotient.liftₐ_apply, Ideal.Quotient.mkₐ_eq_mk,
     Ideal.Quotient.lift_mk, AlgHom.coe_toRingHom, AlgHom.comp_apply,
     HopfAlgebra.antipodeAlgHom_apply]
@@ -246,15 +251,17 @@ noncomputable instance instHopfAlgebraQuotient : HopfAlgebra R (H ⧸ I.toIdeal)
 /-- The quotient map `H →ₐ[R] H ⧸ I` as a bialgebra morphism: it is an algebra homomorphism
 respecting the counit and comultiplication by construction. -/
 noncomputable def mkBialgHom : H →ₐc[R] H ⧸ I.toIdeal :=
-  BialgHom.ofAlgHom (mkₐ I)
+  BialgHom.ofAlgHom (Ideal.Quotient.mkₐ R I.toIdeal)
     (by ext h; simp only [AlgHom.comp_apply, Bialgebra.counitAlgHom_apply, counit_mk])
     (by
       ext h
       simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply, comul_mk]
-      exact LinearMap.congr_fun (Algebra.TensorProduct.toLinearMap_map (mkₐ I) (mkₐ I)) _)
+      exact LinearMap.congr_fun
+        (Algebra.TensorProduct.toLinearMap_map (Ideal.Quotient.mkₐ R I.toIdeal)
+          (Ideal.Quotient.mkₐ R I.toIdeal)) _)
 
 @[simp]
-theorem mkBialgHom_apply (h : H) : mkBialgHom I h = mkₐ I h := rfl
+theorem mkBialgHom_apply (h : H) : mkBialgHom I h = Ideal.Quotient.mkₐ R I.toIdeal h := rfl
 
 end HopfIdeal
 
