@@ -41,15 +41,6 @@ namespace TauCeti.Multiquadratic
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] {ι : Type*} [Finite ι]
   {d : ι → K} {root : ι → L}
 
-omit [Finite ι] in
-/-- Every automorphism sends a generator to itself or to its negation. -/
-theorem aut_gen_eq_self_or_eq_neg (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
-    (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι) :
-    σ (gen root i) = gen root i ∨ σ (gen root i) = -gen root i := by
-  have h1 : (σ (gen root i)) ^ 2 = (gen root i) ^ 2 := by
-    rw [← map_pow, gen_sq hroot, AlgEquiv.commutes, ← gen_sq hroot]
-  exact sq_eq_sq_iff_eq_or_eq_neg.mp h1
-
 variable (root) in
 /-- The sign pattern of an automorphism: `0` where it fixes a generator, `1` where it negates. -/
 noncomputable def signPattern
@@ -84,29 +75,19 @@ theorem signPattern_injective (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
   exact hgen
 
 omit [Finite ι] in
-/-- A generator is not equal to its own negation (the radicand is nonzero). -/
-theorem gen_ne_neg [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
-    (i : ι) (hd : d i ≠ 0) :
-    gen (K := K) root i ≠ -gen root i := by
-  intro h
-  have hcoe : root i = -root i := by simpa using congrArg Subtype.val h
-  have h2L : (2 : L) ≠ 0 := by
-    rw [← map_ofNat (algebraMap K L) 2]
-    exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective K L)).mpr two_ne_zero
-  have hr0 : root i = 0 := by
-    have h2 : (2 : L) * root i = 0 := by rw [two_mul]; nth_rewrite 1 [hcoe]; rw [neg_add_cancel]
-    exact (mul_eq_zero.mp h2).resolve_left h2L
-  have hd0 : d i = 0 := by
-    have hh : algebraMap K L (d i) = 0 := by rw [← hroot i, hr0]; ring
-    exact (map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective K L)).mp hh
-  exact hd hd0
-
-omit [Finite ι] in
 /-- The sign is `0` exactly where the automorphism fixes the generator. -/
 theorem signPattern_eq_zero
     (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι)
     (h : σ (gen root i) = gen root i) : signPattern root σ i = 0 := by
   simp [signPattern, h]
+
+omit [Finite ι] in
+/-- The sign is `0` iff the automorphism fixes the generator. -/
+@[simp] theorem signPattern_eq_zero_iff
+    (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι) :
+    signPattern root σ i = 0 ↔ σ (gen root i) = gen root i := by
+  rw [signPattern]
+  by_cases h : σ (gen root i) = gen root i <;> simp [h]
 
 omit [Finite ι] in
 /-- The sign is `1` where the automorphism negates a generator that differs from its negation. -/
@@ -116,6 +97,22 @@ theorem signPattern_eq_one
     (h : σ (gen root i) = -gen root i) : signPattern root σ i = 1 := by
   have hni : σ (gen root i) ≠ gen root i := fun hh => hne (h ▸ hh.symm)
   simp [signPattern, hni]
+
+omit [Finite ι] in
+/-- The sign is `1` iff the automorphism negates a generator that differs from its negation. -/
+theorem signPattern_eq_one_iff (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι)
+    (hne : gen (K := K) root i ≠ -gen root i) :
+    signPattern root σ i = 1 ↔ σ (gen root i) = -gen root i := by
+  constructor
+  · intro hsign
+    rw [signPattern] at hsign
+    split_ifs at hsign with hfix
+    · exact (zero_ne_one hsign).elim
+    · rcases aut_gen_eq_self_or_eq_neg hroot σ i with h | h
+      · exact (hfix h).elim
+      · exact h
+  · exact signPattern_eq_one σ i hne
 
 omit [Finite ι] in
 /-- The identity automorphism has the zero sign pattern. -/
@@ -130,6 +127,11 @@ private theorem signed_pow_add_mul (x : adjoin K (Set.range root)) (a b : ZMod 2
   -- `(-1) ^ ·` is `2`-periodic, so it factors through `ZMod.val (a + b) = (a.val + b.val) % 2`.
   rw [← mul_assoc, ← pow_add, ZMod.val_add, neg_one_pow_eq_pow_mod_two (b.val + a.val),
     add_comm b.val a.val]
+
+private theorem zmod_two_eq_zero_or_one (t : ZMod 2) : t = 0 ∨ t = 1 := by
+  fin_cases t
+  · exact Or.inl rfl
+  · exact Or.inr rfl
 
 omit [Finite ι] in
 private theorem aut_mul_gen_eq_signPattern_add
@@ -149,7 +151,7 @@ theorem signPattern_mul_apply (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
   by_cases hne : gen (K := K) root i ≠ -gen root i
   · have hmul := aut_mul_gen_eq_signPattern_add hroot σ τ i
     generalize hsum : signPattern root σ i + signPattern root τ i = s
-    rcases (show ∀ t : ZMod 2, t = 0 ∨ t = 1 by decide) s with rfl | rfl
+    rcases zmod_two_eq_zero_or_one s with rfl | rfl
     · refine signPattern_eq_zero _ _ ?_
       rw [hmul, hsum, ZMod.val_zero, pow_zero, one_mul]
     · refine signPattern_eq_one _ _ hne ?_

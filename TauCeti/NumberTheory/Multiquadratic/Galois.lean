@@ -50,6 +50,11 @@ noncomputable def definingPolynomial (d : ι → K) : K[X] :=
   letI := Fintype.ofFinite ι
   ∏ i, (X ^ 2 - C (d i))
 
+/-- The defining polynomial is the product of the quadratic factors `X² - dᵢ`. -/
+@[simp] theorem definingPolynomial_def :
+    definingPolynomial d = (letI := Fintype.ofFinite ι; ∏ i, (X ^ 2 - C (d i))) := by
+  rw [definingPolynomial]
+
 omit [Finite ι] in
 /-- Each quadratic factor splits in `M`, with roots `± rootᵢ`. -/
 private theorem splits_X_sq_sub_C (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) (i : ι) :
@@ -96,6 +101,33 @@ omit [Finite ι] in
   apply Subtype.ext
   rw [IntermediateField.coe_pow, coe_gen, IntermediateField.coe_algebraMap_apply]
   exact hroot i
+
+omit [Finite ι] in
+/-- Every automorphism sends a generator to itself or to its negation. -/
+theorem aut_gen_eq_self_or_eq_neg (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι) :
+    σ (gen root i) = gen root i ∨ σ (gen root i) = -gen root i := by
+  have h1 : (σ (gen root i)) ^ 2 = (gen root i) ^ 2 := by
+    rw [← map_pow, gen_sq hroot, AlgEquiv.commutes, ← gen_sq hroot]
+  exact sq_eq_sq_iff_eq_or_eq_neg.mp h1
+
+omit [Finite ι] in
+/-- A generator is not equal to its own negation when the radicand is nonzero. -/
+theorem gen_ne_neg [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (i : ι) (hd : d i ≠ 0) :
+    gen (K := K) root i ≠ -gen root i := by
+  intro h
+  have hcoe : root i = -root i := by simpa using congrArg Subtype.val h
+  have h2L : (2 : L) ≠ 0 := by
+    rw [← map_ofNat (algebraMap K L) 2]
+    exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective K L)).mpr two_ne_zero
+  have hr0 : root i = 0 := by
+    have h2 : (2 : L) * root i = 0 := by rw [two_mul]; nth_rewrite 1 [hcoe]; rw [neg_add_cancel]
+    exact (mul_eq_zero.mp h2).resolve_left h2L
+  have hd0 : d i = 0 := by
+    have hh : algebraMap K L (d i) = 0 := by rw [← hroot i, hr0]; ring
+    exact (map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective K L)).mp hh
+  exact hd hd0
 
 /-- `∏ᵢ (X² - dᵢ)` is nonzero. -/
 private theorem definingPolynomial_ne_zero : definingPolynomial d ≠ 0 := by
