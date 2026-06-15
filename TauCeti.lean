@@ -35,6 +35,7 @@ import TauCeti.Algebra.Coalgebra.Subcomodule
 import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal
+import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra
 import TauCeti.AlgebraicGeometry.WeilDivisor
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
