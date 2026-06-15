@@ -112,7 +112,7 @@ theorem toAdd_gaPointsMulEquiv (F : WithConv (SymmetricAlgebra R R →ₐ[R] A))
 /-- The inverse equivalence sends an element of the value algebra to the corresponding
 `A`-valued point of `𝔾ₐ`. -/
 @[simp]
-theorem gaPointsMulEquiv_symm_apply (a : Multiplicative A) :
+theorem gaPointsMulEquiv_symm_apply_ι (a : Multiplicative A) :
     ((gaPointsMulEquiv (R := R) (A := A)).symm a).ofConv (ι R R 1) =
       Multiplicative.toAdd a := by
   rw [gaPointsMulEquiv]
