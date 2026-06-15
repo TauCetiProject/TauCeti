@@ -2,7 +2,6 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.TensorProduct.Finite
 import TauCeti.Algebra.Coalgebra.Comodule.Cofree
 import TauCeti.Algebra.Coalgebra.Comodule.Finite
 
@@ -30,8 +29,7 @@ the embedding theorem can be developed.
 ## References
 
 The cofree-comodule construction follows Sweedler, *Hopf Algebras*, Chapter 2, as in
-`TauCeti.Algebra.Coalgebra.Comodule.Cofree`. When the coefficient module and coalgebra are
-finitely generated, the finite-generation proof reuses Mathlib's `Module.Finite.tensorProduct`.
+`TauCeti.Algebra.Coalgebra.Comodule.Cofree`.
 -/
 
 open CategoryTheory
