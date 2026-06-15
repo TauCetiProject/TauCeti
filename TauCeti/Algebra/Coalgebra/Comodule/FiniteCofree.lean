@@ -47,11 +47,6 @@ variable [Module.Finite R C]
 variable {M : Type w} [AddCommMonoid M] [Module R M] [Module.Finite R M]
 variable {N : Type w} [AddCommMonoid N] [Module R N] [Module.Finite R N]
 
-/-- The tensor product underlying a cofree comodule is finitely generated when both tensor
-factors are finitely generated. -/
-instance cofree_tensorProduct_finite : Module.Finite R (M ⊗[R] C) :=
-  Module.Finite.tensorProduct R M C
-
 /-- The cofree right `C`-comodule on a finitely generated module, bundled as an object of
 `FGComoduleCat`.
 
