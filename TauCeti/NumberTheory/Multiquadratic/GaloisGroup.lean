@@ -127,15 +127,9 @@ omit [Finite ι] in
 private theorem signed_pow_add_mul (x : adjoin K (Set.range root)) (a b : ZMod 2) :
     (-1 : adjoin K (Set.range root)) ^ b.val * ((-1) ^ a.val * x)
       = (-1) ^ (a + b).val * x := by
-  fin_cases a <;> fin_cases b
-  · change (-1 : adjoin K (Set.range root)) ^ 0 * ((-1) ^ 0 * x) = (-1) ^ 0 * x
-    simp
-  · change (-1 : adjoin K (Set.range root)) ^ 1 * ((-1) ^ 0 * x) = (-1) ^ 1 * x
-    simp
-  · change (-1 : adjoin K (Set.range root)) ^ 0 * ((-1) ^ 1 * x) = (-1) ^ 1 * x
-    simp
-  · change (-1 : adjoin K (Set.range root)) ^ 1 * ((-1) ^ 1 * x) = (-1) ^ 0 * x
-    simp
+  -- `(-1) ^ ·` is `2`-periodic, so it factors through `ZMod.val (a + b) = (a.val + b.val) % 2`.
+  rw [← mul_assoc, ← pow_add, ZMod.val_add, neg_one_pow_eq_pow_mod_two (b.val + a.val),
+    add_comm b.val a.val]
 
 omit [Finite ι] in
 private theorem aut_mul_gen_eq_signPattern_add
@@ -155,15 +149,11 @@ theorem signPattern_mul_apply (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
   by_cases hne : gen (K := K) root i ≠ -gen root i
   · have hmul := aut_mul_gen_eq_signPattern_add hroot σ τ i
     generalize hsum : signPattern root σ i + signPattern root τ i = s
-    fin_cases s
+    rcases (show ∀ t : ZMod 2, t = 0 ∨ t = 1 by decide) s with rfl | rfl
     · refine signPattern_eq_zero _ _ ?_
-      rw [hmul, hsum]
-      change (-1 : adjoin K (Set.range root)) ^ 0 * gen root i = gen root i
-      simp
+      rw [hmul, hsum, ZMod.val_zero, pow_zero, one_mul]
     · refine signPattern_eq_one _ _ hne ?_
-      rw [hmul, hsum]
-      change (-1 : adjoin K (Set.range root)) ^ 1 * gen root i = -gen root i
-      simp
+      rw [hmul, hsum, ZMod.val_one, pow_one, neg_one_mul]
   · have hself : gen (K := K) root i = -gen root i := of_not_not hne
     have hsign : ∀ υ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root),
         signPattern root υ i = 0 := by
