@@ -1,0 +1,41 @@
+name: Zulip PR status (lifecycle)
+
+# Maintain the per-PR message + emoji in the "Tau Ceti" Zulip channel as a PR is
+# opened, reopened, merged, or closed. CI- and review-status changes are handled
+# by zulip-pr-status.yml; this one owns the message's existence and its
+# merged/closed lifecycle. Updates are cosmetic and never fail anything.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, closed]
+
+permissions:
+  contents: read        # checkout the script
+  pull-requests: read   # read PR state
+  statuses: read        # read the `build` commit status
+
+jobs:
+  zulip-pr:
+    if: github.repository == 'FormalFrontier/TauCeti'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/zulip
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install -r scripts/zulip/requirements.txt
+      - name: Reconcile Zulip reactions
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
+          ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
+          ZULIP_SITE: https://leanprover.zulipchat.com
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          # Create the message when a PR opens/reopens; otherwise only react to it.
+          CREATE=""
+          if [ "${{ github.event.action }}" != "closed" ]; then CREATE="--create"; fi
+          python scripts/zulip/zulip_pr_status.py reconcile "$PR" $CREATE

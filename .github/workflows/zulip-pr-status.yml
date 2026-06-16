@@ -1,0 +1,58 @@
+name: Zulip PR status (CI + review)
+
+# Update the per-PR Zulip message's emoji whenever the build CI or the review
+# changes: it fires when `pr-build` is requested/completed (CI group: running /
+# passed / failed) and when `Review` completes (review group, re-derived from the
+# scoreboard). The script reconciles from GitHub truth, so the exact trigger only
+# decides *when* to refresh, not what to set. It never creates the message (the
+# lifecycle workflow does that on PR open), so concurrent events can't duplicate it.
+
+on:
+  workflow_run:
+    workflows: ["pr-build", "Review"]
+    types: [requested, completed]
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: read
+
+jobs:
+  zulip-pr-status:
+    if: github.repository == 'FormalFrontier/TauCeti'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve PR number
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          PR=$(echo '${{ toJSON(github.event.workflow_run.pull_requests) }}' | jq -r '.[0].number // empty')
+          if [ -z "$PR" ]; then
+            PR=$(gh api "repos/${{ github.repository }}/commits/$HEAD_SHA/pulls" --jq '.[0].number // empty' 2>/dev/null || true)
+          fi
+          if [ -z "$PR" ]; then
+            echo "No PR for $HEAD_SHA; skipping"; echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found PR #$PR"; echo "pr=$PR" >> "$GITHUB_OUTPUT"; echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.pr.outputs.skip != 'true'
+        with:
+          sparse-checkout: scripts/zulip
+      - uses: actions/setup-python@v5
+        if: steps.pr.outputs.skip != 'true'
+        with:
+          python-version: '3.x'
+      - run: pip install -r scripts/zulip/requirements.txt
+        if: steps.pr.outputs.skip != 'true'
+      - name: Reconcile Zulip reactions
+        if: steps.pr.outputs.skip != 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
+          ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
+          ZULIP_SITE: https://leanprover.zulipchat.com
+        run: python scripts/zulip/zulip_pr_status.py reconcile "${{ steps.pr.outputs.pr }}"
