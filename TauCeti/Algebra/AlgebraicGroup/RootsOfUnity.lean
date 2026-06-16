@@ -48,6 +48,7 @@ namespace RootsOfUnityGroup
 universe u v
 
 variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
+variable {B : Type*} [CommSemiring B] [Algebra R B]
 
 /-- The standard generator of the character group defining `μ_n = D(ℤ/n)`. -/
 abbrev generator (n : ℕ) : Multiplicative (ZMod n) :=
@@ -117,6 +118,16 @@ lemma pointsMulEquiv_apply (n : ℕ)
   rw [pointsMulEquiv, MulEquiv.trans_apply, DiagonalizableGroup.pointsMulEquiv_apply,
     characterMulEquivRootsOfUnity_apply]
   exact DiagonalizableGroup.charOfPoint_apply_coe f.ofConv (generator n)
+
+/-- The points equivalence is natural in the value algebra. -/
+@[simp]
+lemma pointsMulEquiv_mapValue (n : ℕ) (φ : A →ₐ[R] B)
+    (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
+    pointsMulEquiv (R := R) (A := B) n
+        (AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative (ZMod n))) φ f) =
+      restrictRootsOfUnity φ.toMonoidHom n (pointsMulEquiv (R := R) (A := A) n f) := by
+  ext
+  simp [pointsMulEquiv_apply]
 
 /-- The inverse points equivalence sends a root of unity to the point taking the standard
 generator to that root. -/
