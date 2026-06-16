@@ -80,13 +80,8 @@ private noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
       (MulEquiv.subgroupCongr (by rw [card_multiplicative_zmod n]))).trans
     (rootsOfUnityUnitsMulEquiv A n)
 
-/-- A character is sent to its value on the standard generator.
-
-The proof is `rfl`: each of the three composed equivalences acts on the underlying unit by a
-projection. `monoidHomMulEquivRootsOfUnityOfGenerator` carries `χ` to
-`(IsUnit.map χ (Group.isUnit (generator n))).unit`, whose value is `χ (generator n)` by
-`IsUnit.unit_spec`; `subgroupCongr` and `rootsOfUnityUnitsMulEquiv` are both identity on the
-underlying value. The composite value in `A` is therefore definitionally `χ (generator n)`. -/
+/-- A character is sent to its value on the standard generator. -/
+-- The proof is `rfl`: each composed equivalence acts on the underlying unit by projection.
 @[simp]
 private lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
     (χ : Multiplicative (ZMod n) →* Aˣ) :
