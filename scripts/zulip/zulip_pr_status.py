@@ -105,7 +105,24 @@ def gh_api(path, jq=None, paginate=False):
 
 
 def pr_state(pr):
-    """{'state','merged','head','title'} for the PR, from GitHub."""
+    """{'state','merged','head','title'} for the PR.
+
+    Prefer the triggering event's payload, passed in via PR_STATE/PR_HEAD/
+    PR_MERGED/PR_TITLE (the lifecycle workflow sets these from
+    github.event.pull_request, so a close/merge needs no GitHub API call at
+    all). Fall back to the REST API when they aren't set (the workflow_run
+    status workflow and the backfill), where the payload is absent or isn't the
+    PR we're reconciling.
+    """
+    env_state = os.environ.get("PR_STATE")
+    env_head = os.environ.get("PR_HEAD")
+    if env_state and env_head:
+        return {
+            "state": env_state,
+            "merged": os.environ.get("PR_MERGED") == "true",
+            "head": env_head,
+            "title": os.environ.get("PR_TITLE") or f"PR #{pr}",
+        }
     d = json.loads(gh_api(f"/repos/{REPO}/pulls/{pr}"))
     return {
         "state": d["state"],                 # "open" | "closed"

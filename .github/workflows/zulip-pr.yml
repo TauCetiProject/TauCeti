@@ -38,6 +38,13 @@ jobs:
           ZULIP_SITE: https://leanprover.zulipchat.com
           PR: ${{ github.event.pull_request.number }}
           ACTION: ${{ github.event.action }}
+          # Feed PR state straight from the event payload so reconcile needs no
+          # /pulls API call (a close/merge then makes zero GitHub API calls).
+          # Title goes via env, never inline, to avoid any shell injection.
+          PR_STATE: ${{ github.event.pull_request.state }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           # Create the message when a PR opens/reopens; otherwise only react to it.
           CREATE=""
