@@ -3,7 +3,6 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.RingTheory.HopfAlgebra.Convolution
-import Mathlib.RingTheory.FiniteType
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal
 

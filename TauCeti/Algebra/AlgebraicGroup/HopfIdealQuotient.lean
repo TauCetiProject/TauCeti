@@ -2,6 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.RingTheory.FiniteType
 import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
 import TauCeti.Algebra.HopfAlgebra.Quotient
 
@@ -31,7 +32,7 @@ the finite-type coordinate-Hopf-algebra category.
 The quotient Hopf algebra construction follows `TauCeti.Algebra.HopfAlgebra.Quotient`,
 which cites Sweedler, *Hopf Algebras*, Chapter 4, and Waterhouse, *Introduction to Affine
 Group Schemes*, §16. The finite-type descent is Mathlib's
-`Algebra.FiniteType.of_surjective`.
+`Algebra.FiniteType.quotient`.
 -/
 
 namespace TauCeti
@@ -92,7 +93,7 @@ lemma liftQuotient_mk (I : HopfIdeal R H) (f : H ⟶ K)
 
 /-- The quotient lift composed with the quotient morphism is the original morphism. -/
 @[simp]
-lemma liftQuotient_comp_mkQuotient (I : HopfIdeal R H) (f : H ⟶ K)
+lemma mkQuotient_comp_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) :
     mkQuotient H I ≫ liftQuotient I f hf = f := by
   ext h
@@ -158,12 +159,12 @@ lemma forget₂_commHopfAlgCat_map_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K
 
 /-- The quotient lift composed with the quotient morphism is the original morphism. -/
 @[simp]
-lemma liftQuotient_comp_mkQuotient (I : HopfIdeal R H) (f : H ⟶ K)
+lemma mkQuotient_comp_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) :
     mkQuotient H I ≫ liftQuotient I f hf = f := by
   apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
     (CommHopfAlgCat.{u, v} R)).map_injective
-  exact CommHopfAlgCat.liftQuotient_comp_mkQuotient I f.hom hf
+  exact CommHopfAlgCat.mkQuotient_comp_liftQuotient I f.hom hf
 
 /-- A morphism out of the quotient object is determined by its precomposition with the
 quotient morphism. -/
