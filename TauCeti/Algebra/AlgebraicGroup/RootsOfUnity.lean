@@ -65,7 +65,6 @@ private lemma mem_zpowers_generator (n : ℕ) (x : Multiplicative (ZMod n)) :
     _ = x := ofAdd_toAdd x
 
 /-- The cardinality of the standard cyclic character group is `n`. -/
-@[simp]
 private lemma card_multiplicative_zmod (n : ℕ) :
     Nat.card (Multiplicative (ZMod n)) = n := by
   exact (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
