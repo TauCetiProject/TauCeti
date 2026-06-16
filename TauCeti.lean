@@ -12,6 +12,8 @@ import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 import TauCeti.Algebra.AlgebraicGroup.HopfMap
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup
 import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
+import TauCeti.Algebra.AlgebraicGroup.Product
+import TauCeti.Algebra.Bialgebra.TensorProduct
 import TauCeti.Algebra.Coalgebra.Comodule
 import TauCeti.Algebra.Coalgebra.Comodule.Cofree
 import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
@@ -66,6 +68,7 @@ import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.Multiquadratic.Galois
 import TauCeti.NumberTheory.Multiquadratic.GaloisGroup
 import TauCeti.NumberTheory.Multiquadratic.SquareClass
+import TauCeti.NumberTheory.NumberField.MultiquadraticSplitting
 import TauCeti.NumberTheory.NumberField.QuadraticSplitting
 import TauCeti.NumberTheory.NumberField.SplitsCompletely
 import TauCeti.Topology.Algebra.HomeomorphAction
