@@ -107,14 +107,6 @@ lemma pointsMulEquiv_apply (n : ℕ)
     characterMulEquivRootsOfUnity_apply]
   rfl
 
-/-- Under the points equivalence, convolution multiplication is multiplication of roots of
-unity. -/
-lemma pointsMulEquiv_mul (n : ℕ)
-    (f g : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
-    pointsMulEquiv (R := R) (A := A) n (f * g) =
-      pointsMulEquiv (R := R) (A := A) n f * pointsMulEquiv (R := R) (A := A) n g := by
-  exact (pointsMulEquiv (R := R) (A := A) n).map_mul f g
-
 end RootsOfUnityGroup
 
 end TauCeti
