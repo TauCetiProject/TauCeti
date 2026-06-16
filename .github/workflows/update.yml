@@ -7,7 +7,9 @@ name: Update Dependencies
 #     commit, plus a fix PR pinned at that commit (a ready-made branch to fix in
 #     place — not for merging as-is), and close the LKG bump PR until resolved.
 # PRs and pushes use the tauceti-review-bot App token so pr-build/review trigger
-# normally. Bump PRs touch the Lake config (human-owned), so a human merges them.
+# normally. The LKG bump is de-pinned below to a manifest- and toolchain-only forward move,
+# so bump-guard validates it and it auto-merges; the first-known-bad fix PR still edits the
+# Lake config and is human-owned.
 
 on:
   schedule:
@@ -47,6 +49,26 @@ jobs:
         id: bump
         if: steps.fkb.outputs.commit == ''
         uses: leanprover-community/downstream-reports/.github/actions/bump-to-latest@main
+
+      # TauCeti tracks mathlib `master` and lets bump-guard (Scripts/check-bump.sh) validate
+      # each bump as a forward move and auto-merge it. bump-to-latest pins the lakefile `rev`
+      # and the manifest `inputRev` to the bumped commit; bump-guard rejects that (lakefile
+      # edits are human-owned; inputRev must stay the nominated branch) and routes it to a
+      # human. De-pin both — restore the human-owned lakefile and reset mathlib's inputRev to
+      # "master" — leaving a manifest- and toolchain-only forward move that validates and
+      # merges without a human. The manifest `rev` still carries the actual pin.
+      - name: De-pin to keep tracking master (so bump-guard can auto-merge)
+        if: steps.fkb.outputs.commit == '' && steps.bump.outputs.updated == 'true'
+        run: |
+          set -euo pipefail
+          # Discard the bot's pinned rev in the human-owned lakefile(s); keep everything else.
+          git checkout -- lakefile.toml
+          git checkout -- lakefile.lean 2>/dev/null || true
+          # Reset mathlib's inputRev back to "master". It is the only 40-hex inputRev in the
+          # manifest (every other dep nominates a branch/tag), so this targets mathlib alone
+          # and preserves Lake's formatting and all derived transitive pins.
+          sed -i -E 's/"inputRev": "[0-9a-f]{40}"/"inputRev": "master"/' lake-manifest.json
+          echo "de-pinned: lakefile restored to master; manifest inputRev reset to master"
 
       - name: Open or update PR
         if: steps.fkb.outputs.commit == '' && steps.bump.outputs.updated == 'true'

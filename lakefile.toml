@@ -1,6 +1,9 @@
 name = "TauCeti"
 defaultTargets = ["TauCeti"]
 
+# mathlib's `rev` below stays on "master", never a pinned commit. The actual revision is
+# pinned in lake-manifest.json; "master" is only the branch the daily bump moves forward
+# along, and bump-guard (Scripts/check-bump.sh) requires it to validate and auto-merge a bump.
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4"
