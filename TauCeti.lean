@@ -11,6 +11,7 @@ import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
 import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
 import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+import TauCeti.Algebra.AlgebraicGroup.HopfIdealQuotient
 import TauCeti.Algebra.AlgebraicGroup.HopfMap
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup
 import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
