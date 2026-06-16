@@ -7,6 +7,11 @@ name: mk-all
 #   - fork PR              -> fail the `mk-all` check with instructions (we can't push to a fork).
 # The push uses the GitHub App token (not GITHUB_TOKEN, whose pushes don't re-trigger CI), so
 # the corrected head gets a fresh build/review; the next mk-all run finds it in sync and stops.
+# The commit-status POST, by contrast, uses GITHUB_TOKEN: it already carries `statuses: write`
+# here, whereas the App installation does not, so posting with the App token 403s ("Resource not
+# accessible by integration") and — under the runner's `bash -e` — that 403 would fail the job
+# even when the aggregator is perfectly in sync. Posting a status never re-triggers CI, so there
+# is no reason to spend the App token on it.
 #
 # Security: this is a pull_request_target job with a write token, so it treats EVERY
 # PR-controlled value as hostile. Such values are never spliced into a `run:` script via
@@ -89,7 +94,9 @@ jobs:
       - name: Push the fix (same-repo) or fail (fork), then report status
         id: sync
         env:
-          GH_TOKEN:  ${{ steps.app-token.outputs.token }}
+          # GITHUB_TOKEN (has `statuses: write` here); the App token lacks it and 403s. The git
+          # push below uses the checkout-managed App credentials, not this token.
+          GH_TOKEN:  ${{ github.token }}
           SAME:      ${{ steps.pr.outputs.same }}
           REF:       ${{ steps.pr.outputs.ref }}
           HEAD_SHA:  ${{ steps.pr.outputs.sha }}
@@ -118,7 +125,10 @@ jobs:
           else
             state=failure; desc="aggregator out of date and PR is from a fork — run Scripts/mk_all.sh and push"
           fi
+          # A status-post hiccup must never red an otherwise-correct sync, so keep it non-fatal;
+          # the job's own conclusion (last line) is the source of truth for the check.
           gh api -X POST "repos/$BASE_REPO/statuses/$status_sha" \
-            -f state="$state" -f context="mk-all" -f description="$desc"
+            -f state="$state" -f context="mk-all" -f description="$desc" \
+            || echo "::warning::could not post mk-all commit status (job conclusion still applies)"
           echo "mk-all=$state ($desc) -> $status_sha"
           [ "$state" = "success" ]

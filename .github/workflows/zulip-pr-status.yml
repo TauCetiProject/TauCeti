@@ -1,0 +1,72 @@
+name: Zulip PR status (CI + review)
+
+# Update the per-PR Zulip message's emoji whenever the build CI or the review
+# changes: it fires when `pr-build` is requested/completed (CI group) and when
+# `Review` completes (review group, re-derived from the scoreboard). The script
+# reconciles from GitHub truth, so the trigger only decides *when* to refresh.
+# It never creates the message (the lifecycle workflow does that on PR open).
+
+on:
+  workflow_run:
+    workflows: ["pr-build", "Review"]
+    types: [requested, completed]
+
+permissions:
+  contents: read
+  pull-requests: read
+  statuses: read
+
+# Share the concurrency group with zulip-pr.yml (keyed on the PR head sha) so all
+# Zulip updates for one PR head are serialized and can't leave conflicting emoji.
+concurrency:
+  group: zulip-pr-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  zulip-pr-status:
+    # Skip Review's "requested" event: the scoreboard isn't updated until Review
+    # completes, so reconciling at its start re-derives the same state and does
+    # no useful work. (pr-build's "requested" is kept -- it paints 🟡 running.)
+    if: >
+      github.repository == 'FormalFrontier/TauCeti' &&
+      !(github.event.workflow_run.name == 'Review' && github.event.action == 'requested')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve PR number
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          PR=$(echo '${{ toJSON(github.event.workflow_run.pull_requests) }}' | jq -r '.[0].number // empty')
+          if [ -z "$PR" ]; then
+            PR=$(gh api "repos/${{ github.repository }}/commits/$HEAD_SHA/pulls" --jq '.[0].number // empty' 2>/dev/null || true)
+          fi
+          if [ -z "$PR" ]; then
+            echo "No PR for $HEAD_SHA; skipping"; echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found PR #$PR"; echo "pr=$PR" >> "$GITHUB_OUTPUT"; echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.pr.outputs.skip != 'true'
+        with:
+          sparse-checkout: scripts/zulip
+      - name: Reconcile Zulip reactions
+        if: steps.pr.outputs.skip != 'true'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
+          ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
+          ZULIP_SITE: https://leanprover.zulipchat.com
+          PR: ${{ steps.pr.outputs.pr }}
+          WF_NAME: ${{ github.event.workflow_run.name }}
+          ACTION: ${{ github.event.action }}
+        run: |
+          # pr-build posts the `build` commit status only at the end, so derive
+          # the "running" (🟡) state from the workflow starting instead.
+          CI_ARG=""
+          if [ "$WF_NAME" = "pr-build" ] && [ "$ACTION" = "requested" ]; then
+            CI_ARG="--ci running"
+          fi
+          python3 scripts/zulip/zulip_pr_status.py reconcile "$PR" $CI_ARG

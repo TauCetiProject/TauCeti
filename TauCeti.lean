@@ -8,6 +8,7 @@
 import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup
 import TauCeti.Algebra.AlgebraicGroup.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
+import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
 import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
 import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 import TauCeti.Algebra.AlgebraicGroup.HopfMap
@@ -44,6 +45,7 @@ import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.Algebra.HopfAlgebra
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal
+import TauCeti.Algebra.HopfAlgebra.Quotient
 import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra
 import TauCeti.AlgebraicGeometry.WeilDivisor
 import TauCeti.AlgebraicTopology.UniversalCover.Deck
@@ -69,6 +71,7 @@ import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.Multiquadratic.Galois
 import TauCeti.NumberTheory.Multiquadratic.GaloisGroup
 import TauCeti.NumberTheory.Multiquadratic.SquareClass
+import TauCeti.NumberTheory.NumberField.MultiquadraticSplitting
 import TauCeti.NumberTheory.NumberField.QuadraticSplitting
 import TauCeti.NumberTheory.NumberField.SplitsCompletely
 import TauCeti.Topology.Algebra.HomeomorphAction
