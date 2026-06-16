@@ -14,6 +14,13 @@ permissions:
   pull-requests: read   # read PR state
   statuses: read        # read the `build` commit status
 
+# Serialize all Zulip updates for a given PR head across both zulip workflows, so
+# two events can't interleave and leave conflicting reactions. Don't cancel: each
+# run reconciles from fresh truth, and we want the last word, not a dropped one.
+concurrency:
+  group: zulip-pr-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: false
+
 jobs:
   zulip-pr:
     if: github.repository == 'FormalFrontier/TauCeti'
@@ -22,10 +29,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           sparse-checkout: scripts/zulip
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-      - run: pip install -r scripts/zulip/requirements.txt
       - name: Reconcile Zulip reactions
         continue-on-error: true
         env:
@@ -34,8 +37,9 @@ jobs:
           ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
           ZULIP_SITE: https://leanprover.zulipchat.com
           PR: ${{ github.event.pull_request.number }}
+          ACTION: ${{ github.event.action }}
         run: |
           # Create the message when a PR opens/reopens; otherwise only react to it.
           CREATE=""
-          if [ "${{ github.event.action }}" != "closed" ]; then CREATE="--create"; fi
-          python scripts/zulip/zulip_pr_status.py reconcile "$PR" $CREATE
+          if [ "$ACTION" != "closed" ]; then CREATE="--create"; fi
+          python3 scripts/zulip/zulip_pr_status.py reconcile "$PR" $CREATE

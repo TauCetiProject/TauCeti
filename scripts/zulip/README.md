@@ -20,7 +20,10 @@ lives in the **PRs** topic, carrying two independent groups of emoji reactions:
 truth** — PR state, the canonical `<!--tauceti-scoreboard-->` comment's meta
 JSON, and the `build` commit status — then finds-or-creates the PR's message and
 sets both groups. It is idempotent, so the same command drives both the
-event-driven workflows and a one-shot backfill.
+event-driven workflows and a one-shot backfill. Only the bot's *own* reactions
+are authoritative (presence is judged by the bot's user id), so a human reacting
+on a status message never confuses reconciliation. Its only dependencies are
+python3's standard library and an authenticated `gh` CLI — no PyPI packages.
 
 Two workflows trigger it:
 
@@ -46,10 +49,10 @@ Two workflows trigger it:
 With the bot credentials exported and `gh` authenticated:
 
 ```bash
-pip install -r scripts/zulip/requirements.txt
 export ZULIP_API_KEY=... ZULIP_EMAIL=... ZULIP_SITE=https://leanprover.zulipchat.com
-for pr in $(gh pr list --repo FormalFrontier/TauCeti --state all --limit 1000 --json number --jq '.[].number'); do
-  python scripts/zulip/zulip_pr_status.py reconcile "$pr" --create
+# ascending PR number == chronological order
+for pr in $(gh pr list --repo FormalFrontier/TauCeti --state all --limit 1000 --json number --jq '.[].number' | sort -n); do
+  python3 scripts/zulip/zulip_pr_status.py reconcile "$pr" --create
 done
 ```
 

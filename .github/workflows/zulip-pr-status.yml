@@ -1,11 +1,10 @@
 name: Zulip PR status (CI + review)
 
 # Update the per-PR Zulip message's emoji whenever the build CI or the review
-# changes: it fires when `pr-build` is requested/completed (CI group: running /
-# passed / failed) and when `Review` completes (review group, re-derived from the
-# scoreboard). The script reconciles from GitHub truth, so the exact trigger only
-# decides *when* to refresh, not what to set. It never creates the message (the
-# lifecycle workflow does that on PR open), so concurrent events can't duplicate it.
+# changes: it fires when `pr-build` is requested/completed (CI group) and when
+# `Review` completes (review group, re-derived from the scoreboard). The script
+# reconciles from GitHub truth, so the trigger only decides *when* to refresh.
+# It never creates the message (the lifecycle workflow does that on PR open).
 
 on:
   workflow_run:
@@ -16,6 +15,12 @@ permissions:
   contents: read
   pull-requests: read
   statuses: read
+
+# Share the concurrency group with zulip-pr.yml (keyed on the PR head sha) so all
+# Zulip updates for one PR head are serialized and can't leave conflicting emoji.
+concurrency:
+  group: zulip-pr-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
 
 jobs:
   zulip-pr-status:
@@ -41,12 +46,6 @@ jobs:
         if: steps.pr.outputs.skip != 'true'
         with:
           sparse-checkout: scripts/zulip
-      - uses: actions/setup-python@v5
-        if: steps.pr.outputs.skip != 'true'
-        with:
-          python-version: '3.x'
-      - run: pip install -r scripts/zulip/requirements.txt
-        if: steps.pr.outputs.skip != 'true'
       - name: Reconcile Zulip reactions
         if: steps.pr.outputs.skip != 'true'
         continue-on-error: true
@@ -55,4 +54,14 @@ jobs:
           ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
           ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}
           ZULIP_SITE: https://leanprover.zulipchat.com
-        run: python scripts/zulip/zulip_pr_status.py reconcile "${{ steps.pr.outputs.pr }}"
+          PR: ${{ steps.pr.outputs.pr }}
+          WF_NAME: ${{ github.event.workflow_run.name }}
+          ACTION: ${{ github.event.action }}
+        run: |
+          # pr-build posts the `build` commit status only at the end, so derive
+          # the "running" (🟡) state from the workflow starting instead.
+          CI_ARG=""
+          if [ "$WF_NAME" = "pr-build" ] && [ "$ACTION" = "requested" ]; then
+            CI_ARG="--ci running"
+          fi
+          python3 scripts/zulip/zulip_pr_status.py reconcile "$PR" $CI_ARG
