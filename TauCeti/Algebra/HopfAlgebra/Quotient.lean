@@ -324,23 +324,43 @@ variable {K : Type*} [Semiring K] [Bialgebra R K]
 private theorem liftBialgHom_kill (f : H →ₐc[R] K)
     (hf : I.toIdeal ≤ RingHom.ker f.toAlgHom.toRingHom) {h : H} (hh : h ∈ I.toIdeal) :
     (f : H →ₐ[R] K) h = 0 :=
-  RingHom.mem_ker.mp (show h ∈ RingHom.ker f.toAlgHom.toRingHom from hf hh)
+  RingHom.mem_ker.mp (hf hh)
+
+private noncomputable abbrev liftBialgHomAlg (f : H →ₐc[R] K)
+    (hf : I.toIdeal ≤ RingHom.ker f.toAlgHom.toRingHom) : H ⧸ I.toIdeal →ₐ[R] K :=
+  Ideal.Quotient.liftₐ I.toIdeal (f : H →ₐ[R] K)
+    fun _ ha => liftBialgHom_kill I f hf ha
 
 private theorem liftBialgHomAlg_mk (f : H →ₐc[R] K)
     (hf : I.toIdeal ≤ RingHom.ker f.toAlgHom.toRingHom) (h : H) :
-    Ideal.Quotient.liftₐ I.toIdeal (f : H →ₐ[R] K)
-      (fun _ ha => liftBialgHom_kill I f hf ha) (Ideal.Quotient.mkₐ R I.toIdeal h) =
-        f h := by
-  rw [Ideal.Quotient.liftₐ_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.lift_mk]
-  rfl
+    liftBialgHomAlg I f hf (Ideal.Quotient.mkₐ R I.toIdeal h) = f h := by
+  exact AlgHom.congr_fun
+    (Ideal.Quotient.liftₐ_comp I.toIdeal (f : H →ₐ[R] K)
+      fun _ ha => liftBialgHom_kill I f hf ha) h
+
+private theorem liftBialgHomAlg_toLinearMap_comp_mkₐ (f : H →ₐc[R] K)
+    (hf : I.toIdeal ≤ RingHom.ker f.toAlgHom.toRingHom) :
+    (liftBialgHomAlg I f hf).toLinearMap.comp
+      (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap = f.toLinearMap := by
+  ext h
+  exact liftBialgHomAlg_mk I f hf h
+
+private theorem liftBialgHomAlg_comul_mk (f : H →ₐc[R] K)
+    (hf : I.toIdeal ≤ RingHom.ker f.toAlgHom.toRingHom) (h : H) :
+    TensorProduct.map (liftBialgHomAlg I f hf).toLinearMap
+        (liftBialgHomAlg I f hf).toLinearMap
+        (TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
+          (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap (Coalgebra.comul h)) =
+      Coalgebra.comul (R := R) (f h) := by
+  rw [TensorProduct.map_map, liftBialgHomAlg_toLinearMap_comp_mkₐ]
+  exact CoalgHomClass.map_comp_comul_apply f h
 
 /-- A bialgebra morphism out of `H` which kills a Hopf ideal factors through the quotient
 bialgebra. -/
 noncomputable def liftBialgHom (f : H →ₐc[R] K)
     (hf : I.toIdeal ≤ RingHom.ker f.toAlgHom.toRingHom) : H ⧸ I.toIdeal →ₐc[R] K :=
   BialgHom.ofAlgHom
-    (Ideal.Quotient.liftₐ I.toIdeal (f : H →ₐ[R] K)
-      fun a ha => liftBialgHom_kill I f hf ha)
+    (liftBialgHomAlg I f hf)
     (by
       ext q
       obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R I.toIdeal q
@@ -355,30 +375,9 @@ noncomputable def liftBialgHom (f : H →ₐc[R] K)
     (by
       ext q
       obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R I.toIdeal q
-      let F : H ⧸ I.toIdeal →ₐ[R] K :=
-        Ideal.Quotient.liftₐ I.toIdeal (f : H →ₐ[R] K)
-          fun a ha => liftBialgHom_kill I f hf ha
-      have hF_mk (x : H) : F (Ideal.Quotient.mkₐ R I.toIdeal x) = f x :=
-        liftBialgHomAlg_mk I f hf x
-      have hF_comp :
-          F.toLinearMap.comp (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap = f.toLinearMap := by
-        ext x
-        exact hF_mk x
-      -- These two `change`s expose the bialgebra-hom comultiplication equation and then the
-      -- underlying linear tensor-map equation after evaluating at a quotient representative.
-      change ((Algebra.TensorProduct.map F F).comp (Bialgebra.comulAlgHom R (H ⧸ I.toIdeal)))
-          (Ideal.Quotient.mkₐ R I.toIdeal h) =
-        ((Bialgebra.comulAlgHom R K).comp F) (Ideal.Quotient.mkₐ R I.toIdeal h)
-      change (Algebra.TensorProduct.map F F)
-          (Bialgebra.comulAlgHom R (H ⧸ I.toIdeal) (Ideal.Quotient.mkₐ R I.toIdeal h)) =
-        Bialgebra.comulAlgHom R K (F (Ideal.Quotient.mkₐ R I.toIdeal h))
-      rw [Bialgebra.comulAlgHom_apply, hF_mk, Bialgebra.comulAlgHom_apply, comul_mk]
-      change TensorProduct.map F.toLinearMap F.toLinearMap
-          (TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
-            (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap (Coalgebra.comul h)) =
-        Coalgebra.comul (R := R) (f h)
-      rw [TensorProduct.map_map, hF_comp]
-      exact CoalgHomClass.map_comp_comul_apply f h)
+      rw [AlgHom.comp_apply, AlgHom.comp_apply, Bialgebra.comulAlgHom_apply,
+        liftBialgHomAlg_mk I f hf h, Bialgebra.comulAlgHom_apply, comul_mk]
+      exact liftBialgHomAlg_comul_mk I f hf h)
 
 /-- The quotient lift, evaluated on a quotient class. -/
 @[simp]
