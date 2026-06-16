@@ -125,12 +125,12 @@ variable {R : Type u} [CommRing R]
 finite-type commutative Hopf algebra. -/
 noncomputable abbrev quotient (H : FiniteTypeCommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) :
     FiniteTypeCommHopfAlgCat.{u, v} R :=
-  of R (H ⧸ I.toIdeal)
+  ⟨CommHopfAlgCat.quotient H.obj I, inferInstanceAs (Algebra.FiniteType R (H ⧸ I.toIdeal))⟩
 
 /-- The quotient morphism `H ⟶ H ⧸ I` in `FiniteTypeCommHopfAlgCat`. -/
 noncomputable abbrev mkQuotient (H : FiniteTypeCommHopfAlgCat.{u, v} R)
     (I : HopfIdeal R H) : H ⟶ quotient H I :=
-  ofHom (HopfIdeal.mkBialgHom I)
+  ObjectProperty.homMk (CommHopfAlgCat.mkQuotient H.obj I)
 
 /-- The quotient morphism has the expected underlying bialgebra morphism. -/
 @[simp]
@@ -151,7 +151,7 @@ variable {H K : FiniteTypeCommHopfAlgCat.{u, v} R}
 factors through the quotient object. -/
 noncomputable abbrev liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) : quotient H I ⟶ K :=
-  ofHom (HopfIdeal.liftBialgHom I (toBialgHom f) hf)
+  ObjectProperty.homMk (CommHopfAlgCat.liftQuotient I f.hom hf)
 
 /-- The quotient lift has the expected underlying bialgebra morphism. -/
 @[simp]
