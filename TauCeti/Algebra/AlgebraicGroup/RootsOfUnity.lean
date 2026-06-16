@@ -52,10 +52,10 @@ abbrev generator (n : ℕ) : Multiplicative (ZMod n) :=
   Multiplicative.ofAdd 1
 
 /-- Every element of `Multiplicative (ZMod n)` is a power of the standard generator. -/
-lemma mem_zpowers_generator (n : ℕ) (x : Multiplicative (ZMod n)) :
+private lemma mem_zpowers_generator (n : ℕ) (x : Multiplicative (ZMod n)) :
     x ∈ Subgroup.zpowers (generator n) := by
   refine ⟨(Multiplicative.toAdd x).cast, ?_⟩
-  change (Multiplicative.ofAdd (1 : ZMod n)) ^ (Multiplicative.toAdd x).cast = x
+  simp only [generator]
   rw [← ofAdd_zsmul]
   calc
     Multiplicative.ofAdd ((Multiplicative.toAdd x).cast • (1 : ZMod n)) =
@@ -66,7 +66,7 @@ lemma mem_zpowers_generator (n : ℕ) (x : Multiplicative (ZMod n)) :
 
 /-- The cardinality of the standard cyclic character group is `n`. -/
 @[simp]
-lemma natCard_multiplicative_zmod (n : ℕ) :
+private lemma card_multiplicative_zmod (n : ℕ) :
     Nat.card (Multiplicative (ZMod n)) = n := by
   exact (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
     (Nat.card_zmod n)
@@ -76,10 +76,16 @@ on the standard generator. -/
 noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
     (Multiplicative (ZMod n) →* Aˣ) ≃* rootsOfUnity n A :=
   ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (mem_zpowers_generator n) Aˣ).trans
-      (MulEquiv.subgroupCongr (by rw [natCard_multiplicative_zmod n]))).trans
+      (MulEquiv.subgroupCongr (by rw [card_multiplicative_zmod n]))).trans
     (rootsOfUnityUnitsMulEquiv A n)
 
-/-- A character is sent to its value on the standard generator. -/
+/-- A character is sent to its value on the standard generator.
+
+The proof is `rfl`: each of the three composed equivalences acts on the underlying unit by a
+projection. `monoidHomMulEquivRootsOfUnityOfGenerator` carries `χ` to
+`(IsUnit.map χ (Group.isUnit (generator n))).unit`, whose value is `χ (generator n)` by
+`IsUnit.unit_spec`; `subgroupCongr` and `rootsOfUnityUnitsMulEquiv` are both identity on the
+underlying value. The composite value in `A` is therefore definitionally `χ (generator n)`. -/
 @[simp]
 lemma characterMulEquivRootsOfUnity_apply (n : ℕ) (χ : Multiplicative (ZMod n) →* Aˣ) :
     ((characterMulEquivRootsOfUnity (A := A) n χ : Aˣ) : A) =
@@ -105,7 +111,7 @@ lemma pointsMulEquiv_apply (n : ℕ)
       f.ofConv (MonoidAlgebra.single (generator n) 1) := by
   rw [pointsMulEquiv, MulEquiv.trans_apply, DiagonalizableGroup.pointsMulEquiv_apply,
     characterMulEquivRootsOfUnity_apply]
-  rfl
+  exact DiagonalizableGroup.charOfPoint_apply_coe f.ofConv (generator n)
 
 end RootsOfUnityGroup
 
