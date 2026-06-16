@@ -61,6 +61,7 @@ import urllib.request
 REPO = os.environ.get("GH_REPO", "FormalFrontier/TauCeti")
 CHANNEL = os.environ.get("ZULIP_CHANNEL", "Tau Ceti")
 TOPIC = os.environ.get("ZULIP_TOPIC", "PRs")
+ZWSP = "\u200b"  # zero-width space, used to defuse mentions/linkifiers
 
 # name -> (reaction_type, emoji_code). Unicode emoji resolve by name on the
 # server, so emoji_code is None; realm (custom) emoji must carry their id.
@@ -211,6 +212,7 @@ class Zulip:
     def get_messages(self, narrow, num_before=1000):
         params = {
             "anchor": "newest", "num_before": num_before, "num_after": 0,
+            "apply_markdown": "false",  # raw markdown, so content compares exactly
             "narrow": json.dumps(narrow),
         }
         return self._call("GET", "/messages", params)["messages"]
@@ -220,6 +222,9 @@ class Zulip:
             "type": "stream", "to": CHANNEL, "topic": TOPIC, "content": content,
         })
         return r["id"]
+
+    def update_message(self, message_id, content):
+        self._call("PATCH", f"/messages/{message_id}", {"content": content})
 
     def _emoji_params(self, name):
         rtype, code = EMOJI[name]
@@ -258,11 +263,17 @@ def find_message(z, pr, bot_id):
     return min(hits, key=lambda m: m["id"]) if hits else None
 
 
-def zulip_escape(text):
-    """Neutralize Zulip/CommonMark markup in untrusted text (e.g. a PR title):
-    backslash-escaping ASCII punctuation renders it literally and, crucially,
-    stops `@**name**` mentions and `[x](y)`/stream links from forming."""
-    return re.sub(r"([\\`*_{}\[\]()#+.!@<>|~-])", r"\\\1", text)
+def pr_message_content(pr, title):
+    return f"**{zulip_sanitize(title)}** · {pr_url(pr)}"
+
+
+def zulip_sanitize(text):
+    """Defuse the only Zulip markup in a PR title that would do real harm: an
+    `@`-mention (pings people) or a linkifier like `#1234` / `@**group**` (wrong
+    auto-link). A zero-width space after each `@`/`#` breaks those patterns
+    invisibly, so the title still reads exactly as written -- no backslash noise.
+    Ordinary emphasis in a title is the author's own and renders harmlessly."""
+    return re.sub(r"([@#])", lambda m: m.group(1) + ZWSP, text)
 
 
 def set_group(z, message, bot_id, group, desired):
@@ -283,15 +294,19 @@ def set_group(z, message, bot_id, group, desired):
 def reconcile(z, pr, create, ci_override):
     bot_id = z.my_user_id()
     st = pr_state(pr)
+    content = pr_message_content(pr, st["title"])
     message = find_message(z, pr, bot_id)
     if message is None:
         if not create:
             log(f"no message for PR #{pr} yet and --create not set; nothing to do")
             return
-        content = f"**{zulip_escape(st['title'])}** · {pr_url(pr)}"
         mid = z.send_message(content)
         log(f"created message {mid} for PR #{pr}")
         message = {"id": mid, "reactions": []}
+    elif message.get("content") != content:
+        # Self-heal: the title changed, or an older format/sanitizer left stale text.
+        log(f"updating content of message {message['id']} for PR #{pr}")
+        z.update_message(message["id"], content)
 
     if st["merged"]:
         rev = "merge"
