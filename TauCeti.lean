@@ -15,6 +15,7 @@ import TauCeti.Algebra.AlgebraicGroup.HopfMap
 import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup
 import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
 import TauCeti.Algebra.AlgebraicGroup.Product
+import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity
 import TauCeti.Algebra.Bialgebra.TensorProduct
 import TauCeti.Algebra.Coalgebra.Comodule
 import TauCeti.Algebra.Coalgebra.Comodule.Cofree
