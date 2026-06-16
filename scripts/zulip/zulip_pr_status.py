@@ -7,9 +7,9 @@ groups of emoji reactions on it from GitHub truth:
 
   CI (build) group        review / lifecycle group
     running   -> yellow      review has begun        -> eyes
-    passed    -> green_circle running, green so far   -> arrow_forward
+    passed    -> green_circle running, green so far   -> play
     failed    -> red_circle  changes_requested/block -> writing
-                             all review done, green  -> white_check_mark
+                             all review done, green  -> check
                              merged                  -> merge        (realm emoji)
                              closed, not merged      -> closed-pr    (realm emoji)
 
@@ -71,14 +71,14 @@ EMOJI = {
     "red_circle":       ("unicode_emoji", None),
     # review / lifecycle group
     "eyes":             ("unicode_emoji", None),
-    "arrow_forward":    ("unicode_emoji", None),
+    "play":    ("unicode_emoji", None),
     "writing":          ("unicode_emoji", None),
-    "white_check_mark": ("unicode_emoji", None),
+    "check": ("unicode_emoji", None),
     "merge":            ("realm_emoji", "18527"),
     "closed-pr":        ("realm_emoji", "61293"),
 }
 CI_GROUP = ["yellow", "green_circle", "red_circle"]
-REVIEW_GROUP = ["eyes", "arrow_forward", "writing", "white_check_mark", "merge", "closed-pr"]
+REVIEW_GROUP = ["eyes", "play", "writing", "check", "merge", "closed-pr"]
 
 
 def log(msg):
@@ -171,8 +171,8 @@ def review_emoji(meta, head):
         if any(r.get("verdict") not in ("approve", "error") for r in runs):
             return "writing"  # at least one changes_requested / block
         if all(r.get("verdict") == "approve" for r in runs):
-            return "white_check_mark"  # all review done, all green
-    return "arrow_forward"  # running, green so far
+            return "check"  # all review done, all green
+    return "play"  # running, green so far
 
 
 # ----- Zulip REST (stdlib urllib; no third-party dependency) ------------------

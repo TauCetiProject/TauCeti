@@ -10,9 +10,9 @@ lives in the **PRs** topic, carrying two independent groups of emoji reactions:
 | | passed | 🟢 `green_circle` |
 | | failed | 🔴 `red_circle` |
 | **Review / lifecycle** | review has begun | 👀 `eyes` |
-| | running, green so far | ▶️ `arrow_forward` |
+| | running, green so far | ▶️ `play` |
 | | changes requested / blocked | ✍️ `writing` |
-| | all review done, all green | ✅ `white_check_mark` |
+| | all review done, all green | ✔️ `check` |
 | | merged | `:merge:` |
 | | closed, not merged | `:closed-pr:` |
 
