@@ -132,17 +132,12 @@ noncomputable abbrev mkQuotient (H : FiniteTypeCommHopfAlgCat.{u, v} R)
     (I : HopfIdeal R H) : H ⟶ quotient H I :=
   ObjectProperty.homMk (CommHopfAlgCat.mkQuotient H.obj I)
 
-/-- The quotient morphism has the expected underlying bialgebra morphism. -/
+/-- The finite-type quotient morphism forgets to the `CommHopfAlgCat` quotient morphism. -/
 @[simp]
-lemma toBialgHom_mkQuotient (H : FiniteTypeCommHopfAlgCat.{u, v} R)
-    (I : HopfIdeal R H) : toBialgHom (mkQuotient H I) = HopfIdeal.mkBialgHom I :=
-  rfl
-
-/-- The quotient morphism sends an element to its quotient class. -/
-@[simp]
-lemma mkQuotient_apply (H : FiniteTypeCommHopfAlgCat.{u, v} R)
-    (I : HopfIdeal R H) (h : H) :
-    toBialgHom (mkQuotient H I) h = Ideal.Quotient.mkₐ R I.toIdeal h :=
+lemma forget₂_commHopfAlgCat_map_mkQuotient (H : FiniteTypeCommHopfAlgCat.{u, v} R)
+    (I : HopfIdeal R H) :
+    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{u, v} R)).map
+      (mkQuotient H I) = CommHopfAlgCat.mkQuotient H.obj I :=
   rfl
 
 variable {H K : FiniteTypeCommHopfAlgCat.{u, v} R}
@@ -153,20 +148,13 @@ noncomputable abbrev liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) : quotient H I ⟶ K :=
   ObjectProperty.homMk (CommHopfAlgCat.liftQuotient I f.hom hf)
 
-/-- The quotient lift has the expected underlying bialgebra morphism. -/
+/-- The finite-type quotient lift forgets to the `CommHopfAlgCat` quotient lift. -/
 @[simp]
-lemma toBialgHom_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
+lemma forget₂_commHopfAlgCat_map_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) :
-    toBialgHom (liftQuotient I f hf) = HopfIdeal.liftBialgHom I (toBialgHom f) hf :=
+    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{u, v} R)).map
+      (liftQuotient I f hf) = CommHopfAlgCat.liftQuotient I f.hom hf :=
   rfl
-
-/-- The quotient lift evaluates on quotient classes as the original morphism. -/
-@[simp]
-lemma liftQuotient_mk (I : HopfIdeal R H) (f : H ⟶ K)
-    (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) (h : H) :
-    toBialgHom (liftQuotient I f hf) (Ideal.Quotient.mkₐ R I.toIdeal h) =
-      toBialgHom f h :=
-  HopfIdeal.liftBialgHom_mk I (toBialgHom f) hf h
 
 /-- The quotient lift composed with the quotient morphism is the original morphism. -/
 @[simp]
