@@ -2,7 +2,8 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib
+import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients
+import TauCeti.NumberTheory.NumberField.SplitsCompletely
 
 /-!
 # Splitting completely and the decomposition group
@@ -13,9 +14,8 @@ if the decomposition group of `Q`, i.e. its stabilizer under the natural action 
 trivial.
 
 This is the decomposition-group form of complete splitting, complementing the ramification/inertia
-counting criterion. The proof is orbit–stabilizer: `Gal(F/ℚ)` acts on the primes above `p` with a
-single orbit (`Algebra.IsInvariant.orbit_eq_primesOver`), so the number of primes is
-`[F : ℚ] / |decomposition group|`.
+counting criterion. It is a bridge between Tau Ceti's complete-splitting criterion and Mathlib's
+cardinality formula for decomposition groups.
 
 ## Main results
 
@@ -24,15 +24,18 @@ single orbit (`Algebra.IsInvariant.orbit_eq_primesOver`), so the number of prime
 
 ## Provenance
 
-Assembled from Mathlib's transitivity of the Galois action on primes
-(`Algebra.IsInvariant.orbit_eq_primesOver`) and orbit–stabilizer; prepared for the multiquadratic
-prime-splitting law (Layer 1 of the multiquadratic roadmap).
+Assembled from Tau Ceti's complete-splitting criterion
+(`TauCeti.NumberField.ncard_primesOver_eq_finrank_iff`) and Mathlib's decomposition-group
+cardinality formula (`Ideal.card_stabilizer_eq`); prepared for the multiquadratic prime-splitting
+law (Layer 1 of the multiquadratic roadmap).
 -/
 
 open NumberField Ideal Module MulAction
 open scoped Pointwise
 
 namespace TauCeti.NumberField
+
+attribute [local instance] Ideal.Quotient.field
 
 /-- **Splitting completely ⟺ trivial decomposition group.** For a Galois number field `F` and a
 prime `Q` of `𝓞 F` above the rational prime `p`, `p` splits completely (there are `[F : ℚ]` primes
@@ -42,21 +45,35 @@ theorem ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot (F : Type*) [Field F]
     [Q.LiesOver (span {(p : ℤ)})] :
     (primesOver (span {(p : ℤ)}) (𝓞 F)).ncard = finrank ℚ F ↔
       stabilizer (F ≃ₐ[ℚ] F) Q = ⊥ := by
-  have horbit : orbit (F ≃ₐ[ℚ] F) Q = (span {(p : ℤ)}).primesOver (𝓞 F) :=
-    Algebra.IsInvariant.orbit_eq_primesOver ℤ (𝓞 F) (F ≃ₐ[ℚ] F) (span {(p : ℤ)}) Q
-  have hkey : (primesOver (span {(p : ℤ)}) (𝓞 F)).ncard *
-      Nat.card (stabilizer (F ≃ₐ[ℚ] F) Q) = finrank ℚ F := by
-    rw [← Nat.card_coe_set_eq, ← horbit, ← Nat.card_prod,
-      Nat.card_congr (orbitProdStabilizerEquivGroup (F ≃ₐ[ℚ] F) Q),
-      IsGalois.card_aut_eq_finrank]
-  have hpos : 0 < finrank ℚ F := finrank_pos
+  have hpne : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
+  have hp0 : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    simpa [Ideal.span_singleton_eq_bot] using hpne
+  haveI : (span {(p : ℤ)} : Ideal ℤ).IsPrime :=
+    (Ideal.span_singleton_prime hpne).mpr (Nat.prime_iff_prime_int.mp (Fact.out : p.Prime))
+  haveI : (span {(p : ℤ)} : Ideal ℤ).IsMaximal := Ideal.IsPrime.isMaximal ‹_› hp0
+  haveI : Q.IsMaximal := Ideal.IsPrime.isMaximal ‹Q.IsPrime› (ne_bot_of_liesOver_of_ne_bot hp0 Q)
+  haveI : Finite (ℤ ⧸ (span {(p : ℤ)} : Ideal ℤ)) :=
+    Ring.HasFiniteQuotients.finiteQuotient hp0
+  haveI : Module.Finite (ℤ ⧸ (span {(p : ℤ)} : Ideal ℤ)) (𝓞 F ⧸ Q) := inferInstance
+  haveI : Algebra.IsAlgebraic (ℤ ⧸ (span {(p : ℤ)} : Ideal ℤ)) (𝓞 F ⧸ Q) := inferInstance
+  haveI : PerfectField (ℤ ⧸ (span {(p : ℤ)} : Ideal ℤ)) := inferInstance
+  haveI : Algebra.IsSeparable (ℤ ⧸ (span {(p : ℤ)} : Ideal ℤ)) (𝓞 F ⧸ Q) :=
+    inferInstance
+  have hsplit := TauCeti.NumberField.ncard_primesOver_eq_finrank_iff F p
+  have hcard :
+      Nat.card (stabilizer (F ≃ₐ[ℚ] F) Q) =
+        (span {(p : ℤ)}).ramificationIdxIn (𝓞 F) *
+          (span {(p : ℤ)}).inertiaDegIn (𝓞 F) :=
+    Ideal.card_stabilizer_eq (G := F ≃ₐ[ℚ] F) (span {(p : ℤ)}) hp0 Q
   constructor
   · intro hn
-    rw [hn] at hkey
-    exact Subgroup.card_eq_one.mp
-      (Nat.eq_of_mul_eq_mul_left hpos (by rw [mul_one]; exact hkey))
+    have hef := hsplit.mp hn
+    have hc : Nat.card (stabilizer (F ≃ₐ[ℚ] F) Q) = 1 := by
+      rw [hcard, hef.1, hef.2]
+    exact Subgroup.card_eq_one.mp hc
   · intro hst
-    rw [hst] at hkey
-    simpa using hkey
+    refine hsplit.mpr ?_
+    have hc : Nat.card (stabilizer (F ≃ₐ[ℚ] F) Q) = 1 := Subgroup.card_eq_one.mpr hst
+    exact mul_eq_one.mp (hcard.symm.trans hc)
 
 end TauCeti.NumberField
