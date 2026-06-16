@@ -393,8 +393,7 @@ theorem liftBialgHom_comp_mkBialgHom (f : H →ₐc[R] K)
     (hf : I.toIdeal ≤ RingHom.ker f.toAlgHom.toRingHom) :
     (liftBialgHom I f hf).comp (mkBialgHom I) = f := by
   ext h
-  change liftBialgHom I f hf (mkBialgHom I h) = f h
-  rw [mkBialgHom_apply, liftBialgHom_mk]
+  simp only [BialgHom.coe_comp, Function.comp_apply, mkBialgHom_apply, liftBialgHom_mk]
 
 /-- A bialgebra morphism out of the quotient is determined by its precomposition with the
 quotient map. -/
