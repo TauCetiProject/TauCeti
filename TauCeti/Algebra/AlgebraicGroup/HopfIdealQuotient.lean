@@ -25,6 +25,7 @@ the finite-type coordinate-Hopf-algebra category.
 * `TauCeti.FiniteTypeCommHopfAlgCat.quotient`: the quotient object in
   `FiniteTypeCommHopfAlgCat`.
 * `TauCeti.FiniteTypeCommHopfAlgCat.mkQuotient`: the quotient morphism.
+* `TauCeti.FiniteTypeCommHopfAlgCat.mkQuotient_ker`: its kernel characterization.
 * `TauCeti.FiniteTypeCommHopfAlgCat.liftQuotient`: the induced morphism out of a quotient.
 
 ## References
@@ -67,6 +68,19 @@ lemma toBialgHom_mkQuotient (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) :
 lemma mkQuotient_apply (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) (h : H) :
     toBialgHom (mkQuotient H I) h = Ideal.Quotient.mkₐ R I.toIdeal h :=
   rfl
+
+/-- The kernel of the quotient morphism is the Hopf ideal being quotiented by. -/
+lemma mkQuotient_ker (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) :
+    RingHom.ker (toBialgHom (mkQuotient H I)).toAlgHom.toRingHom = I.toIdeal := by
+  rw [toBialgHom_mkQuotient]
+  exact Ideal.Quotient.mkₐ_ker (R₁ := R) I.toIdeal
+
+/-- An element maps to zero in the quotient exactly when it belongs to the Hopf ideal. -/
+@[simp]
+lemma mkQuotient_eq_zero_iff (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) (h : H) :
+    toBialgHom (mkQuotient H I) h = 0 ↔ h ∈ I.toIdeal := by
+  rw [mkQuotient_apply]
+  exact Ideal.Quotient.eq_zero_iff_mem
 
 variable {H K : CommHopfAlgCat.{u, v} R}
 
@@ -140,6 +154,18 @@ lemma forget₂_commHopfAlgCat_map_mkQuotient (H : FiniteTypeCommHopfAlgCat.{u, 
     (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{u, v} R)).map
       (mkQuotient H I) = CommHopfAlgCat.mkQuotient H.obj I :=
   rfl
+
+/-- The kernel of the finite-type quotient morphism is the Hopf ideal being quotiented by. -/
+lemma mkQuotient_ker (H : FiniteTypeCommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) :
+    RingHom.ker (toBialgHom (mkQuotient H I)).toAlgHom.toRingHom = I.toIdeal :=
+  CommHopfAlgCat.mkQuotient_ker H.obj I
+
+/-- An element maps to zero in the finite-type quotient exactly when it belongs to the Hopf
+ideal. -/
+@[simp]
+lemma mkQuotient_eq_zero_iff (H : FiniteTypeCommHopfAlgCat.{u, v} R)
+    (I : HopfIdeal R H) (h : H) : toBialgHom (mkQuotient H I) h = 0 ↔ h ∈ I.toIdeal :=
+  CommHopfAlgCat.mkQuotient_eq_zero_iff H.obj I h
 
 variable {H K : FiniteTypeCommHopfAlgCat.{u, v} R}
 
