@@ -2,6 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.NumberTheory.RamificationInertia.Galois
 import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients
 import TauCeti.NumberTheory.NumberField.SplitsCompletely
 
@@ -24,10 +25,9 @@ cardinality formula for decomposition groups.
 
 ## Provenance
 
-Assembled from Tau Ceti's complete-splitting criterion
-(`TauCeti.NumberField.ncard_primesOver_eq_finrank_iff`) and Mathlib's decomposition-group
-cardinality formula (`Ideal.card_stabilizer_eq`); prepared for the multiquadratic prime-splitting
-law (Layer 1 of the multiquadratic roadmap).
+Specializes Tau Ceti's Dedekind-domain trivial-decomposition-group criterion
+(`TauCeti.DedekindDomain.ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot_of_isGaloisGroup`);
+prepared for the multiquadratic prime-splitting law (Layer 1 of the multiquadratic roadmap).
 -/
 
 open NumberField Ideal Module MulAction
@@ -59,21 +59,9 @@ theorem ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot (F : Type*) [Field F]
   haveI : PerfectField (ℤ ⧸ (span {(p : ℤ)} : Ideal ℤ)) := inferInstance
   haveI : Algebra.IsSeparable (ℤ ⧸ (span {(p : ℤ)} : Ideal ℤ)) (𝓞 F ⧸ Q) :=
     inferInstance
-  have hsplit := TauCeti.NumberField.ncard_primesOver_eq_finrank_iff F p
-  have hcard :
-      Nat.card (stabilizer (F ≃ₐ[ℚ] F) Q) =
-        (span {(p : ℤ)}).ramificationIdxIn (𝓞 F) *
-          (span {(p : ℤ)}).inertiaDegIn (𝓞 F) :=
-    Ideal.card_stabilizer_eq (G := F ≃ₐ[ℚ] F) (span {(p : ℤ)}) hp0 Q
-  constructor
-  · intro hn
-    have hef := hsplit.mp hn
-    have hc : Nat.card (stabilizer (F ≃ₐ[ℚ] F) Q) = 1 := by
-      rw [hcard, hef.1, hef.2]
-    exact Subgroup.card_eq_one.mp hc
-  · intro hst
-    refine hsplit.mpr ?_
-    have hc : Nat.card (stabilizer (F ≃ₐ[ℚ] F) Q) = 1 := Subgroup.card_eq_one.mpr hst
-    exact mul_eq_one.mp (hcard.symm.trans hc)
+  have h :=
+    TauCeti.DedekindDomain.ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot_of_isGaloisGroup
+      (F ≃ₐ[ℚ] F) (span {(p : ℤ)}) hp0 Q
+  rwa [IsGaloisGroup.card_eq_finrank (F ≃ₐ[ℚ] F) ℚ F] at h
 
 end TauCeti.NumberField
