@@ -67,6 +67,7 @@ import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.Multiquadratic.Galois
 import TauCeti.NumberTheory.Multiquadratic.GaloisGroup
 import TauCeti.NumberTheory.Multiquadratic.SquareClass
+import TauCeti.NumberTheory.NumberField.MultiquadraticSplitting
 import TauCeti.NumberTheory.NumberField.QuadraticSplitting
 import TauCeti.NumberTheory.NumberField.SplitsCompletely
 import TauCeti.Topology.Algebra.HomeomorphAction
