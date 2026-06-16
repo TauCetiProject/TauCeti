@@ -44,6 +44,7 @@ import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.Algebra.HopfAlgebra
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal
+import TauCeti.Algebra.HopfAlgebra.Quotient
 import TauCeti.AlgebraicGeometry.WeilDivisor
 import TauCeti.AlgebraicTopology.UniversalCover.Deck
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Conjugation
