@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.RingTheory.HopfAlgebra.Convolution
+import Mathlib.RingTheory.FiniteType
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal
 
@@ -30,6 +31,7 @@ map kills. No exactness or flatness input is needed; that is what the Hopf-ideal
   comultiplication and counit of the quotient, as `R`-algebra homomorphisms descended from `H`.
 * `TauCeti.HopfIdeal.instCoalgebraQuotient`, `instBialgebraQuotient`,
   `instHopfAlgebraQuotient`: the coalgebra, bialgebra and Hopf algebra structures on `H ⧸ I`.
+* `TauCeti.HopfIdeal.finiteTypeQuotient`: finite type of `H ⧸ I` when `H` is finite type.
 * `TauCeti.HopfIdeal.mkBialgHom`: the quotient map `H →ₐc[R] H ⧸ I` as a bialgebra morphism.
 * `TauCeti.HopfIdeal.liftBialgHom`: the bialgebra morphism induced from a bialgebra morphism
   which kills the Hopf ideal.
@@ -415,6 +417,12 @@ section CommRing
 
 variable [CommRing H] [HopfAlgebra R H]
 variable (I : HopfIdeal R H)
+
+/-- The quotient of a finite-type commutative Hopf algebra by a Hopf ideal is finite type. -/
+instance finiteTypeQuotient [Algebra.FiniteType R H] :
+    Algebra.FiniteType R (H ⧸ I.toIdeal) :=
+  Algebra.FiniteType.of_surjective (Ideal.Quotient.mkₐ R I.toIdeal)
+    (Ideal.Quotient.mkₐ_surjective R I.toIdeal)
 
 /-- The antipode of the quotient, as an `R`-algebra homomorphism descended from `H` (valid since
 `H` is commutative, where the antipode is an algebra homomorphism). -/

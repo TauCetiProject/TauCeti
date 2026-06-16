@@ -20,7 +20,6 @@ the finite-type coordinate-Hopf-algebra category.
 
 ## Main declarations
 
-* `TauCeti.HopfIdeal.finiteTypeQuotient`: finite type of `H ⧸ I`.
 * `TauCeti.CommHopfAlgCat.quotient`: the quotient object in `CommHopfAlgCat`.
 * `TauCeti.FiniteTypeCommHopfAlgCat.quotient`: the quotient object in
   `FiniteTypeCommHopfAlgCat`.
@@ -38,19 +37,6 @@ Group Schemes*, §16. The finite-type descent is Mathlib's
 namespace TauCeti
 
 universe u v
-
-namespace HopfIdeal
-
-variable {R : Type u} {H : Type v}
-variable [CommRing R] [CommRing H] [HopfAlgebra R H]
-variable [Algebra.FiniteType R H]
-
-/-- The quotient of a finite-type commutative Hopf algebra by a Hopf ideal is finite type. -/
-instance finiteTypeQuotient (I : HopfIdeal R H) : Algebra.FiniteType R (H ⧸ I.toIdeal) :=
-  Algebra.FiniteType.of_surjective (Ideal.Quotient.mkₐ R I.toIdeal)
-    (Ideal.Quotient.mkₐ_surjective R I.toIdeal)
-
-end HopfIdeal
 
 namespace CommHopfAlgCat
 
@@ -187,23 +173,23 @@ lemma liftQuotient_mk (I : HopfIdeal R H) (f : H ⟶ K)
 lemma liftQuotient_comp_mkQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) :
     mkQuotient H I ≫ liftQuotient I f hf = f := by
-  ext h
-  exact BialgHom.congr_fun
-    (HopfIdeal.liftBialgHom_comp_mkBialgHom I (toBialgHom f) hf) h
+  apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
+    (CommHopfAlgCat.{u, v} R)).map_injective
+  exact CommHopfAlgCat.liftQuotient_comp_mkQuotient I f.hom hf
 
 /-- A morphism out of the quotient object is determined by its precomposition with the
 quotient morphism. -/
 lemma liftQuotient_unique (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) (g : quotient H I ⟶ K)
     (hg : mkQuotient H I ≫ g = f) : g = liftQuotient I f hf := by
-  ext q
-  obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R I.toIdeal q
-  calc
-    toBialgHom g (Ideal.Quotient.mkₐ R I.toIdeal h) =
-        toBialgHom (mkQuotient H I ≫ g) h := rfl
-    _ = toBialgHom f h := by rw [hg]
-    _ = toBialgHom (liftQuotient I f hf) (Ideal.Quotient.mkₐ R I.toIdeal h) :=
-      (liftQuotient_mk I f hf h).symm
+  apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
+    (CommHopfAlgCat.{u, v} R)).map_injective
+  have hg' : CommHopfAlgCat.ofHom (HopfIdeal.mkBialgHom I) ≫ g.hom = f.hom :=
+    congrArg
+      (fun φ => (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
+        (CommHopfAlgCat.{u, v} R)).map φ) hg
+  exact CommHopfAlgCat.liftQuotient_unique (H := CommHopfAlgCat.of R H) I f.hom hf
+    g.hom hg'
 
 end FiniteTypeCommHopfAlgCat
 
