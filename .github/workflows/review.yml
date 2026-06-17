@@ -103,7 +103,8 @@ jobs:
   review:
     needs: resolve
     if: ${{ needs.resolve.outputs.pr != '' }}
-    uses: FormalFrontier/TauCetiReview/.github/workflows/review.yml@main
+    # Pinned to a TauCetiReview commit; bump deliberately. Unpinned @main would let an upstream change break every contributor's review at once.
+    uses: FormalFrontier/TauCetiReview/.github/workflows/review.yml@688aea57fce6afee14e51707c987048924ecdf56
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
