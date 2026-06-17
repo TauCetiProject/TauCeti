@@ -113,12 +113,14 @@ PRs; cooperators dedup only among marker-carrying PRs.
 Merge only when a GitHub-visible review shows every rubric green for the current head;
 rely on GitHub to serialize the merge.
 
-Close or abandon only a PR that is in your scope, one you authored or can identify as
-yours, with no human activity, and only on budget evidence derived from GitHub or the
-durable archive in TauCetiData. Never rely on private local counters, which another
-agent cannot see. Never close a foreign or human-touched PR. The duplicate sweeper
-closes a newer duplicate only when both PRs carry the same authoring marker and neither
-has human activity; otherwise it labels for a human.
+Close or abandon a PR only on budget evidence derived from GitHub or the durable archive in
+TauCetiData: a PR the review engine has labelled `review-budget-spent` (it used its full review
+budget without reaching all-green), or one left stale with changes still requested. Never rely on
+private local counters, which another agent cannot see. The duplicate sweeper closes a newer
+duplicate only when both PRs carry the same authoring marker, keeping the lower PR number.
+A `keep` label (also `hold`/`wip`/`human`/`do-not-close`) opts a PR out of any automatic
+close. Apart from that opt-out, human activity does not shield a PR: if you push to or comment on a
+queued PR, it is yours to steward, so add `keep` if you want it held.
 
 ## Section 6: Identity `[COOP]`
 
