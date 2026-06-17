@@ -76,4 +76,5 @@ import TauCeti.NumberTheory.Multiquadratic.SquareClass
 import TauCeti.NumberTheory.NumberField.MultiquadraticSplitting
 import TauCeti.NumberTheory.NumberField.QuadraticSplitting
 import TauCeti.NumberTheory.NumberField.SplitsCompletely
+import TauCeti.ScratchFixCI
 import TauCeti.Topology.Algebra.HomeomorphAction
