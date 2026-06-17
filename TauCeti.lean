@@ -60,7 +60,6 @@ import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
 import TauCeti.Analysis.PDE.LowerOrder
 import TauCeti.Analysis.PDE.UniformEllipticity
-import TauCeti.Basic
 import TauCeti.Coordination
 import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.FieldTheory.Trace
