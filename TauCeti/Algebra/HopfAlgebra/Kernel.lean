@@ -23,6 +23,8 @@ dictionary.
 * `TauCeti.HopfIdeal.ker`: the Hopf ideal given by the kernel of a surjective bialgebra
   morphism.
 * `TauCeti.HopfIdeal.ker_toIdeal` and `TauCeti.HopfIdeal.mem_ker`: its characteristic API.
+* `TauCeti.HopfIdeal.kerLiftBialgHom`: the induced bialgebra morphism from the quotient by
+  the kernel of a surjective morphism.
 * `TauCeti.HopfIdeal.ker_mkBialgHom`: the kernel of the quotient morphism by `I` is `I`.
 
 ## References
@@ -64,35 +66,26 @@ def ker (f : H →ₐc[R] K) (hf : Function.Surjective f) : HopfIdeal R H :=
     (by
       intro x hx
       have hker := comul_mem_tensor_map_ker (R := R) f hx
-      -- `map_ker` is stated for the raw tensor-product algebra map, while
-      -- `comul_mem_tensor_map_ker` naturally packages the same map as a `RingHom` kernel.
-      change Coalgebra.comul (R := R) x ∈
-        RingHom.ker (Algebra.TensorProduct.map (f : H →ₐ[R] K) (f : H →ₐ[R] K)) at hker
+      have hker' : Coalgebra.comul (R := R) x ∈
+          RingHom.ker (Algebra.TensorProduct.map (f : H →ₐ[R] K) (f : H →ₐ[R] K)) := by
+        simpa using hker
       rw [Algebra.TensorProduct.map_ker (f := (f : H →ₐ[R] K)) (g := (f : H →ₐ[R] K))
-        hf hf] at hker
-      -- Unfold the local tensor-ideal wrappers to match the exact image ideals produced by
-      -- `Algebra.TensorProduct.map_ker`.
+        hf hf] at hker'
+      rw [leftTensorIdeal_def, rightTensorIdeal_def]
       change Coalgebra.comul (R := R) x ∈
         Ideal.map Algebra.TensorProduct.includeLeft (RingHom.ker (f : H →ₐ[R] K)) ⊔
           Ideal.map Algebra.TensorProduct.includeRight (RingHom.ker (f : H →ₐ[R] K))
-      exact hker)
+      exact hker')
     (by
       intro x hx
-      have h := LinearMap.congr_fun (CoalgHomClass.counit_comp f) x
-      -- `CoalgHomClass.counit_comp` is a linear-map equality; this exposes its pointwise
-      -- counit statement for the bialgebra-hom coercion.
-      change Coalgebra.counit (R := R) (f x) = Coalgebra.counit (R := R) x at h
+      have h := CoalgHomClass.counit_comp_apply f x
       have hfx : f x = 0 := RingHom.mem_ker.mp hx
       simpa [hfx] using h.symm)
     (by
       intro x hx
       rw [RingHom.mem_ker]
-      -- Normalize the algebra-hom coercion in the kernel goal so `BialgHom.map_antipode`
-      -- rewrites the displayed expression directly.
-      change f (HopfAlgebra.antipode R x) = 0
       have hfx : f x = 0 := RingHom.mem_ker.mp hx
-      rw [BialgHom.map_antipode, hfx]
-      simp)
+      simp [hfx, BialgHom.map_antipode f x])
 
 /-- The underlying ideal of the kernel Hopf ideal is the ring-hom kernel. -/
 @[simp]
@@ -122,6 +115,49 @@ theorem ker_eq_bot_iff (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     ext x
     rw [mem_ker, mem_bot]
     exact ⟨fun hx => hinj (by simpa using hx), fun hx => by rw [hx, map_zero]⟩
+
+/-- The bialgebra morphism induced from a surjective morphism on the quotient by its
+Hopf-ideal kernel. -/
+noncomputable def kerLiftBialgHom (f : H →ₐc[R] K) (hf : Function.Surjective f) :
+    H ⧸ (ker f hf).toIdeal →ₐc[R] K :=
+  liftBialgHom (ker f hf) f (by
+    intro x hx
+    simpa [ker_toIdeal] using hx)
+
+/-- The kernel quotient lift evaluates on quotient classes as the original morphism. -/
+@[simp]
+theorem kerLiftBialgHom_mk (f : H →ₐc[R] K) (hf : Function.Surjective f) (h : H) :
+    kerLiftBialgHom f hf (Ideal.Quotient.mkₐ R (ker f hf).toIdeal h) = f h :=
+  liftBialgHom_mk (ker f hf) f (by
+    intro x hx
+    simpa [ker_toIdeal] using hx) h
+
+/-- The kernel quotient lift composed with the quotient map is the original morphism. -/
+@[simp]
+theorem kerLiftBialgHom_comp_mkBialgHom (f : H →ₐc[R] K) (hf : Function.Surjective f) :
+    (kerLiftBialgHom f hf).comp (mkBialgHom (ker f hf)) = f :=
+  liftBialgHom_comp_mkBialgHom (ker f hf) f (by
+    intro x hx
+    simpa [ker_toIdeal] using hx)
+
+/-- The quotient by the Hopf-ideal kernel of a surjective morphism maps bijectively to the
+codomain. -/
+theorem kerLiftBialgHom_bijective (f : H →ₐc[R] K) (hf : Function.Surjective f) :
+    Function.Bijective (kerLiftBialgHom f hf) := by
+  constructor
+  · intro q₁ q₂ hq
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (ker f hf).toIdeal q₁
+    obtain ⟨y, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (ker f hf).toIdeal q₂
+    rw [kerLiftBialgHom_mk, kerLiftBialgHom_mk] at hq
+    have hsub : x - y ∈ (ker f hf).toIdeal := by
+      rw [ker_toIdeal, RingHom.mem_ker, map_sub]
+      change f x - f y = 0
+      rw [hq, sub_self]
+    change Ideal.Quotient.mk (ker f hf).toIdeal x = Ideal.Quotient.mk (ker f hf).toIdeal y
+    exact (Ideal.Quotient.mk_eq_mk_iff_sub_mem (I := (ker f hf).toIdeal) x y).mpr hsub
+  · intro y
+    obtain ⟨x, rfl⟩ := hf y
+    exact ⟨Ideal.Quotient.mkₐ R (ker f hf).toIdeal x, kerLiftBialgHom_mk f hf x⟩
 
 /-- The Hopf-ideal kernel of the quotient morphism by `I` is `I`. -/
 @[simp]
