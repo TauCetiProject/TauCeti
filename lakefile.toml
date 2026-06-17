@@ -1,6 +1,9 @@
 name = "TauCeti"
 defaultTargets = ["TauCeti"]
 
+# REBASE FIXTURE: this comment intentionally collides with main's lakefile comment
+# block so the PR is CONFLICTING, exercising the worker's rebase workflow in a bubble.
+
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4"
