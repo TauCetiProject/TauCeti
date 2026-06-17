@@ -27,7 +27,7 @@ concrete carrier.
 
 The construction is the standard zero object in the category of comodules; see Sweedler,
 *Hopf Algebras*, Chapter 2. It supplies an additive-category prerequisite for
-`TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1, "Comodules over a coalgebra/Hopf
+`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1, "Comodules over a coalgebra/Hopf
 algebra". The proof that a subsingleton bundled comodule is zero follows Mathlib's
 `SemimoduleCat.isZero_of_subsingleton` / `ModuleCat.isZero_of_subsingleton` pattern.
 -/

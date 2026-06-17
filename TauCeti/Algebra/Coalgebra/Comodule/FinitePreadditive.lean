@@ -32,7 +32,7 @@ Tannakian reconstruction can be built on finitely generated comodules.
 ## References
 
 This supplies additive-category bookkeeping for
-`TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1 target "Comodules over a coalgebra/Hopf
+`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1 target "Comodules over a coalgebra/Hopf
 algebra": the finite-dimensional comodule category should have additive hom-sets before the
 rigid monoidal representation category is developed. The transfer mechanism is Mathlib's
 `ObjectProperty.FullSubcategory` preadditive instance.

@@ -16,7 +16,7 @@ recovers the one-dimensional additive group `𝔾ₐ = Spec R[X]`, whose `A`-val
 `(A, +)`; the `R`-points are this construction specialized to `A = R`.
 
 This is the worked example `𝔾ₐ` from the Tau Ceti reductive-groups roadmap
-(`TauCetiRoadmap/ReductiveGroups/README.md`, "Worked examples" and Layer 0, "R-points as a
+(`ReductiveGroups/README.md` in TauCetiRoadmap, "Worked examples" and Layer 0, "R-points as a
 group"), in the same spirit as the multiplicative group `𝔾ₘ`.
 
 ## Main declarations

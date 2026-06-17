@@ -31,7 +31,7 @@ representation category can be developed.
 ## References
 
 This supplies a prerequisite for
-`TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1 target "Comodules over a coalgebra/Hopf
+`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1 target "Comodules over a coalgebra/Hopf
 algebra": the finite-dimensional comodule representation category should be an additive
 category before tensor products, duals, and Tannakian structure are built on top.
 -/

@@ -33,7 +33,7 @@ reconstruction should be built on this full subcategory rather than on all comod
 ## References
 
 This supplies the finite-dimensional-category part of
-`TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1 target "Comodules over a coalgebra/Hopf
+`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1 target "Comodules over a coalgebra/Hopf
 algebra". The construction follows Mathlib's `FGModuleCat` pattern: finite objects are a full
 subcategory defined by the object property `Module.Finite`.
 -/

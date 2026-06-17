@@ -38,7 +38,7 @@ instances of pre-composition with the bialgebra morphisms from
 
 This realizes the "products of affine group schemes" computation on the functor of points, in
 the spirit of the worked examples of the Tau Ceti ReductiveGroups roadmap
-(`TauCetiRoadmap/ReductiveGroups/README.md`, Layer 0 "R-points as a group" and the three
+(`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 0 "R-points as a group" and the three
 synchronized models). The tensor-product bialgebra structure and its unit and identity
 isomorphisms are from Mathlib's `Mathlib.RingTheory.Bialgebra.TensorProduct`; the universal
 property `Algebra.TensorProduct.lift` is from Mathlib's
