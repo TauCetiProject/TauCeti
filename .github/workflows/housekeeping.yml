@@ -7,9 +7,11 @@ name: Queue Housekeeping
 #            The branch is kept; the comment says it is fine to open a fresh PR after another look.
 #   dedup    Close a newer PR that authors the same roadmap target (the <!--tauceti-target:v1 ...-->
 #            body marker) as an older open one; keep the lowest PR number.
-# Safety lives in Scripts/housekeeping.py: a `keep` (or hold/wip/human/do-not-close) label opts a PR
-# out. abandon is a server-side label query (one request, independent of total open-PR count), and a
-# failed close makes the job exit nonzero. Run it manually first with the dry-run input to preview.
+#   stale    Close a PR whose latest review scoreboard is changes-requested/blocked and that has had
+#            no activity for STALE_DAYS (default 7).
+# The only opt-out is a `keep` (or hold/wip/human/do-not-close) label; human activity alone does not
+# spare a PR. abandon is a server-side label query (one request, independent of total open-PR count),
+# and a failed close makes the job exit nonzero. Run it manually first with the dry-run input to preview.
 
 on:
   schedule:
