@@ -30,7 +30,7 @@ coefficients.
 
 This is standard coalgebra/comodule terminology; see Sweedler, *Hopf Algebras*, Chapter 2.
 It supplies the "matrix coefficients" prerequisite in
-`TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1, "The dictionary: representation of
+`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1, "The dictionary: representation of
 `G` ⇆ `A`-comodule; matrix coefficients."
 -/
 

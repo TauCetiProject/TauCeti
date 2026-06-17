@@ -29,7 +29,7 @@ reductive-groups roadmap: the Hopf algebra structure carries the group law, whil
 ## References
 
 This is the finite-type coordinate-Hopf-algebra wrapper requested by
-`TauCetiRoadmap/ReductiveGroups/README.md`, in the standing hypotheses and Layer 0
+`ReductiveGroups/README.md` in TauCetiRoadmap, in the standing hypotheses and Layer 0
 three-way dictionary: an affine group scheme of finite type over `k` is modeled by a
 commutative Hopf `k`-algebra finitely generated as a `k`-algebra. The finite-type algebra
 infrastructure is Mathlib's `FGAlgCat` and `Algebra.FiniteType`; the Hopf algebra category

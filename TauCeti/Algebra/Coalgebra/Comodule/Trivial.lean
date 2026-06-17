@@ -36,7 +36,7 @@ choose the trivial one.
 ## References
 
 This supplies a small prerequisite for the Tau Ceti reductive-groups roadmap,
-`TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1 target "Comodules over a coalgebra/Hopf
+`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1 target "Comodules over a coalgebra/Hopf
 algebra", specifically the tensor-unit side of the requested tensor-product and rigid
 monoidal comodule category. It uses Mathlib's bialgebra API from
 `Mathlib.RingTheory.Bialgebra.GroupLike`.

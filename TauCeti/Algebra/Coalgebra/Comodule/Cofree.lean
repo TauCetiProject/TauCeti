@@ -41,7 +41,7 @@ explicitly. This follows the convention already used for `Comodule.trivial` and
 This is the cofree (coinduced) comodule of a coalgebra; see for example Sweedler, *Hopf
 Algebras*, Chapter 2. It is added for the Layer 1 target "Comodules over a coalgebra/Hopf
 algebra" of the Tau Ceti reductive-groups roadmap,
-`TauCetiRoadmap/ReductiveGroups/README.md`, specifically the regular/cofree representations and
+`ReductiveGroups/README.md` in TauCetiRoadmap, specifically the regular/cofree representations and
 the adjunction underlying the embedding theorem.
 -/
 

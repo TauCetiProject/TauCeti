@@ -25,7 +25,7 @@ unfolding the definition of a comodule.
 
 ## References
 
-This supplies infrastructure for `TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1 target
+This supplies infrastructure for `ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1 target
 "Comodules over a coalgebra/Hopf algebra", specifically the categorical API needed before
 tensor products and duals of comodules.
 -/

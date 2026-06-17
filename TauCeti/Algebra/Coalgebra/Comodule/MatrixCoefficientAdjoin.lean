@@ -31,7 +31,7 @@ representation is faithful exactly when its matrix coefficients generate `A`.
 ## References
 
 This is standard coalgebra/comodule terminology; see Sweedler, *Hopf Algebras*, Chapter 2.
-It supplies a prerequisite for `TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1,
+It supplies a prerequisite for `ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1,
 "Faithfulness done right", where faithful representations are characterized by their matrix
 coefficients generating the coordinate Hopf algebra.
 -/

@@ -30,7 +30,7 @@ generate the coordinate Hopf algebra.
 
 This is standard matrix-coefficient functoriality for comodules; see Sweedler, *Hopf
 Algebras*, Chapter 2. It supplies a prerequisite for
-`TauCetiRoadmap/ReductiveGroups/README.md`, Layer 1, "Faithfulness done right", where
+`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1, "Faithfulness done right", where
 faithful representations are characterized by their matrix coefficients generating the
 coordinate Hopf algebra.
 -/
