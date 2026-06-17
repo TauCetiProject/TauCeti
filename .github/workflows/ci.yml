@@ -25,8 +25,9 @@ jobs:
             exit 1
           fi
 
-      # Backstop: PRs are auto-synced by mk-all.yml, so main should never drift; this
-      # catches a direct push to main that left the aggregator out of date.
+      # Backstop: mk-all.yml regenerates TauCeti.lean on main after every merge that
+      # touches TauCeti/, so main should never stay drifted; this catches a window where
+      # the aggregator is briefly out of date (the mk-all sync push then brings it back).
       - name: Aggregator check (TauCeti.lean imports every module, sorted)
         run: bash Scripts/mk_all.sh --check
 

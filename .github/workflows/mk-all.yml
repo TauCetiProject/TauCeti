@@ -1,41 +1,37 @@
 name: mk-all
 
 # Keep the root aggregator TauCeti.lean importing every TauCeti/ module, sorted.
-# On every PR this regenerates it with the TRUSTED base Scripts/mk_all.sh (which only
-# lists filenames — it runs none of the PR's code) and, if it drifted:
-#   - same-repo PR branch  -> auto-commit the fix and push it (the worker's PRs land here);
-#   - fork PR              -> fail the `mk-all` check with instructions (we can't push to a fork).
-# The push uses the GitHub App token (not GITHUB_TOKEN, whose pushes don't re-trigger CI), so
-# the corrected head gets a fresh build/review; the next mk-all run finds it in sync and stops.
-# The commit-status POST, by contrast, uses GITHUB_TOKEN: it already carries `statuses: write`
-# here, whereas the App installation does not, so posting with the App token 403s ("Resource not
-# accessible by integration") and — under the runner's `bash -e` — that 403 would fail the job
-# even when the aggregator is perfectly in sync. Posting a status never re-triggers CI, so there
-# is no reason to spend the App token on it.
 #
-# Security: this is a pull_request_target job with a write token, so it treats EVERY
-# PR-controlled value as hostile. Such values are never spliced into a `run:` script via
-# ${{ }}; they are passed through `env`, validated (ref/sha/repo allowlists), and only the
-# validated forms are reused. Push credentials are managed by actions/checkout (no token in
-# any URL we type), and the generator never runs PR code or writes through a symlink.
+# This is NOT a PR check. The build globs every TauCeti/*.lean (see lakefile.toml's
+# `globs = ["TauCeti.*"]`), so a new module is built and axiom-audited without ever
+# being listed in the root aggregator — a PR never needs to touch TauCeti.lean. We
+# therefore regenerate the aggregator AFTER merge, on trusted `main` content, rather
+# than failing fork PRs that cannot push a fix back to their branch.
+#
+# Trigger note: we watch pushes that touch TauCeti/** only. The sync's own commit
+# changes nothing but TauCeti.lean (which is NOT under TauCeti/), so it does not
+# re-trigger this workflow — no self-perpetuating loop.
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+    paths: ['TauCeti/**']
+  workflow_dispatch:
 
 permissions:
   contents: read
-  statuses: write
 
 concurrency:
-  group: mk-all-${{ github.event.pull_request.number }}
+  group: mk-all-main
   cancel-in-progress: true
 
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: App token (its pushes re-trigger CI; GITHUB_TOKEN's do not)
+      # The App is a ruleset bypass actor (so it may push to protected main) and its
+      # pushes re-trigger CI, unlike GITHUB_TOKEN's.
+      - name: App token
         id: app-token
         uses: actions/create-github-app-token@v1
         with:
@@ -43,92 +39,29 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: FormalFrontier
 
-      - name: Resolve and validate PR head (hostile input — never spliced into shell)
-        id: pr
-        env:
-          HEAD_REF:  ${{ github.event.pull_request.head.ref }}
-          HEAD_SHA:  ${{ github.event.pull_request.head.sha }}
-          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
-          BASE_REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::bad head sha"; exit 1; }
-          [[ "$HEAD_REPO" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ ]] || { echo "::error::bad head repo"; exit 1; }
-          # Branch name: strict allowlist AND git's own validator; no refs/ prefix, no '..'.
-          if [[ ! "$HEAD_REF" =~ ^[A-Za-z0-9._/-]+$ ]] || [[ "$HEAD_REF" == refs/* ]] \
-             || ! git check-ref-format --branch "$HEAD_REF" >/dev/null 2>&1; then
-            echo "::error::refusing unusual head ref"; exit 1
-          fi
-          { echo "sha=$HEAD_SHA"; echo "ref=$HEAD_REF"; echo "headrepo=$HEAD_REPO"
-            [ "$HEAD_REPO" = "$BASE_REPO" ] && echo "same=1" || echo "same=0"; } >> "$GITHUB_OUTPUT"
-
-      - name: Checkout base (trusted — the generator script)
-        uses: actions/checkout@v4
-        with: { path: base, persist-credentials: false }
-
-      # Same-repo PR: check out the BRANCH with the App token so checkout sets up push
-      # credentials securely (no token ever appears in a URL we type).
-      - name: Checkout PR branch (same-repo, writable)
-        if: ${{ steps.pr.outputs.same == '1' }}
+      # Check out main with the App token so a later `git push` is authenticated.
+      - name: Checkout main
         uses: actions/checkout@v4
         with:
-          repository: ${{ steps.pr.outputs.headrepo }}
-          ref: ${{ steps.pr.outputs.ref }}
-          path: pr
+          ref: main
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: true
 
-      # Fork PR: read-only checkout of the head commit — we only validate, never push.
-      - name: Checkout PR head (fork, read-only)
-        if: ${{ steps.pr.outputs.same != '1' }}
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ steps.pr.outputs.headrepo }}
-          ref: ${{ steps.pr.outputs.sha }}
-          path: pr
-          persist-credentials: false
+      - name: Regenerate the aggregator
+        run: bash Scripts/mk_all.sh .
 
-      - name: Regenerate the aggregator with the trusted base script
-        run: bash base/Scripts/mk_all.sh pr
-
-      - name: Push the fix (same-repo) or fail (fork), then report status
-        id: sync
-        env:
-          # GITHUB_TOKEN (has `statuses: write` here); the App token lacks it and 403s. The git
-          # push below uses the checkout-managed App credentials, not this token.
-          GH_TOKEN:  ${{ github.token }}
-          SAME:      ${{ steps.pr.outputs.same }}
-          REF:       ${{ steps.pr.outputs.ref }}
-          HEAD_SHA:  ${{ steps.pr.outputs.sha }}
-          BASE_REPO: ${{ github.repository }}
+      # main is trusted, so if mk_all produced no change there is nothing to do.
+      # Otherwise commit the regenerated aggregator and push it back to main. A
+      # rejected push is a real failure here (nothing else races main), so let it fail.
+      - name: Commit and push if the aggregator drifted
         run: |
-          set -uo pipefail
-          cd pr
-          status_sha="$HEAD_SHA"
+          set -euo pipefail
           if git diff --quiet -- TauCeti.lean; then
-            state=success; desc="TauCeti.lean aggregator is in sync"
-          elif [ "$SAME" = "1" ]; then
-            git config user.name  "tauceti-review-bot[bot]"
-            git config user.email "290224625+tauceti-review-bot[bot]@users.noreply.github.com"
-            git add TauCeti.lean
-            git commit -m "chore: sync TauCeti.lean import aggregator (mk_all)" >/dev/null
-            # Non-force push to the exact branch ref via checkout-managed credentials. If it is
-            # rejected the branch moved under us (a concurrent worker push) — do NOT clobber it;
-            # bail without posting, the next push's synchronize event re-syncs from the new head.
-            if git push origin "HEAD:refs/heads/$REF"; then
-              status_sha="$(git rev-parse HEAD)"   # report to the NEW head, not the stale one
-              state=success; desc="auto-synced TauCeti.lean aggregator (pushed a fix commit)"
-            else
-              echo "::warning::aggregator-fix push rejected (branch moved); re-syncs on the next event"
-              exit 0
-            fi
-          else
-            state=failure; desc="aggregator out of date and PR is from a fork — run Scripts/mk_all.sh and push"
+            echo "TauCeti.lean already in sync — nothing to do"
+            exit 0
           fi
-          # A status-post hiccup must never red an otherwise-correct sync, so keep it non-fatal;
-          # the job's own conclusion (last line) is the source of truth for the check.
-          gh api -X POST "repos/$BASE_REPO/statuses/$status_sha" \
-            -f state="$state" -f context="mk-all" -f description="$desc" \
-            || echo "::warning::could not post mk-all commit status (job conclusion still applies)"
-          echo "mk-all=$state ($desc) -> $status_sha"
-          [ "$state" = "success" ]
+          git config user.name  "tauceti-review-bot[bot]"
+          git config user.email "290224625+tauceti-review-bot[bot]@users.noreply.github.com"
+          git add TauCeti.lean
+          git commit -m "chore: sync TauCeti.lean import aggregator (mk_all)"
+          git push origin HEAD:main
