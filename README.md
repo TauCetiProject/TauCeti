@@ -40,7 +40,7 @@ When a PR is opened, we first let CI run, including the full Mathlib linter set.
 
 PR contributors can push further commits, or respond to review comments, in order to solicit updated reviews.
 
-We've built the infrastructure to fire these reviews automatically on each PR (and on a `/review` comment), but it is currently switched off. For now, reviews are run from the command line.
+These reviews fire automatically on each PR once its build is green (and on a `/review` comment), and a green PR merges automatically.
 
 You can also run the same review yourself from the command line, on your own Claude and/or Codex subscription instead of the project's metered API budget, using the `tauceti-review` tool in [TauCetiReview](https://github.com/FormalFrontier/TauCetiReview). With [uv](https://docs.astral.sh/uv/):
 
