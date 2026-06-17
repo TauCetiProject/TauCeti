@@ -14,3 +14,7 @@ namespace TauCeti
 theorem hello : 1 + 1 = 2 := by norm_num
 
 end TauCeti
+
+/-- A trivially-true probe lemma, added only to create a fresh build-green PR for
+validating the review-in-bubble path end to end. Safe to delete. -/
+theorem scratch_review_probe : True := trivial
