@@ -124,8 +124,9 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
   push_cast at hpd
   exact ⟨(a : ZMod p), by linear_combination -hpd⟩
 
-/-- Backward core (pointwise): if `p` is odd, `p ∤ d i`, and `d i` is a quadratic residue mod `p`,
-then every `σ` in the decomposition group of `Q` fixes the generator `r i`. -/
+/-- Backward core (pointwise): for `K` Galois over `ℚ`, if `p` is odd, `p ∤ d i`, and `d i` is a
+quadratic residue mod `p`, then every `σ` in the decomposition group of `Q` fixes the generator
+`r i`. -/
 private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) [IsGalois ℚ K]
     {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) {i : ι} (hcop_i : ¬ (p : ℤ) ∣ d i)
