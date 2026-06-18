@@ -47,6 +47,7 @@ import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.Algebra.HopfAlgebra
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal
+import TauCeti.Algebra.HopfAlgebra.Kernel
 import TauCeti.Algebra.HopfAlgebra.Quotient
 import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra
 import TauCeti.AlgebraicGeometry.WeilDivisor
