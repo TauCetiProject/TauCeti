@@ -42,15 +42,26 @@ jobs:
             NUM='${{ github.event.pull_request.number }}'
             SHA='${{ github.event.pull_request.head.sha }}'
             REPO='${{ github.event.pull_request.head.repo.full_name }}'
+            BASE_REF='${{ github.event.pull_request.base.ref }}'
           else
             NUM='${{ inputs.pr }}'
-            SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.sha)
+            SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM"  --jq .head.sha)
             REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
+            BASE_REF=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .base.ref)
           fi
-          echo "num=$NUM"   >> "$GITHUB_OUTPUT"
-          echo "sha=$SHA"   >> "$GITHUB_OUTPUT"
-          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
-          echo "Building PR #$NUM @ $SHA from $REPO"
+          # Merge-base with the target branch, for the Lake-pin bump validation below:
+          # check-bump.sh uses it to scope the PR's own pin delta. owner:sha for forks;
+          # `|| true` so a failed substitution does not trip set -e before the fallback;
+          # on any miss fall back to the tip (BASE_REF) — at worst the pre-fix behaviour.
+          OWNER="${REPO%%/*}"
+          MB=$(gh api "repos/${{ github.repository }}/compare/${BASE_REF}...${OWNER}:${SHA}" \
+                 --jq '.merge_base_commit.sha' 2>/dev/null || true)
+          [ -n "$MB" ] || { MB="$BASE_REF"; echo "::warning::merge-base unresolved; falling back to $BASE_REF tip"; }
+          echo "num=$NUM"      >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA"      >> "$GITHUB_OUTPUT"
+          echo "repo=$REPO"    >> "$GITHUB_OUTPUT"
+          echo "mergebase=$MB" >> "$GITHUB_OUTPUT"
+          echo "Building PR #$NUM @ $SHA from $REPO (bump delta vs merge-base $MB)"
 
       - name: Scope guard — PR must touch only TauCeti/ or the root TauCeti.lean (from the trusted GitHub file list)
         env: { GH_TOKEN: "${{ github.token }}" }
@@ -105,6 +116,14 @@ jobs:
         uses: actions/checkout@v4
         with: { path: base, persist-credentials: false }
 
+      - name: Checkout merge-base config (trusted ancestor — only to scope the PR's pin delta)
+        if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.mergebase }}
+          path: mergebase
+          persist-credentials: false
+
       - name: Checkout PR head (untrusted, no credentials)
         if: ${{ env.INFRA != '1' }}
         uses: actions/checkout@v4
@@ -115,16 +134,16 @@ jobs:
           persist-credentials: false
 
       # For a Lake-pin PR, validate it is a safe forward bump BEFORE overlaying its
-      # pins or building. The validator is always the TRUSTED base copy of the script,
-      # run against the base config and the PR's (text-only) pin files; it executes no
-      # PR code. An invalid/backward/forked bump sets INFRA=1 → not built, routed to a
-      # human. (Run inline, not by reading the separate bump-guard status, to avoid a
-      # race with that concurrently-running workflow.)
+      # pins or building. The validator and the BASE config it judges against are the
+      # TRUSTED current target tip; mergebase/ only scopes the PR's own pin delta; pr/
+      # is read as text — no PR code runs. An invalid/backward/forked bump sets INFRA=1
+      # → not built, routed to a human. (Run inline, not by reading the separate
+      # bump-guard status, to avoid a race with that concurrently-running workflow.)
       - name: Validate the Lake-pin bump (trusted base validator) before building
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
-          if bash base/Scripts/check-bump.sh base pr; then
+          if bash base/Scripts/check-bump.sh base mergebase pr; then
             echo "Lake-pin bump validated — building with the PR's pins."
           else
             echo "BUMP_BAD=1" >> "$GITHUB_ENV"

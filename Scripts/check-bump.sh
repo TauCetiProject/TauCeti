@@ -28,18 +28,39 @@
 # It does NO build and runs NONE of the PR's code — only reads/parses two text
 # files and queries the trusted upstream via `gh api`. Usage:
 #
-#   check-bump.sh <base_dir> <pr_dir>
+#   check-bump.sh <base_dir> <merge_base_dir> <pr_dir>
 #
 # where each dir holds the repo's lean-toolchain, lake-manifest.json, lakefile.toml
-# (and optionally lakefile.lean). Exit 0 = safe forward bump (or no pin change);
-# exit 1 = not auto-mergeable (route to a human). Reasons are printed.
+# (and optionally lakefile.lean). base_dir is the CURRENT target-branch tip — the
+# trusted config the PR actually builds and merges against, and what a genuine bump is
+# validated against. merge_base_dir is the PR's merge-base with the target branch, used
+# only to decide whether the PR changed these files at all (so a PR that is merely
+# behind the tip is not judged as if it had edited them). Exit 0 = safe forward bump
+# (or no pin change); exit 1 = not auto-mergeable (route to a human). Reasons printed.
 set -uo pipefail
 
-BASE="${1:?usage: check-bump.sh <base_dir> <pr_dir>}"
-PR="${2:?usage: check-bump.sh <base_dir> <pr_dir>}"
+BASE="${1:?usage: check-bump.sh <base_dir> <merge_base_dir> <pr_dir>}"
+MERGE_BASE="${2:?usage: check-bump.sh <base_dir> <merge_base_dir> <pr_dir>}"
+PR="${3:?usage: check-bump.sh <base_dir> <merge_base_dir> <pr_dir>}"
 
 fail() { echo "::error::bump-guard: $*"; echo "BUMP-GUARD: FAIL — $*"; exit 1; }
 ok()   { echo "BUMP-GUARD: PASS — $*"; exit 0; }
+
+# --- 0. is this a pin change at all? (the PR's OWN delta, vs its merge-base) ---
+# Validate only what the PR itself changes in the human-owned lakefile and the Lake
+# pins. If none of these differ from the merge-base, the PR did not touch them — it is
+# not a bump (it may merely be behind the target tip, which has moved them forward
+# underneath it), so pass trivially. Only when the PR's own delta touches one of them
+# do we judge it, strictly, against the CURRENT base config (steps 1–4 below). This is
+# the one fact that needs the merge-base; everything below is relative to BASE (tip).
+pin_changed=0
+for f in lakefile.toml lakefile.lean lake-manifest.json lean-toolchain; do
+  m="$MERGE_BASE/$f"; p="$PR/$f"
+  [ -f "$m" ] || m=/dev/null
+  [ -f "$p" ] || p=/dev/null
+  if ! diff -q "$m" "$p" >/dev/null 2>&1; then pin_changed=1; break; fi
+done
+[ "$pin_changed" = 0 ] && ok "no lakefile or Lake-pin change relative to the merge-base"
 
 # --- 1. lakefile is human-owned: it must not change ---------------------------
 for f in lakefile.toml lakefile.lean; do

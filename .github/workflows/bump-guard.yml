@@ -40,19 +40,38 @@ jobs:
             NUM='${{ github.event.pull_request.number }}'
             SHA='${{ github.event.pull_request.head.sha }}'
             REPO='${{ github.event.pull_request.head.repo.full_name }}'
+            BASE_REF='${{ github.event.pull_request.base.ref }}'
           else
             NUM='${{ inputs.pr }}'
-            SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.sha)
+            SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM"  --jq .head.sha)
             REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
+            BASE_REF=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .base.ref)
           fi
-          echo "num=$NUM"   >> "$GITHUB_OUTPUT"
-          echo "sha=$SHA"   >> "$GITHUB_OUTPUT"
-          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
-          echo "Validating PR #$NUM @ $SHA from $REPO"
+          # Merge-base with the target branch: check-bump.sh uses it to tell the PR's own
+          # lakefile/pin delta apart from the target branch simply moving ahead. owner:sha
+          # head form so a fork head resolves too. `|| true` keeps the command-substitution
+          # nonzero from tripping the shell's set -e before the fallback runs; on any miss
+          # we fall back to the tip (BASE_REF) — at worst the pre-fix behaviour, never a break.
+          OWNER="${REPO%%/*}"
+          MB=$(gh api "repos/${{ github.repository }}/compare/${BASE_REF}...${OWNER}:${SHA}" \
+                 --jq '.merge_base_commit.sha' 2>/dev/null || true)
+          [ -n "$MB" ] || { MB="$BASE_REF"; echo "::warning::merge-base unresolved; falling back to $BASE_REF tip"; }
+          echo "num=$NUM"      >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA"      >> "$GITHUB_OUTPUT"
+          echo "repo=$REPO"    >> "$GITHUB_OUTPUT"
+          echo "mergebase=$MB" >> "$GITHUB_OUTPUT"
+          echo "Validating PR #$NUM @ $SHA from $REPO (delta vs merge-base $MB)"
 
-      - name: Checkout base (trusted — the validator and base config)
+      - name: Checkout base (trusted — the validator and the current target-tip config)
         uses: actions/checkout@v4
         with: { path: base, persist-credentials: false }
+
+      - name: Checkout merge-base config (trusted ancestor — only to scope the PR's delta)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.mergebase }}
+          path: mergebase
+          persist-credentials: false
 
       - name: Checkout PR head (untrusted, no credentials — read as text only)
         uses: actions/checkout@v4
@@ -66,9 +85,10 @@ jobs:
         id: guard
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
-          # The base copy of the script and base config are trusted; only the
-          # PR's lean-toolchain/lake-manifest.json/lakefile.* are read from pr/.
-          bash base/Scripts/check-bump.sh base pr
+          # The validator script and the BASE config it judges a genuine bump against are
+          # the trusted target tip; mergebase/ only scopes the PR's own delta; pr/ is read
+          # as text. See Scripts/check-bump.sh.
+          bash base/Scripts/check-bump.sh base mergebase pr
 
       - name: Report bump-guard status to the PR head commit
         if: always()
