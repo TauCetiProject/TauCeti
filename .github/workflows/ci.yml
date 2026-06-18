@@ -18,16 +18,16 @@ jobs:
       # The two-library split is build convenience, not a trust boundary.
       # This guard is what actually stops the AI-owned library from inheriting
       # sorried declarations: TauCeti/ may not import the roadmap/review trees.
-      - name: Import-boundary guard (TauCeti/ ⊬ roadmap/review)
+      - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
         run: |
-          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(TauCetiRoadmap|TauCetiReview)\b' TauCeti/; then
-            echo "::error::TauCeti/ must not import TauCetiRoadmap or TauCetiReview"
+          if grep -rIn -E '^[[:space:]]*import[[:space:]]+(TauCetiRoadmap|TauCetiReview)\b' TauCeti/ TauCeti.lean; then
+            echo "::error::TauCeti/ and TauCeti.lean must not import TauCetiRoadmap or TauCetiReview"
             exit 1
           fi
 
-      # No aggregator check here: mk-all.yml owns that invariant, regenerating TauCeti.lean
-      # on main after every TauCeti/ merge. Checking it here too would only redden main in
-      # the brief window before the sync push lands. The build globs every module regardless.
+      # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
+      # The build globs every TauCeti/ module directly, so nothing depends on a root that
+      # re-exports the library.
       - name: Build
         uses: leanprover/lean-action@v1
         with:

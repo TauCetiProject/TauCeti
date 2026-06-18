@@ -56,8 +56,8 @@ partial def collectLeanModules (dir : System.FilePath) : IO (Array Name) := do
   return acc
 
 /-- Every module in the `TauCeti` library: the root `TauCeti` plus all `TauCeti/**/*.lean`.
-Enumerating the source tree (rather than only importing the root) means an orphan module
-that is not imported from `TauCeti.lean` is still audited. -/
+Enumerating the source tree (rather than only importing the root) means every module is
+audited regardless of the root, which is intentionally empty and imports nothing. -/
 def auditedModules : IO (Array Name) :=
   return #[auditedRoot] ++ (← collectLeanModules (auditedRoot.toString : System.FilePath))
 
