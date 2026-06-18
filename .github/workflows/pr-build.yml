@@ -87,11 +87,11 @@ jobs:
         run: |
           files=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" --jq '.[].filename')
           echo "changed files:"; echo "$files"
-          # The root aggregator TauCeti.lean is allowed alongside TauCeti/: it holds
-          # only `import TauCeti.*` lines (so new modules can be made reachable from
-          # the root), it is overlaid into the sandbox below, and the import-boundary
-          # guard covers it. Everything else outside TauCeti/ (lakefile, Scripts/,
-          # .github/) stays trusted-base-only and routes to a human.
+          # The root TauCeti.lean is allowed alongside TauCeti/: it is the (intentionally
+          # empty) library root, normally untouched, but a PR may edit it. It is overlaid
+          # into the sandbox below and the import-boundary guard covers it. Everything else
+          # outside TauCeti/ (lakefile, Scripts/, .github/) stays trusted-base-only and
+          # routes to a human.
           # lake-manifest.json and lean-toolchain are also permitted, but ONLY as a
           # machine-validated forward bump: the "Validate the Lake-pin bump" step below
           # runs the trusted base Scripts/check-bump.sh and routes to a human if it is
@@ -180,8 +180,8 @@ jobs:
           test -d pr/TauCeti && test ! -L pr/TauCeti
           rm -rf base/TauCeti
           cp -a pr/TauCeti base/TauCeti
-          # Overlay the root aggregator too (it is a regular file of imports, never a
-          # symlink). Only if the PR actually ships one; otherwise keep the base copy.
+          # Overlay the root TauCeti.lean too (a regular file, never a symlink). Only if
+          # the PR actually ships one; otherwise keep the base copy.
           if [ -e pr/TauCeti.lean ]; then
             test ! -L pr/TauCeti.lean || { echo "::error::TauCeti.lean must not be a symlink"; exit 1; }
             cp -a pr/TauCeti.lean base/TauCeti.lean
