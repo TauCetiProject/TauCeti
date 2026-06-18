@@ -25,12 +25,9 @@ jobs:
             exit 1
           fi
 
-      # Backstop: mk-all.yml regenerates TauCeti.lean on main after every merge that
-      # touches TauCeti/, so main should never stay drifted; this catches a window where
-      # the aggregator is briefly out of date (the mk-all sync push then brings it back).
-      - name: Aggregator check (TauCeti.lean imports every module, sorted)
-        run: bash Scripts/mk_all.sh --check
-
+      # No aggregator check here: mk-all.yml owns that invariant, regenerating TauCeti.lean
+      # on main after every TauCeti/ merge. Checking it here too would only redden main in
+      # the brief window before the sync push lands. The build globs every module regardless.
       - name: Build
         uses: leanprover/lean-action@v1
         with:

@@ -47,21 +47,30 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           persist-credentials: true
 
-      - name: Regenerate the aggregator
-        run: bash Scripts/mk_all.sh .
-
-      # main is trusted, so if mk_all produced no change there is nothing to do.
-      # Otherwise commit the regenerated aggregator and push it back to main. A
-      # rejected push is a real failure here (nothing else races main), so let it fail.
-      - name: Commit and push if the aggregator drifted
+      # Regenerate on the current main tip and push; if another push races main in between
+      # (including one that does not touch TauCeti/**, which would not re-trigger this workflow),
+      # the push is rejected — so re-sync from the new tip and retry rather than leaving main
+      # drifted. main is trusted, so mk_all here runs no PR code.
+      - name: Sync the aggregator on main (retry on a racing push)
         run: |
           set -euo pipefail
-          if git diff --quiet -- TauCeti.lean; then
-            echo "TauCeti.lean already in sync — nothing to do"
-            exit 0
-          fi
           git config user.name  "tauceti-review-bot[bot]"
           git config user.email "290224625+tauceti-review-bot[bot]@users.noreply.github.com"
-          git add TauCeti.lean
-          git commit -m "chore: sync TauCeti.lean import aggregator (mk_all)"
-          git push origin HEAD:main
+          for attempt in 1 2 3 4 5; do
+            git fetch --quiet origin main
+            git reset --hard --quiet origin/main
+            bash Scripts/mk_all.sh .
+            if git diff --quiet -- TauCeti.lean; then
+              echo "TauCeti.lean already in sync — nothing to do"
+              exit 0
+            fi
+            git add TauCeti.lean
+            git commit -q -m "chore: sync TauCeti.lean import aggregator (mk_all)"
+            if git push --quiet origin HEAD:main; then
+              echo "synced TauCeti.lean (attempt $attempt)"
+              exit 0
+            fi
+            echo "push rejected (main moved under us); re-syncing from the new tip (attempt $attempt)"
+          done
+          echo "::error::could not sync TauCeti.lean after 5 attempts"
+          exit 1
