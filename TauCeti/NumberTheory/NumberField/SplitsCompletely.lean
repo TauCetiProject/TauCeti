@@ -41,6 +41,16 @@ namespace TauCeti.NumberField
 variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
+/-- For a prime `Q` of `𝓞 K` lying over the rational prime ideal `(p)`, an integer `m` maps into
+`Q` under `algebraMap ℤ (𝓞 K)` iff `p ∣ m`. -/
+theorem algebraMap_int_mem_iff_dvd_of_liesOver {K : Type*} [Field K] [NumberField K] {p : ℕ}
+    (Q : Ideal (𝓞 K)) [Q.LiesOver (span {(p : ℤ)})] (m : ℤ) :
+    algebraMap ℤ (𝓞 K) m ∈ Q ↔ (p : ℤ) ∣ m := by
+  -- The left-hand side unfolds to membership in `Q.under ℤ = (p)`.
+  have hunder : Q.under ℤ = span {(p : ℤ)} := by symm; exact (‹Q.LiesOver _›).over
+  change m ∈ Q.under ℤ ↔ (p : ℤ) ∣ m
+  rw [hunder, Ideal.mem_span_singleton]
+
 private theorem ncard_primesOver_eq_finrank_iff_of_isGalois {A : Type*} [CommRing A]
     [IsDedekindDomain A] [Algebra A (𝓞 L)] [Module.Finite A (𝓞 L)]
     [IsTorsionFree A (𝓞 L)] [IsGaloisGroup Gal(L/K) A (𝓞 L)] (P : Ideal A)

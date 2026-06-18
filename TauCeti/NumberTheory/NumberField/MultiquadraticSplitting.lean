@@ -25,9 +25,10 @@ criterion `ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot`.
   mod `p`.
 
 The proof is assembled from `private` helper lemmas: `mq_isIntegral_gen` lifts each generator to
-`𝓞 K`, `mem_prime_over_iff_dvd` reads off membership in the chosen prime `Q` over `(p)`,
-`legendre_eq_one_of_complete_split` is the forward direction, and `decompositionGroup_fixes_gen`
-together with `stabilizer_eq_bot_of_legendre` is the backward direction.
+`𝓞 K`, `legendreSym_eq_one_of_ncard_primesOver_eq_finrank` is the forward direction, and
+`decompositionGroup_fixes_gen` together with `stabilizer_eq_bot_of_forall_legendreSym_eq_one` is the
+backward direction. Membership of integers in the chosen prime `Q` over `(p)` is read off with the
+generic `algebraMap_int_mem_iff_dvd_of_liesOver` from `SplitsCompletely`.
 -/
 
 open Polynomial NumberField Ideal Module MulAction
@@ -44,25 +45,16 @@ private theorem mq_isIntegral_gen {ι : Type*} (d : ι → ℤ) (r : ι → K)
   ⟨X ^ 2 - C (d i), monic_X_pow_sub_C (d i) (by norm_num), by
     rw [eval₂_sub, eval₂_X_pow, eval₂_C, hr i, sub_self]⟩
 
-omit [NumberField K] in
-/-- For a prime `Q` of `𝓞 K` lying over `(p)`, an integer `m` maps into `Q` iff `p ∣ m`. The
-left-hand side unfolds to membership in `Q.under ℤ = (p)`. -/
-private theorem mem_prime_over_iff_dvd {p : ℕ} (Q : Ideal (𝓞 K))
-    [Q.LiesOver (span {(p : ℤ)})] (m : ℤ) :
-    algebraMap ℤ (𝓞 K) m ∈ Q ↔ (p : ℤ) ∣ m := by
-  have hunder : Q.under ℤ = span {(p : ℤ)} := by symm; exact (‹Q.LiesOver _›).over
-  change m ∈ Q.under ℤ ↔ (p : ℤ) ∣ m
-  rw [hunder, Ideal.mem_span_singleton]
-
-/-- Forward direction: if `p` splits completely (`#{primes over p} = [K : ℚ]`), then every `d i`
-is a quadratic residue mod `p`. Complete splitting forces residue degree `1`, so `𝓞 K ⧸ Q` is the
-prime field `ℤ ⧸ (p)`; lifting the residue of `r i` to an integer `a` gives `a² ≡ d i (mod p)`. -/
-private theorem legendre_eq_one_of_complete_split {ι : Type*} [Finite ι] (d : ι → ℤ) (r : ι → K)
-    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) [IsGalois ℚ K]
-    {p : ℕ} [Fact p.Prime] (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)
+/-- Forward direction (pointwise): if `p` splits completely (`#{primes over p} = [K : ℚ]`) and
+`p ∤ d i`, then `d i` is a quadratic residue mod `p`. -/
+private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (d : ι → ℤ)
+    (r : ι → K) (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) [IsGalois ℚ K]
+    {p : ℕ} [Fact p.Prime] {i : ι} (hcop_i : ¬ (p : ℤ) ∣ d i)
     (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
-    (hsplit : (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K) (i : ι) :
+    (hsplit : (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K) :
     legendreSym p (d i) = 1 := by
+  -- Complete splitting forces residue degree `1`, so `𝓞 K ⧸ Q` is the prime field `ℤ ⧸ (p)`;
+  -- lifting the residue of `r i` to an integer `a` gives `a² ≡ d i (mod p)`.
   have hpne : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
   haveI : (span {(p : ℤ)} : Ideal ℤ).IsMaximal :=
     Ideal.IsPrime.isMaximal
@@ -95,27 +87,28 @@ private theorem legendre_eq_one_of_complete_split {ι : Type*} [Finite ι] (d : 
   have hdiff : algebraMap ℤ (𝓞 K) a - R i ∈ Q := Ideal.Quotient.eq.mp hc
   -- `(algebraMap a - R i)(algebraMap a + R i) = algebraMap (a² - d i) ∈ Q`, so `p ∣ a² - d i`.
   have hpd : (p : ℤ) ∣ a ^ 2 - d i := by
-    rw [← mem_prime_over_iff_dvd Q]
+    rw [← algebraMap_int_mem_iff_dvd_of_liesOver Q]
     have hfac : algebraMap ℤ (𝓞 K) (a ^ 2 - d i) =
         (algebraMap ℤ (𝓞 K) a - R i) * (algebraMap ℤ (𝓞 K) a + R i) := by
       rw [map_sub, map_pow, ← hRsq i]; ring
     rw [hfac]
     exact Ideal.mul_mem_right _ _ hdiff
-  rw [legendreSym.eq_one_iff p (by rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hcop i)]
+  rw [legendreSym.eq_one_iff p (by rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hcop_i)]
   rw [← ZMod.intCast_zmod_eq_zero_iff_dvd] at hpd
   push_cast at hpd
   exact ⟨(a : ZMod p), by linear_combination -hpd⟩
 
-/-- Backward core: under the all-quadratic-residue hypothesis, every `σ` in the decomposition
-group of `Q` fixes each generator `r i`. From `σ (r i)² = r i²` we get `σ (r i) = ± r i`; the `-`
-sign, combined with a residue `a² ≡ d i (mod p)`, would force `2 a ∈ Q` and hence `p ∣ 2 a`,
-contradicting `p` odd and `p ∤ a`. -/
+/-- Backward core (pointwise): if `p ∤ d i` and `d i` is a quadratic residue mod `p`, then every
+`σ` in the decomposition group of `Q` fixes the generator `r i`. -/
 private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) [IsGalois ℚ K]
-    {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)
-    (hqr : ∀ i, legendreSym p (d i) = 1)
+    {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) {i : ι} (hcop_i : ¬ (p : ℤ) ∣ d i)
+    (hqr_i : legendreSym p (d i) = 1)
     (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
-    {σ : K ≃ₐ[ℚ] K} (hσ : σ ∈ stabilizer (K ≃ₐ[ℚ] K) Q) (i : ι) : σ (r i) = r i := by
+    {σ : K ≃ₐ[ℚ] K} (hσ : σ ∈ stabilizer (K ≃ₐ[ℚ] K) Q) : σ (r i) = r i := by
+  -- From `σ (r i)² = r i²` we get `σ (r i) = ± r i`; the `-` sign, combined with a residue
+  -- `a² ≡ d i (mod p)`, would force `2 a ∈ Q` and hence `p ∣ 2 a`, contradicting `p` odd and
+  -- `p ∤ a`.
   have hr' : ∀ i, r i ^ 2 = algebraMap ℚ K ((d i : ℚ)) := by
     intro i; rw [hr i]; simp
   set R : ι → 𝓞 K := fun i => ⟨r i, mq_isIntegral_gen d r hr i⟩ with hRdef
@@ -123,8 +116,8 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
   have hRsq : ∀ i, R i ^ 2 = algebraMap ℤ (𝓞 K) (d i) := fun i => by
     apply FaithfulSMul.algebraMap_injective (𝓞 K) K
     rw [map_pow, hRK i, hr i, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
-  -- The Galois action on `𝓞 K` is the restriction of the action on `K`, so it lifts `σ`
-  -- (its coercion is `σ` of the coercion, definitionally) and fixes `Q` setwise.
+  -- Definitional: the Galois action on `𝓞 K` is by construction the restriction of the action on
+  -- `K`, so `algebraMap (σ • x) = σ (algebraMap x)` holds by `rfl`.
   have hact : ∀ x : 𝓞 K, algebraMap (𝓞 K) K (σ • x) = σ (algebraMap (𝓞 K) K x) := fun _ => rfl
   have hstab : σ • Q = Q := mem_stabilizer_iff.mp hσ
   have hmapQ : ∀ x ∈ Q, σ • x ∈ Q := by
@@ -139,13 +132,14 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
     have hflip : σ (r i) = - r i := eq_neg_of_add_eq_zero_left h
     -- `d i` is a residue: `a² ≡ d i (mod p)` with `p ∤ a`.
     obtain ⟨b, hb⟩ := (legendreSym.eq_one_iff p (by
-      rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hcop i)).mp (hqr i)
+      rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hcop_i)).mp hqr_i
     obtain ⟨a, rfl⟩ := ZMod.intCast_surjective b
     have hpa : (p : ℤ) ∣ a ^ 2 - d i := by
       rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]; push_cast; rw [hb]; ring
-    have hpa' : ¬ (p : ℤ) ∣ a := fun hd => hcop i (by
+    have hpa' : ¬ (p : ℤ) ∣ a := fun hd => hcop_i (by
       have h2a : (p : ℤ) ∣ a ^ 2 := dvd_pow hd (by norm_num)
       have h3 := dvd_sub h2a hpa
+      -- `a² - (a² - d i) = d i`, so `p ∣ d i`, contradicting `hcop_i`.
       rwa [show a ^ 2 - (a ^ 2 - d i) = d i by ring] at h3)
     set A : 𝓞 K := algebraMap ℤ (𝓞 K) a with hAdef
     -- `(R i - A)(R i + A) = d i - a² ∈ Q`, so one factor lies in the prime `Q`.
@@ -154,7 +148,7 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
       have h1 : (R i - A) * (R i + A) = R i ^ 2 - A ^ 2 := by ring
       rw [h1, hRsq i, hAsq, ← map_sub]
     have hfacQ : (R i - A) * (R i + A) ∈ Q := by
-      rw [heq]; exact (mem_prime_over_iff_dvd Q _).mpr (dvd_sub_comm.mp hpa)
+      rw [heq]; exact (algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr (dvd_sub_comm.mp hpa)
     -- `σ` sends `R i ↦ -R i` and fixes the integer `A`.
     have hsR : σ • R i = - R i := by
       apply FaithfulSMul.algebraMap_injective (𝓞 K) K
@@ -169,25 +163,26 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
       · have h1 : σ • (R i - A) ∈ Q := hmapQ _ hca
         rw [smul_sub, hsR, hsA] at h1
         have hs := Q.add_mem hca h1
+        -- Adding the factor `R i - A` and its image `-R i - A` cancels `R i`, leaving `-(2 A)`.
         rw [show (R i - A) + (-R i - A) = -(2 * A) by ring] at hs
         exact neg_mem_iff.mp hs
       · have h1 : σ • (R i + A) ∈ Q := hmapQ _ hca
         rw [smul_add, hsR, hsA] at h1
         have hs := Q.add_mem hca h1
+        -- Adding the factor `R i + A` and its image `-R i + A` cancels `R i`, leaving `2 A`.
         rw [show (R i + A) + (-R i + A) = 2 * A by ring] at hs
         exact hs
     -- `2 A = algebraMap (2 a) ∈ Q` forces `p ∣ 2 a`, hence (as `p` is odd) `p ∣ a` — absurd.
     have h2a : algebraMap ℤ (𝓞 K) (2 * a) ∈ Q := by
       rw [map_mul, show algebraMap ℤ (𝓞 K) 2 = 2 by norm_num, ← hAdef]; exact h2A
     have hpint : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
-    rcases hpint.dvd_mul.mp ((mem_prime_over_iff_dvd Q _).mp h2a) with h2 | ha
+    rcases hpint.dvd_mul.mp ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h2a) with h2 | ha
     · exact hodd ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp (by exact_mod_cast h2))
     · exact hpa' ha
 
 /-- Backward wrapper: under the all-quadratic-residue hypothesis, the decomposition group of `Q`
-is trivial. Each `σ` in it fixes `ℚ` and every generator `r i` (by `decompositionGroup_fixes_gen`),
-and these generate `K = ℚ(rᵢ)`, so `σ = 1` by an adjoin induction. -/
-private theorem stabilizer_eq_bot_of_legendre {ι : Type*} [Finite ι] (d : ι → ℤ) (r : ι → K)
+is trivial. -/
+private theorem stabilizer_eq_bot_of_forall_legendreSym_eq_one {ι : Type*} (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) [IsGalois ℚ K]
     {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)
@@ -197,9 +192,10 @@ private theorem stabilizer_eq_bot_of_legendre {ι : Type*} [Finite ι] (d : ι �
   rw [eq_bot_iff]
   intro σ hσ
   rw [Subgroup.mem_bot]
+  -- Each `σ` in the stabilizer fixes every generator `r i`, and these generate `K = ℚ(rᵢ)`,
+  -- so `σ = 1` by an adjoin induction.
   have hfix : ∀ i, σ (r i) = r i :=
-    fun i => decompositionGroup_fixes_gen d r hr hodd hcop hqr Q hσ i
-  -- `σ` fixes `ℚ` and every `r i`, which generate `K = ℚ(rᵢ)`, so `σ = 1`.
+    fun i => decompositionGroup_fixes_gen d r hr hodd (hcop i) (hqr i) Q hσ
   refine AlgEquiv.ext fun x => ?_
   rw [AlgEquiv.one_apply]
   have hx : x ∈ (⊤ : IntermediateField ℚ K) := IntermediateField.mem_top
@@ -238,8 +234,9 @@ theorem ncard_primesOver_multiquadratic_iff {ι : Type*} [Finite ι] (d : ι →
     exact ⟨Q, hQ⟩
   haveI := hQp
   haveI := hQo
-  refine ⟨fun hsplit i => legendre_eq_one_of_complete_split d r hr hcop Q hsplit i, fun hqr => ?_⟩
+  refine ⟨fun hsplit i =>
+    legendreSym_eq_one_of_ncard_primesOver_eq_finrank d r hr (hcop i) Q hsplit, fun hqr => ?_⟩
   rw [ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot K Q]
-  exact stabilizer_eq_bot_of_legendre d r hr htop hodd hcop hqr Q
+  exact stabilizer_eq_bot_of_forall_legendreSym_eq_one d r hr htop hodd hcop hqr Q
 
 end TauCeti.NumberField
