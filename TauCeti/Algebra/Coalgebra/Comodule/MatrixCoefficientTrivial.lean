@@ -159,18 +159,36 @@ variable {M : Type w} [AddCommMonoid M] [Module R M]
 
 attribute [local instance] trivial
 
+/-- The trivial comodule is the group-like comodule for the unit group-like element. -/
+theorem trivial_eq_groupLike_one :
+    (trivial (R := R) (C := C) (M := M) : Comodule R C M) =
+      groupLike (R := R) (C := C) (M := M) (1 : GroupLike R C) :=
+  rfl
+
+private theorem adjoin_singleton_one_eq_bot :
+    Algebra.adjoin R ({(1 : C)} : Set C) = ⊥ := by
+  apply le_antisymm
+  · rw [Algebra.adjoin_le_iff]
+    intro c hc
+    rw [Set.mem_singleton_iff.mp hc]
+    exact Subalgebra.one_mem _
+  · exact bot_le
+
 /-- A matrix coefficient of a trivial comodule lies in the line spanned by `1`. -/
 theorem trivial_matrixCoefficient_mem_span_singleton_one (φ : M →ₗ[R] R) (m : M) :
     matrixCoefficient (R := R) (C := C) φ m ∈ Submodule.span R ({1} : Set C) := by
-  rw [matrixCoefficient_trivial]
-  exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_singleton (1 : C)))
+  simpa [trivial_eq_groupLike_one] using
+    groupLike_matrixCoefficient_mem_span_singleton (R := R) (C := C)
+      (M := M) (1 : GroupLike R C) φ m
 
 /-- The coefficient submodule of a trivial comodule is contained in the line spanned by `1`. -/
 theorem trivial_matrixCoefficientSubmodule_le_span_singleton_one :
     matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≤
       Submodule.span R ({1} : Set C) :=
-  matrixCoefficientSubmodule_le (R := R) (C := C) (M := M)
-    trivial_matrixCoefficient_mem_span_singleton_one
+  by
+    simpa [trivial_eq_groupLike_one] using
+      groupLike_matrixCoefficientSubmodule_le_span_singleton (R := R) (C := C)
+        (M := M) (1 : GroupLike R C)
 
 /-- The coefficient submodule of the rank-one trivial comodule is exactly the line spanned by
 `1`. -/
@@ -178,27 +196,23 @@ theorem trivial_matrixCoefficientSubmodule_le_span_singleton_one :
 theorem trivial_rankOne_matrixCoefficientSubmodule_eq_span_singleton_one :
     matrixCoefficientSubmodule (R := R) (C := C) (M := R) =
       Submodule.span R ({1} : Set C) := by
-  apply le_antisymm
-  · exact trivial_matrixCoefficientSubmodule_le_span_singleton_one (R := R) (C := C)
-      (M := R)
-  · rw [Submodule.span_le]
-    intro c hc
-    rw [Set.mem_singleton_iff.mp hc]
-    exact Submodule.subset_span <| by
-      rw [mem_matrixCoefficientSet_iff]
-      exact ⟨LinearMap.id, 1, by simp⟩
+  exact groupLike_rankOne_matrixCoefficientSubmodule_eq_span_singleton (R := R) (C := C)
+    (1 : GroupLike R C)
 
 /-- A matrix coefficient of a trivial comodule lies in the bottom `R`-subalgebra. -/
 theorem trivial_matrixCoefficient_mem_bot (φ : M →ₗ[R] R) (m : M) :
     matrixCoefficient (R := R) (C := C) φ m ∈ (⊥ : Subalgebra R C) := by
-  rw [matrixCoefficient_trivial]
-  exact (⊥ : Subalgebra R C).smul_mem (Subalgebra.one_mem _) (φ m)
+  simpa [adjoin_singleton_one_eq_bot, trivial_eq_groupLike_one] using
+    groupLike_matrixCoefficient_mem_adjoin_singleton (R := R) (C := C)
+      (M := M) (1 : GroupLike R C) φ m
 
 /-- The coefficient algebra of a trivial comodule is contained in the bottom subalgebra. -/
 theorem trivial_matrixCoefficientSubalgebra_le_bot :
     matrixCoefficientSubalgebra (R := R) (C := C) (M := M) ≤ ⊥ :=
-  matrixCoefficientSubalgebra_le (R := R) (C := C) (M := M)
-    trivial_matrixCoefficient_mem_bot
+  by
+    simpa [adjoin_singleton_one_eq_bot, trivial_eq_groupLike_one] using
+      groupLike_matrixCoefficientSubalgebra_le_adjoin_singleton (R := R) (C := C)
+        (M := M) (1 : GroupLike R C)
 
 /-- The coefficient algebra of a trivial comodule is the bottom `R`-subalgebra. -/
 @[simp]
