@@ -11,11 +11,9 @@ rev = "master"
 
 # AI-owned: all the mathematics. No sorries (enforced in CI).
 # This glob is AUTHORITATIVE for what gets built and axiom-audited: `lake build` builds
-# every TauCeti/*.lean, including any not yet imported from the root, so the axiom audit
-# (which enumerates the source tree) can import them, and an orphaned/broken module fails
-# the build. The root aggregator TauCeti.lean is therefore NOT needed to build or audit a
-# module — a PR never has to touch it. It is regenerated automatically on `main` after
-# merge (.github/workflows/mk-all.yml runs Scripts/mk_all.sh).
+# every TauCeti/*.lean directly, and the axiom audit enumerates the source tree, so an
+# orphaned/broken module still fails the build. The root TauCeti.lean re-exports nothing
+# and is intentionally empty — a PR never has to touch it, and no code imports it.
 [[lean_lib]]
 name = "TauCeti"
 globs = ["TauCeti.*"]

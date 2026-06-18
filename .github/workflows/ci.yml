@@ -25,9 +25,9 @@ jobs:
             exit 1
           fi
 
-      # No aggregator check here: mk-all.yml owns that invariant, regenerating TauCeti.lean
-      # on main after every TauCeti/ merge. Checking it here too would only redden main in
-      # the brief window before the sync push lands. The build globs every module regardless.
+      # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
+      # The build globs every TauCeti/ module directly, so nothing depends on a root that
+      # re-exports the library.
       - name: Build
         uses: leanprover/lean-action@v1
         with:
