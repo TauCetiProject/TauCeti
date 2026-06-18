@@ -40,9 +40,9 @@ namespace TauCeti
 
 /-- A grid state on an `n × n` toroidal grid.
 
-The field `toPerm` sends each column to its occupied row. It is intentionally wrapped so that
-the public API for grid states is the point-set API below, rather than the full permutation
-group API. -/
+The field `toPerm` sends each column to its occupied row. The named wrapper gives grid states
+their own preferred point-set API below, while still allowing direct access to the underlying
+permutation when needed. -/
 structure GridState (n : ℕ) where
   /-- The permutation sending each column to the occupied row in that column. -/
   toPerm : Equiv.Perm (Fin n)
