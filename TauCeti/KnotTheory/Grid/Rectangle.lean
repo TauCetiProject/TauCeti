@@ -4,8 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Data.Finset.Prod
 import Mathlib.Data.Fintype.Prod
-import Mathlib.Data.Set.Finite.Basic
-import Mathlib.Order.Circular.ZMod
+import TauCeti.KnotTheory.Grid.CyclicInterval
 import TauCeti.KnotTheory.Grid.Diagram
 
 /-!
@@ -40,83 +39,6 @@ The encoding follows the toroidal grid-diagram convention from Ozsváth--Stipsic
 -/
 
 namespace TauCeti
-
-namespace Grid
-
-variable {n : ℕ}
-
-/-- The clockwise open cyclic interval from `a` to `b` in `Fin n`.
-
-If `a < b` in the standard representatives, this is the ordinary open interval
-`a < x < b`. If `b ≤ a` and `a ≠ b`, it wraps around `0`, so it is the union of
-`a < x` and `x < b`. The interval from a point to itself is empty. -/
-noncomputable def cIoo (a b : Fin n) : Finset (Fin n) :=
-  ((Set.finite_univ : (Set.univ : Set (Fin n)).Finite).subset
-    (Set.subset_univ (Set.cIoo a b : Set (Fin n)))).toFinset
-
-/-- Membership in a clockwise open cyclic interval, unfolded as inequalities between the
-standard representatives. -/
-@[simp]
-theorem mem_cIoo (a b x : Fin n) :
-    x ∈ cIoo a b ↔
-      a ≠ b ∧
-        if a.val < b.val then
-          a.val < x.val ∧ x.val < b.val
-        else
-          a.val < x.val ∨ x.val < b.val := by
-  rw [cIoo]
-  simp only [Set.Finite.mem_toFinset, Set.mem_cIoo, Fin.sbtw_iff, Fin.lt_def]
-  constructor
-  · rintro (⟨hax, hxb⟩ | ⟨hxb, hba⟩ | ⟨hba, hax⟩)
-    · exact ⟨fun hab => by omega, by simp [hax, hxb]⟩
-    · exact ⟨fun hab => by omega, by simp [Nat.not_lt_of_gt hba, hxb]⟩
-    · exact ⟨fun hab => by omega, by simp [Nat.not_lt_of_gt hba, hax]⟩
-  · intro h
-    by_cases hab : a.val < b.val
-    · exact Or.inl (by simpa [hab] using h.2)
-    · have hba : b.val < a.val := by
-        exact Nat.lt_of_le_of_ne (Nat.le_of_not_gt hab) (by omega)
-      rcases (by simpa [hab] using h.2) with hax | hxb
-      · exact Or.inr (Or.inr ⟨hba, hax⟩)
-      · exact Or.inr (Or.inl ⟨hxb, hba⟩)
-
-/-- The open cyclic interval from a point to itself is empty. -/
-@[simp]
-theorem cIoo_self (a : Fin n) : cIoo a a = ∅ := by
-  ext x
-  simp
-
-/-- The initial endpoint is not in its open cyclic interval. -/
-@[simp]
-theorem left_notMem_cIoo (a b : Fin n) : a ∉ cIoo a b := by
-  intro ha
-  rw [mem_cIoo] at ha
-  by_cases hab : a.val < b.val
-  · have hinside : a.val < a.val ∧ a.val < b.val := by
-      simpa only [hab, if_true] using ha.2
-    exact Nat.lt_irrefl a.val hinside.1
-  · have hinside : a.val < a.val ∨ a.val < b.val := by
-      simpa only [hab, if_false] using ha.2
-    cases hinside with
-    | inl hlt => exact Nat.lt_irrefl a.val hlt
-    | inr hlt => exact hab hlt
-
-/-- The terminal endpoint is not in its open cyclic interval. -/
-@[simp]
-theorem right_notMem_cIoo (a b : Fin n) : b ∉ cIoo a b := by
-  intro hb
-  rw [mem_cIoo] at hb
-  by_cases hab : a.val < b.val
-  · have hinside : a.val < b.val ∧ b.val < b.val := by
-      simpa only [hab, if_true] using hb.2
-    exact Nat.lt_irrefl b.val hinside.2
-  · have hinside : a.val < b.val ∨ b.val < b.val := by
-      simpa only [hab, if_false] using hb.2
-    cases hinside with
-    | inl hlt => exact hab hlt
-    | inr hlt => exact Nat.lt_irrefl b.val hlt
-
-end Grid
 
 /-- A toroidal grid rectangle, represented by its oriented column and row sides.
 

@@ -2,7 +2,8 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.KnotTheory.Grid.Rectangle
+import Mathlib.Data.Set.Finite.Basic
+import Mathlib.Order.Circular.ZMod
 
 /-!
 # Complementary cyclic intervals in finite grids
@@ -37,9 +38,80 @@ namespace Grid
 
 variable {n : ℕ}
 
+/-- The clockwise open cyclic interval from `a` to `b` in `Fin n`.
+
+If `a < b` in the standard representatives, this is the ordinary open interval
+`a < x < b`. If `b ≤ a` and `a ≠ b`, it wraps around `0`, so it is the union of
+`a < x` and `x < b`. The interval from a point to itself is empty. -/
+noncomputable def cIoo (a b : Fin n) : Finset (Fin n) :=
+  ((Set.finite_univ : (Set.univ : Set (Fin n)).Finite).subset
+    (Set.subset_univ (Set.cIoo a b : Set (Fin n)))).toFinset
+
+/-- Membership in a clockwise open cyclic interval, unfolded as inequalities between the
+standard representatives. -/
+@[simp]
+theorem mem_cIoo (a b x : Fin n) :
+    x ∈ cIoo a b ↔
+      a ≠ b ∧
+        if a.val < b.val then
+          a.val < x.val ∧ x.val < b.val
+        else
+          a.val < x.val ∨ x.val < b.val := by
+  rw [cIoo]
+  simp only [Set.Finite.mem_toFinset, Set.mem_cIoo, Fin.sbtw_iff, Fin.lt_def]
+  constructor
+  · rintro (⟨hax, hxb⟩ | ⟨hxb, hba⟩ | ⟨hba, hax⟩)
+    · exact ⟨fun hab => by omega, by simp [hax, hxb]⟩
+    · exact ⟨fun hab => by omega, by simp [Nat.not_lt_of_gt hba, hxb]⟩
+    · exact ⟨fun hab => by omega, by simp [Nat.not_lt_of_gt hba, hax]⟩
+  · intro h
+    by_cases hab : a.val < b.val
+    · exact Or.inl (by simpa [hab] using h.2)
+    · have hba : b.val < a.val := by
+        exact Nat.lt_of_le_of_ne (Nat.le_of_not_gt hab) (by omega)
+      rcases (by simpa [hab] using h.2) with hax | hxb
+      · exact Or.inr (Or.inr ⟨hba, hax⟩)
+      · exact Or.inr (Or.inl ⟨hxb, hba⟩)
+
+/-- The open cyclic interval from a point to itself is empty. -/
+@[simp]
+theorem cIoo_self (a : Fin n) : cIoo a a = ∅ := by
+  ext x
+  simp
+
+/-- The initial endpoint is not in its open cyclic interval. -/
+@[simp]
+theorem left_notMem_cIoo (a b : Fin n) : a ∉ cIoo a b := by
+  intro ha
+  rw [mem_cIoo] at ha
+  by_cases hab : a.val < b.val
+  · have hinside : a.val < a.val ∧ a.val < b.val := by
+      simpa only [hab, if_true] using ha.2
+    exact Nat.lt_irrefl a.val hinside.1
+  · have hinside : a.val < a.val ∨ a.val < b.val := by
+      simpa only [hab, if_false] using ha.2
+    cases hinside with
+    | inl hlt => exact Nat.lt_irrefl a.val hlt
+    | inr hlt => exact hab hlt
+
+/-- The terminal endpoint is not in its open cyclic interval. -/
+@[simp]
+theorem right_notMem_cIoo (a b : Fin n) : b ∉ cIoo a b := by
+  intro hb
+  rw [mem_cIoo] at hb
+  by_cases hab : a.val < b.val
+  · have hinside : a.val < b.val ∧ b.val < b.val := by
+      simpa only [hab, if_true] using hb.2
+    exact Nat.lt_irrefl b.val hinside.2
+  · have hinside : a.val < b.val ∨ b.val < b.val := by
+      simpa only [hab, if_false] using hb.2
+    cases hinside with
+    | inl hlt => exact hab hlt
+    | inr hlt => exact Nat.lt_irrefl b.val hlt
+
 /-- A point cannot lie in both open cyclic intervals with the same endpoints but opposite
 orientations. -/
-theorem not_mem_cIoo_and_mem_cIoo_swap (a b x : Fin n) :
+private theorem not_mem_cIoo_and_cIoo_swap (a b x : Fin n) :
     ¬(x ∈ cIoo a b ∧ x ∈ cIoo b a) := by
   rw [mem_cIoo, mem_cIoo]
   rintro ⟨hxab, hxba⟩
@@ -62,10 +134,11 @@ theorem disjoint_cIoo_swap (a b : Fin n) : Disjoint (cIoo a b) (cIoo b a) := by
   rw [Finset.disjoint_iff_ne]
   intro x hx y hy hxy
   subst hxy
-  exact not_mem_cIoo_and_mem_cIoo_swap a b x ⟨hx, hy⟩
+  exact not_mem_cIoo_and_cIoo_swap a b x ⟨hx, hy⟩
 
 /-- Membership in one of the two opposite cyclic intervals is the same as being neither
 endpoint. -/
+@[simp]
 theorem mem_cIoo_or_mem_cIoo_swap_iff {a b x : Fin n} (h : a ≠ b) :
     x ∈ cIoo a b ∨ x ∈ cIoo b a ↔ x ≠ a ∧ x ≠ b := by
   constructor
@@ -100,6 +173,7 @@ theorem mem_cIoo_or_mem_cIoo_swap_iff {a b x : Fin n} (h : a ≠ b) :
 
 /-- A point outside the clockwise interval from `a` to `b` is either an endpoint or lies in
 the opposite clockwise interval. -/
+@[simp]
 theorem not_mem_cIoo_iff {a b x : Fin n} (h : a ≠ b) :
     x ∉ cIoo a b ↔ x = a ∨ x = b ∨ x ∈ cIoo b a := by
   constructor
@@ -116,9 +190,10 @@ theorem not_mem_cIoo_iff {a b x : Fin n} (h : a ≠ b) :
     · rw [hxb]
       exact right_notMem_cIoo a b
     · intro hxab
-      exact not_mem_cIoo_and_mem_cIoo_swap a b x ⟨hxab, hx⟩
+      exact not_mem_cIoo_and_cIoo_swap a b x ⟨hxab, hx⟩
 
 /-- The two opposite cyclic intervals cover exactly the complement of their endpoints. -/
+@[simp]
 theorem cIoo_union_swap {a b : Fin n} (h : a ≠ b) :
     cIoo a b ∪ cIoo b a = (Finset.univ.erase a).erase b := by
   ext x
@@ -130,16 +205,8 @@ theorem cIoo_union_swap {a b : Fin n} (h : a ≠ b) :
   · rintro ⟨hxb, hxa⟩
     exact ⟨hxa, hxb⟩
 
-/-- The endpoint complement can equivalently erase the two endpoints in the other order. -/
-theorem cIoo_union_swap_eq_erase_erase {a b : Fin n} (h : a ≠ b) :
-    cIoo a b ∪ cIoo b a = (Finset.univ.erase b).erase a := by
-  rw [cIoo_union_swap h]
-  ext x
-  simp only [Finset.mem_erase, Finset.mem_univ, and_true]
-  tauto
-
 /-- The opposite cyclic interval is the endpoint complement with the first interval removed. -/
-theorem cIoo_swap_eq_endpointComplement_sdiff {a b : Fin n} (h : a ≠ b) :
+theorem cIoo_swap_eq_erase_erase_sdiff {a b : Fin n} (h : a ≠ b) :
     cIoo b a = (Finset.univ.erase a).erase b \ cIoo a b := by
   ext x
   constructor
@@ -148,7 +215,7 @@ theorem cIoo_swap_eq_endpointComplement_sdiff {a b : Fin n} (h : a ≠ b) :
     · rw [← cIoo_union_swap h]
       exact Finset.mem_union_right _ hx
     · intro hxab
-      exact not_mem_cIoo_and_mem_cIoo_swap a b x ⟨hxab, hx⟩
+      exact not_mem_cIoo_and_cIoo_swap a b x ⟨hxab, hx⟩
   · intro hx
     have hxu : x ∈ cIoo a b ∪ cIoo b a := by
       rw [cIoo_union_swap h]
@@ -156,26 +223,6 @@ theorem cIoo_swap_eq_endpointComplement_sdiff {a b : Fin n} (h : a ≠ b) :
     rcases Finset.mem_union.mp hxu with hxab | hxba
     · exact ((Finset.mem_sdiff.mp hx).2 hxab).elim
     · exact hxba
-
-/-- Removing the opposite cyclic interval from the endpoint complement gives the original
-cyclic interval. -/
-theorem cIoo_eq_endpointComplement_sdiff_swap {a b : Fin n} (h : a ≠ b) :
-    cIoo a b = (Finset.univ.erase a).erase b \ cIoo b a := by
-  ext x
-  constructor
-  · intro hx
-    refine Finset.mem_sdiff.mpr ⟨?_, ?_⟩
-    · rw [← cIoo_union_swap h]
-      exact Finset.mem_union_left _ hx
-    · intro hxba
-      exact not_mem_cIoo_and_mem_cIoo_swap a b x ⟨hx, hxba⟩
-  · intro hx
-    have hxu : x ∈ cIoo a b ∪ cIoo b a := by
-      rw [cIoo_union_swap h]
-      exact (Finset.mem_sdiff.mp hx).1
-    rcases Finset.mem_union.mp hxu with hxab | hxba
-    · exact hxab
-    · exact ((Finset.mem_sdiff.mp hx).2 hxba).elim
 
 /-- The two complementary cyclic intervals have total cardinality `n - 2`. -/
 theorem card_cIoo_add_card_cIoo_swap {a b : Fin n} (h : a ≠ b) :
@@ -187,12 +234,6 @@ theorem card_cIoo_add_card_cIoo_swap {a b : Fin n} (h : a ≠ b) :
   rw [Finset.card_erase_of_mem hbmem, Finset.card_erase_of_mem (Finset.mem_univ a),
     Finset.card_univ, Fintype.card_fin] at hcard
   exact hcard
-
-/-- The cardinalities of the two opposite intervals are symmetric. -/
-theorem card_cIoo_swap_add_card_cIoo {a b : Fin n} (h : a ≠ b) :
-    (cIoo b a).card + (cIoo a b).card = n - 2 := by
-  rw [Nat.add_comm]
-  exact card_cIoo_add_card_cIoo_swap h
 
 end Grid
 
