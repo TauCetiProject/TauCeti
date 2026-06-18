@@ -24,7 +24,7 @@ before defining rectangles, empty rectangles, and the grid differential.
 
 * `TauCeti.GridState`: a grid state as a permutation graph on `Fin n`.
 * `TauCeti.GridState.pointSet`: the finite set of occupied squares of a grid state.
-* `TauCeti.GridDiagram`: a nonempty `n × n` grid diagram with `O` and `X` markings.
+* `TauCeti.GridDiagram`: an `n × n` grid diagram with `O` and `X` markings.
 * `TauCeti.GridDiagram.OSet`, `TauCeti.GridDiagram.XSet`: the marking point sets.
 
 ## References
@@ -105,8 +105,8 @@ theorem pointSet_inj {x y : GridState n} : x.pointSet = y.pointSet ↔ x = y := 
   · intro h
     simp [h]
 
-/-- A square lies in both state point sets exactly when the two states agree in that
-column. -/
+/-- A square lies in both state point sets exactly when both state permutations send its
+column to its row. -/
 @[simp]
 theorem mem_pointSet_inter (x y : GridState n) (p : Fin n × Fin n) :
     p ∈ x.pointSet ∩ y.pointSet ↔ x p.1 = p.2 ∧ y p.1 = p.2 := by
@@ -125,15 +125,11 @@ theorem disjoint_pointSet_iff (x y : GridState n) :
 
 end GridState
 
-/-- A nonempty `n × n` grid diagram, encoded by the `O`-marking and `X`-marking permutation
-graphs.
+/-- An `n × n` grid diagram, encoded by the `O`-marking and `X`-marking permutation graphs.
 
-The `positive` field excludes the degenerate empty grid. The permutation fields enforce one
-`O` and one `X` in each row and column. The `disjoint` field says no square contains both
-markings. -/
+The permutation fields enforce one `O` and one `X` in each row and column. The `disjoint`
+field says no square contains both markings. -/
 structure GridDiagram (n : ℕ) where
-  /-- The grid number is positive, excluding the degenerate empty grid. -/
-  positive : 0 < n
   /-- The `O` marking in each column, encoded by its row. -/
   O : GridState n
   /-- The `X` marking in each column, encoded by its row. -/
@@ -187,23 +183,27 @@ theorem card_XSet : G.XSet.card = n := by
 
 /-- A grid diagram has a unique `O` marking in each column. -/
 theorem existsUnique_ORow_of_column (c : Fin n) :
-    ∃! r : Fin n, (c, r) ∈ G.OSet :=
-  G.O.existsUnique_row_of_column c
+    ∃! r : Fin n, (c, r) ∈ G.OSet := by
+  rw [OSet]
+  exact G.O.existsUnique_row_of_column c
 
 /-- A grid diagram has a unique `X` marking in each column. -/
 theorem existsUnique_XRow_of_column (c : Fin n) :
-    ∃! r : Fin n, (c, r) ∈ G.XSet :=
-  G.X.existsUnique_row_of_column c
+    ∃! r : Fin n, (c, r) ∈ G.XSet := by
+  rw [XSet]
+  exact G.X.existsUnique_row_of_column c
 
 /-- A grid diagram has a unique `O` marking in each row. -/
 theorem existsUnique_OColumn_of_row (r : Fin n) :
-    ∃! c : Fin n, (c, r) ∈ G.OSet :=
-  G.O.existsUnique_column_of_row r
+    ∃! c : Fin n, (c, r) ∈ G.OSet := by
+  rw [OSet]
+  exact G.O.existsUnique_column_of_row r
 
 /-- A grid diagram has a unique `X` marking in each row. -/
 theorem existsUnique_XColumn_of_row (r : Fin n) :
-    ∃! c : Fin n, (c, r) ∈ G.XSet :=
-  G.X.existsUnique_column_of_row r
+    ∃! c : Fin n, (c, r) ∈ G.XSet := by
+  rw [XSet]
+  exact G.X.existsUnique_column_of_row r
 
 /-- The `O` and `X` marking sets of a grid diagram are disjoint. -/
 theorem disjoint_OSet_XSet : Disjoint G.OSet G.XSet := by
