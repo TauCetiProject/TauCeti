@@ -25,6 +25,8 @@ dictionary.
 * `TauCeti.HopfIdeal.ker_toIdeal` and `TauCeti.HopfIdeal.mem_ker`: its characteristic API.
 * `TauCeti.HopfIdeal.kerLiftBialgHom`: the induced bialgebra morphism from the quotient by
   the kernel of a surjective morphism.
+* `TauCeti.HopfIdeal.kerLiftBialgEquiv`: the resulting bialgebra equivalence from the quotient
+  by the kernel to the codomain.
 * `TauCeti.HopfIdeal.ker_mkBialgHom`: the kernel of the quotient morphism by `I` is `I`.
 
 ## References
@@ -150,20 +152,37 @@ theorem kerLiftBialgHom_comp_mkBialgHom (f : H →ₐc[R] K) (hf : Function.Surj
 
 /-- The quotient by the Hopf-ideal kernel of a surjective morphism maps bijectively to the
 codomain. -/
-theorem kerLiftBialgHom_bijective (f : H →ₐc[R] K) (hf : Function.Surjective f) :
+private theorem kerLiftBialgHom_bijective (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     Function.Bijective (kerLiftBialgHom f hf) := by
-  constructor
-  · intro q₁ q₂ hq
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (ker f hf).toIdeal q₁
-    obtain ⟨y, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (ker f hf).toIdeal q₂
-    rw [kerLiftBialgHom_mk, kerLiftBialgHom_mk] at hq
-    have hsub : x - y ∈ (ker f hf).toIdeal := by
-      rw [ker_toIdeal, RingHom.mem_ker]
-      simp [map_sub, hq]
-    exact (Ideal.Quotient.mk_eq_mk_iff_sub_mem (I := (ker f hf).toIdeal) x y).mpr hsub
-  · intro y
-    obtain ⟨x, rfl⟩ := hf y
-    exact ⟨Ideal.Quotient.mkₐ R (ker f hf).toIdeal x, kerLiftBialgHom_mk f hf x⟩
+  have hfun : (kerLiftBialgHom f hf : H ⧸ (ker f hf).toIdeal → K) =
+      (Ideal.quotientKerAlgEquivOfSurjective (f := (f : H →ₐ[R] K)) hf :
+        H ⧸ RingHom.ker (f : H →ₐ[R] K) → K) := by
+    ext q
+    obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R (ker f hf).toIdeal q
+    rw [kerLiftBialgHom_mk, Ideal.Quotient.mkₐ_eq_mk]
+    exact (Ideal.quotientKerAlgEquivOfSurjective_mk (f := (f : H →ₐ[R] K)) hf h).symm
+  rw [hfun]
+  exact (Ideal.quotientKerAlgEquivOfSurjective (f := (f : H →ₐ[R] K)) hf).bijective
+
+/-- The quotient by the Hopf-ideal kernel of a surjective morphism is bialgebra-equivalent to
+the codomain. -/
+noncomputable def kerLiftBialgEquiv (f : H →ₐc[R] K) (hf : Function.Surjective f) :
+    (H ⧸ (ker f hf).toIdeal) ≃ₐc[R] K :=
+  BialgEquiv.ofBijective (kerLiftBialgHom f hf) (kerLiftBialgHom_bijective f hf)
+
+/-- The kernel quotient equivalence applies as the kernel quotient lift. -/
+@[simp]
+theorem kerLiftBialgEquiv_apply (f : H →ₐc[R] K) (hf : Function.Surjective f)
+    (q : H ⧸ (ker f hf).toIdeal) :
+    kerLiftBialgEquiv f hf q = kerLiftBialgHom f hf q :=
+  rfl
+
+/-- The bialgebra morphism underlying the kernel quotient equivalence is the kernel quotient
+lift. -/
+@[simp]
+theorem kerLiftBialgEquiv_toBialgHom (f : H →ₐc[R] K) (hf : Function.Surjective f) :
+    (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal →ₐc[R] K) = kerLiftBialgHom f hf :=
+  rfl
 
 /-- The Hopf-ideal kernel of the quotient morphism by `I` is `I`. -/
 @[simp]
