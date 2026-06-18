@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Data.Finset.Prod
+import Mathlib.Data.Fintype.Prod
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Order.Circular.ZMod
 import TauCeti.KnotTheory.Grid.Diagram
@@ -26,6 +27,8 @@ finite-set disjointness conditions used for empty rectangles and marking-avoidin
 * `TauCeti.GridRectangle`: a toroidal rectangle, represented by its four cyclic sides.
 * `TauCeti.GridRectangle.interior`: the finite set of squares strictly inside the rectangle.
 * `TauCeti.GridRectangleBetween`: an oriented rectangle from one grid state to another.
+* `TauCeti.GridRectangleBetween.all`: all oriented rectangles from `x` to `y`.
+* `TauCeti.GridRectangleBetween.emptyRectangles`: the empty rectangles from `x` to `y`.
 
 ## References
 
@@ -272,7 +275,38 @@ structure GridRectangleBetween {n : ℕ} (x y : GridState n) where
 
 namespace GridRectangleBetween
 
-variable {n : ℕ} {x y : GridState n} (R : GridRectangleBetween x y)
+variable {n : ℕ} {x y : GridState n}
+
+/-- A rectangle between two grid states is determined by its two side columns. -/
+private theorem sidePair_injective :
+    Function.Injective fun R : GridRectangleBetween x y => (R.left, R.right) := by
+  intro R S h
+  cases R
+  cases S
+  simp only at h
+  obtain ⟨hleft, hright⟩ := Prod.ext_iff.mp h
+  cases hleft
+  cases hright
+  rfl
+
+/-- For fixed source and target grid states, the oriented rectangles between them form a
+finite type. Each rectangle is determined by its two side columns. -/
+noncomputable instance : Fintype (GridRectangleBetween x y) :=
+  Fintype.ofInjective (fun R : GridRectangleBetween x y => (R.left, R.right))
+    sidePair_injective
+
+/-- The finite set of all oriented rectangles from `x` to `y`. -/
+noncomputable def all (x y : GridState n) : Finset (GridRectangleBetween x y) := by
+  classical
+  exact Finset.univ
+
+/-- Membership in `GridRectangleBetween.all` is automatic. -/
+@[simp]
+theorem mem_all (R : GridRectangleBetween x y) : R ∈ all x y := by
+  classical
+  simp [all]
+
+variable (R : GridRectangleBetween x y)
 
 /-- The row of `x` on the initial side. -/
 def bottom : Fin n :=
@@ -293,6 +327,21 @@ def toGridRectangle : GridRectangle n where
 theorem bottom_ne_top : R.bottom ≠ R.top := by
   intro h
   exact R.left_ne_right (x.toPerm.injective (by simpa [bottom, top] using h))
+
+/-- A rectangle between grid states has distinct source and target states. A self-rectangle
+would force the source state's permutation to take the same value on the two distinct side
+columns. -/
+theorem source_ne_target (R : GridRectangleBetween x y) : x ≠ y := by
+  intro hxy
+  cases hxy
+  exact R.left_ne_right (x.toPerm.injective (by simpa [bottom, top] using R.map_left))
+
+/-- There are no rectangles from a grid state to itself. -/
+@[simp]
+theorem all_self (x : GridState n) : all x x = ∅ := by
+  classical
+  ext R
+  exact R.source_ne_target rfl |>.elim
 
 /-- The initial lower corner is a point of the source state. -/
 @[simp]
@@ -324,6 +373,36 @@ theorem mem_target_pointSet_iff_of_ne {p : Fin n × Fin n}
 its interior. -/
 def IsEmpty : Prop :=
   R.toGridRectangle.IsEmptyFor x
+
+/-- The finite set of empty oriented rectangles from `x` to `y`. -/
+noncomputable def emptyRectangles (x y : GridState n) : Finset (GridRectangleBetween x y) := by
+  classical
+  exact (all x y).filter fun R => R.IsEmpty
+
+/-- Membership in the finite set of empty rectangles is exactly the emptiness predicate. -/
+@[simp]
+theorem mem_emptyRectangles (R : GridRectangleBetween x y) :
+    R ∈ emptyRectangles x y ↔ R.IsEmpty := by
+  classical
+  simp [emptyRectangles]
+
+/-- Every rectangle in `emptyRectangles` is empty. -/
+theorem isEmpty_of_mem_emptyRectangles {R : GridRectangleBetween x y}
+    (hR : R ∈ emptyRectangles x y) : R.IsEmpty :=
+  (mem_emptyRectangles R).mp hR
+
+/-- Empty rectangles are a subset of all rectangles between the same two states. -/
+theorem emptyRectangles_subset_all (x y : GridState n) :
+    emptyRectangles x y ⊆ all x y := by
+  classical
+  intro R hR
+  simp [emptyRectangles] at hR ⊢
+
+/-- There are no empty rectangles from a grid state to itself. -/
+@[simp]
+theorem emptyRectangles_self (x : GridState n) : emptyRectangles x x = ∅ := by
+  classical
+  simp [emptyRectangles]
 
 /-- The associated rectangle avoids a grid diagram's markings when no marking lies in its
 interior. -/
