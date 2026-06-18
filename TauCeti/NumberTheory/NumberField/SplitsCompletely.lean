@@ -41,11 +41,11 @@ namespace TauCeti.NumberField
 variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
-/-- For a prime `Q` of `𝓞 K` lying over the rational prime ideal `(p)`, an integer `m` maps into
-`Q` under `algebraMap ℤ (𝓞 K)` iff `p ∣ m`. -/
-theorem algebraMap_int_mem_iff_dvd_of_liesOver {K : Type*} [Field K] [NumberField K] {p : ℕ}
-    (Q : Ideal (𝓞 K)) [Q.LiesOver (span {(p : ℤ)})] (m : ℤ) :
-    algebraMap ℤ (𝓞 K) m ∈ Q ↔ (p : ℤ) ∣ m := by
+/-- For an ideal `Q` of a commutative ring `B` lying over the integer ideal `(p)`, an integer `m`
+maps into `Q` under `algebraMap ℤ B` iff `p ∣ m`. -/
+theorem algebraMap_int_mem_iff_dvd_of_liesOver {B : Type*} [CommRing B] {p : ℕ}
+    (Q : Ideal B) [Q.LiesOver (span {(p : ℤ)})] (m : ℤ) :
+    algebraMap ℤ B m ∈ Q ↔ (p : ℤ) ∣ m := by
   -- The left-hand side unfolds to membership in `Q.under ℤ = (p)`.
   have hunder : Q.under ℤ = span {(p : ℤ)} := by symm; exact (‹Q.LiesOver _›).over
   change m ∈ Q.under ℤ ↔ (p : ℤ) ∣ m

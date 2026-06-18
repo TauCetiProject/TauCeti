@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 import Mathlib.LinearAlgebra.Dimension.DivisionRing
+import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
 import TauCeti.NumberTheory.Multiquadratic.Galois
 import TauCeti.NumberTheory.NumberField.SplitsCompletely
 
@@ -39,9 +40,10 @@ namespace TauCeti.NumberField
 variable {K : Type*} [Field K] [NumberField K]
 
 omit [NumberField K] in
-/-- Each generator `r i` is integral over `ℤ`, being a root of the monic `X² - d i`. -/
+/-- Each generator `r i` is integral over `ℤ`. -/
 private theorem mq_isIntegral_gen {ι : Type*} (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) : IsIntegral ℤ (r i) :=
+  -- `r i` is a root of the monic `X² - d i`.
   ⟨X ^ 2 - C (d i), monic_X_pow_sub_C (d i) (by norm_num), by
     rw [eval₂_sub, eval₂_X_pow, eval₂_C, hr i, sub_self]⟩
 
@@ -116,9 +118,17 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
   have hRsq : ∀ i, R i ^ 2 = algebraMap ℤ (𝓞 K) (d i) := fun i => by
     apply FaithfulSMul.algebraMap_injective (𝓞 K) K
     rw [map_pow, hRK i, hr i, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
-  -- Definitional: the Galois action on `𝓞 K` is by construction the restriction of the action on
-  -- `K`, so `algebraMap (σ • x) = σ (algebraMap x)` holds by `rfl`.
-  have hact : ∀ x : 𝓞 K, algebraMap (𝓞 K) K (σ • x) = σ (algebraMap (𝓞 K) K x) := fun _ => rfl
+  -- The Galois action on `𝓞 K` is the restriction of the action on `K`: it agrees with
+  -- `galRestrict ℤ ℚ K (𝓞 K) σ` (both restrict `σ` and are pinned by injectivity of the algebra
+  -- map), so compatibility is `algebraMap_galRestrict_apply`.
+  have hgal : ∀ x : 𝓞 K, galRestrict ℤ ℚ K (𝓞 K) σ x = σ • x := fun x => by
+    apply FaithfulSMul.algebraMap_injective (𝓞 K) K
+    rw [algebraMap_galRestrict_apply (A := ℤ) σ x]
+    -- The remaining equality is the definitional agreement between the integral-closure action
+    -- `σ • x = ⟨σ • (x : K), _⟩` and `σ` acting on `K`; `integralClosure.coe_smul` names it.
+    exact (integralClosure.coe_smul σ x).symm
+  have hact : ∀ x : 𝓞 K, algebraMap (𝓞 K) K (σ • x) = σ (algebraMap (𝓞 K) K x) := fun x => by
+    rw [← hgal x, algebraMap_galRestrict_apply (A := ℤ) σ x]
   have hstab : σ • Q = Q := mem_stabilizer_iff.mp hσ
   have hmapQ : ∀ x ∈ Q, σ • x ∈ Q := by
     intro x hx; rw [← hstab]; exact Ideal.smul_mem_pointwise_smul σ x Q hx
