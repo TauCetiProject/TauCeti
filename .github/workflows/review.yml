@@ -102,12 +102,19 @@ jobs:
 
   review:
     needs: resolve
-    if: ${{ needs.resolve.outputs.pr != '' }}
-    uses: FormalFrontier/TauCetiReview/.github/workflows/review.yml@main
+    # GENERATING reviews in CI spends API budget, so it is OFF unless the repo variable
+    # CI_REVIEW_ENABLED is set to 'true'. While off, reviews are run from the command line
+    # (tauceti-review in TauCetiReview, or tauceti from TauCetiWorker). Merging is independent:
+    # auto-merge.yml merges a green PR regardless of this gate. Re-enable by setting the variable.
+    if: ${{ vars.CI_REVIEW_ENABLED == 'true' && needs.resolve.outputs.pr != '' }}
+    # Pinned to a TauCetiReview commit; bump deliberately (an unpinned @main lets an upstream change
+    # break every contributor's review at once, and this workflow inherits TauCeti's secrets).
+    uses: FormalFrontier/TauCetiReview/.github/workflows/review.yml@8141201d620b0ae986222bea6ee25d7c0d3d1e72
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
-      enable_automerge: true
+      # Merging is handled by auto-merge.yml (the single merge path), so generation never merges.
+      enable_automerge: false
       mode: ${{ needs.resolve.outputs.mode }}
       reply_rubric: ${{ needs.resolve.outputs.reply_rubric }}
       reply_comment_id: ${{ needs.resolve.outputs.reply_comment_id }}
