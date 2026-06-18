@@ -4,9 +4,16 @@
 # reviewed by the AI review agents (see the TauCetiReview repo), not by human code owners.
 # The `/TauCeti/` line below lists no owner, so GitHub requests no human review for a
 # mathematics PR. Last-match-wins keeps every other path — this file, `.github/`, the lake
-# config, the human dirs, and the root `TauCeti.lean` — human-governed.
+# config, and the human dirs — human-governed.
 
 *                 @FormalFrontier/humans
 
 # AI-authored mathematics: no human code owner; the AI review agents gate these PRs.
 /TauCeti/
+
+# The root aggregator is a generated list of `import TauCeti.*` lines, re-synced on main after
+# merge. A PR may add its new module's import here; that edit is mechanical and covered by the
+# sandboxed build + axiom audit + import-boundary guard, so it needs no human review. Leaving it
+# human-owned also blocks the merge queue from enqueuing math PRs (the App bypasses code-owner
+# review for a direct merge, but not at enqueue time), so it is AI-gated like /TauCeti/.
+/TauCeti.lean
