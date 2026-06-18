@@ -1,0 +1,199 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+import TauCeti.KnotTheory.Grid.Rectangle
+
+/-!
+# Complementary cyclic intervals in finite grids
+
+This file records finite-set bookkeeping for the clockwise open cyclic intervals used by
+toroidal grid rectangles. For distinct endpoints `a` and `b`, the two arcs `cIoo a b` and
+`cIoo b a` are disjoint and together contain exactly the points other than `a` and `b`.
+
+These lemmas are deliberately stated at the one-dimensional `Fin n` level. Rectangle-pair
+arguments for the grid differential can then apply them independently in the column and row
+directions before taking products.
+
+## Main results
+
+* `TauCeti.Grid.disjoint_cIoo_swap`: opposite open arcs are disjoint.
+* `TauCeti.Grid.mem_cIoo_or_mem_cIoo_swap_iff`: a point lies in one opposite arc exactly when
+  it is not an endpoint.
+* `TauCeti.Grid.cIoo_union_swap`: the two opposite arcs cover the endpoint complement.
+* `TauCeti.Grid.card_cIoo_add_card_cIoo_swap`: the two arc lengths add to `n - 2`.
+
+## References
+
+This supplies a prerequisite for `TauCetiRoadmap/HeegaardFloer/README.md`, Lane G.3, "The
+complexes and `∂² = 0`", where the annular cases in the juxtaposition proof use the fact that
+the two complementary cyclic intervals partition the non-endpoint columns or rows. The
+terminology follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+-/
+
+namespace TauCeti
+
+namespace Grid
+
+variable {n : ℕ}
+
+/-- A point cannot lie in both open cyclic intervals with the same endpoints but opposite
+orientations. -/
+theorem not_mem_cIoo_and_mem_cIoo_swap (a b x : Fin n) :
+    ¬(x ∈ cIoo a b ∧ x ∈ cIoo b a) := by
+  rw [mem_cIoo, mem_cIoo]
+  rintro ⟨hxab, hxba⟩
+  by_cases hab : a.val < b.val
+  · have hxab' : a.val < x.val ∧ x.val < b.val := by
+      simpa [hab] using hxab.2
+    have hbxa : ¬ b.val < a.val := Nat.not_lt.mpr (Nat.le_of_lt hab)
+    have hxba' : b.val < x.val ∨ x.val < a.val := by
+      simpa [hbxa] using hxba.2
+    omega
+  · have hxab' : a.val < x.val ∨ x.val < b.val := by
+      simpa [hab] using hxab.2
+    have hba : b.val < a.val := Nat.lt_of_le_of_ne (Nat.le_of_not_gt hab) (by omega)
+    have hxba' : b.val < x.val ∧ x.val < a.val := by
+      simpa [hba] using hxba.2
+    omega
+
+/-- Opposite open cyclic intervals with the same endpoints are disjoint. -/
+theorem disjoint_cIoo_swap (a b : Fin n) : Disjoint (cIoo a b) (cIoo b a) := by
+  rw [Finset.disjoint_iff_ne]
+  intro x hx y hy hxy
+  subst hxy
+  exact not_mem_cIoo_and_mem_cIoo_swap a b x ⟨hx, hy⟩
+
+/-- Membership in one of the two opposite cyclic intervals is the same as being neither
+endpoint. -/
+theorem mem_cIoo_or_mem_cIoo_swap_iff {a b x : Fin n} (h : a ≠ b) :
+    x ∈ cIoo a b ∨ x ∈ cIoo b a ↔ x ≠ a ∧ x ≠ b := by
+  constructor
+  · rintro (hx | hx)
+    · exact ⟨fun hxa => left_notMem_cIoo a b (hxa ▸ hx),
+        fun hxb => right_notMem_cIoo a b (hxb ▸ hx)⟩
+    · exact ⟨fun hxa => right_notMem_cIoo b a (hxa ▸ hx),
+        fun hxb => left_notMem_cIoo b a (hxb ▸ hx)⟩
+  · intro hx
+    by_cases hab : a.val < b.val
+    · by_cases hax : a.val < x.val
+      · by_cases hxb : x.val < b.val
+        · exact Or.inl ((mem_cIoo a b x).mpr ⟨h, by simp [hab, hax, hxb]⟩)
+        · exact Or.inr ((mem_cIoo b a x).mpr ⟨h.symm, by
+            have hbxa : ¬ b.val < a.val := Nat.not_lt.mpr (Nat.le_of_lt hab)
+            have hbx : b.val < x.val := Nat.lt_of_le_of_ne (Nat.le_of_not_gt hxb) (by omega)
+            simp [hbxa, hbx]⟩)
+      · exact Or.inr ((mem_cIoo b a x).mpr ⟨h.symm, by
+          have hbxa : ¬ b.val < a.val := Nat.not_lt.mpr (Nat.le_of_lt hab)
+          have hxa : x.val < a.val := Nat.lt_of_le_of_ne (Nat.le_of_not_gt hax) (by omega)
+          simp [hbxa, hxa]⟩)
+    · have hba : b.val < a.val := Nat.lt_of_le_of_ne (Nat.le_of_not_gt hab) (by omega)
+      by_cases hbx : b.val < x.val
+      · by_cases hxa : x.val < a.val
+        · exact Or.inr ((mem_cIoo b a x).mpr ⟨h.symm, by simp [hba, hbx, hxa]⟩)
+        · exact Or.inl ((mem_cIoo a b x).mpr ⟨h, by
+            have hax : a.val < x.val := Nat.lt_of_le_of_ne (Nat.le_of_not_gt hxa) (by omega)
+            simp [hab, hax]⟩)
+      · exact Or.inl ((mem_cIoo a b x).mpr ⟨h, by
+          have hxb : x.val < b.val := Nat.lt_of_le_of_ne (Nat.le_of_not_gt hbx) (by omega)
+          simp [hab, hxb]⟩)
+
+/-- A point outside the clockwise interval from `a` to `b` is either an endpoint or lies in
+the opposite clockwise interval. -/
+theorem not_mem_cIoo_iff {a b x : Fin n} (h : a ≠ b) :
+    x ∉ cIoo a b ↔ x = a ∨ x = b ∨ x ∈ cIoo b a := by
+  constructor
+  · intro hx
+    by_cases hxa : x = a
+    · exact Or.inl hxa
+    by_cases hxb : x = b
+    · exact Or.inr (Or.inl hxb)
+    · exact Or.inr (Or.inr ((mem_cIoo_or_mem_cIoo_swap_iff h).mpr ⟨hxa, hxb⟩ |>.resolve_left hx))
+  · intro hx
+    rcases hx with hxa | hxb | hx
+    · rw [hxa]
+      exact left_notMem_cIoo a b
+    · rw [hxb]
+      exact right_notMem_cIoo a b
+    · intro hxab
+      exact not_mem_cIoo_and_mem_cIoo_swap a b x ⟨hxab, hx⟩
+
+/-- The two opposite cyclic intervals cover exactly the complement of their endpoints. -/
+theorem cIoo_union_swap {a b : Fin n} (h : a ≠ b) :
+    cIoo a b ∪ cIoo b a = (Finset.univ.erase a).erase b := by
+  ext x
+  rw [Finset.mem_union, mem_cIoo_or_mem_cIoo_swap_iff h]
+  simp only [Finset.mem_erase, Finset.mem_univ, and_true]
+  constructor
+  · rintro ⟨hxa, hxb⟩
+    exact ⟨hxb, hxa⟩
+  · rintro ⟨hxb, hxa⟩
+    exact ⟨hxa, hxb⟩
+
+/-- The endpoint complement can equivalently erase the two endpoints in the other order. -/
+theorem cIoo_union_swap_eq_erase_erase {a b : Fin n} (h : a ≠ b) :
+    cIoo a b ∪ cIoo b a = (Finset.univ.erase b).erase a := by
+  rw [cIoo_union_swap h]
+  ext x
+  simp only [Finset.mem_erase, Finset.mem_univ, and_true]
+  tauto
+
+/-- The opposite cyclic interval is the endpoint complement with the first interval removed. -/
+theorem cIoo_swap_eq_endpointComplement_sdiff {a b : Fin n} (h : a ≠ b) :
+    cIoo b a = (Finset.univ.erase a).erase b \ cIoo a b := by
+  ext x
+  constructor
+  · intro hx
+    refine Finset.mem_sdiff.mpr ⟨?_, ?_⟩
+    · rw [← cIoo_union_swap h]
+      exact Finset.mem_union_right _ hx
+    · intro hxab
+      exact not_mem_cIoo_and_mem_cIoo_swap a b x ⟨hxab, hx⟩
+  · intro hx
+    have hxu : x ∈ cIoo a b ∪ cIoo b a := by
+      rw [cIoo_union_swap h]
+      exact (Finset.mem_sdiff.mp hx).1
+    rcases Finset.mem_union.mp hxu with hxab | hxba
+    · exact ((Finset.mem_sdiff.mp hx).2 hxab).elim
+    · exact hxba
+
+/-- Removing the opposite cyclic interval from the endpoint complement gives the original
+cyclic interval. -/
+theorem cIoo_eq_endpointComplement_sdiff_swap {a b : Fin n} (h : a ≠ b) :
+    cIoo a b = (Finset.univ.erase a).erase b \ cIoo b a := by
+  ext x
+  constructor
+  · intro hx
+    refine Finset.mem_sdiff.mpr ⟨?_, ?_⟩
+    · rw [← cIoo_union_swap h]
+      exact Finset.mem_union_left _ hx
+    · intro hxba
+      exact not_mem_cIoo_and_mem_cIoo_swap a b x ⟨hx, hxba⟩
+  · intro hx
+    have hxu : x ∈ cIoo a b ∪ cIoo b a := by
+      rw [cIoo_union_swap h]
+      exact (Finset.mem_sdiff.mp hx).1
+    rcases Finset.mem_union.mp hxu with hxab | hxba
+    · exact hxab
+    · exact ((Finset.mem_sdiff.mp hx).2 hxba).elim
+
+/-- The two complementary cyclic intervals have total cardinality `n - 2`. -/
+theorem card_cIoo_add_card_cIoo_swap {a b : Fin n} (h : a ≠ b) :
+    (cIoo a b).card + (cIoo b a).card = n - 2 := by
+  have hcard := congrArg Finset.card (cIoo_union_swap h)
+  rw [Finset.card_union_of_disjoint (disjoint_cIoo_swap a b)] at hcard
+  have hbmem : b ∈ (Finset.univ : Finset (Fin n)).erase a := by
+    simp [h.symm]
+  rw [Finset.card_erase_of_mem hbmem, Finset.card_erase_of_mem (Finset.mem_univ a),
+    Finset.card_univ, Fintype.card_fin] at hcard
+  exact hcard
+
+/-- The cardinalities of the two opposite intervals are symmetric. -/
+theorem card_cIoo_swap_add_card_cIoo {a b : Fin n} (h : a ≠ b) :
+    (cIoo b a).card + (cIoo a b).card = n - 2 := by
+  rw [Nat.add_comm]
+  exact card_cIoo_add_card_cIoo_swap h
+
+end Grid
+
+end TauCeti
