@@ -137,11 +137,6 @@ theorem symm_right_bottom_mem_target (R : GridRectangleBetween x y) :
     (R.symm.right, R.symm.bottom) ∈ x.pointSet := by
   simpa using R.left_bottom_mem_source
 
-/-- Reversal preserves membership in the finite set of all oriented rectangles, now in the
-reverse direction. -/
-theorem symm_mem_all (R : GridRectangleBetween x y) : R.symm ∈ all y x :=
-  mem_all R.symm
-
 /-- There are as many oriented rectangles from `x` to `y` as from `y` to `x`. -/
 theorem card_all_comm (x y : GridState n) : (all x y).card = (all y x).card := by
   classical
