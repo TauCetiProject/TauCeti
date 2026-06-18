@@ -153,6 +153,7 @@ theorem signPattern_mul_apply (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
       · exact signPattern_eq_zero _ _ h
       · exact signPattern_eq_zero _ _ (h.trans hself.symm)
     rw [hsign (σ * τ), hsign σ, hsign τ]
+    -- All three signs are `0`, so the goal is `(0 : ZMod 2) = 0 + 0`.
     rfl
 
 /-- The sign pattern is additive: it is a group homomorphism to `ι → ℤ/2`. -/
@@ -175,6 +176,7 @@ noncomputable def signHom (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
 /-- Evaluation rule for `signHom`: it is the multiplicative form of `signPattern`. -/
 @[simp] theorem signHom_apply (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :
+    -- Applying the bundled `MonoidHom` unfolds to its `toFun`, which is `ofAdd ∘ signPattern`.
     signHom root hroot σ = Multiplicative.ofAdd (signPattern root σ) := rfl
 
 /-- The sign-pattern homomorphism is injective. -/
