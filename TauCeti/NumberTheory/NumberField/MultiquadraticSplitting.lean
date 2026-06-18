@@ -47,6 +47,27 @@ private theorem mq_isIntegral_gen {ι : Type*} (d : ι → ℤ) (r : ι → K)
   ⟨X ^ 2 - C (d i), monic_X_pow_sub_C (d i) (by norm_num), by
     rw [eval₂_sub, eval₂_X_pow, eval₂_C, hr i, sub_self]⟩
 
+/-- The lift of the generator `r i` to `𝓞 K` (it is integral over `ℤ`). -/
+private noncomputable def ringGen {ι : Type*} (d : ι → ℤ) (r : ι → K)
+    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) : 𝓞 K :=
+  ⟨r i, mq_isIntegral_gen d r hr i⟩
+
+omit [NumberField K] in
+/-- `ringGen` maps back to `r i` under `algebraMap (𝓞 K) K`: `R i = ⟨r i, _⟩`, so its image is the
+definitional coercion of the integral-closure element back to `K`, namely `r i`
+(cf. `RingOfIntegers.coe_mk`). -/
+private theorem algebraMap_ringGen {ι : Type*} (d : ι → ℤ) (r : ι → K)
+    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) :
+    algebraMap (𝓞 K) K (ringGen d r hr i) = r i := rfl
+
+omit [NumberField K] in
+/-- `ringGen` squares to the radicand `d i` in `𝓞 K`. -/
+private theorem ringGen_sq {ι : Type*} (d : ι → ℤ) (r : ι → K)
+    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) :
+    ringGen d r hr i ^ 2 = algebraMap ℤ (𝓞 K) (d i) := by
+  apply FaithfulSMul.algebraMap_injective (𝓞 K) K
+  rw [map_pow, algebraMap_ringGen, hr i, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
+
 omit [NumberField K] in
 /-- For an ideal `Q` lying over the integer ideal `(a)`, an integer `m` maps into `Q` under
 `algebraMap ℤ (𝓞 K)` iff `a ∣ m`. -/
@@ -70,13 +91,7 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
     Ideal.IsPrime.isMaximal
       ((Ideal.span_singleton_prime hpne).mpr (Nat.prime_iff_prime_int.mp Fact.out))
       (by simpa [Ideal.span_singleton_eq_bot] using hpne)
-  set R : ι → 𝓞 K := fun i => ⟨r i, mq_isIntegral_gen d r hr i⟩ with hRdef
-  -- `R i = ⟨r i, _⟩`, so its image under `algebraMap (𝓞 K) K` is the definitional coercion of the
-  -- integral-closure element back to `K`, namely `r i` (cf. `RingOfIntegers.coe_mk`).
-  have hRK : ∀ i, algebraMap (𝓞 K) K (R i) = r i := fun _ => rfl
-  have hRsq : ∀ i, R i ^ 2 = algebraMap ℤ (𝓞 K) (d i) := fun i => by
-    apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-    rw [map_pow, hRK i, hr i, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
+  let R : ι → 𝓞 K := ringGen d r hr
   rw [ncard_primesOver_eq_finrank_iff K p] at hsplit
   have hfQ : finrank (ℤ ⧸ span {(p : ℤ)}) (𝓞 K ⧸ Q) = 1 := by
     rw [← Ideal.inertiaDeg_algebraMap (p := span {(p : ℤ)}) (P := Q),
@@ -102,7 +117,7 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
     rw [← algebraMap_int_mem_iff_dvd_of_liesOver Q]
     have hfac : algebraMap ℤ (𝓞 K) (a ^ 2 - d i) =
         (algebraMap ℤ (𝓞 K) a - R i) * (algebraMap ℤ (𝓞 K) a + R i) := by
-      rw [map_sub, map_pow, ← hRsq i]; ring
+      rw [map_sub, map_pow, ← ringGen_sq d r hr i]; ring
     rw [hfac]
     exact Ideal.mul_mem_right _ _ hdiff
   rw [legendreSym.eq_one_iff p (by rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hcop_i)]
@@ -123,13 +138,7 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
   -- `p ∤ a`.
   have hr' : ∀ i, r i ^ 2 = algebraMap ℚ K ((d i : ℚ)) := by
     intro i; rw [hr i]; simp
-  set R : ι → 𝓞 K := fun i => ⟨r i, mq_isIntegral_gen d r hr i⟩ with hRdef
-  -- `R i = ⟨r i, _⟩`, so its image under `algebraMap (𝓞 K) K` is the definitional coercion of the
-  -- integral-closure element back to `K`, namely `r i` (cf. `RingOfIntegers.coe_mk`).
-  have hRK : ∀ i, algebraMap (𝓞 K) K (R i) = r i := fun _ => rfl
-  have hRsq : ∀ i, R i ^ 2 = algebraMap ℤ (𝓞 K) (d i) := fun i => by
-    apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-    rw [map_pow, hRK i, hr i, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
+  let R : ι → 𝓞 K := ringGen d r hr
   -- The Galois action on `𝓞 K` is the restriction of the action on `K`: it agrees with
   -- `galRestrict ℤ ℚ K (𝓞 K) σ` (both restrict `σ` and are pinned by injectivity of the algebra
   -- map), so compatibility is `algebraMap_galRestrict_apply`.
@@ -168,13 +177,13 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
     have hAsq : A ^ 2 = algebraMap ℤ (𝓞 K) (a ^ 2) := by rw [hAdef, ← map_pow]
     have heq : (R i - A) * (R i + A) = algebraMap ℤ (𝓞 K) (d i - a ^ 2) := by
       have h1 : (R i - A) * (R i + A) = R i ^ 2 - A ^ 2 := by ring
-      rw [h1, hRsq i, hAsq, ← map_sub]
+      rw [h1, ringGen_sq d r hr i, hAsq, ← map_sub]
     have hfacQ : (R i - A) * (R i + A) ∈ Q := by
       rw [heq]; exact (algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr (dvd_sub_comm.mp hpa)
     -- `σ` sends `R i ↦ -R i` and fixes the integer `A`.
     have hsR : σ • R i = - R i := by
       apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-      rw [hact, map_neg, hRK, hflip]
+      rw [hact, map_neg, algebraMap_ringGen, hflip]
     have hsA : σ • A = A := by
       apply FaithfulSMul.algebraMap_injective (𝓞 K) K
       rw [hact, hAdef, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K,
@@ -196,6 +205,7 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
         exact hs
     -- `2 A = algebraMap (2 a) ∈ Q` forces `p ∣ 2 a`, hence (as `p` is odd) `p ∣ a` — absurd.
     have h2a : algebraMap ℤ (𝓞 K) (2 * a) ∈ Q := by
+      -- `algebraMap ℤ (𝓞 K) 2` is the numeral `2` in `𝓞 K`, so `2 A = algebraMap (2 a)`.
       rw [map_mul, show algebraMap ℤ (𝓞 K) 2 = 2 by norm_num, ← hAdef]; exact h2A
     have hpint : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
     rcases hpint.dvd_mul.mp ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h2a) with h2 | ha
