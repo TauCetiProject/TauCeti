@@ -24,7 +24,7 @@ before defining rectangles, empty rectangles, and the grid differential.
 
 * `TauCeti.GridState`: a grid state as a permutation graph on `Fin n`.
 * `TauCeti.GridState.pointSet`: the finite set of occupied squares of a grid state.
-* `TauCeti.GridDiagram`: an `n × n` grid diagram with `O` and `X` markings.
+* `TauCeti.GridDiagram`: a nonempty `n × n` grid diagram with `O` and `X` markings.
 * `TauCeti.GridDiagram.OSet`, `TauCeti.GridDiagram.XSet`: the marking point sets.
 
 ## References
@@ -125,11 +125,15 @@ theorem disjoint_pointSet_iff (x y : GridState n) :
 
 end GridState
 
-/-- An `n × n` grid diagram, encoded by the `O`-marking and `X`-marking permutation graphs.
+/-- A nonempty `n × n` grid diagram, encoded by the `O`-marking and `X`-marking permutation
+graphs.
 
-The permutation fields enforce one `O` and one `X` in each row and column. The `disjoint`
-field says no square contains both markings. -/
+The `positive` field excludes the degenerate empty grid. The permutation fields enforce one
+`O` and one `X` in each row and column. The `disjoint` field says no square contains both
+markings. -/
 structure GridDiagram (n : ℕ) where
+  /-- The grid number is positive, excluding the degenerate empty grid. -/
+  positive : 0 < n
   /-- The `O` marking in each column, encoded by its row. -/
   O : GridState n
   /-- The `X` marking in each column, encoded by its row. -/
