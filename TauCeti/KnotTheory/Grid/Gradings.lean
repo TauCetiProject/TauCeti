@@ -162,22 +162,23 @@ theorem maslovX_eq (x : GridState n) :
 
 /-- The Alexander grading of a grid state.
 
-This is the formula `A(x) = (M_O(x) - M_X(x)) / 2 - (n - 1) / 2`. It is rational-valued here;
-integer-valuedness is a later grading theorem. -/
+This is the formula `A(x) = (M_O(x) - M_X(x)) / 2 - (n - 1) / 2`. The shift is cast
+through `ℤ`, so the formula remains literal at `n = 0`; integer-valuedness is a later grading
+theorem. -/
 def alexander (x : GridState n) : ℚ :=
-  (G.maslovO x - G.maslovX x) / 2 - ((n - 1 : ℕ) : ℚ) / 2
+  (G.maslovO x - G.maslovX x) / 2 - (((n : ℤ) - 1 : ℤ) : ℚ) / 2
 
 /-- The Alexander grading as the difference of the two Maslov gradings with the standard
 normalization shift. -/
 theorem alexander_def (x : GridState n) :
     G.alexander x =
-      (G.maslovO x - G.maslovX x) / 2 - ((n - 1 : ℕ) : ℚ) / 2 :=
+      (G.maslovO x - G.maslovX x) / 2 - (((n : ℤ) - 1 : ℤ) : ℚ) / 2 :=
   rfl
 
 /-- The Alexander grading with the two Maslov formulas expanded. -/
 theorem alexander_eq (x : GridState n) :
     G.alexander x =
-      (2 * (G.JX x - G.JO x) + (G.JOO - G.JXX) - ((n - 1 : ℕ) : ℚ)) / 2 := by
+      (2 * (G.JX x - G.JO x) + (G.JOO - G.JXX) - (((n : ℤ) - 1 : ℤ) : ℚ)) / 2 := by
   rw [alexander, maslovO_eq, maslovX_eq]
   ring
 
@@ -185,14 +186,14 @@ theorem alexander_eq (x : GridState n) :
 normalization shift. -/
 theorem maslovO_sub_maslovX_eq (x : GridState n) :
     G.maslovO x - G.maslovX x =
-      2 * G.alexander x + ((n - 1 : ℕ) : ℚ) := by
+      2 * G.alexander x + (((n : ℤ) - 1 : ℤ) : ℚ) := by
   rw [alexander]
   ring
 
 /-- Replacing the two Maslov gradings by the same value leaves only the normalization shift in
 the Alexander formula. -/
 theorem alexander_eq_neg_shift_of_maslov_eq {x : GridState n} (h : G.maslovO x = G.maslovX x) :
-    G.alexander x = -((n - 1 : ℕ) : ℚ) / 2 := by
+    G.alexander x = -(((n : ℤ) - 1 : ℤ) : ℚ) / 2 := by
   rw [alexander, h]
   ring
 
