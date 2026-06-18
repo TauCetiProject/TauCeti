@@ -22,7 +22,6 @@ finite-set disjointness conditions used for empty rectangles and marking-avoidin
 
 ## Main definitions
 
-* `TauCeti.Grid.cIoo`: the clockwise open-open circular interval from `a` to `b`.
 * `TauCeti.GridRectangle`: a toroidal rectangle, represented by its four cyclic sides.
 * `TauCeti.GridRectangle.interior`: the finite set of squares strictly inside the rectangle.
 * `TauCeti.GridRectangleBetween`: an oriented rectangle from one grid state to another.
