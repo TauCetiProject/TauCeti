@@ -51,12 +51,13 @@ private noncomputable def ringGen {ι : Type*} (d : ι → ℤ) (r : ι → K)
   ⟨r i, mq_isIntegral_gen d r hr i⟩
 
 omit [NumberField K] in
-/-- `ringGen` maps back to `r i` under `algebraMap (𝓞 K) K`: `R i = ⟨r i, _⟩`, so its image is the
-definitional coercion of the integral-closure element back to `K`, namely `r i`
-(cf. `RingOfIntegers.coe_mk`). -/
+/-- Under `𝓞 K ↪ K`, `ringGen d r hr i` maps to the generator `r i`. -/
 private theorem algebraMap_ringGen {ι : Type*} (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) :
-    algebraMap (𝓞 K) K (ringGen d r hr i) = r i := rfl
+    algebraMap (𝓞 K) K (ringGen d r hr i) = r i :=
+  -- `ringGen d r hr i = ⟨r i, _⟩`, so its image is the definitional coercion back to `K`
+  -- (cf. `RingOfIntegers.coe_mk`).
+  rfl
 
 omit [NumberField K] in
 /-- `ringGen` squares to the radicand `d i` in `𝓞 K`. -/
