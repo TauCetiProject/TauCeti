@@ -48,12 +48,12 @@ not the toroidal cyclic order used for rectangles. -/
 def IsSouthWest (p q : Fin n × Fin n) : Prop :=
   p.1.val < q.1.val ∧ p.2.val < q.2.val
 
-/-- The southwest relation is decidable because it is a pair of inequalities of natural
-coordinates. -/
+/-- The strict southwest relation has a decidable instance. -/
 instance decidableIsSouthWest (p q : Fin n × Fin n) : Decidable (IsSouthWest p q) :=
   inferInstanceAs (Decidable (p.1.val < q.1.val ∧ p.2.val < q.2.val))
 
 /-- The southwest relation in coordinate form. -/
+@[simp, grind =]
 theorem isSouthWest_iff (p q : Fin n × Fin n) :
     IsSouthWest p q ↔ p.1.val < q.1.val ∧ p.2.val < q.2.val :=
   Iff.rfl
@@ -104,18 +104,10 @@ theorem I_empty_right (s : Finset (Fin n × Fin n)) : I s ∅ = 0 := by
 @[simp]
 theorem I_singleton_singleton (p q : Fin n × Fin n) :
     I {p} {q} = if IsSouthWest p q then 1 else 0 := by
+  simp only [I, Finset.singleton_product_singleton, Finset.filter_singleton]
   by_cases h : IsSouthWest p q
-  · rw [if_pos h]
-    have hfilter :
-        ({(p, q)} : Finset ((Fin n × Fin n) × (Fin n × Fin n))).filter
-            (fun pq => IsSouthWest pq.1 pq.2) = {(p, q)} := by
-      apply Finset.filter_eq_self.mpr
-      intro pq hpq
-      rw [Finset.mem_singleton] at hpq
-      subst pq
-      exact h
-    simp [I, hfilter]
-  · simp [I, h]
+  · simp only [h, if_true, Finset.card_singleton]
+  · simp only [h, if_false, Finset.card_empty]
 
 /-- No point contributes a southwest pair with itself. -/
 @[simp]
@@ -167,6 +159,37 @@ theorem JNum_singleton_singleton (p q : Fin n × Fin n) :
       (if IsSouthWest p q then 1 else 0) + (if IsSouthWest q p then 1 else 0) := by
   simp [JNum]
 
+/-- The `J`-function on singleton point sets is half the number of southwest comparisons
+between the two points. -/
+@[simp]
+theorem J_singleton_singleton (p q : Fin n × Fin n) :
+    GridPoint.J {p} {q} =
+      (((if IsSouthWest p q then 1 else 0) +
+        (if IsSouthWest q p then 1 else 0) : ℕ) : ℚ) / 2 := by
+  simp [GridPoint.J]
+
+/-- The `J`-function of two comparable singleton point sets is `1 / 2`. -/
+theorem J_singleton_singleton_of_isSouthWest_or_isSouthWest {p q : Fin n × Fin n}
+    (h : IsSouthWest p q ∨ IsSouthWest q p) :
+    GridPoint.J {p} {q} = (1 : ℚ) / 2 := by
+  rcases h with hpq | hqp
+  · have hpqcoord : p.1.val < q.1.val ∧ p.2.val < q.2.val := by
+      simpa using hpq
+    have hqpcoord : ¬ (q.1.val < p.1.val ∧ q.2.val < p.2.val) := by
+      simpa using not_isSouthWest_swap hpq
+    have hqpfin : ¬ (q.1 < p.1 ∧ q.2 < p.2) := by
+      intro h
+      exact hqpcoord ⟨Fin.lt_def.mp h.1, Fin.lt_def.mp h.2⟩
+    simp [J_singleton_singleton, hpqcoord, hqpfin]
+  · have hqpcoord : q.1.val < p.1.val ∧ q.2.val < p.2.val := by
+      simpa using hqp
+    have hpqcoord : ¬ (p.1.val < q.1.val ∧ p.2.val < q.2.val) := by
+      simpa using not_isSouthWest_swap hqp
+    have hpqfin : ¬ (p.1 < q.1 ∧ p.2 < q.2) := by
+      intro h
+      exact hpqcoord ⟨Fin.lt_def.mp h.1, Fin.lt_def.mp h.2⟩
+    simp [J_singleton_singleton, hpqfin, hqpcoord]
+
 /-- The `J`-function of a singleton with itself is zero. -/
 @[simp]
 theorem J_singleton_self (p : Fin n × Fin n) : GridPoint.J {p} {p} = 0 := by
@@ -209,6 +232,11 @@ variable {n : ℕ}
 def J (x y : GridState n) : ℚ :=
   GridPoint.J x.pointSet y.pointSet
 
+/-- The state-level grid `J`-function is the point-set `J`-function on state point sets. -/
+@[simp]
+theorem J_def (x y : GridState n) : GridState.J x y = GridPoint.J x.pointSet y.pointSet :=
+  rfl
+
 /-- The state-level grid `J`-function is symmetric. -/
 theorem J_comm (x y : GridState n) : GridState.J x y = GridState.J y x :=
   GridPoint.J_comm x.pointSet y.pointSet
@@ -223,9 +251,19 @@ variable {n : ℕ} (G : GridDiagram n)
 def JO (x : GridState n) : ℚ :=
   GridPoint.J x.pointSet G.OSet
 
+/-- `JO` is the point-set `J`-function of a state against the `O`-markings. -/
+@[simp]
+theorem JO_def (x : GridState n) : GridDiagram.JO G x = GridPoint.J x.pointSet G.OSet :=
+  rfl
+
 /-- The grid `J`-function against the `X`-markings of a grid diagram. -/
 def JX (x : GridState n) : ℚ :=
   GridPoint.J x.pointSet G.XSet
+
+/-- `JX` is the point-set `J`-function of a state against the `X`-markings. -/
+@[simp]
+theorem JX_def (x : GridState n) : GridDiagram.JX G x = GridPoint.J x.pointSet G.XSet :=
+  rfl
 
 /-- `JO` may equivalently be read with the `O`-markings as the left input. -/
 theorem JO_comm (x : GridState n) : GridDiagram.JO G x = GridPoint.J G.OSet x.pointSet := by
