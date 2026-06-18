@@ -61,7 +61,7 @@ We also have prototype systems for "meta review", using human and AI judges to d
 
 ## Mathlib dependency
 
-For now we depend on Mathlib's `master` branch. AIs are encouraged to make PRs that bump the pin to new commits on the `master` branch, and fix any resulting problems in the library.
+For now we depend on Mathlib's `master` branch. AIs are encouraged to make PRs to Tau Ceti that bump the pin to new commits on Mathlib's `master` branch, and fix any resulting problems in Tau Ceti.
 
 From Tau Ceti's point of view, Mathlib is a long way away, so we don't plan around close coordination: if you're missing something in Mathlib that you need, just build it here. (This includes needing material from Mathlib PRs. It's polite to check with authors first, and then just vendor it here with appropriate attribution, or otherwise rewrite from scratch; we don't wait for Mathlib.)
 
