@@ -1,0 +1,69 @@
+name: Auto-merge
+
+# Merge a PR automatically once it is genuinely ready, WITHOUT generating any reviews here (that is
+# expensive — it spends API budget — and is gated off in review.yml). Reviews are produced by people
+# running tauceti-review / tauceti locally, which push the verdict ledger to the reviews branch and
+# post the scoreboard comment. This workflow just reads that ledger and merges when ready.
+#
+# It calls the lightweight TauCetiReview merge-only workflow, which mints no provider keys, runs no
+# reviewer, and merges only when the engine's own rule says so: build green on HEAD, every blocking
+# rubric green on HEAD, every changed path under TauCeti/ (plus the allowed root files), and bump-guard
+# green for any Lake-pin change. The decision is read from the real ledger, so a forged scoreboard
+# comment can only TRIGGER a re-check, never supply a verdict — which is why the triggers below can be
+# loose: an over-trigger is a cheap no-op, never a wrong merge.
+
+on:
+  # Head is freshly green: re-check whether this PR is now mergeable.
+  workflow_run:
+    workflows: ["pr-build"]
+    types: [completed]
+  # A review scoreboard was just posted or edited (a local review may have turned the PR green).
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: auto-merge-${{ github.event.issue.number || github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    # Only react to a successful build, or to a comment carrying the scoreboard marker on a PR.
+    if: >
+      (github.event_name == 'workflow_run'
+        && github.event.workflow_run.conclusion == 'success'
+        && github.event.workflow_run.event == 'pull_request_target')
+      || (github.event_name == 'issue_comment'
+        && github.event.issue.pull_request != null
+        && contains(github.event.comment.body, 'tauceti-meta:v1'))
+    outputs:
+      pr: ${{ steps.r.outputs.pr }}
+    steps:
+      - id: r
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "issue_comment" ]; then
+            echo "pr=${{ github.event.issue.number }}" >> "$GITHUB_OUTPUT"
+          else
+            pr="${{ github.event.workflow_run.pull_requests[0].number }}"
+            if [ -z "$pr" ]; then
+              pr=$(gh api "repos/$REPO/commits/${{ github.event.workflow_run.head_sha }}/pulls" --jq '.[0].number // empty')
+            fi
+            echo "pr=$pr" >> "$GITHUB_OUTPUT"
+          fi
+
+  merge:
+    needs: resolve
+    if: ${{ needs.resolve.outputs.pr != '' }}
+    # Pinned to a TauCetiReview commit; bump deliberately (the same policy as review.yml).
+    uses: FormalFrontier/TauCetiReview/.github/workflows/merge-only.yml@main
+    with:
+      pr: ${{ needs.resolve.outputs.pr }}
+    secrets: inherit
