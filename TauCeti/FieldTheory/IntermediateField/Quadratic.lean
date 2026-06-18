@@ -154,12 +154,6 @@ theorem finrank_adjoin_simple_eq_two_of_sq_mem_notMem (F : IntermediateField K L
     exact hxF (hy ▸ y.2)
   omega
 
--- `restrictScalars` keeps the same carrier and inherited `K`-module structure; naming that
--- definitional equality keeps later degree computations from relying on an unexplained `rfl`.
-private theorem finrank_restrictScalars_eq (F : IntermediateField K L)
-    (E : IntermediateField F L) :
-    Module.finrank K (E.restrictScalars K) = Module.finrank K E := rfl
-
 /-- If `x² ∈ F` but `x ∉ F`, then adjoining `x` doubles the degree:
 `[F ⊔ K⟮x⟯ : K] = 2 · [F : K]`. -/
 theorem finrank_sup_adjoin_simple_eq_mul_two (F : IntermediateField K L) {x : L}
@@ -173,8 +167,8 @@ theorem finrank_sup_adjoin_simple_eq_mul_two (F : IntermediateField K L) {x : L}
     finrank_adjoin_simple_eq_two_of_sq_mem_notMem F hx2 hxF
   calc Module.finrank K ((F ⊔ IntermediateField.adjoin K {x}) : IntermediateField K L)
       = Module.finrank K ((IntermediateField.adjoin F {x}).restrictScalars K) := by rw [hL]
-    _ = Module.finrank K (IntermediateField.adjoin F {x}) := by
-        rw [finrank_restrictScalars_eq]
+    -- `restrictScalars` preserves the inherited `K`-module structure, so this step is definitional.
+    _ = Module.finrank K (IntermediateField.adjoin F {x}) := rfl
     _ = Module.finrank K F * Module.finrank F (IntermediateField.adjoin F {x}) := by
         rw [Module.finrank_mul_finrank]
     _ = Module.finrank K F * 2 := by rw [hfinL]
