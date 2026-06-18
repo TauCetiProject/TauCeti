@@ -25,11 +25,9 @@ criterion `ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot`.
   law — `p` splits completely in `K = ℚ(√d₁, …, √dₙ)` iff every `dᵢ` is a quadratic residue
   mod `p`.
 
-The proof is assembled from `private` helper lemmas: `mq_isIntegral_gen` lifts each generator to
-`𝓞 K`, `legendreSym_eq_one_of_ncard_primesOver_eq_finrank` is the forward direction, and
-`decompositionGroup_fixes_gen` together with `stabilizer_eq_bot_of_forall_legendreSym_eq_one` is the
-backward direction. Membership of integers in the chosen prime `Q` over `(p)` is read off with the
-local private helper `algebraMap_int_mem_iff_dvd_of_liesOver`.
+After fixing a prime `Q` of `𝓞 K` above `p`, the proof splits into a forward direction (complete
+splitting forces the residue field to be the prime field, so each `dᵢ` is a quadratic residue) and
+a backward direction (when every `dᵢ` is a residue, the decomposition group of `Q` is trivial).
 -/
 
 open Polynomial NumberField Ideal Module MulAction
