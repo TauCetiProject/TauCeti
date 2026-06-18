@@ -2,6 +2,8 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.Algebra.Field.Basic
+import Mathlib.Algebra.Field.Rat
 import Mathlib.Data.Finset.Prod
 import Mathlib.Data.Rat.Lemmas
 import TauCeti.KnotTheory.Grid.Diagram
@@ -121,6 +123,32 @@ theorem I_singleton_singleton (p q : Fin n × Fin n) :
 theorem I_singleton_self (p : Fin n × Fin n) : I {p} {p} = 0 := by
   simp
 
+/-- The ordered southwest count is additive in the left point set over disjoint unions. -/
+theorem I_union_left {s₁ s₂ t : Finset (Fin n × Fin n)} (h : Disjoint s₁ s₂) :
+    I (s₁ ∪ s₂) t = I s₁ t + I s₂ t := by
+  dsimp [I]
+  rw [Finset.union_product, Finset.filter_union, Finset.card_union_of_disjoint]
+  exact Finset.disjoint_filter_filter (Finset.disjoint_product.mpr (Or.inl h))
+
+/-- The ordered southwest count is additive in the right point set over disjoint unions. -/
+theorem I_union_right {s t₁ t₂ : Finset (Fin n × Fin n)} (h : Disjoint t₁ t₂) :
+    I s (t₁ ∪ t₂) = I s t₁ + I s t₂ := by
+  dsimp [I]
+  rw [Finset.product_union, Finset.filter_union, Finset.card_union_of_disjoint]
+  exact Finset.disjoint_filter_filter (Finset.disjoint_product.mpr (Or.inr h))
+
+/-- The ordered southwest count after inserting a fresh point on the left. -/
+theorem I_insert_left {p : Fin n × Fin n} {s t : Finset (Fin n × Fin n)} (h : p ∉ s) :
+    I (insert p s) t = I {p} t + I s t := by
+  rw [← Finset.singleton_union, I_union_left]
+  exact Finset.disjoint_singleton_left.mpr h
+
+/-- The ordered southwest count after inserting a fresh point on the right. -/
+theorem I_insert_right {p : Fin n × Fin n} {s t : Finset (Fin n × Fin n)} (h : p ∉ t) :
+    I s (insert p t) = I s {p} + I s t := by
+  rw [← Finset.singleton_union, I_union_right]
+  exact Finset.disjoint_singleton_left.mpr h
+
 /-- The numerator of the symmetrized `J`-function. Keeping the numerator as a natural number is
 convenient for parity and integrality lemmas before passing to rational values. -/
 def JNum (s t : Finset (Fin n × Fin n)) : ℕ :=
@@ -156,6 +184,29 @@ theorem JNum_empty_left (s : Finset (Fin n × Fin n)) : JNum ∅ s = 0 := by
 theorem JNum_empty_right (s : Finset (Fin n × Fin n)) : JNum s ∅ = 0 := by
   simp [JNum]
 
+/-- The numerator of `J` is additive in the left point set over disjoint unions. -/
+theorem JNum_union_left {s₁ s₂ t : Finset (Fin n × Fin n)} (h : Disjoint s₁ s₂) :
+    JNum (s₁ ∪ s₂) t = JNum s₁ t + JNum s₂ t := by
+  simp only [JNum, I_union_left h, I_union_right h]
+  ac_rfl
+
+/-- The numerator of `J` is additive in the right point set over disjoint unions. -/
+theorem JNum_union_right {s t₁ t₂ : Finset (Fin n × Fin n)} (h : Disjoint t₁ t₂) :
+    JNum s (t₁ ∪ t₂) = JNum s t₁ + JNum s t₂ := by
+  rw [JNum_comm s (t₁ ∪ t₂), JNum_union_left h, JNum_comm t₁ s, JNum_comm t₂ s]
+
+/-- The numerator of `J` after inserting a fresh point on the left. -/
+theorem JNum_insert_left {p : Fin n × Fin n} {s t : Finset (Fin n × Fin n)} (h : p ∉ s) :
+    JNum (insert p s) t = JNum {p} t + JNum s t := by
+  rw [← Finset.singleton_union, JNum_union_left]
+  exact Finset.disjoint_singleton_left.mpr h
+
+/-- The numerator of `J` after inserting a fresh point on the right. -/
+theorem JNum_insert_right {p : Fin n × Fin n} {s t : Finset (Fin n × Fin n)} (h : p ∉ t) :
+    JNum s (insert p t) = JNum s {p} + JNum s t := by
+  rw [← Finset.singleton_union, JNum_union_right]
+  exact Finset.disjoint_singleton_left.mpr h
+
 /-- `J` vanishes when the left point set is empty. -/
 @[simp]
 theorem J_empty_left (s : Finset (Fin n × Fin n)) : GridPoint.J ∅ s = 0 := by
@@ -165,6 +216,29 @@ theorem J_empty_left (s : Finset (Fin n × Fin n)) : GridPoint.J ∅ s = 0 := by
 @[simp]
 theorem J_empty_right (s : Finset (Fin n × Fin n)) : GridPoint.J s ∅ = 0 := by
   simp [GridPoint.J]
+
+/-- The grid `J`-function is additive in the left point set over disjoint unions. -/
+theorem J_union_left {s₁ s₂ t : Finset (Fin n × Fin n)} (h : Disjoint s₁ s₂) :
+    GridPoint.J (s₁ ∪ s₂) t = GridPoint.J s₁ t + GridPoint.J s₂ t := by
+  simp only [GridPoint.J, JNum_union_left h, Nat.cast_add]
+  exact add_div ((JNum s₁ t : ℕ) : ℚ) ((JNum s₂ t : ℕ) : ℚ) (2 : ℚ)
+
+/-- The grid `J`-function is additive in the right point set over disjoint unions. -/
+theorem J_union_right {s t₁ t₂ : Finset (Fin n × Fin n)} (h : Disjoint t₁ t₂) :
+    GridPoint.J s (t₁ ∪ t₂) = GridPoint.J s t₁ + GridPoint.J s t₂ := by
+  rw [J_comm s (t₁ ∪ t₂), J_union_left h, J_comm t₁ s, J_comm t₂ s]
+
+/-- The grid `J`-function after inserting a fresh point on the left. -/
+theorem J_insert_left {p : Fin n × Fin n} {s t : Finset (Fin n × Fin n)} (h : p ∉ s) :
+    GridPoint.J (insert p s) t = GridPoint.J {p} t + GridPoint.J s t := by
+  rw [← Finset.singleton_union, J_union_left]
+  exact Finset.disjoint_singleton_left.mpr h
+
+/-- The grid `J`-function after inserting a fresh point on the right. -/
+theorem J_insert_right {p : Fin n × Fin n} {s t : Finset (Fin n × Fin n)} (h : p ∉ t) :
+    GridPoint.J s (insert p t) = GridPoint.J s {p} + GridPoint.J s t := by
+  rw [← Finset.singleton_union, J_union_right]
+  exact Finset.disjoint_singleton_left.mpr h
 
 /-- The numerator of `J` on singleton point sets records whether either point is southwest of
 the other. -/
