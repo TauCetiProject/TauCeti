@@ -165,15 +165,6 @@ theorem trivial_eq_groupLike_one :
       groupLike (R := R) (C := C) (M := M) (1 : GroupLike R C) :=
   rfl
 
-private theorem adjoin_singleton_one_eq_bot :
-    Algebra.adjoin R ({(1 : C)} : Set C) = ⊥ := by
-  apply le_antisymm
-  · rw [Algebra.adjoin_le_iff]
-    intro c hc
-    rw [Set.mem_singleton_iff.mp hc]
-    exact Subalgebra.one_mem _
-  · exact bot_le
-
 /-- A matrix coefficient of a trivial comodule lies in the line spanned by `1`. -/
 theorem trivial_matrixCoefficient_mem_span_singleton_one (φ : M →ₗ[R] R) (m : M) :
     matrixCoefficient (R := R) (C := C) φ m ∈ Submodule.span R ({1} : Set C) := by
@@ -202,7 +193,7 @@ theorem trivial_rankOne_matrixCoefficientSubmodule_eq_span_singleton_one :
 /-- A matrix coefficient of a trivial comodule lies in the bottom `R`-subalgebra. -/
 theorem trivial_matrixCoefficient_mem_bot (φ : M →ₗ[R] R) (m : M) :
     matrixCoefficient (R := R) (C := C) φ m ∈ (⊥ : Subalgebra R C) := by
-  simpa [adjoin_singleton_one_eq_bot, trivial_eq_groupLike_one] using
+  simpa [trivial_eq_groupLike_one] using
     groupLike_matrixCoefficient_mem_adjoin_singleton (R := R) (C := C)
       (M := M) (1 : GroupLike R C) φ m
 
@@ -210,7 +201,7 @@ theorem trivial_matrixCoefficient_mem_bot (φ : M →ₗ[R] R) (m : M) :
 theorem trivial_matrixCoefficientSubalgebra_le_bot :
     matrixCoefficientSubalgebra (R := R) (C := C) (M := M) ≤ ⊥ :=
   by
-    simpa [adjoin_singleton_one_eq_bot, trivial_eq_groupLike_one] using
+    simpa [trivial_eq_groupLike_one] using
       groupLike_matrixCoefficientSubalgebra_le_adjoin_singleton (R := R) (C := C)
         (M := M) (1 : GroupLike R C)
 
