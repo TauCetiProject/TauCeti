@@ -45,7 +45,7 @@ private theorem mq_isIntegral_gen {ι : Type*} (d : ι → ℤ) (r : ι → K)
   ⟨X ^ 2 - C (d i), monic_X_pow_sub_C (d i) (by norm_num), by
     rw [eval₂_sub, eval₂_X_pow, eval₂_C, hr i, sub_self]⟩
 
-/-- The lift of the generator `r i` to `𝓞 K` (it is integral over `ℤ`). -/
+/-- The generator `r i`, as an element of the ring of integers `𝓞 K`. -/
 private noncomputable def ringGen {ι : Type*} (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) : 𝓞 K :=
   ⟨r i, mq_isIntegral_gen d r hr i⟩
