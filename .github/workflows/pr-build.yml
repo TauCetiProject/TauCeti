@@ -14,6 +14,12 @@ name: pr-build
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
+  # The merge queue tests each entry (PR + current main) before it lands: build the same way and
+  # post the `build` status on the merge-group commit so the queue's required check is satisfied.
+  # The queue is configured group-size 1, so "this PR overlaid on current main" — exactly what the
+  # job already builds — is the merge-group content.
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
     inputs:
       pr: { description: "PR number to build", required: true, type: string }
@@ -23,7 +29,7 @@ permissions:
   statuses: write
 
 concurrency:
-  group: pr-build-${{ github.event.pull_request.number || inputs.pr }}
+  group: pr-build-${{ github.event.pull_request.number || inputs.pr || github.event.merge_group.head_sha }}
   cancel-in-progress: true
 
 jobs:
@@ -38,16 +44,28 @@ jobs:
         id: pr
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
-          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            # The queue's temp ref encodes the PR: refs/heads/gh-readonly-queue/main/pr-183-<sha>.
+            HEAD_REF='${{ github.event.merge_group.head_ref }}'
+            NUM=$(printf '%s' "$HEAD_REF" | sed -n 's#.*/pr-\([0-9]\{1,\}\)-.*#\1#p')
+            [ -n "$NUM" ] || { echo "::error::could not parse PR number from $HEAD_REF"; exit 1; }
+            SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM"  --jq .head.sha)
+            REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
+            BASE_REF='${{ github.event.merge_group.base_ref }}'; BASE_REF="${BASE_REF#refs/heads/}"
+            # The queue's required check must land on the merge-group commit, not the PR head.
+            STATUS_SHA='${{ github.event.merge_group.head_sha }}'
+          elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
             NUM='${{ github.event.pull_request.number }}'
             SHA='${{ github.event.pull_request.head.sha }}'
             REPO='${{ github.event.pull_request.head.repo.full_name }}'
             BASE_REF='${{ github.event.pull_request.base.ref }}'
+            STATUS_SHA="$SHA"
           else
             NUM='${{ inputs.pr }}'
             SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM"  --jq .head.sha)
             REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
             BASE_REF=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .base.ref)
+            STATUS_SHA="$SHA"
           fi
           # Merge-base with the target branch, for the Lake-pin bump validation below:
           # check-bump.sh uses it to scope the PR's own pin delta. owner:sha for forks;
@@ -57,11 +75,12 @@ jobs:
           MB=$(gh api "repos/${{ github.repository }}/compare/${BASE_REF}...${OWNER}:${SHA}" \
                  --jq '.merge_base_commit.sha' 2>/dev/null || true)
           [ -n "$MB" ] || { MB="$BASE_REF"; echo "::warning::merge-base unresolved; falling back to $BASE_REF tip"; }
-          echo "num=$NUM"      >> "$GITHUB_OUTPUT"
-          echo "sha=$SHA"      >> "$GITHUB_OUTPUT"
-          echo "repo=$REPO"    >> "$GITHUB_OUTPUT"
-          echo "mergebase=$MB" >> "$GITHUB_OUTPUT"
-          echo "Building PR #$NUM @ $SHA from $REPO (bump delta vs merge-base $MB)"
+          echo "num=$NUM"             >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA"             >> "$GITHUB_OUTPUT"
+          echo "repo=$REPO"           >> "$GITHUB_OUTPUT"
+          echo "mergebase=$MB"        >> "$GITHUB_OUTPUT"
+          echo "status_sha=$STATUS_SHA" >> "$GITHUB_OUTPUT"
+          echo "Building PR #$NUM @ $SHA from $REPO (status -> $STATUS_SHA, bump delta vs merge-base $MB)"
 
       - name: Scope guard — PR must touch only TauCeti/ or the root TauCeti.lean (from the trusted GitHub file list)
         env: { GH_TOKEN: "${{ github.token }}" }
@@ -257,8 +276,8 @@ jobs:
           else
             state=failure; desc="sandboxed build or axiom audit failed"
           fi
-          gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.sha }}" \
+          gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.status_sha }}" \
             -f state="$state" -f context="build" -f description="$desc" \
             -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "posted build=$state ($desc) to ${{ steps.pr.outputs.sha }}"
+          echo "posted build=$state ($desc) to ${{ steps.pr.outputs.status_sha }}"
           [ "$state" = "success" ]

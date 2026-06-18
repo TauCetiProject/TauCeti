@@ -16,6 +16,11 @@ name: bump-guard
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
+  # Re-validate each merge-queue entry and post `bump-guard` on the merge-group commit, so the
+  # queue's required check is satisfied. The PR's own pin delta is unchanged by queueing, so a
+  # content PR still passes trivially and a real bump is still judged against the current tip.
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
     inputs:
       pr: { description: "PR number to validate", required: true, type: string }
@@ -25,7 +30,7 @@ permissions:
   statuses: write
 
 concurrency:
-  group: bump-guard-${{ github.event.pull_request.number || inputs.pr }}
+  group: bump-guard-${{ github.event.pull_request.number || inputs.pr || github.event.merge_group.head_sha }}
   cancel-in-progress: true
 
 jobs:
@@ -36,16 +41,26 @@ jobs:
         id: pr
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
-          if [ "${{ github.event_name }}" = "pull_request_target" ]; then
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            HEAD_REF='${{ github.event.merge_group.head_ref }}'
+            NUM=$(printf '%s' "$HEAD_REF" | sed -n 's#.*/pr-\([0-9]\{1,\}\)-.*#\1#p')
+            [ -n "$NUM" ] || { echo "::error::could not parse PR number from $HEAD_REF"; exit 1; }
+            SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM"  --jq .head.sha)
+            REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
+            BASE_REF='${{ github.event.merge_group.base_ref }}'; BASE_REF="${BASE_REF#refs/heads/}"
+            STATUS_SHA='${{ github.event.merge_group.head_sha }}'
+          elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
             NUM='${{ github.event.pull_request.number }}'
             SHA='${{ github.event.pull_request.head.sha }}'
             REPO='${{ github.event.pull_request.head.repo.full_name }}'
             BASE_REF='${{ github.event.pull_request.base.ref }}'
+            STATUS_SHA="$SHA"
           else
             NUM='${{ inputs.pr }}'
             SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM"  --jq .head.sha)
             REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
             BASE_REF=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .base.ref)
+            STATUS_SHA="$SHA"
           fi
           # Merge-base with the target branch: check-bump.sh uses it to tell the PR's own
           # lakefile/pin delta apart from the target branch simply moving ahead. owner:sha
@@ -56,11 +71,12 @@ jobs:
           MB=$(gh api "repos/${{ github.repository }}/compare/${BASE_REF}...${OWNER}:${SHA}" \
                  --jq '.merge_base_commit.sha' 2>/dev/null || true)
           [ -n "$MB" ] || { MB="$BASE_REF"; echo "::warning::merge-base unresolved; falling back to $BASE_REF tip"; }
-          echo "num=$NUM"      >> "$GITHUB_OUTPUT"
-          echo "sha=$SHA"      >> "$GITHUB_OUTPUT"
-          echo "repo=$REPO"    >> "$GITHUB_OUTPUT"
-          echo "mergebase=$MB" >> "$GITHUB_OUTPUT"
-          echo "Validating PR #$NUM @ $SHA from $REPO (delta vs merge-base $MB)"
+          echo "num=$NUM"             >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA"             >> "$GITHUB_OUTPUT"
+          echo "repo=$REPO"           >> "$GITHUB_OUTPUT"
+          echo "mergebase=$MB"        >> "$GITHUB_OUTPUT"
+          echo "status_sha=$STATUS_SHA" >> "$GITHUB_OUTPUT"
+          echo "Validating PR #$NUM @ $SHA from $REPO (status -> $STATUS_SHA, delta vs merge-base $MB)"
 
       - name: Checkout base (trusted — the validator and the current target-tip config)
         uses: actions/checkout@v4
@@ -99,8 +115,8 @@ jobs:
           else
             state=failure; desc="manifest/toolchain change is not a validated forward bump — needs human review"
           fi
-          gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.sha }}" \
+          gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.status_sha }}" \
             -f state="$state" -f context="bump-guard" -f description="$desc" \
             -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          echo "posted bump-guard=$state ($desc) to ${{ steps.pr.outputs.sha }}"
+          echo "posted bump-guard=$state ($desc) to ${{ steps.pr.outputs.status_sha }}"
           [ "$state" = "success" ]
