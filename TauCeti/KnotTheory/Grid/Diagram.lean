@@ -7,7 +7,6 @@ import Mathlib.Data.Finset.Card
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Fintype.Card
 import Mathlib.GroupTheory.Perm.Basic
-import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
 # Grid diagrams and grid states
@@ -27,14 +26,6 @@ before defining rectangles, empty rectangles, and the grid differential.
 * `TauCeti.GridState.pointSet`: the finite set of occupied squares of a grid state.
 * `TauCeti.GridDiagram`: an `n × n` grid diagram with `O` and `X` markings.
 * `TauCeti.GridDiagram.OSet`, `TauCeti.GridDiagram.XSet`: the marking point sets.
-* `TauCeti.GridDiagram.empty`: the empty grid diagram of grid number `0`.
-* `TauCeti.GridDiagram.disjointUnion`: the block-diagonal disjoint union of two grid diagrams,
-  for which `empty` is the right unit (`disjointUnion_empty`).
-
-The grid number `n` is an arbitrary natural; in particular `0` is allowed. The standard
-references take it positive, but the empty grid is a consistent degenerate diagram (every
-row/column condition is vacuous), and admitting it is what lets `empty` serve as the unit for
-`disjointUnion`. Excluding it would buy nothing and cost that algebraic structure.
 
 ## References
 
@@ -154,8 +145,7 @@ end GridState
 /-- An `n × n` grid diagram, encoded by the `O`-marking and `X`-marking permutation graphs.
 
 The permutation fields enforce one `O` and one `X` in each row and column. The `disjoint`
-field says no square contains both markings. The grid number `n` may be any natural, including
-`0`: the empty grid diagram (`GridDiagram.empty`) is the unit for disjoint union. -/
+field says no square contains both markings. -/
 @[ext]
 structure GridDiagram (n : ℕ) where
   /-- The `O` marking in each column, encoded by its row. -/
@@ -252,76 +242,6 @@ theorem not_mem_XSet_of_mem_OSet {p : Fin n × Fin n} (hp : p ∈ G.OSet) : p �
 theorem not_mem_OSet_of_mem_XSet {p : Fin n × Fin n} (hp : p ∈ G.XSet) : p ∉ G.OSet := by
   intro hpO
   exact G.not_mem_OSet_and_mem_XSet p ⟨hpO, hp⟩
-
-section DisjointUnion
-
-variable {m n : ℕ}
-
-/-- The empty grid diagram: the unique grid diagram of grid number `0`. Both markings are the
-empty permutation and the disjointness condition is vacuous. It is the right unit for disjoint
-union (`disjointUnion_empty`), so admitting grid number `0` is what gives the disjoint-union
-operation a unit. -/
-def empty : GridDiagram 0 where
-  O := ⟨1⟩
-  X := ⟨1⟩
-  disjoint := fun c => c.elim0
-
-/-- The disjoint union of an `m × m` and an `n × n` grid diagram, placed in the two diagonal
-blocks of an `(m + n) × (m + n)` grid. The two summands' markings are carried into the blocks
-by `finSumFinEquiv`, so the one-per-row-and-column and disjointness conditions are inherited
-block-wise. -/
-def disjointUnion (A : GridDiagram m) (B : GridDiagram n) : GridDiagram (m + n) where
-  O := ⟨finSumFinEquiv.permCongr (A.O.toPerm.sumCongr B.O.toPerm)⟩
-  X := ⟨finSumFinEquiv.permCongr (A.X.toPerm.sumCongr B.X.toPerm)⟩
-  disjoint := by
-    intro c
-    change finSumFinEquiv.permCongr (A.O.toPerm.sumCongr B.O.toPerm) c
-        ≠ finSumFinEquiv.permCongr (A.X.toPerm.sumCongr B.X.toPerm) c
-    simp only [Equiv.permCongr_apply, ne_eq, Equiv.apply_eq_iff_eq]
-    generalize finSumFinEquiv.symm c = s
-    obtain a | b := s
-    · simpa [Equiv.Perm.sumCongr_apply] using A.disjoint a
-    · simpa [Equiv.Perm.sumCongr_apply] using B.disjoint b
-
-@[simp]
-theorem disjointUnion_O_castAdd (A : GridDiagram m) (B : GridDiagram n) (a : Fin m) :
-    (A.disjointUnion B).O (Fin.castAdd n a) = Fin.castAdd n (A.O a) := by
-  change finSumFinEquiv.permCongr (A.O.toPerm.sumCongr B.O.toPerm) (Fin.castAdd n a) = _
-  simp [Equiv.permCongr_apply]
-
-@[simp]
-theorem disjointUnion_X_castAdd (A : GridDiagram m) (B : GridDiagram n) (a : Fin m) :
-    (A.disjointUnion B).X (Fin.castAdd n a) = Fin.castAdd n (A.X a) := by
-  change finSumFinEquiv.permCongr (A.X.toPerm.sumCongr B.X.toPerm) (Fin.castAdd n a) = _
-  simp [Equiv.permCongr_apply]
-
-@[simp]
-theorem disjointUnion_O_natAdd (A : GridDiagram m) (B : GridDiagram n) (b : Fin n) :
-    (A.disjointUnion B).O (Fin.natAdd m b) = Fin.natAdd m (B.O b) := by
-  change finSumFinEquiv.permCongr (A.O.toPerm.sumCongr B.O.toPerm) (Fin.natAdd m b) = _
-  simp [Equiv.permCongr_apply]
-
-@[simp]
-theorem disjointUnion_X_natAdd (A : GridDiagram m) (B : GridDiagram n) (b : Fin n) :
-    (A.disjointUnion B).X (Fin.natAdd m b) = Fin.natAdd m (B.X b) := by
-  change finSumFinEquiv.permCongr (A.X.toPerm.sumCongr B.X.toPerm) (Fin.natAdd m b) = _
-  simp [Equiv.permCongr_apply]
-
-/-- The empty grid diagram is a right unit for disjoint union, on the nose: `n + 0` reduces to
-`n`, so the statement typechecks with no reindexing. Without the empty diagram there is no unit
-even to state, which is the concrete payoff of admitting grid number `0`. -/
-@[simp]
-theorem disjointUnion_empty (A : GridDiagram n) : A.disjointUnion empty = A := by
-  have hcast : ∀ k : Fin n, Fin.castAdd 0 k = k := fun k => Fin.ext (by simp)
-  ext c
-  · induction c using Fin.addCases with
-    | left i => rw [disjointUnion_O_castAdd]; simp only [hcast]
-    | right j => exact j.elim0
-  · induction c using Fin.addCases with
-    | left i => rw [disjointUnion_X_castAdd]; simp only [hcast]
-    | right j => exact j.elim0
-
-end DisjointUnion
 
 end GridDiagram
 
