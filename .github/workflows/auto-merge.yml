@@ -62,10 +62,9 @@ jobs:
   merge:
     needs: resolve
     if: ${{ needs.resolve.outputs.pr != '' }}
-    # NOTE: currently @main — pin to a TauCetiReview commit SHA once #62 is merged (same policy as
-    # review.yml). The reusable workflow receives the App secrets, so a floating ref is a supply-chain
-    # risk until pinned.
-    uses: FormalFrontier/TauCetiReview/.github/workflows/merge-only.yml@main
+    # Pinned to a TauCetiReview commit; bump deliberately. The reusable workflow receives the App
+    # secrets, so a floating @main would be a supply-chain risk.
+    uses: FormalFrontier/TauCetiReview/.github/workflows/merge-only.yml@8141201d620b0ae986222bea6ee25d7c0d3d1e72
     with:
       pr: ${{ needs.resolve.outputs.pr }}
     # Pass only the App credentials merge-only needs, not all of TauCeti's secrets.

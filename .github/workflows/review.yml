@@ -107,7 +107,9 @@ jobs:
     # (tauceti-review in TauCetiReview, or tauceti from TauCetiWorker). Merging is independent:
     # auto-merge.yml merges a green PR regardless of this gate. Re-enable by setting the variable.
     if: ${{ vars.CI_REVIEW_ENABLED == 'true' && needs.resolve.outputs.pr != '' }}
-    uses: FormalFrontier/TauCetiReview/.github/workflows/review.yml@main
+    # Pinned to a TauCetiReview commit; bump deliberately (an unpinned @main lets an upstream change
+    # break every contributor's review at once, and this workflow inherits TauCeti's secrets).
+    uses: FormalFrontier/TauCetiReview/.github/workflows/review.yml@8141201d620b0ae986222bea6ee25d7c0d3d1e72
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
