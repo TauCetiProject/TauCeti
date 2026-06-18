@@ -77,10 +77,11 @@ def parse_ts(s: str) -> datetime.datetime:
     return datetime.datetime.fromisoformat((s or "").replace("Z", "+00:00"))
 
 
-def latest_scoreboard_overall(pr: int):
+def latest_scoreboard_overall(pr: int, pr_author: str = ""):
     """The `overall` verdict from the newest review scoreboard comment, or None if the PR has no
     parseable scoreboard yet. Fails safe (returns None) on any API/parse error, so a hiccup never
-    causes a wrong close."""
+    causes a wrong close. Scoreboards authored by the PR author are ignored: a review is meant to be
+    independent, and trusting a self-posted marker would let an author spoof their own verdict."""
     try:
         comments = gh_json(["api", "--paginate", f"/repos/{REPO}/issues/{pr}/comments?per_page=100"])
     except RuntimeError as e:
@@ -88,6 +89,8 @@ def latest_scoreboard_overall(pr: int):
         return None
     best_ts, overall = "", None
     for c in comments or []:
+        if pr_author and (c.get("user") or {}).get("login") == pr_author:
+            continue                                   # ignore the author's own (self-review) markers
         body = c.get("body") or ""
         if "tauceti-meta:v1" not in body:
             continue
@@ -192,13 +195,19 @@ def main() -> int:
     # for STALE_DAYS. updatedAt bumps on any push/comment/label, so a still-worked PR is never stale.
     cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=STALE_DAYS)
     open_prs = gh_json(["pr", "list", "--repo", REPO, "--state", "open", "--limit", "1000",
-                        "--json", "number,isDraft,labels,updatedAt"]) or []
-    fresh = [p for p in open_prs if not p.get("isDraft") and not has_keep_label(p)
+                        "--json", "number,isDraft,labels,updatedAt,author"]) or []
+    # isDraft must be explicitly False (fail closed: an unknown draft state is never stale-closed).
+    fresh = [p for p in open_prs if p.get("isDraft") is False and not has_keep_label(p)
              and parse_ts(p.get("updatedAt", "")) < cutoff]
     print(f"stale: {len(fresh)} open PR(s) untouched for >{STALE_DAYS}d to check{suffix}")
     for p in fresh:
-        overall = latest_scoreboard_overall(p["number"])
+        overall = latest_scoreboard_overall(p["number"], (p.get("author") or {}).get("login", ""))
         if overall not in STALE_STATES:
+            continue
+        # Re-check the keep label right before closing: a human may have added it since the list.
+        live = gh_json(["pr", "view", str(p["number"]), "--repo", REPO, "--json", "labels"]) or {}
+        if has_keep_label(live):
+            print(f"stale: #{p['number']} gained a keep label since listing; leaving it")
             continue
         print(f"stale: #{p['number']} ({overall}, untouched >{STALE_DAYS}d)")
         failures += not close(p["number"], STALE_COMMENT.format(overall=overall, days=STALE_DAYS))
