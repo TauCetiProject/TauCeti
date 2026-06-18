@@ -137,10 +137,6 @@ private theorem sqrtTower_sup_adjoin_eq_of_mem (root : ℕ → L) {n : ℕ}
   rw [sup_eq_left]
   exact IntermediateField.adjoin_le_iff.mpr (by simpa using hroot)
 
-private theorem algebraMap_eq_iff {a b : K} (h : algebraMap K L a = algebraMap K L b) :
-    a = b :=
-  RingHom.injective (algebraMap K L) h
-
 /-- **Square-class descent.** In characteristic not two, if `y² = r` over `K` and
 `y ∈ K(root₀, …, rootₙ₋₁)`, where `root j` is a chosen square root of `d j`, then `r` is a
 square times a subset product of the `d j` with `j < n`. -/
@@ -158,9 +154,7 @@ theorem squareClass_of_sq_mem (d : ℕ → K) (root : ℕ → L)
       intro r y hy hmem
       rw [sqrtTower_zero, IntermediateField.mem_bot] at hmem
       obtain ⟨s, rfl⟩ := hmem
-      have h2 : s ^ 2 = r := by
-        apply algebraMap_eq_iff (K := K) (L := L)
-        simpa using hy
+      have h2 : s ^ 2 = r := (algebraMap K L).injective (by simpa using hy)
       exact ⟨∅, s, by simp, by rw [Finset.prod_empty, mul_one, h2]⟩
   | succ n ih =>
       intro r y hy hmem
@@ -207,9 +201,7 @@ theorem squareClass_of_sq_mem (d : ℕ → K) (root : ℕ → L)
               rw [map_mul, ← hy, ← hroot n]
               ring
             obtain ⟨T, s, hT, hmul⟩ := ih (r * d n) (y * root n) hy_mul_sq hy_mul_mem
-            have hnT : n ∉ T := by
-              intro hn
-              exact (Nat.lt_irrefl n) (hT hn)
+            have hnT : n ∉ T := fun hn => Nat.lt_irrefl n (hT hn)
             refine ⟨insert n T, s / d n, ?_, ?_⟩
             · intro j hj
               rw [Finset.mem_coe, Finset.mem_insert] at hj

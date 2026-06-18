@@ -203,16 +203,9 @@ theorem aut_mul_self_eq_one (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
   refine IntermediateField.algHom_ext_of_eq_adjoin (F := K)
     (S := IntermediateField.adjoin K (Set.range root)) (s := Set.range root) rfl ?_
   rintro x ⟨i, rfl⟩
-  have hmem : root i ∈ IntermediateField.adjoin K (Set.range root) := subset_adjoin _ _ ⟨i, rfl⟩
-  set y : IntermediateField.adjoin K (Set.range root) := ⟨root i, hmem⟩ with hy
-  have hsq : y ^ 2 = algebraMap K _ (d i) := by
-    apply Subtype.ext
-    have hcoe : ((y : L)) ^ 2 = algebraMap K L (d i) := by rw [hy]; exact hroot i
-    simpa using hcoe
-  have h1 : (σ y) ^ 2 = y ^ 2 := by rw [← map_pow, hsq, AlgEquiv.commutes, ← hsq]
-  -- `σ` sends the generator to `± y`, so applying it twice returns `y`.
-  rcases sq_eq_sq_iff_eq_or_eq_neg.mp h1 with h | h <;>
-    simp [AlgEquiv.mul_apply, h, map_neg]
+  change σ (σ (gen root i)) = gen root i
+  -- `σ` sends the generator to `± gen root i`, so applying it twice returns the generator.
+  rcases aut_gen_eq_self_or_eq_neg hroot σ i with h | h <;> simp [h, map_neg]
 
 /-- The automorphism group of a multiquadratic field is commutative: every element has order
 dividing two, so any two commute. -/
