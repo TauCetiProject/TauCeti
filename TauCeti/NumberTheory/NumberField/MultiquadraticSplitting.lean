@@ -16,18 +16,12 @@ For a multiquadratic number field `K = ℚ(√d₁, …, √dₙ)` and an odd pr
 radicands, `p` splits completely in `K` if and only if every `dᵢ` is a quadratic residue mod `p`.
 
 This is the general (compositum) case; the base case `n = 1` is `ncard_primesOver_quadratic_iff`.
-The reduction to the residue field of a single prime `Q` above `p` rests on the decomposition-group
-criterion `ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot`.
 
 ## Main results
 
 * `TauCeti.NumberField.ncard_primesOver_multiquadratic_iff`: the multiquadratic prime-splitting
   law — `p` splits completely in `K = ℚ(√d₁, …, √dₙ)` iff every `dᵢ` is a quadratic residue
   mod `p`.
-
-After fixing a prime `Q` of `𝓞 K` above `p`, the proof splits into a forward direction (complete
-splitting forces the residue field to be the prime field, so each `dᵢ` is a quadratic residue) and
-a backward direction (when every `dᵢ` is a residue, the decomposition group of `Q` is trivial).
 -/
 
 open Polynomial NumberField Ideal Module MulAction
