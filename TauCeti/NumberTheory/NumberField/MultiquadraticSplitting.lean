@@ -29,7 +29,7 @@ The proof is assembled from `private` helper lemmas: `mq_isIntegral_gen` lifts e
 `𝓞 K`, `legendreSym_eq_one_of_ncard_primesOver_eq_finrank` is the forward direction, and
 `decompositionGroup_fixes_gen` together with `stabilizer_eq_bot_of_forall_legendreSym_eq_one` is the
 backward direction. Membership of integers in the chosen prime `Q` over `(p)` is read off with the
-generic `algebraMap_int_mem_iff_dvd_of_liesOver` from `SplitsCompletely`.
+local private helper `algebraMap_int_mem_iff_dvd_of_liesOver`.
 -/
 
 open Polynomial NumberField Ideal Module MulAction
@@ -46,6 +46,14 @@ private theorem mq_isIntegral_gen {ι : Type*} (d : ι → ℤ) (r : ι → K)
   -- `r i` is a root of the monic `X² - d i`.
   ⟨X ^ 2 - C (d i), monic_X_pow_sub_C (d i) (by norm_num), by
     rw [eval₂_sub, eval₂_X_pow, eval₂_C, hr i, sub_self]⟩
+
+omit [NumberField K] in
+/-- For an ideal `Q` lying over the integer ideal `(a)`, an integer `m` maps into `Q` under
+`algebraMap ℤ (𝓞 K)` iff `a ∣ m`. -/
+private theorem algebraMap_int_mem_iff_dvd_of_liesOver {a : ℤ}
+    (Q : Ideal (𝓞 K)) [Q.LiesOver (span {a})] (m : ℤ) :
+    algebraMap ℤ (𝓞 K) m ∈ Q ↔ a ∣ m :=
+  (Ideal.mem_of_liesOver Q (span {a}) m).symm.trans Ideal.mem_span_singleton
 
 /-- Forward direction (pointwise): for `K` Galois over `ℚ`, if `p` splits completely
 (`#{primes over p} = [K : ℚ]`) and `p ∤ d i`, then `d i` is a quadratic residue mod `p`. -/
