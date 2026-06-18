@@ -60,6 +60,20 @@ private theorem comul_mem_tensor_map_ker (f : H →ₐc[R] K) {x : H}
       have hfx : f x = 0 := RingHom.mem_ker.mp hx
       simpa using congrArg (Coalgebra.comul (R := R) (A := K)) hfx
 
+/-- The tensor-kernel exactness theorem in the tensor-ideal notation used by `HopfIdeal`. -/
+private theorem tensor_map_ker_eq_left_sup_right (f : H →ₐc[R] K)
+    (hf : Function.Surjective f) :
+    RingHom.ker (Algebra.TensorProduct.map (f : H →ₐ[R] K) (f : H →ₐ[R] K)) =
+      leftTensorIdeal (R := R) (H := H) (RingHom.ker (f : H →ₐ[R] K)) ⊔
+        rightTensorIdeal (R := R) (H := H) (RingHom.ker (f : H →ₐ[R] K)) := by
+  rw [Algebra.TensorProduct.map_ker (f := (f : H →ₐ[R] K)) (g := (f : H →ₐ[R] K)) hf hf,
+    leftTensorIdeal_def, rightTensorIdeal_def]
+  simp only [AlgHom.toRingHom_eq_coe]
+  -- `map_ker` states the two maps via algebra-hom coercions, while `leftTensorIdeal_def`
+  -- and `rightTensorIdeal_def` use their `toRingHom`; after the named coercion rewrite
+  -- these are the same ideal maps definitionally.
+  apply congr_arg₂ (· ⊔ ·) <;> rfl
+
 /-- The kernel of a surjective bialgebra morphism, as a Hopf ideal. -/
 def ker (f : H →ₐc[R] K) (hf : Function.Surjective f) : HopfIdeal R H :=
   ofIdeal (RingHom.ker (f : H →ₐ[R] K))
@@ -69,10 +83,7 @@ def ker (f : H →ₐc[R] K) (hf : Function.Surjective f) : HopfIdeal R H :=
       have hker' : Coalgebra.comul (R := R) x ∈
           RingHom.ker (Algebra.TensorProduct.map (f : H →ₐ[R] K) (f : H →ₐ[R] K)) := by
         simpa using hker
-      rw [Algebra.TensorProduct.map_ker (f := (f : H →ₐ[R] K)) (g := (f : H →ₐ[R] K))
-        hf hf] at hker'
-      rw [leftTensorIdeal_def, rightTensorIdeal_def]
-      convert hker' <;> rfl)
+      rwa [tensor_map_ker_eq_left_sup_right (R := R) f hf] at hker')
     (by
       intro x hx
       have h := CoalgHomClass.counit_comp_apply f x
