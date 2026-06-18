@@ -275,14 +275,14 @@ theorem JDiff_self_right (s a t : Finset (Fin n × Fin n)) : JDiff s a t t = 0 :
 /-- Pairing an ordinary point set with a formal difference is the corresponding difference of
 two `J`-values. -/
 @[simp]
-theorem JDiff_empty_left_sub (s t b : Finset (Fin n × Fin n)) :
+theorem JDiff_left_sub_empty (s t b : Finset (Fin n × Fin n)) :
     JDiff s ∅ t b = GridPoint.J s t - GridPoint.J s b := by
   simp [JDiff]
 
 /-- Pairing a formal difference with an ordinary point set is the corresponding difference of
 two `J`-values. -/
 @[simp]
-theorem JDiff_empty_right_sub (s a t : Finset (Fin n × Fin n)) :
+theorem JDiff_right_sub_empty (s a t : Finset (Fin n × Fin n)) :
     JDiff s a t ∅ = GridPoint.J s t - GridPoint.J a t := by
   simp [JDiff]
 
