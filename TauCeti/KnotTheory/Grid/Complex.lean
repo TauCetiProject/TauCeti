@@ -113,7 +113,15 @@ theorem fullyBlockedDifferential_apply (c : GridChain (ZMod 2) n) :
     G.fullyBlockedDifferential c =
       c.sum fun x a => a • G.fullyBlockedDifferentialOnGenerator x := by
   rw [fullyBlockedDifferential]
-  rfl
+  rw [Finsupp.lsum_apply]
+  unfold Finsupp.sum
+  refine Finset.sum_congr rfl ?_
+  intro x _
+  change ((LinearMap.id : ZMod 2 →ₗ[ZMod 2] ZMod 2).smulRight
+      (G.fullyBlockedDifferentialOnGenerator x)) (c x) =
+    c x • G.fullyBlockedDifferentialOnGenerator x
+  rw [LinearMap.smulRight_apply]
+  simp
 
 /-- The coefficient formula for the fully blocked differential on an arbitrary chain. -/
 @[simp]
