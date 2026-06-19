@@ -80,6 +80,7 @@ noncomputable def stdSymplecticForm : SymplecticForm (V × V) where
   isAlt := stdSymplecticBilin_isAlt
   nondegenerate := stdSymplecticBilin_nondegenerate
 
+/-- The coordinate formula for evaluating the standard symplectic form on two vectors of `V × V`. -/
 @[simp]
 lemma stdSymplecticForm_apply (u w : V × V) :
     stdSymplecticForm u w = ⟪u.1, w.2⟫_ℝ - ⟪u.2, w.1⟫_ℝ := by
