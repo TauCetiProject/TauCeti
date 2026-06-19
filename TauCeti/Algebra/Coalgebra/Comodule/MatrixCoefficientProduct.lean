@@ -94,6 +94,7 @@ theorem matrixCoefficient_prod_inr (ψ : N →ₗ[R] R) (n : N) :
 
 /-- The coefficient submodule of the product comodule is the supremum of the coefficient
 submodules of the two factors. -/
+@[simp]
 theorem matrixCoefficientSubmodule_prod :
     letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     matrixCoefficientSubmodule (R := R) (C := C) (M := M × N) =
@@ -142,6 +143,7 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 /-- The coefficient subalgebra of the product comodule is the supremum of the coefficient
 subalgebras of the two factors. -/
+@[simp]
 theorem matrixCoefficientSubalgebra_prod :
     letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     matrixCoefficientSubalgebra (R := R) (C := C) (M := M × N) =
