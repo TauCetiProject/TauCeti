@@ -71,6 +71,9 @@ theorem matrixCoefficient_def (φ : M →ₗ[R] R) (m : M) :
         (TensorProduct.map φ LinearMap.id (coact (R := R) (C := C) (M := M) m)) :=
   rfl
 
+@[deprecated matrixCoefficient_def (since := "2026-06-19")]
+alias matrixCoefficient_eq_lid_map_coact := matrixCoefficient_def
+
 @[simp]
 theorem matrixCoefficient_zero (φ : M →ₗ[R] R) :
     matrixCoefficient (R := R) (C := C) φ 0 = 0 :=
