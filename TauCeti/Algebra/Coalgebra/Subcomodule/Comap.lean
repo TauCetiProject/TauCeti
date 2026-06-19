@@ -119,16 +119,16 @@ private theorem comap_coact_mem (f : Comodule.Hom R C M N) (B : Subcomodule R C 
           (LinearMap.id : C →ₗ[R] C)) := by
   refine tensor_mem_range_comap (R := R) (C := C) (M := M) (N := N)
     B.toSubmodule f.toLinearMap ?_
-  rw [← LinearMap.comp_apply, LinearMap.rTensor_comp]
-  rw [LinearMap.rTensor_def]
-  change TensorProduct.map B.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)
-      (TensorProduct.map f.toLinearMap (LinearMap.id : C →ₗ[R] C)
-        (Comodule.coact (R := R) (C := C) (M := M) m)) = 0
+  rw [LinearMap.rTensor_comp_apply]
+  simp only [LinearMap.rTensor_def]
   rw [Comodule.Hom.map_coact_apply f m]
   rcases B.coact_mem hm with ⟨t, ht⟩
   rw [← LinearMap.rTensor_def]
-  change LinearMap.rTensor C B.toSubmodule.mkQ
-      (Comodule.coact (R := R) (C := C) (M := N) (f.toLinearMap m)) = 0
+  have hcoact :
+      Comodule.coact (R := R) (C := C) (M := N) (f m) =
+        Comodule.coact (R := R) (C := C) (M := N) (f.toLinearMap m) :=
+    rfl
+  rw [hcoact]
   rw [← ht]
   exact rTensor_mkQ_map_subtype (R := R) (C := C) (N := N) B.toSubmodule t
 
@@ -218,5 +218,49 @@ theorem comap_id (B : Subcomodule R C M) :
   rfl
 
 end Subcomodule
+
+namespace Comodule
+
+namespace Hom
+
+/-- The kernel of a comodule morphism as a subcomodule of the domain. -/
+def ker (f : Hom R C M N) : Subcomodule R C M :=
+  (⊥ : Subcomodule R C N).comap f
+
+/-- The underlying submodule of the kernel subcomodule is the linear-map kernel. -/
+@[simp]
+theorem ker_toSubmodule (f : Hom R C M N) :
+    (ker (R := R) (C := C) f).toSubmodule = LinearMap.ker f.toLinearMap :=
+  Subcomodule.comap_bot_toSubmodule f
+
+/-- Membership in the kernel subcomodule is vanishing under the morphism. -/
+@[simp]
+theorem mem_ker {f : Hom R C M N} {m : M} :
+    m ∈ ker (R := R) (C := C) f ↔ f m = 0 := by
+  rw [← Subcomodule.mem_toSubmodule, ker_toSubmodule, LinearMap.mem_ker]
+  rfl
+
+/-- The kernel subcomodule contains zero. -/
+theorem zero_mem_ker (f : Hom R C M N) : (0 : M) ∈ ker (R := R) (C := C) f := by
+  rw [mem_ker]
+  exact f.toLinearMap.map_zero
+
+/-- A subcomodule is contained in the kernel exactly when the morphism vanishes on it. -/
+theorem le_ker_iff {f : Hom R C M N} {A : Subcomodule R C M} :
+    A ≤ ker (R := R) (C := C) f ↔ ∀ ⦃m⦄, m ∈ A → f m = 0 := by
+  constructor
+  · intro h m hm
+    exact mem_ker.mp (h hm)
+  · intro h m hm
+    exact mem_ker.mpr (h hm)
+
+/-- A morphism vanishing on a subcomodule sends every element of it into the kernel. -/
+theorem mem_ker_of_apply_eq_zero {f : Hom R C M N} {m : M} (hm : f m = 0) :
+    m ∈ ker (R := R) (C := C) f :=
+  mem_ker.mpr hm
+
+end Hom
+
+end Comodule
 
 end TauCeti
