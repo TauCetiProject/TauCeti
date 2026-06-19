@@ -6,16 +6,18 @@ import Mathlib.NumberTheory.RamificationInertia.Galois
 import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
-# Ramification and inertia counting criteria in Dedekind domains
+# Ramification and inertia counting criteria
 
 This file records a Galois form of the fundamental identity for primes in finite extensions
-of Dedekind domains: in a Galois extension, the number of primes above a prime ideal is
+of domains: in a Galois extension, the number of primes above a prime ideal is
 maximal exactly when the common ramification index and inertia degree are both `1`.
 
 ## Main results
 
-* `TauCeti.DedekindDomain.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup_of_isDomain`:
+* `TauCeti.RamificationInertia.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`:
   the domain/flat Galois counting criterion.
+* `TauCeti.DedekindDomain.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`:
+  a deprecated compatibility wrapper for the old Dedekind-domain signature.
 
 ## Provenance
 
@@ -25,12 +27,12 @@ Built directly on Mathlib's Galois fundamental identity
 
 open Ideal Module
 
-namespace TauCeti.DedekindDomain
+namespace TauCeti.RamificationInertia
 
 /-- In a finite flat Galois extension of domains, the number of primes over a prime ideal
 equals the order of the Galois group iff the common ramification index and inertia degree are
 both `1`. -/
-theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup_of_isDomain {A B : Type*}
+theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*}
     [CommRing A] [IsDomain A] [CommRing B] [IsDomain B] [Algebra A B] [Module.Finite A B]
     [Module.Flat A B] (G : Type*) [Group G] [Finite G] [MulSemiringAction G B]
     [IsGaloisGroup G A B] (P : Ideal A) [P.IsPrime] :
@@ -47,9 +49,13 @@ theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup_of_isDomain {A B : Type
   · rintro ⟨he, hf⟩
     simpa [he, hf] using h_main
 
+end TauCeti.RamificationInertia
+
+namespace TauCeti.DedekindDomain
+
 /-- Deprecated compatibility wrapper for the old Dedekind-domain signature of
-`ncard_primesOver_eq_natCard_iff_of_isGaloisGroup_of_isDomain`. -/
-@[deprecated ncard_primesOver_eq_natCard_iff_of_isGaloisGroup_of_isDomain
+`TauCeti.RamificationInertia.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`. -/
+@[deprecated TauCeti.RamificationInertia.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup
   (since := "2026-06-19")]
 theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*} [CommRing A]
     [IsDedekindDomain A] [CommRing B] [IsDedekindDomain B] [Algebra A B] [Module.Finite A B]
@@ -57,6 +63,6 @@ theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*} [CommRing
     [IsGaloisGroup G A B] (P : Ideal A) [P.IsMaximal] (_hP : P ≠ ⊥) :
     (primesOver P B).ncard = Nat.card G ↔
       P.ramificationIdxIn B = 1 ∧ P.inertiaDegIn B = 1 :=
-  ncard_primesOver_eq_natCard_iff_of_isGaloisGroup_of_isDomain G P
+  TauCeti.RamificationInertia.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup G P
 
 end TauCeti.DedekindDomain
