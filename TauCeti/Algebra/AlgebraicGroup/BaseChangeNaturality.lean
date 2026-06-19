@@ -73,6 +73,8 @@ lemma baseChangePointsMulEquiv_symm_mapValue (φ : R →ₐ[K] S)
       mapValue (H := A) (φ.restrictScalars k)
         ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm f) := by
   ext a
+  simp only [baseChangePointsMulEquiv_symm_apply, mapValue_apply, AlgHom.coe_comp,
+    Function.comp_apply]
   rfl
 
 end MapValue
@@ -80,7 +82,7 @@ end MapValue
 section MapDomain
 
 variable {k K A B R : Type*} [CommSemiring k] [CommSemiring K] [Algebra k K]
-variable [CommSemiring A] [CommSemiring B] [_root_.Bialgebra k A] [_root_.Bialgebra k B]
+variable [CommSemiring A] [Semiring B] [_root_.Bialgebra k A] [_root_.Bialgebra k B]
 variable [CommSemiring R] [Algebra K R] [Algebra k R] [IsScalarTower k K R]
 
 /-- Base change of points is natural in the coordinate bialgebra.
@@ -105,8 +107,8 @@ lemma baseChangePointsMulEquiv_mapDomain_apply_tmul (φ : A →ₐc[k] B)
     (f : WithConv (B →ₐ[k] R)) (s : K) (a : A) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)
         (mapDomain (A := R) φ f) (s ⊗ₜ[k] a) =
-      s • f.ofConv (φ a) :=
-  rfl
+      s • f.ofConv (φ a) := by
+  rw [baseChangePointsMulEquiv_apply_tmul, mapDomain_apply_apply]
 
 /-- The inverse direction of base change is natural in the coordinate bialgebra.
 
@@ -121,7 +123,8 @@ lemma baseChangePointsMulEquiv_symm_mapDomain (φ : A →ₐc[k] B)
       mapDomain (A := R) φ
         ((baseChangePointsMulEquiv (k := k) (K := K) (A := B) (R := R)).symm f) := by
   ext a
-  rfl
+  simp only [baseChangePointsMulEquiv_symm_apply, mapDomain_apply_apply,
+    _root_.Bialgebra.TensorProduct.map_tmul, _root_.BialgHom.id_apply]
 
 /-- Pointwise form of `AlgHom.baseChangePointsMulEquiv_symm_mapDomain`. -/
 @[simp]
@@ -130,8 +133,9 @@ lemma baseChangePointsMulEquiv_symm_mapDomain_apply (φ : A →ₐc[k] B)
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm
         (mapDomain (A := R)
           (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ) f)).ofConv a =
-      f.ofConv (1 ⊗ₜ[k] φ a) :=
-  rfl
+      f.ofConv (1 ⊗ₜ[k] φ a) := by
+  simp only [baseChangePointsMulEquiv_symm_apply, mapDomain_apply_apply,
+    _root_.Bialgebra.TensorProduct.map_tmul, _root_.BialgHom.id_apply]
 
 end MapDomain
 
