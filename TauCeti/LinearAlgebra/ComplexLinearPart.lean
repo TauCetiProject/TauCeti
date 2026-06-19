@@ -3,7 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Data.Real.Basic
-import Mathlib.LinearAlgebra.Projection
+import Mathlib.LinearAlgebra.Span.Defs
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.Abel
 
@@ -36,6 +36,9 @@ statement, before any smoothness or bundle structure is introduced.
   operator).
 * `TauCeti.complexAntilinearPart J J' F`: the complex-antilinear part `½ (F + J' ∘ F ∘ J)`
   (the `∂̄` operator).
+* `TauCeti.complexLinearPartLinearMap J J'` /
+  `TauCeti.complexAntilinearPartLinearMap J J'`: the corresponding real-linear projections on
+  `V →ₗ[ℝ] W`.
 * `TauCeti.complexLinearMaps J J'` / `TauCeti.complexAntilinearMaps J J'`: the real subspaces of
   complex-linear and complex-antilinear maps.
 
@@ -100,7 +103,7 @@ theorem isComplexAntilinear_of_apply {F : V →ₗ[ℝ] W} (h : ∀ v, F (J v) =
 theorem isComplexLinear_id : IsComplexLinear J J (LinearMap.id) := by
   simp [IsComplexLinear]
 
-/-- An almost complex structure is complex linear over itself. -/
+/-- Any endomorphism is complex linear with respect to itself. -/
 theorem isComplexLinear_self : IsComplexLinear J J J := rfl
 
 /-- The zero map is complex linear. -/
@@ -149,15 +152,66 @@ theorem IsComplexAntilinear.comp_linear {F : V →ₗ[ℝ] W} {G : W →ₗ[ℝ]
   isComplexAntilinear_of_apply fun v => by
     simp only [LinearMap.comp_apply, hF.apply v, hG.apply (F v)]
 
+/-- The complex-linear-part operator `F ↦ ∂F` as a real-linear map on `V →ₗ[ℝ] W`. -/
+noncomputable def complexLinearPartLinearMap (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) :
+    (V →ₗ[ℝ] W) →ₗ[ℝ] (V →ₗ[ℝ] W) where
+  toFun F := (2⁻¹ : ℝ) • (F - J' ∘ₗ F ∘ₗ J)
+  map_add' F G := by
+    ext v
+    simp only [LinearMap.smul_apply, LinearMap.sub_apply, LinearMap.add_apply,
+      LinearMap.comp_apply, map_add]
+    module
+  map_smul' c F := by
+    ext v
+    simp only [LinearMap.smul_apply, LinearMap.sub_apply, LinearMap.comp_apply, map_smul]
+    simp [RingHom.id_apply, smul_sub, smul_smul, mul_comm]
+
+/-- The complex-antilinear-part operator `F ↦ ∂̄F` as a real-linear map on `V →ₗ[ℝ] W`. -/
+noncomputable def complexAntilinearPartLinearMap (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) :
+    (V →ₗ[ℝ] W) →ₗ[ℝ] (V →ₗ[ℝ] W) where
+  toFun F := (2⁻¹ : ℝ) • (F + J' ∘ₗ F ∘ₗ J)
+  map_add' F G := by
+    ext v
+    simp only [LinearMap.smul_apply, LinearMap.add_apply, LinearMap.comp_apply, map_add]
+    module
+  map_smul' c F := by
+    ext v
+    simp only [LinearMap.smul_apply, LinearMap.add_apply, LinearMap.comp_apply, map_smul]
+    simp [RingHom.id_apply, smul_add, smul_smul, mul_comm]
+
+/-- The defining formula for `complexLinearPartLinearMap J J'` on an input map. -/
+@[simp]
+theorem complexLinearPartLinearMap_apply (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W)
+    (F : V →ₗ[ℝ] W) :
+    complexLinearPartLinearMap J J' F = (2⁻¹ : ℝ) • (F - J' ∘ₗ F ∘ₗ J) :=
+  rfl
+
+/-- The defining formula for `complexAntilinearPartLinearMap J J'` on an input map. -/
+@[simp]
+theorem complexAntilinearPartLinearMap_apply (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W)
+    (F : V →ₗ[ℝ] W) :
+    complexAntilinearPartLinearMap J J' F = (2⁻¹ : ℝ) • (F + J' ∘ₗ F ∘ₗ J) :=
+  rfl
+
 /-- The complex-linear part `∂F = ½ (F - J' ∘ F ∘ J)` of a real-linear map. -/
 noncomputable def complexLinearPart (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F : V →ₗ[ℝ] W) :
     V →ₗ[ℝ] W :=
-  (2⁻¹ : ℝ) • (F - J' ∘ₗ F ∘ₗ J)
+  complexLinearPartLinearMap J J' F
 
 /-- The complex-antilinear part `∂̄F = ½ (F + J' ∘ F ∘ J)` of a real-linear map. -/
 noncomputable def complexAntilinearPart (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F : V →ₗ[ℝ] W) :
     V →ₗ[ℝ] W :=
-  (2⁻¹ : ℝ) • (F + J' ∘ₗ F ∘ₗ J)
+  complexAntilinearPartLinearMap J J' F
+
+/-- The defining formula for the complex-linear part as a linear-map equality. -/
+theorem complexLinearPart_def (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F : V →ₗ[ℝ] W) :
+    complexLinearPart J J' F = (2⁻¹ : ℝ) • (F - J' ∘ₗ F ∘ₗ J) :=
+  rfl
+
+/-- The defining formula for the complex-antilinear part as a linear-map equality. -/
+theorem complexAntilinearPart_def (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F : V →ₗ[ℝ] W) :
+    complexAntilinearPart J J' F = (2⁻¹ : ℝ) • (F + J' ∘ₗ F ∘ₗ J) :=
+  rfl
 
 @[simp]
 theorem complexLinearPart_apply (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F : V →ₗ[ℝ] W) (v : V) :
@@ -177,21 +231,64 @@ theorem complexLinearPart_add_complexAntilinearPart (J : V →ₗ[ℝ] V) (J' : 
   simp only [LinearMap.add_apply, complexLinearPart_apply, complexAntilinearPart_apply]
   module
 
+/-- The complex-linear and complex-antilinear projection operators add to the identity. -/
+theorem complexLinearPartLinearMap_add_complexAntilinearPartLinearMap
+    (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) :
+    complexLinearPartLinearMap J J' + complexAntilinearPartLinearMap J J' = LinearMap.id := by
+  ext F v
+  exact LinearMap.congr_fun (complexLinearPart_add_complexAntilinearPart J J' F) v
+
 /-- The complex-linear part is additive in `F`. -/
+@[simp]
 theorem complexLinearPart_add (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F G : V →ₗ[ℝ] W) :
     complexLinearPart J J' (F + G)
-      = complexLinearPart J J' F + complexLinearPart J J' G := by
-  ext v
-  simp only [LinearMap.add_apply, complexLinearPart_apply, map_add]
-  module
+      = complexLinearPart J J' F + complexLinearPart J J' G :=
+  map_add (complexLinearPartLinearMap J J') F G
 
 /-- The complex-antilinear part is additive in `F`. -/
+@[simp]
 theorem complexAntilinearPart_add (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F G : V →ₗ[ℝ] W) :
     complexAntilinearPart J J' (F + G)
-      = complexAntilinearPart J J' F + complexAntilinearPart J J' G := by
-  ext v
-  simp only [LinearMap.add_apply, complexAntilinearPart_apply, map_add]
-  module
+      = complexAntilinearPart J J' F + complexAntilinearPart J J' G :=
+  map_add (complexAntilinearPartLinearMap J J') F G
+
+/-- The complex-linear part commutes with real scalar multiplication in `F`. -/
+@[simp]
+theorem complexLinearPart_smul (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (c : ℝ)
+    (F : V →ₗ[ℝ] W) :
+    complexLinearPart J J' (c • F) = c • complexLinearPart J J' F :=
+  map_smul (complexLinearPartLinearMap J J') c F
+
+/-- The complex-antilinear part commutes with real scalar multiplication in `F`. -/
+@[simp]
+theorem complexAntilinearPart_smul (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (c : ℝ)
+    (F : V →ₗ[ℝ] W) :
+    complexAntilinearPart J J' (c • F) = c • complexAntilinearPart J J' F :=
+  map_smul (complexAntilinearPartLinearMap J J') c F
+
+/-- The complex-linear part of the zero map is zero. -/
+@[simp]
+theorem complexLinearPart_zero (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) :
+    complexLinearPart J J' (0 : V →ₗ[ℝ] W) = 0 :=
+  map_zero (complexLinearPartLinearMap J J')
+
+/-- The complex-antilinear part of the zero map is zero. -/
+@[simp]
+theorem complexAntilinearPart_zero (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) :
+    complexAntilinearPart J J' (0 : V →ₗ[ℝ] W) = 0 :=
+  map_zero (complexAntilinearPartLinearMap J J')
+
+/-- The complex-linear part commutes with negation in `F`. -/
+@[simp]
+theorem complexLinearPart_neg (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F : V →ₗ[ℝ] W) :
+    complexLinearPart J J' (-F) = -complexLinearPart J J' F :=
+  map_neg (complexLinearPartLinearMap J J') F
+
+/-- The complex-antilinear part commutes with negation in `F`. -/
+@[simp]
+theorem complexAntilinearPart_neg (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F : V →ₗ[ℝ] W) :
+    complexAntilinearPart J J' (-F) = -complexAntilinearPart J J' F :=
+  map_neg (complexAntilinearPartLinearMap J J') F
 
 /-- Applying an almost complex structure twice negates, in pointwise form. -/
 private theorem sq_apply (hsq : J ∘ₗ J = -LinearMap.id) (v : V) : J (J v) = -v := by
@@ -344,18 +441,10 @@ theorem isCompl_complexLinearMaps (hJ : J ∘ₗ J = -LinearMap.id)
     intro F hFlin hFanti
     have hlin : IsComplexLinear J J' F := hFlin
     have hanti : IsComplexAntilinear J J' F := hFanti
-    ext v
-    have h1 : F (J v) = J' (F v) := hlin.apply v
-    have h2 : F (J v) = -(J' (F v)) := hanti.apply v
-    have h3 : J' (F v) = -(J' (F v)) := h1.symm.trans h2
-    have h4 : J' (F v) = 0 := by
-      have hx : (2 : ℝ) • J' (F v) = 0 := by
-        have htwo : (2 : ℝ) • J' (F v) = J' (F v) + J' (F v) := two_smul ℝ _
-        rw [htwo]; nth_rewrite 2 [h3]; abel
-      exact (smul_eq_zero.mp hx).resolve_left (by norm_num)
-    have h6 := sq_apply hJ' (F v)
-    rw [h4, map_zero] at h6
-    simpa using (neg_eq_zero.mp h6.symm)
+    have hlin_zero := hlin.complexAntilinearPart_eq_zero hJ'
+    have hanti_zero := hanti.complexLinearPart_eq_zero hJ'
+    simpa [hlin_zero, hanti_zero] using
+      (complexLinearPart_add_complexAntilinearPart J J' F).symm
   · rw [codisjoint_iff, eq_top_iff]
     intro F _
     rw [Submodule.mem_sup]
