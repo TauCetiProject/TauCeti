@@ -8,8 +8,8 @@ import Mathlib.NumberTheory.RamificationInertia.Galois
 # Ramification and inertia counting criteria in Dedekind domains
 
 This file records a Galois form of the fundamental identity for primes in finite extensions
-of Dedekind domains: in a Galois extension, the number of primes above a nonzero maximal
-ideal is maximal exactly when the common ramification index and inertia degree are both `1`.
+of Dedekind domains: in a Galois extension, the number of primes above a prime ideal is
+maximal exactly when the common ramification index and inertia degree are both `1`.
 
 ## Main results
 
@@ -26,13 +26,13 @@ open Ideal Module
 
 namespace TauCeti.DedekindDomain
 
-/-- In a finite Galois extension of Dedekind domains, the number of primes over a nonzero
-maximal ideal equals the order of the Galois group iff the common ramification index and
+/-- In a finite Galois extension of Dedekind domains, the number of primes over a prime
+ideal equals the order of the Galois group iff the common ramification index and
 inertia degree are both `1`. -/
 theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*} [CommRing A]
     [IsDedekindDomain A] [CommRing B] [IsDedekindDomain B] [Algebra A B] [Module.Finite A B]
     [IsTorsionFree A B] (G : Type*) [Group G] [Finite G] [MulSemiringAction G B]
-    [IsGaloisGroup G A B] (P : Ideal A) [P.IsMaximal] :
+    [IsGaloisGroup G A B] (P : Ideal A) [P.IsPrime] :
     (primesOver P B).ncard = Nat.card G ↔
       P.ramificationIdxIn B = 1 ∧ P.inertiaDegIn B = 1 := by
   have h_main := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn P B G
