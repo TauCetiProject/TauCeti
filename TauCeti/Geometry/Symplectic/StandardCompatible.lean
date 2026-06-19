@@ -10,9 +10,9 @@ import TauCeti.Geometry.Symplectic.AlmostComplex
 
 For a real inner product space `V`, the doubled space `V × V` carries a canonical compatible
 triple `(ω, J, g)`: the standard symplectic form `ω₀`, the product almost complex structure
-`J(x, y) = (-y, x)` from `TauCeti.AlmostComplexStructure.product`, and the Euclidean metric
-`g` recovered as `ω₀(·, J ·)`. This is the model `ℝ^{2n} = ℝ^n ⊕ ℝ^n` on which every other
-compatible triple is built, and it serves as a non-vacuous witness that the pointwise
+`J(x, y) = (-y, x)` from `TauCeti.AlmostComplexStructure.product`, and the componentwise inner
+product `g` recovered as `ω₀(·, J ·)`. When `V = ℝ^n`, this specializes to the standard model
+`ℝ^{2n} = ℝ^n ⊕ ℝ^n`; in general it serves as a non-vacuous witness that the pointwise
 almost-complex/symplectic definitions of `AlmostComplex.lean` are inhabited and interact as
 the standard conventions require.
 
@@ -25,7 +25,7 @@ the standard conventions require.
 * `TauCeti.stdSymplecticForm_tames_product`: `ω₀` tames `J`, with `ω₀(v, J v) = ‖v.1‖² + ‖v.2‖²`.
 * `TauCeti.stdSymplecticForm_compatible_product`: `ω₀` is compatible with `J`.
 * `TauCeti.stdSymplecticForm_associatedBilinForm_product`: the metric `g = ω₀(·, J ·)` is the
-  componentwise (Euclidean) inner product `⟪u.1, w.1⟫ + ⟪u.2, w.2⟫`.
+  componentwise inner product `⟪u.1, w.1⟫ + ⟪u.2, w.2⟫`.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1, where `(ℝ^{2n}, ω₀, J₀)` is the standard compatible model.
@@ -39,20 +39,20 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-- The standard symplectic bilinear form on `V × V`, given by
 `ω₀((x₁, y₁), (x₂, y₂)) = ⟪x₁, y₂⟫ - ⟪y₁, x₂⟫`. -/
-noncomputable def stdSymplecticBilin : LinearMap.BilinForm ℝ (V × V) :=
+private noncomputable def stdSymplecticBilin : LinearMap.BilinForm ℝ (V × V) :=
   (innerₗ V).compl₁₂ (LinearMap.fst ℝ V V) (LinearMap.snd ℝ V V) -
     (innerₗ V).compl₁₂ (LinearMap.snd ℝ V V) (LinearMap.fst ℝ V V)
 
 @[simp]
-lemma stdSymplecticBilin_apply (u w : V × V) :
+private lemma stdSymplecticBilin_apply (u w : V × V) :
     stdSymplecticBilin u w = ⟪u.1, w.2⟫_ℝ - ⟪u.2, w.1⟫_ℝ := by
   simp [stdSymplecticBilin]
 
-lemma stdSymplecticBilin_isAlt : (stdSymplecticBilin (V := V)).IsAlt := by
+private lemma stdSymplecticBilin_isAlt : (stdSymplecticBilin (V := V)).IsAlt := by
   intro u
   rw [stdSymplecticBilin_apply, real_inner_comm u.2 u.1, sub_self]
 
-lemma stdSymplecticBilin_nondegenerate :
+private lemma stdSymplecticBilin_nondegenerate :
     (stdSymplecticBilin (V := V)).Nondegenerate := by
   refine ⟨fun u hu => ?_, fun w hw => ?_⟩
   · have h1 : u.1 = 0 := by
@@ -83,8 +83,7 @@ noncomputable def stdSymplecticForm : SymplecticForm (V × V) where
 @[simp]
 lemma stdSymplecticForm_apply (u w : V × V) :
     stdSymplecticForm u w = ⟪u.1, w.2⟫_ℝ - ⟪u.2, w.1⟫_ℝ := by
-  change stdSymplecticBilin u w = _
-  exact stdSymplecticBilin_apply u w
+  simp [stdSymplecticForm]
 
 /-- The standard symplectic form is invariant under the product almost complex structure. -/
 lemma stdSymplecticForm_invariant_product :
@@ -123,7 +122,7 @@ lemma stdSymplecticForm_compatible_product :
     stdSymplecticForm_tames_product
 
 /-- The metric `g = ω₀(·, J ·)` associated to the standard compatible triple is the
-componentwise (Euclidean) inner product on `V × V`. -/
+componentwise inner product on `V × V`. -/
 @[simp]
 lemma stdSymplecticForm_associatedBilinForm_product (u w : V × V) :
     (stdSymplecticForm (V := V)).associatedBilinForm (AlmostComplexStructure.product V) u w =
