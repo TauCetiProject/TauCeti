@@ -63,52 +63,8 @@ end Basic
 
 section AddCommGroup
 
-variable [Ring R]
+variable [Semiring R]
 variable [AddCommGroup E] [Module R E]
-
-variable {J : E →ₗ[R] E} {L : Submodule R E}
-
-namespace Submodule
-
-/-- If `J² = -1`, applying `J` twice sends every submodule back to itself. -/
-theorem map_map_eq_of_comp_self_eq_neg_id (L : Submodule R E)
-    (hJ : J.comp J = -LinearMap.id) : (L.map J).map J = L := by
-  have hJJ (x : E) : J (J x) = -x := by
-    simpa using congr_arg (fun f : E →ₗ[R] E => f x) hJ
-  ext x
-  constructor
-  · rintro ⟨y, ⟨z, hz, rfl⟩, rfl⟩
-    rw [hJJ z]
-    exact show -z ∈ L from neg_mem hz
-  · intro hx
-    refine ⟨J (-x), ?_, ?_⟩
-    · exact ⟨-x, show -x ∈ L from neg_mem hx, rfl⟩
-    · simpa using hJJ (-x)
-
-end Submodule
-
-namespace IsTotallyReal
-
-variable {J : E →ₗ[R] E} {L : Submodule R E}
-
-/-- If `J² = -1`, the image `J(L)` is totally real whenever `L` is totally real. -/
-theorem image (hL : IsTotallyReal J L) (hJ : J.comp J = -LinearMap.id) :
-    IsTotallyReal J (L.map J) := by
-  dsimp [IsTotallyReal]
-  rw [Submodule.map_map_eq_of_comp_self_eq_neg_id (J := J) L hJ]
-  exact hL.isCompl.symm
-
-/-- Under `J² = -1`, `L` is totally real if and only if its image `J(L)` is totally real. -/
-theorem image_iff (hJ : J.comp J = -LinearMap.id) :
-    IsTotallyReal J (L.map J) ↔ IsTotallyReal J L := by
-  constructor
-  · intro h
-    have h' := h.image hJ
-    rwa [Submodule.map_map_eq_of_comp_self_eq_neg_id (J := J) L hJ] at h'
-  · intro h
-    exact h.image hJ
-
-end IsTotallyReal
 
 namespace Submodule
 
@@ -136,10 +92,15 @@ theorem map_prod_bot_top_skewSwap :
     ((⊥ : Submodule R E).prod (⊤ : Submodule R E)).map
         (LinearEquiv.skewSwap R E E).toLinearMap =
       (⊤ : Submodule R E).prod (⊥ : Submodule R E) := by
-  rw [← map_prod_top_bot_skewSwap (R := R) (E := E)]
-  exact Submodule.map_map_eq_of_comp_self_eq_neg_id
-    (J := (LinearEquiv.skewSwap R E E).toLinearMap) _ <| LinearMap.ext fun x => by
-      ext <;> simp
+  ext x
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact ⟨trivial, by simpa using hy.1⟩
+  · intro hx
+    have hx2 : x.2 = 0 := by
+      simpa using hx.2
+    refine ⟨(0, -x.1), by simp, ?_⟩
+    ext <;> simp [hx2]
 
 /-- The first factor in `E × E` is totally real for the standard doubled-module complex
 structure. -/
@@ -157,11 +118,11 @@ structure. -/
 theorem isTotallyReal_prod_bot_top_skewSwap :
     IsTotallyReal (LinearEquiv.skewSwap R E E).toLinearMap
       ((⊥ : Submodule R E).prod (⊤ : Submodule R E)) := by
-  have hJ :
-      ((LinearEquiv.skewSwap R E E).toLinearMap).comp
-          (LinearEquiv.skewSwap R E E).toLinearMap = -LinearMap.id := LinearMap.ext fun x => by
-    ext <;> simp
-  simpa [map_prod_top_bot_skewSwap] using isTotallyReal_prod_top_bot_skewSwap.image hJ
+  dsimp [IsTotallyReal]
+  rw [map_prod_bot_top_skewSwap]
+  refine IsCompl.of_eq ?_ ?_
+  · rw [Submodule.prod_inf_prod, bot_inf_eq, inf_bot_eq, Submodule.prod_bot]
+  · rw [Submodule.prod_sup_prod, bot_sup_eq, top_sup_eq, Submodule.prod_top]
 
 end Submodule
 
@@ -171,6 +132,50 @@ section Ring
 
 variable [Ring R]
 variable [AddCommGroup E] [Module R E]
+
+variable {J : E →ₗ[R] E} {L : Submodule R E}
+
+namespace Submodule
+
+/-- If `J² = -1`, applying `J` twice sends every submodule back to itself. -/
+theorem map_map_eq_of_comp_self_eq_neg_id (L : Submodule R E)
+    (hJ : J.comp J = -LinearMap.id) : (L.map J).map J = L := by
+  have hJJ (x : E) : J (J x) = -x := by
+    simpa using congr_arg (fun f : E →ₗ[R] E => f x) hJ
+  ext x
+  constructor
+  · rintro ⟨y, ⟨z, hz, rfl⟩, rfl⟩
+    rw [hJJ z]
+    exact Submodule.neg_mem _ hz
+  · intro hx
+    refine ⟨J (-x), ?_, ?_⟩
+    · exact ⟨-x, Submodule.neg_mem _ hx, rfl⟩
+    · simpa using hJJ (-x)
+
+end Submodule
+
+namespace IsTotallyReal
+
+variable {J : E →ₗ[R] E} {L : Submodule R E}
+
+/-- If `J² = -1`, the image `J(L)` is totally real whenever `L` is totally real. -/
+theorem image (hL : IsTotallyReal J L) (hJ : J.comp J = -LinearMap.id) :
+    IsTotallyReal J (L.map J) := by
+  dsimp [IsTotallyReal]
+  rw [Submodule.map_map_eq_of_comp_self_eq_neg_id (J := J) L hJ]
+  exact hL.isCompl.symm
+
+/-- Under `J² = -1`, `L` is totally real if and only if its image `J(L)` is totally real. -/
+theorem image_iff (hJ : J.comp J = -LinearMap.id) :
+    IsTotallyReal J (L.map J) ↔ IsTotallyReal J L := by
+  constructor
+  · intro h
+    have h' := h.image hJ
+    rwa [Submodule.map_map_eq_of_comp_self_eq_neg_id (J := J) L hJ] at h'
+  · intro h
+    exact h.image hJ
+
+end IsTotallyReal
 
 namespace IsTotallyReal
 
