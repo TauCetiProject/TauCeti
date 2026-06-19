@@ -62,7 +62,7 @@ noncomputable abbrev mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal
 @[simp]
 lemma toBialgHom_mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     (mkQuotient H I).hom = HopfIdeal.mkBialgHom I :=
-  rfl
+  _root_.CommHopfAlgCat.hom_ofHom _
 
 /-- The quotient morphism sends an element to its quotient class. -/
 @[simp]
@@ -96,7 +96,7 @@ noncomputable abbrev liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
 lemma toBialgHom_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
     (liftQuotient I f hf).hom = HopfIdeal.liftBialgHom I f.hom hf :=
-  rfl
+  _root_.CommHopfAlgCat.hom_ofHom _
 
 /-- The quotient lift evaluates on quotient classes as the original morphism. -/
 @[simp]
@@ -124,7 +124,8 @@ lemma liftQuotient_unique (I : HopfIdeal R H) (f : H ⟶ K)
   obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R I.toIdeal q
   calc
     g.hom (Ideal.Quotient.mkₐ R I.toIdeal h) =
-        (mkQuotient H I ≫ g).hom h := rfl
+        (mkQuotient H I ≫ g).hom h := by
+      rw [_root_.CommHopfAlgCat.comp_apply, mkQuotient_apply]
     _ = f.hom h := by rw [hg]
     _ = (liftQuotient I f hf).hom (Ideal.Quotient.mkₐ R I.toIdeal h) :=
       (liftQuotient_mk I f hf h).symm

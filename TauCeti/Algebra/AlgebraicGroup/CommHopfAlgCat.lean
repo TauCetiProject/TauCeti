@@ -142,7 +142,7 @@ end CommHopfAlgCat
 -- deprecated wrappers forwarding to Mathlib's bundled category and its lemmas, so that
 -- existing references continue to resolve.
 
--- Deprecated: the Tau Ceti-local category alias forwards to Mathlib's bundled category.
+/-- Deprecated: the Tau Ceti-local category alias forwards to Mathlib's bundled `CommHopfAlgCat`. -/
 @[deprecated _root_.CommHopfAlgCat (since := "2026-06-19")]
 abbrev CommHopfAlgCat.{u', v'} (R : Type u') [CommRing R] : Type _ := _root_.CommHopfAlgCat.{v'} R
 
