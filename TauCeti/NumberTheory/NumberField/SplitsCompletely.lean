@@ -47,7 +47,7 @@ private theorem ncard_primesOver_eq_finrank_iff_of_isGalois {A : Type*} [CommRin
     [P.IsMaximal] :
     (primesOver P (𝓞 L)).ncard = finrank K L ↔
       P.ramificationIdxIn (𝓞 L) = 1 ∧ P.inertiaDegIn (𝓞 L) = 1 := by
-  have h := TauCeti.DedekindDomain.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup
+  have h := TauCeti.DedekindDomain.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup_of_isDomain
     (B := 𝓞 L) Gal(L/K) P
   rw [IsGaloisGroup.card_eq_finrank Gal(L/K) K L] at h
   exact h
