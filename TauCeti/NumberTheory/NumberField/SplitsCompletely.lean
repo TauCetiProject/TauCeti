@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.NumberTheory.NumberField.Basic
-import TauCeti.NumberTheory.DedekindDomain.RamificationInertia
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # A counting criterion for a prime to split completely in a Galois number field
