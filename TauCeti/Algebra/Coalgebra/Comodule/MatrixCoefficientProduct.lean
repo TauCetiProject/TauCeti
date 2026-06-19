@@ -51,6 +51,7 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 /-- Matrix coefficients of the product comodule split as the sum of the left and right
 matrix coefficients. -/
+@[simp]
 theorem matrixCoefficient_prod (φ : M × N →ₗ[R] R) (x : M × N) :
     letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     matrixCoefficient (R := R) (C := C) φ x =
@@ -103,6 +104,8 @@ theorem matrixCoefficientSubmodule_prod :
   · rw [matrixCoefficientSubmodule_le_iff]
     intro φ x
     rw [matrixCoefficient_prod]
+    -- The supremum side has two coefficient submodules whose ambient type is the same, so
+    -- spell out the target that `mem_sup_left` and `mem_sup_right` should inhabit.
     exact add_mem
       (show matrixCoefficient (R := R) (C := C) (φ.comp (LinearMap.inl R M N)) x.1 ∈
           matrixCoefficientSubmodule (R := R) (C := C) (M := M) ⊔
@@ -149,6 +152,8 @@ theorem matrixCoefficientSubalgebra_prod :
   · rw [matrixCoefficientSubalgebra_le_iff]
     intro φ x
     rw [matrixCoefficient_prod]
+    -- As above, the type ascription fixes the intended supremum target for the algebra
+    -- membership lemmas.
     exact add_mem
       (show matrixCoefficient (R := R) (C := C) (φ.comp (LinearMap.inl R M N)) x.1 ∈
           matrixCoefficientSubalgebra (R := R) (C := C) (M := M) ⊔
