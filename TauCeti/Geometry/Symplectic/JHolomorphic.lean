@@ -227,6 +227,18 @@ lemma isJHolomorphicWithinAt_id (J : AlmostComplexStructure V) (s : Set V) (x : 
     IsJHolomorphicWithinAt J J id s x :=
   (isJHolomorphicAt_id J x).isJHolomorphicWithinAt
 
+/-- A constant map is `J`-holomorphic on every set. -/
+@[simp]
+lemma isJHolomorphicOn_const (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W)
+    (c : W) (s : Set V) : IsJHolomorphicOn J J' (fun _ : V => c) s :=
+  fun x _ => isJHolomorphicWithinAt_const J J' c s x
+
+/-- The identity map is `J`-holomorphic on every set. -/
+@[simp]
+lemma isJHolomorphicOn_id (J : AlmostComplexStructure V) (s : Set V) :
+    IsJHolomorphicOn J J id s :=
+  fun x _ => isJHolomorphicWithinAt_id J s x
+
 /-- Chain rule for within-set `J`-holomorphic maps. -/
 lemma IsJHolomorphicWithinAt.comp {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {J'' : AlmostComplexStructure X}
