@@ -105,6 +105,13 @@ lemma map_ne_zero_iff (J : AlmostComplexStructure V) {v : V} :
     J v ≠ 0 ↔ v ≠ 0 :=
   not_congr J.map_eq_zero_iff
 
+/-- Two almost complex structures agreeing pointwise are equal. -/
+lemma ext {J K : AlmostComplexStructure V} (h : ∀ v, J v = K v) : J = K := by
+  cases J
+  cases K
+  congr 1
+  exact LinearMap.ext h
+
 /-- The negation of an almost complex structure is again an almost complex structure. -/
 def neg (J : AlmostComplexStructure V) : AlmostComplexStructure V where
   toLinearMap := -J.toLinearMap
