@@ -18,9 +18,8 @@ comultiplication, counit and antipode from `H` (see
 `Ideal` once it is known to be two-sided, a coideal, and antipode-stable. This file supplies the
 **bridge** turning a `TauCeti.HopfIdeal` into those Mathlib hypotheses, so that Mathlib's
 `Coalgebra`/`Bialgebra`/`HopfAlgebra` instances apply to `H ⧸ I.toIdeal`; on top of that bridge it
-provides the parts Mathlib lacks: the **universal property** `liftBialgHom` of the quotient
-bialgebra, and the antipode of the quotient packaged as an algebra homomorphism
-`quotientAntipodeAlgHom` in the commutative case.
+provides the part Mathlib lacks: the **universal property** `liftBialgHom` of the quotient
+bialgebra.
 
 This is the Layer 3 milestone "the quotient Hopf algebra `A/I`" of the reductive-groups
 roadmap: closed subgroup schemes of an affine group scheme are represented on coordinate
@@ -35,13 +34,12 @@ the structure maps to descend.
   quotient coalgebra/bialgebra/Hopf instances fire on `H ⧸ I.toIdeal`.
 * `TauCeti.HopfIdeal.liftBialgHom`: the bialgebra morphism induced from a bialgebra morphism
   which kills the Hopf ideal, together with its computation and uniqueness lemmas.
-* `TauCeti.HopfIdeal.quotientAntipodeAlgHom`: the antipode of the quotient as an `R`-algebra
-  homomorphism, valid when `H` is commutative.
 
-The quotient coalgebra/bialgebra/Hopf-algebra structure maps and the quotient bialgebra morphism
-themselves are Mathlib's `Bialgebra.Quotient.comulAlgHom`, `Bialgebra.Quotient.counitAlgHom`,
-`Bialgebra.Quotient.mkBialgHom`, and `HopfAlgebra.antipode`; the older TauCeti names for them are
-retained as deprecated wrappers.
+The quotient coalgebra/bialgebra/Hopf-algebra structure maps, the quotient bialgebra morphism, and
+the commutative-case antipode algebra homomorphism are themselves Mathlib's
+`Bialgebra.Quotient.comulAlgHom`, `Bialgebra.Quotient.counitAlgHom`,
+`Bialgebra.Quotient.mkBialgHom`, `HopfAlgebra.antipode`, and `HopfAlgebra.antipodeAlgHom`; the older
+TauCeti names for them are retained as deprecated wrappers.
 
 ## References
 
@@ -292,25 +290,18 @@ variable (I : HopfIdeal R H)
 
 /-- The antipode of the quotient, as an `R`-algebra homomorphism descended from `H` (valid since
 `H` is commutative, where the antipode is an algebra homomorphism). -/
+@[deprecated HopfAlgebra.antipodeAlgHom (since := "2026-06-19")]
 noncomputable def quotientAntipodeAlgHom : (H ⧸ I.toIdeal) →ₐ[R] H ⧸ I.toIdeal :=
-  Ideal.Quotient.liftₐ I.toIdeal
-    ((Ideal.Quotient.mkₐ R I.toIdeal).comp (HopfAlgebra.antipodeAlgHom R H)) <| by
-    intro x hx
-    rw [AlgHom.comp_apply, HopfAlgebra.antipodeAlgHom_apply]
-    exact Ideal.Quotient.eq_zero_iff_mem.mpr (I.antipode_mem (mem_toIdeal.mp hx))
-
-private theorem quotientAntipodeAlgHom_comp_mkₐ :
-    (quotientAntipodeAlgHom I).comp (Ideal.Quotient.mkₐ R I.toIdeal) =
-      (Ideal.Quotient.mkₐ R I.toIdeal).comp (HopfAlgebra.antipodeAlgHom R H) := by
-  rw [quotientAntipodeAlgHom]
-  exact Ideal.Quotient.liftₐ_comp I.toIdeal _ _
+  HopfAlgebra.antipodeAlgHom R (H ⧸ I.toIdeal)
 
 /-- The descended antipode algebra homomorphism, evaluated on a quotient class. -/
-@[simp]
+@[deprecated HopfAlgebra.Quotient.antipode_mk (since := "2026-06-19")]
 theorem quotientAntipodeAlgHom_mk (h : H) :
     quotientAntipodeAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h) =
       Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R h) := by
-  exact AlgHom.congr_fun (quotientAntipodeAlgHom_comp_mkₐ I) h
+  rw [quotientAntipodeAlgHom]
+  simp only [Ideal.Quotient.mkₐ_eq_mk]
+  exact HopfAlgebra.Quotient.antipode_mk I.toIdeal h
 
 end CommRing
 
