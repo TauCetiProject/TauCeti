@@ -60,7 +60,7 @@ private def equivPerm : GridState n ≃ Equiv.Perm (Fin n) where
   right_inv σ := rfl
 
 /-- There are finitely many grid states of a fixed grid size. -/
-noncomputable instance : Fintype (GridState n) :=
+instance : Fintype (GridState n) :=
   Fintype.ofEquiv (Equiv.Perm (Fin n)) equivPerm.symm
 
 /-- Apply a grid state to a column to get its occupied row. -/

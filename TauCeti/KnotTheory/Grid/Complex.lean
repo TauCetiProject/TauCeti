@@ -96,13 +96,11 @@ theorem fullyBlockedDifferential_single_apply (x y : GridState n) :
   simp
 
 /-- There is no self-term in the fully blocked differential of a generator. -/
-@[simp]
 theorem fullyBlockedDifferentialOnGenerator_apply_self (x : GridState n) :
     G.fullyBlockedDifferentialOnGenerator x x = 0 := by
   simp
 
 /-- The self-coefficient of the fully blocked differential on a single generator is zero. -/
-@[simp]
 theorem fullyBlockedDifferential_single_apply_self (x : GridState n) :
     G.fullyBlockedDifferential (Finsupp.single x 1) x = 0 := by
   simp
