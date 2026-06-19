@@ -20,8 +20,6 @@ behave naturally in both the value algebra and the coordinate Hopf algebra.
 
 ## Main declarations
 
-* `TauCeti.BialgHom.baseChange`: the scalar extension of a bialgebra morphism
-  `A →ₐc[k] B` to a `K`-bialgebra morphism `K ⊗[k] A →ₐc[K] K ⊗[k] B`.
 * `TauCeti.AlgHom.mapValue_baseChangePointsMulEquiv`: base change of points commutes with
   post-composition in the value algebra.
 * `TauCeti.AlgHom.baseChangePointsMulEquiv_mapDomain`: base change of points commutes with
@@ -39,35 +37,6 @@ This builds on Mathlib's tensor-product bialgebra map
 open TensorProduct WithConv
 
 namespace TauCeti
-
-namespace BialgHom
-
-variable {k K A B : Type*} [CommSemiring k] [CommSemiring K] [Algebra k K]
-variable [CommSemiring A] [CommSemiring B] [_root_.Bialgebra k A] [_root_.Bialgebra k B]
-
-/-- Scalar extension of a bialgebra morphism.
-
-For `φ : A →ₐc[k] B`, this is the `K`-bialgebra morphism
-`K ⊗[k] A →ₐc[K] K ⊗[k] B` given on pure tensors by `s ⊗ a ↦ s ⊗ φ a`. -/
-noncomputable abbrev baseChange (K : Type*) [CommSemiring K] [Algebra k K]
-    (φ : A →ₐc[k] B) : K ⊗[k] A →ₐc[K] K ⊗[k] B :=
-  _root_.Bialgebra.TensorProduct.map (BialgHom.id K K) φ
-
-/-- The base change of a bialgebra morphism sends `s ⊗ a` to `s ⊗ φ a`. -/
-@[simp]
-lemma baseChange_tmul (φ : A →ₐc[k] B) (s : K) (a : A) :
-    baseChange K φ (s ⊗ₜ[k] a) = s ⊗ₜ[k] φ a :=
-  rfl
-
-/-- The underlying algebra homomorphism of the base-changed bialgebra morphism is the
-tensor-product algebra map. -/
-@[simp]
-lemma baseChange_toAlgHom (φ : A →ₐc[k] B) :
-    (baseChange K φ : K ⊗[k] A →ₐ[K] K ⊗[k] B) =
-      Algebra.TensorProduct.map (AlgHom.id K K) (φ : A →ₐ[k] B) :=
-  rfl
-
-end BialgHom
 
 namespace AlgHom
 
@@ -124,7 +93,8 @@ lemma baseChangePointsMulEquiv_mapDomain (φ : A →ₐc[k] B)
     (f : WithConv (B →ₐ[k] R)) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)
         (mapDomain (A := R) φ f) =
-      mapDomain (A := R) (BialgHom.baseChange K φ)
+      mapDomain (A := R)
+        (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ)
         (baseChangePointsMulEquiv (k := k) (K := K) (A := B) (R := R) f) := by
   ext a
   simp [mapDomain_apply]
@@ -146,7 +116,8 @@ with first restricting and then pre-composing by `φ`. -/
 lemma baseChangePointsMulEquiv_symm_mapDomain (φ : A →ₐc[k] B)
     (f : WithConv (K ⊗[k] B →ₐ[K] R)) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm
-        (mapDomain (A := R) (BialgHom.baseChange K φ) f) =
+        (mapDomain (A := R)
+          (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ) f) =
       mapDomain (A := R) φ
         ((baseChangePointsMulEquiv (k := k) (K := K) (A := B) (R := R)).symm f) := by
   ext a
@@ -157,7 +128,8 @@ lemma baseChangePointsMulEquiv_symm_mapDomain (φ : A →ₐc[k] B)
 lemma baseChangePointsMulEquiv_symm_mapDomain_apply (φ : A →ₐc[k] B)
     (f : WithConv (K ⊗[k] B →ₐ[K] R)) (a : A) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm
-        (mapDomain (A := R) (BialgHom.baseChange K φ) f)).ofConv a =
+        (mapDomain (A := R)
+          (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) φ) f)).ofConv a =
       f.ofConv (1 ⊗ₜ[k] φ a) :=
   rfl
 
