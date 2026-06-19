@@ -175,13 +175,6 @@ lemma isComplexLinearMap_iff_apply (J : AlmostComplexStructure V)
     IsComplexLinearMap J J' F ↔ ∀ v, F (J v) = J' (F v) :=
   LinearMap.ext_iff
 
-/-- The almost-complex wrapper predicate is the raw-linear complex-linearity predicate applied
-to the underlying linear maps. -/
-lemma isComplexLinearMap_iff_isComplexLinear (J : AlmostComplexStructure V)
-    (J' : AlmostComplexStructure W) (F : V →ₗ[ℝ] W) :
-    IsComplexLinearMap J J' F ↔ IsComplexLinear J.toLinearMap J'.toLinearMap F :=
-  Iff.rfl
-
 /-- Complex-linearity for almost complex structures is membership in the existing submodule of
 raw-linear complex-linear maps. -/
 lemma isComplexLinearMap_iff_mem_complexLinearMaps (J : AlmostComplexStructure V)
