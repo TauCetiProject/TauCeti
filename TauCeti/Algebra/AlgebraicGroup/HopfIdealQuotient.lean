@@ -43,46 +43,47 @@ universe u v
 namespace CommHopfAlgCat
 
 open CategoryTheory
+open _root_.CommHopfAlgCat
 
 variable {R : Type u} [CommRing R]
 
 /-- The quotient of a commutative Hopf algebra by a Hopf ideal, as a bundled commutative
 Hopf algebra. -/
-noncomputable abbrev quotient (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) :
-    CommHopfAlgCat.{u, v} R :=
+noncomputable abbrev quotient (H : CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
+    CommHopfAlgCat.{v} R :=
   of R (H ⧸ I.toIdeal)
 
 /-- The quotient morphism `H ⟶ H ⧸ I` in `CommHopfAlgCat`. -/
-noncomputable abbrev mkQuotient (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) :
+noncomputable abbrev mkQuotient (H : CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     H ⟶ quotient H I :=
   ofHom (HopfIdeal.mkBialgHom I)
 
 /-- The quotient morphism has the expected underlying bialgebra morphism. -/
 @[simp]
-lemma toBialgHom_mkQuotient (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) :
+lemma toBialgHom_mkQuotient (H : CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     toBialgHom (mkQuotient H I) = HopfIdeal.mkBialgHom I :=
   rfl
 
 /-- The quotient morphism sends an element to its quotient class. -/
 @[simp]
-lemma mkQuotient_apply (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) (h : H) :
+lemma mkQuotient_apply (H : CommHopfAlgCat.{v} R) (I : HopfIdeal R H) (h : H) :
     toBialgHom (mkQuotient H I) h = Ideal.Quotient.mkₐ R I.toIdeal h :=
   rfl
 
 /-- The kernel of the quotient morphism is the Hopf ideal being quotiented by. -/
-lemma mkQuotient_ker (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) :
+lemma mkQuotient_ker (H : CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     RingHom.ker (toBialgHom (mkQuotient H I)).toAlgHom.toRingHom = I.toIdeal := by
   rw [toBialgHom_mkQuotient]
   exact Ideal.Quotient.mkₐ_ker (R₁ := R) I.toIdeal
 
 /-- An element maps to zero in the quotient exactly when it belongs to the Hopf ideal. -/
 @[simp]
-lemma mkQuotient_eq_zero_iff (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) (h : H) :
+lemma mkQuotient_eq_zero_iff (H : CommHopfAlgCat.{v} R) (I : HopfIdeal R H) (h : H) :
     toBialgHom (mkQuotient H I) h = 0 ↔ h ∈ I.toIdeal := by
   rw [mkQuotient_apply]
   exact Ideal.Quotient.eq_zero_iff_mem
 
-variable {H K : CommHopfAlgCat.{u, v} R}
+variable {H K : CommHopfAlgCat.{v} R}
 
 /-- A morphism of commutative Hopf algebras out of `H` which kills a Hopf ideal factors
 through the quotient object. -/
@@ -151,7 +152,7 @@ noncomputable abbrev mkQuotient (H : FiniteTypeCommHopfAlgCat.{u, v} R)
 @[simp]
 lemma forget₂_commHopfAlgCat_map_mkQuotient (H : FiniteTypeCommHopfAlgCat.{u, v} R)
     (I : HopfIdeal R H) :
-    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{u, v} R)).map
+    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{v} R)).map
       (mkQuotient H I) = CommHopfAlgCat.mkQuotient H.obj I :=
   rfl
 
@@ -179,7 +180,7 @@ noncomputable abbrev liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
 @[simp]
 lemma forget₂_commHopfAlgCat_map_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) :
-    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{u, v} R)).map
+    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{v} R)).map
       (liftQuotient I f hf) = CommHopfAlgCat.liftQuotient I f.hom hf :=
   rfl
 
@@ -189,7 +190,7 @@ lemma mkQuotient_comp_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) :
     mkQuotient H I ≫ liftQuotient I f hf = f := by
   apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
-    (CommHopfAlgCat.{u, v} R)).map_injective
+    (CommHopfAlgCat.{v} R)).map_injective
   exact CommHopfAlgCat.mkQuotient_comp_liftQuotient I f.hom hf
 
 /-- A morphism out of the quotient object is determined by its precomposition with the
@@ -198,11 +199,11 @@ lemma liftQuotient_unique (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) (g : quotient H I ⟶ K)
     (hg : mkQuotient H I ≫ g = f) : g = liftQuotient I f hf := by
   apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
-    (CommHopfAlgCat.{u, v} R)).map_injective
+    (CommHopfAlgCat.{v} R)).map_injective
   have hg' : CommHopfAlgCat.ofHom (HopfIdeal.mkBialgHom I) ≫ g.hom = f.hom :=
     congrArg
       (fun φ => (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
-        (CommHopfAlgCat.{u, v} R)).map φ) hg
+        (CommHopfAlgCat.{v} R)).map φ) hg
   exact CommHopfAlgCat.liftQuotient_unique (H := CommHopfAlgCat.of R H) I f.hom hf
     g.hom hg'
 

@@ -45,13 +45,13 @@ universe u v w
 /-- The object property on commutative Hopf algebras selecting finite-type coordinate
 algebras. -/
 def finiteTypeCommHopfAlgProperty (R : Type u) [CommRing R] :
-    ObjectProperty (CommHopfAlgCat.{u, v} R) :=
+    ObjectProperty (CommHopfAlgCat.{v} R) :=
   fun H => Algebra.FiniteType R H
 
 /-- Membership in the finite-type commutative Hopf algebra object property. -/
 @[simp]
 lemma finiteTypeCommHopfAlgProperty_iff {R : Type u} [CommRing R]
-    (H : CommHopfAlgCat.{u, v} R) :
+    (H : CommHopfAlgCat.{v} R) :
     finiteTypeCommHopfAlgProperty R H ↔ Algebra.FiniteType R H :=
   Iff.rfl
 
@@ -133,14 +133,14 @@ lemma toBialgHom_ofHom {H K : Type v} [CommRing H] [CommRing K]
 
 @[simp]
 lemma forget₂_commHopfAlgCat_obj (H : FiniteTypeCommHopfAlgCat.{u, v} R) :
-    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{u, v} R)).obj H =
+    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{v} R)).obj H =
       H.obj :=
   rfl
 
 @[simp]
 lemma forget₂_commHopfAlgCat_map {H K : FiniteTypeCommHopfAlgCat.{u, v} R}
     (φ : H ⟶ K) :
-    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{u, v} R)).map φ =
+    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{v} R)).map φ =
       φ.hom :=
   rfl
 
@@ -169,7 +169,7 @@ algebra. -/
 noncomputable def pointsFunctor :
     (FiniteTypeCommHopfAlgCat.{u, v} R)ᵒᵖ ⥤ CommAlgCat.{w} R ⥤ GrpCat.{max v w} :=
   CategoryTheory.Functor.op
-      (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{u, v} R)) ⋙
+      (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{v} R)) ⋙
     CommHopfAlgCat.pointsFunctor (R := R)
 
 /-- The object part of `pointsFunctor` is the points functor of the underlying commutative
