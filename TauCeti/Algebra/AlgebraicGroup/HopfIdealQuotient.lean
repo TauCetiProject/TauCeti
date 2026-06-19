@@ -55,12 +55,12 @@ noncomputable abbrev quotient (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) 
 /-- The quotient morphism `H ⟶ H ⧸ I` in `CommHopfAlgCat`. -/
 noncomputable abbrev mkQuotient (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) :
     H ⟶ quotient H I :=
-  ofHom (HopfIdeal.mkBialgHom I)
+  ofHom (Bialgebra.Quotient.mkBialgHom I.toIdeal)
 
 /-- The quotient morphism has the expected underlying bialgebra morphism. -/
 @[simp]
 lemma toBialgHom_mkQuotient (H : CommHopfAlgCat.{u, v} R) (I : HopfIdeal R H) :
-    toBialgHom (mkQuotient H I) = HopfIdeal.mkBialgHom I :=
+    toBialgHom (mkQuotient H I) = Bialgebra.Quotient.mkBialgHom I.toIdeal :=
   rfl
 
 /-- The quotient morphism sends an element to its quotient class. -/
@@ -199,7 +199,7 @@ lemma liftQuotient_unique (I : HopfIdeal R H) (f : H ⟶ K)
     (hg : mkQuotient H I ≫ g = f) : g = liftQuotient I f hf := by
   apply (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
     (CommHopfAlgCat.{u, v} R)).map_injective
-  have hg' : CommHopfAlgCat.ofHom (HopfIdeal.mkBialgHom I) ≫ g.hom = f.hom :=
+  have hg' : CommHopfAlgCat.ofHom (Bialgebra.Quotient.mkBialgHom I.toIdeal) ≫ g.hom = f.hom :=
     congrArg
       (fun φ => (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R)
         (CommHopfAlgCat.{u, v} R)).map φ) hg

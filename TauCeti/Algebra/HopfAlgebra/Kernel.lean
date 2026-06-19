@@ -145,7 +145,7 @@ theorem kerLiftBialgHom_mk (f : H →ₐc[R] K) (hf : Function.Surjective f) (h 
 /-- The kernel quotient lift composed with the quotient map is the original morphism. -/
 @[simp]
 theorem kerLiftBialgHom_comp_mkBialgHom (f : H →ₐc[R] K) (hf : Function.Surjective f) :
-    (kerLiftBialgHom f hf).comp (mkBialgHom (ker f hf)) = f :=
+    (kerLiftBialgHom f hf).comp (Bialgebra.Quotient.mkBialgHom (ker f hf).toIdeal) = f :=
   liftBialgHom_comp_mkBialgHom (ker f hf) f (by
     intro x hx
     simpa [ker_toIdeal] using hx)
@@ -187,10 +187,9 @@ theorem kerLiftBialgEquiv_toBialgHom (f : H →ₐc[R] K) (hf : Function.Surject
 /-- The Hopf-ideal kernel of the quotient morphism by `I` is `I`. -/
 @[simp]
 theorem ker_mkBialgHom (I : HopfIdeal R H) :
-    ker (mkBialgHom I) (Ideal.Quotient.mkₐ_surjective R I.toIdeal) = I := by
+    ker (Bialgebra.Quotient.mkBialgHom I.toIdeal) Ideal.Quotient.mk_surjective = I := by
   ext x
-  rw [mem_ker, mkBialgHom_apply, Ideal.Quotient.mkₐ_eq_mk,
-    Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]
+  rw [mem_ker, Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.eq_zero_iff_mem, mem_toIdeal]
 
 end HopfIdeal
 

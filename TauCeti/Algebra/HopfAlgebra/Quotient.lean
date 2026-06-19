@@ -2,17 +2,25 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import Mathlib.RingTheory.HopfAlgebra.Convolution
+import Mathlib.RingTheory.HopfAlgebra.Quotient
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal
 
 /-!
 # The quotient Hopf algebra of a Hopf ideal
 
-For a Hopf algebra `H` over a commutative semiring `R` and a Hopf ideal `I` of `H`, this file
-equips the quotient ring `H ⧸ I` with the structure of a Hopf algebra over `R`, descending the
-comultiplication, counit and antipode from `H`. The quotient map `H →ₐ[R] H ⧸ I` is exported
-as a bialgebra morphism by construction.
+For a Hopf algebra `H` over a commutative ring `R` and a Hopf ideal `I` of `H`, Mathlib equips the
+quotient ring `H ⧸ I` with the structure of a Hopf algebra over `R`, descending the
+comultiplication, counit and antipode from `H` (see
+`Mathlib.RingTheory.{Coalgebra,Bialgebra,HopfAlgebra}.Quotient`). Mathlib's instances fire on an
+`Ideal` once it is known to be two-sided, a coideal, and antipode-stable. This file supplies the
+**bridge** turning a `TauCeti.HopfIdeal` into those Mathlib hypotheses, so that Mathlib's
+`Coalgebra`/`Bialgebra`/`HopfAlgebra` instances apply to `H ⧸ I.toIdeal`; on top of that bridge it
+provides the parts Mathlib lacks: the **universal property** `liftBialgHom` of the quotient
+bialgebra, and the antipode of the quotient packaged as an algebra homomorphism
+`quotientAntipodeAlgHom` in the commutative case.
 
 This is the Layer 3 milestone "the quotient Hopf algebra `A/I`" of the reductive-groups
 roadmap: closed subgroup schemes of an affine group scheme are represented on coordinate
@@ -20,29 +28,29 @@ rings by exactly these quotient Hopf algebras, and the three Hopf-ideal closure 
 (`comul (I) ⊆ I ⊗ H + H ⊗ I`, `counit (I) = 0`, `S(I) ⊆ I`) are precisely what is needed for
 the structure maps to descend.
 
-The construction only uses the *easy* direction of the kernel computation for tensor products:
-the comultiplication descends because `comul x` lands in `I ⊗ H + H ⊗ I`, which the quotient
-map kills. No exactness or flatness input is needed; that is what the Hopf-ideal axioms buy.
-
 ## Main definitions
 
-* `TauCeti.HopfIdeal.quotientComulAlgHom`, `TauCeti.HopfIdeal.quotientCounitAlgHom`: the
-  comultiplication and counit of the quotient, as `R`-algebra homomorphisms descended from `H`.
-* `TauCeti.HopfIdeal.instCoalgebraQuotient`, `instBialgebraQuotient`,
-  `instHopfAlgebraQuotient`: the coalgebra, bialgebra and Hopf algebra structures on `H ⧸ I`.
-* `TauCeti.HopfIdeal.mkBialgHom`: the quotient map `H →ₐc[R] H ⧸ I` as a bialgebra morphism.
+* `TauCeti.HopfIdeal.instIsCoideal`, `TauCeti.HopfIdeal.instIsHopfIdeal`: the bridge instances
+  exhibiting `I.toIdeal` as a coideal and a Hopf ideal in Mathlib's sense, so that Mathlib's
+  quotient coalgebra/bialgebra/Hopf instances fire on `H ⧸ I.toIdeal`.
 * `TauCeti.HopfIdeal.liftBialgHom`: the bialgebra morphism induced from a bialgebra morphism
-  which kills the Hopf ideal.
+  which kills the Hopf ideal, together with its computation and uniqueness lemmas.
+* `TauCeti.HopfIdeal.quotientAntipodeAlgHom`: the antipode of the quotient as an `R`-algebra
+  homomorphism, valid when `H` is commutative.
+
+The quotient coalgebra/bialgebra/Hopf-algebra structure maps and the quotient bialgebra morphism
+themselves are Mathlib's `Bialgebra.Quotient.comulAlgHom`, `Bialgebra.Quotient.counitAlgHom`,
+`Bialgebra.Quotient.mkBialgHom`, and `HopfAlgebra.antipode`; the older TauCeti names for them are
+retained as deprecated wrappers.
 
 ## References
 
 This follows the standard construction of the quotient Hopf algebra; see Sweedler,
 *Hopf Algebras*, Chapter 4, and Waterhouse, *Introduction to Affine Group Schemes*, §16. It
-builds on the `TauCeti.HopfIdeal` API and Mathlib's algebra-quotient lift `Ideal.Quotient.liftₐ`,
-the tensor-product algebra map `Algebra.TensorProduct.map`, and the bialgebra/Hopf-algebra
-constructors `Bialgebra.mk'` and the `HopfAlgebra` axioms. It also uses Mathlib's
-`HopfAlgebra.antipodeAlgHom` from `Mathlib.RingTheory.HopfAlgebra.Convolution`, due to
-Yaël Dillies, Michał Mrugała and Yunzhou Xie.
+builds on the `TauCeti.HopfIdeal` API and Mathlib's quotient Hopf-algebra machinery
+(`Mathlib.RingTheory.HopfAlgebra.Quotient`, due to Robert Hawkins), the algebra-quotient lift
+`Ideal.Quotient.liftₐ`, and `HopfAlgebra.antipodeAlgHom` from
+`Mathlib.RingTheory.HopfAlgebra.Convolution`, due to Yaël Dillies, Michał Mrugała and Yunzhou Xie.
 -/
 
 open scoped TensorProduct
@@ -54,270 +62,131 @@ namespace HopfIdeal
 universe u v
 
 variable {R : Type u} {H : Type v}
-variable [CommSemiring R]
+variable [CommRing R]
 
 section Ring
 
 variable [Ring H] [HopfAlgebra R H]
+
+/-- TauCeti's `leftTensorIdeal I` (`I ⊗ H`), viewed as an `R`-submodule, is the range of
+`rTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeLeft_eq`. -/
+theorem leftTensorIdeal_restrictScalars_eq_range (I : Ideal H) :
+    (leftTensorIdeal (R := R) (H := H) I).restrictScalars R =
+      LinearMap.range (LinearMap.rTensor H (I.restrictScalars R).subtype) :=
+  Ideal.map_includeLeft_eq (R := R) (A := H) (B := H) I
+
+/-- TauCeti's `rightTensorIdeal I` (`H ⊗ I`), viewed as an `R`-submodule, is the range of
+`lTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeRight_eq`. -/
+theorem rightTensorIdeal_restrictScalars_eq_range (I : Ideal H) :
+    (rightTensorIdeal (R := R) (H := H) I).restrictScalars R =
+      LinearMap.range (LinearMap.lTensor H (I.restrictScalars R).subtype) :=
+  Ideal.map_includeRight_eq (R := R) (A := H) (B := H) I
+
+/-- The bridge: TauCeti's `I ⊗ H + H ⊗ I` (a sup of ideals of `H ⊗[R] H`), viewed as an
+`R`-submodule, equals Mathlib's coideal target `range (lTensor …) ⊔ range (rTensor …)`. -/
+theorem leftTensorIdeal_sup_eq_range (I : Ideal H) :
+    (leftTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) I).restrictScalars R =
+      LinearMap.range (LinearMap.lTensor H (I.restrictScalars R).subtype) ⊔
+        LinearMap.range (LinearMap.rTensor H (I.restrictScalars R).subtype) := by
+  rw [Submodule.restrictScalars_sup, leftTensorIdeal_restrictScalars_eq_range,
+    rightTensorIdeal_restrictScalars_eq_range, sup_comm]
+
+/-- A `HopfIdeal` gives Mathlib's coideal structure on the underlying `R`-submodule, so that
+Mathlib's quotient `Coalgebra`/`Bialgebra` instances fire on `H ⧸ I.toIdeal`. -/
+instance instIsCoideal (I : HopfIdeal R H) :
+    (I.toIdeal.restrictScalars R).IsCoideal := by
+  rw [Submodule.isCoideal_iff_comul_mem]
+  refine ⟨fun _ hx => I.counit_eq_zero hx, fun _ hx => ?_⟩
+  have := I.comul_mem hx
+  rwa [← Submodule.restrictScalars_mem R, leftTensorIdeal_sup_eq_range] at this
+
+/-- A `HopfIdeal` gives Mathlib's `Ideal.IsHopfIdeal`, so that Mathlib's quotient
+`HopfAlgebra` instance fires on `H ⧸ I.toIdeal`. -/
+instance instIsHopfIdeal (I : HopfIdeal R H) : I.toIdeal.IsHopfIdeal R where
+  __ := instIsCoideal I
+  antipode_mem := fun _ hx => I.antipode_mem hx
+
 variable (I : HopfIdeal R H)
 
-/-- The tensor square of the quotient map, `H ⊗ H →ₐ[R] (H ⧸ I) ⊗ (H ⧸ I)`. -/
-private noncomputable abbrev mkₐ₂ :
-    H ⊗[R] H →ₐ[R] (H ⧸ I.toIdeal) ⊗[R] (H ⧸ I.toIdeal) :=
-  Algebra.TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal) (Ideal.Quotient.mkₐ R I.toIdeal)
-
-private theorem mkₐ₂_includeLeft_eq_zero {y : H} (hy : y ∈ I.toIdeal) :
-    mkₐ₂ I (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H) y) =
-      0 := by
-  rw [Algebra.TensorProduct.includeLeft_apply (R := R) (S := R), Algebra.TensorProduct.map_tmul,
-    map_one,
-    Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem.mpr hy, TensorProduct.zero_tmul]
-
-private theorem mkₐ₂_includeRight_eq_zero {y : H} (hy : y ∈ I.toIdeal) :
-    mkₐ₂ I (Algebra.TensorProduct.includeRight y) = 0 := by
-  rw [Algebra.TensorProduct.includeRight_apply, Algebra.TensorProduct.map_tmul, map_one,
-    Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem.mpr hy, TensorProduct.tmul_zero]
-
-/-- The tensor square of the quotient map kills `I ⊗ H + H ⊗ I`. -/
-private theorem leSup_le_ker_mkₐ₂ :
-    leftTensorIdeal (R := R) (H := H) I.toIdeal ⊔ rightTensorIdeal (R := R) (H := H) I.toIdeal ≤
-      RingHom.ker (mkₐ₂ I).toRingHom := by
-  apply sup_le
-  · rw [leftTensorIdeal_le_iff]
-    intro y hy
-    rw [Ideal.mem_comap, RingHom.mem_ker]
-    exact mkₐ₂_includeLeft_eq_zero I hy
-  · rw [rightTensorIdeal_le_iff]
-    intro y hy
-    rw [Ideal.mem_comap, RingHom.mem_ker]
-    exact mkₐ₂_includeRight_eq_zero I hy
-
 /-- The comultiplication of the quotient, as an `R`-algebra homomorphism descended from `H`. -/
+@[deprecated Bialgebra.Quotient.comulAlgHom (since := "2026-06-19")]
 noncomputable def quotientComulAlgHom :
     (H ⧸ I.toIdeal) →ₐ[R] (H ⧸ I.toIdeal) ⊗[R] (H ⧸ I.toIdeal) :=
-  Ideal.Quotient.liftₐ I.toIdeal ((mkₐ₂ I).comp (Bialgebra.comulAlgHom R H)) <| by
-    intro x hx
-    rw [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply]
-    exact RingHom.mem_ker.mp (leSup_le_ker_mkₐ₂ I (I.comul_mem (mem_toIdeal.mp hx)))
+  Bialgebra.Quotient.comulAlgHom I.toIdeal
 
 /-- The counit of the quotient, as an `R`-algebra homomorphism descended from `H`. -/
+@[deprecated Bialgebra.Quotient.counitAlgHom (since := "2026-06-19")]
 noncomputable def quotientCounitAlgHom : (H ⧸ I.toIdeal) →ₐ[R] R :=
-  Ideal.Quotient.liftₐ I.toIdeal (Bialgebra.counitAlgHom R H) <| by
-    intro x hx
-    rw [Bialgebra.counitAlgHom_apply]
-    exact I.counit_eq_zero (mem_toIdeal.mp hx)
+  Bialgebra.Quotient.counitAlgHom I.toIdeal
 
-private theorem quotientComulAlgHom_comp_mkₐ :
-    (quotientComulAlgHom I).comp (Ideal.Quotient.mkₐ R I.toIdeal) =
-      (mkₐ₂ I).comp (Bialgebra.comulAlgHom R H) := by
-  rw [quotientComulAlgHom]
-  exact Ideal.Quotient.liftₐ_comp I.toIdeal _ _
+/-- The comultiplication on the quotient, evaluated on a quotient class. -/
+@[deprecated Bialgebra.Quotient.comul_mk (since := "2026-06-19")]
+theorem comul_mk (h : H) :
+    Coalgebra.comul (R := R) (Ideal.Quotient.mkₐ R I.toIdeal h)
+      = TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
+        (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap (Coalgebra.comul h) := by
+  rw [Ideal.Quotient.mkₐ_eq_mk]
+  exact Bialgebra.Quotient.comul_mk I.toIdeal h
 
-private theorem quotientCounitAlgHom_comp_mkₐ :
-    (quotientCounitAlgHom I).comp (Ideal.Quotient.mkₐ R I.toIdeal) =
-      Bialgebra.counitAlgHom R H := by
-  rw [quotientCounitAlgHom]
-  exact Ideal.Quotient.liftₐ_comp I.toIdeal _ _
+/-- The counit on the quotient, evaluated on a quotient class. -/
+@[deprecated Bialgebra.Quotient.counit_mk (since := "2026-06-19")]
+theorem counit_mk (h : H) :
+    Coalgebra.counit (R := R) (Ideal.Quotient.mkₐ R I.toIdeal h) =
+      Coalgebra.counit (R := R) h := by
+  rw [Ideal.Quotient.mkₐ_eq_mk]
+  exact Bialgebra.Quotient.counit_mk I.toIdeal h
 
 /-- The descended comultiplication, evaluated on a quotient class. -/
-@[simp]
+@[deprecated Bialgebra.Quotient.comul_mk (since := "2026-06-19")]
 theorem quotientComulAlgHom_mk (h : H) :
     quotientComulAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h)
       = Algebra.TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal)
         (Ideal.Quotient.mkₐ R I.toIdeal) (Coalgebra.comul h) := by
-  exact AlgHom.congr_fun (quotientComulAlgHom_comp_mkₐ I) h
+  rw [quotientComulAlgHom, Ideal.Quotient.mkₐ_eq_mk]
+  refine (Bialgebra.Quotient.comul_mk I.toIdeal h).trans ?_
+  exact (LinearMap.congr_fun
+    (Algebra.TensorProduct.toLinearMap_map (Ideal.Quotient.mkₐ R I.toIdeal)
+      (Ideal.Quotient.mkₐ R I.toIdeal)) _).symm
 
 /-- The descended counit, evaluated on a quotient class. -/
-@[simp]
+@[deprecated Bialgebra.Quotient.counit_mk (since := "2026-06-19")]
 theorem quotientCounitAlgHom_mk (h : H) :
     quotientCounitAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h) =
       Coalgebra.counit (R := R) h := by
-  exact AlgHom.congr_fun (quotientCounitAlgHom_comp_mkₐ I) h
-
-/-- The underlying linear quotient map `H →ₗ[R] H ⧸ I`. -/
-private noncomputable abbrev mkL : H →ₗ[R] H ⧸ I.toIdeal :=
-  (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
-
-private theorem mkL_surjective : Function.Surjective (mkL I) :=
-  Ideal.Quotient.mkₐ_surjective R I.toIdeal
-
-private theorem comul_mkL_apply (h : H) :
-    (quotientComulAlgHom I).toLinearMap (mkL I h)
-      = TensorProduct.map (mkL I) (mkL I) (Coalgebra.comul h) := by
-  calc
-    (quotientComulAlgHom I).toLinearMap (mkL I h)
-        = quotientComulAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h) := rfl
-    _ = Algebra.TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal)
-        (Ideal.Quotient.mkₐ R I.toIdeal) (Coalgebra.comul h) :=
-      quotientComulAlgHom_mk I h
-    _ = TensorProduct.map (mkL I) (mkL I) (Coalgebra.comul h) :=
-      LinearMap.congr_fun
-        (Algebra.TensorProduct.toLinearMap_map (Ideal.Quotient.mkₐ R I.toIdeal)
-          (Ideal.Quotient.mkₐ R I.toIdeal)) _
-
-/-- The quotient comultiplication intertwines `mkL` with the comultiplication of `H`. -/
-private theorem comul_comp_mkL :
-    (quotientComulAlgHom I).toLinearMap ∘ₗ mkL I
-      = TensorProduct.map (mkL I) (mkL I) ∘ₗ Coalgebra.comul := by
-  ext h
-  simpa only [LinearMap.comp_apply] using comul_mkL_apply I h
-
-/-- The quotient counit intertwines `mkL` with the counit of `H`. -/
-private theorem counit_comp_mkL :
-    (quotientCounitAlgHom I).toLinearMap ∘ₗ mkL I = Coalgebra.counit (R := R) := by
-  ext h
-  exact quotientCounitAlgHom_mk I h
-
-/-- A linear map out of the quotient is determined by its precomposition with `mkL`. -/
-private theorem linearMap_ext {N : Type*} [AddCommMonoid N] [Module R N]
-    {f g : (H ⧸ I.toIdeal) →ₗ[R] N} (hfg : f ∘ₗ mkL I = g ∘ₗ mkL I) : f = g := by
-  refine LinearMap.ext fun q => ?_
-  obtain ⟨a, rfl⟩ := mkL_surjective I q
-  exact LinearMap.congr_fun hfg a
-
-/-- The coalgebra structure on the quotient, with comultiplication and counit descended from
-`H`. -/
-noncomputable instance instCoalgebraQuotient : Coalgebra R (H ⧸ I.toIdeal) where
-  comul := (quotientComulAlgHom I).toLinearMap
-  counit := (quotientCounitAlgHom I).toLinearMap
-  coassoc := by
-    refine linearMap_ext I (LinearMap.ext fun h => ?_)
-    -- Transport coassociativity across the surjective quotient map `mkL`; the simp set
-    -- evaluates only the quotient-map naturality lemmas for tensoring linear maps.
-    simp only [LinearMap.comp_apply, comul_mkL_apply, LinearMap.rTensor_map, LinearMap.lTensor_map,
-      comul_comp_mkL, ← LinearMap.map_rTensor, ← LinearMap.map_lTensor]
-    exact (TensorProduct.map_map_assoc (mkL I) (mkL I) (mkL I) _).symm.trans
-      (congrArg _ (Coalgebra.coassoc_apply h))
-  rTensor_counit_comp_comul := by
-    refine linearMap_ext I ?_
-    rw [LinearMap.comp_assoc, comul_comp_mkL, ← LinearMap.comp_assoc, LinearMap.rTensor_comp_map,
-      counit_comp_mkL, ← LinearMap.lTensor_comp_rTensor, LinearMap.comp_assoc,
-      Coalgebra.rTensor_counit_comp_comul]
-    ext h
-    simp only [LinearMap.comp_apply, TensorProduct.mk_apply, LinearMap.lTensor_tmul]
-  lTensor_counit_comp_comul := by
-    refine linearMap_ext I ?_
-    rw [LinearMap.comp_assoc, comul_comp_mkL, ← LinearMap.comp_assoc, LinearMap.lTensor_comp_map,
-      counit_comp_mkL, ← LinearMap.rTensor_comp_lTensor, LinearMap.comp_assoc,
-      Coalgebra.lTensor_counit_comp_comul]
-    ext h
-    simp only [LinearMap.comp_apply, LinearMap.flip_apply, TensorProduct.mk_apply,
-      LinearMap.rTensor_tmul]
-
-/-- The comultiplication on the quotient, evaluated on a quotient class. -/
-@[simp]
-theorem comul_mk (h : H) :
-    Coalgebra.comul (R := R) (Ideal.Quotient.mkₐ R I.toIdeal h)
-      = TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
-        (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap (Coalgebra.comul h) :=
-  comul_mkL_apply I h
-
-/-- The counit on the quotient, evaluated on a quotient class. -/
-@[simp]
-theorem counit_mk (h : H) :
-    Coalgebra.counit (R := R) (Ideal.Quotient.mkₐ R I.toIdeal h) =
-      Coalgebra.counit (R := R) h :=
-  quotientCounitAlgHom_mk I h
-
-/-- The bialgebra structure on the quotient, whose coalgebra structure maps are algebra
-homomorphisms. -/
-noncomputable instance instBialgebraQuotient : Bialgebra R (H ⧸ I.toIdeal) :=
-  Bialgebra.mk' R (H ⧸ I.toIdeal)
-    (map_one (quotientCounitAlgHom I))
-    (fun {a b} => map_mul (quotientCounitAlgHom I) a b)
-    (map_one (quotientComulAlgHom I))
-    (fun {a b} => map_mul (quotientComulAlgHom I) a b)
+  rw [quotientCounitAlgHom, Ideal.Quotient.mkₐ_eq_mk]
+  exact Bialgebra.Quotient.counit_mk I.toIdeal h
 
 /-- The antipode of the quotient, as an `R`-linear map descended from `H`. -/
-noncomputable def quotientAntipodeLinearMap : (H ⧸ I.toIdeal) →ₗ[R] H ⧸ I.toIdeal where
-  toFun q :=
-    Quotient.liftOn' q
-      (fun h : H => Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R h)) <| by
-        intro a b hab
-        rw [Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, ← map_sub]
-        exact I.antipode_mem (by simpa [Submodule.quotientRel_def] using hab)
-  map_add' := by
-    rintro ⟨a⟩ ⟨b⟩
-    -- Quotient induction reduces the linearity goals to the representative formula used in
-    -- `toFun`; the remaining proof is just linearity of the original antipode and quotient map.
-    change Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R (a + b)) =
-      Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R a) +
-        Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R b)
-    rw [map_add, map_add]
-  map_smul' := by
-    intro r
-    rintro ⟨a⟩
-    -- As above, this exposes the representative-level formula after quotient induction.
-    change Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R (r • a)) =
-      r • Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R a)
-    rw [map_smul, map_smul]
+@[deprecated "Use `HopfAlgebra.antipode R` on the quotient instead." (since := "2026-06-19")]
+noncomputable def quotientAntipodeLinearMap : (H ⧸ I.toIdeal) →ₗ[R] H ⧸ I.toIdeal :=
+  HopfAlgebra.antipode R
+
+/-- The antipode on the quotient, evaluated on a quotient class. -/
+@[deprecated HopfAlgebra.Quotient.antipode_mk (since := "2026-06-19")]
+theorem antipode_mk (h : H) :
+    HopfAlgebra.antipode R (Ideal.Quotient.mkₐ R I.toIdeal h) =
+      Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R h) := by
+  rw [Ideal.Quotient.mkₐ_eq_mk]
+  exact HopfAlgebra.Quotient.antipode_mk I.toIdeal h
 
 /-- The descended antipode linear map, evaluated on a quotient class. -/
-@[simp]
+@[deprecated HopfAlgebra.Quotient.antipode_mk (since := "2026-06-19")]
 theorem quotientAntipodeLinearMap_mk (h : H) :
     quotientAntipodeLinearMap I (Ideal.Quotient.mkₐ R I.toIdeal h) =
       Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R h) := by
-  rfl
-
-@[simp]
-private theorem antipode_comp_mkL :
-    quotientAntipodeLinearMap I ∘ₗ mkL I = mkL I ∘ₗ HopfAlgebra.antipode R := by
-  ext h
-  exact quotientAntipodeLinearMap_mk I h
-
-/-- Multiplication on the quotient is the transport of multiplication on `H`: this is the
-naturality of `LinearMap.mul'` along the algebra homomorphism `mkL`. -/
-private theorem mul'_comp_map_mkL :
-    LinearMap.mul' R (H ⧸ I.toIdeal) ∘ₗ TensorProduct.map (mkL I) (mkL I)
-      = mkL I ∘ₗ LinearMap.mul' R H := by
-  refine TensorProduct.ext' fun a b => ?_
-  simp only [LinearMap.comp_apply, TensorProduct.map_tmul, LinearMap.mul'_apply,
-    AlgHom.toLinearMap_apply, map_mul]
-
-private theorem mul'_map_mkL_apply (x : H ⊗[R] H) :
-    LinearMap.mul' R (H ⧸ I.toIdeal) (TensorProduct.map (mkL I) (mkL I) x)
-      = mkL I (LinearMap.mul' R H x) :=
-  LinearMap.congr_fun (mul'_comp_map_mkL I) x
-
-/-- The Hopf algebra structure on the quotient, with antipode descended from `H`. -/
-noncomputable instance instHopfAlgebraQuotient : HopfAlgebra R (H ⧸ I.toIdeal) where
-  antipode := quotientAntipodeLinearMap I
-  mul_antipode_rTensor_comul := by
-    refine linearMap_ext I (LinearMap.ext fun h => ?_)
-    -- The Hopf identities are transported along `mkL`: first evaluate quotient structure maps
-    -- on representatives, then use the corresponding identity in `H`.
-    simp only [LinearMap.comp_apply, comul_mk, LinearMap.rTensor_map, antipode_comp_mkL,
-      ← LinearMap.map_rTensor, mul'_map_mkL_apply, HopfAlgebra.mul_antipode_rTensor_comul_apply,
-      AlgHom.toLinearMap_apply, AlgHom.commutes, Algebra.linearMap_apply, counit_mk]
-  mul_antipode_lTensor_comul := by
-    refine linearMap_ext I (LinearMap.ext fun h => ?_)
-    -- Same transport argument for the left tensor version of the antipode identity.
-    simp only [LinearMap.comp_apply, comul_mk, LinearMap.lTensor_map, antipode_comp_mkL,
-      ← LinearMap.map_lTensor, mul'_map_mkL_apply, HopfAlgebra.mul_antipode_lTensor_comul_apply,
-      AlgHom.toLinearMap_apply, AlgHom.commutes, Algebra.linearMap_apply, counit_mk]
-
-/-- The antipode on the quotient, evaluated on a quotient class. -/
-@[simp]
-theorem antipode_mk (h : H) :
-    HopfAlgebra.antipode R (Ideal.Quotient.mkₐ R I.toIdeal h) =
-      Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R h) :=
-  quotientAntipodeLinearMap_mk I h
+  rw [quotientAntipodeLinearMap, Ideal.Quotient.mkₐ_eq_mk]
+  exact HopfAlgebra.Quotient.antipode_mk I.toIdeal h
 
 /-- The quotient map `H →ₐ[R] H ⧸ I` as a bialgebra morphism: it is an algebra homomorphism
 respecting the counit and comultiplication by construction. -/
+@[deprecated Bialgebra.Quotient.mkBialgHom (since := "2026-06-19")]
 noncomputable def mkBialgHom : H →ₐc[R] H ⧸ I.toIdeal :=
-  BialgHom.ofAlgHom (Ideal.Quotient.mkₐ R I.toIdeal)
-    (by ext h; simp only [AlgHom.comp_apply, Bialgebra.counitAlgHom_apply, counit_mk])
-    (by
-      ext h
-      simp only [AlgHom.comp_apply, Bialgebra.comulAlgHom_apply, comul_mk]
-      exact LinearMap.congr_fun
-        (Algebra.TensorProduct.toLinearMap_map (Ideal.Quotient.mkₐ R I.toIdeal)
-          (Ideal.Quotient.mkₐ R I.toIdeal)) _)
+  Bialgebra.Quotient.mkBialgHom I.toIdeal
 
 /-- The quotient bialgebra morphism, evaluated on an element of `H`. -/
-@[simp]
-theorem mkBialgHom_apply (h : H) : mkBialgHom I h = Ideal.Quotient.mkₐ R I.toIdeal h := rfl
+@[deprecated Bialgebra.Quotient.mkBialgHom_apply (since := "2026-06-19")]
+theorem mkBialgHom_apply (h : H) : mkBialgHom I h = Ideal.Quotient.mkₐ R I.toIdeal h := by
+  rw [mkBialgHom, Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.mkₐ_eq_mk]
 
 variable {K : Type*} [Semiring K] [Bialgebra R K]
 
@@ -369,14 +238,15 @@ noncomputable def liftBialgHom (f : H →ₐc[R] K)
       -- After quotient-surjectivity reduction, `BialgHom.ofAlgHom` leaves the same counit
       -- equality with the two sides presented through different wrapper APIs.
       change Coalgebra.counit (R := R) (f h) =
-        Coalgebra.counit (R := R) (Ideal.Quotient.mkₐ R I.toIdeal h)
-      rw [counit_mk]
+        Coalgebra.counit (R := R) (Ideal.Quotient.mk I.toIdeal h)
+      rw [Bialgebra.Quotient.counit_mk]
       exact CoalgHomClass.counit_comp_apply f h)
     (by
       ext q
       obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R I.toIdeal q
       rw [AlgHom.comp_apply, AlgHom.comp_apply, Bialgebra.comulAlgHom_apply,
-        liftBialgHomAlg_mk I f hf h, Bialgebra.comulAlgHom_apply, comul_mk]
+        liftBialgHomAlg_mk I f hf h, Bialgebra.comulAlgHom_apply, Ideal.Quotient.mkₐ_eq_mk,
+        Bialgebra.Quotient.comul_mk]
       exact liftBialgHomAlg_comul_mk I f hf h)
 
 /-- The quotient lift, evaluated on a quotient class. -/
@@ -391,20 +261,24 @@ theorem liftBialgHom_mk (f : H →ₐc[R] K)
 @[simp]
 theorem liftBialgHom_comp_mkBialgHom (f : H →ₐc[R] K)
     (hf : I.toIdeal ≤ RingHom.ker f.toAlgHom.toRingHom) :
-    (liftBialgHom I f hf).comp (mkBialgHom I) = f := by
+    (liftBialgHom I f hf).comp (Bialgebra.Quotient.mkBialgHom I.toIdeal) = f := by
   ext h
-  simp only [BialgHom.coe_comp, Function.comp_apply, mkBialgHom_apply, liftBialgHom_mk]
+  rw [BialgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_apply,
+    ← Ideal.Quotient.mkₐ_eq_mk (R₁ := R), liftBialgHom_mk]
 
 /-- A bialgebra morphism out of the quotient is determined by its precomposition with the
 quotient map. -/
 theorem liftBialgHom_unique (f : H →ₐc[R] K)
     (hf : I.toIdeal ≤ RingHom.ker f.toAlgHom.toRingHom) (g : H ⧸ I.toIdeal →ₐc[R] K)
-    (hg : g.comp (mkBialgHom I) = f) :
+    (hg : g.comp (Bialgebra.Quotient.mkBialgHom I.toIdeal) = f) :
     g = liftBialgHom I f hf := by
   ext q
   obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R I.toIdeal q
   calc
-    g (Ideal.Quotient.mkₐ R I.toIdeal h) = (g.comp (mkBialgHom I)) h := rfl
+    g (Ideal.Quotient.mkₐ R I.toIdeal h)
+        = (g.comp (Bialgebra.Quotient.mkBialgHom I.toIdeal)) h := by
+          rw [BialgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_apply,
+            Ideal.Quotient.mkₐ_eq_mk (R₁ := R)]
     _ = f h := BialgHom.congr_fun hg h
     _ = liftBialgHom I f hf (Ideal.Quotient.mkₐ R I.toIdeal h) :=
       (liftBialgHom_mk I f hf h).symm
