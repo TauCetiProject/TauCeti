@@ -151,6 +151,16 @@ private theorem prodCoact_coassoc :
   · ext n
     exact prodCoact_coassoc_inr (R := R) (C := C) (M := M) (N := N) n
 
+omit [Comodule R C M] [Comodule R C N] in
+private theorem counit_lTensor_prod_map {P : Type*} [AddCommMonoid P] [Module R P]
+    (f : P →ₗ[R] M × N) (t : P ⊗[R] C) :
+    Coalgebra.counit.lTensor (M × N) (TensorProduct.map f LinearMap.id t) =
+      TensorProduct.map f LinearMap.id (Coalgebra.counit.lTensor P t) := by
+  induction t using TensorProduct.induction_on with
+  | zero => simp
+  | tmul p c => simp
+  | add x y hx hy => simp [hx, hy]
+
 private theorem prodCoact_counit_map {P : Type*} [AddCommMonoid P] [Module R P]
     [Comodule R C P] (f : P →ₗ[R] M × N)
     (hcomp :
@@ -169,9 +179,9 @@ private theorem prodCoact_counit_map {P : Type*} [AddCommMonoid P] [Module R P]
     congrArg (TensorProduct.map f (LinearMap.id : R →ₗ[R] R))
       (lTensor_counit_coact (R := R) (C := C) (M := P) p)
   -- This transports the counit square across the compatible map `f`.
-  simpa only [LinearMap.lTensor_map, LinearMap.lTensor_def, LinearMap.comp_id, LinearMap.id_comp,
-    TensorProduct.map_id, TensorProduct.map_map, TensorProduct.map_tmul,
-    LinearMap.id_apply] using h
+  rw [counit_lTensor_prod_map]
+  rw [h]
+  simp
 
 private theorem prodCoact_counit_inl (m : M) :
     Coalgebra.counit.lTensor (M × N)
@@ -577,12 +587,12 @@ theorem prod_hom_ext {P M N : ComoduleCat.{u, v, w} R C} {f g : P ⟶ prod R C M
     (hsnd : f ≫ prodSnd M N = g ≫ prodSnd M N) : f = g := by
   apply hom_ext
   intro p
-  have hfstp := congrArg (fun h : P ⟶ M => h p) hfst
-  have hsndp := congrArg (fun h : P ⟶ N => h p) hsnd
-  -- Composition in `ComoduleCat` is definitionally composition of the underlying comodule
-  -- morphisms, so these pointwise equalities are exactly the component equalities.
-  change (f p).1 = (g p).1 at hfstp
-  change (f p).2 = (g p).2 at hsndp
+  have hfstp : prodFst M N (f p) = prodFst M N (g p) := by
+    simpa only [comp_apply] using congrArg (fun h : P ⟶ M => h p) hfst
+  have hsndp : prodSnd M N (f p) = prodSnd M N (g p) := by
+    simpa only [comp_apply] using congrArg (fun h : P ⟶ N => h p) hsnd
+  rw [prodFst_apply] at hfstp
+  rw [prodSnd_apply] at hsndp
   exact Prod.ext hfstp hsndp
 
 /-- Morphisms out of the bundled product are determined by their values on the inclusions. -/
@@ -593,25 +603,26 @@ theorem prod_hom_ext' {M N P : ComoduleCat.{u, v, w} R C} {f g : prod R C M N �
   letI : Comodule R C (M × N) := Comodule.Prod (R := R) (C := C) (M := M) (N := N)
   apply hom_ext
   intro x
-  have hinlp := congrArg (fun h : M ⟶ P => h x.1) hinl
-  have hinrp := congrArg (fun h : N ⟶ P => h x.2) hinr
-  -- Composition in `ComoduleCat` is definitionally composition of the underlying comodule
-  -- morphisms, so these pointwise equalities are exactly the inclusion equalities.
-  change f.toLinearMap (x.1, 0) = g.toLinearMap (x.1, 0) at hinlp
-  change f.toLinearMap (0, x.2) = g.toLinearMap (0, x.2) at hinrp
-  change f.toLinearMap x = g.toLinearMap x
+  have hinlp : f (prodInl M N x.1) = g (prodInl M N x.1) := by
+    simpa only [comp_apply] using congrArg (fun h : M ⟶ P => h x.1) hinl
+  have hinrp : f (prodInr M N x.2) = g (prodInr M N x.2) := by
+    simpa only [comp_apply] using congrArg (fun h : N ⟶ P => h x.2) hinr
+  rw [prodInl_apply] at hinlp
+  rw [prodInr_apply] at hinrp
   have hx : x = (x.1, 0) + (0, x.2) := by
     ext <;> simp
-  calc
-    f.toLinearMap x = f.toLinearMap ((x.1, 0) + (0, x.2)) :=
-      congrArg f.toLinearMap hx
-    _ = f.toLinearMap (x.1, 0) + f.toLinearMap (0, x.2) := by
-      rw [map_add]
-    _ = g.toLinearMap (x.1, 0) + g.toLinearMap (0, x.2) :=
-      congrArg₂ (fun a b => a + b) hinlp hinrp
-    _ = g.toLinearMap ((x.1, 0) + (0, x.2)) := by
-      rw [map_add]
-    _ = g.toLinearMap x := congrArg g.toLinearMap hx.symm
+  have hlin : f.toLinearMap x = g.toLinearMap x := by
+    calc
+      f.toLinearMap x = f.toLinearMap ((x.1, 0) + (0, x.2)) :=
+        congrArg f.toLinearMap hx
+      _ = f.toLinearMap (x.1, 0) + f.toLinearMap (0, x.2) := by
+        rw [map_add]
+      _ = g.toLinearMap (x.1, 0) + g.toLinearMap (0, x.2) :=
+        congrArg₂ (fun a b => a + b) hinlp hinrp
+      _ = g.toLinearMap ((x.1, 0) + (0, x.2)) := by
+        rw [map_add]
+      _ = g.toLinearMap x := congrArg g.toLinearMap hx.symm
+  exact hlin
 
 end ComoduleCat
 
