@@ -72,6 +72,7 @@ def complexModule (J : AlmostComplexStructure V) : Module ℂ V where
     simp [Module.End.mul_apply, J.apply_apply])).toRingHom
 
 /-- The defining formula for the complex action induced by an almost complex structure. -/
+@[simp]
 lemma complexModule_smul_def (J : AlmostComplexStructure V) (z : ℂ) (v : V) :
     letI := J.complexModule
     z • v = z.re • v + z.im • J v :=
@@ -144,7 +145,7 @@ lemma ofComplexModule_complexModule {V : Type*} [AddCommGroup V] [Module ℝ V]
 
 /-- Decompose a complex scalar action into its real and imaginary parts, when the real scalar
 action is the one induced by the complex scalar action. -/
-lemma complex_smul_eq_re_smul_add_im_smul_I {V : Type*}
+lemma re_smul_add_im_smul_I_eq_complex_smul {V : Type*}
     [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V] (z : ℂ) (v : V) :
     z.re • v + z.im • (Complex.I • v) = z • v := by
   conv_rhs =>
@@ -164,7 +165,7 @@ lemma complexModule_ofComplexModule_smul {V : Type*}
   have ofComplexModule_smul (w : V) : ofComplexModule V w = smul₀ Complex.I w := by
     rw [ofComplexModule_apply]
   have hdecomp : z.re • v + z.im • smul₀ Complex.I v = smul₀ z v := by
-    exact complex_smul_eq_re_smul_add_im_smul_I z v
+    exact re_smul_add_im_smul_I_eq_complex_smul z v
   letI := (ofComplexModule V).complexModule
   rw [complexModule_smul_def]
   rw [ofComplexModule_smul]
