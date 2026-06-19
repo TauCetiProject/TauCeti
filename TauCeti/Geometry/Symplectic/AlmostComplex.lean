@@ -164,7 +164,7 @@ lemma self_eq_zero (ω : SymplecticForm V) (v : V) : ω v v = 0 :=
   ω.isAlt.self_eq_zero v
 
 /-- A symplectic form is skew-symmetric in the usual additive form. -/
-lemma neg_apply_swap (ω : SymplecticForm V) (v w : V) :
+lemma neg_eq (ω : SymplecticForm V) (v w : V) :
     -ω v w = ω w v :=
   ω.isAlt.neg_eq v w
 
@@ -231,9 +231,23 @@ lemma Compatible.tames {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) : ω.Tames J :=
   (ω.tames_iff_associated_pos J).mpr h.positive
 
-lemma Compatible.apply_apply {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+lemma Compatible.invariant_apply {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) (v w : V) : ω (J v) (J w) = ω v w :=
   (ω.invariant_iff J).mp h.invariant v w
+
+/-- For a compatible pair, the associated bilinear form is symmetric pointwise. -/
+lemma Compatible.associatedBilinForm_apply_swap
+    {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    (h : ω.Compatible J) (v w : V) : ω v (J w) = ω w (J v) := by
+  calc
+    ω v (J w) = -ω (J w) v := by rw [ω.neg_eq]
+    _ = ω w (J v) := by simpa using h.invariant_apply w (J v)
+
+/-- For a compatible pair, the associated bilinear form `ω(·, J ·)` is symmetric. -/
+lemma Compatible.associatedBilinForm_isSymm
+    {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    (h : ω.Compatible J) : (ω.associatedBilinForm J).IsSymm :=
+  ⟨fun v w => h.associatedBilinForm_apply_swap v w⟩
 
 lemma Compatible.associated_pos {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) {v : V} (hv : v ≠ 0) : 0 < ω v (J v) :=
