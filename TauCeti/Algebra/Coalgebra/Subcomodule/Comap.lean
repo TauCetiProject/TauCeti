@@ -122,7 +122,8 @@ private theorem rTensor_mkQ_map_subtype {N₁ : Type x} [AddCommGroup N₁] [Mod
   | add x y hx hy =>
       simp [hx, hy]
 
-private theorem comap_coact_mem (f : Comodule.Hom R C M N) (B : Subcomodule R C N)
+private theorem coact_mem_range_comap_toLinearMap
+    (f : Comodule.Hom R C M N) (B : Subcomodule R C N)
     {m : M} (hm : m ∈ B.toSubmodule.comap f.toLinearMap) :
     Comodule.coact (R := R) (C := C) (M := M) m ∈
       LinearMap.range
@@ -131,24 +132,31 @@ private theorem comap_coact_mem (f : Comodule.Hom R C M N) (B : Subcomodule R C 
   letI : AddCommGroup C := Module.addCommMonoidToAddCommGroup R (M := C)
   letI : AddCommGroup M := Module.addCommMonoidToAddCommGroup R (M := M)
   letI : AddCommGroup N := Module.addCommMonoidToAddCommGroup R (M := N)
-  let f' : M →ₗ[R] N :=
-    { toFun := f
+  let fLinear : M →ₗ[R] N :=
+    { toFun := f.toLinearMap
       map_add' := f.toLinearMap.map_add
       map_smul' := f.toLinearMap.map_smul }
-  have hf' : f' = f.toLinearMap := by
+  have hfLinear : fLinear = f.toLinearMap := by
     ext m
     rfl
   refine tensor_mem_range_comap (R := R) (C := C) (M₁ := M) (N₁ := N)
-    B.toSubmodule f' ?_
+    B.toSubmodule fLinear ?_
   rw [LinearMap.rTensor_comp_apply]
   simp only [LinearMap.rTensor_def]
-  rw [hf']
-  rw [Comodule.Hom.map_coact_apply f m]
+  rw [hfLinear, Comodule.Hom.map_coact_apply f m]
+  change LinearMap.rTensor C B.toSubmodule.mkQ
+    (Comodule.coact (R := R) (C := C) (M := N) (f.toLinearMap m)) = 0
   rcases B.coact_mem hm with ⟨t, ht⟩
-  rw [← LinearMap.rTensor_def]
-  rw [← Comodule.Hom.coe_toLinearMap f]
   rw [← ht]
   exact rTensor_mkQ_map_subtype (R := R) (C := C) (N₁ := N) B.toSubmodule t
+
+private theorem comap_coact_mem (f : Comodule.Hom R C M N) (B : Subcomodule R C N)
+    {m : M} (hm : m ∈ B.toSubmodule.comap f.toLinearMap) :
+    Comodule.coact (R := R) (C := C) (M := M) m ∈
+      LinearMap.range
+        (TensorProduct.map (B.toSubmodule.comap f.toLinearMap).subtype
+          (LinearMap.id : C →ₗ[R] C)) :=
+  coact_mem_range_comap_toLinearMap f B hm
 
 /-- The inverse image of a subcomodule under a comodule morphism. -/
 def comap (B : Subcomodule R C N) (f : Comodule.Hom R C M N) : Subcomodule R C M where
