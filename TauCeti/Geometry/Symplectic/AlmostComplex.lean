@@ -21,6 +21,7 @@ on tangent fibers rather than restating the linear algebra.
 ## Main declarations
 
 * `TauCeti.AlmostComplexStructure`: a real-linear endomorphism `J` with `J^2 = -1`.
+* `TauCeti.IsComplexLinearMap`: a real-linear map intertwining two almost complex structures.
 * `TauCeti.SymplecticForm`: an alternating, nondegenerate real bilinear form.
 * `TauCeti.SymplecticForm.Tames`: the positivity condition `0 < ω v (J v)` for `v ≠ 0`.
 * `TauCeti.SymplecticForm.Compatible`: `J`-invariance plus positivity of `ω(·, J ·)`.
@@ -36,7 +37,7 @@ namespace TauCeti
 
 open LinearMap
 
-variable {V W : Type*}
+variable {V W X : Type*}
 
 /-- A pointwise almost complex structure is a real-linear endomorphism whose square is `-1`.
 
@@ -138,6 +139,54 @@ lemma product_apply (v : V × V) :
     product V v = (-v.2, v.1) := rfl
 
 end AlmostComplexStructure
+
+section ComplexLinearMap
+
+variable [AddCommGroup V] [Module ℝ V]
+variable [AddCommGroup W] [Module ℝ W]
+variable [AddCommGroup X] [Module ℝ X]
+
+/-- A real-linear map is complex-linear with respect to two fixed pointwise
+almost complex structures if it intertwines them. -/
+def IsComplexLinearMap (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W)
+    (F : V →ₗ[ℝ] W) : Prop :=
+  F.comp J.toLinearMap = J'.toLinearMap.comp F
+
+/-- Rewrite complex-linearity of a real-linear map as the pointwise equation
+`F (J v) = J' (F v)`. -/
+lemma isComplexLinearMap_iff_apply (J : AlmostComplexStructure V)
+    (J' : AlmostComplexStructure W) (F : V →ₗ[ℝ] W) :
+    IsComplexLinearMap J J' F ↔ ∀ v, F (J v) = J' (F v) :=
+  LinearMap.ext_iff
+
+/-- The zero map is complex-linear for any source and target almost complex structures. -/
+@[simp]
+lemma isComplexLinearMap_zero (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W) :
+    IsComplexLinearMap J J' (0 : V →ₗ[ℝ] W) := by
+  rw [isComplexLinearMap_iff_apply]
+  intro v
+  simp
+
+/-- The identity map is complex-linear with respect to the same almost complex structure. -/
+@[simp]
+lemma isComplexLinearMap_id (J : AlmostComplexStructure V) :
+    IsComplexLinearMap J J (LinearMap.id : V →ₗ[ℝ] V) := by
+  rw [isComplexLinearMap_iff_apply]
+  intro v
+  simp [LinearMap.id_apply]
+
+/-- Complex-linear maps are closed under composition. -/
+lemma IsComplexLinearMap.comp {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
+    {J'' : AlmostComplexStructure X} {F : V →ₗ[ℝ] W} {G : W →ₗ[ℝ] X}
+    (hG : IsComplexLinearMap J' J'' G) (hF : IsComplexLinearMap J J' F) :
+    IsComplexLinearMap J J'' (G.comp F) := by
+  rw [isComplexLinearMap_iff_apply] at hF hG ⊢
+  intro v
+  calc
+    G (F (J v)) = G (J' (F v)) := by rw [hF v]
+    _ = J'' (G (F v)) := hG (F v)
+
+end ComplexLinearMap
 
 /-- A symplectic form on a real module is an alternating, nondegenerate bilinear form.
 
