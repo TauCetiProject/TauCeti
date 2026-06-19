@@ -54,6 +54,11 @@ private lemma module_compHom_smul_def {R S M : Type*} [Semiring R] [Semiring S]
     s • m = f s • m :=
   rfl
 
+private lemma liftAux_toRingHom_apply (J : AlmostComplexStructure V)
+    (hJ : J.toLinearMap * J.toLinearMap = -1) (z : ℂ) (v : V) :
+    ((Complex.liftAux J.toLinearMap hJ).toRingHom z) v = z.re • v + z.im • J v := by
+  exact congrArg (fun f : Module.End ℝ V => f v) (Complex.liftAux_apply J.toLinearMap hJ z)
+
 /-- The complex vector space structure on a real module `V` induced by an almost complex
 structure `J`: the scalar `a + b·i` acts as `a • v + b • J v`.
 
@@ -73,11 +78,9 @@ lemma complexModule_smul_def (J : AlmostComplexStructure V) (z : ℂ) (v : V) :
   by
   letI := J.complexModule
   rw [module_compHom_smul_def, Module.End.smul_def]
-  change (Complex.liftAux J.toLinearMap (by
+  exact liftAux_toRingHom_apply J (by
     ext v
-    simp [Module.End.mul_apply, J.apply_apply]) z) v = z.re • v + z.im • J v
-  rw [Complex.liftAux_apply]
-  rfl
+    simp [Module.End.mul_apply, J.apply_apply]) z v
 
 /-- In the induced complex structure, multiplication by `i` is `J`. -/
 @[simp]
