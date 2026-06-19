@@ -328,61 +328,46 @@ lemma IsJHolomorphicAt.add {f g : V → W} {x : V}
     (hf : IsJHolomorphicAt J J' f x) (hg : IsJHolomorphicAt J J' g x) :
     IsJHolomorphicAt J J' (f + g) x := by
   refine ⟨hf.choose + hg.choose, hf.hasFDerivAt.add hg.hasFDerivAt, ?_⟩
-  have hF : IsComplexLinearMap J J' hf.choose.toLinearMap := hf.derivative_isComplexLinear
-  have hG : IsComplexLinearMap J J' hg.choose.toLinearMap := hg.derivative_isComplexLinear
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps, ContinuousLinearMap.toLinearMap_add]
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF hG
-  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).add_mem hF hG
+  rw [ContinuousLinearMap.toLinearMap_add]
+  exact hf.derivative_isComplexLinear.add hg.derivative_isComplexLinear
 
 /-- The pointwise negation of a `J`-holomorphic map is `J`-holomorphic. -/
 lemma IsJHolomorphicAt.neg {f : V → W} {x : V} (hf : IsJHolomorphicAt J J' f x) :
     IsJHolomorphicAt J J' (-f) x := by
   refine ⟨-hf.choose, hf.hasFDerivAt.neg, ?_⟩
-  have hF : IsComplexLinearMap J J' hf.choose.toLinearMap := hf.derivative_isComplexLinear
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps, ContinuousLinearMap.toLinearMap_neg]
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF
-  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).neg_mem hF
+  rw [ContinuousLinearMap.toLinearMap_neg]
+  exact hf.derivative_isComplexLinear.neg
 
 /-- The pointwise difference of two `J`-holomorphic maps is `J`-holomorphic. -/
 lemma IsJHolomorphicAt.sub {f g : V → W} {x : V}
     (hf : IsJHolomorphicAt J J' f x) (hg : IsJHolomorphicAt J J' g x) :
     IsJHolomorphicAt J J' (f - g) x := by
   refine ⟨hf.choose - hg.choose, hf.hasFDerivAt.sub hg.hasFDerivAt, ?_⟩
-  have hF : IsComplexLinearMap J J' hf.choose.toLinearMap := hf.derivative_isComplexLinear
-  have hG : IsComplexLinearMap J J' hg.choose.toLinearMap := hg.derivative_isComplexLinear
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps, ContinuousLinearMap.toLinearMap_sub]
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF hG
-  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).sub_mem hF hG
+  rw [ContinuousLinearMap.toLinearMap_sub]
+  exact hf.derivative_isComplexLinear.sub hg.derivative_isComplexLinear
 
 /-- A real scalar multiple of a `J`-holomorphic map is `J`-holomorphic. -/
 lemma IsJHolomorphicAt.const_smul {f : V → W} {x : V} (hf : IsJHolomorphicAt J J' f x)
     (c : ℝ) : IsJHolomorphicAt J J' (c • f) x := by
   refine ⟨c • hf.choose, hf.hasFDerivAt.const_smul c, ?_⟩
-  have hF : IsComplexLinearMap J J' hf.choose.toLinearMap := hf.derivative_isComplexLinear
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps, ContinuousLinearMap.toLinearMap_smul]
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF
-  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).smul_mem c hF
+  rw [ContinuousLinearMap.toLinearMap_smul]
+  exact hf.derivative_isComplexLinear.smul c
 
 /-- The pointwise sum of two maps `J`-holomorphic within a set is `J`-holomorphic within it. -/
 lemma IsJHolomorphicWithinAt.add {f g : V → W} {s : Set V} {x : V}
     (hf : IsJHolomorphicWithinAt J J' f s x) (hg : IsJHolomorphicWithinAt J J' g s x) :
     IsJHolomorphicWithinAt J J' (f + g) s x := by
   refine ⟨hf.choose + hg.choose, hf.hasFDerivWithinAt.add hg.hasFDerivWithinAt, ?_⟩
-  have hF : IsComplexLinearMap J J' hf.choose.toLinearMap := hf.derivative_isComplexLinear
-  have hG : IsComplexLinearMap J J' hg.choose.toLinearMap := hg.derivative_isComplexLinear
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps, ContinuousLinearMap.toLinearMap_add]
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF hG
-  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).add_mem hF hG
+  rw [ContinuousLinearMap.toLinearMap_add]
+  exact hf.derivative_isComplexLinear.add hg.derivative_isComplexLinear
 
 /-- The pointwise negation of a map `J`-holomorphic within a set is `J`-holomorphic within it. -/
 lemma IsJHolomorphicWithinAt.neg {f : V → W} {s : Set V} {x : V}
     (hf : IsJHolomorphicWithinAt J J' f s x) :
     IsJHolomorphicWithinAt J J' (-f) s x := by
   refine ⟨-hf.choose, hf.hasFDerivWithinAt.neg, ?_⟩
-  have hF : IsComplexLinearMap J J' hf.choose.toLinearMap := hf.derivative_isComplexLinear
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps, ContinuousLinearMap.toLinearMap_neg]
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF
-  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).neg_mem hF
+  rw [ContinuousLinearMap.toLinearMap_neg]
+  exact hf.derivative_isComplexLinear.neg
 
 /-- The pointwise difference of two maps `J`-holomorphic within a set is `J`-holomorphic
 within it. -/
@@ -390,11 +375,8 @@ lemma IsJHolomorphicWithinAt.sub {f g : V → W} {s : Set V} {x : V}
     (hf : IsJHolomorphicWithinAt J J' f s x) (hg : IsJHolomorphicWithinAt J J' g s x) :
     IsJHolomorphicWithinAt J J' (f - g) s x := by
   refine ⟨hf.choose - hg.choose, hf.hasFDerivWithinAt.sub hg.hasFDerivWithinAt, ?_⟩
-  have hF : IsComplexLinearMap J J' hf.choose.toLinearMap := hf.derivative_isComplexLinear
-  have hG : IsComplexLinearMap J J' hg.choose.toLinearMap := hg.derivative_isComplexLinear
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps, ContinuousLinearMap.toLinearMap_sub]
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF hG
-  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).sub_mem hF hG
+  rw [ContinuousLinearMap.toLinearMap_sub]
+  exact hf.derivative_isComplexLinear.sub hg.derivative_isComplexLinear
 
 /-- A real scalar multiple of a map `J`-holomorphic within a set is `J`-holomorphic within
 it. -/
@@ -402,10 +384,8 @@ lemma IsJHolomorphicWithinAt.const_smul {f : V → W} {s : Set V} {x : V}
     (hf : IsJHolomorphicWithinAt J J' f s x) (c : ℝ) :
     IsJHolomorphicWithinAt J J' (c • f) s x := by
   refine ⟨c • hf.choose, hf.hasFDerivWithinAt.const_smul c, ?_⟩
-  have hF : IsComplexLinearMap J J' hf.choose.toLinearMap := hf.derivative_isComplexLinear
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps, ContinuousLinearMap.toLinearMap_smul]
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF
-  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).smul_mem c hF
+  rw [ContinuousLinearMap.toLinearMap_smul]
+  exact hf.derivative_isComplexLinear.smul c
 
 /-- The pointwise sum of two maps `J`-holomorphic on a set is `J`-holomorphic on it. -/
 lemma IsJHolomorphicOn.add {f g : V → W} {s : Set V}
