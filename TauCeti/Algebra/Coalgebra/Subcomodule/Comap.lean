@@ -250,7 +250,7 @@ theorem le_ker_iff {f : Hom R C M N} {A : Subcomodule R C M} :
   · intro h m hm
     exact mem_ker.mpr (h hm)
 
-/-- A morphism vanishing on a subcomodule sends every element of it into the kernel. -/
+/-- An element whose image under a comodule morphism is zero belongs to its kernel. -/
 theorem mem_ker_of_apply_eq_zero {f : Hom R C M N} {m : M} (hm : f m = 0) :
     m ∈ ker (R := R) (C := C) f :=
   mem_ker.mpr hm
