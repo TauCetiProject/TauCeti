@@ -6,6 +6,7 @@ import Mathlib.Data.Real.Basic
 import Mathlib.LinearAlgebra.BilinearForm.Hom
 import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.LinearAlgebra.QuadraticForm.Basic
+import TauCeti.LinearAlgebra.ComplexLinearPart
 
 /-!
 # Almost complex structures and compatible symplectic forms
@@ -159,6 +160,20 @@ lemma isComplexLinearMap_iff_apply (J : AlmostComplexStructure V)
     IsComplexLinearMap J J' F ↔ ∀ v, F (J v) = J' (F v) :=
   LinearMap.ext_iff
 
+/-- The almost-complex wrapper predicate is the raw-linear complex-linearity predicate applied
+to the underlying linear maps. -/
+lemma isComplexLinearMap_iff_isComplexLinear (J : AlmostComplexStructure V)
+    (J' : AlmostComplexStructure W) (F : V →ₗ[ℝ] W) :
+    IsComplexLinearMap J J' F ↔ IsComplexLinear J.toLinearMap J'.toLinearMap F :=
+  Iff.rfl
+
+/-- Complex-linearity for almost complex structures is membership in the existing submodule of
+raw-linear complex-linear maps. -/
+lemma isComplexLinearMap_iff_mem_complexLinearMaps (J : AlmostComplexStructure V)
+    (J' : AlmostComplexStructure W) (F : V →ₗ[ℝ] W) :
+    IsComplexLinearMap J J' F ↔ F ∈ complexLinearMaps J.toLinearMap J'.toLinearMap := by
+  rw [isComplexLinearMap_iff_isComplexLinear, mem_complexLinearMaps]
+
 /-- The zero map is complex-linear for any source and target almost complex structures. -/
 @[simp]
 lemma isComplexLinearMap_zero (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W) :
@@ -190,33 +205,29 @@ lemma IsComplexLinearMap.comp {J : AlmostComplexStructure V} {J' : AlmostComplex
 lemma IsComplexLinearMap.add {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {F G : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F) (hG : IsComplexLinearMap J J' G) :
     IsComplexLinearMap J J' (F + G) := by
-  rw [isComplexLinearMap_iff_apply] at hF hG ⊢
-  intro v
-  rw [LinearMap.add_apply, LinearMap.add_apply, hF v, hG v, map_add]
+  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF hG ⊢
+  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).add_mem hF hG
 
 /-- Complex-linear maps are closed under negation. -/
 lemma IsComplexLinearMap.neg {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {F : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F) :
     IsComplexLinearMap J J' (-F) := by
-  rw [isComplexLinearMap_iff_apply] at hF ⊢
-  intro v
-  rw [LinearMap.neg_apply, LinearMap.neg_apply, hF v, map_neg]
+  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF ⊢
+  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).neg_mem hF
 
 /-- Complex-linear maps are closed under subtraction. -/
 lemma IsComplexLinearMap.sub {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {F G : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F) (hG : IsComplexLinearMap J J' G) :
     IsComplexLinearMap J J' (F - G) := by
-  rw [isComplexLinearMap_iff_apply] at hF hG ⊢
-  intro v
-  rw [LinearMap.sub_apply, LinearMap.sub_apply, hF v, hG v, map_sub]
+  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF hG ⊢
+  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).sub_mem hF hG
 
 /-- Complex-linear maps are closed under multiplication by a real scalar. -/
 lemma IsComplexLinearMap.smul {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {F : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F) (c : ℝ) :
     IsComplexLinearMap J J' (c • F) := by
-  rw [isComplexLinearMap_iff_apply] at hF ⊢
-  intro v
-  rw [LinearMap.smul_apply, LinearMap.smul_apply, hF v, map_smul]
+  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF ⊢
+  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).smul_mem c hF
 
 end ComplexLinearMap
 
