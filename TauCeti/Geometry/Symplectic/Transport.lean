@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Algebra.Module.Equiv.Basic
 import TauCeti.Geometry.Symplectic.AlmostComplex
+import TauCeti.LinearAlgebra.ComplexLinearPart
 
 /-!
 # Transporting almost complex structures along linear equivalences
