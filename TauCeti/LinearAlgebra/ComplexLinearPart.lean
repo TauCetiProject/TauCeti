@@ -235,6 +235,7 @@ theorem complexAntilinearPart_apply (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W)
   simp [complexAntilinearPart]
 
 /-- The canonical decomposition `∂F + ∂̄F = F`. -/
+@[simp]
 theorem complexLinearPart_add_complexAntilinearPart (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W)
     (F : V →ₗ[ℝ] W) :
     complexLinearPart J J' F + complexAntilinearPart J J' F = F := by
