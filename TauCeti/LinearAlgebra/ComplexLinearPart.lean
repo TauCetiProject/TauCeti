@@ -114,9 +114,6 @@ theorem isComplexAntilinear_of_apply {F : V →ₗ[ℝ] W} (h : ∀ v, F (J v) =
 theorem isComplexLinear_id : IsComplexLinear J J (LinearMap.id) := by
   simp [IsComplexLinear]
 
-/-- Any endomorphism is complex linear with respect to itself. -/
-theorem isComplexLinear_self : IsComplexLinear J J J := rfl
-
 /-- The zero map is complex linear. -/
 theorem isComplexLinear_zero : IsComplexLinear J J' (0 : V →ₗ[ℝ] W) := by
   simp [IsComplexLinear]
@@ -224,11 +221,15 @@ theorem complexAntilinearPart_def (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (
     complexAntilinearPart J J' F = (2⁻¹ : ℝ) • (F + J' ∘ₗ F ∘ₗ J) :=
   rfl
 
+/-- The pointwise formula for the complex-linear part:
+`∂F v = 1/2 • (F v - J' (F (J v)))`. -/
 @[simp]
 theorem complexLinearPart_apply (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F : V →ₗ[ℝ] W) (v : V) :
     complexLinearPart J J' F v = (2⁻¹ : ℝ) • (F v - J' (F (J v))) := by
   simp [complexLinearPart]
 
+/-- The pointwise formula for the complex-antilinear part:
+`∂̄F v = 1/2 • (F v + J' (F (J v)))`. -/
 @[simp]
 theorem complexAntilinearPart_apply (J : V →ₗ[ℝ] V) (J' : W →ₗ[ℝ] W) (F : V →ₗ[ℝ] W) (v : V) :
     complexAntilinearPart J J' F v = (2⁻¹ : ℝ) • (F v + J' (F (J v))) := by
