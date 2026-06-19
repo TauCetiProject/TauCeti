@@ -3,8 +3,6 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Algebra.Category.CommHopfAlgCat
-import Mathlib.Algebra.Category.HopfAlgCat.Basic
-import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 import TauCeti.Algebra.AlgebraicGroup.HopfMap
 import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
 
@@ -50,14 +48,6 @@ namespace CommHopfAlgCat
 
 variable {R : Type u} [CommRing R]
 
-/-- Turn a morphism in `CommHopfAlgCat` back into a bialgebra morphism.
-
-This is a thin wrapper around Mathlib's `CommHopfAlgCat.Hom.hom` kept so the points-functor
-API below (and its downstream consumers) can refer to the underlying bialgebra morphism under
-a stable name. -/
-abbrev toBialgHom {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K) : H →ₐc[R] K :=
-  φ.hom
-
 /-- A morphism of coordinate commutative Hopf algebras induces a natural transformation
 between their group-valued points functors, contravariantly in the coordinate algebra.
 
@@ -67,25 +57,25 @@ noncomputable def mapPointsFunctor {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K) :
     HopfAlgebra.pointsFunctor (R := R) (H := K) ⟶
       HopfAlgebra.pointsFunctor (R := R) (H := H) where
   app A := GrpCat.ofHom
-    (AlgHom.mapDomain (H₁ := H) (H₂ := K) (A := A) (toBialgHom φ))
+    (AlgHom.mapDomain (H₁ := H) (H₂ := K) (A := A) φ.hom)
   naturality {A B} ψ := by
     simp only [HopfAlgebra.pointsFunctor_map, HopfAlgebra.mapPoints]
-    exact GrpCat.hom_ext (AlgHom.mapValue_mapDomain (toBialgHom φ) ψ.hom)
+    exact GrpCat.hom_ext (AlgHom.mapValue_mapDomain φ.hom ψ.hom)
 
 /-- On points, `mapPointsFunctor φ` is pre-composition with `φ`. -/
 @[simp]
 lemma mapPointsFunctor_app_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
     (A : CommAlgCat.{w} R) (f : HopfAlgebra.points (R := R) (H := K) A) :
     (mapPointsFunctor φ).app A f =
-      toConv (f.ofConv.comp (toBialgHom φ : H →ₐ[R] K)) := by
-  exact AlgHom.mapDomain_apply (A := A) (toBialgHom φ) f
+      toConv (f.ofConv.comp (φ.hom : H →ₐ[R] K)) := by
+  exact AlgHom.mapDomain_apply (A := A) φ.hom f
 
 /-- Pointwise form of `mapPointsFunctor_app_apply`. -/
 @[simp]
 lemma mapPointsFunctor_app_apply_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
     (A : CommAlgCat.{w} R) (f : HopfAlgebra.points (R := R) (H := K) A) (h : H) :
-    (((mapPointsFunctor φ).app A f).ofConv) h = f.ofConv (toBialgHom φ h) := by
-  exact AlgHom.mapDomain_apply_apply (A := A) (toBialgHom φ) f h
+    (((mapPointsFunctor φ).app A f).ofConv) h = f.ofConv (φ.hom h) := by
+  exact AlgHom.mapDomain_apply_apply (A := A) φ.hom f h
 
 /-- `mapPointsFunctor` sends the identity coordinate morphism to the identity natural
 transformation. -/
@@ -138,20 +128,23 @@ lemma pointsFunctor_map_app_apply_apply {H K : (CommHopfAlgCat.{v} R)ᵒᵖ}
     (φ : H ⟶ K) (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := H.unop) A) (h : K.unop) :
     ((((pointsFunctor (R := R)).map φ).app A f).ofConv) h =
-      f.ofConv (toBialgHom φ.unop h) := by
+      f.ofConv (φ.unop.hom h) := by
   rw [pointsFunctor_map]
   exact mapPointsFunctor_app_apply_apply (R := R) φ.unop A f h
 
 end CommHopfAlgCat
 
-/-!
-### Deprecated declarations
+-- Deprecated declarations.
+--
+-- The declarations below were part of Tau Ceti's hand-rolled `CommHopfAlgCat`, which was a
+-- `CategoryTheory.ObjectProperty.FullSubcategory` of `HopfAlgCat R`. The category is now
+-- Mathlib's bundled `CommHopfAlgCat`, so the Tau Ceti-local surface is kept here only as
+-- deprecated wrappers forwarding to Mathlib's bundled category and its lemmas, so that
+-- existing references continue to resolve.
 
-The declarations below were part of Tau Ceti's hand-rolled `CommHopfAlgCat`, defined as a
-`CategoryTheory.ObjectProperty.FullSubcategory` of `HopfAlgCat R`. They are superseded by
-Mathlib's bundled `CommHopfAlgCat` and kept here only as deprecated wrappers so existing
-references continue to compile.
--/
+-- Deprecated: the Tau Ceti-local category alias forwards to Mathlib's bundled category.
+@[deprecated _root_.CommHopfAlgCat (since := "2026-06-19")]
+abbrev CommHopfAlgCat.{u', v'} (R : Type u') [CommRing R] : Type _ := _root_.CommHopfAlgCat.{v'} R
 
 namespace CommHopfAlgCat
 
@@ -160,42 +153,87 @@ variable {R : Type u} [CommRing R]
 /-- Deprecated. The underlying ring of an object of `CommHopfAlgCat R` is commutative; this is
 now provided directly by Mathlib's bundled `CommHopfAlgCat`. -/
 @[deprecated "Provided by Mathlib's bundled CommHopfAlgCat" (since := "2026-06-19")]
-abbrev commRing (H : CommHopfAlgCat.{v} R) : CommRing H := inferInstance
+abbrev commRing (H : CommHopfAlgCat.{u, v} R) : CommRing H := inferInstance
 
 /-- Deprecated. The underlying type of an object of `CommHopfAlgCat R` is a Hopf algebra; this
 is now provided directly by Mathlib's bundled `CommHopfAlgCat`. -/
 @[deprecated "Provided by Mathlib's bundled CommHopfAlgCat" (since := "2026-06-19")]
-abbrev hopfAlgebra (H : CommHopfAlgCat.{v} R) : _root_.HopfAlgebra R H := inferInstance
+abbrev hopfAlgebra (H : CommHopfAlgCat.{u, v} R) : _root_.HopfAlgebra R H := inferInstance
 
-@[deprecated CommHopfAlgCat.hom_id (since := "2026-06-19")]
-lemma toBialgHom_id {H : CommHopfAlgCat.{v} R} :
-    toBialgHom (𝟙 H : H ⟶ H) = BialgHom.id R H :=
-  rfl
+/-- Deprecated: use `φ.hom`. Turn a morphism in `CommHopfAlgCat` back into a bialgebra
+morphism; this is Mathlib's `CommHopfAlgCat.Hom.hom`. -/
+@[deprecated _root_.CommHopfAlgCat.Hom.hom (since := "2026-06-19")]
+abbrev toBialgHom {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) : H →ₐc[R] K :=
+  φ.hom
 
-@[deprecated CommHopfAlgCat.hom_comp (since := "2026-06-19")]
-lemma toBialgHom_comp {H K L : CommHopfAlgCat.{v} R} (φ : H ⟶ K) (ψ : K ⟶ L) :
+variable (R) in
+/-- Deprecated: use `CommHopfAlgCat.of`. Build a bundled commutative Hopf algebra from the
+usual unbundled typeclasses. -/
+@[deprecated _root_.CommHopfAlgCat.of (since := "2026-06-19")]
+abbrev of (H : Type v) [CommRing H] [_root_.HopfAlgebra R H] : CommHopfAlgCat.{u, v} R :=
+  _root_.CommHopfAlgCat.of R H
+
+/-- Deprecated: use `CommHopfAlgCat.ofHom`. Typecheck a bialgebra morphism as a morphism in
+`CommHopfAlgCat`. -/
+@[deprecated _root_.CommHopfAlgCat.ofHom (since := "2026-06-19")]
+abbrev ofHom {H K : Type v} [CommRing H] [CommRing K]
+    [_root_.HopfAlgebra R H] [_root_.HopfAlgebra R K] (φ : H →ₐc[R] K) :
+    of R H ⟶ of R K :=
+  _root_.CommHopfAlgCat.ofHom φ
+
+/-- Deprecated: `toBialgHom (𝟙 H) = BialgHom.id R H`; use `CommHopfAlgCat.hom_id`. -/
+@[deprecated _root_.CommHopfAlgCat.hom_id (since := "2026-06-19")]
+lemma toBialgHom_id {H : CommHopfAlgCat.{u, v} R} :
+    toBialgHom (𝟙 H : H ⟶ H) = BialgHom.id R H := by
+  ext x
+  exact DFunLike.congr_fun (_root_.CommHopfAlgCat.hom_id (A := H)) x
+
+/-- Deprecated: `toBialgHom (φ ≫ ψ) = (toBialgHom ψ).comp (toBialgHom φ)`; use
+`CommHopfAlgCat.hom_comp`. -/
+@[deprecated _root_.CommHopfAlgCat.hom_comp (since := "2026-06-19")]
+lemma toBialgHom_comp {H K L : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) (ψ : K ⟶ L) :
     toBialgHom (φ ≫ ψ) = (toBialgHom ψ).comp (toBialgHom φ) :=
-  rfl
+  _root_.CommHopfAlgCat.hom_comp φ ψ
 
-@[deprecated CommHopfAlgCat.ofHom_hom (since := "2026-06-19")]
-lemma ofHom_toBialgHom {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K) :
+/-- Deprecated: `ofHom (toBialgHom φ) = φ`; use `CommHopfAlgCat.ofHom_hom`. -/
+@[deprecated _root_.CommHopfAlgCat.ofHom_hom (since := "2026-06-19")]
+lemma ofHom_toBialgHom {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
     _root_.CommHopfAlgCat.ofHom (toBialgHom φ) = φ :=
-  rfl
+  _root_.CommHopfAlgCat.ofHom_hom φ
 
-@[deprecated CommHopfAlgCat.hom_ofHom (since := "2026-06-19")]
+/-- Deprecated: `toBialgHom (ofHom φ) = φ`; use `CommHopfAlgCat.hom_ofHom`. -/
+@[deprecated _root_.CommHopfAlgCat.hom_ofHom (since := "2026-06-19")]
 lemma toBialgHom_ofHom {H K : Type v} [CommRing H] [CommRing K]
     [_root_.HopfAlgebra R H] [_root_.HopfAlgebra R K] (φ : H →ₐc[R] K) :
     toBialgHom (_root_.CommHopfAlgCat.ofHom (R := R) φ) = φ :=
-  rfl
+  _root_.CommHopfAlgCat.hom_ofHom φ
+
+/-- Deprecated: use `CommHopfAlgCat.hom_ext`. Two morphisms of commutative Hopf algebras are
+equal when their underlying bialgebra morphisms are equal. -/
+@[deprecated _root_.CommHopfAlgCat.hom_ext (since := "2026-06-19")]
+lemma hom_ext {H K : CommHopfAlgCat.{u, v} R} {φ ψ : H ⟶ K}
+    (h : φ.hom = ψ.hom) : φ = ψ :=
+  _root_.CommHopfAlgCat.hom_ext h
+
+/-- Deprecated: use `CommHopfAlgCat.hasForgetToCommBialgCat`. The forgetful functor from
+commutative Hopf algebras to commutative bialgebras. -/
+@[deprecated _root_.CommHopfAlgCat.hasForgetToCommBialgCat (since := "2026-06-19")]
+abbrev hasForgetToCommBialgCat :
+    HasForget₂ (CommHopfAlgCat.{u, v} R) (CommBialgCat.{v} R) :=
+  _root_.CommHopfAlgCat.hasForgetToCommBialgCat
+
+/-- Deprecated: use `CommHopfAlgCat.forget₂_commBialgCat_obj`. -/
+@[deprecated _root_.CommHopfAlgCat.forget₂_commBialgCat_obj (since := "2026-06-19")]
+lemma forget₂_commBialgCat_obj (H : CommHopfAlgCat.{u, v} R) :
+    (forget₂ (CommHopfAlgCat.{u, v} R) (CommBialgCat.{v} R)).obj H = CommBialgCat.of R H :=
+  _root_.CommHopfAlgCat.forget₂_commBialgCat_obj H
+
+/-- Deprecated: use `CommHopfAlgCat.forget₂_commBialgCat_map`. -/
+@[deprecated _root_.CommHopfAlgCat.forget₂_commBialgCat_map (since := "2026-06-19")]
+lemma forget₂_commBialgCat_map {H K : CommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
+    (forget₂ (CommHopfAlgCat.{u, v} R) (CommBialgCat.{v} R)).map φ = CommBialgCat.ofHom φ.hom :=
+  _root_.CommHopfAlgCat.forget₂_commBialgCat_map φ
 
 end CommHopfAlgCat
-
-/-- Deprecated. The object property on `HopfAlgCat R` selecting commutative Hopf algebras. It
-backed Tau Ceti's hand-rolled `CommHopfAlgCat` as a `FullSubcategory` of `HopfAlgCat R`; the
-category is now Mathlib's bundled `CommHopfAlgCat`, so this property is unused. -/
-@[deprecated "Unused after rebasing onto mathlib's bundled CommHopfAlgCat" (since := "2026-06-19")]
-def commHopfAlgProperty (R : Type u) [CommRing R] :
-    ObjectProperty (_root_.HopfAlgCat.{v} R) :=
-  fun H => ∀ x y : H, x * y = y * x
 
 end TauCeti
