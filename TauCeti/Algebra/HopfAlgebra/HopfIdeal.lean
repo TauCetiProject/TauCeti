@@ -3,7 +3,9 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.LinearAlgebra.DFinsupp
+import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import Mathlib.RingTheory.HopfAlgebra.Basic
+import Mathlib.RingTheory.HopfAlgebra.Quotient
 import Mathlib.RingTheory.Ideal.Maps
 
 /-!
@@ -27,6 +29,9 @@ must satisfy exactly these Hopf-ideal closure conditions.
 * `I ⊔ J : HopfIdeal R H`: the sum of two Hopf ideals.
 * `sSup S : HopfIdeal R H` and `⨆ i, I i : HopfIdeal R H`: arbitrary suprema of Hopf ideals,
   with underlying ideal the supremum of the underlying ideals.
+* `TauCeti.HopfIdeal.instIsCoideal`, `TauCeti.HopfIdeal.instIsHopfIdeal`: over a commutative
+  ring, the bridge instances exhibiting `I.toIdeal` as a coideal and a Hopf ideal in Mathlib's
+  sense, so that Mathlib's quotient coalgebra/bialgebra/Hopf instances fire on `H ⧸ I.toIdeal`.
 
 ## References
 
@@ -189,6 +194,29 @@ theorem le_rightTensorIdeal_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
       J ≤ Ideal.map
         (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I :=
   Iff.rfl
+
+/-- TauCeti's `leftTensorIdeal I` (`I ⊗ H`), viewed as an `R`-submodule, is the range of
+`rTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeLeft_eq`. -/
+private theorem leftTensorIdeal_restrictScalars_eq_range (I : Ideal H) :
+    (leftTensorIdeal (R := R) (H := H) I).restrictScalars R =
+      LinearMap.range (LinearMap.rTensor H (I.restrictScalars R).subtype) :=
+  Ideal.map_includeLeft_eq (R := R) (A := H) (B := H) I
+
+/-- TauCeti's `rightTensorIdeal I` (`H ⊗ I`), viewed as an `R`-submodule, is the range of
+`lTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeRight_eq`. -/
+private theorem rightTensorIdeal_restrictScalars_eq_range (I : Ideal H) :
+    (rightTensorIdeal (R := R) (H := H) I).restrictScalars R =
+      LinearMap.range (LinearMap.lTensor H (I.restrictScalars R).subtype) :=
+  Ideal.map_includeRight_eq (R := R) (A := H) (B := H) I
+
+/-- The bridge to Mathlib's coideal target: TauCeti's `I ⊗ H + H ⊗ I` (a sup of ideals of
+`H ⊗[R] H`), viewed as an `R`-submodule, equals `range (lTensor …) ⊔ range (rTensor …)`. -/
+private theorem comul_mem_sup_restrictScalars_eq_range (I : Ideal H) :
+    (leftTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) I).restrictScalars R =
+      LinearMap.range (LinearMap.lTensor H (I.restrictScalars R).subtype) ⊔
+        LinearMap.range (LinearMap.rTensor H (I.restrictScalars R).subtype) := by
+  rw [Submodule.restrictScalars_sup, leftTensorIdeal_restrictScalars_eq_range,
+    rightTensorIdeal_restrictScalars_eq_range, sup_comm]
 
 end HopfIdeal
 
@@ -523,5 +551,31 @@ instance instCompleteSemilatticeSup : CompleteSemilatticeSup (HopfIdeal R H) whe
       exact hle hx⟩
 
 end HopfIdeal
+
+section Bridge
+
+variable {R : Type u} {H : Type v}
+variable [CommRing R] [Ring H] [HopfAlgebra R H]
+
+namespace HopfIdeal
+
+/-- A `HopfIdeal` gives Mathlib's coideal structure on the underlying `R`-submodule, so that
+Mathlib's quotient `Coalgebra`/`Bialgebra` instances fire on `H ⧸ I.toIdeal`. -/
+instance instIsCoideal (I : HopfIdeal R H) :
+    (I.toIdeal.restrictScalars R).IsCoideal := by
+  rw [Submodule.isCoideal_iff_comul_mem]
+  refine ⟨fun _ hx => I.counit_eq_zero hx, fun _ hx => ?_⟩
+  have := I.comul_mem hx
+  rwa [← Submodule.restrictScalars_mem R, comul_mem_sup_restrictScalars_eq_range] at this
+
+/-- A `HopfIdeal` gives Mathlib's `Ideal.IsHopfIdeal`, so that Mathlib's quotient
+`HopfAlgebra` instance fires on `H ⧸ I.toIdeal`. -/
+instance instIsHopfIdeal (I : HopfIdeal R H) : I.toIdeal.IsHopfIdeal R where
+  __ := instIsCoideal I
+  antipode_mem := fun _ hx => I.antipode_mem hx
+
+end HopfIdeal
+
+end Bridge
 
 end TauCeti

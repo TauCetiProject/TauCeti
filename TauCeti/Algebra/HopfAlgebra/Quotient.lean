@@ -2,7 +2,6 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import Mathlib.RingTheory.HopfAlgebra.Convolution
 import Mathlib.RingTheory.HopfAlgebra.Quotient
 import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -15,10 +14,11 @@ For a Hopf algebra `H` over a commutative ring `R` and a Hopf ideal `I` of `H`, 
 quotient ring `H ⧸ I` with the structure of a Hopf algebra over `R`, descending the
 comultiplication, counit and antipode from `H` (see
 `Mathlib.RingTheory.{Coalgebra,Bialgebra,HopfAlgebra}.Quotient`). Mathlib's instances fire on an
-`Ideal` once it is known to be two-sided, a coideal, and antipode-stable. This file supplies the
-**bridge** turning a `TauCeti.HopfIdeal` into those Mathlib hypotheses, so that Mathlib's
-`Coalgebra`/`Bialgebra`/`HopfAlgebra` instances apply to `H ⧸ I.toIdeal`; on top of that bridge it
-provides the part Mathlib lacks: the **universal property** `liftBialgHom` of the quotient
+`Ideal` once it is known to be two-sided, a coideal, and antipode-stable. The **bridge** turning a
+`TauCeti.HopfIdeal` into those Mathlib hypotheses lives in `TauCeti.Algebra.HopfAlgebra.HopfIdeal`
+(`HopfIdeal.instIsCoideal`, `HopfIdeal.instIsHopfIdeal`), so that Mathlib's
+`Coalgebra`/`Bialgebra`/`HopfAlgebra` instances apply to `H ⧸ I.toIdeal`. On top of that bridge this
+file provides the part Mathlib lacks: the **universal property** `liftBialgHom` of the quotient
 bialgebra.
 
 This is the Layer 3 milestone "the quotient Hopf algebra `A/I`" of the reductive-groups
@@ -29,9 +29,6 @@ the structure maps to descend.
 
 ## Main definitions
 
-* `TauCeti.HopfIdeal.instIsCoideal`, `TauCeti.HopfIdeal.instIsHopfIdeal`: the bridge instances
-  exhibiting `I.toIdeal` as a coideal and a Hopf ideal in Mathlib's sense, so that Mathlib's
-  quotient coalgebra/bialgebra/Hopf instances fire on `H ⧸ I.toIdeal`.
 * `TauCeti.HopfIdeal.liftBialgHom`: the bialgebra morphism induced from a bialgebra morphism
   which kills the Hopf ideal, together with its computation and uniqueness lemmas.
 
@@ -66,45 +63,25 @@ section Ring
 
 variable [Ring H] [HopfAlgebra R H]
 
-/-- TauCeti's `leftTensorIdeal I` (`I ⊗ H`), viewed as an `R`-submodule, is the range of
-`rTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeLeft_eq`. -/
-theorem leftTensorIdeal_restrictScalars_eq_range (I : Ideal H) :
-    (leftTensorIdeal (R := R) (H := H) I).restrictScalars R =
-      LinearMap.range (LinearMap.rTensor H (I.restrictScalars R).subtype) :=
-  Ideal.map_includeLeft_eq (R := R) (A := H) (B := H) I
-
-/-- TauCeti's `rightTensorIdeal I` (`H ⊗ I`), viewed as an `R`-submodule, is the range of
-`lTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeRight_eq`. -/
-theorem rightTensorIdeal_restrictScalars_eq_range (I : Ideal H) :
-    (rightTensorIdeal (R := R) (H := H) I).restrictScalars R =
-      LinearMap.range (LinearMap.lTensor H (I.restrictScalars R).subtype) :=
-  Ideal.map_includeRight_eq (R := R) (A := H) (B := H) I
-
-/-- The bridge: TauCeti's `I ⊗ H + H ⊗ I` (a sup of ideals of `H ⊗[R] H`), viewed as an
-`R`-submodule, equals Mathlib's coideal target `range (lTensor …) ⊔ range (rTensor …)`. -/
-theorem leftTensorIdeal_sup_eq_range (I : Ideal H) :
-    (leftTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) I).restrictScalars R =
-      LinearMap.range (LinearMap.lTensor H (I.restrictScalars R).subtype) ⊔
-        LinearMap.range (LinearMap.rTensor H (I.restrictScalars R).subtype) := by
-  rw [Submodule.restrictScalars_sup, leftTensorIdeal_restrictScalars_eq_range,
-    rightTensorIdeal_restrictScalars_eq_range, sup_comm]
-
-/-- A `HopfIdeal` gives Mathlib's coideal structure on the underlying `R`-submodule, so that
-Mathlib's quotient `Coalgebra`/`Bialgebra` instances fire on `H ⧸ I.toIdeal`. -/
-instance instIsCoideal (I : HopfIdeal R H) :
-    (I.toIdeal.restrictScalars R).IsCoideal := by
-  rw [Submodule.isCoideal_iff_comul_mem]
-  refine ⟨fun _ hx => I.counit_eq_zero hx, fun _ hx => ?_⟩
-  have := I.comul_mem hx
-  rwa [← Submodule.restrictScalars_mem R, leftTensorIdeal_sup_eq_range] at this
-
-/-- A `HopfIdeal` gives Mathlib's `Ideal.IsHopfIdeal`, so that Mathlib's quotient
-`HopfAlgebra` instance fires on `H ⧸ I.toIdeal`. -/
-instance instIsHopfIdeal (I : HopfIdeal R H) : I.toIdeal.IsHopfIdeal R where
-  __ := instIsCoideal I
-  antipode_mem := fun _ hx => I.antipode_mem hx
-
 variable (I : HopfIdeal R H)
+
+/-- Mathlib's quotient coalgebra structure on `H ⧸ I`, recovered via `inferInstance` from the
+bridge instance `HopfIdeal.instIsCoideal`. -/
+@[deprecated "Mathlib provides this quotient instance; use `inferInstance`" (since := "2026-06-19")]
+noncomputable abbrev instCoalgebraQuotient (I : HopfIdeal R H) : Coalgebra R (H ⧸ I.toIdeal) :=
+  inferInstance
+
+/-- Mathlib's quotient bialgebra structure on `H ⧸ I`, recovered via `inferInstance` from the
+bridge instance `HopfIdeal.instIsHopfIdeal`. -/
+@[deprecated "Mathlib provides this quotient instance; use `inferInstance`" (since := "2026-06-19")]
+noncomputable abbrev instBialgebraQuotient (I : HopfIdeal R H) : Bialgebra R (H ⧸ I.toIdeal) :=
+  inferInstance
+
+/-- Mathlib's quotient Hopf-algebra structure on `H ⧸ I`, recovered via `inferInstance` from
+the bridge instance `HopfIdeal.instIsHopfIdeal`. -/
+@[deprecated "Mathlib provides this quotient instance; use `inferInstance`" (since := "2026-06-19")]
+noncomputable abbrev instHopfAlgebraQuotient (I : HopfIdeal R H) : HopfAlgebra R (H ⧸ I.toIdeal) :=
+  inferInstance
 
 /-- The comultiplication of the quotient, as an `R`-algebra homomorphism descended from `H`. -/
 @[deprecated Bialgebra.Quotient.comulAlgHom (since := "2026-06-19")]
