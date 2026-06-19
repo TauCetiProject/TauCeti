@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.LinearAlgebra.Prod
+import Mathlib.LinearAlgebra.TensorProduct.Prod
 import TauCeti.Algebra.Coalgebra.ComoduleCat
 
 /-!
@@ -22,7 +23,7 @@ reductive-groups roadmap.
 * `TauCeti.Comodule.Prod`: the direct-sum comodule structure on `M × N`.
 * `TauCeti.Comodule.prodFst`, `prodSnd`, `prodInl`, `prodInr`: the four canonical comodule
   morphisms.
-* `TauCeti.ComoduleCat.prod`: the bundled product comodule.
+* `TauCeti.ComoduleCat.prod`: the bundled product comodule, with projections and `prodLift`.
 
 ## References
 
@@ -93,9 +94,11 @@ private theorem prodCoact_coassoc_map {P : Type*} [AddCommMonoid P] [Module R P]
           (prodCoact (R := R) (C := C) (M := M) (N := N) (f p))) =
       Coalgebra.comul.lTensor (M × N)
         (prodCoact (R := R) (C := C) (M := M) (N := N) (f p)) := by
-  rw [show prodCoact (R := R) (C := C) (M := M) (N := N) (f p) =
-      TensorProduct.map f LinearMap.id (coact (R := R) (C := C) (M := P) p) by
-        exact LinearMap.congr_fun hcomp p]
+  have hcoact :
+      prodCoact (R := R) (C := C) (M := M) (N := N) (f p) =
+        TensorProduct.map f LinearMap.id (coact (R := R) (C := C) (M := P) p) :=
+    LinearMap.congr_fun hcomp p
+  rw [hcoact]
   have h :=
     congrArg
       (TensorProduct.map f
@@ -157,9 +160,11 @@ private theorem prodCoact_counit_map {P : Type*} [AddCommMonoid P] [Module R P]
     Coalgebra.counit.lTensor (M × N)
         (prodCoact (R := R) (C := C) (M := M) (N := N) (f p)) =
       f p ⊗ₜ[R] 1 := by
-  rw [show prodCoact (R := R) (C := C) (M := M) (N := N) (f p) =
-      TensorProduct.map f LinearMap.id (coact (R := R) (C := C) (M := P) p) by
-        exact LinearMap.congr_fun hcomp p]
+  have hcoact :
+      prodCoact (R := R) (C := C) (M := M) (N := N) (f p) =
+        TensorProduct.map f LinearMap.id (coact (R := R) (C := C) (M := P) p) :=
+    LinearMap.congr_fun hcomp p
+  rw [hcoact]
   have h :=
     congrArg (TensorProduct.map f (LinearMap.id : R →ₗ[R] R))
       (lTensor_counit_coact (R := R) (C := C) (M := P) p)
@@ -224,13 +229,28 @@ def prodFst :
     Hom R C (M × N) M := by
   letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   exact
-    { toLinearMap := LinearMap.fst R M N
-      map_coact := by
-        apply LinearMap.prod_ext
-        · ext m
-          simp [TensorProduct.map_map]
-        · ext n
-          simp [prodCoact, TensorProduct.map_map] }
+      { toLinearMap := LinearMap.fst R M N
+        map_coact := by
+          apply LinearMap.prod_ext
+          · ext m
+            simp [TensorProduct.map_map]
+          · ext n
+            simp [prodCoact, TensorProduct.map_map] }
+
+/-- The underlying linear map of the first projection from the product comodule. -/
+@[simp]
+theorem prodFst_toLinearMap :
+    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+    (prodFst (R := R) (C := C) (M := M) (N := N)).toLinearMap =
+      LinearMap.fst R M N :=
+  rfl
+
+/-- Evaluating the first projection from the product comodule returns the first component. -/
+@[simp]
+theorem prodFst_apply (x : M × N) :
+    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+    prodFst (R := R) (C := C) (M := M) (N := N) x = x.1 :=
+  rfl
 
 /-- The second projection from the product comodule. -/
 def prodSnd :
@@ -238,13 +258,28 @@ def prodSnd :
     Hom R C (M × N) N := by
   letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   exact
-    { toLinearMap := LinearMap.snd R M N
-      map_coact := by
-        apply LinearMap.prod_ext
-        · ext m
-          simp [prodCoact, TensorProduct.map_map]
-        · ext n
-          simp [TensorProduct.map_map] }
+      { toLinearMap := LinearMap.snd R M N
+        map_coact := by
+          apply LinearMap.prod_ext
+          · ext m
+            simp [prodCoact, TensorProduct.map_map]
+          · ext n
+            simp [TensorProduct.map_map] }
+
+/-- The underlying linear map of the second projection from the product comodule. -/
+@[simp]
+theorem prodSnd_toLinearMap :
+    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+    (prodSnd (R := R) (C := C) (M := M) (N := N)).toLinearMap =
+      LinearMap.snd R M N :=
+  rfl
+
+/-- Evaluating the second projection from the product comodule returns the second component. -/
+@[simp]
+theorem prodSnd_apply (x : M × N) :
+    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+    prodSnd (R := R) (C := C) (M := M) (N := N) x = x.2 :=
+  rfl
 
 /-- The left inclusion into the product comodule. -/
 def prodInl :
@@ -252,10 +287,26 @@ def prodInl :
     Hom R C M (M × N) := by
   letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   exact
-    { toLinearMap := LinearMap.inl R M N
-      map_coact := by
-        ext m
-        simp }
+      { toLinearMap := LinearMap.inl R M N
+        map_coact := by
+          ext m
+          simp }
+
+/-- The underlying linear map of the left inclusion into the product comodule. -/
+@[simp]
+theorem prodInl_toLinearMap :
+    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+    (prodInl (R := R) (C := C) (M := M) (N := N)).toLinearMap =
+      LinearMap.inl R M N :=
+  rfl
+
+/-- Evaluating the left inclusion into the product comodule gives a pair with zero right
+component. -/
+@[simp]
+theorem prodInl_apply (m : M) :
+    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+    prodInl (R := R) (C := C) (M := M) (N := N) m = (m, 0) :=
+  rfl
 
 /-- The right inclusion into the product comodule. -/
 def prodInr :
@@ -263,10 +314,70 @@ def prodInr :
     Hom R C N (M × N) := by
   letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   exact
-    { toLinearMap := LinearMap.inr R M N
+      { toLinearMap := LinearMap.inr R M N
+        map_coact := by
+          ext n
+          simp }
+
+/-- The underlying linear map of the right inclusion into the product comodule. -/
+@[simp]
+theorem prodInr_toLinearMap :
+    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+    (prodInr (R := R) (C := C) (M := M) (N := N)).toLinearMap =
+      LinearMap.inr R M N :=
+  rfl
+
+/-- Evaluating the right inclusion into the product comodule gives a pair with zero left
+component. -/
+@[simp]
+theorem prodInr_apply (n : N) :
+    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+    prodInr (R := R) (C := C) (M := M) (N := N) n = (0, n) :=
+  rfl
+
+omit [Coalgebra R C] [Comodule R C M] [Comodule R C N] in
+private theorem prodLeft_map_prod {P : Type*} [AddCommMonoid P] [Module R P]
+    (f : P →ₗ[R] M) (g : P →ₗ[R] N) (t : P ⊗[R] C) :
+    TensorProduct.prodLeft R R M N C
+        (TensorProduct.map (f.prod g) LinearMap.id t) =
+      (TensorProduct.map f LinearMap.id t, TensorProduct.map g LinearMap.id t) := by
+  refine TensorProduct.induction_on t ?_ ?_ ?_
+  · ext <;> simp
+  · intro p c
+    rfl
+  · intro t u ht hu
+    simp [ht, hu]
+
+/-- The product morphism induced by two morphisms with a common source. -/
+def prodLift {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+    (f : Hom R C P M) (g : Hom R C P N) :
+    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+    Hom R C P (M × N) := by
+  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+  exact
+    { toLinearMap := f.toLinearMap.prod g.toLinearMap
       map_coact := by
-        ext n
-        simp }
+        ext p
+        apply (TensorProduct.prodLeft R R M N C).injective
+        simp [prodCoact, prodLeft_map_prod, LinearMap.inl, LinearMap.inr,
+          Hom.map_coact_apply] }
+
+/-- The underlying linear map of `Comodule.prodLift`. -/
+@[simp]
+theorem prodLift_toLinearMap {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+    (f : Hom R C P M) (g : Hom R C P N) :
+    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+    (prodLift (R := R) (C := C) (M := M) (N := N) f g).toLinearMap =
+      f.toLinearMap.prod g.toLinearMap :=
+  rfl
+
+/-- Evaluating `Comodule.prodLift` gives the pair of evaluations. -/
+@[simp]
+theorem prodLift_apply {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+    (f : Hom R C P M) (g : Hom R C P N) (p : P) :
+    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+    prodLift (R := R) (C := C) (M := M) (N := N) f g p = (f p, g p) :=
+  rfl
 
 end Comodule
 
@@ -290,33 +401,10 @@ abbrev prodFst (M N : ComoduleCat.{u, v, w} R C) : prod R C M N ⟶ M :=
 abbrev prodSnd (M N : ComoduleCat.{u, v, w} R C) : prod R C M N ⟶ N :=
   Comodule.prodSnd (R := R) (C := C) (M := M) (N := N)
 
-/-- The left inclusion into the bundled product comodule. -/
-abbrev prodInl (M N : ComoduleCat.{u, v, w} R C) : M ⟶ prod R C M N :=
-  Comodule.prodInl (R := R) (C := C) (M := M) (N := N)
-
-/-- The right inclusion into the bundled product comodule. -/
-abbrev prodInr (M N : ComoduleCat.{u, v, w} R C) : N ⟶ prod R C M N :=
-  Comodule.prodInr (R := R) (C := C) (M := M) (N := N)
-
-/-- The bundled product comodule, using biproduct terminology. -/
-abbrev biprod (M N : ComoduleCat.{u, v, w} R C) : ComoduleCat.{u, v, w} R C :=
-  prod R C M N
-
-/-- The first projection from the bundled biproduct comodule. -/
-abbrev biprodFst (M N : ComoduleCat.{u, v, w} R C) : biprod M N ⟶ M :=
-  prodFst M N
-
-/-- The second projection from the bundled biproduct comodule. -/
-abbrev biprodSnd (M N : ComoduleCat.{u, v, w} R C) : biprod M N ⟶ N :=
-  prodSnd M N
-
-/-- The left inclusion into the bundled biproduct comodule. -/
-abbrev biprodInl (M N : ComoduleCat.{u, v, w} R C) : M ⟶ biprod M N :=
-  prodInl M N
-
-/-- The right inclusion into the bundled biproduct comodule. -/
-abbrev biprodInr (M N : ComoduleCat.{u, v, w} R C) : N ⟶ biprod M N :=
-  prodInr M N
+/-- The morphism into the bundled product induced by a pair of morphisms. -/
+abbrev prodLift {P M N : ComoduleCat.{u, v, w} R C} (f : P ⟶ M) (g : P ⟶ N) :
+    P ⟶ prod R C M N :=
+  Comodule.prodLift (R := R) (C := C) (M := M) (N := N) f g
 
 /-- Evaluating the bundled first projection returns the first component. -/
 @[simp]
@@ -330,41 +418,39 @@ theorem prodSnd_apply (M N : ComoduleCat.{u, v, w} R C) (x : prod R C M N) :
     prodSnd M N x = x.2 :=
   rfl
 
-/-- Evaluating the bundled left inclusion returns the pair with zero right component. -/
+/-- Evaluating the bundled product lift gives the pair of evaluations. -/
 @[simp]
-theorem prodInl_apply (M N : ComoduleCat.{u, v, w} R C) (m : M) :
-    prodInl M N m = (m, 0) :=
+theorem prodLift_apply {P M N : ComoduleCat.{u, v, w} R C} (f : P ⟶ M) (g : P ⟶ N)
+    (p : P) :
+    prodLift f g p = (f p, g p) :=
   rfl
 
-/-- Evaluating the bundled right inclusion returns the pair with zero left component. -/
+/-- The first projection after the bundled product lift is the first morphism. -/
 @[simp]
-theorem prodInr_apply (M N : ComoduleCat.{u, v, w} R C) (n : N) :
-    prodInr M N n = (0, n) :=
+theorem prodLift_fst {P M N : ComoduleCat.{u, v, w} R C} (f : P ⟶ M) (g : P ⟶ N) :
+    prodLift f g ≫ prodFst M N = f := by
+  ext p
   rfl
 
-/-- Evaluating the bundled biproduct first projection returns the first component. -/
+/-- The second projection after the bundled product lift is the second morphism. -/
 @[simp]
-theorem biprodFst_apply (M N : ComoduleCat.{u, v, w} R C) (x : biprod M N) :
-    biprodFst M N x = x.1 :=
+theorem prodLift_snd {P M N : ComoduleCat.{u, v, w} R C} (f : P ⟶ M) (g : P ⟶ N) :
+    prodLift f g ≫ prodSnd M N = g := by
+  ext p
   rfl
 
-/-- Evaluating the bundled biproduct second projection returns the second component. -/
-@[simp]
-theorem biprodSnd_apply (M N : ComoduleCat.{u, v, w} R C) (x : biprod M N) :
-    biprodSnd M N x = x.2 :=
-  rfl
-
-/-- Evaluating the bundled biproduct left inclusion returns the pair with zero right component. -/
-@[simp]
-theorem biprodInl_apply (M N : ComoduleCat.{u, v, w} R C) (m : M) :
-    biprodInl M N m = (m, 0) :=
-  rfl
-
-/-- Evaluating the bundled biproduct right inclusion returns the pair with zero left component. -/
-@[simp]
-theorem biprodInr_apply (M N : ComoduleCat.{u, v, w} R C) (n : N) :
-    biprodInr M N n = (0, n) :=
-  rfl
+/-- Morphisms into the bundled product are determined by their projections. -/
+@[ext]
+theorem prod_hom_ext {P M N : ComoduleCat.{u, v, w} R C} {f g : P ⟶ prod R C M N}
+    (hfst : f ≫ prodFst M N = g ≫ prodFst M N)
+    (hsnd : f ≫ prodSnd M N = g ≫ prodSnd M N) : f = g := by
+  apply hom_ext
+  intro p
+  have hfstp := congrArg (fun h : P ⟶ M => h p) hfst
+  have hsndp := congrArg (fun h : P ⟶ N => h p) hsnd
+  change prodFst M N (f p) = prodFst M N (g p) at hfstp
+  change prodSnd M N (f p) = prodSnd M N (g p) at hsndp
+  exact Prod.ext (by simpa using hfstp) (by simpa using hsndp)
 
 end ComoduleCat
 
