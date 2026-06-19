@@ -20,8 +20,7 @@ different Cauchy--Riemann convention.
 
 ## Main declarations
 
-* `IsComplexLinearMap`: a continuous real-linear map intertwines two almost complex
-  structures.
+* `IsComplexLinearMap`: a real-linear map intertwines two almost complex structures.
 * `IsJHolomorphicAt`: a map has a complex-linear Frechet derivative at a point.
 * `IsJHolomorphicWithinAt`: a map has a complex-linear Frechet derivative within a set.
 * `IsJHolomorphicOn` and `IsJHolomorphic`: setwise and global versions.
@@ -38,37 +37,37 @@ variable [NormedAddCommGroup V] [NormedSpace ℝ V]
 variable [NormedAddCommGroup W] [NormedSpace ℝ W]
 variable [NormedAddCommGroup X] [NormedSpace ℝ X]
 
-/-- A continuous real-linear map is complex-linear with respect to two fixed pointwise
+/-- A real-linear map is complex-linear with respect to two fixed pointwise
 almost complex structures if it intertwines them. -/
 def IsComplexLinearMap (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W)
-    (F : V →L[ℝ] W) : Prop :=
-  F.toLinearMap.comp J.toLinearMap = J'.toLinearMap.comp F.toLinearMap
+    (F : V →ₗ[ℝ] W) : Prop :=
+  F.comp J.toLinearMap = J'.toLinearMap.comp F
 
-lemma isComplexLinear_iff_apply (J : AlmostComplexStructure V)
-    (J' : AlmostComplexStructure W) (F : V →L[ℝ] W) :
+lemma isComplexLinearMap_iff_apply (J : AlmostComplexStructure V)
+    (J' : AlmostComplexStructure W) (F : V →ₗ[ℝ] W) :
     IsComplexLinearMap J J' F ↔ ∀ v, F (J v) = J' (F v) :=
   LinearMap.ext_iff
 
 /-- The zero map is complex-linear for any source and target almost complex structures. -/
-lemma isComplexLinear_zero (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W) :
-    IsComplexLinearMap J J' (0 : V →L[ℝ] W) := by
-  rw [isComplexLinear_iff_apply]
+lemma isComplexLinearMap_zero (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W) :
+    IsComplexLinearMap J J' (0 : V →ₗ[ℝ] W) := by
+  rw [isComplexLinearMap_iff_apply]
   intro v
   simp
 
 /-- The identity map is complex-linear with respect to the same almost complex structure. -/
-lemma isComplexLinear_id (J : AlmostComplexStructure V) :
-    IsComplexLinearMap J J (ContinuousLinearMap.id ℝ V) := by
-  rw [isComplexLinear_iff_apply]
+lemma isComplexLinearMap_id (J : AlmostComplexStructure V) :
+    IsComplexLinearMap J J (LinearMap.id : V →ₗ[ℝ] V) := by
+  rw [isComplexLinearMap_iff_apply]
   intro v
-  rfl
+  simp [LinearMap.id_apply]
 
-/-- Complex-linear continuous maps are closed under composition. -/
+/-- Complex-linear maps are closed under composition. -/
 lemma IsComplexLinearMap.comp {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
-    {J'' : AlmostComplexStructure X} {F : V →L[ℝ] W} {G : W →L[ℝ] X}
+    {J'' : AlmostComplexStructure X} {F : V →ₗ[ℝ] W} {G : W →ₗ[ℝ] X}
     (hG : IsComplexLinearMap J' J'' G) (hF : IsComplexLinearMap J J' F) :
     IsComplexLinearMap J J'' (G.comp F) := by
-  rw [isComplexLinear_iff_apply] at hF hG ⊢
+  rw [isComplexLinearMap_iff_apply] at hF hG ⊢
   intro v
   calc
     G (F (J v)) = G (J' (F v)) := by rw [hF v]
@@ -80,13 +79,13 @@ section JHolomorphic
 intertwines the source and target almost complex structures. -/
 def IsJHolomorphicAt (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W)
     (f : V → W) (x : V) : Prop :=
-  ∃ f' : V →L[ℝ] W, HasFDerivAt f f' x ∧ IsComplexLinearMap J J' f'
+  ∃ f' : V →L[ℝ] W, HasFDerivAt f f' x ∧ IsComplexLinearMap J J' f'.toLinearMap
 
 /-- A map is `J`-holomorphic within a set at a point if its Frechet derivative within the
 set exists there and intertwines the source and target almost complex structures. -/
 def IsJHolomorphicWithinAt (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W)
     (f : V → W) (s : Set V) (x : V) : Prop :=
-  ∃ f' : V →L[ℝ] W, HasFDerivWithinAt f f' s x ∧ IsComplexLinearMap J J' f'
+  ∃ f' : V →L[ℝ] W, HasFDerivWithinAt f f' s x ∧ IsComplexLinearMap J J' f'.toLinearMap
 
 /-- A map is `J`-holomorphic on a set if it is `J`-holomorphic within that set at every
 point of the set. -/
@@ -99,6 +98,7 @@ def IsJHolomorphic (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W
     (f : V → W) : Prop :=
   ∀ x, IsJHolomorphicAt J J' f x
 
+@[simp]
 lemma isJHolomorphicOn_univ (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W)
     (f : V → W) :
     IsJHolomorphicOn J J' f Set.univ ↔ IsJHolomorphic J J' f := by
@@ -114,7 +114,7 @@ lemma IsJHolomorphicAt.hasFDerivAt {J : AlmostComplexStructure V}
 lemma IsJHolomorphicAt.derivative_isComplexLinear {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {f : V → W} {x : V}
     (hf : IsJHolomorphicAt J J' f x) :
-    IsComplexLinearMap J J' hf.choose :=
+    IsComplexLinearMap J J' hf.choose.toLinearMap :=
   hf.choose_spec.2
 
 lemma IsJHolomorphicAt.differentiableAt {J : AlmostComplexStructure V}
@@ -126,14 +126,15 @@ lemma IsJHolomorphicAt.differentiableAt {J : AlmostComplexStructure V}
 lemma IsJHolomorphicAt.fderiv_isComplexLinear {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {f : V → W} {x : V}
     (hf : IsJHolomorphicAt J J' f x) :
-    IsComplexLinearMap J J' (fderiv ℝ f x) := by
+    IsComplexLinearMap J J' (fderiv ℝ f x).toLinearMap := by
   simpa [hf.hasFDerivAt.fderiv] using hf.derivative_isComplexLinear
 
 lemma IsJHolomorphicAt.fderiv_apply_commute {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {f : V → W} {x v : V}
     (hf : IsJHolomorphicAt J J' f x) :
     fderiv ℝ f x (J v) = J' (fderiv ℝ f x v) :=
-  (isComplexLinear_iff_apply J J' (fderiv ℝ f x)).mp hf.fderiv_isComplexLinear v
+  (isComplexLinearMap_iff_apply J J' (fderiv ℝ f x).toLinearMap).mp
+    hf.fderiv_isComplexLinear v
 
 lemma IsJHolomorphicAt.isJHolomorphicWithinAt {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
@@ -150,7 +151,7 @@ lemma IsJHolomorphicWithinAt.hasFDerivWithinAt {J : AlmostComplexStructure V}
 lemma IsJHolomorphicWithinAt.derivative_isComplexLinear {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
     (hf : IsJHolomorphicWithinAt J J' f s x) :
-    IsComplexLinearMap J J' hf.choose :=
+    IsComplexLinearMap J J' hf.choose.toLinearMap :=
   hf.choose_spec.2
 
 lemma IsJHolomorphicWithinAt.differentiableWithinAt {J : AlmostComplexStructure V}
@@ -162,14 +163,14 @@ lemma IsJHolomorphicWithinAt.differentiableWithinAt {J : AlmostComplexStructure 
 lemma IsJHolomorphicWithinAt.fderivWithin_isComplexLinear {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
     (hf : IsJHolomorphicWithinAt J J' f s x) (hs : UniqueDiffWithinAt ℝ s x) :
-    IsComplexLinearMap J J' (fderivWithin ℝ f s x) := by
+    IsComplexLinearMap J J' (fderivWithin ℝ f s x).toLinearMap := by
   simpa [hf.hasFDerivWithinAt.fderivWithin hs] using hf.derivative_isComplexLinear
 
 lemma IsJHolomorphicWithinAt.fderivWithin_apply_commute {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x v : V}
     (hf : IsJHolomorphicWithinAt J J' f s x) (hs : UniqueDiffWithinAt ℝ s x) :
     fderivWithin ℝ f s x (J v) = J' (fderivWithin ℝ f s x v) :=
-  (isComplexLinear_iff_apply J J' (fderivWithin ℝ f s x)).mp
+  (isComplexLinearMap_iff_apply J J' (fderivWithin ℝ f s x).toLinearMap).mp
     (hf.fderivWithin_isComplexLinear hs) v
 
 lemma IsJHolomorphicWithinAt.isJHolomorphicAt_of_mem_nhds {J : AlmostComplexStructure V}
@@ -182,12 +183,12 @@ lemma IsJHolomorphicWithinAt.isJHolomorphicAt_of_mem_nhds {J : AlmostComplexStru
 /-- A constant map is `J`-holomorphic at every point. -/
 lemma isJHolomorphicAt_const (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W)
     (c : W) (x : V) : IsJHolomorphicAt J J' (fun _ : V => c) x :=
-  ⟨0, hasFDerivAt_const c x, isComplexLinear_zero J J'⟩
+  ⟨0, hasFDerivAt_const c x, by simpa using isComplexLinearMap_zero J J'⟩
 
 /-- The identity map is `J`-holomorphic for any fixed almost complex structure `J`. -/
 lemma isJHolomorphicAt_id (J : AlmostComplexStructure V) (x : V) :
     IsJHolomorphicAt J J id x :=
-  ⟨ContinuousLinearMap.id ℝ V, hasFDerivAt_id x, isComplexLinear_id J⟩
+  ⟨ContinuousLinearMap.id ℝ V, hasFDerivAt_id x, by simpa using isComplexLinearMap_id J⟩
 
 lemma IsJHolomorphicAt.comp {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {J'' : AlmostComplexStructure X}
