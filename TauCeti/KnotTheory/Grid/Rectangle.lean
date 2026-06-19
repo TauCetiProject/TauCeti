@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Data.Finset.Prod
+import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Fintype.Prod
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Order.Circular.ZMod
@@ -25,18 +26,21 @@ finite-set disjointness conditions used for empty rectangles and marking-avoidin
 
 * `TauCeti.Grid.cIoo`: the clockwise open-open circular interval from `a` to `b`.
 * `TauCeti.GridRectangle`: a toroidal rectangle, represented by its four cyclic sides.
+* `TauCeti.GridRectangle.symm`: the opposite toroidal rectangle with side columns reversed.
 * `TauCeti.GridRectangle.interior`: the finite set of squares strictly inside the rectangle.
 * `TauCeti.GridRectangleBetween`: an oriented rectangle from one grid state to another.
+* `TauCeti.GridRectangleBetween.symm`: the opposite oriented rectangle from `y` to `x`.
 * `TauCeti.GridRectangleBetween.all`: all oriented rectangles from `x` to `y`.
 * `TauCeti.GridRectangleBetween.emptyRectangles`: the empty rectangles from `x` to `y`.
 
 ## References
 
 This supplies a prerequisite for the Tau Ceti Heegaard Floer roadmap,
-`HeegaardFloer/README.md` in TauCetiRoadmap, Lane G.1, "Grid diagrams and grid states",
-specifically the next objects named there: rectangles and empty rectangles `Rect°(x, y)`.
-The encoding follows the toroidal grid-diagram convention from Ozsváth--Stipsicz--Szabó,
-*Grid Homology for Knots and Links*, Chapter 3.
+`HeegaardFloer/README.md` in TauCetiRoadmap. Lane G.1, "Grid diagrams and grid states",
+asks for rectangles and empty rectangles `Rect°(x, y)`, and Lane G.3, "The complexes and
+`∂² = 0`", uses the opposite-rectangle bookkeeping in the rectangle-pairing arguments. The
+encoding follows the toroidal grid-diagram convention from Ozsváth--Stipsicz--Szabó, *Grid
+Homology for Knots and Links*, Chapter 3.
 -/
 
 namespace TauCeti
@@ -136,6 +140,40 @@ structure GridRectangle (n : ℕ) where
 namespace GridRectangle
 
 variable {n : ℕ} (R : GridRectangle n)
+
+/-- The opposite toroidal rectangle, obtained by reversing the two vertical sides while
+keeping the horizontal sides fixed. -/
+def symm : GridRectangle n where
+  left := R.right
+  right := R.left
+  bottom := R.bottom
+  top := R.top
+
+/-- The opposite rectangle's left side is the original right side. -/
+@[simp]
+theorem symm_left : R.symm.left = R.right :=
+  rfl
+
+/-- The opposite rectangle's right side is the original left side. -/
+@[simp]
+theorem symm_right : R.symm.right = R.left :=
+  rfl
+
+/-- The opposite rectangle has the same bottom row. -/
+@[simp]
+theorem symm_bottom : R.symm.bottom = R.bottom :=
+  rfl
+
+/-- The opposite rectangle has the same top row. -/
+@[simp]
+theorem symm_top : R.symm.top = R.top :=
+  rfl
+
+/-- Reversing a toroidal rectangle twice gives the original rectangle. -/
+@[simp]
+theorem symm_symm : R.symm.symm = R := by
+  cases R
+  rfl
 
 /-- The columns strictly inside a toroidal grid rectangle. -/
 noncomputable def columnInterior : Finset (Fin n) :=
@@ -323,6 +361,108 @@ def toGridRectangle : GridRectangle n where
   bottom := R.bottom
   top := R.top
 
+/-- The opposite oriented rectangle, obtained by reversing the two side columns.
+
+If `R` goes from `x` to `y`, then `R.symm` goes from `y` back to `x`. It has the same two
+horizontal side rows and traverses the complementary horizontal direction on the torus. -/
+def symm (R : GridRectangleBetween x y) : GridRectangleBetween y x where
+  left := R.right
+  right := R.left
+  left_ne_right := R.left_ne_right.symm
+  map_left := R.map_left.symm
+  map_right := R.map_right.symm
+  map_of_ne c hleft hright := (R.map_of_ne c hright hleft).symm
+
+/-- The opposite rectangle's left side is the original right side. -/
+@[simp]
+theorem symm_left (R : GridRectangleBetween x y) : R.symm.left = R.right :=
+  rfl
+
+/-- The opposite rectangle's right side is the original left side. -/
+@[simp]
+theorem symm_right (R : GridRectangleBetween x y) : R.symm.right = R.left :=
+  rfl
+
+/-- Reversing an oriented rectangle twice gives the original rectangle. -/
+@[simp]
+theorem symm_symm (R : GridRectangleBetween x y) : R.symm.symm = R := by
+  cases R
+  rfl
+
+/-- Reversal is injective on oriented rectangles. -/
+@[simp]
+theorem symm_inj {R S : GridRectangleBetween x y} : R.symm = S.symm ↔ R = S := by
+  constructor
+  · intro h
+    simpa using congrArg symm h
+  · intro h
+    simp [h]
+
+/-- Opposite rectangles give an equivalence between rectangles from `x` to `y` and from `y`
+to `x`. -/
+def symmEquiv (x y : GridState n) : GridRectangleBetween x y ≃ GridRectangleBetween y x where
+  toFun := symm
+  invFun := symm
+  left_inv := symm_symm
+  right_inv := symm_symm
+
+/-- Applying the opposite-rectangle equivalence is `GridRectangleBetween.symm`. -/
+@[simp]
+theorem symmEquiv_apply (R : GridRectangleBetween x y) :
+    symmEquiv x y R = R.symm :=
+  rfl
+
+/-- Applying the inverse opposite-rectangle equivalence is `GridRectangleBetween.symm`. -/
+@[simp]
+theorem symmEquiv_symm_apply (R : GridRectangleBetween y x) :
+    (symmEquiv x y).symm R = R.symm :=
+  rfl
+
+/-- The opposite rectangle has the same bottom row. -/
+@[simp]
+theorem symm_bottom (R : GridRectangleBetween x y) : R.symm.bottom = R.bottom := by
+  simp [bottom, symm, R.map_right]
+
+/-- The opposite rectangle has the same top row. -/
+@[simp]
+theorem symm_top (R : GridRectangleBetween x y) : R.symm.top = R.top := by
+  simp [top, symm, R.map_left]
+
+/-- The associated toroidal rectangle of the opposite oriented rectangle is the opposite of
+the associated toroidal rectangle. -/
+@[simp]
+theorem symm_toGridRectangle (R : GridRectangleBetween x y) :
+    R.symm.toGridRectangle = R.toGridRectangle.symm := by
+  cases R with
+  | mk left right left_ne_right map_left map_right map_of_ne =>
+      simp [toGridRectangle, GridRectangle.symm, symm, bottom, top, map_left, map_right]
+
+/-- The associated opposite toroidal rectangle has the original right side as its left
+side. -/
+@[simp]
+theorem symm_toGridRectangle_left (R : GridRectangleBetween x y) :
+    R.symm.toGridRectangle.left = R.right := by
+  simp [toGridRectangle]
+
+/-- The associated opposite toroidal rectangle has the original left side as its right
+side. -/
+@[simp]
+theorem symm_toGridRectangle_right (R : GridRectangleBetween x y) :
+    R.symm.toGridRectangle.right = R.left := by
+  simp [toGridRectangle]
+
+/-- The associated opposite toroidal rectangle has the same bottom row. -/
+@[simp]
+theorem symm_toGridRectangle_bottom (R : GridRectangleBetween x y) :
+    R.symm.toGridRectangle.bottom = R.bottom := by
+  simp [toGridRectangle]
+
+/-- The associated opposite toroidal rectangle has the same top row. -/
+@[simp]
+theorem symm_toGridRectangle_top (R : GridRectangleBetween x y) :
+    R.symm.toGridRectangle.top = R.top := by
+  simp [toGridRectangle]
+
 /-- The two side rows of a rectangle between states are distinct. -/
 theorem bottom_ne_top : R.bottom ≠ R.top := by
   intro h
@@ -362,6 +502,39 @@ theorem left_top_mem_target : (R.left, R.top) ∈ y.pointSet := by
 @[simp]
 theorem right_bottom_mem_target : (R.right, R.bottom) ∈ y.pointSet := by
   simp [bottom, R.map_right]
+
+/-- The lower-left corner of the opposite rectangle is a target-state point of the original
+rectangle. -/
+@[simp]
+theorem symm_left_bottom_mem_source (R : GridRectangleBetween x y) :
+    (R.symm.left, R.symm.bottom) ∈ y.pointSet := by
+  simpa using R.right_bottom_mem_target
+
+/-- The upper-right corner of the opposite rectangle is a target-state point of the original
+rectangle. -/
+@[simp]
+theorem symm_right_top_mem_source (R : GridRectangleBetween x y) :
+    (R.symm.right, R.symm.top) ∈ y.pointSet := by
+  simpa using R.left_top_mem_target
+
+/-- The upper-left corner of the opposite rectangle is a source-state point of the original
+rectangle. -/
+@[simp]
+theorem symm_left_top_mem_target (R : GridRectangleBetween x y) :
+    (R.symm.left, R.symm.top) ∈ x.pointSet := by
+  simpa using R.right_top_mem_source
+
+/-- The lower-right corner of the opposite rectangle is a source-state point of the original
+rectangle. -/
+@[simp]
+theorem symm_right_bottom_mem_target (R : GridRectangleBetween x y) :
+    (R.symm.right, R.symm.bottom) ∈ x.pointSet := by
+  simpa using R.left_bottom_mem_source
+
+/-- There are as many oriented rectangles from `x` to `y` as from `y` to `x`. -/
+theorem card_all_comm (x y : GridState n) : (all x y).card = (all y x).card := by
+  classical
+  simp [all, Fintype.card_congr (symmEquiv x y)]
 
 /-- Away from the two side columns, membership in the source and target states is identical. -/
 theorem mem_target_pointSet_iff_of_ne {p : Fin n × Fin n}
