@@ -519,28 +519,16 @@ theorem prodLift_snd {P M N : ComoduleCat.{u, v, w} R C} (f : P ⟶ M) (g : P �
 theorem prodInl_desc {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ P) (g : N ⟶ P) :
     prodInl M N ≫ prodDesc f g = f := by
   ext m
-  -- Morphism application in `ComoduleCat` is definitionally application of the bundled
-  -- comodule morphism, so the categorical composite reduces to `prodDesc`.
-  change prodDesc f g (prodInl M N m) = f m
-  rw [prodDesc_apply, prodInl_apply]
-  change f m + g 0 = f m
-  have hg0 : (ConcreteCategory.hom (C := ComoduleCat R C) g) 0 = 0 :=
-    map_zero (ConcreteCategory.hom (C := ComoduleCat R C) g).toLinearMap
-  rw [hg0, add_zero]
+  rw [comp_apply, prodDesc_apply, prodInl_apply]
+  rw [show g 0 = 0 from map_zero g.toLinearMap, add_zero]
 
 /-- The bundled product desc after the right inclusion is the second morphism. -/
 @[simp]
 theorem prodInr_desc {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ P) (g : N ⟶ P) :
     prodInr M N ≫ prodDesc f g = g := by
   ext n
-  -- Morphism application in `ComoduleCat` is definitionally application of the bundled
-  -- comodule morphism, so the categorical composite reduces to `prodDesc`.
-  change prodDesc f g (prodInr M N n) = g n
-  rw [prodDesc_apply, prodInr_apply]
-  change f 0 + g n = g n
-  have hf0 : (ConcreteCategory.hom (C := ComoduleCat R C) f) 0 = 0 :=
-    map_zero (ConcreteCategory.hom (C := ComoduleCat R C) f).toLinearMap
-  rw [hf0, zero_add]
+  rw [comp_apply, prodDesc_apply, prodInr_apply]
+  rw [show f 0 = 0 from map_zero f.toLinearMap, zero_add]
 
 /-- The first projection after the left inclusion is the identity. -/
 @[simp]
@@ -576,8 +564,8 @@ theorem prod_fst_inl_add_snd_inr (M N : ComoduleCat.{u, v, w} R C) :
     prodFst M N ≫ prodInl M N + prodSnd M N ≫ prodInr M N = 𝟙 (prod R C M N) := by
   apply hom_ext
   intro x
-  -- The categorical expression unfolds to the usual componentwise product decomposition.
-  change (x.1, 0) + (0, x.2) = x
+  rw [add_apply, comp_apply, comp_apply, prodInl_apply, prodInr_apply, prodFst_apply,
+    prodSnd_apply, id_apply]
   ext <;> simp
 
 /-- Morphisms into the bundled product are determined by their projections. -/
