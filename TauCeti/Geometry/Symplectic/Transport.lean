@@ -13,12 +13,12 @@ one on `W` by conjugation, `w ↦ e (J (e.symm w))`. This file records that tran
 functoriality, and packages the statement that `e` itself is then a complex-linear isomorphism
 between `(V, J)` and `(W, J.transport e)`.
 
-This is the pointwise naturality that the smooth layer of the analytic Heegaard Floer roadmap
-needs: an almost complex structure on a vector bundle is given fiberwise, and a change of
+This is the pointwise linear algebra that the smooth layer of the analytic Heegaard Floer
+roadmap needs before stating the corresponding bundle-level and `J`-holomorphic naturality:
+an almost complex structure on a vector bundle is given fiberwise, and a change of
 trivialization acts on each fiber by exactly this conjugation. The capstone
-`IsComplexLinearMap.arrowCongr` says that complex-linearity of a map is preserved when both
-source and target are transported, so the whole `J`-holomorphic dictionary moves along
-isomorphisms without being restated.
+`isComplexLinearMap_arrowCongr_iff` says that complex-linearity of a linear map is preserved
+and reflected when both source and target are transported.
 
 ## Main declarations
 
@@ -45,18 +45,10 @@ variable [AddCommGroup V] [Module ℝ V]
 variable [AddCommGroup W] [Module ℝ W]
 variable [AddCommGroup X] [Module ℝ X]
 
-/-- The underlying linear map determines an almost complex structure: the only data is the
-endomorphism, the defining identity being a proposition. -/
-theorem toLinearMap_injective :
-    Function.Injective (toLinearMap : AlmostComplexStructure V → (V →ₗ[ℝ] V)) := by
-  rintro ⟨L, hL⟩ ⟨L', hL'⟩ h
-  subst h
-  rfl
-
 /-- Transport an almost complex structure along a real-linear equivalence by conjugation.
 
-The endomorphism is `LinearEquiv.conj e` applied to `J`, that is `w ↦ e (J (e.symm w))`; it
-again squares to `-1` because conjugation is multiplicative and fixes `±id`. -/
+The transported endomorphism is `LinearEquiv.conj e` applied to `J`, equivalently
+`w ↦ e (J (e.symm w))`, and it satisfies the almost-complex square condition. -/
 def transport (J : AlmostComplexStructure V) (e : V ≃ₗ[ℝ] W) : AlmostComplexStructure W where
   toLinearMap := e.conj J.toLinearMap
   square_neg := by
@@ -104,6 +96,7 @@ lemma transport_neg (J : AlmostComplexStructure V) (e : V ≃ₗ[ℝ] W) :
   simp only [transport_toLinearMap, neg_toLinearMap, map_neg]
 
 /-- A linear equivalence is complex-linear from `J` to its transport `J.transport e`. -/
+@[simp]
 lemma isComplexLinearMap_transport (J : AlmostComplexStructure V) (e : V ≃ₗ[ℝ] W) :
     IsComplexLinearMap J (J.transport e) e.toLinearMap := by
   rw [isComplexLinearMap_iff_apply]
@@ -111,6 +104,7 @@ lemma isComplexLinearMap_transport (J : AlmostComplexStructure V) (e : V ≃ₗ[
   simp
 
 /-- The inverse equivalence is complex-linear from `J.transport e` back to `J`. -/
+@[simp]
 lemma isComplexLinearMap_symm_transport (J : AlmostComplexStructure V) (e : V ≃ₗ[ℝ] W) :
     IsComplexLinearMap (J.transport e) J e.symm.toLinearMap := by
   rw [isComplexLinearMap_iff_apply]
@@ -125,18 +119,40 @@ variable {V₁ V₂ W₁ W₂ : Type*}
 variable [AddCommGroup V₁] [Module ℝ V₁] [AddCommGroup V₂] [Module ℝ V₂]
 variable [AddCommGroup W₁] [Module ℝ W₁] [AddCommGroup W₂] [Module ℝ W₂]
 
+/-- Raw complex-linearity is preserved and reflected by conjugating source and target along
+linear equivalences. -/
+lemma isComplexLinear_arrowCongr_iff {J : V₁ →ₗ[ℝ] V₁} {J' : W₁ →ₗ[ℝ] W₁}
+    {F : V₁ →ₗ[ℝ] W₁} (eV : V₁ ≃ₗ[ℝ] V₂) (eW : W₁ ≃ₗ[ℝ] W₂) :
+    IsComplexLinear (eV.conj J) (eW.conj J') (eV.arrowCongr eW F) ↔
+      IsComplexLinear J J' F := by
+  constructor
+  · intro hF
+    refine isComplexLinear_of_apply fun v => ?_
+    have h := hF.apply (eV v)
+    simpa [LinearEquiv.arrowCongr_apply] using congrArg eW.symm h
+  · intro hF
+    refine isComplexLinear_of_apply fun v => ?_
+    simp [LinearEquiv.arrowCongr_apply, hF.apply]
+
+/-- Complex-linearity is preserved and reflected when source, target, and map are transported
+along linear equivalences. -/
+lemma isComplexLinearMap_arrowCongr_iff {J : AlmostComplexStructure V₁}
+    {J' : AlmostComplexStructure W₁} {F : V₁ →ₗ[ℝ] W₁}
+    (eV : V₁ ≃ₗ[ℝ] V₂) (eW : W₁ ≃ₗ[ℝ] W₂) :
+    IsComplexLinearMap (J.transport eV) (J'.transport eW) (eV.arrowCongr eW F) ↔
+      IsComplexLinearMap J J' F := by
+  rw [isComplexLinearMap_iff_isComplexLinear, isComplexLinearMap_iff_isComplexLinear,
+    AlmostComplexStructure.transport_toLinearMap, AlmostComplexStructure.transport_toLinearMap,
+    isComplexLinear_arrowCongr_iff]
+
 /-- Complex-linearity transports along a pair of linear equivalences: if `F` intertwines `J`
 and `J'`, then conjugating `F` by `eV` on the source and `eW` on the target intertwines the
 transported structures. -/
 lemma IsComplexLinearMap.arrowCongr {J : AlmostComplexStructure V₁}
     {J' : AlmostComplexStructure W₁} {F : V₁ →ₗ[ℝ] W₁} (hF : IsComplexLinearMap J J' F)
     (eV : V₁ ≃ₗ[ℝ] V₂) (eW : W₁ ≃ₗ[ℝ] W₂) :
-    IsComplexLinearMap (J.transport eV) (J'.transport eW) (eV.arrowCongr eW F) := by
-  rw [isComplexLinearMap_iff_apply] at hF ⊢
-  intro v
-  simp only [LinearEquiv.arrowCongr_apply, AlmostComplexStructure.transport_apply,
-    LinearEquiv.symm_apply_apply]
-  rw [hF]
+    IsComplexLinearMap (J.transport eV) (J'.transport eW) (eV.arrowCongr eW F) :=
+  (isComplexLinearMap_arrowCongr_iff eV eW).mpr hF
 
 end Naturality
 
