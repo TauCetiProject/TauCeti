@@ -33,7 +33,7 @@ survives both.
 
 * `TauCeti.Isotopic.postcomp` / `TauCeti.Isotopic.precomp`: the same closure on the isotopy
   *relation*.
-* `TauCeti.Isotopic.precomp_postcomp`: the two-sided form, composing with an embedding on
+* `TauCeti.Isotopic.postcomp_precomp`: the two-sided form, composing with an embedding on
   each side.
 * `TauCeti.Isotopic.postcomp_homeomorph` / `TauCeti.Isotopic.precomp_homeomorph`: the common
   special case where the composing map is a homeomorphism (an ambient homeomorphism on the
@@ -52,8 +52,7 @@ namespace Isotopy
 variable {f₀ f₁ : C(X, Y)}
 
 /-- Postcompose an isotopy `f₀ ≈ f₁` with a topological embedding `g : Y ↪ Z` to get an
-isotopy `g ∘ f₀ ≈ g ∘ f₁`. The total map is `(id × g) ∘ F.totalMap`, an embedding because
-`id × g` and `F.totalMap` both are. -/
+isotopy `g ∘ f₀ ≈ g ∘ f₁`. -/
 def postcomp (F : Isotopy f₀ f₁) (g : C(Y, Z)) (hg : IsEmbedding g) :
     Isotopy (g.comp f₀) (g.comp f₁) where
   toHomotopy := (Homotopy.refl g).comp F.toHomotopy
@@ -65,8 +64,7 @@ theorem postcomp_apply (F : Isotopy f₀ f₁) (g : C(Y, Z)) (hg : IsEmbedding g
     F.postcomp g hg p = g (F p) := rfl
 
 /-- Precompose an isotopy `f₀ ≈ f₁` with a topological embedding `e : W ↪ X` to get an
-isotopy `f₀ ∘ e ≈ f₁ ∘ e`. The total map is `F.totalMap ∘ (id × e)`, an embedding because
-`F.totalMap` and `id × e` both are. -/
+isotopy `f₀ ∘ e ≈ f₁ ∘ e`. -/
 def precomp (F : Isotopy f₀ f₁) (e : C(W, X)) (he : IsEmbedding e) :
     Isotopy (f₀.comp e) (f₁.comp e) where
   toHomotopy := F.toHomotopy.compContinuousMap e
@@ -97,7 +95,7 @@ theorem precomp (h : Isotopic f₀ f₁) (e : C(W, X)) (he : IsEmbedding e) :
 
 /-- The two-sided form: an isotopy relation survives composing with an embedding on each
 side. -/
-theorem precomp_postcomp (h : Isotopic f₀ f₁) (g : C(Y, Z)) (hg : IsEmbedding g) (e : C(W, X))
+theorem postcomp_precomp (h : Isotopic f₀ f₁) (g : C(Y, Z)) (hg : IsEmbedding g) (e : C(W, X))
     (he : IsEmbedding e) : Isotopic (g.comp (f₀.comp e)) (g.comp (f₁.comp e)) :=
   (h.precomp e he).postcomp g hg
 
