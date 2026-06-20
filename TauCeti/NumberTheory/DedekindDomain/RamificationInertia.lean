@@ -2,48 +2,35 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.RamificationInertia.Galois
+import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
-# Ramification and inertia counting criteria in Dedekind domains
+# Dedekind-domain ramification and inertia counting compatibility
 
-This file records a Galois form of the fundamental identity for primes in finite extensions
-of Dedekind domains: in a Galois extension, the number of primes above a nonzero maximal
-ideal is maximal exactly when the common ramification index and inertia degree are both `1`.
+This file preserves the old Dedekind-domain name for the generalized ramification/inertia
+counting criterion.
 
 ## Main results
 
-* `TauCeti.DedekindDomain.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`: the
-  Dedekind-domain Galois counting criterion.
-
-## Provenance
-
-Built directly on Mathlib's Galois fundamental identity
-(`Ideal.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn`).
+* `TauCeti.DedekindDomain.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`:
+  a deprecated compatibility wrapper for the old Dedekind-domain signature.
 -/
 
 open Ideal Module
 
 namespace TauCeti.DedekindDomain
 
-/-- In a finite Galois extension of Dedekind domains, the number of primes over a nonzero
-maximal ideal equals the order of the Galois group iff the common ramification index and
-inertia degree are both `1`. -/
+/-- Deprecated compatibility wrapper for the old Dedekind-domain signature of
+`TauCeti.RamificationInertia.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`. -/
+@[deprecated TauCeti.RamificationInertia.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup
+  (since := "2026-06-19")]
 theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*} [CommRing A]
     [IsDedekindDomain A] [CommRing B] [IsDedekindDomain B] [Algebra A B] [Module.Finite A B]
     [IsTorsionFree A B] (G : Type*) [Group G] [Finite G] [MulSemiringAction G B]
-    [IsGaloisGroup G A B] (P : Ideal A) [P.IsMaximal] (hP : P ≠ ⊥) :
+    [IsGaloisGroup G A B] (P : Ideal A) [P.IsMaximal] (_hP : P ≠ ⊥) :
     (primesOver P B).ncard = Nat.card G ↔
-      P.ramificationIdxIn B = 1 ∧ P.inertiaDegIn B = 1 := by
-  have h_main := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn (p := P) hP B G
-  have hG : 0 < Nat.card G := Nat.card_pos
-  constructor
-  · intro hn
-    rw [hn] at h_main
-    have hef : P.ramificationIdxIn B * P.inertiaDegIn B = 1 :=
-      Nat.eq_of_mul_eq_mul_left hG (by rw [mul_one]; exact h_main)
-    exact mul_eq_one.mp hef
-  · rintro ⟨he, hf⟩
-    simpa [he, hf] using h_main
+      P.ramificationIdxIn B = 1 ∧ P.inertiaDegIn B = 1 :=
+  TauCeti.RamificationInertia.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup G P
 
 end TauCeti.DedekindDomain

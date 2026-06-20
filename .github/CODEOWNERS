@@ -3,8 +3,8 @@
 # Humans own everything EXCEPT the AI-authored mathematics under `TauCeti/`, which is
 # reviewed by the AI review agents (see the TauCetiReview repo), not by human code owners.
 # The `/TauCeti/` line below lists no owner, so GitHub requests no human review for a
-# mathematics PR. Last-match-wins keeps every other path — this file, `.github/`, the lake
-# config, and the human dirs — human-governed.
+# mathematics PR. Last-match-wins keeps every other path — this file, `.github/`, `lakefile.toml`,
+# and the human dirs — human-governed; the bump-guarded pin/toolchain files below are the exception.
 
 *                 @FormalFrontier/humans
 
@@ -17,3 +17,13 @@
 # human-owned also blocks the merge queue from enqueuing math PRs (the App bypasses code-owner
 # review for a direct merge, but not at enqueue time), so it is AI-gated like /TauCeti/.
 /TauCeti.lean
+
+# Lake dependency pin and Lean toolchain. A mathlib/Lean bump (the review bot opens these as
+# `bump-mathlib/` PRs) changes only these two files; both are validated by the forward-only
+# bump-guard check plus the sandboxed build, so they need no human review. As with /TauCeti.lean,
+# leaving them human-owned would also block the merge queue from enqueuing a bump PR (the App
+# bypasses code-owner review for a direct merge, but not at enqueue time), so they are AI-gated.
+# `lakefile.toml` stays human-owned: a build-config change is not a pin and bump-guard does not
+# cover it.
+/lake-manifest.json
+/lean-toolchain

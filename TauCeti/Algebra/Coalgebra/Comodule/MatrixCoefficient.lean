@@ -71,11 +71,8 @@ theorem matrixCoefficient_def (φ : M →ₗ[R] R) (m : M) :
         (TensorProduct.map φ LinearMap.id (coact (R := R) (C := C) (M := M) m)) :=
   rfl
 
-theorem matrixCoefficient_eq_lid_map_coact (φ : M →ₗ[R] R) (m : M) :
-    matrixCoefficient (R := R) (C := C) φ m =
-      TensorProduct.lid R C
-        (TensorProduct.map φ LinearMap.id (coact (R := R) (C := C) (M := M) m)) :=
-  matrixCoefficient_def (R := R) (C := C) φ m
+@[deprecated matrixCoefficient_def (since := "2026-06-19")]
+alias matrixCoefficient_eq_lid_map_coact := matrixCoefficient_def
 
 @[simp]
 theorem matrixCoefficient_zero (φ : M →ₗ[R] R) :
@@ -120,20 +117,20 @@ theorem matrixCoefficientBilinear_apply_apply (φ : M →ₗ[R] R) (m : M) :
 @[simp]
 theorem matrixCoefficient_zero_functional (m : M) :
     matrixCoefficient (R := R) (C := C) (0 : M →ₗ[R] R) m = 0 := by
-  simp [matrixCoefficient_eq_lid_map_coact]
+  simp [matrixCoefficient_def]
 
 @[simp]
 theorem matrixCoefficient_add_functional (φ ψ : M →ₗ[R] R) (m : M) :
     matrixCoefficient (R := R) (C := C) (φ + ψ) m =
       matrixCoefficient (R := R) (C := C) φ m +
         matrixCoefficient (R := R) (C := C) ψ m := by
-  simp [matrixCoefficient_eq_lid_map_coact, TensorProduct.map_add_left]
+  simp [matrixCoefficient_def, TensorProduct.map_add_left]
 
 @[simp]
 theorem matrixCoefficient_smul_functional (r : R) (φ : M →ₗ[R] R) (m : M) :
     matrixCoefficient (R := R) (C := C) (r • φ) m =
       r • matrixCoefficient (R := R) (C := C) φ m := by
-  simp [matrixCoefficient_eq_lid_map_coact, TensorProduct.map_smul_left]
+  simp [matrixCoefficient_def, TensorProduct.map_smul_left]
 
 /-- Matrix coefficients are natural in comodule morphisms: pushing the vector forward is
 the same as pulling the functional back. -/
@@ -141,7 +138,7 @@ the same as pulling the functional back. -/
 theorem matrixCoefficient_map (f : Hom R C M N) (φ : N →ₗ[R] R) (m : M) :
     matrixCoefficient (R := R) (C := C) φ (f m) =
       matrixCoefficient (R := R) (C := C) (φ.comp f.toLinearMap) m := by
-  rw [matrixCoefficient_eq_lid_map_coact, matrixCoefficient_eq_lid_map_coact,
+  rw [matrixCoefficient_def, matrixCoefficient_def,
     ← Hom.map_coact_apply f m]
   exact congrArg (TensorProduct.lid R C)
     (TensorProduct.map_map φ LinearMap.id f.toLinearMap LinearMap.id
@@ -151,7 +148,7 @@ theorem matrixCoefficient_map (f : Hom R C M N) (φ : N →ₗ[R] R) (m : M) :
 @[simp]
 theorem matrixCoefficient_counit_self (c : C) :
     matrixCoefficient (R := R) (C := C) (M := C) (Coalgebra.counit (R := R) (A := C)) c = c := by
-  simpa [matrixCoefficient_eq_lid_map_coact, LinearMap.rTensor] using
+  simpa [matrixCoefficient_def, LinearMap.rTensor] using
     congrArg (TensorProduct.lid R C) (Coalgebra.rTensor_counit_comul (R := R) (A := C) c)
 
 section GroupLike
@@ -165,7 +162,7 @@ theorem matrixCoefficient_groupLike (g : GroupLike R C) (φ : M →ₗ[R] R) (m 
     letI : Comodule R C M := groupLike (R := R) (C := C) (M := M) g
     matrixCoefficient (R := R) (C := C) φ m = φ m • (g : C) := by
   letI : Comodule R C M := groupLike (R := R) (C := C) (M := M) g
-  simp [matrixCoefficient_eq_lid_map_coact]
+  simp [matrixCoefficient_def]
 
 end GroupLike
 
