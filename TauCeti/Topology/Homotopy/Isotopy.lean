@@ -326,6 +326,11 @@ def isotopy {f : C(X, Y)} (hf : IsEmbedding f) : Isotopy f (Φ.final.comp f) whe
     rw [isotopy_totalMap_eq]
     exact Φ.isHomeomorph_total.isEmbedding.comp (IsEmbedding.id.prodMap hf)
 
+@[simp]
+theorem isotopy_apply {f : C(X, Y)} (hf : IsEmbedding f) (t : I) (x : X) :
+    Φ.isotopy hf (t, x) = Φ.toContinuousMap (t, f x) :=
+  rfl
+
 /-- **Ambient isotopy implies isotopy**: an ambient isotopy of `Y` carries any embedding `f`
 into `Y` to the isotopic embedding `Φ.final ∘ f`. -/
 theorem isotopic {f : C(X, Y)} (hf : IsEmbedding f) : Isotopic f (Φ.final.comp f) :=
