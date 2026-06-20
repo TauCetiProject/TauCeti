@@ -34,9 +34,11 @@ From this data we build:
   here as the hypothesis `IsWeightedDegreeZero`), the weighted degree descends to the class
   group, and `Pic⁰` is the kernel of that descended weighted degree.
 
-This realizes the Layer A roadmap items "principal divisors", "`Cl(X) ≅ Pic X`", and
+This advances the Layer A roadmap item "principal divisors" and constructs the abstract
 "`Pic⁰ X = ker deg` (as an abstract group, with the geometric degree supplied as a weight)" of
-`TauCetiRoadmap/JacobianChallenge/README.md`, before the Picard functor and Picard scheme
+`TauCetiRoadmap/JacobianChallenge/README.md`. It builds only the divisor-class side `Cl(X)` of
+the later "`Cl(X) ≅ Pic X`" comparison: the Picard group and the equivalence to it are not
+constructed here, but are later geometric work, before the Picard functor and Picard scheme
 exist. The geometric `ord_x` (residue-field valuations of a function field) and the proof that
 a principal divisor has weighted degree zero are later geometric constructions; here both are
 abstracted to the data of an `OrderSystem`, a weight function, and the predicate
@@ -130,6 +132,13 @@ lemma linearlyEquivalent_iff {D E : WeilDivisor X} :
     S.LinearlyEquivalent D E ↔ D - E ∈ S.principalSubgroup :=
   Iff.rfl
 
+/-- Two Weil divisors are linearly equivalent exactly when their difference is the principal
+divisor of some `g : G`. This is the direct introduction/elimination form of
+`LinearlyEquivalent`, exposing the witnessing function. -/
+lemma linearlyEquivalent_iff_exists_principalDivisor {D E : WeilDivisor X} :
+    S.LinearlyEquivalent D E ↔ ∃ g, S.principalDivisor g = D - E :=
+  S.mem_principalSubgroup
+
 lemma LinearlyEquivalent.refl (D : WeilDivisor X) : S.LinearlyEquivalent D D := by
   simp [LinearlyEquivalent]
 
@@ -167,6 +176,8 @@ lemma divisorClass_principalDivisor (g : G) :
     S.divisorClass (S.principalDivisor g) = 0 :=
   (QuotientAddGroup.eq_zero_iff _).mpr (S.principalDivisor_mem_principalSubgroup g)
 
+/-- Two Weil divisors have the same divisor class exactly when they are linearly equivalent,
+that is, when their difference is a principal divisor. -/
 lemma divisorClass_eq_iff {D E : WeilDivisor X} :
     S.divisorClass D = S.divisorClass E ↔ S.LinearlyEquivalent D E :=
   QuotientAddGroup.eq_iff_sub_mem
@@ -174,6 +185,21 @@ lemma divisorClass_eq_iff {D E : WeilDivisor X} :
 lemma divisorClass_eq_zero_iff {D : WeilDivisor X} :
     S.divisorClass D = 0 ↔ D ∈ S.principalSubgroup :=
   QuotientAddGroup.eq_zero_iff D
+
+/-- The universal property of the divisor class group: a homomorphism `φ : WeilDivisor X →+ H`
+that sends every principal divisor to `0` descends to a homomorphism `Cl(X) →+ H`. -/
+noncomputable def ClassGroup.lift {H : Type*} [AddCommGroup H] (φ : WeilDivisor X →+ H)
+    (hφ : ∀ g, φ (S.principalDivisor g) = 0) : S.ClassGroup →+ H :=
+  QuotientAddGroup.lift S.principalSubgroup φ (by
+    rintro _ ⟨g, rfl⟩
+    rw [AddMonoidHom.mem_ker]
+    exact hφ g)
+
+@[simp]
+lemma ClassGroup.lift_divisorClass {H : Type*} [AddCommGroup H] (φ : WeilDivisor X →+ H)
+    (hφ : ∀ g, φ (S.principalDivisor g) = 0) (D : WeilDivisor X) :
+    ClassGroup.lift S φ hφ (S.divisorClass D) = φ D :=
+  QuotientAddGroup.lift_mk' S.principalSubgroup _ D
 
 /-- An order system has *weighted-degree-zero principal divisors* for a weight `w : X → ℤ` when
 every principal divisor has weighted degree zero.
@@ -216,6 +242,8 @@ lemma mem_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w) {c : S.ClassGro
     c ∈ picZero w h ↔ weightedDegreeClass w h c = 0 :=
   AddMonoidHom.mem_ker
 
+/-- The class of a Weil divisor lies in `picZero` exactly when that representative has weighted
+degree zero; the value is well defined because the weighted degree descends to the class. -/
 @[simp]
 lemma divisorClass_mem_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {D : WeilDivisor X} :
@@ -235,20 +263,21 @@ lemma IsUnweightedDegreeZero.principalSubgroup_le_ker (h : S.IsUnweightedDegreeZ
   exact h.principalSubgroup_le_weightedDegree_ker hD
 
 /-- The unweighted degree map on divisor classes, for the algebraically closed/unweighted
-specialization. For curves over a general field, use `weightedDegreeClass`. -/
+specialization: the descended degree `weightedDegreeClass` at the constant weight `1`. For
+curves over a general field, use `weightedDegreeClass`. -/
 noncomputable def unweightedDegreeClass (h : S.IsUnweightedDegreeZero) : S.ClassGroup →+ ℤ :=
-  QuotientAddGroup.lift S.principalSubgroup degree h.principalSubgroup_le_ker
+  weightedDegreeClass (fun _ => (1 : ℤ)) h
 
 @[simp]
 lemma unweightedDegreeClass_divisorClass (h : S.IsUnweightedDegreeZero) (D : WeilDivisor X) :
-    unweightedDegreeClass h (S.divisorClass D) = degree D :=
-  QuotientAddGroup.lift_mk' S.principalSubgroup h.principalSubgroup_le_ker D
+    unweightedDegreeClass h (S.divisorClass D) = degree D := by
+  rw [unweightedDegreeClass, weightedDegreeClass_divisorClass, weightedDegree_one_eq_degree]
 
 /-- The unweighted-degree-zero part of the divisor class group, for the algebraically
-closed/unweighted specialization. For curves over a general field, use `picZero` with
-residue-field-degree weights. -/
+closed/unweighted specialization: `picZero` at the constant weight `1`. For curves over a
+general field, use `picZero` with residue-field-degree weights. -/
 noncomputable def unweightedPicZero (h : S.IsUnweightedDegreeZero) : AddSubgroup S.ClassGroup :=
-  (unweightedDegreeClass h).ker
+  picZero (fun _ => (1 : ℤ)) h
 
 lemma mem_unweightedPicZero (h : S.IsUnweightedDegreeZero) {c : S.ClassGroup} :
     c ∈ unweightedPicZero h ↔ unweightedDegreeClass h c = 0 :=
