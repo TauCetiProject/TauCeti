@@ -34,10 +34,6 @@ shown explicitly in the theorem statements below.
 * `TauCeti.GridDiagram.swapMarkings_swapMarkings`: the marking swap is an involution.
 * `TauCeti.GridDiagram.swapMarkings_transpose`: the marking swap commutes with the diagonal
   reflection.
-* `TauCeti.GridDiagram.maslovO_swapMarkings`, `TauCeti.GridDiagram.maslovX_swapMarkings`: the two
-  Maslov gradings are exchanged by the marking swap.
-* `TauCeti.GridDiagram.alexander_swapMarkings`: the Alexander grading is negated up to the
-  normalization shift.
 * `TauCeti.GridDiagram.maslovOℤ_swapMarkings`, `TauCeti.GridDiagram.maslovXℤ_swapMarkings`,
   `TauCeti.GridDiagram.alexanderTwoℤ_swapMarkings`: the integer-valued gradings transform the
   same way.
@@ -55,37 +51,6 @@ namespace TauCeti
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
-
-/-- The marking swap exchanges the `O`-marking `J`-pairing with the `X`-marking `J`-pairing. -/
-@[simp]
-theorem JO_swapMarkings (x : GridState n) : G.swapMarkings.JO x = G.JX x :=
-  rfl
-
-/-- The marking swap exchanges the `X`-marking `J`-pairing with the `O`-marking `J`-pairing. -/
-@[simp]
-theorem JX_swapMarkings (x : GridState n) : G.swapMarkings.JX x = G.JO x :=
-  rfl
-
-/-- The marking swap exchanges the two Maslov gradings: `M_O` of the swap is `M_X`. -/
-@[simp]
-theorem maslovO_swapMarkings (x : GridState n) :
-    G.swapMarkings.maslovO x = G.maslovX x := by
-  rw [maslovO_def, maslovX_def, swapMarkings_OSet]
-
-/-- The marking swap exchanges the two Maslov gradings: `M_X` of the swap is `M_O`. -/
-@[simp]
-theorem maslovX_swapMarkings (x : GridState n) :
-    G.swapMarkings.maslovX x = G.maslovO x := by
-  rw [maslovX_def, maslovO_def, swapMarkings_XSet]
-
-/-- The marking swap negates the Alexander grading, up to the constant normalization shift:
-  `A_swap(x) = −A(x) − (n − 1)`. The grading is built antisymmetrically from the two Maslov
-  gradings, which the swap exchanges, while the shift depends only on the grid size. -/
-@[simp]
-theorem alexander_swapMarkings (x : GridState n) :
-    G.swapMarkings.alexander x = -G.alexander x - (((n : ℤ) - 1 : ℤ) : ℚ) := by
-  rw [alexander_def, alexander_def, maslovO_swapMarkings, maslovX_swapMarkings]
-  ring
 
 /-- The marking swap exchanges the integer-valued Maslov gradings. -/
 @[simp]

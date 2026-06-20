@@ -910,6 +910,30 @@ grid diagram. -/
 theorem swapMarkings_swapMarkings : G.swapMarkings.swapMarkings = G := by
   ext c <;> simp [swapMarkings]
 
+/-- Row relabeling commutes with exchanging the two marking states. -/
+@[simp]
+theorem relabelRows_swapMarkings (ρ : Equiv.Perm (Fin n)) :
+    (G.relabelRows ρ).swapMarkings = G.swapMarkings.relabelRows ρ := by
+  ext c <;> simp [swapMarkings]
+
+/-- Column relabeling commutes with exchanging the two marking states. -/
+@[simp]
+theorem relabelColumns_swapMarkings (κ : Equiv.Perm (Fin n)) :
+    (G.relabelColumns κ).swapMarkings = G.swapMarkings.relabelColumns κ := by
+  ext c <;> simp [swapMarkings]
+
+/-- Row swaps commute with exchanging the two marking states. -/
+@[simp]
+theorem swapRows_swapMarkings (a b : Fin n) :
+    (G.swapRows a b).swapMarkings = G.swapMarkings.swapRows a b := by
+  simp [swapRows]
+
+/-- Column swaps commute with exchanging the two marking states. -/
+@[simp]
+theorem swapColumns_swapMarkings (a b : Fin n) :
+    (G.swapColumns a b).swapMarkings = G.swapMarkings.swapColumns a b := by
+  simp [swapColumns]
+
 /-- The marking swap commutes with the diagonal reflection of a grid diagram. -/
 @[simp]
 theorem swapMarkings_transpose : G.swapMarkings.transpose = G.transpose.swapMarkings := by
