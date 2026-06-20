@@ -106,7 +106,7 @@ private theorem isInducing_restrict_of_embedding {Z W A : Type*} [TopologicalSpa
     IsInducing ((f ⁻¹' D).restrict f) := by
   let φ : A ≃ₜ (f ⁻¹' D) := he.toHomeomorph.trans (Homeomorph.setCongr hrange)
   have hφ_apply (a : A) : (φ a : Z) = e a := by
-    change ((Homeomorph.setCongr hrange) (he.toHomeomorph a) : Z) = e a
+    simp only [φ, Homeomorph.trans_apply]
     simp [Homeomorph.setCongr]
   have hcomp : (f ⁻¹' D).restrict f ∘ φ = f ∘ e := by
     funext a
@@ -179,7 +179,7 @@ theorem isEmbedding_right (F : Isotopy f₀ f₁) : IsEmbedding f₁ := by
 
 /-- Value of the concatenated homotopy on the first half `[0, 1 / 2]`, with the time parameter
 rescaled to `2 * t`. -/
-theorem trans_toHomotopy_apply_of_le (F : Isotopy f₀ f₁) (G : Isotopy f₁ f₂) {t : I} (x : X)
+private theorem trans_toHomotopy_apply_of_le (F : Isotopy f₀ f₁) (G : Isotopy f₁ f₂) {t : I} (x : X)
     (h : (t : ℝ) ≤ 1 / 2) :
     (F.toHomotopy.trans G.toHomotopy) (t, x)
       = F.toHomotopy (⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, h⟩⟩, x) := by
@@ -187,7 +187,8 @@ theorem trans_toHomotopy_apply_of_le (F : Isotopy f₀ f₁) (G : Isotopy f₁ f
 
 /-- Value of the concatenated homotopy on the second half `[1 / 2, 1]`, with the time parameter
 rescaled to `2 * t - 1`. -/
-theorem trans_toHomotopy_apply_of_not_le (F : Isotopy f₀ f₁) (G : Isotopy f₁ f₂) {t : I} (x : X)
+private theorem trans_toHomotopy_apply_of_not_le (F : Isotopy f₀ f₁) (G : Isotopy f₁ f₂) {t : I}
+    (x : X)
     (h : ¬ (t : ℝ) ≤ 1 / 2) :
     (F.toHomotopy.trans G.toHomotopy) (t, x)
       = G.toHomotopy
