@@ -30,6 +30,7 @@ variable [AddCommMonoid F] [Module R F]
 def IsTotallyReal (J : E →ₗ[R] E) (L : Submodule R E) : Prop :=
   IsCompl L (L.map J)
 
+/-- The totally real predicate unfolds to complementarity of `L` and its `J`-image. -/
 @[simp]
 theorem isTotallyReal_iff (J : E →ₗ[R] E) (L : Submodule R E) :
     IsTotallyReal J L ↔ IsCompl L (L.map J) :=
@@ -39,18 +40,23 @@ namespace IsTotallyReal
 
 variable {J : E →ₗ[R] E} {K : F →ₗ[R] F} {L L' : Submodule R E} {M : Submodule R F}
 
+/-- A totally real submodule is complementary to its `J`-image. -/
 theorem isCompl (hL : IsTotallyReal J L) : IsCompl L (L.map J) :=
   hL
 
+/-- A totally real submodule is disjoint from its `J`-image. -/
 theorem disjoint (hL : IsTotallyReal J L) : Disjoint L (L.map J) :=
   hL.isCompl.disjoint
 
+/-- The intersection of a totally real submodule with its `J`-image is bottom. -/
 theorem inf_eq_bot (hL : IsTotallyReal J L) : L ⊓ L.map J = ⊥ :=
   hL.isCompl.inf_eq_bot
 
+/-- A totally real submodule spans codisjointly with its `J`-image. -/
 theorem codisjoint (hL : IsTotallyReal J L) : Codisjoint L (L.map J) :=
   hL.isCompl.codisjoint
 
+/-- A totally real submodule and its `J`-image span the whole module. -/
 theorem sup_eq_top (hL : IsTotallyReal J L) : L ⊔ L.map J = ⊤ :=
   hL.isCompl.sup_eq_top
 
