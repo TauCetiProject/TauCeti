@@ -28,17 +28,19 @@ From this data we build:
   `OrderSystem.LinearlyEquivalent`, the equivalence relation "differ by a principal divisor";
 * `OrderSystem.ClassGroup`, the divisor class group `WeilDivisor X ⧸ principal`, with its
   quotient map `OrderSystem.divisorClass` and the characterization of equal classes;
-* `OrderSystem.degreeClass` and `OrderSystem.picZero`: when principal divisors have degree
-  zero (the geometric fact that a rational function has as many zeros as poles, recorded here
-  as the hypothesis `IsDegreeZero`), the degree descends to the class group, and `Pic⁰` is the
-  kernel of that descended degree.
+* `OrderSystem.weightedDegreeClass` and `OrderSystem.picZero`: when principal divisors have
+  weighted degree zero (the geometric fact that a rational function has as many zeros as poles,
+  counted with residue-field degrees on a curve over a non-algebraically-closed field, recorded
+  here as the hypothesis `IsWeightedDegreeZero`), the weighted degree descends to the class
+  group, and `Pic⁰` is the kernel of that descended weighted degree.
 
 This realizes the Layer A roadmap items "principal divisors", "`Cl(X) ≅ Pic X`", and
-"`Pic⁰ X = ker deg` (as an abstract group)" of
+"`Pic⁰ X = ker deg` (as an abstract group, with the geometric degree supplied as a weight)" of
 `TauCetiRoadmap/JacobianChallenge/README.md`, before the Picard functor and Picard scheme
 exist. The geometric `ord_x` (residue-field valuations of a function field) and the proof that
-a principal divisor has degree zero are later geometric constructions; here both are abstracted
-to the data of an `OrderSystem` and the predicate `IsDegreeZero`.
+a principal divisor has weighted degree zero are later geometric constructions; here both are
+abstracted to the data of an `OrderSystem`, a weight function, and the predicate
+`IsWeightedDegreeZero`.
 
 No external mathematics is vendored. This reuses Tau Ceti's existing `WeilDivisor` API and
 Mathlib's `Finsupp.onFinset` (to assemble a finitely supported function from coordinatewise
@@ -173,44 +175,89 @@ lemma divisorClass_eq_zero_iff {D : WeilDivisor X} :
     S.divisorClass D = 0 ↔ D ∈ S.principalSubgroup :=
   QuotientAddGroup.eq_zero_iff D
 
-/-- An order system has *degree-zero principal divisors* when every principal divisor has
-(unweighted) degree zero. For a smooth proper curve this is the geometric fact that a rational
-function has as many zeros as poles, counted with multiplicity; here it is recorded as a
-hypothesis. -/
-def IsDegreeZero : Prop :=
-  ∀ g, degree (S.principalDivisor g) = 0
+/-- An order system has *weighted-degree-zero principal divisors* for a weight `w : X → ℤ` when
+every principal divisor has weighted degree zero.
+
+For a smooth proper curve over a field `k`, the intended weight is the residue-field degree
+`x ↦ [κ(x) : k]`; this is the geometric fact that a rational function has as many zeros as
+poles, counted with residue-field degrees. -/
+def IsWeightedDegreeZero (w : X → ℤ) : Prop :=
+  ∀ g, weightedDegree w (S.principalDivisor g) = 0
 
 variable {S}
 
-lemma IsDegreeZero.principalSubgroup_le_ker (h : S.IsDegreeZero) :
-    S.principalSubgroup ≤ (degree : WeilDivisor X →+ ℤ).ker := by
+lemma IsWeightedDegreeZero.principalSubgroup_le_weightedDegree_ker {w : X → ℤ}
+    (h : S.IsWeightedDegreeZero w) :
+    S.principalSubgroup ≤ (weightedDegree w : WeilDivisor X →+ ℤ).ker := by
   rintro D ⟨g, rfl⟩
   rw [AddMonoidHom.mem_ker]
   exact h g
 
-/-- When principal divisors have degree zero, the degree map descends to the divisor class
-group: linearly equivalent divisors have the same degree. -/
-noncomputable def degreeClass (h : S.IsDegreeZero) : S.ClassGroup →+ ℤ :=
-  QuotientAddGroup.lift S.principalSubgroup degree h.principalSubgroup_le_ker
+/-- When principal divisors have weighted degree zero, the weighted degree map descends to the
+divisor class group: linearly equivalent divisors have the same weighted degree. -/
+noncomputable def weightedDegreeClass (w : X → ℤ) (h : S.IsWeightedDegreeZero w) :
+    S.ClassGroup →+ ℤ :=
+  QuotientAddGroup.lift S.principalSubgroup (weightedDegree w)
+    h.principalSubgroup_le_weightedDegree_ker
 
 @[simp]
-lemma degreeClass_divisorClass (h : S.IsDegreeZero) (D : WeilDivisor X) :
-    degreeClass h (S.divisorClass D) = degree D :=
-  QuotientAddGroup.lift_mk' S.principalSubgroup h.principalSubgroup_le_ker D
+lemma weightedDegreeClass_divisorClass (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+    (D : WeilDivisor X) :
+    weightedDegreeClass w h (S.divisorClass D) = weightedDegree w D :=
+  QuotientAddGroup.lift_mk' S.principalSubgroup h.principalSubgroup_le_weightedDegree_ker D
 
-/-- The degree-zero part of the divisor class group, the abstract `Pic⁰` of the Jacobian
-roadmap: the kernel of the degree map on divisor classes. -/
-noncomputable def picZero (h : S.IsDegreeZero) : AddSubgroup S.ClassGroup :=
-  (degreeClass h).ker
+/-- The weighted-degree-zero part of the divisor class group, the abstract `Pic⁰` of the
+Jacobian roadmap: the kernel of the weighted degree map on divisor classes. -/
+noncomputable def picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w) :
+    AddSubgroup S.ClassGroup :=
+  (weightedDegreeClass w h).ker
 
-lemma mem_picZero (h : S.IsDegreeZero) {c : S.ClassGroup} :
-    c ∈ picZero h ↔ degreeClass h c = 0 :=
+lemma mem_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w) {c : S.ClassGroup} :
+    c ∈ picZero w h ↔ weightedDegreeClass w h c = 0 :=
   AddMonoidHom.mem_ker
 
 @[simp]
-lemma divisorClass_mem_picZero (h : S.IsDegreeZero) {D : WeilDivisor X} :
-    S.divisorClass D ∈ picZero h ↔ degree D = 0 := by
-  rw [mem_picZero, degreeClass_divisorClass]
+lemma divisorClass_mem_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+    {D : WeilDivisor X} :
+    S.divisorClass D ∈ picZero w h ↔ weightedDegree w D = 0 := by
+  rw [mem_picZero, weightedDegreeClass_divisorClass]
+
+/-- An order system has *unweighted-degree-zero principal divisors* when every principal
+divisor has unweighted degree zero. This is the specialization of `IsWeightedDegreeZero` to the
+constant weight `1`, appropriate for the algebraically closed/unweighted formal setting. -/
+def IsUnweightedDegreeZero : Prop :=
+  S.IsWeightedDegreeZero fun _ => (1 : ℤ)
+
+lemma IsUnweightedDegreeZero.principalSubgroup_le_ker (h : S.IsUnweightedDegreeZero) :
+    S.principalSubgroup ≤ (degree : WeilDivisor X →+ ℤ).ker := by
+  intro D hD
+  rw [AddMonoidHom.mem_ker, ← weightedDegree_one_eq_degree D]
+  exact h.principalSubgroup_le_weightedDegree_ker hD
+
+/-- The unweighted degree map on divisor classes, for the algebraically closed/unweighted
+specialization. For curves over a general field, use `weightedDegreeClass`. -/
+noncomputable def unweightedDegreeClass (h : S.IsUnweightedDegreeZero) : S.ClassGroup →+ ℤ :=
+  QuotientAddGroup.lift S.principalSubgroup degree h.principalSubgroup_le_ker
+
+@[simp]
+lemma unweightedDegreeClass_divisorClass (h : S.IsUnweightedDegreeZero) (D : WeilDivisor X) :
+    unweightedDegreeClass h (S.divisorClass D) = degree D :=
+  QuotientAddGroup.lift_mk' S.principalSubgroup h.principalSubgroup_le_ker D
+
+/-- The unweighted-degree-zero part of the divisor class group, for the algebraically
+closed/unweighted specialization. For curves over a general field, use `picZero` with
+residue-field-degree weights. -/
+noncomputable def unweightedPicZero (h : S.IsUnweightedDegreeZero) : AddSubgroup S.ClassGroup :=
+  (unweightedDegreeClass h).ker
+
+lemma mem_unweightedPicZero (h : S.IsUnweightedDegreeZero) {c : S.ClassGroup} :
+    c ∈ unweightedPicZero h ↔ unweightedDegreeClass h c = 0 :=
+  AddMonoidHom.mem_ker
+
+@[simp]
+lemma divisorClass_mem_unweightedPicZero (h : S.IsUnweightedDegreeZero) {D : WeilDivisor X} :
+    S.divisorClass D ∈ unweightedPicZero h ↔ degree D = 0 := by
+  rw [mem_unweightedPicZero, unweightedDegreeClass_divisorClass]
 
 end OrderSystem
 
