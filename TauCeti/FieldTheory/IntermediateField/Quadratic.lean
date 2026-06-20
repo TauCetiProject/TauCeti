@@ -50,11 +50,11 @@ private theorem isIntegral_of_sq_mem {F : IntermediateField K L} {x : L} (hx2 : 
 divides the nonzero polynomial `X² - x²`. -/
 private theorem minpoly_natDegree_le_two_of_sq_mem {F : IntermediateField K L} {x : L}
     (hx2 : x ^ 2 ∈ F) : (minpoly F x).natDegree ≤ 2 := by
-  have hdvd : minpoly F x ∣ ((Polynomial.X : Polynomial F) ^ 2 - Polynomial.C ⟨x ^ 2, hx2⟩) :=
-    minpoly.dvd F x (by simp)
   have hpoly_ne : ((Polynomial.X : Polynomial F) ^ 2 - Polynomial.C ⟨x ^ 2, hx2⟩) ≠ 0 := by
     intro hzero; have hdeg := congrArg Polynomial.natDegree hzero; norm_num at hdeg
-  exact (Polynomial.natDegree_le_of_dvd hdvd hpoly_ne).trans_eq (by simp)
+  have hdeg := minpoly.degree_le_of_ne_zero F x hpoly_ne (by simp)
+  rw [Polynomial.degree_X_pow_sub_C (n := 2) (by norm_num)] at hdeg
+  exact Polynomial.natDegree_le_iff_degree_le.mpr hdeg
 
 /-- If `x² ∈ F`, every element of `F ⊔ K⟮x⟯` has the form `a + b * x` with
 `a, b ∈ F`. -/
