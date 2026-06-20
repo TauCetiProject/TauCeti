@@ -46,6 +46,7 @@ variable {X Y : Type*}
 lemma le_iff {D E : WeilDivisor X} : D ≤ E ↔ ∀ x, coeff D x ≤ coeff E x :=
   Finsupp.le_def
 
+/-- The coefficientwise order projects to coefficients: `D ≤ E` gives `coeff D x ≤ coeff E x`. -/
 lemma coeff_le_coeff {D E : WeilDivisor X} (h : D ≤ E) (x : X) : coeff D x ≤ coeff E x :=
   le_iff.mp h x
 
@@ -65,18 +66,20 @@ lemma le_iff_isEffective_sub {D E : WeilDivisor X} : D ≤ E ↔ IsEffective (E 
 
 /-! ### Lattice operations -/
 
+/-- The coefficient of a pointwise maximum is the maximum of the coefficients. -/
 @[simp]
 lemma coeff_sup (D E : WeilDivisor X) (x : X) :
     coeff (D ⊔ E) x = coeff D x ⊔ coeff E x :=
   rfl
 
+/-- The coefficient of a pointwise minimum is the minimum of the coefficients. -/
 @[simp]
 lemma coeff_inf (D E : WeilDivisor X) (x : X) :
     coeff (D ⊓ E) x = coeff D x ⊓ coeff E x :=
   rfl
 
-/-- The pointwise maximum of two effective divisors is effective. -/
-lemma IsEffective.sup {D E : WeilDivisor X} (hD : IsEffective D) (_hE : IsEffective E) :
+/-- The pointwise maximum of an effective divisor with any divisor is effective. -/
+lemma IsEffective.sup {D E : WeilDivisor X} (hD : IsEffective D) :
     IsEffective (D ⊔ E) :=
   isEffective_iff_zero_le.mpr
     (le_sup_of_le_left (isEffective_iff_zero_le.mp hD))
@@ -89,19 +92,23 @@ lemma IsEffective.inf {D E : WeilDivisor X} (hD : IsEffective D) (hE : IsEffecti
 
 /-! ### Positive and negative parts -/
 
+/-- The coefficient of the positive part is the positive part of the coefficient. -/
 @[simp]
 lemma coeff_posPart (D : WeilDivisor X) (x : X) : coeff D⁺ x = coeff D x ⊔ 0 := by
   rw [posPart_def, coeff_sup, coeff_zero]
 
+/-- The coefficient of the negative part is the negative part of the coefficient. -/
 @[simp]
 lemma coeff_negPart (D : WeilDivisor X) (x : X) : coeff D⁻ x = -coeff D x ⊔ 0 := by
   rw [negPart_def, coeff_sup, coeff_neg, coeff_zero]
 
 /-- The positive part of a Weil divisor is effective. -/
+@[simp]
 lemma isEffective_posPart (D : WeilDivisor X) : IsEffective D⁺ :=
   isEffective_iff_zero_le.mpr (posPart_nonneg D)
 
 /-- The negative part of a Weil divisor is effective. -/
+@[simp]
 lemma isEffective_negPart (D : WeilDivisor X) : IsEffective D⁻ :=
   isEffective_iff_zero_le.mpr (negPart_nonneg D)
 
@@ -112,13 +119,11 @@ lemma support_posPart_disjoint_negPart (D : WeilDivisor X) :
   rw [Finset.disjoint_left]
   intro x hxp hxn
   rw [Finsupp.mem_support_iff] at hxp hxn
-  have hp : coeff D⁺ x ≠ 0 := hxp
-  have hn : coeff D⁻ x ≠ 0 := hxn
-  rw [coeff_posPart] at hp
-  rw [coeff_negPart] at hn
-  rcases le_total (coeff D x) 0 with h | h
-  · exact hp (sup_eq_right.mpr h)
-  · exact hn (sup_eq_right.mpr (neg_nonpos.mpr h))
+  have hinf : coeff D⁺ x ⊓ coeff D⁻ x = 0 := by
+    rw [← coeff_inf, posPart_inf_negPart_eq_zero, coeff_zero]
+  rcases le_total (coeff D⁺ x) (coeff D⁻ x) with h | h
+  · exact hxp (by rwa [inf_eq_left.mpr h] at hinf)
+  · exact hxn (by rwa [inf_eq_right.mpr h] at hinf)
 
 /-- A divisor is effective exactly when its negative part vanishes. -/
 lemma negPart_eq_zero_iff_isEffective {D : WeilDivisor X} : D⁻ = 0 ↔ IsEffective D := by
@@ -128,17 +133,22 @@ lemma negPart_eq_zero_iff_isEffective {D : WeilDivisor X} : D⁻ = 0 ↔ IsEffec
 lemma posPart_eq_self_iff_isEffective {D : WeilDivisor X} : D⁺ = D ↔ IsEffective D := by
   rw [posPart_eq_self, isEffective_iff_zero_le]
 
-/-! ### Degree of the decomposition -/
+/-- Every Weil divisor is the difference of its positive and negative parts. -/
+lemma posPart_sub_negPart (D : WeilDivisor X) : D⁺ - D⁻ = D :=
+  _root_.posPart_sub_negPart D
 
-/-- The unweighted degree splits over the positive/negative part decomposition. -/
-lemma degree_posPart_sub_degree_negPart (D : WeilDivisor X) :
-    degree D⁺ - degree D⁻ = degree D := by
-  rw [← degree_sub, _root_.posPart_sub_negPart]
+/-! ### Degree of the decomposition -/
 
 /-- The weighted degree splits over the positive/negative part decomposition. -/
 lemma weightedDegree_posPart_sub_weightedDegree_negPart (w : X → ℤ) (D : WeilDivisor X) :
     weightedDegree w D⁺ - weightedDegree w D⁻ = weightedDegree w D := by
-  rw [← weightedDegree_sub, _root_.posPart_sub_negPart]
+  rw [← weightedDegree_sub, posPart_sub_negPart]
+
+/-- The unweighted degree splits over the positive/negative part decomposition. -/
+lemma degree_posPart_sub_degree_negPart (D : WeilDivisor X) :
+    degree D⁺ - degree D⁻ = degree D := by
+  simp only [← weightedDegree_one_eq_degree]
+  exact weightedDegree_posPart_sub_weightedDegree_negPart _ D
 
 /-! ### The decomposition of a point difference -/
 
