@@ -70,13 +70,13 @@ lemma le_iff_isEffective_sub {D E : WeilDivisor X} : D ≤ E ↔ IsEffective (E 
 @[simp]
 lemma coeff_sup (D E : WeilDivisor X) (x : X) :
     coeff (D ⊔ E) x = coeff D x ⊔ coeff E x :=
-  rfl
+  Finsupp.sup_apply D E x
 
 /-- The coefficient of a pointwise minimum is the minimum of the coefficients. -/
 @[simp]
 lemma coeff_inf (D E : WeilDivisor X) (x : X) :
     coeff (D ⊓ E) x = coeff D x ⊓ coeff E x :=
-  rfl
+  Finsupp.inf_apply D E x
 
 /-- The pointwise maximum of an effective divisor with any divisor is effective. -/
 lemma IsEffective.sup {D E : WeilDivisor X} (hD : IsEffective D) :
@@ -186,7 +186,7 @@ lemma negPart_pointDifference {x y : X} (h : x ≠ y) :
     (pointDifference x y)⁻ = ofPoint y := by
   have hneg : -pointDifference x y = pointDifference y x := by
     rw [pointDifference, pointDifference, neg_sub]
-  rw [negPart_def, hneg, ← posPart_def, posPart_pointDifference h.symm]
+  rw [← posPart_neg, hneg, posPart_pointDifference h.symm]
 
 end WeilDivisor
 
