@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Data.Real.Basic
+import Mathlib.Algebra.Module.Equiv.Basic
 import Mathlib.LinearAlgebra.Span.Defs
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.Abel
@@ -51,6 +52,8 @@ statement, before any smoothness or bundle structure is introduced.
   complex-antilinear part vanishes (the `∂̄ F = 0` characterization).
 * `TauCeti.isCompl_complexLinearMaps`: the complex-linear and complex-antilinear maps are
   complementary subspaces of all real-linear maps.
+* `TauCeti.isComplexLinear_arrowCongr_iff`: complex-linearity is preserved and reflected by
+  conjugating source, target, and map along real-linear equivalences.
 
 The sign conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 2nd ed., Section 2.2, specialized to the pointwise real-linear setting.
@@ -97,6 +100,23 @@ theorem IsComplexLinear.apply {F : V →ₗ[ℝ] W} (h : IsComplexLinear J J' F)
 theorem isComplexLinear_of_apply {F : V →ₗ[ℝ] W} (h : ∀ v, F (J v) = J' (F v)) :
     IsComplexLinear J J' F :=
   LinearMap.ext fun v => by simpa using h v
+
+/-- Raw complex-linearity is preserved and reflected by conjugating source and target along
+linear equivalences. -/
+@[simp]
+theorem isComplexLinear_arrowCongr_iff {V₂ W₂ : Type*}
+    [AddCommGroup V₂] [Module ℝ V₂] [AddCommGroup W₂] [Module ℝ W₂]
+    {F : V →ₗ[ℝ] W} (eV : V ≃ₗ[ℝ] V₂) (eW : W ≃ₗ[ℝ] W₂) :
+    IsComplexLinear (eV.conj J) (eW.conj J') (eV.arrowCongr eW F) ↔
+      IsComplexLinear J J' F := by
+  constructor
+  · intro hF
+    refine isComplexLinear_of_apply fun v => ?_
+    have h := hF.apply (eV v)
+    simpa [LinearEquiv.arrowCongr_apply] using congrArg eW.symm h
+  · intro hF
+    refine isComplexLinear_of_apply fun v => ?_
+    simp [LinearEquiv.arrowCongr_apply, hF.apply]
 
 /-- The pointwise form of complex antilinearity: `F (J v) = -(J' (F v))`. -/
 theorem IsComplexAntilinear.apply {F : V →ₗ[ℝ] W} (h : IsComplexAntilinear J J' F) (v : V) :

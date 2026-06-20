@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.FieldTheory.Galois.Basic
 import Mathlib.NumberTheory.NumberField.Basic
-import TauCeti.NumberTheory.DedekindDomain.RamificationInertia
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # A counting criterion for a prime to split completely in a Galois number field
@@ -44,11 +44,11 @@ variable (K L : Type*) [Field K] [Field L] [NumberField K] [NumberField L] [Alge
 private theorem ncard_primesOver_eq_finrank_iff_of_isGalois {A : Type*} [CommRing A]
     [IsDedekindDomain A] [Algebra A (𝓞 L)] [Module.Finite A (𝓞 L)]
     [IsTorsionFree A (𝓞 L)] [IsGaloisGroup Gal(L/K) A (𝓞 L)] (P : Ideal A)
-    [P.IsMaximal] (hP : P ≠ ⊥) :
+    [P.IsMaximal] :
     (primesOver P (𝓞 L)).ncard = finrank K L ↔
       P.ramificationIdxIn (𝓞 L) = 1 ∧ P.inertiaDegIn (𝓞 L) = 1 := by
-  have h := TauCeti.DedekindDomain.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup
-    (B := 𝓞 L) Gal(L/K) P hP
+  have h := TauCeti.RamificationInertia.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup
+    (B := 𝓞 L) Gal(L/K) P
   rw [IsGaloisGroup.card_eq_finrank Gal(L/K) K L] at h
   exact h
 
@@ -65,7 +65,7 @@ theorem ncard_primesOver_eq_finrank_iff (K : Type*) [Field K] [NumberField K] [I
   haveI : (span {(p : ℤ)}).IsPrime :=
     (Ideal.span_singleton_prime hpne).mpr (Nat.prime_iff_prime_int.mp (Fact.out : p.Prime))
   haveI : (span {(p : ℤ)}).IsMaximal := Ideal.IsPrime.isMaximal ‹_› hp0
-  have h := ncard_primesOver_eq_finrank_iff_of_isGalois ℚ K (A := ℤ) (span {(p : ℤ)}) hp0
+  have h := ncard_primesOver_eq_finrank_iff_of_isGalois ℚ K (A := ℤ) (span {(p : ℤ)})
   exact h
 
 /-- **Splitting completely ⟺ decomposition group trivial.** For a Galois number field `L` and a

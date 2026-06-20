@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Const
+import Mathlib.Analysis.Calculus.FDeriv.Linear
 import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
@@ -23,6 +25,15 @@ different Cauchy--Riemann convention.
 * `IsJHolomorphicAt`: a map has a complex-linear Frechet derivative at a point.
 * `IsJHolomorphicWithinAt`: a map has a complex-linear Frechet derivative within a set.
 * `IsJHolomorphicOn` and `IsJHolomorphic`: setwise and global versions.
+
+The Cauchy--Riemann equation `df ∘ J = J' ∘ df` is real-linear in `df`, so a continuous
+real-linear map is `J`-holomorphic exactly when it is complex-linear, and `J`-holomorphic maps
+are closed under pointwise sums, differences, and real scalar multiples:
+
+* `isJHolomorphicAt_continuousLinearMap_iff` and `isJHolomorphic_continuousLinearMap_iff`:
+  a continuous real-linear map is `J`-holomorphic iff it is complex-linear.
+* `IsJHolomorphicAt.add`, `IsJHolomorphicAt.neg`, `IsJHolomorphicAt.sub`,
+  `IsJHolomorphicAt.const_smul` and their within-set, setwise, and global analogues.
 
 The convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: the Cauchy--Riemann equation is `df ∘ J = J' ∘ df`.
@@ -293,5 +304,133 @@ lemma IsJHolomorphic.comp {J : AlmostComplexStructure V}
   fun x => (hg (f x)).comp (hf x)
 
 end JHolomorphic
+
+section LinearStructure
+
+variable {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
+
+/-- A continuous real-linear map is `J`-holomorphic at a point iff it is complex-linear: its
+derivative is the map itself, so the Cauchy--Riemann condition becomes complex-linearity. -/
+lemma isJHolomorphicAt_continuousLinearMap_iff (F : V →L[ℝ] W) (x : V) :
+    IsJHolomorphicAt J J' (⇑F) x ↔ IsComplexLinearMap J J' F.toLinearMap := by
+  refine ⟨fun hF => ?_, fun h => ⟨F, F.hasFDerivAt, h⟩⟩
+  obtain ⟨f', hf', hcl⟩ := hF
+  rwa [hf'.unique F.hasFDerivAt] at hcl
+
+/-- A continuous real-linear map is globally `J`-holomorphic iff it is complex-linear. -/
+lemma isJHolomorphic_continuousLinearMap_iff (F : V →L[ℝ] W) :
+    IsJHolomorphic J J' (⇑F) ↔ IsComplexLinearMap J J' F.toLinearMap :=
+  ⟨fun h => (isJHolomorphicAt_continuousLinearMap_iff F 0).mp (h 0),
+    fun h x => (isJHolomorphicAt_continuousLinearMap_iff F x).mpr h⟩
+
+/-- The pointwise sum of two `J`-holomorphic maps is `J`-holomorphic. -/
+lemma IsJHolomorphicAt.add {f g : V → W} {x : V}
+    (hf : IsJHolomorphicAt J J' f x) (hg : IsJHolomorphicAt J J' g x) :
+    IsJHolomorphicAt J J' (f + g) x := by
+  refine ⟨hf.choose + hg.choose, hf.hasFDerivAt.add hg.hasFDerivAt, ?_⟩
+  rw [ContinuousLinearMap.toLinearMap_add]
+  exact hf.derivative_isComplexLinear.add hg.derivative_isComplexLinear
+
+/-- The pointwise negation of a `J`-holomorphic map is `J`-holomorphic. -/
+lemma IsJHolomorphicAt.neg {f : V → W} {x : V} (hf : IsJHolomorphicAt J J' f x) :
+    IsJHolomorphicAt J J' (-f) x := by
+  refine ⟨-hf.choose, hf.hasFDerivAt.neg, ?_⟩
+  rw [ContinuousLinearMap.toLinearMap_neg]
+  exact hf.derivative_isComplexLinear.neg
+
+/-- The pointwise difference of two `J`-holomorphic maps is `J`-holomorphic. -/
+lemma IsJHolomorphicAt.sub {f g : V → W} {x : V}
+    (hf : IsJHolomorphicAt J J' f x) (hg : IsJHolomorphicAt J J' g x) :
+    IsJHolomorphicAt J J' (f - g) x := by
+  refine ⟨hf.choose - hg.choose, hf.hasFDerivAt.sub hg.hasFDerivAt, ?_⟩
+  rw [ContinuousLinearMap.toLinearMap_sub]
+  exact hf.derivative_isComplexLinear.sub hg.derivative_isComplexLinear
+
+/-- A real scalar multiple of a `J`-holomorphic map is `J`-holomorphic. -/
+lemma IsJHolomorphicAt.const_smul {f : V → W} {x : V} (hf : IsJHolomorphicAt J J' f x)
+    (c : ℝ) : IsJHolomorphicAt J J' (c • f) x := by
+  refine ⟨c • hf.choose, hf.hasFDerivAt.const_smul c, ?_⟩
+  rw [ContinuousLinearMap.toLinearMap_smul]
+  exact hf.derivative_isComplexLinear.smul c
+
+/-- The pointwise sum of two maps `J`-holomorphic within a set is `J`-holomorphic within it. -/
+lemma IsJHolomorphicWithinAt.add {f g : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicWithinAt J J' f s x) (hg : IsJHolomorphicWithinAt J J' g s x) :
+    IsJHolomorphicWithinAt J J' (f + g) s x := by
+  refine ⟨hf.choose + hg.choose, hf.hasFDerivWithinAt.add hg.hasFDerivWithinAt, ?_⟩
+  rw [ContinuousLinearMap.toLinearMap_add]
+  exact hf.derivative_isComplexLinear.add hg.derivative_isComplexLinear
+
+/-- The pointwise negation of a map `J`-holomorphic within a set is `J`-holomorphic within it. -/
+lemma IsJHolomorphicWithinAt.neg {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicWithinAt J J' f s x) :
+    IsJHolomorphicWithinAt J J' (-f) s x := by
+  refine ⟨-hf.choose, hf.hasFDerivWithinAt.neg, ?_⟩
+  rw [ContinuousLinearMap.toLinearMap_neg]
+  exact hf.derivative_isComplexLinear.neg
+
+/-- The pointwise difference of two maps `J`-holomorphic within a set is `J`-holomorphic
+within it. -/
+lemma IsJHolomorphicWithinAt.sub {f g : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicWithinAt J J' f s x) (hg : IsJHolomorphicWithinAt J J' g s x) :
+    IsJHolomorphicWithinAt J J' (f - g) s x := by
+  refine ⟨hf.choose - hg.choose, hf.hasFDerivWithinAt.sub hg.hasFDerivWithinAt, ?_⟩
+  rw [ContinuousLinearMap.toLinearMap_sub]
+  exact hf.derivative_isComplexLinear.sub hg.derivative_isComplexLinear
+
+/-- A real scalar multiple of a map `J`-holomorphic within a set is `J`-holomorphic within
+it. -/
+lemma IsJHolomorphicWithinAt.const_smul {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicWithinAt J J' f s x) (c : ℝ) :
+    IsJHolomorphicWithinAt J J' (c • f) s x := by
+  refine ⟨c • hf.choose, hf.hasFDerivWithinAt.const_smul c, ?_⟩
+  rw [ContinuousLinearMap.toLinearMap_smul]
+  exact hf.derivative_isComplexLinear.smul c
+
+/-- The pointwise sum of two maps `J`-holomorphic on a set is `J`-holomorphic on it. -/
+lemma IsJHolomorphicOn.add {f g : V → W} {s : Set V}
+    (hf : IsJHolomorphicOn J J' f s) (hg : IsJHolomorphicOn J J' g s) :
+    IsJHolomorphicOn J J' (f + g) s :=
+  fun x hx => (hf x hx).add (hg x hx)
+
+/-- The pointwise negation of a map `J`-holomorphic on a set is `J`-holomorphic on it. -/
+lemma IsJHolomorphicOn.neg {f : V → W} {s : Set V} (hf : IsJHolomorphicOn J J' f s) :
+    IsJHolomorphicOn J J' (-f) s :=
+  fun x hx => (hf x hx).neg
+
+/-- The pointwise difference of two maps `J`-holomorphic on a set is `J`-holomorphic on it. -/
+lemma IsJHolomorphicOn.sub {f g : V → W} {s : Set V}
+    (hf : IsJHolomorphicOn J J' f s) (hg : IsJHolomorphicOn J J' g s) :
+    IsJHolomorphicOn J J' (f - g) s :=
+  fun x hx => (hf x hx).sub (hg x hx)
+
+/-- A real scalar multiple of a map `J`-holomorphic on a set is `J`-holomorphic on it. -/
+lemma IsJHolomorphicOn.const_smul {f : V → W} {s : Set V} (hf : IsJHolomorphicOn J J' f s)
+    (c : ℝ) : IsJHolomorphicOn J J' (c • f) s :=
+  fun x hx => (hf x hx).const_smul c
+
+/-- The pointwise sum of two globally `J`-holomorphic maps is `J`-holomorphic. -/
+lemma IsJHolomorphic.add {f g : V → W}
+    (hf : IsJHolomorphic J J' f) (hg : IsJHolomorphic J J' g) :
+    IsJHolomorphic J J' (f + g) :=
+  fun x => (hf x).add (hg x)
+
+/-- The pointwise negation of a globally `J`-holomorphic map is `J`-holomorphic. -/
+lemma IsJHolomorphic.neg {f : V → W} (hf : IsJHolomorphic J J' f) :
+    IsJHolomorphic J J' (-f) :=
+  fun x => (hf x).neg
+
+/-- The pointwise difference of two globally `J`-holomorphic maps is `J`-holomorphic. -/
+lemma IsJHolomorphic.sub {f g : V → W}
+    (hf : IsJHolomorphic J J' f) (hg : IsJHolomorphic J J' g) :
+    IsJHolomorphic J J' (f - g) :=
+  fun x => (hf x).sub (hg x)
+
+/-- A real scalar multiple of a globally `J`-holomorphic map is `J`-holomorphic. -/
+lemma IsJHolomorphic.const_smul {f : V → W} (hf : IsJHolomorphic J J' f) (c : ℝ) :
+    IsJHolomorphic J J' (c • f) :=
+  fun x => (hf x).const_smul c
+
+end LinearStructure
 
 end TauCeti
