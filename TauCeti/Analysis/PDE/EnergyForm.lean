@@ -122,7 +122,7 @@ variable {lam Lam beta gamma : ℝ}
 
 /-- Weighted Young inequality in the form used to absorb the first-order drift term into
 half of the ellipticity floor. -/
-lemma mul_norm_abs_le_half_mul_sq_add (hlam : 0 < lam) (beta u : ℝ) (r : ℝ) :
+private lemma mul_norm_abs_le_half_mul_sq_add (hlam : 0 < lam) (beta u : ℝ) (r : ℝ) :
     beta * r * |u| ≤ lam / 2 * r ^ 2 + beta ^ 2 / (2 * lam) * u ^ 2 := by
   have hkey := two_mul_le_add_sq (lam * r) (beta * |u|)
   rw [mul_pow, mul_pow, sq_abs] at hkey
