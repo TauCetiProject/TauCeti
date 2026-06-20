@@ -57,7 +57,7 @@ lemma orbitQuotientToBase_mk (e : E) :
 
 /-- If deck orbits are exactly fibres of `p`, the deck-orbit relation is the kernel relation
 of `p`. -/
-private lemma orbitRel_eq_ker_of_exists_apply_eq
+lemma orbitRel_eq_ker_of_exists_apply_eq
     (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : Deck p, φ.1 e = e') :
     MulAction.orbitRel (Deck p) E = Setoid.ker p := by
   ext e e'
