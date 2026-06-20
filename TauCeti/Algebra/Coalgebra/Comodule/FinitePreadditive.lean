@@ -46,36 +46,9 @@ universe u v w
 
 namespace FGComoduleCat
 
-section Semiring
-
-variable {R : Type u} [CommSemiring R]
+variable {R : Type u} [CommRing R]
 variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable {M N : FGComoduleCat.{u, v, w} R C}
-
-/-- Finitely generated comodule morphisms inherit their additive commutative monoid
-structure from ambient comodule morphisms. -/
-instance instHomAddCommMonoid : AddCommMonoid (M ⟶ N) where
-  zero := ObjectProperty.homMk 0
-  add f g := ObjectProperty.homMk (f.hom + g.hom)
-  nsmul n f := ObjectProperty.homMk (n • f.hom)
-  zero_add f := by
-    apply ObjectProperty.hom_ext
-    exact zero_add f.hom
-  add_zero f := by
-    apply ObjectProperty.hom_ext
-    exact add_zero f.hom
-  add_assoc f g h := by
-    apply ObjectProperty.hom_ext
-    exact add_assoc f.hom g.hom h.hom
-  add_comm f g := by
-    apply ObjectProperty.hom_ext
-    exact add_comm f.hom g.hom
-  nsmul_zero f := by
-    apply ObjectProperty.hom_ext
-    exact AddMonoid.nsmul_zero f.hom
-  nsmul_succ n f := by
-    apply ObjectProperty.hom_ext
-    exact AddMonoid.nsmul_succ n f.hom
 
 /-- The ambient comodule morphism underlying the zero morphism is the zero morphism. -/
 @[simp]
@@ -86,60 +59,6 @@ theorem hom_zero : (0 : M ⟶ N).hom = 0 :=
 @[simp]
 theorem hom_add (f g : M ⟶ N) : (f + g).hom = f.hom + g.hom :=
   rfl
-
-/-- The zero morphism acts as the zero function. -/
-@[simp]
-theorem zero_apply (m : M) : (0 : M ⟶ N) m = 0 :=
-  rfl
-
-/-- Addition of morphisms acts by pointwise addition. -/
-@[simp]
-theorem add_apply (f g : M ⟶ N) (m : M) : (f + g) m = f m + g m :=
-  rfl
-
-/-- Composition of finitely generated comodule morphisms is additive in the left argument. -/
-@[simp]
-theorem add_comp {P : FGComoduleCat.{u, v, w} R C} (g h : N ⟶ P) (f : M ⟶ N) :
-    (f ≫ (g + h)) = f ≫ g + f ≫ h := by
-  apply ObjectProperty.hom_ext
-  change Comodule.Hom.comp (g.hom + h.hom) f.hom =
-    Comodule.Hom.comp g.hom f.hom + Comodule.Hom.comp h.hom f.hom
-  exact Comodule.Hom.add_comp (R := R) (C := C) g.hom h.hom f.hom
-
-/-- Composition of finitely generated comodule morphisms is additive in the right argument. -/
-@[simp]
-theorem comp_add {P : FGComoduleCat.{u, v, w} R C} (g : N ⟶ P) (f h : M ⟶ N) :
-    ((f + h) ≫ g) = f ≫ g + h ≫ g := by
-  apply ObjectProperty.hom_ext
-  change Comodule.Hom.comp g.hom (f.hom + h.hom) =
-    Comodule.Hom.comp g.hom f.hom + Comodule.Hom.comp g.hom h.hom
-  exact Comodule.Hom.comp_add (R := R) (C := C) g.hom f.hom h.hom
-
-/-- Composition with a zero finitely generated comodule morphism on the left is zero. -/
-@[simp]
-theorem zero_comp {P : FGComoduleCat.{u, v, w} R C} (g : N ⟶ P) :
-    (0 : M ⟶ N) ≫ g = 0 := by
-  apply ObjectProperty.hom_ext
-  change Comodule.Hom.comp g.hom 0 = 0
-  ext m
-  simp
-
-/-- Composition with a zero finitely generated comodule morphism on the right is zero. -/
-@[simp]
-theorem comp_zero {P : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
-    f ≫ (0 : N ⟶ P) = 0 := by
-  apply ObjectProperty.hom_ext
-  change Comodule.Hom.comp 0 f.hom = 0
-  ext m
-  rfl
-
-end Semiring
-
-section Ring
-
-variable {R : Type u} [CommRing R]
-variable {C : Type v} [AddCommMonoid C] [Module R C] [Coalgebra R C]
-variable {M N : FGComoduleCat.{u, v, w} R C}
 
 /-- The ambient comodule morphism underlying a negation is the negation of the underlying
 morphism. -/
@@ -153,6 +72,16 @@ morphisms. -/
 theorem hom_sub (f g : M ⟶ N) : (f - g).hom = f.hom - g.hom :=
   rfl
 
+/-- The zero morphism acts as the zero function. -/
+@[simp]
+theorem zero_apply (m : M) : (0 : M ⟶ N) m = 0 :=
+  rfl
+
+/-- Addition of morphisms acts by pointwise addition. -/
+@[simp]
+theorem add_apply (f g : M ⟶ N) (m : M) : (f + g) m = f m + g m :=
+  rfl
+
 /-- Negation of morphisms acts by pointwise negation. -/
 @[simp]
 theorem neg_apply (f : M ⟶ N) (m : M) : (-f) m = -f m :=
@@ -162,8 +91,6 @@ theorem neg_apply (f : M ⟶ N) (m : M) : (-f) m = -f m :=
 @[simp]
 theorem sub_apply (f g : M ⟶ N) (m : M) : (f - g) m = f m - g m :=
   rfl
-
-end Ring
 
 end FGComoduleCat
 
