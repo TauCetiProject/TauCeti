@@ -13,16 +13,17 @@ records that both notions are closed under taking products: an isotopy `f₀ ≈
 `g₀ ≈ g₁` combine, *along the shared time parameter*, into an isotopy `f₀ × g₀ ≈ f₁ × g₁` of the
 product maps, and likewise for ambient isotopies of a product space.
 
-This is the **products** closure property the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology/README.md`, layer 2) asks the general isotopy notion to carry
-before specialising to smooth embeddings `S¹ ↪ M`: "a product of slice charts is a slice chart;
-this is the building block for the product regions below". It mirrors, for `TauCeti.Isotopy`, the
-product lemmas Mathlib already provides for embeddings (`Topology.IsEmbedding.prodMap`) and for
+This supplies product infrastructure for the geometric-topology roadmap's general isotopy
+substrate (`TauCetiRoadmap/GeometricTopology/README.md`, encoding conventions), where isotopy and
+ambient isotopy are defined once before being specialised to locally flat isotopy, diffeotopies,
+and knot equivalence. It is also the isotopy analogue of the product closure lemmas that the
+roadmap's later local-flatness product API is expected to mirror. For `TauCeti.Isotopy`, the
+construction follows Mathlib's product lemmas for embeddings (`Topology.IsEmbedding.prodMap`) and
 homotopy (`ContinuousMap.Homotopy.prodMap`), the latter of which supplies the underlying homotopy
-here. The single subtlety past the homotopy case is that the two factors share one time
-coordinate, so the level-preserving total map of the product is *not* literally the product of the
-two total maps (which would carry two independent times); the embedding/homeomorphism statements
-are recovered through the time-duplicating embedding `(t, x, x') ↦ ((t, x), (t, x'))`.
+here. The single subtlety past the homotopy case is that the two factors share one time coordinate,
+so the level-preserving total map of the product is *not* literally the product of the two total
+maps (which would carry two independent times); the embedding/homeomorphism statements are
+recovered through the time-duplicating embedding `(t, x, x') ↦ ((t, x), (t, x'))`.
 
 ## Main definitions
 
