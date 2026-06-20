@@ -460,7 +460,7 @@ theorem JDiff_image_swap (s a t b : Finset (Fin n × Fin n)) :
 
 /-- Reversing both coordinates of both points of a pair exchanges the two endpoints of the strict
 southwest relation: it sends the column and row comparisons to their reverses. -/
-@[simp]
+@[simp, grind =]
 theorem isSouthWest_rev (p q : Fin n × Fin n) :
     IsSouthWest (Prod.map Fin.rev Fin.rev p) (Prod.map Fin.rev Fin.rev q) ↔ IsSouthWest q p := by
   simp only [IsSouthWest, Prod.map_fst, Prod.map_snd]
