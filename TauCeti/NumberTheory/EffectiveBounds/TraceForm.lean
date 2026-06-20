@@ -16,17 +16,14 @@ square-root bases `{1, x}` with `x² ∈ K`, and on those the trace form is diag
 `x ∉ K`: the off-diagonal entry `Tr(1 · x) = Tr x` vanishes because a non-base-field
 element whose square lies in the base field has trace zero.
 
-This file records the EffectiveBounds square-root examples using the reusable trace and
-discriminant API from `TauCeti.FieldTheory.Trace`.
+This file declares no new results: it records the EffectiveBounds square-root worked
+examples by reusing the trace and discriminant API from `TauCeti.FieldTheory.Trace`
+(`TauCeti.NumberField.trace_eq_zero_of_sq_ratCast` and
+`TauCeti.Algebra.discr_one_sqrt_eq_of_sq`).
 
-## Main results
+## Worked examples
 
-* `TauCeti.NumberField.trace_eq_zero_of_sq_ratCast`: the number-field
-  specialization, for `x` in a number field `K` with `x² ∈ ℚ` and `x ∉ ℚ`.
-* `TauCeti.Algebra.discr_one_self_eq_of_sq`: for a quadratic extension `L / K` and
-  `x ∉ K` with `x² = a ∈ K`, the trace-form discriminant of the basis `{1, x}` is `4 a`.
-
-The two `example`s at the end exercise the API on `ℂ / ℝ` (degree two): `Tr_{ℂ/ℝ} I = 0`
+The two `example`s below exercise that API on `ℂ / ℝ` (degree two): `Tr_{ℂ/ℝ} I = 0`
 and `disc ℝ {1, I} = -4`, mirroring the roadmap's `ℚ(i)` worked example.
 
 ## Provenance
@@ -53,7 +50,7 @@ example : Algebra.trace ℝ ℂ Complex.I = 0 := by
 /-- The trace-form discriminant of the basis `{1, I}` of `ℂ` over `ℝ` is `-4`, recovering
 `|disc {1, i}| = 4` of the roadmap's `ℚ(i)` worked example. -/
 example : Algebra.discr ℝ ![1, Complex.I] = -4 := by
-  rw [discr_one_self_eq_of_sq (a := -1) Complex.finrank_real_complex]
+  rw [discr_one_sqrt_eq_of_sq (a := -1) Complex.finrank_real_complex]
   · norm_num
   · rw [Complex.I_sq]; simp
   · rintro ⟨r, hr⟩
