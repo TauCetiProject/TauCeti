@@ -13,7 +13,7 @@ This file collects reusable trace facts for finite field extensions.
 
 ## Main results
 
-* `TauCeti.NumberField.trace_eq_zero_of_sq_ratCast_of_not_mem_range`: the number-field
+* `TauCeti.NumberField.trace_eq_zero_of_sq_ratCast`: the number-field
   specialization saying that `x² ∈ ℚ`, `x ∉ ℚ` implies `Tr x = 0`.
 * `TauCeti.Algebra.discr_one_self_eq_of_sq`: in a quadratic extension, the trace-form
   discriminant of the square-root basis `{1, x}` is `4a` when `x² = a` and `x ∉ F`.
@@ -103,7 +103,7 @@ end Algebra
 namespace NumberField
 
 /-- In a number field, an irrational element whose square is rational has trace zero. -/
-theorem trace_eq_zero_of_sq_ratCast_of_not_mem_range {K : Type*} [Field K] [NumberField K]
+theorem trace_eq_zero_of_sq_ratCast {K : Type*} [Field K] [NumberField K]
     {x : K} {r : ℚ} (hx2 : x ^ 2 = algebraMap ℚ K r)
     (hx : x ∉ (algebraMap ℚ K).range) :
     Algebra.trace ℚ K x = 0 :=

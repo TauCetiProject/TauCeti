@@ -21,7 +21,7 @@ discriminant API from `TauCeti.FieldTheory.Trace`.
 
 ## Main results
 
-* `TauCeti.NumberField.trace_eq_zero_of_sq_ratCast_of_not_mem_range`: the number-field
+* `TauCeti.NumberField.trace_eq_zero_of_sq_ratCast`: the number-field
   specialization, for `x` in a number field `K` with `x² ∈ ℚ` and `x ∉ ℚ`.
 * `TauCeti.Algebra.discr_one_self_eq_of_sq`: for a quadratic extension `L / K` and
   `x ∉ K` with `x² = a ∈ K`, the trace-form discriminant of the basis `{1, x}` is `4 a`.
