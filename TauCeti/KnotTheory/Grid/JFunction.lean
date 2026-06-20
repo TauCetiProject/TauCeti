@@ -512,6 +512,16 @@ theorem JX_transpose (x : GridState n) :
     GridDiagram.JX G.transpose x.transpose = GridDiagram.JX G x := by
   rw [JX_def, JX_def, GridState.transpose_pointSet, transpose_XSet, GridPoint.J_image_swap]
 
+/-- The marking swap exchanges the `O`-marking `J`-pairing with the `X`-marking `J`-pairing. -/
+@[simp]
+theorem JO_swapMarkings (x : GridState n) : G.swapMarkings.JO x = G.JX x :=
+  rfl
+
+/-- The marking swap exchanges the `X`-marking `J`-pairing with the `O`-marking `J`-pairing. -/
+@[simp]
+theorem JX_swapMarkings (x : GridState n) : G.swapMarkings.JX x = G.JO x :=
+  rfl
+
 /-- `JO` may equivalently be read with the `O`-markings as the left input. -/
 theorem JO_comm (x : GridState n) : GridDiagram.JO G x = GridPoint.J G.OSet x.pointSet := by
   rw [JO, GridPoint.J_comm]
