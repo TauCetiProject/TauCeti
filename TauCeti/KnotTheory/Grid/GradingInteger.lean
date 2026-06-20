@@ -38,6 +38,9 @@ so `M_O(x)` is an integer. The same computation handles `M_X`.
 * `TauCeti.GridDiagram.maslovOℤ_transpose`, `TauCeti.GridDiagram.maslovXℤ_transpose`,
   `TauCeti.GridDiagram.alexanderTwoℤ_transpose`: the integer-valued gradings are invariant
   under the diagonal reflection of a grid state and diagram.
+* `TauCeti.GridDiagram.maslovOℤ_swapMarkings`, `TauCeti.GridDiagram.maslovXℤ_swapMarkings`,
+  `TauCeti.GridDiagram.alexanderTwoℤ_swapMarkings`: the integer-valued gradings transform
+  under the marking swap.
 
 ## References
 
@@ -150,6 +153,26 @@ reflection. -/
 theorem alexanderTwoℤ_transpose (x : GridState n) :
     G.transpose.alexanderTwoℤ x.transpose = G.alexanderTwoℤ x := by
   rw [alexanderTwoℤ_def, alexanderTwoℤ_def, maslovOℤ_transpose, maslovXℤ_transpose]
+
+/-- The marking swap exchanges the integer-valued Maslov gradings. -/
+@[simp]
+theorem maslovOℤ_swapMarkings (x : GridState n) :
+    G.swapMarkings.maslovOℤ x = G.maslovXℤ x := by
+  rw [maslovOℤ_def, maslovXℤ_def, swapMarkings_OSet]
+
+/-- The marking swap exchanges the integer-valued Maslov gradings. -/
+@[simp]
+theorem maslovXℤ_swapMarkings (x : GridState n) :
+    G.swapMarkings.maslovXℤ x = G.maslovOℤ x := by
+  rw [maslovXℤ_def, maslovOℤ_def, swapMarkings_XSet]
+
+/-- The marking swap negates the integer numerator of twice the Alexander grading, up to twice
+the normalization shift: `2·A_swap(x) = −2·A(x) − 2(n − 1)`. -/
+@[simp]
+theorem alexanderTwoℤ_swapMarkings (x : GridState n) :
+    G.swapMarkings.alexanderTwoℤ x = -G.alexanderTwoℤ x - 2 * ((n : ℤ) - 1) := by
+  rw [alexanderTwoℤ_def, alexanderTwoℤ_def, maslovOℤ_swapMarkings, maslovXℤ_swapMarkings]
+  ring
 
 end GridDiagram
 
