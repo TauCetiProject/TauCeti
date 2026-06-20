@@ -288,6 +288,31 @@ theorem mem_pointSet_swapColumns (a b : Fin n) (x : GridState n) (p : Fin n × F
     p ∈ (x.swapColumns a b).pointSet ↔ (Equiv.swap a b p.1, p.2) ∈ x.pointSet := by
   simp [swapColumns]
 
+/-- A square is shared by a grid state and a column relabeling exactly when it is a
+source-state square whose column is fixed by the relabeling permutation. -/
+@[simp]
+theorem mem_pointSet_inter_relabelColumns_iff (x : GridState n) (κ : Equiv.Perm (Fin n))
+    (p : Fin n × Fin n) :
+    p ∈ x.pointSet ∩ (x.relabelColumns κ).pointSet ↔ p ∈ x.pointSet ∧ κ p.1 = p.1 := by
+  rw [Finset.mem_inter, mem_pointSet_relabelColumns]
+  constructor
+  · rintro ⟨hx, hκ⟩
+    refine ⟨hx, ?_⟩
+    have hx_col : x p.1 = p.2 := (mem_pointSet x p).mp hx
+    have hκ_col : x (κ.symm p.1) = p.2 :=
+      (mem_pointSet x (κ.symm p.1, p.2)).mp hκ
+    have hfixed_symm : κ.symm p.1 = p.1 :=
+      x.toPerm.injective (hκ_col.trans hx_col.symm)
+    calc
+      κ p.1 = κ (κ.symm p.1) := by rw [hfixed_symm]
+      _ = p.1 := by simp
+  · rintro ⟨hx, hfixed⟩
+    refine ⟨hx, ?_⟩
+    have hfixed_symm : κ.symm p.1 = p.1 := by
+      apply κ.injective
+      simp [hfixed]
+    simpa [hfixed_symm] using hx
+
 /-- Swapping the same pair of rows twice is the identity on grid states. -/
 @[simp]
 theorem swapRows_swapRows (a b : Fin n) (x : GridState n) :
@@ -309,25 +334,18 @@ theorem mem_pointSet_inter_swapColumns_iff (x : GridState n) {a b : Fin n} (h : 
     (p : Fin n × Fin n) :
     p ∈ x.pointSet ∩ (x.swapColumns a b).pointSet ↔
       p ∈ x.pointSet ∧ p.1 ≠ a ∧ p.1 ≠ b := by
-  rw [Finset.mem_inter, mem_pointSet_swapColumns]
+  rw [swapColumns, mem_pointSet_inter_relabelColumns_iff]
   constructor
-  · rintro ⟨hx, hswap⟩
+  · rintro ⟨hx, hfixed⟩
     refine ⟨hx, ?_, ?_⟩
-    · rintro hpa
-      have hxa : x a = p.2 := by
-        simpa [hpa] using (mem_pointSet x p).mp hx
-      have hxb : x b = p.2 := by
-        simpa [hpa] using (mem_pointSet x (Equiv.swap a b p.1, p.2)).mp hswap
-      exact h (x.toPerm.injective (hxa.trans hxb.symm))
-    · rintro hpb
-      have hxb : x b = p.2 := by
-        simpa [hpb] using (mem_pointSet x p).mp hx
-      have hxa : x a = p.2 := by
-        simpa [hpb] using (mem_pointSet x (Equiv.swap a b p.1, p.2)).mp hswap
-      exact h (x.toPerm.injective (hxa.trans hxb.symm))
+    · intro hpa
+      rw [hpa, Equiv.swap_apply_left] at hfixed
+      exact h hfixed.symm
+    · intro hpb
+      rw [hpb, Equiv.swap_apply_right] at hfixed
+      exact h hfixed
   · rintro ⟨hx, ha, hb⟩
-    refine ⟨hx, ?_⟩
-    simpa [Equiv.swap_apply_of_ne_of_ne ha hb] using hx
+    exact ⟨hx, Equiv.swap_apply_of_ne_of_ne ha hb⟩
 
 /-- The point set of a grid state is the shared part with a column swap, together with the two
 source-state squares in the swapped columns. -/
