@@ -35,6 +35,9 @@ so `M_O(x)` is an integer. The same computation handles `M_X`.
   gradings are integers.
 * `TauCeti.GridDiagram.two_mul_alexander_eq_intCast`,
   `TauCeti.GridDiagram.two_mul_alexander_exists_int`: twice the Alexander grading is an integer.
+* `TauCeti.GridDiagram.maslovOℤ_transpose`, `TauCeti.GridDiagram.maslovXℤ_transpose`,
+  `TauCeti.GridDiagram.alexanderTwoℤ_transpose`: the integer-valued gradings are invariant
+  under the diagonal reflection of a grid state and diagram.
 
 ## References
 
@@ -129,6 +132,24 @@ half-integer. -/
 theorem two_mul_alexander_exists_int (x : GridState n) :
     ∃ m : ℤ, 2 * G.alexander x = (m : ℚ) :=
   ⟨G.alexanderTwoℤ x, G.two_mul_alexander_eq_intCast x⟩
+
+/-- The integer-valued `O`-Maslov grading is invariant under the diagonal reflection. -/
+theorem maslovOℤ_transpose (x : GridState n) :
+    G.transpose.maslovOℤ x.transpose = G.maslovOℤ x := by
+  rw [maslovOℤ_def, maslovOℤ_def, GridState.transpose_pointSet, transpose_OSet,
+    GridPoint.I_image_swap, GridPoint.JNum_image_swap, GridPoint.I_image_swap]
+
+/-- The integer-valued `X`-Maslov grading is invariant under the diagonal reflection. -/
+theorem maslovXℤ_transpose (x : GridState n) :
+    G.transpose.maslovXℤ x.transpose = G.maslovXℤ x := by
+  rw [maslovXℤ_def, maslovXℤ_def, GridState.transpose_pointSet, transpose_XSet,
+    GridPoint.I_image_swap, GridPoint.JNum_image_swap, GridPoint.I_image_swap]
+
+/-- The integer numerator of twice the Alexander grading is invariant under the diagonal
+reflection. -/
+theorem alexanderTwoℤ_transpose (x : GridState n) :
+    G.transpose.alexanderTwoℤ x.transpose = G.alexanderTwoℤ x := by
+  rw [alexanderTwoℤ_def, alexanderTwoℤ_def, maslovOℤ_transpose, maslovXℤ_transpose]
 
 end GridDiagram
 

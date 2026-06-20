@@ -84,10 +84,12 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
     Ideal.IsPrime.isMaximal
       ((Ideal.span_singleton_prime hpne).mpr (Nat.prime_iff_prime_int.mp Fact.out))
       (by simpa [Ideal.span_singleton_eq_bot] using hpne)
+  haveI : Q.IsMaximal := Ideal.IsMaximal.of_liesOver_isMaximal Q (span {(p : ℤ)})
   let R : ι → 𝓞 K := ringGen d r hr
   rw [ncard_primesOver_eq_finrank_iff K p] at hsplit
   have hfQ : finrank (ℤ ⧸ span {(p : ℤ)}) (𝓞 K ⧸ Q) = 1 := by
     rw [← Ideal.inertiaDeg_algebraMap (p := span {(p : ℤ)}) (P := Q),
+      Ideal.inertiaDeg_eq_inertiaDeg',
       ← Ideal.inertiaDegIn_eq_inertiaDeg (span {(p : ℤ)}) Q (K ≃ₐ[ℚ] K)]
     exact hsplit.2
   letI fld : Field (ℤ ⧸ span {(p : ℤ)}) := Ideal.Quotient.field _
