@@ -54,6 +54,11 @@ private lemma module_compHom_smul_def {R S M : Type*} [Semiring R] [Semiring S]
     s • m = f s • m :=
   rfl
 
+private lemma toLinearMap_mul_toLinearMap (J : AlmostComplexStructure V) :
+    J.toLinearMap * J.toLinearMap = -1 := by
+  ext v
+  simp [Module.End.mul_apply, J.apply_apply]
+
 private lemma liftAux_toRingHom_apply (J : AlmostComplexStructure V)
     (hJ : J.toLinearMap * J.toLinearMap = -1) (z : ℂ) (v : V) :
     ((Complex.liftAux J.toLinearMap hJ).toRingHom z) v = z.re • v + z.im • J v := by
@@ -67,9 +72,7 @@ on the chosen `J`. Restricted to the real scalars it is the original `Module ℝ
 (`complexModule_isScalarTower`, `complexModule_ofReal_smul`). -/
 @[implicit_reducible]
 def complexModule (J : AlmostComplexStructure V) : Module ℂ V where
-  __ := Module.compHom V (Complex.liftAux J.toLinearMap (by
-    ext v
-    simp [Module.End.mul_apply, J.apply_apply])).toRingHom
+  __ := Module.compHom V (Complex.liftAux J.toLinearMap J.toLinearMap_mul_toLinearMap).toRingHom
 
 /-- The defining formula for the complex action induced by an almost complex structure. -/
 @[simp]
@@ -79,9 +82,7 @@ lemma complexModule_smul_def (J : AlmostComplexStructure V) (z : ℂ) (v : V) :
   by
   letI := J.complexModule
   rw [module_compHom_smul_def, Module.End.smul_def]
-  exact liftAux_toRingHom_apply J (by
-    ext v
-    simp [Module.End.mul_apply, J.apply_apply]) z v
+  exact liftAux_toRingHom_apply J J.toLinearMap_mul_toLinearMap z v
 
 /-- In the induced complex structure, multiplication by `i` is `J`. -/
 @[simp]
