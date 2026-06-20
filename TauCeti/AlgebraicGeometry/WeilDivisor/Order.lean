@@ -133,16 +133,12 @@ lemma negPart_eq_zero_iff_isEffective {D : WeilDivisor X} : D⁻ = 0 ↔ IsEffec
 lemma posPart_eq_self_iff_isEffective {D : WeilDivisor X} : D⁺ = D ↔ IsEffective D := by
   rw [posPart_eq_self, isEffective_iff_zero_le]
 
-/-- Every Weil divisor is the difference of its positive and negative parts. -/
-lemma posPart_sub_negPart (D : WeilDivisor X) : D⁺ - D⁻ = D :=
-  _root_.posPart_sub_negPart D
-
 /-! ### Degree of the decomposition -/
 
 /-- The weighted degree splits over the positive/negative part decomposition. -/
 lemma weightedDegree_posPart_sub_weightedDegree_negPart (w : X → ℤ) (D : WeilDivisor X) :
     weightedDegree w D⁺ - weightedDegree w D⁻ = weightedDegree w D := by
-  rw [← weightedDegree_sub, posPart_sub_negPart]
+  rw [← weightedDegree_sub, _root_.posPart_sub_negPart]
 
 /-- The unweighted degree splits over the positive/negative part decomposition. -/
 lemma degree_posPart_sub_degree_negPart (D : WeilDivisor X) :
