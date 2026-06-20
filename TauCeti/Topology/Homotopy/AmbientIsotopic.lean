@@ -21,9 +21,10 @@ operations on ambient isotopies themselves, which live beside the `AmbientIsotop
 `TauCeti.Topology.Homotopy.Isotopy`: the constant ambient isotopy `AmbientIsotopy.refl`, the
 pointwise composition `AmbientIsotopy.trans`, and the pointwise inverse `AmbientIsotopy.symm`.
 Because each of their total maps is a composition or inverse of homeomorphisms, none of the
-closure operations needs the closed-cover gluing that `Isotopy.trans` requires; the definitions
-follow Burde--Zieschang, *Knots*, Chapter 1, where ambient isotopy of `Sⁿ` is exactly this
-relation.
+closure operations needs the closed-cover gluing that `Isotopy.trans` requires. This is a
+continuous topological generalization of the point-set ambient-isotopy condition in
+Burde--Zieschang, *Knots*, Chapter 1, intended for later specialization to embeddings such as
+knots.
 
 ## Main definitions
 
