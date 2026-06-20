@@ -213,6 +213,74 @@ theorem prod_hom_ext {P M N : FGComoduleCat.{u, v, w} R C} {f g : P ⟶ prod R C
     (by simpa only [ObjectProperty.FullSubcategory.comp_hom, prodSnd_hom] using
       congrArg (fun h => h.hom) hsnd)
 
+/-- The product desc after the left inclusion is the first morphism. -/
+@[simp]
+theorem prodInl_desc {M N P : FGComoduleCat.{u, v, w} R C} (f : M ⟶ P) (g : N ⟶ P) :
+    prodInl M N ≫ prodDesc f g = f := by
+  apply ObjectProperty.hom_ext
+  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInl_hom, prodDesc_hom]
+  exact
+    (ComoduleCat.prodInl_desc (R := R) (C := C) f.hom g.hom)
+
+/-- The product desc after the right inclusion is the second morphism. -/
+@[simp]
+theorem prodInr_desc {M N P : FGComoduleCat.{u, v, w} R C} (f : M ⟶ P) (g : N ⟶ P) :
+    prodInr M N ≫ prodDesc f g = g := by
+  apply ObjectProperty.hom_ext
+  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInr_hom, prodDesc_hom]
+  exact
+    (ComoduleCat.prodInr_desc (R := R) (C := C) f.hom g.hom)
+
+/-- The first projection after the left inclusion is the identity. -/
+@[simp]
+theorem prodInl_fst (M N : FGComoduleCat.{u, v, w} R C) :
+    prodInl M N ≫ prodFst M N = 𝟙 M := by
+  apply ObjectProperty.hom_ext
+  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInl_hom, prodFst_hom,
+    ObjectProperty.FullSubcategory.id_hom]
+  exact
+    (ComoduleCat.prodInl_fst (R := R) (C := C) M.obj N.obj)
+
+/-- The second projection after the left inclusion is zero. -/
+@[simp]
+theorem prodInl_snd (M N : FGComoduleCat.{u, v, w} R C) :
+    prodInl M N ≫ prodSnd M N = 0 := by
+  apply ObjectProperty.hom_ext
+  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInl_hom, prodSnd_hom]
+  exact
+    (ComoduleCat.prodInl_snd (R := R) (C := C) M.obj N.obj)
+
+/-- The first projection after the right inclusion is zero. -/
+@[simp]
+theorem prodInr_fst (M N : FGComoduleCat.{u, v, w} R C) :
+    prodInr M N ≫ prodFst M N = 0 := by
+  apply ObjectProperty.hom_ext
+  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInr_hom, prodFst_hom]
+  exact
+    (ComoduleCat.prodInr_fst (R := R) (C := C) M.obj N.obj)
+
+/-- The second projection after the right inclusion is the identity. -/
+@[simp]
+theorem prodInr_snd (M N : FGComoduleCat.{u, v, w} R C) :
+    prodInr M N ≫ prodSnd M N = 𝟙 N := by
+  apply ObjectProperty.hom_ext
+  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInr_hom, prodSnd_hom,
+    ObjectProperty.FullSubcategory.id_hom]
+  exact
+    (ComoduleCat.prodInr_snd (R := R) (C := C) M.obj N.obj)
+
+/-- Morphisms out of the product are determined by their values on the inclusions. -/
+@[ext]
+theorem prod_hom_ext' {M N P : FGComoduleCat.{u, v, w} R C} {f g : prod R C M N ⟶ P}
+    (hinl : prodInl M N ≫ f = prodInl M N ≫ g)
+    (hinr : prodInr M N ≫ f = prodInr M N ≫ g) : f = g := by
+  apply ObjectProperty.hom_ext
+  exact ComoduleCat.prod_hom_ext' (R := R) (C := C)
+    (by simpa only [ObjectProperty.FullSubcategory.comp_hom, prodInl_hom] using
+      congrArg (fun h => h.hom) hinl)
+    (by simpa only [ObjectProperty.FullSubcategory.comp_hom, prodInr_hom] using
+      congrArg (fun h => h.hom) hinr)
+
 /-- The concrete binary fan whose point is `FGComoduleCat.prod`. -/
 def prodBinaryFan (M N : FGComoduleCat.{u, v, w} R C) : Limits.BinaryFan M N :=
   Limits.BinaryFan.mk (prodFst M N) (prodSnd M N)
@@ -263,62 +331,6 @@ instance hasBinaryBiproducts : Limits.HasBinaryBiproducts (FGComoduleCat.{u, v, 
 instance hasFiniteBiproducts : Limits.HasFiniteBiproducts (FGComoduleCat.{u, v, w} R C) :=
   Limits.HasFiniteBiproducts.of_hasFiniteProducts
 
-/-- The product desc after the left inclusion is the first morphism. -/
-@[simp]
-theorem prodInl_desc {M N P : FGComoduleCat.{u, v, w} R C} (f : M ⟶ P) (g : N ⟶ P) :
-    prodInl M N ≫ prodDesc f g = f := by
-  apply ObjectProperty.hom_ext
-  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInl_hom, prodDesc_hom]
-  exact
-    (ComoduleCat.prodInl_desc (R := R) (C := C) f.hom g.hom)
-
-/-- The product desc after the right inclusion is the second morphism. -/
-@[simp]
-theorem prodInr_desc {M N P : FGComoduleCat.{u, v, w} R C} (f : M ⟶ P) (g : N ⟶ P) :
-    prodInr M N ≫ prodDesc f g = g := by
-  apply ObjectProperty.hom_ext
-  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInr_hom, prodDesc_hom]
-  exact
-    (ComoduleCat.prodInr_desc (R := R) (C := C) f.hom g.hom)
-
-/-- The first projection after the left inclusion is the identity. -/
-@[simp]
-theorem prodInl_fst (M N : FGComoduleCat.{u, v, w} R C) :
-    prodInl M N ≫ prodFst M N = 𝟙 M := by
-  apply ObjectProperty.hom_ext
-  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInl_hom, prodFst_hom,
-    ObjectProperty.FullSubcategory.id_hom]
-  exact
-    (ComoduleCat.prodInl_fst (R := R) (C := C) M.obj N.obj)
-
-/-- The second projection after the left inclusion is zero. -/
-@[simp]
-theorem prodInl_snd (M N : FGComoduleCat.{u, v, w} R C) :
-    prodInl M N ≫ prodSnd M N = 0 := by
-  apply ObjectProperty.hom_ext
-  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInl_hom, prodSnd_hom, hom_zero]
-  exact
-    (ComoduleCat.prodInl_snd (R := R) (C := C) M.obj N.obj)
-
-/-- The first projection after the right inclusion is zero. -/
-@[simp]
-theorem prodInr_fst (M N : FGComoduleCat.{u, v, w} R C) :
-    prodInr M N ≫ prodFst M N = 0 := by
-  apply ObjectProperty.hom_ext
-  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInr_hom, prodFst_hom, hom_zero]
-  exact
-    (ComoduleCat.prodInr_fst (R := R) (C := C) M.obj N.obj)
-
-/-- The second projection after the right inclusion is the identity. -/
-@[simp]
-theorem prodInr_snd (M N : FGComoduleCat.{u, v, w} R C) :
-    prodInr M N ≫ prodSnd M N = 𝟙 N := by
-  apply ObjectProperty.hom_ext
-  simp only [ObjectProperty.FullSubcategory.comp_hom, prodInr_hom, prodSnd_hom,
-    ObjectProperty.FullSubcategory.id_hom]
-  exact
-    (ComoduleCat.prodInr_snd (R := R) (C := C) M.obj N.obj)
-
 /-- The two projection-inclusion composites reconstruct the identity of the product. -/
 @[simp]
 theorem prod_fst_inl_add_snd_inr (M N : FGComoduleCat.{u, v, w} R C) :
@@ -328,18 +340,6 @@ theorem prod_fst_inl_add_snd_inr (M N : FGComoduleCat.{u, v, w} R C) :
     prodSnd_hom, prodInr_hom, hom_add, ObjectProperty.FullSubcategory.id_hom]
   exact
     (ComoduleCat.prod_fst_inl_add_snd_inr (R := R) (C := C) M.obj N.obj)
-
-/-- Morphisms out of the product are determined by their values on the inclusions. -/
-@[ext]
-theorem prod_hom_ext' {M N P : FGComoduleCat.{u, v, w} R C} {f g : prod R C M N ⟶ P}
-    (hinl : prodInl M N ≫ f = prodInl M N ≫ g)
-    (hinr : prodInr M N ≫ f = prodInr M N ≫ g) : f = g := by
-  apply ObjectProperty.hom_ext
-  exact ComoduleCat.prod_hom_ext' (R := R) (C := C)
-    (by simpa only [ObjectProperty.FullSubcategory.comp_hom, prodInl_hom] using
-      congrArg (fun h => h.hom) hinl)
-    (by simpa only [ObjectProperty.FullSubcategory.comp_hom, prodInr_hom] using
-      congrArg (fun h => h.hom) hinr)
 
 end Ring
 
