@@ -31,7 +31,7 @@ following Mathlib's `LinearMap.prodMap` naming convention.
 * `TauCeti.AlmostComplexStructure.isComplexLinearMap_inl` / `isComplexLinearMap_inr` /
   `isComplexLinearMap_fst` / `isComplexLinearMap_snd`: the structural maps of the product are
   complex-linear for the direct-sum structure.
-* `TauCeti.AlmostComplexStructure.prod_transport`: transport distributes over the direct sum.
+* `TauCeti.AlmostComplexStructure.transport_prod`: transport distributes over the direct sum.
 * `TauCeti.SymplecticForm.prod`: the direct-sum symplectic form on `V × W`.
 * `TauCeti.SymplecticForm.prod_invariant`, `prod_tames`, `prod_compatible`: a direct sum of
   invariant / tame / compatible pairs is invariant / tame / compatible.
@@ -113,7 +113,7 @@ lemma isComplexLinearMap_snd (J₁ : AlmostComplexStructure V) (J₂ : AlmostCom
 /-- Transport distributes over the direct sum: conjugating a direct sum by a product of
 equivalences is the direct sum of the conjugates. -/
 @[simp]
-lemma prod_transport (J₁ : AlmostComplexStructure V) (J₂ : AlmostComplexStructure W)
+lemma transport_prod (J₁ : AlmostComplexStructure V) (J₂ : AlmostComplexStructure W)
     (e₁ : V ≃ₗ[ℝ] V') (e₂ : W ≃ₗ[ℝ] W') :
     (J₁.prod J₂).transport (e₁.prodCongr e₂) = (J₁.transport e₁).prod (J₂.transport e₂) := by
   apply toLinearMap_injective
