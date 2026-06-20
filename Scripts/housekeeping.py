@@ -1,28 +1,31 @@
 #!/usr/bin/env python3
 """Queue housekeeping: retire PRs that are spent or stuck, and close duplicate roadmap PRs.
 
-Green PRs merge on their own (when CI review is enabled, via review.yml `enable_automerge`). This
-covers the janitorial jobs, in CI so the autonomous worker can stay focused on producing work:
+Green PRs merge on their own (the merge queue, fed by auto-merge.yml). This covers the janitorial
+jobs, in CI so the autonomous worker can stay focused on producing work, and so that EVERY PR ends up
+either merged or closed — never stranded:
 
-  abandon  Close any open PR the review engine has labelled `review-budget-spent`: it used its full
-           review budget without reaching an all-green review. The engine clears the label if a later
-           round fixes the PR. The branch is kept, and the closing comment says it is fine to open a
-           fresh PR after another look at the approach.
+  budget   Close a PR that has been reviewed to the round cap (REVIEW_BUDGET) at its current head and
+           is still blocking. CI is the single budget authority — the worker no longer caps itself — so
+           a PR is reviewed and fixed until it merges or this closes it. The decision is read from the
+           scoreboard ledger (`full_rounds` + per-rubric `states`), so it holds whether or not the
+           worker is running. A manual `review-budget-spent` label force-closes a PR early.
   dedup    Close a newer PR that authors the same roadmap target (the `<!--tauceti-target:v1 ...-->`
            body marker) as an older open one. Keep the lowest PR number.
-  stale    Close a PR whose latest review scoreboard is `changes requested` or `blocked` and which has
-           had no activity for STALE_DAYS (default 7): a request for changes nobody acted on. The
-           branch is kept; the comment invites a fresh PR.
+  stale    Close a PR whose latest review scoreboard still has a blocking rubric and which has had no
+           activity for STALE_DAYS (default 7): a request for changes nobody acted on, under budget.
 
 The one override is a `keep` label (also `hold`/`wip`/`human`/`do-not-close`): a PR with one of those
 is never auto-closed. By design these jobs do NOT spare human-touched PRs — anyone who wants a PR held
-adds `keep`. abandon is a server-side label query, so it costs one request no matter how many PRs are
-open (the engine does the per-PR budget bookkeeping as it reviews); it then leaves alone any labelled
-PR whose head commit landed after the label was applied, since a fix is in flight and the re-review
-has not cleared the label yet. A failed close makes the job exit nonzero.
+adds `keep`. A failed close makes the job exit nonzero.
 
-Env: GH_TOKEN (a token that can close PRs), REPO (owner/name), optional DRY_RUN=1, BUDGET_LABEL,
-STALE_DAYS.
+A scoreboard is trusted only if it carries the `tauceti-scoreboard` marker AND its author is
+repo-associated (OWNER/MEMBER/COLLABORATOR) — the same trust the worker applies. The reviewer and the
+PR author are frequently the same account (the worker reviews its own roadmap PRs), so trust is by
+association, not by "not the author": an external author cannot forge a repo-associated comment.
+
+Env: GH_TOKEN (a token that can close PRs), REPO (owner/name), optional DRY_RUN=1, REVIEW_BUDGET,
+BUDGET_LABEL, STALE_DAYS.
 """
 import datetime
 import json
@@ -33,32 +36,40 @@ import sys
 
 REPO = os.environ["REPO"]
 DRY_RUN = os.environ.get("DRY_RUN") == "1"
-# The label the TauCetiReview engine applies when a PR has spent its review budget without going green.
+# Lifetime review rounds a PR may accumulate without going all-green before CI retires it. CI is the
+# single budget authority: the worker no longer caps itself, so a PR is reviewed/fixed until it merges
+# or this cap closes it. Read from the scoreboard ledger's `full_rounds`.
+REVIEW_BUDGET = int(os.environ.get("REVIEW_BUDGET", "10"))
+# Optional manual force-abandon label (a human may add it to retire a PR early). The automatic budget
+# decision is computed from the ledger, not from this label.
 BUDGET_LABEL = os.environ.get("BUDGET_LABEL", "review-budget-spent")
-# How long a changes-requested/blocked PR may sit untouched before the stale job retires it.
+# How long a blocked PR may sit untouched (under budget) before the stale job retires it.
 STALE_DAYS = int(os.environ.get("STALE_DAYS", "7"))
 
 TARGET_MARKER_RE = re.compile(r"<!--tauceti-target:v1 \{[^}]*\}-->")
 TARGET_ID_RE = re.compile(r'"id"\s*:\s*"([^"]+)"')
-# The reviewer posts one scoreboard comment per PR carrying a machine-readable meta block; its
-# `overall` is the PR's current review verdict (see the coordination contract, Section 2).
+# The reviewer posts one scoreboard comment per PR carrying a machine-readable meta block: `full_rounds`
+# (lifetime review passes) and `states` (per-rubric verdict). A rubric `state` not in {green, stale} is
+# blocking ("stale" is a prior approval carried forward, not a block).
+SCOREBOARD_MARKER = "<!--tauceti-scoreboard-->"
 SCOREBOARD_META_RE = re.compile(r"<!--tauceti-meta:v1\s+(\{.*?\})-->", re.S)
-STALE_STATES = {"changes requested", "blocked"}
+TRUSTED_ASSOC = {"OWNER", "MEMBER", "COLLABORATOR"}
+NONBLOCKING_STATES = {"green", "stale"}
 KEEP_LABELS = {"keep", "hold", "wip", "human", "do-not-close"}
-ABANDON_COMMENT = (
-    "Closing automatically: this PR used its review budget without reaching an all-green review, so the "
-    "queue housekeeping is retiring it to keep things moving. The branch is kept, so nothing is lost. It "
-    "is completely fine to open a fresh PR once you have had another think about the approach. Add the "
-    "`keep` label if you would rather it stay open.")
+BUDGET_COMMENT = (
+    "Closing automatically: this PR was reviewed to the round cap without reaching an all-green review, "
+    "so the queue housekeeping is retiring it to keep things moving. The branch is kept, so nothing is "
+    "lost. It is completely fine to open a fresh PR once you have had another think about the approach. "
+    "Add the `keep` label if you would rather it stay open.")
 DEDUP_COMMENT = (
     "Closing automatically: this PR authors the same roadmap target (`{tid}`) as the older open #{kept}. "
     "The queue housekeeping keeps the earlier PR and closes this duplicate to avoid redundant review. "
     "The branch is kept; add the `keep` label if it is intentionally distinct.")
 STALE_COMMENT = (
-    "Closing automatically: this PR's last review asked for changes ({overall}) and it has sat untouched "
-    "for over {days} days, so the queue housekeeping is retiring it to keep things moving. The branch is "
-    "kept, so nothing is lost. It is completely fine to open a fresh PR once the findings are addressed. "
-    "Add the `keep` label if you would rather it stay open.")
+    "Closing automatically: this PR's last review still asks for changes (blocking: {blocking}) and it "
+    "has sat untouched for over {days} days, so the queue housekeeping is retiring it to keep things "
+    "moving. The branch is kept, so nothing is lost. It is completely fine to open a fresh PR once the "
+    "findings are addressed. Add the `keep` label if you would rather it stay open.")
 
 
 def gh_json(args):
@@ -72,59 +83,51 @@ def has_keep_label(pr: dict) -> bool:
     return bool({(l.get("name") or "").lower() for l in (pr.get("labels") or [])} & KEEP_LABELS)
 
 
+def has_label(pr: dict, name: str) -> bool:
+    return name.lower() in {(l.get("name") or "").lower() for l in (pr.get("labels") or [])}
+
+
+def keep_label_live(pr: int) -> bool:
+    """Re-check the keep label right before closing: a human may have added it since the list."""
+    live = gh_json(["pr", "view", str(pr), "--repo", REPO, "--json", "labels"]) or {}
+    return has_keep_label(live)
+
+
 def parse_ts(s: str) -> datetime.datetime:
     """Parse a GitHub ISO-8601 timestamp (trailing 'Z') into an aware datetime."""
     return datetime.datetime.fromisoformat((s or "").replace("Z", "+00:00"))
 
 
-def latest_scoreboard_overall(pr: int, pr_author: str = ""):
-    """The `overall` verdict from the newest review scoreboard comment, or None if the PR has no
-    parseable scoreboard yet. Fails safe (returns None) on any API/parse error, so a hiccup never
-    causes a wrong close. Scoreboards authored by the PR author are ignored: a review is meant to be
-    independent, and trusting a self-posted marker would let an author spoof their own verdict."""
+def latest_scoreboard_meta(pr: int):
+    """The meta block of the newest TRUSTED review scoreboard comment, or None. Trust = the
+    `tauceti-scoreboard` marker AND a repo-associated author (so an external author cannot forge a
+    verdict). Fails safe (None) on any API/parse error, so a hiccup never causes a wrong close."""
     try:
         comments = gh_json(["api", "--paginate", f"/repos/{REPO}/issues/{pr}/comments?per_page=100"])
     except RuntimeError as e:
-        print(f"stale: #{pr} scoreboard fetch failed ({e}); leaving it", file=sys.stderr)
+        print(f"#{pr}: scoreboard fetch failed ({e}); leaving it", file=sys.stderr)
         return None
-    best_ts, overall = "", None
+    best_ts, meta = "", None
     for c in comments or []:
-        if pr_author and (c.get("user") or {}).get("login") == pr_author:
-            continue                                   # ignore the author's own (self-review) markers
         body = c.get("body") or ""
-        if "tauceti-meta:v1" not in body:
+        if SCOREBOARD_MARKER not in body or c.get("author_association") not in TRUSTED_ASSOC:
             continue
         m = SCOREBOARD_META_RE.search(body)
         if not m:
             continue
         try:
-            meta = json.loads(m.group(1))
+            parsed = json.loads(m.group(1))
         except ValueError:
             continue
         ts = c.get("updated_at") or ""
         if ts >= best_ts:
-            best_ts, overall = ts, (meta.get("overall") or "").strip().lower()
-    return overall
+            best_ts, meta = ts, parsed
+    return meta
 
 
-def pushed_after_label(pr: int, head: str) -> bool:
-    """True if the PR's head commit landed after the budget label was last applied — a fix is in
-    flight and the re-review has not cleared the label yet, so we must not close. Fails safe (returns
-    True) on any uncertainty, so a transient API error never causes a wrong close. O(labelled PRs)."""
-    try:
-        timeline = gh_json(["api", "--paginate", f"/repos/{REPO}/issues/{pr}/timeline?per_page=100"])
-        added = [e.get("created_at") for e in (timeline or [])
-                 if e.get("event") == "labeled" and (e.get("label") or {}).get("name") == BUDGET_LABEL]
-        if not added:
-            return True                                  # labelled but no event found: don't risk it
-        commit = gh_json(["api", f"/repos/{REPO}/commits/{head}"])
-        head_time = ((commit or {}).get("commit") or {}).get("committer", {}).get("date", "")
-        if not head_time:
-            return True
-        return head_time > max(added)
-    except RuntimeError as e:
-        print(f"abandon: #{pr} freshness check failed ({e}); leaving it", file=sys.stderr)
-        return True
+def blocking_rubrics(meta: dict) -> list:
+    """The rubrics whose state is blocking (not green or stale) in the scoreboard ledger."""
+    return sorted(k for k, v in (meta.get("states") or {}).items() if v not in NONBLOCKING_STATES)
 
 
 def close(pr: int, comment: str) -> bool:
@@ -145,21 +148,32 @@ def main() -> int:
     failures = 0
     suffix = " [dry-run]" if DRY_RUN else ""
 
-    # abandon: the engine has already decided these are spent and labelled them. Just close them
-    # (unless a human asked to keep one). One query, independent of total open-PR count.
-    spent = gh_json(["pr", "list", "--repo", REPO, "--state", "open", "--label", BUDGET_LABEL,
-                     "--limit", "1000", "--json", "number,headRefOid,labels"]) or []
-    print(f"abandon: {len(spent)} PR(s) labelled {BUDGET_LABEL}{suffix}")
-    for p in spent:
-        if has_keep_label(p):
-            print(f"abandon: #{p['number']} is {BUDGET_LABEL} but has a keep label; leaving it")
+    # budget: a PR reviewed to REVIEW_BUDGET rounds at its CURRENT head and still blocking is terminal —
+    # close it. Read from the scoreboard ledger (full_rounds + states), so it holds even when the worker
+    # is idle. Requiring the scoreboard to be AT the current head means a just-pushed fix that has not
+    # been re-reviewed yet is never closed — it gets its re-review first; only a head reviewed to the cap
+    # and still blocking is spent. A manual `review-budget-spent` label force-closes regardless.
+    open_full = gh_json(["pr", "list", "--repo", REPO, "--state", "open", "--limit", "1000",
+                         "--json", "number,isDraft,headRefOid,labels"]) or []
+    cand = [p for p in open_full if p.get("isDraft") is False and not has_keep_label(p)]
+    print(f"budget: scanning {len(cand)} open PR(s) (cap {REVIEW_BUDGET} rounds){suffix}")
+    for p in cand:
+        n, head = p["number"], p.get("headRefOid", "")
+        if has_label(p, BUDGET_LABEL):
+            reason = f"manual {BUDGET_LABEL} label"
+        else:
+            meta = latest_scoreboard_meta(n)
+            if not meta or (meta.get("head_sha") or "") != head:
+                continue                       # no trusted scoreboard, or it is stale (head moved) — wait
+            fr, blk = meta.get("full_rounds"), blocking_rubrics(meta)
+            if not (isinstance(fr, int) and fr >= REVIEW_BUDGET and blk):
+                continue
+            reason = f"{fr} rounds at head, still blocking {', '.join(blk)}"
+        if keep_label_live(n):
+            print(f"budget: #{n} reached the cap but has a keep label; leaving it")
             continue
-        if pushed_after_label(p["number"], p.get("headRefOid", "")):
-            print(f"abandon: #{p['number']} has a newer commit than its {BUDGET_LABEL} label "
-                  "(a fix is in flight); leaving it")
-            continue
-        print(f"abandon: #{p['number']} ({BUDGET_LABEL})")
-        failures += not close(p["number"], ABANDON_COMMENT)
+        print(f"budget: #{n} ({reason})")
+        failures += not close(n, BUDGET_COMMENT)
 
     # dedup: a newer PR sharing a tauceti-target id with an older open one (keep the lowest number).
     # List-only (the marker is in the body), so this pages cheaply; the marker is on roadmap PRs only.
@@ -191,26 +205,28 @@ def main() -> int:
         print(f"dedup: #{p['number']} duplicates #{seen[tid]} (target '{tid}')")
         failures += not close(p["number"], DEDUP_COMMENT.format(tid=tid, kept=seen[tid]))
 
-    # stale: a PR whose latest scoreboard is changes-requested/blocked and that has had no activity
-    # for STALE_DAYS. updatedAt bumps on any push/comment/label, so a still-worked PR is never stale.
+    # stale: a PR with a blocking rubric (under budget — the budget job takes the spent ones) that has
+    # had no activity for STALE_DAYS. updatedAt bumps on any push/comment/label, so a still-worked PR is
+    # never stale; this catches a blocked PR everyone has walked away from.
     cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=STALE_DAYS)
     open_prs = gh_json(["pr", "list", "--repo", REPO, "--state", "open", "--limit", "1000",
-                        "--json", "number,isDraft,labels,updatedAt,author"]) or []
+                        "--json", "number,isDraft,labels,updatedAt"]) or []
     # isDraft must be explicitly False (fail closed: an unknown draft state is never stale-closed).
     fresh = [p for p in open_prs if p.get("isDraft") is False and not has_keep_label(p)
              and parse_ts(p.get("updatedAt", "")) < cutoff]
     print(f"stale: {len(fresh)} open PR(s) untouched for >{STALE_DAYS}d to check{suffix}")
     for p in fresh:
-        overall = latest_scoreboard_overall(p["number"], (p.get("author") or {}).get("login", ""))
-        if overall not in STALE_STATES:
+        meta = latest_scoreboard_meta(p["number"])
+        if not meta:
             continue
-        # Re-check the keep label right before closing: a human may have added it since the list.
-        live = gh_json(["pr", "view", str(p["number"]), "--repo", REPO, "--json", "labels"]) or {}
-        if has_keep_label(live):
+        blk = blocking_rubrics(meta)
+        if not blk:
+            continue
+        if keep_label_live(p["number"]):
             print(f"stale: #{p['number']} gained a keep label since listing; leaving it")
             continue
-        print(f"stale: #{p['number']} ({overall}, untouched >{STALE_DAYS}d)")
-        failures += not close(p["number"], STALE_COMMENT.format(overall=overall, days=STALE_DAYS))
+        print(f"stale: #{p['number']} (blocking {', '.join(blk)}, untouched >{STALE_DAYS}d)")
+        failures += not close(p["number"], STALE_COMMENT.format(blocking=", ".join(blk), days=STALE_DAYS))
 
     if failures:
         print(f"housekeeping: {failures} close(s) failed", file=sys.stderr)
