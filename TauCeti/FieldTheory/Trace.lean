@@ -112,4 +112,8 @@ theorem trace_eq_zero_of_sq_ratCast {K : Type*} [Field K] [NumberField K]
     Algebra.trace ℚ K x = 0 :=
   TauCeti.Algebra.trace_eq_zero_of_sq_algebraMap_of_not_mem_range hx2 hx
 
+/-- Deprecated compatibility alias for the old NumberField helper name. -/
+@[deprecated TauCeti.NumberField.trace_eq_zero_of_sq_ratCast (since := "2026-06-20")]
+alias trace_eq_zero_of_sq_ratCast_of_not_mem_range := trace_eq_zero_of_sq_ratCast
+
 end TauCeti.NumberField
