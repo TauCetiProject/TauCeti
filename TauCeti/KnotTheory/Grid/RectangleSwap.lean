@@ -52,6 +52,7 @@ variable {n : ℕ} (x : GridState n) {a b : Fin n}
 
 /-- A square is shared by a grid state and the state with columns `a` and `b` swapped exactly
 when it is a source-state square away from the two swapped columns. -/
+@[simp]
 theorem mem_pointSet_inter_swapColumns_iff (h : a ≠ b) (p : Fin n × Fin n) :
     p ∈ x.pointSet ∩ (x.swapColumns a b).pointSet ↔
       p ∈ x.pointSet ∧ p.1 ≠ a ∧ p.1 ≠ b := by
