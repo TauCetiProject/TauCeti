@@ -288,6 +288,31 @@ theorem mem_pointSet_swapColumns (a b : Fin n) (x : GridState n) (p : Fin n × F
     p ∈ (x.swapColumns a b).pointSet ↔ (Equiv.swap a b p.1, p.2) ∈ x.pointSet := by
   simp [swapColumns]
 
+/-- A square is shared by a grid state and a column relabeling exactly when it is a
+source-state square whose column is fixed by the relabeling permutation. -/
+@[simp]
+theorem mem_pointSet_inter_relabelColumns_iff (x : GridState n) (κ : Equiv.Perm (Fin n))
+    (p : Fin n × Fin n) :
+    p ∈ x.pointSet ∩ (x.relabelColumns κ).pointSet ↔ p ∈ x.pointSet ∧ κ p.1 = p.1 := by
+  rw [Finset.mem_inter, mem_pointSet_relabelColumns]
+  constructor
+  · rintro ⟨hx, hκ⟩
+    refine ⟨hx, ?_⟩
+    have hx_col : x p.1 = p.2 := (mem_pointSet x p).mp hx
+    have hκ_col : x (κ.symm p.1) = p.2 :=
+      (mem_pointSet x (κ.symm p.1, p.2)).mp hκ
+    have hfixed_symm : κ.symm p.1 = p.1 :=
+      x.toPerm.injective (hκ_col.trans hx_col.symm)
+    calc
+      κ p.1 = κ (κ.symm p.1) := by rw [hfixed_symm]
+      _ = p.1 := by simp
+  · rintro ⟨hx, hfixed⟩
+    refine ⟨hx, ?_⟩
+    have hfixed_symm : κ.symm p.1 = p.1 := by
+      apply κ.injective
+      simp [hfixed]
+    simpa [hfixed_symm] using hx
+
 /-- Swapping the same pair of rows twice is the identity on grid states. -/
 @[simp]
 theorem swapRows_swapRows (a b : Fin n) (x : GridState n) :
@@ -301,6 +326,100 @@ theorem swapColumns_swapColumns (a b : Fin n) (x : GridState n) :
     (x.swapColumns a b).swapColumns a b = x := by
   ext c
   simp [swapColumns]
+
+/-- A square is shared by a grid state and the state with columns `a` and `b` swapped exactly
+when it is a source-state square away from the two swapped columns. -/
+@[simp]
+theorem mem_pointSet_inter_swapColumns_iff (x : GridState n) {a b : Fin n} (h : a ≠ b)
+    (p : Fin n × Fin n) :
+    p ∈ x.pointSet ∩ (x.swapColumns a b).pointSet ↔
+      p ∈ x.pointSet ∧ p.1 ≠ a ∧ p.1 ≠ b := by
+  rw [swapColumns, mem_pointSet_inter_relabelColumns_iff]
+  constructor
+  · rintro ⟨hx, hfixed⟩
+    refine ⟨hx, ?_, ?_⟩
+    · intro hpa
+      rw [hpa, Equiv.swap_apply_left] at hfixed
+      exact h hfixed.symm
+    · intro hpb
+      rw [hpb, Equiv.swap_apply_right] at hfixed
+      exact h hfixed
+  · rintro ⟨hx, ha, hb⟩
+    exact ⟨hx, Equiv.swap_apply_of_ne_of_ne ha hb⟩
+
+/-- The point set of a grid state is the shared part with a column swap, together with the two
+source-state squares in the swapped columns. -/
+theorem pointSet_eq_insert_insert_inter_swapColumns (x : GridState n) {a b : Fin n} (h : a ≠ b) :
+    x.pointSet =
+      insert (a, x a) (insert (b, x b) (x.pointSet ∩ (x.swapColumns a b).pointSet)) := by
+  ext p
+  simp only [Finset.mem_insert]
+  constructor
+  · intro hx
+    rcases eq_or_ne p.1 a with ha | ha
+    · refine Or.inl ?_
+      have : p.2 = x a := by
+        simpa [ha] using ((mem_pointSet x p).mp hx).symm
+      exact Prod.ext ha this
+    · rcases eq_or_ne p.1 b with hb | hb
+      · refine Or.inr (Or.inl ?_)
+        have : p.2 = x b := by
+          simpa [hb] using ((mem_pointSet x p).mp hx).symm
+        exact Prod.ext hb this
+      · exact Or.inr (Or.inr ((mem_pointSet_inter_swapColumns_iff x h p).mpr ⟨hx, ha, hb⟩))
+  · rintro (rfl | rfl | hp)
+    · simp
+    · simp
+    · exact Finset.mem_of_mem_inter_left hp
+
+/-- The point set after swapping columns `a` and `b` is the shared part with the source state,
+together with the two target-state squares in the swapped columns. -/
+theorem swapColumns_pointSet_eq_insert_insert_inter (x : GridState n) {a b : Fin n} (h : a ≠ b) :
+    (x.swapColumns a b).pointSet =
+      insert (a, x b) (insert (b, x a) (x.pointSet ∩ (x.swapColumns a b).pointSet)) := by
+  ext p
+  simp only [Finset.mem_insert]
+  constructor
+  · intro hp
+    rcases eq_or_ne p.1 a with ha | ha
+    · refine Or.inl ?_
+      have : p.2 = x b := by
+        simpa [ha] using ((mem_pointSet (x.swapColumns a b) p).mp hp).symm
+      exact Prod.ext ha this
+    · rcases eq_or_ne p.1 b with hb | hb
+      · refine Or.inr (Or.inl ?_)
+        have : p.2 = x a := by
+          simpa [hb] using ((mem_pointSet (x.swapColumns a b) p).mp hp).symm
+        exact Prod.ext hb this
+      · refine Or.inr (Or.inr ?_)
+        have hx : p ∈ x.pointSet := by
+          rw [mem_pointSet] at hp ⊢
+          rw [swapColumns_apply, Equiv.swap_apply_of_ne_of_ne ha hb] at hp
+          exact hp
+        exact (mem_pointSet_inter_swapColumns_iff x h p).mpr ⟨hx, ha, hb⟩
+  · rintro (rfl | rfl | hp)
+    · simp
+    · simp
+    · exact Finset.mem_of_mem_inter_right hp
+
+/-- A grid state and a swap of two distinct columns share exactly `n - 2` squares. -/
+theorem card_pointSet_inter_swapColumns (x : GridState n) {a b : Fin n} (h : a ≠ b) :
+    (x.pointSet ∩ (x.swapColumns a b).pointSet).card = n - 2 := by
+  have hne : (b, x b) ∉ x.pointSet ∩ (x.swapColumns a b).pointSet := by
+    rw [mem_pointSet_inter_swapColumns_iff x h]
+    rintro ⟨_, _, hb⟩
+    exact hb rfl
+  have hne' :
+      (a, x a) ∉ insert (b, x b) (x.pointSet ∩ (x.swapColumns a b).pointSet) := by
+    rw [Finset.mem_insert]
+    rintro (hab | ha)
+    · exact absurd (congrArg Prod.fst hab) h
+    · rw [mem_pointSet_inter_swapColumns_iff x h] at ha
+      exact ha.2.1 rfl
+  have hcard := congrArg Finset.card (pointSet_eq_insert_insert_inter_swapColumns x h)
+  rw [card_pointSet, Finset.card_insert_of_notMem hne',
+    Finset.card_insert_of_notMem hne] at hcard
+  omega
 
 end GridState
 
