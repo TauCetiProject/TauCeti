@@ -35,8 +35,7 @@ notion also underlies locally flat isotopy, diffeotopies, and concordance.
 * `TauCeti.Isotopy.toHomotopyWith`: an isotopy is, in particular, a Mathlib homotopy through
   embeddings.
 * `TauCeti.Isotopic.refl` / `TauCeti.Isotopic.symm` / `TauCeti.Isotopic.trans`: isotopy is
-  reflexive on embeddings, symmetric, and transitive when the source is compact and the target
-  is Hausdorff.
+  reflexive on embeddings, symmetric, and transitive.
 * `TauCeti.Isotopic.homotopic`: isotopic maps are homotopic.
 * `TauCeti.AmbientIsotopy.isotopy` / `TauCeti.AmbientIsotopy.isotopic`: an ambient isotopy
   carries any embedding `f` to the isotopic embedding `Φ.final ∘ f`. This is the "ambient
@@ -54,6 +53,60 @@ private theorem isEmbedding_const_prod (t : I) : IsEmbedding fun x : X => (t, x)
     convert (IsEmbedding.id : IsEmbedding (id : X → X)) using 1
     ext x
     rfl)
+
+/-- A map is inducing if its restrictions to the preimages of a closed cover of the codomain are
+inducing. (The closedness of the cover in the *codomain* is what makes the gluing work, even
+though the analogous statement for an arbitrary closed cover of the domain fails.) -/
+private theorem isInducing_of_isClosed_cover {Z W : Type*} [TopologicalSpace Z]
+    [TopologicalSpace W] {f : Z → W} (hf : Continuous f) {D₁ D₂ : Set W}
+    (h₁ : IsClosed D₁) (h₂ : IsClosed D₂) (hcov : D₁ ∪ D₂ = Set.univ)
+    (hi₁ : IsInducing ((f ⁻¹' D₁).restrict f)) (hi₂ : IsInducing ((f ⁻¹' D₂).restrict f)) :
+    IsInducing f := by
+  rw [isInducing_iff_nhds]
+  intro z
+  refine le_antisymm ((hf.tendsto z).le_comap) ?_
+  rw [Filter.le_def]
+  intro U hU
+  rw [Filter.mem_comap]
+  have extract : ∀ D : Set W, IsInducing ((f ⁻¹' D).restrict f) → f z ∈ D →
+      ∃ V ∈ 𝓝 (f z), f ⁻¹' V ∩ f ⁻¹' D ⊆ U := by
+    intro D hi hzD
+    rw [isInducing_iff_nhds] at hi
+    have hUsub : Subtype.val ⁻¹' U ∈ 𝓝 (⟨z, hzD⟩ : f ⁻¹' D) :=
+      continuous_subtype_val.continuousAt.preimage_mem_nhds hU
+    rw [hi ⟨z, hzD⟩, Filter.mem_comap] at hUsub
+    obtain ⟨V, hV, hVsub⟩ := hUsub
+    refine ⟨V, hV, ?_⟩
+    rintro y ⟨hyV, hyD⟩
+    exact hVsub (show ((f ⁻¹' D).restrict f) ⟨y, hyD⟩ ∈ V from hyV)
+  have wstep : ∀ D : Set W, IsClosed D → IsInducing ((f ⁻¹' D).restrict f) →
+      ∃ V ∈ 𝓝 (f z), f ⁻¹' V ∩ f ⁻¹' D ⊆ U := by
+    intro D hD hi
+    by_cases hzD : f z ∈ D
+    · exact extract D hi hzD
+    · exact ⟨Dᶜ, hD.isOpen_compl.mem_nhds hzD, by rintro y ⟨hyc, hyd⟩; exact absurd hyd hyc⟩
+  obtain ⟨V₁, hV₁, hs₁⟩ := wstep D₁ h₁ hi₁
+  obtain ⟨V₂, hV₂, hs₂⟩ := wstep D₂ h₂ hi₂
+  refine ⟨V₁ ∩ V₂, Filter.inter_mem hV₁ hV₂, ?_⟩
+  rw [Set.preimage_inter]
+  intro y hy
+  have hycov : y ∈ f ⁻¹' D₁ ∪ f ⁻¹' D₂ := by
+    rw [← Set.preimage_union, hcov]; exact Set.mem_univ y
+  rcases hycov with h | h
+  · exact hs₁ ⟨hy.1, h⟩
+  · exact hs₂ ⟨hy.2, h⟩
+
+/-- If `e` is an embedding parametrising the preimage `f ⁻¹' D` and `f ∘ e` is inducing, then the
+restriction of `f` to `f ⁻¹' D` is inducing. -/
+private theorem isInducing_restrict_of_embedding {Z W A : Type*} [TopologicalSpace Z]
+    [TopologicalSpace W] [TopologicalSpace A] {f : Z → W} {D : Set W} {e : A → Z}
+    (he : IsEmbedding e) (hrange : Set.range e = f ⁻¹' D) (hfe : IsInducing (f ∘ e)) :
+    IsInducing ((f ⁻¹' D).restrict f) := by
+  let φ : A ≃ₜ (f ⁻¹' D) := he.toHomeomorph.trans (Homeomorph.setCongr hrange)
+  have hcomp : (f ⁻¹' D).restrict f ∘ φ = f ∘ e := rfl
+  have h0 : IsInducing ((f ⁻¹' D).restrict f ∘ φ) := hcomp ▸ hfe
+  have h2 := h0.comp φ.symm.isInducing
+  rwa [Function.comp_assoc, Homeomorph.self_comp_symm, Function.comp_id] at h2
 
 /-- An **isotopy** between `f₀ f₁ : C(X, Y)` is a homotopy whose level-preserving total map
 `I × X → I × Y` is a topological embedding. -/
@@ -117,59 +170,139 @@ theorem isEmbedding_left (F : Isotopy f₀ f₁) : IsEmbedding f₀ := by
 theorem isEmbedding_right (F : Isotopy f₀ f₁) : IsEmbedding f₁ := by
   simpa using F.isEmbedding_apply 1
 
-/-- Concatenate two isotopies when compactness and Hausdorffness make the concatenated total map
-an embedding. -/
-noncomputable def trans [CompactSpace X] [T2Space Y] {f₂ : C(X, Y)}
-    (F : Isotopy f₀ f₁) (G : Isotopy f₁ f₂) : Isotopy f₀ f₂ where
+/-- Value of the concatenated homotopy on the first half `[0, 1 / 2]`, with the time parameter
+rescaled to `2 * t`. -/
+theorem trans_toHomotopy_apply_of_le (F : Isotopy f₀ f₁) (G : Isotopy f₁ f₂) {t : I} (x : X)
+    (h : (t : ℝ) ≤ 1 / 2) :
+    (F.toHomotopy.trans G.toHomotopy) (t, x)
+      = F.toHomotopy (⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, h⟩⟩, x) := by
+  rw [Homotopy.trans_apply, dif_pos h]
+
+/-- Value of the concatenated homotopy on the second half `[1 / 2, 1]`, with the time parameter
+rescaled to `2 * t - 1`. -/
+theorem trans_toHomotopy_apply_of_not_le (F : Isotopy f₀ f₁) (G : Isotopy f₁ f₂) {t : I} (x : X)
+    (h : ¬ (t : ℝ) ≤ 1 / 2) :
+    (F.toHomotopy.trans G.toHomotopy) (t, x)
+      = G.toHomotopy
+          (⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 h).le, t.2.2⟩⟩, x) := by
+  rw [Homotopy.trans_apply, dif_neg h]
+
+/-- Halving reparametrisation `s ↦ s / 2 : I → I`, with image the left half `[0, 1 / 2]`. -/
+private noncomputable def half (s : I) : I :=
+  ⟨(s : ℝ) / 2, by constructor <;> [linarith [s.2.1]; linarith [s.2.2]]⟩
+
+/-- Right-half reparametrisation `s ↦ s / 2 + 1 / 2 : I → I`, with image `[1 / 2, 1]`. -/
+private noncomputable def halfRight (s : I) : I :=
+  ⟨(s : ℝ) / 2 + 1 / 2, by constructor <;> [linarith [s.2.1]; linarith [s.2.2]]⟩
+
+private theorem coe_half (s : I) : (half s : ℝ) = (s : ℝ) / 2 := rfl
+private theorem coe_halfRight (s : I) : (halfRight s : ℝ) = (s : ℝ) / 2 + 1 / 2 := rfl
+
+private theorem injective_half : Function.Injective half := fun a b hab =>
+  Subtype.ext (by have := congrArg Subtype.val hab; simp only [coe_half] at this; linarith)
+
+private theorem injective_halfRight : Function.Injective halfRight := fun a b hab =>
+  Subtype.ext (by have := congrArg Subtype.val hab; simp only [coe_halfRight] at this; linarith)
+
+private theorem isEmbedding_half : IsEmbedding half :=
+  ((Continuous.subtype_mk (by fun_prop) _).isClosedEmbedding injective_half).isEmbedding
+
+private theorem isEmbedding_halfRight : IsEmbedding halfRight :=
+  ((Continuous.subtype_mk (by fun_prop) _).isClosedEmbedding injective_halfRight).isEmbedding
+
+private theorem range_half : Set.range half = {t : I | (t : ℝ) ≤ 1 / 2} := by
+  ext t
+  simp only [Set.mem_range, Set.mem_setOf_eq]
+  refine ⟨?_, fun ht => ⟨⟨2 * t, ⟨by linarith [t.2.1], by linarith⟩⟩, ?_⟩⟩
+  · rintro ⟨s, rfl⟩; rw [coe_half]; linarith [s.2.2]
+  · apply Subtype.ext; change (2 * (t : ℝ)) / 2 = (t : ℝ); ring
+
+private theorem range_halfRight : Set.range halfRight = {t : I | 1 / 2 ≤ (t : ℝ)} := by
+  ext t
+  simp only [Set.mem_range, Set.mem_setOf_eq]
+  refine ⟨?_, fun ht => ⟨⟨2 * t - 1, ⟨by linarith, by linarith [t.2.2]⟩⟩, ?_⟩⟩
+  · rintro ⟨s, rfl⟩; rw [coe_halfRight]; linarith [s.2.1]
+  · apply Subtype.ext; change (2 * (t : ℝ) - 1) / 2 + 1 / 2 = (t : ℝ); ring
+
+private theorem trans_half (F : Isotopy f₀ f₁) (G : Isotopy f₁ f₂) (s : I) (x : X) :
+    (F.toHomotopy.trans G.toHomotopy) (half s, x) = F.toHomotopy (s, x) := by
+  have h : ((half s : I) : ℝ) ≤ 1 / 2 := by rw [coe_half]; linarith [s.2.2]
+  rw [trans_toHomotopy_apply_of_le _ _ _ h]
+  congr 2
+  apply Subtype.ext
+  simp only [coe_half]; ring
+
+private theorem trans_halfRight (F : Isotopy f₀ f₁) (G : Isotopy f₁ f₂) (s : I) (x : X) :
+    (F.toHomotopy.trans G.toHomotopy) (halfRight s, x) = G.toHomotopy (s, x) := by
+  by_cases h : ((halfRight s : I) : ℝ) ≤ 1 / 2
+  · have hs0 : (s : ℝ) = 0 := le_antisymm (by rw [coe_halfRight] at h; linarith) s.2.1
+    have hs : s = (0 : I) := Subtype.ext (by rw [hs0]; rfl)
+    subst hs
+    rw [trans_toHomotopy_apply_of_le _ _ _ h]
+    have key : (⟨2 * ((halfRight (0 : I)) : ℝ), by simp only [coe_halfRight]; norm_num⟩ : I) = 1 :=
+      Subtype.ext (by simp only [coe_halfRight]; norm_num)
+    rw [key]
+    simp
+  · rw [trans_toHomotopy_apply_of_not_le _ _ _ h]
+    congr 2
+    apply Subtype.ext
+    simp only [coe_halfRight]; ring
+
+/-- Concatenate two isotopies: the result follows `F` on `[0, 1 / 2]` and `G` on `[1 / 2, 1]`,
+with the time parameter rescaled linearly. The concatenated total map is an embedding because it
+is one on each closed half (where it is `F`'s or `G`'s total embedding, reparametrised), and these
+glue along the closed cover `{(t, y) | t ≤ 1 / 2}`, `{(t, y) | 1 / 2 ≤ t}` of the codomain. -/
+noncomputable def trans {f₂ : C(X, Y)} (F : Isotopy f₀ f₁) (G : Isotopy f₁ f₂) :
+    Isotopy f₀ f₂ where
   toHomotopy := F.toHomotopy.trans G.toHomotopy
   isEmbedding_total' := by
-    let H : Homotopy f₀ f₂ := F.toHomotopy.trans G.toHomotopy
-    have hcont : Continuous fun p : I × X => (p.1, H p) := by fun_prop
-    exact (hcont.isClosedEmbedding (by
-      rintro ⟨t, x⟩ ⟨u, y⟩ hxy
-      have ht : t = u := congrArg Prod.fst hxy
-      have hy : H (t, x) = H (u, y) := congrArg Prod.snd hxy
-      subst u
-      rw [Prod.mk.injEq]
-      refine ⟨rfl, ?_⟩
-      by_cases ht_half : (t : ℝ) ≤ 1 / 2
-      · let s : I := ⟨2 * t, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨t.2.1, ht_half⟩⟩
-        have hyF : F.toHomotopy (s, x) = F.toHomotopy (s, y) := by
-          rw [show H (t, x) = F.toHomotopy (s, x) by
-                rw [Homotopy.trans_apply]
-                split_ifs with h
-                · rfl
-                · exact (h ht_half).elim,
-              show H (t, y) = F.toHomotopy (s, y) by
-                rw [Homotopy.trans_apply]
-                split_ifs with h
-                · rfl
-                · exact (h ht_half).elim] at hy
-          exact hy
-        have htotal : F.totalMap (s, x) = F.totalMap (s, y) := by
-          ext <;> simp [hyF]
-        exact congrArg Prod.snd (F.isEmbedding_total.injective htotal)
-      · let s : I :=
-          ⟨2 * t - 1, unitInterval.two_mul_sub_one_mem_iff.2 ⟨(not_le.1 ht_half).le, t.2.2⟩⟩
-        have hyG : G.toHomotopy (s, x) = G.toHomotopy (s, y) := by
-          rw [show H (t, x) = G.toHomotopy (s, x) by
-                rw [Homotopy.trans_apply]
-                split_ifs with h
-                · exact (ht_half h).elim
-                · rfl,
-              show H (t, y) = G.toHomotopy (s, y) by
-                rw [Homotopy.trans_apply]
-                split_ifs with h
-                · exact (ht_half h).elim
-                · rfl] at hy
-          exact hy
-        have htotal : G.totalMap (s, x) = G.totalMap (s, y) := by
-          ext <;> simp [hyG]
-        exact congrArg Prod.snd (G.isEmbedding_total.injective htotal))).isEmbedding
+    set T : I × X → I × Y := fun p => (p.1, (F.toHomotopy.trans G.toHomotopy) p) with hT
+    have hTcont : Continuous T := by fun_prop
+    refine ⟨?_, ?_⟩
+    · have hfst : Continuous fun q : I × Y => (q.1 : ℝ) := by fun_prop
+      set D₁ : Set (I × Y) := {q | (q.1 : ℝ) ≤ 1 / 2} with hD₁def
+      set D₂ : Set (I × Y) := {q | 1 / 2 ≤ (q.1 : ℝ)} with hD₂def
+      have hcov : D₁ ∪ D₂ = Set.univ := by
+        ext q
+        simp only [hD₁def, hD₂def, Set.mem_union, Set.mem_setOf_eq, Set.mem_univ, iff_true]
+        exact le_total _ _
+      have hrange₁ : Set.range (Prod.map half (id : X → X)) = T ⁻¹' D₁ := by
+        rw [Set.range_prodMap, Set.range_id, range_half]; ext ⟨t, x⟩; simp [hT, hD₁def]
+      have hTe₁ : T ∘ (Prod.map half (id : X → X))
+          = (Prod.map half (id : Y → Y)) ∘ F.totalMap := by
+        funext p; obtain ⟨s, x⟩ := p
+        simp only [Function.comp_apply, Prod.map_apply, id_eq, hT, totalMap_apply]
+        rw [trans_half]
+      have hi₁ := isInducing_restrict_of_embedding (isEmbedding_half.prodMap IsEmbedding.id)
+        hrange₁ (hTe₁ ▸ (isEmbedding_half.prodMap IsEmbedding.id).isInducing.comp
+          F.isEmbedding_total.isInducing)
+      have hrange₂ : Set.range (Prod.map halfRight (id : X → X)) = T ⁻¹' D₂ := by
+        rw [Set.range_prodMap, Set.range_id, range_halfRight]; ext ⟨t, x⟩; simp [hT, hD₂def]
+      have hTe₂ : T ∘ (Prod.map halfRight (id : X → X))
+          = (Prod.map halfRight (id : Y → Y)) ∘ G.totalMap := by
+        funext p; obtain ⟨s, x⟩ := p
+        simp only [Function.comp_apply, Prod.map_apply, id_eq, hT, totalMap_apply]
+        rw [trans_halfRight]
+      have hi₂ := isInducing_restrict_of_embedding (isEmbedding_halfRight.prodMap IsEmbedding.id)
+        hrange₂ (hTe₂ ▸ (isEmbedding_halfRight.prodMap IsEmbedding.id).isInducing.comp
+          G.isEmbedding_total.isInducing)
+      exact isInducing_of_isClosed_cover hTcont (isClosed_le hfst continuous_const)
+        (isClosed_le continuous_const hfst) hcov hi₁ hi₂
+    · rintro ⟨t, x⟩ ⟨t', x'⟩ hpp
+      have ht : t = t' := congrArg Prod.fst hpp
+      subst ht
+      have hH : (F.toHomotopy.trans G.toHomotopy) (t, x)
+          = (F.toHomotopy.trans G.toHomotopy) (t, x') := congrArg Prod.snd hpp
+      by_cases h : (t : ℝ) ≤ 1 / 2
+      · rw [trans_toHomotopy_apply_of_le _ _ _ h, trans_toHomotopy_apply_of_le _ _ _ h] at hH
+        exact Prod.ext rfl ((F.isEmbedding_apply _).injective hH)
+      · rw [trans_toHomotopy_apply_of_not_le _ _ _ h,
+          trans_toHomotopy_apply_of_not_le _ _ _ h] at hH
+        exact Prod.ext rfl ((G.isEmbedding_apply _).injective hH)
 
 /-- The value of a concatenated isotopy is given by the first isotopy on `[0, 1 / 2]`
 and by the second isotopy on `[1 / 2, 1]`, with the time parameter rescaled linearly. -/
-theorem trans_apply [CompactSpace X] [T2Space Y] {f₂ : C(X, Y)}
+theorem trans_apply {f₂ : C(X, Y)}
     (F : Isotopy f₀ f₁) (G : Isotopy f₁ f₂) (x : I × X) :
     (F.trans G) x =
       if h : (x.1 : ℝ) ≤ 1 / 2 then
@@ -216,9 +349,9 @@ theorem symm (h : Isotopic f₀ f₁) : Isotopic f₁ f₀ :=
         · simp [Function.comp_def, Isotopy.totalMap, e, e', unitInterval.symm_symm]
         · exact congrArg h.some.toHomotopy (by ext <;> simp [e]) }⟩
 
-/-- Isotopy is transitive when the source is compact and the target is Hausdorff. -/
+/-- Isotopy is transitive. -/
 @[trans]
-theorem trans [CompactSpace X] [T2Space Y] {f₂ : C(X, Y)}
+theorem trans {f₂ : C(X, Y)}
     (h₀₁ : Isotopic f₀ f₁) (h₁₂ : Isotopic f₁ f₂) : Isotopic f₀ f₂ :=
   ⟨h₀₁.some.trans h₁₂.some⟩
 
