@@ -42,8 +42,8 @@ notion also underlies locally flat isotopy, diffeotopies, and concordance.
 * `TauCeti.AmbientIsotopy.isotopy` / `TauCeti.AmbientIsotopy.isotopic`: an ambient isotopy
   carries any embedding `f` to the isotopic embedding `Φ.final ∘ f`. This is the "ambient
   isotopy implies isotopy" direction.
-* `TauCeti.AmbientIsotopy.final_trans` / `TauCeti.AmbientIsotopy.final_symm_final` /
-  `TauCeti.AmbientIsotopy.final_final_symm`: the final maps of the composite and inverse ambient
+* `TauCeti.AmbientIsotopy.final_trans` / `TauCeti.AmbientIsotopy.symm_final_final` /
+  `TauCeti.AmbientIsotopy.final_symm_final`: the final maps of the composite and inverse ambient
   isotopies, and that the inverse final map undoes the original on both sides.
 -/
 
@@ -477,6 +477,9 @@ def refl (Y : Type*) [TopologicalSpace Y] : AmbientIsotopy Y where
   isHomeomorph_total' := .id
   map_zero_left' _ := rfl
 
+/-- The final map of the constant ambient isotopy is the identity. -/
+theorem final_refl (y : Y) : (refl Y).final y = y := rfl
+
 instance : Inhabited (AmbientIsotopy Y) := ⟨refl Y⟩
 
 private theorem isotopy_totalMap_eq {f : C(X, Y)} :
@@ -569,7 +572,7 @@ theorem symm_apply (p : I × Y) :
 
 /-- The inverse ambient isotopy undoes the original: its final map is a left inverse of the
 original final map. -/
-theorem final_symm_final (y : Y) : Φ.symm.final (Φ.final y) = y := by
+theorem symm_final_final (y : Y) : Φ.symm.final (Φ.final y) = y := by
   have h1 : Φ.totalHomeomorph (1, y) = (1, Φ.toContinuousMap (1, y)) := by
     rw [totalHomeomorph_apply]
   simp only [final_apply, symm_apply]
@@ -577,7 +580,7 @@ theorem final_symm_final (y : Y) : Φ.symm.final (Φ.final y) = y := by
 
 /-- The original ambient isotopy undoes its inverse: the original final map is a left inverse of
 the inverse final map. -/
-theorem final_final_symm (y : Y) : Φ.final (Φ.symm.final y) = y := by
+theorem final_symm_final (y : Y) : Φ.final (Φ.symm.final y) = y := by
   have hfst : (Φ.totalHomeomorph.symm (1, y)).1 = 1 := Φ.totalHomeomorph_symm_fst (1, y)
   have happ := Φ.totalHomeomorph.apply_symm_apply (1, y)
   rw [totalHomeomorph_apply] at happ

@@ -70,13 +70,13 @@ theorem of_ambientIsotopy (Φ : AmbientIsotopy Y) {f : C(X, Y)} :
 /-- Ambient isotopy is reflexive: the constant ambient isotopy fixes every map. -/
 @[refl]
 theorem refl (f : C(X, Y)) : AmbientIsotopic f f :=
-  ⟨AmbientIsotopy.refl Y, by ext x; rfl⟩
+  ⟨AmbientIsotopy.refl Y, by ext x; exact AmbientIsotopy.final_refl (f x)⟩
 
 /-- Ambient isotopy is symmetric, via the inverse ambient isotopy. -/
 @[symm]
 theorem symm (hfg : AmbientIsotopic f g) : AmbientIsotopic g f := by
   obtain ⟨Φ, rfl⟩ := hfg
-  exact ⟨Φ.symm, by ext x; exact Φ.final_symm_final (f x)⟩
+  exact ⟨Φ.symm, by ext x; exact Φ.symm_final_final (f x)⟩
 
 /-- Ambient isotopy is transitive, via the composite ambient isotopy. -/
 @[trans]
