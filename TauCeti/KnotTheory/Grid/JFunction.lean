@@ -412,6 +412,7 @@ theorem JNum_mono_right {s t₁ t₂ : Finset (Fin n × Fin n)} (h : t₁ ⊆ t�
 /-- The strict southwest relation is invariant under reflecting both points across the diagonal:
 exchanging the column and row coordinates of both endpoints exchanges the two strict
 inequalities. -/
+@[simp, grind =]
 theorem isSouthWest_swap (p q : Fin n × Fin n) :
     IsSouthWest (Prod.swap p) (Prod.swap q) ↔ IsSouthWest p q := by
   unfold IsSouthWest
