@@ -67,8 +67,9 @@ lemma toBialgHom_mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H
 /-- The quotient morphism sends an element to its quotient class. -/
 @[simp]
 lemma mkQuotient_apply (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) (h : H) :
-    (mkQuotient H I).hom h = Ideal.Quotient.mkₐ R I.toIdeal h :=
-  rfl
+    (mkQuotient H I).hom h = Ideal.Quotient.mkₐ R I.toIdeal h := by
+  rw [toBialgHom_mkQuotient]
+  exact HopfIdeal.mkBialgHom_apply I h
 
 /-- The kernel of the quotient morphism is the Hopf ideal being quotiented by. -/
 lemma mkQuotient_ker (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
