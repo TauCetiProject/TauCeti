@@ -66,8 +66,11 @@ variable {f₀ f₁ : C(X, Y)}
 
 instance instFunLike : FunLike (Isotopy f₀ f₁) (I × X) Y where
   coe F := F.toFun
-  coe_injective
-  | ⟨⟨⟨_, _⟩, _, _⟩, _⟩, ⟨⟨⟨_, _⟩, _, _⟩, _⟩, rfl => rfl
+  coe_injective F G h := by
+    obtain ⟨F, _⟩ := F
+    obtain ⟨G, _⟩ := G
+    congr
+    exact DFunLike.coe_injective h
 
 /-- The level-preserving total map of an isotopy. -/
 def totalMap (F : Isotopy f₀ f₁) : C(I × X, I × Y) :=
