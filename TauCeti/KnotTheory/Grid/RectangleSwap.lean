@@ -254,6 +254,7 @@ theorem mem_pointSet_inter_iff (p : Fin n × Fin n) :
     GridState.mem_pointSet_inter_swapColumns_iff x R.left_ne_right p
 
 /-- The lower-left corner is not shared with the target state: it sits on a side column. -/
+@[simp]
 theorem left_bottom_notMem_inter :
     (R.left, R.bottom) ∉ x.pointSet ∩ y.pointSet := by
   rw [mem_pointSet_inter_iff R]
@@ -261,6 +262,7 @@ theorem left_bottom_notMem_inter :
   exact hleft rfl
 
 /-- The upper-right corner is not shared with the target state: it sits on a side column. -/
+@[simp]
 theorem right_top_notMem_inter :
     (R.right, R.top) ∉ x.pointSet ∩ y.pointSet := by
   rw [mem_pointSet_inter_iff R]
@@ -275,6 +277,7 @@ theorem left_bottom_ne_right_top :
   exact absurd h R.left_ne_right
 
 /-- The upper-left target corner is not shared with the source state: it sits on a side column. -/
+@[simp]
 theorem left_top_notMem_inter :
     (R.left, R.top) ∉ x.pointSet ∩ y.pointSet := by
   rw [mem_pointSet_inter_iff R]
@@ -282,6 +285,7 @@ theorem left_top_notMem_inter :
   exact hleft rfl
 
 /-- The lower-right target corner is not shared with the source state: it sits on a side column. -/
+@[simp]
 theorem right_bottom_notMem_inter :
     (R.right, R.bottom) ∉ x.pointSet ∩ y.pointSet := by
   rw [mem_pointSet_inter_iff R]
