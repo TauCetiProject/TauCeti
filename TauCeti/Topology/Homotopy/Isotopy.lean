@@ -105,7 +105,12 @@ private theorem isInducing_restrict_of_embedding {Z W A : Type*} [TopologicalSpa
     (he : IsEmbedding e) (hrange : Set.range e = f ⁻¹' D) (hfe : IsInducing (f ∘ e)) :
     IsInducing ((f ⁻¹' D).restrict f) := by
   let φ : A ≃ₜ (f ⁻¹' D) := he.toHomeomorph.trans (Homeomorph.setCongr hrange)
-  have hcomp : (f ⁻¹' D).restrict f ∘ φ = f ∘ e := rfl
+  have hφ_apply (a : A) : (φ a : Z) = e a := by
+    change ((Homeomorph.setCongr hrange) (he.toHomeomorph a) : Z) = e a
+    simp [Homeomorph.setCongr]
+  have hcomp : (f ⁻¹' D).restrict f ∘ φ = f ∘ e := by
+    funext a
+    exact congrArg f (hφ_apply a)
   have h0 : IsInducing ((f ⁻¹' D).restrict f ∘ φ) := hcomp ▸ hfe
   have h2 := h0.comp φ.symm.isInducing
   rwa [Function.comp_assoc, Homeomorph.self_comp_symm, Function.comp_id] at h2
