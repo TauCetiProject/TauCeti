@@ -2,11 +2,8 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Polynomial.Degree.Operations
+import TauCeti.Algebra.Polynomial.CardBoundedCoeff
 import Mathlib.Algebra.Order.Group.Unbundled.Int
-import Mathlib.Data.Int.Interval
-import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Data.Set.Card
 import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
@@ -74,27 +71,21 @@ theorem coeffVec_injOn :
 absolute value by `C`. -/
 theorem card_intPolynomial_degree_height_le :
     (intPolynomialBox D C).ncard ≤ (2 * C + 1) ^ (D + 1) := by
-  classical
-  -- The coefficient vector lands in `[-C, C]^{D+1}`, a finite type.
-  let T : Finset ℤ := Finset.Icc (-(C : ℤ)) (C : ℤ)
-  let f : intPolynomialBox D C → (Fin (D + 1) → T) :=
-    fun p i => ⟨(p : ℤ[X]).coeff i, coeff_mem_Icc_of_mem_intPolynomialBox D C p.2 i⟩
-  -- Injectivity is `coeffVec_injOn` packaged on the subtype.
-  have hf : Function.Injective f := by
-    rintro ⟨p, hp⟩ ⟨q, hq⟩ hpq
-    refine Subtype.ext (coeffVec_injOn D C hp hq (funext fun i => ?_))
-    exact congr_arg Subtype.val (congr_fun hpq i)
-  -- The target type has exactly `(2·C + 1)^(D+1)` elements.
-  have hcard : Nat.card (Fin (D + 1) → T) = (2 * C + 1) ^ (D + 1) := by
-    rw [Nat.card_eq_fintype_card, Fintype.card_fun, Fintype.card_coe, Fintype.card_fin,
-      Int.card_Icc]
-    congr 1
-    rw [show (C : ℤ) + 1 - -(C : ℤ) = ((2 * C + 1 : ℕ) : ℤ) by push_cast; ring]
-    exact Int.toNat_natCast _
-  calc (intPolynomialBox D C).ncard
-      = Nat.card (intPolynomialBox D C) := (Nat.card_coe_set_eq _).symm
-    _ ≤ Nat.card (Fin (D + 1) → T) := Nat.card_le_card_of_injective f hf
-    _ = (2 * C + 1) ^ (D + 1) := hcard
+  have hbox : intPolynomialBox D C =
+      {p : ℤ[X] | p.natDegree ≤ D ∧ ∀ i, |p.coeff i| ≤ (C : ℤ)} := by
+    ext p
+    constructor
+    · intro hp
+      refine ⟨hp.1, fun i => ?_⟩
+      rw [Int.abs_eq_natAbs]
+      exact_mod_cast hp.2 i
+    · intro hp
+      refine ⟨hp.1, fun i => ?_⟩
+      have hcoeff : |p.coeff i| ≤ (C : ℤ) := hp.2 i
+      rw [Int.abs_eq_natAbs] at hcoeff
+      exact_mod_cast hcoeff
+  rw [hbox]
+  exact TauCeti.Polynomial.ncard_natDegree_le_abs_intCoeff_le D C
 
 /-- The family of integer polynomials of degree at most `D` with coefficients bounded by `C` is
 finite. (The explicit count above bounds its cardinality; this records finiteness on its own, since
