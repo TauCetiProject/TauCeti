@@ -13,9 +13,11 @@ An *isotopy* between two continuous maps is a homotopy whose level-preserving to
 `I × X → I × Y` is a topological embedding, and an *ambient isotopy* of a space `Y` is a
 homotopy from the identity of `Y` whose level-preserving total map `I × Y → I × Y` is a
 homeomorphism. These are the point-set foundations that the geometric-topology roadmap
-(`TauCetiRoadmap/GeometricTopology`) asks for once, in full generality, before specialising:
-knot equivalence is the restriction of `TauCeti.Isotopic` to smooth embeddings `S¹ ↪ M`, and
-the same notion underlies locally flat isotopy, diffeotopies, and concordance.
+(`TauCetiRoadmap/GeometricTopology`) asks for once, in full generality, before specialising.
+The definitions follow Burde--Zieschang, *Knots*, Chapter 1, Definitions 1.1 and 1.2,
+generalized to this continuous topological setting. Later knot-equivalence foundations are
+intended to specialize this continuous relation to smooth embeddings `S¹ ↪ M`; the same
+notion also underlies locally flat isotopy, diffeotopies, and concordance.
 
 ## Main definitions
 
@@ -43,8 +45,9 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 private theorem isEmbedding_const_prod (t : I) : IsEmbedding fun x : X => (t, x) :=
   IsEmbedding.of_comp (by fun_prop) continuous_snd (by
-    change IsEmbedding (id : X → X)
-    exact IsEmbedding.id)
+    convert (IsEmbedding.id : IsEmbedding (id : X → X)) using 1
+    ext x
+    rfl)
 
 /-- An **isotopy** between `f₀ f₁ : C(X, Y)` is a homotopy whose level-preserving total map
 `I × X → I × Y` is a topological embedding. -/
@@ -82,6 +85,12 @@ theorem isEmbedding_apply (F : Isotopy f₀ f₁) (t : I) :
     convert F.isEmbedding_total.comp (isEmbedding_const_prod (X := X) t) using 1
     ext x <;> rfl
   exact IsEmbedding.of_comp (by fun_prop) hk_cont hcomp
+
+/-- An isotopy is, in particular, a `HomotopyWith` whose slices are embeddings. -/
+def toHomotopyWith (F : Isotopy f₀ f₁) :
+    HomotopyWith f₀ f₁ fun g : C(X, Y) => IsEmbedding g where
+  toHomotopy := F.toHomotopy
+  prop' := F.isEmbedding_apply
 
 /-- The map an isotopy starts at is a topological embedding. -/
 theorem isEmbedding_left (F : Isotopy f₀ f₁) : IsEmbedding f₀ := by
@@ -140,6 +149,11 @@ theorem isEmbedding_right (h : Isotopic f₀ f₁) : IsEmbedding f₁ :=
 theorem homotopic (h : Isotopic f₀ f₁) : Homotopic f₀ f₁ :=
   ⟨h.some.toHomotopy⟩
 
+/-- Isotopic maps are homotopic through embeddings in Mathlib's generic API. -/
+theorem homotopicWith (h : Isotopic f₀ f₁) :
+    HomotopicWith f₀ f₁ fun g : C(X, Y) => IsEmbedding g :=
+  ⟨h.some.toHomotopyWith⟩
+
 end Isotopic
 
 /-- An **ambient isotopy** of `Y` is a homotopy from the identity map of `Y` whose
@@ -197,6 +211,22 @@ theorem final_apply (y : Y) : Φ.final y = Φ.toContinuousMap (1, y) := rfl
 theorem isHomeomorph_final : IsHomeomorph Φ.final :=
   Φ.isHomeomorph_apply 1
 
+/-- The time-`t` self-homeomorphism bundled as a `Homeomorph`. -/
+noncomputable def homeomorph (t : I) : Y ≃ₜ Y :=
+  IsHomeomorph.homeomorph (fun y => Φ.toContinuousMap (t, y)) (Φ.isHomeomorph_apply t)
+
+@[simp]
+theorem homeomorph_apply (t : I) (y : Y) : Φ.homeomorph t y = Φ.toContinuousMap (t, y) :=
+  rfl
+
+/-- The time-`1` homeomorphism produced by an ambient isotopy. -/
+noncomputable def finalHomeomorph : Y ≃ₜ Y :=
+  Φ.homeomorph 1
+
+@[simp]
+theorem finalHomeomorph_apply (y : Y) : Φ.finalHomeomorph y = Φ.final y :=
+  rfl
+
 /-- The constant ambient isotopy at the identity. -/
 def refl (Y : Type*) [TopologicalSpace Y] : AmbientIsotopy Y where
   toContinuousMap := ⟨fun p => p.2, by fun_prop⟩
@@ -204,6 +234,11 @@ def refl (Y : Type*) [TopologicalSpace Y] : AmbientIsotopy Y where
   map_zero_left' _ := rfl
 
 instance : Inhabited (AmbientIsotopy Y) := ⟨refl Y⟩
+
+private theorem isotopy_totalMap_eq {f : C(X, Y)} :
+    (fun p : I × X => (p.1, Φ.toContinuousMap (p.1, f p.2))) =
+      Φ.totalMap ∘ Prod.map id f :=
+  rfl
 
 /-- An ambient isotopy carries any embedding `f` to the embedding `Φ.final ∘ f` through an
 explicit isotopy: at time `t` the embedding is the homeomorphism `Φ t` postcomposed with `f`. -/
@@ -214,9 +249,7 @@ def isotopy {f : C(X, Y)} (hf : IsEmbedding f) : Isotopy f (Φ.final.comp f) whe
       map_zero_left := fun x => Φ.map_zero_left (f x)
       map_one_left := fun _ => rfl }
   isEmbedding_total' := by
-    -- Definitional unfolding identifies this total map with `Φ.totalMap` after
-    -- postcomposing the identity-on-time product map induced by `f`.
-    change IsEmbedding (Φ.totalMap ∘ Prod.map id f)
+    rw [isotopy_totalMap_eq]
     exact Φ.isHomeomorph_total.isEmbedding.comp (IsEmbedding.id.prodMap hf)
 
 /-- **Ambient isotopy implies isotopy**: an ambient isotopy of `Y` carries any embedding `f`
