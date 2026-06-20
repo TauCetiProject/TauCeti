@@ -263,6 +263,14 @@ namespace SymplecticForm
 
 variable [AddCommGroup V] [Module ℝ V]
 
+/-- The underlying bilinear form determines a symplectic form: the only data is the form, the
+alternating and nondegeneracy conditions being propositions. -/
+theorem toBilinForm_injective :
+    Function.Injective (toBilinForm : SymplecticForm V → LinearMap.BilinForm ℝ V) := by
+  rintro ⟨B, _, _⟩ ⟨B', _, _⟩ h
+  subst h
+  rfl
+
 instance : CoeFun (SymplecticForm V) fun _ => V → V → ℝ :=
   ⟨fun ω v w => ω.toBilinForm v w⟩
 

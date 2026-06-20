@@ -47,14 +47,6 @@ variable [AddCommGroup V] [Module ℝ V]
 variable [AddCommGroup W] [Module ℝ W]
 variable [AddCommGroup X] [Module ℝ X]
 
-/-- The underlying bilinear form determines a symplectic form: the only data is the form, the
-alternating and nondegeneracy conditions being propositions. -/
-theorem toBilinForm_injective :
-    Function.Injective (toBilinForm : SymplecticForm V → LinearMap.BilinForm ℝ V) := by
-  rintro ⟨B, _, _⟩ ⟨B', _, _⟩ h
-  subst h
-  rfl
-
 /-- Transport a symplectic form along a real-linear equivalence `e : V ≃ₗ[ℝ] W` by pushing the
 arguments back along `e.symm`.
 
@@ -114,24 +106,52 @@ section Compatible
 
 variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 
+/-- Transport by a linear equivalence preserves and reflects `J`-invariance. -/
+@[simp]
+lemma invariant_transport_iff (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (e : V ≃ₗ[ℝ] W) : (ω.transport e).Invariant (J.transport e) ↔ ω.Invariant J := by
+  constructor
+  · rw [invariant_iff, invariant_iff]
+    intro hinv v w
+    have h := hinv (e v) (e w)
+    simpa [transport_apply, AlmostComplexStructure.transport_apply] using h
+  · rw [invariant_iff, invariant_iff]
+    intro hinv v w
+    simp only [transport_apply, AlmostComplexStructure.transport_apply,
+      LinearEquiv.symm_apply_apply]
+    exact hinv (e.symm v) (e.symm w)
+
 /-- `J`-invariance transports along a linear equivalence: if `ω` is `J`-invariant, then
 `ω.transport e` is invariant under the transported almost complex structure `J.transport e`. -/
 lemma Invariant.transport (hinv : ω.Invariant J) (e : V ≃ₗ[ℝ] W) :
-    (ω.transport e).Invariant (J.transport e) := by
-  rw [invariant_iff]
-  intro v w
-  simp only [transport_apply, AlmostComplexStructure.transport_apply,
-    LinearEquiv.symm_apply_apply]
-  exact (ω.invariant_iff J).mp hinv (e.symm v) (e.symm w)
+    (ω.transport e).Invariant (J.transport e) :=
+  (invariant_transport_iff ω J e).mpr hinv
+
+/-- Transport by a linear equivalence preserves and reflects tameness. -/
+@[simp]
+lemma tames_transport_iff (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (e : V ≃ₗ[ℝ] W) : (ω.transport e).Tames (J.transport e) ↔ ω.Tames J := by
+  constructor
+  · intro htames v hv
+    have h := htames (e v) (mt e.map_eq_zero_iff.mp hv)
+    simpa [transport_apply, AlmostComplexStructure.transport_apply] using h
+  · intro htames w hw
+    rw [transport_apply]
+    simp only [AlmostComplexStructure.transport_apply, LinearEquiv.symm_apply_apply]
+    exact htames (e.symm w) (mt e.symm.map_eq_zero_iff.mp hw)
 
 /-- Taming transports along a linear equivalence: if `ω` tames `J`, then `ω.transport e` tames
 the transported almost complex structure `J.transport e`. -/
 lemma Tames.transport (htames : ω.Tames J) (e : V ≃ₗ[ℝ] W) :
-    (ω.transport e).Tames (J.transport e) := by
-  intro w hw
-  rw [transport_apply]
-  simp only [AlmostComplexStructure.transport_apply, LinearEquiv.symm_apply_apply]
-  exact htames (e.symm w) (mt e.symm.map_eq_zero_iff.mp hw)
+    (ω.transport e).Tames (J.transport e) :=
+  (tames_transport_iff ω J e).mpr htames
+
+/-- Transport by a linear equivalence preserves and reflects compatibility. -/
+@[simp]
+lemma compatible_transport_iff (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (e : V ≃ₗ[ℝ] W) : (ω.transport e).Compatible (J.transport e) ↔ ω.Compatible J := by
+  rw [(ω.transport e).compatible_iff (J.transport e), ω.compatible_iff J,
+    invariant_transport_iff, tames_transport_iff]
 
 /-- Compatibility transports along a linear equivalence: if `ω` is compatible with `J`, then
 `ω.transport e` is compatible with the transported almost complex structure `J.transport e`. This
@@ -139,7 +159,7 @@ expresses that `e` carries the compatible pair `(ω, J)` to the compatible pair
 `(ω.transport e, J.transport e)`. -/
 lemma Compatible.transport (h : ω.Compatible J) (e : V ≃ₗ[ℝ] W) :
     (ω.transport e).Compatible (J.transport e) :=
-  Compatible.of_tames (h.invariant.transport e) (h.tames.transport e)
+  (compatible_transport_iff ω J e).mpr h
 
 end Compatible
 
