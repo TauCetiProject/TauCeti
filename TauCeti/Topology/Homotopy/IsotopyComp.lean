@@ -33,7 +33,8 @@ survives both.
 
 * `TauCeti.Isotopic.postcomp` / `TauCeti.Isotopic.precomp`: the same closure on the isotopy
   *relation*.
-* `TauCeti.Isotopic.comp`: the two-sided form, composing with an embedding on each side.
+* `TauCeti.Isotopic.precomp_postcomp`: the two-sided form, composing with an embedding on
+  each side.
 * `TauCeti.Isotopic.postcomp_homeomorph` / `TauCeti.Isotopic.precomp_homeomorph`: the common
   special case where the composing map is a homeomorphism (an ambient homeomorphism on the
   codomain, or a change of source coordinates).
@@ -96,7 +97,7 @@ theorem precomp (h : Isotopic f₀ f₁) (e : C(W, X)) (he : IsEmbedding e) :
 
 /-- The two-sided form: an isotopy relation survives composing with an embedding on each
 side. -/
-theorem comp (h : Isotopic f₀ f₁) (g : C(Y, Z)) (hg : IsEmbedding g) (e : C(W, X))
+theorem precomp_postcomp (h : Isotopic f₀ f₁) (g : C(Y, Z)) (hg : IsEmbedding g) (e : C(W, X))
     (he : IsEmbedding e) : Isotopic (g.comp (f₀.comp e)) (g.comp (f₁.comp e)) :=
   (h.precomp e he).postcomp g hg
 
