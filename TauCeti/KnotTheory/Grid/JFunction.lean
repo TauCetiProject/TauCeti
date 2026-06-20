@@ -31,6 +31,12 @@ and `A`.
 * `TauCeti.GridState.J`, `TauCeti.GridDiagram.JO`, and `TauCeti.GridDiagram.JX`: specialized
   forms for grid states and markings.
 
+## Main results
+
+* `TauCeti.GridPoint.I_image_swap`, `TauCeti.GridPoint.J_image_swap`,
+  `TauCeti.GridPoint.JDiff_image_swap`, `TauCeti.GridState.J_transpose`: the southwest counts
+  and the `J`-function are invariant under reflecting the point sets across the diagonal.
+
 ## References
 
 This supplies a prerequisite for `HeegaardFloer/README.md` in TauCetiRoadmap, Lane G.2,
@@ -403,6 +409,50 @@ theorem JNum_mono_right {s t₁ t₂ : Finset (Fin n × Fin n)} (h : t₁ ⊆ t�
   rw [JNum_comm s t₁, JNum_comm s t₂]
   exact JNum_mono_left h
 
+/-- The strict southwest relation is invariant under reflecting both points across the diagonal:
+exchanging the column and row coordinates of both endpoints exchanges the two strict
+inequalities. -/
+@[simp, grind =]
+theorem isSouthWest_swap (p q : Fin n × Fin n) :
+    IsSouthWest (Prod.swap p) (Prod.swap q) ↔ IsSouthWest p q := by
+  unfold IsSouthWest
+  exact and_comm
+
+/-- The reflection map on pairs of grid squares is injective. -/
+private theorem prodMap_swap_injective :
+    Function.Injective
+      (Prod.map (Prod.swap (α := Fin n) (β := Fin n)) (Prod.swap (α := Fin n) (β := Fin n))) :=
+  Prod.swap_injective.prodMap Prod.swap_injective
+
+/-- The ordered southwest count is invariant under reflecting both point sets across the
+diagonal. -/
+theorem I_image_swap (s t : Finset (Fin n × Fin n)) :
+    I (s.image Prod.swap) (t.image Prod.swap) = I s t := by
+  rw [I_def, I_def, ← Finset.prodMap_image_product Prod.swap Prod.swap s t,
+    Finset.filter_image, Finset.card_image_of_injective _ prodMap_swap_injective]
+  congr 1
+  exact Finset.filter_congr fun pq _ => isSouthWest_swap pq.1 pq.2
+
+/-- The numerator of the `J`-function is invariant under reflecting both point sets across the
+diagonal. -/
+theorem JNum_image_swap (s t : Finset (Fin n × Fin n)) :
+    JNum (s.image Prod.swap) (t.image Prod.swap) = JNum s t := by
+  rw [JNum_def, JNum_def, I_image_swap, I_image_swap]
+
+/-- The symmetrized grid `J`-function is invariant under reflecting both point sets across the
+diagonal. -/
+theorem J_image_swap (s t : Finset (Fin n × Fin n)) :
+    GridPoint.J (s.image Prod.swap) (t.image Prod.swap) = GridPoint.J s t := by
+  rw [J_def, J_def, JNum_image_swap]
+
+/-- The bilinear `J`-function on formal differences is invariant under reflecting all four point
+sets across the diagonal. -/
+theorem JDiff_image_swap (s a t b : Finset (Fin n × Fin n)) :
+    JDiff (s.image Prod.swap) (a.image Prod.swap) (t.image Prod.swap) (b.image Prod.swap)
+      = JDiff s a t b := by
+  rw [JDiff_def, JDiff_def, J_image_swap, J_image_swap, J_image_swap,
+    J_image_swap]
+
 end GridPoint
 
 namespace GridState
@@ -421,6 +471,12 @@ theorem J_def (x y : GridState n) : GridState.J x y = GridPoint.J x.pointSet y.p
 /-- The state-level grid `J`-function is symmetric. -/
 theorem J_comm (x y : GridState n) : GridState.J x y = GridState.J y x :=
   GridPoint.J_comm x.pointSet y.pointSet
+
+/-- The state-level grid `J`-function is invariant under reflecting both states across the
+diagonal. -/
+theorem J_transpose (x y : GridState n) :
+    GridState.J x.transpose y.transpose = GridState.J x y := by
+  rw [J_def, J_def, transpose_pointSet, transpose_pointSet, GridPoint.J_image_swap]
 
 end GridState
 
@@ -445,6 +501,16 @@ def JX (x : GridState n) : ℚ :=
 @[simp]
 theorem JX_def (x : GridState n) : GridDiagram.JX G x = GridPoint.J x.pointSet G.XSet :=
   rfl
+
+/-- `JO` is invariant under reflecting the diagram and state across the diagonal. -/
+theorem JO_transpose (x : GridState n) :
+    GridDiagram.JO G.transpose x.transpose = GridDiagram.JO G x := by
+  rw [JO_def, JO_def, GridState.transpose_pointSet, transpose_OSet, GridPoint.J_image_swap]
+
+/-- `JX` is invariant under reflecting the diagram and state across the diagonal. -/
+theorem JX_transpose (x : GridState n) :
+    GridDiagram.JX G.transpose x.transpose = GridDiagram.JX G x := by
+  rw [JX_def, JX_def, GridState.transpose_pointSet, transpose_XSet, GridPoint.J_image_swap]
 
 /-- `JO` may equivalently be read with the `O`-markings as the left input. -/
 theorem JO_comm (x : GridState n) : GridDiagram.JO G x = GridPoint.J G.OSet x.pointSet := by

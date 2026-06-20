@@ -22,6 +22,12 @@ rectangle-change theorems can refer to these names without unfolding the point-p
   formulas attached to the `O` and `X` markings.
 * `TauCeti.GridDiagram.alexander`: the Alexander grading formula.
 
+## Main results
+
+* `TauCeti.GridDiagram.maslovO_transpose`, `TauCeti.GridDiagram.maslovX_transpose`,
+  `TauCeti.GridDiagram.alexander_transpose`: the Maslov and Alexander gradings are invariant
+  under the diagonal reflection of a grid state and diagram.
+
 ## References
 
 This supplies the grading-definition part of `TauCetiRoadmap/HeegaardFloer/README.md`,
@@ -110,6 +116,24 @@ theorem alexander_eq_neg_shift_of_maslov_eq {x : GridState n} (h : G.maslovO x =
     G.alexander x = -(((n : ℤ) - 1 : ℤ) : ℚ) / 2 := by
   rw [alexander, h]
   ring
+
+/-- The `O`-Maslov grading is invariant under the diagonal reflection. -/
+theorem maslovO_transpose (x : GridState n) :
+    G.transpose.maslovO x.transpose = G.maslovO x := by
+  rw [maslovO_def, maslovO_def, GridState.transpose_pointSet, transpose_OSet,
+    GridPoint.JDiff_image_swap]
+
+/-- The `X`-Maslov grading is invariant under the diagonal reflection. -/
+theorem maslovX_transpose (x : GridState n) :
+    G.transpose.maslovX x.transpose = G.maslovX x := by
+  rw [maslovX_def, maslovX_def, GridState.transpose_pointSet, transpose_XSet,
+    GridPoint.JDiff_image_swap]
+
+/-- The Alexander grading is invariant under the diagonal reflection. The normalization shift
+depends only on the common grid size, so it cancels between the two diagrams. -/
+theorem alexander_transpose (x : GridState n) :
+    G.transpose.alexander x.transpose = G.alexander x := by
+  rw [alexander_def, alexander_def, maslovO_transpose, maslovX_transpose]
 
 end GridDiagram
 

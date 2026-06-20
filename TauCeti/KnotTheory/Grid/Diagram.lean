@@ -29,12 +29,16 @@ before defining rectangles, empty rectangles, and the grid differential.
   relabelings of grid states.
 * `TauCeti.GridState.swapRows`, `TauCeti.GridState.swapColumns`: row and column swaps of
   grid states.
+* `TauCeti.GridState.transpose`: the diagonal reflection of a grid state, with the inverse
+  permutation graph.
 * `TauCeti.GridDiagram`: an `n × n` grid diagram with `O` and `X` markings.
 * `TauCeti.GridDiagram.OSet`, `TauCeti.GridDiagram.XSet`: the marking point sets.
 * `TauCeti.GridDiagram.relabelRows`, `TauCeti.GridDiagram.relabelColumns`: row and column
   relabelings of grid diagrams.
 * `TauCeti.GridDiagram.swapRows`, `TauCeti.GridDiagram.swapColumns`: row and column swaps of
   grid diagrams.
+* `TauCeti.GridDiagram.transpose`: the diagonal reflection of a grid diagram, reflecting both
+  marking states.
 
 ## References
 
@@ -421,6 +425,74 @@ theorem card_pointSet_inter_swapColumns (x : GridState n) {a b : Fin n} (h : a �
     Finset.card_insert_of_notMem hne] at hcard
   omega
 
+/-- The diagonal reflection of a grid state.
+
+Reflecting the occupied squares across the main diagonal exchanges columns and rows, so the new
+permutation graph is the inverse of the old one. -/
+def transpose (x : GridState n) : GridState n where
+  toPerm := x.toPerm.symm
+
+/-- The diagonal reflection evaluates by the inverse permutation graph. -/
+@[simp]
+theorem transpose_apply (x : GridState n) (c : Fin n) : x.transpose c = x.toPerm.symm c :=
+  rfl
+
+/-- The diagonal reflection is an involution on grid states. -/
+@[simp]
+theorem transpose_transpose (x : GridState n) : x.transpose.transpose = x := by
+  cases x
+  simp [transpose]
+
+/-- Reflecting after a row relabeling is the same as column relabeling after reflecting. -/
+@[simp]
+theorem relabelRows_transpose (ρ : Equiv.Perm (Fin n)) (x : GridState n) :
+    (x.relabelRows ρ).transpose = x.transpose.relabelColumns ρ := by
+  ext c
+  exact congrArg Fin.val <| by
+    apply (x.relabelRows ρ).toPerm.injective
+    simp
+
+/-- Reflecting after a column relabeling is the same as row relabeling after reflecting. -/
+@[simp]
+theorem relabelColumns_transpose (κ : Equiv.Perm (Fin n)) (x : GridState n) :
+    (x.relabelColumns κ).transpose = x.transpose.relabelRows κ := by
+  ext c
+  exact congrArg Fin.val <| by
+    apply (x.relabelColumns κ).toPerm.injective
+    simp
+
+/-- Reflecting after a row swap is the same as the corresponding column swap after reflecting. -/
+@[simp]
+theorem swapRows_transpose (a b : Fin n) (x : GridState n) :
+    (x.swapRows a b).transpose = x.transpose.swapColumns a b := by
+  simp [swapRows, swapColumns]
+
+/-- Reflecting after a column swap is the same as the corresponding row swap after reflecting. -/
+@[simp]
+theorem swapColumns_transpose (a b : Fin n) (x : GridState n) :
+    (x.swapColumns a b).transpose = x.transpose.swapRows a b := by
+  simp [swapRows, swapColumns]
+
+/-- A square lies in the reflected state exactly when its diagonal reflection lies in the
+original state. -/
+@[simp]
+theorem mem_pointSet_transpose (x : GridState n) (p : Fin n × Fin n) :
+    p ∈ x.transpose.pointSet ↔ Prod.swap p ∈ x.pointSet := by
+  simp only [mem_pointSet, transpose_apply]
+  rw [Equiv.symm_apply_eq, eq_comm]
+  rfl
+
+/-- The point set of the reflected state is the diagonal reflection of the original point set. -/
+theorem transpose_pointSet (x : GridState n) :
+    x.transpose.pointSet = x.pointSet.image Prod.swap := by
+  ext p
+  rw [mem_pointSet_transpose, Finset.mem_image]
+  constructor
+  · intro hp
+    exact ⟨Prod.swap p, hp, Prod.swap_swap p⟩
+  · rintro ⟨q, hq, rfl⟩
+    rwa [Prod.swap_swap]
+
 end GridState
 
 /-- An `n × n` grid diagram, encoded by the `O`-marking and `X`-marking permutation graphs.
@@ -708,6 +780,84 @@ theorem relabelColumns_relabelColumns (κ τ : Equiv.Perm (Fin n)) :
 theorem relabelRows_relabelColumns (ρ κ : Equiv.Perm (Fin n)) :
     (G.relabelRows ρ).relabelColumns κ = (G.relabelColumns κ).relabelRows ρ := by
   ext c <;> simp [GridState.relabelRows_relabelColumns]
+
+/-- The diagonal reflection of a grid diagram, reflecting both the `O` and `X` marking states.
+
+Reflection across the main diagonal is a bijection of squares, so it preserves the condition
+that no square carries both markings. -/
+def transpose (G : GridDiagram n) : GridDiagram n where
+  O := G.O.transpose
+  X := G.X.transpose
+  disjoint := by
+    intro c h
+    simp only [GridState.transpose_apply] at h
+    refine G.disjoint (G.O.toPerm.symm c) ?_
+    rw [Equiv.apply_symm_apply, h, Equiv.apply_symm_apply]
+
+/-- The `O` marking state of the reflected diagram is the reflected `O` marking state. -/
+@[simp]
+theorem transpose_O : G.transpose.O = G.O.transpose :=
+  rfl
+
+/-- The `X` marking state of the reflected diagram is the reflected `X` marking state. -/
+@[simp]
+theorem transpose_X : G.transpose.X = G.X.transpose :=
+  rfl
+
+/-- The diagonal reflection is an involution on grid diagrams. -/
+@[simp]
+theorem transpose_transpose : G.transpose.transpose = G := by
+  ext c <;> simp
+
+/-- Reflecting after a row relabeling is the same as column relabeling after reflecting. -/
+@[simp]
+theorem relabelRows_transpose (ρ : Equiv.Perm (Fin n)) :
+    (G.relabelRows ρ).transpose = G.transpose.relabelColumns ρ := by
+  ext c <;> simp
+
+/-- Reflecting after a column relabeling is the same as row relabeling after reflecting. -/
+@[simp]
+theorem relabelColumns_transpose (κ : Equiv.Perm (Fin n)) :
+    (G.relabelColumns κ).transpose = G.transpose.relabelRows κ := by
+  ext c <;> simp
+
+/-- Reflecting after a row swap is the same as the corresponding column swap after reflecting. -/
+@[simp]
+theorem swapRows_transpose (a b : Fin n) :
+    (G.swapRows a b).transpose = G.transpose.swapColumns a b := by
+  simp [swapRows, swapColumns]
+
+/-- Reflecting after a column swap is the same as the corresponding row swap after reflecting. -/
+@[simp]
+theorem swapColumns_transpose (a b : Fin n) :
+    (G.swapColumns a b).transpose = G.transpose.swapRows a b := by
+  simp [swapRows, swapColumns]
+
+/-- The `O`-marking set of the reflected diagram is the diagonal reflection of the original
+`O`-marking set. -/
+theorem transpose_OSet : G.transpose.OSet = G.OSet.image Prod.swap := by
+  rw [OSet, OSet, transpose_O, GridState.transpose_pointSet]
+
+/-- The `X`-marking set of the reflected diagram is the diagonal reflection of the original
+`X`-marking set. -/
+theorem transpose_XSet : G.transpose.XSet = G.XSet.image Prod.swap := by
+  rw [XSet, XSet, transpose_X, GridState.transpose_pointSet]
+
+/-- A square lies in the reflected diagram's `O`-marking set exactly when its diagonal
+reflection lies in the original `O`-marking set. -/
+@[simp]
+theorem mem_OSet_transpose (p : Fin n × Fin n) :
+    p ∈ G.transpose.OSet ↔ Prod.swap p ∈ G.OSet := by
+  rw [OSet, OSet, transpose_O]
+  exact GridState.mem_pointSet_transpose G.O p
+
+/-- A square lies in the reflected diagram's `X`-marking set exactly when its diagonal
+reflection lies in the original `X`-marking set. -/
+@[simp]
+theorem mem_XSet_transpose (p : Fin n × Fin n) :
+    p ∈ G.transpose.XSet ↔ Prod.swap p ∈ G.XSet := by
+  rw [XSet, XSet, transpose_X]
+  exact GridState.mem_pointSet_transpose G.X p
 
 end GridDiagram
 
