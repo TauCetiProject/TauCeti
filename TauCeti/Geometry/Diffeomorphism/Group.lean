@@ -60,7 +60,8 @@ instance instMul : Mul (M ≃ₘ^n⟮I, I⟯ M) where mul f g := g.trans f
 instance instInv : Inv (M ≃ₘ^n⟮I, I⟯ M) where inv f := f.symm
 
 /-- Composition of self-diffeomorphisms is associative. -/
-theorem trans_assoc (f g h : M ≃ₘ^n⟮I, I⟯ M) : (f.trans g).trans h = f.trans (g.trans h) :=
+private theorem trans_assoc (f g h : M ≃ₘ^n⟮I, I⟯ M) :
+    (f.trans g).trans h = f.trans (g.trans h) :=
   _root_.Diffeomorph.ext fun _ => rfl
 
 /-- The `Cⁿ` self-diffeomorphisms of `M` form a group under composition, with multiplication
