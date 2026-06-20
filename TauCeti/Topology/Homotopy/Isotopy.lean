@@ -23,6 +23,8 @@ notion also underlies locally flat isotopy, diffeotopies, and concordance.
 
 * `TauCeti.Isotopy f₀ f₁`: a homotopy from `f₀` to `f₁` whose total level-preserving map is a
   topological embedding.
+* `TauCeti.Isotopic f₀ f₁`: the proposition that such an isotopy exists. This is the reusable
+  relation downstream knot-equivalence and ambient-isotopy layers traffic in.
 * `TauCeti.AmbientIsotopy Y`: a homotopy of `Y` from the identity whose total
   level-preserving map is a homeomorphism.
 
@@ -32,8 +34,12 @@ notion also underlies locally flat isotopy, diffeotopies, and concordance.
   embeddings.
 * `TauCeti.Isotopy.toHomotopyWith`: an isotopy is, in particular, a Mathlib homotopy through
   embeddings.
-* `TauCeti.AmbientIsotopy.isotopy`: an ambient isotopy carries any embedding `f` to an isotopy
-  from `f` to `Φ.final ∘ f`. This is the "ambient isotopy implies isotopy" direction.
+* `TauCeti.Isotopic.refl` / `TauCeti.Isotopic.symm`: isotopy is reflexive on embeddings and
+  symmetric.
+* `TauCeti.Isotopic.homotopic`: isotopic maps are homotopic.
+* `TauCeti.AmbientIsotopy.isotopy` / `TauCeti.AmbientIsotopy.isotopic`: an ambient isotopy
+  carries any embedding `f` to the isotopic embedding `Φ.final ∘ f`. This is the "ambient
+  isotopy implies isotopy" direction.
 -/
 
 namespace TauCeti
@@ -113,6 +119,55 @@ instance instHomotopyLike : HomotopyLike (Isotopy f₀ f₁) f₀ f₁ where
   map_one_left F := F.map_one_left
 
 end Isotopy
+
+/-- Two maps `f₀ f₁ : C(X, Y)` are **isotopic** if there is an isotopy between them. -/
+def Isotopic (f₀ f₁ : C(X, Y)) : Prop :=
+  Nonempty (Isotopy f₀ f₁)
+
+namespace Isotopic
+
+variable {f₀ f₁ : C(X, Y)}
+
+/-- An isotopy witnesses that its endpoints are isotopic. -/
+theorem of_isotopy (F : Isotopy f₀ f₁) : Isotopic f₀ f₁ := ⟨F⟩
+
+/-- Isotopy is reflexive on embeddings. -/
+theorem refl (f : C(X, Y)) (hf : IsEmbedding f) : Isotopic f f :=
+  ⟨{ toHomotopy := Homotopy.refl f,
+      isEmbedding_total' := IsEmbedding.id.prodMap hf }⟩
+
+/-- Isotopy is symmetric. -/
+@[symm]
+theorem symm (h : Isotopic f₀ f₁) : Isotopic f₁ f₀ :=
+  ⟨{ toHomotopy := h.some.toHomotopy.symm,
+      isEmbedding_total' := by
+        let e : I × X ≃ₜ I × X :=
+          unitInterval.symmHomeomorph.prodCongr (Homeomorph.refl X)
+        let e' : I × Y ≃ₜ I × Y :=
+          unitInterval.symmHomeomorph.prodCongr (Homeomorph.refl Y)
+        convert e'.isEmbedding.comp (h.some.isEmbedding_total.comp e.isEmbedding) using 1
+        ext p
+        · simp [Function.comp_def, Isotopy.totalMap, e, e', unitInterval.symm_symm]
+        · exact congrArg h.some.toHomotopy (by ext <;> simp [e]) }⟩
+
+/-- The left endpoint of an isotopy relation is an embedding. -/
+theorem isEmbedding_left (h : Isotopic f₀ f₁) : IsEmbedding f₀ :=
+  Isotopy.isEmbedding_left h.some
+
+/-- The right endpoint of an isotopy relation is an embedding. -/
+theorem isEmbedding_right (h : Isotopic f₀ f₁) : IsEmbedding f₁ :=
+  Isotopy.isEmbedding_right h.some
+
+/-- Isotopic maps are homotopic. -/
+theorem homotopic (h : Isotopic f₀ f₁) : Homotopic f₀ f₁ :=
+  ⟨h.some.toHomotopy⟩
+
+/-- Isotopic maps are homotopic through embeddings in Mathlib's generic API. -/
+theorem homotopicWith (h : Isotopic f₀ f₁) :
+    HomotopicWith f₀ f₁ fun g : C(X, Y) => IsEmbedding g :=
+  ⟨h.some.toHomotopyWith⟩
+
+end Isotopic
 
 /-- An **ambient isotopy** of `Y` is a homotopy from the identity map of `Y` whose
 level-preserving total map is a homeomorphism. The time-`1` map `Φ.final` is the resulting
@@ -210,6 +265,11 @@ def isotopy {f : C(X, Y)} (hf : IsEmbedding f) : Isotopy f (Φ.final.comp f) whe
   isEmbedding_total' := by
     rw [isotopy_totalMap_eq]
     exact Φ.isHomeomorph_total.isEmbedding.comp (IsEmbedding.id.prodMap hf)
+
+/-- **Ambient isotopy implies isotopy**: an ambient isotopy of `Y` carries any embedding `f`
+into `Y` to the isotopic embedding `Φ.final ∘ f`. -/
+theorem isotopic {f : C(X, Y)} (hf : IsEmbedding f) : Isotopic f (Φ.final.comp f) :=
+  ⟨Φ.isotopy hf⟩
 
 end AmbientIsotopy
 
