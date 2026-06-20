@@ -59,36 +59,54 @@ instance instMul : Mul (M ≃ₘ^n⟮I, I⟯ M) where mul f g := g.trans f
 /-- The inverse in the self-diffeomorphism group is the inverse diffeomorphism. -/
 instance instInv : Inv (M ≃ₘ^n⟮I, I⟯ M) where inv f := f.symm
 
-/-- The `Cⁿ` self-diffeomorphisms of `M` form a group under composition. The proofs are the
-`Diffeomorph` composition lemmas (`refl_trans`, `trans_refl`, `self_trans_symm`), exactly as for
-`Equiv.Perm`. -/
+/-- Composition of self-diffeomorphisms is associative. -/
+theorem trans_assoc (f g h : M ≃ₘ^n⟮I, I⟯ M) : (f.trans g).trans h = f.trans (g.trans h) :=
+  _root_.Diffeomorph.ext fun _ => rfl
+
+/-- The `Cⁿ` self-diffeomorphisms of `M` form a group under composition, with multiplication
+acting as function composition. -/
 instance instGroup : Group (M ≃ₘ^n⟮I, I⟯ M) where
-  mul_assoc _ _ _ := _root_.Diffeomorph.ext fun _ => rfl
+  mul_assoc _ _ _ := (trans_assoc _ _ _).symm
   one_mul := _root_.Diffeomorph.trans_refl
   mul_one := _root_.Diffeomorph.refl_trans
   inv_mul_cancel := _root_.Diffeomorph.self_trans_symm
 
+/-- The unit of the self-diffeomorphism group is the identity diffeomorphism. -/
 theorem one_def : (1 : M ≃ₘ^n⟮I, I⟯ M) = _root_.Diffeomorph.refl I M n := rfl
 
+/-- Multiplication in the self-diffeomorphism group is `Diffeomorph.trans` in composition order. -/
 theorem mul_def (f g : M ≃ₘ^n⟮I, I⟯ M) : f * g = g.trans f := rfl
 
+/-- Inversion in the self-diffeomorphism group is the inverse diffeomorphism. -/
 theorem inv_def (f : M ≃ₘ^n⟮I, I⟯ M) : f⁻¹ = f.symm := rfl
 
+/-- The unit self-diffeomorphism coerces to the identity function. -/
 @[simp]
 theorem coe_one : ⇑(1 : M ≃ₘ^n⟮I, I⟯ M) = id := rfl
 
+/-- Multiplication of self-diffeomorphisms coerces to function composition. -/
 @[simp]
 theorem coe_mul (f g : M ≃ₘ^n⟮I, I⟯ M) : ⇑(f * g) = f ∘ g := rfl
 
+/-- The inverse self-diffeomorphism coerces to the inverse diffeomorphism. -/
+@[simp]
+theorem coe_inv (f : M ≃ₘ^n⟮I, I⟯ M) : ⇑(f⁻¹) = f.symm := rfl
+
+/-- Multiplication of self-diffeomorphisms acts by applying the right factor, then the left. -/
 theorem mul_apply (f g : M ≃ₘ^n⟮I, I⟯ M) (x : M) : (f * g) x = f (g x) := rfl
 
+/-- The unit self-diffeomorphism fixes every point. -/
 theorem one_apply (x : M) : (1 : M ≃ₘ^n⟮I, I⟯ M) x = x := rfl
 
+/-- The inverse in the self-diffeomorphism group acts as the inverse diffeomorphism. -/
+@[simp]
 theorem inv_apply (f : M ≃ₘ^n⟮I, I⟯ M) (x : M) : f⁻¹ x = f.symm x := rfl
 
+/-- The underlying equivalence of the unit self-diffeomorphism is the unit permutation. -/
 @[simp]
 theorem toEquiv_one : (1 : M ≃ₘ^n⟮I, I⟯ M).toEquiv = 1 := rfl
 
+/-- The underlying equivalence preserves multiplication of self-diffeomorphisms. -/
 @[simp]
 theorem toEquiv_mul (f g : M ≃ₘ^n⟮I, I⟯ M) : (f * g).toEquiv = f.toEquiv * g.toEquiv := rfl
 
@@ -100,6 +118,7 @@ def toPerm : (M ≃ₘ^n⟮I, I⟯ M) →* Equiv.Perm M where
   map_one' := rfl
   map_mul' _ _ := rfl
 
+/-- The forgetful homomorphism to permutations is injective. -/
 theorem toPerm_injective : Function.Injective (toPerm : (M ≃ₘ^n⟮I, I⟯ M) → Equiv.Perm M) :=
   _root_.Diffeomorph.toEquiv_injective
 
