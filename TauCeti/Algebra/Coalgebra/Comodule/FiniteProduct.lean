@@ -26,8 +26,8 @@ needed before tensor products, duals, and the rigid monoidal category can be bui
 ## Main declarations
 
 * `TauCeti.FGComoduleCat.prod`: the concrete product of two finitely generated comodules.
-* `Limits.prod.fst`, `Limits.prod.snd`, `TauCeti.FGComoduleCat.prodInl`,
-  `prodInr`: the canonical maps.
+* `Limits.prod.fst`, `Limits.prod.snd`, `Limits.prod.inl`, `Limits.prod.inr`: the
+  canonical maps.
 * `Limits.prod.lift`, `TauCeti.FGComoduleCat.prodDesc`: maps into and out of the product.
 * `TauCeti.FGComoduleCat.hasBinaryProduct`: the categorical binary product instance using
   the concrete product object.
@@ -297,16 +297,6 @@ theorem prodIso_inv_snd (M N : FGComoduleCat.{u, v, w} R C) :
   exact
     (Limits.limit.isoLimitCone_inv_π (prodLimitCone M N) ⟨Limits.WalkingPair.right⟩)
 
-/-- The left inclusion into the standard product of finitely generated comodules. -/
-noncomputable abbrev prodInl (M N : FGComoduleCat.{u, v, w} R C) :
-    M ⟶ Limits.limit (Limits.pair M N) :=
-  concreteInl M N ≫ (prodIso M N).inv
-
-/-- The right inclusion into the standard product of finitely generated comodules. -/
-noncomputable abbrev prodInr (M N : FGComoduleCat.{u, v, w} R C) :
-    N ⟶ Limits.limit (Limits.pair M N) :=
-  concreteInr M N ≫ (prodIso M N).inv
-
 /-- The morphism out of the standard product of finitely generated comodules induced by two
 morphisms with a common target. -/
 noncomputable abbrev prodDesc {M N P : FGComoduleCat.{u, v, w} R C} (f : M ⟶ P)
@@ -322,67 +312,63 @@ theorem prod_lift_comp_prodIso_hom {P M N : FGComoduleCat.{u, v, w} R C} (f : P 
   · rw [Category.assoc, prodIso_hom_fst, Limits.prod.lift_fst, prodLift_fst]
   · rw [Category.assoc, prodIso_hom_snd, Limits.prod.lift_snd, prodLift_snd]
 
-/-- The product desc after the left inclusion is the first morphism. -/
+private theorem prod_inl_eq (M N : FGComoduleCat.{u, v, w} R C) :
+    (Limits.prod.inl M N : M ⟶ Limits.limit (Limits.pair M N)) =
+      concreteInl M N ≫ (prodIso M N).inv := by
+  apply Limits.prod.hom_ext
+  · simp [Category.assoc, concreteInl_fst]
+  · simp [Category.assoc, concreteInl_snd]
+
+private theorem prod_inr_eq (M N : FGComoduleCat.{u, v, w} R C) :
+    (Limits.prod.inr M N : N ⟶ Limits.limit (Limits.pair M N)) =
+      concreteInr M N ≫ (prodIso M N).inv := by
+  apply Limits.prod.hom_ext
+  · simp [Category.assoc, concreteInr_fst]
+  · simp [Category.assoc, concreteInr_snd]
+
+/-- The product desc after the standard left inclusion is the first morphism. -/
 @[simp]
 theorem prodInl_desc {M N P : FGComoduleCat.{u, v, w} R C} (f : M ⟶ P) (g : N ⟶ P) :
-    prodInl M N ≫ prodDesc f g = f := by
-  simp [prodInl, prodDesc, Category.assoc, concreteInl_desc]
+    (Limits.prod.inl M N : M ⟶ Limits.limit (Limits.pair M N)) ≫ prodDesc f g = f := by
+  simp [prod_inl_eq, prodDesc, Category.assoc, concreteInl_desc]
 
-/-- The product desc after the right inclusion is the second morphism. -/
+/-- The product desc after the standard right inclusion is the second morphism. -/
 @[simp]
 theorem prodInr_desc {M N P : FGComoduleCat.{u, v, w} R C} (f : M ⟶ P) (g : N ⟶ P) :
-    prodInr M N ≫ prodDesc f g = g := by
-  simp [prodInr, prodDesc, Category.assoc, concreteInr_desc]
+    (Limits.prod.inr M N : N ⟶ Limits.limit (Limits.pair M N)) ≫ prodDesc f g = g := by
+  simp [prod_inr_eq, prodDesc, Category.assoc, concreteInr_desc]
 
-/-- Morphisms out of the product are determined by their values on the inclusions. -/
+/-- Morphisms out of the product are determined by their values on the standard inclusions. -/
 @[ext]
 theorem prod_hom_ext' {M N P : FGComoduleCat.{u, v, w} R C}
     {f g : Limits.limit (Limits.pair M N) ⟶ P}
-    (hinl : prodInl M N ≫ f = prodInl M N ≫ g)
-    (hinr : prodInr M N ≫ f = prodInr M N ≫ g) : f = g := by
+    (hinl :
+      (Limits.prod.inl M N : M ⟶ Limits.limit (Limits.pair M N)) ≫ f =
+        (Limits.prod.inl M N : M ⟶ Limits.limit (Limits.pair M N)) ≫ g)
+    (hinr :
+      (Limits.prod.inr M N : N ⟶ Limits.limit (Limits.pair M N)) ≫ f =
+        (Limits.prod.inr M N : N ⟶ Limits.limit (Limits.pair M N)) ≫ g) : f = g := by
   rw [← Iso.hom_inv_id_assoc (prodIso M N) f, ← Iso.hom_inv_id_assoc (prodIso M N) g]
   congr 1
   apply concrete_hom_ext'
-  · simpa [prodInl, Category.assoc] using hinl
-  · simpa [prodInr, Category.assoc] using hinr
-
-/-- The standard first projection after the left inclusion is the identity. -/
-@[simp]
-theorem prodInl_fst (M N : FGComoduleCat.{u, v, w} R C) :
-    prodInl M N ≫ (Limits.prod.fst : Limits.limit (Limits.pair M N) ⟶ M) = 𝟙 M := by
-  simp [prodInl, Category.assoc, concreteInl_fst]
-
-/-- The standard second projection after the left inclusion is zero. -/
-@[simp]
-theorem prodInl_snd (M N : FGComoduleCat.{u, v, w} R C) :
-    prodInl M N ≫ (Limits.prod.snd : Limits.limit (Limits.pair M N) ⟶ N) = 0 := by
-  simp [prodInl, Category.assoc, concreteInl_snd]
-
-/-- The standard first projection after the right inclusion is zero. -/
-@[simp]
-theorem prodInr_fst (M N : FGComoduleCat.{u, v, w} R C) :
-    prodInr M N ≫ (Limits.prod.fst : Limits.limit (Limits.pair M N) ⟶ M) = 0 := by
-  simp [prodInr, Category.assoc, concreteInr_fst]
-
-/-- The standard second projection after the right inclusion is the identity. -/
-@[simp]
-theorem prodInr_snd (M N : FGComoduleCat.{u, v, w} R C) :
-    prodInr M N ≫ (Limits.prod.snd : Limits.limit (Limits.pair M N) ⟶ N) = 𝟙 N := by
-  simp [prodInr, Category.assoc, concreteInr_snd]
+  · simpa [prod_inl_eq, Category.assoc] using hinl
+  · simpa [prod_inr_eq, Category.assoc] using hinr
 
 /-- The two standard projection-inclusion composites reconstruct the identity of the
 product. -/
 @[simp]
 theorem prod_fst_inl_add_snd_inr (M N : FGComoduleCat.{u, v, w} R C) :
-    (Limits.prod.fst : Limits.limit (Limits.pair M N) ⟶ M) ≫ prodInl M N +
-      (Limits.prod.snd : Limits.limit (Limits.pair M N) ⟶ N) ≫ prodInr M N =
+    (Limits.prod.fst : Limits.limit (Limits.pair M N) ⟶ M) ≫
+        (Limits.prod.inl M N : M ⟶ Limits.limit (Limits.pair M N)) +
+      (Limits.prod.snd : Limits.limit (Limits.pair M N) ⟶ N) ≫
+        (Limits.prod.inr M N : N ⟶ Limits.limit (Limits.pair M N)) =
         𝟙 (Limits.limit (Limits.pair M N)) := by
   apply Limits.prod.hom_ext
   · rw [comp_add]
-    simp only [prodInl, prodInr, Category.assoc, prodIso_inv_fst, concreteInl_fst,
+    simp only [prod_inl_eq, prod_inr_eq, Category.assoc, prodIso_inv_fst, concreteInl_fst,
       concreteInr_fst, Category.comp_id, Category.id_comp, comp_zero, add_zero]
   · rw [comp_add]
-    simp only [prodInl, prodInr, Category.assoc, prodIso_inv_snd, concreteInl_snd,
+    simp only [prod_inl_eq, prod_inr_eq, Category.assoc, prodIso_inv_snd, concreteInl_snd,
       concreteInr_snd, Category.comp_id, Category.id_comp, comp_zero, zero_add]
 
 /-- Finitely generated comodules have categorical binary products. -/
