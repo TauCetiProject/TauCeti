@@ -35,7 +35,8 @@ theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*} [CommRing
     [IsGaloisGroup G A B] (P : Ideal A) [P.IsMaximal] (hP : P ≠ ⊥) :
     (primesOver P B).ncard = Nat.card G ↔
       P.ramificationIdxIn B = 1 ∧ P.inertiaDegIn B = 1 := by
-  have h_main := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn hP B G
+  have h_main := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn (p := P) (hpb := hP)
+    (B := B) (G := G)
   have hG : 0 < Nat.card G := Nat.card_pos
   constructor
   · intro hn
