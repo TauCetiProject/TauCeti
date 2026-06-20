@@ -15,6 +15,8 @@ This file collects reusable trace facts for finite field extensions.
 
 * `TauCeti.NumberField.trace_eq_zero_of_sq_ratCast`: the number-field
   specialization saying that `x² ∈ ℚ`, `x ∉ ℚ` implies `Tr x = 0`.
+* `TauCeti.Algebra.trace_eq_zero_of_sq_algebraMap_of_not_mem_range`: the corresponding
+  trace-vanishing statement for any finite field extension.
 * `TauCeti.Algebra.discr_one_self_eq_of_sq`: in a quadratic extension, the trace-form
   discriminant of the square-root basis `{1, x}` is `4a` when `x² = a` and `x ∉ F`.
 
@@ -30,9 +32,11 @@ open Module Polynomial
 
 namespace TauCeti
 
+namespace Algebra
+
 /-- In a finite field extension, an element outside the base field whose square lies in the
 base field has trace zero. -/
-private theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] [Field L]
+theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] [Field L]
     [Algebra F L] [FiniteDimensional F L] {x : L} {r : F}
     (hx2 : x ^ 2 = algebraMap F L r) (hx : x ∉ (algebraMap F L).range) :
     Algebra.trace F L x = 0 := by
@@ -61,8 +65,6 @@ private theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [F
       (by rw [Polynomial.natDegree_X_pow_sub_C]; norm_num)]
     simp [Polynomial.coeff_X_pow]
   rw [hnc]; simp
-
-namespace Algebra
 
 variable {F L : Type*} [Field F] [Field L] [Algebra F L] [FiniteDimensional F L]
 
@@ -107,6 +109,14 @@ theorem trace_eq_zero_of_sq_ratCast {K : Type*} [Field K] [NumberField K]
     {x : K} {r : ℚ} (hx2 : x ^ 2 = algebraMap ℚ K r)
     (hx : x ∉ (algebraMap ℚ K).range) :
     Algebra.trace ℚ K x = 0 :=
-  trace_eq_zero_of_sq_algebraMap_of_not_mem_range hx2 hx
+  TauCeti.Algebra.trace_eq_zero_of_sq_algebraMap_of_not_mem_range hx2 hx
+
+/-- Deprecated compatibility alias for the original trace-vanishing helper name. -/
+@[deprecated TauCeti.NumberField.trace_eq_zero_of_sq_ratCast (since := "2026-06-20")]
+theorem trace_eq_zero_of_sq_ratCast_of_not_mem_range {K : Type*} [Field K] [NumberField K]
+    {x : K} {r : ℚ} (hx2 : x ^ 2 = algebraMap ℚ K r)
+    (hx : x ∉ (algebraMap ℚ K).range) :
+    Algebra.trace ℚ K x = 0 :=
+  trace_eq_zero_of_sq_ratCast hx2 hx
 
 end TauCeti.NumberField
