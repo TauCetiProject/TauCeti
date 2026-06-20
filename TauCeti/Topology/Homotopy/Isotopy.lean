@@ -521,8 +521,7 @@ theorem totalHomeomorph_symm_fst (p : I × Y) : (Φ.totalHomeomorph.symm p).1 = 
   rw [totalHomeomorph_apply] at h
   exact (Prod.ext_iff.mp h).1
 
-/-- **Composition of ambient isotopies**: follow `Φ_t` then `Ψ_t` at each time `t`. The total map
-is `Ψ.totalMap ∘ Φ.totalMap`, hence a homeomorphism, so no gluing is needed. -/
+/-- **Composition of ambient isotopies**: follow `Φ_t` then `Ψ_t` at each time `t`. -/
 def trans (Ψ : AmbientIsotopy Y) : AmbientIsotopy Y where
   toContinuousMap := ⟨fun p => Ψ.toContinuousMap (p.1, Φ.toContinuousMap p), by fun_prop⟩
   isHomeomorph_total' := by
@@ -546,8 +545,7 @@ maps of `Φ` and `Ψ`: at the endpoint it is `Ψ.final ∘ Φ.final`. -/
 theorem final_trans (Ψ : AmbientIsotopy Y) (y : Y) :
     (Φ.trans Ψ).final y = Ψ.final (Φ.final y) := rfl
 
-/-- **Inverse of an ambient isotopy**: undo `Φ_t` at each time `t`. The total map is
-`Φ.totalMap⁻¹`, hence a homeomorphism. -/
+/-- **Inverse of an ambient isotopy**: undo `Φ_t` at each time `t`. -/
 noncomputable def symm : AmbientIsotopy Y where
   toContinuousMap := ⟨fun p => (Φ.totalHomeomorph.symm p).2,
     continuous_snd.comp Φ.totalHomeomorph.symm.continuous⟩
