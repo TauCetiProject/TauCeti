@@ -17,8 +17,9 @@ This file collects reusable trace facts for finite field extensions.
   specialization saying that `x² ∈ ℚ`, `x ∉ ℚ` implies `Tr x = 0`.
 * `TauCeti.Algebra.trace_eq_zero_of_sq_algebraMap_of_not_mem_range`: the corresponding
   trace-vanishing statement for any finite field extension.
-* `TauCeti.Algebra.discr_one_sqrt_eq_of_sq`: in a quadratic extension, the trace-form
-  discriminant of the square-root basis `{1, x}` is `4a` when `x² = a` and `x ∉ F`.
+* `TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap`: in a quadratic extension, the
+  trace-form discriminant of the square-root basis `{1, x}` is `4a` when `x² = a` and
+  `x ∉ F`.
 
 ## Provenance
 
@@ -70,7 +71,7 @@ variable {F L : Type*} [Field F] [Field L] [Algebra F L] [FiniteDimensional F L]
 
 /-- For a quadratic extension `L / F` and an element `x ∉ F` whose square is `a ∈ F`, the
 trace-form discriminant of the square-root basis `{1, x}` equals `4 a`. -/
-theorem discr_one_sqrt_eq_of_sq {x : L} {a : F} (hfin : finrank F L = 2)
+theorem discr_one_elem_eq_of_sq_algebraMap {x : L} {a : F} (hfin : finrank F L = 2)
     (hx2 : x ^ 2 = algebraMap F L a) (hx : x ∉ (algebraMap F L).range) :
     Algebra.discr F ![1, x] = 4 * a := by
   have htr0 : Algebra.trace F L x = 0 :=
@@ -110,5 +111,9 @@ theorem trace_eq_zero_of_sq_ratCast {K : Type*} [Field K] [NumberField K]
     (hx : x ∉ (algebraMap ℚ K).range) :
     Algebra.trace ℚ K x = 0 :=
   TauCeti.Algebra.trace_eq_zero_of_sq_algebraMap_of_not_mem_range hx2 hx
+
+/-- Deprecated compatibility alias for the old NumberField helper name. -/
+@[deprecated TauCeti.NumberField.trace_eq_zero_of_sq_ratCast (since := "2026-06-20")]
+alias trace_eq_zero_of_sq_ratCast_of_not_mem_range := trace_eq_zero_of_sq_ratCast
 
 end TauCeti.NumberField

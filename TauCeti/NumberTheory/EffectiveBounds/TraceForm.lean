@@ -19,7 +19,7 @@ element whose square lies in the base field has trace zero.
 This file declares no new results: it records the EffectiveBounds square-root worked
 examples by reusing the trace and discriminant API from `TauCeti.FieldTheory.Trace`
 (`TauCeti.NumberField.trace_eq_zero_of_sq_ratCast` and
-`TauCeti.Algebra.discr_one_sqrt_eq_of_sq`).
+`TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap`).
 
 ## Worked examples
 
@@ -50,7 +50,7 @@ example : Algebra.trace ℝ ℂ Complex.I = 0 := by
 /-- The trace-form discriminant of the basis `{1, I}` of `ℂ` over `ℝ` is `-4`, recovering
 `|disc {1, i}| = 4` of the roadmap's `ℚ(i)` worked example. -/
 example : Algebra.discr ℝ ![1, Complex.I] = -4 := by
-  rw [discr_one_sqrt_eq_of_sq (a := -1) Complex.finrank_real_complex]
+  rw [discr_one_elem_eq_of_sq_algebraMap (a := -1) Complex.finrank_real_complex]
   · norm_num
   · rw [Complex.I_sq]; simp
   · rintro ⟨r, hr⟩
