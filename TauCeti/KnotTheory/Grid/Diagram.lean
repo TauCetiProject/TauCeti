@@ -39,6 +39,8 @@ before defining rectangles, empty rectangles, and the grid differential.
   grid diagrams.
 * `TauCeti.GridDiagram.transpose`: the diagonal reflection of a grid diagram, reflecting both
   marking states.
+* `TauCeti.GridDiagram.swapMarkings`: the grid diagram obtained by exchanging the `O`- and
+  `X`-marking states.
 
 ## References
 
@@ -858,6 +860,60 @@ theorem mem_XSet_transpose (p : Fin n × Fin n) :
     p ∈ G.transpose.XSet ↔ Prod.swap p ∈ G.XSet := by
   rw [XSet, XSet, transpose_X]
   exact GridState.mem_pointSet_transpose G.X p
+
+/-- The marking swap of a grid diagram, obtained by exchanging the `O`- and `X`-marking states.
+
+The defining no-double-marking condition is symmetric in the two marking states, so the swap is
+again a grid diagram. -/
+def swapMarkings (G : GridDiagram n) : GridDiagram n where
+  O := G.X
+  X := G.O
+  disjoint c := (G.disjoint c).symm
+
+/-- The `O`-marking state of the marking swap is the original `X`-marking state. -/
+@[simp]
+theorem swapMarkings_O : G.swapMarkings.O = G.X :=
+  rfl
+
+/-- The `X`-marking state of the marking swap is the original `O`-marking state. -/
+@[simp]
+theorem swapMarkings_X : G.swapMarkings.X = G.O :=
+  rfl
+
+/-- The `O`-marking set of the marking swap is the original `X`-marking set. -/
+@[simp]
+theorem swapMarkings_OSet : G.swapMarkings.OSet = G.XSet :=
+  rfl
+
+/-- The `X`-marking set of the marking swap is the original `O`-marking set. -/
+@[simp]
+theorem swapMarkings_XSet : G.swapMarkings.XSet = G.OSet :=
+  rfl
+
+/-- Membership in the marking swap's `O`-marking set is membership in the original
+`X`-marking set. -/
+@[simp]
+theorem mem_OSet_swapMarkings (p : Fin n × Fin n) :
+    p ∈ G.swapMarkings.OSet ↔ p ∈ G.XSet :=
+  Iff.rfl
+
+/-- Membership in the marking swap's `X`-marking set is membership in the original
+`O`-marking set. -/
+@[simp]
+theorem mem_XSet_swapMarkings (p : Fin n × Fin n) :
+    p ∈ G.swapMarkings.XSet ↔ p ∈ G.OSet :=
+  Iff.rfl
+
+/-- The marking swap is an involution: exchanging the two marking states twice restores the
+grid diagram. -/
+@[simp]
+theorem swapMarkings_swapMarkings : G.swapMarkings.swapMarkings = G := by
+  ext c <;> simp [swapMarkings]
+
+/-- The marking swap commutes with the diagonal reflection of a grid diagram. -/
+@[simp]
+theorem swapMarkings_transpose : G.swapMarkings.transpose = G.transpose.swapMarkings := by
+  ext c <;> simp [swapMarkings]
 
 end GridDiagram
 
