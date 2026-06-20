@@ -74,7 +74,7 @@ lemma prod_apply (J₁ : AlmostComplexStructure V) (J₂ : AlmostComplexStructur
 
 /-- The direct sum of negations is the negation of the direct sum. -/
 @[simp]
-lemma prod_neg (J₁ : AlmostComplexStructure V) (J₂ : AlmostComplexStructure W) :
+lemma neg_prod_neg (J₁ : AlmostComplexStructure V) (J₂ : AlmostComplexStructure W) :
     (-J₁).prod (-J₂) = -(J₁.prod J₂) :=
   toLinearMap_injective (by apply LinearMap.ext; rintro ⟨v, w⟩; simp)
 
