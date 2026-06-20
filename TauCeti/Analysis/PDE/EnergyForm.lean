@@ -53,8 +53,8 @@ explicit (never hidden in a `∃ C`):
   on the diagonal.
 * `TauCeti.PDE.UniformlyEllipticOn.norm_energyIntegrand_apply_le`,
   `TauCeti.PDE.UniformlyEllipticOn.opNorm_energyIntegrand_le`, and
-  `TauCeti.PDE.UniformlyEllipticOn.garding_energyIntegrand_self`: bundled-hypothesis
-  corollaries of the pointwise estimates.
+  `TauCeti.PDE.UniformlyEllipticOn.garding_energyIntegrand_self`: convenient corollaries
+  of the pointwise estimates.
 -/
 
 namespace TauCeti
@@ -249,10 +249,11 @@ lemma opNorm_energyIntegrand_le (he : UniformlyEllipticOn Ω a lam Lam)
     (fun {_} hx => he.upper_bound hx) (fun {_} hx => hbc.drift_bound hx)
     (fun {_} hx => hbc.mass_bound hx) hx
 
-/-- Bundled-hypothesis corollary of the pointwise Gårding lower bound on the diagonal. -/
+/-- Corollary of the pointwise Gårding lower bound on the diagonal from bundled ellipticity,
+bounded drift, and a pointwise nonnegative mass coefficient. -/
 @[grind =>]
 lemma garding_energyIntegrand_self (he : UniformlyEllipticOn Ω a lam Lam)
-    (hb : DriftBoundedOn Ω b beta) (hc : NonnegMassOn Ω c gamma) {x : X} (hx : x ∈ Ω)
+    (hb : DriftBoundedOn Ω b beta) (hc : MassNonnegativeOn Ω c) {x : X} (hx : x ∈ Ω)
     (U : ℝ × EuclideanSpace ℝ n) :
     lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2
       ≤ energyIntegrand (a x) (b x) (c x) U U :=
