@@ -31,7 +31,7 @@ point `0`); on the open half-line it agrees with the ordinary iterated derivativ
 * `TauCeti.IsCompletelyMonotone.nonneg`, `TauCeti.IsCompletelyMonotone.derivWithin_nonpos`,
   `TauCeti.IsCompletelyMonotone.antitoneOn`: a completely monotone function is nonnegative
   and nonincreasing on `[0, ∞)`.
-* `TauCeti.IsCompletelyMonotone.add`, `TauCeti.IsCompletelyMonotone.const_mul`: closure under
+* `TauCeti.IsCompletelyMonotone.add`, `TauCeti.IsCompletelyMonotone.const_smul`: closure under
   sums and nonnegative scalar multiples.
 * `TauCeti.isCompletelyMonotone_const`: a nonnegative constant is completely monotone.
 * `TauCeti.isCompletelyMonotone_exp_neg_mul`: the building block `t ↦ e^{-x t}` for `x ≥ 0`.
@@ -109,7 +109,7 @@ lemma add (hf : IsCompletelyMonotone f) (hg : IsCompletelyMonotone g) :
   exact add_nonneg (hf.sign n ht) (hg.sign n ht)
 
 /-- Completely monotone functions are closed under multiplication by a nonnegative constant. -/
-lemma const_mul (hf : IsCompletelyMonotone f) {c : ℝ} (hc : 0 ≤ c) :
+lemma const_smul (hf : IsCompletelyMonotone f) {c : ℝ} (hc : 0 ≤ c) :
     IsCompletelyMonotone (c • f) := by
   have hsmul : c • f = fun t => c * f t := by funext t; simp [Pi.smul_apply, smul_eq_mul]
   rw [hsmul]
