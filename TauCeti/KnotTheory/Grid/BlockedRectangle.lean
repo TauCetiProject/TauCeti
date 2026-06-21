@@ -133,11 +133,8 @@ marking avoidance only refers to the union of the two marking sets. -/
 theorem fullyBlockedRectangles_swapMarkings (x y : GridState n) :
     G.swapMarkings.fullyBlockedRectangles x y = G.fullyBlockedRectangles x y := by
   ext R
-  rw [mem_fullyBlockedRectangles, mem_fullyBlockedRectangles]
-  refine and_congr_right fun _ => ?_
-  rw [GridRectangleBetween.avoidsMarkings_iff, GridRectangleBetween.avoidsMarkings_iff,
-    swapMarkings_OSet, swapMarkings_XSet]
-  exact and_comm
+  rw [mem_fullyBlockedRectangles, mem_fullyBlockedRectangles,
+    GridRectangleBetween.avoidsMarkings_swapMarkings]
 
 /-- The fully blocked rectangle count is invariant under swapping the `O` and `X` markings. -/
 @[simp]

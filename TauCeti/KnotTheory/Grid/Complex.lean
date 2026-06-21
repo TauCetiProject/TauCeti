@@ -74,6 +74,16 @@ theorem transposeEquiv_apply {R : Type*} [Semiring R] {n : ℕ} (f : GridChain R
   rw [Finsupp.domLCongr_apply]
   exact Finsupp.equivMapDomain_apply _ _ _
 
+/-- The transpose relabeling is its own inverse: since `GridState.transpose` is an involution, the
+inverse automorphism is again `transposeEquiv`. This lets the forward lemmas
+`transposeEquiv_single` and `transposeEquiv_apply` also drive the inverse map. -/
+@[simp]
+theorem transposeEquiv_symm {R : Type*} [Semiring R] {n : ℕ} :
+    (transposeEquiv R n).symm = transposeEquiv R n := by
+  unfold transposeEquiv
+  rw [Finsupp.domLCongr_symm]
+  rfl
+
 end GridChain
 
 namespace GridDiagram

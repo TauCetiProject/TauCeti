@@ -219,6 +219,14 @@ theorem avoidsMarkings_iff (G : GridDiagram n) :
       Disjoint R.interior G.OSet ∧ Disjoint R.interior G.XSet := by
   rw [AvoidsMarkings, Finset.disjoint_union_right]
 
+/-- Marking avoidance is unchanged by swapping the `O` and `X` markings, since it only refers to
+the union of the two marking sets. -/
+theorem avoidsMarkings_swapMarkings (G : GridDiagram n) :
+    R.AvoidsMarkings G.swapMarkings ↔ R.AvoidsMarkings G := by
+  rw [avoidsMarkings_iff, avoidsMarkings_iff, GridDiagram.swapMarkings_OSet,
+    GridDiagram.swapMarkings_XSet]
+  exact and_comm
+
 /-- The diagonal reflection of a toroidal rectangle, exchanging the two vertical sides with the
 two horizontal sides.
 
@@ -747,6 +755,12 @@ theorem avoidsMarkings_transpose (G : GridDiagram n) (R : GridRectangleBetween x
   unfold GridRectangleBetween.AvoidsMarkings GridRectangle.AvoidsMarkings
   rw [interior_transpose, G.transpose_OSet, G.transpose_XSet, ← Finset.image_union,
     Finset.disjoint_image Prod.swap_injective]
+
+/-- Swapping the `O` and `X` markings preserves marking avoidance of a rectangle between grid
+states. -/
+theorem avoidsMarkings_swapMarkings (G : GridDiagram n) (R : GridRectangleBetween x y) :
+    R.AvoidsMarkings G.swapMarkings ↔ R.AvoidsMarkings G :=
+  R.toGridRectangle.avoidsMarkings_swapMarkings G
 
 end GridRectangleBetween
 
