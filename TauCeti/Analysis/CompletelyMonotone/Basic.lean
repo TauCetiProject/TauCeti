@@ -2,7 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Calculus.AbsolutelyMonotone
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
@@ -63,24 +63,66 @@ lemma isCompletelyMonotone_iff {f : ℝ → ℝ} :
         ∀ n : ℕ, ∀ t : ℝ, 0 ≤ t → 0 ≤ (-1) ^ n * iteratedDerivWithin n f (Ici 0) t :=
   Iff.rfl
 
+/-- Completely monotone functions are exactly absolutely monotone functions after reflecting the
+closed half-line through zero. -/
+lemma isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect {f : ℝ → ℝ} :
+    IsCompletelyMonotone f ↔ AbsolutelyMonotoneOn (fun u => f (-u)) (Iic 0) := by
+  rw [isCompletelyMonotone_iff,
+    AbsolutelyMonotoneOn.iff_iteratedDerivWithin_nonneg (uniqueDiffOn_Iic 0)]
+  constructor
+  · rintro ⟨hcont, hsign⟩
+    refine ⟨?_, fun n u hu => ?_⟩
+    · have hpre : ((-ContinuousLinearMap.id ℝ ℝ) ⁻¹' Ici 0) = Iic 0 := by
+        ext x
+        simp
+      simpa [Function.comp_def, hpre] using
+        (hcont.comp_continuousLinearMap (-ContinuousLinearMap.id ℝ ℝ) :
+          ContDiffOn ℝ ∞ (fun u : ℝ => f (-u)) ((-ContinuousLinearMap.id ℝ ℝ) ⁻¹' Ici 0))
+    · rw [iteratedDerivWithin_comp_neg (n := n) (f := f) (s := Iic 0) u]
+      have hset : (-Iic (0 : ℝ) : Set ℝ) = Ici 0 := by
+        ext x
+        simp
+      rw [hset]
+      simpa [smul_eq_mul] using hsign n (-u) (neg_nonneg.mpr hu)
+  · rintro ⟨hcont, hsign⟩
+    refine ⟨?_, fun n t ht => ?_⟩
+    · have hpre : ((-ContinuousLinearMap.id ℝ ℝ) ⁻¹' Iic 0) = Ici 0 := by
+        ext x
+        simp
+      simpa [Function.comp_def, hpre] using
+        (hcont.comp_continuousLinearMap (-ContinuousLinearMap.id ℝ ℝ) :
+          ContDiffOn ℝ ∞ ((fun u : ℝ => f (-u)) ∘ (-ContinuousLinearMap.id ℝ ℝ))
+            ((-ContinuousLinearMap.id ℝ ℝ) ⁻¹' Iic 0))
+    · have hsign' := hsign n (-t) (mem_Iic.mpr (neg_nonpos.mpr ht))
+      rw [iteratedDerivWithin_comp_neg (n := n) (f := f) (s := Iic 0) (-t)] at hsign'
+      have hset : (-Iic (0 : ℝ) : Set ℝ) = Ici 0 := by
+        ext x
+        simp
+      rw [hset] at hsign'
+      simpa [smul_eq_mul] using hsign'
+
 namespace IsCompletelyMonotone
 
 variable {f g : ℝ → ℝ}
 
 /-- A completely monotone function is `C^∞` on `[0, ∞)`. -/
+@[grind →]
 lemma contDiffOn (hf : IsCompletelyMonotone f) : ContDiffOn ℝ ∞ f (Ici 0) := hf.1
 
 /-- The sign-alternation property of the iterated derivatives of a completely monotone
 function. -/
+@[grind =>]
 lemma sign (hf : IsCompletelyMonotone f) (n : ℕ) {t : ℝ} (ht : 0 ≤ t) :
     0 ≤ (-1) ^ n * iteratedDerivWithin n f (Ici 0) t := hf.2 n t ht
 
 /-- A completely monotone function is nonnegative on `[0, ∞)`. -/
+@[grind =>]
 lemma nonneg (hf : IsCompletelyMonotone f) {t : ℝ} (ht : 0 ≤ t) : 0 ≤ f t := by
   simpa [iteratedDerivWithin_zero] using hf.sign 0 ht
 
 /-- The derivative within `[0, ∞)` of a completely monotone function is nonpositive: it is
 nonincreasing. -/
+@[grind =>]
 lemma derivWithin_nonpos (hf : IsCompletelyMonotone f) {t : ℝ} (ht : 0 ≤ t) :
     derivWithin f (Ici 0) t ≤ 0 := by
   have h := hf.sign 1 ht
@@ -99,23 +141,19 @@ lemma antitoneOn (hf : IsCompletelyMonotone f) : AntitoneOn f (Ici 0) := by
 /-- Completely monotone functions are closed under addition. -/
 lemma add (hf : IsCompletelyMonotone f) (hg : IsCompletelyMonotone g) :
     IsCompletelyMonotone (f + g) := by
-  refine ⟨hf.contDiffOn.add hg.contDiffOn, fun n t ht => ?_⟩
-  have hle : (n : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
-  have hcf : ContDiffWithinAt ℝ n f (Ici 0) t :=
-    (hf.contDiffOn.contDiffWithinAt (mem_Ici.mpr ht)).of_le hle
-  have hcg : ContDiffWithinAt ℝ n g (Ici 0) t :=
-    (hg.contDiffOn.contDiffWithinAt (mem_Ici.mpr ht)).of_le hle
-  rw [iteratedDerivWithin_add (mem_Ici.mpr ht) (uniqueDiffOn_Ici 0) hcf hcg, mul_add]
-  exact add_nonneg (hf.sign n ht) (hg.sign n ht)
+  rw [isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect]
+  convert (isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect.mp hf).add
+    (isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect.mp hg) using 1
+  ext u
+  simp [Pi.add_apply]
 
 /-- Completely monotone functions are closed under multiplication by a nonnegative constant. -/
 lemma const_smul (hf : IsCompletelyMonotone f) {c : ℝ} (hc : 0 ≤ c) :
     IsCompletelyMonotone (c • f) := by
-  have hsmul : c • f = fun t => c * f t := by funext t; simp [Pi.smul_apply, smul_eq_mul]
-  rw [hsmul]
-  refine ⟨contDiffOn_const.mul hf.contDiffOn, fun n t ht => ?_⟩
-  rw [iteratedDerivWithin_const_mul_field, mul_left_comm]
-  exact mul_nonneg hc (hf.sign n ht)
+  rw [isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect]
+  convert (isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect.mp hf).smul hc using 1
+  ext u
+  simp [Pi.smul_apply, smul_eq_mul]
 
 end IsCompletelyMonotone
 
