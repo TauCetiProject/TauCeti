@@ -212,7 +212,7 @@ theorem finite_and_ncard_le_of_subset_box_of_separated (r : ι → ℝ) (hr : �
 /-- **Lattice points in the box.** If every nonzero element of `Λ` escapes the small polydisc
 `box r ρ` in some coordinate, then `Λ ∩ box r 2` is finite of cardinality at most
 `(8/ρ) ^ (2·#ι)`. -/
-theorem lattice_inter_box_finite_card (r : ι → ℝ) (hr : ∀ i, 0 < r i)
+theorem addSubgroup_inter_box_finite_and_ncard_le_of_separated (r : ι → ℝ) (hr : ∀ i, 0 < r i)
     (Λ : AddSubgroup (ι → ℂ)) {ρ : ℝ} (hρ0 : 0 < ρ) (hρ2 : ρ ≤ 2)
     (hsep : ∀ x ∈ Λ, x ≠ 0 → ∃ i, ρ * r i < ‖x i‖) :
     ((Λ : Set (ι → ℂ)) ∩ box r 2).Finite ∧
