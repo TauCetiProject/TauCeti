@@ -27,6 +27,7 @@ group and regularity of the deck action.
   have regular deck action.
 * `TauCeti.Deck.isQuotientCoveringMap_iff_isRegular`: for a preconnected covering map, being a
   quotient covering map for the deck group is equivalent to regularity of the deck action.
+* `TauCeti.IsCoveringMap.isOpenQuotientMap`: a surjective covering map is an open quotient map.
 * `TauCeti.Deck.IsRegular.isOpenQuotientMap`: a regular covering map is an open quotient map.
 
 ## References
@@ -38,9 +39,14 @@ where the quotient of the cover by the deck group is identified with the base vi
 
 namespace TauCeti
 
-namespace Deck
-
 variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
+
+/-- A surjective covering map is an open quotient map. -/
+theorem IsCoveringMap.isOpenQuotientMap (hp : IsCoveringMap p)
+    (hsurj : Function.Surjective p) : IsOpenQuotientMap p :=
+  ⟨hsurj, hp.continuous, hp.isOpenMap⟩
+
+namespace Deck
 
 /-- A regular covering map with preconnected total space is a quotient covering map for its
 deck transformation group: it presents the base as the quotient `E / Deck p`. -/
@@ -48,7 +54,7 @@ theorem IsRegular.isQuotientCoveringMap [PreconnectedSpace E] (hreg : IsRegular 
     (hp : IsCoveringMap p) : IsQuotientCoveringMap p (Deck p) := by
   rw [isQuotientCoveringMap_iff_isCoveringMap_and]
   exact ⟨hp, hreg.1, inferInstance, isCancelSMul hp,
-    fun {e₁ e₂} => IsRegular.apply_eq_iff_mem_orbit hreg⟩
+    fun {e₁ e₂} => Deck.IsRegular.apply_eq_iff_mem_orbit hreg⟩
 
 /-- A quotient covering map for the deck transformation group has regular deck action. -/
 theorem IsQuotientCoveringMap.isRegular (h : IsQuotientCoveringMap p (Deck p)) :
@@ -67,7 +73,7 @@ theorem isQuotientCoveringMap_iff_isRegular [PreconnectedSpace E] (hp : IsCoveri
 /-- A regular covering map is an open quotient map. -/
 theorem IsRegular.isOpenQuotientMap (hreg : IsRegular p) (hp : IsCoveringMap p) :
     IsOpenQuotientMap p :=
-  ⟨hreg.1, hp.continuous, hp.isOpenMap⟩
+  TauCeti.IsCoveringMap.isOpenQuotientMap hp hreg.1
 
 end Deck
 
