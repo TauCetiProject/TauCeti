@@ -35,6 +35,8 @@ worked example and the coordinate-Hopf-algebra functoriality `AlgHom.mapDomain`.
   induced by a group homomorphism `φ : G →* G'`, contravariantly.
 * `TauCeti.DiagonalizableGroup.pointsMap_id`, `TauCeti.DiagonalizableGroup.pointsMap_comp`:
   the contravariant functoriality of `pointsMap`.
+* `TauCeti.DiagonalizableGroup.mapValue_pointsMap`: `pointsMap` is natural in the value
+  algebra, commuting with `AlgHom.mapValue`.
 * `TauCeti.DiagonalizableGroup.charOfPoint_comp`: reading off the character of a precomposed
   point is precomposition of the character by `φ`.
 * `TauCeti.DiagonalizableGroup.pointsMulEquiv_pointsMap`: the points homomorphism is
@@ -99,6 +101,17 @@ theorem pointsMap_comp (φ : G →* G') (ψ : G' →* G'') :
   rw [pointsMap, pointsMap, pointsMap, MonoidAlgebra.mapDomainBialgHom_comp,
     AlgHom.mapDomain_comp]
 
+/-- **Naturality in the value algebra.** The contravariant points homomorphism `pointsMap φ`
+commutes with the value-algebra functoriality `AlgHom.mapValue χ`: pre-composition by the
+induced bialgebra map and post-composition by `χ : A →ₐ[R] B` may be applied in either order.
+This makes `pointsMap φ` a natural transformation of functors of points. -/
+theorem mapValue_pointsMap {B : Type*} [CommSemiring B] [Algebra R B] (φ : G →* G')
+    (χ : A →ₐ[R] B) :
+    (pointsMap (A := B) φ).comp (AlgHom.mapValue (H := MonoidAlgebra R G') χ) =
+      (AlgHom.mapValue (H := MonoidAlgebra R G) χ).comp (pointsMap (A := A) φ) := by
+  rw [pointsMap, pointsMap]
+  exact AlgHom.mapValue_mapDomain (MonoidAlgebra.mapDomainBialgHom R φ) χ
+
 /-- Reading off the character of a point pre-composed by the induced bialgebra map is the
 character of the original point pre-composed by `φ`. -/
 @[simp]
@@ -120,7 +133,7 @@ theorem pointsMulEquiv_pointsMap (φ : G →* G') (f : WithConv (MonoidAlgebra R
 
 /-- Mapping the point attached to a character is precomposition of that character by `φ`. -/
 @[simp]
-theorem pointsMap_pointsMulEquiv_symm (φ : G →* G') (χ : G' →* Aˣ) :
+theorem pointsMap_pointsMulEquiv_symm_apply (φ : G →* G') (χ : G' →* Aˣ) :
     pointsMap (R := R) (A := A) φ ((pointsMulEquiv (R := R) (A := A) (G := G')).symm χ) =
       (pointsMulEquiv (R := R) (A := A) (G := G)).symm (χ.comp φ) := by
   apply (pointsMulEquiv (R := R) (A := A) (G := G)).injective
