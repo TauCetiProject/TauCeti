@@ -33,6 +33,15 @@ The construction reuses Mathlib's group-algebra-free toolkit: the `Finsupp.liftA
 universal property of `σ →₀ ℤ`, the `ℤ`-power homomorphism `zmultiplesHom`, and the type-tag
 adjunctions `AddMonoidHom.toMultiplicativeLeft` / `MonoidHom.toAdditiveRight` from
 `Mathlib.Algebra.Group.TypeTags.Hom`.
+
+The additive shadow of this equivalence is the `R = ℤ` case of Mathlib's
+`Finsupp.lift : (σ → M) ≃+ ((σ →₀ ℤ) →ₗ[ℤ] M)`, transported across `addMonoidHomLequivInt` and
+the `Multiplicative`/`Additive` type-tag adjunctions. We build it directly from the same
+underlying pieces (`Finsupp.liftAddHom` and `zmultiplesHom`) rather than transporting that
+chain of isomorphisms so that the forward map is *definitionally* generator evaluation
+`χ ↦ fun i => χ (ofAdd (single i 1))`. That keeps `freeAbelianCharEquiv_apply`, `map_mul'`, and
+`freeAbelianCharEquiv_comp` true by `rfl`; a transported equivalence would route every
+evaluation through the composite transport maps and lose that defeq.
 -/
 
 namespace TauCeti
