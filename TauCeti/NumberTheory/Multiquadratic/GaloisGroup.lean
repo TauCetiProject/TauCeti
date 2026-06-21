@@ -22,6 +22,8 @@ to be an isomorphism: `Gal(M/K) ≃ (ℤ/2)ⁿ`.
 * `TauCeti.Multiquadratic.signHom`: the injective sign-pattern homomorphism `Gal(M/K) →* (ℤ/2)ⁿ`.
 * `TauCeti.Multiquadratic.galoisGroupEquiv`: for square-class independent radicands, the explicit
   isomorphism `Gal(M/K) ≃* Multiplicative (ι → ℤ/2)`.
+* `TauCeti.Multiquadratic.card_aut_adjoin_range`: the cardinality reading
+  `|Gal(M/K)| = 2^|ι|` of that isomorphism.
 
 ## Provenance
 
@@ -232,5 +234,20 @@ generator `rootᵢ` to `(-1)^(εᵢ) · rootᵢ`. -/
     rw [galoisGroupEquiv_apply] at happ
     exact Multiplicative.ofAdd.injective happ
   rw [aut_gen_eq_signPattern hroot, hσ]
+
+/-- **Cardinality of the Galois group of a multiquadratic field.** If no nonempty subset product
+of the radicands `d i` is a square in `K` (and `2 ≠ 0` in `K`), then the multiquadratic field
+`M = K(rootᵢ : i)` has `|Gal(M/K)| = 2^|ι|`. This is the cardinality reading of the explicit
+isomorphism `galoisGroupEquiv`. -/
+theorem card_aut_adjoin_range [Finite ι] [NeZero (2 : K)]
+    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
+    Nat.card (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) = 2 ^ Nat.card ι := by
+  classical
+  letI := Fintype.ofFinite ι
+  rw [Nat.card_congr (galoisGroupEquiv hroot hindep).toEquiv,
+    Nat.card_congr (Multiplicative.ofAdd (α := ι → ZMod 2)).symm,
+    Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Fintype.card_pi]
+  simp [ZMod.card]
 
 end TauCeti.Multiquadratic
