@@ -16,10 +16,10 @@ degree at most `d` all of whose coefficients lie in `U` form a set of cardinalit
 `#U ^ (d + 1)`: a polynomial of degree `≤ d` is determined by its `d + 1` coefficients
 `coeff 0, …, coeff d`, each of which ranges over `U`.
 
-Mathlib already records the *finiteness* of this set, as the engine of its `bUnion_roots_finite`
+Mathlib uses the *finiteness* of this set inline, as the engine of its `bUnion_roots_finite`
 (the set of roots of all polynomials of bounded degree with coefficients in a finite set is
-finite), where the same injection `f ↦ (f.coeff i)ᵢ` appears; the contribution here is the
-explicit cardinality bound rather than mere finiteness.
+finite), where the same injection `f ↦ (f.coeff i)ᵢ` appears, but exposes neither that finiteness
+nor the explicit cardinality bound; this file supplies both.
 
 The integer specialisation counts the polynomials of degree `≤ d` whose coefficients are bounded
 in absolute value by `B`: there are at most `(2 * B + 1) ^ (d + 1)` of them. This is the
@@ -75,13 +75,13 @@ theorem ncard_natDegree_le_coeff_mem_le (d : ℕ) (U : Finset R) :
 
 /-- The polynomials of degree at most `d` whose coefficients all lie in a finite set `U` form a
 finite set: the same coefficient map that gives the count above injects them into the finite
-product `Fin (d + 1) → U`. (Mathlib proves this only inline, inside
-`Polynomial.bUnion_roots_finite`.) -/
-theorem finite_setOf_natDegree_le_coeff_mem (d : ℕ) (U : Finset R) :
+product `Fin (d + 1) → U`. Finiteness needs no computable finset data, so `U` is an arbitrary
+finite `Set`. (Mathlib proves this only inline, inside `Polynomial.bUnion_roots_finite`.) -/
+theorem finite_setOf_natDegree_le_coeff_mem (d : ℕ) {U : Set R} (hU : U.Finite) :
     {f : R[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U}.Finite := by
   classical
   let π : R[X] → Fin (d + 1) → R := fun f i => f.coeff i
-  refine ((Set.Finite.pi fun _ => U.finite_toSet).subset ?_).of_finite_image
+  refine ((Set.Finite.pi fun _ => hU).subset ?_).of_finite_image
     (?_ : Set.InjOn π _)
   · refine Set.image_subset_iff.2 fun f hf => ?_
     exact fun i _ => hf.2 i
@@ -114,6 +114,6 @@ absolute value form a finite set: their coefficients range over the finite inter
 theorem finite_setOf_natDegree_le_abs_intCoeff_le (d B : ℕ) :
     {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)}.Finite := by
   rw [setOf_abs_intCoeff_le_eq]
-  exact finite_setOf_natDegree_le_coeff_mem d _
+  exact finite_setOf_natDegree_le_coeff_mem d (Finset.Icc (-(B : ℤ)) B).finite_toSet
 
 end TauCeti.Polynomial
