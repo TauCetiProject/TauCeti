@@ -43,11 +43,11 @@ here. The continuity theory and Bochner's representation theorem are later miles
 * `TauCeti.IsPositiveDefinite.normSq_le`: the Cauchy–Schwarz inequality
   `‖F (a + b⋆)‖² ≤ (F (a + a⋆)).re * (F (b + b⋆)).re`.
 * `TauCeti.IsPositiveDefinite.norm_apply_le_map_zero_re_of_star_eq_neg`: `‖F a‖ ≤ (F 0).re`
-  when the involution is negation.
+  when `star a = -a`.
 * `TauCeti.IsPositiveDefinite.gram_posSemidef`: finite Gram matrices of a positive-definite
   function are positive semidefinite.
-* `TauCeti.IsPositiveDefinite.add`, `TauCeti.IsPositiveDefinite.const_mul`,
-  `TauCeti.IsPositiveDefinite.mul`,
+* `TauCeti.IsPositiveDefinite.add`, `TauCeti.IsPositiveDefinite.sum`,
+  `TauCeti.IsPositiveDefinite.const_mul`, `TauCeti.IsPositiveDefinite.mul`,
   `TauCeti.isPositiveDefinite_const`: closure properties and examples.
 
 ## References
@@ -191,12 +191,13 @@ section Group
 
 variable {N : Type*} [AddGroup N] [StarAddMonoid N] {H : N → ℂ}
 
-/-- On an additive group whose involution is negation, a positive-definite function is bounded by
-its value at zero. -/
+/-- If the involution negates the point `a`, then a positive-definite function is bounded at `a`
+by its value at zero. In particular this applies on an additive group whose involution is
+negation. -/
 theorem norm_apply_le_map_zero_re_of_star_eq_neg (hH : IsPositiveDefinite H)
-    (hstar : ∀ a : N, star a = -a) (a : N) : ‖H a‖ ≤ (H 0).re := by
+    (a : N) (hstar_a : star a = -a) : ‖H a‖ ≤ (H 0).re := by
   refine le_of_sq_le_sq ?_ hH.map_zero_re_nonneg
-  simpa [Complex.normSq_eq_norm_sq, pow_two, hstar] using hH.normSq_le a 0
+  simpa [Complex.normSq_eq_norm_sq, pow_two, hstar_a, star_zero] using hH.normSq_le a 0
 
 end Group
 
@@ -272,5 +273,18 @@ theorem isPositiveDefinite_const {k : ℂ} (hk : 0 ≤ k) :
 /-- The zero function is positive definite. -/
 theorem isPositiveDefinite_zero : IsPositiveDefinite (fun _ : M => (0 : ℂ)) :=
   isPositiveDefinite_const le_rfl
+
+namespace IsPositiveDefinite
+
+/-- Positive-definite functions are closed under finite sums. -/
+theorem sum {ι : Type*} {s : Finset ι} {F : ι → M → ℂ}
+    (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :
+    IsPositiveDefinite (fun x => ∑ i ∈ s, F i x) := by
+  have h := Finset.sum_induction F IsPositiveDefinite
+    (fun _ _ => IsPositiveDefinite.add) isPositiveDefinite_zero hF
+  have heq : (∑ i ∈ s, F i) = fun x => ∑ i ∈ s, F i x := funext fun x => Finset.sum_apply x s F
+  rwa [heq] at h
+
+end IsPositiveDefinite
 
 end TauCeti
