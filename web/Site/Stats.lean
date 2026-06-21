@@ -11,12 +11,12 @@ def locGraphs : Html := {{
     <figure class="loc-figure">
       <img class="loc-graph" src="static/loc-tauceti.svg"
            alt="Tau Ceti: lines of Lean by date"/>
-      <figcaption>"The Lean library under " <code>"TauCeti/"</code> ", net lines by date."</figcaption>
+      <figcaption>"The Lean library under " <code>"TauCeti/"</code> ", total lines by date."</figcaption>
     </figure>
     <figure class="loc-figure">
       <img class="loc-graph" src="static/loc-roadmap.svg"
            alt="Tau Ceti Roadmap: lines written by date"/>
-      <figcaption>"The human-owned roadmap repository, net lines by date."</figcaption>
+      <figcaption>"The human-owned roadmap repository, total lines by date."</figcaption>
     </figure>
   </div>
 }}
@@ -24,8 +24,9 @@ def locGraphs : Html := {{
 #doc (Page) "Statistics" =>
 
 How much mathematics has Tau Ceti formalized, and how fast is the roadmap that
-directs it growing? Both charts count net lines — additions minus deletions, taken
-from the git history and reconstructed from scratch each week, so they cannot drift.
+directs it growing? Each chart plots the total number of lines present at every
+commit, counted straight from the git history and rebuilt from scratch each week,
+so the figures cannot drift.
 
 :::blob locGraphs
 :::

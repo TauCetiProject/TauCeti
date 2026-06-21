@@ -50,12 +50,12 @@ jobs:
             --repo . --ref HEAD \
             --title "Tau Ceti — lines of Lean" --accent "#ff9d4d" \
             --out web/static_files/loc-tauceti.svg \
-            'TauCeti/**' 'TauCeti.lean'
+            TauCeti TauCeti.lean
           python3 Scripts/loc_graph.py \
             --repo /tmp/roadmap --ref HEAD \
             --title "Tau Ceti Roadmap — lines written" --accent "#5eead4" \
             --out web/static_files/loc-roadmap.svg \
-            'TauCetiRoadmap/**' 'TauCetiRoadmap.lean'
+            TauCetiRoadmap TauCetiRoadmap.lean
 
       - name: Commit if the charts changed
         run: |

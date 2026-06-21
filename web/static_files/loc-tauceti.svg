@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460"
      font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif" role="img"
-     aria-label="Tau Ceti — lines of Lean: 27,962 lines as of 2026-06-21">
+     aria-label="Tau Ceti — lines of Lean: 28,189 lines as of 2026-06-21">
   <defs>
     <linearGradient id="gff9d4d" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#ff9d4d" stop-opacity="0.28"/>
@@ -19,12 +19,12 @@
   </style>
   <rect x="0.5" y="0.5" width="899" height="459" rx="12" fill="#101936" stroke="#1b2547"/>
   <text class="title" x="72" y="30">Tau Ceti — lines of Lean</text>
-  <text class="sub" x="72" y="48">27,962 lines as of 2026-06-21</text>
+  <text class="sub" x="72" y="48">28,189 lines as of 2026-06-21</text>
   <line class="grid" x1="72" y1="408.0" x2="872" y2="408.0"/><text class="ytick" x="60" y="412.0">0</text><line class="grid" x1="72" y1="338.4" x2="872" y2="338.4"/><text class="ytick" x="60" y="342.4">10,000</text><line class="grid" x1="72" y1="268.8" x2="872" y2="268.8"/><text class="ytick" x="60" y="272.8">20,000</text><line class="grid" x1="72" y1="199.2" x2="872" y2="199.2"/><text class="ytick" x="60" y="203.2">30,000</text><line class="grid" x1="72" y1="129.6" x2="872" y2="129.6"/><text class="ytick" x="60" y="133.6">40,000</text><line class="grid" x1="72" y1="60.0" x2="872" y2="60.0"/><text class="ytick" x="60" y="64.0">50,000</text>
   <line class="axis" x1="72" y1="60" x2="72" y2="408"/>
   <line class="axis" x1="72" y1="408" x2="872" y2="408"/>
-  <polygon points="72,408 72.0,407.8 116.4,405.3 338.7,384.3 383.1,364.2 427.6,348.1 472.0,340.8 516.4,327.3 605.3,316.5 649.8,306.0 694.2,303.0 738.7,289.6 783.1,271.8 827.6,248.6 872.0,213.4 872,408" fill="url(#gff9d4d)"/>
-  <polyline class="line" points="72.0,407.8 116.4,405.3 338.7,384.3 383.1,364.2 427.6,348.1 472.0,340.8 516.4,327.3 605.3,316.5 649.8,306.0 694.2,303.0 738.7,289.6 783.1,271.8 827.6,248.6 872.0,213.4"/>
-  <circle cx="72.0" cy="407.8" r="3"/><circle cx="116.4" cy="405.3" r="3"/><circle cx="338.7" cy="384.3" r="3"/><circle cx="383.1" cy="364.2" r="3"/><circle cx="427.6" cy="348.1" r="3"/><circle cx="472.0" cy="340.8" r="3"/><circle cx="516.4" cy="327.3" r="3"/><circle cx="605.3" cy="316.5" r="3"/><circle cx="649.8" cy="306.0" r="3"/><circle cx="694.2" cy="303.0" r="3"/><circle cx="738.7" cy="289.6" r="3"/><circle cx="783.1" cy="271.8" r="3"/><circle cx="827.6" cy="248.6" r="3"/><circle cx="872.0" cy="213.4" r="3"/>
+  <polygon points="72,408 72.0,407.8 116.4,405.3 338.7,384.3 383.1,364.2 427.6,348.1 472.0,340.8 516.4,327.3 605.3,316.5 649.8,306.0 694.2,303.0 738.7,289.6 783.1,271.8 827.6,248.6 872.0,211.8 872,408" fill="url(#gff9d4d)"/>
+  <polyline class="line" points="72.0,407.8 116.4,405.3 338.7,384.3 383.1,364.2 427.6,348.1 472.0,340.8 516.4,327.3 605.3,316.5 649.8,306.0 694.2,303.0 738.7,289.6 783.1,271.8 827.6,248.6 872.0,211.8"/>
+  <circle cx="72.0" cy="407.8" r="3"/><circle cx="116.4" cy="405.3" r="3"/><circle cx="338.7" cy="384.3" r="3"/><circle cx="383.1" cy="364.2" r="3"/><circle cx="427.6" cy="348.1" r="3"/><circle cx="472.0" cy="340.8" r="3"/><circle cx="516.4" cy="327.3" r="3"/><circle cx="605.3" cy="316.5" r="3"/><circle cx="649.8" cy="306.0" r="3"/><circle cx="694.2" cy="303.0" r="3"/><circle cx="738.7" cy="289.6" r="3"/><circle cx="783.1" cy="271.8" r="3"/><circle cx="827.6" cy="248.6" r="3"/><circle cx="872.0" cy="211.8" r="3"/>
   <text class="xtick" x="72.0" y="432">Jun 3</text><text class="xtick" x="338.7" y="432">Jun 9</text><text class="xtick" x="427.6" y="432">Jun 11</text><text class="xtick" x="516.4" y="432">Jun 13</text><text class="xtick" x="605.3" y="432">Jun 15</text><text class="xtick" x="694.2" y="432">Jun 17</text><text class="xtick" x="783.1" y="432">Jun 19</text><text class="xtick" x="872.0" y="432">Jun 21</text>
 </svg>

@@ -3,10 +3,12 @@
 
 Pure stdlib: no third-party dependencies, so CI needs no `pip install`.
 
-Counts net lines (additions - deletions, from `git log --numstat`) of the files
-matching the given pathspecs, accumulated chronologically, one data point per
-day on which any matching commit landed. The whole series is reconstructed from
-git each run, so there is no state file to keep up to date.
+For each day on which a matching commit landed, counts the total lines present
+in the files matching the given pathspecs at that day's latest commit — exactly
+what `wc -l` would report on a checkout. The whole series is reconstructed from
+git each run, so there is no state file to keep up to date. Counting the lines
+that exist (rather than summing diffs) needs no special handling for merges,
+renames, or binary files.
 
 Styled to sit on the dark navy Tau Ceti site (see web/static_files/style.css).
 """
@@ -22,26 +24,27 @@ TEXT    = "#eef2fb"
 MUTED   = "#9aa6c9"
 
 
+def git(repo, *args):
+    return subprocess.run(["git", "-C", repo, *args],
+                          capture_output=True, text=True).stdout
+
+
+def count_lines(repo, commit, pathspecs):
+    """Total lines in the matching files at `commit` (binary files excluded)."""
+    out = git(repo, "grep", "-I", "-c", "^", commit, "--", *pathspecs)
+    return sum(int(line.rsplit(":", 1)[1]) for line in out.splitlines())
+
+
 def series(repo, pathspecs, ref):
-    out = subprocess.run(
-        ["git", "-C", repo, "log", "--reverse", "--no-merges", "--numstat",
-         "--date=short", "--format=COMMIT %ad", ref, "--", *pathspecs],
-        capture_output=True, text=True, check=True).stdout
-    net, by_day, order = 0, {}, []
-    date = None
-    for line in out.splitlines():
-        if line.startswith("COMMIT "):
-            date = line[7:].strip()
-        elif line and date:
-            add, _, rest = line.partition("\t")
-            if add == "-":            # binary file
-                continue
-            dele = rest.split("\t", 1)[0]
-            net += int(add) - int(dele)
-            if date not in by_day:
-                order.append(date)
-            by_day[date] = net
-    return [(d, by_day[d]) for d in order]
+    # The latest commit on each day that touched the files, in date order;
+    # --reverse walks oldest-first, so the last write for a day wins.
+    day_commit = {}
+    for line in git(repo, "log", "--reverse", "--date=short",
+                    "--format=%ad %H", ref, "--", *pathspecs).splitlines():
+        date, commit = line.split()
+        day_commit[date] = commit
+    return [(date, count_lines(repo, commit, pathspecs))
+            for date, commit in day_commit.items()]
 
 
 def nice_ceil(x):
