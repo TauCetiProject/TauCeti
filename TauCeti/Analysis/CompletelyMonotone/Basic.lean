@@ -35,6 +35,8 @@ point `0`); on the open half-line it agrees with the ordinary iterated derivativ
 * `TauCeti.IsCompletelyMonotone.nonneg`, `TauCeti.IsCompletelyMonotone.derivWithin_nonpos`,
   `TauCeti.IsCompletelyMonotone.antitoneOn`: a completely monotone function is nonnegative
   and nonincreasing on `[0, ∞)`.
+* `TauCeti.IsCompletelyMonotone.neg_one_pow_mul_iteratedDeriv_nonneg`: on the open half-line,
+  the sign condition also holds for ordinary iterated derivatives.
 * `TauCeti.IsCompletelyMonotone.add`, `TauCeti.IsCompletelyMonotone.smul`: closure under
   sums and nonnegative scalar multiples.
 * `TauCeti.isCompletelyMonotone_const`: a nonnegative constant is completely monotone.
@@ -118,6 +120,18 @@ function: `0 ≤ (-1)ⁿ f⁽ⁿ⁾(t)` for every `n` and every `t ≥ 0`. -/
 @[grind =>]
 lemma neg_one_pow_mul_iteratedDerivWithin_nonneg (hf : IsCompletelyMonotone f) (n : ℕ) {t : ℝ}
     (ht : 0 ≤ t) : 0 ≤ (-1) ^ n * iteratedDerivWithin n f (Ici 0) t := hf.2 n t ht
+
+/-- On the open half-line, the completely monotone sign condition can be read using ordinary
+iterated derivatives instead of derivatives within `[0, ∞)`. -/
+lemma neg_one_pow_mul_iteratedDeriv_nonneg (hf : IsCompletelyMonotone f) (n : ℕ) {t : ℝ}
+    (ht : 0 < t) : 0 ≤ (-1) ^ n * iteratedDeriv n f t := by
+  have hnhds : Ici (0 : ℝ) ∈ 𝓝 t :=
+    mem_of_superset (isOpen_Ioi.mem_nhds ht) Ioi_subset_Ici_self
+  have hcont : ContDiffAt ℝ (n : WithTop ℕ∞) f t :=
+    (hf.contDiffOn.contDiffAt hnhds).of_le (by exact_mod_cast le_top)
+  rw [← iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcont
+    (mem_Ici.mpr ht.le)]
+  exact hf.neg_one_pow_mul_iteratedDerivWithin_nonneg n ht.le
 
 /-- A completely monotone function is nonnegative on `[0, ∞)`. -/
 @[grind =>]
