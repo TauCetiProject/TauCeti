@@ -105,6 +105,18 @@ theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
   simp only [pointsMulEquiv, MulEquiv.trans_apply, DiagonalizableGroup.pointsMulEquiv_mapValue,
     freeAbelianCharEquiv_comp]
 
+/-- Naturality of the inverse split-torus points equivalence in the value algebra. -/
+@[simp]
+theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (c : σ → Aˣ) :
+    AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative (σ →₀ ℤ))) φ
+        ((pointsMulEquiv (R := R) (A := A)).symm c) =
+      (pointsMulEquiv (R := R) (A := B)).symm
+        (fun i => Units.map φ.toMonoidHom (c i)) := by
+  apply (pointsMulEquiv (R := R) (A := B)).injective
+  funext i
+  rw [pointsMulEquiv_mapValue]
+  simp
+
 /-- The rank-`n` split torus `𝔾ₘⁿ`: its `A`-points are `Fin n → Aˣ = (Aˣ)ⁿ`. -/
 noncomputable example (n : ℕ) :
     WithConv (MonoidAlgebra R (Multiplicative (Fin n →₀ ℤ)) →ₐ[R] A) ≃* (Fin n → Aˣ) :=
