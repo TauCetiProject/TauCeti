@@ -32,6 +32,18 @@ in `not_isSquare_prod_optionNeg`, and the CM degree is the corollary for `K = �
   for a finite family of distinct primes — the multiquadratic CM degree.
 * `TauCeti.Multiquadratic.finrank_adjoin_I_sqrt_two`: `[ℚ(i, √2) : ℚ] = 4`, the smallest
   nontrivial multiquadratic CM degree.
+
+## Provenance
+
+The CM degree `finrank_adjoin_I_sqrt_primes` parallels `Kf_finrank` (for the field `Kf`) in
+`ErdosUnitDistance/MultiquadraticField.lean` in
+[kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization of
+L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture, which computes
+`[ℚ(i, √q₀, …, √q_{g-1}) : ℚ] = 2^{g+1}` for one concrete CM field. The negative-radicand argument
+here is original and independent of that source: rather than adjoining `i` as a separate quadratic
+step over the real subfield (the route taken there), it treats `i = √(-1)` as one more radicand and
+proves the square-class combinator `not_isSquare_prod_optionNeg` over an arbitrary ordered field,
+then feeds the already-migrated `finrank_adjoin_range`.
 -/
 
 open scoped Function
