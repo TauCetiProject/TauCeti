@@ -63,10 +63,8 @@ variable {R : Type u} {A : Type v} {G : Type w} {G' : Type w'} {G'' : Type w''}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 variable [CommGroup G] [CommGroup G'] [CommGroup G'']
 
-/-- The bialgebra map `R[G] →ₐc[R] R[G']` induced by `φ` sends the group-like `single g 1` to
-the group-like `single (φ g) 1`. -/
 @[simp]
-theorem mapDomainBialgHom_single_one (φ : G →* G') (g : G) :
+private theorem mapDomainBialgHom_single_one (φ : G →* G') (g : G) :
     MonoidAlgebra.mapDomainBialgHom R φ (MonoidAlgebra.single g (1 : R)) =
       MonoidAlgebra.single (φ g) 1 := by
   rw [MonoidAlgebra.mapDomainBialgHom_apply, MonoidAlgebra.mapDomain_single]
@@ -117,9 +115,20 @@ theorem charOfPoint_comp (φ : G →* G') (f : MonoidAlgebra R G' →ₐ[R] A) :
 /-- **The points homomorphism is precomposition of characters.** Under the identification of
 points of `D(G)` with characters of `G`, the homomorphism `pointsMap φ` induced by
 `φ : G →* G'` is intertwined with precomposition `χ ↦ χ ∘ φ` of characters. -/
+@[simp]
 theorem pointsMulEquiv_pointsMap (φ : G →* G') (f : WithConv (MonoidAlgebra R G' →ₐ[R] A)) :
     pointsMulEquiv (pointsMap (A := A) φ f) = (pointsMulEquiv f).comp φ := by
   rw [pointsMap_apply, pointsMulEquiv_apply, ofConv_toConv, pointsMulEquiv_apply, charOfPoint_comp]
+
+/-- Mapping the point attached to a character is precomposition of that character by `φ`. -/
+@[simp]
+theorem pointsMap_pointsMulEquiv_symm (φ : G →* G') (χ : G' →* Aˣ) :
+    pointsMap (R := R) (A := A) φ ((pointsMulEquiv (R := R) (A := A) (G := G')).symm χ) =
+      (pointsMulEquiv (R := R) (A := A) (G := G)).symm (χ.comp φ) := by
+  apply (pointsMulEquiv (R := R) (A := A) (G := G)).injective
+  rw [pointsMulEquiv_pointsMap]
+  rw [(pointsMulEquiv (R := R) (A := A) (G := G')).apply_symm_apply χ]
+  exact ((pointsMulEquiv (R := R) (A := A) (G := G)).apply_symm_apply (χ.comp φ)).symm
 
 section MapValue
 
@@ -130,9 +139,7 @@ of value algebras commutes with the pre-composition in the coordinate group. -/
 theorem pointsMap_mapValue (φ : G →* G') (χ : A →ₐ[R] B) :
     (pointsMap (R := R) (A := B) φ).comp (AlgHom.mapValue (H := MonoidAlgebra R G') χ) =
       (AlgHom.mapValue (H := MonoidAlgebra R G) χ).comp (pointsMap (R := R) (A := A) φ) := by
-  ext f
-  simp only [MonoidHom.comp_apply, pointsMap_apply, AlgHom.mapValue_apply, ofConv_toConv,
-    AlgHom.comp_assoc]
+  exact AlgHom.mapValue_mapDomain (MonoidAlgebra.mapDomainBialgHom R φ) χ
 
 end MapValue
 
