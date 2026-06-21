@@ -242,8 +242,9 @@ private theorem abs_sub_le_of_floor_eq {a b q : ℝ} (hq : 0 < q) (h : ⌊a / q�
     nlinarith [h.1, h.2, Int.floor_le (b / q), Int.lt_floor_add_one (b / q), hq,
       mul_div_cancel₀ a hq.ne', mul_div_cancel₀ b hq.ne']
 
-/-- **Doubling.** Counting lattice points in the double box loses at most `64 ^ #ι` against
-the unit box: `#(Λ ∩ box r 2) ≤ 64 ^ #ι · #(Λ ∩ box r 1)`. -/
+/-- **Doubling.** Assuming `Λ ∩ box r 2` is finite, counting lattice points in the double box
+loses at most `64 ^ #ι` against the unit box:
+`#(Λ ∩ box r 2) ≤ 64 ^ #ι · #(Λ ∩ box r 1)`. -/
 theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr : ∀ i, 0 < r i)
     (Λ : AddSubgroup (ι → ℂ)) (hfin : ((Λ : Set (ι → ℂ)) ∩ box r 2).Finite) :
     (((Λ : Set (ι → ℂ)) ∩ box r 2).ncard : ℝ) ≤
