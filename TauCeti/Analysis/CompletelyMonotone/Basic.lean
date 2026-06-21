@@ -102,7 +102,9 @@ lemma add (hf : IsCompletelyMonotone f) (hg : IsCompletelyMonotone g) :
 
 /-- Completely monotone functions are closed under multiplication by a nonnegative constant. -/
 lemma const_mul (hf : IsCompletelyMonotone f) {c : ℝ} (hc : 0 ≤ c) :
-    IsCompletelyMonotone (fun t => c * f t) := by
+    IsCompletelyMonotone (c • f) := by
+  have hsmul : c • f = fun t => c * f t := by funext t; simp [Pi.smul_apply, smul_eq_mul]
+  rw [hsmul]
   refine ⟨contDiffOn_const.mul hf.contDiffOn, fun n t ht => ?_⟩
   rw [iteratedDerivWithin_const_mul_field, mul_left_comm]
   exact mul_nonneg hc (hf.sign n ht)
