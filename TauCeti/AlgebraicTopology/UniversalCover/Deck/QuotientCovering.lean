@@ -15,22 +15,20 @@ quotient of `E` by the deck transformation group: `p` is a `IsQuotientCoveringMa
 `UniversalCover x₀ / π₁(X, x₀) ≃ X`, packaged so that it consumes Mathlib's quotient
 covering map theory rather than re-deriving it.
 
-The proof feeds the existing Tau Ceti deck-action API into Mathlib's
-`isQuotientCoveringMap_iff_isCoveringMap_and`: the action is free on a preconnected covering
-(`TauCeti.Deck.isCancelSMul`) and continuous (the generic subgroup instance), regularity
-gives surjectivity and the orbit characterization of fibres, and `p` is the covering map by
-hypothesis. Conversely, for a preconnected covering, being a quotient covering map for the
-deck group is *equivalent* to the deck action being regular.
+Conversely, quotient covering maps for the deck group are regular. For a preconnected
+covering map, this gives an equivalence between being a quotient covering map for the deck
+group and regularity of the deck action.
 
 ## Main declarations
 
-* `TauCeti.Deck.apply_eq_iff_mem_orbit`: when every fibre-pair is connected by a deck
-  transformation, two points share a projection exactly when they lie in a common deck orbit.
 * `TauCeti.Deck.IsRegular.isQuotientCoveringMap`: a regular, preconnected covering map is a
   quotient covering map for its deck group.
+* `TauCeti.Deck.IsQuotientCoveringMap.isRegular`: quotient covering maps for the deck group
+  have regular deck action.
 * `TauCeti.Deck.isQuotientCoveringMap_iff_isRegular`: for a preconnected covering map, being a
   quotient covering map for the deck group is equivalent to regularity of the deck action.
-* `TauCeti.Deck.IsRegular.isOpenQuotientMap`: such a covering map is an open quotient map.
+* `TauCeti.Deck.IsCoveringMap.isOpenQuotientMap`: a surjective covering map is an open quotient
+  map.
 
 ## References
 
@@ -45,38 +43,41 @@ namespace Deck
 
 variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
 
-omit [TopologicalSpace B] in
-/-- If every pair of points with the same projection is connected by a deck transformation,
-then two points of the total space have the same projection exactly when they lie in a common
-orbit of the deck transformation group. The reverse direction holds because deck
-transformations preserve the projection. -/
-lemma apply_eq_iff_mem_orbit
-    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : Deck p, φ.1 e = e') {e₁ e₂ : E} :
-    p e₁ = p e₂ ↔ e₁ ∈ MulAction.orbit (Deck p) e₂ := by
-  rw [← MulAction.orbitRel_apply, orbitRel_eq_ker_of_exists_apply_eq hpoint, Setoid.ker_def]
-
 /-- A regular covering map with preconnected total space is a quotient covering map for its
 deck transformation group: it presents the base as the quotient `E / Deck p`. -/
 theorem IsRegular.isQuotientCoveringMap [PreconnectedSpace E] (hreg : IsRegular p)
     (hp : IsCoveringMap p) : IsQuotientCoveringMap p (Deck p) := by
   rw [isQuotientCoveringMap_iff_isCoveringMap_and]
   exact ⟨hp, hreg.1, inferInstance, isCancelSMul hp,
-    fun {e₁ e₂} => apply_eq_iff_mem_orbit (isRegular_iff_exists_apply_eq.mp hreg).2⟩
+    fun {e₁ e₂} => IsRegular.apply_eq_iff_mem_orbit hreg⟩
+
+/-- A quotient covering map for the deck transformation group has regular deck action. -/
+theorem IsQuotientCoveringMap.isRegular (h : IsQuotientCoveringMap p (Deck p)) :
+    IsRegular p := by
+  refine ⟨h.surjective, fun b => ⟨fun e e' => ?_⟩⟩
+  have hee : p e'.1 = p e.1 := (e'.2 : p e'.1 = b).trans (e.2 : p e.1 = b).symm
+  obtain ⟨φ, hφ⟩ := h.apply_eq_iff_mem_orbit.mp hee
+  exact ⟨φ, Subtype.ext ((fiber_smul_coe_eq_smul φ e).trans hφ)⟩
 
 /-- For a covering map with preconnected total space, being a quotient covering map for the
 deck transformation group is equivalent to regularity of the deck action. -/
 theorem isQuotientCoveringMap_iff_isRegular [PreconnectedSpace E] (hp : IsCoveringMap p) :
     IsQuotientCoveringMap p (Deck p) ↔ IsRegular p := by
-  refine ⟨fun h => ⟨h.surjective, fun b => ⟨fun e e' => ?_⟩⟩,
-    fun hreg => hreg.isQuotientCoveringMap hp⟩
-  have hee : p e'.1 = p e.1 := (e'.2 : p e'.1 = b).trans (e.2 : p e.1 = b).symm
-  obtain ⟨φ, hφ⟩ := h.apply_eq_iff_mem_orbit.mp hee
-  exact ⟨φ, Subtype.ext ((fiber_smul_coe_eq_smul φ e).trans hφ)⟩
+  exact ⟨fun h => IsQuotientCoveringMap.isRegular h, fun hreg => hreg.isQuotientCoveringMap hp⟩
+
+namespace IsCoveringMap
+
+/-- A surjective covering map is an open quotient map. -/
+theorem isOpenQuotientMap (hp : IsCoveringMap p) (hsurj : Function.Surjective p) :
+    IsOpenQuotientMap p :=
+  ⟨hsurj, hp.continuous, hp.isOpenMap⟩
+
+end IsCoveringMap
 
 /-- A regular covering map with preconnected total space is an open quotient map. -/
-theorem IsRegular.isOpenQuotientMap [PreconnectedSpace E] (hreg : IsRegular p)
-    (hp : IsCoveringMap p) : IsOpenQuotientMap p :=
-  (hreg.isQuotientCoveringMap hp).isOpenQuotientMap
+theorem IsRegular.isOpenQuotientMap (hreg : IsRegular p) (hp : IsCoveringMap p) :
+    IsOpenQuotientMap p :=
+  IsCoveringMap.isOpenQuotientMap hp hreg.1
 
 end Deck
 
