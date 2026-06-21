@@ -37,6 +37,8 @@ forms, with no positive-definite-kernel notion, so this is new; no code is vendo
 
 * `IsPositiveDefiniteKernel.conj_symm`, `IsPositiveDefiniteKernel.apply_self_nonneg`: the basic
   pointwise consequences (conjugate symmetry and nonnegative diagonal).
+* `IsPositiveDefiniteKernel.posSemidef_gram`, `IsPositiveDefiniteKernel.sum_conj_mul_mul_nonneg`:
+  restatements for arbitrary finite Gram matrices and their quadratic forms.
 * `IsPositiveDefiniteKernel.add`, `IsPositiveDefiniteKernel.smul`, `IsPositiveDefiniteKernel.mul`:
   closure under sums, nonnegative real scalar multiples, and (Schur / entrywise) products.
 * `IsPositiveDefiniteKernel.comp`: pullback along an arbitrary map.
@@ -66,13 +68,30 @@ theorem isPositiveDefiniteKernel_conj_mul (g : α → ℂ) :
       = Matrix.vecMulVec (star fun i => g (v i)) (fun i => g (v i)) := by
     ext i j
     simp only [Matrix.of_apply, Matrix.vecMulVec_apply, Pi.star_apply, starRingEnd_apply]
-  have : (Matrix.of fun i j => conj (g (v i)) * g (v j)).PosSemidef := by
-    rw [e]; exact Matrix.posSemidef_vecMulVec_star_self _
-  exact this
+  rw [e]
+  exact Matrix.posSemidef_vecMulVec_star_self _
 
 namespace IsPositiveDefiniteKernel
 
 variable {K K₁ K₂ : α → α → ℂ}
+
+/-- A positive-definite kernel gives a positive semidefinite Gram matrix for any finite index
+type. This is the arbitrary-finite-family form of the `Fin n` definition. -/
+theorem posSemidef_gram (hK : IsPositiveDefiniteKernel K) {ι : Type*} [Finite ι]
+    (v : ι → α) : (Matrix.of fun i j => K (v i) (v j)).PosSemidef := by
+  classical
+  letI := Fintype.ofFinite ι
+  let e := Fintype.equivFin ι
+  have h := (hK (Fintype.card ι) (fun i : Fin (Fintype.card ι) => v (e.symm i))).submatrix e
+  simpa [Matrix.submatrix, e] using h
+
+/-- The quadratic-form characterization of a positive-definite kernel on `Fin n`-indexed
+families. -/
+theorem sum_conj_mul_mul_nonneg (hK : IsPositiveDefiniteKernel K) (n : ℕ) (v : Fin n → α)
+    (x : Fin n → ℂ) : 0 ≤ ∑ i, ∑ j, conj (x i) * x j * K (v i) (v j) := by
+  classical
+  have h := (hK n v).2 (Finsupp.equivFunOnFinite.symm x)
+  simpa [Finsupp.sum_fintype, mul_assoc, mul_left_comm, mul_comm] using h
 
 /-- A positive-definite kernel is conjugate-symmetric: `conj (K a b) = K b a`. -/
 theorem conj_symm (hK : IsPositiveDefiniteKernel K) (a b : α) : conj (K a b) = K b a := by
@@ -92,9 +111,8 @@ theorem add (h₁ : IsPositiveDefiniteKernel K₁) (h₂ : IsPositiveDefiniteKer
   have e : (Matrix.of fun i j => K₁ (v i) (v j) + K₂ (v i) (v j))
       = (Matrix.of fun i j => K₁ (v i) (v j)) + (Matrix.of fun i j => K₂ (v i) (v j)) := by
     ext i j; simp
-  have : (Matrix.of fun i j => K₁ (v i) (v j) + K₂ (v i) (v j)).PosSemidef := by
-    rw [e]; exact (h₁ n v).add (h₂ n v)
-  exact this
+  rw [e]
+  exact (h₁ n v).add (h₂ n v)
 
 /-- Positive-definite kernels are closed under the Schur (entrywise) product. This is the kernel
 form of the Schur product theorem `Matrix.PosSemidef.hadamard`. -/
@@ -104,9 +122,8 @@ theorem mul (h₁ : IsPositiveDefiniteKernel K₁) (h₂ : IsPositiveDefiniteKer
   have e : (Matrix.of fun i j => K₁ (v i) (v j) * K₂ (v i) (v j))
       = (Matrix.of fun i j => K₁ (v i) (v j)) ⊙ (Matrix.of fun i j => K₂ (v i) (v j)) := by
     ext i j; simp [Matrix.hadamard_apply]
-  have : (Matrix.of fun i j => K₁ (v i) (v j) * K₂ (v i) (v j)).PosSemidef := by
-    rw [e]; exact (h₁ n v).hadamard (h₂ n v)
-  exact this
+  rw [e]
+  exact (h₁ n v).hadamard (h₂ n v)
 
 /-- Positive-definite kernels are closed under multiplication by a nonnegative real scalar. -/
 theorem smul (hK : IsPositiveDefiniteKernel K) {c : ℝ} (hc : 0 ≤ c) :
