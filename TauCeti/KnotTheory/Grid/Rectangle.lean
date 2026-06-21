@@ -2,6 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.Data.Finset.Image
 import Mathlib.Data.Finset.Prod
 import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Fintype.Prod
@@ -25,9 +26,13 @@ finite-set disjointness conditions used for empty rectangles and marking-avoidin
 
 * `TauCeti.GridRectangle`: a toroidal rectangle, represented by its four cyclic sides.
 * `TauCeti.GridRectangle.symm`: the opposite toroidal rectangle with side columns reversed.
+* `TauCeti.GridRectangle.transpose`: the diagonal reflection of a toroidal rectangle, exchanging
+  the column and row sides.
 * `TauCeti.GridRectangle.interior`: the finite set of squares strictly inside the rectangle.
 * `TauCeti.GridRectangleBetween`: an oriented rectangle from one grid state to another.
 * `TauCeti.GridRectangleBetween.symm`: the opposite oriented rectangle from `y` to `x`.
+* `TauCeti.GridRectangleBetween.transpose`: the diagonal reflection of an oriented rectangle, from
+  `x.transpose` to `y.transpose`.
 * `TauCeti.GridRectangleBetween.all`: all oriented rectangles from `x` to `y`.
 * `TauCeti.GridRectangleBetween.emptyRectangles`: the empty rectangles from `x` to `y`.
 
@@ -211,6 +216,67 @@ theorem avoidsMarkings_iff (G : GridDiagram n) :
     R.AvoidsMarkings G ↔
       Disjoint R.interior G.OSet ∧ Disjoint R.interior G.XSet := by
   rw [AvoidsMarkings, Finset.disjoint_union_right]
+
+/-- The diagonal reflection of a toroidal rectangle, exchanging the two vertical sides with the
+two horizontal sides.
+
+Reflecting across the main diagonal turns columns into rows and rows into columns, so the
+interior is reflected by `Prod.swap`. -/
+def transpose : GridRectangle n where
+  left := R.bottom
+  right := R.top
+  bottom := R.left
+  top := R.right
+
+/-- The reflected rectangle's left side is the original bottom side. -/
+@[simp]
+theorem transpose_left : R.transpose.left = R.bottom :=
+  rfl
+
+/-- The reflected rectangle's right side is the original top side. -/
+@[simp]
+theorem transpose_right : R.transpose.right = R.top :=
+  rfl
+
+/-- The reflected rectangle's bottom side is the original left side. -/
+@[simp]
+theorem transpose_bottom : R.transpose.bottom = R.left :=
+  rfl
+
+/-- The reflected rectangle's top side is the original right side. -/
+@[simp]
+theorem transpose_top : R.transpose.top = R.right :=
+  rfl
+
+/-- Reflecting a toroidal rectangle twice gives the original rectangle. -/
+@[simp]
+theorem transpose_transpose : R.transpose.transpose = R := by
+  cases R
+  rfl
+
+/-- The interior of the reflected rectangle is the diagonal reflection of the original
+interior. -/
+theorem interior_transpose : R.transpose.interior = R.interior.image Prod.swap := by
+  ext ⟨a, b⟩
+  constructor
+  · intro hab
+    rw [mem_interior] at hab
+    simp only [mem_columnInterior, mem_rowInterior] at hab
+    rw [Finset.mem_image]
+    refine ⟨(b, a), ?_, rfl⟩
+    rw [mem_interior]
+    simp only [mem_columnInterior, mem_rowInterior]
+    exact ⟨hab.2, hab.1⟩
+  · intro hab
+    rw [Finset.mem_image] at hab
+    obtain ⟨⟨c, d⟩, hcd, hswap⟩ := hab
+    rw [mem_interior] at hcd
+    simp only [mem_columnInterior, mem_rowInterior] at hcd
+    rw [Prod.swap_prod_mk, Prod.mk.injEq] at hswap
+    obtain ⟨rfl, rfl⟩ := hswap
+    rw [mem_interior]
+    simp only [mem_columnInterior, mem_rowInterior]
+    exact ⟨hcd.2, hcd.1⟩
 
 end GridRectangle
 
@@ -549,6 +615,113 @@ theorem disjoint_interior_OSet_of_avoidsMarkings {G : GridDiagram n}
 theorem disjoint_interior_XSet_of_avoidsMarkings {G : GridDiagram n}
     (h : R.AvoidsMarkings G) : Disjoint R.toGridRectangle.interior G.XSet :=
   R.toGridRectangle.disjoint_interior_XSet_of_avoidsMarkings h
+
+/-- The diagonal reflection of an oriented rectangle from `x` to `y`, an oriented rectangle from
+`x.transpose` to `y.transpose`.
+
+Reflecting across the main diagonal exchanges the side columns with the side rows: the new side
+columns are the two rows `x R.left` and `x R.right` that `R` connects. -/
+def transpose (R : GridRectangleBetween x y) :
+    GridRectangleBetween x.transpose y.transpose where
+  left := R.bottom
+  right := R.top
+  left_ne_right := R.bottom_ne_top
+  map_left := by
+    simp only [GridRectangleBetween.bottom, GridRectangleBetween.top]
+    rw [GridState.transpose_apply, GridState.transpose_apply, Equiv.symm_apply_apply,
+      Equiv.symm_apply_eq]
+    exact R.map_right.symm
+  map_right := by
+    simp only [GridRectangleBetween.bottom, GridRectangleBetween.top]
+    rw [GridState.transpose_apply, GridState.transpose_apply, Equiv.symm_apply_apply,
+      Equiv.symm_apply_eq]
+    exact R.map_left.symm
+  map_of_ne c hl hr := by
+    have hsymm : x (x.toPerm.symm c) = c := Equiv.apply_symm_apply _ _
+    have hd_left : x.toPerm.symm c ≠ R.left := by
+      intro h; rw [h] at hsymm; exact hl hsymm.symm
+    have hd_right : x.toPerm.symm c ≠ R.right := by
+      intro h; rw [h] at hsymm; exact hr hsymm.symm
+    rw [GridState.transpose_apply, GridState.transpose_apply, Equiv.symm_apply_eq,
+      R.map_of_ne _ hd_left hd_right]
+    exact hsymm.symm
+
+/-- The reflected rectangle's initial side column is the original initial side row. -/
+@[simp]
+theorem transpose_left (R : GridRectangleBetween x y) : R.transpose.left = R.bottom :=
+  rfl
+
+/-- The reflected rectangle's terminal side column is the original terminal side row. -/
+@[simp]
+theorem transpose_right (R : GridRectangleBetween x y) : R.transpose.right = R.top :=
+  rfl
+
+/-- The reflected rectangle's initial side row is the original initial side column. -/
+@[simp]
+theorem transpose_bottom (R : GridRectangleBetween x y) : R.transpose.bottom = R.left := by
+  simp only [GridRectangleBetween.bottom, transpose_left, GridState.transpose_apply,
+    Equiv.symm_apply_apply]
+
+/-- The reflected rectangle's terminal side row is the original terminal side column. -/
+@[simp]
+theorem transpose_top (R : GridRectangleBetween x y) : R.transpose.top = R.right := by
+  simp only [GridRectangleBetween.top, transpose_right, GridState.transpose_apply,
+    Equiv.symm_apply_apply]
+
+/-- The toroidal rectangle of the reflected oriented rectangle, written out by its four sides. -/
+@[simp]
+theorem transpose_toGridRectangle (R : GridRectangleBetween x y) :
+    R.transpose.toGridRectangle =
+      { left := R.bottom, right := R.top, bottom := R.left, top := R.right } := by
+  unfold GridRectangleBetween.toGridRectangle
+  rw [transpose_bottom, transpose_top, transpose_left, transpose_right]
+
+/-- Two oriented rectangles between the same states with equal side columns are equal. -/
+private theorem eq_of_sides {R S : GridRectangleBetween x y} (hleft : R.left = S.left)
+    (hright : R.right = S.right) : R = S := by
+  obtain ⟨_, _, _, _, _, _⟩ := R
+  obtain ⟨_, _, _, _, _, _⟩ := S
+  obtain rfl : _ = _ := hleft
+  obtain rfl : _ = _ := hright
+  rfl
+
+/-- Reflecting an oriented rectangle twice gives the original rectangle. -/
+@[simp]
+theorem transpose_transpose (R : GridRectangleBetween x y) : R.transpose.transpose = R :=
+  eq_of_sides (transpose_bottom R) (transpose_top R)
+
+/-- The diagonal reflection is injective on oriented rectangles. -/
+theorem transpose_injective :
+    Function.Injective
+      (transpose : GridRectangleBetween x y → GridRectangleBetween x.transpose y.transpose) := by
+  intro R S h
+  have hl := congrArg (·.left) h
+  have hr := congrArg (·.right) h
+  simp only [transpose_left, transpose_right, GridRectangleBetween.bottom,
+    GridRectangleBetween.top] at hl hr
+  exact eq_of_sides (x.toPerm.injective hl) (x.toPerm.injective hr)
+
+/-- The interior of the reflected rectangle is the diagonal reflection of the interior of the
+original rectangle. This is the oriented-rectangle corollary of
+`GridRectangle.interior_transpose`. -/
+theorem interior_transpose (R : GridRectangleBetween x y) :
+    R.transpose.toGridRectangle.interior = R.toGridRectangle.interior.image Prod.swap := by
+  rw [transpose_toGridRectangle]
+  exact R.toGridRectangle.interior_transpose
+
+/-- The diagonal reflection preserves emptiness of a rectangle between grid states. -/
+theorem isEmpty_transpose (R : GridRectangleBetween x y) :
+    R.transpose.IsEmpty ↔ R.IsEmpty := by
+  unfold GridRectangleBetween.IsEmpty GridRectangle.IsEmptyFor
+  rw [interior_transpose, GridState.transpose_pointSet,
+    Finset.disjoint_image Prod.swap_injective]
+
+/-- The diagonal reflection preserves marking avoidance of a rectangle between grid states. -/
+theorem avoidsMarkings_transpose (G : GridDiagram n) (R : GridRectangleBetween x y) :
+    R.transpose.AvoidsMarkings G.transpose ↔ R.AvoidsMarkings G := by
+  unfold GridRectangleBetween.AvoidsMarkings GridRectangle.AvoidsMarkings
+  rw [interior_transpose, G.transpose_OSet, G.transpose_XSet, ← Finset.image_union,
+    Finset.disjoint_image Prod.swap_injective]
 
 end GridRectangleBetween
 
