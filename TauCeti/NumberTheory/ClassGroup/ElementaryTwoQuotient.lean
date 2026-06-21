@@ -29,7 +29,8 @@ square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGroup` f
 
 * `TauCeti.ClassGroup.elementaryTwoQuotient`: the quotient `Cl(R) ⧸ Cl(R)²`, a `ZMod 2`-module.
 * `TauCeti.ClassGroup.elementaryTwoQuotientMk` and `elementaryTwoQuotientMk_eq_zero_iff`: the class
-  of an ideal class, trivial iff that class is a square.
+  of an ideal class, trivial iff that class is a square; `elementaryTwoQuotientMk_mul`,
+  `elementaryTwoQuotientMk_one`, and `elementaryTwoQuotientMk_prod` record its additivity.
 * `TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`,
   the quotient and the 2-torsion subgroup have equal cardinality.
 * `TauCeti.ClassGroup.twoRank` and `card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
@@ -53,6 +54,27 @@ noncomputable def elementaryTwoQuotientMk (C : ClassGroup R) : elementaryTwoQuot
     elementaryTwoQuotientMk R C = 0 ↔ IsSquare C :=
   TauCeti.elementaryTwoQuotientMk_eq_zero_iff C
 
+/-- The class map to `Cl(R)/Cl(R)²` sends a product of ideal classes to the sum of the classes. -/
+@[simp] theorem elementaryTwoQuotientMk_mul (C D : ClassGroup R) :
+    elementaryTwoQuotientMk R (C * D) = elementaryTwoQuotientMk R C + elementaryTwoQuotientMk R D :=
+  TauCeti.elementaryTwoQuotientMk_mul C D
+
+/-- The class map to `Cl(R)/Cl(R)²` sends the trivial ideal class to `0`. -/
+@[simp] theorem elementaryTwoQuotientMk_one :
+    elementaryTwoQuotientMk R (1 : ClassGroup R) = 0 :=
+  TauCeti.elementaryTwoQuotientMk_one
+
+/-- The class map to `Cl(R)/Cl(R)²` sends a finite product of ideal classes to the sum of the
+classes. -/
+theorem elementaryTwoQuotientMk_prod {ι : Type*} (S : Finset ι) (C : ι → ClassGroup R) :
+    elementaryTwoQuotientMk R (∏ i ∈ S, C i) = ∑ i ∈ S, elementaryTwoQuotientMk R (C i) :=
+  TauCeti.elementaryTwoQuotientMk_prod S C
+
+/-- **The 2-rank of the class group**: the `ZMod 2`-dimension of the maximal elementary-2 quotient
+`Cl(R)/Cl(R)²`. This is the quantity the genus-field theorems express as `t - 1`, with `t` the
+number of ramified primes. -/
+noncomputable def twoRank : ℕ := TauCeti.twoRank (ClassGroup R)
+
 variable [Finite (ClassGroup R)]
 
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
@@ -60,11 +82,6 @@ variable [Finite (ClassGroup R)]
 theorem card_elementaryTwoQuotient_eq_card_twoTorsion :
     Nat.card (elementaryTwoQuotient R) = Nat.card {C : ClassGroup R // C ^ 2 = 1} :=
   TauCeti.card_elementaryTwoQuotient_eq_card_sq_eq_one (ClassGroup R)
-
-/-- **The 2-rank of the class group**: the `ZMod 2`-dimension of the maximal elementary-2 quotient
-`Cl(R)/Cl(R)²`. This is the quantity the genus-field theorems express as `t - 1`, with `t` the
-number of ramified primes. -/
-noncomputable def twoRank : ℕ := TauCeti.twoRank (ClassGroup R)
 
 /-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
 space of dimension the 2-rank. -/

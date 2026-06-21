@@ -33,7 +33,8 @@ cleanest through the squaring homomorphism `powMonoidHom 2` and `Subgroup.index_
 
 * `TauCeti.elementaryTwoQuotient`: the quotient `G ⧸ G²`, a `ZMod 2`-module.
 * `TauCeti.elementaryTwoQuotientMk` and `TauCeti.elementaryTwoQuotientMk_eq_zero_iff`: the class of
-  an element, trivial iff the element is a square.
+  an element, trivial iff the element is a square; `elementaryTwoQuotientMk_mul`,
+  `elementaryTwoQuotientMk_one`, and `elementaryTwoQuotientMk_prod` record its additivity.
 * `TauCeti.card_elementaryTwoQuotient_eq_card_sq_eq_one`: `|G/G²| = |{g | g² = 1}|`.
 * `TauCeti.twoRank` and `TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|G/G²| = 2 ^ twoRank`.
@@ -71,6 +72,20 @@ def elementaryTwoQuotientMk (g : G) : elementaryTwoQuotient G :=
     Subgroup.mem_square]
   simp
 
+/-- The class map to `G / G²` sends a product to the sum of the classes. -/
+@[simp] theorem elementaryTwoQuotientMk_mul (g h : G) :
+    elementaryTwoQuotientMk (g * h) = elementaryTwoQuotientMk g + elementaryTwoQuotientMk h := by
+  simp only [elementaryTwoQuotientMk, ofMul_mul, ← QuotientAddGroup.mk'_apply, map_add]
+
+/-- The class map to `G / G²` sends `1` to `0`. -/
+@[simp] theorem elementaryTwoQuotientMk_one : elementaryTwoQuotientMk (1 : G) = 0 := by
+  simp only [elementaryTwoQuotientMk, ofMul_one, ← QuotientAddGroup.mk'_apply, map_zero]
+
+/-- The class map to `G / G²` sends a finite product to the sum of the classes. -/
+theorem elementaryTwoQuotientMk_prod {ι : Type*} (S : Finset ι) (g : ι → G) :
+    elementaryTwoQuotientMk (∏ i ∈ S, g i) = ∑ i ∈ S, elementaryTwoQuotientMk (g i) := by
+  simp only [elementaryTwoQuotientMk, ofMul_prod, ← QuotientAddGroup.mk'_apply, map_sum]
+
 variable (G)
 
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
@@ -84,9 +99,10 @@ theorem card_elementaryTwoQuotient_eq_card_sq_eq_one [Finite G] :
   rw [← AddSubgroup.index_eq_card, Subgroup.index_toAddSubgroup, hsq, Subgroup.index_range]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun g => by simp [MonoidHom.mem_ker])
 
-/-- **The 2-rank of a finite commutative group**: the `ZMod 2`-dimension of the maximal
-elementary-2 quotient `G / G²`. -/
-noncomputable def twoRank [Finite G] : ℕ := Module.finrank (ZMod 2) (elementaryTwoQuotient G)
+/-- **The 2-rank of a commutative group**: the `ZMod 2`-dimension of the maximal
+elementary-2 quotient `G / G²`. For an infinite quotient this `Module.finrank` is `0` by
+convention; the genus-theory use is for a finite group, where it is the genuine 2-rank. -/
+noncomputable def twoRank : ℕ := Module.finrank (ZMod 2) (elementaryTwoQuotient G)
 
 /-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
 space of dimension the 2-rank. -/
