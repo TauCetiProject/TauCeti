@@ -55,6 +55,14 @@ def IsCompletelyMonotone (f : ℝ → ℝ) : Prop :=
   ContDiffOn ℝ ∞ f (Ici 0) ∧
     ∀ n : ℕ, ∀ t : ℝ, 0 ≤ t → 0 ≤ (-1) ^ n * iteratedDerivWithin n f (Ici 0) t
 
+/-- `IsCompletelyMonotone f` unfolds to its defining conjunction: `f` is `C^∞` on `[0, ∞)`
+and its iterated derivatives within `[0, ∞)` alternate in sign. -/
+lemma isCompletelyMonotone_iff {f : ℝ → ℝ} :
+    IsCompletelyMonotone f ↔
+      ContDiffOn ℝ ∞ f (Ici 0) ∧
+        ∀ n : ℕ, ∀ t : ℝ, 0 ≤ t → 0 ≤ (-1) ^ n * iteratedDerivWithin n f (Ici 0) t :=
+  Iff.rfl
+
 namespace IsCompletelyMonotone
 
 variable {f g : ℝ → ℝ}
@@ -119,9 +127,8 @@ lemma isCompletelyMonotone_const {c : ℝ} (hc : 0 ≤ c) :
   · simpa [iteratedDerivWithin_const] using hc
   · simp [iteratedDerivWithin_const]
 
-/-- The prototype completely monotone function `t ↦ e^{-x t}` for `x ≥ 0`, the extreme ray of
-the cone of completely monotone functions. Its `n`-th derivative is `(-x)ⁿ e^{-x t}`, so
-`(-1)ⁿ` times it is `xⁿ e^{-x t} ≥ 0`. -/
+/-- The prototype completely monotone function `t ↦ e^{-x t}` for `x ≥ 0`. Its `n`-th
+derivative is `(-x)ⁿ e^{-x t}`, so `(-1)ⁿ` times it is `xⁿ e^{-x t} ≥ 0`. -/
 lemma isCompletelyMonotone_exp_neg_mul {x : ℝ} (hx : 0 ≤ x) :
     IsCompletelyMonotone (fun t => Real.exp (-x * t)) := by
   have hcd : ContDiff ℝ ∞ (fun t : ℝ => Real.exp (-x * t)) := by fun_prop
@@ -133,7 +140,7 @@ lemma isCompletelyMonotone_exp_neg_mul {x : ℝ} (hx : 0 ≤ x) :
     rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcat (mem_Ici.mpr ht),
       iteratedDeriv_exp_const_mul]
   have hpow : (0 : ℝ) ≤ (-1) ^ n * (-x) ^ n := by
-    rw [← mul_pow, show (-1 : ℝ) * -x = x from by ring]
+    rw [← mul_pow, neg_one_mul, neg_neg]
     exact pow_nonneg hx n
   rw [hval, ← mul_assoc]
   exact mul_nonneg hpow (Real.exp_nonneg _)
