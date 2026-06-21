@@ -65,18 +65,6 @@ namespace TauCeti
 
 variable {M : Type*} [AddMonoid M] [StarAddMonoid M] {F G : M → ℂ}
 
-private theorem complex_offdiag_im_add_eq_zero {p q r s : ℂ}
-    (hp : p.im = 0) (hq : q.im = 0) (h : (p + s + r + q).im = 0) :
-    r.im + s.im = 0 := by
-  simp [Complex.add_im, hp, hq, add_comm, add_left_comm] at h ⊢
-  linarith
-
-private theorem complex_offdiag_re_sub_eq_zero {p q r s : ℂ}
-    (hp : p.im = 0) (hq : q.im = 0) (h : (p + -Complex.I * s + Complex.I * r + q).im = 0) :
-    r.re + -s.re = 0 := by
-  simp [Complex.add_im, Complex.mul_im, hp, hq] at h ⊢
-  linarith
-
 /-- A function `F : M → ℂ` on an involutive additive monoid is **positive definite** when, for
 every finite family of scalars `c : Fin n → ℂ` and points `v : Fin n → M`, the Hermitian form
 `∑_{i,j} c i · conj (c j) · F (v i + star (v j))` is a nonnegative real number (using the order on
@@ -87,8 +75,9 @@ def IsPositiveDefinite (F : M → ℂ) : Prop :=
 
 namespace IsPositiveDefinite
 
-/-- Positive-definiteness for an arbitrary finite index type. The predicate is stored using
-`Fin n`, and this theorem transports that statement across `Fintype.equivFin`. -/
+/-- Positive-definiteness holds for an arbitrary finite index type, not just `Fin n`: for every
+finite family of scalars `c : ι → ℂ` and points `v : ι → M`, the Hermitian form
+`∑_{i,j} c i · conj (c j) · F (v i + star (v j))` is a nonnegative real number. -/
 theorem sum_nonneg (hF : IsPositiveDefinite F) {ι : Type*} [Fintype ι]
     (c : ι → ℂ) (v : ι → M) :
     0 ≤ ∑ i, ∑ j, c i * conj (c j) * F (v i + star (v j)) := by
@@ -114,6 +103,16 @@ theorem add_star_self_nonneg (hF : IsPositiveDefinite F) (a : M) : 0 ≤ F (a + 
   have h := hF 1 ![1] ![a]
   simpa [Fin.sum_univ_one] using h
 
+/-- The value of a positive-definite function at a "norm point" `a + star a` has zero imaginary
+part. -/
+theorem add_star_self_im (hF : IsPositiveDefinite F) (a : M) : (F (a + star a)).im = 0 :=
+  ((Complex.nonneg_iff.mp (hF.add_star_self_nonneg a)).2).symm
+
+/-- The value of a positive-definite function at a "norm point" `a + star a` has nonnegative real
+part. -/
+theorem add_star_self_re_nonneg (hF : IsPositiveDefinite F) (a : M) : 0 ≤ (F (a + star a)).re :=
+  (Complex.nonneg_iff.mp (hF.add_star_self_nonneg a)).1
+
 /-- The value of a positive-definite function at `0` is real and nonnegative. -/
 theorem map_zero_nonneg (hF : IsPositiveDefinite F) : 0 ≤ F 0 := by
   simpa [star_zero] using hF.add_star_self_nonneg 0
@@ -133,20 +132,21 @@ theorem map_zero_re_nonneg (hF : IsPositiveDefinite F) : 0 ≤ (F 0).re :=
 theorem conj_symm (hF : IsPositiveDefinite F) (a b : M) :
     conj (F (b + star a)) = F (a + star b) := by
   -- The diagonal entries `F (a + star a)`, `F (b + star b)` are real.
-  have hp : (F (a + star a)).im = 0 := ((Complex.nonneg_iff.mp (hF.add_star_self_nonneg a)).2).symm
-  have hq : (F (b + star b)).im = 0 := ((Complex.nonneg_iff.mp (hF.add_star_self_nonneg b)).2).symm
-  -- Two choices of scalars force the off-diagonal entries to be conjugate.
-  have h11 := (Complex.nonneg_iff.mp (hF.quadForm_two_nonneg a b 1 1)).2
-  have h1i := (Complex.nonneg_iff.mp (hF.quadForm_two_nonneg a b 1 Complex.I)).2
+  have hp := hF.add_star_self_im a
+  have hq := hF.add_star_self_im b
+  -- Coefficients `(1, 1)` force the imaginary parts of the off-diagonal entries to be opposite.
   have him : (F (b + star a)).im + (F (a + star b)).im = 0 := by
-    exact complex_offdiag_im_add_eq_zero hp hq (by simpa using h11.symm)
-  have hre : (F (b + star a)).re + -(F (a + star b)).re = 0 := by
-    exact complex_offdiag_re_sub_eq_zero hp hq (by simpa using h1i.symm)
+    have h := (Complex.nonneg_iff.mp (hF.quadForm_two_nonneg a b 1 1)).2
+    simp [Complex.add_im, hp, hq] at h
+    linarith
+  -- Coefficients `(1, I)` force the real parts of the off-diagonal entries to be equal.
+  have hre : (F (b + star a)).re = (F (a + star b)).re := by
+    have h := (Complex.nonneg_iff.mp (hF.quadForm_two_nonneg a b 1 Complex.I)).2
+    simp [Complex.add_im, Complex.mul_im, hp, hq] at h
+    linarith
   apply Complex.ext
-  · simp
-    linarith
-  · simp
-    linarith
+  · rw [Complex.conj_re]; exact hre
+  · rw [Complex.conj_im]; linarith
 
 /-- The Cauchy–Schwarz inequality for a positive-definite function: the squared norm of an
 off-diagonal value is bounded by the product of the two diagonal values. -/
@@ -156,12 +156,10 @@ theorem normSq_le (hF : IsPositiveDefinite F) (a b : M) :
   set r := F (a + star b) with hr
   -- The off-diagonal entries are conjugate, and the diagonal entries are real.
   have hconj : F (b + star a) = conj r := by rw [hr, ← hF.conj_symm a b, Complex.conj_conj]
-  have hpim : (F (a + star a)).im = 0 :=
-    ((Complex.nonneg_iff.mp (hF.add_star_self_nonneg a)).2).symm
-  have hqim : (F (b + star b)).im = 0 :=
-    ((Complex.nonneg_iff.mp (hF.add_star_self_nonneg b)).2).symm
-  have hpre : 0 ≤ (F (a + star a)).re := (Complex.nonneg_iff.mp (hF.add_star_self_nonneg a)).1
-  have hqre : 0 ≤ (F (b + star b)).re := (Complex.nonneg_iff.mp (hF.add_star_self_nonneg b)).1
+  have hpim := hF.add_star_self_im a
+  have hqim := hF.add_star_self_im b
+  have hpre := hF.add_star_self_re_nonneg a
+  have hqre := hF.add_star_self_re_nonneg b
   -- For every real `t`, the quadratic `t ↦ pᵣ t² - 2 ‖r‖² t + ‖r‖² qᵣ` is nonnegative.
   have hpoly : ∀ t : ℝ, 0 ≤ (F (a + star a)).re * (t * t)
       + (-2 * Complex.normSq r) * t + Complex.normSq r * (F (b + star b)).re := by
