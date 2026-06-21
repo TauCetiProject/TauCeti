@@ -48,21 +48,6 @@ namespace TauCeti
 
 variable {σ : Type*} {M : Type*} [CommGroup M]
 
-private theorem freeAbelianCharEquiv_toAdditiveRight_single
-    (χ : Multiplicative (σ →₀ ℤ) →* M) (x : σ) (m : ℤ) :
-    χ.toAdditiveRight (Finsupp.single x m) =
-      (zmultiplesHom (Additive M))
-        (Additive.ofMul (χ (Multiplicative.ofAdd (Finsupp.single x 1)))) m := by
-  rw [← Finsupp.smul_single_one x m, map_zsmul, zmultiplesHom_apply,
-    MonoidHom.toAdditiveRight_apply_apply]
-
-private theorem freeAbelianCharEquiv_left_inv_single
-    (χ : Multiplicative (σ →₀ ℤ) →* M) (x : σ) (m : ℤ) :
-    (Finsupp.liftAddHom fun i => (zmultiplesHom (Additive M)) (Additive.ofMul
-      (χ (Multiplicative.ofAdd (Finsupp.single i 1))))) (Finsupp.single x m) =
-      χ.toAdditiveRight (Finsupp.single x m) := by
-  rw [Finsupp.liftAddHom_apply_single, freeAbelianCharEquiv_toAdditiveRight_single]
-
 /-- The universal property of the free abelian group `Multiplicative (σ →₀ ℤ)`: a homomorphism
 to a commutative group `M` is the same data as a family `σ → M`. The forward map reads off the
 values on the standard generators `ofAdd (single i 1)`; the inverse extends a family to the
@@ -78,8 +63,10 @@ noncomputable def freeAbelianCharEquiv :
     simp
   left_inv χ := by
     apply Multiplicative.monoidHom_ext
-    apply Finsupp.addHom_ext
-    exact freeAbelianCharEquiv_left_inv_single χ
+    apply Finsupp.addHom_ext'
+    intro x
+    apply AddMonoidHom.ext_int
+    simp
 
 /-- The forward direction of `freeAbelianCharEquiv` evaluates a character on the standard
 generator indexed by `i`. -/
