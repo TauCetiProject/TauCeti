@@ -35,7 +35,7 @@ as the existing multiplicative group `𝔾ₘ`, roots of unity `μ_n`, and diago
 
 * `TauCeti.SplitTorus.pointsMulEquiv`: the multiplicative equivalence from the convolution
   group of `A`-points of the rank-`σ` split torus to `σ → Aˣ`.
-* `TauCeti.SplitTorus.pointsMulEquiv_apply`: a point is sent to its values on the standard
+* `TauCeti.SplitTorus.pointsMulEquiv_apply_coe`: a point is sent to its values on the standard
   generators `single (ofAdd (single i 1)) 1`.
 * `TauCeti.SplitTorus.pointsMulEquiv_mapValue`: the points equivalence is natural in the value
   algebra.
@@ -68,7 +68,7 @@ noncomputable def pointsMulEquiv :
 /-- The points equivalence reads off the value of a point on the `i`-th standard generator
 `single (ofAdd (single i 1)) 1` of `R[Multiplicative (σ →₀ ℤ)]`. -/
 @[simp]
-theorem pointsMulEquiv_apply
+theorem pointsMulEquiv_apply_coe
     (f : WithConv (MonoidAlgebra R (Multiplicative (σ →₀ ℤ)) →ₐ[R] A)) (i : σ) :
     (pointsMulEquiv f i : A) =
       f.ofConv (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single i 1)) 1) := by

@@ -4,8 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Algebra.BigOperators.Finsupp.Basic
 import Mathlib.Algebra.Group.TypeTags.Hom
-import Mathlib.Data.Finsupp.SMul
-import Mathlib.Data.Finsupp.SMulWithZero
 import Mathlib.Data.Int.Cast.Lemmas
 
 /-!
@@ -31,8 +29,7 @@ one generator).
 
 The construction reuses Mathlib's group-algebra-free toolkit: the `Finsupp.liftAddHom`
 universal property of `σ →₀ ℤ`, the `ℤ`-power homomorphism `zmultiplesHom`, and the type-tag
-adjunctions `AddMonoidHom.toMultiplicativeLeft` / `MonoidHom.toAdditiveRight` from
-`Mathlib.Algebra.Group.TypeTags.Hom`.
+adjunction `AddMonoidHom.toMultiplicativeLeft` from `Mathlib.Algebra.Group.TypeTags.Hom`.
 
 The additive shadow of this equivalence is the `R = ℤ` case of Mathlib's
 `Finsupp.lift : (σ → M) ≃+ ((σ →₀ ℤ) →ₗ[ℤ] M)`, transported across `addMonoidHomLequivInt` and
