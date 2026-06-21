@@ -51,6 +51,15 @@ namespace TauCeti.Polynomial
 
 variable {R : Type*} [Semiring R]
 
+/-- The coefficient map `f ↦ (f.coeff i)ᵢ` into `Fin (d + 1) → R` is injective on the polynomials
+of degree at most `d`: such a polynomial is determined by its first `d + 1` coefficients. This is
+the shared injection behind both the count and the finiteness of the bounded-coefficient family. -/
+private theorem coeff_injOn_natDegree_le (d : ℕ) :
+    Set.InjOn (fun (f : R[X]) (i : Fin (d + 1)) => f.coeff i) {f | f.natDegree ≤ d} := by
+  intro f hf g hg hfg
+  rw [Set.mem_setOf_eq] at hf hg
+  exact (ext_iff_natDegree_le hf hg).2 fun i hi => congrFun hfg ⟨i, Nat.lt_succ_of_le hi⟩
+
 /-- The polynomials of degree at most `d` whose coefficients all lie in a finite set `U` number
 at most `#U ^ (d + 1)`: such a polynomial is determined by the `d + 1` coefficients
 `coeff 0, …, coeff d`, each ranging over `U`, so the coefficient map injects the set into the
@@ -68,10 +77,7 @@ theorem ncard_natDegree_le_coeff_mem_le (d : ℕ) (U : Finset R) :
   · intro f hf
     rw [Finset.mem_coe, Fintype.mem_piFinset]
     exact fun i => hf.2 i
-  · intro f hf g hg hfg
-    rw [hS, Set.mem_setOf_eq] at hf hg
-    rw [ext_iff_natDegree_le hf.1 hg.1]
-    exact fun i hi => congrFun hfg ⟨i, Nat.lt_succ_of_le hi⟩
+  · exact (coeff_injOn_natDegree_le d).mono fun f hf => hf.1
 
 /-- The polynomials of degree at most `d` whose coefficients all lie in a finite set `U` form a
 finite set: the same coefficient map that gives the count above injects them into the finite
@@ -85,8 +91,7 @@ theorem finite_setOf_natDegree_le_coeff_mem (d : ℕ) {U : Set R} (hU : U.Finite
     (?_ : Set.InjOn π _)
   · refine Set.image_subset_iff.2 fun f hf => ?_
     exact fun i _ => hf.2 i
-  · refine fun f hf g hg hfg => (ext_iff_natDegree_le hf.1 hg.1).2 fun i hi => ?_
-    exact congrFun hfg ⟨i, Nat.lt_succ_of_le hi⟩
+  · exact (coeff_injOn_natDegree_le d).mono fun f hf => hf.1
 
 /-- Bounding an integer coefficient by `B` in absolute value is membership in the interval
 `[-B, B]`, so the two spellings of the bounded-degree, bounded-coefficient family agree. -/
