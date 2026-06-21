@@ -2,13 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Geometry.Symplectic.CompatibleMetric
+import Mathlib.Analysis.InnerProductSpace.Defs
+import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
 # The metric of a tame pair
 
 A symplectic form `ω` taming an almost complex structure `J` need not be `J`-invariant, so the
-bilinear form `ω(v, J w)` from `CompatibleMetric.lean` is in general not symmetric. Its symmetric
+bilinear form `ω(v, J w)` from `AlmostComplex.lean` is in general not symmetric. Its symmetric
 part, however, always is a metric: `gₛ(v, w) = ω(v, J w) + ω(w, J v)` is symmetric, automatically
 `J`-invariant, and -- under taming alone -- positive definite. This is the standard "every tame
 `J` carries a `J`-invariant metric" construction (McDuff--Salamon, *J-holomorphic Curves and
@@ -32,6 +33,8 @@ recorded as the bridge `SymplecticForm.Compatible.symmetrizedBilinForm_apply`.
   definite.
 * `TauCeti.SymplecticForm.Tames.innerProductCore`: the symmetric part of the metric of a tame
   pair as an `InnerProductSpace.Core ℝ V`.
+* `TauCeti.SymplecticForm.Tames.innerProductCore_inner_invariant`: the packaged inner product is
+  `J`-invariant, `⟪J v, J w⟫ = ⟪v, w⟫`.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Sections 2.1 and 2.5.
@@ -81,7 +84,7 @@ lemma symmetrizedBilinForm_apply_self (v : V) :
 namespace Tames
 
 /-- The symplectic diagonal `ω(v, J v)` is nonnegative under taming. -/
-lemma apply_apply_self_nonneg (h : ω.Tames J) (v : V) : 0 ≤ ω v (J v) := by
+lemma symplecticForm_apply_apply_self_nonneg (h : ω.Tames J) (v : V) : 0 ≤ ω v (J v) := by
   rcases eq_or_ne v 0 with rfl | hv
   · simp
   · exact (h v hv).le
@@ -143,9 +146,17 @@ noncomputable def innerProductCore (h : ω.Tames J) : InnerProductSpace.Core ℝ
 /-- The inner product from `innerProductCore` is the symmetric part `ω(v, J w) + ω(w, J v)`. -/
 @[simp]
 lemma innerProductCore_inner (h : ω.Tames J) (v w : V) :
-    @inner ℝ V h.innerProductCore.toInner v w = ω v (J w) + ω w (J v) := by
-  change ω.symmetrizedBilinForm J v w = _
-  rw [symmetrizedBilinForm_apply]
+    @inner ℝ V h.innerProductCore.toInner v w = ω v (J w) + ω w (J v) :=
+  -- `inner` for `innerProductCore` is the field `ω.symmetrizedBilinForm J v w` by construction.
+  symmetrizedBilinForm_apply ω J v w
+
+/-- The inner product from `innerProductCore` is `J`-invariant: `⟪J v, J w⟫ = ⟪v, w⟫`. -/
+@[simp]
+lemma innerProductCore_inner_invariant (h : ω.Tames J) (v w : V) :
+    @inner ℝ V h.innerProductCore.toInner (J v) (J w)
+      = @inner ℝ V h.innerProductCore.toInner v w :=
+  -- `inner` for `innerProductCore` is the field `ω.symmetrizedBilinForm J · ·` by construction.
+  symmetrizedBilinForm_invariant v w
 
 end Tames
 
