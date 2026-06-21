@@ -16,8 +16,8 @@ split torus `𝔾ₘⁿ`.
 This file computes its functor of points: for every commutative `R`-algebra `A`, the convolution
 group of `R`-algebra homomorphisms `R[Multiplicative (σ →₀ ℤ)] →ₐ[R] A` is the product group
 `σ → Aˣ` (with `Fin n → Aˣ = (Aˣ)ⁿ` in the finite-rank case), under pointwise multiplication.
-The equivalence sends a point to its values on the standard one-parameter subgroups
-`ofAdd (single i 1)`.
+The equivalence sends a point to its values on the standard characters `ofAdd (single i 1)`,
+equivalently the basis monomials `single (ofAdd (single i 1)) 1`.
 
 This combines two existing pieces: the diagonalizable-group points calculation
 `TauCeti.DiagonalizableGroup.pointsMulEquiv`, computing the points of `D(M)` as the character
@@ -81,6 +81,16 @@ theorem pointsMulEquiv_symm_apply (c : σ → Aˣ) :
     (pointsMulEquiv (R := R) (A := A)).symm c =
       toConv (DiagonalizableGroup.point (freeAbelianCharEquiv.symm c)) := by
   rw [pointsMulEquiv, MulEquiv.symm_trans_apply, DiagonalizableGroup.pointsMulEquiv_symm_apply]
+
+/-- The inverse points equivalence sends a coordinate family to the point taking the `i`-th
+standard generator to the `i`-th coordinate. -/
+@[simp]
+theorem pointsMulEquiv_symm_apply_single (c : σ → Aˣ) (i : σ) :
+    ((pointsMulEquiv (R := R) (A := A)).symm c).ofConv
+        (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single i 1)) 1) =
+      (c i : A) := by
+  rw [pointsMulEquiv_symm_apply, ofConv_toConv, DiagonalizableGroup.point_single_one,
+    freeAbelianCharEquiv_symm_apply_ofAdd_single]
 
 variable {B : Type*} [CommSemiring B] [Algebra R B]
 

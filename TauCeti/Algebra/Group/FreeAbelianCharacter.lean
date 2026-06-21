@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Algebra.BigOperators.Finsupp.Basic
 import Mathlib.Algebra.Group.TypeTags.Hom
+import Mathlib.Data.Finsupp.SMul
 import Mathlib.Data.Finsupp.SMulWithZero
 import Mathlib.Data.Int.Cast.Lemmas
 
@@ -38,6 +39,15 @@ namespace TauCeti
 
 variable {σ : Type*} {M : Type*} [CommGroup M]
 
+private theorem freeAbelianCharEquiv_left_inv_single
+    (χ : Multiplicative (σ →₀ ℤ) →* M) (x : σ) (m : ℤ) :
+    (Finsupp.liftAddHom fun i => (zmultiplesHom (Additive M)) (Additive.ofMul
+      (χ (Multiplicative.ofAdd (Finsupp.single i 1))))) (Finsupp.single x m) =
+      χ.toAdditiveRight (Finsupp.single x m) := by
+  rw [Finsupp.liftAddHom_apply_single, zmultiplesHom_apply,
+    MonoidHom.toAdditiveRight_apply_apply, ← Finsupp.smul_single_one x m, ofAdd_zsmul,
+    map_zpow, ofMul_zpow]
+
 /-- The universal property of the free abelian group `Multiplicative (σ →₀ ℤ)`: a homomorphism
 to a commutative group `M` is the same data as a family `σ → M`. The forward map reads off the
 values on the standard generators `ofAdd (single i 1)`; the inverse extends a family to the
@@ -54,15 +64,7 @@ noncomputable def freeAbelianCharEquiv :
   left_inv χ := by
     apply Multiplicative.monoidHom_ext
     apply Finsupp.addHom_ext
-    intro x m
-    change (Finsupp.liftAddHom fun i => (zmultiplesHom (Additive M)) (Additive.ofMul
-      (χ (Multiplicative.ofAdd (Finsupp.single i 1))))) (Finsupp.single x m) =
-      χ.toAdditiveRight (Finsupp.single x m)
-    rw [Finsupp.liftAddHom_apply_single, zmultiplesHom_apply,
-      MonoidHom.toAdditiveRight_apply_apply,
-      show Finsupp.single x m = m • Finsupp.single x (1 : ℤ) from by
-        rw [Finsupp.smul_single, smul_eq_mul, mul_one],
-      ofAdd_zsmul, map_zpow, ofMul_zpow]
+    exact freeAbelianCharEquiv_left_inv_single χ
 
 @[simp]
 theorem freeAbelianCharEquiv_apply (χ : Multiplicative (σ →₀ ℤ) →* M) (i : σ) :
@@ -73,6 +75,13 @@ theorem freeAbelianCharEquiv_apply (χ : Multiplicative (σ →₀ ℤ) →* M) 
 theorem freeAbelianCharEquiv_symm_apply_ofAdd_single (c : σ → M) (i : σ) :
     (freeAbelianCharEquiv (M := M)).symm c (Multiplicative.ofAdd (Finsupp.single i 1)) = c i := by
   simp [freeAbelianCharEquiv]
+
+@[simp]
+theorem freeAbelianCharEquiv_symm_apply_ofAdd (c : σ → M) (m : σ →₀ ℤ) :
+    (freeAbelianCharEquiv (M := M)).symm c (Multiplicative.ofAdd m) =
+      m.prod fun i n => c i ^ n := by
+  simp [freeAbelianCharEquiv, Finsupp.liftAddHom_apply, Finsupp.sum, Finsupp.prod,
+    toMul_sum, zmultiplesHom_apply]
 
 /-- Reading off generator values is natural in the target group: post-composing with a
 homomorphism `ψ : M →* N` commutes with `freeAbelianCharEquiv`. -/
