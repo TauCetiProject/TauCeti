@@ -24,8 +24,8 @@ deck group is *equivalent* to the deck action being regular.
 
 ## Main declarations
 
-* `TauCeti.Deck.apply_eq_iff_mem_orbit`: for a regular map, two points share a projection
-  exactly when they lie in a common deck orbit.
+* `TauCeti.Deck.apply_eq_iff_mem_orbit`: when every fibre-pair is connected by a deck
+  transformation, two points share a projection exactly when they lie in a common deck orbit.
 * `TauCeti.Deck.IsRegular.isQuotientCoveringMap`: a regular, preconnected covering map is a
   quotient covering map for its deck group.
 * `TauCeti.Deck.isQuotientCoveringMap_iff_isRegular`: for a preconnected covering map, being a
@@ -46,14 +46,14 @@ namespace Deck
 variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
 
 omit [TopologicalSpace B] in
-/-- For a map with regular deck action, two points of the total space have the same
-projection exactly when they lie in a common orbit of the deck transformation group. The
-forward direction is regularity; the converse holds because deck transformations preserve
-the projection. -/
-lemma apply_eq_iff_mem_orbit (hreg : IsRegular p) {e₁ e₂ : E} :
+/-- If every pair of points with the same projection is connected by a deck transformation,
+then two points of the total space have the same projection exactly when they lie in a common
+orbit of the deck transformation group. The reverse direction holds because deck
+transformations preserve the projection. -/
+lemma apply_eq_iff_mem_orbit
+    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : Deck p, φ.1 e = e') {e₁ e₂ : E} :
     p e₁ = p e₂ ↔ e₁ ∈ MulAction.orbit (Deck p) e₂ := by
-  change Setoid.ker p e₁ e₂ ↔ MulAction.orbitRel (Deck p) E e₁ e₂
-  rw [orbitRel_eq_ker_of_exists_apply_eq (isRegular_iff_exists_apply_eq.mp hreg).2]
+  rw [← MulAction.orbitRel_apply, orbitRel_eq_ker_of_exists_apply_eq hpoint, Setoid.ker_def]
 
 /-- A regular covering map with preconnected total space is a quotient covering map for its
 deck transformation group: it presents the base as the quotient `E / Deck p`. -/
@@ -61,7 +61,7 @@ theorem IsRegular.isQuotientCoveringMap [PreconnectedSpace E] (hreg : IsRegular 
     (hp : IsCoveringMap p) : IsQuotientCoveringMap p (Deck p) := by
   rw [isQuotientCoveringMap_iff_isCoveringMap_and]
   exact ⟨hp, hreg.1, inferInstance, isCancelSMul hp,
-    fun {e₁ e₂} => apply_eq_iff_mem_orbit hreg⟩
+    fun {e₁ e₂} => apply_eq_iff_mem_orbit (isRegular_iff_exists_apply_eq.mp hreg).2⟩
 
 /-- For a covering map with preconnected total space, being a quotient covering map for the
 deck transformation group is equivalent to regularity of the deck action. -/
