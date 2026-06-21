@@ -20,18 +20,11 @@ rather than consuming it.
 
 * **Packing** (`finite_and_ncard_le_of_subset_box_of_separated`): a subset of `box r c` whose
   distinct points are `ε`-separated in some coordinate is finite, with at most
-  `(4·c/ε) ^ (2·#ι)` points. The proof partitions each coordinate disc into half-open square
-  cells of side
-  `ε·r i/√2`; two points in the same cell of every coordinate differ by less than `ε·r i`
-  in that coordinate, contradicting separation, so the cell map is injective.
+  `(4·c/ε) ^ (2·#ι)` points.
 
 * **Doubling** (`ncard_inter_box_two_le_pow_mul_ncard_inter_box_one`): passing from the unit
-  box to the double box
-  multiplies the lattice-point count by at most `64 ^ #ι`, i.e.
-  `#(Λ ∩ box r 2) ≤ 64 ^ #ι · #(Λ ∩ box r 1)`. The proof partitions `box r 2` into at most
-  `64` cells per coordinate of coordinatewise diameter `≤ r i`; the points of `Λ` in one
-  cell are translates by `Λ`-elements of `box r 1`, so each cell holds at most
-  `#(Λ ∩ box r 1)` of them.
+  box to the double box multiplies the lattice-point count by at most `64 ^ #ι`, i.e.
+  `#(Λ ∩ box r 2) ≤ 64 ^ #ι · #(Λ ∩ box r 1)`, given that `Λ ∩ box r 2` is finite.
 
 ## Reconciliation with `ZLattice`
 
