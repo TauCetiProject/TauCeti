@@ -1,0 +1,177 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
+
+/-!
+# The closed star, link, and deletion of a simplex
+
+For an abstract simplicial complex `K` and a simplex `σ`, this file builds the three local
+subcomplexes that organise `K` around `σ`:
+
+* the **closed star** `closedStar K σ`, the faces `ρ` whose union with `σ` is still a face of `K`
+  (equivalently, the smallest subcomplex containing every face of `K` that contains `σ`);
+* the **link** `link K σ`, the part of the closed star disjoint from `σ`;
+* the **deletion** `deletion K σ` (the *anti-star*), the faces of `K` that do not contain `σ`.
+
+These are the "basic API (faces, the star and link of a simplex)" that the geometric-topology
+roadmap (`TauCetiRoadmap/GeometricTopology/README.md`, layer 11) asks for on top of Mathlib's
+`AbstractSimplicialComplex`. The link is the load-bearing one downstream: a combinatorial
+`n`-manifold is defined there by the condition that the link of every vertex is a combinatorial
+`(n-1)`-sphere or `(n-1)`-ball, so `link` is the primitive that condition is phrased against. The
+definitions follow Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 3, and
+they work for `PreAbstractSimplicialComplex` (the singleton-free version), since the link of a
+simplex need not contain every vertex even when `K` does.
+
+## Main definitions
+
+* `TauCeti.PreAbstractSimplicialComplex.closedStar K σ`: the closed star of `σ` in `K`.
+* `TauCeti.PreAbstractSimplicialComplex.link K σ`: the link of `σ` in `K`.
+* `TauCeti.PreAbstractSimplicialComplex.deletion K σ`: the deletion (anti-star) of `σ` in `K`.
+
+## Main results
+
+* `TauCeti.PreAbstractSimplicialComplex.closedStar_le` / `link_le` / `deletion_le`: each is a
+  subcomplex of `K`, and `link_le_closedStar` places the link inside the closed star.
+* `TauCeti.PreAbstractSimplicialComplex.closedStar_sup_deletion`: the closed star and the deletion
+  cover `K`, i.e. `closedStar K σ ⊔ deletion K σ = K`.
+* `TauCeti.PreAbstractSimplicialComplex.link_le_deletion`: for a nonempty `σ`, the link sits inside
+  the deletion.
+* `TauCeti.PreAbstractSimplicialComplex.mem_link_singleton`: the link of a vertex `{v}`, in the
+  `insert`-form used by the combinatorial-manifold link condition.
+* `TauCeti.PreAbstractSimplicialComplex.closedStar_empty` / `link_empty` / `deletion_empty`: the
+  values at the empty simplex (`K`, `K`, and `⊥`), pinning the conventions.
+* monotonicity of all three constructions in `K`.
+-/
+
+namespace TauCeti
+
+open Finset
+
+namespace PreAbstractSimplicialComplex
+
+variable {ι : Type*} [DecidableEq ι] (K L : PreAbstractSimplicialComplex ι) (σ : Finset ι)
+
+/-- The **closed star** of a simplex `σ` in `K`: the faces `ρ` whose union with `σ` is a face of
+`K`. Equivalently, this is the smallest subcomplex of `K` containing every face that contains `σ`
+(`closedStar_sup_deletion` shows it is the complement of the deletion). -/
+def closedStar : PreAbstractSimplicialComplex ι where
+  faces := {ρ | ρ.Nonempty ∧ ρ ∪ σ ∈ K}
+  isRelLowerSet_faces := by
+    rintro a ⟨hane, haK⟩
+    refine ⟨hane, fun {b} hba hbne => ⟨hbne, ?_⟩⟩
+    exact (K.isRelLowerSet_faces haK).2 (union_subset_union hba Subset.rfl)
+      (hbne.mono subset_union_left)
+
+/-- The **link** of a simplex `σ` in `K`: the part of the closed star disjoint from `σ`, i.e. the
+faces `ρ` disjoint from `σ` with `ρ ∪ σ` a face of `K`. This is the primitive the combinatorial
+`n`-manifold condition is phrased against: the link of every vertex should be a combinatorial
+sphere or ball. -/
+def link : PreAbstractSimplicialComplex ι where
+  faces := {ρ | ρ.Nonempty ∧ Disjoint ρ σ ∧ ρ ∪ σ ∈ K}
+  isRelLowerSet_faces := by
+    rintro a ⟨hane, hdis, haK⟩
+    refine ⟨hane, fun {b} hba hbne => ⟨hbne, hdis.mono_left hba, ?_⟩⟩
+    exact (K.isRelLowerSet_faces haK).2 (union_subset_union hba Subset.rfl)
+      (hbne.mono subset_union_left)
+
+/-- The **deletion** (or *anti-star*) of a simplex `σ` in `K`: the faces of `K` that do not contain
+`σ`. Together with the closed star it covers `K` (`closedStar_sup_deletion`). -/
+def deletion : PreAbstractSimplicialComplex ι where
+  faces := {ρ | ρ ∈ K ∧ ¬ σ ⊆ ρ}
+  isRelLowerSet_faces := by
+    rintro a ⟨haK, haσ⟩
+    refine ⟨(K.isRelLowerSet_faces haK).1, fun {b} hba hbne => ⟨?_, ?_⟩⟩
+    · exact (K.isRelLowerSet_faces haK).2 hba hbne
+    · exact fun h => haσ (h.trans hba)
+
+variable {K L σ}
+
+@[simp]
+theorem mem_closedStar {ρ : Finset ι} : ρ ∈ closedStar K σ ↔ ρ.Nonempty ∧ ρ ∪ σ ∈ K := Iff.rfl
+
+@[simp]
+theorem mem_link {ρ : Finset ι} :
+    ρ ∈ link K σ ↔ ρ.Nonempty ∧ Disjoint ρ σ ∧ ρ ∪ σ ∈ K := Iff.rfl
+
+omit [DecidableEq ι] in
+@[simp]
+theorem mem_deletion {ρ : Finset ι} : ρ ∈ deletion K σ ↔ ρ ∈ K ∧ ¬ σ ⊆ ρ := Iff.rfl
+
+/-- The closed star of `σ` is a subcomplex of `K`. -/
+theorem closedStar_le : closedStar K σ ≤ K := by
+  rintro ρ ⟨hne, hρ⟩
+  exact (K.isRelLowerSet_faces hρ).2 subset_union_left hne
+
+/-- The link of `σ` is a subcomplex of its closed star. -/
+theorem link_le_closedStar : link K σ ≤ closedStar K σ :=
+  fun _ ⟨hne, _, hρ⟩ => ⟨hne, hρ⟩
+
+/-- The link of `σ` is a subcomplex of `K`. -/
+theorem link_le : link K σ ≤ K :=
+  link_le_closedStar.trans closedStar_le
+
+omit [DecidableEq ι] in
+/-- The deletion of `σ` is a subcomplex of `K`. -/
+theorem deletion_le : deletion K σ ≤ K :=
+  fun _ hρ => hρ.1
+
+/-- The closed star and the deletion of `σ` cover `K`: every face either survives in the deletion
+(it avoids `σ`) or lies in the closed star (it, hence its union with `σ`, is a face). -/
+theorem closedStar_sup_deletion : closedStar K σ ⊔ deletion K σ = K := by
+  refine le_antisymm (sup_le closedStar_le deletion_le) fun ρ hρ => ?_
+  rcases em (σ ⊆ ρ) with h | h
+  · exact Or.inl ⟨(K.isRelLowerSet_faces hρ).1, by rwa [union_eq_left.mpr h]⟩
+  · exact Or.inr ⟨hρ, h⟩
+
+/-- For a nonempty simplex `σ`, the link lies inside the deletion: a face disjoint from a nonempty
+`σ` cannot contain it. -/
+theorem link_le_deletion (hσ : σ.Nonempty) : link K σ ≤ deletion K σ := by
+  rintro ρ ⟨hne, hdis, hρ⟩
+  refine ⟨(K.isRelLowerSet_faces hρ).2 subset_union_left hne, fun hsub => ?_⟩
+  exact hσ.ne_empty (disjoint_self_iff_empty σ |>.mp (hdis.mono_left hsub))
+
+/-- The link of a single vertex `{v}`, written with `insert`: the faces `ρ` not already containing
+`v` for which `insert v ρ` is a face. This is the form the combinatorial-manifold link condition
+uses. -/
+theorem mem_link_singleton {v : ι} {ρ : Finset ι} :
+    ρ ∈ link K {v} ↔ ρ.Nonempty ∧ v ∉ ρ ∧ insert v ρ ∈ K := by
+  rw [mem_link, disjoint_singleton_right, union_comm, ← insert_eq]
+
+/-- The closed star at the empty simplex is the whole complex. -/
+@[simp]
+theorem closedStar_empty : closedStar K ∅ = K := by
+  refine SetLike.ext fun ρ => ?_
+  simp only [mem_closedStar, union_empty]
+  exact ⟨fun h => h.2, fun h => ⟨(K.isRelLowerSet_faces h).1, h⟩⟩
+
+/-- The link at the empty simplex is the whole complex. -/
+@[simp]
+theorem link_empty : link K ∅ = K := by
+  refine SetLike.ext fun ρ => ?_
+  simp only [mem_link, disjoint_empty_right, union_empty, true_and]
+  exact ⟨fun h => h.2, fun h => ⟨(K.isRelLowerSet_faces h).1, h⟩⟩
+
+omit [DecidableEq ι] in
+/-- The deletion at the empty simplex is empty: every face contains `∅`. -/
+@[simp]
+theorem deletion_empty : deletion K ∅ = ⊥ :=
+  eq_bot_iff.mpr fun ρ hρ => (hρ.2 (empty_subset ρ)).elim
+
+/-- The closed star is monotone in the complex. -/
+theorem closedStar_mono (h : K ≤ L) : closedStar K σ ≤ closedStar L σ :=
+  fun _ ⟨hne, hρ⟩ => ⟨hne, h hρ⟩
+
+/-- The link is monotone in the complex. -/
+theorem link_mono (h : K ≤ L) : link K σ ≤ link L σ :=
+  fun _ ⟨hne, hdis, hρ⟩ => ⟨hne, hdis, h hρ⟩
+
+omit [DecidableEq ι] in
+/-- The deletion is monotone in the complex. -/
+theorem deletion_mono (h : K ≤ L) : deletion K σ ≤ deletion L σ :=
+  fun _ ⟨hρ, hσ⟩ => ⟨h hρ, hσ⟩
+
+end PreAbstractSimplicialComplex
+
+end TauCeti
