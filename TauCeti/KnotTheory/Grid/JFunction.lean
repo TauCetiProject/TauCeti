@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Field.Rat
+import Mathlib.Data.Fintype.Prod
 import Mathlib.Data.Finset.Prod
 import Mathlib.Data.Rat.Lemmas
 import Mathlib.Tactic.Ring
@@ -41,6 +42,9 @@ and `A`.
   `TauCeti.GridState.J_rotate`: reversing both coordinates of the point sets exchanges the two
   arguments of the ordered count `I`, while the symmetrized `JNum`, `J`, and `JDiff` are
   invariant.
+* `TauCeti.GridPoint.I_graph_eq`, `TauCeti.GridState.J_pointSet_eq`,
+  `TauCeti.GridDiagram.JO_eq_card`, `TauCeti.GridDiagram.JX_eq_card`: graph and marking
+  point-set `J`-pairings as column-index counts.
 
 ## References
 
@@ -519,6 +523,25 @@ theorem JDiff_image_rev (s a t b : Finset (Fin n × Fin n)) :
       = JDiff s a t b := by
   rw [JDiff_def, JDiff_def, J_image_rev, J_image_rev, J_image_rev, J_image_rev]
 
+/-- The ordered southwest count of two graph point sets is the number of column pairs `c < d`
+where the source row precedes the target row. This graph-level statement does not require either
+row assignment to be a permutation. -/
+theorem I_graph_eq (f g : Fin n → Fin n) :
+    GridPoint.I (Finset.univ.image fun c : Fin n => (c, f c))
+        (Finset.univ.image fun c : Fin n => (c, g c)) =
+      (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ f p.1 < g p.2).card := by
+  classical
+  have hff : Function.Injective (fun c : Fin n => (c, f c)) :=
+    fun _ _ h => congrArg Prod.fst h
+  have hfg : Function.Injective (fun c : Fin n => (c, g c)) :=
+    fun _ _ h => congrArg Prod.fst h
+  rw [GridPoint.I_def,
+    ← Finset.prodMap_image_product (fun c : Fin n => (c, f c)) (fun c : Fin n => (c, g c)),
+    Finset.filter_image, Finset.card_image_of_injective _ (hff.prodMap hfg),
+    Finset.univ_product_univ]
+  refine congrArg Finset.card (Finset.filter_congr fun cd _ => ?_)
+  simp only [Prod.map_fst, Prod.map_snd, GridPoint.isSouthWest_iff, Fin.lt_def]
+
 end GridPoint
 
 namespace GridState
@@ -549,6 +572,67 @@ theorem J_rotate (x y : GridState n) :
     GridState.J x.rotate y.rotate = GridState.J x y := by
   rw [J_def, J_def, rotate_pointSet, rotate_pointSet, GridPoint.J_image_rev]
 
+/-- The ordered southwest count of the point sets of two grid states is the number of column
+pairs `c < d` at which the source row precedes the target row. -/
+theorem I_pointSet_eq (x y : GridState n) :
+    GridPoint.I x.pointSet y.pointSet =
+      (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < y p.2).card := by
+  rw [pointSet, pointSet, GridPoint.I_graph_eq]
+
+/-- The symmetrized numerator of the grid `J`-function on two state point sets, as a sum of two
+column-index counts. -/
+theorem JNum_pointSet_eq (x y : GridState n) :
+    GridPoint.JNum x.pointSet y.pointSet =
+      (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < y p.2).card +
+        (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ y p.1 < x p.2).card := by
+  rw [GridPoint.JNum_def, I_pointSet_eq, I_pointSet_eq]
+
+/-- The rational grid `J`-function on two state point sets is half the sum of the two
+column-index counts. -/
+theorem J_pointSet_eq (x y : GridState n) :
+    GridState.J x y =
+      (((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < y p.2).card +
+        (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ y p.1 < x p.2).card : ℕ) : ℚ)
+        / 2 := by
+  rw [GridState.J_def, GridPoint.J_def, JNum_pointSet_eq]
+
+/-- The self southwest count of a grid state is the number of *non-inversions* of its
+permutation: column pairs `c < d` whose occupied rows are in the same order. -/
+theorem I_self_pointSet_eq (x : GridState n) :
+    GridPoint.I x.pointSet x.pointSet =
+      (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < x p.2).card :=
+  I_pointSet_eq x x
+
+/-- The non-inversions and the inversions of a grid state partition the ordered column pairs: the
+number of pairs `c < d` with `x c < x d` plus the number with `x d < x c` is the total number of
+pairs `c < d`. The state's permutation is injective, so on each ordered column pair exactly one of
+the two strict row comparisons holds. -/
+theorem card_filter_noninversion_add_card_filter_inversion (x : GridState n) :
+    (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < x p.2).card +
+        (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.2 < x p.1).card =
+      (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2).card := by
+  classical
+  have hnoninv :
+      (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < x p.2) =
+        (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2).filter
+          fun p => x p.1 < x p.2 :=
+    (Finset.filter_filter _ _ _).symm
+  have hinv :
+      (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.2 < x p.1) =
+        (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2).filter
+          fun p => ¬ x p.1 < x p.2 := by
+    rw [Finset.filter_filter]
+    apply Finset.filter_congr
+    intro p _
+    constructor
+    · rintro ⟨hlt, hgt⟩
+      exact ⟨hlt, not_lt.mpr (le_of_lt hgt)⟩
+    · rintro ⟨hlt, hngt⟩
+      have hxne : x p.1 ≠ x p.2 := fun h => (ne_of_lt hlt) (x.toPerm.injective h)
+      exact ⟨hlt, lt_of_le_of_ne (not_lt.mp hngt) (Ne.symm hxne)⟩
+  rw [hnoninv, hinv]
+  exact Finset.card_filter_add_card_filter_not _
+
 end GridState
 
 namespace GridDiagram
@@ -572,6 +656,22 @@ def JX (x : GridState n) : ℚ :=
 @[simp]
 theorem JX_def (x : GridState n) : GridDiagram.JX G x = GridPoint.J x.pointSet G.XSet :=
   rfl
+
+/-- The `O`-marking `J`-pairing as a column-index count. -/
+theorem JO_eq_card (x : GridState n) :
+    G.JO x =
+      (((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < G.O p.2).card +
+        (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ G.O p.1 < x p.2).card : ℕ) :
+          ℚ) / 2 := by
+  rw [JO_def, OSet, GridPoint.J_def, GridState.JNum_pointSet_eq]
+
+/-- The `X`-marking `J`-pairing as a column-index count. -/
+theorem JX_eq_card (x : GridState n) :
+    G.JX x =
+      (((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < G.X p.2).card +
+        (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ G.X p.1 < x p.2).card : ℕ) :
+          ℚ) / 2 := by
+  rw [JX_def, XSet, GridPoint.J_def, GridState.JNum_pointSet_eq]
 
 /-- `JO` is invariant under reflecting the diagram and state across the diagonal. -/
 theorem JO_transpose (x : GridState n) :
