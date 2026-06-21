@@ -55,6 +55,9 @@ jobs:
         if: steps.pr.outputs.skip != 'true'
         # No continue-on-error: the script exits 0 for cosmetic/transient hiccups
         # and non-zero only for a persistent config break, which we *want* loud.
+        # This run going red never blocks a PR: only `build` and `bump-guard` are
+        # required checks, and auto-merge gates on the build status + review
+        # ledger, not on this workflow.
         env:
           GH_TOKEN: ${{ github.token }}
           ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}

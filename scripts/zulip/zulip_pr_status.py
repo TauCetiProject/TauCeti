@@ -246,11 +246,15 @@ class Zulip:
             if payload.get("code") in tolerate:
                 return payload
             detail = f"Zulip {method} {path} failed: {e.code} {payload or e.reason}"
-            # 401/403 (and Zulip's UNAUTHORIZED code, e.g. "Malformed API key")
-            # mean the creds themselves are wrong -- a persistent break for every
-            # PR, not a one-off hiccup. Surface it as a ConfigError so main()
-            # fails loudly instead of swallowing it on the cosmetic path.
-            if e.code in (401, 403) or payload.get("code") == "UNAUTHORIZED":
+            # A persistent creds/permission break (vs a one-off hiccup) is a
+            # ConfigError, so main() fails loudly instead of swallowing it. 401
+            # and Zulip's UNAUTHORIZED code (e.g. "Malformed API key") are always
+            # auth. A 403 counts only when Zulip itself answered with a JSON body
+            # (a real permission error); an opaque 403 from a WAF/proxy has no
+            # payload and is treated as a transient hiccup, not a config break.
+            if (e.code == 401
+                    or payload.get("code") == "UNAUTHORIZED"
+                    or (e.code == 403 and payload)):
                 raise ConfigError(detail)
             raise RuntimeError(detail)
 
@@ -402,8 +406,10 @@ def fail_config(msg):
     non-zero exit so the workflow run goes red. See the module docstring."""
     log(f"CONFIG ERROR: {msg}")
     if os.environ.get("GITHUB_ACTIONS") == "true":
-        # One line, no embedded newlines: the ::error:: command must be self-contained.
-        print(f"::error title=Zulip PR status integration is broken::{msg}", flush=True)
+        # Escape the workflow-command payload so a %, CR, or LF in the error text
+        # (e.g. a Zulip JSON body) can't malform or truncate the annotation.
+        safe = msg.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+        print(f"::error title=Zulip PR status integration is broken::{safe}", flush=True)
     return 1
 
 
@@ -427,8 +433,10 @@ def main(argv):
     if cmd == "check":
         try:
             check(z)
-        except ConfigError as exc:
+        except ConfigError as exc:  # broken creds/permissions: loud, fails the run
             return fail_config(str(exc))
+        except Exception as exc:  # a transient probe failure is not a config break
+            log(f"check failed (non-fatal): {exc}")
         return 0
 
     # cmd == "reconcile"
