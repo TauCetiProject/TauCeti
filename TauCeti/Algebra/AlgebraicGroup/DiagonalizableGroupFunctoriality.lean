@@ -39,8 +39,6 @@ worked example and the coordinate-Hopf-algebra functoriality `AlgHom.mapDomain`.
   point is precomposition of the character by `φ`.
 * `TauCeti.DiagonalizableGroup.pointsMulEquiv_pointsMap`: the points homomorphism is
   intertwined by `pointsMulEquiv` with precomposition of characters by `φ`.
-* `TauCeti.DiagonalizableGroup.pointsMap_mapValue`: `pointsMap` is natural in the value
-  algebra.
 
 ## References
 
@@ -129,19 +127,6 @@ theorem pointsMap_pointsMulEquiv_symm (φ : G →* G') (χ : G' →* Aˣ) :
   rw [pointsMulEquiv_pointsMap]
   rw [(pointsMulEquiv (R := R) (A := A) (G := G')).apply_symm_apply χ]
   exact ((pointsMulEquiv (R := R) (A := A) (G := G)).apply_symm_apply (χ.comp φ)).symm
-
-section MapValue
-
-variable {B : Type*} [CommSemiring B] [Algebra R B]
-
-/-- `pointsMap` is natural in the value algebra: post-composing a point with an `R`-algebra map
-of value algebras commutes with the pre-composition in the coordinate group. -/
-theorem pointsMap_mapValue (φ : G →* G') (χ : A →ₐ[R] B) :
-    (pointsMap (R := R) (A := B) φ).comp (AlgHom.mapValue (H := MonoidAlgebra R G') χ) =
-      (AlgHom.mapValue (H := MonoidAlgebra R G) χ).comp (pointsMap (R := R) (A := A) φ) := by
-  exact AlgHom.mapValue_mapDomain (MonoidAlgebra.mapDomainBialgHom R φ) χ
-
-end MapValue
 
 end DiagonalizableGroup
 
