@@ -18,13 +18,15 @@ by grid pigeonhole alone — no Haar measure, no convex-body theorem, no covolum
 sit *upstream* of Mathlib's `ZLattice`/`MeasureTheory.Group.GeometryOfNumbers` machinery
 rather than consuming it.
 
-* **Packing** (`finite_and_card_le_of_separated`): a subset of `box r c` whose distinct
-  points are `ε`-separated in some coordinate is finite, with at most `(4·c/ε) ^ (2·#ι)`
-  points. The proof partitions each coordinate disc into half-open square cells of side
+* **Packing** (`finite_and_ncard_le_of_subset_box_of_separated`): a subset of `box r c` whose
+  distinct points are `ε`-separated in some coordinate is finite, with at most
+  `(4·c/ε) ^ (2·#ι)` points. The proof partitions each coordinate disc into half-open square
+  cells of side
   `ε·r i/√2`; two points in the same cell of every coordinate differ by less than `ε·r i`
   in that coordinate, contradicting separation, so the cell map is injective.
 
-* **Doubling** (`ncard_box_two_le_doubling`): passing from the unit box to the double box
+* **Doubling** (`ncard_inter_box_two_le_pow_mul_ncard_inter_box_one`): passing from the unit
+  box to the double box
   multiplies the lattice-point count by at most `64 ^ #ι`, i.e.
   `#(Λ ∩ box r 2) ≤ 64 ^ #ι · #(Λ ∩ box r 1)`. The proof partitions `box r 2` into at most
   `64` cells per coordinate of coordinatewise diameter `≤ r i`; the points of `Λ` in one
@@ -153,16 +155,15 @@ private theorem cellCount_le {c ε : ℝ} (hε : 0 < ε) (hεc : ε ≤ c) :
 
 /-- **Grid pigeonhole / packing.** A subset of the polydisc `box r c` whose distinct points
 are `ε`-separated in some coordinate (relative to `r`) is finite, of cardinality at most
-`(4·c/ε) ^ (2·#ι)`.
-
-The map sending a point to its tuple of cell indices — `⌊((x i).re + c·r i)/δ i⌋` and the
-analogous imaginary part, with cell side `δ i = ε·r i/√2` — lands in
-`ι → Icc 0 ⌊2√2·c/ε⌋ × Icc 0 ⌊2√2·c/ε⌋` and is injective on the separated set, because two
-points in the same cell of every coordinate differ by less than `ε·r i` there. -/
+`(4·c/ε) ^ (2·#ι)`. -/
 theorem finite_and_ncard_le_of_subset_box_of_separated (r : ι → ℝ) (hr : ∀ i, 0 < r i)
     {c ε : ℝ} (hε : 0 < ε) (hεc : ε ≤ c) {S : Set (ι → ℂ)} (hS : S ⊆ box r c)
     (hsep : ∀ x ∈ S, ∀ y ∈ S, x ≠ y → ∃ i, ε * r i < ‖x i - y i‖) :
     S.Finite ∧ (S.ncard : ℝ) ≤ (4 * c / ε) ^ (2 * Fintype.card ι) := by
+  -- The cell map sends a point to its tuple of cell indices — `⌊((x i).re + c·r i)/δ i⌋` and
+  -- the analogous imaginary part, with cell side `δ i = ε·r i/√2` — landing in
+  -- `ι → Icc 0 ⌊2√2·c/ε⌋ × Icc 0 ⌊2√2·c/ε⌋` and is injective on the separated set, because two
+  -- points in the same cell of every coordinate differ by less than `ε·r i` there.
   set K : ℤ := (⌊2 * Real.sqrt 2 * c / ε⌋₊ : ℤ) with hK
   set T : Finset (ι → ℤ × ℤ) :=
     Fintype.piFinset (fun _ : ι => Finset.Icc (0 : ℤ) K ×ˢ Finset.Icc (0 : ℤ) K) with hT
@@ -217,14 +218,14 @@ theorem finite_and_ncard_le_of_subset_box_of_separated (r : ι → ℝ) (hr : �
 
 /-- **Lattice points in the box.** If every nonzero element of `Λ` escapes the small polydisc
 `box r ρ` in some coordinate, then `Λ ∩ box r 2` is finite of cardinality at most
-`(8/ρ) ^ (2·#ι)`: differences of distinct points of `Λ ∩ box r 2` are nonzero elements of
-`Λ`, so they satisfy the separation hypothesis of `finite_and_card_le_of_separated` with
-`c = 2`, `ε = ρ`. -/
+`(8/ρ) ^ (2·#ι)`. -/
 theorem lattice_inter_box_finite_card (r : ι → ℝ) (hr : ∀ i, 0 < r i)
     (Λ : AddSubgroup (ι → ℂ)) {ρ : ℝ} (hρ0 : 0 < ρ) (hρ2 : ρ ≤ 2)
     (hsep : ∀ x ∈ Λ, x ≠ 0 → ∃ i, ρ * r i < ‖x i‖) :
     ((Λ : Set (ι → ℂ)) ∩ box r 2).Finite ∧
       (((Λ : Set (ι → ℂ)) ∩ box r 2).ncard : ℝ) ≤ (8 / ρ) ^ (2 * Fintype.card ι) := by
+  -- Differences of distinct points of `Λ ∩ box r 2` are nonzero elements of `Λ`, so they
+  -- satisfy the separation hypothesis of the packing lemma with `c = 2`, `ε = ρ`.
   have hbound : (8 / ρ : ℝ) = 4 * 2 / ρ := by ring
   rw [hbound]
   refine finite_and_ncard_le_of_subset_box_of_separated r hr hρ0 hρ2 Set.inter_subset_right ?_
@@ -249,18 +250,17 @@ private theorem abs_sub_le_of_floor_eq {a b q : ℝ} (hq : 0 < q) (h : ⌊a / q�
       mul_div_cancel₀ a hq.ne', mul_div_cancel₀ b hq.ne']
 
 /-- **Doubling.** Counting lattice points in the double box loses at most `64 ^ #ι` against
-the unit box: `#(Λ ∩ box r 2) ≤ 64 ^ #ι · #(Λ ∩ box r 1)`.
-
-The map sending `x` to its tuple of coarse cell indices `⌊(x i).re/(2·r i/3)⌋` (and the
-imaginary analogue) takes at most `7² ≤ 64` values per coordinate on `box r 2`. Within one
-cell, two `Λ`-points `x` and `x₀` have `x - x₀ ∈ Λ` with each coordinate of norm `≤ r i` (the
-two real parts differ by at most `2·r i/3`, likewise the imaginary, so the norm is at most
-`(2·r i/3)·√2 ≤ r i`), hence `x - x₀ ∈ Λ ∩ box r 1`; so each cell holds at most
-`#(Λ ∩ box r 1)` points. -/
+the unit box: `#(Λ ∩ box r 2) ≤ 64 ^ #ι · #(Λ ∩ box r 1)`. -/
 theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr : ∀ i, 0 < r i)
     (Λ : AddSubgroup (ι → ℂ)) (hfin : ((Λ : Set (ι → ℂ)) ∩ box r 2).Finite) :
     (((Λ : Set (ι → ℂ)) ∩ box r 2).ncard : ℝ) ≤
       64 ^ Fintype.card ι * ((Λ : Set (ι → ℂ)) ∩ box r 1).ncard := by
+  -- The coarse cell map sends `x` to its tuple of cell indices `⌊(x i).re/(2·r i/3)⌋` (and the
+  -- imaginary analogue), taking at most `7² ≤ 64` values per coordinate on `box r 2`. Within
+  -- one cell, two `Λ`-points `x` and `x₀` have `x - x₀ ∈ Λ` with each coordinate of norm
+  -- `≤ r i` (the two real parts differ by at most `2·r i/3`, likewise the imaginary, so the
+  -- norm is at most `(2·r i/3)·√2 ≤ r i`), hence `x - x₀ ∈ Λ ∩ box r 1`; so each cell holds at
+  -- most `#(Λ ∩ box r 1)` points.
   set A : Set (ι → ℂ) := (Λ : Set (ι → ℂ)) ∩ box r 2
   set B : Set (ι → ℂ) := (Λ : Set (ι → ℂ)) ∩ box r 1
   have hBA : B ⊆ A := fun x hx => ⟨hx.1, box_mono (fun i => (hr i).le) one_le_two hx.2⟩
