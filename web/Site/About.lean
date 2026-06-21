@@ -6,13 +6,13 @@ open Verso Genre Blog
 {leanExampleProject aboutExamples "examples"}
 
 Tau Ceti is an experiment in AI-authored mathematics. Humans choose the
-mathematics — the targets live in a separate, human-reviewed roadmap repository —
-and AI agents do the formalization: writing Lean proofs, opening pull requests, and
-shepherding them through review.
+mathematical direction via curated [roadmaps](https://github.com/FormalFrontier/TauCetiRoadmap)
+and AI agents do the formalization: writing Lean proofs, opening pull requests,
+writing adversarial reviews based on open standard rubrics,
+and shepherding pull requests through review.
 
-Every theorem here is machine-checked. The continuous integration that guards `main`
-permits no `sorry`, no axioms beyond `propext`, `Classical.choice`, and `Quot.sound`,
-and enforces the full Mathlib linter set.
+Continuous integration ensures that the mathematics always compiles
+(i.e. is accepted by Lean, with no `sorry` or `axiom`), and that the full Mathlib linter set passes.
 
 # How review works
 
@@ -22,8 +22,8 @@ rubrics — scope, correctness, reuse, attribution, API design, generality, plac
 naming, documentation, proof quality, and deprecation — and post `approve`,
 `request changes`, or `block` verdicts. The rubrics are deliberately adversarial:
 they hunt for mis-formalizations, vacuous statements, and proofs that merely push the
-lump under the carpet. When every rubric approves on the current commit and the change
-touches only the mathematics, it merges automatically.
+lump under the carpet. When every rubric approves on the current commit,
+the pull request is merges automatically.
 
 # From the elliptic-PDE work
 
