@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Topology.Covering.AddCircle
 import Mathlib.Topology.Connected.TotallyDisconnected
-import Mathlib.Algebra.NoZeroSMulDivisors.Basic
+import TauCeti.Algebra.Group.ZMultiples
 import TauCeti.AlgebraicTopology.UniversalCover.Deck
 
 /-!
@@ -22,7 +22,7 @@ The forward inclusion is elementary. For the converse, a deck transformation `φ
 `φ e - e` inside the *discrete* subgroup `zmultiples p` while varying continuously in `e`, so on
 a preconnected `𝕜` it is constant; that constant is `φ 0`, and `φ` is translation by it.
 
-When `p` is not a torsion element (`NoZeroSMulDivisors ℤ 𝕜` and `p ≠ 0`), the translation
+When `p` is not a torsion element (`¬ IsOfFinAddOrder p`), the translation
 subgroup is infinite cyclic, giving `Deck ((↑) : 𝕜 → AddCircle p) ≃* Multiplicative ℤ`. For
 `𝕜 = ℝ` this is the deck group of the universal cover `ℝ → S¹` and the algebraic input to the
 universal-covers roadmap target `π₁(S¹) ≅ ℤ` (Stage 4).
@@ -80,7 +80,7 @@ theorem addRightZMultiples_add (a b : zmultiples p) :
   apply Subtype.ext
   ext e
   simp only [Subgroup.coe_mul, Homeomorph.mul_apply, addRightZMultiples_apply]
-  change e + ((a : 𝕜) + b) = e + (b : 𝕜) + a
+  push_cast
   abel
 
 theorem addRightZMultiples_injective :
@@ -133,32 +133,19 @@ theorem addCircleMulEquiv_apply [PreconnectedSpace 𝕜] [DiscreteTopology (zmul
     addCircleMulEquiv a = addRightZMultiples a.toAdd :=
   rfl
 
-variable [NoZeroSMulDivisors ℤ 𝕜]
-
-/-- For a non-torsion period (`p ≠ 0` with `NoZeroSMulDivisors ℤ 𝕜`), the period subgroup
-`zmultiples p` is infinite cyclic, identified with `ℤ` by `n ↦ n • p`. -/
-noncomputable def intEquivZMultiples (hp : p ≠ 0) : ℤ ≃+ zmultiples p :=
-  AddEquiv.ofBijective
-    ({ toFun := fun n => ⟨n • p, mem_zmultiples_iff.2 ⟨n, rfl⟩⟩
-       map_zero' := by ext; simp
-       map_add' := fun n m => by ext; simp [add_zsmul] } : ℤ →+ zmultiples p)
-    (by
-      refine ⟨fun n m h => ?_, fun a => ?_⟩
-      · have h' : n • p = m • p := congrArg Subtype.val h
-        have hsub : (n - m) • p = 0 := by rw [sub_zsmul, h']; abel
-        rcases smul_eq_zero.1 hsub with hnm | hp'
-        · exact sub_eq_zero.1 hnm
-        · exact absurd hp' hp
-      · obtain ⟨n, hn⟩ := mem_zmultiples_iff.1 a.2
-        exact ⟨n, by ext; exact hn⟩)
-
 /-- For a non-torsion period, the deck transformation group of the covering
 `(↑) : 𝕜 → AddCircle p` of a preconnected base is infinite cyclic: `Multiplicative ℤ`. For
 `𝕜 = ℝ` this is the deck group of the universal cover `ℝ → S¹`. -/
 noncomputable def addCircleMulEquivMultInt [PreconnectedSpace 𝕜]
-    [DiscreteTopology (zmultiples p)] (hp : p ≠ 0) :
+    [DiscreteTopology (zmultiples p)] (hp : ¬ IsOfFinAddOrder p) :
     Multiplicative ℤ ≃* Deck ((↑) : 𝕜 → AddCircle p) :=
   (intEquivZMultiples hp).toMultiplicative.trans addCircleMulEquiv
+
+@[simp]
+theorem addCircleMulEquivMultInt_apply [PreconnectedSpace 𝕜]
+    [DiscreteTopology (zmultiples p)] (hp : ¬ IsOfFinAddOrder p) (a : Multiplicative ℤ) (e : 𝕜) :
+    (addCircleMulEquivMultInt hp a).1 e = e + a.toAdd • p := by
+  simp [addCircleMulEquivMultInt]
 
 end Deck
 
