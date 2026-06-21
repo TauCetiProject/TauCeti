@@ -12,10 +12,14 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 A function `f : ℝ → ℝ` is *completely monotone* if it is smooth on the closed half-line
 `[0, ∞)` and its iterated derivatives there alternate in sign:
 `(-1)ⁿ f⁽ⁿ⁾(t) ≥ 0` for every `n` and every `t ≥ 0`. Equivalently `f` is nonnegative,
-nonincreasing, convex, and so on through every order. These are the functions that, by
-Bernstein's theorem, are exactly the Laplace transforms of positive measures on `[0, ∞)`;
-the prototypes `t ↦ e^{-x t}` (`x ≥ 0`) are the extreme rays out of which Bernstein's
-theorem builds the general member.
+nonincreasing, convex, and so on through every order. Bernstein's theorem identifies the
+completely monotone functions on the *open* half-line `(0, ∞)` with the Laplace transforms of
+positive measures on `[0, ∞)`. Demanding smoothness up to the boundary point `0`, as we do
+here, is a genuine strengthening: it carves out the subclass whose representing measure has
+every moment finite. (It thereby excludes some Laplace transforms of finite measures, such as
+`t ↦ ∫₀^∞ e^{-x t} (1 + x)⁻² dx`, which is finite at `0` yet has `f'(0⁺) = -∞`.) The
+prototypes `t ↦ e^{-x t}` (`x ≥ 0`) are the extreme rays out of which Bernstein's theorem
+builds the general member.
 
 The smoothness clause is essential and is not folded into the sign condition: an iterated
 derivative defaults to a junk value where the function fails to be differentiable, so
@@ -65,7 +69,7 @@ lemma isCompletelyMonotone_iff {f : ℝ → ℝ} :
 
 /-- Completely monotone functions are exactly absolutely monotone functions after reflecting the
 closed half-line through zero. -/
-lemma isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect {f : ℝ → ℝ} :
+lemma isCompletelyMonotone_iff_absolutelyMonotoneOn_comp_neg {f : ℝ → ℝ} :
     IsCompletelyMonotone f ↔ AbsolutelyMonotoneOn (fun u => f (-u)) (Iic 0) := by
   rw [isCompletelyMonotone_iff,
     AbsolutelyMonotoneOn.iff_iteratedDerivWithin_nonneg (uniqueDiffOn_Iic 0)]
@@ -141,17 +145,17 @@ lemma antitoneOn (hf : IsCompletelyMonotone f) : AntitoneOn f (Ici 0) := by
 /-- Completely monotone functions are closed under addition. -/
 lemma add (hf : IsCompletelyMonotone f) (hg : IsCompletelyMonotone g) :
     IsCompletelyMonotone (f + g) := by
-  rw [isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect]
-  convert (isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect.mp hf).add
-    (isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect.mp hg) using 1
+  rw [isCompletelyMonotone_iff_absolutelyMonotoneOn_comp_neg]
+  convert (isCompletelyMonotone_iff_absolutelyMonotoneOn_comp_neg.mp hf).add
+    (isCompletelyMonotone_iff_absolutelyMonotoneOn_comp_neg.mp hg) using 1
   ext u
   simp [Pi.add_apply]
 
 /-- Completely monotone functions are closed under multiplication by a nonnegative constant. -/
 lemma smul (hf : IsCompletelyMonotone f) {c : ℝ} (hc : 0 ≤ c) :
     IsCompletelyMonotone (c • f) := by
-  rw [isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect]
-  convert (isCompletelyMonotone_iff_absolutelyMonotoneOn_reflect.mp hf).smul hc using 1
+  rw [isCompletelyMonotone_iff_absolutelyMonotoneOn_comp_neg]
+  convert (isCompletelyMonotone_iff_absolutelyMonotoneOn_comp_neg.mp hf).smul hc using 1
   ext u
   simp [Pi.smul_apply, smul_eq_mul]
 
