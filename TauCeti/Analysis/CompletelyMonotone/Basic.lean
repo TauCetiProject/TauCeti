@@ -110,22 +110,22 @@ variable {f g : ℝ → ℝ}
 lemma contDiffOn (hf : IsCompletelyMonotone f) : ContDiffOn ℝ ∞ f (Ici 0) := hf.1
 
 /-- The sign-alternation property of the iterated derivatives of a completely monotone
-function. -/
+function: `0 ≤ (-1)ⁿ f⁽ⁿ⁾(t)` for every `n` and every `t ≥ 0`. -/
 @[grind =>]
-lemma sign (hf : IsCompletelyMonotone f) (n : ℕ) {t : ℝ} (ht : 0 ≤ t) :
-    0 ≤ (-1) ^ n * iteratedDerivWithin n f (Ici 0) t := hf.2 n t ht
+lemma neg_one_pow_mul_iteratedDerivWithin_nonneg (hf : IsCompletelyMonotone f) (n : ℕ) {t : ℝ}
+    (ht : 0 ≤ t) : 0 ≤ (-1) ^ n * iteratedDerivWithin n f (Ici 0) t := hf.2 n t ht
 
 /-- A completely monotone function is nonnegative on `[0, ∞)`. -/
 @[grind =>]
 lemma nonneg (hf : IsCompletelyMonotone f) {t : ℝ} (ht : 0 ≤ t) : 0 ≤ f t := by
-  simpa [iteratedDerivWithin_zero] using hf.sign 0 ht
+  simpa [iteratedDerivWithin_zero] using hf.neg_one_pow_mul_iteratedDerivWithin_nonneg 0 ht
 
 /-- The derivative within `[0, ∞)` of a completely monotone function is nonpositive: it is
 nonincreasing. -/
 @[grind =>]
 lemma derivWithin_nonpos (hf : IsCompletelyMonotone f) {t : ℝ} (ht : 0 ≤ t) :
     derivWithin f (Ici 0) t ≤ 0 := by
-  have h := hf.sign 1 ht
+  have h := hf.neg_one_pow_mul_iteratedDerivWithin_nonneg 1 ht
   rw [pow_one, iteratedDerivWithin_one] at h
   linarith
 
