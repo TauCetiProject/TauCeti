@@ -2,6 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.RingTheory.Bialgebra.Equiv
 import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 
 /-!
@@ -23,6 +24,8 @@ the reductive-groups roadmap Layer 0 target "R-points as a group" and its follow
 * `AlgHom.mapDomain`: pre-composition by a bialgebra morphism as a monoid homomorphism of
   convolution monoids.
 * `AlgHom.mapDomain_id` and `AlgHom.mapDomain_comp`: identity and composition laws.
+* `AlgHom.mapDomainMulEquiv`: the equiv-version of `AlgHom.mapDomain`, turning a bialgebra
+  isomorphism into a multiplicative equivalence of convolution monoids.
 * `AlgHom.mapValue_mapDomain`: pre-composition in the coordinate algebra commutes with
   post-composition in the value algebra.
 * `AlgHom.mapDomain_inv_apply`: pointwise inverse formula after pre-composition.
@@ -107,6 +110,41 @@ lemma mapDomain_comp (ψ : H₂ →ₐc[R] H₃) (φ : H₁ →ₐc[R] H₂) :
     toConv_ofConv, BialgHom.comp_toAlgHom, AlgHom.comp_assoc]
 
 end BialgebraComp
+
+section BialgebraEquiv
+
+variable [CommSemiring H₁] [CommSemiring H₂]
+variable [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂]
+variable [CommSemiring A] [Algebra R A]
+
+/-- A bialgebra isomorphism `e : H₁ ≃ₐc[R] H₂` induces a multiplicative equivalence of the
+convolution monoids of points, by pre-composition: the equiv-version of the contravariant
+functoriality `mapDomain`. -/
+noncomputable def mapDomainMulEquiv (e : H₁ ≃ₐc[R] H₂) :
+    WithConv (H₂ →ₐ[R] A) ≃* WithConv (H₁ →ₐ[R] A) where
+  toFun := mapDomain (A := A) (e : H₁ →ₐc[R] H₂)
+  invFun := mapDomain (A := A) (e.symm : H₂ →ₐc[R] H₁)
+  map_mul' := map_mul _
+  left_inv f := by
+    have h : (mapDomain (A := A) (e.symm : H₂ →ₐc[R] H₁)).comp
+        (mapDomain (A := A) (e : H₁ →ₐc[R] H₂)) = MonoidHom.id _ := by
+      rw [← mapDomain_comp, e.comp_symm, mapDomain_id]
+    exact DFunLike.congr_fun h f
+  right_inv f := by
+    have h : (mapDomain (A := A) (e : H₁ →ₐc[R] H₂)).comp
+        (mapDomain (A := A) (e.symm : H₂ →ₐc[R] H₁)) = MonoidHom.id _ := by
+      rw [← mapDomain_comp, e.symm_comp, mapDomain_id]
+    exact DFunLike.congr_fun h f
+
+@[simp]
+lemma mapDomainMulEquiv_apply (e : H₁ ≃ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] A)) :
+    mapDomainMulEquiv e f = mapDomain (e : H₁ →ₐc[R] H₂) f := rfl
+
+@[simp]
+lemma mapDomainMulEquiv_symm_apply (e : H₁ ≃ₐc[R] H₂) (f : WithConv (H₁ →ₐ[R] A)) :
+    (mapDomainMulEquiv (A := A) e).symm f = mapDomain (e.symm : H₂ →ₐc[R] H₁) f := rfl
+
+end BialgebraEquiv
 
 section BialgebraMapValue
 

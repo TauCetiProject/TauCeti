@@ -36,8 +36,6 @@ and this identifies its coordinate Hopf algebra `R[ℤⁿ]` with `R[ℤ]^{⊗ n}
 
 ## Main definitions
 
-* `TauCeti.AlgHom.mapDomainMulEquiv`: a bialgebra isomorphism induces a multiplicative
-  equivalence of convolution monoids of points, by pre-composition.
 * `TauCeti.MonoidAlgebra.prodTensorAlgEquiv`: the algebra isomorphism
   `R[G × H] ≃ₐ[R] R[G] ⊗[R] R[H]`.
 * `TauCeti.MonoidAlgebra.prodTensorBialgEquiv`: the same map as a bialgebra isomorphism.
@@ -62,83 +60,68 @@ namespace TauCeti
 
 universe u v w w'
 
-namespace AlgHom
-
-variable {R H₁ H₂ A : Type*} [CommSemiring R]
-variable [CommSemiring H₁] [CommSemiring H₂] [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂]
-variable [CommSemiring A] [Algebra R A]
-
-/-- A bialgebra isomorphism `e : H₁ ≃ₐc[R] H₂` induces a multiplicative equivalence of the
-convolution monoids of points, by pre-composition: the equiv-version of the contravariant
-functoriality `AlgHom.mapDomain`. -/
-noncomputable def mapDomainMulEquiv (e : H₁ ≃ₐc[R] H₂) :
-    WithConv (H₂ →ₐ[R] A) ≃* WithConv (H₁ →ₐ[R] A) where
-  toFun := mapDomain (A := A) (e : H₁ →ₐc[R] H₂)
-  invFun := mapDomain (A := A) (e.symm : H₂ →ₐc[R] H₁)
-  map_mul' := map_mul _
-  left_inv f := by
-    have h : (mapDomain (A := A) (e.symm : H₂ →ₐc[R] H₁)).comp
-        (mapDomain (A := A) (e : H₁ →ₐc[R] H₂)) = MonoidHom.id _ := by
-      rw [← mapDomain_comp, e.comp_symm, mapDomain_id]
-    exact DFunLike.congr_fun h f
-  right_inv f := by
-    have h : (mapDomain (A := A) (e : H₁ →ₐc[R] H₂)).comp
-        (mapDomain (A := A) (e.symm : H₂ →ₐc[R] H₁)) = MonoidHom.id _ := by
-      rw [← mapDomain_comp, e.symm_comp, mapDomain_id]
-    exact DFunLike.congr_fun h f
-
-@[simp]
-lemma mapDomainMulEquiv_apply (e : H₁ ≃ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] A)) :
-    mapDomainMulEquiv e f = mapDomain (e : H₁ →ₐc[R] H₂) f := rfl
-
-@[simp]
-lemma mapDomainMulEquiv_symm_apply (e : H₁ ≃ₐc[R] H₂) (f : WithConv (H₁ →ₐ[R] A)) :
-    (mapDomainMulEquiv (A := A) e).symm f = mapDomain (e.symm : H₂ →ₐc[R] H₁) f := rfl
-
-end AlgHom
-
 namespace MonoidAlgebra
 
 variable (R : Type u) [CommSemiring R]
-variable {G : Type v} {H : Type w} [CommMonoid G] [CommMonoid H]
+variable {G : Type v} {H : Type w} [Monoid G] [Monoid H]
 
 /-- The group-like monoid homomorphism `(g, h) ↦ single g 1 ⊗ₜ single h 1` from `G × H` into the
 multiplicative monoid of `R[G] ⊗[R] R[H]`. -/
-noncomputable def prodChar : G × H →* MonoidAlgebra R G ⊗[R] MonoidAlgebra R H :=
-  ((Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := MonoidAlgebra R G)
-        (B := MonoidAlgebra R H)).toMonoidHom.comp (of R G)).comp (MonoidHom.fst G H) *
-  ((Algebra.TensorProduct.includeRight (R := R) (A := MonoidAlgebra R G)
-        (B := MonoidAlgebra R H)).toMonoidHom.comp (of R H)).comp (MonoidHom.snd G H)
+private noncomputable def prodGroupLike :
+    G × H →* MonoidAlgebra R G ⊗[R] MonoidAlgebra R H where
+  toFun p := single p.1 (1 : R) ⊗ₜ[R] single p.2 1
+  map_one' := by
+    simp only [Prod.fst_one, Prod.snd_one, ← MonoidAlgebra.one_def,
+      Algebra.TensorProduct.one_def]
+  map_mul' x y := by
+    simp only [Prod.fst_mul, Prod.snd_mul, Algebra.TensorProduct.tmul_mul_tmul,
+      single_mul_single, mul_one]
 
 @[simp]
-theorem prodChar_apply (g : G) (h : H) :
-    prodChar R (g, h) = single g (1 : R) ⊗ₜ[R] single h 1 := by
-  simp [prodChar, Algebra.TensorProduct.tmul_mul_tmul]
+private theorem prodGroupLike_apply (g : G) (h : H) :
+    prodGroupLike R (g, h) = single g (1 : R) ⊗ₜ[R] single h 1 := rfl
 
 /-- The forward algebra map `R[G × H] →ₐ[R] R[G] ⊗[R] R[H]`, sending `single (g, h) 1` to
 `single g 1 ⊗ₜ single h 1`. -/
-noncomputable def prodTensorAlgHom :
+private noncomputable def prodTensorAlgHom :
     MonoidAlgebra R (G × H) →ₐ[R] MonoidAlgebra R G ⊗[R] MonoidAlgebra R H :=
-  lift R (MonoidAlgebra R G ⊗[R] MonoidAlgebra R H) (G × H) (prodChar R)
+  lift R (MonoidAlgebra R G ⊗[R] MonoidAlgebra R H) (G × H) (prodGroupLike R)
 
 @[simp]
-theorem prodTensorAlgHom_single (g : G) (h : H) :
+private theorem prodTensorAlgHom_single (g : G) (h : H) :
     prodTensorAlgHom R (single (g, h) (1 : R)) = single g 1 ⊗ₜ[R] single h 1 := by
-  simp only [prodTensorAlgHom, lift_single, one_smul, prodChar_apply]
+  simp only [prodTensorAlgHom, lift_single, one_smul, prodGroupLike_apply]
+
+/-- The images of the two inclusions `R[G] → R[G × H]` and `R[H] → R[G × H]` commute: `single
+(g, 1) a` and `single (1, h) b` multiply to `single (g, h) (a * b)` either way, since `R` is
+commutative. This is the hypothesis needed to assemble the tensor-product universal map. -/
+private theorem commute_mapDomainAlgHom_inl_inr (x : MonoidAlgebra R G) (y : MonoidAlgebra R H) :
+    Commute (mapDomainAlgHom R R (MonoidHom.inl G H) x)
+      (mapDomainAlgHom R R (MonoidHom.inr G H) y) := by
+  induction x using MonoidAlgebra.induction_on with
+  | hM g =>
+    induction y using MonoidAlgebra.induction_on with
+    | hM h =>
+      simp only [of_apply, mapDomainAlgHom_apply, mapDomain_single, MonoidHom.inl_apply,
+        MonoidHom.inr_apply, commute_iff_eq, single_mul_single, Prod.mk_mul_mk, mul_one, one_mul]
+    | hadd y₁ y₂ hy₁ hy₂ => rw [map_add]; exact hy₁.add_right hy₂
+    | hsmul r y hy => rw [map_smul]; exact hy.smul_right r
+  | hadd x₁ x₂ hx₁ hx₂ => rw [map_add]; exact hx₁.add_left hx₂
+  | hsmul r x hx => rw [map_smul]; exact hx.smul_left r
 
 /-- The inverse algebra map `R[G] ⊗[R] R[H] →ₐ[R] R[G × H]`, the tensor-product universal map of
 the two inclusions `R[G] → R[G × H]` and `R[H] → R[G × H]`. -/
-noncomputable def tensorProdAlgHom :
+private noncomputable def tensorProdAlgHom :
     MonoidAlgebra R G ⊗[R] MonoidAlgebra R H →ₐ[R] MonoidAlgebra R (G × H) :=
   Algebra.TensorProduct.lift
     (mapDomainAlgHom R R (MonoidHom.inl G H) :
       MonoidAlgebra R G →ₐ[R] MonoidAlgebra R (G × H))
     (mapDomainAlgHom R R (MonoidHom.inr G H) :
       MonoidAlgebra R H →ₐ[R] MonoidAlgebra R (G × H))
-    (fun _ _ => Commute.all _ _)
+    (commute_mapDomainAlgHom_inl_inr R)
 
 @[simp]
-theorem tensorProdAlgHom_tmul_single (g : G) (h : H) :
+private theorem tensorProdAlgHom_tmul_single (g : G) (h : H) :
     tensorProdAlgHom R (single g (1 : R) ⊗ₜ[R] single h 1) = single (g, h) 1 := by
   simp only [tensorProdAlgHom, Algebra.TensorProduct.lift_tmul, mapDomainAlgHom_apply,
     mapDomain_single, single_mul_single, MonoidHom.inl_apply, MonoidHom.inr_apply,
@@ -246,6 +229,21 @@ theorem prodPointsMulEquiv_snd_ofConv_single
     BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.includeRight_apply, BialgEquiv.coe_toBialgHom]
   rw [show (1 : MonoidAlgebra R G) = single 1 1 from MonoidAlgebra.one_def,
     MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single]
+
+/-- The inverse of `prodPointsMulEquiv` assembles an `A`-point of `D(G × H)` from a pair of
+points of `D(G)` and `D(H)`: on the generator `single (g, h) 1` it multiplies the value of the
+first point at `single g 1` and the value of the second at `single h 1`. -/
+@[simp]
+theorem prodPointsMulEquiv_symm_ofConv_single
+    (f₁ : WithConv (MonoidAlgebra R G →ₐ[R] A)) (f₂ : WithConv (MonoidAlgebra R H →ₐ[R] A))
+    (g : G) (h : H) :
+    (prodPointsMulEquiv.symm (f₁, f₂)).ofConv (single (g, h) (1 : R)) =
+      f₁.ofConv (single g 1) * f₂.ofConv (single h 1) := by
+  rw [prodPointsMulEquiv, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
+    AlgHom.mapDomainMulEquiv_apply]
+  simp only [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+    BialgEquiv.coe_toBialgHom, MonoidAlgebra.prodTensorBialgEquiv_single,
+    AffineGroup.Product.pointsMulEquiv_symm_apply, Algebra.TensorProduct.productMap_apply_tmul]
 
 end DiagonalizableGroup
 
