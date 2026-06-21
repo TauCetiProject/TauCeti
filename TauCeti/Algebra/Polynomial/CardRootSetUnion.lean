@@ -35,9 +35,9 @@ built on.
 
 ## Main results
 
-* `TauCeti.Polynomial.ncard_iUnion_roots_natDegree_le_coeff_mem_le`: at most `#U ^ (d + 1) · d`
+* `TauCeti.Polynomial.ncard_biUnion_roots_natDegree_le_coeff_mem_le`: at most `#U ^ (d + 1) · d`
   roots in `S` among all degree-`≤ d` polynomials with every coefficient in a finite set `U`.
-* `TauCeti.Polynomial.ncard_iUnion_roots_natDegree_le_abs_intCoeff_le`: the integer
+* `TauCeti.Polynomial.ncard_biUnion_roots_natDegree_le_abs_intCoeff_le`: the integer
   specialisation, `(2 · B + 1) ^ (d + 1) · d` roots among all degree-`≤ d` integer polynomials
   with every coefficient bounded by `B` in absolute value. This is the form named by the
   Layer-2 ("effective Hermite–Minkowski") target.
@@ -54,7 +54,7 @@ finite set `U`, mapped along a ring hom `m : R →+* S`, number at most `#U ^ (d
 at most `#U ^ (d + 1)` such polynomials, and each, having degree at most `d`, has at most `d` roots
 in `S`. This is the explicit cardinality of the set whose finiteness is
 `Polynomial.bUnion_roots_finite`. -/
-theorem ncard_iUnion_roots_natDegree_le_coeff_mem_le (m : R →+* S) (d : ℕ) (U : Finset R) :
+theorem ncard_biUnion_roots_natDegree_le_coeff_mem_le (m : R →+* S) (d : ℕ) (U : Finset R) :
     (⋃ (f : R[X]) (_ : f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U),
         ((f.map m).roots.toFinset : Set S)).ncard ≤ U.card ^ (d + 1) * d := by
   classical
@@ -82,10 +82,10 @@ most `d` with every coefficient bounded by `B` in absolute value number at most
 `(2 · B + 1) ^ (d + 1) · d`. Each of the `2 · B + 1` integers in `[-B, B]` is an allowed
 coefficient, and a degree-`≤ d` polynomial has at most `d` roots. This is the counting input named
 by the Layer-2 effective Hermite–Minkowski target. -/
-theorem ncard_iUnion_roots_natDegree_le_abs_intCoeff_le (m : ℤ →+* S) (d B : ℕ) :
+theorem ncard_biUnion_roots_natDegree_le_abs_intCoeff_le (m : ℤ →+* S) (d B : ℕ) :
     (⋃ (f : ℤ[X]) (_ : f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)),
         ((f.map m).roots.toFinset : Set S)).ncard ≤ (2 * B + 1) ^ (d + 1) * d := by
-  have key := ncard_iUnion_roots_natDegree_le_coeff_mem_le m d (Finset.Icc (-(B : ℤ)) B)
+  have key := ncard_biUnion_roots_natDegree_le_coeff_mem_le m d (Finset.Icc (-(B : ℤ)) B)
   have hU : (Finset.Icc (-(B : ℤ)) B).card = 2 * B + 1 := by rw [Int.card_Icc]; omega
   rw [hU] at key
   have hpred : ∀ (f : ℤ[X]) (i : ℕ),
