@@ -68,9 +68,6 @@ namespace TauCeti.Semigroups
 
 variable (X : Type*) [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 
--- Needed for `integral_smul` in the resolvent definition; not auto-synthesized
--- at `maxSynthPendingDepth = 3`.
-instance : SMulCommClass ℝ ℝ X := smulCommClass_self ℝ X
 
 /-- A strongly continuous one-parameter semigroup (C₀-semigroup) on a Banach space
 ([EN] Def. I.5.1, [Linares] Def. 1).
