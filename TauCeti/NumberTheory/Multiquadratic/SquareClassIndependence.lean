@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import TauCeti.NumberTheory.Multiquadratic.Degree
+import Mathlib.Algebra.Group.Subgroup.Even
 import Mathlib.Algebra.Module.ZMod
 import Mathlib.LinearAlgebra.LinearIndependent.Defs
 
@@ -38,27 +39,15 @@ namespace TauCeti.Multiquadratic
 
 variable {K : Type*} [Field K]
 
-/-- The squares `(Kˣ)²`, viewed as an additive subgroup of `Additive Kˣ`. -/
-def squaresAddSubgroup (K : Type*) [Field K] : AddSubgroup (Additive Kˣ) :=
-  Subgroup.toAddSubgroup (powMonoidHom 2 : Kˣ →* Kˣ).range
-
-/-- A unit lies in the squares subgroup iff it is a square. -/
-theorem mem_squaresAddSubgroup_iff (g : Additive Kˣ) :
-    g ∈ squaresAddSubgroup K ↔ IsSquare (Additive.toMul g) := by
-  rw [squaresAddSubgroup, Additive.mem_toAddSubgroup, MonoidHom.mem_range,
-    isSquare_iff_exists_sq]
-  simp only [powMonoidHom_apply]
-  exact ⟨fun ⟨r, hr⟩ => ⟨r, hr.symm⟩, fun ⟨r, hr⟩ => ⟨r, hr.symm⟩⟩
-
 /-- **The square-class group** `Kˣ ⧸ (Kˣ)²`, written additively on `Additive Kˣ`. -/
 abbrev SquareClassGroup (K : Type*) [Field K] : Type _ :=
-  Additive Kˣ ⧸ squaresAddSubgroup K
+  Additive Kˣ ⧸ (Subgroup.square Kˣ).toAddSubgroup
 
 /-- The square-class group is a `ZMod 2`-module: every element has order dividing two, since the
 double of any unit class is the class of a square. -/
 instance : Module (ZMod 2) (SquareClassGroup K) :=
   QuotientAddGroup.zmodModule fun x => by
-    rw [mem_squaresAddSubgroup_iff, toMul_nsmul]
+    rw [Additive.mem_toAddSubgroup, Subgroup.mem_square, toMul_nsmul]
     exact ⟨Additive.toMul x, pow_two _⟩
 
 /-- The square class of a unit. -/
@@ -67,8 +56,9 @@ def squareClass (u : Kˣ) : SquareClassGroup K :=
 
 /-- A unit has trivial square class iff it is a square. -/
 @[simp] theorem squareClass_eq_zero_iff (u : Kˣ) : squareClass u = 0 ↔ IsSquare u := by
-  rw [squareClass, QuotientAddGroup.eq_zero_iff, mem_squaresAddSubgroup_iff]
-  rfl
+  rw [squareClass, QuotientAddGroup.eq_zero_iff, Additive.mem_toAddSubgroup,
+    Subgroup.mem_square]
+  simp
 
 /-- The square class of a product is the sum of the square classes. -/
 theorem squareClass_prod {ι : Type*} (S : Finset ι) (d : ι → Kˣ) :
