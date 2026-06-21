@@ -53,7 +53,8 @@ jobs:
           sparse-checkout: scripts/zulip
       - name: Reconcile Zulip reactions
         if: steps.pr.outputs.skip != 'true'
-        continue-on-error: true
+        # No continue-on-error: the script exits 0 for cosmetic/transient hiccups
+        # and non-zero only for a persistent config break, which we *want* loud.
         env:
           GH_TOKEN: ${{ github.token }}
           ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}

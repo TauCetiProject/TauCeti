@@ -25,10 +25,16 @@ and we only ever add/remove our own reactions.
 
 Usage:
     zulip_pr_status.py reconcile <pr_number> [--create] [--ci STATE]
+    zulip_pr_status.py check
 
 `--create` posts the per-PR message if it does not exist yet (used by the PR
 "opened" workflow and by backfill). Without it, a PR with no message yet is left
 alone (other events only react to an existing message, never create one).
+
+`check` is a credentials/health probe: it authenticates and confirms the bot is
+subscribed to the channel, then exits 0. It touches no PR and no message, so a
+scheduled job can run it to catch a broken key during quiet periods, when no PR
+event would otherwise exercise the integration.
 
 `--ci STATE` (running|success|failure|none) forces the CI group instead of
 deriving it from the `build` commit status. The `pr-build` workflow posts the
@@ -43,9 +49,19 @@ Environment:
     GH_TOKEN / GITHUB_TOKEN                  used by `gh` for the GitHub API
 
 The only runtime dependencies are python3's standard library and an
-authenticated `gh` CLI -- no third-party packages. Emoji updates are cosmetic;
-on any non-fatal hiccup we log and exit 0 so a caller can wrap us in
-`continue-on-error` and never fail CI over a reaction.
+authenticated `gh` CLI -- no third-party packages.
+
+Failure modes are split on purpose, because "a reaction didn't update" and "the
+whole integration is dead" deserve different volumes:
+
+  * A *transient* hiccup (one Zulip 5xx, a network blip, a single missing PR)
+    is cosmetic and self-heals on the next reconcile, so we log it and exit 0.
+  * A *configuration* failure -- missing/empty creds, a bad API key (401), a
+    forbidden bot (403), or the bot not subscribed to the channel -- breaks
+    every PR and will not fix itself. We log it, emit a GitHub Actions
+    `::error::` annotation (visible even under `continue-on-error`), and exit
+    non-zero so the workflow run goes red. This is the loud signal that the
+    secret needs re-setting; see scripts/zulip/README.md for the fix.
 """
 
 import base64
@@ -62,6 +78,14 @@ REPO = os.environ.get("GH_REPO", "FormalFrontier/TauCeti")
 CHANNEL = os.environ.get("ZULIP_CHANNEL", "Tau Ceti")
 TOPIC = os.environ.get("ZULIP_TOPIC", "PRs")
 ZWSP = "\u200b"  # zero-width space, used to defuse mentions/linkifiers
+
+
+class ConfigError(RuntimeError):
+    """A persistent auth/permission/config failure that will not self-heal:
+    missing or empty creds, a bad API key (401), a forbidden bot (403), or the
+    bot not being subscribed to the channel. Raised so the caller can surface it
+    loudly (non-zero exit + ::error:: annotation) instead of the quiet cosmetic
+    path, because it breaks the integration for *every* PR, not just one."""
 
 # name -> (reaction_type, emoji_code). Unicode emoji resolve by name on the
 # server, so emoji_code is None; realm (custom) emoji must carry their id.
@@ -221,10 +245,21 @@ class Zulip:
                 pass
             if payload.get("code") in tolerate:
                 return payload
-            raise RuntimeError(f"Zulip {method} {path} failed: {e.code} {payload or e.reason}")
+            detail = f"Zulip {method} {path} failed: {e.code} {payload or e.reason}"
+            # 401/403 (and Zulip's UNAUTHORIZED code, e.g. "Malformed API key")
+            # mean the creds themselves are wrong -- a persistent break for every
+            # PR, not a one-off hiccup. Surface it as a ConfigError so main()
+            # fails loudly instead of swallowing it on the cosmetic path.
+            if e.code in (401, 403) or payload.get("code") == "UNAUTHORIZED":
+                raise ConfigError(detail)
+            raise RuntimeError(detail)
 
     def my_user_id(self):
         return self._call("GET", "/users/me", None)["user_id"]
+
+    def my_subscriptions(self):
+        return [s["name"] for s in
+                self._call("GET", "/users/me/subscriptions", None)["subscriptions"]]
 
     def get_messages(self, narrow, num_before=1000):
         params = {
@@ -346,13 +381,60 @@ def reconcile(z, pr, create, ci_override):
     log(f"PR #{pr}: review={rev} ci={ci_emoji}")
 
 
+def check(z):
+    """Health probe: authenticate and confirm the bot can act in the channel.
+
+    A bad key raises ConfigError from `my_user_id` (the 401 path); a bot that is
+    not subscribed to the channel can authenticate but cannot post or react, so
+    that is treated as a config failure too. Touches no PR and no message."""
+    bot_id = z.my_user_id()
+    subs = z.my_subscriptions()
+    if CHANNEL not in subs:
+        raise ConfigError(
+            f"bot (user {bot_id}) is not subscribed to channel {CHANNEL!r}; "
+            f"it cannot post or react there. Subscribe it and re-run.")
+    log(f"OK: authenticated as user {bot_id}, subscribed to {CHANNEL!r}")
+
+
+def fail_config(msg):
+    """Report a persistent config break loudly: a GitHub Actions error
+    annotation (visible in the run summary even under `continue-on-error`) plus a
+    non-zero exit so the workflow run goes red. See the module docstring."""
+    log(f"CONFIG ERROR: {msg}")
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        # One line, no embedded newlines: the ::error:: command must be self-contained.
+        print(f"::error title=Zulip PR status integration is broken::{msg}", flush=True)
+    return 1
+
+
 def main(argv):
-    if len(argv) < 3 or argv[1] != "reconcile":
+    cmd = argv[1] if len(argv) > 1 else None
+    if cmd not in ("reconcile", "check"):
         print(__doc__)
         return 2
-    pr = argv[2].lstrip("#")
+
+    # Strip the creds: a stray trailing newline or surrounding whitespace in the
+    # GitHub secret is the single most common way ZULIP_API_KEY breaks (the byte
+    # rides into the Basic-auth header and Zulip rejects it as "Malformed API
+    # key"). Defang it here so a sloppily-set secret still works.
+    email = (os.environ.get("ZULIP_EMAIL") or "").strip()
+    api_key = (os.environ.get("ZULIP_API_KEY") or "").strip()
+    site = (os.environ.get("ZULIP_SITE") or "https://leanprover.zulipchat.com").strip()
+    if not (email and api_key):
+        return fail_config("ZULIP_EMAIL / ZULIP_API_KEY not set (no bot configured)")
+    z = Zulip(email, api_key, site)
+
+    if cmd == "check":
+        try:
+            check(z)
+        except ConfigError as exc:
+            return fail_config(str(exc))
+        return 0
+
+    # cmd == "reconcile"
+    pr = argv[2].lstrip("#") if len(argv) > 2 else ""
     if not pr.isdigit():
-        log(f"not a PR number: {argv[2]!r}")
+        log(f"not a PR number: {argv[2]!r}" if len(argv) > 2 else "missing PR number")
         return 0
     rest = argv[3:]
     create = "--create" in rest
@@ -360,15 +442,11 @@ def main(argv):
     if "--ci" in rest:
         ci_override = rest[rest.index("--ci") + 1]
 
-    email = os.environ.get("ZULIP_EMAIL")
-    api_key = os.environ.get("ZULIP_API_KEY")
-    site = os.environ.get("ZULIP_SITE", "https://leanprover.zulipchat.com")
-    if not (email and api_key):
-        log("ZULIP_EMAIL / ZULIP_API_KEY not set; skipping (no bot configured yet)")
-        return 0
     try:
-        reconcile(Zulip(email, api_key, site), pr, create, ci_override)
-    except Exception as exc:  # cosmetic: never fail the caller over a reaction
+        reconcile(z, pr, create, ci_override)
+    except ConfigError as exc:  # broken creds/permissions: loud, fails the run
+        return fail_config(str(exc))
+    except Exception as exc:  # cosmetic: never fail the caller over one reaction
         log(f"reconcile failed (non-fatal): {exc}")
     return 0
 
