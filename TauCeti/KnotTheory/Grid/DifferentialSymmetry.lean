@@ -31,8 +31,8 @@ marking-avoidance condition only refers to the union `O ∪ X`, which the swap f
 
 * `TauCeti.GridRectangleBetween.interior_transpose`: the reflected rectangle's interior is the
   diagonal reflection of the original interior.
-* `TauCeti.GridRectangleBetween.transpose_isEmpty` and
-  `TauCeti.GridRectangleBetween.transpose_avoidsMarkings`: emptiness and marking avoidance are
+* `TauCeti.GridRectangleBetween.isEmpty_transpose` and
+  `TauCeti.GridRectangleBetween.avoidsMarkings_transpose`: emptiness and marking avoidance are
   preserved by the reflection.
 * `TauCeti.GridDiagram.fullyBlockedRectangleCount_transpose`: the fully blocked rectangle count
   is preserved by the diagonal reflection.
@@ -66,12 +66,12 @@ def transpose (R : GridRectangleBetween x y) :
   right := R.top
   left_ne_right := R.bottom_ne_top
   map_left := by
-    change y.transpose (x R.left) = x.transpose (x R.right)
+    simp only [GridRectangleBetween.bottom, GridRectangleBetween.top]
     rw [GridState.transpose_apply, GridState.transpose_apply, Equiv.symm_apply_apply,
       Equiv.symm_apply_eq]
     exact R.map_right.symm
   map_right := by
-    change y.transpose (x R.right) = x.transpose (x R.left)
+    simp only [GridRectangleBetween.bottom, GridRectangleBetween.top]
     rw [GridState.transpose_apply, GridState.transpose_apply, Equiv.symm_apply_apply,
       Equiv.symm_apply_eq]
     exact R.map_left.symm
@@ -81,7 +81,6 @@ def transpose (R : GridRectangleBetween x y) :
       intro h; rw [h] at hsymm; exact hl hsymm.symm
     have hd_right : x.toPerm.symm c ≠ R.right := by
       intro h; rw [h] at hsymm; exact hr hsymm.symm
-    change y.transpose c = x.transpose c
     rw [GridState.transpose_apply, GridState.transpose_apply, Equiv.symm_apply_eq,
       R.map_of_ne _ hd_left hd_right]
     exact hsymm.symm
@@ -99,20 +98,17 @@ theorem transpose_right (R : GridRectangleBetween x y) : R.transpose.right = R.t
 /-- The reflected rectangle's initial side row is the original initial side column. -/
 @[simp]
 theorem transpose_bottom (R : GridRectangleBetween x y) : R.transpose.bottom = R.left := by
-  change x.transpose R.transpose.left = R.left
-  rw [transpose_left]
-  change x.transpose (x R.left) = R.left
-  rw [GridState.transpose_apply, Equiv.symm_apply_apply]
+  simp only [GridRectangleBetween.bottom, transpose_left, GridState.transpose_apply,
+    Equiv.symm_apply_apply]
 
 /-- The reflected rectangle's terminal side row is the original terminal side column. -/
 @[simp]
 theorem transpose_top (R : GridRectangleBetween x y) : R.transpose.top = R.right := by
-  change x.transpose R.transpose.right = R.right
-  rw [transpose_right]
-  change x.transpose (x R.right) = R.right
-  rw [GridState.transpose_apply, Equiv.symm_apply_apply]
+  simp only [GridRectangleBetween.top, transpose_right, GridState.transpose_apply,
+    Equiv.symm_apply_apply]
 
 /-- The toroidal rectangle of the reflected oriented rectangle, written out by its four sides. -/
+@[simp]
 theorem transpose_toGridRectangle (R : GridRectangleBetween x y) :
     R.transpose.toGridRectangle =
       { left := R.bottom, right := R.top, bottom := R.left, top := R.right } := by
@@ -129,6 +125,7 @@ theorem eq_of_sides {R S : GridRectangleBetween x y} (hleft : R.left = S.left)
   rfl
 
 /-- Reflecting an oriented rectangle twice gives the original rectangle. -/
+@[simp]
 theorem transpose_transpose (R : GridRectangleBetween x y) : R.transpose.transpose = R :=
   eq_of_sides (transpose_bottom R) (transpose_top R)
 
@@ -170,14 +167,14 @@ theorem interior_transpose (R : GridRectangleBetween x y) :
     exact ⟨hcd.2, hcd.1⟩
 
 /-- The diagonal reflection preserves emptiness of a rectangle between grid states. -/
-theorem transpose_isEmpty (R : GridRectangleBetween x y) :
+theorem isEmpty_transpose (R : GridRectangleBetween x y) :
     R.transpose.IsEmpty ↔ R.IsEmpty := by
   unfold GridRectangleBetween.IsEmpty GridRectangle.IsEmptyFor
   rw [interior_transpose, GridState.transpose_pointSet,
     Finset.disjoint_image Prod.swap_injective]
 
 /-- The diagonal reflection preserves marking avoidance of a rectangle between grid states. -/
-theorem transpose_avoidsMarkings (G : GridDiagram n) (R : GridRectangleBetween x y) :
+theorem avoidsMarkings_transpose (G : GridDiagram n) (R : GridRectangleBetween x y) :
     R.transpose.AvoidsMarkings G.transpose ↔ R.AvoidsMarkings G := by
   unfold GridRectangleBetween.AvoidsMarkings GridRectangle.AvoidsMarkings
   rw [interior_transpose, G.transpose_OSet, G.transpose_XSet, ← Finset.image_union,
@@ -194,8 +191,8 @@ reflected diagram. -/
 theorem mem_fullyBlockedRectangles_transpose (x y : GridState n) (R : GridRectangleBetween x y) :
     R.transpose ∈ G.transpose.fullyBlockedRectangles x.transpose y.transpose ↔
       R ∈ G.fullyBlockedRectangles x y := by
-  simp only [mem_fullyBlockedRectangles, GridRectangleBetween.transpose_isEmpty,
-    GridRectangleBetween.transpose_avoidsMarkings]
+  simp only [mem_fullyBlockedRectangles, GridRectangleBetween.isEmpty_transpose,
+    GridRectangleBetween.avoidsMarkings_transpose]
 
 /-- The fully blocked rectangle count is invariant under the diagonal reflection of a grid
 diagram and its two states. This is the matrix-coefficient form of the statement that the
@@ -217,6 +214,7 @@ theorem fullyBlockedRectangleCount_transpose (x y : GridState n) :
 
 /-- The fully blocked rectangles are unchanged by swapping the `O` and `X` markings, since
 marking avoidance only refers to the union of the two marking sets. -/
+@[simp]
 theorem fullyBlockedRectangles_swapMarkings (x y : GridState n) :
     G.swapMarkings.fullyBlockedRectangles x y = G.fullyBlockedRectangles x y := by
   ext R
@@ -227,6 +225,7 @@ theorem fullyBlockedRectangles_swapMarkings (x y : GridState n) :
   exact and_comm
 
 /-- The fully blocked rectangle count is invariant under swapping the `O` and `X` markings. -/
+@[simp]
 theorem fullyBlockedRectangleCount_swapMarkings (x y : GridState n) :
     G.swapMarkings.fullyBlockedRectangleCount x y = G.fullyBlockedRectangleCount x y := by
   rw [fullyBlockedRectangleCount_def, fullyBlockedRectangleCount_def,
@@ -234,6 +233,7 @@ theorem fullyBlockedRectangleCount_swapMarkings (x y : GridState n) :
 
 /-- The generator row of the fully blocked differential is invariant under swapping the `O` and
 `X` markings. -/
+@[simp]
 theorem fullyBlockedDifferentialOnGenerator_swapMarkings (x : GridState n) :
     G.swapMarkings.fullyBlockedDifferentialOnGenerator x =
       G.fullyBlockedDifferentialOnGenerator x := by
@@ -242,6 +242,7 @@ theorem fullyBlockedDifferentialOnGenerator_swapMarkings (x : GridState n) :
 
 /-- The whole fully blocked grid differential is invariant under swapping the `O` and `X`
 markings. -/
+@[simp]
 theorem fullyBlockedDifferential_swapMarkings :
     G.swapMarkings.fullyBlockedDifferential = G.fullyBlockedDifferential := by
   have h : (fun x : GridState n =>
