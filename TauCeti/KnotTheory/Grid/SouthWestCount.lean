@@ -2,7 +2,6 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Fin.Basic
 import TauCeti.KnotTheory.Grid.GradingInteger
 
 /-!
@@ -39,7 +38,6 @@ variable {n : ℕ} (G : GridDiagram n)
 /-- The integer `O`-Maslov grading of a grid state written entirely as counts over column
 indices. Every southwest count in `maslovOℤ` is a state or marking point-set count, so it collapses
 to a column-pair count and the grading evaluates without unfolding any point-pair product. -/
-@[simp]
 theorem maslovOℤ_eq_card (x : GridState n) :
     G.maslovOℤ x =
       ((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < x p.2).card : ℤ)
@@ -53,7 +51,6 @@ theorem maslovOℤ_eq_card (x : GridState n) :
 
 /-- The integer `X`-Maslov grading of a grid state written entirely as counts over column
 indices. -/
-@[simp]
 theorem maslovXℤ_eq_card (x : GridState n) :
     G.maslovXℤ x =
       ((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < x p.2).card : ℤ)
