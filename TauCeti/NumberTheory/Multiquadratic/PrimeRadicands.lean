@@ -26,6 +26,9 @@ factor), so it is not a square.
 * `TauCeti.Multiquadratic.not_isSquare_prod_primes`: for distinct primes `p i`, no nonempty subset
   product `∏_{i ∈ S} (p i : ℚ)` is a square — square-class independence in the form the degree
   theorem consumes.
+* `TauCeti.Multiquadratic.not_isSquare_prod_primes_of_injective`: the same square-class
+  independence, packaged from an injective family of primes — the shape the multiquadratic degree
+  and Galois-group theorems consume directly.
 * `TauCeti.Multiquadratic.finrank_adjoin_sqrt_primes`: `[ℚ(√p₁, …, √pₙ) : ℚ] = 2^|ι|` for a finite
   family of distinct primes.
 * `TauCeti.Multiquadratic.finrank_adjoin_sqrt_two_three`: `[ℚ(√2, √3) : ℚ] = 4`.
@@ -59,6 +62,22 @@ theorem not_isSquare_prod_primes {ι : Type*} (p : ι → ℕ) {S : Finset ι}
     intro hprod
     exact (hp i hi).ne_one (Nat.dvd_one.mp (hprod ▸ Finset.dvd_prod_of_mem p hi))
 
+/-- The real square root of a natural number squares back to its rational value, in the form
+`(√n)² = algebraMap ℚ ℝ n`. This supplies the `hroot` hypothesis that the multiquadratic degree and
+Galois-group theorems consume for the family of square roots of a prime family. -/
+theorem sq_sqrt_natCast (n : ℕ) :
+    (Real.sqrt n) ^ 2 = algebraMap ℚ ℝ (n : ℚ) := by
+  rw [Real.sq_sqrt (Nat.cast_nonneg _), map_natCast]
+
+/-- **Square-class independence of an injective family of primes.** If `p : ι → ℕ` is injective and
+each `p i` is prime, then no nonempty subset product `∏_{i ∈ S} (p i : ℚ)` is a square. This is the
+`hindep` hypothesis the multiquadratic degree and Galois-group theorems consume directly. -/
+theorem not_isSquare_prod_primes_of_injective {ι : Type*} (p : ι → ℕ)
+    (hp : ∀ i, (p i).Prime) (hinj : Function.Injective p) :
+    ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (p i : ℚ)) :=
+  fun _ hS => not_isSquare_prod_primes p (fun i _ => hp i)
+    (fun _ _ _ _ hij h => hij (hinj h)) hS
+
 /-- **Degree of a prime-radicand multiquadratic field.** For a finite family of distinct primes
 `p : ι → ℕ`, the field generated over `ℚ` by their real square roots has degree `2^|ι|`. This is the
 prime-indexed corollary of the field-generic degree theorem `finrank_adjoin_range`. -/
@@ -66,13 +85,9 @@ theorem finrank_adjoin_sqrt_primes {ι : Type*} [Finite ι] (p : ι → ℕ)
     (hp : ∀ i, (p i).Prime) (hinj : Function.Injective p) :
     Module.finrank ℚ
         (IntermediateField.adjoin ℚ (Set.range fun i => (Real.sqrt (p i) : ℝ)))
-      = 2 ^ Nat.card ι := by
-  refine finrank_adjoin_range (d := fun i => (p i : ℚ))
-    (root := fun i => Real.sqrt (p i)) (fun i => ?_) (fun S hS => ?_)
-  · rw [Real.sq_sqrt (Nat.cast_nonneg _), map_natCast]
-  · refine not_isSquare_prod_primes p (fun i _ => hp i) ?_ hS
-    intro i _ j _ hij h
-    exact hij (hinj h)
+      = 2 ^ Nat.card ι :=
+  finrank_adjoin_range (d := fun i => (p i : ℚ)) (root := fun i => Real.sqrt (p i))
+    (fun i => sq_sqrt_natCast (p i)) (not_isSquare_prod_primes_of_injective p hp hinj)
 
 /-- **Worked example: `[ℚ(√2, √3) : ℚ] = 4`.** The smallest nontrivial multiquadratic degree,
 obtained from `finrank_adjoin_sqrt_primes` with the primes `2` and `3`. -/

@@ -31,18 +31,7 @@ open IntermediateField
 
 namespace TauCeti.Multiquadratic
 
-variable {K L : Type*} [Field K] [Field L] [Algebra K L] {ι : Type*}
-
-private theorem sqrt_nat_sq (p : ι → ℕ) (i : ι) :
-    (Real.sqrt (p i)) ^ 2 = algebraMap ℚ ℝ (p i : ℚ) := by
-  rw [Real.sq_sqrt (Nat.cast_nonneg _), map_natCast]
-
-private theorem not_isSquare_prod_sqrt_primes (p : ι → ℕ)
-    (hp : ∀ i, (p i).Prime) (hinj : Function.Injective p) :
-    ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (p i : ℚ)) := by
-  intro S hS
-  exact not_isSquare_prod_primes p (fun i _ => hp i)
-    (fun i _ j _ hij h => hij (hinj h)) hS
+variable {ι : Type*}
 
 /-- **The Galois group of a prime-radicand multiquadratic field is `(ℤ/2)ⁿ`.** For a finite family
 of distinct primes `p : ι → ℕ`, the field generated over `ℚ` by their real square roots has Galois
@@ -54,7 +43,7 @@ noncomputable def galoisGroupEquivSqrtPrimes [Finite ι] (p : ι → ℕ)
         adjoin ℚ (Set.range fun i => (Real.sqrt (p i) : ℝ))) ≃*
       Multiplicative (ι → ZMod 2) :=
   galoisGroupEquiv (d := fun i => (p i : ℚ)) (root := fun i => Real.sqrt (p i))
-    (sqrt_nat_sq p) (not_isSquare_prod_sqrt_primes p hp hinj)
+    (fun i => sq_sqrt_natCast (p i)) (not_isSquare_prod_primes_of_injective p hp hinj)
 
 /-- The prime-radicand Galois equivalence sends an automorphism to its sign pattern on the
 generators `√(p i)`. -/
@@ -65,7 +54,7 @@ generators `√(p i)`. -/
     galoisGroupEquivSqrtPrimes p hp hinj σ =
       Multiplicative.ofAdd (signPattern (fun i => (Real.sqrt (p i) : ℝ)) σ) := by
   exact galoisGroupEquiv_apply (d := fun i => (p i : ℚ)) (root := fun i => Real.sqrt (p i))
-    (sqrt_nat_sq p) (not_isSquare_prod_sqrt_primes p hp hinj) σ
+    (fun i => sq_sqrt_natCast (p i)) (not_isSquare_prod_primes_of_injective p hp hinj) σ
 
 /-- The inverse prime-radicand Galois equivalence realizes a sign pattern by sending each
 generator `√(p i)` to `(-1)^(ε i) · √(p i)`. -/
@@ -76,8 +65,8 @@ generator `√(p i)` to `(-1)^(ε i) · √(p i)`. -/
         (gen (fun i => (Real.sqrt (p i) : ℝ)) i)
       = (-1) ^ (ε i).val * gen (fun i => (Real.sqrt (p i) : ℝ)) i := by
   exact galoisGroupEquiv_symm_apply_gen (d := fun i => (p i : ℚ))
-    (root := fun i => Real.sqrt (p i)) (sqrt_nat_sq p)
-    (not_isSquare_prod_sqrt_primes p hp hinj) ε i
+    (root := fun i => Real.sqrt (p i)) (fun i => sq_sqrt_natCast (p i))
+    (not_isSquare_prod_primes_of_injective p hp hinj) ε i
 
 /-- **Cardinality of the Galois group of a prime-radicand multiquadratic field.** For a finite
 family of distinct primes `p : ι → ℕ`, `|Gal(ℚ(√p₁, …, √pₙ)/ℚ)| = 2^|ι|`. -/
@@ -86,7 +75,7 @@ theorem card_aut_adjoin_sqrt_primes [Finite ι] (p : ι → ℕ)
     Nat.card (adjoin ℚ (Set.range fun i => (Real.sqrt (p i) : ℝ)) ≃ₐ[ℚ]
         adjoin ℚ (Set.range fun i => (Real.sqrt (p i) : ℝ))) = 2 ^ Nat.card ι :=
   card_aut_adjoin_range (d := fun i => (p i : ℚ)) (root := fun i => Real.sqrt (p i))
-    (sqrt_nat_sq p) (not_isSquare_prod_sqrt_primes p hp hinj)
+    (fun i => sq_sqrt_natCast (p i)) (not_isSquare_prod_primes_of_injective p hp hinj)
 
 /-- **Worked example: `|Gal(ℚ(√2, √3)/ℚ)| = 4`.** The two-prime field obtained from
 `card_aut_adjoin_sqrt_primes` with the primes `2` and `3`. -/
