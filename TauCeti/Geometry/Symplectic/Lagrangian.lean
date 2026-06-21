@@ -3,7 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
-import TauCeti.Geometry.Symplectic.StandardCompatible
+import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
 # Isotropic, coisotropic, and Lagrangian subspaces of a symplectic form
@@ -20,9 +20,13 @@ Lagrangian subspaces are the linear model for the boundary conditions of Lagrang
 (Lane F3 of the analytic Heegaard Floer roadmap) and for the totally real tori in `Sym^g(Σ)`
 (Lane F4): the roadmap keeps *totally real* and *Lagrangian* as separate named hypotheses, so this
 file builds the Lagrangian notion on the symplectic form `ω` rather than on an almost complex
-structure. The two meet on the standard model `V × V`: its coordinate factors are simultaneously
-maximal totally real (`TauCeti.Submodule.isMaximalTotallyReal_prod_top_bot_product`) and Lagrangian
-(`isLagrangian_prod_top_bot` below).
+structure. The two meet on the standard model `V × V`: its coordinate factors `V × {0}` and
+`{0} × V` are simultaneously maximal totally real
+(`TauCeti.Submodule.isMaximalTotallyReal_prod_top_bot_product` and
+`TauCeti.Submodule.isMaximalTotallyReal_prod_bot_top_product`) and Lagrangian
+(`TauCeti.SymplecticForm.stdSymplecticForm_isLagrangian_prod_top_bot` and
+`TauCeti.SymplecticForm.stdSymplecticForm_isLagrangian_prod_bot_top`), proved in
+`TauCeti.Geometry.Symplectic.StandardLagrangian`.
 
 This is the pointwise linear-algebra layer, with no topology or smoothness bundled, built directly
 on Mathlib's bilinear-form orthogonal complement
@@ -38,8 +42,10 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
 * `TauCeti.SymplecticForm.IsLagrangian.two_mul_finrank`: a Lagrangian subspace is half-dimensional,
   `2 · dim L = dim V`, and `IsIsotropic.isLagrangian_of_finrank` is the converse for an isotropic
   subspace of half the dimension.
-* `TauCeti.SymplecticForm.isLagrangian_prod_top_bot` and `isLagrangian_prod_bot_top`: the two
-  coordinate factors of the standard model `V × V` are Lagrangian.
+
+The standard model `V × V` and the Lagrangian-ness of its coordinate factors live in the companion
+file `TauCeti.Geometry.Symplectic.StandardLagrangian`, which depends on the inner-product structure
+of the standard symplectic form.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.3.
@@ -81,6 +87,16 @@ lemma orthogonal_le (h : L ≤ L') : ω.orthogonal L' ≤ ω.orthogonal L :=
 lemma le_orthogonal_orthogonal : L ≤ ω.orthogonal (ω.orthogonal L) :=
   ω.toBilinForm.le_orthogonal_orthogonal ω.isRefl
 
+/-- The complement of the zero subspace is the whole space. -/
+@[simp]
+lemma orthogonal_bot : ω.orthogonal (⊥ : Submodule ℝ V) = ⊤ :=
+  ω.toBilinForm.orthogonal_bot
+
+/-- The complement of the whole space is the zero subspace, since `ω` is nondegenerate. -/
+@[simp]
+lemma orthogonal_top : ω.orthogonal (⊤ : Submodule ℝ V) = ⊥ :=
+  ω.toBilinForm.orthogonal_top_eq_bot ω.nondegenerate
+
 /-- A submodule is isotropic if it is contained in its symplectic complement, equivalently `ω`
 vanishes on it. -/
 def IsIsotropic (ω : SymplecticForm V) (L : Submodule ℝ V) : Prop :=
@@ -89,6 +105,12 @@ def IsIsotropic (ω : SymplecticForm V) (L : Submodule ℝ V) : Prop :=
 /-- A submodule is coisotropic if it contains its symplectic complement. -/
 def IsCoisotropic (ω : SymplecticForm V) (L : Submodule ℝ V) : Prop :=
   ω.orthogonal L ≤ L
+
+/-- Coisotropy unfolds to its defining containment of the symplectic complement. -/
+lemma isCoisotropic_iff : ω.IsCoisotropic L ↔ ω.orthogonal L ≤ L := Iff.rfl
+
+/-- A coisotropic subspace contains its symplectic complement. -/
+lemma IsCoisotropic.orthogonal_le (h : ω.IsCoisotropic L) : ω.orthogonal L ≤ L := h
 
 /-- A submodule is Lagrangian if it equals its own symplectic complement. -/
 def IsLagrangian (ω : SymplecticForm V) (L : Submodule ℝ V) : Prop :=
@@ -174,40 +196,6 @@ lemma IsIsotropic.isLagrangian_of_finrank (h : ω.IsIsotropic L)
   omega
 
 end FiniteDimensional
-
-section StandardModel
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-
-open scoped InnerProductSpace
-
-/-- The first coordinate factor `V × {0}` is Lagrangian for the standard symplectic form. -/
-lemma isLagrangian_prod_top_bot :
-    (stdSymplecticForm (V := V)).IsLagrangian ((⊤ : Submodule ℝ V).prod ⊥) := by
-  refine Submodule.ext fun x => ?_
-  rw [mem_orthogonal_iff, Submodule.mem_prod]
-  refine ⟨fun h => ⟨trivial, ?_⟩, fun h y hy => ?_⟩
-  · rw [Submodule.mem_bot]
-    have hh := h (x.2, 0) (Submodule.mem_prod.2 ⟨trivial, Submodule.zero_mem _⟩)
-    simpa using hh
-  · have hy2 : y.2 = 0 := (Submodule.mem_bot ℝ).1 (Submodule.mem_prod.1 hy).2
-    have hx2 : x.2 = 0 := (Submodule.mem_bot ℝ).1 h.2
-    simp [hy2, hx2]
-
-/-- The second coordinate factor `{0} × V` is Lagrangian for the standard symplectic form. -/
-lemma isLagrangian_prod_bot_top :
-    (stdSymplecticForm (V := V)).IsLagrangian ((⊥ : Submodule ℝ V).prod ⊤) := by
-  refine Submodule.ext fun x => ?_
-  rw [mem_orthogonal_iff, Submodule.mem_prod]
-  refine ⟨fun h => ⟨?_, trivial⟩, fun h y hy => ?_⟩
-  · rw [Submodule.mem_bot]
-    have hh := h (0, x.1) (Submodule.mem_prod.2 ⟨Submodule.zero_mem _, trivial⟩)
-    simpa using hh
-  · have hy1 : y.1 = 0 := (Submodule.mem_bot ℝ).1 (Submodule.mem_prod.1 hy).1
-    have hx1 : x.1 = 0 := (Submodule.mem_bot ℝ).1 h.1
-    simp [hy1, hx1]
-
-end StandardModel
 
 end SymplecticForm
 
