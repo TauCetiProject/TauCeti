@@ -39,6 +39,8 @@ forms, with no positive-definite-kernel notion, so this is new; no code is vendo
   pointwise consequences (conjugate symmetry and nonnegative diagonal).
 * `IsPositiveDefiniteKernel.posSemidef_gram`, `IsPositiveDefiniteKernel.sum_conj_mul_mul_nonneg`:
   restatements for arbitrary finite Gram matrices and their quadratic forms.
+* `TauCeti.isPositiveDefiniteKernel_iff`: the quadratic-form characterization, whose reverse
+  direction builds a positive-definite kernel from conjugate symmetry and form nonnegativity.
 * `IsPositiveDefiniteKernel.add`, `IsPositiveDefiniteKernel.smul`, `IsPositiveDefiniteKernel.mul`:
   closure under sums, nonnegative real scalar multiples, and (Schur / entrywise) products.
 * `IsPositiveDefiniteKernel.comp`: pullback along an arbitrary map.
@@ -82,8 +84,8 @@ theorem posSemidef_gram (hK : IsPositiveDefiniteKernel K) {ι : Type*} [Finite �
   classical
   letI := Fintype.ofFinite ι
   let e := Fintype.equivFin ι
-  have h := (hK (Fintype.card ι) (fun i : Fin (Fintype.card ι) => v (e.symm i))).submatrix e
-  simpa [Matrix.submatrix, e] using h
+  rw [← Matrix.posSemidef_submatrix_equiv e.symm]
+  exact hK (Fintype.card ι) (fun i => v (e.symm i))
 
 /-- The quadratic-form characterization of a positive-definite kernel on `Fin n`-indexed
 families. -/
@@ -142,5 +144,28 @@ theorem comp (hK : IsPositiveDefiniteKernel K) (f : β → α) :
   exact hK n (fun i => f (v i))
 
 end IsPositiveDefiniteKernel
+
+/-- The quadratic-form characterization of a positive-definite kernel: `K` is positive definite if
+and only if it is conjugate-symmetric and every Hermitian form
+`∑ᵢⱼ conj (x i) · x j · K (v i) (v j)` is nonnegative. The reverse direction is the introduction
+rule that builds a positive-definite kernel directly from the quadratic-form condition (for
+instance for the `K(a, b) = F(a + b⋆)` construction), without unfolding `Matrix.PosSemidef`. -/
+theorem isPositiveDefiniteKernel_iff {K : α → α → ℂ} :
+    IsPositiveDefiniteKernel K ↔
+      (∀ a b, conj (K a b) = K b a) ∧
+        ∀ (n : ℕ) (v : Fin n → α) (x : Fin n → ℂ),
+          0 ≤ ∑ i, ∑ j, conj (x i) * x j * K (v i) (v j) := by
+  classical
+  refine ⟨fun hK => ⟨hK.conj_symm, hK.sum_conj_mul_mul_nonneg⟩, fun ⟨hsymm, hpos⟩ n v => ?_⟩
+  rw [Matrix.posSemidef_iff_dotProduct_mulVec]
+  refine ⟨?_, fun x => ?_⟩
+  · ext i j
+    rw [Matrix.conjTranspose_apply, ← starRingEnd_apply]
+    exact hsymm (v j) (v i)
+  · refine (hpos n v x).trans_eq ?_
+    simp only [dotProduct, Matrix.mulVec, Matrix.of_apply, Pi.star_apply, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+    rw [starRingEnd_apply]
+    ring
 
 end TauCeti
