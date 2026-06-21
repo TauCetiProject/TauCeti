@@ -15,11 +15,11 @@ hypotheses (a totally real subspace `L` is one complementary to its `J`-image, `
 Lagrangian subspace is one equal to its symplectic complement, `L^ω = L`), because the two play
 different roles downstream: totally real boundary conditions for the Cauchy--Riemann operator and
 the tori `T_α`, `T_β` in `Sym^g(Σ)` (Lane F4), Lagrangian boundary conditions for exact Lagrangian
-Floer homology (Lane F3). They are nevertheless tightly linked: as soon as a symplectic form `ω`
-*tames* an almost complex structure `J`, every Lagrangian subspace is automatically maximal
-totally real. This file records that link in general, complementing the standard-model statement
-in `Lagrangian.lean` where the coordinate factors of `V × V` are seen to be simultaneously
-Lagrangian and maximal totally real.
+Floer homology (Lane F3). They are nevertheless tightly linked: on a finite-dimensional space, as
+soon as a symplectic form `ω` *tames* an almost complex structure `J`, every Lagrangian subspace
+is automatically maximal totally real. This file records that link in general, complementing the
+standard-model statement in `Lagrangian.lean` where the coordinate factors of `V × V` are seen to
+be simultaneously Lagrangian and maximal totally real.
 
 The mechanism is the one classical computation behind "a compatible `J` makes a Lagrangian totally
 real" (McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Section 2.6), split here
@@ -32,8 +32,8 @@ compatible distinct:
 * **Spanning** `L ⊔ JL = ⊤` is the half-dimension count: `J` is a linear isomorphism so
   `dim JL = dim L`, and a Lagrangian subspace is half-dimensional, so `dim L + dim JL = dim V`.
 
-Taming alone therefore upgrades a Lagrangian subspace to a maximal totally real one. Invariance is
-needed only for the parallel fact that `JL` is again Lagrangian (`IsLagrangian.map_of_invariant`).
+On a finite-dimensional space, taming alone therefore upgrades a Lagrangian subspace to a maximal
+totally real one.
 
 ## Main declarations
 
@@ -45,9 +45,6 @@ needed only for the parallel fact that `JL` is again Lagrangian (`IsLagrangian.m
   compatible pair.
 * `TauCeti.SymplecticForm.IsLagrangian.existsUnique_add_of_tames`: the resulting unique
   decomposition `x = (x ∈ L) + (x ∈ JL)`.
-* `TauCeti.SymplecticForm.IsIsotropic.map_of_invariant` and
-  `TauCeti.SymplecticForm.IsLagrangian.map_of_invariant`: under invariance, the `J`-image of an
-  isotropic (resp. Lagrangian) subspace is isotropic (resp. Lagrangian).
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Sections 2.3 and 2.6.
@@ -81,17 +78,6 @@ theorem IsIsotropic.disjoint_map_of_tames (h : ω.IsIsotropic L) (htame : ω.Tam
   rw [← hJyx, hy0]
   simp
 
-/-- Under invariance, the `J`-image of an isotropic subspace is isotropic: `ω(J a, J b) = ω(a, b)`
-vanishes on `L` exactly when `ω` does. -/
-theorem IsIsotropic.map_of_invariant (h : ω.IsIsotropic L) (hinv : ω.Invariant J) :
-    ω.IsIsotropic (L.map J.toLinearMap) := by
-  rw [isIsotropic_iff]
-  rintro v ⟨a, haL, rfl⟩ w ⟨b, hbL, rfl⟩
-  have hcomm : ω (J.toLinearMap a) (J.toLinearMap b) = ω a b :=
-    (ω.invariant_iff J).mp hinv a b
-  rw [hcomm]
-  exact isIsotropic_iff.1 h a haL b hbL
-
 /-- The `J`-image of a subspace has the same dimension, since `J` is a linear isomorphism. -/
 private theorem finrank_map_toLinearMap (L : Submodule ℝ V) :
     finrank ℝ (L.map J.toLinearMap) = finrank ℝ L :=
@@ -121,18 +107,10 @@ theorem IsLagrangian.isMaximalTotallyReal_of_compatible (hL : ω.IsLagrangian L)
   hL.isMaximalTotallyReal_of_tames h.tames
 
 /-- The unique decomposition of every vector as an element of a Lagrangian subspace `L` plus an
-element of its `J`-image, for a taming pair. -/
+element of its `J`-image, for a taming pair on a finite-dimensional space. -/
 theorem IsLagrangian.existsUnique_add_of_tames (hL : ω.IsLagrangian L) (htame : ω.Tames J)
     (x : V) : ∃! y : L × L.map J.toLinearMap, (y.1 : V) + y.2 = x :=
   (hL.isMaximalTotallyReal_of_tames htame).existsUnique_add x
-
-/-- Under invariance, the `J`-image of a Lagrangian subspace is again Lagrangian: it is isotropic
-(`IsIsotropic.map_of_invariant`) and of the same, hence half, dimension. -/
-theorem IsLagrangian.map_of_invariant (hL : ω.IsLagrangian L) (hinv : ω.Invariant J) :
-    ω.IsLagrangian (L.map J.toLinearMap) := by
-  refine (hL.isIsotropic.map_of_invariant hinv).isLagrangian_of_finrank ?_
-  rw [finrank_map_toLinearMap]
-  exact hL.two_mul_finrank
 
 end FiniteDimensional
 
