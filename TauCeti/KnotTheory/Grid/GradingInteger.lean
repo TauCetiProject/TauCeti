@@ -44,6 +44,9 @@ so `M_O(x)` is an integer. The same computation handles `M_X`.
 * `TauCeti.GridDiagram.maslovOℤ_swapMarkings`, `TauCeti.GridDiagram.maslovXℤ_swapMarkings`,
   `TauCeti.GridDiagram.alexanderTwoℤ_swapMarkings`: the integer-valued gradings transform
   under the marking swap.
+* `TauCeti.GridDiagram.maslovOℤ_eq_card`, `TauCeti.GridDiagram.maslovXℤ_eq_card`: the integer
+  Maslov gradings written entirely as counts over column indices, so they evaluate on an
+  explicit grid without unfolding any point-pair product.
 
 ## References
 
@@ -88,6 +91,33 @@ theorem maslovXℤ_def (x : GridState n) :
       (GridPoint.I x.pointSet x.pointSet : ℤ) - GridPoint.JNum x.pointSet G.XSet
         + GridPoint.I G.XSet G.XSet + 1 :=
   rfl
+
+/-- The integer `O`-Maslov grading of a grid state written entirely as counts over column
+indices. Every southwest count in `maslovOℤ` is a state or marking point-set count, so it collapses
+to a column-pair count and the grading evaluates without unfolding any point-pair product. -/
+theorem maslovOℤ_eq_card (x : GridState n) :
+    G.maslovOℤ x =
+      ((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < x p.2).card : ℤ)
+        - ((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < G.O p.2).card
+          + (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ G.O p.1 < x p.2).card)
+        + (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ G.O p.1 < G.O p.2).card + 1 := by
+  rw [maslovOℤ_def, OSet, GridState.I_self_pointSet_eq_card x,
+    GridState.JNum_pointSet_eq_card x G.O, GridState.I_self_pointSet_eq_card G.O]
+  push_cast
+  ring
+
+/-- The integer `X`-Maslov grading of a grid state written entirely as counts over column
+indices. -/
+theorem maslovXℤ_eq_card (x : GridState n) :
+    G.maslovXℤ x =
+      ((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < x p.2).card : ℤ)
+        - ((Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ x p.1 < G.X p.2).card
+          + (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ G.X p.1 < x p.2).card)
+        + (Finset.univ.filter fun p : Fin n × Fin n => p.1 < p.2 ∧ G.X p.1 < G.X p.2).card + 1 := by
+  rw [maslovXℤ_def, XSet, GridState.I_self_pointSet_eq_card x,
+    GridState.JNum_pointSet_eq_card x G.X, GridState.I_self_pointSet_eq_card G.X]
+  push_cast
+  ring
 
 /-- The rational `O`-Maslov grading is the cast of its integer counterpart: `M_O` is an
 integer. This specializes the general self-pairing integrality `GridPoint.JDiff_self_eq_intCast`
