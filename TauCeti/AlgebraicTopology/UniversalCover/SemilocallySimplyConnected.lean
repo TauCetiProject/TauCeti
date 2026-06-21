@@ -20,8 +20,8 @@ here.
 The condition is genuinely *semi*local: the null-homotopy is allowed to leave `U` and use the
 whole of `X`. It is therefore weaker than asking each `U` to be simply connected on its own (the
 local notion); the constructor `SemilocallySimplyConnectedSpace.of_forall_isSimplyConnected_nhds`
-records that implication, and through it every strongly locally contractible space, and every
-discrete space, is semilocally simply connected.
+records that implication, and through it every strongly locally contractible space is semilocally
+simply connected. Discrete spaces are also instances, witnessed by singleton neighbourhoods.
 
 ## Main declarations
 
