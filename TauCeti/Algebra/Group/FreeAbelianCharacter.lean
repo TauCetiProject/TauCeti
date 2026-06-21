@@ -53,8 +53,8 @@ private theorem freeAbelianCharEquiv_toAdditiveRight_single
     χ.toAdditiveRight (Finsupp.single x m) =
       (zmultiplesHom (Additive M))
         (Additive.ofMul (χ (Multiplicative.ofAdd (Finsupp.single x 1)))) m := by
-  rw [← Finsupp.smul_single_one x m, MonoidHom.toAdditiveRight_apply_apply,
-    ofAdd_zsmul, map_zpow, ofMul_zpow, zmultiplesHom_apply]
+  rw [← Finsupp.smul_single_one x m, map_zsmul, zmultiplesHom_apply,
+    MonoidHom.toAdditiveRight_apply_apply]
 
 private theorem freeAbelianCharEquiv_left_inv_single
     (χ : Multiplicative (σ →₀ ℤ) →* M) (x : σ) (m : ℤ) :
@@ -106,6 +106,7 @@ theorem freeAbelianCharEquiv_symm_apply_ofAdd (c : σ → M) (m : σ →₀ ℤ)
 
 /-- Reading off generator values is natural in the target group: post-composing with a
 homomorphism `ψ : M →* N` commutes with `freeAbelianCharEquiv`. -/
+@[simp]
 theorem freeAbelianCharEquiv_comp {N : Type*} [CommGroup N] (ψ : M →* N)
     (χ : Multiplicative (σ →₀ ℤ) →* M) (i : σ) :
     freeAbelianCharEquiv (ψ.comp χ) i = ψ (freeAbelianCharEquiv χ i) :=

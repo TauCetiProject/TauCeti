@@ -77,6 +77,7 @@ theorem pointsMulEquiv_apply
 
 /-- The inverse points equivalence sends a family `c : σ → Aˣ` to the point extending the
 character of `Multiplicative (σ →₀ ℤ)` determined by `c`. -/
+@[simp]
 theorem pointsMulEquiv_symm_apply (c : σ → Aˣ) :
     (pointsMulEquiv (R := R) (A := A)).symm c =
       toConv (DiagonalizableGroup.point (freeAbelianCharEquiv.symm c)) := by
@@ -115,7 +116,7 @@ theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (c : σ → Aˣ)
   apply (pointsMulEquiv (R := R) (A := B)).injective
   funext i
   rw [pointsMulEquiv_mapValue]
-  simp
+  simp only [MulEquiv.apply_symm_apply]
 
 /-- The rank-`n` split torus `𝔾ₘⁿ`: its `A`-points are `Fin n → Aˣ = (Aˣ)ⁿ`. -/
 noncomputable example (n : ℕ) :
