@@ -49,13 +49,33 @@ namespace TauCeti
 variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasure μ]
 
-/-- The integrand of `charFun μ a` is integrable for a finite measure: it is the bounded
-continuous function `innerProbChar a`. -/
-theorem integrable_innerProbChar (a : E) :
+private theorem integrable_innerProbChar (a : E) :
     Integrable (fun y => exp (⟪y, a⟫ * I)) μ := by
   have h : (fun y => exp (⟪y, a⟫ * I)) = ⇑(innerProbChar a) := by
     ext y; rw [innerProbChar_apply]
   rw [h]; exact (innerProbChar a).integrable (μ := μ)
+
+omit [MeasurableSpace E] [OpensMeasurableSpace E] in
+private theorem exp_mul_conj_exp_inner (y a b : E) :
+    exp (⟪y, a⟫ * I) * conj (exp (⟪y, b⟫ * I)) = exp (⟪y, a - b⟫ * I) := by
+  rw [← Complex.exp_conj, ← Complex.exp_add]
+  congr 1
+  rw [inner_sub_right, map_mul, Complex.conj_ofReal, Complex.conj_I]
+  push_cast
+  ring
+
+omit [MeasurableSpace E] [OpensMeasurableSpace E] in
+private theorem normSq_finset_sum_exp_eq_sum {ι : Type*} (s : Finset ι) (c : ι → ℂ)
+    (t : ι → E) (y : E) :
+    ((normSq (∑ i ∈ s, c i * exp (⟪y, t i⟫ * I)) : ℝ) : ℂ)
+      = ∑ i ∈ s, ∑ j ∈ s, c i * conj (c j) * exp (⟪y, t i - t j⟫ * I) := by
+  have hconj : conj (∑ i ∈ s, c i * exp (⟪y, t i⟫ * I))
+      = ∑ j ∈ s, conj (c j) * conj (exp (⟪y, t j⟫ * I)) := by
+    rw [map_sum]; simp only [map_mul]
+  rw [← mul_conj, hconj, Finset.sum_mul_sum]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  rw [← exp_mul_conj_exp_inner y (t i) (t j)]
+  ring
 
 /-- The Hermitian form of `charFun μ` over a finite family `(cᵢ, tᵢ)` equals the integral of a
 squared modulus. This is the engine behind positive-definiteness: the right-hand side is the
@@ -70,24 +90,6 @@ theorem charFun_sum_mul_conj_eq_integral {ι : Type*} (s : Finset ι) (c : ι �
   have hrow : ∀ i : ι,
       Integrable (fun y => ∑ j ∈ s, c i * conj (c j) * exp (⟪y, t i - t j⟫ * I)) μ :=
     fun i => integrable_finsetSum s fun j _ => hterm i j
-  -- the pointwise factorisation `∑ᵢⱼ cᵢ conj cⱼ exp(⟪y, tᵢ - tⱼ⟫ I) = ‖∑ᵢ cᵢ exp(⟪y, tᵢ⟫ I)‖²`
-  have pt : ∀ y : E, ((normSq (∑ i ∈ s, c i * exp (⟪y, t i⟫ * I)) : ℝ) : ℂ)
-      = ∑ i ∈ s, ∑ j ∈ s, c i * conj (c j) * exp (⟪y, t i - t j⟫ * I) := by
-    intro y
-    have hexp : ∀ i j : ι, exp (⟪y, t i⟫ * I) * conj (exp (⟪y, t j⟫ * I))
-        = exp (⟪y, t i - t j⟫ * I) := by
-      intro i j
-      rw [← Complex.exp_conj, ← Complex.exp_add]
-      congr 1
-      rw [inner_sub_right, map_mul, Complex.conj_ofReal, Complex.conj_I]
-      push_cast
-      ring
-    have hconj : conj (∑ i ∈ s, c i * exp (⟪y, t i⟫ * I))
-        = ∑ j ∈ s, conj (c j) * conj (exp (⟪y, t j⟫ * I)) := by
-      rw [map_sum]; simp only [map_mul]
-    rw [← mul_conj, hconj, Finset.sum_mul_sum]
-    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-    rw [← hexp i j]; ring
   calc ∑ i ∈ s, ∑ j ∈ s, c i * conj (c j) * charFun μ (t i - t j)
       = ∑ i ∈ s, ∑ j ∈ s, ∫ y, c i * conj (c j) * exp (⟪y, t i - t j⟫ * I) ∂μ := by
         refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
@@ -98,7 +100,7 @@ theorem charFun_sum_mul_conj_eq_integral {ι : Type*} (s : Finset ι) (c : ι �
     _ = ∫ y, ∑ i ∈ s, ∑ j ∈ s, c i * conj (c j) * exp (⟪y, t i - t j⟫ * I) ∂μ :=
         (integral_finsetSum s fun i _ => hrow i).symm
     _ = ∫ y, ((normSq (∑ i ∈ s, c i * exp (⟪y, t i⟫ * I)) : ℝ) : ℂ) ∂μ :=
-        integral_congr_ae (.of_forall fun y => (pt y).symm)
+        integral_congr_ae (.of_forall fun y => (normSq_finset_sum_exp_eq_sum s c t y).symm)
     _ = ((∫ y, normSq (∑ i ∈ s, c i * exp (⟪y, t i⟫ * I)) ∂μ : ℝ) : ℂ) := integral_complex_ofReal
 
 /-- The Hermitian form of `charFun μ` over a finite family `(cᵢ, tᵢ)` is a nonnegative real:
@@ -122,9 +124,8 @@ theorem charFun_posSemidef {ι : Type*} (t : ι → E) :
   · -- Hermitian: `conj (charFun μ (tⱼ - tᵢ)) = charFun μ (tᵢ - tⱼ)`
     have h : ∀ i j : ι, conj (charFun μ (t j - t i)) = charFun μ (t i - t j) := by
       intro i j
-      rw [show t j - t i = -(t i - t j) from by abel, charFun_neg, Complex.conj_conj]
-    change (Matrix.of fun i j => charFun μ (t i - t j))ᴴ
-      = Matrix.of fun i j => charFun μ (t i - t j)
+      have hsub : t j - t i = -(t i - t j) := by abel
+      rw [hsub, charFun_neg, Complex.conj_conj]
     ext i j
     simpa only [Matrix.conjTranspose_apply, Matrix.of_apply, ← starRingEnd_apply] using h i j
   · -- the Hermitian form is nonnegative
