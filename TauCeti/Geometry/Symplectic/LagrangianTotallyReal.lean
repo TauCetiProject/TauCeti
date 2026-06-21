@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Geometry.Symplectic.AlmostComplex
 import TauCeti.Geometry.Symplectic.Lagrangian
 import TauCeti.LinearAlgebra.TotallyReal
 
@@ -61,9 +62,7 @@ variable {ω : SymplecticForm V} {J : AlmostComplexStructure V} {L : Submodule �
 
 /-- An isotropic subspace of a taming pair is disjoint from its `J`-image: `L ⊓ JL = ⊥`.
 
-This uses only taming, never invariance or finite-dimensionality. If `x = J y` with both `x` and
-`y` in the isotropic subspace `L`, then `ω(y, J y) = ω(y, x) = 0` by isotropy, so `y = 0` by
-taming, hence `x = 0`. -/
+This uses only taming, never invariance or finite-dimensionality. -/
 theorem IsIsotropic.disjoint_map_of_tames (h : ω.IsIsotropic L) (htame : ω.Tames J) :
     Disjoint L (L.map J.toLinearMap) := by
   rw [Submodule.disjoint_def]
@@ -90,9 +89,7 @@ variable [FiniteDimensional ℝ V]
 /-- A Lagrangian subspace of a taming pair on a finite-dimensional space is maximal totally real:
 `V = L ⊕ JL`.
 
-Disjointness is taming (`IsIsotropic.disjoint_map_of_tames`); the complementary spanning is the
-half-dimension count, `dim L + dim JL = 2 · dim L = dim V`. Note that only taming is required, not
-the full compatibility of `(ω, J)`. -/
+Note that only taming is required, not the full compatibility of `(ω, J)`. -/
 theorem IsLagrangian.isMaximalTotallyReal_of_tames (hL : ω.IsLagrangian L) (htame : ω.Tames J) :
     IsMaximalTotallyReal J.toLinearMap L := by
   have hdim : finrank ℝ V ≤ finrank ℝ L + finrank ℝ (L.map J.toLinearMap) := by
