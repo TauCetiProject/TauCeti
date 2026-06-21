@@ -21,12 +21,8 @@ reflection `GridRectangleBetween.transpose` preserves emptiness and marking avoi
 `fullyBlockedRectangleCount_transpose` and `fullyBlockedRectangleCount_swapMarkings`. Here we lift
 those matrix coefficients to the differential itself: the marking swap fixes the whole
 differential, while the diagonal reflection intertwines the differentials of `G` and `G.transpose`
-through the chain relabeling `GridChain.transposeEquiv` induced by `GridState.transpose`.
-
-## Main definitions
-
-* `TauCeti.GridChain.transposeEquiv`: the linear automorphism of grid chains relabeling each
-  generator by the diagonal reflection of grid states.
+through the chain relabeling `GridChain.transposeEquiv` (defined in `Complex.lean`) induced by
+`GridState.transpose`.
 
 ## Main results
 
@@ -46,39 +42,6 @@ follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 
 -/
 
 namespace TauCeti
-
-namespace GridChain
-
-/-- The linear automorphism of grid chains induced by the diagonal reflection of grid states.
-
-Because `GridState.transpose` is an involution, relabeling each generator `x` by `x.transpose`
-gives a linear automorphism of the chain module `GridChain R n`. -/
-noncomputable def transposeEquiv (R : Type*) [Semiring R] (n : ℕ) :
-    GridChain R n ≃ₗ[R] GridChain R n :=
-  Finsupp.domLCongr
-    { toFun := GridState.transpose
-      invFun := GridState.transpose
-      left_inv := GridState.transpose_transpose
-      right_inv := GridState.transpose_transpose }
-
-/-- The transpose relabeling sends the generator `x` to the generator `x.transpose`. -/
-@[simp]
-theorem transposeEquiv_single {R : Type*} [Semiring R] {n : ℕ} (x : GridState n) (a : R) :
-    transposeEquiv R n (Finsupp.single x a) = Finsupp.single x.transpose a := by
-  unfold transposeEquiv
-  rw [Finsupp.domLCongr_single]
-  rfl
-
-/-- The `y`-coefficient of a relabeled chain is the `y.transpose`-coefficient of the original
-chain. -/
-@[simp]
-theorem transposeEquiv_apply {R : Type*} [Semiring R] {n : ℕ} (f : GridChain R n)
-    (y : GridState n) : transposeEquiv R n f y = f y.transpose := by
-  unfold transposeEquiv
-  rw [Finsupp.domLCongr_apply]
-  exact Finsupp.equivMapDomain_apply _ _ _
-
-end GridChain
 
 namespace GridDiagram
 

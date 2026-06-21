@@ -33,6 +33,8 @@ finite-set disjointness conditions used for empty rectangles and marking-avoidin
 * `TauCeti.GridRectangleBetween.symm`: the opposite oriented rectangle from `y` to `x`.
 * `TauCeti.GridRectangleBetween.transpose`: the diagonal reflection of an oriented rectangle, from
   `x.transpose` to `y.transpose`.
+* `TauCeti.GridRectangleBetween.transposeEquiv`: the diagonal reflection packaged as an involutive
+  equivalence with oriented rectangles from `x.transpose` to `y.transpose`.
 * `TauCeti.GridRectangleBetween.all`: all oriented rectangles from `x` to `y`.
 * `TauCeti.GridRectangleBetween.emptyRectangles`: the empty rectangles from `x` to `y`.
 
@@ -690,16 +692,39 @@ private theorem eq_of_sides {R S : GridRectangleBetween x y} (hleft : R.left = S
 theorem transpose_transpose (R : GridRectangleBetween x y) : R.transpose.transpose = R :=
   eq_of_sides (transpose_bottom R) (transpose_top R)
 
+/-- The diagonal reflection as an equivalence between oriented rectangles from `x` to `y` and
+oriented rectangles from `x.transpose` to `y.transpose`. Since reflecting twice is the identity,
+`transpose` is its own inverse. -/
+def transposeEquiv (x y : GridState n) :
+    GridRectangleBetween x y ≃ GridRectangleBetween x.transpose y.transpose where
+  toFun := transpose
+  invFun := transpose
+  left_inv := transpose_transpose
+  right_inv := transpose_transpose
+
+/-- The transpose equivalence applies a rectangle by reflecting it. -/
+@[simp]
+theorem transposeEquiv_apply (R : GridRectangleBetween x y) :
+    transposeEquiv x y R = R.transpose :=
+  rfl
+
+/-- The inverse of the transpose equivalence is again reflection. -/
+@[simp]
+theorem transposeEquiv_symm_apply (R : GridRectangleBetween x.transpose y.transpose) :
+    (transposeEquiv x y).symm R = R.transpose :=
+  rfl
+
 /-- The diagonal reflection is injective on oriented rectangles. -/
 theorem transpose_injective :
     Function.Injective
-      (transpose : GridRectangleBetween x y → GridRectangleBetween x.transpose y.transpose) := by
-  intro R S h
-  have hl := congrArg (·.left) h
-  have hr := congrArg (·.right) h
-  simp only [transpose_left, transpose_right, GridRectangleBetween.bottom,
-    GridRectangleBetween.top] at hl hr
-  exact eq_of_sides (x.toPerm.injective hl) (x.toPerm.injective hr)
+      (transpose : GridRectangleBetween x y → GridRectangleBetween x.transpose y.transpose) :=
+  (transposeEquiv x y).injective
+
+/-- Two oriented rectangles have equal diagonal reflections exactly when they are equal. -/
+@[simp]
+theorem transpose_inj {R S : GridRectangleBetween x y} :
+    R.transpose = S.transpose ↔ R = S :=
+  (transposeEquiv x y).apply_eq_iff_eq
 
 /-- The interior of the reflected rectangle is the diagonal reflection of the interior of the
 original rectangle. This is the oriented-rectangle corollary of

@@ -124,15 +124,8 @@ theorem fullyBlockedRectangleCount_transpose (x y : GridState n) :
       G.fullyBlockedRectangleCount x y := by
   rw [fullyBlockedRectangleCount_def, fullyBlockedRectangleCount_def]
   congr 1
-  refine Finset.card_bij' (fun S _ => S.transpose) (fun R _ => R.transpose) ?_ ?_ ?_ ?_
-  · intro S hS
-    exact (G.transpose.mem_fullyBlockedRectangles_transpose x.transpose y.transpose S).mpr hS
-  · intro R hR
-    exact (G.mem_fullyBlockedRectangles_transpose x y R).mpr hR
-  · intro S _
-    exact GridRectangleBetween.transpose_transpose S
-  · intro R _
-    exact GridRectangleBetween.transpose_transpose R
+  exact (Finset.card_equiv (GridRectangleBetween.transposeEquiv x y) fun R =>
+    (G.mem_fullyBlockedRectangles_transpose x y R).symm).symm
 
 /-- The fully blocked rectangles are unchanged by swapping the `O` and `X` markings, since
 marking avoidance only refers to the union of the two marking sets. -/
