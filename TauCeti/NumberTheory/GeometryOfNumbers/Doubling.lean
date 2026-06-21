@@ -69,9 +69,12 @@ coordinate has norm at most `c · r i`. -/
 def box (r : ι → ℝ) (c : ℝ) : Set (ι → ℂ) :=
   {x | ∀ i, ‖x i‖ ≤ c * r i}
 
+/-- Membership in `box r c` unfolds to the coordinatewise norm bounds `‖x i‖ ≤ c · r i`. -/
 @[simp] theorem mem_box {r : ι → ℝ} {c : ℝ} {x : ι → ℂ} :
     x ∈ box r c ↔ ∀ i, ‖x i‖ ≤ c * r i := Iff.rfl
 
+/-- The polydisc `box r c` is monotone in the scale `c` when every coordinate radius `r i`
+is nonnegative: enlarging the scale enlarges the box. -/
 theorem box_mono {r : ι → ℝ} (hr : ∀ i, 0 ≤ r i) {c c' : ℝ} (h : c ≤ c') :
     box r c ⊆ box r c' :=
   fun _ hx i => (hx i).trans (by have := hr i; nlinarith)
@@ -134,14 +137,16 @@ private theorem norm_lt_of_re_im_bound {z : ℂ} {d : ℝ} (hd : 0 ≤ d)
 private theorem cellCount_le {c ε : ℝ} (hε : 0 < ε) (hεc : ε ≤ c) :
     ((⌊2 * Real.sqrt 2 * c / ε⌋₊ : ℕ) : ℝ) + 1 ≤ 4 * c / ε := by
   have hc : 0 < c := hε.trans_le hεc
-  have hfloor := Nat.floor_le (show 0 ≤ 2 * Real.sqrt 2 * c / ε from
-    div_nonneg (mul_nonneg (by positivity) hc.le) hε.le)
+  have hnn : (0 : ℝ) ≤ 2 * Real.sqrt 2 * c / ε :=
+    div_nonneg (mul_nonneg (by positivity) hc.le) hε.le
+  have hfloor := Nat.floor_le hnn
   -- `⌊·⌋·ε ≤ 2√2·c` and `√2 ≤ 3/2`, so `(⌊·⌋ + 1)·ε ≤ 2√2·c + c ≤ 4·c`.
   have hme : (⌊2 * Real.sqrt 2 * c / ε⌋₊ : ℝ) * ε ≤ 2 * Real.sqrt 2 * c := by
     have := mul_le_mul_of_nonneg_right hfloor hε.le
     rwa [div_mul_cancel₀ (2 * Real.sqrt 2 * c) hε.ne'] at this
   have hs : Real.sqrt 2 ≤ 3 / 2 := by
-    rw [show (3 / 2 : ℝ) = Real.sqrt ((3 / 2) ^ 2) from (Real.sqrt_sq (by norm_num)).symm]
+    have h32 : (3 / 2 : ℝ) = Real.sqrt ((3 / 2) ^ 2) := (Real.sqrt_sq (by norm_num)).symm
+    rw [h32]
     exact Real.sqrt_le_sqrt (by norm_num)
   rw [le_div_iff₀ hε]
   nlinarith [hme, hεc, hc, hs]
@@ -154,7 +159,7 @@ The map sending a point to its tuple of cell indices — `⌊((x i).re + c·r i)
 analogous imaginary part, with cell side `δ i = ε·r i/√2` — lands in
 `ι → Icc 0 ⌊2√2·c/ε⌋ × Icc 0 ⌊2√2·c/ε⌋` and is injective on the separated set, because two
 points in the same cell of every coordinate differ by less than `ε·r i` there. -/
-theorem finite_and_card_le_of_separated (r : ι → ℝ) (hr : ∀ i, 0 < r i)
+theorem finite_and_ncard_le_of_subset_box_of_separated (r : ι → ℝ) (hr : ∀ i, 0 < r i)
     {c ε : ℝ} (hε : 0 < ε) (hεc : ε ≤ c) {S : Set (ι → ℂ)} (hS : S ⊆ box r c)
     (hsep : ∀ x ∈ S, ∀ y ∈ S, x ≠ y → ∃ i, ε * r i < ‖x i - y i‖) :
     S.Finite ∧ (S.ncard : ℝ) ≤ (4 * c / ε) ^ (2 * Fintype.card ι) := by
@@ -222,7 +227,7 @@ theorem lattice_inter_box_finite_card (r : ι → ℝ) (hr : ∀ i, 0 < r i)
       (((Λ : Set (ι → ℂ)) ∩ box r 2).ncard : ℝ) ≤ (8 / ρ) ^ (2 * Fintype.card ι) := by
   have hbound : (8 / ρ : ℝ) = 4 * 2 / ρ := by ring
   rw [hbound]
-  refine finite_and_card_le_of_separated r hr hρ0 hρ2 Set.inter_subset_right ?_
+  refine finite_and_ncard_le_of_subset_box_of_separated r hr hρ0 hρ2 Set.inter_subset_right ?_
   intro x hx y hy hxy
   obtain ⟨i, hi⟩ := hsep (x - y) (Λ.sub_mem hx.1 hy.1) (sub_ne_zero_of_ne hxy)
   exact ⟨i, by simpa using hi⟩
@@ -233,6 +238,16 @@ section Doubling
 
 variable [Fintype ι]
 
+/-- Two reals lying in the same half-open floor-cell of positive width `q` (i.e.
+`⌊a / q⌋ = ⌊b / q⌋`) differ by at most `q`. -/
+private theorem abs_sub_le_of_floor_eq {a b q : ℝ} (hq : 0 < q) (h : ⌊a / q⌋ = ⌊b / q⌋) :
+    |a - b| ≤ q := by
+  rw [Int.floor_eq_iff] at h
+  rw [abs_le]
+  refine ⟨?_, ?_⟩ <;>
+    nlinarith [h.1, h.2, Int.floor_le (b / q), Int.lt_floor_add_one (b / q), hq,
+      mul_div_cancel₀ a hq.ne', mul_div_cancel₀ b hq.ne']
+
 /-- **Doubling.** Counting lattice points in the double box loses at most `64 ^ #ι` against
 the unit box: `#(Λ ∩ box r 2) ≤ 64 ^ #ι · #(Λ ∩ box r 1)`.
 
@@ -242,7 +257,7 @@ cell, two `Λ`-points `x` and `x₀` have `x - x₀ ∈ Λ` with each coordinate
 two real parts differ by at most `2·r i/3`, likewise the imaginary, so the norm is at most
 `(2·r i/3)·√2 ≤ r i`), hence `x - x₀ ∈ Λ ∩ box r 1`; so each cell holds at most
 `#(Λ ∩ box r 1)` points. -/
-theorem ncard_box_two_le_doubling (r : ι → ℝ) (hr : ∀ i, 0 < r i)
+theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr : ∀ i, 0 < r i)
     (Λ : AddSubgroup (ι → ℂ)) (hfin : ((Λ : Set (ι → ℂ)) ∩ box r 2).Finite) :
     (((Λ : Set (ι → ℂ)) ∩ box r 2).ncard : ℝ) ≤
       64 ^ Fintype.card ι * ((Λ : Set (ι → ℂ)) ∩ box r 1).ncard := by
@@ -268,24 +283,10 @@ theorem ncard_box_two_le_doubling (r : ι → ℝ) (hr : ∀ i, 0 < r i)
         intro i
         have hcell := congr_fun hyb i
         have hpos : (0 : ℝ) < 2 * r i / 3 := by have := hr i; positivity
-        have hre : |(y i).re - (x₀ i).re| ≤ 2 * r i / 3 := by
-          have heq : ⌊(y i).re / (2 * r i / 3)⌋ = ⌊(x₀ i).re / (2 * r i / 3)⌋ :=
-            congr_arg Prod.fst hcell
-          rw [Int.floor_eq_iff] at heq
-          rw [abs_le]
-          constructor <;>
-            nlinarith [Int.floor_le ((x₀ i).re / (2 * r i / 3)),
-              Int.lt_floor_add_one ((x₀ i).re / (2 * r i / 3)), hpos,
-              mul_div_cancel₀ (y i).re hpos.ne', mul_div_cancel₀ (x₀ i).re hpos.ne']
-        have him : |(y i).im - (x₀ i).im| ≤ 2 * r i / 3 := by
-          have heq : ⌊(y i).im / (2 * r i / 3)⌋ = ⌊(x₀ i).im / (2 * r i / 3)⌋ :=
-            congr_arg Prod.snd hcell
-          rw [Int.floor_eq_iff] at heq
-          rw [abs_le]
-          constructor <;>
-            nlinarith [Int.floor_le ((x₀ i).im / (2 * r i / 3)),
-              Int.lt_floor_add_one ((x₀ i).im / (2 * r i / 3)), hpos,
-              mul_div_cancel₀ (y i).im hpos.ne', mul_div_cancel₀ (x₀ i).im hpos.ne']
+        have hre : |(y i).re - (x₀ i).re| ≤ 2 * r i / 3 :=
+          abs_sub_le_of_floor_eq hpos (congr_arg Prod.fst hcell)
+        have him : |(y i).im - (x₀ i).im| ≤ 2 * r i / 3 :=
+          abs_sub_le_of_floor_eq hpos (congr_arg Prod.snd hcell)
         have hnorm : ‖(y - x₀) i‖ ^ 2 ≤ (r i) ^ 2 := by
           rw [Complex.sq_norm, Complex.normSq_apply, Pi.sub_apply, Complex.sub_re,
             Complex.sub_im]
