@@ -88,6 +88,14 @@ theorem finite_setOf_natDegree_le_coeff_mem (d : ℕ) (U : Finset R) :
   · refine fun f hf g hg hfg => (ext_iff_natDegree_le hf.1 hg.1).2 fun i hi => ?_
     exact congrFun hfg ⟨i, Nat.lt_succ_of_le hi⟩
 
+/-- Bounding an integer coefficient by `B` in absolute value is membership in the interval
+`[-B, B]`, so the two spellings of the bounded-degree, bounded-coefficient family agree. -/
+private theorem setOf_abs_intCoeff_le_eq (d B : ℕ) :
+    {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)} =
+      {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ Finset.Icc (-(B : ℤ)) B} := by
+  ext f
+  simp only [Set.mem_setOf_eq, Finset.mem_Icc, abs_le]
+
 /-- The integer polynomials of degree at most `d` all of whose coefficients are bounded by `B` in
 absolute value number at most `(2 * B + 1) ^ (d + 1)`: each of the `d + 1` coefficients
 `coeff 0, …, coeff d` ranges over the `2 * B + 1` integers in `[-B, B]`. -/
@@ -95,11 +103,7 @@ theorem ncard_natDegree_le_abs_intCoeff_le (d B : ℕ) :
     {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)}.ncard ≤ (2 * B + 1) ^ (d + 1) := by
   have hU : (Finset.Icc (-(B : ℤ)) B).card = 2 * B + 1 := by
     rw [Int.card_Icc]; omega
-  have hset : {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)} =
-      {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ Finset.Icc (-(B : ℤ)) B} := by
-    ext f
-    simp only [Set.mem_setOf_eq, Finset.mem_Icc, abs_le]
-  rw [hset]
+  rw [setOf_abs_intCoeff_le_eq]
   calc {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ Finset.Icc (-(B : ℤ)) B}.ncard
       ≤ (Finset.Icc (-(B : ℤ)) B).card ^ (d + 1) :=
         ncard_natDegree_le_coeff_mem_le d _
@@ -109,11 +113,7 @@ theorem ncard_natDegree_le_abs_intCoeff_le (d B : ℕ) :
 absolute value form a finite set: their coefficients range over the finite interval `[-B, B]`. -/
 theorem finite_setOf_natDegree_le_abs_intCoeff_le (d B : ℕ) :
     {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)}.Finite := by
-  have hset : {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)} =
-      {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ Finset.Icc (-(B : ℤ)) B} := by
-    ext f
-    simp only [Set.mem_setOf_eq, Finset.mem_Icc, abs_le]
-  rw [hset]
+  rw [setOf_abs_intCoeff_le_eq]
   exact finite_setOf_natDegree_le_coeff_mem d _
 
 end TauCeti.Polynomial
