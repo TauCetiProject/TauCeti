@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Algebra.Polynomial.Degree.Operations
 import Mathlib.Data.Fintype.BigOperators
+import Mathlib.Data.Fintype.Pi
 import Mathlib.Data.Int.Interval
 import Mathlib.Data.Set.Card
 
@@ -28,12 +29,20 @@ and coefficient height of a generating polynomial of a number field of bounded d
 (`natDegree_le_rankOfDiscrBdd`, `boundOfDiscBdd`), so an explicit *count* of number fields of
 bounded discriminant needs an explicit count of the polynomials of bounded degree and height.
 
+The cardinality bound counts a number but does not by itself record finiteness (`Set.ncard` is
+`0` on an infinite set), so each count is paired with the matching finiteness statement: these are
+what turn an injection of some family into one of these boxes into an explicit count of the family,
+the counting step the Layer-2 effective Hermite–Minkowski target needs. Mathlib proves this
+finiteness only inline, inside `Polynomial.bUnion_roots_finite`, rather than exposing it.
+
 ## Main results
 
 * `TauCeti.Polynomial.ncard_natDegree_le_coeff_mem_le`: at most `#U ^ (d + 1)` polynomials of
   degree `≤ d` with every coefficient in a finite set `U`.
+* `TauCeti.Polynomial.finite_setOf_natDegree_le_coeff_mem`: that family is finite.
 * `TauCeti.Polynomial.ncard_natDegree_le_abs_intCoeff_le`: at most `(2 * B + 1) ^ (d + 1)`
   integer polynomials of degree `≤ d` with every coefficient bounded by `B` in absolute value.
+* `TauCeti.Polynomial.finite_setOf_natDegree_le_abs_intCoeff_le`: that family is finite.
 -/
 
 open Polynomial
@@ -64,6 +73,21 @@ theorem ncard_natDegree_le_coeff_mem_le (d : ℕ) (U : Finset R) :
     rw [ext_iff_natDegree_le hf.1 hg.1]
     exact fun i hi => congrFun hfg ⟨i, Nat.lt_succ_of_le hi⟩
 
+/-- The polynomials of degree at most `d` whose coefficients all lie in a finite set `U` form a
+finite set: the same coefficient map that gives the count above injects them into the finite
+product `Fin (d + 1) → U`. (Mathlib proves this only inline, inside
+`Polynomial.bUnion_roots_finite`.) -/
+theorem finite_setOf_natDegree_le_coeff_mem (d : ℕ) (U : Finset R) :
+    {f : R[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U}.Finite := by
+  classical
+  let π : R[X] → Fin (d + 1) → R := fun f i => f.coeff i
+  refine ((Set.Finite.pi fun _ => U.finite_toSet).subset ?_).of_finite_image
+    (?_ : Set.InjOn π _)
+  · refine Set.image_subset_iff.2 fun f hf => ?_
+    exact fun i _ => hf.2 i
+  · refine fun f hf g hg hfg => (ext_iff_natDegree_le hf.1 hg.1).2 fun i hi => ?_
+    exact congrFun hfg ⟨i, Nat.lt_succ_of_le hi⟩
+
 /-- The integer polynomials of degree at most `d` all of whose coefficients are bounded by `B` in
 absolute value number at most `(2 * B + 1) ^ (d + 1)`: each of the `d + 1` coefficients
 `coeff 0, …, coeff d` ranges over the `2 * B + 1` integers in `[-B, B]`. -/
@@ -80,5 +104,16 @@ theorem ncard_natDegree_le_abs_intCoeff_le (d B : ℕ) :
       ≤ (Finset.Icc (-(B : ℤ)) B).card ^ (d + 1) :=
         ncard_natDegree_le_coeff_mem_le d _
     _ = (2 * B + 1) ^ (d + 1) := by rw [hU]
+
+/-- The integer polynomials of degree at most `d` all of whose coefficients are bounded by `B` in
+absolute value form a finite set: their coefficients range over the finite interval `[-B, B]`. -/
+theorem finite_setOf_natDegree_le_abs_intCoeff_le (d B : ℕ) :
+    {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)}.Finite := by
+  have hset : {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)} =
+      {f : ℤ[X] | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ Finset.Icc (-(B : ℤ)) B} := by
+    ext f
+    simp only [Set.mem_setOf_eq, Finset.mem_Icc, abs_le]
+  rw [hset]
+  exact finite_setOf_natDegree_le_coeff_mem d _
 
 end TauCeti.Polynomial
