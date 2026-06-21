@@ -2,11 +2,8 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Group.Subgroup.Even
-import Mathlib.Algebra.Module.ZMod
-import Mathlib.FieldTheory.Finiteness
-import Mathlib.GroupTheory.Index
-import Mathlib.NumberTheory.NumberField.ClassNumber
+import Mathlib.RingTheory.ClassGroup.Basic
+import TauCeti.Algebra.Group.ElementaryTwoQuotient
 
 /-!
 # The maximal elementary-2 quotient `Cl(R)/Cl(R)²` of a class group
@@ -20,68 +17,59 @@ theorems compute.
 
 ⚠ This quotient is the **maximal elementary-2 quotient** of the class group, *not* the 2-torsion
 subgroup `Cl(R)[2] = {C | C² = 1}`. The two are different objects — a quotient and a subgroup — but
-for a finite abelian group they have the same cardinality, because the squaring endomorphism
-`C ↦ C²` has `Cl(R)²` as its range and `Cl(R)[2]` as its kernel, and a finite group has the same
-cardinality as the product of the range and kernel of any endomorphism. We keep the two distinct in
-names and statements and record the cardinality identity as `card_elementaryTwoQuotient`.
+for a finite abelian group they have the same cardinality (see
+`card_elementaryTwoQuotient_eq_card_twoTorsion`); we keep them distinct in names and statements.
+
+The construction itself is the general `TauCeti.elementaryTwoQuotient` of a commutative group,
+specialized here to `G = ClassGroup R` under the genus-theory names Layer 2 of the multiquadratic
+roadmap targets (`TauCetiRoadmap/Multiquadratic/README.md`). The same general construction is the
+square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGroup` for `G = Kˣ`.
 
 ## Main definitions and results
 
 * `TauCeti.ClassGroup.elementaryTwoQuotient`: the quotient `Cl(R) ⧸ Cl(R)²`, a `ZMod 2`-module.
-* `TauCeti.ClassGroup.card_elementaryTwoQuotient`: `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`, the quotient and
-  the 2-torsion subgroup have equal cardinality.
-* `TauCeti.ClassGroup.twoRank` and
-  `TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
+* `TauCeti.ClassGroup.elementaryTwoQuotientMk` and `elementaryTwoQuotientMk_eq_zero_iff`: the class
+  of an ideal class, trivial iff that class is a square.
+* `TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`,
+  the quotient and the 2-torsion subgroup have equal cardinality.
+* `TauCeti.ClassGroup.twoRank` and `card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|Cl(R)/Cl(R)²| = 2 ^ twoRank`.
-
-The `ZMod 2`-module construction mirrors the square-class group `Kˣ ⧸ (Kˣ)²` of
-`TauCeti.FieldTheory.SquareClassGroup`; here it is carried out for the class group, the object
-Layer 2 of the multiquadratic roadmap targets.
 -/
 
 namespace TauCeti.ClassGroup
 
 variable (R : Type*) [CommRing R] [IsDomain R]
 
-/-- **The maximal elementary-2 quotient `Cl(R)/Cl(R)²` of the class group**, written additively on
-`Additive (ClassGroup R)`. -/
-abbrev elementaryTwoQuotient : Type _ :=
-  Additive (ClassGroup R) ⧸ (Subgroup.square (ClassGroup R)).toAddSubgroup
+/-- **The maximal elementary-2 quotient `Cl(R)/Cl(R)²` of the class group**, the general
+`TauCeti.elementaryTwoQuotient` specialized to `ClassGroup R`. -/
+abbrev elementaryTwoQuotient : Type _ := TauCeti.elementaryTwoQuotient (ClassGroup R)
 
-/-- The elementary-2 quotient is a `ZMod 2`-module: every element has order dividing two, since the
-double of any class is (additively) the class of a square. -/
-noncomputable instance : Module (ZMod 2) (elementaryTwoQuotient R) :=
-  QuotientAddGroup.zmodModule fun x => by
-    rw [Additive.mem_toAddSubgroup, Subgroup.mem_square, toMul_nsmul]
-    exact ⟨Additive.toMul x, pow_two _⟩
+/-- The class of an ideal class in the maximal elementary-2 quotient `Cl(R)/Cl(R)²`. -/
+noncomputable def elementaryTwoQuotientMk (C : ClassGroup R) : elementaryTwoQuotient R :=
+  TauCeti.elementaryTwoQuotientMk C
 
-instance [Finite (ClassGroup R)] : Finite (elementaryTwoQuotient R) :=
-  Finite.of_surjective _ (QuotientAddGroup.mk'_surjective _)
+/-- An ideal class has trivial class in `Cl(R)/Cl(R)²` iff it is a square. -/
+@[simp] theorem elementaryTwoQuotientMk_eq_zero_iff (C : ClassGroup R) :
+    elementaryTwoQuotientMk R C = 0 ↔ IsSquare C :=
+  TauCeti.elementaryTwoQuotientMk_eq_zero_iff C
 
 variable [Finite (ClassGroup R)]
 
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
-`|Cl(R)/Cl(R)²| = |Cl(R)[2]|`. The squaring endomorphism `C ↦ C²` has range `Cl(R)²` and kernel
-`Cl(R)[2]`; in a finite group the index of the range equals the cardinality of the kernel. -/
-theorem card_elementaryTwoQuotient :
-    Nat.card (elementaryTwoQuotient R) = Nat.card {C : ClassGroup R // C ^ 2 = 1} := by
-  have hsq : Subgroup.square (ClassGroup R)
-      = (powMonoidHom 2 : ClassGroup R →* ClassGroup R).range := by
-    ext g
-    simp [Subgroup.mem_square, MonoidHom.mem_range, isSquare_iff_exists_sq, eq_comm]
-  change (Subgroup.square (ClassGroup R)).toAddSubgroup.index = _
-  rw [Subgroup.index_toAddSubgroup, hsq, Subgroup.index_range]
-  exact Nat.card_congr (Equiv.subtypeEquivRight fun g => by simp [MonoidHom.mem_ker])
+`|Cl(R)/Cl(R)²| = |Cl(R)[2]|`. -/
+theorem card_elementaryTwoQuotient_eq_card_twoTorsion :
+    Nat.card (elementaryTwoQuotient R) = Nat.card {C : ClassGroup R // C ^ 2 = 1} :=
+  TauCeti.card_elementaryTwoQuotient_eq_card_sq_eq_one (ClassGroup R)
 
 /-- **The 2-rank of the class group**: the `ZMod 2`-dimension of the maximal elementary-2 quotient
 `Cl(R)/Cl(R)²`. This is the quantity the genus-field theorems express as `t - 1`, with `t` the
 number of ramified primes. -/
-noncomputable def twoRank : ℕ := Module.finrank (ZMod 2) (elementaryTwoQuotient R)
+noncomputable def twoRank : ℕ := TauCeti.twoRank (ClassGroup R)
 
 /-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
 space of dimension the 2-rank. -/
 theorem card_elementaryTwoQuotient_eq_two_pow_twoRank :
-    Nat.card (elementaryTwoQuotient R) = 2 ^ twoRank R := by
-  rw [twoRank, Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod]
+    Nat.card (elementaryTwoQuotient R) = 2 ^ twoRank R :=
+  TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank (ClassGroup R)
 
 end TauCeti.ClassGroup
