@@ -13,10 +13,10 @@ import Mathlib.Topology.Homotopy.Product
 A topological space `X` is *semilocally simply connected* if every point `x` has a
 neighbourhood `U` such that every loop in `U` based at `x` is null-homotopic *in `X`*. This is
 the standing point-set hypothesis (alongside path-connectedness and local path-connectedness)
-under which the universal cover of a space exists; see the universal-covers roadmap. Mathlib has
-`SimplyConnectedSpace` and the local notions `LocallyContractibleSpace` and
-`StronglyLocallyContractibleSpace`, but no semilocal simple connectivity, so we introduce it
-here.
+under which the universal cover of a space exists; see the universal-covers roadmap. Mathlib
+master has `SimplyConnectedSpace` and the local notions `LocallyContractibleSpace` and
+`StronglyLocallyContractibleSpace`, but no semilocal simple connectivity; the predicate follows
+Kim Morrison's unmerged mathlib4#38292 (see the References below).
 
 The condition is genuinely *semi*local: the null-homotopy is allowed to leave `U` and use the
 whole of `X`. It is therefore weaker than asking each `U` to be simply connected on its own (the
@@ -45,6 +45,13 @@ instances, witnessed by singleton neighbourhoods.
 
 This file supplies the semilocal-simple-connectivity hypothesis required by the Tau Ceti
 universal-covers roadmap (`TauCetiRoadmap/UniversalCovers`); see the standing hypotheses there.
+The predicate follows the one Kim Morrison introduces (as `SemilocallySimplyConnectedSpace`, the
+classical based notion of Brazas, Definition 2.1, https://arxiv.org/abs/1102.0993) in mathlib4
+PRs [#31576](https://github.com/leanprover-community/mathlib4/pull/31576) and
+[#38292](https://github.com/leanprover-community/mathlib4/pull/38292), which state the
+universal-cover construction over `[SemilocallySimplyConnectedSpace X]`; neither has merged, so
+the predicate is not yet in Mathlib. The API here is a streamlined single-field restatement
+sufficient for the roadmap's Stage 0.2.
 -/
 
 open Topology
