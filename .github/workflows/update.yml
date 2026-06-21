@@ -50,7 +50,7 @@ jobs:
         if: steps.fkb.outputs.commit == ''
         uses: leanprover-community/downstream-reports/.github/actions/bump-to-latest@main
 
-      # TauCeti tracks mathlib `master` and lets bump-guard (Scripts/check-bump.sh) validate
+      # TauCeti tracks mathlib `master` and lets bump-guard (scripts/check-bump.sh) validate
       # each bump as a forward move and auto-merge it. bump-to-latest pins the lakefile `rev`
       # and the manifest `inputRev` to the bumped commit; bump-guard rejects that (lakefile
       # edits are human-owned; inputRev must stay the nominated branch) and routes it to a

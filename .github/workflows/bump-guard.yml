@@ -5,10 +5,10 @@ name: bump-guard
 # in lakefile.toml; transitive pins derived from mathlib; toolchain monotonic and
 # consistent), and posts a `bump-guard` commit status. This status is what lets
 # pr-build build, and the review auto-merge accept, a manifest/toolchain-only PR
-# without a human — see Scripts/check-bump.sh for the full contract.
+# without a human — see scripts/check-bump.sh for the full contract.
 #
 # Runs in a TRUSTED, base-defined workflow (pull_request_target): the validator is
-# always the base's Scripts/check-bump.sh, run against the base config and the PR's
+# always the base's scripts/check-bump.sh, run against the base config and the PR's
 # (text-only) lean-toolchain/lake-manifest.json/lakefile. It executes NONE of the
 # PR's code — only reads two files and queries the trusted mathlib repo via gh api.
 # A PR that changes neither file passes trivially, so the check is uniformly present.
@@ -103,8 +103,8 @@ jobs:
         run: |
           # The validator script and the BASE config it judges a genuine bump against are
           # the trusted target tip; mergebase/ only scopes the PR's own delta; pr/ is read
-          # as text. See Scripts/check-bump.sh.
-          bash base/Scripts/check-bump.sh base mergebase pr
+          # as text. See scripts/check-bump.sh.
+          bash base/scripts/check-bump.sh base mergebase pr
 
       - name: Report bump-guard status to the PR head commit
         if: always()

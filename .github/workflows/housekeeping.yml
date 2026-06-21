@@ -43,4 +43,4 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
           DRY_RUN: ${{ inputs.dry-run && '1' || '' }}
-        run: python3 Scripts/housekeeping.py
+        run: python3 scripts/housekeeping.py
