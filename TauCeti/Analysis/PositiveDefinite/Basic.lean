@@ -65,18 +65,6 @@ namespace TauCeti
 
 variable {M : Type*} [AddMonoid M] [StarAddMonoid M] {F G : M → ℂ}
 
-private theorem complex_add_nonneg {z w : ℂ} (hz : 0 ≤ z) (hw : 0 ≤ w) : 0 ≤ z + w := by
-  rw [Complex.nonneg_iff] at hz hw ⊢
-  constructor
-  · exact add_nonneg hz.1 hw.1
-  · simp [← hz.2, ← hw.2]
-
-private theorem complex_mul_nonneg {z w : ℂ} (hz : 0 ≤ z) (hw : 0 ≤ w) : 0 ≤ z * w := by
-  rw [Complex.nonneg_iff] at hz hw ⊢
-  constructor
-  · simp [Complex.mul_re, ← hz.2, ← hw.2, mul_nonneg hz.1 hw.1]
-  · simp [Complex.mul_im, ← hz.2, ← hw.2]
-
 private theorem complex_offdiag_im_add_eq_zero {p q r s : ℂ}
     (hp : p.im = 0) (hq : q.im = 0) (h : (p + s + r + q).im = 0) :
     r.im + s.im = 0 := by
@@ -122,13 +110,13 @@ theorem quadForm_two_nonneg (hF : IsPositiveDefinite F) (a b : M) (c₀ c₁ : �
 
 /-- A positive-definite function takes a real, nonnegative value at every "norm point"
 `a + star a`. -/
-theorem nonneg_self (hF : IsPositiveDefinite F) (a : M) : 0 ≤ F (a + star a) := by
+theorem add_star_self_nonneg (hF : IsPositiveDefinite F) (a : M) : 0 ≤ F (a + star a) := by
   have h := hF 1 ![1] ![a]
   simpa [Fin.sum_univ_one] using h
 
 /-- The value of a positive-definite function at `0` is real and nonnegative. -/
 theorem map_zero_nonneg (hF : IsPositiveDefinite F) : 0 ≤ F 0 := by
-  simpa [star_zero] using hF.nonneg_self 0
+  simpa [star_zero] using hF.add_star_self_nonneg 0
 
 /-- The value of a positive-definite function at `0` has zero imaginary part. -/
 @[simp]
@@ -145,8 +133,8 @@ theorem map_zero_re_nonneg (hF : IsPositiveDefinite F) : 0 ≤ (F 0).re :=
 theorem conj_symm (hF : IsPositiveDefinite F) (a b : M) :
     conj (F (b + star a)) = F (a + star b) := by
   -- The diagonal entries `F (a + star a)`, `F (b + star b)` are real.
-  have hp : (F (a + star a)).im = 0 := ((Complex.nonneg_iff.mp (hF.nonneg_self a)).2).symm
-  have hq : (F (b + star b)).im = 0 := ((Complex.nonneg_iff.mp (hF.nonneg_self b)).2).symm
+  have hp : (F (a + star a)).im = 0 := ((Complex.nonneg_iff.mp (hF.add_star_self_nonneg a)).2).symm
+  have hq : (F (b + star b)).im = 0 := ((Complex.nonneg_iff.mp (hF.add_star_self_nonneg b)).2).symm
   -- Two choices of scalars force the off-diagonal entries to be conjugate.
   have h11 := (Complex.nonneg_iff.mp (hF.quadForm_two_nonneg a b 1 1)).2
   have h1i := (Complex.nonneg_iff.mp (hF.quadForm_two_nonneg a b 1 Complex.I)).2
@@ -168,10 +156,12 @@ theorem normSq_le (hF : IsPositiveDefinite F) (a b : M) :
   set r := F (a + star b) with hr
   -- The off-diagonal entries are conjugate, and the diagonal entries are real.
   have hconj : F (b + star a) = conj r := by rw [hr, ← hF.conj_symm a b, Complex.conj_conj]
-  have hpim : (F (a + star a)).im = 0 := ((Complex.nonneg_iff.mp (hF.nonneg_self a)).2).symm
-  have hqim : (F (b + star b)).im = 0 := ((Complex.nonneg_iff.mp (hF.nonneg_self b)).2).symm
-  have hpre : 0 ≤ (F (a + star a)).re := (Complex.nonneg_iff.mp (hF.nonneg_self a)).1
-  have hqre : 0 ≤ (F (b + star b)).re := (Complex.nonneg_iff.mp (hF.nonneg_self b)).1
+  have hpim : (F (a + star a)).im = 0 :=
+    ((Complex.nonneg_iff.mp (hF.add_star_self_nonneg a)).2).symm
+  have hqim : (F (b + star b)).im = 0 :=
+    ((Complex.nonneg_iff.mp (hF.add_star_self_nonneg b)).2).symm
+  have hpre : 0 ≤ (F (a + star a)).re := (Complex.nonneg_iff.mp (hF.add_star_self_nonneg a)).1
+  have hqre : 0 ≤ (F (b + star b)).re := (Complex.nonneg_iff.mp (hF.add_star_self_nonneg b)).1
   -- For every real `t`, the quadratic `t ↦ pᵣ t² - 2 ‖r‖² t + ‖r‖² qᵣ` is nonnegative.
   have hpoly : ∀ t : ℝ, 0 ≤ (F (a + star a)).re * (t * t)
       + (-2 * Complex.normSq r) * t + Complex.normSq r * (F (b + star b)).re := by
@@ -217,7 +207,7 @@ theorem add (hF : IsPositiveDefinite F) (hG : IsPositiveDefinite G) :
       = (∑ i, ∑ j, c i * conj (c j) * F (v i + star (v j)))
         + ∑ i, ∑ j, c i * conj (c j) * G (v i + star (v j)) := by
     simp only [mul_add, Finset.sum_add_distrib]
-  simpa only [hsplit] using complex_add_nonneg (hF n c v) (hG n c v)
+  simpa only [hsplit] using add_nonneg (hF n c v) (hG n c v)
 
 /-- Positive-definite functions are closed under multiplication by a nonnegative complex scalar. -/
 theorem const_mul {k : ℂ} (hk : 0 ≤ k) (hF : IsPositiveDefinite F) :
@@ -231,7 +221,7 @@ theorem const_mul {k : ℂ} (hk : 0 ≤ k) (hF : IsPositiveDefinite F) :
     refine Finset.sum_congr rfl fun j _ => ?_
     ring
   rw [hpull]
-  exact complex_mul_nonneg hk (hF n d v)
+  exact mul_nonneg hk (hF n d v)
 
 /-- The Gram matrix of a positive-definite function on any finite family is positive
 semidefinite. -/
@@ -242,6 +232,7 @@ theorem gram_posSemidef (hF : IsPositiveDefinite F) {ι : Type*} [Finite ι] (v 
   refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg ?_ ?_
   · rw [Matrix.IsHermitian]
     ext i j
+    simp only [Matrix.conjTranspose_apply, Complex.star_def]
     exact hF.conj_symm (v i) (v j)
   · intro x
     have h := hF.sum_nonneg (fun i => conj (x i)) v
@@ -276,7 +267,7 @@ theorem isPositiveDefinite_const {k : ℂ} (hk : 0 ≤ k) :
   have hgram : ∑ i, ∑ j, c i * conj (c j) = (∑ i, c i) * conj (∑ i, c i) := by
     rw [map_sum, Fintype.sum_mul_sum]
   rw [hfactor, hgram, Complex.mul_conj]
-  exact complex_mul_nonneg (Complex.zero_le_real.mpr (Complex.normSq_nonneg _)) hk
+  exact mul_nonneg (Complex.zero_le_real.mpr (Complex.normSq_nonneg _)) hk
 
 /-- The zero function is positive definite. -/
 theorem isPositiveDefinite_zero : IsPositiveDefinite (fun _ : M => (0 : ℂ)) :=
