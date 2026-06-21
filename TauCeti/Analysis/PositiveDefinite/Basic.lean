@@ -42,13 +42,15 @@ here. The continuity theory and Bochner's representation theorem are later miles
 * `TauCeti.IsPositiveDefinite.conj_symm`: `conj (F (b + a⋆)) = F (a + b⋆)`.
 * `TauCeti.IsPositiveDefinite.normSq_le`: the Cauchy–Schwarz inequality
   `‖F (a + b⋆)‖² ≤ (F (a + a⋆)).re * (F (b + b⋆)).re`.
-* `TauCeti.IsPositiveDefinite.norm_apply_le_map_zero_re_of_star_eq_neg`: `‖F a‖ ≤ (F 0).re`
-  when `star a = -a`.
+* `TauCeti.IsPositiveDefinite.norm_apply_le_map_zero_re_of_add_star_eq_zero`: `‖F a‖ ≤ (F 0).re`
+  when `a + star a = 0`, with the additive-group corollary
+  `TauCeti.IsPositiveDefinite.norm_apply_le_map_zero_re_of_star_eq_neg` for `star a = -a`.
 * `TauCeti.IsPositiveDefinite.gram_posSemidef`: finite Gram matrices of a positive-definite
   function are positive semidefinite.
 * `TauCeti.IsPositiveDefinite.add`, `TauCeti.IsPositiveDefinite.sum`,
   `TauCeti.IsPositiveDefinite.const_mul`, `TauCeti.IsPositiveDefinite.mul`,
-  `TauCeti.isPositiveDefinite_const`: closure properties and examples.
+  `TauCeti.IsPositiveDefinite.prod`, `TauCeti.isPositiveDefinite_const`: closure properties and
+  examples.
 
 ## References
 
@@ -187,6 +189,13 @@ theorem normSq_le (hF : IsPositiveDefinite F) (a b : M) :
   · rw [← hN0]; exact mul_nonneg hpre hqre
   · nlinarith [hdisc, hN0]
 
+/-- If `a + star a = 0`, then a positive-definite function is bounded at `a` by its value at
+zero. -/
+theorem norm_apply_le_map_zero_re_of_add_star_eq_zero (hF : IsPositiveDefinite F)
+    (a : M) (ha : a + star a = 0) : ‖F a‖ ≤ (F 0).re := by
+  refine le_of_sq_le_sq ?_ hF.map_zero_re_nonneg
+  simpa [Complex.normSq_eq_norm_sq, pow_two, ha, star_zero] using hF.normSq_le a 0
+
 section Group
 
 variable {N : Type*} [AddGroup N] [StarAddMonoid N] {H : N → ℂ}
@@ -195,9 +204,8 @@ variable {N : Type*} [AddGroup N] [StarAddMonoid N] {H : N → ℂ}
 by its value at zero. In particular this applies on an additive group whose involution is
 negation. -/
 theorem norm_apply_le_map_zero_re_of_star_eq_neg (hH : IsPositiveDefinite H)
-    (a : N) (hstar_a : star a = -a) : ‖H a‖ ≤ (H 0).re := by
-  refine le_of_sq_le_sq ?_ hH.map_zero_re_nonneg
-  simpa [Complex.normSq_eq_norm_sq, pow_two, hstar_a, star_zero] using hH.normSq_le a 0
+    (a : N) (hstar_a : star a = -a) : ‖H a‖ ≤ (H 0).re :=
+  hH.norm_apply_le_map_zero_re_of_add_star_eq_zero a (by rw [hstar_a, add_neg_cancel])
 
 end Group
 
@@ -283,6 +291,15 @@ theorem sum {ι : Type*} {s : Finset ι} {F : ι → M → ℂ}
   have h := Finset.sum_induction F IsPositiveDefinite
     (fun _ _ => IsPositiveDefinite.add) isPositiveDefinite_zero hF
   have heq : (∑ i ∈ s, F i) = fun x => ∑ i ∈ s, F i x := funext fun x => Finset.sum_apply x s F
+  rwa [heq] at h
+
+/-- Positive-definite functions are closed under finite products (Schur product). -/
+theorem prod {ι : Type*} {s : Finset ι} {F : ι → M → ℂ}
+    (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :
+    IsPositiveDefinite (fun x => ∏ i ∈ s, F i x) := by
+  have h := Finset.prod_induction F IsPositiveDefinite
+    (fun _ _ => IsPositiveDefinite.mul) (isPositiveDefinite_const zero_le_one) hF
+  have heq : (∏ i ∈ s, F i) = fun x => ∏ i ∈ s, F i x := funext fun x => Finset.prod_apply x s F
   rwa [heq] at h
 
 end IsPositiveDefinite
