@@ -34,6 +34,7 @@ here. The continuity theory and Bochner's representation theorem are later miles
 ## Main declarations
 
 * `TauCeti.IsPositiveDefinite`: the positive-definiteness predicate for `F : M → ℂ`.
+* `TauCeti.IsPositiveDefinite.sum_nonneg`: nonnegativity for arbitrary finite families.
 * `TauCeti.IsPositiveDefinite.quadForm_two_nonneg`: nonnegativity of the `2 × 2` sub-form.
 * `TauCeti.IsPositiveDefinite.map_zero_nonneg`: `0 ≤ F 0`.
 * `TauCeti.IsPositiveDefinite.map_zero_im`: `(F 0).im = 0`.
@@ -43,6 +44,8 @@ here. The continuity theory and Bochner's representation theorem are later miles
   `‖F (a + b⋆)‖² ≤ (F (a + a⋆)).re * (F (b + b⋆)).re`.
 * `TauCeti.IsPositiveDefinite.norm_apply_le_map_zero_re_of_star_eq_neg`: `‖F a‖ ≤ (F 0).re`
   when the involution is negation.
+* `TauCeti.IsPositiveDefinite.gram_posSemidef`: finite Gram matrices of a positive-definite
+  function are positive semidefinite.
 * `TauCeti.IsPositiveDefinite.add`, `TauCeti.IsPositiveDefinite.const_mul`,
   `TauCeti.IsPositiveDefinite.mul`,
   `TauCeti.isPositiveDefinite_const`: closure properties and examples.
@@ -94,6 +97,18 @@ def IsPositiveDefinite (F : M → ℂ) : Prop :=
 
 namespace IsPositiveDefinite
 
+/-- Positive-definiteness for an arbitrary finite index type. The predicate is stored using
+`Fin n`, and this theorem transports that statement across `Fintype.equivFin`. -/
+theorem sum_nonneg (hF : IsPositiveDefinite F) {ι : Type*} [Fintype ι]
+    (c : ι → ℂ) (v : ι → M) :
+    0 ≤ ∑ i, ∑ j, c i * conj (c j) * F (v i + star (v j)) := by
+  classical
+  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
+  have h := hF (Fintype.card ι) (fun i => c (e i)) (fun i => v (e i))
+  refine le_of_le_of_eq h ?_
+  exact Fintype.sum_equiv e _ _ fun i =>
+    Fintype.sum_equiv e _ _ fun j => rfl
+
 /-- The `2 × 2` Hermitian sub-form of a positive-definite function at the points `a, b` with
 coefficients `c₀, c₁` is nonnegative. -/
 theorem quadForm_two_nonneg (hF : IsPositiveDefinite F) (a b : M) (c₀ c₁ : ℂ) :
@@ -124,6 +139,7 @@ theorem map_zero_re_nonneg (hF : IsPositiveDefinite F) : 0 ≤ (F 0).re :=
 
 /-- A positive-definite function is conjugate symmetric in the involution:
 `conj (F (b + star a)) = F (a + star b)`. -/
+@[simp]
 theorem conj_symm (hF : IsPositiveDefinite F) (a b : M) :
     conj (F (b + star a)) = F (a + star b) := by
   -- The diagonal entries `F (a + star a)`, `F (b + star b)` are real.
@@ -208,17 +224,20 @@ theorem const_mul {k : ℂ} (hk : 0 ≤ k) (hF : IsPositiveDefinite F) :
   rw [hpull]
   exact complex_mul_nonneg hk (hF n d v)
 
-private theorem gram_posSemidef (hF : IsPositiveDefinite F) {n : ℕ} (v : Fin n → M) :
+/-- The Gram matrix of a positive-definite function on any finite family is positive
+semidefinite. -/
+theorem gram_posSemidef (hF : IsPositiveDefinite F) {ι : Type*} [Finite ι] (v : ι → M) :
     Matrix.PosSemidef (fun i j => F (v i + star (v j))) := by
   classical
+  letI := Fintype.ofFinite ι
   refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg ?_ ?_
   · rw [Matrix.IsHermitian]
     ext i j
     exact hF.conj_symm (v i) (v j)
   · intro x
-    have h := hF n (fun i => conj (x i)) v
+    have h := hF.sum_nonneg (fun i => conj (x i)) v
     refine le_of_le_of_eq h ?_
-    simp [dotProduct, Matrix.mulVec, Finset.mul_sum, mul_assoc, mul_left_comm, mul_comm]
+    simp [dotProduct, Matrix.mulVec, Finset.sum_mul, mul_assoc, mul_left_comm, mul_comm]
 
 /-- Positive-definite functions are closed under pointwise multiplication (Schur product). -/
 theorem mul (hF : IsPositiveDefinite F) (hG : IsPositiveDefinite G) :
