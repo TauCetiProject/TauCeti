@@ -5,7 +5,7 @@ name: LoC graphs
 # which triggers pages.yml to redeploy the site.
 #
 # Both charts are rebuilt from scratch from git history each run (see
-# Scripts/loc_graph.py), so there is no state file to keep in sync. The TauCeti
+# scripts/loc_graph.py), so there is no state file to keep in sync. The TauCeti
 # chart comes from this repository's own history; the roadmap chart from a fresh
 # clone of the human-owned TauCetiRoadmap repository.
 #
@@ -46,12 +46,12 @@ jobs:
 
       - name: Regenerate the charts
         run: |
-          python3 Scripts/loc_graph.py \
+          python3 scripts/loc_graph.py \
             --repo . --ref HEAD \
             --title "Tau Ceti — lines of Lean" --accent "#ff9d4d" \
             --out web/static_files/loc-tauceti.svg \
             TauCeti TauCeti.lean
-          python3 Scripts/loc_graph.py \
+          python3 scripts/loc_graph.py \
             --repo /tmp/roadmap --ref HEAD \
             --title "Tau Ceti Roadmap — lines written" --accent "#5eead4" \
             --out web/static_files/loc-roadmap.svg \

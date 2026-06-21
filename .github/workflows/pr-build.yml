@@ -2,7 +2,7 @@ name: pr-build
 
 # Builds untrusted PR code in a TRUSTED, base-branch-defined workflow. A PR cannot change what
 # runs here (pull_request_target uses the base definition). The build/audit configuration
-# (lakefile, Scripts/, manifest, toolchain) is always the TRUSTED base's: we overlay only the
+# (lakefile, scripts/, manifest, toolchain) is always the TRUSTED base's: we overlay only the
 # PR's `TauCeti/` sources onto a base checkout and build that. Any PR touching anything outside
 # `TauCeti/` is routed to a human (it can't be validated with trusted config). PR `TauCeti/` code
 # compiles only under landrun (offline; writes confined to base/.lake; no secrets or token in
@@ -90,11 +90,11 @@ jobs:
           # The root TauCeti.lean is allowed alongside TauCeti/: it is the (intentionally
           # empty) library root, normally untouched, but a PR may edit it. It is overlaid
           # into the sandbox below and the import-boundary guard covers it. Everything else
-          # outside TauCeti/ (lakefile, Scripts/, .github/) stays trusted-base-only and
+          # outside TauCeti/ (lakefile, scripts/, .github/) stays trusted-base-only and
           # routes to a human.
           # lake-manifest.json and lean-toolchain are also permitted, but ONLY as a
           # machine-validated forward bump: the "Validate the Lake-pin bump" step below
-          # runs the trusted base Scripts/check-bump.sh and routes to a human if it is
+          # runs the trusted base scripts/check-bump.sh and routes to a human if it is
           # anything other than a forward move (mathlib forward on its nominated branch,
           # transitive pins derived from mathlib, toolchain monotonic). lakefile.* stays
           # human-owned (and check-bump fails if it changed).
@@ -162,7 +162,7 @@ jobs:
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
-          if bash base/Scripts/check-bump.sh base mergebase pr; then
+          if bash base/scripts/check-bump.sh base mergebase pr; then
             echo "Lake-pin bump validated — building with the PR's pins."
           else
             echo "BUMP_BAD=1" >> "$GITHUB_ENV"

@@ -18,7 +18,7 @@ roadmap first, rather than building it here.
   Mathlib linter set (style, file length, no `maxHeartbeats` overrides). Do not try to disable
   these.
 - One topic per PR. Ship a prerequisite refactor as its own PR.
-- `TauCeti/` is the only place code goes. `Scripts/`, `.github/`, and the lakefile
+- `TauCeti/` is the only place code goes. `scripts/`, `.github/`, and the lakefile
   (`lakefile.toml`/`lakefile.lean`) are human-owned. The two Lake *pins* —
   `lake-manifest.json` and `lean-toolchain` — are an exception: a **forward-only** bump of
   them (Mathlib moving forward on the branch the lakefile nominates, with the toolchain moving
@@ -37,7 +37,7 @@ When every rubric approves on the current commit and the PR changes only `TauCet
 green), it **merges automatically**. A PR that *also* changes `lake-manifest.json` and/or
 `lean-toolchain` can auto-merge too, but only once the `bump-guard` check confirms it is a
 forward-only bump and the sandboxed build passes against the new pins. A PR that touches any
-other human-owned path (`Scripts/`, `.github/`, the lakefile) always needs a human review. The
+other human-owned path (`scripts/`, `.github/`, the lakefile) always needs a human review. The
 review pipeline is sandboxed so it can run on untrusted PRs; see
 [`SECURITY.md`](https://github.com/FormalFrontier/TauCetiReview/blob/main/SECURITY.md) in
 TauCetiReview.
