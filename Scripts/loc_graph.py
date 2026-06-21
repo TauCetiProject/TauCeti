@@ -88,7 +88,8 @@ def render(data, title, accent, out):
         if forced or x - last_x >= 78:
             if i == len(data) - 1 and xticks and x - last_x < 78:
                 xticks.pop()        # drop a label that would crowd the final one
-            lab = dt.date.fromisoformat(d).strftime("%b %-d")
+            dd = dt.date.fromisoformat(d)
+            lab = f"{dd:%b} {dd.day}"   # avoid the GNU-only %-d
             xticks.append(f'<text class="xtick" x="{x:.1f}" y="{T+ph+24}">{lab}</text>')
             last_x = x
 

@@ -18,6 +18,10 @@ on:
     - cron: "0 6 * * 1"   # Mondays 06:00 UTC
   workflow_dispatch:
 
+concurrency:
+  group: loc-graph
+  cancel-in-progress: false
+
 jobs:
   graphs:
     runs-on: ubuntu-latest
@@ -62,5 +66,8 @@ jobs:
           else
             git add web/static_files/loc-tauceti.svg web/static_files/loc-roadmap.svg
             git commit -m "chore: refresh lines-of-code charts"
+            # Replay onto any commits that landed since checkout, so the push
+            # is a fast-forward even if main moved during this run.
+            git pull --rebase origin main
             git push
           fi
