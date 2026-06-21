@@ -74,7 +74,7 @@ lemma mem_orthogonal_iff' {x : V} : x ∈ ω.orthogonal L ↔ ∀ y ∈ L, ω x 
     linarith [ω.neg_eq y x]
 
 /-- The symplectic complement is antitone: a larger subspace has a smaller complement. -/
-lemma orthogonal_le_orthogonal (h : L ≤ L') : ω.orthogonal L' ≤ ω.orthogonal L :=
+lemma orthogonal_le (h : L ≤ L') : ω.orthogonal L' ≤ ω.orthogonal L :=
   ω.toBilinForm.orthogonal_le h
 
 /-- A subspace is contained in the complement of its complement. -/
@@ -132,7 +132,7 @@ lemma IsLagrangian.isCoisotropic (h : ω.IsLagrangian L) : ω.IsCoisotropic L :=
   (isLagrangian_iff.1 h).2
 
 /-- The symplectic form vanishes on a Lagrangian subspace. -/
-lemma IsLagrangian.symplecticForm_eq_zero (h : ω.IsLagrangian L) {v w : V}
+lemma IsLagrangian.symplecticForm_apply_eq_zero (h : ω.IsLagrangian L) {v w : V}
     (hv : v ∈ L) (hw : w ∈ L) : ω v w = 0 :=
   isIsotropic_iff.1 h.isIsotropic v hv w hw
 
