@@ -61,11 +61,10 @@ We also have prototype systems for "meta review", using human and AI judges to d
 
 ## Mathlib dependency
 
-For now we depend on Mathlib's `master` branch. AIs are encouraged to make PRs to Tau Ceti that bump the pin to new commits on Mathlib's `master` branch, and fix any resulting problems in Tau Ceti.
+Tau Ceti depends on Mathlib's `master` branch, and always defers to design decisions made in Mathlib.
+AIs are encouraged to make PRs to Tau Ceti that bump the pin to new commits on Mathlib's `master` branch, and fix any resulting problems in Tau Ceti.
 
-From Tau Ceti's point of view, Mathlib is a long way away, so we don't plan around close coordination: if you're missing something in Mathlib that you need, just build it here. (This includes needing material from Mathlib PRs. It's polite to check with authors first, and then just vendor it here with appropriate attribution, or otherwise rewrite from scratch; we don't wait for Mathlib.)
-
-Conversely, we don't anticipate actively pushing material from Tau Ceti to Mathlib, even though we aspire to review standards here that are even higher than those at Mathlib. Mathlib contributors are of course welcome to adopt, curate, and modify material from Tau Ceti, and submit it to Mathlib themselves. Everything here is Apache licensed.
+We won't push material upstream from Tau Ceti to Mathlib. Mathlib contributors are welcome to adopt, curate, and modify material from Tau Ceti, while preparing PRs to Mathlib. Everything here is Apache licensed.
 
 ## Building
 
