@@ -45,11 +45,24 @@ the semigroup, and the resolvent identities of the Hille–Yosida theory.
 ## Implementation notes
 
 Ported and adapted (Apache 2.0) from the AI-authored development
-[`mrdouglasny/hille-yosida`](https://github.com/mrdouglasny/hille-yosida). The generator is
-modelled as a `LinearPMap` (Mathlib's unbounded-operator type); the resolvent is a pointwise
-`X`-valued Bochner integral, defined at the general growth-bound level with the contraction
-case as a corollary. The generation theorem (Yosida approximation / Lumer–Phillips) is a
-separate roadmap milestone, not in this file.
+[`mrdouglasny/hille-yosida`](https://github.com/mrdouglasny/hille-yosida) (design choices
+recorded in that repo's `docs/DESIGN.md`):
+
+* **Generator as `LinearPMap`.** The unbounded generator is `X →ₗ.[ℝ] X`, Mathlib's
+  partially-defined-operator type, so it composes with the existing unbounded-operator API
+  (graph, closure, adjoint) instead of a bespoke domain + map pair.
+* **Time is total `ℝ`, guarded by `t ≥ 0`.** `operator : ℝ → X →L[ℝ] X` is total, with every
+  law and the continuity hypothesis quantified over `t ≥ 0`; `S t` for `t < 0` is unconstrained
+  and carries no information. This keeps `t` a plain real for the analytic lemmas (integrals
+  over `Set.Ioi 0`, the FTC) and avoids an `ℝ≥0 → ℝ` coercion on every estimate. It does not
+  affect any stated result, all of which assume `t ≥ 0`. (The alternative, indexing by `ℝ≥0`,
+  makes extensional equality on `[0,∞)` automatic at that coercion cost.)
+* **Resolvent.** A pointwise `X`-valued Bochner integral (since `t ↦ S t` is only strongly
+  continuous, not norm-measurable as an operator-valued map), defined at the general
+  growth-bound `(ω, M)` level with the contraction case as a corollary.
+
+The generation theorem (Yosida approximation / Lumer–Phillips) is a separate roadmap
+milestone, not in this file.
 
 ## References
 
