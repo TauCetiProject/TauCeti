@@ -18,13 +18,14 @@ the set of *effective* divisors linearly equivalent to `D`:
 `|D| = { E | E effective and E ∼ D }`.
 
 Classically `|D|` is the set of effective divisors of the form `D + div f` for a rational
-function `f` with `D + div f ≥ 0`; this is the geometric object whose underlying projective
-space `ℙ(L(D))` carries the maps `X → ℙⁿ` of Layer F. The vector-space structure of the
-Riemann–Roch space `L(D)` is Layer B and needs coherent cohomology, so it is deliberately not
-built here; this file supplies the set `|D|`, its description in terms of principal divisors,
-and the facts that make it well behaved: it depends only on the divisor class of `D`, every
-member shares the class and hence (when principal divisors have degree zero) the degree of `D`,
-and a divisor of negative degree has empty linear system.
+function `f` with `D + div f ≥ 0`; its members are the effective divisors in the linear
+equivalence class of `D`, and the associated projective space is `ℙ(L(D))` for the
+Riemann–Roch space `L(D)`. The vector-space structure of `L(D)` is Layer B and needs coherent
+cohomology, so it is deliberately not built here; this file supplies the set `|D|`, its
+description in terms of principal divisors, and the facts that make it well behaved: it depends
+only on the divisor class of `D`, every member shares the class and hence (when principal
+divisors have degree zero) the degree of `D`, and a divisor of negative degree has empty linear
+system.
 
 This advances the Tau Ceti Jacobian roadmap, Layer A, "Divisors on a curve" and "Degree":
 `TauCetiRoadmap/JacobianChallenge/README.md`. It reuses Tau Ceti's existing `WeilDivisor` and
