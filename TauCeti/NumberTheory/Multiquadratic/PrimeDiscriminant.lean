@@ -22,7 +22,8 @@ primes into radicands `p*` satisfying `p* ≡ 1 (mod 4)`.
 
 ## Main definitions and results
 
-* `TauCeti.Multiquadratic.oddPrimeDiscriminant`: the integer `p* = (-1)^((p-1)/2) p`.
+* `TauCeti.Multiquadratic.oddPrimeDiscriminant`: the integer `p` if `p % 4 = 1`, and `-p`
+  otherwise.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_natAbs`: its absolute value is `p`.
 * `TauCeti.Multiquadratic.prime_oddPrimeDiscriminant`: it is a prime integer.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_mod_four_eq_one`: for odd `p`, it is `1 mod 4`.
@@ -83,6 +84,13 @@ theorem squarefree_oddPrimeDiscriminant {p : ℕ} (hp : Squarefree p) :
     Squarefree (oddPrimeDiscriminant p) := by
   rw [← Int.squarefree_natAbs, oddPrimeDiscriminant_natAbs]
   exact hp
+
+/-- The odd prime discriminant divides an integer exactly when `p` does. -/
+@[simp] theorem oddPrimeDiscriminant_dvd_iff {p : ℕ} {D : ℤ} :
+    oddPrimeDiscriminant p ∣ D ↔ (p : ℤ) ∣ D := by
+  by_cases hp : p % 4 = 1
+  · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp]
+  · rw [oddPrimeDiscriminant_of_mod_four_ne_one hp, neg_dvd]
 
 /-- The odd prime discriminant has the same divisibility-by-two behavior as `p`. -/
 @[simp] theorem two_dvd_oddPrimeDiscriminant_iff (p : ℕ) :
