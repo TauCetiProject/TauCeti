@@ -17,9 +17,9 @@ group: they assemble `AmbientIsotopy Y` into a group, the pointwise group struct
 path space of the homeomorphism group based at the identity.
 
 Evaluating at time `1` is a group homomorphism `AmbientIsotopy Y →* (Y ≃ₜ Y)` whose image is
-exactly the self-homeomorphisms ambient isotopic to the identity (Mathlib's `Homeo₀`, the
-identity component, expressed here through the `TauCeti.AmbientIsotopic` relation of
-`TauCeti.Topology.Homotopy.AmbientIsotopic`). This is the algebraic counterpart, for the
+exactly the self-homeomorphisms ambient isotopic to the identity, characterised through the
+`TauCeti.AmbientIsotopic` relation of `TauCeti.Topology.Homotopy.AmbientIsotopic`. This is the
+algebraic counterpart, for the
 point-set ambient-isotopy notion, of the diffeomorphism group the geometric-topology roadmap
 (`TauCetiRoadmap/GeometricTopology/README.md`, layer 3) builds in the smooth category.
 
@@ -33,8 +33,8 @@ point-set ambient-isotopy notion, of the diffeomorphism group the geometric-topo
 
 * `TauCeti.AmbientIsotopy.trans_assoc`, `refl_trans`, `trans_refl`, `trans_symm`, `symm_trans`:
   the group laws phrased on the closure operations themselves.
-* `TauCeti.AmbientIsotopy.ambientIsotopic_id_iff_mem_finalRange`: a self-homeomorphism is in the
-  range of the time-`1` homomorphism exactly when it is ambient isotopic to the identity.
+* `TauCeti.AmbientIsotopy.ambientIsotopic_id_iff_mem_finalMonoidHom_range`: a self-homeomorphism
+  is in the range of the time-`1` homomorphism exactly when it is ambient isotopic to the identity.
 -/
 
 namespace TauCeti
@@ -115,6 +115,10 @@ theorem mul_apply (Φ Ψ : AmbientIsotopy Y) (p : I × Y) :
 @[simp]
 theorem one_apply (p : I × Y) : (1 : AmbientIsotopy Y).toContinuousMap p = p.2 := rfl
 
+@[simp]
+theorem inv_apply (Φ : AmbientIsotopy Y) (p : I × Y) :
+    (Φ⁻¹).toContinuousMap p = (Φ.totalHomeomorph.symm p).2 := rfl
+
 /-- The time-`1` homeomorphism of the unit ambient isotopy is the identity. -/
 @[simp]
 theorem finalHomeomorph_one : (1 : AmbientIsotopy Y).finalHomeomorph = 1 := by
@@ -125,6 +129,7 @@ theorem finalHomeomorph_one : (1 : AmbientIsotopy Y).finalHomeomorph = 1 := by
 
 /-- The time-`1` homeomorphism of a pointwise product is the product (in `Y ≃ₜ Y`) of the
 time-`1` homeomorphisms, in the opposite order. -/
+@[simp]
 theorem finalHomeomorph_mul (Φ Ψ : AmbientIsotopy Y) :
     (Φ * Ψ).finalHomeomorph = Φ.finalHomeomorph * Ψ.finalHomeomorph := by
   apply Homeomorph.ext
@@ -144,9 +149,9 @@ theorem finalMonoidHom_apply (Φ : AmbientIsotopy Y) :
     finalMonoidHom Φ = Φ.finalHomeomorph := rfl
 
 /-- A self-homeomorphism of `Y` lies in the image of the time-`1` homomorphism exactly when it is
-ambient isotopic to the identity: the image of `finalMonoidHom` is the identity component of the
-homeomorphism group. -/
-theorem ambientIsotopic_id_iff_mem_finalRange (e : Y ≃ₜ Y) :
+ambient isotopic to the identity: the image of `finalMonoidHom` is the set of self-homeomorphisms
+ambient isotopic to the identity. -/
+theorem ambientIsotopic_id_iff_mem_finalMonoidHom_range (e : Y ≃ₜ Y) :
     AmbientIsotopic (.id Y) (e : C(Y, Y)) ↔ e ∈ (finalMonoidHom (Y := Y)).range := by
   rw [MonoidHom.mem_range]
   constructor
