@@ -13,7 +13,7 @@ import Mathlib.LinearAlgebra.Matrix.Symmetric
 
 This file opens the lattice-homology lane of the combinatorial Heegaard Floer roadmap. A
 plumbing graph records the combinatorial data of a plumbing of disk bundles over spheres: a
-finite graph whose vertices are the spheres, whose edges record which spheres are plumbed, and
+simple graph whose vertices are the spheres, whose edges record which spheres are plumbed, and
 an integer weight on each vertex giving its self-intersection (the framing / Euler number).
 
 The fundamental algebraic object attached to this data is the **intersection form**, the
@@ -24,16 +24,18 @@ entry formulas and symmetry, the bilinear form and its self-pairing expansion as
 form, and the negative-definiteness predicate, recording that a negative-definite plumbing has
 every framing negative.
 
-We model the underlying combinatorics with a finite `SimpleGraph`: one edge between two
-distinct spheres, no edge multiplicities or signs. This is the standard starting point (the
-plumbing trees of Seifert-fibred examples), with edge multiplicities a later refinement.
+We model the underlying combinatorics with a `SimpleGraph`: one edge between two distinct
+spheres, no edge multiplicities or signs. The matrix-level definitions make sense for any
+vertex type; the lattice form used for Lane L is introduced under `[Fintype V]`, matching the
+finite plumbing graphs in the roadmap. This is the standard starting point (the plumbing trees
+of Seifert-fibred examples), with edge multiplicities a later refinement.
 
 ## Main definitions
 
-* `TauCeti.PlumbingGraph`: a finite simple graph with an integer weight on each vertex.
+* `TauCeti.PlumbingGraph`: a simple graph with an integer weight on each vertex.
 * `TauCeti.PlumbingGraph.intersectionMatrix`: the framing-diagonal adjacency matrix.
 * `TauCeti.PlumbingGraph.intersectionForm`: the associated symmetric `ℤ`-bilinear form.
-* `TauCeti.PlumbingGraph.IsNegativeDefinite`: negative-definiteness of the intersection form.
+* `TauCeti.PlumbingGraph.IsNegativeDefinite`: negative-definiteness of the intersection matrix.
 
 ## Main results
 
@@ -42,6 +44,8 @@ plumbing trees of Seifert-fibred examples), with edge multiplicities a later ref
   an off-diagonal entry is the adjacency indicator.
 * `TauCeti.PlumbingGraph.intersectionMatrix_isSymm`,
   `TauCeti.PlumbingGraph.intersectionForm_isSymm`: the intersection form is symmetric.
+* `TauCeti.PlumbingGraph.intersectionForm_apply_weight_add_adj`: the bilinear form expanded
+  as framing terms plus adjacency terms.
 * `TauCeti.PlumbingGraph.intersectionForm_self`: the self-pairing as a quadratic form, the
   framing-weighted sum of squares plus the adjacency cross terms.
 * `TauCeti.PlumbingGraph.IsNegativeDefinite.weight_neg`: a negative-definite plumbing has every
@@ -59,12 +63,13 @@ intersection form of a plumbing graph follows Némethi,
 
 namespace TauCeti
 
-/-- A plumbing graph: a finite simple graph together with an integer weight on each vertex.
+/-- A plumbing graph: a simple graph together with an integer weight on each vertex.
 
 The vertices are the plumbed spheres, the edges record which pairs of spheres are plumbed
 together, and `weight v` is the self-intersection number (the framing / Euler number) of the
 sphere `v`. The combinatorics is modelled by a `SimpleGraph`: at most one edge between two
-distinct vertices, and no self-loops. -/
+distinct vertices, and no self-loops. The finite lattice API is provided by declarations that
+assume `[Fintype V]`. -/
 structure PlumbingGraph (V : Type*) where
   /-- The underlying simple graph: an edge for each pair of plumbed spheres. -/
   toSimpleGraph : SimpleGraph V
@@ -122,10 +127,10 @@ theorem intersectionMatrix_isSymm : P.intersectionMatrix.IsSymm :=
   (Matrix.isSymm_diagonal P.weight).add
     (SimpleGraph.isSymm_adjMatrix (α := ℤ) P.toSimpleGraph)
 
-/-- A plumbing graph is **negative definite** when its intersection form is negative definite,
-equivalently when the negated intersection matrix is positive definite. For plumbed
-three-manifolds this is the standing hypothesis under which lattice homology computes the
-Heegaard Floer invariant. -/
+/-- A plumbing graph is **negative definite** when its intersection matrix is negative
+definite, equivalently when the negated intersection matrix is positive definite. For finite
+plumbed three-manifolds this is the standing hypothesis under which lattice homology computes
+the Heegaard Floer invariant. -/
 def IsNegativeDefinite : Prop :=
   (-P.intersectionMatrix).PosDef
 
@@ -160,16 +165,15 @@ theorem intersectionForm_single (i j : V) :
 theorem intersectionForm_isSymm : P.intersectionForm.IsSymm :=
   Matrix.isSymm_toBilin'_iff_isSymm.mpr P.intersectionMatrix_isSymm
 
-/-- The intersection form as a quadratic form: its value on a single class is the
-framing-weighted sum of squares together with the adjacency cross terms. -/
-theorem intersectionForm_self (x : V → ℤ) :
-    P.intersectionForm x x =
-      (∑ i, P.weight i * x i ^ 2) +
-        ∑ i, ∑ j, if P.toSimpleGraph.Adj i j then x i * x j else 0 := by
+/-- The intersection form expanded into its framing contribution and adjacency contribution. -/
+theorem intersectionForm_apply_weight_add_adj (x y : V → ℤ) :
+    P.intersectionForm x y =
+      (∑ i, P.weight i * x i * y i) +
+        ∑ i, ∑ j, if P.toSimpleGraph.Adj i j then x i * y j else 0 := by
   rw [intersectionForm_apply]
-  have hsplit : ∀ i j : V, x i * P.intersectionMatrix i j * x j =
-      x i * Matrix.diagonal P.weight i j * x j +
-        x i * (P.toSimpleGraph.adjMatrix ℤ) i j * x j := by
+  have hsplit : ∀ i j : V, x i * P.intersectionMatrix i j * y j =
+      x i * Matrix.diagonal P.weight i j * y j +
+        x i * (P.toSimpleGraph.adjMatrix ℤ) i j * y j := by
     intro i j
     rw [intersectionMatrix, Matrix.add_apply]; ring
   simp_rw [hsplit, Finset.sum_add_distrib]
@@ -184,6 +188,16 @@ theorem intersectionForm_self (x : V → ℤ) :
     rw [SimpleGraph.adjMatrix_apply]
     split_ifs <;> ring
 
+/-- The intersection form as a quadratic form: its value on a single class is the
+framing-weighted sum of squares together with the adjacency cross terms. -/
+theorem intersectionForm_self (x : V → ℤ) :
+    P.intersectionForm x x =
+      (∑ i, P.weight i * x i ^ 2) +
+        ∑ i, ∑ j, if P.toSimpleGraph.Adj i j then x i * x j else 0 := by
+  rw [intersectionForm_apply_weight_add_adj]
+  congr 1
+  refine Finset.sum_congr rfl fun i _ => by ring
+
 end Form
 
 end PlumbingGraph
@@ -196,6 +210,7 @@ def a2Plumbing : PlumbingGraph (Fin 2) where
   decidableAdj := inferInstance
   weight := fun _ => -2
 
+/-- The intersection matrix of the `A₂` plumbing is the standard `[-2, 1; 1, -2]` matrix. -/
 @[simp]
 theorem a2Plumbing_intersectionMatrix :
     a2Plumbing.intersectionMatrix = !![(-2 : ℤ), 1; 1, -2] := by
