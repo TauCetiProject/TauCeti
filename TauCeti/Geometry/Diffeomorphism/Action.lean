@@ -12,7 +12,7 @@ import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 
 The self-diffeomorphism group `TauCeti.Diff I M n = M ≃ₘ^n⟮I, I⟯ M`, built in
 `TauCeti.Geometry.Diffeomorphism.Group`, acts on its manifold `M` by evaluation: `f • x = f x`.
-This file records that action — faithful, continuous in the point, and smooth in the point — and
+This file records that action — faithful, continuous in the point, and `Cⁿ` in the point — and
 the forgetful group homomorphism `Diff I M n →* (M ≃ₜ M)` to the homeomorphism group, which is
 injective and intertwines this action with the tautological homeomorphism-group action of
 `TauCeti.Topology.Algebra.HomeomorphAction`. It mirrors `Equiv.Perm.applyMulAction` and
@@ -39,7 +39,7 @@ its closedness deferred to the topology layer.
 ## Main results
 
 * `TauCeti.Diffeomorph.applyFaithfulSMul`, `applyContinuousConstSMul`: the action is faithful and
-  continuous in the point.
+  continuous in the point, with the same continuity inherited by the fixing subgroups.
 * `TauCeti.Diffeomorph.toHomeomorphHom_injective` and `smul_toHomeomorph`: the forgetful
   homomorphism is injective and equivariant for the homeomorphism-group action.
 * `TauCeti.Diff.mem_fixing_iff`, `mem_relBoundary_iff`: membership in the fixing subgroups,
@@ -78,7 +78,7 @@ self-diffeomorphism is a continuous self-map. -/
 instance applyContinuousConstSMul : ContinuousConstSMul (Diff I M n) M :=
   ⟨fun f => f.continuous⟩
 
-/-- Each self-diffeomorphism acts on `M` by a `Cⁿ` map: the orbit map `x ↦ f • x` is smooth. -/
+/-- Each self-diffeomorphism acts on `M` by a `Cⁿ` map: the orbit map `x ↦ f • x` is `Cⁿ`. -/
 theorem contMDiff_smul (f : Diff I M n) : ContMDiff I I n (f • · : M → M) :=
   f.contMDiff
 
@@ -126,6 +126,7 @@ def relBoundary : Subgroup (Diff I M n) :=
 variable {I M n}
 
 /-- A self-diffeomorphism lies in `Diff.fixing I M n s` iff it fixes every point of `s`. -/
+@[simp]
 theorem mem_fixing_iff {s : Set M} {f : Diff I M n} :
     f ∈ fixing I M n s ↔ ∀ x ∈ s, f x = x :=
   mem_fixingSubgroup_iff (Diff I M n)
@@ -134,9 +135,20 @@ theorem mem_fixing_iff {s : Set M} {f : Diff I M n} :
 theorem relBoundary_eq_fixing : relBoundary I M n = fixing I M n (I.boundary M) := rfl
 
 /-- A self-diffeomorphism lies in `Diff(M, ∂M)` iff it fixes every boundary point. -/
+@[simp]
 theorem mem_relBoundary_iff {f : Diff I M n} :
     f ∈ relBoundary I M n ↔ ∀ x ∈ I.boundary M, f x = x :=
   mem_fixing_iff
+
+/-- The action of a pointwise-fixing subgroup remains continuous in the point. -/
+instance fixing.applyContinuousConstSMul (s : Set M) :
+    ContinuousConstSMul (fixing I M n s) M :=
+  ⟨fun f => f.1.continuous⟩
+
+/-- The action of `Diff(M, ∂M)` remains continuous in the point. -/
+instance relBoundary.applyContinuousConstSMul :
+    ContinuousConstSMul (relBoundary I M n) M :=
+  fixing.applyContinuousConstSMul (I := I) (M := M) (n := n) (I.boundary M)
 
 /-- Fixing more points cuts out a smaller subgroup. -/
 theorem fixing_antitone : Antitone (fixing I M n : Set M → Subgroup (Diff I M n)) :=
