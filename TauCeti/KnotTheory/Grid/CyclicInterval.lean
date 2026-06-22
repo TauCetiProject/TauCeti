@@ -23,6 +23,7 @@ directions before taking products.
   it is not an endpoint.
 * `TauCeti.Grid.cIoo_union_swap`: the two opposite arcs cover the endpoint complement.
 * `TauCeti.Grid.card_cIoo_add_card_cIoo_swap`: the two arc lengths add to `n - 2`.
+* `TauCeti.Grid.Noninterleaving`: two endpoint pairs lie on the same cyclic side of each other.
 
 ## References
 
@@ -108,6 +109,32 @@ theorem right_notMem_cIoo (a b : Fin n) : b ∉ cIoo a b := by
     cases hinside with
     | inl hlt => exact hab hlt
     | inr hlt => exact Nat.lt_irrefl b.val hlt
+
+/-- Two oriented cyclic intervals have non-interleaving endpoint pairs.
+
+The endpoints `a₀`, `a₁` lie on the same side of the pair `b₀`, `b₁`, and conversely. This
+two-sided formulation handles shared-endpoint cases uniformly. -/
+def Noninterleaving (a₀ a₁ b₀ b₁ : Fin n) : Prop :=
+  (a₀ ∈ cIoo b₀ b₁ ↔ a₁ ∈ cIoo b₀ b₁) ∧
+    (b₀ ∈ cIoo a₀ a₁ ↔ b₁ ∈ cIoo a₀ a₁)
+
+/-- The defining endpoint-side conditions for `Grid.Noninterleaving`. -/
+theorem noninterleaving_iff (a₀ a₁ b₀ b₁ : Fin n) :
+    Noninterleaving a₀ a₁ b₀ b₁ ↔
+      (a₀ ∈ cIoo b₀ b₁ ↔ a₁ ∈ cIoo b₀ b₁) ∧
+        (b₀ ∈ cIoo a₀ a₁ ↔ b₁ ∈ cIoo a₀ a₁) :=
+  Iff.rfl
+
+/-- An endpoint pair is non-interleaving with itself. -/
+@[simp]
+theorem noninterleaving_self (a₀ a₁ : Fin n) : Noninterleaving a₀ a₁ a₀ a₁ := by
+  simp [Noninterleaving]
+
+/-- Non-interleaving is symmetric in the two endpoint pairs. -/
+theorem noninterleaving_comm {a₀ a₁ b₀ b₁ : Fin n} :
+    Noninterleaving a₀ a₁ b₀ b₁ ↔ Noninterleaving b₀ b₁ a₀ a₁ := by
+  rw [Noninterleaving, Noninterleaving]
+  exact and_comm
 
 /-- A point cannot lie in both open cyclic intervals with the same endpoints but opposite
 orientations. -/
