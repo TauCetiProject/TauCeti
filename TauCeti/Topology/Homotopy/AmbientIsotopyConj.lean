@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import TauCeti.Topology.Homotopy.Isotopy
 
 /-!
-# Conjugating ambient isotopies by homeomorphisms
+# Transporting ambient isotopies across changes of ambient coordinates
 
 The geometric-topology roadmap (`TauCetiRoadmap/GeometricTopology/README.md`, "Encoding
 conventions") mandates that isotopy and ambient isotopy be *"defined generally, then
@@ -14,54 +14,93 @@ flat isotopy (layer 2), diffeotopies (layer 3), and concordance (layer 6) -- *"n
 should re-define it"*. This file records one such general closure property: an ambient isotopy
 can be transported through a change of coordinates on its ambient space.
 
-Given an ambient isotopy `Φ` of `Y` and a self-homeomorphism `h : Y ≃ₜ Y`, `Φ.conj h` runs `Φ`
-in the coordinates moved by `h`. Its total map is obtained by pre- and post-composing `Φ`'s
-total homeomorphism with `id ×ₜ h⁻¹` and `id ×ₜ h`, so it is again an ambient isotopy. The
-endpoint formula records that the final homeomorphism is conjugated by `h`; downstream
-specialisations to smooth or locally flat settings can add their own structure on top of this
-point-set statement.
+Given an ambient isotopy `Φ` of `Y` and a homeomorphism `h : Y ≃ₜ Z`, `Φ.transport h` runs `Φ`
+in the coordinates supplied by `h`, producing an ambient isotopy of `Z`. Its total map is
+obtained by pre- and post-composing `Φ`'s total homeomorphism with `id ×ₜ h⁻¹` and `id ×ₜ h`,
+so it is again an ambient isotopy. The endpoint formula records that each time slice is `h`
+conjugating the corresponding slice of `Φ`; downstream specialisations to smooth or locally
+flat settings can add their own structure on top of this point-set statement.
+
+The self-homeomorphism case `h : Y ≃ₜ Y` is `Φ.conj h`, the conjugation of an ambient isotopy
+that keeps the ambient space fixed; here the endpoint slices land in the group `Y ≃ₜ Y` and the
+transport formulas specialise to genuine group conjugates `h * - * h⁻¹`.
 
 ## Main definitions
 
-* `TauCeti.AmbientIsotopy.conj`: the ambient isotopy `Φ` conjugated by a homeomorphism `h`, with
-  total map `(t, y) ↦ (t, h (Φ (t, h⁻¹ y)))`.
+* `TauCeti.AmbientIsotopy.transport`: the ambient isotopy `Φ` transported across `h : Y ≃ₜ Z`,
+  with total map `(t, z) ↦ (t, h (Φ (t, h⁻¹ z)))`.
+* `TauCeti.AmbientIsotopy.conj`: the self-homeomorphism case `Φ.transport h` for `h : Y ≃ₜ Y`,
+  the ambient isotopy `Φ` conjugated by `h`.
 
 ## Main results
 
-* `TauCeti.AmbientIsotopy.homeomorph_conj`: every time slice of `Φ.conj h` is the conjugate
-  `h * Φ.homeomorph t * h⁻¹`.
-* `TauCeti.AmbientIsotopy.finalHomeomorph_conj`: the final homeomorphism of `Φ.conj h` is the
-  conjugate `h * Φ.finalHomeomorph * h⁻¹`.
+* `TauCeti.AmbientIsotopy.homeomorph_transport`: every time slice of `Φ.transport h` is the
+  conjugate `(h.symm.trans (Φ.homeomorph t)).trans h`.
+* `TauCeti.AmbientIsotopy.finalHomeomorph_transport`: the final homeomorphism of `Φ.transport h`
+  is the conjugate `(h.symm.trans Φ.finalHomeomorph).trans h`.
+* `TauCeti.AmbientIsotopy.homeomorph_conj` / `finalHomeomorph_conj`: the self-homeomorphism
+  specialisations, with the conjugates written as group products `h * - * h⁻¹` in `Y ≃ₜ Y`.
 -/
 
 namespace TauCeti
 
 open unitInterval ContinuousMap Topology
 
-variable {Y : Type*} [TopologicalSpace Y]
+variable {Y Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
 
 namespace AmbientIsotopy
 
 variable (Φ : AmbientIsotopy Y)
 
-/-- **Conjugation of an ambient isotopy** by a self-homeomorphism `h`: at each time `t` run the
-homeomorphism `Φ t` in the coordinates moved by `h`, giving `y ↦ h (Φ (t, h⁻¹ y))`. The total map
-is a homeomorphism because it is `Φ`'s total homeomorphism pre- and post-composed with the
-product homeomorphisms `id ×ₜ h⁻¹` and `id ×ₜ h`. -/
-noncomputable def conj (h : Y ≃ₜ Y) : AmbientIsotopy Y where
+/-- **Transport of an ambient isotopy** across a homeomorphism `h : Y ≃ₜ Z` of ambient spaces:
+at each time `t` run the homeomorphism `Φ t` in the coordinates supplied by `h`, giving
+`z ↦ h (Φ (t, h⁻¹ z))`. The total map is a homeomorphism because it is `Φ`'s total homeomorphism
+pre- and post-composed with the product homeomorphisms `id ×ₜ h⁻¹` and `id ×ₜ h`. -/
+noncomputable def transport (h : Y ≃ₜ Z) : AmbientIsotopy Z where
   toContinuousMap := ⟨fun p => h (Φ.toContinuousMap (p.1, h.symm p.2)), by fun_prop⟩
   isHomeomorph_total' := by
-    have heq : (fun p : I × Y => (p.1, h (Φ.toContinuousMap (p.1, h.symm p.2))))
+    have heq : (fun p : I × Z => (p.1, h (Φ.toContinuousMap (p.1, h.symm p.2))))
         = ⇑((Homeomorph.refl I).prodCongr h) ∘ Φ.totalMap ∘
           ⇑((Homeomorph.refl I).prodCongr h.symm) := by
       funext p
-      obtain ⟨t, y⟩ := p
+      obtain ⟨t, z⟩ := p
       simp [Homeomorph.coe_prodCongr, Function.comp_def, totalMap]
     rw [heq]
     exact (((Homeomorph.refl I).prodCongr h).isHomeomorph.comp Φ.isHomeomorph_total).comp
       ((Homeomorph.refl I).prodCongr h.symm).isHomeomorph
-  map_zero_left' y := by
+  map_zero_left' z := by
     simp
+
+@[simp]
+theorem transport_apply (h : Y ≃ₜ Z) (p : I × Z) :
+    (Φ.transport h).toContinuousMap p = h (Φ.toContinuousMap (p.1, h.symm p.2)) := rfl
+
+@[simp]
+theorem final_transport (h : Y ≃ₜ Z) (z : Z) :
+    (Φ.transport h).final z = h (Φ.final (h.symm z)) := rfl
+
+/-- Every time slice of a transported ambient isotopy is the corresponding slice of `Φ` read in
+the coordinates supplied by `h`:
+`(Φ.transport h).homeomorph t = (h.symm.trans (Φ.homeomorph t)).trans h`. -/
+@[simp]
+theorem homeomorph_transport (h : Y ≃ₜ Z) (t : I) :
+    (Φ.transport h).homeomorph t = (h.symm.trans (Φ.homeomorph t)).trans h := by
+  ext z
+  simp only [homeomorph_apply, transport_apply, Homeomorph.trans_apply]
+
+/-- The final homeomorphism of a transported ambient isotopy is the final homeomorphism of `Φ`
+read in the coordinates supplied by `h`:
+`(Φ.transport h).finalHomeomorph = (h.symm.trans Φ.finalHomeomorph).trans h`. -/
+@[simp]
+theorem finalHomeomorph_transport (h : Y ≃ₜ Z) :
+    (Φ.transport h).finalHomeomorph = (h.symm.trans Φ.finalHomeomorph).trans h := by
+  rw [finalHomeomorph, finalHomeomorph, homeomorph_transport]
+
+/-- **Conjugation of an ambient isotopy** by a self-homeomorphism `h`: the special case of
+`AmbientIsotopy.transport` in which the change of coordinates fixes the ambient space, so the
+endpoint slices conjugate inside the group `Y ≃ₜ Y`. The total map is
+`(t, y) ↦ (t, h (Φ (t, h⁻¹ y)))`. -/
+noncomputable def conj (h : Y ≃ₜ Y) : AmbientIsotopy Y := Φ.transport h
 
 @[simp]
 theorem conj_apply (h : Y ≃ₜ Y) (p : I × Y) :
