@@ -37,8 +37,10 @@ monotone).
   multiplication.
 * `TauCeti.IsCompletelyMonotone.prod`: closure under finite products.
 * `TauCeti.IsCompletelyMonotone.pow`: closure under natural powers.
-* `TauCeti.IsCompletelyMonotone.neg_derivWithin`: if `f` is completely monotone then so is
-  `t ↦ -derivWithin f (Ici 0) t`.
+* `TauCeti.IsCompletelyMonotone.neg_one_pow_mul_iteratedDerivWithin`: every alternating
+  iterated derivative of a completely monotone function is completely monotone.
+* `TauCeti.IsCompletelyMonotone.neg_derivWithin`: the negated derivative within `[0, ∞)` of a
+  completely monotone function is completely monotone.
 
 ## References
 
@@ -55,9 +57,7 @@ namespace IsCompletelyMonotone
 
 variable {f g : ℝ → ℝ}
 
-/-- Completely monotone functions are closed under pointwise multiplication. The Leibniz rule
-writes `(-1)ⁿ (fg)⁽ⁿ⁾` as the nonnegative combination
-`∑ₖ (n choose k) · [(-1)ᵏ f⁽ᵏ⁾] · [(-1)ⁿ⁻ᵏ g⁽ⁿ⁻ᵏ⁾]`. -/
+/-- Completely monotone functions are closed under pointwise multiplication. -/
 theorem mul (hf : IsCompletelyMonotone f) (hg : IsCompletelyMonotone g) :
     IsCompletelyMonotone (f * g) := by
   refine ⟨hf.contDiffOn.mul hg.contDiffOn, fun n t ht => ?_⟩
@@ -97,20 +97,46 @@ theorem pow (hf : IsCompletelyMonotone f) (k : ℕ) : IsCompletelyMonotone (f ^ 
   | zero => rw [pow_zero]; exact isCompletelyMonotone_const zero_le_one
   | succ k ih => rw [pow_succ]; exact ih.mul hf
 
-/-- If `f` is completely monotone then so is its negated derivative `t ↦ -f'(t)`. This is the
-shift `(-1)ⁿ (-f')⁽ⁿ⁾ = (-1)ⁿ⁺¹ f⁽ⁿ⁺¹⁾` of the sign-alternation condition, and is the first step
-towards the completely-monotone ↔ Bernstein correspondence. -/
+/-- Every alternating iterated derivative of a completely monotone function is completely
+monotone. -/
+theorem neg_one_pow_mul_iteratedDerivWithin (hf : IsCompletelyMonotone f) (k : ℕ) :
+    IsCompletelyMonotone (fun t => (-1 : ℝ) ^ k * iteratedDerivWithin k f (Ici 0) t) := by
+  have hu : UniqueDiffOn ℝ (Ici (0 : ℝ)) := uniqueDiffOn_Ici 0
+  have hcont : ContDiffOn ℝ ∞ (iteratedDerivWithin k f (Ici 0)) (Ici 0) := by
+    induction k with
+    | zero => simpa [iteratedDerivWithin_zero] using hf.contDiffOn
+    | succ k ih =>
+        simpa [iteratedDerivWithin_succ] using ih.derivWithin (m := ∞) hu (by simp)
+  refine ⟨?_, fun n t ht => ?_⟩
+  · simpa [smul_eq_mul] using hcont.const_smul ((-1 : ℝ) ^ k)
+  have hshift :
+      iteratedDerivWithin n (iteratedDerivWithin k f (Ici 0)) (Ici 0) =
+        iteratedDerivWithin (n + k) f (Ici 0) := by
+    induction n with
+    | zero => simp [iteratedDerivWithin_zero]
+    | succ n ih =>
+        rw [iteratedDerivWithin_succ, ih, ← iteratedDerivWithin_succ]
+        congr 1
+        omega
+  have hsign := hf.neg_one_pow_mul_iteratedDerivWithin_nonneg (n + k) ht
+  have hiter :
+      iteratedDerivWithin n
+          (fun t => (-1 : ℝ) ^ k * iteratedDerivWithin k f (Ici 0) t) (Ici 0) t =
+        (-1 : ℝ) ^ k * iteratedDerivWithin (n + k) f (Ici 0) t := by
+    rw [iteratedDerivWithin_const_mul_field, hshift]
+  rw [hiter]
+  have key :
+      (-1 : ℝ) ^ n * ((-1 : ℝ) ^ k * iteratedDerivWithin (n + k) f (Ici 0) t) =
+        (-1 : ℝ) ^ (n + k) * iteratedDerivWithin (n + k) f (Ici 0) t := by
+    rw [pow_add]
+    ring
+  rwa [key]
+
+/-- The negated derivative within `[0, ∞)` of a completely monotone function is completely
+monotone. -/
 theorem neg_derivWithin (hf : IsCompletelyMonotone f) :
     IsCompletelyMonotone (fun t => -derivWithin f (Ici 0) t) := by
-  have hu : UniqueDiffOn ℝ (Ici (0 : ℝ)) := uniqueDiffOn_Ici 0
-  refine ⟨(hf.contDiffOn.derivWithin hu (by simp)).neg, fun n t ht => ?_⟩
-  rw [iteratedDerivWithin_fun_neg, ← iteratedDerivWithin_succ' (f := f) (s := Ici 0)]
-  have hsign := hf.neg_one_pow_mul_iteratedDerivWithin_nonneg (n + 1) ht
-  have key : (-1 : ℝ) ^ n * -iteratedDerivWithin (n + 1) f (Ici 0) t
-      = (-1) ^ (n + 1) * iteratedDerivWithin (n + 1) f (Ici 0) t := by
-    rw [pow_succ]; ring
-  rw [key]
-  exact hsign
+  simpa [pow_one, iteratedDerivWithin_one] using hf.neg_one_pow_mul_iteratedDerivWithin 1
 
 end IsCompletelyMonotone
 
