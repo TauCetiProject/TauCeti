@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import Mathlib.Algebra.Order.Ring.Basic
 import Mathlib.Data.Nat.Squarefree
 import Mathlib.Data.Rat.Lemmas
+import Mathlib.Tactic.NormNum.IsSquare
 
 /-!
 # Even prime discriminants
@@ -133,19 +134,7 @@ theorem evenPrimeDiscriminantRadicand_mod_four_eq_three_or_two {D : ℤ}
 theorem not_isSquare_evenPrimeDiscriminantRadicand_rat {D : ℤ}
     (hD : IsEvenPrimeDiscriminant D) :
     ¬ IsSquare ((evenPrimeDiscriminantRadicand D : ℤ) : ℚ) := by
-  rcases hD with rfl | rfl | rfl
-  · exact not_isSquare_of_neg (by norm_num)
-  · rw [evenPrimeDiscriminantRadicand_eight]
-    push_cast
-    rw [Rat.isSquare_ofNat_iff]
-    rintro ⟨n, hn⟩
-    have hdiv : n ∣ 2 := ⟨n, by rw [mul_comm, hn]⟩
-    rcases (Nat.dvd_prime Nat.prime_two).mp hdiv with hn1 | hn2
-    · rw [hn1] at hn
-      norm_num at hn
-    · rw [hn2] at hn
-      norm_num at hn
-  · exact not_isSquare_of_neg (by norm_num)
+  rcases hD with rfl | rfl | rfl <;> norm_num [evenPrimeDiscriminantRadicand]
 
 /-- The discriminant `-4` gives the radicand `-1`. -/
 theorem evenPrimeDiscriminantRadicand_eq_neg_one_iff {D : ℤ}
