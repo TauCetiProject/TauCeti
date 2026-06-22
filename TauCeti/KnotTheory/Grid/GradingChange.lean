@@ -33,6 +33,8 @@ depends only on the four corners of `R` and the markings, never on the `n - 2` s
 * `TauCeti.GridDiagram.JO_source_sub_JO_target`,
   `TauCeti.GridDiagram.JX_source_sub_JX_target`: the four-corner formula for the `O`- and
   `X`-marking pairings.
+* `TauCeti.GridDiagram.alexander_sub_alexander_eq_JX_sub_JX_sub_JO_sub_JO`: the general
+  Alexander grading difference in terms of the `X`- and `O`-marking pairings.
 * `TauCeti.GridDiagram.alexander_source_sub_alexander_target`: the four-corner formula for the
   Alexander grading change across a rectangle.
 
@@ -115,6 +117,14 @@ theorem JX_source_sub_JX_target (R : GridRectangleBetween x y) :
   rw [JX_def, JX_def]
   exact R.J_source_sub_J_target G.XSet
 
+/-- The difference of Alexander gradings of two grid states is the corresponding difference of
+the `X`-marking pairings minus the corresponding difference of the `O`-marking pairings. The
+normalization shift in the Alexander grading cancels in the difference. -/
+theorem alexander_sub_alexander_eq_JX_sub_JX_sub_JO_sub_JO (x y : GridState n) :
+    G.alexander x - G.alexander y = (G.JX x - G.JX y) - (G.JO x - G.JO y) := by
+  rw [alexander_def, alexander_def, maslovO_eq, maslovX_eq, maslovO_eq, maslovX_eq]
+  ring
+
 /-- The Alexander grading change across a rectangle, as a four-corner formula: it is the
 alternating sum over the four corners of the `X`-marking pairing minus the same alternating sum of
 the `O`-marking pairing. In particular it depends only on the four corners of the rectangle and
@@ -125,11 +135,8 @@ theorem alexander_source_sub_alexander_target (R : GridRectangleBetween x y) :
           GridPoint.J {(R.left, R.top)} G.XSet - GridPoint.J {(R.right, R.bottom)} G.XSet) -
         (GridPoint.J {(R.left, R.bottom)} G.OSet + GridPoint.J {(R.right, R.top)} G.OSet -
           GridPoint.J {(R.left, R.top)} G.OSet - GridPoint.J {(R.right, R.bottom)} G.OSet) := by
-  have hAlexander :
-      G.alexander x - G.alexander y = (G.JX x - G.JX y) - (G.JO x - G.JO y) := by
-    rw [alexander_def, alexander_def, maslovO_eq, maslovX_eq, maslovO_eq, maslovX_eq]
-    ring
-  rw [hAlexander, G.JX_source_sub_JX_target R, G.JO_source_sub_JO_target R]
+  rw [G.alexander_sub_alexander_eq_JX_sub_JX_sub_JO_sub_JO x y,
+    G.JX_source_sub_JX_target R, G.JO_source_sub_JO_target R]
 
 end GridDiagram
 
