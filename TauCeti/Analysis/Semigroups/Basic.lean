@@ -10,7 +10,6 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Integral.ExpDecay
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 
 
@@ -127,14 +126,13 @@ theorem StronglyContinuousSemigroup.operatorZeroApply
 
 /-- The operator norm of a C₀-semigroup is bounded on `[0, 1]`.
 
-This is one direction of [EN] Prop. I.5.3: strong continuity implies uniform
-boundedness on compact intervals. The proof applies the Banach-Steinhaus
-theorem (uniform boundedness principle) to the family `{S(t) : t ∈ [0,1]}`,
-using strong continuity at 0 and the semigroup property to establish the
-required pointwise bounds. -/
+One direction of [EN] Prop. I.5.3: strong continuity implies uniform boundedness
+on compact intervals. -/
 private theorem StronglyContinuousSemigroup.normBoundedOnUnitInterval
     (S : StronglyContinuousSemigroup X) :
     ∃ (M : ℝ), 1 ≤ M ∧ ∀ (t : ℝ), 0 ≤ t → t ≤ 1 → ‖S.operator t‖ ≤ M := by
+  -- Banach–Steinhaus (uniform boundedness) on `{S(t) : t ∈ [0,1]}`, using strong
+  -- continuity at 0 and the semigroup property for the pointwise bounds.
   -- Step 1: For each x, the orbit {S(t)x : t ∈ [0, 1]} is pointwise bounded.
   have h_ptwise : ∀ x : X, ∃ C, ∀ (i : Set.Icc (0 : ℝ) 1),
       ‖(fun j : Set.Icc (0 : ℝ) 1 => S.operator j.val) i x‖ ≤ C := by
@@ -202,14 +200,12 @@ private theorem StronglyContinuousSemigroup.normBoundedOnUnitInterval
   exact ⟨max C 1, le_max_right _ _, fun t ht0 ht1 =>
     (hC ⟨t, ht0, ht1⟩).trans (le_max_left _ _)⟩
 
-/-- The operator norm of a C₀-semigroup is bounded on `[0, n]` for any `n : ℕ`.
-
-Proof: by induction on `n`. For `t ∈ (k, k+1]`, write `t = (t-k) + k` where
-`t - k ∈ [0, 1]`, so `S(t) = S(t-k) ∘ S(k)` and
-`‖S(t)‖ ≤ ‖S(t-k)‖ · ‖S(k)‖ ≤ M · M^k = M^(k+1)`. -/
+/-- The operator norm of a C₀-semigroup is bounded on `[0, n]` for any `n : ℕ`. -/
 private theorem StronglyContinuousSemigroup.normBoundedOnInterval
     (S : StronglyContinuousSemigroup X) (n : ℕ) :
     ∃ (C : ℝ), 0 < C ∧ ∀ (t : ℝ), 0 ≤ t → t ≤ n → ‖S.operator t‖ ≤ C := by
+  -- Induction on `n`: on `(k, k+1]` write `t = (t-k) + k` with `t-k ∈ [0,1]`, so
+  -- `S(t) = S(t-k) ∘ S(k)` and `‖S(t)‖ ≤ M · M^k = M^(k+1)`.
   obtain ⟨M, hM1, hMbound⟩ := S.normBoundedOnUnitInterval
   have hM_pos : (0 : ℝ) < M := by linarith
   induction n with
@@ -338,8 +334,6 @@ theorem StronglyContinuousSemigroup.strongContAt
     -- S(t₀ + (t - t₀)) = S(t₀) ∘ S(t - t₀) by semigroup, and t₀ + (t - t₀) = t
     have h_sg := S.semigroup t₀ (t - t₀) ht₀ ht_nn
     rw [show t₀ + (t - t₀) = t from by ring] at h_sg
-    -- defeq reshape: after the semigroup rewrite the goal is the composed form
-    change (S.operator t₀) ((S.operator (t - t₀)) x) = (S.operator t) x
     rw [h_sg, ContinuousLinearMap.comp_apply]
 
 /-! ## The Infinitesimal Generator -/
@@ -450,6 +444,16 @@ theorem StronglyContinuousSemigroup.generator_tendsto
       (nhdsWithin 0 (Set.Ioi 0)) (nhds (S.generator x)) :=
   Classical.choose_spec x.property
 
+omit [CompleteSpace X] in
+/-- Eliminator for the generator: if the difference quotient `(S t x - x)/t` of an
+`x ∈ D(A)` converges to `y`, then `A x = y` (by uniqueness of limits). -/
+theorem StronglyContinuousSemigroup.generator_eq_of_tendsto
+    (S : StronglyContinuousSemigroup X) {x : X} (hx : x ∈ S.domain) {y : X}
+    (h : Filter.Tendsto (fun t => (1 / t) • (S.operator t x - x))
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds y)) :
+    S.generator ⟨x, hx⟩ = y :=
+  tendsto_nhds_unique (S.generator_tendsto ⟨x, hx⟩) h
+
 /-! ## Exponential growth bounds -/
 
 /-- A C₀-semigroup has exponential growth bound `(ω, M)`: `‖S t‖ ≤ M e^{ω t}` for `t ≥ 0`,
@@ -553,7 +557,7 @@ noncomputable def StronglyContinuousSemigroup.resolvent
             rw [smul_eq_mul, h_eval, div_eq_mul_inv]; ring)
 
 /-- The resolvent in integral form (characteristic lemma). -/
-@[simp] theorem StronglyContinuousSemigroup.resolvent_apply
+theorem StronglyContinuousSemigroup.resolvent_apply
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (lambda : ℝ) (hlam : ω < lambda) (x : X) :
     S.resolvent hb lambda hlam x
@@ -724,6 +728,7 @@ private theorem StronglyContinuousSemigroup.local_integral_shift_identity
       have hu_nonneg : 0 ≤ u := by
         rw [Set.uIcc_of_le ht.le] at hu
         exact hu.1
+      -- unfold the local `f := fun u => S.operator u x` so the semigroup law applies
       change S.operator h (S.operator u x) = S.operator (u + h) x
       rw [← ContinuousLinearMap.comp_apply, ← S.semigroup h u hh.le hu_nonneg, add_comm]
   have h_sub :
@@ -854,14 +859,9 @@ theorem StronglyContinuousSemigroup.resolventRightInv
     lambda • S.resolvent hb lambda hlam x
       - S.generator
           ⟨S.resolvent hb lambda hlam x, S.resolvent_mem_domain hb lambda hlam x⟩ = x := by
-  -- `A (R λ x) = λ • R λ x - x` by uniqueness of the generator limit (tendsto_nhds_unique).
-  rw [show S.generator
-        ⟨S.resolvent hb lambda hlam x, S.resolvent_mem_domain hb lambda hlam x⟩
-      = lambda • S.resolvent hb lambda hlam x - x from
-    tendsto_nhds_unique
-      (S.generator_tendsto
-        ⟨S.resolvent hb lambda hlam x, S.resolvent_mem_domain hb lambda hlam x⟩)
-      (S.resolvent_generator_tendsto hb lambda hlam x)]
+  -- `A (R λ x) = λ • R λ x - x` reads off the generator value from the known limit.
+  rw [S.generator_eq_of_tendsto (S.resolvent_mem_domain hb lambda hlam x)
+    (S.resolvent_generator_tendsto hb lambda hlam x)]
   abel
 
 /-- **Hille–Yosida resolvent bound** (forward direction): `‖R λ‖ ≤ M/(λ-ω)` for a C₀
@@ -884,7 +884,7 @@ noncomputable def ContractionSemigroup.resolvent (S : ContractionSemigroup X)
 
 /-- The contraction resolvent unfolds to the Laplace-transform integral
 `R(λ) x = ∫₀^∞ e^{-λt} S(t)x dt`, the `(0, 1)` case. -/
-@[simp] theorem ContractionSemigroup.resolvent_apply (S : ContractionSemigroup X)
+theorem ContractionSemigroup.resolvent_apply (S : ContractionSemigroup X)
     (lambda : ℝ) (hlam : 0 < lambda) (x : X) :
     S.resolvent lambda hlam x
       = ∫ t in Set.Ioi 0, Real.exp (-(lambda * t)) • S.operator t x := rfl
