@@ -25,6 +25,8 @@ assumption.
 
 * `TauCeti.AlmostComplexStructure.complexFinrank`: the `ℂ`-dimension of `V` under the complex
   module structure induced by `J`.
+* `TauCeti.AlmostComplexStructure.complexFinrank_def`: `complexFinrank` is `Module.finrank ℂ V`
+  under the induced complex structure.
 * `TauCeti.AlmostComplexStructure.finrank_real_eq_two_mul_complexFinrank`: the real dimension is
   twice the complex dimension, `finrank ℝ V = 2 * J.complexFinrank`.
 * `TauCeti.AlmostComplexStructure.even_finrank_real`: the real dimension of a module carrying an
@@ -49,6 +51,12 @@ noncomputable def complexFinrank (J : AlmostComplexStructure V) : ℕ :=
   letI := J.complexModule
   Module.finrank ℂ V
 
+/-- The complex dimension of `J` is the `ℂ`-dimension of `V` under the induced complex structure. -/
+lemma complexFinrank_def (J : AlmostComplexStructure V) :
+    letI := J.complexModule
+    J.complexFinrank = Module.finrank ℂ V :=
+  rfl
+
 /-- The real dimension of a module carrying an almost complex structure `J` is twice its complex
 dimension: `finrank ℝ V = 2 * J.complexFinrank`. This is the tower law `finrank ℝ V =
 finrank ℝ ℂ * finrank ℂ V` together with `finrank ℝ ℂ = 2`. -/
@@ -56,8 +64,7 @@ theorem finrank_real_eq_two_mul_complexFinrank (J : AlmostComplexStructure V) :
     Module.finrank ℝ V = 2 * J.complexFinrank := by
   letI := J.complexModule
   letI := J.complexModule_isScalarTower
-  change Module.finrank ℝ V = 2 * Module.finrank ℂ V
-  rw [← Module.finrank_mul_finrank ℝ ℂ V, Complex.finrank_real_complex]
+  rw [J.complexFinrank_def, ← Module.finrank_mul_finrank ℝ ℂ V, Complex.finrank_real_complex]
 
 /-- The real dimension of a module carrying an almost complex structure is even. -/
 theorem even_finrank_real (J : AlmostComplexStructure V) :
