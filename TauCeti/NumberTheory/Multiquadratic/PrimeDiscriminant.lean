@@ -26,8 +26,10 @@ primes into radicands `p*` satisfying `p* ≡ 1 (mod 4)`.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_natAbs`: its absolute value is `p`.
 * `TauCeti.Multiquadratic.prime_oddPrimeDiscriminant`: it is a prime integer.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_mod_four_eq_one`: for odd `p`, it is `1 mod 4`.
-* `TauCeti.Multiquadratic.oddPrimeDiscriminant_eq_neg_one_pow_div_two_mul`: the standard formula
-  `p* = (-1)^(p/2) p`.
+* `TauCeti.Multiquadratic.oddPrimeDiscriminant_eq_neg_one_pow_pred_div_two_mul`: the standard
+  formula `p* = (-1)^((p-1)/2) p`.
+* `TauCeti.Multiquadratic.oddPrimeDiscriminant_eq_neg_one_pow_div_two_mul`: the equivalent
+  formula `p* = (-1)^(p/2) p`.
 -/
 
 namespace TauCeti.Multiquadratic
@@ -113,7 +115,7 @@ private theorem mod_four_eq_one_or_three_of_odd {p : ℕ} (hp : Odd p) :
       exact_mod_cast hp3
     omega
 
-/-- For an odd `p`, the odd prime discriminant is `p` or `-p`. -/
+/-- The odd prime discriminant is always either `p` or `-p`. -/
 theorem oddPrimeDiscriminant_eq_or_eq_neg {p : ℕ} :
     oddPrimeDiscriminant p = (p : ℤ) ∨ oddPrimeDiscriminant p = -(p : ℤ) := by
   by_cases hp : p % 4 = 1
@@ -132,21 +134,20 @@ theorem oddPrimeDiscriminant_pos_iff {p : ℕ} :
   · rw [oddPrimeDiscriminant_of_mod_four_ne_one hmod]
     constructor
     · intro hpos
-      exact (not_lt_of_ge (neg_nonpos.mpr (Int.natCast_nonneg p)) hpos).elim
-    · intro h; exact (hmod h).elim
+      omega
+    · intro h
+      omega
 
 /-- The odd prime discriminant is negative exactly in the `p ≡ 3 (mod 4)` case. -/
 theorem oddPrimeDiscriminant_neg_iff {p : ℕ} (hp : Odd p) :
     oddPrimeDiscriminant p < 0 ↔ p % 4 = 3 := by
   rcases mod_four_eq_one_or_three_of_odd hp with hp1 | hp3
-  · have hp0 : p ≠ 0 := by
-      exact Nat.ne_zero_of_lt (Nat.pos_of_ne_zero (fun h => by simp [h] at hp1))
-    have hpos : (0 : ℤ) < p := by exact_mod_cast Nat.pos_of_ne_zero hp0
+  · have hpos : (0 : ℤ) < p := by
+      exact_mod_cast Nat.pos_of_ne_zero (by omega)
     rw [oddPrimeDiscriminant_of_mod_four_eq_one hp1]
-    exact ⟨fun hneg => (not_lt_of_ge hpos.le hneg).elim, fun h => by omega⟩
-  · have hp0 : p ≠ 0 := by
-      exact Nat.ne_zero_of_lt (Nat.pos_of_ne_zero (fun h => by simp [h] at hp3))
-    have hpos : (0 : ℤ) < p := by exact_mod_cast Nat.pos_of_ne_zero hp0
+    exact ⟨fun hneg => by omega, fun h => by omega⟩
+  · have hpos : (0 : ℤ) < p := by
+      exact_mod_cast Nat.pos_of_ne_zero (by omega)
     rw [oddPrimeDiscriminant_of_mod_four_eq_three hp3]
     exact ⟨fun _ => hp3, fun _ => neg_neg_of_pos hpos⟩
 
@@ -160,5 +161,14 @@ theorem oddPrimeDiscriminant_eq_neg_one_pow_div_two_mul {p : ℕ} (hp : Odd p) :
   · rw [oddPrimeDiscriminant_of_mod_four_eq_three hp3,
       ZMod.neg_one_pow_div_two_of_three_mod_four hp3]
     simp
+
+/-- The odd prime discriminant in the standard notation
+`p* = (-1)^((p - 1)/2) p`. -/
+theorem oddPrimeDiscriminant_eq_neg_one_pow_pred_div_two_mul {p : ℕ} (hp : Odd p) :
+    oddPrimeDiscriminant p = (-1 : ℤ) ^ ((p - 1) / 2) * p := by
+  rw [oddPrimeDiscriminant_eq_neg_one_pow_div_two_mul hp]
+  congr 2
+  rcases hp with ⟨k, rfl⟩
+  omega
 
 end TauCeti.Multiquadratic
