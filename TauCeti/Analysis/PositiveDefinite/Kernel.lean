@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.Matrix.Order
 import Mathlib.LinearAlgebra.Matrix.PosDef
 
 /-!
@@ -42,6 +43,9 @@ forms, with no positive-definite-kernel notion, so this is new; no code is vendo
 * `TauCeti.isPositiveDefiniteKernel_conj_symm`: positive-definite kernels are
   conjugate-symmetric.
 * `TauCeti.isPositiveDefiniteKernel_comp`: positive definiteness is preserved by pullback.
+* `TauCeti.isPositiveDefiniteKernel_add`, `TauCeti.isPositiveDefiniteKernel_smul`,
+  `TauCeti.isPositiveDefiniteKernel_mul`: closure under sums, nonnegative scalar multiples, and
+  pointwise products.
 * `TauCeti.isPositiveDefiniteKernel_iff`: the quadratic-form characterization, whose reverse
   direction builds a positive-definite kernel from conjugate symmetry and form nonnegativity.
 * `TauCeti.isPositiveDefiniteKernel_conj_mul`: the rank-one kernels
@@ -60,7 +64,7 @@ variable {α : Type v}
 
 /-- A kernel `K : α → α → 𝕜` is *positive definite* when the matrix indexed by all points of `α`
 is positive semidefinite. -/
-abbrev IsPositiveDefiniteKernel (K : α → α → 𝕜) : Prop :=
+def IsPositiveDefiniteKernel (K : α → α → 𝕜) : Prop :=
   (Matrix.of fun a b => K a b).PosSemidef
 
 /-- The named kernel predicate is definitionally Mathlib's positive semidefinite predicate on the
@@ -72,12 +76,14 @@ theorem isPositiveDefiniteKernel_def (K : α → α → 𝕜) :
 /-- Diagonal values of a positive-definite kernel are nonnegative. -/
 theorem isPositiveDefiniteKernel_apply_self_nonneg {K : α → α → 𝕜}
     (hK : IsPositiveDefiniteKernel K) (a : α) : 0 ≤ K a a := by
-  simpa [Finsupp.sum_single_index] using hK.2 (Finsupp.single a 1)
+  have hK' := (isPositiveDefiniteKernel_def K).mp hK
+  simpa [Finsupp.sum_single_index] using hK'.2 (Finsupp.single a 1)
 
 /-- Positive-definite kernels are conjugate-symmetric. -/
 theorem isPositiveDefiniteKernel_conj_symm {K : α → α → 𝕜}
     (hK : IsPositiveDefiniteKernel K) (a b : α) : conj (K a b) = K b a := by
-  have h := hK.isHermitian.apply b a
+  have hK' := (isPositiveDefiniteKernel_def K).mp hK
+  have h := hK'.isHermitian.apply b a
   simp only [Matrix.of_apply] at h
   rw [starRingEnd_apply]
   exact h
@@ -86,8 +92,36 @@ theorem isPositiveDefiniteKernel_conj_symm {K : α → α → 𝕜}
 theorem isPositiveDefiniteKernel_comp {β : Type z} {K : α → α → 𝕜}
     (hK : IsPositiveDefiniteKernel K) (f : β → α) :
     IsPositiveDefiniteKernel (fun a b => K (f a) (f b)) := by
+  have hK' := (isPositiveDefiniteKernel_def K).mp hK
   rw [isPositiveDefiniteKernel_def]
-  simpa [Matrix.submatrix, Function.comp_def] using hK.submatrix f
+  simpa [Matrix.submatrix, Function.comp_def] using hK'.submatrix f
+
+/-- Sums of positive-definite kernels are positive definite. -/
+theorem isPositiveDefiniteKernel_add {K L : α → α → 𝕜}
+    (hK : IsPositiveDefiniteKernel K) (hL : IsPositiveDefiniteKernel L) :
+    IsPositiveDefiniteKernel (fun a b => K a b + L a b) := by
+  rw [isPositiveDefiniteKernel_def] at hK hL ⊢
+  convert hK.add hL using 1
+  ext a b
+  rfl
+
+/-- Nonnegative real scalar multiples of positive-definite kernels are positive definite. -/
+theorem isPositiveDefiniteKernel_smul {K : α → α → 𝕜} {r : ℝ} (hr : 0 ≤ r)
+    (hK : IsPositiveDefiniteKernel K) :
+    IsPositiveDefiniteKernel (fun a b => r • K a b) := by
+  rw [isPositiveDefiniteKernel_def] at hK ⊢
+  convert hK.smul hr using 1
+  ext a b
+  rfl
+
+/-- Pointwise products of positive-definite kernels are positive definite. -/
+theorem isPositiveDefiniteKernel_mul {K L : α → α → 𝕜}
+    (hK : IsPositiveDefiniteKernel K) (hL : IsPositiveDefiniteKernel L) :
+    IsPositiveDefiniteKernel (fun a b => K a b * L a b) := by
+  rw [isPositiveDefiniteKernel_def] at hK hL ⊢
+  convert hK.hadamard hL using 1
+  ext a b
+  rfl
 
 private theorem posSemidef_of_support_posSemidef (K : α → α → 𝕜)
     (hHerm : (Matrix.of fun a b => K a b).IsHermitian)
@@ -146,13 +180,15 @@ theorem isPositiveDefiniteKernel_iff {K : α → α → 𝕜} :
   classical
   refine ⟨fun hK => ⟨?_, ?_⟩, fun ⟨hsymm, hpos⟩ => ?_⟩
   · intro a b
-    have h := hK.isHermitian.apply b a
+    have hK' := (isPositiveDefiniteKernel_def K).mp hK
+    have h := hK'.isHermitian.apply b a
     simp only [Matrix.of_apply] at h
     rw [starRingEnd_apply]
     exact h
   · intro ι _ v x
     have hgram : (Matrix.of fun i j => K (v i) (v j)).PosSemidef := by
-      simpa [Matrix.submatrix, Function.comp_def] using hK.submatrix v
+      have hK' := (isPositiveDefiniteKernel_def K).mp hK
+      simpa [Matrix.submatrix, Function.comp_def] using hK'.submatrix v
     have h := (Matrix.posSemidef_iff_dotProduct_mulVec.mp hgram).2 x
     simpa [dotProduct, Matrix.mulVec, Matrix.of_apply, Pi.star_apply, Finset.mul_sum,
       RCLike.star_def, mul_assoc, mul_left_comm, mul_comm] using h
