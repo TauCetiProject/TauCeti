@@ -52,7 +52,7 @@ variable {M N : Type*} [AddMonoid M] [StarAddMonoid M] [AddMonoid N] [StarAddMon
 /-- Positive-definiteness is preserved by pullback along a star-preserving additive
 homomorphism. This is stated for Mathlib's homomorphism classes so it applies to bundled
 additive homomorphisms, star algebra homomorphisms, and similar maps. -/
-theorem comp {Φ : Type*} [FunLike Φ N M] [AddMonoidHomClass Φ N M] [StarHomClass Φ N M]
+theorem comp {Φ : Type*} [FunLike Φ N M] [AddHomClass Φ N M] [StarHomClass Φ N M]
     (hF : IsPositiveDefinite F) (φ : Φ) : IsPositiveDefinite (fun x : N => F (φ x)) := by
   intro n c v
   simpa [map_add, map_star] using hF n c (fun i => φ (v i))
@@ -68,7 +68,7 @@ theorem comp_addMonoidHom (hF : IsPositiveDefinite F) (φ : N →+ M)
 /-- Positive-definiteness descends along a surjective star-preserving additive homomorphism:
 if `F ∘ φ` is positive definite and every point of the codomain is in the range of `φ`, then
 `F` is positive definite. -/
-theorem of_comp_surjective {Φ : Type*} [FunLike Φ N M] [AddMonoidHomClass Φ N M]
+theorem of_comp_surjective {Φ : Type*} [FunLike Φ N M] [AddHomClass Φ N M]
     (φ : Φ) (hstar : ∀ x : N, φ (star x) = star (φ x))
     (hsurj : Function.Surjective φ) (hcomp : IsPositiveDefinite (fun x : N => F (φ x))) :
     IsPositiveDefinite F := by
@@ -82,7 +82,7 @@ theorem of_comp_surjective {Φ : Type*} [FunLike Φ N M] [AddMonoidHomClass Φ N
 
 /-- Along a surjective star-preserving additive homomorphism, a function is positive definite
 if and only if its pullback is positive definite. -/
-theorem comp_iff_of_surjective {Φ : Type*} [FunLike Φ N M] [AddMonoidHomClass Φ N M]
+theorem comp_iff_of_surjective {Φ : Type*} [FunLike Φ N M] [AddHomClass Φ N M]
     [StarHomClass Φ N M] (φ : Φ) (hsurj : Function.Surjective φ) :
     IsPositiveDefinite (fun x : N => F (φ x)) ↔ IsPositiveDefinite F :=
   ⟨of_comp_surjective φ (map_star φ) hsurj, fun hF => hF.comp φ⟩
