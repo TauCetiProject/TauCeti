@@ -2,6 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.Tactic.Ring
 import TauCeti.KnotTheory.Grid.RectangleSwap
 import TauCeti.KnotTheory.Grid.Gradings
 

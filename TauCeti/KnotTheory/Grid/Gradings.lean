@@ -113,9 +113,7 @@ theorem alexander_eq (x : GridState n) :
   ring
 
 /-- The Alexander grading change between two grid states is the change in the `X`-marking pairing
-minus the change in the `O`-marking pairing. In the expanded Maslov formulas,
-`GridState.J z z` cancels inside `M_O(z) - M_X(z)` for each state `z`, while the marking
-self-pairings and the normalization shift cancel between the two Alexander gradings. -/
+minus the change in the `O`-marking pairing. -/
 theorem alexander_sub_eq_JX_sub_JO (x y : GridState n) :
     G.alexander x - G.alexander y = (G.JX x - G.JX y) - (G.JO x - G.JO y) := by
   rw [alexander_def, alexander_def, maslovO_eq, maslovX_eq, maslovO_eq, maslovX_eq]
