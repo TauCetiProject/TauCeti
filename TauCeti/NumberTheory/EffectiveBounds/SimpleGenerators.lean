@@ -38,40 +38,6 @@ open scoped IntermediateField
 
 namespace TauCeti
 
-namespace Polynomial
-
-variable {R S : Type*} [Semiring R] [CommRing S] [IsDomain S] [DecidableEq S]
-
-/-- The roots in a domain `S` of all polynomials of degree at most `d` with coefficients in a
-finite set `U`, mapped along `m : R →+* S`, form a finite set. This is the finite companion to
-`TauCeti.Polynomial.ncard_biUnion_roots_natDegree_le_coeff_mem_le`. -/
-theorem finite_biUnion_roots_natDegree_le_coeff_mem (m : R →+* S) (d : ℕ) (U : Finset R) :
-    (⋃ (f : R[X]) (_ : f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U),
-        ((f.map m).roots.toFinset : Set S)).Finite := by
-  classical
-  set T : Set R[X] := {f | f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U} with hT
-  have hTfinite : T.Finite := finite_setOf_natDegree_le_coeff_mem d U.finite_toSet
-  rw [show (⋃ (f : R[X]) (_ : f.natDegree ≤ d ∧ ∀ i, f.coeff i ∈ U),
-      ((f.map m).roots.toFinset : Set S)) =
-        ⋃ f ∈ T, ((f.map m).roots.toFinset : Set S) by
-    ext x
-    simp [T]]
-  exact hTfinite.biUnion (fun f _ => (f.map m).roots.toFinset.finite_toSet)
-
-/-- The roots in a domain `S` of all integer polynomials of degree at most `d` with coefficients
-bounded by `B` in absolute value form a finite set. -/
-theorem finite_biUnion_roots_natDegree_le_abs_intCoeff (m : ℤ →+* S) (d B : ℕ) :
-    (⋃ (f : ℤ[X]) (_ : f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)),
-        ((f.map m).roots.toFinset : Set S)).Finite := by
-  have hpred : ∀ (f : ℤ[X]) (i : ℕ),
-      |f.coeff i| ≤ (B : ℤ) ↔ f.coeff i ∈ Finset.Icc (-(B : ℤ)) B := by
-    intro f i
-    rw [Finset.mem_Icc, abs_le]
-  simpa only [hpred] using
-    finite_biUnion_roots_natDegree_le_coeff_mem m d (Finset.Icc (-(B : ℤ)) B)
-
-end Polynomial
-
 namespace IntermediateField
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
@@ -122,9 +88,15 @@ theorem ncard_setOf_exists_root_natDegree_le_abs_intCoeff_le (d B : ℕ) :
   classical
   set T : Set A := ⋃ (f : ℤ[X]) (_ : f.natDegree ≤ d ∧ ∀ i, |f.coeff i| ≤ (B : ℤ)),
     (((f.map (algebraMap ℤ A)).roots.toFinset : Set A)) with hTdef
-  have hTfinite : T.Finite :=
-    hTdef.symm ▸ TauCeti.Polynomial.finite_biUnion_roots_natDegree_le_abs_intCoeff
-      (algebraMap ℤ A) d B
+  have hpred : ∀ (f : ℤ[X]) (i : ℕ),
+      |f.coeff i| ≤ (B : ℤ) ↔ f.coeff i ∈ Set.Icc (-(B : ℤ)) B := by
+    intro f i
+    rw [Set.mem_Icc, abs_le]
+  have hTfinite : T.Finite := by
+    rw [hTdef]
+    simpa only [hpred] using
+      Polynomial.bUnion_roots_finite (algebraMap ℤ A) d
+        (U := Set.Icc (-(B : ℤ)) B) (Set.finite_Icc (-(B : ℤ)) B)
   calc {E : IntermediateField ℚ A | ∃ x ∈ T, E = ℚ⟮x⟯}.ncard
       ≤ T.ncard := ncard_setOf_exists_mem_eq_adjoin_le hTfinite
     _ ≤ (2 * B + 1) ^ (d + 1) * d :=
