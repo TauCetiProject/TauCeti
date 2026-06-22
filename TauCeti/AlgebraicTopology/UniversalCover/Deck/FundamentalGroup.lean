@@ -3,7 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.QuotientCovering
-import TauCeti.Topology.Homotopy.Covering
+import Mathlib.Topology.Homotopy.Lifting
 
 /-!
 # The fundamental group of the base of a regular cover and its deck group
@@ -44,9 +44,6 @@ identifies `π₁(X, x)` with that fibre via monodromy.
   with an arbitrary deck transformation by its value at the chosen lift.
 * `TauCeti.Deck.IsRegular.fundamentalGroupMulEquivDeckOp_eq_one_iff`: `γ` maps to the
   identity exactly when its monodromy fixes `e`.
-The imported declaration `TauCeti.IsCoveringMap.fundamentalGroupEquivFiber` gives the
-associated monodromy bijection `FundamentalGroup X x ≃ p ⁻¹' {x}`, `γ ↦ monodromy γ e`,
-for any covering map with simply connected total space.
 
 ## References
 
