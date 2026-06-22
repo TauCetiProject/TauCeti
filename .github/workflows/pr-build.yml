@@ -40,6 +40,14 @@ jobs:
     env:
       LANDRUN_SHA256: 645178e3239cd33760560834e50efea0864183a2a8a82faf199760dffee6dd71
       LANDRUN_VER: v0.1.14
+      # Lake artifact-cache knobs, off by default. The "Configure the Lake artifact cache"
+      # step flips these on (and sets LAKE_CACHE_DIR) ONLY when the public cache endpoints
+      # are installed as repo variables; until then they stay empty and the build runs
+      # exactly as before (a full recompile of TauCeti/). Declared here so the landrun
+      # build's `--env` list always has a defined value to pass.
+      LAKE_ARTIFACT_CACHE: ""
+      LAKE_RESTORE_ARTIFACTS: ""
+      LAKE_CACHE_DIR: ""
     steps:
       # --- Trusted setup: no PR code runs until the landrun build phase ---
       - name: Resolve PR head
@@ -160,7 +168,14 @@ jobs:
         # Pin to the trusted base branch explicitly. For merge_group the event default ref is the
         # untrusted combined commit, so this is what keeps the build config (lakefile, scripts,
         # manifest, toolchain) base-trusted; only TauCeti/ is overlaid from the merge-group commit.
-        with: { ref: "${{ steps.pr.outputs.base_ref }}", path: base, persist-credentials: false }
+        with:
+          ref: "${{ steps.pr.outputs.base_ref }}"
+          path: base
+          persist-credentials: false
+          # Enough base history for `lake cache get` to backtrack to a recently-built
+          # ancestor commit (its `--max-revs`) when the exact base tip has no cache
+          # mapping yet. Harmless (just a slightly deeper fetch) when the cache is off.
+          fetch-depth: 100
 
       - name: Checkout merge-base config (trusted ancestor — only to scope the PR's pin delta)
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
@@ -271,15 +286,63 @@ jobs:
         if: ${{ env.INFRA != '1' }}
         run: ( cd base && lake exe cache get ) && mkdir -p base/.lake/tmp
 
+      # Enable Lake's built-in artifact cache for the build below ONLY when the public read
+      # endpoints are configured (repo variables). Until then this is a no-op: LAKE_*
+      # stay empty and the landrun build recompiles TauCeti/ from scratch exactly as before.
+      # The cache dir lives under base/.lake/ so the offline landrun build (which mounts
+      # base/.lake rw) can read what the network `lake cache get` step populates. We never
+      # pass the cache *endpoints* into landrun, so the sandboxed build stays offline and
+      # can only consult the locally-populated cache.
+      - name: Configure the Lake artifact cache (no-op unless the public endpoints are set)
+        if: ${{ env.INFRA != '1' }}
+        env:
+          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
+        run: |
+          if [ -n "$PUBLIC_ARTIFACT_ENDPOINT" ] && [ -n "$PUBLIC_REVISION_ENDPOINT" ]; then
+            {
+              echo "LAKE_CACHE_DIR=$PWD/base/.lake/cache"
+              echo "LAKE_ARTIFACT_CACHE=true"
+              echo "LAKE_RESTORE_ARTIFACTS=true"
+              echo "TAUCETI_CACHE_ENABLED=1"
+            } >> "$GITHUB_ENV"
+            echo "::notice::Lake artifact cache enabled — will fetch TauCeti's oleans and build incrementally"
+          else
+            echo "::notice::Lake artifact cache not configured — building TauCeti/ from scratch (set the LAKE_CACHE_*_PUBLIC repo variables to enable)"
+          fi
+
+      # Anonymous GETs from the PUBLIC read host (a different host than the S3 API endpoint
+      # the trusted main upload uses). Looks up TauCeti's OWN root-package oleans for the
+      # base-branch revision — backtracking up to --max-revs ancestors — and unpacks them
+      # into the local Lake cache ($LAKE_CACHE_DIR). This is trusted, main-built data: no
+      # token is in reach and no PR code runs (lakefile.toml is declarative + base-trusted).
+      # Mathlib's oleans are NOT here; they come from `lake exe cache get` above. A miss is
+      # non-fatal — the landrun build just recompiles from scratch, as when the cache is off.
+      - name: Fetch TauCeti's own oleans from the Lake cache (network, no token; no PR code)
+        if: ${{ env.INFRA != '1' && env.TAUCETI_CACHE_ENABLED == '1' }}
+        env:
+          LAKE_CACHE_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          LAKE_CACHE_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
+        run: |
+          ( cd base && lake cache get --repo FormalFrontier/TauCeti ) \
+            || echo "::warning::lake cache get failed or missed; building TauCeti/ from scratch"
+
       - name: Build (trusted config + overlaid TauCeti/) under landrun, offline
         id: build
         if: ${{ env.INFRA != '1' }}
+        env:
+          # The sandboxed build is always offline: never let Lake reach out to a remote
+          # cache from inside landrun. When the artifact cache is enabled above, it restores
+          # TauCeti's oleans purely from the locally-populated $LAKE_CACHE_DIR; when it is
+          # not, this is a normal full build. Either way, no network from in here.
+          LAKE_NO_CACHE: "true"
         run: |
           export PATH="$HOME/.local/bin:$HOME/.elan/bin:$PATH"
           landrun --rox /usr --rox /etc \
             --rw /dev/null --rox /dev/zero --rox /dev/urandom --rox /dev/random \
             --rox "$HOME/.elan" --rox "$PWD/base" --rw "$PWD/base/.lake" \
             --env PATH --env HOME --env CI \
+            --env LAKE_NO_CACHE --env LAKE_ARTIFACT_CACHE --env LAKE_RESTORE_ARTIFACTS --env LAKE_CACHE_DIR \
             -- bash -euxo pipefail -c '
               cd base
               export TMPDIR="$PWD/.lake/tmp"
