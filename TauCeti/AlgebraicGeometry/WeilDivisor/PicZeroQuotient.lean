@@ -43,7 +43,7 @@ noncomputable section
 
 /-! ### Weighted degree-zero divisors modulo principal divisors -/
 
-/-- Principal divisor classes inside the weighted-degree-zero divisor group: a degree-zero
+/-- Principal divisors inside the weighted-degree-zero divisor group: a degree-zero
 divisor belongs to this subgroup exactly when its underlying divisor is principal. -/
 def principalSubgroupOfWeightedDegreeZero (w : X → ℤ) :
     AddSubgroup (weightedDegreeZeroSubgroup w) :=
@@ -131,6 +131,8 @@ lemma weightedDegreeZeroQuotientEquivPicZero_mk {w : X → ℤ}
       (QuotientAddGroup.mk D) = S.weightedDegreeZeroClassHom w h D := by
   simp only [weightedDegreeZeroQuotientEquivPicZero, AddEquiv.trans_apply,
     QuotientAddGroup.quotientAddEquivOfEq_mk]
+  -- The first-isomorphism equivalence is defined through `kerLift`, so unfold the composed
+  -- equivalence to expose its quotient-map simp lemma.
   change QuotientAddGroup.kerLift (S.weightedDegreeZeroClassHom w h)
       (QuotientAddGroup.mk D) = S.weightedDegreeZeroClassHom w h D
   rw [QuotientAddGroup.kerLift_mk]
@@ -139,6 +141,109 @@ lemma weightedDegreeZeroQuotientEquivPicZero_mk {w : X → ℤ}
 lemma coe_weightedDegreeZeroQuotientEquivPicZero_mk {w : X → ℤ}
     (h : S.IsWeightedDegreeZero w) (D : weightedDegreeZeroSubgroup w) :
     (S.weightedDegreeZeroQuotientEquivPicZero w h
+      (QuotientAddGroup.mk D) : S.ClassGroup) =
+      S.divisorClass (D : WeilDivisor X) := by
+  simp
+
+/-! ### Unweighted degree-zero divisors modulo principal divisors -/
+
+/-- Principal divisors inside the unweighted degree-zero divisor group: a degree-zero divisor
+belongs to this subgroup exactly when its underlying divisor is principal. -/
+def principalSubgroupOfDegreeZero :
+    AddSubgroup (degreeZeroSubgroup X) :=
+  S.principalSubgroup.comap (degreeZeroSubgroup X).subtype
+
+@[simp]
+lemma mem_principalSubgroupOfDegreeZero {D : degreeZeroSubgroup X} :
+    D ∈ S.principalSubgroupOfDegreeZero ↔
+      (D : WeilDivisor X) ∈ S.principalSubgroup :=
+  Iff.rfl
+
+/-- The natural map from unweighted degree-zero divisors to the abstract unweighted
+degree-zero divisor class group `Pic⁰`, sending a divisor to its divisor class. -/
+def degreeZeroClassHom (h : S.IsUnweightedDegreeZero) :
+    degreeZeroSubgroup X →+ S.unweightedPicZero h where
+  toFun D :=
+    ⟨S.divisorClass (D : WeilDivisor X), by
+      rw [divisorClass_mem_unweightedPicZero]
+      exact degree_coe_degreeZeroSubgroup D⟩
+  map_zero' := by
+    apply Subtype.ext
+    simp
+  map_add' D E := by
+    apply Subtype.ext
+    simp
+
+@[simp]
+lemma coe_degreeZeroClassHom_apply (h : S.IsUnweightedDegreeZero)
+    (D : degreeZeroSubgroup X) :
+    (S.degreeZeroClassHom h D : S.ClassGroup) =
+      S.divisorClass (D : WeilDivisor X) :=
+  rfl
+
+lemma degreeZeroClassHom_apply (h : S.IsUnweightedDegreeZero)
+    (D : degreeZeroSubgroup X) :
+    S.degreeZeroClassHom h D =
+      ⟨S.divisorClass (D : WeilDivisor X), by
+        rw [divisorClass_mem_unweightedPicZero]
+        exact degree_coe_degreeZeroSubgroup D⟩ :=
+  rfl
+
+/-- The natural map from unweighted degree-zero divisors to `Pic⁰` is surjective: every
+degree-zero divisor class has an unweighted degree-zero representative. -/
+lemma degreeZeroClassHom_surjective (h : S.IsUnweightedDegreeZero) :
+    Function.Surjective (S.degreeZeroClassHom h) := by
+  rintro ⟨c, hc⟩
+  obtain ⟨D, rfl⟩ := S.divisorClass_surjective c
+  refine ⟨⟨D, ?_⟩, ?_⟩
+  · rw [mem_degreeZeroSubgroup]
+    exact (S.divisorClass_mem_unweightedPicZero h).mp hc
+  · rfl
+
+@[simp]
+lemma degreeZeroClassHom_eq_zero_iff
+    (h : S.IsUnweightedDegreeZero) {D : degreeZeroSubgroup X} :
+    S.degreeZeroClassHom h D = 0 ↔
+      (D : WeilDivisor X) ∈ S.principalSubgroup := by
+  rw [Subtype.ext_iff]
+  exact S.divisorClass_eq_zero_iff
+
+/-- The kernel of the map from unweighted degree-zero divisors to `Pic⁰` is exactly the subgroup
+of principal divisors inside the unweighted degree-zero divisor group. -/
+lemma degreeZeroClassHom_ker (h : S.IsUnweightedDegreeZero) :
+    (S.degreeZeroClassHom h).ker =
+      S.principalSubgroupOfDegreeZero := by
+  ext D
+  rw [AddMonoidHom.mem_ker, mem_principalSubgroupOfDegreeZero,
+    degreeZeroClassHom_eq_zero_iff]
+
+/-- The quotient of unweighted degree-zero divisors by principal divisors is the abstract
+unweighted degree-zero divisor class group `Pic⁰`. -/
+def degreeZeroQuotientEquivUnweightedPicZero (h : S.IsUnweightedDegreeZero) :
+    degreeZeroSubgroup X ⧸ S.principalSubgroupOfDegreeZero ≃+
+      S.unweightedPicZero h :=
+  (QuotientAddGroup.quotientAddEquivOfEq (S.degreeZeroClassHom_ker h).symm).trans
+    (QuotientAddGroup.quotientKerEquivOfSurjective
+      (φ := S.degreeZeroClassHom h)
+      (S.degreeZeroClassHom_surjective h))
+
+@[simp]
+lemma degreeZeroQuotientEquivUnweightedPicZero_mk
+    (h : S.IsUnweightedDegreeZero) (D : degreeZeroSubgroup X) :
+    S.degreeZeroQuotientEquivUnweightedPicZero h
+      (QuotientAddGroup.mk D) = S.degreeZeroClassHom h D := by
+  simp only [degreeZeroQuotientEquivUnweightedPicZero, AddEquiv.trans_apply,
+    QuotientAddGroup.quotientAddEquivOfEq_mk]
+  -- The first-isomorphism equivalence is defined through `kerLift`, so unfold the composed
+  -- equivalence to expose its quotient-map simp lemma.
+  change QuotientAddGroup.kerLift (S.degreeZeroClassHom h)
+      (QuotientAddGroup.mk D) = S.degreeZeroClassHom h D
+  rw [QuotientAddGroup.kerLift_mk]
+
+@[simp]
+lemma coe_degreeZeroQuotientEquivUnweightedPicZero_mk
+    (h : S.IsUnweightedDegreeZero) (D : degreeZeroSubgroup X) :
+    (S.degreeZeroQuotientEquivUnweightedPicZero h
       (QuotientAddGroup.mk D) : S.ClassGroup) =
       S.divisorClass (D : WeilDivisor X) := by
   simp
