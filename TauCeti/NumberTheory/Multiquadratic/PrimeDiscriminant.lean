@@ -25,7 +25,7 @@ primes into radicands `p*` satisfying `p* ≡ 1 (mod 4)`.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant`: the integer `p* = (-1)^((p-1)/2) p`.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_natAbs`: its absolute value is `p`.
 * `TauCeti.Multiquadratic.prime_oddPrimeDiscriminant`: it is a prime integer.
-* `TauCeti.Multiquadratic.oddPrimeDiscriminant_mod_four`: for odd `p`, it is `1 mod 4`.
+* `TauCeti.Multiquadratic.oddPrimeDiscriminant_mod_four_eq_one`: for odd `p`, it is `1 mod 4`.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_eq_neg_one_pow_div_two_mul`: the standard formula
   `p* = (-1)^(p/2) p`.
 -/
@@ -41,7 +41,7 @@ def oddPrimeDiscriminant (p : ℕ) : ℤ :=
   if p % 4 = 1 then p else -(p : ℤ)
 
 /-- The defining `if` expression for the odd prime discriminant. -/
-@[simp] theorem oddPrimeDiscriminant_def (p : ℕ) :
+theorem oddPrimeDiscriminant_def (p : ℕ) :
     oddPrimeDiscriminant p = if p % 4 = 1 then (p : ℤ) else -(p : ℤ) := rfl
 
 /-- If `p ≡ 1 (mod 4)`, its odd prime discriminant is `p`. -/
@@ -56,7 +56,7 @@ def oddPrimeDiscriminant (p : ℕ) : ℤ :=
   simp [oddPrimeDiscriminant, hp]
 
 /-- If `p ≡ 3 (mod 4)`, its odd prime discriminant is `-p`. -/
-@[simp] theorem oddPrimeDiscriminant_of_mod_four_eq_three {p : ℕ} (hp : p % 4 = 3) :
+theorem oddPrimeDiscriminant_of_mod_four_eq_three {p : ℕ} (hp : p % 4 = 3) :
     oddPrimeDiscriminant p = -(p : ℤ) :=
   oddPrimeDiscriminant_of_mod_four_ne_one (by omega)
 
@@ -103,7 +103,7 @@ private theorem mod_four_eq_one_or_three_of_odd {p : ℕ} (hp : Odd p) :
   Nat.odd_mod_four_iff.mp (Nat.odd_iff.mp hp)
 
 /-- For an odd `p`, the odd prime discriminant is congruent to `1` modulo `4`. -/
-@[simp] theorem oddPrimeDiscriminant_mod_four {p : ℕ} (hp : Odd p) :
+@[simp] theorem oddPrimeDiscriminant_mod_four_eq_one {p : ℕ} (hp : Odd p) :
     oddPrimeDiscriminant p % 4 = 1 := by
   rcases mod_four_eq_one_or_three_of_odd hp with hp1 | hp3
   · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp1]
