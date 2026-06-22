@@ -44,9 +44,15 @@ variable {R H₁ H₂ H₃ A B : Type*} [CommSemiring R]
 
 section Bialgebra
 
-variable [CommSemiring H₁] [Semiring H₂]
+variable [Semiring H₁] [Semiring H₂]
 variable [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂]
 variable [CommSemiring A] [Algebra R A]
+
+private lemma convMul_comp_bialgHom_distrib_of_semiring_source
+    (f g : WithConv (H₂ →ₐ[R] A)) (φ : H₁ →ₐc[R] H₂) :
+    AlgHom.comp (f * g).ofConv (φ : H₁ →ₐ[R] H₂) =
+      ofConv (toConv (f.ofConv.comp φ) * toConv (g.ofConv.comp φ)) := by
+  simp [AlgHom.convMul_def, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp]
 
 /-- Contravariant functoriality of convolution algebra homomorphisms in the source
 bialgebra. A bialgebra morphism `φ : H₁ →ₐc[R] H₂` sends an `A`-valued point of `H₂` to an
@@ -59,7 +65,8 @@ noncomputable def mapDomain (φ : H₁ →ₐc[R] H₂) :
     simp
   map_mul' f g := by
     ext x
-    have h := congrFun (congrArg DFunLike.coe (AlgHom.convMul_comp_bialgHom_distrib f g φ)) x
+    have h :=
+      congrFun (congrArg DFunLike.coe (convMul_comp_bialgHom_distrib_of_semiring_source f g φ)) x
     simpa using h
 
 /-- `mapDomain φ` acts pointwise by pre-composition with `φ`. -/
@@ -75,7 +82,7 @@ end Bialgebra
 
 section BialgebraId
 
-variable [CommSemiring H₁] [_root_.Bialgebra R H₁]
+variable [Semiring H₁] [_root_.Bialgebra R H₁]
 variable [CommSemiring A] [Algebra R A]
 
 /-- Pre-composition by the identity bialgebra morphism is the identity map on the
@@ -92,7 +99,7 @@ end BialgebraId
 
 section BialgebraComp
 
-variable [CommSemiring H₁] [CommSemiring H₂] [Semiring H₃]
+variable [Semiring H₁] [Semiring H₂] [Semiring H₃]
 variable [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂] [_root_.Bialgebra R H₃]
 variable [CommSemiring A] [Algebra R A]
 
@@ -113,7 +120,7 @@ end BialgebraComp
 
 section BialgebraEquiv
 
-variable [CommSemiring H₁] [CommSemiring H₂]
+variable [Semiring H₁] [Semiring H₂]
 variable [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂]
 variable [CommSemiring A] [Algebra R A]
 
@@ -148,7 +155,7 @@ end BialgebraEquiv
 
 section BialgebraMapValue
 
-variable [CommSemiring H₁] [Semiring H₂] [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂]
+variable [Semiring H₁] [Semiring H₂] [_root_.Bialgebra R H₁] [_root_.Bialgebra R H₂]
 variable [CommSemiring A] [Algebra R A]
 variable [CommSemiring B] [Algebra R B]
 
@@ -169,7 +176,7 @@ end BialgebraMapValue
 
 section Hopf
 
-variable [CommSemiring H₁] [Semiring H₂]
+variable [Semiring H₁] [Semiring H₂]
 variable [_root_.Bialgebra R H₁] [_root_.HopfAlgebra R H₂]
 variable [CommSemiring A] [Algebra R A]
 
