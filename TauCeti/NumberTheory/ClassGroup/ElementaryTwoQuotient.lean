@@ -82,12 +82,18 @@ theorem elementaryTwoQuotientMk_eq_iff (C D : ClassGroup R) :
     elementaryTwoQuotientMk R C = elementaryTwoQuotientMk R D ↔ IsSquare (C / D) :=
   TauCeti.elementaryTwoQuotientMk_eq_iff C D
 
+/-- **The 2-rank of the class group when `Cl(R)/Cl(R)²` is finite-dimensional**: the `ZMod 2`
+dimension of the maximal elementary-2 quotient. In genus-theory applications the `t - 1` formula
+belongs to the narrow class group; for imaginary fields the narrow and ordinary class groups
+coincide. -/
+noncomputable def twoRank [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)] : ℕ :=
+  TauCeti.twoRank (ClassGroup R)
+
 variable [Finite (ClassGroup R)]
 
-/-- **The 2-rank of the finite class group**: the `ZMod 2`-dimension of the maximal elementary-2
-quotient `Cl(R)/Cl(R)²`. In genus-theory applications the `t - 1` formula belongs to the narrow
-class group; for imaginary fields the narrow and ordinary class groups coincide. -/
-noncomputable def twoRank : ℕ := TauCeti.twoRank (ClassGroup R)
+/-- A finite class group has finite-dimensional elementary-2 quotient. -/
+instance : Module.Finite (ZMod 2) (ElementaryTwoQuotient R) := by
+  infer_instance
 
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
 `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`. -/
