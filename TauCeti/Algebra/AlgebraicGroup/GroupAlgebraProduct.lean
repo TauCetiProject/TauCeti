@@ -2,6 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.RingTheory.TensorProduct.Maps
 import TauCeti.Algebra.Bialgebra.MonoidAlgebraProduct
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
 import TauCeti.Algebra.AlgebraicGroup.HopfMap

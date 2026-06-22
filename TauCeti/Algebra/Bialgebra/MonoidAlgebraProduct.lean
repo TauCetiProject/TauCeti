@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 import Mathlib.RingTheory.Bialgebra.Equiv
 import Mathlib.RingTheory.Bialgebra.TensorProduct
+import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
 # The monoid algebra of a product is the tensor product of monoid algebras
