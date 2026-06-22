@@ -99,7 +99,7 @@ instance : Module.Finite (ZMod 2) (ElementaryTwoQuotient R) := by
 `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`. -/
 theorem card_elementaryTwoQuotient_eq_card_twoTorsion :
     Nat.card (ElementaryTwoQuotient R) = Nat.card {C : ClassGroup R // C ^ 2 = 1} :=
-  TauCeti.card_elementaryTwoQuotient_eq_card_sq_eq_one (ClassGroup R)
+  TauCeti.card_elementaryTwoQuotient_eq_card_twoTorsion (ClassGroup R)
 
 /-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
 space of dimension the 2-rank. -/

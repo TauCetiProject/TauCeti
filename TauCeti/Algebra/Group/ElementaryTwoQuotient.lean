@@ -25,7 +25,7 @@ commutative group; the genus-theory specialization to a class group lives in
 they have the same cardinality, because the squaring endomorphism `g ↦ g²` has `G²` as its range and
 the 2-torsion as its kernel, and a finite group has the same cardinality as the product of the range
 and kernel of any endomorphism. We keep the two distinct in names and statements and record the
-cardinality identity as `card_elementaryTwoQuotient_eq_card_sq_eq_one`.
+cardinality identity as `card_elementaryTwoQuotient_eq_card_twoTorsion`.
 
 This file uses Mathlib's additive quotient `ModN (Additive G) 2` and adds multiplicative-square
 names around it. The cardinality identity is still expressed through the squaring homomorphism
@@ -44,7 +44,7 @@ names around it. The cardinality identity is still expressed through the squarin
   universal property for maps out of `G/G²`, inherited from `ModN.liftEquiv`.
 * `TauCeti.card_elementaryTwoQuotient_eq_index_square`: the quotient cardinality as the index of
   the subgroup of squares.
-* `TauCeti.card_elementaryTwoQuotient_eq_card_sq_eq_one`: `|G/G²| = |{g | g² = 1}|`.
+* `TauCeti.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|G/G²| = |{g | g² = 1}|`.
 * `TauCeti.twoRank` and `TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|G/G²| = 2 ^ twoRank`.
 -/
@@ -71,6 +71,24 @@ def elementaryTwoQuotientMkAdd : Additive G →+ ElementaryTwoQuotient G :=
 def elementaryTwoQuotientMk (g : G) : ElementaryTwoQuotient G :=
   elementaryTwoQuotientMkAdd (Additive.ofMul g)
 
+/-- An element of `Additive G` lies in the doubling submodule `range (lsmul ℤ _ 2)` iff its
+multiplicative form is a square. This is the shared core relating the `ModN`/`lsmul` model of the
+quotient to the multiplicative subgroup of squares, used both by the zero-characterization and by
+the subgroup identification, and is kept private to the file. -/
+private theorem mem_range_lsmul_two_iff (a : Additive G) :
+    a ∈ LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ)) ↔
+      IsSquare (Additive.toMul a) := by
+  rw [LinearMap.mem_range]
+  constructor
+  · rintro ⟨b, hb⟩
+    refine ⟨Additive.toMul b, ?_⟩
+    have hmul := congr_arg Additive.toMul hb
+    simpa [toMul_zsmul, zpow_two, pow_two] using hmul.symm
+  · rintro ⟨b, hb⟩
+    refine ⟨Additive.ofMul b, ?_⟩
+    apply Additive.toMul.injective
+    simpa [toMul_zsmul, zpow_two, pow_two] using hb.symm
+
 /-- An element has trivial class in `G / G²` iff it is a square. -/
 @[simp] theorem elementaryTwoQuotientMk_eq_zero_iff (g : G) :
     elementaryTwoQuotientMk g = 0 ↔ IsSquare g := by
@@ -78,16 +96,8 @@ def elementaryTwoQuotientMk (g : G) : ElementaryTwoQuotient G :=
   -- vanishes iff `ofMul g` lies in the doubling subgroup `range (lsmul ℤ _ 2)`.
   rw [elementaryTwoQuotientMk, elementaryTwoQuotientMkAdd, ModN.mkQ]
   simp only [AddMonoidHom.coe_coe, Submodule.mkQ_apply]
-  rw [Submodule.Quotient.mk_eq_zero, LinearMap.mem_range]
-  constructor
-  · rintro ⟨a, ha⟩
-    refine ⟨Additive.toMul a, ?_⟩
-    have hmul := congr_arg Additive.toMul ha
-    simpa [toMul_zsmul, zpow_two, pow_two] using hmul.symm
-  · rintro ⟨a, ha⟩
-    refine ⟨Additive.ofMul a, ?_⟩
-    apply Additive.toMul.injective
-    simpa [toMul_zsmul, zpow_two, pow_two] using ha.symm
+  rw [Submodule.Quotient.mk_eq_zero]
+  exact mem_range_lsmul_two_iff (Additive.ofMul g)
 
 /-- The universal property of `G/G²` for additive homomorphisms: maps out of the quotient are
 additive homomorphisms from `Additive G` whose values are killed by `2`. -/
@@ -142,15 +152,8 @@ private theorem range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup :
     (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ))).toAddSubgroup =
       (Subgroup.square G).toAddSubgroup := by
   ext g
-  rw [Submodule.mem_toAddSubgroup, Additive.mem_toAddSubgroup, LinearMap.mem_range,
+  rw [Submodule.mem_toAddSubgroup, mem_range_lsmul_two_iff, Additive.mem_toAddSubgroup,
     Subgroup.mem_square]
-  constructor
-  · rintro ⟨a, rfl⟩
-    exact ⟨Additive.toMul a, by simp [toMul_zsmul, zpow_two]⟩
-  · rintro ⟨a, ha⟩
-    refine ⟨Additive.ofMul a, ?_⟩
-    apply Additive.toMul.injective
-    simpa [toMul_zsmul, zpow_two, pow_two] using ha.symm
 
 /-- The cardinality of `G/G²` is the index of the subgroup of squares. -/
 theorem card_elementaryTwoQuotient_eq_index_square [Finite G] :
@@ -167,7 +170,7 @@ theorem card_elementaryTwoQuotient_eq_index_square [Finite G] :
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
 `|G/G²| = |{g | g² = 1}|`. The squaring endomorphism `g ↦ g²` has range `G²` and kernel the
 2-torsion; in a finite group the index of the range equals the cardinality of the kernel. -/
-theorem card_elementaryTwoQuotient_eq_card_sq_eq_one [Finite G] :
+theorem card_elementaryTwoQuotient_eq_card_twoTorsion [Finite G] :
     Nat.card (ElementaryTwoQuotient G) = Nat.card {g : G // g ^ 2 = 1} := by
   rw [card_elementaryTwoQuotient_eq_index_square, square_eq_powMonoidHom_two_range,
     Subgroup.index_range]
