@@ -60,7 +60,7 @@ noncomputable abbrev mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal
 
 /-- The quotient morphism has the expected underlying bialgebra morphism. -/
 @[simp]
-lemma toBialgHom_mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
+lemma hom_mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     (mkQuotient H I).hom = HopfIdeal.mkBialgHom I :=
   _root_.CommHopfAlgCat.hom_ofHom _
 
@@ -68,13 +68,13 @@ lemma toBialgHom_mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H
 @[simp]
 lemma mkQuotient_apply (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) (h : H) :
     (mkQuotient H I).hom h = Ideal.Quotient.mkₐ R I.toIdeal h := by
-  rw [toBialgHom_mkQuotient]
+  rw [hom_mkQuotient]
   exact HopfIdeal.mkBialgHom_apply I h
 
 /-- The kernel of the quotient morphism is the Hopf ideal being quotiented by. -/
 lemma mkQuotient_ker (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     RingHom.ker (mkQuotient H I).hom.toAlgHom.toRingHom = I.toIdeal := by
-  rw [toBialgHom_mkQuotient]
+  rw [hom_mkQuotient]
   exact Ideal.Quotient.mkₐ_ker (R₁ := R) I.toIdeal
 
 /-- An element maps to zero in the quotient exactly when it belongs to the Hopf ideal. -/
@@ -94,7 +94,7 @@ noncomputable abbrev liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
 
 /-- The quotient lift has the expected underlying bialgebra morphism. -/
 @[simp]
-lemma toBialgHom_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
+lemma hom_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
     (liftQuotient I f hf).hom = HopfIdeal.liftBialgHom I f.hom hf :=
   _root_.CommHopfAlgCat.hom_ofHom _

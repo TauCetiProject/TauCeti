@@ -33,7 +33,7 @@ This is the finite-type coordinate-Hopf-algebra wrapper requested by
 three-way dictionary: an affine group scheme of finite type over `k` is modeled by a
 commutative Hopf `k`-algebra finitely generated as a `k`-algebra. The finite-type algebra
 infrastructure is Mathlib's `FGAlgCat` and `Algebra.FiniteType`; the Hopf algebra category
-and points functor are Tau Ceti's existing `CommHopfAlgCat`.
+is Mathlib's bundled `CommHopfAlgCat`, on top of which Tau Ceti adds the points functor.
 -/
 
 open CategoryTheory
