@@ -63,13 +63,6 @@ namespace IsPositiveDefinite
 
 variable {M : Type*} [AddMonoid M] [StarAddMonoid M] {F : M → ℂ}
 
-/-- Conjugate symmetry of the kernel `K(a, b) = F(a + b⋆)` is conjugate symmetry of `F` in the
-involution. -/
-theorem kernel_conj_symm (hF : IsPositiveDefinite F) (a b : M) :
-    conj (F (a + star b)) = F (b + star a) := by
-  have h := hF.conj_symm a b
-  rw [← h, Complex.conj_conj]
-
 /-- The Hermitian form of the kernel `K(a, b) = F(a + b⋆)` with coefficients `x` over a finite
 family is `F`'s defining form with coefficients `conj x`, hence nonnegative. This is stated as its
 own (universe-polymorphic in the index `ι`) lemma so that it can be fed to
@@ -87,7 +80,7 @@ This is the forward half of the function ↔ kernel correspondence. -/
 theorem isPositiveDefiniteKernel (hF : IsPositiveDefinite F) :
     IsPositiveDefiniteKernel (fun a b => F (a + star b)) :=
   isPositiveDefiniteKernel_iff.mpr
-    ⟨hF.kernel_conj_symm, fun {_ι : Type} _ v x => hF.kernel_form_nonneg v x⟩
+    ⟨fun a b => hF.conj_symm b a, fun {_ι : Type} _ v x => hF.kernel_form_nonneg v x⟩
 
 /-- If the kernel `K(a, b) = F(a + b⋆)` is positive definite, then so is the function `F`. This is
 the reverse half of the function ↔ kernel correspondence. -/
