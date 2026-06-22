@@ -480,6 +480,12 @@ def refl (Y : Type*) [TopologicalSpace Y] : AmbientIsotopy Y where
 /-- The final map of the constant ambient isotopy is the identity. -/
 theorem final_refl (y : Y) : (refl Y).final y = y := rfl
 
+/-- The final homeomorphism of the constant ambient isotopy is the identity. -/
+@[simp]
+theorem finalHomeomorph_refl : (refl Y).finalHomeomorph = Homeomorph.refl Y := by
+  ext y
+  rfl
+
 instance : Inhabited (AmbientIsotopy Y) := ⟨refl Y⟩
 
 private theorem isotopy_totalMap_eq {f : C(X, Y)} :
@@ -548,6 +554,14 @@ maps of `Φ` and `Ψ`: at the endpoint it is `Ψ.final ∘ Φ.final`. -/
 theorem final_trans (Ψ : AmbientIsotopy Y) (y : Y) :
     (Φ.trans Ψ).final y = Ψ.final (Φ.final y) := rfl
 
+/-- The final homeomorphism of a composite ambient isotopy is the composite of the final
+homeomorphisms. -/
+@[simp]
+theorem finalHomeomorph_trans (Ψ : AmbientIsotopy Y) :
+    (Φ.trans Ψ).finalHomeomorph = Φ.finalHomeomorph.trans Ψ.finalHomeomorph := by
+  ext y
+  rfl
+
 /-- **Inverse of an ambient isotopy**: undo `Φ_t` at each time `t`. -/
 noncomputable def symm : AmbientIsotopy Y where
   toContinuousMap := ⟨fun p => (Φ.totalHomeomorph.symm p).2,
@@ -589,6 +603,14 @@ theorem final_symm_final (y : Y) : Φ.final (Φ.symm.final y) = y := by
   simp only [final_apply, symm_apply]
   rw [hpair]
   exact (Prod.ext_iff.mp happ).2
+
+/-- The final homeomorphism of the inverse ambient isotopy is the inverse final homeomorphism. -/
+@[simp]
+theorem finalHomeomorph_symm : Φ.symm.finalHomeomorph = Φ.finalHomeomorph.symm := by
+  ext y
+  symm
+  apply Φ.finalHomeomorph.symm_apply_eq.mpr
+  exact (Φ.final_symm_final y).symm
 
 end AmbientIsotopy
 
