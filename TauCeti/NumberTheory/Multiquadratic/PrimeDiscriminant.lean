@@ -1,0 +1,162 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+import Mathlib.Algebra.Squarefree.Basic
+import Mathlib.Data.Nat.Prime.Int
+import Mathlib.NumberTheory.LegendreSymbol.ZModChar
+import Mathlib.RingTheory.Int.Basic
+
+/-!
+# Odd prime discriminants
+
+The genus-field layer of the multiquadratic roadmap uses **prime discriminants** rather than
+bare squarefree radicands. For an odd prime `p`, the associated prime discriminant is
+
+* `p` when `p ≡ 1 (mod 4)`;
+* `-p` when `p ≡ 3 (mod 4)`.
+
+This file records that elementary normalization as a small arithmetic API. The even prime
+discriminants `-4`, `8`, and `-8` are deliberately left to the later quadratic-discriminant
+packaging; the odd-prime case is the reusable piece needed to turn the roadmap's odd ramified
+primes into radicands `p*` satisfying `p* ≡ 1 (mod 4)`.
+
+## Main definitions and results
+
+* `TauCeti.Multiquadratic.oddPrimeDiscriminant`: the integer `p* = (-1)^((p-1)/2) p`.
+* `TauCeti.Multiquadratic.oddPrimeDiscriminant_natAbs`: its absolute value is `p`.
+* `TauCeti.Multiquadratic.oddPrimeDiscriminant_prime`: it is a prime integer.
+* `TauCeti.Multiquadratic.oddPrimeDiscriminant_emod_four`: for odd `p`, it is `1 mod 4`.
+* `TauCeti.Multiquadratic.oddPrimeDiscriminant_eq_pow_mul`: the standard formula
+  `p* = (-1)^(p/2) p`.
+-/
+
+namespace TauCeti.Multiquadratic
+
+/-- The odd prime discriminant `p*`: `p` for `p ≡ 1 (mod 4)` and `-p` for
+`p ≡ 3 (mod 4)`. The primality hypothesis is not part of the definition so that the expression
+rewrites by computation; the API below supplies the prime-specific facts. -/
+def oddPrimeDiscriminant (p : ℕ) : ℤ :=
+  if p % 4 = 1 then p else -(p : ℤ)
+
+/-- If `p ≡ 1 (mod 4)`, its odd prime discriminant is `p`. -/
+@[simp] theorem oddPrimeDiscriminant_of_mod_four_eq_one {p : ℕ} (hp : p % 4 = 1) :
+    oddPrimeDiscriminant p = p := by
+  simp [oddPrimeDiscriminant, hp]
+
+/-- If `p ≠ 1 (mod 4)`, its odd prime discriminant is `-p`. For an odd prime this is the
+`p ≡ 3 (mod 4)` case. -/
+@[simp] theorem oddPrimeDiscriminant_of_mod_four_ne_one {p : ℕ} (hp : p % 4 ≠ 1) :
+    oddPrimeDiscriminant p = -(p : ℤ) := by
+  simp [oddPrimeDiscriminant, hp]
+
+/-- The absolute value of the odd prime discriminant is the underlying natural number. -/
+@[simp] theorem oddPrimeDiscriminant_natAbs (p : ℕ) :
+    (oddPrimeDiscriminant p).natAbs = p := by
+  by_cases hp : p % 4 = 1 <;> simp [oddPrimeDiscriminant, hp]
+
+/-- The odd prime discriminant is nonzero exactly when `p` is nonzero. -/
+theorem oddPrimeDiscriminant_ne_zero {p : ℕ} (hp : p ≠ 0) :
+    oddPrimeDiscriminant p ≠ 0 := by
+  rw [← Int.natAbs_ne_zero, oddPrimeDiscriminant_natAbs]
+  exact hp
+
+/-- The odd prime discriminant of a natural prime is a prime integer. -/
+theorem oddPrimeDiscriminant_prime {p : ℕ} (hp : p.Prime) :
+    Prime (oddPrimeDiscriminant p) := by
+  rw [Int.prime_iff_natAbs_prime, oddPrimeDiscriminant_natAbs]
+  exact hp
+
+/-- The odd prime discriminant of a natural prime is squarefree. -/
+theorem squarefree_oddPrimeDiscriminant {p : ℕ} (hp : p.Prime) :
+    Squarefree (oddPrimeDiscriminant p) :=
+  (oddPrimeDiscriminant_prime hp).squarefree
+
+/-- The odd prime discriminant has the same divisibility-by-two behavior as `p`. -/
+@[simp] theorem two_dvd_oddPrimeDiscriminant_iff (p : ℕ) :
+    (2 : ℤ) ∣ oddPrimeDiscriminant p ↔ 2 ∣ p := by
+  by_cases hp : p % 4 = 1
+  · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp]
+    exact Int.natCast_dvd_natCast
+  · rw [oddPrimeDiscriminant_of_mod_four_ne_one hp, Int.dvd_neg]
+    exact Int.natCast_dvd_natCast
+
+/-- The odd prime discriminant of an odd natural number is odd. -/
+theorem odd_oddPrimeDiscriminant {p : ℕ} (hp : Odd p) :
+    Odd (oddPrimeDiscriminant p) := by
+  rw [← Int.not_even_iff_odd, even_iff_two_dvd, two_dvd_oddPrimeDiscriminant_iff]
+  simpa [even_iff_two_dvd] using Nat.not_even_iff_odd.mpr hp
+
+/-- An odd natural number is `1` or `3` modulo `4`. -/
+private theorem emod_four_eq_one_or_three_of_odd {p : ℕ} (hp : Odd p) :
+    p % 4 = 1 ∨ p % 4 = 3 :=
+  Nat.odd_mod_four_iff.mp (Nat.odd_iff.mp hp)
+
+/-- For an odd `p`, the odd prime discriminant is congruent to `1` modulo `4`. -/
+theorem oddPrimeDiscriminant_emod_four {p : ℕ} (hp : Odd p) :
+    oddPrimeDiscriminant p % 4 = 1 := by
+  rcases emod_four_eq_one_or_three_of_odd hp with hp1 | hp3
+  · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp1]
+    exact_mod_cast hp1
+  · have hpne : p % 4 ≠ 1 := by omega
+    rw [oddPrimeDiscriminant_of_mod_four_ne_one hpne]
+    have hp3z : (p : ℤ) % 4 = 3 := by
+      exact_mod_cast hp3
+    omega
+
+/-- For an odd prime `p`, the odd prime discriminant is congruent to `1` modulo `4`. -/
+theorem oddPrimeDiscriminant_emod_four_of_prime {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
+    oddPrimeDiscriminant p % 4 = 1 :=
+  oddPrimeDiscriminant_emod_four (Nat.odd_iff.mpr
+    ((Nat.Prime.mod_two_eq_one_iff_ne_two hp).mpr hp2))
+
+/-- For an odd `p`, the odd prime discriminant is `p` or `-p`. -/
+theorem oddPrimeDiscriminant_eq_or_eq_neg {p : ℕ} :
+    oddPrimeDiscriminant p = (p : ℤ) ∨ oddPrimeDiscriminant p = -(p : ℤ) := by
+  by_cases hp : p % 4 = 1
+  · exact Or.inl (oddPrimeDiscriminant_of_mod_four_eq_one hp)
+  · exact Or.inr (oddPrimeDiscriminant_of_mod_four_ne_one hp)
+
+/-- The sign of the odd prime discriminant is controlled by `p mod 4`. -/
+theorem oddPrimeDiscriminant_pos_iff {p : ℕ} (hp : p ≠ 0) :
+    0 < oddPrimeDiscriminant p ↔ p % 4 = 1 := by
+  by_cases hmod : p % 4 = 1
+  · rw [oddPrimeDiscriminant_of_mod_four_eq_one hmod]
+    constructor
+    · intro _; exact hmod
+    · intro _; exact_mod_cast Nat.pos_of_ne_zero hp
+  · rw [oddPrimeDiscriminant_of_mod_four_ne_one hmod]
+    constructor
+    · intro hpos
+      exact (not_lt_of_ge (neg_nonpos.mpr (Int.natCast_nonneg p)) hpos).elim
+    · intro h; exact (hmod h).elim
+
+/-- The odd prime discriminant is negative exactly in the `p ≡ 3 (mod 4)` case. -/
+theorem oddPrimeDiscriminant_neg_iff {p : ℕ} (hp : Odd p) :
+    oddPrimeDiscriminant p < 0 ↔ p % 4 = 3 := by
+  rcases emod_four_eq_one_or_three_of_odd hp with hp1 | hp3
+  · have hp0 : p ≠ 0 := by
+      exact Nat.ne_zero_of_lt (Nat.pos_of_ne_zero (fun h => by simp [h] at hp1))
+    have hpos : (0 : ℤ) < p := by exact_mod_cast Nat.pos_of_ne_zero hp0
+    rw [oddPrimeDiscriminant_of_mod_four_eq_one hp1]
+    exact ⟨fun hneg => (not_lt_of_ge hpos.le hneg).elim, fun h => by omega⟩
+  · have hpne : p % 4 ≠ 1 := by omega
+    have hp0 : p ≠ 0 := by
+      exact Nat.ne_zero_of_lt (Nat.pos_of_ne_zero (fun h => by simp [h] at hp3))
+    have hpos : (0 : ℤ) < p := by exact_mod_cast Nat.pos_of_ne_zero hp0
+    rw [oddPrimeDiscriminant_of_mod_four_ne_one hpne]
+    exact ⟨fun _ => hp3, fun _ => neg_neg_of_pos hpos⟩
+
+/-- The odd prime discriminant in the standard notation `p* = (-1)^(p/2) p`. -/
+theorem oddPrimeDiscriminant_eq_pow_mul {p : ℕ} (hp : Odd p) :
+    oddPrimeDiscriminant p = (-1 : ℤ) ^ (p / 2) * p := by
+  rcases emod_four_eq_one_or_three_of_odd hp with hp1 | hp3
+  · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp1,
+      ZMod.neg_one_pow_div_two_of_one_mod_four hp1]
+    simp
+  · have hpne : p % 4 ≠ 1 := by omega
+    rw [oddPrimeDiscriminant_of_mod_four_ne_one hpne,
+      ZMod.neg_one_pow_div_two_of_three_mod_four hp3]
+    simp
+
+end TauCeti.Multiquadratic
