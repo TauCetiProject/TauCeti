@@ -24,12 +24,12 @@ two is the substitution `cᵢ ↦ conj cᵢ`, which turns `cᵢ · conj cⱼ` in
 in the involution. The proof routes through the quadratic-form characterization
 `TauCeti.isPositiveDefiniteKernel_iff`, so neither direction unfolds `Matrix.PosSemidef` by hand.
 
-On an additive **group** with the negation involution `a⋆ = -a` the kernel takes the familiar
-translation-invariant shape `K(a, b) = F(a - b)`, the form in which positive definiteness is
-usually stated on `ℝᵈ` or a real inner-product space. We record that specialization as a corollary
-parameterized by the hypothesis `star a = -a` (Mathlib pins no such `StarAddMonoid` instance, since
-`star` is the identity on a real vector space, so the negation involution is supplied as a side
-hypothesis rather than an instance).
+Under the negation involution `a⋆ = -a` the kernel takes the familiar translation-invariant shape
+`K(a, b) = F(a - b)`, the form in which positive definiteness is usually stated on groups such as
+`ℝᵈ` or a real inner-product space. We record that specialization as a corollary parameterized by
+the hypothesis `star a = -a` (Mathlib pins no such `StarAddMonoid` instance, since `star` is the
+identity on a real vector space, so the negation involution is supplied as a side hypothesis rather
+than an instance).
 
 This advances the `OneParameterSemigroups` roadmap, Part C ("Positive-definite functions and
 Bochner's theorem", `TauCetiRoadmap/OneParameterSemigroups/README.md`): the `API to develop` bullet
@@ -45,8 +45,8 @@ group form. No Mathlib code is vendored.
   `fun a b => F (a + star b)` is positive definite then `F` is positive definite.
 * `TauCeti.isPositiveDefinite_iff_isPositiveDefiniteKernel`: the equivalence of the two predicates.
 * `TauCeti.IsPositiveDefinite.isPositiveDefiniteKernel_sub` and
-  `TauCeti.isPositiveDefinite_iff_isPositiveDefiniteKernel_sub`: the group form `K(a, b) = F(a - b)`
-  under the negation involution `star a = -a`.
+  `TauCeti.isPositiveDefinite_iff_isPositiveDefiniteKernel_sub`: the subtraction form
+  `K(a, b) = F(a - b)` under the negation involution `star a = -a`.
 
 ## References
 
@@ -105,11 +105,11 @@ theorem isPositiveDefinite_iff_isPositiveDefiniteKernel :
 
 namespace IsPositiveDefinite
 
-variable {G : Type*} [AddGroup G] [StarAddMonoid G] {F : G → ℂ}
+variable {G : Type*} [SubNegMonoid G] [StarAddMonoid G] {F : G → ℂ}
 
-/-- On an additive group with the negation involution `a⋆ = -a`, a positive-definite function `F`
-gives the translation-invariant positive-definite kernel `K(a, b) = F(a - b)`. This is the form in
-which positive definiteness is usually stated on `ℝᵈ` or a real inner-product space. -/
+/-- Under the negation involution `a⋆ = -a`, a positive-definite function `F` gives the
+translation-invariant positive-definite kernel `K(a, b) = F(a - b)`. This is the form in which
+positive definiteness is usually stated on groups such as `ℝᵈ` or a real inner-product space. -/
 theorem isPositiveDefiniteKernel_sub (hstar : ∀ a : G, star a = -a) (hF : IsPositiveDefinite F) :
     IsPositiveDefiniteKernel (fun a b => F (a - b)) := by
   have hfun : (fun a b : G => F (a + star b)) = fun a b => F (a - b) := by
@@ -120,10 +120,10 @@ theorem isPositiveDefiniteKernel_sub (hstar : ∀ a : G, star a = -a) (hF : IsPo
 
 end IsPositiveDefinite
 
-variable {G : Type*} [AddGroup G] [StarAddMonoid G] {F : G → ℂ}
+variable {G : Type*} [SubNegMonoid G] [StarAddMonoid G] {F : G → ℂ}
 
-/-- On an additive group with the negation involution `a⋆ = -a`, `F` is positive definite if and
-only if the translation-invariant kernel `K(a, b) = F(a - b)` is positive definite. -/
+/-- Under the negation involution `a⋆ = -a`, `F` is positive definite if and only if the
+translation-invariant kernel `K(a, b) = F(a - b)` is positive definite. -/
 theorem isPositiveDefinite_iff_isPositiveDefiniteKernel_sub (hstar : ∀ a : G, star a = -a) :
     IsPositiveDefinite F ↔ IsPositiveDefiniteKernel (fun a b => F (a - b)) := by
   have hfun : (fun a b : G => F (a + star b)) = fun a b => F (a - b) := by
