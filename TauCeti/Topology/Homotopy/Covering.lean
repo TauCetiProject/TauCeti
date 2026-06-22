@@ -76,7 +76,7 @@ lemma IsCoveringMap.fundamentalGroupEquivFiber_apply [SimplyConnectedSpace E]
 /-- The inverse of the general fibre equivalence is characterized by the loop class whose
 monodromy sends the chosen lift to the requested fibre point. -/
 @[simp]
-lemma IsCoveringMap.fundamentalGroupEquivFiber_symm_apply [SimplyConnectedSpace E]
+lemma IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e e' : p ⁻¹' {x}) :
     hp.monodromy ((IsCoveringMap.fundamentalGroupEquivFiber hp e).symm e') e = e' := by
   have h := (IsCoveringMap.fundamentalGroupEquivFiber hp e).apply_symm_apply e'
@@ -86,9 +86,9 @@ lemma IsCoveringMap.fundamentalGroupEquivFiber_symm_apply [SimplyConnectedSpace 
 /-- On underlying points, the inverse of the general fibre equivalence is characterized by
 the loop class whose monodromy sends the chosen lift to the requested fibre point. -/
 @[simp]
-lemma IsCoveringMap.fundamentalGroupEquivFiber_symm_apply_coe [SimplyConnectedSpace E]
+lemma IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply_coe [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e e' : p ⁻¹' {x}) :
     (hp.monodromy ((IsCoveringMap.fundamentalGroupEquivFiber hp e).symm e') e : E) = e' := by
-  exact congrArg Subtype.val (IsCoveringMap.fundamentalGroupEquivFiber_symm_apply hp e e')
+  exact congrArg Subtype.val (IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply hp e e')
 
 end TauCeti

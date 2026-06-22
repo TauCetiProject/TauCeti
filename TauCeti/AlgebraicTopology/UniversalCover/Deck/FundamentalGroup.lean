@@ -14,11 +14,12 @@ fundamental group of the base is anti-isomorphic to the deck transformation grou
 
   `FundamentalGroup X x ≃* (Deck p)ᵐᵒᵖ`.
 
-This is the Stage 1 target of the universal-covers roadmap
+This is the regular-cover comparison needed for the Stage 1 universal-covers roadmap target
 (`Deck (UniversalCover.proj x₀) ≃* FundamentalGroup X x₀`, "possibly up to `ᵐᵒᵖ`; pin the
-action/composition convention first"). It is stated here for an arbitrary regular cover with
-simply connected total space, of which the universal cover is the special case
-`E = UniversalCover x₀` (where simple connectivity and regularity of the deck action hold).
+action/composition convention first"). The theorem here is stated for an arbitrary regular
+cover with simply connected total space, not as the specialized `UniversalCover.proj`
+statement itself. That specialization is a later instantiation with `E = UniversalCover x₀`
+once the corresponding regularity and simple-connectivity hypotheses are in scope.
 
 The `ᵐᵒᵖ` is genuine and pins the convention noted in the roadmap. The deck group acts on
 the total space on the *left* (`Deck.smul_eq_apply : φ • e = φ.1 e`), while the monodromy of
@@ -36,21 +37,20 @@ identifies `π₁(X, x)` with that fibre via monodromy.
 
 ## Main declarations
 
-* `TauCeti.Deck.IsRegular.fundamentalGroupMulEquivDeckOp`: the anti-isomorphism
+* `TauCeti.Deck.IsRegular.fundamentalGroupEquiv`: the anti-isomorphism
   `FundamentalGroup X x ≃* (Deck p)ᵐᵒᵖ`.
-* `TauCeti.Deck.IsRegular.fundamentalGroupMulEquivDeckOp_unop_smul`: the deck element
+* `TauCeti.Deck.IsRegular.fundamentalGroupEquiv_unop_smul`: the deck element
   attached to `γ` moves the chosen lift `e` to `monodromy γ e`.
-* `TauCeti.Deck.IsRegular.fundamentalGroupMulEquivDeckOp_eq_iff`: characterizes equality
+* `TauCeti.Deck.IsRegular.fundamentalGroupEquiv_eq_iff`: characterizes equality
   with an arbitrary deck transformation by its value at the chosen lift.
-* `TauCeti.Deck.IsRegular.fundamentalGroupMulEquivDeckOp_eq_one_iff`: `γ` maps to the
+* `TauCeti.Deck.IsRegular.fundamentalGroupEquiv_eq_one_iff`: `γ` maps to the
   identity exactly when its monodromy fixes `e`.
 
 ## References
 
 The comparison map is Mathlib's `IsQuotientCoveringMap.fundamentalGroupEquiv` (Junyan Xu,
 `Mathlib/Topology/Homotopy/Lifting.lean`); the quotient-covering presentation of a regular
-deck action is `TauCeti.Deck.IsRegular.isQuotientCoveringMap`. This discharges the Stage 1
-target of the Tau Ceti universal-covers roadmap.
+deck action is `TauCeti.Deck.IsRegular.isQuotientCoveringMap`.
 -/
 
 namespace TauCeti
@@ -63,7 +63,7 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {
 group of the base is anti-isomorphic to the deck transformation group:
 `FundamentalGroup X x ≃* (Deck p)ᵐᵒᵖ`. The `ᵐᵒᵖ` reflects that the deck group acts on the
 left while the monodromy of `π₁` acts on the right; see the module docstring. -/
-noncomputable def IsRegular.fundamentalGroupMulEquivDeckOp [SimplyConnectedSpace E]
+noncomputable def IsRegular.fundamentalGroupEquiv [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
     FundamentalGroup X x ≃* (Deck p)ᵐᵒᵖ :=
   (hreg.isQuotientCoveringMap hp).fundamentalGroupEquiv e
@@ -71,26 +71,26 @@ noncomputable def IsRegular.fundamentalGroupMulEquivDeckOp [SimplyConnectedSpace
 /-- The deck transformation attached to a loop class `γ` moves the chosen basepoint lift `e`
 along the monodromy of `γ`. -/
 @[simp]
-lemma IsRegular.fundamentalGroupMulEquivDeckOp_unop_smul [SimplyConnectedSpace E]
+lemma IsRegular.fundamentalGroupEquiv_unop_smul [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    (hreg.fundamentalGroupMulEquivDeckOp hp e γ).unop • (e : E) = (hp.monodromy γ e : E) :=
+    (hreg.fundamentalGroupEquiv hp e γ).unop • (e : E) = (hp.monodromy γ e : E) :=
   (hreg.isQuotientCoveringMap hp).unop_fundamentalGroupToMulOpposite_smul
 
 /-- The fundamental group element `γ` corresponds to a deck transformation `g` exactly when
 `g.unop` moves the chosen lift `e` to the monodromy translate of `e` along `γ`. -/
-lemma IsRegular.fundamentalGroupMulEquivDeckOp_eq_iff [SimplyConnectedSpace E]
+lemma IsRegular.fundamentalGroupEquiv_eq_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x})
     (γ : FundamentalGroup X x) (g : (Deck p)ᵐᵒᵖ) :
-    hreg.fundamentalGroupMulEquivDeckOp hp e γ = g ↔
+    hreg.fundamentalGroupEquiv hp e γ = g ↔
       g.unop • (e : E) = hp.monodromy γ e :=
   (hreg.isQuotientCoveringMap hp).fundamentalGroupToMulOpposite_apply_eq_Iff
 
 /-- A loop class `γ` maps to the identity deck transformation exactly when its monodromy
 fixes the chosen basepoint lift `e`. -/
 @[simp]
-lemma IsRegular.fundamentalGroupMulEquivDeckOp_eq_one_iff [SimplyConnectedSpace E]
+lemma IsRegular.fundamentalGroupEquiv_eq_one_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    hreg.fundamentalGroupMulEquivDeckOp hp e γ = 1 ↔ hp.monodromy γ e = e :=
+    hreg.fundamentalGroupEquiv hp e γ = 1 ↔ hp.monodromy γ e = e :=
   (hreg.isQuotientCoveringMap hp).fundamentalGroupToMulOpposite_eq_one_iff
 
 end Deck
