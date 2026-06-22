@@ -7,7 +7,6 @@ import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Data.Rat.Lemmas
 import Mathlib.Algebra.Squarefree.Basic
 import Mathlib.RingTheory.Int.Basic
-import Mathlib.Tactic.NormNum.Prime
 
 /-!
 # Multiquadratic fields with pairwise-coprime squarefree integer radicands
