@@ -34,12 +34,14 @@ simplex need not contain every vertex even when `K` does.
 
 * `TauCeti.PreAbstractSimplicialComplex.closedStar_le` / `link_le` / `deletion_le`: each is a
   subcomplex of `K`, and `link_le_closedStar` places the link inside the closed star.
+* `TauCeti.PreAbstractSimplicialComplex.mem_closedStar_iff` / `mem_link_iff`: membership in the
+  closed star or link, phrased as membership in `K` plus the local condition.
 * `TauCeti.PreAbstractSimplicialComplex.closedStar_sup_deletion`: the closed star and the deletion
   cover `K`, i.e. `closedStar K σ ⊔ deletion K σ = K`.
 * `TauCeti.PreAbstractSimplicialComplex.link_le_deletion_of_nonempty`: for a nonempty `σ`, the
   link sits inside the deletion.
-* `TauCeti.PreAbstractSimplicialComplex.mem_link_singleton`: the link of a vertex `{v}`, in the
-  `insert`-form used by the combinatorial-manifold link condition.
+* `TauCeti.PreAbstractSimplicialComplex.mem_closedStar_singleton` / `mem_link_singleton` /
+  `mem_deletion_singleton`: the vertex forms used by downstream local-link arguments.
 * `TauCeti.PreAbstractSimplicialComplex.closedStar_empty` / `link_empty` / `deletion_empty`: the
   values at the empty simplex (`K`, `K`, and `⊥`), pinning the conventions.
 * monotonicity of all three constructions in `K`.
@@ -99,6 +101,20 @@ omit [DecidableEq ι] in
 @[simp]
 theorem mem_deletion {ρ : Finset ι} : ρ ∈ deletion K σ ↔ ρ ∈ K ∧ ¬ σ ⊆ ρ := Iff.rfl
 
+/-- Membership in the closed star, with the underlying `K`-face exposed. -/
+theorem mem_closedStar_iff {ρ : Finset ι} :
+    ρ ∈ closedStar K σ ↔ ρ ∈ K ∧ ρ ∪ σ ∈ K := by
+  refine ⟨fun hρ => ⟨?_, hρ.2⟩, fun hρ => ⟨?_, hρ.2⟩⟩
+  · exact (K.isRelLowerSet_faces hρ.2).2 subset_union_left hρ.1
+  · exact (K.isRelLowerSet_faces hρ.1).1
+
+/-- Membership in the link, with the underlying `K`-face exposed. -/
+theorem mem_link_iff {ρ : Finset ι} :
+    ρ ∈ link K σ ↔ ρ ∈ K ∧ Disjoint ρ σ ∧ ρ ∪ σ ∈ K := by
+  refine ⟨fun hρ => ⟨?_, hρ.2.1, hρ.2.2⟩, fun hρ => ⟨?_, hρ.2⟩⟩
+  · exact (K.isRelLowerSet_faces hρ.2.2).2 subset_union_left hρ.1
+  · exact (K.isRelLowerSet_faces hρ.1).1
+
 /-- The closed star of `σ` is a subcomplex of `K`. -/
 theorem closedStar_le : closedStar K σ ≤ K := by
   rintro ρ ⟨hne, hρ⟩
@@ -118,7 +134,7 @@ theorem deletion_le : deletion K σ ≤ K :=
   fun _ hρ => hρ.1
 
 /-- The closed star and the deletion of `σ` cover `K`: every face either survives in the deletion
-(it avoids `σ`) or lies in the closed star (it, hence its union with `σ`, is a face). -/
+(it does not contain `σ`) or lies in the closed star (it, hence its union with `σ`, is a face). -/
 theorem closedStar_sup_deletion : closedStar K σ ⊔ deletion K σ = K := by
   refine le_antisymm (sup_le closedStar_le deletion_le) fun ρ hρ => ?_
   rcases em (σ ⊆ ρ) with h | h
@@ -139,6 +155,19 @@ uses. -/
 theorem mem_link_singleton {v : ι} {ρ : Finset ι} :
     ρ ∈ link K {v} ↔ ρ.Nonempty ∧ v ∉ ρ ∧ insert v ρ ∈ K := by
   rw [mem_link, disjoint_singleton_right, union_comm, ← insert_eq]
+
+/-- The closed star of a single vertex `{v}`, written with `insert`. -/
+@[simp]
+theorem mem_closedStar_singleton {v : ι} {ρ : Finset ι} :
+    ρ ∈ closedStar K {v} ↔ ρ ∈ K ∧ insert v ρ ∈ K := by
+  rw [mem_closedStar_iff, union_comm, ← insert_eq]
+
+omit [DecidableEq ι] in
+/-- The deletion of a single vertex `{v}` consists of the faces not containing `v`. -/
+@[simp]
+theorem mem_deletion_singleton {v : ι} {ρ : Finset ι} :
+    ρ ∈ deletion K {v} ↔ ρ ∈ K ∧ v ∉ ρ := by
+  rw [mem_deletion, singleton_subset_iff]
 
 /-- The closed star at the empty simplex is the whole complex. -/
 @[simp]
