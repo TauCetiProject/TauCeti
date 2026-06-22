@@ -23,8 +23,8 @@ monolithic PDE class.
 
 * `TauCeti.PDE.min_mul_prod_norm_sq_le_add`: product sup-norm lower-bound bridge for
   coercivity estimates.
-* `TauCeti.PDE.isCoercive_energyIntegrand_zero_drift_of_lower_bounds`: the zero-drift
-  specialization, needing only a positive mass lower bound.
+* `TauCeti.PDE.isCoercive_energyIntegrand_zero_drift`: the zero-drift specialization,
+  needing only a positive zeroth-order coefficient.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand_zero_drift`: the same result
   using the bundled uniform-ellipticity and mass lower-bound predicates.
 -/
@@ -40,11 +40,10 @@ variable {X n : Type*} [Fintype n] [DecidableEq n]
 
 variable {lam mu beta : ℝ}
 
-omit [DecidableEq n] in
 /-- The square of the product sup norm is controlled by the two squared coordinate norms
 with the smaller coefficient. -/
 lemma min_mul_prod_norm_sq_le_add (hlam : 0 ≤ lam) (hmu : 0 ≤ mu)
-    (U : ℝ × EuclideanSpace ℝ n) :
+    {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] (U : E × F) :
     min lam mu * ‖U‖ ^ 2 ≤ lam * ‖U.2‖ ^ 2 + mu * ‖U.1‖ ^ 2 := by
   have hmin_lam : min lam mu ≤ lam := min_le_left _ _
   have hmin_mu : min lam mu ≤ mu := min_le_right _ _
@@ -104,16 +103,24 @@ private lemma isCoercive_energyIntegrand_of_bounds (hlam : 0 < lam)
   rw [Real.norm_eq_abs, sq_abs] at hmin
   simpa [pow_two, mul_assoc] using hmin.trans hlb
 
-/-- Coercivity of the zero-drift jet bilinear form from a positive mass lower bound.
+/-- Coercivity of the zero-drift jet bilinear form from a positive zeroth-order coefficient.
 
-This is the `β = 0` specialization of `isCoercive_energyIntegrand_of_bounds`, where the
-coercivity constant is `min (λ/2) μ`. -/
+This is the `β = 0` specialization of `isCoercive_energyIntegrand_of_bounds`, with the
+coercivity constant `min (λ/2) c₀`. -/
+lemma isCoercive_energyIntegrand_zero_drift (hlam : 0 < lam) {A : Matrix n n ℝ} {c₀ : ℝ}
+    (hc₀ : 0 < c₀)
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) :
+    IsCoercive (energyIntegrand A 0 c₀) :=
+  isCoercive_energyIntegrand_of_bounds (beta := 0) (mu := c₀) hlam hA (by simp) le_rfl
+    (by simpa using hc₀)
+
+/-- Coercivity of the zero-drift jet bilinear form from a positive mass lower bound. -/
 lemma isCoercive_energyIntegrand_zero_drift_of_lower_bounds (hlam : 0 < lam) (hmu : 0 < mu)
     {A : Matrix n n ℝ} {c₀ : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hc : mu ≤ c₀) :
     IsCoercive (energyIntegrand A 0 c₀) :=
-  isCoercive_energyIntegrand_of_bounds (beta := 0) hlam hA (by simp) hc (by simpa using hmu)
+  isCoercive_energyIntegrand_zero_drift hlam (hmu.trans_le hc) hA
 
 /-- Coercivity of the pointwise jet bilinear form on a domain from raw lower bounds.
 
@@ -150,8 +157,8 @@ zero-drift pointwise jet integrand coercive at every point of the domain. -/
 lemma isCoercive_energyIntegrand_zero_drift (he : UniformlyEllipticOn Ω a lam Lam)
     (hc : MassLowerBoundOn Ω c mu) {x : X} (hx : x ∈ Ω) :
     IsCoercive (energyIntegrand (a x) 0 (c x)) :=
-  isCoercive_energyIntegrand_zero_drift_of_lower_bounds he.pos hc.mu_pos
-    (he.lower_bound hx) (hc.lower_bound hx)
+  PDE.isCoercive_energyIntegrand_zero_drift he.pos (hc.mu_pos.trans_le (hc.lower_bound hx))
+    (he.lower_bound hx)
 
 end UniformlyEllipticOn
 
