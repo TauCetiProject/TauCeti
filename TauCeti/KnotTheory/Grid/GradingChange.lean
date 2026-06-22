@@ -26,6 +26,8 @@ markings, never on the `n - 2` shared squares.
 
 ## Main results
 
+* `TauCeti.GridState.J_pointSet_sub_J_swapColumns_pointSet`: the arbitrary column-swap
+  `J`-pairing change against a fixed point set.
 * `TauCeti.GridRectangleBetween.J_source_pointSet_eq`,
   `TauCeti.GridRectangleBetween.J_target_pointSet_eq`: the `J`-pairing of the source or target
   state against any point set splits as its two corners plus the shared part.
@@ -46,6 +48,66 @@ Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.
 -/
 
 namespace TauCeti
+
+namespace GridState
+
+variable {n : ℕ} (x : GridState n) {a b : Fin n}
+
+/-- The `J`-pairing of a grid state against any point set splits as the contributions of its
+two squares in columns `a` and `b` plus the contribution of the squares it shares with the
+state obtained by swapping those columns. -/
+theorem J_pointSet_eq_of_swapColumns (h : a ≠ b) (s : Finset (Fin n × Fin n)) :
+    GridPoint.J x.pointSet s =
+      GridPoint.J {(a, x a)} s + GridPoint.J {(b, x b)} s +
+        GridPoint.J (x.pointSet ∩ (x.swapColumns a b).pointSet) s := by
+  have hb : (b, x b) ∉ x.pointSet ∩ (x.swapColumns a b).pointSet := by
+    rw [mem_pointSet_inter_swapColumns_iff x h]
+    rintro ⟨_, _, hb⟩
+    exact hb rfl
+  have ha : (a, x a) ∉
+      insert (b, x b) (x.pointSet ∩ (x.swapColumns a b).pointSet) := by
+    simp only [Finset.mem_insert, not_or]
+    exact ⟨fun hab => h (congrArg Prod.fst hab), by
+      rw [mem_pointSet_inter_swapColumns_iff x h]
+      rintro ⟨_, ha, _⟩
+      exact ha rfl⟩
+  conv_lhs => rw [pointSet_eq_insert_insert_inter_swapColumns x h]
+  rw [GridPoint.J_insert_left ha, GridPoint.J_insert_left hb]
+  ring
+
+/-- The `J`-pairing of a column-swapped grid state against any point set splits as the
+contributions of the two transported squares plus the contribution shared with the source
+state. -/
+theorem J_swapColumns_pointSet_eq (h : a ≠ b) (s : Finset (Fin n × Fin n)) :
+    GridPoint.J (x.swapColumns a b).pointSet s =
+      GridPoint.J {(a, x b)} s + GridPoint.J {(b, x a)} s +
+        GridPoint.J (x.pointSet ∩ (x.swapColumns a b).pointSet) s := by
+  have hb : (b, x a) ∉ x.pointSet ∩ (x.swapColumns a b).pointSet := by
+    rw [mem_pointSet_inter_swapColumns_iff x h]
+    rintro ⟨_, _, hb⟩
+    exact hb rfl
+  have ha : (a, x b) ∉
+      insert (b, x a) (x.pointSet ∩ (x.swapColumns a b).pointSet) := by
+    simp only [Finset.mem_insert, not_or]
+    exact ⟨fun hab => h (congrArg Prod.fst hab), by
+      rw [mem_pointSet_inter_swapColumns_iff x h]
+      rintro ⟨_, ha, _⟩
+      exact ha rfl⟩
+  conv_lhs => rw [swapColumns_pointSet_eq_insert_insert_inter x h]
+  rw [GridPoint.J_insert_left ha, GridPoint.J_insert_left hb]
+  ring
+
+/-- The change in the `J`-pairing against a fixed point set under an arbitrary swap of two
+columns. The squares shared by the two states cancel, leaving only the four affected column
+entries. -/
+theorem J_pointSet_sub_J_swapColumns_pointSet (h : a ≠ b) (s : Finset (Fin n × Fin n)) :
+    GridPoint.J x.pointSet s - GridPoint.J (x.swapColumns a b).pointSet s =
+      GridPoint.J {(a, x a)} s + GridPoint.J {(b, x b)} s -
+        GridPoint.J {(a, x b)} s - GridPoint.J {(b, x a)} s := by
+  rw [J_pointSet_eq_of_swapColumns x h s, J_swapColumns_pointSet_eq x h s]
+  ring
+
+end GridState
 
 namespace GridRectangleBetween
 
@@ -89,8 +151,8 @@ theorem J_source_sub_J_target (s : Finset (Fin n × Fin n)) :
     GridPoint.J x.pointSet s - GridPoint.J y.pointSet s =
       GridPoint.J {(R.left, R.bottom)} s + GridPoint.J {(R.right, R.top)} s -
         GridPoint.J {(R.left, R.top)} s - GridPoint.J {(R.right, R.bottom)} s := by
-  rw [R.J_source_pointSet_eq s, R.J_target_pointSet_eq s]
-  ring
+  simpa [R.target_eq_swapColumns, bottom, top] using
+    GridState.J_pointSet_sub_J_swapColumns_pointSet x R.left_ne_right s
 
 end GridRectangleBetween
 
