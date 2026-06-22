@@ -110,9 +110,9 @@ theorem squarefree_evenPrimeDiscriminantRadicand {D : ℤ}
     Squarefree (evenPrimeDiscriminantRadicand D) := by
   rcases hD with rfl | rfl | rfl
   · norm_num
-  · rw [← Int.squarefree_natAbs]
+  · rw [evenPrimeDiscriminantRadicand_eight, ← Int.squarefree_natAbs]
     exact Nat.prime_two.squarefree
-  · rw [← Int.squarefree_natAbs]
+  · rw [evenPrimeDiscriminantRadicand_neg_eight, ← Int.squarefree_natAbs]
     exact Nat.prime_two.squarefree
 
 /-- The even prime discriminants themselves are even. -/
