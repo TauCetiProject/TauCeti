@@ -44,6 +44,8 @@ names around it. The cardinality identity is still expressed through the squarin
   class map is surjective, and two elements have the same class iff they differ by a square.
 * `TauCeti.elementaryTwoQuotientLiftEquiv` and `TauCeti.elementaryTwoQuotientLinearLiftEquiv`: the
   universal property for maps out of `G/G²`, inherited from `ModN.liftEquiv`.
+* `TauCeti.elementaryTwoQuotientEquivSquareQuotient`: the equivalence between Mathlib's `ModN`
+  model and the quotient by the additive form of `G²`.
 * `TauCeti.card_elementaryTwoQuotient_eq_index_square`: the quotient cardinality as the index of
   the subgroup of squares.
 * `TauCeti.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|G/G²| = |{g | g² = 1}|`.
@@ -169,17 +171,22 @@ private theorem range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup :
   rw [Submodule.mem_toAddSubgroup, mem_range_lsmul_two_iff, Additive.mem_toAddSubgroup,
     Subgroup.mem_square]
 
+/-- Mathlib's `ModN (Additive G) 2` model of `G/G²` agrees with the direct quotient by the
+additive form of the square subgroup. -/
+noncomputable def elementaryTwoQuotientEquivSquareQuotient :
+    ElementaryTwoQuotient G ≃+ Additive G ⧸ (Subgroup.square G).toAddSubgroup :=
+  QuotientAddGroup.congr _ _ (AddEquiv.refl (Additive G)) <| by
+    simpa using range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup G
+
 /-- The cardinality of `G/G²` is the index of the subgroup of squares. -/
 theorem card_elementaryTwoQuotient_eq_index_square :
     Nat.card (ElementaryTwoQuotient G) = (Subgroup.square G).index := by
-  -- `ElementaryTwoQuotient G` unfolds to `Additive G ⧸ range (lsmul ℤ _ 2)`, so its cardinality is
-  -- definitionally the index of the doubling subgroup; `AddSubgroup.index_eq_card` names that
-  -- defeq.
-  rw [show Nat.card (ElementaryTwoQuotient G)
-        = (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ))).toAddSubgroup.index from
-        (AddSubgroup.index_eq_card
-          (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ))).toAddSubgroup).symm,
-    range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup, Subgroup.index_toAddSubgroup]
+  calc
+    Nat.card (ElementaryTwoQuotient G)
+        = Nat.card (Additive G ⧸ (Subgroup.square G).toAddSubgroup) :=
+            Nat.card_congr (elementaryTwoQuotientEquivSquareQuotient (G := G)).toEquiv
+    _ = (Subgroup.square G).index := by
+          rw [← AddSubgroup.index_eq_card, Subgroup.index_toAddSubgroup]
 
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
 `|G/G²| = |{g | g² = 1}|`. The squaring endomorphism `g ↦ g²` has range `G²` and kernel the

@@ -106,6 +106,13 @@ coincide. -/
 noncomputable def twoRank [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)] : ℕ :=
   TauCeti.twoRank (ClassGroup R)
 
+/-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
+space of dimension the 2-rank. -/
+theorem card_elementaryTwoQuotient_eq_two_pow_twoRank
+    [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)] :
+    Nat.card (ElementaryTwoQuotient R) = 2 ^ twoRank R :=
+  TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank (ClassGroup R)
+
 variable [Finite (ClassGroup R)]
 
 /-- A finite class group has finite-dimensional elementary-2 quotient. -/
@@ -117,11 +124,5 @@ instance : Module.Finite (ZMod 2) (ElementaryTwoQuotient R) := by
 theorem card_elementaryTwoQuotient_eq_card_twoTorsion :
     Nat.card (ElementaryTwoQuotient R) = Nat.card {C : ClassGroup R // C ^ 2 = 1} :=
   TauCeti.card_elementaryTwoQuotient_eq_card_twoTorsion (ClassGroup R)
-
-/-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
-space of dimension the 2-rank. -/
-theorem card_elementaryTwoQuotient_eq_two_pow_twoRank :
-    Nat.card (ElementaryTwoQuotient R) = 2 ^ twoRank R :=
-  TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank (ClassGroup R)
 
 end TauCeti.ClassGroup
