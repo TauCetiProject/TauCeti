@@ -146,16 +146,6 @@ theorem rowsNoninterleaving_comm {a b : Fin n} :
     RowsNoninterleaving G a b ↔ RowsNoninterleaving G b a := by
   exact Grid.noninterleaving_comm
 
-/-- The row `c` in the reflected diagram has its `O` marking in the original row `G.O c`. -/
-@[simp]
-theorem OColumnOfRow_transpose (c : Fin n) : OColumnOfRow G.transpose c = G.O c := by
-  simp [OColumnOfRow]
-
-/-- The row `c` in the reflected diagram has its `X` marking in the original row `G.X c`. -/
-@[simp]
-theorem XColumnOfRow_transpose (c : Fin n) : XColumnOfRow G.transpose c = G.X c := by
-  simp [XColumnOfRow]
-
 /-- Diagonal reflection turns the row arc in the reflected diagram into the column arc in the
 original diagram. -/
 @[simp]
