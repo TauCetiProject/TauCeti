@@ -46,8 +46,6 @@ identifies `π₁(X, x)` with that fibre via monodromy.
   identity exactly when its monodromy fixes `e`.
 * `TauCeti.IsCoveringMap.fundamentalGroupEquivFiber`: the monodromy bijection
   `FundamentalGroup X x ≃ p ⁻¹' {x}`, `γ ↦ monodromy γ e`.
-* `TauCeti.Deck.IsRegular.fundamentalGroupEquivFiber`: the same bijection, exposed from a
-  regular cover.
 
 ## References
 
@@ -118,23 +116,18 @@ noncomputable def IsCoveringMap.fundamentalGroupEquivFiber [SimplyConnectedSpace
           Path.Homotopic.Quotient.mk
               (PathConnectedSpace.somePath (e : E) (hp.monodromy γ e : E)) = Γ :=
         Subsingleton.elim _ _
-      -- Unfold the inverse map to expose the endpoint casts from `p e` back to `x`.
-      change (((Path.Homotopic.Quotient.mk
-        (PathConnectedSpace.somePath (e : E) (hp.monodromy γ e : E))).map
-          ⟨p, hp.continuous⟩).cast e.2.symm (hp.monodromy γ e).2.symm) = γ
+      dsimp only
       rw [hpath, hp.map_liftPathQuotient]
       simp [Path.Homotopic.Quotient.cast_cast]
     right_inv e' := by
       obtain ⟨e₀, he₀⟩ := e
       obtain ⟨e₁, he₁⟩ := e'
-      change p e₀ = x at he₀
-      change p e₁ = x at he₁
+      simp only [Set.mem_preimage, Set.mem_singleton_iff] at he₀ he₁
       set Γ : Path.Homotopic.Quotient e₀ e₁ :=
         Path.Homotopic.Quotient.mk (PathConnectedSpace.somePath e₀ e₁)
-      -- Unfold the forward map to match the casted base path used in the inverse.
-      change hp.monodromy ((Γ.map ⟨p, hp.continuous⟩).cast he₀.symm he₁.symm)
-        ⟨e₀, he₀⟩ = ⟨e₁, he₁⟩
-      exact hp.monodromy_eq_of_map_eq Γ (by simp [Path.Homotopic.Quotient.cast_cast]) }
+      dsimp only
+      simpa [Γ] using
+        hp.monodromy_eq_of_map_eq Γ (by simp [Γ, Path.Homotopic.Quotient.cast_cast]) }
 
 /-- The general fibre equivalence sends a loop class to the monodromy translate of the chosen
 lift, as an equality in the total space `E`. -/
@@ -152,32 +145,22 @@ lemma IsCoveringMap.fundamentalGroupEquivFiber_apply [SimplyConnectedSpace E]
     IsCoveringMap.fundamentalGroupEquivFiber hp e γ = hp.monodromy γ e :=
   rfl
 
-namespace Deck
-
-/-- Choosing a basepoint lift `e` in the fibre over `x` of a regular simply connected cover
-identifies the fundamental group of the base with that fibre, via `γ ↦ monodromy γ e`. This is
-the regular-cover specialization of `IsCoveringMap.fundamentalGroupEquivFiber`. -/
-noncomputable def IsRegular.fundamentalGroupEquivFiber [SimplyConnectedSpace E]
-    (_hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
-    FundamentalGroup X x ≃ p ⁻¹' {x} :=
-  IsCoveringMap.fundamentalGroupEquivFiber hp e
-
-/-- The regular-cover fibre equivalence sends a loop class to the monodromy translate of the
-chosen lift, as an equality in the total space `E`. -/
+/-- The inverse of the general fibre equivalence is characterized by the loop class whose
+monodromy sends the chosen lift to the requested fibre point. -/
 @[simp]
-lemma IsRegular.fundamentalGroupEquivFiber_apply_coe [SimplyConnectedSpace E]
-    (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    (hreg.fundamentalGroupEquivFiber hp e γ : E) = (hp.monodromy γ e : E) :=
-  IsCoveringMap.fundamentalGroupEquivFiber_apply_coe hp e γ
+lemma IsCoveringMap.fundamentalGroupEquivFiber_symm_apply [SimplyConnectedSpace E]
+    (hp : IsCoveringMap p) (e e' : p ⁻¹' {x}) :
+    hp.monodromy ((IsCoveringMap.fundamentalGroupEquivFiber hp e).symm e') e = e' := by
+  have h := (IsCoveringMap.fundamentalGroupEquivFiber hp e).apply_symm_apply e'
+  rw [IsCoveringMap.fundamentalGroupEquivFiber_apply] at h
+  exact h
 
-/-- The regular-cover fibre equivalence sends a loop class to the monodromy translate of the
-chosen lift, as an equality in the fibre subtype. -/
+/-- On underlying points, the inverse of the general fibre equivalence is characterized by
+the loop class whose monodromy sends the chosen lift to the requested fibre point. -/
 @[simp]
-lemma IsRegular.fundamentalGroupEquivFiber_apply [SimplyConnectedSpace E]
-    (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    hreg.fundamentalGroupEquivFiber hp e γ = hp.monodromy γ e :=
-  IsCoveringMap.fundamentalGroupEquivFiber_apply hp e γ
-
-end Deck
+lemma IsCoveringMap.fundamentalGroupEquivFiber_symm_apply_coe [SimplyConnectedSpace E]
+    (hp : IsCoveringMap p) (e e' : p ⁻¹' {x}) :
+    (hp.monodromy ((IsCoveringMap.fundamentalGroupEquivFiber hp e).symm e') e : E) = e' := by
+  exact congrArg Subtype.val (IsCoveringMap.fundamentalGroupEquivFiber_symm_apply hp e e')
 
 end TauCeti
