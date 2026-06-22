@@ -41,8 +41,7 @@ variable {X G : Type*} [AddCommGroup G]
 
 For the geometric weight `w x = [κ(x) : k]` and a rational base point `x₀` with `w x₀ = 1`,
 this is the degree-zero divisor underlying the Abel-Jacobi class of the closed point `x`.
-In the algebraically closed/unweighted specialization, use
-`unweightedPointBaseDifference`, which is definitionally `[x] - [x₀]`. -/
+In the algebraically closed/unweighted specialization, this recovers `pointDifference x x₀`. -/
 noncomputable def weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) : WeilDivisor X :=
   ofPoint x - w x • ofPoint x₀
 
@@ -93,27 +92,6 @@ lemma weightedPointBaseDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ}
     (hx₀ : w x₀ = 1) (x : X) :
     weightedPointBaseDifference w x₀ x ∈ weightedDegreeZeroSubgroup w := by
   simp [hx₀]
-
-/-- The unweighted divisor `[x] - [x₀]`, the algebraically closed form of the Abel-Jacobi
-point divisor. -/
-noncomputable abbrev unweightedPointBaseDifference (x₀ x : X) : WeilDivisor X :=
-  weightedPointBaseDifference (fun _ : X => (1 : ℤ)) x₀ x
-
-@[simp]
-lemma unweightedPointBaseDifference_eq_pointDifference (x₀ x : X) :
-    unweightedPointBaseDifference x₀ x = pointDifference x x₀ :=
-  weightedPointBaseDifference_eq_pointDifference x₀ x
-
-@[simp]
-lemma degree_unweightedPointBaseDifference (x₀ x : X) :
-    degree (unweightedPointBaseDifference x₀ x) = 0 := by
-  simp
-
-/-- The unweighted point divisor `[x] - [x₀]` lies in the degree-zero divisor subgroup. -/
-@[simp]
-lemma unweightedPointBaseDifference_mem_degreeZeroSubgroup (x₀ x : X) :
-    unweightedPointBaseDifference x₀ x ∈ degreeZeroSubgroup X := by
-  simp
 
 /-! ### Abel-Jacobi classes in the abstract Picard group -/
 
