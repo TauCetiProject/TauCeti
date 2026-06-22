@@ -484,6 +484,7 @@ theorem final_refl (y : Y) : (refl Y).final y = y := rfl
 @[simp]
 theorem finalHomeomorph_refl : (refl Y).finalHomeomorph = Homeomorph.refl Y := by
   ext y
+  rw [finalHomeomorph_apply, final_refl]
   rfl
 
 instance : Inhabited (AmbientIsotopy Y) := ⟨refl Y⟩
@@ -560,7 +561,8 @@ homeomorphisms. -/
 theorem finalHomeomorph_trans (Ψ : AmbientIsotopy Y) :
     (Φ.trans Ψ).finalHomeomorph = Φ.finalHomeomorph.trans Ψ.finalHomeomorph := by
   ext y
-  rfl
+  rw [finalHomeomorph_apply, final_trans, Homeomorph.trans_apply,
+    finalHomeomorph_apply, finalHomeomorph_apply]
 
 /-- **Inverse of an ambient isotopy**: undo `Φ_t` at each time `t`. -/
 noncomputable def symm : AmbientIsotopy Y where
