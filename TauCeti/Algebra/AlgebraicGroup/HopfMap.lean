@@ -30,7 +30,7 @@ the reductive-groups roadmap Layer 0 target "R-points as a group" and its follow
   post-composition in the value algebra.
 * `AlgHom.mapDomain_inv_apply`: pointwise inverse formula after pre-composition.
 
-The convolution-preservation proof reuses Mathlib's
+The convolution-preservation proof is the bialgebra-morphism version of Mathlib's
 `AlgHom.convMul_comp_bialgHom_distrib`, from `Mathlib.RingTheory.Bialgebra.Convolution`.
 -/
 
@@ -143,10 +143,13 @@ noncomputable def mapDomainMulEquiv (e : H₁ ≃ₐc[R] H₂) :
       rw [← mapDomain_comp, e.symm_comp, mapDomain_id]
     exact DFunLike.congr_fun h f
 
+/-- `mapDomainMulEquiv` acts by the underlying `mapDomain` in the forward direction. -/
 @[simp]
 lemma mapDomainMulEquiv_apply (e : H₁ ≃ₐc[R] H₂) (f : WithConv (H₂ →ₐ[R] A)) :
     mapDomainMulEquiv e f = mapDomain (e : H₁ →ₐc[R] H₂) f := rfl
 
+/-- `mapDomainMulEquiv` acts by pre-composition with the inverse bialgebra equivalence in the
+reverse direction. -/
 @[simp]
 lemma mapDomainMulEquiv_symm_apply (e : H₁ ≃ₐc[R] H₂) (f : WithConv (H₁ →ₐ[R] A)) :
     (mapDomainMulEquiv (A := A) e).symm f = mapDomain (e.symm : H₂ →ₐc[R] H₁) f := rfl

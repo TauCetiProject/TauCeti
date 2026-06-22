@@ -11,9 +11,10 @@ import TauCeti.Algebra.Bialgebra.TensorProduct
 # The diagonalizable group of a product
 
 This file records the functor-of-points consequence of
-`TauCeti.MonoidAlgebra.prodTensorBialgEquiv`: the diagonalizable group
-`D(G × H) = Spec R[G × H]`, for commutative groups `G` and `H`, is the direct product
-`D(G) × D(H)` of the diagonalizable groups of the factors.
+`TauCeti.MonoidAlgebra.prodTensorBialgEquiv`: for commutative monoids `G` and `H`, points of
+`Spec R[G × H]` split as pairs of points of `Spec R[G]` and `Spec R[H]`. For commutative groups,
+this specializes to the diagonalizable group statement
+`D(G × H)(A) ≃* D(G)(A) × D(H)(A)`.
 
 On points this composes with `TauCeti.AffineGroup.Product.pointsMulEquiv`, the tensor-product
 points calculation, through the equiv-version `AlgHom.mapDomainMulEquiv` of the contravariant
@@ -30,7 +31,9 @@ and this identifies its coordinate Hopf algebra `R[ℤⁿ]` with `R[ℤ]^{⊗ n}
 
 ## Main definitions
 
-* `TauCeti.DiagonalizableGroup.prodPointsMulEquiv`: on points,
+* `TauCeti.MonoidAlgebra.prodPointsMulEquiv`: on convolution points,
+  `Spec R[G × H](A) ≃* Spec R[G](A) × Spec R[H](A)`.
+* `TauCeti.DiagonalizableGroup.prodPointsMulEquiv`: for commutative groups, on points,
   `D(G × H)(A) ≃* D(G)(A) × D(H)(A)`.
 
 ## References
@@ -49,25 +52,25 @@ namespace TauCeti
 
 universe u v w w'
 
-namespace DiagonalizableGroup
-
 variable {R : Type u} [CommSemiring R]
-variable {G : Type v} {H : Type w} [CommGroup G] [CommGroup H]
+variable {G : Type v} {H : Type w} [CommMonoid G] [CommMonoid H]
 variable {A : Type w'} [CommSemiring A] [Algebra R A]
 
-/-- **The diagonalizable group of a product is the product of diagonalizable groups, on points.**
-For commutative groups `G` and `H` and every commutative `R`-algebra `A`, the convolution group
-of `A`-points of `D(G × H)` is the product of the convolution groups of `A`-points of `D(G)` and
-`D(H)`. -/
+namespace MonoidAlgebra
+
+/-- **The monoid algebra of a product gives the product functor on convolution points.**
+For commutative monoids `G` and `H` and every commutative `R`-algebra `A`, the convolution
+monoid of `A`-points of `Spec R[G × H]` is the product of the convolution monoids of
+`A`-points of `Spec R[G]` and `Spec R[H]`. -/
 noncomputable def prodPointsMulEquiv :
     WithConv (MonoidAlgebra R (G × H) →ₐ[R] A) ≃*
       WithConv (MonoidAlgebra R G →ₐ[R] A) × WithConv (MonoidAlgebra R H →ₐ[R] A) :=
   (AlgHom.mapDomainMulEquiv (A := A) (MonoidAlgebra.prodTensorBialgEquiv R)).symm.trans
     AffineGroup.Product.pointsMulEquiv
 
-/-- The first component of `prodPointsMulEquiv` restricts an `A`-point of `D(G × H)` to the
-factor `D(G)`: on the generator `single g 1` it evaluates the original point at `single (g, 1) 1`,
-the image of `g` under `G → G × H`. -/
+/-- The first component of `prodPointsMulEquiv` restricts an `A`-point of `Spec R[G × H]` to
+the factor `Spec R[G]`: on the generator `single g 1` it evaluates the original point at
+`single (g, 1) 1`, the image of `g` under `G → G × H`. -/
 @[simp]
 theorem prodPointsMulEquiv_fst_ofConv_single
     (f : WithConv (MonoidAlgebra R (G × H) →ₐ[R] A)) (g : G) :
@@ -77,12 +80,11 @@ theorem prodPointsMulEquiv_fst_ofConv_single
     AlgHom.mapDomainMulEquiv_symm_apply]
   simp only [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
     BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.includeLeft_apply, BialgEquiv.coe_toBialgHom]
-  rw [show (1 : MonoidAlgebra R H) = single 1 1 from MonoidAlgebra.one_def,
-    MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single]
+  rw [MonoidAlgebra.one_def, MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single]
 
-/-- The second component of `prodPointsMulEquiv` restricts an `A`-point of `D(G × H)` to the
-factor `D(H)`: on the generator `single h 1` it evaluates the original point at `single (1, h) 1`,
-the image of `h` under `H → G × H`. -/
+/-- The second component of `prodPointsMulEquiv` restricts an `A`-point of `Spec R[G × H]` to
+the factor `Spec R[H]`: on the generator `single h 1` it evaluates the original point at
+`single (1, h) 1`, the image of `h` under `H → G × H`. -/
 @[simp]
 theorem prodPointsMulEquiv_snd_ofConv_single
     (f : WithConv (MonoidAlgebra R (G × H) →ₐ[R] A)) (h : H) :
@@ -92,8 +94,7 @@ theorem prodPointsMulEquiv_snd_ofConv_single
     AlgHom.mapDomainMulEquiv_symm_apply]
   simp only [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply,
     BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.includeRight_apply, BialgEquiv.coe_toBialgHom]
-  rw [show (1 : MonoidAlgebra R G) = single 1 1 from MonoidAlgebra.one_def,
-    MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single]
+  rw [MonoidAlgebra.one_def, MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single]
 
 /-- The inverse of `prodPointsMulEquiv` assembles an `A`-point of `D(G × H)` from a pair of
 points of `D(G)` and `D(H)`: on the generator `single (g, h) 1` it multiplies the value of the
@@ -109,6 +110,75 @@ theorem prodPointsMulEquiv_symm_ofConv_single
   simp only [AlgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
     BialgEquiv.coe_toBialgHom, MonoidAlgebra.prodTensorBialgEquiv_single,
     AffineGroup.Product.pointsMulEquiv_symm_apply, Algebra.TensorProduct.productMap_apply_tmul]
+
+variable {B : Type*} [CommSemiring B] [Algebra R B]
+
+/-- The product-points equivalence is natural in the value algebra. -/
+theorem prodPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
+    (f : WithConv (MonoidAlgebra R (G × H) →ₐ[R] A)) :
+    prodPointsMulEquiv (A := B) (AlgHom.mapValue (H := MonoidAlgebra R (G × H)) φ f) =
+      (AlgHom.mapValue (H := MonoidAlgebra R G) φ (prodPointsMulEquiv f).1,
+        AlgHom.mapValue (H := MonoidAlgebra R H) φ (prodPointsMulEquiv f).2) := by
+  apply Prod.ext
+  · apply WithConv.ofConv_injective
+    apply MonoidAlgebra.algHom_ext
+    intro g
+    simp
+  · apply WithConv.ofConv_injective
+    apply MonoidAlgebra.algHom_ext
+    intro h
+    simp
+
+end MonoidAlgebra
+
+namespace DiagonalizableGroup
+
+variable {G' : Type v} {H' : Type w} [CommGroup G'] [CommGroup H']
+
+/-- **The diagonalizable group of a product is the product of diagonalizable groups, on points.**
+For commutative groups `G` and `H` and every commutative `R`-algebra `A`, the convolution group
+of `A`-points of `D(G × H)` is the product of the convolution groups of `A`-points of `D(G)` and
+`D(H)`. -/
+noncomputable def prodPointsMulEquiv :
+    WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A) ≃*
+      WithConv (MonoidAlgebra R G' →ₐ[R] A) × WithConv (MonoidAlgebra R H' →ₐ[R] A) :=
+  MonoidAlgebra.prodPointsMulEquiv (G := G') (H := H')
+
+/-- On generators, the first component of the diagonalizable product-points equivalence restricts
+along `g ↦ (g, 1)`. -/
+@[simp]
+theorem prodPointsMulEquiv_fst_ofConv_single
+    (f : WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A)) (g : G') :
+    (prodPointsMulEquiv f).1.ofConv (single g (1 : R)) =
+      f.ofConv (single (g, (1 : H')) 1) :=
+  MonoidAlgebra.prodPointsMulEquiv_fst_ofConv_single (H := H') f g
+
+/-- On generators, the second component of the diagonalizable product-points equivalence restricts
+along `h ↦ (1, h)`. -/
+@[simp]
+theorem prodPointsMulEquiv_snd_ofConv_single
+    (f : WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A)) (h : H') :
+    (prodPointsMulEquiv f).2.ofConv (single h (1 : R)) =
+      f.ofConv (single ((1 : G'), h) 1) :=
+  MonoidAlgebra.prodPointsMulEquiv_snd_ofConv_single (G := G') f h
+
+/-- On generators, the inverse diagonalizable product-points equivalence multiplies the two
+factor-point values. -/
+@[simp]
+theorem prodPointsMulEquiv_symm_ofConv_single
+    (f₁ : WithConv (MonoidAlgebra R G' →ₐ[R] A)) (f₂ : WithConv (MonoidAlgebra R H' →ₐ[R] A))
+    (g : G') (h : H') :
+    (prodPointsMulEquiv.symm (f₁, f₂)).ofConv (single (g, h) (1 : R)) =
+      f₁.ofConv (single g 1) * f₂.ofConv (single h 1) :=
+  MonoidAlgebra.prodPointsMulEquiv_symm_ofConv_single f₁ f₂ g h
+
+/-- The diagonalizable product-points equivalence is natural in the value algebra. -/
+theorem prodPointsMulEquiv_mapValue {B : Type*} [CommSemiring B] [Algebra R B] (φ : A →ₐ[R] B)
+    (f : WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A)) :
+    prodPointsMulEquiv (A := B) (AlgHom.mapValue (H := MonoidAlgebra R (G' × H')) φ f) =
+      (AlgHom.mapValue (H := MonoidAlgebra R G') φ (prodPointsMulEquiv f).1,
+        AlgHom.mapValue (H := MonoidAlgebra R H') φ (prodPointsMulEquiv f).2) :=
+  MonoidAlgebra.prodPointsMulEquiv_mapValue φ f
 
 end DiagonalizableGroup
 

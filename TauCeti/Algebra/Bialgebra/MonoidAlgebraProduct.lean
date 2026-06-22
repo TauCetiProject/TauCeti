@@ -12,20 +12,18 @@ import Mathlib.RingTheory.Bialgebra.TensorProduct
 For two monoids `G` and `H`, the canonical map `single (g, h) 1 ↦ single g 1 ⊗ₜ
 single h 1` is an isomorphism of `R`-bialgebras `R[G × H] ≃ₐc[R] R[G] ⊗[R] R[H]`.
 
-The bialgebra isomorphism is built from two mutually inverse algebra maps: the lift of the
-group-like monoid hom `(g, h) ↦ single g 1 ⊗ₜ single h 1` one way, and the tensor-product
-universal map of the two inclusions `R[G] → R[G × H]`, `R[H] → R[G × H]` (themselves
-`MonoidAlgebra.mapDomainAlgHom` of `MonoidHom.inl`/`MonoidHom.inr`) the other way. It is then
-promoted to a bialgebra equivalence by checking compatibility with the counit and
-comultiplication on the group-like generators `single (g, h) 1`.
+The bialgebra isomorphism is promoted from the standard algebra maps: the lift of the group-like
+monoid hom `(g, h) ↦ single g 1 ⊗ₜ single h 1` one way, and the tensor-product universal map of
+the two inclusions `R[G] → R[G × H]`, `R[H] → R[G × H]` (themselves
+`MonoidAlgebra.mapDomainAlgHom` of `MonoidHom.inl`/`MonoidHom.inr`) the other way. The public
+API keeps only the bialgebra equivalence and its generator formulas.
 
 This is generic monoid-algebra API used by the diagonalizable-group product calculation.
 
 ## Main definitions
 
-* `TauCeti.MonoidAlgebra.prodTensorAlgEquiv`: the algebra isomorphism
-  `R[G × H] ≃ₐ[R] R[G] ⊗[R] R[H]`.
-* `TauCeti.MonoidAlgebra.prodTensorBialgEquiv`: the same map as a bialgebra isomorphism.
+* `TauCeti.MonoidAlgebra.prodTensorBialgEquiv`: the bialgebra isomorphism
+  `R[G × H] ≃ₐc[R] R[G] ⊗[R] R[H]`.
 
 ## References
 
@@ -106,9 +104,7 @@ private theorem tensorProdAlgHom_tmul_single (g : G) (h : H) :
     mapDomain_single, single_mul_single, MonoidHom.inl_apply, MonoidHom.inr_apply,
     Prod.mk_mul_mk, mul_one, one_mul]
 
-/-- **The monoid algebra of a product is the tensor product of monoid algebras**, as an algebra
-isomorphism. It sends `single (g, h) 1` to `single g 1 ⊗ₜ single h 1`. -/
-noncomputable def prodTensorAlgEquiv :
+private noncomputable def prodTensorAlgEquiv :
     MonoidAlgebra R (G × H) ≃ₐ[R] MonoidAlgebra R G ⊗[R] MonoidAlgebra R H :=
   AlgEquiv.ofAlgHom (prodTensorAlgHom R) (tensorProdAlgHom R)
     (by
@@ -116,14 +112,12 @@ noncomputable def prodTensorAlgEquiv :
       · apply MonoidAlgebra.algHom_ext
         intro g
         simp only [AlgHom.comp_apply, AlgHom.id_apply, Algebra.TensorProduct.includeLeft_apply]
-        rw [show (1 : MonoidAlgebra R H) = single 1 1 from one_def,
-          tensorProdAlgHom_tmul_single, prodTensorAlgHom_single]
+        rw [one_def, tensorProdAlgHom_tmul_single, prodTensorAlgHom_single]
       · apply MonoidAlgebra.algHom_ext
         intro h
         simp only [AlgHom.coe_restrictScalars', AlgHom.comp_apply, AlgHom.id_apply,
           Algebra.TensorProduct.includeRight_apply]
-        rw [show (1 : MonoidAlgebra R G) = single 1 1 from one_def,
-          tensorProdAlgHom_tmul_single, prodTensorAlgHom_single])
+        rw [one_def, tensorProdAlgHom_tmul_single, prodTensorAlgHom_single])
     (by
       apply MonoidAlgebra.algHom_ext
       rintro ⟨g, h⟩
@@ -131,12 +125,12 @@ noncomputable def prodTensorAlgEquiv :
         AlgHom.id_apply])
 
 @[simp]
-theorem prodTensorAlgEquiv_single (g : G) (h : H) :
+private theorem prodTensorAlgEquiv_single (g : G) (h : H) :
     prodTensorAlgEquiv R (single (g, h) (1 : R)) = single g 1 ⊗ₜ[R] single h 1 :=
   prodTensorAlgHom_single R g h
 
 @[simp]
-theorem prodTensorAlgEquiv_symm_tmul_single (g : G) (h : H) :
+private theorem prodTensorAlgEquiv_symm_tmul_single (g : G) (h : H) :
     (prodTensorAlgEquiv R).symm (single g (1 : R) ⊗ₜ[R] single h 1) = single (g, h) 1 := by
   rw [← prodTensorAlgEquiv_single R g h, AlgEquiv.symm_apply_apply]
 
