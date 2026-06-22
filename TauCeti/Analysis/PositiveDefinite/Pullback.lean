@@ -80,13 +80,6 @@ theorem of_comp_surjective {Φ : Type*} [FunLike Φ N M] [AddMonoidHomClass Φ N
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   simp [map_add, hstar, hw]
 
-/-- The explicit `AddMonoidHom` form of descent along a surjective star-preserving additive
-homomorphism. -/
-theorem of_comp_addMonoidHom_surjective (φ : N →+ M)
-    (hstar : ∀ x : N, φ (star x) = star (φ x)) (hsurj : Function.Surjective φ)
-    (hcomp : IsPositiveDefinite (fun x : N => F (φ x))) : IsPositiveDefinite F :=
-  of_comp_surjective φ hstar hsurj hcomp
-
 /-- Along a surjective star-preserving additive homomorphism, a function is positive definite
 if and only if its pullback is positive definite. -/
 theorem comp_iff_of_surjective {Φ : Type*} [FunLike Φ N M] [AddMonoidHomClass Φ N M]
@@ -98,7 +91,7 @@ theorem comp_iff_of_surjective {Φ : Type*} [FunLike Φ N M] [AddMonoidHomClass 
 theorem comp_addMonoidHom_iff_of_surjective (φ : N →+ M)
     (hstar : ∀ x : N, φ (star x) = star (φ x)) (hsurj : Function.Surjective φ) :
     IsPositiveDefinite (fun x : N => F (φ x)) ↔ IsPositiveDefinite F :=
-  ⟨of_comp_addMonoidHom_surjective φ hstar hsurj, fun hF => hF.comp_addMonoidHom φ hstar⟩
+  ⟨of_comp_surjective φ hstar hsurj, fun hF => hF.comp_addMonoidHom φ hstar⟩
 
 /-- Positive-definiteness is invariant under precomposition with a star-preserving additive
 equivalence. -/
