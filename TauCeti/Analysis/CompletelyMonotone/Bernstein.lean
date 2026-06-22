@@ -2,7 +2,8 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Analysis.CompletelyMonotone.Closure
+import TauCeti.Analysis.CompletelyMonotone.Basic
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Convex.Deriv
 
 /-!
@@ -40,7 +41,7 @@ nonnegative scalar multiples, and the basic catalogue — constants, the identit
   `TauCeti.IsBernsteinFunction.monotoneOn`, `TauCeti.IsBernsteinFunction.concaveOn`: a Bernstein
   function is nonnegative, has nonnegative derivative, is nondecreasing, and is concave on
   `[0, ∞)`.
-* `TauCeti.IsBernsteinFunction.add`, `TauCeti.IsBernsteinFunction.const_smul`,
+* `TauCeti.IsBernsteinFunction.add`, `TauCeti.IsBernsteinFunction.smul`,
   `TauCeti.IsBernsteinFunction.sum`: closure under sums, nonnegative scalar multiples, and finite
   sums.
 * `TauCeti.isBernsteinFunction_const`, `TauCeti.isBernsteinFunction_id`,
@@ -79,17 +80,21 @@ namespace IsCompletelyMonotoneOnIoi
 variable {f g : ℝ → ℝ}
 
 /-- A completely monotone function on `(0, ∞)` is smooth there. -/
+@[grind →]
 lemma contDiffOn (hf : IsCompletelyMonotoneOnIoi f) : ContDiffOn ℝ ∞ f (Ioi 0) := hf.1
 
 /-- The sign-alternation property on `(0, ∞)`. -/
+@[grind =>]
 lemma neg_one_pow_mul_iteratedDeriv_nonneg (hf : IsCompletelyMonotoneOnIoi f) (n : ℕ) {t : ℝ}
     (ht : 0 < t) : 0 ≤ (-1) ^ n * iteratedDeriv n f t := hf.2 n t ht
 
 /-- A completely monotone function on `(0, ∞)` is nonnegative there. -/
+@[grind =>]
 lemma nonneg (hf : IsCompletelyMonotoneOnIoi f) {t : ℝ} (ht : 0 < t) : 0 ≤ f t := by
   simpa [iteratedDeriv_zero] using hf.neg_one_pow_mul_iteratedDeriv_nonneg 0 ht
 
 /-- The derivative of a completely monotone function on `(0, ∞)` is nonpositive there. -/
+@[grind =>]
 lemma deriv_nonpos (hf : IsCompletelyMonotoneOnIoi f) {t : ℝ} (ht : 0 < t) :
     deriv f t ≤ 0 := by
   have h := hf.neg_one_pow_mul_iteratedDeriv_nonneg 1 ht
@@ -145,12 +150,15 @@ variable {f g : ℝ → ℝ}
 lemma continuousOn (hf : IsBernsteinFunction f) : ContinuousOn f (Ici 0) := hf.1
 
 /-- A Bernstein function is `C^∞` on `(0, ∞)`. -/
+@[grind →]
 lemma contDiffOn (hf : IsBernsteinFunction f) : ContDiffOn ℝ ∞ f (Ioi 0) := hf.2.1
 
 /-- A Bernstein function is nonnegative on `[0, ∞)`. -/
+@[grind =>]
 lemma nonneg (hf : IsBernsteinFunction f) {t : ℝ} (ht : 0 ≤ t) : 0 ≤ f t := hf.2.2.1 t ht
 
 /-- The ordinary derivative of a Bernstein function is completely monotone on `(0, ∞)`. -/
+@[grind =>]
 lemma deriv_isCompletelyMonotoneOnIoi (hf : IsBernsteinFunction f) :
     IsCompletelyMonotoneOnIoi (deriv f) := hf.2.2.2
 
@@ -160,6 +168,7 @@ lemma differentiableOn (hf : IsBernsteinFunction f) : DifferentiableOn ℝ f (Io
 
 /-- The derivative of a Bernstein function is nonnegative on `(0, ∞)`: a Bernstein function is
 nondecreasing. -/
+@[grind =>]
 lemma deriv_nonneg (hf : IsBernsteinFunction f) {t : ℝ} (ht : 0 < t) : 0 ≤ deriv f t :=
   hf.deriv_isCompletelyMonotoneOnIoi.nonneg ht
 
@@ -194,7 +203,7 @@ theorem add (hf : IsBernsteinFunction f) (hg : IsBernsteinFunction g) :
   exact (hf.deriv_isCompletelyMonotoneOnIoi.add hg.deriv_isCompletelyMonotoneOnIoi).congr hd
 
 /-- Bernstein functions are closed under multiplication by a nonnegative constant. -/
-theorem const_smul (hf : IsBernsteinFunction f) {c : ℝ} (hc : 0 ≤ c) :
+theorem smul (hf : IsBernsteinFunction f) {c : ℝ} (hc : 0 ≤ c) :
     IsBernsteinFunction (c • f) := by
   refine ⟨hf.continuousOn.const_smul c, hf.contDiffOn.const_smul c, fun t ht => ?_, ?_⟩
   · simpa [Pi.smul_apply, smul_eq_mul] using mul_nonneg hc (hf.nonneg ht)
@@ -246,7 +255,7 @@ theorem isBernsteinFunction_id : IsBernsteinFunction (fun t : ℝ => t) := by
 /-- An affine function `t ↦ c + d t` with nonnegative coefficients is a Bernstein function. -/
 theorem isBernsteinFunction_affine {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d) :
     IsBernsteinFunction (fun t : ℝ => c + d * t) := by
-  have h := (isBernsteinFunction_const hc).add (isBernsteinFunction_id.const_smul hd)
+  have h := (isBernsteinFunction_const hc).add (isBernsteinFunction_id.smul hd)
   have heq : ((fun _ : ℝ => c) + (d • fun t : ℝ => t)) = fun t : ℝ => c + d * t := by
     funext t; simp [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
   rwa [heq] at h
