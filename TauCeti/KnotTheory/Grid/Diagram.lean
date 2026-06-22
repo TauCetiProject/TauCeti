@@ -137,6 +137,20 @@ theorem existsUnique_column_of_row (x : GridState n) (r : Fin n) :
   intro c hc
   exact x.toPerm.injective (by simpa using hc)
 
+/-- The column occupied by a grid state in a given row. -/
+def columnOfRow (x : GridState n) (r : Fin n) : Fin n :=
+  x.toPerm.symm r
+
+/-- The point in row `r` lies in column `columnOfRow x r`. -/
+@[simp]
+theorem apply_columnOfRow (x : GridState n) (r : Fin n) : x (x.columnOfRow r) = r := by
+  simp [columnOfRow]
+
+/-- The column containing the point in row `x c` is `c`. -/
+@[simp]
+theorem columnOfRow_apply (x : GridState n) (c : Fin n) : x.columnOfRow (x c) = c := by
+  simp [columnOfRow]
+
 /-- Point sets of grid states are equal exactly when the underlying permutations are equal. -/
 @[simp]
 theorem pointSet_inj {x y : GridState n} : x.pointSet = y.pointSet ↔ x = y := by
@@ -439,6 +453,11 @@ def transpose (x : GridState n) : GridState n where
 theorem transpose_apply (x : GridState n) (c : Fin n) : x.transpose c = x.toPerm.symm c :=
   rfl
 
+/-- The column in row `r` of the reflected state is the original row-coordinate value at `r`. -/
+@[simp]
+theorem columnOfRow_transpose (x : GridState n) (r : Fin n) : x.transpose.columnOfRow r = x r := by
+  simp [columnOfRow, transpose]
+
 /-- The diagonal reflection is an involution on grid states. -/
 @[simp]
 theorem transpose_transpose (x : GridState n) : x.transpose.transpose = x := by
@@ -577,6 +596,34 @@ theorem existsUnique_XColumn_of_row (r : Fin n) :
     ∃! c : Fin n, (c, r) ∈ G.XSet := by
   rw [XSet]
   exact G.X.existsUnique_column_of_row r
+
+/-- The column containing the `O` marking in a given row. -/
+def OColumnOfRow (r : Fin n) : Fin n :=
+  G.O.columnOfRow r
+
+/-- The column containing the `X` marking in a given row. -/
+def XColumnOfRow (r : Fin n) : Fin n :=
+  G.X.columnOfRow r
+
+/-- The `O` marking in row `r` lies in column `OColumnOfRow r`. -/
+@[simp]
+theorem OColumnOfRow_apply (r : Fin n) : G.O (OColumnOfRow G r) = r := by
+  simp [OColumnOfRow]
+
+/-- The `X` marking in row `r` lies in column `XColumnOfRow r`. -/
+@[simp]
+theorem XColumnOfRow_apply (r : Fin n) : G.X (XColumnOfRow G r) = r := by
+  simp [XColumnOfRow]
+
+/-- The column containing the `O` marking in row `G.O c` is `c`. -/
+@[simp]
+theorem OColumnOfRow_O (c : Fin n) : OColumnOfRow G (G.O c) = c := by
+  simp [OColumnOfRow]
+
+/-- The column containing the `X` marking in row `G.X c` is `c`. -/
+@[simp]
+theorem XColumnOfRow_X (c : Fin n) : XColumnOfRow G (G.X c) = c := by
+  simp [XColumnOfRow]
 
 /-- The `O` and `X` marking sets of a grid diagram are disjoint. -/
 theorem disjoint_OSet_XSet : Disjoint G.OSet G.XSet := by

@@ -74,34 +74,6 @@ theorem O_notMem_columnArc (c : Fin n) : G.O c ∉ columnArc G c := by
 theorem X_notMem_columnArc (c : Fin n) : G.X c ∉ columnArc G c := by
   simp [columnArc]
 
-/-- The column containing the `O` marking in a given row. -/
-def OColumnOfRow (r : Fin n) : Fin n :=
-  G.O.toPerm.symm r
-
-/-- The column containing the `X` marking in a given row. -/
-def XColumnOfRow (r : Fin n) : Fin n :=
-  G.X.toPerm.symm r
-
-/-- The `O` marking in row `r` lies in column `OColumnOfRow r`. -/
-@[simp]
-theorem OColumnOfRow_apply (r : Fin n) : G.O (OColumnOfRow G r) = r := by
-  simp [OColumnOfRow]
-
-/-- The `X` marking in row `r` lies in column `XColumnOfRow r`. -/
-@[simp]
-theorem XColumnOfRow_apply (r : Fin n) : G.X (XColumnOfRow G r) = r := by
-  simp [XColumnOfRow]
-
-/-- The row whose `O` marking is in column `c` recovers `c`. -/
-@[simp]
-theorem OColumnOfRow_O (c : Fin n) : OColumnOfRow G (G.O c) = c := by
-  simp [OColumnOfRow]
-
-/-- The row whose `X` marking is in column `c` recovers `c`. -/
-@[simp]
-theorem XColumnOfRow_X (c : Fin n) : XColumnOfRow G (G.X c) = c := by
-  simp [XColumnOfRow]
-
 /-- The open horizontal arc from the `O` marking to the `X` marking in a row of a grid diagram.
 
 This is the column-coordinate version of `columnArc`: it starts at the unique column containing
@@ -133,13 +105,26 @@ of the endpoint pair in column `b`, and conversely. This symmetric form is robus
 row-sharing cases, where one endpoint of a segment may have the same row coordinate as an endpoint
 of the other segment. -/
 def ColumnsNoninterleaving (a b : Fin n) : Prop :=
-  (G.O a ∈ columnArc G b ↔ G.X a ∈ columnArc G b) ∧
-    (G.O b ∈ columnArc G a ↔ G.X b ∈ columnArc G a)
+  Grid.Noninterleaving (G.O a) (G.X a) (G.O b) (G.X b)
 
 /-- Two rows of a grid diagram have non-interleaving marking segments. -/
 def RowsNoninterleaving (a b : Fin n) : Prop :=
-  (OColumnOfRow G a ∈ rowArc G b ↔ XColumnOfRow G a ∈ rowArc G b) ∧
-    (OColumnOfRow G b ∈ rowArc G a ↔ XColumnOfRow G b ∈ rowArc G a)
+  Grid.Noninterleaving (OColumnOfRow G a) (XColumnOfRow G a)
+    (OColumnOfRow G b) (XColumnOfRow G b)
+
+/-- The defining endpoint-side conditions for column non-interleaving. -/
+theorem columnsNoninterleaving_iff (a b : Fin n) :
+    ColumnsNoninterleaving G a b ↔
+      (G.O a ∈ columnArc G b ↔ G.X a ∈ columnArc G b) ∧
+        (G.O b ∈ columnArc G a ↔ G.X b ∈ columnArc G a) := by
+  rfl
+
+/-- The defining endpoint-side conditions for row non-interleaving. -/
+theorem rowsNoninterleaving_iff (a b : Fin n) :
+    RowsNoninterleaving G a b ↔
+      (OColumnOfRow G a ∈ rowArc G b ↔ XColumnOfRow G a ∈ rowArc G b) ∧
+        (OColumnOfRow G b ∈ rowArc G a ↔ XColumnOfRow G b ∈ rowArc G a) := by
+  rfl
 
 /-- A column is non-interleaving with itself. -/
 @[simp]
@@ -154,38 +139,48 @@ theorem rowsNoninterleaving_self (a : Fin n) : RowsNoninterleaving G a a := by
 /-- Column non-interleaving is symmetric in the two columns. -/
 theorem columnsNoninterleaving_comm {a b : Fin n} :
     ColumnsNoninterleaving G a b ↔ ColumnsNoninterleaving G b a := by
-  rw [ColumnsNoninterleaving, ColumnsNoninterleaving]
-  exact and_comm
+  exact Grid.noninterleaving_comm
 
 /-- Row non-interleaving is symmetric in the two rows. -/
 theorem rowsNoninterleaving_comm {a b : Fin n} :
     RowsNoninterleaving G a b ↔ RowsNoninterleaving G b a := by
-  rw [RowsNoninterleaving, RowsNoninterleaving]
-  exact and_comm
+  exact Grid.noninterleaving_comm
+
+/-- The row `c` in the reflected diagram has its `O` marking in the original row `G.O c`. -/
+@[simp]
+theorem OColumnOfRow_transpose (c : Fin n) : OColumnOfRow G.transpose c = G.O c := by
+  simp [OColumnOfRow]
+
+/-- The row `c` in the reflected diagram has its `X` marking in the original row `G.X c`. -/
+@[simp]
+theorem XColumnOfRow_transpose (c : Fin n) : XColumnOfRow G.transpose c = G.X c := by
+  simp [XColumnOfRow]
 
 /-- Diagonal reflection turns the row arc in the reflected diagram into the column arc in the
 original diagram. -/
 @[simp]
-theorem rowArc_transpose (c : Fin n) : rowArc G.transpose c = columnArc G c :=
-  rfl
+theorem rowArc_transpose (c : Fin n) : rowArc G.transpose c = columnArc G c := by
+  simp [rowArc, columnArc]
 
 /-- Diagonal reflection turns the column arc in the reflected diagram into the row arc in the
 original diagram. -/
 @[simp]
-theorem columnArc_transpose (r : Fin n) : columnArc G.transpose r = rowArc G r :=
-  rfl
+theorem columnArc_transpose (r : Fin n) : columnArc G.transpose r = rowArc G r := by
+  simp [rowArc, columnArc, OColumnOfRow, XColumnOfRow, GridState.columnOfRow]
 
 /-- Diagonal reflection exchanges row non-interleaving with column non-interleaving. -/
 @[simp]
 theorem rowsNoninterleaving_transpose (a b : Fin n) :
     RowsNoninterleaving G.transpose a b ↔ ColumnsNoninterleaving G a b :=
-  Iff.rfl
+  by simp [RowsNoninterleaving, ColumnsNoninterleaving]
 
 /-- Diagonal reflection exchanges column non-interleaving with row non-interleaving. -/
 @[simp]
 theorem columnsNoninterleaving_transpose (a b : Fin n) :
     ColumnsNoninterleaving G.transpose a b ↔ RowsNoninterleaving G a b :=
-  Iff.rfl
+  by
+    simp [RowsNoninterleaving, ColumnsNoninterleaving, OColumnOfRow, XColumnOfRow,
+      GridState.columnOfRow]
 
 end GridDiagram
 
