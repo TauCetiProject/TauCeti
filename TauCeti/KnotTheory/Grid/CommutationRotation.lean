@@ -36,23 +36,6 @@ Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 
 namespace TauCeti
 
-private theorem mem_cIoo_rev_rev {n : ℕ} (a b x : Fin n) :
-    x.rev ∈ Grid.cIoo a.rev b.rev ↔ x ∈ Grid.cIoo b a := by
-  rw [← Grid.cIoo_image_rev b a, Finset.mem_image]
-  constructor
-  · rintro ⟨y, hy, hyx⟩
-    rw [← Fin.rev_injective hyx]
-    exact hy
-  · intro hx
-    exact ⟨x, hx, rfl⟩
-
-private theorem noninterleaving_rev {n : ℕ} (a₀ a₁ b₀ b₁ : Fin n) :
-    Grid.Noninterleaving a₀.rev a₁.rev b₀.rev b₁.rev ↔
-      Grid.Noninterleaving a₁ a₀ b₁ b₀ := by
-  rw [Grid.Noninterleaving, Grid.Noninterleaving]
-  simp only [mem_cIoo_rev_rev]
-  tauto
-
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
@@ -83,7 +66,7 @@ theorem columnsNoninterleaving_rotate (a b : Fin n) :
     ColumnsNoninterleaving G.rotate a b ↔
       ColumnsNoninterleaving G.swapMarkings a.rev b.rev := by
   simpa [ColumnsNoninterleaving] using
-    (noninterleaving_rev (G.O a.rev) (G.X a.rev) (G.O b.rev) (G.X b.rev))
+    (Grid.noninterleaving_rev (G.O a.rev) (G.X a.rev) (G.O b.rev) (G.X b.rev))
 
 /-- The row arc of the rotated diagram is the coordinate reversal of the opposite oriented row
 arc in the original diagram. The `swapMarkings` appears because `Fin.rev` reverses the cyclic
@@ -110,7 +93,7 @@ accounted for by swapping the two marking states. -/
 theorem rowsNoninterleaving_rotate (a b : Fin n) :
     RowsNoninterleaving G.rotate a b ↔ RowsNoninterleaving G.swapMarkings a.rev b.rev := by
   simpa [RowsNoninterleaving] using
-    (noninterleaving_rev (OColumnOfRow G a.rev) (XColumnOfRow G a.rev)
+    (Grid.noninterleaving_rev (OColumnOfRow G a.rev) (XColumnOfRow G a.rev)
       (OColumnOfRow G b.rev) (XColumnOfRow G b.rev))
 
 end GridDiagram

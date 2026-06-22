@@ -27,6 +27,8 @@ directions before taking products.
 * `TauCeti.Grid.cIoo_image_rev`: reversing a clockwise open arc by `Fin.rev` gives the clockwise
   open arc with reversed, exchanged endpoints.
 * `TauCeti.Grid.Noninterleaving`: two endpoint pairs lie on the same cyclic side of each other.
+* `TauCeti.Grid.noninterleaving_rev`: non-interleaving is preserved by reversing every endpoint
+  with `Fin.rev`, exchanging the two endpoints within each pair.
 
 ## References
 
@@ -290,6 +292,27 @@ theorem cIoo_image_rev (a b : Fin n) :
     have ha := a.isLt; have hb := b.isLt; have hy' := y.isLt
     simp only [Fin.val_rev] at hc ⊢
     split_ifs at hc ⊢ <;> omega
+
+/-- Membership in a clockwise open arc with both endpoints and the queried point reversed by
+`Fin.rev`. Since coordinate reversal reverses the cyclic order, the reversed point lies in the
+reversed arc exactly when the original point lies in the opposite arc. -/
+theorem mem_cIoo_rev_rev (a b x : Fin n) :
+    x.rev ∈ cIoo a.rev b.rev ↔ x ∈ cIoo b a := by
+  rw [← cIoo_image_rev b a, Finset.mem_image]
+  constructor
+  · rintro ⟨y, hy, hyx⟩
+    rw [← Fin.rev_injective hyx]
+    exact hy
+  · intro hx
+    exact ⟨x, hx, rfl⟩
+
+/-- Non-interleaving is preserved by reversing every endpoint with `Fin.rev`, with the cyclic
+orientation reversal accounted for by exchanging the two endpoints within each pair. -/
+theorem noninterleaving_rev (a₀ a₁ b₀ b₁ : Fin n) :
+    Noninterleaving a₀.rev a₁.rev b₀.rev b₁.rev ↔ Noninterleaving a₁ a₀ b₁ b₀ := by
+  rw [Noninterleaving, Noninterleaving]
+  simp only [mem_cIoo_rev_rev]
+  tauto
 
 end Grid
 
