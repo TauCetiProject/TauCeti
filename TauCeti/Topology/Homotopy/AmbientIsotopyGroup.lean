@@ -18,14 +18,19 @@ homeomorphisms of the form `Φ.finalHomeomorph` are closed under the group opera
 packages them as a subgroup `TauCeti.isotopicToId Y` of `Y ≃ₜ Y`, the **homeomorphisms isotopic
 to the identity**.
 
-This is the point-set precursor of the identity component of the homeomorphism group, and the
-denominator of the mapping class group `MCG(Y) = (Y ≃ₜ Y) / isotopicToId Y`: the main result
-here, `isotopicToId Y` is a *normal* subgroup, is exactly what makes that quotient a group. The
-geometric-topology roadmap (`TauCetiRoadmap/GeometricTopology/README.md`, layer 3) asks the
-general isotopy notion to be built once and specialised; the normal subgroup of isotopically
-trivial homeomorphisms is the group-theoretic shadow of that construction, the continuous
-topological analogue of the `Diff₀(M) ◁ Diff(M)` whose homotopy type the Smale conjecture is
-about.
+This is the denominator of the mapping class group `MCG(Y) = (Y ≃ₜ Y) / isotopicToId Y`: the
+main result here, that `isotopicToId Y` is a *normal* subgroup, is exactly what makes that
+quotient a group.
+
+The geometric-topology roadmap (`TauCetiRoadmap/GeometricTopology/README.md`, "Encoding
+conventions") mandates that isotopy and ambient isotopy be *"defined generally, then
+specialised ... in full generality"*, with the single general construction underlying locally
+flat isotopy (layer 2), diffeotopies (layer 3), and concordance (layer 6) -- *"none of those
+should re-define it"*. The subgroup of isotopically trivial homeomorphisms, and its normality,
+are part of that one general continuous construction (built on the ambient isotopies of `#248`,
+`#261`, `#263`, `#267` and the `finalHomeomorph` functoriality of `#317`); layer 3's smooth
+`Diff₀(M) ◁ Diff(M)`, whose homotopy type the Smale conjecture concerns, is a downstream
+consumer of it rather than a separate development.
 
 Normality is powered by a new closure operation, `AmbientIsotopy.conj`, conjugating an ambient
 isotopy by a homeomorphism `h`: running `Φ` in the coordinates moved by `h`. Its final
