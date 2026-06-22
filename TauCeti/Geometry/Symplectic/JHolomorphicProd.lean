@@ -20,8 +20,6 @@ symmetric-product targets can use these lemmas without unfolding the Cauchy--Rie
 
 ## Main declarations
 
-* `TauCeti.IsComplexLinearMap.prod`: a pair of complex-linear maps with the same source is
-  complex-linear into a direct-sum target.
 * `TauCeti.IsJHolomorphicAt.prod`, `IsJHolomorphicWithinAt.prod`, `IsJHolomorphicOn.prod`,
   and `IsJHolomorphic.prod`: product maps of `J`-holomorphic maps.
 * `TauCeti.isJHolomorphicAt_fst` and `isJHolomorphicAt_snd`, with within-set, setwise, and
@@ -41,22 +39,6 @@ variable {V W X : Type*}
 variable [NormedAddCommGroup V] [NormedSpace ℝ V]
 variable [NormedAddCommGroup W] [NormedSpace ℝ W]
 variable [NormedAddCommGroup X] [NormedSpace ℝ X]
-
-section ComplexLinearMapProd
-
-variable {J : AlmostComplexStructure V} {J₁ : AlmostComplexStructure W}
-variable {J₂ : AlmostComplexStructure X}
-
-/-- A pair of complex-linear maps with the same source is complex-linear into the direct-sum
-almost complex structure. -/
-lemma IsComplexLinearMap.prod {F : V →ₗ[ℝ] W} {G : V →ₗ[ℝ] X}
-    (hF : IsComplexLinearMap J J₁ F) (hG : IsComplexLinearMap J J₂ G) :
-    IsComplexLinearMap J (J₁.prod J₂) (F.prod G) := by
-  rw [isComplexLinearMap_iff_apply] at hF hG ⊢
-  intro v
-  simp [hF v, hG v]
-
-end ComplexLinearMapProd
 
 section Projections
 
@@ -151,6 +133,7 @@ lemma IsJHolomorphic.prod {f : V → W} {g : V → X}
   fun x => (hf x).prod (hg x)
 
 /-- A map into a direct-sum target is pointwise `J`-holomorphic iff both coordinate maps are. -/
+@[simp]
 lemma isJHolomorphicAt_prod_iff (f : V → W × X) (x : V) :
     IsJHolomorphicAt J (J₁.prod J₂) f x ↔
       IsJHolomorphicAt J J₁ (fun y => (f y).1) x ∧
@@ -163,6 +146,7 @@ lemma isJHolomorphicAt_prod_iff (f : V → W × X) (x : V) :
     simpa using h.1.prod h.2
 
 /-- A map into a direct-sum target is `J`-holomorphic within a set iff both coordinate maps are. -/
+@[simp]
 lemma isJHolomorphicWithinAt_prod_iff (f : V → W × X) (s : Set V) (x : V) :
     IsJHolomorphicWithinAt J (J₁.prod J₂) f s x ↔
       IsJHolomorphicWithinAt J J₁ (fun y => (f y).1) s x ∧
@@ -175,6 +159,7 @@ lemma isJHolomorphicWithinAt_prod_iff (f : V → W × X) (s : Set V) (x : V) :
     simpa using h.1.prod h.2
 
 /-- A map into a direct-sum target is `J`-holomorphic on a set iff both coordinate maps are. -/
+@[simp]
 lemma isJHolomorphicOn_prod_iff (f : V → W × X) (s : Set V) :
     IsJHolomorphicOn J (J₁.prod J₂) f s ↔
       IsJHolomorphicOn J J₁ (fun y => (f y).1) s ∧
@@ -188,6 +173,7 @@ lemma isJHolomorphicOn_prod_iff (f : V → W × X) (s : Set V) :
     exact h.1.prod h.2
 
 /-- A map into a direct-sum target is globally `J`-holomorphic iff both coordinate maps are. -/
+@[simp]
 lemma isJHolomorphic_prod_iff (f : V → W × X) :
     IsJHolomorphic J (J₁.prod J₂) f ↔
       IsJHolomorphic J J₁ (fun y => (f y).1) ∧

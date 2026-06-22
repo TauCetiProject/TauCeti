@@ -31,6 +31,8 @@ following Mathlib's `LinearMap.prodMap` naming convention.
   `isComplexLinearMap_fst` / `isComplexLinearMap_snd`: the structural maps of the product are
   complex-linear for the direct-sum structure.
 * `TauCeti.AlmostComplexStructure.transport_prod`: transport distributes over the direct sum.
+* `TauCeti.IsComplexLinearMap.prod` and `TauCeti.IsComplexLinearMap.prodMap`: complex-linearity is
+  preserved by pairing maps with a common source and by product maps into the direct sum.
 * `TauCeti.SymplecticForm.prod`: the direct-sum symplectic form on `V × W`.
 * `TauCeti.SymplecticForm.prod_invariant`, `prod_tames`, `prod_compatible`: a direct sum of
   invariant / tame / compatible pairs is invariant / tame / compatible.
@@ -128,6 +130,16 @@ section ComplexLinearMap
 
 variable [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
 variable [AddCommGroup V'] [Module ℝ V'] [AddCommGroup W'] [Module ℝ W']
+
+/-- A pair of complex-linear maps with the same source is complex-linear into the direct-sum
+almost complex structure. -/
+lemma IsComplexLinearMap.prod {J : AlmostComplexStructure V} {J₁ : AlmostComplexStructure W}
+    {J₂ : AlmostComplexStructure V'} {F : V →ₗ[ℝ] W} {G : V →ₗ[ℝ] V'}
+    (hF : IsComplexLinearMap J J₁ F) (hG : IsComplexLinearMap J J₂ G) :
+    IsComplexLinearMap J (J₁.prod J₂) (F.prod G) := by
+  rw [isComplexLinearMap_iff_apply] at hF hG ⊢
+  intro v
+  simp [hF v, hG v]
 
 /-- A product map of complex-linear maps is complex-linear for the direct-sum almost complex
 structures. -/
