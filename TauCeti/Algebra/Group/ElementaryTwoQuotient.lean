@@ -37,7 +37,9 @@ names around it. The cardinality identity is still expressed through the squarin
 * `TauCeti.elementaryTwoQuotientMkAdd`, `TauCeti.elementaryTwoQuotientMk`, and
   `TauCeti.elementaryTwoQuotientMk_eq_zero_iff`: the quotient map and the class of an element,
   trivial iff the element is a square; `elementaryTwoQuotientMk_mul`,
-  `elementaryTwoQuotientMk_one`, and `elementaryTwoQuotientMk_prod` record its additivity.
+  `elementaryTwoQuotientMk_one`, `elementaryTwoQuotientMk_inv`,
+  `elementaryTwoQuotientMk_div`, `elementaryTwoQuotientMk_pow`, and
+  `elementaryTwoQuotientMk_prod` record its additivity.
 * `TauCeti.elementaryTwoQuotientMk_surjective` and `TauCeti.elementaryTwoQuotientMk_eq_iff`: the
   class map is surjective, and two elements have the same class iff they differ by a square.
 * `TauCeti.elementaryTwoQuotientLiftEquiv` and `TauCeti.elementaryTwoQuotientLinearLiftEquiv`: the
@@ -122,6 +124,21 @@ protected def elementaryTwoQuotientLinearLiftEquiv [AddCommGroup H] [Module (ZMo
 @[simp] theorem elementaryTwoQuotientMk_one : elementaryTwoQuotientMk (1 : G) = 0 := by
   simp only [elementaryTwoQuotientMk, ofMul_one, AddMonoidHom.map_zero]
 
+/-- The class map to `G / G²` sends inverses to negatives. -/
+@[simp] theorem elementaryTwoQuotientMk_inv (g : G) :
+    elementaryTwoQuotientMk g⁻¹ = -elementaryTwoQuotientMk g := by
+  simp only [elementaryTwoQuotientMk, ofMul_inv, map_neg]
+
+/-- The class map to `G / G²` sends quotients to differences. -/
+@[simp] theorem elementaryTwoQuotientMk_div (g h : G) :
+    elementaryTwoQuotientMk (g / h) = elementaryTwoQuotientMk g - elementaryTwoQuotientMk h := by
+  simp only [elementaryTwoQuotientMk, ofMul_div, map_sub]
+
+/-- The class map to `G / G²` sends powers to scalar multiples. -/
+@[simp] theorem elementaryTwoQuotientMk_pow (g : G) (n : ℕ) :
+    elementaryTwoQuotientMk (g ^ n) = n • elementaryTwoQuotientMk g := by
+  simp only [elementaryTwoQuotientMk, ofMul_pow, map_nsmul]
+
 /-- The class map to `G / G²` sends a finite product to the sum of the classes. -/
 theorem elementaryTwoQuotientMk_prod {ι : Type*} (S : Finset ι) (g : ι → G) :
     elementaryTwoQuotientMk (∏ i ∈ S, g i) = ∑ i ∈ S, elementaryTwoQuotientMk (g i) := by
@@ -138,10 +155,7 @@ theorem elementaryTwoQuotientMk_surjective :
 /-- Two elements have the same class in `G / G²` iff they differ by a square. -/
 theorem elementaryTwoQuotientMk_eq_iff (g h : G) :
     elementaryTwoQuotientMk g = elementaryTwoQuotientMk h ↔ IsSquare (g / h) := by
-  have hdiv : elementaryTwoQuotientMk (g / h)
-      = elementaryTwoQuotientMk g - elementaryTwoQuotientMk h := by
-    simp only [elementaryTwoQuotientMk, ofMul_div, map_sub]
-  rw [← elementaryTwoQuotientMk_eq_zero_iff, hdiv, sub_eq_zero]
+  rw [← elementaryTwoQuotientMk_eq_zero_iff, elementaryTwoQuotientMk_div, sub_eq_zero]
 
 variable (G)
 
@@ -156,7 +170,7 @@ private theorem range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup :
     Subgroup.mem_square]
 
 /-- The cardinality of `G/G²` is the index of the subgroup of squares. -/
-theorem card_elementaryTwoQuotient_eq_index_square [Finite G] :
+theorem card_elementaryTwoQuotient_eq_index_square :
     Nat.card (ElementaryTwoQuotient G) = (Subgroup.square G).index := by
   -- `ElementaryTwoQuotient G` unfolds to `Additive G ⧸ range (lsmul ℤ _ 2)`, so its cardinality is
   -- definitionally the index of the doubling subgroup; `AddSubgroup.index_eq_card` names that
@@ -169,8 +183,10 @@ theorem card_elementaryTwoQuotient_eq_index_square [Finite G] :
 
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
 `|G/G²| = |{g | g² = 1}|`. The squaring endomorphism `g ↦ g²` has range `G²` and kernel the
-2-torsion; in a finite group the index of the range equals the cardinality of the kernel. -/
-theorem card_elementaryTwoQuotient_eq_card_twoTorsion [Finite G] :
+2-torsion; when its kernel has finite index, the index of the range equals the cardinality of the
+kernel. -/
+theorem card_elementaryTwoQuotient_eq_card_twoTorsion
+    [(powMonoidHom 2 : G →* G).ker.FiniteIndex] :
     Nat.card (ElementaryTwoQuotient G) = Nat.card {g : G // g ^ 2 = 1} := by
   rw [card_elementaryTwoQuotient_eq_index_square, square_eq_powMonoidHom_two_range,
     Subgroup.index_range]

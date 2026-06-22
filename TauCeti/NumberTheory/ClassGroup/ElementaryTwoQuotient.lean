@@ -30,9 +30,10 @@ square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGroup` f
 * `TauCeti.ClassGroup.ElementaryTwoQuotient`: the quotient `Cl(R) ⧸ Cl(R)²`, a `ZMod 2`-module.
 * `TauCeti.ClassGroup.elementaryTwoQuotientMk` and `elementaryTwoQuotientMk_eq_zero_iff`: the class
   of an ideal class, trivial iff that class is a square; `elementaryTwoQuotientMk_mul`,
-  `elementaryTwoQuotientMk_one`, and `elementaryTwoQuotientMk_prod` record its additivity, while
-  `elementaryTwoQuotientMk_surjective` and `elementaryTwoQuotientMk_eq_iff` give surjectivity and
-  the equality criterion.
+  `elementaryTwoQuotientMk_one`, `elementaryTwoQuotientMk_inv`,
+  `elementaryTwoQuotientMk_div`, `elementaryTwoQuotientMk_pow`, and
+  `elementaryTwoQuotientMk_prod` record its additivity, while `elementaryTwoQuotientMk_surjective`
+  and `elementaryTwoQuotientMk_eq_iff` give surjectivity and the equality criterion.
 * `TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`,
   the quotient and the 2-torsion subgroup have equal cardinality.
 * `TauCeti.ClassGroup.twoRank` and `card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
@@ -65,6 +66,22 @@ noncomputable def elementaryTwoQuotientMk (C : ClassGroup R) : ElementaryTwoQuot
 @[simp] theorem elementaryTwoQuotientMk_one :
     elementaryTwoQuotientMk R (1 : ClassGroup R) = 0 :=
   TauCeti.elementaryTwoQuotientMk_one
+
+/-- The class map to `Cl(R)/Cl(R)²` sends inverses to negatives. -/
+@[simp] theorem elementaryTwoQuotientMk_inv (C : ClassGroup R) :
+    elementaryTwoQuotientMk R C⁻¹ = -elementaryTwoQuotientMk R C :=
+  TauCeti.elementaryTwoQuotientMk_inv C
+
+/-- The class map to `Cl(R)/Cl(R)²` sends quotients to differences. -/
+@[simp] theorem elementaryTwoQuotientMk_div (C D : ClassGroup R) :
+    elementaryTwoQuotientMk R (C / D) =
+      elementaryTwoQuotientMk R C - elementaryTwoQuotientMk R D :=
+  TauCeti.elementaryTwoQuotientMk_div C D
+
+/-- The class map to `Cl(R)/Cl(R)²` sends powers to scalar multiples. -/
+@[simp] theorem elementaryTwoQuotientMk_pow (C : ClassGroup R) (n : ℕ) :
+    elementaryTwoQuotientMk R (C ^ n) = n • elementaryTwoQuotientMk R C :=
+  TauCeti.elementaryTwoQuotientMk_pow C n
 
 /-- The class map to `Cl(R)/Cl(R)²` sends a finite product of ideal classes to the sum of the
 classes. -/
