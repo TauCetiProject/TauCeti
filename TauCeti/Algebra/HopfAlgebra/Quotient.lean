@@ -99,7 +99,7 @@ noncomputable def quotientCounitAlgHom : (H ⧸ I.toIdeal) →ₐ[R] R :=
   Bialgebra.Quotient.counitAlgHom I.toIdeal
 
 /-- The comultiplication on the quotient, evaluated on a quotient class. -/
-@[deprecated Bialgebra.Quotient.comul_mk (since := "2026-06-19")]
+@[simp, deprecated Bialgebra.Quotient.comul_mk (since := "2026-06-19")]
 theorem comul_mk (h : H) :
     Coalgebra.comul (R := R) (Ideal.Quotient.mkₐ R I.toIdeal h)
       = TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap
@@ -108,7 +108,7 @@ theorem comul_mk (h : H) :
   exact Bialgebra.Quotient.comul_mk I.toIdeal h
 
 /-- The counit on the quotient, evaluated on a quotient class. -/
-@[deprecated Bialgebra.Quotient.counit_mk (since := "2026-06-19")]
+@[simp, deprecated Bialgebra.Quotient.counit_mk (since := "2026-06-19")]
 theorem counit_mk (h : H) :
     Coalgebra.counit (R := R) (Ideal.Quotient.mkₐ R I.toIdeal h) =
       Coalgebra.counit (R := R) h := by
@@ -116,7 +116,7 @@ theorem counit_mk (h : H) :
   exact Bialgebra.Quotient.counit_mk I.toIdeal h
 
 /-- The descended comultiplication, evaluated on a quotient class. -/
-@[deprecated Bialgebra.Quotient.comul_mk (since := "2026-06-19")]
+@[simp, deprecated Bialgebra.Quotient.comul_mk (since := "2026-06-19")]
 theorem quotientComulAlgHom_mk (h : H) :
     quotientComulAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h)
       = Algebra.TensorProduct.map (Ideal.Quotient.mkₐ R I.toIdeal)
@@ -128,7 +128,7 @@ theorem quotientComulAlgHom_mk (h : H) :
       (Ideal.Quotient.mkₐ R I.toIdeal)) _).symm
 
 /-- The descended counit, evaluated on a quotient class. -/
-@[deprecated Bialgebra.Quotient.counit_mk (since := "2026-06-19")]
+@[simp, deprecated Bialgebra.Quotient.counit_mk (since := "2026-06-19")]
 theorem quotientCounitAlgHom_mk (h : H) :
     quotientCounitAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h) =
       Coalgebra.counit (R := R) h := by
@@ -141,7 +141,7 @@ noncomputable def quotientAntipodeLinearMap : (H ⧸ I.toIdeal) →ₗ[R] H ⧸ 
   HopfAlgebra.antipode R
 
 /-- The antipode on the quotient, evaluated on a quotient class. -/
-@[deprecated HopfAlgebra.Quotient.antipode_mk (since := "2026-06-19")]
+@[simp, deprecated HopfAlgebra.Quotient.antipode_mk (since := "2026-06-19")]
 theorem antipode_mk (h : H) :
     HopfAlgebra.antipode R (Ideal.Quotient.mkₐ R I.toIdeal h) =
       Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R h) := by
@@ -149,7 +149,7 @@ theorem antipode_mk (h : H) :
   exact HopfAlgebra.Quotient.antipode_mk I.toIdeal h
 
 /-- The descended antipode linear map, evaluated on a quotient class. -/
-@[deprecated HopfAlgebra.Quotient.antipode_mk (since := "2026-06-19")]
+@[simp, deprecated HopfAlgebra.Quotient.antipode_mk (since := "2026-06-19")]
 theorem quotientAntipodeLinearMap_mk (h : H) :
     quotientAntipodeLinearMap I (Ideal.Quotient.mkₐ R I.toIdeal h) =
       Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R h) := by
@@ -163,7 +163,7 @@ noncomputable def mkBialgHom : H →ₐc[R] H ⧸ I.toIdeal :=
   Bialgebra.Quotient.mkBialgHom I.toIdeal
 
 /-- The quotient bialgebra morphism, evaluated on an element of `H`. -/
-@[deprecated Bialgebra.Quotient.mkBialgHom_apply (since := "2026-06-19")]
+@[simp, deprecated Bialgebra.Quotient.mkBialgHom_apply (since := "2026-06-19")]
 theorem mkBialgHom_apply (h : H) : mkBialgHom I h = Ideal.Quotient.mkₐ R I.toIdeal h := by
   rw [mkBialgHom, Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.mkₐ_eq_mk]
 
@@ -214,7 +214,7 @@ noncomputable def quotientAntipodeAlgHom : (H ⧸ I.toIdeal) →ₐ[R] H ⧸ I.t
   HopfAlgebra.antipodeAlgHom R (H ⧸ I.toIdeal)
 
 /-- The descended antipode algebra homomorphism, evaluated on a quotient class. -/
-@[deprecated HopfAlgebra.Quotient.antipode_mk (since := "2026-06-19")]
+@[simp, deprecated HopfAlgebra.Quotient.antipode_mk (since := "2026-06-19")]
 theorem quotientAntipodeAlgHom_mk (h : H) :
     quotientAntipodeAlgHom I (Ideal.Quotient.mkₐ R I.toIdeal h) =
       Ideal.Quotient.mkₐ R I.toIdeal (HopfAlgebra.antipode R h) := by
