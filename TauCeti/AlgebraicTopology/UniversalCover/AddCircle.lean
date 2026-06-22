@@ -23,10 +23,11 @@ The forward inclusion is elementary. For the converse, a deck transformation `φ
 `φ e - e` inside the *discrete* subgroup `zmultiples p` while varying continuously in `e`, so on
 a preconnected `𝕜` it is constant; that constant is `φ 0`, and `φ` is translation by it.
 
-When `p` is not a torsion element (`¬ IsOfFinAddOrder p`), the translation
-subgroup is infinite cyclic, giving `Deck ((↑) : 𝕜 → AddCircle p) ≃* Multiplicative ℤ`. For
-`𝕜 = ℝ` this is the deck group of the universal cover `ℝ → S¹` and the algebraic input to the
-universal-covers roadmap target `π₁(S¹) ≅ ℤ` (Stage 4).
+When the period subgroup is totally disconnected and `p` is not a torsion element
+(`¬ IsOfFinAddOrder p`), the translation subgroup is infinite cyclic, giving
+`Deck ((↑) : 𝕜 → AddCircle p) ≃* Multiplicative ℤ`. For `𝕜 = ℝ` this is the deck group of
+the universal cover `ℝ → S¹` and the algebraic input to the universal-covers roadmap target
+`π₁(S¹) ≅ ℤ` (Stage 4).
 
 ## Main declarations
 
@@ -34,8 +35,8 @@ universal-covers roadmap target `π₁(S¹) ≅ ℤ` (Stage 4).
   transformation of `(↑) : 𝕜 → AddCircle p`.
 * `TauCeti.Deck.addCircleMulEquiv`: the deck group of `(↑) : 𝕜 → AddCircle p` is
   `Multiplicative (zmultiples p)`.
-* `TauCeti.Deck.addCircleMulEquivInt`: for a non-torsion period, the deck group is
-  `Multiplicative ℤ`.
+* `TauCeti.Deck.addCircleMulEquivInt`: for a totally disconnected period subgroup and a
+  non-torsion period, the deck group is `Multiplicative ℤ`.
 
 ## References
 
@@ -92,8 +93,9 @@ theorem addRightZMultiples_injective :
 
 /-- On a preconnected domain with totally disconnected period subgroup, a deck transformation of
 `(↑) : 𝕜 → AddCircle p` is right translation by `φ 0`. -/
-theorem eq_add_apply_zero [PreconnectedSpace 𝕜] [TotallyDisconnectedSpace (zmultiples p)]
-    (φ : Deck ((↑) : 𝕜 → AddCircle p)) (e : 𝕜) : φ.1 e = e + φ.1 0 := by
+theorem addCircleCoe_eq_add_apply_zero [PreconnectedSpace 𝕜]
+    [TotallyDisconnectedSpace (zmultiples p)] (φ : Deck ((↑) : 𝕜 → AddCircle p)) (e : 𝕜) :
+    φ.1 e = e + φ.1 0 := by
   have hmem : ∀ x, φ.1 x - x ∈ zmultiples p := mem_addCircleCoe.1 φ.2
   have hcont : Continuous fun x => φ.1 x - x := φ.1.continuous.sub continuous_id
   have key : (⟨φ.1 e - e, hmem e⟩ : zmultiples p) = ⟨φ.1 0 - 0, hmem 0⟩ :=
@@ -127,7 +129,7 @@ noncomputable def addCircleMulEquiv [PreconnectedSpace 𝕜]
     · refine ⟨Multiplicative.ofAdd ⟨φ.1 0, by simpa using mem_addCircleCoe.1 φ.2 0⟩, ?_⟩
       apply Subtype.ext
       ext e
-      simpa using (eq_add_apply_zero φ e).symm
+      simpa using (addCircleCoe_eq_add_apply_zero φ e).symm
 
 @[simp]
 theorem addCircleMulEquiv_apply [PreconnectedSpace 𝕜] [TotallyDisconnectedSpace (zmultiples p)]
@@ -147,8 +149,9 @@ theorem addCircleMulEquiv_symm_apply_coe [PreconnectedSpace 𝕜]
     _ = φ.1 0 := by rw [MulEquiv.apply_symm_apply]
 
 /-- For a non-torsion period, the deck transformation group of the covering
-`(↑) : 𝕜 → AddCircle p` on a preconnected domain is infinite cyclic: `Multiplicative ℤ`. For
-`𝕜 = ℝ` this is the deck group of the universal cover `ℝ → S¹`. -/
+`(↑) : 𝕜 → AddCircle p` on a preconnected domain with totally disconnected period subgroup is
+infinite cyclic: `Multiplicative ℤ`. For `𝕜 = ℝ` this is the deck group of the universal cover
+`ℝ → S¹`. -/
 noncomputable def addCircleMulEquivInt [PreconnectedSpace 𝕜]
     [TotallyDisconnectedSpace (zmultiples p)] (hp : ¬ IsOfFinAddOrder p) :
     Multiplicative ℤ ≃* Deck ((↑) : 𝕜 → AddCircle p) :=
