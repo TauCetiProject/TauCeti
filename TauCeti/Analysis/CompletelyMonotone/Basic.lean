@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Analysis.Calculus.AbsolutelyMonotone
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
@@ -32,6 +33,8 @@ point `0`); on the open half-line it agrees with the ordinary iterated derivativ
 
 * `TauCeti.IsCompletelyMonotone`: the predicate that `f` is smooth and sign-alternating on
   `[0, ∞)`.
+* `TauCeti.IsCompletelyMonotone.congr`: complete monotonicity only depends on the values of the
+  function on `[0, ∞)`.
 * `TauCeti.IsCompletelyMonotone.nonneg`, `TauCeti.IsCompletelyMonotone.derivWithin_nonpos`,
   `TauCeti.IsCompletelyMonotone.antitoneOn`: a completely monotone function is nonnegative
   and nonincreasing on `[0, ∞)`.
@@ -39,6 +42,8 @@ point `0`); on the open half-line it agrees with the ordinary iterated derivativ
   the sign condition also holds for ordinary iterated derivatives.
 * `TauCeti.IsCompletelyMonotone.add`, `TauCeti.IsCompletelyMonotone.smul`: closure under
   sums and nonnegative scalar multiples.
+* `TauCeti.IsCompletelyMonotoneOnIoi`: the open-half-line analogue, using ordinary iterated
+  derivatives on `(0, ∞)`.
 * `TauCeti.isCompletelyMonotone_const`: a nonnegative constant is completely monotone.
 * `TauCeti.isCompletelyMonotone_exp_neg_mul`: the building block `t ↦ e^{-x t}` for `x ≥ 0`.
 
@@ -147,6 +152,15 @@ lemma derivWithin_nonpos (hf : IsCompletelyMonotone f) {t : ℝ} (ht : 0 ≤ t) 
   rw [pow_one, iteratedDerivWithin_one] at h
   linarith
 
+/-- Complete monotonicity is determined by the values of the function on `[0, ∞)`: if `g` agrees
+with a completely monotone `f` throughout `[0, ∞)`, then `g` is completely monotone too. Both the
+smoothness clause and the sign condition only see the function within `[0, ∞)`. -/
+lemma congr (hf : IsCompletelyMonotone f) (h : Set.EqOn g f (Ici 0)) :
+    IsCompletelyMonotone g := by
+  refine ⟨hf.contDiffOn.congr fun x hx => h hx, fun n t ht => ?_⟩
+  rw [iteratedDerivWithin_congr h (mem_Ici.mpr ht)]
+  exact hf.neg_one_pow_mul_iteratedDerivWithin_nonneg n ht
+
 /-- A completely monotone function is nonincreasing on `[0, ∞)`. -/
 lemma antitoneOn (hf : IsCompletelyMonotone f) : AntitoneOn f (Ici 0) := by
   refine antitoneOn_of_deriv_nonpos (convex_Ici 0) hf.contDiffOn.continuousOn
@@ -200,5 +214,71 @@ lemma isCompletelyMonotone_exp_neg_mul {x : ℝ} (hx : 0 ≤ x) :
     exact pow_nonneg hx n
   rw [hval, ← mul_assoc]
   exact mul_nonneg hpow (Real.exp_nonneg _)
+
+/-- Complete monotonicity on the open half-line `(0, ∞)`: the function is `C^∞` there and its
+ordinary iterated derivatives alternate in sign. This is the version used for derivatives of
+Bernstein functions, whose right derivatives need not be finite at `0`. -/
+def IsCompletelyMonotoneOnIoi (f : ℝ → ℝ) : Prop :=
+  ContDiffOn ℝ ∞ f (Ioi 0) ∧
+    ∀ n : ℕ, ∀ t : ℝ, 0 < t → 0 ≤ (-1) ^ n * iteratedDeriv n f t
+
+namespace IsCompletelyMonotoneOnIoi
+
+variable {f g : ℝ → ℝ}
+
+/-- A completely monotone function on `(0, ∞)` is smooth there. -/
+@[grind →]
+lemma contDiffOn (hf : IsCompletelyMonotoneOnIoi f) : ContDiffOn ℝ ∞ f (Ioi 0) := hf.1
+
+/-- The sign-alternation property on `(0, ∞)`. -/
+@[grind =>]
+lemma neg_one_pow_mul_iteratedDeriv_nonneg (hf : IsCompletelyMonotoneOnIoi f) (n : ℕ) {t : ℝ}
+    (ht : 0 < t) : 0 ≤ (-1) ^ n * iteratedDeriv n f t := hf.2 n t ht
+
+/-- A completely monotone function on `(0, ∞)` is nonnegative there. -/
+@[grind =>]
+lemma nonneg (hf : IsCompletelyMonotoneOnIoi f) {t : ℝ} (ht : 0 < t) : 0 ≤ f t := by
+  simpa [iteratedDeriv_zero] using hf.neg_one_pow_mul_iteratedDeriv_nonneg 0 ht
+
+/-- The derivative of a completely monotone function on `(0, ∞)` is nonpositive there. -/
+@[grind =>]
+lemma deriv_nonpos (hf : IsCompletelyMonotoneOnIoi f) {t : ℝ} (ht : 0 < t) :
+    deriv f t ≤ 0 := by
+  have h := hf.neg_one_pow_mul_iteratedDeriv_nonneg 1 ht
+  rw [pow_one, iteratedDeriv_one] at h
+  linarith
+
+/-- Complete monotonicity on `(0, ∞)` is preserved by pointwise equality there. -/
+lemma congr (hf : IsCompletelyMonotoneOnIoi f) (h : Set.EqOn g f (Ioi 0)) :
+    IsCompletelyMonotoneOnIoi g := by
+  refine ⟨hf.contDiffOn.congr fun x hx => h hx, fun n t ht => ?_⟩
+  rw [Filter.EventuallyEq.iteratedDeriv_eq n (h.eventuallyEq_of_mem (isOpen_Ioi.mem_nhds ht))]
+  exact hf.neg_one_pow_mul_iteratedDeriv_nonneg n ht
+
+/-- Complete monotonicity on `(0, ∞)` is closed under addition. -/
+lemma add (hf : IsCompletelyMonotoneOnIoi f) (hg : IsCompletelyMonotoneOnIoi g) :
+    IsCompletelyMonotoneOnIoi (f + g) := by
+  refine ⟨hf.contDiffOn.add hg.contDiffOn, fun n t ht => ?_⟩
+  rw [iteratedDeriv_add
+    ((hf.contDiffOn.contDiffAt (isOpen_Ioi.mem_nhds ht)).of_le (by exact_mod_cast le_top))
+    ((hg.contDiffOn.contDiffAt (isOpen_Ioi.mem_nhds ht)).of_le (by exact_mod_cast le_top))]
+  simpa [mul_add] using add_nonneg (hf.neg_one_pow_mul_iteratedDeriv_nonneg n ht)
+    (hg.neg_one_pow_mul_iteratedDeriv_nonneg n ht)
+
+/-- Complete monotonicity on `(0, ∞)` is closed under multiplication by a nonnegative constant. -/
+lemma smul (hf : IsCompletelyMonotoneOnIoi f) {c : ℝ} (hc : 0 ≤ c) :
+    IsCompletelyMonotoneOnIoi (c • f) := by
+  refine ⟨hf.contDiffOn.const_smul c, fun n t ht => ?_⟩
+  rw [iteratedDeriv_const_smul_field]
+  simpa [smul_eq_mul, mul_assoc, mul_left_comm, mul_comm] using
+    mul_nonneg hc (hf.neg_one_pow_mul_iteratedDeriv_nonneg n ht)
+
+/-- The closed-half-line Tau Ceti predicate restricts to complete monotonicity on `(0, ∞)`. -/
+lemma _root_.TauCeti.IsCompletelyMonotone.isCompletelyMonotoneOnIoi
+    (hf : IsCompletelyMonotone f) : IsCompletelyMonotoneOnIoi f :=
+  ⟨hf.contDiffOn.mono Ioi_subset_Ici_self,
+    fun n _ ht => hf.neg_one_pow_mul_iteratedDeriv_nonneg n ht⟩
+
+end IsCompletelyMonotoneOnIoi
 
 end TauCeti
