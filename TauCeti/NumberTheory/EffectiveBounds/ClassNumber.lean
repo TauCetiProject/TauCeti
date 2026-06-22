@@ -20,6 +20,8 @@ classes inject into the ideals of norm `≤ √|d_F|`, of which there are at mos
 ## Main result
 
 * `TauCeti.NumberField.classNumber_le_bound`: `h_F ≤ |d_F| · 4^[F:ℚ]`.
+* `TauCeti.NumberField.classNumber_le_of_abs_discr_le_of_finrank_le`: the monotone
+  corollary from separate discriminant and degree bounds.
 
 ## Provenance
 
@@ -86,5 +88,45 @@ theorem classNumber_le_bound (F : Type*) [Field F] [NumberField F] :
       rw [h_four, ← pow_mul, ← pow_add]
       gcongr <;> norm_num
       have := NumberField.InfinitePlace.card_add_two_mul_card_eq_rank F; linarith
+
+/-- If a number field has discriminant bounded by `D` and degree bounded by `n`, then its class
+number is bounded by `D * 4^n`.
+
+This is the monotone form of `TauCeti.NumberField.classNumber_le_bound`, useful when the
+discriminant and degree have already been bounded separately. -/
+theorem classNumber_le_of_abs_discr_le_of_finrank_le (F : Type*) [Field F] [NumberField F]
+    {D : ℝ} {n : ℕ} (hD : |(NumberField.discr F : ℝ)| ≤ D)
+    (hn : Module.finrank ℚ F ≤ n) :
+    (NumberField.classNumber F : ℝ) ≤ D * 4 ^ n := by
+  calc
+    (NumberField.classNumber F : ℝ)
+        ≤ |(NumberField.discr F : ℝ)| * 4 ^ Module.finrank ℚ F :=
+          classNumber_le_bound F
+    _ ≤ D * 4 ^ n := by
+      gcongr
+      · exact le_trans (abs_nonneg (NumberField.discr F : ℝ)) hD
+      · norm_num
+
+/-- A version of `classNumber_le_of_abs_discr_le_of_finrank_le` with a natural-number
+discriminant bound and a natural-number conclusion. -/
+theorem classNumber_le_nat_of_abs_discr_le_of_finrank_le (F : Type*) [Field F] [NumberField F]
+    {D n : ℕ} (hD : |NumberField.discr F| ≤ D) (hn : Module.finrank ℚ F ≤ n) :
+    NumberField.classNumber F ≤ D * 4 ^ n := by
+  have hD_real : |(NumberField.discr F : ℝ)| ≤ (D : ℝ) := by
+    rw [← Int.cast_abs]
+    exact_mod_cast hD
+  exact_mod_cast classNumber_le_of_abs_discr_le_of_finrank_le F hD_real hn
+
+/-- If `|d_F| ≤ D`, then `h_F ≤ D * 4^[F:ℚ]`. -/
+theorem classNumber_le_of_abs_discr_le (F : Type*) [Field F] [NumberField F] {D : ℝ}
+    (hD : |(NumberField.discr F : ℝ)| ≤ D) :
+    (NumberField.classNumber F : ℝ) ≤ D * 4 ^ Module.finrank ℚ F :=
+  classNumber_le_of_abs_discr_le_of_finrank_le F hD le_rfl
+
+/-- Natural-number version of `classNumber_le_of_abs_discr_le`. -/
+theorem classNumber_le_nat_of_abs_discr_le (F : Type*) [Field F] [NumberField F] {D : ℕ}
+    (hD : |NumberField.discr F| ≤ D) :
+    NumberField.classNumber F ≤ D * 4 ^ Module.finrank ℚ F :=
+  classNumber_le_nat_of_abs_discr_le_of_finrank_le F hD le_rfl
 
 end TauCeti.NumberField
