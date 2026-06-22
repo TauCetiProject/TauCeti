@@ -2,7 +2,8 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminant
+import Mathlib.Algebra.Order.Ring.Basic
+import Mathlib.Data.Nat.Squarefree
 import Mathlib.Data.Rat.Lemmas
 
 /-!
@@ -135,7 +136,7 @@ theorem not_isSquare_evenPrimeDiscriminantRadicand_rat {D : ℤ}
   rcases hD with rfl | rfl | rfl
   · exact not_isSquare_of_neg (by norm_num)
   · rw [evenPrimeDiscriminantRadicand_eight]
-    change ¬ IsSquare (2 : ℚ)
+    push_cast
     rw [Rat.isSquare_ofNat_iff]
     rintro ⟨n, hn⟩
     have hdiv : n ∣ 2 := ⟨n, by rw [mul_comm, hn]⟩
