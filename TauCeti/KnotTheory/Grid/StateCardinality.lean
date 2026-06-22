@@ -124,7 +124,7 @@ theorem apply_eq_zero (x : GridState 1) (c : Fin 1) : x c = 0 := by
   exact Subsingleton.elim _ _
 
 /-- The two grid states on a `2 × 2` grid are exactly the identity and the transposition. -/
-theorem eq_one_or_swap (x : GridState 2) :
+theorem eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap (x : GridState 2) :
     x = (equivPerm 2).symm 1 ∨ x = (equivPerm 2).symm (Equiv.swap 0 1) := by
   have hne : x 1 ≠ x 0 := fun h => Fin.zero_ne_one (x.toPerm.injective h.symm)
   rcases eq_or_ne (x 0) 0 with h0 | h0
