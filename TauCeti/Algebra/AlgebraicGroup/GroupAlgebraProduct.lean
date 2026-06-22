@@ -8,11 +8,11 @@ import TauCeti.Algebra.AlgebraicGroup.Product
 /-!
 # The group algebra of a product is the tensor product of group algebras
 
-For two commutative monoids `G` and `H`, the canonical map `single (g, h) 1 ↦ single g 1 ⊗ₜ
+For two monoids `G` and `H`, the canonical map `single (g, h) 1 ↦ single g 1 ⊗ₜ
 single h 1` is an isomorphism of `R`-bialgebras `R[G × H] ≃ₐc[R] R[G] ⊗[R] R[H]`. This file
 constructs that isomorphism and records its consequence on the functor of points: the
-diagonalizable group `D(G × H) = Spec R[G × H]` is the direct product `D(G) × D(H)` of the
-diagonalizable groups of the factors.
+diagonalizable group `D(G × H) = Spec R[G × H]`, for commutative groups `G` and `H`, is the
+direct product `D(G) × D(H)` of the diagonalizable groups of the factors.
 
 The bialgebra isomorphism is built from two mutually inverse algebra maps — the lift of the
 group-like monoid hom `(g, h) ↦ single g 1 ⊗ₜ single h 1` one way, and the tensor-product
@@ -185,15 +185,13 @@ end MonoidAlgebra
 namespace DiagonalizableGroup
 
 variable {R : Type u} [CommSemiring R]
-variable {G : Type v} {H : Type w} [CommMonoid G] [CommMonoid H]
+variable {G : Type v} {H : Type w} [CommGroup G] [CommGroup H]
 variable {A : Type w'} [CommSemiring A] [Algebra R A]
 
 /-- **The diagonalizable group of a product is the product of diagonalizable groups, on points.**
-For every commutative `R`-algebra `A`, the convolution monoid of `A`-points of `D(G × H)` is the
-product of the convolution monoids of `A`-points of `D(G)` and `D(H)`. When `G` and `H` are
-commutative groups the group algebras are Hopf algebras, so these convolution monoids are the
-convolution groups of points (`TauCeti.AlgHom.instGroup`) and this is an isomorphism of
-groups. -/
+For commutative groups `G` and `H` and every commutative `R`-algebra `A`, the convolution group
+of `A`-points of `D(G × H)` is the product of the convolution groups of `A`-points of `D(G)` and
+`D(H)`. -/
 noncomputable def prodPointsMulEquiv :
     WithConv (MonoidAlgebra R (G × H) →ₐ[R] A) ≃*
       WithConv (MonoidAlgebra R G →ₐ[R] A) × WithConv (MonoidAlgebra R H →ₐ[R] A) :=
