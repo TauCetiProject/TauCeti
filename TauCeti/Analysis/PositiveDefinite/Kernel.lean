@@ -56,7 +56,7 @@ open scoped ComplexConjugate ComplexOrder
 
 namespace TauCeti
 
-universe u v w
+universe u v w z
 
 variable {𝕜 : Type u} [RCLike 𝕜]
 variable {α : Type v} {β : Type w}
@@ -74,42 +74,49 @@ theorem isPositiveDefiniteKernel_def (K : α → α → 𝕜) :
     IsPositiveDefiniteKernel K ↔ (Matrix.of fun a b => K a b).PosSemidef := by
   rfl
 
+private theorem posSemidef_of_support_posSemidef (K : α → α → 𝕜)
+    (hHerm : (Matrix.of fun a b => K a b).IsHermitian)
+    (hgram : ∀ x : α →₀ 𝕜,
+      (Matrix.of fun i j : x.support => K (i : α) (j : α)).PosSemidef) :
+    (Matrix.of fun a b => K a b).PosSemidef := by
+  classical
+  refine ⟨hHerm, fun x => ?_⟩
+  let y : x.support → 𝕜 := fun i => x i
+  have h := (Matrix.posSemidef_iff_dotProduct_mulVec.mp (hgram x)).2 y
+  have h' :
+      0 ≤ ∑ i : x.support, ∑ j : x.support,
+        star (x (i : α)) * (K (i : α) (j : α) * x (j : α)) := by
+    simpa only [y, dotProduct, Matrix.mulVec, Matrix.of_apply, Pi.star_apply,
+      Finset.mul_sum, RCLike.star_def, mul_assoc] using h
+  have h'' :
+      0 ≤ ∑ i ∈ x.support, ∑ j ∈ x.support,
+        star (x i) * (K i j * x j) := by
+    convert h' using 1
+    rw [Finset.sum_subtype x.support (by intro a; rfl)]
+    apply Finset.sum_congr rfl
+    intro i _
+    rw [Finset.sum_subtype x.support (by intro a; rfl)]
+  simpa only [Matrix.of_apply, Finsupp.sum, mul_assoc] using h''
+
 /-- The rank-one kernels `(a, b) ↦ conj (g a) · g b` are positive definite. With `g ≡ 1` this gives
 the constant kernel `1`; with general `g` these are building blocks whose nonnegative mixtures
 and Schur products generate further positive-definite kernels. -/
 theorem isPositiveDefiniteKernel_conj_mul (g : α → 𝕜) :
     IsPositiveDefiniteKernel (fun a b => conj (g a) * g b) := by
   classical
-  change (Matrix.of fun a b => conj (g a) * g b).PosSemidef
-  refine ⟨?_, fun x => ?_⟩
+  rw [isPositiveDefiniteKernel_def]
+  refine posSemidef_of_support_posSemidef _ ?_ ?_
   · ext a b
     rw [Matrix.conjTranspose_apply, Matrix.of_apply, Matrix.of_apply, ← starRingEnd_apply]
     simp [mul_comm]
-  · let v : x.support → α := fun i => i
-    let y : x.support → 𝕜 := fun i => x i
-    have hgram : (Matrix.of fun i j : x.support => conj (g (i : α)) * g (j : α)).PosSemidef := by
-      have e : (Matrix.of fun i j : x.support => conj (g (i : α)) * g (j : α))
-          = Matrix.vecMulVec (star fun i : x.support => g (i : α))
-              (fun i : x.support => g (i : α)) := by
-        ext i j
-        simp only [Matrix.of_apply, Matrix.vecMulVec_apply, Pi.star_apply, starRingEnd_apply]
-      rw [e]
-      exact Matrix.posSemidef_vecMulVec_star_self _
-    have h := (Matrix.posSemidef_iff_dotProduct_mulVec.mp hgram).2 y
-    have h' :
-        0 ≤ ∑ i : x.support, ∑ j : x.support,
-          star (x (i : α)) * ((conj (g (i : α)) * g (j : α)) * x (j : α)) := by
-      simpa only [v, y, dotProduct, Matrix.mulVec, Matrix.of_apply, Pi.star_apply,
-        Finset.mul_sum, RCLike.star_def, mul_assoc] using h
-    have h'' :
-        0 ≤ ∑ i ∈ x.support, ∑ j ∈ x.support,
-          star (x i) * ((conj (g i) * g j) * x j) := by
-      convert h' using 1
-      rw [Finset.sum_subtype x.support (by intro a; rfl)]
-      apply Finset.sum_congr rfl
-      intro i _
-      rw [Finset.sum_subtype x.support (by intro a; rfl)]
-    simpa only [Matrix.of_apply, Finsupp.sum, mul_assoc] using h''
+  · intro x
+    have e : (Matrix.of fun i j : x.support => conj (g (i : α)) * g (j : α))
+        = Matrix.vecMulVec (star fun i : x.support => g (i : α))
+            (fun i : x.support => g (i : α)) := by
+      ext i j
+      simp only [Matrix.of_apply, Matrix.vecMulVec_apply, Pi.star_apply, starRingEnd_apply]
+    rw [e]
+    exact Matrix.posSemidef_vecMulVec_star_self _
 
 namespace IsPositiveDefiniteKernel
 
@@ -149,7 +156,7 @@ theorem add (h₁ : IsPositiveDefiniteKernel K₁) (h₂ : IsPositiveDefiniteKer
       = (Matrix.of fun a b => K₁ a b) + (Matrix.of fun a b => K₂ a b) := by
     ext i j
     simp
-  change (Matrix.of fun a b => K₁ a b + K₂ a b).PosSemidef
+  rw [isPositiveDefiniteKernel_def]
   rw [e]
   exact Matrix.PosSemidef.add h₁ h₂
 
@@ -161,7 +168,7 @@ theorem mul (h₁ : IsPositiveDefiniteKernel K₁) (h₂ : IsPositiveDefiniteKer
       = (Matrix.of fun a b => K₁ a b) ⊙ (Matrix.of fun a b => K₂ a b) := by
     ext i j
     simp [Matrix.hadamard_apply]
-  change (Matrix.of fun a b => K₁ a b * K₂ a b).PosSemidef
+  rw [isPositiveDefiniteKernel_def]
   rw [e]
   exact Matrix.PosSemidef.hadamard h₁ h₂
 
@@ -190,42 +197,32 @@ instance for the `K(a, b) = F(a + b⋆)` construction), without unfolding `Matri
 theorem isPositiveDefiniteKernel_iff {K : α → α → 𝕜} :
     IsPositiveDefiniteKernel K ↔
       (∀ a b, conj (K a b) = K b a) ∧
-        ∀ {ι : Type v} [Fintype ι] (v : ι → α) (x : ι → 𝕜),
+        ∀ {ι : Type z} [Fintype ι] (v : ι → α) (x : ι → 𝕜),
           0 ≤ ∑ i, ∑ j, conj (x i) * x j * K (v i) (v j) := by
   classical
   refine ⟨fun hK => ⟨hK.conj_symm, hK.sum_conj_mul_mul_nonneg⟩, fun ⟨hsymm, hpos⟩ => ?_⟩
-  refine ⟨?_, fun x => ?_⟩
+  rw [isPositiveDefiniteKernel_def]
+  refine posSemidef_of_support_posSemidef K ?_ ?_
   · ext a b
     rw [Matrix.conjTranspose_apply, Matrix.of_apply, Matrix.of_apply, ← starRingEnd_apply]
     exact hsymm b a
-  · let v : x.support → α := fun i => i
-    let y : x.support → 𝕜 := fun i => x i
-    have hgram : (Matrix.of fun i j : x.support => K (i : α) (j : α)).PosSemidef := by
-      rw [Matrix.posSemidef_iff_dotProduct_mulVec]
-      refine ⟨?_, fun z => ?_⟩
-      · ext i j
-        rw [Matrix.conjTranspose_apply, ← starRingEnd_apply]
-        exact hsymm (j : α) (i : α)
-      · refine (hpos (ι := ↥x.support) v z).trans_eq ?_
-        simp only [v, dotProduct, Matrix.mulVec, Matrix.of_apply, Pi.star_apply,
-          Finset.mul_sum]
-        refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-        rw [starRingEnd_apply]
-        ring
-    have h := (Matrix.posSemidef_iff_dotProduct_mulVec.mp hgram).2 y
-    have h' :
-        0 ≤ ∑ i : x.support, ∑ j : x.support,
-          star (x (i : α)) * (K (i : α) (j : α) * x (j : α)) := by
-      simpa only [v, y, dotProduct, Matrix.mulVec, Matrix.of_apply, Pi.star_apply,
-        Finset.mul_sum, RCLike.star_def, mul_assoc] using h
-    have h'' :
-        0 ≤ ∑ i ∈ x.support, ∑ j ∈ x.support,
-          star (x i) * (K i j * x j) := by
-      convert h' using 1
-      rw [Finset.sum_subtype x.support (by intro a; rfl)]
-      apply Finset.sum_congr rfl
-      intro i _
-      rw [Finset.sum_subtype x.support (by intro a; rfl)]
-    simpa only [Matrix.of_apply, Finsupp.sum, mul_assoc] using h''
+  · intro x
+    let e : ULift.{z, 0} (Fin (Fintype.card x.support)) ≃ x.support :=
+      Equiv.ulift.trans (Fintype.equivFin x.support).symm
+    let M : Matrix x.support x.support 𝕜 := Matrix.of fun i j => K (i : α) (j : α)
+    refine (Matrix.posSemidef_submatrix_equiv e).mp ?_
+    rw [Matrix.posSemidef_iff_dotProduct_mulVec]
+    refine ⟨?_, fun y => ?_⟩
+    · ext i j
+      rw [Matrix.conjTranspose_apply, Matrix.submatrix_apply, Matrix.submatrix_apply,
+        Matrix.of_apply, Matrix.of_apply, ← starRingEnd_apply]
+      exact hsymm (e j : α) (e i : α)
+    · refine (hpos (ι := ULift.{z, 0} (Fin (Fintype.card x.support)))
+        (fun i => (e i : α)) y).trans_eq ?_
+      simp only [dotProduct, Matrix.mulVec, Matrix.submatrix_apply, Matrix.of_apply,
+        Pi.star_apply, Finset.mul_sum]
+      refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+      rw [starRingEnd_apply]
+      ring
 
 end TauCeti
