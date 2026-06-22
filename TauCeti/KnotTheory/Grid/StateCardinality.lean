@@ -104,23 +104,28 @@ theorem apply_eq_zero (x : GridState 1) (c : Fin 1) : x c = 0 := by
 theorem eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap (x : GridState 2) :
     x = (equivPerm 2).symm 1 ∨ x = (equivPerm 2).symm (Equiv.swap 0 1) := by
   have hne : x 1 ≠ x 0 := fun h => Fin.zero_ne_one (x.toPerm.injective h.symm)
-  rcases eq_or_ne (x 0) 0 with h0 | h0
-  · left
-    ext c
-    fin_cases c
-    · simpa using h0
-    · have h1 : x 1 = 1 :=
-        Fin.eq_one_of_ne_zero (x 1) fun hx1 => hne (hx1.trans h0.symm)
-      exact congrArg Fin.val h1
-  · right
-    have hx0 : x 0 = 1 := Fin.eq_one_of_ne_zero (x 0) h0
-    ext c
-    fin_cases c
-    · exact congrArg Fin.val hx0
-    · have hx1 : x 1 = 0 := by
+  have hx : x.toPerm = 1 ∨ x.toPerm = Equiv.swap 0 1 := by
+    rcases eq_or_ne (x 0) 0 with h0 | h0
+    · left
+      have h1 : x 1 = 1 := Fin.eq_one_of_ne_zero (x 1) fun hx1 => hne (hx1.trans h0.symm)
+      apply Equiv.ext
+      intro c
+      fin_cases c
+      · simpa using h0
+      · simpa using h1
+    · right
+      have hx0 : x 0 = 1 := Fin.eq_one_of_ne_zero (x 0) h0
+      have hx1 : x 1 = 0 := by
         by_contra hx1
         exact hne ((Fin.eq_one_of_ne_zero (x 1) hx1).trans hx0.symm)
-      exact congrArg Fin.val hx1
+      apply Equiv.ext
+      intro c
+      fin_cases c
+      · simpa [Equiv.swap_apply_left] using hx0
+      · simpa [Equiv.swap_apply_right] using hx1
+  rcases hx with h | h
+  · exact Or.inl (by rw [Equiv.eq_symm_apply, equivPerm_apply, h])
+  · exact Or.inr (by rw [Equiv.eq_symm_apply, equivPerm_apply, h])
 
 end GridState
 

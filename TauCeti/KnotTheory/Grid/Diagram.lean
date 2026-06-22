@@ -70,7 +70,7 @@ instance : CoeFun (GridState n) fun _ => Fin n → Fin n where
 @[simp] theorem equivPerm_apply (x : GridState n) : equivPerm n x = x.toPerm := rfl
 
 /-- The grid state associated to a permutation by the inverse of `GridState.equivPerm`. -/
-@[simp] theorem equivPerm_symm_apply (σ : Equiv.Perm (Fin n)) : (equivPerm n).symm σ = ⟨σ⟩ := rfl
+theorem equivPerm_symm_apply (σ : Equiv.Perm (Fin n)) : (equivPerm n).symm σ = ⟨σ⟩ := rfl
 
 /-- Evaluating a grid state obtained from a permutation gives the permutation value. -/
 @[simp] theorem equivPerm_symm_apply_apply (σ : Equiv.Perm (Fin n)) (c : Fin n) :
