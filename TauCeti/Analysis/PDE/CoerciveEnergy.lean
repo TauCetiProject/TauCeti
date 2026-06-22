@@ -21,17 +21,12 @@ monolithic PDE class.
 
 ## Main declarations
 
-* `TauCeti.PDE.energyIntegrand_self_lower_bound_of_bounds`: pointwise lower bound for the
-  energy density with bounded drift and a mass lower bound.
-* `TauCeti.PDE.isCoercive_energyIntegrand_of_bounds`: coercivity of the jet bilinear form when
-  the mass lower bound dominates the drift defect.
+* `TauCeti.PDE.min_mul_prod_norm_sq_le_add`: product sup-norm lower-bound bridge for
+  coercivity estimates.
 * `TauCeti.PDE.isCoercive_energyIntegrand_zero_drift_of_lower_bounds`: the zero-drift
   specialization, needing only a positive mass lower bound.
-* `TauCeti.PDE.isCoercive_energyIntegrand_of_bounds_on`: the domain version from raw lower
-  bounds, with no upper ellipticity bound or bundled coefficient predicate.
-* `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand` and
-  `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand_zero_drift`: the same results
-  using the bundled uniform-ellipticity and coefficient predicates.
+* `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand_zero_drift`: the same result
+  using the bundled uniform-ellipticity and mass lower-bound predicates.
 -/
 
 namespace TauCeti
@@ -48,7 +43,7 @@ variable {lam mu beta : ℝ}
 omit [DecidableEq n] in
 /-- The square of the product sup norm is controlled by the two squared coordinate norms
 with the smaller coefficient. -/
-private lemma min_mul_prod_norm_sq_le_add (hlam : 0 ≤ lam) (hmu : 0 ≤ mu)
+lemma min_mul_prod_norm_sq_le_add (hlam : 0 ≤ lam) (hmu : 0 ≤ mu)
     (U : ℝ × EuclideanSpace ℝ n) :
     min lam mu * ‖U‖ ^ 2 ≤ lam * ‖U.2‖ ^ 2 + mu * ‖U.1‖ ^ 2 := by
   have hmin_lam : min lam mu ≤ lam := min_le_left _ _
@@ -73,7 +68,7 @@ private lemma min_mul_prod_norm_sq_le_add (hlam : 0 ≤ lam) (hmu : 0 ≤ mu)
 If the principal part has quadratic lower bound `λ‖ξ‖²`, the drift satisfies `‖b₀‖ ≤ β`, and
 the mass coefficient satisfies `μ ≤ c₀`, then the diagonal of the jet form is bounded below by
 `(λ/2)‖∇u‖² + (μ − β²/2λ)|u|²`. -/
-lemma energyIntegrand_self_lower_bound_of_bounds (hlam : 0 < lam)
+private lemma energyIntegrand_self_lower_bound_of_bounds (hlam : 0 < lam)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
@@ -96,7 +91,7 @@ lemma energyIntegrand_self_lower_bound_of_bounds (hlam : 0 < lam)
 
 With ellipticity floor `λ`, drift bound `β`, and mass lower bound `μ` satisfying `β²/2λ < μ`,
 the jet form is coercive with constant `min (λ/2) (μ − β²/2λ)`. -/
-lemma isCoercive_energyIntegrand_of_bounds (hlam : 0 < lam)
+private lemma isCoercive_energyIntegrand_of_bounds (hlam : 0 < lam)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu) :
@@ -125,7 +120,7 @@ lemma isCoercive_energyIntegrand_zero_drift_of_lower_bounds (hlam : 0 < lam) (hm
 At each point of `Ω`, an ellipticity floor `λ`, a drift bound `β`, and a mass lower bound `μ`
 with `β²/2λ < μ` make the jet form coercive.  Only the lower assumptions are needed: there is
 no upper ellipticity bound and no bundled coefficient predicate. -/
-lemma isCoercive_energyIntegrand_of_bounds_on {Ω : Set X}
+private lemma isCoercive_energyIntegrand_of_bounds_on {Ω : Set X}
     {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ} (hlam : 0 < lam)
     (hA : ∀ ⦃x⦄, x ∈ Ω → ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
     (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta) (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x)
@@ -142,7 +137,7 @@ variable {lam Lam beta mu : ℝ}
 dominates the drift defect make the pointwise jet integrand coercive at every point of the
 domain. -/
 @[grind =>]
-lemma isCoercive_energyIntegrand (he : UniformlyEllipticOn Ω a lam Lam)
+private lemma isCoercive_energyIntegrand (he : UniformlyEllipticOn Ω a lam Lam)
     (hb : DriftBoundedOn Ω b beta) (hc : MassLowerBoundOn Ω c mu)
     (hmu : beta ^ 2 / (2 * lam) < mu) {x : X} (hx : x ∈ Ω) :
     IsCoercive (energyIntegrand (a x) (b x) (c x)) :=

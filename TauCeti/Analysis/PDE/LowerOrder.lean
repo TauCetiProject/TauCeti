@@ -360,6 +360,14 @@ lemma mu_nonneg (h : MassLowerBoundOn Ω c mu) : 0 ≤ mu :=
 lemma lower_bound (h : MassLowerBoundOn Ω c mu) {x : X} (hx : x ∈ Ω) : mu ≤ c x :=
   h.2 hx
 
+/-- The mass form associated to a mass lower bound is bounded below on the diagonal. -/
+@[grind =>]
+lemma massForm_self_lower_bound (h : MassLowerBoundOn Ω c mu) {x : X} (hx : x ∈ Ω)
+    (u : ℝ) :
+    mu * u ^ 2 ≤ massForm (c x) u u := by
+  rw [massForm_apply, mul_assoc]
+  simpa [pow_two] using mul_le_mul_of_nonneg_right (h.lower_bound hx) (mul_self_nonneg u)
+
 /-- A positive mass lower bound gives pointwise nonnegativity of the mass coefficient. -/
 lemma nonnegMassPointwiseOn (h : MassLowerBoundOn Ω c mu) :
     NonnegMassPointwiseOn Ω c :=
