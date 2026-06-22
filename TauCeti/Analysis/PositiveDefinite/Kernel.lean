@@ -39,6 +39,8 @@ forms, with no positive-definite-kernel notion, so this is new; no code is vendo
   pointwise consequences (conjugate symmetry and nonnegative diagonal).
 * `IsPositiveDefiniteKernel.posSemidef_gram`, `IsPositiveDefiniteKernel.sum_conj_mul_mul_nonneg`:
   restatements for arbitrary finite Gram matrices and their quadratic forms.
+* `TauCeti.isPositiveDefiniteKernel_iff_posSemidef`: the bridge to Mathlib's arbitrary-index
+  `Matrix.PosSemidef` predicate on `Matrix.of K`.
 * `TauCeti.isPositiveDefiniteKernel_iff`: the quadratic-form characterization, whose reverse
   direction builds a positive-definite kernel from conjugate symmetry and form nonnegativity.
 * `IsPositiveDefiniteKernel.add`, `IsPositiveDefiniteKernel.smul`, `IsPositiveDefiniteKernel.mul`:
@@ -169,5 +171,33 @@ theorem isPositiveDefiniteKernel_iff {K : α → α → 𝕜} :
     refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
     rw [starRingEnd_apply]
     ring
+
+/-- A positive-definite kernel is exactly a positive semidefinite matrix over the full index type.
+This is the bridge to Mathlib's arbitrary-index `Matrix.PosSemidef` API. -/
+theorem isPositiveDefiniteKernel_iff_posSemidef {K : α → α → 𝕜} :
+    IsPositiveDefiniteKernel K ↔ (Matrix.of fun a b => K a b).PosSemidef := by
+  refine ⟨fun hK => ?_, fun hK n v => ?_⟩
+  · refine ⟨?_, fun x => ?_⟩
+    · ext a b
+      rw [Matrix.conjTranspose_apply, Matrix.of_apply, Matrix.of_apply, ← starRingEnd_apply]
+      exact hK.conj_symm b a
+    · let v : x.support → α := fun i => i
+      let y : x.support → 𝕜 := fun i => x i
+      have h := (Matrix.posSemidef_iff_dotProduct_mulVec.mp (hK.posSemidef_gram v)).2 y
+      have h' :
+          0 ≤ ∑ i : x.support, ∑ j : x.support,
+            star (x (i : α)) * (K (i : α) (j : α) * x (j : α)) := by
+        simpa only [v, y, dotProduct, Matrix.mulVec, Matrix.of_apply, Pi.star_apply,
+          Finset.mul_sum, RCLike.star_def, mul_assoc] using h
+      have h'' :
+          0 ≤ ∑ i ∈ x.support, ∑ j ∈ x.support,
+            star (x i) * (K i j * x j) := by
+        convert h' using 1
+        rw [Finset.sum_subtype x.support (by intro a; rfl)]
+        apply Finset.sum_congr rfl
+        intro i _
+        rw [Finset.sum_subtype x.support (by intro a; rfl)]
+      simpa only [Matrix.of_apply, Finsupp.sum, mul_assoc] using h''
+  · simpa [Matrix.submatrix, Function.comp_def] using hK.submatrix v
 
 end TauCeti
