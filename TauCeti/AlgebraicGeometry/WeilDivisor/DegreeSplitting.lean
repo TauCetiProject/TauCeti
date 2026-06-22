@@ -47,9 +47,9 @@ variable {X G : Type*} [AddCommGroup G] (S : OrderSystem X G)
 
 /-! ### The degree section at a base point -/
 
-/-- The section `n ↦ n • [x₀]` of the degree map, sending an integer `n` to the class of
-`n` copies of the base point `x₀`. When `w x₀ = 1` this is a right inverse of
-`weightedDegreeClass`, splitting the degree map. -/
+/-- The homomorphism `n ↦ n • [x₀]`, sending an integer `n` to the class of `n` copies of
+the base point `x₀`. When `w x₀ = 1`, it is a right inverse of `weightedDegreeClass`,
+splitting the degree map. -/
 noncomputable def degreeSection (x₀ : X) : ℤ →+ S.ClassGroup :=
   zmultiplesHom S.ClassGroup (S.divisorClass (ofPoint x₀))
 
@@ -103,65 +103,63 @@ lemma degreeSection_injective (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
 
 /-! ### The product decomposition -/
 
-/-- The retraction `c ↦ c - (deg c) • [x₀]` of the class group onto `picZero`. With a weight-one
-base point its image lands in `picZero`, and together with `degreeSection` it splits the class
-group as `picZero × ℤ`. -/
-noncomputable def degreeRetraction (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X) :
+/-- The degree-correction homomorphism `c ↦ c - (deg c) • [x₀]`. With a weight-one base point
+its image lands in `picZero`, and together with `degreeSection` it splits the class group as
+`picZero × ℤ`. -/
+noncomputable def degreeCorrection (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X) :
     S.ClassGroup →+ S.ClassGroup :=
   AddMonoidHom.id S.ClassGroup - (S.degreeSection x₀).comp (weightedDegreeClass w h)
 
 @[simp]
-lemma degreeRetraction_apply (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X)
+lemma degreeCorrection_apply (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X)
     (c : S.ClassGroup) :
-    S.degreeRetraction w h x₀ c =
+    S.degreeCorrection w h x₀ c =
       c - (weightedDegreeClass w h c) • S.divisorClass (ofPoint x₀) := by
-  simp [degreeRetraction]
+  simp [degreeCorrection]
 
-/-- The retraction lands in `picZero`: the degree-corrected class has weighted degree zero,
+/-- The degree correction lands in `picZero`: the degree-corrected class has weighted degree zero,
 provided the base point has weight one. -/
-lemma degreeRetraction_mem_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+lemma degreeCorrection_mem_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (c : S.ClassGroup) :
-    S.degreeRetraction w h x₀ c ∈ picZero w h := by
-  rw [mem_picZero, degreeRetraction_apply, map_sub, map_zsmul,
+    S.degreeCorrection w h x₀ c ∈ picZero w h := by
+  rw [mem_picZero, degreeCorrection_apply, map_sub, map_zsmul,
     weightedDegreeClass_divisorClass_ofPoint, hx₀, smul_eq_mul, mul_one, sub_self]
 
-/-- The forward map of the splitting: a class `c` goes to its degree-corrected part
-`c - (deg c)·[x₀]` in `picZero` together with its degree `deg c`. -/
-noncomputable def degreeSplitForward (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+private noncomputable def degreeSplitForward (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) : S.ClassGroup →+ picZero w h × ℤ :=
-  ((S.degreeRetraction w h x₀).codRestrict (picZero w h)
-      (S.degreeRetraction_mem_picZero w h hx₀)).prod (weightedDegreeClass w h)
+  ((S.degreeCorrection w h x₀).codRestrict (picZero w h)
+      (S.degreeCorrection_mem_picZero w h hx₀)).prod (weightedDegreeClass w h)
 
 @[simp]
-lemma degreeSplitForward_apply (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+private lemma degreeSplitForward_apply (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (c : S.ClassGroup) :
     S.degreeSplitForward w h hx₀ c =
-      (⟨S.degreeRetraction w h x₀ c, S.degreeRetraction_mem_picZero w h hx₀ c⟩,
+      (⟨S.degreeCorrection w h x₀ c, S.degreeCorrection_mem_picZero w h hx₀ c⟩,
         weightedDegreeClass w h c) :=
   rfl
 
-/-- The inverse map of the splitting: a pair `(p, n)` goes to `p + n·[x₀]`. -/
-noncomputable def degreeSplitInverse (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X) :
+private noncomputable def degreeSplitInverse (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X) :
     picZero w h × ℤ →+ S.ClassGroup :=
   (picZero w h).subtype.comp (AddMonoidHom.fst (picZero w h) ℤ) +
     (S.degreeSection x₀).comp (AddMonoidHom.snd (picZero w h) ℤ)
 
 @[simp]
-lemma degreeSplitInverse_apply (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X)
+private lemma degreeSplitInverse_apply (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X)
     (p : picZero w h) (n : ℤ) :
     S.degreeSplitInverse w h x₀ (p, n) =
       (p : S.ClassGroup) + n • S.divisorClass (ofPoint x₀) := by
   simp [degreeSplitInverse]
 
-lemma degreeSplitInverse_degreeSplitForward (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+private lemma degreeSplitInverse_degreeSplitForward (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (c : S.ClassGroup) :
     S.degreeSplitInverse w h x₀ (S.degreeSplitForward w h hx₀ c) = c := by
   rw [degreeSplitForward_apply, degreeSplitInverse_apply]
-  change S.degreeRetraction w h x₀ c +
+  -- The preceding rewrites leave only the subtype coercion from the `picZero` component.
+  change S.degreeCorrection w h x₀ c +
     (weightedDegreeClass w h c) • S.divisorClass (ofPoint x₀) = c
-  rw [degreeRetraction_apply, sub_add_cancel]
+  rw [degreeCorrection_apply, sub_add_cancel]
 
-lemma degreeSplitForward_degreeSplitInverse (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+private lemma degreeSplitForward_degreeSplitInverse (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (p : picZero w h) (n : ℤ) :
     S.degreeSplitForward w h hx₀ (S.degreeSplitInverse w h x₀ (p, n)) = (p, n) := by
   have hp : weightedDegreeClass w h (p : S.ClassGroup) = 0 := (mem_picZero w h).mp p.property
@@ -169,9 +167,11 @@ lemma degreeSplitForward_degreeSplitInverse (w : X → ℤ) (h : S.IsWeightedDeg
     rw [degreeSplitInverse_apply, map_add, map_zsmul, weightedDegreeClass_divisorClass_ofPoint,
       hx₀, hp, smul_eq_mul, mul_one, zero_add]
   refine Prod.ext (Subtype.ext ?_) ?_
-  · change S.degreeRetraction w h x₀ (S.degreeSplitInverse w h x₀ (p, n)) = (p : S.ClassGroup)
-    rw [degreeRetraction_apply, key, degreeSplitInverse_apply, add_sub_cancel_right]
-  · change weightedDegreeClass w h (S.degreeSplitInverse w h x₀ (p, n)) = n
+  · -- `Prod.ext` and `Subtype.ext` reduce the first projection to equality in `S.ClassGroup`.
+    change S.degreeCorrection w h x₀ (S.degreeSplitInverse w h x₀ (p, n)) = (p : S.ClassGroup)
+    rw [degreeCorrection_apply, key, degreeSplitInverse_apply, add_sub_cancel_right]
+  · -- The second projection is definitionally the weighted degree of the reconstructed class.
+    change weightedDegreeClass w h (S.degreeSplitInverse w h x₀ (p, n)) = n
     exact key
 
 /-- The class group of an order system with weighted-degree-zero principal divisors and a
@@ -194,7 +194,7 @@ noncomputable def classGroupAddEquivPicZeroProdInt (w : X → ℤ) (h : S.IsWeig
 lemma classGroupAddEquivPicZeroProdInt_apply (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (c : S.ClassGroup) :
     S.classGroupAddEquivPicZeroProdInt w h hx₀ c =
-      (⟨S.degreeRetraction w h x₀ c, S.degreeRetraction_mem_picZero w h hx₀ c⟩,
+      (⟨S.degreeCorrection w h x₀ c, S.degreeCorrection_mem_picZero w h hx₀ c⟩,
         weightedDegreeClass w h c) :=
   rfl
 
@@ -213,6 +213,22 @@ splits as `unweightedPicZero × ℤ`. -/
 noncomputable def classGroupAddEquivUnweightedPicZeroProdInt (h : S.IsUnweightedDegreeZero)
     (x₀ : X) : S.ClassGroup ≃+ unweightedPicZero h × ℤ :=
   S.classGroupAddEquivPicZeroProdInt (fun _ => (1 : ℤ)) h (x₀ := x₀) rfl
+
+@[simp]
+lemma classGroupAddEquivUnweightedPicZeroProdInt_apply (h : S.IsUnweightedDegreeZero)
+    (x₀ : X) (c : S.ClassGroup) :
+    S.classGroupAddEquivUnweightedPicZeroProdInt h x₀ c =
+      (⟨S.degreeCorrection (fun _ => (1 : ℤ)) h x₀ c,
+          S.degreeCorrection_mem_picZero (fun _ => (1 : ℤ)) h rfl c⟩,
+        unweightedDegreeClass h c) :=
+  rfl
+
+@[simp]
+lemma classGroupAddEquivUnweightedPicZeroProdInt_symm_apply (h : S.IsUnweightedDegreeZero)
+    (x₀ : X) (p : unweightedPicZero h) (n : ℤ) :
+    (S.classGroupAddEquivUnweightedPicZeroProdInt h x₀).symm (p, n) =
+      (p : S.ClassGroup) + n • S.divisorClass (ofPoint x₀) :=
+  S.classGroupAddEquivPicZeroProdInt_symm_apply (fun _ => (1 : ℤ)) h rfl p n
 
 /-- With unweighted-degree-zero principal divisors and a base point, the unweighted degree is
 surjective onto `ℤ`. -/
