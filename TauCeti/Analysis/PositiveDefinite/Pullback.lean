@@ -107,13 +107,13 @@ variable {G : N → ℂ}
 preserves positive-definiteness. -/
 theorem comp_fst (hF : IsPositiveDefinite F) :
     IsPositiveDefinite (fun x : M × N => F x.1) :=
-  hF.comp_addMonoidHom (AddMonoidHom.fst M N) fun _ => rfl
+  hF.comp_addMonoidHom (AddMonoidHom.fst M N) fun x => Prod.fst_star x
 
 /-- Pulling back a positive-definite function along the second projection from a product
 preserves positive-definiteness. -/
 theorem comp_snd (hG : IsPositiveDefinite G) :
     IsPositiveDefinite (fun x : M × N => G x.2) :=
-  hG.comp_addMonoidHom (AddMonoidHom.snd M N) fun _ => rfl
+  hG.comp_addMonoidHom (AddMonoidHom.snd M N) fun x => Prod.snd_star x
 
 /-- The product of two positive-definite functions, pulled back from the two factors of a
 product monoid, is positive definite. This is the basic product-domain construction obtained by
