@@ -41,8 +41,10 @@ identifies `π₁(X, x)` with that fibre via monodromy.
   `FundamentalGroup X x ≃* (Deck p)ᵐᵒᵖ`.
 * `TauCeti.Deck.IsRegular.fundamentalGroupEquiv_unop_smul`: the deck element
   attached to `γ` moves the chosen lift `e` to `monodromy γ e`.
-* `TauCeti.Deck.IsRegular.fundamentalGroupEquiv_eq_iff`: characterizes equality
+* `TauCeti.Deck.IsRegular.fundamentalGroupEquiv_apply_eq_iff`: characterizes equality
   with an arbitrary deck transformation by its value at the chosen lift.
+* `TauCeti.Deck.IsRegular.fundamentalGroupEquiv_symm_monodromy`: characterizes the
+  inverse equivalence by the monodromy translate of the chosen lift.
 * `TauCeti.Deck.IsRegular.fundamentalGroupEquiv_eq_one_iff`: `γ` maps to the
   identity exactly when its monodromy fixes `e`.
 
@@ -78,12 +80,29 @@ lemma IsRegular.fundamentalGroupEquiv_unop_smul [SimplyConnectedSpace E]
 
 /-- The fundamental group element `γ` corresponds to a deck transformation `g` exactly when
 `g.unop` moves the chosen lift `e` to the monodromy translate of `e` along `γ`. -/
-lemma IsRegular.fundamentalGroupEquiv_eq_iff [SimplyConnectedSpace E]
+lemma IsRegular.fundamentalGroupEquiv_apply_eq_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x})
     (γ : FundamentalGroup X x) (g : (Deck p)ᵐᵒᵖ) :
     hreg.fundamentalGroupEquiv hp e γ = g ↔
       g.unop • (e : E) = hp.monodromy γ e :=
   (hreg.isQuotientCoveringMap hp).fundamentalGroupToMulOpposite_apply_eq_Iff
+
+/-- The fundamental group element corresponding to an opposite deck transformation is the
+unique loop class whose monodromy moves the chosen lift `e` by that deck transformation. -/
+lemma IsRegular.fundamentalGroupEquiv_symm_monodromy [SimplyConnectedSpace E]
+    (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (g : (Deck p)ᵐᵒᵖ) :
+    (hp.monodromy ((hreg.fundamentalGroupEquiv hp e).symm g) e : E) = g.unop • (e : E) := by
+  simpa using
+    (IsRegular.fundamentalGroupEquiv_unop_smul hreg hp e
+      ((hreg.fundamentalGroupEquiv hp e).symm g)).symm
+
+/-- A `Deck p` spelling of `fundamentalGroupEquiv_symm_monodromy`. The loop class
+corresponding to `MulOpposite.op φ` has monodromy action equal to `φ` at the chosen lift. -/
+lemma IsRegular.fundamentalGroupEquiv_symm_op_monodromy [SimplyConnectedSpace E]
+    (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (φ : Deck p) :
+    (hp.monodromy ((hreg.fundamentalGroupEquiv hp e).symm (MulOpposite.op φ)) e : E) =
+      φ • (e : E) := by
+  simpa using IsRegular.fundamentalGroupEquiv_symm_monodromy hreg hp e (MulOpposite.op φ)
 
 /-- A loop class `γ` maps to the identity deck transformation exactly when its monodromy
 fixes the chosen basepoint lift `e`. -/
