@@ -343,12 +343,12 @@ variable {Ω Ω' : Set X} {c : X → ℝ} {mu mu' : ℝ}
 
 /-- The mass lower-bound constant is positive. -/
 @[grind →]
-lemma pos (h : MassLowerBoundOn Ω c mu) : 0 < mu :=
+lemma mu_pos (h : MassLowerBoundOn Ω c mu) : 0 < mu :=
   h.1
 
 /-- The mass lower-bound constant is nonnegative. -/
-lemma nonneg (h : MassLowerBoundOn Ω c mu) : 0 ≤ mu :=
-  h.pos.le
+lemma mu_nonneg (h : MassLowerBoundOn Ω c mu) : 0 ≤ mu :=
+  h.mu_pos.le
 
 /-- The pointwise lower bound supplied by a mass lower-bound hypothesis. -/
 @[grind =>]
@@ -358,12 +358,12 @@ lemma lower_bound (h : MassLowerBoundOn Ω c mu) {x : X} (hx : x ∈ Ω) : mu �
 /-- A positive mass lower bound gives pointwise nonnegativity of the mass coefficient. -/
 lemma nonnegMassPointwiseOn (h : MassLowerBoundOn Ω c mu) :
     NonnegMassPointwiseOn Ω c :=
-  fun {_} hx => h.nonneg.trans (h.lower_bound hx)
+  fun {_} hx => h.mu_nonneg.trans (h.lower_bound hx)
 
 /-- Restricting the domain preserves a mass lower bound. -/
 lemma mono_set (h : MassLowerBoundOn Ω c mu) (hΩ : Ω' ⊆ Ω) :
     MassLowerBoundOn Ω' c mu :=
-  ⟨h.pos, fun {_} hx => h.lower_bound (hΩ hx)⟩
+  ⟨h.mu_pos, fun {_} hx => h.lower_bound (hΩ hx)⟩
 
 /-- Decreasing the positive lower-bound constant preserves a mass lower bound. -/
 lemma mono_constant (h : MassLowerBoundOn Ω c mu) (hmu' : 0 < mu') (hmu'_le : mu' ≤ mu) :

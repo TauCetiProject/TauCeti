@@ -70,10 +70,7 @@ private lemma min_mul_prod_norm_sq_le_add (hlam : 0 ≤ lam) (hmu : 0 ≤ mu)
 
 If the principal part has quadratic lower bound `λ‖ξ‖²`, the drift satisfies `‖b₀‖ ≤ β`, and
 the mass coefficient satisfies `μ ≤ c₀`, then the diagonal of the jet form is bounded below by
-`(λ/2)‖∇u‖² + (μ − β²/2λ)|u|²`.  The drift is absorbed into half of the ellipticity floor by
-Young's inequality, with the resulting mass defect `β²/2λ` paid for out of the mass floor `μ`.
-This reuses the pointwise Gårding bound `garding_energyIntegrand_self_of_bounds`, restoring the
-mass term split off from the nonnegative coefficient `c₀ − μ`. -/
+`(λ/2)‖∇u‖² + (μ − β²/2λ)|u|²`. -/
 lemma energyIntegrand_self_lower_bound_of_bounds (hlam : 0 < lam)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
@@ -143,7 +140,7 @@ zero-drift pointwise jet integrand coercive at every point of the domain. -/
 lemma isCoercive_energyIntegrand_zero_drift (he : UniformlyEllipticOn Ω a lam Lam)
     (hc : MassLowerBoundOn Ω c mu) {x : X} (hx : x ∈ Ω) :
     IsCoercive (energyIntegrand (a x) 0 (c x)) :=
-  isCoercive_energyIntegrand_zero_drift_of_lower_bounds he.pos hc.pos
+  isCoercive_energyIntegrand_zero_drift_of_lower_bounds he.pos hc.mu_pos
     (he.lower_bound hx) (hc.lower_bound hx)
 
 end UniformlyEllipticOn
