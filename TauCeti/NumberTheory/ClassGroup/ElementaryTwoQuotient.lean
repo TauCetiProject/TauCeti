@@ -20,14 +20,14 @@ subgroup `Cl(R)[2] = {C | C² = 1}`. The two are different objects — a quotien
 for a finite abelian group they have the same cardinality (see
 `card_elementaryTwoQuotient_eq_card_twoTorsion`); we keep them distinct in names and statements.
 
-The construction itself is the general `TauCeti.elementaryTwoQuotient` of a commutative group,
+The construction itself is the general `TauCeti.ElementaryTwoQuotient` of a commutative group,
 specialized here to `G = ClassGroup R` under the genus-theory names Layer 2 of the multiquadratic
 roadmap targets (`TauCetiRoadmap/Multiquadratic/README.md`). The same general construction is the
 square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGroup` for `G = Kˣ`.
 
 ## Main definitions and results
 
-* `TauCeti.ClassGroup.elementaryTwoQuotient`: the quotient `Cl(R) ⧸ Cl(R)²`, a `ZMod 2`-module.
+* `TauCeti.ClassGroup.ElementaryTwoQuotient`: the quotient `Cl(R) ⧸ Cl(R)²`, a `ZMod 2`-module.
 * `TauCeti.ClassGroup.elementaryTwoQuotientMk` and `elementaryTwoQuotientMk_eq_zero_iff`: the class
   of an ideal class, trivial iff that class is a square; `elementaryTwoQuotientMk_mul`,
   `elementaryTwoQuotientMk_one`, and `elementaryTwoQuotientMk_prod` record its additivity, while
@@ -44,11 +44,11 @@ namespace TauCeti.ClassGroup
 variable (R : Type*) [CommRing R] [IsDomain R]
 
 /-- **The maximal elementary-2 quotient `Cl(R)/Cl(R)²` of the class group**, the general
-`TauCeti.elementaryTwoQuotient` specialized to `ClassGroup R`. -/
-abbrev elementaryTwoQuotient : Type _ := TauCeti.elementaryTwoQuotient (ClassGroup R)
+`TauCeti.ElementaryTwoQuotient` specialized to `ClassGroup R`. -/
+abbrev ElementaryTwoQuotient : Type _ := TauCeti.ElementaryTwoQuotient (ClassGroup R)
 
 /-- The class of an ideal class in the maximal elementary-2 quotient `Cl(R)/Cl(R)²`. -/
-noncomputable def elementaryTwoQuotientMk (C : ClassGroup R) : elementaryTwoQuotient R :=
+noncomputable def elementaryTwoQuotientMk (C : ClassGroup R) : ElementaryTwoQuotient R :=
   TauCeti.elementaryTwoQuotientMk C
 
 /-- An ideal class has trivial class in `Cl(R)/Cl(R)²` iff it is a square. -/
@@ -92,13 +92,13 @@ noncomputable def twoRank : ℕ := TauCeti.twoRank (ClassGroup R)
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
 `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`. -/
 theorem card_elementaryTwoQuotient_eq_card_twoTorsion :
-    Nat.card (elementaryTwoQuotient R) = Nat.card {C : ClassGroup R // C ^ 2 = 1} :=
+    Nat.card (ElementaryTwoQuotient R) = Nat.card {C : ClassGroup R // C ^ 2 = 1} :=
   TauCeti.card_elementaryTwoQuotient_eq_card_sq_eq_one (ClassGroup R)
 
 /-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
 space of dimension the 2-rank. -/
 theorem card_elementaryTwoQuotient_eq_two_pow_twoRank :
-    Nat.card (elementaryTwoQuotient R) = 2 ^ twoRank R :=
+    Nat.card (ElementaryTwoQuotient R) = 2 ^ twoRank R :=
   TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank (ClassGroup R)
 
 end TauCeti.ClassGroup

@@ -15,6 +15,7 @@ homomorphism has index at most `2 ^ S.card`.
 
 ## Main results
 
+* `TauCeti.square_eq_powMonoidHom_two_range`: `G²` is the range of the squaring homomorphism.
 * `TauCeti.index_square_le_of_closure_eq_top`: `[G : G²] ≤ 2 ^ S.card`.
 
 ## Provenance
@@ -54,7 +55,7 @@ private theorem index_powMonoidHom_range_le_of_closure_eq_top {G : Type*} [CommG
 
 /-- In a commutative group, Mathlib's subgroup of squares agrees with the range of the
 squaring homomorphism. -/
-private theorem square_eq_powMonoidHom_two_range {G : Type*} [CommGroup G] :
+theorem square_eq_powMonoidHom_two_range {G : Type*} [CommGroup G] :
     Subgroup.square G = (powMonoidHom 2 : G →* G).range := by
   ext g
   rw [Subgroup.mem_square, MonoidHom.mem_range]
