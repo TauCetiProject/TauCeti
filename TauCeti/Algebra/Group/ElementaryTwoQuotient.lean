@@ -42,9 +42,8 @@ names around it. The cardinality identity is still expressed through the squarin
   class map is surjective, and two elements have the same class iff they differ by a square.
 * `TauCeti.elementaryTwoQuotientLiftEquiv` and `TauCeti.elementaryTwoQuotientLinearLiftEquiv`: the
   universal property for maps out of `G/G²`, inherited from `ModN.liftEquiv`.
-* `TauCeti.range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup` and
-  `TauCeti.card_elementaryTwoQuotient_eq_index_square`: named identifications used to compute
-  the quotient cardinality.
+* `TauCeti.card_elementaryTwoQuotient_eq_index_square`: the quotient cardinality as the index of
+  the subgroup of squares.
 * `TauCeti.card_elementaryTwoQuotient_eq_card_sq_eq_one`: `|G/G²| = |{g | g² = 1}|`.
 * `TauCeti.twoRank` and `TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|G/G²| = 2 ^ twoRank`.
@@ -136,8 +135,10 @@ theorem elementaryTwoQuotientMk_eq_iff (g h : G) :
 
 variable (G)
 
-/-- The doubling subgroup of `Additive G` is the additive form of the subgroup of squares of `G`. -/
-theorem range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup :
+/-- The doubling subgroup of `Additive G` is the additive form of the subgroup of squares of `G`.
+This is the implementation detail relating the `ModN`/`lsmul` model of the quotient to the
+multiplicative subgroup of squares, and is kept private to the file. -/
+private theorem range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup :
     (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ))).toAddSubgroup =
       (Subgroup.square G).toAddSubgroup := by
   ext g
@@ -154,6 +155,9 @@ theorem range_lsmul_two_toAddSubgroup_eq_square_toAddSubgroup :
 /-- The cardinality of `G/G²` is the index of the subgroup of squares. -/
 theorem card_elementaryTwoQuotient_eq_index_square [Finite G] :
     Nat.card (ElementaryTwoQuotient G) = (Subgroup.square G).index := by
+  -- `ElementaryTwoQuotient G` unfolds to `Additive G ⧸ range (lsmul ℤ _ 2)`, so its cardinality is
+  -- definitionally the index of the doubling subgroup; `AddSubgroup.index_eq_card` names that
+  -- defeq.
   rw [show Nat.card (ElementaryTwoQuotient G)
         = (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ))).toAddSubgroup.index from
         (AddSubgroup.index_eq_card
@@ -176,7 +180,8 @@ noncomputable def twoRank [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] : �
 
 /-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
 space of dimension the 2-rank. -/
-theorem card_elementaryTwoQuotient_eq_two_pow_twoRank [Finite G] :
+theorem card_elementaryTwoQuotient_eq_two_pow_twoRank
+    [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] :
     Nat.card (ElementaryTwoQuotient G) = 2 ^ twoRank G := by
   rw [twoRank, Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod]
 
