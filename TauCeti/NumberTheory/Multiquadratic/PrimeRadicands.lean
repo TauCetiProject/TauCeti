@@ -38,11 +38,6 @@ open scoped Function
 
 namespace TauCeti.Multiquadratic
 
-private theorem not_isSquare_of_squarefree_of_not_isUnit {R : Type*} [CommMonoid R] {a : R}
-    (ha : Squarefree a) (hu : ¬ IsUnit a) : ¬ IsSquare a := by
-  rintro ⟨r, rfl⟩
-  exact hu ((ha r dvd_rfl).mul (ha r dvd_rfl))
-
 /-- **Square-class independence of distinct primes.** If the selected `p i` are prime and pairwise
 distinct, then no nonempty subset product `∏_{i ∈ S} (p i : ℚ)` is a square in `ℚ`. This is the
 hypothesis the multiquadratic degree theorem `finrank_adjoin_range` consumes. -/
@@ -64,10 +59,12 @@ theorem not_isSquare_prod_primes {ι : Type*} (p : ι → ℕ) {S : Finset ι}
 
 /-- The real square root of a natural number squares back to its rational value, in the form
 `(√n)² = algebraMap ℚ ℝ n`. This supplies the `hroot` hypothesis that the multiquadratic degree and
-Galois-group theorems consume for the family of square roots of a prime family. -/
+Galois-group theorems consume for the family of square roots of a prime family. It is the `0 ≤ n`
+special case of `sq_sqrt_intCast`. -/
 theorem sq_sqrt_natCast (n : ℕ) :
     (Real.sqrt n) ^ 2 = algebraMap ℚ ℝ (n : ℚ) := by
-  rw [Real.sq_sqrt (Nat.cast_nonneg _), map_natCast]
+  have h := sq_sqrt_intCast (n := (n : ℤ)) (Int.natCast_nonneg n)
+  rwa [Int.cast_natCast, Int.cast_natCast] at h
 
 /-- **Square-class independence of an injective family of primes.** If `p : ι → ℕ` is injective and
 each `p i` is prime, then no nonempty subset product `∏_{i ∈ S} (p i : ℚ)` is a square. This is the

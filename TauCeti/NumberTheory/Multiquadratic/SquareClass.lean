@@ -335,4 +335,12 @@ theorem squareClass_of_sqrt_mem (c : ℕ → ℚ) (hc : ∀ j, 0 ≤ c j) :
   · have hr_nonneg : 0 ≤ (r : ℝ) := by exact_mod_cast hr
     simpa using Real.sq_sqrt hr_nonneg
 
+/-- The real square root of a nonnegative integer squares back to its rational value, in the form
+`(√n)² = algebraMap ℚ ℝ n`. This supplies the `hroot` hypothesis of the degree theorem for the real
+square roots of integer radicands. The natural-number form `sq_sqrt_natCast` is the special case
+`0 ≤ n`. -/
+theorem sq_sqrt_intCast {n : ℤ} (hn : 0 ≤ n) :
+    (Real.sqrt n) ^ 2 = algebraMap ℚ ℝ (n : ℚ) := by
+  rw [Real.sq_sqrt (by exact_mod_cast hn), map_intCast]
+
 end TauCeti.Multiquadratic

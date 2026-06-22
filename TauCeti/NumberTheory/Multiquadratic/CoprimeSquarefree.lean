@@ -6,7 +6,6 @@ import TauCeti.NumberTheory.Multiquadratic.Degree
 import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Data.Rat.Lemmas
 import Mathlib.Algebra.Squarefree.Basic
-import Mathlib.Data.Nat.Squarefree
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Data.Nat.Prime.Int
 
@@ -33,9 +32,9 @@ special case where each radicand is prime.
 
 * `TauCeti.Multiquadratic.not_isSquare_prod_of_coprime_squarefree`: for pairwise coprime squarefree
   non-unit integers `d i`, no nonempty subset product `∏_{i ∈ S} d i` is a square in `ℤ`.
-* `TauCeti.Multiquadratic.not_isSquare_prod_coprime_squarefree_rat`: the same square-class
+* `TauCeti.Multiquadratic.not_isSquare_prod_of_coprime_squarefree_rat`: the same square-class
   independence cast to `ℚ`, in the `∀ S` shape the degree theorem consumes.
-* `TauCeti.Multiquadratic.finrank_adjoin_range_coprime_squarefree`:
+* `TauCeti.Multiquadratic.finrank_adjoin_range_of_coprime_squarefree`:
   `[ℚ(√d₁, …, √dₙ) : ℚ] = 2^|ι|` for pairwise coprime squarefree non-unit integer radicands, the
   squarefree-integer corollary of `finrank_adjoin_range`.
 * `TauCeti.Multiquadratic.finrank_adjoin_sqrt_six_thirtyfive`: `[ℚ(√6, √35) : ℚ] = 4`, a worked
@@ -45,13 +44,6 @@ special case where each radicand is prime.
 open scoped Function
 
 namespace TauCeti.Multiquadratic
-
-/-- A squarefree non-unit of a commutative monoid is not a square: a square `r * r` has `r` as a
-square factor, so squarefreeness forces `r` to be a unit, hence so is `r * r`. -/
-private theorem not_isSquare_of_squarefree_of_not_isUnit {R : Type*} [CommMonoid R] {a : R}
-    (ha : Squarefree a) (hu : ¬ IsUnit a) : ¬ IsSquare a := by
-  rintro ⟨r, rfl⟩
-  exact hu ((ha r dvd_rfl).mul (ha r dvd_rfl))
 
 /-- **Square-class independence of pairwise coprime squarefree integers.** If the radicands `d i`
 are pairwise coprime, each squarefree, and each a non-unit, then no nonempty subset product
@@ -71,7 +63,7 @@ theorem not_isSquare_prod_of_coprime_squarefree {ι : Type*} (d : ι → ℤ) {S
 /-- **Square-class independence cast to `ℚ`.** If `d : ι → ℤ` is pairwise coprime with each entry
 squarefree and a non-unit, then no nonempty subset product `∏_{i ∈ S} (d i : ℚ)` is a square in
 `ℚ`. This is the `∀ S` shape of `hindep` the degree and Galois-group theorems consume directly. -/
-theorem not_isSquare_prod_coprime_squarefree_rat {ι : Type*} (d : ι → ℤ)
+theorem not_isSquare_prod_of_coprime_squarefree_rat {ι : Type*} (d : ι → ℤ)
     (hcop : Pairwise (IsCoprime on d)) (hsf : ∀ i, Squarefree (d i)) (hnu : ∀ i, ¬ IsUnit (d i)) :
     ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)) := by
   intro S hS
@@ -84,24 +76,17 @@ pairwise coprime with each entry squarefree and a non-unit, and `root i` is a sq
 in a field `L` over `ℚ` (so `ℚ(√d₁, …, √dₙ)` makes sense even for the negative radicands the genus
 theory needs), then `[ℚ(rootᵢ : i) : ℚ] = 2^|ι|`. This is the squarefree-integer corollary of the
 field-generic degree theorem `finrank_adjoin_range`. -/
-theorem finrank_adjoin_range_coprime_squarefree {ι : Type*} [Finite ι] {L : Type*} [Field L]
+theorem finrank_adjoin_range_of_coprime_squarefree {ι : Type*} [Finite ι] {L : Type*} [Field L]
     [Algebra ℚ L] (d : ι → ℤ) (root : ι → L) (hroot : ∀ i, root i ^ 2 = algebraMap ℚ L (d i))
     (hcop : Pairwise (IsCoprime on d)) (hsf : ∀ i, Squarefree (d i)) (hnu : ∀ i, ¬ IsUnit (d i)) :
     Module.finrank ℚ (IntermediateField.adjoin ℚ (Set.range root)) = 2 ^ Nat.card ι :=
   finrank_adjoin_range (d := fun i => (d i : ℚ)) hroot
-    (not_isSquare_prod_coprime_squarefree_rat d hcop hsf hnu)
-
-/-- The real square root of a nonnegative integer squares back to its rational value, in the form
-`(√d)² = algebraMap ℚ ℝ d`. This supplies the `hroot` hypothesis of the degree theorem for the real
-square roots of nonnegative integer radicands. -/
-theorem sq_sqrt_intCast {n : ℤ} (hn : 0 ≤ n) :
-    (Real.sqrt n) ^ 2 = algebraMap ℚ ℝ (n : ℚ) := by
-  rw [Real.sq_sqrt (by exact_mod_cast hn), map_intCast]
+    (not_isSquare_prod_of_coprime_squarefree_rat d hcop hsf hnu)
 
 /-- **Worked example: `[ℚ(√6, √35) : ℚ] = 4`.** The radicands `6 = 2·3` and `35 = 5·7` are
 composite, so this lies beyond the distinct-primes corollary `finrank_adjoin_sqrt_primes`; it is
-covered by `finrank_adjoin_range_coprime_squarefree` because `6` and `35` are coprime, squarefree,
-and not units. -/
+covered by `finrank_adjoin_range_of_coprime_squarefree` because `6` and `35` are coprime,
+squarefree, and not units. -/
 theorem finrank_adjoin_sqrt_six_thirtyfive :
     Module.finrank ℚ
       (IntermediateField.adjoin ℚ {Real.sqrt 6, Real.sqrt 35} : IntermediateField ℚ ℝ) = 4 := by
@@ -128,7 +113,7 @@ theorem finrank_adjoin_sqrt_six_thirtyfive :
   have hnu : ∀ i, ¬ IsUnit ((![6, 35] : Fin 2 → ℤ) i) := by
     intro i
     fin_cases i <;> simp [Int.isUnit_iff]
-  have h := finrank_adjoin_range_coprime_squarefree (L := ℝ) ![6, 35]
+  have h := finrank_adjoin_range_of_coprime_squarefree (L := ℝ) ![6, 35]
     (fun i => Real.sqrt ((![6, 35] : Fin 2 → ℤ) i))
     (fun i => by fin_cases i <;> exact sq_sqrt_intCast (by norm_num)) hcop hsf hnu
   have hset : (Set.range fun i : Fin 2 => Real.sqrt ((![6, 35] : Fin 2 → ℤ) i))
