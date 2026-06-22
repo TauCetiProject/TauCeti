@@ -15,14 +15,9 @@ from `TauCeti.Analysis.PositiveDefinite.Basic`) **if and only if** the two-varia
 `fun a b => F (a + star b)` is positive definite (`TauCeti.IsPositiveDefiniteKernel`, from
 `TauCeti.Analysis.PositiveDefinite.Kernel`).
 
-Both predicates ultimately say "every finite Gram matrix is positive semidefinite", but they are
-indexed differently: `IsPositiveDefinite` runs over finite families of scalars `c` and points `v`
-with the form `∑ᵢⱼ cᵢ · conj cⱼ · F(vᵢ + vⱼ⋆)`, whereas `IsPositiveDefiniteKernel` packs the same
-nonnegativity through Mathlib's `Matrix.PosSemidef` for the kernel `K`. The translation between the
-two is the substitution `cᵢ ↦ conj cᵢ`, which turns `cᵢ · conj cⱼ` into the kernel form
-`conj (conj cᵢ) · conj cⱼ`; conjugate symmetry of the kernel is exactly conjugate symmetry of `F`
-in the involution. The proof routes through the quadratic-form characterization
-`TauCeti.isPositiveDefiniteKernel_iff`, so neither direction unfolds `Matrix.PosSemidef` by hand.
+Both predicates express nonnegativity of finite quadratic forms, with
+`IsPositiveDefiniteKernel` using Mathlib's `Matrix.PosSemidef` convention for the two-variable
+kernel.
 
 Under the negation involution `a⋆ = -a` the kernel takes the familiar translation-invariant shape
 `K(a, b) = F(a - b)`, the form in which positive definiteness is usually stated on groups such as
