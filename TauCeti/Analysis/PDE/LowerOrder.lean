@@ -341,6 +341,11 @@ namespace MassLowerBoundOn
 
 variable {Ω Ω' : Set X} {c : X → ℝ} {mu mu' : ℝ}
 
+/-- Constructor from the positivity side condition and the pointwise lower bound. -/
+lemma of_lower_bound (hmu : 0 < mu) (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x) :
+    MassLowerBoundOn Ω c mu :=
+  ⟨hmu, hc⟩
+
 /-- The mass lower-bound constant is positive. -/
 @[grind →]
 lemma mu_pos (h : MassLowerBoundOn Ω c mu) : 0 < mu :=
@@ -460,6 +465,11 @@ lemma lowerOrderBoundedOn_zero (Ω : Set X) :
 lemma nonnegMassOn_const_self (Ω : Set X) {c : ℝ} (hc : 0 ≤ c) :
     NonnegMassOn Ω (fun _ => c) c :=
   ⟨hc, fun {_} _ => ⟨hc, le_rfl⟩⟩
+
+/-- A constant positive mass coefficient has itself as a mass lower bound. -/
+lemma massLowerBoundOn_const_self (Ω : Set X) {mu : ℝ} (hmu : 0 < mu) :
+    MassLowerBoundOn Ω (fun _ => mu) mu :=
+  ⟨hmu, fun {_} _ => le_rfl⟩
 
 end PDE
 

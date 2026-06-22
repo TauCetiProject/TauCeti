@@ -23,10 +23,12 @@ monolithic PDE class.
 
 * `TauCeti.PDE.energyIntegrand_self_lower_bound_of_bounds`: pointwise lower bound for the
   energy density with bounded drift and a mass lower bound.
-* `TauCeti.PDE.isCoercive_energyIntegrand_of_lower_bounds`: coercivity of the bundled jet
-  bilinear form when the mass lower bound dominates the drift defect.
+* `TauCeti.PDE.isCoercive_energyIntegrand_of_bounds`: coercivity of the jet bilinear form when
+  the mass lower bound dominates the drift defect.
 * `TauCeti.PDE.isCoercive_energyIntegrand_zero_drift_of_lower_bounds`: the zero-drift
   specialization, needing only a positive mass lower bound.
+* `TauCeti.PDE.isCoercive_energyIntegrand_of_bounds_on`: the domain version from raw lower
+  bounds, with no upper ellipticity bound or bundled coefficient predicate.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand` and
   `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand_zero_drift`: the same results
   using the bundled uniform-ellipticity and coefficient predicates.
@@ -94,7 +96,7 @@ lemma energyIntegrand_self_lower_bound_of_bounds (hlam : 0 < lam)
 
 With ellipticity floor `λ`, drift bound `β`, and mass lower bound `μ` satisfying `β²/2λ < μ`,
 the jet form is coercive with constant `min (λ/2) (μ − β²/2λ)`. -/
-lemma isCoercive_energyIntegrand_of_lower_bounds (hlam : 0 < lam)
+lemma isCoercive_energyIntegrand_of_bounds (hlam : 0 < lam)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu) :
@@ -109,14 +111,27 @@ lemma isCoercive_energyIntegrand_of_lower_bounds (hlam : 0 < lam)
 
 /-- Coercivity of the zero-drift jet bilinear form from a positive mass lower bound.
 
-This is the `β = 0` specialization of `isCoercive_energyIntegrand_of_lower_bounds`, where the
+This is the `β = 0` specialization of `isCoercive_energyIntegrand_of_bounds`, where the
 coercivity constant is `min (λ/2) μ`. -/
 lemma isCoercive_energyIntegrand_zero_drift_of_lower_bounds (hlam : 0 < lam) (hmu : 0 < mu)
     {A : Matrix n n ℝ} {c₀ : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hc : mu ≤ c₀) :
     IsCoercive (energyIntegrand A 0 c₀) :=
-  isCoercive_energyIntegrand_of_lower_bounds (beta := 0) hlam hA (by simp) hc (by simpa using hmu)
+  isCoercive_energyIntegrand_of_bounds (beta := 0) hlam hA (by simp) hc (by simpa using hmu)
+
+/-- Coercivity of the pointwise jet bilinear form on a domain from raw lower bounds.
+
+At each point of `Ω`, an ellipticity floor `λ`, a drift bound `β`, and a mass lower bound `μ`
+with `β²/2λ < μ` make the jet form coercive.  Only the lower assumptions are needed: there is
+no upper ellipticity bound and no bundled coefficient predicate. -/
+lemma isCoercive_energyIntegrand_of_bounds_on {Ω : Set X}
+    {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ} (hlam : 0 < lam)
+    (hA : ∀ ⦃x⦄, x ∈ Ω → ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+    (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta) (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x)
+    (hmu : beta ^ 2 / (2 * lam) < mu) {x : X} (hx : x ∈ Ω) :
+    IsCoercive (energyIntegrand (a x) (b x) (c x)) :=
+  isCoercive_energyIntegrand_of_bounds hlam (hA hx) (hb hx) (hc hx) hmu
 
 namespace UniformlyEllipticOn
 
@@ -131,8 +146,8 @@ lemma isCoercive_energyIntegrand (he : UniformlyEllipticOn Ω a lam Lam)
     (hb : DriftBoundedOn Ω b beta) (hc : MassLowerBoundOn Ω c mu)
     (hmu : beta ^ 2 / (2 * lam) < mu) {x : X} (hx : x ∈ Ω) :
     IsCoercive (energyIntegrand (a x) (b x) (c x)) :=
-  isCoercive_energyIntegrand_of_lower_bounds he.pos (he.lower_bound hx)
-    (hb.bound hx) (hc.lower_bound hx) hmu
+  isCoercive_energyIntegrand_of_bounds_on he.pos (fun {_} hy => he.lower_bound hy)
+    (fun {_} hy => hb.bound hy) (fun {_} hy => hc.lower_bound hy) hmu hx
 
 /-- A uniformly elliptic principal coefficient and a positive mass lower bound make the
 zero-drift pointwise jet integrand coercive at every point of the domain. -/
