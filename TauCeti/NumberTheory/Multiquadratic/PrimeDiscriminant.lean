@@ -24,7 +24,7 @@ primes into radicands `p*` satisfying `p* ≡ 1 (mod 4)`.
 
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant`: the integer `p* = (-1)^((p-1)/2) p`.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_natAbs`: its absolute value is `p`.
-* `TauCeti.Multiquadratic.oddPrimeDiscriminant_prime`: it is a prime integer.
+* `TauCeti.Multiquadratic.prime_oddPrimeDiscriminant`: it is a prime integer.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_emod_four`: for odd `p`, it is `1 mod 4`.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_eq_pow_mul`: the standard formula
   `p* = (-1)^(p/2) p`.
@@ -62,15 +62,16 @@ def oddPrimeDiscriminant (p : ℕ) : ℤ :=
   rw [← Int.natAbs_ne_zero, oddPrimeDiscriminant_natAbs]
 
 /-- The odd prime discriminant of a natural prime is a prime integer. -/
-theorem oddPrimeDiscriminant_prime {p : ℕ} (hp : p.Prime) :
+theorem prime_oddPrimeDiscriminant {p : ℕ} (hp : p.Prime) :
     Prime (oddPrimeDiscriminant p) := by
   rw [Int.prime_iff_natAbs_prime, oddPrimeDiscriminant_natAbs]
   exact hp
 
-/-- The odd prime discriminant of a natural prime is squarefree. -/
-theorem squarefree_oddPrimeDiscriminant {p : ℕ} (hp : p.Prime) :
-    Squarefree (oddPrimeDiscriminant p) :=
-  (oddPrimeDiscriminant_prime hp).squarefree
+/-- The odd prime discriminant of a squarefree natural number is squarefree. -/
+theorem squarefree_oddPrimeDiscriminant {p : ℕ} (hp : Squarefree p) :
+    Squarefree (oddPrimeDiscriminant p) := by
+  rw [← Int.squarefree_natAbs, oddPrimeDiscriminant_natAbs]
+  exact hp
 
 /-- The odd prime discriminant has the same divisibility-by-two behavior as `p`. -/
 @[simp] theorem two_dvd_oddPrimeDiscriminant_iff (p : ℕ) :
@@ -105,7 +106,7 @@ private theorem emod_four_eq_one_or_three_of_odd {p : ℕ} (hp : Odd p) :
     omega
 
 /-- For an odd prime `p`, the odd prime discriminant is congruent to `1` modulo `4`. -/
-@[simp] theorem oddPrimeDiscriminant_emod_four_of_prime {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
+theorem oddPrimeDiscriminant_emod_four_of_prime {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
     oddPrimeDiscriminant p % 4 = 1 :=
   oddPrimeDiscriminant_emod_four (Nat.odd_iff.mpr
     ((Nat.Prime.mod_two_eq_one_iff_ne_two hp).mpr hp2))
