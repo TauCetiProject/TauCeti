@@ -453,6 +453,11 @@ def transpose (x : GridState n) : GridState n where
 theorem transpose_apply (x : GridState n) (c : Fin n) : x.transpose c = x.toPerm.symm c :=
   rfl
 
+/-- The row-to-column accessor is evaluation of the reflected grid state. -/
+@[simp]
+theorem columnOfRow_eq_transpose (x : GridState n) (r : Fin n) :
+    x.columnOfRow r = x.transpose r := rfl
+
 /-- The column in row `r` of the reflected state is the original row-coordinate value at `r`. -/
 @[simp]
 theorem columnOfRow_transpose (x : GridState n) (r : Fin n) : x.transpose.columnOfRow r = x r := by
@@ -847,17 +852,20 @@ def transpose (G : GridDiagram n) : GridDiagram n where
 @[simp]
 theorem transpose_O : G.transpose.O = G.O.transpose :=
   rfl
-
 /-- The `X` marking state of the reflected diagram is the reflected `X` marking state. -/
 @[simp]
 theorem transpose_X : G.transpose.X = G.X.transpose :=
   rfl
-
+/-- The reflected diagram's `O` row coordinate is the original `O` column in that row. -/
+@[simp]
+theorem transpose_O_apply (c : Fin n) : G.transpose.O c = OColumnOfRow G c := by simp [OColumnOfRow]
+/-- The reflected diagram's `X` row coordinate is the original `X` column in that row. -/
+@[simp]
+theorem transpose_X_apply (c : Fin n) : G.transpose.X c = XColumnOfRow G c := by simp [XColumnOfRow]
 /-- The diagonal reflection is an involution on grid diagrams. -/
 @[simp]
 theorem transpose_transpose : G.transpose.transpose = G := by
   ext c <;> simp
-
 /-- Reflecting after a row relabeling is the same as column relabeling after reflecting. -/
 @[simp]
 theorem relabelRows_transpose (ρ : Equiv.Perm (Fin n)) :
@@ -985,7 +993,6 @@ theorem swapColumns_swapMarkings (a b : Fin n) :
 @[simp]
 theorem swapMarkings_transpose : G.swapMarkings.transpose = G.transpose.swapMarkings := by
   ext c <;> simp [swapMarkings]
-
 end GridDiagram
 
 end TauCeti

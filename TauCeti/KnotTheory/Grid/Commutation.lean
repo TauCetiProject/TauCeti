@@ -166,7 +166,7 @@ theorem rowArc_transpose (c : Fin n) : rowArc G.transpose c = columnArc G c := b
 original diagram. -/
 @[simp]
 theorem columnArc_transpose (r : Fin n) : columnArc G.transpose r = rowArc G r := by
-  simp [rowArc, columnArc, OColumnOfRow, XColumnOfRow, GridState.columnOfRow]
+  simp only [columnArc, rowArc, transpose_O_apply, transpose_X_apply]
 
 /-- Diagonal reflection exchanges row non-interleaving with column non-interleaving. -/
 @[simp]
@@ -179,8 +179,7 @@ theorem rowsNoninterleaving_transpose (a b : Fin n) :
 theorem columnsNoninterleaving_transpose (a b : Fin n) :
     ColumnsNoninterleaving G.transpose a b ↔ RowsNoninterleaving G a b :=
   by
-    simp [RowsNoninterleaving, ColumnsNoninterleaving, OColumnOfRow, XColumnOfRow,
-      GridState.columnOfRow]
+    simp only [RowsNoninterleaving, ColumnsNoninterleaving, transpose_O_apply, transpose_X_apply]
 
 end GridDiagram
 
