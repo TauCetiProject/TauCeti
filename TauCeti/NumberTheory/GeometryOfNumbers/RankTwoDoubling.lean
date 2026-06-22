@@ -16,19 +16,20 @@ on which both bounds become explicit numbers.
 The lattice is the Gaussian lattice `ℤ + ℤ·i`, packaged as
 `TauCeti.GeometryOfNumbers.gaussianLattice : AddSubgroup (Fin 1 → ℂ)`. Its only nontrivial
 input to the engine is the separation hypothesis: a *nonzero* Gaussian integer has norm at
-least `1` (`one_le_norm_of_mem_of_ne_zero`), so the packing lemma applies with separation
-scale `ρ = 1/2` and produces a finite intersection with the box.
+least `1` (`one_le_norm_of_mem_gaussianLattice_of_ne_zero`), so the packing lemma applies
+with separation scale `ρ = 1/2` and produces a finite intersection with the box.
 
 ## Main results
 
-* `TauCeti.GeometryOfNumbers.one_le_norm_of_mem_of_ne_zero`: a nonzero point of the
-  Gaussian lattice has norm at least `1` (the lattice's minimal distance).
+* `TauCeti.GeometryOfNumbers.one_le_norm_of_mem_gaussianLattice_of_ne_zero`: a nonzero
+  point of the Gaussian lattice has norm at least `1` (the lattice's minimal distance).
 * `TauCeti.GeometryOfNumbers.gaussianLattice_inter_box_two_finite`: the lattice points in
   the radius-two box form a finite set (the packing lemma discharges discreteness).
 * `TauCeti.GeometryOfNumbers.gaussianLattice_inter_box_two_ncard_le`: at most `256` of
   them, the explicit packing count `(8/ρ)^(2·#ι)` at `ρ = 1/2`, `#ι = 1`.
-* `TauCeti.GeometryOfNumbers.gaussianLattice_doubling`: the doubling instance
-  `#(Λ ∩ box 2) ≤ 64 · #(Λ ∩ box 1)`, the engine's factor `64^{#ι}` at `#ι = 1`.
+* `gaussianLattice_ncard_inter_box_two_le_sixtyFour_mul_ncard_inter_box_one`:
+  the doubling instance `#(Λ ∩ box 2) ≤ 64 · #(Λ ∩ box 1)`, the engine's factor
+  `64^{#ι}` at `#ι = 1`.
 
 These exercise both halves of the engine — `addSubgroup_inter_box_finite_and_ncard_le_of_separated`
 and `ncard_inter_box_two_le_pow_mul_ncard_inter_box_one` — on a genuine rank-two lattice,
@@ -54,13 +55,14 @@ def gaussianLattice : AddSubgroup (Fin 1 → ℂ) where
 
 /-- Membership in the Gaussian lattice unfolds to the single coordinate being a Gaussian
 integer. -/
+@[simp]
 theorem mem_gaussianLattice {x : Fin 1 → ℂ} :
     x ∈ gaussianLattice ↔ ∃ m n : ℤ, x 0 = (m : ℂ) + (n : ℂ) * Complex.I := Iff.rfl
 
 /-- **Minimal distance of the Gaussian lattice.** A nonzero Gaussian integer has norm at
 least `1`, since its squared norm `m² + n²` is a positive integer. This is the separation
 input the packing lemma needs. -/
-theorem one_le_norm_of_mem_of_ne_zero {x : Fin 1 → ℂ}
+theorem one_le_norm_of_mem_gaussianLattice_of_ne_zero {x : Fin 1 → ℂ}
     (hx : x ∈ gaussianLattice) (hne : x ≠ 0) : 1 ≤ ‖x 0‖ := by
   obtain ⟨m, n, hmn⟩ := hx
   -- A point of `Fin 1 → ℂ` is determined by its coordinate, so `x ≠ 0` forces `x 0 ≠ 0`.
@@ -97,8 +99,8 @@ private theorem gaussianLattice_separated :
     ∀ x ∈ gaussianLattice, x ≠ 0 →
       ∃ i, (1 / 2 : ℝ) * (fun _ : Fin 1 => (1 : ℝ)) i < ‖x i‖ :=
   fun x hx hne => ⟨0, by
-    have h1 := one_le_norm_of_mem_of_ne_zero hx hne
-    change (1 / 2 : ℝ) * 1 < ‖x 0‖
+    have h1 := one_le_norm_of_mem_gaussianLattice_of_ne_zero hx hne
+    rw [show (fun _ : Fin 1 => (1 : ℝ)) 0 = 1 by rfl]
     linarith⟩
 
 /-- **Discreteness via packing.** The Gaussian lattice meets the radius-two box in a finite
@@ -121,7 +123,7 @@ theorem gaussianLattice_inter_box_two_ncard_le :
 /-- **A concrete doubling instance.** Passing from the unit box to the double box multiplies
 the Gaussian-lattice point count by at most `64`, the engine's factor `64^{#ι}` at `#ι = 1`:
 `#(Λ ∩ box 2) ≤ 64 · #(Λ ∩ box 1)`. -/
-theorem gaussianLattice_doubling :
+theorem gaussianLattice_ncard_inter_box_two_le_sixtyFour_mul_ncard_inter_box_one :
     (((gaussianLattice : Set (Fin 1 → ℂ)) ∩ box (fun _ => 1) 2).ncard : ℝ) ≤
       64 * (((gaussianLattice : Set (Fin 1 → ℂ)) ∩ box (fun _ => 1) 1).ncard : ℝ) := by
   have h := ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (ι := Fin 1) (fun _ => 1)
