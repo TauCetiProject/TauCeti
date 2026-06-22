@@ -6,8 +6,8 @@ import TauCeti.NumberTheory.Multiquadratic.Degree
 import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Data.Rat.Lemmas
 import Mathlib.Algebra.Squarefree.Basic
+import Mathlib.RingTheory.Int.Basic
 import Mathlib.Tactic.NormNum.Prime
-import Mathlib.Data.Nat.Prime.Int
 
 /-!
 # Multiquadratic fields with pairwise-coprime squarefree integer radicands
@@ -98,12 +98,14 @@ theorem finrank_adjoin_sqrt_six_thirtyfive :
   have h6 : Squarefree (6 : ℤ) := by
     have : Squarefree ((2 : ℤ) * 3) := squarefree_mul_iff.mpr
       ⟨(Int.isCoprime_iff_gcd_eq_one.mpr (by decide)).isRelPrime,
-        (by norm_num : Prime (2 : ℤ)).squarefree, (by norm_num : Prime (3 : ℤ)).squarefree⟩
+        (Int.prime_iff_natAbs_prime.2 (by decide)).squarefree,
+        (Int.prime_iff_natAbs_prime.2 (by decide)).squarefree⟩
     simpa using this
   have h35 : Squarefree (35 : ℤ) := by
     have : Squarefree ((5 : ℤ) * 7) := squarefree_mul_iff.mpr
       ⟨(Int.isCoprime_iff_gcd_eq_one.mpr (by decide)).isRelPrime,
-        (by norm_num : Prime (5 : ℤ)).squarefree, (by norm_num : Prime (7 : ℤ)).squarefree⟩
+        (Int.prime_iff_natAbs_prime.2 (by decide)).squarefree,
+        (Int.prime_iff_natAbs_prime.2 (by decide)).squarefree⟩
     simpa using this
   have hsf : ∀ i, Squarefree ((![6, 35] : Fin 2 → ℤ) i) := by
     intro i
