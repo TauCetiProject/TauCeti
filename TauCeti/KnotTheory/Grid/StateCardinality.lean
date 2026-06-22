@@ -22,7 +22,7 @@ the free `ZMod 2`-module on `GridState n`.
 
 * `TauCeti.GridState.card`: there are `n!` grid states on an `n × n` grid.
 * `TauCeti.GridState.card_univ`: the finite generator set has cardinality `n!`.
-* `TauCeti.GridState.uniqueOfLeOne`: for `n ≤ 1`, there is a unique grid state.
+* `TauCeti.GridState.subsingletonOfLeOne`: for `n ≤ 1`, grid states are unique.
 * `TauCeti.GridState.card_zero`, `TauCeti.GridState.card_one`, `TauCeti.GridState.card_two`:
   small-grid cardinalities used as sanity checks for later computations.
 
@@ -39,29 +39,6 @@ namespace TauCeti
 namespace GridState
 
 variable {n : ℕ}
-
-/-- The permutation associated to a grid state by `GridState.equivPerm`. -/
-@[simp]
-theorem equivPerm_apply (x : GridState n) : equivPerm n x = x.toPerm :=
-  rfl
-
-/-- The grid state associated to a permutation by the inverse of `GridState.equivPerm`. -/
-@[simp]
-theorem equivPerm_symm_apply (σ : Equiv.Perm (Fin n)) : (equivPerm n).symm σ = ⟨σ⟩ :=
-  rfl
-
-/-- Converting a permutation to a grid state and evaluating it gives the permutation value. -/
-@[simp]
-theorem equivPerm_symm_apply_apply (σ : Equiv.Perm (Fin n)) (c : Fin n) :
-    ((equivPerm n).symm σ : GridState n) c = σ c :=
-  rfl
-
-/-- The point set of the grid state obtained from a permutation `σ` is the graph `{(c, σ c)}`. -/
-@[simp]
-theorem equivPerm_symm_pointSet (σ : Equiv.Perm (Fin n)) :
-    ((equivPerm n).symm σ : GridState n).pointSet =
-      Finset.univ.image fun c => (c, σ c) :=
-  rfl
 
 /-- The number of grid states on an `n × n` grid is `n!`. -/
 @[simp]
@@ -90,9 +67,8 @@ theorem card_one : Fintype.card (GridState 1) = 1 := by
 theorem card_two : Fintype.card (GridState 2) = 2 := by
   simp
 
-/-- There is a unique grid state whenever the grid has at most one row and column. -/
-@[reducible]
-def uniqueOfLeOne (hn : n ≤ 1) : Unique (GridState n) := by
+/-- Any two grid states are equal whenever the grid has at most one row and column. -/
+theorem subsingletonOfLeOne (hn : n ≤ 1) : Subsingleton (GridState n) := by
   have hcard : Fintype.card (GridState n) ≤ 1 := by
     rw [card]
     rcases n with _ | n
@@ -100,14 +76,13 @@ def uniqueOfLeOne (hn : n ≤ 1) : Unique (GridState n) := by
     · rcases n with _ | n
       · simp
       · omega
-  letI : Subsingleton (GridState n) := Fintype.card_le_one_iff_subsingleton.mp hcard
-  exact
-    { default := (equivPerm n).symm 1
-      uniq := fun _ => Subsingleton.elim _ _ }
+  exact Fintype.card_le_one_iff_subsingleton.mp hcard
 
 /-- There is a unique grid state on the empty grid. -/
 instance instUniqueZero : Unique (GridState 0) :=
-  uniqueOfLeOne (n := 0) (Nat.zero_le 1)
+  letI : Subsingleton (GridState 0) := subsingletonOfLeOne (Nat.zero_le 1)
+  { default := (equivPerm 0).symm 1
+    uniq := fun _ => Subsingleton.elim _ _ }
 
 /-- The unique empty-grid state is the state associated to the identity permutation. -/
 theorem default_zero_eq : (default : GridState 0) = (equivPerm 0).symm 1 :=
@@ -115,7 +90,9 @@ theorem default_zero_eq : (default : GridState 0) = (equivPerm 0).symm 1 :=
 
 /-- There is a unique grid state on a `1 × 1` grid. -/
 instance instUniqueOne : Unique (GridState 1) :=
-  uniqueOfLeOne (n := 1) (Nat.le_refl 1)
+  letI : Subsingleton (GridState 1) := subsingletonOfLeOne (Nat.le_refl 1)
+  { default := (equivPerm 1).symm 1
+    uniq := fun _ => Subsingleton.elim _ _ }
 
 /-- The unique `1 × 1` grid state sends the only column to the only row. -/
 @[simp]

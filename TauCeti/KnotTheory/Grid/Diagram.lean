@@ -21,26 +21,11 @@ that no square contains both markings.
 The point-set API records the basic row, column, cardinality, and disjointness facts used
 before defining rectangles, empty rectangles, and the grid differential.
 
-## Main definitions
-
 * `TauCeti.GridState`: a grid state with a permutation graph on `Fin n`.
 * `TauCeti.GridState.pointSet`: the finite set of occupied squares of a grid state.
-* `TauCeti.GridState.relabelRows`, `TauCeti.GridState.relabelColumns`: row and column
-  relabelings of grid states.
-* `TauCeti.GridState.swapRows`, `TauCeti.GridState.swapColumns`: row and column swaps of
-  grid states.
-* `TauCeti.GridState.transpose`: the diagonal reflection of a grid state, with the inverse
-  permutation graph.
 * `TauCeti.GridDiagram`: an `n × n` grid diagram with `O` and `X` markings.
 * `TauCeti.GridDiagram.OSet`, `TauCeti.GridDiagram.XSet`: the marking point sets.
-* `TauCeti.GridDiagram.relabelRows`, `TauCeti.GridDiagram.relabelColumns`: row and column
-  relabelings of grid diagrams.
-* `TauCeti.GridDiagram.swapRows`, `TauCeti.GridDiagram.swapColumns`: row and column swaps of
-  grid diagrams.
-* `TauCeti.GridDiagram.transpose`: the diagonal reflection of a grid diagram, reflecting both
-  marking states.
-* `TauCeti.GridDiagram.swapMarkings`: the grid diagram obtained by exchanging the `O`- and
-  `X`-marking states.
+* Relabeling, swapping, transposition, and marking-swap operations for grid states and diagrams.
 
 ## References
 
@@ -81,6 +66,16 @@ instance : Fintype (GridState n) :=
 instance : CoeFun (GridState n) fun _ => Fin n → Fin n where
   coe x := x.toPerm
 
+/-- The permutation associated to a grid state by `GridState.equivPerm`. -/
+@[simp] theorem equivPerm_apply (x : GridState n) : equivPerm n x = x.toPerm := rfl
+
+/-- The grid state associated to a permutation by the inverse of `GridState.equivPerm`. -/
+@[simp] theorem equivPerm_symm_apply (σ : Equiv.Perm (Fin n)) : (equivPerm n).symm σ = ⟨σ⟩ := rfl
+
+/-- Evaluating a grid state obtained from a permutation gives the permutation value. -/
+@[simp] theorem equivPerm_symm_apply_apply (σ : Equiv.Perm (Fin n)) (c : Fin n) :
+    ((equivPerm n).symm σ : GridState n) c = σ c := rfl
+
 /-- Grid states are extensional in their column-to-row functions. -/
 @[ext]
 theorem ext {x y : GridState n} (h : ∀ c : Fin n, x c = y c) : x = y := by
@@ -94,6 +89,10 @@ theorem ext {x y : GridState n} (h : ∀ c : Fin n, x c = y c) : x = y := by
 the second coordinate is the row. -/
 def pointSet (x : GridState n) : Finset (Fin n × Fin n) :=
   Finset.univ.image fun c => (c, x c)
+
+/-- The point set of the grid state obtained from `σ` is the graph `{(c, σ c)}`. -/
+@[simp] theorem equivPerm_symm_pointSet (σ : Equiv.Perm (Fin n)) :
+    ((equivPerm n).symm σ : GridState n).pointSet = Finset.univ.image fun c => (c, σ c) := rfl
 
 /-- Membership in the point set of a grid state is the graph condition for its permutation. -/
 @[simp]
