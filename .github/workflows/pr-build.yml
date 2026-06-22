@@ -183,8 +183,9 @@ jobs:
       # pins or building. The validator and the BASE config it judges against are the
       # TRUSTED current target tip; mergebase/ only scopes the PR's own pin delta; pr/
       # is read as text — no PR code runs. An invalid/backward/forked bump sets INFRA=1
-      # → not built, routed to a human. (Run inline, not by reading the separate
-      # bump-guard status, to avoid a race with that concurrently-running workflow.)
+      # → not built, routed to a human. This same inline validation is what the
+      # required `bump-guard` status is posted from in the final step (this job owns
+      # both required statuses; there is no separate bump-guard workflow).
       - name: Validate the Lake-pin bump (trusted base validator) before building
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
         env: { GH_TOKEN: "${{ github.token }}" }
@@ -286,10 +287,26 @@ jobs:
               lake exe axioms
             '
 
-      - name: Report build status to the PR head commit
+      - name: Report build and bump-guard statuses to the PR head commit
         if: always()
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
+          # bump-guard: this job already ran the trusted base scripts/check-bump.sh inline
+          # (the "Validate the Lake-pin bump" step), so we post the required `bump-guard`
+          # status from its result here rather than from a separate workflow. BUMP_BAD is set
+          # only when a manifest/toolchain change failed that validator; anything else (no pin
+          # change, or a validated forward bump) is a pass. Posting it from this job also means
+          # both required statuses land together, before the auto-merge workflow_run fires.
+          if [ "${{ env.BUMP_BAD }}" = "1" ]; then
+            bg_state=failure; bg_desc="manifest/toolchain change is not a validated forward bump — needs human review"
+          else
+            bg_state=success; bg_desc="forward-only Lake-pin / toolchain bump (or no pin change)"
+          fi
+          gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.status_sha }}" \
+            -f state="$bg_state" -f context="bump-guard" -f description="$bg_desc" \
+            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "posted bump-guard=$bg_state ($bg_desc) to ${{ steps.pr.outputs.status_sha }}"
+
           if [ "${{ env.BUMP_BAD }}" = "1" ]; then
             state=failure; desc="Lake-pin change is not a validated forward bump — human review + merge required"
           elif [ "${{ env.INFRA }}" = "1" ]; then
