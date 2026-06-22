@@ -228,8 +228,9 @@ variable [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 /-- A Hopf ideal in a Hopf algebra over a commutative semiring.
 
 The comultiplication condition is stated in the ambient tensor product algebra as
-`Δ(I) ⊆ I ⊗ H + H ⊗ I`. The quotient Hopf algebra will be added separately once the needed
-quotient coalgebra API is available. -/
+`Δ(I) ⊆ I ⊗ H + H ⊗ I`. Over a commutative ring, the bridge instances in
+`TauCeti.Algebra.HopfAlgebra.Quotient` let Mathlib endow the quotient `H ⧸ I.toIdeal` with
+its Hopf-algebra structure. -/
 structure HopfIdeal where
   /-- The underlying ideal. -/
   carrier : Ideal H
