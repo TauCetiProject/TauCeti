@@ -17,12 +17,6 @@ sends these arcs to the reversed images of the corresponding arcs in the marking
 
 ## Main results
 
-* `TauCeti.GridDiagram.OColumnOfRow_rotate` and
-  `TauCeti.GridDiagram.XColumnOfRow_rotate`: row-to-column lookups commute with rotation up to
-  `Fin.rev`.
-* `TauCeti.GridDiagram.OColumnOfRow_swapMarkings` and
-  `TauCeti.GridDiagram.XColumnOfRow_swapMarkings`: row-to-column lookups are exchanged by the
-  marking swap.
 * `TauCeti.GridDiagram.columnArc_rotate` and `TauCeti.GridDiagram.rowArc_rotate`: the oriented
   commutation arcs of the rotated diagram are the `Fin.rev`-images of the opposite oriented arcs
   of the original diagram.
@@ -56,13 +50,8 @@ private theorem noninterleaving_rev {n : ℕ} (a₀ a₁ b₀ b₁ : Fin n) :
     Grid.Noninterleaving a₀.rev a₁.rev b₀.rev b₁.rev ↔
       Grid.Noninterleaving a₁ a₀ b₁ b₀ := by
   rw [Grid.Noninterleaving, Grid.Noninterleaving]
-  constructor
-  · rintro ⟨hab, hba⟩
-    exact ⟨by simpa only [mem_cIoo_rev_rev] using hab.symm,
-      by simpa only [mem_cIoo_rev_rev] using hba.symm⟩
-  · rintro ⟨hab, hba⟩
-    exact ⟨by simpa only [mem_cIoo_rev_rev] using hab.symm,
-      by simpa only [mem_cIoo_rev_rev] using hba.symm⟩
+  simp only [mem_cIoo_rev_rev]
+  tauto
 
 namespace GridDiagram
 
