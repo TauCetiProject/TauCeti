@@ -66,8 +66,8 @@ namespace GridState
 
 variable {n : ℕ}
 
-/-- Grid states are equivalent to permutations of the columns. -/
-private def equivPerm : GridState n ≃ Equiv.Perm (Fin n) where
+/-- Grid states on an `n × n` grid are equivalent to permutations of the columns. -/
+def equivPerm (n : ℕ) : GridState n ≃ Equiv.Perm (Fin n) where
   toFun x := x.toPerm
   invFun σ := ⟨σ⟩
   left_inv x := by cases x; rfl
@@ -75,7 +75,7 @@ private def equivPerm : GridState n ≃ Equiv.Perm (Fin n) where
 
 /-- There are finitely many grid states of a fixed grid size. -/
 instance : Fintype (GridState n) :=
-  Fintype.ofEquiv (Equiv.Perm (Fin n)) equivPerm.symm
+  Fintype.ofEquiv (Equiv.Perm (Fin n)) (equivPerm n).symm
 
 /-- Apply a grid state to a column to get its occupied row. -/
 instance : CoeFun (GridState n) fun _ => Fin n → Fin n where
