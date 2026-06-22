@@ -2,7 +2,7 @@
 --
 -- It is intentionally empty. The lakefile's `globs = ["TauCeti.*"]` is authoritative
 -- for what gets built and axiom-audited: `lake build` builds every `TauCeti/` module
--- directly, and the audit (`Scripts/Axioms.lean`) enumerates the source tree, so nothing
+-- directly, and the audit (`scripts/Axioms.lean`) enumerates the source tree, so nothing
 -- depends on this root re-exporting the library. No code does `import TauCeti`.
 --
 -- A PR therefore never needs to touch this file. It is kept (rather than deleted) only

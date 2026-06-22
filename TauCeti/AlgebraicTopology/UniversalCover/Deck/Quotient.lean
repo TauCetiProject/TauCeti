@@ -70,6 +70,15 @@ private lemma orbitRel_eq_ker_of_exists_apply_eq
         rw [← hφ, Homeomorph.symm_apply_apply]
       simpa [smul_eq_apply] using hinv⟩
 
+/-- If every pair of points with the same projection is connected by a deck transformation,
+then two points of the total space have the same projection exactly when they lie in a common
+orbit of the deck transformation group. The reverse direction holds because deck
+transformations preserve the projection. -/
+lemma apply_eq_iff_mem_orbit_of_exists_apply_eq
+    (hpoint : ∀ {e e' : E}, p e = p e' → ∃ φ : Deck p, φ.1 e = e') {e₁ e₂ : E} :
+    p e₁ = p e₂ ↔ e₁ ∈ MulAction.orbit (Deck p) e₂ := by
+  rw [← MulAction.orbitRel_apply, orbitRel_eq_ker_of_exists_apply_eq hpoint, Setoid.ker_def]
+
 /-- An over-base homeomorphism preserves the corresponding deck-orbit relations. -/
 private lemma orbitRel_homeomorph_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e e' : E) :
     MulAction.orbitRel (Deck p) E e e' ↔
@@ -150,6 +159,12 @@ namespace IsRegular
 lemma orbitQuotientToBase_injective (hreg : IsRegular p) :
     Function.Injective (orbitQuotientToBase p) := by
   exact orbitQuotientToBase_injective_of_exists_apply_eq (isRegular_iff_exists_apply_eq.mp hreg).2
+
+/-- For a regular deck action, two points have the same projection exactly when they lie in a
+common deck orbit. -/
+lemma apply_eq_iff_mem_orbit (hreg : IsRegular p) {e₁ e₂ : E} :
+    p e₁ = p e₂ ↔ e₁ ∈ MulAction.orbit (Deck p) e₂ :=
+  Deck.apply_eq_iff_mem_orbit_of_exists_apply_eq (isRegular_iff_exists_apply_eq.mp hreg).2
 
 /-- A regular deck action identifies the quotient of the total space by deck orbits with the
 base. -/

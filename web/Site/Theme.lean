@@ -23,6 +23,7 @@ def theme : Theme := { Theme.default with
               <a class="brand" href="."><img src="static/header.png" alt="Tau Ceti"/></a>
               <nav class="nav-links">
                 <a href=".">"Home"</a>
+                <a href="statistics">"Statistics"</a>
                 <a href="about">"About"</a>
                 <a href="https://github.com/FormalFrontier/TauCeti">"GitHub"</a>
               </nav>
@@ -83,6 +84,15 @@ def theme : Theme := { Theme.default with
             <div class="card"><h3>"Reductive algebraic groups"</h3></div>
             <div class="card"><h3>"Partial differential equations"</h3></div>
           </div>
+        </section>
+
+        <section class="band growth">
+          <h2 class="section-title">"Growing fast"</h2>
+          <a class="growth-link" href="statistics">
+            <img class="growth-img" src="static/loc-tauceti.svg"
+                 alt="Tau Ceti: lines of Lean by date"/>
+            <span class="growth-cta">"See the statistics →"</span>
+          </a>
         </section>
 
         <section class="band repos">

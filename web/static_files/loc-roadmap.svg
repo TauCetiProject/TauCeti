@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 460"
+     font-family="ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif" role="img"
+     aria-label="Tau Ceti Roadmap — lines written: 5,963 lines as of 2026-06-20">
+  <defs>
+    <linearGradient id="g5eead4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5eead4" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#5eead4" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <style>
+    .grid{stroke:rgba(255,255,255,0.08);stroke-width:1}
+    .axis{stroke:rgba(255,255,255,0.18);stroke-width:1}
+    .ytick{fill:#9aa6c9;font-size:13px;text-anchor:end}
+    .xtick{fill:#9aa6c9;font-size:13px;text-anchor:middle}
+    .title{fill:#eef2fb;font-size:19px;font-weight:600}
+    .sub{fill:#9aa6c9;font-size:13px}
+    .line{fill:none;stroke:#5eead4;stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round}
+    circle{fill:#5eead4}
+  </style>
+  <rect x="0.5" y="0.5" width="899" height="459" rx="12" fill="#101936" stroke="#1b2547"/>
+  <text class="title" x="72" y="30">Tau Ceti Roadmap — lines written</text>
+  <text class="sub" x="72" y="48">5,963 lines as of 2026-06-20</text>
+  <line class="grid" x1="72" y1="408.0" x2="872" y2="408.0"/><text class="ytick" x="60" y="412.0">0</text><line class="grid" x1="72" y1="338.4" x2="872" y2="338.4"/><text class="ytick" x="60" y="342.4">2,000</text><line class="grid" x1="72" y1="268.8" x2="872" y2="268.8"/><text class="ytick" x="60" y="272.8">4,000</text><line class="grid" x1="72" y1="199.2" x2="872" y2="199.2"/><text class="ytick" x="60" y="203.2">6,000</text><line class="grid" x1="72" y1="129.6" x2="872" y2="129.6"/><text class="ytick" x="60" y="133.6">8,000</text><line class="grid" x1="72" y1="60.0" x2="872" y2="60.0"/><text class="ytick" x="60" y="64.0">10,000</text>
+  <line class="axis" x1="72" y1="60" x2="72" y2="408"/>
+  <line class="axis" x1="72" y1="408" x2="872" y2="408"/>
+  <polygon points="72,408 72.0,366.6 448.5,346.1 495.5,329.6 542.6,329.1 683.8,330.2 777.9,330.2 824.9,210.3 872.0,200.5 872,408" fill="url(#g5eead4)"/>
+  <polyline class="line" points="72.0,366.6 448.5,346.1 495.5,329.6 542.6,329.1 683.8,330.2 777.9,330.2 824.9,210.3 872.0,200.5"/>
+  <circle cx="72.0" cy="366.6" r="3"/><circle cx="448.5" cy="346.1" r="3"/><circle cx="495.5" cy="329.6" r="3"/><circle cx="542.6" cy="329.1" r="3"/><circle cx="683.8" cy="330.2" r="3"/><circle cx="777.9" cy="330.2" r="3"/><circle cx="824.9" cy="210.3" r="3"/><circle cx="872.0" cy="200.5" r="3"/>
+  <text class="xtick" x="72.0" y="432">Jun 3</text><text class="xtick" x="448.5" y="432">Jun 11</text><text class="xtick" x="542.6" y="432">Jun 13</text><text class="xtick" x="683.8" y="432">Jun 16</text><text class="xtick" x="777.9" y="432">Jun 18</text><text class="xtick" x="872.0" y="432">Jun 20</text>
+</svg>

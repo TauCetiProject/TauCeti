@@ -27,6 +27,13 @@ rectangle-change theorems can refer to these names without unfolding the point-p
 * `TauCeti.GridDiagram.maslovO_transpose`, `TauCeti.GridDiagram.maslovX_transpose`,
   `TauCeti.GridDiagram.alexander_transpose`: the Maslov and Alexander gradings are invariant
   under the diagonal reflection of a grid state and diagram.
+* `TauCeti.GridDiagram.maslovO_rotate`, `TauCeti.GridDiagram.maslovX_rotate`,
+  `TauCeti.GridDiagram.alexander_rotate`: the Maslov and Alexander gradings are invariant
+  under the half-turn rotation of a grid state and diagram.
+* `TauCeti.GridDiagram.maslovO_swapMarkings`, `TauCeti.GridDiagram.maslovX_swapMarkings`: the
+  two Maslov gradings are exchanged by the marking swap.
+* `TauCeti.GridDiagram.alexander_swapMarkings`: the Alexander grading is negated up to the
+  normalization shift under the marking swap.
 
 ## References
 
@@ -134,6 +141,45 @@ depends only on the common grid size, so it cancels between the two diagrams. -/
 theorem alexander_transpose (x : GridState n) :
     G.transpose.alexander x.transpose = G.alexander x := by
   rw [alexander_def, alexander_def, maslovO_transpose, maslovX_transpose]
+
+/-- The `O`-Maslov grading is invariant under the half-turn rotation. -/
+theorem maslovO_rotate (x : GridState n) :
+    G.rotate.maslovO x.rotate = G.maslovO x := by
+  rw [maslovO_def, maslovO_def, GridState.rotate_pointSet, rotate_OSet,
+    GridPoint.JDiff_image_rev]
+
+/-- The `X`-Maslov grading is invariant under the half-turn rotation. -/
+theorem maslovX_rotate (x : GridState n) :
+    G.rotate.maslovX x.rotate = G.maslovX x := by
+  rw [maslovX_def, maslovX_def, GridState.rotate_pointSet, rotate_XSet,
+    GridPoint.JDiff_image_rev]
+
+/-- The Alexander grading is invariant under the half-turn rotation. The normalization shift
+depends only on the common grid size, so it cancels between the two diagrams. -/
+theorem alexander_rotate (x : GridState n) :
+    G.rotate.alexander x.rotate = G.alexander x := by
+  rw [alexander_def, alexander_def, maslovO_rotate, maslovX_rotate]
+
+/-- The marking swap exchanges the two Maslov gradings: `M_O` of the swap is `M_X`. -/
+@[simp]
+theorem maslovO_swapMarkings (x : GridState n) :
+    G.swapMarkings.maslovO x = G.maslovX x := by
+  rw [maslovO_def, maslovX_def, swapMarkings_OSet]
+
+/-- The marking swap exchanges the two Maslov gradings: `M_X` of the swap is `M_O`. -/
+@[simp]
+theorem maslovX_swapMarkings (x : GridState n) :
+    G.swapMarkings.maslovX x = G.maslovO x := by
+  rw [maslovX_def, maslovO_def, swapMarkings_XSet]
+
+/-- The marking swap negates the Alexander grading, up to the constant normalization shift:
+  `A_swap(x) = -A(x) - (n - 1)`. The grading is built antisymmetrically from the two Maslov
+  gradings, which the swap exchanges, while the shift depends only on the grid size. -/
+@[simp]
+theorem alexander_swapMarkings (x : GridState n) :
+    G.swapMarkings.alexander x = -G.alexander x - (((n : ℤ) - 1 : ℤ) : ℚ) := by
+  rw [alexander_def, alexander_def, maslovO_swapMarkings, maslovX_swapMarkings]
+  ring
 
 end GridDiagram
 

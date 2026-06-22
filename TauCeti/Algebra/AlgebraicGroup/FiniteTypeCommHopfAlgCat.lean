@@ -33,7 +33,7 @@ This is the finite-type coordinate-Hopf-algebra wrapper requested by
 three-way dictionary: an affine group scheme of finite type over `k` is modeled by a
 commutative Hopf `k`-algebra finitely generated as a `k`-algebra. The finite-type algebra
 infrastructure is Mathlib's `FGAlgCat` and `Algebra.FiniteType`; the Hopf algebra category
-and points functor are Tau Ceti's existing `CommHopfAlgCat`.
+is Mathlib's bundled `CommHopfAlgCat`, on top of which Tau Ceti adds the points functor.
 -/
 
 open CategoryTheory
@@ -45,13 +45,13 @@ universe u v w
 /-- The object property on commutative Hopf algebras selecting finite-type coordinate
 algebras. -/
 def finiteTypeCommHopfAlgProperty (R : Type u) [CommRing R] :
-    ObjectProperty (CommHopfAlgCat.{u, v} R) :=
+    ObjectProperty (_root_.CommHopfAlgCat.{v} R) :=
   fun H => Algebra.FiniteType R H
 
 /-- Membership in the finite-type commutative Hopf algebra object property. -/
 @[simp]
 lemma finiteTypeCommHopfAlgProperty_iff {R : Type u} [CommRing R]
-    (H : CommHopfAlgCat.{u, v} R) :
+    (H : _root_.CommHopfAlgCat.{v} R) :
     finiteTypeCommHopfAlgProperty R H ↔ Algebra.FiniteType R H :=
   Iff.rfl
 
@@ -85,12 +85,13 @@ variable (R) in
 typeclasses. -/
 abbrev of (H : Type v) [CommRing H] [_root_.HopfAlgebra R H]
     [Algebra.FiniteType R H] : FiniteTypeCommHopfAlgCat.{u, v} R :=
-  ⟨CommHopfAlgCat.of R H, inferInstanceAs (Algebra.FiniteType R (CommHopfAlgCat.of R H))⟩
+  ⟨_root_.CommHopfAlgCat.of R H,
+    inferInstanceAs (Algebra.FiniteType R (_root_.CommHopfAlgCat.of R H))⟩
 
 /-- Turn a morphism in `FiniteTypeCommHopfAlgCat` back into a bialgebra morphism. -/
 abbrev toBialgHom {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (φ : H ⟶ K) :
     H →ₐc[R] K :=
-  CommHopfAlgCat.toBialgHom φ.hom
+  φ.hom.hom
 
 /-- Typecheck a bialgebra morphism between finite-type commutative Hopf algebras as a
 morphism in `FiniteTypeCommHopfAlgCat`. -/
@@ -98,7 +99,7 @@ abbrev ofHom {H K : Type v} [CommRing H] [CommRing K]
     [_root_.HopfAlgebra R H] [_root_.HopfAlgebra R K]
     [Algebra.FiniteType R H] [Algebra.FiniteType R K] (φ : H →ₐc[R] K) :
     of R H ⟶ of R K :=
-  ObjectProperty.homMk (CommHopfAlgCat.ofHom φ)
+  ObjectProperty.homMk (_root_.CommHopfAlgCat.ofHom φ)
 
 /-- Two morphisms of finite-type commutative Hopf algebras are equal when their underlying
 bialgebra morphisms are equal. -/
@@ -106,7 +107,7 @@ bialgebra morphisms are equal. -/
 lemma hom_ext {H K : FiniteTypeCommHopfAlgCat.{u, v} R} {φ ψ : H ⟶ K}
     (h : toBialgHom φ = toBialgHom ψ) : φ = ψ :=
   ObjectProperty.hom_ext (P := finiteTypeCommHopfAlgProperty R)
-    (CommHopfAlgCat.hom_ext h)
+    (_root_.CommHopfAlgCat.hom_ext h)
 
 @[simp]
 lemma toBialgHom_id {H : FiniteTypeCommHopfAlgCat.{u, v} R} :
@@ -133,14 +134,14 @@ lemma toBialgHom_ofHom {H K : Type v} [CommRing H] [CommRing K]
 
 @[simp]
 lemma forget₂_commHopfAlgCat_obj (H : FiniteTypeCommHopfAlgCat.{u, v} R) :
-    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{u, v} R)).obj H =
+    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (_root_.CommHopfAlgCat.{v} R)).obj H =
       H.obj :=
   rfl
 
 @[simp]
 lemma forget₂_commHopfAlgCat_map {H K : FiniteTypeCommHopfAlgCat.{u, v} R}
     (φ : H ⟶ K) :
-    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{u, v} R)).map φ =
+    (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (_root_.CommHopfAlgCat.{v} R)).map φ =
       φ.hom :=
   rfl
 
@@ -169,7 +170,7 @@ algebra. -/
 noncomputable def pointsFunctor :
     (FiniteTypeCommHopfAlgCat.{u, v} R)ᵒᵖ ⥤ CommAlgCat.{w} R ⥤ GrpCat.{max v w} :=
   CategoryTheory.Functor.op
-      (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (CommHopfAlgCat.{u, v} R)) ⋙
+      (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (_root_.CommHopfAlgCat.{v} R)) ⋙
     CommHopfAlgCat.pointsFunctor (R := R)
 
 /-- The object part of `pointsFunctor` is the points functor of the underlying commutative

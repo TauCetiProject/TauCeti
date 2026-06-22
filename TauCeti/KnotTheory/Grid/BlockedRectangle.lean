@@ -2,6 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.Data.Finset.Card
 import Mathlib.Data.ZMod.Basic
 import TauCeti.KnotTheory.Grid.Rectangle
 
@@ -20,6 +21,16 @@ homology roadmap.
 
 * `TauCeti.GridDiagram.fullyBlockedRectangles`: empty rectangles avoiding all markings.
 * `TauCeti.GridDiagram.fullyBlockedRectangleCount`: the corresponding count in `ZMod 2`.
+
+## Main results
+
+* `TauCeti.GridDiagram.fullyBlockedRectangleCount_transpose`: the count is invariant under the
+  diagonal reflection of a grid diagram and its two states.
+* `TauCeti.GridDiagram.fullyBlockedRectangleCount_rotate`: the count is invariant under the
+  half-turn rotation of a grid diagram and its two states.
+* `TauCeti.GridDiagram.fullyBlockedRectangles_swapMarkings` and
+  `TauCeti.GridDiagram.fullyBlockedRectangleCount_swapMarkings`: the rectangle set and its count
+  are unchanged by swapping the `O` and `X` markings.
 
 ## References
 
@@ -98,6 +109,60 @@ theorem fullyBlockedRectangles_self (x : GridState n) : G.fullyBlockedRectangles
 theorem fullyBlockedRectangleCount_self (x : GridState n) :
     G.fullyBlockedRectangleCount x x = 0 := by
   simp [fullyBlockedRectangleCount]
+
+/-- The diagonal reflection of a fully blocked rectangle is a fully blocked rectangle for the
+reflected diagram. -/
+theorem mem_fullyBlockedRectangles_transpose (x y : GridState n) (R : GridRectangleBetween x y) :
+    R.transpose ∈ G.transpose.fullyBlockedRectangles x.transpose y.transpose ↔
+      R ∈ G.fullyBlockedRectangles x y := by
+  simp only [mem_fullyBlockedRectangles, GridRectangleBetween.isEmpty_transpose,
+    GridRectangleBetween.avoidsMarkings_transpose]
+
+/-- The fully blocked rectangle count is invariant under the diagonal reflection of a grid
+diagram and its two states. This is the matrix-coefficient form of the statement that the
+diagonal reflection is a chain symmetry of the fully blocked grid complex. -/
+theorem fullyBlockedRectangleCount_transpose (x y : GridState n) :
+    G.transpose.fullyBlockedRectangleCount x.transpose y.transpose =
+      G.fullyBlockedRectangleCount x y := by
+  rw [fullyBlockedRectangleCount_def, fullyBlockedRectangleCount_def]
+  congr 1
+  exact (Finset.card_equiv (GridRectangleBetween.transposeEquiv x y) fun R =>
+    (G.mem_fullyBlockedRectangles_transpose x y R).symm).symm
+
+/-- The half-turn rotation of a fully blocked rectangle is a fully blocked rectangle for the
+rotated diagram and rotated states. -/
+theorem mem_fullyBlockedRectangles_rotate (x y : GridState n) (R : GridRectangleBetween x y) :
+    R.rotate ∈ G.rotate.fullyBlockedRectangles x.rotate y.rotate ↔
+      R ∈ G.fullyBlockedRectangles x y := by
+  simp only [mem_fullyBlockedRectangles, GridRectangleBetween.isEmpty_rotate,
+    GridRectangleBetween.avoidsMarkings_rotate]
+
+/-- The fully blocked rectangle count is invariant under the half-turn rotation of a grid diagram
+and its two states. This is the matrix-coefficient form of the statement that the half-turn
+rotation is a chain symmetry of the fully blocked grid complex. -/
+theorem fullyBlockedRectangleCount_rotate (x y : GridState n) :
+    G.rotate.fullyBlockedRectangleCount x.rotate y.rotate =
+      G.fullyBlockedRectangleCount x y := by
+  rw [fullyBlockedRectangleCount_def, fullyBlockedRectangleCount_def]
+  congr 1
+  exact (Finset.card_equiv (GridRectangleBetween.rotateEquiv x y) fun R =>
+    (G.mem_fullyBlockedRectangles_rotate x y R).symm).symm
+
+/-- The fully blocked rectangles are unchanged by swapping the `O` and `X` markings, since
+marking avoidance only refers to the union of the two marking sets. -/
+@[simp]
+theorem fullyBlockedRectangles_swapMarkings (x y : GridState n) :
+    G.swapMarkings.fullyBlockedRectangles x y = G.fullyBlockedRectangles x y := by
+  ext R
+  rw [mem_fullyBlockedRectangles, mem_fullyBlockedRectangles,
+    GridRectangleBetween.avoidsMarkings_swapMarkings]
+
+/-- The fully blocked rectangle count is invariant under swapping the `O` and `X` markings. -/
+@[simp]
+theorem fullyBlockedRectangleCount_swapMarkings (x y : GridState n) :
+    G.swapMarkings.fullyBlockedRectangleCount x y = G.fullyBlockedRectangleCount x y := by
+  rw [fullyBlockedRectangleCount_def, fullyBlockedRectangleCount_def,
+    fullyBlockedRectangles_swapMarkings]
 
 end GridDiagram
 

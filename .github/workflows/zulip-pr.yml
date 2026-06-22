@@ -3,7 +3,10 @@ name: Zulip PR status (lifecycle)
 # Maintain the per-PR message + emoji in the "Tau Ceti" Zulip channel as a PR is
 # opened, reopened, merged, or closed. CI- and review-status changes are handled
 # by zulip-pr-status.yml; this one owns the message's existence and its
-# merged/closed lifecycle. Updates are cosmetic and never fail anything.
+# merged/closed lifecycle. A one-off reaction hiccup is cosmetic and the script
+# swallows it (exit 0); a *config* break (bad ZULIP_API_KEY, bot not subscribed)
+# makes the script exit non-zero so this run goes red -- that is the only way the
+# breakage is visible, since the integration otherwise fails silently.
 
 on:
   pull_request_target:
@@ -30,7 +33,11 @@ jobs:
         with:
           sparse-checkout: scripts/zulip
       - name: Reconcile Zulip reactions
-        continue-on-error: true
+        # No continue-on-error: the script exits 0 for cosmetic/transient hiccups
+        # and non-zero only for a persistent config break, which we *want* loud.
+        # This run going red never blocks a PR: only `build` and `bump-guard` are
+        # required checks, and auto-merge gates on the build status + review
+        # ledger, not on this workflow.
         env:
           GH_TOKEN: ${{ github.token }}
           ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}

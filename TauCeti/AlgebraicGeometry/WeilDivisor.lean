@@ -477,6 +477,68 @@ lemma pointDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x y : X}
     (h : w x = w y) : pointDifference x y ∈ weightedDegreeZeroSubgroup w := by
   simp [h]
 
+/-! ### Degree-corrected point divisors -/
+
+/-- The divisor `[x] - w(x)[x₀]`.
+
+For the geometric weight `w x = [κ(x) : k]` and a rational base point `x₀` with `w x₀ = 1`,
+this is the degree-zero divisor underlying the Abel-Jacobi class of the closed point `x`.
+In the algebraically closed/unweighted specialization, this recovers `pointDifference x x₀`. -/
+noncomputable def weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) : WeilDivisor X :=
+  ofPoint x - w x • ofPoint x₀
+
+/-- At the constant weight `1`, the degree-corrected point divisor is the usual point
+difference. This simp lemma lets unweighted API reuse the weighted construction. -/
+@[simp]
+lemma weightedPointBaseDifference_eq_pointDifference (x₀ x : X) :
+    weightedPointBaseDifference (fun _ : X => (1 : ℤ)) x₀ x = pointDifference x x₀ := by
+  simp [weightedPointBaseDifference, pointDifference]
+
+/-- Coefficients of the degree-corrected point divisor, used as the pointwise simp form of
+`weightedPointBaseDifference`. -/
+@[simp]
+lemma coeff_weightedPointBaseDifference [DecidableEq X] (w : X → ℤ) (x₀ x y : X) :
+    coeff (weightedPointBaseDifference w x₀ x) y =
+      (if y = x then 1 else 0) - if y = x₀ then w x else 0 := by
+  by_cases hyx : y = x
+  · subst y
+    by_cases hx₀ : x = x₀ <;> simp [weightedPointBaseDifference, ofPoint, coeff, hx₀]
+  · by_cases hy₀ : y = x₀
+    · subst y
+      have hx₀ : x₀ ≠ x := by simpa using hyx
+      simp [weightedPointBaseDifference, ofPoint, coeff, hx₀]
+    · simp [weightedPointBaseDifference, ofPoint, coeff, hyx, hy₀]
+
+/-- The support of `[x] - w(x)[x₀]` is contained in `{x, x₀}`. -/
+lemma support_weightedPointBaseDifference_subset [DecidableEq X] (w : X → ℤ) (x₀ x : X) :
+    (weightedPointBaseDifference w x₀ x).support ⊆ {x, x₀} := by
+  intro y hy
+  rw [Finset.mem_insert, Finset.mem_singleton]
+  by_contra hyx
+  push Not at hyx
+  exact Finsupp.mem_support_iff.mp hy (by
+    simp [weightedPointBaseDifference, ofPoint, hyx.1, hyx.2])
+
+/-- If the base point has weight `1`, the divisor `[x₀] - w(x₀)[x₀]` is zero. -/
+@[simp]
+lemma weightedPointBaseDifference_self {w : X → ℤ} {x₀ : X} (hx₀ : w x₀ = 1) :
+    weightedPointBaseDifference w x₀ x₀ = 0 := by
+  simp [weightedPointBaseDifference, hx₀]
+
+/-- The weighted degree of `[x] - w(x)[x₀]` is `w(x) * (1 - w(x₀))`. -/
+@[simp]
+lemma weightedDegree_weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) :
+    weightedDegree w (weightedPointBaseDifference w x₀ x) = w x * (1 - w x₀) := by
+  simp [weightedPointBaseDifference]
+  ring
+
+/-- If the base point has weight `1`, then `[x] - w(x)[x₀]` has weighted degree zero. -/
+@[simp]
+lemma weightedPointBaseDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x₀ : X}
+    (hx₀ : w x₀ = 1) (x : X) :
+    weightedPointBaseDifference w x₀ x ∈ weightedDegreeZeroSubgroup w := by
+  simp [hx₀]
+
 /-- Pushforward as a homomorphism on weighted degree-zero divisors, when the target weight
 pulls back to the source weight. -/
 noncomputable def pushforwardWeightedDegreeZero (wX : X → ℤ) (wY : Y → ℤ) (f : X → Y)

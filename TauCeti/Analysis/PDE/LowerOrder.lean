@@ -295,6 +295,38 @@ lemma opNorm_massForm_le (h : LowerOrderBoundedOn Ω b c beta gamma) {x : X}
 
 end LowerOrderBoundedOn
 
+/-- Pointwise nonnegative zeroth-order coefficients on a domain. -/
+def NonnegMassPointwiseOn (Ω : Set X) (c : X → ℝ) : Prop :=
+  ∀ ⦃x⦄, x ∈ Ω → 0 ≤ c x
+
+/-- Characteristic restatement of pointwise nonnegative mass coefficients. -/
+lemma nonnegMassPointwiseOn_iff {Ω : Set X} {c : X → ℝ} :
+    NonnegMassPointwiseOn Ω c ↔ ∀ ⦃x⦄, x ∈ Ω → 0 ≤ c x :=
+  Iff.rfl
+
+namespace NonnegMassPointwiseOn
+
+variable {Ω Ω' : Set X} {c : X → ℝ}
+
+/-- The mass coefficient is pointwise nonnegative. -/
+@[grind =>]
+lemma nonneg (h : NonnegMassPointwiseOn Ω c) {x : X} (hx : x ∈ Ω) : 0 ≤ c x :=
+  h hx
+
+/-- The mass form associated to a nonnegative mass coefficient is nonnegative on the diagonal. -/
+@[grind =>]
+lemma massForm_self_nonneg (h : NonnegMassPointwiseOn Ω c) {x : X} (hx : x ∈ Ω) (u : ℝ) :
+    0 ≤ massForm (c x) u u := by
+  rw [massForm_apply, mul_assoc]
+  exact mul_nonneg (h.nonneg hx) (mul_self_nonneg u)
+
+/-- Restricting the domain preserves pointwise nonnegative mass coefficients. -/
+lemma mono_set (h : NonnegMassPointwiseOn Ω c) (hΩ : Ω' ⊆ Ω) :
+    NonnegMassPointwiseOn Ω' c :=
+  fun {_} hx => h (hΩ hx)
+
+end NonnegMassPointwiseOn
+
 /-- Nonnegative bounded zeroth-order coefficients on a domain. -/
 def NonnegMassOn (Ω : Set X) (c : X → ℝ) (gamma : ℝ) : Prop :=
   0 ≤ gamma ∧ ∀ ⦃x⦄, x ∈ Ω → 0 ≤ c x ∧ c x ≤ gamma
@@ -319,6 +351,11 @@ lemma gamma_nonneg (h : NonnegMassOn Ω c gamma) : 0 ≤ gamma :=
 @[grind =>]
 lemma nonneg (h : NonnegMassOn Ω c gamma) {x : X} (hx : x ∈ Ω) : 0 ≤ c x :=
   (h.2 hx).1
+
+/-- A nonnegative bounded mass coefficient is pointwise nonnegative. -/
+lemma nonnegMassPointwiseOn (h : NonnegMassOn Ω c gamma) :
+    NonnegMassPointwiseOn Ω c :=
+  fun {_} hx => h.nonneg hx
 
 /-- The mass coefficient is pointwise bounded above. -/
 @[grind =>]
