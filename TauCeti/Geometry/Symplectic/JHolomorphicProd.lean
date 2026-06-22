@@ -20,8 +20,8 @@ symmetric-product targets can use these lemmas without unfolding the Cauchy--Rie
 
 ## Main declarations
 
-* `TauCeti.IsJHolomorphicAt.prod`, `IsJHolomorphicWithinAt.prod`, `IsJHolomorphicOn.prod`,
-  and `IsJHolomorphic.prod`: product maps of `J`-holomorphic maps.
+* `TauCeti.IsJHolomorphicAt.prodMk`, `IsJHolomorphicWithinAt.prodMk`,
+  `IsJHolomorphicOn.prodMk`, and `IsJHolomorphic.prodMk`: product maps of `J`-holomorphic maps.
 * `TauCeti.isJHolomorphicAt_fst` and `isJHolomorphicAt_snd`, with within-set, setwise, and
   global variants: the coordinate projections are `J`-holomorphic.
 * `TauCeti.isJHolomorphicAt_prod_iff`, `isJHolomorphicWithinAt_prod_iff`,
@@ -103,7 +103,7 @@ variable {J₂ : AlmostComplexStructure X}
 
 /-- Pairing two pointwise `J`-holomorphic maps gives a `J`-holomorphic map into the direct-sum
 almost complex structure. -/
-lemma IsJHolomorphicAt.prod {f : V → W} {g : V → X} {x : V}
+lemma IsJHolomorphicAt.prodMk {f : V → W} {g : V → X} {x : V}
     (hf : IsJHolomorphicAt J J₁ f x) (hg : IsJHolomorphicAt J J₂ g x) :
     IsJHolomorphicAt J (J₁.prod J₂) (fun y => (f y, g y)) x := by
   refine ⟨hf.choose.prod hg.choose, hf.hasFDerivAt.prodMk hg.hasFDerivAt, ?_⟩
@@ -111,7 +111,7 @@ lemma IsJHolomorphicAt.prod {f : V → W} {g : V → X} {x : V}
 
 /-- Pairing two maps `J`-holomorphic within a set gives a `J`-holomorphic map into the direct-sum
 almost complex structure. -/
-lemma IsJHolomorphicWithinAt.prod {f : V → W} {g : V → X} {s : Set V} {x : V}
+lemma IsJHolomorphicWithinAt.prodMk {f : V → W} {g : V → X} {s : Set V} {x : V}
     (hf : IsJHolomorphicWithinAt J J₁ f s x)
     (hg : IsJHolomorphicWithinAt J J₂ g s x) :
     IsJHolomorphicWithinAt J (J₁.prod J₂) (fun y => (f y, g y)) s x := by
@@ -120,17 +120,17 @@ lemma IsJHolomorphicWithinAt.prod {f : V → W} {g : V → X} {s : Set V} {x : V
 
 /-- Pairing two maps `J`-holomorphic on a set gives a `J`-holomorphic map into the direct-sum
 almost complex structure. -/
-lemma IsJHolomorphicOn.prod {f : V → W} {g : V → X} {s : Set V}
+lemma IsJHolomorphicOn.prodMk {f : V → W} {g : V → X} {s : Set V}
     (hf : IsJHolomorphicOn J J₁ f s) (hg : IsJHolomorphicOn J J₂ g s) :
     IsJHolomorphicOn J (J₁.prod J₂) (fun y => (f y, g y)) s :=
-  fun x hx => (hf x hx).prod (hg x hx)
+  fun x hx => (hf x hx).prodMk (hg x hx)
 
 /-- Pairing two globally `J`-holomorphic maps gives a `J`-holomorphic map into the direct-sum
 almost complex structure. -/
-lemma IsJHolomorphic.prod {f : V → W} {g : V → X}
+lemma IsJHolomorphic.prodMk {f : V → W} {g : V → X}
     (hf : IsJHolomorphic J J₁ f) (hg : IsJHolomorphic J J₂ g) :
     IsJHolomorphic J (J₁.prod J₂) (fun y => (f y, g y)) :=
-  fun x => (hf x).prod (hg x)
+  fun x => (hf x).prodMk (hg x)
 
 /-- A map into a direct-sum target is pointwise `J`-holomorphic iff both coordinate maps are. -/
 @[simp]
@@ -143,7 +143,7 @@ lemma isJHolomorphicAt_prod_iff (f : V → W × X) (x : V) :
     exact ⟨(isJHolomorphicAt_fst J₁ J₂ (f x)).comp hf,
       (isJHolomorphicAt_snd J₁ J₂ (f x)).comp hf⟩
   · intro h
-    simpa using h.1.prod h.2
+    simpa using h.1.prodMk h.2
 
 /-- A map into a direct-sum target is `J`-holomorphic within a set iff both coordinate maps are. -/
 @[simp]
@@ -156,7 +156,7 @@ lemma isJHolomorphicWithinAt_prod_iff (f : V → W × X) (s : Set V) (x : V) :
     exact ⟨(isJHolomorphicWithinAt_fst J₁ J₂ Set.univ (f x)).comp hf (by simp),
       (isJHolomorphicWithinAt_snd J₁ J₂ Set.univ (f x)).comp hf (by simp)⟩
   · intro h
-    simpa using h.1.prod h.2
+    simpa using h.1.prodMk h.2
 
 /-- A map into a direct-sum target is `J`-holomorphic on a set iff both coordinate maps are. -/
 @[simp]
@@ -170,7 +170,7 @@ lemma isJHolomorphicOn_prod_iff (f : V → W × X) (s : Set V) :
     · exact ((isJHolomorphicWithinAt_prod_iff f s x).mp (hf x hx)).1
     · exact ((isJHolomorphicWithinAt_prod_iff f s x).mp (hf x hx)).2
   · intro h
-    exact h.1.prod h.2
+    exact h.1.prodMk h.2
 
 /-- A map into a direct-sum target is globally `J`-holomorphic iff both coordinate maps are. -/
 @[simp]
@@ -184,7 +184,7 @@ lemma isJHolomorphic_prod_iff (f : V → W × X) :
     · exact ((isJHolomorphicAt_prod_iff f x).mp (hf x)).1
     · exact ((isJHolomorphicAt_prod_iff f x).mp (hf x)).2
   · intro h
-    exact h.1.prod h.2
+    exact h.1.prodMk h.2
 
 end ProductMaps
 
