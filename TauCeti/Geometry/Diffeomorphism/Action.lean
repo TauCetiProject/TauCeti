@@ -42,8 +42,9 @@ its closedness deferred to the topology layer.
   continuous in the point, with the same continuity inherited by the fixing subgroups.
 * `TauCeti.Diffeomorph.toHomeomorphHom_injective` and `smul_toHomeomorph`: the forgetful
   homomorphism is injective and equivariant for the homeomorphism-group action.
-* `TauCeti.Diff.mem_fixing_iff`, `mem_relBoundary_iff`: membership in the fixing subgroups,
-  unfolded to pointwise fixing, and `Diff.relBoundary_eq_fixing` identifying `Diff(M, ∂M)`.
+* `TauCeti.Diff.fixing_eq_fixingSubgroup`, `mem_fixing_iff`, `mem_relBoundary_iff`: the fixing
+  subgroups restated under the `Diff` namespace, with membership unfolded to pointwise fixing,
+  and `Diff.relBoundary_eq_fixing` identifying `Diff(M, ∂M)`.
 -/
 
 namespace TauCeti
@@ -124,6 +125,10 @@ def relBoundary : Subgroup (Diff I M n) :=
   fixing I M n (I.boundary M)
 
 variable {I M n}
+
+/-- `Diff.fixing I M n s` is Mathlib's pointwise fixing subgroup for the tautological action. -/
+theorem fixing_eq_fixingSubgroup (s : Set M) :
+    fixing I M n s = fixingSubgroup (Diff I M n) s := rfl
 
 /-- A self-diffeomorphism lies in `Diff.fixing I M n s` iff it fixes every point of `s`. -/
 @[simp]
