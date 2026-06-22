@@ -2,9 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Algebra.Ring.Parity
 import TauCeti.Geometry.Symplectic.ComplexModule
+import TauCeti.LinearAlgebra.ComplexFinrank
 
 /-!
 # An almost complex structure forces even real dimension
@@ -27,8 +27,6 @@ assumption.
   module structure induced by `J`.
 * `TauCeti.AlmostComplexStructure.complexFinrank_def`: `complexFinrank` is `Module.finrank ℂ V`
   under the induced complex structure.
-* `TauCeti.finrank_real_eq_two_mul_finrank_complex`: a compatible complex module has real
-  dimension twice its complex dimension.
 * `TauCeti.AlmostComplexStructure.finrank_real_eq_two_mul_complexFinrank`: the real dimension is
   twice the complex dimension, `finrank ℝ V = 2 * J.complexFinrank`.
 * `TauCeti.AlmostComplexStructure.even_finrank_real`: the real dimension of a module carrying an
@@ -43,13 +41,6 @@ Section 2.1.
 namespace TauCeti
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
-
-/-- A compatible complex module structure forces the real dimension to be twice the complex
-dimension. This is the tower law `finrank ℝ V = finrank ℝ ℂ * finrank ℂ V` together with
-`finrank ℝ ℂ = 2`. -/
-theorem finrank_real_eq_two_mul_finrank_complex [Module ℂ V] [IsScalarTower ℝ ℂ V] :
-    Module.finrank ℝ V = 2 * Module.finrank ℂ V := by
-  rw [← Module.finrank_mul_finrank ℝ ℂ V, Complex.finrank_real_complex]
 
 namespace AlmostComplexStructure
 
