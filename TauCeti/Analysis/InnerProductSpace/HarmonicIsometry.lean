@@ -11,10 +11,15 @@ Mathlib's `Mathlib/Analysis/InnerProductSpace/Laplacian.lean` records that the L
 commutes with *left* composition by a continuous linear map or equivalence acting on the
 *values* of a function (`ContDiffAt.laplacian_CLM_comp_left`, `laplacian_CLE_comp_left`).
 This file supplies the complementary *right* composition, acting on the *domain* variable: the
-geometric invariance of `Δ` under the rigid motions of a Euclidean space — orthogonal changes
-of variable (linear isometry equivalences) and translations.
+geometric invariance of `Δ` under the rigid motions of a Euclidean space — affine isometry
+equivalences, with orthogonal changes of variable (linear isometry equivalences) and translations
+as special cases.
 
-For a linear isometry equivalence `l : E ≃ₗᵢ[ℝ] E'` and any `f : E' → F`,
+For an affine isometry equivalence `e : E ≃ᵃⁱ[ℝ] E'` and any `f : E' → F`,
+
+`Δ (f ∘ e) = (Δ f) ∘ e`.
+
+In particular, for a linear isometry equivalence `l : E ≃ₗᵢ[ℝ] E'`,
 
 `Δ (f ∘ l) = (Δ f) ∘ l`,
 
@@ -32,13 +37,18 @@ construction of radial harmonic functions (PDE roadmap, Lane C, item 12).
 
 ## Main declarations
 
+* `TauCeti.laplacian_comp_affineIsometryEquiv`: `Δ (f ∘ e) = (Δ f) ∘ e` for an affine
+  isometry equivalence `e`.
 * `TauCeti.laplacian_comp_linearIsometryEquiv`: `Δ (f ∘ l) = (Δ f) ∘ l` for an isometry `l`.
 * `TauCeti.laplacian_comp_add_right`: translation invariance of `Δ`.
+* `TauCeti.harmonicAt_comp_affineIsometryEquiv_iff`,
+  `TauCeti.harmonicOnNhd_comp_affineIsometryEquiv_iff`: harmonicity is invariant under
+  affine isometry equivalences.
 * `TauCeti.harmonicAt_comp_linearIsometryEquiv_iff`,
-  `TauCeti.HarmonicOnNhd.comp_linearIsometryEquiv`: harmonicity is preserved by isometric
-  changes of variable.
-* `TauCeti.harmonicAt_comp_add_right_iff`, `TauCeti.HarmonicOnNhd.comp_add_right`: harmonicity
-  is preserved by translation.
+  `TauCeti.harmonicOnNhd_comp_linearIsometryEquiv_iff`: harmonicity is invariant under
+  linear isometric changes of variable.
+* `TauCeti.harmonicAt_comp_add_right_iff`, `TauCeti.harmonicOnNhd_comp_add_right_iff`:
+  harmonicity is invariant under translation.
 -/
 
 namespace TauCeti
@@ -60,8 +70,8 @@ private theorem iteratedFDeriv_comp_linearIsometryEquiv_apply (l : E ≃ₗᵢ[�
   have h := l.toContinuousLinearEquiv.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ
     (x := x) (Set.mem_univ _) i
   rw [Set.preimage_univ, iteratedFDerivWithin_univ, iteratedFDerivWithin_univ] at h
-  rw [show (f ∘ ⇑l) = f ∘ ⇑l.toContinuousLinearEquiv from rfl, h,
-    ContinuousMultilinearMap.compContinuousLinearMap_apply]
+  rw [← LinearIsometryEquiv.coe_toContinuousLinearEquiv l]
+  rw [h, ContinuousMultilinearMap.compContinuousLinearMap_apply]
   rfl
 
 /-- **Geometric invariance of the Laplacian under isometries.** For a linear isometry
@@ -88,6 +98,23 @@ theorem laplacian_comp_add_right (f : E → F) (a : E) :
   simp only [laplacian_eq_iteratedFDeriv_orthonormalBasis _ (stdOrthonormalBasis ℝ E)]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [iteratedFDeriv_comp_add_right']
+
+/-- **Geometric invariance of the Laplacian under affine isometries.** For an affine isometry
+equivalence `e`, the Laplacian commutes with right composition by `e`:
+`Δ (f ∘ e) = (Δ f) ∘ e`. No differentiability hypothesis is needed. -/
+theorem laplacian_comp_affineIsometryEquiv (e : E ≃ᵃⁱ[ℝ] E') (f : E' → F) :
+    Δ (f ∘ e) = (Δ f) ∘ e := by
+  have hcomp : f ∘ e = (fun y ↦ f (y + e 0)) ∘ e.linearIsometryEquiv := by
+    funext x
+    have hx : e x = e.linearIsometryEquiv x + e 0 := by
+      simpa using e.map_vadd (0 : E) x
+    simp [Function.comp_apply, hx]
+  rw [hcomp, laplacian_comp_linearIsometryEquiv e.linearIsometryEquiv (fun y ↦ f (y + e 0)),
+    laplacian_comp_add_right f (e 0)]
+  ext x
+  have hx : e x = e.linearIsometryEquiv x + e 0 := by
+    simpa using e.map_vadd (0 : E) x
+  simp [Function.comp_apply, hx]
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [InnerProductSpace ℝ E']
   [FiniteDimensional ℝ E'] [NormedSpace ℝ F] in
@@ -119,11 +146,6 @@ theorem harmonicAt_comp_linearIsometryEquiv_iff (l : E ≃ₗᵢ[ℝ] E') {f : E
     rwa [LinearIsometryEquiv.coe_toHomeomorph] at this
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 
-/-- Harmonicity on a neighbourhood of a set is preserved by an isometric change of variable. -/
-theorem HarmonicOnNhd.comp_linearIsometryEquiv {f : E' → F} {s : Set E'} (l : E ≃ₗᵢ[ℝ] E')
-    (hf : HarmonicOnNhd f s) : HarmonicOnNhd (f ∘ l) (l ⁻¹' s) :=
-  fun x hx ↦ (harmonicAt_comp_linearIsometryEquiv_iff l).2 (hf (l x) hx)
-
 /-- **Harmonicity is invariant under translation.** The function `y ↦ f (y + a)` is harmonic
 at `x` iff `f` is harmonic at `x + a`. -/
 theorem harmonicAt_comp_add_right_iff {f : E → F} {x a : E} :
@@ -146,9 +168,60 @@ theorem harmonicAt_comp_add_right_iff {f : E → F} {x a : E} :
     simpa [Function.comp_def] using this
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 
+/-- **Harmonicity is invariant under affine isometries.** For an affine isometry equivalence
+`e`, the function `f ∘ e` is harmonic at `x` iff `f` is harmonic at `e x`. -/
+theorem harmonicAt_comp_affineIsometryEquiv_iff (e : E ≃ᵃⁱ[ℝ] E') {f : E' → F} {x : E} :
+    HarmonicAt (f ∘ e) x ↔ HarmonicAt f (e x) := by
+  have hcomp : f ∘ e = (fun y ↦ f (y + e 0)) ∘ e.linearIsometryEquiv := by
+    funext y
+    have hy : e y = e.linearIsometryEquiv y + e 0 := by
+      simpa using e.map_vadd (0 : E) y
+    simp [Function.comp_apply, hy]
+  rw [hcomp, harmonicAt_comp_linearIsometryEquiv_iff e.linearIsometryEquiv]
+  have hx : e x = e.linearIsometryEquiv x + e 0 := by
+    simpa using e.map_vadd (0 : E) x
+  simpa [hx] using harmonicAt_comp_add_right_iff (f := f) (x := e.linearIsometryEquiv x)
+    (a := e 0)
+
+/-- Harmonicity on a neighbourhood of a set is invariant under an affine isometry equivalence. -/
+theorem harmonicOnNhd_comp_affineIsometryEquiv_iff (e : E ≃ᵃⁱ[ℝ] E') {f : E' → F}
+    {s : Set E'} : HarmonicOnNhd (f ∘ e) (e ⁻¹' s) ↔ HarmonicOnNhd f s := by
+  constructor
+  · intro hf y hy
+    have hpre : e (e.symm y) ∈ s := by simpa using hy
+    have h := hf (e.symm y) hpre
+    simpa using (harmonicAt_comp_affineIsometryEquiv_iff e).1 h
+  · intro hf x hx
+    exact (harmonicAt_comp_affineIsometryEquiv_iff e).2 (hf (e x) hx)
+
+/-- Harmonicity on a neighbourhood of a set is invariant under a linear isometric change of
+variable. -/
+theorem harmonicOnNhd_comp_linearIsometryEquiv_iff (l : E ≃ₗᵢ[ℝ] E') {f : E' → F}
+    {s : Set E'} : HarmonicOnNhd (f ∘ l) (l ⁻¹' s) ↔ HarmonicOnNhd f s := by
+  rw [← LinearIsometryEquiv.coe_toAffineIsometryEquiv l]
+  exact harmonicOnNhd_comp_affineIsometryEquiv_iff l.toAffineIsometryEquiv
+
+/-- Harmonicity on a neighbourhood of a set is invariant under translation. -/
+theorem harmonicOnNhd_comp_add_right_iff {f : E → F} {s : Set E} (a : E) :
+    HarmonicOnNhd (fun y ↦ f (y + a)) ((fun y ↦ y + a) ⁻¹' s) ↔ HarmonicOnNhd f s := by
+  let e : E ≃ᵃⁱ[ℝ] E := AffineIsometryEquiv.constVAdd ℝ E a
+  have hfun : (fun y ↦ f (y + a)) = f ∘ e := by
+    funext y
+    simp [e, Function.comp_apply, add_comm]
+  have hset : ((fun y ↦ y + a) ⁻¹' s) = e ⁻¹' s := by
+    ext y
+    simp [e, add_comm]
+  rw [hfun, hset]
+  exact harmonicOnNhd_comp_affineIsometryEquiv_iff e
+
+/-- Harmonicity on a neighbourhood of a set is preserved by an isometric change of variable. -/
+theorem HarmonicOnNhd.comp_linearIsometryEquiv {f : E' → F} {s : Set E'} (l : E ≃ₗᵢ[ℝ] E')
+    (hf : HarmonicOnNhd f s) : HarmonicOnNhd (f ∘ l) (l ⁻¹' s) :=
+  (harmonicOnNhd_comp_linearIsometryEquiv_iff l).2 hf
+
 /-- Harmonicity on a neighbourhood of a set is preserved by translation. -/
 theorem HarmonicOnNhd.comp_add_right {f : E → F} {s : Set E} (a : E)
     (hf : HarmonicOnNhd f s) : HarmonicOnNhd (fun y ↦ f (y + a)) ((fun y ↦ y + a) ⁻¹' s) :=
-  fun x hx ↦ harmonicAt_comp_add_right_iff.2 (hf (x + a) hx)
+  (harmonicOnNhd_comp_add_right_iff a).2 hf
 
 end TauCeti
