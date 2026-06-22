@@ -27,6 +27,7 @@ weak-derivative Sobolev spaces are available.
   drift and mass coefficients on a domain.
 * `TauCeti.PDE.LowerOrderBoundedOn`: the bundled lower-order bounds.
 * `TauCeti.PDE.NonnegMassOn`: nonnegative bounded mass coefficients.
+* `TauCeti.PDE.MassLowerBoundOn`: a strictly positive lower bound for a mass coefficient.
 * `TauCeti.PDE.driftForm`, `TauCeti.PDE.massForm`: named pointwise lower-order forms.
 -/
 
@@ -327,6 +328,63 @@ lemma mono_set (h : NonnegMassPointwiseOn Ω c) (hΩ : Ω' ⊆ Ω) :
 
 end NonnegMassPointwiseOn
 
+/-- A strictly positive lower bound for a zeroth-order mass coefficient on a domain. -/
+def MassLowerBoundOn (Ω : Set X) (c : X → ℝ) (mu : ℝ) : Prop :=
+  0 < mu ∧ ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x
+
+/-- Characteristic restatement of a positive mass lower bound. -/
+lemma massLowerBoundOn_iff {Ω : Set X} {c : X → ℝ} {mu : ℝ} :
+    MassLowerBoundOn Ω c mu ↔ 0 < mu ∧ ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x :=
+  Iff.rfl
+
+namespace MassLowerBoundOn
+
+variable {Ω Ω' : Set X} {c : X → ℝ} {mu mu' : ℝ}
+
+/-- Constructor from the positivity side condition and the pointwise lower bound. -/
+lemma of_lower_bound (hmu : 0 < mu) (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x) :
+    MassLowerBoundOn Ω c mu :=
+  ⟨hmu, hc⟩
+
+/-- The mass lower-bound constant is positive. -/
+@[grind →]
+lemma mu_pos (h : MassLowerBoundOn Ω c mu) : 0 < mu :=
+  h.1
+
+/-- The mass lower-bound constant is nonnegative. -/
+lemma mu_nonneg (h : MassLowerBoundOn Ω c mu) : 0 ≤ mu :=
+  h.mu_pos.le
+
+/-- The pointwise lower bound supplied by a mass lower-bound hypothesis. -/
+@[grind =>]
+lemma lower_bound (h : MassLowerBoundOn Ω c mu) {x : X} (hx : x ∈ Ω) : mu ≤ c x :=
+  h.2 hx
+
+/-- The mass form associated to a mass lower bound is bounded below on the diagonal. -/
+@[grind =>]
+lemma massForm_self_lower_bound (h : MassLowerBoundOn Ω c mu) {x : X} (hx : x ∈ Ω)
+    (u : ℝ) :
+    mu * u ^ 2 ≤ massForm (c x) u u := by
+  rw [massForm_apply, mul_assoc]
+  simpa [pow_two] using mul_le_mul_of_nonneg_right (h.lower_bound hx) (mul_self_nonneg u)
+
+/-- A positive mass lower bound gives pointwise nonnegativity of the mass coefficient. -/
+lemma nonnegMassPointwiseOn (h : MassLowerBoundOn Ω c mu) :
+    NonnegMassPointwiseOn Ω c :=
+  fun {_} hx => h.mu_nonneg.trans (h.lower_bound hx)
+
+/-- Restricting the domain preserves a mass lower bound. -/
+lemma mono_set (h : MassLowerBoundOn Ω c mu) (hΩ : Ω' ⊆ Ω) :
+    MassLowerBoundOn Ω' c mu :=
+  ⟨h.mu_pos, fun {_} hx => h.lower_bound (hΩ hx)⟩
+
+/-- Decreasing the positive lower-bound constant preserves a mass lower bound. -/
+lemma mono_constant (h : MassLowerBoundOn Ω c mu) (hmu' : 0 < mu') (hmu'_le : mu' ≤ mu) :
+    MassLowerBoundOn Ω c mu' :=
+  ⟨hmu', fun {_} hx => hmu'_le.trans (h.lower_bound hx)⟩
+
+end MassLowerBoundOn
+
 /-- Nonnegative bounded zeroth-order coefficients on a domain. -/
 def NonnegMassOn (Ω : Set X) (c : X → ℝ) (gamma : ℝ) : Prop :=
   0 ≤ gamma ∧ ∀ ⦃x⦄, x ∈ Ω → 0 ≤ c x ∧ c x ≤ gamma
@@ -415,6 +473,11 @@ lemma lowerOrderBoundedOn_zero (Ω : Set X) :
 lemma nonnegMassOn_const_self (Ω : Set X) {c : ℝ} (hc : 0 ≤ c) :
     NonnegMassOn Ω (fun _ => c) c :=
   ⟨hc, fun {_} _ => ⟨hc, le_rfl⟩⟩
+
+/-- A constant positive mass coefficient has itself as a mass lower bound. -/
+lemma massLowerBoundOn_const_self (Ω : Set X) {mu : ℝ} (hmu : 0 < mu) :
+    MassLowerBoundOn Ω (fun _ => mu) mu :=
+  ⟨hmu, fun {_} _ => le_rfl⟩
 
 end PDE
 
