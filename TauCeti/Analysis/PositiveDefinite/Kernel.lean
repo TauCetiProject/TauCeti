@@ -2,9 +2,8 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Matrix.Order
+import Mathlib.Analysis.RCLike.Basic
 import Mathlib.LinearAlgebra.Matrix.PosDef
-import Mathlib.LinearAlgebra.Matrix.Hadamard
 
 /-!
 # Positive-definite kernels
@@ -38,6 +37,11 @@ forms, with no positive-definite-kernel notion, so this is new; no code is vendo
 
 * `TauCeti.isPositiveDefiniteKernel_def`: the bridge to Mathlib's arbitrary-index
   `Matrix.PosSemidef` predicate on `Matrix.of K`.
+* `TauCeti.isPositiveDefiniteKernel_apply_self_nonneg`: diagonal entries of a positive-definite
+  kernel are nonnegative.
+* `TauCeti.isPositiveDefiniteKernel_conj_symm`: positive-definite kernels are
+  conjugate-symmetric.
+* `TauCeti.isPositiveDefiniteKernel_comp`: positive definiteness is preserved by pullback.
 * `TauCeti.isPositiveDefiniteKernel_iff`: the quadratic-form characterization, whose reverse
   direction builds a positive-definite kernel from conjugate symmetry and form nonnegativity.
 * `TauCeti.isPositiveDefiniteKernel_conj_mul`: the rank-one kernels
@@ -64,6 +68,26 @@ full kernel matrix. -/
 theorem isPositiveDefiniteKernel_def (K : α → α → 𝕜) :
     IsPositiveDefiniteKernel K ↔ (Matrix.of fun a b => K a b).PosSemidef := by
   rfl
+
+/-- Diagonal values of a positive-definite kernel are nonnegative. -/
+theorem isPositiveDefiniteKernel_apply_self_nonneg {K : α → α → 𝕜}
+    (hK : IsPositiveDefiniteKernel K) (a : α) : 0 ≤ K a a := by
+  simpa [Finsupp.sum_single_index] using hK.2 (Finsupp.single a 1)
+
+/-- Positive-definite kernels are conjugate-symmetric. -/
+theorem isPositiveDefiniteKernel_conj_symm {K : α → α → 𝕜}
+    (hK : IsPositiveDefiniteKernel K) (a b : α) : conj (K a b) = K b a := by
+  have h := hK.isHermitian.apply b a
+  simp only [Matrix.of_apply] at h
+  rw [starRingEnd_apply]
+  exact h
+
+/-- Pulling back a positive-definite kernel along a map preserves positive definiteness. -/
+theorem isPositiveDefiniteKernel_comp {β : Type z} {K : α → α → 𝕜}
+    (hK : IsPositiveDefiniteKernel K) (f : β → α) :
+    IsPositiveDefiniteKernel (fun a b => K (f a) (f b)) := by
+  rw [isPositiveDefiniteKernel_def]
+  simpa [Matrix.submatrix, Function.comp_def] using hK.submatrix f
 
 private theorem posSemidef_of_support_posSemidef (K : α → α → 𝕜)
     (hHerm : (Matrix.of fun a b => K a b).IsHermitian)
