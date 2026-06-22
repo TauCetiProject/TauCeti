@@ -11,21 +11,18 @@ import TauCeti.KnotTheory.Grid.Gradings
 
 A rectangle `R : GridRectangleBetween x y` exchanges two side columns of the source state `x`,
 so the two point sets `x` and `y` agree on `n - 2` shared squares and differ only at the four
-corners of `R`. `RectangleSwap.lean` records this decomposition; here we feed it through the
-`J`-function additivity (`JFunction.lean`) to read off how the gradings change from `x` to `y`.
+corners of `R`. This file turns that corner/shared-square decomposition into four-corner
+formulas for the change in `J`-pairings and in the Alexander grading.
 
 The `J`-pairing of a state against a fixed marking set is additive over the disjoint corners
 plus the shared part, so the contribution of the `n - 2` shared squares is the *same* for `x`
 and for `y`. In the difference it cancels, leaving a formula in the four corners alone. For the
 `O`- and `X`-marking pairings this is `JO_source_sub_JO_target` and `JX_source_sub_JX_target`.
 
-The general identity `alexander_sub_eq_JX_sub_JO` from `Gradings.lean` rewrites
-`A(x) - A(y)` as `(JX x - JX y) - (JO x - JO y)`: in the expanded Maslov formulas,
-`J(z, z)` cancels inside each state's `M_O(z) - M_X(z)`, while the marking self-pairings and
-normalization shift cancel between the two Alexander gradings. Combining that with the
-rectangle-specific `J`-pairing formulas gives the headline four-corner formula
-`alexander_source_sub_alexander_target`: the Alexander grading change across a rectangle depends
-only on the four corners of `R` and the markings, never on the `n - 2` shared squares.
+Combining those rectangle-specific formulas with the general Alexander-difference identity from
+`Gradings.lean` gives the headline theorem `alexander_source_sub_alexander_target`: the
+Alexander grading change across a rectangle depends only on the four corners of `R` and the
+markings, never on the `n - 2` shared squares.
 
 ## Main results
 
