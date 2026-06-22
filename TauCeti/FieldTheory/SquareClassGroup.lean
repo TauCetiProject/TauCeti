@@ -2,9 +2,8 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Group.Subgroup.Even
-import Mathlib.Algebra.Module.ZMod
 import Mathlib.LinearAlgebra.LinearIndependent.Defs
+import TauCeti.Algebra.Group.ElementaryTwoQuotient
 
 /-!
 # The square-class group `Kˣ ⧸ (Kˣ)²`
@@ -33,31 +32,20 @@ variable {K : Type*} [Field K]
 
 /-- **The square-class group** `Kˣ ⧸ (Kˣ)²`, written additively on `Additive Kˣ`. -/
 abbrev SquareClassGroup (K : Type*) [Field K] : Type _ :=
-  Additive Kˣ ⧸ (Subgroup.square Kˣ).toAddSubgroup
-
-/-- The square-class group is a `ZMod 2`-module: every element has order dividing two, since the
-double of any unit class is the class of a square. -/
-instance : Module (ZMod 2) (SquareClassGroup K) :=
-  QuotientAddGroup.zmodModule fun x => by
-    rw [Additive.mem_toAddSubgroup, Subgroup.mem_square, toMul_nsmul]
-    exact ⟨Additive.toMul x, pow_two _⟩
+  elementaryTwoQuotient Kˣ
 
 /-- The square class of a unit. -/
 def squareClass (u : Kˣ) : SquareClassGroup K :=
-  QuotientAddGroup.mk (Additive.ofMul u)
+  elementaryTwoQuotientMk u
 
 /-- A unit has trivial square class iff it is a square. -/
-@[simp] theorem squareClass_eq_zero_iff (u : Kˣ) : squareClass u = 0 ↔ IsSquare u := by
-  rw [squareClass, QuotientAddGroup.eq_zero_iff, Additive.mem_toAddSubgroup,
-    Subgroup.mem_square]
-  simp
+@[simp] theorem squareClass_eq_zero_iff (u : Kˣ) : squareClass u = 0 ↔ IsSquare u :=
+  elementaryTwoQuotientMk_eq_zero_iff u
 
 /-- The square class of a product is the sum of the square classes. -/
 theorem squareClass_prod {ι : Type*} (S : Finset ι) (d : ι → Kˣ) :
-    squareClass (∏ i ∈ S, d i) = ∑ i ∈ S, squareClass (d i) := by
-  simp only [squareClass, ofMul_prod]
-  rw [← QuotientAddGroup.mk'_apply, map_sum]
-  simp only [QuotientAddGroup.mk'_apply]
+    squareClass (∏ i ∈ S, d i) = ∑ i ∈ S, squareClass (d i) :=
+  elementaryTwoQuotientMk_prod S d
 
 private theorem zmod_two_eq_zero_or_one (t : ZMod 2) : t = 0 ∨ t = 1 := by revert t; decide
 
