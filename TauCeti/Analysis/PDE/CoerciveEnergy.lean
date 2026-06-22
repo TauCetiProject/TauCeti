@@ -114,14 +114,6 @@ lemma isCoercive_energyIntegrand_zero_drift (hlam : 0 < lam) {A : Matrix n n ℝ
   isCoercive_energyIntegrand_of_bounds (beta := 0) (mu := c₀) hlam hA (by simp) le_rfl
     (by simpa using hc₀)
 
-/-- Coercivity of the zero-drift jet bilinear form from a positive mass lower bound. -/
-lemma isCoercive_energyIntegrand_zero_drift_of_lower_bounds (hlam : 0 < lam) (hmu : 0 < mu)
-    {A : Matrix n n ℝ} {c₀ : ℝ}
-    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hc : mu ≤ c₀) :
-    IsCoercive (energyIntegrand A 0 c₀) :=
-  isCoercive_energyIntegrand_zero_drift hlam (hmu.trans_le hc) hA
-
 /-- Coercivity of the pointwise jet bilinear form on a domain from raw lower bounds.
 
 At each point of `Ω`, an ellipticity floor `λ`, a drift bound `β`, and a mass lower bound `μ`
