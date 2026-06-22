@@ -14,10 +14,12 @@ name: pr-build
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
-  # The merge queue tests each entry (PR + current main) before it lands: build the same way and
-  # post the `build` status on the merge-group commit so the queue's required check is satisfied.
-  # The queue is configured group-size 1, so "this PR overlaid on current main" — exactly what the
-  # job already builds — is the merge-group content.
+  # The merge queue tests a batch (one or more PRs combined onto current main) before it lands. We
+  # build the COMBINED merge-group commit and post the `build` status on it so the queue's required
+  # check is satisfied. The merge-group commit's TauCeti/ (all batched PRs) is overlaid onto a
+  # freshly-checked-out TRUSTED base — exactly as for a single PR — so the build config stays
+  # base-trusted and only TauCeti/ code is untrusted, regardless of batch size. A combined diff that
+  # reaches outside TauCeti/ fails the group (the queue then bisects it); see the scope guard.
   merge_group:
     types: [checks_requested]
   workflow_dispatch:
@@ -45,15 +47,20 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           if [ "${{ github.event_name }}" = "merge_group" ]; then
-            # The queue's temp ref encodes the PR: refs/heads/gh-readonly-queue/main/pr-183-<sha>.
-            HEAD_REF='${{ github.event.merge_group.head_ref }}'
-            NUM=$(printf '%s' "$HEAD_REF" | sed -n 's#.*/pr-\([0-9]\{1,\}\)-.*#\1#p')
-            [ -n "$NUM" ] || { echo "::error::could not parse PR number from $HEAD_REF"; exit 1; }
-            SHA=$(gh api "repos/${{ github.repository }}/pulls/$NUM"  --jq .head.sha)
-            REPO=$(gh api "repos/${{ github.repository }}/pulls/$NUM" --jq .head.repo.full_name)
-            BASE_REF='${{ github.event.merge_group.base_ref }}'; BASE_REF="${BASE_REF#refs/heads/}"
-            # The queue's required check must land on the merge-group commit, not the PR head.
+            # Build the COMBINED merge-group commit (current base + ALL batched PRs, squash-merged by
+            # GitHub onto the gh-readonly-queue ref), not any single PR — so a batch is tested as a
+            # whole. The combined commit lives in THIS repo; its TauCeti/ is overlaid onto the trusted
+            # base below, and the required `build` status lands on the merge-group commit.
+            REPO='${{ github.repository }}'
+            SHA='${{ github.event.merge_group.head_sha }}'
+            # Use the IMMUTABLE base SHA the queue synthesized this group on — NOT the mutable `main`
+            # tip, which may have advanced since the group was formed. Building the batch's TauCeti/
+            # over a different base would test (and green-light) the wrong trusted config/pins. This
+            # base_sha drives the trusted base checkout, the combined-diff scope compare, and the bump
+            # merge-base below.
+            BASE_REF='${{ github.event.merge_group.base_sha }}'
             STATUS_SHA='${{ github.event.merge_group.head_sha }}'
+            NUM="merge-group"   # not a single PR; scope/diff use the combined base..head diff below
           elif [ "${{ github.event_name }}" = "pull_request_target" ]; then
             NUM='${{ github.event.pull_request.number }}'
             SHA='${{ github.event.pull_request.head.sha }}'
@@ -78,6 +85,7 @@ jobs:
           echo "num=$NUM"             >> "$GITHUB_OUTPUT"
           echo "sha=$SHA"             >> "$GITHUB_OUTPUT"
           echo "repo=$REPO"           >> "$GITHUB_OUTPUT"
+          echo "base_ref=$BASE_REF"   >> "$GITHUB_OUTPUT"
           echo "mergebase=$MB"        >> "$GITHUB_OUTPUT"
           echo "status_sha=$STATUS_SHA" >> "$GITHUB_OUTPUT"
           echo "Building PR #$NUM @ $SHA from $REPO (status -> $STATUS_SHA, bump delta vs merge-base $MB)"
@@ -85,7 +93,19 @@ jobs:
       - name: Scope guard — PR must touch only TauCeti/ or the root TauCeti.lean (from the trusted GitHub file list)
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
-          files=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" --jq '.[].filename')
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            # The whole batch's combined change set vs the trusted base (every batched PR).
+            files=$(gh api "repos/${{ github.repository }}/compare/${{ steps.pr.outputs.base_ref }}...${{ steps.pr.outputs.sha }}" --jq '.files[].filename')
+            # The compare endpoint caps `.files` at 300. If we hit that, the list may be truncated and
+            # could hide an out-of-scope path — fail closed (route to human); the queue then bisects the
+            # batch into smaller groups that fit under the cap. (Realistic batches are far under 300.)
+            if [ "$(printf '%s\n' "$files" | grep -c .)" -ge 300 ]; then
+              echo "INFRA=1" >> "$GITHUB_ENV"
+              echo "::warning::merge-group combined diff hit the compare 300-file cap — failing closed so the queue bisects"
+            fi
+          else
+            files=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" --jq '.[].filename')
+          fi
           echo "changed files:"; echo "$files"
           # The root TauCeti.lean is allowed alongside TauCeti/: it is the (intentionally
           # empty) library root, normally untouched, but a PR may edit it. It is overlaid
@@ -109,6 +129,10 @@ jobs:
           fi
 
       - name: Diff size guard — additions, deletions, and changed files each ≤ 2000 (trusted GitHub PR totals)
+        # Per-PR cap, enforced when each PR is built on pull_request_target (its entry condition to the
+        # queue). A merge_group batch is the sum of already-capped PRs, so we don't re-cap the combined
+        # size here. (The scope guard's 300-file compare cap still bounds the batch's file count.)
+        if: ${{ github.event_name != 'merge_group' }}
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           # The file-count cap also backstops the scope guard above: the PR files API lists at
@@ -133,7 +157,10 @@ jobs:
       - name: Checkout base (trusted)
         if: ${{ env.INFRA != '1' }}
         uses: actions/checkout@v4
-        with: { path: base, persist-credentials: false }
+        # Pin to the trusted base branch explicitly. For merge_group the event default ref is the
+        # untrusted combined commit, so this is what keeps the build config (lakefile, scripts,
+        # manifest, toolchain) base-trusted; only TauCeti/ is overlaid from the merge-group commit.
+        with: { ref: "${{ steps.pr.outputs.base_ref }}", path: base, persist-credentials: false }
 
       - name: Checkout merge-base config (trusted ancestor — only to scope the PR's pin delta)
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
