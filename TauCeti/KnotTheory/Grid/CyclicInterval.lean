@@ -2,6 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.Data.Fin.Rev
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Order.Circular.ZMod
 
@@ -23,6 +24,8 @@ directions before taking products.
   it is not an endpoint.
 * `TauCeti.Grid.cIoo_union_swap`: the two opposite arcs cover the endpoint complement.
 * `TauCeti.Grid.card_cIoo_add_card_cIoo_swap`: the two arc lengths add to `n - 2`.
+* `TauCeti.Grid.cIoo_image_rev`: reversing a clockwise open arc by `Fin.rev` gives the clockwise
+  open arc with reversed, exchanged endpoints.
 * `TauCeti.Grid.Noninterleaving`: two endpoint pairs lie on the same cyclic side of each other.
 
 ## References
@@ -261,6 +264,32 @@ theorem card_cIoo_add_card_cIoo_swap {a b : Fin n} (h : a ≠ b) :
   rw [Finset.card_erase_of_mem hbmem, Finset.card_erase_of_mem (Finset.mem_univ a),
     Finset.card_univ, Fintype.card_fin] at hcard
   exact hcard
+
+/-- A clockwise open cyclic interval reversed by `Fin.rev` is the clockwise open cyclic interval
+with the two endpoints reversed and exchanged.
+
+Coordinate reversal reverses the cyclic order, so it turns the clockwise arc from `a` to `b` into
+the clockwise arc from `bᵒ` to `aᵒ`. -/
+theorem cIoo_image_rev (a b : Fin n) :
+    (cIoo a b).image Fin.rev = cIoo b.rev a.rev := by
+  ext y
+  rw [Finset.mem_image]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    rw [mem_cIoo] at hx ⊢
+    obtain ⟨hne, hc⟩ := hx
+    refine ⟨fun h => hne (Fin.rev_injective h).symm, ?_⟩
+    have ha := a.isLt; have hb := b.isLt; have hx' := x.isLt
+    simp only [Fin.val_rev]
+    split_ifs at hc ⊢ <;> omega
+  · intro hy
+    refine ⟨Fin.rev y, ?_, Fin.rev_rev y⟩
+    rw [mem_cIoo] at hy ⊢
+    obtain ⟨hne, hc⟩ := hy
+    refine ⟨fun h => hne (by rw [h]), ?_⟩
+    have ha := a.isLt; have hb := b.isLt; have hy' := y.isLt
+    simp only [Fin.val_rev] at hc ⊢
+    split_ifs at hc ⊢ <;> omega
 
 end Grid
 

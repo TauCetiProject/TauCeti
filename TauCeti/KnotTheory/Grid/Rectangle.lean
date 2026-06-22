@@ -2,12 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+import Mathlib.Data.Fin.Rev
 import Mathlib.Data.Finset.Image
 import Mathlib.Data.Finset.Prod
 import Mathlib.Data.Fintype.Card
 import Mathlib.Data.Fintype.Prod
 import TauCeti.KnotTheory.Grid.CyclicInterval
 import TauCeti.KnotTheory.Grid.Diagram
+import TauCeti.KnotTheory.Grid.Rotation
 
 /-!
 # Rectangles in grid diagrams
@@ -28,6 +30,8 @@ finite-set disjointness conditions used for empty rectangles and marking-avoidin
 * `TauCeti.GridRectangle.symm`: the opposite toroidal rectangle with side columns reversed.
 * `TauCeti.GridRectangle.transpose`: the diagonal reflection of a toroidal rectangle, exchanging
   the column and row sides.
+* `TauCeti.GridRectangle.rotate`: the half-turn rotation of a toroidal rectangle, reversing both
+  coordinates.
 * `TauCeti.GridRectangle.interior`: the finite set of squares strictly inside the rectangle.
 * `TauCeti.GridRectangleBetween`: an oriented rectangle from one grid state to another.
 * `TauCeti.GridRectangleBetween.symm`: the opposite oriented rectangle from `y` to `x`.
@@ -35,6 +39,10 @@ finite-set disjointness conditions used for empty rectangles and marking-avoidin
   `x.transpose` to `y.transpose`.
 * `TauCeti.GridRectangleBetween.transposeEquiv`: the diagonal reflection packaged as an involutive
   equivalence with oriented rectangles from `x.transpose` to `y.transpose`.
+* `TauCeti.GridRectangleBetween.rotate`: the half-turn rotation of an oriented rectangle, from
+  `x.rotate` to `y.rotate`.
+* `TauCeti.GridRectangleBetween.rotateEquiv`: the half-turn rotation packaged as an equivalence
+  with oriented rectangles from `x.rotate` to `y.rotate`.
 * `TauCeti.GridRectangleBetween.all`: all oriented rectangles from `x` to `y`.
 * `TauCeti.GridRectangleBetween.emptyRectangles`: the empty rectangles from `x` to `y`.
 
@@ -287,6 +295,49 @@ theorem interior_transpose : R.transpose.interior = R.interior.image Prod.swap :
     rw [mem_interior]
     simp only [mem_columnInterior, mem_rowInterior]
     exact ⟨hcd.2, hcd.1⟩
+
+/-- The half-turn rotation of a toroidal rectangle.
+
+Reversing both coordinates reverses the cyclic order in each direction, so the two vertical sides
+are reversed and exchanged, and likewise the two horizontal sides. -/
+def rotate : GridRectangle n where
+  left := R.right.rev
+  right := R.left.rev
+  bottom := R.top.rev
+  top := R.bottom.rev
+
+/-- The rotated rectangle's left side is the reversed original right side. -/
+@[simp]
+theorem rotate_left : R.rotate.left = R.right.rev :=
+  rfl
+
+/-- The rotated rectangle's right side is the reversed original left side. -/
+@[simp]
+theorem rotate_right : R.rotate.right = R.left.rev :=
+  rfl
+
+/-- The rotated rectangle's bottom side is the reversed original top side. -/
+@[simp]
+theorem rotate_bottom : R.rotate.bottom = R.top.rev :=
+  rfl
+
+/-- The rotated rectangle's top side is the reversed original bottom side. -/
+@[simp]
+theorem rotate_top : R.rotate.top = R.bottom.rev :=
+  rfl
+
+/-- The interior columns of the rotated rectangle are the reversed original interior columns. -/
+theorem columnInterior_rotate : R.rotate.columnInterior = R.columnInterior.image Fin.rev := by
+  simp only [columnInterior, rotate_left, rotate_right, Grid.cIoo_image_rev]
+
+/-- The interior rows of the rotated rectangle are the reversed original interior rows. -/
+theorem rowInterior_rotate : R.rotate.rowInterior = R.rowInterior.image Fin.rev := by
+  simp only [rowInterior, rotate_bottom, rotate_top, Grid.cIoo_image_rev]
+
+/-- The interior of the rotated rectangle is the half-turn rotation of the original interior. -/
+theorem interior_rotate :
+    R.rotate.interior = R.interior.image (Prod.map Fin.rev Fin.rev) := by
+  simp only [interior, Finset.prodMap_image_product, columnInterior_rotate, rowInterior_rotate]
 
 end GridRectangle
 
@@ -761,6 +812,131 @@ states. -/
 theorem avoidsMarkings_swapMarkings (G : GridDiagram n) (R : GridRectangleBetween x y) :
     R.AvoidsMarkings G.swapMarkings ↔ R.AvoidsMarkings G :=
   R.toGridRectangle.avoidsMarkings_swapMarkings G
+
+/-- The half-turn rotation of an oriented rectangle from `x` to `y`, an oriented rectangle from
+`x.rotate` to `y.rotate`.
+
+Reversing both coordinates reverses and exchanges the two side columns: the new initial side is
+the reversed terminal column `R.rightᵒ` and the new terminal side is the reversed initial column
+`R.leftᵒ`. -/
+def rotate (R : GridRectangleBetween x y) : GridRectangleBetween x.rotate y.rotate where
+  left := R.right.rev
+  right := R.left.rev
+  left_ne_right := fun h => R.left_ne_right (Fin.rev_injective h).symm
+  map_left := by
+    simp only [GridState.rotate_apply, Fin.rev_rev, R.map_right]
+  map_right := by
+    simp only [GridState.rotate_apply, Fin.rev_rev, R.map_left]
+  map_of_ne c hl hr := by
+    have h1 : Fin.rev c ≠ R.left := fun h => hr (Fin.rev_eq_iff.mp h)
+    have h2 : Fin.rev c ≠ R.right := fun h => hl (Fin.rev_eq_iff.mp h)
+    simp only [GridState.rotate_apply, R.map_of_ne (Fin.rev c) h1 h2]
+
+/-- The rotated oriented rectangle's initial side column is the reversed terminal side column. -/
+@[simp]
+theorem rotate_left (R : GridRectangleBetween x y) : R.rotate.left = R.right.rev :=
+  rfl
+
+/-- The rotated oriented rectangle's terminal side column is the reversed initial side column. -/
+@[simp]
+theorem rotate_right (R : GridRectangleBetween x y) : R.rotate.right = R.left.rev :=
+  rfl
+
+/-- The rotated oriented rectangle's initial side row is the reversed terminal side row. -/
+@[simp]
+theorem rotate_bottom (R : GridRectangleBetween x y) : R.rotate.bottom = R.top.rev := by
+  simp only [GridRectangleBetween.bottom, GridRectangleBetween.top, rotate_left,
+    GridState.rotate_apply, Fin.rev_rev]
+
+/-- The rotated oriented rectangle's terminal side row is the reversed initial side row. -/
+@[simp]
+theorem rotate_top (R : GridRectangleBetween x y) : R.rotate.top = R.bottom.rev := by
+  simp only [GridRectangleBetween.top, GridRectangleBetween.bottom, rotate_right,
+    GridState.rotate_apply, Fin.rev_rev]
+
+/-- The toroidal rectangle of the rotated oriented rectangle is the rotation of the toroidal
+rectangle. -/
+theorem rotate_toGridRectangle (R : GridRectangleBetween x y) :
+    R.rotate.toGridRectangle = R.toGridRectangle.rotate := by
+  simp only [GridRectangleBetween.toGridRectangle, GridRectangle.rotate, rotate_left, rotate_right,
+    rotate_bottom, rotate_top]
+
+/-- The interior of the rotated oriented rectangle is the half-turn rotation of the interior of
+the original oriented rectangle. -/
+theorem interior_rotate (R : GridRectangleBetween x y) :
+    R.rotate.toGridRectangle.interior =
+      R.toGridRectangle.interior.image (Prod.map Fin.rev Fin.rev) := by
+  rw [rotate_toGridRectangle, GridRectangle.interior_rotate]
+
+/-- The inverse half-turn rotation, an oriented rectangle from `x` to `y` built from one between
+the rotated states. It reverses and exchanges the side columns by the same recipe as `rotate`,
+but lands in `GridRectangleBetween x y` directly; reversal is only an involution up to
+`Fin.rev_rev`, so this avoids transporting along the (non-definitional) state involution. -/
+def rotateSymm (S : GridRectangleBetween x.rotate y.rotate) : GridRectangleBetween x y where
+  left := S.right.rev
+  right := S.left.rev
+  left_ne_right := fun h => S.left_ne_right (Fin.rev_injective h).symm
+  map_left := by
+    have h := S.map_right
+    rw [GridState.rotate_apply, GridState.rotate_apply] at h
+    exact Fin.rev_injective h
+  map_right := by
+    have h := S.map_left
+    rw [GridState.rotate_apply, GridState.rotate_apply] at h
+    exact Fin.rev_injective h
+  map_of_ne c hl hr := by
+    have h1 : Fin.rev c ≠ S.left := fun h => hr (Fin.rev_eq_iff.mp h)
+    have h2 : Fin.rev c ≠ S.right := fun h => hl (Fin.rev_eq_iff.mp h)
+    have h := S.map_of_ne (Fin.rev c) h1 h2
+    rw [GridState.rotate_apply, GridState.rotate_apply, Fin.rev_rev] at h
+    exact Fin.rev_injective h
+
+/-- The inverse rotation's initial side column is the reversed terminal side column. -/
+@[simp]
+theorem rotateSymm_left (S : GridRectangleBetween x.rotate y.rotate) :
+    (rotateSymm S).left = S.right.rev :=
+  rfl
+
+/-- The inverse rotation's terminal side column is the reversed initial side column. -/
+@[simp]
+theorem rotateSymm_right (S : GridRectangleBetween x.rotate y.rotate) :
+    (rotateSymm S).right = S.left.rev :=
+  rfl
+
+/-- The half-turn rotation as an equivalence between oriented rectangles from `x` to `y` and
+oriented rectangles from `x.rotate` to `y.rotate`. -/
+def rotateEquiv (x y : GridState n) :
+    GridRectangleBetween x y ≃ GridRectangleBetween x.rotate y.rotate where
+  toFun := rotate
+  invFun := rotateSymm
+  left_inv R := eq_of_sides (by simp) (by simp)
+  right_inv S := eq_of_sides (by simp) (by simp)
+
+/-- The rotation equivalence applies a rectangle by rotating it. -/
+@[simp]
+theorem rotateEquiv_apply (R : GridRectangleBetween x y) :
+    rotateEquiv x y R = R.rotate :=
+  rfl
+
+/-- The inverse of the rotation equivalence is the inverse rotation. -/
+@[simp]
+theorem rotateEquiv_symm_apply (S : GridRectangleBetween x.rotate y.rotate) :
+    (rotateEquiv x y).symm S = rotateSymm S :=
+  rfl
+
+/-- The half-turn rotation preserves emptiness of a rectangle between grid states. -/
+theorem isEmpty_rotate (R : GridRectangleBetween x y) :
+    R.rotate.IsEmpty ↔ R.IsEmpty := by
+  unfold GridRectangleBetween.IsEmpty GridRectangle.IsEmptyFor
+  rw [interior_rotate, GridState.rotate_pointSet,
+    Finset.disjoint_image (Fin.rev_injective.prodMap Fin.rev_injective)]
+
+/-- The half-turn rotation preserves marking avoidance of a rectangle between grid states. -/
+theorem avoidsMarkings_rotate (G : GridDiagram n) (R : GridRectangleBetween x y) :
+    R.rotate.AvoidsMarkings G.rotate ↔ R.AvoidsMarkings G := by
+  unfold GridRectangleBetween.AvoidsMarkings GridRectangle.AvoidsMarkings
+  rw [interior_rotate, G.rotate_OSet, G.rotate_XSet, ← Finset.image_union,
+    Finset.disjoint_image (Fin.rev_injective.prodMap Fin.rev_injective)]
 
 end GridRectangleBetween
 
