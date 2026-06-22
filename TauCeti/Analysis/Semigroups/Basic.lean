@@ -695,6 +695,104 @@ private theorem StronglyContinuousSemigroup.tendsto_average_resolvent_integrand
     filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
     rw [one_div, intervalIntegral.integral_of_le (le_of_lt ht), hg_eq t ht])
 
+private theorem StronglyContinuousSemigroup.intervalIntegrable_orbit
+    (S : StronglyContinuousSemigroup X) (x : X) {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    IntervalIntegrable (fun u => S.operator u x) volume a b := by
+  have h_cont : ContinuousOn (fun u => S.operator u x) (Set.Ici 0) :=
+    fun u hu => S.strongContAt x u hu
+  exact (h_cont.mono fun u hu => by
+    exact (le_inf ha hb).trans hu.1).intervalIntegrable
+
+private theorem StronglyContinuousSemigroup.local_integral_shift_identity
+    (S : StronglyContinuousSemigroup X) (x : X) {t h : ℝ} (ht : 0 < t) (hh : 0 < h) :
+    S.operator h (∫ u in (0 : ℝ)..t, S.operator u x) -
+        ∫ u in (0 : ℝ)..t, S.operator u x =
+      (∫ u in t..t + h, S.operator u x) - ∫ u in (0 : ℝ)..h, S.operator u x := by
+  set f := fun u => S.operator u x
+  have hf_zero_t : IntervalIntegrable f volume (0 : ℝ) t :=
+    S.intervalIntegrable_orbit x le_rfl ht.le
+  have hf_h_th : IntervalIntegrable f volume h (t + h) :=
+    S.intervalIntegrable_orbit x hh.le (by linarith)
+  have hf_zero_h : IntervalIntegrable f volume (0 : ℝ) h :=
+    S.intervalIntegrable_orbit x le_rfl hh.le
+  have hf_h_zero : IntervalIntegrable f volume h (0 : ℝ) := hf_zero_h.symm
+  have h_push : S.operator h (∫ u in (0 : ℝ)..t, f u) = ∫ u in h..t + h, f u := by
+    rw [← (S.operator h).intervalIntegral_comp_comm hf_zero_t]
+    rw [intervalIntegral.integral_congr (g := fun u => f (u + h))]
+    · simp [zero_add]
+    · intro u hu
+      have hu_nonneg : 0 ≤ u := by
+        rw [Set.uIcc_of_le ht.le] at hu
+        exact hu.1
+      change S.operator h (S.operator u x) = S.operator (u + h) x
+      rw [← ContinuousLinearMap.comp_apply, ← S.semigroup h u hh.le hu_nonneg, add_comm]
+  have h_sub :
+      (∫ u in h..t + h, f u) - ∫ u in (0 : ℝ)..t, f u =
+        (∫ u in t..t + h, f u) - ∫ u in (0 : ℝ)..h, f u := by
+    exact intervalIntegral.integral_interval_sub_interval_comm'
+      hf_h_th hf_zero_t hf_h_zero
+  rw [h_push, h_sub]
+
+private theorem StronglyContinuousSemigroup.tendsto_average_orbit_at
+    (S : StronglyContinuousSemigroup X) (x : X) {t : ℝ} (ht : 0 < t) :
+    Filter.Tendsto (fun h => (1 / h) • ∫ u in t..t + h, S.operator u x)
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds (S.operator t x)) := by
+  set f := fun u => S.operator u x
+  have h_cont_at : ContinuousAt f t := by
+    have h := S.strongContAt x t ht.le
+    rwa [nhdsWithin_eq_nhds.2 (Ici_mem_nhds ht)] at h
+  have h_ftc : HasDerivAt (fun u => ∫ z in t..u, f z) (f t) t :=
+    intervalIntegral.integral_hasDerivAt_right
+      IntervalIntegrable.refl
+      ((ContinuousAt.stronglyMeasurableAtFilter (μ := volume) isOpen_Ioi
+        (s := Set.Ioi (0 : ℝ)) (f := f) (by
+          intro u hu
+          have h := S.strongContAt x u hu.le
+          rwa [nhdsWithin_eq_nhds.2 (Ici_mem_nhds hu)] at h)) t ht)
+      h_cont_at
+  have h_slope := h_ftc.tendsto_slope_zero_right
+  simpa [f, one_div, intervalIntegral.integral_same] using h_slope
+
+private theorem StronglyContinuousSemigroup.integral_orbit_mem_domain
+    (S : StronglyContinuousSemigroup X) (x : X) {t : ℝ} (ht : 0 < t) :
+    (∫ u in Set.Ioc 0 t, S.operator u x) ∈ S.domain := by
+  rw [S.mem_domain_iff_tendsto]
+  refine ⟨S.operator t x - x, ?_⟩
+  set y := ∫ u in (0 : ℝ)..t, S.operator u x
+  have h_zero : Filter.Tendsto
+      (fun h => (1 / h) • ∫ u in (0 : ℝ)..h, S.operator u x)
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds x) := by
+    have h := S.tendsto_average_resolvent_integrand 0 x
+    refine h.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with h hh
+    rw [intervalIntegral.integral_of_le hh.le]
+    simp
+  have h_t : Filter.Tendsto
+      (fun h => (1 / h) • ∫ u in t..t + h, S.operator u x)
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds (S.operator t x)) :=
+    S.tendsto_average_orbit_at x ht
+  have h_lim := h_t.sub h_zero
+  have h_interval : Filter.Tendsto
+      (fun h => (1 / h) • (S.operator h y - y))
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds (S.operator t x - x)) := by
+    refine h_lim.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with h hh
+    rw [StronglyContinuousSemigroup.local_integral_shift_identity S x ht hh]
+    rw [smul_sub]
+  simpa [y, intervalIntegral.integral_of_le ht.le] using h_interval
+
+/-- The generator domain of a strongly continuous semigroup is dense
+([EN] Lemma II.1.3 and its density corollary). -/
+theorem StronglyContinuousSemigroup.dense_domain
+    (S : StronglyContinuousSemigroup X) : Dense (S.domain : Set X) := by
+  intro x
+  refine mem_closure_of_tendsto
+    (f := fun t => (1 / t) • ∫ u in Set.Ioc 0 t, S.operator u x)
+    (b := nhdsWithin 0 (Set.Ioi (0 : ℝ))) ?_ ?_
+  · simpa using S.tendsto_average_resolvent_integrand 0 x
+  · filter_upwards [self_mem_nhdsWithin] with t ht
+    exact S.domain.smul_mem (1 / t) (S.integral_orbit_mem_domain x ht)
+
 /-- The generator difference quotient for `R(λ)x` converges to `λ R(λ)x - x`.
 This is the core computation shared by `resolvent_mem_domain` and `resolventRightInv`. -/
 private theorem StronglyContinuousSemigroup.resolvent_generator_tendsto
