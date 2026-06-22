@@ -42,7 +42,7 @@ its closedness deferred to the topology layer.
   continuous in the point, with the same continuity inherited by the fixing subgroups.
 * `TauCeti.Diffeomorph.toHomeomorphHom_injective` and `smul_toHomeomorph`: the forgetful
   homomorphism is injective and equivariant for the homeomorphism-group action.
-* `TauCeti.Diff.fixing_def`, `relBoundary_def`, `mem_fixing_iff`, `mem_relBoundary_iff`: the fixing
+* `TauCeti.Diff.fixing_eq_fixingSubgroup`, `mem_fixing_iff`, `mem_relBoundary_iff`: the fixing
   subgroups restated under the `Diff` namespace, with membership unfolded to pointwise fixing,
   and `Diff.relBoundary_eq_fixing` identifying `Diff(M, ∂M)`.
 -/
@@ -126,10 +126,6 @@ def relBoundary : Subgroup (Diff I M n) :=
 
 variable {I M n}
 
-/-- The defining equation for `Diff.fixing`. -/
-theorem fixing_def (s : Set M) :
-    fixing I M n s = fixingSubgroup (Diff I M n) s := rfl
-
 /-- `Diff.fixing I M n s` is Mathlib's pointwise fixing subgroup for the tautological action. -/
 theorem fixing_eq_fixingSubgroup (s : Set M) :
     fixing I M n s = fixingSubgroup (Diff I M n) s := rfl
@@ -139,9 +135,6 @@ theorem fixing_eq_fixingSubgroup (s : Set M) :
 theorem mem_fixing_iff {s : Set M} {f : Diff I M n} :
     f ∈ fixing I M n s ↔ ∀ x ∈ s, f x = x :=
   mem_fixingSubgroup_iff (Diff I M n)
-
-/-- The defining equation for `Diff.relBoundary`. -/
-theorem relBoundary_def : relBoundary I M n = fixing I M n (I.boundary M) := rfl
 
 /-- `Diff(M, ∂M)` is the subgroup fixing the boundary pointwise. -/
 theorem relBoundary_eq_fixing : relBoundary I M n = fixing I M n (I.boundary M) := rfl
