@@ -33,7 +33,7 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- A set `S` of intermediate fields, each of the form `K⟮x⟯` for some `x` in a fixed set `T`, is
 contained in the image of `T` under `x ↦ K⟮x⟯`. -/
-theorem subset_image_adjoin_simple {S : Set (IntermediateField K L)} {T : Set L}
+private theorem subset_image_adjoin_simple {S : Set (IntermediateField K L)} {T : Set L}
     (h : ∀ E ∈ S, ∃ x ∈ T, E = K⟮x⟯) :
     S ⊆ (fun x => (K⟮x⟯ : IntermediateField K L)) '' T := fun E hE => by
   obtain ⟨x, hx, rfl⟩ := h E hE
