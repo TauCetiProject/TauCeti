@@ -64,7 +64,8 @@ lemma hom_mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     (mkQuotient H I).hom = HopfIdeal.mkBialgHom I :=
   _root_.CommHopfAlgCat.hom_ofHom _
 
-@[deprecated (since := "2026-06-22")]
+/-- Deprecated compatibility alias for `hom_mkQuotient`. -/
+@[deprecated hom_mkQuotient (since := "2026-06-22")]
 alias toBialgHom_mkQuotient := hom_mkQuotient
 
 /-- The quotient morphism sends an element to its quotient class. -/
@@ -102,7 +103,8 @@ lemma hom_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (liftQuotient I f hf).hom = HopfIdeal.liftBialgHom I f.hom hf :=
   _root_.CommHopfAlgCat.hom_ofHom _
 
-@[deprecated (since := "2026-06-22")]
+/-- Deprecated compatibility alias for `hom_liftQuotient`. -/
+@[deprecated hom_liftQuotient (since := "2026-06-22")]
 alias toBialgHom_liftQuotient := hom_liftQuotient
 
 /-- The quotient lift evaluates on quotient classes as the original morphism. -/
