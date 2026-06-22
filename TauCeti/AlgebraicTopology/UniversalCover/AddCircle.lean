@@ -4,14 +4,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import Mathlib.Topology.Instances.AddCircle.Defs
 import TauCeti.Algebra.Group.ZMultiples
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.QuotientAddGroup
+import TauCeti.AlgebraicTopology.UniversalCover.Deck
 
 /-!
 # The deck transformation group of the quotient map `𝕜 → AddCircle p`
 
-For a topological additive commutative group `𝕜`, this file specializes the quotient-map deck
-computation from `TauCeti.AlgebraicTopology.UniversalCover.Deck.QuotientAddGroup` to
-`H = zmultiples p`. Since `AddCircle p = 𝕜 ⧸ zmultiples p`, it gives
+For a topological additive commutative group `𝕜`, this file computes the deck transformations
+of the quotient map `𝕜 → AddCircle p`. Since `AddCircle p = 𝕜 ⧸ zmultiples p`, it gives
 
   `Deck ((↑) : 𝕜 → AddCircle p) ≃* Multiplicative (zmultiples p)`.
 
@@ -57,12 +56,15 @@ moves every point within the period subgroup `zmultiples p`. -/
 @[simp]
 theorem mem_addCircleCoe {φ : 𝕜 ≃ₜ 𝕜} :
     φ ∈ Deck ((↑) : 𝕜 → AddCircle p) ↔ ∀ e, φ e - e ∈ zmultiples p :=
-  mem_quotientMk
+  by
+    rw [mem_iff]
+    exact forall_congr' fun e => QuotientAddGroup.eq_iff_sub_mem
 
 /-- Right translation by an element of `zmultiples p`, as a deck transformation of
 `(↑) : 𝕜 → AddCircle p`. -/
 def addRightZMultiples (a : zmultiples p) : Deck ((↑) : 𝕜 → AddCircle p) :=
-  addRightQuotient a
+  ⟨Homeomorph.addRight (a : 𝕜), mem_addCircleCoe.2 fun e => by
+    simpa only [Homeomorph.coe_addRight, add_sub_cancel_left] using a.2⟩
 
 @[simp]
 theorem addRightZMultiples_apply (a : zmultiples p) (e : 𝕜) :
@@ -71,30 +73,62 @@ theorem addRightZMultiples_apply (a : zmultiples p) (e : 𝕜) :
 
 @[simp]
 theorem addRightZMultiples_zero : addRightZMultiples (0 : zmultiples p) = 1 := by
-  exact addRightQuotient_zero
+  apply Subtype.ext
+  ext e
+  simp
 
 @[simp]
 theorem addRightZMultiples_add (a b : zmultiples p) :
     addRightZMultiples (a + b) = addRightZMultiples a * addRightZMultiples b := by
-  exact addRightQuotient_add a b
+  apply Subtype.ext
+  ext e
+  simp only [Subgroup.coe_mul, Homeomorph.mul_apply, addRightZMultiples_apply]
+  push_cast
+  abel
 
 theorem addRightZMultiples_injective :
     Function.Injective (addRightZMultiples : zmultiples p → Deck ((↑) : 𝕜 → AddCircle p)) := by
-  exact addRightQuotient_injective
+  intro _ _ h
+  have := congrArg (fun φ : Deck ((↑) : 𝕜 → AddCircle p) => φ.1 0) h
+  simpa using this
 
 /-- On a preconnected domain with totally disconnected period subgroup, a deck transformation of
 `(↑) : 𝕜 → AddCircle p` is right translation by `φ 0`. -/
 theorem addCircleCoe_eq_add_apply_zero [PreconnectedSpace 𝕜]
     [TotallyDisconnectedSpace (zmultiples p)] (φ : Deck ((↑) : 𝕜 → AddCircle p)) (e : 𝕜) :
     φ.1 e = e + φ.1 0 := by
-  exact quotientMk_eq_add_apply_zero φ e
+  have hmem : ∀ x, φ.1 x - x ∈ zmultiples p := mem_addCircleCoe.1 φ.2
+  have hcont : Continuous fun x => φ.1 x - x := φ.1.continuous.sub continuous_id
+  have key :
+      (⟨φ.1 e - e, hmem e⟩ : zmultiples p) = ⟨φ.1 0 - 0, hmem 0⟩ :=
+    TotallyDisconnectedSpace.eq_of_continuous _ (hcont.subtype_mk hmem) e 0
+  have h : φ.1 e - e = φ.1 0 - 0 := congrArg Subtype.val key
+  rw [sub_zero, sub_eq_iff_eq_add] at h
+  rw [h, add_comm]
+
+private def addRightZMultiplesHom :
+    Multiplicative (zmultiples p) →* Deck ((↑) : 𝕜 → AddCircle p) where
+  toFun a := addRightZMultiples a.toAdd
+  map_one' := addRightZMultiples_zero
+  map_mul' _ _ := addRightZMultiples_add _ _
+
+private theorem addRightZMultiplesHom_apply (a : Multiplicative (zmultiples p)) :
+    addRightZMultiplesHom a = addRightZMultiples a.toAdd :=
+  rfl
 
 /-- The deck transformation group of `(↑) : 𝕜 → AddCircle p` on a preconnected domain with
 totally disconnected period subgroup is the group of translations by the period subgroup. -/
 noncomputable def addCircleMulEquiv [PreconnectedSpace 𝕜]
     [TotallyDisconnectedSpace (zmultiples p)] :
     Multiplicative (zmultiples p) ≃* Deck ((↑) : 𝕜 → AddCircle p) :=
-  quotientMulEquiv
+  MulEquiv.ofBijective addRightZMultiplesHom <| by
+    refine ⟨fun a b h => ?_, fun φ => ?_⟩
+    · exact Multiplicative.toAdd.injective (addRightZMultiples_injective h)
+    · refine ⟨Multiplicative.ofAdd ⟨φ.1 0, by simpa using mem_addCircleCoe.1 φ.2 0⟩, ?_⟩
+      apply Subtype.ext
+      ext e
+      rw [addRightZMultiplesHom_apply]
+      simpa using (addCircleCoe_eq_add_apply_zero φ e).symm
 
 @[simp]
 theorem addCircleMulEquiv_apply [PreconnectedSpace 𝕜] [TotallyDisconnectedSpace (zmultiples p)]
@@ -106,7 +140,12 @@ theorem addCircleMulEquiv_apply [PreconnectedSpace 𝕜] [TotallyDisconnectedSpa
 theorem addCircleMulEquiv_symm_apply_coe [PreconnectedSpace 𝕜]
     [TotallyDisconnectedSpace (zmultiples p)] (φ : Deck ((↑) : 𝕜 → AddCircle p)) :
     ((addCircleMulEquiv.symm φ).toAdd : 𝕜) = φ.1 0 := by
-  exact quotientMulEquiv_symm_apply_coe φ
+  calc
+    ((addCircleMulEquiv.symm φ).toAdd : 𝕜) =
+        (addRightZMultiples (addCircleMulEquiv.symm φ).toAdd).1 0 := by simp
+    _ = (addCircleMulEquiv (addCircleMulEquiv.symm φ)).1 0 := by
+        rw [addCircleMulEquiv_apply]
+    _ = φ.1 0 := by rw [MulEquiv.apply_symm_apply]
 
 /-- For a non-torsion period, the deck transformation group of the quotient map
 `(↑) : 𝕜 → AddCircle p` on a preconnected domain with totally disconnected period subgroup is
