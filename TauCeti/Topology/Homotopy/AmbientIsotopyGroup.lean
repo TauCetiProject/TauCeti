@@ -128,7 +128,7 @@ theorem finalHomeomorph_one : (1 : AmbientIsotopy Y).finalHomeomorph = 1 := by
   exact (Homeomorph.one_apply y).symm
 
 /-- The time-`1` homeomorphism of a pointwise product is the product (in `Y ≃ₜ Y`) of the
-time-`1` homeomorphisms, in the opposite order. -/
+time-`1` homeomorphisms in the same order; `finalHomeomorph` is a homomorphism. -/
 @[simp]
 theorem finalHomeomorph_mul (Φ Ψ : AmbientIsotopy Y) :
     (Φ * Ψ).finalHomeomorph = Φ.finalHomeomorph * Ψ.finalHomeomorph := by
