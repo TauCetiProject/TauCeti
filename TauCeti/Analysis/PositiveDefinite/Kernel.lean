@@ -178,13 +178,7 @@ theorem isPositiveDefiniteKernel_iff {K : α → α → 𝕜} :
         ∀ {ι : Type*} [Fintype ι] (v : ι → α) (x : ι → 𝕜),
           0 ≤ ∑ i, ∑ j, conj (x i) * x j * K (v i) (v j) := by
   classical
-  refine ⟨fun hK => ⟨?_, ?_⟩, fun ⟨hsymm, hpos⟩ => ?_⟩
-  · intro a b
-    have hK' := (isPositiveDefiniteKernel_def K).mp hK
-    have h := hK'.isHermitian.apply b a
-    simp only [Matrix.of_apply] at h
-    rw [starRingEnd_apply]
-    exact h
+  refine ⟨fun hK => ⟨isPositiveDefiniteKernel_conj_symm hK, ?_⟩, fun ⟨hsymm, hpos⟩ => ?_⟩
   · intro ι _ v x
     have hgram : (Matrix.of fun i j => K (v i) (v j)).PosSemidef := by
       have hK' := (isPositiveDefiniteKernel_def K).mp hK
@@ -200,7 +194,6 @@ theorem isPositiveDefiniteKernel_iff {K : α → α → 𝕜} :
   · intro x
     let e : ULift (Fin (Fintype.card x.support)) ≃ x.support :=
       Equiv.ulift.trans (Fintype.equivFin x.support).symm
-    let M : Matrix x.support x.support 𝕜 := Matrix.of fun i j => K (i : α) (j : α)
     refine (Matrix.posSemidef_submatrix_equiv e).mp ?_
     rw [Matrix.posSemidef_iff_dotProduct_mulVec]
     refine ⟨?_, fun y => ?_⟩
