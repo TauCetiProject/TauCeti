@@ -18,33 +18,30 @@ injective and intertwines this action with the tautological homeomorphism-group 
 `TauCeti.Topology.Algebra.HomeomorphAction`. It mirrors `Equiv.Perm.applyMulAction` and
 `TauCeti.Homeomorph.applyMulAction`, one rung up the regularity ladder.
 
-The action is what lets Mathlib's `MulAction.fixingSubgroup` name **`Diff(M, ∂M)`**, the subgroup
-of self-diffeomorphisms fixing the boundary `∂M` pointwise. The geometric-topology roadmap
+The action is what lets Mathlib's `MulAction.fixingSubgroup` define **`Diff(M, ∂M)`**, the
+subgroup of self-diffeomorphisms fixing the boundary `∂M` pointwise. The geometric-topology roadmap
 (`TauCetiRoadmap/GeometricTopology/README.md`, layer 3, "diffeomorphism groups with the C^∞
 topology") asks for it directly: "`Diff(M, ∂M)` is the closed subgroup fixing `∂M` pointwise, for
 the relative statements" — the natural home of the relative homotopy classes
 `π_k(Diff(D⁴, ∂))` that Watanabe's disproof of the 4-dimensional Smale conjecture
 (`[Kir97, Problem 4.126]`) lives in. With the C^∞ topology a separate later deliverable, this
-file stops at the group-action and subgroup level: `Diff(M, ∂M)` is defined here as a subgroup,
-its closedness deferred to the topology layer.
+file stops at the group-action and subgroup level: `Diff(M, ∂M)` is the relevant instance of
+Mathlib's pointwise-fixing subgroup, with closedness deferred to the topology layer.
 
 ## Main definitions
 
 * `TauCeti.Diffeomorph.applyMulAction`: the `MulAction (Diff I M n) M` with `f • x = f x`.
 * `TauCeti.Diffeomorph.toHomeomorphHom`: the forgetful group homomorphism `Diff I M n →* (M ≃ₜ M)`.
-* `TauCeti.Diff.fixing`: the subgroup of self-diffeomorphisms fixing a set `s ⊆ M` pointwise,
-  i.e. `MulAction.fixingSubgroup (Diff I M n) s`.
 * `TauCeti.Diff.relBoundary`: `Diff(M, ∂M)`, the subgroup fixing the boundary `∂M` pointwise.
 
 ## Main results
 
 * `TauCeti.Diffeomorph.applyFaithfulSMul`, `applyContinuousConstSMul`: the action is faithful and
-  continuous in the point, with the same continuity inherited by the fixing subgroups.
+  continuous in the point, with the same continuity inherited by `Diff(M, ∂M)`.
 * `TauCeti.Diffeomorph.toHomeomorphHom_injective` and `smul_toHomeomorph`: the forgetful
   homomorphism is injective and equivariant for the homeomorphism-group action.
-* `TauCeti.Diff.fixing_eq_fixingSubgroup`, `mem_fixing_iff`, `mem_relBoundary_iff`: the fixing
-  subgroups restated under the `Diff` namespace, with membership unfolded to pointwise fixing,
-  and `Diff.relBoundary_eq_fixing` identifying `Diff(M, ∂M)`.
+* `TauCeti.Diff.relBoundary_eq_fixingSubgroup`, `mem_relBoundary_iff`: `Diff(M, ∂M)` identified
+  with Mathlib's pointwise-fixing subgroup, with membership unfolded to pointwise fixing.
 -/
 
 namespace TauCeti
@@ -112,62 +109,28 @@ namespace Diff
 
 variable (I M n)
 
-/-- The subgroup of self-diffeomorphisms fixing a set `s ⊆ M` pointwise, defined as Mathlib's
-`MulAction.fixingSubgroup` for the tautological action. The relative diffeomorphism groups of
-geometric topology are instances: see `Diff.relBoundary`. -/
-def fixing (s : Set M) : Subgroup (Diff I M n) :=
-  fixingSubgroup (Diff I M n) s
-
 /-- `Diff(M, ∂M)`, the subgroup of self-diffeomorphisms fixing the boundary `∂M` pointwise. The
 roadmap's relative diffeomorphism group, the home of the relative homotopy classes
 `π_k(Diff(M, ∂M))`. -/
 def relBoundary : Subgroup (Diff I M n) :=
-  fixing I M n (I.boundary M)
+  fixingSubgroup (Diff I M n) (I.boundary M)
 
 variable {I M n}
 
-/-- `Diff.fixing I M n s` is Mathlib's pointwise fixing subgroup for the tautological action. -/
-theorem fixing_eq_fixingSubgroup (s : Set M) :
-    fixing I M n s = fixingSubgroup (Diff I M n) s := rfl
-
-/-- A self-diffeomorphism lies in `Diff.fixing I M n s` iff it fixes every point of `s`. -/
-@[simp]
-theorem mem_fixing_iff {s : Set M} {f : Diff I M n} :
-    f ∈ fixing I M n s ↔ ∀ x ∈ s, f x = x :=
-  mem_fixingSubgroup_iff (Diff I M n)
-
-/-- `Diff(M, ∂M)` is the subgroup fixing the boundary pointwise. -/
-theorem relBoundary_eq_fixing : relBoundary I M n = fixing I M n (I.boundary M) := rfl
+/-- `Diff(M, ∂M)` is Mathlib's pointwise-fixing subgroup for the tautological action. -/
+theorem relBoundary_eq_fixingSubgroup :
+    relBoundary I M n = fixingSubgroup (Diff I M n) (I.boundary M) := rfl
 
 /-- A self-diffeomorphism lies in `Diff(M, ∂M)` iff it fixes every boundary point. -/
 @[simp]
 theorem mem_relBoundary_iff {f : Diff I M n} :
     f ∈ relBoundary I M n ↔ ∀ x ∈ I.boundary M, f x = x :=
-  mem_fixing_iff
-
-/-- The action of a pointwise-fixing subgroup remains continuous in the point. -/
-instance fixing.applyContinuousConstSMul (s : Set M) :
-    ContinuousConstSMul (fixing I M n s) M :=
-  ⟨fun f => f.1.continuous⟩
+  mem_fixingSubgroup_iff (Diff I M n)
 
 /-- The action of `Diff(M, ∂M)` remains continuous in the point. -/
 instance relBoundary.applyContinuousConstSMul :
     ContinuousConstSMul (relBoundary I M n) M :=
-  fixing.applyContinuousConstSMul (I := I) (M := M) (n := n) (I.boundary M)
-
-/-- Fixing more points cuts out a smaller subgroup. -/
-theorem fixing_antitone : Antitone (fixing I M n : Set M → Subgroup (Diff I M n)) :=
-  fixingSubgroup_antitone (Diff I M n) M
-
-/-- Fixing the empty set imposes no condition: the whole self-diffeomorphism group. -/
-@[simp]
-theorem fixing_empty : fixing I M n (∅ : Set M) = ⊤ :=
-  fixingSubgroup_empty (Diff I M n) M
-
-/-- Fixing a union is fixing each part. -/
-theorem fixing_union (s t : Set M) :
-    fixing I M n (s ∪ t) = fixing I M n s ⊓ fixing I M n t :=
-  fixingSubgroup_union (Diff I M n) M
+  ⟨fun f => f.1.continuous⟩
 
 end Diff
 
