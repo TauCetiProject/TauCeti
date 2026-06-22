@@ -484,7 +484,7 @@ theorem final_refl (y : Y) : (refl Y).final y = y := rfl
 @[simp]
 theorem homeomorph_refl (t : I) : (refl Y).homeomorph t = Homeomorph.refl Y := by
   ext y
-  rw [homeomorph_apply]
+  rw [homeomorph_apply, Homeomorph.refl_apply]
   rfl
 
 /-- The final homeomorphism of the constant ambient isotopy is the identity. -/
