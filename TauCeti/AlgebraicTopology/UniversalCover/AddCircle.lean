@@ -2,8 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Topology.Covering.AddCircle
+import Mathlib.Topology.Algebra.Group.Basic
 import Mathlib.Topology.Connected.TotallyDisconnected
+import Mathlib.Topology.Instances.AddCircle.Defs
 import TauCeti.Algebra.Group.ZMultiples
 import TauCeti.AlgebraicTopology.UniversalCover.Deck
 
@@ -33,7 +34,7 @@ universal-covers roadmap target `π₁(S¹) ≅ ℤ` (Stage 4).
   transformation of `(↑) : 𝕜 → AddCircle p`.
 * `TauCeti.Deck.addCircleMulEquiv`: the deck group of `(↑) : 𝕜 → AddCircle p` is
   `Multiplicative (zmultiples p)`.
-* `TauCeti.Deck.addCircleMulEquivMultInt`: for a non-torsion period, the deck group is
+* `TauCeti.Deck.addCircleMulEquivInt`: for a non-torsion period, the deck group is
   `Multiplicative ℤ`.
 
 ## References
@@ -89,14 +90,14 @@ theorem addRightZMultiples_injective :
   have := congrArg (fun φ : Deck ((↑) : 𝕜 → AddCircle p) => φ.1 0) h
   simpa using this
 
-/-- On a preconnected base with discrete period subgroup, a deck transformation of
+/-- On a preconnected domain with totally disconnected period subgroup, a deck transformation of
 `(↑) : 𝕜 → AddCircle p` is right translation by `φ 0`. -/
-theorem eq_add_apply_zero [PreconnectedSpace 𝕜] [DiscreteTopology (zmultiples p)]
+theorem eq_add_apply_zero [PreconnectedSpace 𝕜] [TotallyDisconnectedSpace (zmultiples p)]
     (φ : Deck ((↑) : 𝕜 → AddCircle p)) (e : 𝕜) : φ.1 e = e + φ.1 0 := by
   have hmem : ∀ x, φ.1 x - x ∈ zmultiples p := mem_addCircleCoe.1 φ.2
   have hcont : Continuous fun x => φ.1 x - x := φ.1.continuous.sub continuous_id
   have key : (⟨φ.1 e - e, hmem e⟩ : zmultiples p) = ⟨φ.1 0 - 0, hmem 0⟩ :=
-    PreconnectedSpace.constant ‹PreconnectedSpace 𝕜› (hcont.subtype_mk hmem)
+    TotallyDisconnectedSpace.eq_of_continuous _ (hcont.subtype_mk hmem) e 0
   have h : φ.1 e - e = φ.1 0 - 0 := congrArg Subtype.val key
   rw [sub_zero, sub_eq_iff_eq_add] at h
   rw [h, add_comm]
@@ -115,9 +116,10 @@ theorem addRightZMultiplesHom_apply (a : Multiplicative (zmultiples p)) :
     addRightZMultiplesHom p a = addRightZMultiples a.toAdd :=
   rfl
 
-/-- The deck transformation group of the covering `(↑) : 𝕜 → AddCircle p` of a preconnected
-base with discrete period subgroup is the group of translations by the period subgroup. -/
-noncomputable def addCircleMulEquiv [PreconnectedSpace 𝕜] [DiscreteTopology (zmultiples p)] :
+/-- The deck transformation group of `(↑) : 𝕜 → AddCircle p` on a preconnected domain with
+totally disconnected period subgroup is the group of translations by the period subgroup. -/
+noncomputable def addCircleMulEquiv [PreconnectedSpace 𝕜]
+    [TotallyDisconnectedSpace (zmultiples p)] :
     Multiplicative (zmultiples p) ≃* Deck ((↑) : 𝕜 → AddCircle p) :=
   MulEquiv.ofBijective (addRightZMultiplesHom p) <| by
     refine ⟨fun a b h => ?_, fun φ => ?_⟩
@@ -128,24 +130,46 @@ noncomputable def addCircleMulEquiv [PreconnectedSpace 𝕜] [DiscreteTopology (
       simpa using (eq_add_apply_zero φ e).symm
 
 @[simp]
-theorem addCircleMulEquiv_apply [PreconnectedSpace 𝕜] [DiscreteTopology (zmultiples p)]
+theorem addCircleMulEquiv_apply [PreconnectedSpace 𝕜] [TotallyDisconnectedSpace (zmultiples p)]
     (a : Multiplicative (zmultiples p)) :
     addCircleMulEquiv a = addRightZMultiples a.toAdd :=
   rfl
 
+@[simp]
+theorem addCircleMulEquiv_symm_apply_coe [PreconnectedSpace 𝕜]
+    [TotallyDisconnectedSpace (zmultiples p)] (φ : Deck ((↑) : 𝕜 → AddCircle p)) :
+    ((addCircleMulEquiv.symm φ).toAdd : 𝕜) = φ.1 0 := by
+  calc
+    ((addCircleMulEquiv.symm φ).toAdd : 𝕜) =
+        (addRightZMultiples (addCircleMulEquiv.symm φ).toAdd).1 0 := by simp
+    _ = (addCircleMulEquiv (addCircleMulEquiv.symm φ)).1 0 := by
+        rw [addCircleMulEquiv_apply]
+    _ = φ.1 0 := by rw [MulEquiv.apply_symm_apply]
+
 /-- For a non-torsion period, the deck transformation group of the covering
-`(↑) : 𝕜 → AddCircle p` of a preconnected base is infinite cyclic: `Multiplicative ℤ`. For
+`(↑) : 𝕜 → AddCircle p` on a preconnected domain is infinite cyclic: `Multiplicative ℤ`. For
 `𝕜 = ℝ` this is the deck group of the universal cover `ℝ → S¹`. -/
-noncomputable def addCircleMulEquivMultInt [PreconnectedSpace 𝕜]
-    [DiscreteTopology (zmultiples p)] (hp : ¬ IsOfFinAddOrder p) :
+noncomputable def addCircleMulEquivInt [PreconnectedSpace 𝕜]
+    [TotallyDisconnectedSpace (zmultiples p)] (hp : ¬ IsOfFinAddOrder p) :
     Multiplicative ℤ ≃* Deck ((↑) : 𝕜 → AddCircle p) :=
   (intEquivZMultiples hp).toMultiplicative.trans addCircleMulEquiv
 
 @[simp]
-theorem addCircleMulEquivMultInt_apply [PreconnectedSpace 𝕜]
-    [DiscreteTopology (zmultiples p)] (hp : ¬ IsOfFinAddOrder p) (a : Multiplicative ℤ) (e : 𝕜) :
-    (addCircleMulEquivMultInt hp a).1 e = e + a.toAdd • p := by
-  simp [addCircleMulEquivMultInt]
+theorem addCircleMulEquivInt_apply [PreconnectedSpace 𝕜]
+    [TotallyDisconnectedSpace (zmultiples p)] (hp : ¬ IsOfFinAddOrder p) (a : Multiplicative ℤ)
+    (e : 𝕜) :
+    (addCircleMulEquivInt hp a).1 e = e + a.toAdd • p := by
+  simp [addCircleMulEquivInt]
+
+theorem addCircleMulEquivInt_symm_zsmul_apply_zero [PreconnectedSpace 𝕜]
+    [TotallyDisconnectedSpace (zmultiples p)] (hp : ¬ IsOfFinAddOrder p)
+    (φ : Deck ((↑) : 𝕜 → AddCircle p)) :
+    ((addCircleMulEquivInt hp).symm φ).toAdd • p = φ.1 0 := by
+  have happly :=
+    addCircleMulEquivInt_apply hp ((addCircleMulEquivInt hp).symm φ) (0 : 𝕜)
+  have hzero := congrArg (fun ψ : Deck ((↑) : 𝕜 → AddCircle p) => ψ.1 0)
+    (MulEquiv.apply_symm_apply (addCircleMulEquivInt hp) φ)
+  exact (by simpa using happly.symm.trans hzero)
 
 end Deck
 

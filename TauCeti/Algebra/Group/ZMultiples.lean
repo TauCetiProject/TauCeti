@@ -42,4 +42,19 @@ theorem intEquivZMultiples_apply (hp : ¬ IsOfFinAddOrder p) (n : ℤ) :
     (intEquivZMultiples hp n : G) = n • p :=
   by simp [intEquivZMultiples]
 
+@[simp]
+theorem intEquivZMultiples_symm_mk_zsmul (hp : ¬ IsOfFinAddOrder p) (n : ℤ) :
+    (intEquivZMultiples hp).symm
+      ⟨n • p, mem_zmultiples_iff.2 ⟨n, rfl⟩⟩ = n := by
+  have h : intEquivZMultiples hp n = ⟨n • p, mem_zmultiples_iff.2 ⟨n, rfl⟩⟩ := by
+    ext
+    simp
+  rw [← h]
+  simp
+
+theorem intEquivZMultiples_symm_zsmul (hp : ¬ IsOfFinAddOrder p) (a : zmultiples p) :
+    ((intEquivZMultiples hp).symm a) • p = (a : G) := by
+  rw [← intEquivZMultiples_apply hp ((intEquivZMultiples hp).symm a)]
+  simp
+
 end TauCeti
