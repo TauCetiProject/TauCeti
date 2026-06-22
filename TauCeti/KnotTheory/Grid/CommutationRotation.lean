@@ -28,6 +28,9 @@ sends these arcs to the reversed images of the corresponding arcs in the marking
   of the original diagram.
 * `TauCeti.GridDiagram.mem_columnArc_rotate` and `TauCeti.GridDiagram.mem_rowArc_rotate`: pointwise
   membership forms of those image formulas.
+* `TauCeti.GridDiagram.columnsNoninterleaving_rotate` and
+  `TauCeti.GridDiagram.rowsNoninterleaving_rotate`: the commutation hypotheses are transported by
+  half-turn rotation.
 
 ## References
 
@@ -39,41 +42,31 @@ Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 
 namespace TauCeti
 
+private theorem mem_cIoo_rev_rev {n : ℕ} (a b x : Fin n) :
+    x.rev ∈ Grid.cIoo a.rev b.rev ↔ x ∈ Grid.cIoo b a := by
+  rw [← Grid.cIoo_image_rev b a, Finset.mem_image]
+  constructor
+  · rintro ⟨y, hy, hyx⟩
+    rw [← Fin.rev_injective hyx]
+    exact hy
+  · intro hx
+    exact ⟨x, hx, rfl⟩
+
+private theorem noninterleaving_rev {n : ℕ} (a₀ a₁ b₀ b₁ : Fin n) :
+    Grid.Noninterleaving a₀.rev a₁.rev b₀.rev b₁.rev ↔
+      Grid.Noninterleaving a₁ a₀ b₁ b₀ := by
+  rw [Grid.Noninterleaving, Grid.Noninterleaving]
+  constructor
+  · rintro ⟨hab, hba⟩
+    exact ⟨by simpa only [mem_cIoo_rev_rev] using hab.symm,
+      by simpa only [mem_cIoo_rev_rev] using hba.symm⟩
+  · rintro ⟨hab, hba⟩
+    exact ⟨by simpa only [mem_cIoo_rev_rev] using hab.symm,
+      by simpa only [mem_cIoo_rev_rev] using hba.symm⟩
+
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
-
-/-- In the rotated diagram, the `O` marking in row `r` lies in the reversed column of the
-original `O` marking in row `r.rev`. -/
-@[simp]
-theorem OColumnOfRow_rotate (r : Fin n) :
-    OColumnOfRow G.rotate r = (OColumnOfRow G r.rev).rev := by
-  apply G.rotate.O.toPerm.injective
-  rw [OColumnOfRow_apply]
-  simp [GridState.rotate_apply, Fin.rev_rev]
-
-/-- In the rotated diagram, the `X` marking in row `r` lies in the reversed column of the
-original `X` marking in row `r.rev`. -/
-@[simp]
-theorem XColumnOfRow_rotate (r : Fin n) :
-    XColumnOfRow G.rotate r = (XColumnOfRow G r.rev).rev := by
-  apply G.rotate.X.toPerm.injective
-  rw [XColumnOfRow_apply]
-  simp [GridState.rotate_apply, Fin.rev_rev]
-
-/-- Swapping the `O` and `X` markings turns the `O` row-to-column lookup into the original
-`X` row-to-column lookup. -/
-@[simp]
-theorem OColumnOfRow_swapMarkings (r : Fin n) :
-    OColumnOfRow G.swapMarkings r = XColumnOfRow G r :=
-  rfl
-
-/-- Swapping the `O` and `X` markings turns the `X` row-to-column lookup into the original
-`O` row-to-column lookup. -/
-@[simp]
-theorem XColumnOfRow_swapMarkings (r : Fin n) :
-    XColumnOfRow G.swapMarkings r = OColumnOfRow G r :=
-  rfl
 
 /-- The column arc of the rotated diagram is the coordinate reversal of the opposite oriented
 column arc in the original diagram. The `swapMarkings` appears because `Fin.rev` reverses the
@@ -94,12 +87,21 @@ theorem mem_columnArc_rotate (c r : Fin n) :
   · intro hr
     exact ⟨r.rev, hr, Fin.rev_rev r⟩
 
+/-- Column non-interleaving is preserved by half-turn rotation, with the cyclic orientation
+reversal accounted for by swapping the two marking states. -/
+@[simp]
+theorem columnsNoninterleaving_rotate (a b : Fin n) :
+    ColumnsNoninterleaving G.rotate a b ↔
+      ColumnsNoninterleaving G.swapMarkings a.rev b.rev := by
+  simpa [ColumnsNoninterleaving] using
+    (noninterleaving_rev (G.O a.rev) (G.X a.rev) (G.O b.rev) (G.X b.rev))
+
 /-- The row arc of the rotated diagram is the coordinate reversal of the opposite oriented row
 arc in the original diagram. The `swapMarkings` appears because `Fin.rev` reverses the cyclic
 orientation. -/
 theorem rowArc_rotate (r : Fin n) :
     rowArc G.rotate r = (rowArc G.swapMarkings r.rev).image Fin.rev := by
-  simp [rowArc, Grid.cIoo_image_rev]
+  simp [rowArc, Grid.cIoo_image_rev, OColumnOfRow_rotate, XColumnOfRow_rotate]
 
 /-- Membership in a rotated row arc is membership of the reversed column in the opposite oriented
 row arc of the original diagram. -/
@@ -112,6 +114,15 @@ theorem mem_rowArc_rotate (r c : Fin n) :
     rwa [← hsc, Fin.rev_rev]
   · intro hc
     exact ⟨c.rev, hc, Fin.rev_rev c⟩
+
+/-- Row non-interleaving is preserved by half-turn rotation, with the cyclic orientation reversal
+accounted for by swapping the two marking states. -/
+@[simp]
+theorem rowsNoninterleaving_rotate (a b : Fin n) :
+    RowsNoninterleaving G.rotate a b ↔ RowsNoninterleaving G.swapMarkings a.rev b.rev := by
+  simpa [RowsNoninterleaving] using
+    (noninterleaving_rev (OColumnOfRow G a.rev) (XColumnOfRow G a.rev)
+      (OColumnOfRow G b.rev) (XColumnOfRow G b.rev))
 
 end GridDiagram
 

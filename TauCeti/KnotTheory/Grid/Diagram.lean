@@ -927,40 +927,43 @@ def swapMarkings (G : GridDiagram n) : GridDiagram n where
 
 /-- The `O`-marking state of the marking swap is the original `X`-marking state. -/
 @[simp]
-theorem swapMarkings_O : G.swapMarkings.O = G.X :=
-  rfl
+theorem swapMarkings_O : G.swapMarkings.O = G.X := rfl
 
 /-- The `X`-marking state of the marking swap is the original `O`-marking state. -/
 @[simp]
-theorem swapMarkings_X : G.swapMarkings.X = G.O :=
-  rfl
+theorem swapMarkings_X : G.swapMarkings.X = G.O := rfl
+
+/-- Swapping markings changes the `O` row lookup to the original `X` row lookup. -/
+@[simp]
+theorem OColumnOfRow_swapMarkings (r : Fin n) :
+    OColumnOfRow G.swapMarkings r = XColumnOfRow G r := rfl
+
+/-- Swapping markings changes the `X` row lookup to the original `O` row lookup. -/
+@[simp]
+theorem XColumnOfRow_swapMarkings (r : Fin n) :
+    XColumnOfRow G.swapMarkings r = OColumnOfRow G r := rfl
 
 /-- The `O`-marking set of the marking swap is the original `X`-marking set. -/
 @[simp]
-theorem swapMarkings_OSet : G.swapMarkings.OSet = G.XSet :=
-  rfl
+theorem swapMarkings_OSet : G.swapMarkings.OSet = G.XSet := rfl
 
 /-- The `X`-marking set of the marking swap is the original `O`-marking set. -/
 @[simp]
-theorem swapMarkings_XSet : G.swapMarkings.XSet = G.OSet :=
-  rfl
+theorem swapMarkings_XSet : G.swapMarkings.XSet = G.OSet := rfl
 
 /-- Membership in the marking swap's `O`-marking set is membership in the original
 `X`-marking set. -/
 @[simp]
 theorem mem_OSet_swapMarkings (p : Fin n × Fin n) :
-    p ∈ G.swapMarkings.OSet ↔ p ∈ G.XSet :=
-  Iff.rfl
+    p ∈ G.swapMarkings.OSet ↔ p ∈ G.XSet := Iff.rfl
 
 /-- Membership in the marking swap's `X`-marking set is membership in the original
 `O`-marking set. -/
 @[simp]
 theorem mem_XSet_swapMarkings (p : Fin n × Fin n) :
-    p ∈ G.swapMarkings.XSet ↔ p ∈ G.OSet :=
-  Iff.rfl
+    p ∈ G.swapMarkings.XSet ↔ p ∈ G.OSet := Iff.rfl
 
-/-- The marking swap is an involution: exchanging the two marking states twice restores the
-grid diagram. -/
+/-- The marking swap is an involution. -/
 @[simp]
 theorem swapMarkings_swapMarkings : G.swapMarkings.swapMarkings = G := by
   ext c <;> simp [swapMarkings]
@@ -980,19 +983,16 @@ theorem relabelColumns_swapMarkings (κ : Equiv.Perm (Fin n)) :
 /-- Row swaps commute with exchanging the two marking states. -/
 @[simp]
 theorem swapRows_swapMarkings (a b : Fin n) :
-    (G.swapRows a b).swapMarkings = G.swapMarkings.swapRows a b := by
-  simp [swapRows]
+    (G.swapRows a b).swapMarkings = G.swapMarkings.swapRows a b := by simp [swapRows]
 
 /-- Column swaps commute with exchanging the two marking states. -/
 @[simp]
 theorem swapColumns_swapMarkings (a b : Fin n) :
-    (G.swapColumns a b).swapMarkings = G.swapMarkings.swapColumns a b := by
-  simp [swapColumns]
+    (G.swapColumns a b).swapMarkings = G.swapMarkings.swapColumns a b := by simp [swapColumns]
 
 /-- The marking swap commutes with the diagonal reflection of a grid diagram. -/
 @[simp]
 theorem swapMarkings_transpose : G.swapMarkings.transpose = G.transpose.swapMarkings := by
   ext c <;> simp [swapMarkings]
 end GridDiagram
-
 end TauCeti
