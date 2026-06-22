@@ -2,7 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Topology.Homotopy.AmbientIsotopic
+import TauCeti.Topology.Homotopy.Isotopy
 
 /-!
 # Conjugating ambient isotopies by homeomorphisms
@@ -28,7 +28,7 @@ point-set statement.
 
 ## Main results
 
-* `TauCeti.AmbientIsotopy.conj_finalHomeomorph`: the final homeomorphism of `Φ.conj h` is the
+* `TauCeti.AmbientIsotopy.finalHomeomorph_conj`: the final homeomorphism of `Φ.conj h` is the
   conjugate `h * Φ.finalHomeomorph * h⁻¹`.
 -/
 
@@ -59,6 +59,7 @@ noncomputable def conj (h : Y ≃ₜ Y) : AmbientIsotopy Y where
     exact (((Homeomorph.refl I).prodCongr h).isHomeomorph.comp Φ.isHomeomorph_total).comp
       ((Homeomorph.refl I).prodCongr h.symm).isHomeomorph
   map_zero_left' y := by
+    -- `change` only unfolds the `ContinuousMap` `coe_mk` projection on the total map.
     change h (Φ.toContinuousMap (0, h.symm y)) = y
     rw [Φ.map_zero_left, h.apply_symm_apply]
 
@@ -67,14 +68,15 @@ theorem conj_apply (h : Y ≃ₜ Y) (p : I × Y) :
     (Φ.conj h).toContinuousMap p = h (Φ.toContinuousMap (p.1, h.symm p.2)) := rfl
 
 @[simp]
-theorem conj_final (h : Y ≃ₜ Y) (y : Y) : (Φ.conj h).final y = h (Φ.final (h.symm y)) := rfl
+theorem final_conj (h : Y ≃ₜ Y) (y : Y) : (Φ.conj h).final y = h (Φ.final (h.symm y)) := rfl
 
 /-- The final homeomorphism of a conjugated ambient isotopy is the conjugate of the final
 homeomorphism: `(Φ.conj h).finalHomeomorph = h * Φ.finalHomeomorph * h⁻¹`. -/
-theorem conj_finalHomeomorph (h : Y ≃ₜ Y) :
+@[simp]
+theorem finalHomeomorph_conj (h : Y ≃ₜ Y) :
     (Φ.conj h).finalHomeomorph = h * Φ.finalHomeomorph * h⁻¹ := by
   ext y
-  simp only [finalHomeomorph_apply, conj_final, Homeomorph.mul_apply, Homeomorph.inv_apply]
+  simp only [finalHomeomorph_apply, final_conj, Homeomorph.mul_apply, Homeomorph.inv_apply]
 
 end AmbientIsotopy
 
