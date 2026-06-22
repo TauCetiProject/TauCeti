@@ -30,7 +30,9 @@ square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGroup` f
 * `TauCeti.ClassGroup.elementaryTwoQuotient`: the quotient `Cl(R) ⧸ Cl(R)²`, a `ZMod 2`-module.
 * `TauCeti.ClassGroup.elementaryTwoQuotientMk` and `elementaryTwoQuotientMk_eq_zero_iff`: the class
   of an ideal class, trivial iff that class is a square; `elementaryTwoQuotientMk_mul`,
-  `elementaryTwoQuotientMk_one`, and `elementaryTwoQuotientMk_prod` record its additivity.
+  `elementaryTwoQuotientMk_one`, and `elementaryTwoQuotientMk_prod` record its additivity, while
+  `elementaryTwoQuotientMk_surjective` and `elementaryTwoQuotientMk_eq_iff` give surjectivity and
+  the equality criterion.
 * `TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`,
   the quotient and the 2-torsion subgroup have equal cardinality.
 * `TauCeti.ClassGroup.twoRank` and `card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
@@ -69,6 +71,16 @@ classes. -/
 theorem elementaryTwoQuotientMk_prod {ι : Type*} (S : Finset ι) (C : ι → ClassGroup R) :
     elementaryTwoQuotientMk R (∏ i ∈ S, C i) = ∑ i ∈ S, elementaryTwoQuotientMk R (C i) :=
   TauCeti.elementaryTwoQuotientMk_prod S C
+
+/-- Every element of `Cl(R)/Cl(R)²` is the class of some ideal class. -/
+theorem elementaryTwoQuotientMk_surjective :
+    Function.Surjective (elementaryTwoQuotientMk R) :=
+  TauCeti.elementaryTwoQuotientMk_surjective
+
+/-- Two ideal classes have the same class in `Cl(R)/Cl(R)²` iff they differ by a square. -/
+theorem elementaryTwoQuotientMk_eq_iff (C D : ClassGroup R) :
+    elementaryTwoQuotientMk R C = elementaryTwoQuotientMk R D ↔ IsSquare (C / D) :=
+  TauCeti.elementaryTwoQuotientMk_eq_iff C D
 
 variable [Finite (ClassGroup R)]
 

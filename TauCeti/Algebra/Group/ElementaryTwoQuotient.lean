@@ -36,6 +36,8 @@ names around it. The cardinality identity is still expressed through the squarin
 * `TauCeti.elementaryTwoQuotientMk` and `TauCeti.elementaryTwoQuotientMk_eq_zero_iff`: the class of
   an element, trivial iff the element is a square; `elementaryTwoQuotientMk_mul`,
   `elementaryTwoQuotientMk_one`, and `elementaryTwoQuotientMk_prod` record its additivity.
+* `TauCeti.elementaryTwoQuotientMk_surjective` and `TauCeti.elementaryTwoQuotientMk_eq_iff`: the
+  class map is surjective, and two elements have the same class iff they differ by a square.
 * `TauCeti.elementaryTwoQuotientLiftEquiv` and `TauCeti.elementaryTwoQuotientLinearLiftEquiv`: the
   universal property for maps out of `G/G²`, inherited from `ModN.liftEquiv`.
 * `TauCeti.card_elementaryTwoQuotient_eq_card_sq_eq_one`: `|G/G²| = |{g | g² = 1}|`.
@@ -64,12 +66,11 @@ def elementaryTwoQuotientMk (g : G) : elementaryTwoQuotient G :=
 /-- An element has trivial class in `G / G²` iff it is a square. -/
 @[simp] theorem elementaryTwoQuotientMk_eq_zero_iff (g : G) :
     elementaryTwoQuotientMk g = 0 ↔ IsSquare g := by
+  -- `elementaryTwoQuotientMk g = ModN.mkQ 2 (ofMul g)` is the quotient map of `ofMul g`, so it
+  -- vanishes iff `ofMul g` lies in the doubling subgroup `range (lsmul ℤ _ 2)`.
   rw [elementaryTwoQuotientMk, ModN.mkQ]
   change Submodule.Quotient.mk (Additive.ofMul g) = 0 ↔ IsSquare g
-  rw [Submodule.Quotient.mk_eq_zero]
-  change Additive.ofMul g ∈ LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ)) ↔
-    IsSquare g
-  rw [LinearMap.mem_range]
+  rw [Submodule.Quotient.mk_eq_zero, LinearMap.mem_range]
   constructor
   · rintro ⟨a, ha⟩
     refine ⟨Additive.toMul a, ?_⟩
@@ -109,6 +110,21 @@ theorem elementaryTwoQuotientMk_prod {ι : Type*} (S : Finset ι) (g : ι → G)
   simp only [elementaryTwoQuotientMk, ofMul_prod]
   rw [map_sum]
 
+/-- Every element of `G / G²` is the class of some element of `G`. -/
+theorem elementaryTwoQuotientMk_surjective :
+    Function.Surjective (elementaryTwoQuotientMk : G → elementaryTwoQuotient G) := by
+  intro x
+  obtain ⟨a, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  exact ⟨Additive.toMul a, rfl⟩
+
+/-- Two elements have the same class in `G / G²` iff they differ by a square. -/
+theorem elementaryTwoQuotientMk_eq_iff (g h : G) :
+    elementaryTwoQuotientMk g = elementaryTwoQuotientMk h ↔ IsSquare (g / h) := by
+  have hdiv : elementaryTwoQuotientMk (g / h)
+      = elementaryTwoQuotientMk g - elementaryTwoQuotientMk h := by
+    simp only [elementaryTwoQuotientMk, ofMul_div, map_sub]
+  rw [← elementaryTwoQuotientMk_eq_zero_iff, hdiv, sub_eq_zero]
+
 variable (G)
 
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
@@ -120,9 +136,8 @@ theorem card_elementaryTwoQuotient_eq_card_sq_eq_one [Finite G] :
       (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ))).toAddSubgroup =
       (Subgroup.square G).toAddSubgroup := by
     ext g
-    change g ∈ LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ)) ↔
-      Additive.toMul g ∈ Subgroup.square G
-    rw [LinearMap.mem_range, Subgroup.mem_square]
+    rw [Submodule.mem_toAddSubgroup, Additive.mem_toAddSubgroup, LinearMap.mem_range,
+      Subgroup.mem_square]
     constructor
     · rintro ⟨a, rfl⟩
       exact ⟨Additive.toMul a, by simp [toMul_zsmul, zpow_two]⟩
@@ -133,6 +148,9 @@ theorem card_elementaryTwoQuotient_eq_card_sq_eq_one [Finite G] :
   have hrange : Subgroup.square G = (powMonoidHom 2 : G →* G).range := by
     ext g
     simp [Subgroup.mem_square, MonoidHom.mem_range, isSquare_iff_exists_sq, eq_comm]
+  -- `elementaryTwoQuotient G = ModN (Additive G) 2` is, by definition, the additive quotient of
+  -- `Additive G` by the subgroup `(range (lsmul ℤ _ 2)).toAddSubgroup`, so its cardinality is that
+  -- subgroup's index; `hsq` then identifies the subgroup with the squares `G²`.
   change Nat.card (Additive G ⧸
     (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ))).toAddSubgroup) =
     Nat.card {g : G // g ^ 2 = 1}
