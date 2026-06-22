@@ -175,7 +175,7 @@ instance for the `K(a, b) = F(a + b⋆)` construction), without unfolding `Matri
 theorem isPositiveDefiniteKernel_iff {K : α → α → 𝕜} :
     IsPositiveDefiniteKernel K ↔
       (∀ a b, conj (K a b) = K b a) ∧
-        ∀ {ι : Type z} [Fintype ι] (v : ι → α) (x : ι → 𝕜),
+        ∀ {ι : Type*} [Fintype ι] (v : ι → α) (x : ι → 𝕜),
           0 ≤ ∑ i, ∑ j, conj (x i) * x j * K (v i) (v j) := by
   classical
   refine ⟨fun hK => ⟨?_, ?_⟩, fun ⟨hsymm, hpos⟩ => ?_⟩
@@ -198,7 +198,7 @@ theorem isPositiveDefiniteKernel_iff {K : α → α → 𝕜} :
     rw [Matrix.conjTranspose_apply, Matrix.of_apply, Matrix.of_apply, ← starRingEnd_apply]
     exact hsymm b a
   · intro x
-    let e : ULift.{z, 0} (Fin (Fintype.card x.support)) ≃ x.support :=
+    let e : ULift (Fin (Fintype.card x.support)) ≃ x.support :=
       Equiv.ulift.trans (Fintype.equivFin x.support).symm
     let M : Matrix x.support x.support 𝕜 := Matrix.of fun i j => K (i : α) (j : α)
     refine (Matrix.posSemidef_submatrix_equiv e).mp ?_
@@ -208,7 +208,7 @@ theorem isPositiveDefiniteKernel_iff {K : α → α → 𝕜} :
       rw [Matrix.conjTranspose_apply, Matrix.submatrix_apply, Matrix.submatrix_apply,
         Matrix.of_apply, Matrix.of_apply, ← starRingEnd_apply]
       exact hsymm (e j : α) (e i : α)
-    · refine (hpos (ι := ULift.{z, 0} (Fin (Fintype.card x.support)))
+    · refine (hpos (ι := ULift (Fin (Fintype.card x.support)))
         (fun i => (e i : α)) y).trans_eq ?_
       simp only [dotProduct, Matrix.mulVec, Matrix.submatrix_apply, Matrix.of_apply,
         Pi.star_apply, Finset.mul_sum]
