@@ -22,11 +22,10 @@ The action is what lets Mathlib's `MulAction.fixingSubgroup` define **`Diff(M, �
 subgroup of self-diffeomorphisms fixing the boundary `∂M` pointwise. The geometric-topology roadmap
 (`TauCetiRoadmap/GeometricTopology/README.md`, layer 3, "diffeomorphism groups with the C^∞
 topology") asks for it directly: "`Diff(M, ∂M)` is the closed subgroup fixing `∂M` pointwise, for
-the relative statements" — the natural home of the relative homotopy classes
-`π_k(Diff(D⁴, ∂))` that Watanabe's disproof of the 4-dimensional Smale conjecture
-(`[Kir97, Problem 4.126]`) lives in. With the C^∞ topology a separate later deliverable, this
-file stops at the group-action and subgroup level: `Diff(M, ∂M)` is the relevant instance of
-Mathlib's pointwise-fixing subgroup, with closedness deferred to the topology layer.
+the relative statements". With the C^∞ topology a separate later deliverable, this file stops at
+the group-action and subgroup level: `Diff(M, ∂M)` is the relevant instance of Mathlib's
+pointwise-fixing subgroup, with closedness and homotopy-group applications deferred to the topology
+layer.
 
 ## Main definitions
 
@@ -37,7 +36,7 @@ Mathlib's pointwise-fixing subgroup, with closedness deferred to the topology la
 ## Main results
 
 * `TauCeti.Diffeomorph.applyFaithfulSMul`, `applyContinuousConstSMul`: the action is faithful and
-  continuous in the point, with the same continuity inherited by `Diff(M, ∂M)`.
+  continuous in the point, with the same continuity inherited by every subgroup.
 * `TauCeti.Diffeomorph.toHomeomorphHom_injective` and `smul_toHomeomorph`: the forgetful
   homomorphism is injective and equivariant for the homeomorphism-group action.
 * `TauCeti.Diff.relBoundary_eq_fixingSubgroup`, `mem_relBoundary_iff`: `Diff(M, ∂M)` identified
@@ -76,6 +75,12 @@ self-diffeomorphism is a continuous self-map. -/
 instance applyContinuousConstSMul : ContinuousConstSMul (Diff I M n) M :=
   ⟨fun f => f.continuous⟩
 
+/-- A subgroup of the self-diffeomorphism group acts continuously on `M` in the point, reusing
+continuity of the ambient action. -/
+instance applySubgroupContinuousConstSMul (H : Subgroup (Diff I M n)) :
+    ContinuousConstSMul H M :=
+  ⟨fun f => continuous_const_smul (f : Diff I M n)⟩
+
 /-- Each self-diffeomorphism acts on `M` by a `Cⁿ` map: the orbit map `x ↦ f • x` is `Cⁿ`. -/
 theorem contMDiff_smul (f : Diff I M n) : ContMDiff I I n (f • · : M → M) :=
   f.contMDiff
@@ -110,8 +115,7 @@ namespace Diff
 variable (I M n)
 
 /-- `Diff(M, ∂M)`, the subgroup of self-diffeomorphisms fixing the boundary `∂M` pointwise. The
-roadmap's relative diffeomorphism group, the home of the relative homotopy classes
-`π_k(Diff(M, ∂M))`. -/
+group-level precursor to the roadmap's relative diffeomorphism group with its later C^∞ topology. -/
 def relBoundary : Subgroup (Diff I M n) :=
   fixingSubgroup (Diff I M n) (I.boundary M)
 
@@ -126,11 +130,6 @@ theorem relBoundary_eq_fixingSubgroup :
 theorem mem_relBoundary_iff {f : Diff I M n} :
     f ∈ relBoundary I M n ↔ ∀ x ∈ I.boundary M, f x = x :=
   mem_fixingSubgroup_iff (Diff I M n)
-
-/-- The action of `Diff(M, ∂M)` remains continuous in the point. -/
-instance relBoundary.applyContinuousConstSMul :
-    ContinuousConstSMul (relBoundary I M n) M :=
-  ⟨fun f => f.1.continuous⟩
 
 end Diff
 
