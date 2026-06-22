@@ -27,6 +27,8 @@ assumption.
   module structure induced by `J`.
 * `TauCeti.AlmostComplexStructure.complexFinrank_def`: `complexFinrank` is `Module.finrank ℂ V`
   under the induced complex structure.
+* `TauCeti.finrank_real_eq_two_mul_finrank_complex`: a compatible complex module has real
+  dimension twice its complex dimension.
 * `TauCeti.AlmostComplexStructure.finrank_real_eq_two_mul_complexFinrank`: the real dimension is
   twice the complex dimension, `finrank ℝ V = 2 * J.complexFinrank`.
 * `TauCeti.AlmostComplexStructure.even_finrank_real`: the real dimension of a module carrying an
@@ -40,9 +42,16 @@ Section 2.1.
 
 namespace TauCeti
 
-namespace AlmostComplexStructure
-
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
+
+/-- A compatible complex module structure forces the real dimension to be twice the complex
+dimension. This is the tower law `finrank ℝ V = finrank ℝ ℂ * finrank ℂ V` together with
+`finrank ℝ ℂ = 2`. -/
+theorem finrank_real_eq_two_mul_finrank_complex [Module ℂ V] [IsScalarTower ℝ ℂ V] :
+    Module.finrank ℝ V = 2 * Module.finrank ℂ V := by
+  rw [← Module.finrank_mul_finrank ℝ ℂ V, Complex.finrank_real_complex]
+
+namespace AlmostComplexStructure
 
 /-- The complex dimension of `V` with respect to an almost complex structure `J`: the
 `ℂ`-dimension of `V` under the complex module structure induced by `J`
@@ -52,6 +61,7 @@ noncomputable def complexFinrank (J : AlmostComplexStructure V) : ℕ :=
   Module.finrank ℂ V
 
 /-- The complex dimension of `J` is the `ℂ`-dimension of `V` under the induced complex structure. -/
+@[simp]
 lemma complexFinrank_def (J : AlmostComplexStructure V) :
     letI := J.complexModule
     J.complexFinrank = Module.finrank ℂ V :=
@@ -64,7 +74,8 @@ theorem finrank_real_eq_two_mul_complexFinrank (J : AlmostComplexStructure V) :
     Module.finrank ℝ V = 2 * J.complexFinrank := by
   letI := J.complexModule
   letI := J.complexModule_isScalarTower
-  rw [J.complexFinrank_def, ← Module.finrank_mul_finrank ℝ ℂ V, Complex.finrank_real_complex]
+  rw [J.complexFinrank_def]
+  exact finrank_real_eq_two_mul_finrank_complex
 
 /-- The real dimension of a module carrying an almost complex structure is even. -/
 theorem even_finrank_real (J : AlmostComplexStructure V) :
