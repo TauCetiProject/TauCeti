@@ -149,11 +149,15 @@ noncomputable def prodTensorBialgEquiv :
       rintro ⟨g, h⟩
       simp)
 
+/-- The forward product bialgebra equivalence sends the generator indexed by `(g, h)` to the
+pure tensor of the two factor generators. -/
 @[simp]
 theorem prodTensorBialgEquiv_single (g : G) (h : H) :
     prodTensorBialgEquiv R (single (g, h) (1 : R)) = single g 1 ⊗ₜ[R] single h 1 :=
   prodTensorAlgEquiv_single R g h
 
+/-- The inverse product bialgebra equivalence sends a pure tensor of factor generators to the
+generator indexed by their product pair. -/
 @[simp]
 theorem prodTensorBialgEquiv_symm_tmul_single (g : G) (h : H) :
     (prodTensorBialgEquiv R).symm (single g (1 : R) ⊗ₜ[R] single h 1) = single (g, h) 1 := by

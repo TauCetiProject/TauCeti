@@ -115,6 +115,7 @@ theorem prodPointsMulEquiv_symm_ofConv_single
 variable {B : Type*} [CommSemiring B] [Algebra R B]
 
 /-- The product-points equivalence is natural in the value algebra. -/
+@[simp]
 theorem prodPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (f : WithConv (MonoidAlgebra R (G × H) →ₐ[R] A)) :
     prodPointsMulEquiv (A := B) (AlgHom.mapValue (H := MonoidAlgebra R (G × H)) φ f) =
@@ -174,6 +175,7 @@ theorem prodPointsMulEquiv_symm_ofConv_single
   MonoidAlgebra.prodPointsMulEquiv_symm_ofConv_single f₁ f₂ g h
 
 /-- The diagonalizable product-points equivalence is natural in the value algebra. -/
+@[simp]
 theorem prodPointsMulEquiv_mapValue {B : Type*} [CommSemiring B] [Algebra R B] (φ : A →ₐ[R] B)
     (f : WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A)) :
     prodPointsMulEquiv (A := B) (AlgHom.mapValue (H := MonoidAlgebra R (G' × H')) φ f) =
@@ -184,6 +186,7 @@ theorem prodPointsMulEquiv_mapValue {B : Type*} [CommSemiring B] [Algebra R B] (
 /-- The diagonalizable product-points equivalence agrees with the existing character
 description of diagonalizable-group points: reading the character of a product point is the
 coproduct of the characters read from its two restrictions. -/
+@[simp]
 theorem pointsMulEquiv_prodPointsMulEquiv
     (f : WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := A) (G := G' × H') f =
