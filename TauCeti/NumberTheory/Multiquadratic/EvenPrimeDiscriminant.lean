@@ -121,9 +121,8 @@ theorem two_dvd_evenPrimeDiscriminant {D : ℤ}
     (2 : ℤ) ∣ D := by
   rcases hD with rfl | rfl | rfl <;> norm_num
 
-/-- The radicand attached to an even prime discriminant is congruent to `-1` or `2` modulo
-`4`; these are exactly the squarefree radicands whose quadratic discriminant has nontrivial
-2-part. -/
+/-- The radicand attached to an even prime discriminant is congruent to `-1` or `2`
+modulo `4`. -/
 theorem evenPrimeDiscriminantRadicand_mod_four_eq_three_or_two {D : ℤ}
     (hD : IsEvenPrimeDiscriminant D) :
     evenPrimeDiscriminantRadicand D % 4 = 3 ∨
