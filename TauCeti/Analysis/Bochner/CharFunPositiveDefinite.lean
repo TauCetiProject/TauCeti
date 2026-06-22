@@ -37,7 +37,9 @@ namespace TauCeti
 
 open scoped ComplexOrder
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+section Seminormed
+
+variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasure μ]
 
 /-- The translation-invariant characteristic-function kernel
@@ -50,12 +52,16 @@ theorem charFun_isPositiveDefiniteKernel :
 
 /-- With an explicit `star = -` involution, the kernel associated to `charFun μ` by the generic
 positive-definite-function construction, `(a, b) ↦ charFun μ (a + star b)`, is positive
-definite. -/
+definite. Under `hstar` this kernel coincides with the translation-invariant kernel of
+`charFun_isPositiveDefiniteKernel`. -/
 theorem charFun_star_kernel_isPositiveDefiniteKernel_of_star_eq_neg [StarAddMonoid E]
     (hstar : ∀ x : E, star x = -x) :
     IsPositiveDefiniteKernel (fun a b : E => MeasureTheory.charFun μ (a + star b)) := by
-  rw [isPositiveDefiniteKernel_def]
-  simpa [hstar, sub_eq_add_neg] using charFun_posSemidef (μ := μ) (fun x : E => x)
+  have h : (fun a b : E => MeasureTheory.charFun μ (a + star b))
+      = fun a b : E => MeasureTheory.charFun μ (a - b) := by
+    simp only [hstar, sub_eq_add_neg]
+  rw [h]
+  exact charFun_isPositiveDefiniteKernel
 
 /-- The characteristic function of a finite measure is positive definite for any additive-group
 involution that is explicitly negation. This is the generic-predicate form of
@@ -70,24 +76,22 @@ theorem charFun_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   simp [hstar, sub_eq_add_neg]
 
+end Seminormed
+
+section Normed
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+  {μ : Measure E} [IsFiniteMeasure μ]
+
 /-- The characteristic function of a finite measure on a second-countable real inner product space
 is continuous and positive definite, provided the chosen involution is negation. This is the
 forward bridge toward Bochner's theorem in the language of `TauCeti.IsPositiveDefinite`. -/
-theorem continuous_charFun_and_isPositiveDefinite_of_star_eq_neg
-    [BorelSpace E] [SecondCountableTopology E] [StarAddMonoid E]
+theorem continuous_charFun_and_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
     (hstar : ∀ x : E, star x = -x) :
     Continuous (MeasureTheory.charFun μ) ∧ IsPositiveDefinite (MeasureTheory.charFun μ) :=
   ⟨MeasureTheory.continuous_charFun, charFun_isPositiveDefinite_of_star_eq_neg hstar⟩
 
-/-- The continuous positive-definite characteristic function, together with its associated
-positive-definite kernel. This is a convenient bundled form for downstream Bochner arguments that
-need both the one-variable predicate and the two-variable Gram-kernel predicate. -/
-theorem continuous_charFun_and_isPositiveDefinite_and_kernel_of_star_eq_neg
-    [BorelSpace E] [SecondCountableTopology E] [StarAddMonoid E]
-    (hstar : ∀ x : E, star x = -x) :
-    Continuous (MeasureTheory.charFun μ) ∧ IsPositiveDefinite (MeasureTheory.charFun μ) ∧
-      IsPositiveDefiniteKernel (fun a b : E => MeasureTheory.charFun μ (a + star b)) :=
-  ⟨MeasureTheory.continuous_charFun, charFun_isPositiveDefinite_of_star_eq_neg hstar,
-    charFun_star_kernel_isPositiveDefiniteKernel_of_star_eq_neg hstar⟩
+end Normed
 
 end TauCeti
