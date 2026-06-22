@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import TauCeti.Algebra.Bialgebra.MonoidAlgebraProduct
+import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
 import TauCeti.Algebra.AlgebraicGroup.HopfMap
 import TauCeti.Algebra.AlgebraicGroup.Product
 import TauCeti.Algebra.Bialgebra.TensorProduct
@@ -25,9 +26,8 @@ groups: `D(G × H)(A) ≅ D(G)(A) × D(H)(A)`.
 
 This advances the reductive-groups roadmap (`ReductiveGroups/README.md` in TauCetiRoadmap,
 Layer 4 "Diagonalizable groups" and the "Worked examples / products" theme, together with the
-Layer 0 functor-of-points dictionary): a split torus `𝔾ₘⁿ` is the `n`-fold product of `𝔾ₘ`,
-and this identifies its coordinate Hopf algebra `R[ℤⁿ]` with `R[ℤ]^{⊗ n}` and its points with
-`(Aˣ)ⁿ`.
+Layer 0 functor-of-points dictionary): this supplies the binary product step used in the
+calculation of split tori as iterated products of `𝔾ₘ`.
 
 ## Main definitions
 
@@ -96,9 +96,9 @@ theorem prodPointsMulEquiv_snd_ofConv_single
     BialgHom.coe_toAlgHom, Bialgebra.TensorProduct.includeRight_apply, BialgEquiv.coe_toBialgHom]
   rw [MonoidAlgebra.one_def, MonoidAlgebra.prodTensorBialgEquiv_symm_tmul_single]
 
-/-- The inverse of `prodPointsMulEquiv` assembles an `A`-point of `D(G × H)` from a pair of
-points of `D(G)` and `D(H)`: on the generator `single (g, h) 1` it multiplies the value of the
-first point at `single g 1` and the value of the second at `single h 1`. -/
+/-- The inverse of `prodPointsMulEquiv` assembles an `A`-point of `Spec R[G × H]` from a pair of
+points of `Spec R[G]` and `Spec R[H]`: on the generator `single (g, h) 1` it multiplies the
+value of the first point at `single g 1` and the value of the second at `single h 1`. -/
 @[simp]
 theorem prodPointsMulEquiv_symm_ofConv_single
     (f₁ : WithConv (MonoidAlgebra R G →ₐ[R] A)) (f₂ : WithConv (MonoidAlgebra R H →ₐ[R] A))
@@ -179,6 +179,21 @@ theorem prodPointsMulEquiv_mapValue {B : Type*} [CommSemiring B] [Algebra R B] (
       (AlgHom.mapValue (H := MonoidAlgebra R G') φ (prodPointsMulEquiv f).1,
         AlgHom.mapValue (H := MonoidAlgebra R H') φ (prodPointsMulEquiv f).2) :=
   MonoidAlgebra.prodPointsMulEquiv_mapValue φ f
+
+/-- The diagonalizable product-points equivalence agrees with the existing character
+description of diagonalizable-group points: reading the character of a product point is the
+coproduct of the characters read from its two restrictions. -/
+theorem pointsMulEquiv_prodPointsMulEquiv
+    (f : WithConv (MonoidAlgebra R (G' × H') →ₐ[R] A)) :
+    pointsMulEquiv (R := R) (A := A) (G := G' × H') f =
+      (pointsMulEquiv (R := R) (A := A) (G := G') (prodPointsMulEquiv f).1).coprod
+        (pointsMulEquiv (R := R) (A := A) (G := H') (prodPointsMulEquiv f).2) := by
+  ext p
+  simp only [pointsMulEquiv_apply, MonoidHom.coprod_apply, Units.val_mul]
+  rw [charOfPoint_apply_coe, charOfPoint_apply_coe, charOfPoint_apply_coe,
+    prodPointsMulEquiv_fst_ofConv_single, prodPointsMulEquiv_snd_ofConv_single]
+  rw [← map_mul, single_mul_single, Prod.mk_mul_mk, mul_one, one_mul]
+  simp
 
 end DiagonalizableGroup
 
