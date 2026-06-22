@@ -34,6 +34,9 @@ rectangle-change theorems can refer to these names without unfolding the point-p
   two Maslov gradings are exchanged by the marking swap.
 * `TauCeti.GridDiagram.alexander_swapMarkings`: the Alexander grading is negated up to the
   normalization shift under the marking swap.
+* `TauCeti.GridDiagram.alexander_sub_eq_JX_sub_JO`: the Alexander grading difference between
+  any two states is the corresponding `X`-marking `J`-pairing difference minus the
+  `O`-marking one.
 
 ## References
 
@@ -107,6 +110,15 @@ theorem alexander_eq (x : GridState n) :
       (2 * (G.JX x - G.JO x) + (GridState.J G.O G.O - GridState.J G.X G.X) -
         (((n : ℤ) - 1 : ℤ) : ℚ)) / 2 := by
   rw [alexander, maslovO_eq, maslovX_eq]
+  ring
+
+/-- The Alexander grading change between two grid states is the change in the `X`-marking pairing
+minus the change in the `O`-marking pairing. In the expanded Maslov formulas,
+`GridState.J z z` cancels inside `M_O(z) - M_X(z)` for each state `z`, while the marking
+self-pairings and the normalization shift cancel between the two Alexander gradings. -/
+theorem alexander_sub_eq_JX_sub_JO (x y : GridState n) :
+    G.alexander x - G.alexander y = (G.JX x - G.JX y) - (G.JO x - G.JO y) := by
+  rw [alexander_def, alexander_def, maslovO_eq, maslovX_eq, maslovO_eq, maslovX_eq]
   ring
 
 /-- The difference of the two Maslov gradings is twice the Alexander grading plus the

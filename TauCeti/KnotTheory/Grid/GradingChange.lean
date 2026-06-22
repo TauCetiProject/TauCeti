@@ -18,10 +18,11 @@ plus the shared part, so the contribution of the `n - 2` shared squares is the *
 and for `y`. In the difference it cancels, leaving a formula in the four corners alone. For the
 `O`- and `X`-marking pairings this is `JO_source_sub_JO_target` and `JX_source_sub_JX_target`.
 
-The Alexander grading is `A = (M_O - M_X) / 2 - (n - 1) / 2`, and after expanding the two Maslov
-gradings the self-pairing `J(x, x)` and the grid-size shift cancel between `x` and `y`, so the
-grading change `A(x) - A(y)` reduces to `(JX x - JX y) - (JO x - JO y)`
-(`alexander_sub_eq_JX_sub_JO`). Combining the two pieces gives the headline four-corner formula
+The general identity `alexander_sub_eq_JX_sub_JO` from `Gradings.lean` rewrites
+`A(x) - A(y)` as `(JX x - JX y) - (JO x - JO y)`: in the expanded Maslov formulas,
+`J(z, z)` cancels inside each state's `M_O(z) - M_X(z)`, while the marking self-pairings and
+normalization shift cancel between the two Alexander gradings. Combining that with the
+rectangle-specific `J`-pairing formulas gives the headline four-corner formula
 `alexander_source_sub_alexander_target`: the Alexander grading change across a rectangle depends
 only on the four corners of `R` and the markings, never on the `n - 2` shared squares.
 
@@ -35,8 +36,6 @@ only on the four corners of `R` and the markings, never on the `n - 2` shared sq
 * `TauCeti.GridDiagram.JO_source_sub_JO_target`,
   `TauCeti.GridDiagram.JX_source_sub_JX_target`: the four-corner formula for the `O`- and
   `X`-marking pairings.
-* `TauCeti.GridDiagram.alexander_sub_eq_JX_sub_JO`: the Alexander grading change in terms of the
-  two marking pairings.
 * `TauCeti.GridDiagram.alexander_source_sub_alexander_target`: the four-corner formula for the
   Alexander grading change across a rectangle.
 
@@ -118,16 +117,6 @@ theorem JX_source_sub_JX_target (R : GridRectangleBetween x y) :
         GridPoint.J {(R.left, R.top)} G.XSet - GridPoint.J {(R.right, R.bottom)} G.XSet := by
   rw [JX_def, JX_def]
   exact R.J_source_sub_J_target G.XSet
-
-/-- The Alexander grading change between two grid states is the change in the `X`-marking pairing
-minus the change in the `O`-marking pairing. Expanding the two Maslov gradings, the common
-self-pairing `J(x, x)` and the grid-size normalization shift cancel, leaving only the two marking
-pairings. This holds for any two states; across a rectangle it combines with the four-corner
-formulas above. -/
-theorem alexander_sub_eq_JX_sub_JO (x y : GridState n) :
-    G.alexander x - G.alexander y = (G.JX x - G.JX y) - (G.JO x - G.JO y) := by
-  rw [alexander_def, alexander_def, maslovO_eq, maslovX_eq, maslovO_eq, maslovX_eq]
-  ring
 
 /-- The Alexander grading change across a rectangle, as a four-corner formula: it is the
 alternating sum over the four corners of the `X`-marking pairing minus the same alternating sum of
