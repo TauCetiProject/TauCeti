@@ -7,6 +7,7 @@ import Mathlib.Algebra.Group.Subgroup.Even
 import Mathlib.Algebra.Module.ZMod
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.GroupTheory.Index
+import Mathlib.LinearAlgebra.FreeModule.ModN
 
 /-!
 # The maximal elementary-2 quotient `G / G²` of a commutative group
@@ -25,9 +26,9 @@ the 2-torsion as its kernel, and a finite group has the same cardinality as the 
 and kernel of any endomorphism. We keep the two distinct in names and statements and record the
 cardinality identity as `card_elementaryTwoQuotient_eq_card_sq_eq_one`.
 
-Mathlib's `ModN G n` is the analogous additive quotient `G ⧸ nG` built from `range (lsmul ℤ G n)`;
-we keep the multiplicative `Subgroup.square` framing here because the cardinality identity is
-cleanest through the squaring homomorphism `powMonoidHom 2` and `Subgroup.index_range`.
+This file uses Mathlib's additive quotient `ModN (Additive G) 2` and adds multiplicative-square
+names around it. The cardinality identity is still expressed through the squaring homomorphism
+`powMonoidHom 2` and `Subgroup.index_range`.
 
 ## Main definitions and results
 
@@ -35,6 +36,8 @@ cleanest through the squaring homomorphism `powMonoidHom 2` and `Subgroup.index_
 * `TauCeti.elementaryTwoQuotientMk` and `TauCeti.elementaryTwoQuotientMk_eq_zero_iff`: the class of
   an element, trivial iff the element is a square; `elementaryTwoQuotientMk_mul`,
   `elementaryTwoQuotientMk_one`, and `elementaryTwoQuotientMk_prod` record its additivity.
+* `TauCeti.elementaryTwoQuotientLiftEquiv` and `TauCeti.elementaryTwoQuotientLinearLiftEquiv`: the
+  universal property for maps out of `G/G²`, inherited from `ModN.liftEquiv`.
 * `TauCeti.card_elementaryTwoQuotient_eq_card_sq_eq_one`: `|G/G²| = |{g | g² = 1}|`.
 * `TauCeti.twoRank` and `TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|G/G²| = 2 ^ twoRank`.
@@ -47,14 +50,7 @@ variable (G : Type*) [CommGroup G]
 /-- **The maximal elementary-2 quotient `G / G²`** of a commutative group, written additively on
 `Additive G`. -/
 abbrev elementaryTwoQuotient : Type _ :=
-  Additive G ⧸ (Subgroup.square G).toAddSubgroup
-
-/-- The elementary-2 quotient is a `ZMod 2`-module: every element has order dividing two, since the
-double of any element is (additively) the class of a square. -/
-noncomputable instance : Module (ZMod 2) (elementaryTwoQuotient G) :=
-  QuotientAddGroup.zmodModule fun x => by
-    rw [Additive.mem_toAddSubgroup, Subgroup.mem_square, toMul_nsmul]
-    exact ⟨Additive.toMul x, pow_two _⟩
+  ModN (Additive G) 2
 
 instance [Finite G] : Finite (elementaryTwoQuotient G) :=
   Finite.of_surjective _ (QuotientAddGroup.mk'_surjective _)
@@ -63,28 +59,55 @@ variable {G}
 
 /-- The class of an element of `G` in the maximal elementary-2 quotient `G / G²`. -/
 def elementaryTwoQuotientMk (g : G) : elementaryTwoQuotient G :=
-  QuotientAddGroup.mk (Additive.ofMul g)
+  ModN.mkQ 2 (Additive.ofMul g)
 
 /-- An element has trivial class in `G / G²` iff it is a square. -/
 @[simp] theorem elementaryTwoQuotientMk_eq_zero_iff (g : G) :
     elementaryTwoQuotientMk g = 0 ↔ IsSquare g := by
-  rw [elementaryTwoQuotientMk, QuotientAddGroup.eq_zero_iff, Additive.mem_toAddSubgroup,
-    Subgroup.mem_square]
-  simp
+  rw [elementaryTwoQuotientMk, ModN.mkQ]
+  change Submodule.Quotient.mk (Additive.ofMul g) = 0 ↔ IsSquare g
+  rw [Submodule.Quotient.mk_eq_zero]
+  change Additive.ofMul g ∈ LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ)) ↔
+    IsSquare g
+  rw [LinearMap.mem_range]
+  constructor
+  · rintro ⟨a, ha⟩
+    refine ⟨Additive.toMul a, ?_⟩
+    have hmul := congr_arg Additive.toMul ha
+    simpa [toMul_zsmul, zpow_two, pow_two] using hmul.symm
+  · rintro ⟨a, ha⟩
+    refine ⟨Additive.ofMul a, ?_⟩
+    apply Additive.toMul.injective
+    simpa [toMul_zsmul, zpow_two, pow_two] using ha.symm
+
+/-- The universal property of `G/G²` for additive homomorphisms: maps out of the quotient are
+additive homomorphisms from `Additive G` whose values are killed by `2`. -/
+protected def elementaryTwoQuotientLiftEquiv [AddMonoid M] :
+    (elementaryTwoQuotient G →+ M) ≃
+      {φ : Additive G →+ M // ∀ g, 2 • φ g = 0} :=
+  ModN.liftEquiv
+
+/-- The universal property of `G/G²` for `ZMod 2`-linear maps: linear maps out of the quotient are
+additive homomorphisms from `Additive G` whose values are killed by `2`. -/
+protected def elementaryTwoQuotientLinearLiftEquiv [AddCommGroup H] [Module (ZMod 2) H] :
+    (elementaryTwoQuotient G →ₗ[ZMod 2] H) ≃
+      {φ : Additive G →+ H // ∀ g, 2 • φ g = 0} :=
+  ModN.liftEquiv'
 
 /-- The class map to `G / G²` sends a product to the sum of the classes. -/
 @[simp] theorem elementaryTwoQuotientMk_mul (g h : G) :
     elementaryTwoQuotientMk (g * h) = elementaryTwoQuotientMk g + elementaryTwoQuotientMk h := by
-  simp only [elementaryTwoQuotientMk, ofMul_mul, ← QuotientAddGroup.mk'_apply, map_add]
+  simp only [elementaryTwoQuotientMk, ofMul_mul, AddMonoidHom.map_add]
 
 /-- The class map to `G / G²` sends `1` to `0`. -/
 @[simp] theorem elementaryTwoQuotientMk_one : elementaryTwoQuotientMk (1 : G) = 0 := by
-  simp only [elementaryTwoQuotientMk, ofMul_one, ← QuotientAddGroup.mk'_apply, map_zero]
+  simp only [elementaryTwoQuotientMk, ofMul_one, AddMonoidHom.map_zero]
 
 /-- The class map to `G / G²` sends a finite product to the sum of the classes. -/
 theorem elementaryTwoQuotientMk_prod {ι : Type*} (S : Finset ι) (g : ι → G) :
     elementaryTwoQuotientMk (∏ i ∈ S, g i) = ∑ i ∈ S, elementaryTwoQuotientMk (g i) := by
-  simp only [elementaryTwoQuotientMk, ofMul_prod, ← QuotientAddGroup.mk'_apply, map_sum]
+  simp only [elementaryTwoQuotientMk, ofMul_prod]
+  rw [map_sum]
 
 variable (G)
 
@@ -93,16 +116,33 @@ variable (G)
 2-torsion; in a finite group the index of the range equals the cardinality of the kernel. -/
 theorem card_elementaryTwoQuotient_eq_card_sq_eq_one [Finite G] :
     Nat.card (elementaryTwoQuotient G) = Nat.card {g : G // g ^ 2 = 1} := by
-  have hsq : Subgroup.square G = (powMonoidHom 2 : G →* G).range := by
+  have hsq :
+      (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ))).toAddSubgroup =
+      (Subgroup.square G).toAddSubgroup := by
+    ext g
+    change g ∈ LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ)) ↔
+      Additive.toMul g ∈ Subgroup.square G
+    rw [LinearMap.mem_range, Subgroup.mem_square]
+    constructor
+    · rintro ⟨a, rfl⟩
+      exact ⟨Additive.toMul a, by simp [toMul_zsmul, zpow_two]⟩
+    · rintro ⟨a, ha⟩
+      refine ⟨Additive.ofMul a, ?_⟩
+      apply Additive.toMul.injective
+      simpa [toMul_zsmul, zpow_two, pow_two] using ha.symm
+  have hrange : Subgroup.square G = (powMonoidHom 2 : G →* G).range := by
     ext g
     simp [Subgroup.mem_square, MonoidHom.mem_range, isSquare_iff_exists_sq, eq_comm]
-  rw [← AddSubgroup.index_eq_card, Subgroup.index_toAddSubgroup, hsq, Subgroup.index_range]
+  change Nat.card (Additive G ⧸
+    (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ↑(2 : ℕ))).toAddSubgroup) =
+    Nat.card {g : G // g ^ 2 = 1}
+  rw [← AddSubgroup.index_eq_card, hsq, Subgroup.index_toAddSubgroup, hrange,
+    Subgroup.index_range]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun g => by simp [MonoidHom.mem_ker])
 
-/-- **The 2-rank of a commutative group**: the `ZMod 2`-dimension of the maximal
-elementary-2 quotient `G / G²`. For an infinite quotient this `Module.finrank` is `0` by
-convention; the genus-theory use is for a finite group, where it is the genuine 2-rank. -/
-noncomputable def twoRank : ℕ := Module.finrank (ZMod 2) (elementaryTwoQuotient G)
+/-- **The 2-rank of a finite commutative group**: the `ZMod 2`-dimension of the maximal
+elementary-2 quotient `G / G²`. -/
+noncomputable def twoRank [Finite G] : ℕ := Module.finrank (ZMod 2) (elementaryTwoQuotient G)
 
 /-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
 space of dimension the 2-rank. -/

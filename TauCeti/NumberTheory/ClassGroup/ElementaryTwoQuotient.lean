@@ -70,12 +70,12 @@ theorem elementaryTwoQuotientMk_prod {ι : Type*} (S : Finset ι) (C : ι → Cl
     elementaryTwoQuotientMk R (∏ i ∈ S, C i) = ∑ i ∈ S, elementaryTwoQuotientMk R (C i) :=
   TauCeti.elementaryTwoQuotientMk_prod S C
 
-/-- **The 2-rank of the class group**: the `ZMod 2`-dimension of the maximal elementary-2 quotient
-`Cl(R)/Cl(R)²`. This is the quantity the genus-field theorems express as `t - 1`, with `t` the
-number of ramified primes. -/
-noncomputable def twoRank : ℕ := TauCeti.twoRank (ClassGroup R)
-
 variable [Finite (ClassGroup R)]
+
+/-- **The 2-rank of the finite class group**: the `ZMod 2`-dimension of the maximal elementary-2
+quotient `Cl(R)/Cl(R)²`. In genus-theory applications the `t - 1` formula belongs to the narrow
+class group; for imaginary fields the narrow and ordinary class groups coincide. -/
+noncomputable def twoRank : ℕ := TauCeti.twoRank (ClassGroup R)
 
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
 `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`. -/
