@@ -35,64 +35,6 @@ namespace WeilDivisor
 
 variable {X G : Type*} [AddCommGroup G]
 
-/-! ### Degree-corrected point divisors -/
-
-/-- The divisor `[x] - w(x)[x₀]`.
-
-For the geometric weight `w x = [κ(x) : k]` and a rational base point `x₀` with `w x₀ = 1`,
-this is the degree-zero divisor underlying the Abel-Jacobi class of the closed point `x`.
-In the algebraically closed/unweighted specialization, this recovers `pointDifference x x₀`. -/
-noncomputable def weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) : WeilDivisor X :=
-  ofPoint x - w x • ofPoint x₀
-
-@[simp]
-lemma weightedPointBaseDifference_eq_pointDifference (x₀ x : X) :
-    weightedPointBaseDifference (fun _ : X => (1 : ℤ)) x₀ x = pointDifference x x₀ := by
-  simp [weightedPointBaseDifference, pointDifference]
-
-@[simp]
-lemma coeff_weightedPointBaseDifference [DecidableEq X] (w : X → ℤ) (x₀ x y : X) :
-    coeff (weightedPointBaseDifference w x₀ x) y =
-      (if y = x then 1 else 0) - if y = x₀ then w x else 0 := by
-  by_cases hyx : y = x
-  · subst y
-    by_cases hx₀ : x = x₀ <;> simp [weightedPointBaseDifference, ofPoint, coeff, hx₀]
-  · by_cases hy₀ : y = x₀
-    · subst y
-      have hx₀ : x₀ ≠ x := by simpa using hyx
-      simp [weightedPointBaseDifference, ofPoint, coeff, hx₀]
-    · simp [weightedPointBaseDifference, ofPoint, coeff, hyx, hy₀]
-
-/-- The support of `[x] - w(x)[x₀]` is contained in `{x, x₀}`. -/
-lemma support_weightedPointBaseDifference_subset [DecidableEq X] (w : X → ℤ) (x₀ x : X) :
-    (weightedPointBaseDifference w x₀ x).support ⊆ {x, x₀} := by
-  intro y hy
-  rw [Finset.mem_insert, Finset.mem_singleton]
-  by_contra hyx
-  push Not at hyx
-  exact Finsupp.mem_support_iff.mp hy (by
-    simp [weightedPointBaseDifference, ofPoint, hyx.1, hyx.2])
-
-/-- If the base point has weight `1`, the divisor `[x₀] - w(x₀)[x₀]` is zero. -/
-@[simp]
-lemma weightedPointBaseDifference_self {w : X → ℤ} {x₀ : X} (hx₀ : w x₀ = 1) :
-    weightedPointBaseDifference w x₀ x₀ = 0 := by
-  simp [weightedPointBaseDifference, hx₀]
-
-/-- The weighted degree of `[x] - w(x)[x₀]` is `w(x) * (1 - w(x₀))`. -/
-@[simp]
-lemma weightedDegree_weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) :
-    weightedDegree w (weightedPointBaseDifference w x₀ x) = w x * (1 - w x₀) := by
-  simp [weightedPointBaseDifference]
-  ring
-
-/-- If the base point has weight `1`, then `[x] - w(x)[x₀]` has weighted degree zero. -/
-@[simp]
-lemma weightedPointBaseDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x₀ : X}
-    (hx₀ : w x₀ = 1) (x : X) :
-    weightedPointBaseDifference w x₀ x ∈ weightedDegreeZeroSubgroup w := by
-  simp [hx₀]
-
 /-! ### Abel-Jacobi classes in the abstract Picard group -/
 
 namespace OrderSystem
@@ -109,6 +51,8 @@ noncomputable def weightedAbelJacobiClass (w : X → ℤ) (hdeg : S.IsWeightedDe
     rw [divisorClass_mem_picZero]
     exact weightedPointBaseDifference_mem_weightedDegreeZeroSubgroup hx₀ x⟩
 
+/-- Coercing the weighted Abel-Jacobi class to the class group gives the divisor class of the
+degree-corrected point divisor. This is the canonical simp form for the subtype coercion. -/
 @[simp]
 lemma coe_weightedAbelJacobiClass (w : X → ℤ) (hdeg : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (x : X) :
@@ -132,9 +76,10 @@ lemma weightedAbelJacobiClass_eq_iff_divisorClass (w : X → ℤ)
         S.divisorClass (weightedPointBaseDifference w x₀ y) := by
   constructor
   · intro h
-    exact congr_arg Subtype.val h
+    simpa using congr_arg Subtype.val h
   · intro h
-    exact Subtype.ext h
+    apply Subtype.ext
+    simpa using h
 
 /-- Equality of weighted Abel-Jacobi classes is linear equivalence of the corresponding
 degree-corrected point divisors. -/
@@ -149,13 +94,15 @@ lemma weightedAbelJacobiClass_eq_iff_linearlyEquivalent (w : X → ℤ)
 subgroup. -/
 noncomputable def unweightedAbelJacobiClass (hdeg : S.IsUnweightedDegreeZero) (x₀ x : X) :
     unweightedPicZero hdeg :=
-  ⟨S.divisorClass (pointDifference x x₀), by simp⟩
+  S.weightedAbelJacobiClass (fun _ => (1 : ℤ)) hdeg (x₀ := x₀) rfl x
 
+/-- Coercing the unweighted Abel-Jacobi class to the class group gives the divisor class of
+`[x] - [x₀]`. This exposes the unweighted specialization in the expected class-group form. -/
 @[simp]
 lemma coe_unweightedAbelJacobiClass (hdeg : S.IsUnweightedDegreeZero) (x₀ x : X) :
     (S.unweightedAbelJacobiClass hdeg x₀ x : S.ClassGroup) =
-      S.divisorClass (pointDifference x x₀) :=
-  rfl
+      S.divisorClass (pointDifference x x₀) := by
+  simp [unweightedAbelJacobiClass]
 
 /-- The unweighted abstract Abel-Jacobi class sends the base point to zero. -/
 @[simp]
@@ -172,9 +119,13 @@ lemma unweightedAbelJacobiClass_eq_iff_divisorClass (hdeg : S.IsUnweightedDegree
       S.divisorClass (pointDifference x x₀) = S.divisorClass (pointDifference y x₀) := by
   constructor
   · intro h
+    rw [← S.coe_unweightedAbelJacobiClass hdeg x₀ x,
+      ← S.coe_unweightedAbelJacobiClass hdeg x₀ y]
     exact congr_arg Subtype.val h
   · intro h
-    exact Subtype.ext h
+    apply Subtype.ext
+    rwa [S.coe_unweightedAbelJacobiClass hdeg x₀ x,
+      S.coe_unweightedAbelJacobiClass hdeg x₀ y]
 
 /-- Equality of unweighted Abel-Jacobi classes is linear equivalence of the point-difference
 divisors. -/
