@@ -61,17 +61,25 @@ It runs the identical engine and rubrics CI uses, in a clean room that ignores y
 
 The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/FormalFrontier/TauCetiReview/tree/main/rubrics). We'll update these as we see what is most useful!
 
-Eventually, these review agents' token costs will be covered by some combination of philanthropic donations (in money or in kind), and perhaps eventually a "billable hours" basis for significant contributors. That is, industrial or academic groups making significant pull requests should expect to donate tokens sufficient to power the review bots in proportion to their contributions. Likely small scale contributions can be reviewed "for free" out of this pool.
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
 ## Mathlib dependency
 
+Although Tau Ceti and [Mathlib](https://leanprover-community.github.io/) differ both in the review mechanisms and in design standards, and while they target different mathematical goals, we envision a strong synergy between the two libraries. We hope to build a unified community around this synergy, that aims at formalizing mathematics along the full spectrum of practices running from one library to the other.
+
 Tau Ceti depends on Mathlib's `master` branch, and always defers to design decisions made in Mathlib.
 AIs are encouraged to make PRs to Tau Ceti that bump the pin to new commits on Mathlib's `master` branch, and fix any resulting problems in Tau Ceti.
 
-We won't push material upstream from Tau Ceti to Mathlib. Mathlib contributors are welcome to adopt, curate, and modify material from Tau Ceti, while preparing PRs to Mathlib. Everything here is Apache licensed.
+We won't push material upstream from Tau Ceti to Mathlib. Mathlib contributors are welcome to adopt, curate, and modify material from Tau Ceti, while preparing PRs to Mathlib. Everything here is [Apache licensed](http://www.apache.org/licenses/).
 
+
+## Financial model
+We're aware that both training and running powerful AIs come at a significant financial and environmental cost. We're also aware that at the moment of creating Tau Ceti (June 2026) the most efficient agents are provided by commercial actors and we consider the question of how such a financial model should interact with academic practices very seriously.
+
+For the time being, we offer to run initial CI and reviews on our proper budget and we leave to contributors' subscriptions the generation of the code included in their PRs.
+
+ While we don't help our contributors with such subscriptions, we believe that Tau Ceti will serve its purpose only if, on the long run, it will result in no financial discrimination among its users. This reflects primarily in our choice of the Apache licence. Moreover, we expect that, eventually, the review agents' token costs will be covered by some combination of philanthropic donations (in money or in kind), and perhaps also a "billable hours" basis for significant contributors. That is, industrial or academic groups making significant pull requests should expect to donate tokens sufficient to power the review bots in proportion to their contributions. Likely small scale contributions can be reviewed "for free" out of this pool.
 ## Building
 
 ```bash
