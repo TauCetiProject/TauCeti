@@ -3,7 +3,9 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import TauCeti.Algebra.Bialgebra.MonoidAlgebraProduct
+import TauCeti.Algebra.AlgebraicGroup.HopfMap
 import TauCeti.Algebra.AlgebraicGroup.Product
+import TauCeti.Algebra.Bialgebra.TensorProduct
 
 /-!
 # The diagonalizable group of a product
