@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import Mathlib.RingTheory.HopfAlgebra.Convolution
 import Mathlib.RingTheory.HopfAlgebra.Quotient
 import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.Algebra.Bialgebra.Quotient
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal
 
 /-!
@@ -29,12 +30,11 @@ the structure maps to descend.
 
 ## Main definitions
 
-* `Bialgebra.Quotient.liftBialgHom`: the universal property of the bialgebra quotient by a
-  two-sided coideal `J`, namely the bialgebra morphism induced from a bialgebra morphism which
-  kills `J`, together with its computation and uniqueness lemmas. This needs only the
-  bialgebra-quotient structure, not an antipode.
-* `TauCeti.HopfIdeal.liftBialgHom`: the specialization of the above to the underlying ideal of a
-  Hopf ideal, induced from a bialgebra morphism which kills the Hopf ideal.
+* `TauCeti.HopfIdeal.liftBialgHom`: the specialization to the underlying ideal of a Hopf ideal of
+  the generic bialgebra-quotient universal property `Bialgebra.Quotient.liftBialgHom` (which needs
+  only a two-sided coideal, not an antipode, and lives in `TauCeti.Algebra.Bialgebra.Quotient`),
+  namely the bialgebra morphism induced from a bialgebra morphism which kills the Hopf ideal,
+  together with its computation and uniqueness lemmas.
 
 The quotient coalgebra/bialgebra/Hopf-algebra structure maps, the quotient bialgebra morphism, and
 the commutative-case antipode algebra homomorphism are themselves Mathlib's
@@ -53,121 +53,6 @@ builds on the `TauCeti.HopfIdeal` API and Mathlib's quotient Hopf-algebra machin
 -/
 
 open scoped TensorProduct
-
-namespace Bialgebra.Quotient
-
-/-! ### The universal property of a bialgebra quotient by a two-sided coideal
-
-For a two-sided ideal `J` of an `R`-bialgebra `H` whose underlying `R`-submodule is a coideal,
-Mathlib equips `H ⧸ J` with a bialgebra structure (`Mathlib.RingTheory.Bialgebra.Quotient`).
-The lift below is the matching universal property: a bialgebra morphism out of `H` that kills `J`
-factors uniquely through `H ⧸ J`. Only the bialgebra-quotient structure is used, so neither an
-antipode nor a Hopf-algebra structure is required. -/
-
-variable {R H : Type*} [CommRing R] [Ring H] [Bialgebra R H]
-variable (J : Ideal H) [J.IsTwoSided]
-variable {K : Type*} [Semiring K] [Bialgebra R K]
-
--- `TensorProduct.map` and `TensorProduct.map_map` are qualified with `_root_` throughout this
--- section: the ambient `Bialgebra` namespace otherwise resolves `TensorProduct.map` to
--- `Bialgebra.TensorProduct.map`, which expects coalgebra rather than linear maps.
-omit [J.IsTwoSided] in
-private theorem liftBialgHom_kill (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) {h : H} (hh : h ∈ J) :
-    (f : H →ₐ[R] K) h = 0 :=
-  RingHom.mem_ker.mp (hf hh)
-
-private noncomputable abbrev liftBialgHomAlg (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) : H ⧸ J →ₐ[R] K :=
-  Ideal.Quotient.liftₐ J (f : H →ₐ[R] K)
-    fun _ ha => liftBialgHom_kill J f hf ha
-
-private theorem liftBialgHomAlg_mk (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) (h : H) :
-    liftBialgHomAlg J f hf (Ideal.Quotient.mkₐ R J h) = f h := by
-  exact AlgHom.congr_fun
-    (Ideal.Quotient.liftₐ_comp J (f : H →ₐ[R] K)
-      fun _ ha => liftBialgHom_kill J f hf ha) h
-
-private theorem liftBialgHomAlg_toLinearMap_comp_mkₐ (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) :
-    (liftBialgHomAlg J f hf).toLinearMap.comp
-      (Ideal.Quotient.mkₐ R J).toLinearMap = f.toLinearMap := by
-  ext h
-  exact liftBialgHomAlg_mk J f hf h
-
-private theorem liftBialgHomAlg_comul_mk (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) (h : H) :
-    _root_.TensorProduct.map (liftBialgHomAlg J f hf).toLinearMap
-        (liftBialgHomAlg J f hf).toLinearMap
-        (_root_.TensorProduct.map (Ideal.Quotient.mkₐ R J).toLinearMap
-          (Ideal.Quotient.mkₐ R J).toLinearMap (Coalgebra.comul h)) =
-      Coalgebra.comul (R := R) (f h) := by
-  rw [_root_.TensorProduct.map_map, liftBialgHomAlg_toLinearMap_comp_mkₐ]
-  exact CoalgHomClass.map_comp_comul_apply f h
-
-variable [(J.restrictScalars R).IsCoideal]
-
-/-- A bialgebra morphism out of `H` which kills a two-sided coideal `J` factors through the
-quotient bialgebra `H ⧸ J`. -/
-noncomputable def liftBialgHom (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) : H ⧸ J →ₐc[R] K :=
-  BialgHom.ofAlgHom
-    (liftBialgHomAlg J f hf)
-    (by
-      ext q
-      obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R J q
-      rw [AlgHom.comp_apply, liftBialgHomAlg_mk J f hf h, Bialgebra.counitAlgHom_apply,
-        Bialgebra.counitAlgHom_apply]
-      -- After quotient-surjectivity reduction, `BialgHom.ofAlgHom` leaves the same counit
-      -- equality with the two sides presented through different wrapper APIs.
-      change Coalgebra.counit (R := R) (f h) =
-        Coalgebra.counit (R := R) (Ideal.Quotient.mk J h)
-      rw [Bialgebra.Quotient.counit_mk]
-      exact CoalgHomClass.counit_comp_apply f h)
-    (by
-      ext q
-      obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R J q
-      rw [AlgHom.comp_apply, AlgHom.comp_apply, Bialgebra.comulAlgHom_apply,
-        liftBialgHomAlg_mk J f hf h, Bialgebra.comulAlgHom_apply, Ideal.Quotient.mkₐ_eq_mk,
-        Bialgebra.Quotient.comul_mk]
-      exact liftBialgHomAlg_comul_mk J f hf h)
-
-/-- The quotient lift, evaluated on a quotient class. -/
-@[simp]
-theorem liftBialgHom_mk (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) (h : H) :
-    liftBialgHom J f hf (Ideal.Quotient.mkₐ R J h) = f h := by
-  rw [liftBialgHom]
-  exact liftBialgHomAlg_mk J f hf h
-
-/-- The quotient lift composed with the quotient map is the original bialgebra morphism. -/
-@[simp]
-theorem liftBialgHom_comp_mkBialgHom (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) :
-    (liftBialgHom J f hf).comp (Bialgebra.Quotient.mkBialgHom J) = f := by
-  ext h
-  rw [BialgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_apply,
-    ← Ideal.Quotient.mkₐ_eq_mk (R₁ := R), liftBialgHom_mk]
-
-/-- A bialgebra morphism out of the quotient is determined by its precomposition with the
-quotient map. -/
-theorem liftBialgHom_unique (f : H →ₐc[R] K)
-    (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) (g : H ⧸ J →ₐc[R] K)
-    (hg : g.comp (Bialgebra.Quotient.mkBialgHom J) = f) :
-    g = liftBialgHom J f hf := by
-  ext q
-  obtain ⟨h, rfl⟩ := Ideal.Quotient.mkₐ_surjective R J q
-  calc
-    g (Ideal.Quotient.mkₐ R J h)
-        = (g.comp (Bialgebra.Quotient.mkBialgHom J)) h := by
-          rw [BialgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_apply,
-            Ideal.Quotient.mkₐ_eq_mk (R₁ := R)]
-    _ = f h := BialgHom.congr_fun hg h
-    _ = liftBialgHom J f hf (Ideal.Quotient.mkₐ R J h) :=
-      (liftBialgHom_mk J f hf h).symm
-
-end Bialgebra.Quotient
 
 namespace TauCeti
 
