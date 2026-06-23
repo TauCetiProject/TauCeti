@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Complex.Basic
-import Mathlib.Analysis.InnerProductSpace.Defs
-import TauCeti.Geometry.Symplectic.CompatibleMetric
-import TauCeti.Geometry.Symplectic.ComplexModule
+module
+
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.InnerProductSpace.Defs
+public import TauCeti.Geometry.Symplectic.CompatibleMetric
+public import TauCeti.Geometry.Symplectic.ComplexModule
 
 /-!
 # The Hermitian inner product of a compatible pair
@@ -52,6 +54,8 @@ structure `J.complexModule`.
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: a compatible pair `(ω, J)` gives the Hermitian form `⟨v, w⟩ = g(v, w) + i ω(v, w)`.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 

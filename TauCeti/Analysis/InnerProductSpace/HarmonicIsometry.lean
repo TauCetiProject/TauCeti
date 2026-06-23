@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
-import Mathlib.Analysis.Normed.Affine.Isometry
-import TauCeti.Analysis.InnerProductSpace.Laplacian
+module
+
+public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+public import Mathlib.Analysis.Normed.Affine.Isometry
+public import TauCeti.Analysis.InnerProductSpace.Laplacian
 
 /-!
 # Geometric invariance of harmonic functions
@@ -30,6 +32,8 @@ symmetry that underlies the mean-value property and the construction of radial h
 * `TauCeti.harmonicAt_comp_add_right_iff`, `TauCeti.harmonicOnNhd_comp_add_right_iff`:
   harmonicity is invariant under translation.
 -/
+
+public section
 
 namespace TauCeti
 
