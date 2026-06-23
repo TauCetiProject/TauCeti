@@ -135,24 +135,27 @@ noncomputable def cofree : Comodule R C (M ⊗[R] C) where
     refine TensorProduct.ext' fun m c => ?_
     simp
 
+-- Register `cofree` as a local instance for the rest of this file, so the cofree comodule on a
+-- tensor product `· ⊗[R] C` resolves automatically and need not be threaded through every
+-- statement with `letI`. It is deliberately *not* a global instance: an `R`-module can carry many
+-- coactions, so a global cofree instance would make `Comodule` resolution non-confluent.
+attribute [local instance] cofree
+
 /-- The coaction of the cofree comodule is `id ⊗ Δ` followed by reassociation. -/
 @[simp]
 theorem cofree_coact :
-    letI := cofree R C M
     coact (R := R) (C := C) (M := M ⊗[R] C)
       = (TensorProduct.assoc R M C C).symm.toLinearMap ∘ₗ Coalgebra.comul.lTensor M :=
   rfl
 
 /-- The coaction of the cofree comodule unfolds to its implementation `cofreeCoact`. -/
 private theorem cofree_coact_eq_cofreeCoact :
-    letI := cofree R C M
     coact (R := R) (C := C) (M := M ⊗[R] C) = cofreeCoact R C M :=
   rfl
 
 /-- The coaction of the cofree comodule on a simple tensor: `m ⊗ c ↦ ∑ (m ⊗ c₁) ⊗ c₂`. -/
 @[simp]
 theorem cofree_coact_tmul (m : M) (c : C) :
-    letI := cofree R C M
     coact (R := R) (C := C) (M := M ⊗[R] C) (m ⊗ₜ c)
       = (TensorProduct.assoc R M C C).symm (m ⊗ₜ Coalgebra.comul c) :=
   cofreeCoact_tmul m c
@@ -162,11 +165,7 @@ namespace Hom
 /-- Functoriality of the cofree comodule in the coefficient module: an `R`-linear map
 `f : M → N` induces the comodule morphism `f ⊗ id : M ⊗[R] C → N ⊗[R] C`. -/
 noncomputable def cofreeMap (f : M →ₗ[R] N) :
-    letI := cofree R C M
-    letI := cofree R C N
     Hom R C (M ⊗[R] C) (N ⊗[R] C) := by
-  letI := cofree R C M
-  letI := cofree R C N
   exact
     { toLinearMap := f.rTensor C
       map_coact := by
@@ -181,25 +180,19 @@ noncomputable def cofreeMap (f : M →ₗ[R] N) :
 /-- The underlying linear map of `cofreeMap f` is `f ⊗ id`. -/
 @[simp]
 theorem cofreeMap_toLinearMap (f : M →ₗ[R] N) :
-    letI := cofree R C M
-    letI := cofree R C N
     (cofreeMap (C := C) f).toLinearMap = f.rTensor C :=
   rfl
 
 /-- `cofreeMap f` acts as `f ⊗ id`. -/
 @[simp]
 theorem cofreeMap_apply (f : M →ₗ[R] N) (x : M ⊗[R] C) :
-    letI := cofree R C M
-    letI := cofree R C N
     cofreeMap (C := C) f x = f.rTensor C x :=
   rfl
 
 /-- The cofree functor preserves identities. -/
 @[simp]
 theorem cofreeMap_id :
-    letI := cofree R C M
     cofreeMap (C := C) (LinearMap.id : M →ₗ[R] M) = Comodule.Hom.id R C (M ⊗[R] C) := by
-  letI := cofree R C M
   refine Comodule.Hom.ext fun x => ?_
   rw [cofreeMap_apply, LinearMap.rTensor_id_apply]
   rfl
@@ -207,13 +200,7 @@ theorem cofreeMap_id :
 /-- The cofree functor preserves composition. -/
 @[simp]
 theorem cofreeMap_comp (g : N →ₗ[R] P) (f : M →ₗ[R] N) :
-    letI := cofree R C M
-    letI := cofree R C N
-    letI := cofree R C P
     cofreeMap (C := C) (g.comp f) = comp (cofreeMap (C := C) g) (cofreeMap (C := C) f) := by
-  letI := cofree R C M
-  letI := cofree R C N
-  letI := cofree R C P
   refine Comodule.Hom.ext fun x => ?_
   simp [LinearMap.rTensor_comp]
 
@@ -221,9 +208,7 @@ variable (P) in
 /-- The coaction of a comodule `P`, viewed as a comodule morphism `P → P ⊗[R] C` into its cofree
 comodule. This is the unit of the cofree adjunction. -/
 noncomputable def cofreeUnit [Comodule R C P] :
-    letI := cofree R C P
     Hom R C P (P ⊗[R] C) := by
-  letI := cofree R C P
   exact
     { toLinearMap := coact (R := R) (C := C) (M := P)
       map_coact := by
@@ -236,37 +221,30 @@ noncomputable def cofreeUnit [Comodule R C P] :
 /-- The underlying linear map of `cofreeUnit P` is the coaction of `P`. -/
 @[simp]
 theorem cofreeUnit_toLinearMap [Comodule R C P] :
-    letI := cofree R C P
     (cofreeUnit (R := R) (C := C) P).toLinearMap = coact (R := R) (C := C) (M := P) :=
   rfl
 
 /-- `cofreeUnit P` acts as the coaction of `P`. -/
 @[simp]
 theorem cofreeUnit_apply [Comodule R C P] (p : P) :
-    letI := cofree R C P
     cofreeUnit (R := R) (C := C) P p = coact (R := R) (C := C) (M := P) p :=
   rfl
 
 /-- The comodule morphism `P → M ⊗[R] C` lifting an `R`-linear map `g : P → M`, namely
 `(g ⊗ id) ∘ ρ_P`. -/
 noncomputable def cofreeLift [Comodule R C P] (g : P →ₗ[R] M) :
-    letI := cofree R C M
     Hom R C P (M ⊗[R] C) := by
-  letI := cofree R C P
-  letI := cofree R C M
   exact comp (cofreeMap (C := C) g) (cofreeUnit (R := R) (C := C) P)
 
 /-- The underlying linear map of `cofreeLift g` is `(g ⊗ id) ∘ ρ_P`. -/
 @[simp]
 theorem cofreeLift_toLinearMap [Comodule R C P] (g : P →ₗ[R] M) :
-    letI := cofree R C M
     (cofreeLift (C := C) g).toLinearMap = g.rTensor C ∘ₗ coact (R := R) (C := C) (M := P) :=
   rfl
 
 /-- `cofreeLift g` acts as `(g ⊗ id) ∘ ρ_P`. -/
 @[simp]
 theorem cofreeLift_apply [Comodule R C P] (g : P →ₗ[R] M) (p : P) :
-    letI := cofree R C M
     cofreeLift (C := C) g p = g.rTensor C (coact (R := R) (C := C) (M := P) p) :=
   rfl
 
@@ -308,9 +286,7 @@ private theorem cofree_retract (z : M ⊗[R] C) :
 maps `P → M`: this is the universal property of the cofree comodule (the cofree functor is right
 adjoint to the forgetful functor). -/
 noncomputable def cofreeEquiv [Comodule R C P] :
-    letI := cofree R C M
     Hom R C P (M ⊗[R] C) ≃ (P →ₗ[R] M) := by
-  letI := cofree R C M
   exact
     { toFun φ := (TensorProduct.rid R M).toLinearMap ∘ₗ
         (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ φ.toLinearMap
@@ -332,19 +308,16 @@ noncomputable def cofreeEquiv [Comodule R C P] :
 `R`-linear map obtained by applying the counit to the `C` factor. -/
 @[simp]
 theorem cofreeEquiv_apply [Comodule R C P] :
-    letI := cofree R C M
     ∀ φ : Hom R C P (M ⊗[R] C),
       cofreeEquiv (R := R) (C := C) (M := M) (P := P) φ
         = (TensorProduct.rid R M).toLinearMap ∘ₗ
             (Coalgebra.counit (R := R) (A := C)).lTensor M ∘ₗ φ.toLinearMap := by
-  letI := cofree R C M
   intro φ
   rfl
 
 /-- The inverse direction of the cofree adjunction is `cofreeLift`. -/
 @[simp]
 theorem cofreeEquiv_symm_apply [Comodule R C P] (g : P →ₗ[R] M) :
-    letI := cofree R C M
     (cofreeEquiv (R := R) (C := C) (M := M) (P := P)).symm g = cofreeLift (C := C) g :=
   rfl
 

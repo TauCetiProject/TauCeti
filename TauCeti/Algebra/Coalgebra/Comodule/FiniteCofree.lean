@@ -46,13 +46,18 @@ variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable {M : Type w} [AddCommMonoid M] [Module R M] [Module.Finite R (M ⊗[R] C)]
 variable {N : Type w} [AddCommMonoid N] [Module R N] [Module.Finite R (N ⊗[R] C)]
 
+-- Resolve the cofree comodule structure on `· ⊗[R] C` automatically, rather than threading it
+-- through every statement with `letI`. As in `Comodule.Cofree`, this is a local (not global)
+-- instance because an `R`-module can carry many coactions. The bundled `FGComoduleCat` objects
+-- carry their own comodule instance, so this does not clash with their coactions.
+attribute [local instance] Comodule.cofree
+
 /-- The cofree right `C`-comodule with finitely generated tensor-product carrier, bundled as an
 object of `FGComoduleCat`.
 
 The underlying module is `M ⊗[R] C`, with coaction `id ⊗ Δ` followed by reassociation. -/
 noncomputable abbrev cofree (M : Type w) [AddCommMonoid M] [Module R M]
     [Module.Finite R (M ⊗[R] C)] : FGComoduleCat.{u, v, max w v} R C :=
-  letI := Comodule.cofree R C M
   of (R := R) (C := C) (M ⊗[R] C)
 
 /-- Forgetting the finitely generated cofree comodule to all comodules gives the ambient
@@ -71,7 +76,6 @@ theorem cofree_coe : (cofree (R := R) (C := C) M : Type (max w v)) = M ⊗[R] C 
 reassociation. -/
 @[simp]
 theorem cofree_coact :
-    letI := Comodule.cofree R C M
     Comodule.coact (R := R) (C := C) (M := cofree (R := R) (C := C) M)
       = (TensorProduct.assoc R M C C).symm.toLinearMap ∘ₗ Coalgebra.comul.lTensor M :=
   rfl
@@ -80,7 +84,6 @@ theorem cofree_coact :
 `m ⊗ c` to `∑ (m ⊗ c₁) ⊗ c₂`. -/
 @[simp]
 theorem cofree_coact_tmul (m : M) (c : C) :
-    letI := Comodule.cofree R C M
     Comodule.coact (R := R) (C := C) (M := cofree (R := R) (C := C) M) (m ⊗ₜ[R] c)
       = (TensorProduct.assoc R M C C).symm (m ⊗ₜ Coalgebra.comul c) :=
   Comodule.cofree_coact_tmul m c
@@ -106,24 +109,18 @@ theorem forget₂_semimoduleCat_cofree_obj :
 An `R`-linear map `f : M → N` induces the comodule morphism `f ⊗ id`. -/
 noncomputable abbrev cofreeMap (f : M →ₗ[R] N) :
     cofree (R := R) (C := C) M ⟶ cofree (R := R) (C := C) N :=
-  letI := Comodule.cofree R C M
-  letI := Comodule.cofree R C N
   ofHom (R := R) (C := C) (Comodule.Hom.cofreeMap (C := C) f)
 
 /-- `cofreeMap f` acts as `f ⊗ id`. -/
 @[simp]
 theorem cofreeMap_apply (f : M →ₗ[R] N) (x : M ⊗[R] C) :
     cofreeMap (R := R) (C := C) f x = f.rTensor C x :=
-  letI := Comodule.cofree R C M
-  letI := Comodule.cofree R C N
   rfl
 
 /-- On simple tensors, `cofreeMap f` applies `f` to the coefficient factor. -/
 @[simp]
 theorem cofreeMap_tmul (f : M →ₗ[R] N) (m : M) (c : C) :
     cofreeMap (R := R) (C := C) f (m ⊗ₜ[R] c) = f m ⊗ₜ[R] c :=
-  letI := Comodule.cofree R C M
-  letI := Comodule.cofree R C N
   rfl
 
 /-- The finite cofree construction sends the identity linear map to the identity morphism. -/
@@ -150,7 +147,6 @@ variable {P : FGComoduleCat.{u, v, max w v} R C}
 coefficient module. -/
 noncomputable abbrev cofreeLift (P : FGComoduleCat.{u, v, max w v} R C) (g : P →ₗ[R] M) :
     P ⟶ cofree (R := R) (C := C) M :=
-  letI := Comodule.cofree R C M
   ObjectProperty.homMk
     (ComoduleCat.ofHom (R := R) (C := C) (Comodule.Hom.cofreeLift (C := C) g))
 
@@ -159,13 +155,11 @@ noncomputable abbrev cofreeLift (P : FGComoduleCat.{u, v, max w v} R C) (g : P �
 theorem cofreeLift_apply (g : P →ₗ[R] M) (p : P) :
     cofreeLift (R := R) (C := C) P g p =
       g.rTensor C (Comodule.coact (R := R) (C := C) (M := P) p) :=
-  letI := Comodule.cofree R C M
   rfl
 
 /-- The finite-category cofree universal property. -/
 noncomputable def cofreeEquiv (P : FGComoduleCat.{u, v, max w v} R C) :
     (P ⟶ cofree (R := R) (C := C) M) ≃ (P →ₗ[R] M) := by
-  letI := Comodule.cofree R C M
   exact
     { toFun φ := Comodule.Hom.cofreeEquiv (R := R) (C := C) (M := M) (P := P) φ.hom
       invFun g := cofreeLift (R := R) (C := C) P g
@@ -180,9 +174,7 @@ noncomputable def cofreeEquiv (P : FGComoduleCat.{u, v, max w v} R C) :
 @[simp]
 theorem cofreeEquiv_apply (φ : P ⟶ cofree (R := R) (C := C) M) :
     cofreeEquiv (R := R) (C := C) (M := M) P φ =
-      letI := Comodule.cofree R C M
       Comodule.Hom.cofreeEquiv (R := R) (C := C) (M := M) (P := P) φ.hom := by
-  letI := Comodule.cofree R C M
   rfl
 
 /-- The inverse direction of the finite cofree adjunction is `cofreeLift`. -/
