@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Analysis.Bochner.CharFunPosDef
-import TauCeti.Analysis.PositiveDefinite.Basic
-import TauCeti.Analysis.PositiveDefinite.Kernel
-import Mathlib.MeasureTheory.Measure.CharacteristicFunction.TaylorExpansion
+module
+
+public import TauCeti.Analysis.Bochner.CharFunPosDef
+public import TauCeti.Analysis.PositiveDefinite.Basic
+public import TauCeti.Analysis.PositiveDefinite.Kernel
+public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.TaylorExpansion
 
 /-!
 # Characteristic functions as positive-definite functions
@@ -30,6 +32,8 @@ the `OneParameterSemigroups` roadmap, before the harder converse direction of Bo
 * `TauCeti.continuous_charFun_and_isPositiveDefinite_of_star_eq_neg`: the paired continuity and
   positive-definiteness package.
 -/
+
+public section
 
 open MeasureTheory
 

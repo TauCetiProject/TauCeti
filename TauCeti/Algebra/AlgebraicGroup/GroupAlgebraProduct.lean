@@ -2,12 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.TensorProduct.Maps
-import TauCeti.Algebra.Bialgebra.MonoidAlgebraProduct
-import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
-import TauCeti.Algebra.AlgebraicGroup.HopfMap
-import TauCeti.Algebra.AlgebraicGroup.Product
-import TauCeti.Algebra.Bialgebra.TensorProduct
+module
+
+public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.Algebra.Bialgebra.MonoidAlgebraProduct
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
+public import TauCeti.Algebra.AlgebraicGroup.HopfMap
+public import TauCeti.Algebra.AlgebraicGroup.Product
+public import TauCeti.Algebra.Bialgebra.TensorProduct
 
 /-!
 # The diagonalizable group of a product
@@ -46,6 +48,8 @@ functor-of-points infrastructure, built on Mathlib's tensor-product and monoid-a
 bialgebra structures and the Mathlib convolution monoid of Yaël Dillies, Michał Mrugała and
 Yunzhou Xie.
 -/
+
+public section
 
 open TensorProduct WithConv MonoidAlgebra
 
