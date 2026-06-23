@@ -349,7 +349,7 @@ instance instHomotopyLike : HomotopyLike (Isotopy f₀ f₁) f₀ f₁ where
 end Isotopy
 
 /-- Two maps `f₀ f₁ : C(X, Y)` are **isotopic** if there is an isotopy between them. -/
-def Isotopic (f₀ f₁ : C(X, Y)) : Prop :=
+@[expose] def Isotopic (f₀ f₁ : C(X, Y)) : Prop :=
   Nonempty (Isotopy f₀ f₁)
 
 namespace Isotopic

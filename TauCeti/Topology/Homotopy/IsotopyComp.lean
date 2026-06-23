@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Topology.Homotopy.Isotopy
+module
+
+public import TauCeti.Topology.Homotopy.Isotopy
 
 /-!
 # Naturality of isotopy under composition with embeddings
@@ -39,6 +41,8 @@ survives both.
   special case where the composing map is a homeomorphism (an ambient homeomorphism on the
   codomain, or a change of source coordinates).
 -/
+
+@[expose] public section
 
 namespace TauCeti
 
