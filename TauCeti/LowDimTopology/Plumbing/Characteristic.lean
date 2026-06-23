@@ -24,8 +24,8 @@ from these covectors and the plumbing intersection form.
 * `TauCeti.PlumbingGraph.IsCharacteristicVector`: the vertex-wise parity condition
   `k v ≡ P.weight v [ZMOD 2]`.
 * `TauCeti.PlumbingGraph.characteristicVectors`: the subtype of characteristic covectors.
-* `TauCeti.PlumbingGraph.canonicalCharacteristic`: the canonical covector whose coordinates are
-  the vertex weights.
+* `TauCeti.PlumbingGraph.canonicalCharacteristic`: the canonical covector satisfying the
+  adjunction coordinates `K(E_v) + E_v · E_v = -2`.
 
 ## Main results
 
@@ -67,19 +67,22 @@ theorem isCharacteristicVector_iff (k : V → ℤ) :
     P.IsCharacteristicVector k ↔ ∀ v : V, k v ≡ P.weight v [ZMOD 2] :=
   Iff.rfl
 
-/-- The canonical characteristic covector whose coordinates are the vertex weights. -/
+/-- The canonical characteristic covector, in the plumbing convention
+`K(E_v) + E_v · E_v = -2`. Since `E_v · E_v = P.weight v`, its coordinate at `v` is
+`-P.weight v - 2`. -/
 abbrev canonicalCharacteristic : V → ℤ :=
-  P.weight
+  fun v => -P.weight v - 2
 
 /-- The canonical covector is characteristic. -/
 theorem isCharacteristicVector_canonicalCharacteristic :
     P.IsCharacteristicVector P.canonicalCharacteristic := by
   intro v
-  rfl
+  exact Int.modEq_iff_dvd.mpr ⟨P.weight v + 1, by ring⟩
 
-/-- The canonical characteristic covector has coordinates the vertex weights. -/
+/-- The canonical characteristic covector has coordinates `-P.weight v - 2`. -/
 @[simp]
-theorem canonicalCharacteristic_apply (v : V) : P.canonicalCharacteristic v = P.weight v :=
+theorem canonicalCharacteristic_apply (v : V) :
+    P.canonicalCharacteristic v = -P.weight v - 2 :=
   rfl
 
 section Form
@@ -96,12 +99,13 @@ theorem isCharacteristicVector_iff_intersection_single (k : V → ℤ) :
   · intro hk v
     simpa using hk v
 
-/-- The canonical characteristic covector evaluated on a basis vector is that basis vector's
-self-pairing. -/
-theorem canonicalCharacteristic_apply_eq_intersection_single (v : V) :
-    P.canonicalCharacteristic v =
-      P.intersectionForm (Pi.single v 1) (Pi.single v 1) := by
+/-- The canonical characteristic covector satisfies the adjunction coordinate equation
+`K(E_v) + E_v · E_v = -2`. -/
+theorem canonicalCharacteristic_apply_add_intersection_single (v : V) :
+    P.canonicalCharacteristic v +
+      P.intersectionForm (Pi.single v 1) (Pi.single v 1) = -2 := by
   simp [canonicalCharacteristic]
+  ring
 
 end Form
 
