@@ -278,11 +278,7 @@ private theorem prod_encodeIdeal_le_absNorm {I : Ideal (𝓞 F)} (hI : I ≠ ⊥
           (Ideal.absNorm P) ^ ((normalizedFactors I).count P)
         = Ideal.absNorm (∏ P ∈ (normalizedFactors I).toFinset,
           P ^ ((normalizedFactors I).count P)) := by
-      induction (normalizedFactors I).toFinset using Finset.induction with
-      | empty =>
-          simp
-      | insert P s hPs ih =>
-          rw [Finset.prod_insert hPs, Finset.prod_insert hPs, map_mul, ih, map_pow]
+      simp only [map_prod, map_pow]
     have hI_eq : ∏ P ∈ (normalizedFactors I).toFinset,
         P ^ ((normalizedFactors I).count P) = I := by
       rw [← Finset.prod_multiset_count, Ideal.prod_normalizedFactors_eq_self hI]
