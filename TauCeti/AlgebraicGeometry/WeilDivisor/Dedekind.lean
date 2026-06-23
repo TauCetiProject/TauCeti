@@ -29,7 +29,6 @@ Concretely we build:
 * `WeilDivisorClassGroup R K`, the resulting Weil-divisor presentation of the class group (the
   quotient of Weil divisors by principal divisors; its isomorphism to `ClassGroup R` is not
   constructed here);
-* `DivisorClassGroup R`, an alias for Mathlib's ideal class group `ClassGroup R = Cl(Spec R)`;
 * the sanity check that the principal divisor of a nonzero *integral* element is effective
   (an element of `R` has no poles).
 
@@ -193,18 +192,10 @@ lemma coeff_principalDivisor_eq_fractionalIdeal_count (u : Additive Kˣ)
 /-- The Weil-divisor presentation of the class group of a Dedekind domain: the quotient of the
 Weil divisors `HeightOneSpectrum R →₀ ℤ` by the principal divisors of the order system. Its
 isomorphism to Mathlib's `ClassGroup R` (and hence to `Cl(Spec R)`) is the expected theorem but
-is *not* constructed here. For the standard fractional-ideal class group, use
-`DivisorClassGroup R`. -/
+is *not* constructed here. For the standard fractional-ideal class group, use Mathlib's
+`ClassGroup R` directly. -/
 noncomputable abbrev WeilDivisorClassGroup : Type _ :=
   (OrderSystem.ofDedekindDomain R K).ClassGroup
-
-/-- The divisor class group of a Dedekind domain, defined as Mathlib's ideal class group
-`ClassGroup R` (which is `Cl(Spec R)`). This depends only on `R`, not on a choice of fraction
-field: `ClassGroup R` is built from `FractionRing R` internally. It is the fractional-ideal
-counterpart of `WeilDivisorClassGroup R K`; the two are expected to be isomorphic, but that
-isomorphism is not constructed here. -/
-noncomputable abbrev DivisorClassGroup : Type _ :=
-  ClassGroup R
 
 variable {R K}
 
