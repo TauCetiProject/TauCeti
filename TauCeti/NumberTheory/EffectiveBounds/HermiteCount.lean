@@ -24,16 +24,16 @@ count of `TauCeti.Algebra.Polynomial`). The result is
 
 `#{K : |discr K| ≤ N} ≤ (2 * C + 1) ^ (D + 1) * D`,
 
-with `D = rankOfDiscrBdd N` Mathlib's explicit degree bound and `C = discrBddCoeffBound N` an
+with `D = rankOfDiscrBdd N` Mathlib's explicit degree bound and `C = coeffBoundOfDiscrBdd N` an
 explicit coefficient bound derived from Mathlib's Minkowski bound `boundOfDiscBdd N`.
 
 ## Main results
 
-* `discrBddCoeffBound`: an explicit height bound for the integer minimal polynomials of primitive
+* `coeffBoundOfDiscrBdd`: an explicit height bound for the integer minimal polynomials of primitive
   generators of number fields of discriminant `≤ N`, uniform over real and complex generators.
 * `TauCeti.NumberField.exists_mem_rootSet_eq_adjoin_of_abs_discr_le`: each such field is generated
   by a root of an integer polynomial of degree `≤ rankOfDiscrBdd N` and height
-  `≤ discrBddCoeffBound N`.
+  `≤ coeffBoundOfDiscrBdd N`.
 * `TauCeti.NumberField.ncard_setOf_finiteDimensional_abs_discr_le_le`: the explicit count.
 
 ## Provenance
@@ -57,7 +57,7 @@ namespace TauCeti.NumberField
 field of discriminant `≤ N`. It is `⌈M ^ D * (D.choose (D / 2))⌉₊` where `D = rankOfDiscrBdd N` is
 Mathlib's degree bound and `M = max √(1 + boundOfDiscBdd N ^ 2) 1` dominates the per-conjugate bound
 of both the real and complex primitive elements of `finite_of_discr_bdd`. -/
-noncomputable def discrBddCoeffBound (N : ℕ) : ℕ :=
+noncomputable def coeffBoundOfDiscrBdd (N : ℕ) : ℕ :=
   ⌈(max (Real.sqrt (1 + (boundOfDiscBdd N : ℝ) ^ 2)) 1) ^ rankOfDiscrBdd N
       * ((rankOfDiscrBdd N).choose (rankOfDiscrBdd N / 2) : ℝ)⌉₊
 
@@ -66,14 +66,14 @@ variable (A : Type*) [Field A] [CharZero A]
 /-- **Effective Hermite--Minkowski, generating step.** Each number field `K` (a finite extension of
 `ℚ` inside `A`) with `|discr K| ≤ N` is generated over `ℚ` by a root in `A` of an integer polynomial
 of degree at most `rankOfDiscrBdd N` and all coefficients of absolute value at most
-`discrBddCoeffBound N`. This is `NumberField.hermiteTheorem.finite_of_discr_bdd` recast to expose
+`coeffBoundOfDiscrBdd N`. This is `NumberField.hermiteTheorem.finite_of_discr_bdd` recast to expose
 its explicit generating set. -/
 theorem exists_mem_rootSet_eq_adjoin_of_abs_discr_le [DecidableEq A] {N : ℕ}
     (K : IntermediateField ℚ A) (hK₀ : FiniteDimensional ℚ K)
     (hK : haveI : _root_.NumberField K := @NumberField.mk _ _ inferInstance hK₀
       |discr K| ≤ (N : ℤ)) :
     ∃ x ∈ (⋃ (f : ℤ[X]) (_ : f.natDegree ≤ rankOfDiscrBdd N ∧
-        ∀ i, |f.coeff i| ≤ (discrBddCoeffBound N : ℤ)),
+        ∀ i, |f.coeff i| ≤ (coeffBoundOfDiscrBdd N : ℤ)),
         ((f.map (algebraMap ℤ A)).roots.toFinset : Set A)),
       (K : IntermediateField ℚ A) = ℚ⟮x⟯ := by
   classical
@@ -112,7 +112,7 @@ theorem exists_mem_rootSet_eq_adjoin_of_abs_discr_le [DecidableEq A] {N : ℕ}
     natDegree_le_rankOfDiscrBdd hK a ha₁
   have hrank : finrank ℚ K ≤ rankOfDiscrBdd N := rank_le_rankOfDiscrBdd hK
   have hnorm : ∀ φ : K →+* ℂ, ‖φ (a : K)‖ ≤ M := (le_iff_le (a : K) M).mp haM
-  have hcoeff : ∀ i, |(minpoly ℤ (a : K)).coeff i| ≤ (discrBddCoeffBound N : ℤ) := by
+  have hcoeff : ∀ i, |(minpoly ℤ (a : K)).coeff i| ≤ (coeffBoundOfDiscrBdd N : ℤ) := by
     intro i
     rw [← @Int.cast_le ℝ]
     refine (Eq.trans_le ?_ (Embeddings.coeff_bdd_of_norm_le hnorm i)).trans ?_
@@ -142,17 +142,17 @@ variable (N : ℕ)
 
 /-- **Effective Hermite--Minkowski.** Inside a fixed extension `A / ℚ`, the number of number fields
 `K` (finite extensions of `ℚ`) with `|discr K| ≤ N` is at most
-`(2 * discrBddCoeffBound N + 1) ^ (rankOfDiscrBdd N + 1) * rankOfDiscrBdd N`, an explicit function
+`(2 * coeffBoundOfDiscrBdd N + 1) ^ (rankOfDiscrBdd N + 1) * rankOfDiscrBdd N`, an explicit function
 of `N` alone. This upgrades Mathlib's `NumberField.finite_of_discr_bdd` from finiteness to an
 explicit count. -/
 theorem ncard_setOf_finiteDimensional_abs_discr_le_le :
     {K : {F : IntermediateField ℚ A // FiniteDimensional ℚ F} |
         haveI : _root_.NumberField K := @NumberField.mk _ _ inferInstance K.prop
         |discr K| ≤ (N : ℤ)}.ncard ≤
-      (2 * discrBddCoeffBound N + 1) ^ (rankOfDiscrBdd N + 1) * rankOfDiscrBdd N := by
+      (2 * coeffBoundOfDiscrBdd N + 1) ^ (rankOfDiscrBdd N + 1) * rankOfDiscrBdd N := by
   classical
   set D := rankOfDiscrBdd N with hD
-  set C := discrBddCoeffBound N with hC
+  set C := coeffBoundOfDiscrBdd N with hC
   set S := {K : {F : IntermediateField ℚ A // FiniteDimensional ℚ F} |
       haveI : _root_.NumberField K := @NumberField.mk _ _ inferInstance K.prop
       |discr K| ≤ (N : ℤ)} with hS
