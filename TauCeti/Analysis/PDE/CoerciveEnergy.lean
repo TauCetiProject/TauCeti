@@ -16,19 +16,21 @@ estimate into pointwise coercivity once the zeroth-order mass coefficient has a 
 that dominates the drift defect `β²/2λ`.
 
 This is still a pointwise finite-dimensional statement: the weak Sobolev space and the
-integrated energy form are later Lane A/D work.  The coefficient assumptions (uniform
-ellipticity, a drift bound, and a mass lower bound) are kept as separate named predicates,
-in the roadmap's style of spelling out coefficient assumptions rather than hiding them in a
-monolithic PDE class.
+integrated energy form are later Lane A/D work.  The ellipticity floor, the drift bound, and
+the mass lower bound are all stated inline, as `∀ x ∈ Ω, λ‖ξ‖² ≤ (a x).toQuadraticForm' ξ`,
+`∀ x ∈ Ω, ‖b x‖ ≤ β`, and `∀ x ∈ Ω, μ ≤ c x`; a caller holding a `UniformlyEllipticOn`
+hypothesis passes its lower-bound projection for the first.
 
 ## Main declarations
 
 * `TauCeti.PDE.min_mul_prod_norm_sq_le_add`: product sup-norm lower-bound bridge for
   coercivity estimates.
+* `TauCeti.PDE.isCoercive_energyIntegrand_of_bounds`: pointwise finite-dimensional coercivity
+  from one principal coefficient, drift vector, and mass coefficient.
 * `TauCeti.PDE.isCoercive_energyIntegrand_zero_drift`: the zero-drift specialization,
   needing only a positive zeroth-order coefficient.
-* `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand_zero_drift`: the same result
-  using the bundled uniform-ellipticity and mass lower-bound predicates.
+* `TauCeti.PDE.isCoercive_energyIntegrand_of_bounds_on`: pointwise coercivity on a domain
+  from an ellipticity floor, a drift bound, and a dominating mass lower bound.
 -/
 
 public section
@@ -80,10 +82,7 @@ private lemma energyIntegrand_self_lower_bound_of_bounds (hlam : 0 < lam)
   have hdecomp : energyIntegrand A b₀ c₀ U U
       = energyIntegrand A b₀ (c₀ - mu) U U + mu * U.1 ^ 2 := by
     rw [energyIntegrand_self, energyIntegrand_self]; ring
-  have hgard := garding_energyIntegrand_self_of_bounds (Ω := (Set.univ : Set Unit))
-    (a := fun _ => A) (b := fun _ => b₀) (c := fun _ => c₀ - mu) hlam
-    (fun {_} _ ξ => hA ξ) (fun {_} _ => hb) (fun {_} _ => sub_nonneg.mpr hc)
-    (Set.mem_univ ()) U
+  have hgard := garding_energyIntegrand_self_of_bounds hlam hA hb (sub_nonneg.mpr hc) U
   rw [hdecomp]
   have hrw : lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
       = lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2 + mu * U.1 ^ 2 := by ring
@@ -94,7 +93,7 @@ private lemma energyIntegrand_self_lower_bound_of_bounds (hlam : 0 < lam)
 
 With ellipticity floor `λ`, drift bound `β`, and mass lower bound `μ` satisfying `β²/2λ < μ`,
 the jet form is coercive with constant `min (λ/2) (μ − β²/2λ)`. -/
-private lemma isCoercive_energyIntegrand_of_bounds (hlam : 0 < lam)
+lemma isCoercive_energyIntegrand_of_bounds (hlam : 0 < lam)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu) :
@@ -123,40 +122,13 @@ lemma isCoercive_energyIntegrand_zero_drift (hlam : 0 < lam) {A : Matrix n n ℝ
 At each point of `Ω`, an ellipticity floor `λ`, a drift bound `β`, and a mass lower bound `μ`
 with `β²/2λ < μ` make the jet form coercive.  Only the lower assumptions are needed: there is
 no upper ellipticity bound and no bundled coefficient predicate. -/
-private lemma isCoercive_energyIntegrand_of_bounds_on {Ω : Set X}
+lemma isCoercive_energyIntegrand_of_bounds_on {Ω : Set X}
     {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ} (hlam : 0 < lam)
     (hA : ∀ ⦃x⦄, x ∈ Ω → ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
     (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta) (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x)
     (hmu : beta ^ 2 / (2 * lam) < mu) {x : X} (hx : x ∈ Ω) :
     IsCoercive (energyIntegrand (a x) (b x) (c x)) :=
   isCoercive_energyIntegrand_of_bounds hlam (hA hx) (hb hx) (hc hx) hmu
-
-namespace UniformlyEllipticOn
-
-variable {Ω : Set X} {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
-variable {lam Lam beta mu : ℝ}
-
-/-- A uniformly elliptic principal coefficient, a bounded drift, and a mass lower bound that
-dominates the drift defect make the pointwise jet integrand coercive at every point of the
-domain. -/
-@[grind =>]
-private lemma isCoercive_energyIntegrand (he : UniformlyEllipticOn Ω a lam Lam)
-    (hb : DriftBoundedOn Ω b beta) (hc : MassLowerBoundOn Ω c mu)
-    (hmu : beta ^ 2 / (2 * lam) < mu) {x : X} (hx : x ∈ Ω) :
-    IsCoercive (energyIntegrand (a x) (b x) (c x)) :=
-  isCoercive_energyIntegrand_of_bounds_on he.pos (fun {_} hy => he.lower_bound hy)
-    (fun {_} hy => hb.bound hy) (fun {_} hy => hc.lower_bound hy) hmu hx
-
-/-- A uniformly elliptic principal coefficient and a positive mass lower bound make the
-zero-drift pointwise jet integrand coercive at every point of the domain. -/
-@[grind =>]
-lemma isCoercive_energyIntegrand_zero_drift (he : UniformlyEllipticOn Ω a lam Lam)
-    (hc : MassLowerBoundOn Ω c mu) {x : X} (hx : x ∈ Ω) :
-    IsCoercive (energyIntegrand (a x) 0 (c x)) :=
-  PDE.isCoercive_energyIntegrand_zero_drift he.pos (hc.mu_pos.trans_le (hc.lower_bound hx))
-    (he.lower_bound hx)
-
-end UniformlyEllipticOn
 
 end PDE
 
