@@ -3,6 +3,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
+import Mathlib.RingTheory.ClassGroup.Basic
 import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 
 /-!
@@ -24,7 +25,8 @@ Concretely we build:
 * `OrderSystem.ofDedekindDomain R K : OrderSystem (HeightOneSpectrum R) (Additive Kˣ)`, whose
   finiteness condition is exactly the statement that a nonzero rational function has zeros and
   poles at only finitely many primes;
-* `DivisorClassGroup R K`, the resulting Weil divisor class group `Cl(Spec R)`;
+* `WeilDivisorClassGroup R K`, the resulting Weil-divisor presentation of `Cl(Spec R)`;
+* `DivisorClassGroup R K`, an alias for Mathlib's ideal class group `ClassGroup R`;
 * the sanity check that the principal divisor of a nonzero *integral* element is effective
   (an element of `R` has no poles).
 
@@ -45,6 +47,7 @@ support of a rational function); no external mathematics is vendored.
 -/
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum WithZero
+open scoped nonZeroDivisors
 
 namespace TauCeti
 
@@ -90,6 +93,59 @@ lemma adicOrd_nonneg_iff (v : HeightOneSpectrum R) (u : Additive Kˣ) :
   rw [adicOrd_apply, neg_nonneg, ← WithZero.log_one (M := ℤ),
     WithZero.log_le_log hu one_ne_zero]
 
+/-- A nonzero `v`-adic order means that `v` lies in the support of the function or of its
+inverse. -/
+lemma adicOrd_ne_zero_mem_support_union (v : HeightOneSpectrum R) (u : Additive Kˣ)
+    (h : adicOrd R K v u ≠ 0) :
+    v ∈ HeightOneSpectrum.Support R ((Additive.toMul u : Kˣ) : K) ∪
+      HeightOneSpectrum.Support R (((Additive.toMul u : Kˣ) : K)⁻¹) := by
+  set k : K := ((Additive.toMul u : Kˣ) : K) with hk
+  have hk0 : k ≠ 0 := Units.ne_zero _
+  have hlog : WithZero.log (v.valuation K k) ≠ 0 := by
+    simpa [adicOrd_apply, ← hk, neg_ne_zero] using h
+  have hval : v.valuation K k ≠ 0 := (v.valuation K).ne_zero_iff.mpr hk0
+  have hne_one : v.valuation K k ≠ 1 := fun h => hlog (by rw [h, WithZero.log_one])
+  rcases lt_or_gt_of_ne hne_one with hlt | hgt
+  · refine Or.inr ?_
+    rw [HeightOneSpectrum.Support, Set.mem_setOf_eq, map_inv₀]
+    exact (one_lt_inv₀ (WithZero.pos_iff_ne_zero.mpr hval)).mpr hlt
+  · exact Or.inl hgt
+
+/-- The `v`-adic order of a rational function agrees with Mathlib's exponent of the
+corresponding principal fractional ideal. -/
+lemma adicOrd_eq_fractionalIdeal_count (v : HeightOneSpectrum R) (u : Additive Kˣ) :
+    adicOrd R K v u =
+      FractionalIdeal.count K v
+        (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) := by
+  set k : K := ((Additive.toMul u : Kˣ) : K) with hk
+  obtain ⟨n, d, hnd⟩ := IsLocalization.exists_mk'_eq R⁰ k
+  have hn : n ≠ 0 := by
+    intro hn
+    have hk0 : k ≠ 0 := Units.ne_zero _
+    apply hk0
+    rw [← hnd, hn, IsFractionRing.mk'_eq_div, map_zero, zero_div]
+  have hd : (d : R) ≠ 0 := nonZeroDivisors.ne_zero d.2
+  have hI :
+      (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) ≠ 0 := by
+    rw [coe_toPrincipalIdeal, FractionalIdeal.spanSingleton_ne_zero_iff]
+    exact Units.ne_zero _
+  have hrepr :
+      (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) =
+        FractionalIdeal.spanSingleton R⁰ ((algebraMap R K) (d : R))⁻¹ *
+          ↑(Ideal.span {n} : Ideal R) := by
+    rw [coe_toPrincipalIdeal, ← hk, ← hnd, IsFractionRing.mk'_eq_div,
+      ← FractionalIdeal.spanSingleton_div_spanSingleton, FractionalIdeal.div_spanSingleton,
+      FractionalIdeal.coeIdeal_span_singleton]
+  have hcount := FractionalIdeal.count_well_defined (K := K) v hI hrepr
+  have hval :
+      v.valuation K k = v.intValuation n / v.intValuation (d : R) := by
+    rw [← hnd]
+    exact v.valuation_of_mk'
+  rw [adicOrd_apply, hval, WithZero.log_div (v.intValuation_ne_zero n hn)
+    (v.intValuation_ne_zero (d : R) hd), v.intValuation_if_neg hn,
+    v.intValuation_if_neg hd, WithZero.log_exp, WithZero.log_exp, hcount]
+  ring
+
 variable (R K)
 
 /-- The order system of a Dedekind domain `R` with fraction field `K`: its points are the
@@ -101,22 +157,13 @@ noncomputable def OrderSystem.ofDedekindDomain :
     OrderSystem (HeightOneSpectrum R) (Additive Kˣ) where
   ord v := adicOrd R K v
   finite_support u := by
-    set k : K := ((Additive.toMul u : Kˣ) : K) with hk
-    have hk0 : k ≠ 0 := Units.ne_zero _
     refine Set.Finite.subset
-      ((HeightOneSpectrum.Support.finite (R := R) (K := K) k).union
-        (HeightOneSpectrum.Support.finite (R := R) (K := K) k⁻¹)) ?_
+      ((HeightOneSpectrum.Support.finite (R := R) (K := K)
+          ((Additive.toMul u : Kˣ) : K)).union
+        (HeightOneSpectrum.Support.finite (R := R) (K := K)
+          (((Additive.toMul u : Kˣ) : K)⁻¹))) ?_
     intro v hv
-    have hlog : WithZero.log (v.valuation K k) ≠ 0 := by
-      simpa [adicOrd_apply, ← hk, neg_ne_zero] using hv
-    have hval : v.valuation K k ≠ 0 := (v.valuation K).ne_zero_iff.mpr hk0
-    have hne_one : v.valuation K k ≠ 1 := fun h => hlog (by rw [h, WithZero.log_one])
-    rcases lt_or_gt_of_ne hne_one with hlt | hgt
-    · refine Or.inr ?_
-      change 1 < v.valuation K k⁻¹
-      rw [map_inv₀]
-      exact (one_lt_inv₀ (WithZero.pos_iff_ne_zero.mpr hval)).mpr hlt
-    · exact Or.inl hgt
+    exact adicOrd_ne_zero_mem_support_union (R := R) (K := K) v u hv
 
 @[simp]
 lemma OrderSystem.ofDedekindDomain_ord (v : HeightOneSpectrum R) :
@@ -130,10 +177,25 @@ lemma coeff_principalDivisor_ofDedekindDomain (u : Additive Kˣ) (v : HeightOneS
       -WithZero.log (v.valuation K ((Additive.toMul u : Kˣ) : K)) := by
   rw [OrderSystem.coeff_principalDivisor, OrderSystem.ofDedekindDomain_ord, adicOrd_apply]
 
-/-- The divisor class group `Cl(Spec R)` of a Dedekind domain, as the Weil divisor class group
-of its order system. -/
-noncomputable abbrev DivisorClassGroup : Type _ :=
+/-- The coefficient of a Dedekind-domain principal divisor agrees with Mathlib's exponent of the
+corresponding principal fractional ideal. -/
+lemma coeff_principalDivisor_eq_fractionalIdeal_count (u : Additive Kˣ)
+    (v : HeightOneSpectrum R) :
+    coeff ((OrderSystem.ofDedekindDomain R K).principalDivisor u) v =
+      FractionalIdeal.count K v
+        (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) := by
+  rw [OrderSystem.coeff_principalDivisor, OrderSystem.ofDedekindDomain_ord,
+    adicOrd_eq_fractionalIdeal_count]
+
+/-- The Weil-divisor presentation of the class group `Cl(Spec R)` of a Dedekind domain. For the
+standard fractional-ideal class-group API, use `DivisorClassGroup R K = ClassGroup R`. -/
+noncomputable abbrev WeilDivisorClassGroup : Type _ :=
   (OrderSystem.ofDedekindDomain R K).ClassGroup
+
+/-- The divisor class group `Cl(Spec R)` of a Dedekind domain, reusing Mathlib's ideal class
+group. The field parameter records the chosen fraction field used by the divisor presentation. -/
+noncomputable abbrev DivisorClassGroup : Type _ :=
+  ClassGroup R
 
 variable {R K}
 
@@ -150,7 +212,7 @@ lemma algebraMapUnit_val {r : R} (hr : r ≠ 0) :
 /-- The principal divisor of a nonzero *integral* element is effective: an element of `R` has
 no poles, only zeros. This is the divisor-of-functions sanity check that rules out a vacuous
 order system. -/
-lemma principalDivisor_isEffective_of_integral {r : R} (hr : r ≠ 0) :
+lemma isEffective_principalDivisor_of_integral {r : R} (hr : r ≠ 0) :
     IsEffective ((OrderSystem.ofDedekindDomain R K).principalDivisor
       (Additive.ofMul (algebraMapUnit (K := K) hr))) := by
   rw [isEffective_iff]
@@ -159,18 +221,39 @@ lemma principalDivisor_isEffective_of_integral {r : R} (hr : r ≠ 0) :
   simp only [toMul_ofMul, algebraMapUnit_val]
   exact v.valuation_le_one r
 
+/-- A coefficient of a principal divisor is positive exactly when the corresponding valuation is
+strictly less than one. -/
+lemma coeff_principalDivisor_pos_iff_valuation_lt_one (u : Additive Kˣ)
+    (v : HeightOneSpectrum R) :
+    0 < coeff ((OrderSystem.ofDedekindDomain R K).principalDivisor u) v ↔
+      v.valuation K ((Additive.toMul u : Kˣ) : K) < 1 := by
+  have hu : v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 0 :=
+    (v.valuation K).ne_zero_iff.mpr (Units.ne_zero _)
+  rw [coeff_principalDivisor_ofDedekindDomain, neg_pos, ← WithZero.log_one (M := ℤ),
+    WithZero.log_lt_log hu one_ne_zero]
+
 /-- The divisor of a nonzero integral element `r : R` has a strictly positive coefficient (a
-genuine zero) at `v` exactly when `r` lies in the prime `v`. Its support is therefore the set
-of primes dividing `r`. -/
+genuine zero) at `v` exactly when `r` lies in the prime `v`. -/
 lemma coeff_principalDivisor_pos_iff_mem {r : R} (hr : r ≠ 0) (v : HeightOneSpectrum R) :
     0 < coeff ((OrderSystem.ofDedekindDomain R K).principalDivisor
       (Additive.ofMul (algebraMapUnit (K := K) hr))) v ↔ r ∈ v.asIdeal := by
-  have hu : v.valuation K (algebraMap R K r) ≠ 0 :=
-    (v.valuation K).ne_zero_iff.mpr (by rwa [ne_eq, IsFractionRing.to_map_eq_zero_iff])
-  rw [coeff_principalDivisor_ofDedekindDomain]
+  rw [coeff_principalDivisor_pos_iff_valuation_lt_one]
   simp only [toMul_ofMul, algebraMapUnit_val]
-  rw [neg_pos, ← WithZero.log_one (M := ℤ), WithZero.log_lt_log hu one_ne_zero,
-    v.valuation_lt_one_iff_mem]
+  exact v.valuation_lt_one_iff_mem r
+
+/-- The support of the divisor of a nonzero integral element is the set of height-one primes
+containing that element. -/
+lemma mem_support_principalDivisor_of_integral_iff {r : R} (hr : r ≠ 0)
+    (v : HeightOneSpectrum R) :
+    v ∈ ((OrderSystem.ofDedekindDomain R K).principalDivisor
+      (Additive.ofMul (algebraMapUnit (K := K) hr))).support ↔ r ∈ v.asIdeal := by
+  rw [Finsupp.mem_support_iff]
+  constructor
+  · intro hv
+    rw [← coeff_principalDivisor_pos_iff_mem (K := K) hr v]
+    exact lt_of_le_of_ne (isEffective_principalDivisor_of_integral (K := K) hr v) (Ne.symm hv)
+  · intro hv
+    exact ne_of_gt ((coeff_principalDivisor_pos_iff_mem (K := K) hr v).mpr hv)
 
 end WeilDivisor
 
