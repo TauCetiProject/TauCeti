@@ -51,23 +51,14 @@ variable {H : Type v} {K : Type w} {L : Type x}
 variable [Ring H] [Ring K] [Ring L]
 variable [HopfAlgebra R H] [HopfAlgebra R K] [HopfAlgebra R L]
 
-/-- If `f : H →ₐc[R] K` is surjective, then the composite with the quotient map
-`K → K/I` is surjective. -/
-theorem quotient_comp_surjective (f : H →ₐc[R] K) (hf : Function.Surjective f)
-    (I : HopfIdeal R K) :
-    Function.Surjective ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f) := by
-  intro q
-  obtain ⟨k, rfl⟩ := Ideal.Quotient.mkₐ_surjective R I.toIdeal q
-  obtain ⟨h, rfl⟩ := hf k
-  exact ⟨h, rfl⟩
-
 /-- The inverse image of a Hopf ideal along a surjective bialgebra morphism.
 
 It is defined as the kernel of the composite `H → K → K/I`; its underlying ideal is the
 ordinary ideal comap of `I.toIdeal`. -/
-@[expose] noncomputable def comap (I : HopfIdeal R K) (f : H →ₐc[R] K)
+noncomputable def comap (I : HopfIdeal R K) (f : H →ₐc[R] K)
     (hf : Function.Surjective f) : HopfIdeal R H :=
-  ker ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f) (quotient_comp_surjective f hf I)
+  ker ((Bialgebra.Quotient.mkBialgHom I.toIdeal).comp f)
+    ((Ideal.Quotient.mkₐ_surjective R I.toIdeal).comp hf)
 
 /-- The underlying ideal of `I.comap f hf` is the ordinary ideal-theoretic inverse image. -/
 @[simp]
@@ -132,19 +123,11 @@ theorem comap_id (I : HopfIdeal R H) :
   rw [mem_comap, BialgHom.coe_id]
   rfl
 
-/-- The composite of surjective bialgebra morphisms is surjective. -/
-theorem comp_surjective (g : K →ₐc[R] L) (hg : Function.Surjective g)
-    (f : H →ₐc[R] K) (hf : Function.Surjective f) : Function.Surjective (g.comp f) := by
-  intro l
-  obtain ⟨k, rfl⟩ := hg l
-  obtain ⟨h, rfl⟩ := hf k
-  exact ⟨h, rfl⟩
-
 /-- Inverse image of Hopf ideals is compatible with composition of surjective morphisms. -/
 @[simp]
 theorem comap_comap (I : HopfIdeal R L) (g : K →ₐc[R] L) (hg : Function.Surjective g)
     (f : H →ₐc[R] K) (hf : Function.Surjective f) :
-    (I.comap g hg).comap f hf = I.comap (g.comp f) (comp_surjective g hg f hf) := by
+    (I.comap g hg).comap f hf = I.comap (g.comp f) (hg.comp hf) := by
   ext h
   rw [mem_comap, mem_comap, mem_comap, BialgHom.coe_comp]
   rfl
