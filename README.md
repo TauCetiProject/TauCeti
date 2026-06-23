@@ -77,7 +77,7 @@ We won't push material upstream from Tau Ceti to Mathlib. Mathlib contributors a
 ## Financial model
 We're aware that training and running powerful AIs come at a significant financial and environmental cost. We're also aware that at present the most capable agents are commercial offerings, and consider the question of bridging industrial and academic practices very seriously.
 
-For the time being, we offer to run initial CI and reviews on our proper budget and we leave to contributors' subscriptions the generation of the code included in their PRs.
+For the time being, we will run initial CI and reviews for individual contributors and experiments (we don't really have a budget even for this, but will scrape something together), and expect that contributors will cover the costs of generating the code included in their PRs. 
 
  While we don't help our contributors with such subscriptions, we believe that Tau Ceti will serve its purpose only if, on the long run, it will result in no financial discrimination among its users. This reflects primarily in our choice of the Apache licence. Although we're aware that the following does not address the issue of colleagues who don't dispose of enough budget to run powerful agents, we expect that, eventually, the review agents' token costs will be covered by some combination of philanthropic donations (in money or in kind), and perhaps also a "billable hours" basis for significant contributors. That is, industrial or academic groups making significant pull requests should expect to donate tokens sufficient to power the review bots in proportion to their contributions. Likely small scale contributions can be reviewed "for free" out of this pool. 
 ## Building
