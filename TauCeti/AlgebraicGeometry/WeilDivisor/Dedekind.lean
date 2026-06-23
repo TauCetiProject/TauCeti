@@ -221,6 +221,7 @@ noncomputable abbrev WeilDivisorClassGroup : Type _ :=
 
 variable {R K}
 
+omit [IsDedekindDomain R] in
 /-- An integral element `r : R`, `r ≠ 0`, as a nonzero rational function. -/
 noncomputable def algebraMapUnit {r : R} (hr : r ≠ 0) : Kˣ :=
   Units.mk0 (algebraMap R K r) (by rwa [ne_eq, IsFractionRing.to_map_eq_zero_iff])
