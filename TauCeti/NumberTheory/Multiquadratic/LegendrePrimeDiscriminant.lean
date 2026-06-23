@@ -21,7 +21,7 @@ shape downstream multiquadratic splitting statements need.
 
 * `TauCeti.Multiquadratic.legendreSym_oddPrimeDiscriminant` expands the Legendre symbol of
   `p*` at an arbitrary prime `q`.
-* `TauCeti.Multiquadratic.legendreSym_oddPrimeDiscriminant_eq_symm` proves
+* `TauCeti.Multiquadratic.legendreSym_oddPrimeDiscriminant_eq_legendreSym` proves
   `(p* / q) = (q / p)` for odd primes.
 * `TauCeti.Multiquadratic.legendreSym_oddPrimeDiscriminant_eq_one_iff` rewrites the
   quadratic-residue condition for an odd prime discriminant into the reciprocal symbol.
@@ -57,7 +57,7 @@ theorem legendreSym_oddPrimeDiscriminant_of_ne_two (p q : ℕ) [Fact q.Prime] (h
 /-- For odd primes `p` and `q`, the Legendre symbol of the odd prime discriminant `p*` at
 `q` is the reciprocal symbol `(q / p)`. This is the prime-discriminant form of quadratic
 reciprocity used by genus-field splitting criteria. -/
-theorem legendreSym_oddPrimeDiscriminant_eq_symm [Fact p.Prime] [Fact q.Prime]
+theorem legendreSym_oddPrimeDiscriminant_eq_legendreSym [Fact p.Prime] [Fact q.Prime]
     (hp : p ≠ 2) (hq : q ≠ 2) :
     legendreSym q (oddPrimeDiscriminant p) = legendreSym p (q : ℤ) := by
   have hpodd : p % 2 = 1 := (Nat.Prime.eq_two_or_odd (Fact.out : p.Prime)).resolve_left hp
@@ -76,25 +76,10 @@ theorem legendreSym_oddPrimeDiscriminant_eq_symm [Fact p.Prime] [Fact q.Prime]
 reciprocal Legendre symbol `(q / p) = 1`. This is the form consumed by the multiquadratic
 prime-splitting law after the genus-field radicands have been normalized to prime
 discriminants. -/
-theorem legendreSym_oddPrimeDiscriminant_eq_one_iff [Fact p.Prime] [Fact q.Prime]
+@[simp] theorem legendreSym_oddPrimeDiscriminant_eq_one_iff [Fact p.Prime] [Fact q.Prime]
     (hp : p ≠ 2) (hq : q ≠ 2) :
     legendreSym q (oddPrimeDiscriminant p) = 1 ↔ legendreSym p (q : ℤ) = 1 := by
-  rw [legendreSym_oddPrimeDiscriminant_eq_symm hp hq]
-
-/-- An odd prime discriminant is divisible by `q` exactly when the underlying prime `p` is.
-This form is convenient when checking the unramifiedness side of the splitting law. -/
-theorem dvd_oddPrimeDiscriminant_iff {p q : ℕ} :
-    (q : ℤ) ∣ oddPrimeDiscriminant p ↔ (q : ℤ) ∣ (p : ℤ) := by
-  by_cases hp : p % 4 = 1
-  · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp]
-  · rw [oddPrimeDiscriminant_of_mod_four_ne_one hp, Int.dvd_neg]
-
-/-- An odd prime discriminant is not divisible by `q` exactly when the underlying prime `p`
-is not.
-The negated form is convenient for the unramifiedness side of the splitting law. -/
-@[simp] theorem not_dvd_oddPrimeDiscriminant_iff {p q : ℕ} :
-    ¬ (q : ℤ) ∣ oddPrimeDiscriminant p ↔ ¬ (q : ℤ) ∣ (p : ℤ) := by
-  exact not_congr dvd_oddPrimeDiscriminant_iff
+  rw [legendreSym_oddPrimeDiscriminant_eq_legendreSym hp hq]
 
 /-- Family form of `legendreSym_oddPrimeDiscriminant_eq_one_iff`: for a family of odd primes
 `p i`, the conditions that all odd prime discriminants `p i*` are quadratic residues modulo
@@ -109,21 +94,14 @@ theorem forall_legendreSym_oddPrimeDiscriminant_eq_one_iff {ι : Type*} (p : ι 
     haveI : Fact (p i).Prime := ⟨hpprime i⟩
     have hsymm : legendreSym q (oddPrimeDiscriminant (p i)) =
         @legendreSym (p i) ⟨hpprime i⟩ (q : ℤ) :=
-      legendreSym_oddPrimeDiscriminant_eq_symm (p := p i) (q := q) (hpodd i) hq
+      legendreSym_oddPrimeDiscriminant_eq_legendreSym (p := p i) (q := q) (hpodd i) hq
     exact hsymm ▸ h i
   · intro h i
     haveI : Fact (p i).Prime := ⟨hpprime i⟩
     have hsymm : legendreSym q (oddPrimeDiscriminant (p i)) =
         @legendreSym (p i) ⟨hpprime i⟩ (q : ℤ) :=
-      legendreSym_oddPrimeDiscriminant_eq_symm (p := p i) (q := q) (hpodd i) hq
+      legendreSym_oddPrimeDiscriminant_eq_legendreSym (p := p i) (q := q) (hpodd i) hq
     rw [hsymm]
     exact h i
-
-/-- Family form of unramifiedness for odd prime discriminants: a prime `q` divides none of
-the `p i*` exactly when it divides none of the underlying primes `p i`. -/
-theorem forall_not_dvd_oddPrimeDiscriminant_iff {ι : Type*} (p : ι → ℕ) {q : ℕ} :
-    (∀ i, ¬ (q : ℤ) ∣ oddPrimeDiscriminant (p i)) ↔
-      ∀ i, ¬ (q : ℤ) ∣ (p i : ℤ) := by
-  simp_rw [not_dvd_oddPrimeDiscriminant_iff]
 
 end TauCeti.Multiquadratic

@@ -26,6 +26,8 @@ primes into radicands `p*` satisfying `p* ≡ 1 (mod 4)`.
   otherwise.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_natAbs`: its absolute value is `p`.
 * `TauCeti.Multiquadratic.prime_oddPrimeDiscriminant`: it is a prime integer.
+* `TauCeti.Multiquadratic.dvd_oddPrimeDiscriminant_iff`: divisibility by `p*` is the same as
+  divisibility by `p`.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_mod_four_eq_one`: for odd `p`, it is `1 mod 4`.
 * `TauCeti.Multiquadratic.oddPrimeDiscriminant_eq_neg_one_pow_pred_div_two_mul`: the standard
   formula `p* = (-1)^((p-1)/2) p`.
@@ -91,6 +93,29 @@ theorem squarefree_oddPrimeDiscriminant {p : ℕ} (hp : Squarefree p) :
   by_cases hp : p % 4 = 1
   · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp]
   · rw [oddPrimeDiscriminant_of_mod_four_ne_one hp, neg_dvd]
+
+/-- An integer divides an odd prime discriminant exactly when it divides the underlying
+natural number. This form is convenient when checking the unramifiedness side of the
+splitting law. -/
+@[simp] theorem dvd_oddPrimeDiscriminant_iff {p : ℕ} {q : ℤ} :
+    q ∣ oddPrimeDiscriminant p ↔ q ∣ (p : ℤ) := by
+  by_cases hp : p % 4 = 1
+  · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp]
+  · rw [oddPrimeDiscriminant_of_mod_four_ne_one hp, Int.dvd_neg]
+
+/-- An integer does not divide an odd prime discriminant exactly when it does not divide the
+underlying natural number.
+The negated form is convenient for the unramifiedness side of the splitting law. -/
+@[simp] theorem not_dvd_oddPrimeDiscriminant_iff {p : ℕ} {q : ℤ} :
+    ¬ q ∣ oddPrimeDiscriminant p ↔ ¬ q ∣ (p : ℤ) := by
+  exact not_congr dvd_oddPrimeDiscriminant_iff
+
+/-- Family form of unramifiedness for odd prime discriminants: an integer divides none of
+the `p i*` exactly when it divides none of the underlying `p i`. -/
+theorem forall_not_dvd_oddPrimeDiscriminant_iff {ι : Type*} (p : ι → ℕ) {q : ℤ} :
+    (∀ i, ¬ q ∣ oddPrimeDiscriminant (p i)) ↔
+      ∀ i, ¬ q ∣ (p i : ℤ) := by
+  simp_rw [not_dvd_oddPrimeDiscriminant_iff]
 
 /-- The odd prime discriminant has the same divisibility-by-two behavior as `p`. -/
 @[simp] theorem two_dvd_oddPrimeDiscriminant_iff (p : ℕ) :
