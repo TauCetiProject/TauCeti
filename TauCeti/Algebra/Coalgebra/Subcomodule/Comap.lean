@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.TensorProduct.RightExactness
-import Mathlib.RingTheory.Flat.Basic
-import TauCeti.Algebra.Coalgebra.Subcomodule
+module
+
+public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+public import Mathlib.RingTheory.Flat.Basic
+public import TauCeti.Algebra.Coalgebra.Subcomodule
 
 /-!
 # Inverse images of subcomodules
@@ -34,6 +36,8 @@ The construction is the standard inverse image of a subcomodule; see Sweedler,
 *Hopf Algebras*, Chapter 2. The exactness step reuses Mathlib's
 `TensorProduct.rTensor_exact` and `LinearMap.exact_subtype_ker_map`.
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -156,7 +160,7 @@ private theorem comap_coact_mem (f : Comodule.Hom R C M N) (B : Subcomodule R C 
   coact_mem_range_comap_toLinearMap f B hm
 
 /-- The inverse image of a subcomodule under a comodule morphism. -/
-def comap (B : Subcomodule R C N) (f : Comodule.Hom R C M N) : Subcomodule R C M where
+@[expose] def comap (B : Subcomodule R C N) (f : Comodule.Hom R C M N) : Subcomodule R C M where
   carrier := B.toSubmodule.comap f.toLinearMap
   coact_mem' := by
     intro m hm
