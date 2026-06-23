@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficientAdjoin
-import TauCeti.Algebra.Coalgebra.Comodule.Product
+module
+
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficientAdjoin
+public import TauCeti.Algebra.Coalgebra.Comodule.Product
 
 /-!
 # Matrix coefficients of product comodules
@@ -31,6 +33,8 @@ representation category needs their behavior under finite direct sums.
 This is the standard direct-sum behavior of matrix coefficients of comodules; see Sweedler,
 *Hopf Algebras*, Chapter 2. It builds on Tau Ceti's `Comodule.Prod` construction.
 -/
+
+public section
 
 open scoped TensorProduct
 

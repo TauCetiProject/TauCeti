@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.Comodule.Cofree
-import TauCeti.Algebra.Coalgebra.Comodule.Finite
+module
+
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite
 
 /-!
 # Finitely generated cofree comodules
@@ -31,6 +33,8 @@ the embedding theorem can be developed.
 The cofree-comodule construction follows Sweedler, *Hopf Algebras*, Chapter 2, as in
 `TauCeti.Algebra.Coalgebra.Comodule.Cofree`.
 -/
+
+public section
 
 open CategoryTheory
 open scoped TensorProduct
@@ -158,7 +162,7 @@ theorem cofreeLift_apply (g : P →ₗ[R] M) (p : P) :
   rfl
 
 /-- The finite-category cofree universal property. -/
-noncomputable def cofreeEquiv (P : FGComoduleCat.{u, v, max w v} R C) :
+@[expose] noncomputable def cofreeEquiv (P : FGComoduleCat.{u, v, max w v} R C) :
     (P ⟶ cofree (R := R) (C := C) M) ≃ (P →ₗ[R] M) := by
   exact
     { toFun φ := Comodule.Hom.cofreeEquiv (R := R) (C := C) (M := M) (P := P) φ.hom

@@ -2,13 +2,15 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Finiteness.Prod
-import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinaryProducts
-import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts
-import Mathlib.CategoryTheory.Preadditive.Biproducts
-import TauCeti.Algebra.Coalgebra.Comodule.Finite
-import TauCeti.Algebra.Coalgebra.Comodule.FinitePreadditive
-import TauCeti.Algebra.Coalgebra.Comodule.Product
+module
+
+public import Mathlib.RingTheory.Finiteness.Prod
+public import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinaryProducts
+public import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts
+public import Mathlib.CategoryTheory.Preadditive.Biproducts
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite
+public import TauCeti.Algebra.Coalgebra.Comodule.FinitePreadditive
+public import TauCeti.Algebra.Coalgebra.Comodule.Product
 
 /-!
 # Products of finitely generated comodules
@@ -43,6 +45,8 @@ category should have additive finite products before the rigid monoidal represen
 category is developed. The construction reuses the direct-sum comodule from
 `TauCeti.Algebra.Coalgebra.Comodule.Product`.
 -/
+
+public section
 
 open CategoryTheory CategoryTheory.Limits
 

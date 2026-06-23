@@ -50,7 +50,7 @@ variable [CommSemiring R]
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
 /-- The unique right-comodule structure on the zero module `PUnit`. -/
-private instance instPUnit : Comodule R C PUnit where
+instance instPUnit : Comodule R C PUnit where
   coact := 0
   coassoc := by
     ext x
@@ -68,7 +68,7 @@ variable [CommSemiring R]
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
 /-- The bundled zero right comodule. -/
-def zero : ComoduleCat.{u, v, w} R C :=
+@[expose] def zero : ComoduleCat.{u, v, w} R C :=
   of R C PUnit.{w + 1}
 
 /-- A comodule whose underlying type is subsingleton is a zero object. -/

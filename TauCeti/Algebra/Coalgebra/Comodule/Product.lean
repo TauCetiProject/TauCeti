@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.Prod
-import Mathlib.LinearAlgebra.TensorProduct.Prod
-import TauCeti.Algebra.Coalgebra.ComoduleCat
+module
+
+public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.LinearAlgebra.TensorProduct.Prod
+public import TauCeti.Algebra.Coalgebra.ComoduleCat
 
 /-!
 # Products of comodules
@@ -35,6 +37,8 @@ The construction is the standard direct sum of comodules; see Sweedler, *Hopf Al
 Chapter 2.
 -/
 
+public section
+
 open CategoryTheory
 open scoped TensorProduct
 
@@ -51,7 +55,7 @@ variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 /-- The direct-sum coaction on the product of two comodules. -/
-def prodCoact : M × N →ₗ[R] (M × N) ⊗[R] C :=
+@[expose] def prodCoact : M × N →ₗ[R] (M × N) ⊗[R] C :=
   LinearMap.coprod
     ((TensorProduct.map (LinearMap.inl R M N) LinearMap.id) ∘ₗ
       coact (R := R) (C := C) (M := M))
@@ -139,7 +143,7 @@ private theorem prodCoact_coassoc_inr (n : N) :
   exact prodCoact_coassoc_map (R := R) (C := C) (M := M) (N := N)
     (LinearMap.inr R M N) hcomp n
 
-private theorem prodCoact_coassoc :
+theorem prodCoact_coassoc :
     TensorProduct.assoc R (M × N) C C ∘ₗ
         (prodCoact (R := R) (C := C) (M := M) (N := N)).rTensor C ∘ₗ
           prodCoact (R := R) (C := C) (M := M) (N := N) =
@@ -209,7 +213,7 @@ private theorem prodCoact_counit_inr (n : N) :
   exact prodCoact_counit_map (R := R) (C := C) (M := M) (N := N)
     (LinearMap.inr R M N) hcomp n
 
-private theorem prodCoact_counit :
+theorem prodCoact_counit :
     Coalgebra.counit.lTensor (M × N) ∘ₗ
         prodCoact (R := R) (C := C) (M := M) (N := N) =
       (TensorProduct.mk R (M × N) R).flip 1 := by
@@ -220,7 +224,7 @@ private theorem prodCoact_counit :
     exact prodCoact_counit_inr (R := R) (C := C) (M := M) (N := N) n
 
 /-- The product of two right comodules, with the direct-sum coaction. -/
-@[implicit_reducible]
+@[expose, implicit_reducible]
 def Prod : Comodule R C (M × N) where
   coact := prodCoact (R := R) (C := C) (M := M) (N := N)
   coassoc := prodCoact_coassoc (R := R) (C := C) (M := M) (N := N)
@@ -242,7 +246,7 @@ theorem Prod_coact :
   rfl
 
 /-- The first projection from the product comodule. -/
-def prodFst :
+@[expose] def prodFst :
     Hom R C (M × N) M := by
   exact
       { toLinearMap := LinearMap.fst R M N
@@ -267,7 +271,7 @@ theorem prodFst_apply (x : M × N) :
   rfl
 
 /-- The second projection from the product comodule. -/
-def prodSnd :
+@[expose] def prodSnd :
     Hom R C (M × N) N := by
   exact
       { toLinearMap := LinearMap.snd R M N
@@ -292,7 +296,7 @@ theorem prodSnd_apply (x : M × N) :
   rfl
 
 /-- The left inclusion into the product comodule. -/
-def prodInl :
+@[expose] def prodInl :
     Hom R C M (M × N) := by
   exact
       { toLinearMap := LinearMap.inl R M N
@@ -315,7 +319,7 @@ theorem prodInl_apply (m : M) :
   rfl
 
 /-- The right inclusion into the product comodule. -/
-def prodInr :
+@[expose] def prodInr :
     Hom R C N (M × N) := by
   exact
       { toLinearMap := LinearMap.inr R M N
@@ -351,7 +355,7 @@ private theorem prodLeft_map_prod {P : Type*} [AddCommMonoid P] [Module R P]
     simp [ht, hu]
 
 /-- The product morphism induced by two morphisms with a common source. -/
-def prodLift {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+@[expose] def prodLift {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (f : Hom R C P M) (g : Hom R C P N) :
     Hom R C P (M × N) := by
   exact
@@ -378,7 +382,7 @@ theorem prodLift_apply {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C 
   rfl
 
 /-- The product morphism induced by two morphisms with a common target. -/
-def prodDesc {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+@[expose] def prodDesc {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (f : Hom R C M P) (g : Hom R C N P) :
     Hom R C (M × N) P := by
   exact
