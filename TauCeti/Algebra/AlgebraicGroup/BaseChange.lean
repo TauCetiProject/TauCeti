@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
-import TauCeti.Algebra.HopfAlgebra
-import Mathlib.RingTheory.Bialgebra.TensorProduct
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import TauCeti.Algebra.HopfAlgebra
+public import Mathlib.RingTheory.Bialgebra.TensorProduct
 
 /-!
 # Base change of bialgebra points
@@ -35,6 +37,8 @@ The tensor-product bialgebra and Hopf-algebra structures and algebra base-change
 used here are from Mathlib, respectively `Mathlib.RingTheory.Bialgebra.TensorProduct`,
 `Mathlib.RingTheory.HopfAlgebra.TensorProduct`, and `AlgHom.liftEquiv`.
 -/
+
+public section
 
 open Coalgebra HopfAlgebra TensorProduct WithConv
 
@@ -77,7 +81,7 @@ private lemma liftEquiv_map_mul
 
 The forward direction sends `f : A →ₐ[k] R` to `s ⊗ a ↦ s • f a`; the inverse restricts a
 `K`-algebra map `K ⊗[k] A →ₐ[K] R` along `a ↦ 1 ⊗ a`. -/
-noncomputable def baseChangePointsMulEquiv :
+@[expose] noncomputable def baseChangePointsMulEquiv :
     WithConv (A →ₐ[k] R) ≃* WithConv (K ⊗[k] A →ₐ[K] R) :=
   { WithConv.congr (AlgHom.liftEquiv k K A R) with
   map_mul' f g := by

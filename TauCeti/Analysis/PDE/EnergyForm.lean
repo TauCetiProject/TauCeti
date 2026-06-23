@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Analysis.PDE.UniformEllipticity
-import TauCeti.Analysis.PDE.LowerOrder
+module
+
+public import TauCeti.Analysis.PDE.UniformEllipticity
+public import TauCeti.Analysis.PDE.LowerOrder
 
 /-!
 # The pointwise integrand of a divergence-form energy bilinear form
@@ -56,6 +58,8 @@ explicit (never hidden in a `∃ C`):
   `TauCeti.PDE.UniformlyEllipticOn.garding_energyIntegrand_self`: convenient corollaries
   of the pointwise estimates.
 -/
+
+public section
 
 namespace TauCeti
 

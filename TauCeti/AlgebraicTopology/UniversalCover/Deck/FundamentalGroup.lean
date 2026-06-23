@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.QuotientCovering
-import Mathlib.Topology.Homotopy.Lifting
+module
+
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.QuotientCovering
+public import Mathlib.Topology.Homotopy.Lifting
 
 /-!
 # The fundamental group of the base of a regular cover and its deck group
@@ -54,6 +56,8 @@ The comparison map is Mathlib's `IsQuotientCoveringMap.fundamentalGroupEquiv` (J
 `Mathlib/Topology/Homotopy/Lifting.lean`); the quotient-covering presentation of a regular
 deck action is `TauCeti.Deck.IsRegular.isQuotientCoveringMap`.
 -/
+
+public section
 
 namespace TauCeti
 

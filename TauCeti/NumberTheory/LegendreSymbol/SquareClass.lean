@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.LegendreSymbol.Basic
+module
+
+public import Mathlib.NumberTheory.LegendreSymbol.Basic
 
 /-!
 # Legendre symbols and square-class changes of radicand
@@ -15,6 +17,8 @@ wrappers in the form used by the multiquadratic splitting law.
 
 These facts are generic Legendre-symbol and divisibility statements.
 -/
+
+public section
 
 namespace TauCeti
 

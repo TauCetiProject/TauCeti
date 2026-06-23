@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.NumberField.Units.Regulator
-import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
+module
+
+public import Mathlib.NumberTheory.NumberField.Units.Regulator
+public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 
 /-!
 # The regulator of a number field of unit rank zero
@@ -27,6 +29,8 @@ rank-zero case.
 * `TauCeti.NumberField.Units.regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two`:
   `R_F = 1` for an imaginary quadratic field `F`.
 -/
+
+public section
 
 open Module NumberField NumberField.InfinitePlace NumberField.Units
 open NumberField.Units.dirichletUnitTheorem (w₀)

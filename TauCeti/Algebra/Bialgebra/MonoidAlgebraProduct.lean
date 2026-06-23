@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
-import Mathlib.RingTheory.Bialgebra.Equiv
-import Mathlib.RingTheory.Bialgebra.TensorProduct
-import Mathlib.RingTheory.TensorProduct.Maps
+module
+
+public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+public import Mathlib.RingTheory.Bialgebra.Equiv
+public import Mathlib.RingTheory.Bialgebra.TensorProduct
+public import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
 # The monoid algebra of a product is the tensor product of monoid algebras
@@ -33,6 +35,8 @@ The tensor-product bialgebra structure and `Algebra.TensorProduct.lift` are from
 monoid-algebra bialgebra structure and `MonoidAlgebra.mapDomainAlgHom` are from
 `Mathlib.RingTheory.Bialgebra.MonoidAlgebra` and `Mathlib.Algebra.MonoidAlgebra.Basic`.
 -/
+
+public section
 
 open TensorProduct MonoidAlgebra
 

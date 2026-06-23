@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
+module
+
+public import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
 
 /-!
 # The closed star, link, and deletion of a simplex
@@ -46,6 +48,8 @@ simplex need not contain every vertex even when `K` does.
   values at the empty simplex (`K`, `K`, and `⊥`), pinning the conventions.
 * monotonicity of all three constructions in `K`.
 -/
+
+public section
 
 namespace TauCeti
 

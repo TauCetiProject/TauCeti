@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
-import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
-import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup
+module
+
+public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup
 
 /-!
 # The diagonalizable group and its character functor of points
@@ -55,6 +57,8 @@ Yaël Dillies, Michał Mrugała and Yunzhou Xie. This realizes the diagonalizabl
 example of the Tau Ceti reductive-groups roadmap (Layer 4 and Layer 0).
 -/
 
+public section
+
 open WithConv
 open scoped TensorProduct
 
@@ -70,7 +74,7 @@ variable [CommSemiring R] [CommSemiring A] [Algebra R A] [CommGroup G]
 /-- The `R[G]`-point of the diagonalizable group `D(G)` corresponding to a character of `G`.
 It is the algebra map extending `χ` via the universal property of the group algebra; it sends
 `single g r` to `r • χ g`. -/
-noncomputable def point (χ : G →* Aˣ) : MonoidAlgebra R G →ₐ[R] A :=
+@[expose] noncomputable def point (χ : G →* Aˣ) : MonoidAlgebra R G →ₐ[R] A :=
   MonoidAlgebra.lift R A G ((Units.coeHom A).comp χ)
 
 /-- The point associated to a character sends `single g r` to `r • χ g`. -/
@@ -90,7 +94,7 @@ theorem point_single_one (χ : G →* Aˣ) (g : G) :
 `f (single g 1)` of `A`, whose inverse is `f (single g⁻¹ 1)`. It is the monoid hom
 `(MonoidAlgebra.lift R A G).symm f : G →* A` made unit-valued through `MonoidHom.toHomUnits`,
 using that `G` is a group. -/
-noncomputable def charOfPoint (f : MonoidAlgebra R G →ₐ[R] A) : G →* Aˣ :=
+@[expose] noncomputable def charOfPoint (f : MonoidAlgebra R G →ₐ[R] A) : G →* Aˣ :=
   ((MonoidAlgebra.lift R A G).symm f).toHomUnits
 
 /-- The character read off from a point sends `g` to the value of the point on `single g 1`. -/
@@ -122,7 +126,7 @@ theorem point_charOfPoint (f : MonoidAlgebra R G →ₐ[R] A) :
   rw [point_single_one, charOfPoint_apply_coe]
 
 /-- Algebra maps out of `R[G]` are the same as characters `G →* Aˣ` of `G`. -/
-noncomputable def pointEquiv : (MonoidAlgebra R G →ₐ[R] A) ≃ (G →* Aˣ) :=
+@[expose] noncomputable def pointEquiv : (MonoidAlgebra R G →ₐ[R] A) ≃ (G →* Aˣ) :=
   (MonoidAlgebra.lift R A G).symm.trans MonoidHom.toHomUnitsMulEquiv.toEquiv
 
 /-- The equivalence sends a point to the character read off from it. -/
@@ -179,7 +183,7 @@ theorem charOfPoint_mapValue (φ : A →ₐ[R] B)
 
 The source is the convolution group of `R`-algebra maps out of `R[G]`; the target is the
 group of characters of `G` valued in the units of `A`, under pointwise multiplication. -/
-noncomputable def pointsMulEquiv : WithConv (MonoidAlgebra R G →ₐ[R] A) ≃* (G →* Aˣ) where
+@[expose] noncomputable def pointsMulEquiv : WithConv (MonoidAlgebra R G →ₐ[R] A) ≃* (G →* Aˣ) where
   toFun f := charOfPoint f.ofConv
   invFun χ := toConv (point (R := R) χ)
   left_inv f := congrArg toConv (point_charOfPoint f.ofConv)

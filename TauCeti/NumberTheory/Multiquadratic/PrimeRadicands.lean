@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Squarefree
-import TauCeti.NumberTheory.Multiquadratic.Degree
-import Mathlib.Analysis.Real.Sqrt
-import Mathlib.Data.Rat.Lemmas
-import Mathlib.Data.Nat.Squarefree
+module
+
+public import TauCeti.Algebra.Squarefree
+public import TauCeti.NumberTheory.Multiquadratic.Degree
+public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Data.Rat.Lemmas
+public import Mathlib.Data.Nat.Squarefree
 
 /-!
 # Multiquadratic fields with prime radicands
@@ -34,6 +36,8 @@ factor), so it is not a square.
   family of distinct primes.
 * `TauCeti.Multiquadratic.finrank_adjoin_sqrt_two_three`: `[ℚ(√2, √3) : ℚ] = 4`.
 -/
+
+public section
 
 open scoped Function
 

@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Analysis.PDE.EnergyForm
+module
+
+public import TauCeti.Analysis.PDE.EnergyForm
 
 /-!
 # Pointwise coercivity for divergence-form energy integrands
@@ -28,6 +30,8 @@ monolithic PDE class.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand_zero_drift`: the same result
   using the bundled uniform-ellipticity and mass lower-bound predicates.
 -/
+
+public section
 
 namespace TauCeti
 

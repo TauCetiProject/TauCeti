@@ -2,13 +2,15 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.Algebra.Group.Subgroup.Even
-import Mathlib.Algebra.Module.ZMod
-import Mathlib.FieldTheory.Finiteness
-import Mathlib.GroupTheory.Index
-import Mathlib.LinearAlgebra.FreeModule.ModN
-import TauCeti.Algebra.Group.PowMonoidHom
+module
+
+public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.Algebra.Group.Subgroup.Even
+public import Mathlib.Algebra.Module.ZMod
+public import Mathlib.FieldTheory.Finiteness
+public import Mathlib.GroupTheory.Index
+public import Mathlib.LinearAlgebra.FreeModule.ModN
+public import TauCeti.Algebra.Group.PowMonoidHom
 
 /-!
 # The maximal elementary-2 quotient `G / G²` of a commutative group
@@ -52,6 +54,8 @@ names around it. The cardinality identity is still expressed through the squarin
 * `TauCeti.twoRank` and `TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|G/G²| = 2 ^ twoRank`.
 -/
+
+public section
 
 namespace TauCeti
 

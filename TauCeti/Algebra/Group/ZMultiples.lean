@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.GroupTheory.SpecificGroups.Cyclic
+module
+
+public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 
 /-!
 # `ℤ`-multiples of a non-torsion element
@@ -16,6 +18,8 @@ For an element `p` of an additive group that is not of finite additive order, th
 
 * `TauCeti.intEquivZMultiples`: the isomorphism `ℤ ≃+ zmultiples p` for a non-torsion `p`.
 -/
+
+public section
 
 namespace TauCeti
 

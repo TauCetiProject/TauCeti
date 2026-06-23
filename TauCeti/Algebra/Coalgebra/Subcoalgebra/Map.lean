@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Coalgebra.Hom
-import Mathlib.RingTheory.Finiteness.Basic
-import TauCeti.Algebra.Coalgebra.Subcoalgebra.Lattice
+module
+
+public import Mathlib.RingTheory.Coalgebra.Hom
+public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Lattice
 
 /-!
 # Images of subcoalgebras
@@ -27,6 +29,8 @@ subcoalgebras need to be movable along maps of coordinate coalgebras.
 This uses the standard fact that a coalgebra morphism preserves comultiplication, so the
 image of a subcoalgebra is again a subcoalgebra. See Sweedler, *Hopf Algebras*, Chapter 2.
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -61,7 +65,7 @@ private theorem image_tensorSquare_apply (f : C →ₗc[R] D) (A : Subcoalgebra 
   | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The image of a subcoalgebra under a coalgebra morphism. -/
-def map (f : C →ₗc[R] D) (A : Subcoalgebra R C) : Subcoalgebra R D where
+@[expose] def map (f : C →ₗc[R] D) (A : Subcoalgebra R C) : Subcoalgebra R D where
   carrier := A.carrier.map f.toLinearMap
   comul_mem' := by
     rintro d hd

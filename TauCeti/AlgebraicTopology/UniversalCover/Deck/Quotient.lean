@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
+module
+
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
 
 /-!
 # The orbit quotient of a regular deck action
@@ -29,6 +31,8 @@ the regular-cover milestones where fibres are deck orbits and quotient covers ar
 with the original base.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace Deck
@@ -45,7 +49,7 @@ lemma eq_proj_of_orbitRel {e e' : E} (h : MulAction.orbitRel (Deck p) E e e') :
   simpa [smul_eq_apply] using map_proj φ e'
 
 /-- The projection map factors through the quotient of `E` by deck orbits. -/
-def orbitQuotientToBase (p : E → B) : MulAction.orbitRel.Quotient (Deck p) E → B :=
+@[expose] def orbitQuotientToBase (p : E → B) : MulAction.orbitRel.Quotient (Deck p) E → B :=
   Quotient.lift p fun _ _ h => eq_proj_of_orbitRel h
 
 /-- The map from the deck-orbit quotient to the base evaluates on representatives by `p`. -/
@@ -80,7 +84,7 @@ lemma apply_eq_iff_mem_orbit_of_exists_apply_eq
   rw [← MulAction.orbitRel_apply, orbitRel_eq_ker_of_exists_apply_eq hpoint, Setoid.ker_def]
 
 /-- An over-base homeomorphism preserves the corresponding deck-orbit relations. -/
-private lemma orbitRel_homeomorph_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e e' : E) :
+lemma orbitRel_homeomorph_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e e' : E) :
     MulAction.orbitRel (Deck p) E e e' ↔
       MulAction.orbitRel (Deck q) F (h e) (h e') := by
   constructor
@@ -108,7 +112,7 @@ private lemma orbitRel_homeomorph_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p
       _ = e := by rw [hψ_apply, h.symm_apply_apply]
 
 /-- An over-base homeomorphism identifies the corresponding deck-orbit quotients. -/
-def orbitQuotientEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) :
+@[expose] def orbitQuotientEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) :
     MulAction.orbitRel.Quotient (Deck p) E ≃ MulAction.orbitRel.Quotient (Deck q) F :=
   Quotient.congr h.toEquiv (orbitRel_homeomorph_iff h hpq)
 
@@ -168,7 +172,7 @@ lemma apply_eq_iff_mem_orbit (hreg : IsRegular p) {e₁ e₂ : E} :
 
 /-- A regular deck action identifies the quotient of the total space by deck orbits with the
 base. -/
-noncomputable def orbitQuotientEquivBase (hreg : IsRegular p) :
+@[expose] noncomputable def orbitQuotientEquivBase (hreg : IsRegular p) :
     MulAction.orbitRel.Quotient (Deck p) E ≃ B :=
   Equiv.ofBijective (orbitQuotientToBase p)
     ⟨hreg.orbitQuotientToBase_injective, Quotient.lift_surjective p _ hreg.1⟩

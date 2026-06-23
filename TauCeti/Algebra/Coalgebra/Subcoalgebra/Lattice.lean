@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.DFinsupp
-import Mathlib.RingTheory.Finiteness.Basic
-import TauCeti.Algebra.Coalgebra.Subcoalgebra
+module
+
+public import Mathlib.LinearAlgebra.DFinsupp
+public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.Algebra.Coalgebra.Subcoalgebra
 
 /-!
 # Joins of subcoalgebras
@@ -27,6 +29,8 @@ finite-dimensional subcoalgebras: finite sums of finite subcoalgebras remain fin
 * `Subcoalgebra.iSup_finite`, `Subcoalgebra.sup_finite`, `Subcoalgebra.finset_sup_finite`:
   finite generation is preserved by finite joins.
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -113,28 +117,23 @@ theorem mem_sup {D E : Subcoalgebra R C} {c : C} :
   rw [← mem_toSubmodule, sup_toSubmodule, Submodule.mem_sup]
   rfl
 
-private theorem le_sup_left' (D E : Subcoalgebra R C) : D ≤ D ⊔ E := by
-  intro c hc
-  rw [← mem_toSubmodule, sup_toSubmodule]
-  exact Submodule.mem_sup_left ((mem_toSubmodule).2 hc)
-
-private theorem le_sup_right' (D E : Subcoalgebra R C) : E ≤ D ⊔ E := by
-  intro c hc
-  rw [← mem_toSubmodule, sup_toSubmodule]
-  exact Submodule.mem_sup_right ((mem_toSubmodule).2 hc)
-
-private theorem sup_le' {D E F : Subcoalgebra R C} (hD : D ≤ F) (hE : E ≤ F) :
-    D ⊔ E ≤ F := by
-  intro c hc
-  rw [mem_sup] at hc
-  rcases hc with ⟨d, hd, e, he, rfl⟩
-  exact add_mem (hD hd) (hE he)
-
 /-- Subcoalgebras form a semilattice under the join whose carrier is the supremum of the
 underlying submodules. -/
 instance instSemilatticeSup : SemilatticeSup (Subcoalgebra R C) :=
-  SemilatticeSup.mk (fun D E => D ⊔ E) le_sup_left' le_sup_right'
-    (fun _ _ _ => sup_le')
+  SemilatticeSup.mk (fun D E => D ⊔ E)
+    (fun _ _ => by
+      intro c hc
+      rw [← mem_toSubmodule, sup_toSubmodule]
+      exact Submodule.mem_sup_left ((mem_toSubmodule).2 hc))
+    (fun _ _ => by
+      intro c hc
+      rw [← mem_toSubmodule, sup_toSubmodule]
+      exact Submodule.mem_sup_right ((mem_toSubmodule).2 hc))
+    (fun _ _ _ hD hE => by
+      intro c hc
+      rw [mem_sup] at hc
+      rcases hc with ⟨d, hd, e, he, rfl⟩
+      exact add_mem (hD hd) (hE he))
 
 /-- The underlying submodule of a supremum of a set of subcoalgebras is the supremum of the
 underlying submodules indexed by that set. -/

@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Group.Subgroup.Even
-import Mathlib.GroupTheory.Schreier
+module
+
+public import Mathlib.Algebra.Group.Subgroup.Even
+public import Mathlib.GroupTheory.Schreier
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -24,6 +26,8 @@ The argument is migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), where it was an
 abstract step towards bounding the index of squares in the unit group of a number field.
 -/
+
+public section
 
 namespace TauCeti
 

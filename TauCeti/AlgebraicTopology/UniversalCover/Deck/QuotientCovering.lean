@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Topology.Covering.Quotient
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient
+module
+
+public import Mathlib.Topology.Covering.Quotient
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient
 
 /-!
 # A regular covering is a quotient covering map for its deck group
@@ -36,6 +38,8 @@ This supplies a prerequisite for the Tau Ceti universal-covers roadmap, Stages 0
 where the quotient of the cover by the deck group is identified with the base via Mathlib's
 `IsQuotientCoveringMap` (`Mathlib/Topology/Covering/Quotient.lean`).
 -/
+
+public section
 
 namespace TauCeti
 

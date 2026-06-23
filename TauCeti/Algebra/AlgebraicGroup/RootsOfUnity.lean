@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.RootsOfUnity.Basic
-import Mathlib.SetTheory.Cardinal.Finite
-import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
+module
+
+public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
 
 /-!
 # The roots-of-unity group scheme
@@ -38,6 +40,8 @@ The diagonalizable-group points calculation is Tau Ceti's
 `IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator`, from
 `Mathlib.RingTheory.RootsOfUnity.Basic`.
 -/
+
+public section
 
 open WithConv
 

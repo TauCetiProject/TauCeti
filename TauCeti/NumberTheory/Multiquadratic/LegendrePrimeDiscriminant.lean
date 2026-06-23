@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminant
-import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
+module
+
+public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminant
+public import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
 
 /-!
 # Legendre symbols of odd prime discriminants
@@ -27,6 +29,8 @@ in the shape downstream multiquadratic splitting statements need.
 * `TauCeti.Multiquadratic.forall_legendreSym_oddPrimeDiscriminant_eq_one_iff` is the
   indexed-family form used by the multiquadratic splitting law.
 -/
+
+public section
 
 namespace TauCeti.Multiquadratic
 

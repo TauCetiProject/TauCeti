@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
-import TauCeti.Algebra.Group.FreeAbelianCharacter
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
+public import TauCeti.Algebra.Group.FreeAbelianCharacter
 
 /-!
 # The split torus and its functor of points
@@ -46,6 +48,8 @@ The diagonalizable-group points calculation is Tau Ceti's
 `DiagonalizableGroup.pointsMulEquiv`; the free-abelian-group character identification is
 `TauCeti.freeAbelianCharEquiv`, which reuses Mathlib's `Finsupp.liftAddHom` and `zmultiplesHom`.
 -/
+
+public section
 
 open WithConv
 
