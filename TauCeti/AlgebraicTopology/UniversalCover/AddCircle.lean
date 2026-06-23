@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Topology.Instances.AddCircle.Defs
-import TauCeti.Algebra.Group.ZMultiples
-import TauCeti.AlgebraicTopology.UniversalCover.Deck
+module
+
+public import Mathlib.Topology.Instances.AddCircle.Defs
+public import TauCeti.Algebra.Group.ZMultiples
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck
 
 /-!
 # The deck transformation group of the quotient map `𝕜 → AddCircle p`
@@ -41,6 +43,8 @@ This advances the Tau Ceti universal-covers roadmap, Stage 4 (`π₁(S¹) ≅ �
 `AddCircle` covering and the deck-transformation group of Stage 0.4.
 -/
 
+public section
+
 namespace TauCeti
 
 open AddSubgroup
@@ -62,7 +66,7 @@ theorem mem_addCircleCoe {φ : 𝕜 ≃ₜ 𝕜} :
 
 /-- Right translation by an element of `zmultiples p`, as a deck transformation of
 `(↑) : 𝕜 → AddCircle p`. -/
-def addRightZMultiples (a : zmultiples p) : Deck ((↑) : 𝕜 → AddCircle p) :=
+@[expose] def addRightZMultiples (a : zmultiples p) : Deck ((↑) : 𝕜 → AddCircle p) :=
   ⟨Homeomorph.addRight (a : 𝕜), mem_addCircleCoe.2 fun e => by
     simpa only [Homeomorph.coe_addRight, add_sub_cancel_left] using a.2⟩
 
@@ -106,19 +110,19 @@ theorem addCircleCoe_eq_add_apply_zero [PreconnectedSpace 𝕜]
   rw [sub_zero, sub_eq_iff_eq_add] at h
   rw [h, add_comm]
 
-private def addRightZMultiplesHom :
+@[expose] def addRightZMultiplesHom :
     Multiplicative (zmultiples p) →* Deck ((↑) : 𝕜 → AddCircle p) where
   toFun a := addRightZMultiples a.toAdd
   map_one' := addRightZMultiples_zero
   map_mul' _ _ := addRightZMultiples_add _ _
 
-private theorem addRightZMultiplesHom_apply (a : Multiplicative (zmultiples p)) :
+theorem addRightZMultiplesHom_apply (a : Multiplicative (zmultiples p)) :
     addRightZMultiplesHom a = addRightZMultiples a.toAdd :=
   rfl
 
 /-- The deck transformation group of `(↑) : 𝕜 → AddCircle p` on a preconnected domain with
 totally disconnected period subgroup is the group of translations by the period subgroup. -/
-noncomputable def addCircleMulEquiv [PreconnectedSpace 𝕜]
+@[expose] noncomputable def addCircleMulEquiv [PreconnectedSpace 𝕜]
     [TotallyDisconnectedSpace (zmultiples p)] :
     Multiplicative (zmultiples p) ≃* Deck ((↑) : 𝕜 → AddCircle p) :=
   MulEquiv.ofBijective addRightZMultiplesHom <| by

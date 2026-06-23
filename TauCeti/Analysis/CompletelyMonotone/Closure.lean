@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Analysis.CompletelyMonotone.Basic
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+module
+
+public import TauCeti.Analysis.CompletelyMonotone.Basic
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # Closure of completely monotone functions under products and differentiation
@@ -47,6 +49,8 @@ monotone).
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions: Theory and Applications*
   (de Gruyter, 2nd ed. 2012).
 -/
+
+public section
 
 open Set
 open scoped ContDiff

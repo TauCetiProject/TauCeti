@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
-import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminant
-import TauCeti.NumberTheory.Multiquadratic.Squarefree
-import Mathlib.Data.Rat.Lemmas
+module
+
+public import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
+public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminant
+public import TauCeti.NumberTheory.Multiquadratic.Squarefree
+public import Mathlib.Data.Rat.Lemmas
 
 /-!
 # Prime discriminants
@@ -31,6 +33,8 @@ discriminant `D ∈ {-4, 8, -8}`, the radicand is `D / 4`, so the three even cas
 * `TauCeti.Multiquadratic.not_isSquare_primeDiscriminantRadicand_rat`: the associated rational
   radicand is not a square.
 -/
+
+public section
 
 namespace TauCeti.Multiquadratic
 
@@ -99,7 +103,7 @@ theorem not_isEvenPrimeDiscriminant_oddPrimeDiscriminant {p : ℕ}
 
 /-- The squarefree radicand attached to a prime discriminant. In the even cases this divides by
 `4`; in the odd cases the discriminant is already squarefree and is used as its own radicand. -/
-def primeDiscriminantRadicand (D : ℤ) : ℤ :=
+@[expose] def primeDiscriminantRadicand (D : ℤ) : ℤ :=
   if D = -4 ∨ D = 8 ∨ D = -8 then evenPrimeDiscriminantRadicand D else D
 
 /-- The defining equation for the prime-discriminant radicand. -/

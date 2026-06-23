@@ -2,12 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Fin.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Fintype.Basic
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Fintype.Perm
-import Mathlib.GroupTheory.Perm.Basic
+module
+
+public import Mathlib.Data.Fin.Basic
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Fintype.Basic
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fintype.Perm
+public import Mathlib.GroupTheory.Perm.Basic
 
 /-!
 # Grid diagrams and grid states
@@ -35,6 +37,8 @@ encoding follows the standard grid-diagram convention from Ozsváth--Stipsicz--S
 Homology for Knots and Links*, Chapter 3: one `O` and one `X` marking in each row and column,
 and a grid state is one point in each row and column.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 
