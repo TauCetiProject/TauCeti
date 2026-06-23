@@ -123,30 +123,6 @@ theorem comap_bot (f : H →ₐc[R] K) (hf : Function.Surjective f) :
   ext h
   rw [mem_comap, mem_ker, mem_bot]
 
-/-- Surjective inverse image of Hopf ideals preserves joins. -/
-@[simp]
-theorem comap_sup_of_surjective (I J : HopfIdeal R K) (f : H →ₐc[R] K)
-    (hf : Function.Surjective f) :
-    (I ⊔ J).comap f hf = I.comap f hf ⊔ J.comap f hf := by
-  ext h
-  constructor
-  · intro hh
-    rw [mem_comap, mem_sup] at hh
-    rcases hh with ⟨y, hy, z, hz, hyz⟩
-    obtain ⟨hy', rfl⟩ := hf y
-    obtain ⟨hz', rfl⟩ := hf z
-    rw [← map_add] at hyz
-    refine mem_sup.mpr ⟨hy' + (h - (hy' + hz')), ?_, hz', mem_comap.mpr hz, ?_⟩
-    · rw [mem_comap, map_add, map_sub, hyz, sub_self, add_zero]
-      exact hy
-    · abel
-  · intro hh
-    rw [mem_sup] at hh
-    rcases hh with ⟨y, hy, z, hz, rfl⟩
-    rw [mem_comap] at hy hz ⊢
-    rw [map_add]
-    exact mem_sup.mpr ⟨f y, hy, f z, hz, rfl⟩
-
 /-- Surjective inverse image of Hopf ideals preserves nonempty suprema of families. -/
 @[simp]
 theorem comap_iSup_of_surjective {ι : Type*} [Nonempty ι] (I : ι → HopfIdeal R K)
@@ -200,6 +176,37 @@ theorem comap_iSup_of_surjective {ι : Type*} [Nonempty ι] (I : ι → HopfIdea
       -- Expose the bounded `Finset.sum` shape produced by `Finsupp.sum` so `map_sum` applies.
       change (∑ a ∈ s.support, f (s a)) = f (∑ a ∈ s.support, s a)
       rw [map_sum]⟩
+
+/-- Surjective inverse image of Hopf ideals preserves joins. -/
+@[simp]
+theorem comap_sup_of_surjective (I J : HopfIdeal R K) (f : H →ₐc[R] K)
+    (hf : Function.Surjective f) :
+    (I ⊔ J).comap f hf = I.comap f hf ⊔ J.comap f hf := by
+  have hsup : I ⊔ J = ⨆ b : Bool, cond b I J := by
+    apply le_antisymm
+    · refine sup_le ?_ ?_
+      · exact le_sSup ⟨true, rfl⟩
+      · exact le_sSup ⟨false, rfl⟩
+    · rw [iSup]
+      refine sSup_le ?_
+      rintro _ ⟨b, rfl⟩
+      cases b <;> simp
+  have hsup_comap :
+      I.comap f hf ⊔ J.comap f hf = ⨆ b : Bool, (cond b I J).comap f hf := by
+    apply le_antisymm
+    · refine sup_le ?_ ?_
+      · exact le_sSup ⟨true, rfl⟩
+      · exact le_sSup ⟨false, rfl⟩
+    · rw [iSup]
+      refine sSup_le ?_
+      rintro _ ⟨b, rfl⟩
+      cases b <;> simp
+  calc
+    (I ⊔ J).comap f hf = (⨆ b : Bool, cond b I J).comap f hf := by
+      exact congrArg (fun A : HopfIdeal R K => A.comap f hf) hsup
+    _ = ⨆ b : Bool, (cond b I J).comap f hf :=
+      comap_iSup_of_surjective (fun b : Bool => cond b I J) f hf
+    _ = I.comap f hf ⊔ J.comap f hf := hsup_comap.symm
 
 /-- Surjective inverse image of Hopf ideals preserves nonempty suprema of sets. -/
 @[simp]
