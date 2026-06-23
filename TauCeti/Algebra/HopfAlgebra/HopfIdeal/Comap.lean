@@ -29,7 +29,10 @@ schemes in the affine Hopf-algebra dictionary.
   containment.
 * `TauCeti.HopfIdeal.comap_bot`: the kernel of a surjective morphism is the inverse image of
   the zero Hopf ideal.
-* `TauCeti.HopfIdeal.comap_sup`: surjective inverse image preserves joins.
+* `TauCeti.HopfIdeal.comap_sup_of_surjective`: surjective inverse image preserves binary joins.
+* `TauCeti.HopfIdeal.comap_iSup_of_surjective` and
+  `TauCeti.HopfIdeal.comap_sSup_of_surjective`: surjective inverse image preserves nonempty
+  suprema.
 * `TauCeti.HopfIdeal.comap_id` and `TauCeti.HopfIdeal.comap_comap`: identity and composition
   laws.
 
@@ -80,33 +83,36 @@ theorem mem_comap {I : HopfIdeal R K} {f : H →ₐc[R] K} {hf : Function.Surjec
   exact mem_toIdeal
 
 /-- Inverse image of Hopf ideals is monotone. -/
-theorem comap_mono (f : H →ₐc[R] K) (hf : Function.Surjective f) {I J : HopfIdeal R K}
-    (hIJ : I ≤ J) : I.comap f hf ≤ J.comap f hf := by
+theorem comap_mono (f : H →ₐc[R] K) (hfI hfJ : Function.Surjective f)
+    {I J : HopfIdeal R K} (hIJ : I ≤ J) : I.comap f hfI ≤ J.comap f hfJ := by
   intro h hh
   exact mem_comap.mpr (hIJ (mem_comap.mp hh))
 
 /-- For a surjective morphism, inverse image of Hopf ideals reflects containment. -/
-theorem le_of_comap_le_comap_of_surjective (f : H →ₐc[R] K) (hf : Function.Surjective f)
-    {I J : HopfIdeal R K} (hIJ : I.comap f hf ≤ J.comap f hf) : I ≤ J := by
+theorem le_of_comap_le_comap_of_surjective (f : H →ₐc[R] K)
+    (hfI hfJ : Function.Surjective f) {I J : HopfIdeal R K}
+    (hIJ : I.comap f hfI ≤ J.comap f hfJ) : I ≤ J := by
   intro k hk
-  obtain ⟨h, rfl⟩ := hf k
+  obtain ⟨h, rfl⟩ := hfI k
   exact mem_comap.mp (hIJ (mem_comap.mpr hk))
 
 /-- For a surjective morphism, containment after inverse image is equivalent to containment
 before inverse image. -/
-theorem comap_le_comap_iff_of_surjective (f : H →ₐc[R] K) (hf : Function.Surjective f)
-    {I J : HopfIdeal R K} : I.comap f hf ≤ J.comap f hf ↔ I ≤ J :=
-  ⟨le_of_comap_le_comap_of_surjective f hf, comap_mono f hf⟩
+theorem comap_le_comap_iff_of_surjective (f : H →ₐc[R] K)
+    (hfI hfJ : Function.Surjective f) {I J : HopfIdeal R K} :
+    I.comap f hfI ≤ J.comap f hfJ ↔ I ≤ J :=
+  ⟨le_of_comap_le_comap_of_surjective f hfI hfJ, comap_mono f hfI hfJ⟩
 
 /-- For a surjective morphism, inverse image of Hopf ideals reflects equality. -/
 @[simp]
-theorem comap_eq_comap_iff_of_surjective (f : H →ₐc[R] K) (hf : Function.Surjective f)
-    {I J : HopfIdeal R K} : I.comap f hf = J.comap f hf ↔ I = J := by
+theorem comap_eq_comap_iff_of_surjective (f : H →ₐc[R] K)
+    (hfI hfJ : Function.Surjective f) {I J : HopfIdeal R K} :
+    I.comap f hfI = J.comap f hfJ ↔ I = J := by
   constructor
   · intro h
     apply le_antisymm
-    · rw [← comap_le_comap_iff_of_surjective f hf, h]
-    · rw [← comap_le_comap_iff_of_surjective f hf, h]
+    · rw [← comap_le_comap_iff_of_surjective f hfI hfJ, h]
+    · rw [← comap_le_comap_iff_of_surjective f hfJ hfI, h]
   · intro h
     rw [h]
 
@@ -119,7 +125,7 @@ theorem comap_bot (f : H →ₐc[R] K) (hf : Function.Surjective f) :
 
 /-- Surjective inverse image of Hopf ideals preserves joins. -/
 @[simp]
-theorem comap_sup (I J : HopfIdeal R K) (f : H →ₐc[R] K)
+theorem comap_sup_of_surjective (I J : HopfIdeal R K) (f : H →ₐc[R] K)
     (hf : Function.Surjective f) :
     (I ⊔ J).comap f hf = I.comap f hf ⊔ J.comap f hf := by
   ext h
@@ -140,6 +146,68 @@ theorem comap_sup (I J : HopfIdeal R K) (f : H →ₐc[R] K)
     rw [mem_comap] at hy hz ⊢
     rw [map_add]
     exact mem_sup.mpr ⟨f y, hy, f z, hz, rfl⟩
+
+/-- Surjective inverse image of Hopf ideals preserves nonempty suprema of families. -/
+@[simp]
+theorem comap_iSup_of_surjective {ι : Type*} [Nonempty ι] (I : ι → HopfIdeal R K)
+    (f : H →ₐc[R] K) (hf : Function.Surjective f) :
+    (⨆ i, I i).comap f hf = ⨆ i, (I i).comap f hf := by
+  classical
+  ext h
+  constructor
+  · intro hh
+    rw [mem_comap, mem_iSup] at hh
+    rcases hh with ⟨s, hs, hsum⟩
+    let pre : K → H := fun k => if hk : k = 0 then 0 else Classical.choose (hf k)
+    have hpre : ∀ k, f (pre k) = k := by
+      intro k
+      by_cases hk : k = 0
+      · simp [pre, hk]
+      · simpa [pre, hk] using Classical.choose_spec (hf k)
+    have hpre_zero : pre 0 = 0 := by simp [pre]
+    let t : ι →₀ H := s.mapRange pre hpre_zero
+    let i0 : ι := Classical.choice ‹Nonempty ι›
+    let u : ι →₀ H := t + Finsupp.single i0 (h - t.sum fun _ y => y)
+    rw [mem_iSup]
+    refine ⟨u, ?_, ?_⟩
+    · intro i
+      by_cases hi : i = i0
+      · subst hi
+        dsimp [u]
+        rw [Finsupp.single_eq_same]
+        exact add_mem (by simpa [t, hpre] using hs i0) (by
+          rw [mem_comap, map_sub]
+          have ht_sum : f (t.sum fun _ y => y) = s.sum fun _ y => y := by
+            dsimp [t]
+            rw [Finsupp.sum_mapRange_index (fun _ => rfl), Finsupp.sum, map_sum]
+            exact Finset.sum_congr rfl fun i _ => by simp [hpre]
+          rw [ht_sum, hsum, sub_self]
+          exact zero_mem (I i0))
+      · dsimp [u]
+        rw [Finsupp.single_eq_of_ne hi]
+        simpa [t, hpre] using hs i
+    · dsimp [u]
+      rw [Finsupp.sum_add_index (fun _ _ => rfl) (fun _ _ _ _ => rfl),
+        Finsupp.sum_single_index rfl]
+      abel
+  · intro hh
+    rw [mem_iSup] at hh
+    rcases hh with ⟨s, hs, rfl⟩
+    rw [mem_comap, mem_iSup]
+    exact ⟨s.mapRange f (map_zero f),
+      fun i => (mem_comap (I := I i) (f := f) (hf := hf)).mp (hs i), by
+      rw [Finsupp.sum_mapRange_index (fun _ => rfl)]
+      change (∑ a ∈ s.support, f (s a)) = f (∑ a ∈ s.support, s a)
+      rw [map_sum]⟩
+
+/-- Surjective inverse image of Hopf ideals preserves nonempty suprema of sets. -/
+@[simp]
+theorem comap_sSup_of_surjective (S : Set (HopfIdeal R K)) (hS : S.Nonempty)
+    (f : H →ₐc[R] K) (hf : Function.Surjective f) :
+    (sSup S).comap f hf = sSup ((fun I => I.comap f hf) '' S) := by
+  classical
+  haveI : Nonempty S := hS.to_subtype
+  rw [sSup_eq_iSup', comap_iSup_of_surjective, sSup_image']
 
 /-- Pulling a Hopf ideal back along the identity morphism leaves it unchanged. -/
 @[simp]
