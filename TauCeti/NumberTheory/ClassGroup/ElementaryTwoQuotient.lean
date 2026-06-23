@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.ClassGroup.Basic
-import TauCeti.Algebra.Group.ElementaryTwoQuotient
+module
+
+public import Mathlib.RingTheory.ClassGroup.Basic
+public import TauCeti.Algebra.Group.ElementaryTwoQuotient
 
 /-!
 # The maximal elementary-2 quotient `Cl(R)/Cl(R)²` of a class group
@@ -39,6 +41,8 @@ square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGroup` f
 * `TauCeti.ClassGroup.twoRank` and `card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|Cl(R)/Cl(R)²| = 2 ^ twoRank`.
 -/
+
+public section
 
 namespace TauCeti.ClassGroup
 

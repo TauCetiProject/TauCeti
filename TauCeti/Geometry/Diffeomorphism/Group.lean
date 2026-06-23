@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Geometry.Manifold.Diffeomorph
+module
+
+public import Mathlib.Geometry.Manifold.Diffeomorph
 
 /-!
 # The group of self-diffeomorphisms
@@ -38,6 +40,8 @@ construction works for every smoothness exponent `n`, with `n = ∞` the case na
   operations act by composition, the identity, and the inverse diffeomorphism.
 -/
 
+public section
+
 namespace TauCeti
 
 open scoped Manifold ContDiff
@@ -60,7 +64,7 @@ instance instMul : Mul (M ≃ₘ^n⟮I, I⟯ M) where mul f g := g.trans f
 instance instInv : Inv (M ≃ₘ^n⟮I, I⟯ M) where inv f := f.symm
 
 /-- Composition of diffeomorphisms is associative. -/
-private theorem trans_assoc
+theorem trans_assoc
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
     {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
@@ -128,7 +132,7 @@ theorem toEquiv_inv (f : M ≃ₘ^n⟮I, I⟯ M) : (f⁻¹).toEquiv = f.toEquiv�
 
 /-- The forgetful group homomorphism from the self-diffeomorphism group to the permutation group of
 the underlying set, sending a diffeomorphism to its underlying equivalence. -/
-@[simps]
+@[expose, simps]
 def toPerm : (M ≃ₘ^n⟮I, I⟯ M) →* Equiv.Perm M where
   toFun f := f.toEquiv
   map_one' := rfl
