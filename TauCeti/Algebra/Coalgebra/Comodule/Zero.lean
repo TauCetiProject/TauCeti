@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.ComoduleCat
+module
+
+public import TauCeti.Algebra.Coalgebra.ComoduleCat
 
 /-!
 # The zero comodule
@@ -31,6 +33,8 @@ The construction is the standard zero object in the category of comodules; see S
 algebra". The proof that a subsingleton bundled comodule is zero follows Mathlib's
 `SemimoduleCat.isZero_of_subsingleton` / `ModuleCat.isZero_of_subsingleton` pattern.
 -/
+
+public section
 
 open CategoryTheory CategoryTheory.Limits
 open scoped TensorProduct

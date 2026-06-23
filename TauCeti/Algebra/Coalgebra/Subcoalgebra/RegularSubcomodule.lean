@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.Subcoalgebra.Lattice
-import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
+module
+
+public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Lattice
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
 
 /-!
 # Subcoalgebras as subcomodules of the regular comodule
@@ -29,6 +31,8 @@ This follows immediately from the standard definitions: if `Δ(D) ⊆ D ⊗ D`, 
 `Δ(D) ⊆ D ⊗ C`, so `D` is a subcomodule of the regular comodule. The definitions of
 subcoalgebra and subcomodule follow Sweedler, *Hopf Algebras*, Chapter 2.
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -59,7 +63,7 @@ private theorem tensorSquare_range_le_regular_range (D : Subcoalgebra R C) :
 
 The underlying submodule is unchanged; the map `D ⊗ D → C ⊗ C` factors through
 `D ⊗ C → C ⊗ C` by including the second tensor factor. -/
-def toRegularSubcomodule (D : Subcoalgebra R C) : Subcomodule R C C where
+@[expose] def toRegularSubcomodule (D : Subcoalgebra R C) : Subcomodule R C C where
   carrier := D.toSubmodule
   coact_mem' := by
     intro c hc
@@ -86,7 +90,7 @@ theorem toRegularSubcomodule_mono {D E : Subcoalgebra R C} (hDE : D ≤ E) :
   exact mem_toRegularSubcomodule.2 (hDE (mem_toRegularSubcomodule.1 hc))
 
 /-- Viewing subcoalgebras as regular subcomodules is an order embedding. -/
-def toRegularSubcomoduleOrderEmbedding :
+@[expose] def toRegularSubcomoduleOrderEmbedding :
     Subcoalgebra R C ↪o Subcomodule R C C where
   toFun := toRegularSubcomodule
   inj' D E h := by
