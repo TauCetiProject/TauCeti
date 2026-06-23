@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.BigOperators.Associated
-import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
-import Mathlib.RingTheory.Ideal.Maps
-import Mathlib.Tactic
+module
+
+public import Mathlib.Algebra.BigOperators.Associated
+public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
+public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.Tactic
 
 /-!
 # Conjugate-transversal ideal families in a Dedekind domain
@@ -31,6 +33,8 @@ Migrated from
 of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture, where it counted
 the conjugate-product ideals over primes `p ≡ 1 (mod 4)` in a concrete CM field.
 -/
+
+public section
 
 attribute [local instance] Classical.propDecidable
 

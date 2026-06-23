@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Coalgebra.Basic
+module
+
+public import Mathlib.RingTheory.Coalgebra.Basic
 
 /-!
 # Subcoalgebras
@@ -27,6 +29,8 @@ finite-dimensional subcoalgebras and the fundamental theorem of comodules. Later
 This follows the standard coalgebra definition: a subcoalgebra `D ≤ C` satisfies
 `Δ(D) ⊆ D ⊗ D`. See Sweedler, *Hopf Algebras*, Chapter 2.
 -/
+
+@[expose] public section
 
 open scoped TensorProduct
 

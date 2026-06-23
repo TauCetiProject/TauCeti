@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.DFinsupp
-import Mathlib.LinearAlgebra.TensorProduct.RightExactness
-import Mathlib.RingTheory.HopfAlgebra.Basic
-import Mathlib.RingTheory.HopfAlgebra.Quotient
-import Mathlib.RingTheory.Ideal.Maps
+module
+
+public import Mathlib.LinearAlgebra.DFinsupp
+public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+public import Mathlib.RingTheory.HopfAlgebra.Basic
+public import Mathlib.RingTheory.HopfAlgebra.Quotient
+public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
 # Hopf ideals
@@ -41,6 +43,8 @@ ideal API. The arbitrary-supremum lattice construction follows the local pattern
 `TauCeti.Algebra.Coalgebra.Subcoalgebra.Lattice` and
 `TauCeti.Algebra.Coalgebra.Subcomodule.Lattice`.
 -/
+
+@[expose] public section
 
 open scoped TensorProduct
 
@@ -452,7 +456,7 @@ instance instSemilatticeSup : SemilatticeSup (HopfIdeal R H) where
     rcases Submodule.mem_sup.mp hx with ⟨y, hy, z, hz, rfl⟩
     exact add_mem (hIK hy) (hJK hz)
 
-private theorem sSup_isTwoSided (S : Set (HopfIdeal R H)) :
+theorem sSup_isTwoSided (S : Set (HopfIdeal R H)) :
     (⨆ I : S, (I : HopfIdeal R H).toIdeal).IsTwoSided := by
   classical
   refine ⟨fun {x} b hx => ?_⟩
@@ -462,7 +466,7 @@ private theorem sSup_isTwoSided (S : Set (HopfIdeal R H)) :
   exact Submodule.sum_mem _ fun I _ =>
     Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).mul_mem_right (hf I) b)
 
-private theorem comul_mem_sSup (S : Set (HopfIdeal R H)) {x : H}
+theorem comul_mem_sSup (S : Set (HopfIdeal R H)) {x : H}
     (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
     Coalgebra.comul (R := R) x ∈
       leftTensorIdeal (R := R) (H := H) (⨆ I : S, (I : HopfIdeal R H).toIdeal) ⊔
@@ -479,7 +483,7 @@ private theorem comul_mem_sSup (S : Set (HopfIdeal R H)) {x : H}
       (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
     ((I : HopfIdeal R H).comul_mem (hf I))
 
-private theorem counit_eq_zero_sSup (S : Set (HopfIdeal R H)) {x : H}
+theorem counit_eq_zero_sSup (S : Set (HopfIdeal R H)) {x : H}
     (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
     Coalgebra.counit (R := R) x = 0 := by
   classical
@@ -488,7 +492,7 @@ private theorem counit_eq_zero_sSup (S : Set (HopfIdeal R H)) {x : H}
   rw [Finsupp.sum, map_sum]
   exact Finset.sum_eq_zero fun I _ => (I : HopfIdeal R H).counit_eq_zero (hf I)
 
-private theorem antipode_mem_sSup (S : Set (HopfIdeal R H)) {x : H}
+theorem antipode_mem_sSup (S : Set (HopfIdeal R H)) {x : H}
     (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
     HopfAlgebra.antipode R x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal := by
   classical

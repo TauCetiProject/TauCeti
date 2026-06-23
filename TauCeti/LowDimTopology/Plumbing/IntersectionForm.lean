@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Combinatorics.SimpleGraph.AdjMatrix
-import Mathlib.LinearAlgebra.Matrix.Notation
-import Mathlib.LinearAlgebra.Matrix.BilinearForm
-import Mathlib.LinearAlgebra.Matrix.PosDef
-import Mathlib.LinearAlgebra.Matrix.Symmetric
+module
+
+public import Mathlib.Combinatorics.SimpleGraph.AdjMatrix
+public import Mathlib.LinearAlgebra.Matrix.Notation
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import Mathlib.LinearAlgebra.Matrix.PosDef
+public import Mathlib.LinearAlgebra.Matrix.Symmetric
 
 /-!
 # Plumbing graphs and their intersection forms
@@ -60,6 +62,8 @@ intersection form of a plumbing graph follows Némethi,
 [arXiv:0709.0841](https://arxiv.org/abs/0709.0841), after Ozsváth--Szabó,
 [arXiv:math/0203265](https://arxiv.org/abs/math/0203265).
 -/
+
+public section
 
 namespace TauCeti
 

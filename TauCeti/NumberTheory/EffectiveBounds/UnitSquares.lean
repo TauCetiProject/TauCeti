@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
-import TauCeti.Algebra.Group.PowMonoidHom
+module
+
+public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
+public import TauCeti.Algebra.Group.PowMonoidHom
 
 /-!
 # The index of squares in the unit group of a number field
@@ -28,6 +30,8 @@ Migrated from
 formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance
 conjecture, where this bound fed an explicit class-number estimate.
 -/
+
+public section
 
 open NumberField NumberField.Units
 

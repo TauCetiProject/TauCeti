@@ -2,12 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Real.Pi.Bounds
-import Mathlib.Data.Pi.Interval
-import Mathlib.NumberTheory.NumberField.Basic
-import Mathlib.NumberTheory.RamificationInertia.Basic
-import Mathlib.NumberTheory.ZetaValues
-import Mathlib.RingTheory.Ideal.Int
+module
+
+public import Mathlib.Analysis.Real.Pi.Bounds
+public import Mathlib.Data.Pi.Interval
+public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.NumberTheory.RamificationInertia.Basic
+public import Mathlib.NumberTheory.ZetaValues
+public import Mathlib.RingTheory.Ideal.Int
 
 /-!
 # An effective count of ideals of bounded norm
@@ -34,6 +36,8 @@ Migrated from
 formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance
 conjecture, where this Rankin-style count fed the class-number bound.
 -/
+
+public section
 
 attribute [local instance] Classical.propDecidable
 

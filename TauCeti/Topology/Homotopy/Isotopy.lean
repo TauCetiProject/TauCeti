@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Topology.Homotopy.Basic
-import Mathlib.Topology.Homeomorph.Lemmas
-import Mathlib.Topology.Maps.Basic
+module
+
+public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.Homeomorph.Lemmas
+public import Mathlib.Topology.Maps.Basic
 
 /-!
 # Isotopy and ambient isotopy
@@ -46,6 +48,8 @@ notion also underlies locally flat isotopy, diffeotopies, and concordance.
   `TauCeti.AmbientIsotopy.final_symm_final`: the final maps of the composite and inverse ambient
   isotopies, and that the inverse final map undoes the original on both sides.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 

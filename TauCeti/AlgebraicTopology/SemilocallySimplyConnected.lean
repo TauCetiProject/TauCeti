@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
-import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
-import Mathlib.Topology.Homotopy.LocallyContractible
-import Mathlib.Topology.Homotopy.Product
+module
+
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import Mathlib.Topology.Homotopy.LocallyContractible
+public import Mathlib.Topology.Homotopy.Product
 
 /-!
 # Semilocally simply connected spaces
@@ -53,6 +55,8 @@ universal-cover construction over `[SemilocallySimplyConnectedSpace X]`; neither
 the predicate is not yet in Mathlib. The API here is a streamlined single-field restatement
 sufficient for the roadmap's Stage 0.2.
 -/
+
+public section
 
 open Topology
 

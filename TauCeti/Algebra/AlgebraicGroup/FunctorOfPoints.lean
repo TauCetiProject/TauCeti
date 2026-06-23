@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Bialgebra.Convolution
-import Mathlib.RingTheory.HopfAlgebra.Convolution
-import TauCeti.Algebra.HopfAlgebra
+module
+
+public import Mathlib.RingTheory.Bialgebra.Convolution
+public import Mathlib.RingTheory.HopfAlgebra.Convolution
+public import TauCeti.Algebra.HopfAlgebra
 
 /-!
 # Convolution groups of algebra homomorphisms out of a Hopf algebra
@@ -51,6 +53,8 @@ reductive-groups roadmap (Layer 0). The convolution monoid it builds on is the w
 Yaël Dillies, Michał Mrugała and Yunzhou Xie in Mathlib.
 -/
 
+public section
+
 open Coalgebra HopfAlgebra TensorProduct WithConv
 
 namespace TauCeti
@@ -68,7 +72,7 @@ variable [Semiring H] [_root_.HopfAlgebra R H] [CommSemiring A] [Algebra R A]
 `f.toLinearMap ∘ₗ HopfAlgebra.antipode R`. This is well-defined even when `H` is
 noncommutative: `S` is an antihomomorphism (`HopfAlgebra.antipode_mul_antidistrib`), and `A` is
 commutative, so `f ∘ S` is a homomorphism. -/
-private noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
+@[expose] noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
   AlgHom.ofLinearMap (f.toLinearMap ∘ₗ antipode R)
     (by simp only [LinearMap.coe_comp, Function.comp_apply, antipode_one, f.toLinearMap_apply,
       map_one])
@@ -77,7 +81,7 @@ private noncomputable def antipodeComp (f : H →ₐ[R] A) : H →ₐ[R] A :=
         f.toLinearMap_apply, map_mul]
       rw [mul_comm]
 
-private lemma toLinearMap_antipodeComp (f : H →ₐ[R] A) :
+lemma toLinearMap_antipodeComp (f : H →ₐ[R] A) :
     (antipodeComp f).toLinearMap = f.toLinearMap ∘ₗ antipode R := rfl
 
 /-- The convolution inverse of an `R`-algebra homomorphism `f : H →ₐ[R] A` out of a Hopf
@@ -88,7 +92,7 @@ noncomputable instance : Inv (WithConv (H →ₐ[R] A)) where
 /-- The convolution inverse of `f` is `f ∘ S`, where `S` is the antipode: definitionally,
 `f⁻¹ = toConv (antipodeComp f.ofConv)`. This is `private` because its right-hand side names the
 private `antipodeComp`; the public pointwise characterization is `convInv_apply`. -/
-private lemma convInv_def (f : WithConv (H →ₐ[R] A)) :
+lemma convInv_def (f : WithConv (H →ₐ[R] A)) :
     f⁻¹ = toConv (antipodeComp f.ofConv) := rfl
 
 /-- Pointwise, the convolution inverse of `f` sends `h` to `f (S h)`, where `S` is the
@@ -97,7 +101,7 @@ antipode. -/
 lemma convInv_apply (f : WithConv (H →ₐ[R] A)) (h : H) :
     f⁻¹ h = f.ofConv (antipode R h) := rfl
 
-private lemma convInv_mul_cancel (f : WithConv (H →ₐ[R] A)) : f⁻¹ * f = 1 := by
+lemma convInv_mul_cancel (f : WithConv (H →ₐ[R] A)) : f⁻¹ * f = 1 := by
   -- It suffices to check the equality after passing to the convolution ring of linear
   -- maps, where Mathlib already has the structure; the algebra-hom convolution monoid is
   -- transported from the linear one along the underlying-linear-map injection.
@@ -136,7 +140,7 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 monoids. This needs only the bialgebra structure on `H`. When `H` is moreover a Hopf algebra,
 these convolution monoids are the convolution groups (`instGroup`); a `MonoidHom` between
 groups is automatically a group homomorphism, so no separate construction is needed there. -/
-noncomputable def mapValue (φ : A →ₐ[R] B) :
+@[expose] noncomputable def mapValue (φ : A →ₐ[R] B) :
     WithConv (H →ₐ[R] A) →* WithConv (H →ₐ[R] B) where
   toFun f := toConv (φ.comp f.ofConv)
   map_one' := by

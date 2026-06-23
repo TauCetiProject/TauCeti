@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Bialgebra.Hom
-import Mathlib.RingTheory.HopfAlgebra.Basic
-import Mathlib.RingTheory.HopfAlgebra.TensorProduct
+module
+
+public import Mathlib.RingTheory.Bialgebra.Hom
+public import Mathlib.RingTheory.HopfAlgebra.Basic
+public import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 
 /-!
 # Hopf algebra morphisms
@@ -33,6 +35,8 @@ convolution product on linear maps, due to Yaël Dillies, Michał Mrugała and Y
 The tensor-product antipode formula uses Mathlib's
 `Mathlib.RingTheory.HopfAlgebra.TensorProduct`, specifically `TensorProduct.antipode_def`.
 -/
+
+public section
 
 open Coalgebra HopfAlgebra TensorProduct WithConv
 

@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.NumberField.Basic
-import Mathlib.RingTheory.Discriminant
-import Mathlib.RingTheory.Trace.Basic
+module
+
+public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.RingTheory.Discriminant
+public import Mathlib.RingTheory.Trace.Basic
 
 /-!
 # Trace lemmas for field extensions
@@ -28,6 +30,8 @@ Migrated from
 formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance
 conjecture, where these trace facts supported square-root basis computations over number fields.
 -/
+
+public section
 
 open Module Polynomial
 

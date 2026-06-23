@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.EffectiveBounds.Discriminant
-import TauCeti.FieldTheory.Trace
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
-import Mathlib.Algebra.Polynomial.Monic
+module
+
+public import TauCeti.NumberTheory.EffectiveBounds.Discriminant
+public import TauCeti.FieldTheory.Trace
+public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+public import Mathlib.Algebra.Polynomial.Monic
 
 /-!
 # The effective discriminant bound for a quadratic field, evaluated on a square-root basis
@@ -44,6 +46,8 @@ formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-dista
 conjecture: the effective discriminant bound and the square-root trace-form
 diagonalisation. The closed-form quadratic estimate assembled here is new.
 -/
+
+public section
 
 open Module
 
