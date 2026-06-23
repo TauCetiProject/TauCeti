@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Squarefree.Basic
-import Mathlib.NumberTheory.LegendreSymbol.ZModChar
-import Mathlib.RingTheory.Int.Basic
+module
+
+public import Mathlib.Algebra.Squarefree.Basic
+public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
+public import Mathlib.RingTheory.Int.Basic
 
 /-!
 # Odd prime discriminants
@@ -35,6 +37,8 @@ primes into radicands `p*` satisfying `p* ≡ 1 (mod 4)`.
   formula `p* = (-1)^(p/2) p`.
 -/
 
+public section
+
 namespace TauCeti.Multiquadratic
 
 /-- The odd prime discriminant `p*`: `p` when `p % 4 = 1` and `-p` otherwise (so the value is
@@ -42,7 +46,7 @@ namespace TauCeti.Multiquadratic
 second case is the intended one for odd primes. The primality hypothesis is not part of the
 definition so that the expression rewrites by computation; the API below supplies the
 prime-specific facts. -/
-def oddPrimeDiscriminant (p : ℕ) : ℤ :=
+@[expose] def oddPrimeDiscriminant (p : ℕ) : ℤ :=
   if p % 4 = 1 then p else -(p : ℤ)
 
 /-- The defining `if` expression for the odd prime discriminant. -/

@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.Multiquadratic.PrimeRadicands
-import Mathlib.Data.Complex.Basic
-import Mathlib.Data.Finset.Option
+module
+
+public import TauCeti.NumberTheory.Multiquadratic.PrimeRadicands
+public import Mathlib.Data.Complex.Basic
+public import Mathlib.Data.Finset.Option
 
 /-!
 # Multiquadratic CM fields
@@ -45,6 +47,8 @@ step over the real subfield (the route taken there), it treats `i = √(-1)` as 
 proves the square-class combinator `not_isSquare_prod_optionNeg` over an arbitrary ordered field,
 then feeds the already-migrated `finrank_adjoin_range`.
 -/
+
+public section
 
 open scoped Function
 

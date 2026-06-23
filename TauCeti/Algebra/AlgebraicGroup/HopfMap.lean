@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Bialgebra.Equiv
-import Mathlib.RingTheory.TensorProduct.Maps
-import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+module
+
+public import Mathlib.RingTheory.Bialgebra.Equiv
+public import Mathlib.RingTheory.TensorProduct.Maps
+public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 
 /-!
 # Functoriality in the coordinate Hopf algebra
@@ -35,6 +37,8 @@ The convolution-preservation proof is the bialgebra-morphism version of Mathlib'
 `AlgHom.convMul_comp_bialgHom_distrib`, from `Mathlib.RingTheory.Bialgebra.Convolution`.
 -/
 
+public section
+
 open WithConv
 
 namespace TauCeti
@@ -58,7 +62,7 @@ private lemma convMul_comp_bialgHom_distrib_of_semiring_source
 /-- Contravariant functoriality of convolution algebra homomorphisms in the source
 bialgebra. A bialgebra morphism `φ : H₁ →ₐc[R] H₂` sends an `A`-valued point of `H₂` to an
 `A`-valued point of `H₁` by pre-composition. -/
-noncomputable def mapDomain (φ : H₁ →ₐc[R] H₂) :
+@[expose] noncomputable def mapDomain (φ : H₁ →ₐc[R] H₂) :
     WithConv (H₂ →ₐ[R] A) →* WithConv (H₁ →ₐ[R] A) where
   toFun f := toConv (f.ofConv.comp (φ : H₁ →ₐ[R] H₂))
   map_one' := by
@@ -128,7 +132,7 @@ variable [CommSemiring A] [Algebra R A]
 /-- A bialgebra isomorphism `e : H₁ ≃ₐc[R] H₂` induces a multiplicative equivalence of the
 convolution monoids of points, by pre-composition: the equiv-version of the contravariant
 functoriality `mapDomain`. -/
-noncomputable def mapDomainMulEquiv (e : H₁ ≃ₐc[R] H₂) :
+@[expose] noncomputable def mapDomainMulEquiv (e : H₁ ≃ₐc[R] H₂) :
     WithConv (H₂ →ₐ[R] A) ≃* WithConv (H₁ →ₐ[R] A) where
   toFun := mapDomain (A := A) (e : H₁ →ₐc[R] H₂)
   invFun := mapDomain (A := A) (e.symm : H₂ →ₐc[R] H₁)
