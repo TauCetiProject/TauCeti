@@ -6,7 +6,8 @@ module
 
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
-public import TauCeti.Algebra.HopfAlgebra.Quotient
+public import TauCeti.Algebra.Bialgebra.Quotient
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal
 
 /-!
 # Hopf-ideal quotients of finite-type commutative Hopf algebras

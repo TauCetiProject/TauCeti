@@ -5,9 +5,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal
-public import TauCeti.Algebra.HopfAlgebra.Quotient
 
 /-!
 # Kernels of Hopf algebra morphisms
