@@ -74,6 +74,19 @@ noncomputable def adicOrd (v : HeightOneSpectrum R) : Additive Kˣ →+ ℤ :=
 
 variable {R K}
 
+/-- For a nonzero element `x : ℤᵐ⁰`, its logarithm vanishes exactly when `x = 1`. This is the
+shared logarithm fact behind both the `≠ 1` step of the finiteness proof and the support
+criterion `mem_support_principalDivisor_iff_valuation_ne_one`. -/
+private lemma log_eq_zero_iff_eq_one {x : ℤᵐ⁰} (hx : x ≠ 0) :
+    WithZero.log x = 0 ↔ x = 1 := by
+  constructor
+  · intro h
+    have hx' := WithZero.exp_log hx
+    rw [h, WithZero.exp_zero] at hx'
+    exact hx'.symm
+  · intro h
+    rw [h, WithZero.log_one]
+
 /-- The computational form of `adicOrd`: the order at `v` of an element `u : Additive Kˣ` is the
 sign-flipped logarithm `-log v(u)` of its `v`-adic valuation, where the underlying rational
 function is `(Additive.toMul u : Kˣ) : K`. The minus sign makes a uniformizer have order `+1`. -/
@@ -113,7 +126,7 @@ private lemma adicOrd_ne_zero_mem_support_union (v : HeightOneSpectrum R) (u : A
   have hlog : WithZero.log (v.valuation K k) ≠ 0 := by
     simpa [adicOrd_apply, ← hk, neg_ne_zero] using h
   have hval : v.valuation K k ≠ 0 := (v.valuation K).ne_zero_iff.mpr hk0
-  have hne_one : v.valuation K k ≠ 1 := fun h => hlog (by rw [h, WithZero.log_one])
+  have hne_one : v.valuation K k ≠ 1 := fun h => hlog ((log_eq_zero_iff_eq_one hval).2 h)
   rcases lt_or_gt_of_ne hne_one with hlt | hgt
   · refine Or.inr ?_
     rw [HeightOneSpectrum.Support, Set.mem_setOf_eq, map_inv₀]
@@ -235,22 +248,14 @@ lemma coeff_principalDivisor_eq_fractionalIdeal_count (u : Additive Kˣ)
 /-- A height-one prime lies in the support of a principal divisor exactly when the corresponding
 valuation is not one. -/
 @[simp]
-lemma mem_support_principalDivisor_iff (u : Additive Kˣ) (v : HeightOneSpectrum R) :
+lemma mem_support_principalDivisor_iff_valuation_ne_one (u : Additive Kˣ)
+    (v : HeightOneSpectrum R) :
     v ∈ ((OrderSystem.ofDedekindDomain R K).principalDivisor u).support ↔
       v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 1 := by
   have hu : v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 0 :=
     (v.valuation K).ne_zero_iff.mpr (Units.ne_zero _)
-  rw [mem_support_iff, coeff_principalDivisor_eq_neg_log_valuation]
-  constructor
-  · intro h hval
-    exact h (by rw [hval, WithZero.log_one, neg_zero])
-  · intro hval hcoeff
-    apply hval
-    have hlog : WithZero.log (v.valuation K ((Additive.toMul u : Kˣ) : K)) = 0 := by
-      linarith
-    exact le_antisymm
-      ((WithZero.log_le_log hu one_ne_zero).mp (by rw [hlog, WithZero.log_one]))
-      ((WithZero.log_le_log one_ne_zero hu).mp (by rw [hlog, WithZero.log_one]))
+  rw [mem_support_iff, coeff_principalDivisor_eq_neg_log_valuation, neg_ne_zero]
+  exact not_congr (log_eq_zero_iff_eq_one hu)
 
 /-- The Weil-divisor presentation of the class group of a Dedekind domain: the quotient of the
 Weil divisors `HeightOneSpectrum R →₀ ℤ` by the principal divisors of the order system. Its
@@ -261,31 +266,6 @@ noncomputable abbrev WeilDivisorClassGroup : Type _ :=
   (OrderSystem.ofDedekindDomain R K).ClassGroup
 
 variable {R K}
-
-omit [IsDedekindDomain R] in
-/-- An integral element `r : R`, `r ≠ 0`, as a nonzero rational function. This is a private
-plumbing helper for the integral principal-divisor lemmas below; it is generic fraction-field
-API and is not part of the Dedekind order-system surface. -/
-private noncomputable def algebraMapUnit {r : R} (hr : r ≠ 0) : Kˣ :=
-  Units.mk0 (algebraMap R K r) (by rwa [ne_eq, IsFractionRing.to_map_eq_zero_iff])
-
-omit [IsDedekindDomain R] in
-@[simp]
-private lemma algebraMapUnit_val {r : R} (hr : r ≠ 0) :
-    (algebraMapUnit (K := K) hr : K) = algebraMap R K r :=
-  rfl
-
-/-- The principal divisor of a nonzero *integral* element is effective: an element of `R` has
-no poles, only zeros. This is the divisor-of-functions sanity check that rules out a vacuous
-order system. -/
-lemma isEffective_principalDivisor_of_integral {r : R} (hr : r ≠ 0) :
-    IsEffective ((OrderSystem.ofDedekindDomain R K).principalDivisor
-      (Additive.ofMul (algebraMapUnit (K := K) hr))) := by
-  rw [isEffective_iff]
-  intro v
-  rw [OrderSystem.coeff_principalDivisor, OrderSystem.ofDedekindDomain_ord, adicOrd_nonneg_iff]
-  simp only [toMul_ofMul, algebraMapUnit_val]
-  exact v.valuation_le_one r
 
 /-- A coefficient of a principal divisor is positive exactly when the corresponding valuation is
 strictly less than one. -/
@@ -298,29 +278,43 @@ lemma coeff_principalDivisor_pos_iff_valuation_lt_one (u : Additive Kˣ)
   rw [coeff_principalDivisor_eq_neg_log_valuation, neg_pos, ← WithZero.log_one (M := ℤ),
     WithZero.log_lt_log hu one_ne_zero]
 
-/-- The divisor of a nonzero integral element `r : R` has a strictly positive coefficient (a
-genuine zero) at `v` exactly when `r` lies in the prime `v`. -/
-lemma coeff_principalDivisor_pos_iff_mem {r : R} (hr : r ≠ 0) (v : HeightOneSpectrum R) :
-    0 < coeff ((OrderSystem.ofDedekindDomain R K).principalDivisor
-      (Additive.ofMul (algebraMapUnit (K := K) hr))) v ↔ r ∈ v.asIdeal := by
+/-- The principal divisor of a nonzero *integral* element is effective: an element of `R` has
+no poles, only zeros. The element is presented as any unit `u : Kˣ` whose value is
+`algebraMap R K r`. This is the divisor-of-functions sanity check that rules out a vacuous
+order system. -/
+lemma isEffective_principalDivisor_of_integral {r : R} {u : Kˣ}
+    (hu : (u : K) = algebraMap R K r) :
+    IsEffective ((OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul u)) := by
+  rw [isEffective_iff]
+  intro v
+  rw [OrderSystem.coeff_principalDivisor, OrderSystem.ofDedekindDomain_ord, adicOrd_nonneg_iff]
+  simp only [toMul_ofMul, hu]
+  exact v.valuation_le_one r
+
+/-- The divisor of a nonzero integral element `r : R`, presented as a unit `u : Kˣ` with value
+`algebraMap R K r`, has a strictly positive coefficient (a genuine zero) at `v` exactly when `r`
+lies in the prime `v`. -/
+lemma coeff_principalDivisor_pos_iff_mem {r : R} {u : Kˣ} (hu : (u : K) = algebraMap R K r)
+    (v : HeightOneSpectrum R) :
+    0 < coeff ((OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul u)) v ↔
+      r ∈ v.asIdeal := by
   rw [coeff_principalDivisor_pos_iff_valuation_lt_one]
-  simp only [toMul_ofMul, algebraMapUnit_val]
+  simp only [toMul_ofMul, hu]
   exact v.valuation_lt_one_iff_mem r
 
-/-- The support of the divisor of a nonzero integral element is the set of height-one primes
-containing that element. -/
-@[simp]
-lemma mem_support_principalDivisor_of_integral_iff {r : R} (hr : r ≠ 0)
-    (v : HeightOneSpectrum R) :
-    v ∈ ((OrderSystem.ofDedekindDomain R K).principalDivisor
-      (Additive.ofMul (algebraMapUnit (K := K) hr))).support ↔ r ∈ v.asIdeal := by
+/-- The support of the divisor of a nonzero integral element `r : R`, presented as a unit
+`u : Kˣ` with value `algebraMap R K r`, is the set of height-one primes containing `r`. -/
+lemma mem_support_principalDivisor_of_integral_iff_mem_asIdeal {r : R} {u : Kˣ}
+    (hu : (u : K) = algebraMap R K r) (v : HeightOneSpectrum R) :
+    v ∈ ((OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul u)).support ↔
+      r ∈ v.asIdeal := by
   rw [Finsupp.mem_support_iff]
   constructor
   · intro hv
-    rw [← coeff_principalDivisor_pos_iff_mem (K := K) hr v]
-    exact lt_of_le_of_ne (isEffective_principalDivisor_of_integral (K := K) hr v) (Ne.symm hv)
+    rw [← coeff_principalDivisor_pos_iff_mem hu v]
+    exact lt_of_le_of_ne (isEffective_principalDivisor_of_integral hu v) (Ne.symm hv)
   · intro hv
-    exact ne_of_gt ((coeff_principalDivisor_pos_iff_mem (K := K) hr v).mpr hv)
+    exact ne_of_gt ((coeff_principalDivisor_pos_iff_mem hu v).mpr hv)
 
 end WeilDivisor
 
