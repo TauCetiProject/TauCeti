@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Category.CommHopfAlgCat
-import TauCeti.Algebra.AlgebraicGroup.HopfMap
-import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
+module
+
+public import Mathlib.Algebra.Category.CommHopfAlgCat
+public import TauCeti.Algebra.AlgebraicGroup.HopfMap
+public import TauCeti.Algebra.AlgebraicGroup.PointsFunctor
 
 /-!
 # Commutative Hopf algebras and their functor of points
@@ -38,6 +40,8 @@ functoriality uses Mathlib's convolution monoid and bialgebra morphism API, in p
 `AlgHom.mapDomain`.
 -/
 
+public section
+
 open CategoryTheory WithConv
 
 namespace TauCeti
@@ -53,7 +57,7 @@ between their group-valued points functors, contravariantly in the coordinate al
 
 At a commutative `R`-algebra `A`, this sends an `A`-valued point `f : K →ₐ[R] A` to
 `f ∘ φ : H →ₐ[R] A`. -/
-noncomputable def mapPointsFunctor {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K) :
+@[expose] noncomputable def mapPointsFunctor {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K) :
     HopfAlgebra.pointsFunctor (R := R) (H := K) ⟶
       HopfAlgebra.pointsFunctor (R := R) (H := H) where
   app A := GrpCat.ofHom
@@ -101,7 +105,7 @@ functor of points.
 A coordinate Hopf algebra `H` is sent to the functor `A ↦ WithConv (H →ₐ[R] A)`. A morphism
 `φ : H ⟶ K` is sent contravariantly to the natural transformation that pre-composes
 `K`-points by `φ`. -/
-noncomputable def pointsFunctor :
+@[expose] noncomputable def pointsFunctor :
     (CommHopfAlgCat.{v} R)ᵒᵖ ⥤ CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj H := HopfAlgebra.pointsFunctor (R := R) (H := H.unop)
   map φ := mapPointsFunctor φ.unop
