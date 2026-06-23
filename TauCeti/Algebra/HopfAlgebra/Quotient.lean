@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.HopfAlgebra.Convolution
-import Mathlib.RingTheory.HopfAlgebra.Quotient
-import Mathlib.RingTheory.Ideal.Quotient.Operations
-import TauCeti.Algebra.Bialgebra.Quotient
-import TauCeti.Algebra.HopfAlgebra.HopfIdeal
+module
+
+public import Mathlib.RingTheory.HopfAlgebra.Convolution
+public import Mathlib.RingTheory.HopfAlgebra.Quotient
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import TauCeti.Algebra.Bialgebra.Quotient
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal
 
 /-!
 # The quotient Hopf algebra of a Hopf ideal
@@ -51,6 +53,8 @@ builds on the `TauCeti.HopfIdeal` API and Mathlib's quotient Hopf-algebra machin
 `Ideal.Quotient.liftₐ`, and `HopfAlgebra.antipodeAlgHom` from
 `Mathlib.RingTheory.HopfAlgebra.Convolution`, due to Yaël Dillies, Michał Mrugała and Yunzhou Xie.
 -/
+
+public section
 
 open scoped TensorProduct
 

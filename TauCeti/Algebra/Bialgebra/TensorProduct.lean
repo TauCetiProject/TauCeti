@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Bialgebra.TensorProduct
+module
+
+public import Mathlib.RingTheory.Bialgebra.TensorProduct
 
 /-!
 # Bialgebra maps into tensor products
@@ -13,6 +15,8 @@ of bialgebras as bialgebra morphisms, and records their underlying algebra maps.
 The tensor-product bialgebra structure and its unit isomorphisms are from Mathlib's
 `Mathlib.RingTheory.Bialgebra.TensorProduct`.
 -/
+
+public section
 
 open TensorProduct
 

@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.ZMod.Basic
-import Mathlib.FieldTheory.Galois.Basic
-import TauCeti.NumberTheory.Multiquadratic.Degree
-import TauCeti.NumberTheory.Multiquadratic.Galois
+module
+
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.FieldTheory.Galois.Basic
+public import TauCeti.NumberTheory.Multiquadratic.Degree
+public import TauCeti.NumberTheory.Multiquadratic.Galois
 
 /-!
 # The Galois group of a multiquadratic field is `(ℤ/2)ⁿ`
@@ -34,6 +36,8 @@ sign-change automorphisms of one concrete multiquadratic field were analysed; he
 construction is carried out for an arbitrary such tower.
 -/
 
+public section
+
 open Polynomial IntermediateField
 
 attribute [local instance] Classical.propDecidable
@@ -46,7 +50,7 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L] {ι : Type*}
 variable (root) in
 /-- The sign pattern of an automorphism: `0` where it fixes a generator and `1` otherwise.
 When `gen root i ≠ -gen root i`, the `1` case says that the automorphism negates the generator. -/
-noncomputable def signPattern
+@[expose] noncomputable def signPattern
     (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) (i : ι) : ZMod 2 :=
   if σ (gen root i) = gen root i then 0 else 1
 
@@ -168,7 +172,7 @@ theorem signPattern_mul (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
 
 variable (root) in
 /-- The Galois group of `M / K` maps to the sign patterns `(ℤ/2)ⁱ`. -/
-noncomputable def signHom (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+@[expose] noncomputable def signHom (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     : (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) →*
       Multiplicative (ι → ZMod 2) where
   toFun σ := Multiplicative.ofAdd (signPattern root σ)

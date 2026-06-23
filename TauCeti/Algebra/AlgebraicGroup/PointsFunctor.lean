@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Category.CommAlgCat.Basic
-import Mathlib.Algebra.Category.Grp.Basic
-import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+module
+
+public import Mathlib.Algebra.Category.CommAlgCat.Basic
+public import Mathlib.Algebra.Category.Grp.Basic
+public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 
 /-!
 # The functor of points of a Hopf algebra
@@ -33,6 +35,8 @@ homomorphisms and the convolution-group inverse already developed in
 `TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints`.
 -/
 
+public section
+
 open CategoryTheory _root_.HopfAlgebra TensorProduct WithConv
 
 namespace TauCeti
@@ -53,7 +57,7 @@ noncomputable abbrev points (A : CommAlgCat.{w} R) : GrpCat.{max v w} :=
 /-- The group homomorphism on points induced by a morphism of value algebras.
 
 It sends an `A`-point `f : H →ₐ[R] A` to the `B`-point `φ ∘ f`. -/
-noncomputable def mapPoints {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
+@[expose] noncomputable def mapPoints {A B : CommAlgCat.{w} R} (φ : A ⟶ B) :
     points (H := H) A ⟶ points (H := H) B :=
   GrpCat.ofHom (AlgHom.mapValue (H := H) φ.hom)
 
@@ -94,7 +98,7 @@ lemma mapPoints_comp {A B C : CommAlgCat.{w} R} (φ : A ⟶ B) (ψ : B ⟶ C) :
 
 It maps a commutative `R`-algebra `A` to the convolution group on algebra homomorphisms
 `H →ₐ[R] A`, and maps `φ : A ⟶ B` to post-composition with `φ`. -/
-noncomputable def pointsFunctor : CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
+@[expose] noncomputable def pointsFunctor : CommAlgCat.{w} R ⥤ GrpCat.{max v w} where
   obj A := points (H := H) A
   map φ := mapPoints (H := H) φ
   map_id A := mapPoints_id (H := H) A

@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Complex.Order
-import Mathlib.Analysis.Matrix.Order
-import Mathlib.Algebra.QuadraticDiscriminant
-import Mathlib.Algebra.BigOperators.Fin
+module
+
+public import Mathlib.Analysis.Complex.Order
+public import Mathlib.Analysis.Matrix.Order
+public import Mathlib.Algebra.QuadraticDiscriminant
+public import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # Positive-definite functions on an involutive additive monoid
@@ -58,6 +60,8 @@ here. The continuity theory and Bochner's representation theorem are later miles
   Chapter 3.
 -/
 
+public section
+
 open ComplexConjugate
 open scoped ComplexOrder
 
@@ -69,7 +73,7 @@ variable {M : Type*} [AddMonoid M] [StarAddMonoid M] {F G : M → ℂ}
 every finite family of scalars `c : Fin n → ℂ` and points `v : Fin n → M`, the Hermitian form
 `∑_{i,j} c i · conj (c j) · F (v i + star (v j))` is a nonnegative real number (using the order on
 `ℂ` for which `0 ≤ z` means `z` is real and nonnegative). -/
-def IsPositiveDefinite (F : M → ℂ) : Prop :=
+@[expose] def IsPositiveDefinite (F : M → ℂ) : Prop :=
   ∀ (n : ℕ) (c : Fin n → ℂ) (v : Fin n → M),
     0 ≤ ∑ i, ∑ j, c i * conj (c j) * F (v i + star (v j))
 

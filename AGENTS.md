@@ -6,10 +6,17 @@ the three repos fit together; this file only adds the contract for agents workin
 ## Before you write code
 
 **Read the roadmap first.** The roadmaps live in the separate
-[TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap) repo. Only do work that
-advances a specific roadmap target, or supplies a prerequisite that a specific target needs.
-If a human asks for something that is not on the roadmap, say so and ask them to add it to the
-roadmap first, rather than building it here.
+[TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap) repo. The roadmap gates
+*new* mathematics: only add a new mathematical declaration (definition, theorem, instance,
+notation) or file when it advances a specific roadmap target, or supplies a prerequisite that a
+specific target needs. If a human asks you to build something new that is not on the roadmap,
+say so and ask them to add it to the roadmap first, rather than building it here.
+
+Improving code that already exists is **always in scope** and needs no roadmap entry:
+refactoring, simplifying proofs, fixing or modestly generalising an existing lemma (without
+expanding the project's mathematical scope), relocating a misplaced declaration, adopting a
+cleaner idiom, and documenting existing code are all welcome at any time. The roadmap conditions
+what new mathematics gets *added*, not whether already-merged code may be made better.
 
 ## The rules of the repo
 
@@ -24,6 +31,18 @@ roadmap first, rather than building it here.
   them (Mathlib moving forward on the branch the lakefile nominates, with the toolchain moving
   monotonically forward) is machine-validated by the `bump-guard` check and is welcome, but
   never edit the lakefile or move a pin backward.
+- **Never delete a PR's human-owned changes to get it past the build gate.** When a PR
+  *intentionally* touches `scripts/`, `.github/`, or the lakefile (for example, a PR that adds
+  a new CI check), those changes are the deliverable, not an obstacle. The gate routes such a
+  PR to a human on purpose; the correct response is to wait for that human review and merge,
+  never to strip the human-owned files so the PR looks auto-mergeable — that throws away the
+  work the PR exists to do. This binds automated fix/review agents too: if a PR carries
+  human-owned changes, leave it alone (skip it) rather than "fixing" it toward auto-merge.
+- **Do not `--admin`-merge AI-authored PRs.** Landing a PR is the review pipeline's job: it
+  merges only once every rubric is green (and, for `TauCeti/`-only diffs, CI is green). Using an
+  admin override to bypass that gate — even when the reviews have not been run — defeats the
+  project's quality control. If the pipeline is not producing verdicts, run the review
+  (`tauceti-review`) or leave the PR for a human; never force it through.
 
 ## How review works
 

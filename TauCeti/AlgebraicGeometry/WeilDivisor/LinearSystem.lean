@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
+module
+
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
 
 /-!
 # Complete linear systems of Weil divisors
@@ -32,6 +34,8 @@ This advances the Tau Ceti Jacobian roadmap, Layer A, "Divisors on a curve" and 
 `OrderSystem` API and Mathlib's `Set` and quotient-group machinery; no external mathematics is
 vendored.
 -/
+
+public section
 
 namespace TauCeti
 

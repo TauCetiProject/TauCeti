@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.AlgebraicGroup.BaseChangeNaturality
-import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupFunctoriality
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.BaseChangeNaturality
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupFunctoriality
 
 /-!
 # Base change of diagonalizable-group points
@@ -46,6 +48,8 @@ diagonalizable-group points calculation are Tau Ceti's
 `TauCeti.DiagonalizableGroup.pointsMulEquiv`.
 -/
 
+public section
+
 open WithConv
 open scoped TensorProduct
 
@@ -65,7 +69,7 @@ the character group `G →* Aˣ`.
 
 The source is the convolution group of `K`-algebra maps out of the base-changed Hopf algebra.
 The target is the ordinary pointwise-multiplication group of characters. -/
-noncomputable def baseChangePointsMulEquiv :
+@[expose] noncomputable def baseChangePointsMulEquiv :
     WithConv (K ⊗[k] MonoidAlgebra k G →ₐ[K] A) ≃* (G →* Aˣ) :=
   (AlgHom.baseChangePointsMulEquiv (k := k) (K := K)
       (A := MonoidAlgebra k G) (R := A)).symm.trans

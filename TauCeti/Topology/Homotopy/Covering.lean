@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Topology.Homotopy.Lifting
+module
+
+public import Mathlib.Topology.Homotopy.Lifting
 
 /-!
 # Covering maps and fundamental-group monodromy
@@ -23,13 +25,15 @@ This builds directly on Junyan Xu's covering-space lifting and monodromy API in
 `Mathlib.Topology.Homotopy.Lifting`.
 -/
 
+public section
+
 namespace TauCeti
 
 variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {x : X}
 
 /-- Choosing a basepoint lift `e` in the fibre over `x` identifies the fundamental group of
 the base with that fibre, via `γ ↦ monodromy γ e`. -/
-noncomputable def IsCoveringMap.fundamentalGroupEquivFiber [SimplyConnectedSpace E]
+@[expose] noncomputable def IsCoveringMap.fundamentalGroupEquivFiber [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
     FundamentalGroup X x ≃ p ⁻¹' {x} :=
   { toFun γ := hp.monodromy γ e

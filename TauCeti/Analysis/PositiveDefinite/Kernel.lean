@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.RCLike.Basic
-import Mathlib.Analysis.Matrix.Order
-import Mathlib.LinearAlgebra.Matrix.PosDef
+module
+
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Analysis.Matrix.Order
+public import Mathlib.LinearAlgebra.Matrix.PosDef
 
 /-!
 # Positive-definite kernels
@@ -52,6 +54,8 @@ forms, with no positive-definite-kernel notion, so this is new; no code is vendo
   `(a, b) ↦ conj(g a) · g b`.
 -/
 
+public section
+
 open Matrix
 open scoped ComplexConjugate ComplexOrder
 
@@ -64,7 +68,7 @@ variable {α : Type v}
 
 /-- A kernel `K : α → α → 𝕜` is *positive definite* when the matrix indexed by all points of `α`
 is positive semidefinite. -/
-def IsPositiveDefiniteKernel (K : α → α → 𝕜) : Prop :=
+@[expose] def IsPositiveDefiniteKernel (K : α → α → 𝕜) : Prop :=
   (Matrix.of fun a b => K a b).PosSemidef
 
 /-- The named kernel predicate is definitionally Mathlib's positive semidefinite predicate on the

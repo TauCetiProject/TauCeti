@@ -47,3 +47,76 @@ jobs:
       # and home-rolled axioms, including ones reaching in through imports.
       - name: Axiom audit (TauCeti/ uses only allowlisted axioms)
         run: lake exe axioms
+
+      # Module-system audit. Inspects the built TauCeti `.olean`s and rejects any module that
+      # did not opt into the Lean module system (a leading `module`). It reads each module's
+      # `ModuleData.isModule` flag from the compiled artifact, so it cannot be fooled by a
+      # `module` appearing in a comment or string the way a textual grep could.
+      - name: Module-system audit (every TauCeti/ file opts into `module`)
+        run: lake exe module-system
+
+      # --- Lake artifact-cache publish (dormant until configured) ---------------------
+      # Publish TauCeti's OWN oleans (root-package only) to the Lake cache, so pr-build can
+      # fetch them and recompile only a PR's changed modules instead of the whole library.
+      # Runs only once the upload credential + S3 endpoints are installed; until then these
+      # two steps are skipped and main's health check is unchanged. Mathlib's oleans are
+      # never uploaded: `-o` records only root-package outputs, and Mathlib stays on
+      # `lake exe cache get`. See pr-build.yml for the consuming side.
+      - name: Configure the Lake cache upload (no-op unless secret + S3 endpoints are set)
+        id: cachecfg
+        env:
+          LAKE_CACHE_KEY_RAW: ${{ secrets.LAKE_CACHE_KEY }}
+          S3_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT }}
+          S3_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT }}
+        run: |
+          if [ -n "$LAKE_CACHE_KEY_RAW" ] && [ -n "$S3_ARTIFACT_ENDPOINT" ] && [ -n "$S3_REVISION_ENDPOINT" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Lake cache upload configured — publishing TauCeti's oleans"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Lake cache upload not configured — skipping (set the LAKE_CACHE_KEY secret and the LAKE_CACHE_ARTIFACT_ENDPOINT / LAKE_CACHE_REVISION_ENDPOINT repo variables to enable)"
+          fi
+
+      - name: Publish TauCeti's oleans to the Lake cache
+        if: ${{ steps.cachecfg.outputs.enabled == 'true' }}
+        env:
+          LAKE_ARTIFACT_CACHE: "true"
+          LAKE_RESTORE_ARTIFACTS: "true"
+          # Don't download during the packing build — we only want to PUT, not GET. (The
+          # S3 host needs SigV4 even for reads, so an anonymous GET here would 403 anyway.)
+          LAKE_NO_CACHE: "true"
+          LAKE_CACHE_DIR: ${{ github.workspace }}/.lake/cache
+          # Passed under non-LAKE_ names so Lake never sees the deprecated endpoint
+          # environment variables; we hand it the endpoints through a `--service` config.
+          S3_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT }}
+          S3_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT }}
+          LAKE_CACHE_KEY_RAW: ${{ secrets.LAKE_CACHE_KEY }}
+        run: |
+          export PATH="$HOME/.elan/bin:$PATH"
+          # curl --user wants "<ACCESS_KEY_ID>:<SECRET>"; trim trailing whitespace and mask
+          # it so it never lands in the log. LAKE_CACHE_KEY (the upload secret) stays an
+          # env var; only the endpoints move to the --service config below.
+          KEY="$(printf %s "$LAKE_CACHE_KEY_RAW" | sed -e 's/[[:space:]]*$//')"
+          echo "::add-mask::$KEY"; export LAKE_CACHE_KEY="$KEY"
+          # Define the authenticated S3 service in a Lake system config and select it with
+          # `--service` (the env-var form of endpoint config is deprecated).
+          CFG="$RUNNER_TEMP/lake-cache.toml"
+          cat > "$CFG" <<TOML
+          cache.defaultUploadService = "tauceti-r2"
+          [[cache.service]]
+          name = "tauceti-r2"
+          kind = "s3"
+          artifactEndpoint = "$S3_ARTIFACT_ENDPOINT"
+          revisionEndpoint = "$S3_REVISION_ENDPOINT"
+          TOML
+          export LAKE_CONFIG="$CFG"
+          # Pack the already-built oleans into the local Lake cache (no recompile — the
+          # health-check build above left matching traces), emit the root-package
+          # input->output mappings, then upload just those artifacts (SigV4 PUT to S3).
+          # `lake cache put` configures the workspace, so the revision (this main commit)
+          # and the toolchain/platform scope are detected automatically and match what
+          # pr-build's `lake cache get --service ... --repo` derives.
+          lake build >/dev/null
+          lake build --no-build -o .lake/outputs.jsonl
+          echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
+          lake cache put .lake/outputs.jsonl --service tauceti-r2 --repo FormalFrontier/TauCeti

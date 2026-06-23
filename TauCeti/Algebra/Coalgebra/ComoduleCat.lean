@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Category.ModuleCat.Semi
-import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
-import TauCeti.Algebra.Coalgebra.Comodule.Hom
+module
+
+public import Mathlib.Algebra.Category.ModuleCat.Semi
+public import Mathlib.CategoryTheory.Limits.Shapes.ZeroMorphisms
+public import TauCeti.Algebra.Coalgebra.Comodule.Hom
 
 /-!
 # The category of comodules over a coalgebra
@@ -33,6 +35,8 @@ Layer 1 of the Tau Ceti reductive-groups roadmap: "Comodules over a coalgebra/Ho
 The bundled-category API follows the pattern of `Mathlib.Algebra.Category.CoalgCat.Basic` and
 `Mathlib.LinearAlgebra.QuadraticForm.QuadraticModuleCat`.
 -/
+
+public section
 
 open CategoryTheory
 
@@ -330,7 +334,7 @@ theorem forget₂_map {M N : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
   rfl
 
 /-- A categorical isomorphism of comodules induces the underlying linear equivalence. -/
-def isoToLinearEquiv {M N : ComoduleCat.{u, v, w} R C} (i : M ≅ N) : M ≃ₗ[R] N :=
+@[expose] def isoToLinearEquiv {M N : ComoduleCat.{u, v, w} R C} (i : M ≅ N) : M ≃ₗ[R] N :=
   ((forget₂ (ComoduleCat.{u, v, w} R C) (SemimoduleCat.{w} R)).mapIso i).toLinearEquivₛ
 
 /-- The linear equivalence induced by a comodule isomorphism has the isomorphism's forward
@@ -390,7 +394,7 @@ theorem isoToLinearEquiv_trans {M N P : ComoduleCat.{u, v, w} R C} (i : M ≅ N)
 
 /-- Build a comodule isomorphism from a linear equivalence whose forward map respects the
 coactions. -/
-def isoOfLinearEquiv {M N : ComoduleCat.{u, v, w} R C} (e : M ≃ₗ[R] N)
+@[expose] def isoOfLinearEquiv {M N : ComoduleCat.{u, v, w} R C} (e : M ≃ₗ[R] N)
     (h : TensorProduct.map e.toLinearMap LinearMap.id ∘ₗ
         Comodule.coact (R := R) (C := C) (M := M) =
       Comodule.coact (R := R) (C := C) (M := N) ∘ₗ e.toLinearMap)

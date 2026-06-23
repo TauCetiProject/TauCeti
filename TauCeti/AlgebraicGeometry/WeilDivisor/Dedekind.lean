@@ -2,12 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
-import Mathlib.RingTheory.ClassGroup.Basic
-import Mathlib.RingTheory.DedekindDomain.AdicValuation
-import Mathlib.RingTheory.DedekindDomain.Factorization
-import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
-import Mathlib.RingTheory.DedekindDomain.SelmerGroup
+module
+
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
+public import Mathlib.RingTheory.ClassGroup.Basic
+public import Mathlib.RingTheory.DedekindDomain.AdicValuation
+public import Mathlib.RingTheory.DedekindDomain.Factorization
+public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
+public import Mathlib.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
 # The order system of a Dedekind domain
@@ -50,6 +52,8 @@ This reuses Mathlib's `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZero` (th
 `WithZero.log` logarithm on `ℤᵐ⁰`, and `IsDedekindDomain.HeightOneSpectrum.Support.finite`
 (finiteness of the support of a rational function); no external mathematics is vendored.
 -/
+
+public section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum WithZero
 open scoped nonZeroDivisors
@@ -224,7 +228,7 @@ height-one primes `v` of `R`, the group is the multiplicative group `Kˣ` of non
 functions, and the order at `v` is the `v`-adic order of vanishing. The finiteness condition is
 exactly the statement that a nonzero rational function has zeros and poles at only finitely many
 primes. -/
-noncomputable def OrderSystem.ofDedekindDomain :
+@[expose] noncomputable def OrderSystem.ofDedekindDomain :
     OrderSystem (HeightOneSpectrum R) (Additive Kˣ) where
   ord v := adicOrd R K v
   finite_support u := by
@@ -332,7 +336,8 @@ lemma mem_support_principalDivisor_of_integral_iff_mem_asIdeal {r : R} {u : Kˣ}
   constructor
   · intro hv
     rw [← coeff_principalDivisor_pos_iff_mem hu v]
-    exact lt_of_le_of_ne (isEffective_principalDivisor_of_integral hu v) (Ne.symm hv)
+    exact lt_of_le_of_ne
+      ((isEffective_iff _).mp (isEffective_principalDivisor_of_integral hu) v) (Ne.symm hv)
   · intro hv
     exact ne_of_gt ((coeff_principalDivisor_pos_iff_mem hu v).mpr hv)
 

@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.Comodule.Hom
-import TauCeti.Algebra.Coalgebra.Comodule.Trivial
+module
+
+public import TauCeti.Algebra.Coalgebra.Comodule.Hom
+public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 
 /-!
 # Matrix coefficients of comodules
@@ -26,6 +28,17 @@ coefficients.
 * `TauCeti.Comodule.matrixCoefficient`: the coefficient element attached to `φ` and `m`.
 * `TauCeti.Comodule.matrixCoefficientBilinear`: bilinearity in the functional and vector.
 
+## Implementation notes
+
+The coalgebra `C` is a *phantom* parameter of `matrixCoefficient` and its relatives throughout
+this family of files: it occurs in the return type and in the `[Comodule R C M]` instance, but not
+in the types of the explicit arguments `φ : M →ₗ[R] R` and `m : M`. A module `M` can be a comodule
+over more than one coalgebra, so `C` is genuinely not inferable from `φ` and `m`. Unless the
+expected result type already pins `C` down, call sites must pass it explicitly, as in
+`matrixCoefficient (C := C) φ m` (and likewise `(R := R)` when `R` is not otherwise determined) —
+and statements, `simp` lemmas, and `Set.range`-style expressions usually have no such expected
+type. These named arguments are required for elaboration there, not removable noise.
+
 ## References
 
 This is standard coalgebra/comodule terminology; see Sweedler, *Hopf Algebras*, Chapter 2.
@@ -33,6 +46,8 @@ It supplies the "matrix coefficients" prerequisite in
 `ReductiveGroups/README.md` in TauCetiRoadmap, Layer 1, "The dictionary: representation of
 `G` ⇆ `A`-comodule; matrix coefficients."
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -51,12 +66,12 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 /-- The linear map of matrix coefficients associated to a functional on a right comodule.
 
 It sends `m : M` to `(φ ⊗ id) (ρ m)`, with the canonical identification `R ⊗ C ≃ C`. -/
-def matrixCoefficientLinear (φ : M →ₗ[R] R) : M →ₗ[R] C :=
+@[expose] def matrixCoefficientLinear (φ : M →ₗ[R] R) : M →ₗ[R] C :=
   (TensorProduct.lid R C).toLinearMap.comp
     ((TensorProduct.map φ LinearMap.id).comp (coact (R := R) (C := C) (M := M)))
 
 /-- The matrix coefficient attached to a functional and a vector in a right comodule. -/
-def matrixCoefficient (φ : M →ₗ[R] R) (m : M) : C :=
+@[expose] def matrixCoefficient (φ : M →ₗ[R] R) (m : M) : C :=
   matrixCoefficientLinear (R := R) (C := C) φ m
 
 @[simp]
@@ -93,7 +108,7 @@ theorem matrixCoefficient_smul (φ : M →ₗ[R] R) (r : R) (m : M) :
   map_smul (matrixCoefficientLinear (R := R) (C := C) φ) r m
 
 /-- Matrix coefficients as a linear map from the dual module to linear maps `M →ₗ[R] C`. -/
-def matrixCoefficientBilinear : (M →ₗ[R] R) →ₗ[R] M →ₗ[R] C where
+@[expose] def matrixCoefficientBilinear : (M →ₗ[R] R) →ₗ[R] M →ₗ[R] C where
   toFun := matrixCoefficientLinear (R := R) (C := C) (M := M)
   map_add' φ ψ := by
     ext m

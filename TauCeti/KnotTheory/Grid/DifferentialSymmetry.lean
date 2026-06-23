@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.Finsupp.LSum
-import TauCeti.KnotTheory.Grid.Complex
+module
+
+public import Mathlib.LinearAlgebra.Finsupp.LSum
+public import TauCeti.KnotTheory.Grid.Complex
 
 /-!
 # Symmetries of the fully blocked grid differential
@@ -44,6 +46,8 @@ invariance naturality-ready": these are the chain-level symmetries of the fully 
 complex on which an invariance statement is later built. The diagonal and marking symmetries
 follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
+
+public section
 
 namespace TauCeti
 

@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Ring.Parity
-import TauCeti.Geometry.Symplectic.ComplexModule
-import TauCeti.LinearAlgebra.ComplexFinrank
+module
+
+public import Mathlib.Algebra.Ring.Parity
+public import TauCeti.Geometry.Symplectic.ComplexModule
+public import TauCeti.LinearAlgebra.ComplexFinrank
 
 /-!
 # An almost complex structure forces even real dimension
@@ -38,6 +40,8 @@ The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Top
 Section 2.1.
 -/
 
+public section
+
 namespace TauCeti
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
@@ -47,7 +51,7 @@ namespace AlmostComplexStructure
 /-- The complex dimension of `V` with respect to an almost complex structure `J`: the
 `ℂ`-dimension of `V` under the complex module structure induced by `J`
 (`AlmostComplexStructure.complexModule`). -/
-noncomputable def complexFinrank (J : AlmostComplexStructure V) : ℕ :=
+@[expose] noncomputable def complexFinrank (J : AlmostComplexStructure V) : ℕ :=
   letI := J.complexModule
   Module.finrank ℂ V
 

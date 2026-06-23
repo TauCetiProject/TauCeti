@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Bialgebra.Convolution
-import Mathlib.RingTheory.Bialgebra.SymmetricAlgebra
-import Mathlib.RingTheory.HopfAlgebra.Basic
+module
+
+public import Mathlib.RingTheory.Bialgebra.Convolution
+public import Mathlib.RingTheory.Bialgebra.SymmetricAlgebra
+public import Mathlib.RingTheory.HopfAlgebra.Basic
 
 /-!
 # The Hopf structure on a symmetric algebra
@@ -32,6 +34,8 @@ in `Mathlib.RingTheory.Bialgebra.SymmetricAlgebra`. The Hopf-algebra-from-an-ant
 constructor `HopfAlgebra.ofAlgHom` is from `Mathlib.RingTheory.HopfAlgebra.Basic`.
 -/
 
+public section
+
 open Coalgebra HopfAlgebra WithConv
 open scoped TensorProduct
 
@@ -47,12 +51,12 @@ variable (R : Type u) [CommRing R] (M : Type v) [AddCommMonoid M] [Module R M]
 
 /-- The antipode of the symmetric-algebra Hopf algebra: the `R`-algebra map sending each
 generator `ι x` to `-ι x`. -/
-private noncomputable def antipodeHom :
+noncomputable def antipodeHom :
     _root_.SymmetricAlgebra R M →ₐ[R] _root_.SymmetricAlgebra R M :=
   _root_.SymmetricAlgebra.lift (-(_root_.SymmetricAlgebra.ι R M))
 
 @[simp]
-private theorem antipodeHom_ι (x : M) :
+theorem antipodeHom_ι (x : M) :
     antipodeHom R M (_root_.SymmetricAlgebra.ι R M x) =
       -(_root_.SymmetricAlgebra.ι R M x) := by
   simp [antipodeHom]

@@ -1,0 +1,178 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+module
+
+public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
+public import TauCeti.NumberTheory.EffectiveBounds.SimpleGenerators
+
+/-!
+# An explicit count of number fields of bounded discriminant
+
+Mathlib's `NumberField.finite_of_discr_bdd` is the qualitative summit of geometry of numbers:
+inside a fixed extension `A / ℚ`, the number fields `K` with `|discr K| ≤ N` form a *finite* set.
+Its proof bounds the degree of such a `K` (`rank_le_rankOfDiscrBdd`), bounds the conjugates of a
+primitive integral generator (`minkowskiBound_lt_boundOfDiscBdd`, the convex-body input), and so
+exhibits each `K` as `ℚ⟮x⟯` for `x` a root of an integer polynomial of bounded degree and
+coefficient height; finiteness follows because there are finitely many such polynomials. The proof
+extracts the *finiteness* of that generating set but discards the *count*.
+
+This file is the **effective Hermite--Minkowski count** (the Layer-2 summit of the effective-bounds
+roadmap): an explicit upper bound on the number of such fields. We re-run the generating-set step of
+Mathlib's argument to expose the explicit polynomial bounds, then feed them to the elementary
+field-counting lemma assembled in `TauCeti.IntermediateField` (built on the bounded-polynomial root
+count of `TauCeti.Algebra.Polynomial`). The result is
+
+`#{K : |discr K| ≤ N} ≤ (2 * C + 1) ^ (D + 1) * D`,
+
+with `D = rankOfDiscrBdd N` Mathlib's explicit degree bound and `C = coeffBoundOfDiscrBdd N` an
+explicit coefficient bound derived from Mathlib's Minkowski bound `boundOfDiscBdd N`.
+
+## Main results
+
+* `coeffBoundOfDiscrBdd`: an explicit height bound for the integer minimal polynomials of primitive
+  generators of number fields of discriminant `≤ N`, uniform over real and complex generators.
+* `TauCeti.NumberField.exists_mem_rootSet_eq_adjoin_of_abs_discr_le`: each such field is generated
+  by a root of an integer polynomial of degree `≤ rankOfDiscrBdd N` and height
+  `≤ coeffBoundOfDiscrBdd N`.
+* `TauCeti.NumberField.ncard_setOf_finiteDimensional_abs_discr_le_le`: the explicit count.
+
+## Provenance
+
+The generating-set construction (the case split on a real or complex infinite place, the use of
+`exists_primitive_element_lt_of_isReal` / `exists_primitive_element_lt_of_isComplex` and
+`Embeddings.coeff_bdd_of_norm_le`, and the final `IntermediateField.lift` identification) follows
+the proofs of `NumberField.hermiteTheorem.finite_of_discr_bdd_of_isReal` and `..._of_isComplex` in
+Mathlib's `Mathlib/NumberTheory/NumberField/Discriminant/Basic.lean`; here those proofs are recast
+to return the explicit generating set rather than only its finiteness. No formal code is vendored
+verbatim.
+-/
+
+public section
+
+open Module Polynomial NumberField NumberField.InfinitePlace
+open NumberField.mixedEmbedding NumberField.hermiteTheorem TauCeti.IntermediateField
+open scoped IntermediateField
+
+namespace TauCeti.NumberField
+
+/-- An explicit height bound for the integer minimal polynomial of a primitive generator of a number
+field of discriminant `≤ N`. It is `⌈M ^ D * (D.choose (D / 2))⌉₊` where `D = rankOfDiscrBdd N` is
+Mathlib's degree bound and `M = max √(1 + boundOfDiscBdd N ^ 2) 1` dominates the per-conjugate bound
+of both the real and complex primitive elements of `finite_of_discr_bdd`. -/
+noncomputable def coeffBoundOfDiscrBdd (N : ℕ) : ℕ :=
+  ⌈(max (Real.sqrt (1 + (boundOfDiscBdd N : ℝ) ^ 2)) 1) ^ rankOfDiscrBdd N
+      * ((rankOfDiscrBdd N).choose (rankOfDiscrBdd N / 2) : ℝ)⌉₊
+
+variable (A : Type*) [Field A] [CharZero A]
+
+/-- **Effective Hermite--Minkowski, generating step.** Each number field `K` (a finite extension of
+`ℚ` inside `A`) with `|discr K| ≤ N` is generated over `ℚ` by a root in `A` of an integer polynomial
+of degree at most `rankOfDiscrBdd N` and all coefficients of absolute value at most
+`coeffBoundOfDiscrBdd N`. This is `NumberField.hermiteTheorem.finite_of_discr_bdd` recast to expose
+its explicit generating set. -/
+theorem exists_mem_rootSet_eq_adjoin_of_abs_discr_le [DecidableEq A] {N : ℕ}
+    (K : IntermediateField ℚ A) (hK₀ : FiniteDimensional ℚ K)
+    (hK : haveI : _root_.NumberField K := @NumberField.mk _ _ inferInstance hK₀
+      |discr K| ≤ (N : ℤ)) :
+    ∃ x ∈ (⋃ (f : ℤ[X]) (_ : f.natDegree ≤ rankOfDiscrBdd N ∧
+        ∀ i, |f.coeff i| ≤ (coeffBoundOfDiscrBdd N : ℤ)),
+        ((f.map (algebraMap ℤ A)).roots.toFinset : Set A)),
+      (K : IntermediateField ℚ A) = ℚ⟮x⟯ := by
+  classical
+  have : CharZero K := SubsemiringClass.instCharZero K
+  haveI : _root_.NumberField K := @NumberField.mk _ _ inferInstance hK₀
+  set M : ℝ := max (Real.sqrt (1 + (boundOfDiscBdd N : ℝ) ^ 2)) 1 with hM
+  have h1M : (1 : ℝ) ≤ M := le_max_right _ _
+  have hsqrtM : Real.sqrt (1 + (boundOfDiscBdd N : ℝ) ^ 2) ≤ M := le_max_left _ _
+  have hBM : (boundOfDiscBdd N : ℝ) ≤ Real.sqrt (1 + (boundOfDiscBdd N : ℝ) ^ 2) :=
+    Real.le_sqrt_of_sq_le (by linarith)
+  -- A primitive integral generator whose every conjugate has size `≤ M`, from the real or the
+  -- complex convex-body input depending on the type of an infinite place of `K`.
+  obtain ⟨a, ha₁, haM⟩ : ∃ a : 𝓞 K, ℚ⟮(a : K)⟯ = ⊤ ∧ ∀ w : InfinitePlace K, w (a : K) ≤ M := by
+    obtain ⟨w₀⟩ := (inferInstance : Nonempty (InfinitePlace K))
+    by_cases hw₀ : IsReal w₀
+    · have hlt : minkowskiBound K 1 < convexBodyLTFactor K * boundOfDiscBdd N := by
+        calc minkowskiBound K 1 < boundOfDiscBdd N := minkowskiBound_lt_boundOfDiscBdd hK
+          _ = 1 * boundOfDiscBdd N := (one_mul _).symm
+          _ ≤ convexBodyLTFactor K * boundOfDiscBdd N := by
+              gcongr; exact mod_cast one_le_convexBodyLTFactor K
+      obtain ⟨a, ha₁, ha₂⟩ := exists_primitive_element_lt_of_isReal K hw₀ hlt
+      refine ⟨a, ha₁, fun w => ?_⟩
+      have hw : w (a : K) < max (boundOfDiscBdd N : ℝ) 1 := by
+        have := ha₂ w; rwa [NNReal.coe_max, NNReal.coe_one] at this
+      exact hw.le.trans (max_le_max hBM (le_refl 1))
+    · rw [not_isReal_iff_isComplex] at hw₀
+      have hlt : minkowskiBound K 1 < convexBodyLT'Factor K * boundOfDiscBdd N := by
+        calc minkowskiBound K 1 < boundOfDiscBdd N := minkowskiBound_lt_boundOfDiscBdd hK
+          _ = 1 * boundOfDiscBdd N := (one_mul _).symm
+          _ ≤ convexBodyLT'Factor K * boundOfDiscBdd N := by
+              gcongr; exact mod_cast one_le_convexBodyLT'Factor K
+      obtain ⟨a, ha₁, ha₂⟩ := exists_primitive_element_lt_of_isComplex K hw₀ hlt
+      exact ⟨a, ha₁, fun w => (ha₂ w).le.trans hsqrtM⟩
+  -- The minimal polynomial of `a` is the witnessing integer polynomial.
+  have hdeg : (minpoly ℤ (a : K)).natDegree ≤ rankOfDiscrBdd N :=
+    natDegree_le_rankOfDiscrBdd hK a ha₁
+  have hrank : finrank ℚ K ≤ rankOfDiscrBdd N := rank_le_rankOfDiscrBdd hK
+  have hnorm : ∀ φ : K →+* ℂ, ‖φ (a : K)‖ ≤ M := (le_iff_le (a : K) M).mp haM
+  have hcoeff : ∀ i, |(minpoly ℤ (a : K)).coeff i| ≤ (coeffBoundOfDiscrBdd N : ℤ) := by
+    intro i
+    rw [← @Int.cast_le ℝ]
+    refine (Eq.trans_le ?_ (Embeddings.coeff_bdd_of_norm_le hnorm i)).trans ?_
+    · simp only [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ
+          (show IsIntegral ℤ (a : K) from a.isIntegral_coe), coeff_map, eq_intCast,
+        Int.norm_cast_rat, Int.norm_eq_abs, Int.cast_abs]
+    · rw [max_eq_left h1M]
+      refine le_trans (mul_le_mul (pow_le_pow_right₀ h1M hrank) ?_ (by positivity) (by positivity))
+        (Nat.le_ceil _)
+      exact_mod_cast (Nat.choose_le_choose _ hrank).trans (Nat.choose_le_middle _ _)
+  refine ⟨a, ?_, ?_⟩
+  · refine Set.mem_iUnion.mpr ⟨minpoly ℤ (a : K), Set.mem_iUnion.mpr ⟨⟨hdeg, hcoeff⟩, ?_⟩⟩
+    have hne : (minpoly ℤ (a : K)).map (algebraMap ℤ A) ≠ 0 :=
+      ((minpoly.monic a.isIntegral_coe).map (algebraMap ℤ A)).ne_zero
+    have hroot : ((minpoly ℤ (a : K)).map (algebraMap ℤ A)).IsRoot (a : A) := by
+      rw [Polynomial.IsRoot.def, Polynomial.eval_map, ← Polynomial.aeval_def]
+      exact (aeval_algebraMap_eq_zero_iff A (a : K) _).mpr (minpoly.aeval ℤ (a : K))
+    exact Finset.mem_coe.mpr (Multiset.mem_toFinset.mpr (Polynomial.mem_roots'.mpr ⟨hne, hroot⟩))
+  · have hlift := congrArg (IntermediateField.lift (F := K)) ha₁
+    have e1 : IntermediateField.lift (F := K) ℚ⟮(a : K)⟯ = ℚ⟮(a : A)⟯ :=
+      IntermediateField.lift_adjoin_simple ℚ K (a : K)
+    have e2 : IntermediateField.lift (F := K) (⊤ : IntermediateField ℚ K) = K :=
+      IntermediateField.lift_top ℚ K
+    exact (e1.symm.trans (hlift.trans e2)).symm
+
+variable (N : ℕ)
+
+/-- **Effective Hermite--Minkowski.** Inside a fixed extension `A / ℚ`, the number of number fields
+`K` (finite extensions of `ℚ`) with `|discr K| ≤ N` is at most
+`(2 * coeffBoundOfDiscrBdd N + 1) ^ (rankOfDiscrBdd N + 1) * rankOfDiscrBdd N`, an explicit function
+of `N` alone. This upgrades Mathlib's `NumberField.finite_of_discr_bdd` from finiteness to an
+explicit count. -/
+theorem ncard_setOf_finiteDimensional_abs_discr_le_le :
+    {K : {F : IntermediateField ℚ A // FiniteDimensional ℚ F} |
+        haveI : _root_.NumberField K := @NumberField.mk _ _ inferInstance K.prop
+        |discr K| ≤ (N : ℤ)}.ncard ≤
+      (2 * coeffBoundOfDiscrBdd N + 1) ^ (rankOfDiscrBdd N + 1) * rankOfDiscrBdd N := by
+  classical
+  set D := rankOfDiscrBdd N with hD
+  set C := coeffBoundOfDiscrBdd N with hC
+  set S := {K : {F : IntermediateField ℚ A // FiniteDimensional ℚ F} |
+      haveI : _root_.NumberField K := @NumberField.mk _ _ inferInstance K.prop
+      |discr K| ≤ (N : ℤ)} with hS
+  have hfin : {E : IntermediateField ℚ A | ∃ x ∈ (⋃ (f : ℤ[X])
+        (_ : f.natDegree ≤ D ∧ ∀ i, |f.coeff i| ≤ (C : ℤ)),
+        ((f.map (algebraMap ℤ A)).roots.toFinset : Set A)), E = ℚ⟮x⟯}.Finite :=
+    finite_setOf_exists_mem_eq_adjoin_simple_roots_natDegree_le_abs_intCoeff A D C
+  have hsub : Subtype.val '' S ⊆ {E : IntermediateField ℚ A | ∃ x ∈ (⋃ (f : ℤ[X])
+      (_ : f.natDegree ≤ D ∧ ∀ i, |f.coeff i| ≤ (C : ℤ)),
+      ((f.map (algebraMap ℤ A)).roots.toFinset : Set A)), E = ℚ⟮x⟯} := by
+    rintro E ⟨⟨K, hK₀⟩, hKmem, rfl⟩
+    exact exists_mem_rootSet_eq_adjoin_of_abs_discr_le A K hK₀ hKmem
+  calc S.ncard = (Subtype.val '' S).ncard :=
+        (Set.ncard_image_of_injective S Subtype.val_injective).symm
+    _ ≤ _ := Set.ncard_le_ncard hsub hfin
+    _ ≤ (2 * C + 1) ^ (D + 1) * D :=
+        ncard_setOf_exists_mem_eq_adjoin_simple_roots_natDegree_le_abs_intCoeff_le A D C
+
+end TauCeti.NumberField

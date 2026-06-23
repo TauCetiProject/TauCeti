@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.ComoduleCat
+module
+
+public import TauCeti.Algebra.Coalgebra.ComoduleCat
 
 /-!
 # Transporting comodules across linear equivalences
@@ -29,6 +31,8 @@ This supplies infrastructure for `ReductiveGroups/README.md` in TauCetiRoadmap, 
 "Comodules over a coalgebra/Hopf algebra", specifically the categorical API needed before
 tensor products and duals of comodules.
 -/
+
+@[expose] public section
 
 open scoped TensorProduct
 

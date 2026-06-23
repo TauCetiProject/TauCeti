@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Calculus.AbsolutelyMonotone
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+module
+
+public import Mathlib.Analysis.Calculus.AbsolutelyMonotone
+public import Mathlib.Analysis.Calculus.Deriv.MeanValue
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # Completely monotone functions
@@ -53,6 +55,8 @@ point `0`); on the open half-line it agrees with the ordinary iterated derivativ
   (de Gruyter, 2nd ed. 2012).
 -/
 
+public section
+
 open Set Filter
 open scoped ContDiff Topology
 
@@ -62,7 +66,7 @@ namespace TauCeti
 `[0, ∞)` and its iterated derivatives within `[0, ∞)` alternate in sign:
 `0 ≤ (-1)ⁿ f⁽ⁿ⁾(t)` for every `n` and every `t ≥ 0`. The smoothness clause prevents the sign
 condition from being satisfied vacuously by a junk iterated derivative. -/
-def IsCompletelyMonotone (f : ℝ → ℝ) : Prop :=
+@[expose] def IsCompletelyMonotone (f : ℝ → ℝ) : Prop :=
   ContDiffOn ℝ ∞ f (Ici 0) ∧
     ∀ n : ℕ, ∀ t : ℝ, 0 ≤ t → 0 ≤ (-1) ^ n * iteratedDerivWithin n f (Ici 0) t
 
@@ -218,7 +222,7 @@ lemma isCompletelyMonotone_exp_neg_mul {x : ℝ} (hx : 0 ≤ x) :
 /-- Complete monotonicity on the open half-line `(0, ∞)`: the function is `C^∞` there and its
 ordinary iterated derivatives alternate in sign. This is the version used for derivatives of
 Bernstein functions, whose right derivatives need not be finite at `0`. -/
-def IsCompletelyMonotoneOnIoi (f : ℝ → ℝ) : Prop :=
+@[expose] def IsCompletelyMonotoneOnIoi (f : ℝ → ℝ) : Prop :=
   ContDiffOn ℝ ∞ f (Ioi 0) ∧
     ∀ n : ℕ, ∀ t : ℝ, 0 < t → 0 ≤ (-1) ^ n * iteratedDeriv n f t
 

@@ -17,7 +17,12 @@ rev = "master"
 [[lean_lib]]
 name = "TauCeti"
 globs = ["TauCeti.*"]
-leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFile = 1000, weak.linter.style.longFileDefValue = 1000, weak.linter.style.header = false, warningAsError = true }
+# `longFile = 1500` is the hard ceiling the in-build linter enforces for every file. A
+# *newly added* file is held to a tighter 1000-line limit by the "New-file length guard" in
+# `.github/workflows/pr-build.yml`; only files that already exist may grow up to 1500. Both
+# `longFile` and `longFileDefValue` must be set to the same value, or the linter nags to
+# remove a `set_option` on every short file (fatal under `warningAsError`).
+leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFile = 1500, weak.linter.style.longFileDefValue = 1500, weak.linter.style.header = false, warningAsError = true }
 
 
 # Human-owned governance: the axiom-allowlist audit (`lake exe axioms`). Inspects the
@@ -26,3 +31,12 @@ leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFil
 [[lean_exe]]
 name = "axioms"
 root = "scripts.Axioms"
+
+# Human-owned governance: the module-system audit (`lake exe module-system`). Inspects the
+# built `TauCeti` `.olean`s and rejects any module whose `ModuleData.isModule` flag is false,
+# i.e. any file that did not opt into the Lean module system with a leading `module`. Reads the
+# compiled artifact, not the source text, so a stray comment cannot fool it. Run in CI after
+# the build, alongside the axiom audit.
+[[lean_exe]]
+name = "module-system"
+root = "scripts.ModuleSystem"

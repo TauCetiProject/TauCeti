@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Fin.Rev
-import TauCeti.KnotTheory.Grid.Diagram
+module
+
+public import Mathlib.Data.Fin.Rev
+public import TauCeti.KnotTheory.Grid.Diagram
 
 /-!
 # The half-turn rotation of grid states and diagrams
@@ -44,6 +46,8 @@ This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G item
 standard grid symmetries of Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
 Chapter 3.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 

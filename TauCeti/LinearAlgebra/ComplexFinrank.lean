@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+module
+
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Real finrank of a compatible complex module
@@ -11,6 +13,8 @@ This file records the tower-law dimension formula for a complex module whose rea
 structure is the ambient one. It is the linear-algebra input for almost-complex even-dimensionality
 results, but has no symplectic hypotheses.
 -/
+
+public section
 
 namespace TauCeti
 

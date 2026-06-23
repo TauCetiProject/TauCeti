@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.Comodule.Finite
-import TauCeti.Algebra.Coalgebra.Comodule.Trivial
+module
+
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite
+public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 
 /-!
 # Finitely generated trivial comodules
@@ -16,6 +18,8 @@ than in the unbundled trivial-comodule API.
 
 * `TauCeti.FGComoduleCat.trivial`: the finitely generated bundled trivial comodule on `R`.
 -/
+
+public section
 
 open scoped TensorProduct
 

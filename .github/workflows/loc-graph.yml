@@ -1,6 +1,6 @@
 name: LoC graphs
 
-# Weekly: regenerate the "lines of code by date" charts shown on the website's
+# Daily: regenerate the "lines of code by date" charts shown on the website's
 # Statistics page, and commit them if they changed. The commit touches web/**,
 # which triggers pages.yml to redeploy the site.
 #
@@ -15,7 +15,7 @@ name: LoC graphs
 
 on:
   schedule:
-    - cron: "0 6 * * 1"   # Mondays 06:00 UTC
+    - cron: "0 6 * * *"   # Daily 06:00 UTC
   workflow_dispatch:
 
 concurrency:

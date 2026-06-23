@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.NumberField.Discriminant.Defs
+module
+
+public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 
 /-!
 # An effective discriminant bound from a basis of algebraic integers
@@ -29,6 +31,8 @@ formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-dista
 conjecture, where this was a discriminant input to a class-number bound; the statement holds
 over an arbitrary number field.
 -/
+
+public section
 
 open Module
 

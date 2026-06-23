@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Finiteness.Basic
-import TauCeti.Algebra.Coalgebra.Comodule
+module
+
+public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule
 
 /-!
 # Subcomodules
@@ -33,6 +35,8 @@ This follows the standard definition of a subcomodule: `N ≤ M` satisfies
 
 The lightweight range-based API follows the pattern of `TauCeti.Subcoalgebra`.
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -83,7 +87,7 @@ instance : PartialOrder (Subcomodule R C M) :=
   .ofSetLike (Subcomodule R C M) M
 
 /-- The underlying submodule of a subcomodule. -/
-def toSubmodule (N : Subcomodule R C M) : Submodule R M :=
+@[expose] def toSubmodule (N : Subcomodule R C M) : Submodule R M :=
   N.carrier
 
 @[simp]
@@ -118,7 +122,7 @@ theorem coact_mem (N : Subcomodule R C M) {m : M} (hm : m ∈ N) :
   N.coact_mem' hm
 
 /-- Constructor from a submodule and the tensor-product stability condition. -/
-def ofSubmodule (N : Submodule R M)
+@[expose] def ofSubmodule (N : Submodule R M)
     (hN :
       ∀ ⦃m : M⦄, m ∈ N →
         Comodule.coact (R := R) (C := C) (M := M) m ∈
@@ -216,7 +220,7 @@ private theorem image_tensor_apply (f : Comodule.Hom R C M N) (A : Subcomodule R
   | add x y hx hy => simp only [map_add, hx, hy]
 
 /-- The image of a subcomodule under a comodule morphism. -/
-def map (A : Subcomodule R C M) (f : Comodule.Hom R C M N) : Subcomodule R C N where
+@[expose] def map (A : Subcomodule R C M) (f : Comodule.Hom R C M N) : Subcomodule R C N where
   carrier := A.carrier.map f.toLinearMap
   coact_mem' := by
     intro n hn

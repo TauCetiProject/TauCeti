@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Calculus.FDeriv.Add
-import Mathlib.Analysis.Calculus.FDeriv.Comp
-import Mathlib.Analysis.Calculus.FDeriv.Const
-import Mathlib.Analysis.Calculus.FDeriv.Linear
-import TauCeti.Geometry.Symplectic.AlmostComplex
+module
+
+public import Mathlib.Analysis.Calculus.FDeriv.Add
+public import Mathlib.Analysis.Calculus.FDeriv.Comp
+public import Mathlib.Analysis.Calculus.FDeriv.Const
+public import Mathlib.Analysis.Calculus.FDeriv.Linear
+public import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
 # `J`-holomorphic maps between real normed spaces
@@ -38,6 +40,8 @@ are closed under pointwise sums, differences, and real scalar multiples:
 The convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: the Cauchy--Riemann equation is `df ∘ J = J' ∘ df`.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 

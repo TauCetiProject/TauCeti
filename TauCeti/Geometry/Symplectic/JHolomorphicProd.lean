@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Geometry.Symplectic.JHolomorphic
-import TauCeti.Geometry.Symplectic.Prod
+module
+
+public import Mathlib.Analysis.Calculus.FDeriv.Prod
+public import TauCeti.Geometry.Symplectic.JHolomorphic
+public import TauCeti.Geometry.Symplectic.Prod
 
 /-!
 # Product operations for `J`-holomorphic maps
@@ -31,6 +33,8 @@ symmetric-product targets can use these lemmas without unfolding the Cauchy--Rie
 The convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: product almost complex structures act componentwise.
 -/
+
+public section
 
 namespace TauCeti
 

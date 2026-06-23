@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.ComoduleCat
+module
+
+public import TauCeti.Algebra.Coalgebra.ComoduleCat
 
 /-!
 # The zero comodule
@@ -32,6 +34,8 @@ algebra". The proof that a subsingleton bundled comodule is zero follows Mathlib
 `SemimoduleCat.isZero_of_subsingleton` / `ModuleCat.isZero_of_subsingleton` pattern.
 -/
 
+public section
+
 open CategoryTheory CategoryTheory.Limits
 open scoped TensorProduct
 
@@ -46,7 +50,7 @@ variable [CommSemiring R]
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
 /-- The unique right-comodule structure on the zero module `PUnit`. -/
-private instance instPUnit : Comodule R C PUnit where
+instance instPUnit : Comodule R C PUnit where
   coact := 0
   coassoc := by
     ext x
@@ -64,7 +68,7 @@ variable [CommSemiring R]
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
 /-- The bundled zero right comodule. -/
-def zero : ComoduleCat.{u, v, w} R C :=
+@[expose] def zero : ComoduleCat.{u, v, w} R C :=
   of R C PUnit.{w + 1}
 
 /-- A comodule whose underlying type is subsingleton is a zero object. -/

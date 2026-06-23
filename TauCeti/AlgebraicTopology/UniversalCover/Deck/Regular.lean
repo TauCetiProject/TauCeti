@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.GroupTheory.GroupAction.Transitive
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.FiberTransport
+module
+
+public import Mathlib.GroupTheory.GroupAction.Transitive
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FiberTransport
 
 /-!
 # Regular deck actions on fibres
@@ -39,6 +41,8 @@ regular covers are characterized by transitivity of the deck action on fibres an
 group of the cover associated to a subgroup is computed as a normalizer quotient.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace Deck
@@ -52,7 +56,7 @@ For covering maps between connected, locally path-connected spaces this is the u
 deck-action formulation of a regular covering. The definition is kept independent of
 `IsCoveringMap` so it can also be transported along isomorphisms of maps without carrying
 unused topological hypotheses. -/
-def IsRegular (p : E → B) : Prop :=
+@[expose] def IsRegular (p : E → B) : Prop :=
   Function.Surjective p ∧ ∀ b : B, MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})
 
 /-- Characteristic restatement of regularity of the deck action. -/
@@ -143,7 +147,7 @@ variable [TopologicalSpace B] {b : B}
 
 /-- For a preconnected covering with regular deck action, evaluation at a chosen fibre point
 identifies the deck group with that fibre. -/
-noncomputable def deckEquivFiber [PreconnectedSpace E] (hp : IsCoveringMap p)
+@[expose] noncomputable def deckEquivFiber [PreconnectedSpace E] (hp : IsCoveringMap p)
     (hreg : IsRegular p) (e : p ⁻¹' {b}) : Deck p ≃ p ⁻¹' {b} := by
   letI := hreg.fiber_isPretransitive b
   exact deckEquivFiberOfSurjective hp e (MulAction.surjective_smul (Deck p) e)

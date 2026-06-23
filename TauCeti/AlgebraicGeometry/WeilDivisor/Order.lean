@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicGeometry.WeilDivisor
-import Mathlib.Algebra.Order.Group.PosPart
-import Mathlib.Order.Preorder.Finsupp
+module
+
+public import TauCeti.AlgebraicGeometry.WeilDivisor
+public import Mathlib.Algebra.Order.Group.PosPart
+public import Mathlib.Order.Preorder.Finsupp
 
 /-!
 # The order on Weil divisors and the positive/negative part decomposition
@@ -31,6 +33,8 @@ external mathematics is vendored.
 This advances the Tau Ceti Jacobian roadmap, Layer A, "Divisors on a curve: Weil divisors
 `⊕_x ℤ`", "principal divisors", and "Degree".
 -/
+
+public section
 
 namespace TauCeti
 
