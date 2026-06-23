@@ -153,6 +153,8 @@ lemma pointsMulEquiv_symm_apply_single_generator_smul (n : ℕ) (ζ : rootsOfUni
     ((pointsMulEquiv (R := R) (A := A) n).symm ζ).ofConv
         (MonoidAlgebra.single (generator n) r) =
       r • ((ζ : Aˣ) : A) := by
+  -- The scalar-action rewrite fixes the coefficient from `r` to `1`, so the existing generator
+  -- evaluation lemma applies directly.
   rw [show MonoidAlgebra.single (generator n) r =
       r • MonoidAlgebra.single (generator n) (1 : R) by simp]
   rw [map_smul]

@@ -44,7 +44,9 @@ their functors of points.
 
 The generic algebra base-change calculation is Tau Ceti's
 `AlgHom.baseChangePointsMulEquiv`, and the roots-of-unity points calculation is
-`RootsOfUnityGroup.pointsMulEquiv`.
+`RootsOfUnityGroup.pointsMulEquiv`. This specialization follows the API pattern of
+`DiagonalizableGroup.baseChangePointsMulEquiv` in
+`TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupBaseChange`.
 -/
 
 public section
@@ -93,6 +95,8 @@ lemma baseChangePointsMulEquiv_symm_apply_tmul_single_generator (n : ℕ)
         (s ⊗ₜ[k] MonoidAlgebra.single (generator n) r) =
       s • (r • ((ζ : Aˣ) : A)) := by
   rw [baseChangePointsMulEquiv, MulEquiv.symm_trans_apply]
+  -- After unfolding the transposed equivalence, Lean still sees the inverse result through the
+  -- `WithConv` coercion; this `change` exposes exactly the generic base-change point to rewrite.
   change (AlgHom.baseChangePointsMulEquiv (k := k) (K := K)
       (A := MonoidAlgebra k (Multiplicative (ZMod n))) (R := A)
         ((pointsMulEquiv (R := k) (A := A) n).symm ζ)).ofConv
