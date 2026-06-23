@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
 import Mathlib.RingTheory.ClassGroup.Basic
+import Mathlib.RingTheory.DedekindDomain.Factorization
 import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 import Mathlib.RingTheory.DedekindDomain.SelmerGroup
 
@@ -113,12 +114,26 @@ private lemma adicOrd_ne_zero_mem_support_union (v : HeightOneSpectrum R) (u : A
     exact (one_lt_inv₀ (WithZero.pos_iff_ne_zero.mpr hval)).mpr hlt
   · exact Or.inl hgt
 
-/-- The `v`-adic order of a rational function agrees with Mathlib's exponent of the
-corresponding principal fractional ideal. -/
-lemma adicOrd_eq_fractionalIdeal_count (v : HeightOneSpectrum R) (u : Additive Kˣ) :
-    adicOrd R K v u =
-      FractionalIdeal.count K v
-        (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) := by
+private lemma toPrincipalIdeal_eq_spanSingleton_inv_mul_span_mk'_num (u : Additive Kˣ) (n : R)
+    (d : R⁰) (hnd : IsLocalization.mk' K n d = ((Additive.toMul u : Kˣ) : K)) :
+    (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) =
+      FractionalIdeal.spanSingleton R⁰ ((algebraMap R K) (d : R))⁻¹ *
+        ↑(Ideal.span {n} : Ideal R) := by
+  rw [coe_toPrincipalIdeal, ← hnd, IsFractionRing.mk'_eq_div,
+    ← FractionalIdeal.spanSingleton_div_spanSingleton, FractionalIdeal.div_spanSingleton,
+    FractionalIdeal.coeIdeal_span_singleton]
+
+private lemma valuation_mk'_eq_intValuation_div (v : HeightOneSpectrum R) (n : R) (d : R⁰) :
+    v.valuation K (IsLocalization.mk' K n d) =
+      v.intValuation n / v.intValuation (d : R) :=
+  v.valuation_of_mk'
+
+/-- Mathlib's exponent of a principal fractional ideal is the sign-flipped logarithm of the
+corresponding height-one valuation. -/
+lemma fractionalIdeal_count_toPrincipalIdeal (v : HeightOneSpectrum R) (u : Additive Kˣ) :
+    FractionalIdeal.count K v
+      (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) =
+        -WithZero.log (v.valuation K ((Additive.toMul u : Kˣ) : K)) := by
   set k : K := ((Additive.toMul u : Kˣ) : K) with hk
   obtain ⟨n, d, hnd⟩ := IsLocalization.exists_mk'_eq R⁰ k
   have hn : n ≠ 0 := by
@@ -135,18 +150,25 @@ lemma adicOrd_eq_fractionalIdeal_count (v : HeightOneSpectrum R) (u : Additive K
       (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) =
         FractionalIdeal.spanSingleton R⁰ ((algebraMap R K) (d : R))⁻¹ *
           ↑(Ideal.span {n} : Ideal R) := by
-    rw [coe_toPrincipalIdeal, ← hk, ← hnd, IsFractionRing.mk'_eq_div,
-      ← FractionalIdeal.spanSingleton_div_spanSingleton, FractionalIdeal.div_spanSingleton,
-      FractionalIdeal.coeIdeal_span_singleton]
+    exact toPrincipalIdeal_eq_spanSingleton_inv_mul_span_mk'_num (R := R) (K := K) u n d
+      (by rw [hnd, hk])
   have hcount := FractionalIdeal.count_well_defined (K := K) v hI hrepr
   have hval :
       v.valuation K k = v.intValuation n / v.intValuation (d : R) := by
     rw [← hnd]
-    exact v.valuation_of_mk'
-  rw [adicOrd_apply, hval, WithZero.log_div (v.intValuation_ne_zero n hn)
+    exact valuation_mk'_eq_intValuation_div (R := R) (K := K) v n d
+  rw [hval, WithZero.log_div (v.intValuation_ne_zero n hn)
     (v.intValuation_ne_zero (d : R) hd), v.intValuation_if_neg hn,
     v.intValuation_if_neg hd, WithZero.log_exp, WithZero.log_exp, hcount]
   ring
+
+/-- The `v`-adic order of a rational function agrees with Mathlib's exponent of the
+corresponding principal fractional ideal. -/
+lemma adicOrd_eq_fractionalIdeal_count (v : HeightOneSpectrum R) (u : Additive Kˣ) :
+    adicOrd R K v u =
+      FractionalIdeal.count K v
+        (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) := by
+  rw [adicOrd_apply, fractionalIdeal_count_toPrincipalIdeal]
 
 variable (R K)
 
@@ -174,7 +196,7 @@ lemma OrderSystem.ofDedekindDomain_ord (v : HeightOneSpectrum R) :
 
 /-- The coefficient of the principal divisor of `f : Kˣ` at a height-one prime `v` is the
 `v`-adic order of vanishing `-log v(f)`. -/
-lemma coeff_principalDivisor_ofDedekindDomain (u : Additive Kˣ) (v : HeightOneSpectrum R) :
+lemma coeff_principalDivisor_eq_neg_log_valuation (u : Additive Kˣ) (v : HeightOneSpectrum R) :
     coeff ((OrderSystem.ofDedekindDomain R K).principalDivisor u) v =
       -WithZero.log (v.valuation K ((Additive.toMul u : Kˣ) : K)) := by
   rw [OrderSystem.coeff_principalDivisor, OrderSystem.ofDedekindDomain_ord, adicOrd_apply]
@@ -229,7 +251,7 @@ lemma coeff_principalDivisor_pos_iff_valuation_lt_one (u : Additive Kˣ)
       v.valuation K ((Additive.toMul u : Kˣ) : K) < 1 := by
   have hu : v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 0 :=
     (v.valuation K).ne_zero_iff.mpr (Units.ne_zero _)
-  rw [coeff_principalDivisor_ofDedekindDomain, neg_pos, ← WithZero.log_one (M := ℤ),
+  rw [coeff_principalDivisor_eq_neg_log_valuation, neg_pos, ← WithZero.log_one (M := ℤ),
     WithZero.log_lt_log hu one_ne_zero]
 
 /-- The divisor of a nonzero integral element `r : R` has a strictly positive coefficient (a
