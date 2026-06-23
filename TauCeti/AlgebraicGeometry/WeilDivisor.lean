@@ -78,6 +78,7 @@ lemma ext {D E : WeilDivisor X} (h : ∀ x, coeff D x = coeff E x) : D = E :=
 
 /-- A point lies in the support of a Weil divisor exactly when its coefficient is nonzero. This
 is the `coeff`-level restatement of `Finsupp.mem_support_iff`. -/
+@[simp, grind =]
 lemma mem_support_iff {D : WeilDivisor X} {x : X} : x ∈ D.support ↔ coeff D x ≠ 0 :=
   Finsupp.mem_support_iff
 
