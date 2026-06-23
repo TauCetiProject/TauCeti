@@ -74,7 +74,14 @@ per-call setup on each invocation, which is the ~77ms/decl that dominated the au
 (b) collapses the result to a single `Bool`, since the audit only needs "clean or not". A constant
 is marked `false` before recursing so cycles terminate; axioms are leaves, so a back edge into an
 in-progress constant contributes nothing. Adapted from Robin Arnez's mathlib-wide version
-(leanprover Zulip, #general > "Checking which axioms are used in a project"). -/
+(leanprover Zulip, #general > "Checking which axioms are used in a project").
+
+The fail-if-any-disallowed-axiom guarantee is sound: the declaration that *directly* mentions a
+disallowed axiom is always cached `true` (its badness comes from its own edge to the leaf axiom,
+not a back edge), and since the imported libraries are axiom-clean that declaration is itself an
+audited `TauCeti` candidate — so any violation fails the run. The `false` sentinel can, in a
+cyclic declaration cluster, leave *other* members of the cluster cached clean, so the reported
+offender list may under-count (the next run flags the rest); it never lets a violation pass. -/
 partial def reachesDisallowedAxiom (c : Name) : AxiomCacheM Bool := do
   if let some res := (← get).find? c then return res
   modify (·.insert c false)
