@@ -22,6 +22,8 @@ coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure.
 
 ## Main definitions
 
+* `TauCeti.RootsOfUnityGroup.characterMulEquivRootsOfUnity`: the multiplicative equivalence
+  from characters of `Multiplicative (ZMod n)` to `rootsOfUnity n A`.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv`: the multiplicative equivalence from
   convolution points of `R[Multiplicative (ZMod n)]` to `rootsOfUnity n A`.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv_apply`: the equivalence sends a point to its
@@ -59,7 +61,7 @@ abbrev generator (n : ℕ) : Multiplicative (ZMod n) :=
   Multiplicative.ofAdd 1
 
 /-- Every element of `Multiplicative (ZMod n)` is a power of the standard generator. -/
-private lemma mem_zpowers_generator (n : ℕ) (x : Multiplicative (ZMod n)) :
+lemma mem_zpowers_generator (n : ℕ) (x : Multiplicative (ZMod n)) :
     x ∈ Subgroup.zpowers (generator n) := by
   refine ⟨(Multiplicative.toAdd x).cast, ?_⟩
   simp only [generator]
@@ -72,14 +74,14 @@ private lemma mem_zpowers_generator (n : ℕ) (x : Multiplicative (ZMod n)) :
     _ = x := ofAdd_toAdd x
 
 /-- The cardinality of the standard cyclic character group is `n`. -/
-private lemma card_multiplicative_zmod (n : ℕ) :
+lemma card_multiplicative_zmod (n : ℕ) :
     Nat.card (Multiplicative (ZMod n)) = n := by
   exact (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
     (Nat.card_zmod n)
 
 /-- Characters of `Multiplicative (ZMod n)` are canonically `n`th roots of unity, by evaluation
 on the standard generator. -/
-private noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
+@[expose] noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
     (Multiplicative (ZMod n) →* Aˣ) ≃* rootsOfUnity n A :=
   ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (mem_zpowers_generator n) Aˣ).trans
       (MulEquiv.subgroupCongr (by rw [card_multiplicative_zmod n]))).trans
@@ -88,13 +90,15 @@ private noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
 /-- A character is sent to its value on the standard generator. -/
 -- The proof is `rfl`: each composed equivalence acts on the underlying unit by projection.
 @[simp]
-private lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
+lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
     (χ : Multiplicative (ZMod n) →* Aˣ) :
     ((characterMulEquivRootsOfUnity (A := A) n χ : Aˣ) : A) =
       (χ (generator n) : A) :=
   rfl
 
-private lemma characterMulEquivRootsOfUnity_symm_apply_generator
+/-- The inverse character-roots equivalence sends the standard generator to the chosen root
+of unity. -/
+lemma characterMulEquivRootsOfUnity_symm_apply_generator
     (n : ℕ) (ζ : rootsOfUnity n A) :
     (((characterMulEquivRootsOfUnity (A := A) n).symm ζ (generator n) : Aˣ) : A) =
       ((ζ : Aˣ) : A) := by

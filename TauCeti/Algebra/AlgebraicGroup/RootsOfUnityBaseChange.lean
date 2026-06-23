@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupBaseChange
 public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity
 
 /-!
@@ -15,11 +15,11 @@ This file records the base-changed functor-of-points calculation for the diagona
 `K`-algebra, then the `A`-points of the base-changed Hopf algebra
 `K ⊗[k] k[Multiplicative (ZMod n)]` are the usual subgroup `rootsOfUnity n A`.
 
-The construction first restricts base-changed points along `a ↦ 1 ⊗ a` using the generic
-base-change equivalence for convolution points, then applies the existing
-`RootsOfUnityGroup.pointsMulEquiv`. The characteristic lemmas spell out that the equivalence
-reads a point on the base-changed standard generator `1 ⊗ single (ofAdd 1) 1`, how the inverse
-point evaluates there, and how the equivalence is natural in the value algebra.
+The construction specializes `DiagonalizableGroup.baseChangePointsMulEquiv` to
+`Multiplicative (ZMod n)`, then applies `RootsOfUnityGroup.characterMulEquivRootsOfUnity`.
+The characteristic lemmas spell out that the equivalence reads a point on the base-changed
+standard generator `1 ⊗ single (ofAdd 1) 1`, how the inverse point evaluates on scalar
+multiples of that generator, and how the equivalence is natural in the value algebra.
 
 This is part of the ReductiveGroups roadmap worked examples: `μ_n = D(ℤ/n)` in the
 diagonalizable-groups lane, together with the Layer 0 base-change target for Hopf algebras and
@@ -31,6 +31,8 @@ their functors of points.
   base-changed `μ_n` points to `rootsOfUnity n A`.
 * `TauCeti.RootsOfUnityGroup.baseChangePointsMulEquiv_apply`: the equivalence reads a point
   by evaluating it on `1 ⊗ single (generator n) 1`.
+* `TauCeti.RootsOfUnityGroup.baseChangePointsMulEquiv_symm_apply_tmul_single_generator`: the
+  inverse equivalence evaluates scalar multiples of the base-changed generator.
 * `TauCeti.RootsOfUnityGroup.baseChangePointsMulEquiv_symm_apply_single_generator`: the
   inverse equivalence sends a root of unity to the base-changed point taking the standard
   generator to it.
@@ -39,9 +41,10 @@ their functors of points.
 
 ## References
 
-The generic base-change calculation is Tau Ceti's `AlgHom.baseChangePointsMulEquiv`, and the
-cyclic character identification with `rootsOfUnity n A` is `RootsOfUnityGroup.pointsMulEquiv`,
-itself built from Mathlib's `IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator`.
+The generic diagonalizable base-change calculation is Tau Ceti's
+`DiagonalizableGroup.baseChangePointsMulEquiv`, and the cyclic character identification with
+`rootsOfUnity n A` is `RootsOfUnityGroup.characterMulEquivRootsOfUnity`, itself built from
+Mathlib's `IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator`.
 -/
 
 public section
@@ -67,9 +70,9 @@ The target is Mathlib's subgroup of units whose `n`th power is one. -/
 noncomputable def baseChangePointsMulEquiv (n : ℕ) :
     WithConv (K ⊗[k] MonoidAlgebra k (Multiplicative (ZMod n)) →ₐ[K] A) ≃*
       rootsOfUnity n A :=
-  (AlgHom.baseChangePointsMulEquiv (k := k) (K := K)
-      (A := MonoidAlgebra k (Multiplicative (ZMod n))) (R := A)).symm.trans
-    (RootsOfUnityGroup.pointsMulEquiv (R := k) (A := A) n)
+  (DiagonalizableGroup.baseChangePointsMulEquiv (k := k) (K := K) (A := A)
+    (G := Multiplicative (ZMod n))).trans
+      (RootsOfUnityGroup.characterMulEquivRootsOfUnity n)
 
 /-- The base-changed roots-of-unity points equivalence reads a point by evaluating it on the
 base-changed standard generator `1 ⊗ single (ofAdd 1) 1`. -/
@@ -78,8 +81,20 @@ lemma baseChangePointsMulEquiv_apply (n : ℕ)
     (f : WithConv (K ⊗[k] MonoidAlgebra k (Multiplicative (ZMod n)) →ₐ[K] A)) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) n f : Aˣ) : A) =
       f.ofConv (1 ⊗ₜ[k] MonoidAlgebra.single (generator n) (1 : k)) := by
-  rw [baseChangePointsMulEquiv, MulEquiv.trans_apply, RootsOfUnityGroup.pointsMulEquiv_apply,
-    AlgHom.baseChangePointsMulEquiv_symm_apply]
+  rw [baseChangePointsMulEquiv, MulEquiv.trans_apply, characterMulEquivRootsOfUnity_apply,
+    DiagonalizableGroup.baseChangePointsMulEquiv_apply_coe]
+
+/-- The inverse base-changed roots-of-unity points equivalence evaluates scalar multiples of
+the standard generator by scalar multiplication of the chosen root of unity. -/
+@[simp]
+lemma baseChangePointsMulEquiv_symm_apply_tmul_single_generator (n : ℕ)
+    (ζ : rootsOfUnity n A) (s : K) (r : k) :
+    ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) n).symm ζ).ofConv
+        (s ⊗ₜ[k] MonoidAlgebra.single (generator n) r) =
+      s • (r • ((ζ : Aˣ) : A)) := by
+  rw [baseChangePointsMulEquiv, MulEquiv.symm_trans_apply,
+    DiagonalizableGroup.baseChangePointsMulEquiv_symm_apply_tmul_single,
+    characterMulEquivRootsOfUnity_symm_apply_generator]
 
 /-- The inverse base-changed roots-of-unity points equivalence takes the standard generator to
 the chosen root of unity. -/
@@ -88,7 +103,7 @@ lemma baseChangePointsMulEquiv_symm_apply_single_generator (n : ℕ) (ζ : roots
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) n).symm ζ).ofConv
         (1 ⊗ₜ[k] MonoidAlgebra.single (generator n) (1 : k)) =
       ((ζ : Aˣ) : A) := by
-  rw [← baseChangePointsMulEquiv_apply n]
+  rw [baseChangePointsMulEquiv_symm_apply_tmul_single_generator]
   simp
 
 variable {B : Type*} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower k K B]
