@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Complex.Basic
-import Mathlib.Analysis.InnerProductSpace.Defs
-import TauCeti.Geometry.Symplectic.CompatibleMetric
-import TauCeti.Geometry.Symplectic.ComplexModule
+module
+
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.InnerProductSpace.Defs
+public import TauCeti.Geometry.Symplectic.CompatibleMetric
+public import TauCeti.Geometry.Symplectic.ComplexModule
 
 /-!
 # The Hermitian inner product of a compatible pair
@@ -53,6 +55,8 @@ The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Top
 Section 2.1: a compatible pair `(ω, J)` gives the Hermitian form `⟨v, w⟩ = g(v, w) + i ω(v, w)`.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace SymplecticForm
@@ -69,6 +73,7 @@ argument from `ω.Invariant J` (`Invariant.complexAssociatedForm_conj_symm`,
 `Invariant.complexAssociatedForm_smul_left`), and positive definiteness from `ω.Tames J`
 (`Tames.complexAssociatedForm_self_re_pos`). Full compatibility is needed only to assemble
 `Compatible.hermitianCore`. -/
+@[expose]
 noncomputable def complexAssociatedForm (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (v w : V) : ℂ :=
   (ω v (J w) : ℂ) + Complex.I * (ω v w : ℂ)

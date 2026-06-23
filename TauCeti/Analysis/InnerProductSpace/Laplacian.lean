@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.InnerProductSpace.Laplacian
-import Mathlib.Analysis.Normed.Affine.Isometry
+module
+
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import Mathlib.Analysis.Normed.Affine.Isometry
 
 /-!
 # Geometric invariance of the Laplacian
@@ -42,6 +44,8 @@ corollaries, where smoothness re-enters, live in
   isometry `l`.
 * `TauCeti.laplacian_comp_add_right`: translation invariance of `Δ`.
 -/
+
+public section
 
 namespace TauCeti
 
