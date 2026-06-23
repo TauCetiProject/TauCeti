@@ -61,24 +61,30 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 /-- The complex form associated to a pair `(ω, J)`: `h(v, w) = ω(v, J w) + i ω(v, w)`.
 
 Its real part is the metric `ω(·, J ·)` and its imaginary part is the symplectic form `ω`. The
-Hermitian-structure facts (conjugate symmetry, complex linearity in the second argument, positive
-definiteness) need `J² = -1` and compatibility; the bare definition does not. -/
+bare definition needs no hypotheses on `(ω, J)`; the Hermitian-structure facts are each proved
+under the weakest hypothesis they need: complex linearity in the second argument from `J² = -1`
+alone (`complexAssociatedForm_smul_right`), conjugate symmetry and conjugate-linearity in the first
+argument from `ω.Invariant J` (`Invariant.hermitianForm_conj_symm`,
+`Invariant.hermitianForm_smul_left`), and positive definiteness from `ω.Tames J`
+(`Tames.hermitianForm_self_re_pos`). Full compatibility is needed only to assemble
+`Compatible.hermitianCore`. -/
 noncomputable def complexAssociatedForm (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (v w : V) : ℂ :=
   (ω v (J w) : ℂ) + Complex.I * (ω v w : ℂ)
 
-@[simp]
 lemma complexAssociatedForm_apply (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (v w : V) :
     ω.complexAssociatedForm J v w = (ω v (J w) : ℂ) + Complex.I * (ω v w : ℂ) := rfl
 
 /-- The real part of the complex associated form is the metric `g(v, w) = ω(v, J w)`. -/
+@[simp]
 lemma complexAssociatedForm_re (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (v w : V) :
     (ω.complexAssociatedForm J v w).re = ω v (J w) := by
   simp [complexAssociatedForm]
 
 /-- The imaginary part of the complex associated form is the symplectic form `ω(v, w)`. -/
+@[simp]
 lemma complexAssociatedForm_im (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (v w : V) :
     (ω.complexAssociatedForm J v w).im = ω v w := by
@@ -132,6 +138,7 @@ lemma complexAssociatedForm_smul_right (ω : SymplecticForm V) (J : AlmostComple
 
 /-- The diagonal of the complex associated form is real and equals the metric diagonal
 `ω(v, J v)`. -/
+@[simp]
 lemma complexAssociatedForm_self (ω : SymplecticForm V) (J : AlmostComplexStructure V) (v : V) :
     ω.complexAssociatedForm J v v = (ω v (J v) : ℂ) := by
   simp [complexAssociatedForm]
@@ -170,11 +177,7 @@ variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 needed. -/
 lemma hermitianForm_conj_symm (hinv : ω.Invariant J) (v w : V) :
     (starRingEnd ℂ) (ω.complexAssociatedForm J w v) = ω.complexAssociatedForm J v w := by
-  have hg : ω w (J v) = ω v (J w) := by
-    have h2 : ω v (J w) = ω w (J v) :=
-      calc ω v (J w) = -ω (J w) v := by rw [ω.neg_eq]
-        _ = ω w (J v) := by simpa using hinv.apply w (J v)
-    exact h2.symm
+  have hg : ω w (J v) = ω v (J w) := hinv.associatedBilinForm_apply_swap w v
   have hω : ω w v = -(ω v w) := (ω.neg_eq v w).symm
   simp only [complexAssociatedForm, map_add, map_mul, Complex.conj_ofReal, Complex.conj_I, hg, hω]
   push_cast
