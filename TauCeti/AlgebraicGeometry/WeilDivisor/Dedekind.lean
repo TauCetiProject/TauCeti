@@ -74,6 +74,9 @@ noncomputable def adicOrd (v : HeightOneSpectrum R) : Additive Kˣ →+ ℤ :=
 
 variable {R K}
 
+/-- The computational form of `adicOrd`: the order at `v` of an element `u : Additive Kˣ` is the
+sign-flipped logarithm `-log v(u)` of its `v`-adic valuation, where the underlying rational
+function is `(Additive.toMul u : Kˣ) : K`. The minus sign makes a uniformizer have order `+1`. -/
 @[simp]
 lemma adicOrd_apply (v : HeightOneSpectrum R) (u : Additive Kˣ) :
     adicOrd R K v u = -WithZero.log (v.valuation K ((Additive.toMul u : Kˣ) : K)) := by
@@ -81,6 +84,8 @@ lemma adicOrd_apply (v : HeightOneSpectrum R) (u : Additive Kˣ) :
     Function.comp_apply, ← valuationOfNeZero_eq]
   rfl
 
+/-- The computational form of `adicOrd` applied to `Additive.ofMul u` for a multiplicative unit
+`u : Kˣ`: it is the sign-flipped logarithm `-log v(u)` of the `v`-adic valuation of `u : K`. -/
 @[simp]
 lemma adicOrd_ofMul (v : HeightOneSpectrum R) (u : Kˣ) :
     adicOrd R K v (Additive.ofMul u) = -WithZero.log (v.valuation K (u : K)) := by
@@ -115,9 +120,9 @@ private lemma adicOrd_ne_zero_mem_support_union (v : HeightOneSpectrum R) (u : A
     exact (one_lt_inv₀ (WithZero.pos_iff_ne_zero.mpr hval)).mpr hlt
   · exact Or.inl hgt
 
-private lemma toPrincipalIdeal_eq_spanSingleton_inv_mul_span_mk'_num (u : Additive Kˣ) (n : R)
-    (d : R⁰) (hnd : IsLocalization.mk' K n d = ((Additive.toMul u : Kˣ) : K)) :
-    (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) =
+private lemma toPrincipalIdeal_eq_spanSingleton_inv_mul_span_mk'_num (u : Kˣ) (n : R)
+    (d : R⁰) (hnd : IsLocalization.mk' K n d = (u : K)) :
+    (toPrincipalIdeal R K u : FractionalIdeal R⁰ K) =
       FractionalIdeal.spanSingleton R⁰ ((algebraMap R K) (d : R))⁻¹ *
         ↑(Ideal.span {n} : Ideal R) := by
   rw [coe_toPrincipalIdeal, ← hnd, IsFractionRing.mk'_eq_div,
@@ -141,13 +146,15 @@ private lemma neg_log_intValuation_div_eq_count_span_sub (v : HeightOneSpectrum 
   ring
 
 /-- Mathlib's exponent of a principal fractional ideal is the sign-flipped logarithm of the
-corresponding height-one valuation. -/
+corresponding height-one valuation. Stated at the multiplicative-units level `u : Kˣ`, matching
+Mathlib's `toPrincipalIdeal R K : Kˣ →* _`; the order-system/`Additive` form is recovered by
+`adicOrd_eq_fractionalIdeal_count`. -/
 lemma fractionalIdeal_count_toPrincipalIdeal_eq_neg_log_valuation (v : HeightOneSpectrum R)
-    (u : Additive Kˣ) :
+    (u : Kˣ) :
     FractionalIdeal.count K v
-      (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) =
-        -WithZero.log (v.valuation K ((Additive.toMul u : Kˣ) : K)) := by
-  set k : K := ((Additive.toMul u : Kˣ) : K) with hk
+      (toPrincipalIdeal R K u : FractionalIdeal R⁰ K) =
+        -WithZero.log (v.valuation K (u : K)) := by
+  set k : K := (u : K) with hk
   obtain ⟨n, d, hnd⟩ := IsLocalization.exists_mk'_eq R⁰ k
   have hn : n ≠ 0 := by
     intro hn
@@ -156,11 +163,11 @@ lemma fractionalIdeal_count_toPrincipalIdeal_eq_neg_log_valuation (v : HeightOne
     rw [← hnd, hn, IsFractionRing.mk'_eq_div, map_zero, zero_div]
   have hd : (d : R) ≠ 0 := nonZeroDivisors.ne_zero d.2
   have hI :
-      (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) ≠ 0 := by
+      (toPrincipalIdeal R K u : FractionalIdeal R⁰ K) ≠ 0 := by
     rw [coe_toPrincipalIdeal, FractionalIdeal.spanSingleton_ne_zero_iff]
     exact Units.ne_zero _
   have hrepr :
-      (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) =
+      (toPrincipalIdeal R K u : FractionalIdeal R⁰ K) =
         FractionalIdeal.spanSingleton R⁰ ((algebraMap R K) (d : R))⁻¹ *
           ↑(Ideal.span {n} : Ideal R) := by
     exact toPrincipalIdeal_eq_spanSingleton_inv_mul_span_mk'_num (R := R) (K := K) u n d
@@ -201,6 +208,8 @@ noncomputable def OrderSystem.ofDedekindDomain :
     intro v hv
     exact adicOrd_ne_zero_mem_support_union (R := R) (K := K) v u hv
 
+/-- The order map of the Dedekind-domain order system at a height-one prime `v` is the `v`-adic
+order of vanishing `adicOrd R K v`. -/
 @[simp]
 lemma OrderSystem.ofDedekindDomain_ord (v : HeightOneSpectrum R) :
     (OrderSystem.ofDedekindDomain R K).ord v = adicOrd R K v :=
@@ -231,10 +240,7 @@ lemma mem_support_principalDivisor_iff (u : Additive Kˣ) (v : HeightOneSpectrum
       v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 1 := by
   have hu : v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 0 :=
     (v.valuation K).ne_zero_iff.mpr (Units.ne_zero _)
-  rw [Finsupp.mem_support_iff]
-  change coeff ((OrderSystem.ofDedekindDomain R K).principalDivisor u) v ≠ 0 ↔
-    v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 1
-  rw [coeff_principalDivisor_eq_neg_log_valuation]
+  rw [mem_support_iff, coeff_principalDivisor_eq_neg_log_valuation]
   constructor
   · intro h hval
     exact h (by rw [hval, WithZero.log_one, neg_zero])
@@ -257,13 +263,15 @@ noncomputable abbrev WeilDivisorClassGroup : Type _ :=
 variable {R K}
 
 omit [IsDedekindDomain R] in
-/-- An integral element `r : R`, `r ≠ 0`, as a nonzero rational function. -/
-noncomputable def algebraMapUnit {r : R} (hr : r ≠ 0) : Kˣ :=
+/-- An integral element `r : R`, `r ≠ 0`, as a nonzero rational function. This is a private
+plumbing helper for the integral principal-divisor lemmas below; it is generic fraction-field
+API and is not part of the Dedekind order-system surface. -/
+private noncomputable def algebraMapUnit {r : R} (hr : r ≠ 0) : Kˣ :=
   Units.mk0 (algebraMap R K r) (by rwa [ne_eq, IsFractionRing.to_map_eq_zero_iff])
 
 omit [IsDedekindDomain R] in
 @[simp]
-lemma algebraMapUnit_val {r : R} (hr : r ≠ 0) :
+private lemma algebraMapUnit_val {r : R} (hr : r ≠ 0) :
     (algebraMapUnit (K := K) hr : K) = algebraMap R K r :=
   rfl
 

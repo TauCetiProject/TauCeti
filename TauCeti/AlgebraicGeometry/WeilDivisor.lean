@@ -69,6 +69,11 @@ lemma coeff_sub (D E : WeilDivisor X) (x : X) :
 lemma ext {D E : WeilDivisor X} (h : ∀ x, coeff D x = coeff E x) : D = E :=
   Finsupp.ext h
 
+/-- A point lies in the support of a Weil divisor exactly when its coefficient is nonzero. This
+is the `coeff`-level restatement of `Finsupp.mem_support_iff`. -/
+lemma mem_support_iff {D : WeilDivisor X} {x : X} : x ∈ D.support ↔ coeff D x ≠ 0 :=
+  Finsupp.mem_support_iff
+
 /-- The prime/point divisor supported at a single point with coefficient `1`. -/
 noncomputable def ofPoint (x : X) : WeilDivisor X :=
   Finsupp.single x 1
