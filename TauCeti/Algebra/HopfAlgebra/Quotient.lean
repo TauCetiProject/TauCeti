@@ -24,8 +24,9 @@ bialgebra.
 
 The quotient coalgebra/bialgebra/Hopf-algebra structure maps and the quotient bialgebra morphism
 are Mathlib's own `Bialgebra.Quotient.comulAlgHom`, `Bialgebra.Quotient.counitAlgHom`,
-`Bialgebra.Quotient.mkBialgHom`, `HopfAlgebra.antipode`, and `HopfAlgebra.antipodeAlgHom`; use them
-directly on `H ⧸ I.toIdeal`.
+`Bialgebra.Quotient.mkBialgHom`, and `HopfAlgebra.antipode`; use them directly on
+`H ⧸ I.toIdeal`. In the commutative quotient case, Mathlib also provides the antipode as the
+algebra hom `HopfAlgebra.antipodeAlgHom`.
 
 ## Main definitions
 
