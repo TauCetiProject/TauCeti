@@ -214,14 +214,4 @@ theorem harmonicOnNhd_comp_add_right_iff {f : E → F} {s : Set E} (a : E) :
   rw [hfun, hset]
   exact harmonicOnNhd_comp_affineIsometryEquiv_iff e
 
-/-- Harmonicity on a neighbourhood of a set is preserved by an isometric change of variable. -/
-theorem HarmonicOnNhd.comp_linearIsometryEquiv {f : E' → F} {s : Set E'} (l : E ≃ₗᵢ[ℝ] E')
-    (hf : HarmonicOnNhd f s) : HarmonicOnNhd (f ∘ l) (l ⁻¹' s) :=
-  (harmonicOnNhd_comp_linearIsometryEquiv_iff l).2 hf
-
-/-- Harmonicity on a neighbourhood of a set is preserved by translation. -/
-theorem HarmonicOnNhd.comp_add_right {f : E → F} {s : Set E} (a : E)
-    (hf : HarmonicOnNhd f s) : HarmonicOnNhd (fun y ↦ f (y + a)) ((fun y ↦ y + a) ⁻¹' s) :=
-  (harmonicOnNhd_comp_add_right_iff a).2 hf
-
 end TauCeti
