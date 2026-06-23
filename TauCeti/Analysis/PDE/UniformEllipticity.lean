@@ -48,6 +48,12 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   uniformly elliptic when their scalar coefficient lies between the ellipticity constants.
 * `TauCeti.PDE.UniformlyEllipticOn.add_nonneg`: adding a nonnegative bounded
   coefficient field preserves the lower ellipticity constant and adds upper constants.
+* `TauCeti.PDE.coefficientSymmetricPart`: the symmetric part `(A + Aᵀ) / 2` of a
+  coefficient matrix.
+* `TauCeti.PDE.UniformlyEllipticOn.transpose` and
+  `TauCeti.PDE.UniformlyEllipticOn.coefficientSymmetricPart`: transposing or replacing a
+  coefficient field by its symmetric part preserves uniform ellipticity with the same
+  constants.
 
 The vectors are `EuclideanSpace ℝ n`, matching the roadmap's bounded open subsets of
 `ℝⁿ`; this type is reducibly a finite `L²` product, so Mathlib's matrix-vector API applies
@@ -139,6 +145,27 @@ lemma matrixBilinearForm_add_apply (A B : Matrix n n ℝ) (η ξ : EuclideanSpac
   rw [matrixBilinearForm_apply, matrixBilinearForm_apply, matrixBilinearForm_apply,
     add_mulVec, dotProduct_add]
 
+omit [DecidableEq n] in
+/-- Transposing the coefficient matrix swaps the two arguments in the dot-product bilinear
+expression. -/
+lemma dotProduct_transpose_mulVec (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    η ⬝ᵥ (Aᵀ *ᵥ ξ) = ξ ⬝ᵥ (A *ᵥ η) := by
+  rw [Matrix.dotProduct_mulVec, Matrix.vecMul_transpose, dotProduct_comm]
+
+/-- Transposing the coefficient matrix does not change its quadratic form. -/
+@[simp]
+lemma toQuadraticForm'_transpose (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
+    Aᵀ.toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
+  rw [toQuadraticForm'_eq_dotProduct, toQuadraticForm'_eq_dotProduct,
+    dotProduct_transpose_mulVec]
+
+/-- Transposing the coefficient matrix swaps the arguments of the bundled matrix bilinear
+form. -/
+@[simp]
+lemma matrixBilinearForm_transpose_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm Aᵀ η ξ = matrixBilinearForm A ξ η := by
+  rw [matrixBilinearForm_apply, matrixBilinearForm_apply, dotProduct_transpose_mulVec]
+
 /-- The matrix bilinear form associated to `c • 1` is `c` times the Euclidean dot product. -/
 @[simp]
 lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n) :
@@ -150,6 +177,48 @@ lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n)
 lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
   rw [matrixBilinearForm_apply, toQuadraticForm'_eq_dotProduct]
+
+/-- The symmetric part `(A + Aᵀ) / 2` of a coefficient matrix.
+
+For energy estimates the diagonal quadratic form of `A` agrees with that of
+`coefficientSymmetricPart A`, while the resulting matrix is symmetric. This is the
+finite-dimensional bookkeeping needed before the integrated energy form is specialized to
+self-adjoint elliptic operators. -/
+noncomputable def coefficientSymmetricPart (A : Matrix n n ℝ) : Matrix n n ℝ :=
+  (1 / 2 : ℝ) • (A + Aᵀ)
+
+omit [Fintype n] [DecidableEq n] in
+/-- The symmetric part of a coefficient matrix is symmetric. -/
+lemma coefficientSymmetricPart_isSymm (A : Matrix n n ℝ) :
+    (coefficientSymmetricPart A).IsSymm :=
+  (isSymm_add_transpose_self A).smul (1 / 2 : ℝ)
+
+omit [Fintype n] [DecidableEq n] in
+/-- The entries of the symmetric part are the averages of opposite entries. -/
+@[simp]
+lemma coefficientSymmetricPart_apply (A : Matrix n n ℝ) (i j : n) :
+    coefficientSymmetricPart A i j = (A i j + A j i) / 2 := by
+  simp [coefficientSymmetricPart, div_eq_mul_inv, mul_comm]
+
+/-- The symmetric part has the same quadratic form as the original coefficient matrix. -/
+@[simp]
+lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ)
+    (ξ : EuclideanSpace ℝ n) :
+    (coefficientSymmetricPart A).toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
+  rw [coefficientSymmetricPart, toQuadraticForm'_smul, toQuadraticForm'_add,
+    toQuadraticForm'_transpose]
+  ring
+
+/-- The bundled bilinear form of the symmetric part is the average of the original bilinear
+form and its transpose. -/
+@[simp]
+lemma matrixBilinearForm_coefficientSymmetricPart_apply (A : Matrix n n ℝ)
+    (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm (coefficientSymmetricPart A) η ξ =
+      (matrixBilinearForm A η ξ + matrixBilinearForm A ξ η) / 2 := by
+  rw [coefficientSymmetricPart, matrixBilinearForm_smul_apply, matrixBilinearForm_add_apply,
+    matrixBilinearForm_transpose_apply]
+  ring
 
 /-- A pointwise bilinear upper bound gives the corresponding norm estimate for the bundled
 continuous bilinear form. -/
@@ -219,6 +288,33 @@ lemma abs_dotProduct_add_mulVec_le {A B : Matrix n n ℝ} {Lam Mu : ℝ}
         ≤ |η ⬝ᵥ (A *ᵥ ξ)| + |η ⬝ᵥ (B *ᵥ ξ)| := abs_add_le _ _
     _ ≤ Lam * ‖η‖ * ‖ξ‖ + Mu * ‖η‖ * ‖ξ‖ := add_le_add (hA η ξ) (hB η ξ)
     _ = (Lam + Mu) * ‖η‖ * ‖ξ‖ := by ring
+
+omit [DecidableEq n] in
+/-- The symmetric part of a pointwise bounded coefficient matrix satisfies the same bilinear
+upper bound. -/
+lemma abs_dotProduct_coefficientSymmetricPart_mulVec_le {A : Matrix n n ℝ} {Lam : ℝ}
+    (hA : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (η ξ : EuclideanSpace ℝ n) :
+    |η ⬝ᵥ (coefficientSymmetricPart A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
+  classical
+  rw [← matrixBilinearForm_apply, matrixBilinearForm_coefficientSymmetricPart_apply]
+  have hηξ : ‖matrixBilinearForm A η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ :=
+    norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
+  have hξη : ‖matrixBilinearForm A ξ η‖ ≤ Lam * ‖η‖ * ‖ξ‖ := by
+    rw [mul_right_comm]
+    exact norm_matrixBilinearForm_le_of_upper_bound A hA ξ η
+  have hsum :
+      ‖matrixBilinearForm A η ξ + matrixBilinearForm A ξ η‖
+        ≤ 2 * (Lam * ‖η‖ * ‖ξ‖) := by
+    calc
+      ‖matrixBilinearForm A η ξ + matrixBilinearForm A ξ η‖
+          ≤ ‖matrixBilinearForm A η ξ‖ + ‖matrixBilinearForm A ξ η‖ := norm_add_le _ _
+      _ ≤ Lam * ‖η‖ * ‖ξ‖ + Lam * ‖η‖ * ‖ξ‖ := add_le_add hηξ hξη
+      _ = 2 * (Lam * ‖η‖ * ‖ξ‖) := by ring
+  rw [abs_div]
+  rw [abs_of_pos (show (0 : ℝ) < 2 by norm_num)]
+  exact (div_le_iff₀' two_pos).2 (by
+    simpa [Real.norm_eq_abs] using hsum)
 
 /-- Adding a nonnegative quadratic form preserves a lower quadratic bound. -/
 lemma lower_bound_toQuadraticForm'_add {A B : Matrix n n ℝ} {lam : ℝ}
@@ -382,6 +478,32 @@ lemma isCoercive_matrixBilinearForm (h : UniformlyEllipticOn Ω a lam Lam) {x : 
     (hx : x ∈ Ω) :
     IsCoercive (matrixBilinearForm (a x)) :=
   isCoercive_matrixBilinearForm_of_lower_bound (a x) h.pos (h.lower_bound hx)
+
+/-- Transposing the coefficient field preserves uniform ellipticity with the same constants.
+
+The quadratic lower bound is unchanged, and the bilinear upper bound follows by swapping the
+two Euclidean arguments. -/
+lemma transpose (h : UniformlyEllipticOn Ω a lam Lam) :
+    UniformlyEllipticOn Ω (fun x => (a x)ᵀ) lam Lam := by
+  refine UniformlyEllipticOn.of_bounds h.pos h.le (fun {x} hx ξ => ?_)
+    (fun {x} hx η ξ => ?_)
+  · simpa using h.lower_bound hx ξ
+  · rw [dotProduct_transpose_mulVec]
+    rw [mul_right_comm]
+    exact h.upper_bound hx ξ η
+
+/-- Replacing a coefficient field by its symmetric part preserves uniform ellipticity with
+the same constants.
+
+This lets the energy-method API pass from a nonsymmetric uniformly elliptic principal
+coefficient to the symmetric coefficient with the same diagonal energy, which is the
+finite-dimensional prerequisite for self-adjoint model problems. -/
+lemma coefficientSymmetricPart (h : UniformlyEllipticOn Ω a lam Lam) :
+    UniformlyEllipticOn Ω (fun x => coefficientSymmetricPart (a x)) lam Lam := by
+  refine UniformlyEllipticOn.of_bounds h.pos h.le (fun {x} hx ξ => ?_)
+    (fun {x} hx η ξ => ?_)
+  · simpa using h.lower_bound hx ξ
+  · exact abs_dotProduct_coefficientSymmetricPart_mulVec_le (h.upper_bound hx) η ξ
 
 /-- Adding a pointwise nonnegative bounded coefficient field preserves uniform ellipticity.
 
