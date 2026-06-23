@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+import Mathlib.Data.ZMod.Basic
 public import Mathlib.Data.Int.ModEq
 public import TauCeti.LowDimTopology.Plumbing.IntersectionForm
 
@@ -31,6 +32,8 @@ from these covectors and the plumbing intersection form.
 
 * `TauCeti.PlumbingGraph.isCharacteristicVector_iff_intersection_single`: the parity condition
   can be read from the self-pairing of each basis vector.
+* `TauCeti.PlumbingGraph.isCharacteristicVector_iff_forall_modEq_intersectionForm`: the
+  characteristic condition against every lattice vector.
 * Characteristic covectors are stable under adding twice an integral covector, and the
   difference of two characteristic covectors is pointwise even.
 
@@ -89,6 +92,49 @@ section Form
 
 variable [DecidableEq V] [Fintype V]
 
+private theorem zmod_two_sq (a : ZMod 2) : a ^ 2 = a := by
+  fin_cases a <;> decide
+
+private theorem covector_eval_single (k : V → ℤ) (v : V) :
+    (∑ w, k w * (Pi.single v (1 : ℤ) : V → ℤ) w) = k v := by
+  rw [Finset.sum_eq_single v]
+  · simp
+  · intro w _ hw
+    simp [Pi.single_eq_of_ne hw]
+  · intro hv
+    exact absurd (Finset.mem_univ v) hv
+
+omit [DecidableEq V] in
+private theorem adjacency_sum_cast_zmod_two_eq_zero (x : V → ℤ) :
+    (∑ i, ∑ j, ((if P.toSimpleGraph.Adj i j then x i * x j else 0 : ℤ) : ZMod 2)) = 0 := by
+  classical
+  let f : {p : V × V // P.toSimpleGraph.Adj p.1 p.2} → ZMod 2 :=
+    fun p => (x p.1.1 : ZMod 2) * (x p.1.2 : ZMod 2)
+  have hsum :
+      (∑ i, ∑ j, ((if P.toSimpleGraph.Adj i j then x i * x j else 0 : ℤ) : ZMod 2)) =
+        ∑ p, f p := by
+    simp only [Int.cast_ite, Int.cast_mul, Int.cast_zero]
+    rw [show (∑ i, ∑ j, if P.toSimpleGraph.Adj i j then
+          (x i : ZMod 2) * (x j : ZMod 2) else 0) =
+        ∑ p : V × V, if P.toSimpleGraph.Adj p.1 p.2 then
+          (x p.1 : ZMod 2) * (x p.2 : ZMod 2) else 0 by
+      rw [← Finset.univ_product_univ, Finset.sum_product]]
+    rw [← Finset.sum_filter]
+    rw [Finset.sum_subtype
+      (s := (Finset.univ : Finset (V × V)).filter fun p => P.toSimpleGraph.Adj p.1 p.2)]
+    intro p
+    simp
+  rw [hsum]
+  exact Finset.sum_involution (s := Finset.univ) (f := f)
+    (fun p _ => ⟨(p.1.2, p.1.1), p.2.symm⟩)
+    (fun p _ => by
+      dsimp [f]
+      rw [mul_comm, ← two_mul, show (2 : ZMod 2) = 0 by exact ZMod.natCast_self 2, zero_mul])
+    (fun p _ _ h => by
+      exact p.2.ne (Prod.ext_iff.mp (Subtype.ext_iff.mp h)).2)
+    (fun _ _ => Finset.mem_univ _) (fun p _ => by
+      ext <;> rfl)
+
 /-- Characteristicness can be read from the self-pairing of the plumbing basis vectors. -/
 theorem isCharacteristicVector_iff_intersection_single (k : V → ℤ) :
     P.IsCharacteristicVector k ↔
@@ -98,6 +144,27 @@ theorem isCharacteristicVector_iff_intersection_single (k : V → ℤ) :
     simpa using hk v
   · intro hk v
     simpa using hk v
+
+/-- A covector is characteristic exactly when its evaluation on every lattice vector is congruent
+modulo two to that vector's self-pairing under the plumbing intersection form. -/
+theorem isCharacteristicVector_iff_forall_modEq_intersectionForm (k : V → ℤ) :
+    P.IsCharacteristicVector k ↔
+      ∀ x : V → ℤ, (∑ v, k v * x v) ≡ P.intersectionForm x x [ZMOD 2] := by
+  constructor
+  · intro hk x
+    apply (ZMod.intCast_eq_intCast_iff (∑ v, k v * x v) (P.intersectionForm x x) 2).mp
+    rw [P.intersectionForm_self x]
+    simp only [Int.cast_sum, Int.cast_add, Int.cast_mul, Int.cast_pow]
+    rw [adjacency_sum_cast_zmod_two_eq_zero]
+    simp only [add_zero]
+    refine Finset.sum_congr rfl fun v _ => ?_
+    have hkz : (k v : ZMod 2) = P.weight v :=
+      (ZMod.intCast_eq_intCast_iff (k v) (P.weight v) 2).mpr (hk v)
+    rw [hkz, zmod_two_sq]
+  · intro h v
+    have hv := h (Pi.single v (1 : ℤ) : V → ℤ)
+    rw [covector_eval_single] at hv
+    simpa using hv
 
 /-- The canonical characteristic covector satisfies the adjunction coordinate equation
 `K(E_v) + E_v · E_v = -2`. -/
