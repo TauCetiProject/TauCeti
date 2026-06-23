@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
 import Mathlib.RingTheory.ClassGroup.Basic
 import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
+import Mathlib.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
 # The order system of a Dedekind domain
@@ -25,8 +26,10 @@ Concretely we build:
 * `OrderSystem.ofDedekindDomain R K : OrderSystem (HeightOneSpectrum R) (Additive Kˣ)`, whose
   finiteness condition is exactly the statement that a nonzero rational function has zeros and
   poles at only finitely many primes;
-* `WeilDivisorClassGroup R K`, the resulting Weil-divisor presentation of `Cl(Spec R)`;
-* `DivisorClassGroup R K`, an alias for Mathlib's ideal class group `ClassGroup R`;
+* `WeilDivisorClassGroup R K`, the resulting Weil-divisor presentation of the class group (the
+  quotient of Weil divisors by principal divisors; its isomorphism to `ClassGroup R` is not
+  constructed here);
+* `DivisorClassGroup R`, an alias for Mathlib's ideal class group `ClassGroup R = Cl(Spec R)`;
 * the sanity check that the principal divisor of a nonzero *integral* element is effective
   (an element of `R` has no poles).
 
@@ -41,9 +44,10 @@ We do *not* claim the weighted-degree-zero property here: for a general Dedekind
 only for proper curves over a field (and number fields with the archimedean places included),
 and is later geometric input.
 
-This reuses Mathlib's `IsDedekindDomain.HeightOneSpectrum.valuation`, the `WithZero.log`
-logarithm on `ℤᵐ⁰`, and `IsDedekindDomain.HeightOneSpectrum.Support.finite` (finiteness of the
-support of a rational function); no external mathematics is vendored.
+This reuses Mathlib's `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZero` (the multiplicative
+`v`-adic valuation `Kˣ →* Multiplicative ℤ`, whose multiplicativity `adicOrd` inherits), the
+`WithZero.log` logarithm on `ℤᵐ⁰`, and `IsDedekindDomain.HeightOneSpectrum.Support.finite`
+(finiteness of the support of a rational function); no external mathematics is vendored.
 -/
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum WithZero
@@ -59,29 +63,27 @@ variable (R : Type*) [CommRing R] [IsDedekindDomain R]
 variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
 
 /-- The order of vanishing `ord_v(f) = -log v(f)` of a nonzero rational function `f : Kˣ` at a
-height-one prime `v` of a Dedekind domain `R`, as a homomorphism `Additive Kˣ →+ ℤ`. The sign
-is chosen so that a uniformizer at `v` has order `+1` (a simple zero) and a pole has negative
+height-one prime `v` of a Dedekind domain `R`, as a homomorphism `Additive Kˣ →+ ℤ`. It is the
+additive, sign-flipped form of Mathlib's multiplicative valuation
+`IsDedekindDomain.HeightOneSpectrum.valuationOfNeZero v : Kˣ →* Multiplicative ℤ`; the sign is
+chosen so that a uniformizer at `v` has order `+1` (a simple zero) and a pole has negative
 order. -/
 noncomputable def adicOrd (v : HeightOneSpectrum R) : Additive Kˣ →+ ℤ :=
-  AddMonoidHom.mk' (fun u => -WithZero.log (v.valuation K ((Additive.toMul u : Kˣ) : K)))
-    fun u₁ u₂ => by
-      have h₁ : v.valuation K ((Additive.toMul u₁ : Kˣ) : K) ≠ 0 :=
-        (v.valuation K).ne_zero_iff.mpr (Units.ne_zero _)
-      have h₂ : v.valuation K ((Additive.toMul u₂ : Kˣ) : K) ≠ 0 :=
-        (v.valuation K).ne_zero_iff.mpr (Units.ne_zero _)
-      simp only [toMul_add, Units.val_mul, map_mul, WithZero.log_mul h₁ h₂]
-      ring
+  -MonoidHom.toAdditiveLeft (v.valuationOfNeZero (K := K))
 
 variable {R K}
 
 @[simp]
 lemma adicOrd_apply (v : HeightOneSpectrum R) (u : Additive Kˣ) :
-    adicOrd R K v u = -WithZero.log (v.valuation K ((Additive.toMul u : Kˣ) : K)) :=
+    adicOrd R K v u = -WithZero.log (v.valuation K ((Additive.toMul u : Kˣ) : K)) := by
+  rw [adicOrd, AddMonoidHom.neg_apply, MonoidHom.coe_toAdditiveLeft, Function.comp_apply,
+    Function.comp_apply, ← valuationOfNeZero_eq]
   rfl
 
 @[simp]
 lemma adicOrd_ofMul (v : HeightOneSpectrum R) (u : Kˣ) :
-    adicOrd R K v (Additive.ofMul u) = -WithZero.log (v.valuation K (u : K)) :=
+    adicOrd R K v (Additive.ofMul u) = -WithZero.log (v.valuation K (u : K)) := by
+  rw [adicOrd_apply]
   rfl
 
 /-- The order `ord_v(f)` is nonnegative exactly when `f` is integral at `v`, i.e. has
@@ -94,8 +96,9 @@ lemma adicOrd_nonneg_iff (v : HeightOneSpectrum R) (u : Additive Kˣ) :
     WithZero.log_le_log hu one_ne_zero]
 
 /-- A nonzero `v`-adic order means that `v` lies in the support of the function or of its
-inverse. -/
-lemma adicOrd_ne_zero_mem_support_union (v : HeightOneSpectrum R) (u : Additive Kˣ)
+inverse. This is the implementation helper that drives the finiteness proof of
+`OrderSystem.ofDedekindDomain`. -/
+private lemma adicOrd_ne_zero_mem_support_union (v : HeightOneSpectrum R) (u : Additive Kˣ)
     (h : adicOrd R K v u ≠ 0) :
     v ∈ HeightOneSpectrum.Support R ((Additive.toMul u : Kˣ) : K) ∪
       HeightOneSpectrum.Support R (((Additive.toMul u : Kˣ) : K)⁻¹) := by
@@ -187,13 +190,19 @@ lemma coeff_principalDivisor_eq_fractionalIdeal_count (u : Additive Kˣ)
   rw [OrderSystem.coeff_principalDivisor, OrderSystem.ofDedekindDomain_ord,
     adicOrd_eq_fractionalIdeal_count]
 
-/-- The Weil-divisor presentation of the class group `Cl(Spec R)` of a Dedekind domain. For the
-standard fractional-ideal class-group API, use `DivisorClassGroup R K = ClassGroup R`. -/
+/-- The Weil-divisor presentation of the class group of a Dedekind domain: the quotient of the
+Weil divisors `HeightOneSpectrum R →₀ ℤ` by the principal divisors of the order system. Its
+isomorphism to Mathlib's `ClassGroup R` (and hence to `Cl(Spec R)`) is the expected theorem but
+is *not* constructed here. For the standard fractional-ideal class group, use
+`DivisorClassGroup R`. -/
 noncomputable abbrev WeilDivisorClassGroup : Type _ :=
   (OrderSystem.ofDedekindDomain R K).ClassGroup
 
-/-- The divisor class group `Cl(Spec R)` of a Dedekind domain, reusing Mathlib's ideal class
-group. The field parameter records the chosen fraction field used by the divisor presentation. -/
+/-- The divisor class group of a Dedekind domain, defined as Mathlib's ideal class group
+`ClassGroup R` (which is `Cl(Spec R)`). This depends only on `R`, not on a choice of fraction
+field: `ClassGroup R` is built from `FractionRing R` internally. It is the fractional-ideal
+counterpart of `WeilDivisorClassGroup R K`; the two are expected to be isomorphic, but that
+isomorphism is not constructed here. -/
 noncomputable abbrev DivisorClassGroup : Type _ :=
   ClassGroup R
 
