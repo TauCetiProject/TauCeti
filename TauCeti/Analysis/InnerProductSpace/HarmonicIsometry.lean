@@ -20,12 +20,12 @@ symmetry that underlies the mean-value property and the construction of radial h
 
 ## Main declarations
 
-* `TauCeti.harmonicAt_comp_affineIsometryEquiv_iff`,
-  `TauCeti.harmonicOnNhd_comp_affineIsometryEquiv_iff`: harmonicity is invariant under
-  affine isometry equivalences.
-* `TauCeti.harmonicAt_comp_linearIsometryEquiv_iff`,
-  `TauCeti.harmonicOnNhd_comp_linearIsometryEquiv_iff`: harmonicity is invariant under
-  linear isometric changes of variable.
+* `TauCeti.harmonicAt_comp_affineIsometryEquiv_right_iff`,
+  `TauCeti.harmonicOnNhd_comp_affineIsometryEquiv_right_iff`: harmonicity is invariant
+  under affine isometry equivalences.
+* `TauCeti.harmonicAt_comp_linearIsometryEquiv_right_iff`,
+  `TauCeti.harmonicOnNhd_comp_linearIsometryEquiv_right_iff`: harmonicity is invariant
+  under linear isometric changes of variable.
 * `TauCeti.harmonicAt_comp_add_right_iff`, `TauCeti.harmonicOnNhd_comp_add_right_iff`:
   harmonicity is invariant under translation.
 -/
@@ -58,13 +58,13 @@ private theorem eventuallyEq_zero_comp_homeomorph_iff (h : E ≃ₜ E') (g : E' 
 
 /-- **Harmonicity is invariant under isometric changes of variable.** For a linear isometry
 equivalence `l`, the function `f ∘ l` is harmonic at `x` iff `f` is harmonic at `l x`. -/
-theorem harmonicAt_comp_linearIsometryEquiv_iff (l : E ≃ₗᵢ[ℝ] E') {f : E' → F} {x : E} :
-    HarmonicAt (f ∘ l) x ↔ HarmonicAt f (l x) := by
+theorem harmonicAt_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') {f : E' → F}
+    {x : E} : HarmonicAt (f ∘ l) x ↔ HarmonicAt f (l x) := by
   have hcd : ContDiffAt ℝ 2 (f ∘ l) x ↔ ContDiffAt ℝ 2 f (l x) := by
     have := l.toContinuousLinearEquiv.contDiffAt_comp_iff (f := f) (n := 2) (x := l x)
     simpa using this
   have hlap : (Δ (f ∘ l) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (l x)] 0) := by
-    rw [laplacian_comp_linearIsometryEquiv l f]
+    rw [laplacian_comp_linearIsometryEquiv_right l f]
     have := eventuallyEq_zero_comp_homeomorph_iff l.toHomeomorph (Δ f) x
     rwa [LinearIsometryEquiv.coe_toHomeomorph] at this
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
@@ -93,32 +93,32 @@ theorem harmonicAt_comp_add_right_iff {f : E → F} {x a : E} :
 
 /-- **Harmonicity is invariant under affine isometries.** For an affine isometry equivalence
 `e`, the function `f ∘ e` is harmonic at `x` iff `f` is harmonic at `e x`. -/
-theorem harmonicAt_comp_affineIsometryEquiv_iff (e : E ≃ᵃⁱ[ℝ] E') {f : E' → F} {x : E} :
-    HarmonicAt (f ∘ e) x ↔ HarmonicAt f (e x) := by
+theorem harmonicAt_comp_affineIsometryEquiv_right_iff (e : E ≃ᵃⁱ[ℝ] E') {f : E' → F}
+    {x : E} : HarmonicAt (f ∘ e) x ↔ HarmonicAt f (e x) := by
   have hcomp : f ∘ e = (fun y ↦ f (y + e 0)) ∘ e.linearIsometryEquiv := by
     funext y
     simp [Function.comp_apply, affineIsometryEquiv_apply_eq_add e y]
-  rw [hcomp, harmonicAt_comp_linearIsometryEquiv_iff e.linearIsometryEquiv,
+  rw [hcomp, harmonicAt_comp_linearIsometryEquiv_right_iff e.linearIsometryEquiv,
     harmonicAt_comp_add_right_iff]
   rw [← affineIsometryEquiv_apply_eq_add e x]
 
 /-- Harmonicity on a neighbourhood of a set is invariant under an affine isometry equivalence. -/
-theorem harmonicOnNhd_comp_affineIsometryEquiv_iff (e : E ≃ᵃⁱ[ℝ] E') {f : E' → F}
+theorem harmonicOnNhd_comp_affineIsometryEquiv_right_iff (e : E ≃ᵃⁱ[ℝ] E') {f : E' → F}
     {s : Set E'} : HarmonicOnNhd (f ∘ e) (e ⁻¹' s) ↔ HarmonicOnNhd f s := by
   constructor
   · intro hf y hy
     have hpre : e (e.symm y) ∈ s := by simpa using hy
     have h := hf (e.symm y) hpre
-    simpa using (harmonicAt_comp_affineIsometryEquiv_iff e).1 h
+    simpa using (harmonicAt_comp_affineIsometryEquiv_right_iff e).1 h
   · intro hf x hx
-    exact (harmonicAt_comp_affineIsometryEquiv_iff e).2 (hf (e x) hx)
+    exact (harmonicAt_comp_affineIsometryEquiv_right_iff e).2 (hf (e x) hx)
 
 /-- Harmonicity on a neighbourhood of a set is invariant under a linear isometric change of
 variable. -/
-theorem harmonicOnNhd_comp_linearIsometryEquiv_iff (l : E ≃ₗᵢ[ℝ] E') {f : E' → F}
+theorem harmonicOnNhd_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') {f : E' → F}
     {s : Set E'} : HarmonicOnNhd (f ∘ l) (l ⁻¹' s) ↔ HarmonicOnNhd f s := by
   rw [← LinearIsometryEquiv.coe_toAffineIsometryEquiv l]
-  exact harmonicOnNhd_comp_affineIsometryEquiv_iff l.toAffineIsometryEquiv
+  exact harmonicOnNhd_comp_affineIsometryEquiv_right_iff l.toAffineIsometryEquiv
 
 /-- Harmonicity on a neighbourhood of a set is invariant under translation. -/
 theorem harmonicOnNhd_comp_add_right_iff {f : E → F} {s : Set E} (a : E) :
@@ -131,6 +131,6 @@ theorem harmonicOnNhd_comp_add_right_iff {f : E → F} {s : Set E} (a : E) :
     ext y
     simp [e, add_comm]
   rw [hfun, hset]
-  exact harmonicOnNhd_comp_affineIsometryEquiv_iff e
+  exact harmonicOnNhd_comp_affineIsometryEquiv_right_iff e
 
 end TauCeti

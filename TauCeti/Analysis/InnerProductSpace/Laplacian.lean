@@ -35,9 +35,10 @@ corollaries, where smoothness re-enters, live in
 
 ## Main declarations
 
-* `TauCeti.laplacian_comp_affineIsometryEquiv`: `Δ (f ∘ e) = (Δ f) ∘ e` for an affine
-  isometry equivalence `e`.
-* `TauCeti.laplacian_comp_linearIsometryEquiv`: `Δ (f ∘ l) = (Δ f) ∘ l` for an isometry `l`.
+* `TauCeti.laplacian_comp_affineIsometryEquiv_right`: `Δ (f ∘ e) = (Δ f) ∘ e` for an
+  affine isometry equivalence `e`.
+* `TauCeti.laplacian_comp_linearIsometryEquiv_right`: `Δ (f ∘ l) = (Δ f) ∘ l` for an
+  isometry `l`.
 * `TauCeti.laplacian_comp_add_right`: translation invariance of `Δ`.
 -/
 
@@ -75,7 +76,7 @@ theorem affineIsometryEquiv_apply_eq_add (e : E ≃ᵃⁱ[ℝ] E') (x : E) :
 /-- **Geometric invariance of the Laplacian under isometries.** For a linear isometry
 equivalence `l`, the Laplacian commutes with right composition by `l`:
 `Δ (f ∘ l) = (Δ f) ∘ l`. No differentiability hypothesis is needed. -/
-theorem laplacian_comp_linearIsometryEquiv (l : E ≃ₗᵢ[ℝ] E') (f : E' → F) :
+theorem laplacian_comp_linearIsometryEquiv_right (l : E ≃ₗᵢ[ℝ] E') (f : E' → F) :
     Δ (f ∘ l) = (Δ f) ∘ l := by
   ext x
   simp only [Function.comp_apply,
@@ -100,12 +101,13 @@ theorem laplacian_comp_add_right (f : E → F) (a : E) :
 /-- **Geometric invariance of the Laplacian under affine isometries.** For an affine isometry
 equivalence `e`, the Laplacian commutes with right composition by `e`:
 `Δ (f ∘ e) = (Δ f) ∘ e`. No differentiability hypothesis is needed. -/
-theorem laplacian_comp_affineIsometryEquiv (e : E ≃ᵃⁱ[ℝ] E') (f : E' → F) :
+theorem laplacian_comp_affineIsometryEquiv_right (e : E ≃ᵃⁱ[ℝ] E') (f : E' → F) :
     Δ (f ∘ e) = (Δ f) ∘ e := by
   have hcomp : f ∘ e = (fun y ↦ f (y + e 0)) ∘ e.linearIsometryEquiv := by
     funext x
     simp [Function.comp_apply, affineIsometryEquiv_apply_eq_add e x]
-  rw [hcomp, laplacian_comp_linearIsometryEquiv e.linearIsometryEquiv (fun y ↦ f (y + e 0)),
+  rw [hcomp, laplacian_comp_linearIsometryEquiv_right e.linearIsometryEquiv
+      (fun y ↦ f (y + e 0)),
     laplacian_comp_add_right f (e 0)]
   ext x
   simp [Function.comp_apply, affineIsometryEquiv_apply_eq_add e x]
