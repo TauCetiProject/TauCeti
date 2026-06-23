@@ -28,6 +28,17 @@ coefficients.
 * `TauCeti.Comodule.matrixCoefficient`: the coefficient element attached to `φ` and `m`.
 * `TauCeti.Comodule.matrixCoefficientBilinear`: bilinearity in the functional and vector.
 
+## Implementation notes
+
+The coalgebra `C` is a *phantom* parameter of `matrixCoefficient` and its relatives throughout
+this family of files: it occurs in the return type and in the `[Comodule R C M]` instance, but not
+in the types of the explicit arguments `φ : M →ₗ[R] R` and `m : M`. A module `M` can be a comodule
+over more than one coalgebra, so `C` is genuinely not inferable from `φ` and `m`. Unless the
+expected result type already pins `C` down, call sites must pass it explicitly, as in
+`matrixCoefficient (C := C) φ m` (and likewise `(R := R)` when `R` is not otherwise determined) —
+and statements, `simp` lemmas, and `Set.range`-style expressions usually have no such expected
+type. These named arguments are required for elaboration there, not removable noise.
+
 ## References
 
 This is standard coalgebra/comodule terminology; see Sweedler, *Hopf Algebras*, Chapter 2.

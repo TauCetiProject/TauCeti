@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import TauCeti.Algebra.Squarefree
 public import TauCeti.NumberTheory.Multiquadratic.Degree
-public import TauCeti.NumberTheory.Multiquadratic.Squarefree
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Data.Rat.Lemmas
 public import Mathlib.Data.Nat.Squarefree
@@ -52,7 +52,7 @@ theorem not_isSquare_prod_primes {ι : Type*} (p : ι → ℕ) {S : Finset ι}
     (hS : S.Nonempty) :
     ¬ IsSquare (∏ i ∈ S, (p i : ℚ)) := by
   rw [← Nat.cast_prod, Rat.isSquare_natCast_iff]
-  refine not_isSquare_of_squarefree_of_not_isUnit ?_ ?_
+  refine Squarefree.not_isSquare ?_ ?_
   · refine Finset.squarefree_prod_of_pairwise_isCoprime (fun i hi j hj hij => ?_)
       (fun i hi => (hp i hi).prime.squarefree)
     exact Nat.coprime_iff_isRelPrime.mp

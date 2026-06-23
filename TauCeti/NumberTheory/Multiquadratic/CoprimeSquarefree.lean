@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import TauCeti.Algebra.Squarefree
 public import TauCeti.NumberTheory.Multiquadratic.Degree
-public import TauCeti.NumberTheory.Multiquadratic.Squarefree
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Data.Rat.Lemmas
 public import Mathlib.Algebra.Squarefree.Basic
@@ -58,7 +58,7 @@ theorem not_isSquare_prod_of_coprime_squarefree {ι : Type*} (d : ι → ℤ) {S
     (hcop : (S : Set ι).Pairwise (IsCoprime on d)) (hsf : ∀ i ∈ S, Squarefree (d i))
     (hnu : ∀ i ∈ S, ¬ IsUnit (d i)) (hS : S.Nonempty) :
     ¬ IsSquare (∏ i ∈ S, d i) := by
-  refine not_isSquare_of_squarefree_of_not_isUnit ?_ ?_
+  refine Squarefree.not_isSquare ?_ ?_
   · exact Finset.squarefree_prod_of_pairwise_isCoprime
       (fun i hi j hj hij => (hcop hi hj hij).isRelPrime) hsf
   · obtain ⟨i, hi⟩ := hS

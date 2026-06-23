@@ -4,9 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import TauCeti.Algebra.Squarefree
 public import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminant
-public import TauCeti.NumberTheory.Multiquadratic.Squarefree
 public import Mathlib.Data.Rat.Lemmas
 
 /-!
@@ -184,7 +184,7 @@ theorem not_isSquare_primeDiscriminantRadicand_rat {D : ℤ}
     exact not_isSquare_evenPrimeDiscriminantRadicand_rat hD
   · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd]
     rw [Rat.isSquare_intCast_iff]
-    exact not_isSquare_of_squarefree_of_not_isUnit (squarefree_oddPrimeDiscriminant hp.squarefree)
+    exact (squarefree_oddPrimeDiscriminant hp.squarefree).not_isSquare
       (by
         rw [Int.isUnit_iff_natAbs_eq]
         simpa [oddPrimeDiscriminant_natAbs] using hp.ne_one)
