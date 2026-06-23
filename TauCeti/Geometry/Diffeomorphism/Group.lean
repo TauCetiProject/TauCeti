@@ -33,6 +33,8 @@ construction works for every smoothness exponent `n`, with `n = ∞` the case na
 * the `One`, `Mul`, `Inv`, and `Group` instances on `M ≃ₘ^n⟮I, I⟯ M`.
 * `TauCeti.Diffeomorph.toPerm`: the forgetful group homomorphism to the underlying permutation
   group `Equiv.Perm M`, which is injective.
+* `TauCeti.Diffeomorph.toHomeomorphHom`: the forgetful group homomorphism to the underlying
+  homeomorphism group, which is injective.
 
 ## Main results
 
@@ -141,6 +143,20 @@ def toPerm : (M ≃ₘ^n⟮I, I⟯ M) →* Equiv.Perm M where
 /-- The forgetful homomorphism to permutations is injective. -/
 theorem toPerm_injective : Function.Injective (toPerm : (M ≃ₘ^n⟮I, I⟯ M) → Equiv.Perm M) :=
   _root_.Diffeomorph.toEquiv_injective
+
+/-- The forgetful group homomorphism from self-diffeomorphisms to self-homeomorphisms. -/
+def toHomeomorphHom : (M ≃ₘ^n⟮I, I⟯ M) →* (M ≃ₜ M) where
+  toFun f := f.toHomeomorph
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+/-- The forgetful homomorphism to self-homeomorphisms is injective. -/
+theorem toHomeomorphHom_injective :
+    Function.Injective (toHomeomorphHom : (M ≃ₘ^n⟮I, I⟯ M) → (M ≃ₜ M)) := by
+  intro f g h
+  apply _root_.Diffeomorph.ext
+  intro x
+  exact congr_fun (congrArg DFunLike.coe h) x
 
 end Diffeomorph
 

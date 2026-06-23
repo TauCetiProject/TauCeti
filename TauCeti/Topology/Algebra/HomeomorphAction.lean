@@ -22,11 +22,24 @@ mathlib4#40135.
 * `TauCeti.Homeomorph.smul_def`: the defining simp lemma `φ • e = φ e`.
 * `TauCeti.Homeomorph.applyFaithfulSMul`: the action is faithful.
 * `TauCeti.Homeomorph.applyContinuousConstSMul`: each homeomorphism acts continuously.
+* `TauCeti.Subgroup.continuousConstSMul`: subgroups inherit continuity in the point from an
+  ambient continuous action.
 -/
 
 public section
 
 namespace TauCeti
+
+namespace Subgroup
+
+/-- A subgroup inherits continuity in the point from an ambient continuous action. -/
+instance continuousConstSMul {G X : Type*} [Group G] [TopologicalSpace X] [MulAction G X]
+    [ContinuousConstSMul G X] (S : Subgroup G) : ContinuousConstSMul S X :=
+  ⟨fun g => by
+    change Continuous fun x => (g : G) • x
+    exact continuous_const_smul (g : G)⟩
+
+end Subgroup
 
 namespace Homeomorph
 
@@ -50,15 +63,10 @@ instance applyFaithfulSMul : FaithfulSMul (E ≃ₜ E) E :=
 instance applyContinuousConstSMul : ContinuousConstSMul (E ≃ₜ E) E :=
   ⟨fun φ => φ.continuous⟩
 
--- Faithfulness for a `Subgroup (E ≃ₜ E)` is already supplied by Mathlib's generic subgroup
--- action transfer (`Mathlib.Algebra.Group.Subgroup.Actions`) from the ambient `applyFaithfulSMul`,
--- so we do not restate it. Continuity in the point, however, has no such subgroup transfer:
-
-/-- A subgroup of the homeomorphism group acts continuously on `E` in the point, reusing
-continuity of the ambient action. Mathlib transfers `MulAction` and `FaithfulSMul` to a
-subgroup but not `ContinuousConstSMul`, so we record it here. -/
-instance applySubgroupContinuousConstSMul (H : Subgroup (E ≃ₜ E)) : ContinuousConstSMul H E :=
-  ⟨fun φ => continuous_const_smul (φ : E ≃ₜ E)⟩
+/-- A subgroup of the homeomorphism group acts continuously on `E` in the point, by the generic
+subgroup transfer for `ContinuousConstSMul`. -/
+abbrev applySubgroupContinuousConstSMul (H : Subgroup (E ≃ₜ E)) : ContinuousConstSMul H E :=
+  inferInstance
 
 end Homeomorph
 
