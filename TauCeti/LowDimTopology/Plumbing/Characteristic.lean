@@ -66,6 +66,7 @@ def characteristicVectors :=
 
 /-- Characteristic covectors are exactly the covectors satisfying the vertex-wise parity
 condition. -/
+@[simp, grind =]
 theorem isCharacteristicVector_iff (k : V → ℤ) :
     P.IsCharacteristicVector k ↔ ∀ v : V, k v ≡ P.weight v [ZMOD 2] :=
   Iff.rfl
@@ -77,6 +78,7 @@ abbrev canonicalCharacteristic : V → ℤ :=
   fun v => -P.weight v - 2
 
 /-- The canonical covector is characteristic. -/
+@[simp, grind .]
 theorem isCharacteristicVector_canonicalCharacteristic :
     P.IsCharacteristicVector P.canonicalCharacteristic := by
   intro v
@@ -176,20 +178,18 @@ theorem canonicalCharacteristic_apply_add_intersection_single (v : V) :
 
 end Form
 
-/-- Adding twice an integral covector preserves characteristicness. -/
-theorem IsCharacteristicVector.add_two_mul {k l : V → ℤ}
-    (hk : P.IsCharacteristicVector k) : P.IsCharacteristicVector fun v => k v + 2 * l v := by
-  intro v
-  have htwo : (2 * l v : ℤ) ≡ 0 [ZMOD 2] := by
-    exact Int.modEq_zero_iff_dvd.mpr ⟨l v, by ring⟩
-  simpa using (hk v).add htwo
-
 /-- Adding an even-valued covector preserves characteristicness. -/
 theorem IsCharacteristicVector.add_of_forall_even {k l : V → ℤ}
     (hk : P.IsCharacteristicVector k) (hl : ∀ v : V, Even (l v)) :
     P.IsCharacteristicVector fun v => k v + l v := by
   intro v
   simpa using (hk v).add (Int.modEq_zero_iff_dvd.mpr (even_iff_two_dvd.mp (hl v)))
+
+/-- Adding twice an integral covector preserves characteristicness. -/
+theorem IsCharacteristicVector.add_two_mul {k l : V → ℤ}
+    (hk : P.IsCharacteristicVector k) : P.IsCharacteristicVector fun v => k v + 2 * l v :=
+  PlumbingGraph.IsCharacteristicVector.add_of_forall_even (P := P) hk fun v =>
+    even_iff_two_dvd.mpr ⟨l v, by ring_nf⟩
 
 /-- Negating a characteristic covector preserves characteristicness. -/
 theorem IsCharacteristicVector.neg {k : V → ℤ}
