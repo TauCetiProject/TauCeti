@@ -377,11 +377,18 @@ lemma Compatible.associatedBilinForm_apply_swap
     (h : ω.Compatible J) (v w : V) : ω v (J w) = ω w (J v) :=
   h.invariant.associatedBilinForm_apply_swap v w
 
+/-- For a `J`-invariant form, the associated bilinear form `ω(·, J ·)` is symmetric. Only
+invariance is needed. -/
+lemma Invariant.associatedBilinForm_isSymm
+    {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    (hinv : ω.Invariant J) : (ω.associatedBilinForm J).IsSymm :=
+  ⟨fun v w => hinv.associatedBilinForm_apply_swap v w⟩
+
 /-- For a compatible pair, the associated bilinear form `ω(·, J ·)` is symmetric. -/
 lemma Compatible.associatedBilinForm_isSymm
     {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) : (ω.associatedBilinForm J).IsSymm :=
-  ⟨fun v w => h.associatedBilinForm_apply_swap v w⟩
+  h.invariant.associatedBilinForm_isSymm
 
 lemma Compatible.associated_pos {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) {v : V} (hv : v ≠ 0) : 0 < ω v (J v) :=

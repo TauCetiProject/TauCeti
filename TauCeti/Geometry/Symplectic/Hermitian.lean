@@ -73,6 +73,7 @@ noncomputable def complexAssociatedForm (ω : SymplecticForm V) (J : AlmostCompl
     (v w : V) : ℂ :=
   (ω v (J w) : ℂ) + Complex.I * (ω v w : ℂ)
 
+@[simp]
 lemma complexAssociatedForm_apply (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (v w : V) :
     ω.complexAssociatedForm J v w = (ω v (J w) : ℂ) + Complex.I * (ω v w : ℂ) := rfl
