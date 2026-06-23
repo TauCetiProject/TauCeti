@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
 import Mathlib.RingTheory.ClassGroup.Basic
+import Mathlib.RingTheory.DedekindDomain.AdicValuation
 import Mathlib.RingTheory.DedekindDomain.Factorization
 import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
 import Mathlib.RingTheory.DedekindDomain.SelmerGroup
@@ -128,9 +129,21 @@ private lemma valuation_mk'_eq_intValuation_div (v : HeightOneSpectrum R) (n : R
       v.intValuation n / v.intValuation (d : R) :=
   v.valuation_of_mk'
 
+private lemma neg_log_intValuation_div_eq_count_span_sub (v : HeightOneSpectrum R) (n : R)
+    (d : R⁰) (hn : n ≠ 0) (hd : (d : R) ≠ 0) :
+    -WithZero.log (v.intValuation n / v.intValuation (d : R)) =
+      ((Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {n} : Ideal R)).factors -
+        (Associates.mk v.asIdeal).count
+          (Associates.mk (Ideal.span {(d : R)} : Ideal R)).factors : ℤ) := by
+  rw [WithZero.log_div (v.intValuation_ne_zero n hn)
+    (v.intValuation_ne_zero (d : R) hd), v.intValuation_if_neg hn,
+    v.intValuation_if_neg hd, WithZero.log_exp, WithZero.log_exp]
+  ring
+
 /-- Mathlib's exponent of a principal fractional ideal is the sign-flipped logarithm of the
 corresponding height-one valuation. -/
-lemma fractionalIdeal_count_toPrincipalIdeal (v : HeightOneSpectrum R) (u : Additive Kˣ) :
+lemma fractionalIdeal_count_toPrincipalIdeal_eq_neg_log_valuation (v : HeightOneSpectrum R)
+    (u : Additive Kˣ) :
     FractionalIdeal.count K v
       (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) =
         -WithZero.log (v.valuation K ((Additive.toMul u : Kˣ) : K)) := by
@@ -157,10 +170,9 @@ lemma fractionalIdeal_count_toPrincipalIdeal (v : HeightOneSpectrum R) (u : Addi
       v.valuation K k = v.intValuation n / v.intValuation (d : R) := by
     rw [← hnd]
     exact valuation_mk'_eq_intValuation_div (R := R) (K := K) v n d
-  rw [hval, WithZero.log_div (v.intValuation_ne_zero n hn)
-    (v.intValuation_ne_zero (d : R) hd), v.intValuation_if_neg hn,
-    v.intValuation_if_neg hd, WithZero.log_exp, WithZero.log_exp, hcount]
-  ring
+  rw [hval]
+  exact hcount.trans
+    (neg_log_intValuation_div_eq_count_span_sub (R := R) v n d hn hd).symm
 
 /-- The `v`-adic order of a rational function agrees with Mathlib's exponent of the
 corresponding principal fractional ideal. -/
@@ -168,7 +180,7 @@ lemma adicOrd_eq_fractionalIdeal_count (v : HeightOneSpectrum R) (u : Additive K
     adicOrd R K v u =
       FractionalIdeal.count K v
         (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) := by
-  rw [adicOrd_apply, fractionalIdeal_count_toPrincipalIdeal]
+  rw [adicOrd_apply, fractionalIdeal_count_toPrincipalIdeal_eq_neg_log_valuation]
 
 variable (R K)
 
@@ -210,6 +222,29 @@ lemma coeff_principalDivisor_eq_fractionalIdeal_count (u : Additive Kˣ)
         (toPrincipalIdeal R K (Additive.toMul u) : FractionalIdeal R⁰ K) := by
   rw [OrderSystem.coeff_principalDivisor, OrderSystem.ofDedekindDomain_ord,
     adicOrd_eq_fractionalIdeal_count]
+
+/-- A height-one prime lies in the support of a principal divisor exactly when the corresponding
+valuation is not one. -/
+@[simp]
+lemma mem_support_principalDivisor_iff (u : Additive Kˣ) (v : HeightOneSpectrum R) :
+    v ∈ ((OrderSystem.ofDedekindDomain R K).principalDivisor u).support ↔
+      v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 1 := by
+  have hu : v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 0 :=
+    (v.valuation K).ne_zero_iff.mpr (Units.ne_zero _)
+  rw [Finsupp.mem_support_iff]
+  change coeff ((OrderSystem.ofDedekindDomain R K).principalDivisor u) v ≠ 0 ↔
+    v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 1
+  rw [coeff_principalDivisor_eq_neg_log_valuation]
+  constructor
+  · intro h hval
+    exact h (by rw [hval, WithZero.log_one, neg_zero])
+  · intro hval hcoeff
+    apply hval
+    have hlog : WithZero.log (v.valuation K ((Additive.toMul u : Kˣ) : K)) = 0 := by
+      linarith
+    exact le_antisymm
+      ((WithZero.log_le_log hu one_ne_zero).mp (by rw [hlog, WithZero.log_one]))
+      ((WithZero.log_le_log one_ne_zero hu).mp (by rw [hlog, WithZero.log_one]))
 
 /-- The Weil-divisor presentation of the class group of a Dedekind domain: the quotient of the
 Weil divisors `HeightOneSpectrum R →₀ ℤ` by the principal divisors of the order system. Its
@@ -266,6 +301,7 @@ lemma coeff_principalDivisor_pos_iff_mem {r : R} (hr : r ≠ 0) (v : HeightOneSp
 
 /-- The support of the divisor of a nonzero integral element is the set of height-one primes
 containing that element. -/
+@[simp]
 lemma mem_support_principalDivisor_of_integral_iff {r : R} (hr : r ≠ 0)
     (v : HeightOneSpectrum R) :
     v ∈ ((OrderSystem.ofDedekindDomain R K).principalDivisor
