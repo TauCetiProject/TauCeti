@@ -97,10 +97,14 @@ theorem harmonicAt_comp_affineIsometryEquiv_right_iff (e : E ≃ᵃⁱ[ℝ] E') 
     {x : E} : HarmonicAt (f ∘ e) x ↔ HarmonicAt f (e x) := by
   have hcomp : f ∘ e = (fun y ↦ f (y + e 0)) ∘ e.linearIsometryEquiv := by
     funext y
-    simp [Function.comp_apply, affineIsometryEquiv_apply_eq_add e y]
+    have hy : e y = e.linearIsometryEquiv y + e 0 := by
+      simpa using e.map_vadd (0 : E) y
+    simp [Function.comp_apply, hy]
   rw [hcomp, harmonicAt_comp_linearIsometryEquiv_right_iff e.linearIsometryEquiv,
     harmonicAt_comp_add_right_iff]
-  rw [← affineIsometryEquiv_apply_eq_add e x]
+  have hx : e x = e.linearIsometryEquiv x + e 0 := by
+    simpa using e.map_vadd (0 : E) x
+  rw [← hx]
 
 /-- Harmonicity on a neighbourhood of a set is invariant under an affine isometry equivalence. -/
 theorem harmonicOnNhd_comp_affineIsometryEquiv_right_iff (e : E ≃ᵃⁱ[ℝ] E') {f : E' → F}

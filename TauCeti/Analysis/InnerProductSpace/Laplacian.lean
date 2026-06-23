@@ -65,14 +65,6 @@ private theorem iteratedFDeriv_comp_linearIsometryEquiv_apply (l : E ≃ₗᵢ[�
   rw [h, ContinuousMultilinearMap.compContinuousLinearMap_apply]
   rfl
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
-/-- The normal form of an affine isometry equivalence as its linear part followed by a
-translation: `e x = e.linearIsometryEquiv x + e 0`. This is the reduction that expresses a
-rigid motion through its two generators. -/
-theorem affineIsometryEquiv_apply_eq_add (e : E ≃ᵃⁱ[ℝ] E') (x : E) :
-    e x = e.linearIsometryEquiv x + e 0 := by
-  simpa using e.map_vadd (0 : E) x
-
 /-- **Geometric invariance of the Laplacian under isometries.** For a linear isometry
 equivalence `l`, the Laplacian commutes with right composition by `l`:
 `Δ (f ∘ l) = (Δ f) ∘ l`. No differentiability hypothesis is needed. -/
@@ -105,11 +97,15 @@ theorem laplacian_comp_affineIsometryEquiv_right (e : E ≃ᵃⁱ[ℝ] E') (f : 
     Δ (f ∘ e) = (Δ f) ∘ e := by
   have hcomp : f ∘ e = (fun y ↦ f (y + e 0)) ∘ e.linearIsometryEquiv := by
     funext x
-    simp [Function.comp_apply, affineIsometryEquiv_apply_eq_add e x]
+    have hx : e x = e.linearIsometryEquiv x + e 0 := by
+      simpa using e.map_vadd (0 : E) x
+    simp [Function.comp_apply, hx]
   rw [hcomp, laplacian_comp_linearIsometryEquiv_right e.linearIsometryEquiv
       (fun y ↦ f (y + e 0)),
     laplacian_comp_add_right f (e 0)]
   ext x
-  simp [Function.comp_apply, affineIsometryEquiv_apply_eq_add e x]
+  have hx : e x = e.linearIsometryEquiv x + e 0 := by
+    simpa using e.map_vadd (0 : E) x
+  simp [Function.comp_apply, hx]
 
 end TauCeti
