@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+module
+
 import Mathlib.Tactic.Ring
-import TauCeti.KnotTheory.Grid.Gradings
-import TauCeti.KnotTheory.Grid.RectangleSwap
+public import TauCeti.KnotTheory.Grid.Gradings
+public import TauCeti.KnotTheory.Grid.RectangleSwap
 
 /-!
 # Grading changes across a rectangle move
@@ -58,6 +60,8 @@ This supplies the rectangle grading-change part of
 formulas follow the `J`-function bookkeeping in Ozsváth--Stipsicz--Szabó, *Grid Homology for
 Knots and Links*, Chapters 3 and 4.
 -/
+
+public section
 
 namespace TauCeti
 

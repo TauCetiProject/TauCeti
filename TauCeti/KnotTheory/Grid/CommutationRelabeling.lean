@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.KnotTheory.Grid.Commutation
-import TauCeti.KnotTheory.Grid.DiagramRelabeling
+module
+
+public import TauCeti.KnotTheory.Grid.Commutation
+public import TauCeti.KnotTheory.Grid.DiagramRelabeling
 
 /-!
 # Relabeling and grid commutation arcs
@@ -39,6 +41,8 @@ G.5, "Invariance over 𝔽₂. Grid moves = commutation + (de)stabilization", wh
 are attached to elementary row and column commutations. The conventions follow
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
+
+public section
 
 namespace TauCeti
 

@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.ZMod.Basic
-import Mathlib.LinearAlgebra.Finsupp.LSum
-import TauCeti.KnotTheory.Grid.BlockedRectangle
+module
+
+public import Mathlib.Data.ZMod.Basic
+public import Mathlib.LinearAlgebra.Finsupp.LSum
+public import TauCeti.KnotTheory.Grid.BlockedRectangle
 
 /-!
 # The fully blocked grid chain module
@@ -35,6 +37,8 @@ This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/READ
 markings)". The coefficient formula follows Ozsváth--Stipsicz--Szabó, *Grid Homology for
 Knots and Links*, Chapter 3.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -132,6 +136,7 @@ variable {n : ℕ} (G : GridDiagram n)
 /-- The value of the fully blocked differential on a single grid-state generator.
 
 Its `y`-coefficient is the parity of fully blocked empty rectangles from `x` to `y`. -/
+@[expose]
 noncomputable def fullyBlockedDifferentialOnGenerator (x : GridState n) : GridChain (ZMod 2) n :=
   Finset.univ.sum fun y : GridState n =>
     Finsupp.single y (G.fullyBlockedRectangleCount x y)

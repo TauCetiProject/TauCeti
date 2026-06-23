@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.Comodule.Finite
-import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
+module
+
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite
+public import TauCeti.Algebra.Coalgebra.Comodule.Preadditive
 
 /-!
 # Preadditive structure on finitely generated comodules
@@ -37,6 +39,8 @@ algebra": the finite-dimensional comodule category should have additive hom-sets
 rigid monoidal representation category is developed. The transfer mechanism is Mathlib's
 `ObjectProperty.FullSubcategory` preadditive instance.
 -/
+
+public section
 
 open CategoryTheory
 

@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.FiniteType
-import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
-import TauCeti.Algebra.HopfAlgebra.Quotient
+module
+
+public import Mathlib.RingTheory.FiniteType
+public import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
+public import TauCeti.Algebra.HopfAlgebra.Quotient
 
 /-!
 # Hopf-ideal quotients of finite-type commutative Hopf algebras
@@ -35,6 +37,8 @@ which cites Sweedler, *Hopf Algebras*, Chapter 4, and Waterhouse, *Introduction 
 Group Schemes*, §16. The finite-type descent is Mathlib's
 `Algebra.FiniteType.quotient`.
 -/
+
+public section
 
 namespace TauCeti
 

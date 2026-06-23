@@ -42,7 +42,7 @@ survives both.
   codomain, or a change of source coordinates).
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
@@ -57,7 +57,7 @@ variable {f₀ f₁ : C(X, Y)}
 
 /-- Postcompose an isotopy `f₀ ≈ f₁` with a topological embedding `g : Y ↪ Z` to get an
 isotopy `g ∘ f₀ ≈ g ∘ f₁`. -/
-def postcomp (F : Isotopy f₀ f₁) (g : C(Y, Z)) (hg : IsEmbedding g) :
+@[expose] def postcomp (F : Isotopy f₀ f₁) (g : C(Y, Z)) (hg : IsEmbedding g) :
     Isotopy (g.comp f₀) (g.comp f₁) where
   toHomotopy := (Homotopy.refl g).comp F.toHomotopy
   isEmbedding_total' :=
@@ -69,7 +69,7 @@ theorem postcomp_apply (F : Isotopy f₀ f₁) (g : C(Y, Z)) (hg : IsEmbedding g
 
 /-- Precompose an isotopy `f₀ ≈ f₁` with a topological embedding `e : W ↪ X` to get an
 isotopy `f₀ ∘ e ≈ f₁ ∘ e`. -/
-def precomp (F : Isotopy f₀ f₁) (e : C(W, X)) (he : IsEmbedding e) :
+@[expose] def precomp (F : Isotopy f₀ f₁) (e : C(W, X)) (he : IsEmbedding e) :
     Isotopy (f₀.comp e) (f₁.comp e) where
   toHomotopy := F.toHomotopy.compContinuousMap e
   isEmbedding_total' :=

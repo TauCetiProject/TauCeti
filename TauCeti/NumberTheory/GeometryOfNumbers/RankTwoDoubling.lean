@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.GeometryOfNumbers.Doubling
+module
+
+public import TauCeti.NumberTheory.GeometryOfNumbers.Doubling
 
 /-!
 # A concrete rank-two lattice exercising the geometry-of-numbers engine
@@ -35,6 +37,8 @@ These exercise both halves of the engine — `addSubgroup_inter_box_finite_and_n
 and `ncard_inter_box_two_le_pow_mul_ncard_inter_box_one` — on a genuine rank-two lattice,
 with no new analytic input beyond the elementary minimal-distance bound.
 -/
+
+public section
 
 namespace TauCeti.GeometryOfNumbers
 

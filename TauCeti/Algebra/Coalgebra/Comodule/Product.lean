@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.Prod
-import Mathlib.LinearAlgebra.TensorProduct.Prod
-import TauCeti.Algebra.Coalgebra.ComoduleCat
+module
+
+public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.LinearAlgebra.TensorProduct.Prod
+public import TauCeti.Algebra.Coalgebra.ComoduleCat
 
 /-!
 # Products of comodules
@@ -35,6 +37,8 @@ The construction is the standard direct sum of comodules; see Sweedler, *Hopf Al
 Chapter 2.
 -/
 
+public section
+
 open CategoryTheory
 open scoped TensorProduct
 
@@ -51,7 +55,7 @@ variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 /-- The direct-sum coaction on the product of two comodules. -/
-def prodCoact : M × N →ₗ[R] (M × N) ⊗[R] C :=
+@[expose] def prodCoact : M × N →ₗ[R] (M × N) ⊗[R] C :=
   LinearMap.coprod
     ((TensorProduct.map (LinearMap.inl R M N) LinearMap.id) ∘ₗ
       coact (R := R) (C := C) (M := M))
@@ -139,7 +143,7 @@ private theorem prodCoact_coassoc_inr (n : N) :
   exact prodCoact_coassoc_map (R := R) (C := C) (M := M) (N := N)
     (LinearMap.inr R M N) hcomp n
 
-private theorem prodCoact_coassoc :
+theorem prodCoact_coassoc :
     TensorProduct.assoc R (M × N) C C ∘ₗ
         (prodCoact (R := R) (C := C) (M := M) (N := N)).rTensor C ∘ₗ
           prodCoact (R := R) (C := C) (M := M) (N := N) =
@@ -209,7 +213,7 @@ private theorem prodCoact_counit_inr (n : N) :
   exact prodCoact_counit_map (R := R) (C := C) (M := M) (N := N)
     (LinearMap.inr R M N) hcomp n
 
-private theorem prodCoact_counit :
+theorem prodCoact_counit :
     Coalgebra.counit.lTensor (M × N) ∘ₗ
         prodCoact (R := R) (C := C) (M := M) (N := N) =
       (TensorProduct.mk R (M × N) R).flip 1 := by
@@ -220,25 +224,30 @@ private theorem prodCoact_counit :
     exact prodCoact_counit_inr (R := R) (C := C) (M := M) (N := N) n
 
 /-- The product of two right comodules, with the direct-sum coaction. -/
-@[implicit_reducible]
+@[expose, implicit_reducible]
 def Prod : Comodule R C (M × N) where
   coact := prodCoact (R := R) (C := C) (M := M) (N := N)
   coassoc := prodCoact_coassoc (R := R) (C := C) (M := M) (N := N)
   lTensor_counit_comp_coact := prodCoact_counit (R := R) (C := C) (M := M) (N := N)
 
+-- Register `Prod` as a local instance for the rest of this file, so the product comodule
+-- structure resolves automatically on `M × N` and need not be threaded through every statement
+-- with `letI`. It is deliberately *not* a global instance: several comodule structures can live
+-- on one carrier (e.g. `trivial`, `cofree`), so a global product instance would make `Comodule`
+-- resolution non-confluent. This matches how `Comodule.trivial` is used in the matrix-coefficient
+-- files.
+attribute [local instance] Prod
+
 /-- The coaction in `Comodule.Prod` is `Comodule.prodCoact`. -/
 @[simp]
 theorem Prod_coact :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     coact (R := R) (C := C) (M := M × N) =
       prodCoact (R := R) (C := C) (M := M) (N := N) :=
   rfl
 
 /-- The first projection from the product comodule. -/
-def prodFst :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+@[expose] def prodFst :
     Hom R C (M × N) M := by
-  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   exact
       { toLinearMap := LinearMap.fst R M N
         map_coact := by
@@ -251,7 +260,6 @@ def prodFst :
 /-- The underlying linear map of the first projection from the product comodule. -/
 @[simp]
 theorem prodFst_toLinearMap :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     (prodFst (R := R) (C := C) (M := M) (N := N)).toLinearMap =
       LinearMap.fst R M N :=
   rfl
@@ -259,15 +267,12 @@ theorem prodFst_toLinearMap :
 /-- Evaluating the first projection from the product comodule returns the first component. -/
 @[simp]
 theorem prodFst_apply (x : M × N) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     prodFst (R := R) (C := C) (M := M) (N := N) x = x.1 :=
   rfl
 
 /-- The second projection from the product comodule. -/
-def prodSnd :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+@[expose] def prodSnd :
     Hom R C (M × N) N := by
-  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   exact
       { toLinearMap := LinearMap.snd R M N
         map_coact := by
@@ -280,7 +285,6 @@ def prodSnd :
 /-- The underlying linear map of the second projection from the product comodule. -/
 @[simp]
 theorem prodSnd_toLinearMap :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     (prodSnd (R := R) (C := C) (M := M) (N := N)).toLinearMap =
       LinearMap.snd R M N :=
   rfl
@@ -288,15 +292,12 @@ theorem prodSnd_toLinearMap :
 /-- Evaluating the second projection from the product comodule returns the second component. -/
 @[simp]
 theorem prodSnd_apply (x : M × N) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     prodSnd (R := R) (C := C) (M := M) (N := N) x = x.2 :=
   rfl
 
 /-- The left inclusion into the product comodule. -/
-def prodInl :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+@[expose] def prodInl :
     Hom R C M (M × N) := by
-  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   exact
       { toLinearMap := LinearMap.inl R M N
         map_coact := by
@@ -306,7 +307,6 @@ def prodInl :
 /-- The underlying linear map of the left inclusion into the product comodule. -/
 @[simp]
 theorem prodInl_toLinearMap :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     (prodInl (R := R) (C := C) (M := M) (N := N)).toLinearMap =
       LinearMap.inl R M N :=
   rfl
@@ -315,15 +315,12 @@ theorem prodInl_toLinearMap :
 component. -/
 @[simp]
 theorem prodInl_apply (m : M) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     prodInl (R := R) (C := C) (M := M) (N := N) m = (m, 0) :=
   rfl
 
 /-- The right inclusion into the product comodule. -/
-def prodInr :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
+@[expose] def prodInr :
     Hom R C N (M × N) := by
-  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   exact
       { toLinearMap := LinearMap.inr R M N
         map_coact := by
@@ -333,7 +330,6 @@ def prodInr :
 /-- The underlying linear map of the right inclusion into the product comodule. -/
 @[simp]
 theorem prodInr_toLinearMap :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     (prodInr (R := R) (C := C) (M := M) (N := N)).toLinearMap =
       LinearMap.inr R M N :=
   rfl
@@ -342,7 +338,6 @@ theorem prodInr_toLinearMap :
 component. -/
 @[simp]
 theorem prodInr_apply (n : N) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     prodInr (R := R) (C := C) (M := M) (N := N) n = (0, n) :=
   rfl
 
@@ -360,11 +355,9 @@ private theorem prodLeft_map_prod {P : Type*} [AddCommMonoid P] [Module R P]
     simp [ht, hu]
 
 /-- The product morphism induced by two morphisms with a common source. -/
-def prodLift {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+@[expose] def prodLift {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (f : Hom R C P M) (g : Hom R C P N) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     Hom R C P (M × N) := by
-  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   exact
     { toLinearMap := f.toLinearMap.prod g.toLinearMap
       map_coact := by
@@ -377,7 +370,6 @@ def prodLift {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
 @[simp]
 theorem prodLift_toLinearMap {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (f : Hom R C P M) (g : Hom R C P N) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     (prodLift (R := R) (C := C) (M := M) (N := N) f g).toLinearMap =
       f.toLinearMap.prod g.toLinearMap :=
   rfl
@@ -386,16 +378,13 @@ theorem prodLift_toLinearMap {P : Type*} [AddCommMonoid P] [Module R P] [Comodul
 @[simp]
 theorem prodLift_apply {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (f : Hom R C P M) (g : Hom R C P N) (p : P) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     prodLift (R := R) (C := C) (M := M) (N := N) f g p = (f p, g p) :=
   rfl
 
 /-- The product morphism induced by two morphisms with a common target. -/
-def prodDesc {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
+@[expose] def prodDesc {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (f : Hom R C M P) (g : Hom R C N P) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     Hom R C (M × N) P := by
-  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   exact
     { toLinearMap := LinearMap.coprod f.toLinearMap g.toLinearMap
       map_coact := by
@@ -409,7 +398,6 @@ def prodDesc {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
 @[simp]
 theorem prodDesc_toLinearMap {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (f : Hom R C M P) (g : Hom R C N P) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     (prodDesc (R := R) (C := C) (M := M) (N := N) f g).toLinearMap =
       LinearMap.coprod f.toLinearMap g.toLinearMap :=
   rfl
@@ -418,7 +406,6 @@ theorem prodDesc_toLinearMap {P : Type*} [AddCommMonoid P] [Module R P] [Comodul
 @[simp]
 theorem prodDesc_apply {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
     (f : Hom R C M P) (g : Hom R C N P) (x : M × N) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     prodDesc (R := R) (C := C) (M := M) (N := N) f g x = f x.1 + g x.2 :=
   rfl
 

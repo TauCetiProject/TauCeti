@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.Comodule.Finite
-import TauCeti.Algebra.Coalgebra.Comodule.Trivial
+module
+
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite
+public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 
 /-!
 # The regular comodule
@@ -33,6 +35,8 @@ Chapter 2. It reuses Mathlib's `GroupLike` API from
 `Mathlib.RingTheory.Bialgebra.GroupLike`.
 -/
 
+public section
+
 open scoped TensorProduct
 
 namespace TauCeti
@@ -48,7 +52,7 @@ namespace Hom
 
 /-- The canonical morphism from the group-like comodule on `R` attached to `g` into the
 regular comodule, sending `r` to `r • g`. -/
-def groupLikeToRegular (g : GroupLike R C) :
+@[expose] def groupLikeToRegular (g : GroupLike R C) :
     letI : Comodule R C R := groupLike (R := R) (C := C) (M := R) g
     Hom R C R C := by
   letI : Comodule R C R := groupLike (R := R) (C := C) (M := R) g

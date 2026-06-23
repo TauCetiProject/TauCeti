@@ -68,7 +68,7 @@ variable {α : Type v}
 
 /-- A kernel `K : α → α → 𝕜` is *positive definite* when the matrix indexed by all points of `α`
 is positive semidefinite. -/
-def IsPositiveDefiniteKernel (K : α → α → 𝕜) : Prop :=
+@[expose] def IsPositiveDefiniteKernel (K : α → α → 𝕜) : Prop :=
   (Matrix.of fun a b => K a b).PosSemidef
 
 /-- The named kernel predicate is definitionally Mathlib's positive semidefinite predicate on the

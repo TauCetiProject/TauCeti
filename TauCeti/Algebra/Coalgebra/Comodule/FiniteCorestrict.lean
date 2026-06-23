@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
-import TauCeti.Algebra.Coalgebra.Comodule.Finite
+module
+
+public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite
 
 /-!
 # Corestriction of finitely generated comodules
@@ -31,6 +33,8 @@ This is the standard corestriction of comodules along a coalgebra morphism; see 
 `ObjectProperty.FullSubcategory` API.
 -/
 
+public section
+
 open CategoryTheory
 
 namespace TauCeti
@@ -48,6 +52,7 @@ variable [AddCommMonoid D] [Module R D] [Coalgebra R D]
 
 The underlying module is unchanged, so the finite-generation proof is inherited from the
 source object. -/
+@[expose]
 def corestrict (f : C →ₗc[R] D) : FGComoduleCat.{u, v, x} R C ⥤ FGComoduleCat.{u, w, x} R D where
   __ := (ComoduleCat.isFG (R := R) (C := D)).lift
     ((incl (R := R) (C := C)) ⋙ ComoduleCat.corestrict (R := R) (C := C) (D := D) f)

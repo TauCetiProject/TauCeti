@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Category.CommAlgCat.FiniteType
-import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
+module
+
+public import Mathlib.Algebra.Category.CommAlgCat.FiniteType
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
 
 /-!
 # Finite-type commutative Hopf algebras
@@ -36,6 +38,8 @@ infrastructure is Mathlib's `FGAlgCat` and `Algebra.FiniteType`; the Hopf algebr
 is Mathlib's bundled `CommHopfAlgCat`, on top of which Tau Ceti adds the points functor.
 -/
 
+public section
+
 open CategoryTheory
 
 namespace TauCeti
@@ -44,7 +48,7 @@ universe u v w
 
 /-- The object property on commutative Hopf algebras selecting finite-type coordinate
 algebras. -/
-def finiteTypeCommHopfAlgProperty (R : Type u) [CommRing R] :
+@[expose] def finiteTypeCommHopfAlgProperty (R : Type u) [CommRing R] :
     ObjectProperty (_root_.CommHopfAlgCat.{v} R) :=
   fun H => Algebra.FiniteType R H
 
@@ -167,7 +171,7 @@ lemma forget₂_fgAlgCat_map {H K : FiniteTypeCommHopfAlgCat.{u, v} R} (φ : H �
 
 /-- The contravariant group-valued functor of points of a finite-type commutative Hopf
 algebra. -/
-noncomputable def pointsFunctor :
+@[expose] noncomputable def pointsFunctor :
     (FiniteTypeCommHopfAlgCat.{u, v} R)ᵒᵖ ⥤ CommAlgCat.{w} R ⥤ GrpCat.{max v w} :=
   CategoryTheory.Functor.op
       (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (_root_.CommHopfAlgCat.{v} R)) ⋙

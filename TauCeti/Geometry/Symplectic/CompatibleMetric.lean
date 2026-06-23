@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.InnerProductSpace.Defs
-import TauCeti.Geometry.Symplectic.AlmostComplex
+module
+
+public import Mathlib.Analysis.InnerProductSpace.Defs
+public import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
 # The metric of a compatible pair
@@ -40,6 +42,8 @@ against exactly this metric.
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: a compatible pair `(ω, J)` determines a metric `g(v, w) = ω(v, J w)`.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -157,7 +161,7 @@ lemma associatedBilinForm_nondegenerate (h : ω.Compatible J) :
 /-- The metric of a compatible pair, packaged as an `InnerProductSpace.Core ℝ V`.
 
 The inner product is the associated metric `⟪v, w⟫ = ω(v, J w)`. -/
-@[implicit_reducible]
+@[expose, implicit_reducible]
 noncomputable def innerProductCore (h : ω.Compatible J) : InnerProductSpace.Core ℝ V where
   inner v w := ω v (J w)
   conj_inner_symm v w := by

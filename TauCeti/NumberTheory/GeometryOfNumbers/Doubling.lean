@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Complex.Norm
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
-import Mathlib.Data.Set.Card
-import Mathlib.Data.Fintype.Pi
-import Mathlib.Data.Int.Interval
+module
+
+public import Mathlib.Analysis.Complex.Norm
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Data.Set.Card
+public import Mathlib.Data.Fintype.Pi
+public import Mathlib.Data.Int.Interval
 
 /-!
 # A measure-free lattice-point packing and doubling engine
@@ -52,6 +54,8 @@ conjecture, where the grid-pigeonhole core packed lattice points after projectio
 infinite place. The unit-distance application is dropped; only the reusable packing and
 doubling bounds are migrated.
 -/
+
+public section
 
 attribute [local instance] Classical.propDecidable
 
@@ -124,7 +128,7 @@ private theorem cell_index_diff {c ε : ℝ} (hε : 0 < ε) {ri : ℝ} (hri : 0 
 norm `< d·√2`. -/
 private theorem norm_lt_of_re_im_bound {z : ℂ} {d : ℝ} (hd : 0 ≤ d)
     (hre : |z.re| < d) (him : |z.im| < d) : ‖z‖ < d * Real.sqrt 2 := by
-  rw [← Real.sqrt_sq hd, ← Real.sqrt_mul (by positivity)]
+  rw [Complex.norm_def, ← Real.sqrt_sq hd, ← Real.sqrt_mul (by positivity)]
   refine Real.sqrt_lt_sqrt (Complex.normSq_nonneg _) ?_
   nlinarith [abs_lt.mp hre, abs_lt.mp him, Complex.normSq_apply z]
 

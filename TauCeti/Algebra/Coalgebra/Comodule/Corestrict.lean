@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Coalgebra.Hom
-import TauCeti.Algebra.Coalgebra.ComoduleCat
+module
+
+public import Mathlib.RingTheory.Coalgebra.Hom
+public import TauCeti.Algebra.Coalgebra.ComoduleCat
 
 /-!
 # Corestriction of comodules along a coalgebra morphism
@@ -30,6 +32,8 @@ This is the standard corestriction of comodules along a coalgebra morphism; see 
 Sweedler, *Hopf Algebras*, Chapter 2.
 -/
 
+public section
+
 open CategoryTheory
 open scoped TensorProduct
 
@@ -47,7 +51,7 @@ variable {M : Type x} [AddCommMonoid M] [Module R M] [Comodule R C M]
 
 /-- The coaction obtained from a right `C`-comodule by corestricting along a coalgebra
 morphism `f : C →ₗc[R] D`. -/
-def corestrictCoact (f : C →ₗc[R] D) : M →ₗ[R] M ⊗[R] D :=
+@[expose] def corestrictCoact (f : C →ₗc[R] D) : M →ₗ[R] M ⊗[R] D :=
   TensorProduct.map LinearMap.id f.toLinearMap ∘ₗ coact (R := R) (C := C) (M := M)
 
 private theorem assoc_rTensor_corestrictCoact (f : C →ₗc[R] D) (t : M ⊗[R] C) :
@@ -99,7 +103,7 @@ private theorem counit_lTensor_corestrict_map (f : C →ₗc[R] D) (t : M ⊗[R]
 
 If `M` is a right `C`-comodule and `f : C →ₗc[R] D`, the new right `D`-coaction is
 `(id ⊗ f) ∘ ρ`. -/
-@[implicit_reducible]
+@[expose, implicit_reducible]
 def Corestrict (f : C →ₗc[R] D) : Comodule R D M where
   coact := corestrictCoact (R := R) (C := C) (D := D) (M := M) f
   coassoc := by
@@ -182,7 +186,7 @@ variable {N : Type*} [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 /-- A morphism of `C`-comodules is also a morphism after corestricting both comodules along
 the same coalgebra morphism. -/
-def corestrictHom (f : C →ₗc[R] D) (g : Hom R C M N) :
+@[expose] def corestrictHom (f : C →ₗc[R] D) (g : Hom R C M N) :
     letI : Comodule R D M := Corestrict (R := R) (C := C) (D := D) (M := M) f
     letI : Comodule R D N := Corestrict (R := R) (C := C) (D := D) (M := N) f
     Hom R D M N :=
@@ -295,6 +299,7 @@ variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable [AddCommMonoid D] [Module R D] [Coalgebra R D]
 
 /-- Corestriction of bundled right comodules along a coalgebra morphism. -/
+@[expose]
 def corestrict (f : C →ₗc[R] D) : ComoduleCat.{u, v, x} R C ⥤ ComoduleCat.{u, w, x} R D where
   obj M :=
     letI : Comodule R D M := Comodule.Corestrict (R := R) (C := C) (D := D) (M := M) f

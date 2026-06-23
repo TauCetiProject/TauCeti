@@ -73,7 +73,7 @@ variable {M : Type*} [AddMonoid M] [StarAddMonoid M] {F G : M → ℂ}
 every finite family of scalars `c : Fin n → ℂ` and points `v : Fin n → M`, the Hermitian form
 `∑_{i,j} c i · conj (c j) · F (v i + star (v j))` is a nonnegative real number (using the order on
 `ℂ` for which `0 ≤ z` means `z` is real and nonnegative). -/
-def IsPositiveDefinite (F : M → ℂ) : Prop :=
+@[expose] def IsPositiveDefinite (F : M → ℂ) : Prop :=
   ∀ (n : ℕ) (c : Fin n → ℂ) (v : Fin n → M),
     0 ≤ ∑ i, ∑ j, c i * conj (c j) * F (v i + star (v j))
 
