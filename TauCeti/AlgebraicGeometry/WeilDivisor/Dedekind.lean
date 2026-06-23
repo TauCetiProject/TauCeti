@@ -147,15 +147,35 @@ private lemma valuation_mk'_eq_intValuation_div (v : HeightOneSpectrum R) (n : R
       v.intValuation n / v.intValuation (d : R) :=
   v.valuation_of_mk'
 
-private lemma neg_log_intValuation_div_eq_count_span_sub (v : HeightOneSpectrum R) (n : R)
-    (d : R⁰) (hn : n ≠ 0) (hd : (d : R) ≠ 0) :
-    -WithZero.log (v.intValuation n / v.intValuation (d : R)) =
-      ((Associates.mk v.asIdeal).count (Associates.mk (Ideal.span {n} : Ideal R)).factors -
-        (Associates.mk v.asIdeal).count
-          (Associates.mk (Ideal.span {(d : R)} : Ideal R)).factors : ℤ) := by
-  rw [WithZero.log_div (v.intValuation_ne_zero n hn)
-    (v.intValuation_ne_zero (d : R) hd), v.intValuation_if_neg hn,
-    v.intValuation_if_neg hd, WithZero.log_exp, WithZero.log_exp]
+private lemma fractionalIdeal_count_spanSingleton_eq_neg_log_intValuation
+    (v : HeightOneSpectrum R) (r : R) (hr : r ≠ 0) :
+    FractionalIdeal.count K v (FractionalIdeal.spanSingleton R⁰ (algebraMap R K r)) =
+      -WithZero.log (v.intValuation r) := by
+  have hspan : (Ideal.span {r} : Ideal R) ≠ 0 := by
+    simpa [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot] using hr
+  rw [← FractionalIdeal.coeIdeal_span_singleton (S := R⁰) (P := K) r,
+    FractionalIdeal.count_coe K v hspan, v.intValuation_if_neg hr, WithZero.log_exp]
+  ring
+
+private lemma fractionalIdeal_count_spanSingleton_inv_mul_spanSingleton_eq_neg_log_div
+    (v : HeightOneSpectrum R) (n d : R) (hn : n ≠ 0) (hd : d ≠ 0) :
+    FractionalIdeal.count K v
+        (FractionalIdeal.spanSingleton R⁰ ((algebraMap R K d)⁻¹) *
+          FractionalIdeal.spanSingleton R⁰ (algebraMap R K n)) =
+      -WithZero.log (v.intValuation n / v.intValuation d) := by
+  have hnI : FractionalIdeal.spanSingleton R⁰ (algebraMap R K n) ≠ 0 := by
+    rw [FractionalIdeal.spanSingleton_ne_zero_iff]
+    intro h
+    exact hn ((IsLocalization.injective K (le_refl R⁰)) (by simpa using h))
+  have hdI : FractionalIdeal.spanSingleton R⁰ (algebraMap R K d) ≠ 0 := by
+    rw [FractionalIdeal.spanSingleton_ne_zero_iff]
+    intro h
+    exact hd ((IsLocalization.injective K (le_refl R⁰)) (by simpa using h))
+  rw [← FractionalIdeal.spanSingleton_inv K (algebraMap R K d),
+    FractionalIdeal.count_mul K v (inv_ne_zero hdI) hnI, FractionalIdeal.count_inv,
+    fractionalIdeal_count_spanSingleton_eq_neg_log_intValuation (K := K) v d hd,
+    fractionalIdeal_count_spanSingleton_eq_neg_log_intValuation (K := K) v n hn,
+    WithZero.log_div (v.intValuation_ne_zero n hn) (v.intValuation_ne_zero d hd)]
   ring
 
 /-- Mathlib's exponent of a principal fractional ideal is the sign-flipped logarithm of the
@@ -175,24 +195,19 @@ lemma fractionalIdeal_count_toPrincipalIdeal_eq_neg_log_valuation (v : HeightOne
     apply hk0
     rw [← hnd, hn, IsFractionRing.mk'_eq_div, map_zero, zero_div]
   have hd : (d : R) ≠ 0 := nonZeroDivisors.ne_zero d.2
-  have hI :
-      (toPrincipalIdeal R K u : FractionalIdeal R⁰ K) ≠ 0 := by
-    rw [coe_toPrincipalIdeal, FractionalIdeal.spanSingleton_ne_zero_iff]
-    exact Units.ne_zero _
   have hrepr :
       (toPrincipalIdeal R K u : FractionalIdeal R⁰ K) =
         FractionalIdeal.spanSingleton R⁰ ((algebraMap R K) (d : R))⁻¹ *
           ↑(Ideal.span {n} : Ideal R) := by
     exact toPrincipalIdeal_eq_spanSingleton_inv_mul_span_mk'_num (R := R) (K := K) u n d
       (by rw [hnd, hk])
-  have hcount := FractionalIdeal.count_well_defined (K := K) v hI hrepr
   have hval :
       v.valuation K k = v.intValuation n / v.intValuation (d : R) := by
     rw [← hnd]
     exact valuation_mk'_eq_intValuation_div (R := R) (K := K) v n d
-  rw [hval]
-  exact hcount.trans
-    (neg_log_intValuation_div_eq_count_span_sub (R := R) v n d hn hd).symm
+  rw [hval, hrepr, FractionalIdeal.coeIdeal_span_singleton]
+  exact fractionalIdeal_count_spanSingleton_inv_mul_spanSingleton_eq_neg_log_div (R := R)
+    (K := K) v n d hn hd
 
 /-- The `v`-adic order of a rational function agrees with Mathlib's exponent of the
 corresponding principal fractional ideal. -/
@@ -254,7 +269,11 @@ lemma mem_support_principalDivisor_iff_valuation_ne_one (u : Additive Kˣ)
       v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 1 := by
   have hu : v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 0 :=
     (v.valuation K).ne_zero_iff.mpr (Units.ne_zero _)
-  rw [mem_support_iff, coeff_principalDivisor_eq_neg_log_valuation, neg_ne_zero]
+  -- `coeff` is the named API for the underlying `Finsupp` application in `mem_support`.
+  rw [Finsupp.mem_support_iff]
+  change coeff ((OrderSystem.ofDedekindDomain R K).principalDivisor u) v ≠ 0 ↔
+    v.valuation K ((Additive.toMul u : Kˣ) : K) ≠ 1
+  rw [coeff_principalDivisor_eq_neg_log_valuation, neg_ne_zero]
   exact not_congr (log_eq_zero_iff_eq_one hu)
 
 /-- The Weil-divisor presentation of the class group of a Dedekind domain: the quotient of the
@@ -304,6 +323,7 @@ lemma coeff_principalDivisor_pos_iff_mem {r : R} {u : Kˣ} (hu : (u : K) = algeb
 
 /-- The support of the divisor of a nonzero integral element `r : R`, presented as a unit
 `u : Kˣ` with value `algebraMap R K r`, is the set of height-one primes containing `r`. -/
+@[simp]
 lemma mem_support_principalDivisor_of_integral_iff_mem_asIdeal {r : R} {u : Kˣ}
     (hu : (u : K) = algebraMap R K r) (v : HeightOneSpectrum R) :
     v ∈ ((OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul u)).support ↔
