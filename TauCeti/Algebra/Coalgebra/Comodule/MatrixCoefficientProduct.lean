@@ -42,6 +42,11 @@ universe u v w x
 
 variable {R : Type u} {C : Type v} {M : Type w} {N : Type x}
 
+-- Resolve the product comodule structure on `M × N` automatically, rather than threading it
+-- through every statement with `letI`. As in `Comodule.Product`, `Prod` is a local (not global)
+-- instance because a global product instance would make `Comodule` resolution non-confluent.
+attribute [local instance] Prod
+
 section Submodule
 
 variable [CommSemiring R]
@@ -53,22 +58,18 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 matrix coefficients. -/
 @[simp]
 theorem matrixCoefficient_prod (φ : M × N →ₗ[R] R) (x : M × N) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     matrixCoefficient (R := R) (C := C) φ x =
       matrixCoefficient (R := R) (C := C) (φ.comp (LinearMap.inl R M N)) x.1 +
         matrixCoefficient (R := R) (C := C) (φ.comp (LinearMap.inr R M N)) x.2 := by
-  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   simp [matrixCoefficient_def, TensorProduct.map_map]
 
 /-- Matrix coefficients of a left summand, viewed in the product comodule, are the original
 left matrix coefficients. -/
 @[simp]
 theorem matrixCoefficient_prod_inl (φ : M →ₗ[R] R) (m : M) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     matrixCoefficient (R := R) (C := C) (φ.comp (LinearMap.fst R M N))
         (LinearMap.inl R M N m) =
       matrixCoefficient (R := R) (C := C) φ m := by
-  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   rw [matrixCoefficient_prod]
   have hφ :
       (φ.comp (LinearMap.fst R M N)).comp (LinearMap.inl R M N) = φ := by
@@ -80,11 +81,9 @@ theorem matrixCoefficient_prod_inl (φ : M →ₗ[R] R) (m : M) :
 right matrix coefficients. -/
 @[simp]
 theorem matrixCoefficient_prod_inr (ψ : N →ₗ[R] R) (n : N) :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     matrixCoefficient (R := R) (C := C) (ψ.comp (LinearMap.snd R M N))
         (LinearMap.inr R M N n) =
       matrixCoefficient (R := R) (C := C) ψ n := by
-  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   rw [matrixCoefficient_prod]
   have hψ :
       (ψ.comp (LinearMap.snd R M N)).comp (LinearMap.inr R M N) = ψ := by
@@ -96,11 +95,9 @@ theorem matrixCoefficient_prod_inr (ψ : N →ₗ[R] R) (n : N) :
 submodules of the two factors. -/
 @[simp]
 theorem matrixCoefficientSubmodule_prod :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     matrixCoefficientSubmodule (R := R) (C := C) (M := M × N) =
       matrixCoefficientSubmodule (R := R) (C := C) (M := M) ⊔
         matrixCoefficientSubmodule (R := R) (C := C) (M := N) := by
-  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   apply le_antisymm
   · rw [matrixCoefficientSubmodule_le_iff]
     intro φ x
@@ -145,11 +142,9 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 subalgebras of the two factors. -/
 @[simp]
 theorem matrixCoefficientSubalgebra_prod :
-    letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
     matrixCoefficientSubalgebra (R := R) (C := C) (M := M × N) =
       matrixCoefficientSubalgebra (R := R) (C := C) (M := M) ⊔
         matrixCoefficientSubalgebra (R := R) (C := C) (M := N) := by
-  letI : Comodule R C (M × N) := Prod (R := R) (C := C) (M := M) (N := N)
   apply le_antisymm
   · rw [matrixCoefficientSubalgebra_le_iff]
     intro φ x
