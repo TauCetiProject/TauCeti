@@ -112,12 +112,15 @@ theorem coe_mul (f g : M ≃ₘ^n⟮I, I⟯ M) : ⇑(f * g) = f ∘ g := rfl
 theorem coe_inv (f : M ≃ₘ^n⟮I, I⟯ M) : ⇑(f⁻¹) = f.symm := rfl
 
 /-- Multiplication of self-diffeomorphisms acts by applying the right factor, then the left. -/
+@[simp]
 theorem mul_apply (f g : M ≃ₘ^n⟮I, I⟯ M) (x : M) : (f * g) x = f (g x) := rfl
 
 /-- The unit self-diffeomorphism fixes every point. -/
+@[simp]
 theorem one_apply (x : M) : (1 : M ≃ₘ^n⟮I, I⟯ M) x = x := rfl
 
 /-- The inverse in the self-diffeomorphism group acts as the inverse diffeomorphism. -/
+@[simp]
 theorem inv_apply (f : M ≃ₘ^n⟮I, I⟯ M) (x : M) : f⁻¹ x = f.symm x := rfl
 
 /-- The underlying equivalence of the unit self-diffeomorphism is the unit permutation. -/
@@ -145,7 +148,6 @@ theorem toPerm_injective : Function.Injective (toPerm : (M ≃ₘ^n⟮I, I⟯ M)
   _root_.Diffeomorph.toEquiv_injective
 
 /-- The forgetful group homomorphism from self-diffeomorphisms to self-homeomorphisms. -/
-@[expose]
 def toHomeomorphHom : (M ≃ₘ^n⟮I, I⟯ M) →* (M ≃ₜ M) where
   toFun f := f.toHomeomorph
   map_one' := rfl
@@ -155,7 +157,8 @@ def toHomeomorphHom : (M ≃ₘ^n⟮I, I⟯ M) →* (M ≃ₜ M) where
 homeomorphism. -/
 @[simp]
 theorem toHomeomorphHom_apply (f : M ≃ₘ^n⟮I, I⟯ M) :
-    toHomeomorphHom f = f.toHomeomorph :=
+    toHomeomorphHom f = f.toHomeomorph := by
+  ext x
   rfl
 
 /-- The forgetful homomorphism to self-homeomorphisms is injective. -/

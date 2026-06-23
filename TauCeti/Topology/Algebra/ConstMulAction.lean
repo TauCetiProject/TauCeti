@@ -13,7 +13,7 @@ public import Mathlib.Topology.Algebra.ConstMulAction
 
 This file records generic transfer instances for actions whose pointwise orbit maps are
 continuous. A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from an ambient
-monoid action.
+scalar action; the additive counterparts transfer `ContinuousConstVAdd`.
 -/
 
 public section
@@ -23,7 +23,9 @@ namespace TauCeti
 namespace Submonoid
 
 /-- A submonoid inherits continuity in the point from an ambient continuous action. -/
-instance continuousConstSMul {M X : Type*} [Monoid M] [TopologicalSpace X] [MulAction M X]
+@[to_additive
+  /-- An additive submonoid inherits continuity in the point from an ambient continuous action. -/]
+instance continuousConstSMul {M X : Type*} [MulOneClass M] [TopologicalSpace X] [SMul M X]
     [ContinuousConstSMul M X] (S : Submonoid M) : ContinuousConstSMul S X :=
   ⟨fun g => by
     simpa only [Submonoid.smul_def] using continuous_const_smul (g : M)⟩
@@ -33,7 +35,9 @@ end Submonoid
 namespace Subgroup
 
 /-- A subgroup inherits continuity in the point from an ambient continuous action. -/
-instance continuousConstSMul {G X : Type*} [Group G] [TopologicalSpace X] [MulAction G X]
+@[to_additive
+  /-- An additive subgroup inherits continuity in the point from an ambient continuous action. -/]
+instance continuousConstSMul {G X : Type*} [Group G] [TopologicalSpace X] [SMul G X]
     [ContinuousConstSMul G X] (S : Subgroup G) : ContinuousConstSMul S X :=
   Submonoid.continuousConstSMul S.toSubmonoid
 
