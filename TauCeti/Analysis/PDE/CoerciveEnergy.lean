@@ -25,6 +25,8 @@ hypothesis passes its lower-bound projection for the first.
 
 * `TauCeti.PDE.min_mul_prod_norm_sq_le_add`: product sup-norm lower-bound bridge for
   coercivity estimates.
+* `TauCeti.PDE.isCoercive_energyIntegrand_of_bounds`: pointwise finite-dimensional coercivity
+  from one principal coefficient, drift vector, and mass coefficient.
 * `TauCeti.PDE.isCoercive_energyIntegrand_zero_drift`: the zero-drift specialization,
   needing only a positive zeroth-order coefficient.
 * `TauCeti.PDE.isCoercive_energyIntegrand_of_bounds_on`: pointwise coercivity on a domain
@@ -94,7 +96,7 @@ private lemma energyIntegrand_self_lower_bound_of_bounds (hlam : 0 < lam)
 
 With ellipticity floor `λ`, drift bound `β`, and mass lower bound `μ` satisfying `β²/2λ < μ`,
 the jet form is coercive with constant `min (λ/2) (μ − β²/2λ)`. -/
-private lemma isCoercive_energyIntegrand_of_bounds (hlam : 0 < lam)
+lemma isCoercive_energyIntegrand_of_bounds (hlam : 0 < lam)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu) :
