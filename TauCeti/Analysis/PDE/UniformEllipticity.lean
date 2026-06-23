@@ -145,26 +145,19 @@ lemma matrixBilinearForm_add_apply (A B : Matrix n n ℝ) (η ξ : EuclideanSpac
   rw [matrixBilinearForm_apply, matrixBilinearForm_apply, matrixBilinearForm_apply,
     add_mulVec, dotProduct_add]
 
-omit [DecidableEq n] in
-/-- Transposing the coefficient matrix swaps the two arguments in the dot-product bilinear
-expression. -/
-lemma dotProduct_transpose_mulVec (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
-    η ⬝ᵥ (Aᵀ *ᵥ ξ) = ξ ⬝ᵥ (A *ᵥ η) := by
-  rw [Matrix.dotProduct_mulVec, Matrix.vecMul_transpose, dotProduct_comm]
-
 /-- Transposing the coefficient matrix does not change its quadratic form. -/
 @[simp]
 lemma toQuadraticForm'_transpose (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     Aᵀ.toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
   rw [toQuadraticForm'_eq_dotProduct, toQuadraticForm'_eq_dotProduct,
-    dotProduct_transpose_mulVec]
+    Matrix.dotProduct_transpose_mulVec]
 
 /-- Transposing the coefficient matrix swaps the arguments of the bundled matrix bilinear
 form. -/
 @[simp]
 lemma matrixBilinearForm_transpose_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm Aᵀ η ξ = matrixBilinearForm A ξ η := by
-  rw [matrixBilinearForm_apply, matrixBilinearForm_apply, dotProduct_transpose_mulVec]
+  rw [matrixBilinearForm_apply, matrixBilinearForm_apply, Matrix.dotProduct_transpose_mulVec]
 
 /-- The matrix bilinear form associated to `c • 1` is `c` times the Euclidean dot product. -/
 @[simp]
@@ -488,7 +481,7 @@ lemma transpose (h : UniformlyEllipticOn Ω a lam Lam) :
   refine UniformlyEllipticOn.of_bounds h.pos h.le (fun {x} hx ξ => ?_)
     (fun {x} hx η ξ => ?_)
   · simpa using h.lower_bound hx ξ
-  · rw [dotProduct_transpose_mulVec]
+  · rw [Matrix.dotProduct_transpose_mulVec]
     rw [mul_right_comm]
     exact h.upper_bound hx ξ η
 
