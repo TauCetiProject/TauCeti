@@ -3,8 +3,8 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
 import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
-import TauCeti.NumberTheory.Multiquadratic.Degree
 import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminant
+import TauCeti.NumberTheory.Multiquadratic.Squarefree
 
 /-!
 # Prime discriminants
@@ -50,14 +50,17 @@ theorem IsEvenPrimeDiscriminant.isPrimeDiscriminant {D : ℤ}
     IsPrimeDiscriminant D :=
   Or.inl hD
 
+/-- The discriminant `-4` is a prime discriminant. -/
 @[simp] theorem isPrimeDiscriminant_neg_four :
     IsPrimeDiscriminant (-4) :=
   isEvenPrimeDiscriminant_neg_four.isPrimeDiscriminant
 
+/-- The discriminant `8` is a prime discriminant. -/
 @[simp] theorem isPrimeDiscriminant_eight :
     IsPrimeDiscriminant 8 :=
   isEvenPrimeDiscriminant_eight.isPrimeDiscriminant
 
+/-- The discriminant `-8` is a prime discriminant. -/
 @[simp] theorem isPrimeDiscriminant_neg_eight :
     IsPrimeDiscriminant (-8) :=
   isEvenPrimeDiscriminant_neg_eight.isPrimeDiscriminant
@@ -98,14 +101,17 @@ theorem not_isEvenPrimeDiscriminant_oddPrimeDiscriminant {p : ℕ}
 def primeDiscriminantRadicand (D : ℤ) : ℤ :=
   if D = -4 ∨ D = 8 ∨ D = -8 then evenPrimeDiscriminantRadicand D else D
 
+/-- The prime-discriminant radicand of `-4` is `-1`. -/
 @[simp] theorem primeDiscriminantRadicand_neg_four :
     primeDiscriminantRadicand (-4) = -1 := by
   simp [primeDiscriminantRadicand]
 
+/-- The prime-discriminant radicand of `8` is `2`. -/
 @[simp] theorem primeDiscriminantRadicand_eight :
     primeDiscriminantRadicand 8 = 2 := by
   simp [primeDiscriminantRadicand]
 
+/-- The prime-discriminant radicand of `-8` is `-2`. -/
 @[simp] theorem primeDiscriminantRadicand_neg_eight :
     primeDiscriminantRadicand (-8) = -2 := by
   simp [primeDiscriminantRadicand]
@@ -117,6 +123,7 @@ theorem primeDiscriminantRadicand_of_isEvenPrimeDiscriminant {D : ℤ}
   rcases hD with rfl | rfl | rfl <;> simp [primeDiscriminantRadicand]
 
 /-- The radicand attached to an odd prime discriminant is the discriminant itself. -/
+@[simp]
 theorem primeDiscriminantRadicand_oddPrimeDiscriminant {p : ℕ}
     (hodd : Odd p) :
     primeDiscriminantRadicand (oddPrimeDiscriminant p) = oddPrimeDiscriminant p := by
@@ -124,6 +131,17 @@ theorem primeDiscriminantRadicand_oddPrimeDiscriminant {p : ℕ}
       oddPrimeDiscriminant p = 8 ∨ oddPrimeDiscriminant p = -8) := by
     simpa [IsEvenPrimeDiscriminant] using not_isEvenPrimeDiscriminant_oddPrimeDiscriminant hodd
   simp [primeDiscriminantRadicand, hnot]
+
+/-- A prime discriminant is either its own radicand, or four times its radicand in the even
+cases. -/
+theorem primeDiscriminant_eq_radicand_or_eq_four_mul_radicand {D : ℤ}
+    (hD : IsPrimeDiscriminant D) :
+    D = primeDiscriminantRadicand D ∨ D = 4 * primeDiscriminantRadicand D := by
+  rcases hD with hD | ⟨p, _hp, hodd, rfl⟩
+  · exact Or.inr <| by
+      rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hD]
+      exact evenPrimeDiscriminant_eq_four_mul_radicand hD
+  · exact Or.inl <| by rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd]
 
 /-- The radicand attached to a prime discriminant is nonzero. -/
 theorem primeDiscriminantRadicand_ne_zero {D : ℤ}
