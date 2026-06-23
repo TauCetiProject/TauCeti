@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Topology.Homotopy.AmbientIsotopic
+module
+
+public import TauCeti.Topology.Homotopy.AmbientIsotopic
 
 /-!
 # Products of isotopies and ambient isotopies
@@ -40,6 +42,8 @@ recovered through the time-duplicating embedding `(t, x, x') ↦ ((t, x), (t, x'
 * `TauCeti.AmbientIsotopic.prodMap`: the product closure on the ambient-isotopy relation.
 -/
 
+public section
+
 namespace TauCeti
 
 open unitInterval ContinuousMap Topology
@@ -63,7 +67,7 @@ embeddings of `I × X → I × Y` and `I × X' → I × Y'` that preserve the ti
 *merged* total map `(t, (x, x')) ↦ (t, ((u (t, x)).2, (v (t, x')).2))` reading both at the same
 time `t` is an embedding. It factors as the time-duplicating embedding, then `u × v`, then the
 projection identifying the two (equal) time coordinates. -/
-private theorem isEmbedding_mergeTotal {u : C(I × X, I × Y)} {v : C(I × X', I × Y')}
+theorem isEmbedding_mergeTotal {u : C(I × X, I × Y)} {v : C(I × X', I × Y')}
     (hu : IsEmbedding u) (hv : IsEmbedding v) (hu1 : ∀ p, (u p).1 = p.1)
     (hv1 : ∀ p, (v p).1 = p.1) :
     IsEmbedding fun p : I × (X × X') => (p.1, ((u (p.1, p.2.1)).2, (v (p.1, p.2.2)).2)) := by
@@ -90,7 +94,7 @@ variable {f₀ f₁ : C(X, Y)} {g₀ g₁ : C(X', Y')}
 isotopy `g₀ ≈ g₁` build an isotopy `f₀.prodMap g₀ ≈ f₁.prodMap g₁` whose value at `(t, (x, x'))` is
 `(F (t, x), G (t, x'))`. The underlying homotopy is Mathlib's `ContinuousMap.Homotopy.prodMap`; the
 total map is an embedding by `isEmbedding_mergeTotal`. -/
-def prodMap (F : Isotopy f₀ f₁) (G : Isotopy g₀ g₁) :
+@[expose] def prodMap (F : Isotopy f₀ f₁) (G : Isotopy g₀ g₁) :
     Isotopy (f₀.prodMap g₀) (f₁.prodMap g₁) where
   toHomotopy := F.toHomotopy.prodMap G.toHomotopy
   isEmbedding_total' :=
@@ -121,6 +125,7 @@ namespace AmbientIsotopy
 is `(Φ (t, y), Ψ (t, y'))`. Its total map is a homeomorphism, being an embedding (by
 `isEmbedding_mergeTotal`) and surjective (each factor is surjective at every time, by
 `AmbientIsotopy.isHomeomorph_apply`). -/
+@[expose]
 def prodCongr (Φ : AmbientIsotopy Y) (Ψ : AmbientIsotopy Y') : AmbientIsotopy (Y × Y') where
   toContinuousMap :=
     ⟨fun p => (Φ.toContinuousMap (p.1, p.2.1), Ψ.toContinuousMap (p.1, p.2.2)), by fun_prop⟩

@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Fintype.Perm
-import Mathlib.SetTheory.Cardinal.Finite
+module
+
+public import Mathlib.Data.Fintype.Perm
+public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Tactic.FinCases
-import TauCeti.KnotTheory.Grid.Diagram
+public import TauCeti.KnotTheory.Grid.Diagram
 
 /-!
 # Cardinality of grid states
@@ -33,6 +35,8 @@ and grid states", and the standing convention that the grid complexes should com
 small grids. The encoding follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
 Chapter 3: a grid state is one occupied square in every row and every column.
 -/
+
+public section
 
 namespace TauCeti
 

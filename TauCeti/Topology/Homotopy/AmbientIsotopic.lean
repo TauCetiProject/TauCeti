@@ -55,7 +55,7 @@ carries `f` to `g`, that is, its final homeomorphism postcomposes `f` to `g`. Th
 continuous topological ambient-isotopy relation intended to underlie later knot-equivalence
 specialisations (ambient isotopy of smooth embeddings `S¹ ↪ M`); it does not itself encode the
 smooth or PL structure those specialisations add. -/
-def AmbientIsotopic (f g : C(X, Y)) : Prop :=
+@[expose] def AmbientIsotopic (f g : C(X, Y)) : Prop :=
   ∃ Φ : AmbientIsotopy Y, Φ.final.comp f = g
 
 /-- `f` and `g` are ambient isotopic exactly when some ambient isotopy's final homeomorphism

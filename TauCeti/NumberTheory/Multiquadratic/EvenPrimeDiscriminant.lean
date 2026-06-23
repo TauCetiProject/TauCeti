@@ -43,7 +43,7 @@ public section
 namespace TauCeti.Multiquadratic
 
 /-- The three even prime discriminants: `-4`, `8`, and `-8`. -/
-def IsEvenPrimeDiscriminant (D : ℤ) : Prop :=
+@[expose] def IsEvenPrimeDiscriminant (D : ℤ) : Prop :=
   D = -4 ∨ D = 8 ∨ D = -8
 
 /-- The defining disjunction for `IsEvenPrimeDiscriminant`. -/

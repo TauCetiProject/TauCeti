@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.KnotTheory.Grid.Diagram
+module
+
+public import TauCeti.KnotTheory.Grid.Diagram
 
 /-!
 # Relabeling and column-of-row lookups
@@ -23,6 +25,8 @@ This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/READ
 G.5, "Invariance over 𝔽₂. Grid moves = commutation + (de)stabilization". The conventions follow
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
+
+public section
 
 namespace TauCeti
 

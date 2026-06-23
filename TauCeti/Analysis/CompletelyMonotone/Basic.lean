@@ -66,7 +66,7 @@ namespace TauCeti
 `[0, ∞)` and its iterated derivatives within `[0, ∞)` alternate in sign:
 `0 ≤ (-1)ⁿ f⁽ⁿ⁾(t)` for every `n` and every `t ≥ 0`. The smoothness clause prevents the sign
 condition from being satisfied vacuously by a junk iterated derivative. -/
-def IsCompletelyMonotone (f : ℝ → ℝ) : Prop :=
+@[expose] def IsCompletelyMonotone (f : ℝ → ℝ) : Prop :=
   ContDiffOn ℝ ∞ f (Ici 0) ∧
     ∀ n : ℕ, ∀ t : ℝ, 0 ≤ t → 0 ≤ (-1) ^ n * iteratedDerivWithin n f (Ici 0) t
 
@@ -222,7 +222,7 @@ lemma isCompletelyMonotone_exp_neg_mul {x : ℝ} (hx : 0 ≤ x) :
 /-- Complete monotonicity on the open half-line `(0, ∞)`: the function is `C^∞` there and its
 ordinary iterated derivatives alternate in sign. This is the version used for derivatives of
 Bernstein functions, whose right derivatives need not be finite at `0`. -/
-def IsCompletelyMonotoneOnIoi (f : ℝ → ℝ) : Prop :=
+@[expose] def IsCompletelyMonotoneOnIoi (f : ℝ → ℝ) : Prop :=
   ContDiffOn ℝ ∞ f (Ioi 0) ∧
     ∀ n : ℕ, ∀ t : ℝ, 0 < t → 0 ≤ (-1) ^ n * iteratedDeriv n f t
 

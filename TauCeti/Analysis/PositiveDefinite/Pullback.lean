@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Analysis.PositiveDefinite.Basic
+module
+
+public import TauCeti.Analysis.PositiveDefinite.Basic
 
 /-!
 # Pullbacks of positive-definite functions
@@ -39,6 +41,8 @@ identify the Gram entries.
 * C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100,
   1984), Chapter 3.
 -/
+
+public section
 
 namespace TauCeti
 
