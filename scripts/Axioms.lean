@@ -61,6 +61,41 @@ audited regardless of the root, which is intentionally empty and imports nothing
 def auditedModules : IO (Array Name) :=
   return #[auditedRoot] ++ (← collectLeanModules (auditedRoot.toString : System.FilePath))
 
+/-- Reader/State monad for the shared axiom-reachability pass: the `Environment` is read-only
+and the `NameMap Bool` memoizes, for every constant visited, whether it transitively depends on
+an axiom outside `allowedAxioms`. The map is threaded across *all* candidates so the shared
+`Mathlib`/`TauCeti` closure is walked once total, not re-walked per declaration. -/
+abbrev AxiomCacheM := ReaderT Environment (StateM (Lean.NameMap Bool))
+
+/-- Does `c` transitively depend on an axiom outside `allowedAxioms`? Memoized in the shared
+`NameMap Bool`. Mirrors `Lean.collectAxioms`' traversal of each declaration's type and value, but
+(a) shares one cache across every call — the stock `collectAxioms` rebuilds its state and redoes
+per-call setup on each invocation, which is the ~77ms/decl that dominated the audit — and
+(b) collapses the result to a single `Bool`, since the audit only needs "clean or not". A constant
+is marked `false` before recursing so cycles terminate; axioms are leaves, so a back edge into an
+in-progress constant contributes nothing. Adapted from Robin Arnez's mathlib-wide version
+(leanprover Zulip, #general > "Checking which axioms are used in a project"). -/
+partial def reachesDisallowedAxiom (c : Name) : AxiomCacheM Bool := do
+  if let some res := (← get).find? c then return res
+  modify (·.insert c false)
+  let env ← read
+  let anyExpr (es : Array Expr) : AxiomCacheM Bool :=
+    es.anyM fun e => e.getUsedConstants.anyM reachesDisallowedAxiom
+  let res ← match env.checked.get.find? c with
+    | some (.axiomInfo v) =>
+        if !allowedAxioms.contains c then pure true else anyExpr #[v.type]
+    | some (.defnInfo v)   => anyExpr #[v.type, v.value]
+    | some (.thmInfo v)    => anyExpr #[v.type, v.value]
+    | some (.opaqueInfo v) => anyExpr #[v.type, v.value]
+    | some (.quotInfo _)   => pure false
+    | some (.ctorInfo v)   => anyExpr #[v.type]
+    | some (.recInfo v)    => anyExpr #[v.type]
+    | some (.inductInfo v) =>
+        if (← anyExpr #[v.type]) then pure true else v.ctors.anyM reachesDisallowedAxiom
+    | none                 => pure false
+  modify (·.insert c res)
+  return res
+
 /-- Audit every declaration defined in `TauCeti`. Returns the number audited and a list of
 violation messages, **already rendered to `String`**.
 
@@ -78,11 +113,17 @@ def audit : CoreM (Nat × Array String) := do
       | some m => if inAuditedLib m then acc.push declName else acc
       | none => acc
     | none => acc
+  -- One shared-cache pass over all candidates: near-linear in the reachable closure, vs the old
+  -- per-declaration `collectAxioms` (≈77ms × candidates ≈ minutes). `run env` supplies the
+  -- read-only environment; `run' {}` threads one memo map through every candidate.
+  let offenders : Array Name := (candidates.filterM reachesDisallowedAxiom |>.run env).run' {}
+  -- Attribution only for the (normally empty) offenders: re-collect their exact axioms with the
+  -- stock API, so the violation message still names the specific disallowed axioms.
   let mut messages : Array String := #[]
-  for declName in candidates do
+  for declName in offenders do
     let axs ← collectAxioms declName
     let bad := axs.filter fun a => !allowedAxioms.contains a
-    if !bad.isEmpty then messages := messages.push s!"  {declName} → {bad.toList}"
+    messages := messages.push s!"  {declName} → {bad.toList}"
   return (candidates.size, messages)
 
 -- Return the exit code (rather than `IO.Process.exit`) so the Lean runtime tears the
