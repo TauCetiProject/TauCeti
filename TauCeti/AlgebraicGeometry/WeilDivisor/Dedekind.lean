@@ -8,8 +8,8 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
 public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation
 public import Mathlib.RingTheory.DedekindDomain.Factorization
-public import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
-public import Mathlib.RingTheory.DedekindDomain.SelmerGroup
+import Mathlib.RingTheory.DedekindDomain.FiniteAdeleRing
+import Mathlib.RingTheory.DedekindDomain.SelmerGroup
 
 /-!
 # The order system of a Dedekind domain
@@ -30,9 +30,9 @@ Concretely we build:
 * `OrderSystem.ofDedekindDomain R K : OrderSystem (HeightOneSpectrum R) (Additive Kˣ)`, whose
   finiteness condition is exactly the statement that a nonzero rational function has zeros and
   poles at only finitely many primes;
-* `WeilDivisorClassGroup R K`, the resulting Weil-divisor presentation of the class group (the
-  quotient of Weil divisors by principal divisors; its isomorphism to `ClassGroup R` is not
-  constructed here);
+* `(OrderSystem.ofDedekindDomain R K).ClassGroup`, the resulting Weil-divisor presentation of
+  the class group (the quotient of Weil divisors by principal divisors; its isomorphism to
+  `ClassGroup R` is not constructed here);
 * the sanity check that the principal divisor of a nonzero *integral* element is effective
   (an element of `R` has no poles).
 
@@ -284,14 +284,6 @@ lemma mem_support_principalDivisor_iff_valuation_ne_one (u : Additive Kˣ)
   rw [WeilDivisor.mem_support_iff]
   rw [coeff_principalDivisor_eq_neg_log_valuation, neg_ne_zero]
   exact not_congr (log_eq_zero_iff_eq_one hu)
-
-/-- The Weil-divisor presentation of the class group of a Dedekind domain: the quotient of the
-Weil divisors `HeightOneSpectrum R →₀ ℤ` by the principal divisors of the order system. Its
-isomorphism to Mathlib's `ClassGroup R` (and hence to `Cl(Spec R)`) is the expected theorem but
-is *not* constructed here. For the standard fractional-ideal class group, use Mathlib's
-`ClassGroup R` directly. -/
-noncomputable abbrev WeilDivisorClassGroup : Type _ :=
-  (OrderSystem.ofDedekindDomain R K).ClassGroup
 
 variable {R K}
 
