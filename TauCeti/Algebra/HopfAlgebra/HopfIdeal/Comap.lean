@@ -118,16 +118,16 @@ theorem comap_eq_comap_iff_of_surjective (f : H →ₐc[R] K)
 
 /-- The inverse image of the zero Hopf ideal is the kernel Hopf ideal. -/
 @[simp]
-theorem comap_bot (f : H →ₐc[R] K) (hf : Function.Surjective f) :
-    (⊥ : HopfIdeal R K).comap f hf = ker f hf := by
+theorem comap_bot (f : H →ₐc[R] K) (hf hfker : Function.Surjective f) :
+    (⊥ : HopfIdeal R K).comap f hf = ker f hfker := by
   ext h
   rw [mem_comap, mem_ker, mem_bot]
 
 /-- Surjective inverse image of Hopf ideals preserves joins. -/
 @[simp]
 theorem comap_sup_of_surjective (I J : HopfIdeal R K) (f : H →ₐc[R] K)
-    (hf : Function.Surjective f) :
-    (I ⊔ J).comap f hf = I.comap f hf ⊔ J.comap f hf := by
+    (hf hfI hfJ : Function.Surjective f) :
+    (I ⊔ J).comap f hf = I.comap f hfI ⊔ J.comap f hfJ := by
   ext h
   constructor
   · intro hh
@@ -150,8 +150,9 @@ theorem comap_sup_of_surjective (I J : HopfIdeal R K) (f : H →ₐc[R] K)
 /-- Surjective inverse image of Hopf ideals preserves nonempty suprema of families. -/
 @[simp]
 theorem comap_iSup_of_surjective {ι : Type*} [Nonempty ι] (I : ι → HopfIdeal R K)
-    (f : H →ₐc[R] K) (hf : Function.Surjective f) :
-    (⨆ i, I i).comap f hf = ⨆ i, (I i).comap f hf := by
+    (f : H →ₐc[R] K) (hf : Function.Surjective f)
+    (hfI : ∀ _, Function.Surjective f) :
+    (⨆ i, I i).comap f hf = ⨆ i, (I i).comap f (hfI i) := by
   classical
   ext h
   constructor
@@ -195,7 +196,7 @@ theorem comap_iSup_of_surjective {ι : Type*} [Nonempty ι] (I : ι → HopfIdea
     rcases hh with ⟨s, hs, rfl⟩
     rw [mem_comap, mem_iSup]
     exact ⟨s.mapRange f (map_zero f),
-      fun i => (mem_comap (I := I i) (f := f) (hf := hf)).mp (hs i), by
+      fun i => (mem_comap (I := I i) (f := f) (hf := hfI i)).mp (hs i), by
       rw [Finsupp.sum_mapRange_index (fun _ => rfl)]
       change (∑ a ∈ s.support, f (s a)) = f (∑ a ∈ s.support, s a)
       rw [map_sum]⟩
@@ -203,8 +204,9 @@ theorem comap_iSup_of_surjective {ι : Type*} [Nonempty ι] (I : ι → HopfIdea
 /-- Surjective inverse image of Hopf ideals preserves nonempty suprema of sets. -/
 @[simp]
 theorem comap_sSup_of_surjective (S : Set (HopfIdeal R K)) (hS : S.Nonempty)
-    (f : H →ₐc[R] K) (hf : Function.Surjective f) :
-    (sSup S).comap f hf = sSup ((fun I => I.comap f hf) '' S) := by
+    (f : H →ₐc[R] K) (hf : Function.Surjective f)
+    (hfS : ∀ _, Function.Surjective f) :
+    (sSup S).comap f hf = sSup ((fun I => I.comap f (hfS I)) '' S) := by
   classical
   haveI : Nonempty S := hS.to_subtype
   rw [sSup_eq_iSup', comap_iSup_of_surjective, sSup_image']
