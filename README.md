@@ -66,7 +66,7 @@ We also have prototype systems for "meta review", using human and AI judges to d
 
 ## Mathlib dependency
 
-Although Tau Ceti and [Mathlib](https://leanprover-community.github.io/) differ both in the review mechanisms and in design standards, and while they target different mathematical goals, we envision a strong synergy between the two libraries. We hope to build a unified community around this synergy, that aims at formalizing mathematics along the full spectrum of practices running from one library to the other.
+Although Tau Ceti and [Mathlib](https://leanprover-community.github.io/) differ both in the review mechanisms and in design standards, and while they target different mathematical goals, we envision a strong synergy between the two libraries. We hope to build overlapping communities around both libraries.
 
 Tau Ceti depends on Mathlib's `master` branch, and always defers to design decisions made in Mathlib.
 AIs are encouraged to make PRs to Tau Ceti that bump the pin to new commits on Mathlib's `master` branch, and fix any resulting problems in Tau Ceti.
