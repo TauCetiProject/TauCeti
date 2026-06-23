@@ -75,7 +75,7 @@ We won't push material upstream from Tau Ceti to Mathlib. Mathlib contributors a
 
 
 ## Financial model
-We're aware that both training and running powerful AIs come at a significant financial and environmental cost. We're also aware that at the moment of creating Tau Ceti (June 2026) the most efficient agents are provided by commercial actors and we consider the question of how such a financial model should interact with academic practices very seriously.
+We're aware that training and running powerful AIs come at a significant financial and environmental cost. We're also aware that at present the most capable agents are commercial offerings, and consider the question of bridging industrial and academic practices very seriously.
 
 For the time being, we offer to run initial CI and reviews on our proper budget and we leave to contributors' subscriptions the generation of the code included in their PRs.
 
