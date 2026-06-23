@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.CompletelyMonotone.Basic
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # Open-half-line closure for completely monotone functions
@@ -98,14 +99,19 @@ theorem neg_one_pow_mul_iteratedDeriv (hf : IsCompletelyMonotoneOnIoi f) (k : �
           ih.deriv_of_isOpen isOpen_Ioi (by simp)
   refine ⟨?_, fun n t ht => ?_⟩
   · simpa [smul_eq_mul] using hcont.const_smul ((-1 : ℝ) ^ k)
-  have hshift :
-      iteratedDeriv n (iteratedDeriv k f) t = iteratedDeriv (n + k) f t := by
-    simp [iteratedDeriv_eq_iterate, Function.iterate_add_apply]
+  have iteratedDeriv_iteratedDeriv :
+      iteratedDeriv n (iteratedDeriv k f) = iteratedDeriv (n + k) f := by
+    induction n with
+    | zero => simp [iteratedDeriv_zero]
+    | succ n ih =>
+        rw [iteratedDeriv_succ, ih, ← iteratedDeriv_succ]
+        congr 1
+        omega
   have hsign := hf.neg_one_pow_mul_iteratedDeriv_nonneg (n + k) ht
   have hiter :
       iteratedDeriv n (fun t => (-1 : ℝ) ^ k * iteratedDeriv k f t) t =
         (-1 : ℝ) ^ k * iteratedDeriv (n + k) f t := by
-    rw [iteratedDeriv_const_mul_field, hshift]
+    rw [iteratedDeriv_const_mul_field, iteratedDeriv_iteratedDeriv]
   rw [hiter]
   have key :
       (-1 : ℝ) ^ n * ((-1 : ℝ) ^ k * iteratedDeriv (n + k) f t) =
