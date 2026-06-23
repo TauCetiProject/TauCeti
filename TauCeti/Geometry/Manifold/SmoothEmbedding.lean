@@ -106,18 +106,22 @@ theorem isEmbedding (f : SmoothEmbedding I J n M N) : IsEmbedding f :=
   f.isSmoothEmbedding.isEmbedding
 
 /-- Bundle a map satisfying Mathlib's smooth-embedding predicate as a smooth embedding. -/
-abbrev ofIsSmoothEmbedding (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) :
+def ofIsSmoothEmbedding (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) :
     SmoothEmbedding I J n M N where
   toContMDiffMap := ⟨f, hf.contMDiff⟩
   isSmoothEmbedding_toFun := hf
 
 @[simp]
 theorem ofIsSmoothEmbedding_coe (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) :
-    ⇑(ofIsSmoothEmbedding (I := I) (J := J) (n := n) f hf) = f := rfl
+    ⇑(ofIsSmoothEmbedding (I := I) (J := J) (n := n) f hf) = f := by
+  rw [ofIsSmoothEmbedding.eq_def]
+  rfl
 
 @[simp]
 theorem ofIsSmoothEmbedding_apply (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) (x : M) :
-    ofIsSmoothEmbedding (I := I) (J := J) (n := n) f hf x = f x := rfl
+    ofIsSmoothEmbedding (I := I) (J := J) (n := n) f hf x = f x := by
+  rw [ofIsSmoothEmbedding.eq_def]
+  rfl
 
 /-- Two smooth embeddings are equal when their underlying functions are pointwise equal. -/
 @[ext]
