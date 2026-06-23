@@ -53,10 +53,9 @@ explicit (never hidden in a `∃ C`):
   `Λ + β + γ`.
 * `TauCeti.PDE.garding_energyIntegrand_self_of_bounds`: the pointwise Gårding lower bound
   on the diagonal.
-* `TauCeti.PDE.UniformlyEllipticOn.norm_energyIntegrand_apply_le`,
-  `TauCeti.PDE.UniformlyEllipticOn.opNorm_energyIntegrand_le`, and
-  `TauCeti.PDE.UniformlyEllipticOn.garding_energyIntegrand_self`: convenient corollaries
-  of the pointwise estimates.
+
+Each estimate takes its coefficient bounds inline (`∀ x ∈ Ω, ‖b x‖ ≤ β`, and so on); a caller
+holding a `UniformlyEllipticOn` hypothesis passes its `upper_bound`/`lower_bound` projections.
 -/
 
 public section
@@ -239,41 +238,6 @@ lemma garding_energyIntegrand_self_of_bounds (hlam : 0 < lam)
       lam / 2 * ‖U.2‖ ^ 2 + beta ^ 2 / (2 * lam) * U.1 ^ 2 :=
     mul_norm_abs_le_half_mul_sq_add hlam beta U.1 ‖U.2‖
   nlinarith [hQ', hM, hD, hYoung]
-
-namespace UniformlyEllipticOn
-
-variable {Ω : Set X} {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
-variable {lam Lam beta gamma : ℝ}
-
-/-- Bundled-hypothesis corollary of pointwise boundedness of the jet form. -/
-@[grind =>]
-lemma norm_energyIntegrand_apply_le (he : UniformlyEllipticOn Ω a lam Lam)
-    (hbc : LowerOrderBoundedOn Ω b c beta gamma) {x : X} (hx : x ∈ Ω)
-    (U V : ℝ × EuclideanSpace ℝ n) :
-    ‖energyIntegrand (a x) (b x) (c x) U V‖ ≤ (Lam + beta + gamma) * ‖U‖ * ‖V‖ :=
-  norm_energyIntegrand_apply_le_of_bounds he.upper_nonneg (fun {_} hx => he.upper_bound hx)
-    (fun {_} hx => hbc.drift_bound hx) (fun {_} hx => hbc.mass_bound hx) hx U V
-
-/-- Bundled-hypothesis corollary of the operator-norm bound for the jet form. -/
-@[grind =>]
-lemma opNorm_energyIntegrand_le (he : UniformlyEllipticOn Ω a lam Lam)
-    (hbc : LowerOrderBoundedOn Ω b c beta gamma) {x : X} (hx : x ∈ Ω) :
-    ‖energyIntegrand (a x) (b x) (c x)‖ ≤ Lam + beta + gamma :=
-  opNorm_energyIntegrand_le_of_bounds he.upper_nonneg (fun {_} hx => he.upper_bound hx)
-    (fun {_} hx => hbc.drift_bound hx) (fun {_} hx => hbc.mass_bound hx) hx
-
-/-- Corollary of the pointwise Gårding lower bound on the diagonal from bundled ellipticity,
-bounded drift, and a pointwise nonnegative mass coefficient. -/
-@[grind =>]
-lemma garding_energyIntegrand_self (he : UniformlyEllipticOn Ω a lam Lam)
-    (hb : DriftBoundedOn Ω b beta) (hc : NonnegMassPointwiseOn Ω c) {x : X} (hx : x ∈ Ω)
-    (U : ℝ × EuclideanSpace ℝ n) :
-    lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2
-      ≤ energyIntegrand (a x) (b x) (c x) U U :=
-  garding_energyIntegrand_self_of_bounds he.pos (fun {_} hx => he.lower_bound hx)
-    (fun {_} hx => hb.bound hx) (fun {_} hx => hc.nonneg hx) hx U
-
-end UniformlyEllipticOn
 
 end PDE
 
