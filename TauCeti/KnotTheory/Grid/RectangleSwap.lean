@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.KnotTheory.Grid.Rectangle
+module
+
+public import TauCeti.KnotTheory.Grid.Rectangle
 
 /-!
 # A grid rectangle move is a column transposition
@@ -42,6 +44,8 @@ Lane G.2, "grading-change formulas across a rectangle", and Lane G.3, "The compl
 `∂² = 0`". The column-transposition picture of a rectangle move follows Ozsváth--Stipsicz--Szabó,
 *Grid Homology for Knots and Links*, Chapter 4.
 -/
+
+public section
 
 namespace TauCeti
 
