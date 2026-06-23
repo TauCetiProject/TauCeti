@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Real.Basic
-import Mathlib.LinearAlgebra.BilinearForm.Hom
-import Mathlib.LinearAlgebra.BilinearForm.Properties
-import Mathlib.LinearAlgebra.QuadraticForm.Basic
-import TauCeti.LinearAlgebra.ComplexLinearPart
+module
+
+public import Mathlib.Data.Real.Basic
+public import Mathlib.LinearAlgebra.BilinearForm.Hom
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import TauCeti.LinearAlgebra.ComplexLinearPart
 
 /-!
 # Almost complex structures and compatible symplectic forms
@@ -33,6 +35,8 @@ The definitions follow the standard conventions in McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Section 2.2, specialized here to the
 pointwise real-linear setting.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -91,7 +95,7 @@ lemma surjective (J : AlmostComplexStructure V) : Function.Surjective J := by
 
 Its inverse is `-J`; this is often the convenient way to move bilinear-form statements across
 `J`. -/
-def linearEquiv (J : AlmostComplexStructure V) : V ≃ₗ[ℝ] V where
+@[expose] def linearEquiv (J : AlmostComplexStructure V) : V ≃ₗ[ℝ] V where
   toLinearMap := J.toLinearMap
   invFun v := -J v
   left_inv v := by simp
@@ -124,7 +128,7 @@ lemma ext {J K : AlmostComplexStructure V} (h : ∀ v, J v = K v) : J = K := by
   exact LinearMap.ext h
 
 /-- The negation of an almost complex structure is again an almost complex structure. -/
-def neg (J : AlmostComplexStructure V) : AlmostComplexStructure V where
+@[expose] def neg (J : AlmostComplexStructure V) : AlmostComplexStructure V where
   toLinearMap := -J.toLinearMap
   square_neg := by
     ext v
@@ -142,7 +146,7 @@ lemma neg_apply (J : AlmostComplexStructure V) (v : V) :
     (-J) v = -J v := rfl
 
 /-- The standard almost complex structure on `V × V`, sending `(x, y)` to `(-y, x)`. -/
-def product (V : Type*) [AddCommGroup V] [Module ℝ V] :
+@[expose] def product (V : Type*) [AddCommGroup V] [Module ℝ V] :
     AlmostComplexStructure (V × V) where
   toLinearMap :=
     { toFun := fun v => (-v.2, v.1)
@@ -165,7 +169,7 @@ variable [AddCommGroup X] [Module ℝ X]
 
 /-- A real-linear map is complex-linear with respect to two fixed pointwise
 almost complex structures if it intertwines them. -/
-def IsComplexLinearMap (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W)
+@[expose] def IsComplexLinearMap (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W)
     (F : V →ₗ[ℝ] W) : Prop :=
   F.comp J.toLinearMap = J'.toLinearMap.comp F
 
@@ -299,7 +303,7 @@ lemma separatingRight (ω : SymplecticForm V) :
   (LinearMap.IsRefl.nondegenerate_iff_separatingRight ω.isRefl).mp ω.nondegenerate
 
 /-- The bilinear form `ω(J ·, J ·)`. -/
-def pullback (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
+@[expose] def pullback (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
     LinearMap.BilinForm ℝ V :=
   ω.toBilinForm.comp J.toLinearMap J.toLinearMap
 
@@ -308,7 +312,7 @@ lemma pullback_apply (ω : SymplecticForm V) (J : AlmostComplexStructure V) (v w
     ω.pullback J v w = ω (J v) (J w) := rfl
 
 /-- A symplectic form is `J`-invariant when `ω(Jv, Jw) = ω(v, w)`. -/
-def Invariant (ω : SymplecticForm V) (J : AlmostComplexStructure V) : Prop :=
+@[expose] def Invariant (ω : SymplecticForm V) (J : AlmostComplexStructure V) : Prop :=
   ω.pullback J = ω.toBilinForm
 
 lemma invariant_iff (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
@@ -316,7 +320,7 @@ lemma invariant_iff (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
   LinearMap.ext_iff₂
 
 /-- The bilinear form `g(v,w) = ω(v, Jw)` associated to `ω` and `J`. -/
-def associatedBilinForm (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
+@[expose] def associatedBilinForm (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
     LinearMap.BilinForm ℝ V :=
   LinearMap.BilinForm.compRight ω.toBilinForm J.toLinearMap
 
@@ -326,7 +330,7 @@ lemma associatedBilinForm_apply
     ω.associatedBilinForm J v w = ω v (J w) := rfl
 
 /-- `ω` tames `J` if `ω(v, Jv)` is positive on every nonzero vector. -/
-def Tames (ω : SymplecticForm V) (J : AlmostComplexStructure V) : Prop :=
+@[expose] def Tames (ω : SymplecticForm V) (J : AlmostComplexStructure V) : Prop :=
   ∀ v, v ≠ 0 → 0 < ω v (J v)
 
 lemma tames_iff_associated_pos (ω : SymplecticForm V) (J : AlmostComplexStructure V) :

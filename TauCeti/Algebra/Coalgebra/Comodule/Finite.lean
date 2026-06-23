@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
-import TauCeti.Algebra.Coalgebra.Comodule.Zero
+module
+
+public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
+public import TauCeti.Algebra.Coalgebra.Comodule.Zero
 
 /-!
 # Finitely generated comodules
@@ -37,6 +39,8 @@ This supplies the finite-dimensional-category part of
 algebra". The construction follows Mathlib's `FGModuleCat` pattern: finite objects are a full
 subcategory defined by the object property `Module.Finite`.
 -/
+
+@[expose] public section
 
 open CategoryTheory CategoryTheory.Limits
 

@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficientAdjoin
-import TauCeti.Algebra.Coalgebra.Comodule.Regular
+module
+
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficientAdjoin
+public import TauCeti.Algebra.Coalgebra.Comodule.Regular
 
 /-!
 # Matrix coefficients of the regular comodule
@@ -32,6 +34,8 @@ This is the standard observation that the regular comodule's coefficient space i
 coalgebra; see Sweedler, *Hopf Algebras*, Chapter 2. It uses the existing Tau Ceti matrix
 coefficient API and Mathlib's counit law for coalgebras.
 -/
+
+public section
 
 namespace TauCeti
 

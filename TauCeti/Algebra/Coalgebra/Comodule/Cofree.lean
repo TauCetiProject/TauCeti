@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.ComoduleCat
+module
+
+public import TauCeti.Algebra.Coalgebra.ComoduleCat
 
 /-!
 # Cofree comodules
@@ -45,6 +47,8 @@ algebra" of the Tau Ceti reductive-groups roadmap,
 the adjunction underlying the embedding theorem.
 -/
 
+@[expose] public section
+
 open scoped TensorProduct
 open TensorProduct LinearMap
 
@@ -66,7 +70,7 @@ variable (R C M) in
 reassociation: `m ⊗ c ↦ ∑ (m ⊗ c₁) ⊗ c₂`. This is an implementation detail of `Comodule.cofree`;
 the public characterizations of the coaction are `Comodule.cofree_coact` and
 `Comodule.cofree_coact_tmul`. -/
-private noncomputable def cofreeCoact : M ⊗[R] C →ₗ[R] (M ⊗[R] C) ⊗[R] C :=
+noncomputable def cofreeCoact : M ⊗[R] C →ₗ[R] (M ⊗[R] C) ⊗[R] C :=
   (TensorProduct.assoc R M C C).symm.toLinearMap ∘ₗ Coalgebra.comul.lTensor M
 
 @[simp]
