@@ -44,57 +44,57 @@ variable (J₁ : AlmostComplexStructure V) (J₂ : AlmostComplexStructure W)
 
 /-- The affine inclusion of the first coordinate into a product is `J`-holomorphic. -/
 @[simp]
-lemma isJHolomorphicAt_prod_mk_left (w₀ : W) (v : V) :
+lemma isJHolomorphicAt_prodMk_left (w₀ : W) (v : V) :
     IsJHolomorphicAt J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) v :=
   (isJHolomorphicAt_id J₁ v).prodMk (isJHolomorphicAt_const J₁ J₂ w₀ v)
 
 /-- The affine inclusion of the second coordinate into a product is `J`-holomorphic. -/
 @[simp]
-lemma isJHolomorphicAt_prod_mk_right (v₀ : V) (w : W) :
+lemma isJHolomorphicAt_prodMk_right (v₀ : V) (w : W) :
     IsJHolomorphicAt J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) w :=
   (isJHolomorphicAt_const J₂ J₁ v₀ w).prodMk (isJHolomorphicAt_id J₂ w)
 
 /-- The affine inclusion of the first coordinate into a product is `J`-holomorphic within
 every set. -/
 @[simp]
-lemma isJHolomorphicWithinAt_prod_mk_left (w₀ : W) (s : Set V) (v : V) :
+lemma isJHolomorphicWithinAt_prodMk_left (w₀ : W) (s : Set V) (v : V) :
     IsJHolomorphicWithinAt J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) s v :=
-  (isJHolomorphicAt_prod_mk_left J₁ J₂ w₀ v).isJHolomorphicWithinAt
+  (isJHolomorphicAt_prodMk_left J₁ J₂ w₀ v).isJHolomorphicWithinAt
 
 /-- The affine inclusion of the second coordinate into a product is `J`-holomorphic within
 every set. -/
 @[simp]
-lemma isJHolomorphicWithinAt_prod_mk_right (v₀ : V) (s : Set W) (w : W) :
+lemma isJHolomorphicWithinAt_prodMk_right (v₀ : V) (s : Set W) (w : W) :
     IsJHolomorphicWithinAt J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) s w :=
-  (isJHolomorphicAt_prod_mk_right J₁ J₂ v₀ w).isJHolomorphicWithinAt
+  (isJHolomorphicAt_prodMk_right J₁ J₂ v₀ w).isJHolomorphicWithinAt
 
 /-- The affine inclusion of the first coordinate into a product is `J`-holomorphic on every
 set. -/
 @[simp]
-lemma isJHolomorphicOn_prod_mk_left (w₀ : W) (s : Set V) :
+lemma isJHolomorphicOn_prodMk_left (w₀ : W) (s : Set V) :
     IsJHolomorphicOn J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) s :=
-  fun v _ => isJHolomorphicWithinAt_prod_mk_left J₁ J₂ w₀ s v
+  fun v _ => isJHolomorphicWithinAt_prodMk_left J₁ J₂ w₀ s v
 
 /-- The affine inclusion of the second coordinate into a product is `J`-holomorphic on every
 set. -/
 @[simp]
-lemma isJHolomorphicOn_prod_mk_right (v₀ : V) (s : Set W) :
+lemma isJHolomorphicOn_prodMk_right (v₀ : V) (s : Set W) :
     IsJHolomorphicOn J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) s :=
-  fun w _ => isJHolomorphicWithinAt_prod_mk_right J₁ J₂ v₀ s w
+  fun w _ => isJHolomorphicWithinAt_prodMk_right J₁ J₂ v₀ s w
 
 /-- The affine inclusion of the first coordinate into a product is globally
 `J`-holomorphic. -/
 @[simp]
-lemma isJHolomorphic_prod_mk_left (w₀ : W) :
+lemma isJHolomorphic_prodMk_left (w₀ : W) :
     IsJHolomorphic J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) :=
-  fun v => isJHolomorphicAt_prod_mk_left J₁ J₂ w₀ v
+  fun v => isJHolomorphicAt_prodMk_left J₁ J₂ w₀ v
 
 /-- The affine inclusion of the second coordinate into a product is globally
 `J`-holomorphic. -/
 @[simp]
-lemma isJHolomorphic_prod_mk_right (v₀ : V) :
+lemma isJHolomorphic_prodMk_right (v₀ : V) :
     IsJHolomorphic J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) :=
-  fun w => isJHolomorphicAt_prod_mk_right J₁ J₂ v₀ w
+  fun w => isJHolomorphicAt_prodMk_right J₁ J₂ v₀ w
 
 end CoordinateInclusions
 
@@ -105,47 +105,45 @@ variable {K : AlmostComplexStructure X}
 
 /-- Restricting a product-source `J`-holomorphic map to a fixed second coordinate preserves
 `J`-holomorphicity. -/
-lemma IsJHolomorphicAt.comp_prod_mk_left {f : V × W → X} {v : V} {w : W}
+lemma IsJHolomorphicAt.comp_prodMk_left {f : V × W → X} {v : V} {w : W}
     (hf : IsJHolomorphicAt (J₁.prod J₂) K f (v, w)) :
     IsJHolomorphicAt J₁ K (fun v' : V => f (v', w)) v := by
   simpa [Function.comp_def] using
     IsJHolomorphicAt.comp (J := J₁) (J' := J₁.prod J₂) (J'' := K)
       (f := fun v' : V => (v', w)) (g := f) (x := v) hf
-      (isJHolomorphicAt_prod_mk_left J₁ J₂ w v)
+      (isJHolomorphicAt_prodMk_left J₁ J₂ w v)
 
 /-- Restricting a product-source `J`-holomorphic map to a fixed first coordinate preserves
 `J`-holomorphicity. -/
-lemma IsJHolomorphicAt.comp_prod_mk_right {f : V × W → X} {v : V} {w : W}
+lemma IsJHolomorphicAt.comp_prodMk_right {f : V × W → X} {v : V} {w : W}
     (hf : IsJHolomorphicAt (J₁.prod J₂) K f (v, w)) :
     IsJHolomorphicAt J₂ K (fun w' : W => f (v, w')) w := by
   simpa [Function.comp_def] using
     IsJHolomorphicAt.comp (J := J₂) (J' := J₁.prod J₂) (J'' := K)
       (f := fun w' : W => (v, w')) (g := f) (x := w) hf
-      (isJHolomorphicAt_prod_mk_right J₁ J₂ v w)
+      (isJHolomorphicAt_prodMk_right J₁ J₂ v w)
 
-/-- Restricting a product-source map on a product set to a fixed second coordinate preserves
+/-- Restricting a product-source map along a fixed second-coordinate inclusion preserves
 within-set `J`-holomorphicity. -/
-lemma IsJHolomorphicWithinAt.comp_prod_mk_left {f : V × W → X} {s : Set V} {t : Set W}
-    {v : V} {w : W} (hf : IsJHolomorphicWithinAt (J₁.prod J₂) K f (s ×ˢ t) (v, w))
-    (hw : w ∈ t) :
+lemma IsJHolomorphicWithinAt.comp_prodMk_left {f : V × W → X} {u : Set (V × W)}
+    {s : Set V} {v : V} {w : W} (hf : IsJHolomorphicWithinAt (J₁.prod J₂) K f u (v, w))
+    (hsu : Set.MapsTo (fun v' : V => (v', w)) s u) :
     IsJHolomorphicWithinAt J₁ K (fun v' : V => f (v', w)) s v := by
   simpa [Function.comp_def] using
     IsJHolomorphicWithinAt.comp (J := J₁) (J' := J₁.prod J₂) (J'' := K)
-      (f := fun v' : V => (v', w)) (g := f) (s := s) (t := s ×ˢ t) (x := v) hf
-      (isJHolomorphicWithinAt_prod_mk_left J₁ J₂ w s v)
-      (fun _ hv' => ⟨hv', hw⟩)
+      (f := fun v' : V => (v', w)) (g := f) (s := s) (t := u) (x := v) hf
+      (isJHolomorphicWithinAt_prodMk_left J₁ J₂ w s v) hsu
 
-/-- Restricting a product-source map on a product set to a fixed first coordinate preserves
+/-- Restricting a product-source map along a fixed first-coordinate inclusion preserves
 within-set `J`-holomorphicity. -/
-lemma IsJHolomorphicWithinAt.comp_prod_mk_right {f : V × W → X} {s : Set V} {t : Set W}
-    {v : V} {w : W} (hf : IsJHolomorphicWithinAt (J₁.prod J₂) K f (s ×ˢ t) (v, w))
-    (hv : v ∈ s) :
+lemma IsJHolomorphicWithinAt.comp_prodMk_right {f : V × W → X} {u : Set (V × W)}
+    {t : Set W} {v : V} {w : W} (hf : IsJHolomorphicWithinAt (J₁.prod J₂) K f u (v, w))
+    (htu : Set.MapsTo (fun w' : W => (v, w')) t u) :
     IsJHolomorphicWithinAt J₂ K (fun w' : W => f (v, w')) t w := by
   simpa [Function.comp_def] using
     IsJHolomorphicWithinAt.comp (J := J₂) (J' := J₁.prod J₂) (J'' := K)
-      (f := fun w' : W => (v, w')) (g := f) (s := t) (t := s ×ˢ t) (x := w) hf
-      (isJHolomorphicWithinAt_prod_mk_right J₁ J₂ v t w)
-      (fun _ hw' => ⟨hv, hw'⟩)
+      (f := fun w' : W => (v, w')) (g := f) (s := t) (t := u) (x := w) hf
+      (isJHolomorphicWithinAt_prodMk_right J₁ J₂ v t w) htu
 
 end CoordinateRestrictions
 
@@ -163,14 +161,22 @@ lemma IsJHolomorphicAt.prodMap {f : V → V'} {g : W → W'} {p : V × W}
     ((hf.comp (isJHolomorphicAt_fst J₁ J₂ p)).prodMk
       (hg.comp (isJHolomorphicAt_snd J₁ J₂ p)))
 
+/-- The product map of two maps `J`-holomorphic within sets is `J`-holomorphic within the
+product set. -/
+lemma IsJHolomorphicWithinAt.prodMap {f : V → V'} {g : W → W'} {s : Set V} {t : Set W}
+    {p : V × W} (hf : IsJHolomorphicWithinAt J₁ K₁ f s p.1)
+    (hg : IsJHolomorphicWithinAt J₂ K₂ g t p.2) :
+    IsJHolomorphicWithinAt (J₁.prod J₂) (K₁.prod K₂) (Prod.map f g) (s ×ˢ t) p := by
+  simpa [Prod.map] using
+    ((hf.comp (isJHolomorphicWithinAt_fst J₁ J₂ (s ×ˢ t) p) (fun q hq => hq.1)).prodMk
+      (hg.comp (isJHolomorphicWithinAt_snd J₁ J₂ (s ×ˢ t) p) (fun q hq => hq.2)))
+
 /-- The product map of two maps `J`-holomorphic on sets is `J`-holomorphic on the product set. -/
 lemma IsJHolomorphicOn.prodMap {f : V → V'} {g : W → W'} {s : Set V} {t : Set W}
     (hf : IsJHolomorphicOn J₁ K₁ f s) (hg : IsJHolomorphicOn J₂ K₂ g t) :
     IsJHolomorphicOn (J₁.prod J₂) (K₁.prod K₂) (Prod.map f g) (s ×ˢ t) := by
   intro p hp
-  exact (hf p.1 hp.1).comp (isJHolomorphicWithinAt_fst J₁ J₂ (s ×ˢ t) p)
-      (fun q hq => hq.1) |>.prodMk
-    ((hg p.2 hp.2).comp (isJHolomorphicWithinAt_snd J₁ J₂ (s ×ˢ t) p) (fun q hq => hq.2))
+  simpa [Prod.map] using (hf p.1 hp.1).prodMap (hg p.2 hp.2)
 
 /-- The product map of two globally `J`-holomorphic maps is globally `J`-holomorphic. -/
 lemma IsJHolomorphic.prodMap {f : V → V'} {g : W → W'}
