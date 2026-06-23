@@ -53,38 +53,34 @@ namespace RootsOfUnityGroup
 
 universe u v
 
-variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
-variable {B : Type*} [CommSemiring B] [Algebra R B]
-
 /-- The standard generator of the character group defining `μ_n = D(ℤ/n)`. -/
 abbrev generator (n : ℕ) : Multiplicative (ZMod n) :=
   Multiplicative.ofAdd 1
 
-/-- Every element of `Multiplicative (ZMod n)` is a power of the standard generator. -/
-lemma mem_zpowers_generator (n : ℕ) (x : Multiplicative (ZMod n)) :
-    x ∈ Subgroup.zpowers (generator n) := by
-  refine ⟨(Multiplicative.toAdd x).cast, ?_⟩
-  simp only [generator]
-  rw [← ofAdd_zsmul]
-  calc
-    Multiplicative.ofAdd ((Multiplicative.toAdd x).cast • (1 : ZMod n)) =
-        Multiplicative.ofAdd (((Multiplicative.toAdd x).cast : ℤ) : ZMod n) := by simp
-    _ =
-        Multiplicative.ofAdd (Multiplicative.toAdd x) := by rw [ZMod.intCast_zmod_cast]
-    _ = x := ofAdd_toAdd x
+section Characters
 
-/-- The cardinality of the standard cyclic character group is `n`. -/
-lemma card_multiplicative_zmod (n : ℕ) :
-    Nat.card (Multiplicative (ZMod n)) = n := by
-  exact (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
-    (Nat.card_zmod n)
+variable {A : Type v} [CommMonoid A]
 
 /-- Characters of `Multiplicative (ZMod n)` are canonically `n`th roots of unity, by evaluation
 on the standard generator. -/
 @[expose] noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
     (Multiplicative (ZMod n) →* Aˣ) ≃* rootsOfUnity n A :=
-  ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (mem_zpowers_generator n) Aˣ).trans
-      (MulEquiv.subgroupCongr (by rw [card_multiplicative_zmod n]))).trans
+  let hg : ∀ x : Multiplicative (ZMod n), x ∈ Subgroup.zpowers (generator n) := by
+    intro x
+    refine ⟨(Multiplicative.toAdd x).cast, ?_⟩
+    simp only [generator]
+    rw [← ofAdd_zsmul]
+    calc
+      Multiplicative.ofAdd ((Multiplicative.toAdd x).cast • (1 : ZMod n)) =
+          Multiplicative.ofAdd (((Multiplicative.toAdd x).cast : ℤ) : ZMod n) := by simp
+      _ =
+          Multiplicative.ofAdd (Multiplicative.toAdd x) := by rw [ZMod.intCast_zmod_cast]
+      _ = x := ofAdd_toAdd x
+  let hcard : Nat.card (Multiplicative (ZMod n)) = n :=
+    (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
+      (Nat.card_zmod n)
+  ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (g := generator n) hg Aˣ).trans
+      (MulEquiv.subgroupCongr (by rw [hcard]))).trans
     (rootsOfUnityUnitsMulEquiv A n)
 
 /-- A character is sent to its value on the standard generator. -/
@@ -98,6 +94,7 @@ lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
 
 /-- The inverse character-roots equivalence sends the standard generator to the chosen root
 of unity. -/
+@[simp]
 lemma characterMulEquivRootsOfUnity_symm_apply_generator
     (n : ℕ) (ζ : rootsOfUnity n A) :
     (((characterMulEquivRootsOfUnity (A := A) n).symm ζ (generator n) : Aˣ) : A) =
@@ -105,6 +102,11 @@ lemma characterMulEquivRootsOfUnity_symm_apply_generator
   rw [← characterMulEquivRootsOfUnity_apply n
     ((characterMulEquivRootsOfUnity (A := A) n).symm ζ)]
   simp
+
+end Characters
+
+variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
+variable {B : Type*} [CommSemiring B] [Algebra R B]
 
 /-- The functor of points of `μ_n = D(ℤ/n)` is the group of `n`th roots of unity.
 
