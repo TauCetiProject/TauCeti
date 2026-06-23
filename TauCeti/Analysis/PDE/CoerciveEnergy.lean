@@ -82,10 +82,7 @@ private lemma energyIntegrand_self_lower_bound_of_bounds (hlam : 0 < lam)
   have hdecomp : energyIntegrand A b₀ c₀ U U
       = energyIntegrand A b₀ (c₀ - mu) U U + mu * U.1 ^ 2 := by
     rw [energyIntegrand_self, energyIntegrand_self]; ring
-  have hgard := garding_energyIntegrand_self_of_bounds (Ω := (Set.univ : Set Unit))
-    (a := fun _ => A) (b := fun _ => b₀) (c := fun _ => c₀ - mu) hlam
-    (fun {_} _ ξ => hA ξ) (fun {_} _ => hb) (fun {_} _ => sub_nonneg.mpr hc)
-    (Set.mem_univ ()) U
+  have hgard := garding_energyIntegrand_self_of_bounds hlam hA hb (sub_nonneg.mpr hc) U
   rw [hdecomp]
   have hrw : lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
       = lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2 + mu * U.1 ^ 2 := by ring
