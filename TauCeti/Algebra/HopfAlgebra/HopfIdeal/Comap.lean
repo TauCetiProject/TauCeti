@@ -198,6 +198,7 @@ theorem comap_iSup_of_surjective {ι : Type*} [Nonempty ι] (I : ι → HopfIdea
     exact ⟨s.mapRange f (map_zero f),
       fun i => (mem_comap (I := I i) (f := f) (hf := hfI i)).mp (hs i), by
       rw [Finsupp.sum_mapRange_index (fun _ => rfl)]
+      -- Expose the bounded `Finset.sum` shape produced by `Finsupp.sum` so `map_sum` applies.
       change (∑ a ∈ s.support, f (s a)) = f (∑ a ∈ s.support, s a)
       rw [map_sum]⟩
 
