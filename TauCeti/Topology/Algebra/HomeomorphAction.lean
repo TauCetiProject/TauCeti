@@ -4,9 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Topology.Algebra.ConstMulAction
+public import TauCeti.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Homeomorph.Defs
-public import Mathlib.Algebra.Group.Subgroup.Actions
 
 /-!
 # The tautological action of the homeomorphism group
@@ -22,24 +21,11 @@ mathlib4#40135.
 * `TauCeti.Homeomorph.smul_def`: the defining simp lemma `φ • e = φ e`.
 * `TauCeti.Homeomorph.applyFaithfulSMul`: the action is faithful.
 * `TauCeti.Homeomorph.applyContinuousConstSMul`: each homeomorphism acts continuously.
-* `TauCeti.Subgroup.continuousConstSMul`: subgroups inherit continuity in the point from an
-  ambient continuous action.
 -/
 
 public section
 
 namespace TauCeti
-
-namespace Subgroup
-
-/-- A subgroup inherits continuity in the point from an ambient continuous action. -/
-instance continuousConstSMul {G X : Type*} [Group G] [TopologicalSpace X] [MulAction G X]
-    [ContinuousConstSMul G X] (S : Subgroup G) : ContinuousConstSMul S X :=
-  ⟨fun g => by
-    change Continuous fun x => (g : G) • x
-    exact continuous_const_smul (g : G)⟩
-
-end Subgroup
 
 namespace Homeomorph
 

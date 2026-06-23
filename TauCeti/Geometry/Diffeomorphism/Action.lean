@@ -5,9 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Group
-public import TauCeti.Topology.Algebra.HomeomorphAction
-public import Mathlib.Topology.Algebra.ConstMulAction
-public import Mathlib.Algebra.Group.Subgroup.Actions
+public import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # The tautological action of the diffeomorphism group
@@ -15,8 +13,8 @@ public import Mathlib.Algebra.Group.Subgroup.Actions
 The self-diffeomorphism group `M ≃ₘ^n⟮I, I⟯ M` acts on the underlying manifold by evaluation:
 `φ • x = φ x`. This file records that action, its faithfulness, and continuity in the point.
 
-The action formalization mirrors `TauCeti.Homeomorph.applyMulAction` and
-`TauCeti.Homeomorph.applyContinuousConstSMul` in `TauCeti.Topology.Algebra.HomeomorphAction`,
+The action formalization mirrors `TauCeti.Homeomorph.applyMulAction` in
+`TauCeti.Topology.Algebra.HomeomorphAction`,
 which in turn follows `Equiv.Perm.applyMulAction` and the construction in Kim Morrison's
 mathlib4#40135.
 
@@ -61,6 +59,7 @@ theorem smul_def (f : M ≃ₘ^n⟮I, I⟯ M) (x : M) : f • x = f x := rfl
 
 /-- The action homomorphism of the tautological diffeomorphism action is the forgetful homomorphism
 to permutations. -/
+@[simp]
 theorem toPermHom_eq_toPerm :
     MulAction.toPermHom (M ≃ₘ^n⟮I, I⟯ M) M = toPerm := by
   ext f x

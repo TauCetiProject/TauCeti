@@ -145,10 +145,18 @@ theorem toPerm_injective : Function.Injective (toPerm : (M ≃ₘ^n⟮I, I⟯ M)
   _root_.Diffeomorph.toEquiv_injective
 
 /-- The forgetful group homomorphism from self-diffeomorphisms to self-homeomorphisms. -/
+@[expose]
 def toHomeomorphHom : (M ≃ₘ^n⟮I, I⟯ M) →* (M ≃ₜ M) where
   toFun f := f.toHomeomorph
   map_one' := rfl
   map_mul' _ _ := rfl
+
+/-- The forgetful homomorphism to self-homeomorphisms sends a diffeomorphism to its underlying
+homeomorphism. -/
+@[simp]
+theorem toHomeomorphHom_apply (f : M ≃ₘ^n⟮I, I⟯ M) :
+    toHomeomorphHom f = f.toHomeomorph :=
+  rfl
 
 /-- The forgetful homomorphism to self-homeomorphisms is injective. -/
 theorem toHomeomorphHom_injective :
