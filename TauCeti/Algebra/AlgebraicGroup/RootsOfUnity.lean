@@ -22,12 +22,12 @@ coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure.
 
 ## Main definitions
 
-* `TauCeti.RootsOfUnityGroup.characterMulEquivRootsOfUnity`: the multiplicative equivalence
-  from characters of `Multiplicative (ZMod n)` to `rootsOfUnity n A`.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv`: the multiplicative equivalence from
   convolution points of `R[Multiplicative (ZMod n)]` to `rootsOfUnity n A`.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv_apply`: the equivalence sends a point to its
   value on the standard generator `single (ofAdd 1) 1`.
+* `TauCeti.RootsOfUnityGroup.pointsMulEquiv_symm_apply_single_generator_smul`: the inverse
+  equivalence evaluates scalar multiples of the standard generator.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv_symm_apply_single_generator`: the inverse
   equivalence sends a root of unity to the point taking the standard generator to it.
 
@@ -38,7 +38,7 @@ calculation.
 ## References
 
 The diagonalizable-group points calculation is Tau Ceti's
-`DiagonalizableGroup.pointsMulEquiv`. The cyclic character group calculation is Mathlib's
+`DiagonalizableGroup.pointsMulEquiv`. The internal cyclic character group calculation uses Mathlib's
 `IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator`, from
 `Mathlib.RingTheory.RootsOfUnity.Basic`.
 -/
@@ -61,9 +61,7 @@ section Characters
 
 variable {A : Type v} [CommMonoid A]
 
-/-- Characters of `Multiplicative (ZMod n)` are canonically `n`th roots of unity, by evaluation
-on the standard generator. -/
-@[expose] noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
+private noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
     (Multiplicative (ZMod n) →* Aˣ) ≃* rootsOfUnity n A :=
   let hg : ∀ x : Multiplicative (ZMod n), x ∈ Subgroup.zpowers (generator n) := by
     intro x
@@ -83,19 +81,16 @@ on the standard generator. -/
       (MulEquiv.subgroupCongr (by rw [hcard]))).trans
     (rootsOfUnityUnitsMulEquiv A n)
 
-/-- A character is sent to its value on the standard generator. -/
 -- The proof is `rfl`: each composed equivalence acts on the underlying unit by projection.
 @[simp]
-lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
+private lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
     (χ : Multiplicative (ZMod n) →* Aˣ) :
     ((characterMulEquivRootsOfUnity (A := A) n χ : Aˣ) : A) =
       (χ (generator n) : A) :=
   rfl
 
-/-- The inverse character-roots equivalence sends the standard generator to the chosen root
-of unity. -/
 @[simp]
-lemma characterMulEquivRootsOfUnity_symm_apply_generator
+private lemma characterMulEquivRootsOfUnity_symm_apply_generator
     (n : ℕ) (ζ : rootsOfUnity n A) :
     (((characterMulEquivRootsOfUnity (A := A) n).symm ζ (generator n) : Aˣ) : A) =
       ((ζ : Aˣ) : A) := by
@@ -150,6 +145,18 @@ lemma pointsMulEquiv_symm_apply_single_generator (n : ℕ) (ζ : rootsOfUnity n 
     DiagonalizableGroup.pointsMulEquiv_symm_apply, ofConv_toConv,
     DiagonalizableGroup.point_single_one,
     characterMulEquivRootsOfUnity_symm_apply_generator]
+
+/-- The inverse points equivalence evaluates scalar multiples of the standard generator by
+scalar multiplication of the chosen root of unity. -/
+@[simp]
+lemma pointsMulEquiv_symm_apply_single_generator_smul (n : ℕ) (ζ : rootsOfUnity n A) (r : R) :
+    ((pointsMulEquiv (R := R) (A := A) n).symm ζ).ofConv
+        (MonoidAlgebra.single (generator n) r) =
+      r • ((ζ : Aˣ) : A) := by
+  rw [show MonoidAlgebra.single (generator n) r =
+      r • MonoidAlgebra.single (generator n) (1 : R) by simp]
+  rw [map_smul]
+  rw [pointsMulEquiv_symm_apply_single_generator]
 
 end RootsOfUnityGroup
 
