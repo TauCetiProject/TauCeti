@@ -18,8 +18,8 @@ the unique bialgebra morphism `H ⧸ J →ₐc[R] K` induced from a bialgebra mo
 kills `J`.
 
 The construction uses only the bialgebra-quotient structure — a two-sided ideal `J` that is a
-coideal — so neither an antipode nor a Hopf-algebra structure is required. The specialization to the
-underlying ideal of a `TauCeti.HopfIdeal` lives in `TauCeti.Algebra.HopfAlgebra.Quotient`.
+coideal — so neither an antipode nor a Hopf-algebra structure is required. For the underlying ideal
+of a `TauCeti.HopfIdeal`, use `Bialgebra.Quotient.liftBialgHom I.toIdeal` directly.
 
 ## Main definitions
 

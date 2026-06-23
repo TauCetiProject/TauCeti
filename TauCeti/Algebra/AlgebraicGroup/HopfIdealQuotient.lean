@@ -6,14 +6,15 @@ module
 
 public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
-public import TauCeti.Algebra.HopfAlgebra.Quotient
+public import TauCeti.Algebra.Bialgebra.Quotient
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal
 
 /-!
 # Hopf-ideal quotients of finite-type commutative Hopf algebras
 
 This file packages the quotient of a finite-type commutative Hopf algebra by a Hopf ideal
 as another object of `FiniteTypeCommHopfAlgCat`. The Hopf algebra structure and quotient
-bialgebra morphism are supplied by `TauCeti.Algebra.HopfAlgebra.Quotient`; the only extra
+bialgebra morphism are supplied by Mathlib's quotient instances and morphisms; the only extra
 ingredient here is that finite type descends along the surjective quotient algebra map.
 
 This is a small Layer 3 prerequisite for the reductive-groups roadmap target
@@ -97,13 +98,13 @@ variable {H K : _root_.CommHopfAlgCat.{v} R}
 through the quotient object. -/
 noncomputable abbrev liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) : quotient H I ⟶ K :=
-  _root_.CommHopfAlgCat.ofHom (HopfIdeal.liftBialgHom I f.hom hf)
+  _root_.CommHopfAlgCat.ofHom (Bialgebra.Quotient.liftBialgHom I.toIdeal f.hom hf)
 
 /-- The quotient lift has the expected underlying bialgebra morphism. -/
 @[simp]
 lemma hom_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
-    (liftQuotient I f hf).hom = HopfIdeal.liftBialgHom I f.hom hf :=
+    (liftQuotient I f hf).hom = Bialgebra.Quotient.liftBialgHom I.toIdeal f.hom hf :=
   _root_.CommHopfAlgCat.hom_ofHom _
 
 /-- Deprecated compatibility alias for `hom_liftQuotient`. -/
@@ -116,7 +117,7 @@ lemma liftQuotient_mk (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) (h : H) :
     (liftQuotient I f hf).hom (Ideal.Quotient.mkₐ R I.toIdeal h) =
       f.hom h :=
-  HopfIdeal.liftBialgHom_mk I f.hom hf h
+  Bialgebra.Quotient.liftBialgHom_mk I.toIdeal f.hom hf h
 
 /-- The quotient lift composed with the quotient morphism is the original morphism. -/
 @[simp]
@@ -125,7 +126,7 @@ lemma mkQuotient_comp_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     mkQuotient H I ≫ liftQuotient I f hf = f := by
   ext h
   exact BialgHom.congr_fun
-    (HopfIdeal.liftBialgHom_comp_mkBialgHom I f.hom hf) h
+    (Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom I.toIdeal f.hom hf) h
 
 /-- A morphism out of the quotient object is determined by its precomposition with the
 quotient morphism. -/

@@ -5,9 +5,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal
-public import TauCeti.Algebra.HopfAlgebra.Quotient
 
 /-!
 # Kernels of Hopf algebra morphisms
@@ -134,7 +134,7 @@ theorem ker_eq_bot_iff (f : H →ₐc[R] K) (hf : Function.Surjective f) :
 Hopf-ideal kernel. -/
 @[expose] noncomputable def kerLiftBialgHom (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     H ⧸ (ker f hf).toIdeal →ₐc[R] K :=
-  liftBialgHom (ker f hf) f (by
+  Bialgebra.Quotient.liftBialgHom (ker f hf).toIdeal f (by
     intro x hx
     simpa [ker_toIdeal] using hx)
 
@@ -142,7 +142,7 @@ Hopf-ideal kernel. -/
 @[simp]
 theorem kerLiftBialgHom_mk (f : H →ₐc[R] K) (hf : Function.Surjective f) (h : H) :
     kerLiftBialgHom f hf (Ideal.Quotient.mkₐ R (ker f hf).toIdeal h) = f h :=
-  liftBialgHom_mk (ker f hf) f (by
+  Bialgebra.Quotient.liftBialgHom_mk (ker f hf).toIdeal f (by
     intro x hx
     simpa [ker_toIdeal] using hx) h
 
@@ -150,7 +150,7 @@ theorem kerLiftBialgHom_mk (f : H →ₐc[R] K) (hf : Function.Surjective f) (h 
 @[simp]
 theorem kerLiftBialgHom_comp_mkBialgHom (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     (kerLiftBialgHom f hf).comp (Bialgebra.Quotient.mkBialgHom (ker f hf).toIdeal) = f :=
-  liftBialgHom_comp_mkBialgHom (ker f hf) f (by
+  Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom (ker f hf).toIdeal f (by
     intro x hx
     simpa [ker_toIdeal] using hx)
 
