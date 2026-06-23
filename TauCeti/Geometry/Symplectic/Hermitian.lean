@@ -55,7 +55,7 @@ The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Top
 Section 2.1: a compatible pair `(ω, J)` gives the Hermitian form `⟨v, w⟩ = g(v, w) + i ω(v, w)`.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
@@ -73,6 +73,7 @@ argument from `ω.Invariant J` (`Invariant.complexAssociatedForm_conj_symm`,
 `Invariant.complexAssociatedForm_smul_left`), and positive definiteness from `ω.Tames J`
 (`Tames.complexAssociatedForm_self_re_pos`). Full compatibility is needed only to assemble
 `Compatible.hermitianCore`. -/
+@[expose]
 noncomputable def complexAssociatedForm (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (v w : V) : ℂ :=
   (ω v (J w) : ℂ) + Complex.I * (ω v w : ℂ)

@@ -189,7 +189,7 @@ theorem finite_and_ncard_le_of_subset_box_of_separated (r : ι → ℝ) (hr : �
       cell_index_diff hε (hr i) (congr_arg Prod.snd (congr_fun hxy i))
     have hlt : ‖x i - y i‖ < (ε * r i / Real.sqrt 2) * Real.sqrt 2 :=
       norm_lt_of_re_im_bound hdnn
-        (by rw [Complex.sub_re]; exact hre) (by rw [Complex.sub_im]; exact him)
+        (by rwa [Complex.sub_re]) (by rwa [Complex.sub_im])
     rw [div_mul_cancel₀ _ (by positivity : Real.sqrt 2 ≠ 0)] at hlt
     linarith
   -- Finiteness and the cardinal bound follow from injectivity into the finite `T`.
@@ -246,6 +246,30 @@ private theorem abs_sub_le_of_floor_eq {a b q : ℝ} (hq : 0 < q) (h : ⌊a / q�
     nlinarith [h.1, h.2, Int.floor_le (b / q), Int.lt_floor_add_one (b / q), hq,
       mul_div_cancel₀ a hq.ne', mul_div_cancel₀ b hq.ne']
 
+/-- If two complex numbers share their coarse cell (side `2·ri/3`) in both the real and the
+imaginary part, their distance is at most `ri`. -/
+private theorem norm_sub_le_of_coarseCell_eq {ri : ℝ} (hri : 0 < ri) {z w : ℂ}
+    (hre : ⌊z.re / (2 * ri / 3)⌋ = ⌊w.re / (2 * ri / 3)⌋)
+    (him : ⌊z.im / (2 * ri / 3)⌋ = ⌊w.im / (2 * ri / 3)⌋) :
+    ‖z - w‖ ≤ ri := by
+  have hpos : (0 : ℝ) < 2 * ri / 3 := by positivity
+  have hre' : |z.re - w.re| ≤ 2 * ri / 3 := abs_sub_le_of_floor_eq hpos hre
+  have him' : |z.im - w.im| ≤ 2 * ri / 3 := abs_sub_le_of_floor_eq hpos him
+  have hnorm : ‖z - w‖ ^ 2 ≤ ri ^ 2 := by
+    rw [Complex.sq_norm, Complex.normSq_apply, Complex.sub_re, Complex.sub_im]
+    nlinarith [abs_le.mp hre', abs_le.mp him']
+  nlinarith [norm_nonneg (z - w), hnorm, hri]
+
+/-- A real of absolute value at most `2·ri` lands in one of the seven coarse cells
+`Icc (-3) 3` of side `2·ri/3`. -/
+private theorem coarseCell_mem_Icc {ri : ℝ} (hri : 0 < ri) {t : ℝ} (ht : |t| ≤ 2 * ri) :
+    ⌊t / (2 * ri / 3)⌋ ∈ Finset.Icc (-3 : ℤ) 3 := by
+  have hpos : (0 : ℝ) < 2 * ri / 3 := by positivity
+  rw [Finset.mem_Icc]
+  refine ⟨Int.le_floor.2 ?_, Int.le_of_lt_add_one (Int.floor_lt.2 ?_)⟩
+  · rw [le_div_iff₀ hpos]; push_cast; nlinarith [abs_le.mp ht]
+  · rw [div_lt_iff₀ hpos]; push_cast; nlinarith [abs_le.mp ht]
+
 /-- **Doubling.** Assuming `Λ ∩ box r 2` is finite, counting lattice points in the double box
 loses at most `64 ^ #ι` against the unit box:
 `#(Λ ∩ box r 2) ≤ 64 ^ #ι · #(Λ ∩ box r 1)`. -/
@@ -253,23 +277,14 @@ theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr 
     (Λ : AddSubgroup (ι → ℂ)) (hfin : ((Λ : Set (ι → ℂ)) ∩ box r 2).Finite) :
     (((Λ : Set (ι → ℂ)) ∩ box r 2).ncard : ℝ) ≤
       64 ^ Fintype.card ι * ((Λ : Set (ι → ℂ)) ∩ box r 1).ncard := by
-  -- The coarse cell map sends `x` to its tuple of cell indices `⌊(x i).re/(2·r i/3)⌋` (and the
-  -- imaginary analogue), taking at most `7² ≤ 64` values per coordinate on `box r 2`. Within
-  -- one cell, two `Λ`-points `x` and `x₀` have `x - x₀ ∈ Λ` with each coordinate of norm
-  -- `≤ r i` (the two real parts differ by at most `2·r i/3`, likewise the imaginary, so the
-  -- norm is at most `(2·r i/3)·√2 ≤ r i`), hence `x - x₀ ∈ Λ ∩ box r 1`; so each cell holds at
-  -- most `#(Λ ∩ box r 1)` points.
   set A : Set (ι → ℂ) := (Λ : Set (ι → ℂ)) ∩ box r 2
   set B : Set (ι → ℂ) := (Λ : Set (ι → ℂ)) ∩ box r 1
   have hBA : B ⊆ A := fun x hx => ⟨hx.1, box_mono (fun i => (hr i).le) one_le_two hx.2⟩
   have hBfin : B.Finite := hfin.subset hBA
   set sA : Finset (ι → ℂ) := hfin.toFinset with hsA
   set sB : Finset (ι → ℂ) := hBfin.toFinset with hsB
-  -- The coarse cell map: cell side `2·r i/3` per coordinate.
   set f : (ι → ℂ) → (ι → ℤ × ℤ) :=
     fun x i => (⌊(x i).re / (2 * r i / 3)⌋, ⌊(x i).im / (2 * r i / 3)⌋)
-  -- Each cell of `sA` injects into `sB` by translation, so its fibre has at most `sB.card`
-  -- points.
   have hfiber : ∀ b ∈ sA.image f, (sA.filter (fun a => f a = b)).card ≤ sB.card := by
     intro b hb
     obtain ⟨x₀, hx₀A, hx₀b⟩ := Finset.mem_image.mp hb
@@ -280,17 +295,9 @@ theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr 
       have hdiff : ∀ i, ‖(y - x₀) i‖ ≤ r i := by
         intro i
         have hcell := congr_fun hyb i
-        have hpos : (0 : ℝ) < 2 * r i / 3 := by have := hr i; positivity
-        have hre : |(y i).re - (x₀ i).re| ≤ 2 * r i / 3 :=
-          abs_sub_le_of_floor_eq hpos (congr_arg Prod.fst hcell)
-        have him : |(y i).im - (x₀ i).im| ≤ 2 * r i / 3 :=
-          abs_sub_le_of_floor_eq hpos (congr_arg Prod.snd hcell)
-        have hnorm : ‖(y - x₀) i‖ ^ 2 ≤ (r i) ^ 2 := by
-          rw [Complex.sq_norm, Complex.normSq_apply, Pi.sub_apply, Complex.sub_re,
-            Complex.sub_im]
-          nlinarith [abs_le.mp hre, abs_le.mp him, hr i]
-        have hri := hr i
-        nlinarith [norm_nonneg ((y - x₀) i), hnorm, hri]
+        rw [Pi.sub_apply]
+        exact norm_sub_le_of_coarseCell_eq (hr i) (congr_arg Prod.fst hcell)
+          (congr_arg Prod.snd hcell)
       have hyA : y ∈ A := (hfin.mem_toFinset).mp hy.1
       have hx₀A' : x₀ ∈ A := (hfin.mem_toFinset).mp hx₀A
       rw [hsB, hBfin.mem_toFinset]
@@ -302,7 +309,6 @@ theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr 
           (Finset.card_image_of_injOn hinj).symm
       _ ≤ sB.card := Finset.card_le_card (fun z hz => by
           obtain ⟨y, hy, rfl⟩ := Finset.mem_image.mp hz; exact hmaps y hy)
-  -- The cell map takes at most `64 ^ #ι` values on `sA`.
   set T : Finset (ι → ℤ × ℤ) :=
     Fintype.piFinset (fun _ : ι => Finset.Icc (-3 : ℤ) 3 ×ˢ Finset.Icc (-3 : ℤ) 3) with hTdef
   have himage : sA.image f ⊆ T := by
@@ -311,16 +317,10 @@ theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr 
     have hyA' : y ∈ A := (hfin.mem_toFinset).mp hyA
     rw [hTdef, Fintype.mem_piFinset]
     intro i
-    have hpos : (0 : ℝ) < 2 * r i / 3 := by have := hr i; positivity
     have hbre : |(y i).re| ≤ 2 * r i := (Complex.abs_re_le_norm _).trans (hyA'.2 i)
     have hbim : |(y i).im| ≤ 2 * r i := (Complex.abs_im_le_norm _).trans (hyA'.2 i)
-    rw [Finset.mem_product, Finset.mem_Icc, Finset.mem_Icc]
-    refine ⟨⟨Int.le_floor.2 ?_, Int.le_of_lt_add_one (Int.floor_lt.2 ?_)⟩,
-      Int.le_floor.2 ?_, Int.le_of_lt_add_one (Int.floor_lt.2 ?_)⟩
-    · rw [le_div_iff₀ hpos]; push_cast; nlinarith [abs_le.mp hbre, hr i]
-    · rw [div_lt_iff₀ hpos]; push_cast; nlinarith [abs_le.mp hbre, hr i]
-    · rw [le_div_iff₀ hpos]; push_cast; nlinarith [abs_le.mp hbim, hr i]
-    · rw [div_lt_iff₀ hpos]; push_cast; nlinarith [abs_le.mp hbim, hr i]
+    rw [Finset.mem_product]
+    exact ⟨coarseCell_mem_Icc (hr i) hbre, coarseCell_mem_Icc (hr i) hbim⟩
   have hTcard : (T.card : ℝ) ≤ 64 ^ Fintype.card ι := by
     have hcard7 : (Finset.Icc (-3 : ℤ) 3).card = 7 := by rw [Int.card_Icc]; rfl
     have hTeq : T.card = 49 ^ Fintype.card ι := by
@@ -328,7 +328,6 @@ theorem ncard_inter_box_two_le_pow_mul_ncard_inter_box_one (r : ι → ℝ) (hr 
         Finset.card_product, hcard7]
     rw [hTeq]; push_cast
     exact pow_le_pow_left₀ (by norm_num) (by norm_num) _
-  -- Assemble: `|sA| ≤ |sB| · |image| ≤ |sB| · 64 ^ #ι`.
   have hmul : sA.card ≤ sB.card * (sA.image f).card :=
     Finset.card_le_mul_card_image sA sB.card hfiber
   have hAcard : A.ncard = sA.card := by rw [hsA]; exact Set.ncard_eq_toFinset_card A hfin

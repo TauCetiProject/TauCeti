@@ -38,6 +38,25 @@ open _root_.NumberField
 
 namespace TauCeti.NumberField
 
+/-- The squared Minkowski covolume factor, times `2 ^ n`, is at most `4 ^ n` whenever
+`2 * s ≤ n`. -/
+private lemma minkowski_factor_sq_mul_two_pow_le_four_pow {n s : ℕ} (h : 2 * s ≤ n) :
+    (4 / Real.pi) ^ (2 * s) * ((n.factorial / n ^ n : ℝ)) ^ 2 * 2 ^ n ≤ 4 ^ n := by
+  refine le_trans (mul_le_mul_of_nonneg_right (mul_le_of_le_one_right (by positivity) ?_)
+    (by positivity)) ?_
+  · have h_factorial_le_pow : (n.factorial : ℝ) ≤ (n : ℝ) ^ n := by
+      exact_mod_cast Nat.factorial_le_pow n
+    exact pow_le_one₀ (by positivity) (div_le_one_of_le₀ h_factorial_le_pow (by positivity))
+  · have h_pi_le_two : (4 : ℝ) / Real.pi ≤ 2 := by
+      rw [div_le_iff₀] <;> linarith [Real.pi_gt_three]
+    have h_four : (4 : ℝ) = 2 ^ 2 := by norm_num
+    refine le_trans (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (by positivity)
+      h_pi_le_two _)
+      (by positivity)) ?_
+    rw [h_four, ← pow_mul, ← pow_add]
+    gcongr <;> norm_num
+    linarith
+
 /-- **Class number bound.** The class number of a number field `F` is at most
 `|discr F| * 4 ^ [F : ℚ]`. -/
 theorem classNumber_le_bound (F : Type*) [Field F] [NumberField F] :
@@ -77,21 +96,8 @@ theorem classNumber_le_bound (F : Type*) [Field F] [NumberField F] :
         ((Module.finrank ℚ F).factorial / (Module.finrank ℚ F) ^ Module.finrank ℚ F) ^ 2 *
         2 ^ Module.finrank ℚ F ≤ 4 ^ Module.finrank ℚ F by
       convert mul_le_mul_of_nonneg_left h_simp (abs_nonneg (discr F : ℝ)) using 1; ring
-    refine le_trans (mul_le_mul_of_nonneg_right (mul_le_of_le_one_right (by positivity) ?_)
-      (by positivity)) ?_
-    · have h_factorial_le_pow : ((Module.finrank ℚ F).factorial : ℝ) ≤
-          (Module.finrank ℚ F : ℝ) ^ Module.finrank ℚ F := by
-        exact_mod_cast Nat.factorial_le_pow (Module.finrank ℚ F)
-      exact pow_le_one₀ (by positivity) (div_le_one_of_le₀ h_factorial_le_pow (by positivity))
-    · have h_pi_le_two : (4 : ℝ) / Real.pi ≤ 2 := by
-        rw [div_le_iff₀] <;> linarith [Real.pi_gt_three]
-      have h_four : (4 : ℝ) = 2 ^ 2 := by norm_num
-      refine le_trans (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (by positivity)
-        h_pi_le_two _)
-        (by positivity)) ?_
-      rw [h_four, ← pow_mul, ← pow_add]
-      gcongr <;> norm_num
-      have := NumberField.InfinitePlace.card_add_two_mul_card_eq_rank F; linarith
+    have := NumberField.InfinitePlace.card_add_two_mul_card_eq_rank F
+    exact minkowski_factor_sq_mul_two_pow_le_four_pow (by linarith)
 
 /-- If a number field has discriminant bounded by `D` and degree bounded by `n`, then its class
 number is bounded by `D * 4^n`.
