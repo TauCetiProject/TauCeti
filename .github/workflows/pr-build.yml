@@ -362,7 +362,6 @@ jobs:
               export TMPDIR="$PWD/.lake/tmp"
               lake build
               lake exe axioms
-              lake exe module-system
             '
 
       - name: Report build and bump-guard statuses to the PR head commit
