@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.AlgebraicGroup.BaseChange
-import TauCeti.Algebra.AlgebraicGroup.HopfMap
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.HopfMap
 
 /-!
 # Naturality of base-changed points
@@ -33,6 +35,8 @@ This builds on Mathlib's tensor-product bialgebra map
 `TauCeti.Algebra.AlgebraicGroup.BaseChange` and
 `TauCeti.Algebra.AlgebraicGroup.HopfMap`.
 -/
+
+public section
 
 open TensorProduct WithConv
 

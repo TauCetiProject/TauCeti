@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Coalgebra.Basic
+module
+
+public import Mathlib.RingTheory.Coalgebra.Basic
 
 /-!
 # Subcoalgebras
@@ -27,6 +29,8 @@ finite-dimensional subcoalgebras and the fundamental theorem of comodules. Later
 This follows the standard coalgebra definition: a subcoalgebra `D ≤ C` satisfies
 `Δ(D) ⊆ D ⊗ D`. See Sweedler, *Hopf Algebras*, Chapter 2.
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -75,7 +79,7 @@ instance : PartialOrder (Subcoalgebra R C) :=
   .ofSetLike (Subcoalgebra R C) C
 
 /-- The underlying submodule of a subcoalgebra. -/
-def toSubmodule (D : Subcoalgebra R C) : Submodule R C :=
+@[expose] def toSubmodule (D : Subcoalgebra R C) : Submodule R C :=
   D.carrier
 
 @[simp]
@@ -109,7 +113,7 @@ theorem comul_mem (D : Subcoalgebra R C) {c : C} (hc : c ∈ D) :
   D.comul_mem' hc
 
 /-- Constructor from a submodule and the tensor-square stability condition. -/
-def ofSubmodule (D : Submodule R C)
+@[expose] def ofSubmodule (D : Submodule R C)
     (hD :
       ∀ ⦃c : C⦄, c ∈ D →
         Coalgebra.comul (R := R) (A := C) c ∈

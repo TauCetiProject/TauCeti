@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.CategoryTheory.Preadditive.Basic
-import TauCeti.Algebra.Coalgebra.ComoduleCat
+module
+
+public import Mathlib.CategoryTheory.Preadditive.Basic
+public import TauCeti.Algebra.Coalgebra.ComoduleCat
 
 /-!
 # Preadditive structure on comodule categories
@@ -35,6 +37,8 @@ This supplies a prerequisite for
 algebra": the finite-dimensional comodule representation category should be an additive
 category before tensor products, duals, and Tannakian structure are built on top.
 -/
+
+public section
 
 open CategoryTheory
 open scoped TensorProduct

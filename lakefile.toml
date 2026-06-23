@@ -17,7 +17,12 @@ rev = "master"
 [[lean_lib]]
 name = "TauCeti"
 globs = ["TauCeti.*"]
-leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFile = 1000, weak.linter.style.longFileDefValue = 1000, weak.linter.style.header = false, warningAsError = true }
+# `longFile = 1500` is the hard ceiling the in-build linter enforces for every file. A
+# *newly added* file is held to a tighter 1000-line limit by the "New-file length guard" in
+# `.github/workflows/pr-build.yml`; only files that already exist may grow up to 1500. Both
+# `longFile` and `longFileDefValue` must be set to the same value, or the linter nags to
+# remove a `set_option` on every short file (fatal under `warningAsError`).
+leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFile = 1500, weak.linter.style.longFileDefValue = 1500, weak.linter.style.header = false, warningAsError = true }
 
 
 # Human-owned governance: the axiom-allowlist audit (`lake exe axioms`). Inspects the

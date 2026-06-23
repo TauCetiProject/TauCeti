@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.FieldTheory.Trace
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.RingTheory.Complex
+module
+
+public import TauCeti.FieldTheory.Trace
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import Mathlib.RingTheory.Complex
 
 /-!
 # Trace-form diagonalisation for square-root bases
@@ -36,6 +38,8 @@ conjecture, where it diagonalises the trace form on square-root bases. The reusa
 criterion and discriminant formula live in `TauCeti.FieldTheory.Trace`; this file keeps
 the EffectiveBounds worked examples near the roadmap target.
 -/
+
+public section
 
 open Polynomial
 

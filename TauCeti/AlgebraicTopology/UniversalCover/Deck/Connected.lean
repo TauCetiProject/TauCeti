@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.GroupTheory.GroupAction.Basic
-import Mathlib.Topology.Covering.Basic
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
+module
+
+public import Mathlib.GroupTheory.GroupAction.Basic
+public import Mathlib.Topology.Covering.Basic
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
 
 /-!
 # Deck transformations of connected covers
@@ -25,6 +27,8 @@ connected cover cannot fix a point unless it is the identity.
 * `TauCeti.Deck.deckEquivFiberOfSurjective`: if that evaluation map is also surjective, it
   identifies the deck group with the chosen fibre.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -121,7 +125,7 @@ evaluation at that point identifies the deck group with that fibre.
 
 This is the simply-transitive fibre action package used later when regular covers are
 compared with normal subgroups and normalizer quotients. -/
-noncomputable def deckEquivFiberOfSurjective [PreconnectedSpace E] (hp : IsCoveringMap p)
+@[expose] noncomputable def deckEquivFiberOfSurjective [PreconnectedSpace E] (hp : IsCoveringMap p)
     (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : Deck p => φ • e) :
     Deck p ≃ p ⁻¹' {b} :=
   Equiv.ofBijective (fun φ : Deck p => φ • e)

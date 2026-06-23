@@ -2,12 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.LegendreSymbol.Basic
-import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
-import Mathlib.LinearAlgebra.Dimension.DivisionRing
-import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
-import TauCeti.NumberTheory.Multiquadratic.Galois
-import TauCeti.NumberTheory.NumberField.SplitsCompletely
+module
+
+public import Mathlib.NumberTheory.LegendreSymbol.Basic
+public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
+public import Mathlib.LinearAlgebra.Dimension.DivisionRing
+public import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
+public import TauCeti.NumberTheory.Multiquadratic.Galois
+public import TauCeti.NumberTheory.NumberField.SplitsCompletely
 
 /-!
 # The prime-splitting law for a multiquadratic field
@@ -23,6 +25,8 @@ This is the general (compositum) case; the base case `n = 1` is `ncard_primesOve
   law — `p` splits completely in `K = ℚ(√d₁, …, √dₙ)` iff every `dᵢ` is a quadratic residue
   mod `p`.
 -/
+
+public section
 
 open Polynomial NumberField Ideal Module MulAction
 open scoped Pointwise

@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.AlgebraicGroup.HopfMap
-import TauCeti.Algebra.Bialgebra.TensorProduct
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.HopfMap
+public import TauCeti.Algebra.Bialgebra.TensorProduct
 
 /-!
 # The direct product of affine group schemes on points
@@ -48,6 +50,8 @@ infrastructure, built on the Mathlib convolution monoid of Yaël Dillies, Micha�
 Yunzhou Xie.
 -/
 
+public section
+
 open TensorProduct WithConv
 
 namespace TauCeti
@@ -77,13 +81,13 @@ theorem productMap_restrict (g : (H₁ ⊗[R] H₂) →ₐ[R] A) :
 of convolution monoids: it pre-composes with the two inclusions `includeLeft` and
 `includeRight`. Each component is `TauCeti.AlgHom.mapDomain` of a bialgebra morphism, hence a
 monoid homomorphism, so their pairing is too. -/
-private noncomputable def restrictHom :
+@[expose] noncomputable def restrictHom :
     WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A) →*
       WithConv (H₁ →ₐ[R] A) × WithConv (H₂ →ₐ[R] A) :=
   (AlgHom.mapDomain includeLeft).prod (AlgHom.mapDomain includeRight)
 
 @[simp]
-private theorem restrictHom_apply (f : WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A)) :
+theorem restrictHom_apply (f : WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A)) :
     restrictHom f = (AlgHom.mapDomain includeLeft f, AlgHom.mapDomain includeRight f) := rfl
 
 /-- The convolution monoid of `R`-algebra homomorphisms out of a tensor product of commutative
@@ -93,7 +97,7 @@ On the functor of points this is the direct product of the affine group schemes 
 `Spec H₂`: Mathlib's product map sends `x ⊗ₜ y` to `f₁ x * f₂ y`, and convolution is computed
 componentwise. When `H₁` and `H₂` are Hopf algebras these convolution monoids are groups
 (`TauCeti.AlgHom.instGroup`), so this is automatically an isomorphism of groups. -/
-noncomputable def pointsMulEquiv :
+@[expose] noncomputable def pointsMulEquiv :
     WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A) ≃* WithConv (H₁ →ₐ[R] A) × WithConv (H₂ →ₐ[R] A) where
   toFun := restrictHom
   invFun p := toConv (Algebra.TensorProduct.productMap p.1.ofConv p.2.ofConv)

@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.InnerProductSpace.Defs
-import TauCeti.Geometry.Symplectic.AlmostComplex
+module
+
+public import Mathlib.Analysis.InnerProductSpace.Defs
+public import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
 # The metric of a tame pair
@@ -39,6 +41,8 @@ recorded as the bridge `SymplecticForm.Compatible.symmetrizedBilinForm_apply`.
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Sections 2.1 and 2.5.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -130,7 +134,7 @@ lemma symmetrizedBilinForm_nondegenerate (h : ω.Tames J) :
 /-- The symmetric part of the metric of a tame pair, packaged as an `InnerProductSpace.Core ℝ V`.
 
 The inner product is `⟪v, w⟫ = ω(v, J w) + ω(w, J v)`, the symmetric part of `ω(·, J ·)`. -/
-@[implicit_reducible]
+@[expose, implicit_reducible]
 noncomputable def innerProductCore (h : ω.Tames J) : InnerProductSpace.Core ℝ V where
   inner v w := ω.symmetrizedBilinForm J v w
   conj_inner_symm v w := by

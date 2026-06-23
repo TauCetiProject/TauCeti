@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicGeometry.WeilDivisor
-import Mathlib.GroupTheory.QuotientGroup.Basic
+module
+
+public import TauCeti.AlgebraicGeometry.WeilDivisor
+public import Mathlib.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Principal divisors and the divisor class group of an order system
@@ -49,6 +51,8 @@ Mathlib's `Finsupp.onFinset` (to assemble a finitely supported function from coo
 data) and `QuotientAddGroup` quotient machinery.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace AlgebraicGeometry
@@ -74,7 +78,7 @@ namespace OrderSystem
 variable {X G : Type*} [AddCommGroup G] (S : OrderSystem X G)
 
 /-- The principal divisor `Σ_x ord_x(g) · [x]` attached to `g : G`. -/
-noncomputable def principalDivisor (g : G) : WeilDivisor X :=
+@[expose] noncomputable def principalDivisor (g : G) : WeilDivisor X :=
   Finsupp.onFinset (S.finite_support g).toFinset (fun x => S.ord x g) fun _ hx =>
     (S.finite_support g).mem_toFinset.mpr (Function.mem_support.mpr hx)
 
@@ -84,7 +88,7 @@ lemma coeff_principalDivisor (g : G) (x : X) :
   Finsupp.onFinset_apply
 
 /-- Principal divisors as a homomorphism `G →+ WeilDivisor X`. -/
-noncomputable def principalHom : G →+ WeilDivisor X where
+@[expose] noncomputable def principalHom : G →+ WeilDivisor X where
   toFun := S.principalDivisor
   map_zero' := by ext x; simp
   map_add' g₁ g₂ := by ext x; simp
@@ -207,7 +211,7 @@ every principal divisor has weighted degree zero.
 For a smooth proper curve over a field `k`, the intended weight is the residue-field degree
 `x ↦ [κ(x) : k]`; this is the geometric fact that a rational function has as many zeros as
 poles, counted with residue-field degrees. -/
-def IsWeightedDegreeZero (w : X → ℤ) : Prop :=
+@[expose] def IsWeightedDegreeZero (w : X → ℤ) : Prop :=
   ∀ g, weightedDegree w (S.principalDivisor g) = 0
 
 variable {S}
@@ -234,7 +238,7 @@ lemma weightedDegreeClass_divisorClass (w : X → ℤ) (h : S.IsWeightedDegreeZe
 
 /-- The weighted-degree-zero part of the divisor class group, the abstract `Pic⁰` of the
 Jacobian roadmap: the kernel of the weighted degree map on divisor classes. -/
-noncomputable def picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w) :
+@[expose] noncomputable def picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w) :
     AddSubgroup S.ClassGroup :=
   (weightedDegreeClass w h).ker
 
@@ -253,7 +257,7 @@ lemma divisorClass_mem_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
 /-- An order system has *unweighted-degree-zero principal divisors* when every principal
 divisor has unweighted degree zero. This is the specialization of `IsWeightedDegreeZero` to the
 constant weight `1`, appropriate for the algebraically closed/unweighted formal setting. -/
-def IsUnweightedDegreeZero : Prop :=
+@[expose] def IsUnweightedDegreeZero : Prop :=
   S.IsWeightedDegreeZero fun _ => (1 : ℤ)
 
 lemma IsUnweightedDegreeZero.principalSubgroup_le_ker (h : S.IsUnweightedDegreeZero) :
@@ -265,6 +269,7 @@ lemma IsUnweightedDegreeZero.principalSubgroup_le_ker (h : S.IsUnweightedDegreeZ
 /-- The unweighted degree map on divisor classes, for the algebraically closed/unweighted
 specialization: the descended degree `weightedDegreeClass` at the constant weight `1`. For
 curves over a general field, use `weightedDegreeClass`. -/
+@[expose]
 noncomputable def unweightedDegreeClass (h : S.IsUnweightedDegreeZero) : S.ClassGroup →+ ℤ :=
   weightedDegreeClass (fun _ => (1 : ℤ)) h
 
@@ -276,6 +281,7 @@ lemma unweightedDegreeClass_divisorClass (h : S.IsUnweightedDegreeZero) (D : Wei
 /-- The unweighted-degree-zero part of the divisor class group, for the algebraically
 closed/unweighted specialization: `picZero` at the constant weight `1`. For curves over a
 general field, use `picZero` with residue-field-degree weights. -/
+@[expose]
 noncomputable def unweightedPicZero (h : S.IsUnweightedDegreeZero) : AddSubgroup S.ClassGroup :=
   picZero (fun _ => (1 : ℤ)) h
 

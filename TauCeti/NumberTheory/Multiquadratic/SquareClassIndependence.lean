@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.Multiquadratic.Degree
-import TauCeti.FieldTheory.SquareClassGroup
+module
+
+public import TauCeti.NumberTheory.Multiquadratic.Degree
+public import TauCeti.FieldTheory.SquareClassGroup
 
 /-!
 # Square-class independence as `ZMod 2`-linear independence
@@ -24,6 +26,8 @@ This file consumes that equivalence to restate the degree theorem against the st
 * `TauCeti.Multiquadratic.finrank_adjoin_range_of_linearIndependent`: the degree theorem
   `[K(rootᵢ : i) : K] = 2^|ι|` restated against linear independence of the unit classes.
 -/
+
+public section
 
 namespace TauCeti.Multiquadratic
 

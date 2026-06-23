@@ -2,12 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.Normed.Operator.Bilinear
-import Mathlib.Analysis.Normed.Operator.NormedSpace
-import Mathlib.LinearAlgebra.Matrix.BilinearForm
-import Mathlib.LinearAlgebra.QuadraticForm.Basic
-import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+module
+
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 
 /-!
 # Uniform ellipticity for divergence-form PDE coefficients
@@ -51,6 +53,8 @@ The vectors are `EuclideanSpace ℝ n`, matching the roadmap's bounded open subs
 `ℝⁿ`; this type is reducibly a finite `L²` product, so Mathlib's matrix-vector API applies
 directly.
 -/
+
+public section
 
 namespace TauCeti
 

@@ -2,10 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.Multiquadratic.Degree
-import Mathlib.Analysis.Real.Sqrt
-import Mathlib.Data.Rat.Lemmas
-import Mathlib.Data.Nat.Squarefree
+module
+
+public import TauCeti.Algebra.Squarefree
+public import TauCeti.NumberTheory.Multiquadratic.Degree
+public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Data.Rat.Lemmas
+public import Mathlib.Data.Nat.Squarefree
 
 /-!
 # Multiquadratic fields with prime radicands
@@ -34,6 +37,8 @@ factor), so it is not a square.
 * `TauCeti.Multiquadratic.finrank_adjoin_sqrt_two_three`: `[ℚ(√2, √3) : ℚ] = 4`.
 -/
 
+public section
+
 open scoped Function
 
 namespace TauCeti.Multiquadratic
@@ -47,7 +52,7 @@ theorem not_isSquare_prod_primes {ι : Type*} (p : ι → ℕ) {S : Finset ι}
     (hS : S.Nonempty) :
     ¬ IsSquare (∏ i ∈ S, (p i : ℚ)) := by
   rw [← Nat.cast_prod, Rat.isSquare_natCast_iff]
-  refine not_isSquare_of_squarefree_of_not_isUnit ?_ ?_
+  refine Squarefree.not_isSquare ?_ ?_
   · refine Finset.squarefree_prod_of_pairwise_isCoprime (fun i hi j hj hij => ?_)
       (fun i hi => (hp i hi).prime.squarefree)
     exact Nat.coprime_iff_isRelPrime.mp

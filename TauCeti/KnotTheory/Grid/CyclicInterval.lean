@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Fin.Rev
-import Mathlib.Data.Set.Finite.Basic
-import Mathlib.Order.Circular.ZMod
+module
+
+public import Mathlib.Data.Fin.Rev
+public import Mathlib.Data.Set.Finite.Basic
+public import Mathlib.Order.Circular.ZMod
 
 /-!
 # Complementary cyclic intervals in finite grids
@@ -37,6 +39,8 @@ complexes and `∂² = 0`", where the annular cases in the juxtaposition proof u
 the two complementary cyclic intervals partition the non-endpoint columns or rows. The
 terminology follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -119,7 +123,7 @@ theorem right_notMem_cIoo (a b : Fin n) : b ∉ cIoo a b := by
 
 The endpoints `a₀`, `a₁` lie on the same side of the pair `b₀`, `b₁`, and conversely. This
 two-sided formulation handles shared-endpoint cases uniformly. -/
-def Noninterleaving (a₀ a₁ b₀ b₁ : Fin n) : Prop :=
+@[expose] def Noninterleaving (a₀ a₁ b₀ b₁ : Fin n) : Prop :=
   (a₀ ∈ cIoo b₀ b₁ ↔ a₁ ∈ cIoo b₀ b₁) ∧
     (b₀ ∈ cIoo a₀ a₁ ↔ b₁ ∈ cIoo a₀ a₁)
 

@@ -6,10 +6,17 @@ the three repos fit together; this file only adds the contract for agents workin
 ## Before you write code
 
 **Read the roadmap first.** The roadmaps live in the separate
-[TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap) repo. Only do work that
-advances a specific roadmap target, or supplies a prerequisite that a specific target needs.
-If a human asks for something that is not on the roadmap, say so and ask them to add it to the
-roadmap first, rather than building it here.
+[TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap) repo. The roadmap gates
+*new* mathematics: only add a new mathematical declaration (definition, theorem, instance,
+notation) or file when it advances a specific roadmap target, or supplies a prerequisite that a
+specific target needs. If a human asks you to build something new that is not on the roadmap,
+say so and ask them to add it to the roadmap first, rather than building it here.
+
+Improving code that already exists is **always in scope** and needs no roadmap entry:
+refactoring, simplifying proofs, fixing or modestly generalising an existing lemma (without
+expanding the project's mathematical scope), relocating a misplaced declaration, adopting a
+cleaner idiom, and documenting existing code are all welcome at any time. The roadmap conditions
+what new mathematics gets *added*, not whether already-merged code may be made better.
 
 ## The rules of the repo
 

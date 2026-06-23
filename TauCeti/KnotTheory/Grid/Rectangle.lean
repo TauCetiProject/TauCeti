@@ -2,14 +2,16 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Fin.Rev
-import Mathlib.Data.Finset.Image
-import Mathlib.Data.Finset.Prod
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Fintype.Prod
-import TauCeti.KnotTheory.Grid.CyclicInterval
-import TauCeti.KnotTheory.Grid.Diagram
-import TauCeti.KnotTheory.Grid.Rotation
+module
+
+public import Mathlib.Data.Fin.Rev
+public import Mathlib.Data.Finset.Image
+public import Mathlib.Data.Finset.Prod
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fintype.Prod
+public import TauCeti.KnotTheory.Grid.CyclicInterval
+public import TauCeti.KnotTheory.Grid.Diagram
+public import TauCeti.KnotTheory.Grid.Rotation
 
 /-!
 # Rectangles in grid diagrams
@@ -55,6 +57,8 @@ asks for rectangles and empty rectangles `Rect°(x, y)`, and Lane G.3, "The comp
 encoding follows the toroidal grid-diagram convention from Ozsváth--Stipsicz--Szabó, *Grid
 Homology for Knots and Links*, Chapter 3.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 
@@ -364,7 +368,7 @@ namespace GridRectangleBetween
 variable {n : ℕ} {x y : GridState n}
 
 /-- A rectangle between two grid states is determined by its two side columns. -/
-private theorem sidePair_injective :
+theorem sidePair_injective :
     Function.Injective fun R : GridRectangleBetween x y => (R.left, R.right) := by
   intro R S h
   cases R
@@ -738,7 +742,7 @@ theorem transpose_toGridRectangle (R : GridRectangleBetween x y) :
   rw [transpose_bottom, transpose_top, transpose_left, transpose_right]
 
 /-- Two oriented rectangles between the same states with equal side columns are equal. -/
-private theorem eq_of_sides {R S : GridRectangleBetween x y} (hleft : R.left = S.left)
+theorem eq_of_sides {R S : GridRectangleBetween x y} (hleft : R.left = S.left)
     (hright : R.right = S.right) : R = S := by
   obtain ⟨_, _, _, _, _, _⟩ := R
   obtain ⟨_, _, _, _, _, _⟩ := S

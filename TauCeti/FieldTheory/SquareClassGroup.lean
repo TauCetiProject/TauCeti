@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Group.Subgroup.Even
-import Mathlib.Algebra.Module.ZMod
-import Mathlib.LinearAlgebra.LinearIndependent.Defs
+module
+
+public import Mathlib.Algebra.Group.Subgroup.Even
+public import Mathlib.Algebra.Module.ZMod
+public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 
 /-!
 # The square-class group `Kˣ ⧸ (Kˣ)²`
@@ -26,6 +28,8 @@ square. So linear independence of the classes is the **Finset form** of square-c
 * `TauCeti.linearIndependent_squareClass_iff`: the classes of `d : ι → Kˣ` are `ZMod 2`-linearly
   independent iff no nonempty subset product is a square.
 -/
+
+public section
 
 namespace TauCeti
 

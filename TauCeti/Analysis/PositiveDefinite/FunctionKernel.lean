@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Analysis.PositiveDefinite.Basic
-import TauCeti.Analysis.PositiveDefinite.Kernel
+module
+
+public import TauCeti.Analysis.PositiveDefinite.Basic
+public import TauCeti.Analysis.PositiveDefinite.Kernel
 
 /-!
 # The positive-definite function ↔ positive-definite kernel correspondence
@@ -48,6 +50,8 @@ group form. No Mathlib code is vendored.
 * C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100, 1984),
   Chapter 3.
 -/
+
+public section
 
 open ComplexConjugate
 open scoped ComplexOrder

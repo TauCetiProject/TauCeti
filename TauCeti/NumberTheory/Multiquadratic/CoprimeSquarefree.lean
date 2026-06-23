@@ -2,11 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.Multiquadratic.Degree
-import Mathlib.Analysis.Real.Sqrt
-import Mathlib.Data.Rat.Lemmas
-import Mathlib.Algebra.Squarefree.Basic
-import Mathlib.RingTheory.Int.Basic
+module
+
+public import TauCeti.Algebra.Squarefree
+public import TauCeti.NumberTheory.Multiquadratic.Degree
+public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Data.Rat.Lemmas
+public import Mathlib.Algebra.Squarefree.Basic
+public import Mathlib.RingTheory.Int.Basic
 
 /-!
 # Multiquadratic fields with pairwise-coprime squarefree integer radicands
@@ -40,6 +43,8 @@ special case where each radicand is prime.
   example with composite radicands, beyond the reach of the distinct-primes corollary.
 -/
 
+public section
+
 open scoped Function
 
 namespace TauCeti.Multiquadratic
@@ -53,7 +58,7 @@ theorem not_isSquare_prod_of_coprime_squarefree {ι : Type*} (d : ι → ℤ) {S
     (hcop : (S : Set ι).Pairwise (IsCoprime on d)) (hsf : ∀ i ∈ S, Squarefree (d i))
     (hnu : ∀ i ∈ S, ¬ IsUnit (d i)) (hS : S.Nonempty) :
     ¬ IsSquare (∏ i ∈ S, d i) := by
-  refine not_isSquare_of_squarefree_of_not_isUnit ?_ ?_
+  refine Squarefree.not_isSquare ?_ ?_
   · exact Finset.squarefree_prod_of_pairwise_isCoprime
       (fun i hi j hj hij => (hcop hi hj hij).isRelPrime) hsf
   · obtain ⟨i, hi⟩ := hS

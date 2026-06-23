@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.ZMod.Basic
-import TauCeti.KnotTheory.Grid.Rectangle
+module
+
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.ZMod.Basic
+public import TauCeti.KnotTheory.Grid.Rectangle
 
 /-!
 # Fully blocked empty rectangles in grid diagrams
@@ -41,6 +43,8 @@ objects and terminology follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Kn
 Links*, Chapter 3.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace GridDiagram
@@ -52,7 +56,7 @@ variable {n : ℕ} (G : GridDiagram n) (x y : GridState n)
 "Fully blocked" means that the rectangle is empty for the source grid state and its interior
 avoids every `O` and `X` marking. This is the rectangle set whose parity gives the coefficient
 of `y` in the fully blocked grid differential applied to `x`. -/
-noncomputable def fullyBlockedRectangles : Finset (GridRectangleBetween x y) := by
+@[expose] noncomputable def fullyBlockedRectangles : Finset (GridRectangleBetween x y) := by
   classical
   exact (GridRectangleBetween.emptyRectangles x y).filter fun R => R.AvoidsMarkings G
 
@@ -89,7 +93,7 @@ theorem fullyBlockedRectangles_subset_all :
     (GridRectangleBetween.emptyRectangles_subset_all x y)
 
 /-- The number of fully blocked empty rectangles from `x` to `y`, reduced modulo `2`. -/
-noncomputable def fullyBlockedRectangleCount : ZMod 2 :=
+@[expose] noncomputable def fullyBlockedRectangleCount : ZMod 2 :=
   (G.fullyBlockedRectangles x y).card
 
 /-- The fully blocked rectangle count is the cardinality of `fullyBlockedRectangles`, coerced

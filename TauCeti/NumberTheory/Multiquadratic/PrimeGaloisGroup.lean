@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.Multiquadratic.GaloisGroup
-import TauCeti.NumberTheory.Multiquadratic.PrimeRadicands
+module
+
+public import TauCeti.NumberTheory.Multiquadratic.GaloisGroup
+public import TauCeti.NumberTheory.Multiquadratic.PrimeRadicands
 
 /-!
 # The Galois group of a prime-radicand multiquadratic field
@@ -26,6 +28,8 @@ product of distinct primes is squarefree and not a unit, hence not a square.
 * `TauCeti.Multiquadratic.card_aut_adjoin_sqrt_primes`: `|Gal(ℚ(√p₁, …, √pₙ)/ℚ)| = 2^|ι|`.
 * `TauCeti.Multiquadratic.card_aut_adjoin_sqrt_two_three`: `|Gal(ℚ(√2, √3)/ℚ)| = 4`.
 -/
+
+public section
 
 open IntermediateField
 

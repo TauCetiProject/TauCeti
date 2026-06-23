@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
+module
+
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
 
 /-!
 # The abstract Abel-Jacobi divisor class map
@@ -26,6 +28,8 @@ formal divisor-class level available before line bundles, the Picard scheme, or 
 variety exist.  No external mathematics is vendored; this reuses Tau Ceti's `WeilDivisor`,
 `OrderSystem.divisorClass`, and `OrderSystem.picZero` API.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 

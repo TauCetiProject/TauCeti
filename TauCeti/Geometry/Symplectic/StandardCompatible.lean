@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.InnerProductSpace.Basic
-import TauCeti.Geometry.Symplectic.AlmostComplex
+module
+
+public import Mathlib.Analysis.InnerProductSpace.Basic
+public import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
 # The standard compatible triple on `V × V`
@@ -30,6 +32,8 @@ the standard conventions require.
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1, where `(ℝ^{2n}, ω₀, J₀)` is the standard compatible model.
 -/
+
+public section
 
 namespace TauCeti
 

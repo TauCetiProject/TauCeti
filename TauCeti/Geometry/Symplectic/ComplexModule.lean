@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.BilinearMap
-import Mathlib.LinearAlgebra.Complex.Module
-import TauCeti.Geometry.Symplectic.AlmostComplex
+module
+
+public import Mathlib.LinearAlgebra.BilinearMap
+public import Mathlib.LinearAlgebra.Complex.Module
+public import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
 # Almost complex structures as complex module structures
@@ -37,6 +39,8 @@ structure induced from `ofComplexModule` recovers the original complex scalar ac
 * `TauCeti.AlmostComplexStructure.complexModule_ofComplexModule_smul`: the opposite round trip
   recovers the original complex scalar action.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -119,6 +123,7 @@ variable [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V
 
 /-- The almost complex structure `v ↦ i • v` on a complex module whose real scalars are compatible
 with the ambient real structure. This is the inverse construction to `complexModule`. -/
+@[expose]
 def ofComplexModule (V : Type*) [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V] :
     AlmostComplexStructure V where
   toLinearMap := (LinearMap.lsmul ℂ V Complex.I).restrictScalars ℝ

@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Coalgebra.Basic
+module
+
+public import Mathlib.RingTheory.Coalgebra.Basic
 
 /-!
 # Comodules over a coalgebra
@@ -29,6 +31,8 @@ This follows the standard definition of a right comodule over a coalgebra; see f
 Sweedler, *Hopf Algebras*, Chapter 2. It is added for the "Comodules over a coalgebra/Hopf
 algebra" target in Layer 1 of the Tau Ceti reductive-groups roadmap.
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -164,16 +168,14 @@ theorem map_coact_apply (f : Hom R C M N) (m : M) :
 
 variable (R C M) in
 /-- The identity morphism of a right comodule. -/
-@[simps!]
-def id : Hom R C M M where
+@[expose, simps!] def id : Hom R C M M where
   toLinearMap := LinearMap.id
   map_coact := by
     ext m
     simp
 
 /-- Composition of right-comodule morphisms. -/
-@[simps!]
-def comp (g : Hom R C N P) (f : Hom R C M N) : Hom R C M P where
+@[expose, simps!] def comp (g : Hom R C N P) (f : Hom R C M N) : Hom R C M P where
   toLinearMap := g.toLinearMap ∘ₗ f.toLinearMap
   map_coact := by
     ext m

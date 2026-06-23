@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Analysis.CompletelyMonotone.Basic
-import Mathlib.Analysis.Convex.Deriv
+module
+
+public import TauCeti.Analysis.CompletelyMonotone.Basic
+public import Mathlib.Analysis.Convex.Deriv
 
 /-!
 # Bernstein functions
@@ -49,6 +51,8 @@ nonnegative scalar multiples, and the basic catalogue — constants, the identit
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions: Theory and Applications*
   (de Gruyter, 2nd ed. 2012).
 -/
+
+public section
 
 open Set Filter
 open scoped ContDiff Topology

@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+module
+
 import Mathlib.Tactic.Ring
-import TauCeti.KnotTheory.Grid.JFunction
+public import TauCeti.KnotTheory.Grid.JFunction
 
 /-!
 # Maslov and Alexander gradings for grid states
@@ -45,6 +47,8 @@ Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.2:
 `A(x) = (M_O(x) - M_X(x)) / 2 - (n - 1) / 2`.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace GridDiagram
@@ -54,7 +58,7 @@ variable {n : ℕ} (G : GridDiagram n)
 /-- The `O`-Maslov grading of a grid state.
 
 This is the formula `M_O(x) = J(x - O, x - O) + 1`. -/
-def maslovO (x : GridState n) : ℚ :=
+@[expose] def maslovO (x : GridState n) : ℚ :=
   GridPoint.JDiff x.pointSet G.OSet x.pointSet G.OSet + 1
 
 /-- The `O`-Maslov grading as a `JDiff` self-pairing plus one. -/
@@ -71,7 +75,7 @@ theorem maslovO_eq (x : GridState n) :
 /-- The `X`-Maslov grading of a grid state.
 
 This is the formula `M_X(x) = J(x - X, x - X) + 1`. -/
-def maslovX (x : GridState n) : ℚ :=
+@[expose] def maslovX (x : GridState n) : ℚ :=
   GridPoint.JDiff x.pointSet G.XSet x.pointSet G.XSet + 1
 
 /-- The `X`-Maslov grading as a `JDiff` self-pairing plus one. -/
@@ -90,7 +94,7 @@ theorem maslovX_eq (x : GridState n) :
 This is the formula `A(x) = (M_O(x) - M_X(x)) / 2 - (n - 1) / 2`. The shift is cast
 through `ℤ`, so the formula remains literal at `n = 0`; integer-valuedness is a later grading
 theorem. -/
-def alexander (x : GridState n) : ℚ :=
+@[expose] def alexander (x : GridState n) : ℚ :=
   (G.maslovO x - G.maslovX x) / 2 - (((n : ℤ) - 1 : ℤ) : ℚ) / 2
 
 /-- The Alexander grading as the difference of the two Maslov gradings with the standard

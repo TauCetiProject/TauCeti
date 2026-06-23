@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
-import TauCeti.Geometry.Symplectic.StandardCompatible
+module
+
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import TauCeti.Geometry.Symplectic.StandardCompatible
 
 /-!
 # Isotropic, coisotropic, and Lagrangian subspaces of a symplectic form
@@ -45,6 +47,8 @@ The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Top
 Section 2.3.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace SymplecticForm
@@ -56,7 +60,7 @@ variable {ω : SymplecticForm V} {L L' : Submodule ℝ V}
 
 /-- The symplectic complement `L^ω = {x | ∀ y ∈ L, ω(y, x) = 0}` of a submodule `L`, namely the
 orthogonal complement of `L` for the bilinear form `ω`. -/
-def orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) : Submodule ℝ V :=
+@[expose] def orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) : Submodule ℝ V :=
   ω.toBilinForm.orthogonal L
 
 lemma orthogonal_def (ω : SymplecticForm V) (L : Submodule ℝ V) :

@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Topology.Algebra.ConstMulAction
-import Mathlib.Topology.Homeomorph.Defs
-import Mathlib.Algebra.Group.Subgroup.Actions
+module
+
+public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Homeomorph.Defs
+public import Mathlib.Algebra.Group.Subgroup.Actions
 
 /-!
 # The tautological action of the homeomorphism group
@@ -21,6 +23,8 @@ mathlib4#40135.
 * `TauCeti.Homeomorph.applyFaithfulSMul`: the action is faithful.
 * `TauCeti.Homeomorph.applyContinuousConstSMul`: each homeomorphism acts continuously.
 -/
+
+public section
 
 namespace TauCeti
 

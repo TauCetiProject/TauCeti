@@ -2,13 +2,15 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Field.Basic
-import Mathlib.Algebra.Field.Rat
-import Mathlib.Data.Fintype.Prod
-import Mathlib.Data.Finset.Prod
-import Mathlib.Data.Rat.Lemmas
+module
+
+public import Mathlib.Algebra.Field.Basic
+public import Mathlib.Algebra.Field.Rat
+public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Data.Finset.Prod
+public import Mathlib.Data.Rat.Lemmas
 import Mathlib.Tactic.Ring
-import TauCeti.KnotTheory.Grid.Rotation
+public import TauCeti.KnotTheory.Grid.Rotation
 
 /-!
 # The grid `J`-function
@@ -55,6 +57,8 @@ for Knots and Links*, Chapter 3.2, where `J` is the symmetrization of the northe
 point-pair count.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace GridPoint
@@ -64,7 +68,7 @@ variable {n : ℕ}
 /-- A grid point is strictly southwest of another when both its column and row coordinates are
 strictly smaller. This is the affine point-pair relation used in the grid `J`-function; it is
 not the toroidal cyclic order used for rectangles. -/
-def IsSouthWest (p q : Fin n × Fin n) : Prop :=
+@[expose] def IsSouthWest (p q : Fin n × Fin n) : Prop :=
   p.1.val < q.1.val ∧ p.2.val < q.2.val
 
 /-- The strict southwest relation has a decidable instance. -/
@@ -96,7 +100,7 @@ theorem not_isSouthWest_swap {p q : Fin n × Fin n} (h : IsSouthWest p q) :
   exact (not_lt_of_gt h.1) hqp.1
 
 /-- The ordered count of pairs `(p, q) ∈ s × t` with `p` strictly southwest of `q`. -/
-def I (s t : Finset (Fin n × Fin n)) : ℕ :=
+@[expose] def I (s t : Finset (Fin n × Fin n)) : ℕ :=
   ((s ×ˢ t).filter fun pq : (Fin n × Fin n) × (Fin n × Fin n) =>
     IsSouthWest pq.1 pq.2).card
 
@@ -168,7 +172,7 @@ theorem I_insert_right {p : Fin n × Fin n} {s t : Finset (Fin n × Fin n)} (h :
 
 /-- The numerator of the symmetrized `J`-function. Keeping the numerator as a natural number is
 convenient for parity and integrality lemmas before passing to rational values. -/
-def JNum (s t : Finset (Fin n × Fin n)) : ℕ :=
+@[expose] def JNum (s t : Finset (Fin n × Fin n)) : ℕ :=
   I s t + I t s
 
 /-- The numerator of `J` is the sum of the two ordered southwest counts. -/
@@ -182,7 +186,7 @@ theorem JNum_self (s : Finset (Fin n × Fin n)) : JNum s s = 2 * I s s := by
   rw [JNum_def, two_mul]
 
 /-- The rational-valued symmetrized grid `J`-function. -/
-def J (s t : Finset (Fin n × Fin n)) : ℚ :=
+@[expose] def J (s t : Finset (Fin n × Fin n)) : ℚ :=
   ((JNum s t : ℕ) : ℚ) / 2
 
 /-- The rational-valued `J`-function is half of its symmetrized numerator. -/
@@ -276,7 +280,7 @@ theorem J_insert_right {p : Fin n × Fin n} {s t : Finset (Fin n × Fin n)} (h :
 
 `JDiff s a t b` means `J(s - a, t - b)`, expanded as
 `J s t - J s b - J a t + J a b`. -/
-def JDiff (s a t b : Finset (Fin n × Fin n)) : ℚ :=
+@[expose] def JDiff (s a t b : Finset (Fin n × Fin n)) : ℚ :=
   GridPoint.J s t - GridPoint.J s b - GridPoint.J a t + GridPoint.J a b
 
 /-- The definition of `JDiff` as the expanded four-term formula. -/
@@ -549,7 +553,7 @@ namespace GridState
 variable {n : ℕ}
 
 /-- The grid `J`-function applied to the point sets of two grid states. -/
-def J (x y : GridState n) : ℚ :=
+@[expose] def J (x y : GridState n) : ℚ :=
   GridPoint.J x.pointSet y.pointSet
 
 /-- The state-level grid `J`-function is the point-set `J`-function on state point sets. -/
@@ -640,7 +644,7 @@ namespace GridDiagram
 variable {n : ℕ} (G : GridDiagram n)
 
 /-- The grid `J`-function against the `O`-markings of a grid diagram. -/
-def JO (x : GridState n) : ℚ :=
+@[expose] def JO (x : GridState n) : ℚ :=
   GridPoint.J x.pointSet G.OSet
 
 /-- `JO` is the point-set `J`-function of a state against the `O`-markings. -/
@@ -649,7 +653,7 @@ theorem JO_def (x : GridState n) : GridDiagram.JO G x = GridPoint.J x.pointSet G
   rfl
 
 /-- The grid `J`-function against the `X`-markings of a grid diagram. -/
-def JX (x : GridState n) : ℚ :=
+@[expose] def JX (x : GridState n) : ℚ :=
   GridPoint.J x.pointSet G.XSet
 
 /-- `JX` is the point-set `J`-function of a state against the `X`-markings. -/

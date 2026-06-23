@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
+module
+
 import Mathlib.Tactic.Ring
-import TauCeti.KnotTheory.Grid.Gradings
+public import TauCeti.KnotTheory.Grid.Gradings
 
 /-!
 # Integer-valuedness of the Maslov gradings
@@ -56,6 +58,8 @@ rectangle." The integrality of the Maslov gradings is the prerequisite that the 
 integrality of the Alexander grading itself builds on; see Ozsváth--Stipsicz--Szabó, *Grid Homology
 for Knots and Links*, Chapter 4.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 

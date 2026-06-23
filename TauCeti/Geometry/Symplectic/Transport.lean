@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Module.Equiv.Basic
-import TauCeti.Geometry.Symplectic.AlmostComplex
-import TauCeti.LinearAlgebra.ComplexLinearPart
+module
+
+public import Mathlib.Algebra.Module.Equiv.Basic
+public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.LinearAlgebra.ComplexLinearPart
 
 /-!
 # Transporting almost complex structures along linear equivalences
@@ -36,6 +38,8 @@ The conjugation `LinearEquiv.conj` and `LinearEquiv.arrowCongr` are reused from 
 almost complex structure layer is `TauCeti.AlmostComplexStructure`.
 -/
 
+public section
+
 namespace TauCeti
 
 variable {V W X : Type*}
@@ -50,6 +54,7 @@ variable [AddCommGroup X] [Module ℝ X]
 
 The transported endomorphism is `LinearEquiv.conj e` applied to `J`, equivalently
 `w ↦ e (J (e.symm w))`, and it satisfies the almost-complex square condition. -/
+@[expose]
 def transport (J : AlmostComplexStructure V) (e : V ≃ₗ[ℝ] W) : AlmostComplexStructure W where
   toLinearMap := e.conj J.toLinearMap
   square_neg := by

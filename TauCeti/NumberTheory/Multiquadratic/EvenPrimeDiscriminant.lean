@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Order.Ring.Basic
-import Mathlib.Data.Nat.Squarefree
-import Mathlib.Data.Rat.Lemmas
+module
+
+public import Mathlib.Algebra.Order.Ring.Basic
+public import Mathlib.Data.Nat.Squarefree
+public import Mathlib.Data.Rat.Lemmas
 import Mathlib.Tactic.NormNum.IsSquare
 
 /-!
@@ -36,10 +38,12 @@ later genus-field package can form the multiquadratic compositum of the `ℚ(√
   rational radicand is not a square.
 -/
 
+public section
+
 namespace TauCeti.Multiquadratic
 
 /-- The three even prime discriminants: `-4`, `8`, and `-8`. -/
-def IsEvenPrimeDiscriminant (D : ℤ) : Prop :=
+@[expose] def IsEvenPrimeDiscriminant (D : ℤ) : Prop :=
   D = -4 ∨ D = 8 ∨ D = -8
 
 /-- The defining disjunction for `IsEvenPrimeDiscriminant`. -/

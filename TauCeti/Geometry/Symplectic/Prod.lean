@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.Prod
-import TauCeti.Geometry.Symplectic.AlmostComplex
-import TauCeti.Geometry.Symplectic.Transport
+module
+
+public import Mathlib.LinearAlgebra.Prod
+public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Transport
 
 /-!
 # Direct sums of almost complex structures and symplectic forms
@@ -40,6 +42,8 @@ following Mathlib's `LinearMap.prodMap` naming convention.
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1, where products of compatible triples model split symplectic vector spaces.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 
@@ -161,7 +165,7 @@ section Prod
 variable [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
 
 /-- The underlying bilinear form of the direct-sum symplectic form. -/
-private def prodBilin (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
+def prodBilin (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
     LinearMap.BilinForm ℝ (V × W) :=
   ω₁.toBilinForm.comp (LinearMap.fst ℝ V W) (LinearMap.fst ℝ V W) +
     ω₂.toBilinForm.comp (LinearMap.snd ℝ V W) (LinearMap.snd ℝ V W)
@@ -170,12 +174,12 @@ private def prodBilin (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
 private lemma prodBilin_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (p q : V × W) :
     prodBilin ω₁ ω₂ p q = ω₁ p.1 q.1 + ω₂ p.2 q.2 := rfl
 
-private lemma prodBilin_isAlt (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
+lemma prodBilin_isAlt (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
     (prodBilin ω₁ ω₂).IsAlt := by
   intro p
   simp
 
-private lemma prodBilin_nondegenerate (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
+lemma prodBilin_nondegenerate (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
     (prodBilin ω₁ ω₂).Nondegenerate := by
   refine ⟨fun p hp => ?_, fun q hq => ?_⟩
   · have h1 : p.1 = 0 := ω₁.separatingLeft p.1 fun x => by

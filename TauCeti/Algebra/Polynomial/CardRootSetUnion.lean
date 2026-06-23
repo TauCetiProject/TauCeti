@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Polynomial.Roots
-import Mathlib.Algebra.BigOperators.Finprod
-import Mathlib.Data.Set.Card.Arithmetic
-import Mathlib.Data.Int.Interval
-import TauCeti.Algebra.Polynomial.CardBoundedCoeff
+module
+
+public import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Data.Set.Card.Arithmetic
+public import Mathlib.Data.Int.Interval
+public import TauCeti.Algebra.Polynomial.CardBoundedCoeff
 
 /-!
 # Counting the roots of all polynomials of bounded degree and bounded coefficients
@@ -42,6 +44,8 @@ built on.
   with every coefficient bounded by `B` in absolute value. This is the form named by the
   Layer-2 ("effective Hermite–Minkowski") target.
 -/
+
+public section
 
 open Polynomial
 
