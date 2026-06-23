@@ -138,6 +138,12 @@ theorem id_apply [IsManifold I n M] (x : M) :
     (id (I := I) (n := n) (M := M)) x = x := by
   rfl
 
+@[simp]
+theorem id_coe [IsManifold I n M] :
+    ⇑(id (I := I) (n := n) (M := M)) = _root_.id := by
+  funext x
+  exact id_apply (I := I) (n := n) x
+
 /-- The inclusion of an open subset of a manifold as a bundled smooth embedding. -/
 def of_opens [IsManifold I n M] (s : TopologicalSpace.Opens M) :
     SmoothEmbedding I I n s M where
@@ -149,6 +155,12 @@ def of_opens [IsManifold I n M] (s : TopologicalSpace.Opens M) :
 theorem of_opens_apply [IsManifold I n M] (s : TopologicalSpace.Opens M) (x : s) :
     of_opens (I := I) (n := n) s x = x := by
   rfl
+
+@[simp]
+theorem of_opens_coe [IsManifold I n M] (s : TopologicalSpace.Opens M) :
+    ⇑(of_opens (I := I) (n := n) s) = Subtype.val := by
+  funext x
+  exact of_opens_apply (I := I) (n := n) s x
 
 /-- The product of two bundled smooth embeddings. -/
 def prodMap [IsManifold I n M] [IsManifold J n N]
@@ -166,6 +178,14 @@ theorem prodMap_apply [IsManifold I n M] [IsManifold J n N]
     f.prodMap g x = (f x.1, g x.2) := by
   rfl
 
+@[simp]
+theorem prodMap_coe [IsManifold I n M] [IsManifold J n N]
+    [IsManifold I' n M'] [IsManifold J' n N']
+    (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' n M' N') :
+    ⇑(f.prodMap g) = fun x => (f x.1, g x.2) := by
+  funext x
+  exact prodMap_apply f g x
+
 /-- The left coproduct inclusion as a bundled smooth embedding. -/
 def sumInl {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂]
     [IsManifold I n M] [IsManifold I n M₂] :
@@ -180,6 +200,13 @@ theorem sumInl_apply {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂
     (sumInl (I := I) (n := n) (M := M) (M₂ := M₂)) x = Sum.inl x := by
   rfl
 
+@[simp]
+theorem sumInl_coe {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂]
+    [IsManifold I n M] [IsManifold I n M₂] :
+    ⇑(sumInl (I := I) (n := n) (M := M) (M₂ := M₂)) = Sum.inl := by
+  funext x
+  exact sumInl_apply (I := I) (n := n) (M₂ := M₂) x
+
 /-- The right coproduct inclusion as a bundled smooth embedding. -/
 def sumInr {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂]
     [IsManifold I n M] [IsManifold I n M₂] :
@@ -193,6 +220,13 @@ theorem sumInr_apply {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂
     [IsManifold I n M] [IsManifold I n M₂] (x : M₂) :
     (sumInr (I := I) (n := n) (M := M) (M₂ := M₂)) x = Sum.inr x := by
   rfl
+
+@[simp]
+theorem sumInr_coe {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂]
+    [IsManifold I n M] [IsManifold I n M₂] :
+    ⇑(sumInr (I := I) (n := n) (M := M) (M₂ := M₂)) = Sum.inr := by
+  funext x
+  exact sumInr_apply (I := I) (n := n) (M := M) x
 
 end SmoothEmbedding
 
