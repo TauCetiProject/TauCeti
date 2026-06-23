@@ -142,15 +142,6 @@ theorem pointEquiv_symm_apply (u : Aˣ) :
     (pointEquiv (R := R) (A := A)).symm u = point (R := R) (A := A) u :=
   rfl
 
-/-- Evaluating a product of convolution points at `T` multiplies their values at `T`. -/
-theorem unitOfPoint_mul (f g : WithConv (R[T;T⁻¹] →ₐ[R] A)) :
-    unitOfPoint ((f * g).ofConv) = unitOfPoint f.ofConv * unitOfPoint g.ofConv := by
-  ext
-  rw [unitOfPoint_val, Units.val_mul]
-  simp only [unitOfPoint_val]
-  rw [AlgHom.convMul_apply]
-  simp
-
 /-- The functor of points of the multiplicative group is the unit group of the value algebra.
 
 The source is the convolution group of `R`-algebra maps out of `R[T;T⁻¹]`; the target is the
@@ -161,7 +152,12 @@ ordinary unit group of `A`. -/
   left_inv f := by
     exact congrArg toConv (point_unitOfPoint (R := R) (A := A) f.ofConv)
   right_inv := unitOfPoint_point
-  map_mul' := unitOfPoint_mul
+  map_mul' f g := by
+    ext
+    rw [unitOfPoint_val, Units.val_mul]
+    simp only [unitOfPoint_val]
+    rw [AlgHom.convMul_apply]
+    simp
 
 /-- The multiplicative equivalence sends a convolution point to its value on `T`. -/
 @[simp]

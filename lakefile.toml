@@ -31,3 +31,12 @@ leanOptions = { weak.linter.mathlibStandardSet = true, weak.linter.style.longFil
 [[lean_exe]]
 name = "axioms"
 root = "scripts.Axioms"
+
+# Human-owned governance: the module-system audit (`lake exe module-system`). Inspects the
+# built `TauCeti` `.olean`s and rejects any module whose `ModuleData.isModule` flag is false,
+# i.e. any file that did not opt into the Lean module system with a leading `module`. Reads the
+# compiled artifact, not the source text, so a stray comment cannot fool it. Run in CI after
+# the build, alongside the axiom audit.
+[[lean_exe]]
+name = "module-system"
+root = "scripts.ModuleSystem"

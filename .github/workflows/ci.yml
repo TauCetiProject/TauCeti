@@ -48,6 +48,13 @@ jobs:
       - name: Axiom audit (TauCeti/ uses only allowlisted axioms)
         run: lake exe axioms
 
+      # Module-system audit. Inspects the built TauCeti `.olean`s and rejects any module that
+      # did not opt into the Lean module system (a leading `module`). It reads each module's
+      # `ModuleData.isModule` flag from the compiled artifact, so it cannot be fooled by a
+      # `module` appearing in a comment or string the way a textual grep could.
+      - name: Module-system audit (every TauCeti/ file opts into `module`)
+        run: lake exe module-system
+
       # --- Lake artifact-cache publish (dormant until configured) ---------------------
       # Publish TauCeti's OWN oleans (root-package only) to the Lake cache, so pr-build can
       # fetch them and recompile only a PR's changed modules instead of the whole library.

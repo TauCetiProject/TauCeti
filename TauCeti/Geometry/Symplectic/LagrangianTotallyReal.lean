@@ -53,7 +53,7 @@ The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Top
 Sections 2.3 and 2.6.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
