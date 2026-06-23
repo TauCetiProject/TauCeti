@@ -112,7 +112,6 @@ lemma Invariant.rescale (h : ω.Invariant J) (c : ℝ) (hc : c ≠ 0) :
 
 /-- Rescaling by a nonzero scalar and replacing `J` by `-J` preserves and reflects
 `J`-invariance. -/
-@[simp]
 lemma invariant_rescale_neg_iff (c : ℝ) (hc : c ≠ 0) :
     (ω.rescale c hc).Invariant (-J) ↔ ω.Invariant J := by
   rw [invariant_iff, invariant_iff]
