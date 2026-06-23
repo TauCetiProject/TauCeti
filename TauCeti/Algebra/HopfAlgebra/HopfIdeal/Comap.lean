@@ -25,9 +25,11 @@ schemes in the affine Hopf-algebra dictionary.
 
 * `TauCeti.HopfIdeal.comap`: the inverse image of a Hopf ideal under a surjective morphism.
 * `TauCeti.HopfIdeal.comap_toIdeal` and `TauCeti.HopfIdeal.mem_comap`: characteristic API.
-* `TauCeti.HopfIdeal.comap_le_comap_iff`: surjective inverse image reflects containment.
+* `TauCeti.HopfIdeal.comap_le_comap_iff_of_surjective`: surjective inverse image reflects
+  containment.
 * `TauCeti.HopfIdeal.comap_bot`: the kernel of a surjective morphism is the inverse image of
   the zero Hopf ideal.
+* `TauCeti.HopfIdeal.comap_sup`: surjective inverse image preserves joins.
 * `TauCeti.HopfIdeal.comap_id` and `TauCeti.HopfIdeal.comap_comap`: identity and composition
   laws.
 
@@ -84,7 +86,7 @@ theorem comap_mono (f : H →ₐc[R] K) (hf : Function.Surjective f) {I J : Hopf
   exact mem_comap.mpr (hIJ (mem_comap.mp hh))
 
 /-- For a surjective morphism, inverse image of Hopf ideals reflects containment. -/
-theorem le_of_comap_le_comap (f : H →ₐc[R] K) (hf : Function.Surjective f)
+theorem le_of_comap_le_comap_of_surjective (f : H →ₐc[R] K) (hf : Function.Surjective f)
     {I J : HopfIdeal R K} (hIJ : I.comap f hf ≤ J.comap f hf) : I ≤ J := by
   intro k hk
   obtain ⟨h, rfl⟩ := hf k
@@ -92,19 +94,19 @@ theorem le_of_comap_le_comap (f : H →ₐc[R] K) (hf : Function.Surjective f)
 
 /-- For a surjective morphism, containment after inverse image is equivalent to containment
 before inverse image. -/
-theorem comap_le_comap_iff (f : H →ₐc[R] K) (hf : Function.Surjective f)
+theorem comap_le_comap_iff_of_surjective (f : H →ₐc[R] K) (hf : Function.Surjective f)
     {I J : HopfIdeal R K} : I.comap f hf ≤ J.comap f hf ↔ I ≤ J :=
-  ⟨le_of_comap_le_comap f hf, comap_mono f hf⟩
+  ⟨le_of_comap_le_comap_of_surjective f hf, comap_mono f hf⟩
 
 /-- For a surjective morphism, inverse image of Hopf ideals reflects equality. -/
 @[simp]
-theorem comap_eq_comap_iff (f : H →ₐc[R] K) (hf : Function.Surjective f)
+theorem comap_eq_comap_iff_of_surjective (f : H →ₐc[R] K) (hf : Function.Surjective f)
     {I J : HopfIdeal R K} : I.comap f hf = J.comap f hf ↔ I = J := by
   constructor
   · intro h
     apply le_antisymm
-    · rw [← comap_le_comap_iff f hf, h]
-    · rw [← comap_le_comap_iff f hf, h]
+    · rw [← comap_le_comap_iff_of_surjective f hf, h]
+    · rw [← comap_le_comap_iff_of_surjective f hf, h]
   · intro h
     rw [h]
 
@@ -115,10 +117,35 @@ theorem comap_bot (f : H →ₐc[R] K) (hf : Function.Surjective f) :
   ext h
   rw [mem_comap, mem_ker, mem_bot]
 
+/-- Surjective inverse image of Hopf ideals preserves joins. -/
+@[simp]
+theorem comap_sup (I J : HopfIdeal R K) (f : H →ₐc[R] K)
+    (hf : Function.Surjective f) :
+    (I ⊔ J).comap f hf = I.comap f hf ⊔ J.comap f hf := by
+  ext h
+  constructor
+  · intro hh
+    rw [mem_comap, mem_sup] at hh
+    rcases hh with ⟨y, hy, z, hz, hyz⟩
+    obtain ⟨hy', rfl⟩ := hf y
+    obtain ⟨hz', rfl⟩ := hf z
+    rw [← map_add] at hyz
+    refine mem_sup.mpr ⟨hy' + (h - (hy' + hz')), ?_, hz', mem_comap.mpr hz, ?_⟩
+    · rw [mem_comap, map_add, map_sub, hyz, sub_self, add_zero]
+      exact hy
+    · abel
+  · intro hh
+    rw [mem_sup] at hh
+    rcases hh with ⟨y, hy, z, hz, rfl⟩
+    rw [mem_comap] at hy hz ⊢
+    rw [map_add]
+    exact mem_sup.mpr ⟨f y, hy, f z, hz, rfl⟩
+
 /-- Pulling a Hopf ideal back along the identity morphism leaves it unchanged. -/
 @[simp]
-theorem comap_id (I : HopfIdeal R H) :
-    I.comap (BialgHom.id R H) (fun h => ⟨h, rfl⟩) = I := by
+theorem comap_id (I : HopfIdeal R H)
+    (hf : Function.Surjective (BialgHom.id R H)) :
+    I.comap (BialgHom.id R H) hf = I := by
   ext h
   rw [mem_comap, BialgHom.coe_id]
   rfl
@@ -126,8 +153,9 @@ theorem comap_id (I : HopfIdeal R H) :
 /-- Inverse image of Hopf ideals is compatible with composition of surjective morphisms. -/
 @[simp]
 theorem comap_comap (I : HopfIdeal R L) (g : K →ₐc[R] L) (hg : Function.Surjective g)
-    (f : H →ₐc[R] K) (hf : Function.Surjective f) :
-    (I.comap g hg).comap f hf = I.comap (g.comp f) (hg.comp hf) := by
+    (f : H →ₐc[R] K) (hf : Function.Surjective f)
+    (hgf : Function.Surjective (g.comp f)) :
+    (I.comap g hg).comap f hf = I.comap (g.comp f) hgf := by
   ext h
   rw [mem_comap, mem_comap, mem_comap, BialgHom.coe_comp]
   rfl
