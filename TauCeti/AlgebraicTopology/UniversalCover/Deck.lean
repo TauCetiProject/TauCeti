@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Topology.Homeomorph.Lemmas
-import TauCeti.Topology.Algebra.HomeomorphAction
+module
+
+public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Topology.Algebra.HomeomorphAction
 
 /-!
 # Deck transformations of a map
@@ -24,6 +26,8 @@ This file follows the deck-transformation target in the Tau Ceti universal-cover
 Stage 0.4, and the shape of the construction in Kim Morrison's mathlib4#40135.
 -/
 
+public section
+
 namespace TauCeti
 
 variable {E B : Type*} [TopologicalSpace E] (p : E → B)
@@ -31,7 +35,7 @@ variable {E B : Type*} [TopologicalSpace E] (p : E → B)
 /-- The deck transformations of a map `p : E → B`, as the subgroup of homeomorphisms of `E`
 which commute with `p`. For a covering projection, this is the usual deck transformation
 group. -/
-def Deck : Subgroup (E ≃ₜ E) where
+@[expose] def Deck : Subgroup (E ≃ₜ E) where
   carrier := {φ | ∀ e, p (φ e) = p e}
   one_mem' e := rfl
   mul_mem' hφ hψ e := by
@@ -69,7 +73,7 @@ lemma mapsTo_fiber_symm (φ : Deck p) (b : B) :
 
 /-- A deck transformation restricts to a homeomorphism of every fibre of the projection,
 the restriction of its underlying homeomorphism along `Homeomorph.subtype`. -/
-def fiberHomeomorph (φ : Deck p) (b : B) : p ⁻¹' {b} ≃ₜ p ⁻¹' {b} :=
+@[expose] def fiberHomeomorph (φ : Deck p) (b : B) : p ⁻¹' {b} ≃ₜ p ⁻¹' {b} :=
   φ.1.subtype fun e => by simp [Set.mem_preimage, eq_comm, map_proj]
 
 /-- On points, the fibre homeomorphism induced by a deck transformation is just evaluation

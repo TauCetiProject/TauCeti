@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.GroupTheory.GroupAction.Basic
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.FiberTransport
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
+module
+
+public import Mathlib.GroupTheory.GroupAction.Basic
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FiberTransport
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
 
 /-!
 # Deck orbits on fibres
@@ -38,6 +40,8 @@ the pointed/unpointed connected-cover correspondence records how chosen lifts va
 deck action, and regular covers are exactly those whose deck action is transitive on fibres.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace Deck
@@ -50,7 +54,7 @@ abbrev FiberOrbitQuotient (p : E → B) (b : B) : Type _ :=
   MulAction.orbitRel.Quotient (Deck p) (p ⁻¹' {b})
 
 /-- The deck orbit class of a point in one fibre. -/
-def fiberOrbitClass (e : p ⁻¹' {b}) : FiberOrbitQuotient p b :=
+@[expose] def fiberOrbitClass (e : p ⁻¹' {b}) : FiberOrbitQuotient p b :=
   Quotient.mk'' e
 
 /-- The deck-orbit quotient map sends a fibre point to its own class. -/
@@ -67,7 +71,7 @@ lemma fiberOrbitClass_eq_iff (e e' : p ⁻¹' {b}) :
   rw [fiberOrbitClass_eq_mk, fiberOrbitClass_eq_mk, Quotient.eq'', MulAction.orbitRel_apply]
 
 /-- An over-base homeomorphism identifies deck-orbit quotients of corresponding fibres. -/
-def fiberOrbitQuotientEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (b : B) :
+@[expose] def fiberOrbitQuotientEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (b : B) :
     FiberOrbitQuotient p b ≃ FiberOrbitQuotient q b :=
   Quotient.congr (fiberMap h hpq b).toEquiv fun e e' => by
     rw [MulAction.orbitRel_apply, MulAction.orbitRel_apply]

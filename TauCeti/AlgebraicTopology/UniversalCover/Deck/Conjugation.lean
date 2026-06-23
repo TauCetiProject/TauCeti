@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicTopology.UniversalCover.Deck
+module
+
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck
 
 /-!
 # Conjugating deck transformations
@@ -28,6 +30,8 @@ This file supplies a prerequisite for the Tau Ceti universal-covers roadmap, Sta
 (`Deck p` as the deck transformation group), and the later cover-isomorphism bookkeeping in
 Stage 2.
 -/
+
+public section
 
 namespace TauCeti
 

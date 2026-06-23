@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.CharP.Algebra
-import Mathlib.Algebra.CharP.Lemmas
-import Mathlib.Algebra.MonoidAlgebra.Module
-import Mathlib.RingTheory.Nilpotent.Basic
-import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity
+module
+
+public import Mathlib.Algebra.CharP.Algebra
+public import Mathlib.Algebra.CharP.Lemmas
+public import Mathlib.Algebra.MonoidAlgebra.Module
+public import Mathlib.RingTheory.Nilpotent.Basic
+public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity
 
 /-!
 # The coordinate ring of a diagonalizable group is non-reduced in the presence of `p`-torsion
@@ -56,6 +58,8 @@ The characteristic of the group algebra is transported from that of `R` along th
 roots-of-unity group `μ_n = D(ℤ/n)` and its standard generator are Tau Ceti's
 `TauCeti.RootsOfUnityGroup`.
 -/
+
+public section
 
 namespace TauCeti
 

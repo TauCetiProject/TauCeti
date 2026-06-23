@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
-import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+module
+
+public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 
 /-!
 # The multiplicative group example
@@ -34,6 +36,8 @@ The Hopf algebra structure and Laurent polynomial evaluation API are from Mathli
 building on Amelia Livingston's monoid-algebra Hopf algebra formalization.
 -/
 
+public section
+
 open WithConv
 open scoped LaurentPolynomial
 
@@ -48,7 +52,7 @@ variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 
 /-- The `R[T;T⁻¹]`-point of the multiplicative group corresponding to a unit of the value
 algebra. It sends `T n` to `u ^ n`. -/
-noncomputable def point (u : Aˣ) : R[T;T⁻¹] →ₐ[R] A :=
+@[expose] noncomputable def point (u : Aˣ) : R[T;T⁻¹] →ₐ[R] A :=
   { LaurentPolynomial.eval₂ (algebraMap R A) u with
     commutes' := LaurentPolynomial.eval₂_C (algebraMap R A) u }
 
@@ -65,7 +69,7 @@ theorem point_C (u : Aˣ) (r : R) :
   LaurentPolynomial.eval₂_C (algebraMap R A) u r
 
 /-- The unit of `A` obtained by evaluating an `R[T;T⁻¹]`-point at `T`. -/
-noncomputable def unitOfPoint (f : R[T;T⁻¹] →ₐ[R] A) : Aˣ where
+@[expose] noncomputable def unitOfPoint (f : R[T;T⁻¹] →ₐ[R] A) : Aˣ where
   val := f (LaurentPolynomial.T 1)
   inv := f (LaurentPolynomial.T (-1))
   val_inv := by
@@ -120,7 +124,7 @@ theorem point_unitOfPoint (f : R[T;T⁻¹] →ₐ[R] A) :
   exact point_unitOfPoint_single (R := R) (A := A) f n
 
 /-- Algebra maps out of `R[T;T⁻¹]` are the same as units of the value algebra. -/
-noncomputable def pointEquiv : (R[T;T⁻¹] →ₐ[R] A) ≃ Aˣ where
+@[expose] noncomputable def pointEquiv : (R[T;T⁻¹] →ₐ[R] A) ≃ Aˣ where
   toFun := unitOfPoint
   invFun := point (R := R) (A := A)
   left_inv := point_unitOfPoint
@@ -139,7 +143,7 @@ theorem pointEquiv_symm_apply (u : Aˣ) :
   rfl
 
 /-- Evaluating a product of convolution points at `T` multiplies their values at `T`. -/
-private theorem unitOfPoint_mul (f g : WithConv (R[T;T⁻¹] →ₐ[R] A)) :
+theorem unitOfPoint_mul (f g : WithConv (R[T;T⁻¹] →ₐ[R] A)) :
     unitOfPoint ((f * g).ofConv) = unitOfPoint f.ofConv * unitOfPoint g.ofConv := by
   ext
   rw [unitOfPoint_val, Units.val_mul]
@@ -151,7 +155,7 @@ private theorem unitOfPoint_mul (f g : WithConv (R[T;T⁻¹] →ₐ[R] A)) :
 
 The source is the convolution group of `R`-algebra maps out of `R[T;T⁻¹]`; the target is the
 ordinary unit group of `A`. -/
-noncomputable def pointsMulEquiv : WithConv (R[T;T⁻¹] →ₐ[R] A) ≃* Aˣ where
+@[expose] noncomputable def pointsMulEquiv : WithConv (R[T;T⁻¹] →ₐ[R] A) ≃* Aˣ where
   toFun f := unitOfPoint f.ofConv
   invFun u := toConv (point (R := R) (A := A) u)
   left_inv f := by

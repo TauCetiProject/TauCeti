@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Squarefree.Basic
+module
+
+public import Mathlib.Algebra.Squarefree.Basic
 
 /-!
 # Squarefree helpers for multiquadratic radicands
@@ -10,6 +12,8 @@ import Mathlib.Algebra.Squarefree.Basic
 This file records small squarefree arithmetic facts used by the multiquadratic degree and
 prime-discriminant APIs.
 -/
+
+public section
 
 namespace TauCeti.Multiquadratic
 
