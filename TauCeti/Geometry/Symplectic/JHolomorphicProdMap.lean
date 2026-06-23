@@ -14,7 +14,7 @@ predicate used in the analytic Heegaard Floer roadmap. The existing product file
 with a common source and product target. Here the source is also a product: if
 `f : V → V'` and `g : W → W'` are `J`-holomorphic, then
 `Prod.map f g : V × W → V' × W'` is `J`-holomorphic for the direct-sum almost complex
-structures.
+structures, both on arbitrary product-source subsets and on rectangular product sets.
 
 The same API records the affine coordinate inclusions `v ↦ (v, w₀)` and `w ↦ (v₀, w)`,
 and restriction of a product-source `J`-holomorphic map along either inclusion. These are the
@@ -161,9 +161,19 @@ lemma IsJHolomorphicAt.prodMap {f : V → V'} {g : W → W'} {p : V × W}
     ((hf.comp (isJHolomorphicAt_fst J₁ J₂ p)).prodMk
       (hg.comp (isJHolomorphicAt_snd J₁ J₂ p)))
 
+/-- The product map of two maps `J`-holomorphic within the coordinate images of a product-source
+set is `J`-holomorphic within that set. -/
+lemma IsJHolomorphicWithinAt.prodMap {f : V → V'} {g : W → W'} {u : Set (V × W)}
+    {p : V × W} (hf : IsJHolomorphicWithinAt J₁ K₁ f (Prod.fst '' u) p.1)
+    (hg : IsJHolomorphicWithinAt J₂ K₂ g (Prod.snd '' u) p.2) :
+    IsJHolomorphicWithinAt (J₁.prod J₂) (K₁.prod K₂) (Prod.map f g) u p := by
+  simpa [Prod.map] using
+    ((hf.comp (isJHolomorphicWithinAt_fst J₁ J₂ u p) (fun q hq => ⟨q, hq, rfl⟩)).prodMk
+      (hg.comp (isJHolomorphicWithinAt_snd J₁ J₂ u p) (fun q hq => ⟨q, hq, rfl⟩)))
+
 /-- The product map of two maps `J`-holomorphic within sets is `J`-holomorphic within the
 product set. -/
-lemma IsJHolomorphicWithinAt.prodMap {f : V → V'} {g : W → W'} {s : Set V} {t : Set W}
+lemma IsJHolomorphicWithinAt.prodMap_prod {f : V → V'} {g : W → W'} {s : Set V} {t : Set W}
     {p : V × W} (hf : IsJHolomorphicWithinAt J₁ K₁ f s p.1)
     (hg : IsJHolomorphicWithinAt J₂ K₂ g t p.2) :
     IsJHolomorphicWithinAt (J₁.prod J₂) (K₁.prod K₂) (Prod.map f g) (s ×ˢ t) p := by
@@ -176,7 +186,7 @@ lemma IsJHolomorphicOn.prodMap {f : V → V'} {g : W → W'} {s : Set V} {t : Se
     (hf : IsJHolomorphicOn J₁ K₁ f s) (hg : IsJHolomorphicOn J₂ K₂ g t) :
     IsJHolomorphicOn (J₁.prod J₂) (K₁.prod K₂) (Prod.map f g) (s ×ˢ t) := by
   intro p hp
-  simpa [Prod.map] using (hf p.1 hp.1).prodMap (hg p.2 hp.2)
+  simpa [Prod.map] using (hf p.1 hp.1).prodMap_prod (hg p.2 hp.2)
 
 /-- The product map of two globally `J`-holomorphic maps is globally `J`-holomorphic. -/
 lemma IsJHolomorphic.prodMap {f : V → V'} {g : W → W'}
