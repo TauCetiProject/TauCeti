@@ -162,6 +162,25 @@ jobs:
             exit 1
           fi
 
+      - name: New-file length guard — newly added .lean files must be ≤ 1000 lines
+        # A brand-new file may be at most 1000 lines; an existing file may grow up to the
+        # in-build linter ceiling of 1500 (set in lakefile.toml). The split keeps new material
+        # small and reviewable while not blocking incremental growth of established files.
+        # PR-only, like the diff-size guard: new files enter the library through a PR, and a
+        # merge_group batch is the sum of already-guarded PRs. For an *added* file the GitHub
+        # diff lists every line as an addition, so `.additions` is its line count.
+        if: ${{ github.event_name != 'merge_group' }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          long=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" \
+            --jq '.[] | select(.status == "added" and (.filename | endswith(".lean")) and .additions > 1000)
+                      | "\(.filename) (\(.additions) lines)"')
+          if [ -n "$long" ]; then
+            echo "NEWFILE_TOO_LONG=1" >> "$GITHUB_ENV"
+            echo "::error::New .lean files must be at most 1000 lines; these exceed it. Split them, or grow an existing file (allowed up to 1500):"
+            echo "$long"
+          fi
+
       - name: Checkout base (trusted)
         if: ${{ env.INFRA != '1' }}
         uses: actions/checkout@v4
@@ -392,6 +411,8 @@ jobs:
             state=failure; desc="diff exceeds 2000 added/removed lines or 2000 files — split into smaller PRs to keep review manageable"
           elif [ "${{ env.DIFF_UNKNOWN }}" = "1" ]; then
             state=failure; desc="could not read PR diff totals from the GitHub API — re-run pr-build"
+          elif [ "${{ env.NEWFILE_TOO_LONG }}" = "1" ]; then
+            state=failure; desc="a newly added .lean file exceeds 1000 lines — split it (existing files may grow to 1500)"
           elif [ "${{ steps.build.outcome }}" = "success" ]; then
             state=success; desc="sandboxed build + axiom audit passed (trusted config)"
           else
