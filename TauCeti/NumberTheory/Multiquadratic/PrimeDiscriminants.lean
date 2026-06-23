@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
 import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminant
 import TauCeti.NumberTheory.Multiquadratic.Squarefree
+import Mathlib.Data.Rat.Lemmas
 
 /-!
 # Prime discriminants
@@ -101,6 +102,12 @@ theorem not_isEvenPrimeDiscriminant_oddPrimeDiscriminant {p : ℕ}
 def primeDiscriminantRadicand (D : ℤ) : ℤ :=
   if D = -4 ∨ D = 8 ∨ D = -8 then evenPrimeDiscriminantRadicand D else D
 
+/-- The defining equation for the prime-discriminant radicand. -/
+theorem primeDiscriminantRadicand_def (D : ℤ) :
+    primeDiscriminantRadicand D =
+      if D = -4 ∨ D = 8 ∨ D = -8 then evenPrimeDiscriminantRadicand D else D :=
+  rfl
+
 /-- The prime-discriminant radicand of `-4` is `-1`. -/
 @[simp] theorem primeDiscriminantRadicand_neg_four :
     primeDiscriminantRadicand (-4) = -1 := by
@@ -117,6 +124,7 @@ def primeDiscriminantRadicand (D : ℤ) : ℤ :=
   simp [primeDiscriminantRadicand]
 
 /-- The radicand attached to an even prime discriminant is its even-prime radicand. -/
+@[simp]
 theorem primeDiscriminantRadicand_of_isEvenPrimeDiscriminant {D : ℤ}
     (hD : IsEvenPrimeDiscriminant D) :
     primeDiscriminantRadicand D = evenPrimeDiscriminantRadicand D := by

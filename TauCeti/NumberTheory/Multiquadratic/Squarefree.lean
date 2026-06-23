@@ -13,10 +13,8 @@ prime-discriminant APIs.
 
 namespace TauCeti.Multiquadratic
 
-/-- A squarefree non-unit of a commutative monoid is not a square: a square `r * r` has `r` as a
-square factor, so squarefreeness forces `r` to be a unit, hence so is `r * r`. This converts the
-arithmetic squarefreeness of a radicand product into the `¬ IsSquare` hypothesis the degree theorems
-consume. -/
+/-- A squarefree non-unit of a commutative monoid is not a square. This turns squarefree
+radicand facts into the `¬ IsSquare` hypotheses used by the multiquadratic degree arguments. -/
 theorem not_isSquare_of_squarefree_of_not_isUnit {R : Type*} [CommMonoid R] {a : R}
     (ha : Squarefree a) (hu : ¬ IsUnit a) : ¬ IsSquare a := by
   rintro ⟨r, rfl⟩
