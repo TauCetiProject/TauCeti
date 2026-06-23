@@ -24,22 +24,25 @@ argument over the `J`-induced complex structure, and it is positive definite.
 
 This is the complex companion of `TauCeti.SymplecticForm.Compatible.innerProductCore`, which
 records the real metric `g` of the same pair as an `InnerProductSpace.Core ℝ V`. Here the form is
-built once, as `SymplecticForm.hermitianForm`, with the compatibility hypotheses entering only in
-the Hermitian-structure facts, and the capstone `Compatible.hermitianCore` exhibits it as an
-`InnerProductSpace.Core ℂ V` for the complex structure `J.complexModule`.
+built once, as `SymplecticForm.hermitianForm`, and the Hermitian-structure facts are proved under
+the weakest hypothesis each one needs: conjugate symmetry and conjugate-linearity in the first
+argument need only `ω.Invariant J`, while positive definiteness needs only `ω.Tames J`.
+Compatibility (`Invariant` plus `Tames`) is what assembles all of them into the capstone
+`Compatible.hermitianCore`, exhibiting `h` as an `InnerProductSpace.Core ℂ V` for the complex
+structure `J.complexModule`.
 
 ## Main declarations
 
 * `TauCeti.SymplecticForm.hermitianForm`: the complex form `h(v, w) = ω(v, J w) + i ω(v, w)`.
 * `TauCeti.SymplecticForm.hermitianForm_re` / `hermitianForm_im`: the real and imaginary parts of
   `h` are the metric `g(v, w) = ω(v, J w)` and the symplectic form `ω(v, w)`.
-* `TauCeti.SymplecticForm.Compatible.hermitianForm_conj_symm`: `h` is conjugate-symmetric,
-  `conj (h(w, v)) = h(v, w)`.
+* `TauCeti.SymplecticForm.Invariant.hermitianForm_conj_symm`: `h` is conjugate-symmetric,
+  `conj (h(w, v)) = h(v, w)`, needing only `J`-invariance.
 * `TauCeti.SymplecticForm.hermitianForm_smul_right`: `h` is complex linear in its second argument,
   `h(v, z • w) = z · h(v, w)`, for the complex structure `J.complexModule` (no compatibility
   needed).
-* `TauCeti.SymplecticForm.Compatible.hermitianForm_self`: `h(v, v) = ω(v, J v)` is real and
-  positive on nonzero vectors.
+* `TauCeti.SymplecticForm.hermitianForm_self`: `h(v, v) = ω(v, J v)`, with
+  `TauCeti.SymplecticForm.Tames.hermitianForm_self_re_pos` adding positivity on nonzero vectors.
 * `TauCeti.SymplecticForm.Compatible.hermitianCore`: the Hermitian inner product of a compatible
   pair as an `InnerProductSpace.Core ℂ V`.
 
@@ -62,17 +65,16 @@ noncomputable def hermitianForm (ω : SymplecticForm V) (J : AlmostComplexStruct
     (v w : V) : ℂ :=
   (ω v (J w) : ℂ) + Complex.I * (ω v w : ℂ)
 
+@[simp]
 lemma hermitianForm_apply (ω : SymplecticForm V) (J : AlmostComplexStructure V) (v w : V) :
     ω.hermitianForm J v w = (ω v (J w) : ℂ) + Complex.I * (ω v w : ℂ) := rfl
 
 /-- The real part of the Hermitian form is the metric `g(v, w) = ω(v, J w)`. -/
-@[simp]
 lemma hermitianForm_re (ω : SymplecticForm V) (J : AlmostComplexStructure V) (v w : V) :
     (ω.hermitianForm J v w).re = ω v (J w) := by
   simp [hermitianForm]
 
 /-- The imaginary part of the Hermitian form is the symplectic form `ω(v, w)`. -/
-@[simp]
 lemma hermitianForm_im (ω : SymplecticForm V) (J : AlmostComplexStructure V) (v w : V) :
     (ω.hermitianForm J v w).im = ω v w := by
   simp [hermitianForm]
@@ -96,7 +98,7 @@ lemma hermitianForm_add_right (ω : SymplecticForm V) (J : AlmostComplexStructur
 /-- Auxiliary real-scalar form of complex linearity in the second argument: feeding the real
 decomposition `r.re • w + r.im • J w` of `r • w` to the second slot multiplies by `r`. This needs
 only `J² = -1`, not compatibility. -/
-lemma hermitianForm_smul_right_aux (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+private lemma hermitianForm_smul_right_aux (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (r : ℂ) (v w : V) :
     ω.hermitianForm J v (r.re • w + r.im • J w) = r * ω.hermitianForm J v w := by
   have key1 : ω v (J (r.re • w + r.im • J w)) = r.re * ω v (J w) + r.im * -(ω v w) := by
@@ -104,11 +106,8 @@ lemma hermitianForm_smul_right_aux (ω : SymplecticForm V) (J : AlmostComplexStr
   have key2 : ω v (r.re • w + r.im • J w) = r.re * ω v w + r.im * ω v (J w) := by
     simp only [map_add, map_smul, smul_eq_mul]
   simp only [hermitianForm, key1, key2]
-  apply Complex.ext <;>
-    simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
-      Complex.ofReal_im, Complex.I_re, Complex.I_im, Complex.neg_re, Complex.neg_im,
-      Complex.ofReal_add, Complex.ofReal_mul, Complex.ofReal_neg] <;>
-    ring
+  apply Complex.ext <;> simp
+  ring
 
 /-- The Hermitian form is complex linear in its second argument over the complex structure
 `J.complexModule`: `h(v, z • w) = z · h(v, w)`. This is the defining property of a Hermitian inner
@@ -122,10 +121,84 @@ lemma hermitianForm_smul_right (ω : SymplecticForm V) (J : AlmostComplexStructu
   exact ω.hermitianForm_smul_right_aux J z v w
 
 /-- The diagonal of the Hermitian form is real and equals the metric diagonal `ω(v, J v)`. -/
-@[simp]
 lemma hermitianForm_self (ω : SymplecticForm V) (J : AlmostComplexStructure V) (v : V) :
     ω.hermitianForm J v v = (ω v (J v) : ℂ) := by
   simp [hermitianForm]
+
+namespace Tames
+
+variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+
+/-- The diagonal of the Hermitian form is positive on nonzero vectors. Only tameness is needed. -/
+lemma hermitianForm_self_re_pos (htames : ω.Tames J) {v : V} (hv : v ≠ 0) :
+    0 < (ω.hermitianForm J v v).re := by
+  rw [hermitianForm_re]
+  exact htames v hv
+
+/-- The real part of the diagonal of the Hermitian form is nonnegative, in the `RCLike.re` form
+the inner-product-space core expects. Only tameness is needed. -/
+lemma hermitianForm_re_self_nonneg (htames : ω.Tames J) (v : V) :
+    0 ≤ RCLike.re (ω.hermitianForm J v v) := by
+  rw [ω.hermitianForm_self]
+  simpa using SymplecticForm.symplecticForm_apply_apply_self_nonneg
+    ((ω.tames_iff_associated_pos J).mp htames) v
+
+/-- The diagonal of the Hermitian form vanishes exactly at zero. Only tameness is needed. -/
+lemma hermitianForm_self_eq_zero (htames : ω.Tames J) {v : V} :
+    ω.hermitianForm J v v = 0 ↔ v = 0 := by
+  rw [ω.hermitianForm_self, Complex.ofReal_eq_zero, ← associatedBilinForm_apply]
+  exact SymplecticForm.associatedBilinForm_self_eq_zero ((ω.tames_iff_associated_pos J).mp htames)
+
+end Tames
+
+namespace Invariant
+
+variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+
+/-- The Hermitian form is conjugate-symmetric: `conj (h(w, v)) = h(v, w)`. Only `J`-invariance is
+needed. -/
+lemma hermitianForm_conj_symm (hinv : ω.Invariant J) (v w : V) :
+    (starRingEnd ℂ) (ω.hermitianForm J w v) = ω.hermitianForm J v w := by
+  have hg : ω w (J v) = ω v (J w) := by
+    have h2 : ω v (J w) = ω w (J v) :=
+      calc ω v (J w) = -ω (J w) v := by rw [ω.neg_eq]
+        _ = ω w (J v) := by simpa using hinv.apply w (J v)
+    exact h2.symm
+  have hω : ω w v = -(ω v w) := (ω.neg_eq v w).symm
+  simp only [hermitianForm, map_add, map_mul, Complex.conj_ofReal, Complex.conj_I, hg, hω]
+  push_cast
+  ring
+
+/-- Auxiliary real-scalar form of conjugate linearity in the first argument: feeding the real
+decomposition `r.re • v + r.im • J v` of `r • v` to the first slot multiplies by `conj r`. Only
+`J`-invariance is needed. -/
+private lemma hermitianForm_smul_left_aux (hinv : ω.Invariant J) (r : ℂ) (v w : V) :
+    ω.hermitianForm J (r.re • v + r.im • J v) w
+      = (starRingEnd ℂ) r * ω.hermitianForm J v w := by
+  have hJvw : ω (J v) (J w) = ω v w := hinv.apply v w
+  have hJv : ω (J v) w = -(ω v (J w)) := by
+    have h1 : -ω (J v) w = ω w (J v) := ω.neg_eq (J v) w
+    have h2 : ω v (J w) = ω w (J v) :=
+      calc ω v (J w) = -ω (J w) v := by rw [ω.neg_eq]
+        _ = ω w (J v) := by simpa using hinv.apply w (J v)
+    linarith
+  have key1 : ω (r.re • v + r.im • J v) (J w) = r.re * ω v (J w) + r.im * ω v w := by
+    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hJvw]
+  have key2 : ω (r.re • v + r.im • J v) w = r.re * ω v w + r.im * -(ω v (J w)) := by
+    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hJv]
+  simp only [hermitianForm, key1, key2]
+  apply Complex.ext <;> simp
+
+/-- The Hermitian form is conjugate linear in its first argument over the complex structure
+`J.complexModule`: `h(z • v, w) = conj z · h(v, w)`. Only `J`-invariance is needed. -/
+lemma hermitianForm_smul_left (hinv : ω.Invariant J) (z : ℂ) (v w : V) :
+    letI := J.complexModule
+    ω.hermitianForm J (z • v) w = (starRingEnd ℂ) z * ω.hermitianForm J v w := by
+  letI := J.complexModule
+  rw [J.complexModule_smul_def]
+  exact hinv.hermitianForm_smul_left_aux z v w
+
+end Invariant
 
 namespace Compatible
 
@@ -133,64 +206,31 @@ variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 
 /-- The diagonal of the Hermitian form is positive on nonzero vectors. -/
 lemma hermitianForm_self_re_pos (h : ω.Compatible J) {v : V} (hv : v ≠ 0) :
-    0 < (ω.hermitianForm J v v).re := by
-  rw [hermitianForm_re]
-  exact h.associated_pos hv
+    0 < (ω.hermitianForm J v v).re :=
+  h.tames.hermitianForm_self_re_pos hv
 
 /-- The real part of the diagonal of the Hermitian form is nonnegative, in the `RCLike.re` form
 the inner-product-space core expects. -/
 lemma hermitianForm_re_self_nonneg (h : ω.Compatible J) (v : V) :
-    0 ≤ RCLike.re (ω.hermitianForm J v v) := by
-  rw [ω.hermitianForm_self]
-  simpa using h.symplecticForm_apply_apply_self_nonneg v
+    0 ≤ RCLike.re (ω.hermitianForm J v v) :=
+  h.tames.hermitianForm_re_self_nonneg v
 
-/-- The diagonal of the Hermitian form vanishes only at zero. -/
-lemma hermitianForm_self_eq_zero (h : ω.Compatible J) {v : V}
-    (hv : ω.hermitianForm J v v = 0) : v = 0 := by
-  rw [ω.hermitianForm_self] at hv
-  have hz : ω v (J v) = 0 := by exact_mod_cast hv
-  rw [← associatedBilinForm_apply] at hz
-  exact h.associatedBilinForm_self_eq_zero.mp hz
+/-- The diagonal of the Hermitian form vanishes exactly at zero. -/
+lemma hermitianForm_self_eq_zero (h : ω.Compatible J) {v : V} :
+    ω.hermitianForm J v v = 0 ↔ v = 0 :=
+  h.tames.hermitianForm_self_eq_zero
 
 /-- The Hermitian form is conjugate-symmetric: `conj (h(w, v)) = h(v, w)`. -/
 lemma hermitianForm_conj_symm (h : ω.Compatible J) (v w : V) :
-    (starRingEnd ℂ) (ω.hermitianForm J w v) = ω.hermitianForm J v w := by
-  have hg : ω w (J v) = ω v (J w) := (h.associatedBilinForm_apply_swap v w).symm
-  have hω : ω w v = -(ω v w) := (ω.neg_eq v w).symm
-  simp only [hermitianForm, map_add, map_mul, Complex.conj_ofReal, Complex.conj_I, hg, hω]
-  push_cast
-  ring
-
-/-- Auxiliary real-scalar form of conjugate linearity in the first argument: feeding the real
-decomposition `r.re • v + r.im • J v` of `r • v` to the first slot multiplies by `conj r`. -/
-lemma hermitianForm_smul_left_aux (h : ω.Compatible J) (r : ℂ) (v w : V) :
-    ω.hermitianForm J (r.re • v + r.im • J v) w
-      = (starRingEnd ℂ) r * ω.hermitianForm J v w := by
-  have hJvw : ω (J v) (J w) = ω v w := h.invariant_apply v w
-  have hJv : ω (J v) w = -(ω v (J w)) := by
-    have h1 : -ω (J v) w = ω w (J v) := ω.neg_eq (J v) w
-    have h2 : ω v (J w) = ω w (J v) := h.associatedBilinForm_apply_swap v w
-    linarith
-  have key1 : ω (r.re • v + r.im • J v) (J w) = r.re * ω v (J w) + r.im * ω v w := by
-    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hJvw]
-  have key2 : ω (r.re • v + r.im • J v) w = r.re * ω v w + r.im * -(ω v (J w)) := by
-    simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hJv]
-  simp only [hermitianForm, key1, key2]
-  apply Complex.ext <;>
-    simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
-      Complex.ofReal_im, Complex.I_re, Complex.I_im, Complex.conj_re, Complex.conj_im,
-      Complex.neg_re, Complex.neg_im, Complex.ofReal_add, Complex.ofReal_mul,
-      Complex.ofReal_neg] <;>
-    ring
+    (starRingEnd ℂ) (ω.hermitianForm J w v) = ω.hermitianForm J v w :=
+  h.invariant.hermitianForm_conj_symm v w
 
 /-- The Hermitian form is conjugate linear in its first argument over the complex structure
 `J.complexModule`: `h(z • v, w) = conj z · h(v, w)`. -/
 lemma hermitianForm_smul_left (h : ω.Compatible J) (z : ℂ) (v w : V) :
     letI := J.complexModule
-    ω.hermitianForm J (z • v) w = (starRingEnd ℂ) z * ω.hermitianForm J v w := by
-  letI := J.complexModule
-  rw [J.complexModule_smul_def]
-  exact h.hermitianForm_smul_left_aux z v w
+    ω.hermitianForm J (z • v) w = (starRingEnd ℂ) z * ω.hermitianForm J v w :=
+  h.invariant.hermitianForm_smul_left z v w
 
 /-- The Hermitian inner product of a compatible pair, packaged as an `InnerProductSpace.Core ℂ V`
 for the complex structure `J.complexModule`.
@@ -207,14 +247,15 @@ noncomputable def hermitianCore (h : ω.Compatible J) :
     re_inner_nonneg := h.hermitianForm_re_self_nonneg
     add_left := ω.hermitianForm_add_left J
     smul_left := fun v w z => h.hermitianForm_smul_left z v w
-    definite := fun _ hv => h.hermitianForm_self_eq_zero hv }
+    definite := fun _ hv => h.hermitianForm_self_eq_zero.mp hv }
 
 /-- The inner product from `hermitianCore` is the Hermitian form `ω(v, J w) + i ω(v, w)`. -/
 @[simp]
 lemma hermitianCore_inner (h : ω.Compatible J) (v w : V) :
     letI := J.complexModule
-    @inner ℂ V h.hermitianCore.toInner v w = (ω v (J w) : ℂ) + Complex.I * (ω v w : ℂ) :=
-  rfl
+    @inner ℂ V h.hermitianCore.toInner v w = (ω v (J w) : ℂ) + Complex.I * (ω v w : ℂ) := by
+  change ω.hermitianForm J v w = _
+  rw [hermitianForm_apply]
 
 end Compatible
 
