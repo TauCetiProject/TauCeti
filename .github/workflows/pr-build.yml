@@ -321,10 +321,24 @@ jobs:
       - name: Fetch TauCeti's own oleans from the Lake cache (network, no token; no PR code)
         if: ${{ env.INFRA != '1' && env.TAUCETI_CACHE_ENABLED == '1' }}
         env:
-          LAKE_CACHE_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
-          LAKE_CACHE_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
+          # Passed under non-LAKE_ names so Lake never sees the deprecated endpoint
+          # environment variables; we hand it the endpoints through a `--service` config.
+          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
         run: |
-          ( cd base && lake cache get --repo FormalFrontier/TauCeti ) \
+          # Define the public read service in a Lake system config and select it with
+          # `--service` (the env-var form of endpoint config is deprecated). Anonymous
+          # GETs, so no key here.
+          CFG="$RUNNER_TEMP/lake-cache.toml"
+          cat > "$CFG" <<TOML
+          cache.defaultService = "tauceti-public"
+          [[cache.service]]
+          name = "tauceti-public"
+          kind = "s3"
+          artifactEndpoint = "$PUBLIC_ARTIFACT_ENDPOINT"
+          revisionEndpoint = "$PUBLIC_REVISION_ENDPOINT"
+          TOML
+          ( cd base && LAKE_CONFIG="$CFG" lake cache get --service tauceti-public --repo FormalFrontier/TauCeti ) \
             || echo "::warning::lake cache get failed or missed; building TauCeti/ from scratch"
 
       - name: Build (trusted config + overlaid TauCeti/) under landrun, offline

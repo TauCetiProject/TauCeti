@@ -79,22 +79,37 @@ jobs:
           # S3 host needs SigV4 even for reads, so an anonymous GET here would 403 anyway.)
           LAKE_NO_CACHE: "true"
           LAKE_CACHE_DIR: ${{ github.workspace }}/.lake/cache
-          LAKE_CACHE_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT }}
-          LAKE_CACHE_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT }}
+          # Passed under non-LAKE_ names so Lake never sees the deprecated endpoint
+          # environment variables; we hand it the endpoints through a `--service` config.
+          S3_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT }}
+          S3_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT }}
           LAKE_CACHE_KEY_RAW: ${{ secrets.LAKE_CACHE_KEY }}
         run: |
           export PATH="$HOME/.elan/bin:$PATH"
           # curl --user wants "<ACCESS_KEY_ID>:<SECRET>"; trim trailing whitespace and mask
-          # it so it never lands in the log.
+          # it so it never lands in the log. LAKE_CACHE_KEY (the upload secret) stays an
+          # env var; only the endpoints move to the --service config below.
           KEY="$(printf %s "$LAKE_CACHE_KEY_RAW" | sed -e 's/[[:space:]]*$//')"
           echo "::add-mask::$KEY"; export LAKE_CACHE_KEY="$KEY"
+          # Define the authenticated S3 service in a Lake system config and select it with
+          # `--service` (the env-var form of endpoint config is deprecated).
+          CFG="$RUNNER_TEMP/lake-cache.toml"
+          cat > "$CFG" <<TOML
+          cache.defaultUploadService = "tauceti-r2"
+          [[cache.service]]
+          name = "tauceti-r2"
+          kind = "s3"
+          artifactEndpoint = "$S3_ARTIFACT_ENDPOINT"
+          revisionEndpoint = "$S3_REVISION_ENDPOINT"
+          TOML
+          export LAKE_CONFIG="$CFG"
           # Pack the already-built oleans into the local Lake cache (no recompile — the
           # health-check build above left matching traces), emit the root-package
           # input->output mappings, then upload just those artifacts (SigV4 PUT to S3).
           # `lake cache put` configures the workspace, so the revision (this main commit)
           # and the toolchain/platform scope are detected automatically and match what
-          # pr-build's `lake cache get --repo` derives.
+          # pr-build's `lake cache get --service ... --repo` derives.
           lake build >/dev/null
           lake build --no-build -o .lake/outputs.jsonl
           echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
-          lake cache put .lake/outputs.jsonl --repo FormalFrontier/TauCeti
+          lake cache put .lake/outputs.jsonl --service tauceti-r2 --repo FormalFrontier/TauCeti
