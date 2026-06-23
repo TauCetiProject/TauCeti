@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Order.Ring.Basic
-import Mathlib.Data.Nat.Squarefree
-import Mathlib.Data.Rat.Lemmas
+module
+
+public import Mathlib.Algebra.Order.Ring.Basic
+public import Mathlib.Data.Nat.Squarefree
+public import Mathlib.Data.Rat.Lemmas
 import Mathlib.Tactic.NormNum.IsSquare
 
 /-!
@@ -35,6 +37,8 @@ later genus-field package can form the multiquadratic compositum of the `ℚ(√
 * `TauCeti.Multiquadratic.not_isSquare_evenPrimeDiscriminantRadicand_rat`: the associated
   rational radicand is not a square.
 -/
+
+public section
 
 namespace TauCeti.Multiquadratic
 

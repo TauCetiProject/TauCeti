@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.FieldTheory.IntermediateField.Quadratic
-import Mathlib.Analysis.Real.Sqrt
-import Mathlib.Data.Finset.Fin
+module
+
+public import TauCeti.FieldTheory.IntermediateField.Quadratic
+public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Data.Finset.Fin
 
 /-!
 # Square-class descent in multiquadratic towers
@@ -43,6 +45,8 @@ conjecture, where it was developed for one specific CM field. Here it is the fie
 square-class engine of the multiquadratic-fields roadmap.
 -/
 
+public section
+
 open IntermediateField
 
 namespace TauCeti.Multiquadratic
@@ -50,7 +54,7 @@ namespace TauCeti.Multiquadratic
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- Iterated multiquadratic tower `K(root₀, …, rootₙ₋₁) ⊆ L`. -/
-noncomputable def sqrtTower (root : ℕ → L) (n : ℕ) : IntermediateField K L :=
+@[expose] noncomputable def sqrtTower (root : ℕ → L) (n : ℕ) : IntermediateField K L :=
   IntermediateField.adjoin K (root '' Set.Iio n)
 
 /-- The defining adjoin presentation of `sqrtTower`. -/

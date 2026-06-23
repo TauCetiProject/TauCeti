@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Bialgebra.Quotient
-import Mathlib.RingTheory.Ideal.Quotient.Operations
+module
+
+public import Mathlib.RingTheory.Bialgebra.Quotient
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The universal property of a bialgebra quotient
@@ -32,6 +34,8 @@ The construction descends an algebra homomorphism through the algebra quotient
 `Ideal.Quotient.liftₐ` and upgrades it to a bialgebra morphism via `BialgHom.ofAlgHom`, on top of
 Mathlib's quotient bialgebra machinery (`Mathlib.RingTheory.Bialgebra.Quotient`).
 -/
+
+public section
 
 open scoped TensorProduct
 

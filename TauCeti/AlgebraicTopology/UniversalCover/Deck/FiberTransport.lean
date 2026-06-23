@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.Conjugation
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
+module
+
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Conjugation
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
 
 /-!
 # Transporting deck actions on fibres
@@ -28,6 +30,8 @@ This supplies a prerequisite for the Tau Ceti universal-covers roadmap, Stage 2
 deck-transformation group.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace Deck
@@ -37,7 +41,7 @@ variable {E F G B : Type*} [TopologicalSpace E] [TopologicalSpace F] [Topologica
 
 /-- An over-base homeomorphism identifies the fibre over `b` for `p` with the fibre over
 `b` for `q`. -/
-def fiberMap (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (b : B) :
+@[expose] def fiberMap (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (b : B) :
     p ⁻¹' {b} ≃ₜ q ⁻¹' {b} :=
   h.subtype fun e => by
     simp only [Set.mem_preimage, Set.mem_singleton_iff]

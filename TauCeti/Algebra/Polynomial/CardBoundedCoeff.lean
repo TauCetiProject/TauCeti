@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Polynomial.Degree.Operations
-import Mathlib.Data.Fintype.BigOperators
-import Mathlib.Data.Fintype.Pi
-import Mathlib.Data.Int.Interval
-import Mathlib.Data.Set.Card
+module
+
+public import Mathlib.Algebra.Polynomial.Degree.Operations
+public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Data.Fintype.Pi
+public import Mathlib.Data.Int.Interval
+public import Mathlib.Data.Set.Card
 
 /-!
 # Counting polynomials of bounded degree and bounded coefficients
@@ -44,6 +46,8 @@ finiteness only inline, inside `Polynomial.bUnion_roots_finite`, rather than exp
   integer polynomials of degree `≤ d` with every coefficient bounded by `B` in absolute value.
 * `TauCeti.Polynomial.finite_setOf_natDegree_le_abs_intCoeff_le`: that family is finite.
 -/
+
+public section
 
 open Polynomial
 

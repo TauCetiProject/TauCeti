@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Calculus.AbsolutelyMonotone
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+module
+
+public import Mathlib.Analysis.Calculus.AbsolutelyMonotone
+public import Mathlib.Analysis.Calculus.Deriv.MeanValue
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # Completely monotone functions
@@ -52,6 +54,8 @@ point `0`); on the open half-line it agrees with the ordinary iterated derivativ
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions: Theory and Applications*
   (de Gruyter, 2nd ed. 2012).
 -/
+
+public section
 
 open Set Filter
 open scoped ContDiff Topology

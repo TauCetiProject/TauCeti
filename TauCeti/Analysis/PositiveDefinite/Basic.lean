@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Complex.Order
-import Mathlib.Analysis.Matrix.Order
-import Mathlib.Algebra.QuadraticDiscriminant
-import Mathlib.Algebra.BigOperators.Fin
+module
+
+public import Mathlib.Analysis.Complex.Order
+public import Mathlib.Analysis.Matrix.Order
+public import Mathlib.Algebra.QuadraticDiscriminant
+public import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # Positive-definite functions on an involutive additive monoid
@@ -57,6 +59,8 @@ here. The continuity theory and Bochner's representation theorem are later miles
 * C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100, 1984),
   Chapter 3.
 -/
+
+public section
 
 open ComplexConjugate
 open scoped ComplexOrder

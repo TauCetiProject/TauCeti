@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.InnerProductSpace.LinearMap
-import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.Normed.Operator.Bilinear
-import Mathlib.Analysis.Normed.Operator.Mul
+module
+
+public import Mathlib.Analysis.InnerProductSpace.LinearMap
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import Mathlib.Analysis.Normed.Operator.Mul
 
 /-!
 # Lower-order pointwise forms for divergence-form PDEs
@@ -30,6 +32,8 @@ weak-derivative Sobolev spaces are available.
 * `TauCeti.PDE.MassLowerBoundOn`: a strictly positive lower bound for a mass coefficient.
 * `TauCeti.PDE.driftForm`, `TauCeti.PDE.massForm`: named pointwise lower-order forms.
 -/
+
+public section
 
 namespace TauCeti
 

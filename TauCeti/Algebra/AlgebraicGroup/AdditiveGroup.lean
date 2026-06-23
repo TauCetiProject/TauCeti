@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
-import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra
 
 /-!
 # The additive group
@@ -35,6 +37,8 @@ The symmetric-algebra Hopf structure is supplied by
 bialgebra and convolution monoid APIs.
 -/
 
+public section
+
 open Coalgebra HopfAlgebra SymmetricAlgebra WithConv
 open scoped TensorProduct
 
@@ -54,7 +58,7 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 the convolution monoid of `R`-algebra maps out of `SymmetricAlgebra R M` is the additive monoid
 of `R`-linear maps `M →ₗ[R] A`: a point `F` corresponds to the linear map `x ↦ F (ι x)`, and
 convolution of points corresponds to addition of linear maps. -/
-noncomputable def pointsMulEquiv :
+@[expose] noncomputable def pointsMulEquiv :
     WithConv (SymmetricAlgebra R M →ₐ[R] A) ≃* Multiplicative (M →ₗ[R] A) where
   toFun F := Multiplicative.ofAdd (SymmetricAlgebra.lift.symm F.ofConv)
   invFun φ := toConv (SymmetricAlgebra.lift (Multiplicative.toAdd φ))

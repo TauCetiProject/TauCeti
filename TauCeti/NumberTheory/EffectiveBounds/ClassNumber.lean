@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.NumberField.ClassNumber
-import TauCeti.NumberTheory.EffectiveBounds.IdealCount
+module
+
+public import Mathlib.NumberTheory.NumberField.ClassNumber
+public import TauCeti.NumberTheory.EffectiveBounds.IdealCount
 
 /-!
 # An effective class-number bound
@@ -29,6 +31,8 @@ Migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the
 formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture.
 -/
+
+public section
 
 open _root_.NumberField
 

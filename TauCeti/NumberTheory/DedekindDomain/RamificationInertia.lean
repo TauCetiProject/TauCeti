@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Flat.TorsionFree
-import TauCeti.NumberTheory.RamificationInertia.Galois
+module
+
+public import Mathlib.RingTheory.Flat.TorsionFree
+public import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # Dedekind-domain ramification and inertia counting compatibility
@@ -16,6 +18,8 @@ counting criterion.
 * `TauCeti.DedekindDomain.ncard_primesOver_eq_natCard_iff_of_isGaloisGroup`:
   a deprecated compatibility wrapper for the old Dedekind-domain signature.
 -/
+
+public section
 
 open Ideal Module
 

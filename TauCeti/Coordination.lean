@@ -1,6 +1,6 @@
 module
 
-@[expose] public section
+public section
 
 namespace TauCeti
 

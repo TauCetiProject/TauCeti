@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.FieldTheory.KummerPolynomial
-import Mathlib.NumberTheory.LegendreSymbol.Basic
-import Mathlib.NumberTheory.NumberField.Ideal.KummerDedekind
-import Mathlib.RingTheory.Discriminant
+module
+
+public import Mathlib.FieldTheory.KummerPolynomial
+public import Mathlib.NumberTheory.LegendreSymbol.Basic
+public import Mathlib.NumberTheory.NumberField.Ideal.KummerDedekind
+public import Mathlib.RingTheory.Discriminant
 
 /-!
 # The prime-splitting law for a quadratic field
@@ -33,6 +35,8 @@ multiquadratic roadmap).
 The conductor/discriminant and Kummer–Dedekind toolchain is from Mathlib; this assembly is new,
 prepared for the multiquadratic roadmap of the Tau Ceti library.
 -/
+
+public section
 
 open Polynomial NumberField Ideal Module RingOfIntegers UniqueFactorizationMonoid
 

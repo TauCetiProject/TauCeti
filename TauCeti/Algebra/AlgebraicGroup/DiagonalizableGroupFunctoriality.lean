@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
-import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
-import TauCeti.Algebra.AlgebraicGroup.HopfMap
+module
+
+public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
+public import TauCeti.Algebra.AlgebraicGroup.HopfMap
 
 /-!
 # Functoriality of the diagonalizable group in the abelian group
@@ -51,6 +53,8 @@ coordinate Hopf algebra is Tau Ceti's `TauCeti.AlgHom.mapDomain`
 functoriality of the Tau Ceti reductive-groups roadmap (Layer 4).
 -/
 
+public section
+
 open WithConv
 
 namespace TauCeti
@@ -72,7 +76,7 @@ private theorem mapDomainBialgHom_single_one (φ : G →* G') (g : G) :
 /-- **The diagonalizable group is contravariant in the abelian group.** A group homomorphism
 `φ : G →* G'` induces, by pre-composition with the bialgebra map `R[G] →ₐc[R] R[G']`, a
 homomorphism of convolution groups of points `D(G')(A) → D(G)(A)`. -/
-noncomputable def pointsMap (φ : G →* G') :
+@[expose] noncomputable def pointsMap (φ : G →* G') :
     WithConv (MonoidAlgebra R G' →ₐ[R] A) →* WithConv (MonoidAlgebra R G →ₐ[R] A) :=
   AlgHom.mapDomain (MonoidAlgebra.mapDomainBialgHom R φ)
 

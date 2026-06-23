@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicTopology.UniversalCover.Deck
+module
+
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck
 
 /-!
 # The action of deck transformations on a fibre
@@ -28,6 +30,8 @@ This supplies a prerequisite for the Tau Ceti universal-covers roadmap, Stage 0.
 Stages 1 and 2.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace Deck
@@ -37,7 +41,7 @@ variable {E B : Type*} [TopologicalSpace E] {p : E → B} {b : B}
 /-- The homomorphism from deck transformations to homeomorphisms of the fibre over `b`.
 
 It sends a deck transformation to its restriction to the subtype `p ⁻¹' {b}`. -/
-def fiberHomeomorphHom (p : E → B) (b : B) : Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b}) where
+@[expose] def fiberHomeomorphHom (p : E → B) (b : B) : Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b}) where
   toFun φ := fiberHomeomorph φ b
   map_one' := by
     ext e

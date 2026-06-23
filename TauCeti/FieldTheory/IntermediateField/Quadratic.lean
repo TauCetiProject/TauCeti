@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
-import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+module
+
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Algebra
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
 # Quadratic normal forms in intermediate fields
@@ -21,6 +23,8 @@ of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture
 step in the square-class descent for multiquadratic fields; here it is stated for an arbitrary
 field extension.
 -/
+
+public section
 
 open IntermediateField
 

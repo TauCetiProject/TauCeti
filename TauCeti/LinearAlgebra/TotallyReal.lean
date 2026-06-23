@@ -1,5 +1,7 @@
-import Mathlib.LinearAlgebra.Prod
-import Mathlib.LinearAlgebra.Projection
+module
+
+public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.LinearAlgebra.Projection
 
 /-!
 # Maximal totally real linear subspaces
@@ -13,6 +15,8 @@ purely module-theoretic.
 
 No integrability, topology, or symplectic form is bundled here.
 -/
+
+public section
 
 namespace TauCeti
 

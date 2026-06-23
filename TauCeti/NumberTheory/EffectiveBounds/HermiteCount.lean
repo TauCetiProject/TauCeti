@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.NumberField.Discriminant.Basic
-import TauCeti.NumberTheory.EffectiveBounds.SimpleGenerators
+module
+
+public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
+public import TauCeti.NumberTheory.EffectiveBounds.SimpleGenerators
 
 /-!
 # An explicit count of number fields of bounded discriminant
@@ -46,6 +48,8 @@ Mathlib's `Mathlib/NumberTheory/NumberField/Discriminant/Basic.lean`; here those
 to return the explicit generating set rather than only its finiteness. No formal code is vendored
 verbatim.
 -/
+
+public section
 
 open Module Polynomial NumberField NumberField.InfinitePlace
 open NumberField.mixedEmbedding NumberField.hermiteTheorem TauCeti.IntermediateField
