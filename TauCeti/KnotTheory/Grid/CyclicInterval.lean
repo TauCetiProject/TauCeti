@@ -123,7 +123,7 @@ theorem right_notMem_cIoo (a b : Fin n) : b ∉ cIoo a b := by
 
 The endpoints `a₀`, `a₁` lie on the same side of the pair `b₀`, `b₁`, and conversely. This
 two-sided formulation handles shared-endpoint cases uniformly. -/
-def Noninterleaving (a₀ a₁ b₀ b₁ : Fin n) : Prop :=
+@[expose] def Noninterleaving (a₀ a₁ b₀ b₁ : Fin n) : Prop :=
   (a₀ ∈ cIoo b₀ b₁ ↔ a₁ ∈ cIoo b₀ b₁) ∧
     (b₀ ∈ cIoo a₀ a₁ ↔ b₁ ∈ cIoo a₀ a₁)
 

@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.KnotTheory.Grid.CyclicInterval
-import TauCeti.KnotTheory.Grid.Commutation
-import TauCeti.KnotTheory.Grid.Rotation
+module
+
+public import TauCeti.KnotTheory.Grid.CyclicInterval
+public import TauCeti.KnotTheory.Grid.Commutation
+public import TauCeti.KnotTheory.Grid.Rotation
 
 /-!
 # Rotation and grid commutation arcs
@@ -33,6 +35,8 @@ G.5, "Invariance over 𝔽₂. Grid moves = commutation + (de)stabilization", wh
 are built from the row and column marking arcs. The orientation convention follows
 Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
+
+public section
 
 namespace TauCeti
 
