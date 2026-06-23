@@ -44,7 +44,7 @@ ideal API. The arbitrary-supremum lattice construction follows the local pattern
 `TauCeti.Algebra.Coalgebra.Subcomodule.Lattice`.
 -/
 
-@[expose] public section
+public section
 
 open scoped TensorProduct
 
@@ -61,12 +61,12 @@ namespace HopfIdeal
 
 /-- The image of an ideal `I ≤ H` under the left inclusion `H → H ⊗[R] H`, representing
 `I ⊗ H` inside the tensor product algebra. -/
-def leftTensorIdeal (I : Ideal H) : Ideal (H ⊗[R] H) :=
+@[expose] def leftTensorIdeal (I : Ideal H) : Ideal (H ⊗[R] H) :=
   Ideal.map (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I
 
 /-- The image of an ideal `I ≤ H` under the right inclusion `H → H ⊗[R] H`, representing
 `H ⊗ I` inside the tensor product algebra. -/
-def rightTensorIdeal (I : Ideal H) : Ideal (H ⊗[R] H) :=
+@[expose] def rightTensorIdeal (I : Ideal H) : Ideal (H ⊗[R] H) :=
   Ideal.map (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I
 
 @[simp]
@@ -277,7 +277,7 @@ instance : PartialOrder (HopfIdeal R H) :=
   .ofSetLike (HopfIdeal R H) H
 
 /-- The underlying ideal of a Hopf ideal. -/
-def toIdeal (I : HopfIdeal R H) : Ideal H :=
+@[expose] def toIdeal (I : HopfIdeal R H) : Ideal H :=
   I.carrier
 
 instance (I : HopfIdeal R H) : I.toIdeal.IsTwoSided :=
@@ -308,7 +308,7 @@ theorem ext {I J : HopfIdeal R H} (h : ∀ x : H, x ∈ I ↔ x ∈ J) : I = J :
   SetLike.ext h
 
 /-- Constructor from an ideal and the three Hopf-ideal closure conditions. -/
-def ofIdeal (I : Ideal H) [I.IsTwoSided]
+@[expose] def ofIdeal (I : Ideal H) [I.IsTwoSided]
     (hcomul :
       ∀ ⦃x : H⦄, x ∈ I →
         Coalgebra.comul (R := R) x ∈
@@ -456,61 +456,45 @@ instance instSemilatticeSup : SemilatticeSup (HopfIdeal R H) where
     rcases Submodule.mem_sup.mp hx with ⟨y, hy, z, hz, rfl⟩
     exact add_mem (hIK hy) (hJK hz)
 
-theorem sSup_isTwoSided (S : Set (HopfIdeal R H)) :
-    (⨆ I : S, (I : HopfIdeal R H).toIdeal).IsTwoSided := by
-  classical
-  refine ⟨fun {x} b hx => ?_⟩
-  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-  rcases hx with ⟨f, hf, rfl⟩
-  rw [Finsupp.sum, Finset.sum_mul]
-  exact Submodule.sum_mem _ fun I _ =>
-    Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).mul_mem_right (hf I) b)
-
-theorem comul_mem_sSup (S : Set (HopfIdeal R H)) {x : H}
-    (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
-    Coalgebra.comul (R := R) x ∈
-      leftTensorIdeal (R := R) (H := H) (⨆ I : S, (I : HopfIdeal R H).toIdeal) ⊔
-        rightTensorIdeal (R := R) (H := H) (⨆ I : S, (I : HopfIdeal R H).toIdeal) := by
-  classical
-  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-  rcases hx with ⟨f, hf, rfl⟩
-  rw [Finsupp.sum, map_sum]
-  refine Submodule.sum_mem _ fun I _ => ?_
-  exact sup_le_sup
-    (leftTensorIdeal_mono (R := R) (H := H)
-      (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
-    (rightTensorIdeal_mono (R := R) (H := H)
-      (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
-    ((I : HopfIdeal R H).comul_mem (hf I))
-
-theorem counit_eq_zero_sSup (S : Set (HopfIdeal R H)) {x : H}
-    (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
-    Coalgebra.counit (R := R) x = 0 := by
-  classical
-  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-  rcases hx with ⟨f, hf, rfl⟩
-  rw [Finsupp.sum, map_sum]
-  exact Finset.sum_eq_zero fun I _ => (I : HopfIdeal R H).counit_eq_zero (hf I)
-
-theorem antipode_mem_sSup (S : Set (HopfIdeal R H)) {x : H}
-    (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
-    HopfAlgebra.antipode R x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal := by
-  classical
-  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-  rcases hx with ⟨f, hf, rfl⟩
-  rw [Finsupp.sum, map_sum]
-  exact Submodule.sum_mem _ fun I _ =>
-    Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).antipode_mem (hf I))
-
 /-- The supremum of a set of Hopf ideals has underlying ideal the supremum of the underlying
-ideals. -/
+ideals. The four proof obligations are the implementation of this construction, so they are
+discharged inline rather than as standalone lemmas. -/
 instance instSupSet : SupSet (HopfIdeal R H) where
   sSup S :=
     { carrier := ⨆ I : S, (I : HopfIdeal R H).toIdeal
-      isTwoSided' := sSup_isTwoSided S
-      comul_mem' := fun _ hx => comul_mem_sSup S hx
-      counit_eq_zero' := fun _ hx => counit_eq_zero_sSup S hx
-      antipode_mem' := fun _ hx => antipode_mem_sSup S hx }
+      isTwoSided' := by
+        classical
+        refine ⟨fun {x} b hx => ?_⟩
+        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+        rcases hx with ⟨f, hf, rfl⟩
+        rw [Finsupp.sum, Finset.sum_mul]
+        exact Submodule.sum_mem _ fun I _ =>
+          Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).mul_mem_right (hf I) b)
+      comul_mem' := fun _ hx => by
+        classical
+        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+        rcases hx with ⟨f, hf, rfl⟩
+        rw [Finsupp.sum, map_sum]
+        refine Submodule.sum_mem _ fun I _ => ?_
+        exact sup_le_sup
+          (leftTensorIdeal_mono (R := R) (H := H)
+            (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
+          (rightTensorIdeal_mono (R := R) (H := H)
+            (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
+          ((I : HopfIdeal R H).comul_mem (hf I))
+      counit_eq_zero' := fun _ hx => by
+        classical
+        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+        rcases hx with ⟨f, hf, rfl⟩
+        rw [Finsupp.sum, map_sum]
+        exact Finset.sum_eq_zero fun I _ => (I : HopfIdeal R H).counit_eq_zero (hf I)
+      antipode_mem' := fun _ hx => by
+        classical
+        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+        rcases hx with ⟨f, hf, rfl⟩
+        rw [Finsupp.sum, map_sum]
+        exact Submodule.sum_mem _ fun I _ =>
+          Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).antipode_mem (hf I)) }
 
 /-- The underlying ideal of a supremum of a set of Hopf ideals is the supremum of the
 underlying ideals indexed by that set. -/

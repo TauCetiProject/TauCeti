@@ -6,7 +6,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Even
 public import Mathlib.GroupTheory.Schreier
-public import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.NormNum
 
 /-!
 # The index of powers in a finitely generated commutative group

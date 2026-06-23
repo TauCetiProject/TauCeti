@@ -7,7 +7,7 @@ module
 public import Mathlib.Algebra.BigOperators.Associated
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Ideal.Maps
-public import Mathlib.Tactic
+import Mathlib.Tactic
 
 /-!
 # Conjugate-transversal ideal families in a Dedekind domain

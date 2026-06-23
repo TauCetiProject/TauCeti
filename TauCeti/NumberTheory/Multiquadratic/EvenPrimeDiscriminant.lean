@@ -7,7 +7,7 @@ module
 public import Mathlib.Algebra.Order.Ring.Basic
 public import Mathlib.Data.Nat.Squarefree
 public import Mathlib.Data.Rat.Lemmas
-public import Mathlib.Tactic.NormNum.IsSquare
+import Mathlib.Tactic.NormNum.IsSquare
 
 /-!
 # Even prime discriminants
