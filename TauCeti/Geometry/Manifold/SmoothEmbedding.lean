@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 
 /-!
@@ -23,6 +24,8 @@ later tubular-neighbourhood and surgery interfaces.
 ## Main definitions
 
 * `TauCeti.SmoothEmbedding I J n M N`: bundled `C^n` smooth embeddings `M → N`.
+* `TauCeti.SmoothEmbedding.ofIsSmoothEmbedding`: bundle a map satisfying Mathlib's
+  `Manifold.IsSmoothEmbedding` predicate.
 * `TauCeti.SmoothEmbedding.id`: the identity smooth embedding.
 * `TauCeti.SmoothEmbedding.ofOpens`: the inclusion of an open subset as a smooth embedding.
 * `TauCeti.SmoothEmbedding.prodMap`: the product of two bundled smooth embeddings.
@@ -101,6 +104,20 @@ theorem isImmersion (f : SmoothEmbedding I J n M N) : Manifold.IsImmersion I J n
 /-- A bundled smooth embedding is a topological embedding. -/
 theorem isEmbedding (f : SmoothEmbedding I J n M N) : IsEmbedding f :=
   f.isSmoothEmbedding.isEmbedding
+
+/-- Bundle a map satisfying Mathlib's smooth-embedding predicate as a smooth embedding. -/
+abbrev ofIsSmoothEmbedding (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) :
+    SmoothEmbedding I J n M N where
+  toContMDiffMap := ⟨f, hf.contMDiff⟩
+  isSmoothEmbedding_toFun := hf
+
+@[simp]
+theorem ofIsSmoothEmbedding_coe (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) :
+    ⇑(ofIsSmoothEmbedding (I := I) (J := J) (n := n) f hf) = f := rfl
+
+@[simp]
+theorem ofIsSmoothEmbedding_apply (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) (x : M) :
+    ofIsSmoothEmbedding (I := I) (J := J) (n := n) f hf x = f x := rfl
 
 /-- Two smooth embeddings are equal when their underlying functions are pointwise equal. -/
 @[ext]
