@@ -193,10 +193,8 @@ lemma isComplexLinearMap_iff_mem_complexLinearMaps (J : AlmostComplexStructure V
 /-- The zero map is complex-linear for any source and target almost complex structures. -/
 @[simp]
 lemma isComplexLinearMap_zero (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W) :
-    IsComplexLinearMap J J' (0 : V →ₗ[ℝ] W) := by
-  rw [isComplexLinearMap_iff_apply]
-  intro v
-  simp
+    IsComplexLinearMap J J' (0 : V →ₗ[ℝ] W) :=
+  isComplexLinear_zero
 
 /-- Complex-linear maps are closed under addition. -/
 lemma IsComplexLinearMap.add {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
@@ -208,9 +206,8 @@ lemma IsComplexLinearMap.add {J : AlmostComplexStructure V} {J' : AlmostComplexS
 /-- Complex-linear maps are closed under negation. -/
 lemma IsComplexLinearMap.neg {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {F : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F) :
-    IsComplexLinearMap J J' (-F) := by
-  rw [isComplexLinearMap_iff_mem_complexLinearMaps] at hF ⊢
-  exact (complexLinearMaps J.toLinearMap J'.toLinearMap).neg_mem hF
+    IsComplexLinearMap J J' (-F) :=
+  IsComplexLinear.neg hF
 
 /-- Complex-linear maps are closed under subtraction. -/
 lemma IsComplexLinearMap.sub {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
@@ -229,21 +226,15 @@ lemma IsComplexLinearMap.smul {J : AlmostComplexStructure V} {J' : AlmostComplex
 /-- The identity map is complex-linear with respect to the same almost complex structure. -/
 @[simp]
 lemma isComplexLinearMap_id (J : AlmostComplexStructure V) :
-    IsComplexLinearMap J J (LinearMap.id : V →ₗ[ℝ] V) := by
-  rw [isComplexLinearMap_iff_apply]
-  intro v
-  simp [LinearMap.id_apply]
+    IsComplexLinearMap J J (LinearMap.id : V →ₗ[ℝ] V) :=
+  isComplexLinear_id
 
 /-- Complex-linear maps are closed under composition. -/
 lemma IsComplexLinearMap.comp {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {J'' : AlmostComplexStructure X} {F : V →ₗ[ℝ] W} {G : W →ₗ[ℝ] X}
     (hG : IsComplexLinearMap J' J'' G) (hF : IsComplexLinearMap J J' F) :
-    IsComplexLinearMap J J'' (G.comp F) := by
-  rw [isComplexLinearMap_iff_apply] at hF hG ⊢
-  intro v
-  calc
-    G (F (J v)) = G (J' (F v)) := by rw [hF v]
-    _ = J'' (G (F v)) := hG (F v)
+    IsComplexLinearMap J J'' (G.comp F) :=
+  IsComplexLinear.comp hG hF
 
 end ComplexLinearMap
 
