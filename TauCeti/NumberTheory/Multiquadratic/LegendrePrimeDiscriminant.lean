@@ -13,9 +13,8 @@ The genus-field layer of the multiquadratic roadmap uses the odd prime discrimin
 small Legendre-symbol API that makes that normalization usable in the prime-splitting law.
 
 For odd primes `p` and `q`, the classical identity `(p* / q) = (q / p)` is exactly
-`legendreSym q (oddPrimeDiscriminant p) = legendreSym p q`. The proof is only quadratic
-reciprocity plus the supplementary law for `-1`; this file packages that result in the
-shape downstream multiquadratic splitting statements need.
+`legendreSym q (oddPrimeDiscriminant p) = legendreSym p q`. This file packages that result
+in the shape downstream multiquadratic splitting statements need.
 
 ## Main results
 
@@ -42,7 +41,7 @@ theorem legendreSym_oddPrimeDiscriminant (p q : ℕ) [Fact q.Prime] :
       if p % 4 = 1 then legendreSym q (p : ℤ)
       else legendreSym q (-1) * legendreSym q (p : ℤ) := by
   by_cases hp : p % 4 = 1
-  · simp [hp]
+  · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp, if_pos hp]
   · rw [oddPrimeDiscriminant_of_mod_four_ne_one hp]
     rw [if_neg hp, neg_eq_neg_one_mul, legendreSym.mul]
 
@@ -57,7 +56,7 @@ theorem legendreSym_oddPrimeDiscriminant_of_ne_two (p q : ℕ) [Fact q.Prime] (h
 /-- For odd primes `p` and `q`, the Legendre symbol of the odd prime discriminant `p*` at
 `q` is the reciprocal symbol `(q / p)`. This is the prime-discriminant form of quadratic
 reciprocity used by genus-field splitting criteria. -/
-theorem legendreSym_oddPrimeDiscriminant_eq_legendreSym [Fact p.Prime] [Fact q.Prime]
+@[simp] theorem legendreSym_oddPrimeDiscriminant_eq_legendreSym [Fact p.Prime] [Fact q.Prime]
     (hp : p ≠ 2) (hq : q ≠ 2) :
     legendreSym q (oddPrimeDiscriminant p) = legendreSym p (q : ℤ) := by
   have hpodd : p % 2 = 1 := (Nat.Prime.eq_two_or_odd (Fact.out : p.Prime)).resolve_left hp
@@ -89,19 +88,8 @@ theorem forall_legendreSym_oddPrimeDiscriminant_eq_one_iff {ι : Type*} (p : ι 
     (hq : q ≠ 2) :
     (∀ i, legendreSym q (oddPrimeDiscriminant (p i)) = 1) ↔
       ∀ i, @legendreSym (p i) ⟨hpprime i⟩ (q : ℤ) = 1 := by
-  constructor
-  · intro h i
-    haveI : Fact (p i).Prime := ⟨hpprime i⟩
-    have hsymm : legendreSym q (oddPrimeDiscriminant (p i)) =
-        @legendreSym (p i) ⟨hpprime i⟩ (q : ℤ) :=
-      legendreSym_oddPrimeDiscriminant_eq_legendreSym (p := p i) (q := q) (hpodd i) hq
-    exact hsymm ▸ h i
-  · intro h i
-    haveI : Fact (p i).Prime := ⟨hpprime i⟩
-    have hsymm : legendreSym q (oddPrimeDiscriminant (p i)) =
-        @legendreSym (p i) ⟨hpprime i⟩ (q : ℤ) :=
-      legendreSym_oddPrimeDiscriminant_eq_legendreSym (p := p i) (q := q) (hpodd i) hq
-    rw [hsymm]
-    exact h i
+  refine forall_congr' fun i => ?_
+  haveI : Fact (p i).Prime := ⟨hpprime i⟩
+  exact legendreSym_oddPrimeDiscriminant_eq_one_iff (p := p i) (q := q) (hpodd i) hq
 
 end TauCeti.Multiquadratic
