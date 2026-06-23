@@ -86,6 +86,9 @@ repo: universal covers, the Jacobian challenge, reductive algebraic groups, part
 differential equations, Heegaard Floer and knot Floer homology, and multiquadratic fields and
 genus theory. When asked to work here, read the roadmap first (see `AGENTS.md`).
 
+Before starting a substantial piece of roadmap work, register and claim your intention so you
+don't collide with others; see [Coordinating work: intentions and claims](https://github.com/FormalFrontier/TauCetiRoadmap#coordinating-work-intentions-and-claims).
+
 ---
 
 <p align="center">
