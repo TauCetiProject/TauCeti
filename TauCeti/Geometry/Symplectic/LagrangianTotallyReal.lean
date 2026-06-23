@@ -2,11 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.Dimension.Finrank
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.Geometry.Symplectic.AlmostComplex
-import TauCeti.Geometry.Symplectic.Lagrangian
-import TauCeti.LinearAlgebra.TotallyReal
+module
+
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Lagrangian
+public import TauCeti.LinearAlgebra.TotallyReal
 
 /-!
 # Lagrangian subspaces of a tame pair are maximal totally real
@@ -50,6 +52,8 @@ totally real one.
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Sections 2.3 and 2.6.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 

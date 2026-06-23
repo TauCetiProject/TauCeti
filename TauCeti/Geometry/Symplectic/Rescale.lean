@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Geometry.Symplectic.AlmostComplex
+module
+
+public import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
 # Rescaling symplectic forms
@@ -31,6 +33,8 @@ The convention is the standard one from symplectic geometry: changing the overal
 of `ω` changes the metric scale but not the compatible almost complex structure.
 -/
 
+public section
+
 namespace TauCeti
 
 namespace SymplecticForm
@@ -41,6 +45,7 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
 The hypothesis `c ≠ 0` is needed for nondegeneracy. The construction is not an instance because
 there is no closed scalar action at `c = 0`. -/
+@[expose]
 noncomputable def rescale (ω : SymplecticForm V) (c : ℝ) (hc : c ≠ 0) : SymplecticForm V where
   toBilinForm := c • ω.toBilinForm
   isAlt := by

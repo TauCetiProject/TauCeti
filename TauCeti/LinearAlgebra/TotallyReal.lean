@@ -32,7 +32,7 @@ variable [AddCommMonoid F] [Module R F]
 
 /-- A submodule is maximal totally real with respect to `J` if it is complementary to its
 `J`-image. -/
-def IsMaximalTotallyReal (J : E →ₗ[R] E) (L : Submodule R E) : Prop :=
+@[expose] def IsMaximalTotallyReal (J : E →ₗ[R] E) (L : Submodule R E) : Prop :=
   IsCompl L (L.map J)
 
 /-- The maximal totally real predicate unfolds to complementarity of `L` and its `J`-image. -/

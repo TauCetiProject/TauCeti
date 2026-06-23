@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
+module
+
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
 
 /-!
 # Splitting the divisor class group along the degree at a rational point
@@ -34,6 +36,8 @@ splits, the form in which the degree-zero part is used downstream. It reuses Tau
 `WeilDivisor` and `OrderSystem` API and Mathlib's `zmultiplesHom` and `AddMonoidHom`/`AddEquiv`
 machinery; no external mathematics is vendored.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 
@@ -125,7 +129,7 @@ lemma degreeCorrection_mem_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w
   rw [mem_picZero, degreeCorrection_apply, map_sub, map_zsmul,
     weightedDegreeClass_divisorClass_ofPoint, hx₀, smul_eq_mul, mul_one, sub_self]
 
-private noncomputable def degreeSplitForward (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+noncomputable def degreeSplitForward (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) : S.ClassGroup →+ picZero w h × ℤ :=
   ((S.degreeCorrection w h x₀).codRestrict (picZero w h)
       (S.degreeCorrection_mem_picZero w h hx₀)).prod (weightedDegreeClass w h)
@@ -138,7 +142,7 @@ private lemma degreeSplitForward_apply (w : X → ℤ) (h : S.IsWeightedDegreeZe
         weightedDegreeClass w h c) :=
   rfl
 
-private noncomputable def degreeSplitInverse (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X) :
+noncomputable def degreeSplitInverse (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X) :
     picZero w h × ℤ →+ S.ClassGroup :=
   (picZero w h).subtype.comp (AddMonoidHom.fst (picZero w h) ℤ) +
     (S.degreeSection x₀).comp (AddMonoidHom.snd (picZero w h) ℤ)
@@ -150,7 +154,7 @@ private lemma degreeSplitInverse_apply (w : X → ℤ) (h : S.IsWeightedDegreeZe
       (p : S.ClassGroup) + n • S.divisorClass (ofPoint x₀) := by
   simp [degreeSplitInverse]
 
-private lemma degreeSplitInverse_degreeSplitForward (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+lemma degreeSplitInverse_degreeSplitForward (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (c : S.ClassGroup) :
     S.degreeSplitInverse w h x₀ (S.degreeSplitForward w h hx₀ c) = c := by
   rw [degreeSplitForward_apply, degreeSplitInverse_apply]

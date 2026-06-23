@@ -2,9 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Finsupp.Weight
-import Mathlib.Data.Finsupp.Order
-import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+module
+
+public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.Data.Finsupp.Order
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import Mathlib.Algebra.Order.Ring.Int
+import Mathlib.Tactic.NormNum.Basic
+import Mathlib.Tactic.Ring
 
 /-!
 # Weil divisors as finite integer combinations of points
@@ -29,6 +34,8 @@ This advances the Tau Ceti Jacobian roadmap, Layer A, "Divisors on a curve: Weil
 `⊕_x ℤ`", "Degree", and "`Pic⁰ X = ker deg` (as an abstract group)".
 -/
 
+public section
+
 namespace TauCeti
 
 namespace AlgebraicGeometry
@@ -44,7 +51,7 @@ variable {X Y Z : Type*}
 noncomputable section
 
 /-- The coefficient of a point in a Weil divisor. -/
-def coeff (D : WeilDivisor X) (x : X) : ℤ :=
+@[expose] def coeff (D : WeilDivisor X) (x : X) : ℤ :=
   D x
 
 @[simp]
@@ -141,7 +148,7 @@ lemma mem_effectiveSubmonoid (D : WeilDivisor X) :
 /-- Push forward a formal divisor along a map of point sets by summing coefficients over
 fibres.  Geometric pushforward of Weil divisors will specialize this once the relevant point
 maps and residue-degree factors are available. -/
-noncomputable def pushforward (f : X → Y) : WeilDivisor X →+ WeilDivisor Y :=
+@[expose] noncomputable def pushforward (f : X → Y) : WeilDivisor X →+ WeilDivisor Y :=
   (Finsupp.lmapDomain ℤ ℤ f).toAddMonoidHom
 
 @[simp]
@@ -196,7 +203,7 @@ lemma pushforward_mem_effectiveSubmonoid {D : WeilDivisor X} (hD : D ∈ effecti
 
 /-- The unweighted degree of a Weil divisor, summing its coefficients.  On a curve over a
 non-algebraically-closed field, use `weightedDegree` with residue-field degrees instead. -/
-noncomputable def degree : WeilDivisor X →+ ℤ :=
+@[expose] noncomputable def degree : WeilDivisor X →+ ℤ :=
   Finsupp.degree
 
 lemma degree_apply (D : WeilDivisor X) : degree D = ∑ x ∈ D.support, D x :=
@@ -334,7 +341,7 @@ lemma IsEffective.degree_pos {D : WeilDivisor X} (hD : IsEffective D) (hD0 : D �
 For a smooth proper curve over an algebraically closed field this is the formal divisor group
 whose quotient by principal divisors gives the abstract degree-zero Picard group. Over a
 general field, use `weightedDegreeZeroSubgroup` with residue-field degrees as weights. -/
-noncomputable def degreeZeroSubgroup (X : Type*) : AddSubgroup (WeilDivisor X) :=
+@[expose] noncomputable def degreeZeroSubgroup (X : Type*) : AddSubgroup (WeilDivisor X) :=
   (degree : WeilDivisor X →+ ℤ).ker
 
 @[simp]
@@ -353,7 +360,7 @@ lemma coe_degreeZeroSubgroup_eq_zero_of_isEffective {D : degreeZeroSubgroup X}
   hD.eq_zero_of_degree_eq_zero (degree_coe_degreeZeroSubgroup D)
 
 /-- The formal divisor `[x] - [y]`, a basic source of degree-zero divisors. -/
-noncomputable def pointDifference (x y : X) : WeilDivisor X :=
+@[expose] noncomputable def pointDifference (x y : X) : WeilDivisor X :=
   ofPoint x - ofPoint y
 
 @[simp]
@@ -418,7 +425,7 @@ lemma pushforward_pointDifference (f : X → Y) (x y : X) :
   rfl
 
 /-- Pushforward as a homomorphism on unweighted degree-zero divisors. -/
-noncomputable def pushforwardDegreeZero (f : X → Y) :
+@[expose] noncomputable def pushforwardDegreeZero (f : X → Y) :
     degreeZeroSubgroup X →+ degreeZeroSubgroup Y where
   toFun D :=
     ⟨pushforward f D, by
@@ -451,7 +458,7 @@ lemma pushforwardDegreeZero_comp (g : Y → Z) (f : X → Y) :
 
 For a curve over a field `k`, the intended weight is `x ↦ [κ(x) : k]`, giving the formal
 degree-zero divisor group before principal divisors are introduced. -/
-noncomputable def weightedDegreeZeroSubgroup (w : X → ℤ) : AddSubgroup (WeilDivisor X) :=
+@[expose] noncomputable def weightedDegreeZeroSubgroup (w : X → ℤ) : AddSubgroup (WeilDivisor X) :=
   (weightedDegree w).ker
 
 @[simp]
@@ -541,7 +548,7 @@ lemma weightedPointBaseDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ}
 
 /-- Pushforward as a homomorphism on weighted degree-zero divisors, when the target weight
 pulls back to the source weight. -/
-noncomputable def pushforwardWeightedDegreeZero (wX : X → ℤ) (wY : Y → ℤ) (f : X → Y)
+@[expose] noncomputable def pushforwardWeightedDegreeZero (wX : X → ℤ) (wY : Y → ℤ) (f : X → Y)
     (hw : ∀ x, wY (f x) = wX x) :
     weightedDegreeZeroSubgroup wX →+ weightedDegreeZeroSubgroup wY where
   toFun D :=
