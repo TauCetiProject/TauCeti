@@ -100,9 +100,7 @@ theorem addRightZMultiples_injective :
   simpa using this
 
 /-- The projection `(↑) : 𝕜 → AddCircle p` has regular deck action: it is surjective and its
-deck transformation group acts transitively on every fibre. Transitivity is witnessed by
-translation: two points with the same image differ by an element of the period subgroup
-`zmultiples p`, and translating by that element is a deck transformation. -/
+deck transformation group acts transitively on every fibre. -/
 theorem isRegular_addCircleCoe : IsRegular ((↑) : 𝕜 → AddCircle p) := by
   rw [isRegular_iff_exists_apply_eq]
   refine ⟨QuotientAddGroup.mk_surjective, ?_⟩
