@@ -29,8 +29,6 @@ Mathlib's `fixingSubgroup` applied directly to the relevant set of points.
 * `Diffeomorph.mem_fixedOnSubgroup_iff`: membership in `fixedOnSubgroup` means pointwise fixing.
 * `Diffeomorph.fixedOnSubgroup_univ`: the subgroup fixing the whole space is the bottom
   subgroup.
-* `Diffeomorph.mem_boundaryFixingSubgroup_iff`: membership in `boundaryFixingSubgroup` means
-  pointwise boundary fixing.
 * `Diffeomorph.toHomeomorphHom_mem_fixingSubgroup_of_mem_fixedOnSubgroup`: a set-fixing
   diffeomorphism maps to a set-fixing homeomorphism under the forgetful homomorphism.
 -/
@@ -74,11 +72,6 @@ theorem fixedOnSubgroup_univ :
 /-- The subgroup of self-diffeomorphisms fixing the model boundary pointwise. -/
 abbrev boundaryFixingSubgroup (n : ℕ∞ω) : Subgroup (M ≃ₘ^n⟮I, I⟯ M) :=
   fixedOnSubgroup I n (I.boundary M)
-
-/-- Membership in `boundaryFixingSubgroup` is pointwise fixing on the model boundary. -/
-theorem mem_boundaryFixingSubgroup_iff {f : M ≃ₘ^n⟮I, I⟯ M} :
-    f ∈ boundaryFixingSubgroup I n ↔ ∀ x ∈ I.boundary M, f x = x :=
-  mem_fixedOnSubgroup_iff (I := I) (n := n) (s := I.boundary M)
 
 /-- A set-fixing diffeomorphism forgets to a set-fixing homeomorphism. -/
 theorem toHomeomorphHom_mem_fixingSubgroup_of_mem_fixedOnSubgroup
