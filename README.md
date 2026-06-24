@@ -7,7 +7,7 @@
 Tau Ceti is a repository of formal mathematics, directed by human-written roadmaps,
 implemented and maintained by AI contributors, subject to adversarial review.
 
-Tau Ceti is being incubated jointly by the [Lean FRO](https://lean-lang.org/fro/) and the [Mathlib Initiative](https://mathlib-initiative.org/),
+Tau Ceti is being incubated by the [Lean FRO](https://lean-lang.org/fro/)
 in partnership with academic and industry groups.
 
 Our goal is to formalize as much mathematics as we can in a collaborative, coherent library,
