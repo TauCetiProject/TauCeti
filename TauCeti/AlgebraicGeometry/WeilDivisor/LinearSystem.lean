@@ -163,6 +163,7 @@ lemma eq_zero_of_mem_completeLinearSystem_of_weightedDegree_zero {w : X → ℤ}
 /-- With positive weights and weighted-degree-zero principal divisors, membership in the
 complete linear system of a weighted-degree-zero divisor is equivalent to being the zero divisor
 and the divisor class being zero. -/
+@[simp]
 lemma mem_completeLinearSystem_iff_eq_zero_and_divisorClass_eq_zero_of_weightedDegree_zero
     {w : X → ℤ} (hw : ∀ x, 0 < w x) (h : S.IsWeightedDegreeZero w)
     {D E : WeilDivisor X} (hD : weightedDegree w D = 0) :
@@ -277,6 +278,7 @@ lemma eq_zero_of_mem_completeLinearSystem_of_degree_zero (h : S.IsUnweightedDegr
 /-- Assuming unweighted-degree-zero principal divisors, membership in the complete linear system
 of a degree-zero divisor is equivalent to being the zero divisor and the divisor class being
 zero. -/
+@[simp]
 lemma mem_completeLinearSystem_iff_eq_zero_and_divisorClass_eq_zero_of_degree_zero
     (h : S.IsUnweightedDegreeZero) {D E : WeilDivisor X} (hD : degree D = 0) :
     E ∈ S.completeLinearSystem D ↔ E = 0 ∧ S.divisorClass D = 0 := by
