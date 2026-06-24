@@ -507,8 +507,14 @@ lemma pointDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x y : X}
 For the geometric weight `w x = [κ(x) : k]` and a rational base point `x₀` with `w x₀ = 1`,
 this is the degree-zero divisor underlying the Abel-Jacobi class of the closed point `x`.
 In the algebraically closed/unweighted specialization, this recovers `pointDifference x x₀`. -/
-noncomputable def weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) : WeilDivisor X :=
+@[expose] noncomputable def weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) : WeilDivisor X :=
   ofPoint x - w x • ofPoint x₀
+
+/-- The degree-corrected point divisor is `[x]` minus `w x` copies of the base point `[x₀]`.
+This exposes the definition as a public equation for use across modules. -/
+lemma weightedPointBaseDifference_eq_ofPoint_sub_zsmul (w : X → ℤ) (x₀ x : X) :
+    weightedPointBaseDifference w x₀ x = ofPoint x - w x • ofPoint x₀ :=
+  rfl
 
 /-- At the constant weight `1`, the degree-corrected point divisor is the usual point
 difference. This simp lemma lets unweighted API reuse the weighted construction. -/
