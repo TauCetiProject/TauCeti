@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupBaseChange
-public import TauCeti.Algebra.AlgebraicGroup.SplitTorus
+public import TauCeti.Algebra.Group.FreeAbelianCharacter
 
 /-!
 # Base change of split-torus points
@@ -65,7 +65,7 @@ variable [Algebra k K] [Algebra K A] [Algebra k A] [IsScalarTower k K A]
 The source is the convolution group of `K`-algebra maps out of the base-changed Hopf algebra
 `K ⊗[k] k[Multiplicative (σ →₀ ℤ)]`; the target is the product group of units of the value
 algebra. -/
-@[expose] noncomputable def baseChangePointsMulEquiv :
+noncomputable def baseChangePointsMulEquiv :
     WithConv (K ⊗[k] MonoidAlgebra k (Multiplicative (σ →₀ ℤ)) →ₐ[K] A) ≃* (σ → Aˣ) :=
   (DiagonalizableGroup.baseChangePointsMulEquiv (k := k) (K := K) (A := A)
       (G := Multiplicative (σ →₀ ℤ))).trans freeAbelianCharEquiv
