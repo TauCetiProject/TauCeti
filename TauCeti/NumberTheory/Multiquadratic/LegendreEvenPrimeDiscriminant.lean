@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
+public import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
 
 /-!
@@ -32,11 +33,15 @@ what lets the genus field use the prime discriminant `D` as the splitting charac
 * `TauCeti.Multiquadratic.legendreSym_evenPrimeDiscriminantRadicand` expands the Legendre
   symbol of an even prime-discriminant radicand at an odd prime as the appropriate
   supplementary character.
-* `TauCeti.Multiquadratic.legendreSym_evenPrimeDiscriminant` shows that an even prime
-  discriminant and its radicand have the same Legendre symbol at every odd prime.
+* `TauCeti.Multiquadratic.legendreSym_evenPrimeDiscriminant_eq_legendreSym_radicand` shows
+  that an even prime discriminant and its radicand have the same Legendre symbol at every
+  odd prime.
 * `legendreSym_evenPrimeDiscriminantRadicand_neg_four_eq_one_iff`,
   `..._eight_eq_one_iff`, and `..._neg_eight_eq_one_iff` give the quadratic-residue
   (splitting) conditions as congruences on `q` modulo `4` or `8`.
+* `legendreSym_evenPrimeDiscriminant_neg_four_eq_one_iff`,
+  `..._eight_eq_one_iff`, and `..._neg_eight_eq_one_iff` give the same conditions for the
+  prime discriminants themselves.
 -/
 
 public section
@@ -46,6 +51,12 @@ namespace TauCeti.Multiquadratic
 open ZMod
 
 variable {q : ℕ} [Fact q.Prime]
+
+/-- If `q` is an odd natural prime, then it does not divide `2` as an integer. -/
+private theorem not_intCast_prime_dvd_two (hq : q ≠ 2) : ¬ (q : ℤ) ∣ (2 : ℤ) := by
+  intro hdvd
+  exact hq ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp
+    (Int.natCast_dvd_natCast.mp hdvd))
 
 /-- The Legendre symbol of an even prime-discriminant radicand at an odd prime `q` is the
 supplementary character attached to that discriminant: `χ₄ q` for `-4` (radicand `-1`),
@@ -65,57 +76,105 @@ theorem legendreSym_evenPrimeDiscriminantRadicand {D : ℤ} (hD : IsEvenPrimeDis
 every odd prime `q`: they differ by the square factor `4`, which contributes a trivial
 symbol. This is the form used by the genus-field splitting law, where the prime discriminant
 `D` itself is the splitting character. -/
-theorem legendreSym_evenPrimeDiscriminant {D : ℤ} (hD : IsEvenPrimeDiscriminant D)
+theorem legendreSym_evenPrimeDiscriminant_eq_legendreSym_radicand {D : ℤ}
+    (hD : IsEvenPrimeDiscriminant D)
     (hq : q ≠ 2) :
     legendreSym q D = legendreSym q (evenPrimeDiscriminantRadicand D) := by
-  have h2 : ((2 : ℤ) : ZMod q) ≠ 0 := by
-    rw [show ((2 : ℤ) : ZMod q) = ((2 : ℕ) : ZMod q) by norm_cast, Ne, ZMod.natCast_eq_zero_iff]
-    exact fun hdvd => hq ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp hdvd)
-  conv_lhs => rw [evenPrimeDiscriminant_eq_four_mul_radicand hD, show (4 : ℤ) = 2 ^ 2 by norm_num]
-  rw [legendreSym.mul, legendreSym.sq_one' q h2, one_mul]
+  have hsq : D = evenPrimeDiscriminantRadicand D * 2 ^ 2 := by
+    calc
+      D = 4 * evenPrimeDiscriminantRadicand D :=
+        evenPrimeDiscriminant_eq_four_mul_radicand hD
+      _ = evenPrimeDiscriminantRadicand D * 2 ^ 2 := by ring
+  calc
+    legendreSym q D = legendreSym q (evenPrimeDiscriminantRadicand D * 2 ^ 2) :=
+      congrArg (legendreSym q) hsq
+    _ = legendreSym q (evenPrimeDiscriminantRadicand D) :=
+      legendreSym_mul_sq (p := q) (a := evenPrimeDiscriminantRadicand D)
+        (u := 2) (not_intCast_prime_dvd_two hq)
 
 /-- The radicand `-1` of the prime discriminant `-4` is a quadratic residue modulo an odd
 prime `q` exactly when `q ≡ 1 (mod 4)`; equivalently `q` splits in `ℚ(√-1) = ℚ(i)`. -/
 theorem legendreSym_evenPrimeDiscriminantRadicand_neg_four_eq_one_iff (hq : q ≠ 2) :
     legendreSym q (evenPrimeDiscriminantRadicand (-4)) = 1 ↔ q % 4 = 1 := by
-  have hne : ((-1 : ℤ) : ZMod q) ≠ 0 := by
-    rw [show ((-1 : ℤ) : ZMod q) = -1 by push_cast; ring]
-    exact neg_ne_zero.mpr one_ne_zero
-  rw [evenPrimeDiscriminantRadicand_neg_four, legendreSym.eq_one_iff q hne,
-    show ((-1 : ℤ) : ZMod q) = -1 by push_cast; ring, ZMod.exists_sq_eq_neg_one_iff]
+  rw [evenPrimeDiscriminantRadicand_neg_four, legendreSym.at_neg_one hq]
   have hodd : q % 2 = 1 := (Nat.Prime.eq_two_or_odd Fact.out).resolve_left hq
-  rcases Nat.odd_mod_four_iff.mp hodd with h | h <;> rw [h] <;> decide
+  constructor
+  · intro hχ
+    rcases Nat.odd_mod_four_iff.mp hodd with hq1 | hq3
+    · exact hq1
+    · rw [χ₄_nat_three_mod_four hq3] at hχ
+      norm_num at hχ
+  · exact χ₄_nat_one_mod_four
 
 /-- The radicand `2` of the prime discriminant `8` is a quadratic residue modulo an odd
 prime `q` exactly when `q ≡ 1` or `7 (mod 8)`; equivalently `q` splits in `ℚ(√2)`. -/
 theorem legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff (hq : q ≠ 2) :
     legendreSym q (evenPrimeDiscriminantRadicand 8) = 1 ↔ q % 8 = 1 ∨ q % 8 = 7 := by
-  have hne : ((2 : ℤ) : ZMod q) ≠ 0 := by
-    rw [show ((2 : ℤ) : ZMod q) = ((2 : ℕ) : ZMod q) by norm_cast, Ne, ZMod.natCast_eq_zero_iff]
-    exact fun hdvd => hq ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp hdvd)
-  rw [evenPrimeDiscriminantRadicand_eight, legendreSym.eq_one_iff q hne,
-    show ((2 : ℤ) : ZMod q) = (2 : ZMod q) by push_cast; ring, ZMod.exists_sq_eq_two_iff hq]
+  have hodd : q % 2 = 1 := (Nat.Prime.eq_two_or_odd Fact.out).resolve_left hq
+  rw [evenPrimeDiscriminantRadicand_eight, legendreSym.at_two hq, χ₈_nat_eq_if_mod_eight]
+  by_cases hres : q % 8 = 1 ∨ q % 8 = 7 <;> simp [hodd, hres]
 
 /-- The radicand `-2` of the prime discriminant `-8` is a quadratic residue modulo an odd
 prime `q` exactly when `q ≡ 1` or `3 (mod 8)`; equivalently `q` splits in `ℚ(√-2)`. -/
 theorem legendreSym_evenPrimeDiscriminantRadicand_neg_eight_eq_one_iff (hq : q ≠ 2) :
     legendreSym q (evenPrimeDiscriminantRadicand (-8)) = 1 ↔ q % 8 = 1 ∨ q % 8 = 3 := by
-  have hne : ((-2 : ℤ) : ZMod q) ≠ 0 := by
-    rw [show ((-2 : ℤ) : ZMod q) = -((2 : ℕ) : ZMod q) by push_cast; ring, neg_ne_zero, Ne,
-      ZMod.natCast_eq_zero_iff]
-    exact fun hdvd => hq ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp hdvd)
-  rw [evenPrimeDiscriminantRadicand_neg_eight, legendreSym.eq_one_iff q hne,
-    show ((-2 : ℤ) : ZMod q) = (-2 : ZMod q) by push_cast; ring, ZMod.exists_sq_eq_neg_two_iff hq]
+  have hodd : q % 2 = 1 := (Nat.Prime.eq_two_or_odd Fact.out).resolve_left hq
+  rw [evenPrimeDiscriminantRadicand_neg_eight, legendreSym.at_neg_two hq,
+    χ₈'_nat_eq_if_mod_eight]
+  by_cases hres : q % 8 = 1 ∨ q % 8 = 3 <;> simp [hodd, hres]
 
-/-- **Worked example.** The radicand `-2` of `-8` is a quadratic residue modulo `3`
-(since `3 ≡ 3 (mod 8)`): the prime `3` splits in `ℚ(√-2)`. -/
-theorem legendreSym_three_evenPrimeDiscriminantRadicand_neg_eight :
+/-- The radicand of a variable even prime discriminant is a quadratic residue modulo an odd
+prime `q` exactly under the corresponding supplementary congruence condition. -/
+theorem legendreSym_evenPrimeDiscriminantRadicand_eq_one_iff {D : ℤ}
+    (hD : IsEvenPrimeDiscriminant D) (hq : q ≠ 2) :
+    legendreSym q (evenPrimeDiscriminantRadicand D) = 1 ↔
+      if D = -4 then q % 4 = 1
+      else if D = 8 then q % 8 = 1 ∨ q % 8 = 7
+      else q % 8 = 1 ∨ q % 8 = 3 := by
+  rcases hD with rfl | rfl | rfl
+  · rw [if_pos rfl, legendreSym_evenPrimeDiscriminantRadicand_neg_four_eq_one_iff hq]
+  · rw [if_neg (by norm_num), if_pos rfl,
+      legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff hq]
+  · rw [if_neg (by norm_num), if_neg (by norm_num),
+      legendreSym_evenPrimeDiscriminantRadicand_neg_eight_eq_one_iff hq]
+
+/-- A variable even prime discriminant is a quadratic residue modulo an odd prime `q`
+exactly under the corresponding supplementary congruence condition. -/
+theorem legendreSym_evenPrimeDiscriminant_eq_one_iff {D : ℤ}
+    (hD : IsEvenPrimeDiscriminant D) (hq : q ≠ 2) :
+    legendreSym q D = 1 ↔
+      if D = -4 then q % 4 = 1
+      else if D = 8 then q % 8 = 1 ∨ q % 8 = 7
+      else q % 8 = 1 ∨ q % 8 = 3 := by
+  rw [legendreSym_evenPrimeDiscriminant_eq_legendreSym_radicand hD hq,
+    legendreSym_evenPrimeDiscriminantRadicand_eq_one_iff hD hq]
+
+/-- The prime discriminant `-4` is a quadratic residue modulo an odd prime `q` exactly when
+`q ≡ 1 (mod 4)`. -/
+@[simp] theorem legendreSym_evenPrimeDiscriminant_neg_four_eq_one_iff (hq : q ≠ 2) :
+    legendreSym q (-4) = 1 ↔ q % 4 = 1 := by
+  simpa using legendreSym_evenPrimeDiscriminant_eq_one_iff
+    (q := q) (D := -4) isEvenPrimeDiscriminant_neg_four hq
+
+/-- The prime discriminant `8` is a quadratic residue modulo an odd prime `q` exactly when
+`q ≡ 1` or `7 (mod 8)`. -/
+@[simp] theorem legendreSym_evenPrimeDiscriminant_eight_eq_one_iff (hq : q ≠ 2) :
+    legendreSym q 8 = 1 ↔ q % 8 = 1 ∨ q % 8 = 7 := by
+  simpa using legendreSym_evenPrimeDiscriminant_eq_one_iff
+    (q := q) (D := 8) isEvenPrimeDiscriminant_eight hq
+
+/-- The prime discriminant `-8` is a quadratic residue modulo an odd prime `q` exactly when
+`q ≡ 1` or `3 (mod 8)`. -/
+@[simp] theorem legendreSym_evenPrimeDiscriminant_neg_eight_eq_one_iff (hq : q ≠ 2) :
+    legendreSym q (-8) = 1 ↔ q % 8 = 1 ∨ q % 8 = 3 := by
+  simpa using legendreSym_evenPrimeDiscriminant_eq_one_iff
+    (q := q) (D := -8) isEvenPrimeDiscriminant_neg_eight hq
+
+example :
     legendreSym 3 (evenPrimeDiscriminantRadicand (-8)) = 1 :=
   (legendreSym_evenPrimeDiscriminantRadicand_neg_eight_eq_one_iff (by norm_num)).mpr (by norm_num)
 
-/-- **Worked example.** The radicand `2` of `8` is *not* a quadratic residue modulo `3`
-(since `3 ∉ {1, 7} (mod 8)`): the prime `3` is inert or ramified, not split, in `ℚ(√2)`. -/
-theorem legendreSym_three_evenPrimeDiscriminantRadicand_eight_ne_one :
+example :
     legendreSym 3 (evenPrimeDiscriminantRadicand 8) ≠ 1 := by
   intro h
   rw [legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff (q := 3) (by norm_num)] at h
