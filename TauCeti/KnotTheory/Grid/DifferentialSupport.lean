@@ -22,7 +22,7 @@ by swapping a pair of columns, so an evaluation of `∂` never has to range over
 n`. It is also a step the rectangle-pairing `∂² = 0` argument relies on: a length-two sequence of
 rectangles `x → y → z` passes through a column transposition `y` of `x`, not an arbitrary state.
 
-## Main definitions
+## Key API
 
 * `TauCeti.GridState.columnSwapNeighbors`: the grid states obtained from `x` by transposing a
   pair of distinct columns -- the states a rectangle from `x` can reach.
@@ -48,49 +48,6 @@ for Knots and Links*, Chapters 3 and 4.
 public section
 
 namespace TauCeti
-
-namespace GridState
-
-variable {n : ℕ}
-
-/-- Equality of grid states is decidable: a grid state is determined by its underlying
-permutation, whose equality is decidable. This makes the finite set of column-swap neighbours a
-computable `Finset`. -/
-instance : DecidableEq (GridState n) := fun x y =>
-  decidable_of_iff (x.toPerm = y.toPerm)
-    ⟨fun h => by cases x; cases y; cases h; rfl, fun h => by rw [h]⟩
-
-/-- The grid states obtained from `x` by transposing a pair of distinct columns.
-
-These are exactly the states a single grid rectangle can reach from `x`: the differential of the
-generator `x` is supported here (`fullyBlockedDifferentialOnGenerator_support_subset`). -/
-def columnSwapNeighbors (x : GridState n) : Finset (GridState n) :=
-  (Finset.univ.filter fun p : Fin n × Fin n => p.1 ≠ p.2).image
-    fun p => x.swapColumns p.1 p.2
-
-/-- A state is a column-swap neighbour of `x` exactly when it is `x` with a pair of distinct
-columns transposed. -/
-theorem mem_columnSwapNeighbors {x y : GridState n} :
-    y ∈ x.columnSwapNeighbors ↔ ∃ c d : Fin n, c ≠ d ∧ y = x.swapColumns c d := by
-  simp only [columnSwapNeighbors, Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and,
-    Prod.exists]
-  constructor
-  · rintro ⟨c, d, hcd, rfl⟩
-    exact ⟨c, d, hcd, rfl⟩
-  · rintro ⟨c, d, hcd, rfl⟩
-    exact ⟨c, d, hcd, rfl⟩
-
-/-- A grid state is not a column-swap neighbour of itself: swapping two distinct columns moves the
-occupied row of either column, so the result differs from the original. -/
-@[simp]
-theorem self_notMem_columnSwapNeighbors (x : GridState n) : x ∉ x.columnSwapNeighbors := by
-  rw [mem_columnSwapNeighbors]
-  rintro ⟨c, d, hcd, hx⟩
-  have hval := congrArg (fun z : GridState n => z c) hx
-  simp only [swapColumns_apply, Equiv.swap_apply_left] at hval
-  exact hcd (x.toPerm.injective hval)
-
-end GridState
 
 namespace GridDiagram
 
