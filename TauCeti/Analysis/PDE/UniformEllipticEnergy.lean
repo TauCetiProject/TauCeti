@@ -27,7 +27,7 @@ Lax--Milgram.
   lower-order coefficients at that point.
 * `TauCeti.PDE.UniformlyEllipticOn.opNorm_energyIntegrand_le`: operator-norm boundedness
   of the full energy integrand, with explicit constant `Λ + β + γ`.
-* `TauCeti.PDE.UniformlyEllipticOn.garding_energyIntegrand_self_le`: the pointwise
+* `TauCeti.PDE.UniformlyEllipticOn.garding_le_energyIntegrand_self`: the pointwise
   Gårding lower bound obtained from the lower ellipticity projection of
   `UniformlyEllipticOn`.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand`: coercivity when the
@@ -81,7 +81,7 @@ grind_pattern opNorm_energyIntegrand_le =>
 
 With nonnegative mass coefficient and drift bound `β`, the diagonal energy density is bounded
 below by `(λ/2)‖∇u‖² - (β²/2λ)|u|²`. -/
-lemma garding_energyIntegrand_self_le (h : UniformlyEllipticOn Ω a lam Lam)
+lemma garding_le_energyIntegrand_self (h : UniformlyEllipticOn Ω a lam Lam)
     {x : X} (hx : x ∈ Ω) {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hb : ‖b₀‖ ≤ beta) (hc : 0 ≤ c₀)
     (U : ℝ × EuclideanSpace ℝ n) :
@@ -89,7 +89,7 @@ lemma garding_energyIntegrand_self_le (h : UniformlyEllipticOn Ω a lam Lam)
       ≤ energyIntegrand (a x) b₀ c₀ U U :=
   garding_energyIntegrand_self_of_bounds h.pos (h.lower_bound hx) hb hc U
 
-grind_pattern garding_energyIntegrand_self_le =>
+grind_pattern garding_le_energyIntegrand_self =>
   UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, ‖b₀‖ ≤ beta, 0 ≤ c₀,
   energyIntegrand (a x) b₀ c₀ U U
 
