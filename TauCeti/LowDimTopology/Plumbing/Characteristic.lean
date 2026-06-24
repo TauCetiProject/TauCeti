@@ -73,22 +73,24 @@ theorem isCharacteristicVector_iff (k : V → ℤ) :
 
 /-- The canonical characteristic covector, in the plumbing convention
 `K(E_v) + E_v · E_v = -2`. Since `E_v · E_v = P.weight v`, its coordinate at `v` is
-`-P.weight v - 2`. -/
-abbrev canonicalCharacteristic : V → ℤ :=
+`-P.weight v - 2`. The body is not part of the interface: use `canonicalCharacteristic_apply`
+for its coordinates and the characteristic/adjunction lemmas below. -/
+def canonicalCharacteristic : V → ℤ :=
   fun v => -P.weight v - 2
+
+/-- The canonical characteristic covector has coordinates `-P.weight v - 2`. -/
+@[simp]
+theorem canonicalCharacteristic_apply (v : V) :
+    P.canonicalCharacteristic v = -P.weight v - 2 := by
+  simp only [canonicalCharacteristic]
 
 /-- The canonical covector is characteristic. -/
 @[simp, grind .]
 theorem isCharacteristicVector_canonicalCharacteristic :
     P.IsCharacteristicVector P.canonicalCharacteristic := by
   intro v
+  rw [canonicalCharacteristic_apply]
   exact Int.modEq_iff_dvd.mpr ⟨P.weight v + 1, by ring⟩
-
-/-- The canonical characteristic covector has coordinates `-P.weight v - 2`. -/
-@[simp]
-theorem canonicalCharacteristic_apply (v : V) :
-    P.canonicalCharacteristic v = -P.weight v - 2 :=
-  rfl
 
 section Form
 
@@ -112,26 +114,32 @@ private theorem adjacency_sum_cast_zmod_two_eq_zero (x : V → ℤ) :
   classical
   let f : {p : V × V // P.toSimpleGraph.Adj p.1 p.2} → ZMod 2 :=
     fun p => (x p.1.1 : ZMod 2) * (x p.1.2 : ZMod 2)
+  -- Reindex the iterated sum over `i` then `j` as a single sum over the pair `(i, j) : V × V`.
+  have hpair :
+      (∑ i, ∑ j, if P.toSimpleGraph.Adj i j then
+          (x i : ZMod 2) * (x j : ZMod 2) else 0) =
+        ∑ p : V × V, if P.toSimpleGraph.Adj p.1 p.2 then
+          (x p.1 : ZMod 2) * (x p.2 : ZMod 2) else 0 := by
+    rw [← Finset.univ_product_univ, Finset.sum_product]
+  -- Drop the `if` by restricting to the subtype of adjacent pairs, identifying the sum with `∑ f`.
   have hsum :
       (∑ i, ∑ j, ((if P.toSimpleGraph.Adj i j then x i * x j else 0 : ℤ) : ZMod 2)) =
         ∑ p, f p := by
     simp only [Int.cast_ite, Int.cast_mul, Int.cast_zero]
-    rw [show (∑ i, ∑ j, if P.toSimpleGraph.Adj i j then
-          (x i : ZMod 2) * (x j : ZMod 2) else 0) =
-        ∑ p : V × V, if P.toSimpleGraph.Adj p.1 p.2 then
-          (x p.1 : ZMod 2) * (x p.2 : ZMod 2) else 0 by
-      rw [← Finset.univ_product_univ, Finset.sum_product]]
-    rw [← Finset.sum_filter]
+    rw [hpair, ← Finset.sum_filter]
     rw [Finset.sum_subtype
       (s := (Finset.univ : Finset (V × V)).filter fun p => P.toSimpleGraph.Adj p.1 p.2)]
     intro p
     simp
   rw [hsum]
+  -- Adjacency is symmetric, so `(i, j) ↦ (j, i)` is a fixed-point-free involution on adjacent
+  -- pairs; it pairs `f` with itself, and `a + a = 0` in `ZMod 2`.
   exact Finset.sum_involution (s := Finset.univ) (f := f)
     (fun p _ => ⟨(p.1.2, p.1.1), p.2.symm⟩)
     (fun p _ => by
       dsimp [f]
-      rw [mul_comm, ← two_mul, show (2 : ZMod 2) = 0 by exact ZMod.natCast_self 2, zero_mul])
+      rw [mul_comm]
+      exact CharTwo.add_self_eq_zero _)
     (fun p _ _ h => by
       exact p.2.ne (Prod.ext_iff.mp (Subtype.ext_iff.mp h)).2)
     (fun _ _ => Finset.mem_univ _) (fun p _ => by
@@ -173,7 +181,7 @@ theorem isCharacteristicVector_iff_forall_modEq_intersectionForm (k : V → ℤ)
 theorem canonicalCharacteristic_apply_add_intersection_single (v : V) :
     P.canonicalCharacteristic v +
       P.intersectionForm (Pi.single v 1) (Pi.single v 1) = -2 := by
-  simp [canonicalCharacteristic]
+  rw [canonicalCharacteristic_apply, intersectionForm_single, intersectionMatrix_diag]
   ring
 
 end Form
