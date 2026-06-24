@@ -6,7 +6,7 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
-public import TauCeti.Geometry.Symplectic.ComplexModuleHom
+public import TauCeti.Geometry.Symplectic.ComplexModule
 public import TauCeti.Geometry.Symplectic.JHolomorphic
 
 /-!
