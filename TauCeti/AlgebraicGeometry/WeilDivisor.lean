@@ -584,6 +584,14 @@ lemma weightedPointBaseDifference_sub_change_base (w : X → ℤ) (x₀ y₀ x :
       w x • pointDifference x₀ y₀ := by
   rw [weightedPointBaseDifference_change_base, add_sub_cancel_left]
 
+/-- Subtracting two degree-corrected point divisors with the same base point cancels the base
+term when the two points have equal weight. -/
+lemma weightedPointBaseDifference_sub_same_base (w : X → ℤ) {x₀ x y : X} (hxy : w x = w y) :
+    weightedPointBaseDifference w x₀ x - weightedPointBaseDifference w x₀ y =
+      pointDifference x y := by
+  simp [weightedPointBaseDifference, pointDifference, hxy, sub_eq_add_neg, add_assoc,
+    add_left_comm, add_comm]
+
 /-- Pushforward as a homomorphism on weighted degree-zero divisors, when the target weight
 pulls back to the source weight. -/
 @[expose] noncomputable def pushforwardWeightedDegreeZero (wX : X → ℤ) (wY : Y → ℤ) (f : X → Y)
