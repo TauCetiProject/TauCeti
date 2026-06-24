@@ -17,9 +17,6 @@ The final analytic step of the Chafaï proof of Bernstein's theorem: the Bernste
 (`prokhorov_limit_identification`), yielding the Laplace representation
 `f t = L + ∫ e^{-tp} dμ₀`.
 
-Ported from the sorry-free `mrdouglasny/hille-yosida` (`HilleYosida.BernsteinChafai`, kernel
-part). The two `maxHeartbeats` overrides used there are dropped to comply with TauCeti's linter.
-
 ## Main declarations
 
 * `TauCeti.kernel_uniform_conv`: uniform convergence of `φ_n(x, ·)` to `e^{-x·}` on `[0, ∞)`.

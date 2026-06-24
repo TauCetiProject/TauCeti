@@ -16,9 +16,8 @@ define finite measures `cm_measure f n` whose total mass is bounded by `f(0) - f
 the rescaling `t ↦ (n-1)/t` give measures `cm_rescaled f n` supported on `[0, ∞)` whose Laplace
 kernels `(1 - xp/(n-1))₊ⁿ⁻¹` converge to `e^{-xp}`. These feed the Prokhorov tightness argument.
 
-Ported from the sorry-free `mrdouglasny/hille-yosida` (`HilleYosida.BernsteinMeasures`); the
-`IsCompletelyMonotone` predicate and the analytic lemmas it relies on match TauCeti's
-`CompletelyMonotone/Basic.lean` and `CompletelyMonotone/BernsteinAux.lean`.
+These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean` and
+`CompletelyMonotone/BernsteinAux.lean`.
 
 ## Main declarations
 
