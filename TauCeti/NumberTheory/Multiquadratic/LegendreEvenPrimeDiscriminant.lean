@@ -78,7 +78,7 @@ theorem legendreSym_evenPrimeDiscriminantRadicand {D : ℤ} (hD : IsEvenPrimeDis
 every odd prime `q`: they differ by the square factor `4`, which contributes a trivial
 symbol. This is the form used by the genus-field splitting law, where the prime discriminant
 `D` itself is the splitting character. -/
-@[simp] theorem legendreSym_evenPrimeDiscriminant_eq_legendreSym_radicand {D : ℤ}
+theorem legendreSym_evenPrimeDiscriminant_eq_legendreSym_radicand {D : ℤ}
     (hD : IsEvenPrimeDiscriminant D)
     (hq : q ≠ 2) :
     legendreSym q D = legendreSym q (evenPrimeDiscriminantRadicand D) := by
@@ -152,7 +152,7 @@ prime `q` exactly under the corresponding supplementary congruence condition. -/
 
 /-- A variable even prime discriminant is a quadratic residue modulo an odd prime `q`
 exactly under the corresponding supplementary congruence condition. -/
-@[simp] theorem legendreSym_evenPrimeDiscriminant_eq_one_iff {D : ℤ}
+theorem legendreSym_evenPrimeDiscriminant_eq_one_iff {D : ℤ}
     (hD : IsEvenPrimeDiscriminant D) (hq : q ≠ 2) :
     legendreSym q D = 1 ↔
       if D = -4 then q % 4 = 1
