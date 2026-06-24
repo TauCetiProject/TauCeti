@@ -519,6 +519,7 @@ lemma weightedPointBaseDifference_eq_pointDifference (x₀ x : X) :
 
 /-- If the point has weight `1`, the degree-corrected point divisor is the usual point
 difference. -/
+@[simp]
 lemma weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one {w : X → ℤ} {x₀ x : X}
     (hx : w x = 1) : weightedPointBaseDifference w x₀ x = pointDifference x x₀ := by
   simp [weightedPointBaseDifference, pointDifference, hx]
