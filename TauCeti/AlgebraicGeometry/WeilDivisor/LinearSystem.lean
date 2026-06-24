@@ -206,7 +206,7 @@ lemma nonempty_completeLinearSystem_iff_divisorClass_eq_zero_of_weightedDegree_z
 
 /-- With positive weights and weighted-degree-zero principal divisors, the complete linear system
 of `D` is `{0}` exactly when its divisor class is zero. -/
-lemma completeLinearSystem_eq_singleton_zero_iff_divisorClass_eq_zero_of_weighted_principal_zero
+lemma completeLinearSystem_eq_singleton_zero_iff_divisorClass_eq_zero_of_principal_weightedDegree
     {w : X → ℤ} (hw : ∀ x, 0 < w x) (h : S.IsWeightedDegreeZero w)
     {D : WeilDivisor X} :
     S.completeLinearSystem D = {0} ↔ S.divisorClass D = 0 := by
@@ -229,11 +229,11 @@ lemma completeLinearSystem_eq_singleton_zero_iff_divisorClass_eq_zero_of_weighte
 
 /-- With positive weights and weighted-degree-zero principal divisors, the complete linear system
 of `D` is `{0}` exactly when `D` is linearly equivalent to zero. -/
-lemma completeLinearSystem_eq_singleton_zero_iff_linearlyEquivalent_zero_of_weighted_principal_zero
+lemma completeLinearSystem_eq_singleton_zero_iff_linearlyEquivalent_zero_of_principal_weightedDegree
     {w : X → ℤ} (hw : ∀ x, 0 < w x) (h : S.IsWeightedDegreeZero w)
     {D : WeilDivisor X} :
     S.completeLinearSystem D = {0} ↔ S.LinearlyEquivalent D 0 := by
-  rw [S.completeLinearSystem_eq_singleton_zero_iff_divisorClass_eq_zero_of_weighted_principal_zero
+  rw [S.completeLinearSystem_eq_singleton_zero_iff_divisorClass_eq_zero_of_principal_weightedDegree
     hw h, ← S.divisorClass_eq_iff]
   simp
 
@@ -308,7 +308,7 @@ lemma nonempty_completeLinearSystem_iff_divisorClass_eq_zero_of_degree_zero
 lemma completeLinearSystem_eq_singleton_zero_iff_divisorClass_eq_zero_of_principal_degree_zero
     (h : S.IsUnweightedDegreeZero) {D : WeilDivisor X} :
     S.completeLinearSystem D = {0} ↔ S.divisorClass D = 0 :=
-  S.completeLinearSystem_eq_singleton_zero_iff_divisorClass_eq_zero_of_weighted_principal_zero
+  S.completeLinearSystem_eq_singleton_zero_iff_divisorClass_eq_zero_of_principal_weightedDegree
     (w := fun _ : X => (1 : ℤ)) (fun _ => zero_lt_one) h
 
 /-- Assuming unweighted-degree-zero principal divisors, the complete linear system of `D` is
@@ -316,7 +316,7 @@ lemma completeLinearSystem_eq_singleton_zero_iff_divisorClass_eq_zero_of_princip
 lemma completeLinearSystem_eq_singleton_zero_iff_linearlyEquivalent_zero_of_principal_degree_zero
     (h : S.IsUnweightedDegreeZero) {D : WeilDivisor X} :
     S.completeLinearSystem D = {0} ↔ S.LinearlyEquivalent D 0 :=
-  S.completeLinearSystem_eq_singleton_zero_iff_linearlyEquivalent_zero_of_weighted_principal_zero
+  S.completeLinearSystem_eq_singleton_zero_iff_linearlyEquivalent_zero_of_principal_weightedDegree
     (w := fun _ : X => (1 : ℤ)) (fun _ => zero_lt_one) h
 
 /-- Assuming unweighted-degree-zero principal divisors, a degree-zero divisor has a nonempty
