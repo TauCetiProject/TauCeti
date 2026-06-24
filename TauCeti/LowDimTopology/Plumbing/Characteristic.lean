@@ -65,8 +65,11 @@ def characteristicVectors :=
   { k : V → ℤ // P.IsCharacteristicVector k }
 
 /-- Characteristic covectors are exactly the covectors satisfying the vertex-wise parity
-condition. -/
-@[simp, grind =]
+condition. This is a `_def`-style restatement: it is not a `@[simp]` lemma, so that the
+per-instance characteristic lemmas (such as `isCharacteristicVector_canonicalCharacteristic`)
+keep their `IsCharacteristicVector` head for `simp` to match; it is exposed to `grind` for
+unfolding the predicate. -/
+@[grind =]
 theorem isCharacteristicVector_iff (k : V → ℤ) :
     P.IsCharacteristicVector k ↔ ∀ v : V, k v ≡ P.weight v [ZMOD 2] :=
   Iff.rfl
