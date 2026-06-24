@@ -28,6 +28,7 @@ specialization.
 ## Main results
 
 * `mem_fixingSubgroup_iff`: the pointwise membership criterion for a fixed subset.
+* `fixingSubgroup_fixedPoints_gc`: the Galois connection with fixed points.
 * `mem_boundaryFixingSubgroup_iff`: the pointwise membership criterion.
 * `toHomeomorphHom_mem_fixingSubgroup_of_mem_fixingSubgroup`: a subset-fixing diffeomorphism
   maps to a subset-fixing homeomorphism under the forgetful homomorphism.
@@ -62,6 +63,13 @@ theorem fixingSubgroup_def (s : Set M) :
 theorem mem_fixingSubgroup_iff {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M} :
     f ∈ fixingSubgroup I n s ↔ ∀ x ∈ s, f x = x := by
   simp [fixingSubgroup, _root_.mem_fixingSubgroup_iff, smul_def]
+
+/-- The Galois connection between the diffeomorphism subgroup fixing a set pointwise and the
+fixed points of a diffeomorphism subgroup. -/
+theorem fixingSubgroup_fixedPoints_gc :
+    GaloisConnection (OrderDual.toDual ∘ fixingSubgroup I n)
+      ((fun P : Subgroup (M ≃ₘ^n⟮I, I⟯ M) => MulAction.fixedPoints P M) ∘ OrderDual.ofDual) :=
+  fun _s _P => ⟨fun h s hs p => h p.2 ⟨s, hs⟩, fun h p hp s => h s.2 ⟨p, hp⟩⟩
 
 /-- The diffeomorphism subgroup fixing the empty set is the top subgroup. -/
 @[simp]
