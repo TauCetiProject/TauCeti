@@ -25,7 +25,6 @@ the relative group `Diff(M, ∂M)`, the diffeomorphisms fixing the boundary poin
 
 ## Main results
 
-* `mem_fixingSubgroup_boundary_iff`: the pointwise membership criterion.
 * `toHomeomorphHom_mem_fixingSubgroup_boundary_of_mem_fixingSubgroup_boundary`: a boundary-fixing
   diffeomorphism maps to a boundary-fixing homeomorphism under the forgetful homomorphism.
 -/
@@ -41,15 +40,7 @@ namespace Diffeomorph
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H)
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] (n : ℕ∞ω)
-
-/-- A self-diffeomorphism lies in the boundary-fixing subgroup exactly when it fixes every
-boundary point. -/
-@[simp]
-theorem mem_fixingSubgroup_boundary_iff {f : M ≃ₘ^n⟮I, I⟯ M} :
-    f ∈ _root_.fixingSubgroup (M ≃ₘ^n⟮I, I⟯ M) (I.boundary M) ↔
-      ∀ x ∈ I.boundary M, f x = x := by
-  simp [_root_.mem_fixingSubgroup_iff, smul_def]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
 
 /-- A boundary-fixing diffeomorphism forgets to a boundary-fixing homeomorphism. -/
 theorem toHomeomorphHom_mem_fixingSubgroup_boundary_of_mem_fixingSubgroup_boundary
@@ -59,7 +50,8 @@ theorem toHomeomorphHom_mem_fixingSubgroup_boundary_of_mem_fixingSubgroup_bounda
   rw [_root_.mem_fixingSubgroup_iff]
   intro x hx
   rw [Homeomorph.smul_def]
-  simpa [toHomeomorphHom_apply] using (mem_fixingSubgroup_boundary_iff I n).mp hf x hx
+  simpa [smul_def, toHomeomorphHom_apply] using
+    ((_root_.mem_fixingSubgroup_iff (M ≃ₘ^n⟮I, I⟯ M)).mp hf x hx)
 
 end Diffeomorph
 
