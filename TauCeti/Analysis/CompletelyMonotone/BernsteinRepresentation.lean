@@ -10,57 +10,52 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Analysis.CompletelyMonotone.Basic
 
 /-!
-# Bernstein's representation theorem
+# Bernstein's representation theorem (forward direction)
 
-The Hausdorff–Bernstein–Widder theorem represents a completely monotone function as the
-Laplace transform of a positive measure on `[0, ∞)`. This file develops the representation
-for `TauCeti.IsCompletelyMonotone`, the *closed*-half-line notion from
-`TauCeti.Analysis.CompletelyMonotone.Basic`, building on the object API (the predicate, its
-closure lemmas, and the building block `t ↦ e^{-x t}`) rather than redeveloping it here.
+Bernstein's theorem represents a completely monotone function as the Laplace transform of a
+positive measure on `[0, ∞)`. This file develops the **forward direction** for
+`TauCeti.IsCompletelyMonotone`, the closed-half-line notion from
+`TauCeti.Analysis.CompletelyMonotone.Basic`: every completely monotone `f` is the Laplace
+transform of a finite measure on `ℝ≥0`. It builds on the object API (the predicate and its
+closure lemmas) rather than redeveloping it.
 
-## ⚠ Statement note — which measures correspond to `IsCompletelyMonotone`
+The proof is a port of the sorry-free Chafaï-style development in `mrdouglasny/hille-yosida`
+(`HilleYosida.Bernstein.bernstein_theorem`), whose `IsCompletelyMonotone` is definitionally the
+same predicate. Roadmap intention #33.
 
-The classical theorem matches complete monotonicity on the **open** half-line `(0, ∞)` with
-*arbitrary* (possibly infinite) positive measures, and the bounded/`f(0⁺) < ∞` subclass with
-**finite** measures. Our `IsCompletelyMonotone` is stronger still: it demands `C^∞` up to the
-boundary point `0`. As `CompletelyMonotone/Basic.lean` records, that is a genuine
-strengthening — it excludes some Laplace transforms of finite measures, e.g.
-`t ↦ ∫₀^∞ e^{-x t} (1 + x)⁻² dx`, which is finite at `0` yet has `f'(0⁺) = -∞`.
+## Scope and the finite-vs-all-moments subtlety
 
-So the naïve `IsCompletelyMonotone f ↔ ∃! finite μ, …` (as written in the roadmap milestone)
-is **false in the `⇐` direction**. The class that closed complete monotonicity actually
-matches is the measures with **all moments finite**: `∫ xⁿ dμ < ∞` for every `n`,
-equivalently `f⁽ⁿ⁾(0⁺)` finite for every `n` (note `n = 0` already forces `μ` finite). The
-main statement below is phrased that way, via `HasAllMoments`.
-
-If instead we want the textbook finite-measure biconditional, the right left-hand side is the
-*continuous-at-0* relaxation `IsCompletelyMonotoneOnIoi f ∧ ContinuousWithinAt f (Ici 0) 0`
-rather than `IsCompletelyMonotone f`. That variant is left as a TODO; see the commented
-`bernstein_finite` statement at the end.
+We state only the forward existence here, with a **finite** representing measure — exactly what
+complete monotonicity on the closed half-line yields, and what hille-yosida proves. The
+*biconditional* is deferred (PR #2): the converse "finite measure ⟹ completely monotone" is
+**false** for this closed-half-line class — e.g. `t ↦ ∫₀^∞ e^{-x t}(1+x)⁻² dx` comes from a
+finite measure yet has `f'(0⁺) = -∞`, so it is not `C^∞` at `0`. The class that closed
+complete monotonicity matches biconditionally is the measures with **all moments finite**
+(`∫ xⁿ dμ < ∞` for every `n`), confirmed independently by Gemini 3.1 Pro and Codex. See the
+`TODO` block at the end for the deferred all-moments iff.
 
 ## Main declarations
 
 * `TauCeti.laplaceTransformMeasure`: `t ↦ ∫ e^{-t x} dμ`, the Laplace transform of a measure
   on `ℝ≥0`.
-* `TauCeti.HasAllMoments`: every power `x ↦ xⁿ` is `μ`-integrable.
-* `TauCeti.isCompletelyMonotone_laplaceTransformMeasure`: the Laplace transform of an
-  all-moments measure is completely monotone (the easy `⇐` direction).
-* `TauCeti.IsCompletelyMonotone.exists_measure`: every completely monotone function arises this
-  way (the hard `⇒` direction — measure extraction via tightness).
-* `TauCeti.bernstein`: the representation biconditional with uniqueness.
+* `TauCeti.IsCompletelyMonotone.exists_measure`: every completely monotone function on
+  `[0, ∞)` is the Laplace transform of a finite measure on `ℝ≥0`.
 
 ## Implementation notes
 
-The `⇒` direction is the substance: extract a measure from the sequence of finite
-approximations and pass to the limit (Prokhorov tightness), with uniqueness from injectivity
-of the Laplace transform. The port source is the sorry-free `mrdouglasny/hille-yosida`
-development (roadmap intention #33).
+Port path (Chafaï 2013, as in hille-yosida): the Taylor integral remainder gives
+`f(x) = boundary(n,T) + ∫_x^T ρ_n`, a change of variables `p = (n-1)/t` turns the densities
+`ρ_n` into measures whose kernels `(1 - xp/(n-1))^{n-1}` increase to `e^{-xp}`, the total mass
+is the uniform bound `f(0) - f(∞)`, and Prokhorov + portmanteau extract the weak limit `μ`.
+hille-yosida carries the measure on `Measure ℝ` with a `μ (Iio 0) = 0` support side-condition;
+here we follow the TauCeti convention and carry it on `Measure ℝ≥0`, converting via pushforward.
 
 ## References
 
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions: Theory and Applications*
   (de Gruyter, 2nd ed. 2012), Ch. 1.
 * D. V. Widder, *The Laplace Transform* (Princeton, 1941), Ch. IV.
+* D. Chafaï, *Aspects of the Bernstein theorem* (2013).
 -/
 
 public section
@@ -73,85 +68,43 @@ namespace TauCeti
 variable {f : ℝ → ℝ} {μ : Measure ℝ≥0}
 
 /-- The **Laplace transform** of a measure `μ` on `ℝ≥0`, evaluated at `t : ℝ`:
-`t ↦ ∫ e^{-t x} dμ(x)`. The completely monotone functions on `[0, ∞)` are exactly these
-transforms for measures with all moments finite (`bernstein`). -/
+`t ↦ ∫ e^{-t x} dμ(x)`. By Bernstein's theorem every completely monotone function on
+`[0, ∞)` is of this form for a finite `μ` (`IsCompletelyMonotone.exists_measure`). -/
 noncomputable def laplaceTransformMeasure (μ : Measure ℝ≥0) (t : ℝ) : ℝ :=
   ∫ x, Real.exp (-t * (x : ℝ)) ∂μ
 
-/-- A measure on `ℝ≥0` **has all moments** when every monomial `x ↦ xⁿ` is integrable. This is
-the measure-side condition that matches closed-half-line complete monotonicity: it forces
-`μ` to be finite (the `n = 0` case) and `f⁽ⁿ⁾(0⁺) = (-1)ⁿ ∫ xⁿ dμ` to be finite for all `n`,
-i.e. the Laplace transform is `C^∞` up to the boundary. -/
-def HasAllMoments (μ : Measure ℝ≥0) : Prop :=
-  ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ
+/-- **Bernstein's theorem, forward direction.** Every completely monotone function on the
+closed half-line `[0, ∞)` is the Laplace transform of a finite measure on `ℝ≥0`.
 
-/-- A measure with all moments finite is finite (the zeroth moment is its mass). -/
-theorem HasAllMoments.isFiniteMeasure (hμ : HasAllMoments μ) : IsFiniteMeasure μ := by
-  sorry
-
-/-! ### The easy direction: Laplace transforms are completely monotone -/
-
-/-- The Laplace transform of a measure with all moments finite is completely monotone on the
-closed half-line `[0, ∞)`. Differentiating under the integral sign `n` times brings down a
-factor `(-x)ⁿ`, so `(-1)ⁿ` times the `n`-th derivative is `∫ xⁿ e^{-t x} dμ ≥ 0`; the
-all-moments hypothesis is exactly what licenses differentiation up to and including `t = 0`. -/
-theorem isCompletelyMonotone_laplaceTransformMeasure (hμ : HasAllMoments μ) :
-    IsCompletelyMonotone (laplaceTransformMeasure μ) := by
-  sorry
-
-/-! ### The hard direction: every completely monotone function is a Laplace transform -/
-
-/-- **Measure extraction.** Every completely monotone function on `[0, ∞)` is the Laplace
-transform of a (unique) measure on `ℝ≥0` with all moments finite.
-
-Proof path (Hausdorff–Bernstein–Widder): the finite differences of `f` define a sequence of
-discrete approximating measures; complete monotonicity makes them positive and the bound at
-`t = 0` makes the family tight, so Prokhorov gives a weak limit `μ`, and passing to the limit
-identifies `f` with its Laplace transform. Smoothness at the boundary upgrades finiteness to
-all-moments. -/
+Port of `HilleYosida.Bernstein.bernstein_theorem`: complete monotonicity makes the
+finite-difference densities positive and bounds their total mass by `f(0) - f(∞)`, so the
+Chafaï approximating measures are tight; Prokhorov extracts a weak limit `μ`, and portmanteau
+identifies `f` with its Laplace transform. -/
 theorem IsCompletelyMonotone.exists_measure (hf : IsCompletelyMonotone f) :
-    ∃ μ : Measure ℝ≥0, HasAllMoments μ ∧
+    ∃ μ : Measure ℝ≥0, IsFiniteMeasure μ ∧
       ∀ t : ℝ, 0 ≤ t → f t = laplaceTransformMeasure μ t := by
   sorry
 
-/-- **Uniqueness.** Two all-moments measures with the same Laplace transform on `[0, ∞)` agree,
-by injectivity of the Laplace transform on measures. -/
-theorem laplaceTransformMeasure_injective {μ ν : Measure ℝ≥0}
-    (hμ : HasAllMoments μ) (hν : HasAllMoments ν)
-    (h : ∀ t : ℝ, 0 ≤ t → laplaceTransformMeasure μ t = laplaceTransformMeasure ν t) :
-    μ = ν := by
-  sorry
-
-/-! ### Bernstein's theorem -/
-
-/-- **Bernstein's representation theorem.** A function `f : ℝ → ℝ` is completely monotone on
-the closed half-line `[0, ∞)` if and only if it is the Laplace transform of a unique measure
-on `ℝ≥0` whose moments are all finite.
-
-See the statement note in the module docstring: the all-moments condition (not mere
-finiteness) is what closed complete monotonicity matches. -/
-theorem bernstein (f : ℝ → ℝ) :
-    IsCompletelyMonotone f ↔
-      ∃! μ : Measure ℝ≥0, HasAllMoments μ ∧
-        ∀ t : ℝ, 0 ≤ t → f t = laplaceTransformMeasure μ t := by
-  constructor
-  · intro hf
-    obtain ⟨μ, hμ, hrep⟩ := hf.exists_measure
-    refine ⟨μ, ⟨hμ, hrep⟩, ?_⟩
-    rintro ν ⟨hν, hrep'⟩
-    refine laplaceTransformMeasure_injective hν hμ (fun t ht => ?_)
-    rw [← hrep' t ht, ← hrep t ht]
-  · rintro ⟨μ, ⟨hμ, hrep⟩, -⟩
-    have hcm := isCompletelyMonotone_laplaceTransformMeasure hμ
-    exact hcm.congr (fun t ht => hrep t ht)
-
--- TODO (textbook finite-measure variant). With the continuous-at-0 relaxation of the
--- left-hand side, the representing measure is merely finite:
+-- TODO (PR #2 — the biconditional, all-moments form). The textbook iff requires the
+-- *all-moments* condition on the measure side, not mere finiteness (see the scope note above).
+-- Sketch of the additional API:
 --
--- theorem bernstein_finite (f : ℝ → ℝ)
---     (hf : IsCompletelyMonotoneOnIoi f) (hf0 : ContinuousWithinAt f (Ici 0) 0) :
---     ∃! μ : Measure ℝ≥0, IsFiniteMeasure μ ∧
---       ∀ t : ℝ, 0 ≤ t → f t = laplaceTransformMeasure μ t := by
---   sorry
+-- /-- `μ` has finite moments of every order; this is what closed complete monotonicity
+-- matches biconditionally (`n = 0` already forces `μ` finite). -/
+-- def HasAllMoments (μ : Measure ℝ≥0) : Prop :=
+--   ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ
+--
+-- theorem isCompletelyMonotone_laplaceTransformMeasure (hμ : HasAllMoments μ) :
+--     IsCompletelyMonotone (laplaceTransformMeasure μ) := ...      -- ⇐, differentiate under ∫
+--
+-- theorem laplaceTransformMeasure_injective {μ ν : Measure ℝ≥0}
+--     (hμ : HasAllMoments μ) (hν : HasAllMoments ν)
+--     (h : ∀ t : ℝ, 0 ≤ t → laplaceTransformMeasure μ t = laplaceTransformMeasure ν t) :
+--     μ = ν := ...                                  -- port BCR_Common.laplace_measure_unique
+--
+-- theorem bernstein (f : ℝ → ℝ) :
+--     IsCompletelyMonotone f ↔
+--       ∃! μ : Measure ℝ≥0, HasAllMoments μ ∧
+--         ∀ t : ℝ, 0 ≤ t → f t = laplaceTransformMeasure μ t := ...   -- assemble ⇒/⇐/uniqueness
 
 end TauCeti
