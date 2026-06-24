@@ -19,24 +19,22 @@ to apply the degree theorem `TauCeti.Multiquadratic.finrank_adjoin_range`), one 
 discriminants to be **square-class independent**: no nonempty subset product of their radicands
 is a rational square.
 
-This file supplies that independence. The discriminant of a quadratic field is a *fundamental*
-discriminant, whose prime-discriminant factorization contains at most one even factor (one of
-`-4`, `8`, `-8`); so the relevant hypothesis is that the family of prime discriminants is
-injective and has **at most one even** member. The radicands are then pairwise coprime — their
-absolute values are `1`, `2`, and distinct odd primes — and a nonempty subset product is a
-squarefree integer different from `1`, hence not a square.
+This file supplies that independence. The natural prime-discriminant criterion is that the family
+is injective and does not contain all three even prime discriminants `-4`, `8`, and `-8`: those
+three radicands multiply to the square `4`, while every proper subfamily of the even radicands is
+independent. The fundamental-discriminant specialization has at most one even factor, hence
+satisfies this criterion automatically.
 
 ## Main results
 
 * `TauCeti.Multiquadratic.isCoprime_primeDiscriminantRadicand`: the radicands of two distinct
-  prime discriminants, not both even, are coprime.
+  prime discriminants are coprime except for the pair `8`, `-8`.
 * `TauCeti.Multiquadratic.not_isSquare_prod_primeDiscriminantRadicands`: for an injective family
-  of prime discriminants with at most one even member, no nonempty subset product of their
-  radicands is a rational square — square-class independence in the form the degree theorem
+  of prime discriminants not containing all of `-4`, `8`, and `-8`, no nonempty subset product of
+  their radicands is a rational square — square-class independence in the form the degree theorem
   consumes.
-* `TauCeti.Multiquadratic.finrank_adjoin_primeDiscriminantRadicands`: the multiquadratic
-  compositum of the `√(radicand D i)` over such a family has degree `2^|ι|` — the genus field is
-  multiquadratic of full degree.
+* `TauCeti.Multiquadratic.finrank_adjoin_roots_primeDiscriminantRadicands`: the multiquadratic
+  compositum of the roots of `radicand D i` over such a family has degree `2^|ι|`.
 -/
 
 public section
@@ -54,10 +52,16 @@ private theorem not_isSquare_intCast_of_squarefree_of_ne_one {n : ℤ}
   have hu : IsUnit a := hsf a (ha ▸ dvd_rfl)
   rcases Int.isUnit_iff.mp hu with rfl | rfl <;> simp_all
 
+/-- Dividing a rational square by `4` leaves a rational square. -/
+private theorem isSquare_of_isSquare_four_mul {q : ℚ} (h : IsSquare ((4 : ℚ) * q)) :
+    IsSquare q := by
+  have h4 : IsSquare (4 : ℚ) := ⟨2, by norm_num⟩
+  simpa using h.div h4
+
 /-- If the radicand of a prime discriminant has absolute value `1`, the discriminant is `-4`.
 The odd prime discriminants have radicand of absolute value their underlying prime `≥ 2`, and the
 even radicands `-1`, `2`, `-2` have absolute value `1` only in the `-4` case. -/
-theorem eq_neg_four_of_primeDiscriminantRadicand_natAbs_eq_one {D : ℤ}
+private theorem eq_neg_four_of_primeDiscriminantRadicand_natAbs_eq_one {D : ℤ}
     (hD : IsPrimeDiscriminant D) (h : (primeDiscriminantRadicand D).natAbs = 1) :
     D = -4 := by
   rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, hp, hpodd, rfl⟩
@@ -69,17 +73,95 @@ theorem eq_neg_four_of_primeDiscriminantRadicand_natAbs_eq_one {D : ℤ}
   · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hpodd, oddPrimeDiscriminant_natAbs] at h
     exact absurd h hp.ne_one
 
+/-- The negative of a squarefree integer is squarefree. -/
+private theorem Squarefree.int_neg {n : ℤ} (hn : Squarefree n) : Squarefree (-n) := by
+  rw [← Int.squarefree_natAbs, Int.natAbs_neg, Int.squarefree_natAbs]
+  exact hn
+
+/-- Products over odd prime-discriminant radicands, with no `-4` radicand, are not `-1`. -/
+private theorem prod_primeDiscriminantRadicands_ne_neg_one {ι : Type*} {D : ι → ℤ}
+    (hD : ∀ i, IsPrimeDiscriminant (D i)) {S : Finset ι}
+    (hno_neg_four : ∀ i ∈ S, D i ≠ -4) :
+    (∏ i ∈ S, primeDiscriminantRadicand (D i)) ≠ -1 := by
+  classical
+  intro hprod
+  by_cases hS : S.Nonempty
+  · have hnp := map_prod Int.natAbsHom (fun i => primeDiscriminantRadicand (D i)) S
+    simp only [Int.natAbsHom_apply] at hnp
+    have habs : ∏ i ∈ S, (primeDiscriminantRadicand (D i)).natAbs = 1 := by
+      rw [← hnp, hprod]
+      norm_num
+    have hall : ∀ i ∈ S, (primeDiscriminantRadicand (D i)).natAbs = 1 :=
+      (Finset.prod_eq_one_iff).mp habs
+    obtain ⟨i, hi⟩ := hS
+    exact hno_neg_four i hi (eq_neg_four_of_primeDiscriminantRadicand_natAbs_eq_one (hD i)
+      (hall i hi))
+  · rw [Finset.not_nonempty_iff_eq_empty.mp hS] at hprod
+    norm_num at hprod
+
+/-- Products over prime-discriminant radicands are squarefree when the selected radicands are
+pairwise coprime. -/
+private theorem squarefree_prod_primeDiscriminantRadicands_of_pairwise_isCoprime {ι : Type*}
+    {D : ι → ℤ} (hD : ∀ i, IsPrimeDiscriminant (D i)) {S : Finset ι}
+    (hcop : ∀ i ∈ S, ∀ j ∈ S, i ≠ j →
+      IsCoprime (primeDiscriminantRadicand (D i)) (primeDiscriminantRadicand (D j))) :
+    Squarefree (∏ i ∈ S, primeDiscriminantRadicand (D i)) :=
+  Finset.squarefree_prod_of_pairwise_isCoprime
+    (fun i hi j hj hij => (hcop i hi j hj hij).isRelPrime)
+    (fun i _ => squarefree_primeDiscriminantRadicand (hD i))
+
+/-- Products over pairwise coprime prime-discriminant radicands are not rational squares, provided
+the selected product is not the empty product in disguise. -/
+private theorem not_isSquare_prod_primeDiscriminantRadicands_of_pairwise_isCoprime {ι : Type*}
+    {D : ι → ℤ} (hD : ∀ i, IsPrimeDiscriminant (D i)) {S : Finset ι}
+    (hcop : ∀ i ∈ S, ∀ j ∈ S, i ≠ j →
+      IsCoprime (primeDiscriminantRadicand (D i)) (primeDiscriminantRadicand (D j)))
+    (hne_one : (∏ i ∈ S, primeDiscriminantRadicand (D i)) ≠ 1) :
+    ¬ IsSquare (∏ i ∈ S, ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) := by
+  rw [← Int.cast_prod]
+  exact not_isSquare_intCast_of_squarefree_of_ne_one
+    (squarefree_prod_primeDiscriminantRadicands_of_pairwise_isCoprime hD hcop) hne_one
+
+/-- A product of prime-discriminant radicands is not `1` as soon as the discriminant family is
+injective and the selected set is nonempty. -/
+private theorem prod_primeDiscriminantRadicands_ne_one_of_nonempty {ι : Type*} {D : ι → ℤ}
+    (hD : ∀ i, IsPrimeDiscriminant (D i)) (hinj : Function.Injective D) {S : Finset ι}
+    (hS : S.Nonempty) :
+    (∏ i ∈ S, primeDiscriminantRadicand (D i)) ≠ 1 := by
+  intro hP
+  have hnp := map_prod Int.natAbsHom (fun i => primeDiscriminantRadicand (D i)) S
+  simp only [Int.natAbsHom_apply] at hnp
+  have habs : ∏ i ∈ S, (primeDiscriminantRadicand (D i)).natAbs = 1 := by
+    rw [← hnp, hP, Int.natAbs_one]
+  have hall : ∀ i ∈ S, (primeDiscriminantRadicand (D i)).natAbs = 1 :=
+    (Finset.prod_eq_one_iff).mp habs
+  have hallD : ∀ i ∈ S, D i = -4 := fun i hi =>
+    eq_neg_four_of_primeDiscriminantRadicand_natAbs_eq_one (hD i) (hall i hi)
+  obtain ⟨i₀, hi₀⟩ := hS
+  have hsingle : S = {i₀} :=
+    Finset.eq_singleton_iff_unique_mem.mpr
+      ⟨hi₀, fun x hx => hinj (by rw [hallD x hx, hallD i₀ hi₀])⟩
+  rw [hsingle, Finset.prod_singleton, hallD i₀ hi₀, primeDiscriminantRadicand_neg_four] at hP
+  exact absurd hP (by decide)
+
+/-!
+The first block of private helpers above is intentionally local to this file; the public API starts
+with the coprimality theorem below.
+-/
+
 /-- **Coprimality of distinct prime-discriminant radicands.** The radicands of two distinct prime
-discriminants that are not both even are coprime. Their absolute values are `1`, `2` (the even
-radicands), or distinct odd primes (the odd ones), which are pairwise coprime. -/
+discriminants are coprime except for the ordered exceptional pairs `8`, `-8` and `-8`, `8`.
+Their absolute values are `1`, `2` (the even radicands), or distinct odd primes (the odd ones);
+the only non-coprime distinct even radicands are `2` and `-2`. -/
 theorem isCoprime_primeDiscriminantRadicand {D E : ℤ}
     (hD : IsPrimeDiscriminant D) (hE : IsPrimeDiscriminant E) (hDE : D ≠ E)
-    (hnot : ¬ (IsEvenPrimeDiscriminant D ∧ IsEvenPrimeDiscriminant E)) :
+    (hnot : ¬ ((D = 8 ∧ E = -8) ∨ (D = -8 ∧ E = 8))) :
     IsCoprime (primeDiscriminantRadicand D) (primeDiscriminantRadicand E) := by
   rw [Int.isCoprime_iff_nat_coprime]
   rcases isPrimeDiscriminant_iff.mp hD with hevD | ⟨p, hp, hpodd, rfl⟩
   · rcases isPrimeDiscriminant_iff.mp hE with hevE | ⟨q, hq, hqodd, rfl⟩
-    · exact absurd ⟨hevD, hevE⟩ hnot
+    · rcases hevD with rfl | rfl | rfl <;> rcases hevE with rfl | rfl | rfl <;>
+        simp_all
     · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hevD,
         primeDiscriminantRadicand_oddPrimeDiscriminant hqodd, oddPrimeDiscriminant_natAbs]
       rcases evenPrimeDiscriminantRadicand_natAbs_eq_one_or_two hevD with h1 | h2
@@ -97,49 +179,84 @@ theorem isCoprime_primeDiscriminantRadicand {D E : ℤ}
       exact (Nat.coprime_primes hp hq).mpr fun h => hDE (by rw [h])
 
 /-- **Square-class independence of prime discriminants.** Let `D : ι → ℤ` be an injective family
-of prime discriminants with at most one even member (the shape of the prime-discriminant
-factorization of a fundamental discriminant). Then no nonempty subset product of the radicands
-`primeDiscriminantRadicand (D i)` is a rational square. This is the `hindep` hypothesis the
-multiquadratic degree theorem `finrank_adjoin_range` consumes, applied to the genus-field
-generators. -/
+of prime discriminants which does not contain all three even prime discriminants `-4`, `8`, and
+`-8`. Then no nonempty subset product of the radicands `primeDiscriminantRadicand (D i)` is a
+rational square. This is the `hindep` hypothesis the multiquadratic degree theorem
+`finrank_adjoin_range` consumes, applied to the genus-field generators. -/
 theorem not_isSquare_prod_primeDiscriminantRadicands {ι : Type*} (D : ι → ℤ)
     (hD : ∀ i, IsPrimeDiscriminant (D i)) (hinj : Function.Injective D)
-    (heven : ∀ i j, IsEvenPrimeDiscriminant (D i) → IsEvenPrimeDiscriminant (D j) → i = j) :
+    (heven : ¬ ((∃ i, D i = -4) ∧ (∃ i, D i = 8) ∧ (∃ i, D i = -8))) :
     ∀ S : Finset ι, S.Nonempty →
       ¬ IsSquare (∏ i ∈ S, ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) := by
+  classical
   intro S hS
-  rw [← Int.cast_prod]
-  refine not_isSquare_intCast_of_squarefree_of_ne_one ?_ ?_
-  · refine Finset.squarefree_prod_of_pairwise_isCoprime (fun i _ j _ hij => ?_)
-      (fun i _ => squarefree_primeDiscriminantRadicand (hD i))
-    exact (isCoprime_primeDiscriminantRadicand (hD i) (hD j) (fun h => hij (hinj h))
-      (fun h => hij (heven i j h.1 h.2))).isRelPrime
-  · intro hP
-    have hnp := map_prod Int.natAbsHom (fun i => primeDiscriminantRadicand (D i)) S
-    simp only [Int.natAbsHom_apply] at hnp
-    have habs : ∏ i ∈ S, (primeDiscriminantRadicand (D i)).natAbs = 1 := by
-      rw [← hnp, hP, Int.natAbs_one]
-    have hall : ∀ i ∈ S, (primeDiscriminantRadicand (D i)).natAbs = 1 :=
-      (Finset.prod_eq_one_iff).mp habs
-    have hallD : ∀ i ∈ S, D i = -4 := fun i hi =>
-      eq_neg_four_of_primeDiscriminantRadicand_natAbs_eq_one (hD i) (hall i hi)
-    obtain ⟨i₀, hi₀⟩ := hS
-    have hsingle : S = {i₀} :=
-      Finset.eq_singleton_iff_unique_mem.mpr
-        ⟨hi₀, fun x hx => hinj (by rw [hallD x hx, hallD i₀ hi₀])⟩
-    rw [hsingle, Finset.prod_singleton, hallD i₀ hi₀, primeDiscriminantRadicand_neg_four] at hP
-    exact absurd hP (by decide)
+  by_cases hboth : (∃ i ∈ S, D i = 8) ∧ (∃ i ∈ S, D i = -8)
+  · rcases hboth with ⟨⟨i8, hi8S, hi8D⟩, ⟨im8, him8S, him8D⟩⟩
+    have hne : i8 ≠ im8 := by
+      intro h
+      have : (8 : ℤ) = -8 := by
+        calc
+          (8 : ℤ) = D i8 := hi8D.symm
+          _ = D im8 := by rw [h]
+          _ = -8 := him8D
+      norm_num at this
+    have hno4S : ∀ i ∈ S, D i ≠ -4 := by
+      intro i hiS hiD
+      exact heven ⟨⟨i, hiD⟩, ⟨i8, hi8D⟩, ⟨im8, him8D⟩⟩
+    let T := (S.erase i8).erase im8
+    let P : ℤ := ∏ i ∈ T, primeDiscriminantRadicand (D i)
+    have him8_erase : im8 ∈ S.erase i8 := Finset.mem_erase.mpr ⟨hne.symm, him8S⟩
+    have hprod_int : (∏ i ∈ S, primeDiscriminantRadicand (D i)) = -4 * P := by
+      rw [← Finset.mul_prod_erase S (fun i => primeDiscriminantRadicand (D i)) hi8S,
+        ← Finset.mul_prod_erase (S.erase i8) (fun i => primeDiscriminantRadicand (D i))
+          him8_erase]
+      simp [P, T, hi8D, him8D]
+      ring
+    have hcopT : ∀ i ∈ T, ∀ j ∈ T, i ≠ j →
+        IsCoprime (primeDiscriminantRadicand (D i)) (primeDiscriminantRadicand (D j)) := by
+      intro i hiT j hjT hij
+      exact isCoprime_primeDiscriminantRadicand (hD i) (hD j) (fun h => hij (hinj h))
+        (by
+          intro hbad
+          rcases hbad with ⟨hi, hj⟩ | ⟨hi, hj⟩
+          · exact Finset.ne_of_mem_erase (Finset.mem_of_mem_erase hiT)
+              (hinj (by rw [hi, hi8D]))
+          · exact Finset.ne_of_mem_erase hiT (hinj (by rw [hi, him8D])))
+    have hsfP : Squarefree P :=
+      squarefree_prod_primeDiscriminantRadicands_of_pairwise_isCoprime hD hcopT
+    have hne_negP : -P ≠ 1 := by
+      intro hneg
+      have hP : P = -1 := by omega
+      exact prod_primeDiscriminantRadicands_ne_neg_one hD
+        (fun i hi => hno4S i (Finset.mem_of_mem_erase (Finset.mem_of_mem_erase hi))) hP
+    have hnot_negP : ¬ IsSquare (((-P : ℤ) : ℚ)) :=
+      not_isSquare_intCast_of_squarefree_of_ne_one (Squarefree.int_neg hsfP) hne_negP
+    intro hsquare
+    apply hnot_negP
+    refine isSquare_of_isSquare_four_mul ?_
+    convert hsquare using 1
+    rw [← Int.cast_prod, hprod_int]
+    norm_num
+  · refine not_isSquare_prod_primeDiscriminantRadicands_of_pairwise_isCoprime hD ?_
+      (prod_primeDiscriminantRadicands_ne_one_of_nonempty hD hinj hS)
+    intro i hi j hj hij
+    exact isCoprime_primeDiscriminantRadicand (hD i) (hD j) (fun h => hij (hinj h))
+      (by
+        intro hbad
+        rcases hbad with ⟨hi8, hjm8⟩ | ⟨him8, hj8⟩
+        · exact hboth ⟨⟨i, hi, hi8⟩, ⟨j, hj, hjm8⟩⟩
+        · exact hboth ⟨⟨j, hj, hj8⟩, ⟨i, hi, him8⟩⟩)
 
-/-- **The genus field is multiquadratic of full degree.** Over any field `L ⊇ ℚ` carrying square
-roots `root i` of the radicands of an injective family of prime discriminants with at most one
-even member, the compositum `ℚ(root i : i)` has degree `2^|ι|`. Specialised to the prime
-discriminants dividing a fundamental discriminant, this says the genus field is multiquadratic
-of full degree. It is the prime-discriminant instance of `finrank_adjoin_range`, fed the
+/-- **Full degree for adjoining roots of prime-discriminant radicands.** Over any field `L ⊇ ℚ`
+carrying square roots `root i` of the radicands of an injective family of prime discriminants not
+containing all three even prime discriminants, the compositum `ℚ(root i : i)` has degree `2^|ι|`.
+In a later genus-field specialization, the chosen roots will be identified with the genus-field
+generators. This is the prime-discriminant instance of `finrank_adjoin_range`, fed the
 square-class independence `not_isSquare_prod_primeDiscriminantRadicands`. -/
-theorem finrank_adjoin_primeDiscriminantRadicands {ι : Type*} [Finite ι]
+theorem finrank_adjoin_roots_primeDiscriminantRadicands {ι : Type*} [Finite ι]
     {L : Type*} [Field L] [Algebra ℚ L] (D : ι → ℤ)
     (hD : ∀ i, IsPrimeDiscriminant (D i)) (hinj : Function.Injective D)
-    (heven : ∀ i j, IsEvenPrimeDiscriminant (D i) → IsEvenPrimeDiscriminant (D j) → i = j)
+    (heven : ¬ ((∃ i, D i = -4) ∧ (∃ i, D i = 8) ∧ (∃ i, D i = -8)))
     (root : ι → L)
     (hroot : ∀ i, root i ^ 2 = algebraMap ℚ L ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) :
     Module.finrank ℚ (IntermediateField.adjoin ℚ (Set.range root)) = 2 ^ Nat.card ι :=
@@ -153,15 +270,16 @@ rational square. -/
 example : ∀ S : Finset (Fin 2), S.Nonempty →
     ¬ IsSquare (∏ i ∈ S, ((primeDiscriminantRadicand (![(-4 : ℤ), 5] i) : ℤ) : ℚ)) := by
   refine not_isSquare_prod_primeDiscriminantRadicands _ (fun i => ?_) (fun a b h => ?_)
-    (fun i j hi hj => ?_)
+    ?_
   · fin_cases i
     · simp
     · have h5 : IsPrimeDiscriminant (5 : ℤ) := by
-        rw [show (5 : ℤ) = oddPrimeDiscriminant 5 from
-          (oddPrimeDiscriminant_of_mod_four_eq_one (by norm_num)).symm]
+        have hoddDisc : oddPrimeDiscriminant 5 = (5 : ℤ) :=
+          oddPrimeDiscriminant_of_mod_four_eq_one (by norm_num)
+        rw [← hoddDisc]
         exact isPrimeDiscriminant_oddPrimeDiscriminant (by decide) (by decide)
       simpa using h5
   · fin_cases a <;> fin_cases b <;> simp_all
-  · fin_cases i <;> fin_cases j <;> simp_all [IsEvenPrimeDiscriminant]
+  · simp
 
 end TauCeti.Multiquadratic
