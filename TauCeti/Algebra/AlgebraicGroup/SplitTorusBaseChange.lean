@@ -32,7 +32,7 @@ algebra over `K`") and Layer 4 ("Tori: split ... the character lattice `X*(T)`")
   base-changed points of the rank-`σ` split torus to coordinate families `σ → Aˣ`.
 * `TauCeti.SplitTorus.baseChangePointsMulEquiv_apply_coe`: the equivalence reads a point on
   the base-changed standard coordinate generator.
-* `TauCeti.SplitTorus.baseChangePointsMulEquiv_symm_apply_single`: the inverse equivalence
+* `TauCeti.SplitTorus.baseChangePointsMulEquiv_symm_apply_single_one`: the inverse equivalence
   takes each standard coordinate generator to the chosen coordinate.
 * `TauCeti.SplitTorus.baseChangePointsMulEquiv_mapValue`: the equivalence is natural in the
   value algebra.
@@ -98,7 +98,7 @@ theorem baseChangePointsMulEquiv_symm_apply_tmul_single (c : σ → Aˣ) (s : K)
 /-- The inverse base-changed split-torus points equivalence takes the standard coordinate
 generator indexed by `i` to the chosen coordinate `c i`. -/
 @[simp]
-theorem baseChangePointsMulEquiv_symm_apply_single (c : σ → Aˣ) (i : σ) :
+theorem baseChangePointsMulEquiv_symm_apply_single_one (c : σ → Aˣ) (i : σ) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (σ := σ)).symm c).ofConv
         (1 ⊗ₜ[k] MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single i 1)) (1 : k)) =
       (c i : A) := by
