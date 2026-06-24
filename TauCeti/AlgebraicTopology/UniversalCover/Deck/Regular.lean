@@ -169,6 +169,24 @@ lemma deckEquivFiber_apply_coe [PreconnectedSpace E] (hp : IsCoveringMap p)
   rw [deckEquivFiber_apply]
   exact fiber_smul_coe φ e
 
+/-- The equivalence from deck transformations to a fibre sends the identity to the chosen
+base point. -/
+@[simp]
+lemma deckEquivFiber_one [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (e : p ⁻¹' {b}) :
+    deckEquivFiber hp hreg e 1 = e := by
+  letI := hreg.fiber_isPretransitive b
+  exact deckEquivFiberOfSurjective_one hp e (MulAction.surjective_smul (Deck p) e)
+
+/-- The equivalence from deck transformations to a fibre is equivariant for left
+multiplication on the deck group and the deck action on the fibre. -/
+@[simp]
+lemma deckEquivFiber_mul [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (e : p ⁻¹' {b}) (φ ψ : Deck p) :
+    deckEquivFiber hp hreg e (φ * ψ) = φ • deckEquivFiber hp hreg e ψ := by
+  letI := hreg.fiber_isPretransitive b
+  exact deckEquivFiberOfSurjective_mul hp e (MulAction.surjective_smul (Deck p) e) φ ψ
+
 /-- The inverse of `deckEquivFiber` is characterized by the deck transformation it returns:
 it sends the chosen fibre point to the requested fibre point. -/
 @[simp]
@@ -184,6 +202,17 @@ lemma deckEquivFiber_symm_apply_coe [PreconnectedSpace E] (hp : IsCoveringMap p)
     (hreg : IsRegular p) (e e' : p ⁻¹' {b}) :
     (((deckEquivFiber hp hreg e).symm e').1 e.1 : E) = e'.1 := by
   simpa [fiber_smul_coe] using congrArg Subtype.val (deckEquivFiber_symm_smul hp hreg e e')
+
+/-- Translating a fibre point before applying the inverse `deckEquivFiber` multiplies the
+corresponding deck transformation on the left. -/
+@[simp]
+lemma deckEquivFiber_symm_apply_smul [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (hreg : IsRegular p) (e e' : p ⁻¹' {b}) (φ : Deck p) :
+    (deckEquivFiber hp hreg e).symm (φ • e') =
+      φ * (deckEquivFiber hp hreg e).symm e' := by
+  letI := hreg.fiber_isPretransitive b
+  exact deckEquivFiberOfSurjective_symm_apply_smul hp e
+    (MulAction.surjective_smul (Deck p) e) e' φ
 
 end Connected
 
