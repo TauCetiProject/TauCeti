@@ -22,6 +22,9 @@ is even, so the lattice-homology weight
 is an integer. This is the local `χ_k(x)` function used in the lattice-homology lane before the
 cube weights and `ℤ[U]` complexes are introduced.
 
+The numerator is defined for arbitrary covectors, while the weight itself is restricted to
+characteristic covectors so that the division by `2` has the expected integer meaning.
+
 ## Main definitions
 
 * `TauCeti.PlumbingGraph.characteristicWeightNumerator`: the even numerator
