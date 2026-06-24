@@ -5,8 +5,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
-public import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
+-- `SquareClass` supplies `legendreSym_mul_sq`, used only inside a proof below, so it is not
+-- re-exported.
+import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 
 /-!
 # Legendre symbols of even prime discriminants
@@ -98,8 +100,8 @@ theorem legendreSym_evenPrimeDiscriminantRadicand_neg_four_eq_one_iff (hq : q �
     legendreSym q (evenPrimeDiscriminantRadicand (-4)) = 1 ↔ q % 4 = 1 := by
   rw [evenPrimeDiscriminantRadicand_neg_four,
     legendreSym.eq_one_iff (p := q) (a := (-1 : ℤ))]
-  · rw [show ((-1 : ℤ) : ZMod q) = (-1 : ZMod q) by norm_num,
-      ZMod.exists_sq_eq_neg_one_iff]
+  · push_cast
+    rw [ZMod.exists_sq_eq_neg_one_iff]
     have hodd : q % 2 = 1 := (Nat.Prime.eq_two_or_odd Fact.out).resolve_left hq
     constructor
     · intro hχ
@@ -117,7 +119,7 @@ theorem legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff (hq : q ≠ 2
     legendreSym q (evenPrimeDiscriminantRadicand 8) = 1 ↔ q % 8 = 1 ∨ q % 8 = 7 := by
   rw [evenPrimeDiscriminantRadicand_eight,
     legendreSym.eq_one_iff (p := q) (a := (2 : ℤ))]
-  · rw [show ((2 : ℤ) : ZMod q) = (2 : ZMod q) by norm_num]
+  · push_cast
     exact ZMod.exists_sq_eq_two_iff hq
   · rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
     exact not_intCast_prime_dvd_two hq
@@ -128,7 +130,7 @@ theorem legendreSym_evenPrimeDiscriminantRadicand_neg_eight_eq_one_iff (hq : q �
     legendreSym q (evenPrimeDiscriminantRadicand (-8)) = 1 ↔ q % 8 = 1 ∨ q % 8 = 3 := by
   rw [evenPrimeDiscriminantRadicand_neg_eight,
     legendreSym.eq_one_iff (p := q) (a := (-2 : ℤ))]
-  · rw [show ((-2 : ℤ) : ZMod q) = (-2 : ZMod q) by norm_num]
+  · push_cast
     exact ZMod.exists_sq_eq_neg_two_iff hq
   · rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]
     exact fun h => not_intCast_prime_dvd_two hq (dvd_neg.mp h)
