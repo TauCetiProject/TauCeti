@@ -60,13 +60,18 @@ variable {V : Type*} [DecidableEq V] [Fintype V] (P : PlumbingGraph V)
 /-- The numerator of the characteristic weight function:
 `⟨k, x⟩ + x · x`, where `x · x` is the plumbing intersection form. For a characteristic covector
 `k`, this numerator is even; see `even_characteristicWeightNumerator`. -/
-@[expose] noncomputable def characteristicWeightNumerator (k x : V → ℤ) : ℤ :=
+noncomputable def characteristicWeightNumerator (k x : V → ℤ) : ℤ :=
   (∑ v, k v * x v) + P.intersectionForm x x
+
+/-- The numerator of the characteristic weight function, expanded as the defining sum. -/
+private theorem characteristicWeightNumerator_def_aux (k x : V → ℤ) :
+    P.characteristicWeightNumerator k x = (∑ v, k v * x v) + P.intersectionForm x x :=
+  rfl
 
 /-- The numerator of the characteristic weight function, expanded as the defining sum. -/
 theorem characteristicWeightNumerator_def (k x : V → ℤ) :
     P.characteristicWeightNumerator k x = (∑ v, k v * x v) + P.intersectionForm x x :=
-  rfl
+  characteristicWeightNumerator_def_aux P k x
 
 /-- The characteristic-weight numerator is even when `k` is characteristic. This is the
 integer-valuedness input for the lattice-homology weight function. -/
@@ -92,13 +97,18 @@ theorem even_characteristicWeightNumerator {k : V → ℤ} (hk : P.IsCharacteris
 `-(⟨k, x⟩ + x · x)` by `2`. For a characteristic covector, the numerator is even by
 `even_characteristicWeightNumerator`, and `two_mul_characteristicWeight` states its exact
 doubling equation. -/
-@[expose] noncomputable def characteristicWeight (k : P.characteristicVectors) (x : V → ℤ) : ℤ :=
+noncomputable def characteristicWeight (k : P.characteristicVectors) (x : V → ℤ) : ℤ :=
   -(P.characteristicWeightNumerator k.val x / 2)
+
+/-- The characteristic weight as the negative half of its numerator. -/
+private theorem characteristicWeight_def_aux (k : P.characteristicVectors) (x : V → ℤ) :
+    P.characteristicWeight k x = -(P.characteristicWeightNumerator k.val x / 2) :=
+  rfl
 
 /-- The characteristic weight as the negative half of its numerator. -/
 theorem characteristicWeight_def (k : P.characteristicVectors) (x : V → ℤ) :
     P.characteristicWeight k x = -(P.characteristicWeightNumerator k.val x / 2) :=
-  rfl
+  characteristicWeight_def_aux P k x
 
 /-- The defining equation for the integer-valued characteristic weight. -/
 theorem two_mul_characteristicWeight (k : P.characteristicVectors) (x : V → ℤ) :
@@ -143,6 +153,15 @@ theorem characteristicWeight_add_two_mul (k : P.characteristicVectors) (l x : V 
   rw [Int.add_mul_ediv_left _ _ (by norm_num : (2 : ℤ) ≠ 0)]
   ring
 
+private theorem covector_eval_single (k : V → ℤ) (v : V) :
+    (∑ w, k w * (Pi.single v (1 : ℤ) : V → ℤ) w) = k v := by
+  rw [Finset.sum_eq_single v]
+  · simp
+  · intro w _ hw
+    simp [Pi.single_eq_of_ne hw]
+  · intro hv
+    exact absurd (Finset.mem_univ v) hv
+
 /-- The numerator of any covector on a plumbing basis sphere is the covector coordinate plus the
 sphere weight. -/
 @[simp]
@@ -158,7 +177,7 @@ theorem characteristicWeightNumerator_canonical_single (v : V) :
   simpa [intersectionForm_single, intersectionMatrix_diag] using
     P.canonicalCharacteristic_apply_add_intersection_single v
 
-/-- The characteristic weight of any covector on a plumbing basis sphere. -/
+/-- The characteristic weight of any characteristic covector on a plumbing basis sphere. -/
 @[simp]
 theorem characteristicWeight_single (k : P.characteristicVectors) (v : V) :
     P.characteristicWeight k (Pi.single v 1) = -((k.val v + P.weight v) / 2) := by
@@ -170,11 +189,7 @@ theorem characteristicWeight_canonical_single (v : V) :
     P.characteristicWeight
       ⟨P.canonicalCharacteristic, P.isCharacteristicVector_canonicalCharacteristic⟩
       (Pi.single v 1) = 1 := by
-  rw [characteristicWeight_single]
-  change -((P.canonicalCharacteristic v + P.weight v) / 2) = 1
-  rw [canonicalCharacteristic_apply]
-  have h : -P.weight v - 2 + P.weight v = -2 := by ring
-  rw [h]
+  rw [characteristicWeight_def, characteristicWeightNumerator_canonical_single]
   norm_num
 
 end PlumbingGraph
