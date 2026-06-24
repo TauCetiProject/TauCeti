@@ -72,12 +72,12 @@ theorem of_forall_tendsto {ι : Type*} {l : Filter ι} [NeBot l] {F : ι → M �
     IsPositiveDefinite G :=
   of_tendsto (Eventually.of_forall hF) hlim
 
-/-- Sequential pointwise limits of positive-definite functions are positive definite. -/
+/-- Sequential pointwise limits of eventually positive-definite functions are positive definite. -/
 theorem of_seq_tendsto {F : ℕ → M → ℂ} {G : M → ℂ}
-    (hF : ∀ n, IsPositiveDefinite (F n))
+    (hF : ∀ᶠ n in atTop, IsPositiveDefinite (F n))
     (hlim : ∀ x : M, Tendsto (fun n => F n x) atTop (𝓝 (G x))) :
     IsPositiveDefinite G :=
-  of_forall_tendsto hF hlim
+  of_tendsto hF hlim
 
 end IsPositiveDefinite
 
