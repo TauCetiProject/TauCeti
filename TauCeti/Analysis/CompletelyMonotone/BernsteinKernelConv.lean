@@ -349,7 +349,7 @@ lemma prokhorov_limit_identification (f : ℝ → ℝ) (hcm : IsCompletelyMonoto
       rw [show (σ n).real Set.univ = (σ n Set.univ).toReal from by
         simp [Measure.real]] at h1
       linarith
-    -- Integral bound (sorry): (1-exp(-x₀K)) · toReal(σ_n(Ioi K)) ≤ f(0)-f(x₀)
+    -- Integral bound: (1-exp(-x₀K)) · toReal(σ_n(Ioi K)) ≤ f(0)-f(x₀)
     have hbound : ∀ (x₀ K : ℝ), 0 < x₀ → 0 < K → ∀ n,
         (1 - Real.exp (-(x₀ * K))) * (σ n (Set.Ioi K)).toReal ≤ f 0 - f x₀ := by
       intro x₀ K hx₀ hK n; haveI := hfin_σ n
