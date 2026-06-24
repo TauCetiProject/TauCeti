@@ -10,6 +10,10 @@ def theme : Theme := { Theme.default with
           <meta charset="utf-8"/>
           <meta name="viewport" content="width=device-width, initial-scale=1"/>
           <meta name="color-scheme" content="dark"/>
+          <link rel="icon" href="static/favicon.ico" sizes="any"/>
+          <link rel="icon" type="image/png" sizes="32x32" href="static/favicon-32x32.png"/>
+          <link rel="icon" type="image/png" sizes="16x16" href="static/favicon-16x16.png"/>
+          <link rel="apple-touch-icon" sizes="180x180" href="static/apple-touch-icon.png"/>
           <link rel="preconnect" href="https://fonts.googleapis.com"/>
           <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&display=swap"/>
           <title>{{ (← param (α := String) "title") }} " — Tau Ceti"</title>
