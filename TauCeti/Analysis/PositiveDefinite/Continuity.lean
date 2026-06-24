@@ -11,7 +11,7 @@ public import Mathlib.Topology.Algebra.Group.Basic
 /-!
 # Continuity of positive-definite functions
 
-This file records the standard continuity upgrade for positive-definite functions on a normed
+This file records the standard continuity upgrade for positive-definite functions on a seminormed
 additive group with the negation involution. A positive-definite function that is continuous at
 the origin is uniformly continuous. The proof uses the usual reproducing-kernel estimate
 `‖F x - F y‖² ≤ 2 F(0).re ‖F (x - y) - F 0‖`, obtained from the `3 × 3` Gram matrix of the
@@ -22,12 +22,14 @@ API asks for the basic fact "continuity at `0` ⇒ uniform continuity" before Bo
 
 ## Main declarations
 
-* `TauCeti.IsPositiveDefinite.norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub`: the real-part
-  continuity estimate.
-* `TauCeti.IsPositiveDefinite.norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub`: the norm-valued
-  continuity estimate.
-* `TauCeti.IsPositiveDefinite.uniformContinuous_of_continuousAt_zero`: continuity at `0`
-  implies uniform continuity.
+In the namespace `TauCeti.IsPositiveDefinite`:
+
+* `norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_forall_star_eq_neg`:
+  the real-part continuity estimate.
+* `norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub_of_forall_star_eq_neg`:
+  the norm-valued continuity estimate.
+* `uniformContinuous_of_continuousAt_zero_of_forall_star_eq_neg`:
+  continuity at `0` implies uniform continuity.
 
 ## References
 
@@ -44,7 +46,9 @@ namespace TauCeti
 
 namespace IsPositiveDefinite
 
-variable {E : Type*} [NormedAddCommGroup E] [StarAddMonoid E] {F : E → ℂ}
+section Algebra
+
+variable {E : Type*} [AddCommGroup E] [StarAddMonoid E] {F : E → ℂ}
 
 private theorem apply_neg_eq_conj (hF : IsPositiveDefinite F)
     (hstar : ∀ x : E, star x = -x) (x : E) : F (-x) = conj (F x) := by
@@ -57,8 +61,39 @@ private theorem eq_zero_of_map_zero_re_eq_zero (hF : IsPositiveDefinite F)
     simpa [h0] using hF.norm_apply_le_map_zero_re_of_star_eq_neg x (hstar x)
   exact norm_eq_zero.mp (le_antisymm hnorm (norm_nonneg _))
 
+private theorem gram_three_sub_re_eq (hF : IsPositiveDefinite F)
+    (hstar : ∀ x : E, star x = -x) {x y : E} {C d lam : ℂ}
+    (hC : C = F 0) (hd : d = F x - F y) (hlam : lam = -d / C)
+    (hCpos : 0 < (F 0).re) :
+    (∑ i : Fin 3, ∑ j : Fin 3,
+      ![1, -1, lam] i * conj (![1, -1, lam] j) *
+        F (![x, y, 0] i + star (![x, y, 0] j))).re
+      = 2 * (F 0).re - 2 * (F (x - y)).re - Complex.normSq d / (F 0).re := by
+  have hyx : F (y - x) = conj (F (x - y)) := by
+    have h := hF.conj_symm x y
+    simpa [hstar x, hstar y, sub_eq_add_neg, add_comm] using congrArg conj h
+  have hnx : F (-x) = conj (F x) := hF.apply_neg_eq_conj hstar x
+  have hny : F (-y) = conj (F y) := hF.apply_neg_eq_conj hstar y
+  have hny' : F (0 + -y) = conj (F y) := by simpa using hny
+  simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_two]
+  simp only [Matrix.vecHead, Matrix.vecTail]
+  simp only [Function.comp_apply, Fin.succ_zero_eq_one, Matrix.cons_val_zero,
+    Matrix.cons_val_one]
+  rw [hstar x, hstar y, hstar 0, neg_zero, zero_add, add_zero, sub_eq_add_neg,
+    ← sub_eq_add_neg y x, hyx, hnx, hny']
+  simp only [add_zero, add_neg_cancel]
+  simp only [hC, hd, hlam]
+  rw [hF.map_zero_eq_ofReal_re]
+  field_simp [Complex.ofReal_ne_zero.mpr hCpos.ne']
+  rw [← sub_eq_add_neg x y]
+  simp [Complex.normSq_apply]
+  field_simp [hCpos.ne']
+  ring_nf
+
 /-- The real-part form of the standard positive-definite continuity estimate. -/
-theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub (hF : IsPositiveDefinite F)
+theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_forall_star_eq_neg
+    (hF : IsPositiveDefinite F)
     (hstar : ∀ x : E, star x = -x) (x y : E) :
     ‖F x - F y‖ ^ 2
       ≤ 2 * (F 0).re * ((F 0).re - (F (x - y)).re) := by
@@ -68,12 +103,6 @@ theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub (hF : IsPositiveDefinite F
   let C : ℂ := F 0
   let d : ℂ := F x - F y
   let lam : ℂ := -d / C
-  have hyx : F (y - x) = conj (F (x - y)) := by
-    have h := hF.conj_symm x y
-    simpa [hstar x, hstar y, sub_eq_add_neg, add_comm] using congrArg conj h
-  have hnx : F (-x) = conj (F x) := hF.apply_neg_eq_conj hstar x
-  have hny : F (-y) = conj (F y) := hF.apply_neg_eq_conj hstar y
-  have hny' : F (0 + -y) = conj (F y) := by simpa using hny
   have hQ := hF 3 ![1, -1, lam] ![x, y, 0]
   have hQre : 0 ≤ (∑ i : Fin 3, ∑ j : Fin 3,
       ![1, -1, lam] i * conj (![1, -1, lam] j) *
@@ -84,21 +113,7 @@ theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub (hF : IsPositiveDefinite F
         ![1, -1, lam] i * conj (![1, -1, lam] j) *
           F (![x, y, 0] i + star (![x, y, 0] j))).re
         = 2 * (F 0).re - 2 * (F (x - y)).re - Complex.normSq d / (F 0).re := by
-    simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_two]
-    simp only [Matrix.vecHead, Matrix.vecTail]
-    simp only [Function.comp_apply, Fin.succ_zero_eq_one, Matrix.cons_val_zero,
-      Matrix.cons_val_one]
-    rw [hstar x, hstar y, hstar 0, neg_zero, zero_add, add_zero, sub_eq_add_neg,
-      ← sub_eq_add_neg y x, hyx, hnx, hny']
-    simp only [add_zero, add_neg_cancel]
-    simp only [C, d, lam]
-    rw [hF.map_zero_eq_ofReal_re]
-    field_simp [Complex.ofReal_ne_zero.mpr hCpos.ne']
-    rw [← sub_eq_add_neg x y]
-    simp [Complex.normSq_apply]
-    field_simp [hCpos.ne']
-    ring_nf
+    exact hF.gram_three_sub_re_eq hstar rfl rfl rfl hCpos
   have hmain : Complex.normSq d ≤ (F 0).re *
       (2 * (F 0).re - 2 * (F (x - y)).re) := by
     have hnonneg : 0 ≤ 2 * (F 0).re - 2 * (F (x - y)).re
@@ -116,7 +131,8 @@ theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub (hF : IsPositiveDefinite F
     _ = 2 * (F 0).re * ((F 0).re - (F (x - y)).re) := by ring
 
 /-- The norm-valued form of the standard positive-definite continuity estimate. -/
-theorem norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub (hF : IsPositiveDefinite F)
+theorem norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub_of_forall_star_eq_neg
+    (hF : IsPositiveDefinite F)
     (hstar : ∀ x : E, star x = -x) (x y : E) :
     ‖F x - F y‖ ^ 2 ≤ 2 * (F 0).re * ‖F (x - y) - F 0‖ := by
   have hre :
@@ -126,12 +142,18 @@ theorem norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub (hF : IsPositiveDefinite
       simp [Complex.sub_re]
     rw [h₁]
     exact (neg_le_abs _).trans (Complex.abs_re_le_norm _)
-  exact (hF.norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub hstar x y).trans
+  exact (hF.norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_forall_star_eq_neg hstar x y).trans
     (mul_le_mul_of_nonneg_left hre (mul_nonneg zero_le_two hF.map_zero_re_nonneg))
 
-/-- A positive-definite function on a normed additive group with the negation involution is
+end Algebra
+
+section Topology
+
+variable {E : Type*} [SeminormedAddCommGroup E] [StarAddMonoid E] {F : E → ℂ}
+
+/-- A positive-definite function on a seminormed additive group with the negation involution is
 uniformly continuous as soon as it is continuous at the origin. -/
-theorem uniformContinuous_of_continuousAt_zero (hF : IsPositiveDefinite F)
+theorem uniformContinuous_of_continuousAt_zero_of_forall_star_eq_neg (hF : IsPositiveDefinite F)
     (hstar : ∀ x : E, star x = -x) (hcont : ContinuousAt F 0) :
     UniformContinuous F := by
   rw [Metric.uniformContinuous_iff]
@@ -150,15 +172,18 @@ theorem uniformContinuous_of_continuousAt_zero (hF : IsPositiveDefinite F)
   have hsmall : ‖F (x - y) - F 0‖ < η := by
     simpa [dist_eq_norm] using hδF hdist
   have hsquare_le : ‖F x - F y‖ ^ 2 < ε ^ 2 := by
-    have hbound := hF.norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub hstar x y
+    have hbound :=
+      hF.norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub_of_forall_star_eq_neg hstar x y
     calc
       ‖F x - F y‖ ^ 2 ≤ 2 * (F 0).re * ‖F (x - y) - F 0‖ := hbound
       _ < 2 * (F 0).re * η := mul_lt_mul_of_pos_left hsmall (mul_pos zero_lt_two hCpos)
       _ = ε ^ 2 := by
-        change 2 * (F 0).re * (ε ^ 2 / (2 * (F 0).re)) = ε ^ 2
+        rw [show η = ε ^ 2 / (2 * (F 0).re) from rfl]
         field_simp [(mul_pos zero_lt_two hCpos).ne']
   have habs := sq_lt_sq.mp hsquare_le
   simpa [dist_eq_norm, abs_of_nonneg hε.le] using habs
+
+end Topology
 
 end IsPositiveDefinite
 
