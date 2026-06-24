@@ -37,6 +37,8 @@ finite-set disjointness conditions used for empty rectangles and marking-avoidin
 * `TauCeti.GridRectangle.interior`: the finite set of squares strictly inside the rectangle.
 * `TauCeti.GridRectangleBetween`: an oriented rectangle from one grid state to another.
 * `TauCeti.GridRectangleBetween.symm`: the opposite oriented rectangle from `y` to `x`.
+* `TauCeti.GridRectangleBetween.swapSides`: the complementary oriented rectangle from `x` to `y`
+  with its two side columns exchanged.
 * `TauCeti.GridRectangleBetween.transpose`: the diagonal reflection of an oriented rectangle, from
   `x.transpose` to `y.transpose`.
 * `TauCeti.GridRectangleBetween.transposeEquiv`: the diagonal reflection packaged as an involutive
@@ -749,6 +751,60 @@ theorem eq_of_sides {R S : GridRectangleBetween x y} (hleft : R.left = S.left)
   obtain rfl : _ = _ := hleft
   obtain rfl : _ = _ := hright
   rfl
+
+/-- The oriented rectangle from `x` to `y` obtained by exchanging the two side columns.
+
+It connects the same two states `x` and `y` -- the two states still exchange rows at the two
+side columns and agree elsewhere -- but traverses the complementary toroidal region. This is not
+the opposite rectangle `symm`, which runs from `y` back to `x`. -/
+def swapSides (R : GridRectangleBetween x y) : GridRectangleBetween x y where
+  left := R.right
+  right := R.left
+  left_ne_right := R.left_ne_right.symm
+  map_left := R.map_right
+  map_right := R.map_left
+  map_of_ne c hl hr := R.map_of_ne c hr hl
+
+/-- The side-swapped rectangle's initial side column is the original terminal side column. -/
+@[simp]
+theorem swapSides_left (R : GridRectangleBetween x y) : R.swapSides.left = R.right :=
+  rfl
+
+/-- The side-swapped rectangle's terminal side column is the original initial side column. -/
+@[simp]
+theorem swapSides_right (R : GridRectangleBetween x y) : R.swapSides.right = R.left :=
+  rfl
+
+/-- The side-swapped rectangle's bottom row is the original top row. -/
+@[simp]
+theorem swapSides_bottom (R : GridRectangleBetween x y) : R.swapSides.bottom = R.top :=
+  rfl
+
+/-- The side-swapped rectangle's top row is the original bottom row. -/
+@[simp]
+theorem swapSides_top (R : GridRectangleBetween x y) : R.swapSides.top = R.bottom :=
+  rfl
+
+/-- The toroidal rectangle of the side-swapped oriented rectangle, written out by its four
+sides. -/
+@[simp]
+theorem swapSides_toGridRectangle (R : GridRectangleBetween x y) :
+    R.swapSides.toGridRectangle =
+      { left := R.right, right := R.left, bottom := R.top, top := R.bottom } := by
+  rfl
+
+/-- Exchanging the two side columns twice gives the original rectangle. -/
+@[simp]
+theorem swapSides_swapSides (R : GridRectangleBetween x y) : R.swapSides.swapSides = R :=
+  eq_of_sides (swapSides_right R) (swapSides_left R)
+
+/-- Exchanging the two side columns gives a genuinely different rectangle, since the two side
+columns are distinct. -/
+theorem swapSides_ne_self (R : GridRectangleBetween x y) : R.swapSides ≠ R := by
+  intro h
+  have hleft : R.swapSides.left = R.left := congrArg GridRectangleBetween.left h
+  rw [swapSides_left] at hleft
+  exact R.left_ne_right hleft.symm
 
 /-- Reflecting an oriented rectangle twice gives the original rectangle. -/
 @[simp]

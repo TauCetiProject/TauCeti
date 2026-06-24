@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import Mathlib.Data.Finset.Card
+public import TauCeti.KnotTheory.Grid.BlockedRectangle
 public import TauCeti.KnotTheory.Grid.Complex
 public import TauCeti.KnotTheory.Grid.RectangleSwap
 
@@ -28,11 +30,6 @@ This is the finiteness backbone of the grid differential: the coefficient of `y`
 blocked differential of `x` counts a sub-collection of these at-most-two rectangles, so the
 differential of a generator is supported on the column-transposition neighbours of that
 generator.
-
-## Main definitions
-
-* `TauCeti.GridRectangleBetween.swapSides`: the oriented rectangle from `x` to `y` with its two
-  side columns exchanged.
 
 ## Main results
 
@@ -97,44 +94,6 @@ theorem left_apply_ne : y R.left ≠ x R.left :=
 theorem right_apply_ne : y R.right ≠ x R.right :=
   (R.apply_ne_iff R.right).mpr (Or.inr rfl)
 
-/-- The oriented rectangle from `x` to `y` obtained by exchanging the two side columns.
-
-It connects the same two states `x` and `y` -- the two states still exchange rows at the two
-side columns and agree elsewhere -- but traverses the complementary toroidal region. This is the
-second of the two oriented rectangles between states related by a transposition; it is not the
-opposite rectangle `symm`, which runs from `y` back to `x`. -/
-@[expose] def swapSides (R : GridRectangleBetween x y) : GridRectangleBetween x y where
-  left := R.right
-  right := R.left
-  left_ne_right := R.left_ne_right.symm
-  map_left := R.map_right
-  map_right := R.map_left
-  map_of_ne c hl hr := R.map_of_ne c hr hl
-
-/-- The side-swapped rectangle's initial side column is the original terminal side column. -/
-@[simp]
-theorem swapSides_left : R.swapSides.left = R.right :=
-  rfl
-
-/-- The side-swapped rectangle's terminal side column is the original initial side column. -/
-@[simp]
-theorem swapSides_right : R.swapSides.right = R.left :=
-  rfl
-
-/-- Exchanging the two side columns twice gives the original rectangle. -/
-@[simp]
-theorem swapSides_swapSides : R.swapSides.swapSides = R := by
-  cases R
-  rfl
-
-/-- Exchanging the two side columns gives a genuinely different rectangle, since the two side
-columns are distinct. -/
-theorem swapSides_ne_self : R.swapSides ≠ R := by
-  intro h
-  have hleft : R.swapSides.left = R.left := congrArg GridRectangleBetween.left h
-  rw [swapSides_left] at hleft
-  exact R.left_ne_right hleft.symm
-
 /-- Any oriented rectangle between the same two states is `R` or its side swap `R.swapSides`. Its
 two side columns are exactly the two columns where `x` and `y` differ, which are `R.left` and
 `R.right`, so its ordered side pair is one of the two orderings of that pair. -/
@@ -182,6 +141,12 @@ theorem card_all_of_nonempty (h : (all x y).Nonempty) : (all x y).card = 2 := by
   obtain ⟨R, -⟩ := h
   rw [R.all_eq_pair, Finset.card_pair R.swapSides_ne_self.symm]
 
+/-- Any finite subcollection of the oriented rectangles between two states has cardinality at
+most two. -/
+theorem card_le_two_of_subset_all {s : Finset (GridRectangleBetween x y)}
+    (hs : s ⊆ all x y) : s.card ≤ 2 :=
+  (Finset.card_le_card hs).trans (card_all_le_two x y)
+
 /-- Oriented rectangles between `x` and `y` exist exactly when `y` is a column transposition of
 `x`. A rectangle realizes its side columns as a transposition taking `x` to `y`, and conversely a
 column transposition exhibits an oriented rectangle on those two columns. -/
@@ -200,7 +165,7 @@ theorem nonempty_all_iff :
 /-- There are at most two empty oriented rectangles between two grid states. -/
 theorem card_emptyRectangles_le_two (x y : GridState n) :
     (emptyRectangles x y).card ≤ 2 :=
-  (Finset.card_le_card (emptyRectangles_subset_all x y)).trans (card_all_le_two x y)
+  card_le_two_of_subset_all (emptyRectangles_subset_all x y)
 
 end GridRectangleBetween
 
@@ -212,8 +177,7 @@ variable {n : ℕ} (G : GridDiagram n)
 blocked differential. -/
 theorem card_fullyBlockedRectangles_le_two (x y : GridState n) :
     (G.fullyBlockedRectangles x y).card ≤ 2 :=
-  (Finset.card_le_card (G.fullyBlockedRectangles_subset_all x y)).trans
-    (GridRectangleBetween.card_all_le_two x y)
+  GridRectangleBetween.card_le_two_of_subset_all (G.fullyBlockedRectangles_subset_all x y)
 
 /-- A nonzero matrix coefficient of the fully blocked differential forces the target state to be a
 column transposition of the source state: a nonzero count means there is a fully blocked
