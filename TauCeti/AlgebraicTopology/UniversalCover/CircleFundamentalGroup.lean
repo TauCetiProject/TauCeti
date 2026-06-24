@@ -64,7 +64,7 @@ open AddSubgroup
 namespace AddCircle
 
 variable {𝕜 : Type*} [AddCommGroup 𝕜] [TopologicalSpace 𝕜] [IsTopologicalAddGroup 𝕜]
-  {p : 𝕜} [SimplyConnectedSpace 𝕜] [PreconnectedSpace 𝕜]
+  {p : 𝕜} [SimplyConnectedSpace 𝕜]
   [TotallyDisconnectedSpace (zmultiples p)]
 
 /-- For a covering projection `(↑) : 𝕜 → AddCircle p` from a simply connected preconnected
@@ -79,12 +79,14 @@ noncomputable def fundamentalGroupMulEquivZMultiples
       (MulOpposite.opMulEquiv (M := Multiplicative (zmultiples p))).symm)
 
 omit [SimplyConnectedSpace 𝕜] in
+variable [PreconnectedSpace 𝕜] in
 private lemma addCircleMulEquiv_symm_addRightZMultiples (n : Multiplicative (zmultiples p)) :
     Deck.addCircleMulEquiv.symm (Deck.addRightZMultiples n.toAdd) = n := by
   rw [← Deck.addCircleMulEquiv_apply n]
   exact MulEquiv.symm_apply_apply Deck.addCircleMulEquiv n
 
 omit [SimplyConnectedSpace 𝕜] in
+variable [PreconnectedSpace 𝕜] in
 private lemma fundamentalGroupMulEquivZMultiples_toPeriod_symm_apply
     (n : Multiplicative (zmultiples p)) :
     (((MulEquiv.op Deck.addCircleMulEquiv.symm).trans
