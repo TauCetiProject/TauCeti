@@ -84,6 +84,7 @@ It is essential that Tau Ceti remains an open source project, and however infere
 We intend to move to a system where review agents' inference costs are covered by the large scale contributors to the library. This may be in the form of donations (in money or tokens) to the umbrella organizations (the Lean FRO and/or the Mathlib Initiative), or by in-kind inference using sufficiently capable in-house models. We anticipate that individual contributions can be reviewed "for free" out of this pool.
 
 Finally, we understand that participating in AI-assisted mathematics research requires the ability to pay for inference costs, potentially adding a further barrier to entry on top of the existing societal/financial privilege implicit in holding a research position. We're not sure how to respond to this. Possibilities include advocacy for public and private funding, advocacy for capability limitations, and technical capability work on open weight models and cheaper models. Each of these are difficult, have potential adverse effects, and unknown consequences. We hope that everyone involved in Tau Ceti will think hard about these questions, and contribute to meaningful and beneficial solutions.
+
 ## Building
 
 ```bash
