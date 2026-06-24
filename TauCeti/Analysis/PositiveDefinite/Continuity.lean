@@ -59,6 +59,23 @@ section Algebra
 
 variable {E : Type*} [AddMonoid E] [StarAddMonoid E] {F : E → ℂ}
 
+private theorem gram_three_add_star_expand_of_values
+    {x y : E} {lam : ℂ} {c : Fin 3 → ℂ} {p : Fin 3 → E}
+    (hc0 : c 0 = 1) (hc1 : c 1 = -1) (hc2 : c 2 = lam)
+    (hp0 : p 0 = x) (hp1 : p 1 = y) (hp2 : p 2 = 0)
+    (hx : x + star x = 0) (hy : y + star y = 0)
+    (hyx : F (y + star x) = conj (F (x + star y)))
+    (hnx : F (star x) = conj (F x)) (hny : F (0 + star y) = conj (F y)) :
+    (∑ i : Fin 3, ∑ j : Fin 3,
+      c i * conj (c j) * F (p i + star (p j)))
+      = F 0 - F (x + star y) + conj lam * F x - conj (F (x + star y)) + F 0
+        - conj lam * F y + lam * conj (F x) - lam * conj (F y)
+        + lam * conj lam * F 0 := by
+  simp only [Fin.sum_univ_three, hc0, hc1, hc2, hp0, hp1, hp2]
+  rw [hx, hy, star_zero, zero_add, add_zero, hyx, hnx, hny]
+  simp
+  ring_nf
+
 private theorem gram_three_add_star_expand
     {x y : E} (hx : x + star x = 0) (hy : y + star y = 0)
     (hyx : F (y + star x) = conj (F (x + star y)))
@@ -70,14 +87,9 @@ private theorem gram_three_add_star_expand
       = F 0 - F (x + star y) + conj lam * F x - conj (F (x + star y)) + F 0
         - conj lam * F y + lam * conj (F x) - lam * conj (F y)
         + lam * conj lam * F 0 := by
-  simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_two]
-  simp only [Matrix.vecHead, Matrix.vecTail]
-  simp only [Function.comp_apply, Fin.succ_zero_eq_one, Matrix.cons_val_zero,
-    Matrix.cons_val_one]
-  rw [hx, hy, star_zero, zero_add, add_zero, hyx, hnx, hny]
-  simp
-  ring_nf
+  exact gram_three_add_star_expand_of_values (F := F) (x := x) (y := y)
+    (c := ![1, -1, lam]) (p := ![x, y, 0]) rfl rfl rfl rfl rfl rfl
+    hx hy hyx hnx hny
 
 -- The remaining calculation is pure complex algebra after `F 0` has been normalized to a
 -- positive real scalar and `lam = -d / F 0` has been substituted.
