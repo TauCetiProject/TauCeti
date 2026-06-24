@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.PositiveDefinite.FunctionKernel
+public import TauCeti.Analysis.PositiveDefinite.Kernel
 public import Mathlib.Topology.Algebra.Monoid
 public import Mathlib.Topology.Order.OrderClosed
 
