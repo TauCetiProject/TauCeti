@@ -158,22 +158,13 @@ theorem characteristicWeight_add_two_mul (k : P.characteristicVectors) (l x : V 
   rw [Int.add_mul_ediv_left _ _ (by norm_num : (2 : ℤ) ≠ 0)]
   ring
 
-private theorem covector_eval_single (k : V → ℤ) (v : V) :
-    (∑ w, k w * (Pi.single v (1 : ℤ) : V → ℤ) w) = k v := by
-  rw [Finset.sum_eq_single v]
-  · simp
-  · intro w _ hw
-    simp [Pi.single_eq_of_ne hw]
-  · intro hv
-    exact absurd (Finset.mem_univ v) hv
-
 /-- The numerator of any covector on a plumbing basis sphere is the covector coordinate plus the
 sphere weight. -/
 @[simp]
 theorem characteristicWeightNumerator_single (k : V → ℤ) (v : V) :
     P.characteristicWeightNumerator k (Pi.single v 1) = k v + P.weight v := by
   rw [characteristicWeightNumerator_def, intersectionForm_single, intersectionMatrix_diag]
-  rw [covector_eval_single]
+  simp [Pi.single_apply, Finset.sum_ite_eq']
 
 /-- The numerator of the canonical characteristic covector on a basis sphere is `-2`. -/
 theorem characteristicWeightNumerator_canonical_single (v : V) :

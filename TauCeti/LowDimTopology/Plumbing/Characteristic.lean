@@ -102,16 +102,6 @@ variable [DecidableEq V] [Fintype V]
 private theorem zmod_two_sq (a : ZMod 2) : a ^ 2 = a := by
   fin_cases a <;> decide
 
-/-- Evaluating a covector on a plumbing basis vector picks out the corresponding coordinate. -/
-private theorem covector_eval_single (k : V → ℤ) (v : V) :
-    (∑ w, k w * (Pi.single v (1 : ℤ) : V → ℤ) w) = k v := by
-  rw [Finset.sum_eq_single v]
-  · simp
-  · intro w _ hw
-    simp [Pi.single_eq_of_ne hw]
-  · intro hv
-    exact absurd (Finset.mem_univ v) hv
-
 omit [DecidableEq V] in
 private theorem adjacency_sum_cast_zmod_two_eq_zero (x : V → ℤ) :
     (∑ i, ∑ j, ((if P.toSimpleGraph.Adj i j then x i * x j else 0 : ℤ) : ZMod 2)) = 0 := by
@@ -177,7 +167,7 @@ theorem isCharacteristicVector_iff_forall_modEq_intersectionForm (k : V → ℤ)
     rw [hkz, zmod_two_sq]
   · intro h v
     have hv := h (Pi.single v (1 : ℤ) : V → ℤ)
-    rw [covector_eval_single] at hv
+    simp only [Pi.single_apply] at hv
     simpa using hv
 
 /-- The canonical characteristic covector satisfies the adjunction coordinate equation
