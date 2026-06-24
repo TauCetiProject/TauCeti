@@ -71,6 +71,22 @@ theorem fixingSubgroup_empty :
     (_root_.fixingSubgroup_empty (M := M ≃ₘ^n⟮I, I⟯ M) (α := M))
   ]
 
+/-- The diffeomorphism subgroup fixing every point is the bottom subgroup. -/
+@[simp]
+theorem fixingSubgroup_univ :
+    fixingSubgroup I n (Set.univ : Set M) = ⊥ := by
+  ext f
+  rw [mem_fixingSubgroup_iff]
+  constructor
+  · intro hf
+    rw [Subgroup.mem_bot]
+    ext x
+    exact hf x (Set.mem_univ x)
+  · intro hf x _hx
+    rw [Subgroup.mem_bot] at hf
+    rw [hf]
+    rfl
+
 /-- Fixing the union of two sets is the intersection of the fixing subgroups. -/
 theorem fixingSubgroup_union {s t : Set M} :
     fixingSubgroup I n (s ∪ t) = fixingSubgroup I n s ⊓ fixingSubgroup I n t := by
