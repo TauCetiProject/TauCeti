@@ -16,8 +16,7 @@ subsequence converges weakly to a finite limit `μ₀` supported on `[0, ∞)`
 (`finite_measure_subseq_limit`). A bounded-continuous surrogate `exp_bcf` for the Laplace kernel
 transfers this weak convergence to the Laplace transforms (`tendsto_exp_integral`).
 
-Ported from the sorry-free `mrdouglasny/hille-yosida` (`HilleYosida.BernsteinChafai`, Prokhorov
-part). These facts are about general measures on `ℝ` and do not mention complete monotonicity.
+These facts are about general measures on `ℝ` and do not mention complete monotonicity.
 
 ## Main declarations
 

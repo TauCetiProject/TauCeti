@@ -20,7 +20,7 @@ transform of a finite measure on `ℝ≥0` (`IsCompletelyMonotone.exists_measure
 The Chafaï construction lives in the supporting files (`BernsteinAux`, `BernsteinMeasures`,
 `BernsteinChafaiIdentity`, `BernsteinProkhorov`, `BernsteinKernelConv`); here we tie the pieces
 together (`bernstein_theorem` on `Measure ℝ`) and transport the measure to `ℝ≥0` per the TauCeti
-convention. Ported from the sorry-free `mrdouglasny/hille-yosida` (`HilleYosida.Bernstein`).
+convention.
 
 ## Scope and the finite-vs-all-moments subtlety
 
@@ -106,8 +106,8 @@ private lemma bernstein_theorem_real (hcm : IsCompletelyMonotone f) :
 /-- **Bernstein's theorem, forward direction.** Every completely monotone function on the
 closed half-line `[0, ∞)` is the Laplace transform of a finite measure on `ℝ≥0`.
 
-Port of `HilleYosida.Bernstein.bernstein_theorem`, with the representing measure transported
-from `Measure ℝ` (supported on `[0, ∞)`) to `Measure ℝ≥0` by pushforward along `Real.toNNReal`. -/
+The representing measure is obtained on `Measure ℝ` (supported on `[0, ∞)`) and transported to
+`Measure ℝ≥0` by pushforward along `Real.toNNReal`. -/
 theorem IsCompletelyMonotone.exists_measure (hf : IsCompletelyMonotone f) :
     ∃ μ : Measure ℝ≥0, IsFiniteMeasure μ ∧
       ∀ t : ℝ, 0 ≤ t → f t = laplaceTransformMeasure μ t := by

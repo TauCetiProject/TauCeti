@@ -19,9 +19,8 @@ Bernstein representation theorem). These extend the object API in
 fundamental-theorem identity `f(x) - f(T) = ∫ₓᵀ (-f')`, and the sign of the Taylor integral
 remainder.
 
-Ported from the sorry-free `mrdouglasny/hille-yosida` development (`HilleYosida.BernsteinBasic`),
-whose `IsCompletelyMonotone` is the same predicate; the basic sign/monotonicity lemmas it ports
-already live in `Basic.lean`, so only the analytic extras appear here.
+The basic sign and monotonicity lemmas live in `Basic.lean`; only the analytic extras
+(integral identities, Taylor remainder, the limit at infinity) appear here.
 
 ## Main declarations
 

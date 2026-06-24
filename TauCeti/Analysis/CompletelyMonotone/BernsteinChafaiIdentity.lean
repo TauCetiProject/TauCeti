@@ -18,9 +18,6 @@ kernel (`chafai_repeated_ibp`), whose boundary terms `Tᵏ f⁽ᵏ⁾(T)` decay 
 (`boundary_term_decay`), combined with the change of variables `p = (n-1)/t`
 (`chafai_kernel_density_eq`).
 
-Ported from the sorry-free `mrdouglasny/hille-yosida` (`HilleYosida.BernsteinChafai`, first half).
-The `maxHeartbeats` overrides used there are dropped to comply with TauCeti's linter set.
-
 ## Main declarations
 
 * `TauCeti.chafai_identity`: `f(x) - L = ∫ φ_n(x, ·) d(cm_rescaled f n)`.
