@@ -103,7 +103,7 @@ private theorem zmod_two_sq (a : ZMod 2) : a ^ 2 = a := by
   fin_cases a <;> decide
 
 /-- Evaluating a covector on a plumbing basis vector picks out the corresponding coordinate. -/
-theorem covector_eval_single (k : V → ℤ) (v : V) :
+private theorem covector_eval_single (k : V → ℤ) (v : V) :
     (∑ w, k w * (Pi.single v (1 : ℤ) : V → ℤ) w) = k v := by
   rw [Finset.sum_eq_single v]
   · simp

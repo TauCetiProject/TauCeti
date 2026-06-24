@@ -59,11 +59,11 @@ variable {V : Type*} [DecidableEq V] [Fintype V] (P : PlumbingGraph V)
 /-- The numerator of the characteristic weight function:
 `⟨k, x⟩ + x · x`, where `x · x` is the plumbing intersection form. For a characteristic covector
 `k`, this numerator is even; see `even_characteristicWeightNumerator`. -/
-noncomputable def characteristicWeightNumerator (k x : V → ℤ) : ℤ :=
+@[expose] noncomputable def characteristicWeightNumerator (k x : V → ℤ) : ℤ :=
   (∑ v, k v * x v) + P.intersectionForm x x
 
 /-- The numerator of the characteristic weight function, expanded as the defining sum. -/
-private theorem characteristicWeightNumerator_def (k x : V → ℤ) :
+theorem characteristicWeightNumerator_def (k x : V → ℤ) :
     P.characteristicWeightNumerator k x = (∑ v, k v * x v) + P.intersectionForm x x :=
   rfl
 
@@ -91,11 +91,11 @@ theorem even_characteristicWeightNumerator {k : V → ℤ} (hk : P.IsCharacteris
 `-(⟨k, x⟩ + x · x)` by `2`. For a characteristic covector, the numerator is even by
 `even_characteristicWeightNumerator`, and `two_mul_characteristicWeight` states the exact
 characteristic-weight equation. -/
-noncomputable def characteristicWeight (k x : V → ℤ) : ℤ :=
+@[expose] noncomputable def characteristicWeight (k x : V → ℤ) : ℤ :=
   -(P.characteristicWeightNumerator k x / 2)
 
 /-- The characteristic weight as the negative half of its numerator. -/
-private theorem characteristicWeight_def (k x : V → ℤ) :
+theorem characteristicWeight_def (k x : V → ℤ) :
     P.characteristicWeight k x = -(P.characteristicWeightNumerator k x / 2) :=
   rfl
 
@@ -147,8 +147,15 @@ theorem characteristicWeight_add_two_mul (k l x : V → ℤ) :
 sphere weight. -/
 theorem characteristicWeightNumerator_single (k : V → ℤ) (v : V) :
     P.characteristicWeightNumerator k (Pi.single v 1) = k v + P.weight v := by
-  rw [characteristicWeightNumerator_def, covector_eval_single, intersectionForm_single,
-    intersectionMatrix_diag]
+  rw [characteristicWeightNumerator_def, intersectionForm_single, intersectionMatrix_diag]
+  have hsum : (∑ w, k w * (Pi.single v (1 : ℤ) : V → ℤ) w) = k v := by
+    rw [Finset.sum_eq_single v]
+    · simp
+    · intro w _ hw
+      simp [Pi.single_eq_of_ne hw]
+    · intro hv
+      exact absurd (Finset.mem_univ v) hv
+  rw [hsum]
 
 /-- The numerator of the canonical characteristic covector on a basis sphere is `-2`. -/
 theorem characteristicWeightNumerator_canonical_single (v : V) :
@@ -157,14 +164,19 @@ theorem characteristicWeightNumerator_canonical_single (v : V) :
   simpa [intersectionForm_single, intersectionMatrix_diag] using
     P.canonicalCharacteristic_apply_add_intersection_single v
 
+/-- The characteristic weight of any covector on a plumbing basis sphere. -/
+theorem characteristicWeight_single (k : V → ℤ) (v : V) :
+    P.characteristicWeight k (Pi.single v 1) = -((k v + P.weight v) / 2) := by
+  rw [characteristicWeight_def, characteristicWeightNumerator_single]
+
 /-- The canonical characteristic covector has characteristic weight `1` on each basis sphere. -/
 @[simp]
 theorem characteristicWeight_canonical_single (v : V) :
     P.characteristicWeight P.canonicalCharacteristic (Pi.single v 1) = 1 := by
-  have htwo := P.two_mul_characteristicWeight P.isCharacteristicVector_canonicalCharacteristic
-    (Pi.single v (1 : ℤ) : V → ℤ)
-  rw [characteristicWeightNumerator_canonical_single] at htwo
-  omega
+  rw [characteristicWeight_single, canonicalCharacteristic_apply]
+  have h : -P.weight v - 2 + P.weight v = -2 := by ring
+  rw [h]
+  norm_num
 
 end PlumbingGraph
 
