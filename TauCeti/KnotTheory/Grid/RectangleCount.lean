@@ -36,8 +36,8 @@ generator.
 * `TauCeti.GridRectangleBetween.eq_or_eq_swapSides`: any two oriented rectangles between the same
   states are equal or differ by `swapSides`.
 * `TauCeti.GridRectangleBetween.all_eq_pair`, `TauCeti.GridRectangleBetween.card_all_le_two`,
-  `TauCeti.GridRectangleBetween.card_all_of_nonempty`: there are at most two oriented rectangles
-  between two states, and exactly two when there is at least one.
+  `TauCeti.GridRectangleBetween.card_all_eq_two_of_nonempty`: there are at most two oriented
+  rectangles between two states, and exactly two when there is at least one.
 * `TauCeti.GridRectangleBetween.nonempty_all_iff`: oriented rectangles between `x` and `y` exist
   exactly when `y` is a column transposition of `x`.
 * `TauCeti.GridRectangleBetween.card_emptyRectangles_le_two`: there are at most two empty
@@ -133,7 +133,7 @@ theorem card_all_le_two (x y : GridState n) : (all x y).card ≤ 2 := by
 
 /-- When there is at least one oriented rectangle between two states, there are exactly two: the
 chosen one and its side swap. -/
-theorem card_all_of_nonempty (h : (all x y).Nonempty) : (all x y).card = 2 := by
+theorem card_all_eq_two_of_nonempty (h : (all x y).Nonempty) : (all x y).card = 2 := by
   obtain ⟨R, -⟩ := h
   rw [R.all_eq_pair, Finset.card_pair R.swapSides_ne_self.symm]
 
