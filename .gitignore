@@ -1,5 +1,11 @@
 /.lake/
 /build/
 
+# Artifacts left in the repo root by the radar benchmark suite (scripts/bench)
+/measurements.jsonl
+/lakeprof.log
+/lakeprof.trace_event
+/index.html
+
 __pycache__/
 *.pyc
