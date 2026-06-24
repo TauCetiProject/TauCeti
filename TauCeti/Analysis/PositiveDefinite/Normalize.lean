@@ -70,7 +70,7 @@ theorem map_zero_re_pos_of_ne_zero (hF : IsPositiveDefinite F) (h0 : F 0 ≠ 0) 
   · simpa using hF.map_zero_im
 
 /-- The normalizing scalar `((F 0).re)⁻¹`, viewed as a complex number, is nonnegative. -/
-theorem normalizeScalar_nonneg (hF : IsPositiveDefinite F) :
+private theorem normalizeScalar_nonneg (hF : IsPositiveDefinite F) :
     0 ≤ (((F 0).re)⁻¹ : ℂ) := by
   exact inv_nonneg.mpr ((RCLike.ofReal_nonneg (K := ℂ)).mpr hF.map_zero_re_nonneg)
 
@@ -90,33 +90,21 @@ theorem normalize_apply_zero (hF : IsPositiveDefinite F) (h0 : F 0 ≠ 0) :
   norm_cast
   exact inv_mul_cancel₀ hpos.ne'
 
-/-- The normalized positive-definite function has real value `1` at the origin. -/
-@[simp]
-theorem normalize_apply_zero_re (hF : IsPositiveDefinite F) (h0 : F 0 ≠ 0) :
-    ((((F 0).re)⁻¹ : ℂ) * F 0).re = 1 := by
-  rw [hF.normalize_apply_zero h0]
-  simp
-
-/-- The normalized positive-definite function has zero imaginary value at the origin. -/
-@[simp]
-theorem normalize_apply_zero_im (hF : IsPositiveDefinite F) (h0 : F 0 ≠ 0) :
-    ((((F 0).re)⁻¹ : ℂ) * F 0).im = 0 := by
-  rw [hF.normalize_apply_zero h0]
-  simp
-
 /-- At points satisfying `a + star a = 0`, the normalized positive-definite function is bounded
-by `1`. -/
+by `1`. When `F 0 = 0` the normalizing scalar is `0`, so the bound holds trivially. -/
 theorem norm_normalize_apply_le_one_of_add_star_eq_zero (hF : IsPositiveDefinite F)
-    (h0 : F 0 ≠ 0) (a : M) (ha : a + star a = 0) :
+    (a : M) (ha : a + star a = 0) :
     ‖(((F 0).re)⁻¹ : ℂ) * F a‖ ≤ 1 := by
-  have hpos := hF.map_zero_re_pos_of_ne_zero h0
-  have hbound := hF.norm_apply_le_map_zero_re_of_add_star_eq_zero a ha
-  have hnorm : ‖(((F 0).re)⁻¹ : ℂ)‖ = ((F 0).re)⁻¹ := by
-    rw [norm_inv, Complex.norm_of_nonneg hpos.le]
-  rw [norm_mul, hnorm]
-  have hscale := mul_le_mul_of_nonneg_left hbound (inv_nonneg.mpr hpos.le)
-  rw [inv_mul_cancel₀ hpos.ne'] at hscale
-  simpa [mul_comm] using hscale
+  rcases hF.map_zero_re_nonneg.lt_or_eq with hpos | hre
+  · have hbound := hF.norm_apply_le_map_zero_re_of_add_star_eq_zero a ha
+    have hnorm : ‖(((F 0).re)⁻¹ : ℂ)‖ = ((F 0).re)⁻¹ := by
+      rw [norm_inv, Complex.norm_of_nonneg hpos.le]
+    rw [norm_mul, hnorm]
+    have hscale := mul_le_mul_of_nonneg_left hbound (inv_nonneg.mpr hpos.le)
+    rw [inv_mul_cancel₀ hpos.ne'] at hscale
+    simpa [mul_comm] using hscale
+  · rw [← hre]
+    simp
 
 section Group
 
@@ -125,16 +113,16 @@ variable {G : Type*} [AddGroup G] [StarAddMonoid G] {H : G → ℂ}
 /-- Under the negation involution, the normalized positive-definite function is bounded by `1` at
 every point. -/
 theorem norm_normalize_apply_le_one_of_star_eq_neg (hH : IsPositiveDefinite H)
-    (h0 : H 0 ≠ 0) (a : G) (hstar_a : star a = -a) :
+    (a : G) (hstar_a : star a = -a) :
     ‖(((H 0).re)⁻¹ : ℂ) * H a‖ ≤ 1 :=
-  hH.norm_normalize_apply_le_one_of_add_star_eq_zero h0 a (by rw [hstar_a, add_neg_cancel])
+  hH.norm_normalize_apply_le_one_of_add_star_eq_zero a (by rw [hstar_a, add_neg_cancel])
 
 /-- If the involution is negation everywhere, the normalized positive-definite function is
 uniformly bounded by `1`. -/
 theorem norm_normalize_apply_le_one_of_forall_star_eq_neg (hH : IsPositiveDefinite H)
-    (h0 : H 0 ≠ 0) (hstar : ∀ a : G, star a = -a) (a : G) :
+    (hstar : ∀ a : G, star a = -a) (a : G) :
     ‖(((H 0).re)⁻¹ : ℂ) * H a‖ ≤ 1 :=
-  hH.norm_normalize_apply_le_one_of_star_eq_neg h0 a (hstar a)
+  hH.norm_normalize_apply_le_one_of_star_eq_neg a (hstar a)
 
 end Group
 
