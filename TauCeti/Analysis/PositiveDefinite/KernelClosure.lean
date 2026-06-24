@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import TauCeti.Analysis.PositiveDefinite.Kernel
 
 /-!
@@ -13,24 +14,21 @@ This file adds finite closure API for `TauCeti.IsPositiveDefiniteKernel`, the tw
 positive-definite kernel predicate used in the positive-definite-function and Bochner part of the
 `OneParameterSemigroups` roadmap.
 
-The basic kernel file already proves the binary closure operations: sums, nonnegative real scalar
-multiples, pointwise products, and rank-one kernels `(a, b) ↦ conj (g a) * g b`. This module
-packages their finite consequences. These are the forms used by finite-rank kernel constructions
-and by the finite-dimensional approximations that feed the later GNS/Kolmogorov decomposition:
-finite sums of rank-one kernels are positive definite, and finite Schur products of
-positive-definite kernels are positive definite.
+The basic kernel file already proves the constant kernels and binary closure operations: sums,
+nonnegative scalar multiples, pointwise products, and rank-one kernels
+`(a, b) ↦ conj (g a) * g b`. This module packages their finite consequences. These are the forms
+used by finite-rank kernel constructions and by the finite-dimensional approximations that feed
+the later GNS/Kolmogorov decomposition: finite sums of rank-one kernels are positive definite,
+and finite Schur products of positive-definite kernels are positive definite.
 
-No external formalization is vendored. The proofs are direct inductions through the existing
-Tau Ceti binary kernel API, which itself uses Mathlib's positive-semidefinite matrix calculus.
+No external formalization is vendored.
 
 ## Main declarations
 
-* `TauCeti.isPositiveDefiniteKernel_zero`, `TauCeti.isPositiveDefiniteKernel_one`, and
-  `TauCeti.isPositiveDefiniteKernel_const_of_nonneg`: constant positive-definite kernels.
 * `TauCeti.isPositiveDefiniteKernel_sum`: finite sums of positive-definite kernels.
 * `TauCeti.isPositiveDefiniteKernel_prod`: finite pointwise products of positive-definite
   kernels.
-* `TauCeti.isPositiveDefiniteKernel_sum_smul`: finite sums with nonnegative real weights.
+* `TauCeti.isPositiveDefiniteKernel_sum_smul`: finite sums with nonnegative weights.
 * `TauCeti.isPositiveDefiniteKernel_pow`: Schur powers of a positive-definite kernel.
 * `TauCeti.isPositiveDefiniteKernel_sum_conj_mul`: finite sums of rank-one kernels.
 
@@ -42,7 +40,7 @@ Tau Ceti binary kernel API, which itself uses Mathlib's positive-semidefinite ma
 
 public section
 
-open scoped ComplexConjugate
+open scoped ComplexConjugate ComplexOrder
 
 namespace TauCeti
 
@@ -50,25 +48,6 @@ universe u v w
 
 variable {𝕜 : Type u} [RCLike 𝕜]
 variable {α : Type v}
-
-/-- The zero kernel is positive definite. -/
-theorem isPositiveDefiniteKernel_zero :
-    IsPositiveDefiniteKernel (fun _ _ : α => (0 : 𝕜)) := by
-  simpa using isPositiveDefiniteKernel_conj_mul (𝕜 := 𝕜) (α := α) (fun _ => (0 : 𝕜))
-
-/-- The constant kernel with value `1` is positive definite. -/
-theorem isPositiveDefiniteKernel_one :
-    IsPositiveDefiniteKernel (fun _ _ : α => (1 : 𝕜)) := by
-  simpa using isPositiveDefiniteKernel_conj_mul (𝕜 := 𝕜) (α := α) (fun _ => (1 : 𝕜))
-
-/-- A nonnegative real constant, viewed in an `RCLike` field, gives a positive-definite
-constant kernel. -/
-theorem isPositiveDefiniteKernel_const_of_nonneg {r : ℝ} (hr : 0 ≤ r) :
-    IsPositiveDefiniteKernel (fun _ _ : α => (r : 𝕜)) := by
-  convert isPositiveDefiniteKernel_smul (𝕜 := 𝕜) (α := α)
-    (K := fun _ _ : α => (1 : 𝕜)) hr isPositiveDefiniteKernel_one using 1
-  ext a b
-  exact @Algebra.algebraMap_eq_smul_one ℝ 𝕜 _ _ _ r
 
 /-- Finite sums of positive-definite kernels are positive definite. -/
 theorem isPositiveDefiniteKernel_sum {ι : Type w} {s : Finset ι}
@@ -92,10 +71,10 @@ theorem isPositiveDefiniteKernel_prod {ι : Type w} {s : Finset ι}
     simp
   rwa [heq] at h
 
-/-- Finite sums of positive-definite kernels with nonnegative real weights are positive
+/-- Finite sums of positive-definite kernels with nonnegative weights are positive
 definite. This is the weighted finite-mixture form most often used in examples. -/
 theorem isPositiveDefiniteKernel_sum_smul {ι : Type w} {s : Finset ι}
-    {r : ι → ℝ} {K : ι → α → α → 𝕜} (hr : ∀ i ∈ s, 0 ≤ r i)
+    {r : ι → 𝕜} {K : ι → α → α → 𝕜} (hr : ∀ i ∈ s, 0 ≤ r i)
     (hK : ∀ i ∈ s, IsPositiveDefiniteKernel (K i)) :
     IsPositiveDefiniteKernel (fun a b => ∑ i ∈ s, r i • K i a b) :=
   isPositiveDefiniteKernel_sum fun i hi =>
@@ -128,9 +107,9 @@ theorem isPositiveDefiniteKernel_prod_conj_mul {ι : Type w} (s : Finset ι)
       (fun a b => ∏ i ∈ s, conj (g i a) * g i b) :=
   isPositiveDefiniteKernel_prod fun i _ => isPositiveDefiniteKernel_conj_mul (g i)
 
-/-- Finite nonnegative real combinations of rank-one kernels are positive definite. -/
+/-- Finite nonnegative combinations of rank-one kernels are positive definite. -/
 theorem isPositiveDefiniteKernel_sum_smul_conj_mul {ι : Type w} {s : Finset ι}
-    {r : ι → ℝ} (hr : ∀ i ∈ s, 0 ≤ r i) (g : ι → α → 𝕜) :
+    {r : ι → 𝕜} (hr : ∀ i ∈ s, 0 ≤ r i) (g : ι → α → 𝕜) :
     IsPositiveDefiniteKernel
       (fun a b => ∑ i ∈ s, r i • (conj (g i a) * g i b)) :=
   isPositiveDefiniteKernel_sum_smul hr fun i _ => isPositiveDefiniteKernel_conj_mul (g i)

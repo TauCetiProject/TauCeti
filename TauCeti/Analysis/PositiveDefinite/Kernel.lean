@@ -45,6 +45,8 @@ forms, with no positive-definite-kernel notion, so this is new; no code is vendo
 * `TauCeti.isPositiveDefiniteKernel_conj_symm`: positive-definite kernels are
   conjugate-symmetric.
 * `TauCeti.isPositiveDefiniteKernel_comp`: positive definiteness is preserved by pullback.
+* `TauCeti.isPositiveDefiniteKernel_zero`, `TauCeti.isPositiveDefiniteKernel_one`, and
+  `TauCeti.isPositiveDefiniteKernel_const_of_nonneg`: constant positive-definite kernels.
 * `TauCeti.isPositiveDefiniteKernel_add`, `TauCeti.isPositiveDefiniteKernel_smul`,
   `TauCeti.isPositiveDefiniteKernel_mul`: closure under sums, nonnegative scalar multiples, and
   pointwise products.
@@ -109,12 +111,12 @@ theorem isPositiveDefiniteKernel_add {K L : α → α → 𝕜}
   ext a b
   rfl
 
-/-- Nonnegative real scalar multiples of positive-definite kernels are positive definite. -/
-theorem isPositiveDefiniteKernel_smul {K : α → α → 𝕜} {r : ℝ} (hr : 0 ≤ r)
+/-- Nonnegative scalar multiples of positive-definite kernels are positive definite. -/
+theorem isPositiveDefiniteKernel_smul {K : α → α → 𝕜} {c : 𝕜} (hc : 0 ≤ c)
     (hK : IsPositiveDefiniteKernel K) :
-    IsPositiveDefiniteKernel (fun a b => r • K a b) := by
+    IsPositiveDefiniteKernel (fun a b => c • K a b) := by
   rw [isPositiveDefiniteKernel_def] at hK ⊢
-  convert hK.smul hr using 1
+  convert hK.smul hc using 1
   ext a b
   rfl
 
@@ -170,6 +172,24 @@ theorem isPositiveDefiniteKernel_conj_mul (g : α → 𝕜) :
       simp only [Matrix.of_apply, Matrix.vecMulVec_apply, Pi.star_apply, starRingEnd_apply]
     rw [e]
     exact Matrix.posSemidef_vecMulVec_star_self _
+
+/-- The zero kernel is positive definite. -/
+theorem isPositiveDefiniteKernel_zero :
+    IsPositiveDefiniteKernel (fun _ _ : α => (0 : 𝕜)) := by
+  simpa using isPositiveDefiniteKernel_conj_mul (𝕜 := 𝕜) (α := α) (fun _ => (0 : 𝕜))
+
+/-- The constant kernel with value `1` is positive definite. -/
+theorem isPositiveDefiniteKernel_one :
+    IsPositiveDefiniteKernel (fun _ _ : α => (1 : 𝕜)) := by
+  simpa using isPositiveDefiniteKernel_conj_mul (𝕜 := 𝕜) (α := α) (fun _ => (1 : 𝕜))
+
+/-- A nonnegative constant gives a positive-definite constant kernel. -/
+theorem isPositiveDefiniteKernel_const_of_nonneg {c : 𝕜} (hc : 0 ≤ c) :
+    IsPositiveDefiniteKernel (fun _ _ : α => c) := by
+  convert isPositiveDefiniteKernel_smul (𝕜 := 𝕜) (α := α)
+    (K := fun _ _ : α => (1 : 𝕜)) hc isPositiveDefiniteKernel_one using 1
+  ext a b
+  simp
 
 /-- The quadratic-form characterization of a positive-definite kernel: `K` is positive definite if
 and only if it is conjugate-symmetric and every Hermitian form
