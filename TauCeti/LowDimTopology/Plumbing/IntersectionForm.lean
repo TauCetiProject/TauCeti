@@ -134,8 +134,11 @@ theorem intersectionMatrix_isSymm : P.intersectionMatrix.IsSymm :=
 /-- A plumbing graph is **negative definite** when its intersection matrix is negative
 definite, equivalently when the negated intersection matrix is positive definite. For finite
 plumbed three-manifolds this is the standing hypothesis under which lattice homology computes
-the Heegaard Floer invariant. -/
-def IsNegativeDefinite : Prop :=
+the Heegaard Floer invariant.
+
+Exposed so that downstream files may read it directly as positive-definiteness of the negated
+intersection matrix and apply the `Matrix.PosDef` API to it. -/
+@[expose] def IsNegativeDefinite : Prop :=
   (-P.intersectionMatrix).PosDef
 
 /-- A negative-definite plumbing graph has every framing negative: a diagonal entry of the
