@@ -64,6 +64,41 @@ private theorem eq_zero_of_map_zero_re_eq_zero (hF : IsPositiveDefinite F)
     simpa [h0] using hF.norm_apply_le_map_zero_re_of_star_eq_neg x (hstar x)
   exact norm_eq_zero.mp (le_antisymm hnorm (norm_nonneg _))
 
+private theorem gram_three_sub_expand
+    {x y : E} (hx : star x = -x) (hy : star y = -y)
+    (hyx : F (y - x) = conj (F (x - y)))
+    (hnx : F (-x) = conj (F x)) (hny : F (0 + -y) = conj (F y)) {lam : ℂ} :
+    (∑ i : Fin 3, ∑ j : Fin 3,
+      ![1, -1, lam] i * conj (![1, -1, lam] j) *
+        F (![x, y, 0] i + star (![x, y, 0] j)))
+      = F 0 - F (x - y) + conj lam * F x - conj (F (x - y)) + F 0
+        - conj lam * F y + lam * conj (F x) - lam * conj (F y)
+        + lam * conj lam * F 0 := by
+  simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_two]
+  simp only [Matrix.vecHead, Matrix.vecTail]
+  simp only [Function.comp_apply, Fin.succ_zero_eq_one, Matrix.cons_val_zero,
+    Matrix.cons_val_one]
+  rw [hx, hy, star_zero, zero_add, add_zero, sub_eq_add_neg,
+    ← sub_eq_add_neg y x, hyx, hnx, hny]
+  simp only [add_zero, add_neg_cancel]
+  rw [← sub_eq_add_neg x y]
+  simp
+  ring_nf
+
+-- The remaining calculation is pure complex algebra after `F 0` has been normalized to a
+-- positive real scalar and `lam = -d / F 0` has been substituted.
+private theorem gram_three_sub_re_complex_algebra {r : ℝ} {z d lam : ℂ}
+    (hlam : lam = -d / (r : ℂ)) (hr : 0 < r) :
+    ((r : ℂ) - z + conj lam * d - conj z + (r : ℂ) + lam * conj d
+        + lam * conj lam * (r : ℂ)).re
+      = 2 * r - 2 * z.re - Complex.normSq d / r := by
+  rw [hlam]
+  field_simp [Complex.ofReal_ne_zero.mpr hr.ne']
+  simp [Complex.normSq_apply]
+  field_simp [hr.ne']
+  ring_nf
+
 private theorem gram_three_sub_re_algebra (hF : IsPositiveDefinite F)
     {x y : E} (hx : star x = -x) (hy : star y = -y)
     (hyx : F (y - x) = conj (F (x - y)))
@@ -74,21 +109,23 @@ private theorem gram_three_sub_re_algebra (hF : IsPositiveDefinite F)
       ![1, -1, lam] i * conj (![1, -1, lam] j) *
         F (![x, y, 0] i + star (![x, y, 0] j))).re
       = 2 * (F 0).re - 2 * (F (x - y)).re - Complex.normSq d / (F 0).re := by
-  simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_two]
-  simp only [Matrix.vecHead, Matrix.vecTail]
-  simp only [Function.comp_apply, Fin.succ_zero_eq_one, Matrix.cons_val_zero,
-    Matrix.cons_val_one]
-  rw [hx, hy, star_zero, zero_add, add_zero, sub_eq_add_neg,
-    ← sub_eq_add_neg y x, hyx, hnx, hny]
-  simp only [add_zero, add_neg_cancel]
-  simp only [hC, hd, hlam]
-  rw [hF.map_zero_eq_ofReal_re]
-  field_simp [Complex.ofReal_ne_zero.mpr hCpos.ne']
-  rw [← sub_eq_add_neg x y]
-  simp [Complex.normSq_apply]
-  field_simp [hCpos.ne']
-  ring_nf
+  rw [gram_three_sub_expand hx hy hyx hnx hny]
+  have hCreal : F 0 = ((F 0).re : ℂ) := hF.map_zero_eq_ofReal_re
+  have hstructured :
+      (F 0 - F (x - y) + conj lam * F x - conj (F (x - y)) + F 0
+          - conj lam * F y + lam * conj (F x) - lam * conj (F y)
+          + lam * conj lam * F 0).re
+        = (((F 0).re : ℂ) - F (x - y) + conj lam * d - conj (F (x - y))
+          + ((F 0).re : ℂ) + lam * conj d
+          + lam * conj lam * ((F 0).re : ℂ)).re := by
+    rw [hCreal, hd]
+    simp
+    ring_nf
+  rw [hstructured]
+  have hlam' : lam = -d / ((F 0).re : ℂ) := by
+    rw [hC, hCreal] at hlam
+    exact hlam
+  exact gram_three_sub_re_complex_algebra hlam' hCpos
 
 private theorem gram_three_sub_re_eq (hF : IsPositiveDefinite F)
     {x y : E} (hx : star x = -x) (hy : star y = -y) {C d lam : ℂ}
