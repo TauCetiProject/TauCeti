@@ -78,7 +78,7 @@ theorem isPositiveDefiniteKernel_sum_smul {ι : Type w} {s : Finset ι}
     (hK : ∀ i ∈ s, IsPositiveDefiniteKernel (K i)) :
     IsPositiveDefiniteKernel (fun a b => ∑ i ∈ s, r i • K i a b) :=
   isPositiveDefiniteKernel_sum fun i hi =>
-    isPositiveDefiniteKernel_smul (hr i hi) (hK i hi)
+    isPositiveDefiniteKernel_smul_of_nonneg (hr i hi) (hK i hi)
 
 /-- Schur powers of a positive-definite kernel are positive definite. -/
 theorem isPositiveDefiniteKernel_pow {K : α → α → 𝕜}
