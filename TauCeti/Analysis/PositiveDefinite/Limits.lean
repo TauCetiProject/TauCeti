@@ -6,8 +6,8 @@ module
 
 public import TauCeti.Analysis.PositiveDefinite.FunctionKernel
 public import TauCeti.Analysis.PositiveDefinite.Kernel
-public import Mathlib.Topology.Algebra.Monoid
-public import Mathlib.Topology.Order.OrderClosed
+import Mathlib.Topology.Algebra.Monoid
+import Mathlib.Topology.Order.OrderClosed
 
 /-!
 # Pointwise limits of positive-definite functions
