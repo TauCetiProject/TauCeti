@@ -15,3 +15,11 @@ LAKE_OVERRIDE_LEAN=true LEAN=$(realpath "$BENCH/build/fake-root/bin/lean") \
 # Analyze lakeprof data
 lakeprof report -pj | jq -c '{metric: "build/lakeprof/longest build path//wall-clock", value: .[-1][2], unit: "s"}' >> measurements.jsonl
 lakeprof report -rj | jq -c '{metric: "build/lakeprof/longest rebuild path//wall-clock", value: .[-1][2], unit: "s"}' >> measurements.jsonl
+
+# Upload the lakeprof report when running under radar (radar's harness exports
+# IN_RADAR=1; local runs leave it unset, so this never fires off-radar). Best
+# effort: a failed upload must not fail the benchmark.
+if [ -n "${IN_RADAR:-}" ]; then
+  python3 "$BENCH/build/lakeprof_report_upload.py" \
+    || echo "lakeprof report upload failed; continuing"
+fi
