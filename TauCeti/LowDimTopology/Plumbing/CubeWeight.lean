@@ -86,18 +86,27 @@ private theorem cubeVertex_sum_mem_subsetSum {T S : Finset V} (hTS : T ⊆ S) :
 noncomputable def cubeVertices (x : V → ℤ) (S : Finset V) : Finset (V → ℤ) :=
   ((S.image fun v => Pi.single v (1 : ℤ)).subsetSum).image fun z => x + z
 
-/-- Membership in the vertex set of a plumbing cube. -/
+/-- A point is a vertex of the cube based at `x` with directions `S` exactly when it is
+`cubeVertex x T` for some subset `T ⊆ S` of the directions. -/
 theorem mem_cubeVertices (x : V → ℤ) (S : Finset V) (y : V → ℤ) :
-    y ∈ cubeVertices x S ↔
-      ∃ z ∈ (S.image fun v => Pi.single v (1 : ℤ)).subsetSum, x + z = y := by
+    y ∈ cubeVertices x S ↔ ∃ T ⊆ S, cubeVertex x T = y := by
   rw [cubeVertices, Finset.mem_image]
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    rw [Finset.mem_subsetSum_iff] at hz
+    obtain ⟨U, hU, rfl⟩ := hz
+    rw [Finset.subset_image_iff] at hU
+    obtain ⟨T, hTS, rfl⟩ := hU
+    exact ⟨T, hTS, by rw [cubeVertex, Finset.sum_image single_one_injective.injOn]⟩
+  · rintro ⟨T, hTS, rfl⟩
+    exact ⟨∑ v ∈ T, Pi.single v (1 : ℤ), cubeVertex_sum_mem_subsetSum hTS, rfl⟩
 
 /-- The base point is a vertex of every cube. -/
 @[simp]
 theorem base_mem_cubeVertices (x : V → ℤ) (S : Finset V) :
     x ∈ cubeVertices x S := by
   rw [mem_cubeVertices]
-  exact ⟨0, by simp, by simp⟩
+  exact ⟨∅, Finset.empty_subset S, cubeVertex_empty x⟩
 
 /-- The vertex set of a cube is nonempty. -/
 theorem cubeVertices_nonempty (x : V → ℤ) (S : Finset V) :
@@ -108,15 +117,27 @@ theorem cubeVertices_nonempty (x : V → ℤ) (S : Finset V) :
 theorem cubeVertex_subset_mem_cubeVertices {T S : Finset V} (hTS : T ⊆ S) (x : V → ℤ) :
     cubeVertex x T ∈ cubeVertices x S := by
   rw [mem_cubeVertices]
-  exact ⟨∑ v ∈ T, Pi.single v (1 : ℤ), cubeVertex_sum_mem_subsetSum hTS, by rw [cubeVertex]⟩
+  exact ⟨T, hTS, rfl⟩
 
 /-- The vertices of a subcube are vertices of the larger cube. -/
 theorem cubeVertices_subset {S T : Finset V} (hST : S ⊆ T) (x : V → ℤ) :
     cubeVertices x S ⊆ cubeVertices x T := by
   intro y hy
   rw [mem_cubeVertices] at hy ⊢
-  obtain ⟨z, hz, hzy⟩ := hy
-  exact ⟨z, Finset.subsetSum_mono (Finset.image_subset_image hST) hz, hzy⟩
+  obtain ⟨U, hUS, rfl⟩ := hy
+  exact ⟨U, hUS.trans hST, rfl⟩
+
+/-- The zero-dimensional cube has its base point as its only vertex. -/
+@[simp]
+theorem cubeVertices_empty (x : V → ℤ) : cubeVertices x ∅ = {x} := by
+  ext y
+  rw [mem_cubeVertices, Finset.mem_singleton]
+  constructor
+  · rintro ⟨T, hT, rfl⟩
+    rw [Finset.subset_empty.mp hT]
+    exact cubeVertex_empty x
+  · rintro rfl
+    exact ⟨∅, Finset.empty_subset _, cubeVertex_empty _⟩
 
 variable [Fintype V]
 
@@ -226,18 +247,8 @@ theorem characteristicCubeWeight_empty (P : PlumbingGraph V) (k : P.characterist
   apply le_antisymm
   · apply P.characteristicCubeWeight_le k
     intro z hz
-    rw [mem_cubeVertices] at hz
-    obtain ⟨u, hu, huz⟩ := hz
-    rw [Finset.mem_subsetSum_iff] at hu
-    obtain ⟨U, hU, hsum⟩ := hu
-    have hUeq : U = ∅ := by
-      rw [Finset.eq_empty_iff_forall_notMem]
-      intro a ha
-      exact (by simpa using hU ha)
-    have hu0 : u = 0 := by
-      rw [← hsum, hUeq]
-      simp
-    rw [← huz, hu0, add_zero]
+    rw [cubeVertices_empty, Finset.mem_singleton] at hz
+    rw [hz]
   · exact P.characteristicWeight_le_characteristicCubeWeight_base k x ∅
 
 end PlumbingGraph
