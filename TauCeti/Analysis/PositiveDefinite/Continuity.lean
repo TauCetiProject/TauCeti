@@ -6,7 +6,7 @@ module
 
 public import TauCeti.Analysis.PositiveDefinite.Basic
 public import Mathlib.Topology.MetricSpace.Basic
-public import Mathlib.Topology.Algebra.Group.Basic
+public import Mathlib.Analysis.Normed.Group.Basic
 
 /-!
 # Continuity of positive-definite functions
@@ -269,7 +269,7 @@ end GroupAlgebra
 
 section Topology
 
-variable {E : Type*} [SeminormedAddCommGroup E] [StarAddMonoid E] {F : E → ℂ}
+variable {E : Type*} [SeminormedAddGroup E] [StarAddMonoid E] {F : E → ℂ}
 
 /-- A positive-definite function on a seminormed additive group with the negation involution is
 uniformly continuous as soon as it is continuous at the origin. -/
@@ -287,8 +287,20 @@ theorem uniformContinuous_of_continuousAt_zero_of_forall_star_eq_neg (hF : IsPos
   have hev := (Metric.tendsto_nhds.mp hcont) η hη
   rcases Metric.eventually_nhds_iff.mp hev with ⟨δ, hδ, hδF⟩
   refine ⟨δ, hδ, fun x y hxy => ?_⟩
+  have hadd_comm : ∀ a b : E, a + b = b + a := by
+    intro a b
+    have hneg_comm : -(-a) + -(-b) = -(-b) + -(-a) := by
+      calc
+        -(-a) + -(-b) = star (-a) + star (-b) := by rw [hstar, hstar]
+        _ = star ((-a) + (-b)) := (star_add (-a) (-b)).symm
+        _ = -((-a) + (-b)) := hstar ((-a) + (-b))
+        _ = -(-b) + -(-a) := neg_add_rev (-a) (-b)
+    simpa using hneg_comm
+  have hxy_norm : ‖x + -y‖ < δ := by
+    rw [SeminormedAddGroup.dist_eq] at hxy
+    simpa [sub_eq_add_neg, hadd_comm, ← norm_neg (x + -y)] using hxy
   have hdist : dist (x - y) 0 < δ := by
-    simpa [dist_eq_norm, sub_eq_add_neg, add_comm] using hxy
+    simpa [SeminormedAddGroup.dist_eq, sub_eq_add_neg, ← norm_neg (x + -y)] using hxy_norm
   have hsmall : ‖F (x - y) - F 0‖ < η := by
     simpa [dist_eq_norm] using hδF hdist
   have hsquare_le : ‖F x - F y‖ ^ 2 < ε ^ 2 := by
