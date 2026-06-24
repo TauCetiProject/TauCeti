@@ -25,8 +25,6 @@ normalized function rather than introducing a new bundled predicate.
 
 ## Main declarations
 
-* `TauCeti.IsPositiveDefinite.map_zero_re_pos_of_ne_zero`: a nonzero positive-definite function
-  has strictly positive real value at the origin.
 * `TauCeti.IsPositiveDefinite.normalize`: multiplying by `((F 0).re)⁻¹` preserves
   positive-definiteness.
 * `TauCeti.IsPositiveDefinite.normalize_apply_zero`: the normalized function has value `1` at
@@ -50,24 +48,6 @@ namespace TauCeti
 namespace IsPositiveDefinite
 
 variable {M : Type*} [AddMonoid M] [StarAddMonoid M] {F : M → ℂ}
-
-/-- The value at the origin of a positive-definite function is equal to the real number
-`(F 0).re`, viewed as a complex number. -/
-theorem map_zero_eq_ofReal_re (hF : IsPositiveDefinite F) : F 0 = ((F 0).re : ℂ) := by
-  apply Complex.ext
-  · simp
-  · simpa using hF.map_zero_im
-
-/-- If a positive-definite function is nonzero at the origin, then the real part of that value is
-strictly positive. -/
-theorem map_zero_re_pos_of_ne_zero (hF : IsPositiveDefinite F) (h0 : F 0 ≠ 0) :
-    0 < (F 0).re := by
-  refine lt_of_le_of_ne hF.map_zero_re_nonneg ?_
-  intro hre
-  apply h0
-  apply Complex.ext
-  · exact hre.symm
-  · simpa using hF.map_zero_im
 
 /-- The normalizing scalar `((F 0).re)⁻¹`, viewed as a complex number, is nonnegative. -/
 private theorem normalizeScalar_nonneg (hF : IsPositiveDefinite F) :
