@@ -44,6 +44,11 @@ def hermiteCountBound (D C : ℕ) : ℕ :=
   (2 * C + 1) ^ (D + 1) * D
 
 @[simp]
+theorem hermiteCountBound_def (D C : ℕ) :
+    hermiteCountBound D C = (2 * C + 1) ^ (D + 1) * D :=
+  by simp [hermiteCountBound]
+
+@[simp]
 theorem hermiteCountBound_zero_left (C : ℕ) : hermiteCountBound 0 C = 0 := by
   simp [hermiteCountBound]
 
@@ -58,6 +63,8 @@ theorem hermiteCountBound_mono {D₁ D₂ C₁ C₂ : ℕ} (hD : D₁ ≤ D₂) 
   unfold hermiteCountBound
   gcongr
   omega
+
+attribute [gcongr] hermiteCountBound_mono
 
 /-- The effective Hermite--Minkowski count with the exact constants packaged as
 `hermiteCountBound`. -/
@@ -93,6 +100,7 @@ theorem ncard_setOf_finiteDimensional_abs_discr_le_le_of_bounds' (N D C : ℕ)
         haveI : _root_.NumberField K := @NumberField.mk _ _ inferInstance K.prop
         |discr K| ≤ (N : ℤ)}.ncard ≤
       (2 * C + 1) ^ (D + 1) * D :=
-  ncard_setOf_finiteDimensional_abs_discr_le_le_of_bounds (A := A) N D C hD hC
+  by simpa only [hermiteCountBound_def] using
+    ncard_setOf_finiteDimensional_abs_discr_le_le_of_bounds (A := A) N D C hD hC
 
 end TauCeti.NumberField
