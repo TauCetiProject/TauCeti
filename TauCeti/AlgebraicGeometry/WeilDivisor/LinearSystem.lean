@@ -150,8 +150,8 @@ lemma completeLinearSystem_eq_empty_of_weightedDegree_neg {w : X → ℤ} (hw : 
   rw [hdeg] at hpos
   exact absurd hD (not_lt.mpr hpos)
 
-/-- In a positive-weight theory, every member of the complete linear system of a
-weighted-degree-zero divisor is zero. -/
+/-- With positive weights and weighted-degree-zero principal divisors, every member of the
+complete linear system of a weighted-degree-zero divisor is zero. -/
 lemma eq_zero_of_mem_completeLinearSystem_of_weightedDegree_zero {w : X → ℤ}
     (hw : ∀ x, 0 < w x) (h : S.IsWeightedDegreeZero w) {D E : WeilDivisor X}
     (hE : E ∈ S.completeLinearSystem D) (hD : weightedDegree w D = 0) : E = 0 := by
