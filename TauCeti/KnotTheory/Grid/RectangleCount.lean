@@ -5,8 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Data.Finset.Card
-public import TauCeti.KnotTheory.Grid.BlockedRectangle
-public import TauCeti.KnotTheory.Grid.Complex
 public import TauCeti.KnotTheory.Grid.RectangleSwap
 
 /-!
@@ -42,10 +40,8 @@ generator.
   between two states, and exactly two when there is at least one.
 * `TauCeti.GridRectangleBetween.nonempty_all_iff`: oriented rectangles between `x` and `y` exist
   exactly when `y` is a column transposition of `x`.
-* `TauCeti.GridDiagram.card_fullyBlockedRectangles_le_two`: the fully blocked differential has at
-  most two rectangles in each matrix coefficient.
-* `TauCeti.GridDiagram.exists_swapColumns_of_fullyBlockedDifferentialOnGenerator_ne_zero`: the
-  fully blocked differential of a generator is supported on its column transpositions.
+* `TauCeti.GridRectangleBetween.card_emptyRectangles_le_two`: there are at most two empty
+  rectangles between two states.
 
 ## References
 
@@ -141,11 +137,10 @@ theorem card_all_of_nonempty (h : (all x y).Nonempty) : (all x y).card = 2 := by
   obtain ⟨R, -⟩ := h
   rw [R.all_eq_pair, Finset.card_pair R.swapSides_ne_self.symm]
 
-/-- Any finite subcollection of the oriented rectangles between two states has cardinality at
-most two. -/
-theorem card_le_two_of_subset_all {s : Finset (GridRectangleBetween x y)}
-    (hs : s ⊆ all x y) : s.card ≤ 2 :=
-  (Finset.card_le_card hs).trans (card_all_le_two x y)
+/-- Any finite subcollection of oriented rectangles between two states has cardinality at most
+two. -/
+theorem card_le_two (s : Finset (GridRectangleBetween x y)) : s.card ≤ 2 :=
+  (Finset.card_le_card (by intro R _; exact mem_all R)).trans (card_all_le_two x y)
 
 /-- Oriented rectangles between `x` and `y` exist exactly when `y` is a column transposition of
 `x`. A rectangle realizes its side columns as a transposition taking `x` to `y`, and conversely a
@@ -165,42 +160,8 @@ theorem nonempty_all_iff :
 /-- There are at most two empty oriented rectangles between two grid states. -/
 theorem card_emptyRectangles_le_two (x y : GridState n) :
     (emptyRectangles x y).card ≤ 2 :=
-  card_le_two_of_subset_all (emptyRectangles_subset_all x y)
+  card_le_two (emptyRectangles x y)
 
 end GridRectangleBetween
-
-namespace GridDiagram
-
-variable {n : ℕ} (G : GridDiagram n)
-
-/-- There are at most two fully blocked rectangles in each matrix coefficient of the fully
-blocked differential. -/
-theorem card_fullyBlockedRectangles_le_two (x y : GridState n) :
-    (G.fullyBlockedRectangles x y).card ≤ 2 :=
-  GridRectangleBetween.card_le_two_of_subset_all (G.fullyBlockedRectangles_subset_all x y)
-
-/-- A nonzero matrix coefficient of the fully blocked differential forces the target state to be a
-column transposition of the source state: a nonzero count means there is a fully blocked
-rectangle, hence an oriented rectangle, between the two states. -/
-theorem exists_swapColumns_of_fullyBlockedRectangleCount_ne_zero {x y : GridState n}
-    (h : G.fullyBlockedRectangleCount x y ≠ 0) :
-    ∃ a b : Fin n, a ≠ b ∧ y = x.swapColumns a b := by
-  rw [fullyBlockedRectangleCount_def] at h
-  have hcard : (G.fullyBlockedRectangles x y).card ≠ 0 := by
-    intro hc
-    rw [hc] at h
-    simp at h
-  obtain ⟨R, hR⟩ := Finset.card_ne_zero.mp hcard
-  exact ⟨R.left, R.right, R.left_ne_right, R.target_eq_swapColumns⟩
-
-/-- The fully blocked differential of a generator is supported on the column transpositions of
-that generator: if the `y`-coefficient is nonzero, then `y` is a column transposition of `x`. -/
-theorem exists_swapColumns_of_fullyBlockedDifferentialOnGenerator_ne_zero {x y : GridState n}
-    (h : G.fullyBlockedDifferentialOnGenerator x y ≠ 0) :
-    ∃ a b : Fin n, a ≠ b ∧ y = x.swapColumns a b := by
-  rw [fullyBlockedDifferentialOnGenerator_apply] at h
-  exact G.exists_swapColumns_of_fullyBlockedRectangleCount_ne_zero h
-
-end GridDiagram
 
 end TauCeti
