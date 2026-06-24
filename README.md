@@ -79,7 +79,11 @@ We're aware that training and running powerful AIs come at a significant financi
 
 For the time being, we will run initial CI and reviews for individual contributors and experiments (we don't really have a budget even for this, but will scrape something together), and expect that contributors will cover the costs of generating the code included in their PRs. 
 
- While we don't help our contributors with such subscriptions, we believe that Tau Ceti will serve its purpose only if, on the long run, it will result in no financial discrimination among its users. This reflects primarily in our choice of the Apache licence. Although we're aware that the following does not address the issue of colleagues who don't dispose of enough budget to run powerful agents, we expect that, eventually, the review agents' token costs will be covered by some combination of philanthropic donations (in money or in kind), and perhaps also a "billable hours" basis for significant contributors. That is, industrial or academic groups making significant pull requests should expect to donate tokens sufficient to power the review bots in proportion to their contributions. Likely small scale contributions can be reviewed "for free" out of this pool. 
+It is essential that Tau Ceti remains an open source project, and however inference for generation or review is paid for, the outputs will always be free (as in both speech and beer), protected by the Apache licence.
+
+We intend to move to a system where review agents' inference costs are covered by the large scale contributors to the library. This may be in the form of donations (in money or tokens) to the umbrella organizations (the Lean FRO and/or the Mathlib Initiative), or by in-kind inference using sufficiently capable in-house models. We anticipate that individual contributions can be reviewed "for free" out of this pool.
+
+Finally, we understand that participating in AI-assisted mathematics research requires the ability to pay for inference costs, potentially adding a further barrier to entry on top of the existing societal/financial privilege implicit in holding a research position. We're not sure how to respond to this. Possibilities include advocacy for public and private funding, advocacy for capability limitations, and technical capability work on open weight models and cheaper models. Each of these are difficult, have potential adverse effects, and unknown consequences. 
 ## Building
 
 ```bash
