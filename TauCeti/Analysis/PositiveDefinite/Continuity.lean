@@ -24,10 +24,13 @@ API asks for the basic fact "continuity at `0` ⇒ uniform continuity" before Bo
 
 In the namespace `TauCeti.IsPositiveDefinite`:
 
-* `norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_forall_star_eq_neg`:
-  the real-part continuity estimate.
-* `norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub_of_forall_star_eq_neg`:
-  the norm-valued continuity estimate.
+* `norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_star_eq_neg`:
+  the local real-part continuity estimate.
+* `norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub_of_star_eq_neg`:
+  the local norm-valued continuity estimate.
+* `norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_forall_star_eq_neg` and
+  `norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub_of_forall_star_eq_neg`:
+  specializations to a globally negating involution.
 * `uniformContinuous_of_continuousAt_zero_of_forall_star_eq_neg`:
   continuity at `0` implies uniform continuity.
 
@@ -48,12 +51,12 @@ namespace IsPositiveDefinite
 
 section Algebra
 
-variable {E : Type*} [AddCommGroup E] [StarAddMonoid E] {F : E → ℂ}
+variable {E : Type*} [AddGroup E] [StarAddMonoid E] {F : E → ℂ}
 
 private theorem apply_neg_eq_conj (hF : IsPositiveDefinite F)
-    (hstar : ∀ x : E, star x = -x) (x : E) : F (-x) = conj (F x) := by
+    {x : E} (hx : star x = -x) : F (-x) = conj (F x) := by
   have h := hF.conj_symm x 0
-  simpa [hstar x] using congrArg conj h
+  simpa [hx] using congrArg conj h
 
 private theorem eq_zero_of_map_zero_re_eq_zero (hF : IsPositiveDefinite F)
     (hstar : ∀ x : E, star x = -x) (h0 : (F 0).re = 0) (x : E) : F x = 0 := by
@@ -61,27 +64,23 @@ private theorem eq_zero_of_map_zero_re_eq_zero (hF : IsPositiveDefinite F)
     simpa [h0] using hF.norm_apply_le_map_zero_re_of_star_eq_neg x (hstar x)
   exact norm_eq_zero.mp (le_antisymm hnorm (norm_nonneg _))
 
-private theorem gram_three_sub_re_eq (hF : IsPositiveDefinite F)
-    (hstar : ∀ x : E, star x = -x) {x y : E} {C d lam : ℂ}
+private theorem gram_three_sub_re_algebra (hF : IsPositiveDefinite F)
+    {x y : E} (hx : star x = -x) (hy : star y = -y)
+    (hyx : F (y - x) = conj (F (x - y)))
+    (hnx : F (-x) = conj (F x)) (hny : F (0 + -y) = conj (F y)) {C d lam : ℂ}
     (hC : C = F 0) (hd : d = F x - F y) (hlam : lam = -d / C)
     (hCpos : 0 < (F 0).re) :
     (∑ i : Fin 3, ∑ j : Fin 3,
       ![1, -1, lam] i * conj (![1, -1, lam] j) *
         F (![x, y, 0] i + star (![x, y, 0] j))).re
       = 2 * (F 0).re - 2 * (F (x - y)).re - Complex.normSq d / (F 0).re := by
-  have hyx : F (y - x) = conj (F (x - y)) := by
-    have h := hF.conj_symm x y
-    simpa [hstar x, hstar y, sub_eq_add_neg, add_comm] using congrArg conj h
-  have hnx : F (-x) = conj (F x) := hF.apply_neg_eq_conj hstar x
-  have hny : F (-y) = conj (F y) := hF.apply_neg_eq_conj hstar y
-  have hny' : F (0 + -y) = conj (F y) := by simpa using hny
   simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two]
   simp only [Matrix.vecHead, Matrix.vecTail]
   simp only [Function.comp_apply, Fin.succ_zero_eq_one, Matrix.cons_val_zero,
     Matrix.cons_val_one]
-  rw [hstar x, hstar y, hstar 0, neg_zero, zero_add, add_zero, sub_eq_add_neg,
-    ← sub_eq_add_neg y x, hyx, hnx, hny']
+  rw [hx, hy, star_zero, zero_add, add_zero, sub_eq_add_neg,
+    ← sub_eq_add_neg y x, hyx, hnx, hny]
   simp only [add_zero, add_neg_cancel]
   simp only [hC, hd, hlam]
   rw [hF.map_zero_eq_ofReal_re]
@@ -91,14 +90,38 @@ private theorem gram_three_sub_re_eq (hF : IsPositiveDefinite F)
   field_simp [hCpos.ne']
   ring_nf
 
-/-- The real-part form of the standard positive-definite continuity estimate. -/
-theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_forall_star_eq_neg
+private theorem gram_three_sub_re_eq (hF : IsPositiveDefinite F)
+    {x y : E} (hx : star x = -x) (hy : star y = -y) {C d lam : ℂ}
+    (hC : C = F 0) (hd : d = F x - F y) (hlam : lam = -d / C)
+    (hCpos : 0 < (F 0).re) :
+    (∑ i : Fin 3, ∑ j : Fin 3,
+      ![1, -1, lam] i * conj (![1, -1, lam] j) *
+        F (![x, y, 0] i + star (![x, y, 0] j))).re
+      = 2 * (F 0).re - 2 * (F (x - y)).re - Complex.normSq d / (F 0).re := by
+  have hyx : F (y - x) = conj (F (x - y)) := by
+    have h := hF.conj_symm x y
+    simpa [hx, hy, sub_eq_add_neg] using congrArg conj h
+  have hnx : F (-x) = conj (F x) := hF.apply_neg_eq_conj hx
+  have hny : F (0 + -y) = conj (F y) := by
+    simpa using hF.apply_neg_eq_conj hy
+  exact hF.gram_three_sub_re_algebra hx hy hyx hnx hny hC hd hlam hCpos
+
+/-- The local real-part form of the standard positive-definite continuity estimate. -/
+theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_star_eq_neg
     (hF : IsPositiveDefinite F)
-    (hstar : ∀ x : E, star x = -x) (x y : E) :
+    {x y : E} (hx : star x = -x) (hy : star y = -y) :
     ‖F x - F y‖ ^ 2
       ≤ 2 * (F 0).re * ((F 0).re - (F (x - y)).re) := by
   by_cases hC0 : (F 0).re = 0
-  · simp [hF.eq_zero_of_map_zero_re_eq_zero hstar hC0]
+  · have hFx : F x = 0 := by
+      have hnorm : ‖F x‖ ≤ 0 := by
+        simpa [hC0] using hF.norm_apply_le_map_zero_re_of_star_eq_neg x hx
+      exact norm_eq_zero.mp (le_antisymm hnorm (norm_nonneg _))
+    have hFy : F y = 0 := by
+      have hnorm : ‖F y‖ ≤ 0 := by
+        simpa [hC0] using hF.norm_apply_le_map_zero_re_of_star_eq_neg y hy
+      exact norm_eq_zero.mp (le_antisymm hnorm (norm_nonneg _))
+    simp [hFx, hFy, hC0]
   have hCpos : 0 < (F 0).re := lt_of_le_of_ne hF.map_zero_re_nonneg (Ne.symm hC0)
   let C : ℂ := F 0
   let d : ℂ := F x - F y
@@ -113,7 +136,7 @@ theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_forall_star_eq_neg
         ![1, -1, lam] i * conj (![1, -1, lam] j) *
           F (![x, y, 0] i + star (![x, y, 0] j))).re
         = 2 * (F 0).re - 2 * (F (x - y)).re - Complex.normSq d / (F 0).re := by
-    exact hF.gram_three_sub_re_eq hstar rfl rfl rfl hCpos
+    exact hF.gram_three_sub_re_eq hx hy rfl rfl rfl hCpos
   have hmain : Complex.normSq d ≤ (F 0).re *
       (2 * (F 0).re - 2 * (F (x - y)).re) := by
     have hnonneg : 0 ≤ 2 * (F 0).re - 2 * (F (x - y)).re
@@ -130,10 +153,19 @@ theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_forall_star_eq_neg
     _ ≤ (F 0).re * (2 * (F 0).re - 2 * (F (x - y)).re) := hmain
     _ = 2 * (F 0).re * ((F 0).re - (F (x - y)).re) := by ring
 
-/-- The norm-valued form of the standard positive-definite continuity estimate. -/
-theorem norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub_of_forall_star_eq_neg
+/-- The real-part form of the standard positive-definite continuity estimate under a globally
+negating involution. -/
+theorem norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_forall_star_eq_neg
     (hF : IsPositiveDefinite F)
     (hstar : ∀ x : E, star x = -x) (x y : E) :
+    ‖F x - F y‖ ^ 2
+      ≤ 2 * (F 0).re * ((F 0).re - (F (x - y)).re) :=
+  hF.norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_star_eq_neg (hstar x) (hstar y)
+
+/-- The local norm-valued form of the standard positive-definite continuity estimate. -/
+theorem norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub_of_star_eq_neg
+    (hF : IsPositiveDefinite F)
+    {x y : E} (hx : star x = -x) (hy : star y = -y) :
     ‖F x - F y‖ ^ 2 ≤ 2 * (F 0).re * ‖F (x - y) - F 0‖ := by
   have hre :
       (F 0).re - (F (x - y)).re ≤ ‖F (x - y) - F 0‖ := by
@@ -142,8 +174,16 @@ theorem norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub_of_forall_star_eq_neg
       simp [Complex.sub_re]
     rw [h₁]
     exact (neg_le_abs _).trans (Complex.abs_re_le_norm _)
-  exact (hF.norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_forall_star_eq_neg hstar x y).trans
+  exact (hF.norm_sub_sq_le_two_mul_map_zero_re_mul_re_sub_of_star_eq_neg hx hy).trans
     (mul_le_mul_of_nonneg_left hre (mul_nonneg zero_le_two hF.map_zero_re_nonneg))
+
+/-- The norm-valued form of the standard positive-definite continuity estimate under a globally
+negating involution. -/
+theorem norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub_of_forall_star_eq_neg
+    (hF : IsPositiveDefinite F)
+    (hstar : ∀ x : E, star x = -x) (x y : E) :
+    ‖F x - F y‖ ^ 2 ≤ 2 * (F 0).re * ‖F (x - y) - F 0‖ :=
+  hF.norm_sub_sq_le_two_mul_map_zero_re_mul_norm_sub_of_star_eq_neg (hstar x) (hstar y)
 
 end Algebra
 
@@ -177,8 +217,8 @@ theorem uniformContinuous_of_continuousAt_zero_of_forall_star_eq_neg (hF : IsPos
     calc
       ‖F x - F y‖ ^ 2 ≤ 2 * (F 0).re * ‖F (x - y) - F 0‖ := hbound
       _ < 2 * (F 0).re * η := mul_lt_mul_of_pos_left hsmall (mul_pos zero_lt_two hCpos)
+      _ = 2 * (F 0).re * (ε ^ 2 / (2 * (F 0).re)) := by rfl
       _ = ε ^ 2 := by
-        rw [show η = ε ^ 2 / (2 * (F 0).re) from rfl]
         field_simp [(mul_pos zero_lt_two hCpos).ne']
   have habs := sq_lt_sq.mp hsquare_le
   simpa [dist_eq_norm, abs_of_nonneg hε.le] using habs
