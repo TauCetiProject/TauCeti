@@ -381,6 +381,11 @@ theorem sidePair_injective :
   cases hright
   rfl
 
+/-- An oriented rectangle between two grid states has decidable equality: it is determined by its
+ordered pair of side columns, which has decidable equality. -/
+instance : DecidableEq (GridRectangleBetween x y) :=
+  sidePair_injective.decidableEq
+
 /-- For fixed source and target grid states, the oriented rectangles between them form a
 finite type. Each rectangle is determined by its two side columns. -/
 noncomputable instance : Fintype (GridRectangleBetween x y) :=

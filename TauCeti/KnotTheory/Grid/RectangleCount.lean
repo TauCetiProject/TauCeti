@@ -60,11 +60,6 @@ namespace GridRectangleBetween
 
 variable {n : ℕ} {x y : GridState n}
 
-/-- An oriented rectangle between two grid states has decidable equality: it is determined by its
-ordered pair of side columns, which has decidable equality. -/
-instance : DecidableEq (GridRectangleBetween x y) :=
-  sidePair_injective.decidableEq
-
 variable (R : GridRectangleBetween x y)
 
 /-- A column is a side column of the rectangle exactly when the two states read different rows
