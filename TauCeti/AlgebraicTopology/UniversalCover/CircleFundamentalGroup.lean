@@ -39,6 +39,9 @@ transformation, so `Deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
   regular deck action.
 * `TauCeti.AddCircle.fundamentalGroupMulEquivZMultiples`: for a covering projection from a
   simply connected additive group, the fundamental group of `AddCircle p` is the period subgroup.
+* `TauCeti.AddCircle.fundamentalGroupMulEquivOfAddCircle`: for a covering projection from a
+  simply connected additive group with non-torsion period, the fundamental group of
+  `AddCircle p` is `Multiplicative ℤ`.
 * `TauCeti.AddCircle.fundamentalGroupMulEquiv`: for a nonzero real period, the fundamental
   group of `AddCircle p` (based at any point with a chosen lift) is `Multiplicative ℤ`.
 * `TauCeti.AddCircle.fundamentalGroupMulEquiv_zero`: the basepoint-`0` specialisation, using
@@ -83,6 +86,14 @@ private lemma addCircleMulEquiv_symm_addRightZMultiples (n : Multiplicative (zmu
   rw [← Deck.addCircleMulEquiv_apply n]
   exact MulEquiv.symm_apply_apply Deck.addCircleMulEquiv n
 
+omit [SimplyConnectedSpace 𝕜] in
+private lemma fundamentalGroupMulEquivZMultiples_toPeriod_symm_apply
+    (n : Multiplicative (zmultiples p)) :
+    (((MulEquiv.op Deck.addCircleMulEquiv.symm).trans
+      (MulOpposite.opMulEquiv (M := Multiplicative (zmultiples p))).symm).symm n) =
+        MulOpposite.op (Deck.addCircleMulEquiv n) := by
+  simp
+
 /-- Characterization of the period-subgroup element assigned by
 `fundamentalGroupMulEquivZMultiples`: a loop class maps to `n` exactly when its monodromy
 translate of the chosen lift differs by the element `n`. -/
@@ -101,7 +112,7 @@ lemma fundamentalGroupMulEquivZMultiples_apply_eq_iff
   · intro h
     have hf : F γ = MulOpposite.op (Deck.addCircleMulEquiv n) := by
       have h' := congrArg T.symm h
-      simpa [T] using h'
+      simpa [T, fundamentalGroupMulEquivZMultiples_toPeriod_symm_apply n] using h'
     have hs :=
       (Deck.IsRegular.fundamentalGroupEquiv_apply_eq_iff Deck.isRegular_addCircleCoe hcov e γ
         (MulOpposite.op (Deck.addCircleMulEquiv n))).1 hf
@@ -141,13 +152,19 @@ lemma fundamentalGroupMulEquivZMultiples_eq_one_iff
   simpa using (Iff.symm Subtype.ext_iff :
     ((hcov.monodromy γ e : 𝕜) = (e : 𝕜) ↔ hcov.monodromy γ e = e))
 
-private noncomputable def fundamentalGroupMulEquivOfAddCircle
+/-- For a covering projection `(↑) : 𝕜 → AddCircle p` from a simply connected preconnected
+topological additive commutative group with totally disconnected non-torsion period subgroup,
+the fundamental group of `AddCircle p` is infinite cyclic:
+`FundamentalGroup (AddCircle p) x ≃* Multiplicative ℤ`. -/
+noncomputable def fundamentalGroupMulEquivOfAddCircle
     (hcov : IsCoveringMap ((↑) : 𝕜 → AddCircle p)) (hp : ¬ IsOfFinAddOrder p)
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x}) :
     FundamentalGroup (AddCircle p) x ≃* Multiplicative ℤ :=
   (fundamentalGroupMulEquivZMultiples hcov e).trans (intEquivZMultiples hp).toMultiplicative.symm
 
-private lemma fundamentalGroupMulEquivOfAddCircle_apply_eq_iff
+/-- Characterization of the integer assigned by `fundamentalGroupMulEquivOfAddCircle`: a loop
+class maps to `n` exactly when its monodromy translate of the chosen lift differs by `n • p`. -/
+lemma fundamentalGroupMulEquivOfAddCircle_apply_eq_iff
     (hcov : IsCoveringMap ((↑) : 𝕜 → AddCircle p)) (hp : ¬ IsOfFinAddOrder p)
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x})
     (γ : FundamentalGroup (AddCircle p) x) (n : Multiplicative ℤ) :
@@ -158,8 +175,10 @@ private lemma fundamentalGroupMulEquivOfAddCircle_apply_eq_iff
   simpa using fundamentalGroupMulEquivZMultiples_apply_eq_iff hcov e γ
     ((intEquivZMultiples hp).toMultiplicative n)
 
+/-- The inverse generic integer equivalence sends `n` to the loop class whose monodromy
+translates the chosen lift by `n • p`. -/
 @[simp]
-private lemma fundamentalGroupMulEquivOfAddCircle_symm_monodromy
+lemma fundamentalGroupMulEquivOfAddCircle_symm_monodromy
     (hcov : IsCoveringMap ((↑) : 𝕜 → AddCircle p)) (hp : ¬ IsOfFinAddOrder p)
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x}) (n : Multiplicative ℤ) :
     (hcov.monodromy ((fundamentalGroupMulEquivOfAddCircle hcov hp e).symm n) e : 𝕜) =
@@ -168,8 +187,10 @@ private lemma fundamentalGroupMulEquivOfAddCircle_symm_monodromy
     ((fundamentalGroupMulEquivOfAddCircle hcov hp e).symm n) n).1
       (MulEquiv.apply_symm_apply _ _)
 
+/-- A loop class maps to `1` under the generic integer equivalence exactly when its monodromy
+fixes the chosen lift. -/
 @[simp]
-private lemma fundamentalGroupMulEquivOfAddCircle_eq_one_iff
+lemma fundamentalGroupMulEquivOfAddCircle_eq_one_iff
     (hcov : IsCoveringMap ((↑) : 𝕜 → AddCircle p)) (hp : ¬ IsOfFinAddOrder p)
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x})
     (γ : FundamentalGroup (AddCircle p) x) :
@@ -179,16 +200,6 @@ private lemma fundamentalGroupMulEquivOfAddCircle_eq_one_iff
     ((hcov.monodromy γ e : 𝕜) = (e : 𝕜) ↔ hcov.monodromy γ e = e))
 
 variable (p : ℝ)
-
-/-- The standard lift `0 : ℝ` of the basepoint `0 : AddCircle p`. -/
-@[expose] def zeroLift : ((↑) : ℝ → AddCircle p) ⁻¹' {(0 : AddCircle p)} :=
-  ⟨0, by simp⟩
-
-/-- The underlying real number of the standard zero lift is `0`. -/
-@[simp]
-theorem zeroLift_coe : ((zeroLift p : ((↑) : ℝ → AddCircle p) ⁻¹' {(0 : AddCircle p)}) : ℝ) =
-    0 :=
-  rfl
 
 /-- For a nonzero real period `p`, the fundamental group of the circle `AddCircle p`, based at
 any point `x` with a chosen lift `e : (↑) ⁻¹' {x}`, is infinite cyclic:
@@ -232,23 +243,23 @@ lemma fundamentalGroupMulEquiv_eq_one_iff (hp : p ≠ 0) {x : AddCircle p}
 `Multiplicative ℤ`. -/
 noncomputable def fundamentalGroupMulEquiv_zero (hp : p ≠ 0) :
     FundamentalGroup (AddCircle p) 0 ≃* Multiplicative ℤ :=
-  fundamentalGroupMulEquiv p hp (zeroLift p)
+  fundamentalGroupMulEquiv p hp ⟨0, by simp⟩
 
 /-- Characterization of the integer assigned by the basepoint-`0` specialization. -/
 lemma fundamentalGroupMulEquiv_zero_apply_eq_iff (hp : p ≠ 0)
     (γ : FundamentalGroup (AddCircle p) 0) (n : Multiplicative ℤ) :
     fundamentalGroupMulEquiv_zero p hp γ = n ↔
-      ((AddCircle.isCoveringMap_coe p).monodromy γ (zeroLift p) : ℝ) = n.toAdd • p := by
+      ((AddCircle.isCoveringMap_coe p).monodromy γ ⟨0, by simp⟩ : ℝ) = n.toAdd • p := by
   rw [fundamentalGroupMulEquiv_zero]
-  simpa [zeroLift] using fundamentalGroupMulEquiv_apply_eq_iff p hp (zeroLift p) γ n
+  simpa using fundamentalGroupMulEquiv_apply_eq_iff p hp ⟨0, by simp⟩ γ n
 
 /-- The inverse of the basepoint-`0` specialization has monodromy translation `n • p`. -/
 @[simp]
 lemma fundamentalGroupMulEquiv_zero_symm_monodromy (hp : p ≠ 0) (n : Multiplicative ℤ) :
     ((AddCircle.isCoveringMap_coe p).monodromy ((fundamentalGroupMulEquiv_zero p hp).symm n)
-      (zeroLift p) : ℝ) = n.toAdd • p := by
+      ⟨0, by simp⟩ : ℝ) = n.toAdd • p := by
   rw [fundamentalGroupMulEquiv_zero]
-  simp [zeroLift]
+  simp
 
 /-- A loop class maps to `1` under the basepoint-`0` specialization exactly when its monodromy
 fixes the zero lift. -/
@@ -256,9 +267,9 @@ fixes the zero lift. -/
 lemma fundamentalGroupMulEquiv_zero_eq_one_iff (hp : p ≠ 0)
     (γ : FundamentalGroup (AddCircle p) 0) :
     fundamentalGroupMulEquiv_zero p hp γ = 1 ↔
-      (AddCircle.isCoveringMap_coe p).monodromy γ (zeroLift p) = zeroLift p := by
+      (AddCircle.isCoveringMap_coe p).monodromy γ ⟨0, by simp⟩ = ⟨0, by simp⟩ := by
   rw [fundamentalGroupMulEquiv_zero]
-  exact fundamentalGroupMulEquiv_eq_one_iff p hp (zeroLift p) γ
+  exact fundamentalGroupMulEquiv_eq_one_iff p hp ⟨0, by simp⟩ γ
 
 end AddCircle
 
@@ -274,7 +285,7 @@ noncomputable def fundamentalGroupMulEquiv :
 lemma fundamentalGroupMulEquiv_apply_eq_iff (γ : FundamentalGroup UnitAddCircle 0)
     (n : Multiplicative ℤ) :
     fundamentalGroupMulEquiv γ = n ↔
-      ((AddCircle.isCoveringMap_coe 1).monodromy γ (AddCircle.zeroLift 1) : ℝ) = n.toAdd := by
+      ((AddCircle.isCoveringMap_coe 1).monodromy γ ⟨0, by simp⟩ : ℝ) = n.toAdd := by
   simpa [fundamentalGroupMulEquiv] using
     AddCircle.fundamentalGroupMulEquiv_zero_apply_eq_iff 1 one_ne_zero γ n
 
@@ -282,7 +293,7 @@ lemma fundamentalGroupMulEquiv_apply_eq_iff (γ : FundamentalGroup UnitAddCircle
 @[simp]
 lemma fundamentalGroupMulEquiv_symm_monodromy (n : Multiplicative ℤ) :
     ((AddCircle.isCoveringMap_coe 1).monodromy (fundamentalGroupMulEquiv.symm n)
-      (AddCircle.zeroLift 1) : ℝ) = n.toAdd := by
+      ⟨0, by simp⟩ : ℝ) = n.toAdd := by
   simp [fundamentalGroupMulEquiv,
     AddCircle.fundamentalGroupMulEquiv_zero_symm_monodromy 1 one_ne_zero n]
 
@@ -290,8 +301,7 @@ lemma fundamentalGroupMulEquiv_symm_monodromy (n : Multiplicative ℤ) :
 @[simp]
 lemma fundamentalGroupMulEquiv_eq_one_iff (γ : FundamentalGroup UnitAddCircle 0) :
     fundamentalGroupMulEquiv γ = 1 ↔
-      (AddCircle.isCoveringMap_coe 1).monodromy γ (AddCircle.zeroLift 1) =
-        AddCircle.zeroLift 1 := by
+      (AddCircle.isCoveringMap_coe 1).monodromy γ ⟨0, by simp⟩ = ⟨0, by simp⟩ := by
   simpa [fundamentalGroupMulEquiv] using
     AddCircle.fundamentalGroupMulEquiv_zero_eq_one_iff 1 one_ne_zero γ
 
