@@ -61,7 +61,7 @@ def IsCharacteristicVector (k : V → ℤ) : Prop :=
   ∀ v : V, k v ≡ P.weight v [ZMOD 2]
 
 /-- The subtype of characteristic covectors of the plumbing lattice. -/
-def characteristicVectors :=
+abbrev characteristicVectors :=
   { k : V → ℤ // P.IsCharacteristicVector k }
 
 /-- Characteristic covectors are exactly the covectors satisfying the vertex-wise parity
@@ -103,7 +103,7 @@ private theorem zmod_two_sq (a : ZMod 2) : a ^ 2 = a := by
   fin_cases a <;> decide
 
 /-- Evaluating a covector on a plumbing basis vector picks out the corresponding coordinate. -/
-private theorem covector_eval_single (k : V → ℤ) (v : V) :
+theorem covector_eval_single (k : V → ℤ) (v : V) :
     (∑ w, k w * (Pi.single v (1 : ℤ) : V → ℤ) w) = k v := by
   rw [Finset.sum_eq_single v]
   · simp
