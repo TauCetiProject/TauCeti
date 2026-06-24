@@ -129,18 +129,23 @@ theorem characteristicWeight_zero (k : P.characteristicVectors) :
   rw [map_zero]
   simp
 
+/-- The numerator is additive in its covector argument: shifting `k` by `l` adds the linear
+pairing `⟨l, x⟩`. -/
+theorem characteristicWeightNumerator_add (k l x : V → ℤ) :
+    P.characteristicWeightNumerator (fun v => k v + l v) x =
+      P.characteristicWeightNumerator k x + ∑ v, l v * x v := by
+  rw [characteristicWeightNumerator_def, characteristicWeightNumerator_def]
+  simp_rw [add_mul]
+  rw [Finset.sum_add_distrib]
+  ring
+
 /-- The numerator for a covector shifted by twice another covector. -/
 theorem characteristicWeightNumerator_add_two_mul (k l x : V → ℤ) :
     P.characteristicWeightNumerator (fun v => k v + 2 * l v) x =
       P.characteristicWeightNumerator k x + 2 * ∑ v, l v * x v := by
-  rw [characteristicWeightNumerator_def, characteristicWeightNumerator_def]
-  simp_rw [add_mul]
-  rw [Finset.sum_add_distrib]
-  have htwo : (∑ v, 2 * l v * x v) = 2 * ∑ v, l v * x v := by
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun v _ => ?_
-    ring
-  rw [htwo]
+  rw [P.characteristicWeightNumerator_add k (fun v => 2 * l v) x, Finset.mul_sum]
+  congr 1
+  refine Finset.sum_congr rfl fun v _ => ?_
   ring
 
 /-- Shifting a covector by `2l` subtracts the linear pairing `⟨l, x⟩` from the
