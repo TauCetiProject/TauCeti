@@ -2,10 +2,10 @@ import VersoBlog
 open Verso Genre Blog
 open Verso.Output Verso.Output.Html
 
-/-- The two "lines of code by date" charts. The SVGs are regenerated weekly into
-`static_files/` by the `loc-graph` workflow, so this page never needs touching as
-the project grows. They are embedded as a raw HTML blob: each `<img>` simply points
-at the static asset. -/
+/-- The two "lines of code by date" charts. The SVGs are regenerated at each site
+deploy (and daily) into `static_files/` by the `pages` workflow, so this page never
+needs touching as the project grows. They are embedded as a raw HTML blob: each
+`<img>` simply points at the static asset. -/
 def locGraphs : Html := {{
   <div class="loc-graphs">
     <figure class="loc-figure">
@@ -25,8 +25,8 @@ def locGraphs : Html := {{
 
 How much mathematics has Tau Ceti formalized, and how fast is the roadmap that
 directs it growing? Each chart plots the total number of lines present at every
-commit, counted straight from the git history and rebuilt from scratch each week,
-so the figures cannot drift.
+commit, counted straight from the git history and rebuilt from scratch at each
+deploy, so the figures cannot drift.
 
 :::blob locGraphs
 :::
