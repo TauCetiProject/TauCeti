@@ -27,9 +27,10 @@ Mathlib's `fixingSubgroup` applied directly to the relevant set of points.
 ## Main results
 
 * `Diffeomorph.mem_fixedOnSubgroup_iff`: membership in `fixedOnSubgroup` means pointwise fixing.
-* `Diffeomorph.fixedOnSubgroup_empty`, `Diffeomorph.fixedOnSubgroup_union`,
-  `Diffeomorph.fixedOnSubgroup_iUnion`, and `Diffeomorph.fixedOnSubgroup_antitone`: the
-  standard set-operation API for fixing subgroups specialized to diffeomorphisms.
+* `Diffeomorph.fixedOnSubgroup_empty`, `Diffeomorph.fixedOnSubgroup_univ`,
+  `Diffeomorph.fixedOnSubgroup_union`, `Diffeomorph.fixedOnSubgroup_iUnion`, and
+  `Diffeomorph.fixedOnSubgroup_antitone`: the standard set-operation API for fixing subgroups
+  specialized to diffeomorphisms.
 * `Diffeomorph.fixedOnSubgroup_fixedPoints_gc`: the Galois connection between fixed-on
   subgroups and fixed points for the diffeomorphism action.
 * `Diffeomorph.mem_boundaryFixingSubgroup_iff`: membership in `boundaryFixingSubgroup` means
@@ -68,6 +69,20 @@ theorem mem_fixedOnSubgroup_iff {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M} :
 theorem fixedOnSubgroup_empty :
     fixedOnSubgroup I n (∅ : Set M) = ⊤ :=
   _root_.fixingSubgroup_empty (M ≃ₘ^n⟮I, I⟯ M) M
+
+/-- The subgroup fixing the whole space is the bottom subgroup. -/
+@[simp]
+theorem fixedOnSubgroup_univ :
+    fixedOnSubgroup I n (Set.univ : Set M) = ⊥ := by
+  ext f
+  rw [mem_fixedOnSubgroup_iff, Subgroup.mem_bot]
+  constructor
+  · intro hf
+    apply _root_.Diffeomorph.ext
+    intro x
+    exact hf x (Set.mem_univ x)
+  · rintro rfl x -
+    rfl
 
 /-- The Galois connection between fixed-on subgroups and fixed points of the diffeomorphism
 action. -/
