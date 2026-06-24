@@ -41,41 +41,6 @@ namespace WeilDivisor
 
 variable {X G : Type*} [AddCommGroup G]
 
-/-! ### Divisor-level base-point identities -/
-
-/-- Point differences compose additively: `[x] - [y] + ([y] - [z]) = [x] - [z]`. -/
-@[simp]
-lemma pointDifference_add_pointDifference (x y z : X) :
-    pointDifference x y + pointDifference y z = pointDifference x z := by
-  simp [pointDifference, sub_eq_add_neg, add_assoc, add_left_comm]
-
-/-- Reversing a point difference negates it. -/
-lemma pointDifference_swap (x y : X) : pointDifference y x = -pointDifference x y := by
-  simp [pointDifference, sub_eq_add_neg, add_comm]
-
-/-- Changing the base point in the weighted point-base divisor translates it by
-`w(x) • ([x₀] - [y₀])`. -/
-lemma weightedPointBaseDifference_change_base (w : X → ℤ) (x₀ y₀ x : X) :
-    weightedPointBaseDifference w y₀ x =
-      weightedPointBaseDifference w x₀ x + w x • pointDifference x₀ y₀ := by
-  classical
-  ext z
-  simp [weightedPointBaseDifference, pointDifference, sub_eq_add_neg, add_assoc,
-    add_left_comm, add_comm]
-
-/-- The difference between the weighted point-base divisors for two base points is
-`w(x) • ([x₀] - [y₀])`. -/
-lemma weightedPointBaseDifference_sub_change_base (w : X → ℤ) (x₀ y₀ x : X) :
-    weightedPointBaseDifference w y₀ x - weightedPointBaseDifference w x₀ x =
-      w x • pointDifference x₀ y₀ := by
-  rw [weightedPointBaseDifference_change_base, add_sub_cancel_left]
-
-/-- If two base points have the same weight, their point difference has weighted degree zero. -/
-@[simp]
-lemma basepointDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x₀ y₀ : X}
-    (h : w x₀ = w y₀) : pointDifference x₀ y₀ ∈ weightedDegreeZeroSubgroup w := by
-  simpa using pointDifference_mem_weightedDegreeZeroSubgroup (w := w) (x := x₀) (y := y₀) h
-
 /-! ### Class-level base-point changes -/
 
 namespace OrderSystem
@@ -85,24 +50,23 @@ variable (S : OrderSystem X G)
 /-- The degree-zero class `[x₀] - [y₀]` measuring the translation between Abel-Jacobi maps
 normalized at two weight-one base points. -/
 noncomputable def weightedBasepointChangeClass (w : X → ℤ) (hdeg : S.IsWeightedDegreeZero w)
-    {x₀ y₀ : X} (hx₀ : w x₀ = 1) (hy₀ : w y₀ = 1) : picZero w hdeg :=
-  ⟨S.divisorClass (pointDifference x₀ y₀), by
-    rw [divisorClass_mem_picZero]
-    exact basepointDifference_mem_weightedDegreeZeroSubgroup (hx₀.trans hy₀.symm)⟩
+    {x₀ y₀ : X} (_hx₀ : w x₀ = 1) (hy₀ : w y₀ = 1) : picZero w hdeg :=
+  S.weightedAbelJacobiClass w hdeg hy₀ x₀
 
 @[simp]
 lemma coe_weightedBasepointChangeClass (w : X → ℤ) (hdeg : S.IsWeightedDegreeZero w)
     {x₀ y₀ : X} (hx₀ : w x₀ = 1) (hy₀ : w y₀ = 1) :
     (S.weightedBasepointChangeClass w hdeg hx₀ hy₀ : S.ClassGroup) =
       S.divisorClass (pointDifference x₀ y₀) :=
-  rfl
+  by
+    simp [weightedBasepointChangeClass,
+      weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one hx₀]
 
 @[simp]
 lemma weightedBasepointChangeClass_self (w : X → ℤ) (hdeg : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) :
     S.weightedBasepointChangeClass w hdeg hx₀ hx₀ = 0 := by
-  apply Subtype.ext
-  simp [weightedBasepointChangeClass]
+  exact S.weightedAbelJacobiClass_base w hdeg hx₀
 
 /-- Reversing the two base points negates the base-point-change class. -/
 lemma weightedBasepointChangeClass_swap (w : X → ℤ) (hdeg : S.IsWeightedDegreeZero w)
@@ -110,7 +74,7 @@ lemma weightedBasepointChangeClass_swap (w : X → ℤ) (hdeg : S.IsWeightedDegr
     S.weightedBasepointChangeClass w hdeg hy₀ hx₀ =
       -S.weightedBasepointChangeClass w hdeg hx₀ hy₀ := by
   apply Subtype.ext
-  change S.divisorClass (pointDifference y₀ x₀) = -S.divisorClass (pointDifference x₀ y₀)
+  simp only [coe_weightedBasepointChangeClass, NegMemClass.coe_neg]
   rw [← map_neg, ← pointDifference_swap]
 
 /-- Base-point-change classes compose: the translation from `x₀` to `z₀` is the sum of the
@@ -121,9 +85,8 @@ lemma weightedBasepointChangeClass_add (w : X → ℤ) (hdeg : S.IsWeightedDegre
         S.weightedBasepointChangeClass w hdeg hy₀ hz₀ =
       S.weightedBasepointChangeClass w hdeg hx₀ hz₀ := by
   apply Subtype.ext
-  change S.divisorClass (pointDifference x₀ y₀) + S.divisorClass (pointDifference y₀ z₀) =
-    S.divisorClass (pointDifference x₀ z₀)
-  rw [← map_add, pointDifference_add_pointDifference]
+  simp only [coe_weightedBasepointChangeClass, AddMemClass.coe_add]
+  rw [← map_add, pointDifference_add_pointDifference_cancel]
 
 /-- Changing the Abel-Jacobi base point from `x₀` to `y₀` adds `w(x)` times the class
 `[x₀] - [y₀]`. This is the weighted closed-point form, where `w(x)` is the residue degree. -/
@@ -133,11 +96,25 @@ lemma weightedAbelJacobiClass_change_base (w : X → ℤ) (hdeg : S.IsWeightedDe
       S.weightedAbelJacobiClass w hdeg hx₀ x +
       w x • S.weightedBasepointChangeClass w hdeg hx₀ hy₀ := by
   apply Subtype.ext
-  change S.divisorClass (weightedPointBaseDifference w y₀ x) =
-    (S.weightedAbelJacobiClass w hdeg hx₀ x : S.ClassGroup) +
-      w x • (S.weightedBasepointChangeClass w hdeg hx₀ hy₀ : S.ClassGroup)
-  rw [coe_weightedAbelJacobiClass, coe_weightedBasepointChangeClass]
+  simp only [coe_weightedAbelJacobiClass, coe_weightedBasepointChangeClass,
+    AddMemClass.coe_add, AddSubgroupClass.coe_zsmul]
   rw [← map_zsmul, ← map_add, ← weightedPointBaseDifference_change_base]
+
+/-- The base-point-change class is the Abel-Jacobi class of the old base point with respect to
+the new base point. -/
+lemma weightedAbelJacobiClass_base_eq_basepointChangeClass (w : X → ℤ)
+    (hdeg : S.IsWeightedDegreeZero w) {x₀ y₀ : X} (hx₀ : w x₀ = 1) (hy₀ : w y₀ = 1) :
+    S.weightedAbelJacobiClass w hdeg hy₀ x₀ =
+      S.weightedBasepointChangeClass w hdeg hx₀ hy₀ := by
+  rfl
+
+/-- The base-point-change class equals the Abel-Jacobi class of the old base point with respect
+to the new base point. -/
+lemma weightedBasepointChangeClass_eq_abelJacobiClass (w : X → ℤ)
+    (hdeg : S.IsWeightedDegreeZero w) {x₀ y₀ : X} (hx₀ : w x₀ = 1) (hy₀ : w y₀ = 1) :
+    S.weightedBasepointChangeClass w hdeg hx₀ hy₀ =
+      S.weightedAbelJacobiClass w hdeg hy₀ x₀ := by
+  rfl
 
 /-- In the class group, the difference between two weighted Abel-Jacobi classes with different
 base points is `w(x)` times the class `[x₀] - [y₀]`. -/
@@ -161,19 +138,19 @@ noncomputable def unweightedBasepointChangeClass (hdeg : S.IsUnweightedDegreeZer
 lemma coe_unweightedBasepointChangeClass (hdeg : S.IsUnweightedDegreeZero) (x₀ y₀ : X) :
     (S.unweightedBasepointChangeClass hdeg x₀ y₀ : S.ClassGroup) =
       S.divisorClass (pointDifference x₀ y₀) :=
-  rfl
+  by
+    simp [unweightedBasepointChangeClass]
 
 @[simp]
 lemma unweightedBasepointChangeClass_self (hdeg : S.IsUnweightedDegreeZero) (x₀ : X) :
     S.unweightedBasepointChangeClass hdeg x₀ x₀ = 0 := by
-  apply Subtype.ext
-  simp [unweightedBasepointChangeClass]
+  exact S.weightedBasepointChangeClass_self (fun _ : X => (1 : ℤ)) hdeg rfl
 
 lemma unweightedBasepointChangeClass_swap (hdeg : S.IsUnweightedDegreeZero) (x₀ y₀ : X) :
     S.unweightedBasepointChangeClass hdeg y₀ x₀ =
       -S.unweightedBasepointChangeClass hdeg x₀ y₀ := by
   apply Subtype.ext
-  change S.divisorClass (pointDifference y₀ x₀) = -S.divisorClass (pointDifference x₀ y₀)
+  simp only [coe_unweightedBasepointChangeClass, NegMemClass.coe_neg]
   rw [← map_neg, ← pointDifference_swap]
 
 /-- Unweighted base-point-change classes compose additively. -/
@@ -182,9 +159,8 @@ lemma unweightedBasepointChangeClass_add (hdeg : S.IsUnweightedDegreeZero) (x₀
         S.unweightedBasepointChangeClass hdeg y₀ z₀ =
       S.unweightedBasepointChangeClass hdeg x₀ z₀ := by
   apply Subtype.ext
-  change S.divisorClass (pointDifference x₀ y₀) + S.divisorClass (pointDifference y₀ z₀) =
-    S.divisorClass (pointDifference x₀ z₀)
-  rw [← map_add, pointDifference_add_pointDifference]
+  simp only [coe_unweightedBasepointChangeClass, AddMemClass.coe_add]
+  rw [← map_add, pointDifference_add_pointDifference_cancel]
 
 /-- Changing the base point in the unweighted abstract Abel-Jacobi class is translation by
 `[x₀] - [y₀]`. -/
@@ -193,11 +169,9 @@ lemma unweightedAbelJacobiClass_change_base (hdeg : S.IsUnweightedDegreeZero) (x
       S.unweightedAbelJacobiClass hdeg x₀ x +
         S.unweightedBasepointChangeClass hdeg x₀ y₀ := by
   apply Subtype.ext
-  rw [coe_unweightedAbelJacobiClass]
-  change S.divisorClass (pointDifference x y₀) =
-    (S.unweightedAbelJacobiClass hdeg x₀ x : S.ClassGroup) +
-      (S.unweightedBasepointChangeClass hdeg x₀ y₀ : S.ClassGroup)
-  rw [coe_unweightedAbelJacobiClass, coe_unweightedBasepointChangeClass, ← map_add]
+  simp only [coe_unweightedAbelJacobiClass, coe_unweightedBasepointChangeClass,
+    AddMemClass.coe_add]
+  rw [← map_add]
   simp [pointDifference, sub_eq_add_neg, add_assoc, add_left_comm, add_comm]
 
 /-- The class `[x] - [y]` is the difference of two Abel-Jacobi classes with the same base point. -/
@@ -214,8 +188,7 @@ lemma unweightedAbelJacobiClass_eq_basepointChangeClass (hdeg : S.IsUnweightedDe
     (x y : X) :
     S.unweightedAbelJacobiClass hdeg y x =
       S.unweightedBasepointChangeClass hdeg x y := by
-  apply Subtype.ext
-  simp [unweightedAbelJacobiClass, unweightedBasepointChangeClass]
+  rfl
 
 end OrderSystem
 
