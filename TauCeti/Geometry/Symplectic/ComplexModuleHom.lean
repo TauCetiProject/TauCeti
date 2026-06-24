@@ -113,7 +113,7 @@ theorem isComplexLinearMap_restrictScalars (J : AlmostComplexStructure V)
   letI := J.complexModule_isScalarTower
   letI := J'.complexModule_isScalarTower
   refine (isComplexLinearMap_iff_apply J J' _).mpr fun v => ?_
-  change G (J v) = J' (G v)
+  simp only [LinearMap.restrictScalars_apply]
   rw [← J.complexModule_I_smul v, ← J'.complexModule_I_smul (G v), map_smul]
 
 /-- Packaging a complex-linear real map as a `ℂ`-linear map and then forgetting back down to the
