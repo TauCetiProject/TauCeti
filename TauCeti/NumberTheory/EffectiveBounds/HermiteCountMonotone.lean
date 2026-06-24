@@ -11,10 +11,10 @@ public import TauCeti.NumberTheory.EffectiveBounds.HermiteCount
 
 `TauCeti.NumberField.ncard_setOf_finiteDimensional_abs_discr_le_le` gives an explicit
 Hermite--Minkowski count in terms of Mathlib's exact constants
-`NumberField.rankOfDiscrBdd N` and `TauCeti.NumberField.coeffBoundOfDiscrBdd N`. Later effective
-work often replaces those constants by simpler upper bounds before doing arithmetic. This file
-records the monotone wrapper that permits that replacement without unfolding the proof of the
-count.
+`NumberField.hermiteTheorem.rankOfDiscrBdd N` and
+`TauCeti.NumberField.coeffBoundOfDiscrBdd N`. Later effective work often replaces those constants
+by simpler upper bounds before doing arithmetic. This file records the monotone wrapper that permits
+that replacement without unfolding the proof of the count.
 
 This is a small API layer for the effective-bounds roadmap's Layer 2 summit: explicit upper bounds
 on the number of number fields of bounded discriminant.
