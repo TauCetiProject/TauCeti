@@ -26,6 +26,13 @@ fixes all the others.
 * `TauCeti.Multiquadratic.coordinateSignChangeAut`: the coordinate sign-change automorphism.
 * `TauCeti.Multiquadratic.coordinateSignChangeAut_apply_gen_self` and
   `TauCeti.Multiquadratic.coordinateSignChangeAut_apply_gen_of_ne`: the generator rules.
+
+## Provenance
+
+This file is a thin named API around the already-credited `GaloisGroup` construction, which
+generalises the sign-change automorphisms analysed in
+[kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization
+of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture.
 -/
 
 public section
