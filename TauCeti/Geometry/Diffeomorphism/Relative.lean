@@ -27,6 +27,11 @@ Mathlib's `fixingSubgroup` applied directly to the relevant set of points.
 ## Main results
 
 * `Diffeomorph.mem_fixedOnSubgroup_iff`: membership in `fixedOnSubgroup` means pointwise fixing.
+* `Diffeomorph.fixedOnSubgroup_empty`, `Diffeomorph.fixedOnSubgroup_union`,
+  `Diffeomorph.fixedOnSubgroup_iUnion`, and `Diffeomorph.fixedOnSubgroup_antitone`: the
+  standard set-operation API for fixing subgroups specialized to diffeomorphisms.
+* `Diffeomorph.fixedOnSubgroup_fixedPoints_gc`: the Galois connection between fixed-on
+  subgroups and fixed points for the diffeomorphism action.
 * `Diffeomorph.mem_boundaryFixingSubgroup_iff`: membership in `boundaryFixingSubgroup` means
   pointwise boundary fixing.
 * `Diffeomorph.toHomeomorphHom_mem_fixingSubgroup_of_mem_fixedOnSubgroup`: a set-fixing
@@ -57,6 +62,48 @@ abbrev fixedOnSubgroup (n : ℕ∞ω) (s : Set M) : Subgroup (M ≃ₘ^n⟮I, I�
 theorem mem_fixedOnSubgroup_iff {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M} :
     f ∈ fixedOnSubgroup I n s ↔ ∀ x ∈ s, f x = x := by
   simp [fixedOnSubgroup, _root_.mem_fixingSubgroup_iff, smul_def]
+
+/-- The subgroup fixing the empty set is the top subgroup. -/
+@[simp]
+theorem fixedOnSubgroup_empty :
+    fixedOnSubgroup I n (∅ : Set M) = ⊤ :=
+  _root_.fixingSubgroup_empty (M ≃ₘ^n⟮I, I⟯ M) M
+
+/-- The Galois connection between fixed-on subgroups and fixed points of the diffeomorphism
+action. -/
+theorem fixedOnSubgroup_fixedPoints_gc :
+    GaloisConnection (OrderDual.toDual ∘ fixedOnSubgroup I n)
+      ((fun P : Subgroup (M ≃ₘ^n⟮I, I⟯ M) => MulAction.fixedPoints P M) ∘
+        OrderDual.ofDual) :=
+  _root_.fixingSubgroup_fixedPoints_gc (M ≃ₘ^n⟮I, I⟯ M) M
+
+/-- `fixedOnSubgroup` reverses set inclusion. -/
+theorem fixedOnSubgroup_antitone :
+    Antitone (fixedOnSubgroup I n : Set M → Subgroup (M ≃ₘ^n⟮I, I⟯ M)) :=
+  _root_.fixingSubgroup_antitone (M ≃ₘ^n⟮I, I⟯ M) M
+
+/-- The subgroup fixing a union is the infimum of the subgroups fixing each set. -/
+theorem fixedOnSubgroup_union {s t : Set M} :
+    fixedOnSubgroup I n (s ∪ t) = fixedOnSubgroup I n s ⊓ fixedOnSubgroup I n t :=
+  _root_.fixingSubgroup_union (M ≃ₘ^n⟮I, I⟯ M) M
+
+/-- The subgroup fixing an indexed union is the infimum of the subgroups fixing each set. -/
+theorem fixedOnSubgroup_iUnion {ι : Sort*} {s : ι → Set M} :
+    fixedOnSubgroup I n (⋃ i, s i) = ⨅ i, fixedOnSubgroup I n (s i) :=
+  _root_.fixingSubgroup_iUnion (M ≃ₘ^n⟮I, I⟯ M) M
+
+/-- Fixed points of the supremum of diffeomorphism subgroups are the intersection of their
+fixed points. -/
+theorem fixedPoints_subgroup_sup {P Q : Subgroup (M ≃ₘ^n⟮I, I⟯ M)} :
+    MulAction.fixedPoints (↥(P ⊔ Q)) M =
+      MulAction.fixedPoints (↥P) M ∩ MulAction.fixedPoints (↥Q) M :=
+  _root_.fixedPoints_subgroup_sup (M ≃ₘ^n⟮I, I⟯ M) M
+
+/-- Fixed points of the supremum of an indexed family of diffeomorphism subgroups are the
+intersection of their fixed points. -/
+theorem fixedPoints_subgroup_iSup {ι : Sort*} {P : ι → Subgroup (M ≃ₘ^n⟮I, I⟯ M)} :
+    MulAction.fixedPoints (↥(iSup P)) M = ⋂ i, MulAction.fixedPoints (↥(P i)) M :=
+  _root_.fixedPoints_subgroup_iSup (M ≃ₘ^n⟮I, I⟯ M) M
 
 /-- The subgroup of self-diffeomorphisms fixing the model boundary pointwise. -/
 abbrev boundaryFixingSubgroup (n : ℕ∞ω) : Subgroup (M ≃ₘ^n⟮I, I⟯ M) :=
