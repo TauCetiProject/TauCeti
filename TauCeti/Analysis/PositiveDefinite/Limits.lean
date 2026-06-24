@@ -4,16 +4,17 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PositiveDefinite.Basic
+public import TauCeti.Analysis.PositiveDefinite.FunctionKernel
 public import Mathlib.Topology.Algebra.Monoid
 public import Mathlib.Topology.Order.OrderClosed
 
 /-!
 # Pointwise limits of positive-definite functions
 
-This file records the pointwise-limit closure of `TauCeti.IsPositiveDefinite`, the
-positive-definite function predicate on an involutive additive monoid. If a net of
-positive-definite functions converges pointwise to `F`, then `F` is positive definite.
+This file records the pointwise-limit closure of positive-definite kernels and of
+`TauCeti.IsPositiveDefinite`, the positive-definite function predicate on an involutive additive
+monoid. If a net of positive-definite kernels, or of positive-definite functions, converges
+pointwise to the limit, then the limit is positive definite.
 
 This is the limit-closure item from Part C of the `OneParameterSemigroups` roadmap. The result is
 deliberately only about positive-definiteness: as the roadmap notes, pointwise limits preserve
@@ -22,7 +23,10 @@ convergence hypothesis. Continuity is therefore not bundled into the statement h
 
 ## Main declarations
 
-* `TauCeti.IsPositiveDefinite.of_tendsto`: filter-level pointwise-limit closure.
+* `TauCeti.isPositiveDefiniteKernel_of_tendsto`: filter-level pointwise-limit closure for
+  positive-definite kernels.
+* `TauCeti.IsPositiveDefinite.of_tendsto`: filter-level pointwise-limit closure for
+  positive-definite functions.
 * `TauCeti.IsPositiveDefinite.of_forall_tendsto`: the same result when every function in the
   family is positive definite.
 * `TauCeti.IsPositiveDefinite.of_seq_tendsto`: the sequential `atTop` specialization.
@@ -42,6 +46,42 @@ open scoped ComplexOrder
 
 namespace TauCeti
 
+variable {𝕜 : Type*} [RCLike 𝕜] {α : Type*}
+
+/-- Positive-definite kernels are preserved under pointwise limits along a nontrivial filter. The
+hypothesis on positive-definiteness is eventual, so this applies equally to nets that are
+eventually positive definite. -/
+theorem isPositiveDefiniteKernel_of_tendsto {ι : Type*} {l : Filter ι} [NeBot l]
+    {K : ι → α → α → 𝕜} {L : α → α → 𝕜}
+    (hK : ∀ᶠ i in l, IsPositiveDefiniteKernel (K i))
+    (hlim : ∀ a b : α, Tendsto (fun i => K i a b) l (𝓝 (L a b))) :
+    IsPositiveDefiniteKernel L := by
+  rw [isPositiveDefiniteKernel_def]
+  refine ⟨?_, ?_⟩
+  · ext a b
+    rw [Matrix.conjTranspose_apply, Matrix.of_apply, Matrix.of_apply, ← starRingEnd_apply]
+    have hconj : Tendsto (fun i => conj (K i b a)) l (𝓝 (conj (L b a))) :=
+      RCLike.continuous_conj.tendsto (L b a) |>.comp (hlim b a)
+    have hswap : Tendsto (fun i => conj (K i b a)) l (𝓝 (L a b)) :=
+      (hlim a b).congr' <| by
+        filter_upwards [hK] with i hi
+        exact (isPositiveDefiniteKernel_conj_symm hi b a).symm
+    exact tendsto_nhds_unique hconj hswap
+  · intro x
+    have hquad :
+        Tendsto
+          (fun i => x.support.sum fun a =>
+            x.support.sum fun b => star (x a) * K i a b * x b) l
+          (𝓝 (x.support.sum fun a => x.support.sum fun b => star (x a) * L a b * x b)) := by
+      refine tendsto_finsetSum _ fun a _ => tendsto_finsetSum _ fun b _ => ?_
+      exact ((tendsto_const_nhds.mul (hlim a b)).mul tendsto_const_nhds)
+    have hnonneg : 0 ≤ x.support.sum fun a =>
+        x.support.sum fun b => star (x a) * L a b * x b := by
+      refine ge_of_tendsto hquad ?_
+      filter_upwards [hK] with i hi
+      simpa [Finsupp.sum] using ((isPositiveDefiniteKernel_def (K i)).mp hi).2 x
+    simpa [Finsupp.sum] using hnonneg
+
 namespace IsPositiveDefinite
 
 variable {M : Type*} [AddMonoid M] [StarAddMonoid M]
@@ -52,17 +92,11 @@ eventually positive definite. -/
 theorem of_tendsto {ι : Type*} {l : Filter ι} [NeBot l] {F : ι → M → ℂ} {G : M → ℂ}
     (hF : ∀ᶠ i in l, IsPositiveDefinite (F i))
     (hlim : ∀ x : M, Tendsto (fun i => F i x) l (𝓝 (G x))) :
-    IsPositiveDefinite G := by
-  intro n c v
-  have hquad :
-      Tendsto
-        (fun i => ∑ j, ∑ k, c j * conj (c k) * F i (v j + star (v k))) l
-        (𝓝 (∑ j, ∑ k, c j * conj (c k) * G (v j + star (v k)))) := by
-    refine tendsto_finsetSum _ fun j _ => tendsto_finsetSum _ fun k _ => ?_
-    exact ((tendsto_const_nhds.mul tendsto_const_nhds).mul (hlim (v j + star (v k))))
-  refine ge_of_tendsto hquad ?_
-  filter_upwards [hF] with i hi
-  exact hi n c v
+    IsPositiveDefinite G :=
+  of_isPositiveDefiniteKernel <|
+    isPositiveDefiniteKernel_of_tendsto
+      (hF.mono fun _ hi => hi.isPositiveDefiniteKernel)
+      (fun a b => hlim (a + star b))
 
 /-- A pointwise limit of a family of positive-definite functions is positive definite. This is the
 non-eventual form of `TauCeti.IsPositiveDefinite.of_tendsto`. -/
