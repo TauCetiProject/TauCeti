@@ -92,15 +92,4 @@ theorem ncard_setOf_finiteDimensional_abs_discr_le_le_of_bounds (N D C : ℕ)
   (ncard_setOf_finiteDimensional_abs_discr_le_le_hermiteCountBound (A := A) N).trans
     (hermiteCountBound_mono hD hC)
 
-/-- A fully expanded version of
-`ncard_setOf_finiteDimensional_abs_discr_le_le_of_bounds`. -/
-theorem ncard_setOf_finiteDimensional_abs_discr_le_le_of_bounds' (N D C : ℕ)
-    (hD : rankOfDiscrBdd N ≤ D) (hC : coeffBoundOfDiscrBdd N ≤ C) :
-    {K : {F : IntermediateField ℚ A // FiniteDimensional ℚ F} |
-        haveI : _root_.NumberField K := @NumberField.mk _ _ inferInstance K.prop
-        |discr K| ≤ (N : ℤ)}.ncard ≤
-      (2 * C + 1) ^ (D + 1) * D :=
-  by simpa only [hermiteCountBound_def] using
-    ncard_setOf_finiteDimensional_abs_discr_le_le_of_bounds (A := A) N D C hD hC
-
 end TauCeti.NumberField
