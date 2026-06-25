@@ -115,7 +115,7 @@ theorem characteristicLowerFaceExponent_eq_zero_iff
 
 /-- The nonnegative `U`-exponent contributed by the upper face in a direction. -/
 noncomputable def characteristicUpperFaceExponent
-    (x : V → ℤ) (S : Finset V) (v : V) : ℕ :=
+    (x : V → ℤ) (S : Finset V) {v : V} (_hv : v ∈ S) : ℕ :=
   Int.toNat (P.characteristicCubeWeight k x S -
     P.characteristicCubeWeight k (x + Pi.single v (1 : ℤ)) (S.erase v))
 
@@ -123,7 +123,7 @@ noncomputable def characteristicUpperFaceExponent
 and the upper face weight. -/
 theorem characteristicUpperFaceExponent_intCast
     {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
-    (P.characteristicUpperFaceExponent k x S v : ℤ) =
+    (P.characteristicUpperFaceExponent k x S hv : ℤ) =
       P.characteristicCubeWeight k x S -
         P.characteristicCubeWeight k (x + Pi.single v (1 : ℤ)) (S.erase v) := by
   rw [characteristicUpperFaceExponent]
@@ -133,7 +133,7 @@ theorem characteristicUpperFaceExponent_intCast
 ambient cube. -/
 theorem characteristicUpperFaceExponent_eq_zero_iff
     {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
-    P.characteristicUpperFaceExponent k x S v = 0 ↔
+    P.characteristicUpperFaceExponent k x S hv = 0 ↔
       P.characteristicCubeWeight k x S =
         P.characteristicCubeWeight k (x + Pi.single v (1 : ℤ)) (S.erase v) := by
   constructor
