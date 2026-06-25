@@ -7,7 +7,6 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Map
 public import Mathlib.Algebra.Module.ZMod
 public import TauCeti.NumberTheory.Multiquadratic.GaloisGroup
-public import TauCeti.NumberTheory.Multiquadratic.PrimeRadicands
 
 /-!
 # The subfield lattice of a multiquadratic field
@@ -32,9 +31,6 @@ genus-field constructions.
   `IntermediateField K M ≃o (Submodule (ZMod 2) (ι → ℤ/2))ᵒᵈ`.
 * `TauCeti.Multiquadratic.card_intermediateField_adjoin_range`: its cardinality reading — the
   number of intermediate fields of `M/K` is the number of `𝔽₂`-subspaces of `ι → ℤ/2`.
-* `TauCeti.Multiquadratic.intermediateFieldEquivSubmoduleSqrtPrimes` and
-  `TauCeti.Multiquadratic.card_intermediateField_adjoin_sqrt_primes`: the same dictionary for the
-  prime-radicand field `ℚ(√p₁, …, √pₙ)`, a genus-theory input.
 
 ## Provenance
 
@@ -80,6 +76,59 @@ noncomputable def intermediateFieldEquivSubmodule [Finite ι] [NeZero (2 : K)]
       ((galoisGroupEquiv hroot hindep).mapSubgroup.trans
         (Subgroup.toAddSubgroup'.trans (AddSubgroup.toZModSubmodule 2))))
 
+/-- The subspace attached to an intermediate field is the image of its fixing subgroup under the
+sign-pattern Galois-group equivalence. -/
+@[simp] theorem intermediateFieldEquivSubmodule_apply_ofDual [Finite ι] [NeZero (2 : K)]
+    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
+    (F : IntermediateField K (adjoin K (Set.range root))) :
+    (intermediateFieldEquivSubmodule hroot hindep F).ofDual =
+      AddSubgroup.toZModSubmodule 2
+        (Subgroup.toAddSubgroup'
+          ((galoisGroupEquiv hroot hindep).mapSubgroup F.fixingSubgroup)) :=
+by
+  rw [intermediateFieldEquivSubmodule]
+  rfl
+
+/-- A sign vector belongs to the subspace attached to an intermediate field exactly when it is the
+sign pattern of an automorphism fixing that field. -/
+theorem mem_intermediateFieldEquivSubmodule_apply_ofDual_iff [Finite ι] [NeZero (2 : K)]
+    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
+    (F : IntermediateField K (adjoin K (Set.range root))) (v : ι → ZMod 2) :
+    v ∈ (intermediateFieldEquivSubmodule hroot hindep F).ofDual ↔
+      ∃ σ ∈ F.fixingSubgroup, signPattern root σ = v := by
+  rw [intermediateFieldEquivSubmodule]
+  simp [Subgroup.mem_map]
+
+/-- The intermediate field attached to a subspace is the fixed field of the automorphisms whose
+sign patterns lie in that subspace. -/
+theorem mem_intermediateFieldEquivSubmodule_symm_apply_iff [Finite ι] [NeZero (2 : K)]
+    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
+    (U : Submodule (ZMod 2) (ι → ZMod 2)) (x : adjoin K (Set.range root)) :
+    x ∈ (intermediateFieldEquivSubmodule hroot hindep).symm (OrderDual.toDual U) ↔
+      ∀ σ, signPattern root σ ∈ U → σ x = x := by
+  rw [intermediateFieldEquivSubmodule]
+  simp only [OrderIso.symm_trans_apply, OrderIso.dual_symm_apply, OrderDual.ofDual_toDual,
+    MulEquiv.symm_mapSubgroup, OrderIso.symm_symm, AddSubgroup.toZModSubmodule_symm,
+    MulEquiv.mapSubgroup_apply, IsGalois.intermediateFieldEquivSubgroup_symm_apply,
+    mem_fixedField_iff, Subgroup.mem_map, Multiplicative.mem_toSubgroup, AddSubgroup.mem_mk,
+    Submodule.mem_toAddSubmonoid, MonoidHom.coe_coe, Multiplicative.exists, toAdd_ofAdd,
+    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  constructor
+  · intro h σ hσ
+    have hσeq : (galoisGroupEquiv hroot hindep).symm
+        (Multiplicative.ofAdd (signPattern root σ)) = σ := by
+      apply (galoisGroupEquiv hroot hindep).injective
+      rw [MulEquiv.apply_symm_apply, galoisGroupEquiv_apply]
+    simpa [hσeq] using h (signPattern root σ) hσ
+  · intro h v hv
+    exact h ((galoisGroupEquiv hroot hindep).symm (Multiplicative.ofAdd v)) (by
+      have happ := (galoisGroupEquiv hroot hindep).apply_symm_apply (Multiplicative.ofAdd v)
+      rw [galoisGroupEquiv_apply] at happ
+      simpa [Multiplicative.ofAdd.injective happ] using hv)
+
 /-- **The number of subfields of a multiquadratic field.** Under square-class independence, the
 intermediate fields of `M = K(rootᵢ : i)` over `K` are in bijection with the `𝔽₂`-subspaces of
 `ι → ℤ/2`, so there are exactly as many of them. (For `|ι| = n` this count is the number of
@@ -92,25 +141,5 @@ theorem card_intermediateField_adjoin_range [Finite ι] [NeZero (2 : K)]
   Nat.card_congr <|
     (intermediateFieldEquivSubmodule hroot hindep).toEquiv.trans
       (OrderDual.toDual (α := Submodule (ZMod 2) (ι → ZMod 2))).symm
-
-/-- **The subfield lattice of `ℚ(√p₁, …, √pₙ)`.** For a finite family of distinct primes
-`p : ι → ℕ`, the intermediate fields of `ℚ(√p₁, …, √pₙ)/ℚ` correspond, order-reversingly, to the
-`𝔽₂`-subspaces of `ι → ℤ/2`. This is the prime-radicand specialization of
-`intermediateFieldEquivSubmodule`, a genus-theory input. -/
-noncomputable def intermediateFieldEquivSubmoduleSqrtPrimes [Finite ι] (p : ι → ℕ)
-    (hp : ∀ i, (p i).Prime) (hinj : Function.Injective p) :
-    IntermediateField ℚ (adjoin ℚ (Set.range fun i => (Real.sqrt (p i) : ℝ))) ≃o
-      (Submodule (ZMod 2) (ι → ZMod 2))ᵒᵈ :=
-  intermediateFieldEquivSubmodule (fun i => sq_sqrt_natCast (p i))
-    (not_isSquare_prod_primes_of_injective p hp hinj)
-
-/-- **The number of subfields of `ℚ(√p₁, …, √pₙ)`.** For a finite family of distinct primes, the
-intermediate fields of `ℚ(√p₁, …, √pₙ)/ℚ` are in bijection with the `𝔽₂`-subspaces of `ι → ℤ/2`. -/
-theorem card_intermediateField_adjoin_sqrt_primes [Finite ι] (p : ι → ℕ)
-    (hp : ∀ i, (p i).Prime) (hinj : Function.Injective p) :
-    Nat.card (IntermediateField ℚ (adjoin ℚ (Set.range fun i => (Real.sqrt (p i) : ℝ))))
-      = Nat.card (Submodule (ZMod 2) (ι → ZMod 2)) :=
-  card_intermediateField_adjoin_range (fun i => sq_sqrt_natCast (p i))
-    (not_isSquare_prod_primes_of_injective p hp hinj)
 
 end TauCeti.Multiquadratic
