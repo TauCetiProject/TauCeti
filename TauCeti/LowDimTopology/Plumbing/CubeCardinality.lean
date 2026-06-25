@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.LowDimTopology.Plumbing.CubeWeight
+public import Mathlib.Data.Finset.Powerset
 
 /-!
 # Cardinality of plumbing-lattice cube vertex sets
@@ -94,7 +95,8 @@ theorem cubeVertexSubsetEquiv_apply (x : V → ℤ) (S : Finset V) (T : {T : Fin
 
 /-- The inverse of the subset-to-vertex equivalence returns a subset whose vertex is the
 specified cube vertex. -/
-theorem cubeVertex_cubeVertexSubsetEquiv_symm (x : V → ℤ) (S : Finset V)
+@[simp]
+theorem cubeVertexSubsetEquiv_apply_symm_apply (x : V → ℤ) (S : Finset V)
     (y : {y : V → ℤ // y ∈ cubeVertices x S}) :
     cubeVertex x ((cubeVertexSubsetEquiv x S).symm y).1 = y.1 := by
   exact Subtype.ext_iff.mp ((cubeVertexSubsetEquiv x S).right_inv y)
@@ -117,13 +119,6 @@ theorem card_cubeVertices (x : V → ℤ) (S : Finset V) :
     (cubeVertices x S).card = 2 ^ S.card := by
   rw [cubeVertices_eq_image_powerset, Finset.card_image_of_injective _ (cubeVertex_injective x),
     Finset.card_powerset]
-
-/-- The vertex set of every plumbing-lattice cube is nonempty, as witnessed quantitatively by
-the cardinality formula. -/
-theorem card_cubeVertices_pos (x : V → ℤ) (S : Finset V) :
-    0 < (cubeVertices x S).card := by
-  rw [card_cubeVertices]
-  exact Nat.two_pow_pos S.card
 
 end PlumbingGraph
 
