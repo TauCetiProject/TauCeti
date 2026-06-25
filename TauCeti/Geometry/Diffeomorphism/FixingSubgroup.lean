@@ -6,7 +6,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Topology.Algebra.HomeomorphAction
-public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfFixingSubgroup
+public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 
 /-!
 # Diffeomorphisms fixing a subset pointwise
@@ -118,7 +118,9 @@ theorem fixingSubgroup_union (s t : Set M) :
 theorem fixingSubgroup_le_stabilizer (s : Set M) :
     fixingSubgroup (I := I) (n := n) s ≤
       MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) s :=
-  MulAction.fixingSubgroup_le_stabilizer (M ≃ₘ^n⟮I, I⟯ M) s
+  (MulAction.le_stabilizer_iff_smul_le s _).mpr fun f hf x hx => by
+    rcases hx with ⟨y, hy, rfl⟩
+    simpa [apply_eq_of_mem_fixingSubgroup hf hy] using hy
 
 /-- A relative diffeomorphism fixes every point of the subset defining it. -/
 @[simp]
