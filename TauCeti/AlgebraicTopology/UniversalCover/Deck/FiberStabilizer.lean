@@ -48,17 +48,11 @@ abbrev FiberStabilizer (e : p ⁻¹' {b}) : Subgroup (Deck p) :=
 
 namespace FiberStabilizer
 
-/-- Membership in the fibre stabilizer is pointwise fixedness in the restricted fibre action. -/
-@[simp]
-lemma mem_iff (e : p ⁻¹' {b}) (φ : Deck p) :
-    φ ∈ FiberStabilizer e ↔ φ • e = e :=
-  Iff.rfl
-
 /-- Membership in the fibre stabilizer can be checked on the underlying point of the total
 space. -/
 lemma mem_iff_apply_coe (e : p ⁻¹' {b}) (φ : Deck p) :
     φ ∈ FiberStabilizer e ↔ φ.1 e.1 = e.1 := by
-  rw [mem_iff]
+  rw [MulAction.mem_stabilizer_iff]
   constructor
   · intro h
     simpa [fiber_smul_coe] using congrArg Subtype.val h
@@ -82,14 +76,15 @@ lemma map_fiberStabilizer_conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = 
   ext ψ
   constructor
   · rintro ⟨φ, hφ, rfl⟩
-    exact (FiberStabilizer.mem_iff (fiberMap h hpq b e) (conjMulEquiv h hpq φ)).2 (by
-      rw [← fiberMap_smul h hpq φ e, (FiberStabilizer.mem_iff e φ).mp hφ])
+    exact (MulAction.mem_stabilizer_iff).2 (by
+      change (conjMulEquiv h hpq φ : Deck q) • fiberMap h hpq b e = fiberMap h hpq b e
+      rw [← fiberMap_smul h hpq φ e, (MulAction.mem_stabilizer_iff).mp hφ])
   · intro hψ
     refine ⟨(conjMulEquiv h hpq).symm ψ, ?_, by simp⟩
-    exact (FiberStabilizer.mem_iff e ((conjMulEquiv h hpq).symm ψ)).2 (by
+    exact (MulAction.mem_stabilizer_iff).2 (by
       apply (fiberMap h hpq b).injective
       rw [fiberMap_smul h hpq ((conjMulEquiv h hpq).symm ψ) e]
-      simpa using (FiberStabilizer.mem_iff (fiberMap h hpq b e) ψ).mp hψ)
+      simpa using (MulAction.mem_stabilizer_iff).mp hψ)
 
 /-- An over-base homeomorphism identifies the stabilizers of corresponding fibre points by
 conjugating deck transformations. -/
