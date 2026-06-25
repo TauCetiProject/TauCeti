@@ -138,7 +138,6 @@ theorem toHomeomorph_mem_fixingSubgroup {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M}
 
 /-- Forgetting smoothness maps the relative diffeomorphism group into the corresponding relative
 homeomorphism group. -/
-@[expose]
 def toRelativeHomeomorphHom (s : Set M) :
     fixingSubgroup (I := I) (n := n) s →*
       _root_.fixingSubgroup (M ≃ₜ M) s where
@@ -150,11 +149,15 @@ def toRelativeHomeomorphHom (s : Set M) :
     ext x
     rfl
 
+/-- Applying the forgetful homomorphism to a relative diffeomorphism is its underlying
+homeomorphism. -/
 @[simp]
 theorem toRelativeHomeomorphHom_apply (s : Set M)
     (f : fixingSubgroup (I := I) (n := n) s) :
     (toRelativeHomeomorphHom (M := M) s f : M ≃ₜ M) =
-      (f : M ≃ₘ^n⟮I, I⟯ M).toHomeomorph := rfl
+      (f : M ≃ₘ^n⟮I, I⟯ M).toHomeomorph := by
+  ext x
+  rfl
 
 /-- The relative diffeomorphism group inherits pointwise continuity of its action on `M`. -/
 abbrev RelativeDiff.continuousConstSMul (s : Set M) :
