@@ -66,7 +66,8 @@ theorem IsNegativeDefinite.intersectionForm_self_neg (h : P.IsNegativeDefinite) 
     (hx : x ≠ 0) : P.intersectionForm x x < 0 := by
   have hpos := Matrix.PosDef.dotProduct_mulVec_pos (P.isNegativeDefinite_iff.mp h) hx
   rw [Matrix.neg_mulVec, dotProduct_neg, star_trivial] at hpos
-  rw [P.intersectionForm_eq_dotProduct]
+  rw [P.intersectionForm_apply]
+  rw [← Matrix.toBilin'_apply' P.intersectionMatrix x x, Matrix.toBilin'_apply] at hpos
   linarith
 
 /-- On a negative-definite plumbing the intersection form self-pairing is always nonpositive: it
@@ -119,7 +120,8 @@ theorem IsNegativeDefinite.mulVec_injective (h : P.IsNegativeDefinite) :
   have hz : P.intersectionMatrix *ᵥ (x - y) = 0 := by
     rw [Matrix.mulVec_sub, hxy', sub_self]
   have hzero : P.intersectionForm (x - y) (x - y) = 0 := by
-    rw [P.intersectionForm_eq_dotProduct, hz]
+    rw [P.intersectionForm_apply, ← Matrix.toBilin'_apply P.intersectionMatrix (x - y) (x - y),
+      Matrix.toBilin'_apply', hz]
     simp
   exact sub_eq_zero.mp ((h.intersectionForm_self_eq_zero_iff (x - y)).mp hzero)
 
@@ -135,8 +137,9 @@ theorem a2Plumbing_isNegativeDefinite : a2Plumbing.IsNegativeDefinite := by
     fun x hx => ?_⟩
   have hconv : star x ⬝ᵥ ((-a2Plumbing.intersectionMatrix) *ᵥ x)
       = -a2Plumbing.intersectionForm x x := by
-    rw [Matrix.neg_mulVec, dotProduct_neg, star_trivial,
-      ← a2Plumbing.intersectionForm_eq_dotProduct]
+    rw [Matrix.neg_mulVec, dotProduct_neg, star_trivial]
+    rw [a2Plumbing.intersectionForm_apply,
+      ← Matrix.toBilin'_apply a2Plumbing.intersectionMatrix x x, Matrix.toBilin'_apply']
   have hIF : a2Plumbing.intersectionForm x x
       = -2 * x 0 ^ 2 + 2 * (x 0 * x 1) - 2 * x 1 ^ 2 := by
     rw [a2Plumbing.intersectionForm_apply, a2Plumbing_intersectionMatrix]

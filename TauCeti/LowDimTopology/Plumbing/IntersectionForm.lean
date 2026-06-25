@@ -166,12 +166,6 @@ theorem intersectionForm_apply (x y : V → ℤ) :
     P.intersectionForm x y = ∑ i, ∑ j, x i * P.intersectionMatrix i j * y j :=
   Matrix.toBilin'_apply _ x y
 
-/-- The intersection form is the matrix pairing `x ⬝ᵥ A *ᵥ y`. This is the `Matrix.toBilin'`
-reading of `intersectionMatrix`. -/
-theorem intersectionForm_eq_dotProduct (x y : V → ℤ) :
-    P.intersectionForm x y = x ⬝ᵥ (P.intersectionMatrix *ᵥ y) :=
-  Matrix.toBilin'_apply' _ x y
-
 /-- The intersection form pairs the basis sphere classes by the intersection matrix entries. -/
 @[simp]
 theorem intersectionForm_single (i j : V) :
