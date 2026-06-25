@@ -246,6 +246,18 @@ lemma coe_unweightedAbelJacobiDivisorClass_apply (h : S.IsUnweightedDegreeZero)
     S.degreeCorrection_divisorClass (fun _ : X => (1 : ℤ)) h x₀ D,
     weightedDegree_one_eq_degree D]
 
+/-- The unweighted Abel-Jacobi divisor sum is the constant-weight-one specialization of the
+weighted Abel-Jacobi divisor sum. -/
+lemma unweightedAbelJacobiDivisorClass_eq_weighted (h : S.IsUnweightedDegreeZero) (x₀ : X) :
+    S.unweightedAbelJacobiDivisorClass h x₀ =
+      S.weightedAbelJacobiDivisorClass (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl :=
+  AddMonoidHom.ext fun D => by
+    apply Subtype.ext
+    rw [S.coe_unweightedAbelJacobiDivisorClass_apply]
+    rw [← weightedDegree_one_eq_degree D]
+    exact (S.coe_weightedAbelJacobiDivisorClass_apply (fun _ : X => (1 : ℤ))
+      (show S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ)) from h) (x₀ := x₀) rfl D).symm
+
 /-- The unweighted Abel-Jacobi sum is zero on the base-point divisor. -/
 @[simp]
 lemma unweightedAbelJacobiDivisorClass_ofPoint_base (h : S.IsUnweightedDegreeZero) (x₀ : X) :
@@ -271,9 +283,9 @@ lemma unweightedAbelJacobiDivisorClass_eq_sum (h : S.IsUnweightedDegreeZero)
     (x₀ : X) (D : WeilDivisor X) :
     S.unweightedAbelJacobiDivisorClass h x₀ D =
       D.sum fun x n => n • S.unweightedAbelJacobiClass h x₀ x := by
-  change S.weightedAbelJacobiDivisorClass (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl D =
-    D.sum fun x n => n • S.unweightedAbelJacobiClass h x₀ x
-  rw [S.weightedAbelJacobiDivisorClass_eq_sum (fun _ => (1 : ℤ)) h (x₀ := x₀) rfl D]
+  rw [S.unweightedAbelJacobiDivisorClass_eq_weighted]
+  refine (S.weightedAbelJacobiDivisorClass_eq_sum (fun _ : X => (1 : ℤ))
+    (show S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ)) from h) (x₀ := x₀) rfl D).trans ?_
   apply Finsupp.sum_congr
   intro x _
   congr 1
