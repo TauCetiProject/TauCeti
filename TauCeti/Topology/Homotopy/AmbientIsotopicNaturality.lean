@@ -58,26 +58,13 @@ theorem postcomp_homeomorph (hfg : AmbientIsotopic f g) (h : Y ≃ₜ Z) :
   refine ⟨Φ.transport h, ?_⟩
   ext x
   have hx : Φ.final (f x) = g x := congr_fun (congrArg DFunLike.coe hΦ) x
-  simpa [AmbientIsotopy.final_apply] using hx
+  simpa [AmbientIsotopy.final_transport] using congrArg h hx
 
 /-- The two-sided coordinate-change form: precompose the source by any continuous map and
 postcompose the ambient space by a homeomorphism. -/
 theorem postcomp_homeomorph_precomp (hfg : AmbientIsotopic f g) (h : Y ≃ₜ Z) (e : C(W, X)) :
     AmbientIsotopic ((h : C(Y, Z)).comp (f.comp e)) ((h : C(Y, Z)).comp (g.comp e)) :=
   (hfg.precomp e).postcomp_homeomorph h
-
-/-- Ambient isotopy survives precomposition by a homeomorphism of source spaces. This is the
-homeomorphism special case of `AmbientIsotopic.precomp`; no embedding hypothesis is needed because
-ambient isotopy acts on the codomain. -/
-theorem precomp_homeomorph (hfg : AmbientIsotopic f g) (e : W ≃ₜ X) :
-    AmbientIsotopic (f.comp (e : C(W, X))) (g.comp (e : C(W, X))) :=
-  hfg.precomp (e : C(W, X))
-
-/-- Changing both source and ambient coordinates by homeomorphisms preserves ambient isotopy. -/
-theorem homeomorph_precomp_postcomp (hfg : AmbientIsotopic f g) (h : Y ≃ₜ Z) (e : W ≃ₜ X) :
-    AmbientIsotopic ((h : C(Y, Z)).comp (f.comp (e : C(W, X))))
-      ((h : C(Y, Z)).comp (g.comp (e : C(W, X)))) :=
-  hfg.postcomp_homeomorph_precomp h (e : C(W, X))
 
 end AmbientIsotopic
 
