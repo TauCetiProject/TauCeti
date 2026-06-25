@@ -9,10 +9,10 @@ public import TauCeti.Analysis.PDE.EnergyForm
 /-!
 # Symmetric pointwise energy integrands
 
-For a divergence-form operator with no drift term, symmetry of the principal coefficient
-matrix is exactly symmetry of the pointwise jet bilinear form
-`energyIntegrand A 0 c`.  This file records that finite-dimensional bookkeeping before the
-energy form is integrated over a Sobolev space.
+For a divergence-form operator with no drift term, a symmetric principal coefficient
+matrix gives a symmetric pointwise jet bilinear form `energyIntegrand A 0 c`.  This file
+records that finite-dimensional bookkeeping before the energy form is integrated over a
+Sobolev space.
 
 The main use is Lane D of the PDE roadmap: the weak formulation and the Dirichlet spectrum
 need the integrated form coming from symmetric coefficients to be a symmetric coercive
@@ -114,10 +114,10 @@ lemma energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq (A : Matrix n 
 /-- A pointwise symmetric coefficient field gives symmetric zero-drift jet forms at every
 point of the domain. -/
 lemma energyIntegrand_zero_drift_comm_on {Ω : Set X} {a : X → Matrix n n ℝ}
-    (ha : ∀ ⦃x⦄, x ∈ Ω → (a x).IsSymm) {x : X} (hx : x ∈ Ω) (c₀ : ℝ)
+    (ha : ∀ ⦃x⦄, x ∈ Ω → (a x).IsSymm) {x : X} (hx : x ∈ Ω) (c : X → ℝ)
     (U V : ℝ × EuclideanSpace ℝ n) :
-    energyIntegrand (a x) 0 c₀ U V = energyIntegrand (a x) 0 c₀ V U :=
-  energyIntegrand_zero_drift_comm_of_isSymm (ha hx) c₀ U V
+    energyIntegrand (a x) 0 (c x) U V = energyIntegrand (a x) 0 (c x) V U :=
+  energyIntegrand_zero_drift_comm_of_isSymm (ha hx) (c x) U V
 
 end PDE
 
