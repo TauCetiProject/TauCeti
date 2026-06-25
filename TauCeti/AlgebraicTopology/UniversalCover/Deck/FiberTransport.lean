@@ -26,6 +26,8 @@ deck action on those fibres to be compatible with conjugating the deck group.
   conjugation of deck transformations.
 * `TauCeti.Deck.fiberMapStabilizerEquiv`: fibre transport identifies stabilizers via
   conjugation of deck transformations.
+* `TauCeti.Deck.map_fiber_stabilizer_conjMulEquiv`: conjugation maps the source fibre
+  stabilizer onto the transported target fibre stabilizer.
 * `TauCeti.Deck.mem_orbit_fiberMap_iff`: fibre transport preserves deck-orbit membership.
 
 ## References
@@ -151,7 +153,7 @@ lemma mem_stabilizer_conjMulEquiv_fiberMap_iff (h : E ≃ₜ F)
 
 /-- Conjugation maps the source fibre stabilizer onto the transported target fibre
 stabilizer. -/
-private lemma map_stabilizer_conjMulEquiv_fiberMap (h : E ≃ₜ F)
+theorem map_fiber_stabilizer_conjMulEquiv (h : E ≃ₜ F)
     (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b}) :
     (MulAction.stabilizer (Deck p) e).map ((conjMulEquiv h hpq : Deck p ≃* Deck q) :
         Deck p →* Deck q) =
@@ -171,7 +173,7 @@ def fiberMapStabilizerEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     MulAction.stabilizer (Deck p) e ≃*
       MulAction.stabilizer (Deck q) (fiberMap h hpq b e) :=
   ((conjMulEquiv h hpq).subgroupMap (MulAction.stabilizer (Deck p) e)).trans
-    (MulEquiv.subgroupCongr (map_stabilizer_conjMulEquiv_fiberMap h hpq e))
+    (MulEquiv.subgroupCongr (map_fiber_stabilizer_conjMulEquiv h hpq e))
 
 /-- On deck transformations, the fibre-map stabilizer equivalence is conjugation. -/
 @[simp]
