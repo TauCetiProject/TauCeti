@@ -17,22 +17,15 @@ upper face is based at `x + E_v`.
 Since the characteristic cube weight is the maximum of the point weights over all vertices,
 these face inclusions give the inequalities
 
-`w_k(x, S.erase v) ≤ w_k(x, S)`
-
-and
-
 `w_k(x + E_v, S.erase v) ≤ w_k(x, S)`.
 
-Those are the nonnegativity inputs for the `U`-powers in the lattice-homology cubical
-differential.
+Together with `characteristicCubeWeight_mono` applied to `S.erase v ⊆ S`, this is the
+nonnegativity input for the `U`-powers in the lattice-homology cubical differential.
 
 ## Main results
 
-* `TauCeti.PlumbingGraph.cubeVertices_erase_subset`: the lower face vertices are cube vertices.
 * `TauCeti.PlumbingGraph.cubeVertices_add_single_erase_subset`: the upper face vertices are cube
   vertices.
-* `TauCeti.PlumbingGraph.characteristicCubeWeight_erase_le`: the lower face weight is bounded
-  by the cube weight.
 * `TauCeti.PlumbingGraph.characteristicCubeWeight_add_single_erase_le`: the upper face weight is
   bounded by the cube weight.
 
@@ -51,9 +44,7 @@ namespace PlumbingGraph
 
 variable {V : Type*} [DecidableEq V]
 
-/-- Adding a basis vector to the base point is the same as adding it after forming any vertex
-whose indexing subset does not already contain that direction. -/
-theorem cubeVertex_add_single_of_notMem {T : Finset V} {v : V} (hv : v ∉ T) (x : V → ℤ) :
+private theorem cubeVertex_add_single_of_notMem {T : Finset V} {v : V} (hv : v ∉ T) (x : V → ℤ) :
     cubeVertex (x + Pi.single v (1 : ℤ)) T = cubeVertex x T + Pi.single v 1 := by
   ext w
   by_cases hw : w = v
@@ -61,9 +52,7 @@ theorem cubeVertex_add_single_of_notMem {T : Finset V} {v : V} (hv : v ∉ T) (x
     simp [hv]
   · simp [hw]
 
-/-- Inserting a direction into the vertex subset agrees with moving to the corresponding upper
-base point and using the original subset. -/
-theorem cubeVertex_insert_eq_cubeVertex_add_single {T : Finset V} {v : V} (hv : v ∉ T)
+private theorem cubeVertex_insert_eq_cubeVertex_add_single {T : Finset V} {v : V} (hv : v ∉ T)
     (x : V → ℤ) :
     cubeVertex x (insert v T) = cubeVertex (x + Pi.single v (1 : ℤ)) T := by
   calc
@@ -74,14 +63,9 @@ theorem cubeVertex_insert_eq_cubeVertex_add_single {T : Finset V} {v : V} (hv : 
 
 variable [DecidableEq (V → ℤ)]
 
-/-- The vertices of the lower face obtained by removing the direction `v` are vertices of the
-original cube. -/
-theorem cubeVertices_erase_subset (x : V → ℤ) (S : Finset V) (v : V) :
-    cubeVertices x (S.erase v) ⊆ cubeVertices x S :=
-  cubeVertices_subset (Finset.erase_subset v S) x
-
 /-- The vertices of the upper face based at `x + E_v` are vertices of the original cube, provided
 `v` is one of the original cube directions. -/
+@[grind =>]
 theorem cubeVertices_add_single_erase_subset {S : Finset V} {v : V} (hv : v ∈ S)
     (x : V → ℤ) :
     cubeVertices (x + Pi.single v (1 : ℤ)) (S.erase v) ⊆ cubeVertices x S := by
@@ -99,17 +83,10 @@ theorem cubeVertices_add_single_erase_subset {S : Finset V} {v : V} (hv : v ∈ 
 
 variable [Fintype V]
 
-/-- The characteristic weight of a lower face is bounded above by the characteristic weight of
-the whole cube. -/
-theorem characteristicCubeWeight_erase_le
-    (P : PlumbingGraph V) (k : P.characteristicVectors) (x : V → ℤ)
-    (S : Finset V) (v : V) :
-    P.characteristicCubeWeight k x (S.erase v) ≤ P.characteristicCubeWeight k x S :=
-  P.characteristicCubeWeight_mono k (Finset.erase_subset v S) x
-
 /-- The characteristic weight of an upper face is bounded above by the characteristic weight of
 the whole cube. This is the inequality that makes the corresponding `U`-exponent nonnegative in
 the lattice-homology cubical differential. -/
+@[grind =>]
 theorem characteristicCubeWeight_add_single_erase_le
     (P : PlumbingGraph V) (k : P.characteristicVectors) {S : Finset V} {v : V} (hv : v ∈ S)
     (x : V → ℤ) :
