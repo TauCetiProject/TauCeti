@@ -203,15 +203,21 @@ theorem aut_mul_self_eq_one (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (σ : IntermediateField.adjoin K (Set.range root) ≃ₐ[K]
       IntermediateField.adjoin K (Set.range root)) :
     σ * σ = 1 := by
-  refine AlgEquiv.coe_algHom_injective ?_
-  refine IntermediateField.algHom_ext_of_eq_adjoin (F := K)
-    (S := IntermediateField.adjoin K (Set.range root)) (s := Set.range root) rfl ?_
-  rintro x ⟨i, rfl⟩
-  -- The extensionality goal `↑(σ * σ) ⟨root i, _⟩ = ⟨root i, _⟩` is definitionally the generator
-  -- equation below: `gen root i := ⟨root i, _⟩`, and `↑(σ * σ) ·` reduces to `σ (σ ·)`. We convert
-  -- to that readable form so the `aut_gen_eq_self_or_eq_neg` case split can fire on `gen root i`.
-  change σ (σ (gen root i)) = gen root i
-  rcases aut_gen_eq_self_or_eq_neg hroot σ i with h | h <;> simp [h, map_neg]
+  let S := IntermediateField.adjoin K (Set.range root)
+  have hhom : ((σ * σ : S ≃ₐ[K] S) : S →ₐ[K] S) =
+      ((1 : S ≃ₐ[K] S) : S →ₐ[K] S) := by
+    refine IntermediateField.algHom_ext_of_eq_adjoin (F := K)
+      (S := IntermediateField.adjoin K (Set.range root)) (s := Set.range root) rfl ?_
+    rintro x ⟨i, rfl⟩
+    -- The extensionality goal `↑(σ * σ) ⟨root i, _⟩ = ⟨root i, _⟩` is definitionally the generator
+    -- equation below: `gen root i := ⟨root i, _⟩`, and `↑(σ * σ) ·` reduces to
+    -- `σ (σ ·)`. We convert to that readable form so the `aut_gen_eq_self_or_eq_neg`
+    -- case split can fire on `gen root i`.
+    change σ (σ (gen root i)) = gen root i
+    rcases aut_gen_eq_self_or_eq_neg hroot σ i with h | h <;> simp [h, map_neg]
+  apply AlgEquiv.ext
+  intro x
+  exact AlgHom.congr_fun hhom x
 
 /-- The automorphism group of a multiquadratic field is commutative: every element has order
 dividing two, so any two commute. -/
