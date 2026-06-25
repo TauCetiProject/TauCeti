@@ -98,19 +98,29 @@ lemma normalizerQuotientMk_range (H : Subgroup G) :
 
 variable {M : Type*} [Group M]
 
-/-- The universal property of `N(H) / H`: a homomorphism from the normalizer that kills the
-copy of `H` descends to a homomorphism from the normalizer quotient. -/
-abbrev normalizerQuotientLift (H : Subgroup G)
+/-- The subgroup-form universal property of `N(H) / H`: a homomorphism from the normalizer
+whose kernel contains the copy of `H` descends to a homomorphism from the normalizer quotient. -/
+abbrev normalizerQuotientLiftOfSubgroupOf (H : Subgroup G)
     (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
     (hφ : H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) ≤ φ.ker) :
     normalizerQuotient H →* M :=
   QuotientGroup.lift (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) φ hφ
 
+/-- The universal property of `N(H) / H`: a homomorphism from the normalizer that sends every
+ambient element of `H` to `1` descends to a homomorphism from the normalizer quotient. -/
+abbrev normalizerQuotientLift (H : Subgroup G)
+    (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
+    (hφ : ∀ g : _root_.Subgroup.normalizer (H : Set G), (g : G) ∈ H → φ g = 1) :
+    normalizerQuotient H →* M :=
+  normalizerQuotientLiftOfSubgroupOf H φ (by
+    intro g hg
+    exact hφ g hg)
+
 /-- The lift from `N(H) / H` evaluates on representatives as the original homomorphism. -/
 @[simp]
 lemma normalizerQuotientLift_mk (H : Subgroup G)
     (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
-    (hφ : H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) ≤ φ.ker)
+    (hφ : ∀ g : _root_.Subgroup.normalizer (H : Set G), (g : G) ∈ H → φ g = 1)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientLift H φ hφ (normalizerQuotientMk H g) = φ g :=
   rfl
@@ -120,7 +130,7 @@ from the normalizer. -/
 @[simp]
 lemma normalizerQuotientLift_comp_mk (H : Subgroup G)
     (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
-    (hφ : H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) ≤ φ.ker) :
+    (hφ : ∀ g : _root_.Subgroup.normalizer (H : Set G), (g : G) ∈ H → φ g = 1) :
     (normalizerQuotientLift H φ hφ).comp (normalizerQuotientMk H) = φ :=
   rfl
 
@@ -128,21 +138,34 @@ lemma normalizerQuotientLift_comp_mk (H : Subgroup G)
 surjective. -/
 lemma normalizerQuotientLift_surjective_of_surjective (H : Subgroup G)
     (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
-    (hφ : H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) ≤ φ.ker)
+    (hφ : ∀ g : _root_.Subgroup.normalizer (H : Set G), (g : G) ∈ H → φ g = 1)
     (hφsurj : Function.Surjective φ) :
     Function.Surjective (normalizerQuotientLift H φ hφ) :=
   QuotientGroup.lift_surjective_of_surjective
-    (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) φ hφsurj hφ
+    (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) φ hφsurj (by
+      intro g hg
+      exact hφ g hg)
 
 /-- A lift from `N(H) / H` is injective exactly when the only normalizer elements killed by
 the original homomorphism are the elements of `H`. -/
 lemma normalizerQuotientLift_injective_iff (H : Subgroup G)
     (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
-    (hφ : H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) ≤ φ.ker) :
+    (hφ : ∀ g : _root_.Subgroup.normalizer (H : Set G), (g : G) ∈ H → φ g = 1) :
     Function.Injective (normalizerQuotientLift H φ hφ) ↔
-      H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) = φ.ker :=
-  QuotientGroup.injective_lift_iff
-    (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) φ hφ
+      ∀ g : _root_.Subgroup.normalizer (H : Set G), φ g = 1 ↔ (g : G) ∈ H := by
+  rw [QuotientGroup.injective_lift_iff]
+  · constructor
+    · intro hker g
+      constructor
+      · intro hg
+        have : g ∈ H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) := by
+          rw [hker]
+          exact hg
+        exact this
+      · exact hφ g
+    · intro hker
+      ext g
+      exact (hker g).symm
 
 /-- The quotient equality criterion for representatives in the normalizer, stated in the
 ambient group `G`. -/
