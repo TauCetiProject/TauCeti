@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import TauCeti.Algebra.Coalgebra.Comodule
 
 /-!
@@ -54,7 +55,7 @@ variable {N : Type w'} [AddCommMonoid N] [Module R N] [Comodule R D N]
 
 It coacts on both tensor factors and then rearranges
 `(M ⊗ C) ⊗ (N ⊗ D)` as `(M ⊗ N) ⊗ (C ⊗ D)`. -/
-@[expose] noncomputable def externalTensorCoact :
+noncomputable def externalTensorCoact :
     M ⊗[R] N →ₗ[R] (M ⊗[R] N) ⊗[R] (C ⊗[R] D) :=
   (TensorProduct.tensorTensorTensorComm R M C N D).toLinearMap ∘ₗ
     TensorProduct.map (coact (R := R) (C := C) (M := M))
