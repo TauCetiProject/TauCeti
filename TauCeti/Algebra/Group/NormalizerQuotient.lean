@@ -24,6 +24,8 @@ in the normal case.
 
 * `TauCeti.Subgroup.normalizerQuotient`: the quotient `N(H) / H`.
 * `TauCeti.Subgroup.normalizerQuotientMk`: the canonical map `N(H) →* N(H) / H`.
+* `TauCeti.Subgroup.normalizerQuotientLift`: the universal property for maps out of
+  `N(H) / H`.
 * `TauCeti.Subgroup.normalizerQuotientToQuotientOfNormal`: when `H` is normal in `G`,
   the natural map `N(H) / H →* G / H`.
 * `TauCeti.Subgroup.normalizerQuotientEquivQuotientOfNormal`: when `H` is normal in `G`,
@@ -93,6 +95,54 @@ lemma normalizerQuotientMk_range (H : Subgroup G) :
     (normalizerQuotientMk H).range = ⊤ :=
   QuotientGroup.range_mk'
     (N := H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)))
+
+variable {M : Type*} [Group M]
+
+/-- The universal property of `N(H) / H`: a homomorphism from the normalizer that kills the
+copy of `H` descends to a homomorphism from the normalizer quotient. -/
+abbrev normalizerQuotientLift (H : Subgroup G)
+    (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
+    (hφ : H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) ≤ φ.ker) :
+    normalizerQuotient H →* M :=
+  QuotientGroup.lift (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) φ hφ
+
+/-- The lift from `N(H) / H` evaluates on representatives as the original homomorphism. -/
+@[simp]
+lemma normalizerQuotientLift_mk (H : Subgroup G)
+    (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
+    (hφ : H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) ≤ φ.ker)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
+    normalizerQuotientLift H φ hφ (normalizerQuotientMk H g) = φ g :=
+  rfl
+
+/-- The lift from `N(H) / H`, composed with the quotient map, is the original homomorphism
+from the normalizer. -/
+@[simp]
+lemma normalizerQuotientLift_comp_mk (H : Subgroup G)
+    (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
+    (hφ : H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) ≤ φ.ker) :
+    (normalizerQuotientLift H φ hφ).comp (normalizerQuotientMk H) = φ :=
+  rfl
+
+/-- A lift from `N(H) / H` is surjective when the original homomorphism from the normalizer is
+surjective. -/
+lemma normalizerQuotientLift_surjective_of_surjective (H : Subgroup G)
+    (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
+    (hφ : H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) ≤ φ.ker)
+    (hφsurj : Function.Surjective φ) :
+    Function.Surjective (normalizerQuotientLift H φ hφ) :=
+  QuotientGroup.lift_surjective_of_surjective
+    (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) φ hφsurj hφ
+
+/-- A lift from `N(H) / H` is injective exactly when the only normalizer elements killed by
+the original homomorphism are the elements of `H`. -/
+lemma normalizerQuotientLift_injective_iff (H : Subgroup G)
+    (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
+    (hφ : H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) ≤ φ.ker) :
+    Function.Injective (normalizerQuotientLift H φ hφ) ↔
+      H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) = φ.ker :=
+  QuotientGroup.injective_lift_iff
+    (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) φ hφ
 
 /-- The quotient equality criterion for representatives in the normalizer, stated in the
 ambient group `G`. -/
