@@ -6,7 +6,6 @@ module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Conjugation
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
-public import Mathlib.GroupTheory.GroupAction.Basic
 
 /-!
 # Transporting deck actions on fibres
@@ -25,8 +24,6 @@ deck action on those fibres to be compatible with conjugating the deck group.
   homeomorphism.
 * `TauCeti.Deck.fiberMap_smul`: fibre transport intertwines the restricted deck actions via
   conjugation of deck transformations.
-* `TauCeti.Deck.mem_fiber_stabilizer_iff_coe`: membership in a fibre stabilizer is equality on
-  the underlying point.
 * `TauCeti.Deck.fiberMapStabilizerEquiv`: fibre transport identifies stabilizers via
   conjugation of deck transformations.
 * `TauCeti.Deck.mem_orbit_fiberMap_iff`: fibre transport preserves deck-orbit membership.
@@ -135,12 +132,6 @@ lemma fiberHomeomorphHom_conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p
       (fiberMap h hpq b).symm.trans ((fiberHomeomorphHom p b φ).trans (fiberMap h hpq b)) := by
   ext f
   simp
-
-/-- Membership in the stabilizer of a fibre point is equality on the underlying point. -/
-@[simp, grind =]
-lemma mem_fiber_stabilizer_iff_coe (φ : Deck p) (e : p ⁻¹' {b}) :
-    φ ∈ MulAction.stabilizer (Deck p) e ↔ φ.1 e.1 = e.1 := by
-  simp [Subtype.ext_iff]
 
 /-- Conjugation transports stabilizer membership along the fibre map. -/
 @[simp, grind =]
