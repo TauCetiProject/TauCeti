@@ -27,7 +27,7 @@ relative subgroup is closed are deliberately left to the later `C^∞`-topology 
 ## Main definitions
 
 * `TauCeti.Diffeomorph.fixingSubgroup s`: self-diffeomorphisms fixing every point of `s`.
-* `TauCeti.Diffeomorph.RelativeDiff I M n s`: the corresponding relative diffeomorphism group,
+* `TauCeti.RelativeDiff I M n s`: the corresponding relative diffeomorphism group,
   as a type abbreviation for that subgroup.
 
 ## Main results
@@ -47,12 +47,17 @@ namespace TauCeti
 
 open scoped Manifold ContDiff Pointwise
 
-namespace Diffeomorph
-
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+
+/-- The relative diffeomorphism group fixing the subset `s` pointwise. -/
+abbrev RelativeDiff (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
+    [ChartedSpace H M] (n : ℕ∞ω) (s : Set M) : Type _ :=
+  _root_.fixingSubgroup (M ≃ₘ^n⟮I, I⟯ M) s
+
+namespace Diffeomorph
 
 /-- The subgroup of self-diffeomorphisms fixing every point of `s`.
 
@@ -61,11 +66,6 @@ This is Mathlib's generic `fixingSubgroup`, specialized to the tautological acti
 diffeomorphism group `Diff(M, ∂M)`. -/
 abbrev fixingSubgroup (s : Set M) : Subgroup (M ≃ₘ^n⟮I, I⟯ M) :=
   _root_.fixingSubgroup (M ≃ₘ^n⟮I, I⟯ M) s
-
-/-- The relative diffeomorphism group fixing the subset `s` pointwise. -/
-abbrev RelativeDiff (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
-    [ChartedSpace H M] (n : ℕ∞ω) (s : Set M) : Type _ :=
-  fixingSubgroup (I := I) (n := n) s
 
 /-- Membership in the pointwise fixing subgroup is the pointwise fixedness equation on `s`. -/
 @[simp]
@@ -120,13 +120,6 @@ theorem fixingSubgroup_union (s t : Set M) :
       fixingSubgroup (I := I) (n := n) s ⊓ fixingSubgroup (I := I) (n := n) t := by
   exact _root_.fixingSubgroup_union (M := M ≃ₘ^n⟮I, I⟯ M) (α := M)
 
-/-- A relative diffeomorphism fixes every point of the subset defining it. -/
-@[simp]
-theorem RelativeDiff.apply_eq {s : Set M}
-    (f : RelativeDiff (𝕜 := 𝕜) (I := I) M n s) {x : M} (hx : x ∈ s) :
-    (f : M ≃ₘ^n⟮I, I⟯ M) x = x :=
-  apply_eq_of_mem_fixingSubgroup f.property hx
-
 /-- The forgetful homomorphism to homeomorphisms sends a relative diffeomorphism to a homeomorphism
 fixing the same subset pointwise. -/
 theorem toHomeomorph_mem_fixingSubgroup {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M}
@@ -156,11 +149,18 @@ theorem toRelativeHomeomorphHom_apply (s : Set M)
   ext x
   simp [toRelativeHomeomorphHom, toHomeomorphHom_apply]
 
+end Diffeomorph
+
+/-- A relative diffeomorphism fixes every point of the subset defining it. -/
+@[simp]
+theorem RelativeDiff.apply_eq {s : Set M}
+    (f : RelativeDiff (𝕜 := 𝕜) (I := I) M n s) {x : M} (hx : x ∈ s) :
+    (f : M ≃ₘ^n⟮I, I⟯ M) x = x :=
+  Diffeomorph.apply_eq_of_mem_fixingSubgroup f.property hx
+
 /-- The relative diffeomorphism group inherits pointwise continuity of its action on `M`. -/
 abbrev RelativeDiff.continuousConstSMul (s : Set M) :
     ContinuousConstSMul (RelativeDiff (𝕜 := 𝕜) (I := I) M n s) M :=
   inferInstance
-
-end Diffeomorph
 
 end TauCeti
