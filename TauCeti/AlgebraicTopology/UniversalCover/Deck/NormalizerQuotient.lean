@@ -17,7 +17,8 @@ deck group of the connected cover associated to `H ≤ π₁(X, x₀)` is identi
 The construction is deliberately only a thin local API around Mathlib's `Subgroup.normalizer`,
 `Subgroup.subgroupOf`, and quotient groups. Mathlib already proves that `H` is normal in its
 normalizer; this file gives the quotient a stable name and records its canonical quotient map,
-kernel, equality criterion, and the comparison with `G / H` in the normal case.
+an equality criterion by multiplication by an element of `H`, and the comparison with `G / H`
+in the normal case.
 
 ## Main declarations
 
@@ -44,61 +45,43 @@ namespace Subgroup
 
 variable {G : Type*} [Group G]
 
-/-- The normalizer of a subgroup, as a subgroup of the ambient group. Mathlib's
-`Subgroup.normalizer` is stated for a set, so this abbreviation fixes the coercion for the
-normalizer quotient API below. -/
-abbrev subgroupNormalizer (H : Subgroup G) : Subgroup G :=
-  _root_.Subgroup.normalizer (H : Set G)
-
 /-- The normalizer quotient `N(H) / H` of a subgroup `H ≤ G`. Here `H` is viewed as a normal
 subgroup of its normalizer, using Mathlib's `Subgroup.normal_in_normalizer` instance. -/
 abbrev normalizerQuotient (H : Subgroup G) : Type _ :=
-  subgroupNormalizer H ⧸ H.subgroupOf (subgroupNormalizer H)
+  _root_.Subgroup.normalizer (H : Set G) ⧸
+    H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))
 
 /-- The canonical quotient map from the normalizer of `H` to `N(H) / H`. -/
 @[expose] def normalizerQuotientMk (H : Subgroup G) :
-    subgroupNormalizer H →* normalizerQuotient H :=
-  QuotientGroup.mk' (H.subgroupOf (subgroupNormalizer H))
+    _root_.Subgroup.normalizer (H : Set G) →* normalizerQuotient H :=
+  QuotientGroup.mk' (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)))
 
 /-- The canonical quotient map evaluates as the quotient-group constructor. -/
 @[simp]
-lemma normalizerQuotientMk_apply (H : Subgroup G) (g : subgroupNormalizer H) :
+lemma normalizerQuotientMk_apply (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientMk H g = (g : normalizerQuotient H) :=
   rfl
-
-/-- The canonical quotient map to `N(H) / H` is surjective. -/
-lemma normalizerQuotientMk_surjective (H : Subgroup G) :
-    Function.Surjective (normalizerQuotientMk H) :=
-  QuotientGroup.mk'_surjective (H.subgroupOf (subgroupNormalizer H))
-
-/-- The kernel of the canonical quotient map `N(H) →* N(H) / H` is `H`, viewed as a
-subgroup of its normalizer. -/
-@[simp]
-lemma normalizerQuotientMk_ker (H : Subgroup G) :
-    MonoidHom.ker (normalizerQuotientMk H) = H.subgroupOf (subgroupNormalizer H) :=
-  QuotientGroup.ker_mk' (H.subgroupOf (subgroupNormalizer H))
 
 /-- A normalizer element maps to the identity in `N(H) / H` exactly when its underlying
 element of `G` lies in `H`. -/
 @[simp]
-lemma normalizerQuotientMk_eq_one_iff (H : Subgroup G) (g : subgroupNormalizer H) :
+lemma normalizerQuotientMk_eq_one_iff (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientMk H g = 1 ↔ (g : G) ∈ H := by
-  rw [← MonoidHom.mem_ker, normalizerQuotientMk_ker]
-  rfl
-
-/-- Two elements of the normalizer have the same image in `N(H) / H` exactly when their
-quotient lies in `H`. -/
-lemma normalizerQuotientMk_eq_iff (H : Subgroup G) (g k : subgroupNormalizer H) :
-    normalizerQuotientMk H g = normalizerQuotientMk H k ↔ (g : G) / (k : G) ∈ H := by
-  simpa [normalizerQuotientMk, normalizerQuotient, _root_.Subgroup.mem_subgroupOf]
-    using QuotientGroup.eq_iff_div_mem (N := H.subgroupOf (subgroupNormalizer H))
-      (x := g) (y := k)
+  simp [normalizerQuotientMk, normalizerQuotient, _root_.Subgroup.mem_subgroupOf,
+    QuotientGroup.eq_one_iff]
 
 /-- A version of the equality criterion using multiplication by an element of `H`. -/
-lemma normalizerQuotientMk_eq_iff_exists_mul (H : Subgroup G) (g k : subgroupNormalizer H) :
+lemma normalizerQuotientMk_eq_iff_exists_mul (H : Subgroup G)
+    (g k : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientMk H g = normalizerQuotientMk H k ↔
       ∃ h ∈ H, h * (k : G) = g := by
-  rw [normalizerQuotientMk_eq_iff]
+  rw [show normalizerQuotientMk H g = normalizerQuotientMk H k ↔
+      (g : G) / (k : G) ∈ H by
+    simpa [normalizerQuotientMk, normalizerQuotient, _root_.Subgroup.mem_subgroupOf]
+      using QuotientGroup.eq_iff_div_mem
+        (N := H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) (x := g) (y := k)]
   constructor
   · intro hgk
     exact ⟨(g : G) / k, hgk, by simp [div_eq_mul_inv, mul_assoc]⟩
@@ -111,8 +94,8 @@ section Normal
 variable (H : Subgroup G) [H.Normal]
 
 /-- When `H` is normal in `G`, every element of `G` lies in the normalizer of `H`. -/
-@[expose] def toNormalizerOfNormal : G →* subgroupNormalizer H where
-  toFun g := ⟨g, by simp [subgroupNormalizer, _root_.Subgroup.normalizer_eq_top (H := H)]⟩
+@[expose] def toNormalizerOfNormal : G →* _root_.Subgroup.normalizer (H : Set G) where
+  toFun g := ⟨g, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩
   map_one' := rfl
   map_mul' _ _ := rfl
 
@@ -133,17 +116,17 @@ lemma toNormalizerOfNormal_surjective :
 `G / H` by forgetting that representatives lie in the normalizer. -/
 @[expose] def normalizerQuotientToQuotientOfNormal :
     normalizerQuotient H →* G ⧸ H :=
-  QuotientGroup.lift (H.subgroupOf (subgroupNormalizer H))
-    ((QuotientGroup.mk' H).comp (subgroupNormalizer H).subtype)
+  QuotientGroup.map (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) H
+    (_root_.Subgroup.normalizer (H : Set G)).subtype
     (by
       intro g hg
-      rw [MonoidHom.mem_ker]
-      exact (QuotientGroup.eq_one_iff (N := H) (x := (g : G))).mpr hg)
+      exact hg)
 
 /-- The comparison map from `N(H) / H` to `G / H` sends a normalizer representative to its
 ordinary quotient class. -/
 @[simp]
-lemma normalizerQuotientToQuotientOfNormal_mk (g : subgroupNormalizer H) :
+lemma normalizerQuotientToQuotientOfNormal_mk
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientToQuotientOfNormal H (normalizerQuotientMk H g) =
       QuotientGroup.mk' H (g : G) :=
   rfl
@@ -153,7 +136,7 @@ agrees with the comparison map from `N(H) / H`. -/
 @[simp]
 lemma normalizerQuotientToQuotientOfNormal_comp_mk :
     (normalizerQuotientToQuotientOfNormal H).comp (normalizerQuotientMk H) =
-      (QuotientGroup.mk' H).comp (subgroupNormalizer H).subtype :=
+      (QuotientGroup.mk' H).comp (_root_.Subgroup.normalizer (H : Set G)).subtype :=
   rfl
 
 /-- The comparison map `N(H) / H →* G / H` is surjective when `H` is normal in `G`. -/
@@ -175,13 +158,15 @@ lemma normalizerQuotientToQuotientOfNormal_injective :
       induction r using Quotient.inductionOn' with
       | h k =>
           change normalizerQuotientMk H g = normalizerQuotientMk H k
-          apply (normalizerQuotientMk_eq_iff H g k).mpr
+          apply (QuotientGroup.eq_iff_div_mem
+            (N := H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) (x := g)
+            (y := k)).mpr
           change (normalizerQuotientToQuotientOfNormal H) (normalizerQuotientMk H g) =
               (normalizerQuotientToQuotientOfNormal H) (normalizerQuotientMk H k) at hqr
           rw [normalizerQuotientToQuotientOfNormal_mk,
             normalizerQuotientToQuotientOfNormal_mk] at hqr
-          exact (QuotientGroup.eq_iff_div_mem (N := H) (x := (g : G)) (y := (k : G))).mp
-            hqr
+          simpa [_root_.Subgroup.mem_subgroupOf] using
+            (QuotientGroup.eq_iff_div_mem (N := H) (x := (g : G)) (y := (k : G))).mp hqr
 
 /-- If `H` is normal in `G`, then `N(H) / H` is canonically isomorphic to `G / H`. This is
 the algebraic form of the regular-cover specialization from `N(H) / H` to `π₁(X, x₀) / H`. -/
@@ -194,7 +179,8 @@ the algebraic form of the regular-cover specialization from `N(H) / H` to `π₁
 /-- The normal-case equivalence sends a normalizer representative to its ordinary quotient
 class in `G / H`. -/
 @[simp]
-lemma normalizerQuotientEquivQuotientOfNormal_mk (g : subgroupNormalizer H) :
+lemma normalizerQuotientEquivQuotientOfNormal_mk
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientEquivQuotientOfNormal H (normalizerQuotientMk H g) =
       QuotientGroup.mk' H (g : G) :=
   rfl
