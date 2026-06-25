@@ -1,4 +1,6 @@
-import Mathlib.Probability.Process.FiniteDimensionalLaws
+module
+
+public import Mathlib.Probability.Process.FiniteDimensionalLaws
 
 /-!
 # Basic laws of stochastic processes
@@ -11,6 +13,8 @@ The main finite-dimensional uniqueness theorem is not reproved here.  The final 
 `pathLaw_eq_iff_forall_finiteDimensionalLaw_eq` is only a Tau Ceti naming wrapper around
 Mathlib's `ProbabilityTheory.map_eq_iff_forall_finset_map_restrict_eq`.
 -/
+
+@[expose] public section
 
 open MeasureTheory
 
