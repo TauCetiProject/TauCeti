@@ -11,8 +11,7 @@ public import Mathlib.Topology.Homotopy.Lifting
 
 This file records the covering-space lifting criterion in the form needed by the universal
 covers roadmap. Mathlib already proves the theorem; Tau Ceti only packages the precise
-subgroup condition and gives local names for the general criterion and the simply-connected
-special case.
+subgroup condition and gives local names for the general criterion stated with that condition.
 
 For a covering map `p : E → X`, a continuous map `f : A → X`, a base point `a₀ : A`, and a
 chosen lift `e₀ : E` of `f a₀`, the condition is the usual
@@ -26,7 +25,7 @@ In Lean this is the subgroup inclusion
 
 The theorem then gives a unique continuous lift `F : C(A, E)` with `F a₀ = e₀` and
 `p ∘ F = f`, under the standard hypotheses that `A` is path connected and locally path
-connected. The simply-connected version drops the subgroup condition.
+connected.
 
 ## Main declarations
 
@@ -38,8 +37,7 @@ connected. The simply-connected version drops the subgroup condition.
 
 This is the Tau Ceti universal-covers roadmap, Stage 2, item 6 ("General lifting criterion,
 already in Mathlib"). The proof reuses Junyan Xu's
-`IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le` and
-`IsCoveringMap.existsUnique_continuousMap_lifts` from
+`IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le` from
 `Mathlib/Topology/Homotopy/Lifting.lean`.
 -/
 
@@ -97,21 +95,6 @@ theorem lift_unique_of_liftCondition (hp : IsCoveringMap p)
     (hF : F a₀ = e₀ ∧ p ∘ F = f) (hG : G a₀ = e₀ ∧ p ∘ G = f) :
     F = G :=
   (existsUnique_lift_of_liftCondition hp he h).unique hF hG
-
-/-- Existence part of the simply-connected lifting criterion. -/
-theorem exists_lift_of_simplyConnected (hp : IsCoveringMap p)
-    [SimplyConnectedSpace A] [LocallyPathConnectedSpace A] (f : C(A, X)) (a₀ : A) (e₀ : E)
-    (he : p e₀ = f a₀) :
-    ∃ F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
-  (hp.existsUnique_continuousMap_lifts f a₀ e₀ he).exists
-
-/-- Uniqueness part of the simply-connected lifting criterion. -/
-theorem lift_unique_of_simplyConnected (hp : IsCoveringMap p)
-    [SimplyConnectedSpace A] [LocallyPathConnectedSpace A] {f : C(A, X)} {a₀ : A} {e₀ : E}
-    (he : p e₀ = f a₀) {F G : C(A, E)}
-    (hF : F a₀ = e₀ ∧ p ∘ F = f) (hG : G a₀ = e₀ ∧ p ∘ G = f) :
-    F = G :=
-  (hp.existsUnique_continuousMap_lifts f a₀ e₀ he).unique hF hG
 
 end IsCoveringMap
 
