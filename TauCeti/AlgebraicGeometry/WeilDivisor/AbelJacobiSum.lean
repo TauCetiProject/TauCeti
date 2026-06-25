@@ -195,6 +195,7 @@ lemma classGroupAddEquivPicZeroProdInt_divisorClass (w : X → ℤ)
   rw [classGroupAddEquivPicZeroProdInt_apply]
   refine Prod.ext ?_ ?_
   · apply Subtype.ext
+    -- `Prod.ext` and `Subtype.ext` reduce the first projection to its coercion in `ClassGroup`.
     change S.degreeCorrection w h x₀ (S.divisorClass D) =
       (S.weightedAbelJacobiDivisorClass w h hx₀ D : S.ClassGroup)
     rw [S.degreeCorrection_divisorClass, S.coe_weightedAbelJacobiDivisorClass_apply]
@@ -349,6 +350,7 @@ lemma classGroupAddEquivUnweightedPicZeroProdInt_divisorClass
   rw [classGroupAddEquivUnweightedPicZeroProdInt_apply]
   refine Prod.ext ?_ ?_
   · apply Subtype.ext
+    -- As above, the unweighted splitting is the weighted splitting specialized to weight `1`.
     change S.degreeCorrection (fun _ : X => (1 : ℤ)) h x₀ (S.divisorClass D) =
       (S.unweightedAbelJacobiDivisorClass h x₀ D : S.ClassGroup)
     rw [S.degreeCorrection_divisorClass, S.coe_unweightedAbelJacobiDivisorClass_apply,
