@@ -25,8 +25,6 @@ deck transformations on individual fibres rather than only on the total space.
 * `TauCeti.Deck.instFiberMulAction`: the induced action of `Deck p` on the fibre over `b`.
 * `TauCeti.Deck.mem_fiber_stabilizer_iff_coe`: membership in a fibre stabilizer is equality
   on the underlying point.
-* `TauCeti.Deck.fiberStabilizerEquivOfEqSMul`: same-orbit fibre points have conjugate
-  stabilizers.
 
 ## References
 
@@ -166,28 +164,6 @@ lemma fiber_smul_coe_eq_smul (φ : Deck p) (e : p ⁻¹' {b}) :
 lemma mem_fiber_stabilizer_iff_coe (φ : Deck p) (e : p ⁻¹' {b}) :
     φ ∈ MulAction.stabilizer (Deck p) e ↔ φ.1 e.1 = e.1 := by
   simp [Subtype.ext_iff]
-
-/-- Stabilizers of two fibre points in the same deck orbit are identified by conjugation. -/
-def fiberStabilizerEquivOfEqSMul (φ : Deck p) {e e' : p ⁻¹' {b}} (hφ : e' = φ • e) :
-    MulAction.stabilizer (Deck p) e ≃* MulAction.stabilizer (Deck p) e' :=
-  MulAction.stabilizerEquivStabilizer hφ
-
-/-- On deck transformations, the same-orbit fibre-stabilizer equivalence is conjugation. -/
-@[simp]
-lemma fiberStabilizerEquivOfEqSMul_apply_coe (φ : Deck p) {e e' : p ⁻¹' {b}}
-    (hφ : e' = φ • e) (ψ : MulAction.stabilizer (Deck p) e) :
-    (fiberStabilizerEquivOfEqSMul φ hφ ψ : Deck p) = φ * ψ.1 * φ⁻¹ := by
-  rw [fiberStabilizerEquivOfEqSMul, MulAction.stabilizerEquivStabilizer_apply]
-  rfl
-
-/-- On deck transformations, the inverse same-orbit fibre-stabilizer equivalence is inverse
-conjugation. -/
-@[simp]
-lemma fiberStabilizerEquivOfEqSMul_symm_apply_coe (φ : Deck p) {e e' : p ⁻¹' {b}}
-    (hφ : e' = φ • e) (ψ : MulAction.stabilizer (Deck p) e') :
-    ((fiberStabilizerEquivOfEqSMul φ hφ).symm ψ : Deck p) = φ⁻¹ * ψ.1 * φ := by
-  rw [fiberStabilizerEquivOfEqSMul, MulAction.stabilizerEquivStabilizer_symm_apply]
-  rfl
 
 end Deck
 
