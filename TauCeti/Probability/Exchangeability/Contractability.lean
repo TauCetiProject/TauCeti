@@ -1,6 +1,7 @@
 module
 
 public import TauCeti.Probability.Exchangeability.Basic
+public import Mathlib.Order.Fin.Basic
 
 /-!
 # Contractability API
@@ -25,6 +26,8 @@ namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
+/-- A contractable process has the same finite-dimensional block law as the corresponding
+prefix law along any strictly increasing finite index map. -/
 theorem Contractable.map {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
     {m : ℕ} {k : Fin m → ℕ} (hk : StrictMono k) :
     blockLaw μ X k = prefixLaw μ X m :=

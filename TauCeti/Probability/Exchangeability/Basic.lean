@@ -2,7 +2,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Map
 public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
-public import Mathlib.Order.Fin.Basic
 public import Mathlib.Tactic.Measurability
 
 /-!
@@ -30,14 +29,12 @@ namespace TauCeti
 
 namespace Probability
 
-variable {Ω α β ι : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+variable {Ω α β : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
-/-- The law of a process along an indexed coordinate selection `k`.
-
-This is finite-dimensional when the index type `ι` is finite; `pathLaw` is the special case
-`ι = ℕ` and `k = id`. -/
+/-- The finite-dimensional law of a process along a coordinate selection `k`. -/
 @[expose]
-def blockLaw (μ : Measure Ω) (X : ℕ → Ω → α) (k : ι → ℕ) : Measure (ι → α) :=
+def blockLaw (μ : Measure Ω) (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ) :
+    Measure (Fin m → α) :=
   μ.map fun ω i => X (k i) ω
 
 /-- The law of the first `n` coordinates of a process. -/
@@ -48,7 +45,7 @@ def prefixLaw (μ : Measure Ω) (X : ℕ → Ω → α) (n : ℕ) : Measure (Fin
 /-- The law of the whole process as a measure on path space. -/
 @[expose]
 def pathLaw (μ : Measure Ω) (X : ℕ → Ω → α) : Measure (ℕ → α) :=
-  blockLaw μ X id
+  μ.map fun ω i => X i ω
 
 /-- Projection from path space to the first `n` coordinates. -/
 @[expose]
@@ -74,7 +71,7 @@ def Exchangeable (μ : Measure Ω) (X : ℕ → Ω → α) : Prop :=
 /-- Full exchangeability: the path law is invariant under every permutation of `ℕ`. -/
 @[expose]
 def FullyExchangeable (μ : Measure Ω) (X : ℕ → Ω → α) : Prop :=
-  ∀ π : Equiv.Perm ℕ, blockLaw μ X π = pathLaw μ X
+  ∀ π : Equiv.Perm ℕ, μ.map (fun ω i => X (π i) ω) = pathLaw μ X
 
 /-- Contractability, or spreadability: finite-dimensional laws are invariant under strictly
 increasing finite subsequences. -/
@@ -83,7 +80,7 @@ def Contractable (μ : Measure Ω) (X : ℕ → Ω → α) : Prop :=
   ∀ (m : ℕ) (k : Fin m → ℕ), StrictMono k → blockLaw μ X k = prefixLaw μ X m
 
 @[simp]
-theorem blockLaw_apply (μ : Measure Ω) (X : ℕ → Ω → α) (k : ι → ℕ) :
+theorem blockLaw_apply (μ : Measure Ω) (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ) :
     blockLaw μ X k = μ.map (fun ω i => X (k i) ω) :=
   rfl
 
@@ -94,7 +91,7 @@ theorem prefixLaw_apply (μ : Measure Ω) (X : ℕ → Ω → α) (n : ℕ) :
 
 @[simp]
 theorem pathLaw_apply (μ : Measure Ω) (X : ℕ → Ω → α) :
-    pathLaw μ X = blockLaw μ X id :=
+    pathLaw μ X = μ.map (fun ω i => X i ω) :=
   rfl
 
 omit [MeasurableSpace α] in
@@ -122,32 +119,32 @@ theorem measurable_shift : Measurable (shift α) := by
 theorem map_prefixProj_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
     (hX : ∀ i, Measurable (X i)) (n : ℕ) :
     (pathLaw μ X).map (prefixProj α n) = prefixLaw μ X n := by
-  rw [pathLaw, prefixLaw, blockLaw, blockLaw]
+  rw [pathLaw_apply, prefixLaw_apply, blockLaw_apply]
   rw [Measure.map_map]
   · rfl
   · exact measurable_prefixProj n
   · exact measurable_pi_lambda (fun ω => fun i => X i ω) fun i => hX i
 
 /-- A coordinatewise measurable map sends block laws to block laws. -/
-theorem map_blockLaw (μ : Measure Ω) {X : ℕ → Ω → α} (k : ι → ℕ)
+theorem map_blockLaw (μ : Measure Ω) {X : ℕ → Ω → α} {m : ℕ} (k : Fin m → ℕ)
     {f : α → β} [MeasurableSpace β] (hf : Measurable f)
-    (hXk : ∀ i : ι, Measurable (X (k i))) :
-    (blockLaw μ X k).map (fun x : ι → α => fun i => f (x i)) =
+    (hXk : ∀ i : Fin m, Measurable (X (k i))) :
+    (blockLaw μ X k).map (fun x : Fin m → α => fun i => f (x i)) =
       blockLaw μ (fun n ω => f (X n ω)) k := by
-  rw [blockLaw, blockLaw]
+  rw [blockLaw_apply, blockLaw_apply]
   rw [Measure.map_map]
   · rfl
-  · exact measurable_pi_lambda (fun x : ι → α => fun i => f (x i)) fun i =>
+  · exact measurable_pi_lambda (fun x : Fin m → α => fun i => f (x i)) fun i =>
       hf.comp (measurable_pi_apply i)
   · exact measurable_pi_lambda (fun ω => fun i => X (k i) ω) hXk
 
 /-- A coordinatewise measurable map sends prefix laws to prefix laws. -/
 theorem map_prefixLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    {f : α → β} [MeasurableSpace β] (hf : Measurable f) (hX : ∀ i, Measurable (X i))
-    (n : ℕ) :
+    {f : α → β} [MeasurableSpace β] (hf : Measurable f)
+    (n : ℕ) (hX : ∀ i : Fin n, Measurable (X i.val)) :
     (prefixLaw μ X n).map (fun x : Fin n → α => fun i => f (x i)) =
       prefixLaw μ (fun n ω => f (X n ω)) n :=
-  map_blockLaw μ (fun i : Fin n => i.val) hf fun i => hX i.val
+  map_blockLaw μ (fun i : Fin n => i.val) hf hX
 
 theorem Exchangeable.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω → α}
     (h : Exchangeable μ X) (n : ℕ) : ExchangeableAt μ X n :=
@@ -160,7 +157,7 @@ theorem ExchangeableAt.permute {μ : Measure Ω} {X : ℕ → Ω → α} {n : �
 
 theorem FullyExchangeable.permute {μ : Measure Ω} {X : ℕ → Ω → α}
     (h : FullyExchangeable μ X) (π : Equiv.Perm ℕ) :
-    blockLaw μ X π = pathLaw μ X :=
+    μ.map (fun ω i => X (π i) ω) = pathLaw μ X :=
   h π
 
 end Probability
