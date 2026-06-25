@@ -150,7 +150,7 @@ lemma mem_fiber_stabilizer_iff_coe (φ : Deck p) (e : p ⁻¹' {b}) :
   simp [Subtype.ext_iff]
 
 /-- Stabilizers of fibre points in the same deck orbit are conjugate. -/
-@[expose] def fiberStabilizerEquivOfEqSMul {e e' : p ⁻¹' {b}} (φ : Deck p)
+def fiberStabilizerEquivOfEqSMul {e e' : p ⁻¹' {b}} (φ : Deck p)
     (hφ : e' = φ • e) :
     MulAction.stabilizer (Deck p) e ≃* MulAction.stabilizer (Deck p) e' :=
   MulAction.stabilizerEquivStabilizer hφ
@@ -189,11 +189,15 @@ lemma mem_stabilizer_conjMulEquiv_fiberMap_iff (h : E ≃ₜ F)
       ext ψ
       constructor
       · rintro ⟨φ, hφ, rfl⟩
+        -- `subgroupMap` leaves a membership goal in the mapped subgroup; unfolding that wrapper
+        -- exposes the stabilizer-membership statement handled by the transport lemma.
         change conjMulEquiv h hpq φ ∈
           MulAction.stabilizer (Deck q) (fiberMap h hpq b e)
         rwa [mem_stabilizer_conjMulEquiv_fiberMap_iff]
       · intro hψ
         refine ⟨(conjMulEquiv h hpq).symm ψ, ?_, by simp⟩
+        -- The preimage witness must be proved in the source stabilizer; this is definitionally
+        -- the subgroup-membership goal produced by `subgroupMap`.
         change (conjMulEquiv h hpq).symm ψ ∈ MulAction.stabilizer (Deck p) e
         apply (mem_stabilizer_conjMulEquiv_fiberMap_iff h hpq
           ((conjMulEquiv h hpq).symm ψ) e).mp
@@ -262,11 +266,15 @@ theorem mem_orbit_fiberMap_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
   · rintro ⟨ψ, hψ⟩
     refine ⟨(conjMulEquiv h hpq).symm ψ, ?_⟩
     apply (fiberMap h hpq b).injective
+    -- Injectivity changes the target to equality after applying the fibre map; the transport
+    -- lemma rewrites that equality to the orbit witness supplied in the target fibre.
     change fiberMap h hpq b ((conjMulEquiv h hpq).symm ψ • e) = fiberMap h hpq b e'
     rw [fiberMap_smul]
     simpa using hψ
   · rintro ⟨φ, hφ⟩
     refine ⟨conjMulEquiv h hpq φ, ?_⟩
+    -- The orbit witness is an equality of target-fibre points; exposing the fibre-map action
+    -- shape lets `fiberMap_smul` turn it into the transported source witness.
     change conjMulEquiv h hpq φ • fiberMap h hpq b e = fiberMap h hpq b e'
     rw [← fiberMap_smul]
     exact congrArg (fiberMap h hpq b) hφ
@@ -282,12 +290,16 @@ theorem mem_orbit_fiberMap_symm_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e
   · rintro ⟨φ, hφ⟩
     refine ⟨conjMulEquiv h hpq φ, ?_⟩
     apply (fiberMap h hpq b).symm.injective
+    -- As above, injectivity over the inverse fibre map leaves a definitional wrapper around the
+    -- transported action, which `fiberMap_symm_smul` is stated to rewrite.
     change (fiberMap h hpq b).symm (conjMulEquiv h hpq φ • f) =
       (fiberMap h hpq b).symm f'
     rw [fiberMap_symm_smul]
     simpa using hφ
   · rintro ⟨ψ, hψ⟩
     refine ⟨(conjMulEquiv h hpq).symm ψ, ?_⟩
+    -- The backward direction similarly exposes the source action so the inverse transport lemma
+    -- can rewrite it to the congruence of the target orbit witness.
     change (conjMulEquiv h hpq).symm ψ • (fiberMap h hpq b).symm f =
       (fiberMap h hpq b).symm f'
     rw [← fiberMap_symm_smul]
