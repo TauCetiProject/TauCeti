@@ -78,6 +78,11 @@ theorem convPoint_eq_one (f : WithConv (R →ₐ[R] A)) : f = 1 := by
   rw [AlgHom.convOne_def]
   exact Subsingleton.elim _ _
 
+/-- The identity normal form for trivial-group convolution points, as a simp proposition. -/
+@[simp]
+theorem convPoint_eq_one_iff (f : WithConv (R →ₐ[R] A)) : f = 1 ↔ True :=
+  ⟨fun _ => trivial, fun _ => convPoint_eq_one f⟩
+
 /-- The underlying algebra map of any trivial-group convolution point is `Algebra.ofId`. -/
 @[simp]
 theorem ofConv_eq_ofId (f : WithConv (R →ₐ[R] A)) :
