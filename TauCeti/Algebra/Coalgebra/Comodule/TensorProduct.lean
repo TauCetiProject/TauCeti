@@ -87,31 +87,21 @@ theorem externalTensorCoact_coassoc_shuffle :
             (coact (R := R) (C := C) (M := M)).rTensor C)
           (TensorProduct.assoc R N D D ∘ₗ
             (coact (R := R) (C := D) (M := N)).rTensor D) := by
-  have hshuffle (x : M ⊗[R] C) (y : N ⊗[R] D) (c : C) (d : D) :
-      (TensorProduct.assoc R (M ⊗[R] N) (C ⊗[R] D) (C ⊗[R] D))
-        ((TensorProduct.tensorTensorTensorComm R M C N D) (x ⊗ₜ[R] y) ⊗ₜ[R]
-          (c ⊗ₜ[R] d)) =
-      (LinearMap.lTensor (M ⊗[R] N) (TensorProduct.tensorTensorTensorComm R C C D D).toLinearMap)
-        ((TensorProduct.tensorTensorTensorComm R M (C ⊗[R] C) N (D ⊗[R] D))
-          ((TensorProduct.assoc R M C C) (x ⊗ₜ[R] c) ⊗ₜ[R]
-            (TensorProduct.assoc R N D D) (y ⊗ₜ[R] d))) := by
-    induction x with
-    | zero => simp only [TensorProduct.zero_tmul, LinearMap.map_zero, LinearEquiv.map_zero]
-    | add x₁ x₂ hx₁ hx₂ =>
-        simp only [TensorProduct.add_tmul, LinearMap.map_add, LinearEquiv.map_add, hx₁, hx₂]
-    | tmul m' c' =>
-        induction y with
-        | zero =>
-            simp only [TensorProduct.tmul_zero, TensorProduct.zero_tmul, LinearMap.map_zero,
-              LinearEquiv.map_zero]
-        | add y₁ y₂ hy₁ hy₂ =>
-            simp only [TensorProduct.tmul_add, TensorProduct.add_tmul, LinearMap.map_add,
-              LinearEquiv.map_add, hy₁, hy₂]
-        | tmul n' d' => simp
+  have hshuffle :
+      TensorProduct.assoc R (M ⊗[R] N) (C ⊗[R] D) (C ⊗[R] D) ∘ₗ
+          (TensorProduct.tensorTensorTensorComm R M C N D).toLinearMap.rTensor
+            (C ⊗[R] D) =
+        LinearMap.lTensor (M ⊗[R] N)
+            (TensorProduct.tensorTensorTensorComm R C C D D).toLinearMap ∘ₗ
+          (TensorProduct.tensorTensorTensorComm R M (C ⊗[R] C) N (D ⊗[R] D)).toLinearMap ∘ₗ
+          TensorProduct.map (TensorProduct.assoc R M C C) (TensorProduct.assoc R N D D) ∘ₗ
+          (TensorProduct.tensorTensorTensorComm R (M ⊗[R] C) (N ⊗[R] D) C D).toLinearMap := by
+    ext m c n d c' d'
+    simp
   ext m c n d
-  simpa [externalTensorCoact] using
-    hshuffle (coact (R := R) (C := C) (M := M) m)
-      (coact (R := R) (C := D) (M := N) n) c d
+  simpa [externalTensorCoact, LinearMap.comp_assoc] using LinearMap.congr_fun hshuffle
+    (coact (R := R) (C := C) (M := M) m ⊗ₜ[R]
+      coact (R := R) (C := D) (M := N) n ⊗ₜ[R] (c ⊗ₜ[R] d))
 
 /-- Coassociativity of the external tensor coaction. -/
 @[simp]
