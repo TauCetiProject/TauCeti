@@ -28,8 +28,8 @@ the full zero-drift jet integrand.
   coefficient gives a symmetric zero-drift jet form.
 * `TauCeti.PDE.energyIntegrand_coefficientSymmetricPart_zero_drift_apply`: the symmetric
   part has zero-drift jet form equal to the average of the original form and its transpose.
-* `TauCeti.PDE.energyIntegrand_coefficientSymmetricPart_zero_drift_self`: the diagonal
-  energy density is unchanged by replacing the principal coefficient by its symmetric part.
+* `TauCeti.PDE.energyIntegrand_coefficientSymmetricPart_self`: the diagonal energy density
+  is unchanged by replacing the principal coefficient by its symmetric part.
 * `TauCeti.PDE.energyIntegrand_zero_drift_comm_on`: a pointwise symmetric coefficient field
   gives symmetric zero-drift jet forms at every point of the domain.
 -/
@@ -89,13 +89,13 @@ lemma energyIntegrand_coefficientSymmetricPart_zero_drift_apply (A : Matrix n n 
   simp [driftForm_apply, massForm_apply, mul_comm, mul_left_comm]
   ring
 
-/-- Replacing the principal coefficient by its symmetric part does not change the
-zero-drift diagonal energy density. -/
+/-- Replacing the principal coefficient by its symmetric part does not change the diagonal
+energy density. -/
 @[simp]
-lemma energyIntegrand_coefficientSymmetricPart_zero_drift_self (A : Matrix n n ℝ)
-    (c : ℝ) (U : ℝ × EuclideanSpace ℝ n) :
-    energyIntegrand (coefficientSymmetricPart A) 0 c U U =
-      energyIntegrand A 0 c U U := by
+lemma energyIntegrand_coefficientSymmetricPart_self (A : Matrix n n ℝ)
+    (b : EuclideanSpace ℝ n) (c : ℝ) (U : ℝ × EuclideanSpace ℝ n) :
+    energyIntegrand (coefficientSymmetricPart A) b c U U =
+      energyIntegrand A b c U U := by
   rw [energyIntegrand_self, energyIntegrand_self, toQuadraticForm'_coefficientSymmetricPart]
 
 /-- The symmetric part always gives a symmetric zero-drift jet form. -/
