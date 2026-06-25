@@ -72,6 +72,19 @@ theorem externalTensorCoact_tmul (m : M) (n : N) :
           coact (R := R) (C := D) (M := N) n) := by
   rfl
 
+omit [Coalgebra R C] [Coalgebra R D] [Comodule R C M] [Comodule R D N] in
+private theorem tensorTensorTensorComm_rTensor_assoc :
+    TensorProduct.assoc R (M ⊗[R] N) (C ⊗[R] D) (C ⊗[R] D) ∘ₗ
+        (TensorProduct.tensorTensorTensorComm R M C N D).toLinearMap.rTensor
+          (C ⊗[R] D) =
+      LinearMap.lTensor (M ⊗[R] N)
+          (TensorProduct.tensorTensorTensorComm R C C D D).toLinearMap ∘ₗ
+        (TensorProduct.tensorTensorTensorComm R M (C ⊗[R] C) N (D ⊗[R] D)).toLinearMap ∘ₗ
+        TensorProduct.map (TensorProduct.assoc R M C C) (TensorProduct.assoc R N D D) ∘ₗ
+        (TensorProduct.tensorTensorTensorComm R (M ⊗[R] C) (N ⊗[R] D) C D).toLinearMap := by
+  ext m c n d c' d'
+  simp
+
 /-- Coherence for the tensor shuffle in the coassociativity proof of the external
 tensor-product coaction. -/
 theorem externalTensorCoact_coassoc_shuffle :
@@ -87,19 +100,9 @@ theorem externalTensorCoact_coassoc_shuffle :
             (coact (R := R) (C := C) (M := M)).rTensor C)
           (TensorProduct.assoc R N D D ∘ₗ
             (coact (R := R) (C := D) (M := N)).rTensor D) := by
-  have hshuffle :
-      TensorProduct.assoc R (M ⊗[R] N) (C ⊗[R] D) (C ⊗[R] D) ∘ₗ
-          (TensorProduct.tensorTensorTensorComm R M C N D).toLinearMap.rTensor
-            (C ⊗[R] D) =
-        LinearMap.lTensor (M ⊗[R] N)
-            (TensorProduct.tensorTensorTensorComm R C C D D).toLinearMap ∘ₗ
-          (TensorProduct.tensorTensorTensorComm R M (C ⊗[R] C) N (D ⊗[R] D)).toLinearMap ∘ₗ
-          TensorProduct.map (TensorProduct.assoc R M C C) (TensorProduct.assoc R N D D) ∘ₗ
-          (TensorProduct.tensorTensorTensorComm R (M ⊗[R] C) (N ⊗[R] D) C D).toLinearMap := by
-    ext m c n d c' d'
-    simp
   ext m c n d
-  simpa [externalTensorCoact, LinearMap.comp_assoc] using LinearMap.congr_fun hshuffle
+  simpa [externalTensorCoact, LinearMap.comp_assoc] using LinearMap.congr_fun
+    (tensorTensorTensorComm_rTensor_assoc (R := R) (C := C) (D := D) (M := M) (N := N))
     (coact (R := R) (C := C) (M := M) m ⊗ₜ[R]
       coact (R := R) (C := D) (M := N) n ⊗ₜ[R] (c ⊗ₜ[R] d))
 
