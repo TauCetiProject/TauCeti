@@ -54,19 +54,15 @@ abbrev point : R →ₐ[R] A :=
 theorem point_apply (r : R) : point (R := R) (A := A) r = algebraMap R A r :=
   rfl
 
-/-- Every `A`-point of the trivial affine group is the canonical algebra map. -/
-theorem point_eq (f : R →ₐ[R] A) : f = point (R := R) (A := A) :=
-  Subsingleton.elim f (point (R := R) (A := A))
-
-/-- Pointwise form of `point_eq`: every point evaluates as the algebra map. -/
+/-- Every point evaluates as the algebra map. -/
 theorem apply_eq_algebraMap (f : R →ₐ[R] A) (r : R) : f r = algebraMap R A r := by
-  rw [point_eq f, point_apply]
+  rw [Algebra.ext_id A f (point (R := R) (A := A)), point_apply]
 
 /-- Algebra maps out of the coordinate Hopf algebra `R` are equivalent to the one-point type. -/
 @[expose] noncomputable def pointEquiv : (R →ₐ[R] A) ≃ PUnit.{1} where
   toFun _ := PUnit.unit
   invFun _ := point (R := R) (A := A)
-  left_inv := fun f => (point_eq f).symm
+  left_inv := fun f => Algebra.ext_id A (point (R := R) (A := A)) f
   right_inv _ := rfl
 
 @[simp]
@@ -120,12 +116,6 @@ theorem convInv_apply (f : WithConv (R →ₐ[R] A)) (r : R) :
 section Naturality
 
 variable {B : Type w} [CommSemiring B] [Algebra R B]
-
-/-- The unique point is natural in the value algebra. -/
-@[simp]
-theorem comp_point (φ : A →ₐ[R] B) :
-    φ.comp (point (R := R) (A := A)) = point (R := R) (A := B) :=
-  point_eq _
 
 /-- The plain points equivalence is natural in the value algebra. -/
 @[simp]
