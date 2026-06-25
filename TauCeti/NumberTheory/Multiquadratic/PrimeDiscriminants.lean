@@ -8,6 +8,7 @@ public import TauCeti.Algebra.Squarefree
 public import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminant
 public import Mathlib.Data.Rat.Lemmas
+import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 
 /-!
 # Prime discriminants
@@ -28,6 +29,8 @@ discriminant `D ∈ {-4, 8, -8}`, the radicand is `D / 4`, so the three even cas
   odd prime discriminants.
 * `TauCeti.Multiquadratic.primeDiscriminantRadicand`: the associated squarefree integer
   radicand.
+* `TauCeti.Multiquadratic.dvd_primeDiscriminant_iff_dvd_radicand`: away from `2`, an integer
+  and its associated radicand have the same prime divisors.
 * `TauCeti.Multiquadratic.squarefree_primeDiscriminantRadicand`: the associated radicand is
   squarefree.
 * `TauCeti.Multiquadratic.not_isSquare_primeDiscriminantRadicand_rat`: the associated rational
@@ -154,6 +157,35 @@ theorem primeDiscriminant_eq_radicand_or_eq_four_mul_radicand {D : ℤ}
       rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hD]
       exact evenPrimeDiscriminant_eq_four_mul_radicand hD
   · exact Or.inl <| by rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd]
+
+variable {q : ℕ} [Fact q.Prime]
+
+/-- Away from `2`, divisibility of an integer is the same as divisibility of its associated
+prime-discriminant radicand. In the even-prime cases the two differ by the square factor
+`4`; in all other cases they are equal. -/
+@[simp]
+theorem dvd_primeDiscriminant_iff_dvd_radicand (D : ℤ) (hq : q ≠ 2) :
+    (q : ℤ) ∣ D ↔ (q : ℤ) ∣ primeDiscriminantRadicand D := by
+  have hq2 : ¬ (q : ℤ) ∣ (2 : ℤ) := by
+    intro hdiv
+    have hdiv_nat : q ∣ 2 := by exact_mod_cast hdiv
+    exact hq ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp hdiv_nat)
+  rcases eq_or_ne D (-4) with rfl | hneg4
+  · simpa [pow_two] using (TauCeti.dvd_mul_sq_iff (p := q) (a := (-1 : ℤ)) (u := 2) hq2)
+  rcases eq_or_ne D 8 with rfl | h8
+  · simpa [pow_two] using (TauCeti.dvd_mul_sq_iff (p := q) (a := (2 : ℤ)) (u := 2) hq2)
+  rcases eq_or_ne D (-8) with rfl | hneg8
+  · simpa [pow_two] using (TauCeti.dvd_mul_sq_iff (p := q) (a := (-2 : ℤ)) (u := 2) hq2)
+  · simp [primeDiscriminantRadicand, hneg4, h8, hneg8]
+
+/-- Away from `2`, an indexed family of integers and its associated prime-discriminant
+radicands have the same unramifiedness condition at `q`. -/
+theorem forall_not_dvd_primeDiscriminant_iff_radicand {ι : Type*} (D : ι → ℤ)
+    (hq : q ≠ 2) :
+    (∀ i, ¬ (q : ℤ) ∣ D i) ↔
+      ∀ i, ¬ (q : ℤ) ∣ primeDiscriminantRadicand (D i) := by
+  refine forall_congr' fun i => ?_
+  exact not_congr (dvd_primeDiscriminant_iff_dvd_radicand (q := q) (D i) hq)
 
 /-- The radicand attached to a prime discriminant is nonzero. -/
 theorem primeDiscriminantRadicand_ne_zero {D : ℤ}
