@@ -35,12 +35,64 @@ will be reused by the classification bookkeeping.
 This supplies a small prerequisite for `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
 items 7 and 8: covers associated to subgroups and the pointed/unpointed Galois
 correspondence, where fibre orbits by subgroups and their transports are part of the
-basepoint bookkeeping.
+basepoint bookkeeping. It is the subgroup-level analogue of
+`TauCeti.AlgebraicTopology.UniversalCover.Deck.FiberOrbit`, adapting that file's
+`fiberOrbitClass`, `fiberOrbitQuotientEquiv`, and fibre transport/conjugation lemmas from the
+full deck group to arbitrary subgroups.
 -/
 
 public section
 
 namespace TauCeti
+
+namespace MulAction
+
+namespace orbitRel
+
+namespace Quotient
+
+variable {Γ α : Type*} [Group Γ] [MulAction Γ α]
+
+/-- If `H ≤ K`, the quotient by `H` maps naturally to the quotient by `K`. -/
+@[expose] def mapOfLE {H K : Subgroup Γ} (hHK : H ≤ K) :
+    MulAction.orbitRel.Quotient H α → MulAction.orbitRel.Quotient K α :=
+  Quotient.map' id fun e e' h => by
+    rw [MulAction.orbitRel_apply] at h ⊢
+    rcases h with ⟨φ, hφ⟩
+    exact ⟨⟨φ.1, hHK φ.2⟩, hφ⟩
+
+/-- The map induced by `H ≤ K` sends the `H`-class of a point to its `K`-class. -/
+@[simp]
+lemma mapOfLE_apply {H K : Subgroup Γ} (hHK : H ≤ K) (a : α) :
+    mapOfLE hHK (Quotient.mk'' a : MulAction.orbitRel.Quotient H α) =
+      (Quotient.mk'' a : MulAction.orbitRel.Quotient K α) :=
+  rfl
+
+/-- The map induced by the identity inclusion is the identity on the orbit quotient. -/
+@[simp]
+lemma mapOfLE_refl (H : Subgroup Γ) :
+    mapOfLE (α := α) (le_rfl : H ≤ H) =
+      id := by
+  ext x
+  refine Quotient.inductionOn' x ?_
+  intro a
+  rfl
+
+/-- The maps induced by subgroup inclusions compose as expected. -/
+@[simp]
+lemma mapOfLE_comp {H K L : Subgroup Γ} (hHK : H ≤ K) (hKL : K ≤ L) :
+    (mapOfLE (α := α) hKL) ∘ mapOfLE (α := α) hHK =
+      mapOfLE (α := α) (hHK.trans hKL) := by
+  ext x
+  refine Quotient.inductionOn' x ?_
+  intro a
+  rfl
+
+end Quotient
+
+end orbitRel
+
+end MulAction
 
 namespace Deck
 
@@ -75,10 +127,7 @@ lemma subgroupFiberOrbitClass_eq_iff (H : Subgroup (Deck p)) (e e' : p ⁻¹' {b
 /-- If `H ≤ K`, the quotient of a fibre by `H` maps naturally to the quotient by `K`. -/
 @[expose] def subgroupFiberOrbitMapOfLE {H K : Subgroup (Deck p)} (hHK : H ≤ K) :
     SubgroupFiberOrbitQuotient H b → SubgroupFiberOrbitQuotient K b :=
-  Quotient.map' id fun e e' h => by
-    rw [MulAction.orbitRel_apply] at h ⊢
-    rcases h with ⟨φ, hφ⟩
-    exact ⟨⟨φ.1, hHK φ.2⟩, hφ⟩
+  MulAction.orbitRel.Quotient.mapOfLE hHK
 
 /-- The map induced by `H ≤ K` sends the `H`-class of a point to its `K`-class. -/
 @[simp]
@@ -94,10 +143,7 @@ quotient. -/
 lemma subgroupFiberOrbitMapOfLE_refl (H : Subgroup (Deck p)) :
     subgroupFiberOrbitMapOfLE (b := b) (le_rfl : H ≤ H) =
       id := by
-  ext x
-  refine Quotient.inductionOn' x ?_
-  intro e
-  rfl
+  exact MulAction.orbitRel.Quotient.mapOfLE_refl (α := p ⁻¹' {b}) H
 
 /-- The maps induced by subgroup inclusions compose as expected. -/
 @[simp]
@@ -106,10 +152,7 @@ lemma subgroupFiberOrbitMapOfLE_comp {H K L : Subgroup (Deck p)}
     (subgroupFiberOrbitMapOfLE (b := b) hKL) ∘
         subgroupFiberOrbitMapOfLE (b := b) hHK =
       subgroupFiberOrbitMapOfLE (b := b) (hHK.trans hKL) := by
-  ext x
-  refine Quotient.inductionOn' x ?_
-  intro e
-  rfl
+  exact MulAction.orbitRel.Quotient.mapOfLE_comp (α := p ⁻¹' {b}) hHK hKL
 
 /-- A subgroup fibre-orbit quotient is subsingleton exactly when that subgroup acts
 transitively on the fibre. -/
@@ -143,13 +186,12 @@ lemma mem_orbit_fiberMap_subgroup_map_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e)
     rcases ψ.2 with ⟨φ, hφH, hφψ⟩
     refine ⟨⟨φ, hφH⟩, ?_⟩
     apply (fiberMap h hpq b).injective
-    change fiberMap h hpq b ((⟨φ, hφH⟩ : H) • e') = fiberMap h hpq b e
     have hψ' : (ψ.1 : Deck q) • fiberMap h hpq b e' = fiberMap h hpq b e := by
       simpa [Subgroup.smul_def] using hψ
     have hφ' : (conjMulEquiv h hpq φ) • fiberMap h hpq b e' =
         fiberMap h hpq b e := by
       exact (congrArg (fun η : Deck q => η • fiberMap h hpq b e') hφψ).trans hψ'
-    rw [Subgroup.smul_def, fiberMap_smul]
+    simp only [Subgroup.smul_def, fiberMap_smul]
     exact hφ'
   · exact fiberMap_mem_orbit_subgroup_map h hpq H
 
@@ -189,6 +231,105 @@ lemma subgroupFiberOrbitQuotientEquiv_symm_apply (h : E ≃ₜ F) (hpq : ∀ e, 
   exact congrArg Quotient.mk''
     (congrArg (fun g : q ⁻¹' {b} ≃ₜ p ⁻¹' {b} => g f)
       (fiberMap_symm (h := h) (hpq := hpq) (b := b))).symm
+
+/-- Casting subgroup fibre-orbit quotients along an equality of subgroups carries the class of
+a point to the corresponding class for the target subgroup. -/
+lemma cast_subgroupFiberOrbitClass {H K : Subgroup (Deck p)} (hHK : H = K) (e : p ⁻¹' {b}) :
+    Equiv.cast (congrArg (fun H' => SubgroupFiberOrbitQuotient H' b) hHK)
+        (subgroupFiberOrbitClass H e) =
+      subgroupFiberOrbitClass K e := by
+  subst hHK
+  rfl
+
+/-- Conjugation by the identity over-base homeomorphism maps a subgroup to itself. -/
+lemma subgroup_map_conj_refl (H : Subgroup (Deck p)) :
+    H.map ((conjMulEquiv (Homeomorph.refl E) (p := p) (q := p)
+      (fun e => by rfl) : Deck p ≃* Deck p) : Deck p →* Deck p) = H := by
+  rw [conjMulEquivRefl]
+  change H.map (MonoidHom.id (Deck p)) = H
+  rw [Subgroup.map_id]
+
+/-- Mapping a subgroup through two successive conjugations agrees with mapping it through the
+conjugation attached to the composite over-base homeomorphism. -/
+lemma subgroup_map_conj_trans (h : E ≃ₜ F) (k : F ≃ₜ G)
+    (hpq : ∀ e, q (h e) = p e) (hqr : ∀ f, r (k f) = q f) (H : Subgroup (Deck p)) :
+    (H.map ((conjMulEquiv h hpq : Deck p ≃* Deck q) : Deck p →* Deck q)).map
+        ((conjMulEquiv k hqr : Deck q ≃* Deck r) : Deck q →* Deck r) =
+      H.map ((conjMulEquiv (h.trans k)
+        (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) : Deck p ≃* Deck r) :
+          Deck p →* Deck r) := by
+  rw [Subgroup.map_map]
+  congr 1
+  ext φ
+  simp
+
+/-- The identity over-base homeomorphism induces the identity on subgroup fibre-orbit
+quotients, up to the canonical rewrite identifying the image of a subgroup under the identity
+conjugation with the original subgroup. -/
+@[simp]
+lemma subgroupFiberOrbitQuotientEquiv_refl (H : Subgroup (Deck p))
+    (x : SubgroupFiberOrbitQuotient H b) :
+    Equiv.cast (congrArg (fun H' => SubgroupFiberOrbitQuotient H' b)
+        (subgroup_map_conj_refl (p := p) H))
+      (subgroupFiberOrbitQuotientEquiv (Homeomorph.refl E) (p := p) (q := p)
+        (fun e => by rfl) H b x) =
+      x := by
+  refine Quotient.inductionOn' x ?_
+  intro e
+  change
+    Equiv.cast (congrArg (fun H' => SubgroupFiberOrbitQuotient H' b)
+        (subgroup_map_conj_refl (p := p) H))
+      (subgroupFiberOrbitQuotientEquiv (Homeomorph.refl E) (p := p) (q := p)
+        (fun e => by rfl) H b (subgroupFiberOrbitClass H e)) =
+      subgroupFiberOrbitClass H e
+  rw [subgroupFiberOrbitQuotientEquiv_apply, fiberMap_refl]
+  exact cast_subgroupFiberOrbitClass (subgroup_map_conj_refl (p := p) H) e
+
+/-- Subgroup fibre-orbit quotient equivalences compose as the underlying over-base
+homeomorphisms compose, with subgroup maps rewritten along conjugation composition. -/
+@[simp]
+lemma subgroupFiberOrbitQuotientEquiv_trans (h : E ≃ₜ F) (k : F ≃ₜ G)
+    (hpq : ∀ e, q (h e) = p e) (hqr : ∀ f, r (k f) = q f) (H : Subgroup (Deck p))
+    (x : SubgroupFiberOrbitQuotient H b) :
+    subgroupFiberOrbitQuotientEquiv (h.trans k)
+        (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) H b x =
+      Equiv.cast (congrArg (fun H' => SubgroupFiberOrbitQuotient H' b)
+        (subgroup_map_conj_trans h k hpq hqr H))
+        (subgroupFiberOrbitQuotientEquiv k hqr
+          (H.map ((conjMulEquiv h hpq : Deck p ≃* Deck q) : Deck p →* Deck q)) b
+          (subgroupFiberOrbitQuotientEquiv h hpq H b x)) := by
+  refine Quotient.inductionOn' x ?_
+  intro e
+  change
+    subgroupFiberOrbitQuotientEquiv (h.trans k)
+        (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) H b
+        (subgroupFiberOrbitClass H e) =
+      Equiv.cast (congrArg (fun H' => SubgroupFiberOrbitQuotient H' b)
+        (subgroup_map_conj_trans h k hpq hqr H))
+        (subgroupFiberOrbitQuotientEquiv k hqr
+          (H.map ((conjMulEquiv h hpq : Deck p ≃* Deck q) : Deck p →* Deck q)) b
+          (subgroupFiberOrbitQuotientEquiv h hpq H b (subgroupFiberOrbitClass H e)))
+  rw [subgroupFiberOrbitQuotientEquiv_apply, subgroupFiberOrbitQuotientEquiv_apply,
+    subgroupFiberOrbitQuotientEquiv_apply]
+  rw [← fiberMap_trans (h := h) (k := k) (p := p) (q := q) (r := r)
+    (hpq := hpq) (hqr := hqr) (b := b)]
+  exact (cast_subgroupFiberOrbitClass (subgroup_map_conj_trans h k hpq hqr H)
+    (fiberMap k hqr b (fiberMap h hpq b e))).symm
+
+/-- Transport of subgroup fibre-orbit quotients is natural with respect to maps induced by
+subgroup inclusions. -/
+@[simp]
+lemma subgroupFiberOrbitQuotientEquiv_mapOfLE (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
+    {H K : Subgroup (Deck p)} (hHK : H ≤ K) :
+    (subgroupFiberOrbitQuotientEquiv h hpq K b) ∘
+        subgroupFiberOrbitMapOfLE (b := b) hHK =
+      subgroupFiberOrbitMapOfLE (b := b) (Subgroup.map_mono
+        (f := ((conjMulEquiv h hpq : Deck p ≃* Deck q) : Deck p →* Deck q)) hHK) ∘
+        subgroupFiberOrbitQuotientEquiv h hpq H b := by
+  ext x
+  refine Quotient.inductionOn' x ?_
+  intro e
+  rfl
 
 /-- The quotient by the full deck group is the previously defined deck fibre-orbit quotient. -/
 @[expose] def subgroupFiberOrbitQuotientTopEquiv :
