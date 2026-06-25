@@ -37,6 +37,8 @@ equation `two_mul_characteristicWeight`, with no integer division to discharge.
   `χ_{-k}(-x) = χ_k(x)`.
 * `TauCeti.PlumbingGraph.characteristicWeight_conjugate_add`: the linear relation
   `χ_{-k}(x) + χ_k(x) = -(x · x)`.
+* `TauCeti.PlumbingGraph.characteristicWeight_conjugate_canonical_single`: the conjugate
+  canonical weight on a plumbing basis sphere.
 
 ## References
 
@@ -103,6 +105,17 @@ theorem characteristicWeight_conjugate_add (k : P.characteristicVectors) (x : V 
     rw [mul_add, two_mul_characteristicWeight, two_mul_characteristicWeight, conjugate_val,
       characteristicWeightNumerator_neg_left]
     ring
+  omega
+
+/-- The conjugate of the canonical characteristic covector has weight `-P.weight v - 1` on the
+plumbing basis sphere at `v`. -/
+@[simp]
+theorem characteristicWeight_conjugate_canonical_single (v : V) :
+    P.characteristicWeight
+      (P.conjugate ⟨P.canonicalCharacteristic, P.isCharacteristicVector_canonicalCharacteristic⟩)
+      (Pi.single v 1) = -P.weight v - 1 := by
+  rw [characteristicWeight_single, conjugate_val]
+  simp only [Pi.neg_apply, canonicalCharacteristic_apply]
   omega
 
 end Form
