@@ -33,7 +33,7 @@ for `IsSemigroupGroupPD` as the positive-definite predicate on `ℝ≥0 × V` wi
 * `TauCeti.isSemigroupGroupPD_def`: the definitional bridge to the associated
   positive-definite kernel.
 * `TauCeti.isSemigroupGroupPD_iff`: the finite quadratic-form characterization.
-* `TauCeti.IsSemigroupGroupPD.conj_symm` and origin lemmas: basic consequences of the
+* `TauCeti.IsSemigroupGroupPD.conj_symm`, diagonal, and origin lemmas: basic consequences of the
   semigroup-group positive-definiteness condition.
 * `TauCeti.IsSemigroupGroupPD.add`, `TauCeti.IsSemigroupGroupPD.mul`, and finite
   `sum`/`prod`: closure properties inherited from positive-definite kernels.
@@ -132,29 +132,51 @@ theorem conj_symm (hF : IsSemigroupGroupPD F) (p q : ℝ≥0 × V) :
     conj (F (p.1 + q.1, p.2 - q.2)) = F (q.1 + p.1, q.2 - p.2) :=
   isPositiveDefiniteKernel_conj_symm hF.isPositiveDefiniteKernel p q
 
+/-- Values of a semigroup-group positive-definite function on the time diagonal `(t + t, 0)` are
+real and nonnegative. -/
+theorem diagonal_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) : 0 ≤ F (t + t, 0) := by
+  simpa using isPositiveDefiniteKernel_apply_self_nonneg hF.isPositiveDefiniteKernel (t, 0)
+
+/-- Values of a semigroup-group positive-definite function on the time diagonal `(t + t, 0)` have
+zero imaginary part. -/
+@[simp]
+theorem diagonal_im (hF : IsSemigroupGroupPD F) (t : ℝ≥0) : (F (t + t, 0)).im = 0 :=
+  ((Complex.nonneg_iff.mp (hF.diagonal_nonneg t)).2).symm
+
+/-- The real part of a semigroup-group positive-definite function on the time diagonal
+`(t + t, 0)` is nonnegative. -/
+theorem diagonal_re_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
+    0 ≤ (F (t + t, 0)).re :=
+  (Complex.nonneg_iff.mp (hF.diagonal_nonneg t)).1
+
+/-- A semigroup-group positive-definite function on the time diagonal `(t + t, 0)` is equal to
+its real part, viewed as a complex number. -/
+theorem diagonal_eq_ofReal_re (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
+    F (t + t, 0) = ((F (t + t, 0)).re : ℂ) := by
+  apply Complex.ext
+  · simp
+  · simpa using hF.diagonal_im t
+
 /-- The value of a semigroup-group positive-definite function at `(0, 0)` is real and
 nonnegative. -/
 theorem map_zero_nonneg (hF : IsSemigroupGroupPD F) : 0 ≤ F (0, 0) := by
-  simpa using isPositiveDefiniteKernel_apply_self_nonneg hF.isPositiveDefiniteKernel
-    ((0, 0) : ℝ≥0 × V)
+  simpa using hF.diagonal_nonneg 0
 
 /-- The value of a semigroup-group positive-definite function at `(0, 0)` has zero imaginary
 part. -/
 @[simp]
 theorem map_zero_im (hF : IsSemigroupGroupPD F) : (F (0, 0)).im = 0 :=
-  ((Complex.nonneg_iff.mp hF.map_zero_nonneg).2).symm
+  by simpa using hF.diagonal_im 0
 
 /-- The real part of the value of a semigroup-group positive-definite function at `(0, 0)` is
 nonnegative. -/
 theorem map_zero_re_nonneg (hF : IsSemigroupGroupPD F) : 0 ≤ (F (0, 0)).re :=
-  (Complex.nonneg_iff.mp hF.map_zero_nonneg).1
+  by simpa using hF.diagonal_re_nonneg 0
 
 /-- The value at `(0, 0)` of a semigroup-group positive-definite function is equal to its real
 part, viewed as a complex number. -/
 theorem map_zero_eq_ofReal_re (hF : IsSemigroupGroupPD F) : F (0, 0) = ((F (0, 0)).re : ℂ) := by
-  apply Complex.ext
-  · simp
-  · simpa using hF.map_zero_im
+  simpa using hF.diagonal_eq_ofReal_re 0
 
 /-- Semigroup-group positive-definite functions are closed under addition. -/
 theorem add (hF : IsSemigroupGroupPD F) (hG : IsSemigroupGroupPD G) :
