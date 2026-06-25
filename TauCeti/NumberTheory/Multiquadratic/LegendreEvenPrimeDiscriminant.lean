@@ -103,14 +103,7 @@ theorem legendreSym_evenPrimeDiscriminantRadicand_neg_four_eq_one_iff (hq : q �
   · push_cast
     rw [ZMod.exists_sq_eq_neg_one_iff]
     have hodd : q % 2 = 1 := (Nat.Prime.eq_two_or_odd Fact.out).resolve_left hq
-    constructor
-    · intro hχ
-      rcases Nat.odd_mod_four_iff.mp hodd with hq1 | hq3
-      · exact hq1
-      · exact absurd hq3 hχ
-    · intro hq1
-      rw [hq1]
-      norm_num
+    omega
   · norm_num [ZMod.intCast_zmod_eq_zero_iff_dvd]
 
 /-- The radicand `2` of the prime discriminant `8` is a quadratic residue modulo an odd
@@ -137,7 +130,7 @@ theorem legendreSym_evenPrimeDiscriminantRadicand_neg_eight_eq_one_iff (hq : q �
 
 /-- The radicand of a variable even prime discriminant is a quadratic residue modulo an odd
 prime `q` exactly under the corresponding supplementary congruence condition. -/
-@[simp] theorem legendreSym_evenPrimeDiscriminantRadicand_eq_one_iff {D : ℤ}
+theorem legendreSym_evenPrimeDiscriminantRadicand_eq_one_iff {D : ℤ}
     (hD : IsEvenPrimeDiscriminant D) (hq : q ≠ 2) :
     legendreSym q (evenPrimeDiscriminantRadicand D) = 1 ↔
       if D = -4 then q % 4 = 1
