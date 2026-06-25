@@ -1,6 +1,7 @@
 module
 
 public import Mathlib.MeasureTheory.Measure.Map
+public import Mathlib.MeasureTheory.Measure.AEMeasurable
 public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
 public import Mathlib.Tactic.Measurability
 
@@ -117,31 +118,30 @@ theorem measurable_shift : Measurable (shift α) := by
 
 /-- The prefix law is the pushforward of the path law by `prefixProj`. -/
 theorem map_prefixProj_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, Measurable (X i)) (n : ℕ) :
+    (hX : AEMeasurable (fun ω => fun i => X i ω) μ) (n : ℕ) :
     (pathLaw μ X).map (prefixProj α n) = prefixLaw μ X n := by
   rw [pathLaw_apply, prefixLaw_apply, blockLaw_apply]
-  rw [Measure.map_map]
-  · rfl
-  · exact measurable_prefixProj n
-  · exact measurable_pi_lambda (fun ω => fun i => X i ω) fun i => hX i
+  rw [AEMeasurable.map_map_of_aemeasurable (measurable_prefixProj n).aemeasurable hX,
+    Function.comp_def]
+  rfl
 
 /-- A coordinatewise measurable map sends block laws to block laws. -/
 theorem map_blockLaw (μ : Measure Ω) {X : ℕ → Ω → α} {m : ℕ} (k : Fin m → ℕ)
     {f : α → β} [MeasurableSpace β] (hf : Measurable f)
-    (hXk : ∀ i : Fin m, Measurable (X (k i))) :
+    (hXk : ∀ i : Fin m, AEMeasurable (X (k i)) μ) :
     (blockLaw μ X k).map (fun x : Fin m → α => fun i => f (x i)) =
       blockLaw μ (fun n ω => f (X n ω)) k := by
   rw [blockLaw_apply, blockLaw_apply]
-  rw [Measure.map_map]
+  rw [AEMeasurable.map_map_of_aemeasurable]
   · rfl
-  · exact measurable_pi_lambda (fun x : Fin m → α => fun i => f (x i)) fun i =>
-      hf.comp (measurable_pi_apply i)
-  · exact measurable_pi_lambda (fun ω => fun i => X (k i) ω) hXk
+  · exact (measurable_pi_lambda (fun x : Fin m → α => fun i => f (x i)) fun i =>
+      hf.comp (measurable_pi_apply i)).aemeasurable
+  · exact aemeasurable_pi_lambda (fun ω => fun i => X (k i) ω) hXk
 
 /-- A coordinatewise measurable map sends prefix laws to prefix laws. -/
 theorem map_prefixLaw (μ : Measure Ω) {X : ℕ → Ω → α}
     {f : α → β} [MeasurableSpace β] (hf : Measurable f)
-    (n : ℕ) (hX : ∀ i : Fin n, Measurable (X i.val)) :
+    (n : ℕ) (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) :
     (prefixLaw μ X n).map (fun x : Fin n → α => fun i => f (x i)) =
       prefixLaw μ (fun n ω => f (X n ω)) n :=
   map_blockLaw μ (fun i : Fin n => i.val) hf hX
