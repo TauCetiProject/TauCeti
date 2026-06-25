@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.BaseChange
 /-!
 # Base change of additive-group points
 
-The vector group attached to a `k`-module `M` is represented by the symmetric Hopf algebra
+The vector group attached to a `k`-module `M` is represented by the symmetric bialgebra
 `SymmetricAlgebra k M`. This file records the base-changed functor-of-points calculation:
 if `K` is a `k`-algebra and `A` is a commutative `K`-algebra, then the convolution monoid of
 `K`-algebra maps out of `K ⊗[k] SymmetricAlgebra k M` is the additive monoid of `k`-linear
@@ -23,13 +23,13 @@ the inverse map on scalar multiples of generators, naturality in the value algeb
 one-dimensional additive group `𝔾ₐ`.
 
 This is the additive-group worked example from the ReductiveGroups roadmap, combined with
-the Layer 0 base-change target for Hopf algebras and their functors of points.
+the Layer 0 base-change target for coordinate bialgebras and their functors of points.
 
 ## Main declarations
 
 * `TauCeti.AdditiveGroup.baseChangePointsMulEquiv`: base-changed vector-group points are
   `k`-linear maps `M →ₗ[k] A`.
-* `TauCeti.AdditiveGroup.baseChangePointsMulEquiv_apply_apply`: the equivalence reads a
+* `TauCeti.AdditiveGroup.toAdd_baseChangePointsMulEquiv_apply`: the equivalence reads a
   point on `1 ⊗ ι(m)`.
 * `TauCeti.AdditiveGroup.baseChangePointsMulEquiv_symm_apply_tmul_ι`: the inverse
   equivalence evaluates scalar multiples of base-changed generators.
@@ -39,7 +39,9 @@ the Layer 0 base-change target for Hopf algebras and their functors of points.
 ## References
 
 The generic base-change step is Tau Ceti's `AlgHom.baseChangePointsMulEquiv`; the vector-group
-points calculation is Tau Ceti's `AdditiveGroup.pointsMulEquiv`.
+points calculation is Tau Ceti's `AdditiveGroup.pointsMulEquiv`. This specialization follows
+the API pattern of `RootsOfUnityGroup.baseChangePointsMulEquiv`,
+`SplitTorus.baseChangePointsMulEquiv`, and `DiagonalizableGroup.baseChangePointsMulEquiv`.
 -/
 
 public section
@@ -61,7 +63,7 @@ variable [AddCommMonoid M] [Module k M]
 /-- The `A`-points of the base change `K ⊗[k] SymmetricAlgebra k M` of the vector group on
 `M` are the additive monoid of `k`-linear maps `M →ₗ[k] A`.
 
-The source is the convolution monoid of `K`-algebra maps out of the base-changed Hopf algebra;
+The source is the convolution monoid of `K`-algebra maps out of the base-changed bialgebra;
 the target is written multiplicatively as `Multiplicative (M →ₗ[k] A)` to match `≃*`. -/
 noncomputable def baseChangePointsMulEquiv :
     WithConv (K ⊗[k] SymmetricAlgebra k M →ₐ[K] A) ≃* Multiplicative (M →ₗ[k] A) :=
@@ -72,7 +74,7 @@ noncomputable def baseChangePointsMulEquiv :
 /-- The base-changed vector-group points equivalence reads a point by evaluating it on the
 base-changed generator `1 ⊗ ι(m)`. -/
 @[simp]
-theorem baseChangePointsMulEquiv_apply_apply
+theorem toAdd_baseChangePointsMulEquiv_apply
     (F : WithConv (K ⊗[k] SymmetricAlgebra k M →ₐ[K] A)) (m : M) :
     Multiplicative.toAdd (baseChangePointsMulEquiv F) m =
       F.ofConv (1 ⊗ₜ[k] ι k M m) := by
@@ -114,9 +116,10 @@ theorem toAdd_baseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
         (Multiplicative.toAdd
           (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (M := M) F)) := by
   ext m
-  rw [baseChangePointsMulEquiv_apply_apply, LinearMap.comp_apply,
-    baseChangePointsMulEquiv_apply_apply]
-  rfl
+  rw [toAdd_baseChangePointsMulEquiv_apply, LinearMap.comp_apply,
+    toAdd_baseChangePointsMulEquiv_apply, AlgHom.mapValue_apply, ofConv_toConv,
+    AlgHom.comp_apply]
+  rw [LinearMap.restrictScalars_apply, AlgHom.toLinearMap_apply]
 
 /-- Naturality of the base-changed vector-group points equivalence in the value algebra. -/
 @[simp]
@@ -176,6 +179,45 @@ theorem gaBaseChangePointsMulEquiv_symm_apply_ι (a : Multiplicative A) :
   rw [gaBaseChangePointsMulEquiv, MulEquiv.symm_trans_apply,
     baseChangePointsMulEquiv_symm_apply_ι]
   simp
+
+/-- Reading a base-changed `𝔾ₐ`-point as an element of the value algebra is natural in the
+value algebra: post-composing the point with a `K`-algebra map applies that map to the
+corresponding element. -/
+@[simp]
+theorem toAdd_gaBaseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
+    (F : WithConv (K ⊗[k] SymmetricAlgebra k k →ₐ[K] A)) :
+    Multiplicative.toAdd
+        (gaBaseChangePointsMulEquiv
+          (AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k k) ψ F)) =
+      ψ (Multiplicative.toAdd
+        (gaBaseChangePointsMulEquiv (k := k) (K := K) (A := A) F)) := by
+  rw [toAdd_gaBaseChangePointsMulEquiv, toAdd_gaBaseChangePointsMulEquiv,
+    AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
+
+/-- The base-changed `𝔾ₐ` points equivalence is natural in the value algebra. -/
+@[simp]
+theorem gaBaseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
+    (F : WithConv (K ⊗[k] SymmetricAlgebra k k →ₐ[K] A)) :
+    gaBaseChangePointsMulEquiv
+        (AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k k) ψ F) =
+      Multiplicative.ofAdd
+        (ψ (Multiplicative.toAdd
+          (gaBaseChangePointsMulEquiv (k := k) (K := K) (A := A) F))) := by
+  exact congrArg Multiplicative.ofAdd (toAdd_gaBaseChangePointsMulEquiv_mapValue ψ F)
+
+/-- Naturality of the inverse base-changed `𝔾ₐ` points equivalence in the value algebra. -/
+@[simp]
+theorem mapValue_gaBaseChangePointsMulEquiv_symm_apply (ψ : A →ₐ[K] B)
+    (a : Multiplicative A) :
+    AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k k) ψ
+        ((gaBaseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm a) =
+      (gaBaseChangePointsMulEquiv (k := k) (K := K) (A := B)).symm
+        (Multiplicative.ofAdd (ψ (Multiplicative.toAdd a))) := by
+  apply (gaBaseChangePointsMulEquiv (k := k) (K := K) (A := B)).injective
+  rw [gaBaseChangePointsMulEquiv_mapValue]
+  rw [(gaBaseChangePointsMulEquiv (k := k) (K := K) (A := A)).apply_symm_apply a]
+  exact ((gaBaseChangePointsMulEquiv (k := k) (K := K) (A := B)).apply_symm_apply
+    (Multiplicative.ofAdd (ψ (Multiplicative.toAdd a)))).symm
 
 end Ga
 
