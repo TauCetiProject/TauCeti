@@ -61,52 +61,20 @@ lemma subgroupOrbitClass_eq_iff (H : Subgroup (Deck p)) (e e' : E) :
   rw [subgroupOrbitClass_eq_mk, subgroupOrbitClass_eq_mk, Quotient.eq'',
     MulAction.orbitRel_apply]
 
+/-- The action of a deck subgroup on the total space is the ambient deck action after
+coercing the subgroup element. -/
+@[simp]
+lemma subgroup_smul_eq_deck_smul (H : Subgroup (Deck p)) (φ : H) (e : E) :
+    φ • e = ((φ : Deck p) • e) :=
+  rfl
+
 /-- Points related by the action of a subgroup of the deck group have the same projection. -/
 lemma eq_proj_of_subgroupOrbitRel (H : Subgroup (Deck p)) {e e' : E}
     (h : MulAction.orbitRel H E e e') : p e = p e' := by
   rw [MulAction.orbitRel_apply] at h
   rcases h with ⟨φ, hφ⟩
   rw [← hφ]
-  -- Normalize the subgroup action to the ambient deck action so `map_proj` applies.
-  change p ((φ : Deck p) • e') = p e'
-  simpa only [smul_eq_apply] using map_proj (φ : Deck p) e'
-
-/-- Inclusion of subgroups induces a map between the corresponding orbit quotients. -/
-@[expose] def subgroupOrbitQuotientMap {H K : Subgroup (Deck p)} (hHK : H ≤ K) :
-    SubgroupOrbitQuotient p H → SubgroupOrbitQuotient p K :=
-  Quotient.map' id fun e e' h => by
-    rw [MulAction.orbitRel_apply] at h ⊢
-    rcases h with ⟨φ, hφ⟩
-    refine ⟨⟨φ, hHK φ.2⟩, ?_⟩
-    -- The same ambient deck transformation is being viewed in two subgroup actions.
-    change ((φ : Deck p) • e') = e
-    change ((φ : Deck p) • e') = e at hφ
-    exact hφ
-
-/-- The map induced by subgroup inclusion evaluates on representatives by the identity. -/
-@[simp]
-lemma subgroupOrbitQuotientMap_mk {H K : Subgroup (Deck p)} (hHK : H ≤ K) (e : E) :
-    subgroupOrbitQuotientMap hHK (Quotient.mk'' e : SubgroupOrbitQuotient p H) =
-      (Quotient.mk'' e : SubgroupOrbitQuotient p K) :=
-  rfl
-
-/-- The identity inclusion induces the identity on the subgroup-orbit quotient. -/
-@[simp]
-lemma subgroupOrbitQuotientMap_refl (H : Subgroup (Deck p)) :
-    subgroupOrbitQuotientMap (le_refl H) = id := by
-  ext x
-  induction x using Quotient.inductionOn' with
-  | h e => rfl
-
-/-- The maps induced by subgroup inclusions compose as expected. -/
-@[simp]
-lemma subgroupOrbitQuotientMap_comp {H K L : Subgroup (Deck p)} (hHK : H ≤ K)
-    (hKL : K ≤ L) :
-    subgroupOrbitQuotientMap (hHK.trans hKL) =
-      subgroupOrbitQuotientMap hKL ∘ subgroupOrbitQuotientMap hHK := by
-  ext x
-  induction x using Quotient.inductionOn' with
-  | h e => rfl
+  simpa [subgroup_smul_eq_deck_smul] using map_proj (φ : Deck p) e'
 
 /-- The natural map from the quotient by a subgroup of the deck group to the quotient by the
 full deck group. -/
@@ -144,6 +112,11 @@ lemma orbitQuotientToBase_subgroupOrbitQuotientToDeckOrbitQuotient
   | h e => rfl
 
 section Topology
+
+/-- The natural map from a subgroup-orbit quotient to the deck-orbit quotient is continuous. -/
+lemma continuous_subgroupOrbitQuotientToDeckOrbitQuotient (H : Subgroup (Deck p)) :
+    Continuous (subgroupOrbitQuotientToDeckOrbitQuotient H) :=
+  continuous_id.quotient_map' (MulAction.orbitRel_subgroup_le H)
 
 variable [TopologicalSpace B]
 
