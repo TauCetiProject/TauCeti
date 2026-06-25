@@ -136,40 +136,11 @@ lemma fiberHomeomorphHom_conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p
   ext f
   simp
 
-/-- Membership in the stabilizer of a fibre point is the statement that the restricted deck
-action fixes that point. -/
-@[simp, grind =]
-lemma mem_fiber_stabilizer_iff (φ : Deck p) (e : p ⁻¹' {b}) :
-    φ ∈ MulAction.stabilizer (Deck p) e ↔ φ • e = e :=
-  MulAction.mem_stabilizer_iff
-
 /-- Membership in the stabilizer of a fibre point is equality on the underlying point. -/
 @[simp, grind =]
 lemma mem_fiber_stabilizer_iff_coe (φ : Deck p) (e : p ⁻¹' {b}) :
     φ ∈ MulAction.stabilizer (Deck p) e ↔ φ.1 e.1 = e.1 := by
   simp [Subtype.ext_iff]
-
-/-- Stabilizers of fibre points in the same deck orbit are conjugate. -/
-def fiberStabilizerEquivOfEqSMul {e e' : p ⁻¹' {b}} (φ : Deck p)
-    (hφ : e' = φ • e) :
-    MulAction.stabilizer (Deck p) e ≃* MulAction.stabilizer (Deck p) e' :=
-  MulAction.stabilizerEquivStabilizer hφ
-
-/-- The same-orbit stabilizer equivalence is conjugation by the deck transformation carrying
-one fibre point to the other. -/
-@[simp]
-lemma fiberStabilizerEquivOfEqSMul_apply {e e' : p ⁻¹' {b}} (φ : Deck p)
-    (hφ : e' = φ • e) (ψ : MulAction.stabilizer (Deck p) e) :
-    fiberStabilizerEquivOfEqSMul φ hφ ψ = MulAut.conj φ ψ := by
-  exact MulAction.stabilizerEquivStabilizer_apply hφ ψ
-
-/-- The inverse same-orbit stabilizer equivalence is conjugation by the inverse deck
-transformation. -/
-@[simp]
-lemma fiberStabilizerEquivOfEqSMul_symm_apply {e e' : p ⁻¹' {b}} (φ : Deck p)
-    (hφ : e' = φ • e) (ψ : MulAction.stabilizer (Deck p) e') :
-    (fiberStabilizerEquivOfEqSMul φ hφ).symm ψ = MulAut.conj φ⁻¹ ψ := by
-  exact MulAction.stabilizerEquivStabilizer_symm_apply hφ ψ
 
 /-- Conjugation transports stabilizer membership along the fibre map. -/
 @[simp, grind =]
@@ -179,12 +150,12 @@ lemma mem_stabilizer_conjMulEquiv_fiberMap_iff (h : E ≃ₜ F)
       φ ∈ MulAction.stabilizer (Deck p) e := by
   constructor
   · intro hφ
-    rw [mem_fiber_stabilizer_iff] at hφ ⊢
+    rw [MulAction.mem_stabilizer_iff] at hφ ⊢
     apply (fiberMap h hpq b).injective
     rw [fiberMap_smul]
     exact hφ
   · intro hφ
-    rw [mem_fiber_stabilizer_iff] at hφ ⊢
+    rw [MulAction.mem_stabilizer_iff] at hφ ⊢
     rw [← fiberMap_smul, hφ]
 
 /-- Conjugation maps the source fibre stabilizer onto the transported target fibre
