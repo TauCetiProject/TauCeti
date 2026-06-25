@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+import Mathlib.GroupTheory.GroupAction.SubMulAction.OfFixingSubgroup
+
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Topology.Algebra.HomeomorphAction
 public import TauCeti.Algebra.GroupAction.FixingSubgroup
@@ -34,6 +36,7 @@ relative subgroup is closed are deliberately left to the later `C^∞`-topology 
 * `fixingSubgroup_empty` / `fixingSubgroup_univ`: the empty-set fixer is all of `Diff(M)`, and
   the whole-space fixer is trivial.
 * `fixingSubgroup_antitone`: fixing a larger set gives a smaller subgroup.
+* `fixingSubgroup_le_stabilizer`: pointwise fixing a subset implies stabilizing it setwise.
 * `toHomeomorph_mem_fixingSubgroup`: forgetting smoothness sends a relative diffeomorphism to the
   corresponding relative homeomorphism.
 -/
@@ -103,6 +106,12 @@ theorem fixingSubgroup_congr {s t : Set M} (hst : s = t) :
     fixingSubgroup (I := I) (n := n) s = fixingSubgroup (I := I) (n := n) t := by
   subst t
   rfl
+
+/-- The pointwise fixer of a subset is contained in its setwise stabilizer. -/
+theorem fixingSubgroup_le_stabilizer (s : Set M) :
+    fixingSubgroup (I := I) (n := n) s ≤
+      MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) s := by
+  exact MulAction.fixingSubgroup_le_stabilizer (M ≃ₘ^n⟮I, I⟯ M) s
 
 /-- Fixing `s ∪ t` pointwise is the same as fixing both `s` and `t` pointwise. -/
 @[simp]
