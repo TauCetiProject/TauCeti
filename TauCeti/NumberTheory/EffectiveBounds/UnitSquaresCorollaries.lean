@@ -28,6 +28,10 @@ Dirichlet's unit theorem again.
   `[O_F^× : (O_F^×)^2] ≤ 4`.
 * `TauCeti.NumberField.card_units_elementaryTwoQuotient_le_of_finrank_le`: the same bound for the
   cardinality of the elementary-2 quotient `O_F^×/(O_F^×)^2`.
+* `TauCeti.NumberField.card_units_elementaryTwoQuotient_le_of_finrank_eq_one`: the
+  degree-one quotient cardinality bound.
+* `TauCeti.NumberField.card_units_elementaryTwoQuotient_rat_le_two`: the quotient cardinality
+  bound for the unit group of the ring of integers of `ℚ`.
 * `TauCeti.NumberField.card_units_elementaryTwoQuotient_le_of_finrank_le_two`: the quotient
   cardinality bound specialized to `[F : ℚ] ≤ 2`.
 
@@ -99,6 +103,19 @@ theorem card_units_elementaryTwoQuotient_le_of_finrank_eq
     (F : Type*) [Field F] [NumberField F] {n : ℕ} (hn : finrank ℚ F = n) :
     Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤ 2 ^ n :=
   card_units_elementaryTwoQuotient_le_of_finrank_le F (le_of_eq hn)
+
+/-- In a degree-one number field, the elementary-2 quotient `O_F^×/(O_F^×)^2` has at most two
+elements. -/
+theorem card_units_elementaryTwoQuotient_le_of_finrank_eq_one
+    (F : Type*) [Field F] [NumberField F] (hF : finrank ℚ F = 1) :
+    Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤ 2 := by
+  simpa using card_units_elementaryTwoQuotient_le_of_finrank_eq F hF
+
+/-- The elementary-2 quotient of `ℤˣ` has at most two elements, viewed as the unit group of the
+ring of integers of `ℚ`. -/
+theorem card_units_elementaryTwoQuotient_rat_le_two :
+    Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 ℚ)ˣ) ≤ 2 :=
+  card_units_elementaryTwoQuotient_le_of_finrank_eq_one ℚ (finrank_self ℚ)
 
 /-- If `[F : ℚ] ≤ 2`, then the elementary-2 quotient `O_F^×/(O_F^×)^2` has at most four
 elements. -/
