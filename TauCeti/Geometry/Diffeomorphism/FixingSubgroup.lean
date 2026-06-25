@@ -6,7 +6,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Topology.Algebra.HomeomorphAction
-public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
+public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfFixingSubgroup
 
 /-!
 # Diffeomorphisms fixing a subset pointwise
@@ -34,7 +34,6 @@ relative subgroup is closed are deliberately left to the later `C^∞`-topology 
 * `fixingSubgroup_empty` / `fixingSubgroup_univ`: the empty-set fixer is all of `Diff(M)`, and
   the whole-space fixer is trivial.
 * `fixingSubgroup_antitone`: fixing a larger set gives a smaller subgroup.
-* `fixingSubgroup_le_stabilizer`: pointwise fixers preserve the set setwise.
 * `toHomeomorph_mem_fixingSubgroup`: forgetting smoothness sends a relative diffeomorphism to the
   corresponding relative homeomorphism.
 -/
@@ -113,14 +112,6 @@ theorem fixingSubgroup_union (s t : Set M) :
     fixingSubgroup (I := I) (n := n) (s ∪ t) =
       fixingSubgroup (I := I) (n := n) s ⊓ fixingSubgroup (I := I) (n := n) t := by
   exact _root_.fixingSubgroup_union (M := M ≃ₘ^n⟮I, I⟯ M) (α := M)
-
-/-- Pointwise fixers preserve the fixed subset setwise. -/
-theorem fixingSubgroup_le_stabilizer (s : Set M) :
-    fixingSubgroup (I := I) (n := n) s ≤
-      MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) s :=
-  (MulAction.le_stabilizer_iff_smul_le s _).mpr fun f hf x hx => by
-    rcases hx with ⟨y, hy, rfl⟩
-    simpa [apply_eq_of_mem_fixingSubgroup hf hy] using hy
 
 /-- A relative diffeomorphism fixes every point of the subset defining it. -/
 @[simp]
