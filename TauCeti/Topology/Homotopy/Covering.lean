@@ -18,6 +18,8 @@ loop class to its monodromy translate of `e`.
 
 * `TauCeti.IsCoveringMap.fundamentalGroupEquivFiber`: the monodromy bijection
   `FundamentalGroup X x ≃ p ⁻¹' {x}`, `γ ↦ monodromy γ e`.
+* `TauCeti.IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply`: the inverse sends a
+  fibre point to the loop class whose monodromy translate of the chosen lift is that point.
 
 ## References
 
