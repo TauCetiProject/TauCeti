@@ -322,17 +322,16 @@ lemma lower_bound_toQuadraticForm'_add {A B : Matrix n n ℝ} {lam : ℝ}
   rw [toQuadraticForm'_add]
   exact (hA ξ).trans (le_add_of_nonneg_right (hB ξ))
 
-/-- Adding a coefficient whose quadratic form is bounded in absolute value lowers a
-quadratic lower bound by the size of that perturbation. -/
-lemma lower_bound_toQuadraticForm'_add_of_abs_le {A B : Matrix n n ℝ} {lam Mu : ℝ}
+/-- Adding a coefficient with a one-sided quadratic lower bound lowers a quadratic lower
+bound by the size of that perturbation. -/
+lemma lower_bound_toQuadraticForm'_add_of_lower_bound {A B : Matrix n n ℝ} {lam Mu : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hB : ∀ ξ : EuclideanSpace ℝ n, |B.toQuadraticForm' ξ| ≤ Mu * ‖ξ‖ ^ 2)
+    (hB : ∀ ξ : EuclideanSpace ℝ n, -(Mu * ‖ξ‖ ^ 2) ≤ B.toQuadraticForm' ξ)
     (ξ : EuclideanSpace ℝ n) :
     (lam - Mu) * ‖ξ‖ ^ 2 ≤ (A + B).toQuadraticForm' ξ := by
   rw [toQuadraticForm'_add]
-  have hB_lower : -(Mu * ‖ξ‖ ^ 2) ≤ B.toQuadraticForm' ξ := by
-    exact (neg_le_neg (hB ξ)).trans (neg_abs_le (B.toQuadraticForm' ξ))
   have hA_lower := hA ξ
+  have hB_lower := hB ξ
   nlinarith
 
 /-- A bilinear upper bound for a coefficient matrix bounds its quadratic form in absolute
@@ -559,8 +558,11 @@ lemma add_bounded (h : UniformlyEllipticOn Ω a lam Lam) {b : X → Matrix n n �
   refine UniformlyEllipticOn.of_bounds (sub_pos.mpr hMu_lt) ?_ (fun {x} hx ξ => ?_)
     (fun {x} hx η ξ => ?_)
   · linarith [h.le, hMu_nonneg]
-  · exact lower_bound_toQuadraticForm'_add_of_abs_le (h.lower_bound hx)
-      (abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le (hb_upper hx)) ξ
+  · refine lower_bound_toQuadraticForm'_add_of_lower_bound (h.lower_bound hx) ?_ ξ
+    intro ζ
+    exact (neg_le_neg
+      (abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le (hb_upper hx) ζ)).trans
+      (neg_abs_le ((b x).toQuadraticForm' ζ))
   · exact abs_dotProduct_add_mulVec_le (h.upper_bound hx) (hb_upper hx) η ξ
 
 /-- Adding a bounded scalar multiple of the identity preserves uniform ellipticity after
@@ -579,10 +581,10 @@ lemma add_smul_one_bounded (h : UniformlyEllipticOn Ω a lam Lam) {c : X → ℝ
 /-- Adding a constant bounded scalar multiple of the identity preserves uniform ellipticity
 after reducing the lower ellipticity constant by the absolute value bound. -/
 lemma add_const_smul_one_bounded (h : UniformlyEllipticOn Ω a lam Lam) {c Mu : ℝ}
-    (hMu_nonneg : 0 ≤ Mu) (hMu_lt : Mu < lam) (hc_abs : |c| ≤ Mu) :
+    (hMu_lt : Mu < lam) (hc_abs : |c| ≤ Mu) :
     UniformlyEllipticOn Ω (fun y => a y + c • (1 : Matrix n n ℝ)) (lam - Mu)
       (Lam + Mu) :=
-  h.add_smul_one_bounded hMu_nonneg hMu_lt (fun {_} _ => hc_abs)
+  h.add_smul_one_bounded ((abs_nonneg c).trans hc_abs) hMu_lt (fun {_} _ => hc_abs)
 
 /-- Adding a bounded nonnegative scalar multiple of the identity preserves uniform
 ellipticity, with the upper constant increased by the scalar bound. -/
