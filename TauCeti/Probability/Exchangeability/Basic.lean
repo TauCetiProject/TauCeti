@@ -1,4 +1,6 @@
-import Mathlib.Probability.Process.FiniteDimensionalLaws
+module
+
+public import Mathlib.Probability.Process.FiniteDimensionalLaws
 
 /-!
 # Basic exchangeability definitions
@@ -12,6 +14,8 @@ These declarations follow the roadmap signatures in
 `TauCetiRoadmap/Exchangeability/README.md` and
 `TauCetiRoadmap/Exchangeability/Targets.lean`, Layer 0.
 -/
+
+@[expose] public section
 
 noncomputable section
 
