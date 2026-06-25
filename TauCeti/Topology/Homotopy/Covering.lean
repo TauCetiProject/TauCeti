@@ -41,13 +41,14 @@ variable {A : Type*} [TopologicalSpace A]
 open FundamentalGroup in
 /-- The fundamental-group subgroup condition for lifting `f : A → X` through the covering map
 `p : E → X`, with the chosen point `a₀` lifted to `e₀`. -/
-@[expose] def IsCoveringMap.LiftCondition (hp : IsCoveringMap p) (f : C(A, X)) (a₀ : A)
+def IsCoveringMap.LiftCondition (hp : IsCoveringMap p) (f : C(A, X)) (a₀ : A)
     (e₀ : E) (he : p e₀ = f a₀) : Prop :=
   (map f a₀).range ≤ (mapOfEq ⟨p, hp.continuous⟩ he).range
 
 open FundamentalGroup in
 /-- `LiftCondition` is exactly Mathlib's subgroup-inclusion hypothesis for the covering-space
 lifting criterion. -/
+@[simp]
 theorem IsCoveringMap.liftCondition_iff_range_le (hp : IsCoveringMap p) (f : C(A, X)) (a₀ : A)
     (e₀ : E) (he : p e₀ = f a₀) :
     IsCoveringMap.LiftCondition hp f a₀ e₀ he ↔
