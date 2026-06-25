@@ -46,8 +46,12 @@ variable {R : Type u} {A : Type v}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 
 /-- The unique `A`-point of the trivial affine group represented by the Hopf algebra `R`. -/
-abbrev point : R →ₐ[R] A :=
+def point : R →ₐ[R] A :=
   Algebra.ofId R A
+
+@[simp]
+theorem point_apply (r : R) : point (R := R) (A := A) r = algebraMap R A r :=
+  Algebra.ofId_apply (R := R) (A := A) r
 
 /-- Algebra maps out of the coordinate Hopf algebra `R` are equivalent to the one-point type. -/
 @[expose] noncomputable def pointEquiv : (R →ₐ[R] A) ≃ PUnit.{1} where
@@ -96,6 +100,15 @@ theorem convPoint_eq_one (f : WithConv (R →ₐ[R] A)) : f = 1 := by
   rw [AlgHom.convOne_def]
   exact Subsingleton.elim _ _
 
+@[simp]
+theorem convPoint_ofConv (f : WithConv (R →ₐ[R] A)) :
+    f.ofConv = point (R := R) (A := A) :=
+  Subsingleton.elim _ _
+
+@[simp]
+theorem toConv_eq_one (f : R →ₐ[R] A) : toConv f = (1 : WithConv (R →ₐ[R] A)) :=
+  convPoint_eq_one (toConv f)
+
 /-- Evaluating the inverse of a trivial-group point gives the algebra map. -/
 @[simp]
 theorem convInv_apply (f : WithConv (R →ₐ[R] A)) (r : R) :
@@ -114,6 +127,12 @@ theorem pointEquiv_comp (φ : A →ₐ[R] B) (f : R →ₐ[R] A) :
     pointEquiv (R := R) (A := B) (φ.comp f) =
       pointEquiv (R := R) (A := A) f :=
   rfl
+
+/-- The unique trivial-group point is natural in the value algebra. -/
+@[simp]
+theorem comp_point (φ : A →ₐ[R] B) :
+    φ.comp (point (R := R) (A := A)) = point (R := R) (A := B) := by
+  rw [point, point, Algebra.comp_ofId]
 
 /-- The trivial-group points equivalence is natural in the value algebra. -/
 @[simp]
