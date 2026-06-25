@@ -29,7 +29,7 @@ exponents of the `U`-powers in the later lattice-homology differential.
   ambient cube weight.
 * `TauCeti.PlumbingGraph.characteristicLowerFaceExponent` and
   `TauCeti.PlumbingGraph.characteristicUpperFaceExponent`: the corresponding natural-number
-  weight differences.
+  weight differences for directions in the cube.
 
 ## References
 
@@ -93,38 +93,40 @@ theorem characteristicUpperFaceWeight_le {x : V → ℤ} {S : Finset V} {v : V} 
   exact P.characteristicWeight_le_characteristicCubeWeight k
     (cubeVertices_upperFace_subset hv hy)
 
-/-- The nonnegative `U`-exponent contributed by the lower face of a cube. -/
+/-- The nonnegative `U`-exponent contributed by the lower face of a cube in a direction of the
+cube. -/
 noncomputable def characteristicLowerFaceExponent
-    (x : V → ℤ) (S : Finset V) (v : V) : ℕ :=
+    (x : V → ℤ) (S : Finset V) (v : V) (_hv : v ∈ S) : ℕ :=
   Int.toNat (P.characteristicCubeWeight k x S -
     P.characteristicCubeWeight k x (S.erase v))
 
 /-- The lower-face exponent, cast back to `ℤ`, is the difference between the ambient cube weight
 and the lower face weight. -/
-theorem characteristicLowerFaceExponent_intCast (x : V → ℤ) (S : Finset V) (v : V) :
-    (P.characteristicLowerFaceExponent k x S v : ℤ) =
+theorem characteristicLowerFaceExponent_intCast
+    {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
+    (P.characteristicLowerFaceExponent k x S v hv : ℤ) =
       P.characteristicCubeWeight k x S - P.characteristicCubeWeight k x (S.erase v) := by
   rw [characteristicLowerFaceExponent]
   exact Int.toNat_of_nonneg (sub_nonneg.mpr (P.characteristicLowerFaceWeight_le k x S v))
 
 /-- The lower-face exponent is zero exactly when the lower face has the same weight as the
 ambient cube. -/
-theorem characteristicLowerFaceExponent_eq_zero_iff (x : V → ℤ) (S : Finset V) (v : V) :
-    P.characteristicLowerFaceExponent k x S v = 0 ↔
+theorem characteristicLowerFaceExponent_eq_zero_iff
+    {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
+    P.characteristicLowerFaceExponent k x S v hv = 0 ↔
       P.characteristicCubeWeight k x S = P.characteristicCubeWeight k x (S.erase v) := by
   constructor
   · intro h
     have hcast := congrArg (fun n : ℕ => (n : ℤ)) h
-    rw [characteristicLowerFaceExponent_intCast] at hcast
+    rw [characteristicLowerFaceExponent_intCast (P := P) (k := k) hv] at hcast
     omega
   · intro h
     rw [characteristicLowerFaceExponent, h, sub_self, Int.toNat_zero]
 
 /-- The nonnegative `U`-exponent contributed by the upper face of a cube in a direction `v`.
-When `v ∉ S`, this still returns the formal difference for the erased-direction expression; the
-cast-back theorem below records the intended boundary-face case `v ∈ S`. -/
+The membership hypothesis records that the upper face is a genuine face of the cube. -/
 noncomputable def characteristicUpperFaceExponent
-    (x : V → ℤ) (S : Finset V) (v : V) : ℕ :=
+    (x : V → ℤ) (S : Finset V) (v : V) (_hv : v ∈ S) : ℕ :=
   Int.toNat (P.characteristicCubeWeight k x S -
     P.characteristicCubeWeight k (x + Pi.single v (1 : ℤ)) (S.erase v))
 
@@ -132,7 +134,7 @@ noncomputable def characteristicUpperFaceExponent
 and the upper face weight. -/
 theorem characteristicUpperFaceExponent_intCast
     {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
-    (P.characteristicUpperFaceExponent k x S v : ℤ) =
+    (P.characteristicUpperFaceExponent k x S v hv : ℤ) =
       P.characteristicCubeWeight k x S -
         P.characteristicCubeWeight k (x + Pi.single v (1 : ℤ)) (S.erase v) := by
   rw [characteristicUpperFaceExponent]
@@ -142,7 +144,7 @@ theorem characteristicUpperFaceExponent_intCast
 ambient cube. -/
 theorem characteristicUpperFaceExponent_eq_zero_iff
     {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
-    P.characteristicUpperFaceExponent k x S v = 0 ↔
+    P.characteristicUpperFaceExponent k x S v hv = 0 ↔
       P.characteristicCubeWeight k x S =
         P.characteristicCubeWeight k (x + Pi.single v (1 : ℤ)) (S.erase v) := by
   constructor
@@ -152,13 +154,6 @@ theorem characteristicUpperFaceExponent_eq_zero_iff
     omega
   · intro h
     rw [characteristicUpperFaceExponent, h, sub_self, Int.toNat_zero]
-
-/-- For a zero-dimensional cube, the lower-face exponent is zero. -/
-@[simp]
-theorem characteristicLowerFaceExponent_empty (x : V → ℤ) (v : V) :
-    P.characteristicLowerFaceExponent k x ∅ v = 0 := by
-  rw [characteristicLowerFaceExponent_eq_zero_iff]
-  simp
 
 end PlumbingGraph
 
