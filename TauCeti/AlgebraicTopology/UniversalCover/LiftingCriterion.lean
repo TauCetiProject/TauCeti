@@ -9,9 +9,9 @@ public import Mathlib.Topology.Homotopy.Lifting
 /-!
 # The lifting criterion for covering maps
 
-This file records the covering-space lifting criterion in the form needed by the universal
-covers roadmap. Mathlib already proves the theorem; Tau Ceti only packages the precise
-subgroup condition and gives local names for the general criterion stated with that condition.
+This file records the covering-space lifting criterion's subgroup condition in the form needed
+by the universal covers roadmap. Mathlib already proves the theorem; Tau Ceti only packages the
+precise subgroup condition.
 
 For a covering map `p : E → X`, a continuous map `f : A → X`, a base point `a₀ : A`, and a
 chosen lift `e₀ : E` of `f a₀`, the condition is the usual
@@ -23,15 +23,15 @@ In Lean this is the subgroup inclusion
 `(FundamentalGroup.map f a₀).range ≤
   (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ he).range`.
 
-The theorem then gives a unique continuous lift `F : C(A, E)` with `F a₀ = e₀` and
-`p ∘ F = f`, under the standard hypotheses that `A` is path connected and locally path
-connected.
+Mathlib's theorem `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le` then gives a
+unique continuous lift `F : C(A, E)` with `F a₀ = e₀` and `p ∘ F = f`, under the standard
+hypotheses that `A` is path connected and locally path connected.
 
 ## Main declarations
 
 * `TauCeti.IsCoveringMap.LiftCondition`: the fundamental-group subgroup inclusion.
-* `TauCeti.IsCoveringMap.existsUnique_lift_of_liftCondition`: the general lifting
-  criterion.
+* `TauCeti.IsCoveringMap.liftCondition_iff_range_le`: `LiftCondition` unfolds to Mathlib's
+  range-inclusion hypothesis.
 
 ## References
 
@@ -69,32 +69,6 @@ lemma liftCondition_iff_range_le (hp : IsCoveringMap p) (f : C(A, X)) (a₀ : A)
       (FundamentalGroup.map f a₀).range ≤
         (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ he).range :=
   Iff.rfl
-
-/-- The covering-space lifting criterion, stated using the named lifting condition.
-
-If `A` is path connected and locally path connected, a continuous map `f : A → X` has a unique
-lift through the covering map `p : E → X` taking `a₀` to the chosen point `e₀`, provided
-`f_*(π₁(A, a₀)) ≤ p_*(π₁(E, e₀))`. -/
-theorem existsUnique_lift_of_liftCondition (hp : IsCoveringMap p)
-    [PathConnectedSpace A] [LocallyPathConnectedSpace A] {f : C(A, X)} {a₀ : A} {e₀ : E}
-    (he : p e₀ = f a₀) (h : LiftCondition hp f a₀ e₀ he) :
-    ∃! F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
-  hp.existsUnique_continuousMap_lifts_of_range_le he h
-
-/-- Existence part of the covering-space lifting criterion. -/
-theorem exists_lift_of_liftCondition (hp : IsCoveringMap p)
-    [PathConnectedSpace A] [LocallyPathConnectedSpace A] {f : C(A, X)} {a₀ : A} {e₀ : E}
-    (he : p e₀ = f a₀) (h : LiftCondition hp f a₀ e₀ he) :
-    ∃ F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
-  (existsUnique_lift_of_liftCondition hp he h).exists
-
-/-- Uniqueness part of the covering-space lifting criterion. -/
-theorem lift_unique_of_liftCondition (hp : IsCoveringMap p)
-    [PathConnectedSpace A] [LocallyPathConnectedSpace A] {f : C(A, X)} {a₀ : A} {e₀ : E}
-    (he : p e₀ = f a₀) (h : LiftCondition hp f a₀ e₀ he) {F G : C(A, E)}
-    (hF : F a₀ = e₀ ∧ p ∘ F = f) (hG : G a₀ = e₀ ∧ p ∘ G = f) :
-    F = G :=
-  (existsUnique_lift_of_liftCondition hp he h).unique hF hG
 
 end IsCoveringMap
 
