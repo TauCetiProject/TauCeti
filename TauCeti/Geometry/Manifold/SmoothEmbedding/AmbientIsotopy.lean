@@ -23,8 +23,6 @@ specialise further when they need differentiable isotopies.
 
 ## Main definitions
 
-* `TauCeti.SmoothEmbedding.toContinuousMap`: the continuous map underlying a bundled smooth
-  embedding.
 * `TauCeti.SmoothEmbedding.AmbientIsotopic`: two bundled smooth embeddings are ambient isotopic
   when their underlying continuous maps are ambient isotopic.
 * `TauCeti.SmoothEmbedding.AmbientIsotopic.setoid`: ambient isotopy as a setoid on bundled smooth
@@ -53,46 +51,19 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   {n : ℕ∞ω}
 
-/-- The continuous map underlying a bundled smooth embedding. -/
-@[expose]
-def toContinuousMap (f : SmoothEmbedding I J n M N) : C(M, N) where
-  toFun := f
-  continuous_toFun := f.contMDiff.continuous
-
-@[simp]
-theorem toContinuousMap_apply (f : SmoothEmbedding I J n M N) (x : M) :
-    f.toContinuousMap x = f x :=
-  rfl
-
-@[simp]
-theorem coe_toContinuousMap (f : SmoothEmbedding I J n M N) :
-    ⇑f.toContinuousMap = f :=
-  rfl
-
-/-- The underlying continuous map determines a bundled smooth embedding. -/
-theorem toContinuousMap_injective :
-    Function.Injective (toContinuousMap : SmoothEmbedding I J n M N → C(M, N)) := by
-  intro f g h
-  ext x
-  exact congr_fun (congrArg DFunLike.coe h) x
-
-@[simp]
-theorem toContinuousMap_inj {f g : SmoothEmbedding I J n M N} :
-    f.toContinuousMap = g.toContinuousMap ↔ f = g :=
-  toContinuousMap_injective.eq_iff
-
 variable {f g h : SmoothEmbedding I J n M N}
 
 /-- Two bundled smooth embeddings are ambient isotopic when their underlying continuous maps are
 ambient isotopic. This is the continuous topological relation, not a smooth ambient isotopy. -/
-@[expose] def AmbientIsotopic (f g : SmoothEmbedding I J n M N) : Prop :=
+def AmbientIsotopic (f g : SmoothEmbedding I J n M N) : Prop :=
   TauCeti.AmbientIsotopic f.toContinuousMap g.toContinuousMap
 
-/-- Ambient isotopy of bundled smooth embeddings is ambient isotopy of their underlying
-continuous maps. -/
+/-- Ambient isotopy of bundled smooth embeddings is witnessed by an ambient isotopy whose final
+homeomorphism postcomposes the first underlying continuous map to the second. -/
 theorem ambientIsotopic_def :
-    AmbientIsotopic f g ↔ TauCeti.AmbientIsotopic f.toContinuousMap g.toContinuousMap :=
-  Iff.rfl
+    AmbientIsotopic f g ↔
+      ∃ Φ : TauCeti.AmbientIsotopy N, Φ.final.comp f.toContinuousMap = g.toContinuousMap :=
+  TauCeti.ambientIsotopic_def
 
 namespace AmbientIsotopic
 
@@ -104,7 +75,7 @@ theorem of_ambientIsotopy (Φ : TauCeti.AmbientIsotopy N)
 
 /-- A symmetric form of `SmoothEmbedding.AmbientIsotopic.of_ambientIsotopy`, useful when the
 endpoint equation is oriented as `g = Φ.final ∘ f`. -/
-theorem of_eq_final (Φ : TauCeti.AmbientIsotopy N)
+theorem of_eq_final_comp (Φ : TauCeti.AmbientIsotopy N)
     (hΦ : g.toContinuousMap = Φ.final.comp f.toContinuousMap) : AmbientIsotopic f g :=
   of_ambientIsotopy Φ hΦ.symm
 
