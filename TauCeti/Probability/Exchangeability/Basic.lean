@@ -41,11 +41,6 @@ def pathLaw (μ : Measure Ω) (X : ℕ → Ω → α) : Measure (ℕ → α) :=
 def finiteDimensionalLaw (μ : Measure Ω) (X : ℕ → Ω → α) (I : Finset ℕ) : Measure (I → α) :=
   μ.map (fun ω => I.restrict (pathMap X ω))
 
-/-- Projection from path space to the coordinates indexed by a finite set. -/
-def finiteDimensionalProj (α : Type*) [MeasurableSpace α] (I : Finset ℕ) (x : ℕ → α) :
-    I → α :=
-  I.restrict x
-
 /-- Projection from path space to the first `n` coordinates. -/
 def prefixProj (α : Type*) (n : ℕ) (x : ℕ → α) : Fin n → α :=
   fun i => x i.val
@@ -57,11 +52,6 @@ def prefixLaw (μ : Measure Ω) (X : ℕ → Ω → α) (n : ℕ) : Measure (Fin
 omit [MeasurableSpace Ω] [MeasurableSpace α] in
 @[simp]
 lemma pathMap_apply (X : ℕ → Ω → α) (ω : Ω) (i : ℕ) : pathMap X ω i = X i ω :=
-  rfl
-
-@[simp]
-lemma finiteDimensionalProj_apply (I : Finset ℕ) (x : ℕ → α) (i : I) :
-    finiteDimensionalProj α I x i = x i :=
   rfl
 
 omit [MeasurableSpace α] in
@@ -80,11 +70,6 @@ lemma aemeasurable_pathMap (hX : ∀ i, AEMeasurable (X i) μ) :
     AEMeasurable (pathMap X) μ :=
   aemeasurable_pi_lambda _ hX
 
-/-- Measurability of a finite-dimensional projection on path space. -/
-lemma measurable_finiteDimensionalProj (I : Finset ℕ) :
-    Measurable (finiteDimensionalProj α I) :=
-  Finset.measurable_restrict I
-
 /-- Measurability of the prefix projection on path space. -/
 lemma measurable_prefixProj (n : ℕ) : Measurable (prefixProj α n) :=
   measurable_pi_iff.mpr fun i => measurable_pi_apply i.val
@@ -92,8 +77,8 @@ lemma measurable_prefixProj (n : ℕ) : Measurable (prefixProj α n) :=
 /-- The finite-dimensional law is the image of the path law under the corresponding
 finite-dimensional projection. -/
 lemma finiteDimensionalLaw_eq_map_pathLaw (hX : ∀ i, Measurable (X i)) (I : Finset ℕ) :
-    finiteDimensionalLaw μ X I = (pathLaw μ X).map (finiteDimensionalProj α I) := by
-  rw [finiteDimensionalLaw, pathLaw, Measure.map_map (measurable_finiteDimensionalProj I)
+    finiteDimensionalLaw μ X I = (pathLaw μ X).map (fun x => I.restrict x) := by
+  rw [finiteDimensionalLaw, pathLaw, Measure.map_map (Finset.measurable_restrict I)
     (measurable_pathMap hX)]
   rfl
 
@@ -120,8 +105,8 @@ lemma finiteDimensionalLaw_reindex (f : ℕ → ℕ) (I : Finset ℕ) :
   rfl
 
 /-- The finite-dimensional law over `I` can be read directly from the path law. -/
-lemma pathLaw_map_finiteDimensionalProj (hX : ∀ i, Measurable (X i)) (I : Finset ℕ) :
-    (pathLaw μ X).map (finiteDimensionalProj α I) = finiteDimensionalLaw μ X I :=
+lemma pathLaw_map_restrict (hX : ∀ i, Measurable (X i)) (I : Finset ℕ) :
+    (pathLaw μ X).map (fun x => I.restrict x) = finiteDimensionalLaw μ X I :=
   (finiteDimensionalLaw_eq_map_pathLaw hX I).symm
 
 /-- The prefix law can be read directly from the path law. -/
