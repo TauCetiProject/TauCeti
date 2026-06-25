@@ -80,15 +80,15 @@ theorem characteristicUpperFaceWeight_le {x : V → ℤ} {S : Finset V} {v : V} 
 
 /-- The nonnegative `U`-exponent contributed by the lower face in a cube direction. -/
 noncomputable def characteristicLowerFaceExponent
-    (x : V → ℤ) (S : Finset V) {v : V} (_hv : v ∈ S) : ℕ :=
+    (x : V → ℤ) (S : Finset V) (v : V) : ℕ :=
   Int.toNat (P.characteristicCubeWeight k x S -
     P.characteristicCubeWeight k x (S.erase v))
 
 /-- The lower-face exponent, cast back to `ℤ`, is the difference between the ambient cube weight
 and the lower face weight. -/
 theorem characteristicLowerFaceExponent_natCast
-    {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
-    (P.characteristicLowerFaceExponent k x S hv : ℤ) =
+    {x : V → ℤ} {S : Finset V} (v : V) :
+    (P.characteristicLowerFaceExponent k x S v : ℤ) =
       P.characteristicCubeWeight k x S - P.characteristicCubeWeight k x (S.erase v) := by
   rw [characteristicLowerFaceExponent]
   exact Int.toNat_of_nonneg
@@ -97,13 +97,13 @@ theorem characteristicLowerFaceExponent_natCast
 /-- The lower-face exponent is zero exactly when the lower face has the same weight as the
 ambient cube. -/
 theorem characteristicLowerFaceExponent_eq_zero_iff
-    {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
-    P.characteristicLowerFaceExponent k x S hv = 0 ↔
+    {x : V → ℤ} {S : Finset V} (v : V) :
+    P.characteristicLowerFaceExponent k x S v = 0 ↔
       P.characteristicCubeWeight k x S = P.characteristicCubeWeight k x (S.erase v) := by
   constructor
   · intro h
     have hcast := congrArg (fun n : ℕ => (n : ℤ)) h
-    rw [characteristicLowerFaceExponent_natCast (P := P) (k := k) hv] at hcast
+    rw [characteristicLowerFaceExponent_natCast (P := P) (k := k) v] at hcast
     omega
   · intro h
     rw [characteristicLowerFaceExponent, h, sub_self, Int.toNat_zero]
