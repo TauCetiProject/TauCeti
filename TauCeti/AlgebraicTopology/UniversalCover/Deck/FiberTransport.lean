@@ -180,34 +180,42 @@ lemma mem_stabilizer_conjMulEquiv_fiberMap_iff (h : E ≃ₜ F)
     rw [← fiberMap_smul, hφ]
 
 /-- Fibre transport identifies stabilizers, using conjugation on deck transformations. -/
-@[expose] def fiberMapStabilizerEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
+abbrev fiberMapStabilizerEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (e : p ⁻¹' {b}) :
     MulAction.stabilizer (Deck p) e ≃*
-      MulAction.stabilizer (Deck q) (fiberMap h hpq b e) :=
-  ((conjMulEquiv h hpq).subgroupMap (MulAction.stabilizer (Deck p) e)).trans <|
-    MulEquiv.subgroupCongr <| by
-      ext ψ
-      constructor
-      · rintro ⟨φ, hφ, rfl⟩
-        -- `subgroupMap` leaves a membership goal in the mapped subgroup; unfolding that wrapper
-        -- exposes the stabilizer-membership statement handled by the transport lemma.
-        change conjMulEquiv h hpq φ ∈
-          MulAction.stabilizer (Deck q) (fiberMap h hpq b e)
-        rwa [mem_stabilizer_conjMulEquiv_fiberMap_iff]
-      · intro hψ
-        refine ⟨(conjMulEquiv h hpq).symm ψ, ?_, by simp⟩
-        -- The preimage witness must be proved in the source stabilizer; this is definitionally
-        -- the subgroup-membership goal produced by `subgroupMap`.
-        change (conjMulEquiv h hpq).symm ψ ∈ MulAction.stabilizer (Deck p) e
-        apply (mem_stabilizer_conjMulEquiv_fiberMap_iff h hpq
-          ((conjMulEquiv h hpq).symm ψ) e).mp
-        simpa using hψ
+      MulAction.stabilizer (Deck q) (fiberMap h hpq b e) where
+  toFun φ :=
+    ⟨conjMulEquiv h hpq φ.1,
+      (mem_stabilizer_conjMulEquiv_fiberMap_iff h hpq φ.1 e).mpr φ.2⟩
+  invFun ψ :=
+    ⟨(conjMulEquiv h hpq).symm ψ.1, by
+      apply (mem_stabilizer_conjMulEquiv_fiberMap_iff h hpq
+        ((conjMulEquiv h hpq).symm ψ.1) e).mp
+      simp [ψ.2]⟩
+  left_inv φ := by
+    ext
+    simp
+  right_inv ψ := by
+    ext
+    simp
+  map_mul' φ ψ := by
+    ext
+    simp
 
 /-- On deck transformations, the fibre-map stabilizer equivalence is conjugation. -/
 @[simp]
 lemma fiberMapStabilizerEquiv_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (e : p ⁻¹' {b}) (φ : MulAction.stabilizer (Deck p) e) :
     (fiberMapStabilizerEquiv h hpq e φ : Deck q) = conjMulEquiv h hpq φ.1 :=
+  rfl
+
+/-- On deck transformations, the inverse fibre-map stabilizer equivalence is inverse
+conjugation. -/
+@[simp]
+lemma fiberMapStabilizerEquiv_symm_apply_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
+    (e : p ⁻¹' {b}) (ψ : MulAction.stabilizer (Deck q) (fiberMap h hpq b e)) :
+    ((fiberMapStabilizerEquiv h hpq e).symm ψ : Deck p) =
+      (conjMulEquiv h hpq).symm ψ.1 :=
   rfl
 
 /-- Applying a deck transformation and then transporting to the target fibre gives a point in
