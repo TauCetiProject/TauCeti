@@ -24,6 +24,8 @@ loop class to its monodromy translate of `e`.
   continuous map through a covering map.
 * `TauCeti.IsCoveringMap.liftCondition_iff_range_le`: `LiftCondition` unfolded as Mathlib's
   subgroup-inclusion hypothesis.
+* `TauCeti.IsCoveringMap.existsUnique_continuousMap_lifts_of_liftCondition`: the covering-space
+  lifting criterion stated using `LiftCondition`.
 * `TauCeti.IsCoveringMap.liftCondition_of_simplyConnected`: simply connected domains satisfy
   the lifting condition.
 
@@ -56,6 +58,16 @@ theorem IsCoveringMap.liftCondition_iff_range_le (hp : IsCoveringMap p) (f : C(A
     IsCoveringMap.LiftCondition hp f a₀ e₀ he ↔
       (map f a₀).range ≤ (mapOfEq ⟨p, hp.continuous⟩ he).range :=
   Iff.rfl
+
+/-- A covering-space lifting criterion stated using `LiftCondition`: if the induced
+fundamental-group map for `f` lands in the subgroup induced by `p`, then `f` has a unique lift
+sending `a₀` to `e₀`. -/
+theorem IsCoveringMap.existsUnique_continuousMap_lifts_of_liftCondition
+    [PathConnectedSpace A] [LocallyPathConnectedSpace A]
+    (hp : IsCoveringMap p) {f : C(A, X)} {a₀ : A} {e₀ : E} (he : p e₀ = f a₀)
+    (h : IsCoveringMap.LiftCondition hp f a₀ e₀ he) :
+    ∃! F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
+  hp.existsUnique_continuousMap_lifts_of_range_le he h
 
 /-- A simply connected domain satisfies the lifting condition for every chosen lift of a
 basepoint. -/
