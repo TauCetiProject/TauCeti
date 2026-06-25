@@ -163,6 +163,14 @@ lemma fiberStabilizerEquivOfEqSMul_apply {e e' : p ⁻¹' {b}} (φ : Deck p)
     fiberStabilizerEquivOfEqSMul φ hφ ψ = MulAut.conj φ ψ := by
   exact MulAction.stabilizerEquivStabilizer_apply hφ ψ
 
+/-- The inverse same-orbit stabilizer equivalence is conjugation by the inverse deck
+transformation. -/
+@[simp]
+lemma fiberStabilizerEquivOfEqSMul_symm_apply {e e' : p ⁻¹' {b}} (φ : Deck p)
+    (hφ : e' = φ • e) (ψ : MulAction.stabilizer (Deck p) e') :
+    (fiberStabilizerEquivOfEqSMul φ hφ).symm ψ = MulAut.conj φ⁻¹ ψ := by
+  exact MulAction.stabilizerEquivStabilizer_symm_apply hφ ψ
+
 /-- Conjugation transports stabilizer membership along the fibre map. -/
 @[simp, grind =]
 lemma mem_stabilizer_conjMulEquiv_fiberMap_iff (h : E ≃ₜ F)
