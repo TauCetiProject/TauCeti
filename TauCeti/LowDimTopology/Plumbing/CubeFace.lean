@@ -22,12 +22,11 @@ exponents of the `U`-powers in the later lattice-homology differential.
 
 * `TauCeti.PlumbingGraph.cubeVertices_upperFace_subset`: the upper face's vertices are
   vertices of the ambient cube, when `v ∈ S`.
-* `TauCeti.PlumbingGraph.characteristicLowerFaceWeight_le` and
-  `TauCeti.PlumbingGraph.characteristicUpperFaceWeight_le`: face weights are bounded by the
-  ambient cube weight.
+* `TauCeti.PlumbingGraph.characteristicUpperFaceWeight_le`: the upper face weight is bounded by
+  the ambient cube weight.
 * `TauCeti.PlumbingGraph.characteristicLowerFaceExponent` and
   `TauCeti.PlumbingGraph.characteristicUpperFaceExponent`: the corresponding natural-number
-  weight differences for directions in the cube.
+  weight differences.
 
 ## References
 
@@ -70,11 +69,6 @@ theorem cubeVertices_upperFace_subset {x : V → ℤ} {S : Finset V} {v : V} (hv
 
 variable [Fintype V] (P : PlumbingGraph V) (k : P.characteristicVectors)
 
-/-- The lower face's characteristic cube weight is bounded by the ambient cube weight. -/
-theorem characteristicLowerFaceWeight_le {x : V → ℤ} {S : Finset V} {v : V} (_hv : v ∈ S) :
-    P.characteristicCubeWeight k x (S.erase v) ≤ P.characteristicCubeWeight k x S :=
-  P.characteristicCubeWeight_mono k (Finset.erase_subset v S) x
-
 /-- The upper face's characteristic cube weight is bounded by the ambient cube weight. -/
 theorem characteristicUpperFaceWeight_le {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
     P.characteristicCubeWeight k (x + Pi.single v (1 : ℤ)) (S.erase v) ≤
@@ -86,29 +80,30 @@ theorem characteristicUpperFaceWeight_le {x : V → ℤ} {S : Finset V} {v : V} 
 
 /-- The nonnegative `U`-exponent contributed by the lower face in a direction. -/
 noncomputable def characteristicLowerFaceExponent
-    (x : V → ℤ) (S : Finset V) {v : V} (_hv : v ∈ S) : ℕ :=
+    (x : V → ℤ) (S : Finset V) (v : V) : ℕ :=
   Int.toNat (P.characteristicCubeWeight k x S -
     P.characteristicCubeWeight k x (S.erase v))
 
 /-- The lower-face exponent, cast back to `ℤ`, is the difference between the ambient cube weight
 and the lower face weight. -/
-theorem characteristicLowerFaceExponent_intCast
-    {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
-    (P.characteristicLowerFaceExponent k x S hv : ℤ) =
+theorem characteristicLowerFaceExponent_natCast
+    {x : V → ℤ} {S : Finset V} {v : V} :
+    (P.characteristicLowerFaceExponent k x S v : ℤ) =
       P.characteristicCubeWeight k x S - P.characteristicCubeWeight k x (S.erase v) := by
   rw [characteristicLowerFaceExponent]
-  exact Int.toNat_of_nonneg (sub_nonneg.mpr (P.characteristicLowerFaceWeight_le k hv))
+  exact Int.toNat_of_nonneg
+    (sub_nonneg.mpr (P.characteristicCubeWeight_mono k (Finset.erase_subset v S) x))
 
 /-- The lower-face exponent is zero exactly when the lower face has the same weight as the
 ambient cube. -/
 theorem characteristicLowerFaceExponent_eq_zero_iff
-    {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
-    P.characteristicLowerFaceExponent k x S hv = 0 ↔
+    {x : V → ℤ} {S : Finset V} {v : V} :
+    P.characteristicLowerFaceExponent k x S v = 0 ↔
       P.characteristicCubeWeight k x S = P.characteristicCubeWeight k x (S.erase v) := by
   constructor
   · intro h
     have hcast := congrArg (fun n : ℕ => (n : ℤ)) h
-    rw [characteristicLowerFaceExponent_intCast (P := P) (k := k) hv] at hcast
+    rw [characteristicLowerFaceExponent_natCast (P := P) (k := k)] at hcast
     omega
   · intro h
     rw [characteristicLowerFaceExponent, h, sub_self, Int.toNat_zero]
@@ -121,7 +116,7 @@ noncomputable def characteristicUpperFaceExponent
 
 /-- The upper-face exponent, cast back to `ℤ`, is the difference between the ambient cube weight
 and the upper face weight. -/
-theorem characteristicUpperFaceExponent_intCast
+theorem characteristicUpperFaceExponent_natCast
     {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
     (P.characteristicUpperFaceExponent k x S hv : ℤ) =
       P.characteristicCubeWeight k x S -
@@ -139,7 +134,7 @@ theorem characteristicUpperFaceExponent_eq_zero_iff
   constructor
   · intro h
     have hcast := congrArg (fun n : ℕ => (n : ℤ)) h
-    rw [characteristicUpperFaceExponent_intCast (P := P) (k := k) hv] at hcast
+    rw [characteristicUpperFaceExponent_natCast (P := P) (k := k) hv] at hcast
     omega
   · intro h
     rw [characteristicUpperFaceExponent, h, sub_self, Int.toNat_zero]
