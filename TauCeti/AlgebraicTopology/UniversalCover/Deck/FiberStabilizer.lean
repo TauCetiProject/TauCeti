@@ -12,9 +12,8 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Deck.FiberTransport
 
 This file records the stabilizer bookkeeping for the restricted action of `Deck p` on one
 fibre of a map `p : E → B`. It is deliberately a thin layer over Mathlib's generic
-`MulAction.stabilizer`: the point is to give the universal-covers development stable
-deck-specific names and compatibility lemmas for changing the total-space cover by an
-over-base homeomorphism.
+`MulAction.stabilizer`: the point is to give the universal-covers development compatibility
+lemmas for changing the total-space cover by an over-base homeomorphism.
 
 For the pointed classification of connected covers, changing the chosen lift changes the
 associated subgroup by conjugacy; for unpointed covers, this is the source of conjugacy
@@ -24,12 +23,8 @@ bookkeeping before the later construction of covers attached to subgroups.
 ## Main declarations
 
 * `TauCeti.Deck.FiberStabilizer`: the stabilizer of a chosen point in a fibre.
-* `TauCeti.Deck.fiberStabilizerEquivOfEqSmmul`: stabilizers of points in the same deck orbit
-  are conjugate.
 * `TauCeti.Deck.fiberStabilizerConjMulEquiv`: an over-base homeomorphism identifies the
   stabilizers of corresponding fibre points.
-* `TauCeti.Deck.FiberStabilizer.eq_bot_of_preconnected`: for a preconnected covering, these
-  stabilizers are trivial.
 
 ## References
 
@@ -76,45 +71,7 @@ lemma apply_coe_eq (e : p ⁻¹' {b}) (φ : FiberStabilizer e) :
     φ.1.1 e.1 = e.1 :=
   (mem_iff_apply_coe e φ.1).mp φ.2
 
-/-- The fibre stabilizer of a point in a preconnected covering is trivial. -/
-@[simp]
-lemma eq_bot_of_preconnected [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p)
-    (e : p ⁻¹' {b}) :
-    FiberStabilizer e = ⊥ :=
-  fiber_stabilizer_eq_bot hp e
-
 end FiberStabilizer
-
-/-- Stabilizers of two points in the same deck orbit are identified by conjugating with the
-deck transformation carrying one point to the other. -/
-def fiberStabilizerEquivOfEqSmmul (φ : Deck p) {e e' : p ⁻¹' {b}} (hφ : e' = φ • e) :
-    FiberStabilizer e ≃* FiberStabilizer e' :=
-  MulAction.stabilizerEquivStabilizer hφ
-
-/-- The stabilizer conjugacy equivalence is implemented by group conjugation in the deck
-group. -/
-@[simp]
-lemma fiberStabilizerEquivOfEqSmmul_apply (φ : Deck p) {e e' : p ⁻¹' {b}}
-    (hφ : e' = φ • e) (ψ : FiberStabilizer e) :
-    (fiberStabilizerEquivOfEqSmmul φ hφ ψ : Deck p) = MulAut.conj φ ψ := by
-  exact MulAction.stabilizerEquivStabilizer_apply hφ ψ
-
-/-- The inverse stabilizer conjugacy equivalence is conjugation by the inverse deck
-transformation. -/
-@[simp]
-lemma fiberStabilizerEquivOfEqSmmul_symm_apply (φ : Deck p) {e e' : p ⁻¹' {b}}
-    (hφ : e' = φ • e) (ψ : FiberStabilizer e') :
-    ((fiberStabilizerEquivOfEqSmmul φ hφ).symm ψ : Deck p) = MulAut.conj φ⁻¹ ψ := by
-  exact MulAction.stabilizerEquivStabilizer_symm_apply hφ ψ
-
-/-- Conjugating by the identity deck transformation gives the identity equivalence on the
-fibre stabilizer. -/
-@[simp]
-lemma fiberStabilizerEquivOfEqSmmul_one (e : p ⁻¹' {b}) :
-    fiberStabilizerEquivOfEqSmmul (1 : Deck p) (e := e) (e' := e) (by simp) =
-      MulEquiv.refl (FiberStabilizer e) := by
-  simpa [fiberStabilizerEquivOfEqSmmul] using
-    (MulAction.stabilizerEquivStabilizer_one (G := Deck p) (a := e))
 
 /-- Under an over-base homeomorphism, conjugating deck transformations carries the stabilizer
 of a fibre point onto the stabilizer of the transported point. -/
