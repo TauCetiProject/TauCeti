@@ -7,6 +7,7 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Topology.Algebra.HomeomorphAction
 public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
+public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfFixingSubgroup
 
 /-!
 # Diffeomorphisms fixing a subset pointwise
@@ -46,7 +47,8 @@ open scoped Manifold ContDiff Pointwise
 
 /-- For a faithful action, the subgroup fixing the whole space pointwise is trivial. -/
 @[simp]
-theorem fixingSubgroup_univ {G α : Type*} [Group G] [MulAction G α] [FaithfulSMul G α] :
+private theorem fixingSubgroup_univ_of_faithful {G α : Type*} [Group G] [MulAction G α]
+    [FaithfulSMul G α] :
     _root_.fixingSubgroup G (Set.univ : Set α) = ⊥ := by
   ext g
   rw [_root_.mem_fixingSubgroup_iff, Subgroup.mem_bot]
@@ -101,7 +103,7 @@ theorem fixingSubgroup_empty :
 @[simp]
 theorem fixingSubgroup_univ :
     fixingSubgroup (I := I) (M := M) (n := n) (Set.univ : Set M) = ⊥ := by
-  exact TauCeti.fixingSubgroup_univ (G := M ≃ₘ^n⟮I, I⟯ M) (α := M)
+  exact fixingSubgroup_univ_of_faithful (G := M ≃ₘ^n⟮I, I⟯ M) (α := M)
 
 /-- Fixing a larger set pointwise gives a smaller subgroup. -/
 theorem fixingSubgroup_antitone {s t : Set M} (hst : s ⊆ t) :
@@ -111,16 +113,7 @@ theorem fixingSubgroup_antitone {s t : Set M} (hst : s ⊆ t) :
 /-- Pointwise fixing a subset implies setwise stabilizing it. -/
 theorem fixingSubgroup_le_stabilizer (s : Set M) :
     fixingSubgroup (I := I) (n := n) s ≤ MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) s := by
-  intro f hf
-  rw [MulAction.mem_stabilizer_iff]
-  ext x
-  constructor
-  · rintro ⟨y, hy, hxy⟩
-    have hxy' : f y = x := by simpa [Diffeomorph.smul_def] using hxy
-    rw [apply_eq_of_mem_fixingSubgroup hf hy] at hxy'
-    simpa [← hxy'] using hy
-  · intro hx
-    exact ⟨x, hx, by simpa [Diffeomorph.smul_def] using apply_eq_of_mem_fixingSubgroup hf hx⟩
+  exact MulAction.fixingSubgroup_le_stabilizer (M ≃ₘ^n⟮I, I⟯ M) s
 
 /-- Pointwise fixing is invariant under replacing the subset by an equal subset. -/
 theorem fixingSubgroup_congr {s t : Set M} (hst : s = t) :
