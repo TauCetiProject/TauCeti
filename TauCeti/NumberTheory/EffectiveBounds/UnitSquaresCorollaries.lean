@@ -28,6 +28,8 @@ Dirichlet's unit theorem again.
   `[O_F^× : (O_F^×)^2] ≤ 4`.
 * `TauCeti.NumberField.card_units_elementaryTwoQuotient_le_of_finrank_le`: the same bound for the
   cardinality of the elementary-2 quotient `O_F^×/(O_F^×)^2`.
+* `TauCeti.NumberField.card_units_elementaryTwoQuotient_le_of_finrank_le_two`: the quotient
+  cardinality bound specialized to `[F : ℚ] ≤ 2`.
 
 No formal code is vendored. These are monotone corollaries of the migrated bound
 `TauCeti.NumberField.units_sq_index_le`, whose source attribution is in
@@ -98,11 +100,18 @@ theorem card_units_elementaryTwoQuotient_le_of_finrank_eq
     Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤ 2 ^ n :=
   card_units_elementaryTwoQuotient_le_of_finrank_le F (le_of_eq hn)
 
+/-- If `[F : ℚ] ≤ 2`, then the elementary-2 quotient `O_F^×/(O_F^×)^2` has at most four
+elements. -/
+theorem card_units_elementaryTwoQuotient_le_of_finrank_le_two
+    (F : Type*) [Field F] [NumberField F] (hF : finrank ℚ F ≤ 2) :
+    Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤ 4 := by
+  simpa using card_units_elementaryTwoQuotient_le_of_finrank_le F hF
+
 /-- For a quadratic number field, the elementary-2 quotient `O_F^×/(O_F^×)^2` has at most four
 elements. -/
 theorem card_units_elementaryTwoQuotient_le_quadratic
     (F : Type*) [Field F] [NumberField F] (hF : finrank ℚ F = 2) :
     Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤ 4 := by
-  simpa using card_units_elementaryTwoQuotient_le_of_finrank_eq F hF
+  exact card_units_elementaryTwoQuotient_le_of_finrank_le_two F (le_of_eq hF)
 
 end TauCeti.NumberField
