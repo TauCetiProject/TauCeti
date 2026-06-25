@@ -49,15 +49,6 @@ variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 abbrev point : R →ₐ[R] A :=
   Algebra.ofId R A
 
-/-- The unique point evaluates by the algebra map. -/
-@[simp]
-theorem point_apply (r : R) : point (R := R) (A := A) r = algebraMap R A r :=
-  rfl
-
-/-- Every point evaluates as the algebra map. -/
-theorem apply_eq_algebraMap (f : R →ₐ[R] A) (r : R) : f r = algebraMap R A r := by
-  rw [Algebra.ext_id A f (point (R := R) (A := A)), point_apply]
-
 /-- Algebra maps out of the coordinate Hopf algebra `R` are equivalent to the one-point type. -/
 @[expose] noncomputable def pointEquiv : (R →ₐ[R] A) ≃ PUnit.{1} where
   toFun _ := PUnit.unit
