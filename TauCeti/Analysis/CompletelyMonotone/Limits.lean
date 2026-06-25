@@ -17,6 +17,10 @@ converges to a nonnegative limit as `t → ∞`. This basic object-API fact exte
 ## Main declarations
 
 * `TauCeti.IsCompletelyMonotone.tendsto_atTop`: `f` has a limit `L ≥ 0` at infinity.
+
+## References
+
+* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
 -/
 
 public section

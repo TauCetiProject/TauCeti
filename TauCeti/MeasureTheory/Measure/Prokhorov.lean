@@ -21,6 +21,10 @@ normalization step: tightness and a uniform mass bound place the sequence in a c
   weak cluster limit along an ultrafilter below `atTop`.
 * `TauCeti.finite_measure_subseq_limit`: the corresponding subsequence form when the weak topology
   on `FiniteMeasure α` is first-countable.
+
+## References
+
+* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
 -/
 
 public section

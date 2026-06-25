@@ -31,6 +31,8 @@ The basic sign and monotonicity lemmas live in `Basic.lean`; only the analytic e
 
 ## References
 
+* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
+
 * D. V. Widder, *The Laplace Transform* (Princeton, 1941), Ch. IV.
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013).
 -/

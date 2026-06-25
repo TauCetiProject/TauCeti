@@ -232,7 +232,7 @@ private lemma boundary_term_decay (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
     have hint_density : IntegrableOn (chafaiDensity f k) (Ioi 0) := by
       by_cases hk_eq : k = 1
       · subst hk_eq
-        convert hcm.neg_deriv_integrableOn hL using 1
+        convert hcm.neg_deriv_integrableOn using 1
         ext t; rw [chafaiDensity_one]
       · have hk2 : 2 ≤ k := by omega
         have hmeas_density : AEStronglyMeasurable (chafaiDensity f k)
@@ -435,7 +435,7 @@ private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
           (fun t => -iteratedDerivWithin 1 f (Ici 0) t) := by ext t; simp
       rw [hsimpl]
       have hintx : IntegrableOn (fun t => -iteratedDerivWithin 1 f (Ici 0) t) (Ioi x) :=
-        (hcm.neg_deriv_integrableOn hL).mono_set (Ioi_subset_Ioi hx)
+        (hcm.neg_deriv_integrableOn).mono_set (Ioi_subset_Ioi hx)
       refine tendsto_nhds_unique
         (intervalIntegral_tendsto_integral_Ioi x hintx tendsto_id) ?_
       simp only [id]

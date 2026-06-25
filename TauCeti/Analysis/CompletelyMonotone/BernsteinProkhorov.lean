@@ -24,6 +24,8 @@ This implements the Bernstein theorem milestone in
 
 ## References
 
+* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
+
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013).
 -/
 

@@ -35,6 +35,8 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 
 ## References
 
+* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem milestone).
+
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013).
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions* (de Gruyter, 2nd ed. 2012), Ch. 1.
 -/
@@ -155,9 +157,9 @@ lemma IsCompletelyMonotone.tendsto_total_mass
     (Tendsto.sub tendsto_const_nhds hL)
 
 /-- `-f'` is integrable on `(0, ∞)` for completely monotone functions (total mass `f(0) - L`). -/
-lemma IsCompletelyMonotone.neg_deriv_integrableOn
-    (hcm : IsCompletelyMonotone f) {L : ℝ} (hL : Tendsto f atTop (nhds L)) :
+lemma IsCompletelyMonotone.neg_deriv_integrableOn (hcm : IsCompletelyMonotone f) :
     IntegrableOn (fun t => -iteratedDerivWithin 1 f (Ici 0) t) (Ioi 0) := by
+  obtain ⟨L, hL, -⟩ := hcm.tendsto_atTop
   apply integrableOn_Ioi_of_intervalIntegral_norm_tendsto (f 0 - L) 0
       (l := atTop) (b := id)
   · intro T
@@ -182,7 +184,7 @@ lemma IsCompletelyMonotone.neg_deriv_integrableOn
 lemma IsCompletelyMonotone.integral_Ioi_neg_deriv
     (hcm : IsCompletelyMonotone f) {L : ℝ} (hL : Tendsto f atTop (nhds L)) :
     ∫ t in Ioi 0, -iteratedDerivWithin 1 f (Ici 0) t = f 0 - L := by
-  have hint := hcm.neg_deriv_integrableOn hL
+  have hint := hcm.neg_deriv_integrableOn
   have htend := intervalIntegral_tendsto_integral_Ioi 0 hint tendsto_id
   have htend2 : Tendsto (fun T => ∫ t in (0 : ℝ)..T,
       -iteratedDerivWithin 1 f (Ici 0) t) atTop (nhds (f 0 - L)) :=
@@ -294,6 +296,20 @@ lemma chafaiRescaled_mass_eq (f : ℝ → ℝ) (n : ℕ) :
   unfold chafaiRescaled
   rw [Measure.map_apply (chafaiRescaling_measurable n) MeasurableSet.univ, Set.preimage_univ]
 
+/-- For a completely monotone `f`, the `k`-th iterated derivative within `[0, ∞)` is
+differentiable at any `t > 0`, with derivative the `(k+1)`-th iterated derivative. -/
+lemma IsCompletelyMonotone.hasDerivAt_iteratedDerivWithin_succ
+    (hcm : IsCompletelyMonotone f) (k : ℕ) {t : ℝ} (ht : 0 < t) :
+    HasDerivAt (iteratedDerivWithin k f (Ici 0))
+      (iteratedDerivWithin (k + 1) f (Ici 0) t) t := by
+  have hmem : Ici (0 : ℝ) ∈ nhds t := Ici_mem_nhds ht
+  have hda := (hcm.contDiffOn.differentiableOn_iteratedDerivWithin
+    (nat_lt_top k) (uniqueDiffOn_Ici 0)).hasDerivAt hmem
+  have hval : iteratedDerivWithin (k + 1) f (Ici 0) t
+      = deriv (iteratedDerivWithin k f (Ici 0)) t := by
+    rw [iteratedDerivWithin_succ, derivWithin_of_mem_nhds hmem]
+  rw [hval]; exact hda
+
 /-- **IBP identity** for the CM density:
 `∫₀ᵀ ρ_{m+2}(t) dt = B_{m+2}(T) + ∫₀ᵀ ρ_{m+1}(t) dt`. -/
 private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
@@ -308,16 +324,8 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) (hcm : IsCompletelyMo
   set F := fun t : ℝ => t ^ (m + 1) * (c * g t)
   have hg_cont : ContinuousOn g (Ici 0) :=
     hcm.contDiffOn.continuousOn_iteratedDerivWithin (nat_le_top _) (uniqueDiffOn_Ici 0)
-  have hg_deriv : ∀ t, 0 < t → HasDerivAt g (g' t) t := by
-    intro t ht
-    have hmem : Ici (0 : ℝ) ∈ nhds t := Ici_mem_nhds ht
-    have hda := (hcm.contDiffOn.differentiableOn_iteratedDerivWithin
-      (nat_lt_top (m + 1)) (uniqueDiffOn_Ici 0)).hasDerivAt hmem
-    have hval : g' t = deriv g t := by
-      simp only [g, g']
-      rw [show m + 2 = (m + 1) + 1 from rfl, iteratedDerivWithin_succ,
-        derivWithin_of_mem_nhds hmem]
-    rw [hval]; exact hda
+  have hg_deriv : ∀ t, 0 < t → HasDerivAt g (g' t) t :=
+    fun t ht => hcm.hasDerivAt_iteratedDerivWithin_succ (m + 1) ht
   have huIcc : uIcc (0 : ℝ) T = Icc 0 T := uIcc_of_le hT.le
   have hF_cont : ContinuousOn F (Icc 0 T) :=
     ((continuous_pow _).continuousOn).mul
@@ -327,14 +335,7 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) (hcm : IsCompletelyMo
     fun t ht => (hasDerivAt_pow (m + 1) t).mul ((hg_deriv t ht.1).const_mul c)
   have hcm_int : ∀ k, k ≠ 0 → IntervalIntegrable (fun t => chafaiDensity f k t) volume 0 T := by
     intro k hk; apply ContinuousOn.intervalIntegrable; rw [huIcc]
-    apply ContinuousOn.mono _ Icc_subset_Ici_self
-    change ContinuousOn (fun t => chafaiDensity f k t) (Ici 0)
-    have : (fun t => chafaiDensity f k t) = fun t =>
-        (-1 : ℝ) ^ k / ↑(k - 1).factorial * t ^ (k - 1) *
-          iteratedDerivWithin k f (Ici 0) t := funext fun t => by simp [chafaiDensity, hk]
-    rw [this]
-    exact (continuousOn_const.mul (continuous_pow _).continuousOn).mul
-      (hcm.contDiffOn.continuousOn_iteratedDerivWithin (nat_le_top _) (uniqueDiffOn_Ici 0))
+    exact (continuousOn_chafaiDensity hcm hk).mono Icc_subset_Ici_self
   have hF'_eq : ∀ t, ↑(m + 1) * t ^ m * (c * g t) + t ^ (m + 1) * (c * g' t) =
       chafaiDensity f (m + 2) t - chafaiDensity f (m + 1) t := by
     intro t
