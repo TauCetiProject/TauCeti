@@ -20,13 +20,10 @@ exponents of the `U`-powers in the later lattice-homology differential.
 
 ## Main results
 
-* `TauCeti.PlumbingGraph.cubeVertices_lowerFace_subset`: the lower face's vertices are
-  vertices of the ambient cube.
 * `TauCeti.PlumbingGraph.cubeVertices_upperFace_subset`: the upper face's vertices are
   vertices of the ambient cube, when `v ∈ S`.
-* `TauCeti.PlumbingGraph.characteristicLowerFaceWeight_le` and
-  `TauCeti.PlumbingGraph.characteristicUpperFaceWeight_le`: face weights are bounded by the
-  ambient cube weight.
+* `TauCeti.PlumbingGraph.characteristicUpperFaceWeight_le`: upper face weights are bounded by
+  the ambient cube weight.
 * `TauCeti.PlumbingGraph.characteristicLowerFaceExponent` and
   `TauCeti.PlumbingGraph.characteristicUpperFaceExponent`: the corresponding natural-number
   weight differences for directions in the cube.
@@ -60,11 +57,6 @@ theorem cubeVertex_add_single_eq_insert {T : Finset V} {v : V} (hv : v ∉ T) (x
 
 variable [DecidableEq (V → ℤ)]
 
-/-- The lower face in a direction has its vertices among the vertices of the ambient cube. -/
-theorem cubeVertices_lowerFace_subset (x : V → ℤ) (S : Finset V) (v : V) :
-    cubeVertices x (S.erase v) ⊆ cubeVertices x S :=
-  cubeVertices_subset (Finset.erase_subset v S) x
-
 /-- The upper face in a direction has its vertices among the vertices of the ambient cube. -/
 theorem cubeVertices_upperFace_subset {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
     cubeVertices (x + Pi.single v (1 : ℤ)) (S.erase v) ⊆ cubeVertices x S := by
@@ -78,11 +70,6 @@ theorem cubeVertices_upperFace_subset {x : V → ℤ} {S : Finset V} {v : V} (hv
     exact (cubeVertex_add_single_eq_insert hvT x).symm
 
 variable [Fintype V] (P : PlumbingGraph V) (k : P.characteristicVectors)
-
-/-- The lower face's characteristic cube weight is bounded by the ambient cube weight. -/
-theorem characteristicLowerFaceWeight_le (x : V → ℤ) (S : Finset V) (v : V) :
-    P.characteristicCubeWeight k x (S.erase v) ≤ P.characteristicCubeWeight k x S :=
-  P.characteristicCubeWeight_mono k (Finset.erase_subset v S) x
 
 /-- The upper face's characteristic cube weight is bounded by the ambient cube weight. -/
 theorem characteristicUpperFaceWeight_le {x : V → ℤ} {S : Finset V} {v : V} (hv : v ∈ S) :
@@ -107,7 +94,8 @@ theorem characteristicLowerFaceExponent_intCast
     (P.characteristicLowerFaceExponent k x S v hv : ℤ) =
       P.characteristicCubeWeight k x S - P.characteristicCubeWeight k x (S.erase v) := by
   rw [characteristicLowerFaceExponent]
-  exact Int.toNat_of_nonneg (sub_nonneg.mpr (P.characteristicLowerFaceWeight_le k x S v))
+  exact Int.toNat_of_nonneg
+    (sub_nonneg.mpr (P.characteristicCubeWeight_mono k (Finset.erase_subset v S) x))
 
 /-- The lower-face exponent is zero exactly when the lower face has the same weight as the
 ambient cube. -/
