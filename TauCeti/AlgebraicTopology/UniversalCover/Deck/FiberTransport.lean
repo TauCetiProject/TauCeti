@@ -22,6 +22,9 @@ deck action on those fibres to be compatible with conjugating the deck group.
 
 * `TauCeti.Deck.fiberMap`: the homeomorphism between fibres induced by an over-base
   homeomorphism.
+* `TauCeti.Deck.fiberMap_smul`: fibre transport intertwines the restricted deck actions via
+  conjugation of deck transformations.
+* `TauCeti.Deck.mem_orbit_fiberMap_iff`: fibre transport preserves deck-orbit membership.
 
 ## References
 
