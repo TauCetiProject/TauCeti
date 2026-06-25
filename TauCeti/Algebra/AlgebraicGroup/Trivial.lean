@@ -49,7 +49,7 @@ variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 The source is the convolution group of `R`-algebra maps out of the Hopf algebra `R`; since
 there is only one such algebra map, the convolution group is multiplicatively equivalent to
 `PUnit`. -/
-@[expose] noncomputable def pointsMulEquiv : WithConv (R →ₐ[R] A) ≃* PUnit.{1} where
+noncomputable def pointsMulEquiv : WithConv (R →ₐ[R] A) ≃* PUnit.{1} where
   toFun _ := PUnit.unit
   invFun _ := toConv (Algebra.ofId R A)
   left_inv f := by
@@ -58,15 +58,19 @@ there is only one such algebra map, the convolution group is multiplicatively eq
   right_inv _ := rfl
   map_mul' _ _ := rfl
 
+/-- The equivalence sends every convolution point to the unique element of `PUnit`. -/
 @[simp]
 theorem pointsMulEquiv_apply (f : WithConv (R →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := A) f = PUnit.unit :=
-  rfl
+  Subsingleton.elim _ _
 
+/-- The inverse equivalence sends the unique element of `PUnit` to `Algebra.ofId R A`. -/
 @[simp]
 theorem pointsMulEquiv_symm_apply (u : PUnit.{1}) :
     (pointsMulEquiv (R := R) (A := A)).symm u = toConv (Algebra.ofId R A) :=
-  rfl
+  by
+    apply WithConv.ofConv_injective
+    exact Subsingleton.elim _ _
 
 /-- The unique convolution point is the identity point. -/
 theorem convPoint_eq_one (f : WithConv (R →ₐ[R] A)) : f = 1 := by
@@ -74,11 +78,21 @@ theorem convPoint_eq_one (f : WithConv (R →ₐ[R] A)) : f = 1 := by
   rw [AlgHom.convOne_def]
   exact Subsingleton.elim _ _
 
+/-- The underlying algebra map of any trivial-group convolution point is `Algebra.ofId`. -/
 @[simp]
-theorem convPoint_ofConv (f : WithConv (R →ₐ[R] A)) :
+theorem ofConv_eq_ofId (f : WithConv (R →ₐ[R] A)) :
     f.ofConv = Algebra.ofId R A :=
   Subsingleton.elim _ _
 
+/-- Evaluating any trivial-group convolution point gives the algebra map. -/
+@[simp]
+theorem convPoint_apply (f : WithConv (R →ₐ[R] A)) (r : R) :
+    f r = algebraMap R A r := by
+  rw [convPoint_eq_one f]
+  rw [AlgHom.convOne_def]
+  rfl
+
+/-- Every `R`-algebra map `R →ₐ[R] A` becomes the convolution identity. -/
 @[simp]
 theorem toConv_eq_one (f : R →ₐ[R] A) : toConv f = (1 : WithConv (R →ₐ[R] A)) :=
   convPoint_eq_one (toConv f)
