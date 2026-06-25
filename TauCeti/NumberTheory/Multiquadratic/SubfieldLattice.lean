@@ -92,7 +92,7 @@ by
 
 /-- A sign vector belongs to the subspace attached to an intermediate field exactly when it is the
 sign pattern of an automorphism fixing that field. -/
-theorem mem_intermediateFieldEquivSubmodule_apply_ofDual_iff [Finite ι] [NeZero (2 : K)]
+@[simp] theorem mem_intermediateFieldEquivSubmodule_apply_ofDual_iff [Finite ι] [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
     (F : IntermediateField K (adjoin K (Set.range root))) (v : ι → ZMod 2) :
@@ -103,19 +103,15 @@ theorem mem_intermediateFieldEquivSubmodule_apply_ofDual_iff [Finite ι] [NeZero
 
 /-- The intermediate field attached to a subspace is the fixed field of the automorphisms whose
 sign patterns lie in that subspace. -/
-theorem mem_intermediateFieldEquivSubmodule_symm_apply_iff [Finite ι] [NeZero (2 : K)]
+@[simp] theorem mem_intermediateFieldEquivSubmodule_symm_apply_iff [Finite ι] [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
     (U : Submodule (ZMod 2) (ι → ZMod 2)) (x : adjoin K (Set.range root)) :
     x ∈ (intermediateFieldEquivSubmodule hroot hindep).symm (OrderDual.toDual U) ↔
       ∀ σ, signPattern root σ ∈ U → σ x = x := by
-  rw [intermediateFieldEquivSubmodule]
-  simp only [OrderIso.symm_trans_apply, OrderIso.dual_symm_apply, OrderDual.ofDual_toDual,
-    MulEquiv.symm_mapSubgroup, OrderIso.symm_symm, AddSubgroup.toZModSubmodule_symm,
-    MulEquiv.mapSubgroup_apply, IsGalois.intermediateFieldEquivSubgroup_symm_apply,
-    mem_fixedField_iff, Subgroup.mem_map, Multiplicative.mem_toSubgroup, AddSubgroup.mem_mk,
-    Submodule.mem_toAddSubmonoid, MonoidHom.coe_coe, Multiplicative.exists, toAdd_ofAdd,
-    forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+  suffices (∀ v ∈ U, ((galoisGroupEquiv hroot hindep).symm (Multiplicative.ofAdd v)) x = x) ↔
+      ∀ σ, signPattern root σ ∈ U → σ x = x by
+    simpa [intermediateFieldEquivSubmodule] using this
   constructor
   · intro h σ hσ
     have hσeq : (galoisGroupEquiv hroot hindep).symm

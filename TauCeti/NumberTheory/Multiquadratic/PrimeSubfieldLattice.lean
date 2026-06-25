@@ -55,7 +55,7 @@ noncomputable def intermediateFieldEquivSubmoduleSqrtPrimes :
 
 /-- A sign vector belongs to the subspace attached to an intermediate field of
 `ℚ(√p₁, …, √pₙ)` exactly when it is the sign pattern of an automorphism fixing that field. -/
-theorem mem_intermediateFieldEquivSubmoduleSqrtPrimes_apply_ofDual_iff
+@[simp] theorem mem_intermediateFieldEquivSubmoduleSqrtPrimes_apply_ofDual_iff
     (F : IntermediateField ℚ (adjoin ℚ (Set.range fun i => (Real.sqrt (p i) : ℝ))))
     (v : ι → ZMod 2) :
     v ∈ (intermediateFieldEquivSubmoduleSqrtPrimes p hp hinj F).ofDual ↔
@@ -65,7 +65,7 @@ theorem mem_intermediateFieldEquivSubmoduleSqrtPrimes_apply_ofDual_iff
 
 /-- The intermediate field attached to a subspace in the prime-radicand dictionary is the fixed
 field of the automorphisms whose sign patterns lie in that subspace. -/
-theorem mem_intermediateFieldEquivSubmoduleSqrtPrimes_symm_apply_iff
+@[simp] theorem mem_intermediateFieldEquivSubmoduleSqrtPrimes_symm_apply_iff
     (U : Submodule (ZMod 2) (ι → ZMod 2))
     (x : adjoin ℚ (Set.range fun i => (Real.sqrt (p i) : ℝ))) :
     x ∈ (intermediateFieldEquivSubmoduleSqrtPrimes p hp hinj).symm (OrderDual.toDual U) ↔
