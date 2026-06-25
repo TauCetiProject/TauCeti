@@ -153,30 +153,21 @@ lemma normalizerQuotientToQuotientOfNormal_comp_mk :
       (QuotientGroup.mk' H).comp (_root_.Subgroup.normalizer (H : Set G)).subtype :=
   rfl
 
-/-- Under normality, the normalizer is isomorphic to the ambient group. -/
-abbrev normalizerEquivOfNormal :
-    _root_.Subgroup.normalizer (H : Set G) ≃* G :=
-  (MulEquiv.subgroupCongr (_root_.Subgroup.normalizer_eq_top (H := H))).trans Subgroup.topEquiv
-
-/-- Under the normalizer-to-ambient-group equivalence, the copy of `H` in the normalizer maps
-to `H`. -/
-lemma normalizerEquivOfNormal_map_subgroupOf :
-    (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))).map
-        (normalizerEquivOfNormal H) = H := by
-  ext g
-  constructor
-  · rintro ⟨k, hk, rfl⟩
-    exact hk
-  · intro hg
-    exact ⟨⟨g, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩, hg, rfl⟩
-
 /-- If `H` is normal in `G`, then `N(H) / H` is canonically isomorphic to `G / H`. This is
 the algebraic form of the regular-cover specialization from `N(H) / H` to `π₁(X, x₀) / H`. -/
 noncomputable abbrev normalizerQuotientEquivQuotientOfNormal :
     normalizerQuotient H ≃* G ⧸ H :=
   QuotientGroup.congr
     (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) H
-    (normalizerEquivOfNormal H) (normalizerEquivOfNormal_map_subgroupOf H)
+    ((MulEquiv.subgroupCongr (_root_.Subgroup.normalizer_eq_top (H := H))).trans
+      Subgroup.topEquiv)
+    (by
+      ext g
+      constructor
+      · rintro ⟨k, hk, rfl⟩
+        exact hk
+      · intro hg
+        exact ⟨⟨g, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩, hg, rfl⟩)
 
 /-- The normal-case equivalence sends a normalizer representative to its ordinary quotient
 class in `G / H`. -/
