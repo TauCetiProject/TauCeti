@@ -5,10 +5,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Algebra.Squarefree
-public import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 public import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminant
 public import Mathlib.Data.Rat.Lemmas
+import TauCeti.NumberTheory.LegendreSymbol.SquareClass
 
 /-!
 # Prime discriminants
