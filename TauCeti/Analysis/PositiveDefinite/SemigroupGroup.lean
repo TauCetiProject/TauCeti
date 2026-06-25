@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PositiveDefinite.Basic
+public import TauCeti.Analysis.PositiveDefinite.KernelClosure
 public import Mathlib.Data.NNReal.Basic
 
 /-!
@@ -15,10 +15,11 @@ for functions on `ℝ≥0 × V`. For an additive group `V`, the intended involut
 `(t, v) ↦ (t, -v)`, so the finite quadratic forms use the entries
 `F (tᵢ + tⱼ, vᵢ - vⱼ)`.
 
-The generic predicate `TauCeti.IsPositiveDefinite` already handles involutive additive monoids.
-Here we spell out the BCR specialization directly, rather than installing a global negation
-`StarAddMonoid` instance on every additive group `V`, which would conflict with Mathlib's ordinary
-star conventions. The result is the named hypothesis needed for the BCR Laplace--Fourier
+The generic positive-definite-kernel predicate already captures the finite Gram-matrix condition.
+Here we name its BCR specialization for the kernel
+`K p q = F (p.1 + q.1, p.2 - q.2)`, rather than installing a global negation `StarAddMonoid`
+instance on every additive group `V`, which would conflict with Mathlib's ordinary star
+conventions. The result is the named hypothesis needed for the BCR Laplace--Fourier
 representation target in the `OneParameterSemigroups` roadmap.
 
 This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Objects: the roadmap asks
@@ -56,8 +57,7 @@ Berg--Christensen--Ressel sense, if all finite quadratic forms formed using the 
 `(t, v) ↦ (t, -v)` are nonnegative:
 `∑ᵢⱼ cᵢ conj(cⱼ) F(tᵢ + tⱼ, vᵢ - vⱼ) ≥ 0`. -/
 @[expose] def IsSemigroupGroupPD (F : ℝ≥0 × V → ℂ) : Prop :=
-  ∀ (n : ℕ) (c : Fin n → ℂ) (p : Fin n → ℝ≥0 × V),
-    0 ≤ ∑ i, ∑ j, c i * conj (c j) * F ((p i).1 + (p j).1, (p i).2 - (p j).2)
+  IsPositiveDefiniteKernel fun p q : ℝ≥0 × V => F (p.1 + q.1, p.2 - q.2)
 
 namespace IsSemigroupGroupPD
 
@@ -66,16 +66,12 @@ theorem sum_nonneg (hF : IsSemigroupGroupPD F) {ι : Type*} [Fintype ι]
     (c : ι → ℂ) (p : ι → ℝ≥0 × V) :
     0 ≤ ∑ i, ∑ j, c i * conj (c j) * F ((p i).1 + (p j).1, (p i).2 - (p j).2) := by
   classical
-  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
-  have h := hF (Fintype.card ι) (fun i => c (e i)) (fun i => p (e i))
-  refine le_of_le_of_eq h ?_
-  exact Fintype.sum_equiv e _ _ fun i =>
-    Fintype.sum_equiv e _ _ fun j => rfl
+  have hpos := (isPositiveDefiniteKernel_iff.mp hF).2 p (fun i => conj (c i))
+  simpa only [Complex.conj_conj] using hpos
 
 /-- The value of a semigroup-group positive-definite function at the identity is nonnegative. -/
 theorem map_zero_nonneg (hF : IsSemigroupGroupPD F) : 0 ≤ F (0, 0) := by
-  have h := hF 1 ![1] ![(0, 0)]
-  simpa [Fin.sum_univ_one] using h
+  simpa using isPositiveDefiniteKernel_apply_self_nonneg hF ((0, 0) : ℝ≥0 × V)
 
 /-- The value at the identity of a semigroup-group positive-definite function has zero imaginary
 part. -/
@@ -94,7 +90,7 @@ theorem quadForm_two_nonneg (hF : IsSemigroupGroupPD F) (p q : ℝ≥0 × V) (c�
       + c₀ * conj c₁ * F (p.1 + q.1, p.2 - q.2)
       + c₁ * conj c₀ * F (q.1 + p.1, q.2 - p.2)
       + c₁ * conj c₁ * F (q.1 + q.1, q.2 - q.2) := by
-  have h := hF 2 ![c₀, c₁] ![p, q]
+  have h := hF.sum_nonneg ![c₀, c₁] ![p, q]
   simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one] at h
   exact le_of_le_of_eq h (by ring)
 
@@ -103,76 +99,32 @@ BCR involution: `conj (F (s + t, w - v)) = F (t + s, v - w)`. -/
 @[simp]
 theorem conj_symm (hF : IsSemigroupGroupPD F) (p q : ℝ≥0 × V) :
     conj (F (q.1 + p.1, q.2 - p.2)) = F (p.1 + q.1, p.2 - q.2) := by
-  have hp : (F (p.1 + p.1, p.2 - p.2)).im = 0 := by
-    have h := hF.quadForm_two_nonneg p p 1 0
-    simpa using (Complex.nonneg_iff.mp h).2.symm
-  have hq : (F (q.1 + q.1, q.2 - q.2)).im = 0 := by
-    have h := hF.quadForm_two_nonneg q q 1 0
-    simpa using (Complex.nonneg_iff.mp h).2.symm
-  have hp0 : (F (p.1 + p.1, 0)).im = 0 := by simpa [sub_self] using hp
-  have hq0 : (F (q.1 + q.1, 0)).im = 0 := by simpa [sub_self] using hq
-  have him :
-      (F (q.1 + p.1, q.2 - p.2)).im + (F (p.1 + q.1, p.2 - q.2)).im = 0 := by
-    have h := (Complex.nonneg_iff.mp (hF.quadForm_two_nonneg p q 1 1)).2
-    simp [Complex.add_im, hp0, hq0] at h
-    linarith
-  have hre :
-      (F (q.1 + p.1, q.2 - p.2)).re = (F (p.1 + q.1, p.2 - q.2)).re := by
-    have h := (Complex.nonneg_iff.mp (hF.quadForm_two_nonneg p q 1 Complex.I)).2
-    simp [Complex.add_im, Complex.mul_im, hp0, hq0] at h
-    linarith
-  apply Complex.ext
-  · rw [Complex.conj_re]
-    exact hre
-  · rw [Complex.conj_im]
-    linarith
+  simpa using isPositiveDefiniteKernel_conj_symm hF q p
 
 /-- Semigroup-group positive-definite functions are closed under addition. -/
 theorem add (hF : IsSemigroupGroupPD F) (hG : IsSemigroupGroupPD G) :
     IsSemigroupGroupPD (fun x => F x + G x) := by
-  intro n c p
-  have hsplit :
-      ∑ i, ∑ j, c i * conj (c j) *
-          (F ((p i).1 + (p j).1, (p i).2 - (p j).2) +
-            G ((p i).1 + (p j).1, (p i).2 - (p j).2))
-        = (∑ i, ∑ j, c i * conj (c j) *
-            F ((p i).1 + (p j).1, (p i).2 - (p j).2))
-          + ∑ i, ∑ j, c i * conj (c j) *
-            G ((p i).1 + (p j).1, (p i).2 - (p j).2) := by
-    simp only [mul_add, Finset.sum_add_distrib]
-  simpa only [hsplit] using add_nonneg (hF n c p) (hG n c p)
+  exact isPositiveDefiniteKernel_add hF hG
 
 /-- Semigroup-group positive-definite functions are closed under multiplication by a nonnegative
 complex scalar. -/
 theorem const_mul {k : ℂ} (hk : 0 ≤ k) (hF : IsSemigroupGroupPD F) :
     IsSemigroupGroupPD (fun x => k * F x) := by
-  intro n c p
-  have hpull :
-      ∑ i, ∑ j, c i * conj (c j) *
-          (k * F ((p i).1 + (p j).1, (p i).2 - (p j).2))
-        = k * ∑ i, ∑ j, c i * conj (c j) *
-          F ((p i).1 + (p j).1, (p i).2 - (p j).2) := by
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    ring
-  rw [hpull]
-  exact mul_nonneg hk (hF n c p)
+  change IsPositiveDefiniteKernel fun p q : ℝ≥0 × V =>
+    k * F (p.1 + q.1, p.2 - q.2)
+  simpa [Algebra.smul_def] using
+    isPositiveDefiniteKernel_smul_of_nonneg (α := ℝ≥0 × V) (K := fun p q : ℝ≥0 × V =>
+      F (p.1 + q.1, p.2 - q.2)) hk hF
 
 /-- Semigroup-group positive-definite functions are closed under finite sums. -/
 theorem sum {ι : Type*} {s : Finset ι} {H : ι → ℝ≥0 × V → ℂ}
     (hH : ∀ i ∈ s, IsSemigroupGroupPD (H i)) :
     IsSemigroupGroupPD (fun x => ∑ i ∈ s, H i x) := by
   classical
-  have heq : (∑ i ∈ s, H i) = fun x => ∑ i ∈ s, H i x :=
-    funext fun x => Finset.sum_apply x s H
-  rw [← heq]
-  exact Finset.sum_induction H IsSemigroupGroupPD (fun _ _ => add)
-      (by
-        intro n c p
-        simp)
-      hH
+  change IsPositiveDefiniteKernel fun p q : ℝ≥0 × V =>
+    ∑ i ∈ s, H i (p.1 + q.1, p.2 - q.2)
+  simpa using isPositiveDefiniteKernel_sum (α := ℝ≥0 × V)
+    (K := fun (i : ι) (p q : ℝ≥0 × V) => H i (p.1 + q.1, p.2 - q.2)) hH
 
 end IsSemigroupGroupPD
 
