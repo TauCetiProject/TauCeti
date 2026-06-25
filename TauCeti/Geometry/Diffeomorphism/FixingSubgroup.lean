@@ -6,7 +6,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Topology.Algebra.HomeomorphAction
-public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfFixingSubgroup
+public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 
 /-!
 # Diffeomorphisms fixing a subset pointwise
@@ -43,6 +43,16 @@ public section
 namespace TauCeti
 
 open scoped Manifold ContDiff Pointwise
+
+/-- For a faithful action, the subgroup fixing the whole space pointwise is trivial. -/
+@[simp]
+theorem fixingSubgroup_univ {G α : Type*} [Group G] [MulAction G α] [FaithfulSMul G α] :
+    _root_.fixingSubgroup G (Set.univ : Set α) = ⊥ := by
+  ext g
+  rw [_root_.mem_fixingSubgroup_iff, Subgroup.mem_bot]
+  refine ⟨fun hg => ?_, fun hg x _ => by rw [hg, one_smul]⟩
+  exact FaithfulSMul.eq_of_smul_eq_smul fun x =>
+    (hg x (Set.mem_univ x)).trans (one_smul G x).symm
 
 namespace Diffeomorph
 
@@ -91,14 +101,26 @@ theorem fixingSubgroup_empty :
 @[simp]
 theorem fixingSubgroup_univ :
     fixingSubgroup (I := I) (M := M) (n := n) (Set.univ : Set M) = ⊥ := by
-  ext f
-  simp only [mem_fixingSubgroup_iff, Set.mem_univ, true_imp_iff, Subgroup.mem_bot]
-  exact ⟨fun h => _root_.Diffeomorph.ext h, fun h x => by rw [h]; rfl⟩
+  exact TauCeti.fixingSubgroup_univ (G := M ≃ₘ^n⟮I, I⟯ M) (α := M)
 
 /-- Fixing a larger set pointwise gives a smaller subgroup. -/
 theorem fixingSubgroup_antitone {s t : Set M} (hst : s ⊆ t) :
     fixingSubgroup (I := I) (n := n) t ≤ fixingSubgroup (I := I) (n := n) s := by
   exact _root_.fixingSubgroup_antitone (M ≃ₘ^n⟮I, I⟯ M) M hst
+
+/-- Pointwise fixing a subset implies setwise stabilizing it. -/
+theorem fixingSubgroup_le_stabilizer (s : Set M) :
+    fixingSubgroup (I := I) (n := n) s ≤ MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) s := by
+  intro f hf
+  rw [MulAction.mem_stabilizer_iff]
+  ext x
+  constructor
+  · rintro ⟨y, hy, hxy⟩
+    have hxy' : f y = x := by simpa [Diffeomorph.smul_def] using hxy
+    rw [apply_eq_of_mem_fixingSubgroup hf hy] at hxy'
+    simpa [← hxy'] using hy
+  · intro hx
+    exact ⟨x, hx, by simpa [Diffeomorph.smul_def] using apply_eq_of_mem_fixingSubgroup hf hx⟩
 
 /-- Pointwise fixing is invariant under replacing the subset by an equal subset. -/
 theorem fixingSubgroup_congr {s t : Set M} (hst : s = t) :
