@@ -32,7 +32,7 @@ kernel (`chafai_repeated_ibp`), whose boundary terms `Tᵏ f⁽ᵏ⁾(T)` decay 
 public section
 
 open MeasureTheory Set intervalIntegral Filter
-open scoped ContDiff Topology
+open scoped ContDiff NNReal Topology
 
 namespace TauCeti
 
@@ -242,7 +242,7 @@ private lemma boundary_term_decay (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
           (ae_restrict_mem measurableSet_Ioi).mono fun t ht => chafaiDensity_nonneg hcm k t ht.le
         refine ⟨hmeas_density, ?_⟩
         rw [hasFiniteIntegral_iff_ofReal hnonneg_density]
-        obtain ⟨_, hmass⟩ := chafaiMeasure_finite_mass f hcm k (by omega) L hL
+        obtain ⟨_, hmass⟩ := chafaiMeasure_finite_mass_of_tendsto f hcm k (by omega) L hL
         have hmass' := hmass
         rw [chafaiMeasure_eq_withDensity] at hmass'
         rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] at hmass'
@@ -496,14 +496,14 @@ private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
 lemma chafai_identity (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (n : ℕ) (hn : 2 ≤ n) (x : ℝ) (hx : 0 ≤ x)
     (L : ℝ) (hL : Tendsto f atTop (nhds L)) :
-    f x - L = ∫ p, bernstein_kernel n x p ∂(chafaiRescaled f n) := by
+    f x - L = ∫ p : ℝ≥0, bernstein_kernel n x (p : ℝ) ∂(chafaiRescaled f n) := by
   have hn0 : n ≠ 0 := by omega
-  have step1 : ∫ p, bernstein_kernel n x p ∂(chafaiRescaled f n) =
-      ∫ t, bernstein_kernel n x (((n : ℝ) - 1) / t) ∂(chafaiMeasure f n) := by
+  have step1 : ∫ p : ℝ≥0, bernstein_kernel n x (p : ℝ) ∂(chafaiRescaled f n) =
+      ∫ t, bernstein_kernel n x (chafaiRescaling n t : ℝ) ∂(chafaiMeasure f n) := by
     rw [chafaiRescaled_eq_map]
     exact integral_map_of_stronglyMeasurable (chafaiRescaling_measurable n)
-      (measurable_bernstein_kernel n x).stronglyMeasurable
-  have step2 : ∫ t, bernstein_kernel n x (((n : ℝ) - 1) / t) ∂(chafaiMeasure f n) =
+      ((measurable_bernstein_kernel n x).comp measurable_subtype_coe).stronglyMeasurable
+  have step2 : ∫ t, bernstein_kernel n x (chafaiRescaling n t : ℝ) ∂(chafaiMeasure f n) =
       ∫ t in Ioi 0, bernstein_kernel n x (((n : ℝ) - 1) / t) * chafaiDensity f n t := by
     rw [chafaiMeasure_eq_withDensity]
     have hcont_density : ContinuousOn (chafaiDensity f n) (Ici 0) :=
@@ -516,6 +516,7 @@ lemma chafai_identity (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     exact setIntegral_congr_ae measurableSet_Ioi
       (ae_of_all _ fun t ht => by
         simp only [smul_eq_mul, Set.mem_Ioi] at ht ⊢
+        rw [chafaiRescaling_coe_of_pos hn ht]
         rw [ENNReal.toReal_ofReal (chafaiDensity_nonneg hcm n t ht.le)]; ring)
   have step3 := chafai_kernel_density_eq f hcm n hn x hx
   have step4 := chafai_repeated_ibp f hcm n (by omega) x hx L hL

@@ -7,6 +7,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import TauCeti.Analysis.CompletelyMonotone.BernsteinAux
+public import TauCeti.Analysis.CompletelyMonotone.Limits
 
 /-!
 # Approximating measures for Bernstein's theorem
@@ -14,8 +15,8 @@ public import TauCeti.Analysis.CompletelyMonotone.BernsteinAux
 The Chafaï-style construction of the representing measure in Bernstein's theorem. For a
 completely monotone `f` the densities `ρ_n(t) = (-1)ⁿ/(n-1)! · tⁿ⁻¹ · f⁽ⁿ⁾(t)` are nonnegative,
 define finite measures `chafaiMeasure f n` whose total mass is bounded by `f(0) - f(∞)`, and after
-the rescaling `t ↦ (n-1)/t` give measures `chafaiRescaled f n` supported on `[0, ∞)` whose Laplace
-kernels `(1 - xp/(n-1))₊ⁿ⁻¹` converge to `e^{-xp}`. These feed the Prokhorov tightness argument.
+the rescaling `t ↦ (n-1)/t` give measures `chafaiRescaled f n` on `ℝ≥0` whose Laplace kernels
+`(1 - xp/(n-1))₊ⁿ⁻¹` converge to `e^{-xp}`. These feed the Prokhorov tightness argument.
 
 These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean` and
 `CompletelyMonotone/BernsteinAux.lean`.
@@ -28,8 +29,8 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
   improper integral `f(0) - L`.
 * `TauCeti.bernstein_kernel`, `TauCeti.bernstein_kernel_tendsto`: the rescaled Laplace kernel and
   its pointwise limit `e^{-xp}`.
-* `TauCeti.chafaiRescaled`, `TauCeti.chafaiRescaled_Iio_zero`, `TauCeti.chafaiRescaled_mass_eq`: the
-  pushed-forward measures, their support, and mass preservation.
+* `TauCeti.chafaiRescaled`, `TauCeti.chafaiRescaled_mass_eq`: the `ℝ≥0`-valued pushed-forward
+  measures and mass preservation.
 * `TauCeti.chafaiMeasure_finite_mass`: finiteness and the total-mass bound `≤ f(0) - L`.
 
 ## References
@@ -41,7 +42,7 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 public section
 
 open MeasureTheory Set intervalIntegral Filter
-open scoped ContDiff Topology
+open scoped ContDiff NNReal Topology
 
 namespace TauCeti
 
@@ -245,23 +246,36 @@ lemma bernstein_kernel_tendsto (x p : ℝ) :
   · ring
   · rw [sub_nonneg]; exact div_le_one_of_le₀ hn1_ge hn1_pos.le
 
-/-- The rescaled measure `σ̃_n`: pushforward of `chafaiMeasure f n` under `t ↦ (n-1)/t`. -/
-noncomputable def chafaiRescaled (f : ℝ → ℝ) (n : ℕ) : Measure ℝ :=
-  Measure.map (fun t => ((n : ℝ) - 1) / t) (chafaiMeasure f n)
+/-- The rescaling map `t ↦ max ((n-1)/t) 0`, valued in `ℝ≥0`. -/
+noncomputable def chafaiRescaling (n : ℕ) (t : ℝ) : ℝ≥0 :=
+  Real.toNNReal (((n : ℝ) - 1) / t)
 
-/-- The rescaling map `t ↦ (n-1)/t` is measurable. -/
+/-- The rescaling map `t ↦ max ((n-1)/t) 0`, valued in `ℝ≥0`, is measurable. -/
 lemma chafaiRescaling_measurable (n : ℕ) :
-    Measurable (fun t : ℝ => ((n : ℝ) - 1) / t) :=
-  measurable_const.div measurable_id
+    Measurable (chafaiRescaling n) :=
+  continuous_real_toNNReal.measurable.comp (measurable_const.div measurable_id)
+
+/-- On the positive part of the source, the `ℝ≥0` rescaling coerces back to `(n-1)/t`. -/
+lemma chafaiRescaling_coe_of_pos {n : ℕ} (hn : 2 ≤ n) {t : ℝ} (ht : 0 < t) :
+    (chafaiRescaling n t : ℝ) = ((n : ℝ) - 1) / t := by
+  have hnum : 0 ≤ (n : ℝ) - 1 := by
+    have : (2 : ℝ) ≤ n := by exact_mod_cast hn
+    linarith
+  have hnonneg : 0 ≤ ((n : ℝ) - 1) / t := div_nonneg hnum ht.le
+  simp [chafaiRescaling, Real.coe_toNNReal', max_eq_left hnonneg]
+
+/-- The rescaled measure `σ̃_n`: pushforward of `chafaiMeasure f n` under the `ℝ≥0` rescaling. -/
+noncomputable def chafaiRescaled (f : ℝ → ℝ) (n : ℕ) : Measure ℝ≥0 :=
+  Measure.map (chafaiRescaling n) (chafaiMeasure f n)
 
 /-- `chafaiRescaled` as a pushforward, exposed as a lemma rather than an unfoldable body. -/
 lemma chafaiRescaled_eq_map (f : ℝ → ℝ) (n : ℕ) :
-    chafaiRescaled f n = Measure.map (fun t => ((n : ℝ) - 1) / t) (chafaiMeasure f n) := by
+    chafaiRescaled f n = Measure.map (chafaiRescaling n) (chafaiMeasure f n) := by
   rw [chafaiRescaled]
 
 /-- The mass `chafaiRescaled f n` assigns to a measurable set, as the pushforward formula. -/
-lemma chafaiRescaled_apply (f : ℝ → ℝ) (n : ℕ) {s : Set ℝ} (hs : MeasurableSet s) :
-    chafaiRescaled f n s = chafaiMeasure f n ((fun t => ((n : ℝ) - 1) / t) ⁻¹' s) := by
+lemma chafaiRescaled_apply (f : ℝ → ℝ) (n : ℕ) {s : Set ℝ≥0} (hs : MeasurableSet s) :
+    chafaiRescaled f n s = chafaiMeasure f n ((chafaiRescaling n) ⁻¹' s) := by
   rw [chafaiRescaled, Measure.map_apply (chafaiRescaling_measurable n) hs]
 
 /-- `chafaiMeasure f n` lives on `(0, ∞)`: its complement has zero mass. -/
@@ -273,23 +287,6 @@ lemma chafaiMeasure_compl_Ioi (f : ℝ → ℝ) (n : ℕ) :
   rw [Measure.restrict_apply (measurableSet_Ioi.compl)]
   have : (Ioi (0 : ℝ))ᶜ ∩ Ioi 0 = ∅ := by ext x; simp [Set.mem_Ioi]
   rw [this, measure_empty]
-
-/-- The rescaled measure `σ̃_n` is supported on `[0, ∞)` for `n ≥ 2`. -/
-lemma chafaiRescaled_Iio_zero (f : ℝ → ℝ) (n : ℕ) (hn : 2 ≤ n) :
-    (chafaiRescaled f n) (Iio 0) = 0 := by
-  unfold chafaiRescaled
-  rw [Measure.map_apply (chafaiRescaling_measurable n) measurableSet_Iio]
-  have h_sub : (fun t : ℝ => ((n : ℝ) - 1) / t) ⁻¹' Iio 0 ⊆ (Ioi 0)ᶜ := by
-    intro t ht
-    simp only [Set.mem_preimage, Set.mem_Iio] at ht
-    simp only [Set.mem_compl_iff, Set.mem_Ioi, not_lt]
-    by_contra h; rw [not_le] at h
-    have : (0 : ℝ) < (↑n : ℝ) - 1 := by
-      have : (2 : ℝ) ≤ ↑n := by exact_mod_cast hn
-      linarith
-    linarith [div_pos this h]
-  exact nonpos_iff_eq_zero.mp
-    (le_trans (measure_mono h_sub) (le_of_eq (chafaiMeasure_compl_Ioi f n)))
 
 /-- Pushforward preserves total mass. -/
 lemma chafaiRescaled_mass_eq (f : ℝ → ℝ) (n : ℕ) :
@@ -387,8 +384,9 @@ lemma integral_chafaiDensity_le_pred (f : ℝ → ℝ) (hcm : IsCompletelyMonoto
     simp only [B]; ring
   linarith
 
-/-- **Total mass bound**: `chafaiMeasure f n` is finite with total mass `≤ f(0) - L`. -/
-lemma chafaiMeasure_finite_mass (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
+/-- **Total mass bound with a chosen limit**: `chafaiMeasure f n` is finite with total mass
+`≤ f(0) - L` whenever `f(t) → L` at infinity. -/
+lemma chafaiMeasure_finite_mass_of_tendsto (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (n : ℕ) (hn : 1 ≤ n) (L : ℝ) (hL : Tendsto f atTop (nhds L)) :
     IsFiniteMeasure (chafaiMeasure f n) ∧
     (chafaiMeasure f n) univ ≤ ENNReal.ofReal (f 0 - L) := by
@@ -453,5 +451,16 @@ lemma chafaiMeasure_finite_mass (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
       (le_of_tendsto (intervalIntegral_tendsto_integral_Ioi 0 hint tendsto_id)
         (eventually_atTop.mpr ⟨1, fun T hT => hbound T (by linarith)⟩))
   exact ⟨hfin, hmass⟩
+
+/-- **Natural total mass bound**: for a completely monotone `f`, the Chafaï measures are finite
+and uniformly bounded by `f(0) - L`, where `L` is the automatically obtained limit of `f` at
+infinity. -/
+lemma chafaiMeasure_finite_mass (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f) :
+    ∃ L : ℝ, Tendsto f atTop (nhds L) ∧ 0 ≤ L ∧
+      ∀ n, 1 ≤ n →
+        IsFiniteMeasure (chafaiMeasure f n) ∧
+        (chafaiMeasure f n) univ ≤ ENNReal.ofReal (f 0 - L) := by
+  obtain ⟨L, hL, hL_nn⟩ := hcm.tendsto_atTop
+  exact ⟨L, hL, hL_nn, fun n hn => chafaiMeasure_finite_mass_of_tendsto f hcm n hn L hL⟩
 
 end TauCeti

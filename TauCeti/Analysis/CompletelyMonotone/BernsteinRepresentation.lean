@@ -20,8 +20,10 @@ transform of a finite measure on `ℝ≥0` (`IsCompletelyMonotone.exists_measure
 
 The Chafaï construction lives in the supporting files (`BernsteinAux`, `BernsteinMeasures`,
 `BernsteinChafaiIdentity`, `BernsteinProkhorov`, `BernsteinKernelConv`); here we tie the pieces
-together (`bernstein_theorem` on `Measure ℝ`) and transport the measure to `ℝ≥0` per the TauCeti
-convention.
+together directly on `Measure ℝ≥0`, the TauCeti convention for Bernstein representing measures.
+
+This implements the Bernstein theorem milestone in
+`TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B.
 
 ## Scope and the finite-vs-all-moments subtlety
 
@@ -62,119 +64,87 @@ variable {f : ℝ → ℝ}
 noncomputable def laplaceTransformMeasure (μ : Measure ℝ≥0) (t : ℝ) : ℝ :=
   ∫ x, Real.exp (-t * (x : ℝ)) ∂μ
 
-/-- **Prokhorov extraction + Laplace verification** (Chafaï 2013). Assembles the Chafaï identity
-with the Prokhorov limit identification to represent `f t - L` as `∫ e^{-tp} dμ₀`. -/
-private lemma cm_prokhorov_and_verify (hcm : IsCompletelyMonotone f)
-    (L : ℝ) (hL : Tendsto f atTop (nhds L)) (hL_nn : 0 ≤ L)
-    (hmass : ∀ n, 2 ≤ n → IsFiniteMeasure (chafaiMeasure f n) ∧
-      (chafaiMeasure f n) univ ≤ ENNReal.ofReal (f 0 - L))
-    (hsupp : ∀ n, 2 ≤ n → (chafaiRescaled f n) (Iio 0) = 0) :
-    ∃ μ₀ : Measure ℝ, IsFiniteMeasure μ₀ ∧ μ₀ (Iio 0) = 0 ∧
-      ∀ t, 0 ≤ t → f t = L + ∫ p, Real.exp (-(t * p)) ∂μ₀ := by
+/-- For a completely monotone `f`, there is a limit `L ≥ 0` and a finite measure `μ₀` on `ℝ≥0`
+with `f t = L + ∫ e^{-tp} dμ₀`. -/
+private lemma cm_laplace_representation (hcm : IsCompletelyMonotone f) :
+    ∃ L : ℝ, 0 ≤ L ∧ ∃ μ₀ : Measure ℝ≥0, IsFiniteMeasure μ₀ ∧
+      ∀ t, 0 ≤ t → f t = L + ∫ p : ℝ≥0, Real.exp (-(t * (p : ℝ))) ∂μ₀ := by
+  obtain ⟨L, hL, hL_nn, hmass⟩ := chafaiMeasure_finite_mass f hcm
   have hfin_rescaled : ∀ n, 2 ≤ n → IsFiniteMeasure (chafaiRescaled f n) := by
-    intro n hn; haveI := (hmass n hn).1; exact chafaiRescaled_isFiniteMeasure f n
+    intro n hn
+    haveI := (hmass n (by omega : 1 ≤ n)).1
+    exact chafaiRescaled_isFiniteMeasure f n
   have hmass_rescaled : ∀ n, 2 ≤ n →
       (chafaiRescaled f n) univ ≤ ENNReal.ofReal (f 0 - L) := by
-    intro n hn; rw [chafaiRescaled_mass_eq]; exact (hmass n hn).2
+    intro n hn
+    rw [chafaiRescaled_mass_eq]
+    exact (hmass n (by omega : 1 ≤ n)).2
   have hchafai : ∀ n, 2 ≤ n → ∀ x, 0 ≤ x →
-      f x - L = ∫ p, bernstein_kernel n x p ∂(chafaiRescaled f n) :=
+      f x - L = ∫ p : ℝ≥0, bernstein_kernel n x (p : ℝ) ∂(chafaiRescaled f n) :=
     fun n hn x hx => chafai_identity f hcm n hn x hx L hL
-  exact prokhorov_limit_identification f hcm L hL hL_nn hmass_rescaled hsupp
-    hfin_rescaled hchafai
+  obtain ⟨μ₀, hfin₀, hrep⟩ :=
+    prokhorov_limit_identification f hcm L hL hL_nn hmass_rescaled hfin_rescaled hchafai
+  exact ⟨L, hL_nn, μ₀, hfin₀, hrep⟩
 
-/-- For a completely monotone `f` with limit `L ≥ 0` at infinity, there is a finite positive
-measure `μ₀` on `[0, ∞)` with `f t = L + ∫ e^{-tp} dμ₀`. -/
-private lemma cm_laplace_representation (hcm : IsCompletelyMonotone f)
-    (L : ℝ) (hL : Tendsto f atTop (nhds L)) (hL_nn : 0 ≤ L) :
-    ∃ μ₀ : Measure ℝ, IsFiniteMeasure μ₀ ∧ μ₀ (Iio 0) = 0 ∧
-      ∀ t, 0 ≤ t → f t = L + ∫ p, Real.exp (-(t * p)) ∂μ₀ := by
-  have hmass : ∀ n, 2 ≤ n → IsFiniteMeasure (chafaiMeasure f n) ∧
-      (chafaiMeasure f n) univ ≤ ENNReal.ofReal (f 0 - L) :=
-    fun n hn => chafaiMeasure_finite_mass f hcm n (by omega) L hL
-  have hsupp : ∀ n, 2 ≤ n → (chafaiRescaled f n) (Iio 0) = 0 :=
-    fun n hn => chafaiRescaled_Iio_zero f n hn
-  exact cm_prokhorov_and_verify hcm L hL hL_nn hmass hsupp
-
-/-- **Packaging step**: if `f(x) = L + ∫ e^{-xp} dμ₀` with `μ₀` supported on `[0,∞)`, then
-`μ = μ₀ + L·δ₀` gives `f(x) = ∫ e^{-xp} dμ` with `μ` finite and supported on `[0,∞)`. -/
+/-- **Packaging step**: if `f(x) = L + ∫ e^{-xp} dμ₀`, then `μ = μ₀ + L·δ₀` gives
+`f(x) = ∫ e^{-xp} dμ` with `μ` finite. -/
 private lemma exists_integral_exp_neg_mul_of_const_add {f : ℝ → ℝ} {L : ℝ} (hL : 0 ≤ L)
-    {μ₀ : Measure ℝ} [IsFiniteMeasure μ₀] (hsupp₀ : μ₀ (Iio 0) = 0)
-    (hrep : ∀ t, 0 ≤ t → f t = L + ∫ p, Real.exp (-(t * p)) ∂μ₀) :
-    ∃ μ : Measure ℝ, IsFiniteMeasure μ ∧ μ (Iio 0) = 0 ∧
-      ∀ t, 0 ≤ t → f t = ∫ p, Real.exp (-(t * p)) ∂μ := by
-  set μ := μ₀ + (ENNReal.ofReal L) • Measure.dirac (0 : ℝ)
+    {μ₀ : Measure ℝ≥0} [IsFiniteMeasure μ₀]
+    (hrep : ∀ t, 0 ≤ t → f t = L + ∫ p : ℝ≥0, Real.exp (-(t * (p : ℝ))) ∂μ₀) :
+    ∃ μ : Measure ℝ≥0, IsFiniteMeasure μ ∧
+      ∀ t, 0 ≤ t → f t = ∫ p : ℝ≥0, Real.exp (-(t * (p : ℝ))) ∂μ := by
+  set μ := μ₀ + (ENNReal.ofReal L) • Measure.dirac (0 : ℝ≥0)
   haveI : IsFiniteMeasure μ := by
     constructor
     simp only [μ, Measure.add_apply, Measure.smul_apply, smul_eq_mul,
       Measure.dirac_apply, Set.indicator_univ, Pi.one_apply, mul_one]
     exact ENNReal.add_lt_top.mpr ⟨measure_lt_top _ _, ENNReal.ofReal_lt_top⟩
-  refine ⟨μ, inferInstance, ?_, ?_⟩
-  · simp only [μ, Measure.add_apply, Measure.smul_apply, smul_eq_mul,
-      Measure.dirac_apply, Set.indicator, Set.mem_Iio, lt_irrefl,
-      ↓reduceIte, mul_zero, hsupp₀, add_zero]
-  · intro t ht
-    rw [hrep t ht]
-    set ν := (ENNReal.ofReal L) • Measure.dirac (0 : ℝ)
-    have exp_int : ∀ (μ' : Measure ℝ) [IsFiniteMeasure μ'],
-        μ' (Iio 0) = 0 → Integrable (fun p => Real.exp (-(t * p))) μ' := by
-      intro μ' _ hsupp'
+  refine ⟨μ, inferInstance, fun t ht => ?_⟩
+  rw [hrep t ht]
+  set ν := (ENNReal.ofReal L) • Measure.dirac (0 : ℝ≥0)
+  have exp_int : ∀ (μ' : Measure ℝ≥0) [IsFiniteMeasure μ'],
+      Integrable (fun p : ℝ≥0 => Real.exp (-(t * (p : ℝ)))) μ' := by
+      intro μ' _
       apply Integrable.mono' (integrable_const (1 : ℝ))
       · fun_prop
-      · rw [ae_iff]; refine measure_mono_null (fun p hp => ?_) hsupp'
-        simp only [Set.mem_setOf_eq, Real.norm_eq_abs, not_le] at hp
-        rw [Set.mem_Iio]; by_contra hge; rw [not_lt] at hge
-        linarith [abs_of_nonneg (Real.exp_pos (-(t * p))).le,
-          Real.exp_le_exp_of_le (neg_nonpos.mpr (mul_nonneg ht hge)), Real.exp_zero]
-    have h1 : Integrable (fun p => Real.exp (-(t * p))) μ₀ := exp_int μ₀ hsupp₀
-    have h2 : Integrable (fun p => Real.exp (-(t * p))) ν := by
-      haveI : IsFiniteMeasure ν := by
-        constructor; simp only [ν, Measure.smul_apply, smul_eq_mul,
-          Measure.dirac_apply, Set.indicator_univ, Pi.one_apply, mul_one]
-        exact ENNReal.ofReal_lt_top
-      apply exp_int; simp [ν, Measure.smul_apply, Set.indicator, Set.mem_Iio]
-    change L + ∫ p, Real.exp (-(t * p)) ∂μ₀ = ∫ p, Real.exp (-(t * p)) ∂(μ₀ + ν)
-    rw [integral_add_measure h1 h2]
-    suffices h : ∫ p, Real.exp (-(t * p)) ∂ν = L by linarith
-    rw [@integral_smul_measure ℝ ℝ _ _ _ (Measure.dirac 0)
-      (fun p => Real.exp (-(t * p))) (ENNReal.ofReal L),
-      integral_dirac, ENNReal.toReal_ofReal hL,
-      mul_zero, neg_zero, Real.exp_zero, smul_eq_mul, mul_one]
+      · apply ae_of_all
+        intro p
+        rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+        exact Real.exp_le_one_iff.mpr (neg_nonpos.mpr (mul_nonneg ht p.2))
+  have h1 : Integrable (fun p : ℝ≥0 => Real.exp (-(t * (p : ℝ)))) μ₀ := exp_int μ₀
+  have h2 : Integrable (fun p : ℝ≥0 => Real.exp (-(t * (p : ℝ)))) ν := by
+    haveI : IsFiniteMeasure ν := by
+      constructor
+      simp only [ν, Measure.smul_apply, smul_eq_mul,
+        Measure.dirac_apply, Set.indicator_univ, Pi.one_apply, mul_one]
+      exact ENNReal.ofReal_lt_top
+    exact exp_int ν
+  change L + ∫ p : ℝ≥0, Real.exp (-(t * (p : ℝ))) ∂μ₀ =
+    ∫ p : ℝ≥0, Real.exp (-(t * (p : ℝ))) ∂(μ₀ + ν)
+  rw [integral_add_measure h1 h2]
+  suffices h : ∫ p : ℝ≥0, Real.exp (-(t * (p : ℝ))) ∂ν = L by linarith
+  rw [@integral_smul_measure ℝ≥0 ℝ _ _ _ (Measure.dirac (0 : ℝ≥0))
+    (fun p => Real.exp (-(t * (p : ℝ)))) (ENNReal.ofReal L),
+    integral_dirac, ENNReal.toReal_ofReal hL,
+    NNReal.coe_zero, mul_zero, neg_zero, Real.exp_zero, smul_eq_mul, mul_one]
 
-/-- **Bernstein's theorem** on `Measure ℝ`: every completely monotone `f` on `[0, ∞)` is the
-Laplace transform of a finite measure supported on `[0, ∞)`. -/
-private lemma bernstein_theorem_real (hcm : IsCompletelyMonotone f) :
-    ∃ μ : Measure ℝ, IsFiniteMeasure μ ∧ μ (Iio 0) = 0 ∧
-      ∀ t : ℝ, 0 ≤ t → f t = ∫ p, Real.exp (-(t * p)) ∂μ := by
-  obtain ⟨L, hL_tendsto, hL_nonneg⟩ := hcm.tendsto_atTop
-  obtain ⟨μ₀, hfin₀, hsupp₀, hrep⟩ := cm_laplace_representation hcm L hL_tendsto hL_nonneg
-  exact exists_integral_exp_neg_mul_of_const_add hL_nonneg hsupp₀ hrep
+/-- **Bernstein's theorem** on `Measure ℝ≥0`: every completely monotone `f` on `[0, ∞)` is the
+Laplace transform of a finite measure. -/
+private lemma bernstein_theorem_nnreal (hcm : IsCompletelyMonotone f) :
+    ∃ μ : Measure ℝ≥0, IsFiniteMeasure μ ∧
+      ∀ t : ℝ, 0 ≤ t → f t = ∫ p : ℝ≥0, Real.exp (-(t * (p : ℝ))) ∂μ := by
+  obtain ⟨L, hL_nonneg, μ₀, hfin₀, hrep⟩ := cm_laplace_representation hcm
+  exact exists_integral_exp_neg_mul_of_const_add hL_nonneg hrep
 
 /-- **Bernstein's theorem, forward direction.** Every completely monotone function on the
 closed half-line `[0, ∞)` is the Laplace transform of a finite measure on `ℝ≥0`.
 
-The representing measure is obtained on `Measure ℝ` (supported on `[0, ∞)`) and transported to
-`Measure ℝ≥0` by pushforward along `Real.toNNReal`. -/
+The representing measure is built directly on `ℝ≥0`; nonnegative support is carried by the type. -/
 theorem IsCompletelyMonotone.exists_measure (hf : IsCompletelyMonotone f) :
     ∃ μ : Measure ℝ≥0, IsFiniteMeasure μ ∧
       ∀ t : ℝ, 0 ≤ t → f t = laplaceTransformMeasure μ t := by
-  obtain ⟨μ, hfin, hsupp, hrep⟩ := bernstein_theorem_real hf
-  have hmeas : Measurable Real.toNNReal := continuous_real_toNNReal.measurable
-  haveI hfin_map : IsFiniteMeasure (μ.map Real.toNNReal) := by
-    constructor
-    rw [Measure.map_apply hmeas MeasurableSet.univ]
-    exact measure_lt_top μ _
-  refine ⟨μ.map Real.toNNReal, hfin_map, fun t ht => ?_⟩
-  have hnn : ∀ᵐ p ∂μ, (0 : ℝ) ≤ p := by
-    have hset : {p : ℝ | ¬ (0 : ℝ) ≤ p} = Iio 0 := by ext p; simp [not_le]
-    rw [ae_iff, hset]; exact hsupp
-  rw [hrep t ht]
-  unfold laplaceTransformMeasure
-  rw [integral_map hmeas.aemeasurable
-    (by fun_prop : AEStronglyMeasurable (fun x : ℝ≥0 => Real.exp (-t * (x : ℝ))) _)]
-  refine integral_congr_ae ?_
-  filter_upwards [hnn] with p hp
-  rw [Real.coe_toNNReal' p, max_eq_left hp]
-  ring_nf
+  obtain ⟨μ, hfin, hrep⟩ := bernstein_theorem_nnreal hf
+  exact ⟨μ, hfin, fun t ht => by simpa [laplaceTransformMeasure] using hrep t ht⟩
 
 -- TODO (PR #2 — the biconditional, all-moments form). The textbook iff requires the
 -- *all-moments* condition on the measure side, not mere finiteness (see the scope note above):

@@ -6,13 +6,13 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.CompletelyMonotone.BernsteinMeasures
-public import TauCeti.MeasureTheory.Measure.Prokhorov
+public import TauCeti.Analysis.CompletelyMonotone.BernsteinProkhorov
 
 /-!
 # Bernstein kernel convergence and Prokhorov identification
 
 The final analytic step of the Chafaï proof of Bernstein's theorem: the Bernstein kernel
-`φ_n(x, ·)` converges uniformly to the Laplace kernel `e^{-x·}` on `[0, ∞)`
+`φ_n(x, ·)` converges uniformly to the Laplace kernel `e^{-x·}` on `ℝ≥0`
 (`kernel_uniform_conv`), so the finite-`n` Chafaï identities pass to the weak limit
 (`prokhorov_limit_identification`), yielding the Laplace representation
 `f t = L + ∫ e^{-tp} dμ₀`.
@@ -30,7 +30,7 @@ The final analytic step of the Chafaï proof of Bernstein's theorem: the Bernste
 public section
 
 open MeasureTheory Set Filter
-open scoped ContDiff Topology
+open scoped ContDiff NNReal Topology
 
 namespace TauCeti
 
@@ -164,50 +164,50 @@ private lemma kernel_uniform_conv (x : ℝ) (hx : 0 < x) (ε : ℝ) (hε : 0 < �
 -- `φ_n(x,p) → e^{-xp}` is UNIFORM in `p ∈ [0,∞)` (both functions have exponential
 -- tail decay), so `|∫(φ_n - e^{-xp})dσ_n| ≤ sup|φ_n - e^{-xp}| · σ_n(ℝ) → 0`.
 private lemma kernel_approx_error_tendsto
-    (σ : ℕ → Measure ℝ) (φ : ℕ → ℕ) (hφ : StrictMono φ)
+    (σ : ℕ → Measure ℝ≥0) (l : Filter ℕ) (hl : l ≤ atTop)
     (hfin : ∀ n, IsFiniteMeasure (σ n))
     (hmass : ∀ n, (σ n) Set.univ ≤ ENNReal.ofReal C)
-    (hsupp : ∀ n, (σ n) (Set.Iio 0) = 0)
     (x : ℝ) (hx : 0 ≤ x) :
-    Tendsto (fun k => ∫ p, (bernstein_kernel (φ k + 2) x p -
-        Real.exp (-(x * p))) ∂(σ (φ k))) atTop (nhds 0) := by
+    Tendsto (fun n => ∫ p : ℝ≥0, (bernstein_kernel (n + 2) x (p : ℝ) -
+        Real.exp (-(x * (p : ℝ)))) ∂(σ n)) l (nhds 0) := by
   by_cases hx0 : x = 0
   · -- x = 0: integrand = 0 since bernstein_kernel n 0 p = 1 = exp(0) for n ≥ 2
     subst hx0
-    suffices h : ∀ k, ∫ p, (bernstein_kernel (φ k + 2) 0 p -
-        Real.exp (-(0 * p))) ∂(σ (φ k)) = 0 by
+    suffices h : ∀ n, ∫ p : ℝ≥0, (bernstein_kernel (n + 2) 0 (p : ℝ) -
+        Real.exp (-(0 * (p : ℝ)))) ∂(σ n) = 0 by
       simp only [h]; exact tendsto_const_nhds
-    intro k; apply integral_eq_zero_of_ae; apply ae_of_all; intro p
-    change bernstein_kernel (φ k + 2) 0 p - Real.exp (-(0 * p)) = 0
-    rw [bernstein_kernel_of_two_le (by omega : 2 ≤ φ k + 2)]
+    intro n; apply integral_eq_zero_of_ae; apply ae_of_all; intro p
+    change bernstein_kernel (n + 2) 0 (p : ℝ) - Real.exp (-(0 * (p : ℝ))) = 0
+    rw [bernstein_kernel_of_two_le (by omega : 2 ≤ n + 2)]
     simp
   · -- x > 0: uniform convergence on [0,∞) + mass bound
     have hx_pos : 0 < x := lt_of_le_of_ne hx (Ne.symm hx0)
-    rw [Metric.tendsto_atTop]; intro ε hε
+    rw [Metric.tendsto_nhds]; intro ε hε
     have hmax_pos : 0 < max C 1 := lt_max_of_lt_right one_pos
     obtain ⟨N, hN⟩ := kernel_uniform_conv x hx_pos
       (ε / (2 * max C 1)) (div_pos hε (by positivity))
-    use N; intro k hk; rw [dist_zero_right]
-    haveI := hfin (φ k)
-    have hφk : N ≤ φ k + 2 := le_trans hk (le_trans (hφ.id_le k) (Nat.le_add_right _ _))
-    calc ‖∫ p, (bernstein_kernel (φ k + 2) x p - Real.exp (-(x * p))) ∂(σ (φ k))‖
-        ≤ ∫ p, ‖bernstein_kernel (φ k + 2) x p - Real.exp (-(x * p))‖ ∂(σ (φ k)) :=
+    filter_upwards [hl (eventually_ge_atTop N)] with n hn
+    rw [dist_zero_right]
+    haveI := hfin n
+    have hnN : N ≤ n + 2 := le_trans hn (Nat.le_add_right _ _)
+    calc ‖∫ p : ℝ≥0, (bernstein_kernel (n + 2) x (p : ℝ) -
+          Real.exp (-(x * (p : ℝ)))) ∂(σ n)‖
+        ≤ ∫ p : ℝ≥0, ‖bernstein_kernel (n + 2) x (p : ℝ) -
+            Real.exp (-(x * (p : ℝ)))‖ ∂(σ n) :=
           norm_integral_le_integral_norm _
-      _ ≤ ∫ _, (ε / (2 * max C 1)) ∂(σ (φ k)) := by
+      _ ≤ ∫ _, (ε / (2 * max C 1)) ∂(σ n) := by
           apply integral_mono_of_nonneg
             (ae_of_all _ fun p => norm_nonneg _) (integrable_const _)
-          rw [EventuallyLE, ae_iff]
-          exact measure_mono_null (fun p hp => by
-            simp only [Set.mem_setOf_eq, not_le, Real.norm_eq_abs] at hp
-            rw [Set.mem_Iio]; by_contra hge; push Not at hge
-            exact absurd (le_of_lt (hN (φ k + 2) hφk p hge)) (not_le.mpr hp))
-            (hsupp (φ k))
-      _ = ε / (2 * max C 1) * ((σ (φ k)) Set.univ).toReal := by
+          rw [EventuallyLE]
+          exact ae_of_all _ fun p => by
+            rw [Real.norm_eq_abs]
+            exact le_of_lt (hN (n + 2) hnN (p : ℝ) p.2)
+      _ = ε / (2 * max C 1) * ((σ n) Set.univ).toReal := by
           simp [MeasureTheory.integral_const, smul_eq_mul, Measure.real, mul_comm]
       _ ≤ ε / (2 * max C 1) * max C 1 := by
           apply mul_le_mul_of_nonneg_left _ (le_of_lt (div_pos hε (by positivity)))
           exact ENNReal.toReal_le_of_le_ofReal (le_of_lt hmax_pos)
-            (le_trans (hmass (φ k)) (ENNReal.ofReal_le_ofReal (le_max_left C 1)))
+            (le_trans (hmass n) (ENNReal.ofReal_le_ofReal (le_max_left C 1)))
       _ = ε / 2 := by field_simp
       _ < ε := half_lt_self hε
 
@@ -217,100 +217,98 @@ the subsequence. Decomposes as:
 where the first term → 0 (`kernel_approx_error_tendsto`) and the second
 term → `∫ e^{-xp} dμ₀` (`tendsto_exp_integral`). -/
 private lemma integral_bernstein_kernel_tendsto
-    (σ : ℕ → Measure ℝ) (φ : ℕ → ℕ) (μ₀ : Measure ℝ)
+    (σ : ℕ → Measure ℝ≥0) (l : Filter ℕ) (μ₀ : Measure ℝ≥0)
     [IsFiniteMeasure μ₀]
     (hfin : ∀ n, IsFiniteMeasure (σ n))
-    (hφ : StrictMono φ)
-    (hweak : ∀ (g : BoundedContinuousFunction ℝ ℝ),
-      Tendsto (fun k => ∫ p, g p ∂(σ (φ k))) atTop (nhds (∫ p, g p ∂μ₀)))
+    (hl : l ≤ atTop)
+    (hweak : ∀ (g : BoundedContinuousFunction ℝ≥0 ℝ),
+      Tendsto (fun n => ∫ p, g p ∂(σ n)) l (nhds (∫ p, g p ∂μ₀)))
     (hmass : ∀ n, (σ n) Set.univ ≤ ENNReal.ofReal C)
-    (hsupp_σ : ∀ n, (σ n) (Set.Iio 0) = 0)
-    (hsupp_μ : μ₀ (Set.Iio 0) = 0)
     (x : ℝ) (hx : 0 ≤ x) :
-    Tendsto (fun k => ∫ p, bernstein_kernel (φ k + 2) x p ∂(σ (φ k))) atTop
-      (nhds (∫ p, Real.exp (-(x * p)) ∂μ₀)) := by
+    Tendsto (fun n => ∫ p : ℝ≥0, bernstein_kernel (n + 2) x (p : ℝ) ∂(σ n)) l
+      (nhds (∫ p : ℝ≥0, Real.exp (-(x * (p : ℝ))) ∂μ₀)) := by
   -- Strategy: show the difference with ∫ e^{-xp} dσ_{φ(k)} → 0 (kernel error),
   -- and ∫ e^{-xp} dσ_{φ(k)} → ∫ e^{-xp} dμ₀ (weak convergence).
   -- Combined: ∫ φ_{φ(k)+2} dσ_{φ(k)} → ∫ e^{-xp} dμ₀.
-  have hterm1 := kernel_approx_error_tendsto (C := C) σ φ hφ hfin hmass hsupp_σ x hx
-  have hterm2 := tendsto_exp_integral σ φ μ₀ hweak hsupp_σ hsupp_μ x hx
-  -- The sum of a sequence tending to 0 and one tending to L tends to L
-  rw [show (∫ p, Real.exp (-(x * p)) ∂μ₀) = 0 + ∫ p, Real.exp (-(x * p)) ∂μ₀ from
+  have hterm1 := kernel_approx_error_tendsto (C := C) σ l hl hfin hmass x hx
+  have hterm2 := tendsto_exp_integral σ l μ₀ hweak x hx
+  -- The sum of a net tending to 0 and one tending to L tends to L.
+  rw [show (∫ p : ℝ≥0, Real.exp (-(x * (p : ℝ))) ∂μ₀) =
+      0 + ∫ p : ℝ≥0, Real.exp (-(x * (p : ℝ))) ∂μ₀ from
     (zero_add _).symm]
   apply Tendsto.congr _ (hterm1.add hterm2)
-  intro k; haveI := hfin (φ k)
-  -- ∫ (φ - e^{-xp}) dσ + ∫ e^{-xp} dσ = ∫ φ dσ (linearity)
-  -- Bernstein kernel is bounded on [0,∞) ⊆ support, hence integrable on finite σ
-  have hbk_int : Integrable (fun p => bernstein_kernel (φ k + 2) x p) (σ (φ k)) := by
+  intro n; haveI := hfin n
+  -- ∫ (φ - e^{-xp}) dσ + ∫ e^{-xp} dσ = ∫ φ dσ (linearity).
+  have hbk_int : Integrable (fun p : ℝ≥0 => bernstein_kernel (n + 2) x (p : ℝ)) (σ n) := by
     apply Integrable.mono' (integrable_const (1 : ℝ))
-    · exact (measurable_bernstein_kernel (φ k + 2) x).aestronglyMeasurable
-    · rw [ae_iff]; apply measure_mono_null (fun p hp => ?_) (hsupp_σ (φ k))
-      simp only [Set.mem_setOf_eq, Real.norm_eq_abs, not_le, Set.mem_Iio] at *
-      by_contra hge; push Not at hge
-      rw [bernstein_kernel_of_two_le (by omega : 2 ≤ φ k + 2)] at hp
-      simp only [show φ k + 2 - 1 = φ k + 1 from by omega] at hp
-      have hmax : max (1 - x * p / ↑(φ k + 1)) 0 ≤ 1 := by
+    · exact ((measurable_bernstein_kernel (n + 2) x).comp
+        measurable_subtype_coe).aestronglyMeasurable
+    · apply ae_of_all
+      intro p
+      simp only [Real.norm_eq_abs]
+      rw [bernstein_kernel_of_two_le (by omega : 2 ≤ n + 2)]
+      simp only [show n + 2 - 1 = n + 1 from by omega]
+      have hmax : max (1 - x * (p : ℝ) / ↑(n + 1)) 0 ≤ 1 := by
         apply max_le _ (by norm_num)
-        have : 0 ≤ x * p / ↑(φ k + 1) := div_nonneg (mul_nonneg hx hge) (by positivity)
+        have : 0 ≤ x * (p : ℝ) / ↑(n + 1) := div_nonneg (mul_nonneg hx p.2) (by positivity)
         linarith
-      have : 0 ≤ max (1 - x * p / ↑(φ k + 1)) 0 := le_max_right _ _
-      rw [abs_of_nonneg (pow_nonneg this _)] at hp
-      linarith [pow_le_one₀ (n := φ k + 1) this hmax]
-  have hexp_int : Integrable (fun p => Real.exp (-(x * p))) (σ (φ k)) := by
+      have : 0 ≤ max (1 - x * (p : ℝ) / ↑(n + 1)) 0 := le_max_right _ _
+      rw [abs_of_nonneg (pow_nonneg this _)]
+      exact pow_le_one₀ (n := n + 1) this hmax
+  have hexp_int : Integrable (fun p : ℝ≥0 => Real.exp (-(x * (p : ℝ)))) (σ n) := by
     apply Integrable.mono' (integrable_const (1 : ℝ))
     · exact Measurable.aestronglyMeasurable (by fun_prop)
-    · rw [ae_iff]; apply measure_mono_null (fun p hp => ?_) (hsupp_σ (φ k))
-      simp only [Set.mem_setOf_eq, Real.norm_eq_abs, not_le, Set.mem_Iio] at *
-      by_contra hge; push Not at hge
-      have : Real.exp (-(x * p)) ≤ 1 :=
-        Real.exp_le_one_iff.mpr (neg_nonpos.mpr (mul_nonneg hx hge))
-      rw [abs_of_pos (Real.exp_pos _)] at hp; linarith
+    · apply ae_of_all
+      intro p
+      simp only [Real.norm_eq_abs]
+      have : Real.exp (-(x * (p : ℝ))) ≤ 1 :=
+        Real.exp_le_one_iff.mpr (neg_nonpos.mpr (mul_nonneg hx p.2))
+      rw [abs_of_pos (Real.exp_pos _)]
+      exact this
   linarith [MeasureTheory.integral_sub hbk_int hexp_int]
 
 private lemma diagonal_convergence
     (f : ℝ → ℝ) (L : ℝ)
-    (σ : ℕ → Measure ℝ) (φ : ℕ → ℕ) (μ₀ : Measure ℝ)
+    (σ : ℕ → Measure ℝ≥0) (l : Filter ℕ) (μ₀ : Measure ℝ≥0)
+    [NeBot l]
     [IsFiniteMeasure μ₀]
     (hfin : ∀ n, IsFiniteMeasure (σ n))
-    (hφ : StrictMono φ)
-    (hweak : ∀ (g : BoundedContinuousFunction ℝ ℝ),
-      Tendsto (fun k => ∫ p, g p ∂(σ (φ k))) atTop (nhds (∫ p, g p ∂μ₀)))
+    (hl : l ≤ atTop)
+    (hweak : ∀ (g : BoundedContinuousFunction ℝ≥0 ℝ),
+      Tendsto (fun n => ∫ p, g p ∂(σ n)) l (nhds (∫ p, g p ∂μ₀)))
     (hmass : ∀ n, (σ n) Set.univ ≤ ENNReal.ofReal C)
-    (hsupp_σ : ∀ n, (σ n) (Set.Iio 0) = 0)
-    (hsupp_μ : μ₀ (Set.Iio 0) = 0)
     (x : ℝ) (hx : 0 ≤ x)
-    (hident : ∀ n, f x - L = ∫ p, bernstein_kernel (n + 2) x p ∂(σ n)) :
-    f x - L = ∫ p, Real.exp (-(x * p)) ∂μ₀ := by
-  -- The sequence ∫ φ_{φ(k)+2}(x,p) dσ_{φ(k)} = f(x) - L for all k (constant!)
-  have hconst : ∀ k, ∫ p, bernstein_kernel (φ k + 2) x p ∂(σ (φ k)) = f x - L :=
-    fun k => (hident (φ k)).symm
-  -- The same sequence converges to ∫ e^{-xp} dμ₀
+    (hident : ∀ n, f x - L = ∫ p : ℝ≥0, bernstein_kernel (n + 2) x (p : ℝ) ∂(σ n)) :
+    f x - L = ∫ p : ℝ≥0, Real.exp (-(x * (p : ℝ))) ∂μ₀ := by
+  -- The net ∫ φ_{n+2}(x,p) dσ_n = f(x) - L for all n (constant).
+  have hconst : ∀ n, ∫ p : ℝ≥0, bernstein_kernel (n + 2) x (p : ℝ) ∂(σ n) = f x - L :=
+    fun n => (hident n).symm
+  -- The same net converges to ∫ e^{-xp} dμ₀.
   have htends := integral_bernstein_kernel_tendsto (C := C)
-    σ φ μ₀ hfin hφ hweak hmass hsupp_σ hsupp_μ x hx
-  -- A constant sequence converging to a limit implies the constant equals the limit
-  exact tendsto_nhds_unique (tendsto_const_nhds.congr (fun k => (hconst k).symm)) htends
+    σ l μ₀ hfin hl hweak hmass x hx
+  -- A constant net converging to a limit implies the constant equals the limit.
+  exact tendsto_nhds_unique (tendsto_const_nhds.congr (fun n => (hconst n).symm)) htends
 
 lemma prokhorov_limit_identification (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (L : ℝ) (_hL : Tendsto f Filter.atTop (nhds L)) (_hL_nn : 0 ≤ L)
     (hmass_bound : ∀ n, 2 ≤ n →
       (chafaiRescaled f n) Set.univ ≤ ENNReal.ofReal (f 0 - L))
-    (hsupp : ∀ n, 2 ≤ n → (chafaiRescaled f n) (Set.Iio 0) = 0)
     (hfin : ∀ n, 2 ≤ n → IsFiniteMeasure (chafaiRescaled f n))
     (hidentity : ∀ n, 2 ≤ n → ∀ x, 0 ≤ x →
-      f x - L = ∫ p, bernstein_kernel n x p ∂(chafaiRescaled f n)) :
-    ∃ (μ₀ : Measure ℝ), IsFiniteMeasure μ₀ ∧ μ₀ (Set.Iio 0) = 0 ∧
-      ∀ t, 0 ≤ t → f t = L + ∫ p, Real.exp (-(t * p)) ∂μ₀ := by
+      f x - L = ∫ p : ℝ≥0, bernstein_kernel n x (p : ℝ) ∂(chafaiRescaled f n)) :
+    ∃ (μ₀ : Measure ℝ≥0), IsFiniteMeasure μ₀ ∧
+      ∀ t, 0 ≤ t → f t = L + ∫ p : ℝ≥0, Real.exp (-(t * (p : ℝ))) ∂μ₀ := by
   -- Shift indices: work with σ(n) = chafaiRescaled f (n+2) to avoid the n ≥ 2 condition
   set σ := fun n => chafaiRescaled f (n + 2) with hσ_def
   have hfin_σ : ∀ n, IsFiniteMeasure (σ n) := fun n => hfin (n + 2) (by omega)
   have hmass_σ : ∀ n, (σ n) Set.univ ≤ ENNReal.ofReal (f 0 - L) :=
     fun n => hmass_bound (n + 2) (by omega)
-  have hsupp_σ : ∀ n, (σ n) (Set.Iio 0) = 0 := fun n => hsupp (n + 2) (by omega)
   have hident_σ : ∀ n, 2 ≤ n + 2 → ∀ x, 0 ≤ x →
-      f x - L = ∫ p, bernstein_kernel (n + 2) x p ∂(σ n) :=
+      f x - L = ∫ p : ℝ≥0, bernstein_kernel (n + 2) x (p : ℝ) ∂(σ n) :=
     fun n hn2 x hx => hidentity (n + 2) hn2 x hx
   -- Step 1: Prokhorov extraction — get subsequence σ_{φ(k)} → μ₀
-  have htight_σ : ∀ ε, 0 < ε → ∃ K : ℝ, ∀ n, (σ n) (Set.Ioi K) ≤ ENNReal.ofReal ε := by
+  have htight_σ : ∀ ε : ℝ, 0 < ε →
+      ∃ K : Set ℝ≥0, IsCompact K ∧ ∀ n, (σ n) Kᶜ ≤ ENNReal.ofReal ε := by
     /- Tightness from CM structure (genuinely >30 lines):
        For ε > 0, choose x₀ = 1/K for large K (continuity of f at 0 gives
        f(0) - f(1/K) < ε(1 - e⁻¹)). From hident_σ with x = 0:
@@ -335,7 +333,8 @@ lemma prokhorov_limit_identification (f : ℝ → ℝ) (hcm : IsCompletelyMonoto
     have hmass_real : ∀ n, (σ n Set.univ).toReal = f 0 - L := by
       intro n; haveI := hfin_σ n
       have h1 := hident_σ n (by omega) 0 le_rfl
-      have hkernel_zero : (fun p => bernstein_kernel (n + 2) 0 p) = fun _ => (1 : ℝ) := by
+      have hkernel_zero :
+          (fun p : ℝ≥0 => bernstein_kernel (n + 2) 0 (p : ℝ)) = fun _ => (1 : ℝ) := by
         ext p
         rw [bernstein_kernel_of_two_le (by omega : 2 ≤ n + 2)]
         simp only [zero_mul, zero_div, sub_zero, zero_le_one, max_eq_left, one_pow]
@@ -346,109 +345,109 @@ lemma prokhorov_limit_identification (f : ℝ → ℝ) (hcm : IsCompletelyMonoto
         simp [Measure.real]] at h1
       linarith
     -- Integral bound: (1-exp(-x₀K)) · toReal(σ_n(Ioi K)) ≤ f(0)-f(x₀)
-    have hbound : ∀ (x₀ K : ℝ), 0 < x₀ → 0 < K → ∀ n,
-        (1 - Real.exp (-(x₀ * K))) * (σ n (Set.Ioi K)).toReal ≤ f 0 - f x₀ := by
+    have hbound : ∀ (x₀ K : ℝ) (hx₀ : 0 < x₀) (hK : 0 < K), ∀ n,
+        (1 - Real.exp (-(x₀ * K))) *
+          (σ n (Set.Ioi (⟨K, hK.le⟩ : ℝ≥0))).toReal ≤ f 0 - f x₀ := by
       intro x₀ K hx₀ hK n; haveI := hfin_σ n
+      let Knn : ℝ≥0 := ⟨K, hK.le⟩
       -- f(0)-f(x₀) = mass - ∫ kernel (from hmass_real + hident_σ)
       have h_diff : f 0 - f x₀ = (σ n Set.univ).toReal -
-          ∫ p, bernstein_kernel (n + 2) x₀ p ∂(σ n) := by
+          ∫ p : ℝ≥0, bernstein_kernel (n + 2) x₀ (p : ℝ) ∂(σ n) := by
         linarith [hmass_real n, hident_σ n (by omega) x₀ hx₀.le]
       -- ∫ kernel ≤ mass - (1-exp(-x₀K))·σ(Ioi K).toReal
       -- ↔ (1-exp(-x₀K))·σ(Ioi K).toReal ≤ mass - ∫ kernel = f(0)-f(x₀)
       rw [h_diff]
       -- ∫ kernel ≤ σ(Iic K) + exp(-x₀K)·σ(Ioi K) = σ(univ) - (1-exp(-x₀K))·σ(Ioi K)
-      have hmeas : (σ n Set.univ).toReal = (σ n (Set.Iic K)).toReal + (σ n (Set.Ioi K)).toReal := by
+      have hmeas : (σ n Set.univ).toReal =
+          (σ n (Set.Iic Knn)).toReal + (σ n (Set.Ioi Knn)).toReal := by
         rw [← Set.Iic_union_Ioi,
           measure_union (Set.Iic_disjoint_Ioi le_rfl) measurableSet_Ioi,
           ENNReal.toReal_add (measure_ne_top _ _) (measure_ne_top _ _)]
       set c := Real.exp (-(x₀ * K))
-      set g := fun p : ℝ => Set.indicator (Set.Iic K) (fun _ => (1:ℝ)) p +
-        Set.indicator (Set.Ioi K) (fun _ => c) p
+      set g := fun p : ℝ≥0 => Set.indicator (Set.Iic Knn) (fun _ => (1:ℝ)) p +
+        Set.indicator (Set.Ioi Knn) (fun _ => c) p
       have hg_val : ∫ p, g p ∂(σ n) =
-          (σ n (Set.Iic K)).toReal + c * (σ n (Set.Ioi K)).toReal := by
+          (σ n (Set.Iic Knn)).toReal + c * (σ n (Set.Ioi Knn)).toReal := by
         simp only [g]
         rw [integral_add ((integrable_const (1:ℝ)).indicator measurableSet_Iic)
           ((integrable_const c).indicator measurableSet_Ioi),
           integral_indicator_const _ measurableSet_Iic,
           integral_indicator_const _ measurableSet_Ioi,
           Measure.real, Measure.real, smul_eq_mul, smul_eq_mul, mul_one, mul_comm]
-      have hkernel_int : Integrable (bernstein_kernel (n + 2) x₀) (σ n) := by
+      have hkernel_int :
+          Integrable (fun p : ℝ≥0 => bernstein_kernel (n + 2) x₀ (p : ℝ)) (σ n) := by
         apply Integrable.mono' (integrable_const (1 : ℝ))
-        · exact (measurable_bernstein_kernel (n + 2) x₀).aestronglyMeasurable
-        · rw [ae_iff]
-          apply measure_mono_null (fun p hp => ?_) (hsupp_σ n)
-          simp only [Set.mem_setOf_eq, Real.norm_eq_abs, not_le, Set.mem_Iio] at *
-          by_contra hp_nonneg
-          push Not at hp_nonneg
-          rw [bernstein_kernel_of_two_le (by omega : 2 ≤ n + 2)] at hp
-          simp only [show n + 2 - 1 = n + 1 from by omega] at hp
-          have hmax : max (1 - x₀ * p / ↑(n + 1)) 0 ≤ 1 := by
+        · exact ((measurable_bernstein_kernel (n + 2) x₀).comp
+            measurable_subtype_coe).aestronglyMeasurable
+        · apply ae_of_all
+          intro p
+          simp only [Real.norm_eq_abs]
+          rw [bernstein_kernel_of_two_le (by omega : 2 ≤ n + 2)]
+          simp only [show n + 2 - 1 = n + 1 from by omega]
+          have hmax : max (1 - x₀ * (p : ℝ) / ↑(n + 1)) 0 ≤ 1 := by
             apply max_le _ (by norm_num)
-            have : 0 ≤ x₀ * p / ↑(n + 1) :=
-              div_nonneg (mul_nonneg hx₀.le hp_nonneg) (by positivity)
+            have : 0 ≤ x₀ * (p : ℝ) / ↑(n + 1) :=
+              div_nonneg (mul_nonneg hx₀.le p.2) (by positivity)
             linarith
-          have : 0 ≤ max (1 - x₀ * p / ↑(n + 1)) 0 := le_max_right _ _
-          rw [abs_of_nonneg (pow_nonneg this _)] at hp
-          linarith [pow_le_one₀ (n := n + 1) this hmax]
-      have hkernel_le_g : bernstein_kernel (n + 2) x₀ ≤ᶠ[MeasureTheory.ae (σ n)] g := by
-        have hnonneg_ae : ∀ᵐ p ∂σ n, 0 ≤ p := by
-          rw [ae_iff]
-          show (σ n) {p : ℝ | ¬0 ≤ p} = 0
-          have hset : {p : ℝ | ¬0 ≤ p} = Set.Iio 0 := by
-            ext p
-            simp only [Set.mem_setOf_eq, Set.mem_Iio, not_le]
-          rw [hset]
-          exact hsupp_σ n
-        filter_upwards [hnonneg_ae] with p hp_nonneg
-        by_cases hpK : p ≤ K
-        · have hkernel_le_one : bernstein_kernel (n + 2) x₀ p ≤ 1 := by
+          have : 0 ≤ max (1 - x₀ * (p : ℝ) / ↑(n + 1)) 0 := le_max_right _ _
+          rw [abs_of_nonneg (pow_nonneg this _)]
+          exact pow_le_one₀ (n := n + 1) this hmax
+      have hkernel_le_g :
+          (fun p : ℝ≥0 => bernstein_kernel (n + 2) x₀ (p : ℝ)) ≤ᶠ[MeasureTheory.ae (σ n)] g := by
+        apply ae_of_all
+        intro p
+        by_cases hpK : p ≤ Knn
+        · have hkernel_le_one : bernstein_kernel (n + 2) x₀ (p : ℝ) ≤ 1 := by
             rw [bernstein_kernel_of_two_le (by omega : 2 ≤ n + 2)]
             simp only [show n + 2 - 1 = n + 1 from by omega]
-            have hmax : max (1 - x₀ * p / ↑(n + 1)) 0 ≤ 1 := by
+            have hmax : max (1 - x₀ * (p : ℝ) / ↑(n + 1)) 0 ≤ 1 := by
               apply max_le _ (by norm_num)
-              have : 0 ≤ x₀ * p / ↑(n + 1) :=
-                div_nonneg (mul_nonneg hx₀.le hp_nonneg) (by positivity)
+              have : 0 ≤ x₀ * (p : ℝ) / ↑(n + 1) :=
+                div_nonneg (mul_nonneg hx₀.le p.2) (by positivity)
               linarith
             exact pow_le_one₀ (le_max_right _ _) hmax
           have hg_eq : g p = 1 := by
             unfold g
-            rw [Set.indicator_of_mem (show p ∈ Set.Iic K from hpK),
-              Set.indicator_of_notMem (show p ∉ Set.Ioi K from not_lt.mpr hpK)]
+            rw [Set.indicator_of_mem (show p ∈ Set.Iic Knn from hpK),
+              Set.indicator_of_notMem (show p ∉ Set.Ioi Knn from not_lt.mpr hpK)]
             simp
           simpa [hg_eq] using hkernel_le_one
-        · have hpK' : K < p := lt_of_not_ge hpK
-          have hkernel_le_exp : bernstein_kernel (n + 2) x₀ p ≤ Real.exp (-(x₀ * p)) := by
-            have hxp_nonneg : 0 ≤ x₀ * p := mul_nonneg hx₀.le hp_nonneg
+        · have hpK' : Knn < p := lt_of_not_ge hpK
+          have hpK'_real : K < (p : ℝ) := by exact_mod_cast hpK'
+          have hkernel_le_exp :
+              bernstein_kernel (n + 2) x₀ (p : ℝ) ≤ Real.exp (-(x₀ * (p : ℝ))) := by
+            have hxp_nonneg : 0 ≤ x₀ * (p : ℝ) := mul_nonneg hx₀.le p.2
             rw [bernstein_kernel_of_two_le (by omega : 2 ≤ n + 2)]
             simp only [show n + 2 - 1 = n + 1 from by omega]
-            by_cases hxp : x₀ * p ≤ ↑(n + 1)
-            · have hmax_eq : max (1 - x₀ * p / ↑(n + 1)) 0 = 1 - x₀ * p / ↑(n + 1) := by
+            by_cases hxp : x₀ * (p : ℝ) ≤ ↑(n + 1)
+            · have hmax_eq : max (1 - x₀ * (p : ℝ) / ↑(n + 1)) 0 =
+                  1 - x₀ * (p : ℝ) / ↑(n + 1) := by
                 apply max_eq_left
-                have hdiv : x₀ * p / ↑(n + 1) ≤ 1 := by
+                have hdiv : x₀ * (p : ℝ) / ↑(n + 1) ≤ 1 := by
                   exact (div_le_iff₀ (by positivity : (0 : ℝ) < ↑(n + 1))).2 (by simpa using hxp)
                 linarith
               rw [hmax_eq]
-              simpa using Real.one_sub_div_pow_le_exp_neg (n := n + 1) (t := x₀ * p) hxp
-            · have hmax_eq : max (1 - x₀ * p / ↑(n + 1)) 0 = 0 := by
+              simpa using Real.one_sub_div_pow_le_exp_neg (n := n + 1) (t := x₀ * (p : ℝ)) hxp
+            · have hmax_eq : max (1 - x₀ * (p : ℝ) / ↑(n + 1)) 0 = 0 := by
                 apply max_eq_right
                 push Not at hxp
-                have : 1 < x₀ * p / ↑(n + 1) := by
+                have : 1 < x₀ * (p : ℝ) / ↑(n + 1) := by
                   exact (lt_div_iff₀ (by positivity : (0 : ℝ) < ↑(n + 1))).2 (by simpa using hxp)
                 linarith
               rw [hmax_eq, zero_pow (by positivity)]
               exact le_of_lt (Real.exp_pos _)
-          have hexp_le : Real.exp (-(x₀ * p)) ≤ c := by
+          have hexp_le : Real.exp (-(x₀ * (p : ℝ))) ≤ c := by
             dsimp [c]
             apply Real.exp_le_exp.mpr
-            nlinarith [mul_le_mul_of_nonneg_left hpK'.le hx₀.le]
+            nlinarith [mul_le_mul_of_nonneg_left hpK'_real.le hx₀.le]
           have hg_eq : g p = c := by
             unfold g
-            rw [Set.indicator_of_notMem (show p ∉ Set.Iic K from not_le.mpr hpK'),
-              Set.indicator_of_mem (show p ∈ Set.Ioi K from hpK')]
+            rw [Set.indicator_of_notMem (show p ∉ Set.Iic Knn from not_le.mpr hpK'),
+              Set.indicator_of_mem (show p ∈ Set.Ioi Knn from hpK')]
             simp
           rw [hg_eq]
           exact hkernel_le_exp.trans hexp_le
-      have hle : ∫ p, bernstein_kernel (n+2) x₀ p ∂(σ n) ≤ ∫ p, g p ∂(σ n) := by
+      have hle : ∫ p : ℝ≥0, bernstein_kernel (n+2) x₀ (p : ℝ) ∂(σ n) ≤ ∫ p, g p ∂(σ n) := by
         apply integral_mono_ae
           hkernel_int
           ((integrable_const (1:ℝ)).indicator measurableSet_Iic |>.add
@@ -470,34 +469,43 @@ lemma prokhorov_limit_identification (f : ℝ → ℝ) (hcm : IsCompletelyMonoto
       linarith [neg_abs_le (f (δ/2) - f 0)]
     obtain ⟨x₀, hx₀_pos, hx₀_bound⟩ := hx₀
     -- Choose K = max(1/x₀, 1) so exp(-x₀K) ≤ exp(-1) < 1/2
-    refine ⟨max (1 / x₀) 1, fun n => ?_⟩
+    set K : ℝ := max (1 / x₀) 1
+    have hK : 0 < K := by dsimp [K]; exact lt_max_of_lt_right one_pos
+    let Knn : ℝ≥0 := ⟨K, hK.le⟩
+    refine ⟨Set.Icc 0 Knn, isCompact_Icc, fun n => ?_⟩
     -- σ_n(Ioi K) ≤ ofReal ε
-    have hK : 0 < max (1 / x₀) 1 := lt_max_of_lt_right one_pos
-    have hexp : Real.exp (-(x₀ * max (1 / x₀) 1)) ≤ 1 / 2 := by
-      calc Real.exp (-(x₀ * max (1 / x₀) 1))
+    have hexp : Real.exp (-(x₀ * K)) ≤ 1 / 2 := by
+      calc Real.exp (-(x₀ * K))
           ≤ Real.exp (-1) := by
-            apply Real.exp_le_exp_of_le; linarith [le_max_left (1/x₀) 1,
-              mul_le_mul_of_nonneg_left (le_max_left (1/x₀) 1) hx₀_pos.le,
+            apply Real.exp_le_exp_of_le; linarith [show 1 / x₀ ≤ K from le_max_left _ _,
+              mul_le_mul_of_nonneg_left (show 1 / x₀ ≤ K from le_max_left _ _) hx₀_pos.le,
               div_mul_cancel₀ (1 : ℝ) (ne_of_gt hx₀_pos)]
         _ ≤ 1 / 2 := by
             rw [Real.exp_neg]
             -- 1/e ≤ 1/2 ↔ 2 ≤ e
             rw [inv_le_comm₀ (Real.exp_pos 1) (by positivity : (0:ℝ) < 1/2)]
             linarith [Real.add_one_le_exp (1 : ℝ)]
-    have h_toReal_le : (σ n (Set.Ioi (max (1/x₀) 1))).toReal ≤ ε := by
-      have h1 := hbound x₀ (max (1/x₀) 1) hx₀_pos hK n
+    have hcompl : (Set.Icc 0 Knn : Set ℝ≥0)ᶜ = Set.Ioi Knn := by
+      ext p
+      simp
+    rw [hcompl]
+    have h_toReal_le : (σ n (Set.Ioi Knn)).toReal ≤ ε := by
+      have h1 := hbound x₀ K hx₀_pos hK n
       have h2 : (1 : ℝ) / 2 ≤ 1 - Real.exp (-(x₀ * max (1/x₀) 1)) := by linarith
-      have h3 : 0 ≤ (σ n (Set.Ioi (max (1/x₀) 1))).toReal := ENNReal.toReal_nonneg
+      have h2' : (1 : ℝ) / 2 ≤ 1 - Real.exp (-(x₀ * K)) := by
+        dsimp [K] at hexp ⊢
+        linarith
+      have h3 : 0 ≤ (σ n (Set.Ioi Knn)).toReal := ENNReal.toReal_nonneg
       nlinarith
     rwa [← ENNReal.ofReal_toReal (ne_of_lt (measure_lt_top (σ n) _)),
       ENNReal.ofReal_le_ofReal_iff hε.le]
-  obtain ⟨μ₀, φ, hfin_μ, hφ_mono, hsupp_μ, hmass_μ, hweak⟩ :=
-    finite_measure_subseq_limit σ (f 0 - L) hmass_σ hsupp_σ htight_σ
+  obtain ⟨μ₀, U, hUle, hfin_μ, hmass_μ, hweak⟩ :=
+    finite_measure_cluster_limit σ (f 0 - L) hmass_σ htight_σ
   -- Step 2: Verify the Laplace identity via diagonal convergence
-  refine ⟨μ₀, hfin_μ, hsupp_μ, fun t ht => ?_⟩
+  refine ⟨μ₀, hfin_μ, fun t ht => ?_⟩
   -- We need: f t = L + ∫ e^{-tp} dμ₀, i.e., f t - L = ∫ e^{-tp} dμ₀
   have hdiag := diagonal_convergence (C := f 0 - L) f L
-    σ φ μ₀ hfin_σ hφ_mono hweak hmass_σ hsupp_σ hsupp_μ t ht
+    σ (U : Filter ℕ) μ₀ hfin_σ hUle hweak hmass_σ t ht
     (fun n => hident_σ n (by omega) t ht)
   linarith
 
