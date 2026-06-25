@@ -98,21 +98,13 @@ lemma normalizerQuotientMk_range (H : Subgroup G) :
 
 variable {M : Type*} [Group M]
 
-/-- The subgroup-form universal property of `N(H) / H`: a homomorphism from the normalizer
-whose kernel contains the copy of `H` descends to a homomorphism from the normalizer quotient. -/
-abbrev normalizerQuotientLiftOfSubgroupOf (H : Subgroup G)
-    (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
-    (hφ : H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) ≤ φ.ker) :
-    normalizerQuotient H →* M :=
-  QuotientGroup.lift (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) φ hφ
-
 /-- The universal property of `N(H) / H`: a homomorphism from the normalizer that sends every
 ambient element of `H` to `1` descends to a homomorphism from the normalizer quotient. -/
 abbrev normalizerQuotientLift (H : Subgroup G)
     (φ : _root_.Subgroup.normalizer (H : Set G) →* M)
     (hφ : ∀ g : _root_.Subgroup.normalizer (H : Set G), (g : G) ∈ H → φ g = 1) :
     normalizerQuotient H →* M :=
-  normalizerQuotientLiftOfSubgroupOf H φ (by
+  QuotientGroup.lift (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G))) φ (by
     intro g hg
     exact hφ g hg)
 
