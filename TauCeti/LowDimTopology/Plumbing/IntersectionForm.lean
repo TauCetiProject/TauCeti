@@ -65,6 +65,8 @@ intersection form of a plumbing graph follows Némethi,
 
 public section
 
+open scoped Matrix
+
 namespace TauCeti
 
 /-- A plumbing graph: a simple graph together with an integer weight on each vertex.
@@ -134,12 +136,13 @@ theorem intersectionMatrix_isSymm : P.intersectionMatrix.IsSymm :=
 /-- A plumbing graph is **negative definite** when its intersection matrix is negative
 definite, equivalently when the negated intersection matrix is positive definite. For finite
 plumbed three-manifolds this is the standing hypothesis under which lattice homology computes
-the Heegaard Floer invariant.
-
-Exposed so that downstream files may read it directly as positive-definiteness of the negated
-intersection matrix and apply the `Matrix.PosDef` API to it. -/
-@[expose] def IsNegativeDefinite : Prop :=
+the Heegaard Floer invariant. -/
+def IsNegativeDefinite : Prop :=
   (-P.intersectionMatrix).PosDef
+
+/-- The defining matrix characterization of a negative-definite plumbing graph. -/
+theorem isNegativeDefinite_iff : P.IsNegativeDefinite ↔ (-P.intersectionMatrix).PosDef :=
+  Iff.rfl
 
 /-- A negative-definite plumbing graph has every framing negative: a diagonal entry of the
 positive-definite negated intersection matrix is the negated framing. -/
@@ -161,6 +164,12 @@ noncomputable def intersectionForm : LinearMap.BilinForm ℤ (V → ℤ) :=
 theorem intersectionForm_apply (x y : V → ℤ) :
     P.intersectionForm x y = ∑ i, ∑ j, x i * P.intersectionMatrix i j * y j :=
   Matrix.toBilin'_apply _ x y
+
+/-- The intersection form is the matrix pairing `x ⬝ᵥ A *ᵥ y`. This is the `Matrix.toBilin'`
+reading of `intersectionMatrix`. -/
+theorem intersectionForm_eq_dotProduct (x y : V → ℤ) :
+    P.intersectionForm x y = x ⬝ᵥ (P.intersectionMatrix *ᵥ y) :=
+  Matrix.toBilin'_apply' _ x y
 
 /-- The intersection form pairs the basis sphere classes by the intersection matrix entries. -/
 @[simp]
