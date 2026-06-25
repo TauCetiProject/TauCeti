@@ -33,10 +33,6 @@ connected. The simply-connected version drops the subgroup condition.
 * `TauCeti.IsCoveringMap.LiftCondition`: the fundamental-group subgroup inclusion.
 * `TauCeti.IsCoveringMap.existsUnique_lift_of_liftCondition`: the general lifting
   criterion.
-* `TauCeti.IsCoveringMap.existsUnique_lift_of_range_le`: the same criterion with the
-  subgroup inclusion written inline.
-* `TauCeti.IsCoveringMap.existsUnique_lift_of_simplyConnected`: the simply-connected
-  special case.
 
 ## References
 
@@ -87,29 +83,6 @@ theorem existsUnique_lift_of_liftCondition (hp : IsCoveringMap p)
     ∃! F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
   hp.existsUnique_continuousMap_lifts_of_range_le he h
 
-/-- The covering-space lifting criterion with the subgroup inclusion written inline.
-
-This is the Lean-shaped form of the informal condition
-`f_*(π₁(A, a₀)) ≤ p_*(π₁(E, e₀))`. -/
-theorem existsUnique_lift_of_range_le (hp : IsCoveringMap p)
-    [PathConnectedSpace A] [LocallyPathConnectedSpace A] {f : C(A, X)} {a₀ : A} {e₀ : E}
-    (he : p e₀ = f a₀)
-    (h : (FundamentalGroup.map f a₀).range ≤
-      (FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ he).range) :
-    ∃! F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
-  existsUnique_lift_of_liftCondition hp he h
-
-/-- The simply-connected special case of the covering-space lifting criterion.
-
-If `A` is simply connected and locally path connected, no separate subgroup-inclusion
-hypothesis is needed: every continuous map `f : A → X` lifts uniquely through a covering map
-after choosing the image of one base point. -/
-theorem existsUnique_lift_of_simplyConnected (hp : IsCoveringMap p)
-    [SimplyConnectedSpace A] [LocallyPathConnectedSpace A] (f : C(A, X)) (a₀ : A) (e₀ : E)
-    (he : p e₀ = f a₀) :
-    ∃! F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
-  hp.existsUnique_continuousMap_lifts f a₀ e₀ he
-
 /-- Existence part of the covering-space lifting criterion. -/
 theorem exists_lift_of_liftCondition (hp : IsCoveringMap p)
     [PathConnectedSpace A] [LocallyPathConnectedSpace A] {f : C(A, X)} {a₀ : A} {e₀ : E}
@@ -130,7 +103,7 @@ theorem exists_lift_of_simplyConnected (hp : IsCoveringMap p)
     [SimplyConnectedSpace A] [LocallyPathConnectedSpace A] (f : C(A, X)) (a₀ : A) (e₀ : E)
     (he : p e₀ = f a₀) :
     ∃ F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
-  (existsUnique_lift_of_simplyConnected hp f a₀ e₀ he).exists
+  (hp.existsUnique_continuousMap_lifts f a₀ e₀ he).exists
 
 /-- Uniqueness part of the simply-connected lifting criterion. -/
 theorem lift_unique_of_simplyConnected (hp : IsCoveringMap p)
@@ -138,7 +111,7 @@ theorem lift_unique_of_simplyConnected (hp : IsCoveringMap p)
     (he : p e₀ = f a₀) {F G : C(A, E)}
     (hF : F a₀ = e₀ ∧ p ∘ F = f) (hG : G a₀ = e₀ ∧ p ∘ G = f) :
     F = G :=
-  (existsUnique_lift_of_simplyConnected hp f a₀ e₀ he).unique hF hG
+  (hp.existsUnique_continuousMap_lifts f a₀ e₀ he).unique hF hG
 
 end IsCoveringMap
 
