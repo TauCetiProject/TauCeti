@@ -10,10 +10,11 @@ public import TauCeti.LowDimTopology.Plumbing.Weight
 # Conjugation symmetry of the plumbing-lattice weight function
 
 The spin^c structures of a plumbed three-manifold are encoded by characteristic covectors of the
-plumbing lattice, and spin^c **conjugation** acts by negating the covector. This file records
-that involution on `PlumbingGraph.characteristicVectors` and proves its compatibility with the
-characteristic weight function `χ_k(x)` from `Weight.lean`: conjugating the covector while
-negating the lattice point leaves the weight unchanged,
+plumbing lattice, and spin^c **conjugation** acts by negating the covector. The involution itself,
+`PlumbingGraph.conjugate`, lives at the characteristic-covector layer in `Characteristic.lean`;
+this file proves its compatibility with the characteristic weight function `χ_k(x)` from
+`Weight.lean`: conjugating the covector while negating the lattice point leaves the weight
+unchanged,
 
 `χ_{-k}(-x) = χ_k(x)`,
 
@@ -26,13 +27,8 @@ arguments fixes it, while negating only the covector reflects it through `2 (x �
 for arbitrary covectors and are stated first; the weight statements then follow from the doubling
 equation `two_mul_characteristicWeight`, with no integer division to discharge.
 
-## Main definitions
-
-* `TauCeti.PlumbingGraph.conjugate`: spin^c conjugation, negating a characteristic covector.
-
 ## Main results
 
-* `TauCeti.PlumbingGraph.conjugate_conjugate`: conjugation is an involution.
 * `TauCeti.PlumbingGraph.characteristicWeightNumerator_neg_neg`: negating both arguments fixes the
   weight numerator.
 * `TauCeti.PlumbingGraph.characteristicWeightNumerator_neg_left`: negating only the covector
@@ -61,33 +57,13 @@ namespace PlumbingGraph
 
 variable {V : Type*} (P : PlumbingGraph V)
 
-/-- Spin^c conjugation on characteristic covectors: negate the covector. Characteristicness is
-preserved because `-1 ≡ 1 [ZMOD 2]`, so this is a well-defined involution of
-`characteristicVectors`. On the level of spin^c structures it is the conjugation involution. -/
-def conjugate (k : P.characteristicVectors) : P.characteristicVectors :=
-  ⟨-k.val, k.property.neg⟩
-
-/-- The conjugate covector is the pointwise negation of the original. -/
-private theorem conjugate_val_aux (k : P.characteristicVectors) : (P.conjugate k).val = -k.val :=
-  rfl
-
-/-- The conjugate covector is the pointwise negation of the original. -/
-@[simp]
-theorem conjugate_val (k : P.characteristicVectors) : (P.conjugate k).val = -k.val :=
-  conjugate_val_aux P k
-
-/-- Spin^c conjugation is an involution. -/
-@[simp]
-theorem conjugate_conjugate (k : P.characteristicVectors) :
-    P.conjugate (P.conjugate k) = k :=
-  Subtype.ext (by simp)
-
 section Form
 
 variable [DecidableEq V] [Fintype V]
 
 /-- Negating both the covector and the lattice point fixes the weight numerator: each linear term
 `k v * x v` is unchanged and the quadratic term `x · x` is even in `x`. -/
+@[simp]
 theorem characteristicWeightNumerator_neg_neg (k x : V → ℤ) :
     P.characteristicWeightNumerator (-k) (-x) = P.characteristicWeightNumerator k x := by
   rw [characteristicWeightNumerator_def, characteristicWeightNumerator_def]
@@ -110,6 +86,7 @@ theorem characteristicWeightNumerator_neg_left (k x : V → ℤ) :
 /-- **Conjugation symmetry of the lattice weight.** Conjugating the covector and negating the
 lattice point leaves the characteristic weight unchanged: `χ_{-k}(-x) = χ_k(x)`. This is the
 identity behind the conjugation involution of lattice homology. -/
+@[simp]
 theorem characteristicWeight_conjugate_neg (k : P.characteristicVectors) (x : V → ℤ) :
     P.characteristicWeight (P.conjugate k) (-x) = P.characteristicWeight k x := by
   have h2 : 2 * P.characteristicWeight (P.conjugate k) (-x) =
@@ -133,6 +110,7 @@ theorem characteristicWeight_conjugate_add (k : P.characteristicVectors) (x : V 
 /-- The conjugate of the canonical characteristic covector has weight `-P.weight v - 1` on each
 basis sphere `E_v`; equivalently, by `characteristicWeight_conjugate_neg`, the canonical weight on
 `-E_v`. A concrete value pinning down the conjugate weight on the plumbing basis. -/
+@[simp]
 theorem characteristicWeight_conjugate_canonical_single (v : V) :
     P.characteristicWeight
       (P.conjugate ⟨P.canonicalCharacteristic, P.isCharacteristicVector_canonicalCharacteristic⟩)

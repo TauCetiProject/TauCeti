@@ -27,6 +27,7 @@ from these covectors and the plumbing intersection form.
 * `TauCeti.PlumbingGraph.characteristicVectors`: the subtype of characteristic covectors.
 * `TauCeti.PlumbingGraph.canonicalCharacteristic`: the canonical covector satisfying the
   adjunction coordinates `K(E_v) + E_v · E_v = -2`.
+* `TauCeti.PlumbingGraph.conjugate`: spin^c conjugation, negating a characteristic covector.
 
 ## Main results
 
@@ -36,6 +37,7 @@ from these covectors and the plumbing intersection form.
   characteristic condition against every lattice vector.
 * Characteristic covectors are stable under adding twice an integral covector, and the
   difference of two characteristic covectors is pointwise even.
+* `TauCeti.PlumbingGraph.conjugate_conjugate`: spin^c conjugation is an involution.
 
 ## References
 
@@ -200,6 +202,28 @@ theorem IsCharacteristicVector.neg {k : V → ℤ}
   have hweight : -P.weight v ≡ P.weight v [ZMOD 2] :=
     Int.modEq_iff_dvd.mpr ⟨P.weight v, by ring⟩
   exact (hk v).neg.trans hweight
+
+/-- Spin^c conjugation on characteristic covectors: negate the covector. Characteristicness is
+preserved because `-1 ≡ 1 [ZMOD 2]` (see `IsCharacteristicVector.neg`), so this is a well-defined
+involution of `characteristicVectors`. On the level of spin^c structures it is the conjugation
+involution. -/
+def conjugate (k : P.characteristicVectors) : P.characteristicVectors :=
+  ⟨-k.val, k.property.neg⟩
+
+/-- The conjugate covector is the pointwise negation of the original. -/
+private theorem conjugate_val_aux (k : P.characteristicVectors) : (P.conjugate k).val = -k.val :=
+  rfl
+
+/-- The conjugate covector is the pointwise negation of the original. -/
+@[simp]
+theorem conjugate_val (k : P.characteristicVectors) : (P.conjugate k).val = -k.val :=
+  conjugate_val_aux P k
+
+/-- Spin^c conjugation is an involution. -/
+@[simp]
+theorem conjugate_conjugate (k : P.characteristicVectors) :
+    P.conjugate (P.conjugate k) = k :=
+  Subtype.ext (by simp)
 
 /-- The pointwise difference of two characteristic covectors is even. -/
 theorem IsCharacteristicVector.even_sub {k l : V → ℤ}
