@@ -61,6 +61,7 @@ lemma energyIntegrand_zero_drift_comm_of_isSymm {A : Matrix n n ℝ} (hA : A.IsS
     _ = energyIntegrand A 0 c V U := energyIntegrand_zero_drift_transpose_apply A c U V
 
 /-- Bundled-map form of symmetry for the zero-drift jet integrand. -/
+@[simp]
 lemma energyIntegrand_zero_drift_flip_eq_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm)
     (c : ℝ) :
     (energyIntegrand A 0 c).flip = energyIntegrand A 0 c := by
@@ -105,6 +106,7 @@ lemma energyIntegrand_coefficientSymmetricPart_zero_drift_comm (A : Matrix n n �
   energyIntegrand_zero_drift_comm_of_isSymm (coefficientSymmetricPart_isSymm A) c U V
 
 /-- Bundled-map form of symmetry for the symmetric-part zero-drift jet integrand. -/
+@[simp]
 lemma energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq (A : Matrix n n ℝ)
     (c : ℝ) :
     (energyIntegrand (coefficientSymmetricPart A) 0 c).flip =
