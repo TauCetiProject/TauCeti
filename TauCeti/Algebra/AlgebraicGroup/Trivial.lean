@@ -21,7 +21,6 @@ group scheme dictionary: `Spec R` over `Spec R` represents the trivial group-val
 
 ## Main declarations
 
-* `TauCeti.TrivialGroup.point`: the unique `A`-point, `Algebra.ofId R A`.
 * `TauCeti.TrivialGroup.pointsMulEquiv`: the convolution group of points is `PUnit`.
 * `TauCeti.TrivialGroup.pointsMulEquiv_mapValue`: the equivalence is natural in the value
   algebra.
@@ -45,31 +44,6 @@ universe u v w
 variable {R : Type u} {A : Type v}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 
-/-- The unique `A`-point of the trivial affine group represented by the Hopf algebra `R`. -/
-def point : R →ₐ[R] A :=
-  Algebra.ofId R A
-
-@[simp]
-theorem point_apply (r : R) : point (R := R) (A := A) r = algebraMap R A r :=
-  Algebra.ofId_apply (R := R) (A := A) r
-
-/-- Algebra maps out of the coordinate Hopf algebra `R` are equivalent to the one-point type. -/
-@[expose] noncomputable def pointEquiv : (R →ₐ[R] A) ≃ PUnit.{1} where
-  toFun _ := PUnit.unit
-  invFun _ := point (R := R) (A := A)
-  left_inv := fun f => Algebra.ext_id A (point (R := R) (A := A)) f
-  right_inv _ := rfl
-
-@[simp]
-theorem pointEquiv_apply (f : R →ₐ[R] A) :
-    pointEquiv (R := R) (A := A) f = PUnit.unit :=
-  rfl
-
-@[simp]
-theorem pointEquiv_symm_apply (u : PUnit.{1}) :
-    (pointEquiv (R := R) (A := A)).symm u = point (R := R) (A := A) :=
-  rfl
-
 /-- The functor of points of the trivial affine group is the one-element group.
 
 The source is the convolution group of `R`-algebra maps out of the Hopf algebra `R`; since
@@ -77,7 +51,7 @@ there is only one such algebra map, the convolution group is multiplicatively eq
 `PUnit`. -/
 @[expose] noncomputable def pointsMulEquiv : WithConv (R →ₐ[R] A) ≃* PUnit.{1} where
   toFun _ := PUnit.unit
-  invFun _ := toConv (point (R := R) (A := A))
+  invFun _ := toConv (Algebra.ofId R A)
   left_inv f := by
     apply WithConv.ofConv_injective
     exact Subsingleton.elim _ _
@@ -91,7 +65,7 @@ theorem pointsMulEquiv_apply (f : WithConv (R →ₐ[R] A)) :
 
 @[simp]
 theorem pointsMulEquiv_symm_apply (u : PUnit.{1}) :
-    (pointsMulEquiv (R := R) (A := A)).symm u = toConv (point (R := R) (A := A)) :=
+    (pointsMulEquiv (R := R) (A := A)).symm u = toConv (Algebra.ofId R A) :=
   rfl
 
 /-- The unique convolution point is the identity point. -/
@@ -102,7 +76,7 @@ theorem convPoint_eq_one (f : WithConv (R →ₐ[R] A)) : f = 1 := by
 
 @[simp]
 theorem convPoint_ofConv (f : WithConv (R →ₐ[R] A)) :
-    f.ofConv = point (R := R) (A := A) :=
+    f.ofConv = Algebra.ofId R A :=
   Subsingleton.elim _ _
 
 @[simp]
@@ -120,19 +94,6 @@ theorem convInv_apply (f : WithConv (R →ₐ[R] A)) (r : R) :
 section Naturality
 
 variable {B : Type w} [CommSemiring B] [Algebra R B]
-
-/-- The plain points equivalence is natural in the value algebra. -/
-@[simp]
-theorem pointEquiv_comp (φ : A →ₐ[R] B) (f : R →ₐ[R] A) :
-    pointEquiv (R := R) (A := B) (φ.comp f) =
-      pointEquiv (R := R) (A := A) f :=
-  rfl
-
-/-- The unique trivial-group point is natural in the value algebra. -/
-@[simp]
-theorem comp_point (φ : A →ₐ[R] B) :
-    φ.comp (point (R := R) (A := A)) = point (R := R) (A := B) := by
-  rw [point, point, Algebra.comp_ofId]
 
 /-- The trivial-group points equivalence is natural in the value algebra. -/
 @[simp]
