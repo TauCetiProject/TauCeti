@@ -60,13 +60,6 @@ theorem postcomp_homeomorph (hfg : AmbientIsotopic f g) (h : Y ≃ₜ Z) :
   have hx : Φ.final (f x) = g x := congr_fun (congrArg DFunLike.coe hΦ) x
   simpa [AmbientIsotopy.final_apply] using hx
 
-/-- Transporting ambient-isotopic maps across a homeomorphism of ambient spaces. This is the same
-statement as `AmbientIsotopic.postcomp_homeomorph`, named from the witnessing ambient-isotopy
-construction `AmbientIsotopy.transport`. -/
-theorem transport (hfg : AmbientIsotopic f g) (h : Y ≃ₜ Z) :
-    AmbientIsotopic ((h : C(Y, Z)).comp f) ((h : C(Y, Z)).comp g) :=
-  hfg.postcomp_homeomorph h
-
 /-- The two-sided coordinate-change form: precompose the source by any continuous map and
 postcompose the ambient space by a homeomorphism. -/
 theorem postcomp_homeomorph_precomp (hfg : AmbientIsotopic f g) (h : Y ≃ₜ Z) (e : C(W, X)) :
