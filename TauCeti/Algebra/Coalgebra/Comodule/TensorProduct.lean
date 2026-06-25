@@ -25,6 +25,7 @@ will compose this external coaction with multiplication on the coordinate bialge
 * `TauCeti.Comodule.externalTensorCoact`: the external tensor-product coaction.
 * `TauCeti.Comodule.externalTensorCoact_tmul`: its value on a simple tensor.
 * `TauCeti.Comodule.tensorProduct`: the non-global tensor-product comodule structure.
+* `TauCeti.Comodule.tensorProductHom`: the tensor product of comodule morphisms.
 * `TauCeti.Comodule.externalTensorCoact_naturality`: compatibility with tensor products of
   comodule morphisms.
 
@@ -72,6 +73,7 @@ theorem externalTensorCoact_tmul (m : M) (n : N) :
   rfl
 
 /-- Coassociativity of the external tensor coaction. -/
+@[simp]
 theorem externalTensorCoact_coassoc :
     TensorProduct.assoc R (M ⊗[R] N) (C ⊗[R] D) (C ⊗[R] D) ∘ₗ
         (externalTensorCoact (R := R) (C := C) (D := D) (M := M) (N := N)).rTensor
@@ -163,6 +165,7 @@ theorem externalTensorCoact_coassoc :
         simpa using (LinearMap.congr_fun hright (coact m ⊗ₜ[R] coact n)).symm
 
 /-- The counit law for the external tensor coaction. -/
+@[simp]
 theorem externalTensorCoact_counit :
     Coalgebra.counit.lTensor (M ⊗[R] N) ∘ₗ
         externalTensorCoact (R := R) (C := C) (D := D) (M := M) (N := N) =
@@ -206,6 +209,7 @@ theorem tensorProduct_coact :
   rfl
 
 /-- Naturality of the external tensor coaction under tensor products of comodule morphisms. -/
+@[simp]
 theorem externalTensorCoact_naturality
     {M' : Type*} [AddCommMonoid M'] [Module R M'] [Comodule R C M']
     {N' : Type*} [AddCommMonoid N'] [Module R N'] [Comodule R D N']
@@ -222,6 +226,46 @@ theorem externalTensorCoact_naturality
     (coact (R := R) (C := C) (M := M) m ⊗ₜ[R]
       coact (R := R) (C := D) (M := N) n)
   simpa [externalTensorCoact, TensorProduct.map_map] using hcomm.symm
+
+/-- The tensor product of two comodule morphisms, for the non-global tensor-product comodules. -/
+@[expose] def tensorProductHom
+    {M' : Type*} [AddCommMonoid M'] [Module R M'] [Comodule R C M']
+    {N' : Type*} [AddCommMonoid N'] [Module R N'] [Comodule R D N']
+    (f : Comodule.Hom R C M M') (g : Comodule.Hom R D N N') :
+    letI : Comodule R (C ⊗[R] D) (M ⊗[R] N) := tensorProduct R C D M N
+    letI : Comodule R (C ⊗[R] D) (M' ⊗[R] N') := tensorProduct R C D M' N'
+    Comodule.Hom R (C ⊗[R] D) (M ⊗[R] N) (M' ⊗[R] N') :=
+  letI : Comodule R (C ⊗[R] D) (M ⊗[R] N) := tensorProduct R C D M N
+  letI : Comodule R (C ⊗[R] D) (M' ⊗[R] N') := tensorProduct R C D M' N'
+  { toLinearMap := TensorProduct.map f.toLinearMap g.toLinearMap
+    map_coact := by
+      simp [tensorProduct_coact,
+        externalTensorCoact_naturality (R := R) (C := C) (D := D) f g] }
+
+/-- The underlying linear map of the tensor product of comodule morphisms. -/
+@[simp]
+theorem tensorProductHom_toLinearMap
+    {M' : Type*} [AddCommMonoid M'] [Module R M'] [Comodule R C M']
+    {N' : Type*} [AddCommMonoid N'] [Module R N'] [Comodule R D N']
+    (f : Comodule.Hom R C M M') (g : Comodule.Hom R D N N') :
+    letI : Comodule R (C ⊗[R] D) (M ⊗[R] N) := tensorProduct R C D M N
+    letI : Comodule R (C ⊗[R] D) (M' ⊗[R] N') := tensorProduct R C D M' N'
+    (tensorProductHom (R := R) (C := C) (D := D) f g).toLinearMap =
+      TensorProduct.map f.toLinearMap g.toLinearMap :=
+  rfl
+
+/-- The tensor product of comodule morphisms applies as the tensor product of the underlying
+linear maps. -/
+@[simp]
+theorem tensorProductHom_apply
+    {M' : Type*} [AddCommMonoid M'] [Module R M'] [Comodule R C M']
+    {N' : Type*} [AddCommMonoid N'] [Module R N'] [Comodule R D N']
+    (f : Comodule.Hom R C M M') (g : Comodule.Hom R D N N') (x : M ⊗[R] N) :
+    letI : Comodule R (C ⊗[R] D) (M ⊗[R] N) := tensorProduct R C D M N
+    letI : Comodule R (C ⊗[R] D) (M' ⊗[R] N') := tensorProduct R C D M' N'
+    tensorProductHom (R := R) (C := C) (D := D) f g x =
+      TensorProduct.map f.toLinearMap g.toLinearMap x :=
+  rfl
 
 /-- Pointwise form of naturality of the external tensor coaction. -/
 @[simp]
