@@ -6,8 +6,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Topology.Algebra.HomeomorphAction
-public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
-public import Mathlib.GroupTheory.GroupAction.SubMulAction.OfFixingSubgroup
+public import TauCeti.Algebra.GroupAction.FixingSubgroup
 
 /-!
 # Diffeomorphisms fixing a subset pointwise
@@ -44,17 +43,6 @@ public section
 namespace TauCeti
 
 open scoped Manifold ContDiff Pointwise
-
-/-- For a faithful action, the subgroup fixing the whole space pointwise is trivial. -/
-@[simp]
-private theorem fixingSubgroup_univ_of_faithful {G α : Type*} [Group G] [MulAction G α]
-    [FaithfulSMul G α] :
-    _root_.fixingSubgroup G (Set.univ : Set α) = ⊥ := by
-  ext g
-  rw [_root_.mem_fixingSubgroup_iff, Subgroup.mem_bot]
-  refine ⟨fun hg => ?_, fun hg x _ => by rw [hg, one_smul]⟩
-  exact FaithfulSMul.eq_of_smul_eq_smul fun x =>
-    (hg x (Set.mem_univ x)).trans (one_smul G x).symm
 
 namespace Diffeomorph
 
@@ -103,17 +91,12 @@ theorem fixingSubgroup_empty :
 @[simp]
 theorem fixingSubgroup_univ :
     fixingSubgroup (I := I) (M := M) (n := n) (Set.univ : Set M) = ⊥ := by
-  exact fixingSubgroup_univ_of_faithful (G := M ≃ₘ^n⟮I, I⟯ M) (α := M)
+  exact TauCeti.fixingSubgroup_univ (G := M ≃ₘ^n⟮I, I⟯ M) (α := M)
 
 /-- Fixing a larger set pointwise gives a smaller subgroup. -/
 theorem fixingSubgroup_antitone {s t : Set M} (hst : s ⊆ t) :
     fixingSubgroup (I := I) (n := n) t ≤ fixingSubgroup (I := I) (n := n) s := by
   exact _root_.fixingSubgroup_antitone (M ≃ₘ^n⟮I, I⟯ M) M hst
-
-/-- Pointwise fixing a subset implies setwise stabilizing it. -/
-theorem fixingSubgroup_le_stabilizer (s : Set M) :
-    fixingSubgroup (I := I) (n := n) s ≤ MulAction.stabilizer (M ≃ₘ^n⟮I, I⟯ M) s := by
-  exact MulAction.fixingSubgroup_le_stabilizer (M ≃ₘ^n⟮I, I⟯ M) s
 
 /-- Pointwise fixing is invariant under replacing the subset by an equal subset. -/
 theorem fixingSubgroup_congr {s t : Set M} (hst : s = t) :
