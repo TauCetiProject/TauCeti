@@ -225,7 +225,10 @@ lemma weightedAbelJacobiDivisorClass_principalDivisor (w : X → ℤ)
 
 /-! ### Unweighted Abel-Jacobi sums -/
 
-/-- The unweighted Abel-Jacobi sum of a Weil divisor. -/
+/-- The unweighted Abel-Jacobi sum of a Weil divisor.
+
+This is the constant-weight-one specialization of `weightedAbelJacobiDivisorClass`: it sends
+`D` to the class of `D - degree D • [x₀]` in the unweighted degree-zero Picard group. -/
 noncomputable def unweightedAbelJacobiDivisorClass (h : S.IsUnweightedDegreeZero) (x₀ : X) :
     WeilDivisor X →+ unweightedPicZero h :=
   ((S.degreeCorrection (fun _ => (1 : ℤ)) h x₀).comp S.divisorClass).codRestrict
@@ -268,22 +271,12 @@ lemma unweightedAbelJacobiDivisorClass_eq_sum (h : S.IsUnweightedDegreeZero)
     (x₀ : X) (D : WeilDivisor X) :
     S.unweightedAbelJacobiDivisorClass h x₀ D =
       D.sum fun x n => n • S.unweightedAbelJacobiClass h x₀ x := by
-  classical
-  induction D using Finsupp.induction_linear with
-  | zero =>
-      simp [unweightedAbelJacobiDivisorClass]
-  | single x n =>
-      rw [Finsupp.sum_single_index]
-      · rw [← zsmul_ofPoint_eq_single n x,
-          map_zsmul (S.unweightedAbelJacobiDivisorClass h x₀) n (ofPoint x),
-          S.unweightedAbelJacobiDivisorClass_ofPoint h x₀ x]
-      · simp
-  | add D E hD hE =>
-      rw [map_add, Finsupp.sum_add_index, hD, hE]
-      · intro x
-        simp
-      · intro x a b
-        simp [add_zsmul]
+  change S.weightedAbelJacobiDivisorClass (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl D =
+    D.sum fun x n => n • S.unweightedAbelJacobiClass h x₀ x
+  rw [S.weightedAbelJacobiDivisorClass_eq_sum (fun _ => (1 : ℤ)) h (x₀ := x₀) rfl D]
+  apply Finsupp.sum_congr
+  intro x _
+  congr 1
 
 /-- Equality of unweighted Abel-Jacobi sums is equality of the corresponding
 degree-corrected divisor classes. -/
