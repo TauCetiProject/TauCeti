@@ -141,6 +141,7 @@ def IsNegativeDefinite : Prop :=
   (-P.intersectionMatrix).PosDef
 
 /-- The defining matrix characterization of a negative-definite plumbing graph. -/
+@[grind =]
 theorem isNegativeDefinite_iff : P.IsNegativeDefinite ↔ (-P.intersectionMatrix).PosDef :=
   Iff.rfl
 

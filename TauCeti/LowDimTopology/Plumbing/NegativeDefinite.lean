@@ -104,6 +104,12 @@ theorem IsNegativeDefinite.eq_zero_of_intersectionForm_left (h : P.IsNegativeDef
     (hx : ∀ y, P.intersectionForm x y = 0) : x = 0 :=
   h.intersectionForm_nondegenerate.1 x hx
 
+/-- A right-kernel form of `IsNegativeDefinite.intersectionForm_nondegenerate`: a lattice vector
+paired to zero by every vector is zero. -/
+theorem IsNegativeDefinite.eq_zero_of_intersectionForm_right (h : P.IsNegativeDefinite)
+    {x : V → ℤ} (hx : ∀ y, P.intersectionForm y x = 0) : x = 0 :=
+  h.intersectionForm_nondegenerate.2 x hx
+
 /-- On a negative-definite plumbing, multiplication by the intersection matrix is injective: the
 lattice embeds along its intersection form, with no kernel. -/
 theorem IsNegativeDefinite.mulVec_injective (h : P.IsNegativeDefinite) :
