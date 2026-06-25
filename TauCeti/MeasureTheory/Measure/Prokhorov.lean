@@ -8,9 +8,9 @@ public import Mathlib.MeasureTheory.Measure.LevyProkhorovMetric
 public import Mathlib.MeasureTheory.Measure.Prokhorov
 
 /-!
-# Prokhorov subsequential weak limit for Bernstein's theorem
+# Subsequential weak limits of tight finite measures
 
-The tightness/compactness step of the Chafaï proof of Bernstein's theorem. Given a sequence of
+Given a sequence of
 finite measures on `ℝ`, uniformly bounded in mass, supported on `[0, ∞)`, and tight, a
 subsequence converges weakly to a finite limit `μ₀` supported on `[0, ∞)`
 (`finite_measure_subseq_limit`). A bounded-continuous surrogate `exp_bcf` for the Laplace kernel

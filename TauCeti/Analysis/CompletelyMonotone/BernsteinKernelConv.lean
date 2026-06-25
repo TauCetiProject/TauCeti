@@ -6,7 +6,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 public import TauCeti.Analysis.CompletelyMonotone.BernsteinMeasures
-public import TauCeti.Analysis.CompletelyMonotone.BernsteinProkhorov
+public import TauCeti.MeasureTheory.Measure.Prokhorov
 
 /-!
 # Bernstein kernel convergence and Prokhorov identification

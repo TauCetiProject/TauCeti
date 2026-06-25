@@ -6,6 +6,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Analysis.CompletelyMonotone.BernsteinChafaiIdentity
+public import TauCeti.Analysis.CompletelyMonotone.Limits
 public import TauCeti.Analysis.CompletelyMonotone.BernsteinKernelConv
 
 /-!
