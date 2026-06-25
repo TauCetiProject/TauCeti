@@ -7,7 +7,7 @@ defaultTargets = ["TauCeti"]
 [[require]]
 name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4"
-rev = "2929a789898c9465220a5e2361032eb9edc5c928"
+rev = "master"
 
 # AI-owned: all the mathematics. No sorries (enforced in CI).
 # This glob is AUTHORITATIVE for what gets built and axiom-audited: `lake build` builds
