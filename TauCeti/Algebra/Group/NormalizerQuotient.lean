@@ -81,6 +81,19 @@ lemma normalizerQuotientMk_ker (H : Subgroup G) :
   exact QuotientGroup.ker_mk'
     (N := H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)))
 
+/-- Every element of `N(H) / H` is represented by an element of the normalizer. -/
+lemma normalizerQuotientMk_surjective (H : Subgroup G) :
+    Function.Surjective (normalizerQuotientMk H) :=
+  QuotientGroup.mk'_surjective
+    (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)))
+
+/-- The canonical map `N(H) →* N(H) / H` has full range. -/
+@[simp]
+lemma normalizerQuotientMk_range (H : Subgroup G) :
+    (normalizerQuotientMk H).range = ⊤ :=
+  QuotientGroup.range_mk'
+    (N := H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)))
+
 /-- The quotient equality criterion for representatives in the normalizer, stated in the
 ambient group `G`. -/
 lemma normalizerQuotientMk_eq_iff_div_mem (H : Subgroup G)
@@ -106,25 +119,6 @@ lemma normalizerQuotientMk_eq_iff_exists_mul (H : Subgroup G)
 section Normal
 
 variable (H : Subgroup G) [H.Normal]
-
-/-- When `H` is normal in `G`, every element of `G` lies in the normalizer of `H`. -/
-abbrev toNormalizerOfNormal : G →* _root_.Subgroup.normalizer (H : Set G) where
-  toFun g := ⟨g, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩
-  map_one' := rfl
-  map_mul' _ _ := rfl
-
-/-- The coercion of `toNormalizerOfNormal` is the identity on points. -/
-@[simp]
-lemma toNormalizerOfNormal_apply_coe (g : G) :
-    (toNormalizerOfNormal H g : G) = g :=
-  rfl
-
-/-- Under normality, `toNormalizerOfNormal` is surjective because the normalizer is all of
-`G`. -/
-lemma toNormalizerOfNormal_surjective :
-    Function.Surjective (toNormalizerOfNormal H) := by
-  intro g
-  exact ⟨g, Subtype.ext rfl⟩
 
 /-- When `H` is normal in `G`, the normalizer quotient maps naturally to the ordinary quotient
 `G / H` by forgetting that representatives lie in the normalizer. -/
@@ -183,7 +177,7 @@ corresponding representative in the normalizer quotient. -/
 @[simp]
 lemma normalizerQuotientEquivQuotientOfNormal_symm_mk (g : G) :
     (normalizerQuotientEquivQuotientOfNormal H).symm (QuotientGroup.mk' H g) =
-      normalizerQuotientMk H (toNormalizerOfNormal H g) :=
+      normalizerQuotientMk H ⟨g, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ :=
   rfl
 
 end Normal
