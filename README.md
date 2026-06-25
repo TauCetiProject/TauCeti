@@ -73,6 +73,25 @@ AIs are encouraged to make PRs to Tau Ceti that bump the pin to new commits on M
 
 We won't push material upstream from Tau Ceti to Mathlib. Mathlib contributors are welcome to adopt, curate, and modify material from Tau Ceti, while preparing PRs to Mathlib. Everything here is [Apache licensed](http://www.apache.org/licenses/).
 
+## Collaboration
+
+It's really important we have a good collaboration model with other repositories. We want to make sure that we build rapidly, so that we provide the foundations for people working on frontier research as quickly as possible. But we don't want to get in the way of frontier research, or detract from those efforts.
+
+This will be an evolving process, and community input is welcome.
+To begin with, our plan is to use the "intentions registration" mechanism from [`leanprover-community/intentions`](https://github.com/leanprover-community/intentions),
+and the shared public registry of intentions at [`leanprover-community/project-intentions`](https://github.com/leanprover-community/project-intentions).
+
+We already use this mechanism internally so contributors to Tau Ceti can indicate they are actively working on and preparing pull requests for parts of a Tau Ceti roadmap. These intentions are then automatically fed to agents using the `./tauceti` worker exemplar from [`kim-em/TauCetiWorker`](https://github.com/kim-em/TauCetiWorker), instructing them to avoid working on roadmap items claimed by others. We hope that contributors implementing their own workers will also use this mechanism.
+
+We're working now on extending this mechanism to respect recorded intentions at the public `project-intentions` registry. Hopefully in future there will also be a federated system of registrations collected from individual downstream projects that Tau Ceti can hook into.
+
+(The underlying tooling here was written for earlier projects, but the reusable GitHub Action and the public registry are nice early community benefits from work on Tau Ceti!)
+
+We do want to make some important clarifications about registered intentions, along two axes: frontier vs foundational mathematics, and student projects.
+
+There is so much "frontier mathematics" (roughly, research papers from the last few years, and those still to come) that Tau Ceti can simply disavow interest here. Tau Ceti wants to build a foundational library, so if someone registers a credible intention to work on a frontier project, Tau Ceti can make sure the relevant results are not included in its roadmaps (or removed if they are already there). This isn't to say that people working on these frontier projects shouldn't simultaneously be contributing to Tau Ceti: we hope they'll direct their AIs to send the foundational material they build to Tau Ceti, and then announce the "research result" as an independent downstream project. Indeed, we anticipate that many people working on frontier projects may actually submit Tau Ceti roadmaps for them! On the other hand, for "foundational mathematics" (roughly, anything you might expect graduate students at a subject-specific conference to be aware of), we don't intend to wait or remove material from roadmaps. It's important that this gets done, and per the discussion above about what Tau Ceti is and is not, we believe that Tau Ceti "getting there first" (reaching the minimal bar of "correct, formal, and reusable") does not detract from others curating, digesting, and subsequently incorporating this material into libraries with more ambitious goals.
+
+There's a special bar for student projects. It's really important that students are "left to work in peace" to the extent possible. Noting that Mathlib has a long history of *discouraging* supervisors from requiring or advising their students to submit to Mathlib, we hope that for the most part students are in any case working on frontier mathematics, and the distinction above mostly takes care of respecting student intentions. But to the extent it does not, we want to flag for all Tau Ceti contributors that student projects come first: if there's any indication that roadmaps or contributions make use of ("steal") partially published or announced work by students, or don't respect the registered intentions of student projects ("scoop"), we'll happily just delete material from roadmaps, pull requests, or the main library to make room for students. Common sense will be required here (a student project "I'm going to do Sobolev spaces" or "differential geometry" obviously isn't going to stop progress at Tau Ceti), and we invite the wider community to participate in getting this right.
 
 ## Financial model
 We're aware that training and running powerful AIs come at a significant financial and environmental cost. We're also aware that at present the most capable agents are commercial offerings, and consider the question of bridging industrial and academic practices very seriously.
