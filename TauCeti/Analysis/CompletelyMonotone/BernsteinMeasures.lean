@@ -82,11 +82,17 @@ lemma chafaiDensity_of_ne_zero {n : ℕ} (hn : n ≠ 0) (f : ℝ → ℝ) (t : �
       t ^ (n - 1) * iteratedDerivWithin n f (Ici 0) t := by
   rw [chafaiDensity, if_neg hn]
 
-/-- `chafaiDensity f n` is continuous on `[0, ∞)` for a completely monotone `f` and `n ≠ 0`. -/
-lemma continuousOn_chafaiDensity (hcm : IsCompletelyMonotone f) {n : ℕ} (hn : n ≠ 0) :
+/-- `chafaiDensity f n` is continuous on `[0, ∞)` for a completely monotone `f`. -/
+lemma continuousOn_chafaiDensity (hcm : IsCompletelyMonotone f) (n : ℕ) :
     ContinuousOn (chafaiDensity f n) (Ici 0) := by
+  by_cases hn : n = 0
+  · subst n
+    have hzero : chafaiDensity f 0 = fun _ : ℝ => 0 := funext (chafaiDensity_zero f)
+    rw [hzero]
+    exact continuousOn_const
   have heq : chafaiDensity f n = fun t => (-1 : ℝ) ^ n / (Nat.factorial (n - 1) : ℝ) *
-      t ^ (n - 1) * iteratedDerivWithin n f (Ici 0) t := funext (chafaiDensity_of_ne_zero hn f)
+      t ^ (n - 1) * iteratedDerivWithin n f (Ici 0) t :=
+    funext (chafaiDensity_of_ne_zero hn f)
   rw [heq]
   exact (continuousOn_const.mul ((continuousOn_pow _).mono fun _ _ => trivial)).mul
     (hcm.contDiffOn.continuousOn_iteratedDerivWithin (nat_le_top _) (uniqueDiffOn_Ici 0))
@@ -138,10 +144,21 @@ lemma chafaiDensity_succ_succ_sub_succ (f : ℝ → ℝ) (m : ℕ) (t : ℝ) :
         t ^ (m + 1) *
           (((-1 : ℝ) ^ (m + 2) / ↑(m + 1).factorial) *
             iteratedDerivWithin (m + 2) f (Ici 0) t) := by
-  rw [chafaiDensity_of_ne_zero (show m + 2 ≠ 0 by omega),
-    chafaiDensity_of_ne_zero (show m + 1 ≠ 0 by omega)]
-  simp only [show m + 2 - 1 = m + 1 from by omega,
-    show m + 1 - 1 = m from by omega]
+  have hm2 : m + 2 ≠ 0 := by omega
+  have hm1 : m + 1 ≠ 0 := by omega
+  have hdens_m2 :
+      chafaiDensity f (m + 2) t =
+        (-1 : ℝ) ^ (m + 2) / ((m + 1).factorial : ℝ) *
+          t ^ (m + 1) * iteratedDerivWithin (m + 2) f (Ici 0) t := by
+    rw [chafaiDensity_of_ne_zero hm2]
+    norm_num
+  have hdens_m1 :
+      chafaiDensity f (m + 1) t =
+        (-1 : ℝ) ^ (m + 1) / (m.factorial : ℝ) *
+          t ^ m * iteratedDerivWithin (m + 1) f (Ici 0) t := by
+    rw [chafaiDensity_of_ne_zero hm1]
+    norm_num
+  rw [hdens_m2, hdens_m1]
   have hfact : ((m + 1).factorial : ℝ) = ((m + 1 : ℕ) : ℝ) * ↑m.factorial := by
     rw [Nat.factorial_succ]
     push_cast
@@ -284,11 +301,10 @@ lemma chafaiRescaling_measurable (n : ℕ) :
   continuous_real_toNNReal.measurable.comp (measurable_const.div measurable_id)
 
 /-- On the positive part of the source, the `ℝ≥0` rescaling coerces back to `(n-1)/t`. -/
-lemma chafaiRescaling_coe_of_pos {n : ℕ} (hn : 2 ≤ n) {t : ℝ} (ht : 0 < t) :
+lemma chafaiRescaling_coe_of_pos {n : ℕ} (hn : 1 ≤ n) {t : ℝ} (ht : 0 < t) :
     (chafaiRescaling n t : ℝ) = ((n : ℝ) - 1) / t := by
   have hnum : 0 ≤ (n : ℝ) - 1 := by
-    have : (2 : ℝ) ≤ n := by exact_mod_cast hn
-    linarith
+    exact sub_nonneg.mpr (by exact_mod_cast hn)
   have hnonneg : 0 ≤ ((n : ℝ) - 1) / t := div_nonneg hnum ht.le
   simp [chafaiRescaling, Real.coe_toNNReal', max_eq_left hnonneg]
 
@@ -361,7 +377,7 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) (hcm : IsCompletelyMo
     fun t ht => (hasDerivAt_pow (m + 1) t).mul ((hg_deriv t ht.1).const_mul c)
   have hcm_int : ∀ k, k ≠ 0 → IntervalIntegrable (fun t => chafaiDensity f k t) volume 0 T := by
     intro k hk; apply ContinuousOn.intervalIntegrable; rw [huIcc]
-    exact (continuousOn_chafaiDensity hcm hk).mono Icc_subset_Ici_self
+    exact (continuousOn_chafaiDensity hcm k).mono Icc_subset_Ici_self
   have hF'_eq : ∀ t, ↑(m + 1) * t ^ m * (c * g t) + t ^ (m + 1) * (c * g' t) =
       chafaiDensity f (m + 2) t - chafaiDensity f (m + 1) t := by
     intro t
@@ -410,7 +426,7 @@ lemma chafaiMeasure_finite_mass_of_tendsto (f : ℝ → ℝ) (hcm : IsCompletely
     IsFiniteMeasure (chafaiMeasure f n) ∧
     (chafaiMeasure f n) univ ≤ ENNReal.ofReal (f 0 - L) := by
   have hn0 : n ≠ 0 := by omega
-  have hcont : ContinuousOn (chafaiDensity f n) (Ici 0) := continuousOn_chafaiDensity hcm hn0
+  have hcont : ContinuousOn (chafaiDensity f n) (Ici 0) := continuousOn_chafaiDensity hcm n
   have hbound : ∀ T, 0 < T → ∫ t in (0 : ℝ)..T, chafaiDensity f n t ≤ f 0 - L := by
     have base : ∀ T, 0 < T → ∫ t in (0 : ℝ)..T, chafaiDensity f 1 t = f 0 - f T := by
       intro T hT

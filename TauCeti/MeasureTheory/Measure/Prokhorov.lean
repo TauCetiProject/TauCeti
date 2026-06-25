@@ -95,8 +95,8 @@ lemma finite_measure_cluster_limit
   obtain ⟨U, hUle, hUtend⟩ := mapClusterPt_iff_ultrafilter.mp hmapcluster
   refine ⟨(μf : Measure α), U, hUle, inferInstance, ?_, ?_⟩
   · have hle : (μf.mass : ENNReal) ≤ (Cnn : ENNReal) := ENNReal.coe_le_coe.mpr hμfS.1
-    change (μf : Measure α) univ ≤ (Real.toNNReal C : ENNReal)
-    simpa [FiniteMeasure.ennreal_mass, Cnn] using hle
+    rw [← FiniteMeasure.ennreal_mass]
+    simpa [Cnn, ENNReal.ofNNReal_toNNReal] using hle
   · intro g
     have hweak :=
       (FiniteMeasure.tendsto_iff_forall_integral_tendsto.mp hUtend) g

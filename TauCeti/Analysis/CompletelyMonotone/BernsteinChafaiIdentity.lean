@@ -228,7 +228,7 @@ private lemma boundary_term_decay (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
           simpa [pow_succ, mul_assoc] using hsign
         linarith
     have hcont_density : ContinuousOn (chafaiDensity f k) (Ici 0) :=
-      continuousOn_chafaiDensity hcm hk
+      continuousOn_chafaiDensity hcm k
     have hint_density : IntegrableOn (chafaiDensity f k) (Ioi 0) := by
       by_cases hk_eq : k = 1
       · subst hk_eq
@@ -358,7 +358,7 @@ private lemma ibp_kernel_integrableOn (f : ℝ → ℝ) (hcm : IsCompletelyMonot
       iteratedDerivWithin k f (Ici 0) t) (Ioi x) := by
   have hk0 : k ≠ 0 := by omega
   have hcont_density : ContinuousOn (chafaiDensity f k) (Ici 0) :=
-    continuousOn_chafaiDensity hcm hk0
+    continuousOn_chafaiDensity hcm k
   have density_le : ∀ j, 1 ≤ j → ∀ T, 0 < T →
       ∫ t in (0 : ℝ)..T, chafaiDensity f j t ≤ f 0 - f T := by
     intro j hj; induction j with
@@ -507,7 +507,7 @@ lemma chafai_identity (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
       ∫ t in Ioi 0, bernstein_kernel n x (((n : ℝ) - 1) / t) * chafaiDensity f n t := by
     rw [chafaiMeasure_eq_withDensity]
     have hcont_density : ContinuousOn (chafaiDensity f n) (Ici 0) :=
-      continuousOn_chafaiDensity hcm hn0
+      continuousOn_chafaiDensity hcm n
     rw [integral_withDensity_eq_integral_toReal_smul₀
       (AEMeasurable.ennreal_ofReal
         ((hcont_density.mono Ioi_subset_Ici_self).aestronglyMeasurable
@@ -516,7 +516,7 @@ lemma chafai_identity (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     exact setIntegral_congr_ae measurableSet_Ioi
       (ae_of_all _ fun t ht => by
         simp only [smul_eq_mul, Set.mem_Ioi] at ht ⊢
-        rw [chafaiRescaling_coe_of_pos hn ht]
+        rw [chafaiRescaling_coe_of_pos (by omega : 1 ≤ n) ht]
         rw [ENNReal.toReal_ofReal (chafaiDensity_nonneg hcm n t ht.le)]; ring)
   have step3 := chafai_kernel_density_eq f hcm n hn x hx
   have step4 := chafai_repeated_ibp f hcm n (by omega) x hx L hL
