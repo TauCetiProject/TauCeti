@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Analysis.PositiveDefinite.Kernel
 
 /-!
@@ -27,6 +28,7 @@ API through `TauCeti.IsPositiveDefiniteKernel`.
 
 * `TauCeti.positiveDefiniteKernelFinsuppForm`: the finitely supported Gram form attached to a
   kernel.
+* `TauCeti.positiveDefiniteKernelFinsuppSesqForm`: the same form bundled as a sesquilinear form.
 * `TauCeti.positiveDefiniteKernelFinsuppForm_self_nonneg`: nonnegativity on the diagonal for
   positive-definite kernels.
 * `TauCeti.positiveDefiniteKernelFinsuppForm_add_left` and related lemmas: sesquilinearity of
@@ -62,6 +64,12 @@ noncomputable def positiveDefiniteKernelFinsuppForm (K : α → α → 𝕜)
   x.sum fun a xa => y.sum fun b yb => conj xa * yb * K a b
 
 variable {K : α → α → 𝕜}
+
+/-- The finitely supported Gram form unfolds to the double `Finsupp.sum` expression. -/
+theorem positiveDefiniteKernelFinsuppForm_def (K : α → α → 𝕜) (x y : α →₀ 𝕜) :
+    positiveDefiniteKernelFinsuppForm K x y =
+      x.sum fun a xa => y.sum fun b yb => conj xa * yb * K a b := by
+  rfl
 
 /-- The finitely supported Gram form is zero when the left vector is zero. -/
 @[simp]
@@ -150,6 +158,78 @@ theorem positiveDefiniteKernelFinsuppForm_smul_right (c : 𝕜) (x y : α →₀
     _ = c * ∑ b ∈ y.support, (starRingEnd 𝕜) (x a) * y b * K a b := by
       simp [Finsupp.sum, Finset.mul_sum, mul_left_comm, mul_comm]
 
+/-- The finitely supported Gram form is zero for the zero kernel. -/
+@[simp]
+theorem positiveDefiniteKernelFinsuppForm_zero_kernel (x y : α →₀ 𝕜) :
+    positiveDefiniteKernelFinsuppForm (fun _ _ : α => (0 : 𝕜)) x y = 0 := by
+  simp [positiveDefiniteKernelFinsuppForm]
+
+/-- The finitely supported Gram form is additive in the kernel. -/
+theorem positiveDefiniteKernelFinsuppForm_add_kernel
+    (K L : α → α → 𝕜) (x y : α →₀ 𝕜) :
+    positiveDefiniteKernelFinsuppForm (fun a b => K a b + L a b) x y =
+      positiveDefiniteKernelFinsuppForm K x y + positiveDefiniteKernelFinsuppForm L x y := by
+  classical
+  simp only [positiveDefiniteKernelFinsuppForm, Finsupp.sum]
+  rw [← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun b _ => ?_
+  ring
+
+/-- The finitely supported Gram form is homogeneous in the kernel. -/
+theorem positiveDefiniteKernelFinsuppForm_smul_kernel
+    (c : 𝕜) (K : α → α → 𝕜) (x y : α →₀ 𝕜) :
+    positiveDefiniteKernelFinsuppForm (fun a b => c • K a b) x y =
+      c * positiveDefiniteKernelFinsuppForm K x y := by
+  classical
+  simp only [positiveDefiniteKernelFinsuppForm, Finsupp.sum, smul_eq_mul]
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun a _ => ?_
+  rw [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun b _ => ?_
+  ring
+
+/-- The finitely supported Gram form is homogeneous in a real scalar on the kernel. -/
+theorem positiveDefiniteKernelFinsuppForm_real_smul_kernel
+    (r : ℝ) (K : α → α → 𝕜) (x y : α →₀ 𝕜) :
+    positiveDefiniteKernelFinsuppForm (fun a b => r • K a b) x y =
+      r • positiveDefiniteKernelFinsuppForm K x y := by
+  simpa [Algebra.smul_def] using
+    positiveDefiniteKernelFinsuppForm_smul_kernel (𝕜 := 𝕜) (α := α) (r : 𝕜) K x y
+
+/-- The finitely supported Gram form sends finite sums of kernels to sums of Gram forms. -/
+theorem positiveDefiniteKernelFinsuppForm_sum_kernel {ι : Type*}
+    (s : Finset ι) (K : ι → α → α → 𝕜) (x y : α →₀ 𝕜) :
+    positiveDefiniteKernelFinsuppForm (fun a b => ∑ i ∈ s, K i a b) x y =
+      ∑ i ∈ s, positiveDefiniteKernelFinsuppForm (K i) x y := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+      simp
+  | insert i s his ih =>
+      simp [his, positiveDefiniteKernelFinsuppForm_add_kernel, ih]
+
+/-- The finitely supported Gram form bundled as a sesquilinear form. -/
+noncomputable def positiveDefiniteKernelFinsuppSesqForm (K : α → α → 𝕜) :
+    (α →₀ 𝕜) →ₗ⋆[𝕜] (α →₀ 𝕜) →ₗ[𝕜] 𝕜 :=
+  LinearMap.mk₂'ₛₗ (starRingEnd 𝕜) (RingHom.id 𝕜)
+    (positiveDefiniteKernelFinsuppForm K)
+    positiveDefiniteKernelFinsuppForm_add_left
+    (fun c x y => by
+      simp [positiveDefiniteKernelFinsuppForm_smul_left])
+    positiveDefiniteKernelFinsuppForm_add_right
+    (fun c x y => by
+      simp [positiveDefiniteKernelFinsuppForm_smul_right])
+
+/-- Applying the bundled sesquilinear form gives the finitely supported Gram expression. -/
+@[simp]
+theorem positiveDefiniteKernelFinsuppSesqForm_apply
+    (K : α → α → 𝕜) (x y : α →₀ 𝕜) :
+    positiveDefiniteKernelFinsuppSesqForm K x y =
+      positiveDefiniteKernelFinsuppForm K x y := by
+  rfl
+
 /-- A pointwise conjugate-symmetric kernel gives a conjugate-symmetric finitely supported Gram
 form. -/
 theorem positiveDefiniteKernelFinsuppForm_conj_symm_of_conj_symm
@@ -173,6 +253,14 @@ theorem positiveDefiniteKernelFinsuppForm_conj_symm
       = positiveDefiniteKernelFinsuppForm K y x :=
   positiveDefiniteKernelFinsuppForm_conj_symm_of_conj_symm
     (isPositiveDefiniteKernel_conj_symm hK) x y
+
+/-- Positive-definite kernels give positive-semidefinite finitely supported sesquilinear forms. -/
+theorem positiveDefiniteKernelFinsuppSesqForm_isPosSemidef
+    (hK : IsPositiveDefiniteKernel K) :
+    (positiveDefiniteKernelFinsuppSesqForm K).IsPosSemidef where
+  isSymm := ⟨fun x y => positiveDefiniteKernelFinsuppForm_conj_symm hK x y⟩
+  isNonneg := ⟨fun x => by
+    simpa using positiveDefiniteKernelFinsuppForm_self_nonneg hK x⟩
 
 /-- The finitely supported Gram form takes the expected value on two basis vectors. -/
 @[simp]
