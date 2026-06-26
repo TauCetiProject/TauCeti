@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import TauCeti.Analysis.PositiveDefinite.FunctionKernel
 public import TauCeti.Analysis.PositiveDefinite.Kernel
 public import TauCeti.Analysis.PositiveDefinite.KernelClosure
 public import Mathlib.Data.NNReal.Basic
@@ -16,9 +17,9 @@ for functions on `ℝ≥0 × V`. For an additive group `V`, the intended involut
 `(t, v) ↦ (t, -v)`, so the finite quadratic forms use the entries
 `F (tᵢ + tⱼ, vᵢ - vⱼ)`.
 
-The generic positive-definite-kernel predicate already captures the finite Gram-matrix condition.
-Here we name its BCR specialization for the kernel
-`K p q = F (p.1 + q.1, p.2 - q.2)`, rather than installing a global negation `StarAddMonoid`
+The generic positive-definite-function predicate already captures the finite quadratic-form
+condition. Here we name its BCR specialization by using the local wrapper `BCRPoint V`, whose
+involution is `(t, v) ↦ (t, -v)`, rather than installing a global negation `StarAddMonoid`
 instance on every additive group `V`, which would conflict with Mathlib's ordinary star
 conventions. The result is the named hypothesis needed for the BCR Laplace--Fourier
 representation target in the `OneParameterSemigroups` roadmap.
@@ -30,8 +31,9 @@ for `IsSemigroupGroupPD` as the positive-definite predicate on `ℝ≥0 × V` wi
 ## Main declarations
 
 * `TauCeti.IsSemigroupGroupPD`: the BCR positive-definiteness predicate on `ℝ≥0 × V`.
-* `TauCeti.isSemigroupGroupPD_def`: the definitional bridge to the associated
-  positive-definite kernel.
+* `TauCeti.isSemigroupGroupPD_iff_isPositiveDefinite`: the bridge to the generic
+  positive-definite-function predicate.
+* `TauCeti.isSemigroupGroupPD_def`: the bridge to the associated positive-definite kernel.
 * `TauCeti.isSemigroupGroupPD_iff`: the finite quadratic-form characterization.
 * `TauCeti.IsSemigroupGroupPD.conj_symm`, diagonal, and origin lemmas: basic consequences of the
   semigroup-group positive-definiteness condition.
@@ -56,19 +58,139 @@ namespace TauCeti
 
 variable {V : Type*} [AddCommGroup V] {F G : ℝ≥0 × V → ℂ}
 
+/-- The additive monoid `ℝ≥0 × V` equipped with the BCR involution `(t, v) ↦ (t, -v)`.
+
+This wrapper avoids installing a global negation `StarAddMonoid` instance on an arbitrary
+additive group `V`. -/
+structure BCRPoint (V : Type*) where
+  /-- The nonnegative time coordinate. -/
+  time : ℝ≥0
+  /-- The group coordinate. -/
+  point : V
+
+namespace BCRPoint
+
+variable {V : Type*}
+
+/-- Convert a product point to the local BCR wrapper. -/
+@[expose] def ofProd (p : ℝ≥0 × V) : BCRPoint V :=
+  ⟨p.1, p.2⟩
+
+/-- Convert a local BCR wrapper back to the product type. -/
+@[expose] def toProd (p : BCRPoint V) : ℝ≥0 × V :=
+  (p.time, p.point)
+
+@[simp]
+theorem ofProd_time (p : ℝ≥0 × V) : (ofProd p).time = p.1 :=
+  rfl
+
+@[simp]
+theorem ofProd_point (p : ℝ≥0 × V) : (ofProd p).point = p.2 :=
+  rfl
+
+@[simp]
+theorem toProd_fst (p : BCRPoint V) : (toProd p).1 = p.time :=
+  rfl
+
+@[simp]
+theorem toProd_snd (p : BCRPoint V) : (toProd p).2 = p.point :=
+  rfl
+
+@[ext]
+theorem ext {p q : BCRPoint V} (ht : p.time = q.time) (hv : p.point = q.point) : p = q := by
+  cases p
+  cases q
+  simp_all
+
+instance [AddCommGroup V] : Zero (BCRPoint V) where
+  zero := ⟨0, 0⟩
+
+instance [AddCommGroup V] : Add (BCRPoint V) where
+  add p q := ⟨p.time + q.time, p.point + q.point⟩
+
+instance [AddCommGroup V] : Star (BCRPoint V) where
+  star p := ⟨p.time, -p.point⟩
+
+@[simp]
+theorem zero_time [AddCommGroup V] : (0 : BCRPoint V).time = 0 :=
+  rfl
+
+@[simp]
+theorem zero_point [AddCommGroup V] : (0 : BCRPoint V).point = 0 :=
+  rfl
+
+@[simp]
+theorem add_time [AddCommGroup V] (p q : BCRPoint V) :
+    (p + q).time = p.time + q.time :=
+  rfl
+
+@[simp]
+theorem add_point [AddCommGroup V] (p q : BCRPoint V) :
+    (p + q).point = p.point + q.point :=
+  rfl
+
+@[simp]
+theorem star_time [AddCommGroup V] (p : BCRPoint V) : (star p).time = p.time :=
+  rfl
+
+@[simp]
+theorem star_point [AddCommGroup V] (p : BCRPoint V) : (star p).point = -p.point :=
+  rfl
+
+instance [AddCommGroup V] : AddCommMonoid (BCRPoint V) where
+  add := (· + ·)
+  zero := 0
+  add_assoc := by
+    intro a b c
+    ext <;> simp [add_assoc]
+  zero_add := by
+    intro a
+    ext <;> simp
+  add_zero := by
+    intro a
+    ext <;> simp
+  add_comm := by
+    intro a b
+    ext <;> simp [add_comm]
+  nsmul := nsmulRec
+
+instance [AddCommGroup V] : StarAddMonoid (BCRPoint V) where
+  star_add := by
+    intro p q
+    ext <;> simp [add_comm]
+  star_involutive := by
+    intro p
+    ext <;> simp
+
+end BCRPoint
+
 /-- A function on `ℝ≥0 × V` is semigroup-group positive definite, in the
 Berg--Christensen--Ressel sense, if all finite quadratic forms formed using the involution
 `(t, v) ↦ (t, -v)` are nonnegative:
 `∑ᵢⱼ cᵢ conj(cⱼ) F(tᵢ + tⱼ, vᵢ - vⱼ) ≥ 0`. -/
 def IsSemigroupGroupPD (F : ℝ≥0 × V → ℂ) : Prop :=
-  IsPositiveDefiniteKernel fun p q : ℝ≥0 × V => F (p.1 + q.1, p.2 - q.2)
+  IsPositiveDefinite fun p : BCRPoint V => F (p.time, p.point)
 
-/-- The definitional bridge from semigroup-group positive definiteness to the associated
-positive-definite kernel. -/
+/-- The BCR predicate is the generic positive-definite-function predicate on the local
+`BCRPoint` wrapper carrying the involution `(t, v) ↦ (t, -v)`. -/
+theorem isSemigroupGroupPD_iff_isPositiveDefinite :
+    IsSemigroupGroupPD F ↔ IsPositiveDefinite (fun p : BCRPoint V => F (p.time, p.point)) :=
+  Iff.rfl
+
+/-- The bridge from semigroup-group positive definiteness to the associated positive-definite
+kernel. -/
 theorem isSemigroupGroupPD_def :
     IsSemigroupGroupPD F ↔
-      IsPositiveDefiniteKernel fun p q : ℝ≥0 × V => F (p.1 + q.1, p.2 - q.2) :=
-  Iff.rfl
+      IsPositiveDefiniteKernel fun p q : ℝ≥0 × V => F (p.1 + q.1, p.2 - q.2) := by
+  constructor
+  · intro hF
+    have hK := IsPositiveDefinite.isPositiveDefiniteKernel hF
+    have hK' := isPositiveDefiniteKernel_comp hK (fun p : ℝ≥0 × V => BCRPoint.ofProd p)
+    simpa [BCRPoint.ofProd, sub_eq_add_neg] using hK'
+  · intro hK
+    refine IsPositiveDefinite.of_isPositiveDefiniteKernel ?_
+    have hK' := isPositiveDefiniteKernel_comp hK (fun p : BCRPoint V => BCRPoint.toProd p)
+    simpa [BCRPoint.toProd, sub_eq_add_neg] using hK'
 
 /-- The kernel associated to a semigroup-group positive-definite function is positive definite. -/
 theorem IsSemigroupGroupPD.isPositiveDefiniteKernel (hF : IsSemigroupGroupPD F) :
@@ -121,9 +243,8 @@ theorem quadForm_two_nonneg (hF : IsSemigroupGroupPD F) (p q : ℝ≥0 × V) (c�
       + c₀ * conj c₁ * F (p.1 + q.1, p.2 - q.2)
       + c₁ * conj c₀ * F (q.1 + p.1, q.2 - p.2)
       + c₁ * conj c₁ * F (q.1 + q.1, q.2 - q.2) := by
-  have h := (isSemigroupGroupPD_iff.mp hF).2 ![c₀, c₁] ![p, q]
-  simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one] at h
-  exact le_of_le_of_eq h (by ring)
+  simpa [BCRPoint.ofProd, sub_eq_add_neg] using
+    IsPositiveDefinite.quadForm_two_nonneg hF (BCRPoint.ofProd p) (BCRPoint.ofProd q) c₀ c₁
 
 /-- A semigroup-group positive-definite function is conjugate symmetric for the BCR kernel:
 `conj (F (t + u, v - w)) = F (u + t, w - v)`. -/
