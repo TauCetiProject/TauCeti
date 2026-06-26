@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.QuotientHomeomorph
 
 /-!
 # Quotients by subgroups of the deck group
@@ -129,24 +129,8 @@ lemma continuous_subgroupOrbitQuotientToBase (H : Subgroup (Deck p)) (hp : Conti
 /-- An open projection induces an open map from any subgroup-orbit quotient of the total space
 to the base. -/
 lemma isOpenMap_subgroupOrbitQuotientToBase (H : Subgroup (Deck p)) (hp : IsOpenMap p) :
-    IsOpenMap (subgroupOrbitQuotientToBase H) := by
-  intro V hV
-  have hsurj : Function.Surjective (Quotient.mk'' : E → SubgroupOrbitQuotient p H) :=
-    Quotient.mk''_surjective
-  have hpre : IsOpen ((Quotient.mk'' : E → SubgroupOrbitQuotient p H) ⁻¹' V) :=
-    hV.preimage continuous_quotient_mk'
-  have himg : subgroupOrbitQuotientToBase H '' V =
-      p '' ((Quotient.mk'' : E → SubgroupOrbitQuotient p H) ⁻¹' V) := by
-    ext b
-    simp only [Set.mem_image, Set.mem_preimage]
-    constructor
-    · rintro ⟨x, hxV, rfl⟩
-      obtain ⟨e, rfl⟩ := hsurj x
-      exact ⟨e, hxV, rfl⟩
-    · rintro ⟨e, heV, rfl⟩
-      exact ⟨Quotient.mk'' e, heV, rfl⟩
-  rw [himg]
-  exact hp _ hpre
+    IsOpenMap (subgroupOrbitQuotientToBase H) :=
+  TauCeti.IsOpenMap.quotient_lift hp fun _ _ h => eq_proj_of_subgroupOrbitRel H h
 
 end Topology
 

@@ -39,6 +39,33 @@ public section
 
 namespace TauCeti
 
+namespace IsOpenMap
+
+/-- An open map induces an open map from a quotient whenever it is constant on equivalence
+classes. -/
+lemma quotient_lift {X Y : Type*} {r : Setoid X} [TopologicalSpace X] [TopologicalSpace Y]
+    {f : X → Y} (hf : IsOpenMap f) (h : ∀ x y, x ≈ y → f x = f y) :
+    IsOpenMap (Quotient.lift f h : Quotient r → Y) := by
+  intro V hV
+  have hsurj : Function.Surjective (Quotient.mk'' : X → Quotient r) :=
+    Quotient.mk''_surjective
+  have hpre : IsOpen ((Quotient.mk'' : X → Quotient r) ⁻¹' V) :=
+    hV.preimage continuous_quotient_mk'
+  have himg : (Quotient.lift f h : Quotient r → Y) '' V =
+      f '' ((Quotient.mk'' : X → Quotient r) ⁻¹' V) := by
+    ext y
+    simp only [Set.mem_image, Set.mem_preimage]
+    constructor
+    · rintro ⟨x, hxV, rfl⟩
+      obtain ⟨x, rfl⟩ := hsurj x
+      exact ⟨x, hxV, rfl⟩
+    · rintro ⟨x, hxV, rfl⟩
+      exact ⟨Quotient.mk'' x, hxV, rfl⟩
+  rw [himg]
+  exact hf _ hpre
+
+end IsOpenMap
+
 namespace Deck
 
 variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
@@ -50,25 +77,8 @@ lemma continuous_orbitQuotientToBase (hp : Continuous p) :
 
 /-- An open map induces an open map from the deck-orbit quotient to the base. -/
 lemma isOpenMap_orbitQuotientToBase (hp : IsOpenMap p) :
-    IsOpenMap (orbitQuotientToBase p) := by
-  intro V hV
-  have hsurj : Function.Surjective
-      (Quotient.mk'' : E → MulAction.orbitRel.Quotient (Deck p) E) :=
-    Quotient.mk''_surjective
-  have hpre : IsOpen ((Quotient.mk'' : E → MulAction.orbitRel.Quotient (Deck p) E) ⁻¹' V) :=
-    hV.preimage continuous_quotient_mk'
-  have himg : orbitQuotientToBase p '' V =
-      p '' ((Quotient.mk'' : E → MulAction.orbitRel.Quotient (Deck p) E) ⁻¹' V) := by
-    ext b
-    simp only [Set.mem_image, Set.mem_preimage]
-    constructor
-    · rintro ⟨x, hxV, rfl⟩
-      obtain ⟨e, rfl⟩ := hsurj x
-      exact ⟨e, hxV, rfl⟩
-    · rintro ⟨e, heV, rfl⟩
-      exact ⟨Quotient.mk'' e, heV, rfl⟩
-  rw [himg]
-  exact hp _ hpre
+    IsOpenMap (orbitQuotientToBase p) :=
+  TauCeti.IsOpenMap.quotient_lift hp fun _ _ h => eq_proj_of_orbitRel h
 
 namespace IsRegular
 
