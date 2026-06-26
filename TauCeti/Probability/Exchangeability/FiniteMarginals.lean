@@ -12,9 +12,9 @@ finite-marginal uniqueness milestone of `TauCetiRoadmap/Exchangeability`: a thin
 over Mathlib's projective-limit machinery (`IsProjectiveLimit.unique`), not new measure theory.
 
 `measure_eq_of_prefixProj_map_eq` is the main API (marginals as `Measure.map` equalities);
-`measure_eq_of_prefixProj_setwise` is the setwise form matching the roadmap target, with a
-probability-measure specialization. Since `IsProbabilityMeasure` provides `IsFiniteMeasure`, the
-finite-measure statements already apply to probability measures.
+`measure_eq_of_prefixProj_setwise` is the setwise form matching the roadmap target. The same
+finite-measure statements apply directly to probability measures, since `IsProbabilityMeasure`
+provides `IsFiniteMeasure`.
 -/
 
 public section
