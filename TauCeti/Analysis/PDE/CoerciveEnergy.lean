@@ -36,6 +36,8 @@ energy method, as in Evans, *Partial Differential Equations*, Chapter 6.
   from one principal coefficient, drift vector, and mass coefficient.
 * `TauCeti.PDE.isCoercive_energyIntegrand_zero_drift`: the zero-drift specialization,
   needing only a positive zeroth-order coefficient.
+* `TauCeti.PDE.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self`: explicit
+  zero-drift diagonal lower bound from a principal quadratic lower bound and nonnegative mass.
 * `TauCeti.PDE.isCoercive_energyIntegrand_of_bounds_on`: pointwise coercivity on a domain
   from an ellipticity floor, a drift bound, and a dominating mass lower bound.
 -/
@@ -155,6 +157,32 @@ lemma isCoercive_energyIntegrand_zero_drift (hlam : 0 < lam) {A : Matrix n n ℝ
     IsCoercive (energyIntegrand A 0 c₀) :=
   isCoercive_energyIntegrand_of_bounds (beta := 0) (mu := c₀) hlam hA (by simp) le_rfl
     (by simpa using hc₀)
+
+/-- Zero-drift diagonal lower bound from a principal quadratic lower bound and nonnegative
+mass coefficient. -/
+lemma min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self {A : Matrix n n ℝ}
+    {c₀ : ℝ} (hlam : 0 ≤ lam)
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hc : 0 ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
+    min lam c₀ * ‖U‖ ^ 2 ≤ energyIntegrand A 0 c₀ U U := by
+  have hprod := min_mul_prod_norm_sq_le_add hlam hc U
+  have hA' := hA U.2
+  rw [energyIntegrand_self]
+  simp only [inner_zero_left, zero_mul, add_zero]
+  rw [Real.norm_eq_abs, sq_abs] at hprod
+  exact hprod.trans (add_le_add hA' le_rfl)
+
+/-- The shifted Laplacian jet form is coercive when the mass is positive. -/
+lemma isCoercive_energyIntegrand_one_zero_mass {c : ℝ} (hc : 0 < c) :
+    IsCoercive (energyIntegrand (1 : Matrix n n ℝ) 0 c) :=
+  isCoercive_energyIntegrand_zero_drift zero_lt_one hc (by intro ξ; simp)
+
+/-- Explicit diagonal lower bound for the shifted Laplacian jet form with nonnegative mass. -/
+lemma min_one_mass_mul_norm_sq_le_energyIntegrand_one_zero_mass_self {c : ℝ} (hc : 0 ≤ c)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    min 1 c * ‖U‖ ^ 2 ≤ energyIntegrand (1 : Matrix n n ℝ) 0 c U U :=
+  min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self zero_le_one
+    (by intro ξ; simp) hc U
 
 /-- Coercivity of the pointwise jet bilinear form on a domain from raw lower bounds.
 
