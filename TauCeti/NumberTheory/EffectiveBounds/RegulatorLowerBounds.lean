@@ -28,9 +28,6 @@ regulator estimates are separate Layer 3 work.
   upper bound of one infinite place.
 * `TauCeti.NumberField.Units.one_le_regulator_of_finrank_eq_one`: degree-one lower bound.
 * `TauCeti.NumberField.Units.one_le_regulator_of_finrank_le_one`: degree-at-most-one lower bound.
-* `TauCeti.NumberField.Units.one_le_regulator_rat`: the rational-field lower bound.
-* `TauCeti.NumberField.Units.one_le_regulator_of_isTotallyComplex_of_finrank_eq_two`: imaginary
-  quadratic lower bound.
 -/
 
 public section
@@ -99,16 +96,5 @@ theorem regulator_eq_one_of_finrank_lt_two (h : finrank ℚ K < 2) : regulator K
 /-- If a number field has degree strictly less than two over `ℚ`, then `1 ≤ R_F`. -/
 theorem one_le_regulator_of_finrank_lt_two (h : finrank ℚ K < 2) : 1 ≤ regulator K :=
   (regulator_eq_one_of_finrank_lt_two K h).ge
-
-/-- The regulator of `ℚ` satisfies the rank-zero lower bound `1 ≤ R_ℚ`. -/
-theorem one_le_regulator_rat : 1 ≤ regulator ℚ :=
-  regulator_rat_eq_one.ge
-
-/-- An imaginary quadratic field has regulator at least `1`. More precisely, the regulator is
-`1` by the rank-zero computation; this corollary exposes the lower-bound form used in effective
-estimates. -/
-theorem one_le_regulator_of_isTotallyComplex_of_finrank_eq_two
-    [IsTotallyComplex K] (h : finrank ℚ K = 2) : 1 ≤ regulator K :=
-  (regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two K h).ge
 
 end TauCeti.NumberField.Units
