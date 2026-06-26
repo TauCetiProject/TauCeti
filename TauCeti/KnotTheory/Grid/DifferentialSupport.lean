@@ -60,15 +60,6 @@ theorem fullyBlockedRectangles_nonempty_of_count_ne_zero
   refine Finset.nonempty_of_ne_empty fun he => h ?_
   rw [fullyBlockedRectangleCount_def, he, Finset.card_empty, Nat.cast_zero]
 
-/-- A nonzero coefficient of the fully blocked differential forces the target state to be a column
-transposition of the source: the two distinct side columns of any rectangle from `x` to `y`
-exhibit `y` as `x.swapColumns`. -/
-theorem exists_swapColumns_of_fullyBlockedRectangleCount_ne_zero
-    (h : G.fullyBlockedRectangleCount x y ≠ 0) :
-    ∃ c d : Fin n, c ≠ d ∧ y = x.swapColumns c d := by
-  obtain ⟨R, -⟩ := G.fullyBlockedRectangles_nonempty_of_count_ne_zero h
-  exact ⟨R.left, R.right, R.left_ne_right, R.target_eq_swapColumns⟩
-
 /-- The fully blocked rectangle count vanishes whenever the target is not any column transposition
 of the source. This is the contrapositive of
 `exists_swapColumns_of_fullyBlockedRectangleCount_ne_zero`. -/
@@ -76,7 +67,7 @@ theorem fullyBlockedRectangleCount_eq_zero_of_forall_ne
     (h : ∀ c d : Fin n, c ≠ d → y ≠ x.swapColumns c d) :
     G.fullyBlockedRectangleCount x y = 0 := by
   by_contra hne
-  obtain ⟨c, d, hcd, hy⟩ := G.exists_swapColumns_of_fullyBlockedRectangleCount_ne_zero hne
+  obtain ⟨c, d, hcd, hy⟩ := G.exists_swapColumns_of_fullyBlockedRectangleCount_ne_zero x y hne
   exact h c d hcd hy
 
 /-- The fully blocked rectangle count is supported on column transpositions: if `y` is not a
