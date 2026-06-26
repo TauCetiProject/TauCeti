@@ -487,6 +487,26 @@ lemma weightedDegree_coe_weightedDegreeZeroSubgroup (w : X → ℤ)
     (D : weightedDegreeZeroSubgroup w) : weightedDegree w (D : WeilDivisor X) = 0 :=
   D.property
 
+/-- The unweighted degree-zero subgroup is the weight-one weighted-degree-zero subgroup. -/
+@[expose]
+def degreeZeroSubgroupEquivWeightedDegreeZeroOne :
+    degreeZeroSubgroup X ≃+ weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) where
+  toFun D := ⟨D, by
+    rw [mem_weightedDegreeZeroSubgroup, weightedDegree_one_eq_degree]
+    exact degree_coe_degreeZeroSubgroup D⟩
+  invFun D := ⟨D, by
+    rw [mem_degreeZeroSubgroup, ← weightedDegree_one_eq_degree]
+    exact weightedDegree_coe_weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) D⟩
+  left_inv D := by
+    ext
+    rfl
+  right_inv D := by
+    ext
+    rfl
+  map_add' D E := by
+    ext
+    rfl
+
 /-- For strictly positive weights, an effective divisor lying in the weighted degree-zero
 subgroup is zero. -/
 lemma coe_weightedDegreeZeroSubgroup_eq_zero_of_isEffective {w : X → ℤ} (hw : ∀ x, 0 < w x)

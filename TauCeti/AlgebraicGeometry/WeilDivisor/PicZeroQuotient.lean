@@ -154,26 +154,6 @@ lemma coe_weightedDegreeZeroQuotientEquivPicZero_mk {w : X → ℤ}
 
 /-! ### Unweighted degree-zero divisors modulo principal divisors -/
 
-/-- The unweighted degree-zero subgroup is the weight-one weighted-degree-zero subgroup. -/
-@[expose]
-def degreeZeroSubgroupEquivWeightedDegreeZeroOne :
-    degreeZeroSubgroup X ≃+ weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) where
-  toFun D := ⟨D, by
-    rw [mem_weightedDegreeZeroSubgroup, weightedDegree_one_eq_degree]
-    exact degree_coe_degreeZeroSubgroup D⟩
-  invFun D := ⟨D, by
-    rw [mem_degreeZeroSubgroup, ← weightedDegree_one_eq_degree]
-    exact weightedDegree_coe_weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) D⟩
-  left_inv D := by
-    ext
-    rfl
-  right_inv D := by
-    ext
-    rfl
-  map_add' D E := by
-    ext
-    rfl
-
 /-- Principal divisors inside the unweighted degree-zero divisor group: a degree-zero divisor
 belongs to this subgroup exactly when its underlying divisor is principal. -/
 def principalSubgroupOfDegreeZero :
@@ -230,8 +210,15 @@ lemma degreeZeroClassHom_eq_zero_iff
     (h : S.IsUnweightedDegreeZero) {D : degreeZeroSubgroup X} :
     S.degreeZeroClassHom h D = 0 ↔
       (D : WeilDivisor X) ∈ S.principalSubgroup := by
-  rw [Subtype.ext_iff]
-  exact S.divisorClass_eq_zero_iff
+  -- Expose the weight-one transport so this is exactly the weighted kernel criterion.
+  change S.weightedDegreeZeroClassHom (fun _ : X => (1 : ℤ))
+      (h : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ)))
+      (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X) D) = 0 ↔
+    (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X) D : WeilDivisor X) ∈
+      S.principalSubgroup
+  exact weightedDegreeZeroClassHom_eq_zero_iff
+    (S := S) (w := fun _ : X => (1 : ℤ))
+    (h := (h : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ))))
 
 /-- The kernel of the map from unweighted degree-zero divisors to `Pic⁰` is exactly the subgroup
 of principal divisors inside the unweighted degree-zero divisor group. -/
@@ -239,8 +226,8 @@ lemma degreeZeroClassHom_ker (h : S.IsUnweightedDegreeZero) :
     (S.degreeZeroClassHom h).ker =
       S.principalSubgroupOfDegreeZero := by
   ext D
-  rw [AddMonoidHom.mem_ker, mem_principalSubgroupOfDegreeZero,
-    degreeZeroClassHom_eq_zero_iff]
+  rw [AddMonoidHom.mem_ker, mem_principalSubgroupOfDegreeZero]
+  exact S.degreeZeroClassHom_eq_zero_iff h
 
 lemma principalSubgroupOfDegreeZero_map_equiv :
     S.principalSubgroupOfDegreeZero.map
