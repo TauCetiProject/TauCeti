@@ -259,6 +259,13 @@ lemma degreeZeroQuotientEquivWeightedDegreeZeroOne_mk (D : degreeZeroSubgroup X)
       QuotientAddGroup.mk (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X) D) := by
   rfl
 
+@[simp]
+lemma degreeZeroQuotientEquivWeightedDegreeZeroOne_symm_mk
+    (D : weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ))) :
+    S.degreeZeroQuotientEquivWeightedDegreeZeroOne.symm (QuotientAddGroup.mk D) =
+      QuotientAddGroup.mk ((degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D) := by
+  rfl
+
 /-- The quotient of unweighted degree-zero divisors by principal divisors is the abstract
 unweighted degree-zero divisor class group `Pic⁰`. -/
 @[expose]
