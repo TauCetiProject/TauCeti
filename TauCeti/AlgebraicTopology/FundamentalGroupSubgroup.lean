@@ -75,6 +75,23 @@ lemma mem_basepointChangeSubgroup_of_mem (γ : Path x₀ x₁)
       basepointChangeSubgroup γ H :=
   Subgroup.mem_map_of_mem _ hη
 
+/-- Transporting subgroups by basepoint change preserves and reflects inclusion. -/
+@[simp]
+lemma basepointChangeSubgroup_le_iff (γ : Path x₀ x₁)
+    (H K : Subgroup (_root_.FundamentalGroup X x₀)) :
+    basepointChangeSubgroup γ H ≤ basepointChangeSubgroup γ K ↔ H ≤ K := by
+  constructor
+  · intro h η hη
+    have hmem :
+        _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ η ∈
+          basepointChangeSubgroup γ K :=
+      h (mem_basepointChangeSubgroup_of_mem γ H η hη)
+    simpa using (mem_basepointChangeSubgroup_iff γ K
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ η)).mp hmem
+  · intro h η hη
+    exact (mem_basepointChangeSubgroup_iff γ K η).mpr
+      (h ((mem_basepointChangeSubgroup_iff γ H η).mp hη))
+
 /-- The basepoint-change equivalence restricts to an equivalence from a subgroup to its
 transported subgroup. Kept unexposed so consumers use the coercion lemmas below rather than
 unfolding to `MulEquiv.subgroupMap`. -/
@@ -104,6 +121,7 @@ lemma basepointChangeSubgroupEquiv_symm_apply_coe (γ : Path x₀ x₁)
       (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) H η)
 
 /-- A subgroup is normal exactly when its basepoint-changed subgroup is normal. -/
+@[simp]
 lemma normal_basepointChangeSubgroup_iff (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀)) :
     (basepointChangeSubgroup γ H).Normal ↔ H.Normal :=
