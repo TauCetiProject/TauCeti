@@ -85,10 +85,9 @@ theorem ConditionallyIIDWith.measurable_directing {μ : Measure Ω} {X : ℕ →
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) : Measurable ν :=
   h.1
 
-/-- The defining finite-block mixture identity of a `ConditionallyIIDWith` witness. Named
-`finite_map_eq` rather than `map_eq` to avoid colliding with `Measure.map` lemmas. -/
+/-- The defining finite-block mixture identity of a `ConditionallyIIDWith` witness. -/
 @[grind =>]
-theorem ConditionallyIIDWith.finite_map_eq {μ : Measure Ω} {X : ℕ → Ω → α}
+theorem ConditionallyIIDWith.map {μ : Measure Ω} {X : ℕ → Ω → α}
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν)
     {m : ℕ} (k : Fin m → ℕ) (hk : Function.Injective k) :
     blockLaw μ X k = μ.bind fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure :=
