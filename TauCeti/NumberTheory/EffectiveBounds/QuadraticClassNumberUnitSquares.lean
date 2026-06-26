@@ -92,14 +92,8 @@ theorem classNumber_mul_card_units_elementaryTwoQuotient_le_natAbs_of_sq_intCast
     (hx : x ∉ (algebraMap ℚ K).range) :
     NumberField.classNumber K * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 K)ˣ) ≤
       256 * a.natAbs := by
-  have hD : |NumberField.discr K| ≤ (4 * a.natAbs : ℕ) := by
-    rw [intCast_four_mul_natAbs]
-    exact abs_discr_le_int_of_sq_intCast hfin hx2 hx
-  have hprod :=
-    classNumber_mul_card_units_elementaryTwoQuotient_le_of_abs_discr_le_of_finrank_le K hD
-      (le_of_eq hfin)
-  rw [← four_mul_natAbs_mul_eight_sq]
-  exact hprod
+  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square]
+  exact classNumber_mul_units_sq_index_le_natAbs_of_sq_intCast hfin hx2 hx
 
 /-- A version of
 `TauCeti.NumberField.classNumber_mul_card_units_elementaryTwoQuotient_le_natAbs_of_sq_intCast`
