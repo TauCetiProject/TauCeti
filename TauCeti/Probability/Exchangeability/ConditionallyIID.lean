@@ -57,7 +57,8 @@ theorem ConditionallyIIDWith.intro {μ : Measure Ω} {X : ℕ → Ω → α} {ν
     ConditionallyIIDWith μ X ν :=
   ⟨hν, h⟩
 
-/-- Characteristic restatement of `ConditionallyIIDWith`. -/
+/-- Simp normal form for `ConditionallyIIDWith`. -/
+@[simp]
 theorem conditionallyIIDWith_iff {μ : Measure Ω} {X : ℕ → Ω → α} {ν : Ω → ProbabilityMeasure α} :
     ConditionallyIIDWith μ X ν ↔
       Measurable ν ∧
