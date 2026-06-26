@@ -12,9 +12,9 @@ public import TauCeti.NumberTheory.EffectiveBounds.HermiteCountMonotone
 
 The exact effective Hermite--Minkowski bound in
 `TauCeti.NumberField.ncard_setOf_finiteDimensional_abs_discr_le_le` counts number fields in a fixed
-ambient extension whose discriminant is at most a chosen threshold `N`. The monotone wrappers in
-`TauCeti.NumberTheory.EffectiveBounds.HermiteCountMonotone` allow the degree and coefficient-height
-constants for that same threshold to be replaced by larger constants.
+ambient extension whose absolute discriminant is at most a chosen threshold `N`. The monotone
+wrappers in `TauCeti.NumberTheory.EffectiveBounds.HermiteCountMonotone` allow the degree and
+coefficient-height constants for that same threshold to be replaced by larger constants.
 
 This file records the other monotonicity that later effective estimates need: a field family cut
 out by `|d_K| ≤ N` may be counted using the explicit constants attached to any larger threshold
@@ -56,8 +56,8 @@ private theorem setOf_finiteDimensional_abs_discr_le_subset_of_le {N M : ℕ} (h
   exact @le_trans ℤ _ |discr K| (N : ℤ) (M : ℤ) hK (by exact_mod_cast hNM)
 
 /-- **Threshold-monotone effective Hermite--Minkowski.** If `N ≤ M`, then the number of
-finite-dimensional subfields of an ambient extension `A / ℚ` with discriminant at most `N` is
-bounded by the explicit Hermite-count expression attached to the larger threshold `M`. -/
+finite-dimensional subfields of an ambient extension `A / ℚ` with absolute discriminant at most `N`
+is bounded by the explicit Hermite-count expression attached to the larger threshold `M`. -/
 theorem ncard_setOf_finiteDimensional_abs_discr_le_le_of_threshold_le {N M : ℕ}
     (hNM : N ≤ M) :
     {K : {F : IntermediateField ℚ A // FiniteDimensional ℚ F} |
@@ -70,8 +70,8 @@ theorem ncard_setOf_finiteDimensional_abs_discr_le_le_of_threshold_le {N M : ℕ
 
 /-- **Threshold-monotone effective Hermite--Minkowski with coarser constants.** If `N ≤ M`, and
 `D` and `C` bound the degree and coefficient-height constants attached to `M`, then the number of
-finite-dimensional subfields of an ambient extension `A / ℚ` with discriminant at most `N` is at
-most `hermiteCountBound D C`. -/
+finite-dimensional subfields of an ambient extension `A / ℚ` with absolute discriminant at most `N`
+is at most `hermiteCountBound D C`. -/
 theorem ncard_setOf_finiteDimensional_abs_discr_le_le_of_threshold_bounds {N M D C : ℕ}
     (hNM : N ≤ M) (hD : rankOfDiscrBdd M ≤ D) (hC : coeffBoundOfDiscrBdd M ≤ C) :
     {K : {F : IntermediateField ℚ A // FiniteDimensional ℚ F} |
