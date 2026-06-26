@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import TauCeti.Geometry.Symplectic.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Transport
 
@@ -116,15 +115,15 @@ lemma IsJHolomorphicWithinAt.transport {f : V → W} {s : Set V} {x : V} {t : Se
       (t := Set.univ) (x := eV x) htarget hinner (fun _ _ => Set.mem_univ _)
 
 /-- Transport a setwise `J`-holomorphic map along continuous real-linear equivalences of the
-source and target coordinates. -/
-lemma IsJHolomorphicOn.transport {f : V → W} {s : Set V} (hf : IsJHolomorphicOn J J' f s)
-    (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
+source and target coordinates, for any target-domain set whose points map back into the
+original source set. -/
+lemma IsJHolomorphicOn.transport {f : V → W} {s : Set V} {t : Set V'}
+    (hf : IsJHolomorphicOn J J' f s) (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
+    Set.MapsTo (fun y : V' => eV.symm y) t s →
     IsJHolomorphicOn (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
-      (fun y : V' => eW (f (eV.symm y))) (eV '' s) := by
-  rintro y ⟨x, hx, rfl⟩
-  refine (hf x hx).transport eV eW ?_
-  rintro y ⟨z, hz, rfl⟩
-  simpa using hz
+      (fun y : V' => eW (f (eV.symm y))) t := by
+  intro hts y hy
+  simpa [eV.apply_symm_apply y] using (hf (eV.symm y) (hts hy)).transport eV eW hts
 
 /-- Transport a globally `J`-holomorphic map along continuous real-linear equivalences of the
 source and target coordinates. -/
@@ -172,8 +171,10 @@ lemma isJHolomorphicOn_transport_iff (f : V → W) (s : Set V)
     (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
     IsJHolomorphicOn (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
       (fun y : V' => eW (f (eV.symm y))) (eV '' s) ↔ IsJHolomorphicOn J J' f s := by
-  refine ⟨fun h x hx => ?_, fun h => h.transport eV eW⟩
-  exact (isJHolomorphicWithinAt_transport_iff f s x eV eW).mp (h (eV x) ⟨x, hx, rfl⟩)
+  refine ⟨fun h x hx => ?_, fun h => h.transport eV eW ?_⟩
+  · exact (isJHolomorphicWithinAt_transport_iff f s x eV eW).mp (h (eV x) ⟨x, hx, rfl⟩)
+  · rintro y ⟨z, hz, rfl⟩
+    simpa using hz
 
 /-- Global `J`-holomorphicity is invariant under continuous real-linear coordinate changes. -/
 @[simp]
