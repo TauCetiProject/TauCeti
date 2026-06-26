@@ -6,10 +6,11 @@ import Mathlib.MeasureTheory.Constructions.Projective
 /-!
 # Finite-dimensional marginal uniqueness
 
-Two finite measures on path space `ℕ → α` that agree on every finite prefix marginal
-(`prefixProj α n`, the projection to the first `n` coordinates) are equal. This is the Layer 0
-finite-marginal uniqueness milestone of `TauCetiRoadmap/Exchangeability`: a thin ℕ-prefix wrapper
-over Mathlib's projective-limit machinery (`IsProjectiveLimit.unique`), not new measure theory.
+A finite measure on path space `ℕ → α` is determined by its finite prefix marginals: any measure
+agreeing with it on every prefix projection (`prefixProj α n`, the projection to the first `n`
+coordinates) is equal to it. This is the Layer 0 finite-marginal uniqueness milestone of
+`TauCetiRoadmap/Exchangeability`: a thin ℕ-prefix wrapper over Mathlib's projective-limit
+machinery (`IsProjectiveLimit.unique`), not new measure theory.
 
 `measure_eq_of_prefixProj_map_eq` is the main API (marginals as `Measure.map` equalities);
 `measure_eq_of_prefixProj_setwise` is the setwise form matching the roadmap target. The same
@@ -29,10 +30,11 @@ namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
 
-/-- **Finite-marginal uniqueness.** Two finite measures on `ℕ → α` that have the same law under
-every finite prefix projection `prefixProj α n` are equal. -/
-theorem measure_eq_of_prefixProj_map_eq {μ ν : Measure (ℕ → α)}
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+/-- **Finite-marginal uniqueness.** Two measures on `ℕ → α`, with `μ` finite, that have the same
+law under every finite prefix projection `prefixProj α n` are equal. (Finiteness of `ν` is not
+needed: projective-limit uniqueness only requires the prefix-marginal family, supplied by `μ`, to
+be finite.) -/
+theorem measure_eq_of_prefixProj_map_eq {μ ν : Measure (ℕ → α)} [IsFiniteMeasure μ]
     (h : ∀ n, μ.map (prefixProj α n) = ν.map (prefixProj α n)) : μ = ν := by
   -- The two `Finset ℕ`-restriction families agree: a finite index set `I` sits inside the
   -- prefix `{0, …, n-1}` for `n = I.sup id + 1`, so its restriction factors through `prefixProj`.
@@ -54,10 +56,9 @@ theorem measure_eq_of_prefixProj_map_eq {μ ν : Measure (ℕ → α)}
   exact IsProjectiveLimit.unique (P := fun I => μ.map I.restrict)
     (fun I => rfl) (fun I => (key I).symm)
 
-/-- **Finite-marginal uniqueness, setwise form** (matching the roadmap target): two finite measures
-on `ℕ → α` agreeing on every measurable prefix-cylinder are equal. -/
-theorem measure_eq_of_prefixProj_setwise {μ ν : Measure (ℕ → α)}
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+/-- **Finite-marginal uniqueness, setwise form** (matching the roadmap target): two measures on
+`ℕ → α`, with `μ` finite, agreeing on every measurable prefix-cylinder are equal. -/
+theorem measure_eq_of_prefixProj_setwise {μ ν : Measure (ℕ → α)} [IsFiniteMeasure μ]
     (h : ∀ (n : ℕ) (S : Set (Fin n → α)), MeasurableSet S →
       μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=
   measure_eq_of_prefixProj_map_eq fun n => Measure.ext fun S hS => h n S hS
