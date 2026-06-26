@@ -72,29 +72,15 @@ namespace BCRPoint
 
 variable {V : Type*}
 
-/-- Convert a product point to the local BCR wrapper. -/
-@[expose] def ofProd (p : ℝ≥0 × V) : BCRPoint V :=
+/-- Convert a product point to the local BCR wrapper. Internal helper, not part of the public
+API. -/
+private def ofProd (p : ℝ≥0 × V) : BCRPoint V :=
   ⟨p.1, p.2⟩
 
-/-- Convert a local BCR wrapper back to the product type. -/
-@[expose] def toProd (p : BCRPoint V) : ℝ≥0 × V :=
+/-- Convert a local BCR wrapper back to the product type. Internal helper, not part of the public
+API. -/
+private def toProd (p : BCRPoint V) : ℝ≥0 × V :=
   (p.time, p.point)
-
-@[simp]
-theorem ofProd_time (p : ℝ≥0 × V) : (ofProd p).time = p.1 :=
-  rfl
-
-@[simp]
-theorem ofProd_point (p : ℝ≥0 × V) : (ofProd p).point = p.2 :=
-  rfl
-
-@[simp]
-theorem toProd_fst (p : BCRPoint V) : (toProd p).1 = p.time :=
-  rfl
-
-@[simp]
-theorem toProd_snd (p : BCRPoint V) : (toProd p).2 = p.point :=
-  rfl
 
 @[ext]
 theorem ext {p q : BCRPoint V} (ht : p.time = q.time) (hv : p.point = q.point) : p = q := by
