@@ -86,9 +86,9 @@ private theorem exists_perm_extending_strictMono {m n : ℕ} (k : Fin m → ℕ)
     (fun i j hij => hk.injective (Fin.mk.inj hij))
   exact ⟨σ, fun i => congrArg Fin.val (hσ i)⟩
 
-/-- **Every exchangeable sequence is contractable**: along any strictly increasing finite
-selection `k : Fin m → ℕ`, the block law `blockLaw μ X k` equals the prefix law `prefixLaw μ X m`.
-One direction of the de Finetti–Ryll-Nardzewski equivalence. -/
+/-- **Every exchangeable sequence with a.e. measurable coordinates is contractable**: along any
+strictly increasing finite selection `k : Fin m → ℕ`, the block law `blockLaw μ X k` equals the
+prefix law `prefixLaw μ X m`. One direction of the de Finetti–Ryll-Nardzewski equivalence. -/
 theorem contractable_of_exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X := by
   intro m k hk
@@ -121,8 +121,8 @@ theorem contractable_of_exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
       (Measure.map (fun x : Fin n → α => fun i : Fin (m' + 1) => x (Fin.castLE hmn i))) hexch
     rwa [hLHS, hRHS] at key
 
-/-- Every exchangeable sequence is contractable (dot-notation form of
-`contractable_of_exchangeable`). -/
+/-- Every exchangeable sequence with a.e. measurable coordinates is contractable (dot-notation
+form of `contractable_of_exchangeable`). -/
 theorem Exchangeable.contractable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X :=
   contractable_of_exchangeable hX hX_meas
