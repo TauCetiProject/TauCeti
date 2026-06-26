@@ -111,7 +111,7 @@ variable {E B : Type*} [TopologicalSpace E] {p : E → B} {b : B}
 
 /-- The subgroup-fibre orbit quotient is equivalent to the quotient of the deck group by the
 subgroup, once the deck action on the chosen fibre is free and transitive. -/
-@[expose] noncomputable def subgroupFiberOrbitQuotientEquivQuotientGroup
+noncomputable def subgroupFiberOrbitQuotientEquivQuotientGroup
     [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
     (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) :
     SubgroupFiberOrbitQuotient H b ≃ Deck p ⧸ H :=
@@ -165,7 +165,9 @@ lemma subgroupFiberOrbitQuotientEquivQuotientGroup_symm_mk_coe
           rw [Set.mem_preimage, Set.mem_singleton_iff]
           exact (map_proj φ⁻¹ e.1).trans (Set.mem_singleton_iff.mp e.2)⟩ := by
   rw [subgroupFiberOrbitQuotientEquivQuotientGroup_symm_mk]
-  congr 1
+  apply congrArg (subgroupFiberOrbitClass H)
+  ext
+  exact fiber_smul_coe φ⁻¹ e
 
 /-- The inverse quotient equivalence sends the identity coset to the orbit class of the chosen
 fibre point. -/
