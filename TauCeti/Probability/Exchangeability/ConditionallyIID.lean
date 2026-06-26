@@ -2,6 +2,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.MeasureTheory.Measure.FiniteMeasurePi
+public import Mathlib.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Conditionally i.i.d. sequences
@@ -42,25 +43,51 @@ measure `ν` is measurable, and along every finite selection `k` of **distinct**
 the block law is the `ν`-mixture of the product measure
 `ProbabilityMeasure.pi (fun _ => ν ω)`. Distinctness (`Function.Injective k`) is what product
 laws need, in contrast with the order condition `StrictMono` of `Contractable`. -/
-@[expose]
 def ConditionallyIIDWith (μ : Measure Ω) (X : ℕ → Ω → α) (ν : Ω → ProbabilityMeasure α) :
     Prop :=
   Measurable ν ∧
     ∀ (m : ℕ) (k : Fin m → ℕ), Function.Injective k →
       blockLaw μ X k = μ.bind fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure
 
+/-- Constructor: a measurable directing measure together with the finite-block mixture identity. -/
+theorem ConditionallyIIDWith.intro {μ : Measure Ω} {X : ℕ → Ω → α} {ν : Ω → ProbabilityMeasure α}
+    (hν : Measurable ν)
+    (h : ∀ (m : ℕ) (k : Fin m → ℕ), Function.Injective k →
+      blockLaw μ X k = μ.bind fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure) :
+    ConditionallyIIDWith μ X ν :=
+  ⟨hν, h⟩
+
+/-- Characteristic restatement of `ConditionallyIIDWith`. -/
+theorem conditionallyIIDWith_iff {μ : Measure Ω} {X : ℕ → Ω → α} {ν : Ω → ProbabilityMeasure α} :
+    ConditionallyIIDWith μ X ν ↔
+      Measurable ν ∧
+        ∀ (m : ℕ) (k : Fin m → ℕ), Function.Injective k →
+          blockLaw μ X k = μ.bind fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure :=
+  Iff.rfl
+
 /-- Conditional i.i.d.-ness: existence of a directing probability measure. -/
-@[expose]
 def ConditionallyIID (μ : Measure Ω) (X : ℕ → Ω → α) : Prop :=
   ∃ ν : Ω → ProbabilityMeasure α, ConditionallyIIDWith μ X ν
 
+/-- Constructor from a directing measure together with its witness. -/
+theorem ConditionallyIID.of_directing {μ : Measure Ω} {X : ℕ → Ω → α}
+    {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) : ConditionallyIID μ X :=
+  ⟨ν, h⟩
+
+/-- Characteristic restatement of `ConditionallyIID`. -/
+theorem conditionallyIID_iff {μ : Measure Ω} {X : ℕ → Ω → α} :
+    ConditionallyIID μ X ↔ ∃ ν : Ω → ProbabilityMeasure α, ConditionallyIIDWith μ X ν :=
+  Iff.rfl
+
 /-- The directing measure of a `ConditionallyIIDWith` witness is measurable. -/
+@[grind →]
 theorem ConditionallyIIDWith.measurable_directing {μ : Measure Ω} {X : ℕ → Ω → α}
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) : Measurable ν :=
   h.1
 
 /-- The defining finite-block mixture identity of a `ConditionallyIIDWith` witness. Named
 `finite_map_eq` rather than `map_eq` to avoid colliding with `Measure.map` lemmas. -/
+@[grind =>]
 theorem ConditionallyIIDWith.finite_map_eq {μ : Measure Ω} {X : ℕ → Ω → α}
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν)
     {m : ℕ} (k : Fin m → ℕ) (hk : Function.Injective k) :
