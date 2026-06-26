@@ -8,6 +8,7 @@ public import Mathlib.Analysis.Calculus.AbsolutelyMonotone
 public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+public import Mathlib.Topology.Order.MonotoneConvergence
 
 /-!
 # Completely monotone functions
@@ -40,6 +41,9 @@ point `0`); on the open half-line it agrees with the ordinary iterated derivativ
 * `TauCeti.IsCompletelyMonotone.nonneg`, `TauCeti.IsCompletelyMonotone.derivWithin_nonpos`,
   `TauCeti.IsCompletelyMonotone.antitoneOn`: a completely monotone function is nonnegative
   and nonincreasing on `[0, ∞)`.
+* `TauCeti.IsCompletelyMonotone.tendsto_atTop`,
+  `TauCeti.IsCompletelyMonotone.le_of_tendsto_atTop`: order-limit consequences of
+  nonnegativity and monotonicity on `[0, ∞)`.
 * `TauCeti.IsCompletelyMonotone.neg_one_pow_mul_iteratedDeriv_nonneg`: on the open half-line,
   the sign condition also holds for ordinary iterated derivatives.
 * `TauCeti.IsCompletelyMonotone.add`, `TauCeti.IsCompletelyMonotone.smul`: closure under
@@ -173,6 +177,62 @@ lemma antitoneOn (hf : IsCompletelyMonotone f) : AntitoneOn f (Ici 0) := by
   have hmem : Ici (0 : ℝ) ∈ 𝓝 x := mem_of_superset (isOpen_Ioi.mem_nhds hx) Ioi_subset_Ici_self
   rw [← derivWithin_of_mem_nhds hmem]
   exact hf.derivWithin_nonpos (le_of_lt hx)
+
+/-- A completely monotone function has a limit `L ≥ 0` at infinity: it is antitone on `[0, ∞)`
+and bounded below by `0`. -/
+lemma tendsto_atTop (hf : IsCompletelyMonotone f) :
+    ∃ L, Tendsto f atTop (nhds L) ∧ 0 ≤ L := by
+  have hanti := hf.antitoneOn
+  set g := fun t : ℝ => f (max t 0) with hg
+  have hg_anti : Antitone g := fun a b hab =>
+    hanti (mem_Ici.mpr (le_max_right _ _)) (mem_Ici.mpr (le_max_right _ _))
+      (max_le_max_right 0 hab)
+  have hg_bdd : BddBelow (Set.range g) :=
+    ⟨0, fun _ ⟨t, ht⟩ => ht ▸ hf.nonneg (le_max_right _ _)⟩
+  refine ⟨⨅ i, g i, ?_, le_ciInf (fun _ => hf.nonneg (le_max_right _ _))⟩
+  exact (tendsto_atTop_ciInf hg_anti hg_bdd).congr'
+    (eventually_atTop.mpr ⟨0, fun t ht => by simp [hg, max_eq_left ht]⟩)
+
+/-- A completely monotone function lies above its limit at infinity on `[0, ∞)`. -/
+lemma le_of_tendsto_atTop (hcm : IsCompletelyMonotone f) {L : ℝ}
+    (hL : Tendsto f atTop (nhds L)) {T : ℝ} (hT : 0 ≤ T) : L ≤ f T := by
+  set g₀ := fun t : ℝ => f (max t 0) with hg₀
+  have hg_anti : Antitone g₀ := fun a b hab =>
+    hcm.antitoneOn (mem_Ici.mpr (le_max_right _ _)) (mem_Ici.mpr (le_max_right _ _))
+      (max_le_max_right 0 hab)
+  have := hg_anti.le_of_tendsto
+    (hL.congr' (eventually_atTop.mpr ⟨0, fun t ht => by simp [hg₀, max_eq_left ht]⟩)) T
+  simpa [hg₀, max_eq_left hT] using this
+
+end IsCompletelyMonotone
+
+variable {f : ℝ → ℝ}
+
+/-- At a point `x` in the interior of a unique-differentiability set `s` (`s ∈ 𝓝 x`),
+the derivative of the `k`-th iterated derivative-within-`s` of a `C^∞` function is the
+`(k+1)`-th iterated derivative-within-`s`. -/
+theorem ContDiffOn.hasDerivAt_iteratedDerivWithin
+    (hf : ContDiffOn ℝ ∞ f s) (hs : UniqueDiffOn ℝ s) (k : ℕ) {x : ℝ} (hx : s ∈ nhds x) :
+    HasDerivAt (iteratedDerivWithin k f s) (iteratedDerivWithin (k + 1) f s x) x := by
+  have hda := (hf.differentiableOn_iteratedDerivWithin
+    (WithTop.coe_lt_coe.mpr (WithTop.coe_lt_top k)) hs).hasDerivAt hx
+  have hval : iteratedDerivWithin (k + 1) f s x =
+      deriv (iteratedDerivWithin k f s) x := by
+    rw [iteratedDerivWithin_succ, derivWithin_of_mem_nhds hx]
+  rw [hval]; exact hda
+
+namespace IsCompletelyMonotone
+
+variable {f g : ℝ → ℝ}
+
+/-- For a completely monotone `f`, the `k`-th iterated derivative within `[0, ∞)` is
+differentiable at any `t > 0`, with derivative the `(k+1)`-th iterated derivative. -/
+lemma hasDerivAt_iteratedDerivWithin_succ
+    (hcm : IsCompletelyMonotone f) (k : ℕ) {t : ℝ} (ht : 0 < t) :
+    HasDerivAt (iteratedDerivWithin k f (Ici 0))
+      (iteratedDerivWithin (k + 1) f (Ici 0) t) t :=
+  ContDiffOn.hasDerivAt_iteratedDerivWithin hcm.contDiffOn (uniqueDiffOn_Ici 0) k
+    (Ici_mem_nhds ht)
 
 /-- Completely monotone functions are closed under addition. -/
 lemma add (hf : IsCompletelyMonotone f) (hg : IsCompletelyMonotone g) :
