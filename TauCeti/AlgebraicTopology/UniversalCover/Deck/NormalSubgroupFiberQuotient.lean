@@ -49,7 +49,7 @@ transitive.
 
 Under normality, `N(H) = Deck p`, so this is the fibre-level version of the regular-cover
 specialization from `N(H) / H` to `Deck p / H`. -/
-@[expose] noncomputable def subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal
+noncomputable def subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal
     [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
     SubgroupFiberOrbitQuotient H b ≃ Subgroup.normalizerQuotient H :=
@@ -58,7 +58,7 @@ specialization from `N(H) / H` to `Deck p / H`. -/
 
 /-- For a regular preconnected covering and a normal subgroup `H ≤ Deck p`, the quotient of a
 fibre by the restricted `H`-action is the normalizer quotient `N(H) / H`. -/
-@[expose] noncomputable def regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal
+noncomputable def regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal
     [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
     SubgroupFiberOrbitQuotient H b ≃ Subgroup.normalizerQuotient H :=
@@ -89,8 +89,21 @@ lemma normalizerQuotientEquivQuotientOfNormal_regularSubgroupFiberOrbitQuotientE
     Subgroup.normalizerQuotientEquivQuotientOfNormal H
         (regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal hp hreg H e x) =
       regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e x := by
-  exact (Subgroup.normalizerQuotientEquivQuotientOfNormal H).toEquiv.apply_symm_apply
-    (regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e x)
+  letI := hreg.fiber_isPretransitive b
+  letI := fiber_isCancelSMul (b := b) hp
+  refine Quotient.inductionOn' x ?_
+  intro e'
+  obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Deck p) e e'
+  rw [← hφ]
+  change
+    Subgroup.normalizerQuotientEquivQuotientOfNormal H
+        (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e
+          (subgroupFiberOrbitClass H (φ • e))) =
+      regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e
+        (subgroupFiberOrbitClass H (φ • e))
+  rw [normalizerQuotientEquivQuotientOfNormal_subgroupFiberOrbitQuotientEquiv,
+    subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul,
+    regularSubgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul]
 
 /-- The chosen fibre point maps to the identity class in the normalizer quotient. -/
 @[simp]
