@@ -159,6 +159,29 @@ theorem map_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
       hf.comp (measurable_pi_apply i)).aemeasurable
   · exact aemeasurable_pi_lambda (fun ω => fun i => X i ω) hX
 
+/-- Push a block law forward along a coordinate reindexing: selecting the coordinates of
+`blockLaw μ X k` through `g : Fin p → Fin n` yields the block law along `k ∘ g`. -/
+theorem map_blockLaw_reindex (μ : Measure Ω) {X : ℕ → Ω → α} {n p : ℕ}
+    (k : Fin n → ℕ) (g : Fin p → Fin n) (hXk : ∀ j : Fin n, AEMeasurable (X (k j)) μ) :
+    (blockLaw μ X k).map (fun x : Fin n → α => fun i : Fin p => x (g i)) =
+      blockLaw μ X (k ∘ g) := by
+  rw [blockLaw_apply, blockLaw_apply,
+    AEMeasurable.map_map_of_aemeasurable
+      ((measurable_pi_lambda _ fun i => measurable_pi_apply (g i)).aemeasurable)
+      (aemeasurable_pi_lambda _ hXk)]
+  rfl
+
+/-- Projecting the prefix law on `Fin n` onto its first `m ≤ n` coordinates (via `Fin.castLE`)
+gives the prefix law on `Fin m`. -/
+theorem map_prefixLaw_castLE (μ : Measure Ω) {X : ℕ → Ω → α} {m n : ℕ} (hmn : m ≤ n)
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) :
+    (prefixLaw μ X n).map (fun x : Fin n → α => fun i : Fin m => x (Fin.castLE hmn i)) =
+      prefixLaw μ X m := by
+  have hidx : (fun i : Fin n => i.val) ∘ Fin.castLE hmn = fun i : Fin m => i.val := by
+    funext i; simp
+  rw [prefixLaw_apply, map_blockLaw_reindex μ _ (Fin.castLE hmn) hX, hidx]
+  exact (prefixLaw_apply μ X m).symm
+
 theorem Exchangeable.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω → α}
     (h : Exchangeable μ X) (n : ℕ) : ExchangeableAt μ X n :=
   h n
