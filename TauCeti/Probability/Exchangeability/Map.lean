@@ -8,7 +8,7 @@ public import TauCeti.Probability.Exchangeability.Contractability
 This file records that the Layer 0 symmetry notions for sequence laws are preserved by
 applying a measurable map to every coordinate of the process. It supplies the process-level
 closure API promised by the Exchangeability roadmap from the law-level lemmas
-`map_blockLaw` and `map_prefixLaw` in `Basic.lean`.
+`map_blockLaw`, `map_prefixLaw`, and `map_pathLaw` in `Basic.lean`.
 
 These statements follow `TauCetiRoadmap/Exchangeability/README.md`, Layer 0, the item
 asking for closure of the symmetry classes under coordinatewise pushforward. The proofs use
@@ -27,18 +27,6 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω α β : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace β]
-
-/-- A coordinatewise measurable map sends path laws to path laws. -/
-theorem map_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α} {f : α → β} (hf : Measurable f)
-    (hX : ∀ i, AEMeasurable (X i) μ) :
-    (pathLaw μ X).map (fun x : ℕ → α => fun i => f (x i)) =
-      pathLaw μ (fun n ω => f (X n ω)) := by
-  rw [pathLaw_apply, pathLaw_apply]
-  rw [AEMeasurable.map_map_of_aemeasurable]
-  · rfl
-  · exact (measurable_pi_lambda (fun x : ℕ → α => fun i => f (x i)) fun i =>
-      hf.comp (measurable_pi_apply i)).aemeasurable
-  · exact aemeasurable_pi_lambda (fun ω => fun i => X i ω) hX
 
 /-- Finite exchangeability at a fixed length is preserved by a coordinatewise measurable
 map of the value space. -/
