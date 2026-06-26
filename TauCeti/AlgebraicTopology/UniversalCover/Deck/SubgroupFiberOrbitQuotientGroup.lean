@@ -111,7 +111,7 @@ variable {E B : Type*} [TopologicalSpace E] {p : E → B} {b : B}
 
 /-- The subgroup-fibre orbit quotient is equivalent to the quotient of the deck group by the
 subgroup, once the deck action on the chosen fibre is free and transitive. -/
-noncomputable def subgroupFiberOrbitQuotientEquivQuotientGroup
+@[expose] noncomputable def subgroupFiberOrbitQuotientEquivQuotientGroup
     [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
     (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) :
     SubgroupFiberOrbitQuotient H b ≃ Deck p ⧸ H :=
@@ -119,7 +119,7 @@ noncomputable def subgroupFiberOrbitQuotientEquivQuotientGroup
 
 /-- For a regular preconnected covering map, the subgroup-fibre orbit quotient is equivalent
 to the quotient of the deck group by the subgroup. -/
-noncomputable def regularSubgroupFiberOrbitQuotientEquivQuotientGroup
+@[expose] noncomputable def regularSubgroupFiberOrbitQuotientEquivQuotientGroup
     [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) :
     SubgroupFiberOrbitQuotient H b ≃ Deck p ⧸ H :=

@@ -19,11 +19,13 @@ normalizer quotients without redoing the algebraic comparison.
 
 ## Main declarations
 
-* `TauCeti.Deck.regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal`: for a
-  regular preconnected cover and a normal subgroup `H ≤ Deck p`, the quotient of a fibre by
-  `H` is equivalent to `N(H) / H`.
-* Simp lemmas for the image of the chosen lift, its deck translates, and representatives of
-  the inverse map.
+* `TauCeti.Deck.subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal`: for a normal
+  subgroup `H ≤ Deck p`, identifies the subgroup fibre-orbit quotient with `N(H) / H` when
+  the deck action on the chosen fibre is free and transitive.
+* `TauCeti.Deck.regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal`: the
+  regular-cover specialization.
+* Simp lemmas for the image of the chosen fibre point, its deck translates, and
+  representatives of the inverse map.
 
 ## References
 
@@ -39,25 +41,49 @@ namespace TauCeti
 
 namespace Deck
 
-variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B} {b : B}
+variable {E B : Type*} [TopologicalSpace E] {p : E → B} {b : B}
 
-/-- For a regular preconnected covering and a normal subgroup `H ≤ Deck p`, the quotient of a
-fibre by the restricted `H`-action is the normalizer quotient `N(H) / H`.
+/-- For a normal subgroup `H ≤ Deck p`, the quotient of a fibre by the restricted `H`-action
+is the normalizer quotient `N(H) / H`, once the deck action on the fibre is free and
+transitive.
 
 Under normality, `N(H) = Deck p`, so this is the fibre-level version of the regular-cover
 specialization from `N(H) / H` to `Deck p / H`. -/
-noncomputable def regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal
-    [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+@[expose] noncomputable def subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
     SubgroupFiberOrbitQuotient H b ≃ Subgroup.normalizerQuotient H :=
-  (regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e).trans
+  (subgroupFiberOrbitQuotientEquivQuotientGroup H e).trans
     (Subgroup.normalizerQuotientEquivQuotientOfNormal H).toEquiv.symm
+
+/-- For a regular preconnected covering and a normal subgroup `H ≤ Deck p`, the quotient of a
+fibre by the restricted `H`-action is the normalizer quotient `N(H) / H`. -/
+@[expose] noncomputable def regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
+    SubgroupFiberOrbitQuotient H b ≃ Subgroup.normalizerQuotient H :=
+  letI := hreg.fiber_isPretransitive b
+  letI := fiber_isCancelSMul (b := b) hp
+  subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e
 
 /-- The normal-subgroup fibre quotient equivalence, followed by the normalizer quotient's
 normal-case comparison, is the existing equivalence to `Deck p ⧸ H`. -/
 @[simp]
+lemma normalizerQuotientEquivQuotientOfNormal_subgroupFiberOrbitQuotientEquiv
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b})
+    (x : SubgroupFiberOrbitQuotient H b) :
+    Subgroup.normalizerQuotientEquivQuotientOfNormal H
+        (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e x) =
+      subgroupFiberOrbitQuotientEquivQuotientGroup H e x := by
+  exact (Subgroup.normalizerQuotientEquivQuotientOfNormal H).toEquiv.apply_symm_apply
+    (subgroupFiberOrbitQuotientEquivQuotientGroup H e x)
+
+/-- For a regular cover, the normal-subgroup fibre quotient equivalence, followed by the
+normalizer quotient's normal-case comparison, is the existing equivalence to `Deck p ⧸ H`. -/
+@[simp]
 lemma normalizerQuotientEquivQuotientOfNormal_regularSubgroupFiberOrbitQuotientEquiv
-    [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b})
     (x : SubgroupFiberOrbitQuotient H b) :
     Subgroup.normalizerQuotientEquivQuotientOfNormal H
@@ -68,8 +94,24 @@ lemma normalizerQuotientEquivQuotientOfNormal_regularSubgroupFiberOrbitQuotientE
 
 /-- The chosen fibre point maps to the identity class in the normalizer quotient. -/
 @[simp]
+lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_base
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e
+        (subgroupFiberOrbitClass H e) =
+      Subgroup.normalizerQuotientMk H
+        ⟨1, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
+  apply (Subgroup.normalizerQuotientEquivQuotientOfNormal H).injective
+  rw [normalizerQuotientEquivQuotientOfNormal_subgroupFiberOrbitQuotientEquiv,
+    Subgroup.normalizerQuotientEquivQuotientOfNormal_mk]
+  simpa using
+    subgroupFiberOrbitQuotientEquivQuotientGroup_apply_inv_smul H e (1 : Deck p)
+
+/-- For a regular cover, the chosen fibre point maps to the identity class in the normalizer
+quotient. -/
+@[simp]
 lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_base
-    [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
     regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal hp hreg H e
         (subgroupFiberOrbitClass H e) =
@@ -85,8 +127,24 @@ lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_bas
 /-- The normal-subgroup fibre quotient equivalence sends the class of `φ • e` to the
 normalizer-quotient class of `φ⁻¹`. -/
 @[simp]
+lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) (φ : Deck p) :
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e
+        (subgroupFiberOrbitClass H (φ • e)) =
+      Subgroup.normalizerQuotientMk H
+        ⟨φ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
+  apply (Subgroup.normalizerQuotientEquivQuotientOfNormal H).injective
+  rw [normalizerQuotientEquivQuotientOfNormal_subgroupFiberOrbitQuotientEquiv,
+    subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul,
+    Subgroup.normalizerQuotientEquivQuotientOfNormal_mk]
+  rfl
+
+/-- For a regular cover, the normal-subgroup fibre quotient equivalence sends the class of
+`φ • e` to the normalizer-quotient class of `φ⁻¹`. -/
+@[simp]
 lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul
-    [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) (φ : Deck p) :
     regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal hp hreg H e
         (subgroupFiberOrbitClass H (φ • e)) =
@@ -101,8 +159,21 @@ lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smu
 /-- The normal-subgroup fibre quotient equivalence sends the class of `φ⁻¹ • e` to the
 normalizer-quotient class of `φ`. -/
 @[simp]
+lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_inv_smul
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) (φ : Deck p) :
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e
+        (subgroupFiberOrbitClass H (φ⁻¹ • e)) =
+      Subgroup.normalizerQuotientMk H
+        ⟨φ, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
+  simpa using
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul H e φ⁻¹
+
+/-- For a regular cover, the normal-subgroup fibre quotient equivalence sends the class of
+`φ⁻¹ • e` to the normalizer-quotient class of `φ`. -/
+@[simp]
 lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_inv_smul
-    [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) (φ : Deck p) :
     regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal hp hreg H e
         (subgroupFiberOrbitClass H (φ⁻¹ • e)) =
@@ -115,8 +186,26 @@ lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_inv
 /-- The inverse equivalence sends a normalizer representative to the fibre-orbit class of its
 inverse acting on the chosen fibre point. -/
 @[simp]
+lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_mk
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b})
+    (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) :
+    (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e).symm
+        (Subgroup.normalizerQuotientMk H φ) =
+      subgroupFiberOrbitClass H ((φ : Deck p)⁻¹ • e) := by
+  apply (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e).injective
+  rw [Equiv.apply_symm_apply,
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul]
+  apply (Subgroup.normalizerQuotientEquivQuotientOfNormal H).injective
+  rw [Subgroup.normalizerQuotientEquivQuotientOfNormal_mk,
+    Subgroup.normalizerQuotientEquivQuotientOfNormal_mk]
+  simp
+
+/-- For a regular cover, the inverse equivalence sends a normalizer representative to the
+fibre-orbit class of its inverse acting on the chosen fibre point. -/
+@[simp]
 lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_mk
-    [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b})
     (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) :
     (regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal hp hreg H e).symm
@@ -133,8 +222,22 @@ lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_mk
 /-- In particular, the inverse equivalence sends the identity normalizer quotient class to the
 chosen fibre-orbit class. -/
 @[simp]
+lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_one
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
+    (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e).symm
+        (Subgroup.normalizerQuotientMk H
+          ⟨1, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩) =
+      subgroupFiberOrbitClass H e := by
+  simpa using
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_mk
+      H e ⟨1, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩
+
+/-- For a regular cover, the inverse equivalence sends the identity normalizer quotient class
+to the chosen fibre-orbit class. -/
+@[simp]
 lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_one
-    [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
     (regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal hp hreg H e).symm
         (Subgroup.normalizerQuotientMk H
