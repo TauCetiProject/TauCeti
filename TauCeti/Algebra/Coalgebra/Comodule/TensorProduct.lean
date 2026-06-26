@@ -85,9 +85,7 @@ private theorem tensorTensorTensorComm_rTensor_assoc :
   ext m c n d c' d'
   simp
 
-/-- Coherence for the tensor shuffle in the coassociativity proof of the external
-tensor-product coaction. -/
-theorem externalTensorCoact_coassoc_shuffle :
+private theorem externalTensorCoact_coassoc_shuffle :
     TensorProduct.assoc R (M ⊗[R] N) (C ⊗[R] D) (C ⊗[R] D) ∘ₗ
         (externalTensorCoact (R := R) (C := C) (D := D) (M := M) (N := N)).rTensor
           (C ⊗[R] D) ∘ₗ
@@ -255,6 +253,50 @@ theorem tensorProductHom_apply
     tensorProductHom (R := R) (C := C) (D := D) f g x =
       TensorProduct.map f.toLinearMap g.toLinearMap x :=
   rfl
+
+/-- Tensoring identity comodule morphisms gives the identity morphism on the tensor-product
+comodule. -/
+@[simp]
+theorem tensorProductHom_id :
+    letI : Comodule R (C ⊗[R] D) (M ⊗[R] N) := tensorProduct R C D M N
+    tensorProductHom (R := R) (C := C) (D := D)
+        (Comodule.Hom.id R C M) (Comodule.Hom.id R D N) =
+      Comodule.Hom.id R (C ⊗[R] D) (M ⊗[R] N) := by
+  letI : Comodule R (C ⊗[R] D) (M ⊗[R] N) := tensorProduct R C D M N
+  refine Comodule.Hom.ext fun x => ?_
+  induction x using TensorProduct.induction_on with
+  | zero => simp [tensorProductHom_apply]
+  | tmul m n => simp [tensorProductHom_apply]
+  | add x y hx hy =>
+      simpa [tensorProductHom_apply] using congrArg₂ (· + ·) hx hy
+
+/-- Tensoring composites of comodule morphisms agrees with composing the tensor-product
+morphisms. -/
+@[simp]
+theorem tensorProductHom_comp
+    {M' : Type*} [AddCommMonoid M'] [Module R M'] [Comodule R C M']
+    {M'' : Type*} [AddCommMonoid M''] [Module R M''] [Comodule R C M'']
+    {N' : Type*} [AddCommMonoid N'] [Module R N'] [Comodule R D N']
+    {N'' : Type*} [AddCommMonoid N''] [Module R N''] [Comodule R D N'']
+    (f : Comodule.Hom R C M M') (f' : Comodule.Hom R C M' M'')
+    (g : Comodule.Hom R D N N') (g' : Comodule.Hom R D N' N'') :
+    letI : Comodule R (C ⊗[R] D) (M ⊗[R] N) := tensorProduct R C D M N
+    letI : Comodule R (C ⊗[R] D) (M' ⊗[R] N') := tensorProduct R C D M' N'
+    letI : Comodule R (C ⊗[R] D) (M'' ⊗[R] N'') := tensorProduct R C D M'' N''
+    tensorProductHom (R := R) (C := C) (D := D)
+        (Comodule.Hom.comp f' f) (Comodule.Hom.comp g' g) =
+      Comodule.Hom.comp
+        (tensorProductHom (R := R) (C := C) (D := D) f' g')
+        (tensorProductHom (R := R) (C := C) (D := D) f g) := by
+  letI : Comodule R (C ⊗[R] D) (M ⊗[R] N) := tensorProduct R C D M N
+  letI : Comodule R (C ⊗[R] D) (M' ⊗[R] N') := tensorProduct R C D M' N'
+  letI : Comodule R (C ⊗[R] D) (M'' ⊗[R] N'') := tensorProduct R C D M'' N''
+  refine Comodule.Hom.ext fun x => ?_
+  induction x using TensorProduct.induction_on with
+  | zero => simp [tensorProductHom_apply]
+  | tmul m n => simp [tensorProductHom_apply]
+  | add x y hx hy =>
+      simpa [tensorProductHom_apply] using congrArg₂ (· + ·) hx hy
 
 /-- Pointwise form of naturality of the external tensor coaction. -/
 @[simp]
