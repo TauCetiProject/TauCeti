@@ -58,28 +58,28 @@ private theorem idealsWithAbsNormNatLe_eq_real (F : Type*) [Field F] [NumberFiel
   ext I
   exact and_congr_right fun _ => by exact_mod_cast (Iff.rfl : Ideal.absNorm I ≤ N ↔ _)
 
-/-- In a number field `F`, the set of nonzero integral ideals with norm at most the natural
-number `N` is finite. -/
-theorem finite_ideal_absNorm_le_nat (F : Type*) [Field F] [NumberField F] (N : ℕ) :
-    {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N}.Finite :=
-  idealsWithAbsNormNatLe_finite F N
-
-/-- **Natural-number ideal count.** If `1 ≤ N`, then the number of nonzero integral ideals of
-`𝓞 F` with norm at most `N` is at most `N² * 2^[F:ℚ]`. -/
+/-- **Natural-number ideal count.** The number of nonzero integral ideals of `𝓞 F` with norm at
+most `N` is at most `N² * 2^[F:ℚ]`. -/
 theorem ncard_ideal_absNorm_le_nat (F : Type*) [Field F] [NumberField F]
-    {N : ℕ} (hN : 1 ≤ N) :
+    (N : ℕ) :
     {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N}.ncard ≤
       N ^ 2 * 2 ^ finrank ℚ F := by
-  have hreal : (1 : ℝ) ≤ (N : ℝ) := by exact_mod_cast hN
-  have hcount := (card_ideal_absNorm_le F (X := (N : ℝ)) hreal).2
-  have hcount' : (({I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N}.ncard : ℝ)) ≤
-      (N : ℝ) ^ 2 * 2 ^ finrank ℚ F := by
-    have hset :
-        {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ (Ideal.absNorm I : ℝ) ≤ (N : ℝ)} =
-          {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N} := by
+  rcases N with _ | N
+  · rw [show {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ 0} = ∅ by
       ext I
-      exact and_congr_right fun _ => by exact_mod_cast (Iff.rfl : Ideal.absNorm I ≤ N ↔ _)
-    simpa [hset] using hcount
+      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_and]
+      intro hI0 hI
+      exact hI0 (Ideal.absNorm_eq_zero_iff.mp (Nat.eq_zero_of_le_zero hI))]
+    simp
+  have hreal : (1 : ℝ) ≤ ((N + 1 : ℕ) : ℝ) := by exact_mod_cast Nat.succ_pos N
+  have hcount := (card_ideal_absNorm_le F (X := ((N + 1 : ℕ) : ℝ)) hreal).2
+  have hcount' :
+      (({I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N + 1}.ncard : ℝ)) ≤
+        ((N + 1 : ℕ) : ℝ) ^ 2 * 2 ^ finrank ℚ F := by
+    change ((idealsWithAbsNormNatLe F (N + 1)).ncard : ℝ) ≤
+      ((N + 1 : ℕ) : ℝ) ^ 2 * 2 ^ finrank ℚ F
+    rw [idealsWithAbsNormNatLe_eq_real F (N + 1)]
+    simpa [idealsWithAbsNormRealLe, Nat.cast_add, Nat.cast_one] using hcount
   exact_mod_cast hcount'
 
 /-- If `1 ≤ X` and `[F : ℚ] ≤ n`, then the number of nonzero integral ideals of norm at most
@@ -98,43 +98,27 @@ theorem ncard_ideal_absNorm_le_of_finrank_le (F : Type*) [Field F] [NumberField 
       exact mul_le_mul_of_nonneg_left hpow (sq_nonneg X)
 
 /-- Monotone natural-number ideal count: if all ideals under consideration have norm at most
-`N`, and `N ≤ B`, `[F : ℚ] ≤ n`, and `1 ≤ B`, then there are at most `B² * 2^n` of them. -/
+`N`, and `N ≤ B`, and `[F : ℚ] ≤ n`, then there are at most `B² * 2^n` of them. -/
 theorem ncard_ideal_absNorm_le_of_nat_le_of_finrank_le
     (F : Type*) [Field F] [NumberField F] {N B n : ℕ}
-    (hN : N ≤ B) (hB : 1 ≤ B) (hn : finrank ℚ F ≤ n) :
+    (hN : N ≤ B) (hn : finrank ℚ F ≤ n) :
     {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N}.ncard ≤ B ^ 2 * 2 ^ n := by
   calc
     {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N}.ncard
         ≤ {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ B}.ncard := by
           exact Set.ncard_le_ncard
             (by rintro I ⟨hI0, hI⟩; exact ⟨hI0, hI.trans hN⟩)
-            (finite_ideal_absNorm_le_nat F B)
-    _ ≤ B ^ 2 * 2 ^ finrank ℚ F := ncard_ideal_absNorm_le_nat F hB
+            (idealsWithAbsNormNatLe_finite F B)
+    _ ≤ B ^ 2 * 2 ^ finrank ℚ F := ncard_ideal_absNorm_le_nat F B
     _ ≤ B ^ 2 * 2 ^ n := by
       exact Nat.mul_le_mul_left (B ^ 2) (Nat.pow_le_pow_right (by norm_num : 1 ≤ 2) hn)
 
-/-- Exact-degree specialization of
-`TauCeti.NumberField.ncard_ideal_absNorm_le_of_nat_le_of_finrank_le`. -/
-theorem ncard_ideal_absNorm_le_of_nat_le_of_finrank_eq
-    (F : Type*) [Field F] [NumberField F] {N B n : ℕ}
-    (hN : N ≤ B) (hB : 1 ≤ B) (hn : finrank ℚ F = n) :
-    {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N}.ncard ≤ B ^ 2 * 2 ^ n :=
-  ncard_ideal_absNorm_le_of_nat_le_of_finrank_le F hN hB (le_of_eq hn)
-
-/-- If `[F : ℚ] ≤ n`, then the number of nonzero integral ideals of norm at most `N ≥ 1`
-is at most `N² * 2^n`. -/
+/-- If `[F : ℚ] ≤ n`, then the number of nonzero integral ideals of norm at most `N` is at most
+`N² * 2^n`. -/
 theorem ncard_ideal_absNorm_le_nat_of_finrank_le
     (F : Type*) [Field F] [NumberField F] {N n : ℕ}
-    (hN : 1 ≤ N) (hn : finrank ℚ F ≤ n) :
+    (hn : finrank ℚ F ≤ n) :
     {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N}.ncard ≤ N ^ 2 * 2 ^ n :=
-  ncard_ideal_absNorm_le_of_nat_le_of_finrank_le F le_rfl hN hn
-
-/-- If `[F : ℚ] = n`, then the number of nonzero integral ideals of norm at most `N ≥ 1`
-is at most `N² * 2^n`. -/
-theorem ncard_ideal_absNorm_le_nat_of_finrank_eq
-    (F : Type*) [Field F] [NumberField F] {N n : ℕ}
-    (hN : 1 ≤ N) (hn : finrank ℚ F = n) :
-    {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N}.ncard ≤ N ^ 2 * 2 ^ n :=
-  ncard_ideal_absNorm_le_nat_of_finrank_le F hN (le_of_eq hn)
+  ncard_ideal_absNorm_le_of_nat_le_of_finrank_le F le_rfl hn
 
 end TauCeti.NumberField
