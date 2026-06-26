@@ -205,6 +205,13 @@ lemma normal_basepointChangeSubgroup_iff (γ : Path x₀ x₁)
   rw [basepointChangeSubgroup_eq_map]
   exact MulEquiv.normal_map_iff
 
+/- Seal the transport defs after their characterization lemmas: consumers go through the
+membership, coercion, and order/lattice API above rather than unfolding to `Subgroup.map` or
+`MulEquiv.subgroupMap`. (`@[expose]` above is required only so the in-file `rfl` characterization
+lemmas, which are exported, can unfold the bodies; it does not make them reducible.) -/
+attribute [irreducible]
+  basepointChangeSubgroupOrderIso basepointChangeSubgroup basepointChangeSubgroupEquiv
+
 end FundamentalGroup
 
 end TauCeti
