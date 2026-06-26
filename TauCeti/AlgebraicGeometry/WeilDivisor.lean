@@ -508,9 +508,29 @@ def degreeZeroSubgroupEquivWeightedDegreeZeroOne :
     rfl
 
 @[simp]
+lemma degreeZeroSubgroupEquivWeightedDegreeZeroOne_apply
+    (D : degreeZeroSubgroup X) :
+    degreeZeroSubgroupEquivWeightedDegreeZeroOne D =
+      ⟨(D : WeilDivisor X), by
+        rw [mem_weightedDegreeZeroSubgroup, weightedDegree_one_eq_degree]
+        exact degree_coe_degreeZeroSubgroup D⟩ := by
+  ext
+  rfl
+
+@[simp]
 lemma coe_degreeZeroSubgroupEquivWeightedDegreeZeroOne_apply
     (D : degreeZeroSubgroup X) :
     (degreeZeroSubgroupEquivWeightedDegreeZeroOne D : WeilDivisor X) = D :=
+  rfl
+
+@[simp]
+lemma degreeZeroSubgroupEquivWeightedDegreeZeroOne_symm_apply
+    (D : weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ))) :
+    (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D =
+      ⟨(D : WeilDivisor X), by
+        rw [mem_degreeZeroSubgroup, ← weightedDegree_one_eq_degree]
+        exact weightedDegree_coe_weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) D⟩ := by
+  ext
   rfl
 
 @[simp]
