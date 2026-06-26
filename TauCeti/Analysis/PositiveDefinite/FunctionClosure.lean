@@ -1,0 +1,144 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+module
+
+public import TauCeti.Analysis.PositiveDefinite.Basic
+
+/-!
+# Weighted closure for positive-definite functions
+
+This file adds the weighted finite-mixture and Schur-power API for
+`TauCeti.IsPositiveDefinite`, the positive-definite-function predicate on an involutive additive
+monoid. The basic file already proves binary sums, nonnegative complex scalar multiples, pointwise
+products, and unweighted finite sums/products. Here we package the forms used by examples and
+finite approximations: finite nonnegative weighted sums, real-weighted variants, and powers.
+
+This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the positive-definite
+functions API asking for closure under sums and products before the Bochner and BCR representation
+milestones. No external formalization is vendored.
+
+## Main declarations
+
+* `TauCeti.IsPositiveDefinite.smul`: nonnegative complex scalar multiplication.
+* `TauCeti.IsPositiveDefinite.real_smul`: nonnegative real scalar multiplication.
+* `TauCeti.IsPositiveDefinite.sum_smul`: finite nonnegative weighted sums.
+* `TauCeti.IsPositiveDefinite.sum_real_smul`: finite nonnegative real-weighted sums.
+* `TauCeti.IsPositiveDefinite.pow`: Schur powers of a positive-definite function.
+* `TauCeti.IsPositiveDefinite.sum_smul_apply_zero_of_apply_zero_eq_one`: normalized finite
+  mixtures evaluate at the origin as the sum of their weights.
+
+## References
+
+* C. Berg, J. P. R. Christensen, P. Ressel, *Harmonic Analysis on Semigroups* (GTM 100, 1984),
+  Chapter 3.
+-/
+
+public section
+
+open scoped ComplexOrder
+
+namespace TauCeti
+
+namespace IsPositiveDefinite
+
+variable {M : Type*} [AddMonoid M] [StarAddMonoid M]
+
+/-- Positive-definite functions are closed under multiplication by a nonnegative complex scalar,
+stated with scalar notation. -/
+theorem smul {c : ℂ} {F : M → ℂ} (hc : 0 ≤ c) (hF : IsPositiveDefinite F) :
+    IsPositiveDefinite (fun x => c • F x) := by
+  simpa [Algebra.smul_def] using hF.const_mul hc
+
+/-- Positive-definite functions are closed under multiplication by a nonnegative real scalar. -/
+theorem real_smul {r : ℝ} {F : M → ℂ} (hr : 0 ≤ r) (hF : IsPositiveDefinite F) :
+    IsPositiveDefinite (fun x => r • F x) := by
+  convert hF.smul (c := (r : ℂ)) (by exact_mod_cast hr) using 1
+  ext x
+  exact Algebra.smul_def r (F x)
+
+/-- Finite nonnegative complex-weighted sums of positive-definite functions are positive
+definite. This is the finite-mixture form used when the weights are already complex scalars with
+nonnegative real value. -/
+theorem sum_smul {ι : Type*} {s : Finset ι} {w : ι → ℂ} {F : ι → M → ℂ}
+    (hw : ∀ i ∈ s, 0 ≤ w i) (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :
+    IsPositiveDefinite (fun x => ∑ i ∈ s, w i • F i x) :=
+  sum fun i hi => (hF i hi).smul (hw i hi)
+
+/-- Finite nonnegative complex-weighted sums, written using multiplication rather than scalar
+notation. -/
+theorem sum_const_mul {ι : Type*} {s : Finset ι} {w : ι → ℂ} {F : ι → M → ℂ}
+    (hw : ∀ i ∈ s, 0 ≤ w i) (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :
+    IsPositiveDefinite (fun x => ∑ i ∈ s, w i * F i x) := by
+  simpa [Algebra.smul_def] using sum_smul (M := M) (s := s) (w := w) (F := F) hw hF
+
+/-- Finite nonnegative real-weighted sums of positive-definite functions are positive definite. -/
+theorem sum_real_smul {ι : Type*} {s : Finset ι} {w : ι → ℝ} {F : ι → M → ℂ}
+    (hw : ∀ i ∈ s, 0 ≤ w i) (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :
+    IsPositiveDefinite (fun x => ∑ i ∈ s, w i • F i x) :=
+  sum fun i hi => (hF i hi).real_smul (hw i hi)
+
+/-- Finite nonnegative real-weighted sums, written with the real weight coerced to `ℂ` and
+multiplied in the codomain. -/
+theorem sum_real_const_mul {ι : Type*} {s : Finset ι} {w : ι → ℝ} {F : ι → M → ℂ}
+    (hw : ∀ i ∈ s, 0 ≤ w i) (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :
+    IsPositiveDefinite (fun x => ∑ i ∈ s, (w i : ℂ) * F i x) := by
+  simpa [Algebra.smul_def] using sum_real_smul (M := M) (s := s) (w := w) (F := F) hw hF
+
+/-- Schur powers of a positive-definite function are positive definite. -/
+theorem pow {F : M → ℂ} (hF : IsPositiveDefinite F) (n : ℕ) :
+    IsPositiveDefinite (fun x => F x ^ n) := by
+  induction n with
+  | zero =>
+      simpa using isPositiveDefinite_const (M := M) (k := (1 : ℂ)) zero_le_one
+  | succ n ih =>
+      simpa [pow_succ] using ih.mul hF
+
+section Origin
+
+variable {N : Type*} [AddMonoid N]
+
+/-- If each summand in a finite complex-weighted mixture is normalized at the origin, then the
+mixture's value at the origin is the sum of the weights. -/
+theorem sum_smul_apply_zero_of_apply_zero_eq_one {ι : Type*} {s : Finset ι}
+    {w : ι → ℂ} {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) :
+    (∑ i ∈ s, w i • F i 0) = ∑ i ∈ s, w i := by
+  refine Finset.sum_congr rfl fun i hi => ?_
+  rw [hF0 i hi]
+  simp
+
+/-- A finite complex-weighted mixture of normalized positive-definite functions is normalized when
+the weights sum to `1`. -/
+theorem sum_smul_apply_zero_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℂ}
+    {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) (hw_sum : ∑ i ∈ s, w i = 1) :
+    (fun x => ∑ i ∈ s, w i • F i x) 0 = 1 := by
+  simpa using (sum_smul_apply_zero_of_apply_zero_eq_one (s := s) (w := w) (F := F) hF0).trans
+    hw_sum
+
+/-- If each summand in a finite real-weighted mixture is normalized at the origin, then the
+mixture's value at the origin is the complex coercion of the sum of the real weights. -/
+theorem sum_real_smul_apply_zero_of_apply_zero_eq_one {ι : Type*} {s : Finset ι}
+    {w : ι → ℝ} {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) :
+    (∑ i ∈ s, w i • F i 0) = ((∑ i ∈ s, w i : ℝ) : ℂ) := by
+  calc
+    (∑ i ∈ s, w i • F i 0) = ∑ i ∈ s, (w i : ℂ) := by
+      refine Finset.sum_congr rfl fun i hi => ?_
+      rw [hF0 i hi]
+      simp
+    _ = ((∑ i ∈ s, w i : ℝ) : ℂ) := by
+      simp
+
+/-- A finite real-weighted mixture of normalized positive-definite functions is normalized when
+the weights sum to `1`. -/
+theorem sum_real_smul_apply_zero_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℝ}
+    {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) (hw_sum : ∑ i ∈ s, w i = 1) :
+    (fun x => ∑ i ∈ s, w i • F i x) 0 = 1 := by
+  simpa [hw_sum] using
+    sum_real_smul_apply_zero_of_apply_zero_eq_one (s := s) (w := w) (F := F) hF0
+
+end Origin
+
+end IsPositiveDefinite
+
+end TauCeti
