@@ -507,6 +507,18 @@ def degreeZeroSubgroupEquivWeightedDegreeZeroOne :
     ext
     rfl
 
+@[simp]
+lemma coe_degreeZeroSubgroupEquivWeightedDegreeZeroOne_apply
+    (D : degreeZeroSubgroup X) :
+    (degreeZeroSubgroupEquivWeightedDegreeZeroOne D : WeilDivisor X) = D :=
+  rfl
+
+@[simp]
+lemma coe_degreeZeroSubgroupEquivWeightedDegreeZeroOne_symm_apply
+    (D : weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ))) :
+    ((degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D : WeilDivisor X) = D :=
+  rfl
+
 /-- For strictly positive weights, an effective divisor lying in the weighted degree-zero
 subgroup is zero. -/
 lemma coe_weightedDegreeZeroSubgroup_eq_zero_of_isEffective {w : X → ℤ} (hw : ∀ x, 0 < w x)
