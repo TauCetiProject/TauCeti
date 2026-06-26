@@ -757,6 +757,20 @@ theorem eq_of_sides {R S : GridRectangleBetween x y} (hleft : R.left = S.left)
   obtain rfl : _ = _ := hright
   rfl
 
+end GridRectangleBetween
+
+end TauCeti
+
+end
+
+public section
+
+namespace TauCeti
+
+namespace GridRectangleBetween
+
+variable {n : ℕ} {x y : GridState n}
+
 /-- The oriented rectangle from `x` to `y` obtained by exchanging the two side columns.
 
 It connects the same two states `x` and `y` -- the two states still exchange rows at the two
@@ -770,25 +784,70 @@ def swapSides (R : GridRectangleBetween x y) : GridRectangleBetween x y where
   map_right := R.map_left
   map_of_ne c hl hr := R.map_of_ne c hr hl
 
+end GridRectangleBetween
+
+end TauCeti
+
+end
+
+section
+
+namespace TauCeti
+
+namespace GridRectangleBetween
+
+variable {n : ℕ} {x y : GridState n}
+
+private theorem swapSides_left_aux (R : GridRectangleBetween x y) : R.swapSides.left = R.right :=
+  rfl
+
+private theorem swapSides_right_aux (R : GridRectangleBetween x y) : R.swapSides.right = R.left :=
+  rfl
+
+private theorem swapSides_bottom_aux (R : GridRectangleBetween x y) : R.swapSides.bottom = R.top :=
+  rfl
+
+private theorem swapSides_top_aux (R : GridRectangleBetween x y) : R.swapSides.top = R.bottom :=
+  rfl
+
+private theorem swapSides_toGridRectangle_aux (R : GridRectangleBetween x y) :
+    R.swapSides.toGridRectangle =
+      { left := R.right, right := R.left, bottom := R.top, top := R.bottom } := by
+  rfl
+
+end GridRectangleBetween
+
+end TauCeti
+
+end
+
+public section
+
+namespace TauCeti
+
+namespace GridRectangleBetween
+
+variable {n : ℕ} {x y : GridState n}
+
 /-- The side-swapped rectangle's initial side column is the original terminal side column. -/
 @[simp]
 theorem swapSides_left (R : GridRectangleBetween x y) : R.swapSides.left = R.right :=
-  rfl
+  swapSides_left_aux R
 
 /-- The side-swapped rectangle's terminal side column is the original initial side column. -/
 @[simp]
 theorem swapSides_right (R : GridRectangleBetween x y) : R.swapSides.right = R.left :=
-  rfl
+  swapSides_right_aux R
 
 /-- The side-swapped rectangle's bottom row is the original top row. -/
 @[simp]
 theorem swapSides_bottom (R : GridRectangleBetween x y) : R.swapSides.bottom = R.top :=
-  rfl
+  swapSides_bottom_aux R
 
 /-- The side-swapped rectangle's top row is the original bottom row. -/
 @[simp]
 theorem swapSides_top (R : GridRectangleBetween x y) : R.swapSides.top = R.bottom :=
-  rfl
+  swapSides_top_aux R
 
 /-- The toroidal rectangle of the side-swapped oriented rectangle, written out by its four
 sides. -/
@@ -796,7 +855,7 @@ sides. -/
 theorem swapSides_toGridRectangle (R : GridRectangleBetween x y) :
     R.swapSides.toGridRectangle =
       { left := R.right, right := R.left, bottom := R.top, top := R.bottom } := by
-  rfl
+  exact swapSides_toGridRectangle_aux R
 
 /-- Exchanging the two side columns twice gives the original rectangle. -/
 @[simp]
@@ -810,6 +869,20 @@ theorem swapSides_ne_self (R : GridRectangleBetween x y) : R.swapSides ≠ R := 
   have hleft : R.swapSides.left = R.left := congrArg GridRectangleBetween.left h
   rw [swapSides_left] at hleft
   exact R.left_ne_right hleft.symm
+
+end GridRectangleBetween
+
+end TauCeti
+
+end
+
+@[expose] public section
+
+namespace TauCeti
+
+namespace GridRectangleBetween
+
+variable {n : ℕ} {x y : GridState n}
 
 /-- Reflecting an oriented rectangle twice gives the original rectangle. -/
 @[simp]

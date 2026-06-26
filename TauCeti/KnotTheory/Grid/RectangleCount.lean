@@ -8,12 +8,12 @@ public import Mathlib.Data.Finset.Card
 public import TauCeti.KnotTheory.Grid.Rectangle
 
 /-!
-# Exactly two oriented rectangles connect grid states that differ by a column transposition
+# A two-rectangle bound for oriented rectangles between grid states
 
 An oriented rectangle `R : GridRectangleBetween x y` is determined by its two side columns
 `R.left`, `R.right`: away from those columns the two states agree, and at those columns they
-exchange rows (`RectangleSwap.lean`). This file pins down how many such rectangles there are
-between two fixed grid states.
+exchange rows (`RectangleSwap.lean`). This file pins down the uniform two-rectangle upper bound
+between two fixed grid states, and the exact count once one such rectangle exists.
 
 The key observation is purely about the side columns. A column `c` is a side column of `R`
 exactly when the two states differ there: if `c` is neither `R.left` nor `R.right` then
@@ -21,8 +21,8 @@ exactly when the two states differ there: if `c` is neither `R.left` nor `R.righ
 is injective. So the *unordered* pair of side columns is forced — it is the set of columns where
 `x` and `y` differ — and a rectangle between `x` and `y` is determined up to the *order* of its
 two side columns. Reversing the two side columns gives the other oriented rectangle
-(`swapSides`), so there are exactly two oriented rectangles when the states differ by a
-transposition and none otherwise.
+(`swapSides`), so there are at most two oriented rectangles, and exactly two whenever at least one
+exists. The separate `RectangleSwap.lean` file records the transposition/existence criterion.
 
 This is the finiteness backbone of the grid differential: the coefficient of `y` in the fully
 blocked differential of `x` counts a sub-collection of these at-most-two rectangles, so the

@@ -6,8 +6,9 @@ module
 
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.ZMod.Basic
-public import TauCeti.KnotTheory.Grid.RectangleCount
-public import TauCeti.KnotTheory.Grid.RectangleSwap
+public import TauCeti.KnotTheory.Grid.Rectangle
+import TauCeti.KnotTheory.Grid.RectangleCount
+import TauCeti.KnotTheory.Grid.RectangleSwap
 
 /-!
 # Fully blocked empty rectangles in grid diagrams
