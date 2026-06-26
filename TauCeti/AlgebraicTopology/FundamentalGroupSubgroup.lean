@@ -12,17 +12,17 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 The classification of connected covers records, for a pointed cover, a subgroup of
 `π₁(X, x₀)`. Changing the basepoint along a path transports this subgroup by the usual
 basepoint-change isomorphism. This file packages that transport, together with the membership,
-order/lattice, and normality API needed by the universal-covers roadmap's pointed/unpointed
+coercion, and normality API needed by the universal-covers roadmap's pointed/unpointed
 bookkeeping.
 
 Mathlib already provides the basepoint-change equivalence
 `FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are only the
-subgroup-level spelling of mapping a subgroup along that equivalence.
+subgroup-level spelling of mapping a subgroup along that equivalence. The transport `def`s are
+left unexposed, so downstream their bodies stay hidden and consumers go through the membership,
+coercion, and normality lemmas rather than unfolding to `Subgroup.map`/`MulEquiv.subgroupMap`.
 
 ## Main declarations
 
-* `TauCeti.FundamentalGroup.basepointChangeSubgroupOrderIso`: the order isomorphism between the
-  subgroup lattices of `π₁(X, x₀)` and `π₁(X, x₁)` induced by the basepoint-change equivalence.
 * `TauCeti.FundamentalGroup.basepointChangeSubgroup`: transport a subgroup of `π₁(X, x₀)`
   to a subgroup of `π₁(X, x₁)` along a path from `x₀` to `x₁`.
 * `TauCeti.FundamentalGroup.basepointChangeSubgroupEquiv`: the induced multiplicative
@@ -48,37 +48,15 @@ namespace FundamentalGroup
 
 open scoped FundamentalGroupoid
 
-variable {X : Type*} [TopologicalSpace X] {x₀ x₁ x₂ : X}
-
-/-- The order isomorphism between the subgroup lattices of `π₁(X, x₀)` and `π₁(X, x₁)`
-induced by the basepoint-change equivalence along a path from `x₀` to `x₁`. -/
-@[expose]
-def basepointChangeSubgroupOrderIso (γ : Path x₀ x₁) :
-    Subgroup (_root_.FundamentalGroup X x₀) ≃o Subgroup (_root_.FundamentalGroup X x₁) :=
-  (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).mapSubgroup
+variable {X : Type*} [TopologicalSpace X] {x₀ x₁ : X}
 
 /-- Transport a subgroup of `π₁(X, x₀)` to a subgroup of `π₁(X, x₁)` along a path from `x₀`
-to `x₁`. This is the application of `basepointChangeSubgroupOrderIso`, packaged as a `def` so
-consumers go through the membership and order/lattice API below rather than unfolding to
-`Subgroup.map`. -/
-@[expose]
+to `x₁`, by mapping along the basepoint-change equivalence. Kept unexposed so consumers go
+through the membership and coercion API below rather than unfolding to `Subgroup.map`. -/
 def basepointChangeSubgroup (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀)) :
     Subgroup (_root_.FundamentalGroup X x₁) :=
-  basepointChangeSubgroupOrderIso γ H
-
-/-- The basepoint-change order isomorphism agrees with subgroup transport. -/
-lemma basepointChangeSubgroupOrderIso_apply (γ : Path x₀ x₁)
-    (H : Subgroup (_root_.FundamentalGroup X x₀)) :
-    basepointChangeSubgroupOrderIso γ H = basepointChangeSubgroup γ H :=
-  rfl
-
-/-- Subgroup transport is the image of the subgroup under the basepoint-change equivalence. -/
-lemma basepointChangeSubgroup_eq_map (γ : Path x₀ x₁)
-    (H : Subgroup (_root_.FundamentalGroup X x₀)) :
-    basepointChangeSubgroup γ H =
-      H.map (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ : _ →* _) :=
-  rfl
+  H.map (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ : _ →* _)
 
 /-- Membership in a basepoint-changed subgroup, expressed by transporting back along the
 inverse basepoint-change equivalence. -/
@@ -86,24 +64,20 @@ inverse basepoint-change equivalence. -/
 lemma mem_basepointChangeSubgroup_iff (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀)) (η : _root_.FundamentalGroup X x₁) :
     η ∈ basepointChangeSubgroup γ H ↔
-      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm η ∈ H := by
-  rw [basepointChangeSubgroup_eq_map]
-  exact Subgroup.mem_map_equiv
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm η ∈ H :=
+  Subgroup.mem_map_equiv
 
 /-- The image of an element of `H` under basepoint change lies in the transported subgroup. -/
-@[simp]
-lemma fundamentalGroupMulEquivOfPath_mem_basepointChangeSubgroup (γ : Path x₀ x₁)
+lemma mem_basepointChangeSubgroup_of_mem (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀)) (η : _root_.FundamentalGroup X x₀)
     (hη : η ∈ H) :
     _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ η ∈
-      basepointChangeSubgroup γ H := by
-  rw [basepointChangeSubgroup_eq_map]
-  exact Subgroup.mem_map_of_mem _ hη
+      basepointChangeSubgroup γ H :=
+  Subgroup.mem_map_of_mem _ hη
 
 /-- The basepoint-change equivalence restricts to an equivalence from a subgroup to its
-transported subgroup. Packaged as a `def` so consumers use the coercion lemmas below rather
-than unfolding to `MulEquiv.subgroupMap`. -/
-@[expose]
+transported subgroup. Kept unexposed so consumers use the coercion lemmas below rather than
+unfolding to `MulEquiv.subgroupMap`. -/
 def basepointChangeSubgroupEquiv (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀)) :
     H ≃* basepointChangeSubgroup γ H :=
@@ -116,7 +90,7 @@ lemma basepointChangeSubgroupEquiv_apply_coe (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀)) (η : H) :
     (basepointChangeSubgroupEquiv γ H η : _root_.FundamentalGroup X x₁) =
       _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ η.1 :=
-  rfl
+  MulEquiv.coe_subgroupMap_apply _ H η
 
 /-- The inverse subgroup equivalence is the inverse basepoint-change equivalence on underlying
 loop classes. -/
@@ -125,92 +99,15 @@ lemma basepointChangeSubgroupEquiv_symm_apply_coe (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀)) (η : basepointChangeSubgroup γ H) :
     ((basepointChangeSubgroupEquiv γ H).symm η : _root_.FundamentalGroup X x₀) =
       (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm η.1 :=
-  rfl
-
-/-- Transporting the bottom subgroup along basepoint change gives the bottom subgroup. -/
-@[simp]
-lemma basepointChangeSubgroup_bot (γ : Path x₀ x₁) :
-    basepointChangeSubgroup γ (⊥ : Subgroup (_root_.FundamentalGroup X x₀)) = ⊥ := by
-  rw [basepointChangeSubgroup_eq_map]
-  exact Subgroup.map_bot
-    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).toMonoidHom
-
-/-- Transporting the top subgroup along basepoint change gives the top subgroup. -/
-@[simp]
-lemma basepointChangeSubgroup_top (γ : Path x₀ x₁) :
-    basepointChangeSubgroup γ (⊤ : Subgroup (_root_.FundamentalGroup X x₀)) = ⊤ := by
-  rw [basepointChangeSubgroup_eq_map]
-  exact Subgroup.map_top_of_surjective
-    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).toMonoidHom
-    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).surjective
-
-/-- Basepoint-change transport is monotone on subgroups. -/
-lemma basepointChangeSubgroup_mono (γ : Path x₀ x₁)
-    {H K : Subgroup (_root_.FundamentalGroup X x₀)} (hHK : H ≤ K) :
-    basepointChangeSubgroup γ H ≤ basepointChangeSubgroup γ K := by
-  simp only [basepointChangeSubgroup_eq_map]
-  exact Subgroup.map_mono hHK
-
-/-- Inclusion of basepoint-changed subgroups can be checked before transport. -/
-@[simp]
-lemma basepointChangeSubgroup_le_basepointChangeSubgroup_iff (γ : Path x₀ x₁)
-    (H K : Subgroup (_root_.FundamentalGroup X x₀)) :
-    basepointChangeSubgroup γ H ≤ basepointChangeSubgroup γ K ↔ H ≤ K := by
-  rw [← basepointChangeSubgroupOrderIso_apply γ H, ← basepointChangeSubgroupOrderIso_apply γ K]
-  exact (basepointChangeSubgroupOrderIso γ).le_iff_le
-
-/-- Basepoint-change transport is injective on subgroups. -/
-lemma basepointChangeSubgroup_injective (γ : Path x₀ x₁) :
-    Function.Injective (basepointChangeSubgroup γ :
-      Subgroup (_root_.FundamentalGroup X x₀) → Subgroup (_root_.FundamentalGroup X x₁)) := by
-  intro H K hHK
-  apply le_antisymm
-  · exact (basepointChangeSubgroup_le_basepointChangeSubgroup_iff γ H K).mp (hHK.le)
-  · exact (basepointChangeSubgroup_le_basepointChangeSubgroup_iff γ K H).mp (hHK.ge)
-
-/-- Basepoint-change transport preserves finite intersections of subgroups. -/
-@[simp]
-lemma basepointChangeSubgroup_inf (γ : Path x₀ x₁)
-    (H K : Subgroup (_root_.FundamentalGroup X x₀)) :
-    basepointChangeSubgroup γ (H ⊓ K) =
-      basepointChangeSubgroup γ H ⊓ basepointChangeSubgroup γ K := by
-  simp only [basepointChangeSubgroup_eq_map]
-  exact Subgroup.map_inf H K
-    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).toMonoidHom
-    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).injective
-
-/-- Basepoint-change transport preserves joins of subgroups. -/
-@[simp]
-lemma basepointChangeSubgroup_sup (γ : Path x₀ x₁)
-    (H K : Subgroup (_root_.FundamentalGroup X x₀)) :
-    basepointChangeSubgroup γ (H ⊔ K) =
-      basepointChangeSubgroup γ H ⊔ basepointChangeSubgroup γ K := by
-  simp only [basepointChangeSubgroup_eq_map]
-  exact Subgroup.map_sup H K
-    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).toMonoidHom
-
-/-- Basepoint-change transport preserves arbitrary joins of subgroups. -/
-@[simp]
-lemma basepointChangeSubgroup_iSup {ι : Sort*} (γ : Path x₀ x₁)
-    (H : ι → Subgroup (_root_.FundamentalGroup X x₀)) :
-    basepointChangeSubgroup γ (⨆ i, H i) = ⨆ i, basepointChangeSubgroup γ (H i) := by
-  simp only [basepointChangeSubgroup_eq_map]
-  exact Subgroup.map_iSup
-    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).toMonoidHom H
+  congrArg Subtype.val
+    (MulEquiv.subgroupMap_symm_apply
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) H η)
 
 /-- A subgroup is normal exactly when its basepoint-changed subgroup is normal. -/
 lemma normal_basepointChangeSubgroup_iff (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀)) :
-    (basepointChangeSubgroup γ H).Normal ↔ H.Normal := by
-  rw [basepointChangeSubgroup_eq_map]
-  exact MulEquiv.normal_map_iff
-
-/- Seal the transport defs after their characterization lemmas: consumers go through the
-membership, coercion, and order/lattice API above rather than unfolding to `Subgroup.map` or
-`MulEquiv.subgroupMap`. (`@[expose]` above is required only so the in-file `rfl` characterization
-lemmas, which are exported, can unfold the bodies; it does not make them reducible.) -/
-attribute [irreducible]
-  basepointChangeSubgroupOrderIso basepointChangeSubgroup basepointChangeSubgroupEquiv
+    (basepointChangeSubgroup γ H).Normal ↔ H.Normal :=
+  MulEquiv.normal_map_iff
 
 end FundamentalGroup
 
