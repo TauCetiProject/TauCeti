@@ -13,11 +13,10 @@ coordinates) is equal to it. This is the Layer 0 finite-marginal uniqueness mile
 machinery (`IsProjectiveLimit.unique`), not new measure theory.
 
 The public API:
-* `measure_eq_of_prefixProj_map_eq` — the clean map-equality form;
-* `measure_eq_of_prefixProj_setwise` — the setwise form;
-* `measure_eq_of_fin_marginals_eq` — the roadmap-named version.
+* `measure_eq_of_prefixProj_map_eq` — the map-equality form;
+* `measure_eq_of_fin_marginals_eq` — the roadmap-named setwise form.
 
-These statements apply directly to probability measures, since `IsProbabilityMeasure` provides
+Both apply directly to probability measures, since `IsProbabilityMeasure` provides
 `IsFiniteMeasure`, so no separate probability-measure theorem is needed.
 -/
 
@@ -69,19 +68,13 @@ theorem measure_eq_of_prefixProj_map_eq {μ ν : Measure (ℕ → α)} [IsFinite
   exact IsProjectiveLimit.unique (P := fun I => μ.map I.restrict)
     (fun I => rfl) (fun I => (key I).symm)
 
-/-- **Finite-marginal uniqueness, setwise form** (matching the roadmap target): two measures on
-`ℕ → α`, with `μ` finite, agreeing on every measurable prefix-cylinder are equal. -/
-theorem measure_eq_of_prefixProj_setwise {μ ν : Measure (ℕ → α)} [IsFiniteMeasure μ]
-    (h : ∀ (n : ℕ) (S : Set (Fin n → α)), MeasurableSet S →
-      μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=
-  measure_eq_of_prefixProj_map_eq fun n => Measure.ext fun S hS => h n S hS
-
-/-- Roadmap-named finite-measure version of finite-marginal uniqueness. It assumes only `μ` is
-finite; `ν`'s finiteness is forced by the conclusion. -/
+/-- **Finite-marginal uniqueness, setwise form** (the roadmap-named milestone): two measures on
+`ℕ → α`, with `μ` finite, agreeing on every measurable prefix-cylinder are equal. It assumes only
+`μ` is finite; `ν`'s finiteness is forced by the conclusion. -/
 theorem measure_eq_of_fin_marginals_eq {μ ν : Measure (ℕ → α)} [IsFiniteMeasure μ]
     (h : ∀ (n : ℕ) (S : Set (Fin n → α)), MeasurableSet S →
       μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=
-  measure_eq_of_prefixProj_setwise h
+  measure_eq_of_prefixProj_map_eq fun n => Measure.ext fun S hS => h n S hS
 
 end Probability
 
