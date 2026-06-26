@@ -48,6 +48,9 @@ explicit (never hidden in a `∃ C`):
 * `TauCeti.PDE.energyIntegrand_one_zero_zero_apply`,
   `TauCeti.PDE.energyIntegrand_one_zero_zero_self`: the Laplacian model `−Δ`, whose jet form
   is the Dirichlet integrand `⟨∇u, ∇v⟩`, with diagonal `‖∇u‖²`.
+* `TauCeti.PDE.energyIntegrand_one_zero_mass_apply`,
+  `TauCeti.PDE.energyIntegrand_one_zero_mass_self`: the shifted Laplacian model `−Δ + c`,
+  whose jet form is `⟨∇u, ∇v⟩ + c u v`.
 * `TauCeti.PDE.norm_energyIntegrand_apply_le_of_bounds`,
   `TauCeti.PDE.opNorm_energyIntegrand_le_of_bounds`: pointwise boundedness with explicit
   constant `Λ + β + γ`.
@@ -120,6 +123,21 @@ lemma energyIntegrand_one_zero_zero_self (U : ℝ × EuclideanSpace ℝ n) :
   rw [energyIntegrand_self, toQuadraticForm'_one]
   simp
 
+/-- The shifted Laplacian model `-Δ + c` has jet form
+`(U, V) ↦ ∇u · ∇v + c u v`. -/
+@[simp]
+lemma energyIntegrand_one_zero_mass_apply (c : ℝ) (U V : ℝ × EuclideanSpace ℝ n) :
+    energyIntegrand (1 : Matrix n n ℝ) 0 c U V = V.2 ⬝ᵥ U.2 + c * U.1 * V.1 := by
+  simp [energyIntegrand_apply, massForm_apply]
+
+/-- The shifted Laplacian model `-Δ + c` has diagonal jet density
+`‖∇u‖² + c u²`. -/
+@[simp]
+lemma energyIntegrand_one_zero_mass_self (c : ℝ) (U : ℝ × EuclideanSpace ℝ n) :
+    energyIntegrand (1 : Matrix n n ℝ) 0 c U U = ‖U.2‖ ^ 2 + c * U.1 ^ 2 := by
+  rw [energyIntegrand_self, toQuadraticForm'_one]
+  simp
+
 variable {Ω : Set X} {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
 variable {lam Lam beta gamma : ℝ}
 
@@ -138,6 +156,12 @@ private lemma mul_norm_abs_le_half_mul_sq_add (hlam : 0 < lam) (beta u : ℝ) (r
   rw [expand]
   apply div_nonneg _ h2lam.le
   nlinarith [hkey]
+
+private lemma abs_dotProduct_one_mulVec_le (η ξ : EuclideanSpace ℝ n) :
+    |η ⬝ᵥ ((1 : Matrix n n ℝ) *ᵥ ξ)| ≤ 1 * ‖η‖ * ‖ξ‖ := by
+  rw [one_mulVec, one_mul]
+  simpa [EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm] using
+    abs_real_inner_le_norm η ξ
 
 /-- Pointwise boundedness of the jet form with explicit constant `Λ + β + γ`: the principal,
 drift, and mass contributions are each controlled by the corresponding constant times the jet
@@ -215,6 +239,24 @@ lemma opNorm_energyIntegrand_le_of_bounds (hLam : 0 ≤ Lam)
     (_root_.add_nonneg (_root_.add_nonneg hLam hbeta) hgamma) ?_
   intro U V
   exact norm_energyIntegrand_apply_le_of_bounds hLam ha hb hc U V
+
+/-- Pointwise boundedness of the shifted Laplacian jet form with constant `1 + ‖c‖`. -/
+lemma norm_energyIntegrand_one_zero_mass_apply_le (c : ℝ)
+    (U V : ℝ × EuclideanSpace ℝ n) :
+    ‖energyIntegrand (1 : Matrix n n ℝ) 0 c U V‖ ≤
+      (1 + ‖c‖) * ‖U‖ * ‖V‖ := by
+  simpa using
+    norm_energyIntegrand_apply_le_of_bounds (n := n) (Lam := 1) (beta := 0) (b₀ := 0)
+      (gamma := ‖c‖) zero_le_one
+      (fun η ξ => abs_dotProduct_one_mulVec_le η ξ) (by simp) le_rfl U V
+
+/-- Operator-norm boundedness of the shifted Laplacian jet form with constant `1 + ‖c‖`. -/
+lemma opNorm_energyIntegrand_one_zero_mass_le (c : ℝ) :
+    ‖energyIntegrand (1 : Matrix n n ℝ) 0 c‖ ≤ 1 + ‖c‖ := by
+  simpa using
+    opNorm_energyIntegrand_le_of_bounds (n := n) (Lam := 1) (beta := 0) (b₀ := 0)
+      (gamma := ‖c‖) zero_le_one
+      (fun η ξ => abs_dotProduct_one_mulVec_le η ξ) (by simp) le_rfl
 
 /-- Operator-norm boundedness on a domain, obtained by applying
 `opNorm_energyIntegrand_le_of_bounds` at `x`. -/
