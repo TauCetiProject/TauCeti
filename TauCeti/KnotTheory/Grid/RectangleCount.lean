@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Data.Finset.Card
-public import TauCeti.KnotTheory.Grid.RectangleSwap
+public import TauCeti.KnotTheory.Grid.Rectangle
 
 /-!
 # Exactly two oriented rectangles connect grid states that differ by a column transposition
