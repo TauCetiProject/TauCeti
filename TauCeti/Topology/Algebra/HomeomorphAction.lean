@@ -2,9 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Topology.Algebra.ConstMulAction
-import Mathlib.Topology.Homeomorph.Defs
-import Mathlib.Algebra.Group.Subgroup.Actions
+module
+
+public import TauCeti.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Homeomorph.Defs
 
 /-!
 # The tautological action of the homeomorphism group
@@ -21,6 +22,8 @@ mathlib4#40135.
 * `TauCeti.Homeomorph.applyFaithfulSMul`: the action is faithful.
 * `TauCeti.Homeomorph.applyContinuousConstSMul`: each homeomorphism acts continuously.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -46,15 +49,10 @@ instance applyFaithfulSMul : FaithfulSMul (E ≃ₜ E) E :=
 instance applyContinuousConstSMul : ContinuousConstSMul (E ≃ₜ E) E :=
   ⟨fun φ => φ.continuous⟩
 
--- Faithfulness for a `Subgroup (E ≃ₜ E)` is already supplied by Mathlib's generic subgroup
--- action transfer (`Mathlib.Algebra.Group.Subgroup.Actions`) from the ambient `applyFaithfulSMul`,
--- so we do not restate it. Continuity in the point, however, has no such subgroup transfer:
-
-/-- A subgroup of the homeomorphism group acts continuously on `E` in the point, reusing
-continuity of the ambient action. Mathlib transfers `MulAction` and `FaithfulSMul` to a
-subgroup but not `ContinuousConstSMul`, so we record it here. -/
-instance applySubgroupContinuousConstSMul (H : Subgroup (E ≃ₜ E)) : ContinuousConstSMul H E :=
-  ⟨fun φ => continuous_const_smul (φ : E ≃ₜ E)⟩
+/-- A subgroup of the homeomorphism group acts continuously on `E` in the point, by the generic
+subgroup transfer for `ContinuousConstSMul`. -/
+abbrev applySubgroupContinuousConstSMul (H : Subgroup (E ≃ₜ E)) : ContinuousConstSMul H E :=
+  inferInstance
 
 end Homeomorph
 

@@ -2,9 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.DFinsupp
-import Mathlib.RingTheory.HopfAlgebra.Basic
-import Mathlib.RingTheory.Ideal.Maps
+module
+
+public import Mathlib.LinearAlgebra.DFinsupp
+public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+public import Mathlib.RingTheory.HopfAlgebra.Basic
+public import Mathlib.RingTheory.HopfAlgebra.Quotient
+public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
 # Hopf ideals
@@ -27,6 +31,9 @@ must satisfy exactly these Hopf-ideal closure conditions.
 * `I ⊔ J : HopfIdeal R H`: the sum of two Hopf ideals.
 * `sSup S : HopfIdeal R H` and `⨆ i, I i : HopfIdeal R H`: arbitrary suprema of Hopf ideals,
   with underlying ideal the supremum of the underlying ideals.
+* `TauCeti.HopfIdeal.instIsCoideal`, `TauCeti.HopfIdeal.instIsHopfIdeal`: over a commutative
+  ring, the bridge instances exhibiting `I.toIdeal` as a coideal and a Hopf ideal in Mathlib's
+  sense, so that Mathlib's quotient coalgebra/bialgebra/Hopf instances fire on `H ⧸ I.toIdeal`.
 
 ## References
 
@@ -36,6 +43,8 @@ ideal API. The arbitrary-supremum lattice construction follows the local pattern
 `TauCeti.Algebra.Coalgebra.Subcoalgebra.Lattice` and
 `TauCeti.Algebra.Coalgebra.Subcomodule.Lattice`.
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -52,12 +61,12 @@ namespace HopfIdeal
 
 /-- The image of an ideal `I ≤ H` under the left inclusion `H → H ⊗[R] H`, representing
 `I ⊗ H` inside the tensor product algebra. -/
-def leftTensorIdeal (I : Ideal H) : Ideal (H ⊗[R] H) :=
+@[expose] def leftTensorIdeal (I : Ideal H) : Ideal (H ⊗[R] H) :=
   Ideal.map (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I
 
 /-- The image of an ideal `I ≤ H` under the right inclusion `H → H ⊗[R] H`, representing
 `H ⊗ I` inside the tensor product algebra. -/
-def rightTensorIdeal (I : Ideal H) : Ideal (H ⊗[R] H) :=
+@[expose] def rightTensorIdeal (I : Ideal H) : Ideal (H ⊗[R] H) :=
   Ideal.map (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I
 
 @[simp]
@@ -190,6 +199,29 @@ theorem le_rightTensorIdeal_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
         (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I :=
   Iff.rfl
 
+/-- TauCeti's `leftTensorIdeal I` (`I ⊗ H`), viewed as an `R`-submodule, is the range of
+`rTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeLeft_eq`. -/
+private theorem leftTensorIdeal_restrictScalars_eq_range (I : Ideal H) :
+    (leftTensorIdeal (R := R) (H := H) I).restrictScalars R =
+      LinearMap.range (LinearMap.rTensor H (I.restrictScalars R).subtype) :=
+  Ideal.map_includeLeft_eq (R := R) (A := H) (B := H) I
+
+/-- TauCeti's `rightTensorIdeal I` (`H ⊗ I`), viewed as an `R`-submodule, is the range of
+`lTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeRight_eq`. -/
+private theorem rightTensorIdeal_restrictScalars_eq_range (I : Ideal H) :
+    (rightTensorIdeal (R := R) (H := H) I).restrictScalars R =
+      LinearMap.range (LinearMap.lTensor H (I.restrictScalars R).subtype) :=
+  Ideal.map_includeRight_eq (R := R) (A := H) (B := H) I
+
+/-- The bridge to Mathlib's coideal target: TauCeti's `I ⊗ H + H ⊗ I` (a sup of ideals of
+`H ⊗[R] H`), viewed as an `R`-submodule, equals `range (lTensor …) ⊔ range (rTensor …)`. -/
+private theorem comul_mem_sup_restrictScalars_eq_range (I : Ideal H) :
+    (leftTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) I).restrictScalars R =
+      LinearMap.range (LinearMap.lTensor H (I.restrictScalars R).subtype) ⊔
+        LinearMap.range (LinearMap.rTensor H (I.restrictScalars R).subtype) := by
+  rw [Submodule.restrictScalars_sup, leftTensorIdeal_restrictScalars_eq_range,
+    rightTensorIdeal_restrictScalars_eq_range, sup_comm]
+
 end HopfIdeal
 
 end TensorIdeals
@@ -200,8 +232,9 @@ variable [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 /-- A Hopf ideal in a Hopf algebra over a commutative semiring.
 
 The comultiplication condition is stated in the ambient tensor product algebra as
-`Δ(I) ⊆ I ⊗ H + H ⊗ I`. The quotient Hopf algebra will be added separately once the needed
-quotient coalgebra API is available. -/
+`Δ(I) ⊆ I ⊗ H + H ⊗ I`. Over a commutative ring, the bridge instances
+`HopfIdeal.instIsCoideal` and `HopfIdeal.instIsHopfIdeal` below let Mathlib endow the
+quotient `H ⧸ I.toIdeal` with its Hopf-algebra structure. -/
 structure HopfIdeal where
   /-- The underlying ideal. -/
   carrier : Ideal H
@@ -244,7 +277,7 @@ instance : PartialOrder (HopfIdeal R H) :=
   .ofSetLike (HopfIdeal R H) H
 
 /-- The underlying ideal of a Hopf ideal. -/
-def toIdeal (I : HopfIdeal R H) : Ideal H :=
+@[expose] def toIdeal (I : HopfIdeal R H) : Ideal H :=
   I.carrier
 
 instance (I : HopfIdeal R H) : I.toIdeal.IsTwoSided :=
@@ -275,7 +308,7 @@ theorem ext {I J : HopfIdeal R H} (h : ∀ x : H, x ∈ I ↔ x ∈ J) : I = J :
   SetLike.ext h
 
 /-- Constructor from an ideal and the three Hopf-ideal closure conditions. -/
-def ofIdeal (I : Ideal H) [I.IsTwoSided]
+@[expose] def ofIdeal (I : Ideal H) [I.IsTwoSided]
     (hcomul :
       ∀ ⦃x : H⦄, x ∈ I →
         Coalgebra.comul (R := R) x ∈
@@ -423,61 +456,45 @@ instance instSemilatticeSup : SemilatticeSup (HopfIdeal R H) where
     rcases Submodule.mem_sup.mp hx with ⟨y, hy, z, hz, rfl⟩
     exact add_mem (hIK hy) (hJK hz)
 
-private theorem sSup_isTwoSided (S : Set (HopfIdeal R H)) :
-    (⨆ I : S, (I : HopfIdeal R H).toIdeal).IsTwoSided := by
-  classical
-  refine ⟨fun {x} b hx => ?_⟩
-  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-  rcases hx with ⟨f, hf, rfl⟩
-  rw [Finsupp.sum, Finset.sum_mul]
-  exact Submodule.sum_mem _ fun I _ =>
-    Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).mul_mem_right (hf I) b)
-
-private theorem comul_mem_sSup (S : Set (HopfIdeal R H)) {x : H}
-    (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
-    Coalgebra.comul (R := R) x ∈
-      leftTensorIdeal (R := R) (H := H) (⨆ I : S, (I : HopfIdeal R H).toIdeal) ⊔
-        rightTensorIdeal (R := R) (H := H) (⨆ I : S, (I : HopfIdeal R H).toIdeal) := by
-  classical
-  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-  rcases hx with ⟨f, hf, rfl⟩
-  rw [Finsupp.sum, map_sum]
-  refine Submodule.sum_mem _ fun I _ => ?_
-  exact sup_le_sup
-    (leftTensorIdeal_mono (R := R) (H := H)
-      (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
-    (rightTensorIdeal_mono (R := R) (H := H)
-      (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
-    ((I : HopfIdeal R H).comul_mem (hf I))
-
-private theorem counit_eq_zero_sSup (S : Set (HopfIdeal R H)) {x : H}
-    (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
-    Coalgebra.counit (R := R) x = 0 := by
-  classical
-  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-  rcases hx with ⟨f, hf, rfl⟩
-  rw [Finsupp.sum, map_sum]
-  exact Finset.sum_eq_zero fun I _ => (I : HopfIdeal R H).counit_eq_zero (hf I)
-
-private theorem antipode_mem_sSup (S : Set (HopfIdeal R H)) {x : H}
-    (hx : x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal) :
-    HopfAlgebra.antipode R x ∈ ⨆ I : S, (I : HopfIdeal R H).toIdeal := by
-  classical
-  rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
-  rcases hx with ⟨f, hf, rfl⟩
-  rw [Finsupp.sum, map_sum]
-  exact Submodule.sum_mem _ fun I _ =>
-    Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).antipode_mem (hf I))
-
 /-- The supremum of a set of Hopf ideals has underlying ideal the supremum of the underlying
-ideals. -/
+ideals. The four proof obligations are the implementation of this construction, so they are
+discharged inline rather than as standalone lemmas. -/
 instance instSupSet : SupSet (HopfIdeal R H) where
   sSup S :=
     { carrier := ⨆ I : S, (I : HopfIdeal R H).toIdeal
-      isTwoSided' := sSup_isTwoSided S
-      comul_mem' := fun _ hx => comul_mem_sSup S hx
-      counit_eq_zero' := fun _ hx => counit_eq_zero_sSup S hx
-      antipode_mem' := fun _ hx => antipode_mem_sSup S hx }
+      isTwoSided' := by
+        classical
+        refine ⟨fun {x} b hx => ?_⟩
+        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+        rcases hx with ⟨f, hf, rfl⟩
+        rw [Finsupp.sum, Finset.sum_mul]
+        exact Submodule.sum_mem _ fun I _ =>
+          Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).mul_mem_right (hf I) b)
+      comul_mem' := fun _ hx => by
+        classical
+        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+        rcases hx with ⟨f, hf, rfl⟩
+        rw [Finsupp.sum, map_sum]
+        refine Submodule.sum_mem _ fun I _ => ?_
+        exact sup_le_sup
+          (leftTensorIdeal_mono (R := R) (H := H)
+            (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
+          (rightTensorIdeal_mono (R := R) (H := H)
+            (le_iSup (fun I : S => (I : HopfIdeal R H).toIdeal) I))
+          ((I : HopfIdeal R H).comul_mem (hf I))
+      counit_eq_zero' := fun _ hx => by
+        classical
+        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+        rcases hx with ⟨f, hf, rfl⟩
+        rw [Finsupp.sum, map_sum]
+        exact Finset.sum_eq_zero fun I _ => (I : HopfIdeal R H).counit_eq_zero (hf I)
+      antipode_mem' := fun _ hx => by
+        classical
+        rw [Submodule.mem_iSup_iff_exists_finsupp] at hx
+        rcases hx with ⟨f, hf, rfl⟩
+        rw [Finsupp.sum, map_sum]
+        exact Submodule.sum_mem _ fun I _ =>
+          Submodule.mem_iSup_of_mem I ((I : HopfIdeal R H).antipode_mem (hf I)) }
 
 /-- The underlying ideal of a supremum of a set of Hopf ideals is the supremum of the
 underlying ideals indexed by that set. -/
@@ -523,5 +540,31 @@ instance instCompleteSemilatticeSup : CompleteSemilatticeSup (HopfIdeal R H) whe
       exact hle hx⟩
 
 end HopfIdeal
+
+section Bridge
+
+variable {R : Type u} {H : Type v}
+variable [CommRing R] [Ring H] [HopfAlgebra R H]
+
+namespace HopfIdeal
+
+/-- A `HopfIdeal` gives Mathlib's coideal structure on the underlying `R`-submodule, so that
+Mathlib's quotient `Coalgebra`/`Bialgebra` instances fire on `H ⧸ I.toIdeal`. -/
+instance instIsCoideal (I : HopfIdeal R H) :
+    (I.toIdeal.restrictScalars R).IsCoideal := by
+  rw [Submodule.isCoideal_iff_comul_mem]
+  refine ⟨fun _ hx => I.counit_eq_zero hx, fun _ hx => ?_⟩
+  have := I.comul_mem hx
+  rwa [← Submodule.restrictScalars_mem R, comul_mem_sup_restrictScalars_eq_range] at this
+
+/-- A `HopfIdeal` gives Mathlib's `Ideal.IsHopfIdeal`, so that Mathlib's quotient
+`HopfAlgebra` instance fires on `H ⧸ I.toIdeal`. -/
+instance instIsHopfIdeal (I : HopfIdeal R H) : I.toIdeal.IsHopfIdeal R where
+  __ := instIsCoideal I
+  antipode_mem := fun _ hx => I.antipode_mem hx
+
+end HopfIdeal
+
+end Bridge
 
 end TauCeti

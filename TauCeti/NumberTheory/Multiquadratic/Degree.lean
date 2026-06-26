@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.Multiquadratic.SquareClass
+module
+
+public import TauCeti.NumberTheory.Multiquadratic.SquareClass
 
 /-!
 # The degree of a multiquadratic field
@@ -26,6 +28,8 @@ The tower-degree induction is migrated and generalised from the declaration
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the formalization
 of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture.
 -/
+
+public section
 
 open TauCeti.IntermediateField
 

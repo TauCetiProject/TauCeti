@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.Coalgebra.GroupLike
-import Mathlib.RingTheory.Finiteness.Basic
-import TauCeti.Algebra.Coalgebra.Subcoalgebra
+module
+
+public import Mathlib.RingTheory.Coalgebra.GroupLike
+public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.Algebra.Coalgebra.Subcoalgebra
 
 /-!
 # Subcoalgebras spanned by group-like elements
@@ -18,6 +20,8 @@ singleton span, a finite-generation theorem for finite sets of group-like elemen
 This file uses the `GroupLike` and `IsGroupLikeElem` API from
 `Mathlib.RingTheory.Coalgebra.GroupLike`, by Yaël Dillies and Michał Mrugała.
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -33,7 +37,7 @@ namespace Subcoalgebra
 variable {R C}
 
 /-- The subcoalgebra spanned by a set of group-like elements. -/
-def groupLikeSetSpan (s : Set (GroupLike R C)) : Subcoalgebra R C :=
+@[expose] def groupLikeSetSpan (s : Set (GroupLike R C)) : Subcoalgebra R C :=
   let D := Submodule.span R ((↑) '' s : Set C)
   { carrier := D
     comul_mem' := by

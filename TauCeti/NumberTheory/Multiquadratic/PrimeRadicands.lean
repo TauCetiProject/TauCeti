@@ -2,10 +2,13 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.NumberTheory.Multiquadratic.Degree
-import Mathlib.Analysis.Real.Sqrt
-import Mathlib.Data.Rat.Lemmas
-import Mathlib.Data.Nat.Squarefree
+module
+
+public import TauCeti.Algebra.Squarefree
+public import TauCeti.NumberTheory.Multiquadratic.Degree
+public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Data.Rat.Lemmas
+public import Mathlib.Data.Nat.Squarefree
 
 /-!
 # Multiquadratic fields with prime radicands
@@ -34,14 +37,11 @@ factor), so it is not a square.
 * `TauCeti.Multiquadratic.finrank_adjoin_sqrt_two_three`: `[ℚ(√2, √3) : ℚ] = 4`.
 -/
 
+public section
+
 open scoped Function
 
 namespace TauCeti.Multiquadratic
-
-private theorem not_isSquare_of_squarefree_of_not_isUnit {R : Type*} [CommMonoid R] {a : R}
-    (ha : Squarefree a) (hu : ¬ IsUnit a) : ¬ IsSquare a := by
-  rintro ⟨r, rfl⟩
-  exact hu ((ha r dvd_rfl).mul (ha r dvd_rfl))
 
 /-- **Square-class independence of distinct primes.** If the selected `p i` are prime and pairwise
 distinct, then no nonempty subset product `∏_{i ∈ S} (p i : ℚ)` is a square in `ℚ`. This is the
@@ -52,7 +52,7 @@ theorem not_isSquare_prod_primes {ι : Type*} (p : ι → ℕ) {S : Finset ι}
     (hS : S.Nonempty) :
     ¬ IsSquare (∏ i ∈ S, (p i : ℚ)) := by
   rw [← Nat.cast_prod, Rat.isSquare_natCast_iff]
-  refine not_isSquare_of_squarefree_of_not_isUnit ?_ ?_
+  refine Squarefree.not_isSquare ?_ ?_
   · refine Finset.squarefree_prod_of_pairwise_isCoprime (fun i hi j hj hij => ?_)
       (fun i hi => (hp i hi).prime.squarefree)
     exact Nat.coprime_iff_isRelPrime.mp
@@ -64,10 +64,12 @@ theorem not_isSquare_prod_primes {ι : Type*} (p : ι → ℕ) {S : Finset ι}
 
 /-- The real square root of a natural number squares back to its rational value, in the form
 `(√n)² = algebraMap ℚ ℝ n`. This supplies the `hroot` hypothesis that the multiquadratic degree and
-Galois-group theorems consume for the family of square roots of a prime family. -/
+Galois-group theorems consume for the family of square roots of a prime family. It is the `0 ≤ n`
+special case of `sq_sqrt_intCast`. -/
 theorem sq_sqrt_natCast (n : ℕ) :
     (Real.sqrt n) ^ 2 = algebraMap ℚ ℝ (n : ℚ) := by
-  rw [Real.sq_sqrt (Nat.cast_nonneg _), map_natCast]
+  have h := sq_sqrt_intCast (n := (n : ℤ)) (Int.natCast_nonneg n)
+  rwa [Int.cast_natCast, Int.cast_natCast] at h
 
 /-- **Square-class independence of an injective family of primes.** If `p : ι → ℕ` is injective and
 each `p i` is prime, then no nonempty subset product `∏_{i ∈ S} (p i : ℚ)` is a square. This is the

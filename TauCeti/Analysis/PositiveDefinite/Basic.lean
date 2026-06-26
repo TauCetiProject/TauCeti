@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Complex.Order
-import Mathlib.Analysis.Matrix.Order
-import Mathlib.Algebra.QuadraticDiscriminant
-import Mathlib.Algebra.BigOperators.Fin
+module
+
+public import Mathlib.Analysis.Complex.Order
+public import Mathlib.Analysis.Matrix.Order
+public import Mathlib.Algebra.QuadraticDiscriminant
+public import Mathlib.Algebra.BigOperators.Fin
 
 /-!
 # Positive-definite functions on an involutive additive monoid
@@ -39,6 +41,9 @@ here. The continuity theory and Bochner's representation theorem are later miles
 * `TauCeti.IsPositiveDefinite.map_zero_nonneg`: `0 ≤ F 0`.
 * `TauCeti.IsPositiveDefinite.map_zero_im`: `(F 0).im = 0`.
 * `TauCeti.IsPositiveDefinite.map_zero_re_nonneg`: `0 ≤ (F 0).re`.
+* `TauCeti.IsPositiveDefinite.map_zero_eq_ofReal_re`: `F 0 = ((F 0).re : ℂ)`.
+* `TauCeti.IsPositiveDefinite.map_zero_re_pos_of_ne_zero`: if `F 0 ≠ 0`, then
+  `0 < (F 0).re`.
 * `TauCeti.IsPositiveDefinite.conj_symm`: `conj (F (b + a⋆)) = F (a + b⋆)`.
 * `TauCeti.IsPositiveDefinite.normSq_le`: the Cauchy–Schwarz inequality
   `‖F (a + b⋆)‖² ≤ (F (a + a⋆)).re * (F (b + b⋆)).re`.
@@ -58,6 +63,8 @@ here. The continuity theory and Bochner's representation theorem are later miles
   Chapter 3.
 -/
 
+public section
+
 open ComplexConjugate
 open scoped ComplexOrder
 
@@ -69,7 +76,7 @@ variable {M : Type*} [AddMonoid M] [StarAddMonoid M] {F G : M → ℂ}
 every finite family of scalars `c : Fin n → ℂ` and points `v : Fin n → M`, the Hermitian form
 `∑_{i,j} c i · conj (c j) · F (v i + star (v j))` is a nonnegative real number (using the order on
 `ℂ` for which `0 ≤ z` means `z` is real and nonnegative). -/
-def IsPositiveDefinite (F : M → ℂ) : Prop :=
+@[expose] def IsPositiveDefinite (F : M → ℂ) : Prop :=
   ∀ (n : ℕ) (c : Fin n → ℂ) (v : Fin n → M),
     0 ≤ ∑ i, ∑ j, c i * conj (c j) * F (v i + star (v j))
 
@@ -125,6 +132,24 @@ theorem map_zero_im (hF : IsPositiveDefinite F) : (F 0).im = 0 :=
 /-- The real part of the value of a positive-definite function at `0` is nonnegative. -/
 theorem map_zero_re_nonneg (hF : IsPositiveDefinite F) : 0 ≤ (F 0).re :=
   (Complex.nonneg_iff.mp hF.map_zero_nonneg).1
+
+/-- The value at the origin of a positive-definite function is equal to the real number
+`(F 0).re`, viewed as a complex number. -/
+theorem map_zero_eq_ofReal_re (hF : IsPositiveDefinite F) : F 0 = ((F 0).re : ℂ) := by
+  apply Complex.ext
+  · simp
+  · simpa using hF.map_zero_im
+
+/-- If a positive-definite function is nonzero at the origin, then the real part of that value is
+strictly positive. -/
+theorem map_zero_re_pos_of_ne_zero (hF : IsPositiveDefinite F) (h0 : F 0 ≠ 0) :
+    0 < (F 0).re := by
+  refine lt_of_le_of_ne hF.map_zero_re_nonneg ?_
+  intro hre
+  apply h0
+  apply Complex.ext
+  · exact hre.symm
+  · simpa using hF.map_zero_im
 
 /-- A positive-definite function is conjugate symmetric in the involution:
 `conj (F (b + star a)) = F (a + star b)`. -/

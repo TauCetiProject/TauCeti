@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicTopology.UniversalCover.Deck
+module
+
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck
 
 /-!
 # Conjugating deck transformations
@@ -28,6 +30,8 @@ This file supplies a prerequisite for the Tau Ceti universal-covers roadmap, Sta
 (`Deck p` as the deck transformation group), and the later cover-isomorphism bookkeeping in
 Stage 2.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -164,6 +168,25 @@ lemma conjMulEquivTrans (h : E ≃ₜ F) (k : F ≃ₜ G)
       (conjMulEquiv h hpq).trans (conjMulEquiv k hqr) := by
   ext φ g
   simp
+
+/-- Conjugation by the identity over-base homeomorphism maps a subgroup to itself. -/
+lemma subgroup_map_conj_refl (H : Subgroup (Deck p)) :
+    H.map ((conjMulEquiv (Homeomorph.refl E) (p := p) (q := p)
+      (fun e => by rfl) : Deck p ≃* Deck p) : Deck p →* Deck p) = H := by
+  rw [conjMulEquivRefl]
+  simp
+
+/-- Mapping a subgroup through two successive conjugations agrees with mapping it through the
+conjugation attached to the composite over-base homeomorphism. -/
+lemma subgroup_map_conj_trans (h : E ≃ₜ F) (k : F ≃ₜ G)
+    (hpq : ∀ e, q (h e) = p e) (hqr : ∀ f, r (k f) = q f) (H : Subgroup (Deck p)) :
+    (H.map ((conjMulEquiv h hpq : Deck p ≃* Deck q) : Deck p →* Deck q)).map
+        ((conjMulEquiv k hqr : Deck q ≃* Deck r) : Deck q →* Deck r) =
+      H.map ((conjMulEquiv (h.trans k)
+        (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) : Deck p ≃* Deck r) :
+          Deck p →* Deck r) := by
+  rw [Subgroup.map_map]
+  congr 1
 
 end Deck
 

@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.Group.Subgroup.Even
-import Mathlib.GroupTheory.Schreier
+module
+
+public import Mathlib.Algebra.Group.Subgroup.Even
+public import Mathlib.GroupTheory.Schreier
 import Mathlib.Tactic.NormNum
 
 /-!
@@ -15,6 +17,7 @@ homomorphism has index at most `2 ^ S.card`.
 
 ## Main results
 
+* `TauCeti.square_eq_powMonoidHom_two_range`: `G²` is the range of the squaring homomorphism.
 * `TauCeti.index_square_le_of_closure_eq_top`: `[G : G²] ≤ 2 ^ S.card`.
 
 ## Provenance
@@ -23,6 +26,8 @@ The argument is migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), where it was an
 abstract step towards bounding the index of squares in the unit group of a number field.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -54,7 +59,7 @@ private theorem index_powMonoidHom_range_le_of_closure_eq_top {G : Type*} [CommG
 
 /-- In a commutative group, Mathlib's subgroup of squares agrees with the range of the
 squaring homomorphism. -/
-private theorem square_eq_powMonoidHom_two_range {G : Type*} [CommGroup G] :
+theorem square_eq_powMonoidHom_two_range {G : Type*} [CommGroup G] :
     Subgroup.square G = (powMonoidHom 2 : G →* G).range := by
   ext g
   rw [Subgroup.mem_square, MonoidHom.mem_range]

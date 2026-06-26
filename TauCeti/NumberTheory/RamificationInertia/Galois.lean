@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.NumberTheory.RamificationInertia.Galois
+module
+
+public import Mathlib.NumberTheory.RamificationInertia.Galois
 
 /-!
 # Ramification and inertia counting criteria
@@ -21,6 +23,8 @@ maximal exactly when the common ramification index and inertia degree are both `
 Built directly on Mathlib's Galois fundamental identity
 (`Ideal.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn`).
 -/
+
+public section
 
 open Ideal Module
 

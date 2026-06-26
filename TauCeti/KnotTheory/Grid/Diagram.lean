@@ -2,12 +2,15 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Fin.Basic
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Fintype.Basic
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Fintype.Perm
-import Mathlib.GroupTheory.Perm.Basic
+module
+
+public import Mathlib.Data.Fin.Basic
+public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Fintype.Basic
+public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fintype.Perm
+public import Mathlib.Data.Fintype.Prod
+public import Mathlib.GroupTheory.Perm.Basic
 
 /-!
 # Grid diagrams and grid states
@@ -21,26 +24,11 @@ that no square contains both markings.
 The point-set API records the basic row, column, cardinality, and disjointness facts used
 before defining rectangles, empty rectangles, and the grid differential.
 
-## Main definitions
-
 * `TauCeti.GridState`: a grid state with a permutation graph on `Fin n`.
 * `TauCeti.GridState.pointSet`: the finite set of occupied squares of a grid state.
-* `TauCeti.GridState.relabelRows`, `TauCeti.GridState.relabelColumns`: row and column
-  relabelings of grid states.
-* `TauCeti.GridState.swapRows`, `TauCeti.GridState.swapColumns`: row and column swaps of
-  grid states.
-* `TauCeti.GridState.transpose`: the diagonal reflection of a grid state, with the inverse
-  permutation graph.
 * `TauCeti.GridDiagram`: an `n × n` grid diagram with `O` and `X` markings.
 * `TauCeti.GridDiagram.OSet`, `TauCeti.GridDiagram.XSet`: the marking point sets.
-* `TauCeti.GridDiagram.relabelRows`, `TauCeti.GridDiagram.relabelColumns`: row and column
-  relabelings of grid diagrams.
-* `TauCeti.GridDiagram.swapRows`, `TauCeti.GridDiagram.swapColumns`: row and column swaps of
-  grid diagrams.
-* `TauCeti.GridDiagram.transpose`: the diagonal reflection of a grid diagram, reflecting both
-  marking states.
-* `TauCeti.GridDiagram.swapMarkings`: the grid diagram obtained by exchanging the `O`- and
-  `X`-marking states.
+* Relabeling, swapping, transposition, and marking-swap operations for grid states and diagrams.
 
 ## References
 
@@ -50,6 +38,8 @@ encoding follows the standard grid-diagram convention from Ozsváth--Stipsicz--S
 Homology for Knots and Links*, Chapter 3: one `O` and one `X` marking in each row and column,
 and a grid state is one point in each row and column.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 
@@ -66,8 +56,8 @@ namespace GridState
 
 variable {n : ℕ}
 
-/-- Grid states are equivalent to permutations of the columns. -/
-private def equivPerm : GridState n ≃ Equiv.Perm (Fin n) where
+/-- Grid states on an `n × n` grid are equivalent to permutations of the columns. -/
+def equivPerm (n : ℕ) : GridState n ≃ Equiv.Perm (Fin n) where
   toFun x := x.toPerm
   invFun σ := ⟨σ⟩
   left_inv x := by cases x; rfl
@@ -75,11 +65,27 @@ private def equivPerm : GridState n ≃ Equiv.Perm (Fin n) where
 
 /-- There are finitely many grid states of a fixed grid size. -/
 instance : Fintype (GridState n) :=
-  Fintype.ofEquiv (Equiv.Perm (Fin n)) equivPerm.symm
+  Fintype.ofEquiv (Equiv.Perm (Fin n)) (equivPerm n).symm
+
+/-- Equality of grid states is decidable: a grid state is determined by its underlying
+permutation, whose equality is decidable. This makes finite sets of grid states computable. -/
+instance : DecidableEq (GridState n) := fun x y =>
+  decidable_of_iff (x.toPerm = y.toPerm)
+    ⟨fun h => by cases x; cases y; cases h; rfl, fun h => by rw [h]⟩
 
 /-- Apply a grid state to a column to get its occupied row. -/
 instance : CoeFun (GridState n) fun _ => Fin n → Fin n where
   coe x := x.toPerm
+
+/-- The permutation associated to a grid state by `GridState.equivPerm`. -/
+@[simp] theorem equivPerm_apply (x : GridState n) : equivPerm n x = x.toPerm := rfl
+
+/-- The grid state associated to a permutation by the inverse of `GridState.equivPerm`. -/
+theorem equivPerm_symm_apply (σ : Equiv.Perm (Fin n)) : (equivPerm n).symm σ = ⟨σ⟩ := rfl
+
+/-- Evaluating a grid state obtained from a permutation gives the permutation value. -/
+@[simp] theorem equivPerm_symm_apply_apply (σ : Equiv.Perm (Fin n)) (c : Fin n) :
+    ((equivPerm n).symm σ : GridState n) c = σ c := rfl
 
 /-- Grid states are extensional in their column-to-row functions. -/
 @[ext]
@@ -94,6 +100,10 @@ theorem ext {x y : GridState n} (h : ∀ c : Fin n, x c = y c) : x = y := by
 the second coordinate is the row. -/
 def pointSet (x : GridState n) : Finset (Fin n × Fin n) :=
   Finset.univ.image fun c => (c, x c)
+
+/-- The point set of the grid state obtained from `σ` is the graph `{(c, σ c)}`. -/
+@[simp] theorem equivPerm_symm_pointSet (σ : Equiv.Perm (Fin n)) :
+    ((equivPerm n).symm σ : GridState n).pointSet = Finset.univ.image fun c => (c, σ c) := rfl
 
 /-- Membership in the point set of a grid state is the graph condition for its permutation. -/
 @[simp]
@@ -136,6 +146,20 @@ theorem existsUnique_column_of_row (x : GridState n) (r : Fin n) :
   refine ⟨x.toPerm.symm r, by simp, ?_⟩
   intro c hc
   exact x.toPerm.injective (by simpa using hc)
+
+/-- The column occupied by a grid state in a given row. -/
+def columnOfRow (x : GridState n) (r : Fin n) : Fin n :=
+  x.toPerm.symm r
+
+/-- The point in row `r` lies in column `columnOfRow x r`. -/
+@[simp]
+theorem apply_columnOfRow (x : GridState n) (r : Fin n) : x (x.columnOfRow r) = r := by
+  simp [columnOfRow]
+
+/-- The column containing the point in row `x c` is `c`. -/
+@[simp]
+theorem columnOfRow_apply (x : GridState n) (c : Fin n) : x.columnOfRow (x c) = c := by
+  simp [columnOfRow]
 
 /-- Point sets of grid states are equal exactly when the underlying permutations are equal. -/
 @[simp]
@@ -281,6 +305,37 @@ theorem swapRows_apply (a b : Fin n) (x : GridState n) (c : Fin n) :
 theorem swapColumns_apply (a b : Fin n) (x : GridState n) (c : Fin n) :
     x.swapColumns a b c = x (Equiv.swap a b c) := by
   simp [swapColumns, relabelColumns]
+
+/-- The grid states obtained from `x` by transposing a pair of distinct columns.
+
+These are exactly the states a single grid rectangle can reach from `x`: the fully blocked
+differential of the generator `x` is supported here. -/
+def columnSwapNeighbors (x : GridState n) : Finset (GridState n) :=
+  (Finset.univ.filter fun p : Fin n × Fin n => p.1 ≠ p.2).image
+    fun p => x.swapColumns p.1 p.2
+
+/-- A state is a column-swap neighbour of `x` exactly when it is `x` with a pair of distinct
+columns transposed. -/
+@[simp]
+theorem mem_columnSwapNeighbors {x y : GridState n} :
+    y ∈ x.columnSwapNeighbors ↔ ∃ c d : Fin n, c ≠ d ∧ y = x.swapColumns c d := by
+  simp only [columnSwapNeighbors, Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and,
+    Prod.exists]
+  constructor
+  · rintro ⟨c, d, hcd, rfl⟩
+    exact ⟨c, d, hcd, rfl⟩
+  · rintro ⟨c, d, hcd, rfl⟩
+    exact ⟨c, d, hcd, rfl⟩
+
+/-- A grid state is not a column-swap neighbour of itself: swapping two distinct columns moves the
+occupied row of either column, so the result differs from the original. -/
+@[simp]
+theorem self_notMem_columnSwapNeighbors (x : GridState n) : x ∉ x.columnSwapNeighbors := by
+  rw [mem_columnSwapNeighbors]
+  rintro ⟨c, d, hcd, hx⟩
+  have hval := congrArg (fun z : GridState n => z c) hx
+  simp only [swapColumns_apply, Equiv.swap_apply_left] at hval
+  exact hcd (x.toPerm.injective hval)
 
 /-- Row swaps transport the point set by the row transposition. -/
 @[simp]
@@ -433,18 +488,24 @@ Reflecting the occupied squares across the main diagonal exchanges columns and r
 permutation graph is the inverse of the old one. -/
 def transpose (x : GridState n) : GridState n where
   toPerm := x.toPerm.symm
-
 /-- The diagonal reflection evaluates by the inverse permutation graph. -/
 @[simp]
 theorem transpose_apply (x : GridState n) (c : Fin n) : x.transpose c = x.toPerm.symm c :=
   rfl
 
+/-- The row-to-column accessor is evaluation of the reflected grid state. -/
+@[simp]
+theorem columnOfRow_eq_transpose (x : GridState n) (r : Fin n) :
+    x.columnOfRow r = x.transpose r := rfl
+/-- The column in row `r` of the reflected state is the original row-coordinate value at `r`. -/
+@[simp]
+theorem columnOfRow_transpose (x : GridState n) (r : Fin n) : x.transpose.columnOfRow r = x r := by
+  simp [columnOfRow, transpose]
 /-- The diagonal reflection is an involution on grid states. -/
 @[simp]
 theorem transpose_transpose (x : GridState n) : x.transpose.transpose = x := by
   cases x
   simp [transpose]
-
 /-- Reflecting after a row relabeling is the same as column relabeling after reflecting. -/
 @[simp]
 theorem relabelRows_transpose (ρ : Equiv.Perm (Fin n)) (x : GridState n) :
@@ -453,7 +514,6 @@ theorem relabelRows_transpose (ρ : Equiv.Perm (Fin n)) (x : GridState n) :
   exact congrArg Fin.val <| by
     apply (x.relabelRows ρ).toPerm.injective
     simp
-
 /-- Reflecting after a column relabeling is the same as row relabeling after reflecting. -/
 @[simp]
 theorem relabelColumns_transpose (κ : Equiv.Perm (Fin n)) (x : GridState n) :
@@ -462,13 +522,11 @@ theorem relabelColumns_transpose (κ : Equiv.Perm (Fin n)) (x : GridState n) :
   exact congrArg Fin.val <| by
     apply (x.relabelColumns κ).toPerm.injective
     simp
-
 /-- Reflecting after a row swap is the same as the corresponding column swap after reflecting. -/
 @[simp]
 theorem swapRows_transpose (a b : Fin n) (x : GridState n) :
     (x.swapRows a b).transpose = x.transpose.swapColumns a b := by
   simp [swapRows, swapColumns]
-
 /-- Reflecting after a column swap is the same as the corresponding row swap after reflecting. -/
 @[simp]
 theorem swapColumns_transpose (a b : Fin n) (x : GridState n) :
@@ -577,6 +635,34 @@ theorem existsUnique_XColumn_of_row (r : Fin n) :
     ∃! c : Fin n, (c, r) ∈ G.XSet := by
   rw [XSet]
   exact G.X.existsUnique_column_of_row r
+
+/-- The column containing the `O` marking in a given row. -/
+def OColumnOfRow (r : Fin n) : Fin n :=
+  G.O.columnOfRow r
+
+/-- The column containing the `X` marking in a given row. -/
+def XColumnOfRow (r : Fin n) : Fin n :=
+  G.X.columnOfRow r
+
+/-- The `O` marking in row `r` lies in column `OColumnOfRow r`. -/
+@[simp]
+theorem OColumnOfRow_apply (r : Fin n) : G.O (OColumnOfRow G r) = r := by
+  simp [OColumnOfRow]
+
+/-- The `X` marking in row `r` lies in column `XColumnOfRow r`. -/
+@[simp]
+theorem XColumnOfRow_apply (r : Fin n) : G.X (XColumnOfRow G r) = r := by
+  simp [XColumnOfRow]
+
+/-- The column containing the `O` marking in row `G.O c` is `c`. -/
+@[simp]
+theorem OColumnOfRow_O (c : Fin n) : OColumnOfRow G (G.O c) = c := by
+  simp [OColumnOfRow]
+
+/-- The column containing the `X` marking in row `G.X c` is `c`. -/
+@[simp]
+theorem XColumnOfRow_X (c : Fin n) : XColumnOfRow G (G.X c) = c := by
+  simp [XColumnOfRow]
 
 /-- The `O` and `X` marking sets of a grid diagram are disjoint. -/
 theorem disjoint_OSet_XSet : Disjoint G.OSet G.XSet := by
@@ -798,19 +884,29 @@ def transpose (G : GridDiagram n) : GridDiagram n where
 
 /-- The `O` marking state of the reflected diagram is the reflected `O` marking state. -/
 @[simp]
-theorem transpose_O : G.transpose.O = G.O.transpose :=
-  rfl
-
+theorem transpose_O : G.transpose.O = G.O.transpose := rfl
 /-- The `X` marking state of the reflected diagram is the reflected `X` marking state. -/
 @[simp]
-theorem transpose_X : G.transpose.X = G.X.transpose :=
-  rfl
-
+theorem transpose_X : G.transpose.X = G.X.transpose := rfl
+/-- The reflected diagram's `O` row coordinate is the original `O` column in that row. -/
+@[simp]
+theorem transpose_O_apply (c : Fin n) : G.transpose.O c = OColumnOfRow G c := by simp [OColumnOfRow]
+/-- The reflected diagram's `X` row coordinate is the original `X` column in that row. -/
+@[simp]
+theorem transpose_X_apply (c : Fin n) : G.transpose.X c = XColumnOfRow G c := by simp [XColumnOfRow]
+/-- The `O` marking in row `c` of the reflected diagram lies in column `G.O c`. -/
+@[simp]
+theorem OColumnOfRow_transpose (c : Fin n) : OColumnOfRow G.transpose c = G.O c := by
+  rw [OColumnOfRow, transpose_O]
+  exact GridState.columnOfRow_transpose G.O c
+/-- The `X` marking in row `c` of the reflected diagram lies in column `G.X c`. -/
+@[simp]
+theorem XColumnOfRow_transpose (c : Fin n) : XColumnOfRow G.transpose c = G.X c := by
+  rw [XColumnOfRow, transpose_X]
+  exact GridState.columnOfRow_transpose G.X c
 /-- The diagonal reflection is an involution on grid diagrams. -/
 @[simp]
-theorem transpose_transpose : G.transpose.transpose = G := by
-  ext c <;> simp
-
+theorem transpose_transpose : G.transpose.transpose = G := by ext c <;> simp
 /-- Reflecting after a row relabeling is the same as column relabeling after reflecting. -/
 @[simp]
 theorem relabelRows_transpose (ρ : Equiv.Perm (Fin n)) :
@@ -872,40 +968,43 @@ def swapMarkings (G : GridDiagram n) : GridDiagram n where
 
 /-- The `O`-marking state of the marking swap is the original `X`-marking state. -/
 @[simp]
-theorem swapMarkings_O : G.swapMarkings.O = G.X :=
-  rfl
+theorem swapMarkings_O : G.swapMarkings.O = G.X := rfl
 
 /-- The `X`-marking state of the marking swap is the original `O`-marking state. -/
 @[simp]
-theorem swapMarkings_X : G.swapMarkings.X = G.O :=
-  rfl
+theorem swapMarkings_X : G.swapMarkings.X = G.O := rfl
+
+/-- Swapping markings changes the `O` row lookup to the original `X` row lookup. -/
+@[simp]
+theorem OColumnOfRow_swapMarkings (r : Fin n) :
+    OColumnOfRow G.swapMarkings r = XColumnOfRow G r := rfl
+
+/-- Swapping markings changes the `X` row lookup to the original `O` row lookup. -/
+@[simp]
+theorem XColumnOfRow_swapMarkings (r : Fin n) :
+    XColumnOfRow G.swapMarkings r = OColumnOfRow G r := rfl
 
 /-- The `O`-marking set of the marking swap is the original `X`-marking set. -/
 @[simp]
-theorem swapMarkings_OSet : G.swapMarkings.OSet = G.XSet :=
-  rfl
+theorem swapMarkings_OSet : G.swapMarkings.OSet = G.XSet := rfl
 
 /-- The `X`-marking set of the marking swap is the original `O`-marking set. -/
 @[simp]
-theorem swapMarkings_XSet : G.swapMarkings.XSet = G.OSet :=
-  rfl
+theorem swapMarkings_XSet : G.swapMarkings.XSet = G.OSet := rfl
 
 /-- Membership in the marking swap's `O`-marking set is membership in the original
 `X`-marking set. -/
 @[simp]
 theorem mem_OSet_swapMarkings (p : Fin n × Fin n) :
-    p ∈ G.swapMarkings.OSet ↔ p ∈ G.XSet :=
-  Iff.rfl
+    p ∈ G.swapMarkings.OSet ↔ p ∈ G.XSet := Iff.rfl
 
 /-- Membership in the marking swap's `X`-marking set is membership in the original
 `O`-marking set. -/
 @[simp]
 theorem mem_XSet_swapMarkings (p : Fin n × Fin n) :
-    p ∈ G.swapMarkings.XSet ↔ p ∈ G.OSet :=
-  Iff.rfl
+    p ∈ G.swapMarkings.XSet ↔ p ∈ G.OSet := Iff.rfl
 
-/-- The marking swap is an involution: exchanging the two marking states twice restores the
-grid diagram. -/
+/-- The marking swap is an involution. -/
 @[simp]
 theorem swapMarkings_swapMarkings : G.swapMarkings.swapMarkings = G := by
   ext c <;> simp [swapMarkings]
@@ -925,20 +1024,16 @@ theorem relabelColumns_swapMarkings (κ : Equiv.Perm (Fin n)) :
 /-- Row swaps commute with exchanging the two marking states. -/
 @[simp]
 theorem swapRows_swapMarkings (a b : Fin n) :
-    (G.swapRows a b).swapMarkings = G.swapMarkings.swapRows a b := by
-  simp [swapRows]
+    (G.swapRows a b).swapMarkings = G.swapMarkings.swapRows a b := by simp [swapRows]
 
 /-- Column swaps commute with exchanging the two marking states. -/
 @[simp]
 theorem swapColumns_swapMarkings (a b : Fin n) :
-    (G.swapColumns a b).swapMarkings = G.swapMarkings.swapColumns a b := by
-  simp [swapColumns]
+    (G.swapColumns a b).swapMarkings = G.swapMarkings.swapColumns a b := by simp [swapColumns]
 
 /-- The marking swap commutes with the diagonal reflection of a grid diagram. -/
 @[simp]
 theorem swapMarkings_transpose : G.swapMarkings.transpose = G.transpose.swapMarkings := by
   ext c <;> simp [swapMarkings]
-
 end GridDiagram
-
 end TauCeti

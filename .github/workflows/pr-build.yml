@@ -40,6 +40,14 @@ jobs:
     env:
       LANDRUN_SHA256: 645178e3239cd33760560834e50efea0864183a2a8a82faf199760dffee6dd71
       LANDRUN_VER: v0.1.14
+      # Lake artifact-cache knobs, off by default. The "Configure the Lake artifact cache"
+      # step flips these on (and sets LAKE_CACHE_DIR) ONLY when the public cache endpoints
+      # are installed as repo variables; until then they stay empty and the build runs
+      # exactly as before (a full recompile of TauCeti/). Declared here so the landrun
+      # build's `--env` list always has a defined value to pass.
+      LAKE_ARTIFACT_CACHE: ""
+      LAKE_RESTORE_ARTIFACTS: ""
+      LAKE_CACHE_DIR: ""
     steps:
       # --- Trusted setup: no PR code runs until the landrun build phase ---
       - name: Resolve PR head
@@ -154,13 +162,39 @@ jobs:
             exit 1
           fi
 
+      - name: New-file length guard — newly added .lean files must be ≤ 1000 lines
+        # A brand-new file may be at most 1000 lines; an existing file may grow up to the
+        # in-build linter ceiling of 1500 (set in lakefile.toml). The split keeps new material
+        # small and reviewable while not blocking incremental growth of established files.
+        # PR-only, like the diff-size guard: new files enter the library through a PR, and a
+        # merge_group batch is the sum of already-guarded PRs. For an *added* file the GitHub
+        # diff lists every line as an addition, so `.additions` is its line count.
+        if: ${{ github.event_name != 'merge_group' }}
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          long=$(gh api --paginate "repos/${{ github.repository }}/pulls/${{ steps.pr.outputs.num }}/files" \
+            --jq '.[] | select(.status == "added" and (.filename | endswith(".lean")) and .additions > 1000)
+                      | "\(.filename) (\(.additions) lines)"')
+          if [ -n "$long" ]; then
+            echo "NEWFILE_TOO_LONG=1" >> "$GITHUB_ENV"
+            echo "::error::New .lean files must be at most 1000 lines; these exceed it. Split them, or grow an existing file (allowed up to 1500):"
+            echo "$long"
+          fi
+
       - name: Checkout base (trusted)
         if: ${{ env.INFRA != '1' }}
         uses: actions/checkout@v4
         # Pin to the trusted base branch explicitly. For merge_group the event default ref is the
         # untrusted combined commit, so this is what keeps the build config (lakefile, scripts,
         # manifest, toolchain) base-trusted; only TauCeti/ is overlaid from the merge-group commit.
-        with: { ref: "${{ steps.pr.outputs.base_ref }}", path: base, persist-credentials: false }
+        with:
+          ref: "${{ steps.pr.outputs.base_ref }}"
+          path: base
+          persist-credentials: false
+          # Enough base history for `lake cache get` to backtrack to a recently-built
+          # ancestor commit (its `--max-revs`) when the exact base tip has no cache
+          # mapping yet. Harmless (just a slightly deeper fetch) when the cache is off.
+          fetch-depth: 100
 
       - name: Checkout merge-base config (trusted ancestor — only to scope the PR's pin delta)
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
@@ -183,8 +217,9 @@ jobs:
       # pins or building. The validator and the BASE config it judges against are the
       # TRUSTED current target tip; mergebase/ only scopes the PR's own pin delta; pr/
       # is read as text — no PR code runs. An invalid/backward/forked bump sets INFRA=1
-      # → not built, routed to a human. (Run inline, not by reading the separate
-      # bump-guard status, to avoid a race with that concurrently-running workflow.)
+      # → not built, routed to a human. This same inline validation is what the
+      # required `bump-guard` status is posted from in the final step (this job owns
+      # both required statuses; there is no separate bump-guard workflow).
       - name: Validate the Lake-pin bump (trusted base validator) before building
         if: ${{ env.INFRA != '1' && env.BUMP == '1' }}
         env: { GH_TOKEN: "${{ github.token }}" }
@@ -270,26 +305,105 @@ jobs:
         if: ${{ env.INFRA != '1' }}
         run: ( cd base && lake exe cache get ) && mkdir -p base/.lake/tmp
 
+      # Enable Lake's built-in artifact cache for the build below ONLY when the public read
+      # endpoints are configured (repo variables). Until then this is a no-op: LAKE_*
+      # stay empty and the landrun build recompiles TauCeti/ from scratch exactly as before.
+      # The cache dir lives under base/.lake/ so the offline landrun build (which mounts
+      # base/.lake rw) can read what the network `lake cache get` step populates. We never
+      # pass the cache *endpoints* into landrun, so the sandboxed build stays offline and
+      # can only consult the locally-populated cache.
+      - name: Configure the Lake artifact cache (no-op unless the public endpoints are set)
+        if: ${{ env.INFRA != '1' }}
+        env:
+          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
+        run: |
+          if [ -n "$PUBLIC_ARTIFACT_ENDPOINT" ] && [ -n "$PUBLIC_REVISION_ENDPOINT" ]; then
+            {
+              echo "LAKE_CACHE_DIR=$PWD/base/.lake/cache"
+              echo "LAKE_ARTIFACT_CACHE=true"
+              echo "LAKE_RESTORE_ARTIFACTS=true"
+              echo "TAUCETI_CACHE_ENABLED=1"
+            } >> "$GITHUB_ENV"
+            echo "::notice::Lake artifact cache enabled — will fetch TauCeti's oleans and build incrementally"
+          else
+            echo "::notice::Lake artifact cache not configured — building TauCeti/ from scratch (set the LAKE_CACHE_*_PUBLIC repo variables to enable)"
+          fi
+
+      # Anonymous GETs from the PUBLIC read host (a different host than the S3 API endpoint
+      # the trusted main upload uses). Looks up TauCeti's OWN root-package oleans for the
+      # base-branch revision — backtracking up to --max-revs ancestors — and unpacks them
+      # into the local Lake cache ($LAKE_CACHE_DIR). This is trusted, main-built data: no
+      # token is in reach and no PR code runs (lakefile.toml is declarative + base-trusted).
+      # Mathlib's oleans are NOT here; they come from `lake exe cache get` above. A miss is
+      # non-fatal — the landrun build just recompiles from scratch, as when the cache is off.
+      - name: Fetch TauCeti's own oleans from the Lake cache (network, no token; no PR code)
+        if: ${{ env.INFRA != '1' && env.TAUCETI_CACHE_ENABLED == '1' }}
+        env:
+          # Passed under non-LAKE_ names so Lake never sees the deprecated endpoint
+          # environment variables; we hand it the endpoints through a `--service` config.
+          PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
+          PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
+        run: |
+          # Define the public read service in a Lake system config and select it with
+          # `--service` (the env-var form of endpoint config is deprecated). Anonymous
+          # GETs, so no key here.
+          CFG="$RUNNER_TEMP/lake-cache.toml"
+          cat > "$CFG" <<TOML
+          cache.defaultService = "tauceti-public"
+          [[cache.service]]
+          name = "tauceti-public"
+          kind = "s3"
+          artifactEndpoint = "$PUBLIC_ARTIFACT_ENDPOINT"
+          revisionEndpoint = "$PUBLIC_REVISION_ENDPOINT"
+          TOML
+          ( cd base && LAKE_CONFIG="$CFG" lake cache get --service tauceti-public --repo FormalFrontier/TauCeti ) \
+            || echo "::warning::lake cache get failed or missed; building TauCeti/ from scratch"
+
       - name: Build (trusted config + overlaid TauCeti/) under landrun, offline
         id: build
         if: ${{ env.INFRA != '1' }}
+        env:
+          # The sandboxed build is always offline: never let Lake reach out to a remote
+          # cache from inside landrun. When the artifact cache is enabled above, it restores
+          # TauCeti's oleans purely from the locally-populated $LAKE_CACHE_DIR; when it is
+          # not, this is a normal full build. Either way, no network from in here.
+          LAKE_NO_CACHE: "true"
         run: |
           export PATH="$HOME/.local/bin:$HOME/.elan/bin:$PATH"
           landrun --rox /usr --rox /etc \
             --rw /dev/null --rox /dev/zero --rox /dev/urandom --rox /dev/random \
             --rox "$HOME/.elan" --rox "$PWD/base" --rw "$PWD/base/.lake" \
             --env PATH --env HOME --env CI \
+            --env LAKE_NO_CACHE --env LAKE_ARTIFACT_CACHE --env LAKE_RESTORE_ARTIFACTS --env LAKE_CACHE_DIR \
             -- bash -euxo pipefail -c '
               cd base
               export TMPDIR="$PWD/.lake/tmp"
               lake build
               lake exe axioms
+              lake exe module-system
             '
 
-      - name: Report build status to the PR head commit
+      - name: Report build and bump-guard statuses to the PR head commit
         if: always()
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
+          # bump-guard: this job already ran the trusted base scripts/check-bump.sh inline
+          # (the "Validate the Lake-pin bump" step), so we post the required `bump-guard`
+          # status from its result here rather than from a separate workflow. BUMP_BAD is set
+          # only when a manifest/toolchain change failed that validator; anything else (no pin
+          # change, or a validated forward bump) is a pass. Posting it from this job also means
+          # both required statuses land together, before the auto-merge workflow_run fires.
+          if [ "${{ env.BUMP_BAD }}" = "1" ]; then
+            bg_state=failure; bg_desc="manifest/toolchain change is not a validated forward bump — needs human review"
+          else
+            bg_state=success; bg_desc="forward-only Lake-pin / toolchain bump (or no pin change)"
+          fi
+          gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.status_sha }}" \
+            -f state="$bg_state" -f context="bump-guard" -f description="$bg_desc" \
+            -f target_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo "posted bump-guard=$bg_state ($bg_desc) to ${{ steps.pr.outputs.status_sha }}"
+
           if [ "${{ env.BUMP_BAD }}" = "1" ]; then
             state=failure; desc="Lake-pin change is not a validated forward bump — human review + merge required"
           elif [ "${{ env.INFRA }}" = "1" ]; then
@@ -298,6 +412,8 @@ jobs:
             state=failure; desc="diff exceeds 2000 added/removed lines or 2000 files — split into smaller PRs to keep review manageable"
           elif [ "${{ env.DIFF_UNKNOWN }}" = "1" ]; then
             state=failure; desc="could not read PR diff totals from the GitHub API — re-run pr-build"
+          elif [ "${{ env.NEWFILE_TOO_LONG }}" = "1" ]; then
+            state=failure; desc="a newly added .lean file exceeds 1000 lines — split it (existing files may grow to 1500)"
           elif [ "${{ steps.build.outcome }}" = "success" ]; then
             state=success; desc="sandboxed build + axiom audit passed (trusted config)"
           else

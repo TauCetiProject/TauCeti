@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.GroupTheory.GroupAction.Basic
-import Mathlib.Topology.Covering.Basic
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
+module
+
+public import Mathlib.GroupTheory.GroupAction.Basic
+public import Mathlib.Topology.Covering.Basic
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber
 
 /-!
 # Deck transformations of connected covers
@@ -25,6 +27,8 @@ connected cover cannot fix a point unless it is the identity.
 * `TauCeti.Deck.deckEquivFiberOfSurjective`: if that evaluation map is also surjective, it
   identifies the deck group with the chosen fibre.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -121,7 +125,7 @@ evaluation at that point identifies the deck group with that fibre.
 
 This is the simply-transitive fibre action package used later when regular covers are
 compared with normal subgroups and normalizer quotients. -/
-noncomputable def deckEquivFiberOfSurjective [PreconnectedSpace E] (hp : IsCoveringMap p)
+@[expose] noncomputable def deckEquivFiberOfSurjective [PreconnectedSpace E] (hp : IsCoveringMap p)
     (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : Deck p => φ • e) :
     Deck p ≃ p ⁻¹' {b} :=
   Equiv.ofBijective (fun φ : Deck p => φ • e)
@@ -162,6 +166,33 @@ lemma deckEquivFiberOfSurjective_symm_apply_coe [PreconnectedSpace E]
     (((deckEquivFiberOfSurjective hp e hsurj).symm e').1 e.1 : E) = e'.1 := by
   simpa [fiber_smul_coe] using
     congrArg Subtype.val (deckEquivFiberOfSurjective_symm_smul hp e hsurj e')
+
+/-- The local deck-to-fibre equivalence sends the identity to the chosen base point. -/
+@[simp]
+lemma deckEquivFiberOfSurjective_one [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : Deck p => φ • e) :
+    deckEquivFiberOfSurjective hp e hsurj 1 = e := by
+  rw [deckEquivFiberOfSurjective_apply, one_smul]
+
+/-- The local deck-to-fibre equivalence is equivariant for left multiplication on the deck
+group and the deck action on the fibre. -/
+@[simp]
+lemma deckEquivFiberOfSurjective_mul [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : Deck p => φ • e) (φ ψ : Deck p) :
+    deckEquivFiberOfSurjective hp e hsurj (φ * ψ) =
+      φ • deckEquivFiberOfSurjective hp e hsurj ψ := by
+  rw [deckEquivFiberOfSurjective_apply, deckEquivFiberOfSurjective_apply, mul_smul]
+
+/-- Translating a fibre point before applying the inverse local equivalence multiplies the
+corresponding deck transformation on the left. -/
+@[simp]
+lemma deckEquivFiberOfSurjective_symm_apply_smul [PreconnectedSpace E]
+    (hp : IsCoveringMap p) (e : p ⁻¹' {b})
+    (hsurj : Function.Surjective fun φ : Deck p => φ • e) (e' : p ⁻¹' {b}) (φ : Deck p) :
+    (deckEquivFiberOfSurjective hp e hsurj).symm (φ • e') =
+      φ * (deckEquivFiberOfSurjective hp e hsurj).symm e' := by
+  apply (deckEquivFiberOfSurjective hp e hsurj).injective
+  rw [Equiv.apply_symm_apply, deckEquivFiberOfSurjective_mul, Equiv.apply_symm_apply]
 
 end Fiber
 

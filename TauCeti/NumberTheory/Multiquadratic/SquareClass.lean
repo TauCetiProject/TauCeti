@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.FieldTheory.IntermediateField.Quadratic
-import Mathlib.Analysis.Real.Sqrt
-import Mathlib.Data.Finset.Fin
+module
+
+public import TauCeti.FieldTheory.IntermediateField.Quadratic
+public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.Data.Finset.Fin
 
 /-!
 # Square-class descent in multiquadratic towers
@@ -43,6 +45,8 @@ conjecture, where it was developed for one specific CM field. Here it is the fie
 square-class engine of the multiquadratic-fields roadmap.
 -/
 
+public section
+
 open IntermediateField
 
 namespace TauCeti.Multiquadratic
@@ -50,7 +54,7 @@ namespace TauCeti.Multiquadratic
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- Iterated multiquadratic tower `K(root₀, …, rootₙ₋₁) ⊆ L`. -/
-noncomputable def sqrtTower (root : ℕ → L) (n : ℕ) : IntermediateField K L :=
+@[expose] noncomputable def sqrtTower (root : ℕ → L) (n : ℕ) : IntermediateField K L :=
   IntermediateField.adjoin K (root '' Set.Iio n)
 
 /-- The defining adjoin presentation of `sqrtTower`. -/
@@ -334,5 +338,13 @@ theorem squareClass_of_sqrt_mem (c : ℕ → ℚ) (hc : ∀ j, 0 ≤ c j) :
     simpa using Real.sq_sqrt hcj_nonneg
   · have hr_nonneg : 0 ≤ (r : ℝ) := by exact_mod_cast hr
     simpa using Real.sq_sqrt hr_nonneg
+
+/-- The real square root of a nonnegative integer squares back to its rational value, in the form
+`(√n)² = algebraMap ℚ ℝ n`. This supplies the `hroot` hypothesis of the degree theorem for the real
+square roots of integer radicands. The natural-number form `sq_sqrt_natCast` is the special case
+`0 ≤ n`. -/
+theorem sq_sqrt_intCast {n : ℤ} (hn : 0 ≤ n) :
+    (Real.sqrt n) ^ 2 = algebraMap ℚ ℝ (n : ℚ) := by
+  rw [Real.sq_sqrt (by exact_mod_cast hn), map_intCast]
 
 end TauCeti.Multiquadratic

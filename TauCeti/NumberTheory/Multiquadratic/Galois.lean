@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.FieldTheory.Galois.Basic
-import Mathlib.FieldTheory.Normal.Basic
-import Mathlib.FieldTheory.SeparableClosure
-import Mathlib.GroupTheory.Exponent
+module
+
+public import Mathlib.FieldTheory.Galois.Basic
+public import Mathlib.FieldTheory.Normal.Basic
+public import Mathlib.FieldTheory.SeparableClosure
+public import Mathlib.GroupTheory.Exponent
 
 /-!
 # A multiquadratic field is Galois
@@ -33,6 +35,8 @@ Generalised from
 of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture, where these
 facts were established for one concrete CM field.
 -/
+
+public section
 
 open Polynomial IntermediateField
 
@@ -72,7 +76,7 @@ private theorem splits_X_sq_sub_C (hroot : ∀ i, root i ^ 2 = algebraMap K L (d
   exact (Polynomial.Splits.X_sub_C _).mul (Polynomial.Splits.X_sub_C _)
 
 /-- The `i`-th generator, as an element of the multiquadratic field `M`. -/
-noncomputable def gen (root : ι → L) (i : ι) : adjoin K (Set.range root) :=
+@[expose] noncomputable def gen (root : ι → L) (i : ι) : adjoin K (Set.range root) :=
   ⟨root i, subset_adjoin _ _ ⟨i, rfl⟩⟩
 
 omit [Finite ι] in
@@ -199,7 +203,7 @@ theorem aut_mul_self_eq_one (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (σ : IntermediateField.adjoin K (Set.range root) ≃ₐ[K]
       IntermediateField.adjoin K (Set.range root)) :
     σ * σ = 1 := by
-  refine AlgEquiv.coe_algHom_injective ?_
+  refine AlgEquiv.coe_toAlgHom_injective ?_
   refine IntermediateField.algHom_ext_of_eq_adjoin (F := K)
     (S := IntermediateField.adjoin K (Set.range root)) (s := Set.range root) rfl ?_
   rintro x ⟨i, rfl⟩

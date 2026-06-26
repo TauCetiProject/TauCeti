@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.DFinsupp
-import Mathlib.RingTheory.Finiteness.Basic
-import TauCeti.Algebra.Coalgebra.Subcomodule
+module
+
+public import Mathlib.LinearAlgebra.DFinsupp
+public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.Algebra.Coalgebra.Subcomodule
 
 /-!
 # Joins of subcomodules
@@ -34,6 +36,8 @@ The lattice construction is adapted from `TauCeti.Algebra.Coalgebra.Subcoalgebra
 and the image-join lemmas follow the corresponding map API in
 `TauCeti.Algebra.Coalgebra.Subcoalgebra.Map`.
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -122,28 +126,23 @@ theorem mem_sup {N P : Subcomodule R C M} {m : M} :
   rw [← mem_toSubmodule, sup_toSubmodule, Submodule.mem_sup]
   rfl
 
-private theorem le_sup_left' (N P : Subcomodule R C M) : N ≤ N ⊔ P := by
-  intro m hm
-  rw [← mem_toSubmodule, sup_toSubmodule]
-  exact Submodule.mem_sup_left ((mem_toSubmodule).2 hm)
-
-private theorem le_sup_right' (N P : Subcomodule R C M) : P ≤ N ⊔ P := by
-  intro m hm
-  rw [← mem_toSubmodule, sup_toSubmodule]
-  exact Submodule.mem_sup_right ((mem_toSubmodule).2 hm)
-
-private theorem sup_le' {N P Q : Subcomodule R C M} (hN : N ≤ Q) (hP : P ≤ Q) :
-    N ⊔ P ≤ Q := by
-  intro m hm
-  rw [mem_sup] at hm
-  rcases hm with ⟨n, hn, p, hp, rfl⟩
-  exact add_mem (hN hn) (hP hp)
-
 /-- Subcomodules form a semilattice under the join whose carrier is the supremum of the
 underlying submodules. -/
 instance instSemilatticeSup : SemilatticeSup (Subcomodule R C M) :=
-  SemilatticeSup.mk (fun N P => N ⊔ P) le_sup_left' le_sup_right'
-    (fun _ _ _ => sup_le')
+  SemilatticeSup.mk (fun N P => N ⊔ P)
+    (fun _ _ => by
+      intro m hm
+      rw [← mem_toSubmodule, sup_toSubmodule]
+      exact Submodule.mem_sup_left ((mem_toSubmodule).2 hm))
+    (fun _ _ => by
+      intro m hm
+      rw [← mem_toSubmodule, sup_toSubmodule]
+      exact Submodule.mem_sup_right ((mem_toSubmodule).2 hm))
+    (fun _ _ _ hN hP => by
+      intro m hm
+      rw [mem_sup] at hm
+      rcases hm with ⟨n, hn, p, hp, rfl⟩
+      exact add_mem (hN hn) (hP hp))
 
 /-- The underlying submodule of a supremum of a set of subcomodules is the supremum of the
 underlying submodules indexed by that set. -/

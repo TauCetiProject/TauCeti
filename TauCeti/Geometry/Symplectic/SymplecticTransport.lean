@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Geometry.Symplectic.AlmostComplex
-import TauCeti.Geometry.Symplectic.Transport
+module
+
+public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Transport
 
 /-!
 # Transporting symplectic forms along linear equivalences
@@ -37,6 +39,8 @@ asks. The underlying form transport reuses Mathlib's `LinearMap.BilinForm.congr`
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1, where a symplectomorphism carries a compatible triple to a compatible triple.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 

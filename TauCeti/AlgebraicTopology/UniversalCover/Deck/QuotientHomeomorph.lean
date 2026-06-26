@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Topology.Homeomorph.Defs
-import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient
+module
+
+public import Mathlib.Topology.Homeomorph.Defs
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Quotient
 
 /-!
 # The orbit quotient of a regular open map is homeomorphic to the base
@@ -32,6 +34,8 @@ This supplies a prerequisite for the Tau Ceti universal-covers roadmap, Stage 1,
 `UniversalCover x₀ / π₁(X, x₀) ≃ X` follows from the deck-group identification via Mathlib's
 `IsQuotientCoveringMap`; the present statement is its base-independent regular-cover form.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -70,7 +74,7 @@ namespace IsRegular
 
 /-- For a regular continuous open map, the deck-orbit quotient `E / Deck p` is homeomorphic to
 the base. -/
-noncomputable def orbitQuotientHomeomorphBase (hreg : IsRegular p) (hcont : Continuous p)
+@[expose] noncomputable def orbitQuotientHomeomorphBase (hreg : IsRegular p) (hcont : Continuous p)
     (hopen : IsOpenMap p) :
     MulAction.orbitRel.Quotient (Deck p) E ≃ₜ B :=
   hreg.orbitQuotientEquivBase.toHomeomorphOfContinuousOpen

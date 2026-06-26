@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Algebra.BigOperators.Finsupp.Basic
-import Mathlib.Algebra.Group.TypeTags.Hom
-import Mathlib.Data.Int.Cast.Lemmas
+module
+
+public import Mathlib.Algebra.BigOperators.Finsupp.Basic
+public import Mathlib.Algebra.Group.TypeTags.Hom
+public import Mathlib.Data.Int.Cast.Lemmas
 
 /-!
 # Characters of a free abelian group
@@ -41,6 +43,8 @@ chain of isomorphisms so that the forward map is *definitionally* generator eval
 evaluation through the composite transport maps and lose that defeq.
 -/
 
+public section
+
 namespace TauCeti
 
 variable {σ : Type*} {M : Type*} [CommGroup M]
@@ -49,7 +53,7 @@ variable {σ : Type*} {M : Type*} [CommGroup M]
 to a commutative group `M` is the same data as a family `σ → M`. The forward map reads off the
 values on the standard generators `ofAdd (single i 1)`; the inverse extends a family to the
 unique homomorphism through `Finsupp.liftAddHom` and the `ℤ`-power homomorphism. -/
-noncomputable def freeAbelianCharEquiv :
+@[expose] noncomputable def freeAbelianCharEquiv :
     (Multiplicative (σ →₀ ℤ) →* M) ≃* (σ → M) where
   toFun χ i := χ (Multiplicative.ofAdd (Finsupp.single i 1))
   invFun c := AddMonoidHom.toMultiplicativeLeft

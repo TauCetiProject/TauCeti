@@ -2,8 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Set.Finite.Basic
-import Mathlib.Order.Circular.ZMod
+module
+
+public import Mathlib.Data.Fin.Rev
+public import Mathlib.Data.Set.Finite.Basic
+public import Mathlib.Order.Circular.ZMod
 
 /-!
 # Complementary cyclic intervals in finite grids
@@ -23,6 +26,11 @@ directions before taking products.
   it is not an endpoint.
 * `TauCeti.Grid.cIoo_union_swap`: the two opposite arcs cover the endpoint complement.
 * `TauCeti.Grid.card_cIoo_add_card_cIoo_swap`: the two arc lengths add to `n - 2`.
+* `TauCeti.Grid.cIoo_image_rev`: reversing a clockwise open arc by `Fin.rev` gives the clockwise
+  open arc with reversed, exchanged endpoints.
+* `TauCeti.Grid.Noninterleaving`: two endpoint pairs lie on the same cyclic side of each other.
+* `TauCeti.Grid.noninterleaving_rev`: non-interleaving is preserved by reversing every endpoint
+  with `Fin.rev`, exchanging the two endpoints within each pair.
 
 ## References
 
@@ -31,6 +39,8 @@ complexes and `∂² = 0`", where the annular cases in the juxtaposition proof u
 the two complementary cyclic intervals partition the non-endpoint columns or rows. The
 terminology follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -108,6 +118,32 @@ theorem right_notMem_cIoo (a b : Fin n) : b ∉ cIoo a b := by
     cases hinside with
     | inl hlt => exact hab hlt
     | inr hlt => exact Nat.lt_irrefl b.val hlt
+
+/-- Two oriented cyclic intervals have non-interleaving endpoint pairs.
+
+The endpoints `a₀`, `a₁` lie on the same side of the pair `b₀`, `b₁`, and conversely. This
+two-sided formulation handles shared-endpoint cases uniformly. -/
+@[expose] def Noninterleaving (a₀ a₁ b₀ b₁ : Fin n) : Prop :=
+  (a₀ ∈ cIoo b₀ b₁ ↔ a₁ ∈ cIoo b₀ b₁) ∧
+    (b₀ ∈ cIoo a₀ a₁ ↔ b₁ ∈ cIoo a₀ a₁)
+
+/-- The defining endpoint-side conditions for `Grid.Noninterleaving`. -/
+theorem noninterleaving_iff (a₀ a₁ b₀ b₁ : Fin n) :
+    Noninterleaving a₀ a₁ b₀ b₁ ↔
+      (a₀ ∈ cIoo b₀ b₁ ↔ a₁ ∈ cIoo b₀ b₁) ∧
+        (b₀ ∈ cIoo a₀ a₁ ↔ b₁ ∈ cIoo a₀ a₁) :=
+  Iff.rfl
+
+/-- An endpoint pair is non-interleaving with itself. -/
+@[simp]
+theorem noninterleaving_self (a₀ a₁ : Fin n) : Noninterleaving a₀ a₁ a₀ a₁ := by
+  simp [Noninterleaving]
+
+/-- Non-interleaving is symmetric in the two endpoint pairs. -/
+theorem noninterleaving_comm {a₀ a₁ b₀ b₁ : Fin n} :
+    Noninterleaving a₀ a₁ b₀ b₁ ↔ Noninterleaving b₀ b₁ a₀ a₁ := by
+  rw [Noninterleaving, Noninterleaving]
+  exact and_comm
 
 /-- A point cannot lie in both open cyclic intervals with the same endpoints but opposite
 orientations. -/
@@ -234,6 +270,53 @@ theorem card_cIoo_add_card_cIoo_swap {a b : Fin n} (h : a ≠ b) :
   rw [Finset.card_erase_of_mem hbmem, Finset.card_erase_of_mem (Finset.mem_univ a),
     Finset.card_univ, Fintype.card_fin] at hcard
   exact hcard
+
+/-- A clockwise open cyclic interval reversed by `Fin.rev` is the clockwise open cyclic interval
+with the two endpoints reversed and exchanged.
+
+Coordinate reversal reverses the cyclic order, so it turns the clockwise arc from `a` to `b` into
+the clockwise arc from `bᵒ` to `aᵒ`. -/
+theorem cIoo_image_rev (a b : Fin n) :
+    (cIoo a b).image Fin.rev = cIoo b.rev a.rev := by
+  ext y
+  rw [Finset.mem_image]
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    rw [mem_cIoo] at hx ⊢
+    obtain ⟨hne, hc⟩ := hx
+    refine ⟨fun h => hne (Fin.rev_injective h).symm, ?_⟩
+    have ha := a.isLt; have hb := b.isLt; have hx' := x.isLt
+    simp only [Fin.val_rev]
+    split_ifs at hc ⊢ <;> omega
+  · intro hy
+    refine ⟨Fin.rev y, ?_, Fin.rev_rev y⟩
+    rw [mem_cIoo] at hy ⊢
+    obtain ⟨hne, hc⟩ := hy
+    refine ⟨fun h => hne (by rw [h]), ?_⟩
+    have ha := a.isLt; have hb := b.isLt; have hy' := y.isLt
+    simp only [Fin.val_rev] at hc ⊢
+    split_ifs at hc ⊢ <;> omega
+
+/-- Membership in a clockwise open arc with both endpoints and the queried point reversed by
+`Fin.rev`. Since coordinate reversal reverses the cyclic order, the reversed point lies in the
+reversed arc exactly when the original point lies in the opposite arc. -/
+theorem mem_cIoo_rev_rev (a b x : Fin n) :
+    x.rev ∈ cIoo a.rev b.rev ↔ x ∈ cIoo b a := by
+  rw [← cIoo_image_rev b a, Finset.mem_image]
+  constructor
+  · rintro ⟨y, hy, hyx⟩
+    rw [← Fin.rev_injective hyx]
+    exact hy
+  · intro hx
+    exact ⟨x, hx, rfl⟩
+
+/-- Non-interleaving is preserved by reversing every endpoint with `Fin.rev`, with the cyclic
+orientation reversal accounted for by exchanging the two endpoints within each pair. -/
+theorem noninterleaving_rev (a₀ a₁ b₀ b₁ : Fin n) :
+    Noninterleaving a₀.rev a₁.rev b₀.rev b₁.rev ↔ Noninterleaving a₁ a₀ b₁ b₀ := by
+  rw [Noninterleaving, Noninterleaving]
+  simp only [mem_cIoo_rev_rev]
+  tauto
 
 end Grid
 

@@ -2,9 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Data.Finsupp.Weight
-import Mathlib.Data.Finsupp.Order
-import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+module
+
+public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.Data.Finsupp.Order
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import Mathlib.Algebra.Order.Ring.Int
+import Mathlib.Tactic.NormNum.Basic
+import Mathlib.Tactic.Ring
 
 /-!
 # Weil divisors as finite integer combinations of points
@@ -29,6 +34,8 @@ This advances the Tau Ceti Jacobian roadmap, Layer A, "Divisors on a curve: Weil
 `⊕_x ℤ`", "Degree", and "`Pic⁰ X = ker deg` (as an abstract group)".
 -/
 
+public section
+
 namespace TauCeti
 
 namespace AlgebraicGeometry
@@ -44,7 +51,7 @@ variable {X Y Z : Type*}
 noncomputable section
 
 /-- The coefficient of a point in a Weil divisor. -/
-def coeff (D : WeilDivisor X) (x : X) : ℤ :=
+@[expose] def coeff (D : WeilDivisor X) (x : X) : ℤ :=
   D x
 
 @[simp]
@@ -68,6 +75,12 @@ lemma coeff_sub (D E : WeilDivisor X) (x : X) :
 @[ext]
 lemma ext {D E : WeilDivisor X} (h : ∀ x, coeff D x = coeff E x) : D = E :=
   Finsupp.ext h
+
+/-- A point lies in the support of a Weil divisor exactly when its coefficient is nonzero. This
+is the `coeff`-level restatement of `Finsupp.mem_support_iff`. -/
+@[simp, grind =]
+lemma mem_support_iff {D : WeilDivisor X} {x : X} : x ∈ D.support ↔ coeff D x ≠ 0 :=
+  Finsupp.mem_support_iff
 
 /-- The prime/point divisor supported at a single point with coefficient `1`. -/
 noncomputable def ofPoint (x : X) : WeilDivisor X :=
@@ -141,7 +154,7 @@ lemma mem_effectiveSubmonoid (D : WeilDivisor X) :
 /-- Push forward a formal divisor along a map of point sets by summing coefficients over
 fibres.  Geometric pushforward of Weil divisors will specialize this once the relevant point
 maps and residue-degree factors are available. -/
-noncomputable def pushforward (f : X → Y) : WeilDivisor X →+ WeilDivisor Y :=
+@[expose] noncomputable def pushforward (f : X → Y) : WeilDivisor X →+ WeilDivisor Y :=
   (Finsupp.lmapDomain ℤ ℤ f).toAddMonoidHom
 
 @[simp]
@@ -196,7 +209,7 @@ lemma pushforward_mem_effectiveSubmonoid {D : WeilDivisor X} (hD : D ∈ effecti
 
 /-- The unweighted degree of a Weil divisor, summing its coefficients.  On a curve over a
 non-algebraically-closed field, use `weightedDegree` with residue-field degrees instead. -/
-noncomputable def degree : WeilDivisor X →+ ℤ :=
+@[expose] noncomputable def degree : WeilDivisor X →+ ℤ :=
   Finsupp.degree
 
 lemma degree_apply (D : WeilDivisor X) : degree D = ∑ x ∈ D.support, D x :=
@@ -334,7 +347,7 @@ lemma IsEffective.degree_pos {D : WeilDivisor X} (hD : IsEffective D) (hD0 : D �
 For a smooth proper curve over an algebraically closed field this is the formal divisor group
 whose quotient by principal divisors gives the abstract degree-zero Picard group. Over a
 general field, use `weightedDegreeZeroSubgroup` with residue-field degrees as weights. -/
-noncomputable def degreeZeroSubgroup (X : Type*) : AddSubgroup (WeilDivisor X) :=
+@[expose] noncomputable def degreeZeroSubgroup (X : Type*) : AddSubgroup (WeilDivisor X) :=
   (degree : WeilDivisor X →+ ℤ).ker
 
 @[simp]
@@ -353,12 +366,22 @@ lemma coe_degreeZeroSubgroup_eq_zero_of_isEffective {D : degreeZeroSubgroup X}
   hD.eq_zero_of_degree_eq_zero (degree_coe_degreeZeroSubgroup D)
 
 /-- The formal divisor `[x] - [y]`, a basic source of degree-zero divisors. -/
-noncomputable def pointDifference (x y : X) : WeilDivisor X :=
+@[expose] noncomputable def pointDifference (x y : X) : WeilDivisor X :=
   ofPoint x - ofPoint y
 
 @[simp]
 lemma pointDifference_self (x : X) : pointDifference x x = 0 := by
   simp [pointDifference]
+
+/-- Point differences telescope additively: `[x] - [y] + ([y] - [z]) = [x] - [z]`. -/
+@[simp]
+lemma pointDifference_add_pointDifference_cancel (x y z : X) :
+    pointDifference x y + pointDifference y z = pointDifference x z := by
+  simp [pointDifference, sub_eq_add_neg, add_assoc, add_left_comm]
+
+/-- Reversing a point difference negates it. -/
+lemma pointDifference_swap (x y : X) : pointDifference y x = -pointDifference x y := by
+  simp [pointDifference, sub_eq_add_neg, add_comm]
 
 @[simp]
 lemma coeff_pointDifference_left (x y : X) :
@@ -418,7 +441,7 @@ lemma pushforward_pointDifference (f : X → Y) (x y : X) :
   rfl
 
 /-- Pushforward as a homomorphism on unweighted degree-zero divisors. -/
-noncomputable def pushforwardDegreeZero (f : X → Y) :
+@[expose] noncomputable def pushforwardDegreeZero (f : X → Y) :
     degreeZeroSubgroup X →+ degreeZeroSubgroup Y where
   toFun D :=
     ⟨pushforward f D, by
@@ -451,7 +474,7 @@ lemma pushforwardDegreeZero_comp (g : Y → Z) (f : X → Y) :
 
 For a curve over a field `k`, the intended weight is `x ↦ [κ(x) : k]`, giving the formal
 degree-zero divisor group before principal divisors are introduced. -/
-noncomputable def weightedDegreeZeroSubgroup (w : X → ℤ) : AddSubgroup (WeilDivisor X) :=
+@[expose] noncomputable def weightedDegreeZeroSubgroup (w : X → ℤ) : AddSubgroup (WeilDivisor X) :=
   (weightedDegree w).ker
 
 @[simp]
@@ -477,9 +500,107 @@ lemma pointDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x y : X}
     (h : w x = w y) : pointDifference x y ∈ weightedDegreeZeroSubgroup w := by
   simp [h]
 
+/-! ### Degree-corrected point divisors -/
+
+/-- The divisor `[x] - w(x)[x₀]`.
+
+For the geometric weight `w x = [κ(x) : k]` and a rational base point `x₀` with `w x₀ = 1`,
+this is the degree-zero divisor underlying the Abel-Jacobi class of the closed point `x`.
+In the algebraically closed/unweighted specialization, this recovers `pointDifference x x₀`. -/
+@[expose] noncomputable def weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) : WeilDivisor X :=
+  ofPoint x - w x • ofPoint x₀
+
+/-- The degree-corrected point divisor is `[x]` minus `w x` copies of the base point `[x₀]`.
+This exposes the definition as a public equation for use across modules. -/
+lemma weightedPointBaseDifference_eq_ofPoint_sub_zsmul (w : X → ℤ) (x₀ x : X) :
+    weightedPointBaseDifference w x₀ x = ofPoint x - w x • ofPoint x₀ :=
+  rfl
+
+/-- At the constant weight `1`, the degree-corrected point divisor is the usual point
+difference. This simp lemma lets unweighted API reuse the weighted construction. -/
+@[simp]
+lemma weightedPointBaseDifference_eq_pointDifference (x₀ x : X) :
+    weightedPointBaseDifference (fun _ : X => (1 : ℤ)) x₀ x = pointDifference x x₀ := by
+  simp [weightedPointBaseDifference, pointDifference]
+
+/-- If the point has weight `1`, the degree-corrected point divisor is the usual point
+difference. -/
+@[simp]
+lemma weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one {w : X → ℤ} {x₀ x : X}
+    (hx : w x = 1) : weightedPointBaseDifference w x₀ x = pointDifference x x₀ := by
+  simp [weightedPointBaseDifference, pointDifference, hx]
+
+/-- Coefficients of the degree-corrected point divisor, used as the pointwise simp form of
+`weightedPointBaseDifference`. -/
+@[simp]
+lemma coeff_weightedPointBaseDifference [DecidableEq X] (w : X → ℤ) (x₀ x y : X) :
+    coeff (weightedPointBaseDifference w x₀ x) y =
+      (if y = x then 1 else 0) - if y = x₀ then w x else 0 := by
+  by_cases hyx : y = x
+  · subst y
+    by_cases hx₀ : x = x₀ <;> simp [weightedPointBaseDifference, ofPoint, coeff, hx₀]
+  · by_cases hy₀ : y = x₀
+    · subst y
+      have hx₀ : x₀ ≠ x := by simpa using hyx
+      simp [weightedPointBaseDifference, ofPoint, coeff, hx₀]
+    · simp [weightedPointBaseDifference, ofPoint, coeff, hyx, hy₀]
+
+/-- The support of `[x] - w(x)[x₀]` is contained in `{x, x₀}`. -/
+lemma support_weightedPointBaseDifference_subset [DecidableEq X] (w : X → ℤ) (x₀ x : X) :
+    (weightedPointBaseDifference w x₀ x).support ⊆ {x, x₀} := by
+  intro y hy
+  rw [Finset.mem_insert, Finset.mem_singleton]
+  by_contra hyx
+  push Not at hyx
+  exact Finsupp.mem_support_iff.mp hy (by
+    simp [weightedPointBaseDifference, ofPoint, hyx.1, hyx.2])
+
+/-- If the base point has weight `1`, the divisor `[x₀] - w(x₀)[x₀]` is zero. -/
+@[simp]
+lemma weightedPointBaseDifference_self {w : X → ℤ} {x₀ : X} (hx₀ : w x₀ = 1) :
+    weightedPointBaseDifference w x₀ x₀ = 0 := by
+  simp [weightedPointBaseDifference, hx₀]
+
+/-- The weighted degree of `[x] - w(x)[x₀]` is `w(x) * (1 - w(x₀))`. -/
+@[simp]
+lemma weightedDegree_weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) :
+    weightedDegree w (weightedPointBaseDifference w x₀ x) = w x * (1 - w x₀) := by
+  simp [weightedPointBaseDifference]
+  ring
+
+/-- If the base point has weight `1`, then `[x] - w(x)[x₀]` has weighted degree zero. -/
+@[simp]
+lemma weightedPointBaseDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x₀ : X}
+    (hx₀ : w x₀ = 1) (x : X) :
+    weightedPointBaseDifference w x₀ x ∈ weightedDegreeZeroSubgroup w := by
+  simp [hx₀]
+
+/-- Changing the base point in the weighted point-base divisor translates it by
+`w(x) • ([x₀] - [y₀])`. -/
+lemma weightedPointBaseDifference_change_base (w : X → ℤ) (x₀ y₀ x : X) :
+    weightedPointBaseDifference w y₀ x =
+      weightedPointBaseDifference w x₀ x + w x • pointDifference x₀ y₀ := by
+  simp [weightedPointBaseDifference, pointDifference, sub_eq_add_neg, add_assoc,
+    add_left_comm, add_comm]
+
+/-- The difference between the weighted point-base divisors for two base points is
+`w(x) • ([x₀] - [y₀])`. -/
+lemma weightedPointBaseDifference_sub_change_base (w : X → ℤ) (x₀ y₀ x : X) :
+    weightedPointBaseDifference w y₀ x - weightedPointBaseDifference w x₀ x =
+      w x • pointDifference x₀ y₀ := by
+  rw [weightedPointBaseDifference_change_base, add_sub_cancel_left]
+
+/-- Subtracting two degree-corrected point divisors with the same base point cancels the base
+term when the two points have equal weight. -/
+lemma weightedPointBaseDifference_sub_same_base (w : X → ℤ) {x₀ x y : X} (hxy : w x = w y) :
+    weightedPointBaseDifference w x₀ x - weightedPointBaseDifference w x₀ y =
+      pointDifference x y := by
+  simp [weightedPointBaseDifference, pointDifference, hxy, sub_eq_add_neg, add_assoc,
+    add_left_comm, add_comm]
+
 /-- Pushforward as a homomorphism on weighted degree-zero divisors, when the target weight
 pulls back to the source weight. -/
-noncomputable def pushforwardWeightedDegreeZero (wX : X → ℤ) (wY : Y → ℤ) (f : X → Y)
+@[expose] noncomputable def pushforwardWeightedDegreeZero (wX : X → ℤ) (wY : Y → ℤ) (f : X → Y)
     (hw : ∀ x, wY (f x) = wX x) :
     weightedDegreeZeroSubgroup wX →+ weightedDegreeZeroSubgroup wY where
   toFun D :=

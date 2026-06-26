@@ -2,7 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicTopology.UniversalCover.Deck
+module
+
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck
+public import Mathlib.GroupTheory.GroupAction.Basic
 
 /-!
 # The action of deck transformations on a fibre
@@ -20,6 +23,8 @@ deck transformations on individual fibres rather than only on the total space.
 * `TauCeti.Deck.fiberHomeomorphHom`: the homomorphism
   `Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b})`.
 * `TauCeti.Deck.instFiberMulAction`: the induced action of `Deck p` on the fibre over `b`.
+* `TauCeti.Deck.mem_fiber_stabilizer_iff_coe`: membership in a fibre stabilizer is equality
+  on the underlying point.
 
 ## References
 
@@ -27,6 +32,8 @@ This supplies a prerequisite for the Tau Ceti universal-covers roadmap, Stage 0.
 (`Deck p` as the deck transformation group), and the later deck-group action on fibres in
 Stages 1 and 2.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -37,7 +44,7 @@ variable {E B : Type*} [TopologicalSpace E] {p : E → B} {b : B}
 /-- The homomorphism from deck transformations to homeomorphisms of the fibre over `b`.
 
 It sends a deck transformation to its restriction to the subtype `p ⁻¹' {b}`. -/
-def fiberHomeomorphHom (p : E → B) (b : B) : Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b}) where
+@[expose] def fiberHomeomorphHom (p : E → B) (b : B) : Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b}) where
   toFun φ := fiberHomeomorph φ b
   map_one' := by
     ext e
@@ -151,6 +158,12 @@ lemma fiber_smul_coe_eq_smul (φ : Deck p) (e : p ⁻¹' {b}) :
   trans φ.1 e.1
   · exact fiber_smul_coe φ e
   · exact (smul_eq_apply φ (e : E)).symm
+
+/-- Membership in the stabilizer of a fibre point is equality on the underlying point. -/
+@[simp, grind =]
+lemma mem_fiber_stabilizer_iff_coe (φ : Deck p) (e : p ⁻¹' {b}) :
+    φ ∈ MulAction.stabilizer (Deck p) e ↔ φ.1 e.1 = e.1 := by
+  simp [Subtype.ext_iff]
 
 end Deck
 

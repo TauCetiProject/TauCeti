@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.FieldTheory.Galois.Basic
-import Mathlib.NumberTheory.NumberField.Basic
-import TauCeti.NumberTheory.RamificationInertia.Galois
+module
+
+public import Mathlib.FieldTheory.Galois.Basic
+public import Mathlib.NumberTheory.NumberField.Basic
+public import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # A counting criterion for a prime to split completely in a Galois number field
@@ -32,6 +34,8 @@ Built directly on Mathlib's Galois fundamental identity
 (`Ideal.ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn`); the criterion is assembled
 here for the Tau Ceti library.
 -/
+
+public section
 
 open NumberField Ideal Module MulAction
 open scoped Pointwise

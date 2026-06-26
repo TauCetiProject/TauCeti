@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.LinearAlgebra.Prod
-import TauCeti.Geometry.Symplectic.AlmostComplex
-import TauCeti.Geometry.Symplectic.Transport
+module
+
+public import Mathlib.LinearAlgebra.Prod
+public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Transport
 
 /-!
 # Direct sums of almost complex structures and symplectic forms
@@ -31,6 +33,8 @@ following Mathlib's `LinearMap.prodMap` naming convention.
   `isComplexLinearMap_fst` / `isComplexLinearMap_snd`: the structural maps of the product are
   complex-linear for the direct-sum structure.
 * `TauCeti.AlmostComplexStructure.transport_prod`: transport distributes over the direct sum.
+* `TauCeti.IsComplexLinearMap.prod` and `TauCeti.IsComplexLinearMap.prodMap`: complex-linearity is
+  preserved by pairing maps with a common source and by product maps into the direct sum.
 * `TauCeti.SymplecticForm.prod`: the direct-sum symplectic form on `V × W`.
 * `TauCeti.SymplecticForm.prod_invariant`, `prod_tames`, `prod_compatible`: a direct sum of
   invariant / tame / compatible pairs is invariant / tame / compatible.
@@ -38,6 +42,8 @@ following Mathlib's `LinearMap.prodMap` naming convention.
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1, where products of compatible triples model split symplectic vector spaces.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 
@@ -129,6 +135,16 @@ section ComplexLinearMap
 variable [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
 variable [AddCommGroup V'] [Module ℝ V'] [AddCommGroup W'] [Module ℝ W']
 
+/-- A pair of complex-linear maps with the same source is complex-linear into the direct-sum
+almost complex structure. -/
+lemma IsComplexLinearMap.prod {J : AlmostComplexStructure V} {J₁ : AlmostComplexStructure W}
+    {J₂ : AlmostComplexStructure V'} {F : V →ₗ[ℝ] W} {G : V →ₗ[ℝ] V'}
+    (hF : IsComplexLinearMap J J₁ F) (hG : IsComplexLinearMap J J₂ G) :
+    IsComplexLinearMap J (J₁.prod J₂) (F.prod G) := by
+  rw [isComplexLinearMap_iff_apply] at hF hG ⊢
+  intro v
+  simp [hF v, hG v]
+
 /-- A product map of complex-linear maps is complex-linear for the direct-sum almost complex
 structures. -/
 lemma IsComplexLinearMap.prodMap {J₁ : AlmostComplexStructure V} {J₂ : AlmostComplexStructure W}
@@ -149,7 +165,7 @@ section Prod
 variable [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
 
 /-- The underlying bilinear form of the direct-sum symplectic form. -/
-private def prodBilin (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
+def prodBilin (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
     LinearMap.BilinForm ℝ (V × W) :=
   ω₁.toBilinForm.comp (LinearMap.fst ℝ V W) (LinearMap.fst ℝ V W) +
     ω₂.toBilinForm.comp (LinearMap.snd ℝ V W) (LinearMap.snd ℝ V W)
@@ -158,12 +174,12 @@ private def prodBilin (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
 private lemma prodBilin_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (p q : V × W) :
     prodBilin ω₁ ω₂ p q = ω₁ p.1 q.1 + ω₂ p.2 q.2 := rfl
 
-private lemma prodBilin_isAlt (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
+lemma prodBilin_isAlt (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
     (prodBilin ω₁ ω₂).IsAlt := by
   intro p
   simp
 
-private lemma prodBilin_nondegenerate (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
+lemma prodBilin_nondegenerate (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
     (prodBilin ω₁ ω₂).Nondegenerate := by
   refine ⟨fun p hp => ?_, fun q hq => ?_⟩
   · have h1 : p.1 = 0 := ω₁.separatingLeft p.1 fun x => by

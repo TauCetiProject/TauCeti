@@ -2,12 +2,14 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.Analysis.Real.Pi.Bounds
-import Mathlib.Data.Pi.Interval
-import Mathlib.NumberTheory.NumberField.Basic
-import Mathlib.NumberTheory.RamificationInertia.Basic
-import Mathlib.NumberTheory.ZetaValues
-import Mathlib.RingTheory.Ideal.Int
+module
+
+public import Mathlib.Analysis.Real.Pi.Bounds
+public import Mathlib.Data.Pi.Interval
+public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.NumberTheory.RamificationInertia.Basic
+public import Mathlib.NumberTheory.ZetaValues
+public import Mathlib.RingTheory.Ideal.Int
 
 /-!
 # An effective count of ideals of bounded norm
@@ -34,6 +36,8 @@ Migrated from
 formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance
 conjecture, where this Rankin-style count fed the class-number bound.
 -/
+
+public section
 
 attribute [local instance] Classical.propDecidable
 
@@ -274,11 +278,7 @@ private theorem prod_encodeIdeal_le_absNorm {I : Ideal (𝓞 F)} (hI : I ≠ ⊥
           (Ideal.absNorm P) ^ ((normalizedFactors I).count P)
         = Ideal.absNorm (∏ P ∈ (normalizedFactors I).toFinset,
           P ^ ((normalizedFactors I).count P)) := by
-      induction (normalizedFactors I).toFinset using Finset.induction with
-      | empty =>
-          simp
-      | insert P s hPs ih =>
-          rw [Finset.prod_insert hPs, Finset.prod_insert hPs, map_mul, ih, map_pow]
+      simp only [map_prod, map_pow]
     have hI_eq : ∏ P ∈ (normalizedFactors I).toFinset,
         P ^ ((normalizedFactors I).count P) = I := by
       rw [← Finset.prod_multiset_count, Ideal.prod_normalizedFactors_eq_self hI]

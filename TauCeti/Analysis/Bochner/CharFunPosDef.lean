@@ -2,10 +2,12 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
-import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
-import Mathlib.LinearAlgebra.Matrix.PosDef
-import Mathlib.Analysis.Complex.Order
+module
+
+public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+public import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
+public import Mathlib.LinearAlgebra.Matrix.PosDef
+public import Mathlib.Analysis.Complex.Order
 
 /-!
 # A finite measure's characteristic function is positive definite
@@ -39,6 +41,8 @@ machinery.
 `Mathlib/MeasureTheory/Measure/CharacteristicFunction/Basic.lean`; positive semidefiniteness
 of complex matrices is Mathlib's `Matrix.PosSemidef`.
 -/
+
+public section
 
 open MeasureTheory BoundedContinuousFunction RealInnerProductSpace Real Complex ComplexConjugate
 

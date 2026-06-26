@@ -2,8 +2,10 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficientAdjoin
-import TauCeti.Algebra.Coalgebra.Comodule.Transport
+module
+
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficientAdjoin
+public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 
 /-!
 # Transport invariance of matrix coefficients
@@ -34,6 +36,8 @@ Algebras*, Chapter 2. It supplies a prerequisite for
 faithful representations are characterized by their matrix coefficients generating the
 coordinate Hopf algebra.
 -/
+
+public section
 
 namespace TauCeti
 

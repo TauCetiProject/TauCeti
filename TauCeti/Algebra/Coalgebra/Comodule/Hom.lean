@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.Algebra.Coalgebra.Comodule
+module
+
+public import TauCeti.Algebra.Coalgebra.Comodule
 
 /-!
 # Additive structure on comodule morphisms
@@ -17,6 +19,8 @@ This is basic infrastructure for the reductive-groups roadmap Layer 1 target
 scheme should have additive hom-sets before finite-dimensional, tensor, and dual structures
 are built on top.
 -/
+
+public section
 
 open scoped TensorProduct
 
@@ -125,7 +129,7 @@ instance instAddCommMonoid : AddCommMonoid (Hom R C M N) where
     rw [show (Nat.succ n • f : Hom R C M N) = f + n • f from rfl]
     rw [add_apply, add_apply, add_comm]
 
-private def toLinearMapAddMonoidHom : Hom R C M N →+ M →ₗ[R] N where
+@[expose] def toLinearMapAddMonoidHom : Hom R C M N →+ M →ₗ[R] N where
   toFun f := f.toLinearMap
   map_zero' := zero_toLinearMap
   map_add' := add_toLinearMap

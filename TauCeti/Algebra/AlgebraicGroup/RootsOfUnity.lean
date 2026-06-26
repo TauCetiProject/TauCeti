@@ -2,9 +2,11 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import Mathlib.RingTheory.RootsOfUnity.Basic
-import Mathlib.SetTheory.Cardinal.Finite
-import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
+module
+
+public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import Mathlib.SetTheory.Cardinal.Finite
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
 
 /-!
 # The roots-of-unity group scheme
@@ -24,6 +26,8 @@ coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure.
   convolution points of `R[Multiplicative (ZMod n)]` to `rootsOfUnity n A`.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv_apply`: the equivalence sends a point to its
   value on the standard generator `single (ofAdd 1) 1`.
+* `TauCeti.RootsOfUnityGroup.pointsMulEquiv_symm_apply_single_generator_smul`: the inverse
+  equivalence evaluates scalar multiples of the standard generator.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv_symm_apply_single_generator`: the inverse
   equivalence sends a root of unity to the point taking the standard generator to it.
 
@@ -34,10 +38,12 @@ calculation.
 ## References
 
 The diagonalizable-group points calculation is Tau Ceti's
-`DiagonalizableGroup.pointsMulEquiv`. The cyclic character group calculation is Mathlib's
+`DiagonalizableGroup.pointsMulEquiv`. The internal cyclic character group calculation uses Mathlib's
 `IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator`, from
 `Mathlib.RingTheory.RootsOfUnity.Basic`.
 -/
+
+public section
 
 open WithConv
 
@@ -47,41 +53,34 @@ namespace RootsOfUnityGroup
 
 universe u v
 
-variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
-variable {B : Type*} [CommSemiring B] [Algebra R B]
-
 /-- The standard generator of the character group defining `μ_n = D(ℤ/n)`. -/
 abbrev generator (n : ℕ) : Multiplicative (ZMod n) :=
   Multiplicative.ofAdd 1
 
-/-- Every element of `Multiplicative (ZMod n)` is a power of the standard generator. -/
-private lemma mem_zpowers_generator (n : ℕ) (x : Multiplicative (ZMod n)) :
-    x ∈ Subgroup.zpowers (generator n) := by
-  refine ⟨(Multiplicative.toAdd x).cast, ?_⟩
-  simp only [generator]
-  rw [← ofAdd_zsmul]
-  calc
-    Multiplicative.ofAdd ((Multiplicative.toAdd x).cast • (1 : ZMod n)) =
-        Multiplicative.ofAdd (((Multiplicative.toAdd x).cast : ℤ) : ZMod n) := by simp
-    _ =
-        Multiplicative.ofAdd (Multiplicative.toAdd x) := by rw [ZMod.intCast_zmod_cast]
-    _ = x := ofAdd_toAdd x
+section Characters
 
-/-- The cardinality of the standard cyclic character group is `n`. -/
-private lemma card_multiplicative_zmod (n : ℕ) :
-    Nat.card (Multiplicative (ZMod n)) = n := by
-  exact (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
-    (Nat.card_zmod n)
+variable {A : Type v} [CommMonoid A]
 
-/-- Characters of `Multiplicative (ZMod n)` are canonically `n`th roots of unity, by evaluation
-on the standard generator. -/
 private noncomputable def characterMulEquivRootsOfUnity (n : ℕ) :
     (Multiplicative (ZMod n) →* Aˣ) ≃* rootsOfUnity n A :=
-  ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (mem_zpowers_generator n) Aˣ).trans
-      (MulEquiv.subgroupCongr (by rw [card_multiplicative_zmod n]))).trans
+  let hg : ∀ x : Multiplicative (ZMod n), x ∈ Subgroup.zpowers (generator n) := by
+    intro x
+    refine ⟨(Multiplicative.toAdd x).cast, ?_⟩
+    simp only [generator]
+    rw [← ofAdd_zsmul]
+    calc
+      Multiplicative.ofAdd ((Multiplicative.toAdd x).cast • (1 : ZMod n)) =
+          Multiplicative.ofAdd (((Multiplicative.toAdd x).cast : ℤ) : ZMod n) := by simp
+      _ =
+          Multiplicative.ofAdd (Multiplicative.toAdd x) := by rw [ZMod.intCast_zmod_cast]
+      _ = x := ofAdd_toAdd x
+  let hcard : Nat.card (Multiplicative (ZMod n)) = n :=
+    (Nat.card_congr (Multiplicative.ofAdd : ZMod n ≃ Multiplicative (ZMod n))).trans
+      (Nat.card_zmod n)
+  ((IsCyclic.monoidHomMulEquivRootsOfUnityOfGenerator (g := generator n) hg Aˣ).trans
+      (MulEquiv.subgroupCongr (by rw [hcard]))).trans
     (rootsOfUnityUnitsMulEquiv A n)
 
-/-- A character is sent to its value on the standard generator. -/
 -- The proof is `rfl`: each composed equivalence acts on the underlying unit by projection.
 @[simp]
 private lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
@@ -90,6 +89,7 @@ private lemma characterMulEquivRootsOfUnity_apply (n : ℕ)
       (χ (generator n) : A) :=
   rfl
 
+@[simp]
 private lemma characterMulEquivRootsOfUnity_symm_apply_generator
     (n : ℕ) (ζ : rootsOfUnity n A) :
     (((characterMulEquivRootsOfUnity (A := A) n).symm ζ (generator n) : Aˣ) : A) =
@@ -97,6 +97,11 @@ private lemma characterMulEquivRootsOfUnity_symm_apply_generator
   rw [← characterMulEquivRootsOfUnity_apply n
     ((characterMulEquivRootsOfUnity (A := A) n).symm ζ)]
   simp
+
+end Characters
+
+variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
+variable {B : Type*} [CommSemiring B] [Algebra R B]
 
 /-- The functor of points of `μ_n = D(ℤ/n)` is the group of `n`th roots of unity.
 
@@ -140,6 +145,20 @@ lemma pointsMulEquiv_symm_apply_single_generator (n : ℕ) (ζ : rootsOfUnity n 
     DiagonalizableGroup.pointsMulEquiv_symm_apply, ofConv_toConv,
     DiagonalizableGroup.point_single_one,
     characterMulEquivRootsOfUnity_symm_apply_generator]
+
+/-- The inverse points equivalence evaluates scalar multiples of the standard generator by
+scalar multiplication of the chosen root of unity. -/
+@[simp]
+lemma pointsMulEquiv_symm_apply_single_generator_smul (n : ℕ) (ζ : rootsOfUnity n A) (r : R) :
+    ((pointsMulEquiv (R := R) (A := A) n).symm ζ).ofConv
+        (MonoidAlgebra.single (generator n) r) =
+      r • ((ζ : Aˣ) : A) := by
+  -- The scalar-action rewrite fixes the coefficient from `r` to `1`, so the existing generator
+  -- evaluation lemma applies directly.
+  rw [show MonoidAlgebra.single (generator n) r =
+      r • MonoidAlgebra.single (generator n) (1 : R) by simp]
+  rw [map_smul]
+  rw [pointsMulEquiv_symm_apply_single_generator]
 
 end RootsOfUnityGroup
 
