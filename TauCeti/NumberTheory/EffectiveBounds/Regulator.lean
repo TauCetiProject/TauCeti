@@ -16,16 +16,14 @@ infinite place, so `F = ℚ` or `F` is imaginary quadratic — the unit lattice 
 zero-dimensional log space, and its covolume is the empty determinant `1`.
 
 This is the base case of the effective-bounds roadmap's Layer 3 (regulators and unit-lattice
-volume): the exact value `R_F = 1`, which is in particular the trivial lower bound `1 ≤ R_F`,
-on the fields where the regulator carries no information. Mathlib defines the regulator and
-proves it positive (`NumberField.Units.regulator_pos`) but does not evaluate it in the
-rank-zero case.
+volume): the exact value `R_F = 1` on the fields where the regulator carries no information.
+Mathlib defines the regulator and proves it positive (`NumberField.Units.regulator_pos`) but
+does not evaluate it in the rank-zero case. Callers needing the corresponding lower bound can
+apply `.ge` to these exact evaluations.
 
 ## Main results
 
 * `TauCeti.NumberField.Units.regulator_eq_one_of_rank_eq_zero`: `R_F = 1` when the unit rank
-  of `F` is zero.
-* `TauCeti.NumberField.Units.one_le_regulator_of_rank_eq_zero`: `1 ≤ R_F` when the unit rank
   of `F` is zero.
 * `TauCeti.NumberField.Units.regulator_rat_eq_one`: `R_ℚ = 1`.
 * `TauCeti.NumberField.Units.regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two`:
@@ -54,10 +52,6 @@ theorem regulator_eq_one_of_rank_eq_zero (h : rank K = 0) : regulator K = 1 := b
     rw [← Fintype.card_eq_zero_iff, ← Fintype.card_congr (equivFinRank K), Fintype.card_fin, h]
   rw [regulator_eq_det', Matrix.det_isEmpty, abs_one]
 
-/-- The trivial regulator lower bound in the rank-zero case: `1 ≤ R_F`. -/
-theorem one_le_regulator_of_rank_eq_zero (h : rank K = 0) : 1 ≤ regulator K :=
-  (regulator_eq_one_of_rank_eq_zero K h).ge
-
 /-- A number field with a single infinite place has unit rank zero. This covers `ℚ` (one real
 place) and the imaginary quadratic fields (one complex place). -/
 theorem rank_eq_zero_of_card_infinitePlace_eq_one
@@ -72,13 +66,6 @@ theorem regulator_eq_one_of_card_infinitePlace_eq_one
     (h : Fintype.card (InfinitePlace K) = 1) : regulator K = 1 :=
   regulator_eq_one_of_rank_eq_zero K (rank_eq_zero_of_card_infinitePlace_eq_one K h)
 
-/-- If a number field has a single infinite place, then `1 ≤ R_F`. This is the rank-zero
-base case of explicit regulator lower bounds, stated in the form supplied by the infinite-place
-classification. -/
-theorem one_le_regulator_of_card_infinitePlace_eq_one
-    (h : Fintype.card (InfinitePlace K) = 1) : 1 ≤ regulator K :=
-  (regulator_eq_one_of_card_infinitePlace_eq_one K h).ge
-
 /-- If a number field has at most one infinite place, then it has exactly one infinite place, so
 its regulator is `1`. The nonemptiness of infinite places supplies the missing lower bound on the
 cardinality. -/
@@ -88,11 +75,6 @@ theorem regulator_eq_one_of_card_infinitePlace_le_one
   have hpos : 0 < Fintype.card (InfinitePlace K) :=
     Fintype.card_pos_iff.mpr ⟨Classical.arbitrary _⟩
   omega
-
-/-- If a number field has at most one infinite place, then `1 ≤ R_F`. -/
-theorem one_le_regulator_of_card_infinitePlace_le_one
-    (h : Fintype.card (InfinitePlace K) ≤ 1) : 1 ≤ regulator K :=
-  (regulator_eq_one_of_card_infinitePlace_le_one K h).ge
 
 /-- A number field of degree one over `ℚ` (namely `ℚ` itself) has unit rank zero. -/
 theorem rank_eq_zero_of_finrank_eq_one (h : finrank ℚ K = 1) : rank K = 0 := by
@@ -105,10 +87,6 @@ theorem rank_eq_zero_of_finrank_eq_one (h : finrank ℚ K = 1) : rank K = 0 := b
 theorem regulator_eq_one_of_finrank_eq_one (h : finrank ℚ K = 1) : regulator K = 1 :=
   regulator_eq_one_of_rank_eq_zero K (rank_eq_zero_of_finrank_eq_one K h)
 
-/-- If a number field has degree one over `ℚ`, then `1 ≤ R_F`. -/
-theorem one_le_regulator_of_finrank_eq_one (h : finrank ℚ K = 1) : 1 ≤ regulator K :=
-  (regulator_eq_one_of_finrank_eq_one K h).ge
-
 /-- If a number field has degree at most one over `ℚ`, then its regulator is `1`. This is a
 consumer form for arguments that produce only an upper bound on the degree. -/
 theorem regulator_eq_one_of_finrank_le_one (h : finrank ℚ K ≤ 1) : regulator K = 1 := by
@@ -116,18 +94,10 @@ theorem regulator_eq_one_of_finrank_le_one (h : finrank ℚ K ≤ 1) : regulator
   have hpos : 0 < finrank ℚ K := finrank_pos
   omega
 
-/-- If a number field has degree at most one over `ℚ`, then `1 ≤ R_F`. -/
-theorem one_le_regulator_of_finrank_le_one (h : finrank ℚ K ≤ 1) : 1 ≤ regulator K :=
-  (regulator_eq_one_of_finrank_le_one K h).ge
-
 /-- If a number field has degree strictly less than two over `ℚ`, then its regulator is `1`.
 This is the same rank-zero base case expressed with the common `n < 2` degree bound. -/
 theorem regulator_eq_one_of_finrank_lt_two (h : finrank ℚ K < 2) : regulator K = 1 :=
   regulator_eq_one_of_finrank_le_one K (Nat.lt_succ_iff.mp h)
-
-/-- If a number field has degree strictly less than two over `ℚ`, then `1 ≤ R_F`. -/
-theorem one_le_regulator_of_finrank_lt_two (h : finrank ℚ K < 2) : 1 ≤ regulator K :=
-  (regulator_eq_one_of_finrank_lt_two K h).ge
 
 /-- An imaginary quadratic field — totally complex of degree two — has unit rank zero. -/
 theorem rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two
