@@ -43,15 +43,6 @@ private theorem injective_fin_val {n : ℕ} :
   intro i j hij
   exact Fin.ext hij
 
-/-- Under a named conditional-i.i.d. directing measure, every permuted prefix block has the
-common finite-product mixture law. -/
-theorem ConditionallyIIDWith.permuted_prefixLaw_eq_mixture {μ : Measure Ω}
-    {X : ℕ → Ω → α} {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν)
-    {n : ℕ} (σ : Equiv.Perm (Fin n)) :
-    blockLaw μ X (fun i : Fin n => (σ i).val) =
-      μ.bind fun ω => (ProbabilityMeasure.pi fun _ : Fin n => ν ω).toMeasure :=
-  h.map (fun i : Fin n => (σ i).val) (injective_perm_val σ)
-
 /-- Under a named conditional-i.i.d. directing measure, the prefix law has the common
 finite-product mixture law. -/
 theorem ConditionallyIIDWith.prefixLaw_eq_mixture {μ : Measure Ω} {X : ℕ → Ω → α}
@@ -84,7 +75,7 @@ theorem ConditionallyIIDWith.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω �
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) (n : ℕ) :
     ExchangeableAt μ X n := by
   intro σ
-  rw [h.permuted_prefixLaw_eq_mixture σ, h.prefixLaw_eq_mixture n]
+  exact h.blockLaw_eq_prefixLaw_of_injective (injective_perm_val σ)
 
 /-- A process with a named conditional-i.i.d. directing measure is exchangeable. -/
 theorem ConditionallyIIDWith.exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
