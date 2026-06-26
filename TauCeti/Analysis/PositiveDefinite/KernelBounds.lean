@@ -9,10 +9,10 @@ public import TauCeti.Analysis.PositiveDefinite.Kernel
 /-!
 # Bounds for positive-definite kernels
 
-This file adds the scalar Cauchy--Schwarz estimates for complex-valued positive-definite
+This file adds the scalar Cauchy--Schwarz estimates for `RCLike`-valued positive-definite
 kernels. If `K` is positive definite, then every `2 × 2` Gram submatrix is positive semidefinite,
 so its determinant is nonnegative. Equivalently,
-`‖K a b‖² ≤ (K a a).re * (K b b).re`.
+`RCLike.normSq (K a b) ≤ RCLike.re (K a a) * RCLike.re (K b b)`.
 
 These estimates are the kernel-level counterpart of
 `TauCeti.IsPositiveDefinite.normSq_le` for positive-definite functions. They are also the basic
@@ -46,7 +46,7 @@ open scoped ComplexOrder
 
 namespace TauCeti
 
-variable {α : Type*} {K : α → α → ℂ}
+variable {𝕜 : Type*} [RCLike 𝕜] {α : Type*} {K : α → α → 𝕜}
 
 /-- The `2 × 2` Gram submatrix of a positive-definite kernel is positive semidefinite. -/
 private theorem isPositiveDefiniteKernel_finTwo_posSemidef
@@ -55,25 +55,27 @@ private theorem isPositiveDefiniteKernel_finTwo_posSemidef
   have hK' := (isPositiveDefiniteKernel_def K).mp hK
   simpa [Matrix.submatrix, Function.comp_def] using hK'.submatrix (fun i : Fin 2 => ![a, b] i)
 
-/-- The kernel Cauchy--Schwarz inequality: for a complex-valued positive-definite kernel, the
+/-- The kernel Cauchy--Schwarz inequality: for an `RCLike`-valued positive-definite kernel, the
 squared norm of an off-diagonal entry is bounded by the product of the two diagonal real parts. -/
 theorem isPositiveDefiniteKernel_normSq_le (hK : IsPositiveDefiniteKernel K) (a b : α) :
-    Complex.normSq (K a b) ≤ (K a a).re * (K b b).re := by
-  let A : Matrix (Fin 2) (Fin 2) ℂ := Matrix.of fun i j => K (![a, b] i) (![a, b] j)
+    RCLike.normSq (K a b) ≤ RCLike.re (K a a) * RCLike.re (K b b) := by
+  let A : Matrix (Fin 2) (Fin 2) 𝕜 := Matrix.of fun i j => K (![a, b] i) (![a, b] j)
   have hA : A.PosSemidef := isPositiveDefiniteKernel_finTwo_posSemidef hK a b
   have hdet : 0 ≤ A.det := Matrix.PosSemidef.det_nonneg hA
-  have hdet_re : 0 ≤ (A.det).re := (Complex.nonneg_iff.mp hdet).1
+  have hdet_re : 0 ≤ RCLike.re A.det := by
+    simpa using (RCLike.le_iff_re_im.mp hdet).1
   have hconj : K b a = conj (K a b) := by
     exact (isPositiveDefiniteKernel_conj_symm hK a b).symm
-  have haa_im : (K a a).im = 0 := by
+  have haa_im : RCLike.im (K a a) = 0 := by
     have h := isPositiveDefiniteKernel_conj_symm hK a a
-    exact Complex.conj_eq_iff_im.mp h
-  have hbb_im : (K b b).im = 0 := by
+    exact RCLike.conj_eq_iff_im.mp h
+  have hbb_im : RCLike.im (K b b) = 0 := by
     have h := isPositiveDefiniteKernel_conj_symm hK b b
-    exact Complex.conj_eq_iff_im.mp h
+    exact RCLike.conj_eq_iff_im.mp h
   have hdet_eval :
-      (A.det).re = (K a a).re * (K b b).re - Complex.normSq (K a b) := by
-    simp [A, Matrix.det_fin_two, hconj, Complex.normSq_apply, haa_im, hbb_im]
+      RCLike.re A.det =
+        RCLike.re (K a a) * RCLike.re (K b b) - RCLike.normSq (K a b) := by
+    simp [A, Matrix.det_fin_two, hconj, RCLike.normSq_apply, haa_im, hbb_im]
   nlinarith
 
 /-- If the left diagonal entry of a positive-definite kernel is zero, then the corresponding
@@ -81,10 +83,10 @@ row entry is zero. -/
 theorem isPositiveDefiniteKernel_eq_zero_of_apply_self_eq_zero_left
     (hK : IsPositiveDefiniteKernel K) {a b : α} (ha : K a a = 0) : K a b = 0 := by
   have hnorm := isPositiveDefiniteKernel_normSq_le hK a b
-  have hdiag : (K a a).re * (K b b).re = 0 := by simp [ha]
-  have hnorm_zero : Complex.normSq (K a b) = 0 :=
-    le_antisymm (by simpa [hdiag] using hnorm) (Complex.normSq_nonneg _)
-  exact Complex.normSq_eq_zero.mp hnorm_zero
+  have hdiag : RCLike.re (K a a) * RCLike.re (K b b) = 0 := by simp [ha]
+  have hnorm_zero : RCLike.normSq (K a b) = 0 :=
+    le_antisymm (by simpa [hdiag] using hnorm) (RCLike.normSq_nonneg _)
+  exact RCLike.normSq_eq_zero.mp hnorm_zero
 
 /-- If the right diagonal entry of a positive-definite kernel is zero, then the corresponding
 column entry is zero. -/
@@ -102,7 +104,7 @@ theorem isPositiveDefiniteKernel_norm_le_one_of_apply_self_eq_one
     (hK : IsPositiveDefiniteKernel K) {a b : α} (ha : K a a = 1) (hb : K b b = 1) :
     ‖K a b‖ ≤ 1 := by
   refine le_of_sq_le_sq ?_ zero_le_one
-  simpa [Complex.normSq_eq_norm_sq, pow_two, ha, hb] using
+  simpa [RCLike.normSq_eq_def', pow_two, ha, hb] using
     isPositiveDefiniteKernel_normSq_le hK a b
 
 end TauCeti
