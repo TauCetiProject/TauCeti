@@ -38,8 +38,6 @@ generator.
 * `TauCeti.GridRectangleBetween.all_eq_pair`, `TauCeti.GridRectangleBetween.card_all_le_two`,
   `TauCeti.GridRectangleBetween.card_all_eq_two_of_nonempty`: there are at most two oriented
   rectangles between two states, and exactly two when there is at least one.
-* `TauCeti.GridRectangleBetween.nonempty_all_iff`: oriented rectangles between `x` and `y` exist
-  exactly when `y` is a column transposition of `x`.
 * `TauCeti.GridRectangleBetween.card_emptyRectangles_le_two`: there are at most two empty
   rectangles between two states.
 
@@ -136,21 +134,6 @@ theorem card_all_eq_two_of_nonempty (h : (all x y).Nonempty) : (all x y).card = 
 two. -/
 theorem card_le_two (s : Finset (GridRectangleBetween x y)) : s.card ≤ 2 :=
   (Finset.card_le_card (by intro R _; exact mem_all R)).trans (card_all_le_two x y)
-
-/-- Oriented rectangles between `x` and `y` exist exactly when `y` is a column transposition of
-`x`. A rectangle realizes its side columns as a transposition taking `x` to `y`, and conversely a
-column transposition exhibits an oriented rectangle on those two columns. -/
-theorem nonempty_all_iff :
-    (all x y).Nonempty ↔ ∃ a b : Fin n, a ≠ b ∧ y = x.swapColumns a b := by
-  constructor
-  · rintro ⟨R, -⟩
-    exact ⟨R.left, R.right, R.left_ne_right, R.target_eq_swapColumns⟩
-  · rintro ⟨a, b, hab, hy⟩
-    refine ⟨⟨a, b, hab, ?_, ?_, ?_⟩, mem_all _⟩
-    · rw [hy, GridState.swapColumns_apply, Equiv.swap_apply_left]
-    · rw [hy, GridState.swapColumns_apply, Equiv.swap_apply_right]
-    · intro c hl hr
-      rw [hy, GridState.swapColumns_apply, Equiv.swap_apply_of_ne_of_ne hl hr]
 
 /-- There are at most two empty oriented rectangles between two grid states. -/
 theorem card_emptyRectangles_le_two (x y : GridState n) :

@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.KnotTheory.Grid.Complex
-public import TauCeti.KnotTheory.Grid.RectangleSwap
 
 /-!
 # Support of the fully blocked grid differential
