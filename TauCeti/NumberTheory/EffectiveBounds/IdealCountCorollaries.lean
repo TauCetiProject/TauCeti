@@ -58,28 +58,33 @@ private theorem idealsWithAbsNormNatLe_eq_real (F : Type*) [Field F] [NumberFiel
   ext I
   exact and_congr_right fun _ => by exact_mod_cast (Iff.rfl : Ideal.absNorm I ≤ N ↔ _)
 
+private theorem idealsWithAbsNormNatLe_zero (F : Type*) [Field F] [NumberField F] :
+    idealsWithAbsNormNatLe F 0 = ∅ := by
+  ext I
+  simp only [idealsWithAbsNormNatLe, Set.mem_setOf_eq, Set.mem_empty_iff_false,
+    iff_false, not_and]
+  intro hI0 hI
+  exact hI0 (Ideal.absNorm_eq_zero_iff.mp (Nat.eq_zero_of_le_zero hI))
+
+private theorem ncard_idealsWithAbsNormNatLe_real_le (F : Type*) [Field F] [NumberField F]
+    {N : ℕ} (hN : (1 : ℝ) ≤ N) :
+    ((idealsWithAbsNormNatLe F N).ncard : ℝ) ≤ (N : ℝ) ^ 2 * 2 ^ finrank ℚ F := by
+  rw [idealsWithAbsNormNatLe_eq_real F N]
+  simpa [idealsWithAbsNormRealLe] using (card_ideal_absNorm_le F (X := (N : ℝ)) hN).2
+
 /-- **Natural-number ideal count.** The number of nonzero integral ideals of `𝓞 F` with norm at
 most `N` is at most `N² * 2^[F:ℚ]`. -/
 theorem ncard_ideal_absNorm_le_nat (F : Type*) [Field F] [NumberField F]
     (N : ℕ) :
     {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N}.ncard ≤
       N ^ 2 * 2 ^ finrank ℚ F := by
+  suffices (idealsWithAbsNormNatLe F N).ncard ≤ N ^ 2 * 2 ^ finrank ℚ F by
+    simpa [idealsWithAbsNormNatLe] using this
   rcases N with _ | N
-  · rw [show {I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ 0} = ∅ by
-      ext I
-      simp only [Set.mem_setOf_eq, Set.mem_empty_iff_false, iff_false, not_and]
-      intro hI0 hI
-      exact hI0 (Ideal.absNorm_eq_zero_iff.mp (Nat.eq_zero_of_le_zero hI))]
+  · rw [idealsWithAbsNormNatLe_zero F]
     simp
   have hreal : (1 : ℝ) ≤ ((N + 1 : ℕ) : ℝ) := by exact_mod_cast Nat.succ_pos N
-  have hcount := (card_ideal_absNorm_le F (X := ((N + 1 : ℕ) : ℝ)) hreal).2
-  have hcount' :
-      (({I : Ideal (𝓞 F) | I ≠ ⊥ ∧ Ideal.absNorm I ≤ N + 1}.ncard : ℝ)) ≤
-        ((N + 1 : ℕ) : ℝ) ^ 2 * 2 ^ finrank ℚ F := by
-    change ((idealsWithAbsNormNatLe F (N + 1)).ncard : ℝ) ≤
-      ((N + 1 : ℕ) : ℝ) ^ 2 * 2 ^ finrank ℚ F
-    rw [idealsWithAbsNormNatLe_eq_real F (N + 1)]
-    simpa [idealsWithAbsNormRealLe, Nat.cast_add, Nat.cast_one] using hcount
+  have hcount' := ncard_idealsWithAbsNormNatLe_real_le F (N := N + 1) hreal
   exact_mod_cast hcount'
 
 /-- If `1 ≤ X` and `[F : ℚ] ≤ n`, then the number of nonzero integral ideals of norm at most
