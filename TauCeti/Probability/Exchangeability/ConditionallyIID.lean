@@ -74,7 +74,8 @@ theorem ConditionallyIID.of_directing {μ : Measure Ω} {X : ℕ → Ω → α}
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) : ConditionallyIID μ X :=
   ⟨ν, h⟩
 
-/-- Characteristic restatement of `ConditionallyIID`. -/
+/-- Simp normal form for the existential wrapper `ConditionallyIID`. -/
+@[simp]
 theorem conditionallyIID_iff {μ : Measure Ω} {X : ℕ → Ω → α} :
     ConditionallyIID μ X ↔ ∃ ν : Ω → ProbabilityMeasure α, ConditionallyIIDWith μ X ν :=
   Iff.rfl
