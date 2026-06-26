@@ -1,6 +1,7 @@
 module
 
 public import TauCeti.Probability.Exchangeability.Basic
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.MeasureTheory.Constructions.Projective
 
 /-!
@@ -12,9 +13,13 @@ coordinates) is equal to it. This is the Layer 0 finite-marginal uniqueness mile
 `TauCetiRoadmap/Exchangeability`: a thin ℕ-prefix wrapper over Mathlib's projective-limit
 machinery (`IsProjectiveLimit.unique`), not new measure theory.
 
-`measure_eq_of_prefixProj_map_eq` is the main API (marginals as `Measure.map` equalities);
-`measure_eq_of_prefixProj_setwise` is the setwise form matching the roadmap target. The same
-finite-measure statements apply directly to probability measures, since `IsProbabilityMeasure`
+The public API:
+* `measure_eq_of_prefixProj_map_eq` — the clean map-equality form;
+* `measure_eq_of_prefixProj_setwise` — the setwise form;
+* `measure_eq_of_fin_marginals_eq` — the roadmap-named finite-measure version;
+* `measure_eq_of_fin_marginals_eq_prob` — the roadmap-named probability version.
+
+The finite-measure statements apply directly to probability measures, since `IsProbabilityMeasure`
 provides `IsFiniteMeasure`.
 -/
 
@@ -29,6 +34,16 @@ namespace TauCeti
 namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
+
+omit [MeasurableSpace α] in
+/-- The restriction to a finite index set `I ⊆ {0, …, n-1}` factors through the prefix projection
+to the first `n` coordinates. -/
+private theorem finsetRestrict_eq_comp_prefixProj (I : Finset ℕ) {n : ℕ}
+    (hn : ∀ i ∈ I, i < n) :
+    (Finset.restrict I : (ℕ → α) → ((i : I) → α)) =
+      (fun y : Fin n → α => fun i : I => y ⟨i.1, hn i.1 i.2⟩) ∘ prefixProj α n := by
+  funext x i
+  simp [prefixProj_apply]
 
 /-- **Finite-marginal uniqueness.** Two measures on `ℕ → α`, with `μ` finite, that have the same
 law under every finite prefix projection `prefixProj α n` are equal. (Finiteness of `ν` is not
@@ -45,7 +60,7 @@ theorem measure_eq_of_prefixProj_map_eq {μ ν : Measure (ℕ → α)} [IsFinite
     let g : (Fin n → α) → ((i : I) → α) := fun y i => y ⟨i.1, hn i.1 i.2⟩
     have hg : Measurable g := measurable_pi_lambda _ fun i => measurable_pi_apply _
     have hcomp : (Finset.restrict I : (ℕ → α) → ((i : I) → α)) = g ∘ prefixProj α n := by
-      funext x i; rfl
+      simpa [g] using finsetRestrict_eq_comp_prefixProj (α := α) I hn
     calc μ.map I.restrict
         = μ.map (g ∘ prefixProj α n) := by rw [hcomp]
       _ = (μ.map (prefixProj α n)).map g := (Measure.map_map hg (measurable_prefixProj n)).symm
@@ -62,6 +77,20 @@ theorem measure_eq_of_prefixProj_setwise {μ ν : Measure (ℕ → α)} [IsFinit
     (h : ∀ (n : ℕ) (S : Set (Fin n → α)), MeasurableSet S →
       μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=
   measure_eq_of_prefixProj_map_eq fun n => Measure.ext fun S hS => h n S hS
+
+/-- Roadmap-named finite-measure version of finite-marginal uniqueness. -/
+theorem measure_eq_of_fin_marginals_eq {μ ν : Measure (ℕ → α)}
+    [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    (h : ∀ (n : ℕ) (S : Set (Fin n → α)), MeasurableSet S →
+      μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=
+  measure_eq_of_prefixProj_setwise h
+
+/-- Roadmap-named probability version of finite-marginal uniqueness. -/
+theorem measure_eq_of_fin_marginals_eq_prob {μ ν : Measure (ℕ → α)}
+    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+    (h : ∀ (n : ℕ) (S : Set (Fin n → α)), MeasurableSet S →
+      μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=
+  measure_eq_of_fin_marginals_eq h
 
 end Probability
 
