@@ -30,6 +30,11 @@ Lax--Milgram.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyIntegrand_self`: the pointwise
   Gårding lower bound obtained from the lower ellipticity projection of
   `UniformlyEllipticOn`.
+* `TauCeti.PDE.UniformlyEllipticOn.garding_energyIntegrand_self_of_mass_lower_bound`:
+  the pointwise Gårding lower bound with a mass floor.
+* `TauCeti.PDE.UniformlyEllipticOn.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self`:
+  the explicit positive-constant diagonal estimate when the mass floor dominates the
+  drift defect.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand`: coercivity when the
   pointwise mass lower bound dominates the first-order drift defect.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand_zero_drift`: the zero-drift
@@ -126,6 +131,59 @@ lemma garding_energyIntegrand_self_on (h : UniformlyEllipticOn Ω a lam Lam)
     lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2
       ≤ energyIntegrand (a x) (b x) (c x) U U :=
   h.garding_energyIntegrand_self hx (hb hx) (hc hx) U
+
+/-- Pointwise Gårding lower bound with a mass floor for a uniformly elliptic principal
+coefficient.
+
+With drift bound `β` and mass lower bound `μ`, the diagonal energy density is bounded below
+by `(λ / 2)‖∇u‖² + (μ - β² / (2λ))u²`. -/
+lemma garding_energyIntegrand_self_of_mass_lower_bound (h : UniformlyEllipticOn Ω a lam Lam)
+    {x : X} (hx : x ∈ Ω) {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
+    lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
+      ≤ energyIntegrand (a x) b₀ c₀ U U :=
+  garding_energyIntegrand_self_of_mass_lower_bound_of_bounds h.pos (h.lower_bound hx) hb hc U
+
+grind_pattern garding_energyIntegrand_self_of_mass_lower_bound =>
+  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, ‖b₀‖ ≤ beta, mu ≤ c₀,
+  energyIntegrand (a x) b₀ c₀ U U
+
+/-- Pointwise Gårding lower bound with a mass floor on a domain for coefficient fields,
+from uniform ellipticity of the principal coefficient. -/
+lemma garding_energyIntegrand_self_of_mass_lower_bound_on
+    (h : UniformlyEllipticOn Ω a lam Lam)
+    {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
+    (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)
+    (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x) {x : X} (hx : x ∈ Ω)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
+      ≤ energyIntegrand (a x) (b x) (c x) U U :=
+  h.garding_energyIntegrand_self_of_mass_lower_bound hx (hb hx) (hc hx) U
+
+/-- The lower-bound estimate implies the explicit coercive diagonal estimate with constant
+`min (λ / 2) (μ - β² / (2λ))`. -/
+lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self
+    (h : UniformlyEllipticOn Ω a lam Lam)
+    {x : X} (hx : x ∈ Ω) {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
+      ≤ energyIntegrand (a x) b₀ c₀ U U :=
+  PDE.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self h.pos (h.lower_bound hx)
+    hb hc hmu U
+
+/-- The coefficient-field version of the explicit coercive diagonal estimate from
+uniform ellipticity and a mass floor. -/
+lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self_on
+    (h : UniformlyEllipticOn Ω a lam Lam)
+    {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
+    (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)
+    (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x)
+    (hmu : beta ^ 2 / (2 * lam) < mu) {x : X} (hx : x ∈ Ω)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
+      ≤ energyIntegrand (a x) (b x) (c x) U U :=
+  h.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hx (hb hx) (hc hx) hmu U
 
 /-- Pointwise coercivity of the energy integrand from uniform ellipticity, a drift bound,
 and a mass lower bound that dominates the drift defect.

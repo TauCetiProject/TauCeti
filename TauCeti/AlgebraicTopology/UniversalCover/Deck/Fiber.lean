@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck
+public import Mathlib.GroupTheory.GroupAction.Basic
 
 /-!
 # The action of deck transformations on a fibre
@@ -22,6 +23,8 @@ deck transformations on individual fibres rather than only on the total space.
 * `TauCeti.Deck.fiberHomeomorphHom`: the homomorphism
   `Deck p →* (p ⁻¹' {b} ≃ₜ p ⁻¹' {b})`.
 * `TauCeti.Deck.instFiberMulAction`: the induced action of `Deck p` on the fibre over `b`.
+* `TauCeti.Deck.mem_fiber_stabilizer_iff_coe`: membership in a fibre stabilizer is equality
+  on the underlying point.
 
 ## References
 
@@ -155,6 +158,12 @@ lemma fiber_smul_coe_eq_smul (φ : Deck p) (e : p ⁻¹' {b}) :
   trans φ.1 e.1
   · exact fiber_smul_coe φ e
   · exact (smul_eq_apply φ (e : E)).symm
+
+/-- Membership in the stabilizer of a fibre point is equality on the underlying point. -/
+@[simp, grind =]
+lemma mem_fiber_stabilizer_iff_coe (φ : Deck p) (e : p ⁻¹' {b}) :
+    φ ∈ MulAction.stabilizer (Deck p) e ↔ φ.1 e.1 = e.1 := by
+  simp [Subtype.ext_iff]
 
 end Deck
 

@@ -49,6 +49,9 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   uniformly elliptic when their scalar coefficient lies between the ellipticity constants.
 * `TauCeti.PDE.UniformlyEllipticOn.add_nonneg`: adding a nonnegative bounded
   coefficient field preserves the lower ellipticity constant and adds upper constants.
+* `TauCeti.PDE.UniformlyEllipticOn.add_bounded`: adding a bounded coefficient
+  perturbation preserves uniform ellipticity with lower constant `λ - μ` when the
+  perturbation size `μ` is smaller than `λ`.
 * `TauCeti.PDE.coefficientSymmetricPart`: the symmetric part `(A + Aᵀ) / 2` of a
   coefficient matrix.
 * `TauCeti.PDE.UniformlyEllipticOn.transpose` and
@@ -319,6 +322,28 @@ lemma lower_bound_toQuadraticForm'_add {A B : Matrix n n ℝ} {lam : ℝ}
   rw [toQuadraticForm'_add]
   exact (hA ξ).trans (le_add_of_nonneg_right (hB ξ))
 
+/-- Adding a coefficient with a one-sided quadratic lower bound lowers a quadratic lower
+bound by the size of that perturbation. -/
+lemma lower_bound_toQuadraticForm'_add_of_lower_bound {A B : Matrix n n ℝ} {lam Mu : ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hB : ∀ ξ : EuclideanSpace ℝ n, -(Mu * ‖ξ‖ ^ 2) ≤ B.toQuadraticForm' ξ)
+    (ξ : EuclideanSpace ℝ n) :
+    (lam - Mu) * ‖ξ‖ ^ 2 ≤ (A + B).toQuadraticForm' ξ := by
+  rw [toQuadraticForm'_add]
+  have hA_lower := hA ξ
+  have hB_lower := hB ξ
+  nlinarith
+
+/-- A bilinear upper bound for a coefficient matrix bounds its quadratic form in absolute
+value by the same constant. -/
+lemma abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le {B : Matrix n n ℝ} {Mu : ℝ}
+    (hB : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (B *ᵥ ξ)| ≤ Mu * ‖η‖ * ‖ξ‖)
+    (ξ : EuclideanSpace ℝ n) :
+    |B.toQuadraticForm' ξ| ≤ Mu * ‖ξ‖ ^ 2 := by
+  rw [toQuadraticForm'_eq_dotProduct]
+  have h := hB ξ ξ
+  simpa [sq, mul_assoc] using h
+
 /-- A pointwise quadratic lower bound makes the associated matrix bilinear form coercive in
 Mathlib's Lax--Milgram sense. -/
 lemma isCoercive_matrixBilinearForm_of_lower_bound (A : Matrix n n ℝ) {lam : ℝ}
@@ -517,6 +542,49 @@ lemma add_nonneg (h : UniformlyEllipticOn Ω a lam Lam) {b : X → Matrix n n �
   · exact h.le.trans (le_add_of_nonneg_right hMu)
   · exact lower_bound_toQuadraticForm'_add (h.lower_bound hx) (hb_nonneg hx) ξ
   · exact abs_dotProduct_add_mulVec_le (h.upper_bound hx) (hb_upper hx) η ξ
+
+/-- Adding a bounded coefficient perturbation preserves uniform ellipticity after reducing
+the lower ellipticity constant by the perturbation size.
+
+If `a` is uniformly elliptic with constants `λ, Λ` and `b` has pointwise bilinear bound
+`μ`, then `a + b` is uniformly elliptic with constants `λ - μ, Λ + μ`, provided `μ < λ`.
+This is the finite-dimensional coefficient stability estimate used when perturbing a
+uniformly elliptic divergence-form operator. -/
+lemma add_bounded (h : UniformlyEllipticOn Ω a lam Lam) {b : X → Matrix n n ℝ}
+    {Mu : ℝ} (hMu_nonneg : 0 ≤ Mu) (hMu_lt : Mu < lam)
+    (hb_upper : ∀ ⦃x⦄, x ∈ Ω → ∀ η ξ : EuclideanSpace ℝ n,
+      |η ⬝ᵥ (b x *ᵥ ξ)| ≤ Mu * ‖η‖ * ‖ξ‖) :
+    UniformlyEllipticOn Ω (fun x => a x + b x) (lam - Mu) (Lam + Mu) := by
+  refine UniformlyEllipticOn.of_bounds (sub_pos.mpr hMu_lt) ?_ (fun {x} hx ξ => ?_)
+    (fun {x} hx η ξ => ?_)
+  · linarith [h.le, hMu_nonneg]
+  · refine lower_bound_toQuadraticForm'_add_of_lower_bound (h.lower_bound hx) ?_ ξ
+    intro ζ
+    exact (neg_le_neg
+      (abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le (hb_upper hx) ζ)).trans
+      (neg_abs_le ((b x).toQuadraticForm' ζ))
+  · exact abs_dotProduct_add_mulVec_le (h.upper_bound hx) (hb_upper hx) η ξ
+
+/-- Adding a bounded scalar multiple of the identity preserves uniform ellipticity after
+reducing the lower ellipticity constant by the scalar bound.
+
+This is the scalar-coefficient specialization of `UniformlyEllipticOn.add_bounded`: no sign
+condition is imposed on `c`, only the pointwise bound `|c x| ≤ μ`. -/
+lemma add_smul_one_bounded (h : UniformlyEllipticOn Ω a lam Lam) {c : X → ℝ} {Mu : ℝ}
+    (hMu_nonneg : 0 ≤ Mu) (hMu_lt : Mu < lam)
+    (hc_abs : ∀ ⦃x⦄, x ∈ Ω → |c x| ≤ Mu) :
+    UniformlyEllipticOn Ω (fun x => a x + c x • (1 : Matrix n n ℝ)) (lam - Mu)
+      (Lam + Mu) :=
+  h.add_bounded hMu_nonneg hMu_lt
+    (fun {_} hx η ξ => abs_dotProduct_smul_one_mulVec_le_of_abs_le (hc_abs hx) η ξ)
+
+/-- Adding a constant bounded scalar multiple of the identity preserves uniform ellipticity
+after reducing the lower ellipticity constant by the absolute value bound. -/
+lemma add_const_smul_one_bounded (h : UniformlyEllipticOn Ω a lam Lam) {c Mu : ℝ}
+    (hMu_lt : Mu < lam) (hc_abs : |c| ≤ Mu) :
+    UniformlyEllipticOn Ω (fun y => a y + c • (1 : Matrix n n ℝ)) (lam - Mu)
+      (Lam + Mu) :=
+  h.add_smul_one_bounded ((abs_nonneg c).trans hc_abs) hMu_lt (fun {_} _ => hc_abs)
 
 /-- Adding a bounded nonnegative scalar multiple of the identity preserves uniform
 ellipticity, with the upper constant increased by the scalar bound. -/

@@ -71,7 +71,7 @@ theorem aut_gen_eq_signPattern (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)
 theorem signPattern_injective (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
     Function.Injective (signPattern (K := K) root) := by
   intro σ τ h
-  refine AlgEquiv.coe_algHom_injective
+  refine AlgEquiv.coe_toAlgHom_injective
     (IntermediateField.algHom_ext_of_eq_adjoin (F := K)
       (S := adjoin K (Set.range root)) (s := Set.range root) rfl ?_)
   rintro x ⟨i, rfl⟩
