@@ -58,6 +58,25 @@ open TensorProduct WithConv
 
 namespace TauCeti
 
+namespace Algebra.TensorProduct
+
+variable {R H₁ H₂ A B : Type*} [CommSemiring R]
+variable [Semiring H₁] [Semiring H₂] [CommSemiring A] [CommSemiring B]
+variable [Algebra R H₁] [Algebra R H₂] [Algebra R A] [Algebra R B]
+
+/-- Post-composition commutes with the tensor-product product map.
+
+Equivalently, applying `φ : A →ₐ[R] B` after multiplying the two component values agrees with
+first post-composing both component maps with `φ` and then using `productMap`. -/
+theorem comp_productMap (φ : A →ₐ[R] B) (f₁ : H₁ →ₐ[R] A) (f₂ : H₂ →ₐ[R] A) :
+    φ.comp (_root_.Algebra.TensorProduct.productMap f₁ f₂) =
+      _root_.Algebra.TensorProduct.productMap (φ.comp f₁) (φ.comp f₂) := by
+  apply _root_.Algebra.TensorProduct.ext'
+  intro x y
+  simp [_root_.Algebra.TensorProduct.productMap_apply_tmul, map_mul]
+
+end Algebra.TensorProduct
+
 namespace AffineGroup.Product
 
 open Bialgebra.TensorProduct
@@ -177,15 +196,16 @@ theorem pointsMulEquiv_mapValue_snd (φ : A →ₐ[R] B)
 Assembling an `A`-valued product point from a pair of factor points and then post-composing by
 `φ : A →ₐ[R] B` is the same as post-composing both factor points by `φ` and then assembling the
 resulting `B`-valued product point. -/
+@[simp]
 theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B)
     (p : WithConv (H₁ →ₐ[R] A) × WithConv (H₂ →ₐ[R] A)) :
     AlgHom.mapValue (H := H₁ ⊗[R] H₂) φ
         ((pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂) (A := A)).symm p) =
       (pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂) (A := B)).symm
         (AlgHom.mapValue (H := H₁) φ p.1, AlgHom.mapValue (H := H₂) φ p.2) := by
-  apply (pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂) (A := B)).injective
-  rw [pointsMulEquiv_mapValue]
-  simp
+  rw [pointsMulEquiv_symm_apply, AlgHom.mapValue_apply, pointsMulEquiv_symm_apply]
+  congr 1
+  exact Algebra.TensorProduct.comp_productMap φ p.1.ofConv p.2.ofConv
 
 /-- On pure tensors, naturality of the inverse product-points map says that post-composition
 by `φ` evaluates as applying `φ` to the product of the two factor values. -/
