@@ -29,6 +29,8 @@ will apply.
 * `TauCeti.GridDiagram.fullyBlockedDifferentialOnGenerator`: the row of the fully blocked
   differential on one generator.
 * `TauCeti.GridDiagram.fullyBlockedDifferential`: the corresponding `ZMod 2`-linear map.
+* `TauCeti.GridDiagram.exists_swapColumns_of_fullyBlockedDifferentialOnGenerator_ne_zero`: the
+  fully blocked differential of a generator is supported on its column transpositions.
 
 ## References
 
@@ -162,6 +164,14 @@ theorem fullyBlockedDifferentialOnGenerator_apply (x y : GridState n) :
     simp [hz.symm]
   · intro hy
     exact (hy (Finset.mem_univ y)).elim
+
+/-- The fully blocked differential of a generator is supported on the column transpositions of
+that generator: if the `y`-coefficient is nonzero, then `y` is a column transposition of `x`. -/
+theorem exists_swapColumns_of_fullyBlockedDifferentialOnGenerator_ne_zero {x y : GridState n}
+    (h : G.fullyBlockedDifferentialOnGenerator x y ≠ 0) :
+    ∃ a b : Fin n, a ≠ b ∧ y = x.swapColumns a b := by
+  rw [fullyBlockedDifferentialOnGenerator_apply] at h
+  exact G.exists_swapColumns_of_fullyBlockedRectangleCount_ne_zero x y h
 
 /-- The fully blocked grid differential as a `ZMod 2`-linear map on chains. -/
 noncomputable def fullyBlockedDifferential : GridChain (ZMod 2) n →ₗ[ZMod 2] GridChain (ZMod 2) n :=

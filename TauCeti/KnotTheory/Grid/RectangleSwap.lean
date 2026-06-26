@@ -26,6 +26,8 @@ Alexander grading-change computation across a rectangle rests on, and they let l
 
 * `TauCeti.GridRectangleBetween.target_eq_swapColumns`: the target state of a rectangle is the
   source state with the two side columns swapped.
+* `TauCeti.GridRectangleBetween.nonempty_all_iff`: oriented rectangles between `x` and `y` exist
+  exactly when `y` is a column transposition of `x`.
 * `TauCeti.GridRectangleBetween.source_eq_swapColumns`: the symmetric statement recovering the
   source from the target.
 * `TauCeti.GridRectangleBetween.mem_pointSet_inter_iff`: a square is shared by the two states
@@ -74,6 +76,21 @@ theorem target_eq_swapColumns : y = x.swapColumns R.left R.right := by
   refine GridState.ext fun c => ?_
   rw [GridState.swapColumns_apply]
   exact target_apply R c
+
+/-- Oriented rectangles between `x` and `y` exist exactly when `y` is a column transposition of
+`x`. A rectangle realizes its side columns as a transposition taking `x` to `y`, and conversely a
+column transposition exhibits an oriented rectangle on those two columns. -/
+theorem nonempty_all_iff :
+    (all x y).Nonempty ↔ ∃ a b : Fin n, a ≠ b ∧ y = x.swapColumns a b := by
+  constructor
+  · rintro ⟨R, -⟩
+    exact ⟨R.left, R.right, R.left_ne_right, R.target_eq_swapColumns⟩
+  · rintro ⟨a, b, hab, hy⟩
+    refine ⟨⟨a, b, hab, ?_, ?_, ?_⟩, mem_all _⟩
+    · rw [hy, GridState.swapColumns_apply, Equiv.swap_apply_left]
+    · rw [hy, GridState.swapColumns_apply, Equiv.swap_apply_right]
+    · intro c hl hr
+      rw [hy, GridState.swapColumns_apply, Equiv.swap_apply_of_ne_of_ne hl hr]
 
 /-- The source state of an oriented rectangle is the target state with its two side columns
 swapped: swapping the same pair of columns twice is the identity. -/
