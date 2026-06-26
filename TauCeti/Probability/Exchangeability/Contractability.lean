@@ -2,7 +2,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Order.Fin.Basic
-public import Mathlib.Logic.Equiv.Fintype
+import Mathlib.Logic.Equiv.Fintype
 
 /-!
 # Contractability API
