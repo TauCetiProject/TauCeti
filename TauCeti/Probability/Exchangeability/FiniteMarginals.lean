@@ -78,16 +78,16 @@ theorem measure_eq_of_prefixProj_setwise {μ ν : Measure (ℕ → α)} [IsFinit
       μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=
   measure_eq_of_prefixProj_map_eq fun n => Measure.ext fun S hS => h n S hS
 
-/-- Roadmap-named finite-measure version of finite-marginal uniqueness. -/
-theorem measure_eq_of_fin_marginals_eq {μ ν : Measure (ℕ → α)}
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+/-- Roadmap-named finite-measure version of finite-marginal uniqueness. Only `μ` need be finite
+(`ν`'s finiteness is forced by the conclusion). -/
+theorem measure_eq_of_fin_marginals_eq {μ ν : Measure (ℕ → α)} [IsFiniteMeasure μ]
     (h : ∀ (n : ℕ) (S : Set (Fin n → α)), MeasurableSet S →
       μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=
   measure_eq_of_prefixProj_setwise h
 
-/-- Roadmap-named probability version of finite-marginal uniqueness. -/
-theorem measure_eq_of_fin_marginals_eq_prob {μ ν : Measure (ℕ → α)}
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+/-- Roadmap-named probability version of finite-marginal uniqueness. Only `μ` need be a probability
+measure (`ν` is then forced to equal it). -/
+theorem measure_eq_of_fin_marginals_eq_prob {μ ν : Measure (ℕ → α)} [IsProbabilityMeasure μ]
     (h : ∀ (n : ℕ) (S : Set (Fin n → α)), MeasurableSet S →
       μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=
   measure_eq_of_fin_marginals_eq h
