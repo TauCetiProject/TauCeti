@@ -68,6 +68,7 @@ variable [Algebra R H₁] [Algebra R H₂] [Algebra R A] [Algebra R B]
 
 Equivalently, applying `φ : A →ₐ[R] B` after multiplying the two component values agrees with
 first post-composing both component maps with `φ` and then using `productMap`. -/
+@[simp]
 theorem comp_productMap (φ : A →ₐ[R] B) (f₁ : H₁ →ₐ[R] A) (f₂ : H₂ →ₐ[R] A) :
     φ.comp (_root_.Algebra.TensorProduct.productMap f₁ f₂) =
       _root_.Algebra.TensorProduct.productMap (φ.comp f₁) (φ.comp f₂) := by
