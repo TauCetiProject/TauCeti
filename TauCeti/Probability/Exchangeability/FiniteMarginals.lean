@@ -1,7 +1,6 @@
 module
 
 public import TauCeti.Probability.Exchangeability.Basic
-public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.MeasureTheory.Constructions.Projective
 
 /-!
@@ -16,11 +15,10 @@ machinery (`IsProjectiveLimit.unique`), not new measure theory.
 The public API:
 * `measure_eq_of_prefixProj_map_eq` — the clean map-equality form;
 * `measure_eq_of_prefixProj_setwise` — the setwise form;
-* `measure_eq_of_fin_marginals_eq` — the roadmap-named finite-measure version;
-* `measure_eq_of_fin_marginals_eq_prob` — the roadmap-named probability version.
+* `measure_eq_of_fin_marginals_eq` — the roadmap-named version.
 
-The finite-measure statements apply directly to probability measures, since `IsProbabilityMeasure`
-provides `IsFiniteMeasure`.
+These statements apply directly to probability measures, since `IsProbabilityMeasure` provides
+`IsFiniteMeasure`, so no separate probability-measure theorem is needed.
 -/
 
 public section
@@ -84,13 +82,6 @@ theorem measure_eq_of_fin_marginals_eq {μ ν : Measure (ℕ → α)} [IsFiniteM
     (h : ∀ (n : ℕ) (S : Set (Fin n → α)), MeasurableSet S →
       μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=
   measure_eq_of_prefixProj_setwise h
-
-/-- Roadmap-named probability version of finite-marginal uniqueness. It assumes only `μ` is a
-probability measure; equality then forces `ν` to be that same probability measure. -/
-theorem measure_eq_of_fin_marginals_eq_prob {μ ν : Measure (ℕ → α)} [IsProbabilityMeasure μ]
-    (h : ∀ (n : ℕ) (S : Set (Fin n → α)), MeasurableSet S →
-      μ.map (prefixProj α n) S = ν.map (prefixProj α n) S) : μ = ν :=
-  measure_eq_of_fin_marginals_eq h
 
 end Probability
 
