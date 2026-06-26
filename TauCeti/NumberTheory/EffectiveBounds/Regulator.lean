@@ -53,18 +53,11 @@ theorem regulator_eq_one_of_rank_eq_zero (h : rank K = 0) : regulator K = 1 := b
     rw [← Fintype.card_eq_zero_iff, ← Fintype.card_congr (equivFinRank K), Fintype.card_fin, h]
   rw [regulator_eq_det', Matrix.det_isEmpty, abs_one]
 
-/-- A number field with at most one infinite place has unit rank zero. This covers `ℚ` (one real
-place) and the imaginary quadratic fields (one complex place), and is stated in the monotone
-form consumed by effective lower-bound arguments. -/
-theorem rank_eq_zero_of_card_infinitePlace_le_one
-    (h : Fintype.card (InfinitePlace K) ≤ 1) : rank K = 0 := by
-  rw [NumberField.Units.rank]
-  omega
-
-/-- A number field with a single infinite place has unit rank zero. -/
+/-- A number field with a single infinite place has unit rank zero. This covers `ℚ` (one real
+place) and the imaginary quadratic fields (one complex place). -/
 theorem rank_eq_zero_of_card_infinitePlace_eq_one
     (h : Fintype.card (InfinitePlace K) = 1) : rank K = 0 := by
-  exact rank_eq_zero_of_card_infinitePlace_le_one K h.le
+  rw [NumberField.Units.rank, h]
 
 /-- A number field of degree one over `ℚ` (namely `ℚ` itself) has unit rank zero. -/
 theorem rank_eq_zero_of_finrank_eq_one (h : finrank ℚ K = 1) : rank K = 0 := by
