@@ -66,22 +66,12 @@ theorem rank_eq_zero_of_card_infinitePlace_eq_one
     (h : Fintype.card (InfinitePlace K) = 1) : rank K = 0 := by
   exact rank_eq_zero_of_card_infinitePlace_le_one K h.le
 
-/-- A number field of degree at most one over `ℚ` has unit rank zero. -/
-theorem rank_eq_zero_of_finrank_le_one (h : finrank ℚ K ≤ 1) : rank K = 0 := by
+/-- A number field of degree one over `ℚ` (namely `ℚ` itself) has unit rank zero. -/
+theorem rank_eq_zero_of_finrank_eq_one (h : finrank ℚ K = 1) : rank K = 0 := by
   refine rank_eq_zero_of_card_infinitePlace_eq_one K ?_
-  have hpos : 0 < finrank ℚ K := Module.finrank_pos
-  have hfin : finrank ℚ K = 1 := by omega
   have h₁ := card_add_two_mul_card_eq_rank K
   have h₂ := card_eq_nrRealPlaces_add_nrComplexPlaces K
   omega
-
-/-- A number field of degree less than two over `ℚ` has unit rank zero. -/
-theorem rank_eq_zero_of_finrank_lt_two (h : finrank ℚ K < 2) : rank K = 0 :=
-  rank_eq_zero_of_finrank_le_one K (by omega)
-
-/-- A number field of degree one over `ℚ` (namely `ℚ` itself) has unit rank zero. -/
-theorem rank_eq_zero_of_finrank_eq_one (h : finrank ℚ K = 1) : rank K = 0 :=
-  rank_eq_zero_of_finrank_le_one K h.le
 
 /-- An imaginary quadratic field — totally complex of degree two — has unit rank zero. -/
 theorem rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two
