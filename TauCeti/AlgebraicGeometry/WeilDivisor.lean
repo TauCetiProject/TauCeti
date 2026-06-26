@@ -488,8 +488,7 @@ lemma weightedDegree_coe_weightedDegreeZeroSubgroup (w : X → ℤ)
   D.property
 
 /-- The unweighted degree-zero subgroup is the weight-one weighted-degree-zero subgroup. -/
-@[expose]
-def degreeZeroSubgroupEquivWeightedDegreeZeroOne :
+abbrev degreeZeroSubgroupEquivWeightedDegreeZeroOne :
     degreeZeroSubgroup X ≃+ weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) where
   toFun D := ⟨D, by
     rw [mem_weightedDegreeZeroSubgroup, weightedDegree_one_eq_degree]
