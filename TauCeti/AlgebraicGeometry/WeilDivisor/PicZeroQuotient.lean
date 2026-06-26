@@ -2,7 +2,9 @@
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 -/
-import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
+module
+
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
 
 /-!
 # The degree-zero divisor quotient model of abstract `Pic⁰`
@@ -28,6 +30,8 @@ This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, specificall
 in Layer D)."  No external mathematics is vendored; the proof uses Tau Ceti's existing
 `WeilDivisor`/`OrderSystem` API and Mathlib's quotient-group first isomorphism theorem.
 -/
+
+@[expose] public section
 
 namespace TauCeti
 
