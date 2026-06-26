@@ -2,6 +2,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Order.Fin.Basic
+public import Mathlib.Logic.Equiv.Fintype
 
 /-!
 # Contractability API
@@ -9,6 +10,10 @@ public import Mathlib.Order.Fin.Basic
 This file records basic lemmas for `Contractable` processes. The definitions live in
 `TauCeti.Probability.Exchangeability.Basic`; this file is the Layer 0 home for
 contractability-specific API.
+
+It also provides `map_blockLaw_reindex`, the coordinate-reindexing pushforward of block laws
+(the companion of `Basic`'s value-reindexing `map_blockLaw`), used here to project
+finite-dimensional laws onto sub-blocks.
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses.
@@ -25,6 +30,20 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+
+/-- Push a block law forward along a coordinate reindexing: selecting the coordinates of
+`blockLaw μ X k` through `g : Fin p → Fin n` yields the block law along `k ∘ g`. This is the
+coordinate-reindexing companion of `Basic`'s `map_blockLaw` (which reindexes the *values*),
+used to project a finite-dimensional law onto a sub-block. -/
+theorem map_blockLaw_reindex (μ : Measure Ω) {X : ℕ → Ω → α} {n p : ℕ}
+    (k : Fin n → ℕ) (g : Fin p → Fin n) (hXk : ∀ j : Fin n, AEMeasurable (X (k j)) μ) :
+    (blockLaw μ X k).map (fun x : Fin n → α => fun i : Fin p => x (g i)) =
+      blockLaw μ X (k ∘ g) := by
+  rw [blockLaw_apply, blockLaw_apply,
+    AEMeasurable.map_map_of_aemeasurable
+      ((measurable_pi_lambda _ fun i => measurable_pi_apply (g i)).aemeasurable)
+      (aemeasurable_pi_lambda _ hXk)]
+  rfl
 
 /-- A contractable process has the same finite-dimensional block law as the corresponding
 prefix law along any strictly increasing finite index map. -/
