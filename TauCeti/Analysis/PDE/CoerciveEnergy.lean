@@ -21,10 +21,17 @@ the mass lower bound are all stated inline, as `∀ x ∈ Ω, λ‖ξ‖² ≤ (
 `∀ x ∈ Ω, ‖b x‖ ≤ β`, and `∀ x ∈ Ω, μ ≤ c x`; a caller holding a `UniformlyEllipticOn`
 hypothesis passes its lower-bound projection for the first.
 
+The bookkeeping follows the standard Young-inequality absorption argument used in the
+energy method, as in Evans, *Partial Differential Equations*, Chapter 6.
+
 ## Main declarations
 
 * `TauCeti.PDE.min_mul_prod_norm_sq_le_add`: product sup-norm lower-bound bridge for
   coercivity estimates.
+* `TauCeti.PDE.garding_energyIntegrand_self_of_mass_lower_bound_of_bounds`: pointwise
+  Gårding lower bound with a mass floor.
+* `TauCeti.PDE.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self`: explicit
+  positive-constant diagonal estimate from the mass-floor lower bound.
 * `TauCeti.PDE.isCoercive_energyIntegrand_of_bounds`: pointwise finite-dimensional coercivity
   from one principal coefficient, drift vector, and mass coefficient.
 * `TauCeti.PDE.isCoercive_energyIntegrand_zero_drift`: the zero-drift specialization,
@@ -73,7 +80,7 @@ lemma min_mul_prod_norm_sq_le_add (hlam : 0 ≤ lam) (hmu : 0 ≤ mu)
 If the principal part has quadratic lower bound `λ‖ξ‖²`, the drift satisfies `‖b₀‖ ≤ β`, and
 the mass coefficient satisfies `μ ≤ c₀`, then the diagonal of the jet form is bounded below by
 `(λ/2)‖∇u‖² + (μ − β²/2λ)|u|²`. -/
-private lemma energyIntegrand_self_lower_bound_of_bounds (hlam : 0 < lam)
+lemma garding_energyIntegrand_self_of_mass_lower_bound_of_bounds (hlam : 0 < lam)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
@@ -89,6 +96,41 @@ private lemma energyIntegrand_self_lower_bound_of_bounds (hlam : 0 < lam)
   rw [hrw]
   linarith [hgard]
 
+/-- Pointwise Gårding lower bound with a mass floor on a domain, obtained by applying
+`garding_energyIntegrand_self_of_mass_lower_bound_of_bounds` at `x`. -/
+lemma garding_energyIntegrand_self_of_mass_lower_bound_of_bounds_on {Ω : Set X}
+    {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ} (hlam : 0 < lam)
+    (hA : ∀ ⦃x⦄, x ∈ Ω → ∀ ξ : EuclideanSpace ℝ n,
+      lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+    (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)
+    (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x) {x : X} (hx : x ∈ Ω)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
+      ≤ energyIntegrand (a x) (b x) (c x) U U :=
+  garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam (hA hx) (hb hx) (hc hx) U
+
+/-- Positivity of the explicit coercivity constant under the mass-floor dominance condition
+`β² / (2λ) < μ`. -/
+lemma min_coercivityConstant_pos (hlam : 0 < lam) (hmu : beta ^ 2 / (2 * lam) < mu) :
+    0 < min (lam / 2) (mu - beta ^ 2 / (2 * lam)) :=
+  lt_min (half_pos hlam) (sub_pos.mpr hmu)
+
+/-- The mass-floor Gårding lower bound implies the explicit coercive diagonal estimate with
+constant `min (λ / 2) (μ - β² / (2λ))`. -/
+lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self (hlam : 0 < lam)
+    {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
+      ≤ energyIntegrand A b₀ c₀ U U := by
+  have hhalf : 0 < lam / 2 := half_pos hlam
+  have hdef : 0 < mu - beta ^ 2 / (2 * lam) := sub_pos.mpr hmu
+  have hnorm := min_mul_prod_norm_sq_le_add hhalf.le hdef.le U
+  rw [Real.norm_eq_abs, sq_abs] at hnorm
+  exact hnorm.trans
+    (garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam hA hb hc U)
+
 /-- Coercivity of the jet bilinear form when the mass lower bound dominates the drift defect.
 
 With ellipticity floor `λ`, drift bound `β`, and mass lower bound `μ` satisfying `β²/2λ < μ`,
@@ -98,13 +140,10 @@ lemma isCoercive_energyIntegrand_of_bounds (hlam : 0 < lam)
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu) :
     IsCoercive (energyIntegrand A b₀ c₀) := by
-  have hhalf : (0 : ℝ) < lam / 2 := by positivity
-  have hdef : 0 < mu - beta ^ 2 / (2 * lam) := sub_pos.mpr hmu
-  refine ⟨min (lam / 2) (mu - beta ^ 2 / (2 * lam)), lt_min hhalf hdef, fun U => ?_⟩
-  have hlb := energyIntegrand_self_lower_bound_of_bounds hlam hA hb hc U
-  have hmin := min_mul_prod_norm_sq_le_add hhalf.le hdef.le U
-  rw [Real.norm_eq_abs, sq_abs] at hmin
-  simpa [pow_two, mul_assoc] using hmin.trans hlb
+  refine ⟨min (lam / 2) (mu - beta ^ 2 / (2 * lam)),
+    min_coercivityConstant_pos hlam hmu, fun U => ?_⟩
+  simpa [pow_two, mul_assoc] using
+    min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hlam hA hb hc hmu U
 
 /-- Coercivity of the zero-drift jet bilinear form from a positive zeroth-order coefficient.
 

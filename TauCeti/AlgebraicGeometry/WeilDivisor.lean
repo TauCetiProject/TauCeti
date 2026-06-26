@@ -373,6 +373,16 @@ lemma coe_degreeZeroSubgroup_eq_zero_of_isEffective {D : degreeZeroSubgroup X}
 lemma pointDifference_self (x : X) : pointDifference x x = 0 := by
   simp [pointDifference]
 
+/-- Point differences telescope additively: `[x] - [y] + ([y] - [z]) = [x] - [z]`. -/
+@[simp]
+lemma pointDifference_add_pointDifference_cancel (x y z : X) :
+    pointDifference x y + pointDifference y z = pointDifference x z := by
+  simp [pointDifference, sub_eq_add_neg, add_assoc, add_left_comm]
+
+/-- Reversing a point difference negates it. -/
+lemma pointDifference_swap (x y : X) : pointDifference y x = -pointDifference x y := by
+  simp [pointDifference, sub_eq_add_neg, add_comm]
+
 @[simp]
 lemma coeff_pointDifference_left (x y : X) :
     coeff (pointDifference x y) x = 1 - coeff (ofPoint y) x := by
@@ -497,8 +507,14 @@ lemma pointDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x y : X}
 For the geometric weight `w x = [κ(x) : k]` and a rational base point `x₀` with `w x₀ = 1`,
 this is the degree-zero divisor underlying the Abel-Jacobi class of the closed point `x`.
 In the algebraically closed/unweighted specialization, this recovers `pointDifference x x₀`. -/
-noncomputable def weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) : WeilDivisor X :=
+@[expose] noncomputable def weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) : WeilDivisor X :=
   ofPoint x - w x • ofPoint x₀
+
+/-- The degree-corrected point divisor is `[x]` minus `w x` copies of the base point `[x₀]`.
+This exposes the definition as a public equation for use across modules. -/
+lemma weightedPointBaseDifference_eq_ofPoint_sub_zsmul (w : X → ℤ) (x₀ x : X) :
+    weightedPointBaseDifference w x₀ x = ofPoint x - w x • ofPoint x₀ :=
+  rfl
 
 /-- At the constant weight `1`, the degree-corrected point divisor is the usual point
 difference. This simp lemma lets unweighted API reuse the weighted construction. -/
@@ -506,6 +522,13 @@ difference. This simp lemma lets unweighted API reuse the weighted construction.
 lemma weightedPointBaseDifference_eq_pointDifference (x₀ x : X) :
     weightedPointBaseDifference (fun _ : X => (1 : ℤ)) x₀ x = pointDifference x x₀ := by
   simp [weightedPointBaseDifference, pointDifference]
+
+/-- If the point has weight `1`, the degree-corrected point divisor is the usual point
+difference. -/
+@[simp]
+lemma weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one {w : X → ℤ} {x₀ x : X}
+    (hx : w x = 1) : weightedPointBaseDifference w x₀ x = pointDifference x x₀ := by
+  simp [weightedPointBaseDifference, pointDifference, hx]
 
 /-- Coefficients of the degree-corrected point divisor, used as the pointwise simp form of
 `weightedPointBaseDifference`. -/
@@ -551,6 +574,29 @@ lemma weightedPointBaseDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ}
     (hx₀ : w x₀ = 1) (x : X) :
     weightedPointBaseDifference w x₀ x ∈ weightedDegreeZeroSubgroup w := by
   simp [hx₀]
+
+/-- Changing the base point in the weighted point-base divisor translates it by
+`w(x) • ([x₀] - [y₀])`. -/
+lemma weightedPointBaseDifference_change_base (w : X → ℤ) (x₀ y₀ x : X) :
+    weightedPointBaseDifference w y₀ x =
+      weightedPointBaseDifference w x₀ x + w x • pointDifference x₀ y₀ := by
+  simp [weightedPointBaseDifference, pointDifference, sub_eq_add_neg, add_assoc,
+    add_left_comm, add_comm]
+
+/-- The difference between the weighted point-base divisors for two base points is
+`w(x) • ([x₀] - [y₀])`. -/
+lemma weightedPointBaseDifference_sub_change_base (w : X → ℤ) (x₀ y₀ x : X) :
+    weightedPointBaseDifference w y₀ x - weightedPointBaseDifference w x₀ x =
+      w x • pointDifference x₀ y₀ := by
+  rw [weightedPointBaseDifference_change_base, add_sub_cancel_left]
+
+/-- Subtracting two degree-corrected point divisors with the same base point cancels the base
+term when the two points have equal weight. -/
+lemma weightedPointBaseDifference_sub_same_base (w : X → ℤ) {x₀ x y : X} (hxy : w x = w y) :
+    weightedPointBaseDifference w x₀ x - weightedPointBaseDifference w x₀ y =
+      pointDifference x y := by
+  simp [weightedPointBaseDifference, pointDifference, hxy, sub_eq_add_neg, add_assoc,
+    add_left_comm, add_comm]
 
 /-- Pushforward as a homomorphism on weighted degree-zero divisors, when the target weight
 pulls back to the source weight. -/

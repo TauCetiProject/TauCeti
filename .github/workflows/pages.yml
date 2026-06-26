@@ -7,13 +7,23 @@ name: Pages
 # TauCeti library (and hence Mathlib) — so the showcased mathematics is elaborated at
 # build time and cannot drift. The examples project is built first; its Mathlib oleans
 # come from the cache, not a from-scratch rebuild.
+#
+# The Statistics page's two "lines of code by date" charts are regenerated here, at
+# deploy time, straight from git history (see scripts/loc_graph.py) — they are not
+# committed state. The daily `schedule` below redeploys the site so the charts track
+# the project as it grows. (This replaces the old loc-graph workflow, which committed
+# the SVGs to main on a schedule; main now sits behind a merge queue that refuses
+# direct pushes, so generating the charts in this build is the only way they refresh.)
 
 on:
   push:
     branches: [main]
     paths:
       - 'web/**'
+      - 'scripts/loc_graph.py'
       - '.github/workflows/pages.yml'
+  schedule:
+    - cron: "0 6 * * *"   # Daily 06:00 UTC: refresh the lines-of-code charts
   workflow_dispatch:
 
 permissions:
@@ -36,7 +46,33 @@ jobs:
       run:
         working-directory: web
     steps:
+      # Full history: scripts/loc_graph.py reconstructs the whole "lines by date"
+      # series by walking every commit, so a shallow checkout would truncate the charts.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clone the roadmap repository (full history, for its chart)
+        working-directory: ${{ github.workspace }}
+        run: git clone --quiet https://github.com/FormalFrontier/TauCetiRoadmap.git /tmp/roadmap
+
+      # Overwrites the checked-in SVGs in the runner only (never committed back). The
+      # versions tracked in web/static_files/ are just fallback snapshots so a local
+      # `cd web && lake exe web` renders something; refresh them by running these same
+      # two commands. The deployed charts always come from this step, not from the repo.
+      - name: Regenerate the lines-of-code charts into static_files
+        working-directory: ${{ github.workspace }}
+        run: |
+          python3 scripts/loc_graph.py \
+            --repo . --ref HEAD \
+            --title "Tau Ceti — lines of Lean" --accent "#ff9d4d" \
+            --out web/static_files/loc-tauceti.svg \
+            TauCeti TauCeti.lean
+          python3 scripts/loc_graph.py \
+            --repo /tmp/roadmap --ref HEAD \
+            --title "Tau Ceti Roadmap — lines written" --accent "#5eead4" \
+            --out web/static_files/loc-roadmap.svg \
+            TauCetiRoadmap TauCetiRoadmap.lean
 
       - name: Install elan
         run: |

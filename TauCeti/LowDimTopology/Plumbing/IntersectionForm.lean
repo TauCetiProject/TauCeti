@@ -65,6 +65,8 @@ intersection form of a plumbing graph follows Némethi,
 
 public section
 
+open scoped Matrix
+
 namespace TauCeti
 
 /-- A plumbing graph: a simple graph together with an integer weight on each vertex.
@@ -137,6 +139,11 @@ plumbed three-manifolds this is the standing hypothesis under which lattice homo
 the Heegaard Floer invariant. -/
 def IsNegativeDefinite : Prop :=
   (-P.intersectionMatrix).PosDef
+
+/-- The defining matrix characterization of a negative-definite plumbing graph. -/
+@[grind =]
+theorem isNegativeDefinite_iff : P.IsNegativeDefinite ↔ (-P.intersectionMatrix).PosDef :=
+  Iff.rfl
 
 /-- A negative-definite plumbing graph has every framing negative: a diagonal entry of the
 positive-definite negated intersection matrix is the negated framing. -/

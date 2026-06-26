@@ -24,6 +24,8 @@ later tubular-neighbourhood and surgery interfaces.
 ## Main definitions
 
 * `TauCeti.SmoothEmbedding I J n M N`: bundled `C^n` smooth embeddings `M → N`.
+* `TauCeti.SmoothEmbedding.toContinuousMap`: the underlying continuous map, implemented through
+  Mathlib's generic `ContinuousMapClass` coercion.
 * `TauCeti.SmoothEmbedding.ofIsSmoothEmbedding`: bundle a map satisfying Mathlib's
   `Manifold.IsSmoothEmbedding` predicate.
 * `TauCeti.SmoothEmbedding.id`: the identity smooth embedding.
@@ -83,10 +85,37 @@ instance instFunLike : FunLike (SmoothEmbedding I J n M N) M N where
     cases hfg
     rfl
 
+instance instContinuousMapClass : ContinuousMapClass (SmoothEmbedding I J n M N) M N where
+  map_continuous f := f.toContMDiffMap.contMDiff.continuous
+
 /-- The bundled `C^n` map underlying a smooth embedding. -/
 @[simp]
 theorem toContMDiffMap_coe (f : SmoothEmbedding I J n M N) :
     ⇑f.toContMDiffMap = f := rfl
+
+/-- The continuous map underlying a bundled smooth embedding. -/
+abbrev toContinuousMap (f : SmoothEmbedding I J n M N) : C(M, N) :=
+  _root_.toContinuousMap f
+
+@[simp]
+theorem toContinuousMap_apply (f : SmoothEmbedding I J n M N) (x : M) :
+    f.toContinuousMap x = f x :=
+  rfl
+
+@[simp]
+theorem coe_toContinuousMap (f : SmoothEmbedding I J n M N) :
+    ⇑f.toContinuousMap = f :=
+  rfl
+
+/-- The underlying continuous map determines a bundled smooth embedding. -/
+theorem toContinuousMap_injective :
+    Function.Injective (toContinuousMap : SmoothEmbedding I J n M N → C(M, N)) :=
+  ContinuousMap.coe_injective'
+
+@[simp]
+theorem toContinuousMap_inj {f g : SmoothEmbedding I J n M N} :
+    (toContinuousMap f : C(M, N)) = toContinuousMap g ↔ f = g :=
+  toContinuousMap_injective.eq_iff
 
 /-- A bundled smooth embedding is a `C^n` map. -/
 theorem contMDiff (f : SmoothEmbedding I J n M N) : ContMDiff I J n f :=

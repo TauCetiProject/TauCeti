@@ -203,7 +203,7 @@ theorem aut_mul_self_eq_one (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (σ : IntermediateField.adjoin K (Set.range root) ≃ₐ[K]
       IntermediateField.adjoin K (Set.range root)) :
     σ * σ = 1 := by
-  refine AlgEquiv.coe_algHom_injective ?_
+  refine AlgEquiv.coe_toAlgHom_injective ?_
   refine IntermediateField.algHom_ext_of_eq_adjoin (F := K)
     (S := IntermediateField.adjoin K (Set.range root)) (s := Set.range root) rfl ?_
   rintro x ⟨i, rfl⟩

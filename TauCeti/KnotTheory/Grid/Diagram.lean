@@ -9,6 +9,7 @@ public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fintype.Perm
+public import Mathlib.Data.Fintype.Prod
 public import Mathlib.GroupTheory.Perm.Basic
 
 /-!
@@ -65,6 +66,12 @@ def equivPerm (n : ℕ) : GridState n ≃ Equiv.Perm (Fin n) where
 /-- There are finitely many grid states of a fixed grid size. -/
 instance : Fintype (GridState n) :=
   Fintype.ofEquiv (Equiv.Perm (Fin n)) (equivPerm n).symm
+
+/-- Equality of grid states is decidable: a grid state is determined by its underlying
+permutation, whose equality is decidable. This makes finite sets of grid states computable. -/
+instance : DecidableEq (GridState n) := fun x y =>
+  decidable_of_iff (x.toPerm = y.toPerm)
+    ⟨fun h => by cases x; cases y; cases h; rfl, fun h => by rw [h]⟩
 
 /-- Apply a grid state to a column to get its occupied row. -/
 instance : CoeFun (GridState n) fun _ => Fin n → Fin n where
@@ -298,6 +305,37 @@ theorem swapRows_apply (a b : Fin n) (x : GridState n) (c : Fin n) :
 theorem swapColumns_apply (a b : Fin n) (x : GridState n) (c : Fin n) :
     x.swapColumns a b c = x (Equiv.swap a b c) := by
   simp [swapColumns, relabelColumns]
+
+/-- The grid states obtained from `x` by transposing a pair of distinct columns.
+
+These are exactly the states a single grid rectangle can reach from `x`: the fully blocked
+differential of the generator `x` is supported here. -/
+def columnSwapNeighbors (x : GridState n) : Finset (GridState n) :=
+  (Finset.univ.filter fun p : Fin n × Fin n => p.1 ≠ p.2).image
+    fun p => x.swapColumns p.1 p.2
+
+/-- A state is a column-swap neighbour of `x` exactly when it is `x` with a pair of distinct
+columns transposed. -/
+@[simp]
+theorem mem_columnSwapNeighbors {x y : GridState n} :
+    y ∈ x.columnSwapNeighbors ↔ ∃ c d : Fin n, c ≠ d ∧ y = x.swapColumns c d := by
+  simp only [columnSwapNeighbors, Finset.mem_image, Finset.mem_filter, Finset.mem_univ, true_and,
+    Prod.exists]
+  constructor
+  · rintro ⟨c, d, hcd, rfl⟩
+    exact ⟨c, d, hcd, rfl⟩
+  · rintro ⟨c, d, hcd, rfl⟩
+    exact ⟨c, d, hcd, rfl⟩
+
+/-- A grid state is not a column-swap neighbour of itself: swapping two distinct columns moves the
+occupied row of either column, so the result differs from the original. -/
+@[simp]
+theorem self_notMem_columnSwapNeighbors (x : GridState n) : x ∉ x.columnSwapNeighbors := by
+  rw [mem_columnSwapNeighbors]
+  rintro ⟨c, d, hcd, hx⟩
+  have hval := congrArg (fun z : GridState n => z c) hx
+  simp only [swapColumns_apply, Equiv.swap_apply_left] at hval
+  exact hcd (x.toPerm.injective hval)
 
 /-- Row swaps transport the point set by the row transposition. -/
 @[simp]

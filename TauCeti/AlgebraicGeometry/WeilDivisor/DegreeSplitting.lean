@@ -129,6 +129,28 @@ lemma degreeCorrection_mem_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w
   rw [mem_picZero, degreeCorrection_apply, map_sub, map_zsmul,
     weightedDegreeClass_divisorClass_ofPoint, hx₀, smul_eq_mul, mul_one, sub_self]
 
+/-- Degree correction acts on a divisor class by subtracting the base-point divisor scaled by the
+weighted degree of any representative. -/
+lemma degreeCorrection_divisorClass (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X)
+    (D : WeilDivisor X) :
+    S.degreeCorrection w h x₀ (S.divisorClass D) =
+      S.divisorClass (D - weightedDegree w D • ofPoint x₀) := by
+  rw [degreeCorrection_apply, weightedDegreeClass_divisorClass, map_sub, map_zsmul]
+
+/-- A class already in `picZero` is unchanged by degree correction. -/
+lemma degreeCorrection_eq_self_of_mem_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+    (x₀ : X) {c : S.ClassGroup} (hc : c ∈ picZero w h) :
+    S.degreeCorrection w h x₀ c = c := by
+  rw [degreeCorrection_apply, (mem_picZero w h).mp hc, zero_zsmul, sub_zero]
+
+/-- The degree correction of a coerced `picZero` class is the same class in the ambient class
+group. -/
+@[simp]
+lemma degreeCorrection_coe_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+    (x₀ : X) (p : picZero w h) :
+    S.degreeCorrection w h x₀ (p : S.ClassGroup) = p :=
+  S.degreeCorrection_eq_self_of_mem_picZero w h x₀ p.property
+
 noncomputable def degreeSplitForward (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) : S.ClassGroup →+ picZero w h × ℤ :=
   ((S.degreeCorrection w h x₀).codRestrict (picZero w h)
@@ -209,6 +231,17 @@ lemma classGroupAddEquivPicZeroProdInt_symm_apply (w : X → ℤ) (h : S.IsWeigh
       (p : S.ClassGroup) + n • S.divisorClass (ofPoint x₀) :=
   S.degreeSplitInverse_apply w h x₀ p n
 
+/-- Under the splitting `Cl(X) ≃+ picZero × ℤ`, a coerced `picZero` class has `Pic⁰` component
+itself and degree component `0`. -/
+@[simp]
+lemma classGroupAddEquivPicZeroProdInt_coe_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+    {x₀ : X} (hx₀ : w x₀ = 1) (p : picZero w h) :
+    S.classGroupAddEquivPicZeroProdInt w h hx₀ (p : S.ClassGroup) = (p, 0) := by
+  rw [classGroupAddEquivPicZeroProdInt_apply]
+  refine Prod.ext (Subtype.ext ?_) ?_
+  · exact S.degreeCorrection_coe_picZero w h x₀ p
+  · exact (mem_picZero w h).mp p.property
+
 /-! ### The unweighted specialization -/
 
 /-- The unweighted/algebraically closed specialization of the splitting: with unweighted-degree
@@ -233,6 +266,14 @@ lemma classGroupAddEquivUnweightedPicZeroProdInt_symm_apply (h : S.IsUnweightedD
     (S.classGroupAddEquivUnweightedPicZeroProdInt h x₀).symm (p, n) =
       (p : S.ClassGroup) + n • S.divisorClass (ofPoint x₀) :=
   S.classGroupAddEquivPicZeroProdInt_symm_apply (fun _ => (1 : ℤ)) h rfl p n
+
+/-- Under the unweighted splitting, a coerced `unweightedPicZero` class has `Pic⁰` component
+itself and degree component `0`. -/
+@[simp]
+lemma classGroupAddEquivUnweightedPicZeroProdInt_coe_unweightedPicZero
+    (h : S.IsUnweightedDegreeZero) (x₀ : X) (p : unweightedPicZero h) :
+    S.classGroupAddEquivUnweightedPicZeroProdInt h x₀ (p : S.ClassGroup) = (p, 0) :=
+  S.classGroupAddEquivPicZeroProdInt_coe_picZero (fun _ => (1 : ℤ)) h rfl p
 
 /-- With unweighted-degree-zero principal divisors and a base point, the unweighted degree is
 surjective onto `ℤ`. -/

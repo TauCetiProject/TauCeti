@@ -7,6 +7,7 @@ module
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Algebra.Group.ZMultiples
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
 
 /-!
 # The deck transformation group of the quotient map `𝕜 → AddCircle p`
@@ -31,6 +32,8 @@ universal cover `ℝ → S¹` and the algebraic input to the universal-covers ro
 
 * `TauCeti.Deck.addRightZMultiples`: translation by an element of `zmultiples p` as a deck
   transformation of `(↑) : 𝕜 → AddCircle p`.
+* `TauCeti.Deck.isRegular_addCircleCoe`: the projection `(↑) : 𝕜 → AddCircle p` has regular
+  deck action.
 * `TauCeti.Deck.addCircleMulEquiv`: the deck group of `(↑) : 𝕜 → AddCircle p` is
   `Multiplicative (zmultiples p)`.
 * `TauCeti.Deck.addCircleMulEquivInt`: for a totally disconnected period subgroup and a
@@ -95,6 +98,17 @@ theorem addRightZMultiples_injective :
   intro _ _ h
   have := congrArg (fun φ : Deck ((↑) : 𝕜 → AddCircle p) => φ.1 0) h
   simpa using this
+
+/-- The projection `(↑) : 𝕜 → AddCircle p` has regular deck action: it is surjective and its
+deck transformation group acts transitively on every fibre. -/
+theorem isRegular_addCircleCoe : IsRegular ((↑) : 𝕜 → AddCircle p) := by
+  rw [isRegular_iff_exists_apply_eq]
+  refine ⟨QuotientAddGroup.mk_surjective, ?_⟩
+  intro e e' he
+  have hmem : e' - e ∈ zmultiples p := by
+    have hsub : e - e' ∈ zmultiples p := (QuotientAddGroup.eq_iff_sub_mem ..).1 he
+    simpa using neg_mem hsub
+  exact ⟨addRightZMultiples ⟨e' - e, hmem⟩, by simp [addRightZMultiples_apply]⟩
 
 /-- On a preconnected domain with totally disconnected period subgroup, a deck transformation of
 `(↑) : 𝕜 → AddCircle p` is right translation by `φ 0`. -/
