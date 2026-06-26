@@ -26,8 +26,6 @@ unfolding either construction.
 
 * `MulAction.equivSubgroupOrbitsQuotientGroup`: applied to the deck action on one fibre, this
   identifies `SubgroupFiberOrbitQuotient H b` with `Deck p ⧸ H`.
-* `TauCeti.Deck.regularSubgroupFiberOrbitQuotientEquivQuotientGroup`: the regular-cover
-  specialization of this equivalence.
 * `TauCeti.Deck.subgroupFiberOrbitQuotientEquivQuotientGroup_mapOfLE`: compatibility with
   the maps induced by subgroup inclusions.
 
@@ -59,16 +57,6 @@ private lemma mulAction_equivSubgroupOrbitsQuotientGroup_symm_mk
       (Quotient.mk'' (g⁻¹ • x) : MulAction.orbitRel.Quotient H X) :=
   rfl
 
-/-- For a regular preconnected covering, quotienting one fibre by the action of
-`H ≤ Deck p` is equivalent to the coset quotient `Deck p ⧸ H`. -/
-noncomputable def regularSubgroupFiberOrbitQuotientEquivQuotientGroup
-    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
-    (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) :
-    SubgroupFiberOrbitQuotient H b ≃ Deck p ⧸ H := by
-  letI := hreg.fiber_isPretransitive b
-  letI := fiber_isCancelSMul (b := b) hp
-  exact MulAction.equivSubgroupOrbitsQuotientGroup e H
-
 /-- The inverse quotient equivalence sends the coset of a deck transformation `φ` to the
 `H`-orbit class of the point `φ⁻¹ • e`. -/
 @[simp]
@@ -87,12 +75,13 @@ to the `H`-orbit class of `φ⁻¹ • e`. -/
 lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_symm_mk
     [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) (φ : Deck p) :
-    (regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e).symm
+    (@MulAction.equivSubgroupOrbitsQuotientGroup (Deck p) (p ⁻¹' {b}) _ _ e
+        (hreg.fiber_isPretransitive b) (fiber_isCancelSMul (b := b) hp) H).symm
         (QuotientGroup.mk (s := H) φ) =
       subgroupFiberOrbitClass H (φ⁻¹ • e) := by
   letI := hreg.fiber_isPretransitive b
   letI := fiber_isCancelSMul (b := b) hp
-  simp [regularSubgroupFiberOrbitQuotientEquivQuotientGroup]
+  simp
 
 /-- On underlying points, the inverse quotient equivalence sends the coset of `φ` to the
 class of the value of `φ⁻¹` on the chosen fibre point. -/
@@ -115,7 +104,8 @@ lemma subgroupFiberOrbitQuotientEquivQuotientGroup_symm_mk_coe
 lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_symm_mk_coe
     [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) (φ : Deck p) :
-    (regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e).symm
+    (@MulAction.equivSubgroupOrbitsQuotientGroup (Deck p) (p ⁻¹' {b}) _ _ e
+        (hreg.fiber_isPretransitive b) (fiber_isCancelSMul (b := b) hp) H).symm
         (QuotientGroup.mk φ) =
       subgroupFiberOrbitClass H
         ⟨φ.1.symm e.1, by
@@ -123,8 +113,7 @@ lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_symm_mk_coe
           exact (map_proj φ⁻¹ e.1).trans (Set.mem_singleton_iff.mp e.2)⟩ := by
   letI := hreg.fiber_isPretransitive b
   letI := fiber_isCancelSMul (b := b) hp
-  simpa [regularSubgroupFiberOrbitQuotientEquivQuotientGroup] using
-    subgroupFiberOrbitQuotientEquivQuotientGroup_symm_mk_coe H e φ
+  simpa using subgroupFiberOrbitQuotientEquivQuotientGroup_symm_mk_coe H e φ
 
 /-- The inverse quotient equivalence sends the identity coset to the orbit class of the chosen
 fibre point. -/
@@ -143,12 +132,13 @@ of the chosen fibre point. -/
 lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_symm_one
     [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) :
-    (regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e).symm
+    (@MulAction.equivSubgroupOrbitsQuotientGroup (Deck p) (p ⁻¹' {b}) _ _ e
+        (hreg.fiber_isPretransitive b) (fiber_isCancelSMul (b := b) hp) H).symm
         (QuotientGroup.mk (s := H) (1 : Deck p)) =
       subgroupFiberOrbitClass H e := by
   letI := hreg.fiber_isPretransitive b
   letI := fiber_isCancelSMul (b := b) hp
-  simp [regularSubgroupFiberOrbitQuotientEquivQuotientGroup]
+  simp
 
 /-- The quotient equivalence sends the orbit class of `φ⁻¹ • e` to the coset of `φ`. -/
 @[simp]
@@ -168,13 +158,13 @@ of `φ`. -/
 lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_apply_inv_smul
     [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) (φ : Deck p) :
-    regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e
+    @MulAction.equivSubgroupOrbitsQuotientGroup (Deck p) (p ⁻¹' {b}) _ _ e
+        (hreg.fiber_isPretransitive b) (fiber_isCancelSMul (b := b) hp) H
         (subgroupFiberOrbitClass H (φ⁻¹ • e)) =
       QuotientGroup.mk (s := H) φ := by
   letI := hreg.fiber_isPretransitive b
   letI := fiber_isCancelSMul (b := b) hp
-  simpa [regularSubgroupFiberOrbitQuotientEquivQuotientGroup] using
-    subgroupFiberOrbitQuotientEquivQuotientGroup_apply_inv_smul H e φ
+  simpa using subgroupFiberOrbitQuotientEquivQuotientGroup_apply_inv_smul H e φ
 
 /-- The quotient equivalence sends the chosen fibre point to the identity coset. -/
 @[simp]
@@ -193,13 +183,13 @@ coset. -/
 lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_apply_base
     [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) :
-    regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e
+    @MulAction.equivSubgroupOrbitsQuotientGroup (Deck p) (p ⁻¹' {b}) _ _ e
+        (hreg.fiber_isPretransitive b) (fiber_isCancelSMul (b := b) hp) H
         (subgroupFiberOrbitClass H e) =
       QuotientGroup.mk (s := H) (1 : Deck p) := by
   letI := hreg.fiber_isPretransitive b
   letI := fiber_isCancelSMul (b := b) hp
-  simpa [regularSubgroupFiberOrbitQuotientEquivQuotientGroup] using
-    subgroupFiberOrbitQuotientEquivQuotientGroup_apply_base H e
+  simpa using subgroupFiberOrbitQuotientEquivQuotientGroup_apply_base H e
 
 /-- The quotient equivalence sends the orbit class of `φ • e` to the coset of `φ⁻¹`. -/
 @[simp]
@@ -218,13 +208,13 @@ lemma subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul
 lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul
     [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) (φ : Deck p) :
-    regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e
+    @MulAction.equivSubgroupOrbitsQuotientGroup (Deck p) (p ⁻¹' {b}) _ _ e
+        (hreg.fiber_isPretransitive b) (fiber_isCancelSMul (b := b) hp) H
         (subgroupFiberOrbitClass H (φ • e)) =
       QuotientGroup.mk (s := H) φ⁻¹ := by
   letI := hreg.fiber_isPretransitive b
   letI := fiber_isCancelSMul (b := b) hp
-  simpa [regularSubgroupFiberOrbitQuotientEquivQuotientGroup] using
-    subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul H e φ
+  simpa using subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul H e φ
 
 /-- The subgroup-fibre quotient equivalence is natural in subgroup inclusions. -/
 @[simp]
@@ -267,12 +257,14 @@ lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_mapOfLE
     {H K : Subgroup (Deck p)} (hHK : H ≤ K) (e : p ⁻¹' {b})
     (x : SubgroupFiberOrbitQuotient H b) :
     Subgroup.quotientMapOfLE hHK
-        (regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e x) =
-      regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg K e
+        (@MulAction.equivSubgroupOrbitsQuotientGroup (Deck p) (p ⁻¹' {b}) _ _ e
+          (hreg.fiber_isPretransitive b) (fiber_isCancelSMul (b := b) hp) H x) =
+      @MulAction.equivSubgroupOrbitsQuotientGroup (Deck p) (p ⁻¹' {b}) _ _ e
+        (hreg.fiber_isPretransitive b) (fiber_isCancelSMul (b := b) hp) K
         (subgroupFiberOrbitMapOfLE (b := b) hHK x) := by
   letI := hreg.fiber_isPretransitive b
   letI := fiber_isCancelSMul (b := b) hp
-  simp [regularSubgroupFiberOrbitQuotientEquivQuotientGroup]
+  simp
 
 /-- On representatives, the regular-cover naturality lemma sends the class of `φ • e` through
 the coset map induced by `H ≤ K`. -/
@@ -281,12 +273,14 @@ lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_mapOfLE_apply_smul
     [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     {H K : Subgroup (Deck p)} (hHK : H ≤ K) (e : p ⁻¹' {b}) (φ : Deck p) :
     Subgroup.quotientMapOfLE hHK
-        (regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg H e
+        (@MulAction.equivSubgroupOrbitsQuotientGroup (Deck p) (p ⁻¹' {b}) _ _ e
+          (hreg.fiber_isPretransitive b) (fiber_isCancelSMul (b := b) hp) H
           (subgroupFiberOrbitClass H (φ • e))) =
-      regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg K e
+      @MulAction.equivSubgroupOrbitsQuotientGroup (Deck p) (p ⁻¹' {b}) _ _ e
+        (hreg.fiber_isPretransitive b) (fiber_isCancelSMul (b := b) hp) K
         (subgroupFiberOrbitMapOfLE (b := b) hHK
           (subgroupFiberOrbitClass H (φ • e))) := by
-  rw [regularSubgroupFiberOrbitQuotientEquivQuotientGroup_mapOfLE]
+  simp
 
 /-- Equality of subgroup fibre-orbit classes is equality of the corresponding deck cosets
 under the quotient equivalence, with the inverse orientation coming from Mathlib's quotient
