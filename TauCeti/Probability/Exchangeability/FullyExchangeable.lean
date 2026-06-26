@@ -21,6 +21,9 @@ on path space:
 Both bridges are thin: they reuse the merged Layer 0 API and Mathlib — finite-marginal uniqueness
 (`FiniteMarginals`), the contractability bridge (`Contractability`), and
 `Equiv.Perm.exists_extending_pair` — rather than new measure theory.
+
+These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned at
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses.
 -/
 
 public section
@@ -42,8 +45,7 @@ private theorem exists_perm_nat_extending {n : ℕ} (σ : Equiv.Perm (Fin n)) :
   Equiv.Perm.exists_extending_pair (fun i : Fin n => i.val) (fun i => (σ i).val)
     Fin.val_injective (fun _ _ h => σ.injective (Fin.val_injective h))
 
-/-- **Full exchangeability implies finite exchangeability at every dimension.** Extend the `Fin n`
-permutation to one of `ℕ`, apply full invariance, and project to the first `n` coordinates. -/
+/-- **Full exchangeability implies finite exchangeability at each dimension `n`.** -/
 theorem FullyExchangeable.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) (n : ℕ) :
     ExchangeableAt μ X n := by
@@ -67,9 +69,9 @@ theorem FullyExchangeable.exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Exchangeable μ X :=
   fun n => hX.exchangeableAt hX_meas n
 
-/-- **An exchangeable process has the prefix law along any injective finite selection.** Extend the
-injective `k : Fin n → ℕ` to a permutation of a large enough `Fin N` and project, exactly as in
-`contractable_of_exchangeable` but with `Equiv.Perm.exists_extending_pair` (no monotonicity). -/
+/-- **An exchangeable process has the prefix law along any injective finite selection:**
+`blockLaw μ X k = prefixLaw μ X n` for injective `k : Fin n → ℕ`. (The injective analogue of
+`contractable_of_exchangeable`.) -/
 theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ)
     {n : ℕ} (k : Fin n → ℕ) (hk : Function.Injective k) :
@@ -108,10 +110,8 @@ theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : �
       (Measure.map (fun x : Fin N → α => fun i : Fin (m + 1) => x (Fin.castLE hnN i))) hexch
     rwa [hLHS, hRHS] at key
 
-/-- **Finite exchangeability implies full exchangeability** (finite law, measurable process). For
-each `π`, the reindexed path law and the path law agree on every prefix marginal (the reindexed
-block is an injective selection, so its law is the prefix law); finite-marginal uniqueness lifts
-this to the whole path law. -/
+/-- **Finite exchangeability implies full exchangeability** (finite law, measurable process): the
+path law is invariant under every permutation of `ℕ`. -/
 theorem Exchangeable.fullyExchangeable {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : FullyExchangeable μ X := by
   intro π
