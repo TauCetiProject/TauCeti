@@ -31,13 +31,13 @@ for `IsSemigroupGroupPD` as the positive-definite predicate on `ℝ≥0 × V` wi
 ## Main declarations
 
 * `TauCeti.IsSemigroupGroupPD`: the BCR positive-definiteness predicate on `ℝ≥0 × V`.
-* `TauCeti.isSemigroupGroupPD_iff_isPositiveDefinite`: the bridge to the generic
-  positive-definite-function predicate.
 * `TauCeti.isSemigroupGroupPD_iff_isPositiveDefiniteKernel`: the bridge to the associated
   positive-definite kernel.
 * `TauCeti.isSemigroupGroupPD_iff`: the finite quadratic-form characterization.
 * `TauCeti.IsSemigroupGroupPD.conj_symm`, diagonal, and origin lemmas: basic consequences of the
   semigroup-group positive-definiteness condition.
+* `TauCeti.isSemigroupGroupPD_const_of_nonneg`, `TauCeti.isSemigroupGroupPD_zero`, and
+  `TauCeti.isSemigroupGroupPD_one`: basic constant examples.
 * `TauCeti.IsSemigroupGroupPD.add`, `TauCeti.IsSemigroupGroupPD.mul`, and finite
   `sum`/`prod`: closure properties inherited from positive-definite kernels.
 * `TauCeti.IsSemigroupGroupPD.quadForm_two_nonneg`: the `2 × 2` BCR Hermitian sub-form is
@@ -63,7 +63,7 @@ variable {V : Type*} [AddCommGroup V] {F G : ℝ≥0 × V → ℂ}
 
 This wrapper avoids installing a global negation `StarAddMonoid` instance on an arbitrary
 additive group `V`. -/
-structure BCRPoint (V : Type*) where
+private structure BCRPoint (V : Type*) where
   /-- The nonnegative time coordinate. -/
   time : ℝ≥0
   /-- The group coordinate. -/
@@ -84,47 +84,48 @@ private def toProd (p : BCRPoint V) : ℝ≥0 × V :=
   (p.time, p.point)
 
 @[ext]
-theorem ext {p q : BCRPoint V} (ht : p.time = q.time) (hv : p.point = q.point) : p = q := by
+private theorem ext {p q : BCRPoint V} (ht : p.time = q.time) (hv : p.point = q.point) :
+    p = q := by
   cases p
   cases q
   simp_all
 
-instance [AddCommGroup V] : Zero (BCRPoint V) where
+private instance [AddCommGroup V] : Zero (BCRPoint V) where
   zero := ⟨0, 0⟩
 
-instance [AddCommGroup V] : Add (BCRPoint V) where
+private instance [AddCommGroup V] : Add (BCRPoint V) where
   add p q := ⟨p.time + q.time, p.point + q.point⟩
 
-instance [AddCommGroup V] : Star (BCRPoint V) where
+private instance [AddCommGroup V] : Star (BCRPoint V) where
   star p := ⟨p.time, -p.point⟩
 
 @[simp]
-theorem zero_time [AddCommGroup V] : (0 : BCRPoint V).time = 0 :=
+private theorem zero_time [AddCommGroup V] : (0 : BCRPoint V).time = 0 :=
   rfl
 
 @[simp]
-theorem zero_point [AddCommGroup V] : (0 : BCRPoint V).point = 0 :=
+private theorem zero_point [AddCommGroup V] : (0 : BCRPoint V).point = 0 :=
   rfl
 
 @[simp]
-theorem add_time [AddCommGroup V] (p q : BCRPoint V) :
+private theorem add_time [AddCommGroup V] (p q : BCRPoint V) :
     (p + q).time = p.time + q.time :=
   rfl
 
 @[simp]
-theorem add_point [AddCommGroup V] (p q : BCRPoint V) :
+private theorem add_point [AddCommGroup V] (p q : BCRPoint V) :
     (p + q).point = p.point + q.point :=
   rfl
 
 @[simp]
-theorem star_time [AddCommGroup V] (p : BCRPoint V) : (star p).time = p.time :=
+private theorem star_time [AddCommGroup V] (p : BCRPoint V) : (star p).time = p.time :=
   rfl
 
 @[simp]
-theorem star_point [AddCommGroup V] (p : BCRPoint V) : (star p).point = -p.point :=
+private theorem star_point [AddCommGroup V] (p : BCRPoint V) : (star p).point = -p.point :=
   rfl
 
-instance [AddCommGroup V] : AddCommMonoid (BCRPoint V) where
+private instance [AddCommGroup V] : AddCommMonoid (BCRPoint V) where
   add := (· + ·)
   zero := 0
   add_assoc := by
@@ -141,7 +142,7 @@ instance [AddCommGroup V] : AddCommMonoid (BCRPoint V) where
     ext <;> simp [add_comm]
   nsmul := nsmulRec
 
-instance [AddCommGroup V] : StarAddMonoid (BCRPoint V) where
+private instance [AddCommGroup V] : StarAddMonoid (BCRPoint V) where
   star_add := by
     intro p q
     ext <;> simp [add_comm]
@@ -160,7 +161,7 @@ def IsSemigroupGroupPD (F : ℝ≥0 × V → ℂ) : Prop :=
 
 /-- The BCR predicate is the generic positive-definite-function predicate on the local
 `BCRPoint` wrapper carrying the involution `(t, v) ↦ (t, -v)`. -/
-theorem isSemigroupGroupPD_iff_isPositiveDefinite :
+private theorem isSemigroupGroupPD_iff_isPositiveDefinite :
     IsSemigroupGroupPD F ↔ IsPositiveDefinite (fun p : BCRPoint V => F (p.time, p.point)) :=
   Iff.rfl
 
@@ -190,6 +191,22 @@ theorem IsSemigroupGroupPD.of_isPositiveDefiniteKernel
     (hF : IsPositiveDefiniteKernel fun p q : ℝ≥0 × V => F (p.1 + q.1, p.2 - q.2)) :
     IsSemigroupGroupPD F :=
   isSemigroupGroupPD_iff_isPositiveDefiniteKernel.mpr hF
+
+/-- A nonnegative complex constant is semigroup-group positive definite. -/
+theorem isSemigroupGroupPD_const_of_nonneg {k : ℂ} (hk : 0 ≤ k) :
+    IsSemigroupGroupPD (fun _ : ℝ≥0 × V => k) :=
+  IsSemigroupGroupPD.of_isPositiveDefiniteKernel <| by
+    simpa using isPositiveDefiniteKernel_const_of_nonneg (α := ℝ≥0 × V) hk
+
+/-- The zero function is semigroup-group positive definite. -/
+theorem isSemigroupGroupPD_zero :
+    IsSemigroupGroupPD (fun _ : ℝ≥0 × V => (0 : ℂ)) :=
+  isSemigroupGroupPD_const_of_nonneg le_rfl
+
+/-- The constant-one function is semigroup-group positive definite. -/
+theorem isSemigroupGroupPD_one :
+    IsSemigroupGroupPD (fun _ : ℝ≥0 × V => (1 : ℂ)) :=
+  isSemigroupGroupPD_const_of_nonneg zero_le_one
 
 /-- The finite quadratic-form characterization of semigroup-group positive definiteness. -/
 theorem isSemigroupGroupPD_iff :
