@@ -22,10 +22,15 @@ instances of the quotient defined here.
 
 * `TauCeti.SmoothEmbedding.AmbientIsotopyClass`: bundled smooth embeddings modulo ambient
   isotopy.
+* `TauCeti.SmoothEmbedding.AmbientIsotopyClass.induction_on`: prove facts about classes by
+  checking representatives.
 * `TauCeti.SmoothEmbedding.AmbientIsotopyClass.lift`: descend a relation-invariant function
   from embeddings to ambient-isotopy classes.
 * `TauCeti.SmoothEmbedding.AmbientIsotopyClass.map`: descend a relation-preserving operation
   between smooth-embedding types to their quotients.
+* `TauCeti.SmoothEmbedding.AmbientIsotopyClass.lift₂` and
+  `TauCeti.SmoothEmbedding.AmbientIsotopyClass.map₂`: descend binary invariant or
+  relation-preserving operations.
 
 The relation being quotiented follows Burde--Zieschang, *Knots*, Chapter 1, Definitions 1.1 and
 1.2, via `TauCeti.Topology.Homotopy.AmbientIsotopic`.
@@ -42,17 +47,24 @@ namespace SmoothEmbedding
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {F'' : Type*} [NormedAddCommGroup F''] [NormedSpace 𝕜 F'']
   {H : Type*} [TopologicalSpace H] {H' : Type*} [TopologicalSpace H']
+  {H'' : Type*} [TopologicalSpace H'']
   {G : Type*} [TopologicalSpace G] {G' : Type*} [TopologicalSpace G']
+  {G'' : Type*} [TopologicalSpace G'']
   {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' H'}
+  {I'' : ModelWithCorners 𝕜 E'' H''} {J'' : ModelWithCorners 𝕜 F'' G''}
   {I' : ModelWithCorners 𝕜 F G} {J' : ModelWithCorners 𝕜 F' G'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  {M'' : Type*} [TopologicalSpace M''] [ChartedSpace H'' M'']
+  {N'' : Type*} [TopologicalSpace N''] [ChartedSpace G'' N'']
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace G M']
   {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
-  {n n' : ℕ∞ω}
+  {n n' n'' : ℕ∞ω}
 
 /-- Ambient-isotopy classes of bundled smooth embeddings.
 
@@ -89,6 +101,18 @@ theorem ambientIsotopic_of_mk_eq (hfg : mk f = mk g) :
     SmoothEmbedding.AmbientIsotopic f g :=
   mk_eq_mk_iff.1 hfg
 
+/-- Prove a proposition about ambient-isotopy classes by checking representatives. -/
+@[elab_as_elim]
+theorem induction_on {motive : AmbientIsotopyClass I J n M N → Prop}
+    (x : AmbientIsotopyClass I J n M N)
+    (h : ∀ f : SmoothEmbedding I J n M N, motive (mk f)) : motive x :=
+  Quotient.inductionOn x h
+
+/-- Two functions out of ambient-isotopy classes are equal if they agree on representatives. -/
+theorem funext {β : Sort*} {F G : AmbientIsotopyClass I J n M N → β}
+    (h : ∀ f : SmoothEmbedding I J n M N, F (mk f) = G (mk f)) : F = G :=
+  _root_.funext fun x => induction_on x h
+
 /-- Descend a function on bundled smooth embeddings to ambient-isotopy classes.
 
 The hypothesis says exactly that the function is invariant under ambient isotopy. -/
@@ -107,6 +131,16 @@ theorem lift_mk {β : Sort*} (F : SmoothEmbedding I J n M N → β)
     lift F hF (mk f) = F f :=
   Quotient.lift_mk F (fun f g hfg =>
     hF (f := f) (g := g) (AmbientIsotopic.setoid_r_iff.1 hfg)) f
+
+/-- A function on ambient-isotopy classes agreeing with a descended function on representatives is
+equal to that descended function. -/
+theorem lift_unique {β : Sort*} (F : SmoothEmbedding I J n M N → β)
+    (hF : ∀ ⦃f g : SmoothEmbedding I J n M N⦄,
+      SmoothEmbedding.AmbientIsotopic f g → F f = F g)
+    (G : AmbientIsotopyClass I J n M N → β)
+    (hG : ∀ f : SmoothEmbedding I J n M N, G (mk f) = F f) :
+    G = lift F hF :=
+  funext fun f => by simp [hG f]
 
 /-- Descend an ambient-isotopy-preserving map between bundled smooth-embedding types to their
 ambient-isotopy quotients. -/
@@ -128,6 +162,68 @@ theorem map_mk (F : SmoothEmbedding I J n M N → SmoothEmbedding I' J' n' M' N'
   Quotient.map_mk F (fun {f g} hfg =>
     AmbientIsotopic.setoid_r_iff.2
       (hF (f := f) (g := g) (AmbientIsotopic.setoid_r_iff.1 hfg))) f
+
+/-- Descend a binary function on bundled smooth embeddings to ambient-isotopy classes.
+
+The hypothesis says that the function is invariant under ambient isotopy in both variables. -/
+def lift₂ {β : Sort*}
+    (F : SmoothEmbedding I J n M N → SmoothEmbedding I' J' n' M' N' → β)
+    (hF : ∀ ⦃f f' : SmoothEmbedding I J n M N⦄,
+      SmoothEmbedding.AmbientIsotopic f f' →
+        ∀ ⦃g g' : SmoothEmbedding I' J' n' M' N'⦄,
+          SmoothEmbedding.AmbientIsotopic g g' → F f g = F f' g') :
+    AmbientIsotopyClass I J n M N → AmbientIsotopyClass I' J' n' M' N' → β :=
+  Quotient.lift₂ F fun f g f' g' hff' hgg' =>
+    hF (f := f) (f' := f') (AmbientIsotopic.setoid_r_iff.1 hff')
+      (g := g) (g' := g') (AmbientIsotopic.setoid_r_iff.1 hgg')
+
+/-- Computation rule for `AmbientIsotopyClass.lift₂` on representatives. -/
+@[simp]
+theorem lift₂_mk_mk {β : Sort*}
+    (F : SmoothEmbedding I J n M N → SmoothEmbedding I' J' n' M' N' → β)
+    (hF : ∀ ⦃f f' : SmoothEmbedding I J n M N⦄,
+      SmoothEmbedding.AmbientIsotopic f f' →
+        ∀ ⦃g g' : SmoothEmbedding I' J' n' M' N'⦄,
+          SmoothEmbedding.AmbientIsotopic g g' → F f g = F f' g')
+    (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' n' M' N') :
+    lift₂ F hF (mk f) (mk g) = F f g :=
+  Quotient.lift₂_mk F (fun f g f' g' hff' hgg' =>
+    hF (f := f) (f' := f') (AmbientIsotopic.setoid_r_iff.1 hff')
+      (g := g) (g' := g') (AmbientIsotopic.setoid_r_iff.1 hgg')) f g
+
+/-- Descend a binary ambient-isotopy-preserving operation between bundled smooth-embedding types to
+their ambient-isotopy quotients. -/
+def map₂
+    (F : SmoothEmbedding I J n M N → SmoothEmbedding I' J' n' M' N' →
+      SmoothEmbedding I'' J'' n'' M'' N'')
+    (hF : ∀ ⦃f f' : SmoothEmbedding I J n M N⦄,
+      SmoothEmbedding.AmbientIsotopic f f' →
+        ∀ ⦃g g' : SmoothEmbedding I' J' n' M' N'⦄,
+          SmoothEmbedding.AmbientIsotopic g g' →
+            SmoothEmbedding.AmbientIsotopic (F f g) (F f' g')) :
+    AmbientIsotopyClass I J n M N → AmbientIsotopyClass I' J' n' M' N' →
+      AmbientIsotopyClass I'' J'' n'' M'' N'' :=
+  Quotient.map₂ F fun {f f'} hff' {g g'} hgg' =>
+    AmbientIsotopic.setoid_r_iff.2
+      (hF (f := f) (f' := f') (AmbientIsotopic.setoid_r_iff.1 hff')
+        (g := g) (g' := g') (AmbientIsotopic.setoid_r_iff.1 hgg'))
+
+/-- Computation rule for `AmbientIsotopyClass.map₂` on representatives. -/
+@[simp]
+theorem map₂_mk_mk
+    (F : SmoothEmbedding I J n M N → SmoothEmbedding I' J' n' M' N' →
+      SmoothEmbedding I'' J'' n'' M'' N'')
+    (hF : ∀ ⦃f f' : SmoothEmbedding I J n M N⦄,
+      SmoothEmbedding.AmbientIsotopic f f' →
+        ∀ ⦃g g' : SmoothEmbedding I' J' n' M' N'⦄,
+          SmoothEmbedding.AmbientIsotopic g g' →
+            SmoothEmbedding.AmbientIsotopic (F f g) (F f' g'))
+    (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' n' M' N') :
+    map₂ F hF (mk f) (mk g) = mk (F f g) :=
+  Quotient.map₂_mk F (fun {f f'} hff' {g g'} hgg' =>
+    AmbientIsotopic.setoid_r_iff.2
+      (hF (f := f) (f' := f') (AmbientIsotopic.setoid_r_iff.1 hff')
+        (g := g) (g' := g') (AmbientIsotopic.setoid_r_iff.1 hgg'))) f g
 
 end AmbientIsotopyClass
 

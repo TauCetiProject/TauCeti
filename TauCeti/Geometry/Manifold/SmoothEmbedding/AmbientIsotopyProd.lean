@@ -97,21 +97,18 @@ def prodMap [IsManifold I₁ n M₁] [IsManifold I₂ n M₂]
     AmbientIsotopyClass I₁ J₁ n M₁ N₁ →
       AmbientIsotopyClass I₂ J₂ n M₂ N₂ →
         AmbientIsotopyClass (I₁.prod I₂) (J₁.prod J₂) n (M₁ × M₂) (N₁ × N₂) :=
-  Quotient.map₂ (fun f g => f.prodMap g) fun {f f'} hff' {g g'} hgg' =>
-    AmbientIsotopic.prodMap_setoid (f := f) (f' := f') (g := g) (g' := g') hff' hgg'
+  map₂ (fun f g => f.prodMap g) fun {f f'} hff' {g g'} hgg' =>
+    AmbientIsotopic.prodMap (f := f) (f' := f') (g := g) (g' := g') hff' hgg'
 
 /-- Computation rule for `AmbientIsotopyClass.prodMap` on representatives. -/
 @[simp]
 theorem prodMap_mk_mk [IsManifold I₁ n M₁] [IsManifold I₂ n M₂]
     [IsManifold J₁ n N₁] [IsManifold J₂ n N₂]
     (f : SmoothEmbedding I₁ J₁ n M₁ N₁) (g : SmoothEmbedding I₂ J₂ n M₂ N₂) :
-    prodMap (mk f) (mk g) = mk (f.prodMap g) := by
-  unfold prodMap mk
-  exact Quotient.map₂_mk
-    (fun (f : SmoothEmbedding I₁ J₁ n M₁ N₁) (g : SmoothEmbedding I₂ J₂ n M₂ N₂) =>
-      f.prodMap g)
+    prodMap (mk f) (mk g) = mk (f.prodMap g) :=
+  map₂_mk_mk (fun f g => f.prodMap g)
     (fun {f f'} hff' {g g'} hgg' =>
-      AmbientIsotopic.prodMap_setoid (f := f) (f' := f') (g := g) (g' := g') hff' hgg')
+      AmbientIsotopic.prodMap (f := f) (f' := f') (g := g) (g' := g') hff' hgg')
     f g
 
 end AmbientIsotopyClass
