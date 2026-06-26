@@ -12,7 +12,8 @@ This file records basic lemmas for `Contractable` processes. The definitions liv
 contractability-specific API.
 
 The main result is `contractable_of_exchangeable` (with dot-notation form
-`Exchangeable.contractable`): every exchangeable sequence is contractable.
+`Exchangeable.contractable`): every exchangeable sequence with a.e. measurable coordinates is
+contractable.
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
