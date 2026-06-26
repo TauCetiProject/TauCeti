@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.BaseChangeNaturality
+public import TauCeti.Algebra.AlgebraicGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Trivial
 
 /-!
@@ -18,8 +18,8 @@ calculation: for every commutative `K`-algebra `A`, the convolution group of
 
 This is the terminal-object worked example for the ReductiveGroups roadmap, Layer 0: the
 Hopf-algebra/functor-of-points dictionary needs both the terminal object over `Spec k` and
-compatibility with base change. The proof is just the generic base-change equivalence for
-points, followed by the already-existing calculation of points of the trivial group.
+compatibility with base change. The file packages the base-change point equivalence, tensor-value
+normal forms, identity and inverse normal forms, and naturality in the value algebra.
 
 ## Main declarations
 
@@ -57,7 +57,7 @@ variable [Algebra k K] [Algebra K A] [Algebra k A] [IsScalarTower k K A]
 The source is the convolution group of `K`-algebra maps out of `K ⊗[k] k`. The equivalence is
 the inverse of the generic base-change equivalence for points, followed by the trivial-group
 points calculation over `k`. -/
-@[expose] noncomputable def baseChangePointsMulEquiv :
+noncomputable def baseChangePointsMulEquiv :
     WithConv (K ⊗[k] k →ₐ[K] A) ≃* PUnit.{1} :=
   (AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := k) (R := A)).symm.trans
     (pointsMulEquiv (R := k) (A := A))
@@ -71,7 +71,7 @@ theorem baseChangePointsMulEquiv_apply (f : WithConv (K ⊗[k] k →ₐ[K] A)) :
 
 /-- The inverse base-changed trivial-group points equivalence sends the unique element to
 the scalar-extension of the unique `k`-point of the trivial group. -/
-theorem baseChangePointsMulEquiv_symm_apply (u : PUnit.{1}) :
+private theorem baseChangePointsMulEquiv_symm_apply (u : PUnit.{1}) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u =
       AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := k) (R := A)
         ((pointsMulEquiv (R := k) (A := A)).symm u) :=
