@@ -104,18 +104,8 @@ theorem classNumber_mul_card_units_elementaryTwoQuotient_le
     (F : Type*) [Field F] [NumberField F] :
     NumberField.classNumber F * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤
       (NumberField.discr F).natAbs * 8 ^ finrank ℚ F := by
-  have hclass :
-      NumberField.classNumber F ≤ (NumberField.discr F).natAbs * 4 ^ finrank ℚ F :=
-    classNumber_le_nat_of_abs_discr_le F (abs_discr_le_natAbs F)
-  have hquot :
-      Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤ 2 ^ finrank ℚ F :=
-    card_units_elementaryTwoQuotient_le_of_finrank_le F le_rfl
-  calc
-    NumberField.classNumber F * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ)
-        ≤ ((NumberField.discr F).natAbs * 4 ^ finrank ℚ F) * 2 ^ finrank ℚ F :=
-          Nat.mul_le_mul hclass hquot
-    _ = (NumberField.discr F).natAbs * 8 ^ finrank ℚ F := by
-      rw [mul_assoc, four_pow_mul_two_pow]
+  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square]
+  exact classNumber_mul_units_sq_index_le F
 
 /-- Monotone elementary-2 quotient form: if `|d_F| ≤ D` and `[F : ℚ] ≤ n`, then
 `h_F * #(O_F^×/(O_F^×)^2) ≤ D * 8^n`. -/
@@ -124,14 +114,26 @@ theorem classNumber_mul_card_units_elementaryTwoQuotient_le_of_abs_discr_le_of_f
     (hD : |NumberField.discr F| ≤ D) (hn : finrank ℚ F ≤ n) :
     NumberField.classNumber F * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤
       D * 8 ^ n := by
-  have hclass : NumberField.classNumber F ≤ D * 4 ^ n :=
-    classNumber_le_nat_of_abs_discr_le_of_finrank_le F hD hn
-  have hquot : Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤ 2 ^ n :=
-    card_units_elementaryTwoQuotient_le_of_finrank_le F hn
-  calc
-    NumberField.classNumber F * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ)
-        ≤ (D * 4 ^ n) * 2 ^ n := Nat.mul_le_mul hclass hquot
-    _ = D * 8 ^ n := by
-      rw [mul_assoc, four_pow_mul_two_pow]
+  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square]
+  exact classNumber_mul_units_sq_index_le_of_abs_discr_le_of_finrank_le F hD hn
+
+/-- If `|d_F| ≤ D`, then
+`h_F * #(O_F^×/(O_F^×)^2) ≤ D * 8^[F:ℚ]`. -/
+theorem classNumber_mul_card_units_elementaryTwoQuotient_le_of_abs_discr_le
+    (F : Type*) [Field F] [NumberField F] {D : ℕ}
+    (hD : |NumberField.discr F| ≤ D) :
+    NumberField.classNumber F * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤
+      D * 8 ^ finrank ℚ F := by
+  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square]
+  exact classNumber_mul_units_sq_index_le_of_abs_discr_le F hD
+
+/-- If `[F : ℚ] ≤ n`, then
+`h_F * #(O_F^×/(O_F^×)^2) ≤ |d_F| * 8^n`. -/
+theorem classNumber_mul_card_units_elementaryTwoQuotient_le_of_finrank_le
+    (F : Type*) [Field F] [NumberField F] {n : ℕ} (hn : finrank ℚ F ≤ n) :
+    NumberField.classNumber F * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤
+      (NumberField.discr F).natAbs * 8 ^ n := by
+  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square]
+  exact classNumber_mul_units_sq_index_le_of_finrank_le F hn
 
 end TauCeti.NumberField
