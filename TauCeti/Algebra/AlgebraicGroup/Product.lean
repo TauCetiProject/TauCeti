@@ -146,6 +146,7 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 /-- Restricting a product point to the two factors commutes with post-composition in the value
 algebra. This is the naturality square for the restriction homomorphism underlying
 `pointsMulEquiv`. -/
+@[simp]
 theorem restrictHom_mapValue (φ : A →ₐ[R] B)
     (f : WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A)) :
     restrictHom (AlgHom.mapValue (H := H₁ ⊗[R] H₂) φ f) =
