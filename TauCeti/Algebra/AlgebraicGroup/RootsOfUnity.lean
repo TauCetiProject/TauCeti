@@ -28,6 +28,9 @@ coordinate ring `R[X]/(X^n - 1)` is separate quotient-polynomial infrastructure.
   value on the standard generator `single (ofAdd 1) 1`.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv_symm_apply_single_generator_smul`: the inverse
   equivalence evaluates scalar multiples of the standard generator.
+* `TauCeti.RootsOfUnityGroup.pointsMulEquiv_symm_apply_single_zmod_val`: the inverse
+  equivalence evaluates any cyclic group-algebra generator as the corresponding power of
+  the chosen root of unity.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquiv_symm_apply_single_generator`: the inverse
   equivalence sends a root of unity to the point taking the standard generator to it.
 
@@ -100,6 +103,15 @@ private lemma characterMulEquivRootsOfUnity_symm_apply_generator
 
 end Characters
 
+private lemma generator_pow_val (n : ℕ) [NeZero n] (x : Multiplicative (ZMod n)) :
+    generator n ^ (Multiplicative.toAdd x).val = x := by
+  rw [← ofAdd_nsmul]
+  simp only [nsmul_eq_mul, mul_one]
+  -- Expose the `ZMod` cast hidden in the additive scalar multiple so that
+  -- `ZMod.natCast_zmod_val` applies directly.
+  change Multiplicative.ofAdd (((Multiplicative.toAdd x).val : ℕ) : ZMod n) = x
+  rw [ZMod.natCast_zmod_val, ofAdd_toAdd]
+
 variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
 variable {B : Type*} [CommSemiring B] [Algebra R B]
 
@@ -159,6 +171,96 @@ lemma pointsMulEquiv_symm_apply_single_generator_smul (n : ℕ) (ζ : rootsOfUni
       r • MonoidAlgebra.single (generator n) (1 : R) by simp]
   rw [map_smul]
   rw [pointsMulEquiv_symm_apply_single_generator]
+
+/-- The inverse `μ_n` points equivalence evaluates the group-like generator indexed by
+`x : Multiplicative (ZMod n)` as the corresponding power of the chosen root of unity.
+
+For `x = generator n`, this specializes to
+`RootsOfUnityGroup.pointsMulEquiv_symm_apply_single_generator`. -/
+@[simp]
+lemma pointsMulEquiv_symm_apply_single_zmod_val (n : ℕ) [NeZero n] (ζ : rootsOfUnity n A)
+    (x : Multiplicative (ZMod n)) :
+    ((pointsMulEquiv (R := R) (A := A) n).symm ζ).ofConv
+        (MonoidAlgebra.single x (1 : R)) =
+      ((ζ : Aˣ) ^ (Multiplicative.toAdd x).val : Aˣ) := by
+  have hsingle :
+      MonoidAlgebra.single x (1 : R) =
+        MonoidAlgebra.single (generator n) (1 : R) ^ (Multiplicative.toAdd x).val := by
+    rw [MonoidAlgebra.single_pow, one_pow, generator_pow_val]
+  rw [hsingle, map_pow, pointsMulEquiv_symm_apply_single_generator]
+  rw [Units.val_pow_eq_pow_val]
+
+/-- The inverse `μ_n` points equivalence evaluates scalar multiples of the group-like generator
+indexed by `x : Multiplicative (ZMod n)` by scalar multiplication of the corresponding power
+of the chosen root of unity. -/
+@[simp]
+lemma pointsMulEquiv_symm_apply_single_zmod_val_smul (n : ℕ) [NeZero n] (ζ : rootsOfUnity n A)
+    (x : Multiplicative (ZMod n)) (r : R) :
+    ((pointsMulEquiv (R := R) (A := A) n).symm ζ).ofConv
+        (MonoidAlgebra.single x r) =
+      r • (((ζ : Aˣ) ^ (Multiplicative.toAdd x).val : Aˣ) : A) := by
+  -- The scalar-action rewrite fixes the coefficient from `r` to `1`, so the arbitrary-generator
+  -- evaluation lemma applies directly.
+  rw [show MonoidAlgebra.single x r = r • MonoidAlgebra.single x (1 : R) by simp]
+  rw [map_smul, pointsMulEquiv_symm_apply_single_zmod_val]
+
+/-- The previous normal form, specialized to an additive residue class `j : ZMod n`. -/
+@[simp]
+lemma pointsMulEquiv_symm_apply_single_ofAdd_val (n : ℕ) [NeZero n] (ζ : rootsOfUnity n A)
+    (j : ZMod n) :
+    ((pointsMulEquiv (R := R) (A := A) n).symm ζ).ofConv
+        (MonoidAlgebra.single (Multiplicative.ofAdd j) (1 : R)) =
+      ((ζ : Aˣ) ^ j.val : Aˣ) := by
+  rw [
+    pointsMulEquiv_symm_apply_single_zmod_val (R := R) (A := A) n ζ
+      (Multiplicative.ofAdd j), toAdd_ofAdd]
+
+/-- The scalar version of `pointsMulEquiv_symm_apply_single_ofAdd_val`. -/
+@[simp]
+lemma pointsMulEquiv_symm_apply_single_ofAdd_val_smul (n : ℕ) [NeZero n] (ζ : rootsOfUnity n A)
+    (j : ZMod n) (r : R) :
+    ((pointsMulEquiv (R := R) (A := A) n).symm ζ).ofConv
+        (MonoidAlgebra.single (Multiplicative.ofAdd j) r) =
+      r • (((ζ : Aˣ) ^ j.val : Aˣ) : A) := by
+  rw [
+    pointsMulEquiv_symm_apply_single_zmod_val_smul (R := R) (A := A) n ζ
+      (Multiplicative.ofAdd j) r, toAdd_ofAdd]
+
+/-- Naturality of the inverse `μ_n` points equivalence in the value algebra: post-composing
+the point attached to `ζ` gives the point attached to the image of `ζ`. -/
+@[simp]
+lemma mapValue_pointsMulEquiv_symm_apply (n : ℕ) (φ : A →ₐ[R] B) (ζ : rootsOfUnity n A) :
+    AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative (ZMod n))) φ
+        ((pointsMulEquiv (R := R) (A := A) n).symm ζ) =
+      (pointsMulEquiv (R := R) (A := B) n).symm
+        (restrictRootsOfUnity φ.toMonoidHom n ζ) := by
+  apply (pointsMulEquiv (R := R) (A := B) n).injective
+  rw [pointsMulEquiv_mapValue]
+  simp
+
+/-- Naturality of the inverse `μ_n` points equivalence, evaluated on an arbitrary cyclic
+group-algebra generator. -/
+@[simp]
+lemma mapValue_pointsMulEquiv_symm_apply_single_zmod_val (n : ℕ) [NeZero n] (φ : A →ₐ[R] B)
+    (ζ : rootsOfUnity n A) (x : Multiplicative (ZMod n)) :
+    (AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative (ZMod n))) φ
+        ((pointsMulEquiv (R := R) (A := A) n).symm ζ)).ofConv
+        (MonoidAlgebra.single x (1 : R)) =
+      φ (((ζ : Aˣ) ^ (Multiplicative.toAdd x).val : Aˣ) : A) := by
+  rw [mapValue_pointsMulEquiv_symm_apply, pointsMulEquiv_symm_apply_single_zmod_val]
+  simp [map_pow]
+
+/-- Naturality of the inverse `μ_n` points equivalence on scalar multiples of arbitrary cyclic
+group-algebra generators. -/
+@[simp]
+lemma mapValue_pointsMulEquiv_symm_apply_single_zmod_val_smul (n : ℕ) [NeZero n] (φ : A →ₐ[R] B)
+    (ζ : rootsOfUnity n A) (x : Multiplicative (ZMod n)) (r : R) :
+    (AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative (ZMod n))) φ
+        ((pointsMulEquiv (R := R) (A := A) n).symm ζ)).ofConv
+        (MonoidAlgebra.single x r) =
+      φ (r • (((ζ : Aˣ) ^ (Multiplicative.toAdd x).val : Aˣ) : A)) := by
+  rw [mapValue_pointsMulEquiv_symm_apply, pointsMulEquiv_symm_apply_single_zmod_val_smul]
+  simp [map_pow]
 
 end RootsOfUnityGroup
 
