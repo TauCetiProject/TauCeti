@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
 
 /-!
@@ -31,7 +32,7 @@ in Layer D)."  No external mathematics is vendored; the proof uses Tau Ceti's ex
 `WeilDivisor`/`OrderSystem` API and Mathlib's quotient-group first isomorphism theorem.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
@@ -62,6 +63,7 @@ lemma mem_principalSubgroupOfWeightedDegreeZero {w : X → ℤ}
 
 /-- The natural map from weighted-degree-zero divisors to the abstract degree-zero divisor
 class group `Pic⁰`, sending a divisor to its divisor class. -/
+@[expose]
 def weightedDegreeZeroClassHom (w : X → ℤ) (h : S.IsWeightedDegreeZero w) :
     weightedDegreeZeroSubgroup w →+ S.picZero w h where
   toFun D :=
@@ -120,6 +122,7 @@ lemma weightedDegreeZeroClassHom_ker {w : X → ℤ} (h : S.IsWeightedDegreeZero
 
 /-- The quotient of weighted-degree-zero divisors by principal divisors is the abstract
 degree-zero divisor class group `Pic⁰`. -/
+@[expose]
 def weightedDegreeZeroQuotientEquivPicZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w) :
     weightedDegreeZeroSubgroup w ⧸ S.principalSubgroupOfWeightedDegreeZero w ≃+
       S.picZero w h :=
@@ -151,11 +154,32 @@ lemma coe_weightedDegreeZeroQuotientEquivPicZero_mk {w : X → ℤ}
 
 /-! ### Unweighted degree-zero divisors modulo principal divisors -/
 
+/-- The unweighted degree-zero subgroup is the weight-one weighted-degree-zero subgroup. -/
+@[expose]
+def degreeZeroSubgroupEquivWeightedDegreeZeroOne :
+    degreeZeroSubgroup X ≃+ weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) where
+  toFun D := ⟨D, by
+    rw [mem_weightedDegreeZeroSubgroup, weightedDegree_one_eq_degree]
+    exact degree_coe_degreeZeroSubgroup D⟩
+  invFun D := ⟨D, by
+    rw [mem_degreeZeroSubgroup, ← weightedDegree_one_eq_degree]
+    exact weightedDegree_coe_weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) D⟩
+  left_inv D := by
+    ext
+    rfl
+  right_inv D := by
+    ext
+    rfl
+  map_add' D E := by
+    ext
+    rfl
+
 /-- Principal divisors inside the unweighted degree-zero divisor group: a degree-zero divisor
 belongs to this subgroup exactly when its underlying divisor is principal. -/
 def principalSubgroupOfDegreeZero :
     AddSubgroup (degreeZeroSubgroup X) :=
-  S.principalSubgroup.comap (degreeZeroSubgroup X).subtype
+  (S.principalSubgroupOfWeightedDegreeZero (fun _ : X => (1 : ℤ))).comap
+    (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).toAddMonoidHom
 
 @[simp]
 lemma mem_principalSubgroupOfDegreeZero {D : degreeZeroSubgroup X} :
@@ -165,18 +189,12 @@ lemma mem_principalSubgroupOfDegreeZero {D : degreeZeroSubgroup X} :
 
 /-- The natural map from unweighted degree-zero divisors to the abstract unweighted
 degree-zero divisor class group `Pic⁰`, sending a divisor to its divisor class. -/
+@[expose]
 def degreeZeroClassHom (h : S.IsUnweightedDegreeZero) :
     degreeZeroSubgroup X →+ S.unweightedPicZero h where
-  toFun D :=
-    ⟨S.divisorClass (D : WeilDivisor X), by
-      rw [divisorClass_mem_unweightedPicZero]
-      exact degree_coe_degreeZeroSubgroup D⟩
-  map_zero' := by
-    apply Subtype.ext
-    simp
-  map_add' D E := by
-    apply Subtype.ext
-    simp
+  __ := (S.weightedDegreeZeroClassHom (fun _ : X => (1 : ℤ))
+      (h : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ)))).comp
+    (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).toAddMonoidHom
 
 @[simp]
 lemma coe_degreeZeroClassHom_apply (h : S.IsUnweightedDegreeZero)
@@ -197,12 +215,15 @@ lemma degreeZeroClassHom_apply (h : S.IsUnweightedDegreeZero)
 degree-zero divisor class has an unweighted degree-zero representative. -/
 lemma degreeZeroClassHom_surjective (h : S.IsUnweightedDegreeZero) :
     Function.Surjective (S.degreeZeroClassHom h) := by
-  rintro ⟨c, hc⟩
-  obtain ⟨D, rfl⟩ := S.divisorClass_surjective c
-  refine ⟨⟨D, ?_⟩, ?_⟩
-  · rw [mem_degreeZeroSubgroup]
-    exact (S.divisorClass_mem_unweightedPicZero h).mp hc
-  · rfl
+  intro c
+  obtain ⟨D, hD⟩ :=
+    S.weightedDegreeZeroClassHom_surjective (w := fun _ : X => (1 : ℤ))
+      (h : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ))) c
+  exact ⟨(degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D, by
+    change S.weightedDegreeZeroClassHom (fun _ : X => (1 : ℤ)) h
+        (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)
+          ((degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D)) = c
+    simpa using hD⟩
 
 @[simp]
 lemma degreeZeroClassHom_eq_zero_iff
@@ -221,28 +242,61 @@ lemma degreeZeroClassHom_ker (h : S.IsUnweightedDegreeZero) :
   rw [AddMonoidHom.mem_ker, mem_principalSubgroupOfDegreeZero,
     degreeZeroClassHom_eq_zero_iff]
 
+lemma principalSubgroupOfDegreeZero_map_equiv :
+    S.principalSubgroupOfDegreeZero.map
+      (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).toAddMonoidHom =
+        S.principalSubgroupOfWeightedDegreeZero (fun _ : X => (1 : ℤ)) := by
+  ext D
+  constructor
+  · rintro ⟨E, hE, rfl⟩
+    exact hE
+  · intro hD
+    refine ⟨(degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D, ?_, ?_⟩
+    · simpa [principalSubgroupOfDegreeZero]
+    · simp
+
+/-- Quotient transport from unweighted degree zero to weight-one weighted degree zero. -/
+@[expose]
+def degreeZeroQuotientEquivWeightedDegreeZeroOne :
+    degreeZeroSubgroup X ⧸ S.principalSubgroupOfDegreeZero ≃+
+      weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) ⧸
+        S.principalSubgroupOfWeightedDegreeZero (fun _ : X => (1 : ℤ)) :=
+  QuotientAddGroup.congr S.principalSubgroupOfDegreeZero
+    (S.principalSubgroupOfWeightedDegreeZero (fun _ : X => (1 : ℤ)))
+    (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X))
+    (S.principalSubgroupOfDegreeZero_map_equiv)
+
+@[simp]
+lemma degreeZeroQuotientEquivWeightedDegreeZeroOne_mk (D : degreeZeroSubgroup X) :
+    S.degreeZeroQuotientEquivWeightedDegreeZeroOne (QuotientAddGroup.mk D) =
+      QuotientAddGroup.mk (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X) D) := by
+  rfl
+
 /-- The quotient of unweighted degree-zero divisors by principal divisors is the abstract
 unweighted degree-zero divisor class group `Pic⁰`. -/
+@[expose]
 def degreeZeroQuotientEquivUnweightedPicZero (h : S.IsUnweightedDegreeZero) :
     degreeZeroSubgroup X ⧸ S.principalSubgroupOfDegreeZero ≃+
       S.unweightedPicZero h :=
-  (QuotientAddGroup.quotientAddEquivOfEq (S.degreeZeroClassHom_ker h).symm).trans
-    (QuotientAddGroup.quotientKerEquivOfSurjective
-      (φ := S.degreeZeroClassHom h)
-      (S.degreeZeroClassHom_surjective h))
+  S.degreeZeroQuotientEquivWeightedDegreeZeroOne.trans
+    (S.weightedDegreeZeroQuotientEquivPicZero (fun _ : X => (1 : ℤ))
+      (h : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ))))
 
 @[simp]
 lemma degreeZeroQuotientEquivUnweightedPicZero_mk
     (h : S.IsUnweightedDegreeZero) (D : degreeZeroSubgroup X) :
     S.degreeZeroQuotientEquivUnweightedPicZero h
       (QuotientAddGroup.mk D) = S.degreeZeroClassHom h D := by
-  simp only [degreeZeroQuotientEquivUnweightedPicZero, AddEquiv.trans_apply,
-    QuotientAddGroup.quotientAddEquivOfEq_mk]
-  -- The first-isomorphism equivalence is defined through `kerLift`, so unfold the composed
-  -- equivalence to expose its quotient-map simp lemma.
-  change QuotientAddGroup.kerLift (S.degreeZeroClassHom h)
-      (QuotientAddGroup.mk D) = S.degreeZeroClassHom h D
-  rw [QuotientAddGroup.kerLift_mk]
+  rw [degreeZeroQuotientEquivUnweightedPicZero, AddEquiv.trans_apply,
+    degreeZeroQuotientEquivWeightedDegreeZeroOne_mk]
+  change S.weightedDegreeZeroQuotientEquivPicZero (fun _ : X => (1 : ℤ))
+      (h : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ)))
+      (QuotientAddGroup.mk (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X) D)) =
+    S.degreeZeroClassHom h D
+  rw [weightedDegreeZeroQuotientEquivPicZero_mk
+      (S := S) (w := fun _ : X => (1 : ℤ))
+      (h := (h : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ))))]
+  rfl
 
 @[simp]
 lemma coe_degreeZeroQuotientEquivUnweightedPicZero_mk
