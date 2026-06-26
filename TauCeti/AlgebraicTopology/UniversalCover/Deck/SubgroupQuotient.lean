@@ -21,6 +21,8 @@ group and the projection it inherits from the original covering projection.
 ## Main declarations
 
 * `TauCeti.Deck.SubgroupOrbitQuotient`: the quotient of `E` by a subgroup `H ≤ Deck p`.
+* `TauCeti.Deck.subgroupOrbitQuotientMapOfLE`: the natural map `E / H → E / K` induced
+  by an inclusion `H ≤ K`.
 * `TauCeti.Deck.subgroupOrbitQuotientToDeckOrbitQuotient`: the natural map
   `E / H → E / Deck p`.
 * `TauCeti.Deck.subgroupOrbitQuotientToBase`: the projection `E / H → B` induced by `p`.
@@ -76,11 +78,62 @@ lemma eq_proj_of_subgroupOrbitRel (H : Subgroup (Deck p)) {e e' : E}
   rw [← hφ]
   simpa [subgroup_smul_eq_deck_smul] using map_proj (φ : Deck p) e'
 
+/-- If `H ≤ K`, the quotient by `H` maps naturally to the quotient by `K`. -/
+@[expose] def subgroupOrbitQuotientMapOfLE {H K : Subgroup (Deck p)} (hHK : H ≤ K) :
+    SubgroupOrbitQuotient p H → SubgroupOrbitQuotient p K :=
+  Quotient.map' id fun e e' h => by
+    rw [MulAction.orbitRel_apply] at h ⊢
+    rcases h with ⟨φ, hφ⟩
+    exact ⟨⟨φ.1, hHK φ.2⟩, hφ⟩
+
+/-- The map induced by `H ≤ K` sends the `H`-class of a point to its `K`-class. -/
+@[simp]
+lemma subgroupOrbitQuotientMapOfLE_mk {H K : Subgroup (Deck p)} (hHK : H ≤ K) (e : E) :
+    subgroupOrbitQuotientMapOfLE hHK (subgroupOrbitClass H e) =
+      subgroupOrbitClass K e :=
+  rfl
+
+/-- The map induced by the identity inclusion is the identity on the subgroup-orbit
+quotient. -/
+@[simp]
+lemma subgroupOrbitQuotientMapOfLE_refl (H : Subgroup (Deck p)) :
+    subgroupOrbitQuotientMapOfLE (p := p) (le_rfl : H ≤ H) = id := by
+  ext x
+  refine Quotient.inductionOn' x ?_
+  intro e
+  rfl
+
+/-- The maps induced by subgroup inclusions compose as expected. -/
+@[simp]
+lemma subgroupOrbitQuotientMapOfLE_comp {H K L : Subgroup (Deck p)}
+    (hHK : H ≤ K) (hKL : K ≤ L) :
+    subgroupOrbitQuotientMapOfLE hKL ∘ subgroupOrbitQuotientMapOfLE hHK =
+      subgroupOrbitQuotientMapOfLE (hHK.trans hKL) := by
+  ext x
+  refine Quotient.inductionOn' x ?_
+  intro e
+  rfl
+
+/-- The quotient by the top subgroup maps to the quotient by the ambient deck group. -/
+@[expose] def topSubgroupOrbitQuotientToDeckOrbitQuotient :
+    SubgroupOrbitQuotient p (⊤ : Subgroup (Deck p)) →
+      MulAction.orbitRel.Quotient (Deck p) E :=
+  Quotient.map' id (MulAction.orbitRel_subgroup_le ⊤)
+
+/-- The comparison from the top-subgroup quotient to the full deck quotient evaluates on
+representatives by the identity. -/
+@[simp]
+lemma topSubgroupOrbitQuotientToDeckOrbitQuotient_mk (e : E) :
+    topSubgroupOrbitQuotientToDeckOrbitQuotient
+      (subgroupOrbitClass (p := p) (⊤ : Subgroup (Deck p)) e) =
+        (Quotient.mk'' e : MulAction.orbitRel.Quotient (Deck p) E) :=
+  rfl
+
 /-- The natural map from the quotient by a subgroup of the deck group to the quotient by the
 full deck group. -/
 @[expose] def subgroupOrbitQuotientToDeckOrbitQuotient (H : Subgroup (Deck p)) :
     SubgroupOrbitQuotient p H → MulAction.orbitRel.Quotient (Deck p) E :=
-  Quotient.map' id (MulAction.orbitRel_subgroup_le H)
+  topSubgroupOrbitQuotientToDeckOrbitQuotient ∘ subgroupOrbitQuotientMapOfLE le_top
 
 /-- The map from the subgroup quotient to the full deck quotient evaluates on representatives
 by the identity. -/
@@ -113,10 +166,25 @@ lemma orbitQuotientToBase_subgroupOrbitQuotientToDeckOrbitQuotient
 
 section Topology
 
+/-- The natural map induced by an inclusion of deck subgroups is continuous. -/
+lemma continuous_subgroupOrbitQuotientMapOfLE {H K : Subgroup (Deck p)} (hHK : H ≤ K) :
+    Continuous (subgroupOrbitQuotientMapOfLE (p := p) hHK) :=
+  continuous_id.quotient_map' fun e e' h => by
+    rw [MulAction.orbitRel_apply] at h ⊢
+    rcases h with ⟨φ, hφ⟩
+    exact ⟨⟨φ.1, hHK φ.2⟩, hφ⟩
+
+/-- The natural map from the top-subgroup quotient to the deck-orbit quotient is
+continuous. -/
+lemma continuous_topSubgroupOrbitQuotientToDeckOrbitQuotient :
+    Continuous (topSubgroupOrbitQuotientToDeckOrbitQuotient (p := p)) :=
+  continuous_id.quotient_map' (MulAction.orbitRel_subgroup_le ⊤)
+
 /-- The natural map from a subgroup-orbit quotient to the deck-orbit quotient is continuous. -/
 lemma continuous_subgroupOrbitQuotientToDeckOrbitQuotient (H : Subgroup (Deck p)) :
     Continuous (subgroupOrbitQuotientToDeckOrbitQuotient H) :=
-  continuous_id.quotient_map' (MulAction.orbitRel_subgroup_le H)
+  continuous_topSubgroupOrbitQuotientToDeckOrbitQuotient.comp
+    (continuous_subgroupOrbitQuotientMapOfLE le_top)
 
 variable [TopologicalSpace B]
 
