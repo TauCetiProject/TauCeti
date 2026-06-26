@@ -200,6 +200,8 @@ lemma degreeZeroClassHom_surjective (h : S.IsUnweightedDegreeZero) :
     S.weightedDegreeZeroClassHom_surjective (w := fun _ : X => (1 : ℤ))
       (h : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ))) c
   exact ⟨(degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D, by
+    -- Unfold the unweighted wrapper to expose the weight-one class hom and then cancel the
+    -- inverse degree-zero equivalence selected for this representative.
     change S.weightedDegreeZeroClassHom (fun _ : X => (1 : ℤ)) h
         (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)
           ((degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D)) = c
@@ -283,6 +285,8 @@ lemma degreeZeroQuotientEquivUnweightedPicZero_mk
       (QuotientAddGroup.mk D) = S.degreeZeroClassHom h D := by
   rw [degreeZeroQuotientEquivUnweightedPicZero, AddEquiv.trans_apply,
     degreeZeroQuotientEquivWeightedDegreeZeroOne_mk]
+  -- The unweighted quotient equivalence is the weight-one quotient equivalence after the
+  -- degree-zero quotient transport, so expose that target before applying its `mk` lemma.
   change S.weightedDegreeZeroQuotientEquivPicZero (fun _ : X => (1 : ℤ))
       (h : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ)))
       (QuotientAddGroup.mk (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X) D)) =
