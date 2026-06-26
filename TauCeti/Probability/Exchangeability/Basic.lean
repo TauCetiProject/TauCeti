@@ -146,6 +146,19 @@ theorem map_prefixLaw (μ : Measure Ω) {X : ℕ → Ω → α}
       prefixLaw μ (fun n ω => f (X n ω)) n :=
   map_blockLaw μ (fun i : Fin n => i.val) hf hX
 
+/-- A coordinatewise measurable map sends path laws to path laws. -/
+theorem map_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
+    {f : α → β} [MeasurableSpace β] (hf : Measurable f)
+    (hX : ∀ i, AEMeasurable (X i) μ) :
+    (pathLaw μ X).map (fun x : ℕ → α => fun i => f (x i)) =
+      pathLaw μ (fun n ω => f (X n ω)) := by
+  rw [pathLaw_apply, pathLaw_apply]
+  rw [AEMeasurable.map_map_of_aemeasurable]
+  · rfl
+  · exact (measurable_pi_lambda (fun x : ℕ → α => fun i => f (x i)) fun i =>
+      hf.comp (measurable_pi_apply i)).aemeasurable
+  · exact aemeasurable_pi_lambda (fun ω => fun i => X i ω) hX
+
 /-- Push a block law forward along a coordinate reindexing: selecting the coordinates of
 `blockLaw μ X k` through `g : Fin p → Fin n` yields the block law along `k ∘ g`. -/
 theorem map_blockLaw_reindex (μ : Measure Ω) {X : ℕ → Ω → α} {n p : ℕ}

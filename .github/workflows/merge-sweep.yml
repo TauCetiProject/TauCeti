@@ -1,0 +1,40 @@
+name: Merge sweep
+
+# Re-drive green PRs that the merge queue evicted, so an eviction is never terminal. auto-merge.yml
+# enqueues a green PR once per triggering event (a push, a /review comment, or a fresh pr-build); if the
+# merge queue then evicts it — a merge group that could not form, or a rebuild against a moved main that
+# failed — nothing re-drives an otherwise-idle green PR and it strands: green on every rubric, never
+# merged. housekeeping.yml only CLOSES PRs (and only blocking ones), so a wedged-but-green PR is closed
+# by nothing. This scheduled sweep re-enqueues such PRs (reusing the existing head-pinned review — no
+# re-review, no API spend), and for a head the queue has repeatedly rejected, updates the branch onto
+# main or flags a conflict. It calls the lightweight TauCetiReview merge-sweep workflow, which mints no
+# provider keys and runs no reviewer; the merge decision is the same one auto-merge uses, so the sweep
+# can never merge something the normal gate would refuse.
+
+on:
+  schedule:
+    - cron: "40 * * * *"   # hourly, offset from housekeeping (:20) and the daily bump
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "List actions without enqueuing / updating / flagging"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merge-sweep
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    # Pinned to a TauCetiReview commit; bump deliberately. The reusable workflow receives the App
+    # secrets, so a floating @main would be a supply-chain risk.
+    uses: FormalFrontier/TauCetiReview/.github/workflows/merge-sweep.yml@d1bbbe5e3c3951f28877cd30508c3b3bbf834d61
+    with:
+      dry_run: ${{ inputs.dry-run || false }}
+    secrets:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}

@@ -7,6 +7,8 @@ module
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.KnotTheory.Grid.Rectangle
+import TauCeti.KnotTheory.Grid.RectangleCount
+import TauCeti.KnotTheory.Grid.RectangleSwap
 
 /-!
 # Fully blocked empty rectangles in grid diagrams
@@ -23,6 +25,8 @@ homology roadmap.
 
 * `TauCeti.GridDiagram.fullyBlockedRectangles`: empty rectangles avoiding all markings.
 * `TauCeti.GridDiagram.fullyBlockedRectangleCount`: the corresponding count in `ZMod 2`.
+* `TauCeti.GridDiagram.card_fullyBlockedRectangles_le_two`: at most two fully blocked rectangles
+  contribute to each matrix coefficient.
 
 ## Main results
 
@@ -92,6 +96,12 @@ theorem fullyBlockedRectangles_subset_all :
   G.fullyBlockedRectangles_subset_emptyRectangles x y |>.trans
     (GridRectangleBetween.emptyRectangles_subset_all x y)
 
+/-- There are at most two fully blocked rectangles in each matrix coefficient of the fully
+blocked differential. -/
+theorem card_fullyBlockedRectangles_le_two :
+    (G.fullyBlockedRectangles x y).card ≤ 2 :=
+  GridRectangleBetween.card_le_two (G.fullyBlockedRectangles x y)
+
 /-- The number of fully blocked empty rectangles from `x` to `y`, reduced modulo `2`. -/
 @[expose] noncomputable def fullyBlockedRectangleCount : ZMod 2 :=
   (G.fullyBlockedRectangles x y).card
@@ -101,6 +111,20 @@ to `ZMod 2`. -/
 theorem fullyBlockedRectangleCount_def :
     G.fullyBlockedRectangleCount x y = ((G.fullyBlockedRectangles x y).card : ZMod 2) :=
   rfl
+
+/-- A nonzero fully blocked rectangle count forces the target state to be a column transposition
+of the source state: a nonzero count means there is a fully blocked rectangle, hence an oriented
+rectangle, between the two states. -/
+theorem exists_swapColumns_of_fullyBlockedRectangleCount_ne_zero
+    (h : G.fullyBlockedRectangleCount x y ≠ 0) :
+    ∃ a b : Fin n, a ≠ b ∧ y = x.swapColumns a b := by
+  rw [fullyBlockedRectangleCount_def] at h
+  have hcard : (G.fullyBlockedRectangles x y).card ≠ 0 := by
+    intro hc
+    rw [hc] at h
+    simp at h
+  obtain ⟨R, hR⟩ := Finset.card_ne_zero.mp hcard
+  exact ⟨R.left, R.right, R.left_ne_right, R.target_eq_swapColumns⟩
 
 /-- The set of fully blocked rectangles from a grid state to itself is empty. -/
 @[simp]
