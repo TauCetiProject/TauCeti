@@ -26,10 +26,6 @@ embeddings is again ambient isotopic, with the statement phrased entirely in the
 * `TauCeti.SmoothEmbedding.AmbientIsotopic.prodMap`: products preserve ambient isotopy of bundled
   smooth embeddings.
 * `TauCeti.SmoothEmbedding.AmbientIsotopic.prodMap_setoid`: the same fact in setoid-relation form.
-
-The proof reuses Tau Ceti's existing topological product theorem
-`TauCeti.AmbientIsotopic.prodMap`; the smooth input is only used to identify the continuous maps
-underlying `SmoothEmbedding.prodMap`.
 -/
 
 public section
