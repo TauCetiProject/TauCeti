@@ -95,6 +95,7 @@ lemma normalizerQuotientEquivQuotientOfNormal_regularSubgroupFiberOrbitQuotientE
   intro e'
   obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Deck p) e e'
   rw [← hφ]
+  -- The regular wrapper unfolds, with the two instances above, to the fibre-action equivalence.
   change
     Subgroup.normalizerQuotientEquivQuotientOfNormal H
         (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e
