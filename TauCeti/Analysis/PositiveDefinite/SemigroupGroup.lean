@@ -33,7 +33,8 @@ for `IsSemigroupGroupPD` as the positive-definite predicate on `ℝ≥0 × V` wi
 * `TauCeti.IsSemigroupGroupPD`: the BCR positive-definiteness predicate on `ℝ≥0 × V`.
 * `TauCeti.isSemigroupGroupPD_iff_isPositiveDefinite`: the bridge to the generic
   positive-definite-function predicate.
-* `TauCeti.isSemigroupGroupPD_def`: the bridge to the associated positive-definite kernel.
+* `TauCeti.isSemigroupGroupPD_iff_isPositiveDefiniteKernel`: the bridge to the associated
+  positive-definite kernel.
 * `TauCeti.isSemigroupGroupPD_iff`: the finite quadratic-form characterization.
 * `TauCeti.IsSemigroupGroupPD.conj_symm`, diagonal, and origin lemmas: basic consequences of the
   semigroup-group positive-definiteness condition.
@@ -165,7 +166,7 @@ theorem isSemigroupGroupPD_iff_isPositiveDefinite :
 
 /-- The bridge from semigroup-group positive definiteness to the associated positive-definite
 kernel. -/
-theorem isSemigroupGroupPD_def :
+theorem isSemigroupGroupPD_iff_isPositiveDefiniteKernel :
     IsSemigroupGroupPD F ↔
       IsPositiveDefiniteKernel fun p q : ℝ≥0 × V => F (p.1 + q.1, p.2 - q.2) := by
   constructor
@@ -181,14 +182,14 @@ theorem isSemigroupGroupPD_def :
 /-- The kernel associated to a semigroup-group positive-definite function is positive definite. -/
 theorem IsSemigroupGroupPD.isPositiveDefiniteKernel (hF : IsSemigroupGroupPD F) :
     IsPositiveDefiniteKernel fun p q : ℝ≥0 × V => F (p.1 + q.1, p.2 - q.2) :=
-  isSemigroupGroupPD_def.mp hF
+  isSemigroupGroupPD_iff_isPositiveDefiniteKernel.mp hF
 
 /-- Build a semigroup-group positive-definite function from the associated positive-definite
 kernel. -/
 theorem IsSemigroupGroupPD.of_isPositiveDefiniteKernel
     (hF : IsPositiveDefiniteKernel fun p q : ℝ≥0 × V => F (p.1 + q.1, p.2 - q.2)) :
     IsSemigroupGroupPD F :=
-  isSemigroupGroupPD_def.mpr hF
+  isSemigroupGroupPD_iff_isPositiveDefiniteKernel.mpr hF
 
 /-- The finite quadratic-form characterization of semigroup-group positive definiteness. -/
 theorem isSemigroupGroupPD_iff :
