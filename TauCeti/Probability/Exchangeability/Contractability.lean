@@ -11,16 +11,8 @@ This file records basic lemmas for `Contractable` processes. The definitions liv
 `TauCeti.Probability.Exchangeability.Basic`; this file is the Layer 0 home for
 contractability-specific API.
 
-It also provides `map_blockLaw_reindex`, the coordinate-reindexing pushforward of block laws
-(the companion of `Basic`'s value-reindexing `map_blockLaw`), used here to project
-finite-dimensional laws onto sub-blocks.
-
 The main result is `contractable_of_exchangeable` (with dot-notation form
-`Exchangeable.contractable`): every exchangeable sequence is contractable. The proof realizes a
-strictly increasing finite selection as the first coordinates of a permutation of a large enough
-`Fin n` (`exists_perm_extending_strictMono`, a thin wrapper around Mathlib's
-`Equiv.Perm.exists_extending_pair`), applies exchangeability at that dimension, and projects back
-to the chosen sub-block.
+`Exchangeable.contractable`): every exchangeable sequence is contractable.
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
@@ -78,45 +70,14 @@ theorem Contractable.comp {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contrac
       exact (h.map (hφ.comp (Fin.val_strictMono : StrictMono (fun i : Fin m => i.val)))).symm
     _ = prefixLaw μ (fun n ω => X (φ n) ω) m := rfl
 
-/-- For a contractable process, any two strictly increasing selections of the same length have
-the same block law. -/
-theorem Contractable.allStrictMono_eq {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
-    {m : ℕ} {k₁ k₂ : Fin m → ℕ} (hk₁ : StrictMono k₁) (hk₂ : StrictMono k₂) :
-    blockLaw μ X k₁ = blockLaw μ X k₂ :=
-  (h.map hk₁).trans (h.map hk₂).symm
-
-/-- For a contractable process, every length-`m` consecutive block starting at `c`, namely
-`(X c, X (c+1), …, X (c+m-1))`, has the prefix law. -/
-theorem Contractable.shift_segment_eq {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
-    (m c : ℕ) :
-    blockLaw μ X (fun i : Fin m => c + i.val) = prefixLaw μ X m :=
-  h.map fun _ _ hij => Nat.add_lt_add_left hij c
-
-/-- For a contractable process, a strictly increasing selection shifted by an offset `c` has the
-prefix law. -/
-theorem Contractable.shift_and_select {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
-    {m : ℕ} (k : Fin m → ℕ) (c : ℕ) (hk : StrictMono k) :
-    blockLaw μ X (fun i => c + k i) = prefixLaw μ X m :=
-  h.map fun _ _ hij => Nat.add_lt_add_left (hk hij) c
-
-/-- For a contractable process, a strictly increasing selection of coordinates from `Fin n` has
-the prefix law. -/
-theorem Contractable.restrict {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
-    {n m : ℕ} (k : Fin m → Fin n) (hk : StrictMono k) :
-    blockLaw μ X (fun i => (k i).val) = prefixLaw μ X m :=
-  h.map fun _ _ hij => hk hij
-
-/-- Any strictly increasing finite selection extends to a permutation of a large enough `Fin n`:
-given `k : Fin m → ℕ` strictly increasing with every value `< n` and `m ≤ n`, there is a
-permutation `σ` of `Fin n` with `(σ ⟨i, _⟩).val = k i` for every `i : Fin m`.
-
-This is a thin wrapper around Mathlib's `Equiv.Perm.exists_extending_pair` (Cameron Freer,
-Mathlib #34599), applied to the initial-segment inclusion `Fin.castLE hmn` and the strictly
-monotone embedding `i ↦ ⟨k i, _⟩`, both injective. -/
-theorem exists_perm_extending_strictMono {m n : ℕ} (k : Fin m → ℕ)
+/-- A strictly increasing finite selection `k : Fin m → ℕ` whose values lie below `n` (with
+`m ≤ n`) is realized by a permutation `σ` of `Fin n`: `(σ ⟨i, _⟩).val = k i` for every
+`i : Fin m`. -/
+private theorem exists_perm_extending_strictMono {m n : ℕ} (k : Fin m → ℕ)
     (hk : StrictMono k) (hk_bound : ∀ i, k i < n) (hmn : m ≤ n) :
     ∃ σ : Equiv.Perm (Fin n), ∀ i : Fin m,
       (σ ⟨i.val, Nat.lt_of_lt_of_le i.isLt hmn⟩).val = k i := by
+  -- thin wrapper over Mathlib's `Equiv.Perm.exists_extending_pair` (Cameron Freer, #34599)
   obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair (Fin.castLE hmn)
     (fun i => ⟨k i, hk_bound i⟩)
     (fun i j h => by
@@ -125,12 +86,9 @@ theorem exists_perm_extending_strictMono {m n : ℕ} (k : Fin m → ℕ)
     (fun i j hij => hk.injective (Fin.mk.inj hij))
   exact ⟨σ, fun i => congrArg Fin.val (hσ i)⟩
 
-/-- **Every exchangeable sequence is contractable.** Along any strictly increasing finite
-selection `k : Fin m → ℕ`, the block law equals the prefix law.
-
-The proof extends `k` to a permutation `σ` of a large enough `Fin n`
-(`exists_perm_extending_strictMono`), invokes exchangeability at dimension `n`, and projects both
-laws onto the first `m` coordinates with `map_blockLaw_reindex`. -/
+/-- **Every exchangeable sequence is contractable**: along any strictly increasing finite
+selection `k : Fin m → ℕ`, the block law `blockLaw μ X k` equals the prefix law `prefixLaw μ X m`.
+One direction of the de Finetti–Ryll-Nardzewski equivalence. -/
 theorem contractable_of_exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X := by
   intro m k hk
