@@ -161,12 +161,12 @@ theorem map_blockLaw_reindex (μ : Measure Ω) {X : ℕ → Ω → α} {n p : �
 /-- Projecting the prefix law on `Fin n` onto its first `m ≤ n` coordinates (via `Fin.castLE`)
 gives the prefix law on `Fin m`. -/
 theorem map_prefixLaw_castLE (μ : Measure Ω) {X : ℕ → Ω → α} {m n : ℕ} (hmn : m ≤ n)
-    (hX : ∀ i, AEMeasurable (X i) μ) :
+    (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) :
     (prefixLaw μ X n).map (fun x : Fin n → α => fun i : Fin m => x (Fin.castLE hmn i)) =
       prefixLaw μ X m := by
   have hidx : (fun i : Fin n => i.val) ∘ Fin.castLE hmn = fun i : Fin m => i.val := by
     funext i; simp
-  rw [prefixLaw_apply, map_blockLaw_reindex μ _ (Fin.castLE hmn) (fun j => hX j.val), hidx]
+  rw [prefixLaw_apply, map_blockLaw_reindex μ _ (Fin.castLE hmn) hX, hidx]
   exact (prefixLaw_apply μ X m).symm
 
 theorem Exchangeable.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω → α}

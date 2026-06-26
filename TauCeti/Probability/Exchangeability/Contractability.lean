@@ -116,7 +116,7 @@ theorem contractable_of_exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
     have hRHS : (prefixLaw μ X n).map
           (fun x : Fin n → α => fun i : Fin (m' + 1) => x (Fin.castLE hmn i)) =
             prefixLaw μ X (m' + 1) :=
-      map_prefixLaw_castLE μ hmn hX_meas
+      map_prefixLaw_castLE μ hmn (fun j => hX_meas j.val)
     have key := congrArg
       (Measure.map (fun x : Fin n → α => fun i : Fin (m' + 1) => x (Fin.castLE hmn i))) hexch
     rwa [hLHS, hRHS] at key
