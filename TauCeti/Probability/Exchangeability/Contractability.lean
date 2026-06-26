@@ -40,20 +40,6 @@ namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
-/-- Push a block law forward along a coordinate reindexing: selecting the coordinates of
-`blockLaw μ X k` through `g : Fin p → Fin n` yields the block law along `k ∘ g`. This is the
-coordinate-reindexing companion of `Basic`'s `map_blockLaw` (which reindexes the *values*),
-used to project a finite-dimensional law onto a sub-block. -/
-theorem map_blockLaw_reindex (μ : Measure Ω) {X : ℕ → Ω → α} {n p : ℕ}
-    (k : Fin n → ℕ) (g : Fin p → Fin n) (hXk : ∀ j : Fin n, AEMeasurable (X (k j)) μ) :
-    (blockLaw μ X k).map (fun x : Fin n → α => fun i : Fin p => x (g i)) =
-      blockLaw μ X (k ∘ g) := by
-  rw [blockLaw_apply, blockLaw_apply,
-    AEMeasurable.map_map_of_aemeasurable
-      ((measurable_pi_lambda _ fun i => measurable_pi_apply (g i)).aemeasurable)
-      (aemeasurable_pi_lambda _ hXk)]
-  rfl
-
 /-- A contractable process has the same finite-dimensional block law as the corresponding
 prefix law along any strictly increasing finite index map. -/
 theorem Contractable.map {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
@@ -171,9 +157,8 @@ theorem contractable_of_exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
       rw [map_blockLaw_reindex μ _ (Fin.castLE hmn) (fun j => hX_meas (σ j).val), hidx]
     have hRHS : (prefixLaw μ X n).map
           (fun x : Fin n → α => fun i : Fin (m' + 1) => x (Fin.castLE hmn i)) =
-            prefixLaw μ X (m' + 1) := by
-      rw [prefixLaw_apply, map_blockLaw_reindex μ _ (Fin.castLE hmn) (fun j => hX_meas j.val)]
-      rfl
+            prefixLaw μ X (m' + 1) :=
+      map_prefixLaw_castLE μ hmn hX_meas
     have key := congrArg
       (Measure.map (fun x : Fin n → α => fun i : Fin (m' + 1) => x (Fin.castLE hmn i))) hexch
     rwa [hLHS, hRHS] at key
