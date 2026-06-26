@@ -28,11 +28,8 @@ rank-zero case.
 * `TauCeti.NumberField.Units.one_le_regulator_of_rank_eq_zero`: `1 ≤ R_F` when the unit rank
   of `F` is zero.
 * `TauCeti.NumberField.Units.regulator_rat_eq_one`: `R_ℚ = 1`.
-* `TauCeti.NumberField.Units.one_le_regulator_rat`: `1 ≤ R_ℚ`.
 * `TauCeti.NumberField.Units.regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two`:
   `R_F = 1` for an imaginary quadratic field `F`.
-* `TauCeti.NumberField.Units.one_le_regulator_of_isTotallyComplex_of_finrank_eq_two`:
-  `1 ≤ R_F` for an imaginary quadratic field `F`.
 -/
 
 public section
@@ -146,19 +143,10 @@ empty determinant. -/
 theorem regulator_rat_eq_one : regulator ℚ = 1 :=
   regulator_eq_one_of_rank_eq_zero ℚ (rank_eq_zero_of_finrank_eq_one ℚ (finrank_self ℚ))
 
-/-- The trivial regulator lower bound for `ℚ`. -/
-theorem one_le_regulator_rat : 1 ≤ regulator ℚ :=
-  regulator_rat_eq_one.ge
-
 /-- **The regulator of an imaginary quadratic field is `1`**, the rank-zero base case on a
 degree-two totally complex field. -/
 theorem regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two
     [IsTotallyComplex K] (h : finrank ℚ K = 2) : regulator K = 1 :=
   regulator_eq_one_of_rank_eq_zero K (rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two K h)
-
-/-- The trivial regulator lower bound for an imaginary quadratic field. -/
-theorem one_le_regulator_of_isTotallyComplex_of_finrank_eq_two
-    [IsTotallyComplex K] (h : finrank ℚ K = 2) : 1 ≤ regulator K :=
-  (regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two K h).ge
 
 end TauCeti.NumberField.Units
