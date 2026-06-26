@@ -25,8 +25,6 @@ rank-zero case.
 
 * `TauCeti.NumberField.Units.regulator_eq_one_of_rank_eq_zero`: `R_F = 1` when the unit rank
   of `F` is zero.
-* `TauCeti.NumberField.Units.one_le_regulator_of_rank_eq_zero`: the corresponding lower bound
-  `1 ≤ R_F`.
 * `TauCeti.NumberField.Units.regulator_rat_eq_one`: `R_ℚ = 1`.
 * `TauCeti.NumberField.Units.regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two`:
   `R_F = 1` for an imaginary quadratic field `F`.
@@ -105,44 +103,5 @@ degree-two totally complex field. -/
 theorem regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two
     [IsTotallyComplex K] (h : finrank ℚ K = 2) : regulator K = 1 :=
   regulator_eq_one_of_rank_eq_zero K (rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two K h)
-
-/-- **Rank-zero regulator lower bound.** If the unit rank of `K` is zero, then `1 ≤ R_K`. -/
-theorem one_le_regulator_of_rank_eq_zero (h : rank K = 0) : 1 ≤ regulator K := by
-  rw [regulator_eq_one_of_rank_eq_zero K h]
-
-/-- **One-infinite-place regulator lower bound.** If `K` has at most one infinite place, then
-`1 ≤ R_K`. -/
-theorem one_le_regulator_of_card_infinitePlace_le_one
-    (h : Fintype.card (InfinitePlace K) ≤ 1) : 1 ≤ regulator K :=
-  one_le_regulator_of_rank_eq_zero K (rank_eq_zero_of_card_infinitePlace_le_one K h)
-
-/-- **One-infinite-place regulator lower bound.** If `K` has one infinite place, then
-`1 ≤ R_K`. -/
-theorem one_le_regulator_of_card_infinitePlace_eq_one
-    (h : Fintype.card (InfinitePlace K) = 1) : 1 ≤ regulator K :=
-  one_le_regulator_of_card_infinitePlace_le_one K h.le
-
-/-- **Degree-at-most-one regulator lower bound.** If `[K : ℚ] ≤ 1`, then `1 ≤ R_K`. -/
-theorem one_le_regulator_of_finrank_le_one (h : finrank ℚ K ≤ 1) : 1 ≤ regulator K :=
-  one_le_regulator_of_rank_eq_zero K (rank_eq_zero_of_finrank_le_one K h)
-
-/-- **Degree-less-than-two regulator lower bound.** If `[K : ℚ] < 2`, then `1 ≤ R_K`. -/
-theorem one_le_regulator_of_finrank_lt_two (h : finrank ℚ K < 2) : 1 ≤ regulator K :=
-  one_le_regulator_of_finrank_le_one K (by omega)
-
-/-- **Degree-one regulator lower bound.** If `[K : ℚ] = 1`, then `1 ≤ R_K`. -/
-theorem one_le_regulator_of_finrank_eq_one (h : finrank ℚ K = 1) : 1 ≤ regulator K :=
-  one_le_regulator_of_finrank_le_one K h.le
-
-/-- **The rational regulator lower bound.** For `ℚ`, `1 ≤ R_ℚ`. -/
-@[simp]
-theorem one_le_regulator_rat : 1 ≤ regulator ℚ := by
-  rw [regulator_rat_eq_one]
-
-/-- **Imaginary-quadratic regulator lower bound.** If `K` is totally complex of degree two, then
-`1 ≤ R_K`. -/
-theorem one_le_regulator_of_isTotallyComplex_of_finrank_eq_two
-    [IsTotallyComplex K] (h : finrank ℚ K = 2) : 1 ≤ regulator K :=
-  one_le_regulator_of_rank_eq_zero K (rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two K h)
 
 end TauCeti.NumberField.Units
