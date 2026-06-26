@@ -52,6 +52,11 @@ naming, placement, proofs, and more) and post `approve` / `request_changes` / `b
 verdicts. Address their findings and push; re-review runs automatically on new commits, and a
 human can comment `/review` to re-trigger.
 
+If two findings contradict — one requires X while another requires not-X, or a later round
+reverses a change an earlier finding required — do not silently satisfy one and let the other
+re-fire. Contest one of the threads, link the conflicting one, and quote its wording (rubric
+and round). Explain why both cannot hold. Show the contradiction; do not just assert one.
+
 When every rubric approves on the current commit and the PR changes only `TauCeti/` (with CI
 green), it **merges automatically**. A PR that *also* changes `lake-manifest.json` and/or
 `lean-toolchain` can auto-merge too, but only once the `bump-guard` check confirms it is a
