@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.KnotTheory.Grid.DifferentialSupport
+import Mathlib.Algebra.BigOperators.Finsupp.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finsupp.Basic
 import Mathlib.Data.Finsupp.SMulWithZero
