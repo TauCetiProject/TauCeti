@@ -121,7 +121,7 @@ private lemma principalFunctionClassDivisor_range_eq_principalSubgroup :
   · rintro ⟨q, hq⟩
     induction q using QuotientAddGroup.induction_on with
     | _ g =>
-        exact ⟨g, hq⟩
+        exact ⟨g, by simpa using hq⟩
   · rintro ⟨g, hg⟩
     exact ⟨QuotientAddGroup.mk g, by simp [hg]⟩
 
