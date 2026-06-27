@@ -21,8 +21,6 @@ complexes.
 
 ## Main results
 
-* `TauCeti.GridChain.equivFun`: a chain over a finite grid is equivalently an ordinary function
-  on grid states.
 * `TauCeti.GridChain.card`: for a finite coefficient type `R`, the number of chains is
   `#R ^ n!`.
 * `TauCeti.GridChain.support_card_le_factorial`: every chain has support of size at most `n!`.
@@ -45,26 +43,6 @@ public section
 namespace TauCeti
 
 namespace GridChain
-
-/-- On a finite grid, a finitely supported chain is just an ordinary function on grid states.
-
-This is the grid-chain specialization of Mathlib's `Finsupp.equivFunOnFinite`; it is useful when
-turning explicit small grid complexes into finite matrices. -/
-noncomputable def equivFun (R : Type*) [Zero R] (n : ℕ) :
-    GridChain R n ≃ (GridState n → R) :=
-  Finsupp.equivFunOnFinite
-
-/-- Applying `GridChain.equivFun` to a chain gives its coefficient function. -/
-@[simp]
-theorem equivFun_apply {R : Type*} [Zero R] {n : ℕ} (c : GridChain R n) (x : GridState n) :
-    equivFun R n c x = c x :=
-  Finsupp.equivFunOnFinite_apply c x
-
-/-- A coefficient function is sent back to the chain with those coefficients. -/
-@[simp]
-theorem equivFun_symm_apply {R : Type*} [Zero R] {n : ℕ} (f : GridState n → R)
-    (x : GridState n) : (equivFun R n).symm f x = f x :=
-  congr_fun (Finsupp.coe_equivFunOnFinite_symm f) x
 
 /-- The number of chains over a finite coefficient type is `#R ^ n!`.
 
