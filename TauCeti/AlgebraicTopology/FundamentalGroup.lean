@@ -18,10 +18,8 @@ maps on fundamental groups.
   is subsingleton, the range of any induced map from it is trivial.
 * `TauCeti.FundamentalGroup.map_range_le_of_subsingleton`: if the source fundamental group is
   subsingleton, any induced-map range lies in any target subgroup.
-* `TauCeti.FundamentalGroup.map_range_le_mapOfEq_range_of_subsingleton`: the corresponding
-  basepoint-adjusted `mapOfEq` range specialization.
-* `TauCeti.FundamentalGroup.map_range_le_mapOfEq_range_of_simplyConnectedSpace`: a simply
-  connected domain satisfies the fundamental-group range condition against any `mapOfEq` range.
+* `TauCeti.FundamentalGroup.map_range_le_of_simplyConnectedSpace`: a simply connected domain has
+  induced-map range contained in any target subgroup.
 -/
 
 public section
@@ -62,25 +60,5 @@ theorem FundamentalGroup.map_range_le_of_simplyConnectedSpace [SimplyConnectedSp
     (f : C(A, X)) (a₀ : A) (H : Subgroup (_root_.FundamentalGroup X (f a₀))) :
     (_root_.FundamentalGroup.map f a₀).range ≤ H :=
   FundamentalGroup.map_range_le_of_subsingleton f H
-
-/-- If the source fundamental group is subsingleton, its induced-map range lies in any
-basepoint-adjusted map range. -/
-theorem FundamentalGroup.map_range_le_mapOfEq_range_of_subsingleton
-    [Subsingleton (_root_.FundamentalGroup A a₀)] (p : C(E, X)) (f : C(A, X)) (e₀ : E)
-    (he : p e₀ = f a₀) :
-    (_root_.FundamentalGroup.map f a₀).range ≤
-      (_root_.FundamentalGroup.mapOfEq p he).range :=
-  FundamentalGroup.map_range_le_of_subsingleton f
-    (_root_.FundamentalGroup.mapOfEq p he).range
-
-/-- A simply connected domain satisfies the fundamental-group range condition against any
-basepoint-adjusted map range. -/
-theorem FundamentalGroup.map_range_le_mapOfEq_range_of_simplyConnectedSpace
-    [SimplyConnectedSpace A] (p : C(E, X)) (f : C(A, X)) (a₀ : A) (e₀ : E)
-    (he : p e₀ = f a₀) :
-    (_root_.FundamentalGroup.map f a₀).range ≤
-      (_root_.FundamentalGroup.mapOfEq p he).range :=
-  FundamentalGroup.map_range_le_of_simplyConnectedSpace f a₀
-    (_root_.FundamentalGroup.mapOfEq p he).range
 
 end TauCeti
