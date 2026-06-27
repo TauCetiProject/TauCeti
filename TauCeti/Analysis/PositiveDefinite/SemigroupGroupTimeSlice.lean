@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.PositiveDefinite.SemigroupGroup
-public import TauCeti.Analysis.PositiveDefinite.KernelBounds
 public import Mathlib.Topology.Constructions.SumProd
 
 /-!
@@ -15,8 +14,8 @@ A Berg--Christensen--Ressel positive-definite function on `ℝ≥0 × V` is posi
 spatial variable at every fixed time. Indeed, to test the kernel
 `(v, w) ↦ F (t, v - w)`, apply the BCR kernel to the family of points `(t / 2, v)`.
 
-This file records that fixed-time-slice API in kernel form, together with finite-form,
-symmetry, and bound facts and the predicate form for the fixed-time slice. These lemmas are
+This file records that fixed-time-slice API in kernel form, together with origin normal forms
+and the predicate form for the fixed-time slice. These lemmas are
 prerequisites for the BCR representation milestone in the `OneParameterSemigroups` roadmap:
 later proofs can apply the spatial Bochner theorem to each time slice before handling the
 remaining Laplace/semigroup structure.
@@ -29,10 +28,8 @@ positive-definite function on `[0,∞) × V` to spatial positive-definite functi
 
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefiniteKernel`: the fixed-time spatial
   kernel is positive definite.
-* `TauCeti.IsSemigroupGroupPD.timeSlice_sum_nonneg`,
-  `TauCeti.IsSemigroupGroupPD.timeSlice_conj_symm`, and
-  `TauCeti.IsSemigroupGroupPD.timeSlice_normSq_le`: finite-form, symmetry, and bound facts for
-  the fixed-time spatial kernel.
+* `TauCeti.IsSemigroupGroupPD.timeSlice_apply_zero_nonneg` and related lemmas: origin
+  normal forms for the fixed-time spatial slice.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefinite`: the predicate form when the
   spatial involution is negation.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefiniteKernel_and_continuous`: packages
@@ -64,22 +61,27 @@ theorem timeSlice_isPositiveDefiniteKernel (hF : IsSemigroupGroupPD F) (t : ℝ�
     (fun v : V => (t / 2, v))
   simpa [add_halves] using hK
 
-/-- The finite quadratic form of the fixed-time spatial kernel is nonnegative. -/
-theorem timeSlice_sum_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) {ι : Type*}
-    [Fintype ι] (v : ι → V) (x : ι → ℂ) :
-    0 ≤ ∑ i, ∑ j, conj (x i) * x j * F (t, v i - v j) :=
-  (isPositiveDefiniteKernel_iff.mp (hF.timeSlice_isPositiveDefiniteKernel t)).2 v x
+/-- The value at the spatial origin of a fixed-time slice is nonnegative. -/
+theorem timeSlice_apply_zero_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
+    0 ≤ F (t, 0) := by
+  simpa [add_halves] using hF.diagonal_nonneg (t / 2)
 
-/-- The fixed-time spatial kernel is conjugate-symmetric. -/
+/-- The value at the spatial origin of a fixed-time slice has zero imaginary part. -/
 @[simp]
-theorem timeSlice_conj_symm (hF : IsSemigroupGroupPD F) (t : ℝ≥0) (v w : V) :
-    conj (F (t, v - w)) = F (t, w - v) :=
-  isPositiveDefiniteKernel_conj_symm (hF.timeSlice_isPositiveDefiniteKernel t) v w
+theorem timeSlice_apply_zero_im (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
+    (F (t, 0)).im = 0 := by
+  simpa [add_halves] using hF.diagonal_im (t / 2)
 
-/-- The Cauchy--Schwarz bound for the fixed-time spatial kernel. -/
-theorem timeSlice_normSq_le (hF : IsSemigroupGroupPD F) (t : ℝ≥0) (v w : V) :
-    Complex.normSq (F (t, v - w)) ≤ (F (t, 0)).re * (F (t, 0)).re := by
-  simpa using isPositiveDefiniteKernel_normSq_le (hF.timeSlice_isPositiveDefiniteKernel t) v w
+/-- The real part of the value at the spatial origin of a fixed-time slice is nonnegative. -/
+theorem timeSlice_apply_zero_re_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
+    0 ≤ (F (t, 0)).re := by
+  simpa [add_halves] using hF.diagonal_re_nonneg (t / 2)
+
+/-- The value at the spatial origin of a fixed-time slice is equal to its real part, viewed as a
+complex number. -/
+theorem timeSlice_apply_zero_eq_ofReal_re (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
+    F (t, 0) = ((F (t, 0)).re : ℂ) := by
+  simpa [add_halves] using hF.diagonal_eq_ofReal_re (t / 2)
 
 /-- If the spatial type is equipped with the negation involution, then each fixed-time slice is a
 positive-definite function in the generic `IsPositiveDefinite` sense. -/
