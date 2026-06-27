@@ -28,6 +28,8 @@ positive-definite function on `[0,∞) × V` to spatial positive-definite functi
 
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefiniteKernel`: the fixed-time spatial
   kernel is positive definite.
+* `TauCeti.IsSemigroupGroupPD.timeSlice_conj_symm` and diagonal lemmas: basic symmetry and
+  real-nonnegative diagonal facts for fixed-time slices.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_sum_nonneg`: the fixed-time spatial quadratic form is
   nonnegative for arbitrary finite families.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_normSq_le`: the fixed-time spatial Cauchy--Schwarz
@@ -62,6 +64,36 @@ theorem timeSlice_isPositiveDefiniteKernel (hF : IsSemigroupGroupPD F) (t : ℝ�
   have hK := isPositiveDefiniteKernel_comp hF.isPositiveDefiniteKernel
     (fun v : V => (t / 2, v))
   simpa [add_halves] using hK
+
+/-- Fixed-time slices are conjugate-symmetric in the spatial variable:
+`conj (F (t, v - w)) = F (t, w - v)`. -/
+@[simp]
+theorem timeSlice_conj_symm (hF : IsSemigroupGroupPD F) (t : ℝ≥0) (v w : V) :
+    conj (F (t, v - w)) = F (t, w - v) :=
+  isPositiveDefiniteKernel_conj_symm (hF.timeSlice_isPositiveDefiniteKernel t) v w
+
+/-- The diagonal value `F (t, 0)` of a fixed-time slice is real and nonnegative. -/
+theorem timeSlice_diagonal_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) : 0 ≤ F (t, 0) := by
+  simpa using isPositiveDefiniteKernel_apply_self_nonneg (hF.timeSlice_isPositiveDefiniteKernel t)
+    (0 : V)
+
+/-- The diagonal value `F (t, 0)` of a fixed-time slice has zero imaginary part. -/
+@[simp]
+theorem timeSlice_diagonal_im (hF : IsSemigroupGroupPD F) (t : ℝ≥0) : (F (t, 0)).im = 0 :=
+  ((Complex.nonneg_iff.mp (hF.timeSlice_diagonal_nonneg t)).2).symm
+
+/-- The real part of the diagonal value `F (t, 0)` of a fixed-time slice is nonnegative. -/
+theorem timeSlice_diagonal_re_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
+    0 ≤ (F (t, 0)).re :=
+  (Complex.nonneg_iff.mp (hF.timeSlice_diagonal_nonneg t)).1
+
+/-- The diagonal value `F (t, 0)` of a fixed-time slice is equal to its real part, viewed as a
+complex number. -/
+theorem timeSlice_diagonal_eq_ofReal_re (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
+    F (t, 0) = ((F (t, 0)).re : ℂ) := by
+  apply Complex.ext
+  · simp
+  · simpa using hF.timeSlice_diagonal_im t
 
 /-- The fixed-time spatial quadratic form is nonnegative for arbitrary finite families. -/
 theorem timeSlice_sum_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) {ι : Type*} [Fintype ι]
