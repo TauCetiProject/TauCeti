@@ -276,7 +276,7 @@ lemma subgroupFiberOrbitQuotientEquiv_mapOfLE (h : E ≃ₜ F) (hpq : ∀ e, q (
   rfl
 
 /-- Quotienting a fibre by the trivial deck subgroup gives the fibre itself. -/
-@[expose] noncomputable def subgroupFiberOrbitQuotientBotEquiv :
+noncomputable def subgroupFiberOrbitQuotientBotEquiv :
     SubgroupFiberOrbitQuotient (⊥ : Subgroup (Deck p)) b ≃ p ⁻¹' {b} :=
   { toFun := Quotient.lift (fun e : p ⁻¹' {b} => e) fun e e' h => by
       change _root_.MulAction.orbitRel (⊥ : Subgroup (Deck p)) (p ⁻¹' {b}) e e' at h
@@ -302,7 +302,7 @@ lemma subgroupFiberOrbitQuotientEquiv_mapOfLE (h : E ≃ₜ F) (hpq : ∀ e, q (
 lemma subgroupFiberOrbitQuotientBotEquiv_apply (e : p ⁻¹' {b}) :
     subgroupFiberOrbitQuotientBotEquiv
         (p := p) (b := b) (subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) e) = e :=
-  rfl
+  (subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b)).right_inv e
 
 /-- The inverse bottom-subgroup quotient equivalence sends a fibre point to its quotient
 class. -/
@@ -310,7 +310,8 @@ class. -/
 lemma subgroupFiberOrbitQuotientBotEquiv_symm_apply (e : p ⁻¹' {b}) :
     (subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b)).symm e =
       subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) e :=
-  rfl
+  ((subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b)).apply_eq_iff_eq_symm_apply).mp
+    (subgroupFiberOrbitQuotientBotEquiv_apply e)
 
 /-- Equality of bottom-subgroup fibre-orbit classes is equality of fibre points. -/
 @[simp]
@@ -331,7 +332,7 @@ lemma subgroupFiberOrbitMapOfLE_bot_apply (H : Subgroup (Deck p)) (e : p ⁻¹' 
     subgroupFiberOrbitMapOfLE (b := b) (bot_le : (⊥ : Subgroup (Deck p)) ≤ H)
         ((subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b)).symm e) =
       subgroupFiberOrbitClass H e :=
-  rfl
+  by rw [subgroupFiberOrbitQuotientBotEquiv_symm_apply, subgroupFiberOrbitMapOfLE_apply]
 
 /-- The map from the bottom-subgroup quotient to the `H`-quotient is the `H`-orbit class map
 under the bottom quotient equivalence. -/
