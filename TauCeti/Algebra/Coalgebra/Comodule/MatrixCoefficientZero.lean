@@ -111,15 +111,18 @@ section Submodule
 variable [CommSemiring R]
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
+private theorem subsingleton_zero :
+    Subsingleton (zero R C : ComoduleCat.{u, v, w} R C) := by
+  rw [zero]
+  infer_instance
+
 /-- Matrix coefficients of the bundled zero comodule are zero. -/
 @[simp]
 theorem matrixCoefficient_zero
     (φ : (zero R C : ComoduleCat.{u, v, w} R C) →ₗ[R] R)
     (m : (zero R C : ComoduleCat.{u, v, w} R C)) :
     Comodule.matrixCoefficient (R := R) (C := C) φ m = 0 := by
-  haveI : Subsingleton (zero R C : ComoduleCat.{u, v, w} R C) := by
-    rw [zero]
-    infer_instance
+  haveI := subsingleton_zero (R := R) (C := C)
   exact Comodule.matrixCoefficient_eq_zero_of_subsingleton (R := R) (C := C) φ m
 
 /-- The coefficient set of the bundled zero comodule is `{0}`. -/
@@ -127,18 +130,18 @@ theorem matrixCoefficient_zero
 theorem matrixCoefficientSet_zero :
     Comodule.matrixCoefficientSet (R := R) (C := C)
         (M := (zero R C : ComoduleCat.{u, v, w} R C)) = ({0} : Set C) := by
-  rw [zero]
+  haveI := subsingleton_zero (R := R) (C := C)
   exact Comodule.matrixCoefficientSet_eq_singleton_zero_of_subsingleton (R := R) (C := C)
-    (M := PUnit.{w + 1})
+    (M := (zero R C : ComoduleCat.{u, v, w} R C))
 
 /-- The coefficient submodule of the bundled zero comodule is bottom. -/
 @[simp]
 theorem matrixCoefficientSubmodule_zero :
     Comodule.matrixCoefficientSubmodule (R := R) (C := C)
         (M := (zero R C : ComoduleCat.{u, v, w} R C)) = ⊥ := by
-  rw [zero]
+  haveI := subsingleton_zero (R := R) (C := C)
   exact Comodule.matrixCoefficientSubmodule_eq_bot_of_subsingleton (R := R) (C := C)
-    (M := PUnit.{w + 1})
+    (M := (zero R C : ComoduleCat.{u, v, w} R C))
 
 end Submodule
 
@@ -152,9 +155,9 @@ variable [Semiring C] [Algebra R C] [Coalgebra R C]
 theorem matrixCoefficientSubalgebra_zero :
     Comodule.matrixCoefficientSubalgebra (R := R) (C := C)
         (M := (zero R C : ComoduleCat.{u, v, w} R C)) = ⊥ := by
-  rw [zero]
+  haveI := subsingleton_zero (R := R) (C := C)
   exact Comodule.matrixCoefficientSubalgebra_eq_bot_of_subsingleton (R := R) (C := C)
-    (M := PUnit.{w + 1})
+    (M := (zero R C : ComoduleCat.{u, v, w} R C))
 
 end Algebra
 
