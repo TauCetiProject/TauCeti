@@ -109,6 +109,10 @@ lemma isIsotropic_iff : ω.IsIsotropic L ↔ ∀ v ∈ L, ∀ w ∈ L, ω v w = 
     intro y hy
     exact h y hy v hv
 
+/-- Coisotropy is containment of the symplectic complement. -/
+lemma isCoisotropic_iff : ω.IsCoisotropic L ↔ ∀ v, v ∈ ω.orthogonal L → v ∈ L :=
+  Iff.rfl
+
 /-- A subspace of an isotropic subspace is isotropic. -/
 lemma IsIsotropic.mono (h : ω.IsIsotropic L') (hL : L ≤ L') : ω.IsIsotropic L :=
   isIsotropic_iff.2 fun v hv w hw => isIsotropic_iff.1 h v (hL hv) w (hL hw)
