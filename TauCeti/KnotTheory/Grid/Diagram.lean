@@ -6,13 +6,14 @@ module
 
 public import Mathlib.Data.Fin.Basic
 public import Mathlib.Data.Finset.Card
-public import Mathlib.Data.Finset.Powerset
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.GroupTheory.Perm.Basic
+import Mathlib.Data.Sym.Card
 
 /-!
 # Grid diagrams and grid states
@@ -338,59 +339,30 @@ theorem columnSwapNeighbors_eq_offDiag_image (x : GridState n) :
   ext y
   simp [columnSwapNeighbors, Finset.mem_offDiag]
 
-/-- The result of swapping two columns only depends on the unordered pair of columns. -/
-theorem swapColumns_eq_of_pair_eq (x : GridState n) {a b c d : Fin n} (hab : a ≠ b)
-    (hcd : c ≠ d) (hpair : ({a, b} : Finset (Fin n)) = {c, d}) :
-    x.swapColumns a b = x.swapColumns c d := by
-  have hc : c = a ∨ c = b := by
-    have hc_mem : c ∈ ({a, b} : Finset (Fin n)) := by
-      simp [hpair]
-    simpa using hc_mem
-  have hd : d = a ∨ d = b := by
-    have hd_mem : d ∈ ({a, b} : Finset (Fin n)) := by
-      simp [hpair]
-    simpa using hd_mem
-  rcases hc with rfl | rfl <;> rcases hd with rfl | rfl
-  · exact (hcd rfl).elim
-  · rfl
-  · ext e
-    simp [swapColumns, Equiv.swap_comm]
-  · exact (hcd rfl).elim
-
 /-- A grid state has at most `n.choose 2` column-swap neighbours. -/
 theorem card_columnSwapNeighbors_le (x : GridState n) :
     x.columnSwapNeighbors.card ≤ n.choose 2 := by
   classical
-  let pairSwap : Finset (Fin n) → GridState n := fun s =>
-    if hs : s.card = 2 then
-      x.swapColumns (Finset.card_eq_two.mp hs).choose
-        (Finset.card_eq_two.mp hs).choose_spec.choose
-    else x
+  let pairSwap : Sym2 (Fin n) → GridState n :=
+    Sym2.lift
+      ⟨fun a b => x.swapColumns a b, fun a b => by
+        ext c
+        simp [swapColumns, Equiv.swap_comm]⟩
   have hsubset :
       x.columnSwapNeighbors ⊆
-        ((Finset.univ : Finset (Fin n)).powersetCard 2).image pairSwap := by
+        ((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry).image pairSwap := by
     intro y hy
     rw [mem_columnSwapNeighbors] at hy
     obtain ⟨a, b, hab, rfl⟩ := hy
-    refine Finset.mem_image.mpr ⟨({a, b} : Finset (Fin n)), ?_, ?_⟩
-    · rw [Finset.mem_powersetCard]
-      exact ⟨by simp, by simp [hab]⟩
-    · dsimp [pairSwap]
-      rw [dif_pos (by simp [hab])]
-      let htwo : ({a, b} : Finset (Fin n)).card = 2 := by simp [hab]
-      let c := (Finset.card_eq_two.mp htwo).choose
-      let d := (Finset.card_eq_two.mp htwo).choose_spec.choose
-      have hcd : c ≠ d := (Finset.card_eq_two.mp htwo).choose_spec.choose_spec.1
-      have hpair : ({a, b} : Finset (Fin n)) = {c, d} :=
-        (Finset.card_eq_two.mp htwo).choose_spec.choose_spec.2
-      exact (x.swapColumns_eq_of_pair_eq hab hcd hpair).symm
+    exact Finset.mem_image.mpr
+      ⟨s(a, b), Finset.mem_image.mpr ⟨(a, b), by simpa [Finset.mem_offDiag], rfl⟩, rfl⟩
   calc
     x.columnSwapNeighbors.card ≤
-        (((Finset.univ : Finset (Fin n)).powersetCard 2).image pairSwap).card :=
+        (((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry).image pairSwap).card :=
       Finset.card_le_card hsubset
-    _ ≤ ((Finset.univ : Finset (Fin n)).powersetCard 2).card :=
+    _ ≤ ((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry).card :=
       Finset.card_image_le
-    _ = n.choose 2 := by rw [Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
+    _ = n.choose 2 := by rw [Sym2.card_image_offDiag, Finset.card_univ, Fintype.card_fin]
 
 /-- A grid state on a grid of size at most `1` has no column-swap neighbours. -/
 theorem columnSwapNeighbors_eq_empty_of_le_one (x : GridState n) (hn : n ≤ 1) :

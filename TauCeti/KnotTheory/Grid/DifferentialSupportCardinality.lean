@@ -4,19 +4,19 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Finsupp.Basic
-public import Mathlib.Algebra.Order.BigOperators.Group.Finset
-public import Mathlib.Data.Finsupp.SMulWithZero
 public import TauCeti.KnotTheory.Grid.DifferentialSupport
+import Mathlib.Algebra.BigOperators.Finsupp.Basic
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Finsupp.SMulWithZero
 
 /-!
 # Cardinality bounds for the fully blocked grid differential support
 
 The fully blocked grid differential is already known to be supported on the
 column-swap neighbours of a grid state. This file makes that computability statement
-quantitative: those neighbours are the image of Mathlib's off-diagonal finite set of
-unordered distinct column pairs, so each generator has at most `n.choose 2` possible
-targets.
+quantitative: those neighbours are the image of Mathlib's off-diagonal finite set of ordered
+distinct column pairs. The two orders of the same column swap give the same target state, so
+Mathlib's `Sym2.card_image_offDiag` turns this into the `n.choose 2` bound for possible targets.
 
 The same estimate extends to arbitrary finitely supported chains by taking the finite
 union of the neighbour sets attached to the input support. These bounds are the
