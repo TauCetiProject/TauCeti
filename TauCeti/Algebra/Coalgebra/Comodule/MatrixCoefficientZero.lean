@@ -117,10 +117,10 @@ theorem matrixCoefficient_zero
     (φ : (zero R C : ComoduleCat.{u, v, w} R C) →ₗ[R] R)
     (m : (zero R C : ComoduleCat.{u, v, w} R C)) :
     Comodule.matrixCoefficient (R := R) (C := C) φ m = 0 := by
-  rw [show m = 0 by
-    rw [zero] at m
-    exact Subsingleton.elim m 0]
-  simp
+  haveI : Subsingleton (zero R C : ComoduleCat.{u, v, w} R C) := by
+    rw [zero]
+    infer_instance
+  exact Comodule.matrixCoefficient_eq_zero_of_subsingleton (R := R) (C := C) φ m
 
 /-- The coefficient set of the bundled zero comodule is `{0}`. -/
 @[simp]
