@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import TauCeti.Analysis.PositiveDefinite.KernelBounds
 public import TauCeti.Analysis.PositiveDefinite.SemigroupGroup
 public import Mathlib.Topology.Constructions.SumProd
 
@@ -27,6 +28,10 @@ positive-definite function on `[0,∞) × V` to spatial positive-definite functi
 
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefiniteKernel`: the fixed-time spatial
   kernel is positive definite.
+* `TauCeti.IsSemigroupGroupPD.timeSlice_kernel_sum_nonneg`,
+  `TauCeti.IsSemigroupGroupPD.timeSlice_kernel_conj_symm`,
+  `TauCeti.IsSemigroupGroupPD.timeSlice_kernel_apply_self_nonneg`, and
+  `TauCeti.IsSemigroupGroupPD.timeSlice_kernel_normSq_le`: fixed-time kernel consequences.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefinite`: the predicate form when the
   spatial involution is negation.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefiniteKernel_and_continuous`: packages
@@ -57,6 +62,29 @@ theorem timeSlice_isPositiveDefiniteKernel (hF : IsSemigroupGroupPD F) (t : ℝ�
   have hK := isPositiveDefiniteKernel_comp hF.isPositiveDefiniteKernel
     (fun v : V => (t / 2, v))
   simpa [add_halves] using hK
+
+/-- The finite quadratic-form inequality for the fixed-time spatial kernel. -/
+theorem timeSlice_kernel_sum_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0)
+    {ι : Type*} [Fintype ι] (v : ι → V) (c : ι → ℂ) :
+    0 ≤ ∑ i, ∑ j, conj (c i) * c j * F (t, v i - v j) :=
+  (isPositiveDefiniteKernel_iff.mp (hF.timeSlice_isPositiveDefiniteKernel t)).2 v c
+
+/-- The fixed-time spatial kernel is conjugate-symmetric. -/
+@[simp]
+theorem timeSlice_kernel_conj_symm (hF : IsSemigroupGroupPD F) (t : ℝ≥0) (v w : V) :
+    conj (F (t, v - w)) = F (t, w - v) :=
+  isPositiveDefiniteKernel_conj_symm (hF.timeSlice_isPositiveDefiniteKernel t) v w
+
+/-- Diagonal values of the fixed-time spatial kernel are nonnegative. -/
+theorem timeSlice_kernel_apply_self_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) (v : V) :
+    0 ≤ F (t, v - v) :=
+  isPositiveDefiniteKernel_apply_self_nonneg (hF.timeSlice_isPositiveDefiniteKernel t) v
+
+/-- The fixed-time spatial-kernel Cauchy--Schwarz inequality. -/
+theorem timeSlice_kernel_normSq_le (hF : IsSemigroupGroupPD F) (t : ℝ≥0) (v w : V) :
+    RCLike.normSq (F (t, v - w)) ≤
+      RCLike.re (F (t, v - v)) * RCLike.re (F (t, w - w)) :=
+  isPositiveDefiniteKernel_normSq_le (hF.timeSlice_isPositiveDefiniteKernel t) v w
 
 /-- If the spatial type is equipped with the negation involution, then each fixed-time slice is a
 positive-definite function in the generic `IsPositiveDefinite` sense. -/
