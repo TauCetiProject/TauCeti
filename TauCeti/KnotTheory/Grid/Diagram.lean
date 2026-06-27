@@ -6,6 +6,8 @@ module
 
 public import Mathlib.Data.Fin.Basic
 public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Finset.Powerset
+public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fintype.Perm
@@ -326,6 +328,88 @@ theorem mem_columnSwapNeighbors {x y : GridState n} :
     exact ⟨c, d, hcd, rfl⟩
   · rintro ⟨c, d, hcd, rfl⟩
     exact ⟨c, d, hcd, rfl⟩
+
+/-- The finite set of column-swap neighbours is the image of the off-diagonal of the
+column set: an ordered pair of distinct columns gives the state obtained by swapping
+those columns. -/
+theorem columnSwapNeighbors_eq_offDiag_image (x : GridState n) :
+    x.columnSwapNeighbors =
+      (Finset.univ : Finset (Fin n)).offDiag.image fun p => x.swapColumns p.1 p.2 := by
+  ext y
+  simp [columnSwapNeighbors, Finset.mem_offDiag]
+
+/-- The result of swapping two columns only depends on the unordered pair of columns. -/
+theorem swapColumns_eq_of_pair_eq (x : GridState n) {a b c d : Fin n} (hab : a ≠ b)
+    (hcd : c ≠ d) (hpair : ({a, b} : Finset (Fin n)) = {c, d}) :
+    x.swapColumns a b = x.swapColumns c d := by
+  have hc : c = a ∨ c = b := by
+    have hc_mem : c ∈ ({a, b} : Finset (Fin n)) := by
+      simp [hpair]
+    simpa using hc_mem
+  have hd : d = a ∨ d = b := by
+    have hd_mem : d ∈ ({a, b} : Finset (Fin n)) := by
+      simp [hpair]
+    simpa using hd_mem
+  rcases hc with rfl | rfl <;> rcases hd with rfl | rfl
+  · exact (hcd rfl).elim
+  · rfl
+  · ext e
+    simp [swapColumns, Equiv.swap_comm]
+  · exact (hcd rfl).elim
+
+/-- A grid state has at most `n.choose 2` column-swap neighbours. -/
+theorem card_columnSwapNeighbors_le (x : GridState n) :
+    x.columnSwapNeighbors.card ≤ n.choose 2 := by
+  classical
+  let pairSwap : Finset (Fin n) → GridState n := fun s =>
+    if hs : s.card = 2 then
+      x.swapColumns (Finset.card_eq_two.mp hs).choose
+        (Finset.card_eq_two.mp hs).choose_spec.choose
+    else x
+  have hsubset :
+      x.columnSwapNeighbors ⊆
+        ((Finset.univ : Finset (Fin n)).powersetCard 2).image pairSwap := by
+    intro y hy
+    rw [mem_columnSwapNeighbors] at hy
+    obtain ⟨a, b, hab, rfl⟩ := hy
+    refine Finset.mem_image.mpr ⟨({a, b} : Finset (Fin n)), ?_, ?_⟩
+    · rw [Finset.mem_powersetCard]
+      exact ⟨by simp, by simp [hab]⟩
+    · dsimp [pairSwap]
+      rw [dif_pos (by simp [hab])]
+      let htwo : ({a, b} : Finset (Fin n)).card = 2 := by simp [hab]
+      let c := (Finset.card_eq_two.mp htwo).choose
+      let d := (Finset.card_eq_two.mp htwo).choose_spec.choose
+      have hcd : c ≠ d := (Finset.card_eq_two.mp htwo).choose_spec.choose_spec.1
+      have hpair : ({a, b} : Finset (Fin n)) = {c, d} :=
+        (Finset.card_eq_two.mp htwo).choose_spec.choose_spec.2
+      exact (x.swapColumns_eq_of_pair_eq hab hcd hpair).symm
+  calc
+    x.columnSwapNeighbors.card ≤
+        (((Finset.univ : Finset (Fin n)).powersetCard 2).image pairSwap).card :=
+      Finset.card_le_card hsubset
+    _ ≤ ((Finset.univ : Finset (Fin n)).powersetCard 2).card :=
+      Finset.card_image_le
+    _ = n.choose 2 := by rw [Finset.card_powersetCard, Finset.card_univ, Fintype.card_fin]
+
+/-- A grid state on a grid of size at most `1` has no column-swap neighbours. -/
+theorem columnSwapNeighbors_eq_empty_of_le_one (x : GridState n) (hn : n ≤ 1) :
+    x.columnSwapNeighbors = ∅ := by
+  have hchoose : n.choose 2 = 0 := Nat.choose_eq_zero_of_lt (Nat.lt_succ_of_le hn)
+  apply Finset.card_eq_zero.mp
+  exact Nat.eq_zero_of_le_zero ((x.card_columnSwapNeighbors_le).trans (by rw [hchoose]))
+
+/-- A grid state on a grid of size `0` has no column-swap neighbours. -/
+@[simp]
+theorem columnSwapNeighbors_eq_empty_of_zero (x : GridState 0) :
+    x.columnSwapNeighbors = ∅ :=
+  x.columnSwapNeighbors_eq_empty_of_le_one (Nat.zero_le 1)
+
+/-- A grid state on a grid of size `1` has no column-swap neighbours. -/
+@[simp]
+theorem columnSwapNeighbors_eq_empty_of_one (x : GridState 1) :
+    x.columnSwapNeighbors = ∅ :=
+  x.columnSwapNeighbors_eq_empty_of_le_one le_rfl
 
 /-- A grid state is not a column-swap neighbour of itself: swapping two distinct columns moves the
 occupied row of either column, so the result differs from the original. -/
