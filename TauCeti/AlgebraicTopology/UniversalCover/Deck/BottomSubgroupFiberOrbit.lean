@@ -23,8 +23,6 @@ or the quotient construction.
 
 ## Main declarations
 
-* `TauCeti.Deck.subgroupFiberOrbitClass_bot_eq_iff`: equality of bottom-subgroup classes is
-  equality of fibre points.
 * Compatibility lemmas under the free-transitive and regular-cover quotient-group
   equivalences to `Deck p ⧸ ⊥`.
 

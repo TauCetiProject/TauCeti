@@ -47,56 +47,6 @@ public section
 
 namespace TauCeti
 
-namespace MulAction
-
-variable {G X : Type*} [Group G] [MulAction G X]
-
-/-- For the trivial subgroup, orbit-related points are equal. -/
-@[simp]
-lemma orbitRel_bot_iff {x y : X} :
-    _root_.MulAction.orbitRel (⊥ : Subgroup G) X x y ↔ x = y := by
-  rw [_root_.MulAction.orbitRel_apply]
-  constructor
-  · rintro ⟨g, hg⟩
-    have hg_one : (g : G) = 1 := Subgroup.mem_bot.mp g.2
-    have hsmul : (g : G) • y = x := hg
-    rw [hg_one, one_smul] at hsmul
-    exact hsmul.symm
-  · intro h
-    subst h
-    exact ⟨1, by simp⟩
-
-/-- Quotienting a type by the trivial-subgroup orbit relation gives the original type. -/
-@[expose] noncomputable def orbitRelQuotientBotEquiv :
-    _root_.MulAction.orbitRel.Quotient (⊥ : Subgroup G) X ≃ X where
-  toFun := Quotient.lift id fun _ _ h => orbitRel_bot_iff.mp h
-  invFun := Quotient.mk''
-  left_inv := by
-    intro x
-    refine Quotient.inductionOn' x ?_
-    intro e
-    rfl
-  right_inv := by
-    intro e
-    rfl
-
-/-- The trivial-subgroup orbit quotient equivalence sends a class to its representative. -/
-@[simp]
-lemma orbitRelQuotientBotEquiv_apply (x : X) :
-    orbitRelQuotientBotEquiv
-        (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient (⊥ : Subgroup G) X) = x :=
-  rfl
-
-/-- The inverse trivial-subgroup orbit quotient equivalence sends a point to its class. -/
-@[simp]
-lemma orbitRelQuotientBotEquiv_symm_apply (x : X) :
-    (orbitRelQuotientBotEquiv :
-        _root_.MulAction.orbitRel.Quotient (⊥ : Subgroup G) X ≃ X).symm x =
-      Quotient.mk'' x :=
-  rfl
-
-end MulAction
-
 namespace Deck
 
 variable {E F G B : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace G]
@@ -326,9 +276,26 @@ lemma subgroupFiberOrbitQuotientEquiv_mapOfLE (h : E ≃ₜ F) (hpq : ∀ e, q (
   rfl
 
 /-- Quotienting a fibre by the trivial deck subgroup gives the fibre itself. -/
-noncomputable abbrev subgroupFiberOrbitQuotientBotEquiv :
+@[expose] noncomputable def subgroupFiberOrbitQuotientBotEquiv :
     SubgroupFiberOrbitQuotient (⊥ : Subgroup (Deck p)) b ≃ p ⁻¹' {b} :=
-  MulAction.orbitRelQuotientBotEquiv
+  { toFun := Quotient.lift (fun e : p ⁻¹' {b} => e) fun e e' h => by
+      change _root_.MulAction.orbitRel (⊥ : Subgroup (Deck p)) (p ⁻¹' {b}) e e' at h
+      rw [MulAction.orbitRel_apply] at h
+      rcases h with ⟨φ, hφ⟩
+      have hφ_one : (φ : Deck p) = 1 := Subgroup.mem_bot.mp φ.2
+      have hsmul : (φ : Deck p) • e' = e := by
+        simpa [Subgroup.smul_def] using hφ
+      rw [hφ_one, one_smul] at hsmul
+      exact hsmul.symm
+    invFun := subgroupFiberOrbitClass (⊥ : Subgroup (Deck p))
+    left_inv := by
+      intro x
+      refine Quotient.inductionOn' x ?_
+      intro e
+      rfl
+    right_inv := by
+      intro e
+      rfl }
 
 /-- The bottom-subgroup quotient equivalence sends a class to its representative fibre point. -/
 @[simp]
