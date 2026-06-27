@@ -128,6 +128,47 @@ theorem Exchangeable.contractable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X :=
   contractable_of_exchangeable hX hX_meas
 
+/-- **An exchangeable sequence has the prefix law along any injective finite selection:**
+`blockLaw μ X k = prefixLaw μ X n` for injective `k : Fin n → ℕ`. The injective analogue of
+`contractable_of_exchangeable` (which handles strictly increasing selections). -/
+theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : ℕ → Ω → α}
+    (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ)
+    {n : ℕ} (k : Fin n → ℕ) (hk : Function.Injective k) :
+    blockLaw μ X k = prefixLaw μ X n := by
+  cases n with
+  | zero =>
+    rw [blockLaw_apply, prefixLaw_apply, blockLaw_apply]
+    congr 1
+    funext ω i
+    exact i.elim0
+  | succ m =>
+    set N := max (m + 1) (Finset.univ.sup k + 1) with hN
+    have hnN : m + 1 ≤ N := le_max_left _ _
+    have hk_bound : ∀ i, k i < N := by
+      intro i
+      have h1 : k i ≤ Finset.univ.sup k := Finset.le_sup (Finset.mem_univ i)
+      have h2 : Finset.univ.sup k + 1 ≤ N := le_max_right _ _
+      omega
+    obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair (Fin.castLE hnN)
+      (fun i => (⟨k i, hk_bound i⟩ : Fin N))
+      (fun a b h => by
+        apply Fin.val_injective
+        exact (congrArg Fin.val h : (Fin.castLE hnN a).val = (Fin.castLE hnN b).val))
+      (fun _ _ h => hk (Fin.mk.inj h))
+    have hexch : blockLaw μ X (fun j : Fin N => (σ j).val) = prefixLaw μ X N :=
+      (hX.exchangeableAt N).permute σ
+    have hLHS : (blockLaw μ X (fun j : Fin N => (σ j).val)).map
+          (fun x : Fin N → α => fun i : Fin (m + 1) => x (Fin.castLE hnN i)) = blockLaw μ X k := by
+      have hidx : (fun j : Fin N => (σ j).val) ∘ Fin.castLE hnN = k := by
+        funext i; exact congrArg Fin.val (hσ i)
+      rw [map_blockLaw_reindex μ _ (Fin.castLE hnN) (fun j => hX_meas (σ j).val), hidx]
+    have hRHS : (prefixLaw μ X N).map (fun x : Fin N → α => fun i : Fin (m + 1) =>
+          x (Fin.castLE hnN i)) = prefixLaw μ X (m + 1) :=
+      map_prefixLaw_castLE μ hnN (fun j => hX_meas j.val)
+    have key := congrArg
+      (Measure.map (fun x : Fin N → α => fun i : Fin (m + 1) => x (Fin.castLE hnN i))) hexch
+    rwa [hLHS, hRHS] at key
+
 end Probability
 
 end TauCeti

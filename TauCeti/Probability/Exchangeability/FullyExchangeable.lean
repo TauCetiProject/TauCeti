@@ -45,22 +45,28 @@ private theorem exists_perm_nat_extending {n : ℕ} (σ : Equiv.Perm (Fin n)) :
   Equiv.Perm.exists_extending_pair (fun i : Fin n => i.val) (fun i => (σ i).val)
     Fin.val_injective (fun _ _ h => σ.injective (Fin.val_injective h))
 
+/-- The first-`n` prefix marginal of the `π`-reindexed path law is the block law along the
+selection `j ↦ π j`. -/
+private theorem map_reindex_prefixProj {μ : Measure Ω} {X : ℕ → Ω → α}
+    (hX_meas : ∀ i, AEMeasurable (X i) μ) (π : Equiv.Perm ℕ) (n : ℕ) :
+    (μ.map fun ω i => X (π i) ω).map (prefixProj α n)
+      = blockLaw μ X (fun j : Fin n => π j.val) := by
+  rw [AEMeasurable.map_map_of_aemeasurable (measurable_prefixProj n).aemeasurable
+    (aemeasurable_pi_lambda _ fun i => hX_meas (π i))]
+  rfl
+
 /-- **Full exchangeability implies finite exchangeability at each dimension `n`.** -/
 theorem FullyExchangeable.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) (n : ℕ) :
     ExchangeableAt μ X n := by
   intro σ
   obtain ⟨π, hπ⟩ := exists_perm_nat_extending σ
-  have hLHS : (μ.map fun ω i => X (π i) ω).map (prefixProj α n)
-      = blockLaw μ X (fun j : Fin n => π j.val) := by
-    rw [AEMeasurable.map_map_of_aemeasurable (measurable_prefixProj n).aemeasurable
-      (aemeasurable_pi_lambda _ fun i => hX_meas (π i))]
-    rfl
   have hidx : (fun j : Fin n => π j.val) = fun j : Fin n => (σ j).val := by
     funext j; exact hπ j
   calc blockLaw μ X (fun j : Fin n => (σ j).val)
       = blockLaw μ X (fun j : Fin n => π j.val) := by rw [hidx]
-    _ = (μ.map fun ω i => X (π i) ω).map (prefixProj α n) := hLHS.symm
+    _ = (μ.map fun ω i => X (π i) ω).map (prefixProj α n) :=
+        (map_reindex_prefixProj hX_meas π n).symm
     _ = (pathLaw μ X).map (prefixProj α n) := by rw [hX π]
     _ = prefixLaw μ X n := map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) n
 
@@ -69,47 +75,6 @@ theorem FullyExchangeable.exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Exchangeable μ X :=
   fun n => hX.exchangeableAt hX_meas n
 
-/-- **An exchangeable process has the prefix law along any injective finite selection:**
-`blockLaw μ X k = prefixLaw μ X n` for injective `k : Fin n → ℕ`. (The injective analogue of
-`contractable_of_exchangeable`.) -/
-theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : ℕ → Ω → α}
-    (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ)
-    {n : ℕ} (k : Fin n → ℕ) (hk : Function.Injective k) :
-    blockLaw μ X k = prefixLaw μ X n := by
-  cases n with
-  | zero =>
-    rw [blockLaw_apply, prefixLaw_apply, blockLaw_apply]
-    congr 1
-    funext ω i
-    exact i.elim0
-  | succ m =>
-    set N := max (m + 1) (Finset.univ.sup k + 1) with hN
-    have hnN : m + 1 ≤ N := le_max_left _ _
-    have hk_bound : ∀ i, k i < N := by
-      intro i
-      have h1 : k i ≤ Finset.univ.sup k := Finset.le_sup (Finset.mem_univ i)
-      have h2 : Finset.univ.sup k + 1 ≤ N := le_max_right _ _
-      omega
-    obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair (Fin.castLE hnN)
-      (fun i => (⟨k i, hk_bound i⟩ : Fin N))
-      (fun a b h => by
-        apply Fin.val_injective
-        exact (congrArg Fin.val h : (Fin.castLE hnN a).val = (Fin.castLE hnN b).val))
-      (fun _ _ h => hk (Fin.mk.inj h))
-    have hexch : blockLaw μ X (fun j : Fin N => (σ j).val) = prefixLaw μ X N :=
-      (hX.exchangeableAt N).permute σ
-    have hLHS : (blockLaw μ X (fun j : Fin N => (σ j).val)).map
-          (fun x : Fin N → α => fun i : Fin (m + 1) => x (Fin.castLE hnN i)) = blockLaw μ X k := by
-      have hidx : (fun j : Fin N => (σ j).val) ∘ Fin.castLE hnN = k := by
-        funext i; exact congrArg Fin.val (hσ i)
-      rw [map_blockLaw_reindex μ _ (Fin.castLE hnN) (fun j => hX_meas (σ j).val), hidx]
-    have hRHS : (prefixLaw μ X N).map (fun x : Fin N → α => fun i : Fin (m + 1) =>
-          x (Fin.castLE hnN i)) = prefixLaw μ X (m + 1) :=
-      map_prefixLaw_castLE μ hnN (fun j => hX_meas j.val)
-    have key := congrArg
-      (Measure.map (fun x : Fin N → α => fun i : Fin (m + 1) => x (Fin.castLE hnN i))) hexch
-    rwa [hLHS, hRHS] at key
-
 /-- **Finite exchangeability implies full exchangeability** for a finite law with a.e. measurable
 coordinates: the path law is invariant under every permutation of `ℕ`. -/
 theorem Exchangeable.fullyExchangeable {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
@@ -117,17 +82,10 @@ theorem Exchangeable.fullyExchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
   intro π
   refine measure_eq_of_prefixProj_map_eq ?_
   intro n
-  have hLmar : (μ.map fun ω i => X (π i) ω).map (prefixProj α n)
-      = blockLaw μ X (fun j : Fin n => π j.val) := by
-    rw [AEMeasurable.map_map_of_aemeasurable (measurable_prefixProj n).aemeasurable
-      (aemeasurable_pi_lambda _ fun i => hX_meas (π i))]
-    rfl
-  have hRmar : (pathLaw μ X).map (prefixProj α n) = prefixLaw μ X n :=
-    map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) n
-  have hblock : blockLaw μ X (fun j : Fin n => π j.val) = prefixLaw μ X n :=
-    hX.blockLaw_eq_prefixLaw_of_injective hX_meas _
-      (fun _ _ h => Fin.val_injective (π.injective h))
-  rw [hLmar, hRmar, hblock]
+  rw [map_reindex_prefixProj hX_meas π n,
+    map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) n]
+  exact Exchangeable.blockLaw_eq_prefixLaw_of_injective hX hX_meas _
+    (fun _ _ h => Fin.val_injective (π.injective h))
 
 /-- **Finite exchangeability ↔ full exchangeability** for a process with a.e. measurable
 coordinates under a finite measure. -/
@@ -148,19 +106,26 @@ private theorem map_shift_prefixProj_pathLaw {μ : Measure Ω} {X : ℕ → Ω �
       (measurable_shift.comp_aemeasurable (aemeasurable_pi_lambda _ hX_meas))]
   rfl
 
-/-- **A fully exchangeable process has a shift-invariant path law.** The bridge from symmetry to the
-shift dynamics: `shift` preserves `pathLaw μ X`. -/
-theorem FullyExchangeable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α}
-    [IsFiniteMeasure μ] (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
+/-- **A contractable process has a shift-invariant path law:** `shift` preserves `pathLaw μ X`.
+Shift-preservation needs only contractability, not full exchangeability. -/
+theorem Contractable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
+    (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
     MeasurePreserving (shift α) (pathLaw μ X) (pathLaw μ X) := by
-  have hcontr : Contractable μ X := contractable_of_exchangeable (hX.exchangeable hX_meas) hX_meas
   refine ⟨measurable_shift, ?_⟩
   haveI : IsFiniteMeasure (pathLaw μ X) := by rw [pathLaw_apply]; infer_instance
   refine measure_eq_of_prefixProj_map_eq ?_
   intro n
   rw [map_shift_prefixProj_pathLaw hX_meas n,
     map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) n]
-  exact hcontr n (fun i : Fin n => i.val + 1) (fun _ _ h => Nat.add_lt_add_right h 1)
+  exact hX n (fun i : Fin n => i.val + 1) (fun _ _ h => Nat.add_lt_add_right h 1)
+
+/-- **A fully exchangeable process has a shift-invariant path law** — the Layer 0 shift-preservation
+bridge, a corollary of `Contractable.measurePreserving_shift`. -/
+theorem FullyExchangeable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α}
+    [IsFiniteMeasure μ] (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
+    MeasurePreserving (shift α) (pathLaw μ X) (pathLaw μ X) := by
+  have hc : Contractable μ X := contractable_of_exchangeable (hX.exchangeable hX_meas) hX_meas
+  exact hc.measurePreserving_shift hX_meas
 
 end Probability
 
