@@ -16,8 +16,9 @@ contractability-specific API.
 The main result is `contractable_of_exchangeable` (with dot-notation form
 `Exchangeable.contractable`): every exchangeable sequence with a.e. measurable coordinates is
 contractable. The file also provides `Exchangeable.blockLaw_eq_prefixLaw_of_injective` (the
-injective-selection analogue) and `Contractable.measurePreserving_shift` (a contractable path law is
-shift-invariant).
+injective-selection analogue) and `Contractable.measurePreserving_reindex` /
+`Contractable.measurePreserving_shift` (a contractable path law is invariant under strictly monotone
+time-reindexing, in particular the shift).
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
@@ -128,31 +129,40 @@ theorem Exchangeable.contractable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X :=
   contractable_of_exchangeable hX hX_meas
 
-/-- Projecting the shifted path law onto its first `n` coordinates gives the law of the block
-`(X 1, …, X n)`. -/
-private theorem map_shift_prefixProj_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
-    (hX_meas : ∀ i, AEMeasurable (X i) μ) (n : ℕ) :
-    ((pathLaw μ X).map (shift α)).map (prefixProj α n)
-      = blockLaw μ X (fun i : Fin n => i.val + 1) := by
+/-- Projecting the `φ`-reindexed path law onto its first `n` coordinates gives the law of the block
+`(X (φ 0), …, X (φ (n-1)))`. -/
+private theorem map_reindex_prefixProj_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
+    (hX_meas : ∀ i, AEMeasurable (X i) μ) (φ : ℕ → ℕ) (n : ℕ) :
+    ((pathLaw μ X).map (fun x : ℕ → α => fun k => x (φ k))).map (prefixProj α n)
+      = blockLaw μ X (fun i : Fin n => φ i.val) := by
+  have hφ_meas : Measurable (fun x : ℕ → α => fun k => x (φ k)) :=
+    measurable_pi_lambda _ fun k => measurable_pi_apply (φ k)
   rw [pathLaw_apply,
-    AEMeasurable.map_map_of_aemeasurable measurable_shift.aemeasurable
+    AEMeasurable.map_map_of_aemeasurable hφ_meas.aemeasurable
       (aemeasurable_pi_lambda _ hX_meas),
     AEMeasurable.map_map_of_aemeasurable (measurable_prefixProj n).aemeasurable
-      (measurable_shift.comp_aemeasurable (aemeasurable_pi_lambda _ hX_meas))]
+      (hφ_meas.comp_aemeasurable (aemeasurable_pi_lambda _ hX_meas))]
   rfl
 
-/-- **A contractable process has a shift-invariant path law:** `shift` preserves `pathLaw μ X`.
-Shift-preservation needs only contractability, not full exchangeability. -/
-theorem Contractable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
-    (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
-    MeasurePreserving (shift α) (pathLaw μ X) (pathLaw μ X) := by
-  refine ⟨measurable_shift, ?_⟩
+/-- **A contractable process's path law is invariant under strictly monotone time-reindexing:** for
+`StrictMono φ`, the reindexing `x ↦ x ∘ φ` preserves `pathLaw μ X`. -/
+theorem Contractable.measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
+    (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) {φ : ℕ → ℕ} (hφ : StrictMono φ) :
+    MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) (pathLaw μ X) (pathLaw μ X) := by
+  refine ⟨measurable_pi_lambda _ fun k => measurable_pi_apply (φ k), ?_⟩
   haveI : IsFiniteMeasure (pathLaw μ X) := by rw [pathLaw_apply]; infer_instance
   refine measure_eq_of_prefixProj_map_eq ?_
   intro n
-  rw [map_shift_prefixProj_pathLaw hX_meas n,
+  rw [map_reindex_prefixProj_pathLaw hX_meas φ n,
     map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) n]
-  exact hX n (fun i : Fin n => i.val + 1) (fun _ _ h => Nat.add_lt_add_right h 1)
+  exact hX n (fun i : Fin n => φ i.val) (hφ.comp Fin.val_strictMono)
+
+/-- **A contractable process has a shift-invariant path law:** `shift` preserves `pathLaw μ X`. -/
+theorem Contractable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
+    (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
+    MeasurePreserving (shift α) (pathLaw μ X) (pathLaw μ X) :=
+  Contractable.measurePreserving_reindex hX hX_meas (φ := fun k => k + 1)
+    (fun _ _ h => Nat.add_lt_add_right h 1)
 
 end Probability
 
