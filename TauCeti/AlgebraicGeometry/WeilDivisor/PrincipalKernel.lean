@@ -44,12 +44,6 @@ variable {X G : Type*} [AddCommGroup G] (S : OrderSystem X G)
 
 noncomputable section
 
-private lemma quotientKerEquivRange_mk {H : Type*} [AddCommGroup H] (φ : G →+ H) (g : G) :
-    QuotientAddGroup.quotientKerEquivRange φ (QuotientAddGroup.mk g) =
-      ⟨φ g, ⟨g, rfl⟩⟩ :=
-  Subtype.ext <| by
-    simp [QuotientAddGroup.quotientKerEquivRange, QuotientAddGroup.rangeKerLift]
-
 /-! ### The kernel of the principal-divisor map -/
 
 /-- The subgroup of functions whose principal divisor is zero. Geometrically, for a proper
@@ -104,23 +98,6 @@ functions modulo nonzero constants. -/
 abbrev PrincipalFunctionClass : Type _ :=
   G ⧸ S.principalKernel
 
-/-- The quotient of functions by the zero-principal-divisor subgroup is canonically equivalent
-to the subgroup of principal divisors. -/
-def principalFunctionClassEquivPrincipalSubgroup :
-    S.PrincipalFunctionClass ≃+ S.principalSubgroup :=
-  (QuotientAddGroup.quotientKerEquivRange S.principalHom).trans
-    (AddEquiv.addSubgroupCongr <| by
-      ext D
-      rw [mem_principalSubgroup, AddMonoidHom.mem_range]
-      simp only [principalHom_apply])
-
-@[simp]
-lemma principalFunctionClassEquivPrincipalSubgroup_mk (g : G) :
-    S.principalFunctionClassEquivPrincipalSubgroup (QuotientAddGroup.mk g) =
-      ⟨S.principalDivisor g, S.principalDivisor_mem_principalSubgroup g⟩ :=
-  Subtype.ext <| by
-    simp [principalFunctionClassEquivPrincipalSubgroup, quotientKerEquivRange_mk]
-
 /-- The principal divisor associated to a function class, as a homomorphism into all Weil
 divisors. -/
 def principalFunctionClassDivisor : S.PrincipalFunctionClass →+ WeilDivisor X :=
@@ -131,17 +108,45 @@ lemma principalFunctionClassDivisor_mk (g : G) :
     S.principalFunctionClassDivisor (QuotientAddGroup.mk g) = S.principalDivisor g :=
   QuotientAddGroup.kerLift_mk S.principalHom g
 
+/-- The map from function classes to principal divisors is injective. -/
+lemma principalFunctionClassDivisor_injective :
+    Function.Injective S.principalFunctionClassDivisor :=
+  QuotientAddGroup.kerLift_injective S.principalHom
+
+private lemma principalFunctionClassDivisor_range_eq_principalSubgroup :
+    S.principalFunctionClassDivisor.range = S.principalSubgroup := by
+  ext D
+  rw [AddMonoidHom.mem_range, mem_principalSubgroup]
+  constructor
+  · rintro ⟨q, hq⟩
+    induction q using QuotientAddGroup.induction_on with
+    | _ g =>
+        exact ⟨g, hq⟩
+  · rintro ⟨g, hg⟩
+    exact ⟨QuotientAddGroup.mk g, by simp [hg]⟩
+
+/-- The quotient of functions by the zero-principal-divisor subgroup is canonically equivalent
+to the subgroup of principal divisors. -/
+def principalFunctionClassEquivPrincipalSubgroup :
+    S.PrincipalFunctionClass ≃+ S.principalSubgroup :=
+  (AddMonoidHom.ofInjective S.principalFunctionClassDivisor_injective).trans
+    (AddEquiv.addSubgroupCongr S.principalFunctionClassDivisor_range_eq_principalSubgroup)
+
+@[simp]
+lemma principalFunctionClassEquivPrincipalSubgroup_mk (g : G) :
+    S.principalFunctionClassEquivPrincipalSubgroup (QuotientAddGroup.mk g) =
+      ⟨S.principalDivisor g, S.principalDivisor_mem_principalSubgroup g⟩ :=
+  Subtype.ext <| by
+    simp only [principalFunctionClassEquivPrincipalSubgroup, AddEquiv.trans_apply,
+      AddEquiv.addSubgroupCongr_apply]
+    exact AddMonoidHom.ofInjective_apply S.principalFunctionClassDivisor_injective
+
 @[simp]
 lemma coe_principalFunctionClassEquivPrincipalSubgroup (q : S.PrincipalFunctionClass) :
     ((S.principalFunctionClassEquivPrincipalSubgroup q : S.principalSubgroup) : WeilDivisor X) =
       S.principalFunctionClassDivisor q := by
   induction q using QuotientAddGroup.induction_on with
   | _ g => simp
-
-/-- The map from function classes to principal divisors is injective. -/
-lemma principalFunctionClassDivisor_injective :
-    Function.Injective S.principalFunctionClassDivisor :=
-  QuotientAddGroup.kerLift_injective S.principalHom
 
 @[simp]
 lemma principalFunctionClassDivisor_eq_zero_iff {q : S.PrincipalFunctionClass} :
