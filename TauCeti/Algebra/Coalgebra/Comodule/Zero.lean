@@ -22,6 +22,7 @@ concrete carrier.
 ## Main declarations
 
 * `TauCeti.ComoduleCat.zero`: the bundled zero comodule.
+* `TauCeti.ComoduleCat.subsingleton_zero`: the bundled zero comodule has subsingleton carrier.
 * `TauCeti.ComoduleCat.isZero_zero`: `ComoduleCat.zero` is a zero object.
 * `HasZeroObject (ComoduleCat R C)`.
 
@@ -71,6 +72,11 @@ variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 @[expose] def zero : ComoduleCat.{u, v, w} R C :=
   of R C PUnit.{w + 1}
 
+/-- The named zero comodule has subsingleton carrier. -/
+theorem subsingleton_zero : Subsingleton (zero R C : ComoduleCat.{u, v, w} R C) := by
+  rw [zero]
+  infer_instance
+
 /-- A comodule whose underlying type is subsingleton is a zero object. -/
 theorem isZero_of_subsingleton (M : ComoduleCat.{u, v, w} R C) [Subsingleton M] : IsZero M where
   unique_to N :=
@@ -89,8 +95,8 @@ theorem isZero_of_subsingleton (M : ComoduleCat.{u, v, w} R C) [Subsingleton M] 
 
 /-- The named zero comodule is a zero object. -/
 theorem isZero_zero : IsZero (zero R C : ComoduleCat.{u, v, w} R C) := by
-  rw [zero]
-  exact isZero_of_subsingleton (R := R) (C := C) (of R C PUnit.{w + 1})
+  haveI := subsingleton_zero (R := R) (C := C)
+  exact isZero_of_subsingleton (R := R) (C := C) (zero R C)
 
 /-- Any morphism from the named zero comodule is zero. -/
 theorem zero_hom_eq_zero (M : ComoduleCat.{u, v, w} R C) (f : zero R C ⟶ M) : f = 0 :=
