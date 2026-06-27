@@ -93,39 +93,13 @@ theorem exchangeable_iff_fullyExchangeable {μ : Measure Ω} {X : ℕ → Ω →
     (hX_meas : ∀ i, AEMeasurable (X i) μ) : Exchangeable μ X ↔ FullyExchangeable μ X :=
   ⟨fun h => h.fullyExchangeable hX_meas, fun h => h.exchangeable hX_meas⟩
 
-/-- Projecting the shifted path law onto its first `n` coordinates gives the law of the block
-`(X 1, …, X n)`. -/
-private theorem map_shift_prefixProj_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
-    (hX_meas : ∀ i, AEMeasurable (X i) μ) (n : ℕ) :
-    ((pathLaw μ X).map (shift α)).map (prefixProj α n)
-      = blockLaw μ X (fun i : Fin n => i.val + 1) := by
-  rw [pathLaw_apply,
-    AEMeasurable.map_map_of_aemeasurable measurable_shift.aemeasurable
-      (aemeasurable_pi_lambda _ hX_meas),
-    AEMeasurable.map_map_of_aemeasurable (measurable_prefixProj n).aemeasurable
-      (measurable_shift.comp_aemeasurable (aemeasurable_pi_lambda _ hX_meas))]
-  rfl
-
-/-- **A contractable process has a shift-invariant path law:** `shift` preserves `pathLaw μ X`.
-Shift-preservation needs only contractability, not full exchangeability. -/
-theorem Contractable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
-    (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
-    MeasurePreserving (shift α) (pathLaw μ X) (pathLaw μ X) := by
-  refine ⟨measurable_shift, ?_⟩
-  haveI : IsFiniteMeasure (pathLaw μ X) := by rw [pathLaw_apply]; infer_instance
-  refine measure_eq_of_prefixProj_map_eq ?_
-  intro n
-  rw [map_shift_prefixProj_pathLaw hX_meas n,
-    map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) n]
-  exact hX n (fun i : Fin n => i.val + 1) (fun _ _ h => Nat.add_lt_add_right h 1)
-
 /-- **A fully exchangeable process has a shift-invariant path law** — the Layer 0 shift-preservation
 bridge, a corollary of `Contractable.measurePreserving_shift`. -/
 theorem FullyExchangeable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α}
     [IsFiniteMeasure μ] (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
     MeasurePreserving (shift α) (pathLaw μ X) (pathLaw μ X) := by
   have hc : Contractable μ X := contractable_of_exchangeable (hX.exchangeable hX_meas) hX_meas
-  exact hc.measurePreserving_shift hX_meas
+  exact Contractable.measurePreserving_shift hc hX_meas
 
 end Probability
 
