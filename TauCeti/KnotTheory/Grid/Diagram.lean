@@ -340,6 +340,7 @@ theorem columnSwapNeighbors_eq_offDiag_image (x : GridState n) :
   simp [columnSwapNeighbors, Finset.mem_offDiag]
 
 /-- A grid state has exactly `n.choose 2` column-swap neighbours. -/
+@[simp]
 theorem card_columnSwapNeighbors (x : GridState n) :
     x.columnSwapNeighbors.card = n.choose 2 := by
   classical
