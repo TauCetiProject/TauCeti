@@ -46,9 +46,11 @@ noncomputable section
 
 /-! ### The kernel of the principal-divisor map -/
 
-/-- The subgroup of functions whose principal divisor is zero. Geometrically, for a proper
-curve this is the subgroup of nonzero constants, expressed in the additive notation used for
-the function-field unit group. -/
+/-- The subgroup of functions whose principal divisor is zero.
+
+In geometric applications this is the subgroup quotiented out before passing from rational
+functions to principal divisors. Identifying it with constants requires additional geometric
+input, such as a global-units or constant-field theorem. -/
 abbrev principalKernel : AddSubgroup G :=
   S.principalHom.ker
 
@@ -92,9 +94,11 @@ lemma principalKernel_eq_bot_of_principalHom_injective
 
 /-! ### Principal divisors as a quotient of functions -/
 
-/-- The quotient of the function group by functions with zero principal divisor. Geometrically,
-for a proper curve this is the additive form of `K(X)ˣ / kˣ`, the group of nonzero rational
-functions modulo nonzero constants. -/
+/-- The quotient of the function group by functions with zero principal divisor.
+
+In geometric applications this is the group of rational functions modulo the subgroup with
+zero principal divisor. Under further hypotheses identifying that subgroup with the base-field
+constants, it specializes to the usual rational-functions-modulo-constants group. -/
 abbrev PrincipalFunctionClass : Type _ :=
   G ⧸ S.principalKernel
 
@@ -112,6 +116,25 @@ lemma principalFunctionClassDivisor_mk (g : G) :
 lemma principalFunctionClassDivisor_injective :
     Function.Injective S.principalFunctionClassDivisor :=
   QuotientAddGroup.kerLift_injective S.principalHom
+
+/-- Every divisor attached to a function class is principal. -/
+@[simp]
+lemma principalFunctionClassDivisor_mem_principalSubgroup (q : S.PrincipalFunctionClass) :
+    S.principalFunctionClassDivisor q ∈ S.principalSubgroup := by
+  induction q using QuotientAddGroup.induction_on with
+  | _ g => simp
+
+/-- The image of function classes in all Weil divisors is exactly the subgroup of principal
+divisors. -/
+lemma principalFunctionClassDivisor_range :
+    S.principalFunctionClassDivisor.range = S.principalSubgroup := by
+  ext D
+  constructor
+  · rintro ⟨q, rfl⟩
+    exact S.principalFunctionClassDivisor_mem_principalSubgroup q
+  · intro hD
+    rcases S.mem_principalSubgroup.mp hD with ⟨g, rfl⟩
+    exact ⟨QuotientAddGroup.mk g, by simp⟩
 
 /-- The quotient of functions by the zero-principal-divisor subgroup is canonically equivalent
 to the subgroup of principal divisors. -/
