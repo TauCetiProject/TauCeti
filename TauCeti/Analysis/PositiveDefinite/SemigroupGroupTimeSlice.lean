@@ -14,11 +14,10 @@ A Berg--Christensen--Ressel positive-definite function on `ℝ≥0 × V` is posi
 spatial variable at every fixed time. Indeed, to test the kernel
 `(v, w) ↦ F (t, v - w)`, apply the BCR kernel to the family of points `(t / 2, v)`.
 
-This file records that fixed-time-slice API in kernel form, together with origin normal forms
-and the predicate form for the fixed-time slice. These lemmas are
-prerequisites for the BCR representation milestone in the `OneParameterSemigroups` roadmap:
-later proofs can apply the spatial Bochner theorem to each time slice before handling the
-remaining Laplace/semigroup structure.
+This file records that fixed-time-slice API in kernel form, together with the predicate form for
+the fixed-time slice. These lemmas are prerequisites for the BCR representation milestone in the
+`OneParameterSemigroups` roadmap: later proofs can apply the spatial Bochner theorem to each time
+slice before handling the remaining Laplace/semigroup structure.
 
 This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milestone 2
 ("BCR semigroup--Bochner"), specifically the reduction of a bounded continuous
@@ -28,8 +27,6 @@ positive-definite function on `[0,∞) × V` to spatial positive-definite functi
 
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefiniteKernel`: the fixed-time spatial
   kernel is positive definite.
-* `TauCeti.IsSemigroupGroupPD.timeSlice_apply_zero_nonneg` and related lemmas: origin
-  normal forms for the fixed-time spatial slice.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefinite`: the predicate form when the
   spatial involution is negation.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefiniteKernel_and_continuous`: packages
@@ -60,28 +57,6 @@ theorem timeSlice_isPositiveDefiniteKernel (hF : IsSemigroupGroupPD F) (t : ℝ�
   have hK := isPositiveDefiniteKernel_comp hF.isPositiveDefiniteKernel
     (fun v : V => (t / 2, v))
   simpa [add_halves] using hK
-
-/-- The value at the spatial origin of a fixed-time slice is nonnegative. -/
-theorem timeSlice_apply_zero_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
-    0 ≤ F (t, 0) := by
-  simpa [add_halves] using hF.diagonal_nonneg (t / 2)
-
-/-- The value at the spatial origin of a fixed-time slice has zero imaginary part. -/
-@[simp]
-theorem timeSlice_apply_zero_im (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
-    (F (t, 0)).im = 0 := by
-  simpa [add_halves] using hF.diagonal_im (t / 2)
-
-/-- The real part of the value at the spatial origin of a fixed-time slice is nonnegative. -/
-theorem timeSlice_apply_zero_re_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
-    0 ≤ (F (t, 0)).re := by
-  simpa [add_halves] using hF.diagonal_re_nonneg (t / 2)
-
-/-- The value at the spatial origin of a fixed-time slice is equal to its real part, viewed as a
-complex number. -/
-theorem timeSlice_apply_zero_eq_ofReal_re (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
-    F (t, 0) = ((F (t, 0)).re : ℂ) := by
-  simpa [add_halves] using hF.diagonal_eq_ofReal_re (t / 2)
 
 /-- If the spatial type is equipped with the negation involution, then each fixed-time slice is a
 positive-definite function in the generic `IsPositiveDefinite` sense. -/
