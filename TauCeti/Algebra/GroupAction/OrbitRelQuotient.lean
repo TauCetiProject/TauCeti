@@ -15,8 +15,6 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 
 * `TauCeti.MulAction.orbitRelQuotientBotEquiv`: the quotient by the trivial subgroup is the
   original space.
-* `TauCeti.MulAction.orbitRelQuotientMapOfLE`: the map on orbit quotients induced by an
-  inclusion of acting subgroups.
 * `TauCeti.MulAction.orbitRelQuotientMapOfLE_bot_eq_iff`: equality after the bottom-to-`H`
   quotient map is membership in an `H`-orbit.
 -/
@@ -81,29 +79,20 @@ lemma orbitRelQuotientBot_mk_eq_iff (x y : X) :
   · intro h
     rw [h]
 
-/-- The map on orbit quotients induced by an inclusion of acting subgroups. -/
-@[expose] def orbitRelQuotientMapOfLE {H K : Subgroup G} (hHK : H ≤ K) :
-    _root_.MulAction.orbitRel.Quotient H X →
-      _root_.MulAction.orbitRel.Quotient K X :=
-  Quotient.map' id fun x y h => by
-    rw [_root_.MulAction.orbitRel_apply] at h ⊢
-    rcases h with ⟨g, hg⟩
-    exact ⟨⟨g.1, hHK g.2⟩, hg⟩
-
-/-- The map induced by `H ≤ K` sends an `H`-orbit representative to its `K`-orbit class. -/
-@[simp]
-lemma orbitRelQuotientMapOfLE_mk {H K : Subgroup G} (hHK : H ≤ K) (x : X) :
-    orbitRelQuotientMapOfLE (G := G) (X := X) hHK
-        (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
-      (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient K X) :=
-  rfl
+/-- Orbit relations are monotone in the acting subgroup. -/
+lemma orbitRel_le_of_subgroup_le {H K : Subgroup G} (hHK : H ≤ K) :
+    _root_.MulAction.orbitRel H X ≤ _root_.MulAction.orbitRel K X := by
+  intro x y h
+  rw [_root_.MulAction.orbitRel_apply] at h ⊢
+  rcases h with ⟨g, hg⟩
+  exact ⟨⟨g.1, hHK g.2⟩, hg⟩
 
 /-- The map from the bottom-subgroup quotient to the `H`-quotient is the `H`-orbit class map
 under the bottom quotient equivalence. -/
 @[simp]
 lemma orbitRelQuotientMapOfLE_bot_eq (H : Subgroup G) :
-    orbitRelQuotientMapOfLE (G := G) (X := X)
-        (bot_le : (⊥ : Subgroup G) ≤ H) =
+    Setoid.map_of_le (orbitRel_le_of_subgroup_le (G := G) (X := X)
+        (bot_le : (⊥ : Subgroup G) ≤ H)) =
       (fun x : X => (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X)) ∘
         orbitRelQuotientBotEquiv (G := G) (X := X) := by
   ext x
@@ -115,10 +104,10 @@ lemma orbitRelQuotientMapOfLE_bot_eq (H : Subgroup G) :
 the bottom-subgroup quotient. -/
 lemma orbitRelQuotientMapOfLE_bot_eq_iff (H : Subgroup G)
     (x y : _root_.MulAction.orbitRel.Quotient (⊥ : Subgroup G) X) :
-    orbitRelQuotientMapOfLE (G := G) (X := X)
-        (bot_le : (⊥ : Subgroup G) ≤ H) x =
-        orbitRelQuotientMapOfLE (G := G) (X := X)
-          (bot_le : (⊥ : Subgroup G) ≤ H) y ↔
+    Setoid.map_of_le (orbitRel_le_of_subgroup_le (G := G) (X := X)
+        (bot_le : (⊥ : Subgroup G) ≤ H)) x =
+        Setoid.map_of_le (orbitRel_le_of_subgroup_le (G := G) (X := X)
+          (bot_le : (⊥ : Subgroup G) ≤ H)) y ↔
       orbitRelQuotientBotEquiv (G := G) (X := X) x ∈
         _root_.MulAction.orbit H (orbitRelQuotientBotEquiv (G := G) (X := X) y) := by
   simp [orbitRelQuotientMapOfLE_bot_eq, Quotient.eq'', _root_.MulAction.orbitRel_apply]

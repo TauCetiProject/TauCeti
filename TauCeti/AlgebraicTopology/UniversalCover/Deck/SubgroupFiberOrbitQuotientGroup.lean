@@ -78,14 +78,17 @@ private lemma equivSubgroupOrbitsQuotientGroup_mapOfLE
     Subgroup.quotientMapOfLE hHK
         (MulAction.equivSubgroupOrbitsQuotientGroup x₀ H x) =
       MulAction.equivSubgroupOrbitsQuotientGroup x₀ K
-        (_root_.TauCeti.MulAction.orbitRelQuotientMapOfLE hHK x) := by
+        (Setoid.map_of_le
+          (_root_.TauCeti.MulAction.orbitRel_le_of_subgroup_le (G := G) (X := X) hHK) x) := by
   refine Quotient.inductionOn' x ?_
   intro x'
   obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G x₀ x'
   rw [← hg]
-  rw [_root_.TauCeti.MulAction.orbitRelQuotientMapOfLE_mk,
-    equivSubgroupOrbitsQuotientGroup_apply_smul, equivSubgroupOrbitsQuotientGroup_apply_smul,
-    Subgroup.quotientMapOfLE_apply_mk]
+  rw [equivSubgroupOrbitsQuotientGroup_apply_smul]
+  change Subgroup.quotientMapOfLE hHK (QuotientGroup.mk (s := H) g⁻¹) =
+    MulAction.equivSubgroupOrbitsQuotientGroup x₀ K
+      (Quotient.mk'' (g • x₀) : MulAction.orbitRel.Quotient K X)
+  rw [equivSubgroupOrbitsQuotientGroup_apply_smul, Subgroup.quotientMapOfLE_apply_mk]
 
 end MulAction
 
@@ -237,9 +240,8 @@ lemma subgroupFiberOrbitQuotientEquivQuotientGroup_mapOfLE
       subgroupFiberOrbitQuotientEquivQuotientGroup K e
         (subgroupFiberOrbitMapOfLE (b := b) hHK x) := by
   simp [subgroupFiberOrbitQuotientEquivQuotientGroup,
-    subgroupFiberOrbitMapOfLE, _root_.TauCeti.MulAction.orbitRelQuotientMapOfLE,
-    MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE (G := Deck p) (X := p ⁻¹' {b})
-      hHK e x]
+    subgroupFiberOrbitMapOfLE, MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE
+      (G := Deck p) (X := p ⁻¹' {b}) hHK e x]
 
 /-- For a regular cover, the subgroup-fibre quotient equivalence is natural in subgroup
 inclusions. -/

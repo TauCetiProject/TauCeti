@@ -81,7 +81,8 @@ lemma subgroupFiberOrbitClass_eq_iff (H : Subgroup (Deck p)) (e e' : p ⁻¹' {b
 /-- If `H ≤ K`, the quotient of a fibre by `H` maps naturally to the quotient by `K`. -/
 @[expose] def subgroupFiberOrbitMapOfLE {H K : Subgroup (Deck p)} (hHK : H ≤ K) :
     SubgroupFiberOrbitQuotient H b → SubgroupFiberOrbitQuotient K b :=
-  TauCeti.MulAction.orbitRelQuotientMapOfLE (G := Deck p) (X := p ⁻¹' {b}) hHK
+  Setoid.map_of_le
+    (TauCeti.MulAction.orbitRel_le_of_subgroup_le (G := Deck p) (X := p ⁻¹' {b}) hHK)
 
 /-- The map induced by `H ≤ K` sends the `H`-class of a point to its `K`-class. -/
 @[simp]
