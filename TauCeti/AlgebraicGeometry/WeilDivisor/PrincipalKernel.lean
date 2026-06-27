@@ -102,7 +102,7 @@ to the subgroup of principal divisors. -/
 def principalFunctionClassEquivPrincipalSubgroup :
     S.PrincipalFunctionClass ≃+ S.principalSubgroup :=
   (QuotientAddGroup.quotientKerEquivRange S.principalHom).trans
-    (AddEquiv.addSubgroupCongr (principalSubgroup_eq_range S).symm)
+    (AddEquiv.addSubgroupCongr S.principalSubgroup_eq_range.symm)
 
 @[simp]
 lemma principalFunctionClassEquivPrincipalSubgroup_mk (g : G) :
@@ -115,19 +115,17 @@ lemma principalFunctionClassEquivPrincipalSubgroup_mk (g : G) :
 /-- The principal divisor associated to a function class, as a homomorphism into all Weil
 divisors. -/
 def principalFunctionClassDivisor : S.PrincipalFunctionClass →+ WeilDivisor X :=
-  S.principalSubgroup.subtype.comp
-    S.principalFunctionClassEquivPrincipalSubgroup.toAddMonoidHom
+  QuotientAddGroup.kerLift S.principalHom
 
 @[simp]
 lemma principalFunctionClassDivisor_mk (g : G) :
     S.principalFunctionClassDivisor (QuotientAddGroup.mk g) = S.principalDivisor g :=
-  congr_arg Subtype.val (S.principalFunctionClassEquivPrincipalSubgroup_mk g)
+  QuotientAddGroup.kerLift_mk S.principalHom g
 
 /-- The map from function classes to principal divisors is injective. -/
 lemma principalFunctionClassDivisor_injective :
     Function.Injective S.principalFunctionClassDivisor :=
-  S.principalSubgroup.subtype_injective.comp
-    S.principalFunctionClassEquivPrincipalSubgroup.injective
+  QuotientAddGroup.kerLift_injective S.principalHom
 
 @[simp]
 lemma principalFunctionClassDivisor_eq_zero_iff {q : S.PrincipalFunctionClass} :
