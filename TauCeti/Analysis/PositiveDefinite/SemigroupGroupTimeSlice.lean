@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import TauCeti.Analysis.PositiveDefinite.KernelBounds
 public import TauCeti.Analysis.PositiveDefinite.SemigroupGroup
 public import Mathlib.Topology.Constructions.SumProd
 
@@ -29,6 +30,8 @@ positive-definite function on `[0,∞) × V` to spatial positive-definite functi
   kernel is positive definite.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_sum_nonneg`: the fixed-time spatial quadratic form is
   nonnegative for arbitrary finite families.
+* `TauCeti.IsSemigroupGroupPD.timeSlice_normSq_le`: the fixed-time spatial Cauchy--Schwarz
+  estimate.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefinite`: the predicate form when the
   spatial involution is negation.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefiniteKernel_and_continuous`: packages
@@ -65,6 +68,11 @@ theorem timeSlice_sum_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) {ι : Typ
     (v : ι → V) (x : ι → ℂ) :
     0 ≤ ∑ i, ∑ j, conj (x i) * x j * F (t, v i - v j) :=
   (isPositiveDefiniteKernel_iff.mp (hF.timeSlice_isPositiveDefiniteKernel t)).2 v x
+
+/-- The fixed-time spatial Cauchy--Schwarz bound for the kernel entry `F (t, v - w)`. -/
+theorem timeSlice_normSq_le (hF : IsSemigroupGroupPD F) (t : ℝ≥0) (v w : V) :
+    RCLike.normSq (F (t, v - w)) ≤ RCLike.re (F (t, 0)) * RCLike.re (F (t, 0)) := by
+  simpa using isPositiveDefiniteKernel_normSq_le (hF.timeSlice_isPositiveDefiniteKernel t) v w
 
 /-- If the spatial type is equipped with the negation involution, then each fixed-time slice is a
 positive-definite function in the generic `IsPositiveDefinite` sense. -/
