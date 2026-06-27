@@ -652,6 +652,13 @@ structure GridDiagram (n : ℕ) where
   /-- No square contains both an `O` marking and an `X` marking. -/
   disjoint : ∀ c : Fin n, O c ≠ X c
 
+/-- There is no grid diagram of size `1`: the unique `O` and `X` markings would have to
+occupy the same square. -/
+instance : IsEmpty (GridDiagram 1) where
+  false := by
+    intro G
+    exact G.disjoint 0 (Subsingleton.elim _ _)
+
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)

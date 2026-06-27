@@ -56,49 +56,20 @@ theorem fullyBlockedDifferentialOnGenerator_support_card_le_choose (x : GridStat
   (G.fullyBlockedDifferentialOnGenerator_support_card_le x).trans x.card_columnSwapNeighbors_le
 
 /-- The support of the fully blocked differential of one generator is empty in grid
-size at most `1`. -/
-theorem fullyBlockedDifferentialOnGenerator_support_eq_empty_of_le_one (G : GridDiagram n)
-    (hn : n ≤ 1) (x : GridState n) :
-    (G.fullyBlockedDifferentialOnGenerator x).support = ∅ := by
-  have hchoose : n.choose 2 = 0 := Nat.choose_eq_zero_of_lt (Nat.lt_succ_of_le hn)
-  apply Finset.card_eq_zero.mp
-  exact Nat.eq_zero_of_le_zero
-    ((G.fullyBlockedDifferentialOnGenerator_support_card_le_choose x).trans (by rw [hchoose]))
-
-/-- The support of the fully blocked differential of one generator is empty in grid
 size `0`. -/
 theorem fullyBlockedDifferentialOnGenerator_support_eq_empty_of_zero (G : GridDiagram 0)
     (x : GridState 0) :
     (G.fullyBlockedDifferentialOnGenerator x).support = ∅ := by
-  exact G.fullyBlockedDifferentialOnGenerator_support_eq_empty_of_le_one (Nat.zero_le 1) x
-
-/-- The support of the fully blocked differential of one generator is empty in grid
-size `1`. -/
-theorem fullyBlockedDifferentialOnGenerator_support_eq_empty_of_one (G : GridDiagram 1)
-    (x : GridState 1) :
-    (G.fullyBlockedDifferentialOnGenerator x).support = ∅ := by
-  exact G.fullyBlockedDifferentialOnGenerator_support_eq_empty_of_le_one le_rfl x
-
-/-- The fully blocked differential of a generator is zero in grid size at most `1`. -/
-theorem fullyBlockedDifferentialOnGenerator_eq_zero_of_le_one (G : GridDiagram n) (hn : n ≤ 1)
-    (x : GridState n) :
-    G.fullyBlockedDifferentialOnGenerator x = 0 :=
-  Finsupp.support_eq_empty.mp
-    (G.fullyBlockedDifferentialOnGenerator_support_eq_empty_of_le_one hn x)
+  apply Finset.card_eq_zero.mp
+  exact Nat.eq_zero_of_le_zero
+    (by simpa using G.fullyBlockedDifferentialOnGenerator_support_card_le_choose x)
 
 /-- The fully blocked differential of a generator is zero in grid size `0`. -/
 @[simp]
 theorem fullyBlockedDifferentialOnGenerator_eq_zero_of_zero (G : GridDiagram 0)
     (x : GridState 0) :
     G.fullyBlockedDifferentialOnGenerator x = 0 :=
-  G.fullyBlockedDifferentialOnGenerator_eq_zero_of_le_one (Nat.zero_le 1) x
-
-/-- The fully blocked differential of a generator is zero in grid size `1`. -/
-@[simp]
-theorem fullyBlockedDifferentialOnGenerator_eq_zero_of_one (G : GridDiagram 1)
-    (x : GridState 1) :
-    G.fullyBlockedDifferentialOnGenerator x = 0 :=
-  G.fullyBlockedDifferentialOnGenerator_eq_zero_of_le_one le_rfl x
+  Finsupp.support_eq_empty.mp (G.fullyBlockedDifferentialOnGenerator_support_eq_empty_of_zero x)
 
 /-- The support of the fully blocked differential of a chain is contained in the union
 of the column-swap neighbour sets of the states appearing in the input chain. -/
@@ -130,34 +101,21 @@ theorem fullyBlockedDifferential_support_card_le (c : GridChain (ZMod 2) n) :
     (Finset.card_biUnion_le_card_mul c.support (fun x : GridState n => x.columnSwapNeighbors)
       (n.choose 2) fun x _ => x.card_columnSwapNeighbors_le)
 
-/-- The fully blocked differential is zero on every chain in grid size at most `1`. -/
-theorem fullyBlockedDifferential_eq_zero_of_le_one (G : GridDiagram n) (hn : n ≤ 1) :
-    G.fullyBlockedDifferential = (0 : GridChain (ZMod 2) n →ₗ[ZMod 2] GridChain (ZMod 2) n) := by
+/-- The fully blocked differential is zero on every chain in grid size `0`. -/
+@[simp]
+theorem fullyBlockedDifferential_eq_zero_of_zero (G : GridDiagram 0) :
+    G.fullyBlockedDifferential = (0 : GridChain (ZMod 2) 0 →ₗ[ZMod 2] GridChain (ZMod 2) 0) := by
   apply LinearMap.ext
   intro c
   apply Finsupp.ext
   intro y
-  have hchoose : n.choose 2 = 0 := Nat.choose_eq_zero_of_lt (Nat.lt_succ_of_le hn)
   have hsupport : (G.fullyBlockedDifferential c).support = ∅ := by
     apply Finset.card_eq_zero.mp
-    exact Nat.eq_zero_of_le_zero
-      ((G.fullyBlockedDifferential_support_card_le c).trans (by rw [hchoose, Nat.mul_zero]))
+    exact Nat.eq_zero_of_le_zero (by simpa using G.fullyBlockedDifferential_support_card_le c)
   have hy_not : y ∉ (G.fullyBlockedDifferential c).support := by
     rw [hsupport]
     simp
   simpa using Finsupp.notMem_support_iff.mp hy_not
-
-/-- The fully blocked differential is zero on every chain in grid size `0`. -/
-@[simp]
-theorem fullyBlockedDifferential_eq_zero_of_zero (G : GridDiagram 0) :
-    G.fullyBlockedDifferential = (0 : GridChain (ZMod 2) 0 →ₗ[ZMod 2] GridChain (ZMod 2) 0) :=
-  G.fullyBlockedDifferential_eq_zero_of_le_one (Nat.zero_le 1)
-
-/-- The fully blocked differential is zero on every chain in grid size `1`. -/
-@[simp]
-theorem fullyBlockedDifferential_eq_zero_of_one (G : GridDiagram 1) :
-    G.fullyBlockedDifferential = (0 : GridChain (ZMod 2) 1 →ₗ[ZMod 2] GridChain (ZMod 2) 1) :=
-  G.fullyBlockedDifferential_eq_zero_of_le_one le_rfl
 
 end GridDiagram
 
