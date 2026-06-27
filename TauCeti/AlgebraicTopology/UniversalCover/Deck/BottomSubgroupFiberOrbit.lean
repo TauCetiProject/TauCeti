@@ -81,6 +81,20 @@ lemma quotientBot_subgroupFiberOrbitQuotientEquivQuotientGroup_bot_apply_smul
   rfl
 
 /-- The regular-cover specialization of the bottom-subgroup quotient-group equivalence sends
+the class of `φ⁻¹ • e` to the quotient class of `φ`. -/
+@[simp]
+lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_bot_apply_inv_smul
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (e : p ⁻¹' {b}) (φ : Deck p) :
+    regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg (⊥ : Subgroup (Deck p)) e
+        ((subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b)).symm (φ⁻¹ • e)) =
+      QuotientGroup.mk (s := (⊥ : Subgroup (Deck p))) φ := by
+  letI := hreg.fiber_isPretransitive b
+  letI := fiber_isCancelSMul (b := b) hp
+  rw [subgroupFiberOrbitQuotientBotEquiv_symm_apply,
+    regularSubgroupFiberOrbitQuotientEquivQuotientGroup_apply_inv_smul]
+
+/-- The regular-cover specialization of the bottom-subgroup quotient-group equivalence sends
 the class of `φ • e` to the quotient class of `φ⁻¹`. -/
 @[simp]
 lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_bot_apply_smul
@@ -93,6 +107,20 @@ lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_bot_apply_smul
   letI := fiber_isCancelSMul (b := b) hp
   rw [subgroupFiberOrbitQuotientBotEquiv_symm_apply,
     regularSubgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul]
+
+/-- Composing the regular bottom-subgroup fibre quotient equivalence with `G / ⊥ ≃ G` sends
+the class of `φ⁻¹ • e` to `φ`. -/
+@[simp]
+lemma quotientBot_regularSubgroupFiberOrbitQuotientEquivQuotientGroup_bot_apply_inv_smul
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (e : p ⁻¹' {b}) (φ : Deck p) :
+    QuotientGroup.quotientBot
+        (regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg
+          (⊥ : Subgroup (Deck p)) e
+          ((subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b)).symm (φ⁻¹ • e))) =
+      φ := by
+  rw [regularSubgroupFiberOrbitQuotientEquivQuotientGroup_bot_apply_inv_smul]
+  rfl
 
 /-- Composing the regular bottom-subgroup fibre quotient equivalence with `G / ⊥ ≃ G` sends
 the class of `φ • e` to `φ⁻¹`. -/
