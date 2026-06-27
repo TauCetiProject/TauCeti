@@ -70,6 +70,11 @@ STALE_COMMENT = (
     "has sat untouched for over {days} days, so the queue housekeeping is retiring it to keep things "
     "moving. The branch is kept, so nothing is lost. It is completely fine to open a fresh PR once the "
     "findings are addressed. Add the `keep` label if you would rather it stay open.")
+EMPTY_COMMENT = (
+    "Closing automatically: this PR's diff against `main` is empty — all of its changes are already in "
+    "`main` (typically a sibling attempt at the same roadmap target merged first), so there is nothing "
+    "left to merge. The branch is kept, so nothing is lost. Add the `keep` label if you want it to stay "
+    "open.")
 
 
 def gh_json(args):
@@ -147,6 +152,30 @@ def close(pr: int, comment: str) -> bool:
 def main() -> int:
     failures = 0
     suffix = " [dry-run]" if DRY_RUN else ""
+
+    # empty: a PR whose diff against main is empty has nothing left to merge — all of its changes are
+    # already in main (typically a sibling worker attempt at the same roadmap target merged first). dedup
+    # only matches an OPEN twin, so once the twin merges nothing reaps the loser; this closes it directly
+    # instead of waiting out the 7-day stale timer (and stops the worker thrashing on a done target). The
+    # emptiness is re-confirmed from a fresh per-PR view right before closing — `changedFiles == 0` with
+    # mergeability already computed (not UNKNOWN), so a still-computing or just-pushed PR is never closed.
+    open_empty = gh_json(["pr", "list", "--repo", REPO, "--state", "open", "--limit", "1000",
+                          "--json", "number,isDraft,labels"]) or []
+    cand = [p for p in open_empty if p.get("isDraft") is False and not has_keep_label(p)]
+    print(f"empty: scanning {len(cand)} open PR(s) for an empty diff{suffix}")
+    for p in cand:
+        n = p["number"]
+        v = gh_json(["pr", "view", str(n), "--repo", REPO,
+                     "--json", "changedFiles,additions,deletions,mergeable,labels"]) or {}
+        if v.get("mergeable") == "UNKNOWN":
+            continue                           # GitHub has not finished computing the diff yet — wait
+        if v.get("changedFiles") != 0 or v.get("additions") != 0 or v.get("deletions") != 0:
+            continue
+        if has_keep_label(v):
+            print(f"empty: #{n} has an empty diff but a keep label; leaving it")
+            continue
+        print(f"empty: #{n} (diff against {REPO.split('/')[-1]} main is empty — content already merged)")
+        failures += not close(n, EMPTY_COMMENT)
 
     # budget: a PR reviewed to REVIEW_BUDGET rounds at its CURRENT head and still blocking is terminal —
     # close it. Read from the scoreboard ledger (full_rounds + states), so it holds even when the worker
