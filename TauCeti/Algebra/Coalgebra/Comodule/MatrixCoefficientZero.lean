@@ -25,8 +25,8 @@ the additive API.
 * `TauCeti.Comodule.matrixCoefficient_eq_zero_of_subsingleton`.
 * `TauCeti.Comodule.matrixCoefficientSubmodule_eq_bot_of_subsingleton`.
 * `TauCeti.Comodule.matrixCoefficientSubalgebra_eq_bot_of_subsingleton`.
-* `TauCeti.Comodule.matrixCoefficientSubmodule_punit` and
-  `TauCeti.Comodule.matrixCoefficientSubalgebra_punit`.
+* `TauCeti.ComoduleCat.matrixCoefficient_zero` and
+  `TauCeti.ComoduleCat.matrixCoefficientSet_zero`.
 * `TauCeti.ComoduleCat.matrixCoefficientSubmodule_zero` and
   `TauCeti.ComoduleCat.matrixCoefficientSubalgebra_zero`.
 
@@ -98,49 +98,6 @@ theorem matrixCoefficientSubalgebra_eq_bot_of_subsingleton [Subsingleton M] :
 
 end Algebra
 
-section PUnit
-
-variable (R : Type u) (C : Type v)
-variable [CommSemiring R]
-variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
-
-/-- Matrix coefficients of the concrete zero comodule `PUnit` are zero. -/
-@[simp]
-theorem matrixCoefficient_punit (φ : PUnit.{w + 1} →ₗ[R] R) (u : PUnit.{w + 1}) :
-    matrixCoefficient (R := R) (C := C) φ u = 0 :=
-  matrixCoefficient_eq_zero_of_subsingleton (R := R) (C := C) φ u
-
-/-- The coefficient set of the concrete zero comodule `PUnit` is `{0}`. -/
-@[simp]
-theorem matrixCoefficientSet_punit :
-    matrixCoefficientSet (R := R) (C := C) (M := PUnit.{w + 1}) = ({0} : Set C) :=
-  matrixCoefficientSet_eq_singleton_zero_of_subsingleton (R := R) (C := C)
-    (M := PUnit.{w + 1})
-
-/-- The coefficient submodule of the concrete zero comodule `PUnit` is bottom. -/
-@[simp]
-theorem matrixCoefficientSubmodule_punit :
-    matrixCoefficientSubmodule (R := R) (C := C) (M := PUnit.{w + 1}) = ⊥ :=
-  matrixCoefficientSubmodule_eq_bot_of_subsingleton (R := R) (C := C)
-    (M := PUnit.{w + 1})
-
-end PUnit
-
-section PUnitAlgebra
-
-variable (R : Type u) (C : Type v)
-variable [CommSemiring R]
-variable [Semiring C] [Algebra R C] [Coalgebra R C]
-
-/-- The coefficient subalgebra of the concrete zero comodule `PUnit` is bottom. -/
-@[simp]
-theorem matrixCoefficientSubalgebra_punit :
-    matrixCoefficientSubalgebra (R := R) (C := C) (M := PUnit.{w + 1}) = ⊥ :=
-  matrixCoefficientSubalgebra_eq_bot_of_subsingleton (R := R) (C := C)
-    (M := PUnit.{w + 1})
-
-end PUnitAlgebra
-
 end Comodule
 
 namespace ComoduleCat
@@ -154,13 +111,34 @@ section Submodule
 variable [CommSemiring R]
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
+/-- Matrix coefficients of the bundled zero comodule are zero. -/
+@[simp]
+theorem matrixCoefficient_zero
+    (φ : (zero R C : ComoduleCat.{u, v, w} R C) →ₗ[R] R)
+    (m : (zero R C : ComoduleCat.{u, v, w} R C)) :
+    Comodule.matrixCoefficient (R := R) (C := C) φ m = 0 := by
+  rw [show m = 0 by
+    rw [zero] at m
+    exact Subsingleton.elim m 0]
+  simp
+
+/-- The coefficient set of the bundled zero comodule is `{0}`. -/
+@[simp]
+theorem matrixCoefficientSet_zero :
+    Comodule.matrixCoefficientSet (R := R) (C := C)
+        (M := (zero R C : ComoduleCat.{u, v, w} R C)) = ({0} : Set C) := by
+  rw [zero]
+  exact Comodule.matrixCoefficientSet_eq_singleton_zero_of_subsingleton (R := R) (C := C)
+    (M := PUnit.{w + 1})
+
 /-- The coefficient submodule of the bundled zero comodule is bottom. -/
 @[simp]
 theorem matrixCoefficientSubmodule_zero :
     Comodule.matrixCoefficientSubmodule (R := R) (C := C)
         (M := (zero R C : ComoduleCat.{u, v, w} R C)) = ⊥ := by
   rw [zero]
-  exact Comodule.matrixCoefficientSubmodule_punit (R := R) (C := C)
+  exact Comodule.matrixCoefficientSubmodule_eq_bot_of_subsingleton (R := R) (C := C)
+    (M := PUnit.{w + 1})
 
 end Submodule
 
@@ -175,7 +153,8 @@ theorem matrixCoefficientSubalgebra_zero :
     Comodule.matrixCoefficientSubalgebra (R := R) (C := C)
         (M := (zero R C : ComoduleCat.{u, v, w} R C)) = ⊥ := by
   rw [zero]
-  exact Comodule.matrixCoefficientSubalgebra_punit (R := R) (C := C)
+  exact Comodule.matrixCoefficientSubalgebra_eq_bot_of_subsingleton (R := R) (C := C)
+    (M := PUnit.{w + 1})
 
 end Algebra
 
