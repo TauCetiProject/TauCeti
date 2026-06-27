@@ -20,7 +20,8 @@ the abstract group of principal divisors, canonically identified with
 `S.principalSubgroup`.
 
 In geometric applications, `G` is the additive form of the multiplicative group of a function
-field. This quotient is the formal shadow of rational functions modulo constants, embedded as
+field. After additional geometric input identifying the zero-principal-divisor functions with
+constants, this quotient specializes to rational functions modulo constants, embedded as
 principal divisors before taking the divisor class quotient.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, specifically the
