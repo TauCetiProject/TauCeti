@@ -76,9 +76,7 @@ theorem Contractable.comp {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contrac
     _ = prefixLaw μ (fun n ω => X (φ n) ω) m := rfl
 
 /-- **An exchangeable sequence has the prefix law along any injective finite selection:**
-`blockLaw μ X k = prefixLaw μ X n` for injective `k : Fin n → ℕ`. Extend `k` to a permutation of a
-large enough `Fin N` (`Equiv.Perm.exists_extending_pair`), apply exchangeability at `N`, and project
-back. The shared core of the exchangeable-symmetry lemmas. -/
+`blockLaw μ X k = prefixLaw μ X n` for injective `k : Fin n → ℕ`. -/
 theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ)
     {n : ℕ} (k : Fin n → ℕ) (hk : Function.Injective k) :
@@ -118,9 +116,8 @@ theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : �
     rwa [hLHS, hRHS] at key
 
 /-- **Every exchangeable sequence with a.e. measurable coordinates is contractable**: along any
-strictly increasing finite selection `k`, `blockLaw μ X k = prefixLaw μ X m`. A corollary of
-`Exchangeable.blockLaw_eq_prefixLaw_of_injective` (a strictly increasing selection is injective).
-One direction of the de Finetti–Ryll-Nardzewski equivalence. -/
+strictly increasing finite selection `k`, `blockLaw μ X k = prefixLaw μ X m`. One direction of the
+de Finetti–Ryll-Nardzewski equivalence. -/
 theorem contractable_of_exchangeable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X :=
   fun _ k hk => Exchangeable.blockLaw_eq_prefixLaw_of_injective hX hX_meas k hk.injective

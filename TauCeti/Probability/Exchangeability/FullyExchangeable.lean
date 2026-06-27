@@ -94,7 +94,7 @@ theorem exchangeable_iff_fullyExchangeable {μ : Measure Ω} {X : ℕ → Ω →
   ⟨fun h => h.fullyExchangeable hX_meas, fun h => h.exchangeable hX_meas⟩
 
 /-- **A fully exchangeable process has a shift-invariant path law** — the Layer 0 shift-preservation
-bridge, a corollary of `Contractable.measurePreserving_shift`. -/
+bridge. -/
 theorem FullyExchangeable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α}
     [IsFiniteMeasure μ] (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
     MeasurePreserving (shift α) (pathLaw μ X) (pathLaw μ X) := by
