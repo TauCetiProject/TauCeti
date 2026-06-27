@@ -121,6 +121,12 @@ lemma mem_principalSubgroup {D : WeilDivisor X} :
     D ∈ S.principalSubgroup ↔ ∃ g, S.principalDivisor g = D :=
   AddMonoidHom.mem_range
 
+/-- The subgroup of principal divisors is the range of the principal-divisor homomorphism. -/
+lemma principalSubgroup_eq_range : S.principalSubgroup = S.principalHom.range := by
+  ext D
+  rw [mem_principalSubgroup, AddMonoidHom.mem_range]
+  simp only [principalHom_apply]
+
 @[simp]
 lemma principalDivisor_mem_principalSubgroup (g : G) :
     S.principalDivisor g ∈ S.principalSubgroup :=
