@@ -50,7 +50,7 @@ namespace GridChain
 
 This is the grid-chain specialization of Mathlib's `Finsupp.equivFunOnFinite`; it is useful when
 turning explicit small grid complexes into finite matrices. -/
-@[expose] noncomputable def equivFun (R : Type*) [Zero R] (n : ℕ) :
+noncomputable def equivFun (R : Type*) [Zero R] (n : ℕ) :
     GridChain R n ≃ (GridState n → R) :=
   Finsupp.equivFunOnFinite
 
@@ -58,13 +58,13 @@ turning explicit small grid complexes into finite matrices. -/
 @[simp]
 theorem equivFun_apply {R : Type*} [Zero R] {n : ℕ} (c : GridChain R n) (x : GridState n) :
     equivFun R n c x = c x :=
-  rfl
+  Finsupp.equivFunOnFinite_apply c x
 
 /-- A coefficient function is sent back to the chain with those coefficients. -/
 @[simp]
 theorem equivFun_symm_apply {R : Type*} [Zero R] {n : ℕ} (f : GridState n → R)
     (x : GridState n) : (equivFun R n).symm f x = f x :=
-  rfl
+  congr_fun (Finsupp.coe_equivFunOnFinite_symm f) x
 
 /-- The number of chains over a finite coefficient type is `#R ^ n!`.
 
@@ -74,11 +74,13 @@ theorem card (R : Type*) [Zero R] [Fintype R] (n : ℕ) :
     Fintype.card (GridChain R n) = Fintype.card R ^ n.factorial := by
   rw [Fintype.card_finsupp, GridState.card]
 
-/-- The natural cardinality of chains over a finite coefficient type is `#R ^ n!`. -/
+/-- The natural cardinality of chains over a finite coefficient type is `Nat.card R ^ n!`. -/
 @[simp]
-theorem natCard (R : Type*) [Zero R] [Fintype R] (n : ℕ) :
-    Nat.card (GridChain R n) = Fintype.card R ^ n.factorial := by
-  rw [Nat.card_eq_fintype_card, card]
+theorem natCard (R : Type*) [Zero R] [Finite R] (n : ℕ) :
+    Nat.card (GridChain R n) = Nat.card R ^ n.factorial := by
+  classical
+  letI : Fintype R := Fintype.ofFinite R
+  rw [Nat.card_eq_fintype_card, card, Nat.card_eq_fintype_card]
 
 /-- The support of any grid chain has at most `n!` generators.
 
@@ -88,21 +90,6 @@ theorem support_card_le_factorial {R : Type*} [Zero R] {n : ℕ} (c : GridChain 
     c.support.card ≤ n.factorial := by
   rw [← GridState.card_univ n]
   exact Finset.card_le_univ c.support
-
-/-- On the empty grid, every grid chain has support of size at most one. -/
-theorem support_card_le_one_zero {R : Type*} [Zero R] (c : GridChain R 0) :
-    c.support.card ≤ 1 := by
-  simpa using support_card_le_factorial c
-
-/-- On a `1 × 1` grid, every grid chain has support of size at most one. -/
-theorem support_card_le_one_one {R : Type*} [Zero R] (c : GridChain R 1) :
-    c.support.card ≤ 1 := by
-  simpa using support_card_le_factorial c
-
-/-- On a `2 × 2` grid, every grid chain has support of size at most two. -/
-theorem support_card_le_two_two {R : Type*} [Zero R] (c : GridChain R 2) :
-    c.support.card ≤ 2 := by
-  simpa using support_card_le_factorial c
 
 /-- The fully blocked `ZMod 2` chain module has `2 ^ n!` elements. -/
 @[simp]
@@ -115,7 +102,7 @@ theorem card_zmod_two (n : ℕ) :
 @[simp]
 theorem natCard_zmod_two (n : ℕ) :
     Nat.card (GridChain (ZMod 2) n) = 2 ^ n.factorial := by
-  rw [Nat.card_eq_fintype_card, card_zmod_two]
+  rw [natCard, Nat.card_eq_fintype_card, ZMod.card]
 
 /-- There are two `ZMod 2` chains on the empty grid. -/
 theorem card_zmod_two_zero : Fintype.card (GridChain (ZMod 2) 0) = 2 := by
@@ -134,10 +121,6 @@ instance finite (R : Type*) [Zero R] [Finite R] (n : ℕ) : Finite (GridChain R 
   classical
   letI : Fintype R := Fintype.ofFinite R
   infer_instance
-
-/-- The `ZMod 2` grid chain module is finite. -/
-instance finite_zmod_two (n : ℕ) : Finite (GridChain (ZMod 2) n) :=
-  finite (ZMod 2) n
 
 end GridChain
 
