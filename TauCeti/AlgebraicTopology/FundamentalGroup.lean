@@ -17,7 +17,8 @@ maps on fundamental groups.
 * `TauCeti.FundamentalGroup.map_range_eq_bot_of_subsingleton`: if the source fundamental group
   is subsingleton, the range of any induced map from it is trivial.
 * `TauCeti.FundamentalGroup.map_range_le_mapOfEq_range_of_subsingleton`: if the source
-  fundamental group is subsingleton, any induced-map range lies in any target subgroup.
+  fundamental group is subsingleton, any induced-map range lies in any basepoint-adjusted
+  `mapOfEq` range.
 * `TauCeti.FundamentalGroup.map_range_le_mapOfEq_range_of_simplyConnectedSpace`: a simply
   connected domain satisfies the fundamental-group range condition against any `mapOfEq` range.
 -/
@@ -31,6 +32,7 @@ variable {A : Type*} [TopologicalSpace A]
 
 /-- If the source fundamental group is subsingleton, the range of any induced map from it is
 trivial. -/
+@[simp]
 theorem FundamentalGroup.map_range_eq_bot_of_subsingleton
     [Subsingleton (_root_.FundamentalGroup A a₀)] (f : C(A, X)) :
     (_root_.FundamentalGroup.map f a₀).range = ⊥ := by
