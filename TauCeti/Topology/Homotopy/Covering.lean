@@ -20,14 +20,9 @@ loop class to its monodromy translate of `e`.
   `FundamentalGroup X x ≃ p ⁻¹' {x}`, `γ ↦ monodromy γ e`.
 * `TauCeti.IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply`: the inverse sends a
   fibre point to the loop class whose monodromy translate of the chosen lift is that point.
-* `TauCeti.IsCoveringMap.LiftCondition`: the fundamental-group subgroup condition for lifting a
-  continuous map through another continuous map.
-* `TauCeti.IsCoveringMap.liftCondition_iff_range_le`: `LiftCondition` unfolded as Mathlib's
-  subgroup-inclusion hypothesis.
-* `TauCeti.IsCoveringMap.existsUnique_continuousMap_lifts_of_liftCondition`: the covering-space
-  lifting criterion stated using `LiftCondition`.
-* `TauCeti.IsCoveringMap.liftCondition_of_simplyConnected`: simply connected domains satisfy
-  the lifting condition.
+* `TauCeti.IsCoveringMap.fundamentalGroupMap_range_le_of_simplyConnected`: a simply connected
+  domain satisfies the fundamental-group range condition, the hypothesis of Mathlib's
+  covering-space lifting criterion `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`.
 
 ## References
 
@@ -43,37 +38,13 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {
 variable {A : Type*} [TopologicalSpace A]
 
 open FundamentalGroup in
-/-- The fundamental-group subgroup condition for lifting `f : A → X` through the continuous map
-`p : E → X`, with the chosen point `a₀` lifted to `e₀`. -/
-def IsCoveringMap.LiftCondition (p : C(E, X)) (f : C(A, X)) (a₀ : A)
-    (e₀ : E) (he : p e₀ = f a₀) : Prop :=
-  (map f a₀).range ≤ (mapOfEq p he).range
-
-open FundamentalGroup in
-/-- `LiftCondition` is exactly Mathlib's subgroup-inclusion hypothesis for the covering-space
-lifting criterion. -/
-@[simp]
-theorem IsCoveringMap.liftCondition_iff_range_le (p : C(E, X)) (f : C(A, X)) (a₀ : A)
-    (e₀ : E) (he : p e₀ = f a₀) :
-    IsCoveringMap.LiftCondition p f a₀ e₀ he ↔
-      (map f a₀).range ≤ (mapOfEq p he).range :=
-  Iff.rfl
-
-/-- A covering-space lifting criterion stated using `LiftCondition`: if the induced
-fundamental-group map for `f` lands in the subgroup induced by `p`, then `f` has a unique lift
-sending `a₀` to `e₀`. -/
-theorem IsCoveringMap.existsUnique_continuousMap_lifts_of_liftCondition
-    [PathConnectedSpace A] [LocallyPathConnectedSpace A]
-    (hp : IsCoveringMap p) {f : C(A, X)} {a₀ : A} {e₀ : E} (he : p e₀ = f a₀)
-    (h : IsCoveringMap.LiftCondition ⟨p, hp.continuous⟩ f a₀ e₀ he) :
-    ∃! F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
-  hp.existsUnique_continuousMap_lifts_of_range_le he h
-
-/-- A simply connected domain satisfies the lifting condition for every chosen lift of a
-basepoint. -/
-theorem IsCoveringMap.liftCondition_of_simplyConnected [SimplyConnectedSpace A]
+/-- A simply connected domain satisfies the fundamental-group range condition for lifting `f`
+through `p`: the source has trivial `π₁`, so the image of `FundamentalGroup.map f a₀` is trivial
+and lands in any subgroup. This is the hypothesis of Mathlib's covering-space lifting criterion
+`IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`. -/
+theorem IsCoveringMap.fundamentalGroupMap_range_le_of_simplyConnected [SimplyConnectedSpace A]
     (p : C(E, X)) (f : C(A, X)) (a₀ : A) (e₀ : E) (he : p e₀ = f a₀) :
-    IsCoveringMap.LiftCondition p f a₀ e₀ he := by
+    (map f a₀).range ≤ (mapOfEq p he).range := by
   rintro _ ⟨γ, rfl⟩
   refine ⟨1, ?_⟩
   rw [Subsingleton.elim γ 1]
