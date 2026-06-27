@@ -44,15 +44,6 @@ namespace PlumbingGraph
 
 variable {V : Type*} [DecidableEq V]
 
-private theorem cubeVertex_add_single_eq_insert {T : Finset V} {v : V} (hv : v ∉ T)
-    (x : V → ℤ) :
-    cubeVertex (x + Pi.single v (1 : ℤ)) T = cubeVertex x (insert v T) := by
-  ext w
-  by_cases hw : w = v
-  · subst hw
-    simp [cubeVertex_apply, hv]
-  · simp [cubeVertex_apply, hw]
-
 variable [DecidableEq (V → ℤ)]
 
 /-- The upper face in a direction has its vertices among the vertices of the ambient cube. -/

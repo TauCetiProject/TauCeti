@@ -28,7 +28,7 @@ This is the cubical recursion underneath Némethi's lattice-homology differentia
 consequence is that, in any direction, at least one of the two face exponents vanishes: since the
 cube weight equals the larger face weight, the difference to that face is zero. The face exponents
 are the `U`-powers attached to the two faces in the lattice-homology differential, so this records
-that an edge of the cube never carries a positive `U`-power on both of its endpoints.
+that the two opposite codimension-one faces in a direction never both carry a positive `U`-power.
 
 ## Main results
 
@@ -56,17 +56,6 @@ namespace TauCeti
 namespace PlumbingGraph
 
 variable {V : Type*} [DecidableEq V] [DecidableEq (V → ℤ)]
-
-omit [DecidableEq (V → ℤ)] in
-/-- Shifting the base point by a basis vector `E_v` and adjoining `v` to the directions describe
-the same cube vertex, provided `v` was not already a direction. -/
-private theorem cubeVertex_add_single_eq_insert {T : Finset V} {v : V} (hv : v ∉ T) (x : V → ℤ) :
-    cubeVertex (x + Pi.single v (1 : ℤ)) T = cubeVertex x (insert v T) := by
-  ext w
-  by_cases hw : w = v
-  · subst hw
-    simp [cubeVertex_apply, hv]
-  · simp [cubeVertex_apply, hw]
 
 /-- The vertices of a cube split along a direction `v ∈ S` into the vertices of its two faces: a
 vertex whose direction subset avoids `v` lies in the lower face (same base point, directions
@@ -122,8 +111,9 @@ theorem characteristicCubeWeight_insert_eq_max (x : V → ℤ) {S : Finset V} {v
 
 /-- In any cube direction `v ∈ S`, at least one of the two face exponents is zero: the cube weight
 agrees with the larger of its two face weights, so the difference to that face vanishes. The face
-exponents are the `U`-powers of the lattice-homology differential, so an edge of the cube never
-carries a positive `U`-power on both endpoints. -/
+exponents are the `U`-powers of the lattice-homology differential, so in any direction the two
+opposite codimension-one faces never both carry a positive `U`-power. -/
+@[simp]
 theorem min_characteristicFaceExponent_eq_zero (x : V → ℤ) {S : Finset V} {v : V} (hv : v ∈ S) :
     min (P.characteristicLowerFaceExponent k x S v)
       (P.characteristicUpperFaceExponent k x S hv) = 0 := by
