@@ -28,6 +28,8 @@ positive-definite function on `[0,∞) × V` to spatial positive-definite functi
 
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefiniteKernel`: the fixed-time spatial
   kernel is positive definite.
+* `TauCeti.IsSemigroupGroupPD.timeSlice_sum_nonneg`: the fixed-time spatial quadratic form is
+  nonnegative for arbitrary finite families.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_conj`,
   `TauCeti.IsSemigroupGroupPD.timeSlice_zero_nonneg`, and
   `TauCeti.IsSemigroupGroupPD.timeSlice_normSq_le_zero`: origin-normalized fixed-time
@@ -62,6 +64,12 @@ theorem timeSlice_isPositiveDefiniteKernel (hF : IsSemigroupGroupPD F) (t : ℝ�
   have hK := isPositiveDefiniteKernel_comp hF.isPositiveDefiniteKernel
     (fun v : V => (t / 2, v))
   simpa [add_halves] using hK
+
+/-- The fixed-time spatial quadratic form is nonnegative for arbitrary finite families. -/
+theorem timeSlice_sum_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) {ι : Type*} [Fintype ι]
+    (v : ι → V) (x : ι → ℂ) :
+    0 ≤ ∑ i, ∑ j, conj (x i) * x j * F (t, v i - v j) :=
+  (isPositiveDefiniteKernel_iff.mp (hF.timeSlice_isPositiveDefiniteKernel t)).2 v x
 
 /-- The fixed-time slice is conjugate-symmetric around the spatial origin. -/
 @[simp]
