@@ -6,11 +6,14 @@ module
 
 public import Mathlib.Data.Fin.Basic
 public import Mathlib.Data.Finset.Card
+public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.GroupTheory.Perm.Basic
+import Mathlib.Data.Sym.Card
 
 /-!
 # Grid diagrams and grid states
@@ -327,6 +330,119 @@ theorem mem_columnSwapNeighbors {x y : GridState n} :
   · rintro ⟨c, d, hcd, rfl⟩
     exact ⟨c, d, hcd, rfl⟩
 
+/-- The finite set of column-swap neighbours is the image of the off-diagonal of the
+column set: an ordered pair of distinct columns gives the state obtained by swapping
+those columns. -/
+theorem columnSwapNeighbors_eq_offDiag_image (x : GridState n) :
+    x.columnSwapNeighbors =
+      (Finset.univ : Finset (Fin n)).offDiag.image fun p => x.swapColumns p.1 p.2 := by
+  ext y
+  simp [columnSwapNeighbors, Finset.mem_offDiag]
+
+/-- If two nontrivial column swaps of the same grid state agree, then they swap the same
+unordered pair of columns. -/
+private theorem sym2_mk_eq_of_swapColumns_eq {x : GridState n} {a b c d : Fin n} (hab : a ≠ b)
+    (hcd : c ≠ d) (h : x.swapColumns a b = x.swapColumns c d) : s(a, b) = s(c, d) := by
+  have hswap : Equiv.swap a b = Equiv.swap c d := by
+    ext k
+    apply congrArg Fin.val
+    exact x.toPerm.injective
+      (by simpa [swapColumns_apply] using congrArg (fun y : GridState n => y k) h)
+  have ha : a = c ∨ a = d := by
+    by_contra hnot
+    rw [not_or] at hnot
+    have hval := congrArg (fun e : Equiv.Perm (Fin n) => e a) hswap
+    rw [Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne hnot.1 hnot.2] at hval
+    exact hab hval.symm
+  rcases ha with rfl | rfl
+  · have hbd : b = d := by
+      simpa using congrArg (fun e : Equiv.Perm (Fin n) => e a) hswap
+    rw [hbd]
+  · have hbc : b = c := by
+      simpa using congrArg (fun e : Equiv.Perm (Fin n) => e a) hswap
+    rw [hbc, Sym2.eq_swap]
+
+/-- The map from unordered off-diagonal column pairs to the state obtained by swapping those
+columns is injective on the off-diagonal image. -/
+private theorem injOn_sym2_lift_swapColumns_offDiag (x : GridState n) :
+    Set.InjOn
+      (Sym2.lift
+        ⟨fun a b => x.swapColumns a b, fun a b => by
+          ext c
+          simp [swapColumns, Equiv.swap_comm]⟩)
+      ((((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry) :
+        Set (Sym2 (Fin n)))) := by
+  intro z hz w hw hzw
+  obtain ⟨⟨a, b⟩, hab, hgz⟩ := Finset.mem_image.mp hz
+  obtain ⟨⟨c, d⟩, hcd, hgw⟩ := Finset.mem_image.mp hw
+  rw [← hgz, ← hgw] at hzw ⊢
+  exact sym2_mk_eq_of_swapColumns_eq (x := x) (by simpa [Finset.mem_offDiag] using hab)
+    (by simpa [Finset.mem_offDiag] using hcd)
+    (by
+      simpa using hzw)
+
+/-- A grid state has exactly `n.choose 2` column-swap neighbours. -/
+@[simp]
+theorem card_columnSwapNeighbors (x : GridState n) :
+    x.columnSwapNeighbors.card = n.choose 2 := by
+  classical
+  let pairSwap : Sym2 (Fin n) → GridState n :=
+    Sym2.lift
+      ⟨fun a b => x.swapColumns a b, fun a b => by
+        ext c
+        simp [swapColumns, Equiv.swap_comm]⟩
+  have hpairSwap_injOn :
+      Set.InjOn pairSwap
+        (((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry) :
+          Set (Sym2 (Fin n))) := by
+    simpa [pairSwap] using injOn_sym2_lift_swapColumns_offDiag x
+  have himage :
+      x.columnSwapNeighbors =
+        ((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry).image pairSwap := by
+    ext y
+    constructor
+    · intro hy
+      rw [mem_columnSwapNeighbors] at hy
+      obtain ⟨a, b, hab, rfl⟩ := hy
+      exact Finset.mem_image.mpr
+        ⟨s(a, b), Finset.mem_image.mpr ⟨(a, b), by simpa [Finset.mem_offDiag], rfl⟩, rfl⟩
+    · intro hy
+      obtain ⟨z, hz, rfl⟩ := Finset.mem_image.mp hy
+      obtain ⟨⟨a, b⟩, hab, rfl⟩ := Finset.mem_image.mp hz
+      rw [mem_columnSwapNeighbors]
+      exact ⟨a, b, by simpa [Finset.mem_offDiag] using hab, rfl⟩
+  calc
+    x.columnSwapNeighbors.card =
+        (((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry).image pairSwap).card :=
+      congrArg Finset.card himage
+    _ = ((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry).card :=
+      Finset.card_image_of_injOn hpairSwap_injOn
+    _ = n.choose 2 := by rw [Sym2.card_image_offDiag, Finset.card_univ, Fintype.card_fin]
+
+/-- A grid state has at most `n.choose 2` column-swap neighbours. -/
+theorem card_columnSwapNeighbors_le (x : GridState n) :
+    x.columnSwapNeighbors.card ≤ n.choose 2 := by
+  rw [x.card_columnSwapNeighbors]
+
+/-- A grid state on a grid of size at most `1` has no column-swap neighbours. -/
+theorem columnSwapNeighbors_eq_empty_of_le_one (x : GridState n) (hn : n ≤ 1) :
+    x.columnSwapNeighbors = ∅ := by
+  have hchoose : n.choose 2 = 0 := Nat.choose_eq_zero_of_lt (Nat.lt_succ_of_le hn)
+  apply Finset.card_eq_zero.mp
+  exact Nat.eq_zero_of_le_zero ((x.card_columnSwapNeighbors_le).trans (by rw [hchoose]))
+
+/-- A grid state on a grid of size `0` has no column-swap neighbours. -/
+@[simp]
+theorem columnSwapNeighbors_eq_empty_of_zero (x : GridState 0) :
+    x.columnSwapNeighbors = ∅ :=
+  x.columnSwapNeighbors_eq_empty_of_le_one (Nat.zero_le 1)
+
+/-- A grid state on a grid of size `1` has no column-swap neighbours. -/
+@[simp]
+theorem columnSwapNeighbors_eq_empty_of_one (x : GridState 1) :
+    x.columnSwapNeighbors = ∅ :=
+  x.columnSwapNeighbors_eq_empty_of_le_one le_rfl
+
 /-- A grid state is not a column-swap neighbour of itself: swapping two distinct columns moves the
 occupied row of either column, so the result differs from the original. -/
 @[simp]
@@ -567,6 +683,13 @@ structure GridDiagram (n : ℕ) where
   X : GridState n
   /-- No square contains both an `O` marking and an `X` marking. -/
   disjoint : ∀ c : Fin n, O c ≠ X c
+
+/-- There is no grid diagram of size `1`: the unique `O` and `X` markings would have to
+occupy the same square. -/
+instance : IsEmpty (GridDiagram 1) where
+  false := by
+    intro G
+    exact G.disjoint 0 (Subsingleton.elim _ _)
 
 namespace GridDiagram
 
