@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import TauCeti.Topology.Homotopy.FundamentalGroup
 public import Mathlib.Topology.Homotopy.Lifting
 
 /-!
@@ -20,11 +21,6 @@ loop class to its monodromy translate of `e`.
   `FundamentalGroup X x ≃ p ⁻¹' {x}`, `γ ↦ monodromy γ e`.
 * `TauCeti.IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply`: the inverse sends a
   fibre point to the loop class whose monodromy translate of the chosen lift is that point.
-* `TauCeti.FundamentalGroup.map_range_eq_bot_of_simplyConnected`: maps out of a simply
-  connected space have trivial fundamental-group range.
-* `TauCeti.IsCoveringMap.fundamentalGroupMap_range_le_of_simplyConnected`: a simply connected
-  domain satisfies the fundamental-group range condition, the hypothesis of Mathlib's
-  covering-space lifting criterion `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`.
 
 ## References
 
@@ -40,26 +36,6 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {
 variable {A : Type*} [TopologicalSpace A]
 
 open FundamentalGroup
-
-/-- A map out of a simply connected space has trivial range on fundamental groups. -/
-theorem FundamentalGroup.map_range_eq_bot_of_simplyConnected [SimplyConnectedSpace A]
-    (f : C(A, X)) (a₀ : A) :
-    (map f a₀).range = ⊥ := by
-  apply le_antisymm
-  · rintro _ ⟨γ, rfl⟩
-    rw [Subgroup.mem_bot]
-    rw [Subsingleton.elim γ 1]
-    exact map_one (FundamentalGroup.map f a₀)
-  · exact bot_le
-
-/-- A simply connected domain satisfies the fundamental-group range condition for lifting `f`
-through `p`. This is the hypothesis of Mathlib's covering-space lifting criterion
-`IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`. -/
-theorem IsCoveringMap.fundamentalGroupMap_range_le_of_simplyConnected [SimplyConnectedSpace A]
-    (p : C(E, X)) (f : C(A, X)) (a₀ : A) (e₀ : E) (he : p e₀ = f a₀) :
-    (map f a₀).range ≤ (mapOfEq p he).range := by
-  rw [FundamentalGroup.map_range_eq_bot_of_simplyConnected f a₀]
-  exact bot_le
 
 /-- Choosing a basepoint lift `e` in the fibre over `x` identifies the fundamental group of
 the base with that fibre, via `γ ↦ monodromy γ e`. -/
