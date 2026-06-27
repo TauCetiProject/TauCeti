@@ -168,8 +168,12 @@ def main() -> int:
     # Two guards keep a destructive close safe: it is scoped to autonomous roadmap PRs (those carrying the
     # tauceti-target marker), so an intentionally empty human PR is left alone; and it acts only on a PR
     # QUIET for EMPTY_QUIET_MINUTES, so an actively-pushing worker (which bumps updatedAt) is never raced.
-    # Emptiness, draft, keep, and quiet are ALL re-confirmed from a fresh per-PR view right before the
-    # close, with the diff computed (mergeable != UNKNOWN), so a just-pushed or still-computing PR is safe.
+    # The quiet window is also what guarantees the diff stats are settled: GitHub recomputes
+    # changedFiles/additions/deletions promptly on each push or base move, so a PR untouched for the whole
+    # window has accurate, stable stats. (The `mergeable` field is NOT a usable signal here — it is
+    # computed lazily and a cold query returns UNKNOWN even for a long-settled PR, which would make the
+    # close flaky.) Emptiness, draft, keep, and quiet are all re-confirmed from a fresh per-PR view right
+    # before the close, so a just-pushed PR (now active, or a now-non-empty diff) is never closed.
     quiet_cutoff = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=EMPTY_QUIET_MINUTES)
     open_empty = gh_json(["pr", "list", "--repo", REPO, "--state", "open", "--limit", "1000",
                           "--json", "number,isDraft,labels,body,updatedAt"]) or []
@@ -180,13 +184,13 @@ def main() -> int:
     for p in cand:
         n = p["number"]
         v = gh_json(["pr", "view", str(n), "--repo", REPO,
-                     "--json", "isDraft,changedFiles,additions,deletions,mergeable,labels,updatedAt"]) or {}
+                     "--json", "isDraft,changedFiles,additions,deletions,labels,updatedAt"]) or {}
         # Final eligibility read right before the close: skip on ANY change since the listing — a pushed
-        # commit or new activity (updatedAt back inside the quiet window), a new draft/keep state, a diff
-        # GitHub has not finished computing, or a now-non-empty diff.
-        if (v.get("isDraft") is not False or has_keep_label(v) or v.get("mergeable") == "UNKNOWN"
+        # commit or new activity (updatedAt back inside the quiet window), or a new draft/keep state.
+        if (v.get("isDraft") is not False or has_keep_label(v)
                 or parse_ts(v.get("updatedAt", "")) >= quiet_cutoff):
             continue
+        # A PR quiet for the whole window has settled diff stats; an empty diff here is genuinely empty.
         if v.get("changedFiles") != 0 or v.get("additions") != 0 or v.get("deletions") != 0:
             continue
         print(f"empty: #{n} (empty diff, quiet >{EMPTY_QUIET_MINUTES}m — content already in main)")
