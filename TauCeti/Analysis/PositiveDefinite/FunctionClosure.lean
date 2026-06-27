@@ -89,96 +89,158 @@ theorem pow {F : M → ℂ} (hF : IsPositiveDefinite F) (n : ℕ) :
   | succ n ih =>
       simpa [pow_succ] using ih.mul hF
 
+section Values
+
+variable {N : Type*}
+
+/-- If each summand in a finite complex-weighted sum is normalized at a point, then the sum's
+value at that point is the sum of the weights. -/
+@[simp]
+theorem sum_smul_apply_of_apply_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℂ}
+    {F : ι → N → ℂ} {x : N} (hFx : ∀ i ∈ s, F i x = 1) :
+    (∑ i ∈ s, w i • F i x) = ∑ i ∈ s, w i := by
+  refine Finset.sum_congr rfl fun i hi => ?_
+  rw [hFx i hi]
+  simp
+
+/-- A finite complex-weighted sum of functions normalized at a point is normalized at that point
+when the weights sum to `1`. -/
+@[simp]
+theorem sum_smul_apply_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℂ}
+    {F : ι → N → ℂ} {x : N} (hFx : ∀ i ∈ s, F i x = 1)
+    (hw_sum : ∑ i ∈ s, w i = 1) :
+    (fun y => ∑ i ∈ s, w i • F i y) x = 1 := by
+  simpa using (sum_smul_apply_of_apply_eq_one (s := s) (w := w) (F := F) hFx).trans
+    hw_sum
+
+/-- If each summand in a finite complex-weighted sum is normalized at a point, then the sum's
+multiplication-form value at that point is the sum of the weights. -/
+@[simp]
+theorem sum_const_mul_apply_of_apply_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℂ}
+    {F : ι → N → ℂ} {x : N} (hFx : ∀ i ∈ s, F i x = 1) :
+    (∑ i ∈ s, w i * F i x) = ∑ i ∈ s, w i := by
+  simpa [Algebra.smul_def] using
+    sum_smul_apply_of_apply_eq_one (s := s) (w := w) (F := F) hFx
+
+/-- A finite complex-weighted sum, in multiplication form, of functions normalized at a point is
+normalized at that point when the weights sum to `1`. -/
+@[simp]
+theorem sum_const_mul_apply_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℂ}
+    {F : ι → N → ℂ} {x : N} (hFx : ∀ i ∈ s, F i x = 1)
+    (hw_sum : ∑ i ∈ s, w i = 1) :
+    (fun y => ∑ i ∈ s, w i * F i y) x = 1 := by
+  simpa [Algebra.smul_def] using
+    sum_smul_apply_eq_one (s := s) (w := w) (F := F) hFx hw_sum
+
+/-- If each summand in a finite real-weighted sum is normalized at a point, then the sum's value at
+that point is the complex coercion of the sum of the real weights. -/
+@[simp]
+theorem sum_real_smul_apply_of_apply_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℝ}
+    {F : ι → N → ℂ} {x : N} (hFx : ∀ i ∈ s, F i x = 1) :
+    (∑ i ∈ s, w i • F i x) = ((∑ i ∈ s, w i : ℝ) : ℂ) := by
+  simpa [Algebra.smul_def] using
+    sum_smul_apply_of_apply_eq_one (s := s) (w := fun i => (w i : ℂ)) (F := F) hFx
+
+/-- A finite real-weighted sum of functions normalized at a point is normalized at that point when
+the weights sum to `1`. -/
+@[simp]
+theorem sum_real_smul_apply_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℝ}
+    {F : ι → N → ℂ} {x : N} (hFx : ∀ i ∈ s, F i x = 1)
+    (hw_sum : ∑ i ∈ s, w i = 1) :
+    (fun y => ∑ i ∈ s, w i • F i y) x = 1 := by
+  simpa [hw_sum] using
+    sum_real_smul_apply_of_apply_eq_one (s := s) (w := w) (F := F) hFx
+
+/-- If each summand in a finite real-weighted sum is normalized at a point, then the sum's
+multiplication-form value at that point is the complex coercion of the sum of the real weights. -/
+@[simp]
+theorem sum_real_const_mul_apply_of_apply_eq_one {ι : Type*} {s : Finset ι}
+    {w : ι → ℝ} {F : ι → N → ℂ} {x : N} (hFx : ∀ i ∈ s, F i x = 1) :
+    (∑ i ∈ s, (w i : ℂ) * F i x) = ((∑ i ∈ s, w i : ℝ) : ℂ) := by
+  simpa [Algebra.smul_def] using
+    sum_real_smul_apply_of_apply_eq_one (s := s) (w := w) (F := F) hFx
+
+/-- A finite real-weighted sum, in multiplication form, of functions normalized at a point is
+normalized at that point when the weights sum to `1`. -/
+@[simp]
+theorem sum_real_const_mul_apply_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℝ}
+    {F : ι → N → ℂ} {x : N} (hFx : ∀ i ∈ s, F i x = 1)
+    (hw_sum : ∑ i ∈ s, w i = 1) :
+    (fun y => ∑ i ∈ s, (w i : ℂ) * F i y) x = 1 := by
+  simpa [hw_sum] using
+    sum_real_const_mul_apply_of_apply_eq_one (s := s) (w := w) (F := F) hFx
+
 section Origin
 
-variable {N : Type*} [Zero N]
+variable [Zero N]
 
 /-- If each summand in a finite complex-weighted sum is normalized at the origin, then the sum's
 value at the origin is the sum of the weights. -/
 @[simp]
 theorem sum_smul_apply_zero_of_apply_zero_eq_one {ι : Type*} {s : Finset ι}
     {w : ι → ℂ} {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) :
-    (∑ i ∈ s, w i • F i 0) = ∑ i ∈ s, w i := by
-  refine Finset.sum_congr rfl fun i hi => ?_
-  rw [hF0 i hi]
-  simp
+    (∑ i ∈ s, w i • F i 0) = ∑ i ∈ s, w i :=
+  sum_smul_apply_of_apply_eq_one (s := s) (w := w) (F := F) hF0
 
 /-- A finite complex-weighted sum of functions normalized at the origin is normalized when the
 weights sum to `1`. -/
 @[simp]
 theorem sum_smul_apply_zero_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℂ}
     {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) (hw_sum : ∑ i ∈ s, w i = 1) :
-    (fun x => ∑ i ∈ s, w i • F i x) 0 = 1 := by
-  simpa using (sum_smul_apply_zero_of_apply_zero_eq_one (s := s) (w := w) (F := F) hF0).trans
-    hw_sum
+    (fun x => ∑ i ∈ s, w i • F i x) 0 = 1 :=
+  sum_smul_apply_eq_one (s := s) (w := w) (F := F) hF0 hw_sum
 
 /-- If each summand in a finite complex-weighted sum is normalized at the origin, then the
 sum's multiplication-form value at the origin is the sum of the weights. -/
 @[simp]
 theorem sum_const_mul_apply_zero_of_apply_zero_eq_one {ι : Type*} {s : Finset ι}
     {w : ι → ℂ} {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) :
-    (∑ i ∈ s, w i * F i 0) = ∑ i ∈ s, w i := by
-  refine Finset.sum_congr rfl fun i hi => ?_
-  rw [hF0 i hi]
-  simp
+    (∑ i ∈ s, w i * F i 0) = ∑ i ∈ s, w i :=
+  sum_const_mul_apply_of_apply_eq_one (s := s) (w := w) (F := F) hF0
 
 /-- A finite complex-weighted sum, in multiplication form, of functions normalized at the origin is
 normalized when the weights sum to `1`. -/
 @[simp]
 theorem sum_const_mul_apply_zero_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℂ}
     {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) (hw_sum : ∑ i ∈ s, w i = 1) :
-    (fun x => ∑ i ∈ s, w i * F i x) 0 = 1 := by
-  simpa using
-    (sum_const_mul_apply_zero_of_apply_zero_eq_one (s := s) (w := w) (F := F) hF0).trans
-      hw_sum
+    (fun x => ∑ i ∈ s, w i * F i x) 0 = 1 :=
+  sum_const_mul_apply_eq_one (s := s) (w := w) (F := F) hF0 hw_sum
 
 /-- If each summand in a finite real-weighted sum is normalized at the origin, then the sum's value
 at the origin is the complex coercion of the sum of the real weights. -/
 @[simp]
 theorem sum_real_smul_apply_zero_of_apply_zero_eq_one {ι : Type*} {s : Finset ι}
     {w : ι → ℝ} {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) :
-    (∑ i ∈ s, w i • F i 0) = ((∑ i ∈ s, w i : ℝ) : ℂ) := by
-  calc
-    (∑ i ∈ s, w i • F i 0) = ∑ i ∈ s, (w i : ℂ) := by
-      refine Finset.sum_congr rfl fun i hi => ?_
-      rw [hF0 i hi]
-      simp
-    _ = ((∑ i ∈ s, w i : ℝ) : ℂ) := by
-      simp
+    (∑ i ∈ s, w i • F i 0) = ((∑ i ∈ s, w i : ℝ) : ℂ) :=
+  sum_real_smul_apply_of_apply_eq_one (s := s) (w := w) (F := F) hF0
 
 /-- A finite real-weighted sum of functions normalized at the origin is normalized when the weights
 sum to `1`. -/
 @[simp]
 theorem sum_real_smul_apply_zero_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℝ}
     {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) (hw_sum : ∑ i ∈ s, w i = 1) :
-    (fun x => ∑ i ∈ s, w i • F i x) 0 = 1 := by
-  simpa [hw_sum] using
-    sum_real_smul_apply_zero_of_apply_zero_eq_one (s := s) (w := w) (F := F) hF0
+    (fun x => ∑ i ∈ s, w i • F i x) 0 = 1 :=
+  sum_real_smul_apply_eq_one (s := s) (w := w) (F := F) hF0 hw_sum
 
 /-- If each summand in a finite real-weighted sum is normalized at the origin, then the sum's
 multiplication-form value at the origin is the complex coercion of the sum of the real weights. -/
 @[simp]
 theorem sum_real_const_mul_apply_zero_of_apply_zero_eq_one {ι : Type*} {s : Finset ι}
     {w : ι → ℝ} {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) :
-    (∑ i ∈ s, (w i : ℂ) * F i 0) = ((∑ i ∈ s, w i : ℝ) : ℂ) := by
-  calc
-    (∑ i ∈ s, (w i : ℂ) * F i 0) = ∑ i ∈ s, (w i : ℂ) := by
-      refine Finset.sum_congr rfl fun i hi => ?_
-      rw [hF0 i hi]
-      simp
-    _ = ((∑ i ∈ s, w i : ℝ) : ℂ) := by
-      simp
+    (∑ i ∈ s, (w i : ℂ) * F i 0) = ((∑ i ∈ s, w i : ℝ) : ℂ) :=
+  sum_real_const_mul_apply_of_apply_eq_one (s := s) (w := w) (F := F) hF0
 
 /-- A finite real-weighted sum, in multiplication form, of functions normalized at the origin is
 normalized when the weights sum to `1`. -/
 @[simp]
 theorem sum_real_const_mul_apply_zero_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℝ}
     {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) (hw_sum : ∑ i ∈ s, w i = 1) :
-    (fun x => ∑ i ∈ s, (w i : ℂ) * F i x) 0 = 1 := by
-  simpa [hw_sum] using
-    sum_real_const_mul_apply_zero_of_apply_zero_eq_one (s := s) (w := w) (F := F) hF0
+    (fun x => ∑ i ∈ s, (w i : ℂ) * F i x) 0 = 1 :=
+  sum_real_const_mul_apply_eq_one (s := s) (w := w) (F := F) hF0 hw_sum
 
 end Origin
+
+end Values
 
 end IsPositiveDefinite
 
