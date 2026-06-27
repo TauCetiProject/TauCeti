@@ -113,24 +113,12 @@ lemma principalFunctionClassDivisor_injective :
     Function.Injective S.principalFunctionClassDivisor :=
   QuotientAddGroup.kerLift_injective S.principalHom
 
-private lemma principalFunctionClassDivisor_range_eq_principalSubgroup :
-    S.principalFunctionClassDivisor.range = S.principalSubgroup := by
-  ext D
-  rw [AddMonoidHom.mem_range, mem_principalSubgroup]
-  constructor
-  · rintro ⟨q, hq⟩
-    induction q using QuotientAddGroup.induction_on with
-    | _ g =>
-        exact ⟨g, by simpa using hq⟩
-  · rintro ⟨g, hg⟩
-    exact ⟨QuotientAddGroup.mk g, by simp [hg]⟩
-
 /-- The quotient of functions by the zero-principal-divisor subgroup is canonically equivalent
 to the subgroup of principal divisors. -/
 def principalFunctionClassEquivPrincipalSubgroup :
     S.PrincipalFunctionClass ≃+ S.principalSubgroup :=
-  (AddMonoidHom.ofInjective S.principalFunctionClassDivisor_injective).trans
-    (AddEquiv.addSubgroupCongr S.principalFunctionClassDivisor_range_eq_principalSubgroup)
+  (QuotientAddGroup.quotientKerEquivRange S.principalHom).trans
+    (AddEquiv.addSubgroupCongr S.principalSubgroup_eq_range.symm)
 
 @[simp]
 lemma principalFunctionClassEquivPrincipalSubgroup_mk (g : G) :
@@ -138,8 +126,8 @@ lemma principalFunctionClassEquivPrincipalSubgroup_mk (g : G) :
       ⟨S.principalDivisor g, S.principalDivisor_mem_principalSubgroup g⟩ :=
   Subtype.ext <| by
     simp only [principalFunctionClassEquivPrincipalSubgroup, AddEquiv.trans_apply,
-      AddEquiv.addSubgroupCongr_apply]
-    exact AddMonoidHom.ofInjective_apply S.principalFunctionClassDivisor_injective
+      AddEquiv.addSubgroupCongr_apply, QuotientAddGroup.quotientKerEquivRange]
+    rfl
 
 @[simp]
 lemma coe_principalFunctionClassEquivPrincipalSubgroup (q : S.PrincipalFunctionClass) :
