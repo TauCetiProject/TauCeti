@@ -333,10 +333,8 @@ lemma subgroupFiberOrbitMapOfLE_bot_eq_iff (H : Subgroup (Deck p))
           (bot_le : (⊥ : Subgroup (Deck p)) ≤ H) y ↔
       subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b) x ∈
         _root_.MulAction.orbit H (subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b) y) := by
-  simpa [subgroupFiberOrbitMapOfLE_bot_eq] using
-    subgroupFiberOrbitClass_eq_iff H
-      (subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b) x)
-      (subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b) y)
+  exact TauCeti.MulAction.orbitRelQuotientMapOfLE_bot_eq_iff
+    (G := Deck p) (X := p ⁻¹' {b}) H x y
 
 /-- The quotient by the full deck group is the previously defined deck fibre-orbit quotient. -/
 @[expose] def subgroupFiberOrbitQuotientTopEquiv :

@@ -17,6 +17,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   original space.
 * `TauCeti.MulAction.orbitRelQuotientMapOfLE`: the map on orbit quotients induced by an
   inclusion of acting subgroups.
+* `TauCeti.MulAction.orbitRelQuotientMapOfLE_bot_eq_iff`: equality after the bottom-to-`H`
+  quotient map is membership in an `H`-orbit.
 -/
 
 public section
@@ -108,6 +110,18 @@ lemma orbitRelQuotientMapOfLE_bot_eq (H : Subgroup G) :
   refine Quotient.inductionOn' x ?_
   intro x
   rfl
+
+/-- Equality in an `H`-orbit quotient can be checked after choosing representatives through
+the bottom-subgroup quotient. -/
+lemma orbitRelQuotientMapOfLE_bot_eq_iff (H : Subgroup G)
+    (x y : _root_.MulAction.orbitRel.Quotient (⊥ : Subgroup G) X) :
+    orbitRelQuotientMapOfLE (G := G) (X := X)
+        (bot_le : (⊥ : Subgroup G) ≤ H) x =
+        orbitRelQuotientMapOfLE (G := G) (X := X)
+          (bot_le : (⊥ : Subgroup G) ≤ H) y ↔
+      orbitRelQuotientBotEquiv (G := G) (X := X) x ∈
+        _root_.MulAction.orbit H (orbitRelQuotientBotEquiv (G := G) (X := X) y) := by
+  simp [orbitRelQuotientMapOfLE_bot_eq, Quotient.eq'', _root_.MulAction.orbitRel_apply]
 
 end MulAction
 
