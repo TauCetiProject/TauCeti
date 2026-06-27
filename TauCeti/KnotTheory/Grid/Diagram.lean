@@ -339,6 +339,48 @@ theorem columnSwapNeighbors_eq_offDiag_image (x : GridState n) :
   ext y
   simp [columnSwapNeighbors, Finset.mem_offDiag]
 
+/-- If two nontrivial column swaps of the same grid state agree, then they swap the same
+unordered pair of columns. -/
+private theorem sym2_mk_eq_of_swapColumns_eq {x : GridState n} {a b c d : Fin n} (hab : a ≠ b)
+    (hcd : c ≠ d) (h : x.swapColumns a b = x.swapColumns c d) : s(a, b) = s(c, d) := by
+  have hswap : Equiv.swap a b = Equiv.swap c d := by
+    ext k
+    apply congrArg Fin.val
+    exact x.toPerm.injective
+      (by simpa [swapColumns_apply] using congrArg (fun y : GridState n => y k) h)
+  have ha : a = c ∨ a = d := by
+    by_contra hnot
+    rw [not_or] at hnot
+    have hval := congrArg (fun e : Equiv.Perm (Fin n) => e a) hswap
+    rw [Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne hnot.1 hnot.2] at hval
+    exact hab hval.symm
+  rcases ha with rfl | rfl
+  · have hbd : b = d := by
+      simpa using congrArg (fun e : Equiv.Perm (Fin n) => e a) hswap
+    rw [hbd]
+  · have hbc : b = c := by
+      simpa using congrArg (fun e : Equiv.Perm (Fin n) => e a) hswap
+    rw [hbc, Sym2.eq_swap]
+
+/-- The map from unordered off-diagonal column pairs to the state obtained by swapping those
+columns is injective on the off-diagonal image. -/
+private theorem injOn_sym2_lift_swapColumns_offDiag (x : GridState n) :
+    Set.InjOn
+      (Sym2.lift
+        ⟨fun a b => x.swapColumns a b, fun a b => by
+          ext c
+          simp [swapColumns, Equiv.swap_comm]⟩)
+      ((((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry) :
+        Set (Sym2 (Fin n)))) := by
+  intro z hz w hw hzw
+  obtain ⟨⟨a, b⟩, hab, hgz⟩ := Finset.mem_image.mp hz
+  obtain ⟨⟨c, d⟩, hcd, hgw⟩ := Finset.mem_image.mp hw
+  rw [← hgz, ← hgw] at hzw ⊢
+  exact sym2_mk_eq_of_swapColumns_eq (x := x) (by simpa [Finset.mem_offDiag] using hab)
+    (by simpa [Finset.mem_offDiag] using hcd)
+    (by
+      simpa using hzw)
+
 /-- A grid state has exactly `n.choose 2` column-swap neighbours. -/
 @[simp]
 theorem card_columnSwapNeighbors (x : GridState n) :
@@ -349,36 +391,11 @@ theorem card_columnSwapNeighbors (x : GridState n) :
       ⟨fun a b => x.swapColumns a b, fun a b => by
         ext c
         simp [swapColumns, Equiv.swap_comm]⟩
-  have hpair_of_eq {a b c d : Fin n} (hab : a ≠ b) (hcd : c ≠ d)
-      (h : x.swapColumns a b = x.swapColumns c d) : s(a, b) = s(c, d) := by
-    have hswap : Equiv.swap a b = Equiv.swap c d := by
-      ext k
-      apply congrArg Fin.val
-      exact x.toPerm.injective
-        (by simpa [swapColumns_apply] using congrArg (fun y : GridState n => y k) h)
-    have ha : a = c ∨ a = d := by
-      by_contra hnot
-      rw [not_or] at hnot
-      have hval := congrArg (fun e : Equiv.Perm (Fin n) => e a) hswap
-      rw [Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne hnot.1 hnot.2] at hval
-      exact hab hval.symm
-    rcases ha with rfl | rfl
-    · have hbd : b = d := by
-        simpa using congrArg (fun e : Equiv.Perm (Fin n) => e a) hswap
-      rw [hbd]
-    · have hbc : b = c := by
-        simpa using congrArg (fun e : Equiv.Perm (Fin n) => e a) hswap
-      rw [hbc, Sym2.eq_swap]
   have hpairSwap_injOn :
       Set.InjOn pairSwap
         (((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry) :
           Set (Sym2 (Fin n))) := by
-    intro z hz w hw hzw
-    obtain ⟨⟨a, b⟩, hab, hgz⟩ := Finset.mem_image.mp hz
-    obtain ⟨⟨c, d⟩, hcd, hgw⟩ := Finset.mem_image.mp hw
-    rw [← hgz, ← hgw] at hzw ⊢
-    exact hpair_of_eq (by simpa [Finset.mem_offDiag] using hab)
-      (by simpa [Finset.mem_offDiag] using hcd) (by simpa [pairSwap] using hzw)
+    simpa [pairSwap] using injOn_sym2_lift_swapColumns_offDiag x
   have himage :
       x.columnSwapNeighbors =
         ((Finset.univ : Finset (Fin n)).offDiag.image Sym2.mk.uncurry).image pairSwap := by
