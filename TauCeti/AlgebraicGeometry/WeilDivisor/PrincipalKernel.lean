@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
 
 /-!
@@ -15,7 +16,7 @@ sequence built in `TauCeti.AlgebraicGeometry.WeilDivisor.Principal`.
 For an order system `S : OrderSystem X G`, the homomorphism
 `S.principalHom : G →+ WeilDivisor X` sends a function to its principal divisor. Its kernel is
 the subgroup of functions with zero order at every point. Quotienting `G` by this kernel gives
-the abstract group of nonzero principal divisors, canonically identified with
+the abstract group of principal divisors, canonically identified with
 `S.principalSubgroup`.
 
 In geometric applications, `G` is the additive form of the multiplicative group of a function
@@ -42,6 +43,12 @@ namespace OrderSystem
 variable {X G : Type*} [AddCommGroup G] (S : OrderSystem X G)
 
 noncomputable section
+
+private lemma quotientKerEquivRange_mk {H : Type*} [AddCommGroup H] (φ : G →+ H) (g : G) :
+    QuotientAddGroup.quotientKerEquivRange φ (QuotientAddGroup.mk g) =
+      ⟨φ g, ⟨g, rfl⟩⟩ :=
+  Subtype.ext <| by
+    simp [QuotientAddGroup.quotientKerEquivRange, QuotientAddGroup.rangeKerLift]
 
 /-! ### The kernel of the principal-divisor map -/
 
@@ -102,15 +109,17 @@ to the subgroup of principal divisors. -/
 def principalFunctionClassEquivPrincipalSubgroup :
     S.PrincipalFunctionClass ≃+ S.principalSubgroup :=
   (QuotientAddGroup.quotientKerEquivRange S.principalHom).trans
-    (AddEquiv.addSubgroupCongr S.principalSubgroup_eq_range.symm)
+    (AddEquiv.addSubgroupCongr <| by
+      ext D
+      rw [mem_principalSubgroup, AddMonoidHom.mem_range]
+      simp only [principalHom_apply])
 
 @[simp]
 lemma principalFunctionClassEquivPrincipalSubgroup_mk (g : G) :
     S.principalFunctionClassEquivPrincipalSubgroup (QuotientAddGroup.mk g) =
       ⟨S.principalDivisor g, S.principalDivisor_mem_principalSubgroup g⟩ :=
   Subtype.ext <| by
-    simp [principalFunctionClassEquivPrincipalSubgroup, QuotientAddGroup.quotientKerEquivRange,
-      QuotientAddGroup.rangeKerLift]
+    simp [principalFunctionClassEquivPrincipalSubgroup, quotientKerEquivRange_mk]
 
 /-- The principal divisor associated to a function class, as a homomorphism into all Weil
 divisors. -/
@@ -121,6 +130,13 @@ def principalFunctionClassDivisor : S.PrincipalFunctionClass →+ WeilDivisor X 
 lemma principalFunctionClassDivisor_mk (g : G) :
     S.principalFunctionClassDivisor (QuotientAddGroup.mk g) = S.principalDivisor g :=
   QuotientAddGroup.kerLift_mk S.principalHom g
+
+@[simp]
+lemma coe_principalFunctionClassEquivPrincipalSubgroup (q : S.PrincipalFunctionClass) :
+    ((S.principalFunctionClassEquivPrincipalSubgroup q : S.principalSubgroup) : WeilDivisor X) =
+      S.principalFunctionClassDivisor q := by
+  induction q using QuotientAddGroup.induction_on with
+  | _ g => simp
 
 /-- The map from function classes to principal divisors is injective. -/
 lemma principalFunctionClassDivisor_injective :
