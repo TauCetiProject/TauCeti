@@ -8,6 +8,7 @@ public import TauCeti.KnotTheory.Grid.DifferentialSupport
 import Mathlib.Algebra.BigOperators.Finsupp.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finsupp.SMulWithZero
+import Mathlib.Data.Nat.Choose.Basic
 
 /-!
 # Cardinality bounds for the fully blocked grid differential support
