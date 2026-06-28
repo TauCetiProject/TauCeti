@@ -21,6 +21,10 @@ the mass lower bound are all stated inline, as `∀ x ∈ Ω, λ‖ξ‖² ≤ (
 `∀ x ∈ Ω, ‖b x‖ ≤ β`, and `∀ x ∈ Ω, μ ≤ c x`; a caller holding a `UniformlyEllipticOn`
 hypothesis passes its lower-bound projection for the first.
 
+Accordingly this file stops at coercivity of the pointwise jet form.  The Lax--Milgram
+solution API in `TauCeti.Analysis.InnerProductSpace.LaxMilgram` applies after Lane D builds
+the integrated weak form on the Sobolev space, not to each finite-dimensional jet fiber.
+
 The bookkeeping follows the standard Young-inequality absorption argument used in the
 energy method, as in Evans, *Partial Differential Equations*, Chapter 6.
 
