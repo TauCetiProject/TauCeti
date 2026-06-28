@@ -231,6 +231,7 @@ lemma support_ofFinsetWithMultiplicity_subset (s : Finset X) (m : X → ℕ) :
 
 /-- A point is in the support of a finite-set divisor with multiplicities exactly when it is
 selected and has nonzero multiplicity. -/
+@[simp]
 lemma mem_support_ofFinsetWithMultiplicity_iff {s : Finset X} {m : X → ℕ} {x : X} :
     x ∈ (ofFinsetWithMultiplicity s m).support ↔ x ∈ s ∧ m x ≠ 0 := by
   classical
@@ -302,6 +303,12 @@ lemma ofFinsetWithMultiplicity_mem_degreeZeroSubgroup_iff (s : Finset X) (m : X 
 /-- The effective divisor `Σ x ∈ s, [x]` attached to a finite set of points. -/
 def ofFinset (s : Finset X) : WeilDivisor X :=
   ofFinsetWithMultiplicity s fun _ => 1
+
+/-- The coefficient-one finite-set divisor is the corresponding finite sum of point divisors. -/
+lemma ofFinset_eq_sum (s : Finset X) :
+    ofFinset s = ∑ x ∈ s, ofPoint x := by
+  rw [ofFinset, ofFinsetWithMultiplicity_eq_sum]
+  simp
 
 @[simp]
 lemma ofFinset_empty : ofFinset (∅ : Finset X) = 0 := by
