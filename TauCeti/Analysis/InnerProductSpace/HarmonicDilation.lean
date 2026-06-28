@@ -48,6 +48,7 @@ private abbrev homothetyHomeomorph (a : E) (c : ℝ) (hc : c ≠ 0) : E ≃ₜ E
 
 private lemma homothetyHomeomorph_apply (a : E) (c : ℝ) (hc : c ≠ 0) (x : E) :
     homothetyHomeomorph a c hc x = AffineMap.homothety a c x := by
+  -- Expose the `toHomeomorph` coercion back to the continuous affine equivalence it wraps.
   change (AffineEquiv.toContinuousAffineEquiv
     (AffineEquiv.homothetyUnitsMulHom a (Units.mk0 c hc)) : E ≃ᴬ[ℝ] E) x =
       AffineMap.homothety a c x
@@ -134,6 +135,7 @@ theorem harmonicAt_comp_homothety_right_iff (a : E) (c : ℝ) (hc : c ≠ 0) {f 
       have h' : Δ f ∘ e =ᶠ[𝓝 x] 0 :=
         (eventuallyEq_zero_comp_homeomorph_iff e (Δ f) x).2 (by simpa [he x] using h)
       filter_upwards [h'] with y hy
+      -- Unfold the scaled composition produced by `hscale` at this point.
       change c ^ 2 • ((Δ f ∘ e) y) = 0
       rw [hy]
       simp
