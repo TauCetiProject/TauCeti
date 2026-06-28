@@ -25,6 +25,8 @@ lattice-homology differential can use directly.
   codimension-one faces in a direction.
 * `TauCeti.PlumbingCube.characteristicWeight`: the characteristic cube weight of a bundled
   generator.
+* `TauCeti.PlumbingCube.characteristicLowerFaceExponent` and
+  `TauCeti.PlumbingCube.characteristicUpperFaceExponent`: the bundled face exponents.
 
 ## References
 
@@ -187,6 +189,86 @@ theorem characteristicWeight_mk [Fintype V] (P : PlumbingGraph V)
     characteristicWeight P k ({ base := x, directions := S } : PlumbingCube V) =
       P.characteristicCubeWeight k x S :=
   by simp [characteristicWeight_def]
+
+/-- The nonnegative `U`-exponent contributed by the lower face of a bundled cube. -/
+noncomputable irreducible_def characteristicLowerFaceExponent [Fintype V] (P : PlumbingGraph V)
+    (k : P.characteristicVectors) (C : PlumbingCube V) (v : V) : ℕ :=
+  P.characteristicLowerFaceExponent k C.base C.directions v
+
+/-- The nonnegative `U`-exponent contributed by the upper face of a bundled cube. -/
+noncomputable irreducible_def characteristicUpperFaceExponent [Fintype V] (P : PlumbingGraph V)
+    (k : P.characteristicVectors) (C : PlumbingCube V) {v : V}
+    (hv : v ∈ C.directions) : ℕ :=
+  P.characteristicUpperFaceExponent k C.base C.directions hv
+
+@[simp]
+theorem characteristicLowerFaceExponent_mk [Fintype V] (P : PlumbingGraph V)
+    (k : P.characteristicVectors) (x : V → ℤ) (S : Finset V) (v : V) :
+    characteristicLowerFaceExponent P k ({ base := x, directions := S } : PlumbingCube V) v =
+      P.characteristicLowerFaceExponent k x S v :=
+  by simp [characteristicLowerFaceExponent_def]
+
+@[simp]
+theorem characteristicUpperFaceExponent_mk [Fintype V] (P : PlumbingGraph V)
+    (k : P.characteristicVectors) (x : V → ℤ) (S : Finset V) {v : V} (hv : v ∈ S) :
+    characteristicUpperFaceExponent P k ({ base := x, directions := S } : PlumbingCube V) hv =
+      P.characteristicUpperFaceExponent k x S hv :=
+  by simp [characteristicUpperFaceExponent_def]
+
+/-- The lower-face exponent, cast back to `ℤ`, is the difference between the bundled cube weight
+and the lower face weight. -/
+@[simp]
+theorem characteristicLowerFaceExponent_natCast [Fintype V] (P : PlumbingGraph V)
+    (k : P.characteristicVectors) (C : PlumbingCube V) (v : V) :
+    (characteristicLowerFaceExponent P k C v : ℤ) =
+      characteristicWeight P k C - characteristicWeight P k (C.lowerFace v) :=
+  by
+    simp [characteristicLowerFaceExponent_def, characteristicWeight_def, lowerFace_base,
+      lowerFace_directions]
+
+/-- The upper-face exponent, cast back to `ℤ`, is the difference between the bundled cube weight
+and the upper face weight. -/
+@[simp]
+theorem characteristicUpperFaceExponent_natCast [Fintype V] (P : PlumbingGraph V)
+    (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
+    (characteristicUpperFaceExponent P k C hv : ℤ) =
+      characteristicWeight P k C - characteristicWeight P k (C.upperFace v hv) :=
+  by
+    simp [characteristicUpperFaceExponent_def, characteristicWeight_def, upperFace_base,
+      upperFace_directions]
+
+/-- The lower-face exponent is zero exactly when the lower face has the same bundled weight as the
+ambient cube. -/
+theorem characteristicLowerFaceExponent_eq_zero_iff [Fintype V] (P : PlumbingGraph V)
+    (k : P.characteristicVectors) (C : PlumbingCube V) (v : V) :
+    characteristicLowerFaceExponent P k C v = 0 ↔
+      characteristicWeight P k C = characteristicWeight P k (C.lowerFace v) :=
+  by
+    simpa [characteristicLowerFaceExponent_def, characteristicWeight_def, lowerFace_base,
+      lowerFace_directions] using
+      P.characteristicLowerFaceExponent_eq_zero_iff (k := k) (x := C.base) (S := C.directions)
+        (v := v)
+
+/-- The upper-face exponent is zero exactly when the upper face has the same bundled weight as the
+ambient cube. -/
+theorem characteristicUpperFaceExponent_eq_zero_iff [Fintype V] (P : PlumbingGraph V)
+    (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
+    characteristicUpperFaceExponent P k C hv = 0 ↔
+      characteristicWeight P k C = characteristicWeight P k (C.upperFace v hv) :=
+  by
+    simpa [characteristicUpperFaceExponent_def, characteristicWeight_def, upperFace_base,
+      upperFace_directions] using
+      P.characteristicUpperFaceExponent_eq_zero_iff (k := k) (x := C.base) (S := C.directions)
+        hv
+
+/-- In any bundled cube direction, at least one face exponent is zero. -/
+@[simp]
+theorem min_characteristicFaceExponent_eq_zero [Fintype V] (P : PlumbingGraph V)
+    (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
+    min (characteristicLowerFaceExponent P k C v)
+      (characteristicUpperFaceExponent P k C hv) = 0 :=
+  by
+    simp [characteristicLowerFaceExponent_def, characteristicUpperFaceExponent_def]
 
 /-- The lower face's characteristic weight is bounded by the ambient cube weight. -/
 theorem characteristicWeight_lowerFace_le [Fintype V] (P : PlumbingGraph V)
