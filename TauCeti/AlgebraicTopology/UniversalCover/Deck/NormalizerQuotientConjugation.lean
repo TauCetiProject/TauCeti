@@ -98,6 +98,31 @@ lemma normalizerQuotientConjEquiv_trans_mk
   exact Subgroup.normalizerQuotientEquivMap_trans_mk H (conjMulEquiv h hpq)
     (conjMulEquiv k hqr) φ
 
+/-- After identifying the twice-conjugated subgroup with the subgroup conjugated by the
+composite over-base homeomorphism, composing deck normalizer-quotient conjugation equivalences
+agrees with conjugation by the composite on representatives. -/
+lemma normalizerQuotientConjEquiv_trans_mk_congr
+    {G : Type*} [TopologicalSpace G] {r : G → B}
+    (h : E ≃ₜ F) (k : F ≃ₜ G)
+    (hpq : ∀ e, q (h e) = p e) (hqr : ∀ f, r (k f) = q f)
+    (H : Subgroup (Deck p))
+    (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) :
+    Subgroup.normalizerQuotientCongr (subgroup_map_conj_trans h k hpq hqr H)
+      (normalizerQuotientConjEquiv k hqr
+        (H.map ((conjMulEquiv h hpq : Deck p ≃* Deck q) : Deck p →* Deck q))
+        (normalizerQuotientConjEquiv h hpq H (Subgroup.normalizerQuotientMk H φ))) =
+      normalizerQuotientConjEquiv (h.trans k)
+        (fun e => by rw [Homeomorph.trans_apply, hqr, hpq]) H
+        (Subgroup.normalizerQuotientMk H φ) := by
+  rw [normalizerQuotientConjEquiv_trans_mk, normalizerQuotientConjEquiv_mk,
+    Subgroup.normalizerQuotientCongr_mk]
+  congr 1
+  ext x
+  change (((conjMulEquiv k hqr) ((conjMulEquiv h hpq) (φ : Deck p)) : Deck r).1 x) =
+    ((conjMulEquiv (h.trans k) (fun e => by rw [Homeomorph.trans_apply, hqr, hpq])
+      (φ : Deck p) : Deck r).1 x)
+  simp [conjMulEquiv_apply_coe]
+
 /-- Conjugating representatives by `h` and then by `h.symm` gives the stated
 inverse-conjugation representative in the twice-mapped subgroup. -/
 @[simp]
