@@ -69,6 +69,16 @@ private lemma equivSubgroupOrbitsQuotientGroup_apply_smul
     (MulAction.equivSubgroupOrbitsQuotientGroup x H).apply_symm_apply
     (QuotientGroup.mk (s := H) g⁻¹)
 
+/-- `Setoid.map_of_le` sends a representative of the smaller orbit relation to the same
+representative for the larger orbit relation. -/
+private lemma orbitRel_mapOfLE_mk
+    {G X : Type*} [Group G] [MulAction G X] {H K : Subgroup G} (hHK : H ≤ K) (x : X) :
+    Setoid.map_of_le
+        (_root_.TauCeti.MulAction.orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
+        (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
+      (Quotient.mk'' x : MulAction.orbitRel.Quotient K X) :=
+  rfl
+
 /-- The subgroup-orbit quotient equivalence is natural in subgroup inclusions. -/
 @[simp]
 private lemma equivSubgroupOrbitsQuotientGroup_mapOfLE
@@ -85,10 +95,7 @@ private lemma equivSubgroupOrbitsQuotientGroup_mapOfLE
   obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G x₀ x'
   rw [← hg]
   rw [equivSubgroupOrbitsQuotientGroup_apply_smul]
-  rw [show Setoid.map_of_le
-        (_root_.TauCeti.MulAction.orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
-        (Quotient.mk'' (g • x₀) : MulAction.orbitRel.Quotient H X) =
-      (Quotient.mk'' (g • x₀) : MulAction.orbitRel.Quotient K X) from rfl]
+  rw [orbitRel_mapOfLE_mk hHK]
   rw [equivSubgroupOrbitsQuotientGroup_apply_smul, Subgroup.quotientMapOfLE_apply_mk]
 
 end MulAction
