@@ -38,21 +38,20 @@ variable {X Y : Type*}
 
 noncomputable section
 
+private lemma coeff_zsmul_ofPoint (n : ℤ) (y x : X) :
+    coeff (n • ofPoint y : WeilDivisor X) x = n * coeff (ofPoint y) x := by
+  simp [coeff]
+
 private lemma coeff_sum_zsmul_ofPoint_of_mem {s : Finset X} {a : X → ℤ} {x : X}
     (hxs : x ∈ s) :
     coeff (∑ y ∈ s, a y • ofPoint y : WeilDivisor X) x = a x := by
   classical
   rw [coeff]
   rw [Finset.sum_apply', Finset.sum_eq_single x]
-  -- After unfolding `coeff`, the goal is pointwise evaluation of a `Finsupp` `ℤ`-smul.
-  · change a x * (ofPoint x : WeilDivisor X) x = a x
-    rw [show (ofPoint x : WeilDivisor X) x = coeff (ofPoint x) x from rfl,
-      coeff_ofPoint_self, mul_one]
+  · rw [← coeff, coeff_zsmul_ofPoint, coeff_ofPoint_self, mul_one]
   · intro y hy hyx
     have hxy : x ≠ y := fun h => hyx h.symm
-    change a y * (ofPoint y : WeilDivisor X) x = 0
-    rw [show (ofPoint y : WeilDivisor X) x = coeff (ofPoint y) x from rfl,
-      coeff_ofPoint_of_ne hxy, mul_zero]
+    rw [← coeff, coeff_zsmul_ofPoint, coeff_ofPoint_of_ne hxy, mul_zero]
   · intro hx
     exact (hx hxs).elim
 
@@ -63,10 +62,7 @@ private lemma coeff_sum_zsmul_ofPoint_of_notMem {s : Finset X} {a : X → ℤ} {
   rw [coeff, Finset.sum_apply']
   exact Finset.sum_eq_zero fun y hy => by
     have hxy : x ≠ y := fun h => hxs (h.symm ▸ hy)
-    -- After unfolding `coeff`, the goal is pointwise evaluation of a `Finsupp` `ℤ`-smul.
-    change a y * (ofPoint y : WeilDivisor X) x = 0
-    rw [show (ofPoint y : WeilDivisor X) x = coeff (ofPoint y) x from rfl,
-      coeff_ofPoint_of_ne hxy, mul_zero]
+    rw [← coeff, coeff_zsmul_ofPoint, coeff_ofPoint_of_ne hxy, mul_zero]
 
 /-! ### Finitely supported multiplicities -/
 
@@ -344,6 +340,7 @@ lemma isEffective_ofFinsetWithMultiplicity (s : Finset X) (m : X → ℕ) :
     IsEffective (ofFinsetWithMultiplicity s m) := by
   simp [ofFinsetWithMultiplicity]
 
+/-- `ofFinsetWithMultiplicity s m` belongs to the effective divisor submonoid. -/
 @[simp]
 lemma ofFinsetWithMultiplicity_mem_effectiveSubmonoid (s : Finset X) (m : X → ℕ) :
     ofFinsetWithMultiplicity s m ∈ effectiveSubmonoid X :=
@@ -546,6 +543,7 @@ lemma isEffective_ofFinset (s : Finset X) :
     IsEffective (ofFinset s) := by
   simp [ofFinset]
 
+/-- `ofFinset s` belongs to the effective divisor submonoid. -/
 @[simp]
 lemma ofFinset_mem_effectiveSubmonoid (s : Finset X) :
     ofFinset s ∈ effectiveSubmonoid X :=
