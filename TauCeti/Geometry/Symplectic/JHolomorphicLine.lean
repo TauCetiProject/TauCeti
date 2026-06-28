@@ -161,6 +161,33 @@ lemma symplecticForm_apply_apply_pos (hF : IsComplexLinearMap J₀ J F₀) (hω 
   rw [(isComplexLinearMap_iff_apply J₀ J F₀).mp hF v]
   exact hω (F₀ v) hv
 
+/-- For a complex-linear map from any complex source, the associated-bilinear-form diagonal
+of the image of `J₀ v` equals that of the image of `v`. -/
+lemma associatedBilinForm_apply_apply_self_eq
+    (hF : IsComplexLinearMap J₀ J F₀) (v : U) :
+    ω.associatedBilinForm J (F₀ (J₀ v)) (F₀ (J₀ v)) =
+      ω.associatedBilinForm J (F₀ v) (F₀ v) := by
+  rw [(isComplexLinearMap_iff_apply J₀ J F₀).mp hF v]
+  calc
+    ω.associatedBilinForm J (J (F₀ v)) (J (F₀ v)) =
+        ω (J (F₀ v)) (-F₀ v) := by
+      rw [SymplecticForm.associatedBilinForm_apply, AlmostComplexStructure.apply_apply]
+    _ = -ω (J (F₀ v)) (F₀ v) := by
+      exact map_neg (ω.toBilinForm (J (F₀ v))) (F₀ v)
+    _ = ω (F₀ v) (J (F₀ v)) := by
+      rw [← ω.neg_eq (F₀ v) (J (F₀ v))]
+      simp
+    _ = ω.associatedBilinForm J (F₀ v) (F₀ v) := by
+      rw [SymplecticForm.associatedBilinForm_apply]
+
+/-- For a complex-linear map from any complex source, the associated-bilinear-form diagonal
+of an image vector is the symplectic area density of the ordered pair `(F₀ v, F₀ (J₀ v))`. -/
+lemma associatedBilinForm_apply_self_eq_symplecticForm
+    (hF : IsComplexLinearMap J₀ J F₀) (v : U) :
+    ω.associatedBilinForm J (F₀ v) (F₀ v) = ω (F₀ v) (F₀ (J₀ v)) := by
+  rw [SymplecticForm.associatedBilinForm_apply,
+    (isComplexLinearMap_iff_apply J₀ J F₀).mp hF v]
+
 variable {F : (ℝ × ℝ) →ₗ[ℝ] V}
 
 /-- A real-linear map out of the standard complex line is complex-linear when it satisfies the
