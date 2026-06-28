@@ -1,5 +1,7 @@
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
-import Mathlib.MeasureTheory.Measure.Real
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
+public import Mathlib.MeasureTheory.Measure.Real
 
 /-!
 # Finite measure API for the Chebyshev `T` weight
@@ -14,6 +16,8 @@ nonzero, and that the existing Mathlib orthogonality lemmas combine into one
 Kronecker-delta statement with squared norms `π` in degree zero and `π / 2` in
 positive degree.
 -/
+
+public section
 
 namespace TauCeti
 
