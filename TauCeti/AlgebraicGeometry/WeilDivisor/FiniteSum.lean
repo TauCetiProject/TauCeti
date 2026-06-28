@@ -74,6 +74,7 @@ private lemma coeff_sum_zsmul_ofPoint_of_notMem {s : Finset X} {a : X → ℤ} {
 def ofFinsuppMultiplicity (m : X →₀ ℕ) : WeilDivisor X :=
   Finsupp.mapRange (fun n : ℕ => (n : ℤ)) (by simp) m
 
+/-- Coefficients of `ofFinsuppMultiplicity m` are the natural multiplicities `m x`. -/
 @[simp]
 lemma coeff_ofFinsuppMultiplicity (m : X →₀ ℕ) (x : X) :
     coeff (ofFinsuppMultiplicity m) x = m x := by
@@ -323,11 +324,13 @@ lemma ofFinsetWithMultiplicity_eq_sum (s : Finset X) (m : X → ℕ) :
     ofFinsetWithMultiplicity s m = ∑ x ∈ s, (m x : ℤ) • ofPoint x := by
   simpa [ofFinsetWithMultiplicity] using indicator_nat_eq_sum (s := s) (m := m)
 
+/-- The finite-set multiplicity divisor over the empty set is zero. -/
 @[simp]
 lemma ofFinsetWithMultiplicity_empty (m : X → ℕ) :
     ofFinsetWithMultiplicity (∅ : Finset X) m = 0 := by
   simp [ofFinsetWithMultiplicity]
 
+/-- Inserting a new point splits off the corresponding weighted point divisor. -/
 @[simp]
 lemma ofFinsetWithMultiplicity_insert [DecidableEq X] {s : Finset X} {x : X} (hx : x ∉ s)
     (m : X → ℕ) :
@@ -475,17 +478,8 @@ private lemma pushforward_indicator_one (f : X → Y) (s : Finset X) :
   classical
   simpa using pushforward_indicator_nat (f := f) (s := s) (m := fun _ : X => 1)
 
-/-- For positive weights, a coefficient-one indicator divisor lies in the weighted degree-zero
-subgroup exactly when the finite set is empty. -/
-private lemma indicator_one_mem_weightedDegreeZeroSubgroup_iff_of_pos
-    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) :
-    (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) ∈
-        weightedDegreeZeroSubgroup w ↔
-      s = ∅ := by
-  classical
-  rw [show ((Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) ∈
-      weightedDegreeZeroSubgroup w ↔ ∀ x ∈ s, (fun _ : X => 1) x = 0) from
-    indicator_nat_mem_weightedDegreeZeroSubgroup_iff_of_pos s hw (fun _ : X => 1)]
+private lemma forall_mem_one_eq_zero_iff_empty (s : Finset X) :
+    (∀ x ∈ s, (1 : ℕ) = 0) ↔ s = ∅ := by
   constructor
   · intro h
     ext x
@@ -497,24 +491,24 @@ private lemma indicator_one_mem_weightedDegreeZeroSubgroup_iff_of_pos
   · intro hs x hx
     simp [hs] at hx
 
+/-- For positive weights, a coefficient-one indicator divisor lies in the weighted degree-zero
+subgroup exactly when the finite set is empty. -/
+private lemma indicator_one_mem_weightedDegreeZeroSubgroup_iff_of_pos
+    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) :
+    (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) ∈
+        weightedDegreeZeroSubgroup w ↔
+      s = ∅ := by
+  classical
+  exact (indicator_nat_mem_weightedDegreeZeroSubgroup_iff_of_pos s hw (fun _ : X => 1)).trans
+    (forall_mem_one_eq_zero_iff_empty s)
+
 /-- A coefficient-one indicator divisor has unweighted degree zero exactly when the set is empty. -/
 private lemma indicator_one_mem_degreeZeroSubgroup_iff (s : Finset X) :
     (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) ∈ degreeZeroSubgroup X ↔
       s = ∅ := by
   classical
-  rw [show ((Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) ∈
-      degreeZeroSubgroup X ↔ ∀ x ∈ s, (fun _ : X => 1) x = 0) from
-    indicator_nat_mem_degreeZeroSubgroup_iff (s := s) (m := fun _ : X => 1)]
-  constructor
-  · intro h
-    ext x
-    constructor
-    · intro hx
-      exact (one_ne_zero (h x hx)).elim
-    · intro hx
-      exact (Finset.notMem_empty x hx).elim
-  · intro hs x hx
-    simp [hs] at hx
+  exact (indicator_nat_mem_degreeZeroSubgroup_iff (s := s) (m := fun _ : X => 1)).trans
+    (forall_mem_one_eq_zero_iff_empty s)
 
 /-! ### Named finite-set divisors -/
 
@@ -528,10 +522,12 @@ lemma ofFinset_eq_sum (s : Finset X) :
   simpa [ofFinset] using
     ofFinsetWithMultiplicity_eq_sum (s := s) (m := fun _ : X => 1)
 
+/-- The coefficient-one finite-set divisor over the empty set is zero. -/
 @[simp]
 lemma ofFinset_empty : ofFinset (∅ : Finset X) = 0 := by
   simp [ofFinset]
 
+/-- Inserting a new point splits off the corresponding point divisor. -/
 @[simp]
 lemma ofFinset_insert [DecidableEq X] {s : Finset X} {x : X} (hx : x ∉ s) :
     ofFinset (insert x s) = ofPoint x + ofFinset s := by
@@ -591,32 +587,14 @@ lemma ofFinset_mem_weightedDegreeZeroSubgroup_iff_of_pos
   rw [ofFinset]
   rw [ofFinsetWithMultiplicity_mem_weightedDegreeZeroSubgroup_iff_of_pos
     (s := s) (w := w) hw (fun _ : X => 1)]
-  constructor
-  · intro h
-    ext x
-    constructor
-    · intro hx
-      exact (one_ne_zero (h x hx)).elim
-    · intro hx
-      exact (Finset.notMem_empty x hx).elim
-  · intro hs x hx
-    simp [hs] at hx
+  exact forall_mem_one_eq_zero_iff_empty s
 
 /-- `ofFinset s` has unweighted degree zero exactly when `s` is empty. -/
 lemma ofFinset_mem_degreeZeroSubgroup_iff (s : Finset X) :
     ofFinset s ∈ degreeZeroSubgroup X ↔ s = ∅ := by
   rw [ofFinset]
   rw [ofFinsetWithMultiplicity_mem_degreeZeroSubgroup_iff (s := s) (m := fun _ : X => 1)]
-  constructor
-  · intro h
-    ext x
-    constructor
-    · intro hx
-      exact (one_ne_zero (h x hx)).elim
-    · intro hx
-      exact (Finset.notMem_empty x hx).elim
-  · intro hs x hx
-    simp [hs] at hx
+  exact forall_mem_one_eq_zero_iff_empty s
 
 end
 
