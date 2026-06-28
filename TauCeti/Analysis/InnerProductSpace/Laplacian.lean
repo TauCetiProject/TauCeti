@@ -14,9 +14,9 @@ Mathlib's `Mathlib/Analysis/InnerProductSpace/Laplacian.lean` records that the L
 commutes with *left* composition by a continuous linear map or equivalence acting on the
 *values* of a function (`ContDiffAt.laplacian_CLM_comp_left`, `laplacian_CLE_comp_left`).
 This file supplies the complementary *right* composition, acting on the *domain* variable: the
-geometric invariance of `Δ` under the rigid motions of a Euclidean space — affine isometry
-equivalences, with orthogonal changes of variable (linear isometry equivalences) and translations
-as special cases.
+geometric invariance of `Δ` under rigid motions and scalar homotheties of a Euclidean space:
+affine isometry equivalences, with orthogonal changes of variable (linear isometry equivalences)
+and translations as special cases, and affine homotheties with the expected quadratic scaling.
 
 For an affine isometry equivalence `e : E ≃ᵃⁱ[ℝ] E'` and any `f : E' → F`,
 
@@ -33,8 +33,9 @@ and for a translation by `a : E`,
 All three identities hold with *no* differentiability hypothesis on `f`, because the underlying
 `iteratedFDeriv` composition laws are unconditional (the iterated derivative is junk-valued off
 the smooth locus, yet still transforms correctly under a linear change of variable). The harmonic
-corollaries, where smoothness re-enters, live in
-`TauCeti/Analysis/InnerProductSpace/HarmonicIsometry.lean`.
+corollaries, where smoothness re-enters, live in the companion files
+`TauCeti/Analysis/InnerProductSpace/HarmonicIsometry.lean` and
+`TauCeti/Analysis/InnerProductSpace/HarmonicDilation.lean`.
 
 ## Main declarations
 
@@ -43,6 +44,9 @@ corollaries, where smoothness re-enters, live in
 * `TauCeti.laplacian_comp_linearIsometryEquiv_right`: `Δ (f ∘ l) = (Δ f) ∘ l` for an
   isometry `l`.
 * `TauCeti.laplacian_comp_add_right`: translation invariance of `Δ`.
+* `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
+  `AffineMap.homothety a c`.
+* `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
 -/
 
 public section
@@ -55,6 +59,11 @@ variable
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
+/-- Scalar dilation as a continuous linear equivalence. -/
+private noncomputable abbrev smulLeftContinuousLinearEquiv (c : ℝ) (hc : c ≠ 0) : E ≃L[ℝ] E :=
+  ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
 /-- The iterated derivative transforms under a linear isometry equivalence on the right by
@@ -112,5 +121,64 @@ theorem laplacian_comp_affineIsometryEquiv_right (e : E ≃ᵃⁱ[ℝ] E') (f : 
   have hx : e x = e.linearIsometryEquiv x + e 0 := by
     simpa using e.map_vadd (0 : E) x
   simp [Function.comp_apply, hx]
+
+/-- **Scaling law for the Laplacian under origin-centered dilation.**
+
+Right-composition by `x ↦ c • x` multiplies the Laplacian by `c ^ 2`. The statement is
+unconditional in `f`, matching Mathlib's unconditional definition of `Δ` through iterated
+Fréchet derivatives. -/
+theorem laplacian_comp_smul_right (c : ℝ) (f : E → F) :
+    Δ (fun x ↦ f (c • x)) = fun x ↦ c ^ 2 • (Δ f) (c • x) := by
+  by_cases hc : c = 0
+  · subst c
+    ext x
+    simp
+  · let l : E ≃L[ℝ] E := smulLeftContinuousLinearEquiv c hc
+    have hfun : (fun x : E ↦ f (c • x)) = f ∘ l := by
+      funext x
+      simp [l, smulLeftContinuousLinearEquiv]
+    rw [hfun]
+    ext x
+    simp only [laplacian_eq_iteratedFDeriv_orthonormalBasis (f ∘ l)
+      (stdOrthonormalBasis ℝ E), laplacian_eq_iteratedFDeriv_orthonormalBasis f
+      (stdOrthonormalBasis ℝ E), Finset.smul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hder :
+        (iteratedFDeriv ℝ 2 (f ∘ l) x)
+            ![(stdOrthonormalBasis ℝ E) i, (stdOrthonormalBasis ℝ E) i] =
+          ((iteratedFDeriv ℝ 2 f (l x)).compContinuousLinearMap fun _ => (l : E →L[ℝ] E))
+            ![(stdOrthonormalBasis ℝ E) i, (stdOrthonormalBasis ℝ E) i] := by
+      have h := l.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ (Set.mem_univ (l x)) 2
+      simpa [← iteratedFDerivWithin_univ, Set.preimage_univ] using
+        congrArg
+          (fun L : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F =>
+            L ![(stdOrthonormalBasis ℝ E) i, (stdOrthonormalBasis ℝ E) i]) h
+    rw [hder]
+    rw [ContinuousMultilinearMap.compContinuousLinearMap_apply]
+    have hx : l x = c • x := by
+      simp [l, smulLeftContinuousLinearEquiv]
+    rw [hx]
+    let M := iteratedFDeriv ℝ 2 f (c • x)
+    let v : Fin 2 → E := ![(stdOrthonormalBasis ℝ E) i, (stdOrthonormalBasis ℝ E) i]
+    -- `compContinuousLinearMap_apply` exposes the two derivative directions as `fun j ↦ c • v j`;
+    -- `map_smul_univ` then pulls the two scalar factors out of the bilinear map.
+    change M (fun j => c • v j) = c ^ 2 • M v
+    simpa [M, v, pow_two] using M.map_smul_univ (fun _ : Fin 2 => c) v
+
+/-- **Scaling law for the Laplacian under a homothety.**
+
+Right-composition by `AffineMap.homothety a c` multiplies the Laplacian by `c ^ 2`. -/
+theorem laplacian_comp_homothety_right (a : E) (c : ℝ) (f : E → F) :
+    Δ (fun x ↦ f (AffineMap.homothety a c x)) =
+      fun x ↦ c ^ 2 • (Δ f) (AffineMap.homothety a c x) := by
+  have hfun : (fun x : E ↦ f (AffineMap.homothety a c x)) =
+      fun x ↦ (fun z ↦ f (c • z + a)) (x + -a) := by
+    funext x
+    simp [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add, sub_eq_add_neg, add_comm]
+  rw [hfun, laplacian_comp_add_right (fun z ↦ f (c • z + a)) (-a)]
+  rw [laplacian_comp_smul_right c (fun z ↦ f (z + a))]
+  rw [laplacian_comp_add_right f a]
+  ext x
+  simp [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add, sub_eq_add_neg, add_comm]
 
 end TauCeti
