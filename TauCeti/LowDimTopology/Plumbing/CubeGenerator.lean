@@ -68,13 +68,15 @@ abbrev dimension (C : PlumbingCube V) : ℕ :=
 
 /-- The lower codimension-one face in a present direction `v`: keep the base point and remove
 `v` from the direction set. -/
-abbrev lowerFace (C : PlumbingCube V) (v : V) (_hv : v ∈ C.directions) : PlumbingCube V where
+irreducible_def lowerFace (C : PlumbingCube V) (v : V)
+    (_hv : v ∈ C.directions) : PlumbingCube V where
   base := C.base
   directions := C.directions.erase v
 
 /-- The upper codimension-one face in a present direction `v`: shift the base point by `E_v` and
 remove `v` from the direction set. -/
-abbrev upperFace (C : PlumbingCube V) (v : V) (_hv : v ∈ C.directions) : PlumbingCube V where
+irreducible_def upperFace (C : PlumbingCube V) (v : V)
+    (_hv : v ∈ C.directions) : PlumbingCube V where
   base := C.base + Pi.single v (1 : ℤ)
   directions := C.directions.erase v
 
@@ -88,67 +90,71 @@ theorem dimension_mk (x : V → ℤ) (S : Finset V) :
 theorem lowerFace_mk (x : V → ℤ) (S : Finset V) (v : V) (hv : v ∈ S) :
     lowerFace ({ base := x, directions := S } : PlumbingCube V) v hv =
       ({ base := x, directions := S.erase v } : PlumbingCube V) :=
-  rfl
+  by simp [lowerFace_def]
 
 @[simp]
 theorem upperFace_mk (x : V → ℤ) (S : Finset V) (v : V) (hv : v ∈ S) :
     upperFace ({ base := x, directions := S } : PlumbingCube V) v hv =
       ({ base := x + Pi.single v (1 : ℤ), directions := S.erase v } : PlumbingCube V) :=
-  rfl
+  by simp [upperFace_def]
 
 @[simp]
 theorem lowerFace_base (C : PlumbingCube V) (v : V) (hv : v ∈ C.directions) :
     (C.lowerFace v hv).base = C.base :=
-  rfl
+  by simp [lowerFace_def]
 
 @[simp]
 theorem lowerFace_directions (C : PlumbingCube V) (v : V) (hv : v ∈ C.directions) :
     (C.lowerFace v hv).directions = C.directions.erase v :=
-  rfl
+  by simp [lowerFace_def]
 
 @[simp]
 theorem upperFace_base (C : PlumbingCube V) (v : V) (hv : v ∈ C.directions) :
     (C.upperFace v hv).base = C.base + Pi.single v (1 : ℤ) :=
-  rfl
+  by simp [upperFace_def]
 
 @[simp]
 theorem upperFace_directions (C : PlumbingCube V) (v : V) (hv : v ∈ C.directions) :
     (C.upperFace v hv).directions = C.directions.erase v :=
-  rfl
+  by simp [upperFace_def]
 
 variable [DecidableEq (V → ℤ)]
 
 /-- The vertices of a bundled plumbing cube. -/
-noncomputable abbrev vertices (C : PlumbingCube V) : Finset (V → ℤ) :=
+noncomputable irreducible_def vertices (C : PlumbingCube V) : Finset (V → ℤ) :=
   PlumbingGraph.cubeVertices C.base C.directions
 
 @[simp]
 theorem vertices_mk (x : V → ℤ) (S : Finset V) :
     vertices ({ base := x, directions := S } : PlumbingCube V) =
       PlumbingGraph.cubeVertices x S :=
-  rfl
+  by simp [vertices_def]
 
 /-- Membership in the vertices of a bundled cube, expressed by a direction subset. -/
 theorem mem_vertices (C : PlumbingCube V) (y : V → ℤ) :
     y ∈ C.vertices ↔ ∃ T ⊆ C.directions, PlumbingGraph.cubeVertex C.base T = y :=
-  PlumbingGraph.mem_cubeVertices C.base C.directions y
+  by simpa [vertices_def] using PlumbingGraph.mem_cubeVertices C.base C.directions y
 
 /-- The base point is a vertex of every bundled cube. -/
 @[simp]
 theorem base_mem_vertices (C : PlumbingCube V) :
     C.base ∈ C.vertices :=
-  PlumbingGraph.base_mem_cubeVertices C.base C.directions
+  by simp [vertices_def]
 
 /-- The lower face's vertices are vertices of the ambient cube. -/
 theorem vertices_lowerFace_subset (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
     (C.lowerFace v hv).vertices ⊆ C.vertices :=
-  PlumbingGraph.cubeVertices_subset (Finset.erase_subset v C.directions) C.base
+  by
+    simpa [vertices_def, lowerFace_base, lowerFace_directions] using
+      PlumbingGraph.cubeVertices_subset (Finset.erase_subset v C.directions) C.base
 
 /-- The upper face's vertices are vertices of the ambient cube when the face direction belongs to
 the ambient cube. -/
 theorem vertices_upperFace_subset (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
     (C.upperFace v hv).vertices ⊆ C.vertices :=
-  PlumbingGraph.cubeVertices_upperFace_subset hv
+  by
+    simpa [vertices_def, upperFace_base, upperFace_directions] using
+      PlumbingGraph.cubeVertices_upperFace_subset (x := C.base) hv
 
 omit [DecidableEq (V → ℤ)] in
 /-- Removing a present direction drops the cubical dimension by one for the lower face. -/
@@ -165,7 +171,7 @@ theorem dimension_upperFace_of_mem (C : PlumbingCube V) {v : V} (hv : v ∈ C.di
   rw [dimension, dimension, upperFace_directions, Finset.card_erase_of_mem hv]
 
 /-- The characteristic cube weight of a bundled plumbing cube. -/
-noncomputable abbrev characteristicWeight [Fintype V] (P : PlumbingGraph V)
+noncomputable irreducible_def characteristicWeight [Fintype V] (P : PlumbingGraph V)
     (k : P.characteristicVectors) (C : PlumbingCube V) : ℤ :=
   P.characteristicCubeWeight k C.base C.directions
 
@@ -174,27 +180,31 @@ theorem characteristicWeight_mk [Fintype V] (P : PlumbingGraph V)
     (k : P.characteristicVectors) (x : V → ℤ) (S : Finset V) :
     characteristicWeight P k ({ base := x, directions := S } : PlumbingCube V) =
       P.characteristicCubeWeight k x S :=
-  rfl
+  by simp [characteristicWeight_def]
 
 /-- The lower face's characteristic weight is bounded by the ambient cube weight. -/
 theorem characteristicWeight_lowerFace_le [Fintype V] (P : PlumbingGraph V)
     (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
     characteristicWeight P k (C.lowerFace v hv) ≤ characteristicWeight P k C :=
-  P.characteristicCubeWeight_mono k (Finset.erase_subset v C.directions) C.base
+  by
+    simpa [characteristicWeight_def, lowerFace_base, lowerFace_directions] using
+      P.characteristicCubeWeight_mono k (Finset.erase_subset v C.directions) C.base
 
 /-- The upper face's characteristic weight is bounded by the ambient cube weight. -/
 theorem characteristicWeight_upperFace_le [Fintype V] (P : PlumbingGraph V)
     (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
     characteristicWeight P k (C.upperFace v hv) ≤ characteristicWeight P k C :=
-  P.characteristicUpperFaceWeight_le k hv
+  by
+    simpa [characteristicWeight_def, upperFace_base, upperFace_directions] using
+      P.characteristicUpperFaceWeight_le (x := C.base) k hv
 
 /-- The nonnegative exponent of the lower face in the lattice-homology differential. -/
-noncomputable abbrev characteristicLowerFaceExponent [Fintype V] (P : PlumbingGraph V)
+noncomputable irreducible_def characteristicLowerFaceExponent [Fintype V] (P : PlumbingGraph V)
     (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (_hv : v ∈ C.directions) : ℕ :=
   P.characteristicLowerFaceExponent k C.base C.directions v
 
 /-- The nonnegative exponent of the upper face in the lattice-homology differential. -/
-noncomputable abbrev characteristicUpperFaceExponent [Fintype V] (P : PlumbingGraph V)
+noncomputable irreducible_def characteristicUpperFaceExponent [Fintype V] (P : PlumbingGraph V)
     (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) : ℕ :=
   P.characteristicUpperFaceExponent k C.base C.directions hv
 
@@ -203,14 +213,14 @@ theorem characteristicLowerFaceExponent_mk [Fintype V] (P : PlumbingGraph V)
     (k : P.characteristicVectors) (x : V → ℤ) (S : Finset V) {v : V} (hv : v ∈ S) :
     characteristicLowerFaceExponent P k ({ base := x, directions := S } : PlumbingCube V) hv =
       P.characteristicLowerFaceExponent k x S v :=
-  rfl
+  by simp [characteristicLowerFaceExponent_def]
 
 @[simp]
 theorem characteristicUpperFaceExponent_mk [Fintype V] (P : PlumbingGraph V)
     (k : P.characteristicVectors) (x : V → ℤ) (S : Finset V) {v : V} (hv : v ∈ S) :
     characteristicUpperFaceExponent P k ({ base := x, directions := S } : PlumbingCube V) hv =
       P.characteristicUpperFaceExponent k x S hv :=
-  rfl
+  by simp [characteristicUpperFaceExponent_def]
 
 /-- The lower-face exponent is the weight difference between the ambient cube and the lower face. -/
 @[simp]
@@ -218,7 +228,9 @@ theorem characteristicLowerFaceExponent_natCast [Fintype V] (P : PlumbingGraph V
     (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
     (characteristicLowerFaceExponent P k C hv : ℤ) =
       characteristicWeight P k C - characteristicWeight P k (C.lowerFace v hv) :=
-  P.characteristicLowerFaceExponent_natCast k
+  by
+    simp [characteristicLowerFaceExponent_def, characteristicWeight_def, lowerFace_base,
+      lowerFace_directions]
 
 /-- The upper-face exponent is the weight difference between the ambient cube and the upper face. -/
 @[simp]
@@ -226,7 +238,9 @@ theorem characteristicUpperFaceExponent_natCast [Fintype V] (P : PlumbingGraph V
     (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
     (characteristicUpperFaceExponent P k C hv : ℤ) =
       characteristicWeight P k C - characteristicWeight P k (C.upperFace v hv) :=
-  P.characteristicUpperFaceExponent_natCast k hv
+  by
+    simp [characteristicUpperFaceExponent_def, characteristicWeight_def, upperFace_base,
+      upperFace_directions]
 
 /-- The lower-face exponent vanishes exactly when the lower face has the ambient cube's
 characteristic weight. -/
@@ -234,7 +248,10 @@ theorem characteristicLowerFaceExponent_eq_zero_iff [Fintype V] (P : PlumbingGra
     (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
     characteristicLowerFaceExponent P k C hv = 0 ↔
       characteristicWeight P k C = characteristicWeight P k (C.lowerFace v hv) :=
-  P.characteristicLowerFaceExponent_eq_zero_iff k
+  by
+    simpa [characteristicLowerFaceExponent_def, characteristicWeight_def, lowerFace_base,
+      lowerFace_directions] using
+      P.characteristicLowerFaceExponent_eq_zero_iff (x := C.base) (S := C.directions) (v := v) k
 
 /-- The upper-face exponent vanishes exactly when the upper face has the ambient cube's
 characteristic weight. -/
@@ -242,7 +259,10 @@ theorem characteristicUpperFaceExponent_eq_zero_iff [Fintype V] (P : PlumbingGra
     (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
     characteristicUpperFaceExponent P k C hv = 0 ↔
       characteristicWeight P k C = characteristicWeight P k (C.upperFace v hv) :=
-  P.characteristicUpperFaceExponent_eq_zero_iff k hv
+  by
+    simpa [characteristicUpperFaceExponent_def, characteristicWeight_def, upperFace_base,
+      upperFace_directions] using
+      P.characteristicUpperFaceExponent_eq_zero_iff (x := C.base) k hv
 
 /-- In any present direction, the characteristic weight of a cube is the maximum of the weights
 of its lower and upper faces. -/
@@ -251,7 +271,10 @@ theorem characteristicWeight_eq_max_faces [Fintype V] (P : PlumbingGraph V)
     characteristicWeight P k C =
       max (characteristicWeight P k (C.lowerFace v hv))
         (characteristicWeight P k (C.upperFace v hv)) :=
-  P.characteristicCubeWeight_eq_max_erase k C.base hv
+  by
+    simpa [characteristicWeight_def, lowerFace_base, lowerFace_directions, upperFace_base,
+      upperFace_directions] using
+      P.characteristicCubeWeight_eq_max_erase k C.base hv
 
 /-- In any present direction, at least one of the two face exponents vanishes. -/
 @[simp]
@@ -259,7 +282,8 @@ theorem min_characteristicFaceExponent_eq_zero [Fintype V] (P : PlumbingGraph V)
     (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
     min (characteristicLowerFaceExponent P k C hv)
       (characteristicUpperFaceExponent P k C hv) = 0 :=
-  P.min_characteristicFaceExponent_eq_zero k C.base hv
+  by
+    simp [characteristicLowerFaceExponent_def, characteristicUpperFaceExponent_def]
 
 end PlumbingCube
 
