@@ -422,6 +422,36 @@ lemma subgroupFiberOrbitQuotientTopEquiv_mapOfLE (H : Subgroup (Deck p)) :
       subgroupFiberOrbitMapToFiberOrbit (p := p) (b := b) H :=
   rfl
 
+/-- Equality after mapping two subgroup fibre-orbit representatives into a common
+supergroup quotient is exactly membership in the common supergroup orbit. -/
+lemma subgroupFiberOrbitMapOfLE_apply_eq_iff {H K L : Subgroup (Deck p)}
+    (hHL : H ≤ L) (hKL : K ≤ L) (e e' : p ⁻¹' {b}) :
+    subgroupFiberOrbitMapOfLE (b := b) hHL (subgroupFiberOrbitClass H e) =
+        subgroupFiberOrbitMapOfLE (b := b) hKL (subgroupFiberOrbitClass K e') ↔
+      e ∈ MulAction.orbit L e' := by
+  rw [subgroupFiberOrbitMapOfLE_apply, subgroupFiberOrbitMapOfLE_apply,
+    subgroupFiberOrbitClass_eq_iff]
+
+/-- Equality after mapping two subgroup fibre quotients into a common supergroup quotient
+can be checked on representatives from the common supergroup orbit. -/
+lemma subgroupFiberOrbitMapOfLE_eq_iff {H K L : Subgroup (Deck p)}
+    (hHL : H ≤ L) (hKL : K ≤ L)
+    (x : SubgroupFiberOrbitQuotient H b) (y : SubgroupFiberOrbitQuotient K b) :
+    subgroupFiberOrbitMapOfLE (b := b) hHL x = subgroupFiberOrbitMapOfLE (b := b) hKL y ↔
+      ∃ e e' : p ⁻¹' {b}, x = subgroupFiberOrbitClass H e ∧
+        y = subgroupFiberOrbitClass K e' ∧ e ∈ MulAction.orbit L e' := by
+  refine Quotient.inductionOn' x ?_
+  intro e
+  refine Quotient.inductionOn' y ?_
+  intro e'
+  constructor
+  · intro hxy
+    refine ⟨e, e', rfl, rfl, ?_⟩
+    exact (subgroupFiberOrbitMapOfLE_apply_eq_iff hHL hKL e e').mp hxy
+  · rintro ⟨e, e', hx, hy, hee'⟩
+    rw [hx, hy]
+    exact (subgroupFiberOrbitMapOfLE_apply_eq_iff hHL hKL e e').mpr hee'
+
 /-- Equality after forgetting from `H`-orbits to full deck orbits is exactly membership of
 representatives in the same full deck orbit. -/
 lemma subgroupFiberOrbitMapToFiberOrbit_apply_eq_iff (H K : Subgroup (Deck p))
@@ -429,8 +459,38 @@ lemma subgroupFiberOrbitMapToFiberOrbit_apply_eq_iff (H K : Subgroup (Deck p))
     subgroupFiberOrbitMapToFiberOrbit H (subgroupFiberOrbitClass H e) =
         subgroupFiberOrbitMapToFiberOrbit K (subgroupFiberOrbitClass K e') ↔
       e ∈ MulAction.orbit (Deck p) e' := by
-  rw [subgroupFiberOrbitMapToFiberOrbit_apply, subgroupFiberOrbitMapToFiberOrbit_apply,
-    fiberOrbitClass_eq_iff]
+  constructor
+  · intro h
+    have htop :
+        subgroupFiberOrbitMapOfLE (b := b) (le_top : H ≤ (⊤ : Subgroup (Deck p)))
+            (subgroupFiberOrbitClass H e) =
+          subgroupFiberOrbitMapOfLE (b := b) (le_top : K ≤ (⊤ : Subgroup (Deck p)))
+            (subgroupFiberOrbitClass K e') := by
+      apply (subgroupFiberOrbitQuotientTopEquiv (p := p) (b := b)).injective
+      simpa [subgroupFiberOrbitMapToFiberOrbit] using h
+    have htop_orbit :
+        e ∈ MulAction.orbit (⊤ : Subgroup (Deck p)) e' :=
+      (subgroupFiberOrbitMapOfLE_apply_eq_iff
+        (b := b) (L := (⊤ : Subgroup (Deck p))) (le_top : H ≤ _) (le_top : K ≤ _) e e').mp
+        htop
+    exact (subgroupFiberOrbitClass_top_eq_iff_mem_orbit (p := p) (b := b) e e').mp
+      ((subgroupFiberOrbitClass_eq_iff (p := p) (b := b) (⊤ : Subgroup (Deck p)) e e').mpr
+        htop_orbit)
+  · intro h
+    have htop_orbit :
+        e ∈ MulAction.orbit (⊤ : Subgroup (Deck p)) e' :=
+      (subgroupFiberOrbitClass_eq_iff (p := p) (b := b) (⊤ : Subgroup (Deck p)) e e').mp
+        ((subgroupFiberOrbitClass_top_eq_iff_mem_orbit (p := p) (b := b) e e').mpr h)
+    have htop :
+        subgroupFiberOrbitMapOfLE (b := b) (le_top : H ≤ (⊤ : Subgroup (Deck p)))
+            (subgroupFiberOrbitClass H e) =
+          subgroupFiberOrbitMapOfLE (b := b) (le_top : K ≤ (⊤ : Subgroup (Deck p)))
+            (subgroupFiberOrbitClass K e') :=
+      (subgroupFiberOrbitMapOfLE_apply_eq_iff
+        (b := b) (L := (⊤ : Subgroup (Deck p))) (le_top : H ≤ _) (le_top : K ≤ _) e e').mpr
+        htop_orbit
+    simpa [subgroupFiberOrbitMapToFiberOrbit] using
+      congrArg (subgroupFiberOrbitQuotientTopEquiv (p := p) (b := b)) htop
 
 /-- Equality after forgetting from subgroup fibre quotients to full deck orbits can be
 checked on representatives, even when the two subgroup quotients come from different
@@ -447,12 +507,10 @@ lemma subgroupFiberOrbitMapToFiberOrbit_eq_iff (H K : Subgroup (Deck p))
   constructor
   · intro hxy
     refine ⟨e, e', rfl, rfl, ?_⟩
-    simpa [subgroupFiberOrbitMapToFiberOrbit_apply] using
-      (fiberOrbitClass_eq_iff (p := p) (b := b) e e').mp hxy
+    exact (subgroupFiberOrbitMapToFiberOrbit_apply_eq_iff H K e e').mp hxy
   · rintro ⟨e, e', hx, hy, hee'⟩
-    rw [hx, hy, subgroupFiberOrbitMapToFiberOrbit_apply,
-      subgroupFiberOrbitMapToFiberOrbit_apply]
-    exact (fiberOrbitClass_eq_iff (p := p) (b := b) e e').mpr hee'
+    rw [hx, hy]
+    exact (subgroupFiberOrbitMapToFiberOrbit_apply_eq_iff H K e e').mpr hee'
 
 /-- If `H ≤ K`, forgetting `H`-orbits to full deck orbits factors through the `K`-orbit
 quotient. -/
