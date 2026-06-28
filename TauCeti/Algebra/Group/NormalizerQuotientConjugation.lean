@@ -123,32 +123,6 @@ noncomputable abbrev normalizerQuotientEquivMap (H : Subgroup G) (e : G ≃* K) 
       (_root_.Subgroup.normalizer ((H.map (e : G →* K)) : Set K)))
     (normalizerEquivMap H e) (subgroupOf_map_normalizerEquivMap H e)
 
-/-- Equal subgroups have canonically equivalent normalizer quotients, by transporting both the
-normalizer and the distinguished subgroup inside it across the equality. -/
-noncomputable abbrev normalizerQuotientCongr {H K : Subgroup G} (h : H = K) :
-    normalizerQuotient H ≃* normalizerQuotient K :=
-  QuotientGroup.congr
-    (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)))
-    (K.subgroupOf (_root_.Subgroup.normalizer (K : Set G)))
-    (MulEquiv.subgroupCongr (by rw [h]))
-    (by
-      subst h
-      ext x
-      constructor
-      · rintro ⟨y, hy, rfl⟩
-        exact hy
-      · intro hx
-        exact ⟨x, hx, rfl⟩)
-
-/-- The equal-subgroup congruence on normalizer quotients sends representatives to the
-corresponding representatives under the normalizer congruence. -/
-@[simp]
-lemma normalizerQuotientCongr_mk {H K : Subgroup G} (h : H = K)
-    (g : _root_.Subgroup.normalizer (H : Set G)) :
-    normalizerQuotientCongr h (normalizerQuotientMk H g) =
-      normalizerQuotientMk K (MulEquiv.subgroupCongr (by rw [h]) g) :=
-  rfl
-
 /-- The induced equivalence on normalizer quotients sends a representative to the image
 representative. -/
 @[simp]
@@ -218,8 +192,8 @@ lemma normalizerQuotientEquivMap_trans_mk_congr (H : Subgroup G) (e : G ≃* K) 
   rw [normalizerQuotientEquivMap_mk, normalizerQuotientEquivMap_mk]
   rfl
 
-/-- Transporting representatives by `e` and then by `e.symm` gives the stated inverse-image
-representative in the twice-mapped subgroup. -/
+/-- Transporting a representative of `H.map e` along `e.symm` gives the stated inverse-image
+representative in `(H.map e).map e.symm`. -/
 @[simp]
 lemma normalizerQuotientEquivMap_symm_mk' (H : Subgroup G) (e : G ≃* K)
     (k : _root_.Subgroup.normalizer ((H.map (e : G →* K)) : Set K)) :

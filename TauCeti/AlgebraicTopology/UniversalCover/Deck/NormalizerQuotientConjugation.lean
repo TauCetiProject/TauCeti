@@ -61,6 +61,24 @@ lemma normalizerQuotientConjEquiv_mk (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p 
         (Subgroup.normalizerEquivMap H (conjMulEquiv h hpq) φ) :=
   Subgroup.normalizerQuotientEquivMap_mk H (conjMulEquiv h hpq) φ
 
+/-- After the subgroup equality induced by identity conjugation, conjugating the normalizer
+quotient by the identity over-base homeomorphism is the canonical identity on representatives. -/
+@[simp]
+lemma normalizerQuotientConjEquiv_refl_mk_congr (H : Subgroup (Deck p))
+    (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) :
+    Subgroup.normalizerQuotientCongr (subgroup_map_conj_refl (p := p) H)
+      (normalizerQuotientConjEquiv (Homeomorph.refl E) (p := p) (q := p)
+        (fun e => by rfl : ∀ e, p ((Homeomorph.refl E) e) = p e) H
+        (Subgroup.normalizerQuotientMk H φ)) =
+      Subgroup.normalizerQuotientMk H φ := by
+  rw [normalizerQuotientConjEquiv_mk, Subgroup.normalizerQuotientCongr_mk]
+  congr 1
+  ext x
+  change ((conjMulEquiv (Homeomorph.refl E) (p := p) (q := p)
+    (fun e => by rfl : ∀ e, p ((Homeomorph.refl E) e) = p e)
+    (φ : Deck p) : Deck p).1 x) = (φ : Deck p).1 x
+  simp
+
 /-- The inverse deck normalizer-quotient conjugation equivalence is induced by inverse
 conjugation of deck transformations. -/
 @[simp]
@@ -118,13 +136,15 @@ lemma normalizerQuotientConjEquiv_trans_mk_congr
     Subgroup.normalizerQuotientCongr_mk]
   congr 1
   ext x
+  -- The quotient and subgroup congruences reduce the remaining goal to pointwise equality of
+  -- the two deck conjugation representatives, where `conjMulEquivTrans` is definitional.
   change (((conjMulEquiv k hqr) ((conjMulEquiv h hpq) (φ : Deck p)) : Deck r).1 x) =
     ((conjMulEquiv (h.trans k) (fun e => by rw [Homeomorph.trans_apply, hqr, hpq])
       (φ : Deck p) : Deck r).1 x)
   simp [conjMulEquiv_apply_coe]
 
-/-- Conjugating representatives by `h` and then by `h.symm` gives the stated
-inverse-conjugation representative in the twice-mapped subgroup. -/
+/-- Inverse-conjugating a representative of the `h`-conjugated subgroup quotient gives the
+stated representative in the twice-mapped subgroup. -/
 @[simp]
 lemma normalizerQuotientConjEquiv_symm_mk' (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (H : Subgroup (Deck p))
