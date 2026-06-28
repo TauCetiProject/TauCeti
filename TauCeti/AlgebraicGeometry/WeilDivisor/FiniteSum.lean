@@ -11,10 +11,10 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor
 # Finite sums of point divisors
 
 This file adds an API for the effective Weil divisors represented by finitely supported
-natural-number multiplicities and by Mathlib's `Finsupp.indicator` on finite sets. These are
-the formal Layer A divisor objects that later receive geometric restrictions from symmetric
-powers and relative effective divisors: before any scheme-level construction exists, a finite
-collection of points gives the divisor `Σ nₓ[x]`.
+natural-number multiplicities and by named finite-set constructors. These are the formal
+Layer A divisor objects that later receive geometric restrictions from symmetric powers and
+relative effective divisors: before any scheme-level construction exists, a finite collection
+of points gives the divisor `Σ nₓ[x]`.
 
 The API records the coefficient, support, degree, weighted degree, pushforward, and degree-zero
 normal forms needed by the existing Abel-Jacobi and linear-system files.
@@ -170,6 +170,11 @@ lemma IsEffective.eq_zero_of_weightedDegree_eq_zero_of_pos_on_support {w : X →
 
 /-! ### Finite-set multiplicities via `Finsupp.indicator` -/
 
+/-- The effective divisor whose coefficients on `s` are the natural-number multiplicities `m`
+and whose coefficients off `s` are zero. -/
+@[expose] def ofFinsetWithMultiplicity (s : Finset X) (m : X → ℕ) : WeilDivisor X :=
+  Finsupp.indicator s (fun x _ => (m x : ℤ))
+
 /-- Coefficient formula for `Finsupp.indicator` with natural-number multiplicities. -/
 @[simp]
 lemma coeff_indicator_nat [DecidableEq X] (s : Finset X) (m : X → ℕ) (x : X) :
@@ -299,7 +304,109 @@ lemma indicator_nat_mem_degreeZeroSubgroup_iff (s : Finset X) (m : X → ℕ) :
   exact weightedDegree_indicator_nat_eq_zero_iff_of_pos
     (w := fun _ : X => (1 : ℤ)) s (fun _ _ => zero_lt_one) m
 
+/-! ### Named finite-set multiplicity divisors -/
+
+@[simp]
+lemma ofFinsetWithMultiplicity_eq_indicator (s : Finset X) (m : X → ℕ) :
+    ofFinsetWithMultiplicity s m =
+      (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) :=
+  rfl
+
+/-- Coefficients of `ofFinsetWithMultiplicity s m` are `m x` on `s` and zero off `s`. -/
+@[simp]
+lemma coeff_ofFinsetWithMultiplicity [DecidableEq X] (s : Finset X) (m : X → ℕ) (x : X) :
+    coeff (ofFinsetWithMultiplicity s m) x = if x ∈ s then m x else 0 := by
+  simp [ofFinsetWithMultiplicity]
+
+/-- `ofFinsetWithMultiplicity s m` is the finite sum of point divisors with coefficients `m`. -/
+lemma ofFinsetWithMultiplicity_eq_sum (s : Finset X) (m : X → ℕ) :
+    ofFinsetWithMultiplicity s m = ∑ x ∈ s, (m x : ℤ) • ofPoint x := by
+  simpa [ofFinsetWithMultiplicity] using indicator_nat_eq_sum (s := s) (m := m)
+
+@[simp]
+lemma ofFinsetWithMultiplicity_empty (m : X → ℕ) :
+    ofFinsetWithMultiplicity (∅ : Finset X) m = 0 := by
+  simp [ofFinsetWithMultiplicity]
+
+@[simp]
+lemma ofFinsetWithMultiplicity_insert [DecidableEq X] {s : Finset X} {x : X} (hx : x ∉ s)
+    (m : X → ℕ) :
+    ofFinsetWithMultiplicity (insert x s) m =
+      (m x : ℤ) • ofPoint x + ofFinsetWithMultiplicity s m := by
+  simpa [ofFinsetWithMultiplicity] using indicator_nat_insert (s := s) (x := x) hx m
+
+/-- `ofFinsetWithMultiplicity s m` is effective. -/
+@[simp]
+lemma isEffective_ofFinsetWithMultiplicity (s : Finset X) (m : X → ℕ) :
+    IsEffective (ofFinsetWithMultiplicity s m) := by
+  simp [ofFinsetWithMultiplicity]
+
+@[simp]
+lemma ofFinsetWithMultiplicity_mem_effectiveSubmonoid (s : Finset X) (m : X → ℕ) :
+    ofFinsetWithMultiplicity s m ∈ effectiveSubmonoid X :=
+  (mem_effectiveSubmonoid _).mpr (isEffective_ofFinsetWithMultiplicity s m)
+
+/-- The support of `ofFinsetWithMultiplicity s m` is contained in `s`. -/
+lemma support_ofFinsetWithMultiplicity_subset (s : Finset X) (m : X → ℕ) :
+    (ofFinsetWithMultiplicity s m).support ⊆ s := by
+  simpa [ofFinsetWithMultiplicity] using support_indicator_nat_subset (s := s) (m := m)
+
+/-- A point is in the support of `ofFinsetWithMultiplicity s m` exactly when it lies in `s`
+and has nonzero multiplicity. -/
+@[simp]
+lemma mem_support_ofFinsetWithMultiplicity_iff {s : Finset X} {m : X → ℕ} {x : X} :
+    x ∈ (ofFinsetWithMultiplicity s m).support ↔ x ∈ s ∧ m x ≠ 0 := by
+  simpa [ofFinsetWithMultiplicity] using
+    mem_support_indicator_nat_iff (s := s) (m := m) (x := x)
+
+/-- The degree of `ofFinsetWithMultiplicity s m` is the sum of the selected multiplicities. -/
+@[simp]
+lemma degree_ofFinsetWithMultiplicity (s : Finset X) (m : X → ℕ) :
+    degree (ofFinsetWithMultiplicity s m) = ∑ x ∈ s, (m x : ℤ) := by
+  simp [ofFinsetWithMultiplicity]
+
+/-- The weighted degree of `ofFinsetWithMultiplicity s m` is the selected weighted sum. -/
+@[simp]
+lemma weightedDegree_ofFinsetWithMultiplicity (w : X → ℤ) (s : Finset X) (m : X → ℕ) :
+    weightedDegree w (ofFinsetWithMultiplicity s m) =
+      ∑ x ∈ s, (m x : ℤ) * w x := by
+  simp [ofFinsetWithMultiplicity]
+
+/-- Pushing forward `ofFinsetWithMultiplicity s m` applies the map to each selected point. -/
+@[simp]
+lemma pushforward_ofFinsetWithMultiplicity (f : X → Y) (s : Finset X) (m : X → ℕ) :
+    pushforward f (ofFinsetWithMultiplicity s m) =
+      ∑ x ∈ s, (m x : ℤ) • ofPoint (f x) := by
+  simpa [ofFinsetWithMultiplicity] using pushforward_indicator_nat (f := f) (s := s) (m := m)
+
+/-- With positive weights on `s`, `ofFinsetWithMultiplicity s m` has weighted degree zero
+exactly when every selected multiplicity vanishes. -/
+lemma weightedDegree_ofFinsetWithMultiplicity_eq_zero_iff_of_pos
+    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) (m : X → ℕ) :
+    weightedDegree w (ofFinsetWithMultiplicity s m) = 0 ↔ ∀ x ∈ s, m x = 0 := by
+  simpa [ofFinsetWithMultiplicity] using
+    weightedDegree_indicator_nat_eq_zero_iff_of_pos (s := s) (w := w) hw m
+
+/-- With positive weights on `s`, `ofFinsetWithMultiplicity s m` lies in the weighted
+degree-zero subgroup exactly when every selected multiplicity vanishes. -/
+lemma ofFinsetWithMultiplicity_mem_weightedDegreeZeroSubgroup_iff_of_pos
+    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) (m : X → ℕ) :
+    ofFinsetWithMultiplicity s m ∈ weightedDegreeZeroSubgroup w ↔ ∀ x ∈ s, m x = 0 := by
+  simpa [ofFinsetWithMultiplicity] using
+    indicator_nat_mem_weightedDegreeZeroSubgroup_iff_of_pos (s := s) (w := w) hw m
+
+/-- `ofFinsetWithMultiplicity s m` has unweighted degree zero exactly when every selected
+multiplicity vanishes. -/
+lemma ofFinsetWithMultiplicity_mem_degreeZeroSubgroup_iff (s : Finset X) (m : X → ℕ) :
+    ofFinsetWithMultiplicity s m ∈ degreeZeroSubgroup X ↔ ∀ x ∈ s, m x = 0 := by
+  simpa [ofFinsetWithMultiplicity] using
+    indicator_nat_mem_degreeZeroSubgroup_iff (s := s) (m := m)
+
 /-! ### Finite sums with coefficient one via `Finsupp.indicator` -/
+
+/-- The effective divisor that puts coefficient one on every point of `s` and zero elsewhere. -/
+@[expose] def ofFinset (s : Finset X) : WeilDivisor X :=
+  Finsupp.indicator s (fun _ _ => (1 : ℤ))
 
 /-- The coefficient-one `Finsupp.indicator` divisor is the corresponding finite sum of point
 divisors. -/
@@ -408,6 +515,81 @@ lemma indicator_one_mem_degreeZeroSubgroup_iff (s : Finset X) :
       exact (Finset.notMem_empty x hx).elim
   · intro hs x hx
     simp [hs] at hx
+
+/-! ### Named finite-set divisors -/
+
+@[simp]
+lemma ofFinset_eq_indicator (s : Finset X) :
+    ofFinset s = (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) :=
+  rfl
+
+/-- `ofFinset s` is the finite sum of the point divisors at the points of `s`. -/
+lemma ofFinset_eq_sum (s : Finset X) :
+    ofFinset s = ∑ x ∈ s, ofPoint x := by
+  simpa [ofFinset] using indicator_one_eq_sum (s := s)
+
+@[simp]
+lemma ofFinset_empty : ofFinset (∅ : Finset X) = 0 := by
+  simp [ofFinset]
+
+@[simp]
+lemma ofFinset_insert [DecidableEq X] {s : Finset X} {x : X} (hx : x ∉ s) :
+    ofFinset (insert x s) = ofPoint x + ofFinset s := by
+  simpa [ofFinset] using indicator_one_insert (s := s) (x := x) hx
+
+/-- Coefficients of `ofFinset s` are `1` on `s` and `0` off `s`. -/
+@[simp]
+lemma coeff_ofFinset [DecidableEq X] (s : Finset X) (x : X) :
+    coeff (ofFinset s) x = if x ∈ s then 1 else 0 := by
+  simp [ofFinset]
+
+/-- `ofFinset s` is effective. -/
+@[simp]
+lemma isEffective_ofFinset (s : Finset X) :
+    IsEffective (ofFinset s) := by
+  simp [ofFinset]
+
+@[simp]
+lemma ofFinset_mem_effectiveSubmonoid (s : Finset X) :
+    ofFinset s ∈ effectiveSubmonoid X :=
+  (mem_effectiveSubmonoid _).mpr (isEffective_ofFinset s)
+
+/-- The support of `ofFinset s` is exactly `s`. -/
+@[simp]
+lemma support_ofFinset (s : Finset X) :
+    (ofFinset s).support = s := by
+  simp [ofFinset]
+
+/-- The degree of `ofFinset s` is the cardinality of `s`. -/
+@[simp]
+lemma degree_ofFinset (s : Finset X) :
+    degree (ofFinset s) = s.card := by
+  simp [ofFinset]
+
+/-- The weighted degree of `ofFinset s` is the sum of the weights on `s`. -/
+@[simp]
+lemma weightedDegree_ofFinset (w : X → ℤ) (s : Finset X) :
+    weightedDegree w (ofFinset s) = ∑ x ∈ s, w x := by
+  simp [ofFinset]
+
+/-- Pushing forward `ofFinset s` applies the map to each selected point. -/
+@[simp]
+lemma pushforward_ofFinset (f : X → Y) (s : Finset X) :
+    pushforward f (ofFinset s) = ∑ x ∈ s, ofPoint (f x) := by
+  simpa [ofFinset] using pushforward_indicator_one (f := f) (s := s)
+
+/-- With positive weights on `s`, `ofFinset s` lies in the weighted degree-zero subgroup exactly
+when `s` is empty. -/
+lemma ofFinset_mem_weightedDegreeZeroSubgroup_iff_of_pos
+    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) :
+    ofFinset s ∈ weightedDegreeZeroSubgroup w ↔ s = ∅ := by
+  simpa [ofFinset] using
+    indicator_one_mem_weightedDegreeZeroSubgroup_iff_of_pos (s := s) (w := w) hw
+
+/-- `ofFinset s` has unweighted degree zero exactly when `s` is empty. -/
+lemma ofFinset_mem_degreeZeroSubgroup_iff (s : Finset X) :
+    ofFinset s ∈ degreeZeroSubgroup X ↔ s = ∅ := by
+  simp [ofFinset]
 
 end
 
