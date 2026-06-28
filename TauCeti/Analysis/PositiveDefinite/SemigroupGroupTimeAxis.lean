@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.PositiveDefinite.KernelBounds
-public import TauCeti.Analysis.PositiveDefinite.SemigroupGroupTimeSlice
+public import TauCeti.Analysis.PositiveDefinite.SemigroupGroup
 public import Mathlib.Data.NNReal.Star
 public import Mathlib.Topology.Constructions.SumProd
 
@@ -96,15 +96,15 @@ end IsSemigroupGroupPD
 
 section Topology
 
-variable {F : ℝ≥0 × V → ℂ}
+variable [TopologicalSpace V] {F : ℝ≥0 × V → ℂ}
 
 /-- Package the positive-definite zero-spatial time-axis kernel with continuity of the
 one-variable time-axis slice. -/
 theorem IsSemigroupGroupPD.timeAxis_isPositiveDefiniteKernel_and_continuous
-    (hFpd : IsSemigroupGroupPD F) (hFslice : Continuous fun t : ℝ≥0 => F (t, 0)) :
+    (hFpd : IsSemigroupGroupPD F) (hFcont : Continuous F) :
     IsPositiveDefiniteKernel (fun t u : ℝ≥0 => F (t + u, 0)) ∧
       Continuous (fun t : ℝ≥0 => F (t, 0)) :=
-  ⟨hFpd.timeAxis_isPositiveDefiniteKernel, hFslice⟩
+  ⟨hFpd.timeAxis_isPositiveDefiniteKernel, hFcont.comp (.prodMk_left 0)⟩
 
 end Topology
 
