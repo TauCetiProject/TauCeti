@@ -385,10 +385,52 @@ lemma Compatible.associatedBilinForm_isSymm
     (h : ω.Compatible J) : (ω.associatedBilinForm J).IsSymm :=
   h.invariant.associatedBilinForm_isSymm
 
+/-- Applying the almost complex structure to both entries preserves the diagonal of the
+associated bilinear form. -/
+lemma associatedBilinForm_apply_apply_self_eq (ω : SymplecticForm V)
+    (J : AlmostComplexStructure V) (v : V) :
+    ω.associatedBilinForm J (J v) (J v) = ω.associatedBilinForm J v v := by
+  calc
+    ω.associatedBilinForm J (J v) (J v) = ω (J v) (-v) := by
+      rw [associatedBilinForm_apply, AlmostComplexStructure.apply_apply]
+    _ = -ω (J v) v := by
+      exact map_neg (ω.toBilinForm (J v)) v
+    _ = ω v (J v) := by
+      rw [← ω.neg_eq v (J v)]
+      simp
+    _ = ω.associatedBilinForm J v v := by
+      rw [associatedBilinForm_apply]
+
 lemma Compatible.associated_pos {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) {v : V} (hv : v ≠ 0) : 0 < ω v (J v) :=
   h.tames v hv
 
 end SymplecticForm
+
+namespace IsComplexLinearMap
+
+variable {U : Type*} [AddCommGroup U] [Module ℝ U]
+variable [AddCommGroup V] [Module ℝ V]
+variable {J₀ : AlmostComplexStructure U} {J : AlmostComplexStructure V}
+variable {F : U →ₗ[ℝ] V} {ω : SymplecticForm V}
+
+/-- For a complex-linear map from any complex source, the associated-bilinear-form diagonal
+of the image of `J₀ v` equals that of the image of `v`. -/
+lemma associatedBilinForm_apply_apply_self_eq
+    (hF : IsComplexLinearMap J₀ J F) (v : U) :
+    ω.associatedBilinForm J (F (J₀ v)) (F (J₀ v)) =
+      ω.associatedBilinForm J (F v) (F v) := by
+  rw [(isComplexLinearMap_iff_apply J₀ J F).mp hF v]
+  exact ω.associatedBilinForm_apply_apply_self_eq J (F v)
+
+/-- For a complex-linear map from any complex source, the associated-bilinear-form diagonal
+of an image vector is the symplectic area density of the ordered pair `(F v, F (J₀ v))`. -/
+lemma associatedBilinForm_apply_self_eq_symplecticForm
+    (hF : IsComplexLinearMap J₀ J F) (v : U) :
+    ω.associatedBilinForm J (F v) (F v) = ω (F v) (F (J₀ v)) := by
+  rw [SymplecticForm.associatedBilinForm_apply,
+    (isComplexLinearMap_iff_apply J₀ J F).mp hF v]
+
+end IsComplexLinearMap
 
 end TauCeti
