@@ -27,7 +27,8 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
   its pointwise limit `e^{-xp}`.
 * `TauCeti.chafaiRescaled`, `TauCeti.chafaiRescaled_mass_eq`: the `ℝ≥0`-valued pushed-forward
   measures and mass preservation.
-* `TauCeti.chafaiMeasure_finite_mass`: finiteness and the total-mass bound `≤ f(0) - L`.
+* `TauCeti.chafaiMeasure_finite_mass`, `TauCeti.chafaiRescaled_finite_mass`: finiteness and the
+  total-mass bound `≤ f(0) - L`.
 
 ## References
 
@@ -322,27 +323,30 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) (hcm : IsCompletelyMo
   simp only [F, c]; ring
 
 /-- Monotonicity of the finite-interval Chafaï-density masses in the order:
-`∫₀ᵀ dₖ ≤ ∫₀ᵀ dₖ₋₁` for `2 ≤ k`. This is the exported integration-by-parts consequence
+`∫₀ᵀ dₖ ≤ ∫₀ᵀ dₖ₋₁` for `2 ≤ k` and `0 ≤ T`. This is the exported
+integration-by-parts consequence
 (the raw IBP identity `chafaiDensity_ibp_identity` is private); it is the per-step density
 mass-monotonicity bound consumed by the Bernstein-identity assembly. -/
 lemma integral_chafaiDensity_le_pred (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
-    (k : ℕ) (hk : 2 ≤ k) (T : ℝ) (hT : 0 < T) :
+    (k : ℕ) (hk : 2 ≤ k) (T : ℝ) (hT : 0 ≤ T) :
     ∫ t in (0 : ℝ)..T, chafaiDensity f k t ≤ ∫ t in (0 : ℝ)..T, chafaiDensity f (k - 1) t := by
+  rcases hT.eq_or_lt with rfl | hT_pos
+  · simp
   obtain ⟨m, rfl⟩ : ∃ m, k = m + 2 := ⟨k - 2, by omega⟩
   have hsub : m + 2 - 1 = m + 1 := by omega
   simp only [hsub]
-  have hibp := chafaiDensity_ibp_identity f hcm m T hT
+  have hibp := chafaiDensity_ibp_identity f hcm m T hT_pos
   set B := (-1 : ℝ) ^ (m + 2) * T ^ (m + 1) / ↑(m + 1).factorial *
     iteratedDerivWithin (m + 1) f (Ici 0) T
   have hB : B ≤ 0 := by
     have h_neg : (-1 : ℝ) ^ (m + 2) * iteratedDerivWithin (m + 1) f (Ici 0) T ≤ 0 := by
       have : (-1 : ℝ) ^ (m + 2) = (-1) ^ (m + 1) * (-1) := pow_succ (-1) (m + 1)
-      rw [this]; nlinarith [hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg (m + 1) hT.le]
+      rw [this]; nlinarith [hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg (m + 1) hT_pos.le]
     suffices B = T ^ (m + 1) / ↑(m + 1).factorial *
         ((-1 : ℝ) ^ (m + 2) * iteratedDerivWithin (m + 1) f (Ici 0) T) by
       rw [this]
       exact mul_nonpos_of_nonneg_of_nonpos
-        (div_nonneg (pow_nonneg hT.le _) (Nat.cast_nonneg _)) h_neg
+        (div_nonneg (pow_nonneg hT_pos.le _) (Nat.cast_nonneg _)) h_neg
     simp only [B]; ring
   linarith
 
@@ -381,7 +385,7 @@ private lemma integral_chafaiDensity_le_sub (f : ℝ → ℝ) (hcm : IsCompletel
       exact le_of_eq (integral_chafaiDensity_one_eq f hcm T hT)
     · calc ∫ t in (0 : ℝ)..T, chafaiDensity f (p + 1) t
           ≤ ∫ t in (0 : ℝ)..T, chafaiDensity f p t := by
-            simpa using integral_chafaiDensity_le_pred f hcm (p + 1) (by omega) T hT
+            simpa using integral_chafaiDensity_le_pred f hcm (p + 1) (by omega) T hT.le
         _ ≤ f 0 - f T := ih (Nat.one_le_iff_ne_zero.mpr hp)
 
 private lemma integral_chafaiDensity_le_tendsto_sub (f : ℝ → ℝ)
@@ -462,5 +466,21 @@ lemma chafaiMeasure_finite_mass (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
         (chafaiMeasure f n) univ ≤ ENNReal.ofReal (f 0 - L) := by
   obtain ⟨L, hL, hL_nn⟩ := hcm.tendsto_atTop
   exact ⟨L, hL, hL_nn, fun n => chafaiMeasure_finite_mass_of_tendsto f hcm n L hL⟩
+
+/-- **Natural rescaled total mass bound**: for a completely monotone `f`, the rescaled
+Chafaï measures on `ℝ≥0` are finite and uniformly bounded by `f(0) - L`, where `L` is the
+automatically obtained limit of `f` at infinity. -/
+lemma chafaiRescaled_finite_mass (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f) :
+    ∃ L : ℝ, Tendsto f atTop (nhds L) ∧ 0 ≤ L ∧
+      ∀ n,
+        IsFiniteMeasure (chafaiRescaled f n) ∧
+        (chafaiRescaled f n) univ ≤ ENNReal.ofReal (f 0 - L) := by
+  obtain ⟨L, hL, hL_nn, hfinite⟩ := chafaiMeasure_finite_mass f hcm
+  refine ⟨L, hL, hL_nn, fun n => ?_⟩
+  have hmass := chafaiRescaled_mass_eq f n
+  refine ⟨?_, ?_⟩
+  · exact ⟨by rw [hmass]; exact (hfinite n).1.measure_univ_lt_top⟩
+  · rw [hmass]
+    exact (hfinite n).2
 
 end TauCeti
