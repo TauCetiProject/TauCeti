@@ -63,6 +63,7 @@ noncomputable def chebyshevTNormSq (n : ℕ) : ℝ :=
 lemma chebyshevTNormSq_zero : chebyshevTNormSq 0 = Real.pi := by
   simp [chebyshevTNormSq]
 
+@[simp]
 lemma chebyshevTNormSq_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
     chebyshevTNormSq n = Real.pi / 2 := by
   simp [chebyshevTNormSq, hn]
