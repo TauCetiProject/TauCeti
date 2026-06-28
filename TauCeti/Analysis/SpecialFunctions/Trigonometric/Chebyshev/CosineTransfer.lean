@@ -1,0 +1,108 @@
+module
+
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Basic
+
+/-!
+# Chebyshev `T` transfer to cosine integrals
+
+This file packages the cosine-side consequences of Mathlib's change of variables
+for the Chebyshev orthogonality measure.  The roadmap's Chebyshev Hilbert-basis
+target later identifies the normalized Chebyshev functions on `measureT` with
+the cosine basis under `x = cos θ`; the lemmas here expose the one-dimensional
+integral API needed for that transfer.
+-/
+
+public section
+
+namespace TauCeti
+
+open MeasureTheory Polynomial.Chebyshev
+
+/-- The cosine-side representative corresponding to the Chebyshev polynomial `Tₙ`. -/
+noncomputable def chebyshevCosine (n : ℕ) (θ : ℝ) : ℝ :=
+  Real.cos (n * θ)
+
+@[simp]
+lemma chebyshevCosine_zero (θ : ℝ) : chebyshevCosine 0 θ = 1 := by
+  simp [chebyshevCosine]
+
+lemma chebyshevCosine_one (θ : ℝ) : chebyshevCosine 1 θ = Real.cos θ := by
+  simp [chebyshevCosine]
+
+/-- Chebyshev polynomials restrict along `x = cos θ` to the cosine functions. -/
+lemma eval_T_real_cos_eq_chebyshevCosine (n : ℕ) (θ : ℝ) :
+    (T ℝ n).eval (Real.cos θ) = chebyshevCosine n θ := by
+  simp [chebyshevCosine, Polynomial.Chebyshev.T_real_cos]
+
+/-- The cosine-side representatives are continuous. -/
+lemma continuous_chebyshevCosine (n : ℕ) : Continuous (chebyshevCosine n) := by
+  have h : Continuous (fun θ : ℝ => Real.cos ((n : ℝ) * θ)) :=
+    Real.continuous_cos.comp (continuous_const.mul continuous_id)
+  unfold chebyshevCosine
+  exact h
+
+/-- Transfer a single Chebyshev `T` integral from `measureT` to the angular
+cosine-side integral. -/
+lemma integral_eval_T_real_measureT_eq_integral_chebyshevCosine (n : ℕ) :
+    ∫ x, (T ℝ n).eval x ∂Polynomial.Chebyshev.measureT =
+      ∫ θ in (0)..Real.pi, chebyshevCosine n θ := by
+  rw [integral_measureT_eq_integral_cos]
+  simp [chebyshevCosine]
+
+/-- Transfer a product of two Chebyshev `T` polynomials from `measureT` to the
+angular cosine-side integral. -/
+lemma integral_eval_T_real_mul_eval_T_real_measureT_eq_integral_chebyshevCosine_mul
+    (m n : ℕ) :
+    ∫ x, (T ℝ m).eval x * (T ℝ n).eval x ∂Polynomial.Chebyshev.measureT =
+      ∫ θ in (0)..Real.pi, chebyshevCosine m θ * chebyshevCosine n θ := by
+  rw [integral_measureT_eq_integral_cos]
+  simp [chebyshevCosine]
+
+/-- The cosine-side integral of the constant Chebyshev mode. -/
+lemma integral_chebyshevCosine_zero :
+    ∫ θ in (0)..Real.pi, chebyshevCosine 0 θ = Real.pi := by
+  rw [← integral_eval_T_real_measureT_eq_integral_chebyshevCosine]
+  exact integral_eval_T_real_measureT_zero
+
+/-- Nonzero cosine modes have zero integral over `[0, π]`. -/
+lemma integral_chebyshevCosine_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
+    ∫ θ in (0)..Real.pi, chebyshevCosine n θ = 0 := by
+  rw [← integral_eval_T_real_measureT_eq_integral_chebyshevCosine]
+  exact integral_eval_T_real_measureT_of_ne_zero (by exact_mod_cast hn)
+
+/-- The diagonal cosine-side `L²` integral, using the same squared-norm
+constant as the Chebyshev `T` polynomials. -/
+lemma integral_chebyshevCosine_mul_self (n : ℕ) :
+    ∫ θ in (0)..Real.pi, chebyshevCosine n θ * chebyshevCosine n θ =
+      chebyshevTNormSq n := by
+  rw [← integral_eval_T_real_mul_eval_T_real_measureT_eq_integral_chebyshevCosine_mul]
+  exact integral_eval_T_real_mul_self_measureT n
+
+/-- Off-diagonal cosine modes are orthogonal over `[0, π]`. -/
+lemma integral_chebyshevCosine_mul_chebyshevCosine_of_ne {m n : ℕ} (hmn : m ≠ n) :
+    ∫ θ in (0)..Real.pi, chebyshevCosine m θ * chebyshevCosine n θ = 0 := by
+  rw [← integral_eval_T_real_mul_eval_T_real_measureT_eq_integral_chebyshevCosine_mul]
+  exact integral_eval_T_real_mul_eval_T_real_measureT_of_ne hmn
+
+/-- Cosine-side Chebyshev orthogonality in the Kronecker-delta form expected by
+the later Chebyshev Hilbert-basis construction. -/
+lemma integral_chebyshevCosine_mul_chebyshevCosine_eq_ite (m n : ℕ) :
+    ∫ θ in (0)..Real.pi, chebyshevCosine m θ * chebyshevCosine n θ =
+      if m = n then chebyshevTNormSq n else 0 := by
+  by_cases hmn : m = n
+  · subst hmn
+    simp [integral_chebyshevCosine_mul_self]
+  · simp [hmn, integral_chebyshevCosine_mul_chebyshevCosine_of_ne hmn]
+
+/-- The first nonconstant cosine mode has squared norm `π / 2`. -/
+lemma integral_chebyshevCosine_one_mul_self :
+    ∫ θ in (0)..Real.pi, chebyshevCosine 1 θ * chebyshevCosine 1 θ = Real.pi / 2 := by
+  simpa using integral_chebyshevCosine_mul_self 1
+
+/-- The constant and first cosine modes are orthogonal. -/
+lemma integral_chebyshevCosine_zero_mul_one :
+    ∫ θ in (0)..Real.pi, chebyshevCosine 0 θ * chebyshevCosine 1 θ = 0 := by
+  simpa using integral_chebyshevCosine_mul_chebyshevCosine_of_ne (m := 0) (n := 1) (by norm_num)
+
+end TauCeti
