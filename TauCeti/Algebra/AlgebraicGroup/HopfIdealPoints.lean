@@ -53,7 +53,7 @@ variable {R : Type u} [CommRing R]
 
 Contravariantly, this is the closed-subgroup inclusion on points: it sends a point of the
 quotient Hopf algebra to its composite with the quotient map from `H`. -/
-@[expose] noncomputable def quotientPointsHom (H : _root_.CommHopfAlgCat.{v} R)
+noncomputable def quotientPointsHom (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
     HopfAlgebra.points (R := R) (H := quotient H I) A ⟶
       HopfAlgebra.points (R := R) (H := H) A :=
@@ -89,7 +89,7 @@ lemma quotientPointsHom_injective (H : _root_.CommHopfAlgCat.{v} R)
   exact congrArg (fun p : HopfAlgebra.points (R := R) (H := H) A => p.ofConv h) hfg
 
 /-- An ambient `A`-point factors through `H ⧸ I` when it kills the Hopf ideal `I`. -/
-@[expose] noncomputable def quotientPointOfKills (H : _root_.CommHopfAlgCat.{v} R)
+noncomputable def quotientPointOfKills (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := H) A)
     (hg : ∀ h : H, h ∈ I → g.ofConv h = 0) :
@@ -142,7 +142,7 @@ lemma mem_range_quotientPointsHom_iff (H : _root_.CommHopfAlgCat.{v} R)
 
 Its elements are exactly those algebra maps `H →ₐ[R] A` that vanish on `I`; this is the
 point-level closed subgroup represented by the quotient coordinate Hopf algebra `H ⧸ I`. -/
-@[expose] noncomputable def quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
+noncomputable def quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
     Subgroup (HopfAlgebra.points (R := R) (H := H) A) :=
   (quotientPointsHom H I A).hom.range
