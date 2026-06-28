@@ -129,6 +129,21 @@ theorem Exchangeable.contractable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X :=
   contractable_of_exchangeable hX hX_meas
 
+/-- Internal path-law reindexing helper for the contractability preservation proof. -/
+private theorem map_reindex_prefixProj_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
+    (hX : ∀ i, AEMeasurable (X i) μ) (φ : ℕ → ℕ) (n : ℕ) :
+    (pathLaw μ X).map (fun x : ℕ → α => prefixProj α n (fun k => x (φ k))) =
+      blockLaw μ X (fun i : Fin n => φ i.val) := by
+  rw [pathLaw_apply, blockLaw_apply]
+  have hφ_prefix :
+      AEMeasurable (fun x : ℕ → α => prefixProj α n (fun k => x (φ k)))
+        (Measure.map (fun ω => fun i => X i ω) μ) :=
+    ((measurable_prefixProj n).comp
+      (measurable_pi_lambda _ fun k => measurable_pi_apply (φ k))).aemeasurable
+  rw [AEMeasurable.map_map_of_aemeasurable
+    hφ_prefix (aemeasurable_pi_lambda _ hX)]
+  congr 1
+
 /-- **A contractable process's path law is invariant under strictly monotone time-reindexing:** for
 `StrictMono φ`, the reindexing `x ↦ x ∘ φ` preserves `pathLaw μ X`. -/
 theorem Contractable.measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
