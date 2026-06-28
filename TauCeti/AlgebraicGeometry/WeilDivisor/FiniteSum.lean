@@ -172,19 +172,19 @@ lemma IsEffective.eq_zero_of_weightedDegree_eq_zero_of_pos_on_support {w : X →
 
 /-- The effective divisor whose coefficients on `s` are the natural-number multiplicities `m`
 and whose coefficients off `s` are zero. -/
-@[expose] def ofFinsetWithMultiplicity (s : Finset X) (m : X → ℕ) : WeilDivisor X :=
+def ofFinsetWithMultiplicity (s : Finset X) (m : X → ℕ) : WeilDivisor X :=
   Finsupp.indicator s (fun x _ => (m x : ℤ))
 
 /-- Coefficient formula for `Finsupp.indicator` with natural-number multiplicities. -/
 @[simp]
-lemma coeff_indicator_nat [DecidableEq X] (s : Finset X) (m : X → ℕ) (x : X) :
+private lemma coeff_indicator_nat [DecidableEq X] (s : Finset X) (m : X → ℕ) (x : X) :
     coeff (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) x =
       if x ∈ s then m x else 0 := by
   simp [coeff, Finsupp.indicator_apply]
 
 /-- The `Finsupp.indicator` divisor with multiplicities agrees with the corresponding finite sum
 of point divisors. -/
-lemma indicator_nat_eq_sum (s : Finset X) (m : X → ℕ) :
+private lemma indicator_nat_eq_sum (s : Finset X) (m : X → ℕ) :
     (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) =
       ∑ x ∈ s, (m x : ℤ) • ofPoint x := by
   classical
@@ -195,14 +195,15 @@ lemma indicator_nat_eq_sum (s : Finset X) (m : X → ℕ) :
     simp
 
 @[simp]
-lemma indicator_nat_empty (m : X → ℕ) :
+private lemma indicator_nat_empty (m : X → ℕ) :
     (Finsupp.indicator (∅ : Finset X) (fun x _ => (m x : ℤ)) : WeilDivisor X) = 0 := by
   classical
   ext x
   simp
 
 @[simp]
-lemma indicator_nat_insert [DecidableEq X] {s : Finset X} {x : X} (hx : x ∉ s) (m : X → ℕ) :
+private lemma indicator_nat_insert [DecidableEq X] {s : Finset X} {x : X}
+    (hx : x ∉ s) (m : X → ℕ) :
     (Finsupp.indicator (insert x s) (fun y _ => (m y : ℤ)) : WeilDivisor X) =
       (m x : ℤ) • ofPoint x + Finsupp.indicator s (fun y _ => (m y : ℤ)) := by
   rw [indicator_nat_eq_sum, indicator_nat_eq_sum]
@@ -210,7 +211,7 @@ lemma indicator_nat_insert [DecidableEq X] {s : Finset X} {x : X} (hx : x ∉ s)
 
 /-- `Finsupp.indicator` with natural-number multiplicities is an effective divisor. -/
 @[simp]
-lemma isEffective_indicator_nat (s : Finset X) (m : X → ℕ) :
+private lemma isEffective_indicator_nat (s : Finset X) (m : X → ℕ) :
     IsEffective (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) := by
   classical
   rw [isEffective_iff]
@@ -219,20 +220,20 @@ lemma isEffective_indicator_nat (s : Finset X) (m : X → ℕ) :
   split_ifs <;> simp
 
 @[simp]
-lemma indicator_nat_mem_effectiveSubmonoid (s : Finset X) (m : X → ℕ) :
+private lemma indicator_nat_mem_effectiveSubmonoid (s : Finset X) (m : X → ℕ) :
     (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) ∈ effectiveSubmonoid X :=
   (mem_effectiveSubmonoid _).mpr (isEffective_indicator_nat s m)
 
 /-- The support of `Finsupp.indicator` with multiplicities is contained in the chosen finite set.
 Points in the set whose multiplicity is zero may drop out of the support. -/
-lemma support_indicator_nat_subset (s : Finset X) (m : X → ℕ) :
+private lemma support_indicator_nat_subset (s : Finset X) (m : X → ℕ) :
     (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X).support ⊆ s :=
   Finsupp.support_indicator_subset s (fun x _ => (m x : ℤ))
 
 /-- A point is in the support of `Finsupp.indicator` with multiplicities exactly when it is
 selected and has nonzero multiplicity. -/
 @[simp]
-lemma mem_support_indicator_nat_iff {s : Finset X} {m : X → ℕ} {x : X} :
+private lemma mem_support_indicator_nat_iff {s : Finset X} {m : X → ℕ} {x : X} :
     x ∈ (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X).support ↔
       x ∈ s ∧ m x ≠ 0 := by
   classical
@@ -241,7 +242,7 @@ lemma mem_support_indicator_nat_iff {s : Finset X} {m : X → ℕ} {x : X} :
 
 /-- The degree of `Finsupp.indicator` with multiplicities is the sum of the multiplicities. -/
 @[simp]
-lemma degree_indicator_nat (s : Finset X) (m : X → ℕ) :
+private lemma degree_indicator_nat (s : Finset X) (m : X → ℕ) :
     degree (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) =
       ∑ x ∈ s, (m x : ℤ) := by
   classical
@@ -250,7 +251,7 @@ lemma degree_indicator_nat (s : Finset X) (m : X → ℕ) :
 /-- The weighted degree of `Finsupp.indicator` with multiplicities is the corresponding weighted
 finite sum. -/
 @[simp]
-lemma weightedDegree_indicator_nat (w : X → ℤ) (s : Finset X) (m : X → ℕ) :
+private lemma weightedDegree_indicator_nat (w : X → ℤ) (s : Finset X) (m : X → ℕ) :
     weightedDegree w (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) =
       ∑ x ∈ s, (m x : ℤ) * w x := by
   classical
@@ -259,7 +260,7 @@ lemma weightedDegree_indicator_nat (w : X → ℤ) (s : Finset X) (m : X → ℕ
 /-- Pushing forward `Finsupp.indicator` with multiplicities applies the map to each point in the
 finite sum. -/
 @[simp]
-lemma pushforward_indicator_nat (f : X → Y) (s : Finset X) (m : X → ℕ) :
+private lemma pushforward_indicator_nat (f : X → Y) (s : Finset X) (m : X → ℕ) :
     pushforward f (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) =
       ∑ x ∈ s, (m x : ℤ) • ofPoint (f x) := by
   classical
@@ -269,7 +270,7 @@ lemma pushforward_indicator_nat (f : X → Y) (s : Finset X) (m : X → ℕ) :
 
 /-- With positive weights on the selected set, an indicator divisor with multiplicities has
 weighted degree zero exactly when every selected multiplicity vanishes. -/
-lemma weightedDegree_indicator_nat_eq_zero_iff_of_pos
+private lemma weightedDegree_indicator_nat_eq_zero_iff_of_pos
     (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) (m : X → ℕ) :
     weightedDegree w (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) = 0 ↔
       ∀ x ∈ s, m x = 0 := by
@@ -288,7 +289,7 @@ lemma weightedDegree_indicator_nat_eq_zero_iff_of_pos
 
 /-- An indicator divisor with positive weights on the selected set lies in the weighted
 degree-zero subgroup exactly when all selected multiplicities vanish. -/
-lemma indicator_nat_mem_weightedDegreeZeroSubgroup_iff_of_pos
+private lemma indicator_nat_mem_weightedDegreeZeroSubgroup_iff_of_pos
     (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) (m : X → ℕ) :
     (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) ∈
         weightedDegreeZeroSubgroup w ↔
@@ -297,7 +298,7 @@ lemma indicator_nat_mem_weightedDegreeZeroSubgroup_iff_of_pos
 
 /-- An indicator divisor with multiplicities has unweighted degree zero exactly when every
 selected multiplicity vanishes. -/
-lemma indicator_nat_mem_degreeZeroSubgroup_iff (s : Finset X) (m : X → ℕ) :
+private lemma indicator_nat_mem_degreeZeroSubgroup_iff (s : Finset X) (m : X → ℕ) :
     (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) ∈ degreeZeroSubgroup X ↔
       ∀ x ∈ s, m x = 0 := by
   rw [mem_degreeZeroSubgroup, ← weightedDegree_one_eq_degree]
@@ -306,8 +307,7 @@ lemma indicator_nat_mem_degreeZeroSubgroup_iff (s : Finset X) (m : X → ℕ) :
 
 /-! ### Named finite-set multiplicity divisors -/
 
-@[simp]
-lemma ofFinsetWithMultiplicity_eq_indicator (s : Finset X) (m : X → ℕ) :
+private lemma ofFinsetWithMultiplicity_eq_indicator (s : Finset X) (m : X → ℕ) :
     ofFinsetWithMultiplicity s m =
       (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) :=
   rfl
@@ -405,48 +405,48 @@ lemma ofFinsetWithMultiplicity_mem_degreeZeroSubgroup_iff (s : Finset X) (m : X 
 /-! ### Finite sums with coefficient one via `Finsupp.indicator` -/
 
 /-- The effective divisor that puts coefficient one on every point of `s` and zero elsewhere. -/
-@[expose] def ofFinset (s : Finset X) : WeilDivisor X :=
-  Finsupp.indicator s (fun _ _ => (1 : ℤ))
+def ofFinset (s : Finset X) : WeilDivisor X :=
+  ofFinsetWithMultiplicity s (fun _ => 1)
 
 /-- The coefficient-one `Finsupp.indicator` divisor is the corresponding finite sum of point
 divisors. -/
-lemma indicator_one_eq_sum (s : Finset X) :
+private lemma indicator_one_eq_sum (s : Finset X) :
     (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) = ∑ x ∈ s, ofPoint x := by
   simpa using indicator_nat_eq_sum (s := s) (m := fun _ : X => 1)
 
 @[simp]
-lemma indicator_one_empty :
+private lemma indicator_one_empty :
     (Finsupp.indicator (∅ : Finset X) (fun _ _ => (1 : ℤ)) : WeilDivisor X) = 0 := by
   simpa using indicator_nat_empty (X := X) (fun _ : X => 1)
 
 @[simp]
-lemma indicator_one_insert [DecidableEq X] {s : Finset X} {x : X} (hx : x ∉ s) :
+private lemma indicator_one_insert [DecidableEq X] {s : Finset X} {x : X} (hx : x ∉ s) :
     (Finsupp.indicator (insert x s) (fun _ _ => (1 : ℤ)) : WeilDivisor X) =
       ofPoint x + Finsupp.indicator s (fun _ _ => (1 : ℤ)) := by
   simpa using indicator_nat_insert (s := s) (x := x) hx (fun _ : X => 1)
 
 /-- Coefficients of the coefficient-one indicator divisor are `1` on the set and `0` off it. -/
 @[simp]
-lemma coeff_indicator_one [DecidableEq X] (s : Finset X) (x : X) :
+private lemma coeff_indicator_one [DecidableEq X] (s : Finset X) (x : X) :
     coeff (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) x =
       if x ∈ s then 1 else 0 := by
   simp [coeff, Finsupp.indicator_apply]
 
 /-- The coefficient-one indicator divisor is effective. -/
 @[simp]
-lemma isEffective_indicator_one (s : Finset X) :
+private lemma isEffective_indicator_one (s : Finset X) :
     IsEffective (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) := by
   classical
   simpa using isEffective_indicator_nat (X := X) s (fun _ => 1)
 
 @[simp]
-lemma indicator_one_mem_effectiveSubmonoid (s : Finset X) :
+private lemma indicator_one_mem_effectiveSubmonoid (s : Finset X) :
     (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) ∈ effectiveSubmonoid X :=
   (mem_effectiveSubmonoid _).mpr (isEffective_indicator_one s)
 
 /-- The support of the coefficient-one indicator divisor is exactly the chosen finite set. -/
 @[simp]
-lemma support_indicator_one (s : Finset X) :
+private lemma support_indicator_one (s : Finset X) :
     (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X).support = s := by
   classical
   ext x
@@ -454,14 +454,14 @@ lemma support_indicator_one (s : Finset X) :
 
 /-- The degree of the coefficient-one indicator divisor is the finite set's cardinality. -/
 @[simp]
-lemma degree_indicator_one (s : Finset X) :
+private lemma degree_indicator_one (s : Finset X) :
     degree (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) = s.card := by
   classical
   simpa using degree_indicator_nat (s := s) (m := fun _ : X => 1)
 
 /-- The weighted degree of the coefficient-one indicator divisor is the sum of weights on it. -/
 @[simp]
-lemma weightedDegree_indicator_one (w : X → ℤ) (s : Finset X) :
+private lemma weightedDegree_indicator_one (w : X → ℤ) (s : Finset X) :
     weightedDegree w (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) =
       ∑ x ∈ s, w x := by
   classical
@@ -469,7 +469,7 @@ lemma weightedDegree_indicator_one (w : X → ℤ) (s : Finset X) :
 
 /-- Pushing forward the coefficient-one indicator divisor applies the map to each point. -/
 @[simp]
-lemma pushforward_indicator_one (f : X → Y) (s : Finset X) :
+private lemma pushforward_indicator_one (f : X → Y) (s : Finset X) :
     pushforward f (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) =
       ∑ x ∈ s, ofPoint (f x) := by
   classical
@@ -477,7 +477,7 @@ lemma pushforward_indicator_one (f : X → Y) (s : Finset X) :
 
 /-- For positive weights, a coefficient-one indicator divisor lies in the weighted degree-zero
 subgroup exactly when the finite set is empty. -/
-lemma indicator_one_mem_weightedDegreeZeroSubgroup_iff_of_pos
+private lemma indicator_one_mem_weightedDegreeZeroSubgroup_iff_of_pos
     (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) :
     (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) ∈
         weightedDegreeZeroSubgroup w ↔
@@ -498,7 +498,7 @@ lemma indicator_one_mem_weightedDegreeZeroSubgroup_iff_of_pos
     simp [hs] at hx
 
 /-- A coefficient-one indicator divisor has unweighted degree zero exactly when the set is empty. -/
-lemma indicator_one_mem_degreeZeroSubgroup_iff (s : Finset X) :
+private lemma indicator_one_mem_degreeZeroSubgroup_iff (s : Finset X) :
     (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) ∈ degreeZeroSubgroup X ↔
       s = ∅ := by
   classical
@@ -518,15 +518,15 @@ lemma indicator_one_mem_degreeZeroSubgroup_iff (s : Finset X) :
 
 /-! ### Named finite-set divisors -/
 
-@[simp]
-lemma ofFinset_eq_indicator (s : Finset X) :
+private lemma ofFinset_eq_indicator (s : Finset X) :
     ofFinset s = (Finsupp.indicator s (fun _ _ => (1 : ℤ)) : WeilDivisor X) :=
   rfl
 
 /-- `ofFinset s` is the finite sum of the point divisors at the points of `s`. -/
 lemma ofFinset_eq_sum (s : Finset X) :
     ofFinset s = ∑ x ∈ s, ofPoint x := by
-  simpa [ofFinset] using indicator_one_eq_sum (s := s)
+  simpa [ofFinset] using
+    ofFinsetWithMultiplicity_eq_sum (s := s) (m := fun _ : X => 1)
 
 @[simp]
 lemma ofFinset_empty : ofFinset (∅ : Finset X) = 0 := by
@@ -535,7 +535,8 @@ lemma ofFinset_empty : ofFinset (∅ : Finset X) = 0 := by
 @[simp]
 lemma ofFinset_insert [DecidableEq X] {s : Finset X} {x : X} (hx : x ∉ s) :
     ofFinset (insert x s) = ofPoint x + ofFinset s := by
-  simpa [ofFinset] using indicator_one_insert (s := s) (x := x) hx
+  simpa [ofFinset] using
+    ofFinsetWithMultiplicity_insert (s := s) (x := x) hx (fun _ : X => 1)
 
 /-- Coefficients of `ofFinset s` are `1` on `s` and `0` off `s`. -/
 @[simp]
@@ -558,7 +559,10 @@ lemma ofFinset_mem_effectiveSubmonoid (s : Finset X) :
 @[simp]
 lemma support_ofFinset (s : Finset X) :
     (ofFinset s).support = s := by
-  simp [ofFinset]
+  rw [ofFinset]
+  ext x
+  rw [mem_support_ofFinsetWithMultiplicity_iff]
+  simp
 
 /-- The degree of `ofFinset s` is the cardinality of `s`. -/
 @[simp]
@@ -576,20 +580,43 @@ lemma weightedDegree_ofFinset (w : X → ℤ) (s : Finset X) :
 @[simp]
 lemma pushforward_ofFinset (f : X → Y) (s : Finset X) :
     pushforward f (ofFinset s) = ∑ x ∈ s, ofPoint (f x) := by
-  simpa [ofFinset] using pushforward_indicator_one (f := f) (s := s)
+  simpa [ofFinset] using
+    pushforward_ofFinsetWithMultiplicity (f := f) (s := s) (m := fun _ : X => 1)
 
 /-- With positive weights on `s`, `ofFinset s` lies in the weighted degree-zero subgroup exactly
 when `s` is empty. -/
 lemma ofFinset_mem_weightedDegreeZeroSubgroup_iff_of_pos
     (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) :
     ofFinset s ∈ weightedDegreeZeroSubgroup w ↔ s = ∅ := by
-  simpa [ofFinset] using
-    indicator_one_mem_weightedDegreeZeroSubgroup_iff_of_pos (s := s) (w := w) hw
+  rw [ofFinset]
+  rw [ofFinsetWithMultiplicity_mem_weightedDegreeZeroSubgroup_iff_of_pos
+    (s := s) (w := w) hw (fun _ : X => 1)]
+  constructor
+  · intro h
+    ext x
+    constructor
+    · intro hx
+      exact (one_ne_zero (h x hx)).elim
+    · intro hx
+      exact (Finset.notMem_empty x hx).elim
+  · intro hs x hx
+    simp [hs] at hx
 
 /-- `ofFinset s` has unweighted degree zero exactly when `s` is empty. -/
 lemma ofFinset_mem_degreeZeroSubgroup_iff (s : Finset X) :
     ofFinset s ∈ degreeZeroSubgroup X ↔ s = ∅ := by
-  simp [ofFinset]
+  rw [ofFinset]
+  rw [ofFinsetWithMultiplicity_mem_degreeZeroSubgroup_iff (s := s) (m := fun _ : X => 1)]
+  constructor
+  · intro h
+    ext x
+    constructor
+    · intro hx
+      exact (one_ne_zero (h x hx)).elim
+    · intro hx
+      exact (Finset.notMem_empty x hx).elim
+  · intro hs x hx
+    simp [hs] at hx
 
 end
 
