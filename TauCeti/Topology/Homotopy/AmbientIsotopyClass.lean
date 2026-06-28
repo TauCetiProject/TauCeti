@@ -32,6 +32,9 @@ their own stronger smooth or PL data elsewhere.
 
 The relation follows Burde--Zieschang, *Knots*, Chapter 1, Definitions 1.1 and 1.2, via
 `TauCeti.Topology.Homotopy.AmbientIsotopic`.
+
+The quotient, lift, and map API is adapted from
+`TauCeti.Geometry.Manifold.SmoothEmbedding.AmbientIsotopyClass`.
 -/
 
 public section
