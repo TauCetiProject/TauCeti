@@ -26,15 +26,20 @@ function API item "pullbacks" and Milestone 2 ("BCR semigroup--Bochner").
 
 ## Main declarations
 
-* `TauCeti.IsSemigroupGroupPD.comp_spatialAddMonoidHom`: spatial pullback along an additive
-  homomorphism.
+* `TauCeti.IsSemigroupGroupPD.comp_spatial`: spatial pullback along an additive homomorphism,
+  stated using Mathlib's homomorphism classes.
+* `TauCeti.IsSemigroupGroupPD.of_comp_spatial_surjective` and
+  `TauCeti.IsSemigroupGroupPD.comp_spatial_iff_of_surjective`: descent and equivalence for
+  surjective additive homomorphisms.
 * `TauCeti.IsSemigroupGroupPD.comp_spatialAddEquiv_iff`: invariance under a spatial additive
   equivalence.
 * `TauCeti.IsSemigroupGroupPD.comp_spatialContinuousLinearMap`: the continuous-linear-map form
   used for real vector spaces.
+* `TauCeti.IsSemigroupGroupPD.continuous_comp_spatial`: spatial pullback preserves continuity
+  along continuous maps.
 * `TauCeti.IsSemigroupGroupPD.comp_spatialAddMonoidHom_and_continuous` and
-  `TauCeti.IsSemigroupGroupPD.comp_spatialContinuousLinearMap_and_continuous`: packaged forms
-  preserving both positive-definiteness and continuity.
+  `TauCeti.IsSemigroupGroupPD.comp_spatialContinuousLinearMap_and_continuous`: packaged
+  additive and continuous-linear forms preserving both positive-definiteness and continuity.
 
 ## References
 
@@ -44,7 +49,7 @@ function API item "pullbacks" and Milestone 2 ("BCR semigroup--Bochner").
 
 public section
 
-open scoped NNReal
+open scoped NNReal ComplexOrder
 
 namespace TauCeti
 
@@ -53,38 +58,80 @@ namespace IsSemigroupGroupPD
 variable {V W U : Type*} [AddCommGroup V] [AddCommGroup W] [AddCommGroup U]
   {F : ℝ≥0 × V → ℂ}
 
+private theorem map_sub_of_addHomClass {Φ : Type*} [FunLike Φ W V] [AddHomClass Φ W V]
+    (φ : Φ) (x y : W) : φ (x - y) = φ x - φ y := by
+  have hneg : φ (-y) = -φ y := by
+    have hzero : φ (0 : W) = 0 := by
+      have h := map_add φ (0 : W) (0 : W)
+      have h' : φ (0 : W) + φ (0 : W) = φ (0 : W) + 0 := by simpa using h.symm
+      exact add_left_cancel h'
+    have h := map_add φ y (-y)
+    have hsum : φ y + φ (-y) = 0 := by
+      simpa [hzero] using h.symm
+    exact eq_neg_of_add_eq_zero_right hsum
+  simp [sub_eq_add_neg, map_add, hneg]
+
 /-- Pulling back the spatial coordinate of a semigroup-group positive-definite function along an
-additive homomorphism preserves semigroup-group positive-definiteness. -/
-theorem comp_spatialAddMonoidHom (hF : IsSemigroupGroupPD F) (φ : W →+ V) :
+additive homomorphism preserves semigroup-group positive-definiteness. This is stated for
+Mathlib's homomorphism classes so it applies to bundled additive homomorphisms, additive
+equivalences, continuous linear maps, and similar maps. -/
+theorem comp_spatial {Φ : Type*} [FunLike Φ W V] [AddHomClass Φ W V]
+    (hF : IsSemigroupGroupPD F) (φ : Φ) :
     IsSemigroupGroupPD fun p : ℝ≥0 × W => F (p.1, φ p.2) := by
   refine IsSemigroupGroupPD.of_isPositiveDefiniteKernel ?_
   have hK := isPositiveDefiniteKernel_comp hF.isPositiveDefiniteKernel
     (fun p : ℝ≥0 × W => (p.1, φ p.2))
-  simpa [map_sub] using hK
+  simpa [map_sub_of_addHomClass φ] using hK
+
+/-- The explicit `AddMonoidHom` form of spatial pullback. -/
+theorem comp_spatialAddMonoidHom (hF : IsSemigroupGroupPD F) (φ : W →+ V) :
+    IsSemigroupGroupPD fun p : ℝ≥0 × W => F (p.1, φ p.2) :=
+  hF.comp_spatial φ
 
 /-- Spatial pullbacks compose as expected. -/
 theorem comp_spatialAddMonoidHom_comp (hF : IsSemigroupGroupPD F) (φ : W →+ V) (ψ : U →+ W) :
     IsSemigroupGroupPD fun p : ℝ≥0 × U => F (p.1, φ (ψ p.2)) :=
   (hF.comp_spatialAddMonoidHom φ).comp_spatialAddMonoidHom ψ
 
+/-- Semigroup-group positive-definiteness descends along a surjective spatial additive
+homomorphism. -/
+theorem of_comp_spatial_surjective {Φ : Type*} [FunLike Φ W V] [AddHomClass Φ W V]
+    (φ : Φ) (hsurj : Function.Surjective φ)
+    (hcomp : IsSemigroupGroupPD fun p : ℝ≥0 × W => F (p.1, φ p.2)) :
+    IsSemigroupGroupPD F := by
+  classical
+  refine IsSemigroupGroupPD.of_isPositiveDefiniteKernel ?_
+  choose w hw using hsurj
+  have hK := isPositiveDefiniteKernel_comp hcomp.isPositiveDefiniteKernel
+    (fun p : ℝ≥0 × V => (p.1, w p.2))
+  simpa [hw, map_sub_of_addHomClass φ] using hK
+
+/-- Along a surjective spatial additive homomorphism, a function is semigroup-group positive
+definite if and only if its spatial pullback is. -/
+theorem comp_spatial_iff_of_surjective {Φ : Type*} [FunLike Φ W V] [AddHomClass Φ W V]
+    (φ : Φ) (hsurj : Function.Surjective φ) :
+    IsSemigroupGroupPD (fun p : ℝ≥0 × W => F (p.1, φ p.2)) ↔ IsSemigroupGroupPD F :=
+  ⟨of_comp_spatial_surjective φ hsurj, fun hF => hF.comp_spatial φ⟩
+
+/-- The explicit `AddMonoidHom` form of the spatial pullback equivalence for surjective maps. -/
+theorem comp_spatialAddMonoidHom_iff_of_surjective (φ : W →+ V)
+    (hsurj : Function.Surjective φ) :
+    IsSemigroupGroupPD (fun p : ℝ≥0 × W => F (p.1, φ p.2)) ↔ IsSemigroupGroupPD F :=
+  comp_spatial_iff_of_surjective φ hsurj
+
 /-- Semigroup-group positive-definiteness is invariant under precomposition by a spatial
 additive equivalence. -/
 theorem comp_spatialAddEquiv_iff (e : W ≃+ V) :
-    IsSemigroupGroupPD (fun p : ℝ≥0 × W => F (p.1, e p.2)) ↔ IsSemigroupGroupPD F := by
-  constructor
-  · intro h
-    have h' := h.comp_spatialAddMonoidHom e.symm.toAddMonoidHom
-    simpa using h'
-  · intro h
-    exact h.comp_spatialAddMonoidHom e.toAddMonoidHom
+    IsSemigroupGroupPD (fun p : ℝ≥0 × W => F (p.1, e p.2)) ↔ IsSemigroupGroupPD F :=
+  comp_spatialAddMonoidHom_iff_of_surjective e.toAddMonoidHom e.surjective
 
 section Topology
 
 variable [TopologicalSpace V] [TopologicalSpace W]
 
-/-- If the spatial additive homomorphism is continuous, spatial pullback preserves continuity. -/
-theorem continuous_comp_spatialAddMonoidHom (hF : Continuous F) (φ : W →+ V)
-    (hφ : Continuous φ) :
+omit [AddCommGroup V] [AddCommGroup W] in
+/-- If the spatial map is continuous, spatial pullback preserves continuity. -/
+theorem continuous_comp_spatial (hF : Continuous F) (φ : W → V) (hφ : Continuous φ) :
     Continuous fun p : ℝ≥0 × W => F (p.1, φ p.2) :=
   hF.comp (continuous_fst.prodMk (hφ.comp continuous_snd))
 
@@ -94,7 +141,7 @@ theorem comp_spatialAddMonoidHom_and_continuous (hFpd : IsSemigroupGroupPD F)
     (hFcont : Continuous F) (φ : W →+ V) (hφ : Continuous φ) :
     IsSemigroupGroupPD (fun p : ℝ≥0 × W => F (p.1, φ p.2)) ∧
       Continuous (fun p : ℝ≥0 × W => F (p.1, φ p.2)) :=
-  ⟨hFpd.comp_spatialAddMonoidHom φ, continuous_comp_spatialAddMonoidHom hFcont φ hφ⟩
+  ⟨hFpd.comp_spatialAddMonoidHom φ, continuous_comp_spatial hFcont φ hφ⟩
 
 end Topology
 
@@ -109,7 +156,7 @@ variable {E : Type*} {E' : Type*}
 positive-definiteness. -/
 theorem comp_spatialContinuousLinearMap (hG : IsSemigroupGroupPD G) (φ : E' →L[ℝ] E) :
     IsSemigroupGroupPD fun p : ℝ≥0 × E' => G (p.1, φ p.2) :=
-  hG.comp_spatialAddMonoidHom φ.toAddMonoidHom
+  hG.comp_spatial φ
 
 /-- Spatial pullback along a continuous linear equivalence is an equivalence on
 semigroup-group positive-definiteness. -/
@@ -122,7 +169,7 @@ theorem comp_spatialContinuousLinearMap_and_continuous (hGpd : IsSemigroupGroupP
     (hGcont : Continuous G) (φ : E' →L[ℝ] E) :
     IsSemigroupGroupPD (fun p : ℝ≥0 × E' => G (p.1, φ p.2)) ∧
       Continuous (fun p : ℝ≥0 × E' => G (p.1, φ p.2)) :=
-  hGpd.comp_spatialAddMonoidHom_and_continuous hGcont φ.toAddMonoidHom φ.continuous
+  ⟨hGpd.comp_spatialContinuousLinearMap φ, continuous_comp_spatial hGcont φ φ.continuous⟩
 
 end ContinuousLinearMap
 
