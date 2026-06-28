@@ -31,6 +31,8 @@ This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, Milesto
 
 * `TauCeti.IsSemigroupGroupPD.timeAxis_isPositiveDefiniteKernel`: the kernel
   `(t, u) ↦ F (t + u, 0)` is positive definite.
+* `TauCeti.IsSemigroupGroupPD.timeAxis_conj_symm` and `timeAxis_nonneg`: basic symmetry and
+  real/nonnegative value facts for the zero-spatial time axis.
 * `TauCeti.IsSemigroupGroupPD.timeAxis_sum_nonneg`: the finite quadratic-form restatement.
 * `TauCeti.IsSemigroupGroupPD.timeAxis_isPositiveDefinite`: the one-variable predicate form for
   `t ↦ F (t, 0)` using the trivial involution on `ℝ≥0`.
@@ -63,6 +65,41 @@ theorem timeAxis_isPositiveDefiniteKernel (hF : IsSemigroupGroupPD F) :
   have hK := isPositiveDefiniteKernel_comp hF.isPositiveDefiniteKernel
     (fun t : ℝ≥0 => (t, (0 : V)))
   simpa using hK
+
+/-- The zero-spatial time-axis kernel is conjugate symmetric:
+`conj (F (t + u, 0)) = F (u + t, 0)`. -/
+@[simp]
+theorem timeAxis_conj_symm (hF : IsSemigroupGroupPD F) (t u : ℝ≥0) :
+    conj (F (t + u, 0)) = F (u + t, 0) :=
+  isPositiveDefiniteKernel_conj_symm hF.timeAxis_isPositiveDefiniteKernel t u
+
+/-- Values of the zero-spatial time-axis function are real and nonnegative. -/
+theorem timeAxis_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) : 0 ≤ F (t, 0) := by
+  simpa [add_halves] using hF.diagonal_nonneg (t / 2)
+
+/-- Values of the zero-spatial time-axis function have zero imaginary part. -/
+@[simp]
+theorem timeAxis_im (hF : IsSemigroupGroupPD F) (t : ℝ≥0) : (F (t, 0)).im = 0 :=
+  ((Complex.nonneg_iff.mp (hF.timeAxis_nonneg t)).2).symm
+
+/-- The real part of a zero-spatial time-axis value is nonnegative. -/
+theorem timeAxis_re_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
+    0 ≤ (F (t, 0)).re :=
+  (Complex.nonneg_iff.mp (hF.timeAxis_nonneg t)).1
+
+/-- A zero-spatial time-axis value is equal to its real part, viewed as a complex number. -/
+theorem timeAxis_eq_ofReal_re (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
+    F (t, 0) = ((F (t, 0)).re : ℂ) := by
+  apply Complex.ext
+  · simp
+  · simpa using hF.timeAxis_im t
+
+/-- Conjugation fixes every zero-spatial time-axis value. -/
+@[simp]
+theorem timeAxis_conj (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
+    conj (F (t, 0)) = F (t, 0) := by
+  rw [hF.timeAxis_eq_ofReal_re t]
+  simp
 
 /-- The finite quadratic form of the zero-spatial time-axis kernel is nonnegative. -/
 theorem timeAxis_sum_nonneg (hF : IsSemigroupGroupPD F) {ι : Type*} [Fintype ι]
