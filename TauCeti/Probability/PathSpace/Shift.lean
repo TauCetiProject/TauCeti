@@ -48,6 +48,28 @@ theorem prefixProj_shift_iterate_apply (r n : ℕ) (x : ℕ → α) (i : Fin n) 
 theorem shift_iterate_measurable (r : ℕ) : Measurable ((shift α)^[r]) :=
   measurable_shift.iterate r
 
+/-- Pushing the path law forward by the `r`-fold shift is the path law of the time-shifted
+process. -/
+theorem map_shift_iterate_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
+    (hX : ∀ i, AEMeasurable (X i) μ) (r : ℕ) :
+    (pathLaw μ X).map ((shift α)^[r]) = pathLaw μ (fun n ω => X (n + r) ω) := by
+  rw [pathLaw_apply, pathLaw_apply]
+  rw [AEMeasurable.map_map_of_aemeasurable (shift_iterate_measurable r).aemeasurable
+    (aemeasurable_pi_lambda _ hX)]
+  congr 1
+  funext ω n
+  simp
+
+/-- Projecting the `r`-fold shifted path law onto its first `n` coordinates gives the block law
+of the consecutive block starting at `r`. -/
+theorem map_prefixProj_shift_iterate_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
+    (hX : ∀ i, AEMeasurable (X i) μ) (r n : ℕ) :
+    ((pathLaw μ X).map ((shift α)^[r])).map (prefixProj α n) =
+      blockLaw μ X (fun i : Fin n => i.val + r) := by
+  rw [map_shift_iterate_pathLaw μ hX r,
+    map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ fun i => hX (i + r)) n]
+  rfl
+
 end Probability
 
 end TauCeti
