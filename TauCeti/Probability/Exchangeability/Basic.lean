@@ -116,16 +116,6 @@ theorem measurable_shift : Measurable (shift α) := by
   unfold shift
   measurability
 
-/-- Arbitrary coordinate reindexing on one-sided path space is measurable. -/
-theorem measurable_reindex (φ : ℕ → ℕ) :
-    Measurable fun x : ℕ → α => fun k => x (φ k) :=
-  measurable_pi_lambda _ fun k => measurable_pi_apply (φ k)
-
-/-- A prefix projection after arbitrary coordinate reindexing is measurable. -/
-theorem measurable_prefixProj_reindex (φ : ℕ → ℕ) (n : ℕ) :
-    Measurable fun x : ℕ → α => prefixProj α n (fun k => x (φ k)) :=
-  (measurable_prefixProj n).comp (measurable_reindex φ)
-
 /-- The prefix law is the pushforward of the path law by `prefixProj`. -/
 theorem map_prefixProj_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
     (hX : AEMeasurable (fun ω => fun i => X i ω) μ) (n : ℕ) :
@@ -169,16 +159,6 @@ theorem map_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
       hf.comp (measurable_pi_apply i)).aemeasurable
   · exact aemeasurable_pi_lambda (fun ω => fun i => X i ω) hX
 
-/-- Mapping a path law by a coordinate reindexing gives the path law of the reindexed process. -/
-theorem map_reindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (φ : ℕ → ℕ) :
-    (pathLaw μ X).map (fun x : ℕ → α => fun k => x (φ k)) =
-      pathLaw μ (fun k ω => X (φ k) ω) := by
-  rw [pathLaw_apply, pathLaw_apply]
-  rw [AEMeasurable.map_map_of_aemeasurable (measurable_reindex φ).aemeasurable
-    (aemeasurable_pi_lambda _ hX)]
-  rfl
-
 /-- Push a block law forward along a coordinate reindexing: selecting the coordinates of
 `blockLaw μ X k` through `g : Fin p → Fin n` yields the block law along `k ∘ g`. -/
 theorem map_blockLaw_reindex (μ : Measure Ω) {X : ℕ → Ω → α} {n p : ℕ}
@@ -189,17 +169,6 @@ theorem map_blockLaw_reindex (μ : Measure Ω) {X : ℕ → Ω → α} {n p : �
     AEMeasurable.map_map_of_aemeasurable
       ((measurable_pi_lambda _ fun i => measurable_pi_apply (g i)).aemeasurable)
       (aemeasurable_pi_lambda _ hXk)]
-  rfl
-
-/-- A prefix projection after coordinate reindexing gives the corresponding finite block law. -/
-theorem map_reindex_prefixProj_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (φ : ℕ → ℕ) (n : ℕ) :
-    (pathLaw μ X).map (fun x : ℕ → α => prefixProj α n (fun k => x (φ k))) =
-      blockLaw μ X (fun i : Fin n => φ i.val) := by
-  rw [pathLaw_apply, blockLaw_apply]
-  rw [AEMeasurable.map_map_of_aemeasurable
-    (measurable_prefixProj_reindex φ n).aemeasurable
-    (aemeasurable_pi_lambda _ hX)]
   rfl
 
 /-- Projecting the prefix law on `Fin n` onto its first `m ≤ n` coordinates (via `Fin.castLE`)
