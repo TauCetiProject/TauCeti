@@ -167,6 +167,7 @@ lemma normalizerQuotientEquivMap_trans_mk (H : Subgroup G) (e : G ≃* K) (f : K
 
 /-- After the subgroup equality `H.map id = H`, identity transport on normalizer quotients is
 the canonical identity on representatives. -/
+@[simp]
 lemma normalizerQuotientEquivMap_refl_mk_congr (H : Subgroup G)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientCongr
