@@ -64,54 +64,11 @@ theorem timeAxis_isPositiveDefiniteKernel (hF : IsSemigroupGroupPD F) :
     (fun t : ℝ≥0 => (t, (0 : V)))
   simpa using hK
 
-/-- The zero-spatial time-axis kernel is conjugate-symmetric:
-`conj (F (t + u, 0)) = F (u + t, 0)`. -/
-@[simp]
-theorem timeAxis_conj_symm (hF : IsSemigroupGroupPD F) (t u : ℝ≥0) :
-    conj (F (t + u, 0)) = F (u + t, 0) :=
-  isPositiveDefiniteKernel_conj_symm hF.timeAxis_isPositiveDefiniteKernel t u
-
 /-- The finite quadratic form of the zero-spatial time-axis kernel is nonnegative. -/
 theorem timeAxis_sum_nonneg (hF : IsSemigroupGroupPD F) {ι : Type*} [Fintype ι]
     (t : ι → ℝ≥0) (x : ι → ℂ) :
     0 ≤ ∑ i, ∑ j, conj (x i) * x j * F (t i + t j, 0) :=
   (isPositiveDefiniteKernel_iff.mp hF.timeAxis_isPositiveDefiniteKernel).2 t x
-
-/-- The `2 × 2` Hermitian sub-form of the zero-spatial time-axis kernel. -/
-theorem timeAxis_quadForm_two_nonneg (hF : IsSemigroupGroupPD F)
-    (t u : ℝ≥0) (c₀ c₁ : ℂ) :
-    0 ≤ c₀ * conj c₀ * F (t + t, 0)
-      + c₀ * conj c₁ * F (t + u, 0)
-      + c₁ * conj c₀ * F (u + t, 0)
-      + c₁ * conj c₁ * F (u + u, 0) := by
-  have h := hF.timeAxis_sum_nonneg ![t, u] ![conj c₀, conj c₁]
-  simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Complex.conj_conj] at h
-  exact le_of_le_of_eq h (by ring)
-
-/-- The value `F (t + t, 0)` on the time-axis diagonal is nonnegative. -/
-theorem timeAxis_diagonal_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
-    0 ≤ F (t + t, 0) :=
-  isPositiveDefiniteKernel_apply_self_nonneg hF.timeAxis_isPositiveDefiniteKernel t
-
-/-- The value `F (t + t, 0)` on the time-axis diagonal has zero imaginary part. -/
-@[simp]
-theorem timeAxis_diagonal_im (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
-    (F (t + t, 0)).im = 0 :=
-  ((Complex.nonneg_iff.mp (hF.timeAxis_diagonal_nonneg t)).2).symm
-
-/-- The real part of `F (t + t, 0)` on the time-axis diagonal is nonnegative. -/
-theorem timeAxis_diagonal_re_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
-    0 ≤ (F (t + t, 0)).re :=
-  (Complex.nonneg_iff.mp (hF.timeAxis_diagonal_nonneg t)).1
-
-/-- The value `F (t + t, 0)` on the time-axis diagonal is equal to its real part, viewed as a
-complex number. -/
-theorem timeAxis_diagonal_eq_ofReal_re (hF : IsSemigroupGroupPD F) (t : ℝ≥0) :
-    F (t + t, 0) = ((F (t + t, 0)).re : ℂ) := by
-  apply Complex.ext
-  · simp
-  · simpa using hF.timeAxis_diagonal_im t
 
 /-- The zero-spatial time-axis function `t ↦ F (t, 0)` is positive definite for the trivial
 involution on `ℝ≥0`. -/
