@@ -74,6 +74,8 @@ lemma normalizerQuotientConjEquiv_refl_mk_congr (H : Subgroup (Deck p))
   rw [normalizerQuotientConjEquiv_mk, Subgroup.normalizerQuotientCongr_mk]
   congr 1
   ext x
+  -- The subgroup congruence proof still mentions the opaque identity `conjMulEquiv`, so after
+  -- the quotient congruence the remaining representative equality has to be exposed pointwise.
   change ((conjMulEquiv (Homeomorph.refl E) (p := p) (q := p)
     (fun e => by rfl : ∀ e, p ((Homeomorph.refl E) e) = p e)
     (φ : Deck p) : Deck p).1 x) = (φ : Deck p).1 x
