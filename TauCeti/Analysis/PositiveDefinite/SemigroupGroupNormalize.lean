@@ -47,9 +47,11 @@ open scoped NNReal
 
 namespace TauCeti
 
-variable {V : Type*} [AddCommGroup V] {F : ℝ≥0 × V → ℂ}
-
 namespace IsSemigroupGroupPD
+
+section PositiveDefinite
+
+variable {V : Type*} [AddCommGroup V] {F : ℝ≥0 × V → ℂ}
 
 /-- The normalizing scalar `((F (0, 0)).re)⁻¹`, viewed as a complex number, is nonnegative. -/
 private theorem normalizeScalar_nonneg (hF : IsSemigroupGroupPD F) :
@@ -72,12 +74,6 @@ theorem normalize_apply_zero (hF : IsSemigroupGroupPD F) (h0 : F (0, 0) ≠ 0) :
   norm_cast
   exact inv_mul_cancel₀ hpos.ne'
 
-/-- If a semigroup-group positive-definite function is already normalized at the origin, the
-explicit normalization leaves it unchanged pointwise. -/
-theorem normalize_apply_of_map_zero_eq_one (hF0 : F (0, 0) = 1) (p : ℝ≥0 × V) :
-    (((F (0, 0)).re)⁻¹ : ℂ) * F p = F p := by
-  simp [hF0]
-
 /-- A normalized semigroup-group positive-definite function has origin value `1`, stated as the
 map-zero lemma for the normalized function. -/
 @[simp]
@@ -85,17 +81,40 @@ theorem normalize_map_zero (hF : IsSemigroupGroupPD F) (h0 : F (0, 0) ≠ 0) :
     (fun p => (((F (0, 0)).re)⁻¹ : ℂ) * F p) (0, 0) = 1 :=
   hF.normalize_apply_zero h0
 
+end PositiveDefinite
+
+section Pointwise
+
+variable {V : Type*} [Zero V] {F : ℝ≥0 × V → ℂ}
+
+/-- If a semigroup-group positive-definite function is already normalized at the origin, the
+explicit normalization leaves it unchanged pointwise. -/
+theorem normalize_apply_of_map_zero_eq_one (hF0 : F (0, 0) = 1) (p : ℝ≥0 × V) :
+    (((F (0, 0)).re)⁻¹ : ℂ) * F p = F p := by
+  simp [hF0]
+
 /-- Normalization preserves continuity. -/
 theorem normalize_continuous [TopologicalSpace V] (hFcont : Continuous F) :
     Continuous fun p : ℝ≥0 × V => (((F (0, 0)).re)⁻¹ : ℂ) * F p :=
   continuous_const.mul hFcont
 
+end Pointwise
+
+section PositiveDefiniteTopology
+
+variable {V : Type*} [AddCommGroup V] [TopologicalSpace V] {F : ℝ≥0 × V → ℂ}
+
 /-- Package normalization with continuity preservation. -/
-theorem normalize_and_continuous [TopologicalSpace V]
-    (hFpd : IsSemigroupGroupPD F) (hFcont : Continuous F) :
+theorem normalize_and_continuous (hFpd : IsSemigroupGroupPD F) (hFcont : Continuous F) :
     IsSemigroupGroupPD (fun p => (((F (0, 0)).re)⁻¹ : ℂ) * F p) ∧
       Continuous (fun p : ℝ≥0 × V => (((F (0, 0)).re)⁻¹ : ℂ) * F p) :=
   ⟨hFpd.normalize, normalize_continuous hFcont⟩
+
+end PositiveDefiniteTopology
+
+section Pointwise
+
+variable {V : Type*} [Zero V] {F : ℝ≥0 × V → ℂ}
 
 /-- A function bounded by its origin value becomes bounded by `1` after normalization. This keeps
 the boundedness hypothesis separate, as in the BCR representation theorem. -/
@@ -119,6 +138,8 @@ theorem norm_normalize_apply_le_one_of_norm_le_one_of_map_zero_eq_one
     (hF0 : F (0, 0) = 1) (hbound : ∀ p : ℝ≥0 × V, ‖F p‖ ≤ 1) (p : ℝ≥0 × V) :
     ‖(((F (0, 0)).re)⁻¹ : ℂ) * F p‖ ≤ 1 := by
   simpa [normalize_apply_of_map_zero_eq_one (F := F) hF0 p] using hbound p
+
+end Pointwise
 
 end IsSemigroupGroupPD
 
