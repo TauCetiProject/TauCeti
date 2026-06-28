@@ -180,6 +180,7 @@ lemma normalizerQuotientEquivMap_refl_mk_congr (H : Subgroup G)
 /-- After identifying the twice-mapped subgroup with the subgroup mapped by `e.trans f`,
 composing normalizer-quotient transports agrees with transport by the composite isomorphism on
 representatives. -/
+@[simp]
 lemma normalizerQuotientEquivMap_trans_mk_congr (H : Subgroup G) (e : G ≃* K) (f : K ≃* L)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientCongr

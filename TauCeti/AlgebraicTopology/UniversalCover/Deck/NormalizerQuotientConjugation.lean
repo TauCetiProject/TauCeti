@@ -119,6 +119,7 @@ lemma normalizerQuotientConjEquiv_trans_mk
 /-- After identifying the twice-conjugated subgroup with the subgroup conjugated by the
 composite over-base homeomorphism, composing deck normalizer-quotient conjugation equivalences
 agrees with conjugation by the composite on representatives. -/
+@[simp]
 lemma normalizerQuotientConjEquiv_trans_mk_congr
     {G : Type*} [TopologicalSpace G] {r : G → B}
     (h : E ≃ₜ F) (k : F ≃ₜ G)
