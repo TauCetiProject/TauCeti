@@ -424,10 +424,10 @@ lemma subgroupFiberOrbitQuotientTopEquiv_mapOfLE (H : Subgroup (Deck p)) :
 
 /-- Equality after forgetting from `H`-orbits to full deck orbits is exactly membership of
 representatives in the same full deck orbit. -/
-lemma subgroupFiberOrbitMapToFiberOrbit_apply_eq_iff (H : Subgroup (Deck p))
+lemma subgroupFiberOrbitMapToFiberOrbit_apply_eq_iff (H K : Subgroup (Deck p))
     (e e' : p ⁻¹' {b}) :
     subgroupFiberOrbitMapToFiberOrbit H (subgroupFiberOrbitClass H e) =
-        subgroupFiberOrbitMapToFiberOrbit H (subgroupFiberOrbitClass H e') ↔
+        subgroupFiberOrbitMapToFiberOrbit K (subgroupFiberOrbitClass K e') ↔
       e ∈ MulAction.orbit (Deck p) e' := by
   rw [subgroupFiberOrbitMapToFiberOrbit_apply, subgroupFiberOrbitMapToFiberOrbit_apply,
     fiberOrbitClass_eq_iff]
