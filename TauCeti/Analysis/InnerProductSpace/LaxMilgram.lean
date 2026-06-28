@@ -24,7 +24,7 @@ bundled structure.
 
 * `IsCoercive.solutionOfInner`: the solution of the variational equation with forcing
   represented by `F`.
-* `IsCoercive.solutionOfInner_spec`: the defining variational identity.
+* `IsCoercive.apply_solutionOfInner_eq_inner`: the defining variational identity.
 * `IsCoercive.eq_solutionOfInner`: uniqueness of a vector satisfying the variational
   identity.
 * `IsCoercive.existsUnique_forall_eq_inner`: the combined existence-and-uniqueness theorem.
@@ -55,9 +55,28 @@ For `F : V`, `solutionOfInner hB F` is the unique vector `u` satisfying
 def solutionOfInner (hB : IsCoercive B) (F : V) : V :=
   hB.continuousLinearEquivOfBilin.symm F
 
+/-- The represented-forcing solution is the inverse Lax--Milgram operator. -/
+theorem solutionOfInner_def (hB : IsCoercive B) (F : V) :
+    solutionOfInner hB F = hB.continuousLinearEquivOfBilin.symm F :=
+  by simp [solutionOfInner]
+
+/-- Applying the Lax--Milgram equivalence to the represented-forcing solution returns the
+forcing vector. -/
+@[simp]
+theorem continuousLinearEquivOfBilin_solutionOfInner (hB : IsCoercive B) (F : V) :
+    hB.continuousLinearEquivOfBilin (solutionOfInner hB F) = F := by
+  simp [solutionOfInner]
+
+/-- Solving against the forcing represented by a Lax--Milgram image recovers the original
+vector. -/
+@[simp]
+theorem solutionOfInner_continuousLinearEquivOfBilin (hB : IsCoercive B) (u : V) :
+    solutionOfInner hB (hB.continuousLinearEquivOfBilin u) = u := by
+  simp [solutionOfInner]
+
 /-- The Lax--Milgram solution satisfies the variational equation. -/
 @[simp]
-theorem solutionOfInner_spec (hB : IsCoercive B) (F v : V) :
+theorem apply_solutionOfInner_eq_inner (hB : IsCoercive B) (F v : V) :
     B (solutionOfInner hB F) v = ⟪F, v⟫_ℝ := by
   rw [← hB.continuousLinearEquivOfBilin_apply]
   simp [solutionOfInner]
@@ -78,7 +97,7 @@ If `B` is coercive, then for every `F : V` there is a unique `u` such that
 `B u v = ⟪F, v⟫` for all test vectors `v`. -/
 theorem existsUnique_forall_eq_inner (hB : IsCoercive B) (F : V) :
     ∃! u : V, ∀ v : V, B u v = ⟪F, v⟫_ℝ :=
-  ⟨solutionOfInner hB F, solutionOfInner_spec hB F,
+  ⟨solutionOfInner hB F, apply_solutionOfInner_eq_inner hB F,
     fun _ hu => eq_solutionOfInner hB hu⟩
 
 /-- Lax--Milgram as an existence theorem for represented functionals. -/
@@ -92,12 +111,24 @@ This is `solutionOfInner` applied to the Fréchet--Riesz representative of the f
 def solutionOfFunctional (hB : IsCoercive B) (ℓ : StrongDual ℝ V) : V :=
   solutionOfInner hB ((InnerProductSpace.toDual ℝ V).symm ℓ)
 
+/-- The functional solution is obtained by solving against the Fréchet--Riesz representative. -/
+theorem solutionOfFunctional_def (hB : IsCoercive B) (ℓ : StrongDual ℝ V) :
+    solutionOfFunctional hB ℓ =
+      solutionOfInner hB ((InnerProductSpace.toDual ℝ V).symm ℓ) :=
+  by simp [solutionOfFunctional]
+
+/-- For represented functionals, the functional solution agrees with `solutionOfInner`. -/
+@[simp]
+theorem solutionOfFunctional_toDual (hB : IsCoercive B) (F : V) :
+    solutionOfFunctional hB ((InnerProductSpace.toDual ℝ V) F) = solutionOfInner hB F := by
+  simp [solutionOfFunctional]
+
 /-- The Lax--Milgram solution for a continuous linear functional satisfies the variational
 equation. -/
 @[simp]
-theorem solutionOfFunctional_spec (hB : IsCoercive B) (ℓ : StrongDual ℝ V) (v : V) :
+theorem apply_solutionOfFunctional_eq (hB : IsCoercive B) (ℓ : StrongDual ℝ V) (v : V) :
     B (solutionOfFunctional hB ℓ) v = ℓ v := by
-  rw [solutionOfFunctional, solutionOfInner_spec, InnerProductSpace.toDual_symm_apply]
+  rw [solutionOfFunctional, apply_solutionOfInner_eq_inner, InnerProductSpace.toDual_symm_apply]
 
 /-- A vector satisfying the variational equation for a continuous linear functional is the
 Lax--Milgram solution for that functional. -/
@@ -112,7 +143,7 @@ theorem eq_solutionOfFunctional (hB : IsCoercive B) {ℓ : StrongDual ℝ V} {u 
 functionals. -/
 theorem existsUnique_forall_eq (hB : IsCoercive B) (ℓ : StrongDual ℝ V) :
     ∃! u : V, ∀ v : V, B u v = ℓ v :=
-  ⟨solutionOfFunctional hB ℓ, solutionOfFunctional_spec hB ℓ,
+  ⟨solutionOfFunctional hB ℓ, apply_solutionOfFunctional_eq hB ℓ,
     fun _ hu => eq_solutionOfFunctional hB hu⟩
 
 /-- Lax--Milgram as an existence theorem for arbitrary continuous linear functionals. -/
