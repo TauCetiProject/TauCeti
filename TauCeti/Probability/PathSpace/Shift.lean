@@ -7,12 +7,11 @@ public import TauCeti.Probability.Exchangeability.Basic
 
 This file records the Layer 2 path-space API for iterating the one-sided shift
 `TauCeti.Probability.shift`: the coordinate formula `shift_iterate_apply` and block formulas
-after iterated shifts. Measurability of iterated shifts is available from the existing
-`measurable_shift.iterate` API.
+after iterated shifts, together with the named measurability theorem for iterated shifts.
 
-These declarations support the `TauCetiRoadmap/Exchangeability/README.md` Layer 2
-path-space dynamics targets; they use the existing Tau Ceti Layer 0 path-law and shift
-definitions rather than introducing a parallel shift.
+These declarations advance the `TauCetiRoadmap/Exchangeability/README.md` Layer 2
+path-space dynamics target `shift_iterate_measurable`; they use the existing Tau Ceti
+Layer 0 path-law and shift definitions rather than introducing a parallel shift.
 -/
 
 public section
@@ -44,6 +43,10 @@ omit [MeasurableSpace Ω] [MeasurableSpace α] in
 theorem prefixProj_shift_iterate_apply (r n : ℕ) (x : ℕ → α) (i : Fin n) :
     prefixProj α n ((shift α)^[r] x) i = x (i.val + r) := by
   simp [prefixProj]
+
+/-- The `r`-fold one-sided shift is measurable. -/
+theorem shift_iterate_measurable (r : ℕ) : Measurable ((shift α)^[r]) :=
+  measurable_shift.iterate r
 
 end Probability
 
