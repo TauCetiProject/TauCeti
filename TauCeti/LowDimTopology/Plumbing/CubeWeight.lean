@@ -66,6 +66,16 @@ theorem cubeVertex_apply (x : V → ℤ) (T : Finset V) (v : V) :
   classical
   simp [cubeVertex, Finset.sum_apply, Pi.single_apply]
 
+/-- Shifting the base point by a basis vector `E_v` and adjoining `v` to the directions describe
+the same cube vertex, provided `v` was not already a direction. -/
+theorem cubeVertex_add_single_eq_insert {T : Finset V} {v : V} (hv : v ∉ T) (x : V → ℤ) :
+    cubeVertex (x + Pi.single v (1 : ℤ)) T = cubeVertex x (insert v T) := by
+  ext w
+  by_cases hw : w = v
+  · subst hw
+    simp [cubeVertex_apply, hv]
+  · simp [cubeVertex_apply, hw]
+
 variable [DecidableEq (V → ℤ)]
 
 omit [DecidableEq (V → ℤ)] in
