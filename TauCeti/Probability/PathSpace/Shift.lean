@@ -6,10 +6,8 @@ public import TauCeti.Probability.Exchangeability.Basic
 # Iterated shifts on one-sided path space
 
 This file records the Layer 2 path-space API for iterating the one-sided shift
-`TauCeti.Probability.shift`.  The main declarations are general coordinate-reindexing
-formulas for path laws, together with the coordinate formula `shift_iterate_apply`, block
-formulas after iterated shifts, and the corresponding pushforward identity for process path
-laws.
+`TauCeti.Probability.shift`: the coordinate formula `shift_iterate_apply`, block formulas
+after iterated shifts, and the corresponding pushforward identity for process path laws.
 
 These declarations advance the `TauCetiRoadmap/Exchangeability/README.md` Layer 2
 path-space dynamics target `shift_iterate_measurable`; they use the existing Tau Ceti
@@ -46,45 +44,14 @@ theorem prefixProj_shift_iterate_apply (r n : ℕ) (x : ℕ → α) (i : Fin n) 
     prefixProj α n ((shift α)^[r] x) i = x (i.val + r) := by
   simp [prefixProj]
 
-/-- Arbitrary coordinate reindexing on one-sided path space is measurable. -/
-theorem measurable_reindex (φ : ℕ → ℕ) :
-    Measurable fun x : ℕ → α => fun k => x (φ k) :=
-  measurable_pi_lambda _ fun k => measurable_pi_apply (φ k)
-
 /-- The `r`-fold one-sided shift is measurable. -/
 theorem measurable_shift_iterate (r : ℕ) : Measurable ((shift α)^[r]) :=
   measurable_shift.iterate r
-
-/-- A prefix projection after arbitrary coordinate reindexing is measurable. -/
-theorem measurable_prefixProj_reindex (φ : ℕ → ℕ) (n : ℕ) :
-    Measurable fun x : ℕ → α => prefixProj α n (fun k => x (φ k)) :=
-  (measurable_prefixProj n).comp (measurable_reindex φ)
 
 /-- The map selecting a finite consecutive block starting at `r` is measurable. -/
 theorem measurable_prefixProj_shift_iterate (r n : ℕ) :
     Measurable fun x : ℕ → α => prefixProj α n ((shift α)^[r] x) :=
   (measurable_prefixProj n).comp (measurable_shift_iterate r)
-
-/-- Mapping a path law by a coordinate reindexing gives the path law of the reindexed process. -/
-theorem map_reindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (φ : ℕ → ℕ) :
-    (pathLaw μ X).map (fun x : ℕ → α => fun k => x (φ k)) =
-      pathLaw μ (fun k ω => X (φ k) ω) := by
-  rw [pathLaw_apply, pathLaw_apply]
-  rw [AEMeasurable.map_map_of_aemeasurable (measurable_reindex φ).aemeasurable
-    (aemeasurable_pi_lambda _ hX)]
-  rfl
-
-/-- A prefix projection after coordinate reindexing gives the corresponding finite block law. -/
-theorem map_reindex_prefixProj_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (φ : ℕ → ℕ) (n : ℕ) :
-    (pathLaw μ X).map (fun x : ℕ → α => prefixProj α n (fun k => x (φ k))) =
-      blockLaw μ X (fun i : Fin n => φ i.val) := by
-  rw [pathLaw_apply, blockLaw_apply]
-  rw [AEMeasurable.map_map_of_aemeasurable
-    (measurable_prefixProj_reindex φ n).aemeasurable
-    (aemeasurable_pi_lambda _ hX)]
-  rfl
 
 /-- Mapping a path law by the `r`-fold shift gives the path law of the time-shifted process. -/
 theorem map_shift_iterate_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
