@@ -303,6 +303,17 @@ part, viewed as a complex number. -/
 theorem map_zero_eq_ofReal_re (hF : IsSemigroupGroupPD F) : F (0, 0) = ((F (0, 0)).re : ℂ) := by
   simpa using hF.diagonal_eq_ofReal_re 0
 
+/-- If a semigroup-group positive-definite function is nonzero at the origin, then the real
+part of its value at the origin is strictly positive. -/
+theorem map_zero_re_pos_of_ne_zero (hF : IsSemigroupGroupPD F) (h0 : F (0, 0) ≠ 0) :
+    0 < (F (0, 0)).re := by
+  refine lt_of_le_of_ne hF.map_zero_re_nonneg ?_
+  intro hre
+  apply h0
+  apply Complex.ext
+  · exact hre.symm
+  · simpa using hF.map_zero_im
+
 /-- Semigroup-group positive-definite functions are closed under addition. -/
 theorem add (hF : IsSemigroupGroupPD F) (hG : IsSemigroupGroupPD G) :
     IsSemigroupGroupPD fun x => F x + G x :=

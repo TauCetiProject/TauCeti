@@ -51,17 +51,6 @@ variable {V : Type*} [AddCommGroup V] {F : ℝ≥0 × V → ℂ}
 
 namespace IsSemigroupGroupPD
 
-/-- If a semigroup-group positive-definite function is nonzero at the origin, then the real
-part of its value at the origin is strictly positive. -/
-theorem map_zero_re_pos_of_ne_zero (hF : IsSemigroupGroupPD F) (h0 : F (0, 0) ≠ 0) :
-    0 < (F (0, 0)).re := by
-  refine lt_of_le_of_ne hF.map_zero_re_nonneg ?_
-  intro hre
-  apply h0
-  apply Complex.ext
-  · exact hre.symm
-  · simpa using hF.map_zero_im
-
 /-- The normalizing scalar `((F (0, 0)).re)⁻¹`, viewed as a complex number, is nonnegative. -/
 private theorem normalizeScalar_nonneg (hF : IsSemigroupGroupPD F) :
     0 ≤ (((F (0, 0)).re)⁻¹ : ℂ) := by
@@ -111,10 +100,10 @@ theorem normalize_and_continuous [TopologicalSpace V]
 /-- A function bounded by its origin value becomes bounded by `1` after normalization. This keeps
 the boundedness hypothesis separate, as in the BCR representation theorem. -/
 theorem norm_normalize_apply_le_one_of_norm_le_map_zero_re
-    (hF : IsSemigroupGroupPD F) (hbound : ∀ p : ℝ≥0 × V, ‖F p‖ ≤ (F (0, 0)).re)
-    (p : ℝ≥0 × V) :
+    (hbound : ∀ p : ℝ≥0 × V, ‖F p‖ ≤ (F (0, 0)).re) (p : ℝ≥0 × V) :
     ‖(((F (0, 0)).re)⁻¹ : ℂ) * F p‖ ≤ 1 := by
-  rcases hF.map_zero_re_nonneg.lt_or_eq with hpos | hre
+  have hnonneg : 0 ≤ (F (0, 0)).re := le_trans (norm_nonneg (F (0, 0))) (hbound (0, 0))
+  rcases hnonneg.lt_or_eq with hpos | hre
   · have hnorm : ‖(((F (0, 0)).re)⁻¹ : ℂ)‖ = ((F (0, 0)).re)⁻¹ := by
       rw [norm_inv, Complex.norm_of_nonneg hpos.le]
     rw [norm_mul, hnorm]
@@ -126,7 +115,7 @@ theorem norm_normalize_apply_le_one_of_norm_le_map_zero_re
 
 /-- If a semigroup-group positive-definite function is already bounded by `1` and normalized at
 the origin, then applying the explicit normalization preserves the same bound. -/
-theorem norm_normalize_apply_le_one_of_map_zero_eq_one
+theorem norm_normalize_apply_le_one_of_norm_le_one_of_map_zero_eq_one
     (hF0 : F (0, 0) = 1) (hbound : ∀ p : ℝ≥0 × V, ‖F p‖ ≤ 1) (p : ℝ≥0 × V) :
     ‖(((F (0, 0)).re)⁻¹ : ℂ) * F p‖ ≤ 1 := by
   simpa [normalize_apply_of_map_zero_eq_one (F := F) hF0 p] using hbound p
