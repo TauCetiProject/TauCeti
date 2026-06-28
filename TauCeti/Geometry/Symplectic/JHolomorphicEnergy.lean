@@ -46,19 +46,12 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
 For a compatible pair `(ω, J)`, this is
 `g(F ∂s, F ∂s) + g(F ∂t, F ∂t)`, where `g(v,w) = ω(v, J w)`. -/
-@[expose]
-def stdComplexLineEnergyDensity (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+irreducible_def stdComplexLineEnergyDensity (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (F : (ℝ × ℝ) →ₗ[ℝ] V) : ℝ :=
   ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) +
     ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag)
 
-/-- The defining formula for the standard-line energy density. -/
-lemma stdComplexLineEnergyDensity_def (ω : SymplecticForm V) (J : AlmostComplexStructure V)
-    (F : (ℝ × ℝ) →ₗ[ℝ] V) :
-    ω.stdComplexLineEnergyDensity J F =
-      ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) +
-        ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag) :=
-  rfl
+attribute [simp] stdComplexLineEnergyDensity_def
 
 end SymplecticForm
 
@@ -68,18 +61,28 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 variable {J : AlmostComplexStructure V} {ω : SymplecticForm V}
 variable {F : (ℝ × ℝ) →ₗ[ℝ] V}
 
-/-- For a complex-linear map out of the standard complex line, the metric norm-square of the
-imaginary-coordinate image equals that of the real-coordinate image. -/
+/-- For a complex-linear map out of the standard complex line, the associated-bilinear-form
+diagonal of the imaginary-coordinate image equals that of the real-coordinate image. -/
 lemma associatedBilinForm_apply_stdComplexLineImag_self_eq
-    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F)
-    (hω : ω.Compatible J) :
+    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) :
     ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag) =
       ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) := by
   rw [hF.apply_stdComplexLineImag]
-  exact hω.associatedBilinForm_invariant (F stdComplexLineReal) (F stdComplexLineReal)
+  calc
+    ω.associatedBilinForm J (J (F stdComplexLineReal)) (J (F stdComplexLineReal)) =
+        ω (J (F stdComplexLineReal)) (-F stdComplexLineReal) := by
+      rw [SymplecticForm.associatedBilinForm_apply, AlmostComplexStructure.apply_apply]
+    _ = -ω (J (F stdComplexLineReal)) (F stdComplexLineReal) := by
+      exact map_neg (ω.toBilinForm (J (F stdComplexLineReal))) (F stdComplexLineReal)
+    _ = ω (F stdComplexLineReal) (J (F stdComplexLineReal)) := by
+      rw [← ω.neg_eq (F stdComplexLineReal) (J (F stdComplexLineReal))]
+      simp
+    _ = ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) := by
+      rw [SymplecticForm.associatedBilinForm_apply]
 
-/-- For a complex-linear map out of the standard complex line, the real-coordinate metric
-norm-square is the symplectic area density of the ordered coordinate pair. -/
+/-- For a complex-linear map out of the standard complex line, the real-coordinate
+associated-bilinear-form diagonal is the symplectic area density of the ordered coordinate
+pair. -/
 lemma associatedBilinForm_apply_stdComplexLineReal_self_eq_symplecticForm
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) :
     ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) =
@@ -89,24 +92,22 @@ lemma associatedBilinForm_apply_stdComplexLineReal_self_eq_symplecticForm
 /-- For a complex-linear map out of the standard complex line, the standard pointwise energy
 density is twice the symplectic area density. -/
 lemma stdComplexLineEnergyDensity_eq_two_mul_symplecticForm
-    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F)
-    (hω : ω.Compatible J) :
+    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) :
     ω.stdComplexLineEnergyDensity J F =
       2 * ω (F stdComplexLineReal) (F stdComplexLineImag) := by
   rw [SymplecticForm.stdComplexLineEnergyDensity_def,
-    hF.associatedBilinForm_apply_stdComplexLineImag_self_eq hω,
+    hF.associatedBilinForm_apply_stdComplexLineImag_self_eq,
     hF.associatedBilinForm_apply_stdComplexLineReal_self_eq_symplecticForm]
   ring
 
-/-- The standard pointwise energy density of a complex-linear map is nonnegative under a
-compatible pair. -/
+/-- The standard pointwise energy density of a complex-linear map is nonnegative under tameness. -/
 lemma stdComplexLineEnergyDensity_nonneg
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F)
-    (hω : ω.Compatible J) :
+    (hω : ω.Tames J) :
     0 ≤ ω.stdComplexLineEnergyDensity J F := by
-  rw [hF.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm hω]
+  rw [hF.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm]
   exact mul_nonneg zero_le_two
-    (hF.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hω.tames)
+    (hF.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hω)
 
 end IsComplexLinearMap
 
@@ -116,19 +117,18 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 variable {J : AlmostComplexStructure V} {ω : SymplecticForm V}
 variable {f : ℝ × ℝ → V} {x : ℝ × ℝ}
 
-/-- For a pointwise `J`-holomorphic map from the standard complex line, the metric norm-square
-of the `∂t` derivative equals that of the `∂s` derivative. -/
+/-- For a pointwise `J`-holomorphic map from the standard complex line, the
+associated-bilinear-form diagonal of the `∂t` derivative equals that of the `∂s` derivative. -/
 lemma associatedBilinForm_fderiv_stdComplexLineImag_self_eq
-    (hf : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x)
-    (hω : ω.Compatible J) :
+    (hf : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x) :
     ω.associatedBilinForm J (fderiv ℝ f x stdComplexLineImag)
         (fderiv ℝ f x stdComplexLineImag) =
       ω.associatedBilinForm J (fderiv ℝ f x stdComplexLineReal)
         (fderiv ℝ f x stdComplexLineReal) :=
-  hf.fderiv_isComplexLinear.associatedBilinForm_apply_stdComplexLineImag_self_eq hω
+  hf.fderiv_isComplexLinear.associatedBilinForm_apply_stdComplexLineImag_self_eq
 
-/-- For a pointwise `J`-holomorphic map from the standard complex line, the `∂s` metric
-norm-square is the symplectic area density `ω(∂s u, ∂t u)`. -/
+/-- For a pointwise `J`-holomorphic map from the standard complex line, the `∂s`
+associated-bilinear-form diagonal is the symplectic area density `ω(∂s u, ∂t u)`. -/
 lemma associatedBilinForm_fderiv_stdComplexLineReal_self_eq_symplecticForm
     (hf : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x) :
     ω.associatedBilinForm J (fderiv ℝ f x stdComplexLineReal)
@@ -139,20 +139,72 @@ lemma associatedBilinForm_fderiv_stdComplexLineReal_self_eq_symplecticForm
 /-- For a pointwise `J`-holomorphic map from the standard complex line, the derivative's
 standard energy density is twice its symplectic area density. -/
 lemma fderiv_stdComplexLineEnergyDensity_eq_two_mul_symplecticForm
-    (hf : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x)
-    (hω : ω.Compatible J) :
+    (hf : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x) :
     ω.stdComplexLineEnergyDensity J (fderiv ℝ f x).toLinearMap =
       2 * ω (fderiv ℝ f x stdComplexLineReal) (fderiv ℝ f x stdComplexLineImag) :=
-  hf.fderiv_isComplexLinear.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm hω
+  hf.fderiv_isComplexLinear.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm
 
 /-- The derivative's standard pointwise energy density is nonnegative for a pointwise
-`J`-holomorphic map under a compatible pair. -/
+`J`-holomorphic map under tameness. -/
 lemma fderiv_stdComplexLineEnergyDensity_nonneg
     (hf : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x)
-    (hω : ω.Compatible J) :
+    (hω : ω.Tames J) :
     0 ≤ ω.stdComplexLineEnergyDensity J (fderiv ℝ f x).toLinearMap :=
   hf.fderiv_isComplexLinear.stdComplexLineEnergyDensity_nonneg hω
 
 end IsJHolomorphicAt
+
+namespace IsJHolomorphicWithinAt
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {J : AlmostComplexStructure V} {ω : SymplecticForm V}
+variable {f : ℝ × ℝ → V} {s : Set (ℝ × ℝ)} {x : ℝ × ℝ}
+
+/-- For a within-set `J`-holomorphic map from the standard complex line, the
+associated-bilinear-form diagonal of the `∂t` derivative equals that of the `∂s` derivative,
+provided derivatives within the set are unique. -/
+lemma associatedBilinForm_fderivWithin_stdComplexLineImag_self_eq
+    (hf : IsJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J f s x)
+    (hs : UniqueDiffWithinAt ℝ s x) :
+    ω.associatedBilinForm J (fderivWithin ℝ f s x stdComplexLineImag)
+        (fderivWithin ℝ f s x stdComplexLineImag) =
+      ω.associatedBilinForm J (fderivWithin ℝ f s x stdComplexLineReal)
+        (fderivWithin ℝ f s x stdComplexLineReal) :=
+  (hf.fderivWithin_isComplexLinear hs).associatedBilinForm_apply_stdComplexLineImag_self_eq
+
+/-- For a within-set `J`-holomorphic map from the standard complex line, the `∂s`
+associated-bilinear-form diagonal is the symplectic area density `ω(∂s u, ∂t u)`,
+provided derivatives within the set are unique. -/
+lemma associatedBilinForm_fderivWithin_stdComplexLineReal_self_eq_symplecticForm
+    (hf : IsJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J f s x)
+    (hs : UniqueDiffWithinAt ℝ s x) :
+    ω.associatedBilinForm J (fderivWithin ℝ f s x stdComplexLineReal)
+        (fderivWithin ℝ f s x stdComplexLineReal) =
+      ω (fderivWithin ℝ f s x stdComplexLineReal)
+        (fderivWithin ℝ f s x stdComplexLineImag) :=
+  by
+    have hlin := hf.fderivWithin_isComplexLinear hs
+    exact hlin.associatedBilinForm_apply_stdComplexLineReal_self_eq_symplecticForm
+
+/-- For a within-set `J`-holomorphic map from the standard complex line, the derivative's
+standard energy density is twice its symplectic area density, provided derivatives within the
+set are unique. -/
+lemma fderivWithin_stdComplexLineEnergyDensity_eq_two_mul_symplecticForm
+    (hf : IsJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J f s x)
+    (hs : UniqueDiffWithinAt ℝ s x) :
+    ω.stdComplexLineEnergyDensity J (fderivWithin ℝ f s x).toLinearMap =
+      2 * ω (fderivWithin ℝ f s x stdComplexLineReal)
+        (fderivWithin ℝ f s x stdComplexLineImag) :=
+  (hf.fderivWithin_isComplexLinear hs).stdComplexLineEnergyDensity_eq_two_mul_symplecticForm
+
+/-- The within-set derivative's standard pointwise energy density is nonnegative for a
+within-set `J`-holomorphic map under tameness, provided derivatives within the set are unique. -/
+lemma fderivWithin_stdComplexLineEnergyDensity_nonneg
+    (hf : IsJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J f s x)
+    (hs : UniqueDiffWithinAt ℝ s x) (hω : ω.Tames J) :
+    0 ≤ ω.stdComplexLineEnergyDensity J (fderivWithin ℝ f s x).toLinearMap :=
+  (hf.fderivWithin_isComplexLinear hs).stdComplexLineEnergyDensity_nonneg hω
+
+end IsJHolomorphicWithinAt
 
 end TauCeti
