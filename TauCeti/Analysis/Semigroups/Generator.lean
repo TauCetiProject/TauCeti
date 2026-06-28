@@ -81,14 +81,7 @@ def StronglyContinuousSemigroup.domain (S : StronglyContinuousSemigroup X) :
       (nhdsWithin 0 (Set.Ioi 0)) (nhds Ax) }
   add_mem' := by
     rintro x y ⟨Ax, hAx⟩ ⟨Ay, hAy⟩
-    refine ⟨Ax + Ay, ?_⟩
-    have heq : ∀ᶠ t in nhdsWithin 0 (Set.Ioi 0),
-        (1 / t) • (S.realOperator t (x + y) - (x + y)) =
-          (1 / t) • (S.realOperator t x - x) +
-            (1 / t) • (S.realOperator t y - y) := by
-      filter_upwards with t
-      rw [map_add, add_sub_add_comm, smul_add]
-    exact (hAx.add hAy).congr' (heq.mono (fun _ h => h.symm))
+    exact ⟨Ax + Ay, S.genQuot_tendsto_add hAx hAy⟩
   zero_mem' := by
     refine ⟨0, ?_⟩
     have h0 :
@@ -98,13 +91,7 @@ def StronglyContinuousSemigroup.domain (S : StronglyContinuousSemigroup X) :
     rw [h0]; exact tendsto_const_nhds
   smul_mem' := by
     rintro c x ⟨Ax, hAx⟩
-    refine ⟨c • Ax, ?_⟩
-    have heq : ∀ᶠ t in nhdsWithin 0 (Set.Ioi 0),
-        (1 / t) • (S.realOperator t (c • x) - c • x) =
-          c • ((1 / t) • (S.realOperator t x - x)) := by
-      filter_upwards with t
-      simp only [map_smul, smul_sub, smul_comm c (1 / t)]
-    exact (hAx.const_smul c).congr' (heq.mono (fun _ h => h.symm))
+    exact ⟨c • Ax, S.genQuot_tendsto_smul c hAx⟩
 
 /-- The infinitesimal generator `A` as an unbounded operator (`LinearPMap`),
 `A x = lim_{t→0⁺} (S t x - x)/t` on the domain `D(A)` where the limit exists
@@ -116,39 +103,18 @@ noncomputable def StronglyContinuousSemigroup.generator
   toFun :=
     { toFun := fun x => Classical.choose x.property
       map_add' := fun x y => by
-        have hxy : Filter.Tendsto
-            (fun t => (1 / t) •
-              (S.realOperator t ((x + y : S.domain) : X) - ((x + y : S.domain) : X)))
-            (nhdsWithin 0 (Set.Ioi 0))
-            (nhds (Classical.choose x.property + Classical.choose y.property)) := by
-          have heq : ∀ᶠ t in nhdsWithin 0 (Set.Ioi 0),
-              (1 / t) •
-                (S.realOperator t ((x + y : S.domain) : X) -
-                  ((x + y : S.domain) : X)) =
-                (1 / t) • (S.realOperator t (x : X) - (x : X)) +
-                  (1 / t) • (S.realOperator t (y : X) - (y : X)) := by
-            filter_upwards with t
-            simp only [Submodule.coe_add]
-            rw [map_add, add_sub_add_comm, smul_add]
-          exact ((Classical.choose_spec x.property).add
-            (Classical.choose_spec y.property)).congr' (heq.mono (fun _ h => h.symm))
-        exact tendsto_nhds_unique (Classical.choose_spec (x + y).property) hxy
+        -- additivity of the difference-quotient limit (`genQuot_tendsto_add`), after
+        -- reconciling the submodule coercion `↑(x + y) = ↑x + ↑y`.
+        have h := S.genQuot_tendsto_add (Classical.choose_spec x.property)
+          (Classical.choose_spec y.property)
+        rw [← Submodule.coe_add] at h
+        exact tendsto_nhds_unique (Classical.choose_spec (x + y).property) h
       map_smul' := fun c x => by
-        have hx : Filter.Tendsto
-            (fun t => (1 / t) •
-              (S.realOperator t ((c • x : S.domain) : X) - ((c • x : S.domain) : X)))
-            (nhdsWithin 0 (Set.Ioi 0))
-            (nhds (c • Classical.choose x.property)) := by
-          have heq : ∀ᶠ t in nhdsWithin 0 (Set.Ioi 0),
-              (1 / t) •
-                (S.realOperator t ((c • x : S.domain) : X) -
-                  ((c • x : S.domain) : X)) =
-                c • ((1 / t) • (S.realOperator t (x : X) - (x : X))) := by
-            filter_upwards with t
-            simp only [Submodule.coe_smul, map_smul, smul_sub, smul_comm c (1 / t)]
-          exact ((Classical.choose_spec x.property).const_smul c).congr'
-            (heq.mono (fun _ h => h.symm))
-        exact tendsto_nhds_unique (Classical.choose_spec (c • x).property) hx }
+        -- `ℝ`-homogeneity of the difference-quotient limit (`genQuot_tendsto_smul`), after
+        -- reconciling the submodule coercion `↑(c • x) = c • ↑x`.
+        have h := S.genQuot_tendsto_smul c (Classical.choose_spec x.property)
+        rw [← Submodule.coe_smul] at h
+        exact tendsto_nhds_unique (Classical.choose_spec (c • x).property) h }
 
 omit [CompleteSpace X] in
 /-- `S.generator.domain` is the generator domain submodule. -/
@@ -192,8 +158,7 @@ theorem StronglyContinuousSemigroup.generator_eq_of_tendsto
 
 
 
-/-- The integral average `(1/t) • ∫_{(0,t]} S(u)x du` tends to `x` as `t → 0⁺`.
-This is the Cesàro limit for the orbit, using strong continuity at the origin. -/
+/-- The integral average `(1/t) • ∫_{(0,t]} S(u)x du` of the orbit tends to `x` as `t → 0⁺`. -/
 private theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
     (S : StronglyContinuousSemigroup X) (x : X) :
     Filter.Tendsto

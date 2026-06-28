@@ -8,6 +8,7 @@ public import TauCeti.Analysis.Semigroups.Generator
 public import TauCeti.Analysis.Semigroups.GrowthBound
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.MeasureTheory.Integral.ExpDecay
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 
 /-!
@@ -200,9 +201,8 @@ private theorem StronglyContinuousSemigroup.resolvent_shift_identity
   simp only [smul_sub, sub_smul, one_smul]
   abel
 
-/-- The integral average `(1/t) • ∫_{(0,t]} e^{-λu} S(u)x du` tends to `x` as `t → 0⁺`: the
-integrand `e^{-λu} S(u)x` is continuous at `0` with value `x` (strong continuity), so the
-fundamental theorem of calculus gives the Cesàro limit. -/
+/-- The integral average `(1/t) • ∫_{(0,t]} e^{-λu} S(u)x du` of the resolvent integrand
+tends to `x` as `t → 0⁺`. -/
 private theorem StronglyContinuousSemigroup.tendsto_average_resolvent_integrand
     (S : StronglyContinuousSemigroup X) (lambda : ℝ) (x : X) :
     Filter.Tendsto
