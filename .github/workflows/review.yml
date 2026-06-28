@@ -79,7 +79,7 @@ jobs:
     if: ${{ vars.CI_REVIEW_ENABLED == 'true' && needs.resolve.outputs.pr != '' }}
     # Pinned to a TauCetiReview commit; bump deliberately (an unpinned @main lets an upstream change
     # break every contributor's review at once, and this workflow inherits TauCeti's secrets).
-    uses: FormalFrontier/TauCetiReview/.github/workflows/review.yml@8141201d620b0ae986222bea6ee25d7c0d3d1e72
+    uses: FormalFrontier/TauCetiReview/.github/workflows/review.yml@21f3525b96c22030f5b5b49307867b903cab28dc
     with:
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
