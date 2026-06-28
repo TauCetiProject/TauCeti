@@ -265,10 +265,10 @@ private lemma pushforward_indicator_nat (f : X → Y) (s : Finset X) (m : X → 
   refine Finset.sum_congr rfl fun x hx => ?_
   rw [map_zsmul, pushforward_ofPoint]
 
-/-- With positive weights on the selected set, an indicator divisor with multiplicities has
-weighted degree zero exactly when every selected multiplicity vanishes. -/
+/-- With positive weights at the selected points with nonzero multiplicity, an indicator divisor
+with multiplicities has weighted degree zero exactly when every selected multiplicity vanishes. -/
 private lemma weightedDegree_indicator_nat_eq_zero_iff_of_pos
-    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) (m : X → ℕ) :
+    (s : Finset X) {w : X → ℤ} (m : X → ℕ) (hw : ∀ x ∈ s, m x ≠ 0 → 0 < w x) :
     weightedDegree w (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) = 0 ↔
       ∀ x ∈ s, m x = 0 := by
   classical
@@ -277,21 +277,24 @@ private lemma weightedDegree_indicator_nat_eq_zero_iff_of_pos
     have hzero :
         (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) = 0 :=
       (isEffective_indicator_nat s m).eq_zero_of_weightedDegree_eq_zero_of_pos_on_support
-        (fun y hy => hw y (support_indicator_nat_subset s m hy)) hdeg
+        (fun y hy => by
+          obtain ⟨hys, hmy⟩ := mem_support_indicator_nat_iff.mp hy
+          exact hw y hys hmy)
+        hdeg
     have hcoeff := congrArg (fun D : WeilDivisor X => coeff D x) hzero
     simpa [coeff_indicator_nat, hx] using hcoeff
   · intro hm
     rw [weightedDegree_indicator_nat]
     exact Finset.sum_eq_zero fun x hx => by simp [hm x hx]
 
-/-- An indicator divisor with positive weights on the selected set lies in the weighted
-degree-zero subgroup exactly when all selected multiplicities vanish. -/
+/-- An indicator divisor with positive weights at selected points with nonzero multiplicity lies
+in the weighted degree-zero subgroup exactly when all selected multiplicities vanish. -/
 private lemma indicator_nat_mem_weightedDegreeZeroSubgroup_iff_of_pos
-    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) (m : X → ℕ) :
+    (s : Finset X) {w : X → ℤ} (m : X → ℕ) (hw : ∀ x ∈ s, m x ≠ 0 → 0 < w x) :
     (Finsupp.indicator s (fun x _ => (m x : ℤ)) : WeilDivisor X) ∈
         weightedDegreeZeroSubgroup w ↔
       ∀ x ∈ s, m x = 0 := by
-  rw [mem_weightedDegreeZeroSubgroup, weightedDegree_indicator_nat_eq_zero_iff_of_pos s hw]
+  rw [mem_weightedDegreeZeroSubgroup, weightedDegree_indicator_nat_eq_zero_iff_of_pos s m hw]
 
 /-- An indicator divisor with multiplicities has unweighted degree zero exactly when every
 selected multiplicity vanishes. -/
@@ -300,7 +303,7 @@ private lemma indicator_nat_mem_degreeZeroSubgroup_iff (s : Finset X) (m : X →
       ∀ x ∈ s, m x = 0 := by
   rw [mem_degreeZeroSubgroup, ← weightedDegree_one_eq_degree]
   exact weightedDegree_indicator_nat_eq_zero_iff_of_pos
-    (w := fun _ : X => (1 : ℤ)) s (fun _ _ => zero_lt_one) m
+    (w := fun _ : X => (1 : ℤ)) s m (fun _ _ _ => zero_lt_one)
 
 /-! ### Named finite-set multiplicity divisors -/
 
@@ -379,21 +382,23 @@ lemma pushforward_ofFinsetWithMultiplicity (f : X → Y) (s : Finset X) (m : X �
       ∑ x ∈ s, (m x : ℤ) • ofPoint (f x) := by
   simpa [ofFinsetWithMultiplicity] using pushforward_indicator_nat (f := f) (s := s) (m := m)
 
-/-- With positive weights on `s`, `ofFinsetWithMultiplicity s m` has weighted degree zero
-exactly when every selected multiplicity vanishes. -/
+/-- With positive weights at selected points with nonzero multiplicity,
+`ofFinsetWithMultiplicity s m` has weighted degree zero exactly when every selected multiplicity
+vanishes. -/
 lemma weightedDegree_ofFinsetWithMultiplicity_eq_zero_iff_of_pos
-    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) (m : X → ℕ) :
+    (s : Finset X) {w : X → ℤ} (m : X → ℕ) (hw : ∀ x ∈ s, m x ≠ 0 → 0 < w x) :
     weightedDegree w (ofFinsetWithMultiplicity s m) = 0 ↔ ∀ x ∈ s, m x = 0 := by
   simpa [ofFinsetWithMultiplicity] using
-    weightedDegree_indicator_nat_eq_zero_iff_of_pos (s := s) (w := w) hw m
+    weightedDegree_indicator_nat_eq_zero_iff_of_pos (s := s) (w := w) m hw
 
-/-- With positive weights on `s`, `ofFinsetWithMultiplicity s m` lies in the weighted
-degree-zero subgroup exactly when every selected multiplicity vanishes. -/
+/-- With positive weights at selected points with nonzero multiplicity,
+`ofFinsetWithMultiplicity s m` lies in the weighted degree-zero subgroup exactly when every
+selected multiplicity vanishes. -/
 lemma ofFinsetWithMultiplicity_mem_weightedDegreeZeroSubgroup_iff_of_pos
-    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) (m : X → ℕ) :
+    (s : Finset X) {w : X → ℤ} (m : X → ℕ) (hw : ∀ x ∈ s, m x ≠ 0 → 0 < w x) :
     ofFinsetWithMultiplicity s m ∈ weightedDegreeZeroSubgroup w ↔ ∀ x ∈ s, m x = 0 := by
   simpa [ofFinsetWithMultiplicity] using
-    indicator_nat_mem_weightedDegreeZeroSubgroup_iff_of_pos (s := s) (w := w) hw m
+    indicator_nat_mem_weightedDegreeZeroSubgroup_iff_of_pos (s := s) (w := w) m hw
 
 /-- `ofFinsetWithMultiplicity s m` has unweighted degree zero exactly when every selected
 multiplicity vanishes. -/
@@ -496,7 +501,8 @@ private lemma indicator_one_mem_weightedDegreeZeroSubgroup_iff_of_pos
         weightedDegreeZeroSubgroup w ↔
       s = ∅ := by
   classical
-  exact (indicator_nat_mem_weightedDegreeZeroSubgroup_iff_of_pos s hw (fun _ : X => 1)).trans
+  exact (indicator_nat_mem_weightedDegreeZeroSubgroup_iff_of_pos s
+    (fun _ : X => 1) (fun x hx _ => hw x hx)).trans
     (forall_mem_one_eq_zero_iff_empty s)
 
 /-- A coefficient-one indicator divisor has unweighted degree zero exactly when the set is empty. -/
@@ -584,7 +590,7 @@ lemma ofFinset_mem_weightedDegreeZeroSubgroup_iff_of_pos
     ofFinset s ∈ weightedDegreeZeroSubgroup w ↔ s = ∅ := by
   rw [ofFinset]
   rw [ofFinsetWithMultiplicity_mem_weightedDegreeZeroSubgroup_iff_of_pos
-    (s := s) (w := w) hw (fun _ : X => 1)]
+    (s := s) (w := w) (fun _ : X => 1) (fun x hx _ => hw x hx)]
   exact forall_mem_one_eq_zero_iff_empty s
 
 /-- `ofFinset s` has unweighted degree zero exactly when `s` is empty. -/
