@@ -7,10 +7,11 @@ public import TauCeti.Probability.Exchangeability.Basic
 
 This file records the Layer 2 path-space API for iterating the one-sided shift
 `TauCeti.Probability.shift`: the coordinate formula `shift_iterate_apply` and the corresponding
-measurability, path-law, and finite-prefix normal forms.
+measurability and finite-prefix normal form.
 
 These declarations advance the `TauCetiRoadmap/Exchangeability/README.md` Layer 2
-path-space dynamics target `shift_iterate_measurable`.
+path-space dynamics target `shift_iterate_measurable`; path-law reindexing uses the Layer 0
+generic lemmas from `Exchangeability.Basic`.
 -/
 
 public section
@@ -46,31 +47,6 @@ omit [MeasurableSpace Ω] [MeasurableSpace α] in
 theorem prefixProj_shift_iterate_apply (r n : ℕ) (x : ℕ → α) (i : Fin n) :
     prefixProj α n ((shift α)^[r] x) i = x (i.val + r) := by
   simp [prefixProj]
-
-/-- Mapping a path law by an iterated shift gives the path law of the shifted process. -/
-theorem map_shift_iterate_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (r : ℕ) :
-    (pathLaw μ X).map ((shift α)^[r]) =
-      pathLaw μ (fun k ω => X (k + r) ω) := by
-  rw [pathLaw_apply, pathLaw_apply,
-    AEMeasurable.map_map_of_aemeasurable (measurable_shift_iterate r).aemeasurable
-      (aemeasurable_pi_lambda _ hX)]
-  congr 1
-  funext ω k
-  simp
-
-/-- Mapping a path law by a prefix after an iterated shift gives the shifted finite block law. -/
-theorem map_prefixProj_shift_iterate_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (r n : ℕ) :
-    (pathLaw μ X).map (fun x : ℕ → α => prefixProj α n ((shift α)^[r] x)) =
-      blockLaw μ X (fun i : Fin n => i.val + r) := by
-  rw [pathLaw_apply, blockLaw_apply]
-  rw [AEMeasurable.map_map_of_aemeasurable]
-  · congr 1
-    funext ω i
-    simp
-  · exact ((measurable_prefixProj n).comp (measurable_shift_iterate r)).aemeasurable
-  · exact aemeasurable_pi_lambda _ hX
 
 end Probability
 
