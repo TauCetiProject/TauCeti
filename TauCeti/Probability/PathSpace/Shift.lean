@@ -44,10 +44,14 @@ theorem prefixProj_shift_iterate_apply (r n : ℕ) (x : ℕ → α) (i : Fin n) 
     prefixProj α n ((shift α)^[r] x) i = x (i.val + r) := by
   simp [prefixProj]
 
+/-- The `r`-fold one-sided shift is measurable. -/
+theorem measurable_shift_iterate (r : ℕ) : Measurable ((shift α)^[r]) :=
+  measurable_shift.iterate r
+
 /-- The map selecting a finite consecutive block starting at `r` is measurable. -/
 theorem measurable_prefixProj_shift_iterate (r n : ℕ) :
     Measurable fun x : ℕ → α => prefixProj α n ((shift α)^[r] x) :=
-  (measurable_prefixProj n).comp (measurable_shift.iterate r)
+  (measurable_prefixProj n).comp (measurable_shift_iterate r)
 
 /-- Mapping a path law by the `r`-fold shift gives the path law of the time-shifted process. -/
 theorem map_shift_iterate_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
