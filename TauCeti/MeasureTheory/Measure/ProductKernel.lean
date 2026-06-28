@@ -128,7 +128,9 @@ theorem bind_probabilityMeasure_pi_apply
   Measure.bind_apply hs (aemeasurable_probabilityMeasure_pi_toMeasure ν hν)
 
 /-- **Bind-evaluation on a rectangle.** On a rectangle `Set.univ.pi B`, the mixture equals
-`∫⁻ ω, ∏ i, (ν i ω) (B i) ∂μ`. -/
+`∫⁻ ω, ∏ i, (ν i ω) (B i) ∂μ`. Stated as an explicit `rw` lemma, not `@[simp]`: `simp` first
+unfolds `(ProbabilityMeasure.pi …).toMeasure` via `toMeasure_pi`, so this `.toMeasure`-shaped LHS is
+not simp-normal. -/
 theorem bind_probabilityMeasure_pi_pi
     (ν : ∀ i, Ω → ProbabilityMeasure (α i)) (hν : ∀ i, AEMeasurable (ν i) μ)
     (B : ∀ i, Set (α i)) (hB : ∀ i, MeasurableSet (B i)) :
