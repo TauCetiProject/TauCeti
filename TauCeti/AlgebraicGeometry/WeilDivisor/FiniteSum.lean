@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import Mathlib.Data.Finsupp.Indicator
 public import TauCeti.AlgebraicGeometry.WeilDivisor
 
 /-!
@@ -39,50 +40,157 @@ noncomputable section
 
 /-! ### Finite sums with multiplicity -/
 
+/-- The effective divisor with finitely supported natural-number multiplicities. -/
+def ofFinsuppMultiplicity (m : X →₀ ℕ) : WeilDivisor X :=
+  Finsupp.mapRange (fun n : ℕ => (n : ℤ)) (by simp) m
+
+@[simp]
+lemma coeff_ofFinsuppMultiplicity (m : X →₀ ℕ) (x : X) :
+    coeff (ofFinsuppMultiplicity m) x = m x := by
+  simp [ofFinsuppMultiplicity, coeff]
+
+/-- Finitely supported natural multiplicities give effective divisors. -/
+@[simp]
+lemma isEffective_ofFinsuppMultiplicity (m : X →₀ ℕ) :
+    IsEffective (ofFinsuppMultiplicity m) := by
+  rw [isEffective_iff]
+  intro x
+  simp
+
+/-- The divisor from finitely supported multiplicities is the corresponding sum of point
+divisors over the support. -/
+lemma ofFinsuppMultiplicity_eq_sum (m : X →₀ ℕ) :
+    ofFinsuppMultiplicity m = ∑ x ∈ m.support, (m x : ℤ) • ofPoint x := by
+  classical
+  apply Finsupp.ext
+  intro x
+  simp only [ofFinsuppMultiplicity, Finsupp.mapRange_apply]
+  by_cases hxs : x ∈ m.support
+  · simp_rw [Finset.sum_apply']
+    change (m x : ℤ) = ∑ y ∈ m.support, (((m y : ℤ) • ofPoint y : WeilDivisor X) x)
+    rw [Finset.sum_eq_single x]
+    · have hpoint : (ofPoint x : WeilDivisor X) x = 1 := by
+        simpa [coeff] using coeff_ofPoint_self x
+      simp [hpoint]
+    · intro y hy hyx
+      have hxy : x ≠ y := fun h => hyx h.symm
+      have hpoint : (ofPoint y : WeilDivisor X) x = 0 := by
+        simpa [coeff] using coeff_ofPoint_of_ne (x := y) (y := x) hxy
+      simp [hpoint]
+    · intro hx
+      exact (hx hxs).elim
+  · have hmx : m x = 0 := by
+      by_contra hmx
+      exact hxs (Finsupp.mem_support_iff.mpr hmx)
+    rw [hmx]
+    simp_rw [Finset.sum_apply']
+    change (0 : ℤ) = ∑ y ∈ m.support, (((m y : ℤ) • ofPoint y : WeilDivisor X) x)
+    exact (Finset.sum_eq_zero fun y hy => by
+      have hxy : x ≠ y := fun h => hxs (h.symm ▸ hy)
+      have hpoint : (ofPoint y : WeilDivisor X) x = 0 := by
+        simpa [coeff] using coeff_ofPoint_of_ne (x := y) (y := x) hxy
+      simp [hpoint]).symm
+
+/-- The support of the divisor from finitely supported natural multiplicities is the support
+of those multiplicities. -/
+@[simp]
+lemma support_ofFinsuppMultiplicity (m : X →₀ ℕ) :
+    (ofFinsuppMultiplicity m).support = m.support := by
+  classical
+  ext x
+  rw [mem_support_iff, coeff_ofFinsuppMultiplicity, Finsupp.mem_support_iff]
+  constructor
+  · intro h hx
+    exact h (by simp [hx])
+  · intro h hx
+    apply h
+    exact_mod_cast hx
+
+/-- The degree of a divisor from finitely supported multiplicities is the sum over the support. -/
+@[simp]
+lemma degree_ofFinsuppMultiplicity (m : X →₀ ℕ) :
+    degree (ofFinsuppMultiplicity m) = ∑ x ∈ m.support, (m x : ℤ) := by
+  classical
+  simp [ofFinsuppMultiplicity_eq_sum]
+
+/-- The weighted degree of a divisor from finitely supported multiplicities is the weighted
+sum over the support. -/
+@[simp]
+lemma weightedDegree_ofFinsuppMultiplicity (w : X → ℤ) (m : X →₀ ℕ) :
+    weightedDegree w (ofFinsuppMultiplicity m) =
+      ∑ x ∈ m.support, (m x : ℤ) * w x := by
+  classical
+  simp [ofFinsuppMultiplicity_eq_sum, mul_comm]
+
+/-- Pushing forward a divisor from finitely supported multiplicities applies the map to each
+point in the support sum. -/
+@[simp]
+lemma pushforward_ofFinsuppMultiplicity (f : X → Y) (m : X →₀ ℕ) :
+    pushforward f (ofFinsuppMultiplicity m) =
+      ∑ x ∈ m.support, (m x : ℤ) • ofPoint (f x) := by
+  classical
+  rw [ofFinsuppMultiplicity_eq_sum, map_sum]
+  refine Finset.sum_congr rfl fun x hx => ?_
+  rw [map_zsmul, pushforward_ofPoint]
+
 /-- The effective divisor `Σ x ∈ s, m x • [x]` attached to a finite set of points and
 natural-number multiplicities.  Points outside `s` have coefficient zero. -/
 def ofFinsetWithMultiplicity (s : Finset X) (m : X → ℕ) : WeilDivisor X :=
-  ∑ x ∈ s, (m x : ℤ) • ofPoint x
+  ofFinsuppMultiplicity (Finsupp.indicator s fun x _ => m x)
+
+/-- Coefficient formula for a finite point divisor with multiplicities. -/
+@[simp]
+lemma coeff_ofFinsetWithMultiplicity [DecidableEq X] (s : Finset X) (m : X → ℕ) (x : X) :
+    coeff (ofFinsetWithMultiplicity s m) x = if x ∈ s then m x else 0 := by
+  simp [ofFinsetWithMultiplicity, Finsupp.indicator_apply]
+
+/-- The `Finsupp.indicator` constructor agrees with the finite sum of point divisors. -/
+lemma ofFinsetWithMultiplicity_eq_sum (s : Finset X) (m : X → ℕ) :
+    ofFinsetWithMultiplicity s m = ∑ x ∈ s, (m x : ℤ) • ofPoint x := by
+  classical
+  apply Finsupp.ext
+  intro x
+  simp only [ofFinsetWithMultiplicity, ofFinsuppMultiplicity, Finsupp.mapRange_apply,
+    Finsupp.indicator_apply]
+  by_cases hxs : x ∈ s
+  · rw [dif_pos hxs]
+    simp_rw [Finset.sum_apply']
+    change (m x : ℤ) = ∑ y ∈ s, (((m y : ℤ) • ofPoint y : WeilDivisor X) x)
+    rw [Finset.sum_eq_single x]
+    · have hpoint : (ofPoint x : WeilDivisor X) x = 1 := by
+        simpa [coeff] using coeff_ofPoint_self x
+      simp [hpoint]
+    · intro y hy hyx
+      have hxy : x ≠ y := fun h => hyx h.symm
+      have hpoint : (ofPoint y : WeilDivisor X) x = 0 := by
+        simpa [coeff] using coeff_ofPoint_of_ne (x := y) (y := x) hxy
+      simp [hpoint]
+    · intro hx
+      exact (hx hxs).elim
+  · rw [dif_neg hxs]
+    simp_rw [Finset.sum_apply']
+    change (0 : ℤ) = ∑ y ∈ s, (((m y : ℤ) • ofPoint y : WeilDivisor X) x)
+    exact (Finset.sum_eq_zero fun y hy => by
+      have hxy : x ≠ y := fun h => hxs (h.symm ▸ hy)
+      have hpoint : (ofPoint y : WeilDivisor X) x = 0 := by
+        simpa [coeff] using coeff_ofPoint_of_ne (x := y) (y := x) hxy
+      simp [hpoint]).symm
 
 @[simp]
 lemma ofFinsetWithMultiplicity_empty (m : X → ℕ) :
     ofFinsetWithMultiplicity (∅ : Finset X) m = 0 := by
-  simp [ofFinsetWithMultiplicity]
+  classical
+  ext x
+  rw [coeff_ofFinsetWithMultiplicity]
+  simp
 
 @[simp]
 lemma ofFinsetWithMultiplicity_insert [DecidableEq X] {s : Finset X} {x : X}
     (hx : x ∉ s) (m : X → ℕ) :
     ofFinsetWithMultiplicity (insert x s) m =
       (m x : ℤ) • ofPoint x + ofFinsetWithMultiplicity s m := by
-  simp [ofFinsetWithMultiplicity, hx]
-
-/-- Coefficient formula for a finite point divisor with multiplicities. -/
-@[simp]
-lemma coeff_ofFinsetWithMultiplicity [DecidableEq X] (s : Finset X) (m : X → ℕ) (x : X) :
-    coeff (ofFinsetWithMultiplicity s m) x = if x ∈ s then m x else 0 := by
-  classical
-  induction s using Finset.induction with
-  | empty =>
-      simp
-  | insert y s hy ih =>
-      rw [ofFinsetWithMultiplicity_insert hy, coeff_add]
-      by_cases hxy : x = y
-      · subst y
-        have hsx : (ofFinsetWithMultiplicity s m) x = 0 := by
-          simpa [coeff, hy] using ih
-        have hpoint : (ofPoint x : WeilDivisor X) x = 1 := by
-          simpa [coeff] using coeff_ofPoint_self x
-        rw [show coeff ((m x : ℤ) • ofPoint x) x = (m x : ℤ) by simp [coeff, hpoint]]
-        rw [show coeff (ofFinsetWithMultiplicity s m) x = 0 by simpa [coeff] using hsx]
-        simp
-      · have hsx : (ofFinsetWithMultiplicity s m) x = if x ∈ s then m x else 0 := by
-          simpa [coeff] using ih
-        have hpoint : (ofPoint y : WeilDivisor X) x = 0 := by
-          simpa [coeff] using coeff_ofPoint_of_ne (x := y) (y := x) hxy
-        rw [show coeff ((m y : ℤ) • ofPoint y) x = 0 by simp [coeff, hpoint]]
-        rw [show coeff (ofFinsetWithMultiplicity s m) x =
-          (if x ∈ s then (m x : ℤ) else 0) by simpa [coeff] using hsx]
-        simp [hxy]
+  rw [ofFinsetWithMultiplicity_eq_sum, ofFinsetWithMultiplicity_eq_sum]
+  simp [hx]
 
 /-- Finite point divisors with natural multiplicities are effective. -/
 @[simp]
@@ -111,6 +219,8 @@ lemma support_ofFinsetWithMultiplicity_subset (s : Finset X) (m : X → ℕ) :
   by_contra hxs
   simp [hxs] at hx
 
+/-- A point is in the support of a finite point divisor with multiplicities exactly when it is
+selected and has nonzero multiplicity. -/
 lemma mem_support_ofFinsetWithMultiplicity_iff {s : Finset X} {m : X → ℕ}
     {x : X} :
     x ∈ (ofFinsetWithMultiplicity s m).support ↔ x ∈ s ∧ m x ≠ 0 := by
@@ -123,7 +233,7 @@ lemma mem_support_ofFinsetWithMultiplicity_iff {s : Finset X} {m : X → ℕ}
 lemma degree_ofFinsetWithMultiplicity (s : Finset X) (m : X → ℕ) :
     degree (ofFinsetWithMultiplicity s m) = ∑ x ∈ s, (m x : ℤ) := by
   classical
-  simp [ofFinsetWithMultiplicity]
+  simp [ofFinsetWithMultiplicity_eq_sum]
 
 /-- The weighted degree of `Σ x ∈ s, m x • [x]` is the corresponding weighted finite sum. -/
 @[simp]
@@ -131,7 +241,7 @@ lemma weightedDegree_ofFinsetWithMultiplicity (w : X → ℤ) (s : Finset X) (m 
     weightedDegree w (ofFinsetWithMultiplicity s m) =
       ∑ x ∈ s, (m x : ℤ) * w x := by
   classical
-  simp [ofFinsetWithMultiplicity, mul_comm]
+  simp [ofFinsetWithMultiplicity_eq_sum, mul_comm]
 
 /-- Pushing forward a finite point divisor applies the map to each point in the finite sum. -/
 @[simp]
@@ -139,23 +249,26 @@ lemma pushforward_ofFinsetWithMultiplicity (f : X → Y) (s : Finset X) (m : X �
     pushforward f (ofFinsetWithMultiplicity s m) =
       ∑ x ∈ s, (m x : ℤ) • ofPoint (f x) := by
   classical
-  rw [ofFinsetWithMultiplicity, map_sum]
+  rw [ofFinsetWithMultiplicity_eq_sum, map_sum]
   refine Finset.sum_congr rfl fun x hx => ?_
   rw [map_zsmul, pushforward_ofPoint]
 
 /-- With positive weights, a finite point divisor has weighted degree zero exactly when every
 selected point has zero multiplicity. -/
 lemma weightedDegree_ofFinsetWithMultiplicity_eq_zero_iff_of_pos
-    {w : X → ℤ} (hw : ∀ x, 0 < w x) (s : Finset X) (m : X → ℕ) :
+    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) (m : X → ℕ) :
     weightedDegree w (ofFinsetWithMultiplicity s m) = 0 ↔ ∀ x ∈ s, m x = 0 := by
   classical
   constructor
   · intro hdeg x hx
-    have hzero : ofFinsetWithMultiplicity s m = 0 :=
-      (isEffective_ofFinsetWithMultiplicity s m).eq_zero_of_weightedDegree_eq_zero_of_pos hw
-        hdeg
-    have hcoeff := congr_arg (fun D : WeilDivisor X => coeff D x) hzero
-    simpa [hx] using hcoeff
+    have hterm :
+        (m x : ℤ) * w x = 0 :=
+      (Finset.sum_eq_zero_iff_of_nonneg
+        (fun y hy => mul_nonneg (Int.natCast_nonneg _) (le_of_lt (hw y hy)))).mp
+          (by simpa [weightedDegree_ofFinsetWithMultiplicity] using hdeg) x hx
+    rcases mul_eq_zero.mp hterm with hmx | hwx
+    · exact_mod_cast hmx
+    · exact False.elim ((ne_of_gt (hw x hx)) hwx)
   · intro hm
     rw [weightedDegree_ofFinsetWithMultiplicity]
     exact Finset.sum_eq_zero fun x hx => by simp [hm x hx]
@@ -163,10 +276,18 @@ lemma weightedDegree_ofFinsetWithMultiplicity_eq_zero_iff_of_pos
 /-- A finite point divisor with positive weights lies in the weighted degree-zero subgroup
 exactly when all selected multiplicities vanish. -/
 lemma ofFinsetWithMultiplicity_mem_weightedDegreeZeroSubgroup_iff_of_pos
-    {w : X → ℤ} (hw : ∀ x, 0 < w x) (s : Finset X) (m : X → ℕ) :
+    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) (m : X → ℕ) :
     ofFinsetWithMultiplicity s m ∈ weightedDegreeZeroSubgroup w ↔ ∀ x ∈ s, m x = 0 := by
   rw [mem_weightedDegreeZeroSubgroup,
-    weightedDegree_ofFinsetWithMultiplicity_eq_zero_iff_of_pos hw]
+    weightedDegree_ofFinsetWithMultiplicity_eq_zero_iff_of_pos s hw]
+
+/-- A finite point divisor with multiplicities has unweighted degree zero exactly when every
+selected multiplicity vanishes. -/
+lemma ofFinsetWithMultiplicity_mem_degreeZeroSubgroup_iff (s : Finset X) (m : X → ℕ) :
+    ofFinsetWithMultiplicity s m ∈ degreeZeroSubgroup X ↔ ∀ x ∈ s, m x = 0 := by
+  rw [mem_degreeZeroSubgroup, ← weightedDegree_one_eq_degree]
+  exact weightedDegree_ofFinsetWithMultiplicity_eq_zero_iff_of_pos
+    (w := fun _ : X => (1 : ℤ)) s (fun _ _ => zero_lt_one) m
 
 /-! ### Finite sums with coefficient one -/
 
@@ -183,11 +304,13 @@ lemma ofFinset_insert [DecidableEq X] {s : Finset X} {x : X} (hx : x ∉ s) :
     ofFinset (insert x s) = ofPoint x + ofFinset s := by
   simp [ofFinset, hx]
 
+/-- Coefficients of the divisor attached to a finite set are `1` on the set and `0` off it. -/
 @[simp]
 lemma coeff_ofFinset [DecidableEq X] (s : Finset X) (x : X) :
     coeff (ofFinset s) x = if x ∈ s then 1 else 0 := by
   simp [ofFinset]
 
+/-- The divisor attached to a finite set is effective. -/
 @[simp]
 lemma isEffective_ofFinset (s : Finset X) : IsEffective (ofFinset s) := by
   classical
@@ -198,6 +321,7 @@ lemma ofFinset_mem_effectiveSubmonoid (s : Finset X) :
     ofFinset s ∈ effectiveSubmonoid X :=
   (mem_effectiveSubmonoid _).mpr (isEffective_ofFinset s)
 
+/-- The support of the coefficient-one divisor attached to a finite set is exactly that set. -/
 @[simp]
 lemma support_ofFinset (s : Finset X) : (ofFinset s).support = s := by
   classical
@@ -205,17 +329,20 @@ lemma support_ofFinset (s : Finset X) : (ofFinset s).support = s := by
   rw [ofFinset, mem_support_ofFinsetWithMultiplicity_iff]
   simp
 
+/-- The degree of the coefficient-one divisor attached to a finite set is its cardinality. -/
 @[simp]
 lemma degree_ofFinset (s : Finset X) : degree (ofFinset s) = s.card := by
   classical
   simp [ofFinset]
 
+/-- The weighted degree of the divisor attached to a finite set is the sum of weights on it. -/
 @[simp]
 lemma weightedDegree_ofFinset (w : X → ℤ) (s : Finset X) :
     weightedDegree w (ofFinset s) = ∑ x ∈ s, w x := by
   classical
   simp [ofFinset]
 
+/-- Pushing forward the divisor attached to a finite set applies the map to each point. -/
 @[simp]
 lemma pushforward_ofFinset (f : X → Y) (s : Finset X) :
     pushforward f (ofFinset s) = ∑ x ∈ s, ofPoint (f x) := by
@@ -226,10 +353,27 @@ lemma pushforward_ofFinset (f : X → Y) (s : Finset X) :
 /-- For positive weights, a finite set divisor lies in the weighted degree-zero subgroup exactly
 when the finite set is empty. -/
 lemma ofFinset_mem_weightedDegreeZeroSubgroup_iff_of_pos
-    {w : X → ℤ} (hw : ∀ x, 0 < w x) (s : Finset X) :
+    (s : Finset X) {w : X → ℤ} (hw : ∀ x ∈ s, 0 < w x) :
     ofFinset s ∈ weightedDegreeZeroSubgroup w ↔ s = ∅ := by
   classical
-  rw [ofFinset, ofFinsetWithMultiplicity_mem_weightedDegreeZeroSubgroup_iff_of_pos hw]
+  rw [ofFinset, ofFinsetWithMultiplicity_mem_weightedDegreeZeroSubgroup_iff_of_pos s hw]
+  constructor
+  · intro h
+    ext x
+    constructor
+    · intro hx
+      exact (one_ne_zero (h x hx)).elim
+    · intro hx
+      exact (Finset.notMem_empty x hx).elim
+  · intro hs x hx
+    simp [hs] at hx
+
+/-- A coefficient-one finite set divisor has unweighted degree zero exactly when the set is
+empty. -/
+lemma ofFinset_mem_degreeZeroSubgroup_iff (s : Finset X) :
+    ofFinset s ∈ degreeZeroSubgroup X ↔ s = ∅ := by
+  classical
+  rw [ofFinset, ofFinsetWithMultiplicity_mem_degreeZeroSubgroup_iff]
   constructor
   · intro h
     ext x
