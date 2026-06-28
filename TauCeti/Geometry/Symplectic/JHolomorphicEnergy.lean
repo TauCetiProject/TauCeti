@@ -58,8 +58,38 @@ end SymplecticForm
 namespace IsComplexLinearMap
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
+variable {U : Type*} [AddCommGroup U] [Module ℝ U]
+variable {J₀ : AlmostComplexStructure U}
 variable {J : AlmostComplexStructure V} {ω : SymplecticForm V}
+variable {F₀ : U →ₗ[ℝ] V}
 variable {F : (ℝ × ℝ) →ₗ[ℝ] V}
+
+/-- For a complex-linear map from any complex source, the associated-bilinear-form diagonal
+of the image of `J₀ v` equals that of the image of `v`. -/
+lemma associatedBilinForm_apply_apply_self_eq
+    (hF : IsComplexLinearMap J₀ J F₀) (v : U) :
+    ω.associatedBilinForm J (F₀ (J₀ v)) (F₀ (J₀ v)) =
+      ω.associatedBilinForm J (F₀ v) (F₀ v) := by
+  rw [(isComplexLinearMap_iff_apply J₀ J F₀).mp hF v]
+  calc
+    ω.associatedBilinForm J (J (F₀ v)) (J (F₀ v)) =
+        ω (J (F₀ v)) (-F₀ v) := by
+      rw [SymplecticForm.associatedBilinForm_apply, AlmostComplexStructure.apply_apply]
+    _ = -ω (J (F₀ v)) (F₀ v) := by
+      exact map_neg (ω.toBilinForm (J (F₀ v))) (F₀ v)
+    _ = ω (F₀ v) (J (F₀ v)) := by
+      rw [← ω.neg_eq (F₀ v) (J (F₀ v))]
+      simp
+    _ = ω.associatedBilinForm J (F₀ v) (F₀ v) := by
+      rw [SymplecticForm.associatedBilinForm_apply]
+
+/-- For a complex-linear map from any complex source, the associated-bilinear-form diagonal
+of an image vector is the symplectic area density of the ordered pair `(F₀ v, F₀ (J₀ v))`. -/
+lemma associatedBilinForm_apply_self_eq_symplecticForm
+    (hF : IsComplexLinearMap J₀ J F₀) (v : U) :
+    ω.associatedBilinForm J (F₀ v) (F₀ v) = ω (F₀ v) (F₀ (J₀ v)) := by
+  rw [SymplecticForm.associatedBilinForm_apply,
+    (isComplexLinearMap_iff_apply J₀ J F₀).mp hF v]
 
 /-- For a complex-linear map out of the standard complex line, the associated-bilinear-form
 diagonal of the imaginary-coordinate image equals that of the real-coordinate image. -/
@@ -67,18 +97,8 @@ lemma associatedBilinForm_apply_stdComplexLineImag_self_eq
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) :
     ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag) =
       ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) := by
-  rw [hF.apply_stdComplexLineImag]
-  calc
-    ω.associatedBilinForm J (J (F stdComplexLineReal)) (J (F stdComplexLineReal)) =
-        ω (J (F stdComplexLineReal)) (-F stdComplexLineReal) := by
-      rw [SymplecticForm.associatedBilinForm_apply, AlmostComplexStructure.apply_apply]
-    _ = -ω (J (F stdComplexLineReal)) (F stdComplexLineReal) := by
-      exact map_neg (ω.toBilinForm (J (F stdComplexLineReal))) (F stdComplexLineReal)
-    _ = ω (F stdComplexLineReal) (J (F stdComplexLineReal)) := by
-      rw [← ω.neg_eq (F stdComplexLineReal) (J (F stdComplexLineReal))]
-      simp
-    _ = ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) := by
-      rw [SymplecticForm.associatedBilinForm_apply]
+  simpa [AlmostComplexStructure.product_apply_stdComplexLineReal, stdComplexLineImag] using
+    hF.associatedBilinForm_apply_apply_self_eq stdComplexLineReal
 
 /-- For a complex-linear map out of the standard complex line, the real-coordinate
 associated-bilinear-form diagonal is the symplectic area density of the ordered coordinate
@@ -87,7 +107,8 @@ lemma associatedBilinForm_apply_stdComplexLineReal_self_eq_symplecticForm
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) :
     ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) =
       ω (F stdComplexLineReal) (F stdComplexLineImag) := by
-  rw [SymplecticForm.associatedBilinForm_apply, hF.apply_stdComplexLineImag]
+  simpa [AlmostComplexStructure.product_apply_stdComplexLineReal, stdComplexLineImag] using
+    hF.associatedBilinForm_apply_self_eq_symplecticForm stdComplexLineReal
 
 /-- For a complex-linear map out of the standard complex line, the standard pointwise energy
 density is twice the symplectic area density. -/
