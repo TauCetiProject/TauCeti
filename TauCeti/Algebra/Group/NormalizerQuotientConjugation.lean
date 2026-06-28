@@ -23,8 +23,8 @@ This file records the generic group-theoretic transport: a multiplicative equiva
   normalizer of `H.map e`.
 * `TauCeti.Subgroup.normalizerQuotientEquivMap`: the induced equivalence of normalizer
   quotients.
-* Representative formulas and compatibility with composition, inverse, and identity
-  equivalences.
+* Representative formulas, including compatibility with composition, inverse, and identity
+  equivalences on representatives.
 
 ## References
 
@@ -44,7 +44,7 @@ variable {G K L : Type*} [Group G] [Group K] [Group L]
 
 /-- A group isomorphism identifies the normalizer of a subgroup with the normalizer of its
 image. -/
-@[expose] noncomputable def normalizerEquivMap (H : Subgroup G) (e : G ≃* K) :
+noncomputable abbrev normalizerEquivMap (H : Subgroup G) (e : G ≃* K) :
     _root_.Subgroup.normalizer (H : Set G) ≃*
       _root_.Subgroup.normalizer ((H.map (e : G →* K)) : Set K) :=
   (e.subgroupMap (_root_.Subgroup.normalizer (H : Set G))).trans
@@ -63,6 +63,27 @@ isomorphism. -/
 lemma normalizerEquivMap_symm_apply_coe (H : Subgroup G) (e : G ≃* K)
     (k : _root_.Subgroup.normalizer ((H.map (e : G →* K)) : Set K)) :
     ((normalizerEquivMap H e).symm k : G) = e.symm (k : K) :=
+  rfl
+
+@[simp]
+lemma normalizerEquivMap_refl (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
+    normalizerEquivMap H (MulEquiv.refl G) g =
+      ⟨(g : G), by simp [g.2]⟩ := by
+  ext
+  rfl
+
+@[simp]
+lemma normalizerEquivMap_trans_apply_coe (H : Subgroup G) (e : G ≃* K) (f : K ≃* L)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
+    (normalizerEquivMap (H.map (e : G →* K)) f (normalizerEquivMap H e g) : L) =
+      f (e (g : G)) :=
+  rfl
+
+@[simp]
+lemma normalizerEquivMap_symm_apply_coe' (H : Subgroup G) (e : G ≃* K)
+    (k : _root_.Subgroup.normalizer ((H.map (e : G →* K)) : Set K)) :
+    (normalizerEquivMap (H.map (e : G →* K)) e.symm k : G) = e.symm (k : K) :=
   rfl
 
 /-- The copy of `H` inside its normalizer maps to the copy of `e(H)` inside the target
@@ -87,7 +108,7 @@ lemma subgroupOf_map_normalizerEquivMap (H : Subgroup G) (e : G ≃* K) :
     exact hgk
 
 /-- A group isomorphism induces an isomorphism on normalizer quotients. -/
-@[expose] noncomputable def normalizerQuotientEquivMap (H : Subgroup G) (e : G ≃* K) :
+noncomputable abbrev normalizerQuotientEquivMap (H : Subgroup G) (e : G ≃* K) :
     normalizerQuotient H ≃*
       normalizerQuotient (H.map (e : G →* K)) :=
   QuotientGroup.congr
@@ -115,6 +136,33 @@ lemma normalizerQuotientEquivMap_symm_mk (H : Subgroup G) (e : G ≃* K)
         (normalizerQuotientMk (H.map (e : G →* K)) k) =
       normalizerQuotientMk H ((normalizerEquivMap H e).symm k) :=
   rfl
+
+@[simp]
+lemma normalizerQuotientEquivMap_refl_mk (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
+    normalizerQuotientEquivMap H (MulEquiv.refl G) (normalizerQuotientMk H g) =
+      normalizerQuotientMk (H.map ((MulEquiv.refl G : G ≃* G) : G →* G))
+        ⟨(g : G), by simp [g.2]⟩ := by
+  rw [normalizerQuotientEquivMap_mk]
+  rfl
+
+@[simp]
+lemma normalizerQuotientEquivMap_trans_mk (H : Subgroup G) (e : G ≃* K) (f : K ≃* L)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
+    normalizerQuotientEquivMap (H.map (e : G →* K)) f
+        (normalizerQuotientEquivMap H e (normalizerQuotientMk H g)) =
+      normalizerQuotientMk ((H.map (e : G →* K)).map (f : K →* L))
+        (normalizerEquivMap (H.map (e : G →* K)) f (normalizerEquivMap H e g)) := by
+  rw [normalizerQuotientEquivMap_mk, normalizerQuotientEquivMap_mk]
+
+@[simp]
+lemma normalizerQuotientEquivMap_symm_mk' (H : Subgroup G) (e : G ≃* K)
+    (k : _root_.Subgroup.normalizer ((H.map (e : G →* K)) : Set K)) :
+    normalizerQuotientEquivMap (H.map (e : G →* K)) e.symm
+        (normalizerQuotientMk (H.map (e : G →* K)) k) =
+      normalizerQuotientMk ((H.map (e : G →* K)).map (e.symm : K →* G))
+        (normalizerEquivMap (H.map (e : G →* K)) e.symm k) := by
+  rw [normalizerQuotientEquivMap_mk]
 
 /-- On representatives, `normalizerQuotientEquivMap` applies the original group
 isomorphism. -/
