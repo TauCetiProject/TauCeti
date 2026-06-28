@@ -1,7 +1,7 @@
 module
 
 public import TauCeti.Probability.Exchangeability.Basic
-public import Mathlib.GroupTheory.Perm.Sign
+import Mathlib.GroupTheory.Perm.Sign
 
 /-!
 # Exchangeability from adjacent transpositions
