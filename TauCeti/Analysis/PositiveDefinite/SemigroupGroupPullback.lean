@@ -33,14 +33,14 @@ function API item "pullbacks" and Milestone 2 ("BCR semigroup--Bochner").
 * `TauCeti.IsSemigroupGroupPD.of_comp_spatial_surjective` and
   `TauCeti.IsSemigroupGroupPD.comp_spatial_iff_of_surjective`: descent and equivalence for
   surjective additive homomorphisms.
-* `TauCeti.IsSemigroupGroupPD.comp_spatialAddEquiv_iff`: invariance under a spatial additive
+* `TauCeti.IsSemigroupGroupPD.comp_spatial_addEquiv_iff`: invariance under a spatial additive
   equivalence.
-* `TauCeti.IsSemigroupGroupPD.comp_spatialContinuousLinearMap`: the continuous-linear-map form
+* `TauCeti.IsSemigroupGroupPD.comp_spatial_continuousLinearMap`: the continuous-linear-map form
   used for real vector spaces.
 * `TauCeti.IsSemigroupGroupPD.continuous_comp_spatial`: spatial pullback preserves continuity
   along continuous maps.
 * `TauCeti.IsSemigroupGroupPD.comp_spatial_and_continuous`,
-  `TauCeti.IsSemigroupGroupPD.comp_spatialContinuousLinearMap_and_continuous`: packaged
+  `TauCeti.IsSemigroupGroupPD.comp_spatial_continuousLinearMap_and_continuous`: packaged
   homomorphism-class and continuous-linear forms preserving both positive-definiteness and
   continuity.
 
@@ -87,7 +87,7 @@ theorem comp_spatial {Φ : Type*} [FunLike Φ W V] [AddHomClass Φ W V]
   simpa [map_sub_of_addHomClass φ] using hK
 
 /-- The explicit `AddMonoidHom` form of spatial pullback. -/
-theorem comp_spatialAddMonoidHom (hF : IsSemigroupGroupPD F) (φ : W →+ V) :
+theorem comp_spatial_addMonoidHom (hF : IsSemigroupGroupPD F) (φ : W →+ V) :
     IsSemigroupGroupPD fun p : ℝ≥0 × W => F (p.1, φ p.2) :=
   hF.comp_spatial φ
 
@@ -118,16 +118,16 @@ theorem comp_spatial_iff_of_surjective {Φ : Type*} [FunLike Φ W V] [AddHomClas
   ⟨of_comp_spatial_surjective φ hsurj, fun hF => hF.comp_spatial φ⟩
 
 /-- The explicit `AddMonoidHom` form of the spatial pullback equivalence for surjective maps. -/
-theorem comp_spatialAddMonoidHom_iff_of_surjective (φ : W →+ V)
+theorem comp_spatial_addMonoidHom_iff_of_surjective (φ : W →+ V)
     (hsurj : Function.Surjective φ) :
     IsSemigroupGroupPD (fun p : ℝ≥0 × W => F (p.1, φ p.2)) ↔ IsSemigroupGroupPD F :=
   comp_spatial_iff_of_surjective φ hsurj
 
 /-- Semigroup-group positive-definiteness is invariant under precomposition by a spatial
 additive equivalence. -/
-theorem comp_spatialAddEquiv_iff (e : W ≃+ V) :
+theorem comp_spatial_addEquiv_iff (e : W ≃+ V) :
     IsSemigroupGroupPD (fun p : ℝ≥0 × W => F (p.1, e p.2)) ↔ IsSemigroupGroupPD F :=
-  comp_spatialAddMonoidHom_iff_of_surjective e.toAddMonoidHom e.surjective
+  comp_spatial_addMonoidHom_iff_of_surjective e.toAddMonoidHom e.surjective
 
 section Topology
 
@@ -158,18 +158,18 @@ variable {E : Type*} {E' : Type*}
 
 /-- Spatial pullback along a continuous linear map preserves semigroup-group
 positive-definiteness. -/
-theorem comp_spatialContinuousLinearMap (hG : IsSemigroupGroupPD G) (φ : E' →L[ℝ] E) :
+theorem comp_spatial_continuousLinearMap (hG : IsSemigroupGroupPD G) (φ : E' →L[ℝ] E) :
     IsSemigroupGroupPD fun p : ℝ≥0 × E' => G (p.1, φ p.2) :=
   hG.comp_spatial φ
 
 /-- Spatial pullback along a continuous linear equivalence is an equivalence on
 semigroup-group positive-definiteness. -/
-theorem comp_spatialContinuousLinearEquiv_iff (e : E' ≃L[ℝ] E) :
+theorem comp_spatial_continuousLinearEquiv_iff (e : E' ≃L[ℝ] E) :
     IsSemigroupGroupPD (fun p : ℝ≥0 × E' => G (p.1, e p.2)) ↔ IsSemigroupGroupPD G :=
-  comp_spatialAddEquiv_iff e.toAddEquiv
+  comp_spatial_addEquiv_iff e.toAddEquiv
 
 /-- Package spatial pullback along a continuous linear map with preservation of continuity. -/
-theorem comp_spatialContinuousLinearMap_and_continuous (hGpd : IsSemigroupGroupPD G)
+theorem comp_spatial_continuousLinearMap_and_continuous (hGpd : IsSemigroupGroupPD G)
     (hGcont : Continuous G) (φ : E' →L[ℝ] E) :
     IsSemigroupGroupPD (fun p : ℝ≥0 × E' => G (p.1, φ p.2)) ∧
       Continuous (fun p : ℝ≥0 × E' => G (p.1, φ p.2)) :=
