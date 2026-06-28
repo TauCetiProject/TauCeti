@@ -40,7 +40,7 @@ open Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-variable (A B : Matrix n n ℝ) (b d : EuclideanSpace ℝ n) (c e r : ℝ)
+variable (A B : Matrix n n ℝ) (b d : EuclideanSpace ℝ n) (c e m r : ℝ)
 variable (U V : ℝ × EuclideanSpace ℝ n)
 
 /-- The zero coefficient triple has zero pointwise energy integrand. -/
@@ -162,18 +162,36 @@ lemma energyIntegrand_principal_drift_mass_apply :
   rw [energyIntegrand_principal_drift_mass]
   rfl
 
+/-- The full energy integrand is the sum of a shifted Laplacian model with chosen base mass
+and the residual perturbation of the coefficient triple. -/
+lemma energyIntegrand_eq_one_zero_baseMass_add_perturbation :
+    energyIntegrand A b c =
+      energyIntegrand (1 : Matrix n n ℝ) 0 m +
+        energyIntegrand (A - 1) b (c - m) := by
+  calc
+    energyIntegrand A b c =
+        energyIntegrand ((1 : Matrix n n ℝ) + (A - 1)) (0 + b) (m + (c - m)) := by
+      simp [sub_eq_add_neg, add_left_comm, add_comm]
+    _ = energyIntegrand (1 : Matrix n n ℝ) 0 m + energyIntegrand (A - 1) b (c - m) :=
+      energyIntegrand_add (1 : Matrix n n ℝ) (A - 1) 0 b m (c - m)
+
+/-- Pointwise form of the shifted-Laplacian-plus-residual-perturbation decomposition. -/
+lemma energyIntegrand_eq_one_zero_baseMass_add_perturbation_apply :
+    energyIntegrand A b c U V =
+      energyIntegrand (1 : Matrix n n ℝ) 0 m U V +
+        energyIntegrand (A - 1) b (c - m) U V := by
+  rw [energyIntegrand_eq_one_zero_baseMass_add_perturbation]
+  rfl
+
 /-- The full energy integrand is the sum of a shifted Laplacian model and a perturbation of
-the coefficient triple. -/
+the principal and drift coefficients. -/
 lemma energyIntegrand_eq_one_zero_mass_add_perturbation :
     energyIntegrand A b c =
       energyIntegrand (1 : Matrix n n ℝ) 0 c +
         energyIntegrand (A - 1) b 0 := by
-  calc
-    energyIntegrand A b c =
-        energyIntegrand ((1 : Matrix n n ℝ) + (A - 1)) (0 + b) (c + 0) := by
-      simp [sub_eq_add_neg, add_left_comm, add_comm]
-    _ = energyIntegrand (1 : Matrix n n ℝ) 0 c + energyIntegrand (A - 1) b 0 :=
-      energyIntegrand_add (1 : Matrix n n ℝ) (A - 1) 0 b c 0
+  simpa using
+    (energyIntegrand_eq_one_zero_baseMass_add_perturbation
+      (A := A) (b := b) (c := c) (m := c))
 
 /-- Pointwise form of the shifted-Laplacian-plus-perturbation decomposition. -/
 lemma energyIntegrand_eq_one_zero_mass_add_perturbation_apply :
