@@ -1,7 +1,7 @@
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Basic
 
 /-!
 # Chebyshev `T` transfer to cosine integrals
@@ -20,13 +20,19 @@ namespace TauCeti
 open MeasureTheory Polynomial.Chebyshev
 
 /-- The cosine-side representative corresponding to the Chebyshev polynomial `Tₙ`. -/
+@[expose]
 noncomputable def chebyshevCosine (n : ℕ) (θ : ℝ) : ℝ :=
   Real.cos (n * θ)
+
+/-- The defining equation for the cosine-side Chebyshev representative. -/
+lemma chebyshevCosine_def (n : ℕ) (θ : ℝ) : chebyshevCosine n θ = Real.cos (n * θ) :=
+  rfl
 
 @[simp]
 lemma chebyshevCosine_zero (θ : ℝ) : chebyshevCosine 0 θ = 1 := by
   simp [chebyshevCosine]
 
+@[simp]
 lemma chebyshevCosine_one (θ : ℝ) : chebyshevCosine 1 θ = Real.cos θ := by
   simp [chebyshevCosine]
 
@@ -94,15 +100,5 @@ lemma integral_chebyshevCosine_mul_chebyshevCosine_eq_ite (m n : ℕ) :
   · subst hmn
     simp [integral_chebyshevCosine_mul_self]
   · simp [hmn, integral_chebyshevCosine_mul_chebyshevCosine_of_ne hmn]
-
-/-- The first nonconstant cosine mode has squared norm `π / 2`. -/
-lemma integral_chebyshevCosine_one_mul_self :
-    ∫ θ in (0)..Real.pi, chebyshevCosine 1 θ * chebyshevCosine 1 θ = Real.pi / 2 := by
-  simpa using integral_chebyshevCosine_mul_self 1
-
-/-- The constant and first cosine modes are orthogonal. -/
-lemma integral_chebyshevCosine_zero_mul_one :
-    ∫ θ in (0)..Real.pi, chebyshevCosine 0 θ * chebyshevCosine 1 θ = 0 := by
-  simpa using integral_chebyshevCosine_mul_chebyshevCosine_of_ne (m := 0) (n := 1) (by norm_num)
 
 end TauCeti
