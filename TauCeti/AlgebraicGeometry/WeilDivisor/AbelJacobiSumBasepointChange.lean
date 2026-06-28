@@ -59,18 +59,6 @@ private lemma sub_sub_zsmul_ofPoint_eq_zsmul_pointDifference
   rw [pointDifference, zsmul_sub, sub_eq_add_neg]
   abel
 
-/-! ### Class-level base-point change -/
-
-/-- Changing the base point in the class-group degree correction adds the weighted degree of the
-class times the base-point-change divisor class. -/
-lemma degreeCorrection_change_base (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
-    (x₀ y₀ : X) (c : S.ClassGroup) :
-    S.degreeCorrection w h y₀ c =
-      S.degreeCorrection w h x₀ c +
-        weightedDegreeClass w h c • S.divisorClass (pointDifference x₀ y₀) := by
-  rw [degreeCorrection_apply, degreeCorrection_apply, pointDifference, map_sub, zsmul_sub]
-  abel_nf
-
 /-! ### Weighted base-point change for divisor sums -/
 
 /-- Changing the base point in the weighted Abel-Jacobi sum adds the weighted degree times the
