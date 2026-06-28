@@ -40,8 +40,8 @@ namespace TauCeti
 
 open ContinuousMap
 
-variable {W X Y Z : Type*} [TopologicalSpace W] [TopologicalSpace X] [TopologicalSpace Y]
-  [TopologicalSpace Z]
+variable {U W X Y Z : Type*} [TopologicalSpace U] [TopologicalSpace W] [TopologicalSpace X]
+  [TopologicalSpace Y] [TopologicalSpace Z]
 
 /-- Continuous maps `X → Y` modulo ambient isotopy of the ambient space `Y`. -/
 abbrev AmbientIsotopyClass (X Y : Type*) [TopologicalSpace X] [TopologicalSpace Y] : Type _ :=
@@ -137,6 +137,21 @@ theorem precomp_mk (e : C(W, X)) (f : C(X, Y)) : precomp e (mk f) = mk (f.comp e
   map_mk (fun f => f.comp e)
     (fun {f g} (hfg : AmbientIsotopic f g) => AmbientIsotopic.precomp hfg e) f
 
+/-- Precomposition by the identity source map is the identity on ambient-isotopy classes. -/
+@[simp]
+theorem precomp_id (x : AmbientIsotopyClass X Y) : precomp (ContinuousMap.id X) x = x := by
+  refine induction_on x ?_
+  intro f
+  simp
+
+/-- Source precomposition is functorial on ambient-isotopy classes. -/
+@[simp]
+theorem precomp_comp (e : C(W, X)) (d : C(U, W)) (x : AmbientIsotopyClass X Y) :
+    precomp d (precomp e x) = precomp (e.comp d) x := by
+  refine induction_on x ?_
+  intro f
+  simp
+
 /-- Postcompose an ambient-isotopy class by a homeomorphism of ambient spaces. -/
 def postcompHomeomorph (h : Y ≃ₜ Z) : AmbientIsotopyClass X Y → AmbientIsotopyClass X Z :=
   map (fun f => (h : C(Y, Z)).comp f) fun {f g} (hfg : AmbientIsotopic f g) =>
@@ -148,6 +163,24 @@ theorem postcompHomeomorph_mk (h : Y ≃ₜ Z) (f : C(X, Y)) :
     postcompHomeomorph h (mk f) = mk ((h : C(Y, Z)).comp f) :=
   map_mk (fun f => (h : C(Y, Z)).comp f)
     (fun {f g} (hfg : AmbientIsotopic f g) => AmbientIsotopic.postcomp_homeomorph hfg h) f
+
+/-- Postcomposition by the identity ambient homeomorphism is the identity on ambient-isotopy
+classes. -/
+@[simp]
+theorem postcompHomeomorph_refl (x : AmbientIsotopyClass X Y) :
+    postcompHomeomorph (Homeomorph.refl Y) x = x := by
+  refine induction_on x ?_
+  intro f
+  simp
+
+/-- Ambient-homeomorphism postcomposition is functorial on ambient-isotopy classes. -/
+@[simp]
+theorem postcompHomeomorph_trans (h : Y ≃ₜ Z) (k : Z ≃ₜ U)
+    (x : AmbientIsotopyClass X Y) :
+    postcompHomeomorph k (postcompHomeomorph h x) = postcompHomeomorph (h.trans k) x := by
+  refine induction_on x ?_
+  intro f
+  simp
 
 /-- The equivalence of ambient-isotopy class quotients induced by a homeomorphism of ambient
 spaces. -/
@@ -191,6 +224,23 @@ theorem postcompHomeomorphPrecomp_mk (h : Y ≃ₜ Z) (e : C(W, X)) (f : C(X, Y)
   map_mk (fun f => (h : C(Y, Z)).comp (f.comp e))
     (fun {f g} (hfg : AmbientIsotopic f g) =>
       AmbientIsotopic.postcomp_homeomorph_precomp hfg h e) f
+
+/-- The two-sided coordinate-change map is postcomposition after source precomposition. -/
+@[simp]
+theorem postcompHomeomorphPrecomp_apply (h : Y ≃ₜ Z) (e : C(W, X))
+    (x : AmbientIsotopyClass X Y) :
+    postcompHomeomorphPrecomp h e x = postcompHomeomorph h (precomp e x) := by
+  refine induction_on x ?_
+  intro f
+  simp
+
+/-- The two-sided coordinate-change map equals the composite of the primitive coordinate-change
+maps. -/
+theorem postcompHomeomorphPrecomp_eq_postcompHomeomorph_comp_precomp (h : Y ≃ₜ Z)
+    (e : C(W, X)) :
+    postcompHomeomorphPrecomp h e = postcompHomeomorph h ∘ precomp e := by
+  funext x
+  simp
 
 end AmbientIsotopyClass
 
