@@ -7,7 +7,7 @@ public import TauCeti.Probability.Exchangeability.Basic
 
 This file records the Layer 2 path-space API for iterating the one-sided shift
 `TauCeti.Probability.shift`: the coordinate formula `shift_iterate_apply`, block formulas
-after iterated shifts, and the corresponding pushforward identity for process path laws.
+after iterated shifts, and measurability of iterated shifts.
 
 These declarations advance the `TauCetiRoadmap/Exchangeability/README.md` Layer 2
 path-space dynamics target `shift_iterate_measurable`; they use the existing Tau Ceti
@@ -47,34 +47,6 @@ theorem prefixProj_shift_iterate_apply (r n : ℕ) (x : ℕ → α) (i : Fin n) 
 /-- The `r`-fold one-sided shift is measurable. -/
 theorem measurable_shift_iterate (r : ℕ) : Measurable ((shift α)^[r]) :=
   measurable_shift.iterate r
-
-/-- The map selecting a finite consecutive block starting at `r` is measurable. -/
-theorem measurable_prefixProj_shift_iterate (r n : ℕ) :
-    Measurable fun x : ℕ → α => prefixProj α n ((shift α)^[r] x) :=
-  (measurable_prefixProj n).comp (measurable_shift_iterate r)
-
-/-- Mapping a path law by the `r`-fold shift gives the path law of the time-shifted process. -/
-theorem map_shift_iterate_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (r : ℕ) :
-    (pathLaw μ X).map ((shift α)^[r]) = pathLaw μ (fun n ω => X (n + r) ω) := by
-  have hshift : ((shift α)^[r]) = fun x : ℕ → α => fun n => x (n + r) := by
-    funext x n
-    simp
-  rw [hshift]
-  exact map_reindex_pathLaw μ hX (fun n => n + r)
-
-/-- The prefix projection after `r` shifts gives the finite block beginning at time `r`. -/
-theorem map_prefixProj_shift_iterate_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (r n : ℕ) :
-    (pathLaw μ X).map (fun x : ℕ → α => prefixProj α n ((shift α)^[r] x)) =
-      blockLaw μ X (fun i : Fin n => i.val + r) := by
-  have hshift :
-      (fun x : ℕ → α => prefixProj α n ((shift α)^[r] x)) =
-        fun x : ℕ → α => prefixProj α n (fun k => x (k + r)) := by
-    funext x i
-    simp
-  rw [hshift]
-  exact map_reindex_prefixProj_pathLaw μ hX (fun k => k + r) n
 
 end Probability
 
