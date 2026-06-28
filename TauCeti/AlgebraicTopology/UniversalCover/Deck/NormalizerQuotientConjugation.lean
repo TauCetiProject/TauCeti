@@ -19,8 +19,8 @@ groups of covers attached to subgroups.
 
 * `TauCeti.Deck.normalizerQuotientConjEquiv`: conjugation along an over-base homeomorphism
   identifies `N(H) / H` with `N(conj(H)) / conj(H)`.
-* Representative formulas for the forward and inverse maps, including identity and
-  composition compatibility on representatives.
+* Representative formulas for the forward and inverse maps, including composition
+  compatibility on representatives.
 
 ## References
 
@@ -74,8 +74,10 @@ lemma normalizerQuotientConjEquiv_symm_mk (h : E ≃ₜ F) (hpq : ∀ e, q (h e)
           (H.map ((conjMulEquiv h hpq : Deck p ≃* Deck q) : Deck p →* Deck q)) ψ) =
       Subgroup.normalizerQuotientMk H
         ((Subgroup.normalizerEquivMap H (conjMulEquiv h hpq)).symm ψ) :=
-  Subgroup.normalizerQuotientEquivMap_symm_mk H (conjMulEquiv h hpq) ψ
+    Subgroup.normalizerQuotientEquivMap_symm_mk H (conjMulEquiv h hpq) ψ
 
+/-- Composing two deck normalizer-quotient conjugation equivalences sends representatives through
+the two successive conjugation transports. -/
 @[simp]
 lemma normalizerQuotientConjEquiv_trans_mk
     {G : Type*} [TopologicalSpace G] {r : G → B}
@@ -96,6 +98,8 @@ lemma normalizerQuotientConjEquiv_trans_mk
   exact Subgroup.normalizerQuotientEquivMap_trans_mk H (conjMulEquiv h hpq)
     (conjMulEquiv k hqr) φ
 
+/-- Conjugating representatives by `h` and then by `h.symm` gives the stated
+inverse-conjugation representative in the twice-mapped subgroup. -/
 @[simp]
 lemma normalizerQuotientConjEquiv_symm_mk' (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (H : Subgroup (Deck p))
@@ -119,7 +123,6 @@ lemma normalizerQuotientConjEquiv_symm_mk' (h : E ≃ₜ F) (hpq : ∀ e, q (h e
 
 /-- On underlying deck transformations, the normalizer representative in the target quotient
 is obtained by conjugation. -/
-@[simp]
 lemma normalizerQuotientConjEquiv_mk_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (H : Subgroup (Deck p))
     (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) :
@@ -133,7 +136,6 @@ lemma normalizerQuotientConjEquiv_mk_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) 
 
 /-- On representatives, inverse transport of the deck normalizer quotient applies inverse
 conjugation. -/
-@[simp]
 lemma normalizerQuotientConjEquiv_symm_mk_coe (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (H : Subgroup (Deck p))
     (ψ : _root_.Subgroup.normalizer

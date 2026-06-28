@@ -65,6 +65,8 @@ lemma normalizerEquivMap_symm_apply_coe (H : Subgroup G) (e : G ≃* K)
     ((normalizerEquivMap H e).symm k : G) = e.symm (k : K) :=
   rfl
 
+/-- Transporting normalizer representatives along the identity group isomorphism is the identity
+on underlying representatives. -/
 @[simp]
 lemma normalizerEquivMap_refl (H : Subgroup G)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
@@ -73,6 +75,8 @@ lemma normalizerEquivMap_refl (H : Subgroup G)
   ext
   rfl
 
+/-- Transporting a normalizer representative through two group isomorphisms has underlying value
+`f (e g)`. -/
 @[simp]
 lemma normalizerEquivMap_trans_apply_coe (H : Subgroup G) (e : G ≃* K) (f : K ≃* L)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
@@ -80,6 +84,8 @@ lemma normalizerEquivMap_trans_apply_coe (H : Subgroup G) (e : G ≃* K) (f : K 
       f (e (g : G)) :=
   rfl
 
+/-- Rephrasing the inverse of `normalizerEquivMap` as transport along the inverse group
+isomorphism sends a representative to its inverse image. -/
 @[simp]
 lemma normalizerEquivMap_symm_apply_coe' (H : Subgroup G) (e : G ≃* K)
     (k : _root_.Subgroup.normalizer ((H.map (e : G →* K)) : Set K)) :
@@ -117,6 +123,32 @@ noncomputable abbrev normalizerQuotientEquivMap (H : Subgroup G) (e : G ≃* K) 
       (_root_.Subgroup.normalizer ((H.map (e : G →* K)) : Set K)))
     (normalizerEquivMap H e) (subgroupOf_map_normalizerEquivMap H e)
 
+/-- Equal subgroups have canonically equivalent normalizer quotients, by transporting both the
+normalizer and the distinguished subgroup inside it across the equality. -/
+noncomputable abbrev normalizerQuotientCongr {H K : Subgroup G} (h : H = K) :
+    normalizerQuotient H ≃* normalizerQuotient K :=
+  QuotientGroup.congr
+    (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)))
+    (K.subgroupOf (_root_.Subgroup.normalizer (K : Set G)))
+    (MulEquiv.subgroupCongr (by rw [h]))
+    (by
+      subst h
+      ext x
+      constructor
+      · rintro ⟨y, hy, rfl⟩
+        exact hy
+      · intro hx
+        exact ⟨x, hx, rfl⟩)
+
+/-- The equal-subgroup congruence on normalizer quotients sends representatives to the
+corresponding representatives under the normalizer congruence. -/
+@[simp]
+lemma normalizerQuotientCongr_mk {H K : Subgroup G} (h : H = K)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
+    normalizerQuotientCongr h (normalizerQuotientMk H g) =
+      normalizerQuotientMk K (MulEquiv.subgroupCongr (by rw [h]) g) :=
+  rfl
+
 /-- The induced equivalence on normalizer quotients sends a representative to the image
 representative. -/
 @[simp]
@@ -137,6 +169,8 @@ lemma normalizerQuotientEquivMap_symm_mk (H : Subgroup G) (e : G ≃* K)
       normalizerQuotientMk H ((normalizerEquivMap H e).symm k) :=
   rfl
 
+/-- After identifying `H.map (MulEquiv.refl G)` with `H`, identity transport on normalizer
+quotients fixes representatives. -/
 @[simp]
 lemma normalizerQuotientEquivMap_refl_mk (H : Subgroup G)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
@@ -146,6 +180,8 @@ lemma normalizerQuotientEquivMap_refl_mk (H : Subgroup G)
   rw [normalizerQuotientEquivMap_mk]
   rfl
 
+/-- Composing two normalizer-quotient transports sends representatives through the two
+successive normalizer transports. -/
 @[simp]
 lemma normalizerQuotientEquivMap_trans_mk (H : Subgroup G) (e : G ≃* K) (f : K ≃* L)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
@@ -155,6 +191,35 @@ lemma normalizerQuotientEquivMap_trans_mk (H : Subgroup G) (e : G ≃* K) (f : K
         (normalizerEquivMap (H.map (e : G →* K)) f (normalizerEquivMap H e g)) := by
   rw [normalizerQuotientEquivMap_mk, normalizerQuotientEquivMap_mk]
 
+/-- After the subgroup equality `H.map id = H`, identity transport on normalizer quotients is
+the canonical identity on representatives. -/
+lemma normalizerQuotientEquivMap_refl_mk_congr (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
+    normalizerQuotientCongr
+        (by rw [MulEquiv.coe_monoidHom_refl, _root_.Subgroup.map_id] :
+          H.map ((MulEquiv.refl G : G ≃* G) : G →* G) = H)
+      (normalizerQuotientEquivMap H (MulEquiv.refl G) (normalizerQuotientMk H g)) =
+      normalizerQuotientMk H g := by
+  rw [normalizerQuotientEquivMap_mk]
+  rfl
+
+/-- After identifying the twice-mapped subgroup with the subgroup mapped by `e.trans f`,
+composing normalizer-quotient transports agrees with transport by the composite isomorphism on
+representatives. -/
+lemma normalizerQuotientEquivMap_trans_mk_congr (H : Subgroup G) (e : G ≃* K) (f : K ≃* L)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
+    normalizerQuotientCongr
+        (by rw [_root_.Subgroup.map_map, ← MulEquiv.coe_monoidHom_trans] :
+          (H.map (e : G →* K)).map (f : K →* L) =
+            H.map ((e.trans f : G ≃* L) : G →* L))
+      (normalizerQuotientEquivMap (H.map (e : G →* K)) f
+        (normalizerQuotientEquivMap H e (normalizerQuotientMk H g))) =
+      normalizerQuotientEquivMap H (e.trans f) (normalizerQuotientMk H g) := by
+  rw [normalizerQuotientEquivMap_mk, normalizerQuotientEquivMap_mk]
+  rfl
+
+/-- Transporting representatives by `e` and then by `e.symm` gives the stated inverse-image
+representative in the twice-mapped subgroup. -/
 @[simp]
 lemma normalizerQuotientEquivMap_symm_mk' (H : Subgroup G) (e : G ≃* K)
     (k : _root_.Subgroup.normalizer ((H.map (e : G →* K)) : Set K)) :
@@ -166,7 +231,6 @@ lemma normalizerQuotientEquivMap_symm_mk' (H : Subgroup G) (e : G ≃* K)
 
 /-- On representatives, `normalizerQuotientEquivMap` applies the original group
 isomorphism. -/
-@[simp]
 lemma normalizerQuotientEquivMap_mk_coe (H : Subgroup G) (e : G ≃* K)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientEquivMap H e (normalizerQuotientMk H g) =
