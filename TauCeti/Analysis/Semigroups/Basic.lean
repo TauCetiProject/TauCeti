@@ -186,7 +186,8 @@ theorem StronglyContinuousSemigroup.normBoundedOnUnitInterval
           have htd_lt : t - δ < (↑k + 1) * δ := by
             push_cast [Nat.succ_eq_add_one] at ht_ub; linarith
           have h_sg := S.semigroup δ (t - δ) (le_of_lt hδ_pos) htd_nn
-          rw [show δ + (t - δ) = t from by ring] at h_sg
+          have h_delta_add_sub : δ + (t - δ) = t := by ring
+          rw [h_delta_add_sub] at h_sg
           calc ‖S.realOperator t x‖
               = ‖S.realOperator δ (S.realOperator (t - δ) x)‖ := by
                 simp only [h_sg, ContinuousLinearMap.comp_apply]
@@ -255,8 +256,10 @@ theorem StronglyContinuousSemigroup.strongContWithinAt
     (S : StronglyContinuousSemigroup X) (x : X) (t₀ : ℝ) (ht₀ : 0 ≤ t₀) :
     Filter.Tendsto (fun t => S.realOperator t x)
       (nhdsWithin t₀ (Set.Ici 0)) (nhds (S.realOperator t₀ x)) := by
-  rw [show Set.Ici (0 : ℝ) = (Set.Ici 0 ∩ Set.Iic t₀) ∪ (Set.Ici 0 ∩ Set.Ici t₀) from by
-    rw [← Set.inter_union_distrib_left, Set.Iic_union_Ici, Set.inter_univ]]
+  have h_Ici_split : Set.Ici (0 : ℝ) =
+      (Set.Ici 0 ∩ Set.Iic t₀) ∪ (Set.Ici 0 ∩ Set.Ici t₀) := by
+    rw [← Set.inter_union_distrib_left, Set.Iic_union_Ici, Set.inter_univ]
+  rw [h_Ici_split]
   rw [nhdsWithin_union, Filter.tendsto_sup]
   have h_right_set : Set.Ici (0 : ℝ) ∩ Set.Ici t₀ = Set.Ici t₀ := by
     ext y; simp only [Set.mem_inter_iff, Set.mem_Ici]
@@ -329,7 +332,8 @@ theorem StronglyContinuousSemigroup.strongContWithinAt
     have ht_nn : 0 ≤ t - t₀ := by linarith
     -- S(t₀ + (t - t₀)) = S(t₀) ∘ S(t - t₀) by semigroup, and t₀ + (t - t₀) = t
     have h_sg := S.semigroup t₀ (t - t₀) ht₀ ht_nn
-    rw [show t₀ + (t - t₀) = t from by ring] at h_sg
+    have h_add_sub_t0 : t₀ + (t - t₀) = t := by ring
+    rw [h_add_sub_t0] at h_sg
     rw [h_sg, ContinuousLinearMap.comp_apply]
 
 end TauCeti.Semigroups

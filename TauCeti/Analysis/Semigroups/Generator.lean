@@ -146,7 +146,7 @@ theorem StronglyContinuousSemigroup.generator_tendsto
 
 omit [CompleteSpace X] in
 /-- Eliminator for the generator: if the difference quotient `(S t x - x)/t` of an
-`x ∈ D(A)` converges to `y`, then `A x = y` (by uniqueness of limits). -/
+`x ∈ D(A)` converges to `y`, then `A x = y`. -/
 theorem StronglyContinuousSemigroup.generator_eq_of_tendsto
     (S : StronglyContinuousSemigroup X) {x : X} (hx : x ∈ S.domain) {y : X}
     (h : Filter.Tendsto (fun t => (1 / t) • (S.realOperator t x - x))

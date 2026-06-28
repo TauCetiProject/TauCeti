@@ -40,8 +40,7 @@ open MeasureTheory
 
 omit [CompleteSpace X] in
 /-- The growth-bound estimate for the Laplace-transform integrand:
-`‖e^{-λt} S(t) x‖ ≤ M ‖x‖ e^{-(λ-ω)t}` for `t > 0`. Shared by the integrability of the
-integrand and the norm bound on the resolvent. -/
+`‖e^{-λt} S(t) x‖ ≤ M ‖x‖ e^{-(λ-ω)t}` for `t > 0`. -/
 private lemma StronglyContinuousSemigroup.norm_resolvent_integrand_le
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (lambda : ℝ) (x : X) {t : ℝ} (ht : 0 < t) :
@@ -54,7 +53,8 @@ private lemma StronglyContinuousSemigroup.norm_resolvent_integrand_le
         exact le_trans (ContinuousLinearMap.le_opNorm _ _)
           (by gcongr; exact hb.bound t ht.le)
     _ = M * ‖x‖ * Real.exp (-(lambda - ω) * t) := by
-        rw [show -(lambda - ω) * t = -(lambda * t) + ω * t from by ring, Real.exp_add]
+        have h_exp_exponent : -(lambda - ω) * t = -(lambda * t) + ω * t := by ring
+        rw [h_exp_exponent, Real.exp_add]
         ring
 
 /-- The Laplace-transform integrand `e^{-λt} S(t) x` is integrable on `(0, ∞)` for
@@ -137,8 +137,7 @@ shift trick from [EN] Thm. II.1.10(i) / [Linares] eq. 0.15. We first establish
 helper lemmas for the key computation. -/
 
 omit [CompleteSpace X] in
-/-- Translation of set integral: `∫_{Ioi 0} f(t + h) = ∫_{Ioi h} f(u)`.
-Follows from translation invariance of Lebesgue measure. -/
+/-- Translation of set integral: `∫_{Ioi 0} f(t + h) = ∫_{Ioi h} f(u)`. -/
 private lemma integral_comp_add_right_Ioi (f : ℝ → X) (h : ℝ) :
     ∫ t in Set.Ioi 0, f (t + h) = ∫ u in Set.Ioi h, f u := by
   -- Express set integrals as full integrals with indicators
@@ -182,9 +181,10 @@ private theorem StronglyContinuousSemigroup.resolvent_shift_identity
         (S.realOperator h) (f t) = Real.exp (lambda * h) • f (t + h) := by
       intro t ht
       simp only [f, ContinuousLinearMap.map_smul]
+      have h_time_add_comm : h + t = t + h := add_comm h t
       rw [← ContinuousLinearMap.comp_apply,
           ← S.semigroup h t (le_of_lt hh) (le_of_lt (Set.mem_Ioi.mp ht)),
-          show h + t = t + h from add_comm h t]
+          h_time_add_comm]
       symm; rw [← mul_smul, ← Real.exp_add]; congr 1; ring_nf
     rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioi h_eq]
     rw [integral_smul (μ := volume.restrict (Set.Ioi (0 : ℝ)))]
@@ -269,8 +269,7 @@ private theorem StronglyContinuousSemigroup.tendsto_average_resolvent_integrand
     rw [one_div, intervalIntegral.integral_of_le (le_of_lt ht), hg_eq t ht])
 
 
-/-- The generator difference quotient for `R(λ)x` converges to `λ R(λ)x - x`.
-This is the core computation shared by `resolvent_mem_domain` and `resolventRightInv`. -/
+/-- The generator difference quotient for `R(λ)x` converges to `λ R(λ)x - x`. -/
 private theorem StronglyContinuousSemigroup.resolvent_generator_tendsto
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (lambda : ℝ) (hlam : ω < lambda) (x : X) :
@@ -297,11 +296,16 @@ private theorem StronglyContinuousSemigroup.resolvent_generator_tendsto
       simp only [zero_add, Real.exp_zero, mul_zero] at this
       exact this.congr (fun t => by simp only [smul_eq_mul]; ring)
     · -- `(1/t * e^{λt}) • ∫_{Ioc 0 t} f → 1 • x = x`
-      rw [show x = (1 : ℝ) • x from (one_smul ℝ x).symm]
-      simp_rw [show ∀ t, (1 / t * Real.exp (lambda * t)) • ∫ u in Set.Ioc 0 t, f u =
-          Real.exp (lambda * t) • ((1 / t) • ∫ u in Set.Ioc 0 t, f u) from
-        fun t => by rw [show 1 / t * Real.exp (lambda * t) =
-          Real.exp (lambda * t) * (1 / t) from by ring, mul_smul]]
+      have h_one_smul_x : x = (1 : ℝ) • x := (one_smul ℝ x).symm
+      rw [h_one_smul_x]
+      have h_average_scale : ∀ t,
+          (1 / t * Real.exp (lambda * t)) • ∫ u in Set.Ioc 0 t, f u =
+            Real.exp (lambda * t) • ((1 / t) • ∫ u in Set.Ioc 0 t, f u) := by
+        intro t
+        have h_scale_comm : 1 / t * Real.exp (lambda * t) =
+            Real.exp (lambda * t) * (1 / t) := by ring
+        rw [h_scale_comm, mul_smul]
+      simp_rw [h_average_scale]
       apply Filter.Tendsto.smul
       · have hexp_cont : Filter.Tendsto (fun t => Real.exp (lambda * t))
             (nhds 0) (nhds 1) := by
