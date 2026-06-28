@@ -385,6 +385,22 @@ lemma Compatible.associatedBilinForm_isSymm
     (h : ω.Compatible J) : (ω.associatedBilinForm J).IsSymm :=
   h.invariant.associatedBilinForm_isSymm
 
+/-- Applying the almost complex structure to both entries preserves the diagonal of the
+associated bilinear form. -/
+lemma associatedBilinForm_apply_apply_self_eq (ω : SymplecticForm V)
+    (J : AlmostComplexStructure V) (v : V) :
+    ω.associatedBilinForm J (J v) (J v) = ω.associatedBilinForm J v v := by
+  calc
+    ω.associatedBilinForm J (J v) (J v) = ω (J v) (-v) := by
+      rw [associatedBilinForm_apply, AlmostComplexStructure.apply_apply]
+    _ = -ω (J v) v := by
+      exact map_neg (ω.toBilinForm (J v)) v
+    _ = ω v (J v) := by
+      rw [← ω.neg_eq v (J v)]
+      simp
+    _ = ω.associatedBilinForm J v v := by
+      rw [associatedBilinForm_apply]
+
 lemma Compatible.associated_pos {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) {v : V} (hv : v ≠ 0) : 0 < ω v (J v) :=
   h.tames v hv
@@ -405,17 +421,7 @@ lemma associatedBilinForm_apply_apply_self_eq
     ω.associatedBilinForm J (F (J₀ v)) (F (J₀ v)) =
       ω.associatedBilinForm J (F v) (F v) := by
   rw [(isComplexLinearMap_iff_apply J₀ J F).mp hF v]
-  calc
-    ω.associatedBilinForm J (J (F v)) (J (F v)) =
-        ω (J (F v)) (-F v) := by
-      rw [SymplecticForm.associatedBilinForm_apply, AlmostComplexStructure.apply_apply]
-    _ = -ω (J (F v)) (F v) := by
-      exact map_neg (ω.toBilinForm (J (F v))) (F v)
-    _ = ω (F v) (J (F v)) := by
-      rw [← ω.neg_eq (F v) (J (F v))]
-      simp
-    _ = ω.associatedBilinForm J (F v) (F v) := by
-      rw [SymplecticForm.associatedBilinForm_apply]
+  exact ω.associatedBilinForm_apply_apply_self_eq J (F v)
 
 /-- For a complex-linear map from any complex source, the associated-bilinear-form diagonal
 of an image vector is the symplectic area density of the ordered pair `(F v, F (J₀ v))`. -/
