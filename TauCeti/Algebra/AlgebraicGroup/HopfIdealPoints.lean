@@ -23,7 +23,7 @@ the point factors uniquely through the quotient algebra.
 
 * `CommHopfAlgCat.quotientPointsHom`: the group homomorphism from quotient points to
   ambient points.
-* `CommHopfAlgCat.quotientPointOfKills`: factor an ambient point through `H ⧸ I` when it
+* `CommHopfAlgCat.liftQuotientPoint`: factor an ambient point through `H ⧸ I` when it
   kills `I`.
 * `CommHopfAlgCat.mem_range_quotientPointsHom_iff`: quotient points are exactly ambient
   points killing `I`.
@@ -80,16 +80,12 @@ lemma quotientPointsHom_apply_apply (H : _root_.CommHopfAlgCat.{v} R)
 /-- The map from quotient points to ambient points is injective. -/
 lemma quotientPointsHom_injective (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
-    Function.Injective (quotientPointsHom H I A) := by
-  intro f g hfg
-  apply WithConv.ofConv_injective
-  apply Ideal.Quotient.algHom_ext R
-  apply AlgHom.ext
-  intro h
-  exact congrArg (fun p : HopfAlgebra.points (R := R) (H := H) A => p.ofConv h) hfg
+    Function.Injective (quotientPointsHom H I A) :=
+  mapPointsFunctor_app_injective_of_surjective (mkQuotient H I)
+    (Ideal.Quotient.mkₐ_surjective R I.toIdeal) A
 
 /-- An ambient `A`-point factors through `H ⧸ I` when it kills the Hopf ideal `I`. -/
-noncomputable def quotientPointOfKills (H : _root_.CommHopfAlgCat.{v} R)
+noncomputable def liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := H) A)
     (hg : ∀ h : H, h ∈ I → g.ofConv h = 0) :
@@ -101,11 +97,11 @@ noncomputable def quotientPointOfKills (H : _root_.CommHopfAlgCat.{v} R)
 /-- The quotient point built from a point killing `I` evaluates on a quotient class by
 choosing any representative. -/
 @[simp]
-lemma quotientPointOfKills_apply_mk (H : _root_.CommHopfAlgCat.{v} R)
+lemma liftQuotientPoint_mk (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := H) A)
     (hg : ∀ h : H, h ∈ I → g.ofConv h = 0) (h : H) :
-    ((quotientPointOfKills H I A g hg).ofConv) (Ideal.Quotient.mkₐ R I.toIdeal h) =
+    ((liftQuotientPoint H I A g hg).ofConv) (Ideal.Quotient.mkₐ R I.toIdeal h) =
       g.ofConv h := by
   exact AlgHom.congr_fun (Ideal.Quotient.liftₐ_comp I.toIdeal g.ofConv (by
     intro h hh
@@ -114,18 +110,19 @@ lemma quotientPointOfKills_apply_mk (H : _root_.CommHopfAlgCat.{v} R)
 /-- Factoring a point that kills `I` through the quotient and then including it back in the
 ambient point group recovers the original point. -/
 @[simp]
-lemma quotientPointsHom_quotientPointOfKills (H : _root_.CommHopfAlgCat.{v} R)
+lemma quotientPointsHom_liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := H) A)
     (hg : ∀ h : H, h ∈ I → g.ofConv h = 0) :
-    quotientPointsHom H I A (quotientPointOfKills H I A g hg) = g := by
+    quotientPointsHom H I A (liftQuotientPoint H I A g hg) = g := by
   apply WithConv.ofConv_injective
   apply AlgHom.ext
   intro h
-  rw [quotientPointsHom_apply_apply, quotientPointOfKills_apply_mk]
+  rw [quotientPointsHom_apply_apply, liftQuotientPoint_mk]
 
 /-- A point of the ambient Hopf algebra lies in the image of quotient points if and only if it
 kills the Hopf ideal. -/
+@[simp]
 lemma mem_range_quotientPointsHom_iff (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := H) A) :
@@ -136,7 +133,7 @@ lemma mem_range_quotientPointsHom_iff (H : _root_.CommHopfAlgCat.{v} R)
     exact map_zero f.ofConv ▸ congrArg f.ofConv
       (Ideal.Quotient.eq_zero_iff_mem.mpr ((HopfIdeal.mem_toIdeal (I := I)).mpr hh))
   · intro hg
-    exact ⟨quotientPointOfKills H I A g hg, quotientPointsHom_quotientPointOfKills H I A g hg⟩
+    exact ⟨liftQuotientPoint H I A g hg, quotientPointsHom_liftQuotientPoint H I A g hg⟩
 
 /-- The subgroup of ambient `A`-points cut out by a Hopf ideal `I`.
 
