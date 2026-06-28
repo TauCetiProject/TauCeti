@@ -124,16 +124,15 @@ end IsSemigroupGroupPD
 
 section Topology
 
-variable [TopologicalSpace V] {F : ℝ≥0 × V → ℂ}
+variable {F : ℝ≥0 × V → ℂ}
 
 /-- Package the positive-definite zero-spatial time-axis kernel with continuity of the
 one-variable time-axis slice. -/
 theorem IsSemigroupGroupPD.timeAxis_isPositiveDefiniteKernel_and_continuous
-    (hFpd : IsSemigroupGroupPD F) (hFcont : Continuous F) :
+    (hFpd : IsSemigroupGroupPD F) (hFslice : Continuous fun t : ℝ≥0 => F (t, 0)) :
     IsPositiveDefiniteKernel (fun t u : ℝ≥0 => F (t + u, 0)) ∧
       Continuous (fun t : ℝ≥0 => F (t, 0)) :=
-  ⟨hFpd.timeAxis_isPositiveDefiniteKernel,
-    hFcont.comp (continuous_id.prodMk continuous_const)⟩
+  ⟨hFpd.timeAxis_isPositiveDefiniteKernel, hFslice⟩
 
 end Topology
 
