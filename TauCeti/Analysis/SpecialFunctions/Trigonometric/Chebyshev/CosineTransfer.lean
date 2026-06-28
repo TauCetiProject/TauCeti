@@ -20,33 +20,31 @@ namespace TauCeti
 open MeasureTheory Polynomial.Chebyshev
 
 /-- The cosine-side representative corresponding to the Chebyshev polynomial `Tₙ`. -/
-@[expose]
 noncomputable def chebyshevCosine (n : ℕ) (θ : ℝ) : ℝ :=
   Real.cos (n * θ)
 
 /-- The defining equation for the cosine-side Chebyshev representative. -/
 lemma chebyshevCosine_def (n : ℕ) (θ : ℝ) : chebyshevCosine n θ = Real.cos (n * θ) :=
-  rfl
+  chebyshevCosine.eq_1 n θ
 
 @[simp]
 lemma chebyshevCosine_zero (θ : ℝ) : chebyshevCosine 0 θ = 1 := by
-  simp [chebyshevCosine]
+  simp [chebyshevCosine_def]
 
 @[simp]
 lemma chebyshevCosine_one (θ : ℝ) : chebyshevCosine 1 θ = Real.cos θ := by
-  simp [chebyshevCosine]
+  simp [chebyshevCosine_def]
 
 /-- Chebyshev polynomials restrict along `x = cos θ` to the cosine functions. -/
 lemma eval_T_real_cos_eq_chebyshevCosine (n : ℕ) (θ : ℝ) :
     (T ℝ n).eval (Real.cos θ) = chebyshevCosine n θ := by
-  simp [chebyshevCosine, Polynomial.Chebyshev.T_real_cos]
+  simp [chebyshevCosine_def, Polynomial.Chebyshev.T_real_cos]
 
 /-- The cosine-side representatives are continuous. -/
 lemma continuous_chebyshevCosine (n : ℕ) : Continuous (chebyshevCosine n) := by
   have h : Continuous (fun θ : ℝ => Real.cos ((n : ℝ) * θ)) :=
     Real.continuous_cos.comp (continuous_const.mul continuous_id)
-  unfold chebyshevCosine
-  exact h
+  exact h.congr fun θ => (chebyshevCosine_def n θ).symm
 
 /-- Transfer a single Chebyshev `T` integral from `measureT` to the angular
 cosine-side integral. -/
@@ -54,7 +52,7 @@ lemma integral_eval_T_real_measureT_eq_integral_chebyshevCosine (n : ℕ) :
     ∫ x, (T ℝ n).eval x ∂Polynomial.Chebyshev.measureT =
       ∫ θ in (0)..Real.pi, chebyshevCosine n θ := by
   rw [integral_measureT_eq_integral_cos]
-  simp [chebyshevCosine]
+  simp [chebyshevCosine_def]
 
 /-- Transfer a product of two Chebyshev `T` polynomials from `measureT` to the
 angular cosine-side integral. -/
@@ -63,7 +61,7 @@ lemma integral_eval_T_real_mul_eval_T_real_measureT_eq_integral_chebyshevCosine_
     ∫ x, (T ℝ m).eval x * (T ℝ n).eval x ∂Polynomial.Chebyshev.measureT =
       ∫ θ in (0)..Real.pi, chebyshevCosine m θ * chebyshevCosine n θ := by
   rw [integral_measureT_eq_integral_cos]
-  simp [chebyshevCosine]
+  simp [chebyshevCosine_def]
 
 /-- The cosine-side integral of the constant Chebyshev mode. -/
 lemma integral_chebyshevCosine_zero :
