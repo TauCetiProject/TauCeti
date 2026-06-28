@@ -62,7 +62,7 @@ the unit group `Aˣ`.
 
 The source is the convolution group of `K`-algebra maps out of the base-changed Hopf algebra.
 The target is the ordinary unit group of the value algebra. -/
-@[expose] noncomputable def baseChangePointsMulEquiv :
+noncomputable def baseChangePointsMulEquiv :
     WithConv (K ⊗[k] k[T;T⁻¹] →ₐ[K] A) ≃* Aˣ :=
   (AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := k[T;T⁻¹]) (R := A)).symm.trans
     (pointsMulEquiv (R := k) (A := A))
