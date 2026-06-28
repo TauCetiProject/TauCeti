@@ -67,6 +67,19 @@ lemma subgroupFiberOrbitQuotientEquivQuotientGroup_bot_apply_smul
     subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul]
 
 /-- Composing the bottom-subgroup fibre quotient equivalence with `G / ⊥ ≃ G` sends the
+class of `φ⁻¹ • e` to `φ`. -/
+@[simp]
+lemma quotientBot_subgroupFiberOrbitQuotientEquivQuotientGroup_bot_apply_inv_smul
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (e : p ⁻¹' {b}) (φ : Deck p) :
+    QuotientGroup.quotientBot
+        (subgroupFiberOrbitQuotientEquivQuotientGroup (⊥ : Subgroup (Deck p)) e
+          ((subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b)).symm (φ⁻¹ • e))) =
+      φ := by
+  rw [subgroupFiberOrbitQuotientEquivQuotientGroup_bot_apply_inv_smul]
+  rfl
+
+/-- Composing the bottom-subgroup fibre quotient equivalence with `G / ⊥ ≃ G` sends the
 class of `φ • e` to `φ⁻¹`, matching the convention of
 `MulAction.equivSubgroupOrbitsQuotientGroup`. -/
 @[simp]
