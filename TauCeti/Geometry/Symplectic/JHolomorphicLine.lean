@@ -37,6 +37,8 @@ calculus API needed before the holomorphic-curve energy and elliptic estimates i
 * `TauCeti.IsJHolomorphicAt.fderiv_stdComplexLineImag` and
   `TauCeti.IsJHolomorphicAt.fderiv_stdComplexLine_apply`: the corresponding statements for
   Frechet derivatives of `J`-holomorphic maps.
+* `TauCeti.IsComplexLinearMap.symplecticForm_apply_apply_*`: nonnegativity and positivity of
+  `ω(F v, F (J v))` for a complex-linear map under tameness.
 * `TauCeti.IsComplexLinearMap.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_*`:
   nonnegativity and positivity of `ω(F ∂s, F ∂t)` under tameness.
 
@@ -75,13 +77,13 @@ lemma stdComplexLineImag_snd : stdComplexLineImag.2 = 1 :=
   rfl
 
 @[simp]
-lemma product_apply_stdComplexLineReal :
+lemma AlmostComplexStructure.product_apply_stdComplexLineReal :
     AlmostComplexStructure.product ℝ stdComplexLineReal = stdComplexLineImag :=
   by
     ext <;> simp [stdComplexLineReal, stdComplexLineImag]
 
 @[simp]
-lemma product_apply_stdComplexLineImag :
+lemma AlmostComplexStructure.product_apply_stdComplexLineImag :
     AlmostComplexStructure.product ℝ stdComplexLineImag = -stdComplexLineReal := by
   ext <;> simp [stdComplexLineReal, stdComplexLineImag]
 
@@ -92,7 +94,9 @@ lemma stdComplexLine_eq_smul_real_add_smul_imag (z : ℝ × ℝ) :
 
 section Linear
 
+variable {U : Type*} [AddCommGroup U] [Module ℝ U]
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
+variable {J₀ : AlmostComplexStructure U}
 variable {J : AlmostComplexStructure V}
 
 /-- A real-linear map out of `ℝ × ℝ` is determined by its values on the real and imaginary
@@ -106,6 +110,27 @@ lemma LinearMap.apply_stdComplexLine (F : (ℝ × ℝ) →ₗ[ℝ] V) (z : ℝ �
       rw [map_add, map_smul, map_smul]
 
 namespace IsComplexLinearMap
+
+variable {F₀ : U →ₗ[ℝ] V}
+variable {ω : SymplecticForm V}
+
+/-- Under tameness, the pointwise symplectic area of a complex-linear image of `(v, J₀ v)` is
+nonnegative. -/
+lemma symplecticForm_apply_apply_nonneg (hF : IsComplexLinearMap J₀ J F₀)
+    (hω : ω.Tames J) (v : U) :
+    0 ≤ ω (F₀ v) (F₀ (J₀ v)) := by
+  rw [(isComplexLinearMap_iff_apply J₀ J F₀).mp hF v]
+  rcases eq_or_ne (F₀ v) 0 with hzero | hne
+  · simp [hzero]
+  · exact (hω (F₀ v) hne).le
+
+/-- Under tameness, the pointwise symplectic area of a complex-linear image of `(v, J₀ v)` is
+positive when the image of `v` is nonzero. -/
+lemma symplecticForm_apply_apply_pos (hF : IsComplexLinearMap J₀ J F₀) (hω : ω.Tames J)
+    {v : U} (hv : F₀ v ≠ 0) :
+    0 < ω (F₀ v) (F₀ (J₀ v)) := by
+  rw [(isComplexLinearMap_iff_apply J₀ J F₀).mp hF v]
+  exact hω (F₀ v) hv
 
 variable {F : (ℝ × ℝ) →ₗ[ℝ] V}
 
@@ -139,10 +164,8 @@ oriented coordinate pair is nonnegative. -/
 lemma symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) (hω : ω.Tames J) :
     0 ≤ ω (F stdComplexLineReal) (F stdComplexLineImag) := by
-  rw [hF.apply_stdComplexLineImag]
-  rcases eq_or_ne (F stdComplexLineReal) 0 with hzero | hne
-  · simp [hzero]
-  · exact (hω (F stdComplexLineReal) hne).le
+  simpa [AlmostComplexStructure.product_apply_stdComplexLineReal, stdComplexLineImag] using
+    hF.symplecticForm_apply_apply_nonneg hω stdComplexLineReal
 
 /-- Under tameness, the pointwise symplectic area of a complex-linear image of the standard
 oriented coordinate pair is positive if the real-coordinate image is nonzero. -/
@@ -150,8 +173,8 @@ lemma symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_pos
     (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) (hω : ω.Tames J)
     (hreal : F stdComplexLineReal ≠ 0) :
     0 < ω (F stdComplexLineReal) (F stdComplexLineImag) := by
-  rw [hF.apply_stdComplexLineImag]
-  exact hω (F stdComplexLineReal) hreal
+  simpa [AlmostComplexStructure.product_apply_stdComplexLineReal, stdComplexLineImag] using
+    hF.symplecticForm_apply_apply_pos hω hreal
 
 end IsComplexLinearMap
 
