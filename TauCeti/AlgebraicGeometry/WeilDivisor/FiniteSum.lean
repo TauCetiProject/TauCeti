@@ -139,32 +139,6 @@ lemma pushforward_ofFinsuppMultiplicity (f : X → Y) (m : X →₀ ℕ) :
   refine Finset.sum_congr rfl fun x hx => ?_
   rw [map_zsmul, pushforward_ofPoint]
 
-/-- With strictly positive weights on the support, an effective divisor has weighted degree
-zero iff it is zero. -/
-lemma IsEffective.weightedDegree_eq_zero_iff_of_pos_on_support {w : X → ℤ}
-    {D : WeilDivisor X} (hD : IsEffective D) (hw : ∀ x ∈ D.support, 0 < w x) :
-    weightedDegree w D = 0 ↔ D = 0 := by
-  constructor
-  · intro hdeg
-    by_contra hD0
-    obtain ⟨x, hxpos⟩ := hD.exists_pos_coeff_of_ne_zero hD0
-    have hxs : x ∈ D.support := Finsupp.mem_support_iff.mpr (ne_of_gt hxpos)
-    have hsum_pos : 0 < D.sum fun y n => n * w y := by
-      exact Finsupp.sum_pos'
-        (fun y hy => mul_nonneg ((isEffective_iff D).mp hD y) (le_of_lt (hw y hy)))
-        ⟨x, hxs, mul_pos hxpos (hw x hxs)⟩
-    rw [← weightedDegree_apply] at hsum_pos
-    exact (ne_of_gt hsum_pos) hdeg
-  · intro h
-    simp [h]
-
-/-- With strictly positive weights on the support, an effective divisor of weighted degree zero
-is zero. -/
-lemma IsEffective.eq_zero_of_weightedDegree_eq_zero_of_pos_on_support {w : X → ℤ}
-    {D : WeilDivisor X} (hD : IsEffective D) (hw : ∀ x ∈ D.support, 0 < w x)
-    (hdeg : weightedDegree w D = 0) : D = 0 :=
-  (hD.weightedDegree_eq_zero_iff_of_pos_on_support hw).mp hdeg
-
 /-! ### Finite-set multiplicities via `Finsupp.indicator` -/
 
 /-- The effective divisor whose coefficients on `s` are the natural-number multiplicities `m`
