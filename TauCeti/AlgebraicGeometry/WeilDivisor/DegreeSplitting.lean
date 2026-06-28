@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
+import Mathlib.Tactic.Abel
 
 /-!
 # Splitting the divisor class group along the degree at a rational point
@@ -120,6 +121,16 @@ lemma degreeCorrection_apply (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x�
     S.degreeCorrection w h x₀ c =
       c - (weightedDegreeClass w h c) • S.divisorClass (ofPoint x₀) := by
   simp [degreeCorrection]
+
+/-- Changing the base point in the class-group degree correction adds the weighted degree of the
+class times the base-point-change divisor class. -/
+lemma degreeCorrection_change_base (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
+    (x₀ y₀ : X) (c : S.ClassGroup) :
+    S.degreeCorrection w h y₀ c =
+      S.degreeCorrection w h x₀ c +
+        weightedDegreeClass w h c • S.divisorClass (pointDifference x₀ y₀) := by
+  rw [degreeCorrection_apply, degreeCorrection_apply, pointDifference, map_sub, zsmul_sub]
+  abel_nf
 
 /-- The degree correction lands in `picZero`: the degree-corrected class has weighted degree zero,
 provided the base point has weight one. -/
