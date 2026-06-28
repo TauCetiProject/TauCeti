@@ -33,8 +33,9 @@ and for a translation by `a : E`,
 All three identities hold with *no* differentiability hypothesis on `f`, because the underlying
 `iteratedFDeriv` composition laws are unconditional (the iterated derivative is junk-valued off
 the smooth locus, yet still transforms correctly under a linear change of variable). The harmonic
-corollaries, where smoothness re-enters, live in
-`TauCeti/Analysis/InnerProductSpace/HarmonicIsometry.lean`.
+corollaries, where smoothness re-enters, live in the companion files
+`TauCeti/Analysis/InnerProductSpace/HarmonicIsometry.lean` and
+`TauCeti/Analysis/InnerProductSpace/HarmonicDilation.lean`.
 
 ## Main declarations
 
