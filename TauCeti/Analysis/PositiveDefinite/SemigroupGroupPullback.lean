@@ -40,10 +40,9 @@ function API item "pullbacks" and Milestone 2 ("BCR semigroup--Bochner").
 * `TauCeti.IsSemigroupGroupPD.continuous_comp_spatial`: spatial pullback preserves continuity
   along continuous maps.
 * `TauCeti.IsSemigroupGroupPD.comp_spatial_and_continuous`,
-  `TauCeti.IsSemigroupGroupPD.comp_spatialAddMonoidHom_and_continuous`, and
   `TauCeti.IsSemigroupGroupPD.comp_spatialContinuousLinearMap_and_continuous`: packaged
-  homomorphism-class, additive, and continuous-linear forms preserving both
-  positive-definiteness and continuity.
+  homomorphism-class and continuous-linear forms preserving both positive-definiteness and
+  continuity.
 
 ## References
 
@@ -98,11 +97,6 @@ theorem comp_spatial_comp {Φ Ψ : Type*} [FunLike Φ W V] [AddHomClass Φ W V]
     IsSemigroupGroupPD fun p : ℝ≥0 × U => F (p.1, φ (ψ p.2)) :=
   (hF.comp_spatial φ).comp_spatial ψ
 
-/-- The explicit `AddMonoidHom` form of composed spatial pullbacks. -/
-theorem comp_spatialAddMonoidHom_comp (hF : IsSemigroupGroupPD F) (φ : W →+ V) (ψ : U →+ W) :
-    IsSemigroupGroupPD fun p : ℝ≥0 × U => F (p.1, φ (ψ p.2)) :=
-  hF.comp_spatial_comp φ ψ
-
 /-- Semigroup-group positive-definiteness descends along a surjective spatial additive
 homomorphism. -/
 theorem of_comp_spatial_surjective {Φ : Type*} [FunLike Φ W V] [AddHomClass Φ W V]
@@ -152,13 +146,6 @@ theorem comp_spatial_and_continuous {Φ : Type*} [FunLike Φ W V] [AddHomClass �
     IsSemigroupGroupPD (fun p : ℝ≥0 × W => F (p.1, φ p.2)) ∧
       Continuous (fun p : ℝ≥0 × W => F (p.1, φ p.2)) :=
   ⟨hFpd.comp_spatial φ, continuous_comp_spatial hFcont φ hφ⟩
-
-/-- The explicit `AddMonoidHom` form of spatial pullback packaged with continuity. -/
-theorem comp_spatialAddMonoidHom_and_continuous (hFpd : IsSemigroupGroupPD F)
-    (hFcont : Continuous F) (φ : W →+ V) (hφ : Continuous φ) :
-    IsSemigroupGroupPD (fun p : ℝ≥0 × W => F (p.1, φ p.2)) ∧
-      Continuous (fun p : ℝ≥0 × W => F (p.1, φ p.2)) :=
-  hFpd.comp_spatial_and_continuous hFcont φ hφ
 
 end Topology
 
