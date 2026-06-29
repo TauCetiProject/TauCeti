@@ -69,14 +69,16 @@ lemma surjective_smul_fiberMap (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
 transport the target fibre point first, or compute the source deck transformation first and
 then conjugate it. -/
 @[simp]
-lemma deckEquivFiberOfSurjective_symm_fiberMap [PreconnectedSpace E] [PreconnectedSpace F]
+lemma deckEquivFiberOfSurjective_symm_fiberMap [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (h : E ≃ₜ F)
     (hpq : ∀ e, q (h e) = p e) (e e' : p ⁻¹' {b})
     (hsurj : Function.Surjective fun φ : Deck p => φ • e) :
+    letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
     (deckEquivFiberOfSurjective hq (fiberMap h hpq b e)
           (surjective_smul_fiberMap h hpq e hsurj)).symm
         (fiberMap h hpq b e') =
       conjMulEquiv h hpq ((deckEquivFiberOfSurjective hp e hsurj).symm e') := by
+  letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
   apply (deckEquivFiberOfSurjective hq (fiberMap h hpq b e)
     (surjective_smul_fiberMap h hpq e hsurj)).injective
   rw [Equiv.apply_symm_apply, deckEquivFiberOfSurjective_apply, ← fiberMap_smul,
@@ -89,15 +91,17 @@ This is the local pretransitive-fibre form. The regular-cover API below supplies
 nonemptiness and pretransitivity hypotheses from `Deck.IsRegular`. -/
 @[simp]
 lemma fiberMap_sdiv_eq_conjMulEquiv_of_pretransitive [PreconnectedSpace E]
-    [PreconnectedSpace F] (hp : IsCoveringMap p) (hq : IsCoveringMap q)
+    (hp : IsCoveringMap p) (hq : IsCoveringMap q)
     [Nonempty (p ⁻¹' {b})] [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})]
     (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e₁ e₂ : p ⁻¹' {b}) :
+    letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
     letI := fiberTorsorOfPretransitive hp b
     letI : Nonempty (q ⁻¹' {b}) := ‹Nonempty (p ⁻¹' {b})›.map (fiberMap h hpq b)
     letI : MulAction.IsPretransitive (Deck q) (q ⁻¹' {b}) := isPretransitive_fiberMap h hpq
     letI := fiberTorsorOfPretransitive hq b
     (fiberMap h hpq b e₁ /ₛ fiberMap h hpq b e₂ : Deck q) =
       conjMulEquiv h hpq (e₁ /ₛ e₂ : Deck p) := by
+  letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
   letI := fiberTorsorOfPretransitive hp b
   letI : Nonempty (q ⁻¹' {b}) := ‹Nonempty (p ⁻¹' {b})›.map (fiberMap h hpq b)
   letI : MulAction.IsPretransitive (Deck q) (q ⁻¹' {b}) := isPretransitive_fiberMap h hpq
@@ -110,26 +114,30 @@ lemma fiberMap_sdiv_eq_conjMulEquiv_of_pretransitive [PreconnectedSpace E]
 /-- The local deck-to-fibre equivalence commutes with transport of deck transformations
 and fibre points along an over-base homeomorphism. -/
 @[simp]
-lemma deckEquivFiberOfSurjective_fiberMap [PreconnectedSpace E] [PreconnectedSpace F]
+lemma deckEquivFiberOfSurjective_fiberMap [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (h : E ≃ₜ F)
     (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b})
     (hsurj : Function.Surjective fun φ : Deck p => φ • e) (φ : Deck p) :
+    letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
     deckEquivFiberOfSurjective hq (fiberMap h hpq b e)
         (surjective_smul_fiberMap h hpq e hsurj) (conjMulEquiv h hpq φ) =
       fiberMap h hpq b (deckEquivFiberOfSurjective hp e hsurj φ) := by
+  letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
   rw [deckEquivFiberOfSurjective_apply, deckEquivFiberOfSurjective_apply, fiberMap_smul]
 
 /-- On underlying points, local compatibility of `deckEquivFiberOfSurjective` with fibre
 transport says that conjugating a deck transformation and then evaluating on the transported
 fibre point is the same as transporting the original evaluation. -/
 @[simp]
-lemma deckEquivFiberOfSurjective_fiberMap_coe [PreconnectedSpace E] [PreconnectedSpace F]
+lemma deckEquivFiberOfSurjective_fiberMap_coe [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (h : E ≃ₜ F)
     (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b})
     (hsurj : Function.Surjective fun φ : Deck p => φ • e) (φ : Deck p) :
+    letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
     (deckEquivFiberOfSurjective hq (fiberMap h hpq b e)
         (surjective_smul_fiberMap h hpq e hsurj) (conjMulEquiv h hpq φ) : F) =
       h (φ.1 e.1) := by
+  letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
   rw [deckEquivFiberOfSurjective_fiberMap hp hq h hpq e hsurj φ,
     fiberMap_apply_coe, deckEquivFiberOfSurjective_apply_coe]
 
@@ -137,12 +145,14 @@ lemma deckEquivFiberOfSurjective_fiberMap_coe [PreconnectedSpace E] [Preconnecte
 transport the target fibre point first, or compute the source deck transformation first and
 then conjugate it. -/
 @[simp]
-lemma deckEquivFiber_symm_fiberMap [PreconnectedSpace E] [PreconnectedSpace F]
+lemma deckEquivFiber_symm_fiberMap [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (hreg : IsRegular p)
     (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e e' : p ⁻¹' {b}) :
+    letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
     (deckEquivFiber hq (hreg.conj h hpq) (fiberMap h hpq b e)).symm
         (fiberMap h hpq b e') =
       conjMulEquiv h hpq ((deckEquivFiber hp hreg e).symm e') := by
+  letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
   let hregq := hreg.conj h hpq
   letI := hreg.fiber_isPretransitive b
   letI := hregq.fiber_isPretransitive b
@@ -152,11 +162,13 @@ lemma deckEquivFiber_symm_fiberMap [PreconnectedSpace E] [PreconnectedSpace F]
 /-- The regular deck-to-fibre equivalence commutes with transport of deck transformations
 and fibre points along an over-base homeomorphism. -/
 @[simp]
-lemma deckEquivFiber_fiberMap [PreconnectedSpace E] [PreconnectedSpace F]
+lemma deckEquivFiber_fiberMap [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (hreg : IsRegular p)
     (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b}) (φ : Deck p) :
+    letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
     deckEquivFiber hq (hreg.conj h hpq) (fiberMap h hpq b e) (conjMulEquiv h hpq φ) =
       fiberMap h hpq b (deckEquivFiber hp hreg e φ) := by
+  letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
   let hregq := hreg.conj h hpq
   letI := hreg.fiber_isPretransitive b
   letI := hregq.fiber_isPretransitive b
@@ -167,25 +179,29 @@ lemma deckEquivFiber_fiberMap [PreconnectedSpace E] [PreconnectedSpace F]
 that conjugating a deck transformation and then evaluating on the transported fibre point is
 the same as transporting the original evaluation. -/
 @[simp]
-lemma deckEquivFiber_fiberMap_coe [PreconnectedSpace E] [PreconnectedSpace F]
+lemma deckEquivFiber_fiberMap_coe [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (hreg : IsRegular p)
     (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b}) (φ : Deck p) :
+    letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
     (deckEquivFiber hq (hreg.conj h hpq) (fiberMap h hpq b e)
         (conjMulEquiv h hpq φ) : F) =
       h (φ.1 e.1) := by
+  letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
   rw [deckEquivFiber_fiberMap hp hq hreg h hpq e φ, fiberMap_apply_coe,
     deckEquivFiber_apply_coe]
 
 /-- For regular preconnected covers, fibre transport preserves torsor division, with the
 deck transformation conjugated to the target deck group. -/
 @[simp]
-lemma fiberMap_sdiv_eq_conjMulEquiv [PreconnectedSpace E] [PreconnectedSpace F]
+lemma fiberMap_sdiv_eq_conjMulEquiv [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (hreg : IsRegular p)
     (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e₁ e₂ : p ⁻¹' {b}) :
+    letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
     letI := fiberTorsor hp hreg b
     letI := fiberTorsor hq (hreg.conj h hpq) b
     (fiberMap h hpq b e₁ /ₛ fiberMap h hpq b e₂ : Deck q) =
       conjMulEquiv h hpq (e₁ /ₛ e₂ : Deck p) := by
+  letI : PreconnectedSpace F := h.surjective.denseRange.preconnectedSpace h.continuous
   rw [fiber_sdiv_eq_deckEquivFiber_symm hq (hreg.conj h hpq),
     fiber_sdiv_eq_deckEquivFiber_symm hp hreg]
   exact deckEquivFiber_symm_fiberMap hp hq hreg h hpq e₂ e₁
