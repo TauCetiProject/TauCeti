@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Lagrangian
 
 /-!
 # Rescaling symplectic forms
@@ -28,6 +28,10 @@ they do preserve invariance because invariance is linear in the form.
   reflects compatibility.
 * `TauCeti.SymplecticForm.compatible_rescale_neg_iff_of_neg`: negative rescaling preserves and
   reflects compatibility after replacing `J` by `-J`.
+* `TauCeti.SymplecticForm.orthogonal_rescale`: nonzero rescaling leaves symplectic complements
+  unchanged.
+* `TauCeti.SymplecticForm.isLagrangian_rescale_iff`: nonzero rescaling preserves and reflects
+  Lagrangian subspaces.
 
 The convention is the standard one from symplectic geometry: changing the overall positive scale
 of `ω` changes the metric scale but not the compatible almost complex structure.
@@ -90,6 +94,62 @@ lemma rescale_rescale (ω : SymplecticForm V) (c d : ℝ) (hc : c ≠ 0) (hd : d
     simp [mul_assoc]
 
 variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+variable {L : Submodule ℝ V}
+
+/-- Nonzero rescaling leaves the symplectic complement of a subspace unchanged. -/
+@[simp]
+lemma orthogonal_rescale (c : ℝ) (hc : c ≠ 0) :
+    (ω.rescale c hc).orthogonal L = ω.orthogonal L := by
+  ext x
+  rw [mem_orthogonal_iff, mem_orthogonal_iff]
+  constructor
+  · intro h y hy
+    have hyx := h y hy
+    simp only [rescale_apply] at hyx
+    exact (mul_eq_zero.mp hyx).resolve_left hc
+  · intro h y hy
+    simp [h y hy]
+
+/-- Nonzero rescaling preserves and reflects isotropic subspaces. -/
+@[simp]
+lemma isIsotropic_rescale_iff (c : ℝ) (hc : c ≠ 0) :
+    (ω.rescale c hc).IsIsotropic L ↔ ω.IsIsotropic L := by
+  rw [isIsotropic_iff, isIsotropic_iff]
+  constructor
+  · intro h v hv w hw
+    have hvw := h v hv w hw
+    simp only [rescale_apply] at hvw
+    exact (mul_eq_zero.mp hvw).resolve_left hc
+  · intro h v hv w hw
+    simp [h v hv w hw]
+
+/-- Isotropy is preserved by nonzero rescaling of the symplectic form. -/
+lemma IsIsotropic.rescale (h : ω.IsIsotropic L) (c : ℝ) (hc : c ≠ 0) :
+    (ω.rescale c hc).IsIsotropic L :=
+  (isIsotropic_rescale_iff c hc).mpr h
+
+/-- Nonzero rescaling preserves and reflects coisotropic subspaces. -/
+@[simp]
+lemma isCoisotropic_rescale_iff (c : ℝ) (hc : c ≠ 0) :
+    (ω.rescale c hc).IsCoisotropic L ↔ ω.IsCoisotropic L := by
+  rw [isCoisotropic_iff, isCoisotropic_iff, orthogonal_rescale]
+
+/-- Coisotropy is preserved by nonzero rescaling of the symplectic form. -/
+lemma IsCoisotropic.rescale (h : ω.IsCoisotropic L) (c : ℝ) (hc : c ≠ 0) :
+    (ω.rescale c hc).IsCoisotropic L :=
+  (isCoisotropic_rescale_iff c hc).mpr h
+
+/-- Nonzero rescaling preserves and reflects Lagrangian subspaces. -/
+@[simp]
+lemma isLagrangian_rescale_iff (c : ℝ) (hc : c ≠ 0) :
+    (ω.rescale c hc).IsLagrangian L ↔ ω.IsLagrangian L := by
+  rw [isLagrangian_iff, isLagrangian_iff, isIsotropic_rescale_iff c hc,
+    isCoisotropic_rescale_iff c hc]
+
+/-- Lagrangian subspaces are preserved by nonzero rescaling of the symplectic form. -/
+lemma IsLagrangian.rescale (h : ω.IsLagrangian L) (c : ℝ) (hc : c ≠ 0) :
+    (ω.rescale c hc).IsLagrangian L :=
+  (isLagrangian_rescale_iff c hc).mpr h
 
 /-- The associated bilinear form of a rescaled symplectic form is rescaled by the same factor. -/
 @[simp]
