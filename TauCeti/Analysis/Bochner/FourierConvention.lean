@@ -16,9 +16,9 @@ statements are often written in the Fourier-transform convention
 
 `a ↦ ∫ q, exp (-2π i ⟪a, q⟫) ∂μ q`.
 
-This file gives that convention a local Tau Ceti name and records the exact conversion to
-`MeasureTheory.charFun`: it is `charFun μ (-(2π) • a)`. Combining this with the existing
-characteristic-function bridge gives the finite-measure forward direction in the roadmap's
+This file records the exact conversion from Mathlib's Fourier integral to
+`MeasureTheory.charFun`: at frequency `a`, it is `charFun μ (-(2π) • a)`. Combining this with the
+existing characteristic-function bridge gives the finite-measure forward direction in the roadmap's
 Fourier convention.
 
 This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the API bullet asking for
@@ -29,13 +29,13 @@ normalizations.
 
 ## Main declarations
 
-* `TauCeti.MeasureTheory.fourierConvention`: the finite-measure Fourier transform in the
-  `e^{-2πi⟪a,q⟫}` convention.
-* `TauCeti.MeasureTheory.fourierConvention_eq_charFun`: conversion to Mathlib's `charFun`.
-* `TauCeti.MeasureTheory.norm_fourierConvention_le`: the finite-measure norm bound.
-* `TauCeti.MeasureTheory.continuous_fourierConvention`: continuity for finite measures.
-* `TauCeti.MeasureTheory.fourierConvention_isPositiveDefinite_of_star_eq_neg`: the finite-measure
-  transform is positive definite for an explicit negation involution.
+* `TauCeti.MeasureTheory.fourierStieltjesTransform`: Mathlib's Fourier integral of the constant
+  function `1`, the finite-measure Fourier-Stieltjes transform.
+* `TauCeti.MeasureTheory.fourierStieltjesTransform_eq_charFun`: conversion to Mathlib's `charFun`.
+* `TauCeti.MeasureTheory.norm_fourierStieltjesTransform_le`: the finite-measure norm bound.
+* `TauCeti.MeasureTheory.continuous_fourierStieltjesTransform`: continuity for finite measures.
+* `TauCeti.MeasureTheory.fourierStieltjesTransform_isPositiveDefinite_of_star_eq_neg`: the
+  finite-measure transform is positive definite for an explicit negation involution.
 
 ## References
 
@@ -51,92 +51,107 @@ namespace TauCeti
 
 namespace MeasureTheory
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [MeasurableSpace E] {μ : Measure E}
+section Seminormed
 
-/-- The Fourier transform of a finite measure in Mathlib's Fourier-analysis convention:
-`a ↦ ∫ q, exp (-2π i ⟪a, q⟫) ∂μ q`. This is the convention used in the Bochner statement in the
-OneParameterSemigroups roadmap. -/
-@[expose]
-noncomputable def fourierConvention (μ : Measure E) (a : E) : ℂ :=
-  ∫ q, exp (-2 * Real.pi * I * (⟪a, q⟫ : ℂ)) ∂μ
+variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] {μ : Measure E} [IsFiniteMeasure μ]
 
-/-- The pointwise integral expression for `fourierConvention`. -/
-theorem fourierConvention_apply (a : E) :
-    fourierConvention μ a = ∫ q, exp (-2 * Real.pi * I * (⟪a, q⟫ : ℂ)) ∂μ :=
-  rfl
+/-- The Fourier-Stieltjes transform of a finite measure in Mathlib's `e^{-2πi⟪a,q⟫}` Fourier
+convention, phrased as Mathlib's Fourier integral of the constant function `1`. -/
+noncomputable def fourierStieltjesTransform (μ : Measure E) [IsFiniteMeasure μ] (a : E) : ℂ :=
+  VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) 1 a
 
-/-- The `e^{-2πi⟪a,q⟫}` Fourier convention is the characteristic function evaluated at
-`-(2π) • a`. This is the named conversion between the Fourier convention and Mathlib's
-`MeasureTheory.charFun` convention. -/
-theorem fourierConvention_eq_charFun (a : E) :
-    fourierConvention μ a = charFun μ (-(2 * Real.pi) • a) := by
-  rw [fourierConvention_apply, charFun_apply]
+/-- The pointwise integral expression for `fourierStieltjesTransform`. -/
+theorem fourierStieltjesTransform_apply (a : E) :
+    fourierStieltjesTransform μ a = ∫ q, exp (-2 * Real.pi * I * (⟪a, q⟫ : ℂ)) ∂μ := by
+  rw [fourierStieltjesTransform, VectorFourier.fourierIntegral]
   congr with q
+  simp only [Real.fourierChar_apply', innerₗ_apply_apply, Circle.smul_def, Circle.coe_exp,
+    Pi.ofNat_apply, smul_eq_mul, mul_one]
   congr 1
-  rw [inner_smul_right, real_inner_comm]
-  norm_num
-  ring
+  rw [real_inner_comm]
+  rw [ofReal_mul, ofReal_mul, ofReal_neg]
+  ring_nf
+  simp [mul_assoc, mul_left_comm, mul_comm]
 
-/-- The Fourier-convention transform at the origin is the total mass, as a complex number. -/
+/-- Mathlib's `e^{-2πi⟪a,q⟫}` Fourier integral is the characteristic function evaluated at
+`-(2π) • a`. This is the named conversion between Mathlib's Fourier convention and Mathlib's
+`MeasureTheory.charFun` convention. -/
+theorem fourierStieltjesTransform_eq_charFun (a : E) :
+    fourierStieltjesTransform μ a = charFun μ (-(2 * Real.pi) • a) := by
+  rw [charFun_eq_fourierIntegral']
+  congr 1
+  rw [smul_smul]
+  have h : Real.pi⁻¹ * 2⁻¹ * (2 * Real.pi) = (1 : ℝ) := by
+    field_simp [Real.pi_ne_zero]
+  simp [h]
+
+/-- Function-level form of `fourierStieltjesTransform_eq_charFun`. -/
+theorem fourierStieltjesTransform_eq_charFun_fun :
+    fourierStieltjesTransform μ = fun a : E => charFun μ (-(2 * Real.pi) • a) := by
+  ext a
+  exact fourierStieltjesTransform_eq_charFun (μ := μ) a
+
+/-- The Fourier-Stieltjes transform at the origin is the total mass, as a complex number. -/
 @[simp]
-theorem fourierConvention_zero :
-    fourierConvention μ 0 = μ.real Set.univ := by
-  rw [fourierConvention_eq_charFun]
+theorem fourierStieltjesTransform_zero :
+    fourierStieltjesTransform μ 0 = μ.real Set.univ := by
+  rw [fourierStieltjesTransform_eq_charFun]
   simp
 
-/-- The Fourier-convention transform of the zero measure is zero. -/
+/-- The Fourier-Stieltjes transform of the zero measure is zero. -/
 @[simp]
-theorem fourierConvention_zero_measure (a : E) :
-    fourierConvention (0 : Measure E) a = 0 := by
-  rw [fourierConvention_eq_charFun]
+theorem fourierStieltjesTransform_zero_measure (a : E) :
+    fourierStieltjesTransform (0 : Measure E) a = 0 := by
+  rw [fourierStieltjesTransform_eq_charFun]
   simp
 
-/-- The Fourier-convention transform of a finite measure is bounded by the total mass. -/
-theorem norm_fourierConvention_le (a : E) :
-    ‖fourierConvention μ a‖ ≤ μ.real Set.univ := by
-  rw [fourierConvention_eq_charFun]
+/-- The Fourier-Stieltjes transform of a finite measure is bounded by the total mass. -/
+theorem norm_fourierStieltjesTransform_le (a : E) :
+    ‖fourierStieltjesTransform μ a‖ ≤ μ.real Set.univ := by
+  rw [fourierStieltjesTransform_eq_charFun]
   exact norm_charFun_le (μ := μ) (-(2 * Real.pi) • a)
 
-/-- The Fourier-convention transform of a probability measure has norm at most one. -/
-theorem norm_fourierConvention_le_one [IsProbabilityMeasure μ] (a : E) :
-    ‖fourierConvention μ a‖ ≤ 1 :=
-  (norm_fourierConvention_le (μ := μ) a).trans_eq (by simp)
+/-- The Fourier-Stieltjes transform of a probability measure has norm at most one. -/
+theorem norm_fourierStieltjesTransform_le_one [IsProbabilityMeasure μ] (a : E) :
+    ‖fourierStieltjesTransform μ a‖ ≤ 1 :=
+  (norm_fourierStieltjesTransform_le (μ := μ) a).trans_eq (by simp)
 
-section Topology
+variable [OpensMeasurableSpace E]
 
-variable [BorelSpace E] [IsFiniteMeasure μ]
-
-/-- In the explicit negation-involution convention, the Fourier-convention transform of a finite
+/-- In the explicit negation-involution convention, the Fourier-Stieltjes transform of a finite
 measure is positive definite. -/
-theorem fourierConvention_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
+theorem fourierStieltjesTransform_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
     (hstar : ∀ x : E, star x = -x) :
-    IsPositiveDefinite (fourierConvention μ) := by
-  rw [show fourierConvention μ = fun a : E => charFun μ (-(2 * Real.pi) • a) by
-    ext a
-    exact fourierConvention_eq_charFun (μ := μ) a]
+    IsPositiveDefinite (fourierStieltjesTransform μ) := by
+  rw [fourierStieltjesTransform_eq_charFun_fun]
   exact (charFun_isPositiveDefinite_of_star_eq_neg (μ := μ) hstar).comp_addMonoidHom
     (DistribSMul.toAddMonoidHom E (-(2 * Real.pi))) (by
       intro x
       simp [hstar])
 
-variable [SecondCountableTopology E]
+end Seminormed
 
-/-- The Fourier-convention transform of a finite measure is continuous. -/
-theorem continuous_fourierConvention : Continuous (fourierConvention μ) := by
-  rw [show fourierConvention μ = fun a : E => charFun μ (-(2 * Real.pi) • a) by
-    ext a
-    exact fourierConvention_eq_charFun (μ := μ) a]
+section Normed
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+  {μ : Measure E} [IsFiniteMeasure μ]
+
+/-- The Fourier-Stieltjes transform of a finite measure is continuous. -/
+theorem continuous_fourierStieltjesTransform : Continuous (fourierStieltjesTransform μ) := by
+  rw [fourierStieltjesTransform_eq_charFun_fun]
   exact MeasureTheory.continuous_charFun.comp (continuous_const.smul continuous_id)
 
-/-- The Fourier-convention transform of a finite measure is continuous and positive definite under
-an explicit negation involution. -/
-theorem continuous_fourierConvention_and_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
-    (hstar : ∀ x : E, star x = -x) :
-    Continuous (fourierConvention μ) ∧ IsPositiveDefinite (fourierConvention μ) :=
-  ⟨continuous_fourierConvention, fourierConvention_isPositiveDefinite_of_star_eq_neg hstar⟩
+/-- The Fourier-Stieltjes transform of a finite measure is continuous and positive definite under an
+explicit negation involution. -/
+theorem continuous_fourierStieltjesTransform_and_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
+    [OpensMeasurableSpace E] (hstar : ∀ x : E, star x = -x) :
+    Continuous (fourierStieltjesTransform μ) ∧ IsPositiveDefinite (fourierStieltjesTransform μ) :=
+  ⟨continuous_fourierStieltjesTransform,
+    fourierStieltjesTransform_isPositiveDefinite_of_star_eq_neg hstar⟩
 
-end Topology
+end Normed
 
 end MeasureTheory
 
