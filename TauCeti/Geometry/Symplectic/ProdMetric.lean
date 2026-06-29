@@ -12,9 +12,10 @@ public import TauCeti.Geometry.Symplectic.TameMetric
 # Metrics of direct sums of tame and compatible pairs
 
 `TauCeti.Geometry.Symplectic.Prod` records that direct sums preserve tameness and compatibility.
-This file records the matching metric normal forms: the symmetric metric of a tame direct sum is
-the sum of the factor symmetric metrics, and the compatible metric of a compatible direct sum is
-the sum of the factor compatible metrics.
+This file records the matching normal forms: the symmetrized bilinear form of a direct sum is the
+sum of the factor symmetrized forms, the symmetric metric of a tame direct sum is the sum of the
+factor symmetric metrics, and the compatible metric of a compatible direct sum is the sum of the
+factor compatible metrics.
 
 These are pointwise linear-algebra facts for the analytic Heegaard Floer roadmap. Product
 compatible triples are the local models used before passing to product manifolds and, later,
@@ -24,8 +25,8 @@ inner-product core.
 
 ## Main declarations
 
-* `TauCeti.SymplecticForm.prod_symmetrizedBilinForm_apply`: the symmetrized tame metric of a
-  direct sum is the sum of the factor symmetrized metrics.
+* `TauCeti.SymplecticForm.prod_symmetrizedBilinForm_apply`: the symmetrized bilinear form of a
+  direct sum is the sum of the factor symmetrized bilinear forms.
 * `TauCeti.SymplecticForm.Tames.prod_innerProductCore_inner`: the packaged tame inner product
   of a direct sum evaluates as the sum of the two factor packaged tame inner products.
 * `TauCeti.SymplecticForm.Tames.prod_innerProductCore_inner_inl` and
@@ -51,7 +52,8 @@ variable [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
 variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W}
 variable {J₁ : AlmostComplexStructure V} {J₂ : AlmostComplexStructure W}
 
-/-- The symmetric metric of a direct sum is the direct sum of the symmetric metrics. -/
+/-- The symmetrized bilinear form of a direct sum is the direct sum of the factor symmetrized
+bilinear forms. -/
 @[simp]
 lemma prod_symmetrizedBilinForm_apply (p q : V × W) :
     (ω₁.prod ω₂).symmetrizedBilinForm (J₁.prod J₂) p q =
