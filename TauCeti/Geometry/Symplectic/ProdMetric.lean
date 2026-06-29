@@ -73,8 +73,11 @@ lemma prod_innerProductCore_inner (p q : V × W) :
         @inner ℝ W h₂.innerProductCore.toInner p.2 q.2 := by
   calc
     @inner ℝ (V × W) (prod_tames h₁ h₂).innerProductCore.toInner p q =
+        (ω₁.prod ω₂) p ((J₁.prod J₂) q) + (ω₁.prod ω₂) q ((J₁.prod J₂) p) :=
+      Tames.innerProductCore_inner (prod_tames h₁ h₂) p q
+    _ =
         (ω₁.prod ω₂).symmetrizedBilinForm (J₁.prod J₂) p q := by
-      rfl
+      rw [symmetrizedBilinForm_apply]
     _ = ω₁.symmetrizedBilinForm J₁ p.1 q.1 + ω₂.symmetrizedBilinForm J₂ p.2 q.2 :=
       prod_symmetrizedBilinForm_apply p q
     _ = @inner ℝ V h₁.innerProductCore.toInner p.1 q.1 +
@@ -123,13 +126,17 @@ lemma prod_innerProductCore_inner (p q : V × W) :
         @inner ℝ W h₂.innerProductCore.toInner p.2 q.2 := by
   calc
     @inner ℝ (V × W) (prod_compatible h₁ h₂).innerProductCore.toInner p q =
+        (ω₁.prod ω₂) p ((J₁.prod J₂) q) :=
+      Compatible.innerProductCore_inner (prod_compatible h₁ h₂) p q
+    _ =
         (ω₁.prod ω₂).associatedBilinForm (J₁.prod J₂) p q := by
-      rfl
+      rw [associatedBilinForm_apply]
     _ = ω₁.associatedBilinForm J₁ p.1 q.1 + ω₂.associatedBilinForm J₂ p.2 q.2 :=
       prod_associatedBilinForm_apply ω₁ ω₂ p q
     _ = @inner ℝ V h₁.innerProductCore.toInner p.1 q.1 +
           @inner ℝ W h₂.innerProductCore.toInner p.2 q.2 := by
-      rfl
+      rw [Compatible.innerProductCore_inner, Compatible.innerProductCore_inner,
+        associatedBilinForm_apply, associatedBilinForm_apply]
 
 /-- The first coordinate inclusion is isometric for the packaged compatible product metric. -/
 @[simp]
