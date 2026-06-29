@@ -23,11 +23,19 @@ namespace TauCeti
 
 namespace Probability
 
-variable {α β : Type*} [MeasurableSpace α]
+variable {α β : Type*}
 
 /-- A path-space event is shift-invariant if its preimage under the one-sided shift is itself. -/
 def IsShiftInvariant (s : Set (ℕ → α)) : Prop :=
   shift α ⁻¹' s = s
+
+/-- The defining characterization of shift-invariant path-space events. -/
+@[simp]
+theorem isShiftInvariant_iff {s : Set (ℕ → α)} :
+    IsShiftInvariant s ↔ shift α ⁻¹' s = s :=
+  Iff.rfl
+
+variable [MeasurableSpace α]
 
 /-- The σ-algebra of measurable shift-invariant events on one-sided path space. -/
 @[implicit_reducible]
@@ -40,12 +48,6 @@ under the one-sided shift. -/
 theorem mem_shiftInvariantSigma_iff {s : Set (ℕ → α)} :
     MeasurableSet[shiftInvariantSigma α] s ↔ MeasurableSet s ∧ IsShiftInvariant s :=
   MeasurableSpace.measurableSet_invariants
-
-/-- A set is measurable for `shiftInvariantSigma` iff it is ambient-measurable and invariant
-under the one-sided shift. -/
-theorem measurableSet_shiftInvariantSigma_iff {s : Set (ℕ → α)} :
-    MeasurableSet[shiftInvariantSigma α] s ↔ MeasurableSet s ∧ IsShiftInvariant s :=
-  mem_shiftInvariantSigma_iff
 
 /-- The shift-invariant σ-algebra is a sub-σ-algebra of the ambient path-space σ-algebra. -/
 theorem shiftInvariantSigma_le :
@@ -60,7 +62,7 @@ theorem MeasurableSet.ambient_of_shiftInvariantSigma {s : Set (ℕ → α)}
 /-- A `shiftInvariantSigma`-measurable set is invariant under the one-sided shift. -/
 theorem MeasurableSet.isShiftInvariant_of_shiftInvariantSigma {s : Set (ℕ → α)}
     (hs : MeasurableSet[shiftInvariantSigma α] s) : IsShiftInvariant s :=
-  (measurableSet_shiftInvariantSigma_iff.mp hs).2
+  (mem_shiftInvariantSigma_iff.mp hs).2
 
 /-- An ambient-measurable shift-invariant set is measurable for `shiftInvariantSigma`. -/
 theorem IsShiftInvariant.measurableSet_shiftInvariantSigma {s : Set (ℕ → α)}
@@ -68,19 +70,15 @@ theorem IsShiftInvariant.measurableSet_shiftInvariantSigma {s : Set (ℕ → α)
     MeasurableSet[shiftInvariantSigma α] s :=
   mem_shiftInvariantSigma_iff.mpr ⟨hsm, hs⟩
 
-/-- An ambient-measurable shift-invariant set is measurable for `shiftInvariantSigma`. -/
-theorem shiftInvariant_implies_shiftInvariantMeasurable {s : Set (ℕ → α)}
-    (hsm : MeasurableSet s) (hs : IsShiftInvariant s) :
-    MeasurableSet[shiftInvariantSigma α] s :=
-  hs.measurableSet_shiftInvariantSigma hsm
-
 omit [MeasurableSpace α] in
 /-- A shift-invariant set is invariant under every iterate of the one-sided shift. -/
+@[simp]
 theorem IsShiftInvariant.iterate {s : Set (ℕ → α)} (hs : IsShiftInvariant s) (n : ℕ) :
     (shift α)^[n] ⁻¹' s = s :=
   (Function.IsFixedPt.preimage_iterate hs n).eq
 
 /-- Sets in the shift-invariant σ-algebra are fixed by every shift iterate. -/
+@[simp]
 theorem MeasurableSet.shift_iterate_preimage_eq {s : Set (ℕ → α)}
     (hs : MeasurableSet[shiftInvariantSigma α] s) (n : ℕ) :
     (shift α)^[n] ⁻¹' s = s :=
@@ -92,11 +90,6 @@ theorem measurable_shift_shiftInvariantSigma :
   intro s hs
   rw [MeasurableSet.isShiftInvariant_of_shiftInvariantSigma hs]
   exact hs
-
-/-- The one-sided shift is measurable as a map on the shift-invariant σ-algebra. -/
-theorem shiftInvariantSigma_measurable_shift_eq :
-    @Measurable (ℕ → α) (ℕ → α) (shiftInvariantSigma α) (shiftInvariantSigma α) (shift α) :=
-  measurable_shift_shiftInvariantSigma
 
 /-- Every iterate of the one-sided shift is measurable as a map on the shift-invariant
 σ-algebra. -/
