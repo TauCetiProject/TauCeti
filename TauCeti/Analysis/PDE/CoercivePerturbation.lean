@@ -28,6 +28,7 @@ pointwise: no Sobolev space, weak derivative, or integrated energy form is intro
   preserved by such nonnegative perturbations.
 * `TauCeti.PDE.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self`:
   the explicit coercive lower bound after such a perturbation.
+* `TauCeti.PDE.UniformlyEllipticOn` wrappers for the explicit perturbed diagonal estimate.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand_add_principal_mass` and
   `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand_add_principal_mass_on`:
   `UniformlyEllipticOn` wrappers for constant and coefficient-field perturbations.
@@ -102,6 +103,33 @@ namespace UniformlyEllipticOn
 
 variable {Ω : Set X} {a p : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n}
 variable {c e : X → ℝ} {Lam : ℝ}
+
+/-- The explicit coercive diagonal estimate for a uniformly elliptic principal coefficient
+after adding a nonnegative principal matrix and nonnegative mass perturbation. -/
+lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self
+    (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)
+    {b₀ : EuclideanSpace ℝ n} {c₀ d : ℝ} {B : Matrix n n ℝ}
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
+    (hB : ∀ ξ : EuclideanSpace ℝ n, 0 ≤ B.toQuadraticForm' ξ) (hd : 0 ≤ d)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
+      ≤ energyIntegrand (a x + B) b₀ (c₀ + d) U U :=
+  PDE.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self h.pos
+    (h.lower_bound hx) hb hc hmu hB hd U
+
+/-- The coefficient-field version of the explicit coercive diagonal estimate after adding
+nonnegative principal and mass perturbation fields. -/
+lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self_on
+    (h : UniformlyEllipticOn Ω a lam Lam)
+    (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)
+    (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x) (hmu : beta ^ 2 / (2 * lam) < mu)
+    (hp : ∀ ⦃x⦄, x ∈ Ω → ∀ ξ : EuclideanSpace ℝ n, 0 ≤ (p x).toQuadraticForm' ξ)
+    (he : ∀ ⦃x⦄, x ∈ Ω → 0 ≤ e x) {x : X} (hx : x ∈ Ω)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
+      ≤ energyIntegrand (a x + p x) (b x) (c x + e x) U U :=
+  h.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self hx
+    (hb hx) (hc hx) hmu (hp hx) (he hx) U
 
 /-- Pointwise coercivity for a uniformly elliptic principal coefficient after adding a
 nonnegative principal matrix and nonnegative mass perturbation. -/
