@@ -26,7 +26,7 @@ normalizations.
 
 ## Checked conversion
 
-The example below verifies the conversion directly from Mathlib's
+The theorem below verifies the conversion directly from Mathlib's
 `MeasureTheory.charFun_eq_fourierIntegral'`.
 
 ## References
@@ -46,7 +46,9 @@ namespace MeasureTheory
 variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] {μ : Measure E}
 
-example (a : E) :
+/-- Mathlib's Fourier integral of `1` in the `2π` convention is the characteristic function
+at the negated `2π`-scaled frequency. -/
+theorem fourierIntegral_one_eq_charFun_neg_two_pi_smul (a : E) :
     VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a =
       charFun μ (-(2 * Real.pi) • a) := by
   rw [charFun_eq_fourierIntegral']
