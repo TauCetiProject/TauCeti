@@ -6,6 +6,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor
 public import Mathlib.GroupTheory.QuotientGroup.Basic
+import Mathlib.Tactic.Abel
 
 /-!
 # Principal divisors and the divisor class group of an order system
@@ -165,6 +166,40 @@ lemma LinearlyEquivalent.trans {D E F : WeilDivisor X} (h₁ : S.LinearlyEquival
   rwa [sub_add_sub_cancel] at this
 
 variable (S)
+
+/-- Linear equivalence is compatible with adding equivalent divisors on both sides. -/
+lemma LinearlyEquivalent.add {D D' E E' : WeilDivisor X} (hD : S.LinearlyEquivalent D D')
+    (hE : S.LinearlyEquivalent E E') : S.LinearlyEquivalent (D + E) (D' + E') := by
+  rw [linearlyEquivalent_iff] at hD hE ⊢
+  have hsum := S.principalSubgroup.add_mem hD hE
+  convert hsum using 1
+  abel
+
+/-- Adding the same divisor on the right preserves linear equivalence. -/
+lemma LinearlyEquivalent.add_right {D D' : WeilDivisor X} (hD : S.LinearlyEquivalent D D')
+    (E : WeilDivisor X) : S.LinearlyEquivalent (D + E) (D' + E) :=
+  LinearlyEquivalent.add S hD (LinearlyEquivalent.refl S E)
+
+/-- Adding the same divisor on the left preserves linear equivalence. -/
+lemma LinearlyEquivalent.add_left {E E' : WeilDivisor X} (hE : S.LinearlyEquivalent E E')
+    (D : WeilDivisor X) : S.LinearlyEquivalent (D + E) (D + E') :=
+  LinearlyEquivalent.add S (LinearlyEquivalent.refl S D) hE
+
+/-- A divisor plus a principal divisor is linearly equivalent to the original divisor. -/
+lemma linearlyEquivalent_add_principalDivisor (D : WeilDivisor X) (g : G) :
+    S.LinearlyEquivalent (D + S.principalDivisor g) D := by
+  rw [linearlyEquivalent_iff]
+  convert S.principalDivisor_mem_principalSubgroup g using 1
+  abel
+
+/-- Subtracting a principal divisor from a divisor is linearly equivalent to the original
+divisor. -/
+lemma linearlyEquivalent_sub_principalDivisor (D : WeilDivisor X) (g : G) :
+    S.LinearlyEquivalent (D - S.principalDivisor g) D := by
+  rw [linearlyEquivalent_iff]
+  convert S.principalDivisor_mem_principalSubgroup (-g) using 1
+  rw [S.principalDivisor_neg]
+  abel
 
 lemma equivalence_linearlyEquivalent : Equivalence S.LinearlyEquivalent :=
   ⟨LinearlyEquivalent.refl S, fun h => h.symm, fun h₁ h₂ => h₁.trans h₂⟩
