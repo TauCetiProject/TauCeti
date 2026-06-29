@@ -41,16 +41,10 @@ public section
 
 namespace TauCeti
 
-namespace LinearMap
-
-namespace BilinForm
-
-variable {R : Type*} {M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M] [Module R M]
-variable (B : _root_.LinearMap.BilinForm R M) {L : Submodule R M}
-
-/-- Nonzero scalar multiplication of a bilinear form leaves orthogonal complements unchanged. -/
-@[simp]
-lemma orthogonal_smul {c : R} (hc : c ≠ 0) : (c • B).orthogonal L = B.orthogonal L := by
+private lemma bilinearForm_orthogonal_smul {R : Type*} {M : Type*}
+    [CommSemiring R] [NoZeroDivisors R] [AddCommMonoid M] [Module R M]
+    (B : _root_.LinearMap.BilinForm R M) {L : Submodule R M} {c : R} (hc : c ≠ 0) :
+    (c • B).orthogonal L = B.orthogonal L := by
   ext x
   rw [_root_.LinearMap.BilinForm.mem_orthogonal_iff,
     _root_.LinearMap.BilinForm.mem_orthogonal_iff]
@@ -60,10 +54,6 @@ lemma orthogonal_smul {c : R} (hc : c ≠ 0) : (c • B).orthogonal L = B.orthog
     exact (mul_eq_zero.mp hyx).resolve_left hc
   · intro h y hy
     simp [h y hy]
-
-end BilinForm
-
-end LinearMap
 
 namespace SymplecticForm
 
@@ -125,15 +115,19 @@ variable {L : Submodule ℝ V}
 lemma orthogonal_rescale (c : ℝ) (hc : c ≠ 0) :
     (ω.rescale c hc).orthogonal L = ω.orthogonal L := by
   rw [orthogonal_def, orthogonal_def, rescale_toBilinForm,
-    TauCeti.LinearMap.BilinForm.orthogonal_smul ω.toBilinForm hc]
+    bilinearForm_orthogonal_smul ω.toBilinForm hc]
 
 /-- Nonzero rescaling preserves and reflects isotropic subspaces. -/
 @[simp]
 lemma isIsotropic_rescale_iff (c : ℝ) (hc : c ≠ 0) :
     (ω.rescale c hc).IsIsotropic L ↔ ω.IsIsotropic L := by
-  rw [TauCeti.SymplecticForm.IsIsotropic.eq_def,
-    TauCeti.SymplecticForm.IsIsotropic.eq_def]
-  rw [orthogonal_rescale c hc]
+  rw [isIsotropic_iff, isIsotropic_iff]
+  constructor
+  · intro h v hv w hw
+    have hvw := h v hv w hw
+    simpa only [rescale_apply] using (mul_eq_zero.mp hvw).resolve_left hc
+  · intro h v hv w hw
+    simp [h v hv w hw]
 
 /-- Isotropy is preserved by nonzero rescaling of the symplectic form. -/
 lemma IsIsotropic.rescale (h : ω.IsIsotropic L) (c : ℝ) (hc : c ≠ 0) :
@@ -144,9 +138,7 @@ lemma IsIsotropic.rescale (h : ω.IsIsotropic L) (c : ℝ) (hc : c ≠ 0) :
 @[simp]
 lemma isCoisotropic_rescale_iff (c : ℝ) (hc : c ≠ 0) :
     (ω.rescale c hc).IsCoisotropic L ↔ ω.IsCoisotropic L := by
-  rw [TauCeti.SymplecticForm.IsCoisotropic.eq_def,
-    TauCeti.SymplecticForm.IsCoisotropic.eq_def]
-  rw [orthogonal_rescale c hc]
+  rw [isCoisotropic_iff, isCoisotropic_iff, orthogonal_rescale c hc]
 
 /-- Coisotropy is preserved by nonzero rescaling of the symplectic form. -/
 lemma IsCoisotropic.rescale (h : ω.IsCoisotropic L) (c : ℝ) (hc : c ≠ 0) :
@@ -157,9 +149,8 @@ lemma IsCoisotropic.rescale (h : ω.IsCoisotropic L) (c : ℝ) (hc : c ≠ 0) :
 @[simp]
 lemma isLagrangian_rescale_iff (c : ℝ) (hc : c ≠ 0) :
     (ω.rescale c hc).IsLagrangian L ↔ ω.IsLagrangian L := by
-  rw [TauCeti.SymplecticForm.IsLagrangian.eq_def,
-    TauCeti.SymplecticForm.IsLagrangian.eq_def]
-  rw [orthogonal_rescale c hc]
+  rw [isLagrangian_iff, isLagrangian_iff, isIsotropic_rescale_iff c hc,
+    isCoisotropic_rescale_iff c hc]
 
 /-- Lagrangian subspaces are preserved by nonzero rescaling of the symplectic form. -/
 lemma IsLagrangian.rescale (h : ω.IsLagrangian L) (c : ℝ) (hc : c ≠ 0) :

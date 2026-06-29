@@ -87,17 +87,14 @@ lemma le_orthogonal_orthogonal : L ≤ ω.orthogonal (ω.orthogonal L) :=
 
 /-- A submodule is isotropic if it is contained in its symplectic complement, equivalently `ω`
 vanishes on it. -/
-@[expose]
 def IsIsotropic (ω : SymplecticForm V) (L : Submodule ℝ V) : Prop :=
   L ≤ ω.orthogonal L
 
 /-- A submodule is coisotropic if it contains its symplectic complement. -/
-@[expose]
 def IsCoisotropic (ω : SymplecticForm V) (L : Submodule ℝ V) : Prop :=
   ω.orthogonal L ≤ L
 
 /-- A submodule is Lagrangian if it equals its own symplectic complement. -/
-@[expose]
 def IsLagrangian (ω : SymplecticForm V) (L : Submodule ℝ V) : Prop :=
   ω.orthogonal L = L
 
