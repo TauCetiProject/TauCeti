@@ -55,19 +55,6 @@ section Seminormed
 variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] {μ : Measure E}
 
-/-- Pointwise integral expression for Mathlib's Fourier integral of the constant function `1` in
-the `e^{-2πi⟪a,q⟫}` convention. -/
-theorem fourierIntegral_one_apply (a : E) :
-    VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a =
-      ∫ q, exp (-2 * Real.pi * I * (⟪a, q⟫ : ℂ)) ∂μ := by
-  rw [Real.vector_fourierIntegral_eq_integral_exp_smul]
-  congr with q
-  simp only [innerₗ_apply_apply, Pi.one_apply, smul_eq_mul, mul_one]
-  congr 1
-  rw [real_inner_comm]
-  ring_nf
-  simp [mul_assoc, mul_comm]
-
 /-- Mathlib's `e^{-2πi⟪a,q⟫}` Fourier integral of the constant function `1` is the characteristic
 function evaluated at `-(2π) • a`. This is the named conversion between Mathlib's Fourier
 convention and Mathlib's `MeasureTheory.charFun` convention. -/
@@ -89,8 +76,7 @@ theorem fourierIntegral_one_eq_charFun_fun :
   ext a
   exact fourierIntegral_one_eq_charFun (μ := μ) a
 
-/-- Mathlib's Fourier integral of the constant function `1` at zero is the measure's
-`μ.real Set.univ` mass. -/
+/-- Mathlib's Fourier integral of the constant function `1` at zero has value `μ.real Set.univ`. -/
 @[simp]
 theorem fourierIntegral_one_zero :
     VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) 0 =
