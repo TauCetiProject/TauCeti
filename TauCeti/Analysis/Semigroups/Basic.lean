@@ -122,7 +122,7 @@ lemma realOperator_coe (S : StronglyContinuousSemigroup X) (t : ℝ≥0) :
 omit [CompleteSpace X] in
 /-- The real-time operator at zero is the identity: `S.realOperator 0 = id`. -/
 @[simp]
-theorem at_zero (S : StronglyContinuousSemigroup X) :
+theorem realOperator_zero (S : StronglyContinuousSemigroup X) :
     S.realOperator 0 = ContinuousLinearMap.id ℝ X := by
   rw [realOperator, Real.toNNReal_zero]
   exact S.map_zero'
@@ -203,10 +203,10 @@ theorem ContractionSemigroup.contracting_real (S : ContractionSemigroup X)
 omit [CompleteSpace X] in
 /-- `S(t) x` at `t = 0` equals `x`, pointwise version. -/
 @[simp]
-theorem StronglyContinuousSemigroup.realOperatorZeroApply
+theorem StronglyContinuousSemigroup.realOperator_zero_apply
     (S : StronglyContinuousSemigroup X) (x : X) :
     S.realOperator 0 x = x := by
-  rw [S.at_zero, ContinuousLinearMap.id_apply]
+  rw [S.realOperator_zero, ContinuousLinearMap.id_apply]
 
 omit [CompleteSpace X] in
 /-- Pointwise boundedness on `[0, 1]`, the hypothesis needed for Banach-Steinhaus. -/
@@ -302,7 +302,7 @@ private theorem StronglyContinuousSemigroup.normBoundedOnInterval
     refine ⟨1, one_pos, fun t ht htn => ?_⟩
     simp only [Nat.cast_zero] at htn
     have : t = 0 := le_antisymm htn ht
-    rw [this, S.at_zero]
+    rw [this, S.realOperator_zero]
     exact ContinuousLinearMap.norm_id_le
   | succ k ih =>
     obtain ⟨C_k, hC_k_pos, hC_k_bound⟩ := ih

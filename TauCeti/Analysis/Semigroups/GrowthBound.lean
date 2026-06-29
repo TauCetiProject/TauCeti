@@ -72,7 +72,7 @@ theorem StronglyContinuousSemigroup.existsGrowthBound
   have h_int_bound : ∀ (k : ℕ), ‖S.realOperator (↑k : ℝ)‖ ≤ M ^ k := by
     intro k; induction k with
     | zero =>
-      simp only [Nat.cast_zero, S.at_zero]
+      simp only [Nat.cast_zero, S.realOperator_zero]
       exact ContinuousLinearMap.norm_id_le
     | succ k ih =>
       have : (↑(k + 1) : ℝ) = 1 + ↑k := by push_cast; ring
