@@ -2,8 +2,6 @@ module
 
 public import TauCeti.Probability.Exchangeability.Basic
 public import TauCeti.MeasureTheory.Measure.ProductKernel
-public import Mathlib.MeasureTheory.Measure.FiniteMeasurePi
-public import Mathlib.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Conditionally i.i.d. sequences
@@ -144,6 +142,7 @@ theorem conditionallyIIDWith_of_forall_rectangles {μ : Measure Ω} [IsFiniteMea
 
 /-- A `ConditionallyIIDWith` witness gives the expected rectangle factorization for every injective
 finite block. -/
+@[grind =>]
 theorem ConditionallyIIDWith.blockLaw_univ_pi {μ : Measure Ω} {X : ℕ → Ω → α}
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν)
     {m : ℕ} (k : Fin m → ℕ) (hk : Function.Injective k)

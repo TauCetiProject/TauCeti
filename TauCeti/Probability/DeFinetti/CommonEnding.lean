@@ -14,7 +14,7 @@ The work is done by the `ConditionallyIIDWith` rectangle characterization
 finite product σ-algebra by Mathlib's `generateFrom_pi` / `isPiSystem_pi`, and Tau Ceti's
 product-kernel API evaluates the mixture on rectangles.  This file packages that as the existential
 wrapper.  This advances `TauCetiRoadmap/Exchangeability/README.md`, Layer 1, the common de Finetti
-ending `conditional_iid_from_directing_measure`.
+ending `conditionallyIID_of_directing_forall_rectangles`.
 
 This is adapted from the rectangle common-ending strategy in
 `cameronfreer/exchangeability` (`DeFinetti/CommonEnding.lean`, pin
@@ -36,7 +36,7 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- **Common de Finetti ending.** Rectangle-wise product-kernel factorization against a named
 directing measure supplies a `ConditionallyIID` witness for the process. -/
-theorem conditional_iid_from_directing_measure {μ : Measure Ω} [IsFiniteMeasure μ]
+theorem conditionallyIID_of_directing_forall_rectangles {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} {ν : Ω → ProbabilityMeasure α} (hν : Measurable ν)
     (h_rect : ∀ (m : ℕ) (k : Fin m → ℕ), Function.Injective k →
       ∀ B : Fin m → Set α, (∀ i, MeasurableSet (B i)) →
