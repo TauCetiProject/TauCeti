@@ -20,15 +20,12 @@ public section
 
 namespace TauCeti
 
-open scoped BigOperators
-
 variable {ι : Type*} {𝕜 : Type*} {E F : Type*}
 variable [RCLike 𝕜]
 variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
 /-- Transport a Hilbert basis along a linear isometric equivalence. -/
-@[expose]
 protected noncomputable def _root_.HilbertBasis.mapₗᵢ
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
     _root_.HilbertBasis ι 𝕜 F :=
@@ -36,43 +33,26 @@ protected noncomputable def _root_.HilbertBasis.mapₗᵢ
 
 /-- The coordinate representation of `b.mapₗᵢ e` is `b.repr` after applying `e.symm`. -/
 @[simp]
-theorem _root_.HilbertBasis.mapₗᵢ_repr
+theorem _root_.HilbertBasis.repr_mapₗᵢ
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
     (b.mapₗᵢ e).repr = e.symm.trans b.repr :=
-  rfl
+  congrArg _root_.HilbertBasis.repr (_root_.HilbertBasis.mapₗᵢ.eq_1 b e)
 
 /-- The `i`th vector of the transported basis is the image of the `i`th vector. -/
 @[simp]
 theorem _root_.HilbertBasis.mapₗᵢ_apply
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (i : ι) :
     b.mapₗᵢ e i = e (b i) :=
-  rfl
+  by
+    rw [_root_.HilbertBasis.mapₗᵢ.eq_1]
+    rfl
 
 /-- Function-level form of `HilbertBasis.mapₗᵢ_apply`. -/
 @[simp]
 theorem _root_.HilbertBasis.coe_mapₗᵢ
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
     ⇑(b.mapₗᵢ e) = e ∘ b :=
-  rfl
-
-/-- Transporting a Hilbert basis along a linear isometric equivalence gives an orthonormal
-family. -/
-theorem _root_.HilbertBasis.mapₗᵢ_orthonormal
-    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
-    Orthonormal 𝕜 (e ∘ b) := by
-  simpa using (b.mapₗᵢ e).orthonormal
-
-/-- Parseval's identity as a `HasSum` statement for the transported basis vectors. -/
-theorem _root_.HilbertBasis.mapₗᵢ_hasSum_inner_mul_inner (b : _root_.HilbertBasis ι 𝕜 E)
-    (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
-    HasSum (fun i => inner 𝕜 x (e (b i)) * inner 𝕜 (e (b i)) y) (inner 𝕜 x y) := by
-  simpa using (b.mapₗᵢ e).hasSum_inner_mul_inner x y
-
-/-- Parseval's identity as a `tsum` statement for the transported basis vectors. -/
-theorem _root_.HilbertBasis.mapₗᵢ_tsum_inner_mul_inner (b : _root_.HilbertBasis ι 𝕜 E)
-    (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
-    ∑' i, inner 𝕜 x (e (b i)) * inner 𝕜 (e (b i)) y = inner 𝕜 x y := by
-  simpa using (b.mapₗᵢ e).tsum_inner_mul_inner x y
+  funext (b.mapₗᵢ_apply e)
 
 /-- Transport along the identity isometry leaves a Hilbert basis unchanged. -/
 @[simp]
