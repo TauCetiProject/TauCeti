@@ -82,6 +82,7 @@ theorem toContinuousClass_unique
       (TauCeti.ambientIsotopic_def.2 (SmoothEmbedding.ambientIsotopic_def.1 hfg))) F hF
 
 /-- Forgetting smooth ambient-isotopy classes to continuous classes commutes with products. -/
+@[simp]
 theorem toContinuousClass_prodMap [IsManifold I₁ n M₁] [IsManifold I₂ n M₂]
     [IsManifold J₁ n N₁] [IsManifold J₂ n N₂]
     (x : AmbientIsotopyClass I₁ J₁ n M₁ N₁)
@@ -95,8 +96,7 @@ theorem toContinuousClass_prodMap [IsManifold I₁ n M₁] [IsManifold I₂ n M�
   rw [SmoothEmbedding.AmbientIsotopyClass.prodMap_mk_mk, toContinuousClass_mk,
     toContinuousClass_mk, toContinuousClass_mk, TauCeti.AmbientIsotopyClass.prodMap_mk_mk]
   apply TauCeti.AmbientIsotopyClass.mk_eq_mk
-  convert TauCeti.AmbientIsotopic.refl (f.toContinuousMap.prodMap g.toContinuousMap) using 1
-  ext p <;> simp [SmoothEmbedding.prodMap_apply]
+  rw [SmoothEmbedding.toContinuousMap_prodMap]
 
 end AmbientIsotopyClass
 

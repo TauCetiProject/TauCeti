@@ -24,6 +24,7 @@ their own stronger smooth or PL data elsewhere.
 * `TauCeti.AmbientIsotopyClass X Y`: continuous maps `X → Y` modulo ambient isotopy of `Y`.
 * `TauCeti.AmbientIsotopyClass.lift`: descend ambient-isotopy-invariant functions.
 * `TauCeti.AmbientIsotopyClass.map`: descend ambient-isotopy-preserving operations.
+* `TauCeti.AmbientIsotopyClass.map₂`: descend binary ambient-isotopy-preserving operations.
 * `TauCeti.AmbientIsotopyClass.precomp`: precompose classes by a continuous source map.
 * `TauCeti.AmbientIsotopyClass.postcompHomeomorph`: postcompose classes by a homeomorphism of
   ambient spaces.
@@ -43,8 +44,9 @@ namespace TauCeti
 
 open ContinuousMap
 
-variable {U W X Y Z : Type*} [TopologicalSpace U] [TopologicalSpace W] [TopologicalSpace X]
-  [TopologicalSpace Y] [TopologicalSpace Z]
+variable {U W X Y Z X' Y' : Type*} [TopologicalSpace U] [TopologicalSpace W]
+  [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] [TopologicalSpace X']
+  [TopologicalSpace Y']
 
 /-- Continuous maps `X → Y` modulo ambient isotopy of the ambient space `Y`. -/
 abbrev AmbientIsotopyClass (X Y : Type*) [TopologicalSpace X] [TopologicalSpace Y] : Type _ :=
@@ -125,6 +127,28 @@ theorem map_mk (F : C(X, Y) → C(W, Z))
       AmbientIsotopic.setoid_r_iff.2
         (hF (f := f) (g := g) (AmbientIsotopic.setoid_r_iff.1 hfg)))
     f
+
+/-- Descend a binary ambient-isotopy-preserving operation between continuous-map types to their
+ambient-isotopy quotients. -/
+def map₂ (F : C(X, Y) → C(X', Y') → C(W, Z))
+    (hF : ∀ ⦃f f' : C(X, Y)⦄, AmbientIsotopic f f' →
+      ∀ ⦃g g' : C(X', Y')⦄, AmbientIsotopic g g' → AmbientIsotopic (F f g) (F f' g')) :
+    AmbientIsotopyClass X Y → AmbientIsotopyClass X' Y' → AmbientIsotopyClass W Z :=
+  Quotient.map₂ F fun {_ _} hff' {_ _} hgg' =>
+    AmbientIsotopic.setoid_r_iff.2
+      (hF (AmbientIsotopic.setoid_r_iff.1 hff') (AmbientIsotopic.setoid_r_iff.1 hgg'))
+
+/-- Computation rule for `AmbientIsotopyClass.map₂` on representatives. -/
+@[simp]
+theorem map₂_mk_mk (F : C(X, Y) → C(X', Y') → C(W, Z))
+    (hF : ∀ ⦃f f' : C(X, Y)⦄, AmbientIsotopic f f' →
+      ∀ ⦃g g' : C(X', Y')⦄, AmbientIsotopic g g' → AmbientIsotopic (F f g) (F f' g'))
+    (f : C(X, Y)) (g : C(X', Y')) :
+    map₂ F hF (mk f) (mk g) = mk (F f g) :=
+  (Quotient.map₂_mk F (fun {_ _} hff' {_ _} hgg' =>
+    AmbientIsotopic.setoid_r_iff.2
+      (hF (AmbientIsotopic.setoid_r_iff.1 hff')
+        (AmbientIsotopic.setoid_r_iff.1 hgg'))) f g)
 
 /-- Precompose an ambient-isotopy class by a continuous map of source spaces.
 

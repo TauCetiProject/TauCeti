@@ -215,6 +215,15 @@ theorem prodMap_coe [IsManifold I n M] [IsManifold J n N]
   funext x
   exact prodMap_apply f g x
 
+/-- The underlying continuous map of a product of smooth embeddings is the product of the
+underlying continuous maps. -/
+@[simp]
+theorem toContinuousMap_prodMap [IsManifold I n M] [IsManifold J n N]
+    [IsManifold I' n M'] [IsManifold J' n N']
+    (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' n M' N') :
+    (f.prodMap g).toContinuousMap = f.toContinuousMap.prodMap g.toContinuousMap := by
+  ext x <;> simp [toContinuousMap_apply, prodMap_apply]
+
 /-- The left coproduct inclusion as a bundled smooth embedding. -/
 def sumInl {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂]
     [IsManifold I n M] [IsManifold I n M₂] :

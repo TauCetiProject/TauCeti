@@ -36,29 +36,6 @@ variable {X Y X' Y' : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 namespace AmbientIsotopyClass
 
-/-- Descend a binary ambient-isotopy-preserving operation between continuous-map types to their
-ambient-isotopy quotients. -/
-def map₂ (F : C(X, Y) → C(X', Y') → C(X × X', Y × Y'))
-    (hF : ∀ ⦃f f' : C(X, Y)⦄, AmbientIsotopic f f' →
-      ∀ ⦃g g' : C(X', Y')⦄, AmbientIsotopic g g' → AmbientIsotopic (F f g) (F f' g')) :
-    AmbientIsotopyClass X Y → AmbientIsotopyClass X' Y' →
-      AmbientIsotopyClass (X × X') (Y × Y') :=
-  Quotient.map₂ F fun {_ _} hff' {_ _} hgg' =>
-    AmbientIsotopic.setoid_r_iff.2
-      (hF (AmbientIsotopic.setoid_r_iff.1 hff') (AmbientIsotopic.setoid_r_iff.1 hgg'))
-
-/-- Computation rule for `AmbientIsotopyClass.map₂` on representatives. -/
-@[simp]
-theorem map₂_mk_mk (F : C(X, Y) → C(X', Y') → C(X × X', Y × Y'))
-    (hF : ∀ ⦃f f' : C(X, Y)⦄, AmbientIsotopic f f' →
-      ∀ ⦃g g' : C(X', Y')⦄, AmbientIsotopic g g' → AmbientIsotopic (F f g) (F f' g'))
-    (f : C(X, Y)) (g : C(X', Y')) :
-    map₂ F hF (mk f) (mk g) = mk (F f g) :=
-  (Quotient.map₂_mk F (fun {_ _} hff' {_ _} hgg' =>
-    AmbientIsotopic.setoid_r_iff.2
-      (hF (AmbientIsotopic.setoid_r_iff.1 hff')
-        (AmbientIsotopic.setoid_r_iff.1 hgg'))) f g)
-
 /-- The product of ambient-isotopy classes of continuous maps.
 
 This is the quotient-level operation induced by `ContinuousMap.prodMap`; product closure of
