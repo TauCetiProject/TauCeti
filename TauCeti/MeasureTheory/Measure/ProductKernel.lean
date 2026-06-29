@@ -30,6 +30,10 @@ Bind-evaluation of the mixture `μ.bind fun ω => (ProbabilityMeasure.pi fun i =
   product of coordinate measures, with `Fin m` constant-coordinate forms
   `bind_probabilityMeasure_pi_const_apply` and `bind_probabilityMeasure_pi_const_pi`.
 
+Extensionality:
+* `measure_eq_of_forall_univ_pi` — two measures on a finite product space are equal once the first
+  is finite and they agree on all measurable rectangles `Set.univ.pi B`.
+
 This file does not introduce a new product-kernel structure; the lemmas live directly over Mathlib's
 `ProbabilityMeasure.pi`. It advances `TauCetiRoadmap/Exchangeability`, Layer 1 (product kernels,
 conditional independence, mixtures), and is motivated by the product-kernel layer of
@@ -51,6 +55,25 @@ namespace MeasureTheory
 
 variable {Ω ι : Type*} [MeasurableSpace Ω] [Fintype ι] {α : ι → Type*}
   [∀ i, MeasurableSpace (α i)] {μ : Measure Ω}
+
+/-- Two measures on a finite product space are equal if they agree on all measurable rectangles
+`Set.univ.pi B`. Only the first measure is assumed finite. -/
+theorem measure_eq_of_forall_univ_pi {ι : Type*} [Finite ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] {μ ν : Measure (∀ i, α i)} [IsFiniteMeasure μ]
+    (h : ∀ B : ∀ i, Set (α i), (∀ i, MeasurableSet (B i)) →
+      μ (Set.univ.pi B) = ν (Set.univ.pi B)) :
+    μ = ν := by
+  letI := Fintype.ofFinite ι
+  refine Measure.ext_of_generateFrom_of_iUnion
+    (C := Set.pi Set.univ '' Set.pi Set.univ fun i => {s : Set (α i) | MeasurableSet s})
+    (B := fun _ : ℕ => Set.univ) generateFrom_pi.symm isPiSystem_pi ?_ ?_ ?_ ?_
+  · simpa using (iUnion_const (Set.univ : Set (∀ i, α i)))
+  · intro n
+    exact ⟨fun _ => Set.univ, fun i _ => MeasurableSet.univ, by simp⟩
+  · intro n
+    exact measure_ne_top μ Set.univ
+  · rintro _ ⟨B, hB, rfl⟩
+    exact h B fun i => hB i (mem_univ i)
 
 /-- The finite product combinator `ProbabilityMeasure.pi` is a measurable map
 `(Π i, ProbabilityMeasure (α i)) → ProbabilityMeasure (Π i, α i)`. -/
