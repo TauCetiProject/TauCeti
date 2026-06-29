@@ -136,6 +136,11 @@ lemma isCoercive_energyIntegrand_add_principal_mass
   isCoercive_energyIntegrand_add_principal_mass_of_isCoercive
     (h.isCoercive_energyIntegrand hx hb hc hmu) hp hq
 
+grind_pattern isCoercive_energyIntegrand_add_principal_mass =>
+  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, ‖b₀‖ ≤ beta, mu ≤ c₀,
+  beta ^ 2 / (2 * lam) < mu, id hp, 0 ≤ q,
+  IsCoercive (energyIntegrand (a x + p x) b₀ (c₀ + q))
+
 /-- Coefficient-field version of perturbed pointwise coercivity from uniform ellipticity. -/
 lemma isCoercive_energyIntegrand_add_principal_mass_on
     (h : UniformlyEllipticOn Ω a lam Lam)
