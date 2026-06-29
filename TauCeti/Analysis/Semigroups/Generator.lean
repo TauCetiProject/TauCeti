@@ -34,7 +34,7 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X
 
 /-- The integral averages `(1/t) • ∫_{(0,t]} g u du` of a function continuous on
 `[0, ∞)` tend to `g 0` as `t → 0⁺`. -/
-theorem tendsto_average_Ioc_zero_of_continuousOn_Ici
+private theorem tendsto_average_Ioc_zero_of_continuousOn_Ici
     {g : ℝ → X} (hg : ContinuousOn g (Set.Ici 0)) :
     Filter.Tendsto
       (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, g u)
@@ -204,7 +204,7 @@ theorem StronglyContinuousSemigroup.generator_eq_of_tendsto
 
 
 /-- The integral average `(1/t) • ∫_{(0,t]} S(u)x du` of the orbit tends to `x` as `t → 0⁺`. -/
-private theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
+theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
     (S : StronglyContinuousSemigroup X) (x : X) :
     Filter.Tendsto
       (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, S.realOperator u x)

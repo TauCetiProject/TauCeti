@@ -121,6 +121,7 @@ lemma realOperator_coe (S : StronglyContinuousSemigroup X) (t : ℝ≥0) :
 
 omit [CompleteSpace X] in
 /-- The real-time operator at zero is the identity: `S.realOperator 0 = id`. -/
+@[simp]
 theorem at_zero (S : StronglyContinuousSemigroup X) :
     S.realOperator 0 = ContinuousLinearMap.id ℝ X := by
   rw [realOperator, Real.toNNReal_zero]
