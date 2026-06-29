@@ -253,6 +253,20 @@ lemma fundamentalGroupMulEquiv_zero_apply_eq_iff (hp : p ≠ 0)
   rw [fundamentalGroupMulEquiv_zero]
   simpa using fundamentalGroupMulEquiv_apply_eq_iff p hp ⟨0, by simp⟩ γ n
 
+@[simp]
+lemma fundamentalGroupMulEquiv_zero_apply (hp : p ≠ 0)
+    (γ : FundamentalGroup (AddCircle p) 0) :
+    fundamentalGroupMulEquiv_zero p hp γ = fundamentalGroupMulEquiv p hp ⟨0, by simp⟩ γ := by
+  apply (fundamentalGroupMulEquiv_zero_apply_eq_iff p hp γ _).2
+  simpa using (fundamentalGroupMulEquiv_apply_eq_iff p hp ⟨0, by simp⟩ γ _).1 rfl
+
+@[simp]
+lemma fundamentalGroupMulEquiv_zero_symm_apply (hp : p ≠ 0) (n : Multiplicative ℤ) :
+    (fundamentalGroupMulEquiv_zero p hp).symm n =
+      (fundamentalGroupMulEquiv p hp ⟨0, by simp⟩).symm n := by
+  apply (fundamentalGroupMulEquiv_zero p hp).injective
+  rw [MulEquiv.apply_symm_apply, fundamentalGroupMulEquiv_zero_apply, MulEquiv.apply_symm_apply]
+
 /-- The inverse of the basepoint-`0` specialization has monodromy translation `n • p`. -/
 @[simp]
 lemma fundamentalGroupMulEquiv_zero_symm_monodromy (hp : p ≠ 0) (n : Multiplicative ℤ) :
@@ -294,8 +308,7 @@ lemma fundamentalGroupMulEquiv_apply_eq_iff (γ : FundamentalGroup UnitAddCircle
 lemma fundamentalGroupMulEquiv_symm_monodromy (n : Multiplicative ℤ) :
     ((AddCircle.isCoveringMap_coe 1).monodromy (fundamentalGroupMulEquiv.symm n)
       ⟨0, by simp⟩ : ℝ) = n.toAdd := by
-  simp [fundamentalGroupMulEquiv,
-    AddCircle.fundamentalGroupMulEquiv_zero_symm_monodromy 1 one_ne_zero n]
+  simp [fundamentalGroupMulEquiv]
 
 /-- A unit-circle loop class maps to `1` exactly when its monodromy fixes the zero lift. -/
 @[simp]
