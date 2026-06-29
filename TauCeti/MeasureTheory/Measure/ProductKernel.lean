@@ -127,10 +127,11 @@ theorem bind_probabilityMeasure_pi_apply
       = ∫⁻ ω, (ProbabilityMeasure.pi fun i => ν i ω).toMeasure s ∂μ :=
   Measure.bind_apply hs (aemeasurable_probabilityMeasure_pi_toMeasure ν hν)
 
+-- Not `@[simp]`: `simp` unfolds `(ProbabilityMeasure.pi …).toMeasure` via `toMeasure_pi`, so the
+-- `.toMeasure`-shaped (`ConditionallyIIDWith`-shaped) LHS here is not simp-normal and a `@[simp]`
+-- tag never fires; this is an explicit `rw` lemma in the shape later de Finetti code rewrites with.
 /-- **Bind-evaluation on a rectangle.** On a rectangle `Set.univ.pi B`, the mixture equals
-`∫⁻ ω, ∏ i, (ν i ω) (B i) ∂μ`. Stated as an explicit `rw` lemma, not `@[simp]`: `simp` first
-unfolds `(ProbabilityMeasure.pi …).toMeasure` via `toMeasure_pi`, so this `.toMeasure`-shaped LHS is
-not simp-normal. -/
+`∫⁻ ω, ∏ i, (ν i ω) (B i) ∂μ`. -/
 theorem bind_probabilityMeasure_pi_pi
     (ν : ∀ i, Ω → ProbabilityMeasure (α i)) (hν : ∀ i, AEMeasurable (ν i) μ)
     (B : ∀ i, Set (α i)) (hB : ∀ i, MeasurableSet (B i)) :
