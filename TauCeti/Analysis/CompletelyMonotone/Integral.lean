@@ -54,10 +54,9 @@ variable {f : ℝ → ℝ}
 /-- `iteratedDerivWithin` on `Icc x T` agrees with `iteratedDerivWithin` on `Ici 0` at interior
 points, since both equal `iteratedDeriv n f t` under local smoothness at `t`. -/
 lemma ContDiffAt.iteratedDerivWithin_Icc_eq_Ici {n : ℕ}
-    {x T t : ℝ} (hf : ContDiffAt ℝ (n : WithTop ℕ∞) f t) (hx : 0 ≤ x)
+    {x T t : ℝ} (hf : ContDiffAt ℝ (n : WithTop ℕ∞) f t) (ht_pos : 0 < t)
     (ht : t ∈ Ioo x T) :
     iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici 0) t := by
-  have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
   have hxT : x < T := lt_trans ht.1 ht.2
   rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT) hf
         (Ioo_subset_Icc_self ht),
@@ -112,12 +111,11 @@ namespace IsCompletelyMonotone
 /-- `iteratedDerivWithin` on `Icc x T` agrees with `iteratedDerivWithin` on `Ici 0` at interior
 points, since both equal `iteratedDeriv n f t` when `0 < t`. -/
 lemma iteratedDerivWithin_Icc_eq_Ici {n : ℕ} (hf : IsCompletelyMonotone f)
-    {x T t : ℝ} (hx : 0 ≤ x) (ht : t ∈ Ioo x T) :
+    {x T t : ℝ} (ht_pos : 0 < t) (ht : t ∈ Ioo x T) :
     iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici 0) t := by
-  have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
   have hcda : ContDiffAt ℝ (n : WithTop ℕ∞) f t :=
     (hf.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (by exact_mod_cast le_top)
-  exact ContDiffAt.iteratedDerivWithin_Icc_eq_Ici hcda hx ht
+  exact ContDiffAt.iteratedDerivWithin_Icc_eq_Ici hcda ht_pos ht
 
 /-- **CM sign of the Taylor remainder.** For a completely monotone function the Taylor
 integral remainder `∫ₓᵀ (T-t)ⁿ⁻¹/(n-1)! · f⁽ⁿ⁾(t) dt` has sign `(-1)ⁿ`:
@@ -136,7 +134,7 @@ lemma neg_one_pow_mul_taylor_remainder_nonneg (hf : IsCompletelyMonotone f) {x T
           ((-1 : ℝ) ^ n * iteratedDerivWithin n f (Icc x T) t) :=
           mul_nonneg (mul_nonneg (inv_nonneg.mpr (Nat.cast_nonneg _))
             (pow_nonneg (sub_nonneg.mpr ht.2.le) _))
-            (by rw [hf.iteratedDerivWithin_Icc_eq_Ici hx ht]
+            (by rw [hf.iteratedDerivWithin_Icc_eq_Ici (lt_of_le_of_lt hx ht.1) ht]
                 exact hf.neg_one_pow_mul_iteratedDerivWithin_nonneg n
                   (lt_of_le_of_lt hx ht.1).le)
       _ = _ := by ring

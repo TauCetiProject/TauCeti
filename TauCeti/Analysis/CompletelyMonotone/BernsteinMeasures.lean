@@ -212,7 +212,7 @@ lemma bernstein_kernel_le_one {n : ℕ} {x p : ℝ} (hx : 0 ≤ x) (hp : 0 ≤ p
 
 /-- The Bernstein kernel as a bundled bounded continuous test function of the nonnegative
 variable `p`, for fixed `n` and nonnegative `x`. -/
-noncomputable abbrev bernsteinKernelBCF (n : ℕ) {x : ℝ} (hx : 0 ≤ x) : ℝ≥0 →ᵇ ℝ where
+noncomputable def bernsteinKernelBCF (n : ℕ) {x : ℝ} (hx : 0 ≤ x) : ℝ≥0 →ᵇ ℝ where
   toFun := fun p => bernstein_kernel n x (p : ℝ)
   continuous_toFun := (continuous_bernstein_kernel n x).comp continuous_subtype_val
   map_bounded' :=
@@ -227,7 +227,8 @@ noncomputable abbrev bernsteinKernelBCF (n : ℕ) {x : ℝ} (hx : 0 ≤ x) : ℝ
 /-- The bundled Bernstein kernel evaluates to the unbundled kernel on `ℝ≥0`. -/
 @[simp]
 lemma bernsteinKernelBCF_apply (n : ℕ) {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
-    bernsteinKernelBCF n hx p = bernstein_kernel n x (p : ℝ) := rfl
+    bernsteinKernelBCF n hx p = bernstein_kernel n x (p : ℝ) := by
+  rw [bernsteinKernelBCF]; rfl
 
 /-- The Bernstein kernel is measurable in `p` for fixed `n` and `x`. -/
 lemma measurable_bernstein_kernel (n : ℕ) (x : ℝ) : Measurable (bernstein_kernel n x) := by
