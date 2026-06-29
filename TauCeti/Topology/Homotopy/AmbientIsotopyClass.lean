@@ -26,6 +26,8 @@ their own stronger smooth or PL data elsewhere.
 * `TauCeti.AmbientIsotopyClass.map`: descend ambient-isotopy-preserving operations.
 * `TauCeti.AmbientIsotopyClass.map₂`: descend binary ambient-isotopy-preserving operations.
 * `TauCeti.AmbientIsotopyClass.precomp`: precompose classes by a continuous source map.
+* `TauCeti.AmbientIsotopyClass.precompHomeomorphEquiv`: the quotient equivalence induced by a
+  homeomorphism of source spaces.
 * `TauCeti.AmbientIsotopyClass.postcompHomeomorph`: postcompose classes by a homeomorphism of
   ambient spaces.
 * `TauCeti.AmbientIsotopyClass.postcompHomeomorphEquiv`: the quotient equivalence induced by a
@@ -179,6 +181,60 @@ theorem precomp_comp (e : C(W, X)) (d : C(U, W)) (x : AmbientIsotopyClass X Y) :
   intro f
   simp
 
+/-- The equivalence of ambient-isotopy class quotients induced by a homeomorphism of source
+spaces.
+
+The map sends the class of `f : C(X, Y)` to the class of `f ∘ h`, where `h : W ≃ₜ X`. -/
+def precompHomeomorphEquiv (h : W ≃ₜ X) :
+    AmbientIsotopyClass X Y ≃ AmbientIsotopyClass W Y where
+  toFun := precomp (h : C(W, X))
+  invFun := precomp (h.symm : C(X, W))
+  left_inv x := by
+    refine induction_on x ?_
+    intro f
+    rw [precomp_mk, precomp_mk]
+    apply mk_eq_mk
+    convert AmbientIsotopic.refl f using 1
+    ext x
+    simp
+  right_inv x := by
+    refine induction_on x ?_
+    intro f
+    rw [precomp_mk, precomp_mk]
+    apply mk_eq_mk
+    convert AmbientIsotopic.refl f using 1
+    ext x
+    simp
+
+/-- Computation rule for source-homeomorphism reparametrisation on representatives. -/
+@[simp]
+theorem precompHomeomorphEquiv_mk (h : W ≃ₜ X) (f : C(X, Y)) :
+    precompHomeomorphEquiv h (mk f) = mk (f.comp (h : C(W, X))) :=
+  precomp_mk (h : C(W, X)) f
+
+/-- The inverse of source reparametrisation is reparametrisation by the inverse source
+homeomorphism. -/
+@[simp]
+theorem precompHomeomorphEquiv_symm_apply (h : W ≃ₜ X) (x : AmbientIsotopyClass W Y) :
+    (precompHomeomorphEquiv h).symm x = precompHomeomorphEquiv h.symm x := by
+  refine induction_on x ?_
+  intro f
+  simp [precompHomeomorphEquiv]
+
+/-- Reparametrisation by the identity homeomorphism is the identity on ambient-isotopy classes. -/
+@[simp]
+theorem precompHomeomorphEquiv_refl_apply (x : AmbientIsotopyClass X Y) :
+    precompHomeomorphEquiv (Homeomorph.refl X) x = x := by
+  exact precomp_id x
+
+/-- Source-homeomorphism reparametrisation is functorial on ambient-isotopy classes. -/
+@[simp]
+theorem precompHomeomorphEquiv_trans_apply (h : W ≃ₜ X) (k : U ≃ₜ W)
+    (x : AmbientIsotopyClass X Y) :
+    precompHomeomorphEquiv k (precompHomeomorphEquiv h x) =
+      precompHomeomorphEquiv (k.trans h) x := by
+  exact precomp_comp (h : C(W, X)) (k : C(U, W)) x
+
 /-- Postcompose an ambient-isotopy class by a homeomorphism of ambient spaces. -/
 def postcompHomeomorph (h : Y ≃ₜ Z) : AmbientIsotopyClass X Y → AmbientIsotopyClass X Z :=
   map (fun f => (h : C(Y, Z)).comp f) fun {f g} (hfg : AmbientIsotopic f g) =>
@@ -268,6 +324,66 @@ theorem postcompHomeomorphPrecomp_eq_postcompHomeomorph_comp_precomp (h : Y ≃�
     postcompHomeomorphPrecomp h e = postcompHomeomorph h ∘ precomp e := by
   funext x
   simp
+
+/-- The two-sided coordinate-change equivalence on ambient-isotopy classes: precompose the source
+by a homeomorphism and postcompose the ambient space by a homeomorphism. -/
+def postcompHomeomorphPrecompEquiv (h : Y ≃ₜ Z) (e : W ≃ₜ X) :
+    AmbientIsotopyClass X Y ≃ AmbientIsotopyClass W Z :=
+  (precompHomeomorphEquiv e).trans (postcompHomeomorphEquiv h)
+
+/-- Computation rule for two-sided coordinate change on representatives. -/
+@[simp]
+theorem postcompHomeomorphPrecompEquiv_mk (h : Y ≃ₜ Z) (e : W ≃ₜ X) (f : C(X, Y)) :
+    postcompHomeomorphPrecompEquiv h e (mk f) =
+      mk ((h : C(Y, Z)).comp (f.comp (e : C(W, X)))) :=
+  postcompHomeomorphPrecomp_mk h (e : C(W, X)) f
+
+/-- The inverse of two-sided coordinate change is the two-sided coordinate change by the inverse
+homeomorphisms. -/
+@[simp]
+theorem postcompHomeomorphPrecompEquiv_symm_apply (h : Y ≃ₜ Z) (e : W ≃ₜ X)
+    (x : AmbientIsotopyClass W Z) :
+    (postcompHomeomorphPrecompEquiv h e).symm x =
+      postcompHomeomorphPrecompEquiv h.symm e.symm x := by
+  refine induction_on x ?_
+  intro f
+  apply mk_eq_mk
+  convert AmbientIsotopic.refl ((h.symm : C(Z, Y)).comp (f.comp (e.symm : C(X, W)))) using 1
+  ext x
+  simp
+
+/-- The two-sided coordinate-change equivalence factors as ambient postcomposition after source
+reparametrisation. -/
+@[simp]
+theorem postcompHomeomorphPrecompEquiv_apply_eq (h : Y ≃ₜ Z) (e : W ≃ₜ X)
+    (x : AmbientIsotopyClass X Y) :
+    postcompHomeomorphPrecompEquiv h e x =
+      postcompHomeomorph h (precompHomeomorphEquiv e x) := by
+  rfl
+
+/-- With the identity source reparametrisation, the two-sided coordinate-change equivalence is
+ambient postcomposition. -/
+@[simp]
+theorem postcompHomeomorphPrecompEquiv_refl_source_apply (h : Y ≃ₜ Z)
+    (x : AmbientIsotopyClass X Y) :
+    postcompHomeomorphPrecompEquiv h (Homeomorph.refl X) x = postcompHomeomorph h x := by
+  rw [postcompHomeomorphPrecompEquiv_apply_eq, precompHomeomorphEquiv_refl_apply]
+
+/-- With the identity ambient homeomorphism, the two-sided coordinate-change equivalence is source
+reparametrisation. -/
+@[simp]
+theorem postcompHomeomorphPrecompEquiv_refl_ambient_apply (e : W ≃ₜ X)
+    (x : AmbientIsotopyClass X Y) :
+    postcompHomeomorphPrecompEquiv (Homeomorph.refl Y) e x =
+      precompHomeomorphEquiv e x := by
+  rw [postcompHomeomorphPrecompEquiv_apply_eq, postcompHomeomorph_refl]
+
+/-- The two-sided coordinate-change equivalence is the identity when both coordinate changes are
+identities. -/
+@[simp]
+theorem postcompHomeomorphPrecompEquiv_refl_refl_apply (x : AmbientIsotopyClass X Y) :
+    postcompHomeomorphPrecompEquiv (Homeomorph.refl Y) (Homeomorph.refl X) x = x := by
+  rw [postcompHomeomorphPrecompEquiv_refl_source_apply, postcompHomeomorph_refl]
 
 end AmbientIsotopyClass
 
