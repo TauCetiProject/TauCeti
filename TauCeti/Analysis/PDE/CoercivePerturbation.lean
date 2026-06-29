@@ -6,6 +6,7 @@ module
 
 public import TauCeti.Analysis.PDE.CoerciveEnergy
 public import TauCeti.Analysis.PDE.EnergyFormLinearity
+public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 
 /-!
 # Coercive energy integrands under nonnegative perturbations
@@ -66,9 +67,7 @@ lemma isCoercive_energyIntegrand_add_principal_mass_of_isCoercive
     (h : IsCoercive (energyIntegrand A b₀ c₀))
     (hB : ∀ ξ : EuclideanSpace ℝ n, 0 ≤ B.toQuadraticForm' ξ) (hd : 0 ≤ d) :
     IsCoercive (energyIntegrand (A + B) b₀ (c₀ + d)) := by
-  rcases h with ⟨K, hKpos, hK⟩
-  refine ⟨K, hKpos, fun U => (hK U).trans ?_⟩
-  exact energyIntegrand_le_add_principal_mass_self hB hd U
+  exact TauCeti.IsCoercive.mono h (energyIntegrand_le_add_principal_mass_self hB hd)
 
 grind_pattern isCoercive_energyIntegrand_add_principal_mass_of_isCoercive =>
   IsCoercive (energyIntegrand A b₀ c₀), 0 ≤ d,

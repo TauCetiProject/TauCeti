@@ -45,6 +45,15 @@ open scoped InnerProductSpace
 
 namespace IsCoercive
 
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+variable {B C : E →L[ℝ] E →L[ℝ] ℝ}
+
+/-- Coercivity is preserved by pointwise increasing the diagonal of a bilinear form. -/
+theorem mono (hB : IsCoercive B) (hBC : ∀ u, B u u ≤ C u u) :
+    IsCoercive C := by
+  rcases hB with ⟨K, hKpos, hK⟩
+  exact ⟨K, hKpos, fun u => (hK u).trans (hBC u)⟩
+
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
 variable {B : V →L[ℝ] V →L[ℝ] ℝ}
 
