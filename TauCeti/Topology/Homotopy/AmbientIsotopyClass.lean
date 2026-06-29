@@ -361,6 +361,16 @@ theorem postcompHomeomorphPrecompEquiv_apply_eq (h : Y ≃ₜ Z) (e : W ≃ₜ X
       postcompHomeomorph h (precompHomeomorphEquiv e x) := by
   rfl
 
+/-- Two-sided coordinate change is functorial for iterated coordinate changes. -/
+@[simp]
+theorem postcompHomeomorphPrecompEquiv_trans_apply (h : Y ≃ₜ Z) (k : Z ≃ₜ Y')
+    (e : W ≃ₜ X) (d : X' ≃ₜ W) (x : AmbientIsotopyClass X Y) :
+    postcompHomeomorphPrecompEquiv k d (postcompHomeomorphPrecompEquiv h e x) =
+      postcompHomeomorphPrecompEquiv (h.trans k) (d.trans e) x := by
+  refine induction_on x ?_
+  intro f
+  simp
+
 /-- With the identity source reparametrisation, the two-sided coordinate-change equivalence is
 ambient postcomposition. -/
 @[simp]
