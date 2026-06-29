@@ -14,9 +14,10 @@ every finite block of **distinct** coordinates has, as its law, the `ν`-mixture
 corresponding product measure. `ConditionallyIIDWith μ X ν` names the directing measure;
 `ConditionallyIID` is the existential wrapper.
 
-This file adds the Layer 0 directing-measure definitions and their destructors only. The
-bridge `ConditionallyIID → Exchangeable` (permutation invariance of the finite product
-measures) is a later milestone.
+This file adds the Layer 0 directing-measure definitions and destructors, together with the
+Layer 1 rectangle-factorization characterization used by the common de Finetti ending. The bridge
+`ConditionallyIID → Exchangeable` (permutation invariance of the finite product measures) is a later
+milestone.
 
 These declarations follow the roadmap signatures in
 `TauCetiRoadmap/Exchangeability/README.md` and
@@ -31,13 +32,33 @@ public section
 
 noncomputable section
 
-open MeasureTheory
+open MeasureTheory Set
 
 namespace TauCeti
 
 namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+
+/-- Implementation helper for the rectangle characterization: two measures on a finite product
+space are equal if they agree on all measurable rectangles `Set.univ.pi B`. Only the first measure
+is assumed finite. -/
+private theorem measure_eq_of_forall_univ_pi {ι : Type*} [Finite ι] {α : ι → Type*}
+    [∀ i, MeasurableSpace (α i)] {μ ν : Measure (∀ i, α i)} [IsFiniteMeasure μ]
+    (h : ∀ B : ∀ i, Set (α i), (∀ i, MeasurableSet (B i)) →
+      μ (Set.univ.pi B) = ν (Set.univ.pi B)) :
+    μ = ν := by
+  letI := Fintype.ofFinite ι
+  refine Measure.ext_of_generateFrom_of_iUnion
+    (C := Set.pi Set.univ '' Set.pi Set.univ fun i => {s : Set (α i) | MeasurableSet s})
+    (B := fun _ : ℕ => Set.univ) generateFrom_pi.symm isPiSystem_pi ?_ ?_ ?_ ?_
+  · simpa using (iUnion_const (Set.univ : Set (∀ i, α i)))
+  · intro n
+    exact ⟨fun _ => Set.univ, fun i _ => MeasurableSet.univ, by simp⟩
+  · intro n
+    exact measure_ne_top μ Set.univ
+  · rintro _ ⟨B, hB, rfl⟩
+    exact h B fun i => hB i (mem_univ i)
 
 /-- Conditional i.i.d.-ness with a specified directing probability measure `ν`: the random
 measure `ν` is measurable, and along every finite selection `k` of **distinct** coordinates
@@ -116,7 +137,7 @@ theorem conditionallyIIDWith_of_forall_rectangles {μ : Measure Ω} [IsFiniteMea
   haveI : IsFiniteMeasure (blockLaw μ X k) := by
     rw [blockLaw_apply]
     infer_instance
-  refine TauCeti.MeasureTheory.measure_eq_of_forall_univ_pi ?_
+  refine measure_eq_of_forall_univ_pi ?_
   intro B hB
   rw [h_rect m k hk B hB]
   rw [TauCeti.MeasureTheory.bind_probabilityMeasure_pi_const_pi ν hν.aemeasurable B hB]
