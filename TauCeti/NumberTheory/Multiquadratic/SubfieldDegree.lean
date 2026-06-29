@@ -73,7 +73,7 @@ private theorem card_submodule_eq_pow_finrank [Finite ι]
 /-- The subspace attached to an intermediate field `F` of `M = K(rootᵢ : i)` has the same
 cardinality as the fixing subgroup of `F`: both reinterpret the same set of automorphisms, one as a
 subgroup of `Gal(M/K)` and one as an `𝔽₂`-subspace of `ι → ℤ/2`. -/
-theorem card_intermediateFieldEquivSubmodule_ofDual [Finite ι] [NeZero (2 : K)]
+private theorem card_intermediateFieldEquivSubmodule_ofDual [Finite ι] [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
     (F : IntermediateField K (adjoin K (Set.range root))) :
@@ -114,8 +114,7 @@ theorem finrank_mul_card_intermediateFieldEquivSubmodule [Finite ι] [NeZero (2 
   exact card_aut_adjoin_range hroot hindep
 
 /-- **The degree of an intermediate field through the dimension of its subspace.** The reciprocal
-relation `[F : K] · |U| = 2ⁿ` read with `|U| = 2 ^ dim U`: `[F : K] · 2 ^ dim U = 2 ^ |ι|`, so the
-degree of `F` is `2` to the codimension of `U`. -/
+relation `[F : K] · |U| = 2ⁿ` read with `|U| = 2 ^ dim U`: `[F : K] · 2 ^ dim U = 2 ^ |ι|`. -/
 theorem finrank_mul_two_pow_finrank_intermediateFieldEquivSubmodule [Finite ι] [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
