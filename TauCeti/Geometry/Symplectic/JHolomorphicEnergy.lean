@@ -4,8 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+import Mathlib.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.JHolomorphicLine
+public import TauCeti.Geometry.Symplectic.Prod
 
 /-!
 # Pointwise energy density for maps from the standard complex line
@@ -38,6 +40,8 @@ or disks.
   under tameness, with `TauCeti.IsJHolomorphicAt.fderiv_stdComplexLineEnergyDensity_eq_zero_iff`
   and `TauCeti.IsJHolomorphicWithinAt.fderivWithin_stdComplexLineEnergyDensity_eq_zero_iff` the
   Frechet-derivative versions.
+* `TauCeti.SymplecticForm.prod_stdComplexLineEnergyDensity`: product-target energy density is
+  the sum of the factor energy densities.
 
 The convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: for a compatible pair, `g(·, ·) = ω(·, J ·)` and `du(∂t) = J du(∂s)`.
@@ -151,6 +155,57 @@ lemma stdComplexLineEnergyDensity_pos_iff (hω : ω.Tames J) {F : (ℝ × ℝ) �
     exact hpos.ne' ((ω.stdComplexLineEnergyDensity_eq_zero_iff (J := J) hω).mpr hzero)
   · exact ω.stdComplexLineEnergyDensity_pos hω
 
+section Prod
+
+variable {W : Type*} [AddCommGroup W] [Module ℝ W]
+variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W}
+variable {J₁ : AlmostComplexStructure V} {J₂ : AlmostComplexStructure W}
+
+/-- The standard-line energy density of a real-linear map into a direct-sum target is the sum of
+the two factor energy densities of its coordinate projections. -/
+@[simp]
+lemma prod_stdComplexLineEnergyDensity (F : (ℝ × ℝ) →ₗ[ℝ] V × W) :
+    (ω₁.prod ω₂).stdComplexLineEnergyDensity (J₁.prod J₂) F =
+      ω₁.stdComplexLineEnergyDensity J₁ ((LinearMap.fst ℝ V W).comp F) +
+        ω₂.stdComplexLineEnergyDensity J₂ ((LinearMap.snd ℝ V W).comp F) := by
+  simp only [stdComplexLineEnergyDensity_def, prod_associatedBilinForm_apply,
+    LinearMap.comp_apply, LinearMap.fst_apply, LinearMap.snd_apply]
+  ring_nf
+
+/-- Paired-map form of the direct-sum energy identity. -/
+@[simp]
+lemma prod_stdComplexLineEnergyDensity_prod (F : (ℝ × ℝ) →ₗ[ℝ] V)
+    (G : (ℝ × ℝ) →ₗ[ℝ] W) :
+    (ω₁.prod ω₂).stdComplexLineEnergyDensity (J₁.prod J₂) (F.prod G) =
+      ω₁.stdComplexLineEnergyDensity J₁ F + ω₂.stdComplexLineEnergyDensity J₂ G := by
+  simpa using
+    (prod_stdComplexLineEnergyDensity
+      (ω₁ := ω₁) (ω₂ := ω₂) (J₁ := J₁) (J₂ := J₂) (F.prod G))
+
+/-- Under tameness in both factors, product-target standard-line energy density vanishes exactly
+when both coordinate linear maps vanish. -/
+@[simp]
+lemma prod_stdComplexLineEnergyDensity_prod_eq_zero_iff
+    (h₁ : ω₁.Tames J₁) (h₂ : ω₂.Tames J₂)
+    {F : (ℝ × ℝ) →ₗ[ℝ] V} {G : (ℝ × ℝ) →ₗ[ℝ] W} :
+    (ω₁.prod ω₂).stdComplexLineEnergyDensity (J₁.prod J₂) (F.prod G) = 0 ↔
+      F = 0 ∧ G = 0 := by
+  rw [prod_stdComplexLineEnergyDensity_prod]
+  constructor
+  · intro henergy
+    have hF_nonneg : 0 ≤ ω₁.stdComplexLineEnergyDensity J₁ F :=
+      ω₁.stdComplexLineEnergyDensity_nonneg h₁ F
+    have hG_nonneg : 0 ≤ ω₂.stdComplexLineEnergyDensity J₂ G :=
+      ω₂.stdComplexLineEnergyDensity_nonneg h₂ G
+    have hF_energy : ω₁.stdComplexLineEnergyDensity J₁ F = 0 := by linarith
+    have hG_energy : ω₂.stdComplexLineEnergyDensity J₂ G = 0 := by linarith
+    exact ⟨(ω₁.stdComplexLineEnergyDensity_eq_zero_iff h₁).mp hF_energy,
+      (ω₂.stdComplexLineEnergyDensity_eq_zero_iff h₂).mp hG_energy⟩
+  · rintro ⟨rfl, rfl⟩
+    simp
+
+end Prod
+
 end SymplecticForm
 
 namespace IsComplexLinearMap
@@ -263,6 +318,44 @@ lemma fderiv_stdComplexLineEnergyDensity_pos (hω : ω.Tames J)
   (fderiv_stdComplexLineEnergyDensity_pos_iff (ω := ω) (J := J) (f := f) (x := x) hω).mpr
     hfderiv
 
+section Prod
+
+variable {W X : Type*}
+variable [NormedAddCommGroup W] [NormedSpace ℝ W]
+variable [NormedAddCommGroup X] [NormedSpace ℝ X]
+variable {ω₁ : SymplecticForm W} {ω₂ : SymplecticForm X}
+variable {J₁ : AlmostComplexStructure W} {J₂ : AlmostComplexStructure X}
+variable {u : ℝ × ℝ → W × X} {g : ℝ × ℝ → W} {h : ℝ × ℝ → X}
+
+/-- The standard-line energy density of the Frechet derivative of a map into a direct-sum target
+is the sum of the coordinate energy densities. -/
+lemma fderiv_prod_stdComplexLineEnergyDensity :
+    (ω₁.prod ω₂).stdComplexLineEnergyDensity (J₁.prod J₂)
+        (fderiv ℝ u x).toLinearMap =
+      ω₁.stdComplexLineEnergyDensity J₁
+          ((LinearMap.fst ℝ W X).comp (fderiv ℝ u x).toLinearMap) +
+        ω₂.stdComplexLineEnergyDensity J₂
+          ((LinearMap.snd ℝ W X).comp (fderiv ℝ u x).toLinearMap) := by
+  simpa using
+    (SymplecticForm.prod_stdComplexLineEnergyDensity
+      (ω₁ := ω₁) (ω₂ := ω₂) (J₁ := J₁) (J₂ := J₂) (fderiv ℝ u x).toLinearMap)
+
+/-- Paired-map form of the product-target energy identity for Frechet derivatives. -/
+lemma fderiv_prodMk_stdComplexLineEnergyDensity
+    (hg : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J₁ g x)
+    (hh : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J₂ h x) :
+    (ω₁.prod ω₂).stdComplexLineEnergyDensity (J₁.prod J₂)
+        (fderiv ℝ (fun y => (g y, h y)) x).toLinearMap =
+      ω₁.stdComplexLineEnergyDensity J₁ (fderiv ℝ g x).toLinearMap +
+        ω₂.stdComplexLineEnergyDensity J₂ (fderiv ℝ h x).toLinearMap := by
+  rw [hg.differentiableAt.fderiv_prodMk hh.differentiableAt]
+  simpa using
+    (SymplecticForm.prod_stdComplexLineEnergyDensity_prod
+      (ω₁ := ω₁) (ω₂ := ω₂) (J₁ := J₁) (J₂ := J₂)
+      (fderiv ℝ g x).toLinearMap (fderiv ℝ h x).toLinearMap)
+
+end Prod
+
 end IsJHolomorphicAt
 
 namespace IsJHolomorphicWithinAt
@@ -349,6 +442,45 @@ lemma fderivWithin_stdComplexLineEnergyDensity_pos (hω : ω.Tames J)
     0 < ω.stdComplexLineEnergyDensity J (fderivWithin ℝ f s x).toLinearMap :=
   (fderivWithin_stdComplexLineEnergyDensity_pos_iff
     (ω := ω) (J := J) (f := f) (s := s) (x := x) hω).mpr hfderiv
+
+section Prod
+
+variable {W X : Type*}
+variable [NormedAddCommGroup W] [NormedSpace ℝ W]
+variable [NormedAddCommGroup X] [NormedSpace ℝ X]
+variable {ω₁ : SymplecticForm W} {ω₂ : SymplecticForm X}
+variable {J₁ : AlmostComplexStructure W} {J₂ : AlmostComplexStructure X}
+variable {u : ℝ × ℝ → W × X} {g : ℝ × ℝ → W} {h : ℝ × ℝ → X}
+
+/-- The standard-line energy density of the within-set Frechet derivative of a map into a
+direct-sum target is the sum of the coordinate energy densities. -/
+lemma fderivWithin_prod_stdComplexLineEnergyDensity :
+    (ω₁.prod ω₂).stdComplexLineEnergyDensity (J₁.prod J₂)
+        (fderivWithin ℝ u s x).toLinearMap =
+      ω₁.stdComplexLineEnergyDensity J₁
+          ((LinearMap.fst ℝ W X).comp (fderivWithin ℝ u s x).toLinearMap) +
+        ω₂.stdComplexLineEnergyDensity J₂
+          ((LinearMap.snd ℝ W X).comp (fderivWithin ℝ u s x).toLinearMap) := by
+  simpa using
+    (SymplecticForm.prod_stdComplexLineEnergyDensity
+      (ω₁ := ω₁) (ω₂ := ω₂) (J₁ := J₁) (J₂ := J₂) (fderivWithin ℝ u s x).toLinearMap)
+
+/-- Paired-map form of the product-target energy identity for within-set Frechet derivatives. -/
+lemma fderivWithin_prodMk_stdComplexLineEnergyDensity
+    (hg : IsJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J₁ g s x)
+    (hh : IsJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J₂ h s x)
+    (hs : UniqueDiffWithinAt ℝ s x) :
+    (ω₁.prod ω₂).stdComplexLineEnergyDensity (J₁.prod J₂)
+        (fderivWithin ℝ (fun y => (g y, h y)) s x).toLinearMap =
+      ω₁.stdComplexLineEnergyDensity J₁ (fderivWithin ℝ g s x).toLinearMap +
+        ω₂.stdComplexLineEnergyDensity J₂ (fderivWithin ℝ h s x).toLinearMap := by
+  rw [hg.differentiableWithinAt.fderivWithin_prodMk hh.differentiableWithinAt hs]
+  simpa using
+    (SymplecticForm.prod_stdComplexLineEnergyDensity_prod
+      (ω₁ := ω₁) (ω₂ := ω₂) (J₁ := J₁) (J₂ := J₂)
+      (fderivWithin ℝ g s x).toLinearMap (fderivWithin ℝ h s x).toLinearMap)
+
+end Prod
 
 end IsJHolomorphicWithinAt
 
