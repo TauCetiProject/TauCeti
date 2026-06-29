@@ -65,6 +65,23 @@ lemma surjective_smul_fiberMap (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
   obtain ⟨φ, rfl⟩ := hsurj e'
   exact ⟨conjMulEquiv h hpq φ, (fiberMap_smul h hpq φ e).symm⟩
 
+/-- The inverse of the local deck-to-fibre equivalence is compatible with fibre transport:
+transport the target fibre point first, or compute the source deck transformation first and
+then conjugate it. -/
+@[simp]
+lemma deckEquivFiberOfSurjective_symm_fiberMap [PreconnectedSpace E] [PreconnectedSpace F]
+    (hp : IsCoveringMap p) (hq : IsCoveringMap q) (h : E ≃ₜ F)
+    (hpq : ∀ e, q (h e) = p e) (e e' : p ⁻¹' {b})
+    (hsurj : Function.Surjective fun φ : Deck p => φ • e) :
+    (deckEquivFiberOfSurjective hq (fiberMap h hpq b e)
+          (surjective_smul_fiberMap h hpq e hsurj)).symm
+        (fiberMap h hpq b e') =
+      conjMulEquiv h hpq ((deckEquivFiberOfSurjective hp e hsurj).symm e') := by
+  apply (deckEquivFiberOfSurjective hq (fiberMap h hpq b e)
+    (surjective_smul_fiberMap h hpq e hsurj)).injective
+  rw [Equiv.apply_symm_apply, deckEquivFiberOfSurjective_apply, ← fiberMap_smul,
+    deckEquivFiberOfSurjective_symm_smul]
+
 /-- Fibre transport preserves torsor division, with the deck-group element transported by
 conjugation along the over-base homeomorphism.
 
@@ -87,41 +104,8 @@ lemma fiberMap_sdiv_eq_conjMulEquiv_of_pretransitive [PreconnectedSpace E]
   letI := fiberTorsorOfPretransitive hq b
   rw [← deckEquivFiberOfSurjective_symm_eq_sdiv hq,
     ← deckEquivFiberOfSurjective_symm_eq_sdiv hp]
-  apply eq_of_fiber_smul_eq_fiber_smul hq
-  calc
-    ((deckEquivFiberOfSurjective hq (fiberMap h hpq b e₂)
-          (MulAction.surjective_smul (Deck q) (fiberMap h hpq b e₂))).symm
-        (fiberMap h hpq b e₁)) • fiberMap h hpq b e₂ =
-        fiberMap h hpq b e₁ := by
-      exact deckEquivFiberOfSurjective_symm_smul hq (fiberMap h hpq b e₂)
-        (MulAction.surjective_smul (Deck q) (fiberMap h hpq b e₂))
-        (fiberMap h hpq b e₁)
-    _ = fiberMap h hpq b
-        (((deckEquivFiberOfSurjective hp e₂
-            (MulAction.surjective_smul (Deck p) e₂)).symm e₁) • e₂) := by
-      rw [deckEquivFiberOfSurjective_symm_smul]
-    _ = conjMulEquiv h hpq
-          ((deckEquivFiberOfSurjective hp e₂
-            (MulAction.surjective_smul (Deck p) e₂)).symm e₁) •
-        fiberMap h hpq b e₂ := by
-      rw [fiberMap_smul]
-
-/-- The inverse of the local deck-to-fibre equivalence is compatible with fibre transport:
-transport the target fibre point first, or compute the source deck transformation first and
-then conjugate it. -/
-@[simp]
-lemma deckEquivFiberOfSurjective_symm_fiberMap [PreconnectedSpace E] [PreconnectedSpace F]
-    (hp : IsCoveringMap p) (hq : IsCoveringMap q) (h : E ≃ₜ F)
-    (hpq : ∀ e, q (h e) = p e) (e e' : p ⁻¹' {b})
-    (hsurj : Function.Surjective fun φ : Deck p => φ • e) :
-    (deckEquivFiberOfSurjective hq (fiberMap h hpq b e)
-          (surjective_smul_fiberMap h hpq e hsurj)).symm
-        (fiberMap h hpq b e') =
-      conjMulEquiv h hpq ((deckEquivFiberOfSurjective hp e hsurj).symm e') := by
-  apply (deckEquivFiberOfSurjective hq (fiberMap h hpq b e)
-    (surjective_smul_fiberMap h hpq e hsurj)).injective
-  rw [Equiv.apply_symm_apply, deckEquivFiberOfSurjective_apply, ← fiberMap_smul,
-    deckEquivFiberOfSurjective_symm_smul]
+  exact deckEquivFiberOfSurjective_symm_fiberMap hp hq h hpq e₂ e₁
+    (MulAction.surjective_smul (Deck p) e₂)
 
 /-- The local deck-to-fibre equivalence commutes with transport of deck transformations
 and fibre points along an over-base homeomorphism. -/
