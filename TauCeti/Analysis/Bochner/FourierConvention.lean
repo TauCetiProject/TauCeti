@@ -15,7 +15,7 @@ statements are often written in the Fourier-transform convention
 
 `a ↦ ∫ q, exp (-2π i ⟪a, q⟫) ∂μ q`.
 
-This file records the exact conversion from Mathlib's Fourier integral to
+This file documents the exact conversion from Mathlib's Fourier integral to
 `MeasureTheory.charFun`: at frequency `a`, it is `charFun μ (-(2π) • a)`.
 
 This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the API bullet asking for
@@ -24,10 +24,10 @@ This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the API
 vendored; the conversion follows Mathlib's characteristic-function and Fourier-character
 normalizations.
 
-## Main declarations
+## Checked conversion
 
-* `TauCeti.MeasureTheory.fourierIntegral_one_eq_charFun`: conversion from Mathlib's Fourier integral
-  of the constant function `1` to Mathlib's `charFun`.
+The example below verifies the conversion directly from Mathlib's
+`MeasureTheory.charFun_eq_fourierIntegral'`.
 
 ## References
 
@@ -43,16 +43,10 @@ namespace TauCeti
 
 namespace MeasureTheory
 
-section Seminormed
-
 variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] {μ : Measure E}
 
-/-- Mathlib's `e^{-2πi⟪a,q⟫}` Fourier integral of the constant function `1` is the characteristic
-function evaluated at `-(2π) • a`. This is the named conversion between Mathlib's Fourier
-convention and Mathlib's `MeasureTheory.charFun` convention. -/
-@[simp]
-theorem fourierIntegral_one_eq_charFun (a : E) :
+example (a : E) :
     VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a =
       charFun μ (-(2 * Real.pi) • a) := by
   rw [charFun_eq_fourierIntegral']
@@ -61,8 +55,6 @@ theorem fourierIntegral_one_eq_charFun (a : E) :
   have h : Real.pi⁻¹ * 2⁻¹ * (2 * Real.pi) = (1 : ℝ) := by
     field_simp [Real.pi_ne_zero]
   simp [h]
-
-end Seminormed
 
 end MeasureTheory
 
