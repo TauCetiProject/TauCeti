@@ -1,9 +1,11 @@
+module
+
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Codex
 -/
-import Mathlib.Analysis.InnerProductSpace.l2Space
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 
 /-!
 # Transporting Hilbert bases by linear isometric equivalences
@@ -13,6 +15,8 @@ can be transported across a linear isometric equivalence.  The construction is t
 `HilbertBasis.mapₗᵢ` primitive from the `OrthogonalL2Bases` roadmap, used later to move weighted
 orthogonal-polynomial bases across the weight-change isometry.
 -/
+
+public section
 
 namespace TauCeti
 
@@ -24,6 +28,7 @@ variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
 /-- Transport a Hilbert basis along a linear isometric equivalence. -/
+@[expose]
 protected noncomputable def _root_.HilbertBasis.mapₗᵢ
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
     _root_.HilbertBasis ι 𝕜 F :=
