@@ -129,8 +129,9 @@ theorem tailProcess_eq_iInf_revFiltration (X : (k : ℕ) → Ω → β k)
 filtration at that cutoff. -/
 theorem measurable_revFiltration_of_le {X : (k : ℕ) → Ω → β k}
     (hX : ∀ k, Measurable (X k)) {n k : ℕ} (hnk : n ≤ k) :
-    Measurable[revFiltration X hX (OrderDual.toDual n)] (X k) :=
-  measurable_tailFamily_of_le hnk
+    Measurable[revFiltration X hX (OrderDual.toDual n)] (X k) := by
+  rw [revFiltration_apply]
+  exact measurable_tailFamily_of_le hnk
 
 end Probability
 
