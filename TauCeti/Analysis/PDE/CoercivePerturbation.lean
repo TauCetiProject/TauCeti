@@ -6,7 +6,6 @@ module
 
 public import TauCeti.Analysis.PDE.CoerciveEnergy
 public import TauCeti.Analysis.PDE.EnergyFormLinearity
-public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 
 /-!
 # Coercive energy integrands under nonnegative perturbations
@@ -25,13 +24,6 @@ pointwise: no Sobolev space, weak derivative, or integrated energy form is intro
 
 * `TauCeti.PDE.isCoercive_energyIntegrand_add_principal_mass_of_isCoercive`: coercivity is
   preserved by such nonnegative perturbations.
-* `TauCeti.PDE.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self`:
-  the explicit diagonal lower bound after such perturbations.
-* `TauCeti.PDE.min_lam_mass_mul_norm_sq_le_energyIntegrand_add_principal_mass_zero_drift_self`:
-  the zero-drift explicit diagonal lower bound after such perturbations.
-* `TauCeti.PDE.UniformlyEllipticOn.
-    min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self`: the
-  same explicit estimate from a bundled uniform ellipticity hypothesis.
 
 The perturbation argument is the standard monotonicity of the quadratic energy density in
 the energy method, as in Evans, *Partial Differential Equations*, Chapter 6.
@@ -81,77 +73,6 @@ lemma isCoercive_energyIntegrand_add_principal_mass_of_isCoercive
 grind_pattern isCoercive_energyIntegrand_add_principal_mass_of_isCoercive =>
   IsCoercive (energyIntegrand A b₀ c₀), 0 ≤ d,
   IsCoercive (energyIntegrand (A + B) b₀ (c₀ + d))
-
-/-- The explicit coercive diagonal lower bound remains valid after adding a nonnegative
-principal quadratic form and a nonnegative mass coefficient. -/
-lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self
-    (hlam : 0 < lam)
-    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
-    (hB : ∀ ξ : EuclideanSpace ℝ n, 0 ≤ B.toQuadraticForm' ξ) (hd : 0 ≤ d)
-    (U : ℝ × EuclideanSpace ℝ n) :
-    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
-      ≤ energyIntegrand (A + B) b₀ (c₀ + d) U U :=
-  (min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hlam hA hb hc hmu U).trans
-    (energyIntegrand_le_add_principal_mass_self hB hd U)
-
-/-- The zero-drift diagonal lower bound remains valid after adding a nonnegative principal
-quadratic form and a nonnegative mass coefficient. -/
-lemma min_lam_mass_mul_norm_sq_le_energyIntegrand_add_principal_mass_zero_drift_self
-    {lam c d : ℝ} (hlam : 0 ≤ lam)
-    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hc : 0 ≤ c) (hB : ∀ ξ : EuclideanSpace ℝ n, 0 ≤ B.toQuadraticForm' ξ)
-    (hd : 0 ≤ d) (U : ℝ × EuclideanSpace ℝ n) :
-    min lam c * ‖U‖ ^ 2 ≤ energyIntegrand (A + B) 0 (c + d) U U :=
-  calc
-    min lam c * ‖U‖ ^ 2 ≤ min lam (c + d) * ‖U‖ ^ 2 :=
-      mul_le_mul_of_nonneg_right (min_le_min_left lam (le_add_of_nonneg_right hd))
-        (sq_nonneg ‖U‖)
-    _ ≤ energyIntegrand (A + B) 0 (c + d) U U :=
-      min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self hlam
-        (lower_bound_toQuadraticForm'_add hA hB)
-        (add_nonneg hc hd) U
-
-namespace UniformlyEllipticOn
-
-variable {X : Type*} {Ω : Set X} {a p : X → Matrix n n ℝ}
-variable {lam Lam beta mu : ℝ}
-
-/-- The explicit coercive diagonal lower bound from uniform ellipticity remains valid after
-adding a nonnegative principal quadratic form and a nonnegative mass coefficient. -/
-lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self
-    (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)
-    {B : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ q : ℝ}
-    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
-    (hB : ∀ ξ : EuclideanSpace ℝ n, 0 ≤ B.toQuadraticForm' ξ) (hq : 0 ≤ q)
-    (U : ℝ × EuclideanSpace ℝ n) :
-    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
-      ≤ energyIntegrand (a x + B) b₀ (c₀ + q) U U :=
-  PDE.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self h.pos
-    (h.lower_bound hx) hb hc hmu hB hq U
-
-grind_pattern min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self =>
-  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, ‖b₀‖ ≤ beta, mu ≤ c₀,
-  beta ^ 2 / (2 * lam) < mu, 0 ≤ q,
-  energyIntegrand (a x + B) b₀ (c₀ + q) U U
-
-/-- The coefficient-field version of the explicit perturbed coercive diagonal estimate from
-uniform ellipticity and a mass floor. -/
-lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self_on
-    (h : UniformlyEllipticOn Ω a lam Lam)
-    {b : X → EuclideanSpace ℝ n} {c q : X → ℝ}
-    (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)
-    (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x)
-    (hmu : beta ^ 2 / (2 * lam) < mu)
-    (hp : ∀ ⦃x⦄, x ∈ Ω → ∀ ξ : EuclideanSpace ℝ n, 0 ≤ (p x).toQuadraticForm' ξ)
-    (hq : ∀ ⦃x⦄, x ∈ Ω → 0 ≤ q x) {x : X} (hx : x ∈ Ω)
-    (U : ℝ × EuclideanSpace ℝ n) :
-    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
-      ≤ energyIntegrand (a x + p x) (b x) (c x + q x) U U :=
-  h.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self hx
-    (hb hx) (hc hx) hmu (hp hx) (hq hx) U
-
-end UniformlyEllipticOn
 
 end PDE
 
