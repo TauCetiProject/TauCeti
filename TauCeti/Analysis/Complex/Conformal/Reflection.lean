@@ -83,9 +83,12 @@ lemma differentiableOn_conj_conj (hf : DifferentiableOn ℂ f S) :
     rw [starRingEnd_eq_starL, starRingEnd_eq_starL]
   have hset : (starRingEnd ℂ) ⁻¹' S = ⇑(starL ℂ).toContinuousLinearMap ⁻¹' S := by
     ext w
-    exact show (starRingEnd ℂ) w ∈ S ↔ ((starL ℂ).toContinuousLinearMap : ℂ → ℂ) w ∈ S by
+    -- Expose membership in the preimages before rewriting across the two conjugation coercions.
+    change (starRingEnd ℂ) w ∈ S ↔ ((starL ℂ).toContinuousLinearMap : ℂ → ℂ) w ∈ S
+    have hw : (starRingEnd ℂ) w = ((starL ℂ).toContinuousLinearMap : ℂ → ℂ) w := by
       rw [starRingEnd_eq_starL]
       rfl
+    rw [hw]
   rw [hfun, hset]
   exact hstar.differentiableWithinAt
 
