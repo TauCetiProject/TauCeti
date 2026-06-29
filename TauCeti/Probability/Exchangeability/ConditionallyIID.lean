@@ -13,9 +13,9 @@ corresponding product measure. `ConditionallyIIDWith μ X ν` names the directin
 `ConditionallyIID` is the existential wrapper.
 
 This file adds the Layer 0 directing-measure definitions and destructors, together with the
-Layer 1 rectangle-factorization characterization used by the common de Finetti ending. The bridge
-`ConditionallyIID → Exchangeable` (permutation invariance of the finite product measures) is a later
-milestone.
+Layer 1 rectangle-factorization characterization used by the common de Finetti ending. The
+exchangeability implications from conditionally i.i.d. processes live in
+`ConditionallyIIDImplications.lean`.
 
 These declarations follow the roadmap signatures in
 `TauCetiRoadmap/Exchangeability/README.md` and
