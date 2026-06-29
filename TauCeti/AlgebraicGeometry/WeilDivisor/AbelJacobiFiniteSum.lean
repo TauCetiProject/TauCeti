@@ -49,6 +49,7 @@ variable (S : OrderSystem X G)
 
 /-- The weighted Abel-Jacobi sum of a divisor from finitely supported natural multiplicities is
 the finite sum of the point Abel-Jacobi classes with those multiplicities. -/
+@[simp]
 lemma weightedAbelJacobiDivisorClass_ofFinsupp (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (m : X →₀ ℕ) :
     S.weightedAbelJacobiDivisorClass w h hx₀ (ofFinsupp m) =
@@ -59,6 +60,7 @@ lemma weightedAbelJacobiDivisorClass_ofFinsupp (w : X → ℤ) (h : S.IsWeighted
 
 /-- The weighted Abel-Jacobi sum of a finite-set divisor with multiplicities is the finite sum
 of the point Abel-Jacobi classes with those multiplicities. -/
+@[simp]
 lemma weightedAbelJacobiDivisorClass_ofFinsetWithMultiplicity (w : X → ℤ)
     (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1) (s : Finset X)
     (m : X → ℕ) :
@@ -70,6 +72,7 @@ lemma weightedAbelJacobiDivisorClass_ofFinsetWithMultiplicity (w : X → ℤ)
 
 /-- The weighted Abel-Jacobi sum of a coefficient-one finite-set divisor is the sum of the
 point Abel-Jacobi classes over the finite set. -/
+@[simp]
 lemma weightedAbelJacobiDivisorClass_ofFinset (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (s : Finset X) :
     S.weightedAbelJacobiDivisorClass w h hx₀ (ofFinset s) =
@@ -82,6 +85,7 @@ lemma weightedAbelJacobiDivisorClass_ofFinset (w : X → ℤ) (h : S.IsWeightedD
 
 /-- The unweighted Abel-Jacobi sum of a divisor from finitely supported natural multiplicities is
 the finite sum of the point Abel-Jacobi classes with those multiplicities. -/
+@[simp]
 lemma unweightedAbelJacobiDivisorClass_ofFinsupp (h : S.IsUnweightedDegreeZero)
     (x₀ : X) (m : X →₀ ℕ) :
     S.unweightedAbelJacobiDivisorClass h x₀ (ofFinsupp m) =
@@ -92,6 +96,7 @@ lemma unweightedAbelJacobiDivisorClass_ofFinsupp (h : S.IsUnweightedDegreeZero)
 
 /-- The unweighted Abel-Jacobi sum of a finite-set divisor with multiplicities is the finite sum
 of the point Abel-Jacobi classes with those multiplicities. -/
+@[simp]
 lemma unweightedAbelJacobiDivisorClass_ofFinsetWithMultiplicity
     (h : S.IsUnweightedDegreeZero) (x₀ : X) (s : Finset X) (m : X → ℕ) :
     S.unweightedAbelJacobiDivisorClass h x₀ (ofFinsetWithMultiplicity s m) =
@@ -102,6 +107,7 @@ lemma unweightedAbelJacobiDivisorClass_ofFinsetWithMultiplicity
 
 /-- The unweighted Abel-Jacobi sum of a coefficient-one finite-set divisor is the sum of the
 point Abel-Jacobi classes over the finite set. -/
+@[simp]
 lemma unweightedAbelJacobiDivisorClass_ofFinset (h : S.IsUnweightedDegreeZero)
     (x₀ : X) (s : Finset X) :
     S.unweightedAbelJacobiDivisorClass h x₀ (ofFinset s) =
