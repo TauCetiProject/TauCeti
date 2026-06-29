@@ -60,19 +60,18 @@ the `e^{-2πi⟪a,q⟫}` convention. -/
 theorem fourierIntegral_one_apply (a : E) :
     VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a =
       ∫ q, exp (-2 * Real.pi * I * (⟪a, q⟫ : ℂ)) ∂μ := by
-  rw [VectorFourier.fourierIntegral]
+  rw [Real.vector_fourierIntegral_eq_integral_exp_smul]
   congr with q
-  simp only [Real.fourierChar_apply', innerₗ_apply_apply, Circle.smul_def, Circle.coe_exp,
-    Pi.ofNat_apply, smul_eq_mul, mul_one]
+  simp only [innerₗ_apply_apply, Pi.one_apply, smul_eq_mul, mul_one]
   congr 1
   rw [real_inner_comm]
-  rw [ofReal_mul, ofReal_mul, ofReal_neg]
   ring_nf
-  simp [mul_assoc, mul_left_comm, mul_comm]
+  simp [mul_assoc, mul_comm]
 
 /-- Mathlib's `e^{-2πi⟪a,q⟫}` Fourier integral of the constant function `1` is the characteristic
 function evaluated at `-(2π) • a`. This is the named conversion between Mathlib's Fourier
 convention and Mathlib's `MeasureTheory.charFun` convention. -/
+@[simp]
 theorem fourierIntegral_one_eq_charFun (a : E) :
     VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a =
       charFun μ (-(2 * Real.pi) • a) := by
@@ -89,6 +88,28 @@ theorem fourierIntegral_one_eq_charFun_fun :
       fun a : E => charFun μ (-(2 * Real.pi) • a) := by
   ext a
   exact fourierIntegral_one_eq_charFun (μ := μ) a
+
+/-- Mathlib's Fourier integral of the constant function `1` at zero is the measure's
+`μ.real Set.univ` mass. -/
+@[simp]
+theorem fourierIntegral_one_zero :
+    VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) 0 =
+      μ.real Set.univ := by
+  simp [fourierIntegral_one_eq_charFun (μ := μ)]
+
+/-- Norm bound for Mathlib's Fourier integral of the constant function `1`, inherited from the
+corresponding characteristic-function bound. -/
+theorem norm_fourierIntegral_one_le (a : E) :
+    ‖VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a‖ ≤
+      μ.real Set.univ := by
+  simpa [fourierIntegral_one_eq_charFun (μ := μ) a] using
+    norm_charFun_le (μ := μ) (-(2 * Real.pi) • a)
+
+/-- Probability-measure specialization of `norm_fourierIntegral_one_le`. -/
+theorem norm_fourierIntegral_one_le_one [IsProbabilityMeasure μ] (a : E) :
+    ‖VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a‖ ≤ 1 := by
+  simpa [fourierIntegral_one_eq_charFun (μ := μ) a] using
+    norm_charFun_le_one (μ := μ) (-(2 * Real.pi) • a)
 
 variable [OpensMeasurableSpace E]
 variable [IsFiniteMeasure μ]
@@ -123,7 +144,7 @@ theorem continuous_fourierIntegral_one :
 /-- Mathlib's Fourier integral of the constant function `1` is continuous and positive definite
 under an explicit negation involution. -/
 theorem continuous_fourierIntegral_one_and_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
-    [OpensMeasurableSpace E] (hstar : ∀ x : E, star x = -x) :
+    (hstar : ∀ x : E, star x = -x) :
     Continuous
         (fun a : E => VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a) ∧
       IsPositiveDefinite
