@@ -1,6 +1,6 @@
 module
 
-public import TauCeti.Probability.Exchangeability.PathSpace.Shift
+public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 import Mathlib.Logic.Equiv.Fintype

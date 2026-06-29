@@ -10,9 +10,11 @@ This file records the elementary path-space API for iterating the one-sided shif
 building shift-invariant sigma algebras and before comparing finite-dimensional path laws after
 discarding an initial block.
 
-It also exposes the general time-reindexing path-law lemmas used by the shift-specialized
-statements. The implementation is only a Tau Ceti adapter around the existing path-space
-definitions and Mathlib's generic `Measurable.iterate`; no Mathlib infrastructure is vendored.
+The shift-specialized statements reuse the general time-reindexing path-law lemmas
+(`measurable_reindex`, `map_reindex_pathLaw`, `map_reindex_prefixProj_pathLaw`) from
+`TauCeti.Probability.Exchangeability.Basic`. The implementation is only a Tau Ceti adapter around
+the existing path-space definitions and Mathlib's generic `Measurable.iterate`; no Mathlib
+infrastructure is vendored.
 -/
 
 public section
@@ -26,32 +28,6 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-
-omit [MeasurableSpace Ω] in
-/-- Reindexing the coordinates of path space along `φ` is measurable. -/
-theorem measurable_reindex (φ : ℕ → ℕ) :
-    Measurable (fun x : ℕ → α => fun k => x (φ k)) :=
-  measurable_pi_lambda _ fun k => measurable_pi_apply (φ k)
-
-/-- Reindexing a path law gives the path law of the reindexed process. -/
-theorem map_reindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (φ : ℕ → ℕ) :
-    (pathLaw μ X).map (fun x : ℕ → α => fun k => x (φ k)) =
-      pathLaw μ (fun k ω => X (φ k) ω) := by
-  rw [pathLaw_apply, pathLaw_apply]
-  rw [AEMeasurable.map_map_of_aemeasurable (measurable_reindex φ).aemeasurable
-    (aemeasurable_pi_lambda _ hX)]
-  rfl
-
-/-- Projecting the `φ`-reindexed path law onto its first `n` coordinates gives the law of the
-block `(X (φ 0), …, X (φ (n-1)))`. -/
-theorem map_reindex_prefixProj_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (φ : ℕ → ℕ) (n : ℕ) :
-    ((pathLaw μ X).map (fun x : ℕ → α => fun k => x (φ k))).map (prefixProj α n) =
-      blockLaw μ X (fun i : Fin n => φ i.val) := by
-  rw [map_reindex_pathLaw μ hX φ,
-    map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ fun i => hX (φ i)) n]
-  rw [prefixLaw_apply, blockLaw_apply, blockLaw_apply]
 
 omit [MeasurableSpace α] in
 /-- Iterating the one-sided shift by `n` drops the first `n` coordinates. -/
