@@ -11,7 +11,8 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 # Transporting Hilbert bases by linear isometric equivalences
 
 This file adds the Hilbert-basis analogue of `Basis.map`: a Hilbert basis of a Hilbert space
-can be transported across a linear isometric equivalence.  The construction is the Part 0
+can be transported across a linear isometric equivalence.  It also follows Mathlib's
+`OrthonormalBasis.map` API for transporting orthonormal bases.  The construction is the Part 0
 `HilbertBasis.mapₗᵢ` primitive from the `OrthogonalL2Bases` roadmap, used later to move weighted
 orthogonal-polynomial bases across the weight-change isometry.
 -/
