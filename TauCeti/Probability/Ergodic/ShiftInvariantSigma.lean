@@ -69,38 +69,16 @@ theorem isShiftInvariant.measurableSet_shiftInvariantSigma {s : Set (ℕ → α)
     MeasurableSet[shiftInvariantSigma α] s :=
   mem_shiftInvariantSigma_iff.mpr ⟨hsm, hs⟩
 
-omit [MeasurableSpace (ℕ → α)] in
-/-- A shift-invariant path-space event is fixed by every iterate of the one-sided shift. -/
-@[simp]
-theorem isShiftInvariant.preimage_shift_iterate_eq {s : Set (ℕ → α)}
-    (hs : isShiftInvariant s) (n : ℕ) : ((shift α)^[n]) ⁻¹' s = s :=
-  Function.IsFixedPt.preimage_iterate hs n
-
-/-- A `shiftInvariantSigma`-measurable set is fixed by every iterate of the one-sided shift. -/
-@[simp]
-theorem MeasurableSet.preimage_shift_iterate_eq_of_shiftInvariantSigma {s : Set (ℕ → α)}
-    (hs : MeasurableSet[shiftInvariantSigma α] s) (n : ℕ) : ((shift α)^[n]) ⁻¹' s = s :=
-  (MeasurableSet.isShiftInvariant_of_shiftInvariantSigma hs).preimage_shift_iterate_eq n
-
-/-- Every iterate of the one-sided shift is measurable as a map on the shift-invariant
-σ-algebra. -/
-theorem measurable_shift_iterate_shiftInvariantSigma (n : ℕ) :
-    @Measurable (ℕ → α) (ℕ → α) (shiftInvariantSigma α) (shiftInvariantSigma α)
-      ((shift α)^[n]) := by
-  intro s hs
-  have hs_iter : MeasurableSet[MeasurableSpace.invariants ((shift α)^[n])] s :=
-    (MeasurableSpace.le_invariants_iterate (shift α) n) s hs
-  rw [(MeasurableSpace.measurableSet_invariants.mp hs_iter).2]
-  exact hs
-
 /-- The one-sided shift is measurable as a map on the shift-invariant σ-algebra. -/
-theorem measurable_shift_shiftInvariantSigma :
+theorem shiftInvariantSigma_measurable_shift_eq :
     @Measurable (ℕ → α) (ℕ → α) (shiftInvariantSigma α) (shiftInvariantSigma α) (shift α) := by
-  simpa using (measurable_shift_iterate_shiftInvariantSigma (α := α) 1)
+  intro s hs
+  rw [MeasurableSet.isShiftInvariant_of_shiftInvariantSigma hs]
+  exact hs
 
 /-- An ambient-measurable observable fixed by the one-sided shift is measurable with respect to
 the shift-invariant σ-algebra. -/
-theorem measurable_shiftInvariantSigma_of_comp_shift_eq [MeasurableSpace β]
+theorem shiftInvariant_implies_shiftInvariantMeasurable [MeasurableSpace β]
     {g : (ℕ → α) → β} (hg : Measurable g) (hg_shift : g ∘ shift α = g) :
     @Measurable (ℕ → α) β (shiftInvariantSigma α) inferInstance g :=
   MeasurableSpace.measurable_invariants_dom.mpr ⟨hg, fun _ _ => by rw [hg_shift]⟩
