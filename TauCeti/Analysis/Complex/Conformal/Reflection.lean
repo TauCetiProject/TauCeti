@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Star
+public import Mathlib.Analysis.Calculus.FDeriv.Star
 public import Mathlib.Analysis.Complex.Basic
 
 /-!
@@ -15,7 +15,8 @@ Schwarz-reflection layer.  Mathlib already proves the pointwise fact
 `DifferentiableAt.conj_conj`: if `f` is complex differentiable at `conj z`, then
 `z ↦ conj (f (conj z))` is complex differentiable at `z`.  The lemmas here package the
 corresponding within-set statement for reflected images, which is the form needed before the
-real-axis Schwarz reflection principle.
+real-axis Schwarz reflection principle.  The private semilinear within-set helper adapts the
+proof pattern of Mathlib's `HasFDerivAt.comp_semilinear`.
 -/
 
 public section
@@ -26,6 +27,10 @@ open Complex Filter Set
 open scoped ComplexConjugate
 
 variable {f : ℂ → ℂ} {S : Set ℂ}
+
+private lemma starRingEnd_eq_starL (z : ℂ) :
+    (starRingEnd ℂ) z = (starL ℂ : ℂ ≃L⋆[ℂ] ℂ) z := by
+  rw [starL_apply, starRingEnd_apply]
 
 private lemma HasFDerivWithinAt.comp_semilinear_preimage
     {𝕜 V V' W W' : Type*} [NontriviallyNormedField 𝕜] {σ σ' : RingHom 𝕜 𝕜}
@@ -54,7 +59,7 @@ Antiholomorphic-composition prerequisite for Schwarz reflection.
 If `f` is holomorphic on `S`, then `z ↦ conj (f (conj z))` is holomorphic on the reflected
 set `conj '' S`.
 -/
-lemma differentiableOn_starRingEnd_comp_starRingEnd (hf : DifferentiableOn ℂ f S) :
+lemma differentiableOn_conj_conj (hf : DifferentiableOn ℂ f S) :
     DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
       ((starRingEnd ℂ) '' S) := by
   intro z hz
@@ -74,32 +79,33 @@ lemma differentiableOn_starRingEnd_comp_starRingEnd (hf : DifferentiableOn ℂ f
       (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) =
         (⇑(starL ℂ).toContinuousLinearMap ∘ f ∘ ⇑(starL ℂ).toContinuousLinearMap) := by
     funext w
-    change (starRingEnd ℂ) (f ((starRingEnd ℂ) w)) =
-      (starL ℂ : ℂ ≃L⋆[ℂ] ℂ) (f ((starL ℂ : ℂ ≃L⋆[ℂ] ℂ) w))
-    rw [starL_apply, starL_apply, starRingEnd_apply, starRingEnd_apply]
+    dsimp [Function.comp_def]
+    rw [starRingEnd_eq_starL, starRingEnd_eq_starL]
   have hset : (starRingEnd ℂ) ⁻¹' S = ⇑(starL ℂ).toContinuousLinearMap ⁻¹' S := by
     ext w
-    change (starRingEnd ℂ) w ∈ S ↔ (starL ℂ : ℂ ≃L⋆[ℂ] ℂ) w ∈ S
-    rw [starL_apply, starRingEnd_apply]
+    exact show (starRingEnd ℂ) w ∈ S ↔ ((starL ℂ).toContinuousLinearMap : ℂ → ℂ) w ∈ S by
+      rw [starRingEnd_eq_starL]
+      rfl
   rw [hfun, hset]
   exact hstar.differentiableWithinAt
 
 /--
 Conjugating both source and target preserves holomorphicity on domains, in both directions.
 -/
-lemma differentiableOn_starRingEnd_comp_starRingEnd_iff :
+@[simp]
+lemma differentiableOn_conj_conj_iff :
     DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
         ((starRingEnd ℂ) '' S) ↔
       DifferentiableOn ℂ f S := by
   constructor
   · intro h
     have htwice :=
-      differentiableOn_starRingEnd_comp_starRingEnd
+      differentiableOn_conj_conj
         (S := (starRingEnd ℂ) '' S)
         (f := fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) h
     simpa [Function.Involutive.image_eq_preimage_symm
       (starRingEnd_self_apply : Function.Involutive (starRingEnd ℂ)), Set.preimage_preimage,
       Function.comp_def] using htwice
-  · exact differentiableOn_starRingEnd_comp_starRingEnd
+  · exact differentiableOn_conj_conj
 
 end TauCeti
