@@ -24,7 +24,6 @@ bundled structure.
 
 * `IsCoercive.solutionOfInner`: the solution of the variational equation with forcing
   represented by `F`.
-* `IsCoercive.mono`: monotonicity of coercivity under a diagonal lower bound.
 * `IsCoercive.apply_solutionOfInner_eq_inner`: the defining variational identity.
 * `IsCoercive.eq_solutionOfInner`: uniqueness of a vector satisfying the variational
   identity.
@@ -45,14 +44,6 @@ namespace TauCeti
 open scoped InnerProductSpace
 
 namespace IsCoercive
-
-variable {W : Type*} [SeminormedAddCommGroup W] [NormedSpace ℝ W]
-
-/-- Coercivity is monotone under pointwise diagonal lower bounds. -/
-theorem mono {B C : W →L[ℝ] W →L[ℝ] ℝ} (hB : IsCoercive B)
-    (hle : ∀ u : W, B u u ≤ C u u) : IsCoercive C := by
-  rcases hB with ⟨K, hKpos, hK⟩
-  exact ⟨K, hKpos, fun u => (hK u).trans (hle u)⟩
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
 variable {B : V →L[ℝ] V →L[ℝ] ℝ}
