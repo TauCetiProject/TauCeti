@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LaxMilgram
-public import TauCeti.Analysis.InnerProductSpace.Coercivity
 
 /-!
 # Existence and uniqueness form of Lax--Milgram
@@ -17,8 +16,9 @@ Mathlib's Lax--Milgram theorem is packaged as
 
 The PDE roadmap's energy-method lane needs the corresponding variational-solution API:
 given a represented forcing functional `v ↦ ⟪F, v⟫`, there is a unique `u` satisfying
-`B u v = ⟪F, v⟫` for every test vector `v`.  These are direct wrappers around Mathlib's
-API and do not introduce any PDE-specific bundled structure.
+`B u v = ⟪F, v⟫` for every test vector `v`.  This file records that direct
+existence/uniqueness form without changing Mathlib's theorem or introducing any PDE-specific
+bundled structure.
 
 ## Main declarations
 
