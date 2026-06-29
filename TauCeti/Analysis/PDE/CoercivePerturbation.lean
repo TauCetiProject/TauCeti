@@ -4,6 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
+public import TauCeti.Analysis.PDE.EnergyFormLinearity
 public import TauCeti.Analysis.PDE.UniformEllipticEnergy
 
 /-!
@@ -22,9 +24,6 @@ pointwise: no Sobolev space, weak derivative, or integrated energy form is intro
 
 ## Main declarations
 
-* `TauCeti.PDE.energyIntegrand_add_principal_mass_self`: the diagonal of
-  `energyIntegrand (A + B) b (c + d)` is the old diagonal plus the nonnegative principal
-  and mass contributions.
 * `TauCeti.PDE.isCoercive_energyIntegrand_add_principal_mass_of_isCoercive`: coercivity is
   preserved by such nonnegative perturbations.
 * `TauCeti.PDE.isCoercive_energyIntegrand_add_principal_mass_of_bounds`: the raw-bound
@@ -50,65 +49,26 @@ variable {X n : Type*} [Fintype n] [DecidableEq n]
 variable {A B : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ d : ℝ}
 variable {lam beta mu : ℝ}
 
-/-- Adding a principal coefficient `B` and a mass coefficient `d` changes the diagonal
-energy density by `B`'s quadratic form on the gradient plus `d u²`. -/
-lemma energyIntegrand_add_principal_mass_self (U : ℝ × EuclideanSpace ℝ n) :
-    energyIntegrand (A + B) b₀ (c₀ + d) U U =
-      energyIntegrand A b₀ c₀ U U + B.toQuadraticForm' U.2 + d * U.1 ^ 2 := by
-  rw [energyIntegrand_self, energyIntegrand_self, toQuadraticForm'_add]
-  ring
-
-/-- The diagonal of `energyIntegrand (A + B) b c` is the old diagonal plus the quadratic
-form of `B` on the gradient. -/
-lemma energyIntegrand_add_principal_self (U : ℝ × EuclideanSpace ℝ n) :
-    energyIntegrand (A + B) b₀ c₀ U U =
-      energyIntegrand A b₀ c₀ U U + B.toQuadraticForm' U.2 := by
-  simpa using
-    (energyIntegrand_add_principal_mass_self (A := A) (B := B) (b₀ := b₀) (c₀ := c₀)
-      (d := 0) U)
-
-/-- The diagonal of `energyIntegrand A b (c + d)` is the old diagonal plus `d u²`. -/
-lemma energyIntegrand_add_mass_self (U : ℝ × EuclideanSpace ℝ n) :
-    energyIntegrand A b₀ (c₀ + d) U U =
-      energyIntegrand A b₀ c₀ U U + d * U.1 ^ 2 := by
-  rw [energyIntegrand_self, energyIntegrand_self]
-  ring
-
 /-- A coercive pointwise energy integrand remains coercive after adding a nonnegative
 principal quadratic form and a nonnegative mass coefficient. -/
 lemma isCoercive_energyIntegrand_add_principal_mass_of_isCoercive
     (h : IsCoercive (energyIntegrand A b₀ c₀))
     (hB : ∀ ξ : EuclideanSpace ℝ n, 0 ≤ B.toQuadraticForm' ξ) (hd : 0 ≤ d) :
     IsCoercive (energyIntegrand (A + B) b₀ (c₀ + d)) := by
-  rcases h with ⟨C, hCpos, hC⟩
-  refine ⟨C, hCpos, fun U => ?_⟩
-  rw [energyIntegrand_add_principal_mass_self]
+  refine TauCeti.IsCoercive.mono (V := ℝ × EuclideanSpace ℝ n)
+    (B := energyIntegrand A b₀ c₀)
+    (C := energyIntegrand (A + B) b₀ (c₀ + d)) h fun U => ?_
+  have hpert : 0 ≤ energyIntegrand B 0 d U U := by
+    rw [energyIntegrand_self]
+    simpa using add_nonneg (hB U.2) (mul_nonneg hd (sq_nonneg U.1))
   calc
-    C * ‖U‖ * ‖U‖ ≤ energyIntegrand A b₀ c₀ U U := hC U
-    _ ≤ energyIntegrand A b₀ c₀ U U + (B.toQuadraticForm' U.2 + d * U.1 ^ 2) :=
-      le_add_of_nonneg_right (add_nonneg (hB U.2) (mul_nonneg hd (sq_nonneg U.1)))
-    _ = energyIntegrand A b₀ c₀ U U + B.toQuadraticForm' U.2 + d * U.1 ^ 2 := by
-      ring
-
-/-- The raw-bound coercivity lower estimate remains valid after adding a nonnegative
-principal quadratic form and a nonnegative mass coefficient. -/
-lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_add_principal_mass_self
-    (hlam : 0 < lam)
-    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
-    (hB : ∀ ξ : EuclideanSpace ℝ n, 0 ≤ B.toQuadraticForm' ξ) (hd : 0 ≤ d)
-    (U : ℝ × EuclideanSpace ℝ n) :
-    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
-      ≤ energyIntegrand (A + B) b₀ (c₀ + d) U U := by
-  rw [energyIntegrand_add_principal_mass_self]
-  calc
-    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
-        ≤ energyIntegrand A b₀ c₀ U U :=
-      min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hlam hA hb hc hmu U
-    _ ≤ energyIntegrand A b₀ c₀ U U + (B.toQuadraticForm' U.2 + d * U.1 ^ 2) :=
-      le_add_of_nonneg_right (add_nonneg (hB U.2) (mul_nonneg hd (sq_nonneg U.1)))
-    _ = energyIntegrand A b₀ c₀ U U + B.toQuadraticForm' U.2 + d * U.1 ^ 2 := by
-      ring
+    energyIntegrand A b₀ c₀ U U
+        ≤ energyIntegrand A b₀ c₀ U U + energyIntegrand B 0 d U U :=
+      le_add_of_nonneg_right hpert
+    _ = energyIntegrand (A + B) b₀ (c₀ + d) U U := by
+      simpa using
+        (energyIntegrand_add_apply (A := A) (B := B) (b := b₀) (d := 0) (c := c₀)
+          (e := d) (U := U) (V := U)).symm
 
 /-- Coercivity from raw lower bounds is preserved after adding a nonnegative principal
 quadratic form and a nonnegative mass coefficient. -/
@@ -117,8 +77,8 @@ lemma isCoercive_energyIntegrand_add_principal_mass_of_bounds (hlam : 0 < lam)
     (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
     (hB : ∀ ξ : EuclideanSpace ℝ n, 0 ≤ B.toQuadraticForm' ξ) (hd : 0 ≤ d) :
     IsCoercive (energyIntegrand (A + B) b₀ (c₀ + d)) :=
-  isCoercive_energyIntegrand_add_principal_mass_of_isCoercive
-    (isCoercive_energyIntegrand_of_bounds hlam hA hb hc hmu) hB hd
+  isCoercive_energyIntegrand_of_bounds hlam (lower_bound_toQuadraticForm'_add hA hB) hb
+    (hc.trans (le_add_of_nonneg_right hd)) hmu
 
 /-- The shifted Laplacian jet form remains coercive after adding a nonnegative principal
 quadratic form and a nonnegative mass coefficient. -/
@@ -144,6 +104,11 @@ lemma isCoercive_energyIntegrand_add_principal_mass
     IsCoercive (energyIntegrand (a x + B) b₀ (c₀ + d)) :=
   PDE.isCoercive_energyIntegrand_add_principal_mass_of_bounds h.pos (h.lower_bound hx)
     hb hc hmu hB hd
+
+grind_pattern isCoercive_energyIntegrand_add_principal_mass =>
+  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, ‖b₀‖ ≤ beta, mu ≤ c₀,
+  beta ^ 2 / (2 * lam) < mu, 0 ≤ d,
+  IsCoercive (energyIntegrand (a x + B) b₀ (c₀ + d))
 
 /-- Domain version of coercivity preservation under nonnegative principal and mass
 perturbations. -/
