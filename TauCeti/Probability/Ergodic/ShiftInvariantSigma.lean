@@ -82,13 +82,6 @@ theorem MeasurableSet.preimage_shift_iterate_eq_of_shiftInvariantSigma {s : Set 
     (hs : MeasurableSet[shiftInvariantSigma α] s) (n : ℕ) : ((shift α)^[n]) ⁻¹' s = s :=
   (MeasurableSet.isShiftInvariant_of_shiftInvariantSigma hs).preimage_shift_iterate_eq n
 
-/-- The one-sided shift is measurable as a map on the shift-invariant σ-algebra. -/
-theorem measurable_shift_shiftInvariantSigma :
-    @Measurable (ℕ → α) (ℕ → α) (shiftInvariantSigma α) (shiftInvariantSigma α) (shift α) := by
-  intro s hs
-  rw [MeasurableSet.isShiftInvariant_of_shiftInvariantSigma hs]
-  exact hs
-
 /-- Every iterate of the one-sided shift is measurable as a map on the shift-invariant
 σ-algebra. -/
 theorem measurable_shift_iterate_shiftInvariantSigma (n : ℕ) :
@@ -99,6 +92,11 @@ theorem measurable_shift_iterate_shiftInvariantSigma (n : ℕ) :
     (MeasurableSpace.le_invariants_iterate (shift α) n) s hs
   rw [(MeasurableSpace.measurableSet_invariants.mp hs_iter).2]
   exact hs
+
+/-- The one-sided shift is measurable as a map on the shift-invariant σ-algebra. -/
+theorem measurable_shift_shiftInvariantSigma :
+    @Measurable (ℕ → α) (ℕ → α) (shiftInvariantSigma α) (shiftInvariantSigma α) (shift α) := by
+  simpa using (measurable_shift_iterate_shiftInvariantSigma (α := α) 1)
 
 /-- An ambient-measurable observable fixed by the one-sided shift is measurable with respect to
 the shift-invariant σ-algebra. -/
