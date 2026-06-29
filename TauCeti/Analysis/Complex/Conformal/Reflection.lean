@@ -25,33 +25,7 @@ namespace TauCeti
 open Complex Filter Set
 open scoped ComplexConjugate
 
-variable {f : ℂ → ℂ} {S : Set ℂ} {z : ℂ}
-
-/-!
-Mathlib's conjugation lemmas are stated using both `conj` and `starRingEnd ℂ`; the
-conformal roadmap fixes `starRingEnd ℂ` as the reflection map.  The next two lemmas make the
-reflected set usable without unfolding the image witness.
--/
-
-/-- Membership in the conjugate image of a set, written with `starRingEnd ℂ`. -/
-lemma mem_starRingEnd_image_iff :
-    z ∈ (starRingEnd ℂ) '' S ↔ (starRingEnd ℂ) z ∈ S := by
-  constructor
-  · rintro ⟨w, hw, rfl⟩
-    simpa using hw
-  · intro hz
-    refine ⟨(starRingEnd ℂ) z, hz, ?_⟩
-    simp
-
-/-- Since complex conjugation is an involution, its image of a set is its preimage. -/
-lemma starRingEnd_image_eq_preimage : (starRingEnd ℂ) '' S = (starRingEnd ℂ) ⁻¹' S := by
-  ext z
-  exact mem_starRingEnd_image_iff
-
-/-- Complex conjugation sends open subsets of `ℂ` to open subsets of `ℂ`. -/
-lemma isOpen_starRingEnd_image (hS : IsOpen S) : IsOpen ((starRingEnd ℂ) '' S) := by
-  rw [starRingEnd_image_eq_preimage]
-  exact hS.preimage continuous_star
+variable {f : ℂ → ℂ} {S : Set ℂ}
 
 private lemma HasFDerivWithinAt.comp_semilinear_preimage
     {𝕜 V V' W W' : Type*} [NontriviallyNormedField 𝕜] {σ σ' : RingHom 𝕜 𝕜}
@@ -84,12 +58,18 @@ lemma differentiableOn_starRingEnd_comp_starRingEnd (hf : DifferentiableOn ℂ f
     DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
       ((starRingEnd ℂ) '' S) := by
   intro z hz
-  have hzS : (starRingEnd ℂ) z ∈ S := mem_starRingEnd_image_iff.mp hz
+  have hzS : (starRingEnd ℂ) z ∈ S :=
+    (Set.mem_image_iff_of_inverse
+      (Function.Involutive.leftInverse (starRingEnd_self_apply : Function.Involutive
+        (starRingEnd ℂ)))
+      (Function.Involutive.rightInverse (starRingEnd_self_apply : Function.Involutive
+        (starRingEnd ℂ)))).mp hz
   rcases (hf ((starRingEnd ℂ) z) hzS) with ⟨f', hf'⟩
   have hstar :=
     HasFDerivWithinAt.comp_semilinear_preimage
       (starL ℂ).toContinuousLinearMap (starL ℂ).toContinuousLinearMap (x := z) hf'
-  rw [starRingEnd_image_eq_preimage]
+  rw [Function.Involutive.image_eq_preimage_symm
+    (starRingEnd_self_apply : Function.Involutive (starRingEnd ℂ))]
   have hfun :
       (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) =
         (⇑(starL ℂ).toContinuousLinearMap ∘ f ∘ ⇑(starL ℂ).toContinuousLinearMap) := by
@@ -105,15 +85,6 @@ lemma differentiableOn_starRingEnd_comp_starRingEnd (hf : DifferentiableOn ℂ f
   exact hstar.differentiableWithinAt
 
 /--
-Open-domain form of `differentiableOn_starRingEnd_comp_starRingEnd`.
--/
-lemma differentiableOn_starRingEnd_comp_starRingEnd_of_isOpen (_hS : IsOpen S)
-    (hf : DifferentiableOn ℂ f S) :
-    DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
-      ((starRingEnd ℂ) '' S) :=
-  differentiableOn_starRingEnd_comp_starRingEnd hf
-
-/--
 Conjugating both source and target preserves holomorphicity on domains, in both directions.
 -/
 lemma differentiableOn_starRingEnd_comp_starRingEnd_iff :
@@ -126,16 +97,9 @@ lemma differentiableOn_starRingEnd_comp_starRingEnd_iff :
       differentiableOn_starRingEnd_comp_starRingEnd
         (S := (starRingEnd ℂ) '' S)
         (f := fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) h
-    simpa [starRingEnd_image_eq_preimage, Set.preimage_preimage, Function.comp_def] using htwice
+    simpa [Function.Involutive.image_eq_preimage_symm
+      (starRingEnd_self_apply : Function.Involutive (starRingEnd ℂ)), Set.preimage_preimage,
+      Function.comp_def] using htwice
   · exact differentiableOn_starRingEnd_comp_starRingEnd
-
-/--
-Open-domain form of `differentiableOn_starRingEnd_comp_starRingEnd_iff`.
--/
-lemma differentiableOn_starRingEnd_comp_starRingEnd_iff_of_isOpen (_hS : IsOpen S) :
-    DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
-        ((starRingEnd ℂ) '' S) ↔
-      DifferentiableOn ℂ f S :=
-  differentiableOn_starRingEnd_comp_starRingEnd_iff
 
 end TauCeti
