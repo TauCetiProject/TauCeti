@@ -8,17 +8,17 @@ public import TauCeti.Analysis.Bochner.CharFunPositiveDefinite
 public import TauCeti.Analysis.PositiveDefinite.Pullback
 
 /-!
-# Fourier-convention bridge for finite measures
+# Fourier-convention bridge for measures
 
 Mathlib's Fourier transform uses the character `x ↦ exp (2π i x)`, while Mathlib's
-characteristic function of a finite measure is `t ↦ ∫ q, exp (i ⟪q, t⟫) ∂μ q`. Bochner-type
+characteristic function of a measure is `t ↦ ∫ q, exp (i ⟪q, t⟫) ∂μ q`. Bochner-type
 statements are often written in the Fourier-transform convention
 
 `a ↦ ∫ q, exp (-2π i ⟪a, q⟫) ∂μ q`.
 
 This file records the exact conversion from Mathlib's Fourier integral to
 `MeasureTheory.charFun`: at frequency `a`, it is `charFun μ (-(2π) • a)`. Combining this with the
-existing characteristic-function bridge gives the finite-measure forward direction in the roadmap's
+existing finite-measure characteristic-function bridge gives the forward direction in the roadmap's
 Fourier convention.
 
 This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the API bullet asking for
@@ -29,13 +29,12 @@ normalizations.
 
 ## Main declarations
 
-* `TauCeti.MeasureTheory.fourierStieltjesTransform`: Mathlib's Fourier integral of the constant
-  function `1`, the finite-measure Fourier-Stieltjes transform.
-* `TauCeti.MeasureTheory.fourierStieltjesTransform_eq_charFun`: conversion to Mathlib's `charFun`.
-* `TauCeti.MeasureTheory.norm_fourierStieltjesTransform_le`: the finite-measure norm bound.
-* `TauCeti.MeasureTheory.continuous_fourierStieltjesTransform`: continuity for finite measures.
-* `TauCeti.MeasureTheory.fourierStieltjesTransform_isPositiveDefinite_of_star_eq_neg`: the
-  finite-measure transform is positive definite for an explicit negation involution.
+* `TauCeti.MeasureTheory.fourierIntegral_one_eq_charFun`: conversion from Mathlib's
+  Fourier integral of the constant function `1` to Mathlib's `charFun`.
+* `TauCeti.MeasureTheory.fourierIntegral_one_isPositiveDefinite_of_star_eq_neg`: the finite-measure
+  positive-definiteness consequence for this Fourier integral.
+* `TauCeti.MeasureTheory.continuous_fourierIntegral_one`: continuity for the same finite-measure
+  Fourier integral.
 
 ## References
 
@@ -54,17 +53,14 @@ namespace MeasureTheory
 section Seminormed
 
 variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [MeasurableSpace E] {μ : Measure E} [IsFiniteMeasure μ]
+  [MeasurableSpace E] {μ : Measure E}
 
-/-- The Fourier-Stieltjes transform of a finite measure in Mathlib's `e^{-2πi⟪a,q⟫}` Fourier
-convention, phrased as Mathlib's Fourier integral of the constant function `1`. -/
-noncomputable def fourierStieltjesTransform (μ : Measure E) [IsFiniteMeasure μ] (a : E) : ℂ :=
-  VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) 1 a
-
-/-- The pointwise integral expression for `fourierStieltjesTransform`. -/
-theorem fourierStieltjesTransform_apply (a : E) :
-    fourierStieltjesTransform μ a = ∫ q, exp (-2 * Real.pi * I * (⟪a, q⟫ : ℂ)) ∂μ := by
-  rw [fourierStieltjesTransform, VectorFourier.fourierIntegral]
+/-- Pointwise integral expression for Mathlib's Fourier integral of the constant function `1` in
+the `e^{-2πi⟪a,q⟫}` convention. -/
+theorem fourierIntegral_one_apply (a : E) :
+    VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a =
+      ∫ q, exp (-2 * Real.pi * I * (⟪a, q⟫ : ℂ)) ∂μ := by
+  rw [VectorFourier.fourierIntegral]
   congr with q
   simp only [Real.fourierChar_apply', innerₗ_apply_apply, Circle.smul_def, Circle.coe_exp,
     Pi.ofNat_apply, smul_eq_mul, mul_one]
@@ -74,11 +70,12 @@ theorem fourierStieltjesTransform_apply (a : E) :
   ring_nf
   simp [mul_assoc, mul_left_comm, mul_comm]
 
-/-- Mathlib's `e^{-2πi⟪a,q⟫}` Fourier integral is the characteristic function evaluated at
-`-(2π) • a`. This is the named conversion between Mathlib's Fourier convention and Mathlib's
-`MeasureTheory.charFun` convention. -/
-theorem fourierStieltjesTransform_eq_charFun (a : E) :
-    fourierStieltjesTransform μ a = charFun μ (-(2 * Real.pi) • a) := by
+/-- Mathlib's `e^{-2πi⟪a,q⟫}` Fourier integral of the constant function `1` is the characteristic
+function evaluated at `-(2π) • a`. This is the named conversion between Mathlib's Fourier
+convention and Mathlib's `MeasureTheory.charFun` convention. -/
+theorem fourierIntegral_one_eq_charFun (a : E) :
+    VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a =
+      charFun μ (-(2 * Real.pi) • a) := by
   rw [charFun_eq_fourierIntegral']
   congr 1
   rw [smul_smul]
@@ -86,45 +83,23 @@ theorem fourierStieltjesTransform_eq_charFun (a : E) :
     field_simp [Real.pi_ne_zero]
   simp [h]
 
-/-- Function-level form of `fourierStieltjesTransform_eq_charFun`. -/
-theorem fourierStieltjesTransform_eq_charFun_fun :
-    fourierStieltjesTransform μ = fun a : E => charFun μ (-(2 * Real.pi) • a) := by
+/-- Function-level form of `fourierIntegral_one_eq_charFun`. -/
+theorem fourierIntegral_one_eq_charFun_fun :
+    (fun a : E => VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a) =
+      fun a : E => charFun μ (-(2 * Real.pi) • a) := by
   ext a
-  exact fourierStieltjesTransform_eq_charFun (μ := μ) a
-
-/-- The Fourier-Stieltjes transform at the origin is the total mass, as a complex number. -/
-@[simp]
-theorem fourierStieltjesTransform_zero :
-    fourierStieltjesTransform μ 0 = μ.real Set.univ := by
-  rw [fourierStieltjesTransform_eq_charFun]
-  simp
-
-/-- The Fourier-Stieltjes transform of the zero measure is zero. -/
-@[simp]
-theorem fourierStieltjesTransform_zero_measure (a : E) :
-    fourierStieltjesTransform (0 : Measure E) a = 0 := by
-  rw [fourierStieltjesTransform_eq_charFun]
-  simp
-
-/-- The Fourier-Stieltjes transform of a finite measure is bounded by the total mass. -/
-theorem norm_fourierStieltjesTransform_le (a : E) :
-    ‖fourierStieltjesTransform μ a‖ ≤ μ.real Set.univ := by
-  rw [fourierStieltjesTransform_eq_charFun]
-  exact norm_charFun_le (μ := μ) (-(2 * Real.pi) • a)
-
-/-- The Fourier-Stieltjes transform of a probability measure has norm at most one. -/
-theorem norm_fourierStieltjesTransform_le_one [IsProbabilityMeasure μ] (a : E) :
-    ‖fourierStieltjesTransform μ a‖ ≤ 1 :=
-  (norm_fourierStieltjesTransform_le (μ := μ) a).trans_eq (by simp)
+  exact fourierIntegral_one_eq_charFun (μ := μ) a
 
 variable [OpensMeasurableSpace E]
+variable [IsFiniteMeasure μ]
 
-/-- In the explicit negation-involution convention, the Fourier-Stieltjes transform of a finite
-measure is positive definite. -/
-theorem fourierStieltjesTransform_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
+/-- In the explicit negation-involution convention, Mathlib's Fourier integral of the constant
+function `1` is positive definite. -/
+theorem fourierIntegral_one_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
     (hstar : ∀ x : E, star x = -x) :
-    IsPositiveDefinite (fourierStieltjesTransform μ) := by
-  rw [fourierStieltjesTransform_eq_charFun_fun]
+    IsPositiveDefinite
+      (fun a : E => VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a) := by
+  rw [fourierIntegral_one_eq_charFun_fun]
   exact (charFun_isPositiveDefinite_of_star_eq_neg (μ := μ) hstar).comp_addMonoidHom
     (DistribSMul.toAddMonoidHom E (-(2 * Real.pi))) (by
       intro x
@@ -138,18 +113,23 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
   {μ : Measure E} [IsFiniteMeasure μ]
 
-/-- The Fourier-Stieltjes transform of a finite measure is continuous. -/
-theorem continuous_fourierStieltjesTransform : Continuous (fourierStieltjesTransform μ) := by
-  rw [fourierStieltjesTransform_eq_charFun_fun]
+/-- Mathlib's Fourier integral of the constant function `1` is continuous for finite measures. -/
+theorem continuous_fourierIntegral_one :
+    Continuous
+      (fun a : E => VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a) := by
+  rw [fourierIntegral_one_eq_charFun_fun]
   exact MeasureTheory.continuous_charFun.comp (continuous_const.smul continuous_id)
 
-/-- The Fourier-Stieltjes transform of a finite measure is continuous and positive definite under an
-explicit negation involution. -/
-theorem continuous_fourierStieltjesTransform_and_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
+/-- Mathlib's Fourier integral of the constant function `1` is continuous and positive definite
+under an explicit negation involution. -/
+theorem continuous_fourierIntegral_one_and_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
     [OpensMeasurableSpace E] (hstar : ∀ x : E, star x = -x) :
-    Continuous (fourierStieltjesTransform μ) ∧ IsPositiveDefinite (fourierStieltjesTransform μ) :=
-  ⟨continuous_fourierStieltjesTransform,
-    fourierStieltjesTransform_isPositiveDefinite_of_star_eq_neg hstar⟩
+    Continuous
+        (fun a : E => VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a) ∧
+      IsPositiveDefinite
+        (fun a : E => VectorFourier.fourierIntegral Real.fourierChar μ (innerₗ E) (1 : E → ℂ) a) :=
+  ⟨continuous_fourierIntegral_one,
+    fourierIntegral_one_isPositiveDefinite_of_star_eq_neg hstar⟩
 
 end Normed
 
