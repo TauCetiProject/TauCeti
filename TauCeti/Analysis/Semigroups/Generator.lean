@@ -103,7 +103,7 @@ private theorem StronglyContinuousSemigroup.genQuot_tendsto_add
       S.genQuot (x + y) t = S.genQuot x t + S.genQuot y t := by
     filter_upwards with t
     simp only [StronglyContinuousSemigroup.genQuot]
-    rw [map_add, add_sub_add_comm, smul_add]
+    rw [ContinuousLinearMap.map_add, add_sub_add_comm, smul_add]
   exact (hx.add hy).congr' (heq.mono (fun _ h => h.symm))
 
 omit [CompleteSpace X] in

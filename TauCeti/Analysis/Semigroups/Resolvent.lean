@@ -89,7 +89,7 @@ noncomputable def StronglyContinuousSemigroup.resolvent
     { toFun := fun x =>
         ∫ t in Set.Ioi (0 : ℝ), Real.exp (-(lambda * t)) • S.realOperator t x
       map_add' := fun x y => by
-        simp only [map_add, smul_add]
+        simp only [ContinuousLinearMap.map_add, smul_add]
         exact integral_add
           (S.integrable_resolvent_integrand hb lambda hlam x)
           (S.integrable_resolvent_integrand hb lambda hlam y)
