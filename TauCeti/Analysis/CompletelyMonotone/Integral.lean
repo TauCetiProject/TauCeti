@@ -49,7 +49,7 @@ open scoped ContDiff Topology
 
 namespace TauCeti
 
-variable {f : ℝ → ℝ}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E}
 
 /-- `iteratedDerivWithin` on `Icc x T` agrees with `iteratedDerivWithin` on `Ici 0` at interior
 points, since both equal `iteratedDeriv n f t` under local smoothness at `t`. -/
@@ -66,16 +66,15 @@ lemma ContDiffAt.iteratedDerivWithin_Icc_eq_Ici {n : ℕ}
 /-- The fundamental-theorem identity
 `f x - f T = ∫ₓᵀ -f'` on a compact interval, with derivatives taken within that interval. -/
 lemma ContDiffOn.integral_neg_derivWithin_Icc {x T : ℝ}
-    (hf : ContDiffOn ℝ 1 f (Icc x T)) (hxT : x ≤ T) :
+    [CompleteSpace E] (hf : ContDiffOn ℝ 1 f (Icc x T)) (hxT : x ≤ T) :
     f x - f T = ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t := by
   have hFTC := intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc hf hxT
   rw [iteratedDerivWithin_one]
-  rw [intervalIntegral.integral_neg]
-  linarith [hFTC]
+  rw [intervalIntegral.integral_neg, hFTC, neg_sub]
 
 /-- The zero-left specialization of `ContDiffOn.integral_neg_derivWithin_Icc`. -/
 lemma ContDiffOn.integral_neg_derivWithin_Icc_zero_left {T : ℝ}
-    (hf : ContDiffOn ℝ 1 f (Icc 0 T)) (hT : 0 ≤ T) :
+    [CompleteSpace E] (hf : ContDiffOn ℝ 1 f (Icc 0 T)) (hT : 0 ≤ T) :
     ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t = f 0 - f T := by
   exact (ContDiffOn.integral_neg_derivWithin_Icc hf hT).symm
 
@@ -99,12 +98,15 @@ lemma ContDiffOn.integral_neg_derivWithin_Icc_eq_Ici
 /-- The total mass `∫₀ᵀ (-f') dt → f(0) - L` as `T → ∞`, assuming smoothness on `[0, ∞)`
 and convergence of `f` to `L` at infinity. -/
 lemma ContDiffOn.tendsto_total_mass
-    (hf : ContDiffOn ℝ 1 f (Ici 0)) {L : ℝ} (hL : Tendsto f atTop (nhds L)) :
+    [CompleteSpace E] (hf : ContDiffOn ℝ 1 f (Ici 0)) {L : E}
+    (hL : Tendsto f atTop (nhds L)) :
     Tendsto (fun T => ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t) atTop
         (nhds (f 0 - L)) := by
   refine Tendsto.congr' (EventuallyEq.symm ?_) (Tendsto.sub tendsto_const_nhds hL)
   exact (eventually_gt_atTop 0).mono fun T hT =>
     ContDiffOn.integral_neg_derivWithin_Icc_zero_left (hf.mono Icc_subset_Ici_self) hT.le
+
+variable {f : ℝ → ℝ}
 
 namespace IsCompletelyMonotone
 
