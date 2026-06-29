@@ -1,5 +1,11 @@
-import Mathlib.Analysis.Calculus.Deriv.Star
-import Mathlib.Analysis.Complex.Basic
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+module
+
+public import Mathlib.Analysis.Calculus.Deriv.Star
+public import Mathlib.Analysis.Complex.Basic
 
 /-!
 # Conjugation and open holomorphic domains
@@ -11,6 +17,8 @@ Schwarz-reflection layer.  Mathlib already proves the pointwise fact
 pointwise result for open domains and reflected images, which is the form needed before the
 real-axis Schwarz reflection principle.
 -/
+
+public section
 
 namespace TauCeti
 
