@@ -58,21 +58,6 @@ private theorem isSquare_of_isSquare_four_mul {q : ℚ} (h : IsSquare ((4 : ℚ)
   have h4 : IsSquare (4 : ℚ) := ⟨2, by norm_num⟩
   simpa using h.div h4
 
-/-- If the radicand of a prime discriminant has absolute value `1`, the discriminant is `-4`.
-The odd prime discriminants have radicand of absolute value their underlying prime `≥ 2`, and the
-even radicands `-1`, `2`, `-2` have absolute value `1` only in the `-4` case. -/
-private theorem eq_neg_four_of_primeDiscriminantRadicand_natAbs_eq_one {D : ℤ}
-    (hD : IsPrimeDiscriminant D) (h : (primeDiscriminantRadicand D).natAbs = 1) :
-    D = -4 := by
-  rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, hp, hpodd, rfl⟩
-  · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hev] at h
-    rcases evenPrimeDiscriminantRadicand_eq_neg_one_or_eq_two_or_eq_neg_two hev with h1 | h2 | h3
-    · exact (evenPrimeDiscriminantRadicand_eq_neg_one_iff hev).mp h1
-    · rw [h2] at h; exact absurd h (by decide)
-    · rw [h3] at h; exact absurd h (by decide)
-  · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hpodd, oddPrimeDiscriminant_natAbs] at h
-    exact absurd h hp.ne_one
-
 /-- The negative of a squarefree integer is squarefree. -/
 private theorem Squarefree.int_neg {n : ℤ} (hn : Squarefree n) : Squarefree (-n) := by
   rw [← Int.squarefree_natAbs, Int.natAbs_neg, Int.squarefree_natAbs]
@@ -94,7 +79,7 @@ private theorem prod_primeDiscriminantRadicands_ne_neg_one {ι : Type*} {D : ι 
     have hall : ∀ i ∈ S, (primeDiscriminantRadicand (D i)).natAbs = 1 :=
       (Finset.prod_eq_one_iff).mp habs
     obtain ⟨i, hi⟩ := hS
-    exact hno_neg_four i hi (eq_neg_four_of_primeDiscriminantRadicand_natAbs_eq_one (hD i)
+    exact hno_neg_four i hi ((primeDiscriminantRadicand_natAbs_eq_one_iff (hD i)).mp
       (hall i hi))
   · rw [Finset.not_nonempty_iff_eq_empty.mp hS] at hprod
     norm_num at hprod
@@ -136,7 +121,7 @@ private theorem prod_primeDiscriminantRadicands_ne_one_of_nonempty {ι : Type*} 
   have hall : ∀ i ∈ S, (primeDiscriminantRadicand (D i)).natAbs = 1 :=
     (Finset.prod_eq_one_iff).mp habs
   have hallD : ∀ i ∈ S, D i = -4 := fun i hi =>
-    eq_neg_four_of_primeDiscriminantRadicand_natAbs_eq_one (hD i) (hall i hi)
+    (primeDiscriminantRadicand_natAbs_eq_one_iff (hD i)).mp (hall i hi)
   obtain ⟨i₀, hi₀⟩ := hS
   have hsingle : S = {i₀} :=
     Finset.eq_singleton_iff_unique_mem.mpr

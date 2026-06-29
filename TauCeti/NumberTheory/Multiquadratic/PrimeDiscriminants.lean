@@ -240,8 +240,137 @@ modulo `4`. -/
 theorem isEvenPrimeDiscriminant_or_primeDiscriminantRadicand_mod_four_eq_one {D : ℤ}
     (hD : IsPrimeDiscriminant D) :
     IsEvenPrimeDiscriminant D ∨ primeDiscriminantRadicand D % 4 = 1 := by
-  rcases hD with hD | ⟨p, hp, hodd, rfl⟩
+  rcases isPrimeDiscriminant_iff.mp hD with hD | ⟨p, hp, hodd, rfl⟩
   · exact Or.inl hD
   · exact Or.inr (primeDiscriminantRadicand_mod_four_eq_one_of_odd hodd)
+
+/-- The only prime discriminant whose radicand has absolute value `1` is `-4`. This is the
+small exceptional case in the radicand map: the odd prime-discriminant radicands have prime
+absolute value, and the other even prime-discriminant radicands have absolute value `2`. -/
+theorem primeDiscriminantRadicand_natAbs_eq_one_iff {D : ℤ}
+    (hD : IsPrimeDiscriminant D) :
+    (primeDiscriminantRadicand D).natAbs = 1 ↔ D = -4 := by
+  constructor
+  · intro h
+    rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, hp, hodd, rfl⟩
+    · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hev] at h
+      rcases hev with rfl | rfl | rfl
+      · rfl
+      · norm_num at h
+      · norm_num at h
+    · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd,
+        oddPrimeDiscriminant_natAbs] at h
+      exact False.elim (hp.ne_one h)
+  · intro h
+    rw [h, primeDiscriminantRadicand_neg_four]
+    norm_num
+
+/-- Among prime discriminants, radicand `-1` comes only from the even prime discriminant
+`-4`. -/
+theorem primeDiscriminantRadicand_eq_neg_one_iff {D : ℤ}
+    (hD : IsPrimeDiscriminant D) :
+    primeDiscriminantRadicand D = -1 ↔ D = -4 := by
+  constructor
+  · intro h
+    exact (primeDiscriminantRadicand_natAbs_eq_one_iff hD).mp (by rw [h]; norm_num)
+  · intro h
+    rw [h, primeDiscriminantRadicand_neg_four]
+
+/-- Among prime discriminants, radicand `2` comes only from the even prime discriminant `8`. -/
+theorem primeDiscriminantRadicand_eq_two_iff {D : ℤ}
+    (hD : IsPrimeDiscriminant D) :
+    primeDiscriminantRadicand D = 2 ↔ D = 8 := by
+  constructor
+  · intro h
+    rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, hp, hodd, rfl⟩
+    · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hev] at h
+      exact (evenPrimeDiscriminantRadicand_eq_two_iff hev).mp h
+    · have hp2 : p = 2 := by
+        simpa [primeDiscriminantRadicand_oddPrimeDiscriminant hodd,
+          oddPrimeDiscriminant_natAbs] using congrArg Int.natAbs h
+      rcases hodd with ⟨k, hk⟩
+      omega
+  · intro h
+    rw [h, primeDiscriminantRadicand_eight]
+
+/-- Among prime discriminants, radicand `-2` comes only from the even prime discriminant
+`-8`. -/
+theorem primeDiscriminantRadicand_eq_neg_two_iff {D : ℤ}
+    (hD : IsPrimeDiscriminant D) :
+    primeDiscriminantRadicand D = -2 ↔ D = -8 := by
+  constructor
+  · intro h
+    rcases isPrimeDiscriminant_iff.mp hD with hev | ⟨p, hp, hodd, rfl⟩
+    · rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hev] at h
+      exact (evenPrimeDiscriminantRadicand_eq_neg_two_iff hev).mp h
+    · have hp2 : p = 2 := by
+        simpa [primeDiscriminantRadicand_oddPrimeDiscriminant hodd,
+          oddPrimeDiscriminant_natAbs] using congrArg Int.natAbs h
+      rcases hodd with ⟨k, hk⟩
+      omega
+  · intro h
+    rw [h, primeDiscriminantRadicand_neg_eight]
+
+/-- The radicand map is injective on prime discriminants. This is the bookkeeping that lets
+later genus-field code pass between a list of prime discriminants and the corresponding
+multiquadratic radicands without identifying two different quadratic factors. -/
+theorem eq_of_primeDiscriminantRadicand_eq {D E : ℤ}
+    (hD : IsPrimeDiscriminant D) (hE : IsPrimeDiscriminant E)
+    (h : primeDiscriminantRadicand D = primeDiscriminantRadicand E) :
+    D = E := by
+  rcases isPrimeDiscriminant_iff.mp hD with hevD | ⟨p, hp, hpodd, rfl⟩
+  · rcases isPrimeDiscriminant_iff.mp hE with hevE | ⟨q, hq, hqodd, rfl⟩
+    · rcases hevD with rfl | rfl | rfl
+      · have hE' : E = -4 :=
+          (primeDiscriminantRadicand_eq_neg_one_iff (Or.inl hevE)).mp (by simpa using h.symm)
+        rw [hE']
+      · have hE' : E = 8 :=
+          (primeDiscriminantRadicand_eq_two_iff (Or.inl hevE)).mp (by simpa using h.symm)
+        rw [hE']
+      · have hE' : E = -8 :=
+          (primeDiscriminantRadicand_eq_neg_two_iff (Or.inl hevE)).mp (by simpa using h.symm)
+        rw [hE']
+    · have habs := congrArg Int.natAbs h
+      rw [primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hevD,
+        primeDiscriminantRadicand_oddPrimeDiscriminant hqodd,
+        oddPrimeDiscriminant_natAbs] at habs
+      rcases evenPrimeDiscriminantRadicand_natAbs_eq_one_or_two hevD with h1 | h2
+      · rw [h1] at habs
+        exact False.elim (hq.ne_one habs.symm)
+      · rw [h2] at habs
+        rcases hqodd with ⟨k, hk⟩
+        omega
+  · rcases isPrimeDiscriminant_iff.mp hE with hevE | ⟨q, hq, hqodd, rfl⟩
+    · have habs := congrArg Int.natAbs h
+      rw [primeDiscriminantRadicand_oddPrimeDiscriminant hpodd,
+        primeDiscriminantRadicand_of_isEvenPrimeDiscriminant hevE,
+        oddPrimeDiscriminant_natAbs] at habs
+      rcases evenPrimeDiscriminantRadicand_natAbs_eq_one_or_two hevE with h1 | h2
+      · rw [h1] at habs
+        exact False.elim (hp.ne_one habs)
+      · rw [h2] at habs
+        rcases hpodd with ⟨k, hk⟩
+        omega
+    · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hpodd,
+        primeDiscriminantRadicand_oddPrimeDiscriminant hqodd] at h
+      have hpq : p = q := by
+        simpa [oddPrimeDiscriminant_natAbs] using congrArg Int.natAbs h
+      rw [hpq]
+
+/-- `primeDiscriminantRadicand` is injective on the set of prime discriminants. -/
+theorem injOn_primeDiscriminantRadicand :
+    Set.InjOn primeDiscriminantRadicand {D : ℤ | IsPrimeDiscriminant D} := by
+  intro D hD E hE h
+  exact eq_of_primeDiscriminantRadicand_eq hD hE h
+
+/-- For a family of prime discriminants, injectivity is unchanged after replacing each
+discriminant by its multiquadratic radicand. -/
+theorem injective_primeDiscriminantRadicand_comp_iff {ι : Type*} {D : ι → ℤ}
+    (hD : ∀ i, IsPrimeDiscriminant (D i)) :
+    Function.Injective (fun i => primeDiscriminantRadicand (D i)) ↔
+      Function.Injective D := by
+  simpa only [Function.comp_def] using
+    (Set.InjOn.injective_iff {D : ℤ | IsPrimeDiscriminant D} injOn_primeDiscriminantRadicand
+      (by rintro _ ⟨i, rfl⟩; exact hD i))
 
 end TauCeti.Multiquadratic
