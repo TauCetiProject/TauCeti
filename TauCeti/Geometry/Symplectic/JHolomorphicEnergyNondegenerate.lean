@@ -38,37 +38,6 @@ public section
 
 namespace TauCeti
 
-namespace IsComplexLinearMap
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V]
-variable {J : AlmostComplexStructure V} {ω : SymplecticForm V}
-variable {F : (ℝ × ℝ) →ₗ[ℝ] V}
-
-/-- Under tameness, the standard pointwise energy density of a nonzero complex-linear map from
-the standard complex line is positive. -/
-lemma stdComplexLineEnergyDensity_pos
-    (_hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) (hω : ω.Tames J)
-    (hFne : F ≠ 0) :
-    0 < ω.stdComplexLineEnergyDensity J F :=
-  ω.stdComplexLineEnergyDensity_pos hω hFne
-
-/-- For a complex-linear map from the standard complex line, standard pointwise energy density
-vanishes under tameness exactly for the zero map. -/
-@[simp]
-lemma stdComplexLineEnergyDensity_eq_zero_iff
-    (_hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) (hω : ω.Tames J) :
-    ω.stdComplexLineEnergyDensity J F = 0 ↔ F = 0 :=
-  ω.stdComplexLineEnergyDensity_eq_zero_iff hω
-
-/-- Under tameness, the standard pointwise energy density is positive exactly for nonzero
-complex-linear maps from the standard complex line. -/
-lemma stdComplexLineEnergyDensity_pos_iff
-    (_hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) (hω : ω.Tames J) :
-    0 < ω.stdComplexLineEnergyDensity J F ↔ F ≠ 0 :=
-  ω.stdComplexLineEnergyDensity_pos_iff hω
-
-end IsComplexLinearMap
-
 namespace IsJHolomorphicAt
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
