@@ -12,7 +12,8 @@ public import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 # Strongly continuous semigroups
 
 This file contains the foundational C₀-semigroup structures, the nonnegative-time API
-(`map_zero`, `map_add`, and their apply forms), the `realOperator` real-time shim,
+(`map_zero`, `map_add`, `continuousAt_zero`, and their pointwise/tendsto forms),
+the `realOperator` real-time shim,
 operator-norm local boundedness, and strong continuity within the nonnegative half-line.
 
 ## References
@@ -96,6 +97,18 @@ theorem map_add_apply (S : StronglyContinuousSemigroup X) (s t : ℝ≥0) (x : X
   rfl
 
 omit [CompleteSpace X] in
+/-- Strong continuity at zero for the native nonnegative-time action. -/
+theorem continuousAt_zero (S : StronglyContinuousSemigroup X) (x : X) :
+    ContinuousAt (fun t : ℝ≥0 => S t x) 0 :=
+  S.continuousAt_zero' x
+
+omit [CompleteSpace X] in
+/-- Tendsto form of `StronglyContinuousSemigroup.continuousAt_zero`. -/
+theorem continuousAt_zero_tendsto (S : StronglyContinuousSemigroup X) (x : X) :
+    Filter.Tendsto (fun t : ℝ≥0 => S t x) (nhds 0) (nhds x) := by
+  simpa using (S.continuousAt_zero x).tendsto
+
+omit [CompleteSpace X] in
 /-- The semigroup as a function of real time, extended by `id` for `t < 0`. -/
 noncomputable def realOperator (S : StronglyContinuousSemigroup X) (t : ℝ) : X →L[ℝ] X :=
   S t.toNNReal
@@ -128,14 +141,11 @@ theorem strong_cont (S : StronglyContinuousSemigroup X) (x : X) :
     simpa [Real.toNNReal_zero] using
       (continuous_real_toNNReal.continuousAt.tendsto.mono_left nhdsWithin_le_nhds :
         Filter.Tendsto Real.toNNReal (nhdsWithin 0 (Set.Ici (0 : ℝ))) (nhds (Real.toNNReal 0)))
-  have h_orbit : Filter.Tendsto (fun t : ℝ≥0 => S.toFun t x) (nhds 0) (nhds x) := by
-    have h := (S.continuousAt_zero' x).tendsto
-    rw [S.map_zero'] at h
-    simpa using h
+  have h_orbit : Filter.Tendsto (fun t : ℝ≥0 => S t x) (nhds 0) (nhds x) :=
+    S.continuousAt_zero_tendsto x
   exact (h_orbit.comp h_toNNReal).congr' (by
     filter_upwards with t
-    simp only [realOperator, Function.comp_apply]
-    rfl)
+    simp only [realOperator, Function.comp_apply])
 
 end StronglyContinuousSemigroup
 
@@ -185,10 +195,13 @@ private theorem StronglyContinuousSemigroup.pointwiseBoundedOnUnitInterval
   set L := max ‖S.realOperator δ‖ 1
   set B := ‖x‖ + 1
   set N := Nat.ceil (1 / δ)
+  -- Induction invariant: after `k` steps of length `δ`, every `t ∈ [0, (k+1)δ)`
+  -- has orbit norm bounded by `L^k * B`.
   have h_claim : ∀ (k : ℕ), ∀ t : ℝ, 0 ≤ t → t < (↑k + 1) * δ →
       ‖S.realOperator t x‖ ≤ L ^ k * B := by
     intro k; induction k with
     | zero =>
+      -- Base interval `[0, δ)`: this is exactly strong continuity at zero.
       intro t ht0 htδ
       simp only [Nat.cast_zero, zero_add, one_mul] at htδ
       simp only [pow_zero, one_mul]
@@ -196,11 +209,13 @@ private theorem StronglyContinuousSemigroup.pointwiseBoundedOnUnitInterval
     | succ k ih =>
       intro t ht0 ht_ub
       by_cases hk : t < (↑k + 1) * δ
-      · calc ‖S.realOperator t x‖ ≤ L ^ k * B := ih t ht0 hk
+      · -- Previous interval: reuse the induction hypothesis and enlarge `L^k` to `L^(k+1)`.
+        calc ‖S.realOperator t x‖ ≤ L ^ k * B := ih t ht0 hk
           _ ≤ L ^ (k + 1) * B := by
               apply mul_le_mul_of_nonneg_right _ (by positivity)
               exact pow_le_pow_right₀ (le_max_right _ _) (Nat.le_succ k)
-      · push Not at hk
+      · -- New strip `[(k+1)δ, (k+2)δ)`: write `t = δ + (t - δ)` and use the semigroup law.
+        push Not at hk
         have htd_nn : 0 ≤ t - δ := by
           have : δ ≤ (↑k + 1) * δ :=
             le_mul_of_one_le_left (le_of_lt hδ_pos)
