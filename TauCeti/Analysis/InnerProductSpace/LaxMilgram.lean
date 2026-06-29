@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LaxMilgram
+public import TauCeti.Analysis.InnerProductSpace.Coercivity
 
 /-!
 # Existence and uniqueness form of Lax--Milgram
@@ -16,14 +17,11 @@ Mathlib's Lax--Milgram theorem is packaged as
 
 The PDE roadmap's energy-method lane needs the corresponding variational-solution API:
 given a represented forcing functional `v ↦ ⟪F, v⟫`, there is a unique `u` satisfying
-`B u v = ⟪F, v⟫` for every test vector `v`.  This file also records a basic monotonicity
-principle for coercivity under pointwise increases of the diagonal.  These are direct
-wrappers around Mathlib's API and do not introduce any PDE-specific bundled structure.
+`B u v = ⟪F, v⟫` for every test vector `v`.  These are direct wrappers around Mathlib's
+API and do not introduce any PDE-specific bundled structure.
 
 ## Main declarations
 
-* `IsCoercive.mono`: coercivity is preserved by pointwise increasing the diagonal of a
-  bilinear form.
 * `IsCoercive.solutionOfInner`: the solution of the variational equation with forcing
   represented by `F`.
 * `IsCoercive.apply_solutionOfInner_eq_inner`: the defining variational identity.
@@ -46,15 +44,6 @@ namespace TauCeti
 open scoped InnerProductSpace
 
 namespace IsCoercive
-
-variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-variable {B C : E →L[ℝ] E →L[ℝ] ℝ}
-
-/-- Coercivity is preserved by pointwise increasing the diagonal of a bilinear form. -/
-theorem mono (hB : IsCoercive B) (hBC : ∀ u, B u u ≤ C u u) :
-    IsCoercive C := by
-  rcases hB with ⟨K, hKpos, hK⟩
-  exact ⟨K, hKpos, fun u => (hK u).trans (hBC u)⟩
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
 variable {B : V →L[ℝ] V →L[ℝ] ℝ}

@@ -4,9 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PDE.UniformEllipticEnergy
 public import TauCeti.Analysis.PDE.EnergyFormLinearity
-public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
+public import TauCeti.Analysis.InnerProductSpace.Coercivity
 
 /-!
 # Coercive energy integrands under nonnegative perturbations
