@@ -70,7 +70,7 @@ theorem isShiftInvariant.measurableSet_shiftInvariantSigma {s : Set (ℕ → α)
   mem_shiftInvariantSigma_iff.mpr ⟨hsm, hs⟩
 
 /-- The one-sided shift is measurable as a map on the shift-invariant σ-algebra. -/
-theorem shiftInvariantSigma_measurable_shift_eq :
+theorem measurable_shift_shiftInvariantSigma :
     @Measurable (ℕ → α) (ℕ → α) (shiftInvariantSigma α) (shiftInvariantSigma α) (shift α) := by
   intro s hs
   rw [MeasurableSet.isShiftInvariant_of_shiftInvariantSigma hs]
@@ -78,7 +78,7 @@ theorem shiftInvariantSigma_measurable_shift_eq :
 
 /-- An ambient-measurable observable fixed by the one-sided shift is measurable with respect to
 the shift-invariant σ-algebra. -/
-theorem shiftInvariant_implies_shiftInvariantMeasurable [MeasurableSpace β]
+theorem measurable_shiftInvariantSigma_of_comp_shift_eq [MeasurableSpace β]
     {g : (ℕ → α) → β} (hg : Measurable g) (hg_shift : g ∘ shift α = g) :
     @Measurable (ℕ → α) β (shiftInvariantSigma α) inferInstance g :=
   MeasurableSpace.measurable_invariants_dom.mpr ⟨hg, fun _ _ => by rw [hg_shift]⟩
