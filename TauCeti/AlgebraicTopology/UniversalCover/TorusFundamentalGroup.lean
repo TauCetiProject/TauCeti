@@ -113,12 +113,47 @@ def prodFundamentalGroupMulEquiv_zero {p q : ℝ} (hp : p ≠ 0) (hq : q ≠ 0) 
       Multiplicative ℤ × Multiplicative ℤ :=
   prodFundamentalGroupMulEquiv hp hq ⟨0, by simp⟩ ⟨0, by simp⟩
 
+@[simp]
+theorem prodFundamentalGroupMulEquiv_zero_apply {p q : ℝ} (hp : p ≠ 0) (hq : q ≠ 0)
+    (γ : FundamentalGroup (AddCircle p × AddCircle q) (0, 0)) :
+    prodFundamentalGroupMulEquiv_zero hp hq γ =
+      (fundamentalGroupMulEquiv_zero p hp
+          (FundamentalGroup.map (ContinuousMap.fst : C(AddCircle p × AddCircle q, _)) (0, 0) γ),
+        fundamentalGroupMulEquiv_zero q hq
+          (FundamentalGroup.map
+            (ContinuousMap.snd : C(AddCircle p × AddCircle q, _)) (0, 0) γ)) := by
+  simp [prodFundamentalGroupMulEquiv_zero]
+
+@[simp]
+theorem prodFundamentalGroupMulEquiv_zero_symm_apply {p q : ℝ} (hp : p ≠ 0) (hq : q ≠ 0)
+    (mn : Multiplicative ℤ × Multiplicative ℤ) :
+    (prodFundamentalGroupMulEquiv_zero hp hq).symm mn =
+      prod ((fundamentalGroupMulEquiv_zero p hp).symm mn.1)
+        ((fundamentalGroupMulEquiv_zero q hq).symm mn.2) := by
+  simp [prodFundamentalGroupMulEquiv_zero]
+
 /-- The fundamental group of a torus `Π i, AddCircle (p i)`, based at `0`, is the product
 `Π i, Multiplicative ℤ`, for a family of nonzero real periods. For a finite index this is the
 free abelian group `(Multiplicative ℤ)ᵏ`, i.e. `π₁(Tᵏ) ≅ ℤᵏ`. -/
 def piFundamentalGroupMulEquiv_zero {ι : Type*} {p : ι → ℝ} (hp : ∀ i, p i ≠ 0) :
     FundamentalGroup (∀ i, AddCircle (p i)) (fun _ => 0) ≃* ∀ _ : ι, Multiplicative ℤ :=
   piFundamentalGroupMulEquiv hp fun i => ⟨0, by simp⟩
+
+@[simp]
+theorem piFundamentalGroupMulEquiv_zero_apply {ι : Type*} {p : ι → ℝ}
+    (hp : ∀ i, p i ≠ 0)
+    (γ : FundamentalGroup (∀ i, AddCircle (p i)) (fun _ => 0)) (i : ι) :
+    piFundamentalGroupMulEquiv_zero hp γ i =
+      fundamentalGroupMulEquiv_zero (p i) (hp i)
+        (FundamentalGroup.map (ContinuousMap.eval i) (fun _ => 0) γ) := by
+  simp [piFundamentalGroupMulEquiv_zero]
+
+@[simp]
+theorem piFundamentalGroupMulEquiv_zero_symm_apply {ι : Type*} {p : ι → ℝ}
+    (hp : ∀ i, p i ≠ 0) (n : ∀ _ : ι, Multiplicative ℤ) :
+    (piFundamentalGroupMulEquiv_zero hp).symm n =
+      pi fun i => (fundamentalGroupMulEquiv_zero (p i) (hp i)).symm (n i) := by
+  simp [piFundamentalGroupMulEquiv_zero]
 
 end AddCircle
 
