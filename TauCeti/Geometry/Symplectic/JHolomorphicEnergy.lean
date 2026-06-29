@@ -69,6 +69,88 @@ lemma stdComplexLineEnergyDensity_nonneg (hω : ω.Tames J)
     · simp [h]
     · exact (hω (F stdComplexLineImag) h).le
 
+/-- Under tameness, the associated metric diagonal detects zero vectors. -/
+lemma associatedBilinForm_self_eq_zero_iff (hω : ω.Tames J) {v : V} :
+    ω.associatedBilinForm J v v = 0 ↔ v = 0 := by
+  constructor
+  · intro hzero
+    by_contra hv
+    exact (hω v hv).ne' (by simpa [associatedBilinForm_apply] using hzero)
+  · rintro rfl
+    simp
+
+/-- Under tameness, the standard pointwise energy density of a nonzero real-linear map from the
+standard complex line is positive. -/
+lemma stdComplexLineEnergyDensity_pos (hω : ω.Tames J) {F : (ℝ × ℝ) →ₗ[ℝ] V}
+    (hFne : F ≠ 0) :
+    0 < ω.stdComplexLineEnergyDensity J F := by
+  rw [stdComplexLineEnergyDensity_def]
+  by_cases hreal : F stdComplexLineReal = 0
+  · have himag : F stdComplexLineImag ≠ 0 := by
+      intro himag
+      apply hFne
+      apply LinearMap.ext
+      intro z
+      rw [LinearMap.apply_stdComplexLine F z, hreal, himag]
+      simp
+    exact add_pos_of_nonneg_of_pos
+      (by simp [hreal])
+      (by simpa [associatedBilinForm_apply] using hω (F stdComplexLineImag) himag)
+  · exact add_pos_of_pos_of_nonneg
+      (by simpa [associatedBilinForm_apply] using hω (F stdComplexLineReal) hreal)
+      (by
+        rw [associatedBilinForm_apply]
+        by_cases himag : F stdComplexLineImag = 0
+        · simp [himag]
+        · exact (hω (F stdComplexLineImag) himag).le)
+
+/-- Under tameness, standard pointwise energy density vanishes exactly for the zero real-linear
+map from the standard complex line. -/
+@[simp]
+lemma stdComplexLineEnergyDensity_eq_zero_iff (hω : ω.Tames J)
+    {F : (ℝ × ℝ) →ₗ[ℝ] V} :
+    ω.stdComplexLineEnergyDensity J F = 0 ↔ F = 0 := by
+  constructor
+  · intro henergy
+    rw [stdComplexLineEnergyDensity_def] at henergy
+    have hreal_nonneg :
+        0 ≤ ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) := by
+      rw [associatedBilinForm_apply]
+      by_cases hreal : F stdComplexLineReal = 0
+      · simp [hreal]
+      · exact (hω (F stdComplexLineReal) hreal).le
+    have himag_nonneg :
+        0 ≤ ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag) := by
+      rw [associatedBilinForm_apply]
+      by_cases himag : F stdComplexLineImag = 0
+      · simp [himag]
+      · exact (hω (F stdComplexLineImag) himag).le
+    have hreal_zero :
+        ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) = 0 := by
+      linarith
+    have himag_zero :
+        ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag) = 0 := by
+      linarith
+    have hreal : F stdComplexLineReal = 0 :=
+      (associatedBilinForm_self_eq_zero_iff (ω := ω) (J := J) hω).mp hreal_zero
+    have himag : F stdComplexLineImag = 0 :=
+      (associatedBilinForm_self_eq_zero_iff (ω := ω) (J := J) hω).mp himag_zero
+    apply LinearMap.ext
+    intro z
+    rw [LinearMap.apply_stdComplexLine F z, hreal, himag]
+    simp
+  · intro hzero
+    simp [hzero]
+
+/-- Under tameness, the standard pointwise energy density is positive exactly for nonzero
+real-linear maps from the standard complex line. -/
+lemma stdComplexLineEnergyDensity_pos_iff (hω : ω.Tames J) {F : (ℝ × ℝ) →ₗ[ℝ] V} :
+    0 < ω.stdComplexLineEnergyDensity J F ↔ F ≠ 0 := by
+  constructor
+  · intro hpos hzero
+    exact hpos.ne' ((ω.stdComplexLineEnergyDensity_eq_zero_iff (J := J) hω).mpr hzero)
+  · exact ω.stdComplexLineEnergyDensity_pos hω
+
 end SymplecticForm
 
 namespace IsComplexLinearMap
