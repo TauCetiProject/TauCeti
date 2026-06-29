@@ -85,6 +85,17 @@ theorem blockLaw_apply (μ : Measure Ω) (X : ℕ → Ω → α) {m : ℕ} (k : 
     blockLaw μ X k = μ.map (fun ω i => X (k i) ω) :=
   rfl
 
+/-- The block law of `X` along `k`, evaluated on a measurable rectangle `Set.univ.pi B`, is the
+measure of the coordinate-wise preimage `{ω | ∀ i, X (k i) ω ∈ B i}`. -/
+theorem blockLaw_apply_rectangle (μ : Measure Ω) (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ)
+    (hXk : ∀ i, AEMeasurable (X (k i)) μ) (B : Fin m → Set α) (hB : ∀ i, MeasurableSet (B i)) :
+    blockLaw μ X k (Set.univ.pi B) = μ {ω | ∀ i, X (k i) ω ∈ B i} := by
+  rw [blockLaw_apply, Measure.map_apply_of_aemeasurable
+    (aemeasurable_pi_lambda _ hXk) (MeasurableSet.univ_pi hB)]
+  congr 1
+  ext ω
+  simp [Set.mem_preimage]
+
 @[simp]
 theorem prefixLaw_apply (μ : Measure Ω) (X : ℕ → Ω → α) (n : ℕ) :
     prefixLaw μ X n = blockLaw μ X (fun i : Fin n => i.val) :=
