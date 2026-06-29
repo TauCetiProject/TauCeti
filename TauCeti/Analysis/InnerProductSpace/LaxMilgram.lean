@@ -16,12 +16,14 @@ Mathlib's Lax--Milgram theorem is packaged as
 
 The PDE roadmap's energy-method lane needs the corresponding variational-solution API:
 given a represented forcing functional `v ↦ ⟪F, v⟫`, there is a unique `u` satisfying
-`B u v = ⟪F, v⟫` for every test vector `v`.  This file records that direct
-existence/uniqueness form without changing Mathlib's theorem or introducing any PDE-specific
-bundled structure.
+`B u v = ⟪F, v⟫` for every test vector `v`.  This file also records a basic monotonicity
+principle for coercivity under pointwise increases of the diagonal.  These are direct
+wrappers around Mathlib's API and do not introduce any PDE-specific bundled structure.
 
 ## Main declarations
 
+* `IsCoercive.mono`: coercivity is preserved by pointwise increasing the diagonal of a
+  bilinear form.
 * `IsCoercive.solutionOfInner`: the solution of the variational equation with forcing
   represented by `F`.
 * `IsCoercive.apply_solutionOfInner_eq_inner`: the defining variational identity.
