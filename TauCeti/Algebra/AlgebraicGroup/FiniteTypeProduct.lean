@@ -6,7 +6,7 @@ module
 
 public import Mathlib.RingTheory.FiniteStability
 public import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.Product
+public import TauCeti.Algebra.Bialgebra.TensorProduct
 
 /-!
 # Products of finite-type commutative Hopf algebras
