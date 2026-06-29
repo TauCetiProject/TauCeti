@@ -41,7 +41,7 @@ namespace Deck
 variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B} {b : B}
 
 /-- The fibre of a regular preconnected covering is a torsor for its deck group. -/
-@[reducible, expose]
+@[reducible]
 noncomputable def fiberTorsor [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hreg : IsRegular p) (b : B) :
     Torsor (Deck p) (p ⁻¹' {b}) := by
