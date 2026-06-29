@@ -75,11 +75,13 @@ theorem IsShiftInvariant.measurableSet_shiftInvariantSigma {s : Set (ℕ → α)
 
 omit [MeasurableSpace (ℕ → α)] in
 /-- A shift-invariant path-space event is fixed by every iterate of the one-sided shift. -/
+@[simp]
 theorem IsShiftInvariant.preimage_shift_iterate_eq {s : Set (ℕ → α)}
     (hs : IsShiftInvariant s) (n : ℕ) : ((shift α)^[n]) ⁻¹' s = s :=
   Function.IsFixedPt.preimage_iterate hs n
 
 /-- A `shiftInvariantSigma`-measurable set is fixed by every iterate of the one-sided shift. -/
+@[simp]
 theorem MeasurableSet.preimage_shift_iterate_eq_of_shiftInvariantSigma {s : Set (ℕ → α)}
     (hs : MeasurableSet[shiftInvariantSigma α] s) (n : ℕ) : ((shift α)^[n]) ⁻¹' s = s :=
   (MeasurableSet.isShiftInvariant_of_shiftInvariantSigma hs).preimage_shift_iterate_eq n
