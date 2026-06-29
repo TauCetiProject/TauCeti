@@ -27,9 +27,10 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 * `TauCeti.bernstein_kernel`, `TauCeti.continuous_bernstein_kernel`,
   `TauCeti.bernstein_kernel_nonneg`, `TauCeti.bernstein_kernel_le_one`,
   `TauCeti.bernsteinKernelBCF`, `TauCeti.bernsteinKernelBCF_apply`,
+  `TauCeti.laplaceKernelBCF`, `TauCeti.laplaceKernelBCF_apply`,
   `TauCeti.bernstein_kernel_tendsto`: the rescaled Laplace kernel, its bundled
-  bounded-continuous `p`-dependence on the nonnegative half-line, and its pointwise limit
-  `e^{-xp}`.
+  bounded-continuous `p`-dependence on the nonnegative half-line, and its bundled pointwise
+  limit `e^{-xp}`.
 * `TauCeti.chafaiRescaled`, `TauCeti.chafaiRescaled_mass_eq`: the `ℝ≥0`-valued pushed-forward
   measures and mass preservation.
 * `TauCeti.chafaiMeasure_finite_mass`, `TauCeti.chafaiRescaled_finite_mass`: finiteness and the
@@ -229,6 +230,30 @@ noncomputable def bernsteinKernelBCF (n : ℕ) {x : ℝ} (hx : 0 ≤ x) : ℝ≥
 lemma bernsteinKernelBCF_apply (n : ℕ) {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
     bernsteinKernelBCF n hx p = bernstein_kernel n x (p : ℝ) := by
   rw [bernsteinKernelBCF]; rfl
+
+/-- The limiting Laplace kernel as a bundled bounded continuous test function of the
+nonnegative variable `p`, for fixed nonnegative `x`. -/
+noncomputable def laplaceKernelBCF {x : ℝ} (hx : 0 ≤ x) : ℝ≥0 →ᵇ ℝ where
+  toFun := fun p => Real.exp (-(x * (p : ℝ)))
+  continuous_toFun := Real.continuous_exp.comp ((continuous_const.mul continuous_subtype_val).neg)
+  map_bounded' :=
+    ⟨1, fun p q => by
+      rw [Real.dist_eq]
+      have hp0 : 0 < Real.exp (-(x * (p : ℝ))) := Real.exp_pos _
+      have hp1 : Real.exp (-(x * (p : ℝ))) ≤ 1 := by
+        rw [Real.exp_le_one_iff]
+        exact neg_nonpos.mpr (mul_nonneg hx p.2)
+      have hq0 : 0 < Real.exp (-(x * (q : ℝ))) := Real.exp_pos _
+      have hq1 : Real.exp (-(x * (q : ℝ))) ≤ 1 := by
+        rw [Real.exp_le_one_iff]
+        exact neg_nonpos.mpr (mul_nonneg hx q.2)
+      exact abs_sub_le_iff.mpr ⟨by linarith, by linarith⟩⟩
+
+/-- The bundled limiting Laplace kernel evaluates to the usual exponential kernel on `ℝ≥0`. -/
+@[simp]
+lemma laplaceKernelBCF_apply {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
+    laplaceKernelBCF hx p = Real.exp (-(x * (p : ℝ))) := by
+  rw [laplaceKernelBCF]; rfl
 
 /-- The Bernstein kernel is measurable in `p` for fixed `n` and `x`. -/
 lemma measurable_bernstein_kernel (n : ℕ) (x : ℝ) : Measurable (bernstein_kernel n x) := by
