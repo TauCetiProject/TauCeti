@@ -1,6 +1,6 @@
 module
 
-public import TauCeti.Probability.Exchangeability.Basic
+public import TauCeti.Probability.Exchangeability.PathSpace.Shift
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 import Mathlib.Logic.Equiv.Fintype
@@ -129,21 +129,6 @@ theorem Exchangeable.contractable {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) : Contractable μ X :=
   contractable_of_exchangeable hX hX_meas
 
-/-- Projecting the `φ`-reindexed path law onto its first `n` coordinates gives the law of the block
-`(X (φ 0), …, X (φ (n-1)))`. -/
-private theorem map_reindex_prefixProj_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
-    (hX_meas : ∀ i, AEMeasurable (X i) μ) (φ : ℕ → ℕ) (n : ℕ) :
-    ((pathLaw μ X).map (fun x : ℕ → α => fun k => x (φ k))).map (prefixProj α n)
-      = blockLaw μ X (fun i : Fin n => φ i.val) := by
-  have hφ_meas : Measurable (fun x : ℕ → α => fun k => x (φ k)) :=
-    measurable_pi_lambda _ fun k => measurable_pi_apply (φ k)
-  rw [pathLaw_apply,
-    AEMeasurable.map_map_of_aemeasurable hφ_meas.aemeasurable
-      (aemeasurable_pi_lambda _ hX_meas),
-    AEMeasurable.map_map_of_aemeasurable (measurable_prefixProj n).aemeasurable
-      (hφ_meas.comp_aemeasurable (aemeasurable_pi_lambda _ hX_meas))]
-  rfl
-
 /-- **A contractable process's path law is invariant under strictly monotone time-reindexing:** for
 `StrictMono φ`, the reindexing `x ↦ x ∘ φ` preserves `pathLaw μ X`. -/
 theorem Contractable.measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
@@ -153,7 +138,7 @@ theorem Contractable.measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω
   haveI : IsFiniteMeasure (pathLaw μ X) := by rw [pathLaw_apply]; infer_instance
   refine measure_eq_of_prefixProj_map_eq ?_
   intro n
-  rw [map_reindex_prefixProj_pathLaw hX_meas φ n,
+  rw [map_reindex_prefixProj_pathLaw μ hX_meas φ n,
     map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) n]
   exact hX n (fun i : Fin n => φ i.val) (hφ.comp Fin.val_strictMono)
 
