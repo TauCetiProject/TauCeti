@@ -37,6 +37,13 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   predicate.
 * `TauCeti.PDE.UniformlyEllipticOn.mono_set`: restriction to a smaller domain preserves the
   predicate.
+* `TauCeti.PDE.UniformlyEllipticOn.congr`: replace a coefficient field by one that agrees
+  on the domain.
+* `TauCeti.PDE.UniformlyEllipticOn.union` and
+  `TauCeti.PDE.uniformlyEllipticOn_union_iff`: patch uniform ellipticity over a binary union.
+* `TauCeti.PDE.UniformlyEllipticOn.iUnion` and
+  `TauCeti.PDE.uniformlyEllipticOn_iUnion_iff`: patch over an indexed union.
+* `TauCeti.PDE.UniformlyEllipticOn.biUnion`: patch over a union indexed by points of a set.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
@@ -72,7 +79,7 @@ namespace PDE
 
 open Matrix
 
-variable {X n : Type*} [Fintype n] [DecidableEq n]
+variable {X n ι : Type*} [Fintype n] [DecidableEq n]
 
 /-- Mathlib's matrix quadratic form is the dot-product expression `ξᵀ A ξ`. -/
 lemma toQuadraticForm'_eq_dotProduct (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
@@ -393,7 +400,8 @@ lemma uniformlyEllipticOn_iff :
 
 namespace UniformlyEllipticOn
 
-variable {Ω Ω' : Set X} {a : X → Matrix n n ℝ} {lam Lam lam' Lam' : ℝ}
+variable {Ω Ω' : Set X} {Ωs : ι → Set X} {a b : X → Matrix n n ℝ}
+  {lam Lam lam' Lam' : ℝ}
 
 /-- The lower ellipticity constant is positive. -/
 @[grind →]
@@ -463,6 +471,57 @@ lemma of_bounds (hlam : 0 < lam) (hlamLam : lam ≤ Lam)
       |η ⬝ᵥ (a x *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖) :
     UniformlyEllipticOn Ω a lam Lam :=
   ⟨hlam, hlamLam, fun {_} hx => ⟨hbounds hx, hupper hx⟩⟩
+
+/-- Uniform ellipticity depends only on the coefficient values on the domain. -/
+lemma congr (h : UniformlyEllipticOn Ω a lam Lam) (hab : Set.EqOn b a Ω) :
+    UniformlyEllipticOn Ω b lam Lam := by
+  refine UniformlyEllipticOn.of_bounds h.pos h.le (fun {x} hx ξ => ?_)
+    (fun {x} hx η ξ => ?_)
+  · rw [hab hx]
+    exact h.lower_bound hx ξ
+  · rw [hab hx]
+    exact h.upper_bound hx η ξ
+
+/-- Uniform ellipticity patches over a binary union when the same constants work on both
+pieces. -/
+lemma union (hΩ : UniformlyEllipticOn Ω a lam Lam)
+    (hΩ' : UniformlyEllipticOn Ω' a lam Lam) :
+    UniformlyEllipticOn (Ω ∪ Ω') a lam Lam := by
+  refine UniformlyEllipticOn.of_bounds hΩ.pos hΩ.le (fun {x} hx ξ => ?_)
+    (fun {x} hx η ξ => ?_)
+  · rcases hx with hx | hx
+    · exact hΩ.lower_bound hx ξ
+    · exact hΩ'.lower_bound hx ξ
+  · rcases hx with hx | hx
+    · exact hΩ.upper_bound hx η ξ
+    · exact hΩ'.upper_bound hx η ξ
+
+/-- Uniform ellipticity patches over an indexed union when the same constants work on every
+piece and the side conditions are supplied explicitly. -/
+lemma iUnion (hlam : 0 < lam) (hLam : lam ≤ Lam)
+    (h : ∀ i, UniformlyEllipticOn (Ωs i) a lam Lam) :
+    UniformlyEllipticOn (⋃ i, Ωs i) a lam Lam := by
+  classical
+  refine UniformlyEllipticOn.of_bounds hlam hLam (fun {x} hx ξ => ?_)
+    (fun {x} hx η ξ => ?_)
+  · rcases Set.mem_iUnion.mp hx with ⟨i, hi⟩
+    exact (h i).lower_bound hi ξ
+  · rcases Set.mem_iUnion.mp hx with ⟨i, hi⟩
+    exact (h i).upper_bound hi η ξ
+
+/-- Uniform ellipticity patches over a union indexed by points of a set when the same
+constants work on every piece and the side conditions are supplied explicitly. -/
+lemma biUnion {s : Set ι} {Ωs : ι → Set X} (hlam : 0 < lam) (hLam : lam ≤ Lam)
+    (h : ∀ i ∈ s, UniformlyEllipticOn (Ωs i) a lam Lam) :
+    UniformlyEllipticOn (⋃ i ∈ s, Ωs i) a lam Lam := by
+  refine UniformlyEllipticOn.of_bounds hlam hLam (fun {x} hx ξ => ?_)
+    (fun {x} hx η ξ => ?_)
+  · rcases Set.mem_iUnion.mp hx with ⟨i, hx⟩
+    rcases Set.mem_iUnion.mp hx with ⟨hi, hxi⟩
+    exact (h i hi).lower_bound hxi ξ
+  · rcases Set.mem_iUnion.mp hx with ⟨i, hx⟩
+    rcases Set.mem_iUnion.mp hx with ⟨hi, hxi⟩
+    exact (h i hi).upper_bound hxi η ξ
 
 /-- At every point of the domain, uniform ellipticity gives a norm bound for the attached
 matrix bilinear form. -/
@@ -606,6 +665,53 @@ lemma add_const_smul_one (h : UniformlyEllipticOn Ω a lam Lam) {c : ℝ} (hc : 
   h.add_smul_one hc (fun {_} _ => hc) (fun {_} _ => le_rfl)
 
 end UniformlyEllipticOn
+
+variable {Ω Ω' : Set X} {Ωs : ι → Set X} {a b : X → Matrix n n ℝ}
+  {lam Lam : ℝ}
+
+/-- Equal coefficient fields on the domain give equivalent uniform-ellipticity hypotheses. -/
+lemma uniformlyEllipticOn_congr (hab : Set.EqOn a b Ω) :
+    UniformlyEllipticOn Ω a lam Lam ↔ UniformlyEllipticOn Ω b lam Lam := by
+  constructor
+  · intro h
+    exact h.congr (fun x hx => (hab hx).symm)
+  · intro h
+    exact h.congr hab
+
+/-- Binary-union characterization of uniform ellipticity with fixed constants. -/
+@[simp]
+lemma uniformlyEllipticOn_union_iff :
+    UniformlyEllipticOn (Ω ∪ Ω') a lam Lam ↔
+      UniformlyEllipticOn Ω a lam Lam ∧ UniformlyEllipticOn Ω' a lam Lam := by
+  constructor
+  · intro h
+    exact ⟨h.mono_set Set.subset_union_left, h.mono_set Set.subset_union_right⟩
+  · rintro ⟨hΩ, hΩ'⟩
+    exact hΩ.union hΩ'
+
+/-- Indexed-union characterization of uniform ellipticity with fixed constants. -/
+@[simp]
+lemma uniformlyEllipticOn_iUnion_iff :
+    UniformlyEllipticOn (⋃ i, Ωs i) a lam Lam ↔
+      0 < lam ∧ lam ≤ Lam ∧ ∀ i, UniformlyEllipticOn (Ωs i) a lam Lam := by
+  constructor
+  · intro h
+    exact ⟨h.pos, h.le, fun i => h.mono_set (Set.subset_iUnion Ωs i)⟩
+  · rintro ⟨hlam, hLam, h⟩
+    exact UniformlyEllipticOn.iUnion hlam hLam h
+
+/-- Bounded-indexed-union characterization of uniform ellipticity with fixed constants. -/
+@[simp]
+lemma uniformlyEllipticOn_biUnion_iff {s : Set ι} {Ωs : ι → Set X} :
+    UniformlyEllipticOn (⋃ i ∈ s, Ωs i) a lam Lam ↔
+      0 < lam ∧ lam ≤ Lam ∧ ∀ i ∈ s, UniformlyEllipticOn (Ωs i) a lam Lam := by
+  constructor
+  · intro h
+    refine ⟨h.pos, h.le, fun i hi => h.mono_set ?_⟩
+    intro x hx
+    exact Set.mem_iUnion.2 ⟨i, Set.mem_iUnion.2 ⟨hi, hx⟩⟩
+  · rintro ⟨hlam, hLam, h⟩
+    exact UniformlyEllipticOn.biUnion hlam hLam h
 
 /-- The constant identity coefficient field is uniformly elliptic with any constants
 `λ ≤ 1 ≤ Λ` and `0 < λ`. This is the coefficient field of the Laplacian model problem. -/
