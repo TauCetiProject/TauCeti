@@ -8,13 +8,13 @@ public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.Basic
 
 /-!
-# Conjugation and open holomorphic domains
+# Conjugation and holomorphic domains
 
 This file records the elementary conjugation API used by the conformal-mapping roadmap's
 Schwarz-reflection layer.  Mathlib already proves the pointwise fact
 `DifferentiableAt.conj_conj`: if `f` is complex differentiable at `conj z`, then
-`z ↦ conj (f (conj z))` is complex differentiable at `z`.  The lemmas here package that
-pointwise result for open domains and reflected images, which is the form needed before the
+`z ↦ conj (f (conj z))` is complex differentiable at `z`.  The lemmas here package the
+corresponding within-set statement for reflected images, which is the form needed before the
 real-axis Schwarz reflection principle.
 -/
 
@@ -22,7 +22,7 @@ public section
 
 namespace TauCeti
 
-open Complex Set
+open Complex Filter Set
 open scoped ComplexConjugate
 
 variable {f : ℂ → ℂ} {S : Set ℂ} {z : ℂ}
@@ -53,39 +53,89 @@ lemma isOpen_starRingEnd_image (hS : IsOpen S) : IsOpen ((starRingEnd ℂ) '' S)
   rw [starRingEnd_image_eq_preimage]
   exact hS.preimage continuous_star
 
-/--
-Open-domain form of the antiholomorphic-composition prerequisite for Schwarz reflection.
+private lemma HasFDerivWithinAt.comp_semilinear_preimage
+    {𝕜 V V' W W' : Type*} [NontriviallyNormedField 𝕜] {σ σ' : RingHom 𝕜 𝕜}
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    [NormedAddCommGroup V'] [NormedSpace 𝕜 V']
+    [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+    [NormedAddCommGroup W'] [NormedSpace 𝕜 W']
+    [RingHomIsometric σ] [RingHomInvPair σ σ']
+    (L : W →SL[σ] W') (R : V' →SL[σ'] V)
+    {g : V → W} {g' : V →L[𝕜] W} {T : Set V} {x : V'}
+    (hg : HasFDerivWithinAt g g' T (R x)) :
+    HasFDerivWithinAt (L ∘ g ∘ R) (L.comp (g'.comp R)) (R ⁻¹' T) x := by
+  rw [hasFDerivWithinAt_iff_isLittleO] at ⊢ hg
+  have : RingHomIsometric σ' := .inv σ
+  have hR : Tendsto R (nhdsWithin x (R ⁻¹' T)) (nhdsWithin (R x) T) :=
+    R.continuous.continuousAt.continuousWithinAt.tendsto_nhdsWithin (mapsTo_preimage R T)
+  have hsmall := hg.comp_tendsto hR
+  have hRsub : ((fun x' => x' - R x) ∘ R) =O[nhdsWithin x (R ⁻¹' T)] fun x' => x' - x := by
+    simpa [Function.comp_def, map_sub] using R.isBigO_sub (nhdsWithin x (R ⁻¹' T)) x
+  simpa [Function.comp_def, map_sub] using
+    ((L.isBigO_comp _ _).trans_isLittleO hsmall).trans_isBigO hRsub
 
-If `f` is holomorphic on an open set `S`, then `z ↦ conj (f (conj z))` is holomorphic on the
-reflected open set `conj '' S`.  This is the `DifferentiableOn` wrapper around Mathlib's
-pointwise `DifferentiableAt.conj_conj`.
+/--
+Antiholomorphic-composition prerequisite for Schwarz reflection.
+
+If `f` is holomorphic on `S`, then `z ↦ conj (f (conj z))` is holomorphic on the reflected
+set `conj '' S`.
 -/
-lemma differentiableOn_starRingEnd_comp_starRingEnd_of_isOpen (hS : IsOpen S)
-    (hf : DifferentiableOn ℂ f S) :
+lemma differentiableOn_starRingEnd_comp_starRingEnd (hf : DifferentiableOn ℂ f S) :
     DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
       ((starRingEnd ℂ) '' S) := by
   intro z hz
   have hzS : (starRingEnd ℂ) z ∈ S := mem_starRingEnd_image_iff.mp hz
-  have hfz : DifferentiableAt ℂ f ((starRingEnd ℂ) z) :=
-    (hf ((starRingEnd ℂ) z) hzS).differentiableAt (hS.mem_nhds hzS)
-  simpa [Function.comp_def] using (hfz.conj_conj).differentiableWithinAt
+  rcases (hf ((starRingEnd ℂ) z) hzS) with ⟨f', hf'⟩
+  have hstar :=
+    HasFDerivWithinAt.comp_semilinear_preimage
+      (starL ℂ).toContinuousLinearMap (starL ℂ).toContinuousLinearMap (x := z) hf'
+  rw [starRingEnd_image_eq_preimage]
+  have hfun :
+      (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) =
+        (⇑(starL ℂ).toContinuousLinearMap ∘ f ∘ ⇑(starL ℂ).toContinuousLinearMap) := by
+    funext w
+    change (starRingEnd ℂ) (f ((starRingEnd ℂ) w)) =
+      (starL ℂ : ℂ ≃L⋆[ℂ] ℂ) (f ((starL ℂ : ℂ ≃L⋆[ℂ] ℂ) w))
+    rw [starL_apply, starL_apply, starRingEnd_apply, starRingEnd_apply]
+  have hset : (starRingEnd ℂ) ⁻¹' S = ⇑(starL ℂ).toContinuousLinearMap ⁻¹' S := by
+    ext w
+    change (starRingEnd ℂ) w ∈ S ↔ (starL ℂ : ℂ ≃L⋆[ℂ] ℂ) w ∈ S
+    rw [starL_apply, starRingEnd_apply]
+  rw [hfun, hset]
+  exact hstar.differentiableWithinAt
 
 /--
-Conjugating both source and target preserves holomorphicity on open domains, in both
-directions.
+Open-domain form of `differentiableOn_starRingEnd_comp_starRingEnd`.
 -/
-lemma differentiableOn_starRingEnd_comp_starRingEnd_iff_of_isOpen (hS : IsOpen S) :
+lemma differentiableOn_starRingEnd_comp_starRingEnd_of_isOpen (_hS : IsOpen S)
+    (hf : DifferentiableOn ℂ f S) :
+    DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
+      ((starRingEnd ℂ) '' S) :=
+  differentiableOn_starRingEnd_comp_starRingEnd hf
+
+/--
+Conjugating both source and target preserves holomorphicity on domains, in both directions.
+-/
+lemma differentiableOn_starRingEnd_comp_starRingEnd_iff :
     DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
         ((starRingEnd ℂ) '' S) ↔
       DifferentiableOn ℂ f S := by
   constructor
   · intro h
-    have hopen : IsOpen ((starRingEnd ℂ) '' S) := isOpen_starRingEnd_image hS
     have htwice :=
-      differentiableOn_starRingEnd_comp_starRingEnd_of_isOpen
+      differentiableOn_starRingEnd_comp_starRingEnd
         (S := (starRingEnd ℂ) '' S)
-        (f := fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) hopen h
+        (f := fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) h
     simpa [starRingEnd_image_eq_preimage, Set.preimage_preimage, Function.comp_def] using htwice
-  · exact differentiableOn_starRingEnd_comp_starRingEnd_of_isOpen hS
+  · exact differentiableOn_starRingEnd_comp_starRingEnd
+
+/--
+Open-domain form of `differentiableOn_starRingEnd_comp_starRingEnd_iff`.
+-/
+lemma differentiableOn_starRingEnd_comp_starRingEnd_iff_of_isOpen (_hS : IsOpen S) :
+    DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
+        ((starRingEnd ℂ) '' S) ↔
+      DifferentiableOn ℂ f S :=
+  differentiableOn_starRingEnd_comp_starRingEnd_iff
 
 end TauCeti
