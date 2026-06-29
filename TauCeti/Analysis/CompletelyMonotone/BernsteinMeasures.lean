@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+public import Mathlib.Topology.ContinuousMap.Bounded.Basic
 public import TauCeti.Analysis.CompletelyMonotone.Integral
 
 /-!
@@ -25,8 +26,10 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 * `TauCeti.chafaiDensity`, `TauCeti.chafaiMeasure`: the approximating densities and measures.
 * `TauCeti.bernstein_kernel`, `TauCeti.continuous_bernstein_kernel`,
   `TauCeti.bernstein_kernel_nonneg`, `TauCeti.bernstein_kernel_le_one`,
-  `TauCeti.bernstein_kernel_tendsto`: the rescaled Laplace kernel, its bounded-continuous
-  `p`-dependence on the nonnegative half-line, and its pointwise limit `e^{-xp}`.
+  `TauCeti.bernsteinKernelBCF`, `TauCeti.bernsteinKernelBCF_apply`,
+  `TauCeti.bernstein_kernel_tendsto`: the rescaled Laplace kernel, its bundled
+  bounded-continuous `p`-dependence on the nonnegative half-line, and its pointwise limit
+  `e^{-xp}`.
 * `TauCeti.chafaiRescaled`, `TauCeti.chafaiRescaled_mass_eq`: the `ℝ≥0`-valued pushed-forward
   measures and mass preservation.
 * `TauCeti.chafaiMeasure_finite_mass`, `TauCeti.chafaiRescaled_finite_mass`: finiteness and the
@@ -43,7 +46,7 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 public section
 
 open MeasureTheory Set intervalIntegral Filter
-open scoped ContDiff NNReal Topology
+open scoped BoundedContinuousFunction ContDiff NNReal Topology
 
 namespace TauCeti
 
@@ -165,19 +168,6 @@ private lemma chafaiDensity_succ_succ_sub_succ (f : ℝ → ℝ) (m : ℕ) (t : 
   field_simp
   ring
 
-private lemma ContDiffOn.hasDerivAt_iteratedDerivWithin_of_nat {s : Set ℝ} {k : ℕ}
-    (hf : ContDiffOn ℝ ((k + 1 : ℕ) : WithTop ℕ∞) f s) (hs : UniqueDiffOn ℝ s)
-    {x : ℝ} (hx : s ∈ nhds x) :
-    HasDerivAt (iteratedDerivWithin k f s) (iteratedDerivWithin (k + 1) f s x) x := by
-  have hklt : (k : WithTop ℕ∞) < ((k + 1 : ℕ) : WithTop ℕ∞) := by
-    exact_mod_cast (Nat.lt_succ_self k)
-  have hda := (hf.differentiableOn_iteratedDerivWithin hklt hs).hasDerivAt hx
-  have hval : iteratedDerivWithin (k + 1) f s x =
-      deriv (iteratedDerivWithin k f s) x := by
-    rw [iteratedDerivWithin_succ, derivWithin_of_mem_nhds hx]
-  rw [hval]
-  exact hda
-
 /-! ## Rescaled measures and Prokhorov extraction -/
 
 /-- The Bernstein kernel `φ_n(x,p) = max(1 - xp/(n-1), 0)ⁿ⁻¹` for `n ≥ 2`. After the change of
@@ -219,6 +209,26 @@ lemma bernstein_kernel_le_one {n : ℕ} {x p : ℝ} (hx : 0 ≤ x) (hp : 0 ≤ p
     have hbase_le_one : max (1 - x * p / (↑(n - 1) : ℝ)) 0 ≤ 1 := by
       exact max_le (by linarith) zero_le_one
     exact pow_le_one₀ hbase_nonneg hbase_le_one
+
+/-- The Bernstein kernel as a bundled bounded continuous test function of the nonnegative
+variable `p`, for fixed `n` and nonnegative `x`. -/
+@[expose]
+noncomputable def bernsteinKernelBCF (n : ℕ) {x : ℝ} (hx : 0 ≤ x) : ℝ≥0 →ᵇ ℝ where
+  toFun := fun p => bernstein_kernel n x (p : ℝ)
+  continuous_toFun := (continuous_bernstein_kernel n x).comp continuous_subtype_val
+  map_bounded' :=
+    ⟨1, fun p q => by
+      rw [Real.dist_eq]
+      have hp0 : 0 ≤ bernstein_kernel n x (p : ℝ) := bernstein_kernel_nonneg n x (p : ℝ)
+      have hp1 : bernstein_kernel n x (p : ℝ) ≤ 1 := bernstein_kernel_le_one hx p.2
+      have hq0 : 0 ≤ bernstein_kernel n x (q : ℝ) := bernstein_kernel_nonneg n x (q : ℝ)
+      have hq1 : bernstein_kernel n x (q : ℝ) ≤ 1 := bernstein_kernel_le_one hx q.2
+      exact abs_sub_le_iff.mpr ⟨by linarith, by linarith⟩⟩
+
+/-- The bundled Bernstein kernel evaluates to the unbundled kernel on `ℝ≥0`. -/
+@[simp]
+lemma bernsteinKernelBCF_apply (n : ℕ) {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
+    bernsteinKernelBCF n hx p = bernstein_kernel n x (p : ℝ) := rfl
 
 /-- The Bernstein kernel is measurable in `p` for fixed `n` and `x`. -/
 lemma measurable_bernstein_kernel (n : ℕ) (x : ℝ) : Measurable (bernstein_kernel n x) := by
@@ -325,7 +335,7 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) {m : ℕ}
       le_rfl (uniqueDiffOn_Ici 0)
   have hg_deriv : ∀ t, 0 < t → HasDerivAt g (g' t) t :=
     fun t ht =>
-      ContDiffOn.hasDerivAt_iteratedDerivWithin_of_nat hf (uniqueDiffOn_Ici 0) (Ici_mem_nhds ht)
+      ContDiffOn.hasDerivAt_iteratedDerivWithin hf (uniqueDiffOn_Ici 0) (Ici_mem_nhds ht)
   have huIcc : uIcc (0 : ℝ) T = Icc 0 T := uIcc_of_le hT.le
   have hF_cont : ContinuousOn F (Icc 0 T) :=
     ((continuous_pow _).continuousOn).mul

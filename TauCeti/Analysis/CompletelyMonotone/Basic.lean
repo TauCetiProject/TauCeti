@@ -209,13 +209,16 @@ end IsCompletelyMonotone
 variable {f : ℝ → ℝ}
 
 /-- At a point `x` in the interior of a unique-differentiability set `s` (`s ∈ 𝓝 x`),
-the derivative of the `k`-th iterated derivative-within-`s` of a `C^∞` function is the
+the derivative of the `k`-th iterated derivative-within-`s` of a `C^(k+1)` function is the
 `(k+1)`-th iterated derivative-within-`s`. -/
 theorem ContDiffOn.hasDerivAt_iteratedDerivWithin
-    (hf : ContDiffOn ℝ ∞ f s) (hs : UniqueDiffOn ℝ s) (k : ℕ) {x : ℝ} (hx : s ∈ nhds x) :
+    {k : ℕ} (hf : ContDiffOn ℝ ((k + 1 : ℕ) : WithTop ℕ∞) f s)
+    (hs : UniqueDiffOn ℝ s) {x : ℝ} (hx : s ∈ nhds x) :
     HasDerivAt (iteratedDerivWithin k f s) (iteratedDerivWithin (k + 1) f s x) x := by
+  have hklt : (k : WithTop ℕ∞) < ((k + 1 : ℕ) : WithTop ℕ∞) := by
+    exact_mod_cast (Nat.lt_succ_self k)
   have hda := (hf.differentiableOn_iteratedDerivWithin
-    (WithTop.coe_lt_coe.mpr (WithTop.coe_lt_top k)) hs).hasDerivAt hx
+    hklt hs).hasDerivAt hx
   have hval : iteratedDerivWithin (k + 1) f s x =
       deriv (iteratedDerivWithin k f s) x := by
     rw [iteratedDerivWithin_succ, derivWithin_of_mem_nhds hx]
@@ -230,9 +233,10 @@ differentiable at any `t > 0`, with derivative the `(k+1)`-th iterated derivativ
 lemma hasDerivAt_iteratedDerivWithin_succ
     (hcm : IsCompletelyMonotone f) (k : ℕ) {t : ℝ} (ht : 0 < t) :
     HasDerivAt (iteratedDerivWithin k f (Ici 0))
-      (iteratedDerivWithin (k + 1) f (Ici 0) t) t :=
-  ContDiffOn.hasDerivAt_iteratedDerivWithin hcm.contDiffOn (uniqueDiffOn_Ici 0) k
-    (Ici_mem_nhds ht)
+      (iteratedDerivWithin (k + 1) f (Ici 0) t) t := by
+  have horder : ((k + 1 : ℕ) : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
+  exact ContDiffOn.hasDerivAt_iteratedDerivWithin (k := k)
+    (hcm.contDiffOn.of_le horder) (uniqueDiffOn_Ici 0) (Ici_mem_nhds ht)
 
 /-- Completely monotone functions are closed under addition. -/
 lemma add (hf : IsCompletelyMonotone f) (hg : IsCompletelyMonotone g) :
