@@ -191,6 +191,28 @@ lemma apply_stdComplexLine
     F z = z.1 • F stdComplexLineReal + z.2 • J (F stdComplexLineReal) := by
   rw [LinearMap.apply_stdComplexLine F z, hF.apply_stdComplexLineImag]
 
+/-- A complex-linear map from the standard complex line is zero exactly when its real-coordinate
+value is zero. -/
+@[simp]
+lemma eq_zero_iff_apply_stdComplexLineReal
+    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) :
+    F = 0 ↔ F stdComplexLineReal = 0 := by
+  constructor
+  · intro h
+    simp [h]
+  · intro hreal
+    apply LinearMap.ext
+    intro z
+    rw [hF.apply_stdComplexLine z, hreal]
+    simp
+
+/-- The real-coordinate value of a nonzero complex-linear map from the standard complex line is
+nonzero. -/
+lemma apply_stdComplexLineReal_ne_zero
+    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) (hFne : F ≠ 0) :
+    F stdComplexLineReal ≠ 0 := by
+  exact fun hreal => hFne ((hF.eq_zero_iff_apply_stdComplexLineReal).mpr hreal)
+
 variable {ω : SymplecticForm V}
 
 /-- Under tameness, the pointwise symplectic area of a complex-linear image of the standard
