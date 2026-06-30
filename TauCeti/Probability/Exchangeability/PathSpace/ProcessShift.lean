@@ -42,6 +42,7 @@ def processShift (X : ℕ → Ω → α) (m : ℕ) : Ω → (ℕ → α) :=
   fun ω n => X (m + n) ω
 
 omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- Coordinate equation for `processShift`: its `n`th coordinate is `X (m + n)`. -/
 @[simp]
 theorem processShift_apply (X : ℕ → Ω → α) (m n : ℕ) (ω : Ω) :
     processShift X m ω n = X (m + n) ω := by
@@ -60,11 +61,13 @@ def processCons (x : Ω → α) (t : Ω → ℕ → α) : Ω → ℕ → α
   | ω, (n + 1) => t ω n
 
 omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- Leading coordinate of a cons: `processCons x t ω 0 = x ω`. -/
 @[simp]
 theorem processCons_zero (x : Ω → α) (t : Ω → ℕ → α) (ω : Ω) : processCons x t ω 0 = x ω := by
   simp only [processCons]
 
 omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- Later coordinates of a cons: `processCons x t ω (n + 1) = t ω n`. -/
 @[simp]
 theorem processCons_succ (x : Ω → α) (t : Ω → ℕ → α) (ω : Ω) (n : ℕ) :
     processCons x t ω (n + 1) = t ω n := by
@@ -75,6 +78,7 @@ t ω (n+1)`. -/
 def processTail (t : Ω → ℕ → α) : Ω → ℕ → α := fun ω n => t ω (n + 1)
 
 omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- Coordinate equation for `processTail`: its `n`th coordinate is `t (n + 1)`. -/
 @[simp]
 theorem processTail_apply (t : Ω → ℕ → α) (ω : Ω) (n : ℕ) : processTail t ω n = t ω (n + 1) := by
   simp only [processTail]
@@ -102,11 +106,11 @@ theorem measurable_processCons {x : Ω → α} {t : Ω → ℕ → α} (hx : Mea
   | zero => exact hx
   | succ n => exact (measurable_pi_apply n).comp ht
 
-/-- The tail of a measurable process is measurable. -/
+/-- The tail of a process is measurable when its tail coordinates `t (· + 1)` are. -/
 @[fun_prop]
-theorem measurable_processTail {t : Ω → ℕ → α} (ht : Measurable t) :
+theorem measurable_processTail {t : Ω → ℕ → α} (ht : ∀ n, Measurable fun ω => t ω (n + 1)) :
     Measurable (processTail t) :=
-  measurable_pi_lambda _ fun n => (measurable_pi_apply (n + 1)).comp ht
+  measurable_pi_lambda _ ht
 
 omit [MeasurableSpace Ω] in
 /-- The tail of a sequence-valued random variable generates a coarser σ-algebra. It is the

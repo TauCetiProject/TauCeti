@@ -38,6 +38,8 @@ def blockCylinder (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ) (C : Fin
   {ω | ∀ i, X (k i) ω ∈ C i}
 
 omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- Membership in the block cylinder: `ω` lies in `blockCylinder X k C` iff every selected
+coordinate `X (k i) ω` lies in its set `C i`. -/
 @[simp]
 theorem mem_blockCylinder {X : ℕ → Ω → α} {m : ℕ} {k : Fin m → ℕ} {C : Fin m → Set α} {ω : Ω} :
     ω ∈ blockCylinder X k C ↔ ∀ i, X (k i) ω ∈ C i :=
@@ -56,12 +58,20 @@ def blockIndicatorProd (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ) (C 
   fun ω => ∏ i, (C i).indicator (fun _ => (1 : ℝ)) (X (k i) ω)
 
 omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- Pointwise value of the indicator product: the product of the selected coordinate indicators. -/
+@[simp]
+theorem blockIndicatorProd_apply (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ) (C : Fin m → Set α)
+    (ω : Ω) :
+    blockIndicatorProd X k C ω = ∏ i, (C i).indicator (fun _ => (1 : ℝ)) (X (k i) ω) := by
+  simp only [blockIndicatorProd]
+
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
 /-- The indicator product is the indicator of the block cylinder. -/
 theorem blockIndicatorProd_eq_indicator (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ)
     (C : Fin m → Set α) :
     blockIndicatorProd X k C = (blockCylinder X k C).indicator (fun _ => (1 : ℝ)) := by
   funext ω
-  simp only [blockIndicatorProd]
+  rw [blockIndicatorProd_apply]
   by_cases h : ω ∈ blockCylinder X k C
   · rw [Set.indicator_of_mem h]
     exact Finset.prod_eq_one fun i _ => Set.indicator_of_mem (mem_blockCylinder.mp h i) _
