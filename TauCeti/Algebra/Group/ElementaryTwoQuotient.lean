@@ -238,12 +238,12 @@ noncomputable def elementaryTwoQuotientCongr (e : G ≃* H) :
   exact elementaryTwoQuotientMap_mk e.symm.toMonoidHom h
 
 /-- The identity equivalence induces the identity equivalence on the elementary-2 quotient. -/
-@[simp] theorem elementaryTwoQuotientCongr_refl (x : ElementaryTwoQuotient G) :
+@[simp] theorem elementaryTwoQuotientCongr_refl_apply (x : ElementaryTwoQuotient G) :
     elementaryTwoQuotientCongr (MulEquiv.refl G) x = x :=
   elementaryTwoQuotientMap_id x
 
 /-- Induced equivalences on elementary-2 quotients compose functorially. -/
-@[simp] theorem elementaryTwoQuotientCongr_trans (e : G ≃* H) (e' : H ≃* K)
+@[simp] theorem elementaryTwoQuotientCongr_trans_apply (e : G ≃* H) (e' : H ≃* K)
     (x : ElementaryTwoQuotient G) :
     elementaryTwoQuotientCongr (e.trans e') x =
       elementaryTwoQuotientCongr e' (elementaryTwoQuotientCongr e x) :=
