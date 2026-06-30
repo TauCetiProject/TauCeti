@@ -9,14 +9,12 @@ public import Mathlib.Order.Interval.Finset.Nat
 # Finitely supported permutations
 
 This file records small bridges for Mathlib's finite-support predicate for permutations,
-`(MulAction.fixedBy ι π)ᶜ.Finite`, used by exchangeability constructions.
+`(MulAction.fixedBy ι π)ᶜ.Finite`.
 -/
 
 public section
 
 namespace TauCeti
-
-namespace Probability
 
 variable {ι : Type*}
 
@@ -56,7 +54,5 @@ theorem finite_compl_fixedBy_conj {π σ : Equiv.Perm ι}
   rw [Set.mem_compl_iff, MulAction.mem_fixedBy, Equiv.Perm.smul_def]
   intro hfixed
   exact hn' (by simp [hfixed])
-
-end Probability
 
 end TauCeti
