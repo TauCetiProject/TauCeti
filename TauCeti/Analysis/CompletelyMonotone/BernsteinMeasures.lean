@@ -24,13 +24,13 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 ## Main declarations
 
 * `TauCeti.chafaiDensity`, `TauCeti.chafaiMeasure`: the approximating densities and measures.
-* `TauCeti.bernstein_kernel`, `TauCeti.continuous_bernstein_kernel`,
-  `TauCeti.bernstein_kernel_nonneg`, `TauCeti.bernstein_kernel_le_one`,
+* `TauCeti.bernsteinKernel`, `TauCeti.continuous_bernsteinKernel`,
+  `TauCeti.bernsteinKernel_nonneg`, `TauCeti.bernsteinKernel_le_one`,
   `TauCeti.bernsteinKernelBoundedContinuous`,
   `TauCeti.bernsteinKernelBoundedContinuous_apply`,
   `TauCeti.laplaceKernelBoundedContinuous`,
   `TauCeti.laplaceKernelBoundedContinuous_apply`,
-  `TauCeti.bernstein_kernel_tendsto`: the rescaled Laplace kernel, its bundled
+  `TauCeti.bernsteinKernel_tendsto`: the rescaled Laplace kernel, its bundled
   bounded-continuous `p`-dependence on the nonnegative half-line, and its bundled pointwise
   limit `e^{-xp}`.
 * `TauCeti.chafaiRescaled`, `TauCeti.chafaiRescaled_mass_eq`: the `ℝ≥0`-valued pushed-forward
@@ -185,34 +185,34 @@ private lemma chafaiDensity_succ_succ_sub_succ (f : ℝ → ℝ) (m : ℕ) (t : 
 /-- The Bernstein kernel `φ_n(x,p) = max(1 - xp/(n-1), 0)ⁿ⁻¹` for `n ≥ 2`. After the change of
 variable `p = (n-1)/t`, the Taylor integral kernel on `[0, T]` becomes `φ_n(x, p)`, which
 converges pointwise to `e^{-xp}` as `n → ∞` (the classical `(1-x/n)ⁿ → e^{-x}` limit). -/
-noncomputable def bernstein_kernel (n : ℕ) (x p : ℝ) : ℝ :=
+noncomputable def bernsteinKernel (n : ℕ) (x p : ℝ) : ℝ :=
   if n ≤ 1 then 0 else (max (1 - x * p / (↑(n - 1) : ℝ)) 0) ^ (n - 1)
 
 /-- The Bernstein kernel vanishes for `n ≤ 1`. -/
-@[simp] lemma bernstein_kernel_of_le_one {n : ℕ} (hn : n ≤ 1) (x p : ℝ) :
-    bernstein_kernel n x p = 0 := by
-  rw [bernstein_kernel, if_pos hn]
+@[simp] lemma bernsteinKernel_of_le_one {n : ℕ} (hn : n ≤ 1) (x p : ℝ) :
+    bernsteinKernel n x p = 0 := by
+  rw [bernsteinKernel, if_pos hn]
 
 /-- The defining formula for the Bernstein kernel at `2 ≤ n`. -/
 @[simp]
-lemma bernstein_kernel_of_two_le {n : ℕ} (hn : 2 ≤ n) (x p : ℝ) :
-    bernstein_kernel n x p = (max (1 - x * p / (↑(n - 1) : ℝ)) 0) ^ (n - 1) := by
+lemma bernsteinKernel_of_two_le {n : ℕ} (hn : 2 ≤ n) (x p : ℝ) :
+    bernsteinKernel n x p = (max (1 - x * p / (↑(n - 1) : ℝ)) 0) ^ (n - 1) := by
   have hnle : ¬ n ≤ 1 := by omega
-  rw [bernstein_kernel, if_neg hnle]
+  rw [bernsteinKernel, if_neg hnle]
 
 /-- The Bernstein kernel is continuous in `p` for fixed `n` and `x`. -/
-lemma continuous_bernstein_kernel (n : ℕ) (x : ℝ) : Continuous (bernstein_kernel n x) := by
-  unfold bernstein_kernel
+lemma continuous_bernsteinKernel (n : ℕ) (x : ℝ) : Continuous (bernsteinKernel n x) := by
+  unfold bernsteinKernel
   split_ifs <;> fun_prop
 
 /-- The Bernstein kernel is nonnegative. -/
-@[simp] lemma bernstein_kernel_nonneg (n : ℕ) (x p : ℝ) : 0 ≤ bernstein_kernel n x p := by
-  rw [bernstein_kernel]; split_ifs <;> positivity
+@[simp] lemma bernsteinKernel_nonneg (n : ℕ) (x p : ℝ) : 0 ≤ bernsteinKernel n x p := by
+  rw [bernsteinKernel]; split_ifs <;> positivity
 
 /-- On the nonnegative half-plane, the Bernstein kernel is bounded above by `1`. -/
-lemma bernstein_kernel_le_one {n : ℕ} {x p : ℝ} (hx : 0 ≤ x) (hp : 0 ≤ p) :
-    bernstein_kernel n x p ≤ 1 := by
-  rw [bernstein_kernel]
+lemma bernsteinKernel_le_one {n : ℕ} {x p : ℝ} (hx : 0 ≤ x) (hp : 0 ≤ p) :
+    bernsteinKernel n x p ≤ 1 := by
+  rw [bernsteinKernel]
   split_ifs with hn
   · norm_num
   · have hn_pos : (0 : ℝ) < (↑(n - 1) : ℝ) := Nat.cast_pos.mpr (by omega)
@@ -227,21 +227,21 @@ lemma bernstein_kernel_le_one {n : ℕ} {x p : ℝ} (hx : 0 ≤ x) (hp : 0 ≤ p
 variable `p`, for fixed `n` and nonnegative `x`. -/
 noncomputable def bernsteinKernelBoundedContinuous (n : ℕ) {x : ℝ} (hx : 0 ≤ x) :
     ℝ≥0 →ᵇ ℝ where
-  toFun := fun p => bernstein_kernel n x (p : ℝ)
-  continuous_toFun := (continuous_bernstein_kernel n x).comp continuous_subtype_val
+  toFun := fun p => bernsteinKernel n x (p : ℝ)
+  continuous_toFun := (continuous_bernsteinKernel n x).comp continuous_subtype_val
   map_bounded' :=
     ⟨1, fun p q => by
       rw [Real.dist_eq]
-      have hp0 : 0 ≤ bernstein_kernel n x (p : ℝ) := bernstein_kernel_nonneg n x (p : ℝ)
-      have hp1 : bernstein_kernel n x (p : ℝ) ≤ 1 := bernstein_kernel_le_one hx p.2
-      have hq0 : 0 ≤ bernstein_kernel n x (q : ℝ) := bernstein_kernel_nonneg n x (q : ℝ)
-      have hq1 : bernstein_kernel n x (q : ℝ) ≤ 1 := bernstein_kernel_le_one hx q.2
+      have hp0 : 0 ≤ bernsteinKernel n x (p : ℝ) := bernsteinKernel_nonneg n x (p : ℝ)
+      have hp1 : bernsteinKernel n x (p : ℝ) ≤ 1 := bernsteinKernel_le_one hx p.2
+      have hq0 : 0 ≤ bernsteinKernel n x (q : ℝ) := bernsteinKernel_nonneg n x (q : ℝ)
+      have hq1 : bernsteinKernel n x (q : ℝ) ≤ 1 := bernsteinKernel_le_one hx q.2
       exact abs_sub_le_iff.mpr ⟨by linarith, by linarith⟩⟩
 
 /-- The bundled Bernstein kernel evaluates to the unbundled kernel on `ℝ≥0`. -/
 @[simp]
 lemma bernsteinKernelBoundedContinuous_apply (n : ℕ) {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
-    bernsteinKernelBoundedContinuous n hx p = bernstein_kernel n x (p : ℝ) := by
+    bernsteinKernelBoundedContinuous n hx p = bernsteinKernel n x (p : ℝ) := by
   rw [bernsteinKernelBoundedContinuous]; rfl
 
 /-- The limiting Laplace kernel as a bundled bounded continuous test function of the
@@ -269,15 +269,15 @@ lemma laplaceKernelBoundedContinuous_apply {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0
   rw [laplaceKernelBoundedContinuous]; rfl
 
 /-- The Bernstein kernel is measurable in `p` for fixed `n` and `x`. -/
-lemma measurable_bernstein_kernel (n : ℕ) (x : ℝ) : Measurable (bernstein_kernel n x) := by
-  unfold bernstein_kernel; split_ifs
+lemma measurable_bernsteinKernel (n : ℕ) (x : ℝ) : Measurable (bernsteinKernel n x) := by
+  unfold bernsteinKernel; split_ifs
   · exact measurable_const
   · fun_prop
 
 /-- **Pointwise convergence of the Bernstein kernel** to the Laplace kernel:
 `φ_n(x,p) → e^{-xp}` as `n → ∞`. -/
-lemma bernstein_kernel_tendsto (x p : ℝ) :
-    Tendsto (fun n : ℕ => bernstein_kernel n x p) atTop (nhds (Real.exp (-(x * p)))) := by
+lemma bernsteinKernel_tendsto (x p : ℝ) :
+    Tendsto (fun n : ℕ => bernsteinKernel n x p) atTop (nhds (Real.exp (-(x * p)))) := by
   set g := fun n : ℕ => (1 + (-(x * p)) / (↑n : ℝ)) ^ n with hg_def
   have hg_tendsto : Tendsto g atTop (nhds (Real.exp (-(x * p)))) :=
     Real.tendsto_one_add_div_pow_exp (-(x * p))
@@ -288,7 +288,7 @@ lemma bernstein_kernel_tendsto (x p : ℝ) :
   refine ⟨{n : ℕ | n ≥ Nat.ceil (x * p) + 2}, mem_atTop _, ?_⟩
   intro n hn
   simp only [Set.mem_setOf_eq] at hn
-  simp only [bernstein_kernel, hg_def]
+  simp only [bernsteinKernel, hg_def]
   have hn1 : ¬(n ≤ 1) := by omega
   simp only [hn1, ite_false]
   have hn1_pos : (0 : ℝ) < ↑(n - 1) := Nat.cast_pos.mpr (by omega)
