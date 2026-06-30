@@ -46,15 +46,21 @@ theorem _root_.Polynomial.derivative_hermite_succ (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [hermite_succ (n + 1)]
-    simp only [derivative_sub, derivative_mul, derivative_X, one_mul, ih, derivative_smul]
-    rw [mul_smul_comm]
-    rw [add_sub_assoc, ← smul_sub, ← hermite_succ n]
-    simp [add_smul, one_smul, add_comm, add_left_comm]
-    ring_nf
+    calc
+      derivative (hermite (n + 1 + 1))
+          = derivative (X * hermite (n + 1) - derivative (hermite (n + 1))) := by
+            rw [hermite_succ]
+      _ = hermite (n + 1) + X * ((n + 1) • hermite n) -
+            derivative ((n + 1) • hermite n) := by
+            simp only [derivative_sub, derivative_mul, derivative_X, one_mul, ih, derivative_smul]
+      _ = (n + 1 + 1) • hermite (n + 1) := by
+            rw [hermite_succ n]
+            simp only [derivative_smul]
+            ring_nf
 
 /-- The Hermite derivative identity restated at index `n`: `H'ₙ = n · Hₙ₋₁`. For `n = 0` both sides
 vanish (`H₀ = 1`). -/
+@[simp]
 theorem _root_.Polynomial.derivative_hermite (n : ℕ) :
     derivative (hermite n) = n • hermite (n - 1) := by
   cases n with
@@ -64,6 +70,7 @@ theorem _root_.Polynomial.derivative_hermite (n : ℕ) :
 /-- Iterating the lowering identity: the `k`-th derivative of `Hₙ` is the descending factorial
 `n (n-1) ⋯ (n-k+1)` times `H_{n-k}`. For `k > n` the descending factorial is `0` and both sides
 vanish. -/
+@[simp]
 theorem _root_.Polynomial.iterate_derivative_hermite (n k : ℕ) :
     derivative^[k] (hermite n) = n.descFactorial k • hermite (n - k) := by
   induction k with
