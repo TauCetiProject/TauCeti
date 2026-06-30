@@ -60,14 +60,6 @@ lemma mem_basepointChangeSubgroup (γ : Path x₀ x₁)
       ∃ h ∈ H, _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ h = g :=
   Iff.rfl
 
-/-- Membership in the subgroup transported along a basepoint-change path. -/
-lemma basepointChangeSubgroup_iff (γ : Path x₀ x₁)
-    (H : Subgroup (_root_.FundamentalGroup X x₀))
-    (g : _root_.FundamentalGroup X x₁) :
-    g ∈ basepointChangeSubgroup γ H ↔
-      ∃ h ∈ H, _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ h = g :=
-  mem_basepointChangeSubgroup γ H g
-
 /-- The normalizer quotient `N(H) / H` transported along a basepoint-change path. -/
 noncomputable def basepointChangeNormalizerQuotientEquiv (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀)) :
