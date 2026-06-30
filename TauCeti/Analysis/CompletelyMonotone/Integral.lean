@@ -21,7 +21,7 @@ fundamental-theorem identities, and improper-integral facts for `-f'`.
 ## Main declarations
 
 * `TauCeti.ContDiffAt.iteratedDerivWithin_Icc_eq_Ici`: iterated derivatives within `Icc x T`
-  and within `Ici 0` agree at interior points.
+  and within `Ici a` agree at interior points.
 * `TauCeti.ContDiffOn.integral_neg_derivWithin_Icc`,
   `TauCeti.ContDiffOn.integral_neg_derivWithin_Icc_zero_left`: finite-interval
   fundamental-theorem identities for smooth functions.
@@ -51,17 +51,17 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E}
 
-/-- `iteratedDerivWithin` on `Icc x T` agrees with `iteratedDerivWithin` on `Ici 0` at interior
+/-- `iteratedDerivWithin` on `Icc x T` agrees with `iteratedDerivWithin` on `Ici a` at interior
 points, since both equal `iteratedDeriv n f t` under local smoothness at `t`. -/
 lemma ContDiffAt.iteratedDerivWithin_Icc_eq_Ici {n : ℕ}
-    {x T t : ℝ} (hf : ContDiffAt ℝ (n : WithTop ℕ∞) f t) (ht_pos : 0 < t)
+    {a x T t : ℝ} (hf : ContDiffAt ℝ (n : WithTop ℕ∞) f t) (ht_lo : a < t)
     (ht : t ∈ Ioo x T) :
-    iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici 0) t := by
+    iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici a) t := by
   have hxT : x < T := lt_trans ht.1 ht.2
   rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT) hf
         (Ioo_subset_Icc_self ht),
-      ← iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hf
-        (mem_Ici.mpr ht_pos.le)]
+      ← iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici a) hf
+        (mem_Ici.mpr ht_lo.le)]
 
 /-- The fundamental-theorem identity
 `f x - f T = ∫ₓᵀ -f'` on a compact interval, with derivatives taken within that interval. -/
@@ -117,7 +117,7 @@ lemma iteratedDerivWithin_Icc_eq_Ici {n : ℕ} (hf : IsCompletelyMonotone f)
     iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici 0) t := by
   have hcda : ContDiffAt ℝ (n : WithTop ℕ∞) f t :=
     (hf.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (by exact_mod_cast le_top)
-  exact ContDiffAt.iteratedDerivWithin_Icc_eq_Ici hcda ht_pos ht
+  exact ContDiffAt.iteratedDerivWithin_Icc_eq_Ici (a := 0) hcda ht_pos ht
 
 /-- **CM sign of the Taylor remainder.** For a completely monotone function the Taylor
 integral remainder `∫ₓᵀ (T-t)ⁿ⁻¹/(n-1)! · f⁽ⁿ⁾(t) dt` has sign `(-1)ⁿ`:
