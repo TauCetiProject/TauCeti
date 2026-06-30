@@ -46,10 +46,12 @@ theorem _root_.Polynomial.derivative_hermite_succ (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [hermite_succ (n + 1), derivative_sub, derivative_mul, derivative_X, one_mul, ih,
-      derivative_smul, mul_smul_comm, add_sub_assoc, ← smul_sub, ← hermite_succ n]
-    conv_rhs => rw [add_smul, one_smul]
-    exact add_comm _ _
+    rw [hermite_succ (n + 1)]
+    simp only [derivative_sub, derivative_mul, derivative_X, one_mul, ih, derivative_smul]
+    rw [mul_smul_comm]
+    rw [add_sub_assoc, ← smul_sub, ← hermite_succ n]
+    simp [add_smul, one_smul, add_comm, add_left_comm]
+    ring_nf
 
 /-- The Hermite derivative identity restated at index `n`: `H'ₙ = n · Hₙ₋₁`. For `n = 0` both sides
 vanish (`H₀ = 1`). -/
