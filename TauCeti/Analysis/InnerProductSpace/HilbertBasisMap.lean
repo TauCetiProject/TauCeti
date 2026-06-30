@@ -21,10 +21,14 @@ public section
 
 namespace TauCeti
 
+open scoped BigOperators
+
 variable {ι : Type*} {𝕜 : Type*} {E F : Type*}
 variable [RCLike 𝕜]
 variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
 
 /-- Transport a Hilbert basis along a linear isometric equivalence. -/
 protected noncomputable def _root_.HilbertBasis.mapₗᵢ
@@ -38,6 +42,23 @@ theorem _root_.HilbertBasis.repr_mapₗᵢ
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
     (b.mapₗᵢ e).repr = e.symm.trans b.repr :=
   congrArg _root_.HilbertBasis.repr (_root_.HilbertBasis.mapₗᵢ.eq_1 b e)
+
+/-- Coordinates in the transported Hilbert basis are the original coordinates after applying
+the inverse isometry. -/
+@[simp]
+theorem _root_.HilbertBasis.repr_mapₗᵢ_apply
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x : F) :
+    (b.mapₗᵢ e).repr x = b.repr (e.symm x) := by
+  rw [_root_.HilbertBasis.repr_mapₗᵢ]
+  rfl
+
+/-- The `i`th coordinate in the transported Hilbert basis is the inner product against the
+corresponding original basis vector after applying the inverse isometry. -/
+@[simp]
+theorem _root_.HilbertBasis.repr_mapₗᵢ_apply_apply
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x : F) (i : ι) :
+    ((b.mapₗᵢ e).repr x) i = ⟪b i, e.symm x⟫ := by
+  rw [_root_.HilbertBasis.repr_mapₗᵢ_apply, b.repr_apply_apply]
 
 /-- The `i`th vector of the transported basis is the image of the `i`th vector. -/
 @[simp]
@@ -54,6 +75,32 @@ theorem _root_.HilbertBasis.coe_mapₗᵢ
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
     ⇑(b.mapₗᵢ e) = e ∘ b :=
   funext (b.mapₗᵢ_apply e)
+
+/-- The image family of a Hilbert basis under a linear isometric equivalence is orthonormal. -/
+theorem _root_.HilbertBasis.orthonormal_mapₗᵢ
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
+    Orthonormal 𝕜 (e ∘ b) := by
+  rw [← _root_.HilbertBasis.coe_mapₗᵢ b e]
+  exact (b.mapₗᵢ e).orthonormal
+
+/-- Parseval for a transported Hilbert basis, stated using the original basis vectors and the
+transporting isometry. -/
+protected theorem _root_.HilbertBasis.hasSum_inner_mapₗᵢ_mul_inner
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
+    HasSum (fun i => ⟪x, e (b i)⟫ * ⟪e (b i), y⟫) ⟪x, y⟫ := by
+  simpa using (b.mapₗᵢ e).hasSum_inner_mul_inner x y
+
+/-- Summability of the Parseval series for a transported Hilbert basis. -/
+protected theorem _root_.HilbertBasis.summable_inner_mapₗᵢ_mul_inner
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
+    Summable (fun i => ⟪x, e (b i)⟫ * ⟪e (b i), y⟫) :=
+  (b.hasSum_inner_mapₗᵢ_mul_inner e x y).summable
+
+/-- The `tsum` form of Parseval for a transported Hilbert basis. -/
+protected theorem _root_.HilbertBasis.tsum_inner_mapₗᵢ_mul_inner
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
+    ∑' i, ⟪x, e (b i)⟫ * ⟪e (b i), y⟫ = ⟪x, y⟫ :=
+  (b.hasSum_inner_mapₗᵢ_mul_inner e x y).tsum_eq
 
 /-- Transport along the identity isometry leaves a Hilbert basis unchanged. -/
 @[simp]
