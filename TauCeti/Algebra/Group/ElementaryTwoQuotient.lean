@@ -301,11 +301,22 @@ theorem card_elementaryTwoQuotient_eq_two_pow_twoRank
     Nat.card (ElementaryTwoQuotient G) = 2 ^ twoRank G := by
   rw [twoRank, Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod]
 
-/-- Multiplicatively equivalent commutative groups have the same elementary-2 rank. -/
-theorem twoRank_eq_of_mulEquiv (e : G ≃* H)
-    [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)]
-    [Module.Finite (ZMod 2) (ElementaryTwoQuotient H)] :
-    twoRank G = twoRank H :=
+/-- Multiplicatively equivalent commutative groups have elementary-2 quotients with the same
+`ZMod 2` finrank. -/
+theorem finrank_elementaryTwoQuotient_eq_of_mulEquiv (e : G ≃* H) :
+    Module.finrank (ZMod 2) (ElementaryTwoQuotient G) =
+      Module.finrank (ZMod 2) (ElementaryTwoQuotient H) :=
   (elementaryTwoQuotientCongr e).finrank_eq
+
+/-- If the elementary-2 quotient of `G` is finite-dimensional, then a multiplicatively equivalent
+commutative group has the same elementary-2 rank; target finite-dimensionality is transported by
+the induced equivalence. -/
+theorem twoRank_eq_of_mulEquiv (e : G ≃* H)
+    [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] :
+    letI : Module.Finite (ZMod 2) (ElementaryTwoQuotient H) :=
+      Module.Finite.of_surjective (elementaryTwoQuotientCongr e).toLinearMap
+        (elementaryTwoQuotientCongr e).surjective
+    twoRank G = twoRank H :=
+  finrank_elementaryTwoQuotient_eq_of_mulEquiv (G := G) (H := H) e
 
 end TauCeti

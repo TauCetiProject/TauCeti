@@ -166,11 +166,24 @@ theorem card_elementaryTwoQuotient_eq_two_pow_twoRank
     Nat.card (ElementaryTwoQuotient R) = 2 ^ twoRank R :=
   TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank (ClassGroup R)
 
-/-- Multiplicatively equivalent class groups have the same elementary-2 rank. -/
+/-- Multiplicatively equivalent class groups have `Cl/Cl²` quotients with the same `ZMod 2`
+finrank. -/
+theorem finrank_elementaryTwoQuotient_eq_of_mulEquiv {S : Type*} [CommRing S] [IsDomain S]
+    (e : ClassGroup R ≃* ClassGroup S) :
+    Module.finrank (ZMod 2) (ElementaryTwoQuotient R) =
+      Module.finrank (ZMod 2) (ElementaryTwoQuotient S) :=
+  TauCeti.finrank_elementaryTwoQuotient_eq_of_mulEquiv
+    (G := ClassGroup R) (H := ClassGroup S) e
+
+/-- If `Cl(R)/Cl(R)²` is finite-dimensional, then a multiplicatively equivalent class group has
+the same elementary-2 rank; target finite-dimensionality is transported by the induced
+equivalence. -/
 theorem twoRank_eq_of_mulEquiv {S : Type*} [CommRing S] [IsDomain S]
     (e : ClassGroup R ≃* ClassGroup S)
-    [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)]
-    [Module.Finite (ZMod 2) (ElementaryTwoQuotient S)] :
+    [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)] :
+    letI : Module.Finite (ZMod 2) (ElementaryTwoQuotient S) :=
+      Module.Finite.of_surjective (elementaryTwoQuotientCongr e).toLinearMap
+        (elementaryTwoQuotientCongr e).surjective
     twoRank R = twoRank S :=
   TauCeti.twoRank_eq_of_mulEquiv (G := ClassGroup R) (H := ClassGroup S) e
 
