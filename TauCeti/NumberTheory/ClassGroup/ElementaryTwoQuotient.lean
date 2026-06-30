@@ -137,6 +137,19 @@ of its inverse image. -/
     TauCeti.elementaryTwoQuotientMk (e.symm C)
   exact TauCeti.elementaryTwoQuotientCongr_symm_mk e C
 
+/-- The identity equivalence of class groups induces the identity equivalence on `Cl/Cl²`. -/
+@[simp] theorem elementaryTwoQuotientCongr_refl (x : ElementaryTwoQuotient R) :
+    elementaryTwoQuotientCongr (MulEquiv.refl (ClassGroup R)) x = x :=
+  TauCeti.elementaryTwoQuotientCongr_refl x
+
+/-- Induced class-group equivalences on `Cl/Cl²` compose functorially. -/
+theorem elementaryTwoQuotientCongr_trans {S T : Type*} [CommRing S] [IsDomain S]
+    [CommRing T] [IsDomain T] (e : ClassGroup R ≃* ClassGroup S)
+    (e' : ClassGroup S ≃* ClassGroup T) (x : ElementaryTwoQuotient R) :
+    elementaryTwoQuotientCongr (e.trans e') x =
+      elementaryTwoQuotientCongr e' (elementaryTwoQuotientCongr e x) :=
+  TauCeti.elementaryTwoQuotientCongr_trans e e' x
+
 variable (R)
 
 /-- **The 2-rank of the class group when `Cl(R)/Cl(R)²` is finite-dimensional**: the `ZMod 2`
