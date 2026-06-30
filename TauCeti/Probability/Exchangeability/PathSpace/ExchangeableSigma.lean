@@ -35,13 +35,19 @@ theorem permReindex_apply (π : Equiv.Perm ℕ) (x : ℕ → α) (n : ℕ) :
     permReindex π x n = x (π n) :=
   rfl
 
+/-- Composition rule for time reindexing. -/
+private theorem permReindex_permReindex (π σ : Equiv.Perm ℕ) (x : ℕ → α) :
+    permReindex (α := α) π (permReindex (α := α) σ x) =
+      permReindex (α := α) (σ * π) x := by
+  rfl
+
 variable [MeasurableSpace α]
 
 /-- The exchangeable σ-algebra on path space: ambient-measurable events invariant under every
 finitely supported permutation of the time coordinate. -/
 @[implicit_reducible]
 def exchangeableSigma (α : Type*) [MeasurableSpace α] : MeasurableSpace (ℕ → α) :=
-  ⨅ π : {π : Equiv.Perm ℕ // IsFinitelySupportedPerm π},
+  ⨅ π : {π : Equiv.Perm ℕ // (MulAction.fixedBy ℕ π)ᶜ.Finite},
     MeasurableSpace.invariants (permReindex (α := α) π.1)
 
 /-- A set is measurable for `exchangeableSigma` iff it is ambient-measurable and fixed by every
@@ -50,14 +56,14 @@ finitely supported time permutation. -/
 theorem mem_exchangeableSigma_iff {s : Set (ℕ → α)} :
     MeasurableSet[exchangeableSigma α] s ↔
       MeasurableSet s ∧
-        ∀ π : Equiv.Perm ℕ, IsFinitelySupportedPerm π →
+        ∀ π : Equiv.Perm ℕ, (MulAction.fixedBy ℕ π)ᶜ.Finite →
           permReindex (α := α) π ⁻¹' s = s := by
   rw [exchangeableSigma, MeasurableSpace.measurableSet_iInf]
   constructor
   · intro hs
     refine ⟨?_, ?_⟩
     · exact (MeasurableSpace.invariants_le (permReindex (α := α) (1 : Equiv.Perm ℕ))) _
-        (hs ⟨1, isFinitelySupportedPerm_one⟩)
+        (hs ⟨1, by simp⟩)
     · intro π hπ
       exact (MeasurableSpace.measurableSet_invariants.mp (hs ⟨π, hπ⟩)).2
   · rintro ⟨hs_meas, hs_inv⟩ π
@@ -78,7 +84,7 @@ theorem MeasurableSet.ambient_of_exchangeableSigma {s : Set (ℕ → α)}
 for the exchangeable σ-algebra. -/
 theorem measurableSet_exchangeableSigma_of_forall_permReindex {s : Set (ℕ → α)}
     (hs_meas : MeasurableSet s)
-    (hs_inv : ∀ π : Equiv.Perm ℕ, IsFinitelySupportedPerm π →
+    (hs_inv : ∀ π : Equiv.Perm ℕ, (MulAction.fixedBy ℕ π)ᶜ.Finite →
       permReindex (α := α) π ⁻¹' s = s) :
     MeasurableSet[exchangeableSigma α] s :=
   mem_exchangeableSigma_iff.mpr ⟨hs_meas, hs_inv⟩
@@ -87,25 +93,38 @@ theorem measurableSet_exchangeableSigma_of_forall_permReindex {s : Set (ℕ → 
 @[simp]
 theorem MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma {s : Set (ℕ → α)}
     (hs : MeasurableSet[exchangeableSigma α] s) {π : Equiv.Perm ℕ}
-    (hπ : IsFinitelySupportedPerm π) :
+    (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) :
     permReindex (α := α) π ⁻¹' s = s :=
   (mem_exchangeableSigma_iff.mp hs).2 π hπ
 
-/-- Reindexing by a finitely supported permutation is measurable as an endomap of the
-exchangeable σ-algebra. -/
-theorem measurable_permReindex_exchangeableSigma {π : Equiv.Perm ℕ}
-    (hπ : IsFinitelySupportedPerm π) :
+/-- Reindexing by any permutation is measurable as an endomap of the exchangeable σ-algebra. -/
+theorem measurable_permReindex_exchangeableSigma (π : Equiv.Perm ℕ) :
     @Measurable (ℕ → α) (ℕ → α) (exchangeableSigma α) (exchangeableSigma α)
       (permReindex (α := α) π) := by
   intro s hs
-  rw [MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma (α := α) hs hπ]
-  exact hs
+  refine mem_exchangeableSigma_iff.mpr ⟨?_, ?_⟩
+  · exact (measurable_pi_lambda _ fun n => measurable_pi_apply (π n))
+      (mem_exchangeableSigma_iff.mp hs).1
+  · intro σ hσ
+    ext x
+    simp only [Set.mem_preimage]
+    have hconj : (MulAction.fixedBy ℕ (π⁻¹ * σ * π))ᶜ.Finite :=
+      finite_compl_fixedBy_conj hσ
+    have hinv := MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma
+      (α := α) hs hconj
+    have hx := Set.ext_iff.mp hinv (permReindex (α := α) π x)
+    have hleft :
+        permReindex (α := α) (π⁻¹ * σ * π) (permReindex (α := α) π x) =
+          permReindex (α := α) π (permReindex (α := α) σ x) := by
+      ext n
+      simp [permReindex, Equiv.Perm.mul_apply]
+    simpa [Set.mem_preimage, hleft] using hx
 
 /-- An ambient-measurable observable fixed by every finitely supported reindexing is measurable
 with respect to the exchangeable σ-algebra. -/
 theorem measurable_exchangeableSigma_of_comp_permReindex_eq [MeasurableSpace β]
     {g : (ℕ → α) → β} (hg : Measurable g)
-    (hg_perm : ∀ π : Equiv.Perm ℕ, IsFinitelySupportedPerm π →
+    (hg_perm : ∀ π : Equiv.Perm ℕ, (MulAction.fixedBy ℕ π)ᶜ.Finite →
       g ∘ permReindex (α := α) π = g) :
     @Measurable (ℕ → α) β (exchangeableSigma α) inferInstance g := by
   intro s hs
@@ -119,10 +138,11 @@ supported reindexing. -/
 theorem comp_permReindex_eq_of_measurable_exchangeableSigma [MeasurableSpace β]
     [MeasurableSingletonClass β] {g : (ℕ → α) → β}
     (hg : @Measurable (ℕ → α) β (exchangeableSigma α) inferInstance g)
-    {π : Equiv.Perm ℕ} (hπ : IsFinitelySupportedPerm π) :
+    {π : Equiv.Perm ℕ} (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) :
     g ∘ permReindex (α := α) π = g := by
   exact MeasurableSpace.comp_eq_of_measurable_invariants
-    (hg.mono (iInf_le (fun π : {π : Equiv.Perm ℕ // IsFinitelySupportedPerm π} =>
+    (hg.mono (iInf_le (fun π : {π : Equiv.Perm ℕ //
+      (MulAction.fixedBy ℕ π)ᶜ.Finite} =>
       MeasurableSpace.invariants (permReindex (α := α) π.1)) ⟨π, hπ⟩) le_rfl)
 
 /-- If a set belongs to the future path σ-algebra from time `N` onward and `π` fixes every index
@@ -157,9 +177,14 @@ theorem pathTail_le_exchangeableSigma :
   · exact tailProcess_le_ambient 0 (X := fun k (x : ℕ → α) => x k)
       (fun k _ => measurable_pi_apply k) s hs
   · intro π hπ
-    rcases hπ.eventually_eq_self with ⟨N, hN⟩
+    rcases finite_compl_fixedBy_eventually_eq_self hπ with ⟨N, hN⟩
     exact preimage_permReindex_eq_of_measurable_tailFamily
       ((pathTail_le_tailFamily (α := α) N) s hs) hN
+
+/-- The path-space tail σ-algebra is contained in the exchangeable σ-algebra. -/
+theorem tail_le_exchangeableSigma :
+    pathTail α ≤ exchangeableSigma α :=
+  pathTail_le_exchangeableSigma
 
 end Probability
 
