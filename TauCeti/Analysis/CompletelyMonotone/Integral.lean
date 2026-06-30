@@ -78,33 +78,33 @@ lemma ContDiffOn.integral_neg_derivWithin_Icc_zero_left {T : ℝ}
     ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t = f 0 - f T := by
   exact (ContDiffOn.integral_neg_derivWithin_Icc hf hT).symm
 
-/-- The interval integral of `-f'` with the `T`-dependent set `Icc 0 T` equals the integral with
-the fixed set `Ici 0`, under local smoothness at the strict interior points. -/
+/-- The interval integral of `-f'` with the `T`-dependent set `Icc x T` equals the integral with
+the fixed set `Ici a`, under local smoothness at the strict interior points. -/
 lemma ContDiffOn.integral_neg_derivWithin_Icc_eq_Ici
-    {T : ℝ} (hf : ∀ t ∈ Ioo (0 : ℝ) T, ContDiffAt ℝ 1 f t) (hT : 0 ≤ T) :
-    ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t =
-    ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t := by
+    {a x T : ℝ} (hf : ∀ t ∈ Ioo x T, ContDiffAt ℝ 1 f t) (hax : a ≤ x) (hxT : x ≤ T) :
+    ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t =
+    ∫ t in x..T, -iteratedDerivWithin 1 f (Ici a) t := by
   apply intervalIntegral.integral_congr_uIoo
   intro t ht
-  rw [uIoo_of_le hT] at ht
-  have ht_pos : 0 < t := ht.1
-  have hT_pos : 0 < T := lt_trans ht_pos ht.2
+  rw [uIoo_of_le hxT] at ht
+  have ha_lt : a < t := lt_of_le_of_lt hax ht.1
+  have hxT_pos : x < T := lt_trans ht.1 ht.2
   have hcda : ContDiffAt ℝ 1 f t := hf t ht
-  simp only [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hT_pos) hcda
+  simp only [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT_pos) hcda
       (Ioo_subset_Icc_self ht),
-    iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcda
-      (mem_Ici.mpr ht_pos.le)]
+    iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici a) hcda
+      (mem_Ici.mpr ha_lt.le)]
 
-/-- The total mass `∫₀ᵀ (-f') dt → f(0) - L` as `T → ∞`, assuming smoothness on `[0, ∞)`
+/-- The total mass `∫ₐᵀ (-f') dt → f(a) - L` as `T → ∞`, assuming smoothness on `[a, ∞)`
 and convergence of `f` to `L` at infinity. -/
 lemma ContDiffOn.tendsto_total_mass
-    [CompleteSpace E] (hf : ContDiffOn ℝ 1 f (Ici 0)) {L : E}
+    [CompleteSpace E] {a : ℝ} (hf : ContDiffOn ℝ 1 f (Ici a)) {L : E}
     (hL : Tendsto f atTop (nhds L)) :
-    Tendsto (fun T => ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t) atTop
-        (nhds (f 0 - L)) := by
+    Tendsto (fun T => ∫ t in a..T, -iteratedDerivWithin 1 f (Icc a T) t) atTop
+        (nhds (f a - L)) := by
   refine Tendsto.congr' (EventuallyEq.symm ?_) (Tendsto.sub tendsto_const_nhds hL)
-  exact (eventually_gt_atTop 0).mono fun T hT =>
-    ContDiffOn.integral_neg_derivWithin_Icc_zero_left (hf.mono Icc_subset_Ici_self) hT.le
+  exact (eventually_gt_atTop a).mono fun T hT =>
+    (ContDiffOn.integral_neg_derivWithin_Icc (hf.mono Icc_subset_Ici_self) hT.le).symm
 
 variable {f : ℝ → ℝ}
 
@@ -180,7 +180,8 @@ lemma IsCompletelyMonotone.integral_neg_deriv_Ici
     ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t =
     ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t := by
   exact ContDiffOn.integral_neg_derivWithin_Icc_eq_Ici
-    (fun t ht => (hcm.contDiffOn.contDiffAt (Ici_mem_nhds ht.1)).of_le (nat_le_top _)) hT
+    (fun t ht => (hcm.contDiffOn.contDiffAt (Ici_mem_nhds ht.1)).of_le (nat_le_top _))
+    le_rfl hT
 
 /-- The total mass `∫₀ᵀ (-f') dt → f(0) - L` as `T → ∞`, where `L = lim f(t)`. This is
 the key uniform bound for the tightness argument in Bernstein's theorem. -/
@@ -188,7 +189,7 @@ lemma IsCompletelyMonotone.tendsto_total_mass
     (hcm : IsCompletelyMonotone f) {L : ℝ} (hL : Tendsto f atTop (nhds L)) :
     Tendsto (fun T => ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t) atTop
         (nhds (f 0 - L)) :=
-  ContDiffOn.tendsto_total_mass (hcm.contDiffOn.of_le (nat_le_top _)) hL
+  ContDiffOn.tendsto_total_mass (a := 0) (hcm.contDiffOn.of_le (nat_le_top _)) hL
 
 /-- `-f'` is integrable on `(0, ∞)` for a completely monotone function, where the derivative is
 taken within the closed half-line `[0, ∞)`. -/

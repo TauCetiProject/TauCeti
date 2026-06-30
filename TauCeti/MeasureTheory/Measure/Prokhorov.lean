@@ -44,44 +44,44 @@ The compactness input is Mathlib's
 convergence along an ultrafilter `U ≤ atTop`, which is enough for diagonal limit arguments and does
 not require a metrizability instance for `FiniteMeasure α`. -/
 lemma finite_measure_cluster_limit
-    (σ : ℕ → Measure α) (C : ℝ)
+    (σ : ℕ → Measure α) (C : ℝ≥0)
     [hfin : ∀ n, IsFiniteMeasure (σ n)]
-    (hmass : ∀ n, (σ n) univ ≤ ENNReal.ofReal C)
-    (htight : ∀ ε : ℝ, 0 < ε →
-      ∃ K : Set α, IsCompact K ∧ ∀ n, (σ n) Kᶜ ≤ ENNReal.ofReal ε) :
+    (hmass : ∀ n, (σ n) univ ≤ (C : ENNReal))
+    (hTight : IsTightMeasureSet (Set.range σ)) :
     ∃ (μ₀ : Measure α) (U : Ultrafilter ℕ), (U : Filter ℕ) ≤ atTop ∧ IsFiniteMeasure μ₀ ∧
-      μ₀ univ ≤ ENNReal.ofReal C ∧
+      μ₀ univ ≤ (C : ENNReal) ∧
       ∀ g : BoundedContinuousFunction α ℝ,
         Tendsto (fun n => ∫ x, g x ∂(σ n)) (U : Filter ℕ)
           (nhds (∫ x, g x ∂μ₀)) := by
   let σf : ℕ → FiniteMeasure α := fun n => ⟨σ n, hfin n⟩
-  let Cnn : ℝ≥0 := Real.toNNReal C
   obtain ⟨u, -, hu_pos, hu_lim⟩ :
       ∃ u : ℕ → ℝ≥0, StrictAnti u ∧ (∀ n, 0 < u n) ∧ Tendsto u atTop (𝓝 0) :=
     exists_seq_strictAnti_tendsto 0
   have hchoose : ∀ j, ∃ K : Set α, IsCompact K ∧
       ∀ n, (σ n) Kᶜ ≤ (u j : ENNReal) := by
     intro j
-    obtain ⟨K, hK, htail⟩ := htight (u j : ℝ) (by exact_mod_cast hu_pos j)
+    obtain ⟨K, hK, htail⟩ :=
+      isTightMeasureSet_iff_exists_isCompact_measure_compl_le.mp hTight
+        (u j : ENNReal) (by exact_mod_cast hu_pos j)
     refine ⟨K, hK, fun n => ?_⟩
-    simpa using htail n
+    exact htail (σ n) (Set.mem_range_self n)
   choose K hK_comp hK_tail using hchoose
   let Kacc : ℕ → Set α := Set.accumulate K
   let S : Set (FiniteMeasure α) :=
-    {μ | μ.mass ≤ Cnn ∧ ∀ j, μ (Kacc j)ᶜ ≤ u j}
+    {μ | μ.mass ≤ C ∧ ∀ j, μ (Kacc j)ᶜ ≤ u j}
   have hKacc_comp : ∀ j, IsCompact (Kacc j) := by
     intro j
     exact isCompact_accumulate hK_comp j
   have hcompact : IsCompact S := by
     simpa [S] using
       isCompact_setOf_finiteMeasure_mass_le_compl_isCompact_le
-        (E := α) (C := Cnn) (u := u) (K := Kacc) hu_lim hKacc_comp
+        (E := α) (C := C) (u := u) (K := Kacc) hu_lim hKacc_comp
         (Or.inr Set.monotone_accumulate)
   have hσ_mem : ∀ n, σf n ∈ S := by
     intro n
     constructor
-    · dsimp [σf, S, Cnn, FiniteMeasure.mass]
-      exact ENNReal.toNNReal_mono ENNReal.ofReal_ne_top (hmass n)
+    · dsimp [σf, S, FiniteMeasure.mass]
+      exact ENNReal.coe_le_coe.mp (by simpa using hmass n)
     · intro j
       have hsubset : (Kacc j)ᶜ ⊆ (K j)ᶜ :=
         compl_subset_compl.mpr (Set.subset_accumulate (s := K) (x := j))
@@ -94,9 +94,9 @@ lemma finite_measure_cluster_limit
   have hmapcluster : MapClusterPt μf atTop σf := hcluster
   obtain ⟨U, hUle, hUtend⟩ := mapClusterPt_iff_ultrafilter.mp hmapcluster
   refine ⟨(μf : Measure α), U, hUle, inferInstance, ?_, ?_⟩
-  · have hle : (μf.mass : ENNReal) ≤ (Cnn : ENNReal) := ENNReal.coe_le_coe.mpr hμfS.1
+  · have hle : (μf.mass : ENNReal) ≤ (C : ENNReal) := ENNReal.coe_le_coe.mpr hμfS.1
     rw [← FiniteMeasure.ennreal_mass]
-    simpa [Cnn, ENNReal.ofNNReal_toNNReal] using hle
+    simpa using hle
   · intro g
     have hweak :=
       (FiniteMeasure.tendsto_iff_forall_integral_tendsto.mp hUtend) g
@@ -105,18 +105,17 @@ lemma finite_measure_cluster_limit
 /-- Sequential form of `finite_measure_cluster_limit` when `FiniteMeasure α` is first-countable. -/
 lemma finite_measure_subseq_limit
     [FirstCountableTopology (FiniteMeasure α)]
-    (σ : ℕ → Measure α) (C : ℝ)
+    (σ : ℕ → Measure α) (C : ℝ≥0)
     [hfin : ∀ n, IsFiniteMeasure (σ n)]
-    (hmass : ∀ n, (σ n) univ ≤ ENNReal.ofReal C)
-    (htight : ∀ ε : ℝ, 0 < ε →
-      ∃ K : Set α, IsCompact K ∧ ∀ n, (σ n) Kᶜ ≤ ENNReal.ofReal ε) :
+    (hmass : ∀ n, (σ n) univ ≤ (C : ENNReal))
+    (hTight : IsTightMeasureSet (Set.range σ)) :
     ∃ (μ₀ : Measure α) (φ : ℕ → ℕ), IsFiniteMeasure μ₀ ∧ StrictMono φ ∧
-      μ₀ univ ≤ ENNReal.ofReal C ∧
+      μ₀ univ ≤ (C : ENNReal) ∧
       ∀ g : BoundedContinuousFunction α ℝ,
         Tendsto (fun k => ∫ x, g x ∂(σ (φ k))) atTop
           (nhds (∫ x, g x ∂μ₀)) := by
   obtain ⟨μ₀, U, hUle, hμ₀_fin, hmass_μ₀, hweakU⟩ :=
-    finite_measure_cluster_limit (α := α) σ C hmass htight
+    finite_measure_cluster_limit (α := α) σ C hmass hTight
   let σf : ℕ → FiniteMeasure α := fun n => ⟨σ n, hfin n⟩
   let μf : FiniteMeasure α := ⟨μ₀, hμ₀_fin⟩
   have hUtend : Tendsto σf (U : Filter ℕ) (nhds μf) := by

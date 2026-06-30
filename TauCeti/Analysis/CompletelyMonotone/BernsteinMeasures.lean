@@ -292,7 +292,7 @@ noncomputable def chafaiRescaling (n : ℕ) (t : ℝ) : ℝ≥0 :=
   Real.toNNReal (((n : ℝ) - 1) / t)
 
 /-- The rescaling map `t ↦ max ((n-1)/t) 0`, valued in `ℝ≥0`, is measurable. -/
-lemma chafaiRescaling_measurable (n : ℕ) :
+lemma measurable_chafaiRescaling (n : ℕ) :
     Measurable (chafaiRescaling n) :=
   continuous_real_toNNReal.measurable.comp (measurable_const.div measurable_id)
 
@@ -316,7 +316,7 @@ lemma chafaiRescaled_eq_map (f : ℝ → ℝ) (n : ℕ) :
 /-- The mass `chafaiRescaled f n` assigns to a measurable set, as the pushforward formula. -/
 lemma chafaiRescaled_apply (f : ℝ → ℝ) (n : ℕ) {s : Set ℝ≥0} (hs : MeasurableSet s) :
     chafaiRescaled f n s = chafaiMeasure f n ((chafaiRescaling n) ⁻¹' s) := by
-  rw [chafaiRescaled, Measure.map_apply (chafaiRescaling_measurable n) hs]
+  rw [chafaiRescaled, Measure.map_apply (measurable_chafaiRescaling n) hs]
 
 /-- Integrating against `chafaiRescaled f n` is integrating the pullback along the Chafaï
 rescaling against `chafaiMeasure f n`. -/
@@ -325,7 +325,7 @@ lemma chafaiRescaled_integral (f : ℝ → ℝ) (n : ℕ) {g : ℝ≥0 → ℝ}
     ∫ x, g x ∂(chafaiRescaled f n) =
       ∫ t, g (chafaiRescaling n t) ∂(chafaiMeasure f n) := by
   rw [chafaiRescaled_eq_map] at hg ⊢
-  exact MeasureTheory.integral_map (chafaiRescaling_measurable n).aemeasurable hg
+  exact MeasureTheory.integral_map (measurable_chafaiRescaling n).aemeasurable hg
 
 /-- `chafaiMeasure f n` lives on `(0, ∞)`: its complement has zero mass. -/
 lemma chafaiMeasure_compl_Ioi (f : ℝ → ℝ) (n : ℕ) :
@@ -341,7 +341,7 @@ lemma chafaiMeasure_compl_Ioi (f : ℝ → ℝ) (n : ℕ) :
 lemma chafaiRescaled_mass_eq (f : ℝ → ℝ) (n : ℕ) :
     (chafaiRescaled f n) univ = (chafaiMeasure f n) univ := by
   unfold chafaiRescaled
-  rw [Measure.map_apply (chafaiRescaling_measurable n) MeasurableSet.univ, Set.preimage_univ]
+  rw [Measure.map_apply (measurable_chafaiRescaling n) MeasurableSet.univ, Set.preimage_univ]
 
 /-- **IBP identity** for the CM density:
 `∫₀ᵀ ρ_{m+2}(t) dt = B_{m+2}(T) + ∫₀ᵀ ρ_{m+1}(t) dt`. -/
