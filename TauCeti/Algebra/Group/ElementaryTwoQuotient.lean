@@ -206,7 +206,7 @@ noncomputable def elementaryTwoQuotientMap (f : G →* H) :
 variable {K : Type*} [CommGroup K]
 
 /-- Induced maps on elementary-2 quotients compose functorially. -/
-theorem elementaryTwoQuotientMap_comp (f : G →* H) (g : H →* K)
+@[simp] theorem elementaryTwoQuotientMap_comp (f : G →* H) (g : H →* K)
     (x : ElementaryTwoQuotient G) :
     elementaryTwoQuotientMap (g.comp f) x =
       elementaryTwoQuotientMap g (elementaryTwoQuotientMap f x) := by
@@ -243,7 +243,7 @@ noncomputable def elementaryTwoQuotientCongr (e : G ≃* H) :
   elementaryTwoQuotientMap_id x
 
 /-- Induced equivalences on elementary-2 quotients compose functorially. -/
-theorem elementaryTwoQuotientCongr_trans (e : G ≃* H) (e' : H ≃* K)
+@[simp] theorem elementaryTwoQuotientCongr_trans (e : G ≃* H) (e' : H ≃* K)
     (x : ElementaryTwoQuotient G) :
     elementaryTwoQuotientCongr (e.trans e') x =
       elementaryTwoQuotientCongr e' (elementaryTwoQuotientCongr e x) :=

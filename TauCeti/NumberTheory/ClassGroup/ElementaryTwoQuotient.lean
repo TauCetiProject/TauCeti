@@ -143,7 +143,7 @@ of its inverse image. -/
   TauCeti.elementaryTwoQuotientCongr_refl x
 
 /-- Induced class-group equivalences on `Cl/Cl²` compose functorially. -/
-theorem elementaryTwoQuotientCongr_trans {S T : Type*} [CommRing S] [IsDomain S]
+@[simp] theorem elementaryTwoQuotientCongr_trans {S T : Type*} [CommRing S] [IsDomain S]
     [CommRing T] [IsDomain T] (e : ClassGroup R ≃* ClassGroup S)
     (e' : ClassGroup S ≃* ClassGroup T) (x : ElementaryTwoQuotient R) :
     elementaryTwoQuotientCongr (e.trans e') x =
