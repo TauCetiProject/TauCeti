@@ -108,6 +108,73 @@ theorem pointsMulEquiv_symm_apply (H K : FiniteTypeCommHopfAlgCat.{u, v} R)
       toConv (Algebra.TensorProduct.productMap p.1.ofConv p.2.ofConv) :=
   AffineGroup.Product.pointsMulEquiv_symm_apply (R := R) (H₁ := H) (H₂ := K) (A := A) p
 
+variable {B : CommAlgCat.{w} R}
+
+/-- The product-points equivalence is natural in the value algebra: post-composing a point of
+the product by `φ`, then splitting it into its two factor points, agrees with splitting first
+and then post-composing each factor point by `φ`. -/
+@[simp]
+theorem pointsMulEquiv_mapValue (H K : FiniteTypeCommHopfAlgCat.{u, v} R) (φ : A →ₐ[R] B)
+    (f : HopfAlgebra.points (R := R) (H := tensorProduct H K) A) :
+    pointsMulEquiv B H K (AlgHom.mapValue (H := tensorProduct H K) φ f) =
+      (AlgHom.mapValue (H := H) φ (pointsMulEquiv A H K f).1,
+        AlgHom.mapValue (H := K) φ (pointsMulEquiv A H K f).2) :=
+  AffineGroup.Product.pointsMulEquiv_mapValue (R := R) (H₁ := H) (H₂ := K) φ f
+
+/-- First-component form of `pointsMulEquiv_mapValue`. -/
+@[simp]
+theorem pointsMulEquiv_mapValue_fst (H K : FiniteTypeCommHopfAlgCat.{u, v} R) (φ : A →ₐ[R] B)
+    (f : HopfAlgebra.points (R := R) (H := tensorProduct H K) A) :
+    (pointsMulEquiv B H K (AlgHom.mapValue (H := tensorProduct H K) φ f)).1 =
+      AlgHom.mapValue (H := H) φ (pointsMulEquiv A H K f).1 :=
+  AffineGroup.Product.pointsMulEquiv_mapValue_fst (R := R) (H₁ := H) (H₂ := K) φ f
+
+/-- Second-component form of `pointsMulEquiv_mapValue`. -/
+@[simp]
+theorem pointsMulEquiv_mapValue_snd (H K : FiniteTypeCommHopfAlgCat.{u, v} R) (φ : A →ₐ[R] B)
+    (f : HopfAlgebra.points (R := R) (H := tensorProduct H K) A) :
+    (pointsMulEquiv B H K (AlgHom.mapValue (H := tensorProduct H K) φ f)).2 =
+      AlgHom.mapValue (H := K) φ (pointsMulEquiv A H K f).2 :=
+  AffineGroup.Product.pointsMulEquiv_mapValue_snd (R := R) (H₁ := H) (H₂ := K) φ f
+
+/-- The inverse product-points map is natural in the value algebra: assembling an `A`-valued
+product point from a pair of factor points and post-composing by `φ` is the same as
+post-composing both factor points by `φ` and then assembling the resulting `B`-valued point. -/
+@[simp]
+theorem mapValue_pointsMulEquiv_symm_apply (H K : FiniteTypeCommHopfAlgCat.{u, v} R)
+    (φ : A →ₐ[R] B)
+    (p : HopfAlgebra.points (R := R) (H := H) A × HopfAlgebra.points (R := R) (H := K) A) :
+    AlgHom.mapValue (H := tensorProduct H K) φ ((pointsMulEquiv A H K).symm p) =
+      (pointsMulEquiv B H K).symm
+        (AlgHom.mapValue (H := H) φ p.1, AlgHom.mapValue (H := K) φ p.2) :=
+  AffineGroup.Product.mapValue_pointsMulEquiv_symm_apply (R := R) (H₁ := H) (H₂ := K) φ p
+
+/-- On pure tensors, naturality of the inverse product-points map evaluates post-composition by
+`φ` as applying `φ` to the product of the two factor values. -/
+@[simp]
+theorem mapValue_pointsMulEquiv_symm_apply_tmul (H K : FiniteTypeCommHopfAlgCat.{u, v} R)
+    (φ : A →ₐ[R] B)
+    (p : HopfAlgebra.points (R := R) (H := H) A × HopfAlgebra.points (R := R) (H := K) A)
+    (x : H) (y : K) :
+    (AlgHom.mapValue (H := tensorProduct H K) φ ((pointsMulEquiv A H K).symm p)).ofConv
+        (x ⊗ₜ[R] y) =
+      φ (p.1.ofConv x * p.2.ofConv y) :=
+  AffineGroup.Product.mapValue_pointsMulEquiv_symm_apply_tmul
+    (R := R) (H₁ := H) (H₂ := K) φ p x y
+
+/-- On pure tensors, assembling after post-composing both factor points by `φ` multiplies the
+two post-composed factor values. -/
+@[simp]
+theorem pointsMulEquiv_symm_mapValue_apply_tmul (H K : FiniteTypeCommHopfAlgCat.{u, v} R)
+    (φ : A →ₐ[R] B)
+    (p : HopfAlgebra.points (R := R) (H := H) A × HopfAlgebra.points (R := R) (H := K) A)
+    (x : H) (y : K) :
+    ((pointsMulEquiv B H K).symm
+        (AlgHom.mapValue (H := H) φ p.1, AlgHom.mapValue (H := K) φ p.2)).ofConv (x ⊗ₜ[R] y) =
+      φ (p.1.ofConv x) * φ (p.2.ofConv y) :=
+  AffineGroup.Product.pointsMulEquiv_symm_mapValue_apply_tmul
+    (R := R) (H₁ := H) (H₂ := K) φ p x y
+
 end FiniteTypeCommHopfAlgCat
 
 end TauCeti
