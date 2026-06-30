@@ -1,7 +1,9 @@
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
+public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Real
+import Mathlib.Topology.Algebra.Polynomial
 
 /-!
 # Finite measure API for the Chebyshev `T` weight
@@ -14,7 +16,9 @@ target.
 The main facts are that `measureT` has total mass `π`, hence is finite and
 nonzero, and that the existing Mathlib orthogonality lemmas combine into one
 Kronecker-delta statement with squared norms `π` in degree zero and `π / 2` in
-positive degree.
+positive degree.  The file also records the compact-support consequences used
+by the later Chebyshev Hilbert-basis construction: exponential moments, ordinary
+polynomial moments, and `L²` membership of the normalized `T` modes.
 -/
 
 public section
@@ -99,5 +103,61 @@ lemma integral_eval_T_real_mul_eval_T_real_measureT_eq_ite (m n : ℕ) :
   · subst hmn
     simp [integral_eval_T_real_mul_self_measureT]
   · simp [hmn, integral_eval_T_real_mul_eval_T_real_measureT_of_ne hmn]
+
+/-! ### Moment and `L²` consumer forms -/
+
+/-- The Chebyshev `T` measure has every exponential absolute moment.  This is
+the compact-support input needed by the roadmap's moment-determinacy route to
+Chebyshev completeness. -/
+lemma integrable_exp_mul_abs_measureT (a : ℝ) :
+    Integrable (fun x : ℝ => Real.exp (a * |x|)) Polynomial.Chebyshev.measureT :=
+  integrable_measureT (by fun_prop)
+
+/-- The Chebyshev `T` measure has every nonnegative exponential absolute
+moment, in the exact hypothesis shape used by the moment-determinacy target. -/
+lemma integrable_exp_mul_abs_measureT_of_nonneg {a : ℝ} (_ha : 0 ≤ a) :
+    Integrable (fun x : ℝ => Real.exp (a * |x|)) Polynomial.Chebyshev.measureT :=
+  integrable_exp_mul_abs_measureT a
+
+/-- Monomials are integrable with respect to the Chebyshev `T` measure. -/
+lemma integrable_pow_measureT (n : ℕ) :
+    Integrable (fun x : ℝ => x ^ n) Polynomial.Chebyshev.measureT :=
+  integrable_measureT (by fun_prop)
+
+/-- Real polynomials are integrable with respect to the Chebyshev `T` measure. -/
+lemma integrable_polynomial_eval_measureT (p : Polynomial ℝ) :
+    Integrable (fun x : ℝ => p.eval x) Polynomial.Chebyshev.measureT :=
+  integrable_measureT p.continuous.continuousOn
+
+/-- A Chebyshev `T` polynomial is integrable with respect to `measureT`. -/
+lemma integrable_eval_T_real_measureT (n : ℕ) :
+    Integrable (fun x : ℝ => (T ℝ n).eval x) Polynomial.Chebyshev.measureT :=
+  integrable_polynomial_eval_measureT (T ℝ n)
+
+/-- Products of Chebyshev `T` polynomials are integrable with respect to
+`measureT`. -/
+lemma integrable_eval_T_real_mul_eval_T_real_measureT (m n : ℕ) :
+    Integrable (fun x : ℝ => (T ℝ m).eval x * (T ℝ n).eval x)
+      Polynomial.Chebyshev.measureT :=
+  integrable_measureT ((T ℝ m).continuous.mul (T ℝ n).continuous).continuousOn
+
+/-- The real normalized Chebyshev `T` mode lies in `L²(measureT)`. -/
+lemma memLp_normalized_eval_T_real_measureT (n : ℕ) :
+    MemLp (fun x : ℝ => (T ℝ n).eval x / Real.sqrt (chebyshevTNormSq n)) 2
+      Polynomial.Chebyshev.measureT := by
+  have hcont : Continuous fun x : ℝ =>
+      (T ℝ n).eval x / Real.sqrt (chebyshevTNormSq n) :=
+    (T ℝ n).continuous.div_const _
+  rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
+  exact integrable_measureT (hcont.pow 2).continuousOn
+
+/-- The scalar-cast normalized Chebyshev `T` mode lies in `L²(measureT)`, in
+the form consumed by the family-generic orthogonality-to-Hilbert-basis bridge. -/
+lemma memLp_normalized_eval_T_real_measureT_of_RCLike {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
+    MemLp (fun x : ℝ =>
+        (algebraMap ℝ 𝕜) ((T ℝ n).eval x / Real.sqrt (chebyshevTNormSq n))) 2
+      Polynomial.Chebyshev.measureT := by
+  simpa only [← RCLike.algebraMap_eq_ofReal] using
+    (memLp_normalized_eval_T_real_measureT n).ofReal (K := 𝕜)
 
 end TauCeti
