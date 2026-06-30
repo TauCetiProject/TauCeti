@@ -85,12 +85,13 @@ theorem blockLaw_apply (μ : Measure Ω) (X : ℕ → Ω → α) {m : ℕ} (k : 
     blockLaw μ X k = μ.map (fun ω i => X (k i) ω) :=
   rfl
 
--- Not `@[simp]`: `blockLaw_apply` already simp-normalizes `blockLaw μ X k` to `μ.map …`, and the
--- preimage form needs the a.e.-measurability side condition `hXk`, which `simp` cannot discharge,
--- so this and `blockLaw_apply_rectangle` are explicit `rw` lemmas.
+-- Annotated `@[grind =>]` rather than `@[simp]`: `blockLaw_apply` already simp-normalizes
+-- `blockLaw μ X k` to `μ.map …` (so a `@[simp]` here would be shadowed), and the preimage form
+-- needs the a.e.-measurability side condition `hXk`, which `simp` cannot discharge.
 /-- The block law of `X` along `k`, evaluated on any measurable set `S`, is the measure of its
 coordinate-wise preimage. This is the characteristic evaluation of `blockLaw` as a pushforward;
 `blockLaw_apply_rectangle` is the rectangle specialization. -/
+@[grind =>]
 theorem blockLaw_apply_of_measurable (μ : Measure Ω) (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ)
     (hXk : ∀ i, AEMeasurable (X (k i)) μ) {S : Set (Fin m → α)} (hS : MeasurableSet S) :
     blockLaw μ X k S = μ ((fun ω i => X (k i) ω) ⁻¹' S) := by
@@ -99,6 +100,7 @@ theorem blockLaw_apply_of_measurable (μ : Measure Ω) (X : ℕ → Ω → α) {
 /-- The block law of `X` along `k`, evaluated on a measurable rectangle `Set.univ.pi B`, is the
 measure of the coordinate-wise preimage `{ω | ∀ i, X (k i) ω ∈ B i}` — the rectangle specialization
 of `blockLaw_apply_of_measurable`. -/
+@[grind =>]
 theorem blockLaw_apply_rectangle (μ : Measure Ω) (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ)
     (hXk : ∀ i, AEMeasurable (X (k i)) μ) (B : Fin m → Set α) (hB : ∀ i, MeasurableSet (B i)) :
     blockLaw μ X k (Set.univ.pi B) = μ {ω | ∀ i, X (k i) ω ∈ B i} := by
