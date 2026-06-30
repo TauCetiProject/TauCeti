@@ -70,12 +70,11 @@ theorem ambientIsotopyClass_smul_mk (φ : M ≃ₘ^n⟮I, I⟯ M) (f : C(X, M)) 
 /-- The homeomorphism-induced quotient equivalence of the underlying homeomorphism agrees with the
 diffeomorphism action. -/
 @[simp]
-theorem ambientIsotopyClass_postcompHomeomorphEquiv_apply
+theorem ambientIsotopyClass_postcompHomeomorphEquiv_apply_eq_smul
     (φ : M ≃ₘ^n⟮I, I⟯ M) (x : AmbientIsotopyClass X M) :
     AmbientIsotopyClass.postcompHomeomorphEquiv φ.toHomeomorph x = φ • x := by
-  refine AmbientIsotopyClass.induction_on x ?_
-  intro f
-  rw [AmbientIsotopyClass.postcompHomeomorphEquiv_mk, ambientIsotopyClass_smul_mk]
+  rw [AmbientIsotopyClass.postcompHomeomorphEquiv_apply_eq_smul,
+    ← ambientIsotopyClass_smul_eq_homeomorph_smul]
 
 end Diffeomorph
 

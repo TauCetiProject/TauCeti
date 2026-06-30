@@ -49,7 +49,7 @@ theorem smul_def (h : Y ≃ₜ Y) (x : AmbientIsotopyClass X Y) :
 /-- Ambient homeomorphisms act on ambient-isotopy classes by postcomposition. -/
 instance instMulAction : MulAction (Y ≃ₜ Y) (AmbientIsotopyClass X Y) where
   one_smul x := by
-    change postcompHomeomorph (Homeomorph.refl Y) x = x
+    rw [smul_def, show (1 : Y ≃ₜ Y) = Homeomorph.refl Y by ext y; simp]
     exact postcompHomeomorph_refl x
   mul_smul h k x := by
     rw [smul_def, smul_def, smul_def]
