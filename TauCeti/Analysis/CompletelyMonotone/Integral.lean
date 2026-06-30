@@ -23,8 +23,8 @@ monotone functions, and improper-integral facts for the first derivative within 
 * `TauCeti.IsCompletelyMonotone.neg_one_pow_mul_taylor_remainder_nonneg`: the Taylor integral
   remainder has sign `(-1)ⁿ`.
 * `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc`,
-  `TauCeti.IsCompletelyMonotone.integral_mass`: compatibility wrappers for the smooth
-  finite-interval identities.
+  `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc_zero_left`:
+  compatibility wrappers for the smooth finite-interval identities.
 * `TauCeti.IsCompletelyMonotone.neg_iteratedDerivWithin_one_integrableOn`,
   `TauCeti.IsCompletelyMonotone.integral_Ioi_neg_iteratedDerivWithin_one`: integrability and the
   improper integral of `-f'` on `(0, ∞)`, represented as `iteratedDerivWithin 1`.
@@ -95,8 +95,10 @@ lemma integral_neg_iteratedDerivWithin_one_Icc (hf : IsCompletelyMonotone f)
     (hf.contDiffOn.mono hsubset).of_le (by exact_mod_cast le_top)
   exact ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc hcm_Icc hxT
 
-/-- The total mass identity `∫₀ᵀ (-f') = f(0) - f(T)` for a completely monotone function. -/
-lemma integral_mass (hf : IsCompletelyMonotone f) (T : ℝ) (hT : 0 ≤ T) :
+/-- The zero-left integral identity `∫₀ᵀ (-f') = f(0) - f(T)` for a completely monotone
+function. -/
+lemma integral_neg_iteratedDerivWithin_one_Icc_zero_left
+    (hf : IsCompletelyMonotone f) (T : ℝ) (hT : 0 ≤ T) :
     ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t = f 0 - f T := by
   exact (hf.integral_neg_iteratedDerivWithin_one_Icc 0 T le_rfl hT).symm
 
@@ -123,13 +125,14 @@ lemma IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici
     (fun t ht => (hcm.contDiffOn.contDiffAt (Ici_mem_nhds ht.1)).of_le (nat_le_top _))
     le_rfl hT
 
-/-- The total mass `∫₀ᵀ (-f') dt → f(0) - L` as `T → ∞`, where `L = lim f(t)`. This is
+/-- The integral `∫₀ᵀ (-f') dt → f(0) - L` as `T → ∞`, where `L = lim f(t)`. This is
 the key uniform bound for the tightness argument in Bernstein's theorem. -/
-lemma IsCompletelyMonotone.tendsto_total_mass
+lemma IsCompletelyMonotone.tendsto_integral_neg_iteratedDerivWithin_one_Icc_atTop
     (hcm : IsCompletelyMonotone f) {L : ℝ} (hL : Tendsto f atTop (nhds L)) :
     Tendsto (fun T => ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t) atTop
         (nhds (f 0 - L)) :=
-  ContDiffOn.tendsto_total_mass (a := 0) (hcm.contDiffOn.of_le (nat_le_top _)) hL
+  ContDiffOn.tendsto_integral_neg_iteratedDerivWithin_one_Icc_atTop
+    (a := 0) (hcm.contDiffOn.of_le (nat_le_top _)) hL
 
 /-- `-f'` is integrable on `(0, ∞)` for a completely monotone function, where the derivative is
 taken within the closed half-line `[0, ∞)`. -/
@@ -137,25 +140,31 @@ lemma IsCompletelyMonotone.neg_iteratedDerivWithin_one_integrableOn
     (hcm : IsCompletelyMonotone f) :
     IntegrableOn (fun t => -iteratedDerivWithin 1 f (Ici 0) t) (Ioi 0) := by
   obtain ⟨L, hL, -⟩ := hcm.exists_nonneg_tendsto_atTop
+  -- Reduce the improper-integrability criterion to convergence of the interval integrals of
+  -- the nonnegative function `-f'`.
   apply integrableOn_Ioi_of_intervalIntegral_norm_tendsto (f 0 - L) 0
       (l := atTop) (b := id)
+  -- Local integrability on each compact interval follows from continuity of the derivative
+  -- within the fixed half-line.
   · intro T
     exact ((hcm.contDiffOn.continuousOn_iteratedDerivWithin (nat_le_top _)
       (uniqueDiffOn_Ici 0)).neg.mono Icc_subset_Ici_self).integrableOn_compact
         isCompact_Icc |>.mono_set Ioc_subset_Icc_self
   · exact tendsto_id
+  -- On positive intervals the norm drops because `f' ≤ 0`; the finite-interval FTC identity
+  -- then identifies the primitive with `f(0) - f(T)`.
   · have hnorm : ∀ᶠ T in atTop, (∫ t in (0 : ℝ)..id T,
         ‖(fun t => -iteratedDerivWithin 1 f (Ici 0) t) t‖) = f 0 - f T := by
       filter_upwards [eventually_gt_atTop 0] with T hT
       simp only [id]
       have : (∫ t in (0 : ℝ)..T, ‖(fun t => -iteratedDerivWithin 1 f (Ici 0) t) t‖) =
-          ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t :=
+              ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t :=
         intervalIntegral.integral_congr_ae (ae_of_all _ fun t ht => by
           rw [uIoc_of_le hT.le] at ht
           simp only [Real.norm_eq_abs]
           rw [abs_of_nonneg (by linarith [hcm.iteratedDerivWithin_one_nonpos ht.1.le])])
       rw [this, ← hcm.integral_neg_iteratedDerivWithin_one_Ici T hT.le,
-        hcm.integral_mass T hT.le]
+        hcm.integral_neg_iteratedDerivWithin_one_Icc_zero_left T hT.le]
     exact Tendsto.congr' (EventuallyEq.symm hnorm) (Tendsto.sub tendsto_const_nhds hL)
 
 /-- The improper integral `∫₀^∞ (-f') dt = f(0) - L` for completely monotone functions. -/
@@ -169,7 +178,7 @@ lemma IsCompletelyMonotone.integral_Ioi_neg_iteratedDerivWithin_one
     Tendsto.congr'
       ((eventually_gt_atTop 0).mono fun T hT =>
         ((hcm.integral_neg_iteratedDerivWithin_one_Ici T hT.le).symm.trans
-          (hcm.integral_mass T hT.le)).symm)
+          (hcm.integral_neg_iteratedDerivWithin_one_Icc_zero_left T hT.le)).symm)
       (Tendsto.sub tendsto_const_nhds hL)
   exact tendsto_nhds_unique htend htend2
 

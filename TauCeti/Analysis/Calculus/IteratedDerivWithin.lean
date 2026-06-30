@@ -23,8 +23,8 @@ independent of any completely-monotone or Bernstein-function structure.
   `TauCeti.ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_zero_left`,
   `TauCeti.ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici`: finite-interval
   fundamental-theorem identities for first iterated derivatives within intervals.
-* `TauCeti.ContDiffOn.tendsto_total_mass`: convergence of the finite-interval total-mass
-  primitive under convergence at infinity.
+* `TauCeti.ContDiffOn.tendsto_integral_neg_iteratedDerivWithin_one_Icc_atTop`: convergence of
+  the finite-interval primitive under convergence at infinity.
 -/
 
 public section
@@ -101,10 +101,10 @@ lemma ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici
     iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici a) hcda
       (mem_Ici.mpr ha_lt.le)]
 
-/-- The total mass `∫ₐᵀ (-f') dt → f(a) - L` as `T → ∞`, assuming smoothness on
+/-- The integral `∫ₐᵀ (-f') dt → f(a) - L` as `T → ∞`, assuming smoothness on
 `[a, ∞)` and convergence of `f` to `L` at infinity. The derivative is represented as
 `iteratedDerivWithin 1`. -/
-lemma ContDiffOn.tendsto_total_mass
+lemma ContDiffOn.tendsto_integral_neg_iteratedDerivWithin_one_Icc_atTop
     [CompleteSpace E] {a : ℝ} (hf : ContDiffOn ℝ 1 f (Ici a)) {L : E}
     (hL : Tendsto f atTop (nhds L)) :
     Tendsto (fun T => ∫ t in a..T, -iteratedDerivWithin 1 f (Icc a T) t) atTop

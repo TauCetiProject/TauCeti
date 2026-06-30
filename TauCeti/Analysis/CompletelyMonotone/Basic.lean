@@ -89,6 +89,7 @@ lemma isCompletelyMonotone_iff_absolutelyMonotoneOn_comp_neg {f : ℝ → ℝ} :
   rw [isCompletelyMonotone_iff,
     AbsolutelyMonotoneOn.iff_iteratedDerivWithin_nonneg (uniqueDiffOn_Iic 0)]
   constructor
+  -- Reflect smoothness and the alternating-sign condition from `[0, ∞)` to `(-∞, 0]`.
   · rintro ⟨hcont, hsign⟩
     refine ⟨?_, fun n u hu => ?_⟩
     · have hpre : ((-ContinuousLinearMap.id ℝ ℝ) ⁻¹' Ici 0) = Iic 0 := by
@@ -103,6 +104,7 @@ lemma isCompletelyMonotone_iff_absolutelyMonotoneOn_comp_neg {f : ℝ → ℝ} :
         simp
       rw [hset]
       simpa [smul_eq_mul] using hsign n (-u) (neg_nonneg.mpr hu)
+  -- Reflect the absolutely-monotone data back to the original closed half-line.
   · rintro ⟨hcont, hsign⟩
     refine ⟨?_, fun n t ht => ?_⟩
     · have hpre : ((-ContinuousLinearMap.id ℝ ℝ) ⁻¹' Iic 0) = Ici 0 := by

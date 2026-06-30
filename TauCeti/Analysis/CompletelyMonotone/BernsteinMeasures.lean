@@ -74,6 +74,7 @@ noncomputable def chafaiDensity (f : ℝ → ℝ) (n : ℕ) (t : ℝ) : ℝ :=
   rw [chafaiDensity, if_pos rfl]
 
 /-- The defining formula for `chafaiDensity` at a nonzero order. -/
+@[simp]
 lemma chafaiDensity_of_ne_zero {n : ℕ} (hn : n ≠ 0) (f : ℝ → ℝ) (t : ℝ) :
     chafaiDensity f n t = (-1 : ℝ) ^ n / (Nat.factorial (n - 1) : ℝ) *
       t ^ (n - 1) * iteratedDerivWithin n f (Ici 0) t := by
@@ -108,6 +109,7 @@ lemma chafaiMeasure_eq_withDensity (f : ℝ → ℝ) (n : ℕ) :
   rw [chafaiMeasure]
 
 /-- The mass `chafaiMeasure f n` assigns to a measurable set, as a set lintegral of the density. -/
+@[simp]
 lemma chafaiMeasure_apply (f : ℝ → ℝ) (n : ℕ) {s : Set ℝ} (hs : MeasurableSet s) :
     chafaiMeasure f n s =
       ∫⁻ t in s, ENNReal.ofReal (chafaiDensity f n t) ∂(volume.restrict (Ioi 0)) := by
@@ -144,6 +146,7 @@ private lemma chafaiDensity_succ_succ_sub_succ (f : ℝ → ℝ) (m : ℕ) (t : 
         t ^ (m + 1) *
           (((-1 : ℝ) ^ (m + 2) / ↑(m + 1).factorial) *
             iteratedDerivWithin (m + 2) f (Ici 0) t) := by
+  -- Put both densities into their nonzero defining branches.
   have hm2 : m + 2 ≠ 0 := by omega
   have hm1 : m + 1 ≠ 0 := by omega
   have hdens_m2 :
@@ -159,6 +162,8 @@ private lemma chafaiDensity_succ_succ_sub_succ (f : ℝ → ℝ) (m : ℕ) (t : 
     rw [chafaiDensity_of_ne_zero hm1]
     norm_num
   rw [hdens_m2, hdens_m1]
+  -- Move the two factorial denominators to the same `(m + 1)!` denominator and normalize the
+  -- alternating sign.
   have hfact : ((m + 1).factorial : ℝ) = ((m + 1 : ℕ) : ℝ) * ↑m.factorial := by
     rw [Nat.factorial_succ]
     push_cast
@@ -185,6 +190,7 @@ noncomputable def bernstein_kernel (n : ℕ) (x p : ℝ) : ℝ :=
   rw [bernstein_kernel, if_pos hn]
 
 /-- The defining formula for the Bernstein kernel at `2 ≤ n`. -/
+@[simp]
 lemma bernstein_kernel_of_two_le {n : ℕ} (hn : 2 ≤ n) (x p : ℝ) :
     bernstein_kernel n x p = (max (1 - x * p / (↑(n - 1) : ℝ)) 0) ^ (n - 1) := by
   have hnle : ¬ n ≤ 1 := by omega
@@ -300,6 +306,7 @@ lemma measurable_chafaiRescaling (n : ℕ) :
   continuous_real_toNNReal.measurable.comp (measurable_const.div measurable_id)
 
 /-- On the positive part of the source, the `ℝ≥0` rescaling coerces back to `(n-1)/t`. -/
+@[simp]
 lemma chafaiRescaling_coe_of_pos {n : ℕ} (hn : 1 ≤ n) {t : ℝ} (ht : 0 < t) :
     (chafaiRescaling n t : ℝ) = ((n : ℝ) - 1) / t := by
   have hnum : 0 ≤ (n : ℝ) - 1 := by
@@ -317,6 +324,7 @@ lemma chafaiRescaled_eq_map (f : ℝ → ℝ) (n : ℕ) :
   rw [chafaiRescaled]
 
 /-- The mass `chafaiRescaled f n` assigns to a measurable set, as the pushforward formula. -/
+@[simp]
 lemma chafaiRescaled_apply (f : ℝ → ℝ) (n : ℕ) {s : Set ℝ≥0} (hs : MeasurableSet s) :
     chafaiRescaled f n s = chafaiMeasure f n ((chafaiRescaling n) ⁻¹' s) := by
   rw [chafaiRescaled, Measure.map_apply (measurable_chafaiRescaling n) hs]
@@ -331,6 +339,7 @@ lemma chafaiRescaled_integral (f : ℝ → ℝ) (n : ℕ) {g : ℝ≥0 → ℝ}
   exact MeasureTheory.integral_map (measurable_chafaiRescaling n).aemeasurable hg
 
 /-- `chafaiMeasure f n` lives on `(0, ∞)`: its complement has zero mass. -/
+@[simp]
 lemma chafaiMeasure_compl_Ioi (f : ℝ → ℝ) (n : ℕ) :
     (chafaiMeasure f n) (Ioi 0)ᶜ = 0 := by
   unfold chafaiMeasure
@@ -341,6 +350,7 @@ lemma chafaiMeasure_compl_Ioi (f : ℝ → ℝ) (n : ℕ) :
   rw [this, measure_empty]
 
 /-- Pushforward preserves total mass. -/
+@[simp]
 lemma chafaiRescaled_mass_eq (f : ℝ → ℝ) (n : ℕ) :
     (chafaiRescaled f n) univ = (chafaiMeasure f n) univ := by
   unfold chafaiRescaled
@@ -354,10 +364,13 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) {m : ℕ}
     (-1 : ℝ) ^ (m + 2) * T ^ (m + 1) / ↑(m + 1).factorial *
       iteratedDerivWithin (m + 1) f (Ici 0) T +
     ∫ t in (0 : ℝ)..T, chafaiDensity f (m + 1) t := by
+  -- Set up the primitive whose derivative is the difference of successive densities.
   set g := iteratedDerivWithin (m + 1) f (Ici 0)
   set g' := iteratedDerivWithin (m + 2) f (Ici 0)
   set c : ℝ := (-1) ^ (m + 2) / ↑(m + 1).factorial
   set F := fun t : ℝ => t ^ (m + 1) * (c * g t)
+  -- Smoothness gives continuity of the primitive and differentiability of the iterated
+  -- derivative on the open interval.
   have hg_cont : ContinuousOn g (Ici 0) :=
     (hf.of_le (by exact_mod_cast (by omega : m + 1 ≤ m + 2))).continuousOn_iteratedDerivWithin
       le_rfl (uniqueDiffOn_Ici 0)
@@ -371,6 +384,7 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) {m : ℕ}
   have hF_deriv : ∀ t ∈ Ioo 0 T, HasDerivAt F
       (↑(m + 1) * t ^ m * (c * g t) + t ^ (m + 1) * (c * g' t)) t :=
     fun t ht => (hasDerivAt_pow (m + 1) t).mul ((hg_deriv t ht.1).const_mul c)
+  -- Transfer interval integrability from continuity of the two density branches.
   have h_int_m2 : IntervalIntegrable (fun t => chafaiDensity f (m + 2) t) volume 0 T := by
     apply ContinuousOn.intervalIntegrable; rw [huIcc]
     exact (continuousOn_chafaiDensity (n := m + 2) hf).mono Icc_subset_Ici_self
@@ -386,6 +400,8 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) {m : ℕ}
   have hF'_int : IntervalIntegrable
       (fun t => ↑(m + 1) * t ^ m * (c * g t) + t ^ (m + 1) * (c * g' t)) volume 0 T :=
     (h_int_m2.sub h_int_m1).congr fun t _ => (hF'_eq t).symm
+  -- Apply FTC to the primitive and rewrite the derivative integral as the difference of the
+  -- Chafaï density integrals.
   have hftc := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le hT.le hF_cont hF_deriv hF'_int
   have hstep1 : ∫ t in (0 : ℝ)..T,
       (chafaiDensity f (m + 2) t - chafaiDensity f (m + 1) t) = F T - F 0 := by
@@ -396,19 +412,21 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) {m : ℕ}
   have hF0 : F 0 = 0 := by simp [F, zero_pow hm1]
   rw [hF0, sub_zero] at hstep1
   rw [intervalIntegral.integral_sub h_int_m2 h_int_m1] at hstep1
+  -- The lower endpoint vanishes; the upper endpoint is the boundary term in the statement.
   suffices hgoal : (-1 : ℝ) ^ (m + 2) * T ^ (m + 1) / ↑(m + 1).factorial * g T = F T by linarith
   simp only [F, c]; ring
 
-/-- Monotonicity of the finite-interval Chafaï-density masses in the order:
+/-- Monotonicity of the finite-interval Chafaï-density integrals in the order:
 `∫₀ᵀ dₖ ≤ ∫₀ᵀ dₖ₋₁` for `2 ≤ k` and `0 ≤ T`. This is the exported
 integration-by-parts consequence
 (the raw IBP identity `chafaiDensity_ibp_identity` is private); it is the per-step density
-mass-monotonicity bound consumed by the Bernstein-identity assembly. -/
+integral-monotonicity bound consumed by the Bernstein-identity assembly. -/
 lemma integral_chafaiDensity_le_pred (f : ℝ → ℝ) {k : ℕ} (hk : 2 ≤ k)
     (hf : ContDiffOn ℝ (k : WithTop ℕ∞) f (Ici 0))
     (T : ℝ) (hT : 0 ≤ T)
     (hsign : 0 ≤ (-1 : ℝ) ^ (k - 1) * iteratedDerivWithin (k - 1) f (Ici 0) T) :
     ∫ t in (0 : ℝ)..T, chafaiDensity f k t ≤ ∫ t in (0 : ℝ)..T, chafaiDensity f (k - 1) t := by
+  -- The degenerate interval is immediate; otherwise reindex `k` as `m + 2` for the IBP lemma.
   rcases hT.eq_or_lt with rfl | hT_pos
   · simp
   obtain ⟨m, rfl⟩ : ∃ m, k = m + 2 := ⟨k - 2, by omega⟩
@@ -417,6 +435,7 @@ lemma integral_chafaiDensity_le_pred (f : ℝ → ℝ) {k : ℕ} (hk : 2 ≤ k)
   have hibp := chafaiDensity_ibp_identity (m := m) f hf T hT_pos
   set B := (-1 : ℝ) ^ (m + 2) * T ^ (m + 1) / ↑(m + 1).factorial *
     iteratedDerivWithin (m + 1) f (Ici 0) T
+  -- The boundary term in the IBP identity is nonpositive by complete-monotone sign alternation.
   have hB : B ≤ 0 := by
     have hsign_m : 0 ≤ (-1 : ℝ) ^ (m + 1) * iteratedDerivWithin (m + 1) f (Ici 0) T := by
       simpa [hsub] using hsign
@@ -454,7 +473,7 @@ private lemma integral_chafaiDensity_one_eq (f : ℝ → ℝ) (hcm : IsCompletel
     intervalIntegral.integral_congr_ae
       (Filter.Eventually.of_forall fun t _ => chafaiDensity_one t)
   rw [h1, ← hcm.integral_neg_iteratedDerivWithin_one_Ici T hT.le,
-    hcm.integral_mass T hT.le]
+    hcm.integral_neg_iteratedDerivWithin_one_Icc_zero_left T hT.le]
 
 private lemma integral_chafaiDensity_le_sub (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (j : ℕ) (hj : 1 ≤ j) (T : ℝ) (hT : 0 < T) :
@@ -486,12 +505,17 @@ private lemma chafaiDensity_integrableOn_Ioi_of_tendsto (f : ℝ → ℝ)
     IntegrableOn (chafaiDensity f n) (Ioi 0) := by
   have hcont : ContinuousOn (chafaiDensity f n) (Ici 0) :=
     continuousOn_chafaiDensity (n := n) ((hcm.contDiffOn).of_le (nat_le_top n))
+  -- The improper-integrability criterion reduces the proof to compact integrability on each
+  -- interval and a uniform bound for interval integrals of `|ρ_n|`.
   apply integrableOn_Ioi_of_intervalIntegral_norm_bounded (f 0 - L) 0
     (l := atTop) (b := id)
+  -- Compact integrability comes from continuity of the density on `[0, ∞)`.
   · intro T
     exact (hcont.mono Icc_subset_Ici_self).integrableOn_compact isCompact_Icc
       |>.mono_set Ioc_subset_Icc_self
   · exact tendsto_id
+  -- On positive intervals the density is nonnegative, so the norm integral is the density
+  -- integral, bounded by the finite-interval Chafaï estimate.
   · filter_upwards [eventually_gt_atTop 0] with T hT
     simp only [id]
     calc ∫ t in (0 : ℝ)..T, ‖chafaiDensity f n t‖
