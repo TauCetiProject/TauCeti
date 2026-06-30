@@ -36,7 +36,8 @@ theorem permReindex_apply (π : Equiv.Perm ℕ) (x : ℕ → α) (n : ℕ) :
   rfl
 
 /-- Composition rule for time reindexing. -/
-private theorem permReindex_permReindex (π σ : Equiv.Perm ℕ) (x : ℕ → α) :
+@[simp]
+theorem permReindex_permReindex (π σ : Equiv.Perm ℕ) (x : ℕ → α) :
     permReindex (α := α) π (permReindex (α := α) σ x) =
       permReindex (α := α) (σ * π) x := by
   rfl
