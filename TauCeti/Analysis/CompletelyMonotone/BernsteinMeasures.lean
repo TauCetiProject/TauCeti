@@ -545,7 +545,7 @@ lemma chafaiMeasure_finite_mass (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
       ∀ n,
         IsFiniteMeasure (chafaiMeasure f n) ∧
         (chafaiMeasure f n) univ ≤ ENNReal.ofReal (f 0 - L) := by
-  obtain ⟨L, hL, hL_nn⟩ := hcm.tendsto_atTop
+  obtain ⟨L, hL, hL_nn⟩ := hcm.exists_nonneg_tendsto_atTop
   exact ⟨L, hL, hL_nn, fun n => chafaiMeasure_finite_mass_of_tendsto f hcm n L hL⟩
 
 /-- **Natural rescaled total mass bound**: for a completely monotone `f`, the rescaled

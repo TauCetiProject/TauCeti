@@ -41,7 +41,7 @@ point `0`); on the open half-line it agrees with the ordinary iterated derivativ
 * `TauCeti.IsCompletelyMonotone.nonneg`, `TauCeti.IsCompletelyMonotone.derivWithin_nonpos`,
   `TauCeti.IsCompletelyMonotone.antitoneOn`: a completely monotone function is nonnegative
   and nonincreasing on `[0, ∞)`.
-* `TauCeti.IsCompletelyMonotone.tendsto_atTop`,
+* `TauCeti.IsCompletelyMonotone.exists_nonneg_tendsto_atTop`,
   `TauCeti.IsCompletelyMonotone.le_of_tendsto_atTop`: order-limit consequences of
   nonnegativity and monotonicity on `[0, ∞)`.
 * `TauCeti.IsCompletelyMonotone.neg_one_pow_mul_iteratedDeriv_nonneg`: on the open half-line,
@@ -180,7 +180,7 @@ lemma antitoneOn (hf : IsCompletelyMonotone f) : AntitoneOn f (Ici 0) := by
 
 /-- A completely monotone function has a limit `L ≥ 0` at infinity: it is antitone on `[0, ∞)`
 and bounded below by `0`. -/
-lemma tendsto_atTop (hf : IsCompletelyMonotone f) :
+lemma exists_nonneg_tendsto_atTop (hf : IsCompletelyMonotone f) :
     ∃ L, Tendsto f atTop (nhds L) ∧ 0 ≤ L := by
   have hanti := hf.antitoneOn
   set g := fun t : ℝ => f (max t 0) with hg

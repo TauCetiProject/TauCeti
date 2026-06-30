@@ -158,10 +158,7 @@ lemma integral_neg_deriv (hf : IsCompletelyMonotone f)
 /-- The total mass identity `∫₀ᵀ (-f') = f(0) - f(T)` for a completely monotone function. -/
 lemma integral_mass (hf : IsCompletelyMonotone f) (T : ℝ) (hT : 0 ≤ T) :
     ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t = f 0 - f T := by
-  have hsubset : Icc 0 T ⊆ Ici 0 := Icc_subset_Ici_self
-  have hcm_Icc : ContDiffOn ℝ 1 f (Icc 0 T) :=
-    (hf.contDiffOn.mono hsubset).of_le (by exact_mod_cast le_top)
-  exact ContDiffOn.integral_neg_derivWithin_Icc_zero_left hcm_Icc hT
+  exact (hf.integral_neg_deriv 0 T le_rfl hT).symm
 
 end IsCompletelyMonotone
 
@@ -197,7 +194,7 @@ lemma IsCompletelyMonotone.tendsto_total_mass
 taken within the closed half-line `[0, ∞)`. -/
 lemma IsCompletelyMonotone.neg_deriv_integrableOn (hcm : IsCompletelyMonotone f) :
     IntegrableOn (fun t => -iteratedDerivWithin 1 f (Ici 0) t) (Ioi 0) := by
-  obtain ⟨L, hL, -⟩ := hcm.tendsto_atTop
+  obtain ⟨L, hL, -⟩ := hcm.exists_nonneg_tendsto_atTop
   apply integrableOn_Ioi_of_intervalIntegral_norm_tendsto (f 0 - L) 0
       (l := atTop) (b := id)
   · intro T
