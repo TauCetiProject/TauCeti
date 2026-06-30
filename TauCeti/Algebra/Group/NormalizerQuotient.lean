@@ -207,6 +207,15 @@ lemma normalizerQuotientCongr_mk {H K : Subgroup G} (h : H = K)
       normalizerQuotientMk K (MulEquiv.subgroupCongr (by rw [h]) g) :=
   rfl
 
+/-- The inverse equal-subgroup congruence on normalizer quotients sends representatives to the
+corresponding representatives under the inverse normalizer congruence. -/
+@[simp]
+lemma normalizerQuotientCongr_symm_mk {H K : Subgroup G} (h : H = K)
+    (g : _root_.Subgroup.normalizer (K : Set G)) :
+    (normalizerQuotientCongr h).symm (normalizerQuotientMk K g) =
+      normalizerQuotientMk H (MulEquiv.subgroupCongr (by rw [h]) g) :=
+  rfl
+
 section Normal
 
 variable (H : Subgroup G) [H.Normal]

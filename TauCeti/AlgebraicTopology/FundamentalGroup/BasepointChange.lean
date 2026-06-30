@@ -97,18 +97,11 @@ lemma basepointChangeNormalizerQuotientEquiv_symm_mk (γ : Path x₀ x₁)
         ((Subgroup.normalizerEquivMap H
           (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ)).symm
           ((MulEquiv.subgroupCongr (by rw [basepointChangeSubgroup])).symm g)) := by
-  rw [basepointChangeNormalizerQuotientEquiv, MulEquiv.symm_trans_apply]
-  change (Subgroup.normalizerQuotientEquivMap H
-        (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ)).symm
-      (Subgroup.normalizerQuotientMk
-        (H.map ((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) :
-          _root_.FundamentalGroup X x₀ →* _root_.FundamentalGroup X x₁))
-        ((MulEquiv.subgroupCongr (by rw [basepointChangeSubgroup])).symm g)) =
-    Subgroup.normalizerQuotientMk H
-      ((Subgroup.normalizerEquivMap H
-        (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ)).symm
-        ((MulEquiv.subgroupCongr (by rw [basepointChangeSubgroup])).symm g))
-  rw [Subgroup.normalizerQuotientEquivMap_symm_mk]
+  rw [basepointChangeNormalizerQuotientEquiv, MulEquiv.symm_trans_apply,
+    Subgroup.normalizerQuotientCongr_symm_mk, Subgroup.normalizerQuotientEquivMap_symm_mk]
+  -- The forward and inverse `subgroupCongr` agree on representatives (both are the identity on
+  -- underlying elements), so the two transported representatives coincide.
+  rfl
 
 /-- On representatives, basepoint-change transport applies the path-conjugation isomorphism
 of fundamental groups. -/
