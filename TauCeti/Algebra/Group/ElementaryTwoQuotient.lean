@@ -197,16 +197,16 @@ noncomputable def elementaryTwoQuotientMap (f : G →* H) :
       elementaryTwoQuotientMk (f g) := by
   rfl
 
-/-- The identity homomorphism induces the identity map on the elementary-2 quotient. -/
-@[simp] theorem elementaryTwoQuotientMap_id (x : ElementaryTwoQuotient G) :
+/-- The map induced by the identity homomorphism fixes each class in the elementary-2 quotient. -/
+@[simp] theorem elementaryTwoQuotientMap_id_apply (x : ElementaryTwoQuotient G) :
     elementaryTwoQuotientMap (MonoidHom.id G) x = x := by
   obtain ⟨g, rfl⟩ := elementaryTwoQuotientMk_surjective (G := G) x
   simp
 
 variable {K : Type*} [CommGroup K]
 
-/-- Induced maps on elementary-2 quotients compose functorially. -/
-@[simp] theorem elementaryTwoQuotientMap_comp (f : G →* H) (g : H →* K)
+/-- Induced maps on elementary-2 quotients compose pointwise. -/
+@[simp] theorem elementaryTwoQuotientMap_comp_apply (f : G →* H) (g : H →* K)
     (x : ElementaryTwoQuotient G) :
     elementaryTwoQuotientMap (g.comp f) x =
       elementaryTwoQuotientMap g (elementaryTwoQuotientMap f x) := by
@@ -240,14 +240,14 @@ noncomputable def elementaryTwoQuotientCongr (e : G ≃* H) :
 /-- The identity equivalence induces the identity equivalence on the elementary-2 quotient. -/
 @[simp] theorem elementaryTwoQuotientCongr_refl_apply (x : ElementaryTwoQuotient G) :
     elementaryTwoQuotientCongr (MulEquiv.refl G) x = x :=
-  elementaryTwoQuotientMap_id x
+  elementaryTwoQuotientMap_id_apply x
 
 /-- Induced equivalences on elementary-2 quotients compose functorially. -/
 @[simp] theorem elementaryTwoQuotientCongr_trans_apply (e : G ≃* H) (e' : H ≃* K)
     (x : ElementaryTwoQuotient G) :
     elementaryTwoQuotientCongr (e.trans e') x =
       elementaryTwoQuotientCongr e' (elementaryTwoQuotientCongr e x) :=
-  elementaryTwoQuotientMap_comp e.toMonoidHom e'.toMonoidHom x
+  elementaryTwoQuotientMap_comp_apply e.toMonoidHom e'.toMonoidHom x
 
 variable (G)
 
