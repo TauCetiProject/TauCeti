@@ -103,11 +103,15 @@ theorem directingMeasure_ae_eq_condExp {μ : Measure Ω} [IsFiniteMeasure μ] {X
 
 /-- The directing measure bundled as a `ProbabilityMeasure`-valued map — the form that
 `ConditionallyIIDWith` consumes as its directing measure `ν`. -/
+-- This wrapper is exposed because its public characteristic lemma
+-- `directingProbabilityMeasure_toMeasure` is an exported `rfl` coercion lemma, which requires the
+-- definition body to be visible (unlike `directingMeasure`, characterised by property lemmas).
 @[expose]
 def directingProbabilityMeasure (μ : Measure Ω) [IsFiniteMeasure μ] (X : ℕ → Ω → α) (ω : Ω) :
     ProbabilityMeasure α :=
   ⟨directingMeasure μ X ω, inferInstance⟩
 
+/-- The underlying measure of the bundled directing measure is `directingMeasure μ X ω`. -/
 @[simp]
 theorem directingProbabilityMeasure_toMeasure {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (ω : Ω) : (directingProbabilityMeasure μ X ω : Measure α) = directingMeasure μ X ω :=
@@ -115,6 +119,7 @@ theorem directingProbabilityMeasure_toMeasure {μ : Measure Ω} [IsFiniteMeasure
 
 /-- The bundled directing measure is measurable into `ProbabilityMeasure α` — the measurability of
 the directing measure that `ConditionallyIIDWith` requires. -/
+@[fun_prop]
 theorem measurable_directingProbabilityMeasure {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hTail : tailProcess X ≤ (inferInstance : MeasurableSpace Ω)) :
     Measurable (directingProbabilityMeasure μ X) := by
