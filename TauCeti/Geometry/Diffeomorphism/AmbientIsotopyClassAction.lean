@@ -45,34 +45,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
   {X : Type*} [TopologicalSpace X]
 
-/-- The self-diffeomorphism group acts on continuous ambient-isotopy classes through the
-underlying self-homeomorphism. -/
-instance ambientIsotopyClassSMul : SMul (M ≃ₘ^n⟮I, I⟯ M) (AmbientIsotopyClass X M) where
-  smul φ x := φ.toHomeomorph • x
+/-- Self-diffeomorphisms act on continuous ambient-isotopy classes. -/
+instance ambientIsotopyClassMulAction : MulAction (M ≃ₘ^n⟮I, I⟯ M)
+    (AmbientIsotopyClass X M) :=
+  MulAction.compHom (AmbientIsotopyClass X M) (toHomeomorphHom (I := I) (M := M) (n := n))
 
 /-- The diffeomorphism action on continuous ambient-isotopy classes is the underlying
 homeomorphism action. -/
 @[simp]
 theorem ambientIsotopyClass_smul_eq_homeomorph_smul
     (φ : M ≃ₘ^n⟮I, I⟯ M) (x : AmbientIsotopyClass X M) :
-    φ • x = φ.toHomeomorph • x :=
-  rfl
-
-/-- Self-diffeomorphisms act on continuous ambient-isotopy classes. -/
-instance ambientIsotopyClassMulAction : MulAction (M ≃ₘ^n⟮I, I⟯ M) (AmbientIsotopyClass X M) where
-  one_smul x := by
-    rw [ambientIsotopyClass_smul_eq_homeomorph_smul]
-    rw [← toHomeomorphHom_apply (I := I) (M := M) (n := n)
-      (f := (1 : M ≃ₘ^n⟮I, I⟯ M))]
-    rw [map_one, one_smul]
-  mul_smul φ ψ x := by
-    rw [ambientIsotopyClass_smul_eq_homeomorph_smul,
-      ambientIsotopyClass_smul_eq_homeomorph_smul,
-      ambientIsotopyClass_smul_eq_homeomorph_smul]
-    rw [← toHomeomorphHom_apply (I := I) (M := M) (n := n) (f := φ * ψ),
-      ← toHomeomorphHom_apply (I := I) (M := M) (n := n) (f := φ),
-      ← toHomeomorphHom_apply (I := I) (M := M) (n := n) (f := ψ)]
-    rw [map_mul, mul_smul]
+    φ • x = φ.toHomeomorph • x := by
+  rw [MulAction.compHom_smul_def, toHomeomorphHom_apply]
 
 /-- The diffeomorphism action on representatives is postcomposition by the underlying
 homeomorphism. -/
@@ -80,7 +64,8 @@ homeomorphism. -/
 theorem ambientIsotopyClass_smul_mk (φ : M ≃ₘ^n⟮I, I⟯ M) (f : C(X, M)) :
     φ • AmbientIsotopyClass.mk f =
       AmbientIsotopyClass.mk ((φ.toHomeomorph : C(M, M)).comp f) :=
-  AmbientIsotopyClass.smul_mk φ.toHomeomorph f
+  ambientIsotopyClass_smul_eq_homeomorph_smul φ (AmbientIsotopyClass.mk f) ▸
+    AmbientIsotopyClass.smul_mk φ.toHomeomorph f
 
 /-- The homeomorphism-induced quotient equivalence of the underlying homeomorphism agrees with the
 diffeomorphism action. -/

@@ -76,13 +76,6 @@ theorem postcompHomeomorphEquiv_apply_eq_smul (h : Y ≃ₜ Y)
   intro f
   rw [postcompHomeomorphEquiv_mk, smul_mk]
 
-/-- Acting by a product of ambient homeomorphisms is iterated postcomposition, with the usual
-function-composition convention for the homeomorphism group. -/
-@[simp]
-theorem mul_smul_apply (h k : Y ≃ₜ Y) (x : AmbientIsotopyClass X Y) :
-    (h * k) • x = h • k • x :=
-  mul_smul h k x
-
 end AmbientIsotopyClass
 
 end TauCeti
