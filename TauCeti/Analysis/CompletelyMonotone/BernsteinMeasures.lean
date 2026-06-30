@@ -37,6 +37,9 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
   measures and mass preservation.
 * `TauCeti.chafaiMeasure_finite_mass`, `TauCeti.chafaiRescaled_finite_mass`: finiteness and the
   total-mass bound `≤ f(0) - L`.
+* `TauCeti.chafaiRescaled_prokhorov_mass_bound`,
+  `TauCeti.chafaiRescaled_tendsto_laplace_integral_of_weak`: Prokhorov-ready mass bounds and
+  the Laplace test-function specialization of weak convergence for the rescaled measures.
 
 ## References
 
@@ -97,7 +100,8 @@ lemma continuousOn_chafaiDensity {n : ℕ}
   exact (continuousOn_const.mul ((continuousOn_pow _).mono fun _ _ => trivial)).mul
     (hf.continuousOn_iteratedDerivWithin le_rfl (uniqueDiffOn_Ici 0))
 
-/-- The `n`-th approximating measure `σ_n` for the Bernstein proof, with density `ρ_n` on
+/-- The `n`-th Chafaï approximating measure `σ_n` for the Bernstein representation, with density
+`ρ_n` on
 `(0, ∞)`. -/
 noncomputable def chafaiMeasure (f : ℝ → ℝ) (n : ℕ) : Measure ℝ :=
   (volume.restrict (Ioi 0)).withDensity (fun t => ENNReal.ofReal (chafaiDensity f n t))
@@ -417,10 +421,8 @@ private lemma chafaiDensity_ibp_identity (f : ℝ → ℝ) {m : ℕ}
   simp only [F, c]; ring
 
 /-- Monotonicity of the finite-interval Chafaï-density integrals in the order:
-`∫₀ᵀ dₖ ≤ ∫₀ᵀ dₖ₋₁` for `2 ≤ k` and `0 ≤ T`. This is the exported
-integration-by-parts consequence
-(the raw IBP identity `chafaiDensity_ibp_identity` is private); it is the per-step density
-integral-monotonicity bound consumed by the Bernstein-identity assembly. -/
+for `2 ≤ k` and `0 ≤ T`, the integral of the `k`-th density on `[0,T]` is bounded above by the
+integral of the preceding density, assuming the endpoint has the required alternating sign. -/
 lemma integral_chafaiDensity_le_pred (f : ℝ → ℝ) {k : ℕ} (hk : 2 ≤ k)
     (hf : ContDiffOn ℝ (k : WithTop ℕ∞) f (Ici 0))
     (T : ℝ) (hT : 0 ≤ T)
@@ -472,7 +474,7 @@ private lemma integral_chafaiDensity_one_eq (f : ℝ → ℝ) (hcm : IsCompletel
       ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t :=
     intervalIntegral.integral_congr_ae
       (Filter.Eventually.of_forall fun t _ => chafaiDensity_one t)
-  rw [h1, ← hcm.integral_neg_iteratedDerivWithin_one_Ici T hT.le,
+  rw [h1, ← hcm.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici T hT.le,
     hcm.integral_neg_iteratedDerivWithin_one_Icc_zero_left T hT.le]
 
 private lemma integral_chafaiDensity_le_sub (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
@@ -591,5 +593,37 @@ lemma chafaiRescaled_finite_mass (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f
   · exact ⟨by rw [hmass]; exact (hfinite n).1.measure_univ_lt_top⟩
   · rw [hmass]
     exact (hfinite n).2
+
+/-- Prokhorov-ready mass bound for the rescaled Chafaï measures: a completely monotone function
+supplies a nonnegative real mass constant `C = f(0) - L`, where `L` is the limit of `f` at
+infinity, such that every `chafaiRescaled f n` is finite and has total mass at most `C`. -/
+lemma chafaiRescaled_prokhorov_mass_bound (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f) :
+    ∃ L : ℝ, ∃ C : ℝ≥0, Tendsto f atTop (nhds L) ∧ 0 ≤ L ∧ (C : ℝ) = f 0 - L ∧
+      ∀ n,
+        IsFiniteMeasure (chafaiRescaled f n) ∧
+        (chafaiRescaled f n) univ ≤ (C : ENNReal) := by
+  obtain ⟨L, hL, hL_nn, hfinite⟩ := chafaiRescaled_finite_mass f hcm
+  have hL_le : L ≤ f 0 := hcm.le_of_tendsto_atTop hL le_rfl
+  let C : ℝ≥0 := ⟨f 0 - L, sub_nonneg.mpr hL_le⟩
+  refine ⟨L, C, hL, hL_nn, rfl, fun n => ?_⟩
+  refine ⟨(hfinite n).1, ?_⟩
+  have hC : (C : ENNReal) = ENNReal.ofReal (f 0 - L) := by
+    rw [← ENNReal.ofReal_coe_nnreal (p := C)]
+    rfl
+  rw [hC]
+  exact (hfinite n).2
+
+/-- Weak convergence of the rescaled Chafaï measures specializes to the Laplace kernel:
+if all bounded-continuous test integrals for `chafaiRescaled f n` converge to those for `μ₀`,
+then the integrals of `p ↦ exp (-x * p)` converge for every `x ≥ 0`. -/
+lemma chafaiRescaled_tendsto_laplace_integral_of_weak
+    {μ₀ : Measure ℝ≥0} {l : Filter ℕ}
+    (hweak : ∀ g : BoundedContinuousFunction ℝ≥0 ℝ,
+        Tendsto (fun n => ∫ p, g p ∂(chafaiRescaled f n)) l
+          (nhds (∫ p, g p ∂μ₀)))
+    {x : ℝ} (hx : 0 ≤ x) :
+    Tendsto (fun n => ∫ p, Real.exp (-(x * (p : ℝ))) ∂(chafaiRescaled f n)) l
+      (nhds (∫ p, Real.exp (-(x * (p : ℝ))) ∂μ₀)) := by
+  simpa using hweak (laplaceKernelBoundedContinuous hx)
 
 end TauCeti

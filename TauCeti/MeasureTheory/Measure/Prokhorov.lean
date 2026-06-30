@@ -39,10 +39,10 @@ variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α]
 
 /-- A tight, uniformly mass-bounded sequence of finite measures has a weak cluster limit.
 
-The compactness input is Mathlib's
-`isCompact_setOf_finiteMeasure_mass_le_compl_isCompact_le`; the conclusion is phrased as
-convergence along an ultrafilter `U ≤ atTop`, which is enough for diagonal limit arguments and does
-not require a metrizability instance for `FiniteMeasure α`. -/
+Given tightness of the sequence and a common total-mass bound, the conclusion is a finite limiting
+measure with the same mass bound and weak convergence of all bounded-continuous test-function
+integrals along an ultrafilter `U ≤ atTop`; no first-countability assumption on `FiniteMeasure α`
+is needed. -/
 lemma finite_measure_cluster_limit
     (σ : ℕ → Measure α) (C : ℝ≥0)
     (hmass : ∀ n, (σ n) univ ≤ (C : ENNReal))

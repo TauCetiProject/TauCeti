@@ -25,6 +25,9 @@ monotone functions, and improper-integral facts for the first derivative within 
 * `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc`,
   `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc_zero_left`:
   compatibility wrappers for the smooth finite-interval identities.
+* `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici`:
+  transfer of the first-derivative integral from the interval-dependent differentiability set
+  `Icc 0 T` to the fixed half-line `Ici 0`.
 * `TauCeti.IsCompletelyMonotone.neg_iteratedDerivWithin_one_integrableOn`,
   `TauCeti.IsCompletelyMonotone.integral_Ioi_neg_iteratedDerivWithin_one`: integrability and the
   improper integral of `-f'` on `(0, ∞)`, represented as `iteratedDerivWithin 1`.
@@ -116,8 +119,8 @@ private lemma IsCompletelyMonotone.iteratedDerivWithin_one_nonpos
   rw [iteratedDerivWithin_one]; exact hf.derivWithin_nonpos ht
 
 /-- The interval integral of `-f'` with the `T`-dependent set `Icc 0 T` equals the integral with
-the fixed set `Ici 0` (both agree a.e. by set transfer at interior points). -/
-lemma IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici
+the fixed set `Ici 0` for a completely monotone function. -/
+lemma IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici
     (hcm : IsCompletelyMonotone f) (T : ℝ) (hT : 0 ≤ T) :
     ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t =
     ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t := by
@@ -163,7 +166,7 @@ lemma IsCompletelyMonotone.neg_iteratedDerivWithin_one_integrableOn
           rw [uIoc_of_le hT.le] at ht
           simp only [Real.norm_eq_abs]
           rw [abs_of_nonneg (by linarith [hcm.iteratedDerivWithin_one_nonpos ht.1.le])])
-      rw [this, ← hcm.integral_neg_iteratedDerivWithin_one_Ici T hT.le,
+      rw [this, ← hcm.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici T hT.le,
         hcm.integral_neg_iteratedDerivWithin_one_Icc_zero_left T hT.le]
     exact Tendsto.congr' (EventuallyEq.symm hnorm) (Tendsto.sub tendsto_const_nhds hL)
 
@@ -177,7 +180,7 @@ lemma IsCompletelyMonotone.integral_Ioi_neg_iteratedDerivWithin_one
       -iteratedDerivWithin 1 f (Ici 0) t) atTop (nhds (f 0 - L)) :=
     Tendsto.congr'
       ((eventually_gt_atTop 0).mono fun T hT =>
-        ((hcm.integral_neg_iteratedDerivWithin_one_Ici T hT.le).symm.trans
+        ((hcm.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici T hT.le).symm.trans
           (hcm.integral_neg_iteratedDerivWithin_one_Icc_zero_left T hT.le)).symm)
       (Tendsto.sub tendsto_const_nhds hL)
   exact tendsto_nhds_unique htend htend2
