@@ -1,6 +1,7 @@
 module
 
-public import Mathlib.GroupTheory.Perm.ClosureSwap
+public import Mathlib.GroupTheory.GroupAction.FixedPoints
+public import Mathlib.Algebra.Group.Action.End
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Order.Interval.Finset.Nat
 
