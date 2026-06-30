@@ -2,6 +2,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Basic
 public import TauCeti.Probability.Process.Tail
+public import Mathlib.GroupTheory.Perm.ClosureSwap
 public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
 public import Mathlib.Data.Set.Finite.Lattice
 
@@ -24,7 +25,7 @@ namespace TauCeti
 
 namespace Probability
 
-variable {α : Type*}
+variable {α β ι : Type*}
 
 /-- Reindex a one-sided path by a permutation of time. -/
 abbrev permReindex (π : Equiv.Perm ℕ) (x : ℕ → α) : ℕ → α :=
@@ -36,9 +37,9 @@ theorem permReindex_apply (π : Equiv.Perm ℕ) (x : ℕ → α) (n : ℕ) :
     permReindex π x n = x (π n) :=
   rfl
 
-/-- A permutation of `ℕ` is finitely supported if it moves only finitely many indices. -/
-def IsFinitelySupportedPerm (π : Equiv.Perm ℕ) : Prop :=
-  Set.Finite {n : ℕ | π n ≠ n}
+/-- A permutation is finitely supported if it moves only finitely many indices. -/
+def IsFinitelySupportedPerm (π : Equiv.Perm ι) : Prop :=
+  Set.Finite {i : ι | π i ≠ i}
 
 /-- Constructor for finitely supported permutations from an eventual fixedness bound. -/
 theorem isFinitelySupportedPerm_of_eventually_eq_self {π : Equiv.Perm ℕ}
@@ -48,8 +49,8 @@ theorem isFinitelySupportedPerm_of_eventually_eq_self {π : Equiv.Perm ℕ}
     by_contra hnN
     exact hn (hN n (not_lt.mp hnN))
 
-/-- The identity permutation of `ℕ` is finitely supported. -/
-theorem isFinitelySupportedPerm_one : IsFinitelySupportedPerm (1 : Equiv.Perm ℕ) := by
+/-- The identity permutation is finitely supported. -/
+theorem isFinitelySupportedPerm_one : IsFinitelySupportedPerm (1 : Equiv.Perm ι) := by
   rw [IsFinitelySupportedPerm]
   simp
 
@@ -67,37 +68,25 @@ theorem isFinitelySupportedPerm_iff_eventually_eq_self {π : Equiv.Perm ℕ} :
     IsFinitelySupportedPerm π ↔ ∃ N, ∀ n, N ≤ n → π n = n :=
   ⟨IsFinitelySupportedPerm.eventually_eq_self, isFinitelySupportedPerm_of_eventually_eq_self⟩
 
-/-- A transposition of two natural-number indices is finitely supported. -/
-theorem isFinitelySupportedPerm_swap (a b : ℕ) :
+/-- A transposition is finitely supported. -/
+theorem isFinitelySupportedPerm_swap [DecidableEq ι] (a b : ι) :
     IsFinitelySupportedPerm (Equiv.swap a b) := by
   rw [IsFinitelySupportedPerm]
-  exact (Set.finite_singleton a).insert b |>.subset fun n hn => by
-    by_cases hna : n = a
-    · exact Or.inr hna
-    by_cases hnb : n = b
-    · exact Or.inl hnb
-    exfalso
-    exact hn (Equiv.swap_apply_of_ne_of_ne hna hnb)
+  simpa only [MulAction.fixedBy, Equiv.Perm.smul_def, Set.compl_setOf] using
+    (finite_compl_fixedBy_swap (x := a) (y := b))
 
 /-- The product of finitely supported permutations is finitely supported. -/
-theorem IsFinitelySupportedPerm.mul {π σ : Equiv.Perm ℕ}
+theorem IsFinitelySupportedPerm.mul {π σ : Equiv.Perm ι}
     (hπ : IsFinitelySupportedPerm π) (hσ : IsFinitelySupportedPerm σ) :
     IsFinitelySupportedPerm (π * σ) := by
   rw [IsFinitelySupportedPerm] at hπ hσ ⊢
-  refine (hσ.union (hπ.preimage (Equiv.injective σ).injOn)).subset ?_
-  intro n hmove
-  by_cases hσn : σ n = n
-  · right
-    by_contra hπσ
-    exact hmove (by simpa [hσn] using hπσ)
-  · exact Or.inl hσn
+  exact (hπ.union hσ).subset (Equiv.Perm.set_support_mul_subset π σ)
 
 /-- The inverse of a finitely supported permutation is finitely supported. -/
-theorem IsFinitelySupportedPerm.symm {π : Equiv.Perm ℕ}
+theorem IsFinitelySupportedPerm.symm {π : Equiv.Perm ι}
     (hπ : IsFinitelySupportedPerm π) : IsFinitelySupportedPerm π.symm := by
   rw [IsFinitelySupportedPerm] at hπ ⊢
-  exact (hπ.image π).subset fun n hn => by
-    exact ⟨π.symm n, by simpa using hn.symm, by simp⟩
+  simpa [Equiv.Perm.set_support_symm_eq π] using hπ
 
 variable [MeasurableSpace α]
 
@@ -138,6 +127,11 @@ theorem exchangeableSigma_le :
   intro s hs
   exact (mem_exchangeableSigma_iff.mp hs).1
 
+/-- An `exchangeableSigma`-measurable set is ambient-measurable. -/
+theorem MeasurableSet.ambient_of_exchangeableSigma {s : Set (ℕ → α)}
+    (hs : MeasurableSet[exchangeableSigma α] s) : MeasurableSet s :=
+  exchangeableSigma_le s hs
+
 /-- An ambient-measurable event fixed by every finitely supported time permutation is measurable
 for the exchangeable σ-algebra. -/
 theorem measurableSet_exchangeableSigma_of_forall_permReindex {s : Set (ℕ → α)}
@@ -154,6 +148,40 @@ theorem MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma {s : Set (ℕ
     permReindex (α := α) π ⁻¹' s = s :=
   (mem_exchangeableSigma_iff.mp hs).2 π hπ
 
+/-- Reindexing by a finitely supported permutation is measurable as an endomap of the
+exchangeable σ-algebra. -/
+theorem measurable_permReindex_exchangeableSigma {π : Equiv.Perm ℕ}
+    (hπ : IsFinitelySupportedPerm π) :
+    @Measurable (ℕ → α) (ℕ → α) (exchangeableSigma α) (exchangeableSigma α)
+      (permReindex (α := α) π) := by
+  intro s hs
+  rw [MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma (α := α) hs hπ]
+  exact hs
+
+/-- An ambient-measurable observable fixed by every finitely supported reindexing is measurable
+with respect to the exchangeable σ-algebra. -/
+theorem measurable_exchangeableSigma_of_comp_permReindex_eq [MeasurableSpace β]
+    {g : (ℕ → α) → β} (hg : Measurable g)
+    (hg_perm : ∀ π : Equiv.Perm ℕ, IsFinitelySupportedPerm π →
+      g ∘ permReindex (α := α) π = g) :
+    @Measurable (ℕ → α) β (exchangeableSigma α) inferInstance g := by
+  intro s hs
+  refine mem_exchangeableSigma_iff.mpr ⟨hg hs, ?_⟩
+  intro π hπ
+  ext x
+  exact Set.ext_iff.mp (congrFun (congrArg Set.preimage (hg_perm π hπ)) s) x
+
+/-- A function measurable with respect to the exchangeable σ-algebra is fixed by every finitely
+supported reindexing. -/
+theorem comp_permReindex_eq_of_measurable_exchangeableSigma [MeasurableSpace β]
+    [MeasurableSingletonClass β] {g : (ℕ → α) → β}
+    (hg : @Measurable (ℕ → α) β (exchangeableSigma α) inferInstance g)
+    {π : Equiv.Perm ℕ} (hπ : IsFinitelySupportedPerm π) :
+    g ∘ permReindex (α := α) π = g := by
+  exact MeasurableSpace.comp_eq_of_measurable_invariants
+    (hg.mono (iInf_le (fun π : {π : Equiv.Perm ℕ // IsFinitelySupportedPerm π} =>
+      MeasurableSpace.invariants (permReindex (α := α) π.1)) ⟨π, hπ⟩) le_rfl)
+
 /-- If a set belongs to the future path σ-algebra from time `N` onward and `π` fixes every index
 `k ≥ N`, then reindexing paths by `π` leaves the set fixed. -/
 private theorem preimage_permReindex_eq_of_measurable_tailFamily
@@ -167,8 +195,8 @@ private theorem preimage_permReindex_eq_of_measurable_tailFamily
   | basic u hu =>
       rcases hu with ⟨k, t, ht, rfl⟩
       ext x
-      change x (π k.1) ∈ t ↔ x k.1 ∈ t
-      rw [hπ k.1 k.2]
+      simp only [Set.mem_preimage]
+      rw [permReindex_apply, hπ k.1 k.2]
   | empty =>
       simp
   | compl t ht hpre =>
