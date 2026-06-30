@@ -1,18 +1,22 @@
 module
 
 public import TauCeti.Probability.Process.Tail
-public import Mathlib.Probability.Kernel.Condexp
+public import Mathlib.Probability.Kernel.CondDistrib
 
 /-!
 # The de Finetti directing measure
 
-For a process `X : ℕ → Ω → α` on a standard Borel space, `directingMeasure μ X ω` is the conditional
-law of the initial coordinate `X 0` given the process tail σ-algebra `tailProcess X`, realised
-through Mathlib's conditional-expectation kernel `condExpKernel`:
+For a process `X : ℕ → Ω → α` valued in a standard Borel space `α`, `directingMeasure μ X ω` is the
+conditional law of the initial coordinate `X 0` given the process tail σ-algebra `tailProcess X`,
+realised as Mathlib's regular conditional distribution `condDistrib` of `X 0`, conditioning on
+`tailProcess X` via the identity map:
 
 ```
-directingMeasure μ X ω = (condExpKernel μ (tailProcess X) ω).map (X 0).
+directingMeasure μ X ω = condDistrib (X 0) (id) μ ω    (conditioning on tailProcess X).
 ```
+
+Because it lives over the **value** space `α`, it needs only `[StandardBorelSpace α]` (and
+`[Nonempty α]`); the sample space `Ω` is an arbitrary measurable space.
 
 This is the random directing measure of the martingale (and kernel-based Koopman) route to de
 Finetti's theorem. This file records its basic theory: it is a probability measure
@@ -22,8 +26,9 @@ Finetti's theorem. This file records its basic theory: it is a probability measu
 (the product factorisation across a whole block) is left to a later step.
 
 Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/DirectingMeasure.lean`, pin
-`e0532e59ceff23edab44dda9ab0655debbc9cc22`), here over Mathlib's `condExpKernel` and the Tau Ceti
-`tailProcess` API.
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`); that version conditions over `Ω` (needing
+`[StandardBorelSpace Ω]`), here strengthened to the value-space formulation over Mathlib's
+`condDistrib` and the Tau Ceti `tailProcess` API.
 -/
 
 public section
@@ -36,54 +41,50 @@ namespace TauCeti
 
 namespace Probability
 
-variable {Ω α : Type*} [MeasurableSpace Ω] [StandardBorelSpace Ω] [MeasurableSpace α]
+variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [StandardBorelSpace α] [Nonempty α]
 
 /-- The **de Finetti directing measure**: the conditional law of the initial coordinate `X 0` given
-the process tail σ-algebra `tailProcess X`, as the pushforward of the conditional-expectation kernel
-`condExpKernel μ (tailProcess X)` along `X 0`. -/
+the process tail σ-algebra `tailProcess X`, as the regular conditional distribution of `X 0` given
+that σ-algebra (Mathlib's `condDistrib`, conditioning on `tailProcess X` via the identity map). It
+lives over the value space `α`, so it needs `α` standard Borel, not `Ω`. -/
 @[expose]
 def directingMeasure (μ : Measure Ω) [IsFiniteMeasure μ] (X : ℕ → Ω → α) (ω : Ω) : Measure α :=
-  (condExpKernel μ (tailProcess X) ω).map (X 0)
+  @condDistrib Ω Ω α _ _ _ _ (tailProcess X) (X 0) id μ _ ω
 
-/-- The directing measure is a probability measure: the conditional-expectation kernel is Markov and
-`X 0` is measurable. -/
-theorem isProbabilityMeasure_directingMeasure {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
-    (hX0 : Measurable (X 0)) (ω : Ω) : IsProbabilityMeasure (directingMeasure μ X ω) := by
+/-- The directing measure is a probability measure: the regular conditional distribution is a Markov
+kernel. -/
+instance isProbabilityMeasure_directingMeasure {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
+    {ω : Ω} : IsProbabilityMeasure (directingMeasure μ X ω) := by
   rw [directingMeasure]
-  exact Measure.isProbabilityMeasure_map hX0.aemeasurable
+  infer_instance
 
 /-- Each set-evaluation `ω ↦ directingMeasure μ X ω B` is measurable: it is `tailProcess`-measurable
-(the conditional-expectation kernel's coordinate is), hence ambient-measurable. -/
+(the regular conditional distribution's coordinate is), hence ambient-measurable. -/
 @[fun_prop]
 theorem measurable_directingMeasure_coe {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX : ∀ n, Measurable (X n)) {B : Set α} (hB : MeasurableSet B) :
     Measurable fun ω => directingMeasure μ X ω B := by
-  simp_rw [directingMeasure, Measure.map_apply (hX 0) hB]
-  exact ((condExpKernel μ (tailProcess X)).measurable_coe ((hX 0) hB)).mono
-    (tailProcess_le_ambient 0 fun k _ => hX k) le_rfl
+  have h := measurable_condDistrib (μ := μ) (Y := X 0) (X := (id : Ω → Ω))
+    (mβ := tailProcess X) hB
+  rw [MeasurableSpace.comap_id] at h
+  exact h.mono (tailProcess_le_ambient 0 fun k _ => hX k) le_rfl
 
 /-- The directing measure is the **conditional law of the initial coordinate** `X 0` given the tail
 σ-algebra: for measurable `B`, the real evaluation `ω ↦ directingMeasure μ X ω B` is a version of
 the conditional expectation of `𝟙_B ∘ X 0` given `tailProcess X`. -/
 theorem directingMeasure_X0_marginal {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX : ∀ n, Measurable (X n)) {B : Set α} (hB : MeasurableSet B) :
-    (fun ω => (directingMeasure μ X ω B).toReal)
+    (fun ω => (directingMeasure μ X ω).real B)
       =ᵐ[μ] μ[Set.indicator B (fun _ => (1 : ℝ)) ∘ X 0 | tailProcess X] := by
-  have hcomp : (Set.indicator B (fun _ => (1 : ℝ)) ∘ X 0)
-      = ((X 0) ⁻¹' B).indicator (fun _ => (1 : ℝ)) := by
+  have hid : @Measurable Ω Ω _ (tailProcess X) id :=
+    measurable_id'' (tailProcess_le_ambient 0 fun k _ => hX k)
+  have hcomp : ((X 0) ⁻¹' B).indicator (fun _ => (1 : ℝ))
+      = Set.indicator B (fun _ => (1 : ℝ)) ∘ X 0 := by
     funext y
     by_cases h : X 0 y ∈ B <;> simp [Set.mem_preimage, h]
-  have hint : Integrable (Set.indicator B (fun _ => (1 : ℝ)) ∘ X 0) μ := by
-    rw [hcomp]; exact (integrable_const (1 : ℝ)).indicator ((hX 0) hB)
-  have hpt : (fun ω => (directingMeasure μ X ω B).toReal)
-      = fun ω => ∫ y, (Set.indicator B (fun _ => (1 : ℝ)) ∘ X 0) y
-          ∂(condExpKernel μ (tailProcess X) ω) := by
-    funext ω
-    rw [hcomp, directingMeasure, Measure.map_apply (hX 0) hB,
-      integral_indicator_const (1 : ℝ) ((hX 0) hB), smul_eq_mul, mul_one, measureReal_def]
-  rw [hpt]
-  exact (condExp_ae_eq_integral_condExpKernel
-    (tailProcess_le_ambient 0 fun k _ => hX k) hint).symm
+  have h := condDistrib_ae_eq_condExp (μ := μ) (Y := X 0) (X := (id : Ω → Ω)) hid (hX 0) hB
+  rw [MeasurableSpace.comap_id, hcomp] at h
+  exact h
 
 end Probability
 
