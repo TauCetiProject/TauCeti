@@ -90,11 +90,6 @@ theorem IsFinitelySupportedPerm.symm {π : Equiv.Perm ι}
 
 variable [MeasurableSpace α]
 
-/-- Reindexing paths by a time permutation is measurable. -/
-theorem measurable_permReindex (π : Equiv.Perm ℕ) :
-    Measurable (permReindex (α := α) π) := by
-  simpa [permReindex] using measurable_reindex (α := α) (φ := π)
-
 /-- The exchangeable σ-algebra on path space: ambient-measurable events invariant under every
 finitely supported permutation of the time coordinate. -/
 @[implicit_reducible]
@@ -142,6 +137,7 @@ theorem measurableSet_exchangeableSigma_of_forall_permReindex {s : Set (ℕ → 
   mem_exchangeableSigma_iff.mpr ⟨hs_meas, hs_inv⟩
 
 /-- An exchangeable event is fixed by any finitely supported time permutation. -/
+@[simp]
 theorem MeasurableSet.preimage_permReindex_eq_of_exchangeableSigma {s : Set (ℕ → α)}
     (hs : MeasurableSet[exchangeableSigma α] s) {π : Equiv.Perm ℕ}
     (hπ : IsFinitelySupportedPerm π) :
