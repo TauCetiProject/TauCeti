@@ -311,7 +311,7 @@ lemma normalizerQuotientOrbitRelQuotientPermHom_mk_apply (H : Subgroup G)
   by simp [normalizerQuotientOrbitRelQuotientPermHom]
 
 /-- The normalizer quotient `N(H) / H` acts on the quotient by `H`-orbits. -/
-@[reducible]
+@[implicit_reducible]
 noncomputable def normalizerQuotientOrbitRelQuotientMulAction (H : Subgroup G) :
     MulAction (Subgroup.normalizerQuotient H) (_root_.MulAction.orbitRel.Quotient H X) :=
   MulAction.compHom (_root_.MulAction.orbitRel.Quotient H X)
