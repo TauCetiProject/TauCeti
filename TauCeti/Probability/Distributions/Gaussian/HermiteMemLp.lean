@@ -32,8 +32,8 @@ These consume only the moment hypothesis `∀ k, Integrable (x ↦ xᵏ)`, so th
 Chebyshev measure (compact support) as well as to the Gaussian.  The Gaussian instance supplies that
 hypothesis from Mathlib's `memLp_id_gaussianReal'` (all moments of a real Gaussian are finite).  The
 scalar-generic cast to `[RCLike 𝕜]` (needed because the roadmap's bases are stated over `Lp 𝕜 2 μ`
-uniformly for `𝕜 = ℝ` and `𝕜 = ℂ`) is isolated in `memLp_two_algebraMap`, using that
-`algebraMap ℝ 𝕜 = RCLike.ofReal` is norm-preserving.
+uniformly for `𝕜 = ℝ` and `𝕜 = ℂ`) reuses Mathlib's `MemLp.ofReal`, rewriting the `algebraMap ℝ 𝕜`
+cast to `RCLike.ofReal`.
 
 Mathlib's `memLp_id_gaussianReal'` (Fernique), `memLp_two_iff_integrable_sq`, and the `Polynomial`
 evaluation API are consumed, not re-derived.
@@ -94,34 +94,19 @@ theorem memLp_two_eval_gaussianReal (μ : ℝ) (v : ℝ≥0) (q : ℝ[X]) :
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- Casting an `L²` real function into `𝕜` via `algebraMap ℝ 𝕜` preserves `L²` membership: the cast
-is `RCLike.ofReal`, which is norm-preserving, so the squared norm of the cast is the squared
-original function. -/
-theorem memLp_two_algebraMap {α : Type*} [MeasurableSpace α] {ν : Measure α} {g : α → ℝ}
-    (hg : MemLp g 2 ν) :
-    MemLp (fun x => (algebraMap ℝ 𝕜) (g x)) 2 ν := by
-  simp only [RCLike.algebraMap_eq_ofReal]
-  have haesm : AEStronglyMeasurable (fun x => (RCLike.ofReal (g x) : 𝕜)) ν :=
-    RCLike.continuous_ofReal.comp_aestronglyMeasurable hg.1
-  rw [memLp_two_iff_integrable_sq_norm haesm]
-  have hnorm : (fun x => ‖(RCLike.ofReal (g x) : 𝕜)‖ ^ 2) = fun x => g x ^ 2 := by
-    ext x; rw [RCLike.norm_ofReal, sq_abs]
-  rw [hnorm]
-  exact hg.integrable_sq
-
 /-- **Target A3′ (variance-general `L²` membership).** The normalized probabilists' Hermite
 polynomial `Hₙ / √(n!)`, cast into `𝕜`, is square-integrable against every centred real Gaussian
 `gaussianReal 0 v`.  Immediate from `memLp_two_eval_gaussianReal` (Hermite is a polynomial) and the
-scalar cast `memLp_two_algebraMap`. -/
+scalar cast `MemLp.ofReal`. -/
 theorem memLp_hermite_gaussianReal (n : ℕ) (v : ℝ≥0) :
     MemLp (fun x => (algebraMap ℝ 𝕜) (aeval x (hermite n) / Real.sqrt (n.factorial))) 2
       (gaussianReal 0 v) := by
-  apply memLp_two_algebraMap
   have key : ∀ x : ℝ, aeval x (hermite n) / Real.sqrt (n.factorial)
       = ((hermite n).map (Int.castRingHom ℝ)).eval x * (Real.sqrt (n.factorial))⁻¹ := by
     intro x
     rw [div_eq_mul_inv, Polynomial.aeval_def, algebraMap_int_eq, Polynomial.eval_map]
   simp only [key]
-  exact (memLp_two_eval_gaussianReal 0 v _).mul_const _
+  simpa only [← RCLike.algebraMap_eq_ofReal] using
+    ((memLp_two_eval_gaussianReal 0 v _).mul_const _).ofReal (K := 𝕜)
 
 end TauCeti
