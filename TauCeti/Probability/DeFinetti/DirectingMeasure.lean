@@ -2,6 +2,7 @@ module
 
 public import TauCeti.Probability.Process.Tail
 public import Mathlib.Probability.Kernel.CondDistrib
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 
 /-!
 # The de Finetti directing measure
@@ -23,8 +24,12 @@ Finetti's theorem. This file records its basic theory: it is a probability measu
 (`isProbabilityMeasure_directingMeasure`), its set evaluations are `tailProcess X`-measurable
 (`measurable_tailProcess_directingMeasure_coe`, with the ambient corollary
 `measurable_directingMeasure_coe`), and it is the conditional law of `X 0` given the tail
-(`directingMeasure_ae_eq_condExp`). Packaging it as a directing measure for `ConditionallyIIDWith`
-(the product factorisation across a whole block) is left to a later step.
+(`directingMeasure_ae_eq_condExp`). It is also bundled as the `ProbabilityMeasure`-valued
+`directingProbabilityMeasure`, measurable at the `tailProcess X` level
+(`measurable_tailProcess_directingProbabilityMeasure`, with the ambient corollary
+`measurable_directingProbabilityMeasure`) — the form `ConditionallyIIDWith` consumes as its
+directing measure `ν`. The full block-product factorisation
+(conditional independence across a whole block) is left to a later step.
 
 Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/DirectingMeasure.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`); that version conditions over `Ω` (needing
@@ -97,6 +102,33 @@ theorem directingMeasure_ae_eq_condExp {μ : Measure Ω} [IsFiniteMeasure μ] {X
   have h := condDistrib_ae_eq_condExp (μ := μ) (Y := X 0) (X := (id : Ω → Ω)) hid hX0 hB
   rw [MeasurableSpace.comap_id, hcomp] at h
   exact h
+
+/-- The directing measure bundled as a `ProbabilityMeasure`-valued map — the form that
+`ConditionallyIIDWith` consumes as its directing measure `ν`. -/
+def directingProbabilityMeasure (μ : Measure Ω) [IsFiniteMeasure μ] (X : ℕ → Ω → α) (ω : Ω) :
+    ProbabilityMeasure α :=
+  ⟨directingMeasure μ X ω, inferInstance⟩
+
+/-- The underlying measure of the bundled directing measure is `directingMeasure μ X ω`. -/
+@[simp]
+theorem directingProbabilityMeasure_toMeasure {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
+    (ω : Ω) : (directingProbabilityMeasure μ X ω : Measure α) = directingMeasure μ X ω := by
+  simp only [directingProbabilityMeasure, ProbabilityMeasure.coe_mk]
+
+/-- The bundled directing measure is **`tailProcess X`-measurable** into `ProbabilityMeasure α`. -/
+theorem measurable_tailProcess_directingProbabilityMeasure {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : ℕ → Ω → α} : Measurable[tailProcess X] (directingProbabilityMeasure μ X) := by
+  refine Measurable.subtype_mk ?_
+  exact Measure.measurable_of_measurable_coe _ fun B hB =>
+    measurable_tailProcess_directingMeasure_coe hB
+
+/-- The bundled directing measure is measurable into `ProbabilityMeasure α` — the ambient corollary
+of the `tailProcess X`-measurable form, the measurability that `ConditionallyIIDWith` requires. -/
+@[fun_prop]
+theorem measurable_directingProbabilityMeasure {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
+    (hTail : tailProcess X ≤ (inferInstance : MeasurableSpace Ω)) :
+    Measurable (directingProbabilityMeasure μ X) :=
+  measurable_tailProcess_directingProbabilityMeasure.mono hTail le_rfl
 
 end Probability
 
