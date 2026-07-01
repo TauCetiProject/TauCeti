@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-public import TauCeti.Analysis.Calculus.IteratedDerivWithin
 public import TauCeti.Analysis.CompletelyMonotone.Basic
 
 /-!
