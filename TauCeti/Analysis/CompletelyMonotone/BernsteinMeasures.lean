@@ -10,12 +10,17 @@ public import TauCeti.Analysis.CompletelyMonotone.Integral
 /-!
 # Approximating measures for Bernstein's theorem
 
-The Chafaï-style construction of the representing measure in Bernstein's theorem. For a
-completely monotone `f` the densities `ρ_n(t) = (-1)ⁿ/(n-1)! · tⁿ⁻¹ · f⁽ⁿ⁾(t)` are nonnegative on
-`[0, ∞)`, the positive support used by `chafaiMeasure`; they define finite measures whose total
-mass is bounded by `f(0) - f(∞)`, and after the rescaling `t ↦ (n-1)/t` give measures
-`chafaiRescaled f n` on `ℝ≥0` whose Laplace kernels `(1 - xp/(n-1))₊ⁿ⁻¹` converge to `e^{-xp}`.
-These feed the Prokhorov tightness argument.
+The Chafaï-style approximating measures for the **non-constant part** of a completely monotone
+function in Bernstein's theorem. For a completely monotone `f` with `L = lim_{t→∞} f t`, the
+densities `ρ_n(t) = (-1)ⁿ/(n-1)! · tⁿ⁻¹ · f⁽ⁿ⁾(t)` are nonnegative on `[0, ∞)`, the positive
+support used by `chafaiMeasure`; they define finite measures whose total mass is bounded by
+`f(0) - f(∞) = f(0) - L`, and after the rescaling `t ↦ (n-1)/t` give measures `chafaiRescaled f n`
+on `ℝ≥0` whose Laplace kernels `(1 - xp/(n-1))₊ⁿ⁻¹` converge to `e^{-xp}`. These feed the Prokhorov
+tightness argument and, in the limit, represent `f - L` (mass `f(0) - L`), i.e. the non-constant
+part; the **full** Bernstein representing measure adds the atom `L · δ₀` at `0` (the constant `L =
+∫ e^{-tx} d(L·δ₀)`). That final assembly — recovering `f` itself, not merely `f - L` — is performed
+downstream in the Bernstein-theorem file, not here. This file supplies only the approximating
+infrastructure.
 
 These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean` and
 `CompletelyMonotone/Integral.lean`.
