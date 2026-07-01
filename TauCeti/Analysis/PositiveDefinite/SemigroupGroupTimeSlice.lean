@@ -34,6 +34,10 @@ positive-definite function on `[0,∞) × V` to spatial positive-definite functi
   nonnegative for arbitrary finite families.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_normSq_le`: the fixed-time spatial Cauchy--Schwarz
   estimate.
+* `TauCeti.IsSemigroupGroupPD.norm_apply_le_timeSlice_diagonal_re`: the direct fixed-time bound
+  `‖F (t, v)‖ ≤ (F (t, 0)).re`.
+* `TauCeti.IsSemigroupGroupPD.timeSlice_eq_zero_of_timeSlice_diagonal_eq_zero`: a zero
+  fixed-time diagonal value kills the whole fixed-time spatial slice.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefinite`: the predicate form when the
   spatial involution is negation.
 * `TauCeti.IsSemigroupGroupPD.timeSlice_isPositiveDefiniteKernel_and_continuous`: packages
@@ -105,6 +109,26 @@ theorem timeSlice_sum_nonneg (hF : IsSemigroupGroupPD F) (t : ℝ≥0) {ι : Typ
 theorem timeSlice_normSq_le (hF : IsSemigroupGroupPD F) (t : ℝ≥0) (v w : V) :
     RCLike.normSq (F (t, v - w)) ≤ RCLike.re (F (t, 0)) * RCLike.re (F (t, 0)) := by
   simpa using isPositiveDefiniteKernel_normSq_le (hF.timeSlice_isPositiveDefiniteKernel t) v w
+
+/-- At a fixed time, a semigroup-group positive-definite function is bounded by the real part of
+its zero-spatial value. -/
+theorem norm_apply_le_timeSlice_diagonal_re (hF : IsSemigroupGroupPD F) (t : ℝ≥0) (v : V) :
+    ‖F (t, v)‖ ≤ (F (t, 0)).re := by
+  refine le_of_sq_le_sq ?_ (hF.timeSlice_diagonal_re_nonneg t)
+  have hsq := hF.timeSlice_normSq_le t v 0
+  simpa [Complex.normSq_eq_norm_sq, pow_two] using hsq
+
+/-- If the fixed-time diagonal value is zero, then the whole fixed-time spatial slice is zero. -/
+theorem timeSlice_eq_zero_of_timeSlice_diagonal_eq_zero (hF : IsSemigroupGroupPD F)
+    {t : ℝ≥0} (ht : F (t, 0) = 0) (v : V) : F (t, v) = 0 := by
+  simpa using isPositiveDefiniteKernel_eq_zero_of_apply_self_eq_zero_left
+    (hF.timeSlice_isPositiveDefiniteKernel t) (a := v) (b := 0) (by simpa using ht)
+
+/-- Normalized fixed-time slices are bounded by `1`. -/
+theorem norm_apply_le_one_of_timeSlice_diagonal_eq_one (hF : IsSemigroupGroupPD F)
+    {t : ℝ≥0} (ht : F (t, 0) = 1) (v : V) : ‖F (t, v)‖ ≤ 1 := by
+  have hbound := hF.norm_apply_le_timeSlice_diagonal_re t v
+  simpa [ht] using hbound
 
 /-- If the spatial type is equipped with the negation involution, then each fixed-time slice is a
 positive-definite function in the generic `IsPositiveDefinite` sense. -/
