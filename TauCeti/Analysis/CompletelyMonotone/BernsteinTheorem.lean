@@ -252,8 +252,9 @@ private theorem chafaiRescaledBernsteinApproximationToNonconstantPart
         Tendsto (fun n => ∫ p : ℝ≥0,
           (bernsteinKernel n t (p : ℝ) - Real.exp (-(t * (p : ℝ))))
             ∂(chafaiRescaled f n)) atTop (nhds 0) :=
-      kernel_approx_error_tendsto (σ := chafaiRescaled f) (C := f 0 - L)
-        (fun n => (hfinite n).2) t ht
+      integral_bernsteinKernel_sub_laplaceKernel_tendsto_zero_of_mass_bound
+        (σ := chafaiRescaled f) (C := f 0 - L)
+        (Filter.Eventually.of_forall (fun n => (hfinite n).2)) t ht
     have hneg :
         Tendsto (fun n => -∫ p : ℝ≥0,
           (bernsteinKernel n t (p : ℝ) - Real.exp (-(t * (p : ℝ))))
