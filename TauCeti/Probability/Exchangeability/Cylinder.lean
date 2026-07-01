@@ -68,6 +68,7 @@ theorem measurableSet_blockCylinder {X : ℕ → Ω → α} {m : ℕ} {k : Fin m
 /-- The block law evaluated on a measurable rectangle is the measure of the block cylinder:
 `blockLaw μ X k (Set.univ.pi C) = μ (blockCylinder X k C)`. A `blockCylinder`-named restatement of
 the merged `blockLaw_apply_rectangle`. -/
+@[grind =>]
 theorem blockLaw_blockCylinder {μ : Measure Ω} (X : ℕ → Ω → α) {m : ℕ} {k : Fin m → ℕ}
     {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ) (hC : ∀ i, MeasurableSet (C i)) :
     blockLaw μ X k (Set.univ.pi C) = μ (blockCylinder X k C) := by
@@ -107,12 +108,19 @@ theorem blockIndicatorProd_empty (X : ℕ → Ω → α) (k : Fin 0 → ℕ) (C 
   funext ω
   simp [blockIndicatorProd]
 
-/-- The indicator product is integrable under a finite measure. -/
+/-- The block cylinder is null-measurable when the selected coordinates are a.e. measurable. -/
+theorem nullMeasurableSet_blockCylinder {μ : Measure Ω} {X : ℕ → Ω → α} {m : ℕ} {k : Fin m → ℕ}
+    {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ) (hC : ∀ i, MeasurableSet (C i)) :
+    NullMeasurableSet (blockCylinder X k C) μ := by
+  rw [blockCylinder, Set.setOf_forall]
+  exact NullMeasurableSet.iInter fun i => (hX i).nullMeasurableSet_preimage (hC i)
+
+/-- The indicator product is integrable under a finite measure (a.e.-measurable coordinates). -/
 theorem integrable_blockIndicatorProd {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} {m : ℕ}
-    {k : Fin m → ℕ} {C : Fin m → Set α} (hX : ∀ i, Measurable (X (k i)))
+    {k : Fin m → ℕ} {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ)
     (hC : ∀ i, MeasurableSet (C i)) : Integrable (blockIndicatorProd X k C) μ := by
   rw [blockIndicatorProd_eq_indicator]
-  exact Integrable.indicator (integrable_const (1 : ℝ)) (measurableSet_blockCylinder hX hC)
+  exact (integrable_const (1 : ℝ)).indicator₀ (nullMeasurableSet_blockCylinder hX hC)
 
 end Probability
 
