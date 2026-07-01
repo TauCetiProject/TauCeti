@@ -16,10 +16,6 @@ directing-measure construction:
 * `Contractable.condExp_indicator_tailProcess_eq` — the same equality conditioning on the process
   tail σ-algebra `tailProcess X`. The "extreme members agree on the tail" step.
 
-Notably the tail-level result avoids the reverse-martingale (Lévy downward) machinery the
-reference's Kallenberg route uses: the conditional-expectation tower over
-`tailProcess X ≤ tailFamily X (m + 1)` reaches the same conclusion directly.
-
 Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/CondExpConvergence.lean`,
 `condexp_convergence` and `extreme_members_equal_on_tail_via_tower`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`).
@@ -66,6 +62,7 @@ theorem Contractable.condExp_indicator_tailProcess_eq {μ : Measure Ω} [IsFinit
     tailFamily_le_ambient (m + 1) fun k _ => hX_meas k
   haveI : IsFiniteMeasure (μ.trim hfam_le) := isFiniteMeasure_trim hfam_le
   have hfut := hX.condExp_indicator_future_eq hX_meas hk hB
+  -- The tower over `tailProcess X ≤ tailFamily X (m+1)` replaces the reverse-martingale route.
   have htower : ∀ g : Ω → ℝ,
       μ[μ[g | tailFamily X (m + 1)] | tailProcess X] =ᵐ[μ] μ[g | tailProcess X] :=
     fun g => condExp_condExp_of_le htail_le hfam_le

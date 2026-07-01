@@ -95,13 +95,12 @@ theorem tailProcess_le_tailFamily (X : (k : ℕ) → Ω → β k) (n : ℕ) :
 theorem tailFamily_eq_comap_shift (X : (k : ℕ) → Ω → β k) (r : ℕ) :
     tailFamily X r = MeasurableSpace.comap (fun ω n => X (r + n) ω) inferInstance := by
   refine le_antisymm ?_ ?_
-  · rw [tailFamily_eq_iSup_comap]
-    refine iSup_le fun k => ?_
-    obtain ⟨j, hj⟩ := k
-    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hj
-    rw [show (X (r + d)) = (fun f : (∀ n, β (r + n)) => f d) ∘ fun ω n => X (r + n) ω from rfl,
-      ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (measurable_pi_apply d).comap_le
+  · -- Each `X k` with `r ≤ k` is coordinate `k - r` of the shift, hence shift-measurable.
+    refine tailFamily_le_iff.2 fun k hk => ?_
+    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hk
+    have hshift : Measurable[MeasurableSpace.comap (fun ω n => X (r + n) ω) inferInstance]
+        (fun ω n => X (r + n) ω) := measurable_iff_comap_le.mpr le_rfl
+    exact (measurable_pi_apply d).comp hshift
   · have hmeas : Measurable[tailFamily X r] (fun ω n => X (r + n) ω) := by
       letI : MeasurableSpace Ω := tailFamily X r
       exact measurable_pi_lambda (fun ω n => X (r + n) ω)
