@@ -22,6 +22,12 @@ These are the prime-radicand consumer forms of the field-generic results in
 They support the Layer 0 multiquadratic roadmap target identifying subfields with
 `𝔽₂`-subspaces, with the degree interpretation needed to organize quadratic subfields.
 
+The point of the specializations is that their statements mention the public prime-radicand
+dictionary `intermediateFieldEquivSubmoduleSqrtPrimes`. A consumer working in
+`ℚ(√p₁, …, √pₙ)` should not have to expose the private square-root equation or repeat the
+prime-family square-class-independence witness just to state a degree fact. The proofs below
+therefore remain thin rewrites to the generic API rather than new degree arguments.
+
 ## Main results
 
 * `TauCeti.Multiquadratic.finrank_mul_card_intermediateFieldEquivSubmoduleSqrtPrimes`:
