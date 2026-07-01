@@ -246,7 +246,7 @@ private theorem chafaiRescaledBernsteinApproximationToNonconstantPart
           f t - L := by
       filter_upwards [eventually_ge_atTop 2] with n hn
       simpa using
-        (chafaiRescaled_integral_bernsteinKernel_eq_sub_tendsto_atTop f hcm n hn t ht L hL).symm
+        chafaiRescaled_integral_bernsteinKernel_eq_sub_tendsto_atTop f hcm n hn t ht L hL
     exact Tendsto.congr' (EventuallyEq.symm hconst) tendsto_const_nhds
   · have hkernel :
         Tendsto (fun n => ∫ p : ℝ≥0,
