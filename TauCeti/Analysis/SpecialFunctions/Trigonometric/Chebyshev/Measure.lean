@@ -17,7 +17,8 @@ The main facts are that `measureT` has total mass `π`, hence is finite and
 nonzero, and that the existing Mathlib orthogonality lemmas combine into one
 Kronecker-delta statement with squared norms `π` in degree zero and `π / 2` in
 positive degree.  The file also records `L²` membership of the normalized `T`
-modes used by the later Chebyshev Hilbert-basis construction.
+modes and the finite exponential moments used by the later Chebyshev
+Hilbert-basis construction.
 -/
 
 public section
@@ -102,6 +103,14 @@ lemma integral_eval_T_real_mul_eval_T_real_measureT_eq_ite (m n : ℕ) :
   · subst hmn
     simp [integral_eval_T_real_mul_self_measureT]
   · simp [hmn, integral_eval_T_real_mul_eval_T_real_measureT_of_ne hmn]
+
+/-! ### Exponential-moment consumer form -/
+
+/-- The Chebyshev `T` orthogonality measure has all exponential absolute
+moments. -/
+lemma integrable_exp_mul_abs_measureT (a : ℝ) :
+    Integrable (fun x : ℝ => Real.exp (a * |x|)) Polynomial.Chebyshev.measureT := by
+  exact integrable_measureT (by fun_prop)
 
 /-! ### `L²` consumer forms -/
 
