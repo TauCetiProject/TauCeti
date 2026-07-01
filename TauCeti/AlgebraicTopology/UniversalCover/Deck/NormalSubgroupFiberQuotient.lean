@@ -207,22 +207,8 @@ lemma subgroupFiberOrbitClass_eq_iff_normalizerQuotientMk_inv_eq
           ⟨φ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ =
         Subgroup.normalizerQuotientMk H
           ⟨ψ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
-  constructor
-  · intro h
-    rw [subgroupFiberOrbitClass_eq_iff] at h
-    rcases h with ⟨η, hη⟩
-    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem]
-    have hmul : ((η : Deck p) * ψ) • e = φ • e := by
-      simpa [Subgroup.smul_def, smul_smul] using hη
-    have hφ : (η : Deck p) * ψ = φ := IsCancelSMul.right_cancel _ _ e hmul
-    rw [← hφ]
-    exact (inferInstance : H.Normal).conj_mem' _ (H.inv_mem η.2) ψ
-  · intro h
-    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem] at h
-    rw [subgroupFiberOrbitClass_eq_iff]
-    have hmem : φ * ψ⁻¹ ∈ H := by
-      simpa [mul_assoc] using (inferInstance : H.Normal).conj_mem _ (H.inv_mem h) φ
-    exact ⟨⟨φ * ψ⁻¹, hmem⟩, by simp [Subgroup.smul_def]⟩
+  exact TauCeti.MulAction.orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq
+    (G := Deck p) (X := p ⁻¹' {b}) H e φ ψ
 
 /-- For a preconnected cover, equality of subgroup fibre-orbit classes of two deck translates is
 equality of the corresponding inverse representatives in the normalizer quotient. -/

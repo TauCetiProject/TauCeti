@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import TauCeti.Algebra.Group.NormalizerQuotient
 
 /-!
 # Generic orbit-relation quotient helpers
@@ -20,6 +21,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.orbitRelQuotient_smul_eq_base_iff`: in a cancellative action, a
   translate has the same `H`-orbit class as the base point exactly when the translator is in
   `H`.
+* `TauCeti.MulAction.orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq`: for a
+  normal subgroup, equality of two translates in the `H`-orbit quotient is equality of the
+  corresponding inverse representatives in `N(H) / H`.
 -/
 
 public section
@@ -131,6 +135,35 @@ lemma orbitRelQuotient_smul_eq_base_iff [IsCancelSMul G X] (H : Subgroup G) (g :
   · intro hg
     rw [Quotient.eq'', _root_.MulAction.orbitRel_apply]
     exact ⟨⟨g, hg⟩, rfl⟩
+
+/-- In a cancellative action by `G`, equality of two translates in the quotient by a normal
+subgroup `H` is equality of the corresponding inverse representatives in the normalizer
+quotient `N(H) / H`. -/
+lemma orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq [IsCancelSMul G X]
+    (H : Subgroup G) [H.Normal] (x : X) (g k : G) :
+    (Quotient.mk'' (g • x) : _root_.MulAction.orbitRel.Quotient H X) =
+        Quotient.mk'' (k • x) ↔
+      Subgroup.normalizerQuotientMk H
+          ⟨g⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ =
+        Subgroup.normalizerQuotientMk H
+          ⟨k⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
+  constructor
+  · intro h
+    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply] at h
+    rcases h with ⟨l, hl⟩
+    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem]
+    have hmul : ((l : G) * k) • x = g • x := by
+      simpa [Subgroup.smul_def, smul_smul] using hl
+    have hg : (l : G) * k = g := IsCancelSMul.right_cancel _ _ x hmul
+    rw [← hg]
+    simpa [div_eq_mul_inv, mul_assoc] using
+      (inferInstance : H.Normal).conj_mem' _ (H.inv_mem l.2) k
+  · intro h
+    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem] at h
+    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply]
+    have hmem : g * k⁻¹ ∈ H := by
+      simpa [mul_assoc] using (inferInstance : H.Normal).conj_mem _ (H.inv_mem h) g
+    exact ⟨⟨g * k⁻¹, hmem⟩, by simp [Subgroup.smul_def, smul_smul]⟩
 
 end MulAction
 
