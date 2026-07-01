@@ -30,11 +30,6 @@ namespace TauCeti
 open Complex
 open scoped ComplexConjugate
 
-/-- Multiplication by a complex scalar is holomorphic. -/
-lemma differentiable_unitDiscRotationFormula (u : ℂ) :
-    Differentiable ℂ (fun z : ℂ => u * z) :=
-  (differentiable_const (c := u)).mul differentiable_id
-
 /--
 The standard automorphism of the complex unit disc
 `z ↦ u * (z - a) / (1 - conj a * z)`.
