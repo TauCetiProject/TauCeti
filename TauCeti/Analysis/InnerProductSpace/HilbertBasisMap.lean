@@ -49,8 +49,11 @@ theorem _root_.HilbertBasis.mapₗᵢ_apply
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (i : ι) :
     b.mapₗᵢ e i = e (b i) :=
   by
-    rw [_root_.HilbertBasis.mapₗᵢ.eq_1]
-    rfl
+    classical
+    rw [← _root_.HilbertBasis.repr_symm_single, _root_.HilbertBasis.repr_mapₗᵢ,
+      LinearIsometryEquiv.symm_trans, LinearIsometryEquiv.trans_apply,
+      _root_.HilbertBasis.repr_symm_single]
+    simp
 
 /-- Function-level form of `HilbertBasis.mapₗᵢ_apply`. -/
 @[simp]
@@ -74,5 +77,26 @@ theorem _root_.HilbertBasis.mapₗᵢ_trans {G : Type*} [NormedAddCommGroup G] [
     (b.mapₗᵢ e).mapₗᵢ f = b.mapₗᵢ (e.trans f) := by
   cases b
   rfl
+
+/-- Parseval's identity for the transported Hilbert basis. -/
+theorem _root_.HilbertBasis.mapₗᵢ_hasSum_inner_mul_inner
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
+    HasSum (fun i => inner 𝕜 x (e (b i)) * inner 𝕜 (e (b i)) y) (inner 𝕜 x y) := by
+  simpa only [_root_.HilbertBasis.mapₗᵢ_apply] using
+    (b.mapₗᵢ e).hasSum_inner_mul_inner x y
+
+/-- Summability form of Parseval's identity for the transported Hilbert basis. -/
+theorem _root_.HilbertBasis.mapₗᵢ_summable_inner_mul_inner
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
+    Summable fun i => inner 𝕜 x (e (b i)) * inner 𝕜 (e (b i)) y := by
+  simpa only [_root_.HilbertBasis.mapₗᵢ_apply] using
+    (b.mapₗᵢ e).summable_inner_mul_inner x y
+
+/-- Tsum form of Parseval's identity for the transported Hilbert basis. -/
+theorem _root_.HilbertBasis.mapₗᵢ_tsum_inner_mul_inner
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
+    ∑' i, inner 𝕜 x (e (b i)) * inner 𝕜 (e (b i)) y = inner 𝕜 x y := by
+  simpa only [_root_.HilbertBasis.mapₗᵢ_apply] using
+    (b.mapₗᵢ e).tsum_inner_mul_inner x y
 
 end TauCeti
