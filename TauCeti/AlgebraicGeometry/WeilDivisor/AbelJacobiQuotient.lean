@@ -61,22 +61,31 @@ private lemma zsmul_ofPoint_eq_single (n : ℤ) (x : X) :
 
 For a weight-one base point `x₀`, this is `D - weightedDegree(D) • [x₀]`, viewed as a
 weighted-degree-zero divisor. -/
-@[expose] def weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
+def weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
     (D : WeilDivisor X) : weightedDegreeZeroSubgroup w :=
   ⟨D - weightedDegree w D • ofPoint x₀, by
     rw [mem_weightedDegreeZeroSubgroup, map_sub, map_zsmul, weightedDegree_ofPoint, hx₀]
     simp⟩
+
+-- The `def`s in this file are intentionally not `@[expose]`, so downstream modules cannot unfold
+-- them; each defining equality is unfolded once here in a `private` lemma and re-exported through
+-- the public characterization lemma below.
+private lemma coe_weightedAbelJacobiDegreeZeroDivisor_def (w : X → ℤ) {x₀ : X}
+    (hx₀ : w x₀ = 1) (D : WeilDivisor X) :
+    (weightedAbelJacobiDegreeZeroDivisor w hx₀ D : WeilDivisor X) =
+      D - weightedDegree w D • ofPoint x₀ :=
+  rfl
 
 @[simp]
 lemma coe_weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X}
     (hx₀ : w x₀ = 1) (D : WeilDivisor X) :
     (weightedAbelJacobiDegreeZeroDivisor w hx₀ D : WeilDivisor X) =
       D - weightedDegree w D • ofPoint x₀ :=
-  rfl
+  coe_weightedAbelJacobiDegreeZeroDivisor_def w hx₀ D
 
 /-- The quotient class of the degree-corrected representative
 `D - weightedDegree(D) • [x₀]`. -/
-@[expose] def weightedAbelJacobiQuotientClass (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1) :
+def weightedAbelJacobiQuotientClass (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1) :
     WeilDivisor X →+
       weightedDegreeZeroSubgroup w ⧸ S.principalSubgroupOfWeightedDegreeZero w where
   toFun D := QuotientAddGroup.mk (weightedAbelJacobiDegreeZeroDivisor w hx₀ D)
@@ -95,12 +104,18 @@ lemma coe_weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X}
     -- additivity is `map_add`; rewrite `mk` to `mk'` to apply it explicitly.
     simp only [hdiv, ← QuotientAddGroup.mk'_apply, map_add]
 
+private lemma weightedAbelJacobiQuotientClass_mk_def (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
+    (D : WeilDivisor X) :
+    S.weightedAbelJacobiQuotientClass w hx₀ D =
+      QuotientAddGroup.mk (weightedAbelJacobiDegreeZeroDivisor w hx₀ D) :=
+  rfl
+
 @[simp]
 lemma weightedAbelJacobiQuotientClass_mk (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
     (D : WeilDivisor X) :
     S.weightedAbelJacobiQuotientClass w hx₀ D =
       QuotientAddGroup.mk (weightedAbelJacobiDegreeZeroDivisor w hx₀ D) :=
-  rfl
+  S.weightedAbelJacobiQuotientClass_mk_def w hx₀ D
 
 /-- The quotient Abel-Jacobi representative of a sum is the sum of the quotient
 representatives. -/
@@ -216,21 +231,26 @@ lemma weightedAbelJacobiQuotientClass_eq_iff_linearlyEquivalent
 
 /-- The degree-corrected representative of a divisor in the unweighted degree-zero divisor
 group.  This is `D - degree(D) • [x₀]`. -/
-@[expose] def unweightedAbelJacobiDegreeZeroDivisor (x₀ : X) (D : WeilDivisor X) :
+def unweightedAbelJacobiDegreeZeroDivisor (x₀ : X) (D : WeilDivisor X) :
     degreeZeroSubgroup X :=
   ⟨D - degree D • ofPoint x₀, by
     rw [mem_degreeZeroSubgroup, map_sub, map_zsmul, degree_ofPoint]
     simp⟩
 
-@[simp]
-lemma coe_unweightedAbelJacobiDegreeZeroDivisor (x₀ : X) (D : WeilDivisor X) :
+private lemma coe_unweightedAbelJacobiDegreeZeroDivisor_def (x₀ : X) (D : WeilDivisor X) :
     (unweightedAbelJacobiDegreeZeroDivisor x₀ D : WeilDivisor X) =
       D - degree D • ofPoint x₀ :=
   rfl
 
+@[simp]
+lemma coe_unweightedAbelJacobiDegreeZeroDivisor (x₀ : X) (D : WeilDivisor X) :
+    (unweightedAbelJacobiDegreeZeroDivisor x₀ D : WeilDivisor X) =
+      D - degree D • ofPoint x₀ :=
+  coe_unweightedAbelJacobiDegreeZeroDivisor_def x₀ D
+
 /-- The quotient class of the unweighted degree-corrected representative
 `D - degree(D) • [x₀]`. -/
-@[expose] def unweightedAbelJacobiQuotientClass (x₀ : X) :
+def unweightedAbelJacobiQuotientClass (x₀ : X) :
     WeilDivisor X →+ degreeZeroSubgroup X ⧸ S.principalSubgroupOfDegreeZero where
   toFun D := QuotientAddGroup.mk (unweightedAbelJacobiDegreeZeroDivisor x₀ D)
   map_zero' := by
@@ -248,11 +268,16 @@ lemma coe_unweightedAbelJacobiDegreeZeroDivisor (x₀ : X) (D : WeilDivisor X) :
     -- additivity is `map_add`; rewrite `mk` to `mk'` to apply it explicitly.
     simp only [hdiv, ← QuotientAddGroup.mk'_apply, map_add]
 
+private lemma unweightedAbelJacobiQuotientClass_mk_def (x₀ : X) (D : WeilDivisor X) :
+    S.unweightedAbelJacobiQuotientClass x₀ D =
+      QuotientAddGroup.mk (unweightedAbelJacobiDegreeZeroDivisor x₀ D) :=
+  rfl
+
 @[simp]
 lemma unweightedAbelJacobiQuotientClass_mk (x₀ : X) (D : WeilDivisor X) :
     S.unweightedAbelJacobiQuotientClass x₀ D =
       QuotientAddGroup.mk (unweightedAbelJacobiDegreeZeroDivisor x₀ D) :=
-  rfl
+  S.unweightedAbelJacobiQuotientClass_mk_def x₀ D
 
 /-- The unweighted quotient Abel-Jacobi representative of a sum is the sum of the quotient
 representatives. -/
