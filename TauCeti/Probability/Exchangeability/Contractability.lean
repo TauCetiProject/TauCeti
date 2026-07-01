@@ -23,7 +23,9 @@ time-reindexing, in particular the shift).
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
 combinatorial core is Mathlib's `Equiv.Perm.exists_extending_pair` (Cameron Freer, Mathlib
-#34599).
+#34599). `Contractable.pairLaw_eq` is adapted from `DeFinetti/ViaMartingale/FutureRectangles.lean`
+(`contractable_dist_eq`) in the same repo, reproved via the reindexing route below rather than the
+reference's rectangle π-system.
 -/
 
 public section
@@ -149,18 +151,19 @@ theorem Contractable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω �
   Contractable.measurePreserving_reindex hX hX_meas (φ := fun k => k + 1)
     (fun _ _ h => Nat.add_lt_add_right h 1)
 
-/-- **Pair-law equality from contractability.** For a contractable process and two head indices
-`j, k` below a common cutoff `r`, the joint law of the head coordinate `X j` with the future tail
-`(X r, X (r+1), …)` equals the joint law of `X k` with the **same** tail:
+/-- **Pair-law equality from contractability.** For a contractable process, a strictly increasing
+tail selection `g`, and two head indices `j, k` below the tail start `g 0`, the joint law of the
+head coordinate `X j` with the tail `(X (g 0), X (g 1), …)` equals the joint law of `X k` with
+the **same** tail:
 ```
-μ.map (fun ω => (X j ω, fun n => X (r + n) ω)) = μ.map (fun ω => (X k ω, fun n => X (r + n) ω)).
+μ.map (fun ω => (X j ω, fun n => X (g n) ω)) = μ.map (fun ω => (X k ω, fun n => X (g n) ω)).
 ```
 -/
 theorem Contractable.pairLaw_eq {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
-    (hX : Contractable μ X) (hX_ae : ∀ n, AEMeasurable (X n) μ) {j k r : ℕ}
-    (hj : j < r) (hk : k < r) :
-    μ.map (fun ω => (X j ω, fun n => X (r + n) ω))
-      = μ.map (fun ω => (X k ω, fun n => X (r + n) ω)) := by
+    (hX : Contractable μ X) (hX_ae : ∀ n, AEMeasurable (X n) μ) {g : ℕ → ℕ} (hg : StrictMono g)
+    {j k : ℕ} (hj : j < g 0) (hk : k < g 0) :
+    μ.map (fun ω => (X j ω, fun n => X (g n) ω))
+      = μ.map (fun ω => (X k ω, fun n => X (g n) ω)) := by
   classical
   -- The head/tail split on path space.
   let headTail : (ℕ → α) → α × (ℕ → α) := fun f => (f 0, fun n => f (n + 1))
@@ -174,24 +177,26 @@ theorem Contractable.pairLaw_eq {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ 
         = (pathLaw μ X).map (fun x : ℕ → α => fun i => x (φ i)) :=
           (map_reindex_pathLaw μ hX_ae φ).symm
       _ = pathLaw μ X := (hX.measurePreserving_reindex hX_ae hφ).map_eq
-  -- For a head `h < r`, the selection `(h, r, r+1, …)` is strictly monotone and collapses the joint
-  -- law of `(X h, tail)` onto the common measure `(pathLaw μ X).map headTail`.
-  have side : ∀ h : ℕ, h < r →
-      μ.map (fun ω => (X h ω, fun n => X (r + n) ω)) = (pathLaw μ X).map headTail := by
+  -- For a head `h < g 0`, the selection `(h, g 0, g 1, …)` is strictly monotone and collapses the
+  -- joint law of `(X h, tail)` onto the common measure `(pathLaw μ X).map headTail`.
+  have side : ∀ h : ℕ, h < g 0 →
+      μ.map (fun ω => (X h ω, fun n => X (g n) ω)) = (pathLaw μ X).map headTail := by
     intro h hhr
-    set φ : ℕ → ℕ := fun i => if i = 0 then h else r + (i - 1) with hφdef
+    set φ : ℕ → ℕ := fun i => if i = 0 then h else g (i - 1) with hφdef
     have hφmono : StrictMono φ := by
       intro a b hab
       simp only [hφdef]
       rcases Nat.eq_zero_or_pos a with ha | ha
       · subst ha
-        rw [if_pos rfl, if_neg (by omega : b ≠ 0)]; omega
-      · rw [if_neg (by omega : a ≠ 0), if_neg (by omega : b ≠ 0)]; omega
+        rw [if_pos rfl, if_neg (by omega : b ≠ 0)]
+        exact hhr.trans_le (hg.monotone (Nat.zero_le _))
+      · rw [if_neg (by omega : a ≠ 0), if_neg (by omega : b ≠ 0)]
+        exact hg (by omega : a - 1 < b - 1)
     have hφ0 : φ 0 = h := by simp [hφdef]
     have hpath_ae : AEMeasurable (fun ω (i : ℕ) => X (φ i) ω) μ :=
       aemeasurable_pi_lambda _ fun i => hX_ae (φ i)
-    -- `φ (n+1)` reduces definitionally to `r + n`, so `congr 1` closes the tail on its own.
-    have hfun : (fun ω => (X h ω, fun n => X (r + n) ω))
+    -- `φ (n+1)` reduces definitionally to `g n`, so `congr 1` closes the tail on its own.
+    have hfun : (fun ω => (X h ω, fun n => X (g n) ω))
         = headTail ∘ (fun ω (i : ℕ) => X (φ i) ω) := by
       funext ω
       simp only [headTail, Function.comp_apply, hφ0]
