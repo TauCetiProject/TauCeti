@@ -80,6 +80,25 @@ lemma subgroupFiberOrbitClass_eq_iff (H : Subgroup (Deck p)) (e e' : p ⁻¹' {b
   rw [subgroupFiberOrbitClass_eq_mk, subgroupFiberOrbitClass_eq_mk, Quotient.eq'',
     MulAction.orbitRel_apply]
 
+/-- A deck translate of the chosen fibre point has the same subgroup orbit class as the chosen
+point exactly when the translating deck transformation lies in the subgroup. -/
+lemma subgroupFiberOrbitClass_smul_eq_base_iff
+    [IsCancelSMul (Deck p) (p ⁻¹' {b})] (H : Subgroup (Deck p)) (e : p ⁻¹' {b})
+    (φ : Deck p) :
+    subgroupFiberOrbitClass H (φ • e) = subgroupFiberOrbitClass H e ↔ φ ∈ H := by
+  exact TauCeti.MulAction.orbitRelQuotient_smul_eq_base_iff
+    (G := Deck p) (X := p ⁻¹' {b}) H φ e
+
+/-- For a preconnected covering, a deck translate of the chosen fibre point has the same
+subgroup orbit class as the chosen point exactly when the translating deck transformation lies
+in the subgroup. -/
+lemma subgroupFiberOrbitClass_smul_eq_base_iff_of_isCoveringMap
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) (φ : Deck p) :
+    subgroupFiberOrbitClass H (φ • e) = subgroupFiberOrbitClass H e ↔ φ ∈ H := by
+  letI := fiber_isCancelSMul (b := b) hp
+  exact subgroupFiberOrbitClass_smul_eq_base_iff H e φ
+
 /-- If `H ≤ K`, the quotient of a fibre by `H` maps naturally to the quotient by `K`. -/
 @[expose] def subgroupFiberOrbitMapOfLE {H K : Subgroup (Deck p)} (hHK : H ≤ K) :
     SubgroupFiberOrbitQuotient H b → SubgroupFiberOrbitQuotient K b :=

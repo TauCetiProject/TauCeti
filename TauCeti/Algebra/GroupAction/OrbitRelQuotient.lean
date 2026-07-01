@@ -125,8 +125,9 @@ lemma orbitRelQuotient_smul_eq_base_iff [IsCancelSMul G X] (H : Subgroup G) (g :
   · intro h
     rw [Quotient.eq'', _root_.MulAction.orbitRel_apply] at h
     rcases h with ⟨k, hk⟩
-    change (k : G) • x = g • x at hk
-    exact (IsCancelSMul.right_cancel (k : G) g x hk).symm ▸ k.2
+    have hkG : (k : G) • x = g • x := by
+      simpa [Subgroup.smul_def] using hk
+    exact (IsCancelSMul.right_cancel (k : G) g x hkG).symm ▸ k.2
   · intro hg
     rw [Quotient.eq'', _root_.MulAction.orbitRel_apply]
     exact ⟨⟨g, hg⟩, rfl⟩
