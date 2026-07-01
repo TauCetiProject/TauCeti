@@ -139,11 +139,10 @@ theorem lintegral_blockCylinder_indicator {μ : Measure Ω} {X : ℕ → Ω → 
     blockLaw_blockCylinder X hX hC]
 
 /-- The real (Bochner) integral of the indicator product is the block law of the rectangle:
-`∫ ω, ∏ i, 𝟙_{C i}(X (k i) ω) ∂μ = (blockLaw μ X k (∏ᵢ C i)).toReal` — the real (`toReal`) form of
-the `ℝ≥0∞` identity `lintegral_blockCylinder_indicator` (integrability under a finite measure is
-`integrable_blockIndicatorProd`). -/
+`∫ ω, ∏ i, 𝟙_{C i}(X (k i) ω) ∂μ = (blockLaw μ X k (∏ᵢ C i)).toReal`. This is the finite-measure
+real form of the `ℝ≥0∞` identity `lintegral_blockCylinder_indicator`. -/
 @[grind =>]
-theorem integral_blockIndicatorProd {μ : Measure Ω} {X : ℕ → Ω → α} {m : ℕ}
+theorem integral_blockIndicatorProd {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} {m : ℕ}
     {k : Fin m → ℕ} {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ)
     (hC : ∀ i, MeasurableSet (C i)) :
     ∫ ω, blockIndicatorProd X k C ω ∂μ = (blockLaw μ X k (Set.univ.pi C)).toReal := by
