@@ -78,4 +78,59 @@ theorem _root_.HilbertBasis.mapₗᵢ_trans {G : Type*} [NormedAddCommGroup G] [
   cases b
   rfl
 
+/-- Transporting a Hilbert basis across an isometry and then back across the inverse isometry
+recovers the original basis. -/
+@[simp]
+theorem _root_.HilbertBasis.mapₗᵢ_symm
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
+    (b.mapₗᵢ e).mapₗᵢ e.symm = b := by
+  rw [_root_.HilbertBasis.mapₗᵢ_trans]
+  simp
+
+/-- Transporting a Hilbert basis back across an inverse isometry and then forward again recovers
+the original basis. -/
+@[simp]
+theorem _root_.HilbertBasis.mapₗᵢ_symm_self
+    (b : _root_.HilbertBasis ι 𝕜 F) (e : E ≃ₗᵢ[𝕜] F) :
+    (b.mapₗᵢ e.symm).mapₗᵢ e = b := by
+  rw [_root_.HilbertBasis.mapₗᵢ_trans]
+  simp
+
+/-- Transporting Hilbert bases across a fixed linear isometric equivalence is injective. -/
+theorem _root_.HilbertBasis.mapₗᵢ_injective (e : E ≃ₗᵢ[𝕜] F) :
+    Function.Injective (fun b : _root_.HilbertBasis ι 𝕜 E => b.mapₗᵢ e) := by
+  intro b c hbc
+  simpa using congrArg (fun b' : _root_.HilbertBasis ι 𝕜 F => b'.mapₗᵢ e.symm) hbc
+
+/-- Every Hilbert basis of the target is the transport of a Hilbert basis of the source. -/
+theorem _root_.HilbertBasis.mapₗᵢ_surjective (e : E ≃ₗᵢ[𝕜] F) :
+    Function.Surjective (fun b : _root_.HilbertBasis ι 𝕜 E => b.mapₗᵢ e) := by
+  intro b
+  exact ⟨b.mapₗᵢ e.symm, by simp⟩
+
+/-- Transporting Hilbert bases across a fixed linear isometric equivalence is bijective. -/
+theorem _root_.HilbertBasis.mapₗᵢ_bijective (e : E ≃ₗᵢ[𝕜] F) :
+    Function.Bijective (fun b : _root_.HilbertBasis ι 𝕜 E => b.mapₗᵢ e) :=
+  ⟨_root_.HilbertBasis.mapₗᵢ_injective e, _root_.HilbertBasis.mapₗᵢ_surjective e⟩
+
+/-- Equality after transporting a Hilbert basis across an isometry is the same as equality after
+transporting the right-hand side back across the inverse isometry. -/
+@[simp]
+theorem _root_.HilbertBasis.mapₗᵢ_eq_iff
+    (b : _root_.HilbertBasis ι 𝕜 E) (c : _root_.HilbertBasis ι 𝕜 F) (e : E ≃ₗᵢ[𝕜] F) :
+    b.mapₗᵢ e = c ↔ b = c.mapₗᵢ e.symm := by
+  constructor
+  · intro h
+    simpa using congrArg (fun b' : _root_.HilbertBasis ι 𝕜 F => b'.mapₗᵢ e.symm) h
+  · intro h
+    simp [h]
+
+/-- Equality to a transported Hilbert basis is the same as equality after transporting the
+left-hand side back across the inverse isometry. -/
+@[simp]
+theorem _root_.HilbertBasis.eq_mapₗᵢ_iff
+    (c : _root_.HilbertBasis ι 𝕜 F) (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
+    c = b.mapₗᵢ e ↔ c.mapₗᵢ e.symm = b := by
+  rw [eq_comm, _root_.HilbertBasis.mapₗᵢ_eq_iff, eq_comm]
+
 end TauCeti
