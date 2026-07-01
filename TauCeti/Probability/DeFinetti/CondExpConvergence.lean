@@ -34,9 +34,9 @@ namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
-/-- **Conditional law of a future coordinate.** For a contractable process and two head indices
-`j, k` below a cutoff `r`, the conditional expectations of `𝟙_B ∘ X j` and `𝟙_B ∘ X k` given the
-future σ-algebra `tailFamily X r` agree almost everywhere. -/
+/-- **Conditional law of head coordinates given the future.** For a contractable process and two
+head indices `j, k` below a cutoff `r`, the conditional expectations of `𝟙_B ∘ X j` and `𝟙_B ∘ X k`
+given the future σ-algebra `tailFamily X r` agree almost everywhere. -/
 theorem Contractable.condExp_indicator_future_eq {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n)) {r j k : ℕ}
     (hj : j < r) (hk : k < r) {B : Set α} (hB : MeasurableSet B) :
@@ -63,8 +63,8 @@ theorem Contractable.condExp_indicator_tailProcess_eq {μ : Measure Ω} [IsFinit
   have hfam_le : tailFamily X (max j k + 1) ≤ (inferInstance : MeasurableSpace Ω) :=
     tailFamily_le_ambient (max j k + 1) fun i _ => hX_meas i
   haveI : IsFiniteMeasure (μ.trim hfam_le) := isFiniteMeasure_trim hfam_le
-  have hfut := hX.condExp_indicator_future_eq hX_meas
-    (show j < max j k + 1 by omega) (show k < max j k + 1 by omega) hB
+  have hfut := hX.condExp_indicator_future_eq (r := max j k + 1) (j := j) (k := k) hX_meas
+    (by omega) (by omega) hB
   -- The tower over `tailProcess X ≤ tailFamily X (max j k + 1)` replaces the reverse martingale.
   have htower : ∀ g : Ω → ℝ,
       μ[μ[g | tailFamily X (max j k + 1)] | tailProcess X] =ᵐ[μ] μ[g | tailProcess X] :=
