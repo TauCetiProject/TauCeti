@@ -149,6 +149,60 @@ theorem Contractable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω �
   Contractable.measurePreserving_reindex hX hX_meas (φ := fun k => k + 1)
     (fun _ _ h => Nat.add_lt_add_right h 1)
 
+/-- **Pair-law equality from contractability.** For a contractable process and two head indices
+`j, k` below a common cutoff `r`, the joint law of the head coordinate `X j` with the future tail
+`(X r, X (r+1), …)` equals the joint law of `X k` with the **same** tail:
+```
+μ.map (fun ω => (X j ω, fun n => X (r + n) ω)) = μ.map (fun ω => (X k ω, fun n => X (r + n) ω)).
+```
+Both sides collapse to `(pathLaw μ X).map headTail` via `Contractable.measurePreserving_reindex`:
+each is a head/tail split composed with the strictly monotone time-reindexing that places the head
+at position `0` and enumerates the tail `r, r+1, …` afterwards (strict monotonicity needs the head
+below `r`). The head-at-`m`, tail-at-`m+1` case is `r := m + 1` (so `j = m`, `k ≤ m`). -/
+theorem Contractable.pairLaw_eq {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
+    (hX : Contractable μ X) (hX_ae : ∀ n, AEMeasurable (X n) μ) {j k r : ℕ}
+    (hj : j < r) (hk : k < r) :
+    μ.map (fun ω => (X j ω, fun n => X (r + n) ω))
+      = μ.map (fun ω => (X k ω, fun n => X (r + n) ω)) := by
+  classical
+  -- The head/tail split on path space.
+  let headTail : (ℕ → α) → α × (ℕ → α) := fun f => (f 0, fun n => f (n + 1))
+  have hheadTail_meas : Measurable headTail :=
+    (measurable_pi_apply 0).prodMk (measurable_pi_lambda _ fun n => measurable_pi_apply (n + 1))
+  -- Strictly-monotone time-reindexing preserves the path law of a contractable process.
+  have hreindex : ∀ φ : ℕ → ℕ, StrictMono φ →
+      μ.map (fun ω (i : ℕ) => X (φ i) ω) = pathLaw μ X := by
+    intro φ hφ
+    calc μ.map (fun ω (i : ℕ) => X (φ i) ω)
+        = (pathLaw μ X).map (fun x : ℕ → α => fun i => x (φ i)) :=
+          (map_reindex_pathLaw μ hX_ae φ).symm
+      _ = pathLaw μ X := (hX.measurePreserving_reindex hX_ae hφ).map_eq
+  -- For a head `h < r`, the selection `(h, r, r+1, …)` is strictly monotone and collapses the joint
+  -- law of `(X h, tail)` onto the common measure `(pathLaw μ X).map headTail`.
+  have side : ∀ h : ℕ, h < r →
+      μ.map (fun ω => (X h ω, fun n => X (r + n) ω)) = (pathLaw μ X).map headTail := by
+    intro h hhr
+    set φ : ℕ → ℕ := fun i => if i = 0 then h else r + (i - 1) with hφdef
+    have hφmono : StrictMono φ := by
+      intro a b hab
+      simp only [hφdef]
+      rcases Nat.eq_zero_or_pos a with ha | ha
+      · subst ha
+        rw [if_pos rfl, if_neg (by omega : b ≠ 0)]; omega
+      · rw [if_neg (by omega : a ≠ 0), if_neg (by omega : b ≠ 0)]; omega
+    have hφ0 : φ 0 = h := by simp [hφdef]
+    have hpath_ae : AEMeasurable (fun ω (i : ℕ) => X (φ i) ω) μ :=
+      aemeasurable_pi_lambda _ fun i => hX_ae (φ i)
+    -- `φ (n+1)` reduces definitionally to `r + n`, so `congr 1` closes the tail on its own.
+    have hfun : (fun ω => (X h ω, fun n => X (r + n) ω))
+        = headTail ∘ (fun ω (i : ℕ) => X (φ i) ω) := by
+      funext ω
+      simp only [headTail, Function.comp_apply, hφ0]
+      congr 1
+    rw [hfun, ← AEMeasurable.map_map_of_aemeasurable hheadTail_meas.aemeasurable hpath_ae,
+      hreindex φ hφmono]
+  rw [side j hj, side k hk]
+
 end Probability
 
 end TauCeti
