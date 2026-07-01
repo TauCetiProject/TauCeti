@@ -78,25 +78,4 @@ theorem _root_.HilbertBasis.mapₗᵢ_trans {G : Type*} [NormedAddCommGroup G] [
   cases b
   rfl
 
-/-- Parseval's identity for the transported Hilbert basis. -/
-theorem _root_.HilbertBasis.mapₗᵢ_hasSum_inner_mul_inner
-    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
-    HasSum (fun i => inner 𝕜 x (e (b i)) * inner 𝕜 (e (b i)) y) (inner 𝕜 x y) := by
-  simpa only [_root_.HilbertBasis.mapₗᵢ_apply] using
-    (b.mapₗᵢ e).hasSum_inner_mul_inner x y
-
-/-- Summability form of Parseval's identity for the transported Hilbert basis. -/
-theorem _root_.HilbertBasis.mapₗᵢ_summable_inner_mul_inner
-    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
-    Summable fun i => inner 𝕜 x (e (b i)) * inner 𝕜 (e (b i)) y := by
-  simpa only [_root_.HilbertBasis.mapₗᵢ_apply] using
-    (b.mapₗᵢ e).summable_inner_mul_inner x y
-
-/-- Tsum form of Parseval's identity for the transported Hilbert basis. -/
-theorem _root_.HilbertBasis.mapₗᵢ_tsum_inner_mul_inner
-    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
-    ∑' i, inner 𝕜 x (e (b i)) * inner 𝕜 (e (b i)) y = inner 𝕜 x y := by
-  simpa only [_root_.HilbertBasis.mapₗᵢ_apply] using
-    (b.mapₗᵢ e).tsum_inner_mul_inner x y
-
 end TauCeti
