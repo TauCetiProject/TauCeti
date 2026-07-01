@@ -16,6 +16,11 @@ composes it with Mathlib's `Circle` action on `Complex.UnitDisc`.
 
 This advances the conformal-mapping roadmap's L2 disc-automorphism target.  It reuses
 Mathlib's `Circle` action on `Complex.UnitDisc` and Tau Ceti's `unitDiscMoebiusEquiv`.
+
+This L2 material is coordinated with the upstream Mathlib RMT effort in
+leanprover-community/mathlib4#33505.  Mathlib already contains the preceding human-curated
+work in `Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`;
+this file only adds the small discoverable API around `Complex.UnitDisc`.
 -/
 
 public section
@@ -37,85 +42,96 @@ The standard automorphism of the complex unit disc
 The center-removing factor is `unitDiscMoebiusEquiv a`; the circle element `u` supplies the
 rotation factor in the usual classification formula for disc automorphisms.
 -/
-noncomputable def unitDiscStandardAutomorphEquiv (u : Circle) (a : Complex.UnitDisc) :
+noncomputable def unitDiscStandardAutomorphismEquiv (u : Circle) (a : Complex.UnitDisc) :
     Complex.UnitDisc ≃ Complex.UnitDisc :=
   (unitDiscMoebiusEquiv a).trans (MulAction.toPerm u : Equiv.Perm Complex.UnitDisc)
 
 /-- The standard automorphism applies by first sending `a` to `0`, then rotating. -/
 @[simp]
-lemma unitDiscStandardAutomorphEquiv_apply (u : Circle) (a z : Complex.UnitDisc) :
-    unitDiscStandardAutomorphEquiv u a z = u • unitDiscMoebius a z :=
-  by simp [unitDiscStandardAutomorphEquiv]
+lemma unitDiscStandardAutomorphismEquiv_apply (u : Circle) (a z : Complex.UnitDisc) :
+    unitDiscStandardAutomorphismEquiv u a z = u • unitDiscMoebius a z :=
+  by simp [unitDiscStandardAutomorphismEquiv]
 
 /-- The scalar formula for the standard disc automorphism. -/
 @[simp, norm_cast]
-lemma coe_unitDiscStandardAutomorphEquiv_apply (u : Circle) (a z : Complex.UnitDisc) :
-    (unitDiscStandardAutomorphEquiv u a z : ℂ) =
+lemma coe_unitDiscStandardAutomorphismEquiv_apply (u : Circle) (a z : Complex.UnitDisc) :
+    (unitDiscStandardAutomorphismEquiv u a z : ℂ) =
       (u : ℂ) *
         (((z : ℂ) - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * (z : ℂ))) := by
-  simp [unitDiscStandardAutomorphEquiv]
+  simp [unitDiscStandardAutomorphismEquiv]
 
 /-- With zero center, the standard automorphism is just rotation. -/
 @[simp]
-lemma unitDiscStandardAutomorphEquiv_zero (u : Circle) :
-    unitDiscStandardAutomorphEquiv u 0 = (MulAction.toPerm u : Equiv.Perm Complex.UnitDisc) := by
+lemma unitDiscStandardAutomorphismEquiv_zero (u : Circle) :
+    unitDiscStandardAutomorphismEquiv u 0 =
+      (MulAction.toPerm u : Equiv.Perm Complex.UnitDisc) := by
   ext z
-  simp [unitDiscStandardAutomorphEquiv]
+  simp [unitDiscStandardAutomorphismEquiv]
 
 /-- With unit rotation factor, the standard automorphism is the Moebius equivalence. -/
 @[simp]
-lemma unitDiscStandardAutomorphEquiv_one (a : Complex.UnitDisc) :
-    unitDiscStandardAutomorphEquiv 1 a = unitDiscMoebiusEquiv a := by
+lemma unitDiscStandardAutomorphismEquiv_one (a : Complex.UnitDisc) :
+    unitDiscStandardAutomorphismEquiv 1 a = unitDiscMoebiusEquiv a := by
   ext z
-  simp [unitDiscStandardAutomorphEquiv]
+  simp [unitDiscStandardAutomorphismEquiv]
 
 /-- The standard automorphism sends its center to zero. -/
 @[simp]
-lemma unitDiscStandardAutomorphEquiv_self (u : Circle) (a : Complex.UnitDisc) :
-    unitDiscStandardAutomorphEquiv u a a = 0 := by
-  rw [unitDiscStandardAutomorphEquiv_apply, unitDiscMoebius_self]
+lemma unitDiscStandardAutomorphismEquiv_self (u : Circle) (a : Complex.UnitDisc) :
+    unitDiscStandardAutomorphismEquiv u a a = 0 := by
+  rw [unitDiscStandardAutomorphismEquiv_apply, unitDiscMoebius_self]
   ext
   simp
 
 /-- The standard automorphism sends zero to `-u * a`. -/
 @[simp]
-lemma unitDiscStandardAutomorphEquiv_apply_zero (u : Circle) (a : Complex.UnitDisc) :
-    unitDiscStandardAutomorphEquiv u a 0 = u • (-a) := by
-  simp [unitDiscStandardAutomorphEquiv]
+lemma unitDiscStandardAutomorphismEquiv_apply_zero (u : Circle) (a : Complex.UnitDisc) :
+    unitDiscStandardAutomorphismEquiv u a 0 = u • (-a) := by
+  simp [unitDiscStandardAutomorphismEquiv]
 
 /-- The norm of a standard automorphism value is the pseudo-hyperbolic expression. -/
 @[simp]
-lemma norm_unitDiscStandardAutomorphEquiv (u : Circle) (a z : Complex.UnitDisc) :
-    ‖(unitDiscStandardAutomorphEquiv u a z : ℂ)‖ = pseudoHyperbolicExpr (z : ℂ) (a : ℂ) := by
-  rw [unitDiscStandardAutomorphEquiv_apply, Complex.UnitDisc.coe_circle_smul, norm_mul,
+lemma norm_unitDiscStandardAutomorphismEquiv (u : Circle) (a z : Complex.UnitDisc) :
+    ‖(unitDiscStandardAutomorphismEquiv u a z : ℂ)‖ = pseudoHyperbolicExpr (z : ℂ) (a : ℂ) := by
+  rw [unitDiscStandardAutomorphismEquiv_apply, Complex.UnitDisc.coe_circle_smul, norm_mul,
     Circle.norm_coe, one_mul, norm_unitDiscMoebius]
 
 /-- A standard disc automorphism vanishes exactly at its center. -/
 @[simp]
-lemma unitDiscStandardAutomorphEquiv_eq_zero_iff (u : Circle) (a z : Complex.UnitDisc) :
-    unitDiscStandardAutomorphEquiv u a z = 0 ↔ z = a := by
-  rw [← Complex.UnitDisc.coe_inj, unitDiscStandardAutomorphEquiv_apply,
+lemma unitDiscStandardAutomorphismEquiv_eq_zero_iff (u : Circle) (a z : Complex.UnitDisc) :
+    unitDiscStandardAutomorphismEquiv u a z = 0 ↔ z = a := by
+  rw [← Complex.UnitDisc.coe_inj, unitDiscStandardAutomorphismEquiv_apply,
     Complex.UnitDisc.coe_circle_smul, Complex.UnitDisc.coe_zero, mul_eq_zero,
     Complex.UnitDisc.coe_eq_zero, unitDiscMoebius_eq_zero_iff]
   simp
 
+/-- The scalar formula of a standard automorphism is holomorphic on the unit disc. -/
+lemma differentiableOn_unitDiscStandardAutomorphismFormula_of_norm_lt_one
+    (u : Circle) {a : ℂ} (ha : ‖a‖ < 1) :
+    DifferentiableOn ℂ
+      (fun z : ℂ =>
+        (u : ℂ) * ((z - a) / (1 - (starRingEnd ℂ) a * z)))
+      (Metric.ball (0 : ℂ) 1) :=
+  (differentiableOn_const (c := (u : ℂ))).mul
+    (differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one ha)
+
 /-- The scalar formula of the standard automorphism is holomorphic on the unit disc. -/
-lemma differentiableOn_unitDiscStandardAutomorphFormula (u : Circle) (a : Complex.UnitDisc) :
+lemma differentiableOn_unitDiscStandardAutomorphismFormula (u : Circle) (a : Complex.UnitDisc) :
     DifferentiableOn ℂ
       (fun z : ℂ =>
         (u : ℂ) *
           ((z - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * z)))
       (Metric.ball (0 : ℂ) 1) :=
-  (differentiableOn_const (c := (u : ℂ))).mul (differentiableOn_unitDiscMoebiusFormula a)
+  differentiableOn_unitDiscStandardAutomorphismFormula_of_norm_lt_one u a.norm_lt_one
 
 /-- The inverse of a standard automorphism as a composition of the inverse rotation and
 the inverse Moebius factor. -/
 @[simp]
-lemma unitDiscStandardAutomorphEquiv_symm (u : Circle) (a : Complex.UnitDisc) :
-    (unitDiscStandardAutomorphEquiv u a).symm =
+lemma unitDiscStandardAutomorphismEquiv_symm (u : Circle) (a : Complex.UnitDisc) :
+    (unitDiscStandardAutomorphismEquiv u a).symm =
       (MulAction.toPerm u⁻¹ : Equiv.Perm Complex.UnitDisc).trans (unitDiscMoebiusEquiv (-a)) :=
   by
     ext z
-    simp [unitDiscStandardAutomorphEquiv]
+    simp [unitDiscStandardAutomorphismEquiv]
 
 end TauCeti
