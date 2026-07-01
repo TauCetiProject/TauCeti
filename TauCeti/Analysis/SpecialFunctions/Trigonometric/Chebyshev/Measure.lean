@@ -104,13 +104,59 @@ lemma integral_eval_T_real_mul_eval_T_real_measureT_eq_ite (m n : ℕ) :
     simp [integral_eval_T_real_mul_self_measureT]
   · simp [hmn, integral_eval_T_real_mul_eval_T_real_measureT_of_ne hmn]
 
-/-! ### Exponential-moment consumer form -/
+/-! ### Exponential-moment consumer forms -/
 
-/-- The Chebyshev `T` orthogonality measure has all exponential absolute
-moments. -/
-lemma integrable_exp_mul_abs_measureT (a : ℝ) :
-    Integrable (fun x : ℝ => Real.exp (a * |x|)) Polynomial.Chebyshev.measureT := by
-  exact integrable_measureT (by fun_prop)
+private lemma ae_mem_Icc_measureT :
+    ∀ᵐ x ∂Polynomial.Chebyshev.measureT, x ∈ Set.Icc (-1 : ℝ) 1 := by
+  rw [ae_iff]
+  have hreal : Polynomial.Chebyshev.measureT.real (Set.Icc (-1 : ℝ) 1)ᶜ = 0 := by
+    calc
+      Polynomial.Chebyshev.measureT.real (Set.Icc (-1 : ℝ) 1)ᶜ
+          = ∫ x, ((Set.Icc (-1 : ℝ) 1)ᶜ.indicator (fun _ => (1 : ℝ)) x)
+              ∂Polynomial.Chebyshev.measureT := by
+            rw [(integral_indicator_one (μ := Polynomial.Chebyshev.measureT)
+              measurableSet_Icc.compl).symm]
+            rfl
+      _ = ∫ x in (-1 : ℝ)..1,
+            ((Set.Icc (-1 : ℝ) 1)ᶜ.indicator (fun _ => (1 : ℝ)) x) *
+              √(1 - x ^ 2)⁻¹ := by
+            exact integral_measureT _
+      _ = 0 := by
+            have hzero : (fun x : ℝ =>
+                ((Set.Icc (-1 : ℝ) 1)ᶜ.indicator (fun _ => (1 : ℝ)) x) *
+                  √(1 - x ^ 2)⁻¹) =ᵐ[volume.restrict (Set.uIoc (-1 : ℝ) 1)] 0 := by
+              refine ae_restrict_of_forall_mem measurableSet_uIoc fun x hx => ?_
+              have hxIcc : x ∈ Set.Icc (-1 : ℝ) 1 := by
+                rw [Set.uIoc_of_le (by norm_num : (-1 : ℝ) ≤ 1)] at hx
+                exact ⟨le_of_lt hx.1, hx.2⟩
+              simp [hxIcc]
+            rw [intervalIntegral.integral_congr_ae_restrict hzero]
+            simp
+  rw [Measure.real] at hreal
+  exact ((ENNReal.toReal_eq_zero_iff _).1 hreal).resolve_right (by finiteness)
+
+/-- Multiplication by an exponential absolute moment preserves `L¹(measureT)`.
+
+This is the compact-support consumer form used by the Chebyshev completeness
+argument. -/
+lemma integrable_exp_mul_abs_smul_measureT {𝕜 : Type*} [RCLike 𝕜] {g : ℝ → 𝕜} (a : ℝ)
+    (hg : Integrable g Polynomial.Chebyshev.measureT) :
+    Integrable (fun x : ℝ => (Real.exp (a * |x|) : 𝕜) • g x)
+      Polynomial.Chebyshev.measureT := by
+  have h_exp : AEStronglyMeasurable (fun x : ℝ => (Real.exp (a * |x|) : 𝕜))
+      Polynomial.Chebyshev.measureT := by
+    exact (RCLike.continuous_ofReal.comp (by fun_prop)).aestronglyMeasurable
+  refine hg.bdd_smul (Real.exp |a|) h_exp ?_
+  filter_upwards [ae_mem_Icc_measureT] with x hx
+  have hx_abs : |x| ≤ 1 := abs_le.mpr hx
+  have hmul : a * |x| ≤ |a| := by
+    calc
+      a * |x| ≤ |a| * |x| := by
+        exact mul_le_mul_of_nonneg_right (le_abs_self a) (abs_nonneg x)
+      _ ≤ |a| * 1 := by
+        exact mul_le_mul_of_nonneg_left hx_abs (abs_nonneg a)
+      _ = |a| := mul_one _
+  simpa [RCLike.norm_ofReal] using Real.exp_le_exp.mpr hmul
 
 /-! ### `L²` consumer forms -/
 
