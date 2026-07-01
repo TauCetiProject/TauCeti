@@ -155,10 +155,7 @@ theorem Contractable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω �
 ```
 μ.map (fun ω => (X j ω, fun n => X (r + n) ω)) = μ.map (fun ω => (X k ω, fun n => X (r + n) ω)).
 ```
-Both sides collapse to `(pathLaw μ X).map headTail` via `Contractable.measurePreserving_reindex`:
-each is a head/tail split composed with the strictly monotone time-reindexing that places the head
-at position `0` and enumerates the tail `r, r+1, …` afterwards (strict monotonicity needs the head
-below `r`). The head-at-`m`, tail-at-`m+1` case is `r := m + 1` (so `j = m`, `k ≤ m`). -/
+-/
 theorem Contractable.pairLaw_eq {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX : Contractable μ X) (hX_ae : ∀ n, AEMeasurable (X n) μ) {j k r : ℕ}
     (hj : j < r) (hk : k < r) :
