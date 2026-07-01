@@ -49,6 +49,10 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 * `TauCeti.chafaiRescaled_prokhorov_mass_bound`,
   `TauCeti.chafaiRescaled_tendsto_laplace_integral_of_weak`: Prokhorov-ready mass bounds and
   the Laplace test-function specialization of weak convergence for the rescaled measures.
+* `TauCeti.chafaiRescaled_lintegral_coe_le`: first-moment / coe-lintegral bound.
+* `TauCeti.chafaiRescaled_integral_bernsteinKernel_eq_sub_tendsto_atTop`: Chafaï
+  reconstruction identity `f x - L = ∫ bernsteinKernel ∂chafaiRescaled`.
+* `TauCeti.kernel_approx_error_tendsto`: Bernstein-kernel to Laplace-kernel error tends to `0`.
 
 ## References
 
@@ -440,6 +444,7 @@ private lemma chafaiDensity_neg_derivWithin_pred (f : ℝ → ℝ)
   have hiter : iteratedDerivWithin (n - 1)
         (fun t => -derivWithin f (Ici 0) t) (Ici 0) t =
       -iteratedDerivWithin n f (Ici 0) t := by
+    -- The negated function elaborates as negation of `derivWithin`; expose that defeq.
     change iteratedDerivWithin (n - 1) (-(derivWithin f (Ici 0))) (Ici 0) t =
       -iteratedDerivWithin n f (Ici 0) t
     rw [iteratedDerivWithin_neg]
@@ -919,6 +924,7 @@ private lemma boundary_term_decay (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
   set h := fun T => (-1 : ℝ) ^ k * iteratedDerivWithin k f (Ici 0) T
   have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
   have hkey : Tendsto (fun T => (T - x) ^ k * h T) atTop (nhds 0) := by
+    -- Phase: sign and antitone control for the normalized derivative.
     have h_nonneg : ∀ T, 0 ≤ T → 0 ≤ h T := by
       intro T hT
       simpa [h] using hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg k hT
@@ -961,6 +967,7 @@ private lemma boundary_term_decay (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
       filter_upwards with T
       simp
       ring_nf
+    -- Phase: compare `(T - x)^k h T` with the density tail on `[T / 2, ∞)`.
     have hupper :
         ∀ᶠ T in atTop,
           (T - x) ^ k * h T ≤
@@ -1087,6 +1094,7 @@ private lemma boundary_term_decay (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
           ((2 : ℝ) ^ k * ↑((k - 1).factorial)) *
             ∫ t in Ioi (T / 2), chafaiDensity f k t) atTop (nhds 0) := by
       simpa [mul_zero] using htail_half.const_mul (((2 : ℝ) ^ k) * ↑((k - 1).factorial))
+    -- Phase: squeeze between nonnegativity and the vanishing tail bound.
     exact squeeze_zero' hnonneg_event hupper hupper_tendsto
   have heq : ∀ T, (-1 : ℝ) ^ (k + 1) / ↑k.factorial * (T - x) ^ k *
       iteratedDerivWithin k f (Ici 0) T =
@@ -1152,11 +1160,15 @@ private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
     ∫ t in Ioi x, (-1 : ℝ) ^ n / ↑(n - 1).factorial *
       (t - x) ^ (n - 1) *
       iteratedDerivWithin n f (Ici 0) t = f x - L := by
+  -- Induction on `n`. Base case `n = 1`: the integral is `∫ -f'` on `(x, ∞)`, which equals
+  -- `f x - L` by the FTC and `f → L`. Inductive step: one integration by parts lowers the order
+  -- from `k+1` to `k`; the boundary term decays, and the interior term is the `k`-th case.
   induction n with
   | zero => omega
   | succ k ih =>
     by_cases hk : k = 0
-    · subst hk
+    · -- Base case `n = 1`: reduce to `∫ (x,∞) -f' = f x - L` via the fundamental theorem.
+      subst hk
       have hsimpl :
           (fun t => (-1 : ℝ) ^ (0 + 1) / ↑(0 + 1 - 1).factorial *
             (t - x) ^ (0 + 1 - 1) *
@@ -1188,7 +1200,10 @@ private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
           iteratedDerivWithin_eq_iteratedDeriv
             (uniqueDiffOn_Ici 0) hcda (mem_Ici.mpr ht_pos.le)]]
       exact hcm.integral_neg_iteratedDerivWithin_one_Icc x T hx hxT.le
-    · have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
+    · -- Inductive step `n = k+1`: integrate by parts once (`ibp_finite_interval`); the boundary
+      -- term vanishes in the limit (`boundary_term_decay`), leaving the order-`k` integral, which
+      -- the induction hypothesis identifies with `f x - L`.
+      have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
       have ih_applied := ih hk1
       simp only [show k + 1 - 1 = k by omega]
       have hintk := ibp_kernel_integrableOn f hcm k hk1 x hx L hL
@@ -1231,7 +1246,8 @@ private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
           (fun T => by simp [id])) htend_via_ibp
 
 /-- **Chafaï reconstruction identity** for the nonconstant part. -/
-lemma chafai_identity (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
+lemma chafaiRescaled_integral_bernsteinKernel_eq_sub_tendsto_atTop
+    (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (n : ℕ) (hn : 2 ≤ n) (x : ℝ) (hx : 0 ≤ x)
     (L : ℝ) (hL : Tendsto f atTop (nhds L)) :
     f x - L = ∫ p, bernsteinKernel n x (p : ℝ) ∂(chafaiRescaled f n) := by
@@ -1319,6 +1335,7 @@ private lemma kernel_uniform_conv_compact (x R ε : ℝ) (hx : 0 < x) (hR : 0 < 
     rw [bernsteinKernel_of_two_le hn_ge2]
     congr 1
     exact max_eq_left (by
+      -- `max_eq_left` needs the truncated factor `1 - x*p/m` nonneg; expose it as the defeq goal.
       change 0 ≤ 1 - x * p / (↑m : ℝ)
       rw [← hu_def]
       linarith)
@@ -1329,6 +1346,7 @@ private lemma kernel_uniform_conv_compact (x R ε : ℝ) (hx : 0 < x) (hR : 0 < 
   have hmu : ↑m * u = x * p := by
     simp only [hu_def]
     field_simp [hm_pos.ne']
+  -- Phase: the logarithmic lower bound converts the power into an exponential error term.
   have hpow_ge : (1 - u) ^ m ≥ Real.exp (-(x * p) - b) := by
     have heq : (1 - u) ^ m = Real.exp (↑m * Real.log (1 - u)) := by
       rw [← Real.rpow_natCast (1 - u) m, Real.rpow_def_of_pos h1u, mul_comm]
@@ -1355,6 +1373,7 @@ private lemma kernel_uniform_conv_compact (x R ε : ℝ) (hx : 0 < x) (hR : 0 < 
     simp only [hb_def, hu_def]
     field_simp [hm_pos.ne']
   have hm_gt_C' : 0 < ↑m - C := by linarith
+  -- Phase: bound the local error parameter using the compact restriction `p ≤ R`.
   have hb_le : b ≤ C ^ 2 / (↑m - C) := by
     rw [hb_eq]
     exact div_le_div₀ (sq_nonneg C) (sq_le_sq' (by linarith) hxp_le_C)
@@ -1395,7 +1414,6 @@ private lemma kernel_uniform_conv (x : ℝ) (hx : 0 < x) (ε : ℝ) (hε : 0 < �
 /-- Bernstein-to-Laplace replacement against a uniformly finite sequence of measures. -/
 lemma kernel_approx_error_tendsto
     (σ : ℕ → Measure ℝ≥0)
-    (hfin : ∀ n, IsFiniteMeasure (σ n))
     (hmass : ∀ n, (σ n) univ ≤ ENNReal.ofReal C)
     (x : ℝ) (hx : 0 ≤ x) :
     Tendsto (fun n => ∫ p : ℝ≥0,
@@ -1410,6 +1428,7 @@ lemma kernel_approx_error_tendsto
     apply integral_eq_zero_of_ae
     apply ae_of_all
     intro p
+    -- At `x = 0` the integrand is defeq to this explicit difference; expose it before rewriting.
     change bernsteinKernel n 0 (p : ℝ) - Real.exp (-(0 * (p : ℝ))) = 0
     rw [bernsteinKernel_of_two_le hn]
     simp
@@ -1421,7 +1440,7 @@ lemma kernel_approx_error_tendsto
       (ε / (2 * max C 1)) (div_pos hε (by positivity))
     refine ⟨N, fun n hn => ?_⟩
     rw [dist_zero_right]
-    letI := hfin n
+    haveI : IsFiniteMeasure (σ n) := ⟨(hmass n).trans_lt ENNReal.ofReal_lt_top⟩
     calc
       ‖∫ p : ℝ≥0, (bernsteinKernel n x (p : ℝ) - Real.exp (-(x * (p : ℝ)))) ∂(σ n)‖
           ≤ ∫ p : ℝ≥0,
