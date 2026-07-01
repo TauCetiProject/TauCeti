@@ -43,6 +43,7 @@ abbrev negFourNegThreeNegSevenPrimeDiscriminants : Fin 3 → ℤ :=
 /-- **The `ℚ(√-5)` genus-field character condition.** For an odd prime `p`, the Legendre
 symbols of the prime-discriminant list `[-4, 5]` are all `1` exactly when
 `p ≡ 1 (mod 4)` and the reciprocal symbol `(p / 5)` is `1`. -/
+@[simp]
 theorem forall_legendreSym_neg_four_five_eq_one_iff {p : ℕ} [Fact p.Prime] (hodd : p ≠ 2) :
     (∀ i, legendreSym p (negFourFivePrimeDiscriminants i) = 1) ↔
       p % 4 = 1 ∧ @legendreSym 5 ⟨by decide⟩ (p : ℤ) = 1 := by
@@ -68,6 +69,7 @@ theorem forall_legendreSym_neg_four_five_eq_one_iff {p : ℕ} [Fact p.Prime] (ho
 /-- **The `ℚ(√-21)` genus-field character condition.** For an odd prime `p`, the Legendre
 symbols of the prime-discriminant list `[-4, -3, -7]` are all `1` exactly when
 `p ≡ 1 (mod 4)`, `(p / 3) = 1`, and `(p / 7) = 1`. -/
+@[simp]
 theorem forall_legendreSym_neg_four_neg_three_neg_seven_eq_one_iff {p : ℕ}
     [Fact p.Prime] (hodd : p ≠ 2) :
     (∀ i, legendreSym p (negFourNegThreeNegSevenPrimeDiscriminants i) = 1) ↔
