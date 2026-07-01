@@ -30,10 +30,10 @@ namespace TauCeti
 open Complex
 open scoped ComplexConjugate
 
-/-- Rotation by a circle element is holomorphic as a scalar map on the open unit disc. -/
-lemma differentiableOn_unitDiscRotationFormula (u : Circle) :
-    DifferentiableOn ℂ (fun z : ℂ => (u : ℂ) * z) (Metric.ball (0 : ℂ) 1) :=
-  (differentiableOn_const (c := (u : ℂ))).mul differentiableOn_id
+/-- Multiplication by a complex scalar is holomorphic on the open unit disc. -/
+lemma differentiableOn_unitDiscRotationFormula (u : ℂ) :
+    DifferentiableOn ℂ (fun z : ℂ => u * z) (Metric.ball (0 : ℂ) 1) :=
+  (differentiableOn_const (c := u)).mul differentiableOn_id
 
 /--
 The standard automorphism of the complex unit disc
@@ -107,12 +107,12 @@ lemma unitDiscStandardAutomorphismEquiv_eq_zero_iff (u : Circle) (a z : Complex.
 
 /-- The scalar formula of a standard automorphism is holomorphic on the unit disc. -/
 lemma differentiableOn_unitDiscStandardAutomorphismFormula_of_norm_lt_one
-    (u : Circle) {a : ℂ} (ha : ‖a‖ < 1) :
+    (u : ℂ) {a : ℂ} (ha : ‖a‖ < 1) :
     DifferentiableOn ℂ
       (fun z : ℂ =>
-        (u : ℂ) * ((z - a) / (1 - (starRingEnd ℂ) a * z)))
+        u * ((z - a) / (1 - (starRingEnd ℂ) a * z)))
       (Metric.ball (0 : ℂ) 1) :=
-  (differentiableOn_const (c := (u : ℂ))).mul
+  (differentiableOn_const (c := u)).mul
     (differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one ha)
 
 /-- The scalar formula of the standard automorphism is holomorphic on the unit disc. -/
@@ -122,7 +122,7 @@ lemma differentiableOn_unitDiscStandardAutomorphismFormula (u : Circle) (a : Com
         (u : ℂ) *
           ((z - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * z)))
       (Metric.ball (0 : ℂ) 1) :=
-  differentiableOn_unitDiscStandardAutomorphismFormula_of_norm_lt_one u a.norm_lt_one
+  differentiableOn_unitDiscStandardAutomorphismFormula_of_norm_lt_one (u : ℂ) a.norm_lt_one
 
 /-- The inverse of a standard automorphism as a composition of the inverse rotation and
 the inverse Moebius factor. -/
