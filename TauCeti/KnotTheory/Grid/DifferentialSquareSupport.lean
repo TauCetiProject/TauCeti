@@ -110,39 +110,6 @@ namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
 
-/-- The support of `∂ (∂ x)` is contained in the states reachable from `x` by two
-column transpositions. This is the finite search space for the later rectangle-pairing proof of
-`∂² = 0` on generators. -/
-theorem fullyBlockedDifferential_sq_single_support_subset (x : GridState n) :
-    (G.fullyBlockedDifferential
-      (G.fullyBlockedDifferential (Finsupp.single x 1))).support ⊆
-        x.twoStepColumnSwapNeighbors := by
-  intro z hz
-  have hz' :=
-    G.fullyBlockedDifferential_support_subset_biUnion
-      (G.fullyBlockedDifferential (Finsupp.single x 1)) hz
-  rw [fullyBlockedDifferential_single] at hz'
-  rw [GridState.mem_twoStepColumnSwapNeighbors]
-  obtain ⟨y, hy, hzy⟩ := Finset.mem_biUnion.mp hz'
-  exact ⟨y, G.fullyBlockedDifferentialOnGenerator_support_subset x hy, hzy⟩
-
-/-- If a state is not reachable by two column swaps from `x`, its coefficient in
-`∂ (∂ x)` is zero. -/
-theorem fullyBlockedDifferential_sq_single_apply_eq_zero_of_notMem_twoStep
-    (x : GridState n) {z : GridState n} (hz : z ∉ x.twoStepColumnSwapNeighbors) :
-    G.fullyBlockedDifferential
-      (G.fullyBlockedDifferential (Finsupp.single x 1)) z = 0 :=
-  Finsupp.notMem_support_iff.mp fun hsupport =>
-    hz (G.fullyBlockedDifferential_sq_single_support_subset x hsupport)
-
-/-- The support of `∂ (∂ x)` has at most `(n.choose 2) ^ 2` states. -/
-theorem fullyBlockedDifferential_sq_single_support_card_le (x : GridState n) :
-    (G.fullyBlockedDifferential
-      (G.fullyBlockedDifferential (Finsupp.single x 1))).support.card ≤
-        (n.choose 2) ^ 2 :=
-  (Finset.card_le_card (G.fullyBlockedDifferential_sq_single_support_subset x)).trans
-    x.card_twoStepColumnSwapNeighbors_le
-
 /-- The support of `∂ (∂ c)` is contained in the union of the two-step neighbour sets attached
 to the states appearing in the input chain. -/
 theorem fullyBlockedDifferential_sq_support_subset_biUnion (c : GridChain (ZMod 2) n) :
@@ -178,20 +145,33 @@ theorem fullyBlockedDifferential_sq_support_card_le (c : GridChain (ZMod 2) n) :
       (fun x : GridState n => x.twoStepColumnSwapNeighbors) ((n.choose 2) ^ 2)
       fun x _ => x.card_twoStepColumnSwapNeighbors_le)
 
-/-- In grid size at most `1`, the square of the fully blocked differential is the zero map. -/
-theorem fullyBlockedDifferential_sq_eq_zero_of_le_one (G : GridDiagram n) (hn : n ≤ 1) :
-    G.fullyBlockedDifferential.comp G.fullyBlockedDifferential =
-      (0 : GridChain (ZMod 2) n →ₗ[ZMod 2] GridChain (ZMod 2) n) := by
-  rw [G.fullyBlockedDifferential_eq_zero_of_le_one hn]
-  ext c x
-  simp
+/-- The support of `∂ (∂ x)` is contained in the states reachable from `x` by two
+column transpositions. This is the finite search space for the later rectangle-pairing proof of
+`∂² = 0` on generators. -/
+theorem fullyBlockedDifferential_sq_single_support_subset (x : GridState n) :
+    (G.fullyBlockedDifferential
+      (G.fullyBlockedDifferential (Finsupp.single x 1))).support ⊆
+        x.twoStepColumnSwapNeighbors := by
+  intro z hz
+  have hz' := G.fullyBlockedDifferential_sq_support_subset_biUnion (Finsupp.single x 1) hz
+  simpa using hz'
 
-/-- In grid size `0`, the square of the fully blocked differential is the zero map. -/
-@[simp]
-theorem fullyBlockedDifferential_sq_eq_zero_of_zero (G : GridDiagram 0) :
-    G.fullyBlockedDifferential.comp G.fullyBlockedDifferential =
-      (0 : GridChain (ZMod 2) 0 →ₗ[ZMod 2] GridChain (ZMod 2) 0) :=
-  G.fullyBlockedDifferential_sq_eq_zero_of_le_one (Nat.zero_le 1)
+/-- If a state is not reachable by two column swaps from `x`, its coefficient in
+`∂ (∂ x)` is zero. -/
+theorem fullyBlockedDifferential_sq_single_apply_eq_zero_of_notMem_twoStep
+    (x : GridState n) {z : GridState n} (hz : z ∉ x.twoStepColumnSwapNeighbors) :
+    G.fullyBlockedDifferential
+      (G.fullyBlockedDifferential (Finsupp.single x 1)) z = 0 :=
+  Finsupp.notMem_support_iff.mp fun hsupport =>
+    hz (G.fullyBlockedDifferential_sq_single_support_subset x hsupport)
+
+/-- The support of `∂ (∂ x)` has at most `(n.choose 2) ^ 2` states. -/
+theorem fullyBlockedDifferential_sq_single_support_card_le (x : GridState n) :
+    (G.fullyBlockedDifferential
+      (G.fullyBlockedDifferential (Finsupp.single x 1))).support.card ≤
+        (n.choose 2) ^ 2 :=
+  (Finset.card_le_card (G.fullyBlockedDifferential_sq_single_support_subset x)).trans
+    x.card_twoStepColumnSwapNeighbors_le
 
 end GridDiagram
 
