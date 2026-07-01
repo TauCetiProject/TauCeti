@@ -163,6 +163,21 @@ lemma integrable_exp_mul_abs_smul_measureT {𝕜 : Type*} [RCLike 𝕜] {g : ℝ
 
 /-! ### `L²` consumer forms -/
 
+/-- The real normalized Chebyshev `T` mode, with squared norm one in `L²(measureT)`. -/
+noncomputable def normalizedChebyshevT (n : ℕ) (x : ℝ) : ℝ :=
+  (T ℝ n).eval x / Real.sqrt (chebyshevTNormSq n)
+
+/-- The defining equation for the real normalized Chebyshev `T` mode. -/
+@[simp]
+lemma normalizedChebyshevT_def (n : ℕ) (x : ℝ) :
+    normalizedChebyshevT n x = (T ℝ n).eval x / Real.sqrt (chebyshevTNormSq n) :=
+  normalizedChebyshevT.eq_1 n x
+
+/-- The real normalized Chebyshev `T` mode is continuous. -/
+lemma continuous_normalizedChebyshevT (n : ℕ) :
+    Continuous (normalizedChebyshevT n) :=
+  ((T ℝ n).continuous.div_const _).congr fun x => (normalizedChebyshevT_def n x).symm
+
 /-- The real normalized Chebyshev `T` mode lies in `L²(measureT)`. -/
 lemma memLp_normalized_eval_T_real_measureT (n : ℕ) :
     MemLp (fun x : ℝ => (T ℝ n).eval x / Real.sqrt (chebyshevTNormSq n)) 2
@@ -173,6 +188,13 @@ lemma memLp_normalized_eval_T_real_measureT (n : ℕ) :
   rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
   exact integrable_measureT (hcont.pow 2).continuousOn
 
+/-- The real normalized Chebyshev `T` mode lies in `L²(measureT)`. -/
+lemma memLp_normalizedChebyshevT_measureT (n : ℕ) :
+    MemLp (normalizedChebyshevT n) 2 Polynomial.Chebyshev.measureT := by
+  convert memLp_normalized_eval_T_real_measureT n using 1
+  ext x
+  rw [normalizedChebyshevT_def]
+
 /-- The scalar-cast normalized Chebyshev `T` mode lies in `L²(measureT)`, in
 the form consumed by the family-generic orthogonality-to-Hilbert-basis bridge. -/
 lemma memLp_algebraMap_normalized_eval_T_real_measureT {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
@@ -181,5 +203,76 @@ lemma memLp_algebraMap_normalized_eval_T_real_measureT {𝕜 : Type*} [RCLike �
       Polynomial.Chebyshev.measureT := by
   simpa only [← RCLike.algebraMap_eq_ofReal] using
     (memLp_normalized_eval_T_real_measureT n).ofReal (K := 𝕜)
+
+/-- The scalar-cast normalized Chebyshev `T` mode lies in `L²(measureT)`. -/
+lemma memLp_algebraMap_normalizedChebyshevT_measureT {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
+    MemLp (fun x : ℝ => (algebraMap ℝ 𝕜) (normalizedChebyshevT n x)) 2
+      Polynomial.Chebyshev.measureT := by
+  convert memLp_algebraMap_normalized_eval_T_real_measureT (𝕜 := 𝕜) n using 1
+  ext x
+  rw [normalizedChebyshevT_def]
+
+/-- The normalized Chebyshev `T` mode as a vector of `L²(measureT)`. -/
+noncomputable def normalizedChebyshevTLp (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
+    Lp 𝕜 2 Polynomial.Chebyshev.measureT :=
+  (memLp_algebraMap_normalizedChebyshevT_measureT (𝕜 := 𝕜) n).toLp _
+
+/-- The `Lp` representative of the normalized Chebyshev `T` mode is the expected scalar-cast
+function. -/
+lemma coeFn_normalizedChebyshevTLp {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
+    ⇑(normalizedChebyshevTLp 𝕜 n) =ᵐ[Polynomial.Chebyshev.measureT]
+      fun x : ℝ => (algebraMap ℝ 𝕜) (normalizedChebyshevT n x) :=
+  MemLp.coeFn_toLp _
+
+/-- The real integral of two normalized Chebyshev `T` modes is the Kronecker delta. -/
+lemma integral_normalizedChebyshevT_mul_normalizedChebyshevT (m n : ℕ) :
+    ∫ x, normalizedChebyshevT m x * normalizedChebyshevT n x
+        ∂Polynomial.Chebyshev.measureT = if m = n then 1 else 0 := by
+  have hmpos := chebyshevTNormSq_pos m
+  have hnpos := chebyshevTNormSq_pos n
+  calc
+    ∫ x, normalizedChebyshevT m x * normalizedChebyshevT n x
+        ∂Polynomial.Chebyshev.measureT
+        = (Real.sqrt (chebyshevTNormSq m) * Real.sqrt (chebyshevTNormSq n))⁻¹ *
+            ∫ x, (T ℝ m).eval x * (T ℝ n).eval x
+              ∂Polynomial.Chebyshev.measureT := by
+          rw [← integral_const_mul]
+          refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+          dsimp only
+          rw [normalizedChebyshevT_def, normalizedChebyshevT_def]
+          field_simp [normalizedChebyshevT_def, Real.sqrt_ne_zero'.mpr hmpos,
+            Real.sqrt_ne_zero'.mpr hnpos]
+    _ = if m = n then 1 else 0 := by
+          rw [integral_eval_T_real_mul_eval_T_real_measureT_eq_ite]
+          by_cases hmn : m = n
+          · subst hmn
+            rw [if_pos rfl, if_pos rfl]
+            field_simp [Real.sqrt_ne_zero'.mpr hnpos]
+            rw [Real.sq_sqrt hnpos.le]
+          · rw [if_neg hmn, if_neg hmn, mul_zero]
+
+/-- The normalized Chebyshev `T` modes have Kronecker-delta inner products in `L²(measureT)`. -/
+lemma inner_normalizedChebyshevTLp_real (m n : ℕ) :
+    inner ℝ (normalizedChebyshevTLp ℝ m) (normalizedChebyshevTLp ℝ n) =
+      if m = n then 1 else 0 := by
+  calc
+    inner ℝ (normalizedChebyshevTLp ℝ m) (normalizedChebyshevTLp ℝ n)
+        = ∫ x, normalizedChebyshevT m x * normalizedChebyshevT n x
+            ∂Polynomial.Chebyshev.measureT := by
+          rw [MeasureTheory.L2.inner_def]
+          refine integral_congr_ae ?_
+          filter_upwards [coeFn_normalizedChebyshevTLp (𝕜 := ℝ) m,
+            coeFn_normalizedChebyshevTLp (𝕜 := ℝ) n] with x hxm hxn
+          rw [hxm, hxn]
+          simp
+          ring_nf
+    _ = if m = n then 1 else 0 :=
+          integral_normalizedChebyshevT_mul_normalizedChebyshevT m n
+
+/-- The normalized Chebyshev `T` modes form an orthonormal family in `L²(measureT)`. -/
+lemma orthonormal_normalizedChebyshevTLp_real :
+    Orthonormal ℝ (normalizedChebyshevTLp ℝ) := by
+  rw [orthonormal_iff_ite]
+  exact inner_normalizedChebyshevTLp_real
 
 end TauCeti
