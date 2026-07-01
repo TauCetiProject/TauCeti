@@ -23,8 +23,17 @@ statements.
 * `TauCeti.exists_representsLaplace_of_isCompletelyMonotone`
 * `TauCeti.exists_representsLaplace_of_isClosedCompletelyMonotone`
 * `TauCeti.laplaceTransform_ext`, `TauCeti.laplaceTransform_unique`
-* `TauCeti.bernstein`, `TauCeti.bernstein_unique`
+* `TauCeti.hausdorff_bernstein_widder`, `TauCeti.hausdorff_bernstein_widder_unique`
 * `TauCeti.existsUnique_representsLaplace_of_isCompletelyMonotone`
+
+## References
+
+The finite-measure representation is the Hausdorff--Bernstein--Widder theorem, after
+S. Bernstein (1928) and D. V. Widder, *The Laplace Transform*, Chapter IV. The extraction
+argument follows the Bernstein-kernel proof described by D. Chafaï (2013). The Lean proofs of
+`chafai_identity` and the Bernstein-to-Laplace kernel convergence were adapted from Tau Ceti's
+Hille--Yosida formalization in `HilleYosida/BernsteinChafai.lean` and completed here; in
+particular, the `chafai_identity` that was `sorry` there is now proved.
 -/
 
 public section
@@ -373,7 +382,7 @@ theorem exists_representsLaplace_of_isCompletelyMonotone
   have hν_fin : IsFiniteMeasure ν := by
     dsimp [ν]
     infer_instance
-  refine ⟨ν, hν_fin, fun t ht => ?_⟩
+  refine ⟨ν, representsLaplace_iff.mpr ⟨hν_fin, fun t ht => ?_⟩⟩
   letI := hν_fin
   have hweak_laplace :
       Tendsto (fun n => ∫ p, Real.exp (-(t * (p : ℝ))) ∂(chafaiRescaled f n))
@@ -459,8 +468,9 @@ theorem exists_representsLaplace_of_isClosedCompletelyMonotone
         rw [ofReal_measureReal]
       _ ≤ ENNReal.ofReal (f 0) := ENNReal.ofReal_le_ofReal hle
       _ = (C : ENNReal) := by
-        change ENNReal.ofReal (C : ℝ) = (C : ENNReal)
-        exact ENNReal.ofReal_coe_nnreal
+            have hC : f 0 = (C : ℝ) := rfl
+            rw [hC]
+            exact ENNReal.ofReal_coe_nnreal
   have hf_tendsto0 : Tendsto (fun n => f (a n)) atTop (nhds (f 0)) :=
     (hf.continuousOn.continuousWithinAt (mem_Ici.mpr le_rfl)).tendsto.comp
       ha_tendsto_Ici
@@ -554,7 +564,7 @@ theorem exists_representsLaplace_of_isClosedCompletelyMonotone
         _ ≤ ε := hquot
   obtain ⟨μ₀, U, hUle, hμ₀_fin, _hmass₀, hweak⟩ :=
     finite_measure_cluster_limit (σ := μ) C hmass htight
-  refine ⟨μ₀, hμ₀_fin, fun t ht => ?_⟩
+  refine ⟨μ₀, representsLaplace_iff.mpr ⟨hμ₀_fin, fun t ht => ?_⟩⟩
   have ht_a_tendsto_nhds : Tendsto (fun n => t + a n) atTop (nhds t) := by
     simpa [add_zero] using tendsto_const_nhds.add ha_tendsto_nhds
   have ht_a_mem : ∀ᶠ n : ℕ in atTop, t + a n ∈ Ici (0 : ℝ) := by
@@ -637,12 +647,9 @@ private lemma laplaceExpGenerator_adjoin_separatesPoints :
       (BoundedContinuousFunction.toContinuousMapStarₐ ℝ)).SeparatesPoints := by
   intro x y hxy
   refine ⟨(laplaceExpGenerator : ℝ≥0 → ℝ), ?_, ?_⟩
-  · change (laplaceExpGenerator : ℝ≥0 → ℝ) ∈
-      (fun f : C(ℝ≥0, ℝ) => (f : ℝ≥0 → ℝ)) '' _
+  · -- Coerce the bounded continuous generator to the plain function used by `SeparatesPoints`.
     refine ⟨BoundedContinuousFunction.toContinuousMap laplaceExpGenerator, ?_, rfl⟩
-    change BoundedContinuousFunction.toContinuousMap laplaceExpGenerator ∈
-      ((StarAlgebra.adjoin ℝ ({laplaceExpGenerator} : Set (ℝ≥0 →ᵇ ℝ))).map
-        (BoundedContinuousFunction.toContinuousMapStarₐ ℝ) : StarSubalgebra ℝ C(ℝ≥0, ℝ))
+    -- The mapped star subalgebra contains the continuous-map coercion of the generator.
     exact StarSubalgebra.mem_map.mpr
       ⟨laplaceExpGenerator, StarAlgebra.self_mem_adjoin_singleton ℝ laplaceExpGenerator, rfl⟩
   · intro h
@@ -679,29 +686,31 @@ theorem laplaceTransform_unique
 
 /-! ## Headline theorem -/
 
-/-- Statement of the **Hausdorff--Bernstein--Widder theorem**, finite-measure version on `ℝ≥0`.
+/-- Internal proposition form of the **Hausdorff--Bernstein--Widder theorem**, finite-measure
+version on `ℝ≥0`.
 
 A function is continuous on `[0, ∞)` and completely monotone on `(0, ∞)` if and only if it is the
 Laplace transform of a finite positive measure on `ℝ≥0`, on the nonnegative half-line. -/
-@[expose] def BernsteinTheorem : Prop :=
+private def HausdorffBernsteinWidderTheorem : Prop :=
   ∀ f : ℝ → ℝ,
     IsClosedCompletelyMonotone f ↔ ∃ μ : Measure ℝ≥0, RepresentsLaplace f μ
 
-/-- Unique-existence statement of the Hausdorff--Bernstein--Widder theorem. -/
-@[expose] def BernsteinUniqueTheorem : Prop :=
+/-- Internal proposition form of the unique-existence statement of the
+Hausdorff--Bernstein--Widder theorem. -/
+private def HausdorffBernsteinWidderUniqueTheorem : Prop :=
   ∀ f : ℝ → ℝ,
     IsClosedCompletelyMonotone f ↔ ∃! μ : Measure ℝ≥0, RepresentsLaplace f μ
 
-/-- Assemble the non-unique Bernstein theorem from separately supplied existence and easy
-directions. -/
-private theorem bernstein_of_exists_of_laplaceTransform
+/-- Assemble the non-unique Hausdorff--Bernstein--Widder theorem from separately supplied
+existence and easy directions. -/
+private theorem hausdorff_bernstein_widder_of_exists_of_laplaceTransform
     (hexists :
       ∀ f : ℝ → ℝ, IsClosedCompletelyMonotone f →
         ∃ μ : Measure ℝ≥0, RepresentsLaplace f μ)
     (hlaplace :
       ∀ μ : Measure ℝ≥0, IsFiniteMeasure μ →
         IsClosedCompletelyMonotone (laplaceTransform μ)) :
-    BernsteinTheorem := by
+    HausdorffBernsteinWidderTheorem := by
   intro f
   constructor
   · exact hexists f
@@ -709,33 +718,41 @@ private theorem bernstein_of_exists_of_laplaceTransform
     exact (hlaplace μ hμ.isFiniteMeasure).congr fun t ht =>
       hμ.eq_laplaceTransform ht
 
-/-- Assemble the unique-existence Bernstein theorem from the non-unique theorem. -/
-private theorem bernstein_unique_of_bernstein
-    (hbernstein : BernsteinTheorem) :
-    BernsteinUniqueTheorem := by
+/-- Assemble the unique-existence Hausdorff--Bernstein--Widder theorem from the non-unique
+theorem. -/
+private theorem hausdorff_bernstein_widder_unique_of_hausdorff_bernstein_widder
+    (hhbw : HausdorffBernsteinWidderTheorem) :
+    HausdorffBernsteinWidderUniqueTheorem := by
   intro f
   constructor
   · intro hf
-    obtain ⟨μ, hμ⟩ := (hbernstein f).mp hf
+    obtain ⟨μ, hμ⟩ := (hhbw f).mp hf
     exact ⟨μ, hμ, fun ν hν =>
       (laplaceTransform_unique (f := f) (μ := μ) (ν := ν) hμ hν).symm⟩
   · rintro ⟨μ, hμ, _huniq⟩
-    exact (hbernstein f).mpr ⟨μ, hμ⟩
+    exact (hhbw f).mpr ⟨μ, hμ⟩
 
 /-- Hausdorff--Bernstein--Widder theorem, finite-measure version on `ℝ≥0`.
 
 A function is continuous on `[0, ∞)` and completely monotone on `(0, ∞)` if and only if it is
 the Laplace transform of a finite positive measure on `ℝ≥0`. -/
-theorem bernstein : BernsteinTheorem :=
-  bernstein_of_exists_of_laplaceTransform
+theorem hausdorff_bernstein_widder (f : ℝ → ℝ) :
+    IsClosedCompletelyMonotone f ↔ ∃ μ : Measure ℝ≥0, RepresentsLaplace f μ :=
+  hausdorff_bernstein_widder_of_exists_of_laplaceTransform
     (fun _f hf => exists_representsLaplace_of_isClosedCompletelyMonotone hf)
     (fun μ hμ => by
       letI := hμ
-      exact laplaceTransform_isClosedCompletelyMonotone μ)
+      exact laplaceTransform_isClosedCompletelyMonotone μ) f
 
 /-- Unique-existence form of the Hausdorff--Bernstein--Widder theorem. -/
-theorem bernstein_unique : BernsteinUniqueTheorem :=
-  bernstein_unique_of_bernstein bernstein
+theorem hausdorff_bernstein_widder_unique (f : ℝ → ℝ) :
+    IsClosedCompletelyMonotone f ↔ ∃! μ : Measure ℝ≥0, RepresentsLaplace f μ :=
+  hausdorff_bernstein_widder_unique_of_hausdorff_bernstein_widder
+    (hausdorff_bernstein_widder_of_exists_of_laplaceTransform
+      (fun _f hf => exists_representsLaplace_of_isClosedCompletelyMonotone hf)
+      (fun μ hμ => by
+        letI := hμ
+        exact laplaceTransform_isClosedCompletelyMonotone μ)) f
 
 /-- Strong-predicate unique-existence corollary of the Bernstein theorem. -/
 theorem existsUnique_representsLaplace_of_isCompletelyMonotone
