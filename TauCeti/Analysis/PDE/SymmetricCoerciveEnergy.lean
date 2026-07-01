@@ -18,10 +18,9 @@ for the same pointwise integrand.
 
 The statements remain finite-dimensional and pointwise: a jet is an element of
 `ℝ × EuclideanSpace ℝ n`, representing `(u, ∇u)` at one point.  The main consumer form is a
-uniformly elliptic symmetric principal coefficient with a positive mass term; the file also
-records the corresponding symmetric-part replacement for nonsymmetric uniformly elliptic
-coefficients.  The shifted Laplacian model `energyIntegrand 1 0 c`, corresponding to `-Δ + c`,
-is included as the constant coefficient test case.
+uniformly elliptic symmetric principal coefficient with a positive mass term.  The shifted
+Laplacian model `energyIntegrand 1 0 c`, corresponding to `-Δ + c`, is included as the constant
+coefficient test case.
 
 ## Main declarations
 
@@ -29,11 +28,6 @@ is included as the constant coefficient test case.
   coefficient, a quadratic lower bound, and positive mass give symmetry and coercivity.
 * `TauCeti.PDE.UniformlyEllipticOn.zero_drift_flip_eq_and_isCoercive_energyIntegrand`:
   bundled uniform ellipticity wrapper for the same pointwise package.
-* `TauCeti.PDE.energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq_and_isCoercive`:
-  symmetric-part replacement form for a coefficient with the same quadratic lower bound.
-* `TauCeti.PDE.UniformlyEllipticOn`:
-  `energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq_and_isCoercive` is the
-  bundled uniformly elliptic symmetric-part replacement wrapper.
 * `TauCeti.PDE.energyIntegrand_one_zero_mass_flip_eq_and_isCoercive`: symmetry and
   coercivity of the shifted Laplacian model with positive mass.
 -/
@@ -64,20 +58,6 @@ lemma zero_drift_flip_eq_and_isCoercive_energyIntegrand {A : Matrix n n ℝ} (hl
   ⟨energyIntegrand_zero_drift_flip_eq_of_isSymm ha c₀,
     isCoercive_energyIntegrand_zero_drift hlam hc hA⟩
 
-/-- Replacing the principal coefficient by its symmetric part gives a zero-drift pointwise
-jet form that is both symmetric and coercive, provided the original coefficient has the
-same positive quadratic lower bound. -/
-lemma energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq_and_isCoercive
-    {A : Matrix n n ℝ} (hlam : 0 < lam)
-    (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    {c₀ : ℝ} (hc : 0 < c₀) :
-    (energyIntegrand (coefficientSymmetricPart A) 0 c₀).flip =
-        energyIntegrand (coefficientSymmetricPart A) 0 c₀ ∧
-      IsCoercive (energyIntegrand (coefficientSymmetricPart A) 0 c₀) :=
-  zero_drift_flip_eq_and_isCoercive_energyIntegrand hlam
-    (fun ξ => by simpa [toQuadraticForm'_coefficientSymmetricPart] using hA ξ)
-    (coefficientSymmetricPart_isSymm A) hc
-
 namespace UniformlyEllipticOn
 
 variable {Ω : Set X} {a : X → Matrix n n ℝ} {Lam : ℝ}
@@ -102,28 +82,6 @@ lemma zero_drift_flip_eq_and_isCoercive_energyIntegrand_on
     (energyIntegrand (a x) 0 (c x)).flip = energyIntegrand (a x) 0 (c x) ∧
       IsCoercive (energyIntegrand (a x) 0 (c x)) :=
   h.zero_drift_flip_eq_and_isCoercive_energyIntegrand ha hx (hc hx)
-
-/-- For a uniformly elliptic coefficient, replacing the principal coefficient by its
-symmetric part gives a zero-drift pointwise jet form that is both symmetric and coercive. -/
-lemma energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq_and_isCoercive
-    (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) {c₀ : ℝ}
-    (hc : 0 < c₀) :
-    (energyIntegrand (PDE.coefficientSymmetricPart (a x)) 0 c₀).flip =
-        energyIntegrand (PDE.coefficientSymmetricPart (a x)) 0 c₀ ∧
-      IsCoercive (energyIntegrand (PDE.coefficientSymmetricPart (a x)) 0 c₀) :=
-  (h.coefficientSymmetricPart).zero_drift_flip_eq_and_isCoercive_energyIntegrand
-    (fun _ _ => PDE.coefficientSymmetricPart_isSymm _) hx hc
-
-/-- Coefficient-field form of
-`UniformlyEllipticOn.energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq_and_isCoercive`.
--/
-lemma energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq_and_isCoercive_on
-    (h : UniformlyEllipticOn Ω a lam Lam) {c : X → ℝ}
-    (hc : ∀ ⦃x⦄, x ∈ Ω → 0 < c x) {x : X} (hx : x ∈ Ω) :
-    (energyIntegrand (PDE.coefficientSymmetricPart (a x)) 0 (c x)).flip =
-        energyIntegrand (PDE.coefficientSymmetricPart (a x)) 0 (c x) ∧
-      IsCoercive (energyIntegrand (PDE.coefficientSymmetricPart (a x)) 0 (c x)) :=
-  h.energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq_and_isCoercive hx (hc hx)
 
 end UniformlyEllipticOn
 
