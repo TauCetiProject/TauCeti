@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Complex.Conformal.Moebius
 This file adds the rotation factor in the standard disc-automorphism formula
 `z ↦ u * (z - a) / (1 - conj a * z)`, with `u` on the unit circle and `a` in the
 unit disc.  The previous Moebius file supplies the factor sending `a` to `0`; this file
-packages rotations as self-equivalences of `Complex.UnitDisc` and composes the two.
+composes it with Mathlib's `Circle` action on `Complex.UnitDisc`.
 
 This advances the conformal-mapping roadmap's L2 disc-automorphism target.  It reuses
 Mathlib's `Circle` action on `Complex.UnitDisc` and Tau Ceti's `unitDiscMoebiusEquiv`.
@@ -24,30 +24,6 @@ namespace TauCeti
 
 open Complex
 open scoped ComplexConjugate
-
-/-- Rotation of the complex unit disc by a unit complex number. -/
-noncomputable abbrev unitDiscRotationEquiv (u : Circle) : Complex.UnitDisc ≃ Complex.UnitDisc :=
-  (MulAction.toPerm u : Equiv.Perm Complex.UnitDisc)
-
-/-- The scalar formula for a unit-disc rotation. -/
-@[simp, norm_cast]
-lemma coe_unitDiscRotationEquiv_apply (u : Circle) (z : Complex.UnitDisc) :
-    (unitDiscRotationEquiv u z : ℂ) = (u : ℂ) * (z : ℂ) := by
-  exact Complex.UnitDisc.coe_circle_smul u z
-
-/-- The norm of a rotated unit-disc point is unchanged. -/
-@[simp]
-lemma norm_unitDiscRotationEquiv (u : Circle) (z : Complex.UnitDisc) :
-    ‖(unitDiscRotationEquiv u z : ℂ)‖ = ‖(z : ℂ)‖ := by
-  simp
-
-/-- A rotated unit-disc point is zero exactly when the original point is zero. -/
-@[simp]
-lemma unitDiscRotationEquiv_eq_zero_iff (u : Circle) (z : Complex.UnitDisc) :
-    unitDiscRotationEquiv u z = 0 ↔ z = 0 := by
-  rw [← Complex.UnitDisc.coe_inj, coe_unitDiscRotationEquiv_apply, Complex.UnitDisc.coe_zero,
-    mul_eq_zero, Complex.UnitDisc.coe_eq_zero]
-  simp
 
 /-- Rotation by a circle element is holomorphic as a scalar map on the open unit disc. -/
 lemma differentiableOn_unitDiscRotationFormula (u : Circle) :
@@ -63,12 +39,12 @@ rotation factor in the usual classification formula for disc automorphisms.
 -/
 noncomputable def unitDiscStandardAutomorphEquiv (u : Circle) (a : Complex.UnitDisc) :
     Complex.UnitDisc ≃ Complex.UnitDisc :=
-  (unitDiscMoebiusEquiv a).trans (unitDiscRotationEquiv u)
+  (unitDiscMoebiusEquiv a).trans (MulAction.toPerm u : Equiv.Perm Complex.UnitDisc)
 
 /-- The standard automorphism applies by first sending `a` to `0`, then rotating. -/
 @[simp]
 lemma unitDiscStandardAutomorphEquiv_apply (u : Circle) (a z : Complex.UnitDisc) :
-    unitDiscStandardAutomorphEquiv u a z = unitDiscRotationEquiv u (unitDiscMoebius a z) :=
+    unitDiscStandardAutomorphEquiv u a z = u • unitDiscMoebius a z :=
   by simp [unitDiscStandardAutomorphEquiv]
 
 /-- The scalar formula for the standard disc automorphism. -/
@@ -82,7 +58,7 @@ lemma coe_unitDiscStandardAutomorphEquiv_apply (u : Circle) (a z : Complex.UnitD
 /-- With zero center, the standard automorphism is just rotation. -/
 @[simp]
 lemma unitDiscStandardAutomorphEquiv_zero (u : Circle) :
-    unitDiscStandardAutomorphEquiv u 0 = unitDiscRotationEquiv u := by
+    unitDiscStandardAutomorphEquiv u 0 = (MulAction.toPerm u : Equiv.Perm Complex.UnitDisc) := by
   ext z
   simp [unitDiscStandardAutomorphEquiv]
 
@@ -111,14 +87,17 @@ lemma unitDiscStandardAutomorphEquiv_apply_zero (u : Circle) (a : Complex.UnitDi
 @[simp]
 lemma norm_unitDiscStandardAutomorphEquiv (u : Circle) (a z : Complex.UnitDisc) :
     ‖(unitDiscStandardAutomorphEquiv u a z : ℂ)‖ = pseudoHyperbolicExpr (z : ℂ) (a : ℂ) := by
-  rw [unitDiscStandardAutomorphEquiv_apply, norm_unitDiscRotationEquiv, norm_unitDiscMoebius]
+  rw [unitDiscStandardAutomorphEquiv_apply, Complex.UnitDisc.coe_circle_smul, norm_mul,
+    Circle.norm_coe, one_mul, norm_unitDiscMoebius]
 
 /-- A standard disc automorphism vanishes exactly at its center. -/
 @[simp]
 lemma unitDiscStandardAutomorphEquiv_eq_zero_iff (u : Circle) (a z : Complex.UnitDisc) :
     unitDiscStandardAutomorphEquiv u a z = 0 ↔ z = a := by
-  rw [unitDiscStandardAutomorphEquiv_apply, unitDiscRotationEquiv_eq_zero_iff,
-    unitDiscMoebius_eq_zero_iff]
+  rw [← Complex.UnitDisc.coe_inj, unitDiscStandardAutomorphEquiv_apply,
+    Complex.UnitDisc.coe_circle_smul, Complex.UnitDisc.coe_zero, mul_eq_zero,
+    Complex.UnitDisc.coe_eq_zero, unitDiscMoebius_eq_zero_iff]
+  simp
 
 /-- The scalar formula of the standard automorphism is holomorphic on the unit disc. -/
 lemma differentiableOn_unitDiscStandardAutomorphFormula (u : Circle) (a : Complex.UnitDisc) :
@@ -134,9 +113,9 @@ the inverse Moebius factor. -/
 @[simp]
 lemma unitDiscStandardAutomorphEquiv_symm (u : Circle) (a : Complex.UnitDisc) :
     (unitDiscStandardAutomorphEquiv u a).symm =
-      (unitDiscRotationEquiv u⁻¹).trans (unitDiscMoebiusEquiv (-a)) :=
+      (MulAction.toPerm u⁻¹ : Equiv.Perm Complex.UnitDisc).trans (unitDiscMoebiusEquiv (-a)) :=
   by
     ext z
-    simp [unitDiscStandardAutomorphEquiv, unitDiscRotationEquiv]
+    simp [unitDiscStandardAutomorphEquiv]
 
 end TauCeti
