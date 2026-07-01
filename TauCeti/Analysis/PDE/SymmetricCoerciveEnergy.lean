@@ -22,6 +22,12 @@ uniformly elliptic symmetric principal coefficient with a positive mass term.  T
 Laplacian model `energyIntegrand 1 0 c`, corresponding to `-Δ + c`, is included as the constant
 coefficient test case.
 
+For a nonsymmetric principal coefficient, first pass to `coefficientSymmetricPart` using the
+uniform ellipticity API in `TauCeti.Analysis.PDE.UniformEllipticity`, then use the lemmas in
+this file with the symmetric coefficient field.  This keeps the symmetric-part replacement
+available to downstream energy-form consumers without duplicating every packaged coercivity
+statement.
+
 ## Main declarations
 
 * `TauCeti.PDE.zero_drift_flip_eq_and_isCoercive_energyIntegrand`: a symmetric principal
