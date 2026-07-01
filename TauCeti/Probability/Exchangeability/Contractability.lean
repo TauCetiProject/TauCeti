@@ -193,14 +193,15 @@ theorem Contractable.pairLaw_eq {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ 
       · rw [if_neg (by omega : a ≠ 0), if_neg (by omega : b ≠ 0)]
         exact hg (by omega : a - 1 < b - 1)
     have hφ0 : φ 0 = h := by simp [hφdef]
+    -- The tail-index identity, stated explicitly rather than left to definitional reduction.
+    have hφsucc : ∀ n, φ (n + 1) = g n := by
+      intro n; simp only [hφdef]; rw [if_neg (by omega : n + 1 ≠ 0), Nat.add_sub_cancel]
     have hpath_ae : AEMeasurable (fun ω (i : ℕ) => X (φ i) ω) μ :=
       aemeasurable_pi_lambda _ fun i => hX_ae (φ i)
-    -- `φ (n+1)` reduces definitionally to `g n`, so `congr 1` closes the tail on its own.
     have hfun : (fun ω => (X h ω, fun n => X (g n) ω))
         = headTail ∘ (fun ω (i : ℕ) => X (φ i) ω) := by
       funext ω
-      simp only [headTail, Function.comp_apply, hφ0]
-      congr 1
+      simp only [headTail, Function.comp_apply, hφ0, hφsucc]
     rw [hfun, ← AEMeasurable.map_map_of_aemeasurable hheadTail_meas.aemeasurable hpath_ae,
       hreindex φ hφmono]
   rw [side j hj, side k hk]
