@@ -1271,7 +1271,7 @@ lemma chafaiRescaled_integral_bernsteinKernel_eq_sub_tendsto_atTop
     (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (n : ℕ) (hn : 2 ≤ n) (x : ℝ) (hx : 0 ≤ x)
     (L : ℝ) (hL : Tendsto f atTop (nhds L)) :
-    f x - L = ∫ p, bernsteinKernel n x (p : ℝ) ∂(chafaiRescaled f n) := by
+    ∫ p, bernsteinKernel n x (p : ℝ) ∂(chafaiRescaled f n) = f x - L := by
   have h_integral_pullback :
       ∫ p : ℝ≥0, bernsteinKernel n x (p : ℝ) ∂(chafaiRescaled f n) =
         ∫ t, bernsteinKernel n x (chafaiRescaling n t : ℝ) ∂(chafaiMeasure f n) := by
@@ -1301,7 +1301,7 @@ lemma chafaiRescaled_integral_bernsteinKernel_eq_sub_tendsto_atTop
   have hkernel := chafai_kernel_density_eq f n hn x hx
   have hibp := chafai_repeated_ibp f hcm n (by omega) x hx L hL
   rw [h_integral_pullback, h_integral_density, hkernel]
-  exact hibp.symm
+  exact hibp
 
 private lemma bernsteinKernel_le_exp {n : ℕ} (hn : 2 ≤ n) {x p : ℝ} (_hx : 0 ≤ x)
     (_hp : 0 ≤ p) :
