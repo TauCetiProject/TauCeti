@@ -52,10 +52,61 @@ theorem StronglyContinuousSemigroup.HasGrowthBound.bound
   exact hb.2 t ht
 
 omit [CompleteSpace X] in
+/-- A growth bound can be weakened by increasing both the exponential rate and the multiplicative
+constant. -/
+theorem StronglyContinuousSemigroup.HasGrowthBound.mono
+    {S : StronglyContinuousSemigroup X} {ω M ω' M' : ℝ}
+    (hb : S.HasGrowthBound ω M) (hω : ω ≤ ω') (hM : M ≤ M') :
+    S.HasGrowthBound ω' M' := by
+  refine ⟨hb.one_le.trans hM, fun t ht => ?_⟩
+  have hM_nonneg : 0 ≤ M := zero_le_one.trans hb.one_le
+  have hexp : Real.exp (ω * t) ≤ Real.exp (ω' * t) :=
+    Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_right hω ht)
+  exact (hb.bound t ht).trans
+    (mul_le_mul hM hexp (Real.exp_nonneg _) (hM_nonneg.trans hM))
+
+omit [CompleteSpace X] in
+/-- A growth bound can be weakened by increasing the exponential rate. -/
+theorem StronglyContinuousSemigroup.HasGrowthBound.mono_omega
+    {S : StronglyContinuousSemigroup X} {ω M ω' : ℝ}
+    (hb : S.HasGrowthBound ω M) (hω : ω ≤ ω') :
+    S.HasGrowthBound ω' M :=
+  hb.mono hω le_rfl
+
+omit [CompleteSpace X] in
+/-- A growth bound can be weakened by increasing the multiplicative constant. -/
+theorem StronglyContinuousSemigroup.HasGrowthBound.mono_const
+    {S : StronglyContinuousSemigroup X} {ω M M' : ℝ}
+    (hb : S.HasGrowthBound ω M) (hM : M ≤ M') :
+    S.HasGrowthBound ω M' :=
+  hb.mono le_rfl hM
+
+omit [CompleteSpace X] in
 /-- A contraction semigroup has growth bound `(0, 1)`. -/
 theorem ContractionSemigroup.hasGrowthBound (S : ContractionSemigroup X) :
     S.toStronglyContinuousSemigroup.HasGrowthBound 0 1 :=
   ⟨le_rfl, fun t ht => by simpa using S.contracting_real t ht⟩
+
+omit [CompleteSpace X] in
+/-- A contraction semigroup has every nonnegative exponential growth rate with constant `1`. -/
+theorem ContractionSemigroup.hasGrowthBound_of_nonneg_omega
+    (S : ContractionSemigroup X) {ω : ℝ} (hω : 0 ≤ ω) :
+    S.toStronglyContinuousSemigroup.HasGrowthBound ω 1 :=
+  S.hasGrowthBound.mono_omega hω
+
+omit [CompleteSpace X] in
+/-- A contraction semigroup has growth bound `(0, M)` for every `M ≥ 1`. -/
+theorem ContractionSemigroup.hasGrowthBound_of_one_le_const
+    (S : ContractionSemigroup X) {M : ℝ} (hM : 1 ≤ M) :
+    S.toStronglyContinuousSemigroup.HasGrowthBound 0 M :=
+  S.hasGrowthBound.mono_const hM
+
+omit [CompleteSpace X] in
+/-- A contraction semigroup has growth bound `(ω, M)` whenever `0 ≤ ω` and `1 ≤ M`. -/
+theorem ContractionSemigroup.hasGrowthBound_of_nonneg_omega_of_one_le_const
+    (S : ContractionSemigroup X) {ω M : ℝ} (hω : 0 ≤ ω) (hM : 1 ≤ M) :
+    S.toStronglyContinuousSemigroup.HasGrowthBound ω M :=
+  S.hasGrowthBound.mono hω hM
 
 
 /-! ## Growth Bounds and Exponential Type -/
@@ -107,6 +158,32 @@ theorem StronglyContinuousSemigroup.existsGrowthBound
               calc ↑n * Real.log M ≤ t * Real.log M :=
                     mul_le_mul_of_nonneg_right hn_le (Real.log_nonneg hM1)
                 _ = Real.log M * t := by ring
+
+/-- A C₀-semigroup admits a growth bound with exponent at least any prescribed real number. -/
+theorem StronglyContinuousSemigroup.existsGrowthBound_ge_omega
+    (S : StronglyContinuousSemigroup X) (ω₀ : ℝ) :
+    ∃ (ω : ℝ) (M : ℝ), ω₀ ≤ ω ∧ S.HasGrowthBound ω M := by
+  obtain ⟨ω, M, hb⟩ := S.existsGrowthBound
+  refine ⟨max ω ω₀, M, le_max_right _ _, hb.mono_omega ?_⟩
+  exact le_max_left _ _
+
+/-- A C₀-semigroup admits a growth bound with multiplicative constant at least any prescribed
+real number. -/
+theorem StronglyContinuousSemigroup.existsGrowthBound_ge_const
+    (S : StronglyContinuousSemigroup X) (M₀ : ℝ) :
+    ∃ (ω : ℝ) (M : ℝ), M₀ ≤ M ∧ S.HasGrowthBound ω M := by
+  obtain ⟨ω, M, hb⟩ := S.existsGrowthBound
+  refine ⟨ω, max M M₀, le_max_right _ _, hb.mono_const ?_⟩
+  exact le_max_left _ _
+
+/-- A C₀-semigroup admits a growth bound whose exponent and multiplicative constant are both at
+least prescribed lower bounds. -/
+theorem StronglyContinuousSemigroup.existsGrowthBound_ge
+    (S : StronglyContinuousSemigroup X) (ω₀ M₀ : ℝ) :
+    ∃ (ω : ℝ) (M : ℝ), ω₀ ≤ ω ∧ M₀ ≤ M ∧ S.HasGrowthBound ω M := by
+  obtain ⟨ω, M, hb⟩ := S.existsGrowthBound
+  refine ⟨max ω ω₀, max M M₀, le_max_right _ _, le_max_right _ _, ?_⟩
+  exact hb.mono (le_max_left _ _) (le_max_left _ _)
 
 end TauCeti.Semigroups
 
