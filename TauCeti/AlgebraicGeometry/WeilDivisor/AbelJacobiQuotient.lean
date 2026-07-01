@@ -61,7 +61,7 @@ private lemma zsmul_ofPoint_eq_single (n : ℤ) (x : X) :
 
 For a weight-one base point `x₀`, this is `D - weightedDegree(D) • [x₀]`, viewed as a
 weighted-degree-zero divisor. -/
-abbrev weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
+@[expose] def weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
     (D : WeilDivisor X) : weightedDegreeZeroSubgroup w :=
   ⟨D - weightedDegree w D • ofPoint x₀, by
     rw [mem_weightedDegreeZeroSubgroup, map_sub, map_zsmul, weightedDegree_ofPoint, hx₀]
@@ -76,7 +76,7 @@ lemma coe_weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X}
 
 /-- The quotient class of the degree-corrected representative
 `D - weightedDegree(D) • [x₀]`. -/
-abbrev weightedAbelJacobiQuotientClass (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1) :
+@[expose] def weightedAbelJacobiQuotientClass (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1) :
     WeilDivisor X →+
       weightedDegreeZeroSubgroup w ⧸ S.principalSubgroupOfWeightedDegreeZero w where
   toFun D := QuotientAddGroup.mk (weightedAbelJacobiDegreeZeroDivisor w hx₀ D)
@@ -91,13 +91,9 @@ abbrev weightedAbelJacobiQuotientClass (w : X → ℤ) {x₀ : X} (hx₀ : w x�
             weightedAbelJacobiDegreeZeroDivisor w hx₀ E := by
       ext x
       simp [map_add, add_zsmul, sub_eq_add_neg, add_assoc, add_left_comm, add_comm]
-    change QuotientAddGroup.mk (weightedAbelJacobiDegreeZeroDivisor w hx₀ (D + E)) =
-      QuotientAddGroup.mk (weightedAbelJacobiDegreeZeroDivisor w hx₀ D) +
-        QuotientAddGroup.mk (weightedAbelJacobiDegreeZeroDivisor w hx₀ E)
-    rw [hdiv]
-    exact map_add (QuotientAddGroup.mk' (S.principalSubgroupOfWeightedDegreeZero w))
-      (weightedAbelJacobiDegreeZeroDivisor w hx₀ D)
-      (weightedAbelJacobiDegreeZeroDivisor w hx₀ E)
+    -- `QuotientAddGroup.mk` is the underlying homomorphism `QuotientAddGroup.mk'`, so its
+    -- additivity is `map_add`; rewrite `mk` to `mk'` to apply it explicitly.
+    simp only [hdiv, ← QuotientAddGroup.mk'_apply, map_add]
 
 @[simp]
 lemma weightedAbelJacobiQuotientClass_mk (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
@@ -194,33 +190,33 @@ lemma weightedAbelJacobiQuotientClass_principalDivisor (w : X → ℤ)
 /-- Equality of weighted quotient Abel-Jacobi representatives is equality of the corresponding
 degree-corrected divisor classes. -/
 lemma weightedAbelJacobiQuotientClass_eq_iff_divisorClass
-    (w : X → ℤ) (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1)
+    (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
     {D E : WeilDivisor X} :
     S.weightedAbelJacobiQuotientClass w hx₀ D =
         S.weightedAbelJacobiQuotientClass w hx₀ E ↔
       S.divisorClass (D - weightedDegree w D • ofPoint x₀) =
         S.divisorClass (E - weightedDegree w E • ofPoint x₀) := by
-  rw [← (S.weightedDegreeZeroQuotientEquivPicZero w h).apply_eq_iff_eq,
-    S.weightedDegreeZeroQuotientEquivPicZero_weightedAbelJacobiQuotientClass,
-    S.weightedDegreeZeroQuotientEquivPicZero_weightedAbelJacobiQuotientClass,
-    S.weightedAbelJacobiDivisorClass_eq_iff_divisorClass w h hx₀]
+  rw [weightedAbelJacobiQuotientClass_mk, weightedAbelJacobiQuotientClass_mk,
+    QuotientAddGroup.eq_iff_sub_mem, mem_principalSubgroupOfWeightedDegreeZero,
+    S.divisorClass_eq_iff, linearlyEquivalent_iff]
+  simp only [AddSubgroup.coe_sub, coe_weightedAbelJacobiDegreeZeroDivisor]
 
 /-- Equality of weighted quotient Abel-Jacobi representatives is linear equivalence of the
 corresponding degree-corrected divisors. -/
 lemma weightedAbelJacobiQuotientClass_eq_iff_linearlyEquivalent
-    (w : X → ℤ) (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1)
+    (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
     {D E : WeilDivisor X} :
     S.weightedAbelJacobiQuotientClass w hx₀ D =
         S.weightedAbelJacobiQuotientClass w hx₀ E ↔
       S.LinearlyEquivalent (D - weightedDegree w D • ofPoint x₀)
         (E - weightedDegree w E • ofPoint x₀) := by
-  rw [S.weightedAbelJacobiQuotientClass_eq_iff_divisorClass w h hx₀, S.divisorClass_eq_iff]
+  rw [S.weightedAbelJacobiQuotientClass_eq_iff_divisorClass w hx₀, S.divisorClass_eq_iff]
 
 /-! ### Unweighted quotient representatives -/
 
 /-- The degree-corrected representative of a divisor in the unweighted degree-zero divisor
 group.  This is `D - degree(D) • [x₀]`. -/
-abbrev unweightedAbelJacobiDegreeZeroDivisor (x₀ : X) (D : WeilDivisor X) :
+@[expose] def unweightedAbelJacobiDegreeZeroDivisor (x₀ : X) (D : WeilDivisor X) :
     degreeZeroSubgroup X :=
   ⟨D - degree D • ofPoint x₀, by
     rw [mem_degreeZeroSubgroup, map_sub, map_zsmul, degree_ofPoint]
@@ -234,7 +230,7 @@ lemma coe_unweightedAbelJacobiDegreeZeroDivisor (x₀ : X) (D : WeilDivisor X) :
 
 /-- The quotient class of the unweighted degree-corrected representative
 `D - degree(D) • [x₀]`. -/
-abbrev unweightedAbelJacobiQuotientClass (x₀ : X) :
+@[expose] def unweightedAbelJacobiQuotientClass (x₀ : X) :
     WeilDivisor X →+ degreeZeroSubgroup X ⧸ S.principalSubgroupOfDegreeZero where
   toFun D := QuotientAddGroup.mk (unweightedAbelJacobiDegreeZeroDivisor x₀ D)
   map_zero' := by
@@ -248,13 +244,9 @@ abbrev unweightedAbelJacobiQuotientClass (x₀ : X) :
             unweightedAbelJacobiDegreeZeroDivisor x₀ E := by
       ext x
       simp [map_add, add_zsmul, sub_eq_add_neg, add_assoc, add_left_comm, add_comm]
-    change QuotientAddGroup.mk (unweightedAbelJacobiDegreeZeroDivisor x₀ (D + E)) =
-      QuotientAddGroup.mk (unweightedAbelJacobiDegreeZeroDivisor x₀ D) +
-        QuotientAddGroup.mk (unweightedAbelJacobiDegreeZeroDivisor x₀ E)
-    rw [hdiv]
-    exact map_add (QuotientAddGroup.mk' S.principalSubgroupOfDegreeZero)
-      (unweightedAbelJacobiDegreeZeroDivisor x₀ D)
-      (unweightedAbelJacobiDegreeZeroDivisor x₀ E)
+    -- `QuotientAddGroup.mk` is the underlying homomorphism `QuotientAddGroup.mk'`, so its
+    -- additivity is `map_add`; rewrite `mk` to `mk'` to apply it explicitly.
+    simp only [hdiv, ← QuotientAddGroup.mk'_apply, map_add]
 
 @[simp]
 lemma unweightedAbelJacobiQuotientClass_mk (x₀ : X) (D : WeilDivisor X) :
@@ -347,24 +339,24 @@ lemma unweightedAbelJacobiQuotientClass_principalDivisor (h : S.IsUnweightedDegr
 /-- Equality of unweighted quotient Abel-Jacobi representatives is equality of the corresponding
 degree-corrected divisor classes. -/
 lemma unweightedAbelJacobiQuotientClass_eq_iff_divisorClass
-    (h : S.IsUnweightedDegreeZero) (x₀ : X) {D E : WeilDivisor X} :
+    (x₀ : X) {D E : WeilDivisor X} :
     S.unweightedAbelJacobiQuotientClass x₀ D =
         S.unweightedAbelJacobiQuotientClass x₀ E ↔
       S.divisorClass (D - degree D • ofPoint x₀) =
         S.divisorClass (E - degree E • ofPoint x₀) := by
-  rw [← (S.degreeZeroQuotientEquivUnweightedPicZero h).apply_eq_iff_eq,
-    S.degreeZeroQuotientEquivUnweightedPicZero_unweightedAbelJacobiQuotientClass,
-    S.degreeZeroQuotientEquivUnweightedPicZero_unweightedAbelJacobiQuotientClass,
-    S.unweightedAbelJacobiDivisorClass_eq_iff_divisorClass h x₀]
+  rw [unweightedAbelJacobiQuotientClass_mk, unweightedAbelJacobiQuotientClass_mk,
+    QuotientAddGroup.eq_iff_sub_mem, mem_principalSubgroupOfDegreeZero,
+    S.divisorClass_eq_iff, linearlyEquivalent_iff]
+  simp only [AddSubgroup.coe_sub, coe_unweightedAbelJacobiDegreeZeroDivisor]
 
 /-- Equality of unweighted quotient Abel-Jacobi representatives is linear equivalence of the
 corresponding degree-corrected divisors. -/
 lemma unweightedAbelJacobiQuotientClass_eq_iff_linearlyEquivalent
-    (h : S.IsUnweightedDegreeZero) (x₀ : X) {D E : WeilDivisor X} :
+    (x₀ : X) {D E : WeilDivisor X} :
     S.unweightedAbelJacobiQuotientClass x₀ D =
         S.unweightedAbelJacobiQuotientClass x₀ E ↔
       S.LinearlyEquivalent (D - degree D • ofPoint x₀) (E - degree E • ofPoint x₀) := by
-  rw [S.unweightedAbelJacobiQuotientClass_eq_iff_divisorClass h x₀, S.divisorClass_eq_iff]
+  rw [S.unweightedAbelJacobiQuotientClass_eq_iff_divisorClass x₀, S.divisorClass_eq_iff]
 
 end
 
