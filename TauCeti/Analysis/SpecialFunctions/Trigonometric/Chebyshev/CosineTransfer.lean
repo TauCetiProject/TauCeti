@@ -139,6 +139,17 @@ lemma normalized_eval_T_real_cos_eq_normalizedChebyshevCosine (n : ℕ) (θ : �
   rw [eval_T_real_cos_eq_chebyshevCosine]
   simp [normalizedChebyshevCosine_def]
 
+/-- Transfer a product of normalized Chebyshev `T` polynomials from `measureT` to the normalized
+angular cosine-side integral. -/
+lemma integral_normalized_eval_T_real_mul_measureT_eq_integral_normalizedChebyshevCosine_mul
+    (m n : ℕ) :
+    ∫ x, ((T ℝ m).eval x / Real.sqrt (chebyshevTNormSq m)) *
+        ((T ℝ n).eval x / Real.sqrt (chebyshevTNormSq n)) ∂Polynomial.Chebyshev.measureT =
+      ∫ θ in (0)..Real.pi, normalizedChebyshevCosine m θ *
+        normalizedChebyshevCosine n θ := by
+  rw [integral_measureT_eq_integral_cos]
+  simp [normalizedChebyshevCosine_def, chebyshevCosine_def]
+
 /-- The diagonal normalized angular cosine modes have integral one over `[0, π]`. -/
 lemma integral_normalizedChebyshevCosine_mul_self (n : ℕ) :
     ∫ θ in (0)..Real.pi, normalizedChebyshevCosine n θ * normalizedChebyshevCosine n θ = 1 := by
