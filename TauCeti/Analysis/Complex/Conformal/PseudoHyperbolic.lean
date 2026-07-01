@@ -30,25 +30,25 @@ open scoped ComplexConjugate
 
 /-- The pseudo-hyperbolic expression on `ℂ`, written as a total real-valued function.
 
-On the open unit disc this is the pseudo-hyperbolic distance.  Outside the disc the same
+On the open unit disc this is the pseudo-hyperbolic expression.  Outside the disc the same
 formula is still meaningful as a total expression in Lean, with division by zero evaluating
 to zero as usual. -/
-noncomputable def pseudoHyperbolicDist (z w : ℂ) : ℝ :=
+noncomputable def pseudoHyperbolicExpr (z w : ℂ) : ℝ :=
   ‖(z - w) / (1 - (starRingEnd ℂ) w * z)‖
 
 /-- The defining formula for the pseudo-hyperbolic expression. -/
-lemma pseudoHyperbolicDist_def (z w : ℂ) :
-    pseudoHyperbolicDist z w = ‖(z - w) / (1 - (starRingEnd ℂ) w * z)‖ :=
+lemma pseudoHyperbolicExpr_def (z w : ℂ) :
+    pseudoHyperbolicExpr z w = ‖(z - w) / (1 - (starRingEnd ℂ) w * z)‖ :=
   by rfl
 
 @[simp]
-lemma pseudoHyperbolicDist_nonneg (z w : ℂ) : 0 ≤ pseudoHyperbolicDist z w :=
+lemma pseudoHyperbolicExpr_nonneg (z w : ℂ) : 0 ≤ pseudoHyperbolicExpr z w :=
   norm_nonneg _
 
 /-- The pseudo-hyperbolic expression from a point to itself is zero. -/
 @[simp]
-lemma pseudoHyperbolicDist_self (z : ℂ) : pseudoHyperbolicDist z z = 0 := by
-  simp [pseudoHyperbolicDist]
+lemma pseudoHyperbolicExpr_self (z : ℂ) : pseudoHyperbolicExpr z z = 0 := by
+  simp [pseudoHyperbolicExpr]
 
 /-- The denominator `1 - conj w * z` is nonzero whenever `‖w‖ * ‖z‖ < 1`. -/
 lemma one_sub_conj_mul_ne_zero_of_norm_mul_lt_one {z w : ℂ} (h : ‖w‖ * ‖z‖ < 1) :
@@ -85,53 +85,53 @@ private lemma norm_one_sub_conj_mul_comm (z w : ℂ) :
       simp [mul_comm]
 
 /-- The pseudo-hyperbolic expression is symmetric in its two arguments. -/
-lemma pseudoHyperbolicDist_comm (z w : ℂ) :
-    pseudoHyperbolicDist z w = pseudoHyperbolicDist w z := by
-  unfold pseudoHyperbolicDist
+lemma pseudoHyperbolicExpr_comm (z w : ℂ) :
+    pseudoHyperbolicExpr z w = pseudoHyperbolicExpr w z := by
+  unfold pseudoHyperbolicExpr
   rw [norm_div, norm_div, norm_sub_rev, norm_one_sub_conj_mul_comm]
 
 /-- If the two points are equal, their pseudo-hyperbolic expression is zero. -/
-lemma pseudoHyperbolicDist_eq_zero_of_eq {z w : ℂ} (h : z = w) :
-    pseudoHyperbolicDist z w = 0 := by
+lemma pseudoHyperbolicExpr_eq_zero_of_eq {z w : ℂ} (h : z = w) :
+    pseudoHyperbolicExpr z w = 0 := by
   simp [h]
 
 /-- The pseudo-hyperbolic expression with right endpoint zero is the norm. -/
 @[simp]
-lemma pseudoHyperbolicDist_zero_right (z : ℂ) : pseudoHyperbolicDist z 0 = ‖z‖ := by
-  simp [pseudoHyperbolicDist]
+lemma pseudoHyperbolicExpr_zero_right (z : ℂ) : pseudoHyperbolicExpr z 0 = ‖z‖ := by
+  simp [pseudoHyperbolicExpr]
 
 /-- The pseudo-hyperbolic expression with left endpoint zero is the norm. -/
 @[simp]
-lemma pseudoHyperbolicDist_zero_left (w : ℂ) : pseudoHyperbolicDist 0 w = ‖w‖ := by
-  simp [pseudoHyperbolicDist]
+lemma pseudoHyperbolicExpr_zero_left (w : ℂ) : pseudoHyperbolicExpr 0 w = ‖w‖ := by
+  simp [pseudoHyperbolicExpr]
 
 /-- If the denominator is nonzero, zero pseudo-hyperbolic expression characterizes equality. -/
-lemma pseudoHyperbolicDist_eq_zero_iff_of_den_ne_zero {z w : ℂ}
+lemma pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero {z w : ℂ}
     (hden : 1 - (starRingEnd ℂ) w * z ≠ 0) :
-    pseudoHyperbolicDist z w = 0 ↔ z = w := by
-  rw [pseudoHyperbolicDist, norm_eq_zero, div_eq_zero_iff]
+    pseudoHyperbolicExpr z w = 0 ↔ z = w := by
+  rw [pseudoHyperbolicExpr, norm_eq_zero, div_eq_zero_iff]
   simp only [hden, or_false]
   exact sub_eq_zero
 
 /-- On the open unit disc, zero pseudo-hyperbolic expression characterizes equality. -/
-lemma pseudoHyperbolicDist_eq_zero_iff_of_norm_lt_one {z w : ℂ}
+lemma pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
-    pseudoHyperbolicDist z w = 0 ↔ z = w :=
-  pseudoHyperbolicDist_eq_zero_iff_of_den_ne_zero
+    pseudoHyperbolicExpr z w = 0 ↔ z = w :=
+  pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero
     (one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw)
 
 /-- For points in the open unit ball, zero pseudo-hyperbolic expression characterizes equality. -/
-lemma pseudoHyperbolicDist_eq_zero_iff_of_mem_ball {z w : ℂ}
+lemma pseudoHyperbolicExpr_eq_zero_iff_of_mem_ball {z w : ℂ}
     (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
-    pseudoHyperbolicDist z w = 0 ↔ z = w :=
-  pseudoHyperbolicDist_eq_zero_iff_of_norm_lt_one (by simpa [mem_ball_zero_iff] using hz)
+    pseudoHyperbolicExpr z w = 0 ↔ z = w :=
+  pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one (by simpa [mem_ball_zero_iff] using hz)
     (by simpa [mem_ball_zero_iff] using hw)
 
 /-- For bundled unit-disc points, zero pseudo-hyperbolic expression characterizes equality. -/
 @[simp]
-lemma pseudoHyperbolicDist_eq_zero_iff_unitDisc (z w : Complex.UnitDisc) :
-    pseudoHyperbolicDist (z : ℂ) (w : ℂ) = 0 ↔ z = w := by
-  rw [pseudoHyperbolicDist_eq_zero_iff_of_norm_lt_one z.norm_lt_one w.norm_lt_one]
+lemma pseudoHyperbolicExpr_eq_zero_iff_unitDisc (z w : Complex.UnitDisc) :
+    pseudoHyperbolicExpr (z : ℂ) (w : ℂ) = 0 ↔ z = w := by
+  rw [pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one z.norm_lt_one w.norm_lt_one]
   exact Subtype.ext_iff.symm
 
 private lemma normSq_one_sub_conj_mul_sub_normSq_sub (z w : ℂ) :
@@ -167,27 +167,27 @@ lemma norm_sub_lt_norm_one_sub_conj_mul_of_norm_lt_one {z w : ℂ}
 
 /-- The pseudo-hyperbolic expression of two points of norm less than one is strictly less
 than one. -/
-lemma pseudoHyperbolicDist_lt_one_of_norm_lt_one {z w : ℂ}
+lemma pseudoHyperbolicExpr_lt_one_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
-    pseudoHyperbolicDist z w < 1 := by
+    pseudoHyperbolicExpr z w < 1 := by
   have hden : 0 < ‖1 - (starRingEnd ℂ) w * z‖ :=
     norm_pos_iff.mpr (one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw)
   have hlt := norm_sub_lt_norm_one_sub_conj_mul_of_norm_lt_one hz hw
-  rw [pseudoHyperbolicDist, norm_div]
+  rw [pseudoHyperbolicExpr, norm_div]
   rwa [div_lt_one hden]
 
 /-- The pseudo-hyperbolic expression of two points in the open unit ball is strictly less
 than one. -/
-lemma pseudoHyperbolicDist_lt_one_of_mem_ball {z w : ℂ}
+lemma pseudoHyperbolicExpr_lt_one_of_mem_ball {z w : ℂ}
     (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
-    pseudoHyperbolicDist z w < 1 :=
-  pseudoHyperbolicDist_lt_one_of_norm_lt_one (by simpa [mem_ball_zero_iff] using hz)
+    pseudoHyperbolicExpr z w < 1 :=
+  pseudoHyperbolicExpr_lt_one_of_norm_lt_one (by simpa [mem_ball_zero_iff] using hz)
     (by simpa [mem_ball_zero_iff] using hw)
 
 /-- The pseudo-hyperbolic expression of two bundled unit-disc points is strictly less
 than one. -/
-lemma pseudoHyperbolicDist_lt_one_unitDisc (z w : Complex.UnitDisc) :
-    pseudoHyperbolicDist (z : ℂ) (w : ℂ) < 1 :=
-  pseudoHyperbolicDist_lt_one_of_norm_lt_one z.norm_lt_one w.norm_lt_one
+lemma pseudoHyperbolicExpr_lt_one_unitDisc (z w : Complex.UnitDisc) :
+    pseudoHyperbolicExpr (z : ℂ) (w : ℂ) < 1 :=
+  pseudoHyperbolicExpr_lt_one_of_norm_lt_one z.norm_lt_one w.norm_lt_one
 
 end TauCeti
