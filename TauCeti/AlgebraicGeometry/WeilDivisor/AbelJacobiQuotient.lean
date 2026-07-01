@@ -320,26 +320,31 @@ lemma degreeZeroQuotientEquivUnweightedPicZero_unweightedAbelJacobiQuotientClass
   rw [S.degreeZeroQuotientEquivUnweightedPicZero_unweightedAbelJacobiQuotientClass,
     S.unweightedAbelJacobiDivisorClass_ofPoint]
 
+/-- The unweighted quotient Abel-Jacobi representative is the constant-weight-one specialization
+of the weighted quotient Abel-Jacobi representative, transported along the degree-zero quotient
+equivalence. -/
+lemma unweightedAbelJacobiQuotientClass_eq_weighted (x₀ : X) (D : WeilDivisor X) :
+    S.unweightedAbelJacobiQuotientClass x₀ D =
+      S.degreeZeroQuotientEquivWeightedDegreeZeroOne.symm
+        (S.weightedAbelJacobiQuotientClass (fun _ : X => (1 : ℤ)) (x₀ := x₀) rfl D) := by
+  rw [weightedAbelJacobiQuotientClass_mk, degreeZeroQuotientEquivWeightedDegreeZeroOne_symm_mk,
+    unweightedAbelJacobiQuotientClass_mk]
+  congr 1
+  apply Subtype.ext
+  rw [coe_unweightedAbelJacobiDegreeZeroDivisor,
+    coe_degreeZeroSubgroupEquivWeightedDegreeZeroOne_symm_apply,
+    coe_weightedAbelJacobiDegreeZeroDivisor, weightedDegree_one_eq_degree]
+
 /-- The unweighted quotient Abel-Jacobi representative of a finitely supported formal divisor is
 the finite sum of the quotient representatives of its point divisors. -/
 lemma unweightedAbelJacobiQuotientClass_eq_sum (x₀ : X) (D : WeilDivisor X) :
     S.unweightedAbelJacobiQuotientClass x₀ D =
       D.sum fun x n => n • S.unweightedAbelJacobiQuotientClass x₀ (ofPoint x) := by
-  classical
-  induction D using Finsupp.induction_linear with
-  | zero =>
-      simp
-  | single x n =>
-      rw [Finsupp.sum_single_index]
-      · rw [← zsmul_ofPoint_eq_single n x,
-          S.unweightedAbelJacobiQuotientClass_zsmul x₀ n (ofPoint x)]
-      · simp
-  | add D E hD hE =>
-      rw [S.unweightedAbelJacobiQuotientClass_add x₀, Finsupp.sum_add_index, hD, hE]
-      · intro x
-        simp
-      · intro x a b
-        simp [add_zsmul]
+  rw [S.unweightedAbelJacobiQuotientClass_eq_weighted x₀ D,
+    S.weightedAbelJacobiQuotientClass_eq_sum (fun _ : X => (1 : ℤ)) (x₀ := x₀) rfl D,
+    map_finsuppSum]
+  refine Finsupp.sum_congr fun x _ => ?_
+  rw [map_zsmul, ← S.unweightedAbelJacobiQuotientClass_eq_weighted x₀ (ofPoint x)]
 
 /-- The unweighted base-point divisor represents zero in the degree-zero quotient. -/
 @[simp]
