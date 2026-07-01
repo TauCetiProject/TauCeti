@@ -88,15 +88,35 @@ lemma pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero {z w : ℂ}
   simp only [hden, or_false]
   exact sub_eq_zero
 
+/-- On the open unit disc, the denominator in the pseudo-hyperbolic expression is nonzero. -/
+lemma one_sub_conj_mul_ne_zero_of_norm_lt_one {z w : ℂ}
+    (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
+    1 - (starRingEnd ℂ) w * z ≠ 0 :=
+  (isUnit_one_sub_of_norm_lt_one (x := (starRingEnd ℂ) w * z)
+    (by
+      rw [norm_mul, norm_conj]
+      exact mul_lt_one_of_nonneg_of_lt_one_right hw.le (norm_nonneg _) hz)).ne_zero
+
+/-- For points in the open unit ball, the denominator in the pseudo-hyperbolic expression is
+nonzero. -/
+lemma one_sub_conj_mul_ne_zero_of_mem_ball {z w : ℂ}
+    (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
+    1 - (starRingEnd ℂ) w * z ≠ 0 :=
+  one_sub_conj_mul_ne_zero_of_norm_lt_one (by simpa [mem_ball_zero_iff] using hz)
+    (by simpa [mem_ball_zero_iff] using hw)
+
+/-- For bundled unit-disc points, the denominator in the pseudo-hyperbolic expression is
+nonzero. -/
+lemma one_sub_conj_mul_ne_zero_unitDisc (z w : Complex.UnitDisc) :
+    1 - (starRingEnd ℂ) (w : ℂ) * (z : ℂ) ≠ 0 :=
+  one_sub_conj_mul_ne_zero_of_norm_lt_one z.norm_lt_one w.norm_lt_one
+
 /-- On the open unit disc, zero pseudo-hyperbolic expression characterizes equality. -/
 lemma pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     pseudoHyperbolicExpr z w = 0 ↔ z = w := by
-  refine pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero ?_
-  exact (isUnit_one_sub_of_norm_lt_one (x := (starRingEnd ℂ) w * z)
-    (by
-      rw [norm_mul, norm_conj]
-      exact mul_lt_one_of_nonneg_of_lt_one_right hw.le (norm_nonneg _) hz)).ne_zero
+  exact pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero
+    (one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw)
 
 /-- For points in the open unit ball, zero pseudo-hyperbolic expression characterizes equality. -/
 lemma pseudoHyperbolicExpr_eq_zero_iff_of_mem_ball {z w : ℂ}
@@ -149,10 +169,7 @@ lemma pseudoHyperbolicExpr_lt_one_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     pseudoHyperbolicExpr z w < 1 := by
   have hden_ne : 1 - (starRingEnd ℂ) w * z ≠ 0 :=
-    (isUnit_one_sub_of_norm_lt_one (x := (starRingEnd ℂ) w * z)
-      (by
-        rw [norm_mul, norm_conj]
-        exact mul_lt_one_of_nonneg_of_lt_one_right hw.le (norm_nonneg _) hz)).ne_zero
+    one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw
   have hden : 0 < ‖1 - (starRingEnd ℂ) w * z‖ := norm_pos_iff.mpr hden_ne
   have hlt := norm_sub_lt_norm_one_sub_conj_mul_of_norm_lt_one hz hw
   rw [pseudoHyperbolicExpr, norm_div]
