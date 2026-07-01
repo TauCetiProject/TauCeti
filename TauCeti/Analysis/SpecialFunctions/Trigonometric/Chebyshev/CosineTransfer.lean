@@ -121,6 +121,11 @@ lemma normalizedChebyshevCosine_one (θ : ℝ) :
     normalizedChebyshevCosine 1 θ = Real.cos θ / Real.sqrt (Real.pi / 2) := by
   simp [normalizedChebyshevCosine_def]
 
+@[simp]
+lemma normalizedChebyshevCosine_of_ne_zero {n : ℕ} (hn : n ≠ 0) (θ : ℝ) :
+    normalizedChebyshevCosine n θ = Real.cos (n * θ) / Real.sqrt (Real.pi / 2) := by
+  simp [normalizedChebyshevCosine_def, chebyshevCosine_def, chebyshevTNormSq_of_ne_zero hn]
+
 /-- The normalized angular Chebyshev representatives are continuous. -/
 lemma continuous_normalizedChebyshevCosine (n : ℕ) :
     Continuous (normalizedChebyshevCosine n) :=
