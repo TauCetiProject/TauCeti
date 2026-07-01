@@ -173,18 +173,6 @@ lemma normalizedChebyshevT_def (n : ℕ) (x : ℝ) :
     normalizedChebyshevT n x = (T ℝ n).eval x / Real.sqrt (chebyshevTNormSq n) :=
   normalizedChebyshevT.eq_1 n x
 
-/-- The zeroth normalized Chebyshev `T` mode is the constant `1 / √π`. -/
-@[simp]
-lemma normalizedChebyshevT_zero_apply (x : ℝ) :
-    normalizedChebyshevT 0 x = (Real.sqrt Real.pi)⁻¹ := by
-  rw [normalizedChebyshevT_def, chebyshevTNormSq_zero]
-  simp
-
-/-- A positive-degree normalized Chebyshev `T` mode has denominator `√(π / 2)`. -/
-lemma normalizedChebyshevT_of_ne_zero_apply {n : ℕ} (hn : n ≠ 0) (x : ℝ) :
-    normalizedChebyshevT n x = (T ℝ n).eval x / Real.sqrt (Real.pi / 2) := by
-  rw [normalizedChebyshevT_def, chebyshevTNormSq_of_ne_zero hn]
-
 /-- The real normalized Chebyshev `T` mode is continuous. -/
 lemma continuous_normalizedChebyshevT (n : ℕ) :
     Continuous (normalizedChebyshevT n) :=
@@ -235,23 +223,6 @@ lemma coeFn_normalizedChebyshevTLp {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
     ⇑(normalizedChebyshevTLp 𝕜 n) =ᵐ[Polynomial.Chebyshev.measureT]
       fun x : ℝ => (algebraMap ℝ 𝕜) (normalizedChebyshevT n x) :=
   MemLp.coeFn_toLp _
-
-/-- The `L²(measureT)` representative of the zeroth normalized Chebyshev mode is
-the constant scalar `1 / √π`. -/
-lemma coeFn_normalizedChebyshevTLp_zero {𝕜 : Type*} [RCLike 𝕜] :
-    ⇑(normalizedChebyshevTLp 𝕜 0) =ᵐ[Polynomial.Chebyshev.measureT]
-      fun _ : ℝ => (algebraMap ℝ 𝕜) ((Real.sqrt Real.pi)⁻¹) := by
-  filter_upwards [coeFn_normalizedChebyshevTLp (𝕜 := 𝕜) 0] with x hx
-  rw [hx, normalizedChebyshevT_zero_apply]
-
-/-- The `L²(measureT)` representative of a positive-degree normalized Chebyshev mode is
-the scalar-cast function `(Tₙ x) / √(π / 2)`. -/
-lemma coeFn_normalizedChebyshevTLp_of_ne_zero {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
-    (hn : n ≠ 0) :
-    ⇑(normalizedChebyshevTLp 𝕜 n) =ᵐ[Polynomial.Chebyshev.measureT]
-      fun x : ℝ => (algebraMap ℝ 𝕜) ((T ℝ n).eval x / Real.sqrt (Real.pi / 2)) := by
-  filter_upwards [coeFn_normalizedChebyshevTLp (𝕜 := 𝕜) n] with x hx
-  rw [hx, normalizedChebyshevT_of_ne_zero_apply hn]
 
 /-- The real `measureT` integral of two normalized Chebyshev `T` modes is the Kronecker
 delta. -/
