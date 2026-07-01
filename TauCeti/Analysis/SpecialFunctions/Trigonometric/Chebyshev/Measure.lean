@@ -19,6 +19,11 @@ Kronecker-delta statement with squared norms `π` in degree zero and `π / 2` in
 positive degree.  The file also records `L²` membership of the normalized `T`
 modes and the finite exponential moments used by the later Chebyshev
 Hilbert-basis construction.
+
+For finite-coordinate arguments, use `orthonormal_normalizedChebyshevTLp`
+together with Mathlib's generic `Orthonormal` coordinate and finite linear
+combination API.  This file intentionally keeps the Chebyshev-specific surface
+to the normalized modes and their orthonormality.
 -/
 
 public section
