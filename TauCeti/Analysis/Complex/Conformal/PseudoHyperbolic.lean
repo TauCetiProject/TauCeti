@@ -50,15 +50,6 @@ lemma pseudoHyperbolicExpr_nonneg (z w : ℂ) : 0 ≤ pseudoHyperbolicExpr z w :
 lemma pseudoHyperbolicExpr_self (z : ℂ) : pseudoHyperbolicExpr z z = 0 := by
   simp [pseudoHyperbolicExpr]
 
-/-- The denominator `1 - conj w * z` is nonzero for two bundled unit-disc points. -/
-lemma one_sub_conj_mul_ne_zero_unitDisc (z w : Complex.UnitDisc) :
-    1 - (starRingEnd ℂ) (w : ℂ) * (z : ℂ) ≠ 0 := by
-  exact (isUnit_one_sub_of_norm_lt_one (x := (starRingEnd ℂ) (w : ℂ) * (z : ℂ))
-    (by
-      rw [norm_mul, norm_conj]
-      exact mul_lt_one_of_nonneg_of_lt_one_right w.norm_lt_one.le (norm_nonneg _)
-        z.norm_lt_one)).ne_zero
-
 private lemma norm_one_sub_conj_mul_comm (z w : ℂ) :
     ‖1 - (starRingEnd ℂ) w * z‖ = ‖1 - (starRingEnd ℂ) z * w‖ := by
   calc
