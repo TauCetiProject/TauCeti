@@ -267,14 +267,8 @@ lemma subgroupFiberOrbitClass_smul_eq_base_iff
     [IsCancelSMul (Deck p) (p ⁻¹' {b})] (H : Subgroup (Deck p)) (e : p ⁻¹' {b})
     (φ : Deck p) :
     subgroupFiberOrbitClass H (φ • e) = subgroupFiberOrbitClass H e ↔ φ ∈ H := by
-  constructor
-  · intro h
-    rcases (subgroupFiberOrbitClass_eq_iff H (φ • e) e).mp h with ⟨η, hη⟩
-    change (η : Deck p) • e = φ • e at hη
-    exact (IsCancelSMul.right_cancel (η : Deck p) φ e hη).symm ▸ η.2
-  · intro hφ
-    exact (subgroupFiberOrbitClass_eq_iff H (φ • e) e).mpr
-      ⟨⟨φ, hφ⟩, rfl⟩
+  exact TauCeti.MulAction.orbitRelQuotient_smul_eq_base_iff
+    (G := Deck p) (X := p ⁻¹' {b}) H φ e
 
 /-- For a preconnected covering, a deck translate of the chosen fibre point has the same
 subgroup orbit class as the chosen point exactly when the translating deck transformation lies

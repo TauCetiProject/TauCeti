@@ -17,6 +17,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   original space.
 * `TauCeti.MulAction.orbitRelQuotientMapOfLE_bot_eq_iff`: equality after the bottom-to-`H`
   quotient map is membership in an `H`-orbit.
+* `TauCeti.MulAction.orbitRelQuotient_smul_eq_base_iff`: in a cancellative action, a
+  translate has the same `H`-orbit class as the base point exactly when the translator is in
+  `H`.
 -/
 
 public section
@@ -111,6 +114,22 @@ lemma orbitRelQuotientMapOfLE_bot_eq_iff (H : Subgroup G)
       orbitRelQuotientBotEquiv (G := G) (X := X) x ∈
         _root_.MulAction.orbit H (orbitRelQuotientBotEquiv (G := G) (X := X) y) := by
   simp [orbitRelQuotientMapOfLE_bot_eq, Quotient.eq'', _root_.MulAction.orbitRel_apply]
+
+/-- In a cancellative action, a translate has the same subgroup-orbit quotient class as the
+base point exactly when the translating group element belongs to the subgroup. -/
+lemma orbitRelQuotient_smul_eq_base_iff [IsCancelSMul G X] (H : Subgroup G) (g : G) (x : X) :
+    (Quotient.mk'' (g • x) : _root_.MulAction.orbitRel.Quotient H X) =
+        Quotient.mk'' x ↔
+      g ∈ H := by
+  constructor
+  · intro h
+    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply] at h
+    rcases h with ⟨k, hk⟩
+    change (k : G) • x = g • x at hk
+    exact (IsCancelSMul.right_cancel (k : G) g x hk).symm ▸ k.2
+  · intro hg
+    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply]
+    exact ⟨⟨g, hg⟩, rfl⟩
 
 end MulAction
 

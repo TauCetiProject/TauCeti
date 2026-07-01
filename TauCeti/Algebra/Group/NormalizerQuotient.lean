@@ -30,9 +30,6 @@ in the normal case.
   the natural map `N(H) / H →* G / H`.
 * `TauCeti.Subgroup.normalizerQuotientEquivQuotientOfNormal`: when `H` is normal in `G`,
   the normalizer quotient is canonically isomorphic to `G / H`.
-* `TauCeti.Subgroup.normalizerQuotientMk_eq_iff_quotientGroup_mk_eq`: the equality
-  criterion comparing normalizer-quotient representatives with their ordinary quotient
-  classes in the normal case.
 
 ## References
 
@@ -274,22 +271,6 @@ lemma normalizerQuotientEquivQuotientOfNormal_mk
     normalizerQuotientEquivQuotientOfNormal H (normalizerQuotientMk H g) =
       QuotientGroup.mk' H (g : G) :=
   rfl
-
-/-- In the normal case, equality of normalizer-quotient representatives is exactly equality
-of their corresponding ordinary quotient-group representatives. -/
-lemma normalizerQuotientMk_eq_iff_quotientGroup_mk_eq (g k : G) :
-    normalizerQuotientMk H
-        ⟨g, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ =
-      normalizerQuotientMk H
-        ⟨k, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ ↔
-      QuotientGroup.mk' H g = QuotientGroup.mk' H k := by
-  constructor
-  · intro h
-    simpa [normalizerQuotientEquivQuotientOfNormal_mk] using
-      congrArg (normalizerQuotientEquivQuotientOfNormal H) h
-  · intro h
-    apply (normalizerQuotientEquivQuotientOfNormal H).injective
-    simpa [normalizerQuotientEquivQuotientOfNormal_mk] using h
 
 /-- The inverse normal-case equivalence sends an ordinary quotient representative to the
 corresponding representative in the normalizer quotient. -/
