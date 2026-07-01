@@ -6,6 +6,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Coset.Basic
+public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Deck.SubgroupFiberOrbit
 
 /-!
@@ -30,6 +31,9 @@ unfolding either construction.
   specialization that installs the free-transitive deck action on the fibre.
 * `TauCeti.Deck.subgroupFiberOrbitQuotientEquivQuotientGroup_mapOfLE`: compatibility with
   the maps induced by subgroup inclusions.
+* `TauCeti.Deck.subgroupFiberOrbitQuotientBotEquivDeck`: for `H = ⊥`, the quotient is the
+  deck group, with the inverse orientation coming from Mathlib's quotient convention.
+* Endpoint collapse lemmas for `H = ⊤`.
 
 ## References
 
@@ -103,6 +107,12 @@ end MulAction
 namespace Deck
 
 variable {E B : Type*} [TopologicalSpace E] {p : E → B} {b : B}
+
+private lemma quotientGroup_quotientBot_mk (φ : Deck p) :
+    QuotientGroup.quotientBot (G := Deck p)
+        (QuotientGroup.mk (s := (⊥ : Subgroup (Deck p))) φ) =
+      φ :=
+  rfl
 
 /-- The subgroup-fibre orbit quotient is equivalent to the quotient of the deck group by the
 subgroup, once the deck action on the chosen fibre is free and transitive. -/
@@ -236,6 +246,144 @@ lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul
   letI := fiber_isCancelSMul (b := b) hp
   simpa [regularSubgroupFiberOrbitQuotientEquivQuotientGroup] using
     subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul H e φ
+
+/-- For a free transitive deck action on a fibre, quotienting the fibre by the trivial
+subgroup identifies that quotient with the deck group. The representative convention is the
+same as `subgroupFiberOrbitQuotientEquivQuotientGroup`: the class of `φ • e` corresponds to
+`φ⁻¹`. -/
+noncomputable def subgroupFiberOrbitQuotientBotEquivDeck
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (e : p ⁻¹' {b}) :
+    SubgroupFiberOrbitQuotient (⊥ : Subgroup (Deck p)) b ≃ Deck p :=
+  (subgroupFiberOrbitQuotientEquivQuotientGroup (⊥ : Subgroup (Deck p)) e).trans
+    (QuotientGroup.quotientBot (G := Deck p) : Deck p ⧸ (⊥ : Subgroup (Deck p)) ≃ Deck p)
+
+/-- For a regular preconnected covering map, the quotient of a fibre by the trivial deck
+subgroup is the deck group. -/
+noncomputable def regularSubgroupFiberOrbitQuotientBotEquivDeck
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (e : p ⁻¹' {b}) :
+    SubgroupFiberOrbitQuotient (⊥ : Subgroup (Deck p)) b ≃ Deck p :=
+  letI := hreg.fiber_isPretransitive b
+  letI := fiber_isCancelSMul (b := b) hp
+  subgroupFiberOrbitQuotientBotEquivDeck e
+
+/-- The bottom-subgroup quotient-to-deck equivalence sends the class of `φ • e` to `φ⁻¹`. -/
+@[simp]
+lemma subgroupFiberOrbitQuotientBotEquivDeck_apply_smul
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (e : p ⁻¹' {b}) (φ : Deck p) :
+    subgroupFiberOrbitQuotientBotEquivDeck e
+        (subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) (φ • e)) =
+      φ⁻¹ := by
+  change QuotientGroup.quotientBot
+      (subgroupFiberOrbitQuotientEquivQuotientGroup (⊥ : Subgroup (Deck p)) e
+        (subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) (φ • e))) = φ⁻¹
+  rw [subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul]
+  exact quotientGroup_quotientBot_mk φ⁻¹
+
+/-- For a regular cover, the bottom-subgroup quotient-to-deck equivalence sends the class of
+`φ • e` to `φ⁻¹`. -/
+@[simp]
+lemma regularSubgroupFiberOrbitQuotientBotEquivDeck_apply_smul
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (e : p ⁻¹' {b}) (φ : Deck p) :
+    regularSubgroupFiberOrbitQuotientBotEquivDeck hp hreg e
+        (subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) (φ • e)) =
+      φ⁻¹ := by
+  letI := hreg.fiber_isPretransitive b
+  letI := fiber_isCancelSMul (b := b) hp
+  exact subgroupFiberOrbitQuotientBotEquivDeck_apply_smul e φ
+
+/-- The chosen fibre point maps to the identity deck transformation under the
+bottom-subgroup quotient-to-deck equivalence. -/
+@[simp]
+lemma subgroupFiberOrbitQuotientBotEquivDeck_apply_base
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (e : p ⁻¹' {b}) :
+    subgroupFiberOrbitQuotientBotEquivDeck e
+        (subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) e) =
+      1 := by
+  simpa using subgroupFiberOrbitQuotientBotEquivDeck_apply_smul e (1 : Deck p)
+
+/-- For a regular cover, the chosen fibre point maps to the identity deck transformation
+under the bottom-subgroup quotient-to-deck equivalence. -/
+@[simp]
+lemma regularSubgroupFiberOrbitQuotientBotEquivDeck_apply_base
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (e : p ⁻¹' {b}) :
+    regularSubgroupFiberOrbitQuotientBotEquivDeck hp hreg e
+        (subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) e) =
+      1 := by
+  simpa using
+    regularSubgroupFiberOrbitQuotientBotEquivDeck_apply_smul hp hreg e (1 : Deck p)
+
+/-- The inverse bottom-subgroup quotient-to-deck equivalence sends a deck transformation to
+the class of its inverse acting on the chosen fibre point. -/
+@[simp]
+lemma subgroupFiberOrbitQuotientBotEquivDeck_symm_apply
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (e : p ⁻¹' {b}) (φ : Deck p) :
+    (subgroupFiberOrbitQuotientBotEquivDeck e).symm φ =
+      subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) (φ⁻¹ • e) := by
+  apply (subgroupFiberOrbitQuotientBotEquivDeck e).injective
+  rw [Equiv.apply_symm_apply, subgroupFiberOrbitQuotientBotEquivDeck_apply_smul]
+  simp
+
+/-- For a regular cover, the inverse bottom-subgroup quotient-to-deck equivalence sends a
+deck transformation to the class of its inverse acting on the chosen fibre point. -/
+@[simp]
+lemma regularSubgroupFiberOrbitQuotientBotEquivDeck_symm_apply
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (e : p ⁻¹' {b}) (φ : Deck p) :
+    (regularSubgroupFiberOrbitQuotientBotEquivDeck hp hreg e).symm φ =
+      subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) (φ⁻¹ • e) := by
+  letI := hreg.fiber_isPretransitive b
+  letI := fiber_isCancelSMul (b := b) hp
+  simp [regularSubgroupFiberOrbitQuotientBotEquivDeck]
+
+/-- If the full deck group acts transitively on a fibre, then the quotient of that fibre by
+the full deck subgroup is a subsingleton. -/
+lemma subsingleton_subgroupFiberOrbitQuotient_top
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] :
+    Subsingleton (SubgroupFiberOrbitQuotient (⊤ : Subgroup (Deck p)) b) := by
+  rw [subgroupFiberOrbitQuotient_subsingleton_iff]
+  refine MulAction.IsPretransitive.mk ?_
+  intro e e'
+  rcases MulAction.exists_smul_eq (Deck p) e e' with ⟨φ, hφ⟩
+  exact ⟨⟨φ, trivial⟩, by simpa [Subgroup.smul_def] using hφ⟩
+
+/-- For a regular preconnected covering, the quotient of a fibre by the full deck subgroup is
+a subsingleton. -/
+lemma regularSubgroupFiberOrbitQuotient_top_subsingleton
+    [TopologicalSpace B] [PreconnectedSpace E] (hreg : IsRegular p) :
+    Subsingleton (SubgroupFiberOrbitQuotient (⊤ : Subgroup (Deck p)) b) := by
+  letI := hreg.fiber_isPretransitive b
+  exact subsingleton_subgroupFiberOrbitQuotient_top
+
+/-- Under the quotient-group equivalence, the full-subgroup fibre quotient lands in the
+unique coset of `Deck p ⧸ ⊤`. -/
+@[simp]
+lemma subgroupFiberOrbitQuotientEquivQuotientGroup_top
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (e : p ⁻¹' {b}) (x : SubgroupFiberOrbitQuotient (⊤ : Subgroup (Deck p)) b) :
+    subgroupFiberOrbitQuotientEquivQuotientGroup (⊤ : Subgroup (Deck p)) e x =
+      QuotientGroup.mk (s := (⊤ : Subgroup (Deck p))) (1 : Deck p) := by
+  haveI := QuotientGroup.subsingleton_quotient_top (G := Deck p)
+  exact Subsingleton.elim _ _
+
+/-- For a regular cover, the full-subgroup fibre quotient lands in the unique coset of
+`Deck p ⧸ ⊤`. -/
+@[simp]
+lemma regularSubgroupFiberOrbitQuotientEquivQuotientGroup_top
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (e : p ⁻¹' {b}) (x : SubgroupFiberOrbitQuotient (⊤ : Subgroup (Deck p)) b) :
+    regularSubgroupFiberOrbitQuotientEquivQuotientGroup hp hreg (⊤ : Subgroup (Deck p)) e x =
+      QuotientGroup.mk (s := (⊤ : Subgroup (Deck p))) (1 : Deck p) := by
+  letI := hreg.fiber_isPretransitive b
+  letI := fiber_isCancelSMul (b := b) hp
+  simp [regularSubgroupFiberOrbitQuotientEquivQuotientGroup,
+    subgroupFiberOrbitQuotientEquivQuotientGroup_top e x]
 
 /-- The subgroup-fibre quotient equivalence is natural in subgroup inclusions. -/
 @[simp]
