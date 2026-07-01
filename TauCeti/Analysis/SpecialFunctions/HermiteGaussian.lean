@@ -22,10 +22,11 @@ measure-space bridge itself.
 
 ## Main results
 
-* `TauCeti.Hermite.integrable_eval_mul_gaussian` : any real polynomial is integrable against the
-  Gaussian weight `e^{-x²/2}` (the general result).
-* `TauCeti.Hermite.integrable_aeval_mul_gaussian` : the integer-coefficient special case named by
-  the roadmap for consumers.
+* `TauCeti.Hermite.integrable_eval_mul_exp_neg_mul_sq` : any real polynomial is integrable against
+  the Gaussian weight `e^{-a*x²}` for `0 < a`.
+* `TauCeti.Hermite.integrable_aeval_mul_exp_neg_mul_sq` : the integer-coefficient special case.
+* `TauCeti.Hermite.integrable_eval_mul_gaussian` and
+  `TauCeti.Hermite.integrable_aeval_mul_gaussian` : the standard-normal `a = 1/2` specializations.
 * `TauCeti.Hermite.hasDerivAt_hermite_mul_gaussian` : the Rodrigues derivative
   `(Hₙ·e^{-x²/2})' = -Hₙ₊₁·e^{-x²/2}`.
 * `TauCeti.Hermite.integral_aeval_mul_hermite_succ` : the one-step weighted-pairing recursion
@@ -33,15 +34,19 @@ measure-space bridge itself.
 * `TauCeti.Hermite.integral_hermite_mul_hermite_mul_gaussian` : the orthogonality relation
   `∫ Hₘ·Hₙ·e^{-x²/2} = if m = n then n!·√(2π) else 0`.
 * `TauCeti.Hermite.integral_hermite_mul_hermite_gaussianReal` : the same relation against the
-  standard Gaussian **measure**, `∫ Hₘ·Hₙ ∂N(0,1) = if m = n then n! else 0` — the canonical A1 form
-  the downstream `OrthogonalL2Bases` weighted-measure bridge consumes (the Lebesgue form divided by
-  `√(2π)`).
+  standard Gaussian **measure**, `∫ Hₘ·Hₙ ∂N(0,1) = if m = n then n! else 0`;
+  this is the canonical A1 form named by the roadmap.
+* `TauCeti.Hermite.integral_hermiteℝ_mul_hermiteℝ_mul_gaussianPDFReal` : the
+  bridge-shaped density form
+  `∫ (hermiteℝ m).eval x * (hermiteℝ n).eval x * gaussianPDFReal 0 1 x`
+  with value `if m = n then n! else 0`.
 
 ## Implementation notes
 
-The Mathlib `Polynomial.hermite` lives in `ℤ[X]`; we evaluate it in `ℝ` via `aeval`. The auxiliary
-`hermiteReal` is its image in `ℝ[X]`, used only to combine two factors into a single polynomial for
-integrability inside this file. The boundary-term-free integration by parts over `ℝ` is
+The Mathlib `Polynomial.hermite` lives in `ℤ[X]`; we evaluate it in `ℝ` via `aeval`.
+The auxiliary `hermiteℝ` is its image in `ℝ[X]`, used only to combine two factors into a
+single polynomial for integrability inside this file. The boundary-term-free integration by parts
+over `ℝ` is
 `MeasureTheory.integral_mul_deriv_eq_deriv_mul_of_integrable`, whose hypotheses are met because
 polynomials times the Gaussian are integrable and the weight kills the boundary contributions.
 -/
@@ -56,25 +61,26 @@ open scoped Nat NNReal
 namespace TauCeti.Hermite
 
 /-- The probabilists' Hermite polynomial `hermite n`, realised as a real polynomial. -/
-private def hermiteReal (n : ℕ) : ℝ[X] := (hermite n).map (Int.castRingHom ℝ)
+def hermiteℝ (n : ℕ) : ℝ[X] := (hermite n).map (Int.castRingHom ℝ)
 
-/-- Evaluating the `ℝ`-realisation of an integer polynomial agrees with `aeval` of the original. -/
+/-- Evaluating the `ℝ`-realisation of an integer polynomial agrees with `aeval` of the
+original. -/
 private theorem eval_map_intCast (x : ℝ) (q : ℤ[X]) :
     (q.map (Int.castRingHom ℝ)).eval x = aeval x q := by
   rw [aeval_def, eval₂_eq_eval_map, algebraMap_int_eq]
 
 private theorem eval_hermiteReal (x : ℝ) (n : ℕ) :
-    (hermiteReal n).eval x = aeval x (hermite n) :=
+    (hermiteℝ n).eval x = aeval x (hermite n) :=
   eval_map_intCast x (hermite n)
 
 private theorem aeval_hermiteReal (x : ℝ) (n : ℕ) :
-    aeval x (hermiteReal n) = aeval x (hermite n) := by
+    aeval x (hermiteℝ n) = aeval x (hermite n) := by
   rw [coe_aeval_eq_eval, eval_hermiteReal]
 
-/-- `xⁿ` is integrable against the Gaussian weight `e^{-x²/2}`. -/
-private theorem integrable_pow_mul_gaussian (k : ℕ) :
-    Integrable (fun x : ℝ => x ^ k * Real.exp (-(x ^ 2 / 2))) := by
-  have h := integrable_rpow_mul_exp_neg_mul_sq (b := (1 : ℝ) / 2) (by norm_num)
+/-- `xⁿ` is integrable against every positive Gaussian weight `e^{-a*x²}`. -/
+private theorem integrable_pow_mul_exp_neg_mul_sq {a : ℝ} (ha : 0 < a) (k : ℕ) :
+    Integrable (fun x : ℝ => x ^ k * Real.exp (-(a * x ^ 2))) := by
+  have h := integrable_rpow_mul_exp_neg_mul_sq (b := a) ha
     (s := (k : ℝ)) (lt_of_lt_of_le (by norm_num) (Nat.cast_nonneg k))
   simp_rw [Real.rpow_natCast] at h
   refine h.congr ?_
@@ -82,35 +88,53 @@ private theorem integrable_pow_mul_gaussian (k : ℕ) :
   congr 2
   ring
 
-/-- Any real polynomial is integrable against the Gaussian weight `e^{-x²/2}`. The general
-result; `integrable_aeval_mul_gaussian` is the integer-coefficient special case. -/
-theorem integrable_eval_mul_gaussian (p : ℝ[X]) :
-    Integrable (fun x : ℝ => p.eval x * Real.exp (-(x ^ 2 / 2))) := by
+/-- Any real polynomial is integrable against every positive Gaussian weight `e^{-a*x²}`. The
+standard-normal specialization is `integrable_eval_mul_gaussian`. -/
+theorem integrable_eval_mul_exp_neg_mul_sq {a : ℝ} (ha : 0 < a) (p : ℝ[X]) :
+    Integrable (fun x : ℝ => p.eval x * Real.exp (-(a * x ^ 2))) := by
   induction p using Polynomial.induction_on' with
   | add p q hp hq =>
     refine (hp.add hq).congr ?_
     filter_upwards with x
     simp only [Pi.add_apply, eval_add, add_mul]
-  | monomial k a =>
-    have := (integrable_pow_mul_gaussian k).const_mul a
+  | monomial k c =>
+    have := (integrable_pow_mul_exp_neg_mul_sq ha k).const_mul c
     refine this.congr ?_
     filter_upwards with x
     simp only [eval_monomial]
     ring
 
-/-- Any integer polynomial is integrable against the Gaussian weight `e^{-x²/2}`. -/
-theorem integrable_aeval_mul_gaussian (p : ℤ[X]) :
-    Integrable (fun x : ℝ => aeval x p * Real.exp (-(x ^ 2 / 2))) := by
-  have h := integrable_eval_mul_gaussian (p.map (Int.castRingHom ℝ))
+/-- Any integer polynomial is integrable against every positive Gaussian weight `e^{-a*x²}`. -/
+theorem integrable_aeval_mul_exp_neg_mul_sq {a : ℝ} (ha : 0 < a) (p : ℤ[X]) :
+    Integrable (fun x : ℝ => aeval x p * Real.exp (-(a * x ^ 2))) := by
+  have h := integrable_eval_mul_exp_neg_mul_sq ha (p.map (Int.castRingHom ℝ))
   refine h.congr ?_
   filter_upwards with x
   rw [eval_map_intCast]
+
+/-- Any real polynomial is integrable against the standard Gaussian weight `e^{-x²/2}`. -/
+theorem integrable_eval_mul_gaussian (p : ℝ[X]) :
+    Integrable (fun x : ℝ => p.eval x * Real.exp (-(x ^ 2 / 2))) := by
+  have h := integrable_eval_mul_exp_neg_mul_sq (a := (1 : ℝ) / 2) (by norm_num) p
+  refine h.congr ?_
+  filter_upwards with x
+  have hhalf : -((1 : ℝ) / 2 * x ^ 2) = -(x ^ 2 / 2) := by ring
+  rw [hhalf]
+
+/-- Any integer polynomial is integrable against the standard Gaussian weight `e^{-x²/2}`. -/
+theorem integrable_aeval_mul_gaussian (p : ℤ[X]) :
+    Integrable (fun x : ℝ => aeval x p * Real.exp (-(x ^ 2 / 2))) := by
+  have h := integrable_aeval_mul_exp_neg_mul_sq (a := (1 : ℝ) / 2) (by norm_num) p
+  refine h.congr ?_
+  filter_upwards with x
+  have hhalf : -((1 : ℝ) / 2 * x ^ 2) = -(x ^ 2 / 2) := by ring
+  rw [hhalf]
 
 /-- A real polynomial times a Hermite polynomial is integrable against the Gaussian weight. -/
 private theorem integrable_aeval_mul_hermite_mul_gaussian (p : ℝ[X]) (m : ℕ) :
     Integrable
       (fun x : ℝ => aeval x p * aeval x (hermite m) * Real.exp (-(x ^ 2 / 2))) := by
-  have h := integrable_eval_mul_gaussian (p * hermiteReal m)
+  have h := integrable_eval_mul_gaussian (p * hermiteℝ m)
   refine h.congr ?_
   filter_upwards with x
   simp only [eval_mul, eval_hermiteReal, coe_aeval_eq_eval]
@@ -164,7 +188,8 @@ theorem integral_aeval_mul_hermite_succ (p : ℝ[X]) (n : ℕ) :
   simp_rw [mul_assoc]
   exact key
 
-/-- Iterating the recursion: `∫ p·Hₙ·w = ∫ (p^{(n)})·w` (the right Hermite factor is consumed). -/
+/-- Iterating the recursion: `∫ p·Hₙ·w = ∫ (p^{(n)})·w`; the right Hermite factor is
+consumed. -/
 private theorem integral_aeval_mul_hermite (p : ℝ[X]) (n : ℕ) :
     ∫ x, aeval x p * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2))
       = ∫ x, aeval x (derivative^[n] p) * Real.exp (-(x ^ 2 / 2)) := by
@@ -194,13 +219,13 @@ private theorem integral_gaussian_half :
 /-- Off-diagonal vanishing: if `m < n` then `∫ Hₘ·Hₙ·e^{-x²/2} = 0`. -/
 private theorem integral_hermite_mul_hermite_mul_gaussian_of_lt {m n : ℕ} (h : m < n) :
     ∫ x, aeval x (hermite m) * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2)) = 0 := by
-  have key := integral_aeval_mul_hermite (hermiteReal m) n
+  have key := integral_aeval_mul_hermite (hermiteℝ m) n
   simp only [aeval_hermiteReal] at key
   rw [key]
-  have hz : (⇑derivative)^[n] (hermiteReal m) = 0 := by
+  have hz : (⇑derivative)^[n] (hermiteℝ m) = 0 := by
     have hzℤ : (⇑derivative)^[n] (hermite m) = 0 :=
       iterate_derivative_eq_zero (by rw [natDegree_hermite]; exact h)
-    rw [hermiteReal, iterate_derivative_map, hzℤ, Polynomial.map_zero]
+    rw [hermiteℝ, iterate_derivative_map, hzℤ, Polynomial.map_zero]
   simp [hz]
 
 /-- **Hermite L²-orthogonality against the Gaussian weight** (roadmap `OrthogonalL2Bases`, A1):
@@ -213,12 +238,12 @@ theorem integral_hermite_mul_hermite_mul_gaussian (m n : ℕ) :
     exact integral_hermite_mul_hermite_mul_gaussian_of_lt h
   · subst h
     rw [if_pos rfl]
-    have key := integral_aeval_mul_hermite (hermiteReal m) m
+    have key := integral_aeval_mul_hermite (hermiteℝ m) m
     simp only [aeval_hermiteReal] at key
     rw [key]
-    have hval : ∀ x : ℝ, aeval x ((⇑derivative)^[m] (hermiteReal m)) = (m ! : ℝ) := by
+    have hval : ∀ x : ℝ, aeval x ((⇑derivative)^[m] (hermiteℝ m)) = (m ! : ℝ) := by
       intro x
-      rw [hermiteReal, iterate_derivative_map, coe_aeval_eq_eval, eval_map_intCast,
+      rw [hermiteℝ, iterate_derivative_map, coe_aeval_eq_eval, eval_map_intCast,
         iterate_derivative_hermite, Nat.descFactorial_self, Nat.sub_self]
       simp
     rw [integral_congr_ae (Filter.Eventually.of_forall fun x => by rw [hval x]),
@@ -230,15 +255,58 @@ theorem integral_hermite_mul_hermite_mul_gaussian (m n : ℕ) :
     rw [comm]
     exact integral_hermite_mul_hermite_mul_gaussian_of_lt h
 
-/-- **Hermite L²-orthogonality against the standard Gaussian measure** (roadmap `OrthogonalL2Bases`,
-the canonical A1 form): `∫ Hₘ(x)·Hₙ(x) ∂N(0,1) = if m = n then n! else 0`. This is the Lebesgue form
-divided by the `√(2π)` density normalisation; it is what the weighted-measure Hilbert-basis bridge
-consumes (the bare `Hₙ/√(n!)` are orthonormal in `L²(N(0,1))`). -/
+/-- Hermite orthogonality against the standard Gaussian density, in `aeval` form:
+`∫ Hₘ(x)·Hₙ(x)·gaussianPDFReal 0 1 x dx = if m = n then n! else 0`. -/
+theorem integral_hermite_mul_hermite_mul_gaussianPDFReal (m n : ℕ) :
+    ∫ x, aeval x (hermite m) * aeval x (hermite n) * gaussianPDFReal 0 1 x
+      = if m = n then (n ! : ℝ) else 0 := by
+  have hs : Real.sqrt (2 * π) ≠ 0 := ne_of_gt (by positivity)
+  have hpdf : ∀ x : ℝ, gaussianPDFReal 0 1 x = (Real.sqrt (2 * π))⁻¹ *
+      Real.exp (-(x ^ 2 / 2)) := by
+    intro x
+    simp only [gaussianPDFReal_def, NNReal.coe_one, mul_one, sub_zero]
+    congr 2
+    ring
+  calc
+    ∫ x, aeval x (hermite m) * aeval x (hermite n) * gaussianPDFReal 0 1 x
+        = (Real.sqrt (2 * π))⁻¹ *
+          ∫ x, aeval x (hermite m) * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2)) := by
+          rw [← integral_const_mul]
+          refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+          simp only
+          rw [hpdf x]
+          ring
+    _ = if m = n then (n ! : ℝ) else 0 := by
+      rw [integral_hermite_mul_hermite_mul_gaussian]
+      split_ifs with h
+      · rw [mul_comm (n ! : ℝ) (Real.sqrt (2 * π)), ← mul_assoc, inv_mul_cancel₀ hs,
+          one_mul]
+      · rw [mul_zero]
+
+/-- Bridge-shaped Hermite orthogonality for `hilbertBasisOfWeightedMeasure`: with
+`p := hermiteℝ`, `w := gaussianPDFReal 0 1`, and `c n := n!`, this is exactly the weighted-volume
+orthogonality hypothesis `∫ (p m).eval x * (p n).eval x * w x = if m = n then c n else 0`. -/
+theorem integral_hermiteℝ_mul_hermiteℝ_mul_gaussianPDFReal (m n : ℕ) :
+    ∫ x, (hermiteℝ m).eval x * (hermiteℝ n).eval x * gaussianPDFReal 0 1 x
+      = if m = n then (n ! : ℝ) else 0 := by
+  calc
+    ∫ x, (hermiteℝ m).eval x * (hermiteℝ n).eval x * gaussianPDFReal 0 1 x
+        = ∫ x, aeval x (hermite m) * aeval x (hermite n) * gaussianPDFReal 0 1 x := by
+          refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+          simp only [eval_hermiteReal]
+    _ = if m = n then (n ! : ℝ) else 0 :=
+        integral_hermite_mul_hermite_mul_gaussianPDFReal m n
+
+/-- **Hermite L²-orthogonality against the standard Gaussian measure** (roadmap
+`OrthogonalL2Bases`, the canonical A1 form):
+`∫ Hₘ(x)·Hₙ(x) ∂N(0,1) = if m = n then n! else 0`. This is the Lebesgue form divided by the
+`√(2π)` density normalisation; it is what the weighted-measure Hilbert-basis bridge consumes. -/
 theorem integral_hermite_mul_hermite_gaussianReal (m n : ℕ) :
     ∫ x, aeval x (hermite m) * aeval x (hermite n) ∂(gaussianReal 0 1)
       = if m = n then (n ! : ℝ) else 0 := by
   have hs : Real.sqrt (2 * π) ≠ 0 := ne_of_gt (by positivity)
-  have hpdf : ∀ x : ℝ, gaussianPDFReal 0 1 x = (Real.sqrt (2 * π))⁻¹ * Real.exp (-(x ^ 2 / 2)) := by
+  have hpdf : ∀ x : ℝ, gaussianPDFReal 0 1 x =
+      (Real.sqrt (2 * π))⁻¹ * Real.exp (-(x ^ 2 / 2)) := by
     intro x
     simp only [gaussianPDFReal_def, NNReal.coe_one, mul_one, sub_zero]
     congr 2
