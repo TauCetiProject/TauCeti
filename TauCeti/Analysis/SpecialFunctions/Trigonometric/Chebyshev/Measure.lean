@@ -108,6 +108,9 @@ lemma integral_eval_T_real_mul_eval_T_real_measureT_eq_ite (m n : ℕ) :
 
 private lemma ae_mem_Icc_measureT :
     ∀ᵐ x ∂Polynomial.Chebyshev.measureT, x ∈ Set.Icc (-1 : ℝ) 1 := by
+  -- Across the `module` boundary, `measureT`'s restricted-measure definition is not
+  -- unfoldable here.  Recover the support fact through the public `integral_measureT`
+  -- API instead.
   rw [ae_iff]
   have hreal : Polynomial.Chebyshev.measureT.real (Set.Icc (-1 : ℝ) 1)ᶜ = 0 := by
     calc
