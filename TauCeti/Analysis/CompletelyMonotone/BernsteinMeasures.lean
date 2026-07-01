@@ -52,7 +52,8 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 * `TauCeti.chafaiRescaled_lintegral_coe_le`: first-moment / coe-lintegral bound.
 * `TauCeti.chafaiRescaled_integral_bernsteinKernel_eq_sub_tendsto_atTop`: Chafaï
   reconstruction identity `f x - L = ∫ bernsteinKernel ∂chafaiRescaled`.
-* `TauCeti.kernel_approx_error_tendsto`: Bernstein-kernel to Laplace-kernel error tends to `0`.
+* `TauCeti.integral_bernsteinKernel_sub_laplaceKernel_tendsto_zero_of_mass_bound`:
+  Bernstein-kernel to Laplace-kernel error tends to `0`.
 
 ## References
 
@@ -916,6 +917,157 @@ private lemma ibp_finite_interval (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
     intervalIntegral.integral_congr_ae (ae_of_all _ fun t _ => by rw [hu'_eq])
   linarith
 
+private lemma normalized_iteratedDerivWithin_nonneg_antitone (f : ℝ → ℝ)
+    (hcm : IsCompletelyMonotone f) (k : ℕ) :
+    (∀ T, 0 ≤ T → 0 ≤ (-1 : ℝ) ^ k * iteratedDerivWithin k f (Ici 0) T) ∧
+      AntitoneOn (fun T => (-1 : ℝ) ^ k * iteratedDerivWithin k f (Ici 0) T) (Ici 0) := by
+  constructor
+  · intro T hT
+    exact hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg k hT
+  · apply antitoneOn_of_deriv_nonpos (convex_Ici 0)
+    · exact (hcm.contDiffOn.continuousOn_iteratedDerivWithin (nat_le_top k)
+        (uniqueDiffOn_Ici 0)).const_mul ((-1 : ℝ) ^ k)
+    · rw [interior_Ici]
+      intro T hT
+      exact ((hcm.hasDerivAt_iteratedDerivWithin_succ k hT).const_mul
+        ((-1 : ℝ) ^ k)).differentiableAt.differentiableWithinAt
+    · rw [interior_Ici]
+      intro T hT
+      have hderiv : deriv (fun T => (-1 : ℝ) ^ k *
+            iteratedDerivWithin k f (Ici 0) T) T =
+          (-1 : ℝ) ^ k * iteratedDerivWithin (k + 1) f (Ici 0) T := by
+        simpa using
+          ((hcm.hasDerivAt_iteratedDerivWithin_succ k hT).const_mul
+            ((-1 : ℝ) ^ k)).deriv
+      rw [hderiv]
+      have hsign : 0 ≤ (-1 : ℝ) ^ (k + 1) *
+          iteratedDerivWithin (k + 1) f (Ici 0) T :=
+        hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg (k + 1) hT.le
+      have hneg : 0 ≤ -(((-1 : ℝ) ^ k) *
+          iteratedDerivWithin (k + 1) f (Ici 0) T) := by
+        simpa [pow_succ, mul_assoc] using hsign
+      linarith
+
+/-- Boundary-term tail estimate factored out of `boundary_term_decay`: `(T-x)^k · h T` is
+eventually squeezed by a multiple of the vanishing density tail `∫_{Ioi (T/2)}`. -/
+private lemma density_tail_lower_bound_eventually (f : ℝ → ℝ)
+    (hcm : IsCompletelyMonotone f) (k : ℕ) (hk : k ≠ 0) (x : ℝ) (hx : 0 ≤ x)
+    (h : ℝ → ℝ) (h_nonneg : ∀ T, 0 ≤ T → 0 ≤ h T)
+    (h_antitone : AntitoneOn h (Ici 0))
+    (h_density_eq : ∀ t, chafaiDensity f k t =
+      (1 / ↑((k - 1).factorial)) * t ^ (k - 1) * h t)
+    (hint_density : IntegrableOn (chafaiDensity f k) (Ioi 0)) :
+    ∀ᶠ T in atTop,
+      (T - x) ^ k * h T ≤
+        ((2 : ℝ) ^ k * ↑((k - 1).factorial)) *
+          ∫ t in Ioi (T / 2), chafaiDensity f k t := by
+  have hcont_density : ContinuousOn (chafaiDensity f k) (Ici 0) :=
+    continuousOn_chafaiDensity (n := k) (hcm.contDiffOn.of_le (nat_le_top k))
+  filter_upwards [eventually_gt_atTop (max (2 * x) 2)] with T hT
+  have hT2 : (2 : ℝ) < T := lt_of_le_of_lt (le_max_right (2 * x) 2) hT
+  have hTpos : 0 < T := by linarith
+  have hxT : x < T := by
+    have h2xT : 2 * x < T := lt_of_le_of_lt (le_max_left (2 * x) 2) hT
+    linarith
+  have hTx_nonneg : 0 ≤ T - x := sub_nonneg.mpr hxT.le
+  have hT_nonneg : 0 ≤ T := hTpos.le
+  have hhalf_nonneg : 0 ≤ T / 2 := by positivity
+  have hhT_nonneg : 0 ≤ h T := h_nonneg T hT_nonneg
+  have h_interval_le :
+      ∫ t in T / 2..T, chafaiDensity f k t ≤
+        ∫ t in Ioi (T / 2), chafaiDensity f k t := by
+    rw [intervalIntegral.integral_of_le (by linarith)]
+    apply setIntegral_mono_set (hint_density.mono_set (Ioi_subset_Ioi hhalf_nonneg))
+    · exact (ae_restrict_mem measurableSet_Ioi).mono fun t ht =>
+        chafaiDensity_nonneg (lt_of_le_of_lt hhalf_nonneg ht).le
+          (hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg k
+            (lt_of_le_of_lt hhalf_nonneg ht).le)
+    · exact ae_of_all _ fun t ht => Ioc_subset_Ioi_self ht
+  have h_const_le :
+      (1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T ≤
+        ∫ t in T / 2..T, chafaiDensity f k t := by
+    have hmono :
+        ∀ᵐ t ∂(volume.restrict (Icc (T / 2) T)),
+          (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T ≤
+            chafaiDensity f k t := by
+      filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
+      have ht_nonneg : 0 ≤ t := le_trans hhalf_nonneg ht.1
+      have ht_pos : 0 < t := lt_of_lt_of_le (by positivity : 0 < T / 2) ht.1
+      have hpow : (T / 2) ^ (k - 1) ≤ t ^ (k - 1) :=
+        pow_le_pow_left₀ hhalf_nonneg ht.1 _
+      have hh_le : h T ≤ h t :=
+        h_antitone ht_nonneg hT_nonneg ht.2
+      have hmul :
+          (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T ≤
+            (1 / ↑((k - 1).factorial)) * t ^ (k - 1) * h t := by
+        have hcoeff_nonneg : 0 ≤ (1 / ↑((k - 1).factorial) : ℝ) := by positivity
+        have hright_nonneg : 0 ≤ (1 / ↑((k - 1).factorial)) * t ^ (k - 1) :=
+          mul_nonneg hcoeff_nonneg (pow_nonneg ht_nonneg _)
+        calc
+          (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T
+              ≤ ((1 / ↑((k - 1).factorial)) * t ^ (k - 1)) * h T := by
+                simpa [mul_assoc] using
+                  mul_le_mul_of_nonneg_right
+                    (mul_le_mul_of_nonneg_left hpow hcoeff_nonneg)
+                    hhT_nonneg
+          _ ≤ ((1 / ↑((k - 1).factorial)) * t ^ (k - 1)) * h t :=
+                mul_le_mul_of_nonneg_left hh_le hright_nonneg
+      simpa [h_density_eq t] using hmul
+    have hconst_int :
+        IntervalIntegrable (fun _ : ℝ =>
+          (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T) volume (T / 2) T :=
+      intervalIntegrable_const
+    have hIcc_subset : Icc (T / 2) T ⊆ Ici 0 := by
+      intro t ht
+      exact le_trans hhalf_nonneg ht.1
+    have hdens_int : IntervalIntegrable (chafaiDensity f k) volume (T / 2) T :=
+      (hcont_density.mono hIcc_subset).intervalIntegrable_of_Icc (by linarith)
+    have hmono_int :=
+      intervalIntegral.integral_mono_ae_restrict (μ := volume) (a := T / 2) (b := T)
+        (hab := by linarith) hconst_int hdens_int hmono
+    rw [intervalIntegral.integral_const] at hmono_int
+    have hhalf_eq : (T - T / 2) = T / 2 := by ring
+    rw [hhalf_eq] at hmono_int
+    rw [smul_eq_mul] at hmono_int
+    have hconst_eq :
+        T / 2 * ((1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T) =
+          (1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T := by
+      have hk_succ : k = (k - 1) + 1 := by omega
+      rw [hk_succ]
+      ring_nf
+      have hnat : 1 + (k - 1) - 1 = k - 1 := by omega
+      simp [hnat]
+    rw [hconst_eq] at hmono_int
+    exact hmono_int
+  have hhalf_le :
+      (T / 2) ^ k * h T ≤
+        ↑((k - 1).factorial) * ∫ t in Ioi (T / 2), chafaiDensity f k t := by
+    have hfact_pos : (0 : ℝ) < ↑((k - 1).factorial) :=
+      Nat.cast_pos.mpr (Nat.factorial_pos _)
+    have haux := le_trans h_const_le h_interval_le
+    have hmul := mul_le_mul_of_nonneg_left haux hfact_pos.le
+    have hleft_eq :
+        ↑((k - 1).factorial) *
+            ((1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T) =
+          (T / 2) ^ k * h T := by
+      field_simp [hfact_pos.ne']
+    rw [hleft_eq] at hmul
+    exact hmul
+  have hpow_le : (T - x) ^ k ≤ T ^ k :=
+    pow_le_pow_left₀ hTx_nonneg (by linarith) _
+  have hTk_eq : T ^ k * h T = (2 : ℝ) ^ k * ((T / 2) ^ k * h T) := by
+    calc
+      T ^ k * h T = ((2 : ℝ) * (T / 2)) ^ k * h T := by congr 1; field_simp
+      _ = (2 : ℝ) ^ k * ((T / 2) ^ k * h T) := by rw [mul_pow]; ring
+  calc
+    (T - x) ^ k * h T ≤ T ^ k * h T := by gcongr
+    _ = (2 : ℝ) ^ k * ((T / 2) ^ k * h T) := hTk_eq
+    _ ≤ (2 : ℝ) ^ k *
+        (↑((k - 1).factorial) * ∫ t in Ioi (T / 2), chafaiDensity f k t) := by
+          gcongr
+    _ = ((2 : ℝ) ^ k * ↑((k - 1).factorial)) *
+          ∫ t in Ioi (T / 2), chafaiDensity f k t := by ring
+
 private lemma boundary_term_decay (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (k : ℕ) (hk : k ≠ 0) (x : ℝ) (hx : 0 ≤ x)
     (L : ℝ) (hL : Tendsto f atTop (nhds L)) :
@@ -924,36 +1076,10 @@ private lemma boundary_term_decay (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
   set h := fun T => (-1 : ℝ) ^ k * iteratedDerivWithin k f (Ici 0) T
   have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
   have hkey : Tendsto (fun T => (T - x) ^ k * h T) atTop (nhds 0) := by
-    -- Phase: sign and antitone control for the normalized derivative.
-    have h_nonneg : ∀ T, 0 ≤ T → 0 ≤ h T := by
-      intro T hT
-      simpa [h] using hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg k hT
-    have h_antitone : AntitoneOn h (Ici 0) := by
-      apply antitoneOn_of_deriv_nonpos (convex_Ici 0)
-      · simpa [h] using
-          (hcm.contDiffOn.continuousOn_iteratedDerivWithin (nat_le_top k)
-            (uniqueDiffOn_Ici 0)).const_mul ((-1 : ℝ) ^ k)
-      · rw [interior_Ici]
-        intro T hT
-        exact ((hcm.hasDerivAt_iteratedDerivWithin_succ k hT).const_mul
-          ((-1 : ℝ) ^ k)).differentiableAt.differentiableWithinAt
-      · rw [interior_Ici]
-        intro T hT
-        have hderiv :
-            deriv h T = (-1 : ℝ) ^ k * iteratedDerivWithin (k + 1) f (Ici 0) T := by
-          simpa [h] using
-            ((hcm.hasDerivAt_iteratedDerivWithin_succ k hT).const_mul
-              ((-1 : ℝ) ^ k)).deriv
-        rw [hderiv]
-        have hsign : 0 ≤ (-1 : ℝ) ^ (k + 1) *
-            iteratedDerivWithin (k + 1) f (Ici 0) T :=
-          hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg (k + 1) hT.le
-        have hneg : 0 ≤ -(((-1 : ℝ) ^ k) *
-            iteratedDerivWithin (k + 1) f (Ici 0) T) := by
-          simpa [pow_succ, mul_assoc] using hsign
-        linarith
-    have hcont_density : ContinuousOn (chafaiDensity f k) (Ici 0) :=
-      continuousOn_chafaiDensity (n := k) (hcm.contDiffOn.of_le (nat_le_top k))
+    obtain ⟨h_nonneg₀, h_antitone₀⟩ :=
+      normalized_iteratedDerivWithin_nonneg_antitone f hcm k
+    have h_nonneg : ∀ T, 0 ≤ T → 0 ≤ h T := by simpa [h] using h_nonneg₀
+    have h_antitone : AntitoneOn h (Ici 0) := by simpa [h] using h_antitone₀
     have hint_density : IntegrableOn (chafaiDensity f k) (Ioi 0) :=
       chafaiDensity_integrableOn_Ioi_of_tendsto f hcm k hk1 L hL
     have htail : Tendsto (fun S : ℝ => ∫ t in Ioi S, chafaiDensity f k t)
@@ -967,123 +1093,13 @@ private lemma boundary_term_decay (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
       filter_upwards with T
       simp
       ring_nf
-    -- Phase: compare `(T - x)^k h T` with the density tail on `[T / 2, ∞)`.
-    have hupper :
-        ∀ᶠ T in atTop,
-          (T - x) ^ k * h T ≤
-            ((2 : ℝ) ^ k * ↑((k - 1).factorial)) *
-              ∫ t in Ioi (T / 2), chafaiDensity f k t := by
-      filter_upwards [eventually_gt_atTop (max (2 * x) 2)] with T hT
-      have hT2 : (2 : ℝ) < T := lt_of_le_of_lt (le_max_right (2 * x) 2) hT
-      have hTpos : 0 < T := by linarith
-      have hxT : x < T := by
-        have h2xT : 2 * x < T := lt_of_le_of_lt (le_max_left (2 * x) 2) hT
-        linarith
-      have hTx_nonneg : 0 ≤ T - x := sub_nonneg.mpr hxT.le
-      have hT_nonneg : 0 ≤ T := hTpos.le
-      have hhalf_nonneg : 0 ≤ T / 2 := by positivity
-      have hhT_nonneg : 0 ≤ h T := h_nonneg T hT_nonneg
-      have h_interval_le :
-          ∫ t in T / 2..T, chafaiDensity f k t ≤
-            ∫ t in Ioi (T / 2), chafaiDensity f k t := by
-        rw [intervalIntegral.integral_of_le (by linarith)]
-        apply setIntegral_mono_set (hint_density.mono_set (Ioi_subset_Ioi hhalf_nonneg))
-        · exact (ae_restrict_mem measurableSet_Ioi).mono fun t ht =>
-            chafaiDensity_nonneg (lt_of_le_of_lt hhalf_nonneg ht).le
-              (hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg k
-                (lt_of_le_of_lt hhalf_nonneg ht).le)
-        · exact ae_of_all _ fun t ht => Ioc_subset_Ioi_self ht
-      have h_density_eq :
-          ∀ t, chafaiDensity f k t =
-            (1 / ↑((k - 1).factorial)) * t ^ (k - 1) * h t := by
+    have hupper := density_tail_lower_bound_eventually f hcm k hk x hx h h_nonneg h_antitone
+      (by
         intro t
         rw [chafaiDensity_of_ne_zero hk]
         simp only [h]
-        field_simp
-      have h_const_le :
-          (1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T ≤
-            ∫ t in T / 2..T, chafaiDensity f k t := by
-        have hmono :
-            ∀ᵐ t ∂(volume.restrict (Icc (T / 2) T)),
-              (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T ≤
-                chafaiDensity f k t := by
-          filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
-          have ht_nonneg : 0 ≤ t := le_trans hhalf_nonneg ht.1
-          have ht_pos : 0 < t := lt_of_lt_of_le (by positivity : 0 < T / 2) ht.1
-          have hpow : (T / 2) ^ (k - 1) ≤ t ^ (k - 1) :=
-            pow_le_pow_left₀ hhalf_nonneg ht.1 _
-          have hh_le : h T ≤ h t :=
-            h_antitone ht_nonneg hT_nonneg ht.2
-          have hmul :
-              (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T ≤
-                (1 / ↑((k - 1).factorial)) * t ^ (k - 1) * h t := by
-            have hcoeff_nonneg : 0 ≤ (1 / ↑((k - 1).factorial) : ℝ) := by positivity
-            have hright_nonneg : 0 ≤ (1 / ↑((k - 1).factorial)) * t ^ (k - 1) :=
-              mul_nonneg hcoeff_nonneg (pow_nonneg ht_nonneg _)
-            calc
-              (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T
-                  ≤ ((1 / ↑((k - 1).factorial)) * t ^ (k - 1)) * h T := by
-                    simpa [mul_assoc] using
-                      mul_le_mul_of_nonneg_right
-                        (mul_le_mul_of_nonneg_left hpow hcoeff_nonneg)
-                        hhT_nonneg
-              _ ≤ ((1 / ↑((k - 1).factorial)) * t ^ (k - 1)) * h t :=
-                    mul_le_mul_of_nonneg_left hh_le hright_nonneg
-          simpa [h_density_eq t] using hmul
-        have hconst_int :
-            IntervalIntegrable (fun _ : ℝ =>
-              (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T) volume (T / 2) T :=
-          intervalIntegrable_const
-        have hIcc_subset : Icc (T / 2) T ⊆ Ici 0 := by
-          intro t ht
-          exact le_trans hhalf_nonneg ht.1
-        have hdens_int : IntervalIntegrable (chafaiDensity f k) volume (T / 2) T :=
-          (hcont_density.mono hIcc_subset).intervalIntegrable_of_Icc (by linarith)
-        have hmono_int :=
-          intervalIntegral.integral_mono_ae_restrict (μ := volume) (a := T / 2) (b := T)
-            (hab := by linarith) hconst_int hdens_int hmono
-        rw [intervalIntegral.integral_const] at hmono_int
-        have hhalf_eq : (T - T / 2) = T / 2 := by ring
-        rw [hhalf_eq] at hmono_int
-        rw [smul_eq_mul] at hmono_int
-        have hconst_eq :
-            T / 2 * ((1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T) =
-              (1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T := by
-          have hk_succ : k = (k - 1) + 1 := by omega
-          rw [hk_succ]
-          ring_nf
-          have hnat : 1 + (k - 1) - 1 = k - 1 := by omega
-          simp [hnat]
-        rw [hconst_eq] at hmono_int
-        exact hmono_int
-      have hhalf_le :
-          (T / 2) ^ k * h T ≤
-            ↑((k - 1).factorial) * ∫ t in Ioi (T / 2), chafaiDensity f k t := by
-        have hfact_pos : (0 : ℝ) < ↑((k - 1).factorial) :=
-          Nat.cast_pos.mpr (Nat.factorial_pos _)
-        have haux := le_trans h_const_le h_interval_le
-        have hmul := mul_le_mul_of_nonneg_left haux hfact_pos.le
-        have hleft_eq :
-            ↑((k - 1).factorial) *
-                ((1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T) =
-              (T / 2) ^ k * h T := by
-          field_simp [hfact_pos.ne']
-        rw [hleft_eq] at hmul
-        exact hmul
-      have hpow_le : (T - x) ^ k ≤ T ^ k :=
-        pow_le_pow_left₀ hTx_nonneg (by linarith) _
-      have hTk_eq : T ^ k * h T = (2 : ℝ) ^ k * ((T / 2) ^ k * h T) := by
-        calc
-          T ^ k * h T = ((2 : ℝ) * (T / 2)) ^ k * h T := by congr 1; field_simp
-          _ = (2 : ℝ) ^ k * ((T / 2) ^ k * h T) := by rw [mul_pow]; ring
-      calc
-        (T - x) ^ k * h T ≤ T ^ k * h T := by gcongr
-        _ = (2 : ℝ) ^ k * ((T / 2) ^ k * h T) := hTk_eq
-        _ ≤ (2 : ℝ) ^ k *
-            (↑((k - 1).factorial) * ∫ t in Ioi (T / 2), chafaiDensity f k t) := by
-              gcongr
-        _ = ((2 : ℝ) ^ k * ↑((k - 1).factorial)) *
-              ∫ t in Ioi (T / 2), chafaiDensity f k t := by ring
+        field_simp)
+      hint_density
     have hnonneg_event : ∀ᶠ T in atTop, 0 ≤ (T - x) ^ k * h T := by
       filter_upwards [eventually_gt_atTop (max x 0)] with T hT
       have hT0 : 0 < T := lt_of_le_of_lt (le_max_right x 0) hT
@@ -1154,6 +1170,24 @@ private lemma ibp_kernel_integrableOn (f : ℝ → ℝ) (hcm : IsCompletelyMonot
       _ = (-1 : ℝ) ^ k / ↑(k - 1).factorial * t ^ (k - 1) *
           iteratedDerivWithin k f (Ici 0) t := by field_simp
 
+private lemma integral_neg_iteratedDerivWithin_one_Ici_eq_Icc
+    (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
+    {x T : ℝ} (hx : 0 ≤ x) (hxT : x < T) :
+    (∫ t in x..T, -iteratedDerivWithin 1 f (Ici 0) t) =
+      ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t := by
+  apply intervalIntegral.integral_congr_ae
+  apply ae_of_all
+  intro t ht
+  rw [uIoc_of_le hxT.le] at ht
+  have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
+  have hcda : ContDiffAt ℝ (↑1 : WithTop ℕ∞) f t :=
+    (hcm.contDiffOn.of_le (nat_le_top 1)).contDiffAt (Ici_mem_nhds ht_pos)
+  congr 1
+  rw [iteratedDerivWithin_eq_iteratedDeriv
+      (uniqueDiffOn_Icc hxT) hcda (Ioc_subset_Icc_self ht),
+    iteratedDerivWithin_eq_iteratedDeriv
+      (uniqueDiffOn_Ici 0) hcda (mem_Ici.mpr ht_pos.le)]
+
 private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (n : ℕ) (hn : 1 ≤ n) (x : ℝ) (hx : 0 ≤ x)
     (L : ℝ) (hL : Tendsto f atTop (nhds L)) :
@@ -1185,20 +1219,7 @@ private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
       refine Tendsto.congr' ?_ (Tendsto.sub tendsto_const_nhds hL)
       filter_upwards [eventually_gt_atTop (max x 1)] with T hT
       have hxT : x < T := lt_of_le_of_lt (le_max_left x 1) hT
-      rw [show (∫ t in x..T, -iteratedDerivWithin 1 f (Ici 0) t) =
-          ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t from by
-        apply intervalIntegral.integral_congr_ae
-        apply ae_of_all
-        intro t ht
-        rw [uIoc_of_le hxT.le] at ht
-        have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
-        have hcda : ContDiffAt ℝ (↑1 : WithTop ℕ∞) f t :=
-          (hcm.contDiffOn.of_le (nat_le_top 1)).contDiffAt (Ici_mem_nhds ht_pos)
-        congr 1
-        rw [iteratedDerivWithin_eq_iteratedDeriv
-            (uniqueDiffOn_Icc hxT) hcda (Ioc_subset_Icc_self ht),
-          iteratedDerivWithin_eq_iteratedDeriv
-            (uniqueDiffOn_Ici 0) hcda (mem_Ici.mpr ht_pos.le)]]
+      rw [integral_neg_iteratedDerivWithin_one_Ici_eq_Icc f hcm hx hxT]
       exact hcm.integral_neg_iteratedDerivWithin_one_Icc x T hx hxT.le
     · -- Inductive step `n = k+1`: integrate by parts once (`ibp_finite_interval`); the boundary
       -- term vanishes in the limit (`boundary_term_decay`), leaving the order-`k` integral, which
@@ -1412,9 +1433,9 @@ private lemma kernel_uniform_conv (x : ℝ) (hx : 0 < x) (ε : ℝ) (hε : 0 < �
     linarith [bernsteinKernel_nonneg n x p]
 
 /-- Bernstein-to-Laplace replacement against a uniformly finite sequence of measures. -/
-lemma kernel_approx_error_tendsto
+lemma integral_bernsteinKernel_sub_laplaceKernel_tendsto_zero_of_mass_bound
     (σ : ℕ → Measure ℝ≥0)
-    (hmass : ∀ n, (σ n) univ ≤ ENNReal.ofReal C)
+    (hmass : ∀ᶠ n in atTop, (σ n) univ ≤ ENNReal.ofReal C)
     (x : ℝ) (hx : 0 ≤ x) :
     Tendsto (fun n => ∫ p : ℝ≥0,
         (bernsteinKernel n x (p : ℝ) - Real.exp (-(x * (p : ℝ)))) ∂(σ n))
@@ -1438,9 +1459,10 @@ lemma kernel_approx_error_tendsto
     have hmax_pos : 0 < max C 1 := lt_max_of_lt_right one_pos
     obtain ⟨N, hN⟩ := kernel_uniform_conv x hx_pos
       (ε / (2 * max C 1)) (div_pos hε (by positivity))
-    refine ⟨N, fun n hn => ?_⟩
+    refine eventually_atTop.1 <| ((eventually_ge_atTop N).and hmass).mono fun n hn => ?_
+    rcases hn with ⟨hn, hmass_n⟩
     rw [dist_zero_right]
-    haveI : IsFiniteMeasure (σ n) := ⟨(hmass n).trans_lt ENNReal.ofReal_lt_top⟩
+    haveI : IsFiniteMeasure (σ n) := ⟨hmass_n.trans_lt ENNReal.ofReal_lt_top⟩
     calc
       ‖∫ p : ℝ≥0, (bernsteinKernel n x (p : ℝ) - Real.exp (-(x * (p : ℝ)))) ∂(σ n)‖
           ≤ ∫ p : ℝ≥0,
@@ -1456,7 +1478,7 @@ lemma kernel_approx_error_tendsto
       _ ≤ ε / (2 * max C 1) * max C 1 := by
           apply mul_le_mul_of_nonneg_left _ (le_of_lt (div_pos hε (by positivity)))
           exact ENNReal.toReal_le_of_le_ofReal (le_of_lt hmax_pos)
-            (le_trans (hmass n) (ENNReal.ofReal_le_ofReal (le_max_left C 1)))
+            (le_trans hmass_n (ENNReal.ofReal_le_ofReal (le_max_left C 1)))
       _ = ε / 2 := by field_simp
       _ < ε := half_lt_self hε
 
