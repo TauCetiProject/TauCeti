@@ -26,56 +26,20 @@ open Complex
 open scoped ComplexConjugate
 
 /-- Rotation of the complex unit disc by a unit complex number. -/
-noncomputable def unitDiscRotationEquiv (u : Circle) : Complex.UnitDisc ≃ Complex.UnitDisc where
-  toFun z := u • z
-  invFun z := u⁻¹ • z
-  left_inv z := by
-    simp [smul_smul]
-  right_inv z := by
-    simp [smul_smul]
-
-/-- The rotation equivalence applies by the `Circle` action on the unit disc. -/
-@[simp]
-lemma unitDiscRotationEquiv_apply (u : Circle) (z : Complex.UnitDisc) :
-    unitDiscRotationEquiv u z = u • z :=
-  by simp [unitDiscRotationEquiv]
+noncomputable abbrev unitDiscRotationEquiv (u : Circle) : Complex.UnitDisc ≃ Complex.UnitDisc :=
+  (MulAction.toPerm u : Equiv.Perm Complex.UnitDisc)
 
 /-- The scalar formula for a unit-disc rotation. -/
 @[simp, norm_cast]
 lemma coe_unitDiscRotationEquiv_apply (u : Circle) (z : Complex.UnitDisc) :
     (unitDiscRotationEquiv u z : ℂ) = (u : ℂ) * (z : ℂ) := by
-  simp [unitDiscRotationEquiv]
-
-/-- Rotation by `1` is the identity equivalence of the unit disc. -/
-@[simp]
-lemma unitDiscRotationEquiv_one : unitDiscRotationEquiv 1 = Equiv.refl Complex.UnitDisc :=
-  Equiv.ext fun z => by simp [unitDiscRotationEquiv]
-
-/-- The inverse of a unit-disc rotation is rotation by the inverse circle element. -/
-@[simp]
-lemma unitDiscRotationEquiv_symm (u : Circle) :
-    (unitDiscRotationEquiv u).symm = unitDiscRotationEquiv u⁻¹ :=
-  Equiv.ext fun _ => rfl
-
-/-- The inverse rotation followed by the original rotation is the identity. -/
-@[simp]
-lemma unitDiscRotationEquiv_inv_trans (u : Circle) :
-    (unitDiscRotationEquiv u⁻¹).trans (unitDiscRotationEquiv u) = Equiv.refl Complex.UnitDisc := by
-  ext z
-  simp [unitDiscRotationEquiv]
-
-/-- The original rotation followed by the inverse rotation is the identity. -/
-@[simp]
-lemma unitDiscRotationEquiv_trans_inv (u : Circle) :
-    (unitDiscRotationEquiv u).trans (unitDiscRotationEquiv u⁻¹) = Equiv.refl Complex.UnitDisc := by
-  ext z
-  simp [unitDiscRotationEquiv]
+  exact Complex.UnitDisc.coe_circle_smul u z
 
 /-- The norm of a rotated unit-disc point is unchanged. -/
 @[simp]
 lemma norm_unitDiscRotationEquiv (u : Circle) (z : Complex.UnitDisc) :
     ‖(unitDiscRotationEquiv u z : ℂ)‖ = ‖(z : ℂ)‖ := by
-  simp [unitDiscRotationEquiv]
+  simp
 
 /-- A rotated unit-disc point is zero exactly when the original point is zero. -/
 @[simp]
@@ -171,6 +135,8 @@ the inverse Moebius factor. -/
 lemma unitDiscStandardAutomorphEquiv_symm (u : Circle) (a : Complex.UnitDisc) :
     (unitDiscStandardAutomorphEquiv u a).symm =
       (unitDiscRotationEquiv u⁻¹).trans (unitDiscMoebiusEquiv (-a)) :=
-  by simp [unitDiscStandardAutomorphEquiv]
+  by
+    ext z
+    simp [unitDiscStandardAutomorphEquiv, unitDiscRotationEquiv]
 
 end TauCeti
