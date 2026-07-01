@@ -26,8 +26,6 @@ variable [RCLike 𝕜]
 variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 variable [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
 
-local notation "⟪" x ", " y "⟫" => inner 𝕜 x y
-
 /-- Transport a Hilbert basis along a linear isometric equivalence. -/
 protected noncomputable def _root_.HilbertBasis.mapₗᵢ
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
@@ -40,24 +38,6 @@ theorem _root_.HilbertBasis.repr_mapₗᵢ
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
     (b.mapₗᵢ e).repr = e.symm.trans b.repr :=
   congrArg _root_.HilbertBasis.repr (_root_.HilbertBasis.mapₗᵢ.eq_1 b e)
-
-/-- Coordinates in the transported Hilbert basis are the original coordinates after applying
-the inverse isometry. -/
-@[simp]
-theorem _root_.HilbertBasis.repr_mapₗᵢ_apply
-    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x : F) :
-    (b.mapₗᵢ e).repr x = b.repr (e.symm x) := by
-  simpa only [LinearIsometryEquiv.trans_apply] using
-    congrArg (fun f : F ≃ₗᵢ[𝕜] lp (fun _ : ι => 𝕜) 2 => f x)
-      (_root_.HilbertBasis.repr_mapₗᵢ b e)
-
-/-- The `i`th coordinate in the transported Hilbert basis is the inner product against the
-corresponding original basis vector after applying the inverse isometry. -/
-@[simp]
-theorem _root_.HilbertBasis.repr_mapₗᵢ_apply_apply
-    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x : F) (i : ι) :
-    ((b.mapₗᵢ e).repr x) i = ⟪b i, e.symm x⟫ := by
-  rw [_root_.HilbertBasis.repr_mapₗᵢ_apply, b.repr_apply_apply]
 
 /-- The `i`th vector of the transported basis is the image of the `i`th vector. -/
 @[simp]
