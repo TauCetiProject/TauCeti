@@ -261,6 +261,75 @@ lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_one
     regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_mk
       hp hreg H e ⟨1, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩
 
+/-- Equality of normal-subgroup fibre-orbit classes is equality of the corresponding
+normalizer-quotient classes, with the inverse orientation inherited from Mathlib's
+subgroup-orbit quotient convention. -/
+lemma subgroupFiberOrbitClass_eq_iff_normalizerQuotientMk_inv_eq
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) (φ ψ : Deck p) :
+    subgroupFiberOrbitClass H (φ • e) = subgroupFiberOrbitClass H (ψ • e) ↔
+      Subgroup.normalizerQuotientMk H
+          ⟨φ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ =
+        Subgroup.normalizerQuotientMk H
+          ⟨ψ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
+  constructor
+  · intro h
+    have h' :=
+      congrArg (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e) h
+    rw [subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul,
+      subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul] at h'
+    exact h'
+  · intro h
+    apply (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e).injective
+    rw [subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul,
+      subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul]
+    exact h
+
+/-- For a regular cover, equality of normal-subgroup fibre-orbit classes is equality of the
+corresponding normalizer-quotient classes. -/
+lemma regularSubgroupFiberOrbitClass_eq_iff_normalizerQuotientMk_inv_eq
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) (φ ψ : Deck p) :
+    subgroupFiberOrbitClass H (φ • e) = subgroupFiberOrbitClass H (ψ • e) ↔
+      Subgroup.normalizerQuotientMk H
+          ⟨φ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ =
+        Subgroup.normalizerQuotientMk H
+          ⟨ψ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
+  letI := hreg.fiber_isPretransitive b
+  letI := fiber_isCancelSMul (b := b) hp
+  exact subgroupFiberOrbitClass_eq_iff_normalizerQuotientMk_inv_eq H e φ ψ
+
+/-- A deck translate of the chosen fibre point has the same normal-subgroup orbit class as
+the chosen point exactly when the translating deck transformation lies in the subgroup. -/
+lemma subgroupFiberOrbitClass_smul_eq_base_iff
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) (φ : Deck p) :
+    subgroupFiberOrbitClass H (φ • e) = subgroupFiberOrbitClass H e ↔ φ ∈ H := by
+  have hbase :
+      subgroupFiberOrbitClass H e = subgroupFiberOrbitClass H ((1 : Deck p) • e) := by
+    simp
+  rw [hbase]
+  rw [subgroupFiberOrbitClass_eq_iff_normalizerQuotientMk_inv_eq H e φ 1]
+  constructor
+  · intro h
+    have hmem := (Subgroup.normalizerQuotientMk_eq_iff_div_mem H _ _).mp h
+    have hφinv : φ⁻¹ ∈ H := by simpa [div_eq_mul_inv] using hmem
+    simpa using H.inv_mem hφinv
+  · intro hφ
+    apply (Subgroup.normalizerQuotientMk_eq_iff_div_mem H _ _).mpr
+    simpa [div_eq_mul_inv] using H.inv_mem hφ
+
+/-- For a regular cover, a deck translate of the chosen fibre point has the same
+normal-subgroup orbit class as the chosen point exactly when the translating deck
+transformation lies in the subgroup. -/
+lemma regularSubgroupFiberOrbitClass_smul_eq_base_iff
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) (φ : Deck p) :
+    subgroupFiberOrbitClass H (φ • e) = subgroupFiberOrbitClass H e ↔ φ ∈ H := by
+  letI := hreg.fiber_isPretransitive b
+  letI := fiber_isCancelSMul (b := b) hp
+  exact subgroupFiberOrbitClass_smul_eq_base_iff H e φ
+
 end Deck
 
 end TauCeti
