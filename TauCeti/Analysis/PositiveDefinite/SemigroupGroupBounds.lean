@@ -31,10 +31,6 @@ In the namespace `TauCeti.IsSemigroupGroupPD`:
   value kills the corresponding row or column of the BCR kernel.
 * `norm_le_one_of_diagonal_eq_one` and `norm_apply_le_one_of_diagonal_eq_one`: normalized diagonal
   entries bound the BCR kernel entry by `1`.
-* `norm_apply_le_timeSlice_diagonal_re`: the direct fixed-time bound
-  `‖F (t, v)‖ ≤ (F (t, 0)).re`.
-* `timeSlice_eq_zero_of_diagonal_eq_zero`: a zero fixed-time diagonal value kills the whole
-  fixed-time spatial slice.
 
 ## References
 
@@ -105,27 +101,6 @@ theorem norm_apply_le_one_of_diagonal_eq_one (hF : IsSemigroupGroupPD F)
     {t u : ℝ≥0} {v w : V} (ht : F (t + t, 0) = 1) (hu : F (u + u, 0) = 1) :
     ‖F (t + u, v - w)‖ ≤ 1 := by
   simpa using hF.norm_le_one_of_diagonal_eq_one (p := (t, v)) (q := (u, w)) ht hu
-
-/-- At a fixed time, a semigroup-group positive-definite function is bounded by the real part of
-its zero-spatial value. -/
-theorem norm_apply_le_timeSlice_diagonal_re (hF : IsSemigroupGroupPD F) (t : ℝ≥0) (v : V) :
-    ‖F (t, v)‖ ≤ (F (t, 0)).re := by
-  refine le_of_sq_le_sq ?_ (by simpa [add_halves] using hF.diagonal_re_nonneg (t / 2))
-  have hsq := hF.normSq_apply_le (t / 2) (t / 2) v 0
-  simpa [Complex.normSq_eq_norm_sq, pow_two, add_halves] using hsq
-
-/-- If the fixed-time diagonal value is zero, then the whole fixed-time spatial slice is zero. -/
-theorem timeSlice_eq_zero_of_diagonal_eq_zero (hF : IsSemigroupGroupPD F)
-    {t : ℝ≥0} (ht : F (t, 0) = 0) (v : V) : F (t, v) = 0 := by
-  have ht' : F (t / 2 + t / 2, 0) = 0 := by simpa [add_halves] using ht
-  simpa [add_halves] using
-    hF.apply_eq_zero_of_diagonal_eq_zero_left (t := t / 2) (u := t / 2) (v := v) (w := 0) ht'
-
-/-- Normalized fixed-time slices are bounded by `1`. -/
-theorem norm_apply_le_one_of_timeSlice_diagonal_eq_one (hF : IsSemigroupGroupPD F)
-    {t : ℝ≥0} (ht : F (t, 0) = 1) (v : V) : ‖F (t, v)‖ ≤ 1 := by
-  have hbound := hF.norm_apply_le_timeSlice_diagonal_re t v
-  simpa [ht] using hbound
 
 end IsSemigroupGroupPD
 
