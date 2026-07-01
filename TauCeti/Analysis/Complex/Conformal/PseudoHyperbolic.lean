@@ -50,30 +50,14 @@ lemma pseudoHyperbolicExpr_nonneg (z w : ℂ) : 0 ≤ pseudoHyperbolicExpr z w :
 lemma pseudoHyperbolicExpr_self (z : ℂ) : pseudoHyperbolicExpr z z = 0 := by
   simp [pseudoHyperbolicExpr]
 
-/-- The denominator `1 - conj w * z` is nonzero whenever `‖w‖ * ‖z‖ < 1`. -/
-lemma one_sub_conj_mul_ne_zero_of_norm_mul_lt_one {z w : ℂ} (h : ‖w‖ * ‖z‖ < 1) :
-    1 - (starRingEnd ℂ) w * z ≠ 0 := by
-  exact (isUnit_one_sub_of_norm_lt_one (x := (starRingEnd ℂ) w * z)
-    (by simpa [norm_mul, norm_conj] using h)).ne_zero
-
-/-- The denominator `1 - conj w * z` is nonzero for two points of norm less than one. -/
-lemma one_sub_conj_mul_ne_zero_of_norm_lt_one {z w : ℂ}
-    (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
-    1 - (starRingEnd ℂ) w * z ≠ 0 :=
-  one_sub_conj_mul_ne_zero_of_norm_mul_lt_one
-    (mul_lt_one_of_nonneg_of_lt_one_right hw.le (norm_nonneg _) hz)
-
-/-- The denominator `1 - conj w * z` is nonzero for two points of the open unit ball. -/
-lemma one_sub_conj_mul_ne_zero_of_mem_ball {z w : ℂ}
-    (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
-    1 - (starRingEnd ℂ) w * z ≠ 0 :=
-  one_sub_conj_mul_ne_zero_of_norm_lt_one (by simpa [mem_ball_zero_iff] using hz)
-    (by simpa [mem_ball_zero_iff] using hw)
-
 /-- The denominator `1 - conj w * z` is nonzero for two bundled unit-disc points. -/
 lemma one_sub_conj_mul_ne_zero_unitDisc (z w : Complex.UnitDisc) :
-    1 - (starRingEnd ℂ) (w : ℂ) * (z : ℂ) ≠ 0 :=
-  one_sub_conj_mul_ne_zero_of_norm_lt_one z.norm_lt_one w.norm_lt_one
+    1 - (starRingEnd ℂ) (w : ℂ) * (z : ℂ) ≠ 0 := by
+  exact (isUnit_one_sub_of_norm_lt_one (x := (starRingEnd ℂ) (w : ℂ) * (z : ℂ))
+    (by
+      rw [norm_mul, norm_conj]
+      exact mul_lt_one_of_nonneg_of_lt_one_right w.norm_lt_one.le (norm_nonneg _)
+        z.norm_lt_one)).ne_zero
 
 private lemma norm_one_sub_conj_mul_comm (z w : ℂ) :
     ‖1 - (starRingEnd ℂ) w * z‖ = ‖1 - (starRingEnd ℂ) z * w‖ := by
@@ -116,9 +100,12 @@ lemma pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero {z w : ℂ}
 /-- On the open unit disc, zero pseudo-hyperbolic expression characterizes equality. -/
 lemma pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
-    pseudoHyperbolicExpr z w = 0 ↔ z = w :=
-  pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero
-    (one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw)
+    pseudoHyperbolicExpr z w = 0 ↔ z = w := by
+  refine pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero ?_
+  exact (isUnit_one_sub_of_norm_lt_one (x := (starRingEnd ℂ) w * z)
+    (by
+      rw [norm_mul, norm_conj]
+      exact mul_lt_one_of_nonneg_of_lt_one_right hw.le (norm_nonneg _) hz)).ne_zero
 
 /-- For points in the open unit ball, zero pseudo-hyperbolic expression characterizes equality. -/
 lemma pseudoHyperbolicExpr_eq_zero_iff_of_mem_ball {z w : ℂ}
@@ -170,8 +157,12 @@ than one. -/
 lemma pseudoHyperbolicExpr_lt_one_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     pseudoHyperbolicExpr z w < 1 := by
-  have hden : 0 < ‖1 - (starRingEnd ℂ) w * z‖ :=
-    norm_pos_iff.mpr (one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw)
+  have hden_ne : 1 - (starRingEnd ℂ) w * z ≠ 0 :=
+    (isUnit_one_sub_of_norm_lt_one (x := (starRingEnd ℂ) w * z)
+      (by
+        rw [norm_mul, norm_conj]
+        exact mul_lt_one_of_nonneg_of_lt_one_right hw.le (norm_nonneg _) hz)).ne_zero
+  have hden : 0 < ‖1 - (starRingEnd ℂ) w * z‖ := norm_pos_iff.mpr hden_ne
   have hlt := norm_sub_lt_norm_one_sub_conj_mul_of_norm_lt_one hz hw
   rw [pseudoHyperbolicExpr, norm_div]
   rwa [div_lt_one hden]
