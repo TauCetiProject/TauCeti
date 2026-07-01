@@ -1,7 +1,8 @@
 module
 
 public import TauCeti.Probability.Exchangeability.Basic
-public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Block cylinders and their indicator products
@@ -29,6 +30,8 @@ public section
 noncomputable section
 
 open MeasureTheory
+
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -121,6 +124,33 @@ theorem integrable_blockIndicatorProd {μ : Measure Ω} [IsFiniteMeasure μ] {X 
     (hC : ∀ i, MeasurableSet (C i)) : Integrable (blockIndicatorProd X k C) μ := by
   rw [blockIndicatorProd_eq_indicator]
   exact (integrable_const (1 : ℝ)).indicator₀ (nullMeasurableSet_blockCylinder hX hC)
+
+/-- **The block law of a rectangle is the lintegral of the block-cylinder indicator.** For
+a.e.-measurable selected coordinates,
+`∫⁻ ω, 𝟙_{blockCylinder X k C}(ω) ∂μ = blockLaw μ X k (∏ᵢ C i)`. Being an `ℝ≥0∞` lintegral, this is
+the honest identity for an **arbitrary** measure (no finiteness needed). -/
+@[grind =>]
+theorem lintegral_blockCylinder_indicator {μ : Measure Ω} {X : ℕ → Ω → α} {m : ℕ}
+    {k : Fin m → ℕ} {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ)
+    (hC : ∀ i, MeasurableSet (C i)) :
+    ∫⁻ ω, (blockCylinder X k C).indicator (fun _ => (1 : ℝ≥0∞)) ω ∂μ
+      = blockLaw μ X k (Set.univ.pi C) := by
+  rw [lintegral_indicator_const₀ (nullMeasurableSet_blockCylinder hX hC), one_mul,
+    blockLaw_blockCylinder X hX hC]
+
+/-- The real (Bochner) integral of the indicator product is the block law of the rectangle:
+`∫ ω, ∏ i, 𝟙_{C i}(X (k i) ω) ∂μ = (blockLaw μ X k (∏ᵢ C i)).toReal` — the real (`toReal`) form of
+the `ℝ≥0∞` identity `lintegral_blockCylinder_indicator` (integrability under a finite measure is
+`integrable_blockIndicatorProd`). -/
+@[grind =>]
+theorem integral_blockIndicatorProd {μ : Measure Ω} {X : ℕ → Ω → α} {m : ℕ}
+    {k : Fin m → ℕ} {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ)
+    (hC : ∀ i, MeasurableSet (C i)) :
+    ∫ ω, blockIndicatorProd X k C ω ∂μ = (blockLaw μ X k (Set.univ.pi C)).toReal := by
+  rw [blockIndicatorProd_eq_indicator,
+    integral_indicator₀ (nullMeasurableSet_blockCylinder hX hC), setIntegral_const,
+    blockLaw_blockCylinder X hX hC]
+  simp [Measure.real]
 
 end Probability
 
