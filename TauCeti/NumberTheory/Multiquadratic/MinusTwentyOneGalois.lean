@@ -35,9 +35,33 @@ namespace TauCeti.Multiquadratic
 noncomputable abbrev sqrtNegThree : ℂ :=
   Complex.I * ((Real.sqrt 3 : ℝ) : ℂ)
 
+/-- The chosen root `sqrtNegThree` squares to `-3`. -/
+@[simp]
+theorem sqrtNegThree_sq : sqrtNegThree ^ 2 = (-3 : ℂ) := by
+  have hsqrt : (((Real.sqrt 3 : ℝ) : ℂ) ^ 2) = (3 : ℂ) := by
+    rw [← Complex.ofReal_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 3)]
+    norm_num
+  calc
+    sqrtNegThree ^ 2 = Complex.I ^ 2 * (((Real.sqrt 3 : ℝ) : ℂ) ^ 2) := by
+      ring
+    _ = (-3 : ℂ) := by
+      simp [Complex.I_sq, hsqrt]
+
 /-- The chosen complex square root of `-7`, namely `i√7`. -/
 noncomputable abbrev sqrtNegSeven : ℂ :=
   Complex.I * ((Real.sqrt 7 : ℝ) : ℂ)
+
+/-- The chosen root `sqrtNegSeven` squares to `-7`. -/
+@[simp]
+theorem sqrtNegSeven_sq : sqrtNegSeven ^ 2 = (-7 : ℂ) := by
+  have hsqrt : (((Real.sqrt 7 : ℝ) : ℂ) ^ 2) = (7 : ℂ) := by
+    rw [← Complex.ofReal_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 7)]
+    norm_num
+  calc
+    sqrtNegSeven ^ 2 = Complex.I ^ 2 * (((Real.sqrt 7 : ℝ) : ℂ) ^ 2) := by
+      ring
+    _ = (-7 : ℂ) := by
+      simp [Complex.I_sq, hsqrt]
 
 /-- The three prime discriminants used for the `ℚ(√-21)` genus-field example. -/
 private def minusTwentyOnePrimeDiscriminants : Fin 3 → ℤ :=
@@ -51,30 +75,14 @@ private theorem root_neg_four_neg_three_neg_seven_sq (i : Fin 3) :
         (((primeDiscriminantRadicand (minusTwentyOnePrimeDiscriminants i) : ℤ) : ℚ)) := by
   fin_cases i
   · simp [minusTwentyOnePrimeDiscriminants, Complex.I_sq]
-  · have hsqrt : (((Real.sqrt 3 : ℝ) : ℂ) ^ 2) = (3 : ℂ) := by
-      rw [← Complex.ofReal_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 3)]
-      norm_num
-    have hrad : primeDiscriminantRadicand (-3) = -3 := by
+  · have hrad : primeDiscriminantRadicand (-3) = -3 := by
       have h := primeDiscriminantRadicand_oddPrimeDiscriminant (p := 3) (by decide)
       simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)] using h
-    calc
-      sqrtNegThree ^ 2 = Complex.I ^ 2 * (((Real.sqrt 3 : ℝ) : ℂ) ^ 2) := by
-        ring
-      _ = algebraMap ℚ ℂ
-          (((primeDiscriminantRadicand (minusTwentyOnePrimeDiscriminants 1) : ℤ) : ℚ)) := by
-        simp [minusTwentyOnePrimeDiscriminants, Complex.I_sq, hsqrt, hrad]
-  · have hsqrt : (((Real.sqrt 7 : ℝ) : ℂ) ^ 2) = (7 : ℂ) := by
-      rw [← Complex.ofReal_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 7)]
-      norm_num
-    have hrad : primeDiscriminantRadicand (-7) = -7 := by
+    simp [minusTwentyOnePrimeDiscriminants, hrad]
+  · have hrad : primeDiscriminantRadicand (-7) = -7 := by
       have h := primeDiscriminantRadicand_oddPrimeDiscriminant (p := 7) (by decide)
       simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)] using h
-    calc
-      sqrtNegSeven ^ 2 = Complex.I ^ 2 * (((Real.sqrt 7 : ℝ) : ℂ) ^ 2) := by
-        ring
-      _ = algebraMap ℚ ℂ
-          (((primeDiscriminantRadicand (minusTwentyOnePrimeDiscriminants 2) : ℤ) : ℚ)) := by
-        simp [minusTwentyOnePrimeDiscriminants, Complex.I_sq, hsqrt, hrad]
+    simp [minusTwentyOnePrimeDiscriminants, hrad]
 
 private theorem isPrimeDiscriminant_minusTwentyOnePrimeDiscriminants :
     ∀ i : Fin 3, IsPrimeDiscriminant (minusTwentyOnePrimeDiscriminants i) := by
