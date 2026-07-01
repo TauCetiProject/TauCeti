@@ -260,12 +260,8 @@ private lemma unweightedAbelJacobiQuotientClass_mk_def (x₀ : X) (D : WeilDivis
       QuotientAddGroup.mk (unweightedAbelJacobiDegreeZeroDivisor x₀ D) :=
   by
     rw [unweightedAbelJacobiQuotientClass, AddMonoidHom.comp_apply,
-      weightedAbelJacobiQuotientClass_mk]
-    change S.degreeZeroQuotientEquivWeightedDegreeZeroOne.symm
-        (QuotientAddGroup.mk
-          (weightedAbelJacobiDegreeZeroDivisor (fun _ : X => (1 : ℤ)) (x₀ := x₀) rfl D)) =
-      QuotientAddGroup.mk (unweightedAbelJacobiDegreeZeroDivisor x₀ D)
-    rw [degreeZeroQuotientEquivWeightedDegreeZeroOne_symm_mk]
+      weightedAbelJacobiQuotientClass_mk, AddEquiv.coe_toAddMonoidHom,
+      degreeZeroQuotientEquivWeightedDegreeZeroOne_symm_mk]
     congr 1
     apply Subtype.ext
     rw [coe_degreeZeroSubgroupEquivWeightedDegreeZeroOne_symm_apply,
