@@ -33,9 +33,6 @@ unfolding either construction.
   the maps induced by subgroup inclusions.
 * `TauCeti.Deck.subgroupFiberOrbitQuotientBotEquivDeck`: for `H = ⊥`, the quotient is the
   deck group, with the inverse orientation coming from Mathlib's quotient convention.
-* `TauCeti.Deck.subgroupFiberOrbitClass_smul_eq_base_iff`: a translated fibre point has the
-  base subgroup-orbit class exactly when the translating deck transformation lies in the
-  subgroup.
 * Endpoint collapse lemmas for `H = ⊤`.
 
 ## References
@@ -418,54 +415,6 @@ lemma subgroupFiberOrbitClass_eq_iff_quotientGroup_mk_inv_eq
     rw [subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul,
       subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul]
     exact h
-
-/-- A deck translate of the chosen fibre point has the same subgroup orbit class as the
-chosen point exactly when the translating deck transformation lies in the subgroup. -/
-@[simp]
-lemma subgroupFiberOrbitClass_smul_eq_base_iff
-    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
-    (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) (φ : Deck p) :
-    subgroupFiberOrbitClass H (φ • e) = subgroupFiberOrbitClass H e ↔ φ ∈ H := by
-  have hbase :
-      subgroupFiberOrbitClass H e = subgroupFiberOrbitClass H ((1 : Deck p) • e) := by
-    simp
-  rw [hbase]
-  rw [subgroupFiberOrbitClass_eq_iff_quotientGroup_mk_inv_eq H e φ 1]
-  constructor
-  · intro h
-    simpa using (QuotientGroup.eq (s := H) (a := φ⁻¹) (b := 1)).mp h
-  · intro hφ
-    exact (QuotientGroup.eq (s := H) (a := φ⁻¹) (b := 1)).mpr (by simpa using hφ)
-
-/-- For a regular cover, a deck translate of the chosen fibre point has the same subgroup
-orbit class as the chosen point exactly when the translating deck transformation lies in the
-subgroup. -/
-lemma regularSubgroupFiberOrbitClass_smul_eq_base_iff
-    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p)
-    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] (H : Subgroup (Deck p))
-    (e : p ⁻¹' {b}) (φ : Deck p) :
-    subgroupFiberOrbitClass H (φ • e) = subgroupFiberOrbitClass H e ↔ φ ∈ H := by
-  letI := fiber_isCancelSMul (b := b) hp
-  exact subgroupFiberOrbitClass_smul_eq_base_iff H e φ
-
-/-- The chosen fibre point has the same subgroup orbit class as a deck translate exactly when
-the translating deck transformation lies in the subgroup. -/
-@[simp]
-lemma subgroupFiberOrbitClass_base_eq_smul_iff
-    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
-    (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) (φ : Deck p) :
-    subgroupFiberOrbitClass H e = subgroupFiberOrbitClass H (φ • e) ↔ φ ∈ H := by
-  rw [eq_comm, subgroupFiberOrbitClass_smul_eq_base_iff H e φ]
-
-/-- For a regular cover, the chosen fibre point has the same subgroup orbit class as a deck
-translate exactly when the translating deck transformation lies in the subgroup. -/
-lemma regularSubgroupFiberOrbitClass_base_eq_smul_iff
-    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p)
-    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] (H : Subgroup (Deck p))
-    (e : p ⁻¹' {b}) (φ : Deck p) :
-    subgroupFiberOrbitClass H e = subgroupFiberOrbitClass H (φ • e) ↔ φ ∈ H := by
-  letI := fiber_isCancelSMul (b := b) hp
-  exact subgroupFiberOrbitClass_base_eq_smul_iff H e φ
 
 end Deck
 
