@@ -32,7 +32,7 @@ open IntermediateField
 namespace TauCeti.Multiquadratic
 
 /-- The complex number `i√n` squares to `-n`. -/
-theorem I_mul_real_sqrt_nat_sq (n : ℕ) :
+private theorem I_mul_real_sqrt_nat_sq (n : ℕ) :
     (Complex.I * ((Real.sqrt n : ℝ) : ℂ)) ^ 2 = -(n : ℂ) := by
   have hsqrt : (((Real.sqrt n : ℝ) : ℂ) ^ 2) = (n : ℂ) := by
     rw [← Complex.ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
