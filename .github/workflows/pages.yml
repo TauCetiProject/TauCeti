@@ -54,7 +54,7 @@ jobs:
 
       - name: Clone the roadmap repository (full history, for its chart)
         working-directory: ${{ github.workspace }}
-        run: git clone --quiet https://github.com/FormalFrontier/TauCetiRoadmap.git /tmp/roadmap
+        run: git clone --quiet https://github.com/TauCetiProject/TauCetiRoadmap.git /tmp/roadmap
 
       # Overwrites the checked-in SVGs in the runner only (never committed back). The
       # versions tracked in web/static_files/ are just fallback snapshots so a local

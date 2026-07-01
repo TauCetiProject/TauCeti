@@ -28,7 +28,7 @@ jobs:
     # completes, so reconciling at its start re-derives the same state and does
     # no useful work. (pr-build's "requested" is kept -- it paints 🟡 running.)
     if: >
-      github.repository == 'FormalFrontier/TauCeti' &&
+      github.repository == 'TauCetiProject/TauCeti' &&
       !(github.event.workflow_run.name == 'Review' && github.event.action == 'requested')
     runs-on: ubuntu-latest
     steps:

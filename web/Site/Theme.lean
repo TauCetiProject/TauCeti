@@ -29,7 +29,7 @@ def theme : Theme := { Theme.default with
                 <a href=".">"Home"</a>
                 <a href="statistics">"Statistics"</a>
                 <a href="about">"About"</a>
-                <a href="https://github.com/FormalFrontier/TauCeti">"GitHub"</a>
+                <a href="https://github.com/TauCetiProject/TauCeti">"GitHub"</a>
               </nav>
             </div>
           </header>
@@ -40,9 +40,9 @@ def theme : Theme := { Theme.default with
             <div class="foot-inner">
               <p class="foot-tag">"Let’s do lots of maths."</p>
               <ul class="foot-links">
-                <li><a href="https://github.com/FormalFrontier/TauCeti">"TauCeti"</a></li>
-                <li><a href="https://github.com/FormalFrontier/TauCetiRoadmap">"TauCetiRoadmap"</a></li>
-                <li><a href="https://github.com/FormalFrontier/TauCetiReview">"TauCetiReview"</a></li>
+                <li><a href="https://github.com/TauCetiProject/TauCeti">"TauCeti"</a></li>
+                <li><a href="https://github.com/TauCetiProject/TauCetiRoadmap">"TauCetiRoadmap"</a></li>
+                <li><a href="https://github.com/TauCetiProject/TauCetiReview">"TauCetiReview"</a></li>
               </ul>
               <p class="foot-legal">"AI-authored Lean mathematics · Apache-2.0"</p>
             </div>
@@ -61,7 +61,7 @@ def theme : Theme := { Theme.default with
             <h1 class="hero-title">"Tau Ceti"</h1>
             <p class="hero-tag">"Let’s do lots of maths."</p>
             <p class="hero-sub">"AI-authored Lean mathematics, directed by a human-owned roadmap and gated by open, adversarial review."</p>
-            <a class="cta" href="https://github.com/FormalFrontier/TauCeti">"Explore the code →"</a>
+            <a class="cta" href="https://github.com/TauCetiProject/TauCeti">"Explore the code →"</a>
           </div>
         </section>
 
@@ -102,15 +102,15 @@ def theme : Theme := { Theme.default with
         <section class="band repos">
           <h2 class="section-title">"Three repositories"</h2>
           <div class="cards three">
-            <a class="card repo" href="https://github.com/FormalFrontier/TauCeti">
+            <a class="card repo" href="https://github.com/TauCetiProject/TauCeti">
               <h3>"TauCeti"</h3>
               <p>"The AI-authored Lean mathematics."</p>
             </a>
-            <a class="card repo" href="https://github.com/FormalFrontier/TauCetiRoadmap">
+            <a class="card repo" href="https://github.com/TauCetiProject/TauCetiRoadmap">
               <h3>"TauCetiRoadmap"</h3>
               <p>"The human-controlled roadmaps that direct the work."</p>
             </a>
-            <a class="card repo" href="https://github.com/FormalFrontier/TauCetiReview">
+            <a class="card repo" href="https://github.com/TauCetiProject/TauCetiReview">
               <h3>"TauCetiReview"</h3>
               <p>"The review rubrics and the machinery that runs review."</p>
             </a>

@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   zulip-healthcheck:
-    if: github.repository == 'FormalFrontier/TauCeti'
+    if: github.repository == 'TauCetiProject/TauCeti'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

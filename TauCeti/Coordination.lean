@@ -61,7 +61,7 @@ The canonical reviewer posts exactly one issue comment per PR containing the mar
 ```
 
 To read a PR's review state: fetch issue comments paginated
-(`gh api --paginate /repos/FormalFrontier/TauCeti/issues/<pr>/comments?per_page=100`),
+(`gh api --paginate /repos/TauCetiProject/TauCeti/issues/<pr>/comments?per_page=100`),
 keep comments by the canonical reviewer and the `tauceti-scoreboard` marker, take the
 newest by `updated_at`, and parse the `tauceti-meta` JSON. Do not scrape the rendered
 Markdown heading. If you find several valid comments, prefer the newest and log it. If

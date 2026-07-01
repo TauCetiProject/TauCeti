@@ -41,7 +41,7 @@ Three workflows drive it:
 1. **Create a dedicated Zulip bot** (Zulip → Settings → Bots → Add a new bot,
    type *Generic*). Subscribe it to the **Tau Ceti** channel — a bot can only
    post and react in channels it belongs to.
-2. **Add repository secrets** on `FormalFrontier/TauCeti`:
+2. **Add repository secrets** on `TauCetiProject/TauCeti`:
    - `ZULIP_API_KEY` — the bot's API key
    - `ZULIP_EMAIL` — the bot's email (e.g. `tauceti-pr-bot@leanprover.zulipchat.com`)
 
@@ -52,7 +52,7 @@ Three workflows drive it:
    > `Malformed API key` (a 401). Use `--body`, which does not append one:
    >
    > ```bash
-   > gh secret set ZULIP_API_KEY --repo FormalFrontier/TauCeti --body "$KEY"
+   > gh secret set ZULIP_API_KEY --repo TauCetiProject/TauCeti --body "$KEY"
    > ```
    >
    > Avoid `echo "$KEY" | gh secret set ...` (echo adds a newline). The script
@@ -94,7 +94,7 @@ With the bot credentials exported and `gh` authenticated:
 ```bash
 export ZULIP_API_KEY=... ZULIP_EMAIL=... ZULIP_SITE=https://leanprover.zulipchat.com
 # ascending PR number == chronological order
-for pr in $(gh pr list --repo FormalFrontier/TauCeti --state all --limit 1000 --json number --jq '.[].number' | sort -n); do
+for pr in $(gh pr list --repo TauCetiProject/TauCeti --state all --limit 1000 --json number --jq '.[].number' | sort -n); do
   python3 scripts/zulip/zulip_pr_status.py reconcile "$pr" --create
 done
 ```

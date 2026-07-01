@@ -45,7 +45,7 @@ Environment:
     ZULIP_API_KEY, ZULIP_EMAIL, ZULIP_SITE   bot credentials (required)
     ZULIP_CHANNEL                            default "Tau Ceti"
     ZULIP_TOPIC                              default "PRs"
-    GH_REPO                                  default "FormalFrontier/TauCeti"
+    GH_REPO                                  default "TauCetiProject/TauCeti"
     GH_TOKEN / GITHUB_TOKEN                  used by `gh` for the GitHub API
 
 The only runtime dependencies are python3's standard library and an
@@ -74,7 +74,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-REPO = os.environ.get("GH_REPO", "FormalFrontier/TauCeti")
+REPO = os.environ.get("GH_REPO", "TauCetiProject/TauCeti")
 CHANNEL = os.environ.get("ZULIP_CHANNEL", "Tau Ceti")
 TOPIC = os.environ.get("ZULIP_TOPIC", "PRs")
 ZWSP = "\u200b"  # zero-width space, used to defuse mentions/linkifiers

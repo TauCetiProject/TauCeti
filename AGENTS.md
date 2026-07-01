@@ -6,7 +6,7 @@ the three repos fit together; this file only adds the contract for agents workin
 ## Before you write code
 
 **Read the roadmap first.** The roadmaps live in the separate
-[TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap) repo. The roadmap gates
+[TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap) repo. The roadmap gates
 *new* mathematics: only add a new mathematical declaration (definition, theorem, instance,
 notation) or file when it advances a specific roadmap target, or supplies a prerequisite that a
 specific target needs. If a human asks you to build something new that is not on the roadmap,
@@ -47,7 +47,7 @@ what new mathematics gets *added*, not whether already-merged code may be made b
 ## How review works
 
 Open a PR. After CI passes, AI review agents judge it against the rubrics in
-[TauCetiReview](https://github.com/FormalFrontier/TauCetiReview) (correctness, reuse, API,
+[TauCetiReview](https://github.com/TauCetiProject/TauCetiReview) (correctness, reuse, API,
 naming, placement, proofs, and more) and post `approve` / `request_changes` / `block`
 verdicts. Address their findings and push; re-review runs automatically on new commits, and a
 human can comment `/review` to re-trigger.
@@ -63,5 +63,5 @@ green), it **merges automatically**. A PR that *also* changes `lake-manifest.jso
 forward-only bump and the sandboxed build passes against the new pins. A PR that touches any
 other human-owned path (`scripts/`, `.github/`, the lakefile) always needs a human review. The
 review pipeline is sandboxed so it can run on untrusted PRs; see
-[`SECURITY.md`](https://github.com/FormalFrontier/TauCetiReview/blob/main/SECURITY.md) in
+[`SECURITY.md`](https://github.com/TauCetiProject/TauCetiReview/blob/main/SECURITY.md) in
 TauCetiReview.

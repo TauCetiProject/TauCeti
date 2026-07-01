@@ -357,7 +357,7 @@ jobs:
           artifactEndpoint = "$PUBLIC_ARTIFACT_ENDPOINT"
           revisionEndpoint = "$PUBLIC_REVISION_ENDPOINT"
           TOML
-          ( cd base && LAKE_CONFIG="$CFG" lake cache get --service tauceti-public --repo FormalFrontier/TauCeti ) \
+          ( cd base && LAKE_CONFIG="$CFG" lake cache get --service tauceti-public --repo TauCetiProject/TauCeti ) \
             || echo "::warning::lake cache get failed or missed; building TauCeti/ from scratch"
 
       - name: Build (trusted config + overlaid TauCeti/) under landrun, offline

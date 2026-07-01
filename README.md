@@ -24,7 +24,7 @@ we hope that we can efficiently build a reusable library at significant scale. W
 * and Mathlib, Tau Ceti, and other libraries provide the knowledge necessary to reach the research frontier.
 
 Humans own the roadmap for Tau Ceti, which lives in the
-[TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap) repository (mostly in the form of markdown files, together with a
+[TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap) repository (mostly in the form of markdown files, together with a
 small amount of Lean); changes are made via human-reviewed pull requests there.
 
 AIs own the code in this repository, initiating pull requests and shepherding them through an
@@ -37,9 +37,9 @@ Humans can raise issues against the code, and leave implementation (and review) 
 ## The three repositories
 
 - **TauCeti** (this repository) — the AI-authored Lean mathematics.
-- **[TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap)** — the human-controlled
+- **[TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap)** — the human-controlled
   roadmaps that direct the work.
-- **[TauCetiReview](https://github.com/FormalFrontier/TauCetiReview)** — the review rubrics and
+- **[TauCetiReview](https://github.com/TauCetiProject/TauCetiReview)** — the review rubrics and
   the machinery that runs review.
 
 ## Review
@@ -52,18 +52,18 @@ PR contributors can push further commits, or respond to review comments, in orde
 
 We've built the infrastructure to fire these reviews automatically on each PR (and on a `/review` comment), but it is currently switched off. For now, reviews are run from the command line.
 
-You can also run the same review yourself from the command line, on your own Claude and/or Codex subscription instead of the project's metered API budget, using the `tauceti-review` tool in [TauCetiReview](https://github.com/FormalFrontier/TauCetiReview). With [uv](https://docs.astral.sh/uv/):
+You can also run the same review yourself from the command line, on your own Claude and/or Codex subscription instead of the project's metered API budget, using the `tauceti-review` tool in [TauCetiReview](https://github.com/TauCetiProject/TauCetiReview). With [uv](https://docs.astral.sh/uv/):
 
 ```bash
 # print the verdicts for PR #42, posting nothing:
-uvx --from git+https://github.com/FormalFrontier/TauCetiReview tauceti-review 42
+uvx --from git+https://github.com/TauCetiProject/TauCetiReview tauceti-review 42
 # add --post to publish the scoreboard and per-rubric threads, as you:
-uvx --from git+https://github.com/FormalFrontier/TauCetiReview tauceti-review 42 --post
+uvx --from git+https://github.com/TauCetiProject/TauCetiReview tauceti-review 42 --post
 ```
 
-It runs the identical engine and rubrics CI uses, in a clean room that ignores your personal editor configuration so the review stays reproducible. See [REVIEWING.md](https://github.com/FormalFrontier/TauCetiReview/blob/main/REVIEWING.md) for prerequisites, flags, and the contest/re-review flow.
+It runs the identical engine and rubrics CI uses, in a clean room that ignores your personal editor configuration so the review stays reproducible. See [REVIEWING.md](https://github.com/TauCetiProject/TauCetiReview/blob/main/REVIEWING.md) for prerequisites, flags, and the contest/re-review flow.
 
-The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/FormalFrontier/TauCetiReview/tree/main/rubrics). We'll update these as we see what is most useful!
+The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/TauCetiProject/TauCetiReview/tree/main/rubrics). We'll update these as we see what is most useful!
 
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
@@ -139,13 +139,13 @@ lake build
 
 ## Roadmaps
 
-The roadmaps live in the [TauCetiRoadmap](https://github.com/FormalFrontier/TauCetiRoadmap)
+The roadmaps live in the [TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap)
 repo: universal covers, the Jacobian challenge, reductive algebraic groups, partial
 differential equations, Heegaard Floer and knot Floer homology, and multiquadratic fields and
 genus theory. When asked to work here, read the roadmap first (see `AGENTS.md`).
 
 Before starting a substantial piece of roadmap work, register and claim your intention so you
-don't collide with others; see [Coordinating work: intentions and claims](https://github.com/FormalFrontier/TauCetiRoadmap#coordinating-work-intentions-and-claims).
+don't collide with others; see [Coordinating work: intentions and claims](https://github.com/TauCetiProject/TauCetiRoadmap#coordinating-work-intentions-and-claims).
 
 ---
 

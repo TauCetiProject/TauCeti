@@ -4,18 +4,31 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+import TauCeti.AlgebraicTopology.FundamentalGroup
 public import Mathlib.Topology.Homotopy.Lifting
 
 /-!
-# Covering maps and fundamental-group monodromy
+# Covering maps, lifting criteria, and fundamental-group monodromy
 
 This file records generic covering-space consequences of Mathlib's path-lifting and
 monodromy API. For a covering map `p : E → X` whose total space is simply connected,
 choosing a lift `e` over `x` identifies `π₁(X, x)` with the fibre over `x` by sending a
 loop class to its monodromy translate of `e`.
 
+It also records the lifting criterion in a subgroup form used by the universal-covers
+roadmap. Mathlib already proves the fundamental result
+`IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`: a map `f : A → X` lifts through
+a covering map `p : E → X`, with prescribed basepoint lift `e₀`, when
+`f_* π₁(A, a₀)` is contained in `p_* π₁(E, e₀)`. The classification of covers often inserts
+an intermediate subgroup `H ≤ π₁(X, f a₀)`: one first proves `f_* π₁(A, a₀) ≤ H`, and
+separately identifies `H` as a subgroup of the image of `p_*`.
+
 ## Main declarations
 
+* `TauCeti.IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le_subgroup`: lift when
+  `f_* π₁(A, a₀) ≤ H ≤ p_* π₁(E, e₀)`.
+* `existsUnique_continuousMap_lifts_of_subsingleton_fundamentalGroup`: lift when the source
+  fundamental group is subsingleton.
 * `TauCeti.IsCoveringMap.fundamentalGroupEquivFiber`: the monodromy bijection
   `FundamentalGroup X x ≃ p ⁻¹' {x}`, `γ ↦ monodromy γ e`.
 * `TauCeti.IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply`: the inverse sends a
@@ -24,7 +37,9 @@ loop class to its monodromy translate of `e`.
 ## References
 
 This builds directly on Junyan Xu's covering-space lifting and monodromy API in
-`Mathlib.Topology.Homotopy.Lifting`.
+`Mathlib.Topology.Homotopy.Lifting`. The subgroup lifting criterion is a thin wrapper around
+Mathlib's `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`, and uses the
+trivial-source fundamental-group range lemmas from `TauCeti.AlgebraicTopology.FundamentalGroup`.
 -/
 
 public section
@@ -35,6 +50,32 @@ variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X] {p : E → X} {
 variable {A : Type*} [TopologicalSpace A]
 
 open FundamentalGroup
+
+/-- The lifting criterion for a covering map, with the subgroup inclusion factored through an
+intermediate subgroup `H ≤ π₁(X, f a₀)`.
+
+This is the form used when a cover is known to have recovered subgroup `H`: to lift `f`, it
+suffices to show that `f_* π₁(A, a₀)` lies in `H`, and that `H` is contained in the image of
+`p_* π₁(E, e₀)`. -/
+theorem IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le_subgroup
+    (hp : _root_.IsCoveringMap p) [PathConnectedSpace A] [LocallyPathConnectedSpace A]
+    {f : C(A, X)} {a₀ : A} {e₀ : E} (he : p e₀ = f a₀)
+    (H : Subgroup (_root_.FundamentalGroup X (f a₀)))
+    (hfH : (_root_.FundamentalGroup.map f a₀).range ≤ H)
+    (hHp : H ≤ (_root_.FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ he).range) :
+    ∃! F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
+  hp.existsUnique_continuousMap_lifts_of_range_le he (hfH.trans hHp)
+
+/-- The lifting criterion when the source fundamental group at `a₀` is subsingleton. In this
+case the induced subgroup `f_* π₁(A, a₀)` is trivial. -/
+theorem IsCoveringMap.existsUnique_continuousMap_lifts_of_subsingleton_fundamentalGroup
+    (hp : _root_.IsCoveringMap p) [PathConnectedSpace A] [LocallyPathConnectedSpace A]
+    {f : C(A, X)} {a₀ : A} {e₀ : E}
+    [Subsingleton (_root_.FundamentalGroup A a₀)] (he : p e₀ = f a₀) :
+    ∃! F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
+  hp.existsUnique_continuousMap_lifts_of_range_le he <| by
+    rw [FundamentalGroup.map_range_eq_bot_of_subsingleton f]
+    exact bot_le
 
 /-- Choosing a basepoint lift `e` in the fibre over `x` identifies the fundamental group of
 the base with that fibre, via `γ ↦ monodromy γ e`. -/

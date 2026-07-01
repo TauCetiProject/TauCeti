@@ -46,6 +46,8 @@ names around it. The cardinality identity is still expressed through the squarin
   class map is surjective, and two elements have the same class iff they differ by a square.
 * `TauCeti.elementaryTwoQuotientLiftEquiv` and `TauCeti.elementaryTwoQuotientLinearLiftEquiv`: the
   universal property for maps out of `G/G²`, inherited from `ModN.liftEquiv`.
+* `TauCeti.elementaryTwoQuotientMap` and `TauCeti.elementaryTwoQuotientCongr`: transport along
+  homomorphisms and equivalences of commutative groups.
 * `TauCeti.elementaryTwoQuotientEquivSquareQuotient`: the equivalence between Mathlib's `ModN`
   model and the quotient by the additive form of `G²`.
 * `TauCeti.card_elementaryTwoQuotient_eq_index_square`: the quotient cardinality as the index of
@@ -163,6 +165,90 @@ theorem elementaryTwoQuotientMk_eq_iff (g h : G) :
     elementaryTwoQuotientMk g = elementaryTwoQuotientMk h ↔ IsSquare (g / h) := by
   rw [← elementaryTwoQuotientMk_eq_zero_iff, elementaryTwoQuotientMk_div, sub_eq_zero]
 
+variable {H : Type*} [CommGroup H]
+
+/-- A homomorphism of commutative groups induces a `ZMod 2`-linear map on maximal elementary-2
+quotients. -/
+noncomputable def elementaryTwoQuotientMap (f : G →* H) :
+    ElementaryTwoQuotient G →ₗ[ZMod 2] ElementaryTwoQuotient H :=
+  (TauCeti.elementaryTwoQuotientLinearLiftEquiv (G := G) (H := ElementaryTwoQuotient H)).symm
+    ⟨{ toFun := fun g => elementaryTwoQuotientMk (f (Additive.toMul g))
+       map_zero' := by
+        -- The source is written additively as `Additive G`; expose its multiplicative zero.
+        change elementaryTwoQuotientMk (f 1) = 0
+        simp
+       map_add' := by
+        intro g h
+        -- The source addition is multiplication in `G`, so the quotient map is additive.
+        change elementaryTwoQuotientMk (f (Additive.toMul (g + h))) =
+          elementaryTwoQuotientMk (f (Additive.toMul g)) +
+            elementaryTwoQuotientMk (f (Additive.toMul h))
+        simp },
+      fun g => by
+        -- `G/G²` is killed by `2` because the square of any representative maps to zero.
+        change 2 • elementaryTwoQuotientMk (f (Additive.toMul g)) = 0
+        rw [← elementaryTwoQuotientMk_pow]
+        exact (elementaryTwoQuotientMk_eq_zero_iff _).2
+          ⟨f (Additive.toMul g), by rw [pow_two]⟩⟩
+
+/-- The induced map on `G/G²` sends the class of `g` to the class of `f g`. -/
+@[simp] theorem elementaryTwoQuotientMap_mk (f : G →* H) (g : G) :
+    elementaryTwoQuotientMap f (elementaryTwoQuotientMk g) =
+      elementaryTwoQuotientMk (f g) := by
+  rfl
+
+/-- The map induced by the identity homomorphism fixes each class in the elementary-2 quotient. -/
+@[simp] theorem elementaryTwoQuotientMap_id_apply (x : ElementaryTwoQuotient G) :
+    elementaryTwoQuotientMap (MonoidHom.id G) x = x := by
+  obtain ⟨g, rfl⟩ := elementaryTwoQuotientMk_surjective (G := G) x
+  simp
+
+variable {K : Type*} [CommGroup K]
+
+/-- Induced maps on elementary-2 quotients compose pointwise. -/
+@[simp] theorem elementaryTwoQuotientMap_comp_apply (f : G →* H) (g : H →* K)
+    (x : ElementaryTwoQuotient G) :
+    elementaryTwoQuotientMap (g.comp f) x =
+      elementaryTwoQuotientMap g (elementaryTwoQuotientMap f x) := by
+  obtain ⟨a, rfl⟩ := elementaryTwoQuotientMk_surjective (G := G) x
+  simp
+
+/-- A multiplicative equivalence of commutative groups induces a `ZMod 2`-linear equivalence of
+their maximal elementary-2 quotients. -/
+noncomputable def elementaryTwoQuotientCongr (e : G ≃* H) :
+    ElementaryTwoQuotient G ≃ₗ[ZMod 2] ElementaryTwoQuotient H where
+  toLinearMap := elementaryTwoQuotientMap e.toMonoidHom
+  invFun := elementaryTwoQuotientMap e.symm.toMonoidHom
+  left_inv x := by
+    obtain ⟨g, rfl⟩ := elementaryTwoQuotientMk_surjective (G := G) x
+    simp
+  right_inv x := by
+    obtain ⟨h, rfl⟩ := elementaryTwoQuotientMk_surjective (G := H) x
+    simp
+
+/-- The induced equivalence on `G/G²` sends the class of `g` to the class of `e g`. -/
+@[simp] theorem elementaryTwoQuotientCongr_mk (e : G ≃* H) (g : G) :
+    elementaryTwoQuotientCongr e (elementaryTwoQuotientMk g) = elementaryTwoQuotientMk (e g) := by
+  exact elementaryTwoQuotientMap_mk e.toMonoidHom g
+
+/-- The inverse induced equivalence on `G/G²` sends the class of `h` to the class of `e.symm h`. -/
+@[simp] theorem elementaryTwoQuotientCongr_symm_mk (e : G ≃* H) (h : H) :
+    (elementaryTwoQuotientCongr e).symm (elementaryTwoQuotientMk h) =
+      elementaryTwoQuotientMk (e.symm h) := by
+  exact elementaryTwoQuotientMap_mk e.symm.toMonoidHom h
+
+/-- The identity equivalence induces the identity equivalence on the elementary-2 quotient. -/
+@[simp] theorem elementaryTwoQuotientCongr_refl_apply (x : ElementaryTwoQuotient G) :
+    elementaryTwoQuotientCongr (MulEquiv.refl G) x = x :=
+  elementaryTwoQuotientMap_id_apply x
+
+/-- Induced equivalences on elementary-2 quotients compose functorially. -/
+@[simp] theorem elementaryTwoQuotientCongr_trans_apply (e : G ≃* H) (e' : H ≃* K)
+    (x : ElementaryTwoQuotient G) :
+    elementaryTwoQuotientCongr (e.trans e') x =
+      elementaryTwoQuotientCongr e' (elementaryTwoQuotientCongr e x) :=
+  elementaryTwoQuotientMap_comp_apply e.toMonoidHom e'.toMonoidHom x
+
 variable (G)
 
 /-- The doubling subgroup of `Additive G` is the additive form of the subgroup of squares of `G`.
@@ -214,5 +300,23 @@ theorem card_elementaryTwoQuotient_eq_two_pow_twoRank
     [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] :
     Nat.card (ElementaryTwoQuotient G) = 2 ^ twoRank G := by
   rw [twoRank, Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod]
+
+/-- Multiplicatively equivalent commutative groups have elementary-2 quotients with the same
+`ZMod 2` finrank. -/
+theorem finrank_elementaryTwoQuotient_eq_of_mulEquiv (e : G ≃* H) :
+    Module.finrank (ZMod 2) (ElementaryTwoQuotient G) =
+      Module.finrank (ZMod 2) (ElementaryTwoQuotient H) :=
+  (elementaryTwoQuotientCongr e).finrank_eq
+
+/-- If the elementary-2 quotient of `G` is finite-dimensional, then a multiplicatively equivalent
+commutative group has the same elementary-2 rank; target finite-dimensionality is transported by
+the induced equivalence. -/
+theorem twoRank_eq_of_mulEquiv (e : G ≃* H)
+    [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] :
+    letI : Module.Finite (ZMod 2) (ElementaryTwoQuotient H) :=
+      Module.Finite.of_surjective (elementaryTwoQuotientCongr e).toLinearMap
+        (elementaryTwoQuotientCongr e).surjective
+    twoRank G = twoRank H :=
+  finrank_elementaryTwoQuotient_eq_of_mulEquiv (G := G) (H := H) e
 
 end TauCeti

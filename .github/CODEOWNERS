@@ -6,7 +6,7 @@
 # mathematics PR. Last-match-wins keeps every other path — this file, `.github/`, `lakefile.toml`,
 # and the human dirs — human-governed; the bump-guarded pin/toolchain files below are the exception.
 
-*                 @FormalFrontier/humans
+*                 @TauCetiProject/humans
 
 # AI-authored mathematics: no human code owner; the AI review agents gate these PRs.
 /TauCeti/

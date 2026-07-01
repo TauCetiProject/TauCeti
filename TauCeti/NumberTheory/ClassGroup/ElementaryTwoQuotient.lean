@@ -36,6 +36,8 @@ square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGroup` f
   `elementaryTwoQuotientMk_div`, `elementaryTwoQuotientMk_pow`, and
   `elementaryTwoQuotientMk_prod` record its additivity, while `elementaryTwoQuotientMk_surjective`
   and `elementaryTwoQuotientMk_eq_iff` give surjectivity and the equality criterion.
+* `TauCeti.ClassGroup.elementaryTwoQuotientCongr`: a multiplicative equivalence of class groups
+  induces a `ZMod 2`-linear equivalence of their elementary-2 quotients.
 * `TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`,
   the quotient and the 2-torsion subgroup have equal cardinality.
 * `TauCeti.ClassGroup.twoRank` and `card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
@@ -103,6 +105,53 @@ theorem elementaryTwoQuotientMk_eq_iff (C D : ClassGroup R) :
     elementaryTwoQuotientMk R C = elementaryTwoQuotientMk R D ↔ IsSquare (C / D) :=
   TauCeti.elementaryTwoQuotientMk_eq_iff C D
 
+variable {R}
+
+/-- A multiplicative equivalence of class groups induces a `ZMod 2`-linear equivalence on the
+maximal elementary-2 quotients. This is the transport API used when genus-field constructions
+identify class groups through canonical isomorphisms. -/
+noncomputable def elementaryTwoQuotientCongr {S : Type*} [CommRing S] [IsDomain S]
+    (e : ClassGroup R ≃* ClassGroup S) :
+    ElementaryTwoQuotient R ≃ₗ[ZMod 2] ElementaryTwoQuotient S :=
+  TauCeti.elementaryTwoQuotientCongr e
+
+/-- The induced equivalence on `Cl/Cl²` sends the class of an ideal class to the class of its
+image. -/
+@[simp] theorem elementaryTwoQuotientCongr_mk {S : Type*} [CommRing S] [IsDomain S]
+    (e : ClassGroup R ≃* ClassGroup S) (C : ClassGroup R) :
+    elementaryTwoQuotientCongr e (elementaryTwoQuotientMk R C) =
+      elementaryTwoQuotientMk S (e C) := by
+  -- Reduce the class-group wrapper names to the generic elementary-2 quotient statement.
+  change TauCeti.elementaryTwoQuotientCongr e (TauCeti.elementaryTwoQuotientMk C) =
+    TauCeti.elementaryTwoQuotientMk (e C)
+  exact TauCeti.elementaryTwoQuotientCongr_mk e C
+
+/-- The inverse induced equivalence on `Cl/Cl²` sends the class of an ideal class to the class
+of its inverse image. -/
+@[simp] theorem elementaryTwoQuotientCongr_symm_mk {S : Type*} [CommRing S] [IsDomain S]
+    (e : ClassGroup R ≃* ClassGroup S) (C : ClassGroup S) :
+    (elementaryTwoQuotientCongr e).symm (elementaryTwoQuotientMk S C) =
+      elementaryTwoQuotientMk R (e.symm C) := by
+  -- Reduce the class-group wrapper names to the generic elementary-2 quotient statement.
+  change (TauCeti.elementaryTwoQuotientCongr e).symm (TauCeti.elementaryTwoQuotientMk C) =
+    TauCeti.elementaryTwoQuotientMk (e.symm C)
+  exact TauCeti.elementaryTwoQuotientCongr_symm_mk e C
+
+/-- The identity equivalence of class groups induces the identity equivalence on `Cl/Cl²`. -/
+@[simp] theorem elementaryTwoQuotientCongr_refl_apply (x : ElementaryTwoQuotient R) :
+    elementaryTwoQuotientCongr (MulEquiv.refl (ClassGroup R)) x = x :=
+  TauCeti.elementaryTwoQuotientCongr_refl_apply x
+
+/-- Induced class-group equivalences on `Cl/Cl²` compose functorially. -/
+@[simp] theorem elementaryTwoQuotientCongr_trans_apply {S T : Type*} [CommRing S] [IsDomain S]
+    [CommRing T] [IsDomain T] (e : ClassGroup R ≃* ClassGroup S)
+    (e' : ClassGroup S ≃* ClassGroup T) (x : ElementaryTwoQuotient R) :
+    elementaryTwoQuotientCongr (e.trans e') x =
+      elementaryTwoQuotientCongr e' (elementaryTwoQuotientCongr e x) :=
+  TauCeti.elementaryTwoQuotientCongr_trans_apply e e' x
+
+variable (R)
+
 /-- **The 2-rank of the class group when `Cl(R)/Cl(R)²` is finite-dimensional**: the `ZMod 2`
 dimension of the maximal elementary-2 quotient. In genus-theory applications the `t - 1` formula
 belongs to the narrow class group; for imaginary fields the narrow and ordinary class groups
@@ -116,6 +165,27 @@ theorem card_elementaryTwoQuotient_eq_two_pow_twoRank
     [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)] :
     Nat.card (ElementaryTwoQuotient R) = 2 ^ twoRank R :=
   TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank (ClassGroup R)
+
+/-- Multiplicatively equivalent class groups have `Cl/Cl²` quotients with the same `ZMod 2`
+finrank. -/
+theorem finrank_elementaryTwoQuotient_eq_of_mulEquiv {S : Type*} [CommRing S] [IsDomain S]
+    (e : ClassGroup R ≃* ClassGroup S) :
+    Module.finrank (ZMod 2) (ElementaryTwoQuotient R) =
+      Module.finrank (ZMod 2) (ElementaryTwoQuotient S) :=
+  TauCeti.finrank_elementaryTwoQuotient_eq_of_mulEquiv
+    (G := ClassGroup R) (H := ClassGroup S) e
+
+/-- If `Cl(R)/Cl(R)²` is finite-dimensional, then a multiplicatively equivalent class group has
+the same elementary-2 rank; target finite-dimensionality is transported by the induced
+equivalence. -/
+theorem twoRank_eq_of_mulEquiv {S : Type*} [CommRing S] [IsDomain S]
+    (e : ClassGroup R ≃* ClassGroup S)
+    [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)] :
+    letI : Module.Finite (ZMod 2) (ElementaryTwoQuotient S) :=
+      Module.Finite.of_surjective (elementaryTwoQuotientCongr e).toLinearMap
+        (elementaryTwoQuotientCongr e).surjective
+    twoRank R = twoRank S :=
+  TauCeti.twoRank_eq_of_mulEquiv (G := ClassGroup R) (H := ClassGroup S) e
 
 variable [Finite (ClassGroup R)]
 

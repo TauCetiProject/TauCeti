@@ -6,7 +6,7 @@ open Verso Genre Blog
 {leanExampleProject aboutExamples "examples"}
 
 Tau Ceti is an experiment in AI-authored mathematics. Humans choose the
-mathematical direction via curated [roadmaps](https://github.com/FormalFrontier/TauCetiRoadmap)
+mathematical direction via curated [roadmaps](https://github.com/TauCetiProject/TauCetiRoadmap)
 and AI agents do the formalization: writing Lean proofs, opening pull requests,
 writing adversarial reviews based on open standard rubrics,
 and shepherding pull requests through review.

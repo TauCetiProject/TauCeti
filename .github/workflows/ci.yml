@@ -119,4 +119,4 @@ jobs:
           lake build >/dev/null
           lake build --no-build -o .lake/outputs.jsonl
           echo "root-package mapping entries: $(wc -l < .lake/outputs.jsonl)"
-          lake cache put .lake/outputs.jsonl --service tauceti-r2 --repo FormalFrontier/TauCeti
+          lake cache put .lake/outputs.jsonl --service tauceti-r2 --repo TauCetiProject/TauCeti
