@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import TauCeti.Algebra.Group.NormalizerQuotient
 
 /-!
 # Generic orbit-relation quotient helpers
@@ -17,6 +18,12 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   original space.
 * `TauCeti.MulAction.orbitRelQuotientMapOfLE_bot_eq_iff`: equality after the bottom-to-`H`
   quotient map is membership in an `H`-orbit.
+* `TauCeti.MulAction.orbitRelQuotient_smul_eq_base_iff`: in a cancellative action, a
+  translate has the same `H`-orbit class as the base point exactly when the translator is in
+  `H`.
+* `TauCeti.MulAction.orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq`: for a
+  normal subgroup, equality of two translates in the `H`-orbit quotient is equality of the
+  corresponding inverse representatives in `N(H) / H`.
 -/
 
 public section
@@ -111,6 +118,52 @@ lemma orbitRelQuotientMapOfLE_bot_eq_iff (H : Subgroup G)
       orbitRelQuotientBotEquiv (G := G) (X := X) x ∈
         _root_.MulAction.orbit H (orbitRelQuotientBotEquiv (G := G) (X := X) y) := by
   simp [orbitRelQuotientMapOfLE_bot_eq, Quotient.eq'', _root_.MulAction.orbitRel_apply]
+
+/-- In a cancellative action, a translate has the same subgroup-orbit quotient class as the
+base point exactly when the translating group element belongs to the subgroup. -/
+lemma orbitRelQuotient_smul_eq_base_iff [IsCancelSMul G X] (H : Subgroup G) (g : G) (x : X) :
+    (Quotient.mk'' (g • x) : _root_.MulAction.orbitRel.Quotient H X) =
+        Quotient.mk'' x ↔
+      g ∈ H := by
+  constructor
+  · intro h
+    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply] at h
+    rcases h with ⟨k, hk⟩
+    have hkG : (k : G) • x = g • x := by
+      simpa [Subgroup.smul_def] using hk
+    exact (IsCancelSMul.right_cancel (k : G) g x hkG).symm ▸ k.2
+  · intro hg
+    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply]
+    exact ⟨⟨g, hg⟩, rfl⟩
+
+/-- In a cancellative action by `G`, equality of two translates in the quotient by a normal
+subgroup `H` is equality of the corresponding inverse representatives in the normalizer
+quotient `N(H) / H`. -/
+lemma orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq [IsCancelSMul G X]
+    (H : Subgroup G) [H.Normal] (x : X) (g k : G) :
+    (Quotient.mk'' (g • x) : _root_.MulAction.orbitRel.Quotient H X) =
+        Quotient.mk'' (k • x) ↔
+      Subgroup.normalizerQuotientMk H
+          ⟨g⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ =
+        Subgroup.normalizerQuotientMk H
+          ⟨k⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
+  constructor
+  · intro h
+    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply] at h
+    rcases h with ⟨l, hl⟩
+    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem]
+    have hmul : ((l : G) * k) • x = g • x := by
+      simpa [Subgroup.smul_def, smul_smul] using hl
+    have hg : (l : G) * k = g := IsCancelSMul.right_cancel _ _ x hmul
+    rw [← hg]
+    simpa [div_eq_mul_inv, mul_assoc] using
+      (inferInstance : H.Normal).conj_mem' _ (H.inv_mem l.2) k
+  · intro h
+    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem] at h
+    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply]
+    have hmem : g * k⁻¹ ∈ H := by
+      simpa [mul_assoc] using (inferInstance : H.Normal).conj_mem _ (H.inv_mem h) g
+    exact ⟨⟨g * k⁻¹, hmem⟩, by simp [Subgroup.smul_def, smul_smul]⟩
 
 end MulAction
 
