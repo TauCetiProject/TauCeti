@@ -127,15 +127,15 @@ lemma IsJHolomorphicWithinAt.congr_mono' (hf : IsJHolomorphicWithinAt J J' f s x
     IsJHolomorphicWithinAt J J' g t x :=
   hf.congr_mono hfg (hfg hx) hts
 
-/-- Within-set `J`-holomorphicity is invariant under changing the source set in a neighborhood
-of the base point. -/
-lemma isJHolomorphicWithinAt_congr_set (hst : s =ᶠ[𝓝 x] t) :
+/-- Within-set `J`-holomorphicity is invariant under changing the source set in a punctured
+neighborhood of the base point. -/
+lemma isJHolomorphicWithinAt_congr_set (hst : s =ᶠ[𝓝[≠] x] t) :
     IsJHolomorphicWithinAt J J' f s x ↔ IsJHolomorphicWithinAt J J' f t x := by
   constructor
   · rintro ⟨f', hf', hlin⟩
-    exact ⟨f', (hasFDerivWithinAt_congr_set hst).mp hf', hlin⟩
+    exact ⟨f', (hasFDerivWithinAt_congr_set_nhdsNE hst).mp hf', hlin⟩
   · rintro ⟨f', hf', hlin⟩
-    exact ⟨f', (hasFDerivWithinAt_congr_set hst).mpr hf', hlin⟩
+    exact ⟨f', (hasFDerivWithinAt_congr_set_nhdsNE hst).mpr hf', hlin⟩
 
 /-- Setwise `J`-holomorphicity on a smaller source set is unchanged after replacing a map by
 one equal to it on that smaller source set. -/
