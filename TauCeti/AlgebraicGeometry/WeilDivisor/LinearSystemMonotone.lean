@@ -46,7 +46,7 @@ lemma add_sub_mem_completeLinearSystem_of_le {D D' E : WeilDivisor X} (hDD' : D 
     E + (D' - D) ∈ S.completeLinearSystem D' := by
   have hdiff : IsEffective (D' - D) := le_iff_isEffective_sub.mp hDD'
   have hmem : E + (D' - D) ∈ S.completeLinearSystem (D + (D' - D)) :=
-    S.add_mem_completeLinearSystem hE (S.self_mem_completeLinearSystem hdiff)
+    S.add_effective_mem_completeLinearSystem hdiff hE
   convert hmem using 2
   abel
 
@@ -60,15 +60,10 @@ lemma mapsTo_add_sub_completeLinearSystem_of_le {D D' : WeilDivisor X} (hDD' : D
 lemma nonempty_completeLinearSystem_of_le {D D' : WeilDivisor X} (hDD' : D ≤ D')
     (hD : (S.completeLinearSystem D).Nonempty) :
     (S.completeLinearSystem D').Nonempty := by
-  rcases hD with ⟨E, hE⟩
-  exact ⟨E + (D' - D), S.add_sub_mem_completeLinearSystem_of_le hDD' hE⟩
-
-/-- If `D ≤ D'` and `E ∈ |D|`, then the divisor `E + D' - D` is an effective representative
-of the class of `D'`. -/
-lemma add_sub_mem_completeLinearSystem_of_le' {D D' E : WeilDivisor X} (hDD' : D ≤ D')
-    (hE : E ∈ S.completeLinearSystem D) :
-    E + D' - D ∈ S.completeLinearSystem D' := by
-  convert S.add_sub_mem_completeLinearSystem_of_le hDD' hE using 1
+  have hdiff : IsEffective (D' - D) := le_iff_isEffective_sub.mp hDD'
+  have hnonempty : (S.completeLinearSystem (D + (D' - D))).Nonempty :=
+    S.nonempty_completeLinearSystem_add_effective hdiff hD
+  convert hnonempty using 2
   abel
 
 end OrderSystem
