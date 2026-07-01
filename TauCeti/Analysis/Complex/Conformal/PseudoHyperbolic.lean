@@ -45,6 +45,7 @@ lemma pseudoHyperbolicDist_def (z w : ℂ) :
 lemma pseudoHyperbolicDist_nonneg (z w : ℂ) : 0 ≤ pseudoHyperbolicDist z w :=
   norm_nonneg _
 
+/-- The pseudo-hyperbolic expression from a point to itself is zero. -/
 @[simp]
 lemma pseudoHyperbolicDist_self (z : ℂ) : pseudoHyperbolicDist z z = 0 := by
   simp [pseudoHyperbolicDist]
@@ -92,8 +93,7 @@ lemma pseudoHyperbolicDist_comm (z w : ℂ) :
 /-- If the two points are equal, their pseudo-hyperbolic expression is zero. -/
 lemma pseudoHyperbolicDist_eq_zero_of_eq {z w : ℂ} (h : z = w) :
     pseudoHyperbolicDist z w = 0 := by
-  subst h
-  simp
+  simp [h]
 
 /-- The pseudo-hyperbolic expression with right endpoint zero is the norm. -/
 @[simp]
@@ -105,15 +105,27 @@ lemma pseudoHyperbolicDist_zero_right (z : ℂ) : pseudoHyperbolicDist z 0 = ‖
 lemma pseudoHyperbolicDist_zero_left (w : ℂ) : pseudoHyperbolicDist 0 w = ‖w‖ := by
   simp [pseudoHyperbolicDist]
 
-/-- On the open unit disc, zero pseudo-hyperbolic expression characterizes equality. -/
-lemma pseudoHyperbolicDist_eq_zero_iff_of_norm_lt_one {z w : ℂ}
-    (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
+/-- If the denominator is nonzero, zero pseudo-hyperbolic expression characterizes equality. -/
+lemma pseudoHyperbolicDist_eq_zero_iff_of_den_ne_zero {z w : ℂ}
+    (hden : 1 - (starRingEnd ℂ) w * z ≠ 0) :
     pseudoHyperbolicDist z w = 0 ↔ z = w := by
-  have hden : 1 - (starRingEnd ℂ) w * z ≠ 0 :=
-    one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw
   rw [pseudoHyperbolicDist, norm_eq_zero, div_eq_zero_iff]
   simp only [hden, or_false]
   exact sub_eq_zero
+
+/-- On the open unit disc, zero pseudo-hyperbolic expression characterizes equality. -/
+lemma pseudoHyperbolicDist_eq_zero_iff_of_norm_lt_one {z w : ℂ}
+    (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
+    pseudoHyperbolicDist z w = 0 ↔ z = w :=
+  pseudoHyperbolicDist_eq_zero_iff_of_den_ne_zero
+    (one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw)
+
+/-- For points in the open unit ball, zero pseudo-hyperbolic expression characterizes equality. -/
+lemma pseudoHyperbolicDist_eq_zero_iff_of_mem_ball {z w : ℂ}
+    (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
+    pseudoHyperbolicDist z w = 0 ↔ z = w :=
+  pseudoHyperbolicDist_eq_zero_iff_of_norm_lt_one (by simpa [mem_ball_zero_iff] using hz)
+    (by simpa [mem_ball_zero_iff] using hw)
 
 /-- For bundled unit-disc points, zero pseudo-hyperbolic expression characterizes equality. -/
 @[simp]
