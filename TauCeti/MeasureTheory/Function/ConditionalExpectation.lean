@@ -59,11 +59,8 @@ theorem condExp_indicator_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : Measurable
       ∫ ω in Z ⁻¹' E, (W ⁻¹' B).indicator (fun _ => (1 : ℝ)) ω ∂μ
         = (μ (W ⁻¹' B ∩ Z ⁻¹' E)).toReal := by
     intro W hW
-    simp_rw [integral_indicator (hW hB)]
-    simp only [integral_const]
-    simp_rw [Measure.restrict_restrict (hW hB)]
-    simp only [smul_eq_mul, mul_one]
-    simp [Measure.real, Measure.restrict_apply MeasurableSet.univ, Set.univ_inter]
+    rw [setIntegral_indicator (hW hB), setIntegral_const, Set.inter_comm]
+    simp [Measure.real]
   have h_lhs : ∫ ω in Z ⁻¹' E, f ω ∂μ = (μ (Y ⁻¹' B ∩ Z ⁻¹' E)).toReal := by
     have hf_eq : f = (Y ⁻¹' B).indicator (fun _ => (1 : ℝ)) := by
       ext ω; simp only [hf_def, Function.comp_apply, Set.indicator, Set.mem_preimage]
