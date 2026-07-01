@@ -200,7 +200,7 @@ lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_inv
 /-- Equality of subgroup fibre-orbit classes of two deck translates is equality of the
 corresponding inverse representatives in the normalizer quotient. -/
 lemma subgroupFiberOrbitClass_eq_iff_normalizerQuotientMk_inv_eq
-    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    [IsCancelSMul (Deck p) (p ⁻¹' {b})]
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) (φ ψ : Deck p) :
     subgroupFiberOrbitClass H (φ • e) = subgroupFiberOrbitClass H (ψ • e) ↔
       Subgroup.normalizerQuotientMk H
@@ -209,27 +209,31 @@ lemma subgroupFiberOrbitClass_eq_iff_normalizerQuotientMk_inv_eq
           ⟨ψ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
   constructor
   · intro h
-    have h' := congrArg (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e) h
-    rw [subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul,
-      subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul] at h'
-    exact h'
+    rw [subgroupFiberOrbitClass_eq_iff] at h
+    rcases h with ⟨η, hη⟩
+    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem]
+    have hmul : ((η : Deck p) * ψ) • e = φ • e := by
+      simpa [Subgroup.smul_def, smul_smul] using hη
+    have hφ : (η : Deck p) * ψ = φ := IsCancelSMul.right_cancel _ _ e hmul
+    rw [← hφ]
+    exact (inferInstance : H.Normal).conj_mem' _ (H.inv_mem η.2) ψ
   · intro h
-    apply (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e).injective
-    rw [subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul,
-      subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul]
-    exact h
+    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem] at h
+    rw [subgroupFiberOrbitClass_eq_iff]
+    have hmem : φ * ψ⁻¹ ∈ H := by
+      simpa [mul_assoc] using (inferInstance : H.Normal).conj_mem _ (H.inv_mem h) φ
+    exact ⟨⟨φ * ψ⁻¹, hmem⟩, by simp [Subgroup.smul_def]⟩
 
-/-- For a regular cover, equality of subgroup fibre-orbit classes of two deck translates is
+/-- For a preconnected cover, equality of subgroup fibre-orbit classes of two deck translates is
 equality of the corresponding inverse representatives in the normalizer quotient. -/
-lemma regularSubgroupFiberOrbitClass_eq_iff_normalizerQuotientMk_inv_eq
-    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
+lemma subgroupFiberOrbitClass_eq_iff_normalizerQuotientMk_inv_eq_of_isCoveringMap
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p)
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) (φ ψ : Deck p) :
     subgroupFiberOrbitClass H (φ • e) = subgroupFiberOrbitClass H (ψ • e) ↔
       Subgroup.normalizerQuotientMk H
           ⟨φ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ =
         Subgroup.normalizerQuotientMk H
           ⟨ψ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
-  letI := hreg.fiber_isPretransitive b
   letI := fiber_isCancelSMul (b := b) hp
   exact subgroupFiberOrbitClass_eq_iff_normalizerQuotientMk_inv_eq H e φ ψ
 
