@@ -341,24 +341,6 @@ lemma regularSubgroupFiberOrbitQuotientBotEquivDeck_symm_apply
   letI := fiber_isCancelSMul (b := b) hp
   simp [regularSubgroupFiberOrbitQuotientBotEquivDeck]
 
-/-- If the full deck group acts transitively on a fibre, then the quotient of that fibre by
-the full deck subgroup is a subsingleton. -/
-lemma subsingleton_subgroupFiberOrbitQuotient_top
-    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] :
-    Subsingleton (SubgroupFiberOrbitQuotient (⊤ : Subgroup (Deck p)) b) := by
-  rw [subgroupFiberOrbitQuotient_subsingleton_iff]
-  refine MulAction.IsPretransitive.mk ?_
-  intro e e'
-  rcases MulAction.exists_smul_eq (Deck p) e e' with ⟨φ, hφ⟩
-  exact ⟨⟨φ, trivial⟩, by simpa [Subgroup.smul_def] using hφ⟩
-
-/-- For a regular cover, the quotient of a fibre by the full deck subgroup is a
-subsingleton. -/
-lemma subsingleton_regularSubgroupFiberOrbitQuotient_top (hreg : IsRegular p) :
-    Subsingleton (SubgroupFiberOrbitQuotient (⊤ : Subgroup (Deck p)) b) := by
-  letI := hreg.fiber_isPretransitive b
-  exact subsingleton_subgroupFiberOrbitQuotient_top
-
 /-- Under the quotient-group equivalence, the full-subgroup fibre quotient lands in the
 unique coset of `Deck p ⧸ ⊤`. -/
 @[simp]

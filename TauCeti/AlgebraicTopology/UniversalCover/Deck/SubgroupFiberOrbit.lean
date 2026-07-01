@@ -124,6 +124,24 @@ lemma subgroupFiberOrbitQuotient_subsingleton_iff (H : Subgroup (Deck p)) :
       MulAction.IsPretransitive H (p ⁻¹' {b}) := by
   exact (MulAction.pretransitive_iff_subsingleton_quotient H (p ⁻¹' {b})).symm
 
+/-- If the full deck group acts transitively on a fibre, then the quotient of that fibre by
+the full deck subgroup is a subsingleton. -/
+lemma subsingleton_subgroupFiberOrbitQuotient_top
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] :
+    Subsingleton (SubgroupFiberOrbitQuotient (⊤ : Subgroup (Deck p)) b) := by
+  rw [subgroupFiberOrbitQuotient_subsingleton_iff]
+  refine MulAction.IsPretransitive.mk ?_
+  intro e e'
+  rcases MulAction.exists_smul_eq (Deck p) e e' with ⟨φ, hφ⟩
+  exact ⟨⟨φ, trivial⟩, by simpa [Subgroup.smul_def] using hφ⟩
+
+/-- For a regular cover, the quotient of a fibre by the full deck subgroup is a
+subsingleton. -/
+lemma subsingleton_regularSubgroupFiberOrbitQuotient_top (hreg : IsRegular p) :
+    Subsingleton (SubgroupFiberOrbitQuotient (⊤ : Subgroup (Deck p)) b) := by
+  letI := hreg.fiber_isPretransitive b
+  exact subsingleton_subgroupFiberOrbitQuotient_top
+
 /-- Transporting a point in an `H`-orbit along an over-base homeomorphism puts the transported
 point in the orbit for the conjugated subgroup. -/
 lemma fiberMap_mem_orbit_subgroup_map (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
