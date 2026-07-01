@@ -154,10 +154,8 @@ lemma normalizerQuotient_smul_subgroupFiberOrbitClass (H : Subgroup (Deck p))
       subgroupFiberOrbitClass H ((φ : Deck p) • e) :=
   by
     simpa [instNormalizerQuotientSubgroupFiberOrbitMulAction,
-      TauCeti.MulAction.normalizerQuotientOrbitRelQuotientMulAction,
-      normalizerQuotientSubgroupFiberOrbitPermHom, subgroupFiberOrbitClass,
-      MulAction.compHom_smul_def] using
-        TauCeti.MulAction.normalizerQuotientOrbitRelQuotientPermHom_mk_apply
+      subgroupFiberOrbitClass] using
+        TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_mk
           (X := p ⁻¹' {b}) H φ e
 
 /-- The identity class in `N(H) / H` fixes every subgroup fibre-orbit class. -/
