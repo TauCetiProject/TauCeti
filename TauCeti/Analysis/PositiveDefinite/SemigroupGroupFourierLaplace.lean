@@ -41,7 +41,7 @@ mixture of these atoms.
   Chapter 4.
 -/
 
-@[expose] public section
+public section
 
 open Complex ComplexConjugate
 open scoped ComplexOrder NNReal
@@ -62,16 +62,16 @@ public noncomputable def fourierAtom (q : V) (v : V) : ℂ :=
 @[simp]
 theorem laplaceAtom_def (p : ℝ≥0) (t : ℝ≥0) :
     laplaceAtom p t = (Real.exp (-(t : ℝ) * (p : ℝ)) : ℂ) :=
-  rfl
+  by simp [laplaceAtom]
 
 /-- The `Real.fourierChar` form of a Fourier atom. -/
 theorem fourierAtom_eq_fourierChar (q : V) (v : V) :
     fourierAtom q v = (Real.fourierChar (-(inner ℝ v q)) : ℂ) :=
-  rfl
+  by simp [fourierAtom]
 
 /-- The raw exponential form of a Fourier atom. -/
 @[simp]
-theorem fourierAtom_def (q : V) (v : V) :
+theorem fourierAtom_apply (q : V) (v : V) :
     fourierAtom q v =
       Complex.exp (-2 * ((Real.pi : ℝ) : ℂ) * Complex.I * ((inner ℝ v q : ℝ) : ℂ)) := by
   rw [fourierAtom_eq_fourierChar, Real.fourierChar_apply]
@@ -94,7 +94,7 @@ theorem fourierAtom_sub (q v w : V) :
     fourierAtom q (v - w) =
       conj (Complex.exp (2 * ((Real.pi : ℝ) : ℂ) * Complex.I * ((inner ℝ v q : ℝ) : ℂ))) *
         Complex.exp (2 * ((Real.pi : ℝ) : ℂ) * Complex.I * ((inner ℝ w q : ℝ) : ℂ)) := by
-  rw [fourierAtom_def]
+  rw [fourierAtom_apply]
   rw [← Complex.exp_conj, ← Complex.exp_add]
   congr 1
   simp only [inner_sub_left, Complex.ofReal_sub, map_mul, map_ofNat, Complex.conj_ofReal,
