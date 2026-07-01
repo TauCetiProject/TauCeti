@@ -10,7 +10,7 @@ This file packages the cosine-side consequences of Mathlib's change of variables
 for the Chebyshev orthogonality measure.  The roadmap's Chebyshev Hilbert-basis
 target later identifies the normalized Chebyshev functions on `measureT` with
 the cosine basis under `x = cos θ`; the lemmas here expose the one-dimensional
-integral API needed for that transfer.
+integral API needed for that transfer, including the normalized angular modes.
 -/
 
 public section
@@ -98,5 +98,79 @@ lemma integral_chebyshevCosine_mul_chebyshevCosine_eq_ite (m n : ℕ) :
   · subst hmn
     simp [integral_chebyshevCosine_mul_self]
   · simp [hmn, integral_chebyshevCosine_mul_chebyshevCosine_of_ne hmn]
+
+/-! ### Normalized cosine modes -/
+
+/-- The normalized angular cosine mode corresponding to the normalized Chebyshev `Tₙ` mode. -/
+noncomputable def normalizedChebyshevCosine (n : ℕ) (θ : ℝ) : ℝ :=
+  chebyshevCosine n θ / Real.sqrt (chebyshevTNormSq n)
+
+/-- The defining equation for the normalized angular cosine representative. -/
+lemma normalizedChebyshevCosine_def (n : ℕ) (θ : ℝ) :
+    normalizedChebyshevCosine n θ =
+      chebyshevCosine n θ / Real.sqrt (chebyshevTNormSq n) :=
+  normalizedChebyshevCosine.eq_1 n θ
+
+@[simp]
+lemma normalizedChebyshevCosine_zero (θ : ℝ) :
+    normalizedChebyshevCosine 0 θ = 1 / Real.sqrt Real.pi := by
+  simp [normalizedChebyshevCosine_def]
+
+@[simp]
+lemma normalizedChebyshevCosine_one (θ : ℝ) :
+    normalizedChebyshevCosine 1 θ = Real.cos θ / Real.sqrt (Real.pi / 2) := by
+  simp [normalizedChebyshevCosine_def]
+
+/-- The normalized angular Chebyshev representatives are continuous. -/
+lemma continuous_normalizedChebyshevCosine (n : ℕ) :
+    Continuous (normalizedChebyshevCosine n) :=
+  (continuous_chebyshevCosine n).div_const _
+
+/-- Pulling back a normalized Chebyshev `T` polynomial along `x = cos θ` gives the normalized
+angular cosine mode. -/
+lemma normalized_eval_T_real_cos_eq_normalizedChebyshevCosine (n : ℕ) (θ : ℝ) :
+    (T ℝ n).eval (Real.cos θ) / Real.sqrt (chebyshevTNormSq n) =
+      normalizedChebyshevCosine n θ := by
+  rw [eval_T_real_cos_eq_chebyshevCosine]
+  simp [normalizedChebyshevCosine_def]
+
+/-- The diagonal normalized angular cosine modes have integral one over `[0, π]`. -/
+lemma integral_normalizedChebyshevCosine_mul_self (n : ℕ) :
+    ∫ θ in (0)..Real.pi, normalizedChebyshevCosine n θ * normalizedChebyshevCosine n θ = 1 := by
+  have hfun : (fun θ : ℝ => normalizedChebyshevCosine n θ * normalizedChebyshevCosine n θ) =
+      fun θ : ℝ => (Real.sqrt (chebyshevTNormSq n) * Real.sqrt (chebyshevTNormSq n))⁻¹ *
+        (chebyshevCosine n θ * chebyshevCosine n θ) := by
+    funext θ
+    simp only [normalizedChebyshevCosine_def]
+    field_simp [(Real.sqrt_ne_zero').mpr (chebyshevTNormSq_pos n)]
+  rw [hfun, intervalIntegral.integral_const_mul, integral_chebyshevCosine_mul_self]
+  have hsqrt : Real.sqrt (chebyshevTNormSq n) * Real.sqrt (chebyshevTNormSq n) =
+      chebyshevTNormSq n := by
+    rw [← sq, Real.sq_sqrt (chebyshevTNormSq_pos n).le]
+  rw [hsqrt]
+  field_simp [chebyshevTNormSq_ne_zero n]
+
+/-- Distinct normalized angular cosine modes are orthogonal over `[0, π]`. -/
+lemma integral_normalizedChebyshevCosine_mul_normalizedChebyshevCosine_of_ne {m n : ℕ}
+    (hmn : m ≠ n) :
+    ∫ θ in (0)..Real.pi, normalizedChebyshevCosine m θ * normalizedChebyshevCosine n θ = 0 := by
+  have hfun : (fun θ : ℝ => normalizedChebyshevCosine m θ * normalizedChebyshevCosine n θ) =
+      fun θ : ℝ => (Real.sqrt (chebyshevTNormSq m) * Real.sqrt (chebyshevTNormSq n))⁻¹ *
+        (chebyshevCosine m θ * chebyshevCosine n θ) := by
+    funext θ
+    simp only [normalizedChebyshevCosine_def]
+    field_simp [(Real.sqrt_ne_zero').mpr (chebyshevTNormSq_pos m),
+      (Real.sqrt_ne_zero').mpr (chebyshevTNormSq_pos n)]
+  rw [hfun, intervalIntegral.integral_const_mul,
+    integral_chebyshevCosine_mul_chebyshevCosine_of_ne hmn, mul_zero]
+
+/-- Normalized angular Chebyshev-cosine orthogonality in Kronecker-delta form. -/
+lemma integral_normalizedChebyshevCosine_mul_normalizedChebyshevCosine_eq_ite (m n : ℕ) :
+    ∫ θ in (0)..Real.pi, normalizedChebyshevCosine m θ * normalizedChebyshevCosine n θ =
+      if m = n then 1 else 0 := by
+  by_cases hmn : m = n
+  · subst hmn
+    simp [integral_normalizedChebyshevCosine_mul_self]
+  · simp [hmn, integral_normalizedChebyshevCosine_mul_normalizedChebyshevCosine_of_ne hmn]
 
 end TauCeti
