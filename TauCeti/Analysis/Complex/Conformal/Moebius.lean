@@ -31,7 +31,6 @@ open Complex Metric
 open scoped ComplexConjugate
 
 /-- The standard Moebius factor of the unit disc sending `a` to `0`. -/
-@[expose]
 noncomputable def unitDiscMoebius (a z : Complex.UnitDisc) : Complex.UnitDisc :=
   Complex.UnitDisc.mk
     (((z : ℂ) - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * (z : ℂ)))
@@ -45,7 +44,7 @@ noncomputable def unitDiscMoebius (a z : Complex.UnitDisc) : Complex.UnitDisc :=
 lemma coe_unitDiscMoebius (a z : Complex.UnitDisc) :
     (unitDiscMoebius a z : ℂ) =
       ((z : ℂ) - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * (z : ℂ)) :=
-  rfl
+  by simp [unitDiscMoebius]
 
 /-- The unit-disc Moebius factor centered at zero is the identity. -/
 @[simp]
@@ -82,26 +81,33 @@ lemma unitDiscMoebius_eq_zero_iff (a z : Complex.UnitDisc) :
     norm_unitDiscMoebius]
   exact pseudoHyperbolicExpr_eq_zero_iff_unitDisc z a
 
+/-- The scalar Moebius formula with center of norm less than one is holomorphic on the unit disc. -/
+lemma differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha : ‖a‖ < 1) :
+    DifferentiableOn ℂ
+      (fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z))
+      (ball (0 : ℂ) 1) := by
+  intro z hz
+  have hden :
+      1 - (starRingEnd ℂ) a * z ≠ 0 :=
+    one_sub_conj_mul_ne_zero_of_norm_lt_one
+      (by simpa [mem_ball_zero_iff] using hz) ha
+  have hnum :
+      DifferentiableWithinAt ℂ (fun z : ℂ => z - a) (ball (0 : ℂ) 1) z :=
+    differentiableWithinAt_id.sub (differentiableWithinAt_const (c := a))
+  have hden_diff :
+      DifferentiableWithinAt ℂ
+        (fun z : ℂ => 1 - (starRingEnd ℂ) a * z) (ball (0 : ℂ) 1) z :=
+    (differentiableWithinAt_const (c := (1 : ℂ))).sub
+      ((differentiableWithinAt_const (c := (starRingEnd ℂ) a)).mul
+        differentiableWithinAt_id)
+  exact hnum.div hden_diff hden
+
 /-- The scalar formula of the unit-disc Moebius factor is holomorphic on the unit disc. -/
 lemma differentiableOn_unitDiscMoebiusFormula (a : Complex.UnitDisc) :
     DifferentiableOn ℂ
       (fun z : ℂ => (z - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * z))
-      (ball (0 : ℂ) 1) := by
-  intro z hz
-  have hden :
-      1 - (starRingEnd ℂ) (a : ℂ) * z ≠ 0 :=
-    one_sub_conj_mul_ne_zero_of_norm_lt_one
-      (by simpa [mem_ball_zero_iff] using hz) a.norm_lt_one
-  have hnum :
-      DifferentiableWithinAt ℂ (fun z : ℂ => z - (a : ℂ)) (ball (0 : ℂ) 1) z :=
-    differentiableWithinAt_id.sub (differentiableWithinAt_const (c := (a : ℂ)))
-  have hden_diff :
-      DifferentiableWithinAt ℂ
-        (fun z : ℂ => 1 - (starRingEnd ℂ) (a : ℂ) * z) (ball (0 : ℂ) 1) z :=
-    (differentiableWithinAt_const (c := (1 : ℂ))).sub
-      ((differentiableWithinAt_const (c := (starRingEnd ℂ) (a : ℂ))).mul
-        differentiableWithinAt_id)
-  exact hnum.div hden_diff hden
+      (ball (0 : ℂ) 1) :=
+  differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one a.norm_lt_one
 
 private lemma unitDiscMoebius_neg_apply_unitDiscMoebius_apply_scalar {a z : ℂ}
     (hden : 1 - (starRingEnd ℂ) a * z ≠ 0)
@@ -152,7 +158,6 @@ lemma unitDiscMoebius_comp_unitDiscMoebius_neg (a : Complex.UnitDisc) :
   simpa using unitDiscMoebius_neg_comp_unitDiscMoebius (-a)
 
 /-- The standard Moebius self-equivalence of the unit disc sending `a` to `0`. -/
-@[expose]
 noncomputable def unitDiscMoebiusEquiv (a : Complex.UnitDisc) :
     Complex.UnitDisc ≃ Complex.UnitDisc where
   toFun := unitDiscMoebius a
@@ -166,7 +171,7 @@ noncomputable def unitDiscMoebiusEquiv (a : Complex.UnitDisc) :
 @[simp]
 lemma unitDiscMoebiusEquiv_apply (a z : Complex.UnitDisc) :
     unitDiscMoebiusEquiv a z = unitDiscMoebius a z :=
-  rfl
+  by simp [unitDiscMoebiusEquiv]
 
 /-- The inverse equivalence is the Moebius equivalence centered at `-a`. -/
 @[simp]
