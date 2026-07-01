@@ -19,7 +19,7 @@ a covering map `p : E → X`, with prescribed basepoint lift `e₀`, when
 The classification of covers often inserts an intermediate subgroup
 `H ≤ π₁(X, f a₀)`: one first proves `f_* π₁(A, a₀) ≤ H`, and separately identifies `H` as a
 subgroup of the image of `p_*`. The lemmas here package exactly that two-step shape, together
-with the simply-connected-domain special case.
+with the subsingleton-fundamental-group special case.
 
 ## Main declarations
 
@@ -27,8 +27,6 @@ with the simply-connected-domain special case.
   `f_* π₁(A, a₀) ≤ H ≤ p_* π₁(E, e₀)`.
 * `existsUnique_continuousMap_lifts_of_subsingleton_fundamentalGroup`: lift when the source
   fundamental group is subsingleton.
-* `TauCeti.IsCoveringMap.existsUnique_continuousMap_lifts_of_simplyConnectedSpace_source`:
-  the simply connected source special case, as a TauCeti-named wrapper.
 
 ## References
 
@@ -72,13 +70,6 @@ theorem existsUnique_continuousMap_lifts_of_subsingleton_fundamentalGroup
   hp.existsUnique_continuousMap_lifts_of_range_le he <| by
     rw [FundamentalGroup.map_range_eq_bot_of_subsingleton f]
     exact bot_le
-
-/-- The lifting criterion when the source space is simply connected. -/
-theorem existsUnique_continuousMap_lifts_of_simplyConnectedSpace_source
-    (hp : _root_.IsCoveringMap p) [SimplyConnectedSpace A] [LocallyPathConnectedSpace A]
-    {f : C(A, X)} {a₀ : A} {e₀ : E} (he : p e₀ = f a₀) :
-    ∃! F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
-  hp.existsUnique_continuousMap_lifts f a₀ e₀ he
 
 end IsCoveringMap
 
