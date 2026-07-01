@@ -276,11 +276,10 @@ lemma subgroupFiberOrbitQuotientBotEquivDeck_apply_smul
     subgroupFiberOrbitQuotientBotEquivDeck e
         (subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) (φ • e)) =
       φ⁻¹ := by
-  change QuotientGroup.quotientBot
-      (subgroupFiberOrbitQuotientEquivQuotientGroup (⊥ : Subgroup (Deck p)) e
-        (subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) (φ • e))) = φ⁻¹
-  rw [subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul]
-  exact quotientGroup_quotientBot_mk φ⁻¹
+  have h := congrArg (QuotientGroup.quotientBot (G := Deck p))
+    (subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul
+      (H := (⊥ : Subgroup (Deck p))) e φ)
+  simpa [subgroupFiberOrbitQuotientBotEquivDeck] using h.trans (quotientGroup_quotientBot_mk φ⁻¹)
 
 /-- For a regular cover, the bottom-subgroup quotient-to-deck equivalence sends the class of
 `φ • e` to `φ⁻¹`. -/
@@ -353,10 +352,9 @@ lemma subsingleton_subgroupFiberOrbitQuotient_top
   rcases MulAction.exists_smul_eq (Deck p) e e' with ⟨φ, hφ⟩
   exact ⟨⟨φ, trivial⟩, by simpa [Subgroup.smul_def] using hφ⟩
 
-/-- For a regular preconnected covering, the quotient of a fibre by the full deck subgroup is
-a subsingleton. -/
-lemma regularSubgroupFiberOrbitQuotient_top_subsingleton
-    [TopologicalSpace B] [PreconnectedSpace E] (hreg : IsRegular p) :
+/-- For a regular cover, the quotient of a fibre by the full deck subgroup is a
+subsingleton. -/
+lemma subsingleton_regularSubgroupFiberOrbitQuotient_top (hreg : IsRegular p) :
     Subsingleton (SubgroupFiberOrbitQuotient (⊤ : Subgroup (Deck p)) b) := by
   letI := hreg.fiber_isPretransitive b
   exact subsingleton_subgroupFiberOrbitQuotient_top
