@@ -139,14 +139,14 @@ theorem lintegral_blockCylinder_indicator {μ : Measure Ω} {X : ℕ → Ω → 
     blockLaw_blockCylinder X hX hC]
 
 /-- The real (Bochner) integral of the indicator product is the block law of the rectangle:
-`∫ ω, ∏ i, 𝟙_{C i}(X (k i) ω) ∂μ = (blockLaw μ X k (∏ᵢ C i)).toReal`. This is the finite-measure
-real form of `lintegral_blockCylinder_indicator`; `[IsFiniteMeasure μ]` is required because a real
-Bochner integral is the wrong object at infinite block mass (the `∞.toReal` convention would make it
-vacuous). -/
+`∫ ω, ∏ i, 𝟙_{C i}(X (k i) ω) ∂μ = (blockLaw μ X k (∏ᵢ C i)).toReal`, whenever the rectangle carries
+finite mass. This is the real form of `lintegral_blockCylinder_indicator`; the finite-mass
+hypothesis guards faithfulness — a real Bochner integral is the wrong object at infinite block
+mass, where the `∞.toReal` convention would otherwise make the identity vacuous. -/
 @[grind =>]
-theorem integral_blockIndicatorProd {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} {m : ℕ}
+theorem integral_blockIndicatorProd {μ : Measure Ω} {X : ℕ → Ω → α} {m : ℕ}
     {k : Fin m → ℕ} {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ)
-    (hC : ∀ i, MeasurableSet (C i)) :
+    (hC : ∀ i, MeasurableSet (C i)) (_hfin : blockLaw μ X k (Set.univ.pi C) ≠ ⊤) :
     ∫ ω, blockIndicatorProd X k C ω ∂μ = (blockLaw μ X k (Set.univ.pi C)).toReal := by
   rw [blockIndicatorProd_eq_indicator,
     integral_indicator₀ (nullMeasurableSet_blockCylinder hX hC), setIntegral_const,
