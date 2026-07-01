@@ -2,9 +2,10 @@ module
 
 public import Mathlib.Probability.Process.Filtration
 public import Mathlib.Order.LiminfLimsup
+import Mathlib.Data.Stream.Init
 
 /-!
-# Tail σ-algebras of a process
+# Tail σ-algebras of a process, and cons/tail of sequence-valued random variables
 
 This file provides the process-relative tail σ-algebra API requested in the Exchangeability
 roadmap, Layer 2.  For a process `X : (k : ℕ) → Ω → β k`, `tailFamily X n` is the
@@ -12,6 +13,11 @@ roadmap, Layer 2.  For a process `X : (k : ℕ) → Ω → β k`, `tailFamily X 
 tail σ-algebra `limsup ... atTop` of the coordinate σ-algebras.  The same future σ-algebras are
 also bundled as a filtration indexed by `ℕᵒᵈ`, so later reverse-martingale statements can consume
 Mathlib's `Filtration` interface.
+
+It also provides the pointwise `Stream'.cons`/`Stream'.tail` operations `processCons`/`processTail`
+on sequence-valued random variables `t : Ω → ℕ → α`, with their measurability and `comap`
+σ-algebra-contraction lemmas — kept here because their contraction lemmas are exactly the tail
+σ-algebra facts the Kallenberg conditional-independence step of the de Finetti factorisation needs.
 -/
 
 public section
@@ -141,6 +147,108 @@ theorem measurable_futureFiltration_of_le {X : (k : ℕ) → Ω → β k}
     Measurable[futureFiltration X hX (OrderDual.toDual n)] (X k) := by
   rw [futureFiltration_apply]
   exact measurable_tailFamily_of_le hnk
+
+/-! ## Cons and tail of sequence-valued random variables
+
+`processCons` / `processTail` prepend / drop the leading coordinate of a sequence-valued random
+variable `t : Ω → ℕ → α`.  The `comap` contraction lemmas (`comap_processTail_le`,
+`comap_le_comap_processCons`) record that the tail generates a coarser σ-algebra and that consing
+refines it; these feed the Kallenberg conditional-independence step of the de Finetti block-product
+factorisation.  The definitions are not `@[expose]`; their characteristic API is the `@[simp]`
+`_apply` / interaction lemmas below.
+
+Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/ShiftOperations.lean`, pin
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`). -/
+
+variable {α : Type*} [MeasurableSpace α]
+
+/-- Cons a head random variable onto a sequence-valued one (a pointwise `Stream'.cons`):
+`processCons x t = [x, t 0, t 1, …]`. -/
+def processCons (x : Ω → α) (t : Ω → ℕ → α) : Ω → ℕ → α :=
+  fun ω => Stream'.cons (x ω) (t ω)
+
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- Leading coordinate of a cons: `processCons x t ω 0 = x ω`. -/
+@[simp]
+theorem processCons_zero (x : Ω → α) (t : Ω → ℕ → α) (ω : Ω) : processCons x t ω 0 = x ω := by
+  simp only [processCons]
+  exact Stream'.get_zero_cons (x ω) (t ω)
+
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- Later coordinates of a cons: `processCons x t ω (n + 1) = t ω n`. -/
+@[simp]
+theorem processCons_succ (x : Ω → α) (t : Ω → ℕ → α) (ω : Ω) (n : ℕ) :
+    processCons x t ω (n + 1) = t ω n := by
+  simp only [processCons]
+  exact Stream'.get_succ_cons n (t ω) (x ω)
+
+/-- Drop the leading coordinate of a sequence-valued random variable (a pointwise `Stream'.tail`):
+`processTail t ω n = t ω (n+1)`. -/
+def processTail (t : Ω → ℕ → α) : Ω → ℕ → α :=
+  fun ω => Stream'.tail (t ω)
+
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- Coordinate equation for `processTail`: its `n`th coordinate is `t (n + 1)`. -/
+@[simp]
+theorem processTail_apply (t : Ω → ℕ → α) (ω : Ω) (n : ℕ) : processTail t ω n = t ω (n + 1) := by
+  simp only [processTail, Stream'.tail, Stream'.get]
+
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- The tail of a cons recovers the original sequence. -/
+@[simp]
+theorem processTail_processCons (x : Ω → α) (t : Ω → ℕ → α) :
+    processTail (processCons x t) = t := by
+  funext ω
+  simp only [processTail, processCons]
+  exact Stream'.tail_cons (x ω) (t ω)
+
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- Reconstruct a sequence from its head and tail (the reverse of `processTail_processCons`). -/
+@[simp]
+theorem processCons_processTail (t : Ω → ℕ → α) :
+    processCons (fun ω => t ω 0) (processTail t) = t := by
+  funext ω n
+  cases n with
+  | zero => simp only [processCons_zero]
+  | succ n => simp only [processCons_succ, processTail_apply]
+
+/-- Consing a measurable head onto a process is measurable when its coordinates `t (· ·)` are. -/
+@[fun_prop]
+theorem measurable_processCons {x : Ω → α} {t : Ω → ℕ → α} (hx : Measurable x)
+    (ht : ∀ n, Measurable fun ω => t ω n) : Measurable (processCons x t) := by
+  refine measurable_pi_lambda _ fun n => ?_
+  cases n with
+  | zero => simpa only [processCons_zero] using hx
+  | succ n => simpa only [processCons_succ] using ht n
+
+/-- The tail of a process is measurable when its tail coordinates `t (· + 1)` are. -/
+@[fun_prop]
+theorem measurable_processTail {t : Ω → ℕ → α} (ht : ∀ n, Measurable fun ω => t ω (n + 1)) :
+    Measurable (processTail t) := by
+  refine measurable_pi_lambda _ fun n => ?_
+  simpa only [processTail_apply] using ht n
+
+omit [MeasurableSpace Ω] in
+/-- The tail of a sequence-valued random variable generates a coarser σ-algebra than the variable
+itself. -/
+theorem comap_processTail_le {t : Ω → ℕ → α} :
+    MeasurableSpace.comap (processTail t) inferInstance
+      ≤ MeasurableSpace.comap t inferInstance := by
+  have hcomp : processTail t = (fun s : ℕ → α => fun n => s (n + 1)) ∘ t := by
+    funext ω n; simp only [processTail, Stream'.tail, Stream'.get, Function.comp_apply]
+  rw [hcomp, ← MeasurableSpace.comap_comp]
+  have hshift : Measurable fun s : ℕ → α => fun n => s (n + 1) := by fun_prop
+  exact MeasurableSpace.comap_mono hshift.comap_le
+
+omit [MeasurableSpace Ω] in
+/-- Consing a head onto a sequence-valued random variable refines its σ-algebra: `σ(t) ≤
+σ(processCons x t)`. -/
+theorem comap_le_comap_processCons (x : Ω → α) (t : Ω → ℕ → α) :
+    MeasurableSpace.comap t inferInstance ≤ MeasurableSpace.comap (processCons x t) inferInstance :=
+  calc MeasurableSpace.comap t inferInstance
+      = MeasurableSpace.comap (processTail (processCons x t)) inferInstance := by
+        rw [processTail_processCons]
+    _ ≤ MeasurableSpace.comap (processCons x t) inferInstance := comap_processTail_le
 
 end Probability
 
