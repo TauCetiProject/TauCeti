@@ -27,8 +27,6 @@ with the simply-connected-domain special case.
   `f_* π₁(A, a₀) ≤ H ≤ p_* π₁(E, e₀)`.
 * `TauCeti.IsCoveringMap.existsUnique_continuousMap_lifts_of_subsingleton_source_subgroup`:
   the same statement when the source fundamental group is subsingleton.
-* `TauCeti.IsCoveringMap.existsUnique_continuousMap_lifts_of_simplyConnectedSpace_subgroup`:
-  the simply-connected-source specialization.
 
 ## References
 
@@ -74,20 +72,6 @@ theorem existsUnique_continuousMap_lifts_of_subsingleton_source_subgroup
     ∃! F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
   TauCeti.IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le_subgroup hp he H
     (FundamentalGroup.map_range_le_of_subsingleton f H) hHp
-
-/-- The subgroup-form lifting criterion for maps out of a simply connected source.
-
-This is the universal-covers-roadmap special case of the lifting criterion: once a
-simply-connected domain is locally path connected, every map from it satisfies the
-fundamental-group inclusion into any intermediate subgroup `H`, so only the containment
-`H ≤ p_* π₁(E, e₀)` remains. -/
-theorem existsUnique_continuousMap_lifts_of_simplyConnectedSpace_subgroup
-    (hp : _root_.IsCoveringMap p) [SimplyConnectedSpace A] [LocallyPathConnectedSpace A]
-    {f : C(A, X)} {a₀ : A} {e₀ : E} (he : p e₀ = f a₀)
-    (H : Subgroup (_root_.FundamentalGroup X (f a₀)))
-    (hHp : H ≤ (_root_.FundamentalGroup.mapOfEq ⟨p, hp.continuous⟩ he).range) :
-    ∃! F : C(A, E), F a₀ = e₀ ∧ p ∘ F = f :=
-  TauCeti.IsCoveringMap.existsUnique_continuousMap_lifts_of_subsingleton_source_subgroup hp he H hHp
 
 end IsCoveringMap
 
