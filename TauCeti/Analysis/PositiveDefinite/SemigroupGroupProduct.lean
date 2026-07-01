@@ -32,8 +32,6 @@ function/kernel correspondence and the Schur product closure for positive-defini
   function and a spatial positive-definite function is BCR positive definite.
 * `TauCeti.isSemigroupGroupPD_mul_time_spatial_of_kernels`: the same construction when the time
   factor and spatial subtraction factor are supplied as positive-definite kernels.
-* `TauCeti.isSemigroupGroupPD_mul_time_spatial_of_kernel`: an alias with the same two-kernel
-  hypotheses, matching the singular kernel naming used before this file exposed both kernels.
 * `TauCeti.continuous_mul_time_spatial`: continuity of separated products.
 * `TauCeti.isSemigroupGroupPD_mul_time_spatial_and_continuous`: the packaged positive-definite
   and continuous form used by BCR-facing examples.
@@ -67,16 +65,6 @@ theorem isSemigroupGroupPD_mul_time_spatial_of_kernels
   have hspace : IsPositiveDefiniteKernel fun p q : ℝ≥0 × V => g (p.2 - q.2) :=
     isPositiveDefiniteKernel_comp hg Prod.snd
   simpa using isPositiveDefiniteKernel_mul htime hspace
-
-/-- If the time factor gives a positive-definite kernel `(t, u) ↦ f (t + u)`, and the spatial
-factor gives a positive-definite subtraction kernel `(v, w) ↦ g (v - w)`, then their separated
-product is semigroup-group positive definite. -/
-theorem isSemigroupGroupPD_mul_time_spatial_of_kernel
-    {f : ℝ≥0 → ℂ} {g : V → ℂ}
-    (hf : IsPositiveDefiniteKernel fun t u : ℝ≥0 => f (t + u))
-    (hg : IsPositiveDefiniteKernel fun v w : V => g (v - w)) :
-    IsSemigroupGroupPD fun p : ℝ≥0 × V => f p.1 * g p.2 :=
-  isSemigroupGroupPD_mul_time_spatial_of_kernels hf hg
 
 /-- A separated product of a time positive-definite function and a spatial positive-definite
 function is semigroup-group positive definite. The time factor uses Mathlib's trivial involution
@@ -117,16 +105,6 @@ theorem isSemigroupGroupPD_mul_time_spatial_of_kernels_and_continuous
     IsSemigroupGroupPD (fun p : ℝ≥0 × V => f p.1 * g p.2) ∧
       Continuous (fun p : ℝ≥0 × V => f p.1 * g p.2) :=
   ⟨isSemigroupGroupPD_mul_time_spatial_of_kernels hf hg,
-    continuous_mul_time_spatial hfcont hgcont⟩
-
-/-- Kernel-supplied version of the separated-product construction, packaged with continuity. -/
-theorem isSemigroupGroupPD_mul_time_spatial_of_kernel_and_continuous
-    (hf : IsPositiveDefiniteKernel fun t u : ℝ≥0 => f (t + u))
-    (hg : IsPositiveDefiniteKernel fun v w : V => g (v - w))
-    (hfcont : Continuous f) (hgcont : Continuous g) :
-    IsSemigroupGroupPD (fun p : ℝ≥0 × V => f p.1 * g p.2) ∧
-      Continuous (fun p : ℝ≥0 × V => f p.1 * g p.2) :=
-  ⟨isSemigroupGroupPD_mul_time_spatial_of_kernel hf hg,
     continuous_mul_time_spatial hfcont hgcont⟩
 
 end Topology
