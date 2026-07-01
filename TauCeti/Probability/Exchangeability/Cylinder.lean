@@ -1,7 +1,7 @@
 module
 
 public import TauCeti.Probability.Exchangeability.Basic
-public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Block cylinders and their indicator products
@@ -121,6 +121,18 @@ theorem integrable_blockIndicatorProd {μ : Measure Ω} [IsFiniteMeasure μ] {X 
     (hC : ∀ i, MeasurableSet (C i)) : Integrable (blockIndicatorProd X k C) μ := by
   rw [blockIndicatorProd_eq_indicator]
   exact (integrable_const (1 : ℝ)).indicator₀ (nullMeasurableSet_blockCylinder hX hC)
+
+/-- The integral of the indicator product is the block law of the corresponding rectangle: for
+a.e.-measurable selected coordinates, `∫ ω, ∏ i, 𝟙_{C i}(X (k i) ω) ∂μ = blockLaw μ X k (∏ᵢ C i)`
+(as a real number). -/
+theorem integral_blockIndicatorProd {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} {m : ℕ}
+    {k : Fin m → ℕ} {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ)
+    (hC : ∀ i, MeasurableSet (C i)) :
+    ∫ ω, blockIndicatorProd X k C ω ∂μ = (blockLaw μ X k (Set.univ.pi C)).toReal := by
+  rw [blockIndicatorProd_eq_indicator,
+    integral_indicator₀ (nullMeasurableSet_blockCylinder hX hC), setIntegral_const,
+    blockLaw_blockCylinder X hX hC]
+  simp [Measure.real]
 
 end Probability
 
