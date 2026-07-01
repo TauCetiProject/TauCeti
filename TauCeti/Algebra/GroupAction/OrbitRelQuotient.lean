@@ -24,6 +24,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq`: for a
   normal subgroup, equality of two translates in the `H`-orbit quotient is equality of the
   corresponding inverse representatives in `N(H) / H`.
+* `TauCeti.MulAction.normalizerOrbitRelQuotientPermHom`: the normalizer action on the
+  quotient by `H`-orbits.
+* `TauCeti.MulAction.normalizerQuotientOrbitRelQuotientPermHom`: the descended action of
+  `N(H) / H` on the quotient by `H`-orbits.
 -/
 
 public section
@@ -164,6 +168,172 @@ lemma orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq [IsCancelSMu
     have hmem : g * k⁻¹ ∈ H := by
       simpa [mul_assoc] using (inferInstance : H.Normal).conj_mem _ (H.inv_mem h) g
     exact ⟨⟨g * k⁻¹, hmem⟩, by simp [Subgroup.smul_def, smul_smul]⟩
+
+private lemma normalizer_smul_mem_orbit (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G))
+    {x y : X} (hxy : x ∈ _root_.MulAction.orbit H y) :
+    (g : G) • x ∈ _root_.MulAction.orbit H ((g : G) • y) := by
+  rcases hxy with ⟨h, hh⟩
+  refine ⟨⟨(g : G) * h * (g : G)⁻¹, ?_⟩, ?_⟩
+  · exact ((_root_.Subgroup.mem_normalizer_iff.mp g.2) (h : G)).1 h.2
+  · rw [← hh]
+    simp [Subgroup.smul_def, mul_smul]
+
+/-- A normalizer representative acts on the quotient by `H`-orbits. -/
+def normalizerOrbitRelQuotientMap (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
+    _root_.MulAction.orbitRel.Quotient H X → _root_.MulAction.orbitRel.Quotient H X :=
+  Quotient.map' (fun x : X => (g : G) • x) fun x y hxy => by
+    rw [_root_.MulAction.orbitRel_apply] at hxy ⊢
+    exact normalizer_smul_mem_orbit H g hxy
+
+/-- The normalizer action on an orbit quotient sends a class to the class of its translate. -/
+@[simp]
+lemma normalizerOrbitRelQuotientMap_apply (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) (x : X) :
+    normalizerOrbitRelQuotientMap H g
+        (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
+      Quotient.mk'' ((g : G) • x) :=
+  by simp [normalizerOrbitRelQuotientMap]
+
+/-- The normalizer representative `1` acts trivially on the orbit quotient. -/
+@[simp]
+lemma normalizerOrbitRelQuotientMap_one (H : Subgroup G) :
+    normalizerOrbitRelQuotientMap (X := X) H ⟨1, by simp⟩ = id := by
+  ext x
+  refine Quotient.inductionOn' x ?_
+  intro x
+  simp [normalizerOrbitRelQuotientMap]
+
+/-- Normalizer representatives act by composition on the orbit quotient. -/
+@[simp]
+lemma normalizerOrbitRelQuotientMap_mul (H : Subgroup G)
+    (g k : _root_.Subgroup.normalizer (H : Set G)) :
+    normalizerOrbitRelQuotientMap (X := X) H (g * k) =
+      normalizerOrbitRelQuotientMap H g ∘ normalizerOrbitRelQuotientMap H k := by
+  ext x
+  refine Quotient.inductionOn' x ?_
+  intro x
+  simp [normalizerOrbitRelQuotientMap, mul_smul]
+
+/-- A normalizer representative acts on the orbit quotient by a permutation. -/
+def normalizerOrbitRelQuotientEquiv (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
+    Equiv.Perm (_root_.MulAction.orbitRel.Quotient H X) where
+  toFun := normalizerOrbitRelQuotientMap H g
+  invFun := normalizerOrbitRelQuotientMap H g⁻¹
+  left_inv := by
+    intro x
+    refine Quotient.inductionOn' x ?_
+    intro x
+    simp [normalizerOrbitRelQuotientMap]
+  right_inv := by
+    intro x
+    refine Quotient.inductionOn' x ?_
+    intro x
+    simp [normalizerOrbitRelQuotientMap]
+
+/-- A normalizer representative permutes orbit classes by translating representatives. -/
+@[simp]
+lemma normalizerOrbitRelQuotientEquiv_apply (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) (x : X) :
+    normalizerOrbitRelQuotientEquiv H g
+        (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
+      Quotient.mk'' ((g : G) • x) :=
+  by simp [normalizerOrbitRelQuotientEquiv]
+
+/-- The inverse normalizer permutation translates representatives by the inverse element. -/
+@[simp]
+lemma normalizerOrbitRelQuotientEquiv_symm_apply (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) (x : X) :
+    (normalizerOrbitRelQuotientEquiv H g).symm
+        (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
+      Quotient.mk'' ((g : G)⁻¹ • x) :=
+  by simp [normalizerOrbitRelQuotientEquiv]
+
+/-- The normalizer action on the orbit quotient as a permutation representation. -/
+noncomputable def normalizerOrbitRelQuotientPermHom (H : Subgroup G) :
+    _root_.Subgroup.normalizer (H : Set G) →*
+      Equiv.Perm (_root_.MulAction.orbitRel.Quotient H X) where
+  toFun := normalizerOrbitRelQuotientEquiv H
+  map_one' := by
+    ext x
+    refine Quotient.inductionOn' x ?_
+    intro x
+    simp [normalizerOrbitRelQuotientEquiv, normalizerOrbitRelQuotientMap]
+  map_mul' := by
+    intro g k
+    ext x
+    refine Quotient.inductionOn' x ?_
+    intro x
+    simp only [normalizerOrbitRelQuotientEquiv_apply, Equiv.Perm.coe_mul, Function.comp_apply]
+    have hgk : ((g * k : _root_.Subgroup.normalizer (H : Set G)) : G) = (g : G) * (k : G) :=
+      rfl
+    rw [hgk]
+    rw [mul_smul]
+
+/-- The normalizer permutation homomorphism sends representatives to their translates. -/
+@[simp]
+lemma normalizerOrbitRelQuotientPermHom_apply (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) (x : X) :
+    normalizerOrbitRelQuotientPermHom (X := X) H g
+        (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
+      Quotient.mk'' ((g : G) • x) :=
+  by simp [normalizerOrbitRelQuotientPermHom]
+
+/-- Any normalizer representative whose underlying group element lies in `H` acts trivially
+on the quotient by `H`-orbits. -/
+lemma normalizerOrbitRelQuotientPermHom_eq_one_of_mem
+    (H : Subgroup G) (g : _root_.Subgroup.normalizer (H : Set G)) (hg : (g : G) ∈ H) :
+    normalizerOrbitRelQuotientPermHom (X := X) H g = 1 := by
+  ext x
+  refine Quotient.inductionOn' x ?_
+  intro x
+  rw [normalizerOrbitRelQuotientPermHom_apply]
+  exact Quotient.sound' ⟨⟨(g : G), hg⟩, rfl⟩
+
+/-- The action of the normalizer on an orbit quotient descends to `N(H) / H`. -/
+noncomputable def normalizerQuotientOrbitRelQuotientPermHom (H : Subgroup G) :
+    Subgroup.normalizerQuotient H →*
+      Equiv.Perm (_root_.MulAction.orbitRel.Quotient H X) :=
+  Subgroup.normalizerQuotientLift H (normalizerOrbitRelQuotientPermHom (X := X) H)
+    (normalizerOrbitRelQuotientPermHom_eq_one_of_mem (X := X) H)
+
+/-- The descended normalizer-quotient action sends a normalizer representative to the
+corresponding translate on orbit classes. -/
+@[simp]
+lemma normalizerQuotientOrbitRelQuotientPermHom_mk_apply (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) (x : X) :
+    normalizerQuotientOrbitRelQuotientPermHom (X := X) H
+        (Subgroup.normalizerQuotientMk H g)
+        (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
+      Quotient.mk'' ((g : G) • x) :=
+  by simp [normalizerQuotientOrbitRelQuotientPermHom]
+
+/-- The normalizer quotient `N(H) / H` acts on the quotient by `H`-orbits. -/
+@[implicit_reducible]
+noncomputable def normalizerQuotientOrbitRelQuotientMulAction (H : Subgroup G) :
+    MulAction (Subgroup.normalizerQuotient H) (_root_.MulAction.orbitRel.Quotient H X) :=
+  MulAction.compHom (_root_.MulAction.orbitRel.Quotient H X)
+    (normalizerQuotientOrbitRelQuotientPermHom (X := X) H)
+
+/-- A normalizer-quotient representative acts on the orbit quotient by translating
+representatives. -/
+@[simp]
+lemma normalizerQuotientOrbitRelQuotient_smul_mk (H : Subgroup G)
+    (g : _root_.Subgroup.normalizer (H : Set G)) (x : X) :
+    letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+    Subgroup.normalizerQuotientMk H g •
+        (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
+      Quotient.mk'' ((g : G) • x) :=
+  by
+    -- The named action is the `compHom` action, whose smul applies the underlying
+    -- permutation homomorphism to the point.
+    change normalizerQuotientOrbitRelQuotientPermHom (X := X) H
+        (Subgroup.normalizerQuotientMk H g)
+        (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
+      Quotient.mk'' ((g : G) • x)
+    exact normalizerQuotientOrbitRelQuotientPermHom_mk_apply (X := X) H g x
 
 end MulAction
 

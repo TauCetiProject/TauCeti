@@ -1,0 +1,181 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+-/
+module
+
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.SubgroupFiberOrbit
+
+/-!
+# Normalizer-quotient actions on subgroup fibre quotients
+
+For a subgroup `H ≤ Deck p`, the normalizer of `H` acts on the quotient of a fibre by
+`H`-orbits: a normalizer representative sends the class of `e` to the class of its deck
+translate. Elements of `H` act trivially on this quotient, so the action descends to the
+normalizer quotient `N(H) / H`.
+
+This is the fibre-level action bookkeeping needed before the universal-covers roadmap can
+identify the deck group of the cover attached to `H` with `N(H) / H`.
+
+## Main declarations
+
+* `TauCeti.Deck.normalizerSubgroupFiberOrbitEquiv`: the permutation of the `H`-fibre
+  quotient induced by one normalizer representative.
+* `TauCeti.Deck.normalizerSubgroupFiberOrbitPermHom`: the homomorphism from the normalizer
+  to permutations of the `H`-fibre quotient.
+* `TauCeti.Deck.normalizerQuotientSubgroupFiberOrbitPermHom`: the descended homomorphism
+  from `N(H) / H`.
+* `TauCeti.Deck.instNormalizerQuotientSubgroupFiberOrbitMulAction`: the resulting action of
+  `N(H) / H` on `SubgroupFiberOrbitQuotient H b`.
+
+## References
+
+This supplies a small prerequisite for `TauCetiRoadmap/UniversalCovers/README.md`, Stage 2,
+item 8: for the cover attached to `H`, the deck group is `N(H)/H`, with the regular case
+specializing to `π₁(X, x₀)/H`.
+-/
+
+public section
+
+namespace TauCeti
+
+namespace Deck
+
+variable {E B : Type*} [TopologicalSpace E] {p : E → B} {b : B}
+
+/-- A normalizer representative acts on the quotient of one fibre by `H`-orbits. -/
+def normalizerSubgroupFiberOrbitMap (H : Subgroup (Deck p))
+    (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) :
+    SubgroupFiberOrbitQuotient H b → SubgroupFiberOrbitQuotient H b :=
+  TauCeti.MulAction.normalizerOrbitRelQuotientMap H φ
+
+/-- The normalizer action on fibre quotients sends the class of a point to the class of its
+deck translate. -/
+@[simp]
+lemma normalizerSubgroupFiberOrbitMap_apply (H : Subgroup (Deck p))
+    (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) (e : p ⁻¹' {b}) :
+    normalizerSubgroupFiberOrbitMap H φ (subgroupFiberOrbitClass H e) =
+      subgroupFiberOrbitClass H ((φ : Deck p) • e) :=
+  by simp [normalizerSubgroupFiberOrbitMap, subgroupFiberOrbitClass]
+
+/-- The normalizer representative `1` acts trivially on the subgroup fibre quotient. -/
+@[simp]
+lemma normalizerSubgroupFiberOrbitMap_one (H : Subgroup (Deck p)) :
+    normalizerSubgroupFiberOrbitMap (b := b) H ⟨1, by simp⟩ = id := by
+  exact TauCeti.MulAction.normalizerOrbitRelQuotientMap_one (X := p ⁻¹' {b}) H
+
+/-- Normalizer representatives act by composition on the subgroup fibre quotient. -/
+@[simp]
+lemma normalizerSubgroupFiberOrbitMap_mul (H : Subgroup (Deck p))
+    (φ ψ : _root_.Subgroup.normalizer (H : Set (Deck p))) :
+    normalizerSubgroupFiberOrbitMap (b := b) H (φ * ψ) =
+      normalizerSubgroupFiberOrbitMap H φ ∘ normalizerSubgroupFiberOrbitMap H ψ := by
+  exact TauCeti.MulAction.normalizerOrbitRelQuotientMap_mul (X := p ⁻¹' {b}) H φ ψ
+
+/-- A normalizer representative acts on the subgroup fibre quotient by a permutation. -/
+def normalizerSubgroupFiberOrbitEquiv (H : Subgroup (Deck p))
+    (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) :
+    Equiv.Perm (SubgroupFiberOrbitQuotient H b) :=
+  TauCeti.MulAction.normalizerOrbitRelQuotientEquiv H φ
+
+/-- A normalizer representative permutes the subgroup fibre quotient by translating
+representatives. -/
+@[simp]
+lemma normalizerSubgroupFiberOrbitEquiv_apply (H : Subgroup (Deck p))
+    (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) (e : p ⁻¹' {b}) :
+    normalizerSubgroupFiberOrbitEquiv H φ (subgroupFiberOrbitClass H e) =
+      subgroupFiberOrbitClass H ((φ : Deck p) • e) :=
+  by simp [normalizerSubgroupFiberOrbitEquiv, subgroupFiberOrbitClass]
+
+/-- The inverse normalizer permutation translates fibre-orbit representatives by the inverse
+deck transformation. -/
+@[simp]
+lemma normalizerSubgroupFiberOrbitEquiv_symm_apply (H : Subgroup (Deck p))
+    (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) (e : p ⁻¹' {b}) :
+    (normalizerSubgroupFiberOrbitEquiv H φ).symm (subgroupFiberOrbitClass H e) =
+      subgroupFiberOrbitClass H ((φ : Deck p)⁻¹ • e) :=
+  by simp [normalizerSubgroupFiberOrbitEquiv, subgroupFiberOrbitClass]
+
+/-- The normalizer action on the subgroup fibre quotient as a permutation representation. -/
+noncomputable def normalizerSubgroupFiberOrbitPermHom (H : Subgroup (Deck p)) :
+    _root_.Subgroup.normalizer (H : Set (Deck p)) →*
+      Equiv.Perm (SubgroupFiberOrbitQuotient H b) :=
+  TauCeti.MulAction.normalizerOrbitRelQuotientPermHom H
+
+/-- The normalizer permutation homomorphism sends representatives to the expected deck
+translate on fibre-orbit classes. -/
+@[simp]
+lemma normalizerSubgroupFiberOrbitPermHom_apply (H : Subgroup (Deck p))
+    (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) (e : p ⁻¹' {b}) :
+    normalizerSubgroupFiberOrbitPermHom (b := b) H φ (subgroupFiberOrbitClass H e) =
+      subgroupFiberOrbitClass H ((φ : Deck p) • e) :=
+  by simp [normalizerSubgroupFiberOrbitPermHom, subgroupFiberOrbitClass]
+
+/-- Any normalizer representative whose underlying deck transformation lies in `H` maps to
+the identity permutation on the quotient of each fibre by `H`-orbits. -/
+lemma normalizerSubgroupFiberOrbitPermHom_eq_one_of_mem
+    (H : Subgroup (Deck p)) (φ : _root_.Subgroup.normalizer (H : Set (Deck p)))
+    (hφ : (φ : Deck p) ∈ H) :
+    normalizerSubgroupFiberOrbitPermHom (b := b) H φ = 1 := by
+  exact TauCeti.MulAction.normalizerOrbitRelQuotientPermHom_eq_one_of_mem
+    (X := p ⁻¹' {b}) H φ hφ
+
+/-- The action of the normalizer on subgroup fibre quotients descends to `N(H) / H`. -/
+noncomputable def normalizerQuotientSubgroupFiberOrbitPermHom
+    (H : Subgroup (Deck p)) :
+    Subgroup.normalizerQuotient H →*
+      Equiv.Perm (SubgroupFiberOrbitQuotient H b) :=
+  TauCeti.MulAction.normalizerQuotientOrbitRelQuotientPermHom H
+
+/-- The descended normalizer-quotient action sends a normalizer representative to the
+corresponding deck translate on fibre-orbit classes. -/
+@[simp]
+lemma normalizerQuotientSubgroupFiberOrbitPermHom_mk_apply (H : Subgroup (Deck p))
+    (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) (e : p ⁻¹' {b}) :
+    normalizerQuotientSubgroupFiberOrbitPermHom (b := b) H
+        (Subgroup.normalizerQuotientMk H φ) (subgroupFiberOrbitClass H e) =
+      subgroupFiberOrbitClass H ((φ : Deck p) • e) :=
+  by
+    simpa [normalizerQuotientSubgroupFiberOrbitPermHom, subgroupFiberOrbitClass] using
+      TauCeti.MulAction.normalizerQuotientOrbitRelQuotientPermHom_mk_apply
+        (X := p ⁻¹' {b}) H φ e
+
+/-- The normalizer quotient `N(H) / H` acts on the quotient of a fibre by `H`-orbits. -/
+noncomputable instance instNormalizerQuotientSubgroupFiberOrbitMulAction
+    (H : Subgroup (Deck p)) :
+    MulAction (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) :=
+  TauCeti.MulAction.normalizerQuotientOrbitRelQuotientMulAction H
+
+/-- Representative formula for the action of `N(H) / H` on subgroup fibre quotients. -/
+@[simp]
+lemma normalizerQuotient_smul_subgroupFiberOrbitClass (H : Subgroup (Deck p))
+    (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) (e : p ⁻¹' {b}) :
+    Subgroup.normalizerQuotientMk H φ • subgroupFiberOrbitClass H e =
+      subgroupFiberOrbitClass H ((φ : Deck p) • e) :=
+  by
+    simpa [instNormalizerQuotientSubgroupFiberOrbitMulAction,
+      subgroupFiberOrbitClass] using
+        TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_mk
+          (X := p ⁻¹' {b}) H φ e
+
+/-- The identity class in `N(H) / H` fixes every subgroup fibre-orbit class. -/
+@[simp]
+lemma normalizerQuotient_one_smul_subgroupFiberOrbitClass (H : Subgroup (Deck p))
+    (e : p ⁻¹' {b}) :
+    (1 : Subgroup.normalizerQuotient H) • subgroupFiberOrbitClass H e =
+      subgroupFiberOrbitClass H e := by
+  simp
+
+/-- A representative from `H` acts trivially through the normalizer quotient. -/
+@[simp]
+lemma normalizerQuotient_mk_of_mem_smul_subgroupFiberOrbitClass
+    (H : Subgroup (Deck p)) (φ : Deck p) (hφ : φ ∈ H) (e : p ⁻¹' {b}) :
+    Subgroup.normalizerQuotientMk H ⟨φ, _root_.Subgroup.le_normalizer hφ⟩ •
+        subgroupFiberOrbitClass H e =
+      subgroupFiberOrbitClass H e := by
+  rw [normalizerQuotient_smul_subgroupFiberOrbitClass]
+  exact (subgroupFiberOrbitClass_eq_iff H (φ • e) e).2 ⟨⟨φ, hφ⟩, rfl⟩
+
+end Deck
+
+end TauCeti
