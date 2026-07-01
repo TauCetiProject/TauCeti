@@ -47,8 +47,9 @@ the inverse isometry. -/
 theorem _root_.HilbertBasis.repr_mapₗᵢ_apply
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x : F) :
     (b.mapₗᵢ e).repr x = b.repr (e.symm x) := by
-  rw [_root_.HilbertBasis.repr_mapₗᵢ]
-  rfl
+  simpa only [LinearIsometryEquiv.trans_apply] using
+    congrArg (fun f : F ≃ₗᵢ[𝕜] lp (fun _ : ι => 𝕜) 2 => f x)
+      (_root_.HilbertBasis.repr_mapₗᵢ b e)
 
 /-- The `i`th coordinate in the transported Hilbert basis is the inner product against the
 corresponding original basis vector after applying the inverse isometry. -/
@@ -57,6 +58,27 @@ theorem _root_.HilbertBasis.repr_mapₗᵢ_apply_apply
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x : F) (i : ι) :
     ((b.mapₗᵢ e).repr x) i = ⟪b i, e.symm x⟫ := by
   rw [_root_.HilbertBasis.repr_mapₗᵢ_apply, b.repr_apply_apply]
+
+/-- Parseval for a transported Hilbert basis, written in the original coordinates of `b` after
+applying the inverse isometry. -/
+protected theorem _root_.HilbertBasis.hasSum_mapₗᵢ_inner_mul_inner
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
+    HasSum (fun i => ⟪e.symm x, b i⟫ * ⟪b i, e.symm y⟫) ⟪x, y⟫ := by
+  simpa only [e.symm.inner_map_map x y] using b.hasSum_inner_mul_inner (e.symm x) (e.symm y)
+
+/-- Summability of the transported Parseval series in the original coordinates of `b` after
+applying the inverse isometry. -/
+protected theorem _root_.HilbertBasis.summable_mapₗᵢ_inner_mul_inner
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
+    Summable fun i => ⟪e.symm x, b i⟫ * ⟪b i, e.symm y⟫ :=
+  (b.hasSum_mapₗᵢ_inner_mul_inner e x y).summable
+
+/-- The transported Parseval identity in the original coordinates of `b` after applying the
+inverse isometry. -/
+protected theorem _root_.HilbertBasis.tsum_mapₗᵢ_inner_mul_inner
+    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
+    ∑' i, ⟪e.symm x, b i⟫ * ⟪b i, e.symm y⟫ = ⟪x, y⟫ :=
+  (b.hasSum_mapₗᵢ_inner_mul_inner e x y).tsum_eq
 
 /-- The `i`th vector of the transported basis is the image of the `i`th vector. -/
 @[simp]
