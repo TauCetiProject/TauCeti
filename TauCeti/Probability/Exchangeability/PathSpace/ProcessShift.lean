@@ -14,7 +14,8 @@ block-product factorisation:
 The `processCons` / `processTail` operations on sequence-valued random variables, together with
 their σ-algebra-contraction lemmas, live in `TauCeti.Probability.Process.Tail`.
 
-Its exported API is the `@[simp]` coordinate equation `processShift_apply`.
+Its exported API is the `@[simp]` coordinate equation `processShift_apply` and the bridges to the
+path shift: `processShift_eq_shift_iterate` (composition) and `map_processShift` (measure level).
 
 Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/ShiftOperations.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`).
@@ -50,6 +51,21 @@ theorem measurable_processShift {X : ℕ → Ω → α} {m : ℕ} (hX : ∀ n, M
     Measurable (processShift X m) := by
   refine measurable_pi_lambda _ fun n => ?_
   simpa only [processShift_apply] using hX n
+
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- `processShift X m` is the `m`-fold path shift `(shift α)^[m]` composed with the process path. -/
+theorem processShift_eq_shift_iterate (X : ℕ → Ω → α) (m : ℕ) :
+    processShift X m = (shift α)^[m] ∘ fun ω n => X n ω := by
+  funext ω
+  simp only [processShift, Function.comp_apply]
+
+/-- Measure-level bridge: the law of the shifted process is the pushforward of the path law by the
+`m`-fold path shift `(shift α)^[m]`. -/
+theorem map_processShift (μ : Measure Ω) {X : ℕ → Ω → α} (hX : ∀ i, AEMeasurable (X i) μ) (m : ℕ) :
+    μ.map (processShift X m) = (pathLaw μ X).map ((shift α)^[m]) := by
+  rw [processShift_eq_shift_iterate, pathLaw_apply,
+    AEMeasurable.map_map_of_aemeasurable (measurable_shift_iterate m).aemeasurable
+      (aemeasurable_pi_lambda _ hX)]
 
 end Probability
 
