@@ -149,7 +149,10 @@ variable `t : Ω → ℕ → α`.  The `comap` contraction lemmas (`comap_proces
 `comap_le_comap_processCons`) record that the tail generates a coarser σ-algebra and that consing
 refines it; these feed the Kallenberg conditional-independence step of the de Finetti block-product
 factorisation.  The definitions are not `@[expose]`; their characteristic API is the `@[simp]`
-`_apply` / interaction lemmas below. -/
+`_apply` / interaction lemmas below.
+
+Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/ShiftOperations.lean`, pin
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`). -/
 
 variable {α : Type*} [MeasurableSpace α]
 
@@ -189,14 +192,14 @@ theorem processTail_processCons (x : Ω → α) (t : Ω → ℕ → α) :
   funext ω n
   simp only [processTail, processCons]
 
-/-- Consing a measurable head onto a measurable process is measurable. -/
+/-- Consing a measurable head onto a process is measurable when its coordinates `t (· ·)` are. -/
 @[fun_prop]
-theorem measurable_processCons {x : Ω → α} {t : Ω → ℕ → α} (hx : Measurable x) (ht : Measurable t) :
-    Measurable (processCons x t) := by
+theorem measurable_processCons {x : Ω → α} {t : Ω → ℕ → α} (hx : Measurable x)
+    (ht : ∀ n, Measurable fun ω => t ω n) : Measurable (processCons x t) := by
   refine measurable_pi_lambda _ fun n => ?_
   cases n with
   | zero => exact hx
-  | succ n => exact (measurable_pi_apply n).comp ht
+  | succ n => exact ht n
 
 /-- The tail of a process is measurable when its tail coordinates `t (· + 1)` are. -/
 @[fun_prop]
@@ -205,8 +208,8 @@ theorem measurable_processTail {t : Ω → ℕ → α} (ht : ∀ n, Measurable f
   measurable_pi_lambda _ ht
 
 omit [MeasurableSpace Ω] in
-/-- The tail of a sequence-valued random variable generates a coarser σ-algebra. It is the
-composition of the measurable index shift with `t`. -/
+/-- The tail of a sequence-valued random variable generates a coarser σ-algebra than the variable
+itself. -/
 theorem comap_processTail_le {t : Ω → ℕ → α} :
     MeasurableSpace.comap (processTail t) inferInstance
       ≤ MeasurableSpace.comap t inferInstance := by

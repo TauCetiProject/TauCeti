@@ -1,5 +1,6 @@
 module
 
+public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 
 /-!
@@ -12,9 +13,11 @@ For a process `X : ℕ → Ω → α` and a finite coordinate selection `k : Fin
   `k = fun i => i.val`);
 * `blockIndicatorProd X k C ω = ∏ i, 𝟙_{C i}(X (k i) ω)` — its (`ℝ`-valued) indicator product.
 
-These are the events and integrands the de Finetti block-product factorisation manipulates;
-`blockIndicatorProd_eq_indicator` identifies the product with the cylinder indicator, and
-`integrable_blockIndicatorProd` records that it is integrable under a finite measure.
+These are the finite-dimensional events and integrands the de Finetti block-product factorisation
+manipulates. `blockCylinder_eq_preimage_univ_pi` and `blockLaw_blockCylinder` bridge the cylinder to
+the existing rectangle/`blockLaw` interface; `blockIndicatorProd_eq_indicator` identifies the
+product with the cylinder indicator; and `integrable_blockIndicatorProd` records integrability under
+a finite measure.
 
 Adapted from `cameronfreer/exchangeability` (`PathSpace/CylinderHelpers.lean`,
 `DeFinetti/ViaMartingale/IndicatorAlgebra.lean`, pin
@@ -45,6 +48,15 @@ theorem mem_blockCylinder {X : ℕ → Ω → α} {m : ℕ} {k : Fin m → ℕ} 
     ω ∈ blockCylinder X k C ↔ ∀ i, X (k i) ω ∈ C i :=
   Iff.rfl
 
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- The block cylinder is the preimage of the rectangle `Set.univ.pi C` under the
+selected-coordinate map `ω ↦ (X (k ·) ω)`. -/
+theorem blockCylinder_eq_preimage_univ_pi (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ)
+    (C : Fin m → Set α) :
+    blockCylinder X k C = (fun ω i => X (k i) ω) ⁻¹' Set.univ.pi C := by
+  ext ω
+  simp only [mem_blockCylinder, Set.mem_preimage, Set.mem_univ_pi]
+
 /-- The block cylinder of a process with measurable selected coordinates on measurable sets is
 measurable. -/
 theorem measurableSet_blockCylinder {X : ℕ → Ω → α} {m : ℕ} {k : Fin m → ℕ} {C : Fin m → Set α}
@@ -52,6 +64,14 @@ theorem measurableSet_blockCylinder {X : ℕ → Ω → α} {m : ℕ} {k : Fin m
     MeasurableSet (blockCylinder X k C) := by
   simp only [blockCylinder, Set.setOf_forall]
   exact MeasurableSet.iInter fun i => (hX i) (hC i)
+
+/-- The block law evaluated on a measurable rectangle is the measure of the block cylinder:
+`blockLaw μ X k (Set.univ.pi C) = μ (blockCylinder X k C)`. A `blockCylinder`-named restatement of
+the merged `blockLaw_apply_rectangle`. -/
+theorem blockLaw_blockCylinder {μ : Measure Ω} (X : ℕ → Ω → α) {m : ℕ} {k : Fin m → ℕ}
+    {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ) (hC : ∀ i, MeasurableSet (C i)) :
+    blockLaw μ X k (Set.univ.pi C) = μ (blockCylinder X k C) := by
+  rw [blockLaw_apply_rectangle μ X k hX C hC, blockCylinder]
 
 /-- The product of the selected coordinate indicators, `∏ i, 𝟙_{C i}(X (k i) ω)`. -/
 def blockIndicatorProd (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ) (C : Fin m → Set α) : Ω → ℝ :=

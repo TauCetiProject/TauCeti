@@ -14,9 +14,8 @@ block-product factorisation:
 The `processCons` / `processTail` operations on sequence-valued random variables, together with
 their σ-algebra-contraction lemmas, live in `TauCeti.Probability.Process.Tail`.
 
-The definition is not `@[expose]`; its characteristic API is the `@[simp]` `processShift_apply`
-lemma (proved through the equation lemma), so downstream code reasons through that rather than the
-definition body.
+Its exported API is the `@[simp]` coordinate equation `processShift_apply` and the path-shift
+identity `processShift_eq`.
 
 Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/ShiftOperations.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`).
