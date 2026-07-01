@@ -25,7 +25,7 @@ parallel prime-specific degree API.
 
 * `TauCeti.Multiquadratic.intermediateFieldEquivSubmoduleSqrtPrimes_apply_ofDual_eq`:
   the `ofDual` subspace from the public prime-radicand dictionary agrees with the generic
-  dictionary specialized to `sqrtPrime_sq` and
+  dictionary specialized to `sq_sqrt_natCast` and
   `not_isSquare_prod_primes_of_injective`.
 -/
 
@@ -41,12 +41,6 @@ section PrimeFamily
 
 variable [Finite ι] (p : ι → ℕ) (hp : ∀ i, (p i).Prime) (hinj : Function.Injective p)
 
-omit [Finite ι] in
-/-- The square roots `√(p i)` of a prime family satisfy the radicand equation `√(p i)² = p i`.
-This is the `hroot` input used by the field-generic subfield-degree results. -/
-theorem sqrtPrime_sq (i : ι) : Real.sqrt (p i) ^ 2 = algebraMap ℚ ℝ (p i : ℚ) :=
-  sq_sqrt_natCast (p i)
-
 include hp hinj
 
 /-- The subspace attached by the public prime-radicand dictionary is extensionally the same as
@@ -56,7 +50,7 @@ use the degree theorems from `SubfieldDegree` with
 theorem intermediateFieldEquivSubmoduleSqrtPrimes_apply_ofDual_eq
     (F : IntermediateField ℚ (adjoin ℚ (Set.range fun i => (Real.sqrt (p i) : ℝ)))) :
     (intermediateFieldEquivSubmoduleSqrtPrimes p hp hinj F).ofDual =
-      (intermediateFieldEquivSubmodule (sqrtPrime_sq p)
+      (intermediateFieldEquivSubmodule (fun i => sq_sqrt_natCast (p i))
         (not_isSquare_prod_primes_of_injective p hp hinj) F).ofDual := by
   ext v
   rw [mem_intermediateFieldEquivSubmoduleSqrtPrimes_apply_ofDual_iff,
