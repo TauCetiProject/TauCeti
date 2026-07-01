@@ -224,8 +224,10 @@ lemma coeFn_normalizedChebyshevTLp {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
       fun x : ℝ => (algebraMap ℝ 𝕜) (normalizedChebyshevT n x) :=
   MemLp.coeFn_toLp _
 
-/-- The real integral of two normalized Chebyshev `T` modes is the Kronecker delta. -/
-lemma integral_normalizedChebyshevT_mul_normalizedChebyshevT (m n : ℕ) :
+/-- The real `measureT` integral of two normalized Chebyshev `T` modes is the Kronecker
+delta. -/
+@[simp]
+lemma integral_normalizedChebyshevT_mul_normalizedChebyshevT_measureT_eq_ite (m n : ℕ) :
     ∫ x, normalizedChebyshevT m x * normalizedChebyshevT n x
         ∂Polynomial.Chebyshev.measureT = if m = n then 1 else 0 := by
   have hmpos := chebyshevTNormSq_pos m
@@ -252,27 +254,47 @@ lemma integral_normalizedChebyshevT_mul_normalizedChebyshevT (m n : ℕ) :
           · rw [if_neg hmn, if_neg hmn, mul_zero]
 
 /-- The normalized Chebyshev `T` modes have Kronecker-delta inner products in `L²(measureT)`. -/
-lemma inner_normalizedChebyshevTLp_real (m n : ℕ) :
-    inner ℝ (normalizedChebyshevTLp ℝ m) (normalizedChebyshevTLp ℝ n) =
+@[simp]
+lemma inner_normalizedChebyshevTLp {𝕜 : Type*} [RCLike 𝕜] (m n : ℕ) :
+    inner 𝕜 (normalizedChebyshevTLp 𝕜 m) (normalizedChebyshevTLp 𝕜 n) =
       if m = n then 1 else 0 := by
+  have hinner : ∀ a b : ℝ,
+      inner 𝕜 ((algebraMap ℝ 𝕜) a) ((algebraMap ℝ 𝕜) b) =
+        (algebraMap ℝ 𝕜) (a * b) := by
+    intro a b
+    simp [RCLike.inner_apply, RCLike.conj_ofReal, map_mul, mul_comm]
   calc
-    inner ℝ (normalizedChebyshevTLp ℝ m) (normalizedChebyshevTLp ℝ n)
-        = ∫ x, normalizedChebyshevT m x * normalizedChebyshevT n x
+    inner 𝕜 (normalizedChebyshevTLp 𝕜 m) (normalizedChebyshevTLp 𝕜 n)
+        = ∫ x, (algebraMap ℝ 𝕜) (normalizedChebyshevT m x * normalizedChebyshevT n x)
             ∂Polynomial.Chebyshev.measureT := by
           rw [MeasureTheory.L2.inner_def]
           refine integral_congr_ae ?_
-          filter_upwards [coeFn_normalizedChebyshevTLp (𝕜 := ℝ) m,
-            coeFn_normalizedChebyshevTLp (𝕜 := ℝ) n] with x hxm hxn
+          filter_upwards [coeFn_normalizedChebyshevTLp (𝕜 := 𝕜) m,
+            coeFn_normalizedChebyshevTLp (𝕜 := 𝕜) n] with x hxm hxn
           rw [hxm, hxn]
-          simp
-          ring_nf
+          exact hinner (normalizedChebyshevT m x) (normalizedChebyshevT n x)
     _ = if m = n then 1 else 0 :=
-          integral_normalizedChebyshevT_mul_normalizedChebyshevT m n
+          by
+            rw [integral_ofReal,
+              integral_normalizedChebyshevT_mul_normalizedChebyshevT_measureT_eq_ite]
+            by_cases hmn : m = n <;> simp [hmn]
+
+/-- The normalized Chebyshev `T` modes have Kronecker-delta inner products in real
+`L²(measureT)`. -/
+lemma inner_normalizedChebyshevTLp_real (m n : ℕ) :
+    inner ℝ (normalizedChebyshevTLp ℝ m) (normalizedChebyshevTLp ℝ n) =
+      if m = n then 1 else 0 :=
+  inner_normalizedChebyshevTLp (𝕜 := ℝ) m n
 
 /-- The normalized Chebyshev `T` modes form an orthonormal family in `L²(measureT)`. -/
-lemma orthonormal_normalizedChebyshevTLp_real :
-    Orthonormal ℝ (normalizedChebyshevTLp ℝ) := by
+lemma orthonormal_normalizedChebyshevTLp {𝕜 : Type*} [RCLike 𝕜] :
+    Orthonormal 𝕜 (normalizedChebyshevTLp 𝕜) := by
   rw [orthonormal_iff_ite]
-  exact inner_normalizedChebyshevTLp_real
+  exact inner_normalizedChebyshevTLp
+
+/-- The normalized Chebyshev `T` modes form an orthonormal family in real `L²(measureT)`. -/
+lemma orthonormal_normalizedChebyshevTLp_real :
+    Orthonormal ℝ (normalizedChebyshevTLp ℝ) :=
+  orthonormal_normalizedChebyshevTLp (𝕜 := ℝ)
 
 end TauCeti
