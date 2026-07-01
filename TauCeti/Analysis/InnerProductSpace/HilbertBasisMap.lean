@@ -21,8 +21,6 @@ public section
 
 namespace TauCeti
 
-open scoped BigOperators
-
 variable {ι : Type*} {𝕜 : Type*} {E F : Type*}
 variable [RCLike 𝕜]
 variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
@@ -75,32 +73,6 @@ theorem _root_.HilbertBasis.coe_mapₗᵢ
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
     ⇑(b.mapₗᵢ e) = e ∘ b :=
   funext (b.mapₗᵢ_apply e)
-
-/-- The image family of a Hilbert basis under a linear isometric equivalence is orthonormal. -/
-theorem _root_.HilbertBasis.orthonormal_mapₗᵢ
-    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
-    Orthonormal 𝕜 (e ∘ b) := by
-  rw [← _root_.HilbertBasis.coe_mapₗᵢ b e]
-  exact (b.mapₗᵢ e).orthonormal
-
-/-- Parseval for a transported Hilbert basis, stated using the original basis vectors and the
-transporting isometry. -/
-protected theorem _root_.HilbertBasis.hasSum_inner_mapₗᵢ_mul_inner
-    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
-    HasSum (fun i => ⟪x, e (b i)⟫ * ⟪e (b i), y⟫) ⟪x, y⟫ := by
-  simpa using (b.mapₗᵢ e).hasSum_inner_mul_inner x y
-
-/-- Summability of the Parseval series for a transported Hilbert basis. -/
-protected theorem _root_.HilbertBasis.summable_inner_mapₗᵢ_mul_inner
-    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
-    Summable (fun i => ⟪x, e (b i)⟫ * ⟪e (b i), y⟫) :=
-  (b.hasSum_inner_mapₗᵢ_mul_inner e x y).summable
-
-/-- The `tsum` form of Parseval for a transported Hilbert basis. -/
-protected theorem _root_.HilbertBasis.tsum_inner_mapₗᵢ_mul_inner
-    (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) (x y : F) :
-    ∑' i, ⟪x, e (b i)⟫ * ⟪e (b i), y⟫ = ⟪x, y⟫ :=
-  (b.hasSum_inner_mapₗᵢ_mul_inner e x y).tsum_eq
 
 /-- Transport along the identity isometry leaves a Hilbert basis unchanged. -/
 @[simp]
