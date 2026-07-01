@@ -73,6 +73,25 @@ lemma nonempty_completeLinearSystem_add {D D' : WeilDivisor X}
   rcases hD' with ⟨E', hE'⟩
   exact ⟨E + E', S.add_mem_completeLinearSystem hE hE'⟩
 
+/-- Translating a member of `|D|` by an effective divisor `A` gives a member of `|D + A|`. -/
+lemma add_effective_mem_completeLinearSystem {D A E : WeilDivisor X} (hA : IsEffective A)
+    (hE : E ∈ S.completeLinearSystem D) :
+    E + A ∈ S.completeLinearSystem (D + A) :=
+  S.add_mem_completeLinearSystem hE (S.self_mem_completeLinearSystem hA)
+
+/-- Translation by an effective divisor `A` sends `|D|` into `|D + A|`. -/
+lemma mapsTo_add_effective_completeLinearSystem {D A : WeilDivisor X} (hA : IsEffective A) :
+    Set.MapsTo (fun E => E + A) (S.completeLinearSystem D) (S.completeLinearSystem (D + A)) :=
+  fun _ hE => S.add_effective_mem_completeLinearSystem hA hE
+
+/-- Adding an effective divisor to the indexing divisor preserves nonemptiness of complete
+linear systems. -/
+lemma nonempty_completeLinearSystem_add_effective {D A : WeilDivisor X} (hA : IsEffective A)
+    (hD : (S.completeLinearSystem D).Nonempty) :
+    (S.completeLinearSystem (D + A)).Nonempty := by
+  rcases hD with ⟨E, hE⟩
+  exact ⟨E + A, S.add_effective_mem_completeLinearSystem hA hE⟩
+
 /-- A finite sum of members of complete linear systems is a member of the complete linear system
 of the finite sum of the indexing divisors. -/
 lemma sum_mem_completeLinearSystem (s : Finset ι) {D E : ι → WeilDivisor X}
