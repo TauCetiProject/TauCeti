@@ -261,23 +261,6 @@ lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_one
     regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_mk
       hp hreg H e ⟨1, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩
 
-/-- In the normal case, equality of normalizer-quotient representatives is exactly equality of
-the corresponding quotient-group representatives under the normalizer comparison. -/
-lemma normalizerQuotientMk_inv_eq_iff_quotientGroup_mk_inv_eq
-    (H : Subgroup (Deck p)) [H.Normal] (φ ψ : Deck p) :
-    Subgroup.normalizerQuotientMk H
-        ⟨φ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ =
-      Subgroup.normalizerQuotientMk H
-        ⟨ψ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ ↔
-      QuotientGroup.mk (s := H) φ⁻¹ = QuotientGroup.mk (s := H) ψ⁻¹ := by
-  constructor
-  · intro h
-    simpa [Subgroup.normalizerQuotientEquivQuotientOfNormal_mk] using
-      congrArg (Subgroup.normalizerQuotientEquivQuotientOfNormal H) h
-  · intro h
-    apply (Subgroup.normalizerQuotientEquivQuotientOfNormal H).injective
-    simpa [Subgroup.normalizerQuotientEquivQuotientOfNormal_mk] using h
-
 /-- A deck translate of the chosen fibre point has the same subgroup orbit class as the chosen
 point exactly when the translating deck transformation lies in the subgroup. -/
 lemma subgroupFiberOrbitClass_smul_eq_base_iff
