@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Congr
 public import TauCeti.Geometry.Symplectic.JHolomorphic
 
 /-!
@@ -26,7 +25,8 @@ equal local representatives in overlapping charts and restricted domains.
 * `TauCeti.IsJHolomorphicWithinAt.congr_of_eventuallyEq` and
   `TauCeti.IsJHolomorphicWithinAt.congr_mono`: within-set locality under equality in the
   source filter or on a smaller source set.
-* `TauCeti.isJHolomorphicWithinAt_congr_set`: changing the source set near the base point.
+* `TauCeti.isJHolomorphicWithinAt_congr_set_nhdsNE`: changing the source set near the base
+  point in a punctured neighborhood.
 * `TauCeti.IsJHolomorphicOn.congr_mono`, `IsJHolomorphicOn.congr`, and
   `isJHolomorphicOn_congr`: setwise congruence API.
 
@@ -129,7 +129,7 @@ lemma IsJHolomorphicWithinAt.congr_mono' (hf : IsJHolomorphicWithinAt J J' f s x
 
 /-- Within-set `J`-holomorphicity is invariant under changing the source set in a punctured
 neighborhood of the base point. -/
-lemma isJHolomorphicWithinAt_congr_set (hst : s =ᶠ[𝓝[≠] x] t) :
+lemma isJHolomorphicWithinAt_congr_set_nhdsNE (hst : s =ᶠ[𝓝[≠] x] t) :
     IsJHolomorphicWithinAt J J' f s x ↔ IsJHolomorphicWithinAt J J' f t x := by
   constructor
   · rintro ⟨f', hf', hlin⟩
