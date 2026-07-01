@@ -1,8 +1,6 @@
 module
 
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
-public import Mathlib.MeasureTheory.Integral.Bochner.Set
-public import Mathlib.MeasureTheory.Integral.IntegrableOn
 
 /-!
 # Conditional expectation of an indicator under pair-law equality
@@ -11,10 +9,9 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 for every measurable `B` the conditional expectations of `𝟙_B ∘ Y` and `𝟙_B ∘ Y'` given `σ(Z)` agree
 almost everywhere.
 
-This is the bridge that turns a pair-law (distributional) equality into a conditional-expectation
-identity. It is consumed by the de Finetti block-product factorisation, where contractability
-supplies the pair-law equality that extends the per-coordinate conditional law from `X 0` to every
-`X n`.
+This is a generic conditional-expectation fact (no exchangeability/tail/directing-measure
+hypotheses); it is the bridge that turns a pair-law (distributional) equality into a
+conditional-expectation identity, consumed by the de Finetti block-product factorisation.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/CondExp.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`).
@@ -28,7 +25,7 @@ open MeasureTheory
 
 namespace TauCeti
 
-namespace Probability
+namespace MeasureTheory
 
 /-- If the pairs `(Y, Z)` and `(Y', Z)` have the same law, then for measurable `B` the conditional
 expectations of `𝟙_B ∘ Y` and `𝟙_B ∘ Y'` given `σ(Z)` agree almost everywhere. -/
@@ -57,26 +54,28 @@ theorem condExp_indicator_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : Measurable
     simp only [Measure.map_apply (hY.prodMk hZ) (hB.prod hE),
       Measure.map_apply (hY'.prodMk hZ) (hB.prod hE), Set.mk_preimage_prod] at h
     exact h
+  -- The set-integral of a preimage indicator over `Z ⁻¹' E`, shared by both coordinates.
+  have hint : ∀ W : Ω → α, Measurable[mΩ] W →
+      ∫ ω in Z ⁻¹' E, (W ⁻¹' B).indicator (fun _ => (1 : ℝ)) ω ∂μ
+        = (μ (W ⁻¹' B ∩ Z ⁻¹' E)).toReal := by
+    intro W hW
+    simp_rw [integral_indicator (hW hB)]
+    simp only [integral_const]
+    simp_rw [Measure.restrict_restrict (hW hB)]
+    simp only [smul_eq_mul, mul_one]
+    simp [Measure.real, Measure.restrict_apply MeasurableSet.univ, Set.univ_inter]
   have h_lhs : ∫ ω in Z ⁻¹' E, f ω ∂μ = (μ (Y ⁻¹' B ∩ Z ⁻¹' E)).toReal := by
     have hf_eq : f = (Y ⁻¹' B).indicator (fun _ => (1 : ℝ)) := by
       ext ω; simp only [hf_def, Function.comp_apply, Set.indicator, Set.mem_preimage]
-    simp_rw [hf_eq, integral_indicator (hY hB)]
-    simp only [integral_const]
-    simp_rw [Measure.restrict_restrict (hY hB)]
-    simp only [smul_eq_mul, mul_one]
-    simp [Measure.real, Measure.restrict_apply MeasurableSet.univ, Set.univ_inter]
+    rw [hf_eq]; exact hint Y hY
   have h_rhs_ce : ∫ ω in Z ⁻¹' E, μ[f' | mZ] ω ∂μ = ∫ ω in Z ⁻¹' E, f' ω ∂μ :=
     setIntegral_condExp hmZ_le hf'_int ⟨E, hE, rfl⟩
   have h_rhs : ∫ ω in Z ⁻¹' E, f' ω ∂μ = (μ (Y' ⁻¹' B ∩ Z ⁻¹' E)).toReal := by
     have hf'_eq : f' = (Y' ⁻¹' B).indicator (fun _ => (1 : ℝ)) := by
       ext ω; simp only [hf'_def, Function.comp_apply, Set.indicator, Set.mem_preimage]
-    simp_rw [hf'_eq, integral_indicator (hY' hB)]
-    simp only [integral_const]
-    simp_rw [Measure.restrict_restrict (hY' hB)]
-    simp only [smul_eq_mul, mul_one]
-    simp [Measure.real, Measure.restrict_apply MeasurableSet.univ, Set.univ_inter]
+    rw [hf'_eq]; exact hint Y' hY'
   simp_rw [h_lhs, h_rhs_ce, h_rhs, h_meas_eq]
 
-end Probability
+end MeasureTheory
 
 end TauCeti
