@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicTopology.FundamentalGroup
+import TauCeti.AlgebraicTopology.FundamentalGroup
 public import Mathlib.Topology.Homotopy.Lifting
 
 /-!
