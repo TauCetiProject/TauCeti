@@ -127,7 +127,7 @@ theorem integrable_blockIndicatorProd {μ : Measure Ω} [IsFiniteMeasure μ] {X 
 a.e.-measurable selected coordinates, `∫ ω, ∏ i, 𝟙_{C i}(X (k i) ω) ∂μ = blockLaw μ X k (∏ᵢ C i)`
 (as a real number). -/
 @[grind =>]
-theorem integral_blockIndicatorProd {μ : Measure Ω} {X : ℕ → Ω → α} {m : ℕ}
+theorem integral_blockIndicatorProd {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} {m : ℕ}
     {k : Fin m → ℕ} {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ)
     (hC : ∀ i, MeasurableSet (C i)) :
     ∫ ω, blockIndicatorProd X k C ω ∂μ = (blockLaw μ X k (Set.univ.pi C)).toReal := by
