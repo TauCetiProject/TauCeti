@@ -134,8 +134,8 @@ theorem measurable_exchangeableSigma_of_comp_permReindex_eq [MeasurableSpace β]
   ext x
   exact Set.ext_iff.mp (congrFun (congrArg Set.preimage (hg_perm π hπ)) s) x
 
-/-- A function measurable with respect to the exchangeable σ-algebra is fixed by every finitely
-supported reindexing. -/
+/-- For a target with measurable singletons, a function measurable with respect to the
+exchangeable σ-algebra is fixed by every finitely supported reindexing. -/
 theorem comp_permReindex_eq_of_measurable_exchangeableSigma [MeasurableSpace β]
     [MeasurableSingletonClass β] {g : (ℕ → α) → β}
     (hg : @Measurable (ℕ → α) β (exchangeableSigma α) inferInstance g)
