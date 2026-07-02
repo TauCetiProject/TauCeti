@@ -120,8 +120,9 @@ theorem classNumber_le_of_abs_discr_le_of_finrank_le (F : Type*) [Field F] [Numb
 /-- A version of `classNumber_le_of_abs_discr_le_of_finrank_le` with a natural-number
 discriminant bound and a natural-number conclusion.
 
-Here `|NumberField.discr F|` is the natural absolute value of the integer discriminant, so
-this is the form to use when the available discriminant estimate is stated in `ℕ`. -/
+Here `|NumberField.discr F|` is the integer absolute value of the discriminant, compared with
+the natural-number bound `D` coerced to `ℤ`, so this is the form to use when the available
+discriminant estimate is stated in `ℕ`. -/
 theorem classNumber_le_nat_of_abs_discr_le_of_finrank_le (F : Type*) [Field F] [NumberField F]
     {D n : ℕ} (hD : |NumberField.discr F| ≤ D) (hn : Module.finrank ℚ F ≤ n) :
     NumberField.classNumber F ≤ D * 4 ^ n := by
