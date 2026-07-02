@@ -63,7 +63,7 @@ theorem condExp_blockIndicatorProd_ae_eq_prod [StandardBorelSpace Ω] [StandardB
         = Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X (k i) := by
       funext ω; by_cases h : X (k i) ω ∈ C i <;> simp [Set.indicator, Set.mem_preimage, h]
     rw [hind]
-    exact (hX.directingMeasure_ae_eq_condExp_coord hX_meas hTail (k i) (hC i)).symm
+    exact (hX.directingMeasure_ae_eq_condExp_coord hX_meas (k i) (hC i)).symm
   have key : ∀ᵐ ω ∂μ, ∀ i, (μ⟦X (k i) ⁻¹' C i | tailProcess X⟧) ω
       = (directingMeasure μ X ω).real (C i) := ae_all_iff.mpr hfactor
   filter_upwards [key] with ω hω
