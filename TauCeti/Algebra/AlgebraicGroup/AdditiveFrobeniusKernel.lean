@@ -40,8 +40,7 @@ The functor of points is recovered by pre-composing points of `αₚ` with the q
 `TauCeti.AdditiveGroup.gaPointsMulEquiv`. The image consists of exactly the `p`-nilpotent
 elements, and the pre-composition map is injective because the quotient map is surjective, so
 `αₚ(A)` is the additive group of `p`-nilpotent elements of `A` (those `a` with `aᵖ = 0`). This
-exhibits `αₚ` as a non-smooth,
-non-reduced affine group scheme, the additive companion of the `μ_p` example of
+exhibits `αₚ` as a non-reduced affine group scheme, the additive companion of the `μ_p` example of
 `TauCeti.Algebra.AlgebraicGroup.GroupAlgebraNotReduced`.
 
 This is the worked example `αₚ` from the Tau Ceti reductive-groups roadmap
@@ -57,6 +56,9 @@ and Layer 3 develops "Hopf ideals ↔ closed subgroup schemes".
   `αₚ` to the additive group `Multiplicative A`, landing in the `p`-nilpotent elements.
 * `TauCeti.AlphaP.mem_range_pointsHom_iff`: a point value `a` comes from `αₚ` iff `aᵖ = 0`, so
   the functor of points of `αₚ` is the `p`-nilpotent elements of the additive group.
+* `TauCeti.AlphaP.pNilpotent`: the `p`-nilpotent elements as a subgroup of the additive group.
+* `TauCeti.AlphaP.pointsMulEquiv`: the group isomorphism identifying the points of `αₚ` with the
+  `p`-nilpotent subgroup.
 
 ## References
 
@@ -183,6 +185,7 @@ noncomputable abbrev CoordinateRing : Type u :=
   SymmetricAlgebra R R ⧸ (hopfIdeal (R := R) p).toIdeal
 
 /-- The class of `x` in the coordinate ring of `αₚ` is `p`-nilpotent: its `p`-th power is `0`. -/
+@[simp]
 theorem mk_ι_pow_eq_zero :
     (Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal
         (ι R R 1 : SymmetricAlgebra R R)) ^ p = 0 := by
@@ -209,9 +212,8 @@ theorem mk_ι_ne_zero [Nontrivial R] :
   exact one_ne_zero hsnd
 
 /-- **The coordinate ring of `αₚ` is not reduced.** Over a nontrivial base of characteristic `p`,
-the class of `x` is a nonzero nilpotent (`x̄ᵖ = 0`), so `R[x] / (xᵖ)` is non-reduced. Geometrically
-this exhibits `αₚ` as a non-smooth affine group scheme, the additive companion of the `μ_p`
-example. -/
+the class of `x` is a nonzero nilpotent (`x̄ᵖ = 0`), so `R[x] / (xᵖ)` is non-reduced. This is the
+additive companion of the non-reduced `μ_p` example. -/
 theorem coordinateRing_not_isReduced [Nontrivial R] :
     ¬ IsReduced (CoordinateRing (R := R) p) := by
   intro hred
@@ -260,6 +262,7 @@ theorem pointsHom_injective : Function.Injective (pointsHom (R := R) p (A := A))
 
 /-- **The functor of points of `αₚ` is the `p`-nilpotent elements of the additive group.** An
 element `a` of `A` is the value of a point of `αₚ` iff `aᵖ = 0`. -/
+@[simp]
 theorem mem_range_pointsHom_iff (a : Multiplicative A) :
     a ∈ (pointsHom (R := R) p (A := A)).range ↔ (Multiplicative.toAdd a) ^ p = 0 := by
   constructor
@@ -282,6 +285,38 @@ theorem mem_range_pointsHom_iff (a : Multiplicative A) :
     refine ⟨toConv (Ideal.Quotient.liftₐ (hopfIdeal (R := R) p).toIdeal f hfker), ?_⟩
     apply Multiplicative.toAdd.injective
     rw [toAdd_pointsHom, ofConv_toConv, hlift, hfx]
+
+/-- **The `p`-nilpotent subgroup of the additive group.** For a commutative `R`-algebra `A`, the
+elements `a : A` with `aᵖ = 0` form a subgroup of the additive group `Multiplicative A`: they are
+exactly the image of the points homomorphism of `αₚ`, hence closed under the group operations. -/
+@[expose] noncomputable def pNilpotent : Subgroup (Multiplicative A) :=
+  (pointsHom (R := R) p (A := A)).range
+
+/-- Membership in the `p`-nilpotent subgroup is the relation `aᵖ = 0`. -/
+@[simp]
+theorem mem_pNilpotent_iff (a : Multiplicative A) :
+    a ∈ pNilpotent (R := R) p ↔ Multiplicative.toAdd a ^ p = 0 :=
+  mem_range_pointsHom_iff p a
+
+/-- **The functor of points of `αₚ` as the `p`-nilpotent subgroup.** The points homomorphism
+corestricts to a group isomorphism from the convolution group of points of `αₚ` onto the
+`p`-nilpotent subgroup of the additive group, so `αₚ(A)` *is* the group of `p`-nilpotent elements
+of `A`. -/
+@[expose] noncomputable def pointsMulEquiv :
+    WithConv (CoordinateRing (R := R) p →ₐ[R] A) ≃* pNilpotent (R := R) p (A := A) :=
+  MonoidHom.ofInjective (pointsHom_injective (R := R) p (A := A))
+
+/-- The points isomorphism of `αₚ` agrees with the points homomorphism on underlying elements. -/
+@[simp]
+theorem coe_pointsMulEquiv (F : WithConv (CoordinateRing (R := R) p →ₐ[R] A)) :
+    (pointsMulEquiv (R := R) p F : Multiplicative A) = pointsHom p F :=
+  rfl
+
+/-- The inverse of the points isomorphism of `αₚ` is a section of the points homomorphism. -/
+@[simp]
+theorem pointsHom_pointsMulEquiv_symm (a : pNilpotent (R := R) p (A := A)) :
+    pointsHom p ((pointsMulEquiv (R := R) p).symm a) = (a : Multiplicative A) := by
+  rw [← coe_pointsMulEquiv, MulEquiv.apply_symm_apply]
 
 end Points
 
