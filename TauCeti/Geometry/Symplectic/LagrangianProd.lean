@@ -6,6 +6,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Lagrangian
 public import TauCeti.Geometry.Symplectic.Prod
+public import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Products of Lagrangian subspaces
@@ -22,8 +23,6 @@ totally real tori that later live inside symmetric products.
 
 ## Main declarations
 
-* `TauCeti.Submodule.prod_le_prod_iff`: products of submodules compare factorwise; the general
-  order lemma from which the product rules below follow.
 * `TauCeti.SymplecticForm.orthogonal_prod`: the symplectic complement of a product subspace.
 * `TauCeti.SymplecticForm.isIsotropic_prod_iff`: product isotropy is factorwise isotropy.
 * `TauCeti.SymplecticForm.isCoisotropic_prod_iff`: product coisotropy is factorwise coisotropy.
@@ -38,28 +37,6 @@ Section 2.3.
 public section
 
 namespace TauCeti
-
-namespace Submodule
-
-variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
-  [Module R N]
-
-/-- A product of submodules is contained in another product of submodules exactly when each
-factor is contained in the corresponding factor. A general order lemma that could move to
-Mathlib's `Mathlib/LinearAlgebra/Prod.lean`. -/
-lemma prod_le_prod_iff {p p' : Submodule R M} {q q' : Submodule R N} :
-    p.prod q ≤ p'.prod q' ↔ p ≤ p' ∧ q ≤ q' := by
-  constructor
-  · intro h
-    refine ⟨fun x hx => ?_, fun y hy => ?_⟩
-    · exact (Submodule.mem_prod.1
-        (h (Submodule.mem_prod.2 ⟨hx, q.zero_mem⟩ : (x, 0) ∈ p.prod q))).1
-    · exact (Submodule.mem_prod.1
-        (h (Submodule.mem_prod.2 ⟨p.zero_mem, hy⟩ : (0, y) ∈ p.prod q))).2
-  · rintro ⟨h₁, h₂⟩ x hx
-    exact Submodule.mem_prod.2 ⟨h₁ (Submodule.mem_prod.1 hx).1, h₂ (Submodule.mem_prod.1 hx).2⟩
-
-end Submodule
 
 namespace SymplecticForm
 
