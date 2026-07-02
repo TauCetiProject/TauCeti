@@ -8,6 +8,7 @@ public import Mathlib.LinearAlgebra.Prod
 public import TauCeti.Geometry.Symplectic.Lagrangian
 public import TauCeti.Geometry.Symplectic.Prod
 public import TauCeti.Geometry.Symplectic.Rescale
+public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 /-!
 # The graph of a symplectomorphism is Lagrangian
@@ -38,6 +39,8 @@ coming from nondegeneracy of `ω₁` alone.
 * `TauCeti.SymplecticForm.twistedProd`: the twisted product form `ω₁ ⊖ ω₂` on `V × W`.
 * `TauCeti.SymplecticForm.IsSymplectomorphism`: a linear equivalence `e` with
   `ω₂(e v, e w) = ω₁(v, w)`, together with `refl`, `symm`, and `trans`.
+* `TauCeti.SymplecticForm.isSymplectomorphism_iff_transport_eq`: this predicate is equivalent
+  to equality with the transported symplectic form.
 * `TauCeti.SymplecticForm.isIsotropic_graph_iff`: the graph of `e` is isotropic for `ω₁ ⊖ ω₂`
   iff `e` is a symplectomorphism.
 * `TauCeti.SymplecticForm.IsSymplectomorphism.isLagrangian_graph` and
@@ -81,6 +84,20 @@ def IsSymplectomorphism (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (e
 
 variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W} {ω₃ : SymplecticForm U}
 
+/-- A linear equivalence is a symplectomorphism exactly when `ω₂` is the transport of `ω₁`
+along that equivalence. -/
+lemma isSymplectomorphism_iff_transport_eq {e : V ≃ₗ[ℝ] W} :
+    IsSymplectomorphism ω₁ ω₂ e ↔ ω₁.transport e = ω₂ := by
+  constructor
+  · intro h
+    apply toBilinForm_injective
+    ext v w
+    change ω₁.transport e v w = ω₂ v w
+    rw [transport_apply]
+    simpa using (h (e.symm v) (e.symm w)).symm
+  · intro h v w
+    rw [← h, transport_apply_apply]
+
 /-- The identity equivalence is a symplectomorphism. -/
 lemma IsSymplectomorphism.refl (ω : SymplecticForm V) :
     IsSymplectomorphism ω ω (LinearEquiv.refl ℝ V) := by
@@ -104,6 +121,7 @@ lemma IsSymplectomorphism.trans {e : V ≃ₗ[ℝ] W} {f : W ≃ₗ[ℝ] U}
 
 /-- The graph of `e` is isotropic for the twisted product form iff `e` is a symplectomorphism:
 isotropy of the graph is precisely the intertwining identity `ω₂(e v, e w) = ω₁(v, w)`. -/
+@[simp]
 lemma isIsotropic_graph_iff {e : V ≃ₗ[ℝ] W} :
     (twistedProd ω₁ ω₂).IsIsotropic e.toLinearMap.graph ↔ IsSymplectomorphism ω₁ ω₂ e := by
   rw [isIsotropic_iff]
@@ -153,6 +171,7 @@ lemma IsSymplectomorphism.isLagrangian_graph {e : V ≃ₗ[ℝ] W} (h : IsSymple
   simp [hx1]
 
 /-- The graph of `e` is Lagrangian for the twisted product form iff `e` is a symplectomorphism. -/
+@[simp]
 lemma isLagrangian_graph_iff {e : V ≃ₗ[ℝ] W} :
     (twistedProd ω₁ ω₂).IsLagrangian e.toLinearMap.graph ↔ IsSymplectomorphism ω₁ ω₂ e :=
   ⟨fun h => isIsotropic_graph_iff.1 h.isIsotropic, IsSymplectomorphism.isLagrangian_graph⟩
