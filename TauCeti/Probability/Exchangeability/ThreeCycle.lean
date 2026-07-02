@@ -70,12 +70,6 @@ instance : threeCycleMeasure.IsAddRightInvariant := by
   rw [h]
   infer_instance
 
-/-- The uniform law on `ZMod 3` has total mass one. -/
-instance : IsProbabilityMeasure threeCycleMeasure where
-  measure_univ := by
-    rw [threeCycleMeasure]
-    exact measure_univ
-
 /-- The uniform law gives mass `3⁻¹` to each singleton. -/
 @[simp]
 theorem threeCycleMeasure_singleton (a : ZMod 3) : threeCycleMeasure {a} = 3⁻¹ := by
