@@ -143,11 +143,12 @@ private lemma upperCrossingTime_lt_imp_index_lt {Ω : Type*} {a b : ℝ} {f : �
     have ih_n : n ≤ upperCrossingTime a b f N n ω := ih h_n_lt
     omega
 
-/-- **Corrected one-way inequality** with shifted horizon on the reversed side.
-
-The bijection `(τ, σ) ↦ (N - σ, N - τ)` maps `X` upcrossings to `Y` upcrossings. When `τ = 0`, the
-reversed crossing completes at time `N`; with "before `N + 1`" on the reversed side, this crossing
-is counted (since `N < N + 1`). -/
+/-- One-way inequality: the upcrossings of `X` on `[a, b]` before time `N` are bounded by the
+downcrossings of the time-reversed process `revProcess X N` before time `N + 1`. The extra `N + 1`
+horizon on the reversed side is what makes crossings completing exactly at time `N` count. -/
+-- Via the bijection `(τ, σ) ↦ (N - σ, N - τ)` mapping `X` upcrossings to reversed-process
+-- upcrossings: when `τ = 0` the reversed crossing completes at time `N`, which the `N + 1` horizon
+-- includes since `N < N + 1`.
 lemma upcrossingsBefore_le_downcrossingsBefore_revProcess_succ
     {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N : ℕ) :
     (fun ω => upcrossingsBefore a b X N ω)

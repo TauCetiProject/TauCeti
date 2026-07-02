@@ -36,10 +36,10 @@ namespace ProbabilityTheory
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {𝔽 : ℕ → MeasurableSpace Ω}
 
-/-- Reverse filtration on a finite horizon `N`.
-
-For an antitone family `𝔽`, set `𝔾ₖ := 𝔽 (N - k)`. Since `k ≤ ℓ` gives `N - ℓ ≤ N - k`, antitonicity
-of `𝔽` yields `𝔽 (N - k) ≤ 𝔽 (N - ℓ)`, so `𝔾` is a forward (increasing) filtration. -/
+/-- Reverse filtration on a finite horizon `N`: its level `n` is `𝔽 (N - n)`. Used for
+finite-horizon time reversal of an antitone family `𝔽`. -/
+-- This is a (forward, increasing) filtration because `k ≤ ℓ` gives `N - ℓ ≤ N - k`, so
+-- antitonicity of `𝔽` yields `𝔽 (N - k) ≤ 𝔽 (N - ℓ)`.
 def revFiltration (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Antitone 𝔽)
     (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (N : ℕ) : Filtration ℕ (inferInstance : MeasurableSpace Ω) where
@@ -59,8 +59,10 @@ noncomputable def revCondExpFinite (f : Ω → ℝ) (𝔽 : ℕ → MeasurableSp
 lemma revCondExpFinite_apply (f : Ω → ℝ) (𝔽 : ℕ → MeasurableSpace Ω) (N n : ℕ) :
     revCondExpFinite (μ := μ) f 𝔽 N n = μ[f | 𝔽 (N - n)] := by rfl
 
-/-- The reversed process `revCondExpFinite f 𝔽 N` is a martingale for `revFiltration 𝔽 N`: by
-the tower property, `μ[μ[f | 𝔽 (N - j)] | 𝔽 (N - i)] = μ[f | 𝔽 (N - i)]` whenever `i ≤ j`. -/
+/-- The finite-horizon reversed conditional-expectation process `revCondExpFinite f 𝔽 N` is a
+martingale for `revFiltration 𝔽 N`. -/
+-- Martingale by the tower property: `μ[μ[f | 𝔽 (N - j)] | 𝔽 (N - i)] = μ[f | 𝔽 (N - i)]` whenever
+-- `i ≤ j`.
 lemma martingale_revCondExpFinite [IsFiniteMeasure μ]
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (N : ℕ) :
