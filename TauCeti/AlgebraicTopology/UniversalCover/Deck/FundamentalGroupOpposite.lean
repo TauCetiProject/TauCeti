@@ -60,6 +60,8 @@ is isomorphic to the opposite of the fundamental group of the base:
 
 The opposite is the same convention as in `fundamentalGroupEquiv`: deck transformations act
 on the left, while fundamental-group monodromy acts on the right. -/
+-- The public `rfl` characterization lemmas below need this exposed under Lean's module
+-- export rules, as in the nearby deck-to-fibre equivalences.
 @[expose] noncomputable def deckFundamentalGroupEquiv [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) :
     Deck p ≃* (FundamentalGroup X x)ᵐᵒᵖ :=
