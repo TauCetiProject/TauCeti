@@ -41,9 +41,6 @@ of Seifert-fibred examples), with edge multiplicities a later refinement.
 
 ## Main results
 
-* `TauCeti.bilinForm_self_add`: a symmetric bilinear form expands on a sum by polarization.
-* `TauCeti.matrix_toBilin'_apply_single_right`: `Matrix.toBilin'` applied to a basis vector on the
-  right reads off a matrix column.
 * `TauCeti.PlumbingGraph.intersectionMatrix_diag` and
   `TauCeti.PlumbingGraph.intersectionMatrix_apply_of_ne`: the diagonal entry is the framing and
   an off-diagonal entry is the adjacency indicator.
@@ -55,6 +52,10 @@ of Seifert-fibred examples), with edge multiplicities a later refinement.
   framing-weighted sum of squares plus the adjacency cross terms.
 * `TauCeti.PlumbingGraph.IsNegativeDefinite.weight_neg`: a negative-definite plumbing has every
   framing negative.
+* `TauCeti.PlumbingGraph.intersectionForm_self_add`: a symmetric-pairing expansion for the
+  intersection form on a sum.
+* `TauCeti.PlumbingGraph.intersectionForm_apply_single_right`: pairing against a basis sphere reads
+  off the corresponding intersection-matrix column.
 
 ## References
 
@@ -69,28 +70,6 @@ intersection form of a plumbing graph follows Némethi,
 public section
 
 namespace TauCeti
-
-/-- A symmetric bilinear form expands on a sum by the usual polarization formula. -/
-theorem bilinForm_self_add {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    (B : LinearMap.BilinForm R M) (hB : B.IsSymm) (x y : M) :
-    B (x + y) (x + y) = B x x + 2 * B x y + B y y := by
-  simp only [map_add, LinearMap.add_apply]
-  rw [hB.eq y x]
-  ring
-
-/-- Applying the bilinear form associated to a matrix to a basis vector on the right reads off the
-corresponding column. -/
-theorem matrix_toBilin'_apply_single_right {R V : Type*} [CommSemiring R] [Fintype V]
-    [DecidableEq V] (M : Matrix V V R) (x : V → R) (v : V) :
-    Matrix.toBilin' M x (Pi.single v 1) = ∑ i, x i * M i v := by
-  rw [Matrix.toBilin'_apply]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [Finset.sum_eq_single v]
-  · rw [Pi.single_eq_same, mul_one]
-  · intro j _ hj
-    rw [Pi.single_eq_of_ne hj, mul_zero]
-  · intro hv
-    exact absurd (Finset.mem_univ v) hv
 
 /-- A plumbing graph: a simple graph together with an integer weight on each vertex.
 
@@ -204,13 +183,20 @@ twice because the form is symmetric. -/
 theorem intersectionForm_self_add (x y : V → ℤ) :
     P.intersectionForm (x + y) (x + y) =
       P.intersectionForm x x + 2 * P.intersectionForm x y + P.intersectionForm y y :=
-  bilinForm_self_add P.intersectionForm P.intersectionForm_isSymm x y
+  by
+    simp only [map_add, LinearMap.add_apply]
+    rw [P.intersectionForm_isSymm.eq y x]
+    ring
 
 /-- Pairing a lattice point against a basis sphere `E_v` reads off the `v`-th column of the
 intersection matrix: `x · E_v = ∑ i, x i * (intersection matrix) i v`. -/
 theorem intersectionForm_apply_single_right (x : V → ℤ) (v : V) :
     P.intersectionForm x (Pi.single v 1) = ∑ i, x i * P.intersectionMatrix i v :=
-  matrix_toBilin'_apply_single_right P.intersectionMatrix x v
+  by
+    change Matrix.toBilin' P.intersectionMatrix x (Pi.single v 1) =
+      ∑ i, x i * P.intersectionMatrix i v
+    rw [Matrix.toBilin'_apply', Matrix.mulVec_single_one]
+    rfl
 
 /-- The intersection form expanded into its framing contribution and adjacency contribution. -/
 theorem intersectionForm_apply_weight_add_adj (x y : V → ℤ) :
