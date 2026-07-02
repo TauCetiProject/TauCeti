@@ -134,7 +134,6 @@ theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
 
 /-- Naturality of the inverse base-changed trivial-group points equivalence in the value
 algebra. -/
-@[simp]
 theorem mapValue_baseChangePointsMulEquiv_symm_apply (φ : A →ₐ[K] B) (u : PUnit.{1}) :
     AlgHom.mapValue (H := K ⊗[k] k) φ
         ((baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u) =

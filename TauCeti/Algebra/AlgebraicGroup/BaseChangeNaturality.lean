@@ -55,7 +55,6 @@ variable [Algebra K S] [Algebra k S] [IsScalarTower k K S]
 
 Post-composing an `R`-valued point by a `K`-algebra homomorphism `φ : R →ₐ[K] S` and then
 base-changing agrees with first base-changing the point and then post-composing by `φ`. -/
-@[simp]
 lemma mapValue_baseChangePointsMulEquiv (φ : R →ₐ[K] S)
     (f : WithConv (A →ₐ[k] R)) :
     mapValue (H := K ⊗[k] A) φ
@@ -69,7 +68,6 @@ lemma mapValue_baseChangePointsMulEquiv (φ : R →ₐ[K] S)
 
 Restricting a post-composed base-changed point along `a ↦ 1 ⊗ a` agrees with
 post-composing the restricted point. -/
-@[simp]
 lemma baseChangePointsMulEquiv_symm_mapValue (φ : R →ₐ[K] S)
     (f : WithConv (K ⊗[k] A →ₐ[K] R)) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := S)).symm
@@ -94,7 +92,6 @@ variable [CommSemiring R] [Algebra K R] [Algebra k R] [IsScalarTower k K R]
 Pre-composing a `B`-point by a bialgebra morphism `φ : A →ₐc[k] B` and then base-changing
 agrees with first base-changing the point and then pre-composing by the scalar extension
 `K ⊗[k] A →ₐc[K] K ⊗[k] B`. -/
-@[simp]
 lemma baseChangePointsMulEquiv_mapDomain (φ : A →ₐc[k] B)
     (f : WithConv (B →ₐ[k] R)) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)
@@ -118,7 +115,6 @@ lemma baseChangePointsMulEquiv_mapDomain_apply_tmul (φ : A →ₐc[k] B)
 
 Restricting along `a ↦ 1 ⊗ a` after pre-composing with the scalar extension of `φ` agrees
 with first restricting and then pre-composing by `φ`. -/
-@[simp]
 lemma baseChangePointsMulEquiv_symm_mapDomain (φ : A →ₐc[k] B)
     (f : WithConv (K ⊗[k] B →ₐ[K] R)) :
     (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm

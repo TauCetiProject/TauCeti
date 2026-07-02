@@ -128,7 +128,6 @@ theorem groupLikeSpan_toSubmodule (g : GroupLike R C) :
   simp
 
 /-- A group-like element belongs to its span subcoalgebra. -/
-@[simp]
 theorem groupLike_mem_groupLikeSpan (g : GroupLike R C) :
     (g : C) ∈ groupLikeSpan (R := R) (C := C) g := by
   rw [← mem_toSubmodule, groupLikeSpan_toSubmodule]

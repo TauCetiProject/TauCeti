@@ -288,7 +288,6 @@ theorem trivialEquiv_symm_apply (f : M →ₗ[R] N) :
   rfl
 
 /-- Pointwise form of `trivialEquiv_symm_apply`. -/
-@[simp]
 theorem trivialEquiv_symm_apply_apply (f : M →ₗ[R] N) (m : M) :
     (trivialEquiv (R := R) (C := C) (M := M) (N := N)).symm f m = f m :=
   rfl
