@@ -92,13 +92,11 @@ theorem mem_regularObj_matrixCoefficientSet (c : ComoduleCat.regular R C) :
   mem_regular_matrixCoefficientSet (R := R) (C := C) c
 
 /-- The bundled regular comodule's matrix coefficient set is the whole coalgebra. -/
-@[simp]
 theorem regularObj_matrixCoefficientSet_eq_univ :
     matrixCoefficientSet (R := R) (C := C) (M := ComoduleCat.regular R C) = Set.univ :=
   regular_matrixCoefficientSet_eq_univ (R := R) (C := C)
 
 /-- The bundled regular comodule's matrix coefficients span the whole coalgebra. -/
-@[simp]
 theorem regularObj_matrixCoefficientSubmodule_eq_top :
     matrixCoefficientSubmodule (R := R) (C := C) (M := ComoduleCat.regular R C) = ⊤ :=
   regular_matrixCoefficientSubmodule_eq_top (R := R) (C := C)
@@ -131,7 +129,6 @@ theorem regular_matrixCoefficientSubalgebra_eq_top :
     (regular_matrixCoefficientSubmodule_eq_top (R := R) (C := C))
 
 /-- The bundled regular comodule's matrix coefficients generate the whole ambient algebra. -/
-@[simp]
 theorem regularObj_matrixCoefficientSubalgebra_eq_top :
     matrixCoefficientSubalgebra (R := R) (C := C) (M := ComoduleCat.regular R C) = ⊤ :=
   regular_matrixCoefficientSubalgebra_eq_top (R := R) (C := C)

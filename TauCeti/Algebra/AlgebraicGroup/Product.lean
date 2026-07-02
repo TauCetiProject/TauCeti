@@ -206,7 +206,6 @@ theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B)
 
 /-- On pure tensors, naturality of the inverse product-points map says that post-composition
 by `φ` evaluates as applying `φ` to the product of the two factor values. -/
-@[simp]
 theorem mapValue_pointsMulEquiv_symm_apply_tmul (φ : A →ₐ[R] B)
     (p : WithConv (H₁ →ₐ[R] A) × WithConv (H₂ →ₐ[R] A)) (x : H₁) (y : H₂) :
     (AlgHom.mapValue (H := H₁ ⊗[R] H₂) φ

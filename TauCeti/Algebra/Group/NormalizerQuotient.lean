@@ -76,7 +76,6 @@ lemma normalizerQuotientMk_eq_one_iff (H : Subgroup G)
 
 /-- The kernel of the quotient map `N(H) →* N(H) / H` is the copy of `H` inside its
 normalizer. -/
-@[simp]
 lemma normalizerQuotientMk_ker (H : Subgroup G) :
     (normalizerQuotientMk H).ker =
       H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)) := by
@@ -90,7 +89,6 @@ lemma normalizerQuotientMk_surjective (H : Subgroup G) :
     (H.subgroupOf (_root_.Subgroup.normalizer (H : Set G)))
 
 /-- The canonical map `N(H) →* N(H) / H` has full range. -/
-@[simp]
 lemma normalizerQuotientMk_range (H : Subgroup G) :
     (normalizerQuotientMk H).range = ⊤ :=
   QuotientGroup.range_mk'

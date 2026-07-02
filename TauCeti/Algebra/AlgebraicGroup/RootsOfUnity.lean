@@ -148,7 +148,6 @@ lemma pointsMulEquiv_mapValue (n : ℕ) (φ : A →ₐ[R] B)
 
 /-- The inverse points equivalence sends a root of unity to the point taking the standard
 generator to that root. -/
-@[simp]
 lemma pointsMulEquiv_symm_apply_single_generator (n : ℕ) (ζ : rootsOfUnity n A) :
     ((pointsMulEquiv (R := R) (A := A) n).symm ζ).ofConv
         (MonoidAlgebra.single (generator n) 1) =
@@ -177,7 +176,6 @@ lemma pointsMulEquiv_symm_apply_single_generator_smul (n : ℕ) (ζ : rootsOfUni
 
 For `x = generator n`, this specializes to
 `RootsOfUnityGroup.pointsMulEquiv_symm_apply_single_generator`. -/
-@[simp]
 lemma pointsMulEquiv_symm_apply_single_zmod_val (n : ℕ) [NeZero n] (ζ : rootsOfUnity n A)
     (x : Multiplicative (ZMod n)) :
     ((pointsMulEquiv (R := R) (A := A) n).symm ζ).ofConv
@@ -205,7 +203,6 @@ lemma pointsMulEquiv_symm_apply_single_zmod_val_smul (n : ℕ) [NeZero n] (ζ : 
   rw [map_smul, pointsMulEquiv_symm_apply_single_zmod_val]
 
 /-- The previous normal form, specialized to an additive residue class `j : ZMod n`. -/
-@[simp]
 lemma pointsMulEquiv_symm_apply_single_ofAdd_val (n : ℕ) [NeZero n] (ζ : rootsOfUnity n A)
     (j : ZMod n) :
     ((pointsMulEquiv (R := R) (A := A) n).symm ζ).ofConv
@@ -216,7 +213,6 @@ lemma pointsMulEquiv_symm_apply_single_ofAdd_val (n : ℕ) [NeZero n] (ζ : root
       (Multiplicative.ofAdd j), toAdd_ofAdd]
 
 /-- The scalar version of `pointsMulEquiv_symm_apply_single_ofAdd_val`. -/
-@[simp]
 lemma pointsMulEquiv_symm_apply_single_ofAdd_val_smul (n : ℕ) [NeZero n] (ζ : rootsOfUnity n A)
     (j : ZMod n) (r : R) :
     ((pointsMulEquiv (R := R) (A := A) n).symm ζ).ofConv
@@ -240,7 +236,6 @@ lemma mapValue_pointsMulEquiv_symm_apply (n : ℕ) (φ : A →ₐ[R] B) (ζ : ro
 
 /-- Naturality of the inverse `μ_n` points equivalence, evaluated on an arbitrary cyclic
 group-algebra generator. -/
-@[simp]
 lemma mapValue_pointsMulEquiv_symm_apply_single_zmod_val (n : ℕ) [NeZero n] (φ : A →ₐ[R] B)
     (ζ : rootsOfUnity n A) (x : Multiplicative (ZMod n)) :
     (AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative (ZMod n))) φ
@@ -252,7 +247,6 @@ lemma mapValue_pointsMulEquiv_symm_apply_single_zmod_val (n : ℕ) [NeZero n] (�
 
 /-- Naturality of the inverse `μ_n` points equivalence on scalar multiples of arbitrary cyclic
 group-algebra generators. -/
-@[simp]
 lemma mapValue_pointsMulEquiv_symm_apply_single_zmod_val_smul (n : ℕ) [NeZero n] (φ : A →ₐ[R] B)
     (ζ : rootsOfUnity n A) (x : Multiplicative (ZMod n)) (r : R) :
     (AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative (ZMod n))) φ

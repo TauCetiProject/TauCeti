@@ -109,7 +109,6 @@ theorem baseChangePointsMulEquiv_symm_apply_tmul_single (χ : G →* Aˣ) (s : K
 
 /-- The inverse base-changed diagonalizable-points equivalence takes `1 ⊗ single g 1` to the
 value of the character at `g`. -/
-@[simp]
 theorem baseChangePointsMulEquiv_symm_apply_single_one (χ : G →* Aˣ) (g : G) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (G := G)).symm χ).ofConv
         (1 ⊗ₜ[k] MonoidAlgebra.single g (1 : k)) =
