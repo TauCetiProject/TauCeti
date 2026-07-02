@@ -18,7 +18,12 @@ directing measure on the coordinate sets:
 This chains Mathlib's `iCondIndepFun_iff_condExp_inter_preimage_eq_mul` (conditional independence ⟺
 product of indicator conditional expectations) with
 `Contractable.directingMeasure_ae_eq_condExp_coord` (each coordinate's conditional law is the
-directing measure). It is the conditional-expectation core of the de Finetti common ending.
+directing measure), and feeds the common ending to reduce de Finetti to the tail conditional
+independence of the coordinates.
+
+Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/CommonEnding.lean`, pin
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`); here the factorisation is obtained by reuse of
+Mathlib's `iCondIndepFun` characterisation rather than a hand-rolled π-system.
 -/
 
 public section
@@ -33,15 +38,16 @@ namespace Probability
 
 variable {Ω α : Type*} {mΩ : MeasurableSpace Ω} [MeasurableSpace α]
 
-/-- **Block-product factorisation of the conditional expectation.** If the selected coordinates
-`fun i => X (k i)` are conditionally independent given the tail, then the conditional expectation of
-the block-indicator product factors as `∏ i, (directingMeasure μ X ·).real (C i)`. -/
-theorem condExp_blockIndicatorProd_ae_eq_prod [StandardBorelSpace Ω] [StandardBorelSpace α]
-    [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX : Contractable μ X)
-    (hX_meas : ∀ n, Measurable (X n)) (hTail : tailProcess X ≤ mΩ)
+/-- **Block-product factorisation of the conditional expectation** (given tail conditional
+independence). If the selected coordinates `fun i => X (k i)` are conditionally independent given
+the tail, then the conditional expectation of the block-indicator product factors as
+`∏ i, (directingMeasure μ X ·).real (C i)`. -/
+theorem condExp_blockIndicatorProd_ae_eq_prod_of_iCondIndepFun_tailProcess
+    [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     {m : ℕ} {k : Fin m → ℕ} {C : Fin m → Set α} (hC : ∀ i, MeasurableSet (C i))
     (hCI : iCondIndepFun (m := fun _ : Fin m => (inferInstance : MeasurableSpace α))
-      (tailProcess X) hTail (fun i => X (k i)) μ) :
+      (tailProcess X) (tailProcess_le_ambient 0 fun j _ => hX_meas j) (fun i => X (k i)) μ) :
     μ[blockIndicatorProd X k C | tailProcess X]
       =ᵐ[μ] fun ω => ∏ i, (directingMeasure μ X ω).real (C i) := by
   -- The CI factorisation on the full selection `S = univ`, sets `C`.
@@ -73,14 +79,15 @@ theorem condExp_blockIndicatorProd_ae_eq_prod [StandardBorelSpace Ω] [StandardB
 /-- **Block law of a rectangle as a directing-measure mixture** (given tail conditional
 independence). The block law of the rectangle `∏ᵢ C i` is the `μ`-average of the directing-measure
 product `∏ i, directingMeasure μ X ω (C i)`. -/
-theorem blockLaw_eq_lintegral_prod_directingMeasure [StandardBorelSpace Ω] [StandardBorelSpace α]
-    [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX : Contractable μ X)
-    (hX_meas : ∀ n, Measurable (X n)) (hTail : tailProcess X ≤ mΩ)
+theorem blockLaw_eq_lintegral_prod_directingMeasure_of_iCondIndepFun_tailProcess
+    [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     {m : ℕ} {k : Fin m → ℕ} {C : Fin m → Set α} (hC : ∀ i, MeasurableSet (C i))
     (hCI : iCondIndepFun (m := fun _ : Fin m => (inferInstance : MeasurableSpace α))
-      (tailProcess X) hTail (fun i => X (k i)) μ) :
+      (tailProcess X) (tailProcess_le_ambient 0 fun j _ => hX_meas j) (fun i => X (k i)) μ) :
     blockLaw μ X k (Set.univ.pi C) = ∫⁻ ω, ∏ i, directingMeasure μ X ω (C i) ∂μ := by
   classical
+  have hTail : tailProcess X ≤ mΩ := tailProcess_le_ambient 0 fun j _ => hX_meas j
   haveI : IsFiniteMeasure (μ.trim hTail) := isFiniteMeasure_trim hTail
   set g : Ω → ℝ := fun ω => ∏ i, (directingMeasure μ X ω).real (C i) with hg
   have hg_meas : Measurable g :=
@@ -98,7 +105,8 @@ theorem blockLaw_eq_lintegral_prod_directingMeasure [StandardBorelSpace Ω] [Sta
   have hbl : (blockLaw μ X k (Set.univ.pi C)).toReal = ∫ ω, g ω ∂μ := by
     rw [← integral_blockIndicatorProd (fun i => (hX_meas (k i)).aemeasurable) hC,
       ← integral_condExp hTail]
-    exact integral_congr_ae (condExp_blockIndicatorProd_ae_eq_prod hX hX_meas hTail hC hCI)
+    exact integral_congr_ae
+      (condExp_blockIndicatorProd_ae_eq_prod_of_iCondIndepFun_tailProcess hX hX_meas hC hCI)
   have hbl_ne : blockLaw μ X k (Set.univ.pi C) ≠ ⊤ := by
     rw [blockLaw_blockCylinder X (fun i => (hX_meas (k i)).aemeasurable) hC]
     exact measure_ne_top μ _
@@ -110,23 +118,38 @@ theorem blockLaw_eq_lintegral_prod_directingMeasure [StandardBorelSpace Ω] [Sta
   rw [ENNReal.ofReal_prod_of_nonneg fun i _ => ENNReal.toReal_nonneg]
   exact Finset.prod_congr rfl fun i _ => ENNReal.ofReal_toReal (measure_ne_top _ _)
 
-/-- **de Finetti reduces to conditional independence over the tail.** If every finite injective
-selection of coordinates of a contractable process is conditionally independent given the tail
-σ-algebra, then the process is conditionally i.i.d., with directing measure the tail conditional
-law `directingProbabilityMeasure μ X`. -/
-theorem conditionallyIID_of_iCondIndepFun_tailProcess [StandardBorelSpace Ω] [StandardBorelSpace α]
-    [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX : Contractable μ X)
-    (hX_meas : ∀ n, Measurable (X n)) (hTail : tailProcess X ≤ mΩ)
+/-- **de Finetti reduces to conditional independence over the tail** (directing-measure form). If
+every finite injective selection of coordinates of a contractable process is conditionally
+independent given the tail σ-algebra, then the process is conditionally i.i.d. **with directing
+measure** the tail conditional law `directingProbabilityMeasure μ X`. -/
+theorem conditionallyIIDWith_of_iCondIndepFun_tailProcess
+    [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     (hCI : ∀ (m : ℕ) (k : Fin m → ℕ), Function.Injective k →
       iCondIndepFun (m := fun _ : Fin m => (inferInstance : MeasurableSpace α))
-        (tailProcess X) hTail (fun i => X (k i)) μ) :
-    ConditionallyIID μ X := by
-  refine conditionallyIID_of_directing_forall_rectangles
+        (tailProcess X) (tailProcess_le_ambient 0 fun j _ => hX_meas j) (fun i => X (k i)) μ) :
+    ConditionallyIIDWith μ X (directingProbabilityMeasure μ X) := by
+  have hTail : tailProcess X ≤ mΩ := tailProcess_le_ambient 0 fun j _ => hX_meas j
+  refine conditionallyIIDWith_of_forall_rectangles
     (measurable_directingProbabilityMeasure (μ := μ) hTail) ?_
   intro m k hk B hB
-  rw [blockLaw_eq_lintegral_prod_directingMeasure hX hX_meas hTail hB (hCI m k hk)]
+  rw [blockLaw_eq_lintegral_prod_directingMeasure_of_iCondIndepFun_tailProcess
+    hX hX_meas hB (hCI m k hk)]
   refine lintegral_congr fun ω => ?_
   simp only [directingProbabilityMeasure_toMeasure]
+
+/-- **de Finetti reduces to conditional independence over the tail.** The existential form of
+`conditionallyIIDWith_of_iCondIndepFun_tailProcess`: under the same tail conditional-independence
+hypothesis, a contractable process is `ConditionallyIID`. -/
+theorem conditionallyIID_of_iCondIndepFun_tailProcess
+    [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
+    (hCI : ∀ (m : ℕ) (k : Fin m → ℕ), Function.Injective k →
+      iCondIndepFun (m := fun _ : Fin m => (inferInstance : MeasurableSpace α))
+        (tailProcess X) (tailProcess_le_ambient 0 fun j _ => hX_meas j) (fun i => X (k i)) μ) :
+    ConditionallyIID μ X :=
+  ConditionallyIID.of_directing
+    (conditionallyIIDWith_of_iCondIndepFun_tailProcess hX hX_meas hCI)
 
 end Probability
 
