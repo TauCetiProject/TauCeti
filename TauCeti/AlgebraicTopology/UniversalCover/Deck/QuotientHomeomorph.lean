@@ -51,7 +51,8 @@ lemma continuous_orbitQuotientToBase (hp : Continuous p) :
 /-- An open map induces an open map from the deck-orbit quotient to the base. -/
 lemma isOpenMap_orbitQuotientToBase (hp : IsOpenMap p) :
     IsOpenMap (orbitQuotientToBase p) :=
-  IsOpenMap.of_comp continuous_quotient_mk' Quotient.mk''_surjective hp
+  IsOpenMap.of_comp (f := Quotient.mk'') continuous_quotient_mk' Quotient.mk''_surjective
+    (by simpa [Function.comp_def] using hp)
 
 namespace IsRegular
 
