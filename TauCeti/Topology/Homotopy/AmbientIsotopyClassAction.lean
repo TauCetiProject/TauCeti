@@ -65,7 +65,6 @@ theorem postcompHomeomorph_eq_smul (h : Y ≃ₜ Y) :
   rfl
 
 /-- The ambient homeomorphism action on representatives. -/
-@[simp]
 theorem smul_mk (h : Y ≃ₜ Y) (f : C(X, Y)) :
     h • mk f = mk ((h : C(Y, Y)).comp f) :=
   postcompHomeomorph_mk h f
