@@ -179,7 +179,6 @@ theorem maslovX_swapMarkings (x : GridState n) :
 /-- The marking swap negates the Alexander grading, up to the constant normalization shift:
   `A_swap(x) = -A(x) - (n - 1)`. The grading is built antisymmetrically from the two Maslov
   gradings, which the swap exchanges, while the shift depends only on the grid size. -/
-@[simp]
 theorem alexander_swapMarkings (x : GridState n) :
     G.swapMarkings.alexander x = -G.alexander x - (((n : ℤ) - 1 : ℤ) : ℚ) := by
   rw [alexander_def, alexander_def, maslovO_swapMarkings, maslovX_swapMarkings]

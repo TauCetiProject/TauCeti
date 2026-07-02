@@ -96,7 +96,6 @@ theorem rotate_apply (x : GridState n) (c : Fin n) :
 
 /-- In the rotated state, the occupied square in row `r` lies in the reversed column of the
 occupied square in row `r.rev` of the original state. -/
-@[simp]
 theorem columnOfRow_rotate (x : GridState n) (r : Fin n) :
     x.rotate.columnOfRow r = (x.columnOfRow r.rev).rev := by
   apply x.rotate.toPerm.injective
@@ -104,7 +103,6 @@ theorem columnOfRow_rotate (x : GridState n) (r : Fin n) :
 
 /-- A square lies in the rotated state exactly when its half-turn rotation lies in the original
 state. -/
-@[simp]
 theorem mem_pointSet_rotate (x : GridState n) (p : Fin n × Fin n) :
     p ∈ x.rotate.pointSet ↔ Prod.map Fin.rev Fin.rev p ∈ x.pointSet := by
   simp only [mem_pointSet, rotate_apply, Prod.map_fst, Prod.map_snd, Fin.rev_eq_iff]
@@ -213,7 +211,6 @@ theorem rotate_XSet : G.rotate.XSet = G.XSet.image (Prod.map Fin.rev Fin.rev) :=
 
 /-- A square lies in the rotated diagram's `O`-marking set exactly when its half-turn rotation
 lies in the original `O`-marking set. -/
-@[simp]
 theorem mem_OSet_rotate (p : Fin n × Fin n) :
     p ∈ G.rotate.OSet ↔ Prod.map Fin.rev Fin.rev p ∈ G.OSet := by
   rw [OSet, OSet, rotate_O]
@@ -221,7 +218,6 @@ theorem mem_OSet_rotate (p : Fin n × Fin n) :
 
 /-- A square lies in the rotated diagram's `X`-marking set exactly when its half-turn rotation
 lies in the original `X`-marking set. -/
-@[simp]
 theorem mem_XSet_rotate (p : Fin n × Fin n) :
     p ∈ G.rotate.XSet ↔ Prod.map Fin.rev Fin.rev p ∈ G.XSet := by
   rw [XSet, XSet, rotate_X]
