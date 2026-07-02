@@ -13,8 +13,8 @@ limits of sequences, used when working with tail σ-algebras and reverse marting
 
 - `aestronglyMeasurable_iInf_antitone`: `AEStronglyMeasurable` is preserved under the infimum of an
   antitone sequence of σ-algebras.
-- `aestronglyMeasurable_sub_of_tendsto_ae`: `AEStronglyMeasurable` for a sub-σ-algebra is preserved
-  under a.e. pointwise limits.
+- `aestronglyMeasurable_of_tendsto_ae_of_le`: `AEStronglyMeasurable` for a sub-σ-algebra is
+  preserved under a.e. pointwise limits.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/SigmaAlgebraHelpers.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). These sub-σ-algebra statements have no Mathlib
@@ -88,7 +88,7 @@ lemma aestronglyMeasurable_iInf_antitone
 If `f n` are all `Measurable[m]` where `m ≤ m₀`, and `f n → g` a.e., then `g` is
 `AEStronglyMeasurable[m]`, with the `limsup` as witness. Mathlib's
 `aestronglyMeasurable_of_tendsto_ae` covers only the `m = m₀` case. -/
-lemma aestronglyMeasurable_sub_of_tendsto_ae
+lemma aestronglyMeasurable_of_tendsto_ae_of_le
     {α : Type*} {m₀ : MeasurableSpace α} {μ : @MeasureTheory.Measure α m₀}
     {m : MeasurableSpace α} (_hm : m ≤ m₀)
     {f : ℕ → α → ℝ} {g : α → ℝ}

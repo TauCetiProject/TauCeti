@@ -15,8 +15,9 @@ No filtration / integrability content here — this is the purely combinatorial 
 
 ## Main results
 
-- `up_neg_flip_eq_down`: `up(-b, -a, -X) = down(a, b, X)`.
-- `upBefore_le_downBefore_rev_succ`: the upcrossing–downcrossing inequality with shifted horizon.
+- `upcrossings_neg_flip_eq_downcrossings`: `up(-b, -a, -X) = down(a, b, X)`.
+- `upcrossingsBefore_le_downcrossingsBefore_revProcess_succ`: the upcrossing–downcrossing
+  inequality with shifted horizon.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/Martingale/Crossings/Pathwise.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
@@ -47,7 +48,7 @@ Returns a random variable `Ω → ℕ`. -/
 
 /-- **Identity 1:** upcrossings of the negated process = downcrossings of the original.
 Negation flips crossing direction: `up(-b, -a, -X) = down(a, b, X)`. -/
-lemma up_neg_flip_eq_down {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) :
+lemma upcrossings_neg_flip_eq_downcrossings {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) :
     upcrossings (-b) (-a) (negProcess X) = downcrossings a b X := rfl
 
 /-- Double negation is identity (used by `simp` below). -/
@@ -56,7 +57,7 @@ lemma up_neg_flip_eq_down {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) :
 
 /-- **Identity 2:** downcrossings of the negated process = upcrossings of the original.
 Negation flips crossing direction: `down(-b, -a, -X) = up(a, b, X)`. -/
-private lemma down_neg_flip_eq_up {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) :
+private lemma downcrossings_neg_flip_eq_upcrossings {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) :
     downcrossings (-b) (-a) (negProcess X) = upcrossings a b X := by
   unfold downcrossings downcrossingsBefore upcrossings; simp
 
@@ -143,7 +144,7 @@ private lemma upperCrossingTime_lt_imp_index_lt {Ω : Type*} {a b : ℝ} {f : �
 The bijection `(τ, σ) ↦ (N - σ, N - τ)` maps `X` upcrossings to `Y` upcrossings. When `τ = 0`, the
 reversed crossing completes at time `N`; with "before `N + 1`" on the reversed side, this crossing
 is counted (since `N < N + 1`). -/
-lemma upBefore_le_downBefore_rev_succ
+lemma upcrossingsBefore_le_downcrossingsBefore_revProcess_succ
     {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N : ℕ) :
     (fun ω => upcrossingsBefore a b X N ω)
       ≤ (fun ω => downcrossingsBefore a b (revProcess X N) (N + 1) ω) := by

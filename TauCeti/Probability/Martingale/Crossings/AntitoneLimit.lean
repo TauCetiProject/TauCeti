@@ -14,7 +14,7 @@ antitone filtration, and its identification as `μ[f | ⨅ n, 𝔽 n]`.
 
 - `condExp_exists_ae_limit_antitone`: a.e. limit existence for antitone filtrations, via the
   upcrossing inequality applied to the time-reversed martingales.
-- `ae_limit_is_condexp_iInf`: the a.e. limit equals `μ[f | ⨅ n, 𝔽 n]`, via uniform integrability
+- `tendsto_ae_condExp_iInf_aux`: the a.e. limit equals `μ[f | ⨅ n, 𝔽 n]`, via uniform integrability
   and L¹-continuity of conditional expectation.
 
 Adapted from `cameronfreer/exchangeability`
@@ -87,70 +87,73 @@ lemma condExp_exists_ae_limit_antitone
     have h_le_key (N : ℕ) (ω : Ω) :
         ↑(upcrossingsBefore (↑a) (↑b) (fun n => μ[f | 𝔽 n]) N ω)
         ≤ upcrossings (- (↑b : ℝ)) (- (↑a : ℝ))
-            (negProcess (fun n => revCEFinite (μ := μ) f 𝔽 N n)) ω := by
+            (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω := by
       -- Use the corrected inequality with N+1 horizon to avoid boundary issues
-      have h_ineq := upBefore_le_downBefore_rev_succ (fun n => μ[f | 𝔽 n]) (↑a) (↑b) hab' N
+      have h_ineq := upcrossingsBefore_le_downcrossingsBefore_revProcess_succ
+        (fun n => μ[f | 𝔽 n]) (↑a) (↑b) hab' N
       have h_orig_le : upcrossingsBefore (↑a) (↑b) (fun n => μ[f | 𝔽 n]) N ω
           ≤ downcrossingsBefore (↑a) (↑b) (revProcess (fun n => μ[f | 𝔽 n]) N) (N + 1) ω :=
         h_ineq ω
       -- Expand downcrossingsBefore to upcrossingsBefore with negProcess
       simp only [downcrossingsBefore] at h_orig_le
-      -- Recognize that revProcess of condExp = revCEFinite
+      -- Recognize that revProcess of condExp = revCondExpFinite
       have h_rev_eq : negProcess (revProcess (fun n => μ[f | 𝔽 n]) N)
-                    = negProcess (fun n => revCEFinite (μ := μ) f 𝔽 N n) := rfl
+                    = negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) := rfl
       -- Pick index (N+1) from the supremum definition of upcrossings
       have h_to_iSup :
           ↑(upcrossingsBefore (- (↑b : ℝ)) (- (↑a : ℝ))
-              (negProcess (fun n => revCEFinite (μ := μ) f 𝔽 N n)) (N + 1) ω)
+              (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) (N + 1) ω)
             ≤ upcrossings (- (↑b : ℝ)) (- (↑a : ℝ))
-                (negProcess (fun n => revCEFinite (μ := μ) f 𝔽 N n)) ω := by
+                (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω := by
         simp only [MeasureTheory.upcrossings]
         apply le_iSup (fun M => (upcrossingsBefore (- (↑b : ℝ)) (- (↑a : ℝ))
-            (negProcess (fun n => revCEFinite (μ := μ) f 𝔽 N n)) M ω : ℝ≥0∞)) (N + 1)
+            (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) M ω : ℝ≥0∞)) (N + 1)
       calc ↑(upcrossingsBefore (↑a) (↑b) (fun n => μ[f | 𝔽 n]) N ω)
           ≤ ↑(upcrossingsBefore (- (↑b : ℝ)) (- (↑a : ℝ))
                 (negProcess (revProcess (fun n => μ[f | 𝔽 n]) N)) (N + 1) ω) :=
             Nat.cast_le.mpr h_orig_le
         _ = ↑(upcrossingsBefore (- (↑b : ℝ)) (- (↑a : ℝ))
-                (negProcess (fun n => revCEFinite (μ := μ) f 𝔽 N n)) (N + 1) ω) := by rw [h_rev_eq]
+                (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) (N + 1) ω) := by
+              rw [h_rev_eq]
         _ ≤ upcrossings (- (↑b : ℝ)) (- (↑a : ℝ))
-                (negProcess (fun n => revCEFinite (μ := μ) f 𝔽 N n)) ω := h_to_iSup
+                (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω := h_to_iSup
     -- For each N, bound the expected upcrossings using the negated reversed martingale
     have h_N_bound : ∀ N,
         ∫⁻ ω, ↑(upcrossingsBefore (↑a) (↑b) (fun n => μ[f | 𝔽 n]) N ω) ∂μ ≤ C := by
       intro N
       calc ∫⁻ ω, ↑(upcrossingsBefore (↑a) (↑b) (fun n => μ[f | 𝔽 n]) N ω) ∂μ
           ≤ ∫⁻ ω, upcrossings (- (↑b : ℝ)) (- (↑a : ℝ))
-                (negProcess (fun n => revCEFinite (μ := μ) f 𝔽 N n)) ω ∂μ :=
+                (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω ∂μ :=
             lintegral_mono (h_le_key N)
-        _ = ∫⁻ ω, downcrossings (↑a) (↑b) (fun n => revCEFinite (μ := μ) f 𝔽 N n) ω ∂μ := by
+        _ = ∫⁻ ω, downcrossings (↑a) (↑b) (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) ω ∂μ := by
             -- Use identity: up(-b, -a, -X) = down(a, b, X)
             rw [show (fun ω => upcrossings (- (↑b : ℝ)) (- (↑a : ℝ))
-                    (negProcess (fun n => revCEFinite (μ := μ) f 𝔽 N n)) ω)
+                    (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω)
                    = (fun ω => downcrossings (↑a) (↑b)
-                    (fun n => revCEFinite (μ := μ) f 𝔽 N n) ω) from
-                up_neg_flip_eq_down (↑a) (↑b) (fun n => revCEFinite (μ := μ) f 𝔽 N n)]
+                    (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) ω) from
+                upcrossings_neg_flip_eq_downcrossings (↑a) (↑b)
+                  (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)]
         _ ≤ C := by
             -- Rewrite `downcrossings(a,b,X) = upcrossings(-b,-a,-X)`
-            -- (`up_neg_flip_eq_down`), recognise `negProcess (revCEFinite f) =ᵐ
-            -- revCEFinite (-f)` (a consequence of `condExp_neg`), and apply
+            -- (`upcrossings_neg_flip_eq_downcrossings`), recognise
+            -- `negProcess (revCondExpFinite f) =ᵐ revCondExpFinite (-f)` (via `condExp_neg`), and
             -- `upcrossings_bdd_uniform` to `-f` on `[-b,-a]` to get the
             -- precomputed `C_down` bound.
-            calc ∫⁻ ω, downcrossings (↑a) (↑b) (fun n => revCEFinite (μ := μ) f 𝔽 N n) ω ∂μ
+            calc ∫⁻ ω, downcrossings (↑a) (↑b) (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) ω ∂μ
                 = ∫⁻ ω, upcrossings (-↑b) (-↑a)
-                    (negProcess (fun n => revCEFinite (μ := μ) f 𝔽 N n)) ω ∂μ := by
-                    simp only [up_neg_flip_eq_down]
+                    (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω ∂μ := by
+                    simp only [upcrossings_neg_flip_eq_downcrossings]
               _ = ∫⁻ ω, upcrossings (-↑b) (-↑a)
-                    (fun n => revCEFinite (μ := μ) (fun x => -f x) 𝔽 N n) ω ∂μ := by
+                    (fun n => revCondExpFinite (μ := μ) (fun x => -f x) 𝔽 N n) ω ∂μ := by
                     -- lintegral_congr_ae: processes agree ae at all times → upcrossings agree ae
                     apply lintegral_congr_ae
                     -- Get ae equality at each time index via countable intersection
                     have h_ae_eq : ∀ᵐ ω ∂μ, ∀ n,
-                        negProcess (fun m => revCEFinite (μ := μ) f 𝔽 N m) n ω =
-                        revCEFinite (μ := μ) (fun x => -f x) 𝔽 N n ω := by
+                        negProcess (fun m => revCondExpFinite (μ := μ) f 𝔽 N m) n ω =
+                        revCondExpFinite (μ := μ) (fun x => -f x) 𝔽 N n ω := by
                       rw [ae_all_iff]
                       intro n
-                      simp only [negProcess, revCEFinite]
+                      simp only [negProcess, revCondExpFinite]
                       exact (condExp_neg f (𝔽 (N - n))).symm
                     filter_upwards [h_ae_eq] with ω hω
                     simp [MeasureTheory.upcrossings,
@@ -283,10 +286,10 @@ private lemma aestronglyMeasurable_iInf_of_tendsto_ae_antitone
     AEStronglyMeasurable[⨅ n, 𝔽 n] Xlim μ := by
   -- Compose the two `SigmaAlgebraHelpers` lemmas: first show
   -- `AEStronglyMeasurable[𝔽 N] Xlim` for each `N` by feeding the shifted
-  -- sequence `g (n + N)` into `aestronglyMeasurable_sub_of_tendsto_ae`; then
+  -- sequence `g (n + N)` into `aestronglyMeasurable_of_tendsto_ae_of_le`; then
   -- combine over `N` via `aestronglyMeasurable_iInf_antitone`.
   refine aestronglyMeasurable_iInf_antitone (μ := μ) h_antitone h_le Xlim (fun N => ?_)
-  refine aestronglyMeasurable_sub_of_tendsto_ae (μ := μ) (h_le N) (f := fun n => g (n + N))
+  refine aestronglyMeasurable_of_tendsto_ae_of_le (μ := μ) (h_le N) (f := fun n => g (n + N))
     (fun n => (hg_meas (n + N)).measurable.mono
       (h_antitone (Nat.le_add_left N n)) le_rfl) ?_
   filter_upwards [h_tendsto] with ω hω
@@ -296,7 +299,7 @@ private lemma aestronglyMeasurable_iInf_of_tendsto_ae_antitone
 
 Uses uniform integrability to pass from a.e. convergence to L¹ convergence,
 then uses L¹-continuity of conditional expectation to identify the limit. -/
-lemma ae_limit_is_condexp_iInf
+lemma tendsto_ae_condExp_iInf_aux
     [IsProbabilityMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (hf : Integrable f μ) :

@@ -12,7 +12,7 @@ Lévy's downward theorem for conditional expectations along a decreasing filtrat
 
 ## Main results
 
-- `condExp_tendsto_iInf`: Lévy's downward theorem — for antitone `𝔽` and integrable `f`, the
+- `tendsto_ae_condExp_iInf`: Lévy's downward theorem — for antitone `𝔽` and integrable `f`, the
   sequence `μ[f | 𝔽 n]` converges a.e. to `μ[f | ⨅ n, 𝔽 n]`.
 
 ## References
@@ -53,7 +53,7 @@ to `μ[f | ⨅ₙ 𝔽ₙ]`.
 equals `F 0` (since `F 0` is the largest element of the chain), not `⨅ n, F n`. So applying
 Lévy's upward theorem to the dualised filtration would give convergence to `μ[f | F 0]`, the wrong
 limit. -/
-theorem condExp_tendsto_iInf
+theorem tendsto_ae_condExp_iInf
     [IsProbabilityMeasure μ]
     {𝔽 : ℕ → MeasurableSpace Ω}
     (h_filtration : Antitone 𝔽)
@@ -63,20 +63,20 @@ theorem condExp_tendsto_iInf
       (fun n => μ[f | 𝔽 n] ω)
       atTop
       (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) :=
-  ae_limit_is_condexp_iInf h_filtration h_le f h_f_int
+  tendsto_ae_condExp_iInf_aux h_filtration h_le f h_f_int
 
 /-! ## Implementation notes
 
-`condExp_tendsto_iInf` is proved via the chain:
+`tendsto_ae_condExp_iInf` is proved via the chain:
 
-1. `revFiltration`, `revCEFinite`: time-reversal infrastructure (`Martingale/Reverse.lean`).
-2. `revCEFinite_martingale`: the reversed process is a forward martingale.
+1. `revFiltration`, `revCondExpFinite`: time-reversal infrastructure (`Martingale/Reverse.lean`).
+2. `revCondExpFinite_martingale`: the reversed process is a forward martingale.
 3. `condExp_exists_ae_limit_antitone`: a.s. existence via upcrossing bounds
    (`Martingale/Crossings.lean`).
 4. `Integrable.uniformIntegrable_condExp` (Mathlib): uniform integrability of conditional
    expectations.
-5. `ae_limit_is_condexp_iInf`: limit identification via Vitali convergence + tower property.
-6. `condExp_tendsto_iInf`: wraps step 5.
+5. `tendsto_ae_condExp_iInf_aux`: limit identification via Vitali convergence + tower property.
+6. `tendsto_ae_condExp_iInf`: wraps step 5.
 
 Mathlib dependencies: `Filtration`, `condExp_condExp_of_le` (tower property). Reverse-martingale
 convergence is *not* available in Mathlib; the chain above proves it locally for the Lévy downward
