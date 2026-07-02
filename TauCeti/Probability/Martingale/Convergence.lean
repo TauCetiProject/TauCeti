@@ -43,20 +43,8 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
 /-- **Conditional expectation converges along a decreasing filtration (Lévy's downward theorem).**
 
-For a decreasing filtration `𝔽ₙ` and integrable `f`, the sequence `Mₙ := μ[f | 𝔽ₙ]` converges a.s.
-to `μ[f | ⨅ₙ 𝔽ₙ]`.
-
-**Proof strategy:** the upcrossing inequality approach:
-1. Define upcrossings for an interval `[a,b]`.
-2. Prove the upcrossing inequality: `E[# upcrossings] ≤ E[|X₀ - a|] / (b - a)`.
-3. Show finitely many upcrossings a.e. for all rational `[a,b]`.
-4. Deduce that `μ[f | 𝔽 n]` converges a.e.
-5. Identify the limit as `μ[f | ⨅ 𝔽 n]` using the tower property.
-
-**Why not use OrderDual reindexing?** For antitone `F`, the supremum `⨆ i : ℕᵒᵈ, F i.ofDual`
-equals `F 0` (since `F 0` is the largest element of the chain), not `⨅ n, F n`. So applying
-Lévy's upward theorem to the dualised filtration would give convergence to `μ[f | F 0]`, the wrong
-limit. -/
+For a decreasing filtration `𝔽ₙ` and integrable `f`, the sequence `μ[f | 𝔽ₙ]` converges almost
+surely to `μ[f | ⨅ₙ 𝔽ₙ]`. -/
 theorem tendsto_ae_condExp_iInf
     [IsFiniteMeasure μ]
     {𝔽 : ℕ → MeasurableSpace Ω}
@@ -71,12 +59,19 @@ theorem tendsto_ae_condExp_iInf
 
 /-! ## Implementation notes
 
+The proof follows the upcrossing-inequality route (define upcrossings on `[a, b]`, bound their
+expected number, deduce finitely many upcrossings a.e. for all rational `[a, b]`, hence a.e.
+convergence, then identify the limit by the tower property) rather than reindexing by `ℕᵒᵈ`: for
+antitone `𝔽`, the supremum `⨆ i : ℕᵒᵈ, 𝔽 i.ofDual` equals `𝔽 0` (the largest σ-algebra of the
+chain), not `⨅ n, 𝔽 n`, so applying Lévy's *upward* theorem to the dualised filtration would
+converge to the wrong limit `μ[f | 𝔽 0]`.
+
 `tendsto_ae_condExp_iInf` is proved via the chain:
 
 1. `revFiltration`, `revCondExpFinite`: time-reversal infrastructure (`Martingale/Reverse.lean`).
 2. `revCondExpFinite_martingale`: the reversed process is a forward martingale.
 3. `condExp_exists_ae_limit_antitone`: a.s. existence via upcrossing bounds
-   (`Martingale/Crossings.lean`).
+   (`Martingale/Crossings/AntitoneLimit.lean`).
 4. `Integrable.uniformIntegrable_condExp` (Mathlib): uniform integrability of conditional
    expectations.
 5. `tendsto_ae_condExp_iInf_aux`: limit identification via Vitali convergence + tower property.

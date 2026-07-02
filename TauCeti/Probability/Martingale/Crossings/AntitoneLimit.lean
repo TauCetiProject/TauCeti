@@ -37,11 +37,9 @@ namespace ProbabilityTheory
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 variable {𝔽 : ℕ → MeasurableSpace Ω}
 
-/-- A.S. existence of the limit of `μ[f | 𝔽 n]` along an antitone filtration.
-
-This uses the upcrossing inequality applied to the time-reversed martingales to show
-that the original sequence has finitely many upcrossings and downcrossings a.e.,
-hence converges a.e. -/
+/-- A.S. existence of the limit of `μ[f | 𝔽 n]` along an antitone filtration. -/
+-- The proof applies the upcrossing inequality to the time-reversed martingales to show that the
+-- original sequence has finitely many upcrossings and downcrossings a.e., hence converges a.e.
 private lemma condExp_exists_ae_limit_antitone
     [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
@@ -285,7 +283,7 @@ private lemma aestronglyMeasurable_iInf_of_tendsto_ae_antitone
     (hg_meas : ∀ n, StronglyMeasurable[𝔽 n] (g n))
     (h_tendsto : ∀ᵐ ω ∂μ, Tendsto (fun n => g n ω) atTop (𝓝 (Xlim ω))) :
     AEStronglyMeasurable[⨅ n, 𝔽 n] Xlim μ := by
-  -- Compose the two `SigmaAlgebraHelpers` lemmas: first show
+  -- Compose the two `AEStronglyMeasurable` helper lemmas: first show
   -- `AEStronglyMeasurable[𝔽 N] Xlim` for each `N` by feeding the shifted
   -- sequence `g (n + N)` into `aestronglyMeasurable_of_tendsto_ae_of_le`; then
   -- combine over `N` via `aestronglyMeasurable_iInf_antitone`.
@@ -296,10 +294,10 @@ private lemma aestronglyMeasurable_iInf_of_tendsto_ae_antitone
   filter_upwards [h_tendsto] with ω hω
   exact hω.comp (Filter.tendsto_add_atTop_nat N)
 
-/-- Identification: the a.s. limit equals `μ[f | ⨅ n, 𝔽 n]`.
-
-Uses uniform integrability to pass from a.e. convergence to L¹ convergence,
-then uses L¹-continuity of conditional expectation to identify the limit. -/
+/-- Identification: the a.s. limit of `μ[f | 𝔽 n]` along an antitone filtration equals
+`μ[f | ⨅ n, 𝔽 n]`. -/
+-- Uniform integrability upgrades the a.e. convergence to L¹ convergence, and L¹-continuity of
+-- conditional expectation then identifies the limit.
 lemma tendsto_ae_condExp_iInf_aux
     [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))

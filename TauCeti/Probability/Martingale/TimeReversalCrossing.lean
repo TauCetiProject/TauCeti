@@ -174,11 +174,10 @@ private lemma timeReversal_crossing_bound_strong
 
 For a process `X` with `k` upcrossings `[a→b]` completing before time `N`, the time-reversed
 negated process `Y = negProcess (revProcess X N)` has its `k` upcrossings `[-b→-a]` completing at
-time `≤ N`.
-
-The proof uses the bijection `(τ, σ) ↦ (N - σ, N - τ)` which maps `X`'s crossings to `Y`'s
-crossings in reverse order. The greedy upcrossing algorithm finds these crossings with completion
-times bounded by `hittingBtwn_le_of_mem`. -/
+time `≤ N`. -/
+-- The proof uses the bijection `(τ, σ) ↦ (N - σ, N - τ)` which maps `X`'s crossings to `Y`'s
+-- crossings in reverse order; the greedy upcrossing algorithm finds these crossings with
+-- completion times bounded by `hittingBtwn_le_of_mem`.
 lemma timeReversal_crossing_bound
     {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N k : ℕ) (ω : Ω)
     (h_k : upperCrossingTime a b X N k ω < N) :

@@ -34,8 +34,9 @@ namespace MeasureTheory
 /-- `AEStronglyMeasurable` for the infimum of an antitone sequence of σ-algebras.
 
 For real-valued functions, if `f` is `AEStronglyMeasurable` with respect to each σ-algebra in an
-antitone (decreasing) sequence, then `f` is `AEStronglyMeasurable` with respect to their infimum.
-The common representative is built as the `liminf` of the per-σ-algebra witnesses. -/
+antitone (decreasing) sequence, then `f` is `AEStronglyMeasurable` with respect to their
+infimum. -/
+-- The common representative is built as the `liminf` of the per-σ-algebra witnesses.
 lemma aestronglyMeasurable_iInf_antitone
     {α : Type*} {m₀ : MeasurableSpace α} {μ : @MeasureTheory.Measure α m₀}
     {m : ℕ → MeasurableSpace α}
@@ -86,8 +87,9 @@ lemma aestronglyMeasurable_iInf_antitone
 /-- `AEStronglyMeasurable` for a sub-σ-algebra is preserved under a.e. pointwise limits.
 
 If `f n` are all `Measurable[m]` where `m ≤ m₀`, and `f n → g` a.e., then `g` is
-`AEStronglyMeasurable[m]`, with the `limsup` as witness. Mathlib's
-`aestronglyMeasurable_of_tendsto_ae` covers only the `m = m₀` case. -/
+`AEStronglyMeasurable[m]`. Mathlib's `aestronglyMeasurable_of_tendsto_ae` covers only the
+`m = m₀` case. -/
+-- The witness is the pointwise `limsup` of the `f n`.
 lemma aestronglyMeasurable_of_tendsto_ae_of_le
     {α : Type*} {m₀ : MeasurableSpace α} {μ : @MeasureTheory.Measure α m₀}
     {m : MeasurableSpace α} (_hm : m ≤ m₀)
