@@ -18,14 +18,15 @@ group isomorphism `Diff I M n ≃* Diff J N n` between the self-diffeomorphism g
 forgetful homomorphism to the permutation group (`Diffeomorph.toPerm`) through Mathlib's
 `Equiv.permCongr`.
 
-This is the sense in which the group object of the geometric-topology roadmap
+This expresses that the *algebraic* group object of the geometric-topology roadmap
 (`TauCetiRoadmap/GeometricTopology/README.md`, layer 3, "diffeomorphism groups with the C^∞
 topology") is a diffeomorphism invariant: diffeomorphic manifolds have isomorphic
-self-diffeomorphism groups, so the homotopy-type statements the layer targets — the Smale
+self-diffeomorphism groups as abstract groups. The construction is purely algebraic and stops at the
+bare group isomorphism; it does *not yet* carry the `C^∞` topology, so on its own it says nothing
+about homotopy type. Transporting the homotopy-type statements the layer targets — the Smale
 conjecture `Diff(S³) ≃ O(4)`, `[Kir97, Problem 4.34]`, and Watanabe's `π_k(Diff(D⁴, ∂))` classes,
-`[Kir97, Problem 4.126]` — transport along a chosen diffeomorphism of the underlying manifold. The
-construction is purely algebraic and stops at the bare group isomorphism; the `C^∞` topology making
-it a topological-group isomorphism is a separate, later layer-3 deliverable. It works for every
+`[Kir97, Problem 4.126]` — needs the refinement of this isomorphism to a topological-group (indeed
+homeomorphism) isomorphism, which is a separate, later layer-3 deliverable. It works for every
 smoothness exponent `n`.
 
 The construction is the diffeomorphism analogue of `Equiv.permCongr`
@@ -45,6 +46,8 @@ for the naturality statement.
 * `TauCeti.Diffeomorph.diffCongr_trans`: `diffCongr` turns `Diffeomorph.trans` into
   `MulEquiv.trans`, so it is functorial on the groupoid of diffeomorphisms.
 * `TauCeti.Diffeomorph.diffCongr_symm`: the inverse isomorphism conjugates by `e.symm`.
+* `TauCeti.Diffeomorph.toHomeomorph_diffCongr`: the forgetful homomorphism to the self-homeomorphism
+  group intertwines `diffCongr` with conjugation of homeomorphisms.
 * `TauCeti.Diffeomorph.toPerm_diffCongr`: the forgetful homomorphism to the permutation group
   intertwines `diffCongr` with `Equiv.permCongr`.
 -/
@@ -87,7 +90,7 @@ groups. -/
     simp [mul_def, _root_.Diffeomorph.coe_trans]
 
 /-- The conjugating isomorphism acts pointwise by `diffCongr e φ x = e (φ (e.symm x))`. -/
-@[simp]
+@[simp, grind =]
 theorem diffCongr_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) (x : N) :
     diffCongr e φ x = e (φ (e.symm x)) := rfl
 
@@ -120,12 +123,24 @@ theorem diffCongr_symm (e : M ≃ₘ^n⟮I, J⟯ N) : (diffCongr e).symm = diffC
   ext ψ x
   rfl
 
-/-- Forgetting smoothness intertwines `diffCongr` with `Equiv.permCongr` on the permutation
-groups. -/
+/-- Forgetting only smoothness (keeping the topology) sends `diffCongr e φ` to the conjugate of
+underlying self-homeomorphisms `e ∘ φ ∘ e⁻¹`. This is the naturality of `diffCongr` against the
+stronger forgetful homomorphism `Diffeomorph.toHomeomorphHom`, refining `toPerm_diffCongr`. -/
+theorem toHomeomorph_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
+    (diffCongr e φ).toHomeomorph =
+      (e.toHomeomorph.symm.trans φ.toHomeomorph).trans e.toHomeomorph := by
+  ext x
+  rfl
+
+/-- Forgetting all topology intertwines `diffCongr` with `Equiv.permCongr` on the permutation
+groups; this is the `toPerm`-level shadow of `toHomeomorph_diffCongr`. -/
 theorem toPerm_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
     toPerm (diffCongr e φ) = e.toEquiv.permCongr (toPerm φ) := by
-  ext x
-  simp [toPerm, Equiv.permCongr_apply]
+  have key : (diffCongr e φ).toEquiv = e.toEquiv.permCongr φ.toEquiv := by
+    rw [← _root_.Diffeomorph.toHomeomorph_toEquiv, toHomeomorph_diffCongr]
+    ext x
+    simp [Equiv.permCongr_apply, _root_.Diffeomorph.coe_toHomeomorph_symm]
+  simpa [toPerm] using key
 
 end Diffeomorph
 
