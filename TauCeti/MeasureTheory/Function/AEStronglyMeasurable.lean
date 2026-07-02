@@ -27,7 +27,9 @@ noncomputable section
 
 open MeasureTheory Filter
 
-namespace ProbabilityTheory
+namespace TauCeti
+
+namespace MeasureTheory
 
 /-- `AEStronglyMeasurable` for the infimum of an antitone sequence of σ-algebras.
 
@@ -105,4 +107,6 @@ lemma aestronglyMeasurable_sub_of_tendsto_ae
     exact h_meas.stronglyMeasurable
   exact ⟨h, h_sm, h_ae_eq.symm⟩
 
-end ProbabilityTheory
+end MeasureTheory
+
+end TauCeti

@@ -1,7 +1,7 @@
 module
 
 public import Mathlib.Probability.Martingale.Convergence
-public import TauCeti.Probability.Martingale.SigmaAlgebraHelpers
+public import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 public import TauCeti.Probability.Martingale.Crossings.Bounds
 
 /-!
@@ -29,6 +29,8 @@ noncomputable section
 open MeasureTheory Filter Set Function
 
 open scoped Topology ENNReal
+
+open TauCeti.MeasureTheory
 
 namespace ProbabilityTheory
 
