@@ -276,17 +276,16 @@ The key observation: For antitone 𝔽 (𝔽 n decreases as n increases):
 This is crucial for showing that reverse martingale limits satisfy μ[Xlim | F_inf] = Xlim. -/
 private lemma aestronglyMeasurable_iInf_of_tendsto_ae_antitone
     {𝔽 : ℕ → MeasurableSpace Ω} (h_antitone : Antitone 𝔽)
-    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     {g : ℕ → Ω → ℝ} {Xlim : Ω → ℝ}
     (hg_meas : ∀ n, StronglyMeasurable[𝔽 n] (g n))
     (h_tendsto : ∀ᵐ ω ∂μ, Tendsto (fun n => g n ω) atTop (𝓝 (Xlim ω))) :
     AEStronglyMeasurable[⨅ n, 𝔽 n] Xlim μ := by
   -- Compose the two `AEStronglyMeasurable` helper lemmas: first show
   -- `AEStronglyMeasurable[𝔽 N] Xlim` for each `N` by feeding the shifted
-  -- sequence `g (n + N)` into `aestronglyMeasurable_of_tendsto_ae_of_le`; then
+  -- sequence `g (n + N)` into `aestronglyMeasurable_of_tendsto_ae'`; then
   -- combine over `N` via `aestronglyMeasurable_iInf_antitone`.
-  refine aestronglyMeasurable_iInf_antitone (μ := μ) h_antitone h_le Xlim (fun N => ?_)
-  refine aestronglyMeasurable_of_tendsto_ae_of_le (μ := μ) (h_le N) (f := fun n => g (n + N))
+  refine aestronglyMeasurable_iInf_antitone (μ := μ) h_antitone Xlim (fun N => ?_)
+  refine aestronglyMeasurable_of_tendsto_ae' (μ := μ) (f := fun n => g (n + N))
     (fun n => (hg_meas (n + N)).measurable.mono
       (h_antitone (Nat.le_add_left N n)) le_rfl) ?_
   filter_upwards [h_tendsto] with ω hω
@@ -316,7 +315,7 @@ lemma tendsto_ae_condExp_iInf_aux
   -- Prove Xlim is AEStronglyMeasurable[⨅ 𝔽] BEFORE introducing F_inf alias
   -- This avoids type class unification issues between F_inf and ⨅ 𝔽
   have hXlim_iInf_meas : AEStronglyMeasurable[⨅ n, 𝔽 n] Xlim μ :=
-    aestronglyMeasurable_iInf_of_tendsto_ae_antitone h_antitone h_le
+    aestronglyMeasurable_iInf_of_tendsto_ae_antitone h_antitone
       (fun n => stronglyMeasurable_condExp) h_tendsto
   -- 3) Pass limit through condExp at F_inf := ⨅ n, 𝔽 n
   set F_inf := iInf 𝔽 with hF_inf_def

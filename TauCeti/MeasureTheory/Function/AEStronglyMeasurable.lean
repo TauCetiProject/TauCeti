@@ -13,7 +13,7 @@ limits of sequences, used when working with tail σ-algebras and reverse marting
 
 - `aestronglyMeasurable_iInf_antitone`: `AEStronglyMeasurable` is preserved under the infimum of an
   antitone sequence of σ-algebras.
-- `aestronglyMeasurable_of_tendsto_ae_of_le`: `AEStronglyMeasurable` for a sub-σ-algebra is
+- `aestronglyMeasurable_of_tendsto_ae'`: `AEStronglyMeasurable` for a sub-σ-algebra is
   preserved under a.e. pointwise limits.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/SigmaAlgebraHelpers.lean`, pin
@@ -41,7 +41,6 @@ lemma aestronglyMeasurable_iInf_antitone
     {α : Type*} {m₀ : MeasurableSpace α} {μ : @MeasureTheory.Measure α m₀}
     {m : ℕ → MeasurableSpace α}
     (h_anti : Antitone m)
-    (_h_le : ∀ N, m N ≤ m₀)
     (f : α → ℝ)
     (hf : ∀ N, @MeasureTheory.AEStronglyMeasurable α ℝ _ (m N) m₀ f μ) :
     @MeasureTheory.AEStronglyMeasurable α ℝ _ (⨅ N, m N) m₀ f μ := by
@@ -90,9 +89,9 @@ If `f n` are all `Measurable[m]` where `m ≤ m₀`, and `f n → g` a.e., then 
 `AEStronglyMeasurable[m]`. Mathlib's `aestronglyMeasurable_of_tendsto_ae` covers only the
 `m = m₀` case. -/
 -- The witness is the pointwise `limsup` of the `f n`.
-lemma aestronglyMeasurable_of_tendsto_ae_of_le
+lemma aestronglyMeasurable_of_tendsto_ae'
     {α : Type*} {m₀ : MeasurableSpace α} {μ : @MeasureTheory.Measure α m₀}
-    {m : MeasurableSpace α} (_hm : m ≤ m₀)
+    {m : MeasurableSpace α}
     {f : ℕ → α → ℝ} {g : α → ℝ}
     (hf_meas : ∀ n, @Measurable α ℝ m _ (f n))
     (hlim : ∀ᵐ x ∂μ, Filter.Tendsto (fun n => f n x) Filter.atTop (nhds (g x))) :
