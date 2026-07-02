@@ -10,9 +10,11 @@ public import Mathlib.Algebra.Polynomial.AlgebraMap
 /-!
 # Polynomial integrability against the Gaussian weight
 
-This file collects generic polynomial integrability results for the Gaussian weight
-`Real.exp (-(x ^ 2 / 2))`.  The public lemmas are stated in the `Polynomial` namespace: real
-polynomials are integrable in `eval` form, and integer polynomials are integrable in `aeval` form.
+This file collects generic polynomial integrability results for the Gaussian weight, in the
+`Polynomial` namespace. The primary results are stated at full generality — a real polynomial
+(`eval` form) resp. an integer polynomial (`aeval` form) is integrable against *every* positive
+Gaussian weight `e^{-a·x²}` (`a > 0`) — with the standard weight `e^{-x²/2}` recovered as a
+corollary (`integrable_eval_mul_gaussian`, `integrable_aeval_mul_gaussian`).
 -/
 
 public section
@@ -36,7 +38,7 @@ private theorem integrable_pow_mul_exp_neg_mul_sq {a : ℝ} (ha : 0 < a) (k : �
   ring
 
 /-- Any real polynomial is integrable against every positive Gaussian weight `e^{-a*x²}`. -/
-private theorem integrable_eval_mul_exp_neg_mul_sq {a : ℝ} (ha : 0 < a) (p : ℝ[X]) :
+theorem _root_.Polynomial.integrable_eval_mul_exp_neg_mul_sq {a : ℝ} (ha : 0 < a) (p : ℝ[X]) :
     Integrable (fun x : ℝ => p.eval x * Real.exp (-(a * x ^ 2))) := by
   induction p using Polynomial.induction_on' with
   | add p q hp hq =>
@@ -57,14 +59,15 @@ private theorem eval_map_intCast (x : ℝ) (q : ℤ[X]) :
   rw [aeval_def, eval₂_eq_eval_map, algebraMap_int_eq]
 
 /-- Any integer polynomial is integrable against every positive Gaussian weight `e^{-a*x²}`. -/
-private theorem integrable_aeval_mul_exp_neg_mul_sq {a : ℝ} (ha : 0 < a) (p : ℤ[X]) :
+theorem _root_.Polynomial.integrable_aeval_mul_exp_neg_mul_sq {a : ℝ} (ha : 0 < a) (p : ℤ[X]) :
     Integrable (fun x : ℝ => aeval x p * Real.exp (-(a * x ^ 2))) := by
   have h := integrable_eval_mul_exp_neg_mul_sq ha (p.map (Int.castRingHom ℝ))
   refine h.congr ?_
   filter_upwards with x
   rw [eval_map_intCast]
 
-/-- Any real polynomial is integrable against the standard Gaussian weight `e^{-x²/2}`. -/
+/-- Any real polynomial is integrable against the standard Gaussian weight `e^{-x²/2}` — the
+`a = 1/2` corollary of `Polynomial.integrable_eval_mul_exp_neg_mul_sq`. -/
 theorem _root_.Polynomial.integrable_eval_mul_gaussian (p : ℝ[X]) :
     Integrable (fun x : ℝ => p.eval x * Real.exp (-(x ^ 2 / 2))) := by
   have h := integrable_eval_mul_exp_neg_mul_sq (a := (1 : ℝ) / 2) (by norm_num) p
@@ -73,7 +76,8 @@ theorem _root_.Polynomial.integrable_eval_mul_gaussian (p : ℝ[X]) :
   have hhalf : -((1 : ℝ) / 2 * x ^ 2) = -(x ^ 2 / 2) := by ring
   rw [hhalf]
 
-/-- Any integer polynomial is integrable against the standard Gaussian weight `e^{-x²/2}`. -/
+/-- Any integer polynomial is integrable against the standard Gaussian weight `e^{-x²/2}` — the
+`a = 1/2` corollary of `Polynomial.integrable_aeval_mul_exp_neg_mul_sq`. -/
 theorem _root_.Polynomial.integrable_aeval_mul_gaussian (p : ℤ[X]) :
     Integrable (fun x : ℝ => aeval x p * Real.exp (-(x ^ 2 / 2))) := by
   have h := integrable_aeval_mul_exp_neg_mul_sq (a := (1 : ℝ) / 2) (by norm_num) p
