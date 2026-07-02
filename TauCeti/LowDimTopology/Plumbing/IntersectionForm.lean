@@ -52,6 +52,8 @@ of Seifert-fibred examples), with edge multiplicities a later refinement.
   framing-weighted sum of squares plus the adjacency cross terms.
 * `TauCeti.PlumbingGraph.IsNegativeDefinite.weight_neg`: a negative-definite plumbing has every
   framing negative.
+* `TauCeti.PlumbingGraph.intersectionForm_self_add`: a symmetric-pairing expansion for the
+  intersection form on a sum.
 
 ## References
 
@@ -173,6 +175,16 @@ theorem intersectionForm_single (i j : V) :
 /-- The intersection form is symmetric. -/
 theorem intersectionForm_isSymm : P.intersectionForm.IsSymm :=
   Matrix.isSymm_toBilin'_iff_isSymm.mpr P.intersectionMatrix_isSymm
+
+/-- The intersection form on a sum expands by the symmetric polarization: the cross term appears
+twice because the form is symmetric. -/
+theorem intersectionForm_self_add (x y : V → ℤ) :
+    P.intersectionForm (x + y) (x + y) =
+      P.intersectionForm x x + 2 * P.intersectionForm x y + P.intersectionForm y y :=
+  by
+    simp only [map_add, LinearMap.add_apply]
+    rw [P.intersectionForm_isSymm.eq y x]
+    ring
 
 /-- The intersection form expanded into its framing contribution and adjacency contribution. -/
 theorem intersectionForm_apply_weight_add_adj (x y : V → ℤ) :
