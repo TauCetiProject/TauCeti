@@ -214,8 +214,9 @@ lemma prod_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (p q : V 
 /-- The twisted product symplectic form `ω₁ ⊖ ω₂` on `V × W`, given by
 `(ω₁ ⊖ ω₂)((v₁, w₁), (v₂, w₂)) = ω₁(v₁, v₂) - ω₂(w₁, w₂)`.
 
-It is the direct sum `prod` of `ω₁` with the negation `ω₂.rescale (-1)` of `ω₂`; downstream code
-uses it through `twistedProd_apply`. -/
+It is the direct sum `prod` of `ω₁` with the negation `ω₂.rescale (-1)` of `ω₂`; the body is
+`@[no_expose]`, so downstream code uses it through `twistedProd_apply` rather than by unfolding. -/
+@[no_expose]
 noncomputable def twistedProd (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
     SymplecticForm (V × W) :=
   ω₁.prod (ω₂.rescale (-1) (by norm_num))

@@ -145,6 +145,7 @@ lemma isSymplectomorphism_iff_transport_eq {e : V ≃ₗ[ℝ] W} :
     rw [← h, transport_apply_apply]
 
 /-- The identity equivalence is a symplectomorphism. -/
+@[simp]
 lemma IsSymplectomorphism.refl (ω : SymplecticForm V) :
     IsSymplectomorphism ω ω (LinearEquiv.refl ℝ V) := by
   intro v w
