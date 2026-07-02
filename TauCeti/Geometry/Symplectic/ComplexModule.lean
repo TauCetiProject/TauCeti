@@ -160,7 +160,6 @@ private lemma re_smul_add_im_smul_I_eq_complex_smul {V : Type*}
   rw [Complex.coe_algebraMap]
 
 /-- The complex module induced by `ofComplexModule` has the original complex scalar action. -/
-@[simp]
 lemma complexModule_ofComplexModule_smul {V : Type*}
     [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V] (z : ℂ) (v : V) :
     let smul₀ : ℂ → V → V := (· • ·)

@@ -65,7 +65,6 @@ irreducible_def stdComplexLineEnergyDensity (ω : SymplecticForm V) (J : AlmostC
   ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) +
     ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag)
 
-attribute [simp] stdComplexLineEnergyDensity_def
 
 /-- The standard pointwise energy density of any real-linear map is nonnegative under tameness. -/
 lemma stdComplexLineEnergyDensity_nonneg (hω : ω.Tames J)
@@ -143,7 +142,7 @@ lemma stdComplexLineEnergyDensity_eq_zero_iff (hω : ω.Tames J)
     rw [LinearMap.apply_stdComplexLine F z, hreal, himag]
     simp
   · intro hzero
-    simp [hzero]
+    simp [hzero, stdComplexLineEnergyDensity_def]
 
 /-- Under tameness, the standard pointwise energy density is positive exactly for nonzero
 real-linear maps from the standard complex line. -/
@@ -253,7 +252,6 @@ lemma fderiv_stdComplexLineEnergyDensity_nonneg (hω : ω.Tames J) :
 
 /-- Under tameness, the derivative standard energy density of a map from the standard complex line
 vanishes exactly when its Frechet derivative is zero. -/
-@[simp]
 lemma fderiv_stdComplexLineEnergyDensity_eq_zero_iff (hω : ω.Tames J) :
     ω.stdComplexLineEnergyDensity J (fderiv ℝ f x).toLinearMap = 0 ↔ fderiv ℝ f x = 0 := by
   constructor
@@ -337,7 +335,6 @@ lemma fderivWithin_stdComplexLineEnergyDensity_nonneg (hω : ω.Tames J) :
 
 /-- Under tameness, the within-set derivative standard energy density of a map from the standard
 complex line vanishes exactly when its Frechet derivative within the set is zero. -/
-@[simp]
 lemma fderivWithin_stdComplexLineEnergyDensity_eq_zero_iff (hω : ω.Tames J) :
     ω.stdComplexLineEnergyDensity J (fderivWithin ℝ f s x).toLinearMap = 0 ↔
       fderivWithin ℝ f s x = 0 := by
