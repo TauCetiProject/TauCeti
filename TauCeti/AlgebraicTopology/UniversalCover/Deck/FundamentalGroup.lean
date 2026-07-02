@@ -82,6 +82,12 @@ lemma IsRegular.fundamentalGroupEquiv_unop_apply [SimplyConnectedSpace E]
     (hreg.fundamentalGroupEquiv hp e γ).unop.1 (e : E) = (hp.monodromy γ e : E) :=
   (hreg.isQuotientCoveringMap hp).unop_fundamentalGroupToMulOpposite_smul
 
+/-- Compatibility spelling of `fundamentalGroupEquiv_unop_apply` using the deck action. -/
+lemma IsRegular.fundamentalGroupEquiv_unop_smul [SimplyConnectedSpace E]
+    (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
+    (hreg.fundamentalGroupEquiv hp e γ).unop • (e : E) = hp.monodromy γ e := by
+  simpa only [smul_eq_apply] using IsRegular.fundamentalGroupEquiv_unop_apply hreg hp e γ
+
 /-- The fundamental group element `γ` corresponds to a deck transformation `g` exactly when
 `g.unop` moves the chosen lift `e` to the monodromy translate of `e` along `γ`. -/
 lemma IsRegular.fundamentalGroupEquiv_apply_eq_iff [SimplyConnectedSpace E]
