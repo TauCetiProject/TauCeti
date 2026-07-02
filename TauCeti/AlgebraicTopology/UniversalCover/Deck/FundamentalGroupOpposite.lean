@@ -91,8 +91,8 @@ transformation on the chosen lift. -/
 lemma deckFundamentalGroupEquiv_unop_monodromy [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (φ : Deck p) :
     (hp.monodromy ((hreg.deckFundamentalGroupEquiv hp e φ).unop) e : E) = φ • (e : E) := by
-  simpa [deckFundamentalGroupEquiv] using
-    fundamentalGroupEquiv_symm_op_monodromy hreg hp e φ
+  rw [deckFundamentalGroupEquiv_apply, MulOpposite.unop_op]
+  exact fundamentalGroupEquiv_symm_op_monodromy hreg hp e φ
 
 /-- A deck transformation corresponds to a loop class exactly when that loop class's
 monodromy moves the chosen lift by the deck transformation. -/
@@ -103,16 +103,18 @@ lemma deckFundamentalGroupEquiv_apply_eq_op_iff [SimplyConnectedSpace E]
       (hp.monodromy γ e : E) = φ • (e : E) := by
   constructor
   · intro h
-    have hunop := congrArg MulOpposite.unop h
-    dsimp [deckFundamentalGroupEquiv] at hunop
+    have hunop : (hreg.deckFundamentalGroupEquiv hp e φ).unop = γ := by
+      rw [h, MulOpposite.unop_op]
     rw [← hunop]
-    simpa using fundamentalGroupEquiv_symm_op_monodromy hreg hp e φ
+    exact deckFundamentalGroupEquiv_unop_monodromy hreg hp e φ
   · intro hmono
     have hF : hreg.fundamentalGroupEquiv hp e γ = MulOpposite.op φ :=
       (fundamentalGroupEquiv_apply_eq_iff hreg hp e γ (MulOpposite.op φ)).2
         (by simpa [eq_comm] using hmono)
-    simpa [deckFundamentalGroupEquiv] using
-      (congrArg (hreg.fundamentalGroupEquiv hp e).symm hF).symm
+    have hsymm : (hreg.deckFundamentalGroupEquiv hp e).symm (MulOpposite.op γ) = φ := by
+      rw [deckFundamentalGroupEquiv_symm_op, hF, MulOpposite.unop_op]
+    rw [← hsymm]
+    exact (hreg.deckFundamentalGroupEquiv hp e).apply_symm_apply (MulOpposite.op γ)
 
 /-- The inverse comparison is characterized by the same monodromy formula. -/
 lemma deckFundamentalGroupEquiv_symm_op_eq_iff [SimplyConnectedSpace E]
