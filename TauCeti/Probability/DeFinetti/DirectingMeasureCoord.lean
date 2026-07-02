@@ -1,7 +1,8 @@
 module
 
-public import TauCeti.Probability.DeFinetti.CondExpConvergence
+import TauCeti.Probability.DeFinetti.CondExpConvergence
 public import TauCeti.Probability.DeFinetti.DirectingMeasure
+public import TauCeti.Probability.Exchangeability.Basic
 
 /-!
 # The directing measure is the conditional law of every coordinate
