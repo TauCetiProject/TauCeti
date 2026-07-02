@@ -6,7 +6,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Lagrangian
 public import TauCeti.Geometry.Symplectic.Prod
-public import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Products of Lagrangian subspaces
@@ -70,7 +69,7 @@ are isotropic. -/
 lemma isIsotropic_prod_iff :
     (ω₁.prod ω₂).IsIsotropic (L₁.prod L₂) ↔ ω₁.IsIsotropic L₁ ∧ ω₂.IsIsotropic L₂ := by
   rw [isIsotropic_iff_le, isIsotropic_iff_le, isIsotropic_iff_le, orthogonal_prod,
-    Submodule.prod_le_prod_iff]
+    Submodule.le_prod_iff, Submodule.prod_map_fst, Submodule.prod_map_snd]
 
 /-- The product of two isotropic subspaces is isotropic for the direct-sum symplectic form. -/
 lemma IsIsotropic.prod (h₁ : ω₁.IsIsotropic L₁) (h₂ : ω₂.IsIsotropic L₂) :
@@ -84,7 +83,7 @@ lemma isCoisotropic_prod_iff :
     (ω₁.prod ω₂).IsCoisotropic (L₁.prod L₂) ↔
       ω₁.IsCoisotropic L₁ ∧ ω₂.IsCoisotropic L₂ := by
   rw [isCoisotropic_iff_le, isCoisotropic_iff_le, isCoisotropic_iff_le, orthogonal_prod,
-    Submodule.prod_le_prod_iff]
+    Submodule.le_prod_iff, Submodule.prod_map_fst, Submodule.prod_map_snd]
 
 /-- The product of two coisotropic subspaces is coisotropic for the direct-sum symplectic form. -/
 lemma IsCoisotropic.prod (h₁ : ω₁.IsCoisotropic L₁) (h₂ : ω₂.IsCoisotropic L₂) :
