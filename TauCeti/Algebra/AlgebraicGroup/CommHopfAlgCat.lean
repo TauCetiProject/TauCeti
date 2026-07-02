@@ -75,7 +75,6 @@ lemma mapPointsFunctor_app_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
   exact AlgHom.mapDomain_apply (A := A) φ.hom f
 
 /-- Pointwise form of `mapPointsFunctor_app_apply`. -/
-@[simp]
 lemma mapPointsFunctor_app_apply_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
     (A : CommAlgCat.{w} R) (f : HopfAlgebra.points (R := R) (H := K) A) (h : H) :
     (((mapPointsFunctor φ).app A f).ofConv) h = f.ofConv (φ.hom h) := by

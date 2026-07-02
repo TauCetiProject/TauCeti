@@ -36,7 +36,6 @@ variable {n : ℕ} (x : GridState n)
 
 /-- Row relabeling moves the column containing a given row by reading the old state at the
 inverse row label. -/
-@[simp]
 theorem columnOfRow_relabelRows (ρ : Equiv.Perm (Fin n)) (r : Fin n) :
     (x.relabelRows ρ).columnOfRow r = x.columnOfRow (ρ.symm r) := by
   apply (x.relabelRows ρ).toPerm.injective
@@ -44,7 +43,6 @@ theorem columnOfRow_relabelRows (ρ : Equiv.Perm (Fin n)) (r : Fin n) :
 
 /-- Column relabeling moves the column containing a given row by applying the column permutation
 to the old column. -/
-@[simp]
 theorem columnOfRow_relabelColumns (κ : Equiv.Perm (Fin n)) (r : Fin n) :
     (x.relabelColumns κ).columnOfRow r = κ (x.columnOfRow r) := by
   apply (x.relabelColumns κ).toPerm.injective
@@ -52,14 +50,12 @@ theorem columnOfRow_relabelColumns (κ : Equiv.Perm (Fin n)) (r : Fin n) :
 
 /-- After swapping rows, the column containing row `r` is the old column containing the swapped
 row label. -/
-@[simp]
 theorem columnOfRow_swapRows (a b r : Fin n) :
     (x.swapRows a b).columnOfRow r = x.columnOfRow (Equiv.swap a b r) := by
   simp [swapRows]
 
 /-- After swapping columns, the column containing row `r` is the swap of the old column
 containing that row. -/
-@[simp]
 theorem columnOfRow_swapColumns (a b r : Fin n) :
     (x.swapColumns a b).columnOfRow r = Equiv.swap a b (x.columnOfRow r) := by
   simp [swapColumns]

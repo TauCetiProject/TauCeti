@@ -101,7 +101,6 @@ theorem baseChangePointsMulEquiv_symm_apply_tmul_T (u : Aˣ) (s : K) (n : ℤ) :
 
 /-- The inverse base-changed multiplicative-group points equivalence takes `1 ⊗ T` to the
 chosen unit. -/
-@[simp]
 theorem baseChangePointsMulEquiv_symm_apply_T (u : Aˣ) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u).ofConv
         (1 ⊗ₜ[k] LaurentPolynomial.T 1) =

@@ -223,7 +223,6 @@ lemma fiberMap_symm_mem_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (ψ 
 
 /-- The inverse fibre map carries the deck orbit of a point onto the deck orbit of the
 transported point. -/
-@[simp]
 theorem fiberMap_symm_image_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (f : q ⁻¹' {b}) :
     (fiberMap h hpq b).symm '' MulAction.orbit (Deck q) f =
@@ -261,7 +260,6 @@ theorem mem_orbit_fiberMap_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     exact congrArg (fiberMap h hpq b) hφ
 
 /-- Transporting both target-fibre points back preserves membership in deck orbits. -/
-@[simp]
 theorem mem_orbit_fiberMap_symm_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (f f' : q ⁻¹' {b}) :
     (fiberMap h hpq b).symm f' ∈

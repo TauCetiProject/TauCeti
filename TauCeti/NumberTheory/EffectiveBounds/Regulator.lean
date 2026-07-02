@@ -135,7 +135,6 @@ theorem one_le_regulator_of_finrank_eq_one (h : finrank ℚ K = 1) : 1 ≤ regul
   one_le_regulator_of_finrank_le_one K h.le
 
 /-- **The rational regulator lower bound.** For `ℚ`, `1 ≤ R_ℚ`. -/
-@[simp]
 theorem one_le_regulator_rat : 1 ≤ regulator ℚ := by
   rw [regulator_rat_eq_one]
 

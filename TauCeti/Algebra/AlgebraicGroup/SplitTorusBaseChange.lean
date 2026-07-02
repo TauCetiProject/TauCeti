@@ -97,7 +97,6 @@ theorem baseChangePointsMulEquiv_symm_apply_tmul_single (c : σ → Aˣ) (s : K)
 
 /-- The inverse base-changed split-torus points equivalence takes the standard coordinate
 generator indexed by `i` to the chosen coordinate `c i`. -/
-@[simp]
 theorem baseChangePointsMulEquiv_symm_apply_single_one (c : σ → Aˣ) (i : σ) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (σ := σ)).symm c).ofConv
         (1 ⊗ₜ[k] MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single i 1)) (1 : k)) =

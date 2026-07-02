@@ -107,7 +107,6 @@ lemma baseChangePointsMulEquiv_symm_apply_tmul_single_generator (n : ℕ)
 
 /-- The inverse base-changed roots-of-unity points equivalence takes the standard generator to
 the chosen root of unity. -/
-@[simp]
 lemma baseChangePointsMulEquiv_symm_apply_single_generator (n : ℕ) (ζ : rootsOfUnity n A) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) n).symm ζ).ofConv
         (1 ⊗ₜ[k] MonoidAlgebra.single (generator n) (1 : k)) =

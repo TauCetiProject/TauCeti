@@ -79,7 +79,6 @@ private theorem baseChangePointsMulEquiv_symm_apply (u : PUnit.{1}) :
 
 /-- The unique base-changed trivial-group point sends `s ⊗ r` to
 `s • algebraMap k A r`. -/
-@[simp]
 theorem baseChangePointsMulEquiv_symm_apply_tmul (u : PUnit.{1}) (s : K) (r : k) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u).ofConv
         (s ⊗ₜ[k] r) =
@@ -89,7 +88,6 @@ theorem baseChangePointsMulEquiv_symm_apply_tmul (u : PUnit.{1}) (s : K) (r : k)
 
 /-- On `1 ⊗ r`, the unique base-changed trivial-group point is the structure map
 `k → A`. -/
-@[simp]
 theorem baseChangePointsMulEquiv_symm_apply_one_tmul (u : PUnit.{1}) (r : k) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u).ofConv
         (1 ⊗ₜ[k] r) =
@@ -118,7 +116,6 @@ theorem convPoint_apply_tmul (f : WithConv (K ⊗[k] k →ₐ[K] A)) (s : K) (r 
   rw [hf, baseChangePointsMulEquiv_symm_apply_tmul]
 
 /-- The inverse of any base-changed trivial-group point is again the unique point. -/
-@[simp]
 theorem convInv_apply_tmul (f : WithConv (K ⊗[k] k →ₐ[K] A)) (s : K) (r : k) :
     (f⁻¹).ofConv (s ⊗ₜ[k] r) = s • algebraMap k A r := by
   rw [baseChangeConvPoint_eq_one (f⁻¹), convPoint_apply_tmul]
@@ -128,7 +125,6 @@ section Naturality
 variable {B : Type w'} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower k K B]
 
 /-- The base-changed trivial-group points equivalence is natural in the value algebra. -/
-@[simp]
 theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
     (f : WithConv (K ⊗[k] k →ₐ[K] A)) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := B)
@@ -148,7 +144,6 @@ theorem mapValue_baseChangePointsMulEquiv_symm_apply (φ : A →ₐ[K] B) (u : P
 
 /-- Pointwise naturality of the unique base-changed trivial-group point in the value
 algebra. -/
-@[simp]
 theorem mapValue_baseChangePointsMulEquiv_symm_apply_tmul
     (φ : A →ₐ[K] B) (u : PUnit.{1}) (s : K) (r : k) :
     (AlgHom.mapValue (H := K ⊗[k] k) φ

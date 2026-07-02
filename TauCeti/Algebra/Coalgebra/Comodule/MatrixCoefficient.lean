@@ -189,7 +189,6 @@ variable {M : Type w} [AddCommMonoid M] [Module R M]
 attribute [local instance] trivial
 
 /-- Matrix coefficients of the trivial comodule are scalar multiples of `1`. -/
-@[simp]
 theorem matrixCoefficient_trivial (φ : M →ₗ[R] R) (m : M) :
     matrixCoefficient (R := R) (C := C) φ m = φ m • (1 : C) := by
   simp

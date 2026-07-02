@@ -90,20 +90,17 @@ lemma transport_trans (ω : SymplecticForm V) (e₁ : V ≃ₗ[ℝ] W) (e₂ : W
     rw [LinearMap.BilinForm.congr_congr]
 
 /-- Transporting forward along `e` and back along `e.symm` returns the original form. -/
-@[simp]
 lemma transport_symm_transport (ω : SymplecticForm V) (e : V ≃ₗ[ℝ] W) :
     (ω.transport e).transport e.symm = ω := by
   rw [transport_trans, e.self_trans_symm, transport_refl]
 
 /-- Transporting back along `e.symm` and forward along `e` returns the original form. -/
-@[simp]
 lemma transport_transport_symm (ω : SymplecticForm W) (e : V ≃ₗ[ℝ] W) :
     (ω.transport e.symm).transport e = ω := by
   rw [transport_trans, e.symm_trans_self, transport_refl]
 
 /-- `e` is a symplectomorphism onto the transported form: evaluating `ω.transport e` on images
 under `e` recovers `ω`. -/
-@[simp]
 lemma transport_apply_apply (ω : SymplecticForm V) (e : V ≃ₗ[ℝ] W) (v w : V) :
     ω.transport e (e v) (e w) = ω v w := by
   rw [transport_apply, e.symm_apply_apply, e.symm_apply_apply]

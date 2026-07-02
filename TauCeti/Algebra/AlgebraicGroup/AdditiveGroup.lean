@@ -80,7 +80,6 @@ theorem toAdd_pointsMulEquiv (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
   rfl
 
 /-- The linear map underlying a point evaluates as `x ↦ F (ι x)`. -/
-@[simp]
 theorem toAdd_pointsMulEquiv_apply (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) (x : M) :
     Multiplicative.toAdd (pointsMulEquiv F) x = F.ofConv (ι R M x) :=
   TauCeti.SymmetricAlgebra.lift_symm_apply F.ofConv x
@@ -144,7 +143,6 @@ theorem pointsMulEquiv_inv (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
 
 /-- In additive notation, the convolution inverse of a point corresponds to negating its linear
 map of generator values. -/
-@[simp]
 theorem toAdd_pointsMulEquiv_inv (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
     Multiplicative.toAdd (pointsMulEquiv (F⁻¹)) = -Multiplicative.toAdd (pointsMulEquiv F) := by
   rw [pointsMulEquiv_inv]
@@ -185,7 +183,6 @@ theorem gaPointsMulEquiv_symm_apply_ι (a : Multiplicative A) :
 /-- Reading a `𝔾ₐ`-point as an element of the value algebra is natural in the value algebra:
 post-composing the point with an `R`-algebra map applies that map to the corresponding
 element. -/
-@[simp]
 theorem toAdd_gaPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     Multiplicative.toAdd
@@ -231,7 +228,6 @@ theorem gaPointsMulEquiv_inv (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
 
 /-- In additive notation, the convolution inverse of a `𝔾ₐ`-point is the negative of its value
 on the generator `ι 1`. -/
-@[simp]
 theorem toAdd_gaPointsMulEquiv_inv (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     Multiplicative.toAdd (gaPointsMulEquiv (F⁻¹)) = -Multiplicative.toAdd (gaPointsMulEquiv F) := by
   rw [gaPointsMulEquiv_inv]

@@ -111,7 +111,6 @@ lemma energyIntegrand_self (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n) (c : 
 
 /-- The Laplacian model `−Δ` (`a = 1`, no drift, no mass) has jet form the Dirichlet
 integrand `⟨∇u, ∇v⟩`. -/
-@[simp]
 lemma energyIntegrand_one_zero_zero_apply (U V : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (1 : Matrix n n ℝ) 0 0 U V = V.2 ⬝ᵥ U.2 := by
   simp [energyIntegrand_apply]
@@ -125,7 +124,6 @@ lemma energyIntegrand_one_zero_zero_self (U : ℝ × EuclideanSpace ℝ n) :
 
 /-- The shifted Laplacian model `-Δ + c` has jet form
 `(U, V) ↦ ∇u · ∇v + c u v`. -/
-@[simp]
 lemma energyIntegrand_one_zero_mass_apply (c : ℝ) (U V : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (1 : Matrix n n ℝ) 0 c U V = V.2 ⬝ᵥ U.2 + c * U.1 * V.1 := by
   simp [energyIntegrand_apply, massForm_apply]

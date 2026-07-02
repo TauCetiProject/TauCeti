@@ -73,7 +73,6 @@ theorem prodCoact_apply (x : M × N) :
   rfl
 
 /-- The product coaction after the left inclusion. -/
-@[simp]
 theorem prodCoact_inl (m : M) :
     prodCoact (R := R) (C := C) (M := M) (N := N) (LinearMap.inl R M N m) =
       TensorProduct.map (LinearMap.inl R M N) LinearMap.id
@@ -81,7 +80,6 @@ theorem prodCoact_inl (m : M) :
   simp [prodCoact]
 
 /-- The product coaction after the right inclusion. -/
-@[simp]
 theorem prodCoact_inr (n : N) :
     prodCoact (R := R) (C := C) (M := M) (N := N) (LinearMap.inr R M N n) =
       TensorProduct.map (LinearMap.inr R M N) LinearMap.id

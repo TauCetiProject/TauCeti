@@ -168,7 +168,6 @@ lemma deckEquivFiberOfSurjective_symm_apply_coe [PreconnectedSpace E]
     congrArg Subtype.val (deckEquivFiberOfSurjective_symm_smul hp e hsurj e')
 
 /-- The local deck-to-fibre equivalence sends the identity to the chosen base point. -/
-@[simp]
 lemma deckEquivFiberOfSurjective_one [PreconnectedSpace E] (hp : IsCoveringMap p)
     (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : Deck p => φ • e) :
     deckEquivFiberOfSurjective hp e hsurj 1 = e := by
@@ -176,7 +175,6 @@ lemma deckEquivFiberOfSurjective_one [PreconnectedSpace E] (hp : IsCoveringMap p
 
 /-- The local deck-to-fibre equivalence is equivariant for left multiplication on the deck
 group and the deck action on the fibre. -/
-@[simp]
 lemma deckEquivFiberOfSurjective_mul [PreconnectedSpace E] (hp : IsCoveringMap p)
     (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : Deck p => φ • e) (φ ψ : Deck p) :
     deckEquivFiberOfSurjective hp e hsurj (φ * ψ) =

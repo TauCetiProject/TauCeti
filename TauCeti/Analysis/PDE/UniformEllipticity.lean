@@ -115,7 +115,6 @@ lemma matrixBilinearForm_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ 
   rfl
 
 /-- The matrix bilinear form associated to the identity matrix is the Euclidean dot product. -/
-@[simp]
 lemma matrixBilinearForm_one_apply (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm (1 : Matrix n n ℝ) η ξ = η ⬝ᵥ ξ := by
   rw [matrixBilinearForm_apply, one_mulVec]
@@ -129,7 +128,6 @@ lemma toQuadraticForm'_smul (c : ℝ) (A : Matrix n n ℝ) (ξ : EuclideanSpace 
   simp [smul_eq_mul]
 
 /-- The scalar identity matrix has quadratic form `c ‖ξ‖²`. -/
-@[simp]
 lemma toQuadraticForm'_smul_one (c : ℝ) (ξ : EuclideanSpace ℝ n) :
     (c • (1 : Matrix n n ℝ)).toQuadraticForm' ξ = c * ‖ξ‖ ^ 2 := by
   rw [toQuadraticForm'_smul, toQuadraticForm'_one]

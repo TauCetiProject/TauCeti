@@ -48,11 +48,9 @@ theorem hermiteCountBound_def (D C : ℕ) :
     hermiteCountBound D C = (2 * C + 1) ^ (D + 1) * D :=
   by simp [hermiteCountBound]
 
-@[simp]
 theorem hermiteCountBound_zero_left (C : ℕ) : hermiteCountBound 0 C = 0 := by
   simp [hermiteCountBound]
 
-@[simp]
 theorem hermiteCountBound_zero_right (D : ℕ) : hermiteCountBound D 0 = D := by
   simp [hermiteCountBound]
 

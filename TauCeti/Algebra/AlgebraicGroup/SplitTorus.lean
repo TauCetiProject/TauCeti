@@ -89,7 +89,6 @@ theorem pointsMulEquiv_symm_apply (c : σ → Aˣ) :
 
 /-- The inverse points equivalence sends a coordinate family to the point taking the `i`-th
 standard generator to the `i`-th coordinate. -/
-@[simp]
 theorem pointsMulEquiv_symm_apply_single (c : σ → Aˣ) (i : σ) :
     ((pointsMulEquiv (R := R) (A := A)).symm c).ofConv
         (MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single i 1)) 1) =

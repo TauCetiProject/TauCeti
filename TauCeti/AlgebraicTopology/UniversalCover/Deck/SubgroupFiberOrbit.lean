@@ -335,7 +335,6 @@ lemma subgroupFiberOrbitQuotientBotEquiv_symm_apply (e : p ⁻¹' {b}) :
     (G := Deck p) (X := p ⁻¹' {b}) e
 
 /-- Equality of bottom-subgroup fibre-orbit classes is equality of fibre points. -/
-@[simp]
 lemma subgroupFiberOrbitClass_bot_eq_iff (e e' : p ⁻¹' {b}) :
     subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) e =
         subgroupFiberOrbitClass (⊥ : Subgroup (Deck p)) e' ↔

@@ -85,7 +85,6 @@ theorem point_single (χ : G →* Aˣ) (g : G) (r : R) :
     Units.coeHom_apply]
 
 /-- The point associated to a character sends the group-like `single g 1` to `χ g`. -/
-@[simp]
 theorem point_single_one (χ : G →* Aˣ) (g : G) :
     point (R := R) χ (MonoidAlgebra.single g 1) = (χ g : A) := by
   rw [point_single, one_smul]
