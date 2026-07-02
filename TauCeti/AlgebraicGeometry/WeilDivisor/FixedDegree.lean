@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Data.Finsupp.Multiset
-public import Mathlib.Data.Sym.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FiniteSum
 
 /-!
@@ -85,10 +84,15 @@ def multiplicityFinsupp (D : EffectiveDivisorOfDegree X d) : X →₀ ℕ :=
   Finsupp.ofSupportFinite (fun x => (coeff (D : WeilDivisor X) x).toNat) <|
     (D : WeilDivisor X).support.finite_toSet.subset <| by
       intro x hx
+      -- `support.finite_toSet` exposes membership in the set coercion of the finset support;
+      -- switch to finset membership before using the coefficient support lemma.
       change x ∈ (D : WeilDivisor X).support
-      rw [Finsupp.mem_support_iff]
+      rw [WeilDivisor.mem_support_iff]
       intro hcoeff
-      exact hx (by change ((D : WeilDivisor X) x).toNat = 0; rw [hcoeff]; exact Int.toNat_zero)
+      exact hx (by
+        change (coeff (D : WeilDivisor X) x).toNat = 0
+        rw [hcoeff]
+        exact Int.toNat_zero)
 
 @[simp]
 lemma multiplicityFinsupp_apply (D : EffectiveDivisorOfDegree X d) (x : X) :
@@ -96,6 +100,8 @@ lemma multiplicityFinsupp_apply (D : EffectiveDivisorOfDegree X d) (x : X) :
   by
     rw [multiplicityFinsupp, Finsupp.ofSupportFinite_coe]
 
+/-- Rebuilding an effective divisor from its natural multiplicity function recovers the
+underlying Weil divisor. -/
 @[simp]
 lemma ofFinsupp_multiplicityFinsupp (D : EffectiveDivisorOfDegree X d) :
     WeilDivisor.ofFinsupp D.multiplicityFinsupp = (D : WeilDivisor X) := by
@@ -103,6 +109,7 @@ lemma ofFinsupp_multiplicityFinsupp (D : EffectiveDivisorOfDegree X d) :
   rw [WeilDivisor.coeff_ofFinsupp, multiplicityFinsupp_apply]
   exact Int.toNat_of_nonneg ((isEffective_iff (D : WeilDivisor X)).mp D.property.1 x)
 
+/-- The natural multiplicity function of a degree-`d` effective divisor has total mass `d`. -/
 lemma sum_multiplicityFinsupp (D : EffectiveDivisorOfDegree X d) :
     D.multiplicityFinsupp.sum (fun _ n => n) = d := by
   have hcast :
@@ -111,11 +118,15 @@ lemma sum_multiplicityFinsupp (D : EffectiveDivisorOfDegree X d) :
     simp [Finsupp.sum]
   exact_mod_cast hcast.trans D.degree_eq
 
+/-- Rebuilding an effective divisor from its natural multiplicity function recovers the
+original fixed-degree divisor. -/
 @[simp]
 lemma ofFinsupp_multiplicityFinsupp_eq (D : EffectiveDivisorOfDegree X d) :
     ofFinsupp D.multiplicityFinsupp D.sum_multiplicityFinsupp = D := by
   exact Subtype.ext (ofFinsupp_multiplicityFinsupp D)
 
+/-- The natural multiplicity function of a divisor built from a finitely supported function is
+that function. -/
 @[simp]
 lemma multiplicityFinsupp_ofFinsupp (m : X →₀ ℕ) (hm : m.sum (fun _ n => n) = d) :
     (ofFinsupp m hm).multiplicityFinsupp = m := by
@@ -158,6 +169,8 @@ lemma coe_ofSym (s : Sym X d) :
   classical
   rfl
 
+/-- The symmetric-power divisor has coefficient equal to the multiplicity of the point in the
+unordered collection. -/
 lemma coeff_ofSym (s : Sym X d) (x : X) :
     coeff (ofSym s : WeilDivisor X) x =
       (letI := Classical.decEq X; (s : Multiset X).count x) := by
@@ -171,6 +184,8 @@ def equivSym : EffectiveDivisorOfDegree X d ≃ Sym X d := by
   letI := Classical.decEq X
   exact equivFinsupp.trans (Sym.equivNatSum X d).symm
 
+/-- Applying the symmetric-power equivalence is the same as applying Mathlib's multiplicity
+equivalence to the fixed-degree divisor's multiplicity function. -/
 @[simp]
 lemma equivSym_apply (D : EffectiveDivisorOfDegree X d) :
     equivSym D =
@@ -178,23 +193,25 @@ lemma equivSym_apply (D : EffectiveDivisorOfDegree X d) :
   classical
   rfl
 
+/-- The inverse of the symmetric-power equivalence is `ofSym`. -/
 @[simp]
 lemma equivSym_symm_apply (s : Sym X d) :
     (equivSym.symm s : EffectiveDivisorOfDegree X d) = ofSym s := by
   classical
   rfl
 
+/-- Converting a divisor to the symmetric power and back gives the original divisor. -/
 @[simp]
 lemma ofSym_equivSym (D : EffectiveDivisorOfDegree X d) :
-    ofSym (letI := Classical.decEq X; (Sym.equivNatSum X d).symm (equivFinsupp D)) = D := by
-  rw [← equivSym_apply D]
-  exact equivSym.left_inv D
+    ofSym (equivSym D) = D :=
+  equivSym.left_inv D
 
+/-- Converting a symmetric-power point to a divisor and back gives the original symmetric-power
+point. -/
 @[simp]
 lemma equivSym_ofSym (s : Sym X d) :
-    (letI := Classical.decEq X; (Sym.equivNatSum X d).symm (equivFinsupp (ofSym s))) = s := by
-  rw [← equivSym_apply (ofSym s)]
-  exact equivSym.right_inv s
+    equivSym (ofSym s) = s :=
+  equivSym.right_inv s
 
 end Sym
 
@@ -210,6 +227,7 @@ lemma coe_pushforward (f : X → Y) (D : EffectiveDivisorOfDegree X d) :
     (D.pushforward f : WeilDivisor Y) = WeilDivisor.pushforward f D :=
   rfl
 
+/-- Pushing forward along the identity function is the identity on fixed-degree divisors. -/
 @[simp]
 lemma pushforward_id (D : EffectiveDivisorOfDegree X d) :
     D.pushforward (fun x : X => x) = D := by
@@ -217,6 +235,7 @@ lemma pushforward_id (D : EffectiveDivisorOfDegree X d) :
   rw [coe_pushforward, WeilDivisor.pushforward_id]
   rfl
 
+/-- Pushforwards of fixed-degree divisors compose functorially. -/
 @[simp]
 lemma pushforward_comp {Z : Type*} (g : Y → Z) (f : X → Y) (D : EffectiveDivisorOfDegree X d) :
     (D.pushforward f).pushforward g = D.pushforward (g ∘ f) := by
@@ -224,6 +243,7 @@ lemma pushforward_comp {Z : Type*} (g : Y → Z) (f : X → Y) (D : EffectiveDiv
   rw [coe_pushforward, coe_pushforward, coe_pushforward, WeilDivisor.pushforward_comp]
   rfl
 
+/-- Pushing forward a divisor built from multiplicities corresponds to `Finsupp.mapDomain`. -/
 @[simp]
 lemma pushforward_ofFinsupp (f : X → Y) (m : X →₀ ℕ) (hm : m.sum (fun _ n => n) = d) :
     (ofFinsupp m hm).pushforward f = ofFinsupp (m.mapDomain f) (by
@@ -236,6 +256,7 @@ lemma pushforward_ofFinsupp (f : X → Y) (m : X →₀ ℕ) (hm : m.sum (fun _ 
     WeilDivisor.coeff_ofFinsupp]
   simp [Finsupp.mapDomain, Finsupp.sum, Finsupp.single_apply, Finset.sum_ite]
 
+/-- The multiplicity function of a pushforward is the pushed-forward multiplicity function. -/
 @[simp]
 lemma multiplicityFinsupp_pushforward (f : X → Y) (D : EffectiveDivisorOfDegree X d) :
     (D.pushforward f).multiplicityFinsupp = D.multiplicityFinsupp.mapDomain f := by
@@ -243,24 +264,18 @@ lemma multiplicityFinsupp_pushforward (f : X → Y) (D : EffectiveDivisorOfDegre
   rw [ofFinsupp_multiplicityFinsupp_eq D] at h
   rw [h, multiplicityFinsupp_ofFinsupp]
 
+/-- The symmetric-power equivalence sends divisor pushforward to `Sym.map`. -/
 @[simp]
 lemma equivSym_pushforward (f : X → Y) (D : EffectiveDivisorOfDegree X d) :
-    (letI := Classical.decEq Y; (Sym.equivNatSum Y d).symm (equivFinsupp (D.pushforward f))) =
-      Sym.map f (equivSym D) := by
+    equivSym (D.pushforward f) = Sym.map f (equivSym D) := by
   classical
   apply (Sym.equivNatSum Y d).injective
   ext y
   simp [Finsupp.toMultiset_map]
 
 /-- The zero divisor is the unique effective divisor of degree zero. -/
-def zeroEquivPUnit : EffectiveDivisorOfDegree X 0 ≃ PUnit where
-  toFun _ := PUnit.unit
-  invFun _ := ⟨0, isEffective_zero, degree_zero⟩
-  left_inv D := by
-    have hzero : (D : WeilDivisor X) = 0 :=
-      D.isEffective.eq_zero_of_degree_eq_zero D.degree_eq
-    exact Subtype.ext hzero.symm
-  right_inv _ := rfl
+def zeroEquivPUnit : EffectiveDivisorOfDegree X 0 ≃ PUnit :=
+  (equivSym (X := X) (d := 0)).trans (Equiv.equivPUnit (Sym X 0))
 
 end EffectiveDivisorOfDegree
 
