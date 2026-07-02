@@ -84,8 +84,7 @@ inverse automorphism is again `transposeEquiv`. This lets the forward lemmas
 theorem transposeEquiv_symm {R : Type*} [Semiring R] {n : ℕ} :
     (transposeEquiv R n).symm = transposeEquiv R n := by
   unfold transposeEquiv
-  rw [Finsupp.domLCongr_symm]
-  rfl
+  rw [Finsupp.domLCongr_symm, Function.Involutive.toPerm_symm]
 
 /-- The linear automorphism of grid chains induced by the half-turn rotation of grid states.
 
@@ -118,8 +117,7 @@ and `rotateEquiv_apply` also drive the inverse map. -/
 theorem rotateEquiv_symm {R : Type*} [Semiring R] {n : ℕ} :
     (rotateEquiv R n).symm = rotateEquiv R n := by
   unfold rotateEquiv
-  rw [Finsupp.domLCongr_symm]
-  rfl
+  rw [Finsupp.domLCongr_symm, Function.Involutive.toPerm_symm]
 
 end GridChain
 
