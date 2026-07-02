@@ -208,7 +208,6 @@ theorem fullyBlockedDifferential_single (x : GridState n) :
 
 /-- The matrix coefficient of the fully blocked differential on a single generator is the fully
 blocked rectangle count. -/
-@[simp]
 theorem fullyBlockedDifferential_single_apply (x y : GridState n) :
     G.fullyBlockedDifferential (Finsupp.single x 1) y =
       G.fullyBlockedRectangleCount x y := by

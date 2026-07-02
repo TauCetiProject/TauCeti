@@ -90,7 +90,6 @@ theorem cIoo_self (a : Fin n) : cIoo a a = ∅ := by
   simp
 
 /-- The initial endpoint is not in its open cyclic interval. -/
-@[simp]
 theorem left_notMem_cIoo (a b : Fin n) : a ∉ cIoo a b := by
   intro ha
   rw [mem_cIoo] at ha
@@ -105,7 +104,6 @@ theorem left_notMem_cIoo (a b : Fin n) : a ∉ cIoo a b := by
     | inr hlt => exact hab hlt
 
 /-- The terminal endpoint is not in its open cyclic interval. -/
-@[simp]
 theorem right_notMem_cIoo (a b : Fin n) : b ∉ cIoo a b := by
   intro hb
   rw [mem_cIoo] at hb
