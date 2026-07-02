@@ -50,25 +50,9 @@ lemma continuous_orbitQuotientToBase (hp : Continuous p) :
 
 /-- An open map induces an open map from the deck-orbit quotient to the base. -/
 lemma isOpenMap_orbitQuotientToBase (hp : IsOpenMap p) :
-    IsOpenMap (orbitQuotientToBase p) := by
-  intro V hV
-  have hsurj : Function.Surjective
-      (Quotient.mk'' : E → MulAction.orbitRel.Quotient (Deck p) E) :=
-    Quotient.mk''_surjective
-  have hpre : IsOpen ((Quotient.mk'' : E → MulAction.orbitRel.Quotient (Deck p) E) ⁻¹' V) :=
-    hV.preimage continuous_quotient_mk'
-  have himg : orbitQuotientToBase p '' V =
-      p '' ((Quotient.mk'' : E → MulAction.orbitRel.Quotient (Deck p) E) ⁻¹' V) := by
-    ext b
-    simp only [Set.mem_image, Set.mem_preimage]
-    constructor
-    · rintro ⟨x, hxV, rfl⟩
-      obtain ⟨e, rfl⟩ := hsurj x
-      exact ⟨e, hxV, rfl⟩
-    · rintro ⟨e, heV, rfl⟩
-      exact ⟨Quotient.mk'' e, heV, rfl⟩
-  rw [himg]
-  exact hp _ hpre
+    IsOpenMap (orbitQuotientToBase p) :=
+  IsOpenMap.of_comp (f := Quotient.mk'') continuous_quotient_mk' Quotient.mk''_surjective
+    (by simpa [Function.comp_def] using hp)
 
 namespace IsRegular
 
