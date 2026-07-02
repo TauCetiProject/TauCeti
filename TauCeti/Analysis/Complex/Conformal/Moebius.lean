@@ -68,7 +68,6 @@ lemma unitDiscMoebius_apply_zero (a : Complex.UnitDisc) :
   simp
 
 /-- The norm of the Moebius factor is the pseudo-hyperbolic expression. -/
-@[simp]
 lemma norm_unitDiscMoebius (a z : Complex.UnitDisc) :
     ‖(unitDiscMoebius a z : ℂ)‖ = pseudoHyperbolicExpr (z : ℂ) (a : ℂ) :=
   (pseudoHyperbolicExpr_def (z : ℂ) (a : ℂ)).symm

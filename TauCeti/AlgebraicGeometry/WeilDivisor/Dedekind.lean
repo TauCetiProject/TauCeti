@@ -103,7 +103,6 @@ lemma adicOrd_apply (v : HeightOneSpectrum R) (u : Additive Kˣ) :
 
 /-- The computational form of `adicOrd` applied to `Additive.ofMul u` for a multiplicative unit
 `u : Kˣ`: it is the sign-flipped logarithm `-log v(u)` of the `v`-adic valuation of `u : K`. -/
-@[simp]
 lemma adicOrd_ofMul (v : HeightOneSpectrum R) (u : Kˣ) :
     adicOrd R K v (Additive.ofMul u) = -WithZero.log (v.valuation K (u : K)) := by
   rw [adicOrd_apply]

@@ -101,7 +101,6 @@ lemma energyIntegrand_apply (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n) (c :
   simp [energyIntegrand]
 
 /-- The diagonal of the jet form, the energy density `⟨a ∇u, ∇u⟩ + ⟪b, ∇u⟫ u + c u²`. -/
-@[simp]
 lemma energyIntegrand_self (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n) (c : ℝ)
     (U : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand A b c U U
@@ -116,7 +115,6 @@ lemma energyIntegrand_one_zero_zero_apply (U V : ℝ × EuclideanSpace ℝ n) :
   simp [energyIntegrand_apply]
 
 /-- The diagonal of the Laplacian model's jet form is the Dirichlet energy density `‖∇u‖²`. -/
-@[simp]
 lemma energyIntegrand_one_zero_zero_self (U : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (1 : Matrix n n ℝ) 0 0 U U = ‖U.2‖ ^ 2 := by
   rw [energyIntegrand_self, toQuadraticForm'_one]
@@ -130,7 +128,6 @@ lemma energyIntegrand_one_zero_mass_apply (c : ℝ) (U V : ℝ × EuclideanSpace
 
 /-- The shifted Laplacian model `-Δ + c` has diagonal jet density
 `‖∇u‖² + c u²`. -/
-@[simp]
 lemma energyIntegrand_one_zero_mass_self (c : ℝ) (U : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (1 : Matrix n n ℝ) 0 c U U = ‖U.2‖ ^ 2 + c * U.1 ^ 2 := by
   rw [energyIntegrand_self, toQuadraticForm'_one]

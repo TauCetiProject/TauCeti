@@ -358,7 +358,6 @@ lemma chafaiRescaled_integral (f : ℝ → ℝ) (n : ℕ) {g : ℝ≥0 → ℝ}
 
 /-- On positive source points, pulling the Bernstein kernel back along the Chafaï rescaling
 gives the classical finite-order kernel `(max (1 - x / t) 0) ^ (n - 1)`. -/
-@[simp]
 lemma bernsteinKernel_chafaiRescaling_of_pos {n : ℕ} (hn : 2 ≤ n) (x : ℝ) {t : ℝ}
     (ht : 0 < t) :
     bernsteinKernel n x (chafaiRescaling n t : ℝ) = (max (1 - x / t) 0) ^ (n - 1) := by
@@ -409,7 +408,6 @@ lemma chafaiRescaled_integral_bernsteinKernelBoundedContinuous
   simp
 
 /-- `chafaiMeasure f n` lives on `(0, ∞)`: its complement has zero mass. -/
-@[simp]
 lemma chafaiMeasure_compl_Ioi (f : ℝ → ℝ) (n : ℕ) :
     (chafaiMeasure f n) (Ioi 0)ᶜ = 0 := by
   unfold chafaiMeasure

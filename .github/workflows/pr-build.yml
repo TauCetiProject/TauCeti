@@ -382,6 +382,15 @@ jobs:
               lake build
               lake exe axioms
               lake exe module-system
+              # Simp normal-form lint (Mathlib simpNF linter) against the grandfathered
+              # baseline in scripts/simp-nf-baseline.txt. Script, baseline, and the
+              # @[nolint simpNF] allowlist (scripts/simp-nf-nolints-allowlist.txt) are
+              # the TRUSTED base copies (scripts/ routes to a human, so a PR cannot
+              # edit them here); it elaborates the PR code, which is why it runs inside
+              # this landrun sandbox, and its report parsing is fail-closed (see the
+              # SECURITY MODEL in the script). Fails on new violations or unaccounted
+              # nolints; fixed baseline entries are printed as a ratchet reminder only.
+              bash scripts/lint-simp-nf.sh
             '
 
       - name: Report build and bump-guard statuses to the PR head commit
@@ -415,9 +424,9 @@ jobs:
           elif [ "${{ env.NEWFILE_TOO_LONG }}" = "1" ]; then
             state=failure; desc="a newly added .lean file exceeds 1000 lines — split it (existing files may grow to 1500)"
           elif [ "${{ steps.build.outcome }}" = "success" ]; then
-            state=success; desc="sandboxed build + axiom audit passed (trusted config)"
+            state=success; desc="sandboxed build, audits, and simp-NF lint passed (trusted config)"
           else
-            state=failure; desc="sandboxed build or axiom audit failed"
+            state=failure; desc="sandboxed build, audit, or simp-NF lint failed"
           fi
           gh api -X POST "repos/${{ github.repository }}/statuses/${{ steps.pr.outputs.status_sha }}" \
             -f state="$state" -f context="build" -f description="$desc" \
