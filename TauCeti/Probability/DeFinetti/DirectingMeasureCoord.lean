@@ -14,6 +14,9 @@ collapse `Contractable.condExp_indicator_tailProcess_eq`.
 
 This is the per-coordinate input to the de Finetti block-product factorisation: it is what lets the
 single directing measure serve as the common conditional law of all coordinates.
+
+Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/CondExpConvergence.lean`, pin
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`).
 -/
 
 public section
