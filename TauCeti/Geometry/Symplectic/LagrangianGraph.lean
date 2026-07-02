@@ -6,7 +6,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Lagrangian
 public import TauCeti.Geometry.Symplectic.Prod
-public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 /-!
@@ -30,9 +29,11 @@ the identity continuation. The twisted product reuses the direct sum
 
 The Lagrangian conclusion needs no finite-dimensionality hypothesis.
 
+The twisted product form `ω₁ ⊖ ω₂` itself lives with the rest of the product-form API in
+`TauCeti.Geometry.Symplectic.Prod`.
+
 ## Main declarations
 
-* `TauCeti.SymplecticForm.twistedProd`: the twisted product form `ω₁ ⊖ ω₂` on `V × W`.
 * `TauCeti.SymplecticForm.IsSymplectomorphism`: a linear equivalence `e` with
   `ω₂(e v, e w) = ω₁(v, w)`, together with `refl`, `symm`, and `trans`.
 * `TauCeti.SymplecticForm.isSymplectomorphism_iff`: the pointwise characterization of
@@ -60,21 +61,6 @@ namespace SymplecticForm
 variable {V W : Type*}
 variable [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
 variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W}
-
-/-- The twisted product symplectic form `ω₁ ⊖ ω₂` on `V × W`, given by
-`(ω₁ ⊖ ω₂)((v₁, w₁), (v₂, w₂)) = ω₁(v₁, v₂) - ω₂(w₁, w₂)`.
-
-It is the direct sum `prod` of `ω₁` with the negation `ω₂.rescale (-1)` of `ω₂`; downstream code
-uses it through `twistedProd_apply`. -/
-noncomputable def twistedProd (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
-    SymplecticForm (V × W) :=
-  ω₁.prod (ω₂.rescale (-1) (by norm_num))
-
-@[simp]
-lemma twistedProd_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (p q : V × W) :
-    twistedProd ω₁ ω₂ p q = ω₁ p.1 q.1 - ω₂ p.2 q.2 := by
-  simp only [twistedProd, prod_apply, rescale_apply]
-  ring
 
 /-- The graph of `f` is isotropic for the twisted product form iff `f` preserves the symplectic
 forms pointwise: `ω₂(f v, f w) = ω₁(v, w)`. -/

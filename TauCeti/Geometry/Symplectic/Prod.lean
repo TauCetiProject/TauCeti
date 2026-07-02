@@ -6,6 +6,7 @@ module
 
 public import Mathlib.LinearAlgebra.Prod
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.Geometry.Symplectic.Transport
 
 /-!
@@ -36,6 +37,8 @@ following Mathlib's `LinearMap.prodMap` naming convention.
 * `TauCeti.IsComplexLinearMap.prod` and `TauCeti.IsComplexLinearMap.prodMap`: complex-linearity is
   preserved by pairing maps with a common source and by product maps into the direct sum.
 * `TauCeti.SymplecticForm.prod`: the direct-sum symplectic form on `V × W`.
+* `TauCeti.SymplecticForm.twistedProd`: the twisted product form `ω₁ ⊖ ω₂` on `V × W`, the
+  direct sum with the second factor negated.
 * `TauCeti.SymplecticForm.prod_invariant`, `prod_tames`, `prod_compatible`: a direct sum of
   invariant / tame / compatible pairs is invariant / tame / compatible.
 
@@ -207,6 +210,21 @@ def prod (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) : SymplecticForm 
 @[simp]
 lemma prod_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (p q : V × W) :
     ω₁.prod ω₂ p q = ω₁ p.1 q.1 + ω₂ p.2 q.2 := rfl
+
+/-- The twisted product symplectic form `ω₁ ⊖ ω₂` on `V × W`, given by
+`(ω₁ ⊖ ω₂)((v₁, w₁), (v₂, w₂)) = ω₁(v₁, v₂) - ω₂(w₁, w₂)`.
+
+It is the direct sum `prod` of `ω₁` with the negation `ω₂.rescale (-1)` of `ω₂`; downstream code
+uses it through `twistedProd_apply`. -/
+noncomputable def twistedProd (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
+    SymplecticForm (V × W) :=
+  ω₁.prod (ω₂.rescale (-1) (by norm_num))
+
+@[simp]
+lemma twistedProd_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (p q : V × W) :
+    twistedProd ω₁ ω₂ p q = ω₁ p.1 q.1 - ω₂ p.2 q.2 := by
+  simp only [twistedProd, prod_apply, rescale_apply]
+  ring
 
 variable {J₁ : AlmostComplexStructure V} {J₂ : AlmostComplexStructure W}
 
