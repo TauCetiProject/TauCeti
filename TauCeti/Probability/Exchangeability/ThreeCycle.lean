@@ -94,7 +94,7 @@ theorem threeCycle_measurePreserving_shift :
     simp only [Function.comp_apply, shift_apply, threeCycle_apply]
     push_cast
     ring
-  rw [pathLaw_apply, Measure.map_map measurable_shift hP, hcomp,
+  rw [pathLaw_def, Measure.map_map measurable_shift hP, hcomp,
     ← Measure.map_map hP hT, map_add_right_eq_self threeCycleMeasure 1]
 
 /-- The straight two-coordinate event `{X₀ = 0, X₁ = 1}` is realized only from the start state
@@ -112,7 +112,7 @@ private theorem threeCycle_straight_event :
 simultaneously. -/
 private theorem threeCycle_spread_event :
     {ω : ZMod 3 | ∀ i : Fin 2,
-        threeCycle ((fun r : Fin 2 => if r = 0 then 0 else 2) i) ω ∈
+        threeCycle ((![0, 2] : Fin 2 → ℕ) i) ω ∈
           (![{0}, {1}] : Fin 2 → Set (ZMod 3)) i} = ∅ := by
   ext ω
   simp only [Set.mem_setOf_eq, Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one,
@@ -126,10 +126,9 @@ the prefix law has mass `3⁻¹` while the spread law has mass `0`. -/
 theorem threeCycle_not_contractable : ¬ Contractable threeCycleMeasure threeCycle := by
   intro hC
   have h := hC.map_pair (i := 0) (j := 2) (by norm_num)
-  rw [prefixLaw_apply] at h
+  rw [prefixLaw_def] at h
   have hval := congrArg (fun m : Measure (Fin 2 → ZMod 3) => m (Set.univ.pi ![{0}, {1}])) h
-  rw [blockLaw_apply_rectangle threeCycleMeasure threeCycle
-        (fun r : Fin 2 => if r = 0 then 0 else 2)
+  rw [blockLaw_apply_rectangle threeCycleMeasure threeCycle (![0, 2] : Fin 2 → ℕ)
         (fun _ => Measurable.of_discrete.aemeasurable) _ (fun _ => MeasurableSet.of_discrete),
       blockLaw_apply_rectangle threeCycleMeasure threeCycle (fun i : Fin 2 => (i : ℕ))
         (fun _ => Measurable.of_discrete.aemeasurable) _ (fun _ => MeasurableSet.of_discrete)]
