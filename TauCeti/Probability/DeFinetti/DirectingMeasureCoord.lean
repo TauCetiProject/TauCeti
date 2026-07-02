@@ -36,12 +36,12 @@ and any `m`, the real evaluation `ω ↦ (directingMeasure μ X ω).real B` is a
 conditional expectation of `𝟙_B ∘ X m` given the tail σ-algebra `tailProcess X`. -/
 theorem Contractable.directingMeasure_ae_eq_condExp_coord [StandardBorelSpace α] [Nonempty α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX : Contractable μ X)
-    (hX_meas : ∀ n, Measurable (X n))
-    (hTail : tailProcess X ≤ (inferInstance : MeasurableSpace Ω)) (m : ℕ)
+    (hX_meas : ∀ n, Measurable (X n)) (m : ℕ)
     {B : Set α} (hB : MeasurableSet B) :
     (fun ω => (directingMeasure μ X ω).real B)
       =ᵐ[μ] μ[Set.indicator B (fun _ => (1 : ℝ)) ∘ X m | tailProcess X] :=
-  (directingMeasure_ae_eq_condExp hTail (hX_meas 0) hB).trans
+  (directingMeasure_ae_eq_condExp (tailProcess_le_ambient 0 fun k _ => hX_meas k)
+      (hX_meas 0) hB).trans
     (hX.condExp_indicator_tailProcess_eq (j := 0) (k := m) hX_meas hB)
 
 end Probability
