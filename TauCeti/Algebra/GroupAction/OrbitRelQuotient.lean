@@ -31,6 +31,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   quotient by `H`-orbits.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotientPermHom`: the descended action of
   `N(H) / H` on the quotient by `H`-orbits.
+* `TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff`: if the original
+  action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
 -/
 
 public section
@@ -336,6 +338,40 @@ lemma normalizerQuotientOrbitRelQuotient_smul_mk (H : Subgroup G)
         (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((g : G) • x)
     exact normalizerQuotientOrbitRelQuotientPermHom_mk_apply (X := X) H g x
+
+/-- Equality after the descended `N(H) / H` action on an `H`-orbit quotient is equality of
+normalizer-quotient elements, provided the original action is free. -/
+@[simp]
+lemma normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff [IsCancelSMul G X]
+    (H : Subgroup G) (a c : Subgroup.normalizerQuotient H)
+    (x : _root_.MulAction.orbitRel.Quotient H X) :
+    letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+    a • x = c • x ↔ a = c := by
+  letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+  constructor
+  · intro h
+    obtain ⟨g, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H a
+    obtain ⟨k, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H c
+    refine Quotient.inductionOn' x ?_ h
+    intro x h
+    rw [normalizerQuotientOrbitRelQuotient_smul_mk,
+      normalizerQuotientOrbitRelQuotient_smul_mk] at h
+    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem]
+    simpa [div_eq_mul_inv] using
+      (orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem H x (g : G) (k : G)).mp h
+  · intro h
+    rw [h]
+
+/-- If a group acts freely on `X`, then the descended `N(H) / H` action on the quotient of `X`
+by `H`-orbits is free. This packages `normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff` as the
+cancellativity of the descended action. -/
+theorem normalizerQuotientOrbitRelQuotientIsCancelSMul [IsCancelSMul G X]
+    (H : Subgroup G) :
+    letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+    IsCancelSMul (Subgroup.normalizerQuotient H) (_root_.MulAction.orbitRel.Quotient H X) :=
+  letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+  { right_cancel' := fun a c x h =>
+      (normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff H a c x).mp h }
 
 end MulAction
 
