@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Matrix.Notation
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
-public import TauCeti.LinearAlgebra.BilinForm
 
 /-!
 # Plumbing graphs and their intersection forms
@@ -182,7 +181,10 @@ twice because the form is symmetric. -/
 theorem intersectionForm_self_add (x y : V → ℤ) :
     P.intersectionForm (x + y) (x + y) =
       P.intersectionForm x x + 2 * P.intersectionForm x y + P.intersectionForm y y :=
-  LinearMap.BilinForm.IsSymm.self_add P.intersectionForm_isSymm x y
+  by
+    simp only [map_add, LinearMap.add_apply]
+    rw [P.intersectionForm_isSymm.eq y x]
+    ring
 
 /-- The intersection form expanded into its framing contribution and adjacency contribution. -/
 theorem intersectionForm_apply_weight_add_adj (x y : V → ℤ) :
