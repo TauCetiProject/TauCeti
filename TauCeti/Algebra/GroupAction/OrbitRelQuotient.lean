@@ -341,6 +341,7 @@ lemma normalizerQuotientOrbitRelQuotient_smul_mk (H : Subgroup G)
 
 /-- Equality after the descended `N(H) / H` action on an `H`-orbit quotient is equality of
 normalizer-quotient elements, provided the original action is free. -/
+@[simp]
 lemma normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff [IsCancelSMul G X]
     (H : Subgroup G) (a c : Subgroup.normalizerQuotient H)
     (x : _root_.MulAction.orbitRel.Quotient H X) :
