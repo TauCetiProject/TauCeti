@@ -135,30 +135,6 @@ theorem mapValue_baseChangePointsMulEquiv_symm_apply (φ : A →ₐ[K] B) (u : A
   rw [baseChangePointsMulEquiv_mapValue]
   simp
 
-/-- Naturality of the inverse base-changed multiplicative-group points equivalence, evaluated
-on a pure Laurent monomial `s ⊗ C r * T n`. -/
-@[simp]
-theorem mapValue_baseChangePointsMulEquiv_symm_apply_tmul_C_mul_T
-    (φ : A →ₐ[K] B) (u : Aˣ) (s : K) (r : k) (n : ℤ) :
-    (AlgHom.mapValue (H := K ⊗[k] k[T;T⁻¹]) φ
-        ((baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u)).ofConv
-        (s ⊗ₜ[k] (LaurentPolynomial.C r * LaurentPolynomial.T n)) =
-      s • (r • (((Units.map φ.toMonoidHom u) ^ n : Bˣ) : B)) := by
-  rw [mapValue_baseChangePointsMulEquiv_symm_apply,
-    baseChangePointsMulEquiv_symm_apply_tmul_C_mul_T]
-
-/-- Naturality of the inverse base-changed multiplicative-group points equivalence, evaluated
-on a pure tensor `s ⊗ T n`. -/
-@[simp]
-theorem mapValue_baseChangePointsMulEquiv_symm_apply_tmul_T
-    (φ : A →ₐ[K] B) (u : Aˣ) (s : K) (n : ℤ) :
-    (AlgHom.mapValue (H := K ⊗[k] k[T;T⁻¹]) φ
-        ((baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u)).ofConv
-        (s ⊗ₜ[k] LaurentPolynomial.T n) =
-      s • (((Units.map φ.toMonoidHom u) ^ n : Bˣ) : B) := by
-  simpa using mapValue_baseChangePointsMulEquiv_symm_apply_tmul_C_mul_T
-    (k := k) (K := K) (A := A) (B := B) φ u s (1 : k) n
-
 end MultiplicativeGroup
 
 end TauCeti
