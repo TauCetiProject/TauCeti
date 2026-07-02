@@ -37,12 +37,20 @@ open scoped ENNReal
 namespace ProbabilityTheory
 
 /-- Negation of a stochastic process. -/
-@[expose] def negProcess {Ω : Type*} (X : ℕ → Ω → ℝ) : ℕ → Ω → ℝ :=
+def negProcess {Ω : Type*} (X : ℕ → Ω → ℝ) : ℕ → Ω → ℝ :=
   fun n ω => -X n ω
 
 /-- Time reversal of a stochastic process up to time `N`. -/
-@[expose] def revProcess {Ω : Type*} (X : ℕ → Ω → ℝ) (N : ℕ) : ℕ → Ω → ℝ :=
+def revProcess {Ω : Type*} (X : ℕ → Ω → ℝ) (N : ℕ) : ℕ → Ω → ℝ :=
   fun n ω => X (N - n) ω
+
+/-- Defining equation for `negProcess` (whose body is deliberately not `@[expose]`d). -/
+lemma negProcess_apply {Ω : Type*} (X : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
+    negProcess X n ω = -X n ω := by rfl
+
+/-- Defining equation for `revProcess` (whose body is deliberately not `@[expose]`d). -/
+lemma revProcess_apply {Ω : Type*} (X : ℕ → Ω → ℝ) (N n : ℕ) (ω : Ω) :
+    revProcess X N n ω = X (N - n) ω := by rfl
 
 /-- Strict inequality between lower and upper crossing times when the crossing completes before
 `N`. -/

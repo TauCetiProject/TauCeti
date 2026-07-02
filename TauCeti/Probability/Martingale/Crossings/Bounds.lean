@@ -44,6 +44,7 @@ lemma upcrossings_bdd_uniform
   -- The L¹ norm of revCondExpFinite is uniformly bounded by ‖f‖₁
   have hL1_bdd : ∀ N n, eLpNorm (revCondExpFinite (μ := μ) f 𝔽 N n) 1 μ ≤ eLpNorm f 1 μ := by
     intro N n
+    rw [revCondExpFinite_apply]
     exact eLpNorm_one_condExp_le_eLpNorm f
   -- For each N, revCondExpFinite is a martingale, hence a submartingale
   have h_submart : ∀ N, Submartingale (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)

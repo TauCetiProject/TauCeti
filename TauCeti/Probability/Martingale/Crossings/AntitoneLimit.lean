@@ -42,7 +42,7 @@ variable {𝔽 : ℕ → MeasurableSpace Ω}
 This uses the upcrossing inequality applied to the time-reversed martingales to show
 that the original sequence has finitely many upcrossings and downcrossings a.e.,
 hence converges a.e. -/
-lemma condExp_exists_ae_limit_antitone
+private lemma condExp_exists_ae_limit_antitone
     [IsProbabilityMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (hf : Integrable f μ) :
@@ -95,10 +95,11 @@ lemma condExp_exists_ae_limit_antitone
           ≤ downcrossingsBefore (↑a) (↑b) (revProcess (fun n => μ[f | 𝔽 n]) N) (N + 1) ω :=
         h_ineq ω
       -- Expand downcrossingsBefore to upcrossingsBefore with negProcess
-      simp only [downcrossingsBefore] at h_orig_le
+      simp only [downcrossingsBefore_eq] at h_orig_le
       -- Recognize that revProcess of condExp = revCondExpFinite
       have h_rev_eq : negProcess (revProcess (fun n => μ[f | 𝔽 n]) N)
-                    = negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) := rfl
+                    = negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) := by
+        funext n ω; simp only [negProcess_apply, revProcess_apply, revCondExpFinite_apply]
       -- Pick index (N+1) from the supremum definition of upcrossings
       have h_to_iSup :
           ↑(upcrossingsBefore (- (↑b : ℝ)) (- (↑a : ℝ))
@@ -153,7 +154,7 @@ lemma condExp_exists_ae_limit_antitone
                         revCondExpFinite (μ := μ) (fun x => -f x) 𝔽 N n ω := by
                       rw [ae_all_iff]
                       intro n
-                      simp only [negProcess, revCondExpFinite]
+                      simp only [negProcess_apply, revCondExpFinite_apply]
                       exact (condExp_neg f (𝔽 (N - n))).symm
                     filter_upwards [h_ae_eq] with ω hω
                     simp [MeasureTheory.upcrossings,

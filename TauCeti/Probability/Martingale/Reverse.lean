@@ -51,9 +51,13 @@ def revFiltration (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Antitone �
 
 /-- Reverse conditional-expectation process at finite horizon `N`: for `n ≤ N` this is
 `μ[f | 𝔽 (N - n)]`. -/
-@[expose] noncomputable def revCondExpFinite (f : Ω → ℝ) (𝔽 : ℕ → MeasurableSpace Ω) (N n : ℕ) :
+noncomputable def revCondExpFinite (f : Ω → ℝ) (𝔽 : ℕ → MeasurableSpace Ω) (N n : ℕ) :
     Ω → ℝ :=
   μ[f | 𝔽 (N - n)]
+
+/-- Defining equation for `revCondExpFinite` (whose body is deliberately not `@[expose]`d). -/
+lemma revCondExpFinite_apply (f : Ω → ℝ) (𝔽 : ℕ → MeasurableSpace Ω) (N n : ℕ) :
+    revCondExpFinite (μ := μ) f 𝔽 N n = μ[f | 𝔽 (N - n)] := by rfl
 
 /-- The reversed process `revCondExpFinite f 𝔽 N` is a martingale for `revFiltration 𝔽 N`: by
 the tower property, `μ[μ[f | 𝔽 (N - j)] | 𝔽 (N - i)] = μ[f | 𝔽 (N - i)]` whenever `i ≤ j`. -/

@@ -38,22 +38,26 @@ variable {𝔽 : ℕ → MeasurableSpace Ω}
 
 /-- Downcrossings before `N`: defined as upcrossings of the negated process with flipped interval.
 Returns a random variable `Ω → ℕ`. -/
-@[expose] noncomputable def downcrossingsBefore {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) (N : ℕ) :
+noncomputable def downcrossingsBefore {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) (N : ℕ) :
     Ω → ℕ :=
   upcrossingsBefore (-b) (-a) (negProcess X) N
 
 /-- Total downcrossings: supremum over all time horizons. -/
-@[expose] noncomputable def downcrossings {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) : Ω → ℝ≥0∞ :=
+noncomputable def downcrossings {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) : Ω → ℝ≥0∞ :=
   fun ω => ⨆ N, ((downcrossingsBefore a b X N ω : ℕ) : ℝ≥0∞)
+
+/-- Defining equation for `downcrossingsBefore` (whose body is deliberately not `@[expose]`d). -/
+lemma downcrossingsBefore_eq {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) (N : ℕ) :
+    downcrossingsBefore a b X N = upcrossingsBefore (-b) (-a) (negProcess X) N := by rfl
 
 /-- **Identity 1:** upcrossings of the negated process = downcrossings of the original.
 Negation flips crossing direction: `up(-b, -a, -X) = down(a, b, X)`. -/
 lemma upcrossings_neg_flip_eq_downcrossings {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) :
-    upcrossings (-b) (-a) (negProcess X) = downcrossings a b X := rfl
+    upcrossings (-b) (-a) (negProcess X) = downcrossings a b X := by rfl
 
 /-- Double negation is identity (used by `simp` below). -/
 @[simp] private lemma negProcess_negProcess {Ω : Type*} (X : ℕ → Ω → ℝ) :
-    negProcess (negProcess X) = X := by ext; simp [negProcess]
+    negProcess (negProcess X) = X := by funext n ω; simp only [negProcess_apply, neg_neg]
 
 /-- **Identity 2:** downcrossings of the negated process = upcrossings of the original.
 Negation flips crossing direction: `down(-b, -a, -X) = up(a, b, X)`. -/

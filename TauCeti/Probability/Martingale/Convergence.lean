@@ -3,7 +3,11 @@ module
 public import Mathlib.Probability.Martingale.Basic
 public import Mathlib.Probability.Martingale.Convergence
 public import Mathlib.Probability.Process.Filtration
-public import TauCeti.Probability.Martingale.Crossings
+-- The crossing/reverse-martingale implementation chain is imported non-publicly, so downstream
+-- users of this module see `tendsto_ae_condExp_iInf` but not the internal helpers
+-- (`condExp_exists_ae_limit_antitone`, `upcrossings_bdd_uniform`, `downcrossings`, ...). The
+-- `AntitoneLimit` module transitively pulls in `Bounds` and `Pathwise`.
+import TauCeti.Probability.Martingale.Crossings.AntitoneLimit
 
 /-!
 # Martingale convergence theorems
