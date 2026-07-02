@@ -4,7 +4,6 @@ public import TauCeti.Probability.DeFinetti.DirectingMeasureCoord
 public import TauCeti.Probability.Exchangeability.Cylinder
 public import TauCeti.Probability.Exchangeability.ConditionallyIID
 public import Mathlib.Probability.Independence.Conditional
-import TauCeti.Probability.DeFinetti.CommonEnding
 
 /-!
 # Block-product factorisation of the conditional expectation
