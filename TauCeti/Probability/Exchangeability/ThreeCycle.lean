@@ -145,9 +145,9 @@ theorem threeCycle_not_contractable : ¬ Contractable threeCycleMeasure threeCyc
     threeCycleMeasure_singleton] at hval
   exact (ENNReal.inv_ne_zero.mpr (by norm_num)) hval.symm
 
-/-- **The 3-cycle is not exchangeable.** Its path law is not invariant under swapping two
-coordinates: the pair `(X₀, X₁) = (ω, ω + 1)` ranges over `{(0, 1), (1, 2), (2, 0)}`, so the law
-of `(X₀, X₁)` differs from that of `(X₁, X₀)`. -/
+/-- **The 3-cycle is not exchangeable.** Its two-coordinate prefix law already fails the finite
+exchangeability symmetry: the pair `(X₀, X₁) = (ω, ω + 1)` ranges over
+`{(0, 1), (1, 2), (2, 0)}`, so the law of `(X₀, X₁)` differs from that of `(X₁, X₀)`. -/
 theorem threeCycle_not_exchangeable : ¬ Exchangeable threeCycleMeasure threeCycle := by
   intro hE
   exact threeCycle_not_contractable (hE.contractable (fun _ => Measurable.of_discrete.aemeasurable))
