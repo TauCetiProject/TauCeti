@@ -52,8 +52,6 @@ of Seifert-fibred examples), with edge multiplicities a later refinement.
   framing-weighted sum of squares plus the adjacency cross terms.
 * `TauCeti.PlumbingGraph.IsNegativeDefinite.weight_neg`: a negative-definite plumbing has every
   framing negative.
-* `TauCeti.bilinForm_self_add_of_isSymm`: a generic no-division self-add expansion for symmetric
-  bilinear forms.
 * `TauCeti.PlumbingGraph.intersectionForm_self_add`: a symmetric-pairing expansion for the
   intersection form on a sum.
 
@@ -72,7 +70,7 @@ public section
 namespace TauCeti
 
 /-- A symmetric bilinear form on a sum expands without division: the cross term appears twice. -/
-theorem bilinForm_self_add_of_isSymm {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+private theorem bilinForm_self_add_of_isSymm {R M : Type*} [CommSemiring R] [AddCommMonoid M]
     [Module R M] (B : LinearMap.BilinForm R M) (hB : B.IsSymm) (x y : M) :
     B (x + y) (x + y) = B x x + 2 * B x y + B y y := by
   simp only [map_add, LinearMap.add_apply]
