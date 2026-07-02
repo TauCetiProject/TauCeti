@@ -381,6 +381,18 @@ lemma of_isCompletelyMonotone (hf : IsCompletelyMonotone f) :
     IsClosedCompletelyMonotone f :=
   ⟨hf.contDiffOn.continuousOn, hf.isCompletelyMonotoneOnIoi⟩
 
+/-- Closed-half-line complete monotonicity is closed under addition. -/
+lemma add (hf : IsClosedCompletelyMonotone f) (hg : IsClosedCompletelyMonotone g) :
+    IsClosedCompletelyMonotone (f + g) :=
+  ⟨hf.continuousOn.add hg.continuousOn,
+    hf.isCompletelyMonotoneOnIoi.add hg.isCompletelyMonotoneOnIoi⟩
+
+/-- Closed-half-line complete monotonicity is closed under multiplication by a nonnegative
+constant. -/
+lemma smul (hf : IsClosedCompletelyMonotone f) {c : ℝ} (hc : 0 ≤ c) :
+    IsClosedCompletelyMonotone (c • f) :=
+  ⟨hf.continuousOn.const_smul c, hf.isCompletelyMonotoneOnIoi.smul hc⟩
+
 /-- A closed-half-line completely monotone function is nonincreasing on `(0, ∞)`. -/
 lemma antitoneOn_Ioi (hf : IsClosedCompletelyMonotone f) : AntitoneOn f (Ioi 0) := by
   refine antitoneOn_of_deriv_nonpos (convex_Ioi 0)
@@ -420,7 +432,7 @@ lemma nonneg (hf : IsClosedCompletelyMonotone f) {t : ℝ} (ht : 0 ≤ t) : 0 �
   · exact hf.isCompletelyMonotoneOnIoi.nonneg ht_pos
 
 /-- A closed-half-line completely monotone function lies below its value at `0` on `[0, ∞)`. -/
-lemma le_zero (hf : IsClosedCompletelyMonotone f) {t : ℝ} (ht : 0 ≤ t) : f t ≤ f 0 := by
+lemma le_apply_zero (hf : IsClosedCompletelyMonotone f) {t : ℝ} (ht : 0 ≤ t) : f t ≤ f 0 := by
   rcases ht.eq_or_lt with rfl | ht_pos
   · exact le_rfl
   have hy_tendsto_nhds : Tendsto (fun n : ℕ => t / ((n : ℝ) + 2)) atTop (nhds 0) := by

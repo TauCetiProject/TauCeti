@@ -8,6 +8,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.CompletelyMonotone.Closure
 public import TauCeti.Analysis.CompletelyMonotone.Integral
+public import TauCeti.Analysis.CompletelyMonotone.LaplaceRepresentation
 
 /-!
 # Approximating measures for Bernstein's theorem
@@ -34,11 +35,9 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
   `TauCeti.bernsteinKernel_nonneg`, `TauCeti.bernsteinKernel_le_one`,
   `TauCeti.bernsteinKernelBoundedContinuous`,
   `TauCeti.bernsteinKernelBoundedContinuous_apply`,
-  `TauCeti.laplaceKernelBoundedContinuous`,
-  `TauCeti.laplaceKernelBoundedContinuous_apply`,
   `TauCeti.bernsteinKernel_tendsto`: the rescaled Laplace kernel, its bundled
-  bounded-continuous `p`-dependence on the nonnegative half-line, and its bundled pointwise
-  limit `e^{-xp}`.
+  bounded-continuous `p`-dependence on the nonnegative half-line, and its pointwise limit
+  `e^{-xp}`.
 * `TauCeti.chafaiRescaled`, `TauCeti.chafaiRescaled_mass_eq`: the `ℝ≥0`-valued pushed-forward
   measures and mass preservation.
 * `TauCeti.chafaiRescaled_integral_bernsteinKernel`,
@@ -259,30 +258,6 @@ lemma bernsteinKernelBoundedContinuous_apply (n : ℕ) {x : ℝ} (hx : 0 ≤ x) 
     bernsteinKernelBoundedContinuous n hx p = bernsteinKernel n x (p : ℝ) := by
   rw [bernsteinKernelBoundedContinuous]; rfl
 
-/-- The limiting Laplace kernel as a bundled bounded continuous test function of the
-nonnegative variable `p`, for fixed nonnegative `x`. -/
-noncomputable def laplaceKernelBoundedContinuous {x : ℝ} (hx : 0 ≤ x) : ℝ≥0 →ᵇ ℝ where
-  toFun := fun p => Real.exp (-(x * (p : ℝ)))
-  continuous_toFun := Real.continuous_exp.comp ((continuous_const.mul continuous_subtype_val).neg)
-  map_bounded' :=
-    ⟨1, fun p q => by
-      rw [Real.dist_eq]
-      have hp0 : 0 < Real.exp (-(x * (p : ℝ))) := Real.exp_pos _
-      have hp1 : Real.exp (-(x * (p : ℝ))) ≤ 1 := by
-        rw [Real.exp_le_one_iff]
-        exact neg_nonpos.mpr (mul_nonneg hx p.2)
-      have hq0 : 0 < Real.exp (-(x * (q : ℝ))) := Real.exp_pos _
-      have hq1 : Real.exp (-(x * (q : ℝ))) ≤ 1 := by
-        rw [Real.exp_le_one_iff]
-        exact neg_nonpos.mpr (mul_nonneg hx q.2)
-      exact abs_sub_le_iff.mpr ⟨by linarith, by linarith⟩⟩
-
-/-- The bundled limiting Laplace kernel evaluates to the usual exponential kernel on `ℝ≥0`. -/
-@[simp]
-lemma laplaceKernelBoundedContinuous_apply {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
-    laplaceKernelBoundedContinuous hx p = Real.exp (-(x * (p : ℝ))) := by
-  rw [laplaceKernelBoundedContinuous]; rfl
-
 /-- The Bernstein kernel is measurable in `p` for fixed `n` and `x`. -/
 lemma measurable_bernsteinKernel (n : ℕ) (x : ℝ) : Measurable (bernsteinKernel n x) := by
   unfold bernsteinKernel; split_ifs
@@ -451,16 +426,17 @@ private lemma chafaiDensity_neg_derivWithin_pred (f : ℝ → ℝ)
     congr 1
     omega
   rw [hiter]
+  have hn_sub_succ : n - 1 = (n - 2) + 1 := by omega
   have hfact : ((n - 1).factorial : ℝ) =
       ((n - 1 : ℕ) : ℝ) * ((n - 2).factorial : ℝ) := by
-    rw [show n - 1 = (n - 2) + 1 by omega, Nat.factorial_succ]
+    rw [hn_sub_succ, Nat.factorial_succ]
     norm_num
   rw [hfact]
   have hnp : ((n - 1 : ℕ) : ℝ) = (n : ℝ) - 1 := by
     norm_num [Nat.cast_sub (by omega : 1 ≤ n)]
   have hsub : n - 1 - 1 = n - 2 := by omega
   have hpow' : t ^ (n - 2) * t = t ^ (n - 1) := by
-    rw [show n - 1 = (n - 2) + 1 by omega, pow_succ]
+    rw [hn_sub_succ, pow_succ]
   have hsign : -((-1 : ℝ) ^ (n - 1)) = (-1 : ℝ) ^ n := by
     have hpow : ((-1 : ℝ) ^ n) = (-1 : ℝ) ^ ((n - 1) + 1) := by
       congr
@@ -1083,8 +1059,9 @@ private lemma boundary_term_decay (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
       tendsto_integral_Ioi_zero tendsto_id
     have htail_half : Tendsto (fun T : ℝ => ∫ t in Ioi (T / 2), chafaiDensity f k t)
         atTop (nhds 0) := by
+      have hhalf_pos : (0 : ℝ) < 1 / 2 := by positivity
       have hhalf_map : Tendsto (fun T : ℝ => (1 / 2 : ℝ) * T) atTop atTop :=
-        (tendsto_const_mul_atTop_of_pos (show (0 : ℝ) < 1 / 2 by positivity)).2 tendsto_id
+        (tendsto_const_mul_atTop_of_pos hhalf_pos).2 tendsto_id
       refine (htail.comp hhalf_map).congr' ?_
       filter_upwards with T
       simp
@@ -1115,7 +1092,8 @@ private lemma boundary_term_decay (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
     simp only [h, pow_succ]
     ring
   simp_rw [heq]
-  rw [show (0 : ℝ) = -(1 / ↑k.factorial) * 0 from by ring]
+  have hzero_scale : (0 : ℝ) = -(1 / ↑k.factorial) * 0 := by ring
+  rw [hzero_scale]
   exact hkey.const_mul _
 
 private lemma ibp_kernel_integrableOn (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
@@ -1202,10 +1180,11 @@ private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
     · -- Inductive step `n = k+1`: integrate by parts once and pass to the limit.
       have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
       have ih_applied := ih hk1
-      simp only [show k + 1 - 1 = k by omega]
+      have hk_add_sub : k + 1 - 1 = k := by omega
+      simp only [hk_add_sub]
       have hintk := ibp_kernel_integrableOn f hcm k hk1 x hx L hL
       have hintkp1 := ibp_kernel_integrableOn f hcm (k + 1) (by omega) x hx L hL
-      simp only [show k + 1 - 1 = k by omega] at hintkp1
+      simp only [hk_add_sub] at hintkp1
       have hibp := fun T (hT : x < T) => ibp_finite_interval f hcm k hk x T hx hT
       have hbdry := boundary_term_decay f hcm k hk x hx L hL
       have htend_k : Tendsto (fun T => ∫ t in x..T,
@@ -1313,13 +1292,15 @@ private lemma kernel_uniform_conv_compact (x R ε : ℝ) (hx : 0 < x) (hR : 0 < 
   have hn_gt : (↑n : ℝ) > C + 2 + 2 * C ^ 2 / ε :=
     lt_of_lt_of_le hN₀ (Nat.cast_le.mpr hn)
   have haux : 0 ≤ 2 * C ^ 2 / ε := div_nonneg (by positivity) hε.le
-  have hn_ge2 : 2 ≤ n := by exact_mod_cast (show (2 : ℝ) < ↑n by linarith [hC_pos]).le
+  have hn_gt_two : (2 : ℝ) < ↑n := by linarith [hC_pos]
+  have hn_ge2 : 2 ≤ n := by exact_mod_cast hn_gt_two.le
   have hle := bernsteinKernel_le_exp hn_ge2 hx.le hp
   rw [abs_of_nonpos (by linarith), neg_sub]
   set m := n - 1
   have hm_pos : (0 : ℝ) < ↑m := Nat.cast_pos.mpr (by omega)
   have hm_eq : (↑m : ℝ) = ↑n - 1 := by
-    rw [Nat.cast_sub (show 1 ≤ n by omega)]
+    have hn_one_le : 1 ≤ n := by omega
+    rw [Nat.cast_sub hn_one_le]
     simp
   have hxp_nn : 0 ≤ x * p := mul_nonneg hx.le hp
   have hxp_le_C : x * p ≤ C := mul_le_mul_of_nonneg_left hpR hx.le
@@ -1349,14 +1330,16 @@ private lemma kernel_uniform_conv_compact (x R ε : ℝ) (hx : 0 < x) (hR : 0 < 
       rw [← Real.rpow_natCast (1 - u) m, Real.rpow_def_of_pos h1u, mul_comm]
     rw [heq]
     gcongr
-    rw [show -(x * p) - b = ↑m * (-u - u ^ 2 / (1 - u)) by
+    have hlog_arg : -(x * p) - b = ↑m * (-u - u ^ 2 / (1 - u)) := by
       rw [← hmu, hb_def]
-      ring]
+      ring
+    rw [hlog_arg]
     apply mul_le_mul_of_nonneg_left _ (Nat.cast_nonneg m)
     have habs : |u| < 1 := by rwa [abs_of_nonneg hu_nn]
     have hlog := Real.abs_log_sub_add_sum_range_le habs 1
     simp only [Finset.sum_range_one, Nat.cast_zero, zero_add, div_one, pow_one] at hlog
-    rw [abs_of_nonneg hu_nn, show u ^ (1 + 1) = u ^ 2 by ring] at hlog
+    have hu_sq : u ^ (1 + 1) = u ^ 2 := by ring
+    rw [abs_of_nonneg hu_nn, hu_sq] at hlog
     linarith [(abs_le.mp hlog).1]
   have hstep : Real.exp (-(x * p)) - (1 - u) ^ m ≤ b := by
     suffices h : Real.exp (-(x * p)) - Real.exp (-(x * p) - b) ≤ b by linarith

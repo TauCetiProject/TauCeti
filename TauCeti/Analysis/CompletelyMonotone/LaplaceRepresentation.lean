@@ -8,7 +8,7 @@ public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
-public import TauCeti.Analysis.CompletelyMonotone.BernsteinMeasures
+public import TauCeti.Analysis.CompletelyMonotone.Basic
 
 /-!
 # Laplace representations for completely monotone functions
@@ -21,10 +21,11 @@ transforms and the predicate that a finite measure represents a function by its 
 
 The finite-measure representation is the Hausdorff--Bernstein--Widder theorem, after
 S. Bernstein (1928) and D. V. Widder, *The Laplace Transform*, Chapter IV. The extraction
-argument follows the Bernstein-kernel proof described by D. Chafaï (2013). The Lean proofs of
-`chafai_identity` and the Bernstein-to-Laplace kernel convergence were adapted from Tau Ceti's
-Hille--Yosida formalization in `HilleYosida/BernsteinChafai.lean` and completed here; in
-particular, the `chafai_identity` that was `sorry` there is now proved.
+argument follows the Bernstein-kernel proof described by D. Chafaï (2013). This file provides
+the Laplace-transform API used by the finite-measure representation theorem.
+
+* Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem
+  milestone).
 -/
 
 public section
@@ -59,6 +60,30 @@ lemma continuous_laplaceKernel (t : ℝ) :
     Continuous fun x : ℝ≥0 => Real.exp (-(t * (x : ℝ))) := by
   fun_prop
 
+/-- The limiting Laplace kernel as a bundled bounded continuous test function of the
+nonnegative variable `p`, for fixed nonnegative `x`. -/
+noncomputable def laplaceKernelBoundedContinuous {x : ℝ} (hx : 0 ≤ x) : ℝ≥0 →ᵇ ℝ where
+  toFun := fun p => Real.exp (-(x * (p : ℝ)))
+  continuous_toFun := Real.continuous_exp.comp ((continuous_const.mul continuous_subtype_val).neg)
+  map_bounded' :=
+    ⟨1, fun p q => by
+      rw [Real.dist_eq]
+      have hp0 : 0 < Real.exp (-(x * (p : ℝ))) := Real.exp_pos _
+      have hp1 : Real.exp (-(x * (p : ℝ))) ≤ 1 := by
+        rw [Real.exp_le_one_iff]
+        exact neg_nonpos.mpr (mul_nonneg hx p.2)
+      have hq0 : 0 < Real.exp (-(x * (q : ℝ))) := Real.exp_pos _
+      have hq1 : Real.exp (-(x * (q : ℝ))) ≤ 1 := by
+        rw [Real.exp_le_one_iff]
+        exact neg_nonpos.mpr (mul_nonneg hx q.2)
+      exact abs_sub_le_iff.mpr ⟨by linarith, by linarith⟩⟩
+
+/-- The bundled limiting Laplace kernel evaluates to the usual exponential kernel on `ℝ≥0`. -/
+@[simp]
+lemma laplaceKernelBoundedContinuous_apply {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
+    laplaceKernelBoundedContinuous hx p = Real.exp (-(x * (p : ℝ))) := by
+  rw [laplaceKernelBoundedContinuous]; rfl
+
 /-- For `0 ≤ t`, the Laplace kernel is integrable against every finite measure on `ℝ≥0`. -/
 lemma integrable_laplaceKernel_of_nonneg (μ : Measure ℝ≥0) [IsFiniteMeasure μ]
     {t : ℝ} (ht : 0 ≤ t) :
@@ -74,7 +99,7 @@ lemma laplaceTransform_zero (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
   simp [laplaceTransform]
 
 /-- The Laplace transform of a positive measure is nonnegative. -/
-lemma laplaceTransform_nonneg (μ : Measure ℝ≥0) [IsFiniteMeasure μ] (t : ℝ) :
+lemma laplaceTransform_nonneg (μ : Measure ℝ≥0) (t : ℝ) :
     0 ≤ laplaceTransform μ t := by
   exact integral_nonneg fun x => Real.exp_nonneg _
 
@@ -110,6 +135,31 @@ theorem laplaceTransform_continuousOn_halfLine (μ : Measure ℝ≥0) [IsFiniteM
 For `0 < t`, this is the `n`-th ordinary derivative of `laplaceTransform μ` at `t`. -/
 private noncomputable def laplaceMomentTransform (μ : Measure ℝ≥0) (n : ℕ) (t : ℝ) : ℝ :=
   ∫ x : ℝ≥0, (-(x : ℝ)) ^ n * Real.exp (-(t * (x : ℝ))) ∂μ
+
+/-- The signed moment kernel is nonnegative after multiplying by the complete-monotonicity sign. -/
+private lemma neg_one_pow_mul_laplaceMomentTransform_nonneg
+    (μ : Measure ℝ≥0) (n : ℕ) (t : ℝ) :
+    0 ≤ (-1 : ℝ) ^ n * laplaceMomentTransform μ n t := by
+  rw [laplaceMomentTransform]
+  rw [← integral_const_mul]
+  refine integral_nonneg fun x => ?_
+  have hx : 0 ≤ (x : ℝ) := x.2
+  have hpow : 0 ≤ (x : ℝ) ^ n := pow_nonneg hx n
+  have hexp : 0 ≤ Real.exp (-(t * (x : ℝ))) := Real.exp_nonneg _
+  have heq : (-1 : ℝ) ^ n * ((-(x : ℝ)) ^ n * Real.exp (-(t * (x : ℝ)))) =
+      (x : ℝ) ^ n * Real.exp (-(t * (x : ℝ))) := by
+    rw [← mul_assoc, ← mul_pow, neg_one_mul, neg_neg]
+  simpa [heq] using mul_nonneg hpow hexp
+
+/-- Integrability of the zeroth moment makes the measure finite. -/
+private lemma isFiniteMeasure_of_integrable_moments
+    (μ : Measure ℝ≥0)
+    (hmom : ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ) :
+    IsFiniteMeasure μ := by
+  have hconst : Integrable (fun _ : ℝ≥0 => (1 : ℝ)) μ := by
+    simpa using hmom 0
+  exact (integrable_const_iff_isFiniteMeasure (μ := μ)
+    (by norm_num : (1 : ℝ) ≠ 0)).mp hconst
 
 /-- A polynomial times a decaying exponential is bounded on the closed half-line. -/
 private lemma exists_bound_pow_mul_exp_neg (n : ℕ) {b : ℝ} (hb : 0 < b) :
@@ -234,13 +284,15 @@ private lemma hasDerivAt_laplaceMomentTransform (μ : Measure ℝ≥0) [IsFinite
           exact hmul.neg
         have hder := hlin.exp.const_mul ((-(x : ℝ)) ^ n)
         simpa [pow_succ, mul_assoc, mul_comm, mul_left_comm] using hder)
-  -- Rewrite the private moment-transform definition to the differentiated integral just proved.
-  rw [show laplaceMomentTransform μ n =
-      (fun y : ℝ => ∫ x : ℝ≥0, (-(x : ℝ)) ^ n * Real.exp (-(y * (x : ℝ))) ∂μ) by
-        rfl]
-  rw [show laplaceMomentTransform μ (n + 1) t =
-      ∫ x : ℝ≥0, (-(x : ℝ)) ^ (n + 1) * Real.exp (-(t * (x : ℝ))) ∂μ by
-        rfl]
+  have hmoment_fun :
+      laplaceMomentTransform μ n =
+        (fun y : ℝ => ∫ x : ℝ≥0, (-(x : ℝ)) ^ n * Real.exp (-(y * (x : ℝ))) ∂μ) := by
+    rfl
+  have hmoment_deriv :
+      laplaceMomentTransform μ (n + 1) t =
+        ∫ x : ℝ≥0, (-(x : ℝ)) ^ (n + 1) * Real.exp (-(t * (x : ℝ))) ∂μ := by
+    rfl
+  rw [hmoment_fun, hmoment_deriv]
   exact h.2
 
 private lemma abs_exp_neg_sub_one_le {a : ℝ} (ha : 0 ≤ a) :
@@ -274,12 +326,14 @@ private lemma norm_laplaceMomentKernel_slope_zero_le (n : ℕ) {y : ℝ} (hy : 0
   calc
     ‖slope (fun z : ℝ => (-(x : ℝ)) ^ n * Real.exp (-(z * (x : ℝ)))) 0 y‖
         = |(-(x : ℝ)) ^ n| * |(Real.exp (-(y * (x : ℝ))) - 1) / y| := by
+          have hslope_rewrite :
+              (((-(x : ℝ)) ^ n * Real.exp (-(y * (x : ℝ))) -
+                    (-(x : ℝ)) ^ n) / y) =
+                (-(x : ℝ)) ^ n * ((Real.exp (-(y * (x : ℝ))) - 1) / y) := by
+            ring
           rw [Real.norm_eq_abs, slope_def_field]
           simp only [sub_zero, zero_mul, neg_zero, Real.exp_zero, mul_one]
-          rw [show (((-(x : ℝ)) ^ n * Real.exp (-(y * (x : ℝ))) -
-                (-(x : ℝ)) ^ n) / y) =
-              (-(x : ℝ)) ^ n * ((Real.exp (-(y * (x : ℝ))) - 1) / y) by ring,
-            abs_mul]
+          rw [hslope_rewrite, abs_mul]
     _ ≤ (x : ℝ) ^ n * (x : ℝ) := by
           simpa [hpow_abs] using mul_le_mul_of_nonneg_left hquot hpow_nonneg
     _ = (x : ℝ) ^ (n + 1) := by rw [pow_succ]
@@ -386,9 +440,10 @@ private lemma iteratedDerivWithin_laplaceTransform_eq_laplaceMomentTransform_Ici
 /-- If all moments of the representing measure are finite, its Laplace transform is smooth on the
 closed half-line in the existing `iteratedDerivWithin` sense. -/
 lemma laplaceTransform_contDiffOn_Ici_of_moments
-    (μ : Measure ℝ≥0) [IsFiniteMeasure μ]
+    (μ : Measure ℝ≥0)
     (hmom : ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ) :
     ContDiffOn ℝ (⊤ : ℕ∞) (laplaceTransform μ) (Ici 0) := by
+  haveI : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_moments μ hmom
   refine contDiffOn_of_differentiableOn_deriv (𝕜 := ℝ) (n := (⊤ : ℕ∞))
     (s := Ici (0 : ℝ)) (f := laplaceTransform μ) ?_
   intro m _hm
@@ -450,16 +505,7 @@ theorem laplaceTransform_isCompletelyMonotoneOnIoi
     IsCompletelyMonotoneOnIoi (laplaceTransform μ) := by
   refine ⟨laplaceTransform_contDiffOn_Ioi μ, fun n t ht => ?_⟩
   rw [iteratedDeriv_laplaceTransform_eq_laplaceMomentTransform μ n ht]
-  rw [laplaceMomentTransform]
-  rw [← integral_const_mul]
-  refine integral_nonneg fun x => ?_
-  have hx : 0 ≤ (x : ℝ) := x.2
-  have hpow : 0 ≤ (x : ℝ) ^ n := pow_nonneg hx n
-  have hexp : 0 ≤ Real.exp (-(t * (x : ℝ))) := Real.exp_nonneg _
-  have heq : (-1 : ℝ) ^ n * ((-(x : ℝ)) ^ n * Real.exp (-(t * (x : ℝ)))) =
-      (x : ℝ) ^ n * Real.exp (-(t * (x : ℝ))) := by
-    rw [← mul_assoc, ← mul_pow, neg_one_mul, neg_neg]
-  simpa [heq] using mul_nonneg hpow hexp
+  exact neg_one_pow_mul_laplaceMomentTransform_nonneg μ n t
 
 /-- The Laplace transform of a finite measure is completely monotone in the closed-half-line
 roadmap sense. -/
@@ -472,21 +518,13 @@ theorem laplaceTransform_isClosedCompletelyMonotone
 /-- Strong easy direction: with all moments finite, the Laplace transform satisfies the existing
 `IsCompletelyMonotone` predicate using derivatives within `[0, ∞)`. -/
 theorem laplaceTransform_isCompletelyMonotone_of_moments
-    (μ : Measure ℝ≥0) [hμ : IsFiniteMeasure μ]
+    (μ : Measure ℝ≥0)
     (hmom : ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ) :
     IsCompletelyMonotone (laplaceTransform μ) := by
+  haveI : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_moments μ hmom
   refine ⟨laplaceTransform_contDiffOn_Ici_of_moments μ hmom, fun n t ht => ?_⟩
   rw [iteratedDerivWithin_laplaceTransform_eq_laplaceMomentTransform_Ici μ hmom n ht]
-  rw [laplaceMomentTransform]
-  rw [← integral_const_mul]
-  refine integral_nonneg fun x => ?_
-  have hx : 0 ≤ (x : ℝ) := x.2
-  have hpow : 0 ≤ (x : ℝ) ^ n := pow_nonneg hx n
-  have hexp : 0 ≤ Real.exp (-(t * (x : ℝ))) := Real.exp_nonneg _
-  have heq : (-1 : ℝ) ^ n * ((-(x : ℝ)) ^ n * Real.exp (-(t * (x : ℝ)))) =
-      (x : ℝ) ^ n * Real.exp (-(t * (x : ℝ))) := by
-    rw [← mul_assoc, ← mul_pow, neg_one_mul, neg_neg]
-  simpa [heq] using mul_nonneg hpow hexp
+  exact neg_one_pow_mul_laplaceMomentTransform_nonneg μ n t
 
 /-! ## Representation predicate -/
 
