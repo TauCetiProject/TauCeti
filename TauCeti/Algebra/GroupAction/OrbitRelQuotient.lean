@@ -18,6 +18,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   original space.
 * `TauCeti.MulAction.orbitRelQuotientMapOfLE_bot_eq_iff`: equality after the bottom-to-`H`
   quotient map is membership in an `H`-orbit.
+* `TauCeti.MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem`: in a cancellative
+  action, two translates have the same `H`-orbit class exactly when the translators differ on
+  the right by an element of `H`; this holds for an arbitrary subgroup.
 * `TauCeti.MulAction.orbitRelQuotient_smul_eq_base_iff`: in a cancellative action, a
   translate has the same `H`-orbit class as the base point exactly when the translator is in
   `H`.
@@ -123,22 +126,34 @@ lemma orbitRelQuotientMapOfLE_bot_eq_iff (H : Subgroup G)
         _root_.MulAction.orbit H (orbitRelQuotientBotEquiv (G := G) (X := X) y) := by
   simp [orbitRelQuotientMapOfLE_bot_eq, Quotient.eq'', _root_.MulAction.orbitRel_apply]
 
+/-- In a cancellative action, two translates have the same subgroup-orbit quotient class
+exactly when the translators differ on the right by an element of the subgroup. This holds
+for an arbitrary subgroup; the normal-subgroup criterion
+`orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq` follows from it. -/
+lemma orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem [IsCancelSMul G X] (H : Subgroup G)
+    (x : X) (g k : G) :
+    (Quotient.mk'' (g • x) : _root_.MulAction.orbitRel.Quotient H X) =
+        Quotient.mk'' (k • x) ↔
+      g * k⁻¹ ∈ H := by
+  constructor
+  · intro h
+    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply] at h
+    rcases h with ⟨l, hl⟩
+    have hmul : ((l : G) * k) • x = g • x := by
+      simpa [Subgroup.smul_def, smul_smul] using hl
+    have hg : (l : G) * k = g := IsCancelSMul.right_cancel _ _ x hmul
+    simp [← hg, mul_assoc]
+  · intro hg
+    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply]
+    exact ⟨⟨g * k⁻¹, hg⟩, by simp [Subgroup.smul_def, smul_smul]⟩
+
 /-- In a cancellative action, a translate has the same subgroup-orbit quotient class as the
 base point exactly when the translating group element belongs to the subgroup. -/
 lemma orbitRelQuotient_smul_eq_base_iff [IsCancelSMul G X] (H : Subgroup G) (g : G) (x : X) :
     (Quotient.mk'' (g • x) : _root_.MulAction.orbitRel.Quotient H X) =
         Quotient.mk'' x ↔
       g ∈ H := by
-  constructor
-  · intro h
-    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply] at h
-    rcases h with ⟨k, hk⟩
-    have hkG : (k : G) • x = g • x := by
-      simpa [Subgroup.smul_def] using hk
-    exact (IsCancelSMul.right_cancel (k : G) g x hkG).symm ▸ k.2
-  · intro hg
-    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply]
-    exact ⟨⟨g, hg⟩, rfl⟩
+  simpa using orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem H x g 1
 
 /-- In a cancellative action by `G`, equality of two translates in the quotient by a normal
 subgroup `H` is equality of the corresponding inverse representatives in the normalizer
@@ -151,23 +166,10 @@ lemma orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq [IsCancelSMu
           ⟨g⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ =
         Subgroup.normalizerQuotientMk H
           ⟨k⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
-  constructor
-  · intro h
-    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply] at h
-    rcases h with ⟨l, hl⟩
-    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem]
-    have hmul : ((l : G) * k) • x = g • x := by
-      simpa [Subgroup.smul_def, smul_smul] using hl
-    have hg : (l : G) * k = g := IsCancelSMul.right_cancel _ _ x hmul
-    rw [← hg]
-    simpa [div_eq_mul_inv, mul_assoc] using
-      (inferInstance : H.Normal).conj_mem' _ (H.inv_mem l.2) k
-  · intro h
-    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem] at h
-    rw [Quotient.eq'', _root_.MulAction.orbitRel_apply]
-    have hmem : g * k⁻¹ ∈ H := by
-      simpa [mul_assoc] using (inferInstance : H.Normal).conj_mem _ (H.inv_mem h) g
-    exact ⟨⟨g * k⁻¹, hmem⟩, by simp [Subgroup.smul_def, smul_smul]⟩
+  rw [orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem,
+    Subgroup.normalizerQuotientMk_eq_iff_div_mem, div_eq_mul_inv, inv_inv,
+    (inferInstance : H.Normal).mem_comm_iff, ← inv_mem_iff]
+  simp [mul_inv_rev]
 
 private lemma normalizer_smul_mem_orbit (H : Subgroup G)
     (g : _root_.Subgroup.normalizer (H : Set G))
