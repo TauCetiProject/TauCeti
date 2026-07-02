@@ -57,7 +57,6 @@ lemma isEffective (D : EffectiveDivisorOfDegree X d) : IsEffective (D : WeilDivi
 lemma degree_eq (D : EffectiveDivisorOfDegree X d) : degree (D : WeilDivisor X) = d :=
   D.property.2
 
-@[simp]
 lemma mem_effectiveSubmonoid (D : EffectiveDivisorOfDegree X d) :
     (D : WeilDivisor X) ∈ effectiveSubmonoid X :=
   (WeilDivisor.mem_effectiveSubmonoid _).mpr D.isEffective
@@ -76,7 +75,6 @@ lemma coe_ofFinsupp (m : X →₀ ℕ) (hm : m.sum (fun _ n => n) = d) :
     (ofFinsupp m hm : WeilDivisor X) = WeilDivisor.ofFinsupp m :=
   rfl
 
-@[simp]
 lemma coeff_ofFinsupp (m : X →₀ ℕ) (hm : m.sum (fun _ n => n) = d) (x : X) :
     coeff (ofFinsupp m hm : WeilDivisor X) x = m x :=
   WeilDivisor.coeff_ofFinsupp m x
@@ -139,7 +137,6 @@ lemma coe_ofSym (s : Sym X d) :
     (ofSym s : WeilDivisor X) = WeilDivisor.ofFinsupp (Multiset.toFinsupp (s : Multiset X)) :=
   rfl
 
-@[simp]
 lemma coeff_ofSym (s : Sym X d) (x : X) :
     coeff (ofSym s : WeilDivisor X) x = (s : Multiset X).count x := by
   rw [coe_ofSym, WeilDivisor.coeff_ofFinsupp, Multiset.toFinsupp_apply]
