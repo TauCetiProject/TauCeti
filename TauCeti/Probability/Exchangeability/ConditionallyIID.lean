@@ -133,7 +133,7 @@ theorem conditionallyIIDWith_of_forall_rectangles {μ : Measure Ω} [IsFiniteMea
   refine ConditionallyIIDWith.intro hν ?_
   intro m k hk
   haveI : IsFiniteMeasure (blockLaw μ X k) := by
-    rw [blockLaw_apply]
+    rw [blockLaw_def]
     infer_instance
   refine measure_eq_of_forall_univ_pi ?_
   intro B hB

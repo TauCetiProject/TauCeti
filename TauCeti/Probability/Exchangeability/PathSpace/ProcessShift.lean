@@ -63,7 +63,7 @@ theorem processShift_eq_shift_iterate (X : ℕ → Ω → α) (m : ℕ) :
 `m`-fold path shift `(shift α)^[m]`. -/
 theorem map_processShift (μ : Measure Ω) {X : ℕ → Ω → α} (hX : ∀ i, AEMeasurable (X i) μ) (m : ℕ) :
     μ.map (processShift X m) = (pathLaw μ X).map ((shift α)^[m]) := by
-  rw [processShift_eq_shift_iterate, pathLaw_apply,
+  rw [processShift_eq_shift_iterate, pathLaw_def,
     AEMeasurable.map_map_of_aemeasurable (measurable_shift_iterate m).aemeasurable
       (aemeasurable_pi_lambda _ hX)]
 

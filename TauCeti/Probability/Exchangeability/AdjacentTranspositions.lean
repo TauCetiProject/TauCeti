@@ -43,7 +43,7 @@ private theorem prefixLaw_map_perm {μ : Measure Ω} {X : ℕ → Ω → α} {n 
     (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (τ : Equiv.Perm (Fin n)) :
     (prefixLaw μ X n).map (fun x : Fin n → α => fun i => x (τ i)) =
       blockLaw μ X fun i : Fin n => (τ i).val := by
-  simpa [Function.comp_def, prefixLaw_apply] using
+  simpa [Function.comp_def, prefixLaw_def] using
     map_blockLaw_reindex μ (fun i : Fin n => i.val) τ hX
 
 /-- The submonoid of finite permutations preserving the `n`-dimensional law of a process. -/
@@ -51,7 +51,7 @@ private def invariantSubmonoid (μ : Measure Ω) (X : ℕ → Ω → α) {n : �
     (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) : Submonoid (Equiv.Perm (Fin n)) where
   carrier := {σ | blockLaw μ X (fun i : Fin n => (σ i).val) = prefixLaw μ X n}
   one_mem' := by
-    simp [prefixLaw_apply]
+    simp [prefixLaw_def]
   mul_mem' := by
     intro σ τ hσ hτ
     calc
@@ -109,7 +109,7 @@ private theorem exchangeableAt_zero {μ : Measure Ω} {X : ℕ → Ω → α} :
     ExchangeableAt μ X 0 := by
   intro σ
   have hσ : σ = 1 := Subsingleton.elim σ 1
-  simp [hσ, prefixLaw_apply]
+  simp [hσ, prefixLaw_def]
 
 /-- A process is exchangeable iff each finite block is invariant under adjacent swaps. -/
 theorem iff_forall_adjacent_swap {μ : Measure Ω} {X : ℕ → Ω → α}
