@@ -360,7 +360,6 @@ theorem postcompHomeomorphPrecompEquiv_apply_eq (h : Y ≃ₜ Z) (e : W ≃ₜ X
   rfl
 
 /-- Two-sided coordinate change is functorial for iterated coordinate changes. -/
-@[simp]
 theorem postcompHomeomorphPrecompEquiv_trans_apply (h : Y ≃ₜ Z) (k : Z ≃ₜ Y')
     (e : W ≃ₜ X) (d : X' ≃ₜ W) (x : AmbientIsotopyClass X Y) :
     postcompHomeomorphPrecompEquiv k d (postcompHomeomorphPrecompEquiv h e x) =
