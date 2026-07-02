@@ -133,9 +133,7 @@ private lemma ae_upcrossings_condExp_lt_top
   -- The sequence `μ[f | 𝔽 n]` is adapted to the constant ambient filtration; used
   -- below for both `measurable_upcrossingsBefore` and `measurable_upcrossings`.
   let ℱ : Filtration ℕ (inferInstance : MeasurableSpace Ω) :=
-    { seq := fun _ => (inferInstance : MeasurableSpace Ω)
-      mono' := fun _ _ _ => le_refl _
-      le' := fun _ => le_refl _ }
+    Filtration.const ℕ (inferInstance : MeasurableSpace Ω) le_rfl
   have h_adapted : StronglyAdapted ℱ (fun n => μ[f | 𝔽 n]) :=
     fun n => stronglyMeasurable_condExp.mono (h_le n)
   -- Use monotone convergence on the ORIGINAL process (which IS monotone in N)
