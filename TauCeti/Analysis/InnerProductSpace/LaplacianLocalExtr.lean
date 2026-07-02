@@ -18,7 +18,7 @@ supplies the *necessary* direction and its multivariate Laplacian consequence, t
 building block of the Lane C maximum principle in the PDE roadmap.
 
 The one-dimensional necessary test `deriv_deriv_nonpos_of_isLocalMax` says that at a local maximum
-of a twice-differentiable `g : ℝ → ℝ` the second derivative is nonpositive. Restricting a function
+of a continuous `g : ℝ → ℝ` the second derivative is nonpositive. Restricting a function
 `f : E → ℝ` to a line `t ↦ f (x + t • w)` turns each diagonal Hessian entry into such a second
 derivative (`deriv_deriv_comp_line`), and summing over an orthonormal basis gives the Laplacian.
 
@@ -46,15 +46,15 @@ namespace TauCeti
 
 open InnerProductSpace Laplacian Topology
 
-/-- **Necessary second-derivative test.** At a local maximum of a twice-differentiable function
+/-- **Necessary second-derivative test.** At a local maximum of a continuous function
 `g : ℝ → ℝ`, the second derivative is nonpositive. -/
 theorem deriv_deriv_nonpos_of_isLocalMax {g : ℝ → ℝ} {t₀ : ℝ}
-    (hg : ContDiffAt ℝ 2 g t₀) (hmax : IsLocalMax g t₀) :
+    (hg : ContinuousAt g t₀) (hmax : IsLocalMax g t₀) :
     deriv (deriv g) t₀ ≤ 0 := by
   by_contra h
   rw [not_le] at h
   have hd : deriv g t₀ = 0 := hmax.deriv_eq_zero
-  have hmin : IsLocalMin g t₀ := isLocalMin_of_deriv_deriv_pos h hd hg.continuousAt
+  have hmin : IsLocalMin g t₀ := isLocalMin_of_deriv_deriv_pos h hd hg
   -- Being both a local minimum and a local maximum, `g` is eventually constant near `t₀`.
   have hconst : g =ᶠ[𝓝 t₀] fun _ => g t₀ := by
     filter_upwards [hmax, hmin] with y hy hy' using le_antisymm hy hy'
@@ -65,10 +65,10 @@ theorem deriv_deriv_nonpos_of_isLocalMax {g : ℝ → ℝ} {t₀ : ℝ}
     rw [hderiv.deriv_eq]; simp
   linarith
 
-/-- **Necessary second-derivative test, minimum version.** At a local minimum of a
-twice-differentiable function `g : ℝ → ℝ`, the second derivative is nonnegative. -/
+/-- **Necessary second-derivative test, minimum version.** At a local minimum of a continuous
+function `g : ℝ → ℝ`, the second derivative is nonnegative. -/
 theorem deriv_deriv_nonneg_of_isLocalMin {g : ℝ → ℝ} {t₀ : ℝ}
-    (hg : ContDiffAt ℝ 2 g t₀) (hmin : IsLocalMin g t₀) :
+    (hg : ContinuousAt g t₀) (hmin : IsLocalMin g t₀) :
     0 ≤ deriv (deriv g) t₀ := by
   have := deriv_deriv_nonpos_of_isLocalMax (g := -g) hg.neg hmin.neg
   simpa using this
@@ -142,7 +142,8 @@ theorem fderiv_fderiv_self_nonpos_of_isLocalMax {f : E → ℝ} {x : E}
     (hf : ContDiffAt ℝ 2 f x) (hmax : IsLocalMax f x) (w : E) :
     fderiv ℝ (fderiv ℝ f) x w w ≤ 0 := by
   rw [← deriv_deriv_comp_line hf w]
-  exact deriv_deriv_nonpos_of_isLocalMax (contDiffAt_comp_line hf w) (isLocalMax_comp_line hmax w)
+  exact deriv_deriv_nonpos_of_isLocalMax (contDiffAt_comp_line hf w).continuousAt
+    (isLocalMax_comp_line hmax w)
 
 /-- At an interior local minimum of a `C²` function `f : E → ℝ`, every diagonal Hessian entry is
 nonnegative. -/
@@ -150,7 +151,8 @@ theorem fderiv_fderiv_self_nonneg_of_isLocalMin {f : E → ℝ} {x : E}
     (hf : ContDiffAt ℝ 2 f x) (hmin : IsLocalMin f x) (w : E) :
     0 ≤ fderiv ℝ (fderiv ℝ f) x w w := by
   rw [← deriv_deriv_comp_line hf w]
-  exact deriv_deriv_nonneg_of_isLocalMin (contDiffAt_comp_line hf w) (isLocalMin_comp_line hmin w)
+  exact deriv_deriv_nonneg_of_isLocalMin (contDiffAt_comp_line hf w).continuousAt
+    (isLocalMin_comp_line hmin w)
 
 section FiniteDimensional
 
