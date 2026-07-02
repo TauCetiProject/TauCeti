@@ -268,7 +268,6 @@ lemma fundamentalGroupMulEquiv_zero_symm_apply (hp : p ≠ 0) (n : Multiplicativ
   rw [MulEquiv.apply_symm_apply, fundamentalGroupMulEquiv_zero_apply, MulEquiv.apply_symm_apply]
 
 /-- The inverse of the basepoint-`0` specialization has monodromy translation `n • p`. -/
-@[simp]
 lemma fundamentalGroupMulEquiv_zero_symm_monodromy (hp : p ≠ 0) (n : Multiplicative ℤ) :
     ((AddCircle.isCoveringMap_coe p).monodromy ((fundamentalGroupMulEquiv_zero p hp).symm n)
       ⟨0, by simp⟩ : ℝ) = n.toAdd • p := by
