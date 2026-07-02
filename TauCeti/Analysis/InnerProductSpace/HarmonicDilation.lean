@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+public import TauCeti.Analysis.InnerProductSpace.HarmonicIsometry
 public import TauCeti.Analysis.InnerProductSpace.Laplacian
 
 /-!
@@ -26,6 +27,8 @@ without reproving the Laplacian calculation each time.
 * `TauCeti.harmonicOnNhd_comp_homothety_right_iff`: set-level nonzero homothety invariance.
 * `TauCeti.harmonicAt_comp_smul_right_iff`: harmonicity is invariant under nonzero dilation.
 * `TauCeti.harmonicOnNhd_comp_smul_right_iff`: set-level nonzero dilation invariance.
+* `TauCeti.harmonicAt_comp_const_add_smul_iff`: harmonicity is invariant under the affine
+  normalization `z ↦ x + c • z` with nonzero scale.
 -/
 
 public section
@@ -192,6 +195,26 @@ theorem harmonicOnNhd_comp_smul_right_iff (c : ℝ) (hc : c ≠ 0) {f : E → F}
     simp [AffineMap.homothety_apply]
   rw [hfun, hset]
   exact harmonicOnNhd_comp_homothety_right_iff (0 : E) c hc
+
+/-- **Harmonicity is invariant under the affine normalization `z ↦ x + c • z`** when the scale
+is nonzero.
+
+For `c ≠ 0`, the function `z ↦ f (x + c • z)` is harmonic at `y` iff `f` is harmonic at
+`x + c • y`. -/
+theorem harmonicAt_comp_const_add_smul_iff (x : E) {c : ℝ} (hc : c ≠ 0) {f : E → F} {y : E} :
+    HarmonicAt (fun z ↦ f (x + c • z)) y ↔ HarmonicAt f (x + c • y) := by
+  have hfun : (fun z : E ↦ f (x + c • z)) = fun z ↦ (fun w : E ↦ f (x + w)) (c • z) := rfl
+  have hpoint : x + c • y = c • y + x := by rw [add_comm]
+  have hscale :=
+    harmonicAt_comp_smul_right_iff (c := c) hc (f := fun w : E ↦ f (x + w)) (x := y)
+  have htranslate :=
+    harmonicAt_comp_add_right_iff (f := f) (x := c • y) (a := x)
+  have hcomm : (fun w : E ↦ f (x + w)) = fun w ↦ f (w + x) := by
+    funext w
+    rw [add_comm]
+  rw [hcomm] at hscale
+  rw [hfun]
+  exact hscale.trans (by simpa [hpoint] using htranslate)
 
 end TauCeti
 
