@@ -38,7 +38,6 @@ theorem dvd_mul_sq_iff {a u : ℤ} (hu : ¬ (p : ℤ) ∣ u) :
   · exact absurd ((prime_intCast_of_fact (p := p)).dvd_of_dvd_pow hu2) hu
 
 /-- Multiplying by `u ^ 2` with `p ∤ u` preserves non-divisibility by `p`. -/
-@[simp]
 theorem not_dvd_mul_sq_iff {a u : ℤ} (hu : ¬ (p : ℤ) ∣ u) :
     ¬ (p : ℤ) ∣ a * u ^ 2 ↔ ¬ (p : ℤ) ∣ a :=
   not_congr (dvd_mul_sq_iff hu)
