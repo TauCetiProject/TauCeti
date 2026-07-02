@@ -152,12 +152,18 @@ of its inverse image. -/
 
 variable (R)
 
-/-- **The 2-rank of the class group when `Cl(R)/Cl(R)²` is finite-dimensional**: the `ZMod 2`
-dimension of the maximal elementary-2 quotient. In genus-theory applications the `t - 1` formula
-belongs to the narrow class group; for imaginary fields the narrow and ordinary class groups
-coincide. -/
-noncomputable def twoRank [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)] : ℕ :=
+/-- **The 2-rank of the class group**: the `ZMod 2` dimension of the maximal elementary-2
+quotient `Cl(R)/Cl(R)²` (zero, by convention of `Module.finrank`, when the quotient is
+infinite-dimensional). In genus-theory applications the `t - 1` formula belongs to the narrow
+class group; for imaginary fields the narrow and ordinary class groups coincide. -/
+noncomputable def twoRank : ℕ :=
   TauCeti.twoRank (ClassGroup R)
+
+/-- The 2-rank of the class group is the `ZMod 2` dimension of its maximal elementary-2 quotient
+`Cl(R) / Cl(R)²`. -/
+@[simp] theorem twoRank_def :
+    twoRank R = Module.finrank (ZMod 2) (ElementaryTwoQuotient R) :=
+  TauCeti.twoRank_def (ClassGroup R)
 
 /-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
 space of dimension the 2-rank. -/
@@ -175,15 +181,9 @@ theorem finrank_elementaryTwoQuotient_eq_of_mulEquiv {S : Type*} [CommRing S] [I
   TauCeti.finrank_elementaryTwoQuotient_eq_of_mulEquiv
     (G := ClassGroup R) (H := ClassGroup S) e
 
-/-- If `Cl(R)/Cl(R)²` is finite-dimensional, then a multiplicatively equivalent class group has
-the same elementary-2 rank; target finite-dimensionality is transported by the induced
-equivalence. -/
+/-- Multiplicatively equivalent class groups have the same elementary-2 rank. -/
 theorem twoRank_eq_of_mulEquiv {S : Type*} [CommRing S] [IsDomain S]
-    (e : ClassGroup R ≃* ClassGroup S)
-    [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)] :
-    letI : Module.Finite (ZMod 2) (ElementaryTwoQuotient S) :=
-      Module.Finite.of_surjective (elementaryTwoQuotientCongr e).toLinearMap
-        (elementaryTwoQuotientCongr e).surjective
+    (e : ClassGroup R ≃* ClassGroup S) :
     twoRank R = twoRank S :=
   TauCeti.twoRank_eq_of_mulEquiv (G := ClassGroup R) (H := ClassGroup S) e
 
