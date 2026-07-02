@@ -63,19 +63,16 @@ lemma degreeSection_apply (x₀ : X) (n : ℤ) :
     S.degreeSection x₀ n = n • S.divisorClass (ofPoint x₀) :=
   rfl
 
-@[simp]
 lemma degreeSection_one (x₀ : X) :
     S.degreeSection x₀ 1 = S.divisorClass (ofPoint x₀) := by
   simp
 
 /-- The descended weighted degree of the base-point class is the weight of the base point. -/
-@[simp]
 lemma weightedDegreeClass_divisorClass_ofPoint (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     (x₀ : X) : weightedDegreeClass w h (S.divisorClass (ofPoint x₀)) = w x₀ := by
   rw [weightedDegreeClass_divisorClass, weightedDegree_ofPoint]
 
 /-- The descended weighted degree of the degree section at `n` is `n * w x₀`. -/
-@[simp]
 lemma weightedDegreeClass_degreeSection (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     (x₀ : X) (n : ℤ) :
     weightedDegreeClass w h (S.degreeSection x₀ n) = n * w x₀ := by
