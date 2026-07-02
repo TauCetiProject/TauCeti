@@ -12,10 +12,11 @@ public import TauCeti.Geometry.Diffeomorphism.Group
 A diffeomorphism `e : M ≃ₘ^n⟮I, J⟯ N` conjugates self-diffeomorphisms of `M` into
 self-diffeomorphisms of `N` by `φ ↦ e ∘ φ ∘ e⁻¹`. Because this preserves composition, it is a
 group isomorphism `Diff I M n ≃* Diff J N n` between the self-diffeomorphism groups built in
-`TauCeti.Geometry.Diffeomorphism.Group`. This file records that isomorphism, `Diffeomorph.congr`,
-its pointwise action, and its functoriality: it is the identity on `Diffeomorph.refl`, respects
-`Diffeomorph.trans` and `Diffeomorph.symm`, and commutes with the forgetful homomorphism to the
-permutation group (`Diffeomorph.toPerm`) through Mathlib's `Equiv.permCongr`.
+`TauCeti.Geometry.Diffeomorphism.Group`. This file records that isomorphism,
+`Diffeomorph.diffCongr`, its pointwise action, and its functoriality: it is the identity on
+`Diffeomorph.refl`, respects `Diffeomorph.trans` and `Diffeomorph.symm`, and commutes with the
+forgetful homomorphism to the permutation group (`Diffeomorph.toPerm`) through Mathlib's
+`Equiv.permCongr`.
 
 This is the sense in which the group object of the geometric-topology roadmap
 (`TauCetiRoadmap/GeometricTopology/README.md`, layer 3, "diffeomorphism groups with the C^∞
@@ -33,18 +34,19 @@ for the naturality statement.
 
 ## Main definitions
 
-* `TauCeti.Diffeomorph.congr e`: the group isomorphism `Diff I M n ≃* Diff J N n` conjugating by a
-  diffeomorphism `e : M ≃ₘ^n⟮I, J⟯ N`.
+* `TauCeti.Diffeomorph.diffCongr e`: the group isomorphism `Diff I M n ≃* Diff J N n` conjugating by
+  a diffeomorphism `e : M ≃ₘ^n⟮I, J⟯ N`.
 
 ## Main results
 
-* `TauCeti.Diffeomorph.congr_apply_apply`: the pointwise action `congr e φ x = e (φ (e.symm x))`.
-* `TauCeti.Diffeomorph.congr_refl`: conjugating by the identity is the identity isomorphism.
-* `TauCeti.Diffeomorph.congr_trans`: `congr` turns `Diffeomorph.trans` into `MulEquiv.trans`, so it
-  is functorial on the groupoid of diffeomorphisms.
-* `TauCeti.Diffeomorph.congr_symm`: the inverse isomorphism conjugates by `e.symm`.
-* `TauCeti.Diffeomorph.toPerm_congr`: the forgetful homomorphism to the permutation group
-  intertwines `congr` with `Equiv.permCongr`.
+* `TauCeti.Diffeomorph.diffCongr_apply_apply`: the pointwise action
+  `diffCongr e φ x = e (φ (e.symm x))`.
+* `TauCeti.Diffeomorph.diffCongr_refl`: conjugating by the identity is the identity isomorphism.
+* `TauCeti.Diffeomorph.diffCongr_trans`: `diffCongr` turns `Diffeomorph.trans` into
+  `MulEquiv.trans`, so it is functorial on the groupoid of diffeomorphisms.
+* `TauCeti.Diffeomorph.diffCongr_symm`: the inverse isomorphism conjugates by `e.symm`.
+* `TauCeti.Diffeomorph.toPerm_diffCongr`: the forgetful homomorphism to the permutation group
+  intertwines `diffCongr` with `Equiv.permCongr`.
 -/
 
 public section
@@ -68,10 +70,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 namespace Diffeomorph
 
 /-- Conjugation by a diffeomorphism `e : M ≃ₘ^n⟮I, J⟯ N` as a group isomorphism between the
-self-diffeomorphism groups: `congr e φ = e ∘ φ ∘ e⁻¹`. This is the diffeomorphism analogue of
+self-diffeomorphism groups: `diffCongr e φ = e ∘ φ ∘ e⁻¹`. This is the diffeomorphism analogue of
 `Equiv.permCongr` and expresses that diffeomorphic manifolds have isomorphic self-diffeomorphism
 groups. -/
-@[expose] def congr (e : M ≃ₘ^n⟮I, J⟯ N) : (M ≃ₘ^n⟮I, I⟯ M) ≃* (N ≃ₘ^n⟮J, J⟯ N) where
+@[expose] def diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) : (M ≃ₘ^n⟮I, I⟯ M) ≃* (N ≃ₘ^n⟮J, J⟯ N) where
   toFun φ := (e.symm.trans φ).trans e
   invFun ψ := (e.trans ψ).trans e.symm
   left_inv φ := by
@@ -84,42 +86,44 @@ groups. -/
     ext x
     simp [mul_def, _root_.Diffeomorph.coe_trans]
 
-/-- The conjugating isomorphism acts pointwise by `congr e φ x = e (φ (e.symm x))`. -/
+/-- The conjugating isomorphism acts pointwise by `diffCongr e φ x = e (φ (e.symm x))`. -/
 @[simp]
-theorem congr_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) (x : N) :
-    congr e φ x = e (φ (e.symm x)) := rfl
+theorem diffCongr_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) (x : N) :
+    diffCongr e φ x = e (φ (e.symm x)) := rfl
 
-/-- The underlying diffeomorphism of `congr e φ` is `e ∘ φ ∘ e⁻¹`. -/
-theorem congr_apply (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
-    congr e φ = (e.symm.trans φ).trans e := rfl
+/-- The underlying diffeomorphism of `diffCongr e φ` is `e ∘ φ ∘ e⁻¹`. -/
+theorem diffCongr_apply (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
+    diffCongr e φ = (e.symm.trans φ).trans e := rfl
 
-/-- The inverse of `congr e φ` is `congr e φ⁻¹`, since conjugation is a homomorphism. -/
-theorem congr_inv (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
-    (congr e φ)⁻¹ = congr e φ⁻¹ := (map_inv (congr e) φ).symm
+/-- The inverse of `diffCongr e φ` is `diffCongr e φ⁻¹`, since conjugation is a homomorphism. -/
+theorem diffCongr_inv (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
+    (diffCongr e φ)⁻¹ = diffCongr e φ⁻¹ := (map_inv (diffCongr e) φ).symm
 
 /-- Conjugating by the identity diffeomorphism is the identity isomorphism. -/
 @[simp]
-theorem congr_refl : congr (_root_.Diffeomorph.refl I M n) = MulEquiv.refl (M ≃ₘ^n⟮I, I⟯ M) := by
+theorem diffCongr_refl :
+    diffCongr (_root_.Diffeomorph.refl I M n) = MulEquiv.refl (M ≃ₘ^n⟮I, I⟯ M) := by
   ext φ x
   simp
 
 /-- Conjugation is functorial: conjugating by a composite diffeomorphism is the composite of the
 conjugating isomorphisms. -/
 @[simp]
-theorem congr_trans (e : M ≃ₘ^n⟮I, J⟯ N) (e' : N ≃ₘ^n⟮J, K⟯ P) :
-    congr (e.trans e') = (congr e).trans (congr e') := by
+theorem diffCongr_trans (e : M ≃ₘ^n⟮I, J⟯ N) (e' : N ≃ₘ^n⟮J, K⟯ P) :
+    diffCongr (e.trans e') = (diffCongr e).trans (diffCongr e') := by
   ext φ x
   simp [_root_.Diffeomorph.coe_trans, _root_.Diffeomorph.symm_trans']
 
 /-- The isomorphism conjugating by `e.symm` is the inverse of the one conjugating by `e`. -/
 @[simp]
-theorem congr_symm (e : M ≃ₘ^n⟮I, J⟯ N) : (congr e).symm = congr e.symm := by
+theorem diffCongr_symm (e : M ≃ₘ^n⟮I, J⟯ N) : (diffCongr e).symm = diffCongr e.symm := by
   ext ψ x
   rfl
 
-/-- Forgetting smoothness intertwines `congr` with `Equiv.permCongr` on the permutation groups. -/
-theorem toPerm_congr (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
-    toPerm (congr e φ) = e.toEquiv.permCongr (toPerm φ) := by
+/-- Forgetting smoothness intertwines `diffCongr` with `Equiv.permCongr` on the permutation
+groups. -/
+theorem toPerm_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
+    toPerm (diffCongr e φ) = e.toEquiv.permCongr (toPerm φ) := by
   ext x
   simp [toPerm, Equiv.permCongr_apply]
 
