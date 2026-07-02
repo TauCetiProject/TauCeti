@@ -131,14 +131,12 @@ lemma energyIntegrand_zero_drift_comm_on {Ω : Set X} {a : X → Matrix n n ℝ}
 
 /-- A pointwise symmetric coefficient field gives a bundled symmetric zero-drift jet form at
 each point of the domain. -/
-@[simp]
 lemma energyIntegrand_zero_drift_flip_eq_on {Ω : Set X} {a : X → Matrix n n ℝ}
     (ha : ∀ ⦃x⦄, x ∈ Ω → (a x).IsSymm) {x : X} (hx : x ∈ Ω) (c : X → ℝ) :
     (energyIntegrand (a x) 0 (c x)).flip = energyIntegrand (a x) 0 (c x) :=
   energyIntegrand_zero_drift_flip_eq_of_isSymm (ha hx) (c x)
 
 /-- Bundled symmetry of the shifted Laplacian jet form. -/
-@[simp]
 lemma energyIntegrand_one_zero_mass_flip_eq (c : ℝ) :
     (energyIntegrand (1 : Matrix n n ℝ) 0 c).flip =
       energyIntegrand (1 : Matrix n n ℝ) 0 c :=

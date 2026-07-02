@@ -75,7 +75,6 @@ theorem map_zero (S : StronglyContinuousSemigroup X) :
 
 omit [CompleteSpace X] in
 /-- Pointwise form of `StronglyContinuousSemigroup.map_zero`. -/
-@[simp]
 theorem map_zero_apply (S : StronglyContinuousSemigroup X) (x : X) :
     S 0 x = x := by
   rw [S.map_zero]
@@ -90,7 +89,6 @@ theorem map_add (S : StronglyContinuousSemigroup X) (s t : ℝ≥0) :
 
 omit [CompleteSpace X] in
 /-- Pointwise form of `StronglyContinuousSemigroup.map_add`. -/
-@[simp]
 theorem map_add_apply (S : StronglyContinuousSemigroup X) (s t : ℝ≥0) (x : X) :
     S (s + t) x = S s (S t x) := by
   rw [S.map_add]
@@ -202,7 +200,6 @@ theorem ContractionSemigroup.contracting_real (S : ContractionSemigroup X)
 
 omit [CompleteSpace X] in
 /-- `S(t) x` at `t = 0` equals `x`, pointwise version. -/
-@[simp]
 theorem StronglyContinuousSemigroup.realOperator_zero_apply
     (S : StronglyContinuousSemigroup X) (x : X) :
     S.realOperator 0 x = x := by
