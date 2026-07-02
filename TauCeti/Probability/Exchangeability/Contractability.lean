@@ -2,7 +2,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Order.Fin.Basic
-public import Mathlib.Data.Fin.VecNotation
+public import Mathlib.Order.Fin.Tuple
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 import Mathlib.Logic.Equiv.Fintype
 import TauCeti.Probability.Exchangeability.FiniteMarginals
@@ -57,10 +57,8 @@ theorem Contractable.map_single {μ : Measure Ω} {X : ℕ → Ω → α} (h : C
 /-- The two-coordinate specialization of contractability. -/
 theorem Contractable.map_pair {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
     {i j : ℕ} (hij : i < j) :
-    blockLaw μ X ![i, j] = prefixLaw μ X 2 := by
-  refine h.map ?_
-  intro r s hrs
-  fin_cases r <;> fin_cases s <;> simp_all
+    blockLaw μ X ![i, j] = prefixLaw μ X 2 :=
+  h.map (strictMono_vecEmpty.vecCons hij)
 
 /-- Contractability is preserved by passing to a strictly increasing subsequence. -/
 theorem Contractable.comp {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
