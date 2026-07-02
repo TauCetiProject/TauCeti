@@ -84,14 +84,12 @@ lemma complexAssociatedForm_apply (ω : SymplecticForm V) (J : AlmostComplexStru
     ω.complexAssociatedForm J v w = (ω v (J w) : ℂ) + Complex.I * (ω v w : ℂ) := rfl
 
 /-- The real part of the complex associated form is the metric `g(v, w) = ω(v, J w)`. -/
-@[simp]
 lemma complexAssociatedForm_re (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (v w : V) :
     (ω.complexAssociatedForm J v w).re = ω v (J w) := by
   simp [complexAssociatedForm]
 
 /-- The imaginary part of the complex associated form is the symplectic form `ω(v, w)`. -/
-@[simp]
 lemma complexAssociatedForm_im (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (v w : V) :
     (ω.complexAssociatedForm J v w).im = ω v w := by
@@ -145,7 +143,6 @@ lemma complexAssociatedForm_smul_right (ω : SymplecticForm V) (J : AlmostComple
 
 /-- The diagonal of the complex associated form is real and equals the metric diagonal
 `ω(v, J v)`. -/
-@[simp]
 lemma complexAssociatedForm_self (ω : SymplecticForm V) (J : AlmostComplexStructure V) (v : V) :
     ω.complexAssociatedForm J v v = (ω v (J v) : ℂ) := by
   simp [complexAssociatedForm]

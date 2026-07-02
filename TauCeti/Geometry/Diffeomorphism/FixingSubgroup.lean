@@ -85,13 +85,11 @@ theorem mem_fixingSubgroup_of_forall {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M}
   mem_fixingSubgroup_iff.mpr hf
 
 /-- The relative diffeomorphism group fixing the empty set is the full diffeomorphism group. -/
-@[simp]
 theorem fixingSubgroup_empty :
     fixingSubgroup (I := I) (M := M) (n := n) (∅ : Set M) = ⊤ := by
   exact _root_.fixingSubgroup_empty (M := M ≃ₘ^n⟮I, I⟯ M) (α := M)
 
 /-- The relative diffeomorphism group fixing all points is trivial. -/
-@[simp]
 theorem fixingSubgroup_univ :
     fixingSubgroup (I := I) (M := M) (n := n) (Set.univ : Set M) = ⊥ := by
   exact TauCeti.fixingSubgroup_univ (G := M ≃ₘ^n⟮I, I⟯ M) (α := M)
