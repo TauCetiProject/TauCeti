@@ -102,17 +102,16 @@ lemma fiberMap_smul (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (φ : Deck p)
     (e : p ⁻¹' {b}) :
     fiberMap h hpq b (φ • e) = conjMulEquiv h hpq φ • fiberMap h hpq b e := by
   ext
-  simp
+  simp [fiber_smul_eq_fiberHomeomorph]
 
 /-- The inverse fibre transport intertwines the restricted deck action with inverse
 conjugation of deck transformations. -/
-@[simp]
 lemma fiberMap_symm_smul (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (ψ : Deck q)
     (f : q ⁻¹' {b}) :
     (fiberMap h hpq b).symm (ψ • f) =
       (conjMulEquiv h hpq).symm ψ • (fiberMap h hpq b).symm f := by
   ext
-  simp
+  simp [fiber_smul_eq_fiberHomeomorph]
 
 /-- Transporting a deck transformation to the target cover and then restricting it to a fibre
 is the same as restricting first and conjugating the resulting fibre homeomorphism by the fibre
@@ -136,7 +135,7 @@ lemma fiberHomeomorphHom_conjMulEquiv (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p
   simp
 
 /-- Conjugation transports stabilizer membership along the fibre map. -/
-@[simp, grind =]
+@[grind =]
 lemma mem_stabilizer_conjMulEquiv_fiberMap_iff (h : E ≃ₜ F)
     (hpq : ∀ e, q (h e) = p e) (φ : Deck p) (e : p ⁻¹' {b}) :
     conjMulEquiv h hpq φ ∈ MulAction.stabilizer (Deck q) (fiberMap h hpq b e) ↔
@@ -211,7 +210,7 @@ theorem fiberMap_image_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : 
     exact fiberMap_mem_orbit h hpq φ e
   · rintro ⟨ψ, rfl⟩
     refine ⟨(conjMulEquiv h hpq).symm ψ • e, ⟨(conjMulEquiv h hpq).symm ψ, rfl⟩, ?_⟩
-    simpa using fiberMap_smul h hpq ((conjMulEquiv h hpq).symm ψ) e
+    simp
 
 /-- Applying a deck transformation and then transporting back to the source fibre gives a
 point in the source deck orbit. -/
@@ -223,7 +222,6 @@ lemma fiberMap_symm_mem_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (ψ 
 
 /-- The inverse fibre map carries the deck orbit of a point onto the deck orbit of the
 transported point. -/
-@[simp]
 theorem fiberMap_symm_image_orbit (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (f : q ⁻¹' {b}) :
     (fiberMap h hpq b).symm '' MulAction.orbit (Deck q) f =
@@ -261,7 +259,6 @@ theorem mem_orbit_fiberMap_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     exact congrArg (fiberMap h hpq b) hφ
 
 /-- Transporting both target-fibre points back preserves membership in deck orbits. -/
-@[simp]
 theorem mem_orbit_fiberMap_symm_iff (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (f f' : q ⁻¹' {b}) :
     (fiberMap h hpq b).symm f' ∈

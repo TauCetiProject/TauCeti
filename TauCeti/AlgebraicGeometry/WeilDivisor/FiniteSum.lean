@@ -191,7 +191,6 @@ lemma isEffective_ofFinsetWithMultiplicity (s : Finset X) (m : X → ℕ) :
 
 /-- A named finite-set divisor with natural multiplicities belongs to the effective divisor
 submonoid. -/
-@[simp]
 lemma ofFinsetWithMultiplicity_mem_effectiveSubmonoid (s : Finset X) (m : X → ℕ) :
     ofFinsetWithMultiplicity s m ∈ effectiveSubmonoid X :=
   (mem_effectiveSubmonoid _).mpr (isEffective_ofFinsetWithMultiplicity s m)
@@ -204,7 +203,6 @@ lemma support_ofFinsetWithMultiplicity_subset (s : Finset X) (m : X → ℕ) :
 
 /-- A point is in the support of a named finite-set divisor with multiplicities exactly when it
 is selected and has nonzero multiplicity. -/
-@[simp]
 lemma mem_support_ofFinsetWithMultiplicity_iff {s : Finset X} {m : X → ℕ} {x : X} :
     x ∈ (ofFinsetWithMultiplicity s m : WeilDivisor X).support ↔ x ∈ s ∧ m x ≠ 0 := by
   classical
@@ -317,7 +315,6 @@ lemma isEffective_ofFinset (s : Finset X) : IsEffective (ofFinset s : WeilDiviso
   isEffective_ofFinsetWithMultiplicity s fun _ => 1
 
 /-- The named coefficient-one finite-set divisor belongs to the effective divisor submonoid. -/
-@[simp]
 lemma ofFinset_mem_effectiveSubmonoid (s : Finset X) :
     ofFinset s ∈ effectiveSubmonoid X :=
   (mem_effectiveSubmonoid _).mpr (isEffective_ofFinset s)

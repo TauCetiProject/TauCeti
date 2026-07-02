@@ -107,7 +107,6 @@ lemma baseChangePointsMulEquiv_symm_apply_tmul_single_generator (n : ℕ)
 
 /-- The inverse base-changed roots-of-unity points equivalence takes the standard generator to
 the chosen root of unity. -/
-@[simp]
 lemma baseChangePointsMulEquiv_symm_apply_single_generator (n : ℕ) (ζ : rootsOfUnity n A) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) n).symm ζ).ofConv
         (1 ⊗ₜ[k] MonoidAlgebra.single (generator n) (1 : k)) =
@@ -119,7 +118,6 @@ variable {B : Type*} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower
 
 /-- The base-changed roots-of-unity points equivalence is natural in the value algebra:
 post-composing a point with a `K`-algebra map applies the induced map on roots of unity. -/
-@[simp]
 lemma baseChangePointsMulEquiv_mapValue (n : ℕ) (φ : A →ₐ[K] B)
     (f : WithConv (K ⊗[k] MonoidAlgebra k (Multiplicative (ZMod n)) →ₐ[K] A)) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := B) n
@@ -131,7 +129,6 @@ lemma baseChangePointsMulEquiv_mapValue (n : ℕ) (φ : A →ₐ[K] B)
 
 /-- Naturality of the inverse base-changed roots-of-unity points equivalence in the value
 algebra. -/
-@[simp]
 lemma mapValue_baseChangePointsMulEquiv_symm_apply (n : ℕ) (φ : A →ₐ[K] B)
     (ζ : rootsOfUnity n A) :
     AlgHom.mapValue (H := K ⊗[k] MonoidAlgebra k (Multiplicative (ZMod n))) φ

@@ -101,7 +101,6 @@ theorem baseChangePointsMulEquiv_symm_apply_tmul_T (u : Aˣ) (s : K) (n : ℤ) :
 
 /-- The inverse base-changed multiplicative-group points equivalence takes `1 ⊗ T` to the
 chosen unit. -/
-@[simp]
 theorem baseChangePointsMulEquiv_symm_apply_T (u : Aˣ) :
     ((baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u).ofConv
         (1 ⊗ₜ[k] LaurentPolynomial.T 1) =
@@ -113,7 +112,6 @@ variable {B : Type w'} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTow
 
 /-- Reading a base-changed `𝔾_m` point as a unit is natural in the value algebra:
 post-composing the point with a `K`-algebra map applies the induced map on unit groups. -/
-@[simp]
 theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
     (f : WithConv (K ⊗[k] k[T;T⁻¹] →ₐ[K] A)) :
     baseChangePointsMulEquiv
@@ -125,7 +123,6 @@ theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
 
 /-- Naturality of the inverse base-changed multiplicative-group points equivalence in the
 value algebra. -/
-@[simp]
 theorem mapValue_baseChangePointsMulEquiv_symm_apply (φ : A →ₐ[K] B) (u : Aˣ) :
     AlgHom.mapValue (H := K ⊗[k] k[T;T⁻¹]) φ
         ((baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u) =

@@ -128,7 +128,6 @@ lemma stdSymplecticForm_compatible_product :
 
 /-- The metric `g = ω₀(·, J ·)` associated to the standard compatible triple is the
 componentwise inner product on `V × V`. -/
-@[simp]
 lemma stdSymplecticForm_associatedBilinForm_product (u w : V × V) :
     (stdSymplecticForm (V := V)).associatedBilinForm (AlmostComplexStructure.product V) u w =
       ⟪u.1, w.1⟫_ℝ + ⟪u.2, w.2⟫_ℝ := by

@@ -292,14 +292,12 @@ theorem comp_smul {M N P : ComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) (g :
   rfl
 
 /-- Composing the zero morphism on the left gives the zero morphism. -/
-@[simp]
 theorem zero_comp {M N P : ComoduleCat.{u, v, w} R C} (f : N ⟶ P) :
     (0 : M ⟶ N) ≫ f = 0 := by
   ext m
   exact map_zero f.toLinearMap
 
 /-- Composing the zero morphism on the right gives the zero morphism. -/
-@[simp]
 theorem comp_zero {M N P : ComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
     f ≫ (0 : N ⟶ P) = 0 := by
   ext m

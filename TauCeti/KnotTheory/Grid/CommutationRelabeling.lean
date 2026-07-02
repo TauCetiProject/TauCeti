@@ -58,7 +58,6 @@ theorem columnArc_relabelColumns (κ : Equiv.Perm (Fin n)) (c : Fin n) :
 
 /-- Membership in a column arc after column relabeling is membership in the old arc with the
 inverse column label. -/
-@[simp]
 theorem mem_columnArc_relabelColumns (κ : Equiv.Perm (Fin n)) (c r : Fin n) :
     r ∈ columnArc (G.relabelColumns κ) c ↔ r ∈ columnArc G (κ.symm c) := by
   rw [columnArc_relabelColumns]
@@ -71,7 +70,6 @@ theorem columnArc_swapColumns (a b c : Fin n) :
 
 /-- Membership in a column arc after a column swap is membership in the old arc with the swapped
 column label. -/
-@[simp]
 theorem mem_columnArc_swapColumns (a b c r : Fin n) :
     r ∈ columnArc (G.swapColumns a b) c ↔ r ∈ columnArc G (Equiv.swap a b c) := by
   rw [columnArc_swapColumns]
@@ -98,7 +96,6 @@ theorem rowArc_relabelRows (ρ : Equiv.Perm (Fin n)) (r : Fin n) :
 
 /-- Membership in a row arc after row relabeling is membership in the old arc with the inverse
 row label. -/
-@[simp]
 theorem mem_rowArc_relabelRows (ρ : Equiv.Perm (Fin n)) (r c : Fin n) :
     c ∈ rowArc (G.relabelRows ρ) r ↔ c ∈ rowArc G (ρ.symm r) := by
   rw [rowArc_relabelRows]
@@ -111,7 +108,6 @@ theorem rowArc_swapRows (a b r : Fin n) :
 
 /-- Membership in a row arc after a row swap is membership in the old arc with the swapped row
 label. -/
-@[simp]
 theorem mem_rowArc_swapRows (a b r c : Fin n) :
     c ∈ rowArc (G.swapRows a b) r ↔ c ∈ rowArc G (Equiv.swap a b r) := by
   rw [rowArc_swapRows]

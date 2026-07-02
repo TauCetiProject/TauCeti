@@ -122,7 +122,7 @@ noncomputable def liftBialgHom (f : H →ₐc[R] K)
 @[simp]
 theorem liftBialgHom_mk (f : H →ₐc[R] K)
     (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) (h : H) :
-    liftBialgHom J f hf (Ideal.Quotient.mkₐ R J h) = f h := by
+    liftBialgHom J f hf (Ideal.Quotient.mk J h) = f h := by
   rw [liftBialgHom]
   exact liftBialgHomAlg_mk J f hf h
 
@@ -132,8 +132,7 @@ theorem liftBialgHom_comp_mkBialgHom (f : H →ₐc[R] K)
     (hf : J ≤ RingHom.ker f.toAlgHom.toRingHom) :
     (liftBialgHom J f hf).comp (Bialgebra.Quotient.mkBialgHom J) = f := by
   ext h
-  rw [BialgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_apply,
-    ← Ideal.Quotient.mkₐ_eq_mk (R₁ := R), liftBialgHom_mk]
+  rw [BialgHom.comp_apply, Bialgebra.Quotient.mkBialgHom_apply, liftBialgHom_mk]
 
 /-- A bialgebra morphism out of the quotient is determined by its precomposition with the
 quotient map. -/

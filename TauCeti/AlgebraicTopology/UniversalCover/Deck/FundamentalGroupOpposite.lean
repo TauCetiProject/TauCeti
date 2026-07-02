@@ -89,7 +89,6 @@ lemma deckFundamentalGroupEquiv_symm_op [SimplyConnectedSpace E]
 
 /-- The loop class attached to a deck transformation has monodromy equal to that deck
 transformation on the chosen lift. -/
-@[simp]
 lemma deckFundamentalGroupEquiv_unop_monodromy [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (φ : Deck p) :
     (hp.monodromy ((hreg.deckFundamentalGroupEquiv hp e φ).unop) e : E) = φ • (e : E) := by
@@ -135,7 +134,6 @@ lemma deckFundamentalGroupEquiv_symm_op_eq_iff [SimplyConnectedSpace E]
 
 /-- A deck transformation maps to the identity loop class exactly when it fixes the chosen
 lift. -/
-@[simp]
 lemma deckFundamentalGroupEquiv_eq_one_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (φ : Deck p) :
     hreg.deckFundamentalGroupEquiv hp e φ = 1 ↔ φ • (e : E) = e := by
@@ -151,7 +149,6 @@ lemma deckFundamentalGroupEquiv_eq_one_iff [SimplyConnectedSpace E]
 
 /-- Under the deck-to-fundamental-group comparison, the deck-to-fibre equivalence for a
 regular cover agrees with the monodromy equivalence from `π₁` to the same fibre. -/
-@[simp]
 lemma deckEquivFiber_eq_fundamentalGroupEquivFiber [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p)
     (e : p ⁻¹' {x}) (φ : Deck p) :

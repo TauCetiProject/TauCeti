@@ -94,7 +94,6 @@ instance : PartialOrder (Subcomodule R C M) :=
 theorem mem_carrier {N : Subcomodule R C M} {m : M} : m ∈ N.carrier ↔ m ∈ N :=
   Iff.rfl
 
-@[simp]
 theorem mem_toSubmodule {N : Subcomodule R C M} {m : M} : m ∈ N.toSubmodule ↔ m ∈ N :=
   Iff.rfl
 

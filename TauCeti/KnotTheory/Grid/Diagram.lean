@@ -123,7 +123,6 @@ theorem mem_pointSet (x : GridState n) (p : Fin n × Fin n) :
     exact Finset.mem_image.mpr ⟨p.1, Finset.mem_univ _, by ext <;> simp [hp]⟩
 
 /-- The square `(c, r)` lies in a grid state's point set exactly when `x c = r`. -/
-@[simp]
 theorem mk_mem_pointSet (x : GridState n) (c r : Fin n) :
     (c, r) ∈ x.pointSet ↔ x c = r := by
   simp
@@ -155,12 +154,10 @@ def columnOfRow (x : GridState n) (r : Fin n) : Fin n :=
   x.toPerm.symm r
 
 /-- The point in row `r` lies in column `columnOfRow x r`. -/
-@[simp]
 theorem apply_columnOfRow (x : GridState n) (r : Fin n) : x (x.columnOfRow r) = r := by
   simp [columnOfRow]
 
 /-- The column containing the point in row `x c` is `c`. -/
-@[simp]
 theorem columnOfRow_apply (x : GridState n) (c : Fin n) : x.columnOfRow (x c) = c := by
   simp [columnOfRow]
 
@@ -177,7 +174,6 @@ theorem pointSet_inj {x y : GridState n} : x.pointSet = y.pointSet ↔ x = y := 
 
 /-- A square lies in both state point sets exactly when both state permutations send its
 column to its row. -/
-@[simp]
 theorem mem_pointSet_inter (x y : GridState n) (p : Fin n × Fin n) :
     p ∈ x.pointSet ∩ y.pointSet ↔ x p.1 = p.2 ∧ y p.1 = p.2 := by
   simp
@@ -269,7 +265,6 @@ theorem relabelRows_relabelColumns (ρ κ : Equiv.Perm (Fin n)) (x : GridState n
   simp
 
 /-- Membership in the point set after a row relabeling. -/
-@[simp]
 theorem mem_pointSet_relabelRows (ρ : Equiv.Perm (Fin n)) (x : GridState n)
     (p : Fin n × Fin n) :
     p ∈ (x.relabelRows ρ).pointSet ↔ (p.1, ρ.symm p.2) ∈ x.pointSet := by
@@ -283,7 +278,6 @@ theorem mem_pointSet_relabelRows (ρ : Equiv.Perm (Fin n)) (x : GridState n)
     simp
 
 /-- Membership in the point set after a column relabeling. -/
-@[simp]
 theorem mem_pointSet_relabelColumns (κ : Equiv.Perm (Fin n)) (x : GridState n)
     (p : Fin n × Fin n) :
     p ∈ (x.relabelColumns κ).pointSet ↔ (κ.symm p.1, p.2) ∈ x.pointSet := by
@@ -445,7 +439,6 @@ theorem columnSwapNeighbors_eq_empty_of_one (x : GridState 1) :
 
 /-- A grid state is not a column-swap neighbour of itself: swapping two distinct columns moves the
 occupied row of either column, so the result differs from the original. -/
-@[simp]
 theorem self_notMem_columnSwapNeighbors (x : GridState n) : x ∉ x.columnSwapNeighbors := by
   rw [mem_columnSwapNeighbors]
   rintro ⟨c, d, hcd, hx⟩
@@ -454,20 +447,17 @@ theorem self_notMem_columnSwapNeighbors (x : GridState n) : x ∉ x.columnSwapNe
   exact hcd (x.toPerm.injective hval)
 
 /-- Row swaps transport the point set by the row transposition. -/
-@[simp]
 theorem mem_pointSet_swapRows (a b : Fin n) (x : GridState n) (p : Fin n × Fin n) :
     p ∈ (x.swapRows a b).pointSet ↔ (p.1, Equiv.swap a b p.2) ∈ x.pointSet := by
   simpa [swapRows] using GridState.mem_pointSet_relabelRows (Equiv.swap a b) x p
 
 /-- Column swaps transport the point set by the column transposition. -/
-@[simp]
 theorem mem_pointSet_swapColumns (a b : Fin n) (x : GridState n) (p : Fin n × Fin n) :
     p ∈ (x.swapColumns a b).pointSet ↔ (Equiv.swap a b p.1, p.2) ∈ x.pointSet := by
   simp [swapColumns]
 
 /-- A square is shared by a grid state and a column relabeling exactly when it is a
 source-state square whose column is fixed by the relabeling permutation. -/
-@[simp]
 theorem mem_pointSet_inter_relabelColumns_iff (x : GridState n) (κ : Equiv.Perm (Fin n))
     (p : Fin n × Fin n) :
     p ∈ x.pointSet ∩ (x.relabelColumns κ).pointSet ↔ p ∈ x.pointSet ∧ κ p.1 = p.1 := by
@@ -506,7 +496,6 @@ theorem swapColumns_swapColumns (a b : Fin n) (x : GridState n) :
 
 /-- A square is shared by a grid state and the state with columns `a` and `b` swapped exactly
 when it is a source-state square away from the two swapped columns. -/
-@[simp]
 theorem mem_pointSet_inter_swapColumns_iff (x : GridState n) {a b : Fin n} (h : a ≠ b)
     (p : Fin n × Fin n) :
     p ∈ x.pointSet ∩ (x.swapColumns a b).pointSet ↔
@@ -614,7 +603,6 @@ theorem transpose_apply (x : GridState n) (c : Fin n) : x.transpose c = x.toPerm
 theorem columnOfRow_eq_transpose (x : GridState n) (r : Fin n) :
     x.columnOfRow r = x.transpose r := rfl
 /-- The column in row `r` of the reflected state is the original row-coordinate value at `r`. -/
-@[simp]
 theorem columnOfRow_transpose (x : GridState n) (r : Fin n) : x.transpose.columnOfRow r = x r := by
   simp [columnOfRow, transpose]
 /-- The diagonal reflection is an involution on grid states. -/
@@ -651,7 +639,6 @@ theorem swapColumns_transpose (a b : Fin n) (x : GridState n) :
 
 /-- A square lies in the reflected state exactly when its diagonal reflection lies in the
 original state. -/
-@[simp]
 theorem mem_pointSet_transpose (x : GridState n) (p : Fin n × Fin n) :
     p ∈ x.transpose.pointSet ↔ Prod.swap p ∈ x.pointSet := by
   simp only [mem_pointSet, transpose_apply]
@@ -716,12 +703,10 @@ theorem mem_XSet (p : Fin n × Fin n) : p ∈ G.XSet ↔ G.X p.1 = p.2 := by
   simp [XSet]
 
 /-- The square `(c, r)` contains an `O` marking exactly when `G.O c = r`. -/
-@[simp]
 theorem mk_mem_OSet (c r : Fin n) : (c, r) ∈ G.OSet ↔ G.O c = r := by
   simp [OSet]
 
 /-- The square `(c, r)` contains an `X` marking exactly when `G.X c = r`. -/
-@[simp]
 theorem mk_mem_XSet (c r : Fin n) : (c, r) ∈ G.XSet ↔ G.X c = r := by
   simp [XSet]
 
@@ -872,27 +857,23 @@ theorem relabelColumns_X_apply (κ : Equiv.Perm (Fin n)) (c : Fin n) :
   rfl
 
 /-- Row relabeling transports the `O` marking set by the row permutation. -/
-@[simp]
 theorem mem_OSet_relabelRows (ρ : Equiv.Perm (Fin n)) (p : Fin n × Fin n) :
     p ∈ (G.relabelRows ρ).OSet ↔ (p.1, ρ.symm p.2) ∈ G.OSet := by
   rw [OSet, OSet]
   exact GridState.mem_pointSet_relabelRows ρ G.O p
 
 /-- Row relabeling transports the `X` marking set by the row permutation. -/
-@[simp]
 theorem mem_XSet_relabelRows (ρ : Equiv.Perm (Fin n)) (p : Fin n × Fin n) :
     p ∈ (G.relabelRows ρ).XSet ↔ (p.1, ρ.symm p.2) ∈ G.XSet := by
   rw [XSet, XSet]
   exact GridState.mem_pointSet_relabelRows ρ G.X p
 
 /-- Column relabeling transports the `O` marking set by the column permutation. -/
-@[simp]
 theorem mem_OSet_relabelColumns (κ : Equiv.Perm (Fin n)) (p : Fin n × Fin n) :
     p ∈ (G.relabelColumns κ).OSet ↔ (κ.symm p.1, p.2) ∈ G.OSet := by
   simp [OSet]
 
 /-- Column relabeling transports the `X` marking set by the column permutation. -/
-@[simp]
 theorem mem_XSet_relabelColumns (κ : Equiv.Perm (Fin n)) (p : Fin n × Fin n) :
     p ∈ (G.relabelColumns κ).XSet ↔ (κ.symm p.1, p.2) ∈ G.XSet := by
   simp [XSet]
@@ -930,25 +911,21 @@ theorem swapColumns_X (a b : Fin n) :
   rfl
 
 /-- Row swaps transport the `O` marking set by the row transposition. -/
-@[simp]
 theorem mem_OSet_swapRows (a b : Fin n) (p : Fin n × Fin n) :
     p ∈ (G.swapRows a b).OSet ↔ (p.1, Equiv.swap a b p.2) ∈ G.OSet := by
   simpa [swapRows] using G.mem_OSet_relabelRows (Equiv.swap a b) p
 
 /-- Row swaps transport the `X` marking set by the row transposition. -/
-@[simp]
 theorem mem_XSet_swapRows (a b : Fin n) (p : Fin n × Fin n) :
     p ∈ (G.swapRows a b).XSet ↔ (p.1, Equiv.swap a b p.2) ∈ G.XSet := by
   simpa [swapRows] using G.mem_XSet_relabelRows (Equiv.swap a b) p
 
 /-- Column swaps transport the `O` marking set by the column transposition. -/
-@[simp]
 theorem mem_OSet_swapColumns (a b : Fin n) (p : Fin n × Fin n) :
     p ∈ (G.swapColumns a b).OSet ↔ (Equiv.swap a b p.1, p.2) ∈ G.OSet := by
   simp [swapColumns]
 
 /-- Column swaps transport the `X` marking set by the column transposition. -/
-@[simp]
 theorem mem_XSet_swapColumns (a b : Fin n) (p : Fin n × Fin n) :
     p ∈ (G.swapColumns a b).XSet ↔ (Equiv.swap a b p.1, p.2) ∈ G.XSet := by
   simp [swapColumns]
@@ -1012,10 +989,8 @@ theorem transpose_O : G.transpose.O = G.O.transpose := rfl
 @[simp]
 theorem transpose_X : G.transpose.X = G.X.transpose := rfl
 /-- The reflected diagram's `O` row coordinate is the original `O` column in that row. -/
-@[simp]
 theorem transpose_O_apply (c : Fin n) : G.transpose.O c = OColumnOfRow G c := by simp [OColumnOfRow]
 /-- The reflected diagram's `X` row coordinate is the original `X` column in that row. -/
-@[simp]
 theorem transpose_X_apply (c : Fin n) : G.transpose.X c = XColumnOfRow G c := by simp [XColumnOfRow]
 /-- The `O` marking in row `c` of the reflected diagram lies in column `G.O c`. -/
 @[simp]
@@ -1066,7 +1041,6 @@ theorem transpose_XSet : G.transpose.XSet = G.XSet.image Prod.swap := by
 
 /-- A square lies in the reflected diagram's `O`-marking set exactly when its diagonal
 reflection lies in the original `O`-marking set. -/
-@[simp]
 theorem mem_OSet_transpose (p : Fin n × Fin n) :
     p ∈ G.transpose.OSet ↔ Prod.swap p ∈ G.OSet := by
   rw [OSet, OSet, transpose_O]
@@ -1074,7 +1048,6 @@ theorem mem_OSet_transpose (p : Fin n × Fin n) :
 
 /-- A square lies in the reflected diagram's `X`-marking set exactly when its diagonal
 reflection lies in the original `X`-marking set. -/
-@[simp]
 theorem mem_XSet_transpose (p : Fin n × Fin n) :
     p ∈ G.transpose.XSet ↔ Prod.swap p ∈ G.XSet := by
   rw [XSet, XSet, transpose_X]
@@ -1117,13 +1090,11 @@ theorem swapMarkings_XSet : G.swapMarkings.XSet = G.OSet := rfl
 
 /-- Membership in the marking swap's `O`-marking set is membership in the original
 `X`-marking set. -/
-@[simp]
 theorem mem_OSet_swapMarkings (p : Fin n × Fin n) :
     p ∈ G.swapMarkings.OSet ↔ p ∈ G.XSet := Iff.rfl
 
 /-- Membership in the marking swap's `X`-marking set is membership in the original
 `O`-marking set. -/
-@[simp]
 theorem mem_XSet_swapMarkings (p : Fin n × Fin n) :
     p ∈ G.swapMarkings.XSet ↔ p ∈ G.OSet := Iff.rfl
 

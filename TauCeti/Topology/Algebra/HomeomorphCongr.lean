@@ -49,7 +49,7 @@ namespace Homeomorph
 /-- Conjugation by a homeomorphism `e : M ≃ₜ N` as a group isomorphism between the
 self-homeomorphism groups: `homeoCongr e φ = e ∘ φ ∘ e⁻¹`. This is the homeomorphism analogue of
 `Equiv.permCongrHom` and the target of the forgetful naturality of `Diffeomorph.diffCongr`. -/
-@[expose, simps]
+@[expose, simps apply]
 def homeoCongr (e : M ≃ₜ N) : (M ≃ₜ M) ≃* (N ≃ₜ N) where
   toFun φ := (e.symm.trans φ).trans e
   invFun ψ := (e.trans ψ).trans e.symm

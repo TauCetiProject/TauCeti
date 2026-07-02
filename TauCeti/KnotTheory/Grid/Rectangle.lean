@@ -140,22 +140,18 @@ theorem mem_rowInterior (r : Fin n) :
   rfl
 
 /-- The left side is not an interior column. -/
-@[simp]
 theorem left_notMem_columnInterior : R.left ∉ R.columnInterior := by
   simp [columnInterior]
 
 /-- The right side is not an interior column. -/
-@[simp]
 theorem right_notMem_columnInterior : R.right ∉ R.columnInterior := by
   simp [columnInterior]
 
 /-- The bottom side is not an interior row. -/
-@[simp]
 theorem bottom_notMem_rowInterior : R.bottom ∉ R.rowInterior := by
   simp [rowInterior]
 
 /-- The top side is not an interior row. -/
-@[simp]
 theorem top_notMem_rowInterior : R.top ∉ R.rowInterior := by
   simp [rowInterior]
 
@@ -171,7 +167,6 @@ theorem mem_interior (p : Fin n × Fin n) :
 
 /-- A coordinate pair lies in the rectangle interior exactly when its column and row lie in
 the corresponding open cyclic intervals. -/
-@[simp]
 theorem mk_mem_interior (c r : Fin n) :
     (c, r) ∈ R.interior ↔ c ∈ R.columnInterior ∧ r ∈ R.rowInterior := by
   simp
@@ -498,49 +493,41 @@ theorem all_self (x : GridState n) : all x x = ∅ := by
   exact R.source_ne_target rfl |>.elim
 
 /-- The initial lower corner is a point of the source state. -/
-@[simp]
 theorem left_bottom_mem_source : (R.left, R.bottom) ∈ x.pointSet := by
   simp [bottom]
 
 /-- The terminal upper corner is a point of the source state. -/
-@[simp]
 theorem right_top_mem_source : (R.right, R.top) ∈ x.pointSet := by
   simp [top]
 
 /-- The initial upper corner is a point of the target state. -/
-@[simp]
 theorem left_top_mem_target : (R.left, R.top) ∈ y.pointSet := by
   simp [top, R.map_left]
 
 /-- The terminal lower corner is a point of the target state. -/
-@[simp]
 theorem right_bottom_mem_target : (R.right, R.bottom) ∈ y.pointSet := by
   simp [bottom, R.map_right]
 
 /-- The lower-left corner of the opposite rectangle is a target-state point of the original
 rectangle. -/
-@[simp]
 theorem symm_left_bottom_mem_source (R : GridRectangleBetween x y) :
     (R.symm.left, R.symm.bottom) ∈ y.pointSet := by
   simpa using R.right_bottom_mem_target
 
 /-- The upper-right corner of the opposite rectangle is a target-state point of the original
 rectangle. -/
-@[simp]
 theorem symm_right_top_mem_source (R : GridRectangleBetween x y) :
     (R.symm.right, R.symm.top) ∈ y.pointSet := by
   simpa using R.left_top_mem_target
 
 /-- The upper-left corner of the opposite rectangle is a source-state point of the original
 rectangle. -/
-@[simp]
 theorem symm_left_top_mem_target (R : GridRectangleBetween x y) :
     (R.symm.left, R.symm.top) ∈ x.pointSet := by
   simpa using R.right_top_mem_source
 
 /-- The lower-right corner of the opposite rectangle is a source-state point of the original
 rectangle. -/
-@[simp]
 theorem symm_right_bottom_mem_target (R : GridRectangleBetween x y) :
     (R.symm.right, R.symm.bottom) ∈ x.pointSet := by
   simpa using R.left_bottom_mem_source

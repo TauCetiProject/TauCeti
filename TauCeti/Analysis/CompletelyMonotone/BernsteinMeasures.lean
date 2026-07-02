@@ -150,7 +150,7 @@ lemma chafaiDensity_nonneg {n : ℕ} {t : ℝ} (ht : 0 ≤ t)
       _ ≥ 0 := mul_nonneg (div_nonneg (pow_nonneg ht _) hfact_pos.le) hsign
 
 /-- For `n = 1`, the density simplifies to `-f'(t)`. -/
-@[simp] lemma chafaiDensity_one (t : ℝ) :
+lemma chafaiDensity_one (t : ℝ) :
     chafaiDensity f 1 t = -iteratedDerivWithin 1 f (Ici 0) t := by
   simp [chafaiDensity]
 
@@ -358,7 +358,6 @@ lemma chafaiRescaled_integral (f : ℝ → ℝ) (n : ℕ) {g : ℝ≥0 → ℝ}
 
 /-- On positive source points, pulling the Bernstein kernel back along the Chafaï rescaling
 gives the classical finite-order kernel `(max (1 - x / t) 0) ^ (n - 1)`. -/
-@[simp]
 lemma bernsteinKernel_chafaiRescaling_of_pos {n : ℕ} (hn : 2 ≤ n) (x : ℝ) {t : ℝ}
     (ht : 0 < t) :
     bernsteinKernel n x (chafaiRescaling n t : ℝ) = (max (1 - x / t) 0) ^ (n - 1) := by
@@ -382,7 +381,6 @@ lemma ae_nonneg_bernsteinKernel_chafaiRescaled (f : ℝ → ℝ) (n : ℕ) (x : 
 
 /-- Bundled version of `ae_nonneg_bernsteinKernel_chafaiRescaled` for the bounded-continuous
 Bernstein kernel. -/
-@[simp]
 lemma ae_nonneg_bernsteinKernelBoundedContinuous_chafaiRescaled
     (f : ℝ → ℝ) (n : ℕ) {x : ℝ} (hx : 0 ≤ x) :
     0 ≤ᵐ[chafaiRescaled f n] fun p : ℝ≥0 => bernsteinKernelBoundedContinuous n hx p := by
@@ -410,7 +408,6 @@ lemma chafaiRescaled_integral_bernsteinKernelBoundedContinuous
   simp
 
 /-- `chafaiMeasure f n` lives on `(0, ∞)`: its complement has zero mass. -/
-@[simp]
 lemma chafaiMeasure_compl_Ioi (f : ℝ → ℝ) (n : ℕ) :
     (chafaiMeasure f n) (Ioi 0)ᶜ = 0 := by
   unfold chafaiMeasure
@@ -421,7 +418,6 @@ lemma chafaiMeasure_compl_Ioi (f : ℝ → ℝ) (n : ℕ) :
   rw [this, measure_empty]
 
 /-- Pushforward preserves total mass. -/
-@[simp]
 lemma chafaiRescaled_mass_eq (f : ℝ → ℝ) (n : ℕ) :
     (chafaiRescaled f n) univ = (chafaiMeasure f n) univ := by
   unfold chafaiRescaled

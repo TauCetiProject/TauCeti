@@ -215,7 +215,6 @@ lemma orbitQuotientEquivBase_conj (hreg : IsRegular p) (h : E ≃ₜ F)
 
 /-- Representative form of compatibility between over-base homeomorphisms and the regular
 orbit-quotient equivalences. -/
-@[simp]
 lemma orbitQuotientEquivBase_conj_mk (hreg : IsRegular p) (h : E ≃ₜ F)
     (hpq : ∀ e, q (h e) = p e) (f : F) :
     (hreg.conj h hpq).orbitQuotientEquivBase

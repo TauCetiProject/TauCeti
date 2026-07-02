@@ -110,7 +110,7 @@ splitting law. -/
 /-- An integer does not divide an odd prime discriminant exactly when it does not divide the
 underlying natural number.
 The negated form is convenient for the unramifiedness side of the splitting law. -/
-@[simp] theorem not_dvd_oddPrimeDiscriminant_iff {p : ℕ} {q : ℤ} :
+theorem not_dvd_oddPrimeDiscriminant_iff {p : ℕ} {q : ℤ} :
     ¬ q ∣ oddPrimeDiscriminant p ↔ ¬ q ∣ (p : ℤ) := by
   exact not_congr dvd_oddPrimeDiscriminant_iff
 
@@ -121,20 +121,12 @@ theorem forall_not_dvd_oddPrimeDiscriminant_iff {ι : Type*} (p : ι → ℕ) {q
       ∀ i, ¬ q ∣ (p i : ℤ) := by
   simp_rw [not_dvd_oddPrimeDiscriminant_iff]
 
-/-- The odd prime discriminant has the same divisibility-by-two behavior as `p`. -/
-@[simp] theorem two_dvd_oddPrimeDiscriminant_iff (p : ℕ) :
-    (2 : ℤ) ∣ oddPrimeDiscriminant p ↔ 2 ∣ p := by
-  by_cases hp : p % 4 = 1
-  · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp]
-    exact Int.natCast_dvd_natCast
-  · rw [oddPrimeDiscriminant_of_mod_four_ne_one hp, Int.dvd_neg]
-    exact Int.natCast_dvd_natCast
-
 /-- The odd prime discriminant of an odd natural number is odd. -/
 theorem odd_oddPrimeDiscriminant {p : ℕ} (hp : Odd p) :
     Odd (oddPrimeDiscriminant p) := by
-  rw [← Int.not_even_iff_odd, even_iff_two_dvd, two_dvd_oddPrimeDiscriminant_iff]
-  simpa [even_iff_two_dvd] using Nat.not_even_iff_odd.mpr hp
+  rw [← Int.not_even_iff_odd, even_iff_two_dvd, dvd_oddPrimeDiscriminant_iff]
+  exact fun h => Nat.not_even_iff_odd.mpr hp (by
+    simpa [even_iff_two_dvd] using Int.natCast_dvd_natCast.mp h)
 
 /-- An odd natural number is `1` or `3` modulo `4`. -/
 private theorem mod_four_eq_one_or_three_of_odd {p : ℕ} (hp : Odd p) :

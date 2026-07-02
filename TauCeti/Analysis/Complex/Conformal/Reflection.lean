@@ -61,7 +61,6 @@ lemma schwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
   simp [schwarzReflection, not_le.mpr hz]
 
 /-- On the real axis, Schwarz reflection agrees with the original function. -/
-@[simp]
 lemma schwarzReflection_of_im_zero {z : ℂ} (hz : z.im = 0) :
     schwarzReflection f z = f z := by
   exact schwarzReflection_of_im_nonneg (f := f) (z := z) hz.ge

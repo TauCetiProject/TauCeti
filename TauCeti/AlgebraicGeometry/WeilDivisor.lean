@@ -78,7 +78,7 @@ lemma ext {D E : WeilDivisor X} (h : ∀ x, coeff D x = coeff E x) : D = E :=
 
 /-- A point lies in the support of a Weil divisor exactly when its coefficient is nonzero. This
 is the `coeff`-level restatement of `Finsupp.mem_support_iff`. -/
-@[simp, grind =]
+@[grind =]
 lemma mem_support_iff {D : WeilDivisor X} {x : X} : x ∈ D.support ↔ coeff D x ≠ 0 :=
   Finsupp.mem_support_iff
 
@@ -172,7 +172,6 @@ lemma coeff_pushforward [DecidableEq Y] (f : X → Y) (D : WeilDivisor X) (y : Y
       exact (hy ⟨x, hx.2⟩).elim
     · exact hy
 
-@[simp]
 lemma pushforward_zero (f : X → Y) : pushforward f (0 : WeilDivisor X) = 0 :=
   map_zero (pushforward f)
 
@@ -445,7 +444,6 @@ lemma weightedDegree_pointDifference (w : X → ℤ) (x y : X) :
     weightedDegree w (pointDifference x y) = w x - w y := by
   simp [pointDifference]
 
-@[simp]
 lemma pointDifference_mem_degreeZeroSubgroup (x y : X) :
     pointDifference x y ∈ degreeZeroSubgroup X := by
   simp
@@ -608,7 +606,6 @@ lemma coe_weightedDegreeZeroSubgroup_eq_zero_of_isEffective {w : X → ℤ} (hw 
   hD.eq_zero_of_weightedDegree_eq_zero_of_pos hw
     (weightedDegree_coe_weightedDegreeZeroSubgroup w D)
 
-@[simp]
 lemma pointDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x y : X}
     (h : w x = w y) : pointDifference x y ∈ weightedDegreeZeroSubgroup w := by
   simp [h]
@@ -634,8 +631,7 @@ lemma weightedPointBaseDifference_eq_ofPoint_sub_zsmul (w : X → ℤ) (x₀ x :
   weightedPointBaseDifference_def w x₀ x
 
 /-- At the constant weight `1`, the degree-corrected point divisor is the usual point
-difference. This simp lemma lets unweighted API reuse the weighted construction. -/
-@[simp]
+difference. This lets unweighted API reuse the weighted construction. -/
 lemma weightedPointBaseDifference_eq_pointDifference (x₀ x : X) :
     weightedPointBaseDifference (fun _ : X => (1 : ℤ)) x₀ x = pointDifference x x₀ := by
   simp [weightedPointBaseDifference, pointDifference]
@@ -673,7 +669,6 @@ lemma support_weightedPointBaseDifference_subset [DecidableEq X] (w : X → ℤ)
     simp [weightedPointBaseDifference, ofPoint, hyx.1, hyx.2])
 
 /-- If the base point has weight `1`, the divisor `[x₀] - w(x₀)[x₀]` is zero. -/
-@[simp]
 lemma weightedPointBaseDifference_self {w : X → ℤ} {x₀ : X} (hx₀ : w x₀ = 1) :
     weightedPointBaseDifference w x₀ x₀ = 0 := by
   simp [weightedPointBaseDifference, hx₀]
@@ -686,7 +681,6 @@ lemma weightedDegree_weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) :
   ring
 
 /-- If the base point has weight `1`, then `[x] - w(x)[x₀]` has weighted degree zero. -/
-@[simp]
 lemma weightedPointBaseDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x₀ : X}
     (hx₀ : w x₀ = 1) (x : X) :
     weightedPointBaseDifference w x₀ x ∈ weightedDegreeZeroSubgroup w := by

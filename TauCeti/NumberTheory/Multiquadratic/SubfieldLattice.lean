@@ -92,7 +92,7 @@ by
 
 /-- A sign vector belongs to the subspace attached to an intermediate field exactly when it is the
 sign pattern of an automorphism fixing that field. -/
-@[simp] theorem mem_intermediateFieldEquivSubmodule_apply_ofDual_iff [Finite ι] [NeZero (2 : K)]
+theorem mem_intermediateFieldEquivSubmodule_apply_ofDual_iff [Finite ι] [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
     (F : IntermediateField K (adjoin K (Set.range root))) (v : ι → ZMod 2) :

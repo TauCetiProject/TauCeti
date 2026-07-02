@@ -47,7 +47,6 @@ namespace GridChain
 /-- The number of chains over a finite coefficient type is `#R ^ n!`.
 
 This is the exact size of the finite search space for the ambient free module on grid states. -/
-@[simp]
 theorem card (R : Type*) [Zero R] [Fintype R] (n : ℕ) :
     Fintype.card (GridChain R n) = Fintype.card R ^ n.factorial := by
   rw [Fintype.card_finsupp, GridState.card]
@@ -70,14 +69,12 @@ theorem support_card_le_factorial {R : Type*} [Zero R] {n : ℕ} (c : GridChain 
   exact Finset.card_le_univ c.support
 
 /-- The fully blocked `ZMod 2` chain module has `2 ^ n!` elements. -/
-@[simp]
 theorem card_zmod_two (n : ℕ) :
     Fintype.card (GridChain (ZMod 2) n) = 2 ^ n.factorial := by
   rw [card]
   rw [ZMod.card]
 
 /-- The natural cardinality of the fully blocked `ZMod 2` chain module is `2 ^ n!`. -/
-@[simp]
 theorem natCard_zmod_two (n : ℕ) :
     Nat.card (GridChain (ZMod 2) n) = 2 ^ n.factorial := by
   rw [natCard, Nat.card_eq_fintype_card, ZMod.card]

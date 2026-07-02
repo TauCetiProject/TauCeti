@@ -75,12 +75,15 @@ path-conjugation isomorphism of fundamental groups. -/
 lemma basepointChangeNormalizerQuotientEquiv_mk (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀))
     (g : _root_.Subgroup.normalizer (H : Set (_root_.FundamentalGroup X x₀))) :
-    basepointChangeNormalizerQuotientEquiv γ H (Subgroup.normalizerQuotientMk H g) =
-      Subgroup.normalizerQuotientMk (basepointChangeSubgroup γ H)
-        (MulEquiv.subgroupCongr (by rw [basepointChangeSubgroup])
+    basepointChangeNormalizerQuotientEquiv γ H (g : Subgroup.normalizerQuotient H) =
+      ((MulEquiv.subgroupCongr (by rw [basepointChangeSubgroup])
           (Subgroup.normalizerEquivMap H
-            (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) g)) := by
-  rw [basepointChangeNormalizerQuotientEquiv, MulEquiv.trans_apply,
+            (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) g) :
+          _root_.Subgroup.normalizer
+            ((basepointChangeSubgroup γ H) : Set (_root_.FundamentalGroup X x₁))) :
+        Subgroup.normalizerQuotient (basepointChangeSubgroup γ H)) := by
+  rw [← Subgroup.normalizerQuotientMk_apply, ← Subgroup.normalizerQuotientMk_apply,
+    basepointChangeNormalizerQuotientEquiv, MulEquiv.trans_apply,
     Subgroup.normalizerQuotientEquivMap_mk,
     Subgroup.normalizerQuotientCongr_mk]
 
@@ -92,12 +95,13 @@ lemma basepointChangeNormalizerQuotientEquiv_symm_mk (γ : Path x₀ x₁)
     (g : _root_.Subgroup.normalizer
       ((basepointChangeSubgroup γ H) : Set (_root_.FundamentalGroup X x₁))) :
     (basepointChangeNormalizerQuotientEquiv γ H).symm
-        (Subgroup.normalizerQuotientMk (basepointChangeSubgroup γ H) g) =
-      Subgroup.normalizerQuotientMk H
-        ((Subgroup.normalizerEquivMap H
+        (g : Subgroup.normalizerQuotient (basepointChangeSubgroup γ H)) =
+      (((Subgroup.normalizerEquivMap H
           (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ)).symm
-          ((MulEquiv.subgroupCongr (by rw [basepointChangeSubgroup])).symm g)) := by
-  rw [basepointChangeNormalizerQuotientEquiv, MulEquiv.symm_trans_apply,
+          ((MulEquiv.subgroupCongr (by rw [basepointChangeSubgroup])).symm g)) :
+        Subgroup.normalizerQuotient H) := by
+  rw [← Subgroup.normalizerQuotientMk_apply, ← Subgroup.normalizerQuotientMk_apply,
+    basepointChangeNormalizerQuotientEquiv, MulEquiv.symm_trans_apply,
     Subgroup.normalizerQuotientCongr_symm_mk, Subgroup.normalizerQuotientEquivMap_symm_mk]
   -- The forward and inverse `subgroupCongr` agree on representatives (both are the identity on
   -- underlying elements), so the two transported representatives coincide.

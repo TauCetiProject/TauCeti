@@ -73,7 +73,6 @@ lemma baseChange_antipode_tmul {k K A : Type*} [CommSemiring k] [CommSemiring K]
 /-- The antipode is a left convolution inverse of the identity in the convolution ring of
 linear maps: `S * id = 1`. This is a restatement of the antipode axiom
 `HopfAlgebra.mul_antipode_rTensor_comul`. -/
-@[simp]
 lemma antipode_convMul_id :
     (toConv (antipode R) : WithConv (H →ₗ[R] H)) * toConv LinearMap.id = 1 := by
   refine WithConv.ext ?_
@@ -85,7 +84,6 @@ lemma antipode_convMul_id :
 /-- The antipode is a right convolution inverse of the identity in the convolution ring of
 linear maps: `id * S = 1`. This is a restatement of the antipode axiom
 `HopfAlgebra.mul_antipode_lTensor_comul`. -/
-@[simp]
 lemma id_convMul_antipode :
     (toConv LinearMap.id : WithConv (H →ₗ[R] H)) * toConv (antipode R) = 1 := by
   refine WithConv.ext ?_
@@ -167,7 +165,6 @@ private lemma id_antipode_comp_coalgHom_ofConv (φ : A →ₐc[R] B) :
 
 /-- A bialgebra morphism between Hopf algebras commutes with the antipodes, as a statement
 about underlying linear maps. -/
-@[simp]
 theorem toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
     φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A)) =
       (HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap := by
@@ -202,7 +199,6 @@ theorem toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
   exact WithConv.toConv_injective h_eq
 
 /-- A bialgebra morphism between Hopf algebras commutes with the antipodes, pointwise. -/
-@[simp]
 theorem map_antipode (φ : A →ₐc[R] B) (a : A) :
     φ (HopfAlgebra.antipode R a) = HopfAlgebra.antipode R (φ a) :=
   LinearMap.congr_fun (toLinearMap_comp_antipode φ) a

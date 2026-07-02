@@ -413,7 +413,6 @@ theorem upperFace_lowerFace_comm (hv : v ∈ C.directions) (hw : w ∈ C.directi
 
 /-- The direction set of the lower-lower codimension-two face is the ambient direction set with the
 two chosen directions removed. -/
-@[simp]
 theorem lowerFace_lowerFace_directions (hv : v ∈ C.directions)
     (hwv : w ∈ (C.lowerFace v hv).directions) :
     ((C.lowerFace v hv).lowerFace w hwv).directions = (C.directions.erase v).erase w := by
@@ -421,7 +420,6 @@ theorem lowerFace_lowerFace_directions (hv : v ∈ C.directions)
 
 /-- The direction set of the upper-upper codimension-two face is the ambient direction set with the
 two chosen directions removed. -/
-@[simp]
 theorem upperFace_upperFace_directions (hv : v ∈ C.directions)
     (hwv : w ∈ (C.upperFace v hv).directions) :
     ((C.upperFace v hv).upperFace w hwv).directions = (C.directions.erase v).erase w := by
@@ -429,7 +427,6 @@ theorem upperFace_upperFace_directions (hv : v ∈ C.directions)
 
 /-- The direction set of the lower-upper codimension-two face is the ambient direction set with the
 two chosen directions removed. -/
-@[simp]
 theorem lowerFace_upperFace_directions (hv : v ∈ C.directions)
     (hwv : w ∈ (C.lowerFace v hv).directions) :
     ((C.lowerFace v hv).upperFace w hwv).directions = (C.directions.erase v).erase w := by
@@ -437,35 +434,30 @@ theorem lowerFace_upperFace_directions (hv : v ∈ C.directions)
 
 /-- The direction set of the upper-lower codimension-two face is the ambient direction set with the
 two chosen directions removed. -/
-@[simp]
 theorem upperFace_lowerFace_directions (hv : v ∈ C.directions)
     (hwv : w ∈ (C.upperFace v hv).directions) :
     ((C.upperFace v hv).lowerFace w hwv).directions = (C.directions.erase v).erase w := by
   simp
 
 /-- The lower-lower codimension-two face keeps the ambient base point. -/
-@[simp]
 theorem lowerFace_lowerFace_base (hv : v ∈ C.directions)
     (hwv : w ∈ (C.lowerFace v hv).directions) :
     ((C.lowerFace v hv).lowerFace w hwv).base = C.base := by
   simp
 
 /-- The upper-upper codimension-two face sits at the far corner `C.base + E_v + E_w`. -/
-@[simp]
 theorem upperFace_upperFace_base (hv : v ∈ C.directions)
     (hwv : w ∈ (C.upperFace v hv).directions) :
     ((C.upperFace v hv).upperFace w hwv).base = C.base + Pi.single v (1 : ℤ) + Pi.single w 1 := by
   simp
 
 /-- The lower-upper codimension-two face sits at the mixed corner `C.base + E_w`. -/
-@[simp]
 theorem lowerFace_upperFace_base (hv : v ∈ C.directions)
     (hwv : w ∈ (C.lowerFace v hv).directions) :
     ((C.lowerFace v hv).upperFace w hwv).base = C.base + Pi.single w (1 : ℤ) := by
   simp
 
 /-- The upper-lower codimension-two face sits at the mixed corner `C.base + E_v`. -/
-@[simp]
 theorem upperFace_lowerFace_base (hv : v ∈ C.directions)
     (hwv : w ∈ (C.upperFace v hv).directions) :
     ((C.upperFace v hv).lowerFace w hwv).base = C.base + Pi.single v (1 : ℤ) := by

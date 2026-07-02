@@ -142,7 +142,6 @@ lemma fundamentalGroupMulEquivZMultiples_symm_monodromy
 
 /-- A loop class maps to `1` under the period-subgroup equivalence exactly when its monodromy
 fixes the chosen lift. -/
-@[simp]
 lemma fundamentalGroupMulEquivZMultiples_eq_one_iff
     (hcov : IsCoveringMap ((↑) : 𝕜 → AddCircle p))
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x})
@@ -189,7 +188,6 @@ lemma fundamentalGroupMulEquivInt_symm_monodromy
 
 /-- A loop class maps to `1` under the generic integer equivalence exactly when its monodromy
 fixes the chosen lift. -/
-@[simp]
 lemma fundamentalGroupMulEquivInt_eq_one_iff
     (hcov : IsCoveringMap ((↑) : 𝕜 → AddCircle p)) (hp : ¬ IsOfFinAddOrder p)
     {x : AddCircle p} (e : ((↑) : 𝕜 → AddCircle p) ⁻¹' {x})
@@ -232,7 +230,6 @@ lemma fundamentalGroupMulEquiv_symm_monodromy (hp : p ≠ 0) {x : AddCircle p}
 
 /-- A loop class maps to `1` under `fundamentalGroupMulEquiv` exactly when its monodromy fixes
 the chosen lift. -/
-@[simp]
 lemma fundamentalGroupMulEquiv_eq_one_iff (hp : p ≠ 0) {x : AddCircle p}
     (e : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) (γ : FundamentalGroup (AddCircle p) x) :
     fundamentalGroupMulEquiv p hp e γ = 1 ↔ (AddCircle.isCoveringMap_coe p).monodromy γ e = e :=
@@ -268,7 +265,6 @@ lemma fundamentalGroupMulEquiv_zero_symm_apply (hp : p ≠ 0) (n : Multiplicativ
   rw [MulEquiv.apply_symm_apply, fundamentalGroupMulEquiv_zero_apply, MulEquiv.apply_symm_apply]
 
 /-- The inverse of the basepoint-`0` specialization has monodromy translation `n • p`. -/
-@[simp]
 lemma fundamentalGroupMulEquiv_zero_symm_monodromy (hp : p ≠ 0) (n : Multiplicative ℤ) :
     ((AddCircle.isCoveringMap_coe p).monodromy ((fundamentalGroupMulEquiv_zero p hp).symm n)
       ⟨0, by simp⟩ : ℝ) = n.toAdd • p := by
@@ -277,7 +273,6 @@ lemma fundamentalGroupMulEquiv_zero_symm_monodromy (hp : p ≠ 0) (n : Multiplic
 
 /-- A loop class maps to `1` under the basepoint-`0` specialization exactly when its monodromy
 fixes the zero lift. -/
-@[simp]
 lemma fundamentalGroupMulEquiv_zero_eq_one_iff (hp : p ≠ 0)
     (γ : FundamentalGroup (AddCircle p) 0) :
     fundamentalGroupMulEquiv_zero p hp γ = 1 ↔
@@ -311,7 +306,6 @@ lemma fundamentalGroupMulEquiv_symm_monodromy (n : Multiplicative ℤ) :
   simp [fundamentalGroupMulEquiv]
 
 /-- A unit-circle loop class maps to `1` exactly when its monodromy fixes the zero lift. -/
-@[simp]
 lemma fundamentalGroupMulEquiv_eq_one_iff (γ : FundamentalGroup UnitAddCircle 0) :
     fundamentalGroupMulEquiv γ = 1 ↔
       (AddCircle.isCoveringMap_coe 1).monodromy γ ⟨0, by simp⟩ = ⟨0, by simp⟩ := by

@@ -67,7 +67,6 @@ lemma energyIntegrand_add :
   ring_nf
 
 /-- Pointwise evaluation form of `energyIntegrand_add`. -/
-@[simp]
 lemma energyIntegrand_add_apply :
     energyIntegrand (A + B) (b + d) (c + e) U V =
       energyIntegrand A b c U V + energyIntegrand B d e U V := by
@@ -86,7 +85,6 @@ lemma energyIntegrand_neg :
   ring_nf
 
 /-- Pointwise evaluation form of `energyIntegrand_neg`. -/
-@[simp]
 lemma energyIntegrand_neg_apply :
     energyIntegrand (-A) (-b) (-c) U V = -energyIntegrand A b c U V := by
   simp
@@ -103,7 +101,6 @@ lemma energyIntegrand_sub :
   simp [sub_eq_add_neg]
 
 /-- Pointwise evaluation form of `energyIntegrand_sub`. -/
-@[simp]
 lemma energyIntegrand_sub_apply :
     energyIntegrand (A - B) (b - d) (c - e) U V =
       energyIntegrand A b c U V - energyIntegrand B d e U V := by
@@ -122,7 +119,6 @@ lemma energyIntegrand_smul :
   ring
 
 /-- Pointwise evaluation form of `energyIntegrand_smul`. -/
-@[simp]
 lemma energyIntegrand_smul_apply :
     energyIntegrand (r • A) (r • b) (r * c) U V = r * energyIntegrand A b c U V := by
   simp [smul_eq_mul]

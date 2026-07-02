@@ -89,7 +89,6 @@ lemma complexModule_smul_def (J : AlmostComplexStructure V) (z : ℂ) (v : V) :
   exact liftAux_toRingHom_apply J J.toLinearMap_mul_toLinearMap z v
 
 /-- In the induced complex structure, multiplication by `i` is `J`. -/
-@[simp]
 lemma complexModule_I_smul (J : AlmostComplexStructure V) (v : V) :
     letI := J.complexModule
     (Complex.I) • v = J v := by
@@ -97,7 +96,6 @@ lemma complexModule_I_smul (J : AlmostComplexStructure V) (v : V) :
   rw [complexModule_smul_def, Complex.I_re, Complex.I_im, zero_smul, one_smul, zero_add]
 
 /-- The induced complex action restricts along `ℝ → ℂ` to the original real action. -/
-@[simp]
 lemma complexModule_ofReal_smul (J : AlmostComplexStructure V) (r : ℝ) (v : V) :
     letI := J.complexModule
     (r : ℂ) • v = r • v := by

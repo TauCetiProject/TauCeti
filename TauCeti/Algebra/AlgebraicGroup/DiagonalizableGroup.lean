@@ -85,7 +85,6 @@ theorem point_single (χ : G →* Aˣ) (g : G) (r : R) :
     Units.coeHom_apply]
 
 /-- The point associated to a character sends the group-like `single g 1` to `χ g`. -/
-@[simp]
 theorem point_single_one (χ : G →* Aˣ) (g : G) :
     point (R := R) χ (MonoidAlgebra.single g 1) = (χ g : A) := by
   rw [point_single, one_smul]
@@ -171,7 +170,6 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 
 /-- Reading off characters is natural in the value algebra: post-composing a point with an
 `R`-algebra map sends the associated character through the induced map on units. -/
-@[simp]
 theorem charOfPoint_mapValue (φ : A →ₐ[R] B)
     (f : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
     charOfPoint ((AlgHom.mapValue (H := MonoidAlgebra R G) φ f).ofConv) =
@@ -197,7 +195,6 @@ theorem pointsMulEquiv_apply (f : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
   rfl
 
 /-- The multiplicative point equivalence is natural in the value algebra. -/
-@[simp]
 theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (f : WithConv (MonoidAlgebra R G →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := B) (G := G)

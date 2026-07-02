@@ -48,7 +48,7 @@ lemma unitDiscStandardAutomorphismEquiv_apply (u : Circle) (a z : Complex.UnitDi
   by simp [unitDiscStandardAutomorphismEquiv]
 
 /-- The scalar formula for the standard disc automorphism. -/
-@[simp, norm_cast]
+@[norm_cast]
 lemma coe_unitDiscStandardAutomorphismEquiv_apply (u : Circle) (a z : Complex.UnitDisc) :
     (unitDiscStandardAutomorphismEquiv u a z : ℂ) =
       (u : ℂ) *
@@ -79,13 +79,11 @@ lemma unitDiscStandardAutomorphismEquiv_self (u : Circle) (a : Complex.UnitDisc)
   simp
 
 /-- The standard automorphism sends zero to `-u * a`. -/
-@[simp]
 lemma unitDiscStandardAutomorphismEquiv_apply_zero (u : Circle) (a : Complex.UnitDisc) :
     unitDiscStandardAutomorphismEquiv u a 0 = u • (-a) := by
   simp [unitDiscStandardAutomorphismEquiv]
 
 /-- The norm of a standard automorphism value is the pseudo-hyperbolic expression. -/
-@[simp]
 lemma norm_unitDiscStandardAutomorphismEquiv (u : Circle) (a z : Complex.UnitDisc) :
     ‖(unitDiscStandardAutomorphismEquiv u a z : ℂ)‖ = pseudoHyperbolicExpr (z : ℂ) (a : ℂ) := by
   rw [unitDiscStandardAutomorphismEquiv_apply, Complex.UnitDisc.coe_circle_smul, norm_mul,

@@ -60,7 +60,6 @@ theorem ambientIsotopyClass_smul_eq_homeomorph_smul
 
 /-- The diffeomorphism action on representatives is postcomposition by the underlying
 homeomorphism. -/
-@[simp]
 theorem ambientIsotopyClass_smul_mk (φ : M ≃ₘ^n⟮I, I⟯ M) (f : C(X, M)) :
     φ • AmbientIsotopyClass.mk f =
       AmbientIsotopyClass.mk ((φ.toHomeomorph : C(M, M)).comp f) :=
@@ -69,7 +68,6 @@ theorem ambientIsotopyClass_smul_mk (φ : M ≃ₘ^n⟮I, I⟯ M) (f : C(X, M)) 
 
 /-- The homeomorphism-induced quotient equivalence of the underlying homeomorphism agrees with the
 diffeomorphism action. -/
-@[simp]
 theorem ambientIsotopyClass_postcompHomeomorphEquiv_apply_eq_smul
     (φ : M ≃ₘ^n⟮I, I⟯ M) (x : AmbientIsotopyClass X M) :
     AmbientIsotopyClass.postcompHomeomorphEquiv φ.toHomeomorph x = φ • x := by

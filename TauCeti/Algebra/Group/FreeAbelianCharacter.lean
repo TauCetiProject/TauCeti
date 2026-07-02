@@ -78,7 +78,6 @@ theorem freeAbelianCharEquiv_apply (χ : Multiplicative (σ →₀ ℤ) →* M) 
 
 /-- The inverse of `freeAbelianCharEquiv` sends the standard generator indexed by `i` to the
 chosen coordinate `c i`. -/
-@[simp]
 theorem freeAbelianCharEquiv_symm_apply_ofAdd_single (c : σ → M) (i : σ) :
     (freeAbelianCharEquiv (M := M)).symm c (Multiplicative.ofAdd (Finsupp.single i 1)) = c i := by
   simp [freeAbelianCharEquiv]

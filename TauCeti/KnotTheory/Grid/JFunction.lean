@@ -82,7 +82,6 @@ theorem isSouthWest_iff (p q : Fin n × Fin n) :
   Iff.rfl
 
 /-- A point is not strictly southwest of itself. -/
-@[simp]
 theorem not_isSouthWest_self (p : Fin n × Fin n) : ¬ IsSouthWest p p := by
   intro h
   exact (lt_self_iff_false p.1.val).mp h.1
@@ -112,7 +111,6 @@ theorem I_def (s t : Finset (Fin n × Fin n)) :
   rfl
 
 /-- Membership in the finite set counted by `GridPoint.I`. -/
-@[simp]
 theorem mem_filter_product_isSouthWest (s t : Finset (Fin n × Fin n))
   (pq : (Fin n × Fin n) × (Fin n × Fin n)) :
     pq ∈ (s ×ˢ t).filter (fun pq => IsSouthWest pq.1 pq.2) ↔
@@ -140,7 +138,6 @@ theorem I_singleton_singleton (p q : Fin n × Fin n) :
   · simp only [h, if_false, Finset.card_empty]
 
 /-- No point contributes a southwest pair with itself. -/
-@[simp]
 theorem I_singleton_self (p : Fin n × Fin n) : I {p} {p} = 0 := by
   simp
 
@@ -391,7 +388,6 @@ theorem J_singleton_singleton_of_isSouthWest_or_isSouthWest {p q : Fin n × Fin 
     simp [J_singleton_singleton, hpqfin, hqpcoord]
 
 /-- The `J`-function of a singleton with itself is zero. -/
-@[simp]
 theorem J_singleton_self (p : Fin n × Fin n) : GridPoint.J {p} {p} = 0 := by
   simp [GridPoint.J]
 
@@ -425,7 +421,7 @@ theorem JNum_mono_right {s t₁ t₂ : Finset (Fin n × Fin n)} (h : t₁ ⊆ t�
 /-- The strict southwest relation is invariant under reflecting both points across the diagonal:
 exchanging the column and row coordinates of both endpoints exchanges the two strict
 inequalities. -/
-@[simp, grind =]
+@[grind =]
 theorem isSouthWest_swap (p q : Fin n × Fin n) :
     IsSouthWest (Prod.swap p) (Prod.swap q) ↔ IsSouthWest p q := by
   unfold IsSouthWest
@@ -468,7 +464,7 @@ theorem JDiff_image_swap (s a t b : Finset (Fin n × Fin n)) :
 
 /-- Reversing both coordinates of both points of a pair exchanges the two endpoints of the strict
 southwest relation: it sends the column and row comparisons to their reverses. -/
-@[simp, grind =]
+@[grind =]
 theorem isSouthWest_rev (p q : Fin n × Fin n) :
     IsSouthWest (Prod.map Fin.rev Fin.rev p) (Prod.map Fin.rev Fin.rev q) ↔ IsSouthWest q p := by
   simp only [IsSouthWest, Prod.map_fst, Prod.map_snd]

@@ -47,7 +47,6 @@ open Matrix
 variable {X n : Type*} [Fintype n] [DecidableEq n]
 
 /-- With zero drift, transposing the principal coefficient swaps the two jet arguments. -/
-@[simp]
 lemma energyIntegrand_zero_drift_transpose_apply (A : Matrix n n ℝ) (c : ℝ)
     (U V : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand Aᵀ 0 c U V = energyIntegrand A 0 c V U := by
@@ -87,7 +86,6 @@ lemma energyIntegrand_one_zero_drift_comm (c : ℝ) (U V : ℝ × EuclideanSpace
 
 /-- The symmetric part's zero-drift jet form is the average of the original form and its
 transpose. -/
-@[simp]
 lemma energyIntegrand_coefficientSymmetricPart_zero_drift_apply (A : Matrix n n ℝ)
     (c : ℝ) (U V : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (coefficientSymmetricPart A) 0 c U V =
@@ -99,7 +97,6 @@ lemma energyIntegrand_coefficientSymmetricPart_zero_drift_apply (A : Matrix n n 
 
 /-- Replacing the principal coefficient by its symmetric part does not change the diagonal
 energy density. -/
-@[simp]
 lemma energyIntegrand_coefficientSymmetricPart_self (A : Matrix n n ℝ)
     (b : EuclideanSpace ℝ n) (c : ℝ) (U : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (coefficientSymmetricPart A) b c U U =
@@ -131,14 +128,12 @@ lemma energyIntegrand_zero_drift_comm_on {Ω : Set X} {a : X → Matrix n n ℝ}
 
 /-- A pointwise symmetric coefficient field gives a bundled symmetric zero-drift jet form at
 each point of the domain. -/
-@[simp]
 lemma energyIntegrand_zero_drift_flip_eq_on {Ω : Set X} {a : X → Matrix n n ℝ}
     (ha : ∀ ⦃x⦄, x ∈ Ω → (a x).IsSymm) {x : X} (hx : x ∈ Ω) (c : X → ℝ) :
     (energyIntegrand (a x) 0 (c x)).flip = energyIntegrand (a x) 0 (c x) :=
   energyIntegrand_zero_drift_flip_eq_of_isSymm (ha hx) (c x)
 
 /-- Bundled symmetry of the shifted Laplacian jet form. -/
-@[simp]
 lemma energyIntegrand_one_zero_mass_flip_eq (c : ℝ) :
     (energyIntegrand (1 : Matrix n n ℝ) 0 c).flip =
       energyIntegrand (1 : Matrix n n ℝ) 0 c :=

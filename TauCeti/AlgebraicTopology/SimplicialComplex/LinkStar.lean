@@ -155,20 +155,17 @@ theorem link_le_deletion_of_nonempty (hσ : σ.Nonempty) : link K σ ≤ deletio
 /-- The link of a single vertex `{v}`, written with `insert`: the faces `ρ` not already containing
 `v` for which `insert v ρ` is a face. This is the form the combinatorial-manifold link condition
 uses. -/
-@[simp]
 theorem mem_link_singleton {v : ι} {ρ : Finset ι} :
     ρ ∈ link K {v} ↔ ρ.Nonempty ∧ v ∉ ρ ∧ insert v ρ ∈ K := by
   rw [mem_link, disjoint_singleton_right, union_comm, ← insert_eq]
 
 /-- The closed star of a single vertex `{v}`, written with `insert`. -/
-@[simp]
 theorem mem_closedStar_singleton {v : ι} {ρ : Finset ι} :
     ρ ∈ closedStar K {v} ↔ ρ ∈ K ∧ insert v ρ ∈ K := by
   rw [mem_closedStar_iff, union_comm, ← insert_eq]
 
 omit [DecidableEq ι] in
 /-- The deletion of a single vertex `{v}` consists of the faces not containing `v`. -/
-@[simp]
 theorem mem_deletion_singleton {v : ι} {ρ : Finset ι} :
     ρ ∈ deletion K {v} ↔ ρ ∈ K ∧ v ∉ ρ := by
   rw [mem_deletion, singleton_subset_iff]
