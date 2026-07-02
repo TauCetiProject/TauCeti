@@ -23,7 +23,7 @@ harmonic near `Metric.ball x r`.
 ## Main declarations
 
 * `TauCeti.preimage_const_add_smul_ball`: the affine normalization map `y ↦ x + c • y` pulls
-  `Metric.ball x (‖c‖ * r)` back to `Metric.ball 0 r`, for nonzero scale `c`.
+  `Metric.ball x (|c| * r)` back to `Metric.ball 0 r`, for nonzero scale `c`.
 * `TauCeti.harmonicOnNhd_comp_add_right_ball_zero_iff`: translation-normalized harmonicity
   on a ball.
 * `TauCeti.harmonicOnNhd_comp_const_add_smul_ball_radius_iff`: ball-level affine normalization
@@ -41,15 +41,15 @@ section Preimage
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- The affine normalization map `y ↦ x + c • y` pulls the ball `Metric.ball x (‖c‖ * r)` back
+/-- The affine normalization map `y ↦ x + c • y` pulls the ball `Metric.ball x (|c| * r)` back
 to `Metric.ball 0 r`, for nonzero scale `c`.  This is the characteristic ball rewrite underlying
 the harmonic ball-normalization lemmas below. -/
 @[simp]
 theorem preimage_const_add_smul_ball (x : E) {c : ℝ} (hc : c ≠ 0) (r : ℝ) :
-    ((fun y : E ↦ x + c • y) ⁻¹' Metric.ball x (‖c‖ * r)) = Metric.ball 0 r := by
+    ((fun y : E ↦ x + c • y) ⁻¹' Metric.ball x (|c| * r)) = Metric.ball 0 r := by
   ext y
   simp only [Set.mem_preimage, Metric.mem_ball, dist_eq_norm, add_sub_cancel_left, sub_zero,
-    norm_smul]
+    norm_smul, Real.norm_eq_abs]
   exact mul_lt_mul_iff_right₀ (norm_pos_iff.2 hc)
 
 end Preimage
