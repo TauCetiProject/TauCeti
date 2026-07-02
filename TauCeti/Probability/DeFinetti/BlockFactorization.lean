@@ -68,6 +68,46 @@ theorem condExp_blockIndicatorProd_ae_eq_prod [StandardBorelSpace Ω] [StandardB
   rw [Finset.prod_apply]
   exact Finset.prod_congr rfl fun i _ => hω i
 
+/-- **Block law of a rectangle as a directing-measure mixture** (given tail conditional
+independence). The block law of the rectangle `∏ᵢ C i` is the `μ`-average of the directing-measure
+product `∏ i, directingMeasure μ X ω (C i)`. -/
+theorem blockLaw_eq_lintegral_prod_directingMeasure [StandardBorelSpace Ω] [StandardBorelSpace α]
+    [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX : Contractable μ X)
+    (hX_meas : ∀ n, Measurable (X n)) (hTail : tailProcess X ≤ mΩ)
+    {m : ℕ} {k : Fin m → ℕ} {C : Fin m → Set α} (hC : ∀ i, MeasurableSet (C i))
+    (hCI : iCondIndepFun (m := fun _ : Fin m => (inferInstance : MeasurableSpace α))
+      (tailProcess X) hTail (fun i => X (k i)) μ) :
+    blockLaw μ X k (Set.univ.pi C) = ∫⁻ ω, ∏ i, directingMeasure μ X ω (C i) ∂μ := by
+  classical
+  haveI : IsFiniteMeasure (μ.trim hTail) := isFiniteMeasure_trim hTail
+  set g : Ω → ℝ := fun ω => ∏ i, (directingMeasure μ X ω).real (C i) with hg
+  have hg_meas : Measurable g :=
+    Finset.measurable_prod _ fun i _ =>
+      (measurable_directingMeasure_coe hTail (hC i)).ennreal_toReal
+  have hg_bound : ∀ ω, ‖g ω‖ ≤ 1 := fun ω => by
+    have hval : g ω = ∏ i, ((directingMeasure μ X ω) (C i)).toReal := by
+      simp only [hg, measureReal_def]
+    rw [hval, Real.norm_of_nonneg (Finset.prod_nonneg fun i _ => ENNReal.toReal_nonneg)]
+    refine Finset.prod_le_one (fun i _ => ENNReal.toReal_nonneg) fun i _ => ?_
+    exact ENNReal.toReal_le_of_le_ofReal zero_le_one
+      (by rw [ENNReal.ofReal_one]; exact (measure_mono (Set.subset_univ _)).trans_eq measure_univ)
+  have hg_int : Integrable g μ :=
+    (integrable_const (1 : ℝ)).mono' hg_meas.aestronglyMeasurable (ae_of_all _ hg_bound)
+  have hbl : (blockLaw μ X k (Set.univ.pi C)).toReal = ∫ ω, g ω ∂μ := by
+    rw [← integral_blockIndicatorProd (fun i => (hX_meas (k i)).aemeasurable) hC,
+      ← integral_condExp hTail]
+    exact integral_congr_ae (condExp_blockIndicatorProd_ae_eq_prod hX hX_meas hTail hC hCI)
+  have hbl_ne : blockLaw μ X k (Set.univ.pi C) ≠ ⊤ := by
+    rw [blockLaw_blockCylinder X (fun i => (hX_meas (k i)).aemeasurable) hC]
+    exact measure_ne_top μ _
+  rw [← ENNReal.ofReal_toReal hbl_ne, hbl,
+    ofReal_integral_eq_lintegral_ofReal hg_int (ae_of_all _ fun ω =>
+      Finset.prod_nonneg fun i _ => ENNReal.toReal_nonneg)]
+  refine lintegral_congr fun ω => ?_
+  simp only [hg, measureReal_def]
+  rw [ENNReal.ofReal_prod_of_nonneg fun i _ => ENNReal.toReal_nonneg]
+  exact Finset.prod_congr rfl fun i _ => ENNReal.ofReal_toReal (measure_ne_top _ _)
+
 end Probability
 
 end TauCeti
