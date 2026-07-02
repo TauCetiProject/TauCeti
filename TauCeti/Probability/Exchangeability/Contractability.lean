@@ -86,7 +86,7 @@ theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : �
     blockLaw μ X k = prefixLaw μ X n := by
   cases n with
   | zero =>
-    rw [blockLaw_apply, prefixLaw_apply, blockLaw_apply]
+    rw [blockLaw_def, prefixLaw_def, blockLaw_def]
     congr 1
     funext ω i
     exact i.elim0
@@ -137,7 +137,7 @@ theorem Contractable.measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω
     (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) {φ : ℕ → ℕ} (hφ : StrictMono φ) :
     MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) (pathLaw μ X) (pathLaw μ X) := by
   refine ⟨measurable_pi_lambda _ fun k => measurable_pi_apply (φ k), ?_⟩
-  haveI : IsFiniteMeasure (pathLaw μ X) := by rw [pathLaw_apply]; infer_instance
+  haveI : IsFiniteMeasure (pathLaw μ X) := by rw [pathLaw_def]; infer_instance
   refine measure_eq_of_prefixProj_map_eq ?_
   intro n
   rw [map_reindex_prefixProj_pathLaw μ hX_meas φ n,

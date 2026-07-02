@@ -49,7 +49,7 @@ theorem ConditionallyIIDWith.prefixLaw_eq_mixture {μ : Measure Ω} {X : ℕ →
     {ν : Ω → ProbabilityMeasure α} (h : ConditionallyIIDWith μ X ν) (n : ℕ) :
     prefixLaw μ X n =
       μ.bind fun ω => (ProbabilityMeasure.pi fun _ : Fin n => ν ω).toMeasure := by
-  rw [prefixLaw_apply]
+  rw [prefixLaw_def]
   exact h.map (fun i : Fin n => i.val) injective_fin_val
 
 /-- Under a named conditional-i.i.d. directing measure, every injective finite block has the

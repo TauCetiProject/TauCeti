@@ -81,11 +81,11 @@ def Contractable (μ : Measure Ω) (X : ℕ → Ω → α) : Prop :=
   ∀ (m : ℕ) (k : Fin m → ℕ), StrictMono k → blockLaw μ X k = prefixLaw μ X m
 
 @[simp]
-theorem blockLaw_apply (μ : Measure Ω) (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ) :
+theorem blockLaw_def (μ : Measure Ω) (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ) :
     blockLaw μ X k = μ.map (fun ω i => X (k i) ω) :=
   rfl
 
--- Annotated `@[grind =>]` rather than `@[simp]`: `blockLaw_apply` already simp-normalizes
+-- Annotated `@[grind =>]` rather than `@[simp]`: `blockLaw_def` already simp-normalizes
 -- `blockLaw μ X k` to `μ.map …` (so a `@[simp]` here would be shadowed), and the preimage form
 -- needs the a.e.-measurability side condition `hXk`, which `simp` cannot discharge.
 /-- The block law of `X` along `k`, evaluated on any measurable set `S`, is the measure of its
@@ -95,7 +95,7 @@ coordinate-wise preimage. This is the characteristic evaluation of `blockLaw` as
 theorem blockLaw_apply_of_measurable (μ : Measure Ω) (X : ℕ → Ω → α) {m : ℕ} (k : Fin m → ℕ)
     (hXk : ∀ i, AEMeasurable (X (k i)) μ) {S : Set (Fin m → α)} (hS : MeasurableSet S) :
     blockLaw μ X k S = μ ((fun ω i => X (k i) ω) ⁻¹' S) := by
-  rw [blockLaw_apply, Measure.map_apply_of_aemeasurable (aemeasurable_pi_lambda _ hXk) hS]
+  rw [blockLaw_def, Measure.map_apply_of_aemeasurable (aemeasurable_pi_lambda _ hXk) hS]
 
 /-- The block law of `X` along `k`, evaluated on a measurable rectangle `Set.univ.pi B`, is the
 measure of the coordinate-wise preimage `{ω | ∀ i, X (k i) ω ∈ B i}` — the rectangle specialization
@@ -110,12 +110,12 @@ theorem blockLaw_apply_rectangle (μ : Measure Ω) (X : ℕ → Ω → α) {m : 
   simp [Set.mem_preimage]
 
 @[simp]
-theorem prefixLaw_apply (μ : Measure Ω) (X : ℕ → Ω → α) (n : ℕ) :
+theorem prefixLaw_def (μ : Measure Ω) (X : ℕ → Ω → α) (n : ℕ) :
     prefixLaw μ X n = blockLaw μ X (fun i : Fin n => i.val) :=
   rfl
 
 @[simp]
-theorem pathLaw_apply (μ : Measure Ω) (X : ℕ → Ω → α) :
+theorem pathLaw_def (μ : Measure Ω) (X : ℕ → Ω → α) :
     pathLaw μ X = μ.map (fun ω i => X i ω) :=
   rfl
 
@@ -144,7 +144,7 @@ theorem measurable_shift : Measurable (shift α) := by
 theorem map_prefixProj_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
     (hX : AEMeasurable (fun ω => fun i => X i ω) μ) (n : ℕ) :
     (pathLaw μ X).map (prefixProj α n) = prefixLaw μ X n := by
-  rw [pathLaw_apply, prefixLaw_apply, blockLaw_apply]
+  rw [pathLaw_def, prefixLaw_def, blockLaw_def]
   rw [AEMeasurable.map_map_of_aemeasurable (measurable_prefixProj n).aemeasurable hX,
     Function.comp_def]
   rfl
@@ -155,7 +155,7 @@ theorem map_blockLaw (μ : Measure Ω) {X : ℕ → Ω → α} {m : ℕ} (k : Fi
     (hXk : ∀ i : Fin m, AEMeasurable (X (k i)) μ) :
     (blockLaw μ X k).map (fun x : Fin m → α => fun i => f (x i)) =
       blockLaw μ (fun n ω => f (X n ω)) k := by
-  rw [blockLaw_apply, blockLaw_apply]
+  rw [blockLaw_def, blockLaw_def]
   rw [AEMeasurable.map_map_of_aemeasurable]
   · rfl
   · exact (measurable_pi_lambda (fun x : Fin m → α => fun i => f (x i)) fun i =>
@@ -176,7 +176,7 @@ theorem map_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
     (hX : ∀ i, AEMeasurable (X i) μ) :
     (pathLaw μ X).map (fun x : ℕ → α => fun i => f (x i)) =
       pathLaw μ (fun n ω => f (X n ω)) := by
-  rw [pathLaw_apply, pathLaw_apply]
+  rw [pathLaw_def, pathLaw_def]
   rw [AEMeasurable.map_map_of_aemeasurable]
   · rfl
   · exact (measurable_pi_lambda (fun x : ℕ → α => fun i => f (x i)) fun i =>
@@ -189,7 +189,7 @@ theorem map_blockLaw_reindex (μ : Measure Ω) {X : ℕ → Ω → α} {n p : �
     (k : Fin n → ℕ) (g : Fin p → Fin n) (hXk : ∀ j : Fin n, AEMeasurable (X (k j)) μ) :
     (blockLaw μ X k).map (fun x : Fin n → α => fun i : Fin p => x (g i)) =
       blockLaw μ X (k ∘ g) := by
-  rw [blockLaw_apply, blockLaw_apply,
+  rw [blockLaw_def, blockLaw_def,
     AEMeasurable.map_map_of_aemeasurable
       ((measurable_pi_lambda _ fun i => measurable_pi_apply (g i)).aemeasurable)
       (aemeasurable_pi_lambda _ hXk)]
@@ -206,7 +206,7 @@ theorem map_reindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
     (hX : ∀ i, AEMeasurable (X i) μ) (φ : ℕ → ℕ) :
     (pathLaw μ X).map (fun x : ℕ → α => fun k => x (φ k)) =
       pathLaw μ (fun k ω => X (φ k) ω) := by
-  rw [pathLaw_apply, pathLaw_apply]
+  rw [pathLaw_def, pathLaw_def]
   rw [AEMeasurable.map_map_of_aemeasurable (measurable_reindex φ).aemeasurable
     (aemeasurable_pi_lambda _ hX)]
   rfl
@@ -219,7 +219,7 @@ theorem map_reindex_prefixProj_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
       blockLaw μ X (fun i : Fin n => φ i.val) := by
   rw [map_reindex_pathLaw μ hX φ,
     map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ fun i => hX (φ i)) n]
-  rw [prefixLaw_apply, blockLaw_apply, blockLaw_apply]
+  rw [prefixLaw_def, blockLaw_def, blockLaw_def]
 
 /-- Projecting the prefix law on `Fin n` onto its first `m ≤ n` coordinates (via `Fin.castLE`)
 gives the prefix law on `Fin m`. -/
@@ -229,8 +229,8 @@ theorem map_prefixLaw_castLE (μ : Measure Ω) {X : ℕ → Ω → α} {m n : �
       prefixLaw μ X m := by
   have hidx : (fun i : Fin n => i.val) ∘ Fin.castLE hmn = fun i : Fin m => i.val := by
     funext i; simp
-  rw [prefixLaw_apply, map_blockLaw_reindex μ _ (Fin.castLE hmn) hX, hidx]
-  exact (prefixLaw_apply μ X m).symm
+  rw [prefixLaw_def, map_blockLaw_reindex μ _ (Fin.castLE hmn) hX, hidx]
+  exact (prefixLaw_def μ X m).symm
 
 theorem Exchangeable.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω → α}
     (h : Exchangeable μ X) (n : ℕ) : ExchangeableAt μ X n :=
