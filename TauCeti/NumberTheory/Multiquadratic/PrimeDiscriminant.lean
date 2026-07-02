@@ -122,7 +122,7 @@ theorem forall_not_dvd_oddPrimeDiscriminant_iff {ι : Type*} (p : ι → ℕ) {q
   simp_rw [not_dvd_oddPrimeDiscriminant_iff]
 
 /-- The odd prime discriminant has the same divisibility-by-two behavior as `p`. -/
-@[simp] theorem two_dvd_oddPrimeDiscriminant_iff (p : ℕ) :
+theorem two_dvd_oddPrimeDiscriminant_iff (p : ℕ) :
     (2 : ℤ) ∣ oddPrimeDiscriminant p ↔ 2 ∣ p := by
   by_cases hp : p % 4 = 1
   · rw [oddPrimeDiscriminant_of_mod_four_eq_one hp]
