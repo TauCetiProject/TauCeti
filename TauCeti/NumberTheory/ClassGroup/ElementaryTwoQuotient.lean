@@ -156,8 +156,13 @@ variable (R)
 quotient `Cl(R)/Cl(R)²` (zero, by convention of `Module.finrank`, when the quotient is
 infinite-dimensional). In genus-theory applications the `t - 1` formula belongs to the narrow
 class group; for imaginary fields the narrow and ordinary class groups coincide. -/
-noncomputable def twoRank : ℕ :=
+@[expose] noncomputable def twoRank : ℕ :=
   TauCeti.twoRank (ClassGroup R)
+
+/-- The 2-rank of the class group is the `ZMod 2` dimension of its maximal elementary-2 quotient
+`Cl(R) / Cl(R)²`. -/
+@[simp] theorem twoRank_def :
+    twoRank R = Module.finrank (ZMod 2) (ElementaryTwoQuotient R) := rfl
 
 /-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
 space of dimension the 2-rank. -/

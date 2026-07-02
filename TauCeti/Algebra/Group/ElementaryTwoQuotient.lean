@@ -292,8 +292,12 @@ theorem card_elementaryTwoQuotient_eq_card_twoTorsion
 /-- **The 2-rank of a commutative group**: the `ZMod 2`-dimension of the maximal elementary-2
 quotient `G / G²` (zero, by convention of `Module.finrank`, when the quotient is
 infinite-dimensional). -/
-noncomputable def twoRank : ℕ :=
+@[expose] noncomputable def twoRank : ℕ :=
   Module.finrank (ZMod 2) (ElementaryTwoQuotient G)
+
+/-- The 2-rank of `G` is the `ZMod 2` dimension of its maximal elementary-2 quotient `G / G²`. -/
+@[simp] theorem twoRank_def :
+    twoRank G = Module.finrank (ZMod 2) (ElementaryTwoQuotient G) := rfl
 
 /-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
 space of dimension the 2-rank. -/
