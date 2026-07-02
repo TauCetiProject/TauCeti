@@ -92,6 +92,65 @@ theorem not_isSquare_prod_optionNeg {K : Type*} [Field K] [LinearOrder K] [IsStr
     | none => exact absurd hx hnone
     | some i => exact ⟨i, Finset.mem_eraseNone.mpr hx⟩
 
+section CMFamily
+
+variable {ι : Type*} (p : ι → ℕ)
+
+/-- The `Option ι`-indexed radicand family of a multiquadratic CM field: `none ↦ -1` (for `i`)
+and `some i ↦ p i` (for `√(p i)`). -/
+@[expose] def cmRadicand : Option ι → ℚ := fun x => x.elim (-1) (fun i => (p i : ℚ))
+
+/-- The `Option ι`-indexed generator family of a multiquadratic CM field: `none ↦ i` and
+`some i ↦ √(p i)` (as a complex number). -/
+@[expose] noncomputable def cmRoot : Option ι → ℂ :=
+  fun x => x.elim Complex.I (fun i => ((Real.sqrt (p i) : ℝ) : ℂ))
+
+@[simp] theorem cmRadicand_none : cmRadicand p none = -1 := rfl
+
+@[simp] theorem cmRadicand_some (i : ι) : cmRadicand p (some i) = (p i : ℚ) := rfl
+
+@[simp] theorem cmRoot_none : cmRoot p none = Complex.I := rfl
+
+@[simp] theorem cmRoot_some (i : ι) : cmRoot p (some i) = ((Real.sqrt (p i) : ℝ) : ℂ) := rfl
+
+/-- The generator family squares to the radicand family: `i² = -1` and `√(p i)² = p i`. This is
+the `hroot` hypothesis the field-generic multiquadratic results consume. -/
+theorem cmRoot_sq (x : Option ι) : cmRoot p x ^ 2 = algebraMap ℚ ℂ (cmRadicand p x) := by
+  cases x with
+  | none => simp [cmRoot, cmRadicand, Complex.I_sq]
+  | some i =>
+      simp only [cmRoot, cmRadicand, Option.elim_some]
+      rw [← Complex.ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg _), Complex.ofReal_natCast,
+        map_natCast]
+
+/-- The range of the CM generator family is the inserted generator set: `i` together with the
+real square roots `√(p i)`. This identifies `adjoin ℚ (Set.range (cmRoot p))` with the named
+field `ℚ(i, √p₁, …, √pₙ)`. -/
+theorem range_cmRoot :
+    Set.range (cmRoot p)
+      = insert Complex.I (Set.range fun i => ((Real.sqrt (p i) : ℝ) : ℂ)) := by
+  ext z
+  simp only [Set.mem_range, Set.mem_insert_iff]
+  constructor
+  · rintro ⟨x, rfl⟩
+    cases x with
+    | none => exact Or.inl rfl
+    | some i => exact Or.inr ⟨i, rfl⟩
+  · rintro (rfl | ⟨i, rfl⟩)
+    · exact ⟨none, rfl⟩
+    · exact ⟨some i, rfl⟩
+
+/-- The CM radicand family is square-class independent: for distinct primes `p`, no nonempty
+subset product of `-1, p₁, …, pₙ` is a square in `ℚ`. -/
+theorem not_isSquare_prod_cmRadicand (hp : ∀ i, (p i).Prime) (hinj : Function.Injective p)
+    (S : Finset (Option ι)) (hS : S.Nonempty) : ¬ IsSquare (∏ x ∈ S, cmRadicand p x) := by
+  have h := not_isSquare_prod_optionNeg (K := ℚ) (d := fun i => (p i : ℚ))
+    (fun i => by exact_mod_cast (hp i).pos)
+    (not_isSquare_prod_primes_of_injective p hp hinj) (c := -1) (by norm_num) S hS
+  exact h
+
+end CMFamily
+
 /-- **Degree of a multiquadratic CM field.** For a finite family of distinct primes `p : ι → ℕ`,
 the field `ℚ(i, √p₁, …, √pₙ)` generated over `ℚ` by `i` and the real square roots of the `p i`
 has degree `2^{|ι|+1}`. This recovers the Erdős CM field `ℚ(i, √q₀, …, √q_{g-1})` as a
@@ -102,39 +161,12 @@ theorem finrank_adjoin_I_sqrt_primes {ι : Type*} [Finite ι] (p : ι → ℕ)
         (IntermediateField.adjoin ℚ
           (insert Complex.I (Set.range fun i => ((Real.sqrt (p i) : ℝ) : ℂ))))
       = 2 ^ (Nat.card ι + 1) := by
-  classical
-  set d : Option ι → ℚ := fun x => x.elim (-1) (fun i => (p i : ℚ)) with hd
-  set root : Option ι → ℂ :=
-    fun x => x.elim Complex.I (fun i => ((Real.sqrt (p i) : ℝ) : ℂ)) with hr
-  have hroot : ∀ x : Option ι, root x ^ 2 = algebraMap ℚ ℂ (d x) := by
-    intro x
-    cases x with
-    | none => simp [hr, hd, Complex.I_sq]
-    | some i =>
-        simp only [hr, hd, Option.elim_some]
-        rw [← Complex.ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg _), Complex.ofReal_natCast,
-          map_natCast]
-  have hindep : ∀ S : Finset (Option ι), S.Nonempty → ¬ IsSquare (∏ x ∈ S, d x) := by
-    intro S hS
-    exact not_isSquare_prod_optionNeg (fun i => by exact_mod_cast (hp i).pos)
-      (not_isSquare_prod_primes_of_injective p hp hinj) (by norm_num) S hS
-  have hrange : Set.range root
-      = insert Complex.I (Set.range fun i => ((Real.sqrt (p i) : ℝ) : ℂ)) := by
-    ext z
-    simp only [Set.mem_range, Set.mem_insert_iff]
-    constructor
-    · rintro ⟨x, rfl⟩
-      cases x with
-      | none => exact Or.inl rfl
-      | some i => exact Or.inr ⟨i, rfl⟩
-    · rintro (rfl | ⟨i, rfl⟩)
-      · exact ⟨none, rfl⟩
-      · exact ⟨some i, rfl⟩
   have hcard : Nat.card (Option ι) = Nat.card ι + 1 := by
     letI := Fintype.ofFinite ι
     simp [Nat.card_eq_fintype_card, Fintype.card_option]
-  have hkey := finrank_adjoin_range (d := d) (root := root) hroot hindep
-  rw [hrange, hcard] at hkey
+  have hkey := finrank_adjoin_range (d := cmRadicand p) (root := cmRoot p)
+    (cmRoot_sq p) (not_isSquare_prod_cmRadicand p hp hinj)
+  rw [range_cmRoot p, hcard] at hkey
   exact hkey
 
 /-- **Worked example: `[ℚ(i, √2) : ℚ] = 4`.** The smallest nontrivial multiquadratic CM degree,
