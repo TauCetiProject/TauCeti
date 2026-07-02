@@ -114,7 +114,6 @@ lemma map_eq_zero_iff (J : AlmostComplexStructure V) {v : V} :
     J v = 0 ↔ v = 0 :=
   J.injective.eq_iff' J.toLinearMap.map_zero
 
-@[simp]
 lemma map_ne_zero_iff (J : AlmostComplexStructure V) {v : V} :
     J v ≠ 0 ↔ v ≠ 0 :=
   not_congr J.map_eq_zero_iff

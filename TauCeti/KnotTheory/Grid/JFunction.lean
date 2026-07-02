@@ -82,7 +82,6 @@ theorem isSouthWest_iff (p q : Fin n × Fin n) :
   Iff.rfl
 
 /-- A point is not strictly southwest of itself. -/
-@[simp]
 theorem not_isSouthWest_self (p : Fin n × Fin n) : ¬ IsSouthWest p p := by
   intro h
   exact (lt_self_iff_false p.1.val).mp h.1
@@ -140,7 +139,6 @@ theorem I_singleton_singleton (p q : Fin n × Fin n) :
   · simp only [h, if_false, Finset.card_empty]
 
 /-- No point contributes a southwest pair with itself. -/
-@[simp]
 theorem I_singleton_self (p : Fin n × Fin n) : I {p} {p} = 0 := by
   simp
 
@@ -391,7 +389,6 @@ theorem J_singleton_singleton_of_isSouthWest_or_isSouthWest {p q : Fin n × Fin 
     simp [J_singleton_singleton, hpqfin, hqpcoord]
 
 /-- The `J`-function of a singleton with itself is zero. -/
-@[simp]
 theorem J_singleton_self (p : Fin n × Fin n) : GridPoint.J {p} {p} = 0 := by
   simp [GridPoint.J]
 

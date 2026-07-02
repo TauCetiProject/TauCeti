@@ -79,7 +79,7 @@ reciprocity used by genus-field splitting criteria. -/
 reciprocal Legendre symbol `(q / p) = 1`. This is the form consumed by the multiquadratic
 prime-splitting law after the genus-field radicands have been normalized to prime
 discriminants. -/
-@[simp] theorem legendreSym_oddPrimeDiscriminant_eq_one_iff [Fact p.Prime] [Fact q.Prime]
+theorem legendreSym_oddPrimeDiscriminant_eq_one_iff [Fact p.Prime] [Fact q.Prime]
     (hp : p ≠ 2) (hq : q ≠ 2) :
     legendreSym q (oddPrimeDiscriminant p) = 1 ↔ legendreSym p (q : ℤ) = 1 := by
   rw [legendreSym_oddPrimeDiscriminant_eq_legendreSym hp hq]

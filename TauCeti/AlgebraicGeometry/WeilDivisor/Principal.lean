@@ -48,8 +48,8 @@ abstracted to the data of an `OrderSystem`, a weight function, and the predicate
 `IsWeightedDegreeZero`.
 
 No external mathematics is vendored. This reuses Tau Ceti's existing `WeilDivisor` API and
-Mathlib's `Finsupp.onFinset` (to assemble a finitely supported function from coordinatewise
-data) and `QuotientAddGroup` quotient machinery.
+Mathlib's `Finsupp.ofSupportFinite` (to assemble a finitely supported function from
+coordinatewise data) and `QuotientAddGroup` quotient machinery.
 -/
 
 public section
@@ -79,24 +79,23 @@ namespace OrderSystem
 variable {X G : Type*} [AddCommGroup G] (S : OrderSystem X G)
 
 /-- The principal divisor `Σ_x ord_x(g) · [x]` attached to `g : G`. -/
-@[expose] noncomputable def principalDivisor (g : G) : WeilDivisor X :=
-  Finsupp.onFinset (S.finite_support g).toFinset (fun x => S.ord x g) fun _ hx =>
-    (S.finite_support g).mem_toFinset.mpr (Function.mem_support.mpr hx)
+noncomputable def principalDivisor (g : G) : WeilDivisor X :=
+  Finsupp.ofSupportFinite (fun x => S.ord x g) (S.finite_support g)
 
 @[simp]
 lemma coeff_principalDivisor (g : G) (x : X) :
-    coeff (S.principalDivisor g) x = S.ord x g :=
-  Finsupp.onFinset_apply
+    coeff (S.principalDivisor g) x = S.ord x g := by
+  rw [principalDivisor, coeff, Finsupp.ofSupportFinite_coe]
 
 /-- Principal divisors as a homomorphism `G →+ WeilDivisor X`. -/
-@[expose] noncomputable def principalHom : G →+ WeilDivisor X where
+noncomputable def principalHom : G →+ WeilDivisor X where
   toFun := S.principalDivisor
   map_zero' := by ext x; simp
   map_add' g₁ g₂ := by ext x; simp
 
 @[simp]
-lemma principalHom_apply (g : G) : S.principalHom g = S.principalDivisor g :=
-  rfl
+lemma principalHom_apply (g : G) : S.principalHom g = S.principalDivisor g := by
+  rw [principalHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk]
 
 @[simp]
 lemma principalDivisor_zero : S.principalDivisor 0 = 0 :=

@@ -116,17 +116,17 @@ theorem primeDiscriminantRadicand_def (D : ℤ) :
   rfl
 
 /-- The prime-discriminant radicand of `-4` is `-1`. -/
-@[simp] theorem primeDiscriminantRadicand_neg_four :
+theorem primeDiscriminantRadicand_neg_four :
     primeDiscriminantRadicand (-4) = -1 := by
   simp [primeDiscriminantRadicand]
 
 /-- The prime-discriminant radicand of `8` is `2`. -/
-@[simp] theorem primeDiscriminantRadicand_eight :
+theorem primeDiscriminantRadicand_eight :
     primeDiscriminantRadicand 8 = 2 := by
   simp [primeDiscriminantRadicand]
 
 /-- The prime-discriminant radicand of `-8` is `-2`. -/
-@[simp] theorem primeDiscriminantRadicand_neg_eight :
+theorem primeDiscriminantRadicand_neg_eight :
     primeDiscriminantRadicand (-8) = -2 := by
   simp [primeDiscriminantRadicand]
 

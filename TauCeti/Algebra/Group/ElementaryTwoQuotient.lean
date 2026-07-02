@@ -289,10 +289,15 @@ theorem card_elementaryTwoQuotient_eq_card_twoTorsion
     Subgroup.index_range]
   exact Nat.card_congr (Equiv.subtypeEquivRight fun g => by simp [MonoidHom.mem_ker])
 
-/-- **The 2-rank of a commutative group with finite-dimensional elementary-2 quotient**: the
-`ZMod 2`-dimension of the maximal elementary-2 quotient `G / G²`. -/
-noncomputable def twoRank [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] : ℕ :=
+/-- **The 2-rank of a commutative group**: the `ZMod 2`-dimension of the maximal elementary-2
+quotient `G / G²` (zero, by convention of `Module.finrank`, when the quotient is
+infinite-dimensional). -/
+@[expose] noncomputable def twoRank : ℕ :=
   Module.finrank (ZMod 2) (ElementaryTwoQuotient G)
+
+/-- The 2-rank of `G` is the `ZMod 2` dimension of its maximal elementary-2 quotient `G / G²`. -/
+@[simp] theorem twoRank_def :
+    twoRank G = Module.finrank (ZMod 2) (ElementaryTwoQuotient G) := rfl
 
 /-- The maximal elementary-2 quotient has cardinality `2 ^ twoRank`: it is a finite `𝔽₂`-vector
 space of dimension the 2-rank. -/
@@ -308,15 +313,8 @@ theorem finrank_elementaryTwoQuotient_eq_of_mulEquiv (e : G ≃* H) :
       Module.finrank (ZMod 2) (ElementaryTwoQuotient H) :=
   (elementaryTwoQuotientCongr e).finrank_eq
 
-/-- If the elementary-2 quotient of `G` is finite-dimensional, then a multiplicatively equivalent
-commutative group has the same elementary-2 rank; target finite-dimensionality is transported by
-the induced equivalence. -/
-theorem twoRank_eq_of_mulEquiv (e : G ≃* H)
-    [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] :
-    letI : Module.Finite (ZMod 2) (ElementaryTwoQuotient H) :=
-      Module.Finite.of_surjective (elementaryTwoQuotientCongr e).toLinearMap
-        (elementaryTwoQuotientCongr e).surjective
-    twoRank G = twoRank H :=
+/-- Multiplicatively equivalent commutative groups have the same elementary-2 rank. -/
+theorem twoRank_eq_of_mulEquiv (e : G ≃* H) : twoRank G = twoRank H :=
   finrank_elementaryTwoQuotient_eq_of_mulEquiv (G := G) (H := H) e
 
 end TauCeti

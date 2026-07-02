@@ -68,21 +68,8 @@ are isotropic. -/
 @[simp]
 lemma isIsotropic_prod_iff :
     (ω₁.prod ω₂).IsIsotropic (L₁.prod L₂) ↔ ω₁.IsIsotropic L₁ ∧ ω₂.IsIsotropic L₂ := by
-  rw [isIsotropic_iff, isIsotropic_iff, isIsotropic_iff]
-  constructor
-  · intro h
-    constructor
-    · intro x hx y hy
-      have := h (x, 0) (Submodule.mem_prod.2 ⟨hx, Submodule.zero_mem L₂⟩)
-        (y, 0) (Submodule.mem_prod.2 ⟨hy, Submodule.zero_mem L₂⟩)
-      simpa using this
-    · intro y hy z hz
-      have := h (0, y) (Submodule.mem_prod.2 ⟨Submodule.zero_mem L₁, hy⟩)
-        (0, z) (Submodule.mem_prod.2 ⟨Submodule.zero_mem L₁, hz⟩)
-      simpa using this
-  · rintro ⟨h₁, h₂⟩ x hx
-    intro y hy
-    rw [SymplecticForm.prod_apply, h₁ x.1 hx.1 y.1 hy.1, h₂ x.2 hx.2 y.2 hy.2, add_zero]
+  rw [isIsotropic_iff_le, isIsotropic_iff_le, isIsotropic_iff_le, orthogonal_prod,
+    Submodule.le_prod_iff, Submodule.prod_map_fst, Submodule.prod_map_snd]
 
 /-- The product of two isotropic subspaces is isotropic for the direct-sum symplectic form. -/
 lemma IsIsotropic.prod (h₁ : ω₁.IsIsotropic L₁) (h₂ : ω₂.IsIsotropic L₂) :
@@ -95,18 +82,8 @@ factors are coisotropic. -/
 lemma isCoisotropic_prod_iff :
     (ω₁.prod ω₂).IsCoisotropic (L₁.prod L₂) ↔
       ω₁.IsCoisotropic L₁ ∧ ω₂.IsCoisotropic L₂ := by
-  rw [isCoisotropic_iff, isCoisotropic_iff, isCoisotropic_iff, orthogonal_prod]
-  constructor
-  · intro h
-    constructor
-    · intro x hx
-      exact (h (x, 0)
-        (Submodule.mem_prod.2 ⟨hx, Submodule.zero_mem (ω₂.orthogonal L₂)⟩)).1
-    · intro y hy
-      exact (h (0, y)
-        (Submodule.mem_prod.2 ⟨Submodule.zero_mem (ω₁.orthogonal L₁), hy⟩)).2
-  · rintro ⟨h₁, h₂⟩ x hx
-    exact Submodule.mem_prod.2 ⟨h₁ x.1 hx.1, h₂ x.2 hx.2⟩
+  rw [isCoisotropic_iff_le, isCoisotropic_iff_le, isCoisotropic_iff_le, orthogonal_prod,
+    Submodule.le_prod_iff, Submodule.prod_map_fst, Submodule.prod_map_snd]
 
 /-- The product of two coisotropic subspaces is coisotropic for the direct-sum symplectic form. -/
 lemma IsCoisotropic.prod (h₁ : ω₁.IsCoisotropic L₁) (h₂ : ω₂.IsCoisotropic L₂) :

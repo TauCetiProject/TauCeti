@@ -58,7 +58,7 @@ theorem ConditionallyIIDWith.of_iIndepFun_identDistrib {μ : Measure Ω}
   have hindep_k : iIndepFun (fun i : Fin m => X (k i)) μ := hindep.precomp hk
   have hblock : blockLaw μ X k = Measure.pi (fun _ : Fin m => μ.map (X 0)) := by
     have h1 : blockLaw μ X k = Measure.pi (fun i : Fin m => μ.map (X (k i))) := by
-      rw [blockLaw_apply]
+      rw [blockLaw_def]
       exact hindep_k.map_fun_eq_pi_map (fun i => (hident (k i)).aemeasurable_fst)
     rw [h1]
     exact congrArg Measure.pi (funext fun i => (hident (k i)).map_eq)

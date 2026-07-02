@@ -57,8 +57,8 @@ abbrev principalKernel : AddSubgroup G :=
 
 @[simp]
 lemma mem_principalKernel {g : G} :
-    g ∈ S.principalKernel ↔ S.principalDivisor g = 0 :=
-  AddMonoidHom.mem_ker
+    g ∈ S.principalKernel ↔ S.principalDivisor g = 0 := by
+  simp only [principalKernel, AddMonoidHom.mem_ker, principalHom_apply]
 
 /-- A function has zero principal divisor exactly when all of its orders vanish. -/
 lemma mem_principalKernel_iff_forall_ord_eq_zero {g : G} :
@@ -110,8 +110,8 @@ def principalFunctionClassDivisor : S.PrincipalFunctionClass →+ WeilDivisor X 
 
 @[simp]
 lemma principalFunctionClassDivisor_mk (g : G) :
-    S.principalFunctionClassDivisor (QuotientAddGroup.mk g) = S.principalDivisor g :=
-  QuotientAddGroup.kerLift_mk S.principalHom g
+    S.principalFunctionClassDivisor (QuotientAddGroup.mk g) = S.principalDivisor g := by
+  rw [principalFunctionClassDivisor, QuotientAddGroup.kerLift_mk, principalHom_apply]
 
 /-- The map from function classes to principal divisors is injective. -/
 lemma principalFunctionClassDivisor_injective :
@@ -151,7 +151,7 @@ lemma principalFunctionClassEquivPrincipalSubgroup_mk (g : G) :
   Subtype.ext <| by
     simp only [principalFunctionClassEquivPrincipalSubgroup, AddEquiv.trans_apply,
       AddEquiv.addSubgroupCongr_apply, QuotientAddGroup.quotientKerEquivRange]
-    rfl
+    exact S.principalHom_apply g
 
 @[simp]
 lemma coe_principalFunctionClassEquivPrincipalSubgroup (q : S.PrincipalFunctionClass) :

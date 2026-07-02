@@ -64,7 +64,6 @@ noncomputable abbrev mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal
   _root_.CommHopfAlgCat.ofHom (Bialgebra.Quotient.mkBialgHom I.toIdeal)
 
 /-- The quotient morphism has the expected underlying bialgebra morphism. -/
-@[simp]
 lemma hom_mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     (mkQuotient H I).hom = Bialgebra.Quotient.mkBialgHom I.toIdeal :=
   _root_.CommHopfAlgCat.hom_ofHom _
@@ -97,7 +96,6 @@ noncomputable abbrev liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
   _root_.CommHopfAlgCat.ofHom (Bialgebra.Quotient.liftBialgHom I.toIdeal f.hom hf)
 
 /-- The quotient lift has the expected underlying bialgebra morphism. -/
-@[simp]
 lemma hom_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
     (liftQuotient I f hf).hom = Bialgebra.Quotient.liftBialgHom I.toIdeal f.hom hf :=

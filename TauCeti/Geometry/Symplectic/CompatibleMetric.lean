@@ -54,7 +54,6 @@ variable {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 
 /-- Applying `J` to the right argument of the metric `g(v, w) = ω(v, J w)` negates the symplectic
 form: `g(v, J w) = -ω(v, w)`. This uses only `J² = -1`, not compatibility. -/
-@[simp]
 lemma associatedBilinForm_apply_right_apply (v w : V) :
     ω.associatedBilinForm J v (J w) = -ω v w := by
   rw [associatedBilinForm_apply, AlmostComplexStructure.apply_apply]

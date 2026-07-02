@@ -53,8 +53,11 @@ variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W}
 variable {J₁ : AlmostComplexStructure V} {J₂ : AlmostComplexStructure W}
 
 /-- The symmetrized bilinear form of a direct sum is the direct sum of the factor symmetrized
-bilinear forms. -/
-@[simp]
+bilinear forms.
+
+Not a `simp` lemma: the `simp` lemma `symmetrizedBilinForm_apply` already rewrites the
+left-hand side, and the two rewrites reach sums grouped differently, so marking both would
+make the `simp` normal form depend on which lemma fires first. -/
 lemma prod_symmetrizedBilinForm_apply (p q : V × W) :
     (ω₁.prod ω₂).symmetrizedBilinForm (J₁.prod J₂) p q =
       ω₁.symmetrizedBilinForm J₁ p.1 q.1 + ω₂.symmetrizedBilinForm J₂ p.2 q.2 := by
@@ -67,8 +70,12 @@ namespace Tames
 variable (h₁ : ω₁.Tames J₁) (h₂ : ω₂.Tames J₂)
 
 /-- The packaged tame inner product of a direct sum is the sum of the two packaged tame inner
-products. -/
-@[simp]
+products.
+
+Not a `simp` lemma: the `simp` lemma `Tames.innerProductCore_inner` already rewrites the
+left-hand side, and the two rewrites reach sums grouped differently, so marking both would
+make the `simp` normal form depend on which lemma fires first. Use this as a named reduction
+to the factor metrics. -/
 lemma prod_innerProductCore_inner (p q : V × W) :
     @inner ℝ (V × W) (prod_tames h₁ h₂).innerProductCore.toInner p q =
       @inner ℝ V h₁.innerProductCore.toInner p.1 q.1 +
@@ -88,27 +95,23 @@ lemma prod_innerProductCore_inner (p q : V × W) :
         symmetrizedBilinForm_apply, symmetrizedBilinForm_apply]
 
 /-- The first coordinate inclusion is isometric for the packaged tame product metric. -/
-@[simp]
 lemma prod_innerProductCore_inner_inl (v v' : V) :
     @inner ℝ (V × W) (prod_tames h₁ h₂).innerProductCore.toInner (v, 0) (v', 0) =
       @inner ℝ V h₁.innerProductCore.toInner v v' := by
   simp [prod_innerProductCore_inner h₁ h₂]
 
 /-- The second coordinate inclusion is isometric for the packaged tame product metric. -/
-@[simp]
 lemma prod_innerProductCore_inner_inr (w w' : W) :
     @inner ℝ (V × W) (prod_tames h₁ h₂).innerProductCore.toInner (0, w) (0, w') =
       @inner ℝ W h₂.innerProductCore.toInner w w' := by
   simp [prod_innerProductCore_inner h₁ h₂]
 
 /-- The two coordinate summands are orthogonal for the packaged tame product metric. -/
-@[simp]
 lemma prod_innerProductCore_inner_inl_inr (v : V) (w : W) :
     @inner ℝ (V × W) (prod_tames h₁ h₂).innerProductCore.toInner (v, 0) (0, w) = 0 := by
   simp [prod_innerProductCore_inner h₁ h₂]
 
 /-- The reverse coordinate orthogonality for the packaged tame product metric. -/
-@[simp]
 lemma prod_innerProductCore_inner_inr_inl (w : W) (v : V) :
     @inner ℝ (V × W) (prod_tames h₁ h₂).innerProductCore.toInner (0, w) (v, 0) = 0 := by
   simp [prod_innerProductCore_inner h₁ h₂]
@@ -120,8 +123,11 @@ namespace Compatible
 variable (h₁ : ω₁.Compatible J₁) (h₂ : ω₂.Compatible J₂)
 
 /-- The packaged compatible inner product of a direct sum is the sum of the two factor packaged
-compatible inner products. -/
-@[simp]
+compatible inner products.
+
+Not a `simp` lemma: the `simp` lemma `Compatible.innerProductCore_inner` already rewrites the
+left-hand side, so this lemma would never fire from the default `simp` set. Use it as a named
+reduction to the factor metrics. -/
 lemma prod_innerProductCore_inner (p q : V × W) :
     @inner ℝ (V × W) (prod_compatible h₁ h₂).innerProductCore.toInner p q =
       @inner ℝ V h₁.innerProductCore.toInner p.1 q.1 +
@@ -141,27 +147,23 @@ lemma prod_innerProductCore_inner (p q : V × W) :
         associatedBilinForm_apply, associatedBilinForm_apply]
 
 /-- The first coordinate inclusion is isometric for the packaged compatible product metric. -/
-@[simp]
 lemma prod_innerProductCore_inner_inl (v v' : V) :
     @inner ℝ (V × W) (prod_compatible h₁ h₂).innerProductCore.toInner (v, 0) (v', 0) =
       @inner ℝ V h₁.innerProductCore.toInner v v' := by
   simp [prod_innerProductCore_inner h₁ h₂]
 
 /-- The second coordinate inclusion is isometric for the packaged compatible product metric. -/
-@[simp]
 lemma prod_innerProductCore_inner_inr (w w' : W) :
     @inner ℝ (V × W) (prod_compatible h₁ h₂).innerProductCore.toInner (0, w) (0, w') =
       @inner ℝ W h₂.innerProductCore.toInner w w' := by
   simp [prod_innerProductCore_inner h₁ h₂]
 
 /-- The two coordinate summands are orthogonal for the packaged compatible product metric. -/
-@[simp]
 lemma prod_innerProductCore_inner_inl_inr (v : V) (w : W) :
     @inner ℝ (V × W) (prod_compatible h₁ h₂).innerProductCore.toInner (v, 0) (0, w) = 0 := by
   simp [prod_innerProductCore_inner h₁ h₂]
 
 /-- The reverse coordinate orthogonality for the packaged compatible product metric. -/
-@[simp]
 lemma prod_innerProductCore_inner_inr_inl (w : W) (v : V) :
     @inner ℝ (V × W) (prod_compatible h₁ h₂).innerProductCore.toInner (0, w) (v, 0) = 0 := by
   simp [prod_innerProductCore_inner h₁ h₂]

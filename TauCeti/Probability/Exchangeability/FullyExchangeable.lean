@@ -51,9 +51,8 @@ private theorem map_reindex_prefixProj {μ : Measure Ω} {X : ℕ → Ω → α}
     (hX_meas : ∀ i, AEMeasurable (X i) μ) (π : Equiv.Perm ℕ) (n : ℕ) :
     (μ.map fun ω i => X (π i) ω).map (prefixProj α n)
       = blockLaw μ X (fun j : Fin n => π j.val) := by
-  rw [AEMeasurable.map_map_of_aemeasurable (measurable_prefixProj n).aemeasurable
-    (aemeasurable_pi_lambda _ fun i => hX_meas (π i))]
-  rfl
+  rw [← pathLaw_def, ← map_reindex_pathLaw μ hX_meas π,
+    map_reindex_prefixProj_pathLaw μ hX_meas π n]
 
 /-- **Full exchangeability implies finite exchangeability at each dimension `n`.** -/
 theorem FullyExchangeable.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω → α}

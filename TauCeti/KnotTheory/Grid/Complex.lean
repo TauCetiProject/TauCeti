@@ -53,33 +53,58 @@ abbrev GridChain (R : Type*) [Zero R] (n : ℕ) :=
 
 namespace GridChain
 
+/-- The linear automorphism of grid chains induced by relabeling each generator `x` along an
+equivalence `e` of grid states, sending the generator `x` to the generator `e x`.
+
+The transpose and rotation relabelings below are the two special cases in which `e` is the
+permutation of grid states coming from an involution. This is an implementation helper that
+factors those two equivalences; it is private because no downstream consumer refers to it. -/
+private noncomputable def relabelEquiv {R : Type*} [Semiring R] {n : ℕ}
+    (e : GridState n ≃ GridState n) :
+    GridChain R n ≃ₗ[R] GridChain R n :=
+  Finsupp.domLCongr e
+
+/-- The relabeling along `e` sends the generator `x` to the generator `e x`. -/
+private theorem relabelEquiv_single {R : Type*} [Semiring R] {n : ℕ}
+    (e : GridState n ≃ GridState n) (x : GridState n) (a : R) :
+    relabelEquiv e (Finsupp.single x a) = Finsupp.single (e x) a :=
+  Finsupp.domLCongr_single e x a
+
+/-- The `y`-coefficient of a relabeled chain is the `e.symm y`-coefficient of the original
+chain. -/
+private theorem relabelEquiv_apply {R : Type*} [Semiring R] {n : ℕ}
+    (e : GridState n ≃ GridState n)
+    (f : GridChain R n) (y : GridState n) : relabelEquiv e f y = f (e.symm y) := by
+  rw [relabelEquiv, Finsupp.domLCongr_apply]
+  exact Finsupp.equivMapDomain_apply _ _ _
+
+/-- The inverse of the relabeling along `e` is the relabeling along `e.symm`. -/
+private theorem relabelEquiv_symm {R : Type*} [Semiring R] {n : ℕ}
+    (e : GridState n ≃ GridState n) :
+    (relabelEquiv (R := R) e).symm = relabelEquiv e.symm := by
+  unfold relabelEquiv
+  rw [Finsupp.domLCongr_symm]
+
 /-- The linear automorphism of grid chains induced by the diagonal reflection of grid states.
 
 Because `GridState.transpose` is an involution, relabeling each generator `x` by `x.transpose`
 gives a linear automorphism of the chain module `GridChain R n`. -/
 noncomputable def transposeEquiv (R : Type*) [Semiring R] (n : ℕ) :
     GridChain R n ≃ₗ[R] GridChain R n :=
-  Finsupp.domLCongr
-    { toFun := GridState.transpose
-      invFun := GridState.transpose
-      left_inv := GridState.transpose_transpose
-      right_inv := GridState.transpose_transpose }
+  relabelEquiv (Function.Involutive.toPerm _ GridState.transpose_transpose)
 
 /-- The transpose relabeling sends the generator `x` to the generator `x.transpose`. -/
 @[simp]
 theorem transposeEquiv_single {R : Type*} [Semiring R] {n : ℕ} (x : GridState n) (a : R) :
-    transposeEquiv R n (Finsupp.single x a) = Finsupp.single x.transpose a := by
-  unfold transposeEquiv
-  exact Finsupp.domLCongr_single _ x a
+    transposeEquiv R n (Finsupp.single x a) = Finsupp.single x.transpose a :=
+  relabelEquiv_single _ x a
 
 /-- The `y`-coefficient of a relabeled chain is the `y.transpose`-coefficient of the original
 chain. -/
 @[simp]
 theorem transposeEquiv_apply {R : Type*} [Semiring R] {n : ℕ} (f : GridChain R n)
-    (y : GridState n) : transposeEquiv R n f y = f y.transpose := by
-  unfold transposeEquiv
-  rw [Finsupp.domLCongr_apply]
-  exact Finsupp.equivMapDomain_apply _ _ _
+    (y : GridState n) : transposeEquiv R n f y = f y.transpose :=
+  relabelEquiv_apply _ f y
 
 /-- The transpose relabeling is its own inverse: since `GridState.transpose` is an involution, the
 inverse automorphism is again `transposeEquiv`. This lets the forward lemmas
@@ -88,8 +113,7 @@ inverse automorphism is again `transposeEquiv`. This lets the forward lemmas
 theorem transposeEquiv_symm {R : Type*} [Semiring R] {n : ℕ} :
     (transposeEquiv R n).symm = transposeEquiv R n := by
   unfold transposeEquiv
-  rw [Finsupp.domLCongr_symm]
-  rfl
+  rw [relabelEquiv_symm, Function.Involutive.toPerm_symm]
 
 /-- The linear automorphism of grid chains induced by the half-turn rotation of grid states.
 
@@ -97,27 +121,20 @@ Because `GridState.rotate` is an involution, relabeling each generator `x` by `x
 linear automorphism of the chain module `GridChain R n`. -/
 noncomputable def rotateEquiv (R : Type*) [Semiring R] (n : ℕ) :
     GridChain R n ≃ₗ[R] GridChain R n :=
-  Finsupp.domLCongr
-    { toFun := GridState.rotate
-      invFun := GridState.rotate
-      left_inv := GridState.rotate_rotate
-      right_inv := GridState.rotate_rotate }
+  relabelEquiv (Function.Involutive.toPerm _ GridState.rotate_rotate)
 
 /-- The rotation relabeling sends the generator `x` to the generator `x.rotate`. -/
 @[simp]
 theorem rotateEquiv_single {R : Type*} [Semiring R] {n : ℕ} (x : GridState n) (a : R) :
-    rotateEquiv R n (Finsupp.single x a) = Finsupp.single x.rotate a := by
-  unfold rotateEquiv
-  exact Finsupp.domLCongr_single _ x a
+    rotateEquiv R n (Finsupp.single x a) = Finsupp.single x.rotate a :=
+  relabelEquiv_single _ x a
 
 /-- The `y`-coefficient of a relabeled chain is the `y.rotate`-coefficient of the original
 chain. -/
 @[simp]
 theorem rotateEquiv_apply {R : Type*} [Semiring R] {n : ℕ} (f : GridChain R n)
-    (y : GridState n) : rotateEquiv R n f y = f y.rotate := by
-  unfold rotateEquiv
-  rw [Finsupp.domLCongr_apply]
-  exact Finsupp.equivMapDomain_apply _ _ _
+    (y : GridState n) : rotateEquiv R n f y = f y.rotate :=
+  relabelEquiv_apply _ f y
 
 /-- The rotation relabeling is its own inverse: since `GridState.rotate` is an involution, the
 inverse automorphism is again `rotateEquiv`. This lets the forward lemmas `rotateEquiv_single`
@@ -126,8 +143,7 @@ and `rotateEquiv_apply` also drive the inverse map. -/
 theorem rotateEquiv_symm {R : Type*} [Semiring R] {n : ℕ} :
     (rotateEquiv R n).symm = rotateEquiv R n := by
   unfold rotateEquiv
-  rw [Finsupp.domLCongr_symm]
-  rfl
+  rw [relabelEquiv_symm, Function.Involutive.toPerm_symm]
 
 end GridChain
 
@@ -192,7 +208,6 @@ theorem fullyBlockedDifferential_single (x : GridState n) :
 
 /-- The matrix coefficient of the fully blocked differential on a single generator is the fully
 blocked rectangle count. -/
-@[simp]
 theorem fullyBlockedDifferential_single_apply (x y : GridState n) :
     G.fullyBlockedDifferential (Finsupp.single x 1) y =
       G.fullyBlockedRectangleCount x y := by

@@ -2,7 +2,9 @@ module
 
 public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Order.Fin.Basic
+public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
+import Mathlib.Order.Fin.Tuple
 import Mathlib.Logic.Equiv.Fintype
 import TauCeti.Probability.Exchangeability.FiniteMarginals
 
@@ -50,20 +52,14 @@ theorem Contractable.map {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contract
 /-- The one-coordinate specialization of contractability. -/
 theorem Contractable.map_single {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
     (k : Fin 1 → ℕ) :
-    blockLaw μ X k = prefixLaw μ X 1 := by
-  exact h.map (by
-    intro i j hij
-    fin_cases i
-    fin_cases j
-    omega)
+    blockLaw μ X k = prefixLaw μ X 1 :=
+  h.map (Subsingleton.strictMono k)
 
 /-- The two-coordinate specialization of contractability. -/
 theorem Contractable.map_pair {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
     {i j : ℕ} (hij : i < j) :
-    blockLaw μ X (fun r : Fin 2 => if r = 0 then i else j) = prefixLaw μ X 2 := by
-  refine h.map ?_
-  intro r s hrs
-  fin_cases r <;> fin_cases s <;> simp_all
+    blockLaw μ X ![i, j] = prefixLaw μ X 2 :=
+  h.map (strictMono_vecEmpty.vecCons hij)
 
 /-- Contractability is preserved by passing to a strictly increasing subsequence. -/
 theorem Contractable.comp {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
@@ -84,39 +80,32 @@ theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : �
     (hX : Exchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ)
     {n : ℕ} (k : Fin n → ℕ) (hk : Function.Injective k) :
     blockLaw μ X k = prefixLaw μ X n := by
-  cases n with
-  | zero =>
-    rw [blockLaw_apply, prefixLaw_apply, blockLaw_apply]
-    congr 1
-    funext ω i
-    exact i.elim0
-  | succ m =>
-    set N := max (m + 1) (Finset.univ.sup k + 1) with hN
-    have hnN : m + 1 ≤ N := le_max_left _ _
-    have hk_bound : ∀ i, k i < N := by
-      intro i
-      have h1 : k i ≤ Finset.univ.sup k := Finset.le_sup (Finset.mem_univ i)
-      have h2 : Finset.univ.sup k + 1 ≤ N := le_max_right _ _
-      omega
-    obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair (Fin.castLE hnN)
-      (fun i => (⟨k i, hk_bound i⟩ : Fin N))
-      (fun a b h => by
-        apply Fin.val_injective
-        exact (congrArg Fin.val h : (Fin.castLE hnN a).val = (Fin.castLE hnN b).val))
-      (fun _ _ h => hk (Fin.mk.inj h))
-    have hexch : blockLaw μ X (fun j : Fin N => (σ j).val) = prefixLaw μ X N :=
-      (hX.exchangeableAt N).permute σ
-    have hLHS : (blockLaw μ X (fun j : Fin N => (σ j).val)).map
-          (fun x : Fin N → α => fun i : Fin (m + 1) => x (Fin.castLE hnN i)) = blockLaw μ X k := by
-      have hidx : (fun j : Fin N => (σ j).val) ∘ Fin.castLE hnN = k := by
-        funext i; exact congrArg Fin.val (hσ i)
-      rw [map_blockLaw_reindex μ _ (Fin.castLE hnN) (fun j => hX_meas (σ j).val), hidx]
-    have hRHS : (prefixLaw μ X N).map (fun x : Fin N → α => fun i : Fin (m + 1) =>
-          x (Fin.castLE hnN i)) = prefixLaw μ X (m + 1) :=
-      map_prefixLaw_castLE μ hnN (fun j => hX_meas j.val)
-    have key := congrArg
-      (Measure.map (fun x : Fin N → α => fun i : Fin (m + 1) => x (Fin.castLE hnN i))) hexch
-    rwa [hLHS, hRHS] at key
+  set N := max n (Finset.univ.sup k + 1) with hN
+  have hnN : n ≤ N := le_max_left _ _
+  have hk_bound : ∀ i, k i < N := by
+    intro i
+    have h1 : k i ≤ Finset.univ.sup k := Finset.le_sup (Finset.mem_univ i)
+    have h2 : Finset.univ.sup k + 1 ≤ N := le_max_right _ _
+    omega
+  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair (Fin.castLE hnN)
+    (fun i => (⟨k i, hk_bound i⟩ : Fin N))
+    (fun a b h => by
+      apply Fin.val_injective
+      exact (congrArg Fin.val h : (Fin.castLE hnN a).val = (Fin.castLE hnN b).val))
+    (fun _ _ h => hk (Fin.mk.inj h))
+  have hexch : blockLaw μ X (fun j : Fin N => (σ j).val) = prefixLaw μ X N :=
+    (hX.exchangeableAt N).permute σ
+  have hLHS : (blockLaw μ X (fun j : Fin N => (σ j).val)).map
+        (fun x : Fin N → α => fun i : Fin n => x (Fin.castLE hnN i)) = blockLaw μ X k := by
+    have hidx : (fun j : Fin N => (σ j).val) ∘ Fin.castLE hnN = k := by
+      funext i; exact congrArg Fin.val (hσ i)
+    rw [map_blockLaw_reindex μ _ (Fin.castLE hnN) (fun j => hX_meas (σ j).val), hidx]
+  have hRHS : (prefixLaw μ X N).map (fun x : Fin N → α => fun i : Fin n =>
+        x (Fin.castLE hnN i)) = prefixLaw μ X n :=
+    map_prefixLaw_castLE μ hnN (fun j => hX_meas j.val)
+  have key := congrArg
+    (Measure.map (fun x : Fin N → α => fun i : Fin n => x (Fin.castLE hnN i))) hexch
+  rwa [hLHS, hRHS] at key
 
 /-- **Every exchangeable sequence with a.e. measurable coordinates is contractable**: along any
 strictly increasing finite selection `k`, `blockLaw μ X k = prefixLaw μ X m`. One direction of the
@@ -137,7 +126,7 @@ theorem Contractable.measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω
     (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) {φ : ℕ → ℕ} (hφ : StrictMono φ) :
     MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) (pathLaw μ X) (pathLaw μ X) := by
   refine ⟨measurable_pi_lambda _ fun k => measurable_pi_apply (φ k), ?_⟩
-  haveI : IsFiniteMeasure (pathLaw μ X) := by rw [pathLaw_apply]; infer_instance
+  haveI : IsFiniteMeasure (pathLaw μ X) := by rw [pathLaw_def]; infer_instance
   refine measure_eq_of_prefixProj_map_eq ?_
   intro n
   rw [map_reindex_prefixProj_pathLaw μ hX_meas φ n,

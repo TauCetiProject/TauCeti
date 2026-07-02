@@ -66,7 +66,7 @@ theorem FullyExchangeable.map_values {μ : Measure Ω} {X : ℕ → Ω → α}
           (fun x : ℕ → α => fun i => f (x i)) := by
       exact (map_pathLaw μ hf (fun i => hX (π i))).symm
     _ = (pathLaw μ X).map (fun x : ℕ → α => fun i => f (x i)) := by
-      rw [pathLaw_apply, h.permute π]
+      rw [pathLaw_def, h.permute π]
     _ = pathLaw μ (fun n ω => f (X n ω)) := by
       exact map_pathLaw μ hf hX
 

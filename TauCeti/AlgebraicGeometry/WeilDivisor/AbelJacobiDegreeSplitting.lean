@@ -30,7 +30,7 @@ Ceti's existing `OrderSystem.picZero`, `weightedAbelJacobiClass`, and
 `classGroupAddEquivPicZeroProdInt` APIs.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 

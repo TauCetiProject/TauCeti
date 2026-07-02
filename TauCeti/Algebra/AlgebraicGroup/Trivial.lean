@@ -90,7 +90,6 @@ theorem ofConv_eq_ofId (f : WithConv (R →ₐ[R] A)) :
   Subsingleton.elim _ _
 
 /-- Evaluating any trivial-group convolution point gives the algebra map. -/
-@[simp]
 theorem convPoint_apply (f : WithConv (R →ₐ[R] A)) (r : R) :
     f r = algebraMap R A r := by
   rw [convPoint_eq_one f]
@@ -103,7 +102,6 @@ theorem toConv_eq_one (f : R →ₐ[R] A) : toConv f = (1 : WithConv (R →ₐ[R
   convPoint_eq_one (toConv f)
 
 /-- Evaluating the inverse of a trivial-group point gives the algebra map. -/
-@[simp]
 theorem convInv_apply (f : WithConv (R →ₐ[R] A)) (r : R) :
     f⁻¹ r = algebraMap R A r := by
   rw [convPoint_eq_one f]
@@ -123,7 +121,6 @@ theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B) (f : WithConv (R →ₐ[R] 
   rfl
 
 /-- Naturality of the inverse trivial-group points equivalence in the value algebra. -/
-@[simp]
 theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (u : PUnit.{1}) :
     AlgHom.mapValue (H := R) φ ((pointsMulEquiv (R := R) (A := A)).symm u) =
       (pointsMulEquiv (R := R) (A := B)).symm u := by

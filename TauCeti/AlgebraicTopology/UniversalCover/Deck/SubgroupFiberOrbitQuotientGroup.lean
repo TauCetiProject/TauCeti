@@ -176,7 +176,6 @@ lemma subgroupFiberOrbitQuotientEquivQuotientGroup_symm_mk_coe
 
 /-- The inverse quotient equivalence sends the identity coset to the orbit class of the chosen
 fibre point. -/
-@[simp]
 lemma subgroupFiberOrbitQuotientEquivQuotientGroup_symm_one
     [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
     (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) :

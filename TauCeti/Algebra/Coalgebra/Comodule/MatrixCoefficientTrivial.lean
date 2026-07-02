@@ -187,7 +187,6 @@ theorem trivial_matrixCoefficientSubmodule_le_span_singleton_one :
 
 /-- The coefficient submodule of the rank-one trivial comodule is exactly the line spanned by
 `1`. -/
-@[simp]
 theorem trivial_rankOne_matrixCoefficientSubmodule_eq_span_singleton_one :
     matrixCoefficientSubmodule (R := R) (C := C) (M := R) =
       Submodule.span R ({1} : Set C) := by

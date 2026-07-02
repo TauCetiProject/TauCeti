@@ -284,28 +284,6 @@ lemma IsEffective.weightedDegree_nonneg {w : X → ℤ} (hw : ∀ x, 0 ≤ w x)
   rw [weightedDegree_apply]
   exact Finsupp.sum_nonneg fun x _ => mul_nonneg (hD x) (hw x)
 
-/-- With strictly positive weights, an effective divisor has weighted degree zero iff it is
-zero. -/
-lemma IsEffective.weightedDegree_eq_zero_iff_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
-    {D : WeilDivisor X} (hD : IsEffective D) :
-    weightedDegree w D = 0 ↔ D = 0 := by
-  constructor
-  · intro hdeg
-    by_contra hD0
-    obtain ⟨x, hxpos⟩ := hD.exists_pos_coeff_of_ne_zero hD0
-    have hsum_pos : 0 < D.sum fun y n => n * w y := by
-      exact Finsupp.sum_pos' (fun y _ => mul_nonneg (hD y) (le_of_lt (hw y)))
-        ⟨x, Finsupp.mem_support_iff.mpr (ne_of_gt hxpos), mul_pos hxpos (hw x)⟩
-    rw [← weightedDegree_apply] at hsum_pos
-    exact (ne_of_gt hsum_pos) hdeg
-  · intro h
-    simp [h]
-
-/-- With strictly positive weights, an effective divisor of weighted degree zero is zero. -/
-lemma IsEffective.eq_zero_of_weightedDegree_eq_zero_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
-    {D : WeilDivisor X} (hD : IsEffective D) (hdeg : weightedDegree w D = 0) : D = 0 :=
-  (hD.weightedDegree_eq_zero_iff_of_pos hw).mp hdeg
-
 /-- With strictly positive weights on the support, an effective divisor has weighted degree
 zero iff it is zero. -/
 lemma IsEffective.weightedDegree_eq_zero_iff_of_pos_on_support {w : X → ℤ}
@@ -331,6 +309,18 @@ lemma IsEffective.eq_zero_of_weightedDegree_eq_zero_of_pos_on_support {w : X →
     {D : WeilDivisor X} (hD : IsEffective D) (hw : ∀ x ∈ D.support, 0 < w x)
     (hdeg : weightedDegree w D = 0) : D = 0 :=
   (hD.weightedDegree_eq_zero_iff_of_pos_on_support hw).mp hdeg
+
+/-- With strictly positive weights, an effective divisor has weighted degree zero iff it is
+zero. -/
+lemma IsEffective.weightedDegree_eq_zero_iff_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
+    {D : WeilDivisor X} (hD : IsEffective D) :
+    weightedDegree w D = 0 ↔ D = 0 :=
+  hD.weightedDegree_eq_zero_iff_of_pos_on_support fun x _ => hw x
+
+/-- With strictly positive weights, an effective divisor of weighted degree zero is zero. -/
+lemma IsEffective.eq_zero_of_weightedDegree_eq_zero_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
+    {D : WeilDivisor X} (hD : IsEffective D) (hdeg : weightedDegree w D = 0) : D = 0 :=
+  hD.eq_zero_of_weightedDegree_eq_zero_of_pos_on_support (fun x _ => hw x) hdeg
 
 /-- With strictly positive weights, a nonzero effective divisor has positive weighted degree. -/
 lemma IsEffective.weightedDegree_pos_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
@@ -630,14 +620,18 @@ lemma pointDifference_mem_weightedDegreeZeroSubgroup {w : X → ℤ} {x y : X}
 For the geometric weight `w x = [κ(x) : k]` and a rational base point `x₀` with `w x₀ = 1`,
 this is the degree-zero divisor underlying the Abel-Jacobi class of the closed point `x`.
 In the algebraically closed/unweighted specialization, this recovers `pointDifference x x₀`. -/
-@[expose] noncomputable def weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) : WeilDivisor X :=
+noncomputable def weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) : WeilDivisor X :=
   ofPoint x - w x • ofPoint x₀
+
+private lemma weightedPointBaseDifference_def (w : X → ℤ) (x₀ x : X) :
+    weightedPointBaseDifference w x₀ x = ofPoint x - w x • ofPoint x₀ :=
+  rfl
 
 /-- The degree-corrected point divisor is `[x]` minus `w x` copies of the base point `[x₀]`.
 This exposes the definition as a public equation for use across modules. -/
 lemma weightedPointBaseDifference_eq_ofPoint_sub_zsmul (w : X → ℤ) (x₀ x : X) :
     weightedPointBaseDifference w x₀ x = ofPoint x - w x • ofPoint x₀ :=
-  rfl
+  weightedPointBaseDifference_def w x₀ x
 
 /-- At the constant weight `1`, the degree-corrected point divisor is the usual point
 difference. This simp lemma lets unweighted API reuse the weighted construction. -/
