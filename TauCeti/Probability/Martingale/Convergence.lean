@@ -58,7 +58,7 @@ equals `F 0` (since `F 0` is the largest element of the chain), not `⨅ n, F n`
 Lévy's upward theorem to the dualised filtration would give convergence to `μ[f | F 0]`, the wrong
 limit. -/
 theorem tendsto_ae_condExp_iInf
-    [IsProbabilityMeasure μ]
+    [IsFiniteMeasure μ]
     {𝔽 : ℕ → MeasurableSpace Ω}
     (h_filtration : Antitone 𝔽)
     (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))

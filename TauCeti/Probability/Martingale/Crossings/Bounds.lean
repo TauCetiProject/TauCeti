@@ -36,7 +36,7 @@ variable {𝔽 : ℕ → MeasurableSpace Ω}
 For an L¹-bounded martingale obtained by reversing an antitone filtration, the expected number of
 upcrossings is uniformly bounded, independent of the time horizon `N`. -/
 lemma upcrossings_bdd_uniform
-    [IsProbabilityMeasure μ]
+    [IsFiniteMeasure μ]
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (hf : Integrable f μ) (a b : ℝ) (hab : a < b) :
     ∃ C : ENNReal, C < ⊤ ∧ ∀ N,
@@ -49,10 +49,11 @@ lemma upcrossings_bdd_uniform
   -- For each N, revCondExpFinite is a martingale, hence a submartingale
   have h_submart : ∀ N, Submartingale (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)
       (revFiltration 𝔽 h_antitone h_le N) μ :=
-    fun N => (revCondExpFinite_martingale (μ := μ) h_antitone h_le f hf N).submartingale
-  -- For each fixed N and M, we can bound E[(f_M - a)⁺] by ‖f‖₁ + |a|
+    fun N => (revCondExpFinite_martingale (μ := μ) h_antitone h_le f N).submartingale
+  -- For each fixed N and M, we can bound E[(f_M - a)⁺] by ‖f‖₁ + |a| * μ(univ). The constant
+  -- term keeps the finite factor `μ Set.univ` (it is `1` only in the probability case).
   have h_bound : ∀ N M, ∫⁻ ω, ENNReal.ofReal ((revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
-      ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| := by
+      ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
     intro N M
     -- Use (x - a)⁺ ≤ |x - a| ≤ |x| + |a|, then integrate
     calc ∫⁻ ω, ENNReal.ofReal ((revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
@@ -69,9 +70,10 @@ lemma upcrossings_bdd_uniform
                 simpa using abs_add_le (revCondExpFinite (μ := μ) f 𝔽 N M ω) (-a)
       _ = ∫⁻ ω, (ENNReal.ofReal |revCondExpFinite (μ := μ) f 𝔽 N M ω| + ENNReal.ofReal |a|) ∂μ := by
           simp [ENNReal.ofReal_add]
-      _ = ∫⁻ ω, ENNReal.ofReal |revCondExpFinite (μ := μ) f 𝔽 N M ω| ∂μ + ENNReal.ofReal |a| := by
-          simp [lintegral_add_right, lintegral_const, IsProbabilityMeasure.measure_univ]
-      _ ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| := by
+      _ = ∫⁻ ω, ENNReal.ofReal |revCondExpFinite (μ := μ) f 𝔽 N M ω| ∂μ
+            + ENNReal.ofReal |a| * μ Set.univ := by
+          rw [lintegral_add_right _ measurable_const, lintegral_const]
+      _ ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
           gcongr
           -- Convert lintegral to eLpNorm and use hL1_bdd
           have hconv : ∫⁻ ω, ENNReal.ofReal |revCondExpFinite (μ := μ) f 𝔽 N M ω| ∂μ =
@@ -86,15 +88,17 @@ lemma upcrossings_bdd_uniform
                 rw [ENNReal.ofReal_toReal]
                 exact (memLp_one_iff_integrable.mpr hf).eLpNorm_ne_top
   -- Define C as the bound divided by (b - a)
-  set C := (ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a|) / ENNReal.ofReal (b - a)
+  set C := (ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ)
+      / ENNReal.ofReal (b - a)
   -- Prove C < ⊤
   have hC_finite : C < ⊤ := by
     refine ENNReal.div_lt_top ?h1 ?h2
-    · -- Numerator ≠ ⊤
-      refine ENNReal.add_lt_top.2 ⟨?_, ENNReal.ofReal_lt_top⟩ |>.ne
-      rw [ENNReal.ofReal_toReal]
-      · exact (memLp_one_iff_integrable.mpr hf).eLpNorm_lt_top
-      · exact (memLp_one_iff_integrable.mpr hf).eLpNorm_ne_top
+    · -- Numerator ≠ ⊤ (finite measure keeps `μ Set.univ < ⊤`)
+      refine (ENNReal.add_lt_top.2 ⟨?_, ?_⟩).ne
+      · rw [ENNReal.ofReal_toReal]
+        · exact (memLp_one_iff_integrable.mpr hf).eLpNorm_lt_top
+        · exact (memLp_one_iff_integrable.mpr hf).eLpNorm_ne_top
+      · exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top μ Set.univ)
     · -- Denominator ≠ 0
       exact (ENNReal.ofReal_pos.2 (sub_pos.2 hab)).ne'
   refine ⟨C, hC_finite, fun N => ?_⟩
@@ -102,7 +106,7 @@ lemma upcrossings_bdd_uniform
   have key := (h_submart N).mul_lintegral_upcrossings_le_lintegral_pos_part a b
   -- Bound the supremum using h_bound
   have sup_bdd : ⨆ M, ∫⁻ ω, ENNReal.ofReal ((revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
-      ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| := by
+      ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
     apply iSup_le
     intro M
     exact h_bound N M
@@ -117,7 +121,8 @@ lemma upcrossings_bdd_uniform
         refine (ENNReal.le_div_iff_mul_le ?_ ?_).2 step1
         · left; exact (ENNReal.ofReal_pos.2 (sub_pos.2 hab)).ne'
         · left; exact ENNReal.ofReal_ne_top
-    _ ≤ (ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a|) / ENNReal.ofReal (b - a) := by
+    _ ≤ (ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ)
+          / ENNReal.ofReal (b - a) := by
         gcongr
     _ = C := rfl
 

@@ -61,9 +61,9 @@ lemma revCondExpFinite_apply (f : Ω → ℝ) (𝔽 : ℕ → MeasurableSpace Ω
 
 /-- The reversed process `revCondExpFinite f 𝔽 N` is a martingale for `revFiltration 𝔽 N`: by
 the tower property, `μ[μ[f | 𝔽 (N - j)] | 𝔽 (N - i)] = μ[f | 𝔽 (N - i)]` whenever `i ≤ j`. -/
-lemma revCondExpFinite_martingale [IsProbabilityMeasure μ]
+lemma revCondExpFinite_martingale [IsFiniteMeasure μ]
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
-    (f : Ω → ℝ) (_hf : Integrable f μ) (N : ℕ) :
+    (f : Ω → ℝ) (N : ℕ) :
     Martingale (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)
       (revFiltration 𝔽 h_antitone h_le N) μ := by
   constructor

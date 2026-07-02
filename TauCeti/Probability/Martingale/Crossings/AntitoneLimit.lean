@@ -43,7 +43,7 @@ This uses the upcrossing inequality applied to the time-reversed martingales to 
 that the original sequence has finitely many upcrossings and downcrossings a.e.,
 hence converges a.e. -/
 private lemma condExp_exists_ae_limit_antitone
-    [IsProbabilityMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
+    [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (hf : Integrable f μ) :
     ∃ Xlim, (Integrable Xlim μ ∧
@@ -301,7 +301,7 @@ private lemma aestronglyMeasurable_iInf_of_tendsto_ae_antitone
 Uses uniform integrability to pass from a.e. convergence to L¹ convergence,
 then uses L¹-continuity of conditional expectation to identify the limit. -/
 lemma tendsto_ae_condExp_iInf_aux
-    [IsProbabilityMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
+    [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (hf : Integrable f μ) :
     ∀ᵐ ω ∂μ, Tendsto (fun n => μ[f | 𝔽 n] ω) atTop (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) := by
