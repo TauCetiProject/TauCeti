@@ -37,11 +37,10 @@ namespace TauCeti
 
 open InnerProductSpace
 
-variable
-  {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+section Preimage
 
-omit [FiniteDimensional ℝ E] in
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
 /-- The affine normalization map `y ↦ x + c • y` pulls the ball `Metric.ball x (‖c‖ * r)` back
 to `Metric.ball 0 r`, for nonzero scale `c`.  This is the characteristic ball rewrite underlying
 the harmonic ball-normalization lemmas below. -/
@@ -52,6 +51,12 @@ theorem preimage_const_add_smul_ball (x : E) {c : ℝ} (hc : c ≠ 0) (r : ℝ) 
   simp only [Set.mem_preimage, Metric.mem_ball, dist_eq_norm, add_sub_cancel_left, sub_zero,
     norm_smul]
   exact mul_lt_mul_iff_right₀ (norm_pos_iff.2 hc)
+
+end Preimage
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- Harmonicity on a neighbourhood of `Metric.ball x (‖c‖ * r)` is equivalent to harmonicity
 of `y ↦ f (x + c • y)` on a neighbourhood of `Metric.ball 0 r`, for nonzero scale `c`. -/
