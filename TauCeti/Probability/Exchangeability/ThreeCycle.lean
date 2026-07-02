@@ -58,7 +58,12 @@ theorem threeCycle_apply (n : ℕ) (ω : ZMod 3) : threeCycle n ω = ω + (n : Z
 /-- The uniform probability law on `ZMod 3`, the stationary law of the 3-cycle. This is a `def`
 (not an `abbrev`) so that the `IsAddRightInvariant` instance below keys on `threeCycleMeasure`
 and stays scoped to this example, rather than leaking to the general `uniformOn Set.univ`. -/
-def threeCycleMeasure : Measure (ZMod 3) := uniformOn Set.univ
+@[expose] def threeCycleMeasure : Measure (ZMod 3) := uniformOn Set.univ
+
+/-- The stationary measure of the 3-cycle is the uniform law on `ZMod 3`. -/
+@[simp]
+theorem threeCycleMeasure_def : threeCycleMeasure = uniformOn Set.univ :=
+  rfl
 
 /-- The uniform law on `ZMod 3` is invariant under right addition, supplying the translation
 invariance used in the shift-stationarity proof. -/
@@ -88,14 +93,18 @@ theorem threeCycle_measurePreserving_shift :
   refine ⟨measurable_shift, ?_⟩
   have hP : Measurable (fun ω : ZMod 3 => fun i => threeCycle i ω) := Measurable.of_discrete
   have hT : Measurable (fun ω : ZMod 3 => ω + 1) := Measurable.of_discrete
-  have hcomp : shift (ZMod 3) ∘ (fun ω : ZMod 3 => fun i => threeCycle i ω)
+  have hshift : shift (ZMod 3) = fun x : ℕ → ZMod 3 => fun k => x (k + 1) := by
+    funext x k
+    rfl
+  have hcomp : (fun ω : ZMod 3 => fun k => threeCycle (k + 1) ω)
       = (fun ω : ZMod 3 => fun i => threeCycle i ω) ∘ (fun ω : ZMod 3 => ω + 1) := by
     funext ω n
-    simp only [Function.comp_apply, shift_apply, threeCycle_apply]
+    simp only [Function.comp_apply, threeCycle_apply]
     push_cast
     ring
-  rw [pathLaw_def, Measure.map_map measurable_shift hP, hcomp,
-    ← Measure.map_map hP hT, map_add_right_eq_self threeCycleMeasure 1]
+  rw [hshift, map_reindex_pathLaw threeCycleMeasure (fun _ => Measurable.of_discrete.aemeasurable)
+    (fun k => k + 1), pathLaw_def, hcomp, ← Measure.map_map hP hT,
+    map_add_right_eq_self threeCycleMeasure 1, ← pathLaw_def]
 
 /-- The straight two-coordinate event `{X₀ = 0, X₁ = 1}` is realized only from the start state
 `0`. -/
