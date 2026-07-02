@@ -153,7 +153,6 @@ lemma degreeCorrection_eq_self_of_mem_picZero (w : X → ℤ) (h : S.IsWeightedD
 
 /-- The degree correction of a coerced `picZero` class is the same class in the ambient class
 group. -/
-@[simp]
 lemma degreeCorrection_coe_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     (x₀ : X) (p : picZero w h) :
     S.degreeCorrection w h x₀ (p : S.ClassGroup) = p :=
@@ -241,7 +240,6 @@ lemma classGroupAddEquivPicZeroProdInt_symm_apply (w : X → ℤ) (h : S.IsWeigh
 
 /-- Under the splitting `Cl(X) ≃+ picZero × ℤ`, a coerced `picZero` class has `Pic⁰` component
 itself and degree component `0`. -/
-@[simp]
 lemma classGroupAddEquivPicZeroProdInt_coe_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (p : picZero w h) :
     S.classGroupAddEquivPicZeroProdInt w h hx₀ (p : S.ClassGroup) = (p, 0) := by
@@ -277,7 +275,6 @@ lemma classGroupAddEquivUnweightedPicZeroProdInt_symm_apply (h : S.IsUnweightedD
 
 /-- Under the unweighted splitting, a coerced `unweightedPicZero` class has `Pic⁰` component
 itself and degree component `0`. -/
-@[simp]
 lemma classGroupAddEquivUnweightedPicZeroProdInt_coe_unweightedPicZero
     (h : S.IsUnweightedDegreeZero) (x₀ : X) (p : unweightedPicZero h) :
     S.classGroupAddEquivUnweightedPicZeroProdInt h x₀ (p : S.ClassGroup) = (p, 0) :=

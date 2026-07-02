@@ -203,7 +203,6 @@ lemma support_ofFinsetWithMultiplicity_subset (s : Finset X) (m : X → ℕ) :
 
 /-- A point is in the support of a named finite-set divisor with multiplicities exactly when it
 is selected and has nonzero multiplicity. -/
-@[simp]
 lemma mem_support_ofFinsetWithMultiplicity_iff {s : Finset X} {m : X → ℕ} {x : X} :
     x ∈ (ofFinsetWithMultiplicity s m : WeilDivisor X).support ↔ x ∈ s ∧ m x ≠ 0 := by
   classical

@@ -273,7 +273,6 @@ lemma coeff_principalDivisor_eq_fractionalIdeal_count (u : Additive Kˣ)
 
 /-- A height-one prime lies in the support of a principal divisor exactly when the corresponding
 valuation is not one. -/
-@[simp]
 lemma mem_support_principalDivisor_iff_valuation_ne_one (u : Additive Kˣ)
     (v : HeightOneSpectrum R) :
     v ∈ ((OrderSystem.ofDedekindDomain R K).principalDivisor u).support ↔
@@ -323,7 +322,6 @@ lemma coeff_principalDivisor_pos_iff_mem {r : R} {u : Kˣ} (hu : (u : K) = algeb
 
 /-- The support of the divisor of a nonzero integral element `r : R`, presented as a unit
 `u : Kˣ` with value `algebraMap R K r`, is the set of height-one primes containing `r`. -/
-@[simp]
 lemma mem_support_principalDivisor_of_integral_iff_mem_asIdeal {r : R} {u : Kˣ}
     (hu : (u : K) = algebraMap R K r) (v : HeightOneSpectrum R) :
     v ∈ ((OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul u)).support ↔
