@@ -78,27 +78,6 @@ universe u v
 
 variable {R : Type u} [CommRing R] (p : ℕ) [Fact p.Prime] [CharP R p]
 
-/-- The comultiplication respects powers, since it is an algebra map. -/
-private theorem comul_pow (a : SymmetricAlgebra R R) (n : ℕ) :
-    Coalgebra.comul (R := R) (a ^ n) = (Coalgebra.comul (R := R) a) ^ n := by
-  induction n with
-  | zero => rw [pow_zero, pow_zero, Bialgebra.comul_one]
-  | succ k ih => rw [pow_succ, Bialgebra.comul_mul, ih, pow_succ]
-
-/-- The counit respects powers, since it is an algebra map. -/
-private theorem counit_pow (a : SymmetricAlgebra R R) (n : ℕ) :
-    Coalgebra.counit (R := R) (a ^ n) = (Coalgebra.counit (R := R) a) ^ n := by
-  induction n with
-  | zero => rw [pow_zero, pow_zero, Bialgebra.counit_one]
-  | succ k ih => rw [pow_succ, Bialgebra.counit_mul, ih, pow_succ]
-
-/-- The antipode respects powers in the commutative Hopf algebra. -/
-private theorem antipode_pow (a : SymmetricAlgebra R R) (n : ℕ) :
-    HopfAlgebra.antipode R (a ^ n) = (HopfAlgebra.antipode R a) ^ n := by
-  induction n with
-  | zero => rw [pow_zero, pow_zero, HopfAlgebra.antipode_one]
-  | succ k ih => rw [pow_succ, HopfAlgebra.antipode_mul_distrib, ih, pow_succ]
-
 omit [Fact p.Prime] in
 /-- The tensor-square ring of the additive-group Hopf algebra has characteristic `p`: the
 structure map `R → R[x] ⊗ R[x]` is a section of the counit, hence injective. -/
@@ -148,7 +127,7 @@ private theorem comul_gen_mem :
           Algebra.TensorProduct.includeRight (R := R)
             (A := SymmetricAlgebra R R) (B := SymmetricAlgebra R R)
             ((ι R R 1 : SymmetricAlgebra R R) ^ p) := by
-    rw [comul_pow, hcomulx, add_pow_char, hL, hR]
+    rw [Bialgebra.comul_pow, hcomulx, add_pow_char, hL, hR]
   rw [key]
   exact Ideal.add_mem _
     (Ideal.mem_sup_left (Ideal.mem_map_of_mem _ hgI))
@@ -158,14 +137,18 @@ omit [CharP R p] in
 /-- The counit vanishes on `xᵖ`, since `ε x = 0`. -/
 private theorem counit_gen :
     Coalgebra.counit (R := R) ((ι R R 1 : SymmetricAlgebra R R) ^ p) = 0 := by
-  rw [counit_pow, SymmetricAlgebra.counit_ι, zero_pow (Fact.out (p := p.Prime)).ne_zero]
+  rw [Bialgebra.counit_pow, SymmetricAlgebra.counit_ι,
+    zero_pow (Fact.out (p := p.Prime)).ne_zero]
 
 omit [Fact p.Prime] [CharP R p] in
 /-- The antipode preserves the ideal `(xᵖ)`, since `S(xᵖ) = (-x)ᵖ = (-1)ᵖ xᵖ`. -/
 private theorem antipode_gen_mem :
     HopfAlgebra.antipode R ((ι R R 1 : SymmetricAlgebra R R) ^ p) ∈
       Ideal.span {(ι R R 1 : SymmetricAlgebra R R) ^ p} := by
-  rw [antipode_pow, TauCeti.SymmetricAlgebra.antipode_ι, neg_pow]
+  have hpow : HopfAlgebra.antipode R ((ι R R 1 : SymmetricAlgebra R R) ^ p) =
+      (HopfAlgebra.antipode R (ι R R 1 : SymmetricAlgebra R R)) ^ p :=
+    map_pow (HopfAlgebra.antipodeAlgHom R _) _ _
+  rw [hpow, TauCeti.SymmetricAlgebra.antipode_ι, neg_pow]
   exact Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)
 
 /-- **The Hopf ideal `(xᵖ)` of the additive group.** For `R` of prime characteristic `p`, the
@@ -198,7 +181,7 @@ noncomputable abbrev CoordinateRing : Type u :=
   SymmetricAlgebra R R ⧸ (hopfIdeal (R := R) p).toIdeal
 
 /-- The class of `x` in the coordinate ring of `αₚ` is `p`-nilpotent: its `p`-th power is `0`. -/
-theorem mk_x_pow :
+theorem mk_ι_pow_eq_zero :
     (Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal
         (ι R R 1 : SymmetricAlgebra R R)) ^ p = 0 := by
   rw [← map_pow, Ideal.Quotient.eq_zero_iff_mem, hopfIdeal_toIdeal]
@@ -231,7 +214,8 @@ theorem coordinateRing_not_isReduced [Nontrivial R] :
     ¬ IsReduced (CoordinateRing (R := R) p) := by
   intro hred
   haveI := hred
-  exact mk_ι_ne_zero p (IsNilpotent.eq_zero (x := Ideal.Quotient.mk _ (ι R R 1)) ⟨p, mk_x_pow p⟩)
+  exact mk_ι_ne_zero p
+    (IsNilpotent.eq_zero (x := Ideal.Quotient.mk _ (ι R R 1)) ⟨p, mk_ι_pow_eq_zero p⟩)
 
 section Points
 
