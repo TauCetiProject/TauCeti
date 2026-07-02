@@ -92,7 +92,6 @@ theorem characteristicWeight_add_single (k : P.characteristicVectors) (x : V →
 
 /-- The value of `χ_k` on a sum of two basis spheres, with the interaction term given by their
 intersection-matrix entry: for adjacent spheres this entry is `1`, otherwise `0` off-diagonal. -/
-@[simp]
 theorem characteristicWeight_single_add_single (k : P.characteristicVectors) (v w : V) :
     P.characteristicWeight k (Pi.single v 1 + Pi.single w 1) =
       P.characteristicWeight k (Pi.single v 1) + P.characteristicWeight k (Pi.single w 1) -
