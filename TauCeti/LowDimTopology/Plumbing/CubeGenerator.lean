@@ -14,6 +14,17 @@ the pair of a lattice base point `x : V → ℤ` and a finite set `S : Finset V`
 Its codimension-one faces in a direction `v ∈ S` are the lower face `(x, S.erase v)` and the
 upper face `(x + E_v, S.erase v)`.
 
+Taking faces in two distinct present directions `v ≠ w` produces a codimension-two face, and the
+order of the two directions does not matter: `PlumbingCube.lowerFace_lowerFace_comm`,
+`PlumbingCube.upperFace_upperFace_comm`, `PlumbingCube.lowerFace_upperFace_comm`, and
+`PlumbingCube.upperFace_lowerFace_comm` identify the two ways of reaching each corner. These
+commuting squares are the geometric skeleton of the lattice-homology differential's `∂² = 0`: the
+boundary of the boundary revisits each codimension-two face along the two edges of a square, and
+the squares identify those two contributions as the *same* generator (before the `U`-power
+bookkeeping, which lives in the weight files). All four corners share the direction set
+`(S.erase v).erase w`, drop the cubical dimension by two, and have vertices among those of the
+ambient cube.
+
 The earlier plumbing files define vertices, characteristic cube weights, and the lower/upper
 face exponents as functions of `(x, S)`. This file provides the bundled generator API that the
 lattice-homology differential can use directly.
@@ -333,6 +344,186 @@ theorem characteristicWeight_eq_max_faces [Fintype V] (P : PlumbingGraph V)
     simpa [characteristicWeight_def, lowerFace_base, lowerFace_directions, upperFace_base,
       upperFace_directions] using
       P.characteristicCubeWeight_eq_max_erase k C.base hv
+
+/-! ### Codimension-two faces
+
+Taking a face in two distinct present directions `v ≠ w` gives a codimension-two face. The four
+corners (one per choice of lower/upper in each direction) are independent of the order in which the
+directions are removed, so each corner is well defined; they share the direction set
+`(C.directions.erase v).erase w`, drop the cubical dimension by two, and have vertices among those
+of the ambient cube. These commuting squares are the standard cubical-boundary squares underlying
+`∂² = 0` in Némethi's lattice homology, [arXiv:0709.0841](https://arxiv.org/abs/0709.0841). -/
+
+variable (C : PlumbingCube V) {v w : V}
+
+section
+omit [DecidableEq (V → ℤ)]
+
+/-- The two lower faces in distinct directions `v` and `w` agree: both are the cube based at
+`C.base` with directions `(C.directions.erase v).erase w`. -/
+theorem lowerFace_lowerFace_comm (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
+    (C.lowerFace v hv).lowerFace w
+        (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne.symm hw) =
+      (C.lowerFace w hw).lowerFace v
+        (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv) := by
+  apply PlumbingCube.ext
+  · simp
+  · simp only [lowerFace_directions]
+    exact Finset.erase_right_comm
+
+/-- The two upper faces in distinct directions `v` and `w` agree: both are the cube based at
+`C.base + E_v + E_w` with directions `(C.directions.erase v).erase w`, since the two basis shifts
+commute. -/
+theorem upperFace_upperFace_comm (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
+    (C.upperFace v hv).upperFace w
+        (by rw [upperFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne.symm hw) =
+      (C.upperFace w hw).upperFace v
+        (by rw [upperFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv) := by
+  apply PlumbingCube.ext
+  · simp only [upperFace_base]
+    exact add_right_comm _ _ _
+  · simp only [upperFace_directions]
+    exact Finset.erase_right_comm
+
+/-- Taking the lower face in direction `v` then the upper face in direction `w` agrees with taking
+the upper face in direction `w` then the lower face in direction `v`: both are the mixed corner
+based at `C.base + E_w`. -/
+theorem lowerFace_upperFace_comm (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
+    (C.lowerFace v hv).upperFace w
+        (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne.symm hw) =
+      (C.upperFace w hw).lowerFace v
+        (by rw [upperFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv) := by
+  apply PlumbingCube.ext
+  · simp
+  · simp only [upperFace_directions, lowerFace_directions]
+    exact Finset.erase_right_comm
+
+/-- Taking the upper face in direction `v` then the lower face in direction `w` agrees with taking
+the lower face in direction `w` then the upper face in direction `v`: both are the mixed corner
+based at `C.base + E_v`. -/
+theorem upperFace_lowerFace_comm (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
+    (C.upperFace v hv).lowerFace w
+        (by rw [upperFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne.symm hw) =
+      (C.lowerFace w hw).upperFace v
+        (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv) := by
+  apply PlumbingCube.ext
+  · simp
+  · simp only [upperFace_directions, lowerFace_directions]
+    exact Finset.erase_right_comm
+
+/-- The direction set of the lower-lower codimension-two face is the ambient direction set with the
+two chosen directions removed. -/
+@[simp]
+theorem lowerFace_lowerFace_directions (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.lowerFace v hv).directions) :
+    ((C.lowerFace v hv).lowerFace w hwv).directions = (C.directions.erase v).erase w := by
+  simp
+
+/-- The direction set of the upper-upper codimension-two face is the ambient direction set with the
+two chosen directions removed. -/
+@[simp]
+theorem upperFace_upperFace_directions (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.upperFace v hv).directions) :
+    ((C.upperFace v hv).upperFace w hwv).directions = (C.directions.erase v).erase w := by
+  simp
+
+/-- The direction set of the lower-upper codimension-two face is the ambient direction set with the
+two chosen directions removed. -/
+@[simp]
+theorem lowerFace_upperFace_directions (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.lowerFace v hv).directions) :
+    ((C.lowerFace v hv).upperFace w hwv).directions = (C.directions.erase v).erase w := by
+  simp
+
+/-- The direction set of the upper-lower codimension-two face is the ambient direction set with the
+two chosen directions removed. -/
+@[simp]
+theorem upperFace_lowerFace_directions (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.upperFace v hv).directions) :
+    ((C.upperFace v hv).lowerFace w hwv).directions = (C.directions.erase v).erase w := by
+  simp
+
+/-- The lower-lower codimension-two face keeps the ambient base point. -/
+@[simp]
+theorem lowerFace_lowerFace_base (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.lowerFace v hv).directions) :
+    ((C.lowerFace v hv).lowerFace w hwv).base = C.base := by
+  simp
+
+/-- The upper-upper codimension-two face sits at the far corner `C.base + E_v + E_w`. -/
+@[simp]
+theorem upperFace_upperFace_base (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.upperFace v hv).directions) :
+    ((C.upperFace v hv).upperFace w hwv).base = C.base + Pi.single v (1 : ℤ) + Pi.single w 1 := by
+  simp
+
+/-- The lower-upper codimension-two face sits at the mixed corner `C.base + E_w`. -/
+@[simp]
+theorem lowerFace_upperFace_base (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.lowerFace v hv).directions) :
+    ((C.lowerFace v hv).upperFace w hwv).base = C.base + Pi.single w (1 : ℤ) := by
+  simp
+
+/-- The upper-lower codimension-two face sits at the mixed corner `C.base + E_v`. -/
+@[simp]
+theorem upperFace_lowerFace_base (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.upperFace v hv).directions) :
+    ((C.upperFace v hv).lowerFace w hwv).base = C.base + Pi.single v (1 : ℤ) := by
+  simp
+
+/-- The lower-lower codimension-two face has cubical dimension two less than the ambient cube. -/
+theorem dimension_lowerFace_lowerFace (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.lowerFace v hv).directions) :
+    ((C.lowerFace v hv).lowerFace w hwv).dimension = C.dimension - 2 := by
+  rw [dimension_lowerFace_of_mem, dimension_lowerFace_of_mem]
+  omega
+
+/-- The upper-upper codimension-two face has cubical dimension two less than the ambient cube. -/
+theorem dimension_upperFace_upperFace (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.upperFace v hv).directions) :
+    ((C.upperFace v hv).upperFace w hwv).dimension = C.dimension - 2 := by
+  rw [dimension_upperFace_of_mem, dimension_upperFace_of_mem]
+  omega
+
+/-- The lower-upper codimension-two face has cubical dimension two less than the ambient cube. -/
+theorem dimension_lowerFace_upperFace (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.lowerFace v hv).directions) :
+    ((C.lowerFace v hv).upperFace w hwv).dimension = C.dimension - 2 := by
+  rw [dimension_upperFace_of_mem, dimension_lowerFace_of_mem]
+  omega
+
+/-- The upper-lower codimension-two face has cubical dimension two less than the ambient cube. -/
+theorem dimension_upperFace_lowerFace (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.upperFace v hv).directions) :
+    ((C.upperFace v hv).lowerFace w hwv).dimension = C.dimension - 2 := by
+  rw [dimension_lowerFace_of_mem, dimension_upperFace_of_mem]
+  omega
+
+end
+
+/-- The vertices of the lower-lower codimension-two face are vertices of the ambient cube. -/
+theorem vertices_lowerFace_lowerFace_subset (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.lowerFace v hv).directions) :
+    ((C.lowerFace v hv).lowerFace w hwv).vertices ⊆ C.vertices :=
+  ((C.lowerFace v hv).vertices_lowerFace_subset hwv).trans (C.vertices_lowerFace_subset hv)
+
+/-- The vertices of the upper-upper codimension-two face are vertices of the ambient cube. -/
+theorem vertices_upperFace_upperFace_subset (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.upperFace v hv).directions) :
+    ((C.upperFace v hv).upperFace w hwv).vertices ⊆ C.vertices :=
+  ((C.upperFace v hv).vertices_upperFace_subset hwv).trans (C.vertices_upperFace_subset hv)
+
+/-- The vertices of the lower-upper codimension-two face are vertices of the ambient cube. -/
+theorem vertices_lowerFace_upperFace_subset (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.lowerFace v hv).directions) :
+    ((C.lowerFace v hv).upperFace w hwv).vertices ⊆ C.vertices :=
+  ((C.lowerFace v hv).vertices_upperFace_subset hwv).trans (C.vertices_lowerFace_subset hv)
+
+/-- The vertices of the upper-lower codimension-two face are vertices of the ambient cube. -/
+theorem vertices_upperFace_lowerFace_subset (hv : v ∈ C.directions)
+    (hwv : w ∈ (C.upperFace v hv).directions) :
+    ((C.upperFace v hv).lowerFace w hwv).vertices ⊆ C.vertices :=
+  ((C.upperFace v hv).vertices_lowerFace_subset hwv).trans (C.vertices_upperFace_subset hv)
 
 end PlumbingCube
 
