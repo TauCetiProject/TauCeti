@@ -305,7 +305,6 @@ noncomputable def normalizerQuotientOrbitRelQuotientPermHom (H : Subgroup G) :
 
 /-- The descended normalizer-quotient action sends a normalizer representative to the
 corresponding translate on orbit classes. -/
-@[simp]
 lemma normalizerQuotientOrbitRelQuotientPermHom_mk_apply (H : Subgroup G)
     (g : _root_.Subgroup.normalizer (H : Set G)) (x : X) :
     normalizerQuotientOrbitRelQuotientPermHom (X := X) H
@@ -323,7 +322,6 @@ noncomputable def normalizerQuotientOrbitRelQuotientMulAction (H : Subgroup G) :
 
 /-- A normalizer-quotient representative acts on the orbit quotient by translating
 representatives. -/
-@[simp]
 lemma normalizerQuotientOrbitRelQuotient_smul_mk (H : Subgroup G)
     (g : _root_.Subgroup.normalizer (H : Set G)) (x : X) :
     letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H

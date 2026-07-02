@@ -135,7 +135,6 @@ theorem pointsMulEquiv_pointsMap (φ : G →* G') (f : WithConv (MonoidAlgebra R
   rw [pointsMap_apply, pointsMulEquiv_apply, ofConv_toConv, pointsMulEquiv_apply, charOfPoint_comp]
 
 /-- Mapping the point attached to a character is precomposition of that character by `φ`. -/
-@[simp]
 theorem pointsMap_pointsMulEquiv_symm_apply (φ : G →* G') (χ : G' →* Aˣ) :
     pointsMap (R := R) (A := A) φ ((pointsMulEquiv (R := R) (A := A) (G := G')).symm χ) =
       (pointsMulEquiv (R := R) (A := A) (G := G)).symm (χ.comp φ) := by

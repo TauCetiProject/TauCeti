@@ -165,7 +165,6 @@ private lemma id_antipode_comp_coalgHom_ofConv (φ : A →ₐc[R] B) :
 
 /-- A bialgebra morphism between Hopf algebras commutes with the antipodes, as a statement
 about underlying linear maps. -/
-@[simp]
 theorem toLinearMap_comp_antipode (φ : A →ₐc[R] B) :
     φ.toLinearMap.comp (HopfAlgebra.antipode R (A := A)) =
       (HopfAlgebra.antipode R (A := B)).comp φ.toLinearMap := by

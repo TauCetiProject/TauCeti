@@ -109,7 +109,6 @@ variable {B : Type*} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower
 /-- The base-changed split-torus points equivalence is natural in the value algebra:
 post-composing a point with a `K`-algebra map sends each coordinate through the induced map on
 unit groups. -/
-@[simp]
 theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
     (f : WithConv (K ⊗[k] MonoidAlgebra k (Multiplicative (σ →₀ ℤ)) →ₐ[K] A)) (i : σ) :
     baseChangePointsMulEquiv
@@ -120,7 +119,6 @@ theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
 
 /-- Naturality of the inverse base-changed split-torus points equivalence in the value
 algebra. -/
-@[simp]
 theorem mapValue_baseChangePointsMulEquiv_symm_apply (φ : A →ₐ[K] B) (c : σ → Aˣ) :
     AlgHom.mapValue (H := K ⊗[k] MonoidAlgebra k (Multiplicative (σ →₀ ℤ))) φ
         ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (σ := σ)).symm c) =

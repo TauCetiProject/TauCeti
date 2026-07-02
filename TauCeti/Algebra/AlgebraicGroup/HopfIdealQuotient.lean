@@ -69,7 +69,6 @@ lemma hom_mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
   _root_.CommHopfAlgCat.hom_ofHom _
 
 /-- The quotient morphism sends an element to its quotient class. -/
-@[simp]
 lemma mkQuotient_apply (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) (h : H) :
     (mkQuotient H I).hom h = Ideal.Quotient.mkₐ R I.toIdeal h := by
   rw [hom_mkQuotient, Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.mkₐ_eq_mk]
@@ -81,7 +80,6 @@ lemma mkQuotient_ker (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
   exact Ideal.Quotient.mkₐ_ker (R₁ := R) I.toIdeal
 
 /-- An element maps to zero in the quotient exactly when it belongs to the Hopf ideal. -/
-@[simp]
 lemma mkQuotient_eq_zero_iff (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) (h : H) :
     (mkQuotient H I).hom h = 0 ↔ h ∈ I.toIdeal := by
   rw [mkQuotient_apply]
@@ -102,7 +100,6 @@ lemma hom_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
   _root_.CommHopfAlgCat.hom_ofHom _
 
 /-- The quotient lift evaluates on quotient classes as the original morphism. -/
-@[simp]
 lemma liftQuotient_mk (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) (h : H) :
     (liftQuotient I f hf).hom (Ideal.Quotient.mkₐ R I.toIdeal h) =
@@ -153,7 +150,6 @@ noncomputable abbrev mkQuotient (H : FiniteTypeCommHopfAlgCat.{u, v} R)
   ObjectProperty.homMk (CommHopfAlgCat.mkQuotient H.obj I)
 
 /-- The finite-type quotient morphism forgets to the `CommHopfAlgCat` quotient morphism. -/
-@[simp]
 lemma forget₂_commHopfAlgCat_map_mkQuotient (H : FiniteTypeCommHopfAlgCat.{u, v} R)
     (I : HopfIdeal R H) :
     (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (_root_.CommHopfAlgCat.{v} R)).map
@@ -167,7 +163,6 @@ lemma mkQuotient_ker (H : FiniteTypeCommHopfAlgCat.{u, v} R) (I : HopfIdeal R H)
 
 /-- An element maps to zero in the finite-type quotient exactly when it belongs to the Hopf
 ideal. -/
-@[simp]
 lemma mkQuotient_eq_zero_iff (H : FiniteTypeCommHopfAlgCat.{u, v} R)
     (I : HopfIdeal R H) (h : H) : toBialgHom (mkQuotient H I) h = 0 ↔ h ∈ I.toIdeal :=
   CommHopfAlgCat.mkQuotient_eq_zero_iff H.obj I h
@@ -181,7 +176,6 @@ noncomputable abbrev liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
   ObjectProperty.homMk (CommHopfAlgCat.liftQuotient I f.hom hf)
 
 /-- The finite-type quotient lift forgets to the `CommHopfAlgCat` quotient lift. -/
-@[simp]
 lemma forget₂_commHopfAlgCat_map_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker (toBialgHom f).toAlgHom.toRingHom) :
     (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (_root_.CommHopfAlgCat.{v} R)).map
