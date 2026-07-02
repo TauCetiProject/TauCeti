@@ -361,6 +361,17 @@ lemma normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff [IsCancelSMul G X]
   · intro h
     rw [h]
 
+/-- If a group acts freely on `X`, then the descended `N(H) / H` action on the quotient of `X`
+by `H`-orbits is free. This packages `normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff` as the
+cancellativity of the descended action. -/
+theorem normalizerQuotientOrbitRelQuotientIsCancelSMul [IsCancelSMul G X]
+    (H : Subgroup G) :
+    letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+    IsCancelSMul (Subgroup.normalizerQuotient H) (_root_.MulAction.orbitRel.Quotient H X) :=
+  letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+  { right_cancel' := fun a c x h =>
+      (normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff H a c x).mp h }
+
 end MulAction
 
 end TauCeti

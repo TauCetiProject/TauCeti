@@ -180,6 +180,7 @@ lemma normalizerQuotient_mk_of_mem_smul_subgroupFiberOrbitClass
 
 /-- Equality after the `N(H) / H` action on an `H`-fibre quotient is equality of
 normalizer-quotient elements, provided the deck action on that fibre is free. -/
+@[simp]
 lemma normalizerQuotient_smul_subgroupFiberOrbit_eq_smul_iff
     [IsCancelSMul (Deck p) (p ⁻¹' {b})] (H : Subgroup (Deck p))
     (a c : Subgroup.normalizerQuotient H) (x : SubgroupFiberOrbitQuotient H b) :
@@ -190,9 +191,8 @@ lemma normalizerQuotient_smul_subgroupFiberOrbit_eq_smul_iff
 quotient of that fibre by `H`-orbits is free. -/
 noncomputable instance instNormalizerQuotientSubgroupFiberOrbitIsCancelSMul
     [IsCancelSMul (Deck p) (p ⁻¹' {b})] (H : Subgroup (Deck p)) :
-    IsCancelSMul (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) where
-  right_cancel' a c x h :=
-    (normalizerQuotient_smul_subgroupFiberOrbit_eq_smul_iff H a c x).mp h
+    IsCancelSMul (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) :=
+  TauCeti.MulAction.normalizerQuotientOrbitRelQuotientIsCancelSMul (X := p ⁻¹' {b}) H
 
 /-- For a preconnected covering map, the descended `N(H) / H` action on every `H`-fibre
 quotient is free. -/
