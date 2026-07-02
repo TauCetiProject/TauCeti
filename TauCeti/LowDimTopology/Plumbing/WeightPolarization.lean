@@ -19,16 +19,11 @@ and lattice points `x`, `y`,
 The single-direction specialization `y = E_v` is the first-difference recursion that drives the
 cube-weight comparisons of Némethi's lattice homology: moving one lattice step in the basis
 direction `v` changes the weight by `χ_k(E_v)` minus the pairing of the current point against the
-`v`-th sphere. The file keeps everything over `ℤ` by doubling through
-`two_mul_characteristicWeight`, so no division by two ever has to be reasoned about directly.
+`v`-th sphere.
 
 ## Main results
 
-* `TauCeti.PlumbingGraph.intersectionForm_self_add`: the intersection form on a sum expands by the
-  symmetric polarization `(x + y) · (x + y) = x · x + 2 (x · y) + y · y`.
-* `TauCeti.PlumbingGraph.intersectionForm_apply_single_right`: pairing a lattice point against a
-  basis sphere reads off a column of the intersection matrix.
-* `TauCeti.PlumbingGraph.characteristicWeightNumerator_add_point`: the weight numerator is quadratic
+* `TauCeti.PlumbingGraph.characteristicWeightNumerator_add_right`: the weight numerator is quadratic
   in the lattice point, gaining `2 (x · y)` on a sum.
 * `TauCeti.PlumbingGraph.characteristicWeight_add`: the polarization identity for `χ_k`.
 * `TauCeti.PlumbingGraph.characteristicWeight_add_single`: the first-difference recursion of `χ_k`
@@ -54,31 +49,9 @@ namespace PlumbingGraph
 
 variable {V : Type*} [DecidableEq V] [Fintype V] (P : PlumbingGraph V)
 
-/-- The intersection form on a sum expands by the symmetric polarization: the cross term appears
-twice because the form is symmetric. -/
-theorem intersectionForm_self_add (x y : V → ℤ) :
-    P.intersectionForm (x + y) (x + y) =
-      P.intersectionForm x x + 2 * P.intersectionForm x y + P.intersectionForm y y := by
-  simp only [map_add, LinearMap.add_apply]
-  rw [P.intersectionForm_isSymm.eq y x]
-  ring
-
-/-- Pairing a lattice point against a basis sphere `E_v` reads off the `v`-th column of the
-intersection matrix: `x · E_v = ∑ i, x i * (intersection matrix) i v`. -/
-theorem intersectionForm_apply_single_right (x : V → ℤ) (v : V) :
-    P.intersectionForm x (Pi.single v 1) = ∑ i, x i * P.intersectionMatrix i v := by
-  rw [intersectionForm_apply]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [Finset.sum_eq_single v]
-  · rw [Pi.single_eq_same, mul_one]
-  · intro j _ hj
-    rw [Pi.single_eq_of_ne hj, mul_zero]
-  · intro hv
-    exact absurd (Finset.mem_univ v) hv
-
 /-- The characteristic-weight numerator is quadratic in the lattice point: on a sum it gains twice
 the intersection pairing of the two summands. -/
-theorem characteristicWeightNumerator_add_point (k x y : V → ℤ) :
+theorem characteristicWeightNumerator_add_right (k x y : V → ℤ) :
     P.characteristicWeightNumerator k (x + y) =
       P.characteristicWeightNumerator k x + P.characteristicWeightNumerator k y +
         2 * P.intersectionForm x y := by
@@ -97,7 +70,7 @@ theorem characteristicWeight_add (k : P.characteristicVectors) (x y : V → ℤ)
   have h : (2 : ℤ) * P.characteristicWeight k (x + y) =
       2 * (P.characteristicWeight k x + P.characteristicWeight k y -
         P.intersectionForm x y) := by
-    rw [two_mul_characteristicWeight, characteristicWeightNumerator_add_point,
+    rw [two_mul_characteristicWeight, characteristicWeightNumerator_add_right,
       mul_sub, mul_add, two_mul_characteristicWeight, two_mul_characteristicWeight]
     ring
   exact mul_left_cancel₀ (by norm_num) h
@@ -105,6 +78,7 @@ theorem characteristicWeight_add (k : P.characteristicVectors) (x y : V → ℤ)
 /-- The first-difference recursion of `χ_k` along a basis direction: taking one lattice step in the
 direction `v` subtracts `(k_v + weight v) / 2` and the pairing of the current point against the
 `v`-th sphere. This is the step that drives the cube-weight comparisons of lattice homology. -/
+@[simp]
 theorem characteristicWeight_add_single (k : P.characteristicVectors) (x : V → ℤ) (v : V) :
     P.characteristicWeight k (x + Pi.single v 1) =
       P.characteristicWeight k x - ((k.val v + P.weight v) / 2) -
@@ -115,6 +89,7 @@ theorem characteristicWeight_add_single (k : P.characteristicVectors) (x : V →
 
 /-- The value of `χ_k` on a sum of two basis spheres, with the interaction term given by their
 intersection-matrix entry: for adjacent spheres this entry is `1`, otherwise `0` off-diagonal. -/
+@[simp]
 theorem characteristicWeight_add_single_single (k : P.characteristicVectors) (v w : V) :
     P.characteristicWeight k (Pi.single v 1 + Pi.single w 1) =
       P.characteristicWeight k (Pi.single v 1) + P.characteristicWeight k (Pi.single w 1) -
