@@ -141,12 +141,10 @@ lemma support_posPart_disjoint_negPart (D : WeilDivisor X) :
   · exact hxn (by rwa [inf_eq_right.mpr h] at hinf)
 
 /-- A divisor is effective exactly when its negative part vanishes. -/
-@[simp]
 lemma negPart_eq_zero_iff_isEffective {D : WeilDivisor X} : D⁻ = 0 ↔ IsEffective D := by
   rw [negPart_eq_zero, isEffective_iff_zero_le]
 
 /-- A divisor is effective exactly when it equals its own positive part. -/
-@[simp]
 lemma posPart_eq_self_iff_isEffective {D : WeilDivisor X} : D⁺ = D ↔ IsEffective D := by
   rw [posPart_eq_self, isEffective_iff_zero_le]
 
