@@ -37,6 +37,9 @@ for the naturality statement.
 
 * `TauCeti.Diffeomorph.diffCongr e`: the group isomorphism `Diff I M n ≃* Diff J N n` conjugating by
   a diffeomorphism `e : M ≃ₘ^n⟮I, J⟯ N`.
+* `TauCeti.Homeomorph.homeoCongr e`: the analogous group isomorphism `(M ≃ₜ M) ≃* (N ≃ₜ N)`
+  conjugating self-homeomorphisms by a homeomorphism `e : M ≃ₜ N`, the target of the forgetful
+  naturality below.
 
 ## Main results
 
@@ -46,10 +49,12 @@ for the naturality statement.
 * `TauCeti.Diffeomorph.diffCongr_trans`: `diffCongr` turns `Diffeomorph.trans` into
   `MulEquiv.trans`, so it is functorial on the groupoid of diffeomorphisms.
 * `TauCeti.Diffeomorph.diffCongr_symm`: the inverse isomorphism conjugates by `e.symm`.
-* `TauCeti.Diffeomorph.toHomeomorph_diffCongr`: the forgetful homomorphism to the self-homeomorphism
-  group intertwines `diffCongr` with conjugation of homeomorphisms.
-* `TauCeti.Diffeomorph.toPerm_diffCongr`: the forgetful homomorphism to the permutation group
-  intertwines `diffCongr` with `Equiv.permCongr`.
+* `TauCeti.Diffeomorph.toHomeomorphHom_comp_diffCongr` and
+  `TauCeti.Diffeomorph.toPerm_comp_diffCongr`: naturality of `diffCongr` against the forgetful
+  homomorphisms `toHomeomorphHom` and `toPerm`, as commutative squares of group homomorphisms
+  intertwining `diffCongr` with `Homeomorph.homeoCongr` and `Equiv.permCongrHom` respectively.
+* `TauCeti.Diffeomorph.toHomeomorph_diffCongr` and `TauCeti.Diffeomorph.toPerm_diffCongr`: the
+  elementwise shadows of those squares.
 -/
 
 public section
@@ -69,6 +74,21 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
   {n : ℕ∞ω}
+
+namespace Homeomorph
+
+/-- Conjugation by a homeomorphism `e : M ≃ₜ N` as a group isomorphism between the
+self-homeomorphism groups: `homeoCongr e φ = e ∘ φ ∘ e⁻¹`. This is the homeomorphism analogue of
+`Equiv.permCongrHom` and the target of the forgetful naturality of `Diffeomorph.diffCongr`. -/
+@[expose, simps]
+def homeoCongr (e : M ≃ₜ N) : (M ≃ₜ M) ≃* (N ≃ₜ N) where
+  toFun φ := (e.symm.trans φ).trans e
+  invFun ψ := (e.trans ψ).trans e.symm
+  left_inv φ := by ext x; simp
+  right_inv ψ := by ext x; simp
+  map_mul' φ ψ := by ext x; simp
+
+end Homeomorph
 
 namespace Diffeomorph
 
@@ -118,29 +138,45 @@ theorem diffCongr_trans (e : M ≃ₘ^n⟮I, J⟯ N) (e' : N ≃ₘ^n⟮J, K⟯ 
   simp [_root_.Diffeomorph.coe_trans, _root_.Diffeomorph.symm_trans']
 
 /-- The isomorphism conjugating by `e.symm` is the inverse of the one conjugating by `e`. -/
-@[simp]
+@[simp, grind =]
 theorem diffCongr_symm (e : M ≃ₘ^n⟮I, J⟯ N) : (diffCongr e).symm = diffCongr e.symm := by
   ext ψ x
   rfl
 
+/-- Naturality of `diffCongr` against the forgetful homomorphism to self-homeomorphisms, as a
+commutative square of group homomorphisms: conjugating diffeomorphisms by `e` and then forgetting
+smoothness equals forgetting smoothness and then conjugating homeomorphisms by `e` through
+`Homeomorph.homeoCongr`. This is the naturality of `diffCongr` against the stronger forgetful
+homomorphism `Diffeomorph.toHomeomorphHom`, refining `toPerm_comp_diffCongr`. -/
+theorem toHomeomorphHom_comp_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) :
+    toHomeomorphHom.comp (diffCongr e).toMonoidHom =
+      (Homeomorph.homeoCongr e.toHomeomorph).toMonoidHom.comp toHomeomorphHom := by
+  ext φ x
+  simp [toHomeomorphHom_apply]
+
+/-- Naturality of `diffCongr` against the forgetful homomorphism to permutations, as a commutative
+square of group homomorphisms intertwining `diffCongr` with `Equiv.permCongrHom`; this is the
+`toPerm`-level shadow of `toHomeomorphHom_comp_diffCongr`. -/
+theorem toPerm_comp_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) :
+    toPerm.comp (diffCongr e).toMonoidHom = e.toEquiv.permCongrHom.toMonoidHom.comp toPerm := by
+  ext φ x
+  simp [Equiv.permCongr_apply]
+
 /-- Forgetting only smoothness (keeping the topology) sends `diffCongr e φ` to the conjugate of
-underlying self-homeomorphisms `e ∘ φ ∘ e⁻¹`. This is the naturality of `diffCongr` against the
-stronger forgetful homomorphism `Diffeomorph.toHomeomorphHom`, refining `toPerm_diffCongr`. -/
+underlying self-homeomorphisms `e ∘ φ ∘ e⁻¹`; the elementwise shadow of
+`toHomeomorphHom_comp_diffCongr`. -/
 theorem toHomeomorph_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
     (diffCongr e φ).toHomeomorph =
       (e.toHomeomorph.symm.trans φ.toHomeomorph).trans e.toHomeomorph := by
-  ext x
-  rfl
+  have h := DFunLike.congr_fun (toHomeomorphHom_comp_diffCongr e) φ
+  simpa using h
 
 /-- Forgetting all topology intertwines `diffCongr` with `Equiv.permCongr` on the permutation
-groups; this is the `toPerm`-level shadow of `toHomeomorph_diffCongr`. -/
+groups; the elementwise shadow of `toPerm_comp_diffCongr`. -/
 theorem toPerm_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I⟯ M) :
     toPerm (diffCongr e φ) = e.toEquiv.permCongr (toPerm φ) := by
-  have key : (diffCongr e φ).toEquiv = e.toEquiv.permCongr φ.toEquiv := by
-    rw [← _root_.Diffeomorph.toHomeomorph_toEquiv, toHomeomorph_diffCongr]
-    ext x
-    simp [Equiv.permCongr_apply, _root_.Diffeomorph.coe_toHomeomorph_symm]
-  simpa [toPerm] using key
+  have h := DFunLike.congr_fun (toPerm_comp_diffCongr e) φ
+  simpa using h
 
 end Diffeomorph
 
