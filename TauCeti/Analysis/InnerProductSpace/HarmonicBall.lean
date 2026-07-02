@@ -51,8 +51,8 @@ omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
 @[simp]
 lemma preimage_add_right_ball_zero (x : E) (r : ℝ) :
     ((fun y : E ↦ y + x) ⁻¹' Metric.ball x r) = Metric.ball 0 r := by
-  ext y
-  simp [Metric.mem_ball, dist_eq_norm]
+  rw [show (fun y : E ↦ y + x) = (x + ·) from funext fun _ ↦ add_comm _ _]
+  simp [preimage_add_ball]
 
 omit [FiniteDimensional ℝ E] in
 /-- Positive scaling by `c` pulls back the radius-`c * r` ball centered at `0` to the
@@ -60,10 +60,8 @@ radius-`r` ball centered at `0`. -/
 @[simp]
 lemma preimage_smul_ball_zero_radius {c : ℝ} (hc : 0 < c) (r : ℝ) :
     ((fun y : E ↦ c • y) ⁻¹' Metric.ball (0 : E) (c * r)) = Metric.ball 0 r := by
-  ext y
-  simp only [Set.mem_preimage, Metric.mem_ball, dist_eq_norm, sub_zero, norm_smul,
-    Real.norm_of_nonneg hc.le]
-  constructor <;> intro h <;> nlinarith
+  rw [Set.preimage_smul₀ hc.ne', smul_ball (inv_ne_zero hc.ne') 0 (c * r)]
+  simp [Real.norm_of_nonneg (inv_nonneg.2 hc.le), inv_mul_cancel_left₀ hc.ne']
 
 omit [FiniteDimensional ℝ E] in
 /-- Positive scaling by `r` pulls back the radius-`r` ball centered at `0` to the unit ball. -/
