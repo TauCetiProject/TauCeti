@@ -154,7 +154,9 @@ lemma isCoercive_energyIntegrand_of_bounds (hlam : 0 < lam)
 /-- Coercivity of the zero-drift jet bilinear form from a positive zeroth-order coefficient.
 
 This is the `β = 0` specialization of `isCoercive_energyIntegrand_of_bounds`, with the
-coercivity constant `min (λ/2) c₀`. -/
+coercivity constant `min (λ/2) c₀`.  Downstream energy forms that need the same integrand to
+be both symmetric and coercive pair this with
+`energyIntegrand_zero_drift_flip_eq_of_isSymm`. -/
 lemma isCoercive_energyIntegrand_zero_drift (hlam : 0 < lam) {A : Matrix n n ℝ} {c₀ : ℝ}
     (hc₀ : 0 < c₀)
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) :

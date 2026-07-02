@@ -62,7 +62,13 @@ lemma energyIntegrand_zero_drift_comm_of_isSymm {A : Matrix n n ℝ} (hA : A.IsS
     energyIntegrand A 0 c U V = energyIntegrand Aᵀ 0 c U V := by rw [hA.eq]
     _ = energyIntegrand A 0 c V U := energyIntegrand_zero_drift_transpose_apply A c U V
 
-/-- Bundled-map form of symmetry for the zero-drift jet integrand. -/
+/-- Bundled-map form of symmetry for the zero-drift jet integrand.
+
+Downstream energy forms that need the same integrand to be both symmetric and coercive pair
+this with `isCoercive_energyIntegrand_zero_drift`.  For a nonsymmetric principal coefficient,
+first pass to `coefficientSymmetricPart` using the uniform ellipticity API in
+`TauCeti.Analysis.PDE.UniformEllipticity`, then apply this lemma to the symmetric
+coefficient field. -/
 @[simp]
 lemma energyIntegrand_zero_drift_flip_eq_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm)
     (c : ℝ) :
