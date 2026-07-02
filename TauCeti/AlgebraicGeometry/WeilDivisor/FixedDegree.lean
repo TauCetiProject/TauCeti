@@ -185,11 +185,15 @@ lemma equivSym_symm_apply (s : Sym X d) :
   rfl
 
 @[simp]
-lemma ofSym_equivSym (D : EffectiveDivisorOfDegree X d) : ofSym (equivSym D) = D := by
+lemma ofSym_equivSym (D : EffectiveDivisorOfDegree X d) :
+    ofSym (letI := Classical.decEq X; (Sym.equivNatSum X d).symm (equivFinsupp D)) = D := by
+  rw [← equivSym_apply D]
   exact equivSym.left_inv D
 
 @[simp]
-lemma equivSym_ofSym (s : Sym X d) : equivSym (ofSym s) = s := by
+lemma equivSym_ofSym (s : Sym X d) :
+    (letI := Classical.decEq X; (Sym.equivNatSum X d).symm (equivFinsupp (ofSym s))) = s := by
+  rw [← equivSym_apply (ofSym s)]
   exact equivSym.right_inv s
 
 end Sym
@@ -241,7 +245,8 @@ lemma multiplicityFinsupp_pushforward (f : X → Y) (D : EffectiveDivisorOfDegre
 
 @[simp]
 lemma equivSym_pushforward (f : X → Y) (D : EffectiveDivisorOfDegree X d) :
-    equivSym (D.pushforward f) = Sym.map f (equivSym D) := by
+    (letI := Classical.decEq Y; (Sym.equivNatSum Y d).symm (equivFinsupp (D.pushforward f))) =
+      Sym.map f (equivSym D) := by
   classical
   apply (Sym.equivNatSum Y d).injective
   ext y
