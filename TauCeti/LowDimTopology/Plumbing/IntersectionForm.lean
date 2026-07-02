@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Notation
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import TauCeti.LinearAlgebra.BilinForm
 
 /-!
 # Plumbing graphs and their intersection forms
@@ -68,14 +69,6 @@ intersection form of a plumbing graph follows Némethi,
 public section
 
 namespace TauCeti
-
-/-- A symmetric bilinear form on a sum expands without division: the cross term appears twice. -/
-private theorem bilinForm_self_add_of_isSymm {R M : Type*} [CommSemiring R] [AddCommMonoid M]
-    [Module R M] (B : LinearMap.BilinForm R M) (hB : B.IsSymm) (x y : M) :
-    B (x + y) (x + y) = B x x + 2 * B x y + B y y := by
-  simp only [map_add, LinearMap.add_apply]
-  rw [hB.eq y x]
-  ring
 
 /-- A plumbing graph: a simple graph together with an integer weight on each vertex.
 
@@ -189,7 +182,7 @@ twice because the form is symmetric. -/
 theorem intersectionForm_self_add (x y : V → ℤ) :
     P.intersectionForm (x + y) (x + y) =
       P.intersectionForm x x + 2 * P.intersectionForm x y + P.intersectionForm y y :=
-  bilinForm_self_add_of_isSymm P.intersectionForm P.intersectionForm_isSymm x y
+  LinearMap.BilinForm.IsSymm.self_add P.intersectionForm_isSymm x y
 
 /-- The intersection form expanded into its framing contribution and adjacency contribution. -/
 theorem intersectionForm_apply_weight_add_adj (x y : V → ℤ) :
