@@ -1,7 +1,6 @@
 module
 
 public import Mathlib.Probability.Martingale.Convergence
-public import TauCeti.Probability.Martingale.IntegrationHelpers
 public import TauCeti.Probability.Martingale.SigmaAlgebraHelpers
 public import TauCeti.Probability.Martingale.Crossings.Bounds
 
@@ -220,16 +219,25 @@ lemma condExp_exists_ae_limit_antitone
       have h_ae_tendsto : ∀ᵐ ω ∂μ, Tendsto (fun n => μ[f | 𝔽 n] ω) atTop (𝓝 (Xlim ω)) := by
         filter_upwards [h_ae_conv] with ω hω
         simpa [Xlim, hω] using Classical.choose_spec hω
-      -- Measurability proofs (separated to avoid timeout)
+      -- Measurability proof (per-index) for the Fatou step
       have hmeas_n : ∀ n, AEMeasurable (fun ω => ENNReal.ofReal ‖μ[f | 𝔽 n] ω‖) μ := fun n =>
         ((stronglyMeasurable_condExp (f := f) (m := 𝔽 n) (μ := μ)).mono
           (h_le n)).norm.measurable.ennreal_ofReal.aemeasurable
-      have hmeas_lim : AEMeasurable (fun ω => ENNReal.ofReal ‖Xlim ω‖) μ :=
-        hXlim_ae_meas.norm.aemeasurable.ennreal_ofReal
       calc
         ∫⁻ ω, ENNReal.ofReal ‖Xlim ω‖ ∂μ
-            ≤ liminf (fun n => ∫⁻ ω, ENNReal.ofReal ‖μ[f | 𝔽 n] ω‖ ∂μ) atTop :=
-              IntegrationHelpers.lintegral_fatou_ofReal_norm h_ae_tendsto hmeas_n hmeas_lim
+            ≤ liminf (fun n => ∫⁻ ω, ENNReal.ofReal ‖μ[f | 𝔽 n] ω‖ ∂μ) atTop := by
+              -- Fatou along the a.e. limit: rewrite ‖Xlim‖ as the a.e. `liminf` of ‖μ[f|𝔽 n]‖
+              -- (via `Tendsto.liminf_eq`), then apply Mathlib's `lintegral_liminf_le'`.
+              have hae_ofReal : ∀ᵐ ω ∂μ,
+                  Tendsto (fun n => ENNReal.ofReal ‖μ[f | 𝔽 n] ω‖) atTop
+                    (nhds (ENNReal.ofReal ‖Xlim ω‖)) :=
+                h_ae_tendsto.mono fun ω hω =>
+                  ((ENNReal.continuous_ofReal.comp continuous_norm).tendsto _).comp hω
+              calc ∫⁻ ω, ENNReal.ofReal ‖Xlim ω‖ ∂μ
+                  = ∫⁻ ω, liminf (fun n => ENNReal.ofReal ‖μ[f | 𝔽 n] ω‖) atTop ∂μ :=
+                    lintegral_congr_ae (hae_ofReal.mono fun ω hω => hω.liminf_eq.symm)
+                _ ≤ liminf (fun n => ∫⁻ ω, ENNReal.ofReal ‖μ[f | 𝔽 n] ω‖ ∂μ) atTop :=
+                    lintegral_liminf_le' hmeas_n
         _ ≤ ↑R := by
               rw [liminf_le_iff]
               intro b hb
