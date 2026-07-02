@@ -92,12 +92,9 @@ theorem IsNegativeDefinite.intersectionForm_self_eq_zero_iff (h : P.IsNegativeDe
 /-- The intersection form of a negative-definite plumbing is nondegenerate: a lattice vector that
 pairs to zero with every vector — in particular with itself — is zero, on either side. -/
 theorem IsNegativeDefinite.intersectionForm_nondegenerate (h : P.IsNegativeDefinite) :
-    P.intersectionForm.Nondegenerate := by
-  refine ⟨?_, ?_⟩
-  · intro x hx
-    exact (h.intersectionForm_self_eq_zero_iff x).mp (hx x)
-  · intro x hx
-    exact (h.intersectionForm_self_eq_zero_iff x).mp (hx x)
+    P.intersectionForm.Nondegenerate :=
+  (LinearMap.IsRefl.nondegenerate_iff_separatingLeft P.intersectionForm_isSymm.isRefl).mpr
+    fun x hx => (h.intersectionForm_self_eq_zero_iff x).mp (hx x)
 
 /-- A left-kernel form of `IsNegativeDefinite.intersectionForm_nondegenerate`: a lattice vector
 pairing to zero with every vector is zero. -/
