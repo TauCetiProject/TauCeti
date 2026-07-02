@@ -172,7 +172,6 @@ theorem disjoint_cIoo_swap (a b : Fin n) : Disjoint (cIoo a b) (cIoo b a) := by
 
 /-- Membership in one of the two opposite cyclic intervals is the same as being neither
 endpoint. -/
-@[simp]
 theorem mem_cIoo_or_mem_cIoo_swap_iff {a b x : Fin n} (h : a ≠ b) :
     x ∈ cIoo a b ∨ x ∈ cIoo b a ↔ x ≠ a ∧ x ≠ b := by
   constructor
@@ -207,7 +206,6 @@ theorem mem_cIoo_or_mem_cIoo_swap_iff {a b x : Fin n} (h : a ≠ b) :
 
 /-- A point outside the clockwise interval from `a` to `b` is either an endpoint or lies in
 the opposite clockwise interval. -/
-@[simp]
 theorem not_mem_cIoo_iff {a b x : Fin n} (h : a ≠ b) :
     x ∉ cIoo a b ↔ x = a ∨ x = b ∨ x ∈ cIoo b a := by
   constructor

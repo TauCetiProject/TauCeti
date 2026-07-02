@@ -118,7 +118,6 @@ theorem mem_target_pointSet_iff (p : Fin n × Fin n) :
 /-- The two side columns carry the four corners of a rectangle, so a square that the two states
 share must avoid both side columns. Conversely, away from the side columns the two states agree,
 so every source square off the side columns is shared. -/
-@[simp]
 theorem mem_pointSet_inter_iff (p : Fin n × Fin n) :
     p ∈ x.pointSet ∩ y.pointSet ↔
       p ∈ x.pointSet ∧ p.1 ≠ R.left ∧ p.1 ≠ R.right := by
@@ -126,7 +125,6 @@ theorem mem_pointSet_inter_iff (p : Fin n × Fin n) :
     GridState.mem_pointSet_inter_swapColumns_iff x R.left_ne_right p
 
 /-- The lower-left corner is not shared with the target state: it sits on a side column. -/
-@[simp]
 theorem left_bottom_notMem_inter :
     (R.left, R.bottom) ∉ x.pointSet ∩ y.pointSet := by
   rw [mem_pointSet_inter_iff R]
@@ -134,7 +132,6 @@ theorem left_bottom_notMem_inter :
   exact hleft rfl
 
 /-- The upper-right corner is not shared with the target state: it sits on a side column. -/
-@[simp]
 theorem right_top_notMem_inter :
     (R.right, R.top) ∉ x.pointSet ∩ y.pointSet := by
   rw [mem_pointSet_inter_iff R]
@@ -142,7 +139,6 @@ theorem right_top_notMem_inter :
   exact hright rfl
 
 /-- The upper-left target corner is not shared with the source state: it sits on a side column. -/
-@[simp]
 theorem left_top_notMem_inter :
     (R.left, R.top) ∉ x.pointSet ∩ y.pointSet := by
   rw [mem_pointSet_inter_iff R]
@@ -150,7 +146,6 @@ theorem left_top_notMem_inter :
   exact hleft rfl
 
 /-- The lower-right target corner is not shared with the source state: it sits on a side column. -/
-@[simp]
 theorem right_bottom_notMem_inter :
     (R.right, R.bottom) ∉ x.pointSet ∩ y.pointSet := by
   rw [mem_pointSet_inter_iff R]

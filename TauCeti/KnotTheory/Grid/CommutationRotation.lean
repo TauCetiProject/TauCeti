@@ -53,7 +53,6 @@ theorem columnArc_rotate (c : Fin n) :
 
 /-- Membership in a rotated column arc is membership of the reversed row in the opposite oriented
 column arc of the original diagram. -/
-@[simp]
 theorem mem_columnArc_rotate (c r : Fin n) :
     r ∈ columnArc G.rotate c ↔ r.rev ∈ columnArc G.swapMarkings c.rev := by
   rw [columnArc_rotate, Finset.mem_image]
@@ -81,7 +80,6 @@ theorem rowArc_rotate (r : Fin n) :
 
 /-- Membership in a rotated row arc is membership of the reversed column in the opposite oriented
 row arc of the original diagram. -/
-@[simp]
 theorem mem_rowArc_rotate (r c : Fin n) :
     c ∈ rowArc G.rotate r ↔ c.rev ∈ rowArc G.swapMarkings r.rev := by
   rw [rowArc_rotate, Finset.mem_image]
