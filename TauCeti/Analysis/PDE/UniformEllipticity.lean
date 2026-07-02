@@ -140,7 +140,6 @@ lemma toQuadraticForm'_add (A B : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     toQuadraticForm'_eq_dotProduct, add_mulVec, dotProduct_add]
 
 /-- Matrix bilinear forms are linear in scalar multiplication of the coefficient matrix. -/
-@[simp]
 lemma matrixBilinearForm_smul_apply (c : ℝ) (A : Matrix n n ℝ)
     (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm (c • A) η ξ = c * matrixBilinearForm A η ξ := by
@@ -148,7 +147,6 @@ lemma matrixBilinearForm_smul_apply (c : ℝ) (A : Matrix n n ℝ)
   simp [smul_eq_mul]
 
 /-- Matrix bilinear forms are additive in the coefficient matrix. -/
-@[simp]
 lemma matrixBilinearForm_add_apply (A B : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm (A + B) η ξ = matrixBilinearForm A η ξ + matrixBilinearForm B η ξ := by
   rw [matrixBilinearForm_apply, matrixBilinearForm_apply, matrixBilinearForm_apply,
@@ -163,19 +161,16 @@ lemma toQuadraticForm'_transpose (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n
 
 /-- Transposing the coefficient matrix swaps the arguments of the bundled matrix bilinear
 form. -/
-@[simp]
 lemma matrixBilinearForm_transpose_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm Aᵀ η ξ = matrixBilinearForm A ξ η := by
   rw [matrixBilinearForm_apply, matrixBilinearForm_apply, Matrix.dotProduct_transpose_mulVec]
 
 /-- The matrix bilinear form associated to `c • 1` is `c` times the Euclidean dot product. -/
-@[simp]
 lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm (c • (1 : Matrix n n ℝ)) η ξ = c * (η ⬝ᵥ ξ) := by
   rw [matrixBilinearForm_smul_apply, matrixBilinearForm_one_apply]
 
 /-- The quadratic part of the matrix bilinear form is the matrix quadratic form. -/
-@[simp]
 lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
   rw [matrixBilinearForm_apply, toQuadraticForm'_eq_dotProduct]
@@ -213,7 +208,6 @@ lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ)
 
 /-- The bundled bilinear form of the symmetric part is the average of the original bilinear
 form and its transpose. -/
-@[simp]
 lemma matrixBilinearForm_coefficientSymmetricPart_apply (A : Matrix n n ℝ)
     (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm (coefficientSymmetricPart A) η ξ =

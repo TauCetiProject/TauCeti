@@ -84,7 +84,6 @@ lemma unitDiscStandardAutomorphismEquiv_apply_zero (u : Circle) (a : Complex.Uni
   simp [unitDiscStandardAutomorphismEquiv]
 
 /-- The norm of a standard automorphism value is the pseudo-hyperbolic expression. -/
-@[simp]
 lemma norm_unitDiscStandardAutomorphismEquiv (u : Circle) (a z : Complex.UnitDisc) :
     ‖(unitDiscStandardAutomorphismEquiv u a z : ℂ)‖ = pseudoHyperbolicExpr (z : ℂ) (a : ℂ) := by
   rw [unitDiscStandardAutomorphismEquiv_apply, Complex.UnitDisc.coe_circle_smul, norm_mul,
