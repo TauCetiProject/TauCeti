@@ -43,13 +43,15 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
 /-- **An i.i.d. sequence is conditionally i.i.d.**, with the constant directing measure
 `ω ↦ μ.map (X 0)` (the common law of the coordinates). For independent, identically
-distributed measurable coordinates, the law of an injective finite block is the product of
+distributed coordinates, the law of an injective finite block is the product of
 that common law, which is precisely the mixture against the constant directing measure. -/
-theorem ConditionallyIIDWith.of_iIndepFun_identDistrib {μ : Measure Ω} [IsProbabilityMeasure μ]
-    {X : ℕ → Ω → α} (hindep : iIndepFun X μ) (hmeas : ∀ i, Measurable (X i))
+theorem ConditionallyIIDWith.of_iIndepFun_identDistrib {μ : Measure Ω}
+    {X : ℕ → Ω → α} (hindep : iIndepFun X μ)
     (hident : ∀ i, IdentDistrib (X i) (X 0) μ μ) :
+    haveI := hindep.isProbabilityMeasure
     ConditionallyIIDWith μ X
-      (fun _ => ⟨μ.map (X 0), Measure.isProbabilityMeasure_map (hmeas 0).aemeasurable⟩) := by
+      (fun _ => ⟨μ.map (X 0), Measure.isProbabilityMeasure_map (hident 0).aemeasurable_fst⟩) := by
+  haveI := hindep.isProbabilityMeasure
   refine ConditionallyIIDWith.intro measurable_const ?_
   intro m k hk
   -- The block law along an injective selection is the `m`-fold product of the common law.
@@ -57,7 +59,7 @@ theorem ConditionallyIIDWith.of_iIndepFun_identDistrib {μ : Measure Ω} [IsProb
   have hblock : blockLaw μ X k = Measure.pi (fun _ : Fin m => μ.map (X 0)) := by
     have h1 : blockLaw μ X k = Measure.pi (fun i : Fin m => μ.map (X (k i))) := by
       rw [blockLaw_apply]
-      exact hindep_k.map_fun_eq_pi_map (fun i => (hmeas (k i)).aemeasurable)
+      exact hindep_k.map_fun_eq_pi_map (fun i => (hident (k i)).aemeasurable_fst)
     rw [h1]
     exact congrArg Measure.pi (funext fun i => (hident (k i)).map_eq)
   -- Binding a probability measure against a constant measure returns that measure.
@@ -65,26 +67,26 @@ theorem ConditionallyIIDWith.of_iIndepFun_identDistrib {μ : Measure Ω} [IsProb
   rfl
 
 /-- **An i.i.d. sequence is conditionally i.i.d.** (existential directing-measure form). -/
-theorem ConditionallyIID.of_iIndepFun_identDistrib {μ : Measure Ω} [IsProbabilityMeasure μ]
-    {X : ℕ → Ω → α} (hindep : iIndepFun X μ) (hmeas : ∀ i, Measurable (X i))
+theorem ConditionallyIID.of_iIndepFun_identDistrib {μ : Measure Ω}
+    {X : ℕ → Ω → α} (hindep : iIndepFun X μ)
     (hident : ∀ i, IdentDistrib (X i) (X 0) μ μ) :
     ConditionallyIID μ X :=
   ConditionallyIID.of_directing
-    (ConditionallyIIDWith.of_iIndepFun_identDistrib hindep hmeas hident)
+    (ConditionallyIIDWith.of_iIndepFun_identDistrib hindep hident)
 
 /-- **An i.i.d. sequence is exchangeable.** -/
-theorem Exchangeable.of_iIndepFun_identDistrib {μ : Measure Ω} [IsProbabilityMeasure μ]
-    {X : ℕ → Ω → α} (hindep : iIndepFun X μ) (hmeas : ∀ i, Measurable (X i))
+theorem Exchangeable.of_iIndepFun_identDistrib {μ : Measure Ω}
+    {X : ℕ → Ω → α} (hindep : iIndepFun X μ)
     (hident : ∀ i, IdentDistrib (X i) (X 0) μ μ) :
     Exchangeable μ X :=
-  (ConditionallyIIDWith.of_iIndepFun_identDistrib hindep hmeas hident).exchangeable
+  (ConditionallyIIDWith.of_iIndepFun_identDistrib hindep hident).exchangeable
 
 /-- **An i.i.d. sequence is contractable.** -/
-theorem Contractable.of_iIndepFun_identDistrib {μ : Measure Ω} [IsProbabilityMeasure μ]
-    {X : ℕ → Ω → α} (hindep : iIndepFun X μ) (hmeas : ∀ i, Measurable (X i))
+theorem Contractable.of_iIndepFun_identDistrib {μ : Measure Ω}
+    {X : ℕ → Ω → α} (hindep : iIndepFun X μ)
     (hident : ∀ i, IdentDistrib (X i) (X 0) μ μ) :
     Contractable μ X :=
-  (ConditionallyIIDWith.of_iIndepFun_identDistrib hindep hmeas hident).contractable
+  (ConditionallyIIDWith.of_iIndepFun_identDistrib hindep hident).contractable
 
 end Probability
 
