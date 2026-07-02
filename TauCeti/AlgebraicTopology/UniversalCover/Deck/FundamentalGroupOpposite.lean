@@ -135,9 +135,7 @@ lift. -/
 lemma deckFundamentalGroupEquiv_eq_one_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (φ : Deck p) :
     hreg.deckFundamentalGroupEquiv hp e φ = 1 ↔ φ • (e : E) = e := by
-  rw [show (1 : (FundamentalGroup X x)ᵐᵒᵖ) =
-      MulOpposite.op (1 : FundamentalGroup X x) by rfl,
-    deckFundamentalGroupEquiv_apply_eq_op_iff]
+  rw [← MulOpposite.op_one, deckFundamentalGroupEquiv_apply_eq_op_iff]
   have hmon : (hp.monodromy (1 : FundamentalGroup X x) e : E) = e := by
     exact congrArg Subtype.val ((fundamentalGroupEquiv_eq_one_iff hreg hp e 1).1 (by simp))
   rw [hmon]
@@ -151,7 +149,7 @@ lemma deckFundamentalGroupEquiv_eq_one_iff [SimplyConnectedSpace E]
 regular cover agrees with the monodromy equivalence from `π₁` to the same fibre. -/
 @[simp]
 lemma deckEquivFiber_eq_fundamentalGroupEquivFiber [SimplyConnectedSpace E]
-    [PreconnectedSpace E] (hreg : IsRegular p) (hp : IsCoveringMap p)
+    (hreg : IsRegular p) (hp : IsCoveringMap p)
     (e : p ⁻¹' {x}) (φ : Deck p) :
     deckEquivFiber hp hreg e φ =
       TauCeti.IsCoveringMap.fundamentalGroupEquivFiber hp e
@@ -159,7 +157,7 @@ lemma deckEquivFiber_eq_fundamentalGroupEquivFiber [SimplyConnectedSpace E]
   ext
   rw [deckEquivFiber_apply_coe, TauCeti.IsCoveringMap.fundamentalGroupEquivFiber_apply_coe,
     deckFundamentalGroupEquiv_unop_monodromy]
-  rfl
+  exact (smul_eq_apply φ (e : E)).symm
 
 end IsRegular
 
