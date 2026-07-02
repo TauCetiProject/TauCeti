@@ -55,25 +55,28 @@ abbrev threeCycle : ℕ → ZMod 3 → ZMod 3 := fun n ω => ω + (n : ZMod 3)
 theorem threeCycle_apply (n : ℕ) (ω : ZMod 3) : threeCycle n ω = ω + (n : ZMod 3) :=
   rfl
 
-/-- The uniform probability law on `ZMod 3`, the stationary law of the 3-cycle. -/
-abbrev threeCycleMeasure : Measure (ZMod 3) := uniformOn Set.univ
+/-- The uniform probability law on `ZMod 3`, the stationary law of the 3-cycle. This is a `def`
+(not an `abbrev`) so that the `IsAddRightInvariant` instance below keys on `threeCycleMeasure`
+and stays scoped to this example, rather than leaking to the general `uniformOn Set.univ`. -/
+def threeCycleMeasure : Measure (ZMod 3) := uniformOn Set.univ
 
 /-- The uniform law on `ZMod 3` is invariant under right addition, supplying the translation
 invariance used in the shift-stationarity proof. -/
 instance : threeCycleMeasure.IsAddRightInvariant := by
-  rw [threeCycleMeasure]
   have h : (uniformOn (Set.univ : Set (ZMod 3))) = (3 : ℝ≥0∞)⁻¹ • Measure.count := by
     ext s
     rw [uniformOn_univ, Measure.smul_apply, smul_eq_mul]
     rw [ENNReal.div_eq_inv_mul]
     simp [ZMod.card]
+  unfold threeCycleMeasure
   rw [h]
   infer_instance
 
 /-- The uniform law gives mass `3⁻¹` to each singleton. -/
 @[simp]
 theorem threeCycleMeasure_singleton (a : ZMod 3) : threeCycleMeasure {a} = 3⁻¹ := by
-  rw [threeCycleMeasure, uniformOn_univ]
+  unfold threeCycleMeasure
+  rw [uniformOn_univ]
   simp [ZMod.card]
 
 /-- **The 3-cycle is stationary.** Its path law is preserved by the one-sided shift: shifting the
@@ -135,9 +138,9 @@ theorem threeCycle_not_contractable : ¬ Contractable threeCycleMeasure threeCyc
     threeCycleMeasure_singleton] at hval
   exact (ENNReal.inv_ne_zero.mpr (by norm_num)) hval.symm
 
-/-- **The 3-cycle is not exchangeable.** If it were exchangeable, the existing hierarchy theorem
-`Exchangeable.contractable` would make it contractable, contradicting the pair-law computation
-above. -/
+/-- **The 3-cycle is not exchangeable.** Its path law is not invariant under swapping two
+coordinates: the pair `(X₀, X₁) = (ω, ω + 1)` ranges over `{(0, 1), (1, 2), (2, 0)}`, so the law
+of `(X₀, X₁)` differs from that of `(X₁, X₀)`. -/
 theorem threeCycle_not_exchangeable : ¬ Exchangeable threeCycleMeasure threeCycle := by
   intro hE
   exact threeCycle_not_contractable (hE.contractable (fun _ => Measurable.of_discrete.aemeasurable))
