@@ -6,6 +6,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Lagrangian
 public import TauCeti.Geometry.Symplectic.Prod
+public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 /-!
@@ -23,8 +24,9 @@ This is the pointwise linear-algebra layer the analytic Heegaard Floer roadmap
 (`TauCetiRoadmap/HeegaardFloer/README.md`, Lane F3) needs before Lagrangian Floer homology:
 the boundary conditions of Floer strips between two Lagrangians `L₀`, `L₁` are packaged as a
 single Lagrangian in the twisted product, and the diagonal is the model boundary condition for
-the identity continuation. The construction uses the product form API from
-`TauCeti.Geometry.Symplectic.Prod` and Mathlib's graph submodule `LinearMap.graph`.
+the identity continuation. The twisted product reuses the direct sum
+`TauCeti.SymplecticForm.prod` with the second factor negated by
+`TauCeti.SymplecticForm.rescale`, and the graph is Mathlib's submodule `LinearMap.graph`.
 
 The Lagrangian conclusion needs no finite-dimensionality hypothesis.
 
@@ -59,6 +61,21 @@ variable {V W : Type*}
 variable [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
 variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W}
 
+/-- The twisted product symplectic form `ω₁ ⊖ ω₂` on `V × W`, given by
+`(ω₁ ⊖ ω₂)((v₁, w₁), (v₂, w₂)) = ω₁(v₁, v₂) - ω₂(w₁, w₂)`.
+
+It is the direct sum `prod` of `ω₁` with the negation `ω₂.rescale (-1)` of `ω₂`; downstream code
+uses it through `twistedProd_apply`. -/
+noncomputable def twistedProd (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
+    SymplecticForm (V × W) :=
+  ω₁.prod (ω₂.rescale (-1) (by norm_num))
+
+@[simp]
+lemma twistedProd_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (p q : V × W) :
+    twistedProd ω₁ ω₂ p q = ω₁ p.1 q.1 - ω₂ p.2 q.2 := by
+  simp only [twistedProd, prod_apply, rescale_apply]
+  ring
+
 /-- The graph of `f` is isotropic for the twisted product form iff `f` preserves the symplectic
 forms pointwise: `ω₂(f v, f w) = ω₁(v, w)`. -/
 @[simp]
@@ -86,10 +103,10 @@ lemma isIsotropic_linearEquiv_graph_iff {e : V ≃ₗ[ℝ] W} :
     (twistedProd ω₁ ω₂).IsIsotropic e.toLinearMap.graph ↔ IsSymplectomorphism ω₁ ω₂ e := by
   rw [isIsotropic_graph_iff]
   constructor
+  · intro h
+    exact isSymplectomorphism_iff.2 fun v w => h v w
   · intro h v w
-    exact h v w
-  · intro h v w
-    exact h v w
+    exact h.apply v w
 
 /-- The graph of a symplectomorphism `e : V ≃ₗ[ℝ] W` is a Lagrangian subspace of the twisted
 product `(V × W, ω₁ ⊖ ω₂)`. No finite-dimensionality is required. -/
@@ -111,7 +128,7 @@ lemma IsSymplectomorphism.isLagrangian_graph {e : V ≃ₗ[ℝ] W} (h : IsSymple
   have key2 : ∀ w : V, (ω₁.toBilinForm w) (x.1 - e.symm x.2) = 0 := by
     intro w
     have hb : ω₂ (e w) x.2 = ω₁ w (e.symm x.2) := by
-      have hh := h w (e.symm x.2)
+      have hh := h.apply w (e.symm x.2)
       rwa [e.apply_symm_apply] at hh
     have hk := key w
     rw [hb] at hk

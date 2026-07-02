@@ -111,7 +111,11 @@ lemma transport_apply_apply (ω : SymplecticForm V) (e : V ≃ₗ[ℝ] W) (v w :
 variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W} {ω₃ : SymplecticForm X}
 
 /-- A real-linear equivalence `e : V ≃ₗ[ℝ] W` is a symplectomorphism from `(V, ω₁)` to `(W, ω₂)`
-when it intertwines the two symplectic forms, `ω₂(e v, e w) = ω₁(v, w)`. -/
+when it intertwines the two symplectic forms, `ω₂(e v, e w) = ω₁(v, w)`.
+
+The body is `@[no_expose]`: downstream code uses this predicate through `isSymplectomorphism_iff`,
+`IsSymplectomorphism.apply`, and `isSymplectomorphism_iff_transport_eq` rather than by unfolding. -/
+@[no_expose]
 def IsSymplectomorphism (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (e : V ≃ₗ[ℝ] W) :
     Prop :=
   ∀ v w, ω₂ (e v) (e w) = ω₁ v w
