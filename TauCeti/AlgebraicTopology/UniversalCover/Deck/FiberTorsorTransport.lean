@@ -113,7 +113,6 @@ lemma fiberMap_sdiv_eq_conjMulEquiv_of_pretransitive [PreconnectedSpace E]
 
 /-- The local deck-to-fibre equivalence commutes with transport of deck transformations
 and fibre points along an over-base homeomorphism. -/
-@[simp]
 lemma deckEquivFiberOfSurjective_fiberMap [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (h : E ≃ₜ F)
     (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b})
@@ -159,7 +158,6 @@ lemma deckEquivFiber_symm_fiberMap [PreconnectedSpace E]
 
 /-- The regular deck-to-fibre equivalence commutes with transport of deck transformations
 and fibre points along an over-base homeomorphism. -/
-@[simp]
 lemma deckEquivFiber_fiberMap [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (hreg : IsRegular p)
     (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b}) (φ : Deck p) :

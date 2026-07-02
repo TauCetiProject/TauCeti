@@ -66,7 +66,6 @@ abbrev SubgroupFiberOrbitQuotient (H : Subgroup (Deck p)) (b : B) : Type _ :=
   Quotient.mk'' e
 
 /-- The subgroup fibre-orbit quotient map sends a fibre point to its own class. -/
-@[simp]
 lemma subgroupFiberOrbitClass_eq_mk (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) :
     subgroupFiberOrbitClass H e =
       (Quotient.mk'' e : SubgroupFiberOrbitQuotient H b) :=
@@ -247,11 +246,12 @@ conjugation with the original subgroup. -/
 @[simp]
 lemma subgroupFiberOrbitQuotientEquiv_refl (H : Subgroup (Deck p))
     (x : SubgroupFiberOrbitQuotient H b) :
-    Equiv.cast (congrArg (fun H' => SubgroupFiberOrbitQuotient H' b)
+    cast (congrArg (fun H' => SubgroupFiberOrbitQuotient H' b)
         (subgroup_map_conj_refl (p := p) H))
       (subgroupFiberOrbitQuotientEquiv (Homeomorph.refl E) (p := p) (q := p)
         (fun e => by rfl) H b x) =
       x := by
+  rw [← Equiv.cast_apply]
   refine Quotient.inductionOn' x ?_
   intro e
   -- Quotient induction exposes the representative as `Quotient.mk''`; rewrite that
@@ -344,7 +344,6 @@ lemma subgroupFiberOrbitClass_bot_eq_iff (e e' : p ⁻¹' {b}) :
 
 /-- The quotient map induced by `⊥ ≤ H`, after identifying the bottom quotient with the
 fibre, is the `H`-orbit class map. -/
-@[simp]
 lemma subgroupFiberOrbitMapOfLE_bot_apply (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) :
     subgroupFiberOrbitMapOfLE (b := b) (bot_le : (⊥ : Subgroup (Deck p)) ≤ H)
         ((subgroupFiberOrbitQuotientBotEquiv (p := p) (b := b)).symm e) =

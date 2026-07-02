@@ -51,7 +51,6 @@ noncomputable abbrev normalizerQuotientConjEquiv (h : E ≃ₜ F)
 
 /-- On normalizer representatives, the deck normalizer-quotient conjugation equivalence is
 induced by conjugating deck transformations. -/
-@[simp]
 lemma normalizerQuotientConjEquiv_mk (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (H : Subgroup (Deck p))
     (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) :
@@ -63,7 +62,6 @@ lemma normalizerQuotientConjEquiv_mk (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p 
 
 /-- After the subgroup equality induced by identity conjugation, conjugating the normalizer
 quotient by the identity over-base homeomorphism is the canonical identity on representatives. -/
-@[simp]
 lemma normalizerQuotientConjEquiv_refl_mk_congr (H : Subgroup (Deck p))
     (φ : _root_.Subgroup.normalizer (H : Set (Deck p))) :
     Subgroup.normalizerQuotientCongr (subgroup_map_conj_refl (p := p) H)
@@ -83,7 +81,6 @@ lemma normalizerQuotientConjEquiv_refl_mk_congr (H : Subgroup (Deck p))
 
 /-- The inverse deck normalizer-quotient conjugation equivalence is induced by inverse
 conjugation of deck transformations. -/
-@[simp]
 lemma normalizerQuotientConjEquiv_symm_mk (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (H : Subgroup (Deck p))
     (ψ : _root_.Subgroup.normalizer
@@ -98,7 +95,6 @@ lemma normalizerQuotientConjEquiv_symm_mk (h : E ≃ₜ F) (hpq : ∀ e, q (h e)
 
 /-- Composing two deck normalizer-quotient conjugation equivalences sends representatives through
 the two successive conjugation transports. -/
-@[simp]
 lemma normalizerQuotientConjEquiv_trans_mk
     {G : Type*} [TopologicalSpace G] {r : G → B}
     (h : E ≃ₜ F) (k : F ≃ₜ G)
@@ -121,7 +117,6 @@ lemma normalizerQuotientConjEquiv_trans_mk
 /-- After identifying the twice-conjugated subgroup with the subgroup conjugated by the
 composite over-base homeomorphism, composing deck normalizer-quotient conjugation equivalences
 agrees with conjugation by the composite on representatives. -/
-@[simp]
 lemma normalizerQuotientConjEquiv_trans_mk_congr
     {G : Type*} [TopologicalSpace G] {r : G → B}
     (h : E ≃ₜ F) (k : F ≃ₜ G)
@@ -148,7 +143,6 @@ lemma normalizerQuotientConjEquiv_trans_mk_congr
 
 /-- Inverse-conjugating a representative of the `h`-conjugated subgroup quotient gives the
 stated representative in the twice-mapped subgroup. -/
-@[simp]
 lemma normalizerQuotientConjEquiv_symm_mk' (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e)
     (H : Subgroup (Deck p))
     (ψ : _root_.Subgroup.normalizer
