@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Order
+public import Mathlib.Algebra.Order.Hom.Monoid
 
 /-!
 # Degree and the divisor order
@@ -34,19 +35,30 @@ variable {X : Type*}
 
 /-! ### Weighted degree -/
 
+/-- With nonnegative weights on the support of the difference, a coefficientwise increase does
+not decrease weighted degree. -/
+lemma weightedDegree_le_of_le_of_nonneg_on_support {w : X → ℤ} {D E : WeilDivisor X}
+    (hDE : D ≤ E) (hw : ∀ x ∈ (E - D).support, 0 ≤ w x) :
+    weightedDegree w D ≤ weightedDegree w E := by
+  have hdiff : IsEffective (E - D) := le_iff_isEffective_sub.mp hDE
+  have hnonneg : 0 ≤ weightedDegree w (E - D) := by
+    rw [weightedDegree_apply]
+    exact Finsupp.sum_nonneg fun x hx =>
+      mul_nonneg ((isEffective_iff (E - D)).mp hdiff x) (hw x hx)
+  rw [map_sub] at hnonneg
+  exact sub_nonneg.mp hnonneg
+
 /-- With nonnegative weights, weighted degree is monotone for the coefficientwise divisor
 order. -/
 lemma weightedDegree_le_of_le {w : X → ℤ} (hw : ∀ x, 0 ≤ w x) {D E : WeilDivisor X}
-    (hDE : D ≤ E) : weightedDegree w D ≤ weightedDegree w E := by
-  have hdiff : IsEffective (E - D) := le_iff_isEffective_sub.mp hDE
-  have hnonneg : 0 ≤ weightedDegree w (E - D) := hdiff.weightedDegree_nonneg hw
-  rw [map_sub] at hnonneg
-  exact sub_nonneg.mp hnonneg
+    (hDE : D ≤ E) : weightedDegree w D ≤ weightedDegree w E :=
+  weightedDegree_le_of_le_of_nonneg_on_support hDE fun x _ => hw x
 
 /-- Bundled monotonicity of weighted degree for nonnegative weights. -/
 lemma monotone_weightedDegree {w : X → ℤ} (hw : ∀ x, 0 ≤ w x) :
     Monotone (weightedDegree w : WeilDivisor X → ℤ) :=
-  fun _ _ hDE => weightedDegree_le_of_le hw hDE
+  (monotone_iff_map_nonneg (weightedDegree w)).2 fun _ hD =>
+    (isEffective_iff_zero_le.mpr hD).weightedDegree_nonneg hw
 
 /-- With positive weights on the support of the difference, a proper coefficientwise increase
 strictly increases weighted degree. -/
