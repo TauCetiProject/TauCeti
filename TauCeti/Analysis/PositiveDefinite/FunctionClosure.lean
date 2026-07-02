@@ -138,7 +138,6 @@ theorem sum_real_smul_apply_of_apply_eq_one {ι : Type*} {s : Finset ι} {w : ι
 
 /-- A finite real-weighted sum of functions normalized at a point is normalized at that point when
 the weights sum to `1`. -/
-@[simp]
 theorem sum_real_smul_apply_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℝ}
     {F : ι → N → ℂ} {x : N} (hFx : ∀ i ∈ s, F i x = 1)
     (hw_sum : ∑ i ∈ s, w i = 1) :
@@ -156,7 +155,6 @@ theorem sum_real_const_mul_apply_of_apply_eq_one {ι : Type*} {s : Finset ι}
 
 /-- A finite real-weighted sum, in multiplication form, of functions normalized at a point is
 normalized at that point when the weights sum to `1`. -/
-@[simp]
 theorem sum_real_const_mul_apply_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℝ}
     {F : ι → N → ℂ} {x : N} (hFx : ∀ i ∈ s, F i x = 1)
     (hw_sum : ∑ i ∈ s, w i = 1) :
@@ -205,7 +203,6 @@ theorem sum_real_smul_apply_zero_of_apply_zero_eq_one {ι : Type*} {s : Finset �
 
 /-- A finite real-weighted sum of functions normalized at the origin is normalized when the weights
 sum to `1`. -/
-@[simp]
 theorem sum_real_smul_apply_zero_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℝ}
     {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) (hw_sum : ∑ i ∈ s, w i = 1) :
     (fun x => ∑ i ∈ s, w i • F i x) 0 = 1 :=
@@ -220,7 +217,6 @@ theorem sum_real_const_mul_apply_zero_of_apply_zero_eq_one {ι : Type*} {s : Fin
 
 /-- A finite real-weighted sum, in multiplication form, of functions normalized at the origin is
 normalized when the weights sum to `1`. -/
-@[simp]
 theorem sum_real_const_mul_apply_zero_eq_one {ι : Type*} {s : Finset ι} {w : ι → ℝ}
     {F : ι → N → ℂ} (hF0 : ∀ i ∈ s, F i 0 = 1) (hw_sum : ∑ i ∈ s, w i = 1) :
     (fun x => ∑ i ∈ s, (w i : ℂ) * F i x) 0 = 1 :=
