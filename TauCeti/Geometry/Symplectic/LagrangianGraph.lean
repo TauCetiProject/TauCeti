@@ -39,6 +39,8 @@ coming from nondegeneracy of `ω₁` alone.
 * `TauCeti.SymplecticForm.twistedProd`: the twisted product form `ω₁ ⊖ ω₂` on `V × W`.
 * `TauCeti.SymplecticForm.IsSymplectomorphism`: a linear equivalence `e` with
   `ω₂(e v, e w) = ω₁(v, w)`, together with `refl`, `symm`, and `trans`.
+* `TauCeti.SymplecticForm.isSymplectomorphism_iff`: the pointwise characterization of
+  `IsSymplectomorphism`.
 * `TauCeti.SymplecticForm.isSymplectomorphism_iff_transport_eq`: this predicate is equivalent
   to equality with the transported symplectic form.
 * `TauCeti.SymplecticForm.isIsotropic_graph_iff`: the graph of `e` is isotropic for `ω₁ ⊖ ω₂`
@@ -83,6 +85,17 @@ def IsSymplectomorphism (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (e
   ∀ v w, ω₂ (e v) (e w) = ω₁ v w
 
 variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W} {ω₃ : SymplecticForm U}
+
+/-- A linear equivalence is a symplectomorphism exactly when it preserves the symplectic forms
+pointwise. -/
+lemma isSymplectomorphism_iff {e : V ≃ₗ[ℝ] W} :
+    IsSymplectomorphism ω₁ ω₂ e ↔ ∀ v w, ω₂ (e v) (e w) = ω₁ v w :=
+  Iff.rfl
+
+/-- Apply a symplectomorphism hypothesis to two vectors. -/
+lemma IsSymplectomorphism.apply {e : V ≃ₗ[ℝ] W} (h : IsSymplectomorphism ω₁ ω₂ e) (v w : V) :
+    ω₂ (e v) (e w) = ω₁ v w :=
+  h v w
 
 /-- A linear equivalence is a symplectomorphism exactly when `ω₂` is the transport of `ω₁`
 along that equivalence. -/
