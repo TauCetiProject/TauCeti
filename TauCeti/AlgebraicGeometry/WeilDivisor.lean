@@ -513,6 +513,51 @@ lemma weightedDegree_coe_weightedDegreeZeroSubgroup (w : X → ℤ)
     (D : weightedDegreeZeroSubgroup w) : weightedDegree w (D : WeilDivisor X) = 0 :=
   D.property
 
+/-- The degree-corrected representative of a divisor in the weighted degree-zero divisor group.
+
+For a weight-one base point `x₀`, this is `D - weightedDegree(D) • [x₀]`, viewed as a
+weighted-degree-zero divisor. -/
+noncomputable def weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
+    (D : WeilDivisor X) : weightedDegreeZeroSubgroup w :=
+  ⟨D - weightedDegree w D • ofPoint x₀, by
+    rw [mem_weightedDegreeZeroSubgroup, map_sub, map_zsmul, weightedDegree_ofPoint, hx₀]
+    simp⟩
+
+-- The degree-corrected representatives are intentionally not `@[expose]`, so downstream modules
+-- cannot unfold them; each defining equality is unfolded once here in a `private` lemma and
+-- re-exported through the public characterization lemma below.
+private lemma coe_weightedAbelJacobiDegreeZeroDivisor_def (w : X → ℤ) {x₀ : X}
+    (hx₀ : w x₀ = 1) (D : WeilDivisor X) :
+    (weightedAbelJacobiDegreeZeroDivisor w hx₀ D : WeilDivisor X) =
+      D - weightedDegree w D • ofPoint x₀ :=
+  rfl
+
+@[simp]
+lemma coe_weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X}
+    (hx₀ : w x₀ = 1) (D : WeilDivisor X) :
+    (weightedAbelJacobiDegreeZeroDivisor w hx₀ D : WeilDivisor X) =
+      D - weightedDegree w D • ofPoint x₀ :=
+  coe_weightedAbelJacobiDegreeZeroDivisor_def w hx₀ D
+
+/-- The degree-corrected representative of a divisor in the unweighted degree-zero divisor
+group.  This is `D - degree(D) • [x₀]`. -/
+noncomputable def unweightedAbelJacobiDegreeZeroDivisor (x₀ : X) (D : WeilDivisor X) :
+    degreeZeroSubgroup X :=
+  ⟨D - degree D • ofPoint x₀, by
+    rw [mem_degreeZeroSubgroup, map_sub, map_zsmul, degree_ofPoint]
+    simp⟩
+
+private lemma coe_unweightedAbelJacobiDegreeZeroDivisor_def (x₀ : X) (D : WeilDivisor X) :
+    (unweightedAbelJacobiDegreeZeroDivisor x₀ D : WeilDivisor X) =
+      D - degree D • ofPoint x₀ :=
+  rfl
+
+@[simp]
+lemma coe_unweightedAbelJacobiDegreeZeroDivisor (x₀ : X) (D : WeilDivisor X) :
+    (unweightedAbelJacobiDegreeZeroDivisor x₀ D : WeilDivisor X) =
+      D - degree D • ofPoint x₀ :=
+  coe_unweightedAbelJacobiDegreeZeroDivisor_def x₀ D
+
 /-- The unweighted degree-zero subgroup is the weight-one weighted-degree-zero subgroup. -/
 @[expose]
 def degreeZeroSubgroupEquivWeightedDegreeZeroOne :
