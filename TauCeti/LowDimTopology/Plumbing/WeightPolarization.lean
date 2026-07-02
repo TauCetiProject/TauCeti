@@ -83,8 +83,11 @@ theorem characteristicWeight_add_single (k : P.characteristicVectors) (x : V →
     P.characteristicWeight k (x + Pi.single v 1) =
       P.characteristicWeight k x - ((k.val v + P.weight v) / 2) -
         ∑ i, x i * P.intersectionMatrix i v := by
-  rw [characteristicWeight_add, characteristicWeight_single,
-    intersectionForm_apply_single_right]
+  have hform : P.intersectionForm x (Pi.single v 1) =
+      ∑ i, x i * P.intersectionMatrix i v := by
+    rw [P.intersectionForm_apply]
+    simp [Pi.single_apply, Finset.sum_ite_eq']
+  rw [characteristicWeight_add, characteristicWeight_single, hform]
   ring
 
 /-- The value of `χ_k` on a sum of two basis spheres, with the interaction term given by their

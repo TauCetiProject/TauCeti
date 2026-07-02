@@ -54,8 +54,6 @@ of Seifert-fibred examples), with edge multiplicities a later refinement.
   framing negative.
 * `TauCeti.PlumbingGraph.intersectionForm_self_add`: a symmetric-pairing expansion for the
   intersection form on a sum.
-* `TauCeti.PlumbingGraph.intersectionForm_apply_single_right`: pairing against a basis sphere reads
-  off the corresponding intersection-matrix column.
 
 ## References
 
@@ -187,16 +185,6 @@ theorem intersectionForm_self_add (x y : V → ℤ) :
     simp only [map_add, LinearMap.add_apply]
     rw [P.intersectionForm_isSymm.eq y x]
     ring
-
-/-- Pairing a lattice point against a basis sphere `E_v` reads off the `v`-th column of the
-intersection matrix: `x · E_v = ∑ i, x i * (intersection matrix) i v`. -/
-theorem intersectionForm_apply_single_right (x : V → ℤ) (v : V) :
-    P.intersectionForm x (Pi.single v 1) = ∑ i, x i * P.intersectionMatrix i v :=
-  by
-    change Matrix.toBilin' P.intersectionMatrix x (Pi.single v 1) =
-      ∑ i, x i * P.intersectionMatrix i v
-    rw [Matrix.toBilin'_apply', Matrix.mulVec_single_one]
-    rfl
 
 /-- The intersection form expanded into its framing contribution and adjacency contribution. -/
 theorem intersectionForm_apply_weight_add_adj (x y : V → ℤ) :
