@@ -69,7 +69,7 @@ converge to the wrong limit `μ[f | 𝔽 0]`.
 `tendsto_ae_condExp_iInf` is proved via the chain:
 
 1. `revFiltration`, `revCondExpFinite`: time-reversal infrastructure (`Martingale/Reverse.lean`).
-2. `revCondExpFinite_martingale`: the reversed process is a forward martingale.
+2. `martingale_revCondExpFinite`: the reversed process is a forward martingale.
 3. `condExp_exists_ae_limit_antitone`: a.s. existence via upcrossing bounds
    (`Martingale/Crossings/AntitoneLimit.lean`).
 4. `Integrable.uniformIntegrable_condExp` (Mathlib): uniform integrability of conditional

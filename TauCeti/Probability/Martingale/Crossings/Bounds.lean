@@ -49,7 +49,7 @@ lemma upcrossings_bdd_uniform
   -- For each N, revCondExpFinite is a martingale, hence a submartingale
   have h_submart : ∀ N, Submartingale (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)
       (revFiltration 𝔽 h_antitone h_le N) μ :=
-    fun N => (revCondExpFinite_martingale (μ := μ) h_antitone h_le f N).submartingale
+    fun N => (martingale_revCondExpFinite (μ := μ) h_antitone h_le f N).submartingale
   -- For each fixed N and M, we can bound E[(f_M - a)⁺] by ‖f‖₁ + |a| * μ(univ). The constant
   -- term keeps the finite factor `μ Set.univ` (it is `1` only in the probability case).
   have h_bound : ∀ N M, ∫⁻ ω, ENNReal.ofReal ((revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ

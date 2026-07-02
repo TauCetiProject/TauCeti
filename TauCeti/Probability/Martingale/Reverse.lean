@@ -18,7 +18,7 @@ it to the upcrossing inequality.
 
 ## Main results
 
-- `revCondExpFinite_martingale`: the reversed process is a forward martingale for `revFiltration`.
+- `martingale_revCondExpFinite`: the reversed process is a forward martingale for `revFiltration`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/Martingale/Reverse.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
@@ -61,7 +61,7 @@ lemma revCondExpFinite_apply (f : Ω → ℝ) (𝔽 : ℕ → MeasurableSpace Ω
 
 /-- The reversed process `revCondExpFinite f 𝔽 N` is a martingale for `revFiltration 𝔽 N`: by
 the tower property, `μ[μ[f | 𝔽 (N - j)] | 𝔽 (N - i)] = μ[f | 𝔽 (N - i)]` whenever `i ≤ j`. -/
-lemma revCondExpFinite_martingale [IsFiniteMeasure μ]
+lemma martingale_revCondExpFinite [IsFiniteMeasure μ]
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (N : ℕ) :
     Martingale (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)
