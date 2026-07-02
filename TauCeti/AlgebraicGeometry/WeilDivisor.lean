@@ -631,7 +631,7 @@ lemma weightedPointBaseDifference_eq_ofPoint_sub_zsmul (w : X → ℤ) (x₀ x :
   weightedPointBaseDifference_def w x₀ x
 
 /-- At the constant weight `1`, the degree-corrected point divisor is the usual point
-difference. This simp lemma lets unweighted API reuse the weighted construction. -/
+difference. This lets unweighted API reuse the weighted construction. -/
 lemma weightedPointBaseDifference_eq_pointDifference (x₀ x : X) :
     weightedPointBaseDifference (fun _ : X => (1 : ℤ)) x₀ x = pointDifference x x₀ := by
   simp [weightedPointBaseDifference, pointDifference]
