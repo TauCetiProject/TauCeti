@@ -27,6 +27,8 @@ identify the deck group of the cover attached to `H` with `N(H) / H`.
   from `N(H) / H`.
 * `TauCeti.Deck.instNormalizerQuotientSubgroupFiberOrbitMulAction`: the resulting action of
   `N(H) / H` on `SubgroupFiberOrbitQuotient H b`.
+* `TauCeti.Deck.instNormalizerQuotientSubgroupFiberOrbitIsCancelSMul`: freeness of this
+  descended action when the deck action on the fibre is free.
 
 ## References
 
@@ -175,6 +177,31 @@ lemma normalizerQuotient_mk_of_mem_smul_subgroupFiberOrbitClass
       subgroupFiberOrbitClass H e := by
   rw [normalizerQuotient_smul_subgroupFiberOrbitClass]
   exact (subgroupFiberOrbitClass_eq_iff H (φ • e) e).2 ⟨⟨φ, hφ⟩, rfl⟩
+
+/-- Equality after the `N(H) / H` action on an `H`-fibre quotient is equality of
+normalizer-quotient elements, provided the deck action on that fibre is free. -/
+lemma normalizerQuotient_smul_subgroupFiberOrbit_eq_smul_iff
+    [IsCancelSMul (Deck p) (p ⁻¹' {b})] (H : Subgroup (Deck p))
+    (a c : Subgroup.normalizerQuotient H) (x : SubgroupFiberOrbitQuotient H b) :
+    a • x = c • x ↔ a = c :=
+  TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff H a c x
+
+/-- If the deck action on a fibre is free, then the descended `N(H) / H` action on the
+quotient of that fibre by `H`-orbits is free. -/
+noncomputable instance instNormalizerQuotientSubgroupFiberOrbitIsCancelSMul
+    [IsCancelSMul (Deck p) (p ⁻¹' {b})] (H : Subgroup (Deck p)) :
+    IsCancelSMul (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) where
+  right_cancel' a c x h :=
+    (normalizerQuotient_smul_subgroupFiberOrbit_eq_smul_iff H a c x).mp h
+
+/-- For a preconnected covering map, the descended `N(H) / H` action on every `H`-fibre
+quotient is free. -/
+theorem normalizerQuotientSubgroupFiberOrbitIsCancelSMulOfIsCoveringMap
+    [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p)
+    (H : Subgroup (Deck p)) :
+    IsCancelSMul (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) := by
+  letI := fiber_isCancelSMul (b := b) hp
+  exact instNormalizerQuotientSubgroupFiberOrbitIsCancelSMul H
 
 end Deck
 
