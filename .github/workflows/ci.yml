@@ -55,6 +55,16 @@ jobs:
       - name: Module-system audit (every TauCeti/ file opts into `module`)
         run: lake exe module-system
 
+      # Simp normal-form lint. Elaborates a generated driver importing every TauCeti/
+      # module and runs Mathlib's `simpNF` linter, comparing against the grandfathered
+      # baseline in scripts/simp-nf-baseline.txt: new violations fail, fixed baseline
+      # entries print a ratchet reminder. `@[nolint simpNF]` occurrences must be
+      # accounted for in scripts/simp-nf-nolints-allowlist.txt. PR-time enforcement
+      # runs inside the landrun sandbox in pr-build.yml (this lint executes the linted
+      # code); this post-merge run is the health check on main, like the audits above.
+      - name: Simp normal-form lint (simpNF vs grandfathered baseline)
+        run: bash scripts/lint-simp-nf.sh
+
       # --- Lake artifact-cache publish (dormant until configured) ---------------------
       # Publish TauCeti's OWN oleans (root-package only) to the Lake cache, so pr-build can
       # fetch them and recompile only a PR's changed modules instead of the whole library.
