@@ -128,7 +128,6 @@ lemma deckEquivFiberOfSurjective_fiberMap [PreconnectedSpace E]
 /-- On underlying points, local compatibility of `deckEquivFiberOfSurjective` with fibre
 transport says that conjugating a deck transformation and then evaluating on the transported
 fibre point is the same as transporting the original evaluation. -/
-@[simp]
 lemma deckEquivFiberOfSurjective_fiberMap_coe [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (h : E ≃ₜ F)
     (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b})
@@ -144,7 +143,6 @@ lemma deckEquivFiberOfSurjective_fiberMap_coe [PreconnectedSpace E]
 /-- The inverse of the regular deck-to-fibre equivalence is compatible with fibre transport:
 transport the target fibre point first, or compute the source deck transformation first and
 then conjugate it. -/
-@[simp]
 lemma deckEquivFiber_symm_fiberMap [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (hreg : IsRegular p)
     (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e e' : p ⁻¹' {b}) :
@@ -178,7 +176,6 @@ lemma deckEquivFiber_fiberMap [PreconnectedSpace E]
 /-- On underlying points, the compatibility of `deckEquivFiber` with fibre transport says
 that conjugating a deck transformation and then evaluating on the transported fibre point is
 the same as transporting the original evaluation. -/
-@[simp]
 lemma deckEquivFiber_fiberMap_coe [PreconnectedSpace E]
     (hp : IsCoveringMap p) (hq : IsCoveringMap q) (hreg : IsRegular p)
     (h : E ≃ₜ F) (hpq : ∀ e, q (h e) = p e) (e : p ⁻¹' {b}) (φ : Deck p) :

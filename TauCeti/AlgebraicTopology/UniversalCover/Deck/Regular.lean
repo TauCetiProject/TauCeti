@@ -171,7 +171,6 @@ lemma deckEquivFiber_apply_coe [PreconnectedSpace E] (hp : IsCoveringMap p)
 
 /-- The equivalence from deck transformations to a fibre sends the identity to the chosen
 base point. -/
-@[simp]
 lemma deckEquivFiber_one [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (e : p ⁻¹' {b}) :
     deckEquivFiber hp hreg e 1 = e := by
@@ -180,7 +179,6 @@ lemma deckEquivFiber_one [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : Is
 
 /-- The equivalence from deck transformations to a fibre is equivariant for left
 multiplication on the deck group and the deck action on the fibre. -/
-@[simp]
 lemma deckEquivFiber_mul [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (e : p ⁻¹' {b}) (φ ψ : Deck p) :
     deckEquivFiber hp hreg e (φ * ψ) = φ • deckEquivFiber hp hreg e ψ := by

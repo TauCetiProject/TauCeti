@@ -161,7 +161,6 @@ lemma normalizerQuotient_smul_subgroupFiberOrbitClass (H : Subgroup (Deck p))
           (X := p ⁻¹' {b}) H φ e
 
 /-- The identity class in `N(H) / H` fixes every subgroup fibre-orbit class. -/
-@[simp]
 lemma normalizerQuotient_one_smul_subgroupFiberOrbitClass (H : Subgroup (Deck p))
     (e : p ⁻¹' {b}) :
     (1 : Subgroup.normalizerQuotient H) • subgroupFiberOrbitClass H e =
@@ -180,7 +179,6 @@ lemma normalizerQuotient_mk_of_mem_smul_subgroupFiberOrbitClass
 
 /-- Equality after the `N(H) / H` action on an `H`-fibre quotient is equality of
 normalizer-quotient elements, provided the deck action on that fibre is free. -/
-@[simp]
 lemma normalizerQuotient_smul_subgroupFiberOrbit_eq_smul_iff
     [IsCancelSMul (Deck p) (p ⁻¹' {b})] (H : Subgroup (Deck p))
     (a c : Subgroup.normalizerQuotient H) (x : SubgroupFiberOrbitQuotient H b) :
