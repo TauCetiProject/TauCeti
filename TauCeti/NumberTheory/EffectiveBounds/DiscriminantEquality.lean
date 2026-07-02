@@ -5,8 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
-public import Mathlib.RingTheory.Localization.NormTrace
-public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 
 /-!
 # When the discriminant bound is an equality: integral bases
@@ -35,8 +33,10 @@ nose. It is exactly the step behind the roadmap's `ℚ(i)` worked example, where
   `ℚ`-basis `b` of algebraic integers whose `ℤ`-span (inside `𝒪_K`) is everything.
 * `TauCeti.NumberField.abs_discr_eq_of_basis_isIntegral_of_span_eq_top`: the matching
   `|d_K| = |disc b|`, the equality companion of `abs_discr_le_of_basis_isIntegral`.
-* `TauCeti.NumberField.natAbs_discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int`: the
-  consumer form that turns an evaluated integer basis discriminant into `(d_K).natAbs`.
+* `TauCeti.NumberField.discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int`: the consumer
+  form that turns an evaluated integer basis discriminant into `d_K` exactly, with
+  `TauCeti.NumberField.natAbs_discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int` its
+  `natAbs` corollary.
 
 ## Provenance
 
@@ -89,7 +89,7 @@ theorem discr_eq_of_basis_isIntegral_of_span_eq_top
   -- Package it as a `ℤ`-basis of `𝒪_K`, whose image in `K` is `b`.
   let c : Basis ι ℤ (𝓞 K) := Basis.mk hli hspan.ge
   have hc : (fun i => algebraMap (𝓞 K) K (c i)) = (b : ι → K) := by
-    funext i; rw [Basis.mk_apply]; rfl
+    funext i; simp [c, Basis.mk_apply, hv]
   have := discr_eq_of_integralBasis c
   rwa [hc] at this
 
@@ -102,17 +102,26 @@ theorem abs_discr_eq_of_basis_isIntegral_of_span_eq_top
   rw [discr_eq_of_basis_isIntegral_of_span_eq_top b hb hspan]
 
 /-- **Evaluating the discriminant through a spanning integral basis.** If the discriminant of a
-generating basis of algebraic integers computes to an integer `d`, then `(d_K).natAbs = d.natAbs`.
-This is the consumer form used to read off `|d_K|` from a concrete trace-form computation, as in
-the roadmap's `ℚ(i)` example (`disc {1, i} = -4`, whence `(d_{ℚ(i)}).natAbs = 4`). -/
+generating basis of algebraic integers computes to an integer `d`, then `d_K = d` exactly. This is
+the consumer form used to read off `d_K` from a concrete trace-form computation, as in the
+roadmap's `ℚ(i)` example (`disc {1, i} = -4`, whence `d_{ℚ(i)} = -4`). -/
+theorem discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int
+    (b : Basis ι ℚ K) (hb : ∀ i, IsIntegral ℤ (b i))
+    (hspan : Submodule.span ℤ (Set.range fun i => (⟨b i, hb i⟩ : 𝓞 K)) = ⊤)
+    {d : ℤ} (hd : Algebra.discr ℚ (b : ι → K) = (d : ℚ)) :
+    NumberField.discr K = d := by
+  have h : (NumberField.discr K : ℚ) = (d : ℚ) :=
+    (discr_eq_of_basis_isIntegral_of_span_eq_top b hb hspan).symm.trans hd
+  exact_mod_cast h
+
+/-- **The absolute value of the discriminant from a spanning integral basis.** The `natAbs`
+corollary of `discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int`, reading off `|d_K|`
+from an evaluated integer basis discriminant (in the `ℚ(i)` example, `(d_{ℚ(i)}).natAbs = 4`). -/
 theorem natAbs_discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int
     (b : Basis ι ℚ K) (hb : ∀ i, IsIntegral ℤ (b i))
     (hspan : Submodule.span ℤ (Set.range fun i => (⟨b i, hb i⟩ : 𝓞 K)) = ⊤)
     {d : ℤ} (hd : Algebra.discr ℚ (b : ι → K) = (d : ℚ)) :
     (NumberField.discr K).natAbs = d.natAbs := by
-  have h : (NumberField.discr K : ℚ) = (d : ℚ) :=
-    (discr_eq_of_basis_isIntegral_of_span_eq_top b hb hspan).symm.trans hd
-  have : NumberField.discr K = d := by exact_mod_cast h
-  rw [this]
+  rw [discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int b hb hspan hd]
 
 end TauCeti.NumberField
