@@ -2,7 +2,9 @@ module
 
 public import TauCeti.Probability.DeFinetti.DirectingMeasureCoord
 public import TauCeti.Probability.Exchangeability.Cylinder
+public import TauCeti.Probability.Exchangeability.ConditionallyIID
 public import Mathlib.Probability.Independence.Conditional
+import TauCeti.Probability.DeFinetti.CommonEnding
 
 /-!
 # Block-product factorisation of the conditional expectation
@@ -107,6 +109,24 @@ theorem blockLaw_eq_lintegral_prod_directingMeasure [StandardBorelSpace Ω] [Sta
   simp only [hg, measureReal_def]
   rw [ENNReal.ofReal_prod_of_nonneg fun i _ => ENNReal.toReal_nonneg]
   exact Finset.prod_congr rfl fun i _ => ENNReal.ofReal_toReal (measure_ne_top _ _)
+
+/-- **de Finetti reduces to conditional independence over the tail.** If every finite injective
+selection of coordinates of a contractable process is conditionally independent given the tail
+σ-algebra, then the process is conditionally i.i.d., with directing measure the tail conditional
+law `directingProbabilityMeasure μ X`. -/
+theorem conditionallyIID_of_iCondIndepFun_tailProcess [StandardBorelSpace Ω] [StandardBorelSpace α]
+    [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX : Contractable μ X)
+    (hX_meas : ∀ n, Measurable (X n)) (hTail : tailProcess X ≤ mΩ)
+    (hCI : ∀ (m : ℕ) (k : Fin m → ℕ), Function.Injective k →
+      iCondIndepFun (m := fun _ : Fin m => (inferInstance : MeasurableSpace α))
+        (tailProcess X) hTail (fun i => X (k i)) μ) :
+    ConditionallyIID μ X := by
+  refine conditionallyIID_of_directing_forall_rectangles
+    (measurable_directingProbabilityMeasure (μ := μ) hTail) ?_
+  intro m k hk B hB
+  rw [blockLaw_eq_lintegral_prod_directingMeasure hX hX_meas hTail hB (hCI m k hk)]
+  refine lintegral_congr fun ω => ?_
+  simp only [directingProbabilityMeasure_toMeasure]
 
 end Probability
 
