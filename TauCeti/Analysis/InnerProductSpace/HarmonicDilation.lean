@@ -29,6 +29,7 @@ without reproving the Laplacian calculation each time.
 * `TauCeti.harmonicOnNhd_comp_smul_right_iff`: set-level nonzero dilation invariance.
 * `TauCeti.harmonicAt_comp_const_add_smul_iff`: harmonicity is invariant under the affine
   normalization `z ↦ x + c • z` with nonzero scale.
+* `TauCeti.harmonicOnNhd_comp_const_add_smul_iff`: set-level affine normalization invariance.
 -/
 
 public section
@@ -215,6 +216,25 @@ theorem harmonicAt_comp_const_add_smul_iff (x : E) {c : ℝ} (hc : c ≠ 0) {f :
   rw [hcomm] at hscale
   rw [hfun]
   exact hscale.trans (by simpa [hpoint] using htranslate)
+
+/-- **Harmonicity on a neighbourhood of a set is invariant under the affine normalization
+`z ↦ x + c • z`** when the scale is nonzero.
+
+For `c ≠ 0`, the function `z ↦ f (x + c • z)` is harmonic near `(fun z ↦ x + c • z) ⁻¹' s`
+iff `f` is harmonic near `s`. -/
+theorem harmonicOnNhd_comp_const_add_smul_iff (x : E) {c : ℝ} (hc : c ≠ 0) {f : E → F}
+    {s : Set E} :
+    HarmonicOnNhd (fun z ↦ f (x + c • z)) ((fun z ↦ x + c • z) ⁻¹' s) ↔
+      HarmonicOnNhd f s := by
+  have hfun : (fun z : E ↦ f (x + c • z)) = fun z ↦ (fun w : E ↦ f (w + x)) (c • z) := by
+    funext z
+    rw [add_comm]
+  have hset : ((fun z : E ↦ x + c • z) ⁻¹' s) =
+      ((fun z : E ↦ c • z) ⁻¹' ((fun y : E ↦ y + x) ⁻¹' s)) := by
+    ext z
+    simp [add_comm]
+  rw [hfun, hset, harmonicOnNhd_comp_smul_right_iff (c := c) hc (f := fun w : E ↦ f (w + x)),
+    harmonicOnNhd_comp_add_right_iff (f := f) (s := s) x]
 
 end TauCeti
 

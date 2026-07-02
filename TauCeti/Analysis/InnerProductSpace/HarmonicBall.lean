@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HarmonicDilation
-public import TauCeti.Analysis.InnerProductSpace.HarmonicIsometry
 
 /-!
 # Ball normalizations for harmonic functions
@@ -58,19 +57,13 @@ theorem harmonicOnNhd_comp_const_add_smul_ball_radius_iff (x : E) {c : ℝ} (hc 
     (r : ℝ) {f : E → F} :
     HarmonicOnNhd (fun y ↦ f (x + c • y)) (Metric.ball 0 r) ↔
       HarmonicOnNhd f (Metric.ball x (‖c‖ * r)) := by
-  have hfun : (fun y : E ↦ f (x + c • y)) =
-      fun y ↦ (fun z : E ↦ f (z + x)) (c • y) := by
-    funext y
-    rw [add_comm]
-  have hpre : ((fun y : E ↦ c • y) ⁻¹' Metric.ball (0 : E) (‖c‖ * r)) = Metric.ball 0 r := by
-    rw [Set.preimage_smul₀ hc, smul_ball (inv_ne_zero hc) 0 (‖c‖ * r)]
-    simp only [smul_zero, norm_inv, inv_mul_cancel_left₀ (norm_ne_zero_iff.2 hc)]
-  rw [hfun]
-  rw [← harmonicOnNhd_comp_add_right_ball_zero_iff x (‖c‖ * r) (f := f)]
+  have hpre : ((fun y : E ↦ x + c • y) ⁻¹' Metric.ball x (‖c‖ * r)) = Metric.ball 0 r := by
+    ext y
+    simp only [Set.mem_preimage, Metric.mem_ball, dist_eq_norm, add_sub_cancel_left, sub_zero,
+      norm_smul]
+    exact mul_lt_mul_iff_right₀ (norm_pos_iff.2 hc)
   rw [← hpre]
-  simpa using
-    (harmonicOnNhd_comp_smul_right_iff c hc (f := fun z : E ↦ f (z + x))
-      (s := Metric.ball 0 (‖c‖ * r)))
+  exact harmonicOnNhd_comp_const_add_smul_iff x hc (f := f) (s := Metric.ball x (‖c‖ * r))
 
 /-- Harmonicity on a neighbourhood of `Metric.ball x r` is equivalent to harmonicity of the
 normalized function `y ↦ f (x + r • y)` on a neighbourhood of the unit ball. -/
