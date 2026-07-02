@@ -79,7 +79,6 @@ instance : threeCycleMeasure.IsAddRightInvariant := by
   infer_instance
 
 /-- The uniform law gives mass `3⁻¹` to each singleton. -/
-@[simp]
 theorem threeCycleMeasure_singleton (a : ZMod 3) : threeCycleMeasure {a} = 3⁻¹ := by
   unfold threeCycleMeasure
   rw [uniformOn_univ]
