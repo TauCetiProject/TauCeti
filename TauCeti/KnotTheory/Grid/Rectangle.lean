@@ -280,27 +280,8 @@ theorem transpose_transpose : R.transpose.transpose = R := by
 
 /-- The interior of the reflected rectangle is the diagonal reflection of the original
 interior. -/
-theorem interior_transpose : R.transpose.interior = R.interior.image Prod.swap := by
-  ext ⟨a, b⟩
-  constructor
-  · intro hab
-    rw [mem_interior] at hab
-    simp only [mem_columnInterior, mem_rowInterior] at hab
-    rw [Finset.mem_image]
-    refine ⟨(b, a), ?_, rfl⟩
-    rw [mem_interior]
-    simp only [mem_columnInterior, mem_rowInterior]
-    exact ⟨hab.2, hab.1⟩
-  · intro hab
-    rw [Finset.mem_image] at hab
-    obtain ⟨⟨c, d⟩, hcd, hswap⟩ := hab
-    rw [mem_interior] at hcd
-    simp only [mem_columnInterior, mem_rowInterior] at hcd
-    rw [Prod.swap_prod_mk, Prod.mk.injEq] at hswap
-    obtain ⟨rfl, rfl⟩ := hswap
-    rw [mem_interior]
-    simp only [mem_columnInterior, mem_rowInterior]
-    exact ⟨hcd.2, hcd.1⟩
+theorem interior_transpose : R.transpose.interior = R.interior.image Prod.swap :=
+  (Finset.image_swap_product _ _).symm
 
 /-- The half-turn rotation of a toroidal rectangle.
 
