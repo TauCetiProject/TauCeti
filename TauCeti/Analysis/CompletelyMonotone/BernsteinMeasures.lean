@@ -150,7 +150,7 @@ lemma chafaiDensity_nonneg {n : ℕ} {t : ℝ} (ht : 0 ≤ t)
       _ ≥ 0 := mul_nonneg (div_nonneg (pow_nonneg ht _) hfact_pos.le) hsign
 
 /-- For `n = 1`, the density simplifies to `-f'(t)`. -/
-@[simp] lemma chafaiDensity_one (t : ℝ) :
+lemma chafaiDensity_one (t : ℝ) :
     chafaiDensity f 1 t = -iteratedDerivWithin 1 f (Ici 0) t := by
   simp [chafaiDensity]
 
@@ -382,7 +382,6 @@ lemma ae_nonneg_bernsteinKernel_chafaiRescaled (f : ℝ → ℝ) (n : ℕ) (x : 
 
 /-- Bundled version of `ae_nonneg_bernsteinKernel_chafaiRescaled` for the bounded-continuous
 Bernstein kernel. -/
-@[simp]
 lemma ae_nonneg_bernsteinKernelBoundedContinuous_chafaiRescaled
     (f : ℝ → ℝ) (n : ℕ) {x : ℝ} (hx : 0 ≤ x) :
     0 ≤ᵐ[chafaiRescaled f n] fun p : ℝ≥0 => bernsteinKernelBoundedContinuous n hx p := by
@@ -421,7 +420,6 @@ lemma chafaiMeasure_compl_Ioi (f : ℝ → ℝ) (n : ℕ) :
   rw [this, measure_empty]
 
 /-- Pushforward preserves total mass. -/
-@[simp]
 lemma chafaiRescaled_mass_eq (f : ℝ → ℝ) (n : ℕ) :
     (chafaiRescaled f n) univ = (chafaiMeasure f n) univ := by
   unfold chafaiRescaled

@@ -76,7 +76,6 @@ theorem normalize_apply_zero (hF : IsSemigroupGroupPD F) (h0 : F (0, 0) ≠ 0) :
 
 /-- A normalized semigroup-group positive-definite function has origin value `1`, stated as the
 map-zero lemma for the normalized function. -/
-@[simp]
 theorem normalize_map_zero (hF : IsSemigroupGroupPD F) (h0 : F (0, 0) ≠ 0) :
     (fun p => (((F (0, 0)).re)⁻¹ : ℂ) * F p) (0, 0) = 1 :=
   hF.normalize_apply_zero h0

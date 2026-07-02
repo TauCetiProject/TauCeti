@@ -80,7 +80,6 @@ theorem _root_.HilbertBasis.mapₗᵢ_trans {G : Type*} [NormedAddCommGroup G] [
 
 /-- Transporting a Hilbert basis across an isometry and then back across the inverse isometry
 recovers the original basis. -/
-@[simp]
 theorem _root_.HilbertBasis.mapₗᵢ_symm
     (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
     (b.mapₗᵢ e).mapₗᵢ e.symm = b := by
@@ -89,7 +88,6 @@ theorem _root_.HilbertBasis.mapₗᵢ_symm
 
 /-- Transporting a Hilbert basis back across an inverse isometry and then forward again recovers
 the original basis. -/
-@[simp]
 theorem _root_.HilbertBasis.mapₗᵢ_symm_self
     (b : _root_.HilbertBasis ι 𝕜 F) (e : E ≃ₗᵢ[𝕜] F) :
     (b.mapₗᵢ e.symm).mapₗᵢ e = b := by
