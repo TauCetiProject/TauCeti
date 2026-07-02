@@ -65,8 +65,6 @@ intersection form of a plumbing graph follows Némethi,
 
 public section
 
-open scoped Matrix
-
 namespace TauCeti
 
 /-- A plumbing graph: a simple graph together with an integer weight on each vertex.
