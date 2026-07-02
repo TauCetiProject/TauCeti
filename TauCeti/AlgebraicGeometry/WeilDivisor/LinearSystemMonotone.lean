@@ -6,7 +6,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.LinearSystemAddition
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Order
-import Mathlib.Tactic.Abel
 
 /-!
 # Effective monotonicity of complete linear systems
@@ -47,8 +46,7 @@ lemma add_sub_mem_completeLinearSystem_of_le {D D' E : WeilDivisor X} (hDD' : D 
   have hdiff : IsEffective (D' - D) := le_iff_isEffective_sub.mp hDD'
   have hmem : E + (D' - D) ∈ S.completeLinearSystem (D + (D' - D)) :=
     S.add_effective_mem_completeLinearSystem hdiff hE
-  convert hmem using 2
-  abel
+  rwa [add_sub_cancel] at hmem
 
 /-- The order-induced translation map sends `|D|` into `|D'|` whenever `D ≤ D'`. -/
 lemma mapsTo_add_sub_completeLinearSystem_of_le {D D' : WeilDivisor X} (hDD' : D ≤ D') :
@@ -63,8 +61,7 @@ lemma nonempty_completeLinearSystem_of_le {D D' : WeilDivisor X} (hDD' : D ≤ D
   have hdiff : IsEffective (D' - D) := le_iff_isEffective_sub.mp hDD'
   have hnonempty : (S.completeLinearSystem (D + (D' - D))).Nonempty :=
     S.nonempty_completeLinearSystem_add_effective hdiff hD
-  convert hnonempty using 2
-  abel
+  rwa [add_sub_cancel] at hnonempty
 
 end OrderSystem
 
