@@ -36,6 +36,7 @@ following Mathlib's `LinearMap.prodMap` naming convention.
 * `TauCeti.IsComplexLinearMap.prod` and `TauCeti.IsComplexLinearMap.prodMap`: complex-linearity is
   preserved by pairing maps with a common source and by product maps into the direct sum.
 * `TauCeti.SymplecticForm.prod`: the direct-sum symplectic form on `V × W`.
+* `TauCeti.SymplecticForm.twistedProd`: the twisted product form `ω₁ ⊖ ω₂` on `V × W`.
 * `TauCeti.SymplecticForm.prod_invariant`, `prod_tames`, `prod_compatible`: a direct sum of
   invariant / tame / compatible pairs is invariant / tame / compatible.
 
@@ -207,6 +208,39 @@ def prod (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) : SymplecticForm 
 @[simp]
 lemma prod_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (p q : V × W) :
     ω₁.prod ω₂ p q = ω₁ p.1 q.1 + ω₂ p.2 q.2 := rfl
+
+/-- The twisted product symplectic form `ω₁ ⊖ ω₂` on `V × W`, given by
+`(ω₁ ⊖ ω₂)((v₁, w₁), (v₂, w₂)) = ω₁(v₁, v₂) - ω₂(w₁, w₂)`. -/
+noncomputable def twistedProd (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
+    SymplecticForm (V × W) where
+  toBilinForm :=
+    ω₁.toBilinForm.comp (LinearMap.fst ℝ V W) (LinearMap.fst ℝ V W) -
+      ω₂.toBilinForm.comp (LinearMap.snd ℝ V W) (LinearMap.snd ℝ V W)
+  isAlt := by
+    intro p
+    simp
+  nondegenerate := by
+    constructor
+    · intro p hp
+      have h1 : p.1 = 0 := ω₁.separatingLeft p.1 fun x => by
+        have := hp (x, 0)
+        simpa using this
+      have h2 : p.2 = 0 := ω₂.separatingLeft p.2 fun y => by
+        have := hp (0, y)
+        simpa using this
+      exact Prod.ext h1 h2
+    · intro q hq
+      have h1 : q.1 = 0 := ω₁.separatingRight q.1 fun x => by
+        have := hq (x, 0)
+        simpa using this
+      have h2 : q.2 = 0 := ω₂.separatingRight q.2 fun y => by
+        have := hq (0, y)
+        simpa using this
+      exact Prod.ext h1 h2
+
+@[simp]
+lemma twistedProd_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (p q : V × W) :
+    twistedProd ω₁ ω₂ p q = ω₁ p.1 q.1 - ω₂ p.2 q.2 := rfl
 
 variable {J₁ : AlmostComplexStructure V} {J₂ : AlmostComplexStructure W}
 

@@ -32,6 +32,8 @@ asks. The underlying form transport reuses Mathlib's `LinearMap.BilinForm.congr`
   `transport_transport_symm`: functoriality of transport in the linear equivalence.
 * `TauCeti.SymplecticForm.transport_apply_apply`: `e` is a symplectomorphism onto the transported
   form, `(ω.transport e)(e v, e w) = ω(v, w)`.
+* `TauCeti.SymplecticForm.IsSymplectomorphism`: a linear equivalence `e` with
+  `ω₂(e v, e w) = ω₁(v, w)`, together with its pointwise and transport characterizations.
 * `TauCeti.SymplecticForm.Invariant.transport`, `Tames.transport`, `Compatible.transport`:
   invariance, tameness, and compatibility of a pair `(ω, J)` transport along `e` to the pair
   `(ω.transport e, J.transport e)`.
@@ -105,6 +107,59 @@ under `e` recovers `ω`. -/
 lemma transport_apply_apply (ω : SymplecticForm V) (e : V ≃ₗ[ℝ] W) (v w : V) :
     ω.transport e (e v) (e w) = ω v w := by
   rw [transport_apply, e.symm_apply_apply, e.symm_apply_apply]
+
+variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W} {ω₃ : SymplecticForm X}
+
+/-- A real-linear equivalence `e : V ≃ₗ[ℝ] W` is a symplectomorphism from `(V, ω₁)` to `(W, ω₂)`
+when it intertwines the two symplectic forms, `ω₂(e v, e w) = ω₁(v, w)`. -/
+def IsSymplectomorphism (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (e : V ≃ₗ[ℝ] W) :
+    Prop :=
+  ∀ v w, ω₂ (e v) (e w) = ω₁ v w
+
+/-- A linear equivalence is a symplectomorphism exactly when it preserves the symplectic forms
+pointwise. -/
+lemma isSymplectomorphism_iff {e : V ≃ₗ[ℝ] W} :
+    IsSymplectomorphism ω₁ ω₂ e ↔ ∀ v w, ω₂ (e v) (e w) = ω₁ v w :=
+  Iff.rfl
+
+/-- Apply a symplectomorphism hypothesis to two vectors. -/
+lemma IsSymplectomorphism.apply {e : V ≃ₗ[ℝ] W} (h : IsSymplectomorphism ω₁ ω₂ e) (v w : V) :
+    ω₂ (e v) (e w) = ω₁ v w :=
+  h v w
+
+/-- A linear equivalence is a symplectomorphism exactly when `ω₂` is the transport of `ω₁`
+along that equivalence. -/
+lemma isSymplectomorphism_iff_transport_eq {e : V ≃ₗ[ℝ] W} :
+    IsSymplectomorphism ω₁ ω₂ e ↔ ω₁.transport e = ω₂ := by
+  constructor
+  · intro h
+    apply toBilinForm_injective
+    ext v w
+    rw [transport_toBilinForm, LinearMap.BilinForm.congr_apply]
+    simpa using (h (e.symm v) (e.symm w)).symm
+  · intro h v w
+    rw [← h, transport_apply_apply]
+
+/-- The identity equivalence is a symplectomorphism. -/
+lemma IsSymplectomorphism.refl (ω : SymplecticForm V) :
+    IsSymplectomorphism ω ω (LinearEquiv.refl ℝ V) := by
+  intro v w
+  simp
+
+/-- The inverse of a symplectomorphism is a symplectomorphism. -/
+lemma IsSymplectomorphism.symm {e : V ≃ₗ[ℝ] W} (h : IsSymplectomorphism ω₁ ω₂ e) :
+    IsSymplectomorphism ω₂ ω₁ e.symm := by
+  intro v w
+  have h2 := h (e.symm v) (e.symm w)
+  rw [e.apply_symm_apply, e.apply_symm_apply] at h2
+  exact h2.symm
+
+/-- Symplectomorphisms compose. -/
+lemma IsSymplectomorphism.trans {e : V ≃ₗ[ℝ] W} {f : W ≃ₗ[ℝ] X}
+    (h₁ : IsSymplectomorphism ω₁ ω₂ e) (h₂ : IsSymplectomorphism ω₂ ω₃ f) :
+    IsSymplectomorphism ω₁ ω₃ (e.trans f) := by
+  intro v w
+  rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, h₂ (e v) (e w), h₁ v w]
 
 section Compatible
 

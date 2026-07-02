@@ -4,10 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.LinearAlgebra.Prod
 public import TauCeti.Geometry.Symplectic.Lagrangian
 public import TauCeti.Geometry.Symplectic.Prod
-public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 /-!
@@ -25,14 +23,10 @@ This is the pointwise linear-algebra layer the analytic Heegaard Floer roadmap
 (`TauCetiRoadmap/HeegaardFloer/README.md`, Lane F3) needs before Lagrangian Floer homology:
 the boundary conditions of Floer strips between two Lagrangians `L₀`, `L₁` are packaged as a
 single Lagrangian in the twisted product, and the diagonal is the model boundary condition for
-the identity continuation. The construction reuses the direct-sum form
-`TauCeti.SymplecticForm.prod` (from `Prod.lean`) precomposed with the nonzero rescaling
-`TauCeti.SymplecticForm.rescale` by `-1` (from `Rescale.lean`), and Mathlib's graph submodule
-`LinearMap.graph`, so no new nondegeneracy bookkeeping is introduced.
+the identity continuation. The construction uses the product form API from
+`TauCeti.Geometry.Symplectic.Prod` and Mathlib's graph submodule `LinearMap.graph`.
 
-The Lagrangian conclusion needs no finite-dimensionality hypothesis: it is proved through the
-isotropic-plus-coisotropic characterization `SymplecticForm.isLagrangian_iff`, with coisotropy
-coming from nondegeneracy of `ω₁` alone.
+The Lagrangian conclusion needs no finite-dimensionality hypothesis.
 
 ## Main declarations
 
@@ -43,8 +37,8 @@ coming from nondegeneracy of `ω₁` alone.
   `IsSymplectomorphism`.
 * `TauCeti.SymplecticForm.isSymplectomorphism_iff_transport_eq`: this predicate is equivalent
   to equality with the transported symplectic form.
-* `TauCeti.SymplecticForm.isIsotropic_graph_iff`: the graph of `e` is isotropic for `ω₁ ⊖ ω₂`
-  iff `e` is a symplectomorphism.
+* `TauCeti.SymplecticForm.isIsotropic_graph_iff`: the graph of a linear map is isotropic for
+  `ω₁ ⊖ ω₂` iff it preserves the forms pointwise.
 * `TauCeti.SymplecticForm.IsSymplectomorphism.isLagrangian_graph` and
   `TauCeti.SymplecticForm.isLagrangian_graph_iff`: the graph of `e` is Lagrangian for `ω₁ ⊖ ω₂`
   iff `e` is a symplectomorphism.
@@ -61,103 +55,45 @@ namespace TauCeti
 
 namespace SymplecticForm
 
-variable {V W U : Type*}
-variable [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W] [AddCommGroup U] [Module ℝ U]
+variable {V W : Type*}
+variable [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
+variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W}
 
-/-- The twisted product symplectic form `ω₁ ⊖ ω₂` on `V × W`, given by
-`(ω₁ ⊖ ω₂)((v₁, w₁), (v₂, w₂)) = ω₁(v₁, v₂) - ω₂(w₁, w₂)`.
-
-It is the direct-sum form `ω₁ ⊕ ω₂` of `Prod.lean` with the second factor rescaled by `-1`. -/
-noncomputable def twistedProd (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) :
-    SymplecticForm (V × W) :=
-  ω₁.prod (ω₂.rescale (-1) (by norm_num))
-
+/-- The graph of `f` is isotropic for the twisted product form iff `f` preserves the symplectic
+forms pointwise: `ω₂(f v, f w) = ω₁(v, w)`. -/
 @[simp]
-lemma twistedProd_apply (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (p q : V × W) :
-    twistedProd ω₁ ω₂ p q = ω₁ p.1 q.1 - ω₂ p.2 q.2 := by
-  unfold twistedProd
-  rw [prod_apply, rescale_apply]
-  ring
-
-/-- A real-linear equivalence `e : V ≃ₗ[ℝ] W` is a symplectomorphism from `(V, ω₁)` to `(W, ω₂)`
-when it intertwines the two symplectic forms, `ω₂(e v, e w) = ω₁(v, w)`. -/
-def IsSymplectomorphism (ω₁ : SymplecticForm V) (ω₂ : SymplecticForm W) (e : V ≃ₗ[ℝ] W) : Prop :=
-  ∀ v w, ω₂ (e v) (e w) = ω₁ v w
-
-variable {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm W} {ω₃ : SymplecticForm U}
-
-/-- A linear equivalence is a symplectomorphism exactly when it preserves the symplectic forms
-pointwise. -/
-lemma isSymplectomorphism_iff {e : V ≃ₗ[ℝ] W} :
-    IsSymplectomorphism ω₁ ω₂ e ↔ ∀ v w, ω₂ (e v) (e w) = ω₁ v w :=
-  Iff.rfl
-
-/-- Apply a symplectomorphism hypothesis to two vectors. -/
-lemma IsSymplectomorphism.apply {e : V ≃ₗ[ℝ] W} (h : IsSymplectomorphism ω₁ ω₂ e) (v w : V) :
-    ω₂ (e v) (e w) = ω₁ v w :=
-  h v w
-
-/-- A linear equivalence is a symplectomorphism exactly when `ω₂` is the transport of `ω₁`
-along that equivalence. -/
-lemma isSymplectomorphism_iff_transport_eq {e : V ≃ₗ[ℝ] W} :
-    IsSymplectomorphism ω₁ ω₂ e ↔ ω₁.transport e = ω₂ := by
-  constructor
-  · intro h
-    apply toBilinForm_injective
-    ext v w
-    change ω₁.transport e v w = ω₂ v w
-    rw [transport_apply]
-    simpa using (h (e.symm v) (e.symm w)).symm
-  · intro h v w
-    rw [← h, transport_apply_apply]
-
-/-- The identity equivalence is a symplectomorphism. -/
-lemma IsSymplectomorphism.refl (ω : SymplecticForm V) :
-    IsSymplectomorphism ω ω (LinearEquiv.refl ℝ V) := by
-  intro v w
-  simp
-
-/-- The inverse of a symplectomorphism is a symplectomorphism. -/
-lemma IsSymplectomorphism.symm {e : V ≃ₗ[ℝ] W} (h : IsSymplectomorphism ω₁ ω₂ e) :
-    IsSymplectomorphism ω₂ ω₁ e.symm := by
-  intro v w
-  have h2 := h (e.symm v) (e.symm w)
-  rw [e.apply_symm_apply, e.apply_symm_apply] at h2
-  exact h2.symm
-
-/-- Symplectomorphisms compose. -/
-lemma IsSymplectomorphism.trans {e : V ≃ₗ[ℝ] W} {f : W ≃ₗ[ℝ] U}
-    (h₁ : IsSymplectomorphism ω₁ ω₂ e) (h₂ : IsSymplectomorphism ω₂ ω₃ f) :
-    IsSymplectomorphism ω₁ ω₃ (e.trans f) := by
-  intro v w
-  rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, h₂ (e v) (e w), h₁ v w]
-
-/-- The graph of `e` is isotropic for the twisted product form iff `e` is a symplectomorphism:
-isotropy of the graph is precisely the intertwining identity `ω₂(e v, e w) = ω₁(v, w)`. -/
-@[simp]
-lemma isIsotropic_graph_iff {e : V ≃ₗ[ℝ] W} :
-    (twistedProd ω₁ ω₂).IsIsotropic e.toLinearMap.graph ↔ IsSymplectomorphism ω₁ ω₂ e := by
+lemma isIsotropic_graph_iff {f : V →ₗ[ℝ] W} :
+    (twistedProd ω₁ ω₂).IsIsotropic f.graph ↔ ∀ v w, ω₂ (f v) (f w) = ω₁ v w := by
   rw [isIsotropic_iff]
   constructor
   · intro h v w
-    have hv : ((v, e v) : V × W) ∈ e.toLinearMap.graph := by simp [LinearMap.mem_graph_iff]
-    have hw : ((w, e w) : V × W) ∈ e.toLinearMap.graph := by simp [LinearMap.mem_graph_iff]
-    have hvw := h (v, e v) hv (w, e w) hw
+    have hv : ((v, f v) : V × W) ∈ f.graph := by simp [LinearMap.mem_graph_iff]
+    have hw : ((w, f w) : V × W) ∈ f.graph := by simp [LinearMap.mem_graph_iff]
+    have hvw := h (v, f v) hv (w, f w) hw
     simp only [twistedProd_apply] at hvw
     linarith
   · intro h p hp q hq
     rw [LinearMap.mem_graph_iff] at hp hq
-    simp only [LinearEquiv.coe_toLinearMap] at hp hq
     rw [twistedProd_apply, hp, hq]
     linarith [h p.1 q.1]
 
+/-- The graph of `e` is isotropic for the twisted product form iff `e` is a symplectomorphism. -/
+@[simp]
+lemma isIsotropic_linearEquiv_graph_iff {e : V ≃ₗ[ℝ] W} :
+    (twistedProd ω₁ ω₂).IsIsotropic e.toLinearMap.graph ↔ IsSymplectomorphism ω₁ ω₂ e := by
+  rw [isIsotropic_graph_iff]
+  constructor
+  · intro h v w
+    exact h v w
+  · intro h v w
+    exact h v w
+
 /-- The graph of a symplectomorphism `e : V ≃ₗ[ℝ] W` is a Lagrangian subspace of the twisted
-product `(V × W, ω₁ ⊖ ω₂)`. No finite-dimensionality is required: coisotropy follows from
-nondegeneracy of `ω₁`. -/
+product `(V × W, ω₁ ⊖ ω₂)`. No finite-dimensionality is required. -/
 lemma IsSymplectomorphism.isLagrangian_graph {e : V ≃ₗ[ℝ] W} (h : IsSymplectomorphism ω₁ ω₂ e) :
     (twistedProd ω₁ ω₂).IsLagrangian e.toLinearMap.graph := by
   rw [isLagrangian_iff]
-  refine ⟨isIsotropic_graph_iff.2 h, ?_⟩
+  refine ⟨isIsotropic_linearEquiv_graph_iff.2 h, ?_⟩
   rw [isCoisotropic_iff]
   intro x hx
   rw [mem_orthogonal_iff] at hx
@@ -187,7 +123,8 @@ lemma IsSymplectomorphism.isLagrangian_graph {e : V ≃ₗ[ℝ] W} (h : IsSymple
 @[simp]
 lemma isLagrangian_graph_iff {e : V ≃ₗ[ℝ] W} :
     (twistedProd ω₁ ω₂).IsLagrangian e.toLinearMap.graph ↔ IsSymplectomorphism ω₁ ω₂ e :=
-  ⟨fun h => isIsotropic_graph_iff.1 h.isIsotropic, IsSymplectomorphism.isLagrangian_graph⟩
+  ⟨fun h => isIsotropic_linearEquiv_graph_iff.1 h.isIsotropic,
+    IsSymplectomorphism.isLagrangian_graph⟩
 
 /-- The diagonal of `(V × V, ω ⊖ ω)`, realized as the graph of the identity equivalence, is
 Lagrangian. This is the boundary condition modeled by the identity continuation in Lagrangian
