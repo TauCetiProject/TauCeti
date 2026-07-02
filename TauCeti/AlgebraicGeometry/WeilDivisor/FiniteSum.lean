@@ -38,8 +38,7 @@ variable {X Y : Type*}
 
 noncomputable section
 
-/-- The point divisor is a single spike. The body of `ofPoint` is not exposed, so this is
-proved through the coefficient API rather than by `rfl`. -/
+/-- The point divisor `ofPoint x` is the single spike `Finsupp.single x 1`. -/
 private lemma ofPoint_eq_single (x : X) : ofPoint x = Finsupp.single x 1 := by
   ext y
   rcases eq_or_ne y x with rfl | hyx
