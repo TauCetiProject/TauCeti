@@ -1,6 +1,6 @@
 module
 
-public import TauCeti.Probability.Martingale.TimeReversalCrossing
+public import TauCeti.Probability.Martingale.Crossings.TimeReversal
 
 /-!
 # Crossings: pathwise reversal lemmas
