@@ -203,15 +203,17 @@ lemma equivSym_symm_apply (s : Sym X d) :
 /-- Converting a divisor to the symmetric power and back gives the original divisor. -/
 @[simp]
 lemma ofSym_equivSym (D : EffectiveDivisorOfDegree X d) :
-    ofSym (equivSym D) = D :=
-  equivSym.left_inv D
+    ofSym (letI := Classical.decEq X; (Sym.equivNatSum X d).symm (equivFinsupp D)) = D := by
+  classical
+  simpa [equivSym_apply] using (equivSym.left_inv D)
 
 /-- Converting a symmetric-power point to a divisor and back gives the original symmetric-power
 point. -/
 @[simp]
 lemma equivSym_ofSym (s : Sym X d) :
-    equivSym (ofSym s) = s :=
-  equivSym.right_inv s
+    (letI := Classical.decEq X; (Sym.equivNatSum X d).symm (equivFinsupp (ofSym s))) = s := by
+  classical
+  simpa [equivSym_apply] using (equivSym.right_inv s)
 
 end Sym
 
@@ -267,7 +269,8 @@ lemma multiplicityFinsupp_pushforward (f : X → Y) (D : EffectiveDivisorOfDegre
 /-- The symmetric-power equivalence sends divisor pushforward to `Sym.map`. -/
 @[simp]
 lemma equivSym_pushforward (f : X → Y) (D : EffectiveDivisorOfDegree X d) :
-    equivSym (D.pushforward f) = Sym.map f (equivSym D) := by
+    (letI := Classical.decEq Y; (Sym.equivNatSum Y d).symm (equivFinsupp (D.pushforward f))) =
+      Sym.map f (equivSym D) := by
   classical
   apply (Sym.equivNatSum Y d).injective
   ext y
