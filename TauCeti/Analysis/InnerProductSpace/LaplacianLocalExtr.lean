@@ -5,27 +5,26 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
-public import Mathlib.Analysis.Calculus.DerivativeTest
+public import Mathlib.Analysis.Calculus.TaylorIntegral
+public import TauCeti.Analysis.Calculus.DerivativeTest
 
 /-!
 # The Laplacian at an interior local extremum
 
 The second-derivative test underlies the maximum principle for the Laplacian: at an interior
 local maximum of a `C²` function the Laplacian is nonpositive, and at an interior local minimum
-it is nonnegative. Mathlib already has the *sufficient* second-derivative test
-(`isLocalMax_of_deriv_deriv_neg`: a negative second derivative forces a local maximum); this file
-supplies the *necessary* direction and its multivariate Laplacian consequence, the first
-building block of the Lane C maximum principle in the PDE roadmap.
+it is nonnegative. The one-dimensional necessary tests live in
+`TauCeti.Analysis.Calculus.DerivativeTest`; this file supplies their multivariate Laplacian
+consequences, the first building block of the Lane C maximum principle in the PDE roadmap.
 
-The one-dimensional necessary test `deriv_deriv_nonpos_of_isLocalMax` says that at a local maximum
-of a continuous `g : ℝ → ℝ` the second derivative is nonpositive. Restricting a function
-`f : E → ℝ` to a line `t ↦ f (x + t • w)` turns each diagonal Hessian entry into such a second
-derivative (`deriv_deriv_comp_line`), and summing over an orthonormal basis gives the Laplacian.
+Restricting a function `f : E → F` to a line `t ↦ f (x + t • w)` turns the second derivative
+`deriv (deriv fun t ↦ f (x + t • w)) 0` into a diagonal Hessian entry
+`fderiv ℝ (fderiv ℝ f) x w w` (`deriv_deriv_comp_line`). In the scalar case, the
+one-dimensional necessary test signs each diagonal entry, and summing over an orthonormal basis
+gives the Laplacian.
 
 ## Main declarations
 
-* `TauCeti.deriv_deriv_nonpos_of_isLocalMax` / `TauCeti.deriv_deriv_nonneg_of_isLocalMin`: the
-  necessary one-dimensional second-derivative test.
 * `TauCeti.deriv_deriv_comp_line`: the second derivative of the restriction of `f` to a line is a
   diagonal entry of the Hessian `fderiv ℝ (fderiv ℝ f) x w w`.
 * `TauCeti.fderiv_fderiv_self_nonpos_of_isLocalMax` /
@@ -45,33 +44,6 @@ noncomputable section
 namespace TauCeti
 
 open InnerProductSpace Laplacian Topology
-
-/-- **Necessary second-derivative test.** At a local maximum of a continuous function
-`g : ℝ → ℝ`, the second derivative is nonpositive. -/
-theorem deriv_deriv_nonpos_of_isLocalMax {g : ℝ → ℝ} {t₀ : ℝ}
-    (hg : ContinuousAt g t₀) (hmax : IsLocalMax g t₀) :
-    deriv (deriv g) t₀ ≤ 0 := by
-  by_contra h
-  rw [not_le] at h
-  have hd : deriv g t₀ = 0 := hmax.deriv_eq_zero
-  have hmin : IsLocalMin g t₀ := isLocalMin_of_deriv_deriv_pos h hd hg
-  -- Being both a local minimum and a local maximum, `g` is eventually constant near `t₀`.
-  have hconst : g =ᶠ[𝓝 t₀] fun _ => g t₀ := by
-    filter_upwards [hmax, hmin] with y hy hy' using le_antisymm hy hy'
-  have hderiv : deriv g =ᶠ[𝓝 t₀] fun _ => (0 : ℝ) := by
-    filter_upwards [hconst.deriv] with y hy
-    simpa using hy
-  have hzero : deriv (deriv g) t₀ = 0 := by
-    rw [hderiv.deriv_eq]; simp
-  linarith
-
-/-- **Necessary second-derivative test, minimum version.** At a local minimum of a continuous
-function `g : ℝ → ℝ`, the second derivative is nonnegative. -/
-theorem deriv_deriv_nonneg_of_isLocalMin {g : ℝ → ℝ} {t₀ : ℝ}
-    (hg : ContinuousAt g t₀) (hmin : IsLocalMin g t₀) :
-    0 ≤ deriv (deriv g) t₀ := by
-  have := deriv_deriv_nonpos_of_isLocalMax (g := -g) hg.neg hmin.neg
-  simpa using this
 
 variable
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
@@ -99,18 +71,17 @@ private theorem isLocalMin_comp_line {f : E → ℝ} {x : E} (hmin : IsLocalMin 
   simpa using ht
 
 /-- The restriction of a `C²` function `f` to a line is `C²` at `0`. -/
-private theorem contDiffAt_comp_line {f : E → ℝ} {x : E} (hf : ContDiffAt ℝ 2 f x) (w : E) :
+private theorem contDiffAt_comp_line {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : E → F} {x : E} (hf : ContDiffAt ℝ 2 f x) (w : E) :
     ContDiffAt ℝ 2 (fun t : ℝ => f (x + t • w)) 0 :=
-  (show ContDiffAt ℝ 2 f ((fun t : ℝ => x + t • w) 0) by simpa using hf).comp 0
+  (by simpa using hf : ContDiffAt ℝ 2 f ((fun t : ℝ => x + t • w) 0)).comp 0
     (contDiffAt_line x w)
 
 /-- The second derivative of the restriction of `f` to the line `t ↦ x + t • w` is the diagonal
 Hessian entry `fderiv ℝ (fderiv ℝ f) x w w`. -/
-theorem deriv_deriv_comp_line {f : E → ℝ} {x : E} (hf : ContDiffAt ℝ 2 f x) (w : E) :
+theorem deriv_deriv_comp_line {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : E → F} {x : E} (hf : ContDiffAt ℝ 2 f x) (w : E) :
     deriv (deriv fun t : ℝ => f (x + t • w)) 0 = fderiv ℝ (fderiv ℝ f) x w w := by
-  -- The line and its derivative.
-  have hlin : ∀ t : ℝ, HasDerivAt (fun s : ℝ => x + s • w) w t := fun t => by
-    simpa using ((hasDerivAt_id t).smul_const w).const_add x
   -- `f` is differentiable on a neighbourhood of `x`, so the first derivative of the restriction is
   -- `t ↦ fderiv ℝ f (x + t • w) w` near `0`.
   have hfev : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y := by
@@ -120,18 +91,12 @@ theorem deriv_deriv_comp_line {f : E → ℝ} {x : E} (hf : ContDiffAt ℝ 2 f x
   have hev : (deriv fun t : ℝ => f (x + t • w)) =ᶠ[𝓝 0]
       fun t => fderiv ℝ f (x + t • w) w := by
     filter_upwards [hdiff] with t ht
-    exact (ht.hasFDerivAt.comp_hasDerivAt t (hlin t)).deriv
-  -- `fderiv ℝ f` is differentiable at `x` since `f` is `C²`.
-  have hD : DifferentiableAt ℝ (fderiv ℝ f) x :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hDx : HasFDerivAt (fderiv ℝ f) (fderiv ℝ (fderiv ℝ f) x) (x + (0 : ℝ) • w) := by
-    simpa using hD.hasFDerivAt
-  -- Differentiate `t ↦ fderiv ℝ f (x + t • w) w` at `0` by the chain rule (staying with the
-  -- `ℝ`-valued composition to avoid the two `AddCommGroup` structures on `E →L[ℝ] ℝ`).
-  have h2 := (ContinuousLinearMap.apply ℝ ℝ w).hasFDerivAt.comp_hasDerivAt 0
-    (hDx.comp_hasDerivAt 0 (hlin 0))
+    exact ht.deriv_comp_add_smul
+  have hf_line_point : ContDiffAt ℝ (1 + 1 : ℕ) f (x + (0 : ℝ) • w) := by
+    simpa using hf
+  have h2 := hf_line_point.deriv_fderiv_add_smul (n := 1) (x := x) (y := w) (t := 0)
   have h2' : deriv (fun t : ℝ => fderiv ℝ f (x + t • w) w) 0 = fderiv ℝ (fderiv ℝ f) x w w := by
-    simpa [Function.comp_def, ContinuousLinearMap.apply_apply] using h2.deriv
+    simpa [iteratedFDeriv_two_apply] using h2
   calc deriv (deriv fun t : ℝ => f (x + t • w)) 0
       = deriv (fun t : ℝ => fderiv ℝ f (x + t • w) w) 0 := hev.deriv_eq
     _ = fderiv ℝ (fderiv ℝ f) x w w := h2'
