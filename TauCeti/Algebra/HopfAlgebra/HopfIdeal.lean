@@ -287,7 +287,6 @@ instance (I : HopfIdeal R H) : I.toIdeal.IsTwoSided :=
 theorem mem_carrier {I : HopfIdeal R H} {x : H} : x ∈ I.carrier ↔ x ∈ I :=
   Iff.rfl
 
-@[simp]
 theorem mem_toIdeal {I : HopfIdeal R H} {x : H} : x ∈ I.toIdeal ↔ x ∈ I :=
   Iff.rfl
 

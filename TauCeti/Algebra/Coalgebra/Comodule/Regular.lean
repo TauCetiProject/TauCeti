@@ -174,7 +174,6 @@ abbrev trivialToRegular : trivial R C ⟶ regular R C :=
   Comodule.Hom.trivialToRegular (R := R) (C := C)
 
 /-- The bundled morphism `trivialToRegular` sends `r` to `algebraMap R C r`. -/
-@[simp]
 theorem trivialToRegular_apply (r : R) :
     trivialToRegular (R := R) (C := C) r = algebraMap R C r :=
   Comodule.Hom.trivialToRegular_apply (R := R) (C := C) r

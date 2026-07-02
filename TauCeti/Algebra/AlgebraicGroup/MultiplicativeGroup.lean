@@ -184,7 +184,6 @@ theorem unitOfPoint_comp (φ : A →ₐ[R] B) (f : R[T;T⁻¹] →ₐ[R] A) :
   simp [unitOfPoint_val, Units.coe_map]
 
 /-- The plain Laurent-polynomial points equivalence is natural in the value algebra. -/
-@[simp]
 theorem pointEquiv_comp (φ : A →ₐ[R] B) (f : R[T;T⁻¹] →ₐ[R] A) :
     pointEquiv (R := R) (A := B) (φ.comp f) =
       Units.map φ.toMonoidHom (pointEquiv (R := R) (A := A) f) :=
@@ -203,7 +202,6 @@ theorem comp_point (φ : A →ₐ[R] B) (u : Aˣ) :
 
 /-- Reading a multiplicative-group point as a unit is natural in the value algebra:
 post-composing the point with an `R`-algebra map applies the induced map on unit groups. -/
-@[simp]
 theorem unitOfPoint_mapValue (φ : A →ₐ[R] B)
     (f : WithConv (R[T;T⁻¹] →ₐ[R] A)) :
     unitOfPoint ((AlgHom.mapValue (H := R[T;T⁻¹]) φ f).ofConv) =
@@ -212,7 +210,6 @@ theorem unitOfPoint_mapValue (φ : A →ₐ[R] B)
   exact unitOfPoint_comp φ f.ofConv
 
 /-- The `𝔾ₘ` points equivalence is natural in the value algebra. -/
-@[simp]
 theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (f : WithConv (R[T;T⁻¹] →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := B)
@@ -223,7 +220,6 @@ theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     exact unitOfPoint_mapValue φ f
 
 /-- Naturality of the inverse `𝔾ₘ` points equivalence in the value algebra. -/
-@[simp]
 theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (u : Aˣ) :
     AlgHom.mapValue (H := R[T;T⁻¹]) φ
         ((pointsMulEquiv (R := R) (A := A)).symm u) =
