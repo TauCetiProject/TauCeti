@@ -77,8 +77,11 @@ lemma isIsotropic_graph_iff {f : V →ₗ[ℝ] W} :
     rw [twistedProd_apply, hp, hq]
     linarith [h p.1 q.1]
 
-/-- The graph of `e` is isotropic for the twisted product form iff `e` is a symplectomorphism. -/
-@[simp]
+/-- The graph of `e` is isotropic for the twisted product form iff `e` is a symplectomorphism.
+
+This is a plain bridging lemma, not a `simp` lemma: the general `isIsotropic_graph_iff` already
+puts graph isotropy into its own normal form, so marking this `@[simp]` too would leave two
+competing normal forms for `e.toLinearMap.graph`. -/
 lemma isIsotropic_linearEquiv_graph_iff {e : V ≃ₗ[ℝ] W} :
     (twistedProd ω₁ ω₂).IsIsotropic e.toLinearMap.graph ↔ IsSymplectomorphism ω₁ ω₂ e := by
   rw [isIsotropic_graph_iff]
