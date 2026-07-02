@@ -22,6 +22,8 @@ totally real tori that later live inside symmetric products.
 
 ## Main declarations
 
+* `TauCeti.Submodule.prod_le_prod_iff`: products of submodules compare factorwise; the general
+  order lemma from which the product rules below follow.
 * `TauCeti.SymplecticForm.orthogonal_prod`: the symplectic complement of a product subspace.
 * `TauCeti.SymplecticForm.isIsotropic_prod_iff`: product isotropy is factorwise isotropy.
 * `TauCeti.SymplecticForm.isCoisotropic_prod_iff`: product coisotropy is factorwise coisotropy.
@@ -36,6 +38,28 @@ Section 2.3.
 public section
 
 namespace TauCeti
+
+namespace Submodule
+
+variable {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N]
+
+/-- A product of submodules is contained in another product of submodules exactly when each
+factor is contained in the corresponding factor. A general order lemma that could move to
+Mathlib's `Mathlib/LinearAlgebra/Prod.lean`. -/
+lemma prod_le_prod_iff {p p' : Submodule R M} {q q' : Submodule R N} :
+    p.prod q ≤ p'.prod q' ↔ p ≤ p' ∧ q ≤ q' := by
+  constructor
+  · intro h
+    refine ⟨fun x hx => ?_, fun y hy => ?_⟩
+    · exact (Submodule.mem_prod.1
+        (h (Submodule.mem_prod.2 ⟨hx, q.zero_mem⟩ : (x, 0) ∈ p.prod q))).1
+    · exact (Submodule.mem_prod.1
+        (h (Submodule.mem_prod.2 ⟨p.zero_mem, hy⟩ : (0, y) ∈ p.prod q))).2
+  · rintro ⟨h₁, h₂⟩ x hx
+    exact Submodule.mem_prod.2 ⟨h₁ (Submodule.mem_prod.1 hx).1, h₂ (Submodule.mem_prod.1 hx).2⟩
+
+end Submodule
 
 namespace SymplecticForm
 
@@ -68,21 +92,8 @@ are isotropic. -/
 @[simp]
 lemma isIsotropic_prod_iff :
     (ω₁.prod ω₂).IsIsotropic (L₁.prod L₂) ↔ ω₁.IsIsotropic L₁ ∧ ω₂.IsIsotropic L₂ := by
-  rw [isIsotropic_iff, isIsotropic_iff, isIsotropic_iff]
-  constructor
-  · intro h
-    constructor
-    · intro x hx y hy
-      have := h (x, 0) (Submodule.mem_prod.2 ⟨hx, Submodule.zero_mem L₂⟩)
-        (y, 0) (Submodule.mem_prod.2 ⟨hy, Submodule.zero_mem L₂⟩)
-      simpa using this
-    · intro y hy z hz
-      have := h (0, y) (Submodule.mem_prod.2 ⟨Submodule.zero_mem L₁, hy⟩)
-        (0, z) (Submodule.mem_prod.2 ⟨Submodule.zero_mem L₁, hz⟩)
-      simpa using this
-  · rintro ⟨h₁, h₂⟩ x hx
-    intro y hy
-    rw [SymplecticForm.prod_apply, h₁ x.1 hx.1 y.1 hy.1, h₂ x.2 hx.2 y.2 hy.2, add_zero]
+  rw [isIsotropic_iff_le, isIsotropic_iff_le, isIsotropic_iff_le, orthogonal_prod,
+    Submodule.prod_le_prod_iff]
 
 /-- The product of two isotropic subspaces is isotropic for the direct-sum symplectic form. -/
 lemma IsIsotropic.prod (h₁ : ω₁.IsIsotropic L₁) (h₂ : ω₂.IsIsotropic L₂) :
@@ -95,18 +106,8 @@ factors are coisotropic. -/
 lemma isCoisotropic_prod_iff :
     (ω₁.prod ω₂).IsCoisotropic (L₁.prod L₂) ↔
       ω₁.IsCoisotropic L₁ ∧ ω₂.IsCoisotropic L₂ := by
-  rw [isCoisotropic_iff, isCoisotropic_iff, isCoisotropic_iff, orthogonal_prod]
-  constructor
-  · intro h
-    constructor
-    · intro x hx
-      exact (h (x, 0)
-        (Submodule.mem_prod.2 ⟨hx, Submodule.zero_mem (ω₂.orthogonal L₂)⟩)).1
-    · intro y hy
-      exact (h (0, y)
-        (Submodule.mem_prod.2 ⟨Submodule.zero_mem (ω₁.orthogonal L₁), hy⟩)).2
-  · rintro ⟨h₁, h₂⟩ x hx
-    exact Submodule.mem_prod.2 ⟨h₁ x.1 hx.1, h₂ x.2 hx.2⟩
+  rw [isCoisotropic_iff_le, isCoisotropic_iff_le, isCoisotropic_iff_le, orthogonal_prod,
+    Submodule.prod_le_prod_iff]
 
 /-- The product of two coisotropic subspaces is coisotropic for the direct-sum symplectic form. -/
 lemma IsCoisotropic.prod (h₁ : ω₁.IsCoisotropic L₁) (h₂ : ω₂.IsCoisotropic L₂) :

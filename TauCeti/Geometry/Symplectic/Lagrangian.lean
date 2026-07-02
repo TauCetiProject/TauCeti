@@ -98,6 +98,14 @@ def IsCoisotropic (ω : SymplecticForm V) (L : Submodule ℝ V) : Prop :=
 def IsLagrangian (ω : SymplecticForm V) (L : Submodule ℝ V) : Prop :=
   ω.orthogonal L = L
 
+/-- Isotropy as an order statement: `L` is contained in its symplectic complement. -/
+lemma isIsotropic_iff_le : ω.IsIsotropic L ↔ L ≤ ω.orthogonal L :=
+  Iff.rfl
+
+/-- Coisotropy as an order statement: the symplectic complement is contained in `L`. -/
+lemma isCoisotropic_iff_le : ω.IsCoisotropic L ↔ ω.orthogonal L ≤ L :=
+  Iff.rfl
+
 /-- Isotropy is the vanishing of the symplectic form on the subspace. -/
 lemma isIsotropic_iff : ω.IsIsotropic L ↔ ∀ v ∈ L, ∀ w ∈ L, ω v w = 0 := by
   constructor
