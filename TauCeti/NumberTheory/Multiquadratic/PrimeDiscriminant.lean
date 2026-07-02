@@ -110,7 +110,7 @@ splitting law. -/
 /-- An integer does not divide an odd prime discriminant exactly when it does not divide the
 underlying natural number.
 The negated form is convenient for the unramifiedness side of the splitting law. -/
-@[simp] theorem not_dvd_oddPrimeDiscriminant_iff {p : ℕ} {q : ℤ} :
+theorem not_dvd_oddPrimeDiscriminant_iff {p : ℕ} {q : ℤ} :
     ¬ q ∣ oddPrimeDiscriminant p ↔ ¬ q ∣ (p : ℤ) := by
   exact not_congr dvd_oddPrimeDiscriminant_iff
 
