@@ -140,22 +140,18 @@ theorem mem_rowInterior (r : Fin n) :
   rfl
 
 /-- The left side is not an interior column. -/
-@[simp]
 theorem left_notMem_columnInterior : R.left ∉ R.columnInterior := by
   simp [columnInterior]
 
 /-- The right side is not an interior column. -/
-@[simp]
 theorem right_notMem_columnInterior : R.right ∉ R.columnInterior := by
   simp [columnInterior]
 
 /-- The bottom side is not an interior row. -/
-@[simp]
 theorem bottom_notMem_rowInterior : R.bottom ∉ R.rowInterior := by
   simp [rowInterior]
 
 /-- The top side is not an interior row. -/
-@[simp]
 theorem top_notMem_rowInterior : R.top ∉ R.rowInterior := by
   simp [rowInterior]
 
@@ -171,7 +167,6 @@ theorem mem_interior (p : Fin n × Fin n) :
 
 /-- A coordinate pair lies in the rectangle interior exactly when its column and row lie in
 the corresponding open cyclic intervals. -/
-@[simp]
 theorem mk_mem_interior (c r : Fin n) :
     (c, r) ∈ R.interior ↔ c ∈ R.columnInterior ∧ r ∈ R.rowInterior := by
   simp

@@ -50,12 +50,10 @@ theorem card (n : ℕ) : Fintype.card (GridState n) = n.factorial := by
   rw [Fintype.card_congr (equivPerm n), Fintype.card_perm, Fintype.card_fin]
 
 /-- The universe finite set of grid states has cardinality `n!`. -/
-@[simp]
 theorem card_univ (n : ℕ) : (Finset.univ : Finset (GridState n)).card = n.factorial := by
   rw [Finset.card_univ, card]
 
 /-- The natural cardinality of grid states is `n!`. -/
-@[simp]
 theorem natCard (n : ℕ) : Nat.card (GridState n) = n.factorial := by
   rw [Nat.card_eq_fintype_card, card]
 

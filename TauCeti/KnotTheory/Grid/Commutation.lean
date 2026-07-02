@@ -69,12 +69,10 @@ theorem mem_columnArc (c r : Fin n) : r ∈ columnArc G c ↔ r ∈ Grid.cIoo (G
   Iff.rfl
 
 /-- The `O` endpoint of a column is not in its own open column arc. -/
-@[simp]
 theorem O_notMem_columnArc (c : Fin n) : G.O c ∉ columnArc G c := by
   simp [columnArc]
 
 /-- The `X` endpoint of a column is not in its own open column arc. -/
-@[simp]
 theorem X_notMem_columnArc (c : Fin n) : G.X c ∉ columnArc G c := by
   simp [columnArc]
 
@@ -93,12 +91,10 @@ theorem mem_rowArc (r c : Fin n) :
   Iff.rfl
 
 /-- The `O` endpoint of a row is not in its own open row arc. -/
-@[simp]
 theorem OColumn_notMem_rowArc (r : Fin n) : OColumnOfRow G r ∉ rowArc G r := by
   simp [rowArc]
 
 /-- The `X` endpoint of a row is not in its own open row arc. -/
-@[simp]
 theorem XColumn_notMem_rowArc (r : Fin n) : XColumnOfRow G r ∉ rowArc G r := by
   simp [rowArc]
 
