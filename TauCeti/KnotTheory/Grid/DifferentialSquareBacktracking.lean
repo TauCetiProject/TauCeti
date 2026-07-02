@@ -123,13 +123,11 @@ theorem self_notMem_twoStepColumnSwapNeighbors_of_le_one (x : GridState n) (hn :
   omega
 
 /-- In grid size `0`, the source state is not a two-step neighbour of itself. -/
-@[simp]
 theorem self_notMem_twoStepColumnSwapNeighbors_zero (x : GridState 0) :
     x ∉ x.twoStepColumnSwapNeighbors :=
   x.self_notMem_twoStepColumnSwapNeighbors_of_le_one (Nat.zero_le 1)
 
 /-- In grid size `1`, the source state is not a two-step neighbour of itself. -/
-@[simp]
 theorem self_notMem_twoStepColumnSwapNeighbors_one (x : GridState 1) :
     x ∉ x.twoStepColumnSwapNeighbors :=
   x.self_notMem_twoStepColumnSwapNeighbors_of_le_one le_rfl
@@ -151,14 +149,12 @@ theorem fullyBlockedDifferential_sq_single_apply_eq_zero_self_of_le_one
     (x.self_notMem_twoStepColumnSwapNeighbors_of_le_one hn)
 
 /-- In grid size `0`, the diagonal coefficient of `∂²` on a generator is zero. -/
-@[simp]
 theorem fullyBlockedDifferential_sq_single_apply_eq_zero_self_zero
     (G : GridDiagram 0) (x : GridState 0) :
     G.fullyBlockedDifferential (G.fullyBlockedDifferential (Finsupp.single x 1)) x = 0 :=
   G.fullyBlockedDifferential_sq_single_apply_eq_zero_self_of_le_one (Nat.zero_le 1) x
 
 /-- In grid size `1`, the diagonal coefficient of `∂²` on a generator is zero. -/
-@[simp]
 theorem fullyBlockedDifferential_sq_single_apply_eq_zero_self_one
     (G : GridDiagram 1) (x : GridState 1) :
     G.fullyBlockedDifferential (G.fullyBlockedDifferential (Finsupp.single x 1)) x = 0 :=
