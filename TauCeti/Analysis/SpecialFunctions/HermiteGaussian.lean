@@ -8,7 +8,9 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import Mathlib.Probability.Distributions.Gaussian.Real
+public import TauCeti.Analysis.SpecialFunctions.GaussianPolynomialIntegrable
 public import TauCeti.RingTheory.Polynomial.Hermite.Derivative
+public import TauCeti.RingTheory.Polynomial.Hermite.Real
 
 /-!
 # Gaussian orthogonality integrals for the Hermite polynomials
@@ -22,10 +24,10 @@ measure-space bridge itself.
 
 ## Main results
 
-* `TauCeti.Hermite.hermiteℝ`, with simp lemmas `TauCeti.Hermite.eval_hermiteℝ` and
-  `TauCeti.Hermite.aeval_hermiteℝ` : the real-polynomial realization of `Polynomial.hermite`,
+* `Polynomial.hermiteℝ`, with simp lemmas `Polynomial.eval_hermiteℝ` and
+  `Polynomial.aeval_hermiteℝ` : the real-polynomial realization of `Polynomial.hermite`,
   characterized without unfolding.
-* `TauCeti.Hermite.integrable_aeval_mul_gaussian` : any integer polynomial is integrable against
+* `Polynomial.integrable_aeval_mul_gaussian` : any integer polynomial is integrable against
   the Gaussian weight `e^{-x²/2}`.
 * `TauCeti.Hermite.integral_hermite_mul_hermite_mul_gaussian` : the orthogonality relation
   `∫ Hₘ·Hₙ·e^{-x²/2} = if m = n then n!·√(2π) else 0`.
@@ -41,10 +43,11 @@ measure-space bridge itself.
 
 ## Implementation notes
 
-The Mathlib `Polynomial.hermite` lives in `ℤ[X]`; we evaluate it in `ℝ` via `aeval`.
-The auxiliary `hermiteℝ` is its image in `ℝ[X]`, used only to combine two factors into a
-single polynomial for integrability inside this file. The boundary-term-free integration by parts
-over `ℝ` is
+The Mathlib `Polynomial.hermite` lives in `ℤ[X]`; we evaluate it in `ℝ` via `aeval`. The auxiliary
+`Polynomial.hermiteℝ` is its image in `ℝ[X]`, used to combine two factors into a single polynomial
+for integrability. The generic polynomial-times-Gaussian integrability lemmas live in
+`TauCeti.Analysis.SpecialFunctions.GaussianPolynomialIntegrable`. The boundary-term-free
+integration by parts over `ℝ` is
 `MeasureTheory.integral_mul_deriv_eq_deriv_mul_of_integrable`, whose hypotheses are met because
 polynomials times the Gaussian are integrable and the weight kills the boundary contributions.
 -/
@@ -58,85 +61,11 @@ open scoped Nat NNReal
 
 namespace TauCeti.Hermite
 
-/-- The probabilists' Hermite polynomial `hermite n`, realised as a real polynomial. -/
-def hermiteℝ (n : ℕ) : ℝ[X] := (hermite n).map (Int.castRingHom ℝ)
-
-/-- Evaluating the `ℝ`-realisation of an integer polynomial agrees with `aeval` of the
-original. -/
-private theorem eval_map_intCast (x : ℝ) (q : ℤ[X]) :
-    (q.map (Int.castRingHom ℝ)).eval x = aeval x q := by
-  rw [aeval_def, eval₂_eq_eval_map, algebraMap_int_eq]
-
-/-- Evaluating the real-polynomial realization of `hermite n` agrees with evaluating the original
-integer polynomial by `aeval`. -/
-@[simp]
-theorem eval_hermiteℝ (x : ℝ) (n : ℕ) :
-    (hermiteℝ n).eval x = aeval x (hermite n) :=
-  eval_map_intCast x (hermite n)
-
-/-- The `aeval` form of `eval_hermiteℝ`. -/
-@[simp]
-theorem aeval_hermiteℝ (x : ℝ) (n : ℕ) :
-    aeval x (hermiteℝ n) = aeval x (hermite n) := by
-  rw [coe_aeval_eq_eval, eval_hermiteℝ]
-
-/-- `xⁿ` is integrable against every positive Gaussian weight `e^{-a*x²}`. -/
-private theorem integrable_pow_mul_exp_neg_mul_sq {a : ℝ} (ha : 0 < a) (k : ℕ) :
-    Integrable (fun x : ℝ => x ^ k * Real.exp (-(a * x ^ 2))) := by
-  have h := integrable_rpow_mul_exp_neg_mul_sq (b := a) ha
-    (s := (k : ℝ)) (lt_of_lt_of_le (by norm_num) (Nat.cast_nonneg k))
-  simp_rw [Real.rpow_natCast] at h
-  refine h.congr ?_
-  filter_upwards with x
-  congr 2
-  ring
-
-/-- Any real polynomial is integrable against every positive Gaussian weight `e^{-a*x²}`. -/
-private theorem integrable_eval_mul_exp_neg_mul_sq {a : ℝ} (ha : 0 < a) (p : ℝ[X]) :
-    Integrable (fun x : ℝ => p.eval x * Real.exp (-(a * x ^ 2))) := by
-  induction p using Polynomial.induction_on' with
-  | add p q hp hq =>
-    refine (hp.add hq).congr ?_
-    filter_upwards with x
-    simp only [Pi.add_apply, eval_add, add_mul]
-  | monomial k c =>
-    have := (integrable_pow_mul_exp_neg_mul_sq ha k).const_mul c
-    refine this.congr ?_
-    filter_upwards with x
-    simp only [eval_monomial]
-    ring
-
-/-- Any integer polynomial is integrable against every positive Gaussian weight `e^{-a*x²}`. -/
-private theorem integrable_aeval_mul_exp_neg_mul_sq {a : ℝ} (ha : 0 < a) (p : ℤ[X]) :
-    Integrable (fun x : ℝ => aeval x p * Real.exp (-(a * x ^ 2))) := by
-  have h := integrable_eval_mul_exp_neg_mul_sq ha (p.map (Int.castRingHom ℝ))
-  refine h.congr ?_
-  filter_upwards with x
-  rw [eval_map_intCast]
-
-/-- Any real polynomial is integrable against the standard Gaussian weight `e^{-x²/2}`. -/
-private theorem integrable_eval_mul_gaussian (p : ℝ[X]) :
-    Integrable (fun x : ℝ => p.eval x * Real.exp (-(x ^ 2 / 2))) := by
-  have h := integrable_eval_mul_exp_neg_mul_sq (a := (1 : ℝ) / 2) (by norm_num) p
-  refine h.congr ?_
-  filter_upwards with x
-  have hhalf : -((1 : ℝ) / 2 * x ^ 2) = -(x ^ 2 / 2) := by ring
-  rw [hhalf]
-
-/-- Any integer polynomial is integrable against the standard Gaussian weight `e^{-x²/2}`. -/
-theorem integrable_aeval_mul_gaussian (p : ℤ[X]) :
-    Integrable (fun x : ℝ => aeval x p * Real.exp (-(x ^ 2 / 2))) := by
-  have h := integrable_aeval_mul_exp_neg_mul_sq (a := (1 : ℝ) / 2) (by norm_num) p
-  refine h.congr ?_
-  filter_upwards with x
-  have hhalf : -((1 : ℝ) / 2 * x ^ 2) = -(x ^ 2 / 2) := by ring
-  rw [hhalf]
-
 /-- A real polynomial times a Hermite polynomial is integrable against the Gaussian weight. -/
 private theorem integrable_aeval_mul_hermite_mul_gaussian (p : ℝ[X]) (m : ℕ) :
     Integrable
       (fun x : ℝ => aeval x p * aeval x (hermite m) * Real.exp (-(x ^ 2 / 2))) := by
-  have h := integrable_eval_mul_gaussian (p * hermiteℝ m)
+  have h := Polynomial.integrable_eval_mul_gaussian (p * hermiteℝ m)
   refine h.congr ?_
   filter_upwards with x
   simp only [eval_mul, eval_hermiteℝ, coe_aeval_eq_eval]
@@ -227,7 +156,7 @@ private theorem integral_hermite_mul_hermite_mul_gaussian_of_lt {m n : ℕ} (h :
   have hz : (⇑derivative)^[n] (hermiteℝ m) = 0 := by
     have hzℤ : (⇑derivative)^[n] (hermite m) = 0 :=
       iterate_derivative_eq_zero (by rw [natDegree_hermite]; exact h)
-    rw [hermiteℝ, iterate_derivative_map, hzℤ, Polynomial.map_zero]
+    rw [Polynomial.hermiteℝ_def, iterate_derivative_map, hzℤ, Polynomial.map_zero]
   simp [hz]
 
 /-- **Hermite L²-orthogonality against the Gaussian weight** (roadmap `OrthogonalL2Bases`, A1):
@@ -245,8 +174,9 @@ theorem integral_hermite_mul_hermite_mul_gaussian (m n : ℕ) :
     rw [key]
     have hval : ∀ x : ℝ, aeval x ((⇑derivative)^[m] (hermiteℝ m)) = (m ! : ℝ) := by
       intro x
-      rw [hermiteℝ, iterate_derivative_map, coe_aeval_eq_eval, eval_map_intCast,
-        iterate_derivative_hermite, Nat.descFactorial_self, Nat.sub_self]
+      rw [Polynomial.hermiteℝ_def, iterate_derivative_map, coe_aeval_eq_eval,
+        ← eval₂_eq_eval_map, ← algebraMap_int_eq, ← aeval_def, iterate_derivative_hermite,
+        Nat.descFactorial_self, Nat.sub_self]
       simp
     rw [integral_congr_ae (Filter.Eventually.of_forall fun x => by rw [hval x]),
       integral_const_mul, integral_gaussian_half]
