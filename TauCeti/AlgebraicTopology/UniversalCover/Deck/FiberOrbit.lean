@@ -58,7 +58,6 @@ abbrev FiberOrbitQuotient (p : E → B) (b : B) : Type _ :=
   Quotient.mk'' e
 
 /-- The deck-orbit quotient map sends a fibre point to its own class. -/
-@[simp]
 lemma fiberOrbitClass_eq_mk (e : p ⁻¹' {b}) :
     fiberOrbitClass e = (Quotient.mk'' e : FiberOrbitQuotient p b) :=
   rfl

@@ -60,7 +60,6 @@ variable {𝕜 : Type*} [AddCommGroup 𝕜] [TopologicalSpace 𝕜] [IsTopologic
 omit [IsTopologicalAddGroup 𝕜] in
 /-- A homeomorphism of `𝕜` is a deck transformation of `(↑) : 𝕜 → AddCircle p` exactly when it
 moves every point within the period subgroup `zmultiples p`. -/
-@[simp]
 theorem mem_addCircleCoe {φ : 𝕜 ≃ₜ 𝕜} :
     φ ∈ Deck ((↑) : 𝕜 → AddCircle p) ↔ ∀ e, φ e - e ∈ zmultiples p :=
   by
