@@ -1,6 +1,7 @@
 module
 
 public import TauCeti.Probability.Exchangeability.Contractability
+public import TauCeti.Probability.Exchangeability.PathSpace.Shift
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.Probability.UniformOn
 public import Mathlib.Data.ZMod.Basic
@@ -92,17 +93,16 @@ theorem threeCycle_measurePreserving_shift :
   refine ⟨measurable_shift, ?_⟩
   have hP : Measurable (fun ω : ZMod 3 => fun i => threeCycle i ω) := Measurable.of_discrete
   have hT : Measurable (fun ω : ZMod 3 => ω + 1) := Measurable.of_discrete
-  have hshift : shift (ZMod 3) = fun x : ℕ → ZMod 3 => fun k => x (k + 1) := by
-    funext x k
-    rfl
   have hcomp : (fun ω : ZMod 3 => fun k => threeCycle (k + 1) ω)
       = (fun ω : ZMod 3 => fun i => threeCycle i ω) ∘ (fun ω : ZMod 3 => ω + 1) := by
     funext ω n
     simp only [Function.comp_apply, threeCycle_apply]
     push_cast
     ring
-  rw [hshift, map_reindex_pathLaw threeCycleMeasure (fun _ => Measurable.of_discrete.aemeasurable)
-    (fun k => k + 1), pathLaw_def, hcomp, ← Measure.map_map hP hT,
+  change (pathLaw threeCycleMeasure threeCycle).map ((shift (ZMod 3))^[1]) =
+    pathLaw threeCycleMeasure threeCycle
+  rw [map_shift_iterate_pathLaw threeCycleMeasure (fun _ => Measurable.of_discrete.aemeasurable) 1,
+    pathLaw_def, hcomp, ← Measure.map_map hP hT,
     map_add_right_eq_self threeCycleMeasure 1, ← pathLaw_def]
 
 /-- The straight two-coordinate event `{X₀ = 0, X₁ = 1}` is realized only from the start state
