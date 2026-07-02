@@ -84,13 +84,11 @@ lemma transport_trans (J : AlmostComplexStructure V) (e₁ : V ≃ₗ[ℝ] W) (e
   rw [← LinearEquiv.trans_apply, LinearEquiv.conj_trans]
 
 /-- Transporting forward along `e` and back along `e.symm` returns the original structure. -/
-@[simp]
 lemma transport_symm_transport (J : AlmostComplexStructure V) (e : V ≃ₗ[ℝ] W) :
     (J.transport e).transport e.symm = J := by
   rw [transport_trans, e.self_trans_symm, transport_refl]
 
 /-- Transporting back along `e.symm` and forward along `e` returns the original structure. -/
-@[simp]
 lemma transport_transport_symm (J : AlmostComplexStructure W) (e : V ≃ₗ[ℝ] W) :
     (J.transport e.symm).transport e = J := by
   rw [transport_trans, e.symm_trans_self, transport_refl]

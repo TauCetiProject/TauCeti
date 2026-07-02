@@ -112,7 +112,6 @@ theorem toContinuousMap_injective :
     Function.Injective (toContinuousMap : SmoothEmbedding I J n M N → C(M, N)) :=
   ContinuousMap.coe_injective'
 
-@[simp]
 theorem toContinuousMap_inj {f g : SmoothEmbedding I J n M N} :
     (toContinuousMap f : C(M, N)) = toContinuousMap g ↔ f = g :=
   toContinuousMap_injective.eq_iff
