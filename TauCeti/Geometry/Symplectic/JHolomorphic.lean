@@ -220,6 +220,12 @@ lemma isJHolomorphicAt_id (J : AlmostComplexStructure V) (x : V) :
     IsJHolomorphicAt J J id x :=
   ⟨ContinuousLinearMap.id ℝ V, hasFDerivAt_id x, by simp⟩
 
+/-- The eta-expanded identity map is `J`-holomorphic for any fixed almost complex structure `J`. -/
+@[simp]
+lemma isJHolomorphicAt_id_fun (J : AlmostComplexStructure V) (x : V) :
+    IsJHolomorphicAt J J (fun y : V => y) x :=
+  isJHolomorphicAt_id J x
+
 /-- Chain rule for pointwise `J`-holomorphic maps. -/
 lemma IsJHolomorphicAt.comp {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {J'' : AlmostComplexStructure X}
@@ -242,6 +248,12 @@ lemma isJHolomorphicWithinAt_id (J : AlmostComplexStructure V) (s : Set V) (x : 
     IsJHolomorphicWithinAt J J id s x :=
   (isJHolomorphicAt_id J x).isJHolomorphicWithinAt
 
+/-- The eta-expanded identity map is `J`-holomorphic within every set at every point. -/
+@[simp]
+lemma isJHolomorphicWithinAt_id_fun (J : AlmostComplexStructure V) (s : Set V) (x : V) :
+    IsJHolomorphicWithinAt J J (fun y : V => y) s x :=
+  isJHolomorphicWithinAt_id J s x
+
 /-- A constant map is `J`-holomorphic on every set. -/
 @[simp]
 lemma isJHolomorphicOn_const (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W)
@@ -253,6 +265,12 @@ lemma isJHolomorphicOn_const (J : AlmostComplexStructure V) (J' : AlmostComplexS
 lemma isJHolomorphicOn_id (J : AlmostComplexStructure V) (s : Set V) :
     IsJHolomorphicOn J J id s :=
   fun x _ => isJHolomorphicWithinAt_id J s x
+
+/-- The eta-expanded identity map is `J`-holomorphic on every set. -/
+@[simp]
+lemma isJHolomorphicOn_id_fun (J : AlmostComplexStructure V) (s : Set V) :
+    IsJHolomorphicOn J J (fun y : V => y) s :=
+  isJHolomorphicOn_id J s
 
 /-- Chain rule for within-set `J`-holomorphic maps. -/
 lemma IsJHolomorphicWithinAt.comp {J : AlmostComplexStructure V}
@@ -298,6 +316,12 @@ lemma isJHolomorphic_const (J : AlmostComplexStructure V) (J' : AlmostComplexStr
 @[simp]
 lemma isJHolomorphic_id (J : AlmostComplexStructure V) : IsJHolomorphic J J id :=
   fun x => isJHolomorphicAt_id J x
+
+/-- The eta-expanded identity map is globally `J`-holomorphic. -/
+@[simp]
+lemma isJHolomorphic_id_fun (J : AlmostComplexStructure V) :
+    IsJHolomorphic J J (fun y : V => y) :=
+  isJHolomorphic_id J
 
 /-- Chain rule for global `J`-holomorphic maps. -/
 lemma IsJHolomorphic.comp {J : AlmostComplexStructure V}

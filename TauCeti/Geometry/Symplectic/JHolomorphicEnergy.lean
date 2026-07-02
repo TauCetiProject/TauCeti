@@ -153,6 +153,20 @@ lemma stdComplexLineEnergyDensity_pos_iff (hω : ω.Tames J) {F : (ℝ × ℝ) �
     exact hpos.ne' ((ω.stdComplexLineEnergyDensity_eq_zero_iff (J := J) hω).mpr hzero)
   · exact ω.stdComplexLineEnergyDensity_pos hω
 
+/-- Under tameness, standard pointwise energy density of a continuous linear map vanishes exactly
+when the continuous linear map is zero. -/
+lemma stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff
+    [TopologicalSpace V] (hω : ω.Tames J) (F : (ℝ × ℝ) →L[ℝ] V) :
+    ω.stdComplexLineEnergyDensity J F.toLinearMap = 0 ↔ F = 0 := by
+  constructor
+  · intro henergy
+    have hlin : F.toLinearMap = 0 :=
+      (ω.stdComplexLineEnergyDensity_eq_zero_iff hω).mp henergy
+    exact ContinuousLinearMap.ext fun z => LinearMap.congr_fun hlin z
+  · intro hzero
+    rw [hzero]
+    exact (ω.stdComplexLineEnergyDensity_eq_zero_iff hω).mpr rfl
+
 section Prod
 
 variable {W : Type*} [AddCommGroup W] [Module ℝ W]
@@ -253,15 +267,8 @@ lemma fderiv_stdComplexLineEnergyDensity_nonneg (hω : ω.Tames J) :
 /-- Under tameness, the derivative standard energy density of a map from the standard complex line
 vanishes exactly when its Frechet derivative is zero. -/
 lemma fderiv_stdComplexLineEnergyDensity_eq_zero_iff (hω : ω.Tames J) :
-    ω.stdComplexLineEnergyDensity J (fderiv ℝ f x).toLinearMap = 0 ↔ fderiv ℝ f x = 0 := by
-  constructor
-  · intro henergy
-    have hlin :
-        (fderiv ℝ f x).toLinearMap = 0 :=
-      (ω.stdComplexLineEnergyDensity_eq_zero_iff hω).mp henergy
-    exact ContinuousLinearMap.ext fun z => LinearMap.congr_fun hlin z
-  · intro hzero
-    exact (ω.stdComplexLineEnergyDensity_eq_zero_iff hω).mpr (by simp [hzero])
+    ω.stdComplexLineEnergyDensity J (fderiv ℝ f x).toLinearMap = 0 ↔ fderiv ℝ f x = 0 :=
+  ω.stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff hω (fderiv ℝ f x)
 
 /-- Under tameness, the derivative standard energy density of a map from the standard complex
 line is positive exactly when its Frechet derivative is nonzero. -/
@@ -337,15 +344,8 @@ lemma fderivWithin_stdComplexLineEnergyDensity_nonneg (hω : ω.Tames J) :
 complex line vanishes exactly when its Frechet derivative within the set is zero. -/
 lemma fderivWithin_stdComplexLineEnergyDensity_eq_zero_iff (hω : ω.Tames J) :
     ω.stdComplexLineEnergyDensity J (fderivWithin ℝ f s x).toLinearMap = 0 ↔
-      fderivWithin ℝ f s x = 0 := by
-  constructor
-  · intro henergy
-    have hlin :
-        (fderivWithin ℝ f s x).toLinearMap = 0 :=
-      (ω.stdComplexLineEnergyDensity_eq_zero_iff hω).mp henergy
-    exact ContinuousLinearMap.ext fun z => LinearMap.congr_fun hlin z
-  · intro hzero
-    exact (ω.stdComplexLineEnergyDensity_eq_zero_iff hω).mpr (by simp [hzero])
+      fderivWithin ℝ f s x = 0 :=
+  ω.stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff hω (fderivWithin ℝ f s x)
 
 /-- Under tameness, the within-set derivative standard energy density is positive exactly when
 the Frechet derivative within the set is nonzero. -/
