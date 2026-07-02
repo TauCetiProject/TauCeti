@@ -79,6 +79,7 @@ instance : threeCycleMeasure.IsAddRightInvariant := by
   infer_instance
 
 /-- The uniform law gives mass `3⁻¹` to each singleton. -/
+@[simp]
 theorem threeCycleMeasure_singleton (a : ZMod 3) : threeCycleMeasure {a} = 3⁻¹ := by
   unfold threeCycleMeasure
   rw [uniformOn_univ]
@@ -99,6 +100,7 @@ theorem threeCycle_measurePreserving_shift :
     simp only [Function.comp_apply, threeCycle_apply]
     push_cast
     ring
+  -- Expose the one-step shift as the first iterate expected by `map_shift_iterate_pathLaw`.
   change (pathLaw threeCycleMeasure threeCycle).map ((shift (ZMod 3))^[1]) =
     pathLaw threeCycleMeasure threeCycle
   rw [map_shift_iterate_pathLaw threeCycleMeasure (fun _ => Measurable.of_discrete.aemeasurable) 1,
