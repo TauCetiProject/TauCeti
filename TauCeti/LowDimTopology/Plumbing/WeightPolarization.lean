@@ -28,7 +28,7 @@ direction `v` changes the weight by `χ_k(E_v)` minus the pairing of the current
 * `TauCeti.PlumbingGraph.characteristicWeight_add`: the polarization identity for `χ_k`.
 * `TauCeti.PlumbingGraph.characteristicWeight_add_single`: the first-difference recursion of `χ_k`
   along a basis direction.
-* `TauCeti.PlumbingGraph.characteristicWeight_add_single_single`: the value of `χ_k` on a sum of two
+* `TauCeti.PlumbingGraph.characteristicWeight_single_add_single`: the value of `χ_k` on a sum of two
   basis spheres in terms of their intersection-matrix entry.
 
 ## References
@@ -92,7 +92,8 @@ theorem characteristicWeight_add_single (k : P.characteristicVectors) (x : V →
 
 /-- The value of `χ_k` on a sum of two basis spheres, with the interaction term given by their
 intersection-matrix entry: for adjacent spheres this entry is `1`, otherwise `0` off-diagonal. -/
-theorem characteristicWeight_add_single_single (k : P.characteristicVectors) (v w : V) :
+@[simp]
+theorem characteristicWeight_single_add_single (k : P.characteristicVectors) (v w : V) :
     P.characteristicWeight k (Pi.single v 1 + Pi.single w 1) =
       P.characteristicWeight k (Pi.single v 1) + P.characteristicWeight k (Pi.single w 1) -
         P.intersectionMatrix v w := by
@@ -108,7 +109,7 @@ example :
         ⟨a2Plumbing.canonicalCharacteristic,
           a2Plumbing.isCharacteristicVector_canonicalCharacteristic⟩
         (Pi.single 0 1 + Pi.single 1 1) = 1 := by
-  rw [PlumbingGraph.characteristicWeight_add_single_single,
+  rw [PlumbingGraph.characteristicWeight_single_add_single,
     PlumbingGraph.characteristicWeight_canonical_single,
     PlumbingGraph.characteristicWeight_canonical_single, a2Plumbing_intersectionMatrix]
   norm_num [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons]
