@@ -49,6 +49,9 @@ for the naturality statement.
 * `TauCeti.Diffeomorph.diffCongr_trans`: `diffCongr` turns `Diffeomorph.trans` into
   `MulEquiv.trans`, so it is functorial on the groupoid of diffeomorphisms.
 * `TauCeti.Diffeomorph.diffCongr_symm`: the inverse isomorphism conjugates by `e.symm`.
+* `TauCeti.Homeomorph.homeoCongr_refl`, `TauCeti.Homeomorph.homeoCongr_trans`, and
+  `TauCeti.Homeomorph.homeoCongr_symm`: the parallel functoriality of `homeoCongr` on the groupoid
+  of homeomorphisms.
 * `TauCeti.Diffeomorph.toHomeomorphHom_comp_diffCongr` and
   `TauCeti.Diffeomorph.toPerm_comp_diffCongr`: naturality of `diffCongr` against the forgetful
   homomorphisms `toHomeomorphHom` and `toPerm`, as commutative squares of group homomorphisms
@@ -87,6 +90,35 @@ def homeoCongr (e : M ≃ₜ N) : (M ≃ₜ M) ≃* (N ≃ₜ N) where
   left_inv φ := by ext x; simp
   right_inv ψ := by ext x; simp
   map_mul' φ ψ := by ext x; simp
+
+/-- The conjugating isomorphism acts pointwise by `homeoCongr e φ x = e (φ (e.symm x))`. -/
+@[simp, grind =]
+theorem homeoCongr_apply_apply (e : M ≃ₜ N) (φ : M ≃ₜ M) (x : N) :
+    homeoCongr e φ x = e (φ (e.symm x)) := rfl
+
+/-- The inverse of `homeoCongr e φ` is `homeoCongr e φ⁻¹`, since conjugation is a homomorphism. -/
+theorem homeoCongr_inv (e : M ≃ₜ N) (φ : M ≃ₜ M) :
+    (homeoCongr e φ)⁻¹ = homeoCongr e φ⁻¹ := (map_inv (homeoCongr e) φ).symm
+
+/-- Conjugating by the identity homeomorphism is the identity isomorphism. -/
+@[simp]
+theorem homeoCongr_refl : homeoCongr (_root_.Homeomorph.refl M) = MulEquiv.refl (M ≃ₜ M) := by
+  ext φ x
+  simp
+
+/-- Conjugation is functorial: conjugating by a composite homeomorphism is the composite of the
+conjugating isomorphisms. -/
+@[simp]
+theorem homeoCongr_trans (e : M ≃ₜ N) (e' : N ≃ₜ P) :
+    homeoCongr (e.trans e') = (homeoCongr e).trans (homeoCongr e') := by
+  ext φ x
+  simp
+
+/-- The isomorphism conjugating by `e.symm` is the inverse of the one conjugating by `e`. -/
+@[simp, grind =]
+theorem homeoCongr_symm (e : M ≃ₜ N) : (homeoCongr e).symm = homeoCongr e.symm := by
+  ext ψ x
+  rfl
 
 end Homeomorph
 
