@@ -52,25 +52,6 @@ lemma negProcess_apply {Ω : Type*} (X : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω)
 lemma revProcess_apply {Ω : Type*} (X : ℕ → Ω → ℝ) (N n : ℕ) (ω : Ω) :
     revProcess X N n ω = X (N - n) ω := by rfl
 
-/-- Strict inequality between lower and upper crossing times when the crossing completes before
-`N`. -/
-private lemma lowerCrossingTime_lt_upperCrossingTime_succ' {Ω : Type*} {a b : ℝ} {f : ℕ → Ω → ℝ}
-    {N n : ℕ} {ω : Ω} (hab : a < b)
-    (h : upperCrossingTime a b f N (n + 1) ω < N) :
-    lowerCrossingTime a b f N n ω < upperCrossingTime a b f N (n + 1) ω := by
-  have h_neq : upperCrossingTime a b f N (n + 1) ω ≠ N := Nat.ne_of_lt h
-  have h_le : lowerCrossingTime a b f N n ω ≤ upperCrossingTime a b f N (n + 1) ω :=
-    lowerCrossingTime_le_upperCrossingTime_succ
-  by_contra hge
-  push Not at hge
-  have h_eq : lowerCrossingTime a b f N n ω = upperCrossingTime a b f N (n + 1) ω :=
-    le_antisymm h_le hge
-  have h_neq' : lowerCrossingTime a b f N n ω ≠ N := h_eq ▸ h_neq
-  have h_le_a := stoppedValue_lowerCrossingTime (f := f) h_neq'
-  have h_ge_b := stoppedValue_upperCrossingTime (f := f) h_neq
-  simp only [stoppedValue] at h_le_a h_ge_b
-  rw [h_eq] at h_le_a
-  linarith
 
 /-- Strong version tracking the bijection explicitly.
 
@@ -96,7 +77,7 @@ private lemma timeReversal_crossing_bound_strong
     intro j hj
     have h_j1 : j + 1 ≤ k := hj
     have h_uct : upperCrossingTime a b X N (j + 1) ω < N := h_j (j + 1) h_j1
-    exact lt_trans (lowerCrossingTime_lt_upperCrossingTime_succ' hab h_uct) h_uct
+    exact lt_trans (lowerCrossingTime_lt_upperCrossingTime hab (Nat.ne_of_lt h_uct)) h_uct
   induction m with
   | zero =>
     simp only [upperCrossingTime_zero, Nat.sub_zero]
@@ -121,7 +102,7 @@ private lemma timeReversal_crossing_bound_strong
       have h_j_eq : j = (j - 1) + 1 := by omega
       have h_uct_lt : upperCrossingTime a b X N ((j - 1) + 1) ω < N := by
         simp only [← h_j_eq]; exact hσ_lt_N
-      have := lowerCrossingTime_lt_upperCrossingTime_succ' hab h_uct_lt
+      have := lowerCrossingTime_lt_upperCrossingTime hab (Nat.ne_of_lt h_uct_lt)
       simp only [← hτ_def, ← hσ_def, ← h_j_eq] at this
       exact this
     rw [h_km1_eq]

@@ -59,20 +59,10 @@ noncomputable def revCondExpFinite (f : Ω → ℝ) (𝔽 : ℕ → MeasurableSp
 lemma revCondExpFinite_apply (f : Ω → ℝ) (𝔽 : ℕ → MeasurableSpace Ω) (N n : ℕ) :
     revCondExpFinite (μ := μ) f 𝔽 N n = μ[f | 𝔽 (N - n)] := by rfl
 
-/-- The finite-horizon reversed conditional-expectation process `revCondExpFinite f 𝔽 N` is a
-martingale for `revFiltration 𝔽 N`. -/
--- Martingale by the tower property: `μ[μ[f | 𝔽 (N - j)] | 𝔽 (N - i)] = μ[f | 𝔽 (N - i)]` whenever
--- `i ≤ j`.
-lemma martingale_revCondExpFinite [IsFiniteMeasure μ]
-    (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
-    (f : Ω → ℝ) (N : ℕ) :
-    Martingale (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)
-      (revFiltration 𝔽 h_antitone h_le N) μ := by
-  constructor
-  · intro n
-    exact stronglyMeasurable_condExp
-  · intro i j hij
-    simp only [revCondExpFinite, revFiltration]
-    exact condExp_condExp_of_le (h_antitone (tsub_le_tsub_left hij N)) (h_le (N - j))
+/-- Levels of the reverse filtration: `revFiltration 𝔽 … N` at `n` is `𝔽 (N - n)`. -/
+lemma revFiltration_apply (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Antitone 𝔽)
+    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω)) (N n : ℕ) :
+    (revFiltration 𝔽 h_antitone h_le N) n = 𝔽 (N - n) := by
+  simp only [revFiltration]
 
 end ProbabilityTheory
