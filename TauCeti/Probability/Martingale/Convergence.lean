@@ -117,11 +117,9 @@ private lemma condExp_ae_eq_of_tendsto_eLpNorm
   simp only [Pi.zero_apply] at hω
   exact sub_eq_zero.mp hω
 
-/-- **Conditional expectation converges along a decreasing filtration (Lévy's downward theorem).**
-
-For a decreasing filtration `𝔽ₙ` and integrable `f`, the sequence `μ[f | 𝔽ₙ]` converges almost
-surely to `μ[f | ⨅ₙ 𝔽ₙ]`. -/
-theorem tendsto_ae_condExp_iInf
+/-- Integrable case of Lévy's downward theorem: for integrable `f`, `μ[f | 𝔽 n]` converges a.e. to
+`μ[f | ⨅ n, 𝔽 n]`. -/
+private lemma tendsto_ae_condExp_iInf_of_integrable
     [IsFiniteMeasure μ]
     {𝔽 : ℕ → MeasurableSpace Ω}
     (h_filtration : Antitone 𝔽)
@@ -176,5 +174,27 @@ theorem tendsto_ae_condExp_iInf
   filter_upwards [h_tendsto, hXlim_eq] with ω h_tend h_eq
   rw [h_eq]
   exact h_tend
+
+/-- **Conditional expectation converges along a decreasing filtration (Lévy's downward theorem).**
+
+For a decreasing filtration `𝔽ₙ`, the sequence `μ[f | 𝔽ₙ]` converges almost surely to
+`μ[f | ⨅ₙ 𝔽ₙ]`. No integrability hypothesis is needed: when `f` is not integrable both
+`μ[f | 𝔽ₙ]` and `μ[f | ⨅ₙ 𝔽ₙ]` are `0`, so the limit is the constant `0`. -/
+theorem tendsto_ae_condExp_iInf
+    [IsFiniteMeasure μ]
+    {𝔽 : ℕ → MeasurableSpace Ω}
+    (h_filtration : Antitone 𝔽)
+    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
+    (f : Ω → ℝ) :
+    ∀ᵐ ω ∂μ, Tendsto
+      (fun n => μ[f | 𝔽 n] ω)
+      atTop
+      (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) := by
+  by_cases hf : Integrable f μ
+  · exact tendsto_ae_condExp_iInf_of_integrable h_filtration h_le f hf
+  · -- Non-integrable `f`: `condExp` is `0` at every σ-algebra, so both sides are `0`.
+    filter_upwards with ω
+    simp only [condExp_of_not_integrable hf, Pi.zero_apply]
+    exact tendsto_const_nhds
 
 end ProbabilityTheory
