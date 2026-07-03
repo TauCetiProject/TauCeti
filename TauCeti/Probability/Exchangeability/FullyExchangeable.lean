@@ -7,19 +7,25 @@ import TauCeti.Probability.Exchangeability.Contractability
 import Mathlib.Logic.Equiv.Fintype
 
 /-!
-# Full exchangeability and shift-preservation
+# Full exchangeability and path-law bridges
 
-The Layer 0 bridges between finite exchangeability, full exchangeability, and the shift dynamics
-on path space:
+The Layer 0 bridges between finite exchangeability, full exchangeability, and path-law
+endomorphisms:
 
 * `exchangeable_iff_fullyExchangeable` — finite exchangeability (invariance under permutations of
   each `Fin n`) is equivalent to full exchangeability (invariance under all permutations of `ℕ`)
   for a process with a.e. measurable coordinates under a finite measure.
 * `FullyExchangeable.measurePreserving_shift` — a fully exchangeable process has a shift-invariant
   path law, the bridge from symmetry to the Koopman/ergodic lane.
+* `fullyExchangeable_iff_forall_map_permReindex_pathLaw` and
+  `fullyExchangeable_iff_forall_measurePreserving_permReindex` — full exchangeability is
+  equivalently invariance, or measure preservation, of the path law under every time-permutation
+  reindexing map.
 
-Both bridges are thin: they reuse the merged Layer 0 API and Mathlib — finite-marginal uniqueness
-(`FiniteMarginals`), the contractability bridge (`Contractability`), and
+These bridges live together because they all identify the process-level symmetry
+`FullyExchangeable μ X` with corresponding path-law invariance statements. They are thin: they
+reuse the merged Layer 0 API and Mathlib — finite-marginal uniqueness (`FiniteMarginals`), the
+contractability bridge (`Contractability`), generic path-law reindexing, and
 `Equiv.Perm.exists_extending_pair` — rather than new measure theory.
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned at
