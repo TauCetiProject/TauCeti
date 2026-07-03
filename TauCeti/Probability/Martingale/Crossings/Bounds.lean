@@ -2,6 +2,7 @@ module
 
 public import TauCeti.Probability.Martingale.Reverse
 public import TauCeti.Probability.Martingale.Crossings.Pathwise
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 
 /-!
 # Crossings: uniform upcrossing bound for reverse martingales

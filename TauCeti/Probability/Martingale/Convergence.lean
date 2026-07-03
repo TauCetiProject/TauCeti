@@ -57,9 +57,6 @@ theorem tendsto_ae_condExp_iInf
       (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) :=
   tendsto_ae_condExp_iInf_aux h_filtration h_le f h_f_int
 
-/-- Roadmap Layer-4 target spelling of `tendsto_ae_condExp_iInf` (Lévy's downward theorem). -/
-alias condExp_tendsto_iInf := tendsto_ae_condExp_iInf
-
 /-! ## Implementation notes
 
 The proof follows the upcrossing-inequality route (define upcrossings on `[a, b]`, bound their

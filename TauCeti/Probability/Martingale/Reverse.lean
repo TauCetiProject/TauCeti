@@ -2,7 +2,6 @@ module
 
 public import Mathlib.Probability.Martingale.Basic
 public import Mathlib.Probability.Process.Filtration
-public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 
 /-!
 # Reverse martingale infrastructure
