@@ -200,4 +200,7 @@ theorem tendsto_ae_condExp_iInf
     simp only [condExp_of_not_integrable hf, Pi.zero_apply]
     exact tendsto_const_nhds
 
+/-- Roadmap Layer-4 target spelling of `tendsto_ae_condExp_iInf` (Lévy's downward theorem). -/
+alias condExp_tendsto_iInf := tendsto_ae_condExp_iInf
+
 end ProbabilityTheory
