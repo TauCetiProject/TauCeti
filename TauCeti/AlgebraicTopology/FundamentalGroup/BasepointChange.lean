@@ -19,13 +19,13 @@ attached to subgroups.
 Mathlib already supplies the fundamental-group isomorphism
 `FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are only the
 subgroup and normalizer-quotient bookkeeping needed by the universal-covers roadmap.
-For inclusion, monotonicity, and normality questions about `basepointChangeSubgroup`, unfold
-the definition and use the generic `Subgroup.map` and `MulEquiv` API.
 
 ## Main declarations
 
 * `TauCeti.FundamentalGroup.basepointChangeSubgroup`: transport a subgroup of `π₁(X, x₀)`
   along a path `γ : Path x₀ x₁`.
+* Domain-specific membership, inclusion, monotonicity, and normality lemmas for
+  `basepointChangeSubgroup`.
 * `TauCeti.FundamentalGroup.basepointChangeNormalizerQuotientEquiv`: the corresponding
   isomorphism `N(H) / H ≃* N(γ₊H) / γ₊H`.
 * `TauCeti.FundamentalGroup.mem_basepointChangeSubgroup` and the representative `[simp]`
@@ -61,6 +61,68 @@ lemma mem_basepointChangeSubgroup (γ : Path x₀ x₁)
     g ∈ basepointChangeSubgroup γ H ↔
       ∃ h ∈ H, _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ h = g :=
   Iff.rfl
+
+/-- Membership in a transported subgroup, expressed by applying the inverse basepoint-change
+isomorphism. -/
+@[simp]
+lemma mem_basepointChangeSubgroup_iff (γ : Path x₀ x₁)
+    (H : Subgroup (_root_.FundamentalGroup X x₀))
+    (g : _root_.FundamentalGroup X x₁) :
+    g ∈ basepointChangeSubgroup γ H ↔
+      (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g ∈ H := by
+  simpa [basepointChangeSubgroup] using
+    (Subgroup.mem_map_equiv
+      (f := _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) (K := H) (x := g))
+
+/-- A subgroup of the target fundamental group is contained in the transported subgroup iff
+its inverse basepoint-change image is contained in the original subgroup. -/
+lemma le_basepointChangeSubgroup_iff (γ : Path x₀ x₁)
+    (K : Subgroup (_root_.FundamentalGroup X x₁))
+    (H : Subgroup (_root_.FundamentalGroup X x₀)) :
+    K ≤ basepointChangeSubgroup γ H ↔
+      K.map (((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm) :
+        _root_.FundamentalGroup X x₁ →* _root_.FundamentalGroup X x₀) ≤ H := by
+  rw [basepointChangeSubgroup]
+  constructor
+  · intro h x hx
+    rcases Subgroup.mem_map.mp hx with ⟨y, hyK, rfl⟩
+    exact (Subgroup.mem_map_equiv
+      (f := _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) (K := H)
+        (x := y)).mp (h hyK)
+  · intro h y hy
+    exact (Subgroup.mem_map_equiv
+      (f := _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) (K := H)
+        (x := y)).mpr (h (Subgroup.mem_map_of_mem _ hy))
+
+/-- The transported subgroup is contained in a target subgroup iff the original subgroup is
+contained in the target subgroup's inverse image under basepoint change. -/
+lemma basepointChangeSubgroup_le_iff (γ : Path x₀ x₁)
+    (H : Subgroup (_root_.FundamentalGroup X x₀))
+    (K : Subgroup (_root_.FundamentalGroup X x₁)) :
+    basepointChangeSubgroup γ H ≤ K ↔
+      H ≤ K.comap (((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) :
+        _root_.FundamentalGroup X x₀ →* _root_.FundamentalGroup X x₁)) := by
+  rw [basepointChangeSubgroup, Subgroup.map_le_iff_le_comap]
+
+/-- Basepoint-change transport is monotone on subgroups. -/
+lemma basepointChangeSubgroup_mono (γ : Path x₀ x₁)
+    {H K : Subgroup (_root_.FundamentalGroup X x₀)} (h : H ≤ K) :
+    basepointChangeSubgroup γ H ≤ basepointChangeSubgroup γ K := by
+  rw [basepointChangeSubgroup, basepointChangeSubgroup]
+  exact Subgroup.map_mono h
+
+/-- Normality is invariant under basepoint-change transport. -/
+lemma basepointChangeSubgroup_normal_iff (γ : Path x₀ x₁)
+    (H : Subgroup (_root_.FundamentalGroup X x₀)) :
+    (basepointChangeSubgroup γ H).Normal ↔ H.Normal := by
+  rw [basepointChangeSubgroup]
+  exact MulEquiv.normal_map_iff
+
+/-- A normal subgroup remains normal after basepoint-change transport. -/
+lemma basepointChangeSubgroup.normal (γ : Path x₀ x₁)
+    {H : Subgroup (_root_.FundamentalGroup X x₀)} (hH : H.Normal) :
+    (basepointChangeSubgroup γ H).Normal :=
+  (basepointChangeSubgroup_normal_iff γ H).2 hH
 
 /-- The normalizer quotient `N(H) / H` transported along a basepoint-change path. -/
 noncomputable def basepointChangeNormalizerQuotientEquiv (γ : Path x₀ x₁)
