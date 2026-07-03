@@ -86,7 +86,7 @@ private lemma toLinearMap_antipodeComp (f : H →ₐ[R] A) :
 
 /-- The convolution inverse of an `R`-algebra homomorphism `f : H →ₐ[R] A` out of a Hopf
 algebra is `f ∘ S`, where `S` is the antipode. -/
-noncomputable instance : Inv (WithConv (H →ₐ[R] A)) where
+noncomputable instance instInv : Inv (WithConv (H →ₐ[R] A)) where
   inv f := toConv (antipodeComp f.ofConv)
 
 /-- The convolution inverse of `f` is `f ∘ S`, where `S` is the antipode: definitionally,

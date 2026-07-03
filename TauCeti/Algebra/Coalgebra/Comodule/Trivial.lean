@@ -63,6 +63,9 @@ section GroupLikeDef
 
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 
+/-- The map `m ↦ m ⊗ g` attached to a group-like element `g : GroupLike R C`, as an
+`R`-linear map `M →ₗ[R] M ⊗[R] C`. It serves as the coaction of the comodule structure
+`Comodule.groupLike g`. -/
 def groupLikeCoact (g : GroupLike R C) : M →ₗ[R] M ⊗[R] C :=
   (TensorProduct.mk R M C).flip (g : C)
 

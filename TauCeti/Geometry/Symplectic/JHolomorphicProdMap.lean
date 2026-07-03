@@ -43,55 +43,47 @@ section CoordinateInclusions
 variable (J₁ : AlmostComplexStructure V) (J₂ : AlmostComplexStructure W)
 
 /-- The affine inclusion of the first coordinate into a product is `J`-holomorphic. -/
-@[simp]
 lemma isJHolomorphicAt_prodMk_left (w₀ : W) (v : V) :
     IsJHolomorphicAt J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) v :=
   (isJHolomorphicAt_id J₁ v).prodMk (isJHolomorphicAt_const J₁ J₂ w₀ v)
 
 /-- The affine inclusion of the second coordinate into a product is `J`-holomorphic. -/
-@[simp]
 lemma isJHolomorphicAt_prodMk_right (v₀ : V) (w : W) :
     IsJHolomorphicAt J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) w :=
   (isJHolomorphicAt_const J₂ J₁ v₀ w).prodMk (isJHolomorphicAt_id J₂ w)
 
 /-- The affine inclusion of the first coordinate into a product is `J`-holomorphic within
 every set. -/
-@[simp]
 lemma isJHolomorphicWithinAt_prodMk_left (w₀ : W) (s : Set V) (v : V) :
     IsJHolomorphicWithinAt J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) s v :=
   (isJHolomorphicAt_prodMk_left J₁ J₂ w₀ v).isJHolomorphicWithinAt
 
 /-- The affine inclusion of the second coordinate into a product is `J`-holomorphic within
 every set. -/
-@[simp]
 lemma isJHolomorphicWithinAt_prodMk_right (v₀ : V) (s : Set W) (w : W) :
     IsJHolomorphicWithinAt J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) s w :=
   (isJHolomorphicAt_prodMk_right J₁ J₂ v₀ w).isJHolomorphicWithinAt
 
 /-- The affine inclusion of the first coordinate into a product is `J`-holomorphic on every
 set. -/
-@[simp]
 lemma isJHolomorphicOn_prodMk_left (w₀ : W) (s : Set V) :
     IsJHolomorphicOn J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) s :=
   fun v _ => isJHolomorphicWithinAt_prodMk_left J₁ J₂ w₀ s v
 
 /-- The affine inclusion of the second coordinate into a product is `J`-holomorphic on every
 set. -/
-@[simp]
 lemma isJHolomorphicOn_prodMk_right (v₀ : V) (s : Set W) :
     IsJHolomorphicOn J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) s :=
   fun w _ => isJHolomorphicWithinAt_prodMk_right J₁ J₂ v₀ s w
 
 /-- The affine inclusion of the first coordinate into a product is globally
 `J`-holomorphic. -/
-@[simp]
 lemma isJHolomorphic_prodMk_left (w₀ : W) :
     IsJHolomorphic J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) :=
   fun v => isJHolomorphicAt_prodMk_left J₁ J₂ w₀ v
 
 /-- The affine inclusion of the second coordinate into a product is globally
 `J`-holomorphic. -/
-@[simp]
 lemma isJHolomorphic_prodMk_right (v₀ : V) :
     IsJHolomorphic J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) :=
   fun w => isJHolomorphicAt_prodMk_right J₁ J₂ v₀ w

@@ -72,7 +72,6 @@ theorem forall_legendreSym_primeDiscriminant_eq_one_iff_radicand {ι : Type*} (D
 For the three even prime discriminants this is the corresponding supplementary congruence
 condition on `q`; for an odd prime discriminant `p*` it is the reciprocal condition
 `(q / p) = 1`. -/
-@[simp]
 theorem legendreSym_primeDiscriminant_eq_one_iff {D : ℤ}
     (hD : IsPrimeDiscriminant D) (hq : q ≠ 2) :
     legendreSym q D = 1 ↔
@@ -110,7 +109,6 @@ theorem legendreSym_primeDiscriminant_eq_one_iff {D : ℤ}
 `legendreSym_primeDiscriminant_eq_one_iff`, stated for the associated squarefree radicand.
 This is the form consumed after converting a genus-field prime-discriminant list into
 multiquadratic radicands. -/
-@[simp]
 theorem legendreSym_primeDiscriminantRadicand_eq_one_iff {D : ℤ}
     (hD : IsPrimeDiscriminant D) (hq : q ≠ 2) :
     legendreSym q (primeDiscriminantRadicand D) = 1 ↔

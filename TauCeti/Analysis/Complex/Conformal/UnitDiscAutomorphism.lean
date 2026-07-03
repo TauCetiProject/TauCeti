@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Moebius
+public import TauCeti.Analysis.Complex.UnitDisc.Basic
 
 /-!
 # Standard automorphisms of the complex unit disc
@@ -71,11 +72,8 @@ lemma unitDiscStandardAutomorphismEquiv_one (a : Complex.UnitDisc) :
   simp [unitDiscStandardAutomorphismEquiv]
 
 /-- The standard automorphism sends its center to zero. -/
-@[simp]
 lemma unitDiscStandardAutomorphismEquiv_self (u : Circle) (a : Complex.UnitDisc) :
     unitDiscStandardAutomorphismEquiv u a a = 0 := by
-  rw [unitDiscStandardAutomorphismEquiv_apply, unitDiscMoebius_self]
-  ext
   simp
 
 /-- The standard automorphism sends zero to `-u * a`. -/
@@ -90,12 +88,8 @@ lemma norm_unitDiscStandardAutomorphismEquiv (u : Circle) (a z : Complex.UnitDis
     Circle.norm_coe, one_mul, norm_unitDiscMoebius]
 
 /-- A standard disc automorphism vanishes exactly at its center. -/
-@[simp]
 lemma unitDiscStandardAutomorphismEquiv_eq_zero_iff (u : Circle) (a z : Complex.UnitDisc) :
     unitDiscStandardAutomorphismEquiv u a z = 0 ↔ z = a := by
-  rw [← Complex.UnitDisc.coe_inj, unitDiscStandardAutomorphismEquiv_apply,
-    Complex.UnitDisc.coe_circle_smul, Complex.UnitDisc.coe_zero, mul_eq_zero,
-    Complex.UnitDisc.coe_eq_zero, unitDiscMoebius_eq_zero_iff]
   simp
 
 /-- The scalar formula of a standard automorphism is holomorphic on the unit disc. -/

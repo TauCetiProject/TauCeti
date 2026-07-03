@@ -62,11 +62,11 @@ lemma associatedBilinForm_apply_right_apply (v w : V) :
 namespace Invariant
 
 /-- Pointwise form of invariance under applying `J` to both arguments. -/
+@[simp]
 lemma apply (hinv : ω.Invariant J) (v w : V) : ω (J v) (J w) = ω v w :=
   (ω.invariant_iff J).mp hinv v w
 
 /-- The metric recovers the symplectic form: `g(J v, w) = ω(v, w)`. -/
-@[simp]
 lemma associatedBilinForm_apply_left_apply (hinv : ω.Invariant J) (v w : V) :
     ω.associatedBilinForm J (J v) w = ω v w := by
   rw [associatedBilinForm_apply, hinv.apply]
@@ -112,7 +112,6 @@ lemma associatedBilinForm_self_eq_zero
 namespace Compatible
 
 /-- The metric recovers the symplectic form: `g(J v, w) = ω(v, w)`. -/
-@[simp]
 lemma associatedBilinForm_apply_left_apply (h : ω.Compatible J) (v w : V) :
     ω.associatedBilinForm J (J v) w = ω v w :=
   h.invariant.associatedBilinForm_apply_left_apply v w
