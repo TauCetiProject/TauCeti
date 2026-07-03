@@ -60,11 +60,23 @@ variable {ω : SymplecticForm V}
 
 For a compatible pair `(ω, J)`, this is
 `g(F ∂s, F ∂s) + g(F ∂t, F ∂t)`, where `g(v,w) = ω(v, J w)`. -/
-irreducible_def stdComplexLineEnergyDensity (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+@[expose] def stdComplexLineEnergyDensity (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (F : (ℝ × ℝ) →ₗ[ℝ] V) : ℝ :=
   ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) +
     ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag)
 
+/-- The defining equation for `stdComplexLineEnergyDensity`, which is irreducible after this
+lemma. Stated by hand rather than via `irreducible_def`: the generated equation lemma hoisted
+a nested instance proof into a private auxiliary constant, which the module system does not
+export, making the public lemma fail to type check outside this module. -/
+lemma stdComplexLineEnergyDensity_def (ω : SymplecticForm V) (J : AlmostComplexStructure V)
+    (F : (ℝ × ℝ) →ₗ[ℝ] V) :
+    ω.stdComplexLineEnergyDensity J F =
+      ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) +
+        ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag) :=
+  rfl
+
+attribute [irreducible] stdComplexLineEnergyDensity
 
 /-- The standard pointwise energy density of any real-linear map is nonnegative under tameness. -/
 lemma stdComplexLineEnergyDensity_nonneg (hω : ω.Tames J)
