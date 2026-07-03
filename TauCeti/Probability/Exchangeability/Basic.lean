@@ -58,6 +58,10 @@ def prefixProj (α : Type*) (n : ℕ) (x : ℕ → α) : Fin n → α :=
 def shift (α : Type*) (x : ℕ → α) : ℕ → α :=
   fun n => x (n + 1)
 
+/-- Reindex a one-sided path by a permutation of time. -/
+abbrev permReindex (π : Equiv.Perm ℕ) (x : ℕ → α) : ℕ → α :=
+  fun n => x (π n)
+
 /-- Finite exchangeability at `n`: the first `n` coordinates have permutation-invariant law. -/
 @[expose]
 def ExchangeableAt (μ : Measure Ω) (X : ℕ → Ω → α) (n : ℕ) : Prop :=
@@ -128,6 +132,19 @@ theorem prefixProj_apply (n : ℕ) (x : ℕ → α) (i : Fin n) :
 omit [MeasurableSpace α] in
 @[simp]
 theorem shift_apply (x : ℕ → α) (n : ℕ) : shift α x n = x (n + 1) :=
+  rfl
+
+omit [MeasurableSpace α] in
+@[simp]
+theorem permReindex_apply (π : Equiv.Perm ℕ) (x : ℕ → α) (n : ℕ) :
+    permReindex π x n = x (π n) :=
+  rfl
+
+omit [MeasurableSpace α] in
+@[simp]
+theorem permReindex_permReindex (π σ : Equiv.Perm ℕ) (x : ℕ → α) :
+    permReindex (α := α) π (permReindex (α := α) σ x) =
+      permReindex (α := α) (σ * π) x := by
   rfl
 
 /-- The prefix projection is measurable. -/

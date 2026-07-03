@@ -1,7 +1,7 @@
 module
 
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
-public import TauCeti.Probability.Exchangeability.PathSpace.Reindex
+public import TauCeti.Probability.Exchangeability.Basic
 public import TauCeti.Probability.Process.Tail
 public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
 
@@ -86,7 +86,7 @@ theorem measurable_permReindex_exchangeableSigma (π : Equiv.Perm ℕ) :
       (permReindex (α := α) π) := by
   intro s hs
   refine mem_exchangeableSigma_iff.mpr ⟨?_, ?_⟩
-  · exact (measurable_permReindex π) (mem_exchangeableSigma_iff.mp hs).1
+  · exact (measurable_reindex π) (mem_exchangeableSigma_iff.mp hs).1
   · intro σ hσ
     ext x
     simp only [Set.mem_preimage]
