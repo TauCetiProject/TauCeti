@@ -382,15 +382,17 @@ jobs:
               lake build
               lake exe axioms
               lake exe module-system
-              # Simp normal-form lint (Mathlib simpNF linter) against the grandfathered
-              # baseline in scripts/simp-nf-baseline.txt. Script, baseline, and the
-              # @[nolint simpNF] allowlist (scripts/simp-nf-nolints-allowlist.txt) are
-              # the TRUSTED base copies (scripts/ routes to a human, so a PR cannot
-              # edit them here); it elaborates the PR code, which is why it runs inside
-              # this landrun sandbox, and its report parsing is fail-closed (see the
-              # SECURITY MODEL in the script). Fails on new violations or unaccounted
-              # nolints; fixed baseline entries are printed as a ratchet reminder only.
-              bash scripts/lint-simp-nf.sh
+              # Environment lint (Mathlib's default `#lint` set minus docBlame, plus
+              # a module-system-reliable docstring scan; see the script header)
+              # against the grandfathered baseline in scripts/lint-baseline.txt.
+              # Script, baseline, and the @[nolint <linter>] allowlist
+              # (scripts/lint-nolints-allowlist.txt) are the TRUSTED base copies
+              # (scripts/ routes to a human, so a PR cannot edit them here); it
+              # elaborates the PR code, which is why it runs inside this landrun
+              # sandbox, and its report parsing is fail-closed (see the SECURITY
+              # MODEL in the script). Fails on new violations or unaccounted nolints;
+              # fixed baseline entries are printed as a ratchet reminder only.
+              bash scripts/lint-env.sh
             '
 
       - name: Report build and bump-guard statuses to the PR head commit
