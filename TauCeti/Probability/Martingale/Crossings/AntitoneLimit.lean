@@ -84,6 +84,31 @@ private lemma lintegral_upcrossings_negProcess_revCondExpFinite_eq
   filter_upwards [h_ae_eq] with ω hω
   simp [MeasureTheory.upcrossings, upcrossingsBefore_congr (fun k _ => hω k)]
 
+/-- Upgrade a uniform-in-`N` bound on the per-horizon `upcrossingsBefore` integrals to a bound on
+the total `upcrossings` integral, by monotone convergence in the horizon `N`. The adapted process
+`g` supplies the measurability of each `upcrossingsBefore` count. -/
+private lemma lintegral_upcrossings_le_of_forall_lintegral_upcrossingsBefore_le
+    {g : ℕ → Ω → ℝ} {a b : ℝ} {C : ℝ≥0∞}
+    {ℱ : Filtration ℕ (inferInstance : MeasurableSpace Ω)}
+    (h_adapted : StronglyAdapted ℱ g) (hab : a < b)
+    (h_N_bound : ∀ N, ∫⁻ ω, ↑(upcrossingsBefore a b g N ω) ∂μ ≤ C) :
+    ∫⁻ ω, upcrossings a b g ω ∂μ ≤ C := by
+  -- Set `U N ω := upcrossingsBefore` (as `ℝ≥0∞`) for the process `g`.
+  set U : ℕ → Ω → ℝ≥0∞ := fun N ω => (upcrossingsBefore a b g N ω : ℝ≥0∞) with hU
+  -- Monotonicity in `N` (pathwise): more time allows more completed crossings.
+  have hU_mono : Monotone U := by
+    intro m n hmn ω
+    simp only [hU]
+    exact Nat.cast_le.2 (upcrossingsBefore_mono (f := g) hab hmn ω)
+  -- Measurability of each `U N` via the adaptedness hypothesis.
+  have hU_meas : ∀ N, Measurable (U N) := fun _ =>
+    measurable_from_top.comp (h_adapted.measurable_upcrossingsBefore hab)
+  -- Monotone convergence, then bound the supremum of integrals by `C`.
+  have h_iSup : ∫⁻ ω, (⨆ N, U N ω) ∂μ = ⨆ N, ∫⁻ ω, U N ω ∂μ := lintegral_iSup hU_meas hU_mono
+  have hbound : (⨆ N, ∫⁻ ω, U N ω ∂μ) ≤ C := iSup_le h_N_bound
+  -- Conclude via `upcrossings = ⨆ N, upcrossingsBefore N`.
+  simpa [MeasureTheory.upcrossings, hU] using h_iSup.le.trans hbound
+
 /-- Reverse-martingale upcrossing bound: for real `a < b`, the expected number of upcrossings of
 `n ↦ μ[f | 𝔽 n]` on `[a, b]` is finite, so the upcrossings are a.e. finite. -/
 private lemma ae_upcrossings_condExp_lt_top
@@ -121,26 +146,9 @@ private lemma ae_upcrossings_condExp_lt_top
     Filtration.const ℕ (inferInstance : MeasurableSpace Ω) le_rfl
   have h_adapted : StronglyAdapted ℱ (fun n => μ[f | 𝔽 n]) :=
     fun n => stronglyMeasurable_condExp.mono (h_le n)
-  -- Use monotone convergence on the ORIGINAL process (which IS monotone in N)
-  have h_exp_orig : ∫⁻ ω, upcrossings (a) (b) (fun n => μ[f | 𝔽 n]) ω ∂μ ≤ C := by
-    -- Set U N ω := upcrossingsBefore for the original process
-    set U : ℕ → Ω → ℝ≥0∞ :=
-      fun N ω => (upcrossingsBefore (a) (b) (fun n => μ[f | 𝔽 n]) N ω : ℝ≥0∞) with hU
-    -- Monotonicity in N (pathwise): more time allows more completed crossings
-    have hU_mono : Monotone U := by
-      intro m n hmn ω
-      simp only [hU]
-      have := upcrossingsBefore_mono (f := fun n => μ[f | 𝔽 n]) hab hmn ω
-      exact Nat.cast_le.2 this
-    -- Measurability (via the constant filtration `ℱ` set up above)
-    have hU_meas : ∀ N, Measurable (U N) := fun _ =>
-      measurable_from_top.comp (h_adapted.measurable_upcrossingsBefore hab)
-    -- Apply monotone convergence theorem
-    have h_iSup : ∫⁻ ω, (⨆ N, U N ω) ∂μ = ⨆ N, ∫⁻ ω, U N ω ∂μ := lintegral_iSup hU_meas hU_mono
-    -- Bound the supremum of integrals
-    have : (⨆ N, ∫⁻ ω, U N ω ∂μ) ≤ C := iSup_le h_N_bound
-    -- Conclude: upcrossings = ⨆ N, upcrossingsBefore N
-    simpa [MeasureTheory.upcrossings, hU] using h_iSup.le.trans this
+  -- Upgrade the per-horizon bound to the total upcrossings integral (monotone convergence in N).
+  have h_exp_orig : ∫⁻ ω, upcrossings a b (fun n => μ[f | 𝔽 n]) ω ∂μ ≤ C :=
+    lintegral_upcrossings_le_of_forall_lintegral_upcrossingsBefore_le h_adapted hab h_N_bound
   -- Apply ae_lt_top: measurable function with finite expectation is a.e. finite
   refine ae_lt_top ?_ (lt_of_le_of_lt h_exp_orig h_C_finite).ne
   exact h_adapted.measurable_upcrossings hab
