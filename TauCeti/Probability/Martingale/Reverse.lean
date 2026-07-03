@@ -17,7 +17,8 @@ it to the upcrossing inequality.
 
 ## Main results
 
-- `martingale_revCondExpFinite`: the reversed process is a forward martingale for `revFiltration`.
+- `submartingale_revCondExpFinite`: the reversed conditional-expectation process is a submartingale
+  for `revFiltration`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/Martingale/Reverse.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.

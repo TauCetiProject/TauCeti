@@ -12,8 +12,10 @@ top of `Pathwise.lean` and `Reverse.lean`.
 
 ## Main results
 
+- `lintegral_pos_part_revCondExpFinite_le`: positive-part L¹ bound for the reversed
+  conditional-expectation process.
 - `upcrossings_bdd_uniform`: uniform-in-`N` bound on the expected number of upcrossings for the
-  reverse martingale of an L¹-bounded `f` along an antitone filtration.
+  reversed conditional-expectation process along an antitone filtration.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/Martingale/Crossings/Bounds.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
