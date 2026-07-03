@@ -1,8 +1,5 @@
 module
 
-public import Mathlib.Probability.Martingale.Basic
-public import Mathlib.Probability.Martingale.Convergence
-public import Mathlib.Probability.Process.Filtration
 public import TauCeti.Probability.Martingale.Crossings.AntitoneLimit
 -- Non-public: the generic `AEStronglyMeasurable` σ-algebra helpers are used only in the proof of
 -- `aestronglyMeasurable_iInf_of_tendsto_ae_antitone`, so they are not re-exported through the
