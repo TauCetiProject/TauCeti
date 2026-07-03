@@ -32,6 +32,47 @@ namespace ProbabilityTheory
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 variable {𝔽 : ℕ → MeasurableSpace Ω}
 
+/-- Positive-part L¹ bound for the reversed conditional-expectation process: for integrable `f`,
+the integral of `(revCondExpFinite f 𝔽 N M · - a)⁺` is bounded by `‖f‖₁ + |a| · μ(univ)`,
+uniformly in the horizon `N` and the time `M`. -/
+lemma lintegral_pos_part_revCondExpFinite_le
+    (f : Ω → ℝ) (hf : Integrable f μ) (a : ℝ) (N M : ℕ) :
+    ∫⁻ ω, ENNReal.ofReal ((revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
+      ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
+  -- Use (x - a)⁺ ≤ |x - a| ≤ |x| + |a|, integrate, then convert to `eLpNorm` and apply the
+  -- L¹ contraction of conditional expectation.
+  calc ∫⁻ ω, ENNReal.ofReal ((revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
+      ≤ ∫⁻ ω, ENNReal.ofReal (|revCondExpFinite (μ := μ) f 𝔽 N M ω| + |a|) ∂μ := by
+        apply lintegral_mono
+        intro ω
+        apply ENNReal.ofReal_le_ofReal
+        calc (revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺
+            = max (revCondExpFinite (μ := μ) f 𝔽 N M ω - a) 0 := rfl
+          _ ≤ |revCondExpFinite (μ := μ) f 𝔽 N M ω - a| := by
+              simp only [le_abs_self, max_le_iff, abs_nonneg, and_self]
+          _ ≤ |revCondExpFinite (μ := μ) f 𝔽 N M ω| + |a| := by
+              rw [sub_eq_add_neg]
+              simpa using abs_add_le (revCondExpFinite (μ := μ) f 𝔽 N M ω) (-a)
+    _ = ∫⁻ ω, (ENNReal.ofReal |revCondExpFinite (μ := μ) f 𝔽 N M ω| + ENNReal.ofReal |a|) ∂μ := by
+        simp [ENNReal.ofReal_add]
+    _ = ∫⁻ ω, ENNReal.ofReal |revCondExpFinite (μ := μ) f 𝔽 N M ω| ∂μ
+          + ENNReal.ofReal |a| * μ Set.univ := by
+        rw [lintegral_add_right _ measurable_const, lintegral_const]
+    _ ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
+        gcongr
+        have hconv : ∫⁻ ω, ENNReal.ofReal |revCondExpFinite (μ := μ) f 𝔽 N M ω| ∂μ =
+            eLpNorm (revCondExpFinite (μ := μ) f 𝔽 N M) 1 μ := by
+          rw [eLpNorm_one_eq_lintegral_enorm]
+          congr 1; ext ω
+          exact (Real.enorm_eq_ofReal_abs _).symm
+        rw [hconv]
+        calc eLpNorm (revCondExpFinite (μ := μ) f 𝔽 N M) 1 μ
+            ≤ eLpNorm f 1 μ := by
+                rw [revCondExpFinite_apply]; exact eLpNorm_one_condExp_le_eLpNorm f
+          _ = ENNReal.ofReal (eLpNorm f 1 μ).toReal := by
+              rw [ENNReal.ofReal_toReal]
+              exact (memLp_one_iff_integrable.mpr hf).eLpNorm_ne_top
+
 /-- Uniform (in `N`) bound on upcrossings for the reverse martingale.
 
 For an L¹-bounded martingale obtained by reversing an antitone filtration, the expected number of
@@ -42,60 +83,9 @@ lemma upcrossings_bdd_uniform
     (f : Ω → ℝ) (hf : Integrable f μ) (a b : ℝ) (hab : a < b) :
     ∃ C : ENNReal, C < ⊤ ∧ ∀ N,
       ∫⁻ ω, (upcrossings (↑a) (↑b) (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) ω) ∂μ ≤ C := by
-  -- The L¹ norm of revCondExpFinite is uniformly bounded by ‖f‖₁
-  have hL1_bdd : ∀ N n, eLpNorm (revCondExpFinite (μ := μ) f 𝔽 N n) 1 μ ≤ eLpNorm f 1 μ := by
-    intro N n
-    rw [revCondExpFinite_apply]
-    exact eLpNorm_one_condExp_le_eLpNorm f
-  -- For each N, revCondExpFinite is a martingale, hence a submartingale
-  have h_submart : ∀ N, Submartingale (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)
-      (revFiltration 𝔽 h_antitone h_le N) μ := fun N => by
-    have hfun : (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)
-        = fun n => μ[f | (revFiltration 𝔽 h_antitone h_le N) n] := by
-      funext n; rw [revCondExpFinite_apply, revFiltration_apply]
-    rw [hfun]
-    exact (martingale_condExp f (revFiltration 𝔽 h_antitone h_le N) μ).submartingale
-  -- For each fixed N and M, we can bound E[(f_M - a)⁺] by ‖f‖₁ + |a| * μ(univ). The constant
-  -- term keeps the finite factor `μ Set.univ` (it is `1` only in the probability case).
-  have h_bound : ∀ N M, ∫⁻ ω, ENNReal.ofReal ((revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
-      ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
-    intro N M
-    -- Use (x - a)⁺ ≤ |x - a| ≤ |x| + |a|, then integrate
-    calc ∫⁻ ω, ENNReal.ofReal ((revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
-        ≤ ∫⁻ ω, ENNReal.ofReal (|revCondExpFinite (μ := μ) f 𝔽 N M ω| + |a|) ∂μ := by
-          apply lintegral_mono
-          intro ω
-          apply ENNReal.ofReal_le_ofReal
-          calc (revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺
-              = max (revCondExpFinite (μ := μ) f 𝔽 N M ω - a) 0 := rfl
-            _ ≤ |revCondExpFinite (μ := μ) f 𝔽 N M ω - a| := by
-                simp only [le_abs_self, max_le_iff, abs_nonneg, and_self]
-            _ ≤ |revCondExpFinite (μ := μ) f 𝔽 N M ω| + |a| := by
-                rw [sub_eq_add_neg]
-                simpa using abs_add_le (revCondExpFinite (μ := μ) f 𝔽 N M ω) (-a)
-      _ = ∫⁻ ω, (ENNReal.ofReal |revCondExpFinite (μ := μ) f 𝔽 N M ω| + ENNReal.ofReal |a|) ∂μ := by
-          simp [ENNReal.ofReal_add]
-      _ = ∫⁻ ω, ENNReal.ofReal |revCondExpFinite (μ := μ) f 𝔽 N M ω| ∂μ
-            + ENNReal.ofReal |a| * μ Set.univ := by
-          rw [lintegral_add_right _ measurable_const, lintegral_const]
-      _ ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
-          gcongr
-          -- Convert lintegral to eLpNorm and use hL1_bdd
-          have hconv : ∫⁻ ω, ENNReal.ofReal |revCondExpFinite (μ := μ) f 𝔽 N M ω| ∂μ =
-              eLpNorm (revCondExpFinite (μ := μ) f 𝔽 N M) 1 μ := by
-            rw [eLpNorm_one_eq_lintegral_enorm]
-            congr 1; ext ω
-            exact (Real.enorm_eq_ofReal_abs _).symm
-          rw [hconv]
-          calc eLpNorm (revCondExpFinite (μ := μ) f 𝔽 N M) 1 μ
-              ≤ eLpNorm f 1 μ := hL1_bdd N M
-            _ = ENNReal.ofReal (eLpNorm f 1 μ).toReal := by
-                rw [ENNReal.ofReal_toReal]
-                exact (memLp_one_iff_integrable.mpr hf).eLpNorm_ne_top
-  -- Define C as the bound divided by (b - a)
+  -- Define C as the positive-part bound divided by (b - a).
   set C := (ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ)
       / ENNReal.ofReal (b - a)
-  -- Prove C < ⊤
   have hC_finite : C < ⊤ := by
     refine ENNReal.div_lt_top ?h1 ?h2
     · -- Numerator ≠ ⊤ (finite measure keeps `μ Set.univ < ⊤`)
@@ -107,15 +97,13 @@ lemma upcrossings_bdd_uniform
     · -- Denominator ≠ 0
       exact (ENNReal.ofReal_pos.2 (sub_pos.2 hab)).ne'
   refine ⟨C, hC_finite, fun N => ?_⟩
-  -- Apply the submartingale upcrossing inequality
-  have key := (h_submart N).mul_lintegral_upcrossings_le_lintegral_pos_part a b
-  -- Bound the supremum using h_bound
+  -- Doob's upcrossing inequality for the reversed submartingale, then bound the supremum with the
+  -- positive-part L¹ estimate.
+  have hsub := submartingale_revCondExpFinite (μ := μ) h_antitone h_le f N
+  have key := hsub.mul_lintegral_upcrossings_le_lintegral_pos_part a b
   have sup_bdd : ⨆ M, ∫⁻ ω, ENNReal.ofReal ((revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
-      ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
-    apply iSup_le
-    intro M
-    exact h_bound N M
-  -- Combine: (b - a) * E[upcrossings] ≤ sup ≤ bound, so E[upcrossings] ≤ C
+      ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ :=
+    iSup_le fun M => lintegral_pos_part_revCondExpFinite_le f hf a N M
   have step1 : (∫⁻ ω, upcrossings (↑a) (↑b) (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) ω ∂μ)
       * ENNReal.ofReal (b - a)
       ≤ ⨆ M, ∫⁻ ω, ENNReal.ofReal ((revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ := by
