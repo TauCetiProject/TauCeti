@@ -223,7 +223,6 @@ theorem maslovXℤ_swapMarkings (x : GridState n) :
 
 /-- The marking swap negates the integer numerator of twice the Alexander grading, up to twice
 the normalization shift: `2·A_swap(x) = −2·A(x) − 2(n − 1)`. -/
-@[simp]
 theorem alexanderTwoℤ_swapMarkings (x : GridState n) :
     G.swapMarkings.alexanderTwoℤ x = -G.alexanderTwoℤ x - 2 * ((n : ℤ) - 1) := by
   rw [alexanderTwoℤ_def, alexanderTwoℤ_def, maslovOℤ_swapMarkings, maslovXℤ_swapMarkings]

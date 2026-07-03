@@ -75,7 +75,7 @@ a chosen fibre. -/
 theorem eq_of_fiber_smul_eq_fiber_smul [PreconnectedSpace E] (hp : IsCoveringMap p)
     (φ ψ : Deck p) {e : p ⁻¹' {b}} (h : φ • e = ψ • e) : φ = ψ := by
   have hcoe : (φ • e : E) = (ψ • e : E) := congrArg Subtype.val h
-  rw [fiber_smul_coe, fiber_smul_coe] at hcoe
+  rw [smul_eq_apply, smul_eq_apply] at hcoe
   exact eq_of_apply_eq hp φ ψ hcoe
 
 /-- A deck transformation of a preconnected covering is determined by the value of its
@@ -83,7 +83,7 @@ restricted fibre homeomorphism at one point. -/
 theorem eq_of_fiberHomeomorph_apply_eq [PreconnectedSpace E] (hp : IsCoveringMap p)
     (φ ψ : Deck p) {e : p ⁻¹' {b}} (h : fiberHomeomorph φ b e = fiberHomeomorph ψ b e) :
     φ = ψ :=
-  eq_of_fiber_smul_eq_fiber_smul hp φ ψ (by simpa using h)
+  eq_of_fiber_smul_eq_fiber_smul hp φ ψ (by simpa [fiber_smul_eq_fiberHomeomorph] using h)
 
 /-- The induced deck action on a fibre of a preconnected covering is cancellative. -/
 theorem fiber_isCancelSMul [PreconnectedSpace E] (hp : IsCoveringMap p) :
@@ -141,7 +141,6 @@ lemma deckEquivFiberOfSurjective_apply [PreconnectedSpace E] (hp : IsCoveringMap
 
 /-- On underlying points, the local deck-to-fibre equivalence is evaluation of the
 underlying homeomorphism. -/
-@[simp]
 lemma deckEquivFiberOfSurjective_apply_coe [PreconnectedSpace E] (hp : IsCoveringMap p)
     (e : p ⁻¹' {b}) (hsurj : Function.Surjective fun φ : Deck p => φ • e) (φ : Deck p) :
     (deckEquivFiberOfSurjective hp e hsurj φ : E) = φ.1 e.1 := by
@@ -164,7 +163,7 @@ lemma deckEquivFiberOfSurjective_symm_apply_coe [PreconnectedSpace E]
     (hp : IsCoveringMap p) (e : p ⁻¹' {b})
     (hsurj : Function.Surjective fun φ : Deck p => φ • e) (e' : p ⁻¹' {b}) :
     (((deckEquivFiberOfSurjective hp e hsurj).symm e').1 e.1 : E) = e'.1 := by
-  simpa [fiber_smul_coe] using
+  simpa only [fiber_smul_eq_fiberHomeomorph, fiberHomeomorph_apply] using
     congrArg Subtype.val (deckEquivFiberOfSurjective_symm_smul hp e hsurj e')
 
 /-- The local deck-to-fibre equivalence sends the identity to the chosen base point. -/

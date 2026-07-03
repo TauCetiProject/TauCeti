@@ -101,7 +101,6 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 /-- The split-torus points equivalence is natural in the value algebra: post-composing a point
 with an `R`-algebra map `φ : A →ₐ[R] B` sends each coordinate through the induced map on
 units. -/
-@[simp]
 theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (f : WithConv (MonoidAlgebra R (Multiplicative (σ →₀ ℤ)) →ₐ[R] A)) (i : σ) :
     pointsMulEquiv (AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative (σ →₀ ℤ))) φ f) i =
@@ -110,7 +109,6 @@ theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     freeAbelianCharEquiv_comp]
 
 /-- Naturality of the inverse split-torus points equivalence in the value algebra. -/
-@[simp]
 theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (c : σ → Aˣ) :
     AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative (σ →₀ ℤ))) φ
         ((pointsMulEquiv (R := R) (A := A)).symm c) =

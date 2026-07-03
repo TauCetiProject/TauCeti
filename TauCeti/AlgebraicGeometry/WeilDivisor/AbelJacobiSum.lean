@@ -187,7 +187,6 @@ lemma weightedAbelJacobiDivisorClass_eq_of_linearlyEquivalent
 
 /-- Under the splitting `Cl(X) ≃+ Pic⁰ × ℤ`, the class of a divisor has `Pic⁰` component
 its weighted Abel-Jacobi sum and degree component its weighted degree. -/
-@[simp]
 lemma classGroupAddEquivPicZeroProdInt_divisorClass (w : X → ℤ)
     (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1) (D : WeilDivisor X) :
     S.classGroupAddEquivPicZeroProdInt w h hx₀ (S.divisorClass D) =
@@ -203,7 +202,6 @@ lemma classGroupAddEquivPicZeroProdInt_divisorClass (w : X → ℤ)
 
 /-- The inverse splitting reconstructs the divisor class from its weighted Abel-Jacobi sum and
 weighted degree. -/
-@[simp]
 lemma classGroupAddEquivPicZeroProdInt_symm_weightedAbelJacobiDivisorClass
     (w : X → ℤ) (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1)
     (D : WeilDivisor X) :
@@ -347,7 +345,6 @@ lemma unweightedAbelJacobiDivisorClass_principalDivisor (h : S.IsUnweightedDegre
 
 /-- Under the unweighted splitting, the class of a divisor has `Pic⁰` component its
 unweighted Abel-Jacobi sum and degree component its degree. -/
-@[simp]
 lemma classGroupAddEquivUnweightedPicZeroProdInt_divisorClass
     (h : S.IsUnweightedDegreeZero) (x₀ : X) (D : WeilDivisor X) :
     S.classGroupAddEquivUnweightedPicZeroProdInt h x₀ (S.divisorClass D) =
@@ -364,7 +361,6 @@ lemma classGroupAddEquivUnweightedPicZeroProdInt_divisorClass
 
 /-- The inverse unweighted splitting reconstructs the divisor class from its unweighted
 Abel-Jacobi sum and degree. -/
-@[simp]
 lemma classGroupAddEquivUnweightedPicZeroProdInt_symm_unweightedAbelJacobiDivisorClass
     (h : S.IsUnweightedDegreeZero) (x₀ : X) (D : WeilDivisor X) :
     (S.classGroupAddEquivUnweightedPicZeroProdInt h x₀).symm

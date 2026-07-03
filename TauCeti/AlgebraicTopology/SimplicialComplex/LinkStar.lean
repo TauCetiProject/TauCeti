@@ -160,7 +160,6 @@ theorem mem_link_singleton {v : ι} {ρ : Finset ι} :
   rw [mem_link, disjoint_singleton_right, union_comm, ← insert_eq]
 
 /-- The closed star of a single vertex `{v}`, written with `insert`. -/
-@[simp]
 theorem mem_closedStar_singleton {v : ι} {ρ : Finset ι} :
     ρ ∈ closedStar K {v} ↔ ρ ∈ K ∧ insert v ρ ∈ K := by
   rw [mem_closedStar_iff, union_comm, ← insert_eq]

@@ -93,7 +93,6 @@ lemma weightedAbelJacobiQuotientClass_mk (w : X → ℤ) {x₀ : X} (hx₀ : w x
 
 /-- The quotient Abel-Jacobi representative of a sum is the sum of the quotient
 representatives. -/
-@[simp]
 lemma weightedAbelJacobiQuotientClass_add (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
     (D E : WeilDivisor X) :
     S.weightedAbelJacobiQuotientClass w hx₀ (D + E) =
@@ -103,7 +102,6 @@ lemma weightedAbelJacobiQuotientClass_add (w : X → ℤ) {x₀ : X} (hx₀ : w 
 
 /-- The quotient Abel-Jacobi representative of an integral multiple is the corresponding
 multiple of the quotient representative. -/
-@[simp]
 lemma weightedAbelJacobiQuotientClass_zsmul (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1)
     (n : ℤ) (D : WeilDivisor X) :
     S.weightedAbelJacobiQuotientClass w hx₀ (n • D) =
@@ -112,7 +110,6 @@ lemma weightedAbelJacobiQuotientClass_zsmul (w : X → ℤ) {x₀ : X} (hx₀ : 
 
 /-- The quotient representative maps to the weighted Abel-Jacobi divisor class under the
 degree-zero quotient equivalence. -/
-@[simp]
 lemma weightedDegreeZeroQuotientEquivPicZero_weightedAbelJacobiQuotientClass
     (w : X → ℤ) (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1)
     (D : WeilDivisor X) :
@@ -125,7 +122,6 @@ lemma weightedDegreeZeroQuotientEquivPicZero_weightedAbelJacobiQuotientClass
     coe_weightedAbelJacobiDegreeZeroDivisor]
 
 /-- For point divisors, the quotient representative maps to the point Abel-Jacobi class. -/
-@[simp]
 lemma weightedDegreeZeroQuotientEquivPicZero_weightedAbelJacobiQuotientClass_ofPoint
     (w : X → ℤ) (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1) (x : X) :
     S.weightedDegreeZeroQuotientEquivPicZero w h
@@ -157,7 +153,6 @@ lemma weightedAbelJacobiQuotientClass_eq_sum (w : X → ℤ) {x₀ : X} (hx₀ :
         simp [add_zsmul]
 
 /-- The base-point divisor represents zero in the degree-zero quotient. -/
-@[simp]
 lemma weightedAbelJacobiQuotientClass_ofPoint_base (w : X → ℤ) {x₀ : X} (hx₀ : w x₀ = 1) :
     S.weightedAbelJacobiQuotientClass w hx₀ (ofPoint x₀) = 0 := by
   rw [weightedAbelJacobiQuotientClass_mk]
@@ -167,7 +162,6 @@ lemma weightedAbelJacobiQuotientClass_ofPoint_base (w : X → ℤ) {x₀ : X} (h
   exact S.principalSubgroup.zero_mem
 
 /-- A principal divisor has zero weighted quotient Abel-Jacobi representative. -/
-@[simp]
 lemma weightedAbelJacobiQuotientClass_principalDivisor (w : X → ℤ)
     (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1) (g : G) :
     S.weightedAbelJacobiQuotientClass w hx₀ (S.principalDivisor g) = 0 := by
@@ -231,7 +225,6 @@ lemma unweightedAbelJacobiQuotientClass_mk (x₀ : X) (D : WeilDivisor X) :
 
 /-- The unweighted quotient Abel-Jacobi representative of a sum is the sum of the quotient
 representatives. -/
-@[simp]
 lemma unweightedAbelJacobiQuotientClass_add (x₀ : X) (D E : WeilDivisor X) :
     S.unweightedAbelJacobiQuotientClass x₀ (D + E) =
       S.unweightedAbelJacobiQuotientClass x₀ D +
@@ -240,7 +233,6 @@ lemma unweightedAbelJacobiQuotientClass_add (x₀ : X) (D E : WeilDivisor X) :
 
 /-- The unweighted quotient Abel-Jacobi representative of an integral multiple is the
 corresponding multiple of the quotient representative. -/
-@[simp]
 lemma unweightedAbelJacobiQuotientClass_zsmul (x₀ : X) (n : ℤ) (D : WeilDivisor X) :
     S.unweightedAbelJacobiQuotientClass x₀ (n • D) =
       n • S.unweightedAbelJacobiQuotientClass x₀ D :=
@@ -248,7 +240,6 @@ lemma unweightedAbelJacobiQuotientClass_zsmul (x₀ : X) (n : ℤ) (D : WeilDivi
 
 /-- The quotient representative maps to the unweighted Abel-Jacobi divisor class under the
 degree-zero quotient equivalence. -/
-@[simp]
 lemma degreeZeroQuotientEquivUnweightedPicZero_unweightedAbelJacobiQuotientClass
     (h : S.IsUnweightedDegreeZero) (x₀ : X) (D : WeilDivisor X) :
     S.degreeZeroQuotientEquivUnweightedPicZero h
@@ -261,7 +252,6 @@ lemma degreeZeroQuotientEquivUnweightedPicZero_unweightedAbelJacobiQuotientClass
 
 /-- For point divisors, the unweighted quotient representative maps to the point
 Abel-Jacobi class. -/
-@[simp]
 lemma degreeZeroQuotientEquivUnweightedPicZero_unweightedAbelJacobiQuotientClass_ofPoint
     (h : S.IsUnweightedDegreeZero) (x₀ x : X) :
     S.degreeZeroQuotientEquivUnweightedPicZero h
@@ -291,14 +281,12 @@ lemma unweightedAbelJacobiQuotientClass_eq_sum (x₀ : X) (D : WeilDivisor X) :
   rw [map_zsmul, ← S.unweightedAbelJacobiQuotientClass_eq_weighted x₀ (ofPoint x)]
 
 /-- The unweighted base-point divisor represents zero in the degree-zero quotient. -/
-@[simp]
 lemma unweightedAbelJacobiQuotientClass_ofPoint_base (x₀ : X) :
     S.unweightedAbelJacobiQuotientClass x₀ (ofPoint x₀) = 0 := by
   rw [S.unweightedAbelJacobiQuotientClass_eq_weighted]
   simp
 
 /-- A principal divisor has zero unweighted quotient Abel-Jacobi representative. -/
-@[simp]
 lemma unweightedAbelJacobiQuotientClass_principalDivisor (h : S.IsUnweightedDegreeZero)
     (x₀ : X) (g : G) :
     S.unweightedAbelJacobiQuotientClass x₀ (S.principalDivisor g) = 0 := by

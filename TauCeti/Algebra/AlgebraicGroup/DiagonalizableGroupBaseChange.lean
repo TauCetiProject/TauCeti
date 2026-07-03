@@ -119,7 +119,6 @@ theorem baseChangePointsMulEquiv_symm_apply_single_one (χ : G →* Aˣ) (g : G)
 variable {B : Type*} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower k K B]
 
 /-- The base-changed diagonalizable-points equivalence is natural in the value algebra. -/
-@[simp]
 theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
     (f : WithConv (K ⊗[k] MonoidAlgebra k G →ₐ[K] A)) :
     baseChangePointsMulEquiv
@@ -131,7 +130,6 @@ theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
 
 /-- Naturality of the inverse base-changed diagonalizable-points equivalence in the value
 algebra. -/
-@[simp]
 theorem mapValue_baseChangePointsMulEquiv_symm_apply (φ : A →ₐ[K] B) (χ : G →* Aˣ) :
     AlgHom.mapValue (H := K ⊗[k] MonoidAlgebra k G) φ
         ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (G := G)).symm χ) =
@@ -147,7 +145,6 @@ variable {G' : Type*} [CommGroup G']
 
 /-- Under base change, the points map induced contravariantly by `φ : G →* G'` is
 precomposition of characters by `φ`. -/
-@[simp]
 theorem baseChangePointsMulEquiv_mapDomain (φ : G →* G')
     (f : WithConv (K ⊗[k] MonoidAlgebra k G' →ₐ[K] A)) :
     baseChangePointsMulEquiv
@@ -163,7 +160,6 @@ theorem baseChangePointsMulEquiv_mapDomain (φ : G →* G')
 
 /-- Mapping the base-changed point attached to a character is precomposition of that character
 by the homomorphism of character groups. -/
-@[simp]
 theorem mapDomain_baseChangePointsMulEquiv_symm_apply (φ : G →* G') (χ : G' →* Aˣ) :
     AlgHom.mapDomain (A := A)
         (_root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K)

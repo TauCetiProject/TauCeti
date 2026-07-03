@@ -127,7 +127,6 @@ instance instFiberMulAction : MulAction (Deck p) (p ⁻¹' {b}) :=
   MulAction.compHom (p ⁻¹' {b}) (fiberHomeomorphHom p b)
 
 /-- The fibre action is evaluation of the fibre homeomorphism. -/
-@[simp]
 lemma fiber_smul_eq_fiberHomeomorph (φ : Deck p) (e : p ⁻¹' {b}) :
     φ • e = fiberHomeomorph φ b e :=
   rfl
@@ -136,7 +135,7 @@ lemma fiber_smul_eq_fiberHomeomorph (φ : Deck p) (e : p ⁻¹' {b}) :
 transformation. -/
 @[simp]
 lemma fiber_smul_coe (φ : Deck p) (e : p ⁻¹' {b}) :
-    (φ • e : E) = φ.1 e.1 :=
+    ((φ • e : p ⁻¹' {b}) : E) = φ.1 e.1 :=
   rfl
 
 /-- The projection value of a point in the fibre is unchanged after the restricted deck
@@ -146,7 +145,6 @@ lemma map_fiber_smul (φ : Deck p) (e : p ⁻¹' {b}) :
   exact (φ • e).2
 
 /-- The restricted deck action keeps points in the fibre over `b`. -/
-@[simp]
 lemma fiber_smul_mem (φ : Deck p) (e : p ⁻¹' {b}) :
     (φ • e : E) ∈ p ⁻¹' {b} := by
   exact map_fiber_smul φ e
@@ -154,16 +152,16 @@ lemma fiber_smul_mem (φ : Deck p) (e : p ⁻¹' {b}) :
 /-- The restricted fibre action agrees with the ambient action on the total space after
 coercing out of the fibre subtype. -/
 lemma fiber_smul_coe_eq_smul (φ : Deck p) (e : p ⁻¹' {b}) :
-    (φ • e : E) = φ • (e : E) := by
+    ((φ • e : p ⁻¹' {b}) : E) = φ • (e : E) := by
   trans φ.1 e.1
   · exact fiber_smul_coe φ e
   · exact (smul_eq_apply φ (e : E)).symm
 
 /-- Membership in the stabilizer of a fibre point is equality on the underlying point. -/
-@[simp, grind =]
+@[grind =]
 lemma mem_fiber_stabilizer_iff_coe (φ : Deck p) (e : p ⁻¹' {b}) :
     φ ∈ MulAction.stabilizer (Deck p) e ↔ φ.1 e.1 = e.1 := by
-  simp [Subtype.ext_iff]
+  simp [Subtype.ext_iff, fiber_smul_eq_fiberHomeomorph]
 
 end Deck
 

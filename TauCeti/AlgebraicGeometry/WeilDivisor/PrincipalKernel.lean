@@ -55,7 +55,6 @@ input, such as a global-units or constant-field theorem. -/
 abbrev principalKernel : AddSubgroup G :=
   S.principalHom.ker
 
-@[simp]
 lemma mem_principalKernel {g : G} :
     g ∈ S.principalKernel ↔ S.principalDivisor g = 0 := by
   simp only [principalKernel, AddMonoidHom.mem_ker, principalHom_apply]
@@ -73,7 +72,6 @@ lemma mem_principalKernel_iff_forall_ord_eq_zero {g : G} :
     rw [S.coeff_principalDivisor, h x]
     simp
 
-@[simp]
 lemma zero_mem_principalKernel : (0 : G) ∈ S.principalKernel := by
   rw [mem_principalKernel]
   simp
@@ -184,7 +182,6 @@ lemma mk_eq_mk_iff_principalDivisor_eq {g h : G} :
   (S.principalDivisor_eq_iff_mk_eq_mk).symm
 
 /-- A function class is zero exactly when the representative has zero principal divisor. -/
-@[simp]
 lemma mk_eq_zero_iff_principalDivisor_eq_zero {g : G} :
     (QuotientAddGroup.mk g : S.PrincipalFunctionClass) = 0 ↔ S.principalDivisor g = 0 := by
   rw [← principalFunctionClassDivisor_eq_zero_iff]

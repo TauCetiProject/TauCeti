@@ -67,7 +67,6 @@ lemma normalizerQuotientMk_apply (H : Subgroup G)
 
 /-- A normalizer element maps to the identity in `N(H) / H` exactly when its underlying
 element of `G` lies in `H`. -/
-@[simp]
 lemma normalizerQuotientMk_eq_one_iff (H : Subgroup G)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientMk H g = 1 ↔ (g : G) ∈ H := by
@@ -207,7 +206,6 @@ lemma normalizerQuotientCongr_mk {H K : Subgroup G} (h : H = K)
 
 /-- The inverse equal-subgroup congruence on normalizer quotients sends representatives to the
 corresponding representatives under the inverse normalizer congruence. -/
-@[simp]
 lemma normalizerQuotientCongr_symm_mk {H K : Subgroup G} (h : H = K)
     (g : _root_.Subgroup.normalizer (K : Set G)) :
     (normalizerQuotientCongr h).symm (normalizerQuotientMk K g) =
@@ -263,7 +261,6 @@ noncomputable abbrev normalizerQuotientEquivQuotientOfNormal :
 
 /-- The normal-case equivalence sends a normalizer representative to its ordinary quotient
 class in `G / H`. -/
-@[simp]
 lemma normalizerQuotientEquivQuotientOfNormal_mk
     (g : _root_.Subgroup.normalizer (H : Set G)) :
     normalizerQuotientEquivQuotientOfNormal H (normalizerQuotientMk H g) =
@@ -272,7 +269,6 @@ lemma normalizerQuotientEquivQuotientOfNormal_mk
 
 /-- The inverse normal-case equivalence sends an ordinary quotient representative to the
 corresponding representative in the normalizer quotient. -/
-@[simp]
 lemma normalizerQuotientEquivQuotientOfNormal_symm_mk (g : G) :
     (normalizerQuotientEquivQuotientOfNormal H).symm (QuotientGroup.mk' H g) =
       normalizerQuotientMk H ⟨g, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ :=

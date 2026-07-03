@@ -105,7 +105,6 @@ variable {B : Type*} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower
 
 /-- The base-changed vector-group points equivalence is natural in the value algebra:
 post-composing a point with a `K`-algebra map post-composes the corresponding `k`-linear map. -/
-@[simp]
 theorem toAdd_baseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
     (F : WithConv (K ⊗[k] SymmetricAlgebra k M →ₐ[K] A)) :
     Multiplicative.toAdd
@@ -121,7 +120,6 @@ theorem toAdd_baseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
   rw [LinearMap.restrictScalars_apply, AlgHom.toLinearMap_apply]
 
 /-- Naturality of the base-changed vector-group points equivalence in the value algebra. -/
-@[simp]
 theorem baseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
     (F : WithConv (K ⊗[k] SymmetricAlgebra k M →ₐ[K] A)) :
     baseChangePointsMulEquiv
@@ -134,7 +132,6 @@ theorem baseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
 
 /-- Naturality of the inverse base-changed vector-group points equivalence in the value
 algebra. -/
-@[simp]
 theorem mapValue_baseChangePointsMulEquiv_symm_apply (ψ : A →ₐ[K] B)
     (φ : Multiplicative (M →ₗ[k] A)) :
     AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k M) ψ
@@ -193,7 +190,6 @@ theorem toAdd_gaBaseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
     AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
 
 /-- The base-changed `𝔾ₐ` points equivalence is natural in the value algebra. -/
-@[simp]
 theorem gaBaseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
     (F : WithConv (K ⊗[k] SymmetricAlgebra k k →ₐ[K] A)) :
     gaBaseChangePointsMulEquiv
@@ -204,7 +200,6 @@ theorem gaBaseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
   exact congrArg Multiplicative.ofAdd (toAdd_gaBaseChangePointsMulEquiv_mapValue ψ F)
 
 /-- Naturality of the inverse base-changed `𝔾ₐ` points equivalence in the value algebra. -/
-@[simp]
 theorem mapValue_gaBaseChangePointsMulEquiv_symm_apply (ψ : A →ₐ[K] B)
     (a : Multiplicative A) :
     AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k k) ψ

@@ -146,7 +146,6 @@ variable {B : Type*} [CommSemiring B] [Algebra R B]
 /-- Restricting a product point to the two factors commutes with post-composition in the value
 algebra. This is the naturality square for the restriction homomorphism underlying
 `pointsMulEquiv`. -/
-@[simp]
 theorem restrictHom_mapValue (φ : A →ₐ[R] B)
     (f : WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A)) :
     restrictHom (AlgHom.mapValue (H := H₁ ⊗[R] H₂) φ f) =
@@ -164,7 +163,6 @@ theorem restrictHom_mapValue (φ : A →ₐ[R] B)
 Post-composing an `A`-valued point of `Spec (H₁ ⊗[R] H₂)` by `φ : A →ₐ[R] B`, then splitting
 it into its two factor points, gives the same pair as first splitting and then post-composing
 each factor point by `φ`. -/
-@[simp]
 theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (f : WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A)) :
     pointsMulEquiv (A := B) (AlgHom.mapValue (H := H₁ ⊗[R] H₂) φ f) =
@@ -173,7 +171,6 @@ theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
   restrictHom_mapValue φ f
 
 /-- First-component form of `pointsMulEquiv_mapValue`. -/
-@[simp]
 theorem pointsMulEquiv_mapValue_fst (φ : A →ₐ[R] B)
     (f : WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A)) :
     (pointsMulEquiv (A := B) (AlgHom.mapValue (H := H₁ ⊗[R] H₂) φ f)).1 =
@@ -181,7 +178,6 @@ theorem pointsMulEquiv_mapValue_fst (φ : A →ₐ[R] B)
   rw [pointsMulEquiv_mapValue]
 
 /-- Second-component form of `pointsMulEquiv_mapValue`. -/
-@[simp]
 theorem pointsMulEquiv_mapValue_snd (φ : A →ₐ[R] B)
     (f : WithConv ((H₁ ⊗[R] H₂) →ₐ[R] A)) :
     (pointsMulEquiv (A := B) (AlgHom.mapValue (H := H₁ ⊗[R] H₂) φ f)).2 =
@@ -193,7 +189,6 @@ theorem pointsMulEquiv_mapValue_snd (φ : A →ₐ[R] B)
 Assembling an `A`-valued product point from a pair of factor points and then post-composing by
 `φ : A →ₐ[R] B` is the same as post-composing both factor points by `φ` and then assembling the
 resulting `B`-valued product point. -/
-@[simp]
 theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B)
     (p : WithConv (H₁ →ₐ[R] A) × WithConv (H₂ →ₐ[R] A)) :
     AlgHom.mapValue (H := H₁ ⊗[R] H₂) φ

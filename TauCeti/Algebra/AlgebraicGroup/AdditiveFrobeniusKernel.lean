@@ -262,7 +262,6 @@ theorem pointsHom_injective : Function.Injective (pointsHom (R := R) p (A := A))
 
 /-- **The functor of points of `αₚ` is the `p`-nilpotent elements of the additive group.** An
 element `a` of `A` is the value of a point of `αₚ` iff `aᵖ = 0`. -/
-@[simp]
 theorem mem_range_pointsHom_iff (a : Multiplicative A) :
     a ∈ (pointsHom (R := R) p (A := A)).range ↔ (Multiplicative.toAdd a) ^ p = 0 := by
   constructor

@@ -137,7 +137,6 @@ lemma pointsMulEquiv_apply (n : ℕ)
   exact DiagonalizableGroup.charOfPoint_apply_coe f.ofConv (generator n)
 
 /-- The points equivalence is natural in the value algebra. -/
-@[simp]
 lemma pointsMulEquiv_mapValue (n : ℕ) (φ : A →ₐ[R] B)
     (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
     pointsMulEquiv (R := R) (A := B) n
@@ -224,7 +223,6 @@ lemma pointsMulEquiv_symm_apply_single_ofAdd_val_smul (n : ℕ) [NeZero n] (ζ :
 
 /-- Naturality of the inverse `μ_n` points equivalence in the value algebra: post-composing
 the point attached to `ζ` gives the point attached to the image of `ζ`. -/
-@[simp]
 lemma mapValue_pointsMulEquiv_symm_apply (n : ℕ) (φ : A →ₐ[R] B) (ζ : rootsOfUnity n A) :
     AlgHom.mapValue (H := MonoidAlgebra R (Multiplicative (ZMod n))) φ
         ((pointsMulEquiv (R := R) (A := A) n).symm ζ) =

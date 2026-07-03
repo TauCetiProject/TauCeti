@@ -144,7 +144,6 @@ lemma weightedDegreeZeroQuotientEquivPicZero_mk {w : X → ℤ}
       (QuotientAddGroup.mk D) = S.weightedDegreeZeroClassHom w h D
   rw [QuotientAddGroup.kerLift_mk]
 
-@[simp]
 lemma coe_weightedDegreeZeroQuotientEquivPicZero_mk {w : X → ℤ}
     (h : S.IsWeightedDegreeZero w) (D : weightedDegreeZeroSubgroup w) :
     (S.weightedDegreeZeroQuotientEquivPicZero w h
@@ -296,7 +295,6 @@ lemma degreeZeroQuotientEquivUnweightedPicZero_mk
       (h := (h : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ))))]
   rfl
 
-@[simp]
 lemma coe_degreeZeroQuotientEquivUnweightedPicZero_mk
     (h : S.IsUnweightedDegreeZero) (D : degreeZeroSubgroup X) :
     (S.degreeZeroQuotientEquivUnweightedPicZero h

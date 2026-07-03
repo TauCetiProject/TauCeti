@@ -135,7 +135,6 @@ lemma IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply [SimplyConnected
 
 /-- On underlying points, the inverse of the general fibre equivalence is characterized by
 the loop class whose monodromy sends the chosen lift to the requested fibre point. -/
-@[simp]
 lemma IsCoveringMap.fundamentalGroupEquivFiber_apply_symm_apply_coe [SimplyConnectedSpace E]
     (hp : IsCoveringMap p) (e e' : p ⁻¹' {x}) :
     (hp.monodromy ((IsCoveringMap.fundamentalGroupEquivFiber hp e).symm e') e : E) = e' := by

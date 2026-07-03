@@ -63,19 +63,16 @@ lemma degreeSection_apply (x₀ : X) (n : ℤ) :
     S.degreeSection x₀ n = n • S.divisorClass (ofPoint x₀) :=
   rfl
 
-@[simp]
 lemma degreeSection_one (x₀ : X) :
     S.degreeSection x₀ 1 = S.divisorClass (ofPoint x₀) := by
   simp
 
 /-- The descended weighted degree of the base-point class is the weight of the base point. -/
-@[simp]
 lemma weightedDegreeClass_divisorClass_ofPoint (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     (x₀ : X) : weightedDegreeClass w h (S.divisorClass (ofPoint x₀)) = w x₀ := by
   rw [weightedDegreeClass_divisorClass, weightedDegree_ofPoint]
 
 /-- The descended weighted degree of the degree section at `n` is `n * w x₀`. -/
-@[simp]
 lemma weightedDegreeClass_degreeSection (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     (x₀ : X) (n : ℤ) :
     weightedDegreeClass w h (S.degreeSection x₀ n) = n * w x₀ := by
@@ -156,7 +153,6 @@ lemma degreeCorrection_eq_self_of_mem_picZero (w : X → ℤ) (h : S.IsWeightedD
 
 /-- The degree correction of a coerced `picZero` class is the same class in the ambient class
 group. -/
-@[simp]
 lemma degreeCorrection_coe_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     (x₀ : X) (p : picZero w h) :
     S.degreeCorrection w h x₀ (p : S.ClassGroup) = p :=
@@ -244,7 +240,6 @@ lemma classGroupAddEquivPicZeroProdInt_symm_apply (w : X → ℤ) (h : S.IsWeigh
 
 /-- Under the splitting `Cl(X) ≃+ picZero × ℤ`, a coerced `picZero` class has `Pic⁰` component
 itself and degree component `0`. -/
-@[simp]
 lemma classGroupAddEquivPicZeroProdInt_coe_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (p : picZero w h) :
     S.classGroupAddEquivPicZeroProdInt w h hx₀ (p : S.ClassGroup) = (p, 0) := by
@@ -280,7 +275,6 @@ lemma classGroupAddEquivUnweightedPicZeroProdInt_symm_apply (h : S.IsUnweightedD
 
 /-- Under the unweighted splitting, a coerced `unweightedPicZero` class has `Pic⁰` component
 itself and degree component `0`. -/
-@[simp]
 lemma classGroupAddEquivUnweightedPicZeroProdInt_coe_unweightedPicZero
     (h : S.IsUnweightedDegreeZero) (x₀ : X) (p : unweightedPicZero h) :
     S.classGroupAddEquivUnweightedPicZeroProdInt h x₀ (p : S.ClassGroup) = (p, 0) :=

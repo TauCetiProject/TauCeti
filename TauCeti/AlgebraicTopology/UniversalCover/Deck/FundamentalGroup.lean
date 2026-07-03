@@ -41,7 +41,7 @@ identifies `π₁(X, x)` with that fibre via monodromy.
 
 * `TauCeti.Deck.IsRegular.fundamentalGroupEquiv`: the anti-isomorphism
   `FundamentalGroup X x ≃* (Deck p)ᵐᵒᵖ`.
-* `TauCeti.Deck.IsRegular.fundamentalGroupEquiv_unop_smul`: the deck element
+* `TauCeti.Deck.IsRegular.fundamentalGroupEquiv_unop_apply`: the deck element
   attached to `γ` moves the chosen lift `e` to `monodromy γ e`.
 * `TauCeti.Deck.IsRegular.fundamentalGroupEquiv_apply_eq_iff`: characterizes equality
   with an arbitrary deck transformation by its value at the chosen lift.
@@ -77,10 +77,16 @@ noncomputable def IsRegular.fundamentalGroupEquiv [SimplyConnectedSpace E]
 /-- The deck transformation attached to a loop class `γ` moves the chosen basepoint lift `e`
 along the monodromy of `γ`. -/
 @[simp]
+lemma IsRegular.fundamentalGroupEquiv_unop_apply [SimplyConnectedSpace E]
+    (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
+    (hreg.fundamentalGroupEquiv hp e γ).unop.1 (e : E) = (hp.monodromy γ e : E) :=
+  (hreg.isQuotientCoveringMap hp).unop_fundamentalGroupToMulOpposite_smul
+
+/-- Compatibility spelling of `fundamentalGroupEquiv_unop_apply` using the deck action. -/
 lemma IsRegular.fundamentalGroupEquiv_unop_smul [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
-    (hreg.fundamentalGroupEquiv hp e γ).unop • (e : E) = (hp.monodromy γ e : E) :=
-  (hreg.isQuotientCoveringMap hp).unop_fundamentalGroupToMulOpposite_smul
+    (hreg.fundamentalGroupEquiv hp e γ).unop • (e : E) = hp.monodromy γ e := by
+  simpa only [smul_eq_apply] using IsRegular.fundamentalGroupEquiv_unop_apply hreg hp e γ
 
 /-- The fundamental group element `γ` corresponds to a deck transformation `g` exactly when
 `g.unop` moves the chosen lift `e` to the monodromy translate of `e` along `γ`. -/
@@ -97,7 +103,7 @@ lemma IsRegular.fundamentalGroupEquiv_symm_monodromy [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (g : (Deck p)ᵐᵒᵖ) :
     (hp.monodromy ((hreg.fundamentalGroupEquiv hp e).symm g) e : E) = g.unop • (e : E) := by
   simpa using
-    (IsRegular.fundamentalGroupEquiv_unop_smul hreg hp e
+    (IsRegular.fundamentalGroupEquiv_unop_apply hreg hp e
       ((hreg.fundamentalGroupEquiv hp e).symm g)).symm
 
 /-- A `Deck p` spelling of `fundamentalGroupEquiv_symm_monodromy`. The loop class
@@ -110,7 +116,6 @@ lemma IsRegular.fundamentalGroupEquiv_symm_op_monodromy [SimplyConnectedSpace E]
 
 /-- A loop class `γ` maps to the identity deck transformation exactly when its monodromy
 fixes the chosen basepoint lift `e`. -/
-@[simp]
 lemma IsRegular.fundamentalGroupEquiv_eq_one_iff [SimplyConnectedSpace E]
     (hreg : IsRegular p) (hp : IsCoveringMap p) (e : p ⁻¹' {x}) (γ : FundamentalGroup X x) :
     hreg.fundamentalGroupEquiv hp e γ = 1 ↔ hp.monodromy γ e = e :=

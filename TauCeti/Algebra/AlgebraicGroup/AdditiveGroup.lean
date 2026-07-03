@@ -93,7 +93,6 @@ theorem pointsMulEquiv_symm_apply (φ : Multiplicative (M →ₗ[R] A)) :
 
 /-- Reading a vector-group point as a linear map is natural in the value algebra:
 post-composing the point with an `R`-algebra map post-composes the corresponding linear map. -/
-@[simp]
 theorem toAdd_pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
     Multiplicative.toAdd
@@ -104,7 +103,6 @@ theorem toAdd_pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
   simp [LinearMap.comp_apply]
 
 /-- The vector-group points equivalence is natural in the value algebra. -/
-@[simp]
 theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
     pointsMulEquiv (R := R) (M := M) (A := B)
@@ -114,7 +112,6 @@ theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
   exact congrArg Multiplicative.ofAdd (toAdd_pointsMulEquiv_mapValue φ F)
 
 /-- Naturality of the inverse vector-group points equivalence in the value algebra. -/
-@[simp]
 theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B)
     (ψ : Multiplicative (M →ₗ[R] A)) :
     AlgHom.mapValue (H := SymmetricAlgebra R M) φ
@@ -192,7 +189,6 @@ theorem toAdd_gaPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
   simp
 
 /-- The `𝔾ₐ` points equivalence is natural in the value algebra. -/
-@[simp]
 theorem gaPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     gaPointsMulEquiv (R := R) (A := B)
@@ -201,7 +197,6 @@ theorem gaPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
   exact congrArg Multiplicative.ofAdd (toAdd_gaPointsMulEquiv_mapValue φ F)
 
 /-- Naturality of the inverse `𝔾ₐ` points equivalence in the value algebra. -/
-@[simp]
 theorem mapValue_gaPointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (a : Multiplicative A) :
     AlgHom.mapValue (H := SymmetricAlgebra R R) φ
         ((gaPointsMulEquiv (R := R) (A := A)).symm a) =

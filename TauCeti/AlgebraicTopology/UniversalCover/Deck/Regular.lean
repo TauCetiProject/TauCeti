@@ -79,7 +79,8 @@ lemma isRegular_iff_exists_apply_eq :
     let y : p ⁻¹' {b} := ⟨e', by simp [b, heq.symm]⟩
     letI := hreg.2 b
     rcases MulAction.exists_smul_eq (Deck p) x y with ⟨φ, hφ⟩
-    exact ⟨φ, by simpa [fiber_smul_coe] using congrArg Subtype.val hφ⟩
+    exact ⟨φ, by
+      simpa [fiber_smul_eq_fiberHomeomorph] using congrArg Subtype.val hφ⟩
   · rintro ⟨hsurj, hpoint⟩
     refine ⟨hsurj, fun b => ?_⟩
     refine MulAction.IsPretransitive.mk ?_
@@ -89,7 +90,7 @@ lemma isRegular_iff_exists_apply_eq :
       have hy : p y.1 = b := Set.mem_singleton_iff.mp y.2
       rw [hx, hy]
     rcases hpoint hxy with ⟨φ, hφ⟩
-    exact ⟨φ, by ext; simpa [fiber_smul_coe] using hφ⟩
+    exact ⟨φ, by ext; simpa [fiber_smul_eq_fiberHomeomorph] using hφ⟩
 
 namespace IsRegular
 
@@ -162,7 +163,6 @@ lemma deckEquivFiber_apply [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : 
 
 /-- On underlying points, the deck-to-fibre equivalence is evaluation of the underlying
 homeomorphism. -/
-@[simp]
 lemma deckEquivFiber_apply_coe [PreconnectedSpace E] (hp : IsCoveringMap p)
     (hreg : IsRegular p) (e : p ⁻¹' {b}) (φ : Deck p) :
     (deckEquivFiber hp hreg e φ : E) = φ.1 e.1 := by
@@ -187,7 +187,6 @@ lemma deckEquivFiber_mul [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : Is
 
 /-- The inverse of `deckEquivFiber` is characterized by the deck transformation it returns:
 it sends the chosen fibre point to the requested fibre point. -/
-@[simp]
 lemma deckEquivFiber_symm_smul [PreconnectedSpace E] (hp : IsCoveringMap p)
     (hreg : IsRegular p) (e e' : p ⁻¹' {b}) :
     (deckEquivFiber hp hreg e).symm e' • e = e' :=
@@ -195,15 +194,14 @@ lemma deckEquivFiber_symm_smul [PreconnectedSpace E] (hp : IsCoveringMap p)
 
 /-- On underlying points, the inverse of `deckEquivFiber` sends the chosen point to the
 requested point. -/
-@[simp]
 lemma deckEquivFiber_symm_apply_coe [PreconnectedSpace E] (hp : IsCoveringMap p)
     (hreg : IsRegular p) (e e' : p ⁻¹' {b}) :
     (((deckEquivFiber hp hreg e).symm e').1 e.1 : E) = e'.1 := by
-  simpa [fiber_smul_coe] using congrArg Subtype.val (deckEquivFiber_symm_smul hp hreg e e')
+  simpa only [fiber_smul_eq_fiberHomeomorph, fiberHomeomorph_apply] using
+    congrArg Subtype.val (deckEquivFiber_symm_smul hp hreg e e')
 
 /-- Translating a fibre point before applying the inverse `deckEquivFiber` multiplies the
 corresponding deck transformation on the left. -/
-@[simp]
 lemma deckEquivFiber_symm_apply_smul [PreconnectedSpace E] (hp : IsCoveringMap p)
     (hreg : IsRegular p) (e e' : p ⁻¹' {b}) (φ : Deck p) :
     (deckEquivFiber hp hreg e).symm (φ • e') =

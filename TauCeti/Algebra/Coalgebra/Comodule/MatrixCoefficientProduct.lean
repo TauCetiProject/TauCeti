@@ -69,7 +69,6 @@ theorem matrixCoefficient_prod (φ : M × N →ₗ[R] R) (x : M × N) :
 
 /-- Matrix coefficients of a left summand, viewed in the product comodule, are the original
 left matrix coefficients. -/
-@[simp]
 theorem matrixCoefficient_prod_inl (φ : M →ₗ[R] R) (m : M) :
     matrixCoefficient (R := R) (C := C) (φ.comp (LinearMap.fst R M N))
         (LinearMap.inl R M N m) =
@@ -83,7 +82,6 @@ theorem matrixCoefficient_prod_inl (φ : M →ₗ[R] R) (m : M) :
 
 /-- Matrix coefficients of a right summand, viewed in the product comodule, are the original
 right matrix coefficients. -/
-@[simp]
 theorem matrixCoefficient_prod_inr (ψ : N →ₗ[R] R) (n : N) :
     matrixCoefficient (R := R) (C := C) (ψ.comp (LinearMap.snd R M N))
         (LinearMap.inr R M N n) =
