@@ -1,6 +1,7 @@
 module
 
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
+public import TauCeti.Probability.Exchangeability.PathSpace.Reindex
 public import TauCeti.Probability.Process.Tail
 public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
 
@@ -23,26 +24,7 @@ namespace TauCeti
 
 namespace Probability
 
-variable {α β : Type*}
-
-/-- Reindex a one-sided path by a permutation of time. -/
-abbrev permReindex (π : Equiv.Perm ℕ) (x : ℕ → α) : ℕ → α :=
-  fun n => x (π n)
-
-/-- Coordinates of a permutation-reindexed path. -/
-@[simp]
-theorem permReindex_apply (π : Equiv.Perm ℕ) (x : ℕ → α) (n : ℕ) :
-    permReindex π x n = x (π n) :=
-  rfl
-
-/-- Composition rule for time reindexing. -/
-@[simp]
-theorem permReindex_permReindex (π σ : Equiv.Perm ℕ) (x : ℕ → α) :
-    permReindex (α := α) π (permReindex (α := α) σ x) =
-      permReindex (α := α) (σ * π) x := by
-  rfl
-
-variable [MeasurableSpace α]
+variable {α β : Type*} [MeasurableSpace α]
 
 /-- The exchangeable σ-algebra on path space: ambient-measurable events invariant under every
 finitely supported permutation of the time coordinate. -/
@@ -104,8 +86,7 @@ theorem measurable_permReindex_exchangeableSigma (π : Equiv.Perm ℕ) :
       (permReindex (α := α) π) := by
   intro s hs
   refine mem_exchangeableSigma_iff.mpr ⟨?_, ?_⟩
-  · exact (measurable_pi_lambda _ fun n => measurable_pi_apply (π n))
-      (mem_exchangeableSigma_iff.mp hs).1
+  · exact (measurable_permReindex π) (mem_exchangeableSigma_iff.mp hs).1
   · intro σ hσ
     ext x
     simp only [Set.mem_preimage]
