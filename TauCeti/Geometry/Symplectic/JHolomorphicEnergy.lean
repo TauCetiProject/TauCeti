@@ -65,10 +65,9 @@ For a compatible pair `(ω, J)`, this is
   ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) +
     ω.associatedBilinForm J (F stdComplexLineImag) (F stdComplexLineImag)
 
-/-- The defining equation for `stdComplexLineEnergyDensity`, which is irreducible after this
-lemma. Stated by hand rather than via `irreducible_def`: the generated equation lemma hoisted
-a nested instance proof into a private auxiliary constant, which the module system does not
-export, making the public lemma fail to type check outside this module. -/
+/-- The defining equation for the standard complex-line energy density. -/
+-- Stated by hand rather than via `irreducible_def`: the generated equation lemma hoisted a nested
+-- instance proof into a private auxiliary constant, which does not export from this module.
 lemma stdComplexLineEnergyDensity_def (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (F : (ℝ × ℝ) →ₗ[ℝ] V) :
     ω.stdComplexLineEnergyDensity J F =
