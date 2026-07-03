@@ -97,7 +97,6 @@ theorem mem_carrier {N : Subcomodule R C M} {m : M} : m ∈ N.carrier ↔ m ∈ 
 theorem mem_toSubmodule {N : Subcomodule R C M} {m : M} : m ∈ N.toSubmodule ↔ m ∈ N :=
   Iff.rfl
 
-@[simp]
 theorem toSubmodule_carrier (N : Subcomodule R C M) : N.toSubmodule = N.carrier :=
   rfl
 
