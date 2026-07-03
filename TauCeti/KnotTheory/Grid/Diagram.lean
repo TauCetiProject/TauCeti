@@ -13,7 +13,7 @@ public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.GroupTheory.Perm.Basic
-import Mathlib.Data.Sym.Card
+public import Mathlib.Data.Sym.Card
 
 /-!
 # Grid diagrams and grid states
@@ -324,6 +324,27 @@ theorem mem_columnSwapNeighbors {x y : GridState n} :
   · rintro ⟨c, d, hcd, rfl⟩
     exact ⟨c, d, hcd, rfl⟩
 
+/-- If `y` is a column-swap neighbour of `x`, then `x` is a column-swap neighbour of `y`.
+
+This is the elementary reversibility of a rectangle target: the same pair of side columns swaps
+back to the source state. -/
+theorem mem_columnSwapNeighbors_comm {x y : GridState n} :
+    y ∈ x.columnSwapNeighbors ↔ x ∈ y.columnSwapNeighbors := by
+  constructor
+  · rw [mem_columnSwapNeighbors]
+    rintro ⟨a, b, hab, rfl⟩
+    rw [mem_columnSwapNeighbors]
+    refine ⟨a, b, hab, ?_⟩
+    ext c
+    simp [swapColumns]
+  · rw [mem_columnSwapNeighbors]
+    rintro ⟨a, b, hab, hxy⟩
+    rw [mem_columnSwapNeighbors]
+    refine ⟨a, b, hab, ?_⟩
+    rw [hxy]
+    ext c
+    simp [swapColumns]
+
 /-- The finite set of column-swap neighbours is the image of the off-diagonal of the
 column set: an ordered pair of distinct columns gives the state obtained by swapping
 those columns. -/
@@ -335,7 +356,7 @@ theorem columnSwapNeighbors_eq_offDiag_image (x : GridState n) :
 
 /-- If two nontrivial column swaps of the same grid state agree, then they swap the same
 unordered pair of columns. -/
-private theorem sym2_mk_eq_of_swapColumns_eq {x : GridState n} {a b c d : Fin n} (hab : a ≠ b)
+theorem sym2_mk_eq_of_swapColumns_eq {x : GridState n} {a b c d : Fin n} (hab : a ≠ b)
     (hcd : c ≠ d) (h : x.swapColumns a b = x.swapColumns c d) : s(a, b) = s(c, d) := by
   have hswap : Equiv.swap a b = Equiv.swap c d := by
     ext k
