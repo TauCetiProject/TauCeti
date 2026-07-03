@@ -12,8 +12,6 @@ top of `Pathwise.lean` and `Reverse.lean`.
 
 ## Main results
 
-- `lintegral_pos_part_revCondExpFinite_le`: positive-part L¹ bound for the reversed
-  conditional-expectation process.
 - `upcrossings_bdd_uniform`: uniform-in-`N` bound on the expected number of upcrossings for the
   reversed conditional-expectation process along an antitone filtration.
 
@@ -37,7 +35,7 @@ variable {𝔽 : ℕ → MeasurableSpace Ω}
 /-- Positive-part L¹ bound for the reversed conditional-expectation process: for integrable `f`,
 the integral of `(revCondExpFinite f 𝔽 N M · - a)⁺` is bounded by `‖f‖₁ + |a| · μ(univ)`,
 uniformly in the horizon `N` and the time `M`. -/
-lemma lintegral_pos_part_revCondExpFinite_le
+private lemma lintegral_pos_part_revCondExpFinite_le
     (f : Ω → ℝ) (hf : Integrable f μ) (a : ℝ) (N M : ℕ) :
     ∫⁻ ω, ENNReal.ofReal ((revCondExpFinite (μ := μ) f 𝔽 N M ω - a)⁺) ∂μ
       ≤ ENNReal.ofReal (eLpNorm f 1 μ).toReal + ENNReal.ofReal |a| * μ Set.univ := by
