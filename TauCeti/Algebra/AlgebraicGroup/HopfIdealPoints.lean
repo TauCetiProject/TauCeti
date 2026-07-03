@@ -60,7 +60,6 @@ noncomputable def quotientPointsHom (H : _root_.CommHopfAlgCat.{v} R)
   (mapPointsFunctor (mkQuotient H I)).app A
 
 /-- The quotient-points map acts by pre-composition with the quotient morphism. -/
-@[simp]
 lemma quotientPointsHom_apply (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H)
     (A : CommAlgCat.{w} R) (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
     quotientPointsHom H I A f =
@@ -68,7 +67,6 @@ lemma quotientPointsHom_apply (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R
   mapPointsFunctor_app_apply (mkQuotient H I) A f
 
 /-- Pointwise form of `CommHopfAlgCat.quotientPointsHom_apply`. -/
-@[simp]
 lemma quotientPointsHom_apply_apply (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := quotient H I) A) (h : H) :
@@ -109,7 +107,6 @@ lemma liftQuotientPoint_mk (H : _root_.CommHopfAlgCat.{v} R)
 
 /-- Factoring a point that kills `I` through the quotient and then including it back in the
 ambient point group recovers the original point. -/
-@[simp]
 lemma quotientPointsHom_liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (g : HopfAlgebra.points (R := R) (H := H) A)

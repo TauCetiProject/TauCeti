@@ -106,7 +106,6 @@ instance instSupSet : SupSet (Subcoalgebra R C) where
         exact comul_mem_sSup S hc }
 
 /-- The underlying submodule of the join is the join of the underlying submodules. -/
-@[simp]
 theorem sup_toSubmodule (D E : Subcoalgebra R C) :
     (D ⊔ E).toSubmodule = D.toSubmodule ⊔ E.toSubmodule :=
   rfl
@@ -137,7 +136,6 @@ instance instSemilatticeSup : SemilatticeSup (Subcoalgebra R C) :=
 
 /-- The underlying submodule of a supremum of a set of subcoalgebras is the supremum of the
 underlying submodules indexed by that set. -/
-@[simp]
 theorem sSup_toSubmodule (S : Set (Subcoalgebra R C)) :
     (sSup S).toSubmodule = ⨆ D : S, (D : Subcoalgebra R C).toSubmodule :=
   rfl
@@ -153,7 +151,6 @@ theorem mem_sSup {S : Set (Subcoalgebra R C)} {c : C} :
 
 /-- The underlying submodule of a supremum of subcoalgebras is the supremum of the
 underlying submodules. -/
-@[simp]
 theorem iSup_toSubmodule {ι : Sort*} (D : ι → Subcoalgebra R C) :
     (⨆ i, D i).toSubmodule = ⨆ i, (D i).toSubmodule := by
   rw [iSup, sSup_toSubmodule]
@@ -199,7 +196,6 @@ variable {ι : Type*}
 
 /-- The underlying submodule of a finite join of subcoalgebras is the finite join of the
 underlying submodules. -/
-@[simp]
 theorem finset_sup_toSubmodule (s : Finset ι) (D : ι → Subcoalgebra R C) :
     (s.sup D).toSubmodule = s.sup fun i => (D i).toSubmodule := by
   classical

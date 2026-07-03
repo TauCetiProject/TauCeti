@@ -153,7 +153,6 @@ theorem rightTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
   Ideal.map_mono hIJ
 
 /-- The construction `I ↦ I ⊗ H` distributes over arbitrary suprema of ideals. -/
-@[simp]
 theorem leftTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
     leftTensorIdeal (R := R) (H := H) (⨆ i, I i) =
       ⨆ i, leftTensorIdeal (R := R) (H := H) (I i) :=
@@ -161,7 +160,6 @@ theorem leftTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
     (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I
 
 /-- The construction `I ↦ H ⊗ I` distributes over arbitrary suprema of ideals. -/
-@[simp]
 theorem rightTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
     rightTensorIdeal (R := R) (H := H) (⨆ i, I i) =
       ⨆ i, rightTensorIdeal (R := R) (H := H) (I i) :=
@@ -169,7 +167,6 @@ theorem rightTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
     (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I
 
 /-- The construction `I ↦ I ⊗ H` distributes over joins of ideals. -/
-@[simp]
 theorem leftTensorIdeal_sup (I J : Ideal H) :
     leftTensorIdeal (R := R) (H := H) (I ⊔ J) =
       leftTensorIdeal (R := R) (H := H) I ⊔ leftTensorIdeal (R := R) (H := H) J :=
@@ -177,7 +174,6 @@ theorem leftTensorIdeal_sup (I J : Ideal H) :
     (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I J
 
 /-- The construction `I ↦ H ⊗ I` distributes over joins of ideals. -/
-@[simp]
 theorem rightTensorIdeal_sup (I J : Ideal H) :
     rightTensorIdeal (R := R) (H := H) (I ⊔ J) =
       rightTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) J :=
@@ -372,7 +368,6 @@ instance instBot : Bot (HopfIdeal R H) where
         subst x
         simp }
 
-@[simp]
 theorem bot_toIdeal : (⊥ : HopfIdeal R H).toIdeal = (⊥ : Ideal H) :=
   rfl
 
@@ -428,7 +423,6 @@ instance instMax : Max (HopfIdeal R H) where
 
 /-- The underlying ideal of the join of two Hopf ideals is the join of their underlying
 ideals. -/
-@[simp]
 theorem sup_toIdeal (I J : HopfIdeal R H) : (I ⊔ J).toIdeal = I.toIdeal ⊔ J.toIdeal :=
   rfl
 
@@ -495,7 +489,6 @@ instance instSupSet : SupSet (HopfIdeal R H) where
 
 /-- The underlying ideal of a supremum of a set of Hopf ideals is the supremum of the
 underlying ideals indexed by that set. -/
-@[simp]
 theorem sSup_toIdeal (S : Set (HopfIdeal R H)) :
     (sSup S).toIdeal = ⨆ I : S, (I : HopfIdeal R H).toIdeal :=
   rfl
@@ -509,7 +502,6 @@ theorem mem_sSup {S : Set (HopfIdeal R H)} {x : H} :
 
 /-- The underlying ideal of a supremum of a family of Hopf ideals is the supremum of the
 underlying ideals. -/
-@[simp]
 theorem iSup_toIdeal {ι : Sort*} (I : ι → HopfIdeal R H) :
     (⨆ i, I i).toIdeal = ⨆ i, (I i).toIdeal := by
   rw [iSup, sSup_toIdeal]

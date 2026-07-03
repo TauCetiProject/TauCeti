@@ -66,7 +66,6 @@ noncomputable def comap (I : HopfIdeal R K) (f : H →ₐc[R] K)
     ((Ideal.Quotient.mkₐ_surjective R I.toIdeal).comp hf)
 
 /-- The underlying ideal of `I.comap f hf` is the ordinary ideal-theoretic inverse image. -/
-@[simp]
 theorem comap_toIdeal (I : HopfIdeal R K) (f : H →ₐc[R] K)
     (hf : Function.Surjective f) :
     (I.comap f hf).toIdeal = Ideal.comap (f : H →+* K) I.toIdeal := by

@@ -77,7 +77,6 @@ private theorem image_tensorSquare_apply (f : C →ₗc[R] D) (A : Subcoalgebra 
 
 /-- The underlying submodule of the image subcoalgebra is the image of the underlying
 submodule. -/
-@[simp]
 theorem map_toSubmodule (f : C →ₗc[R] D) (A : Subcoalgebra R C) :
     (A.map f).toSubmodule = A.toSubmodule.map f.toLinearMap :=
   rfl

@@ -67,7 +67,6 @@ variable {R C}
 
 /-- The underlying submodule of the subcoalgebra spanned by a set of group-like elements is the
 linear span of their underlying elements. -/
-@[simp]
 theorem groupLikeSetSpan_toSubmodule (s : Set (GroupLike R C)) :
     (groupLikeSetSpan (R := R) (C := C) s).toSubmodule =
       Submodule.span R ((↑) '' s : Set C) :=

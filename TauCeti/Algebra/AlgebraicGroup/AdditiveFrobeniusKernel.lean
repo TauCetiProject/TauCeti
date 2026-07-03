@@ -174,7 +174,6 @@ antipode-stable. Its quotient is the coordinate ring of the Frobenius kernel gro
       rw [HopfAlgebra.antipode_mul_distrib]
       exact Ideal.mul_mem_left _ _ (antipode_gen_mem p))
 
-@[simp]
 theorem hopfIdeal_toIdeal :
     (hopfIdeal (R := R) p).toIdeal = Ideal.span {(ι R R 1 : SymmetricAlgebra R R) ^ p} :=
   rfl
