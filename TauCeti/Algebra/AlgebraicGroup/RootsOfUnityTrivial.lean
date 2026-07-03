@@ -22,8 +22,6 @@ general theory.
 
 ## Main declarations
 
-* `TauCeti.RootsOfUnityGroup.subsingleton_rootsOfUnity_one`: `rootsOfUnity 1 A` is a
-  subsingleton.
 * `TauCeti.RootsOfUnityGroup.pointsMulEquivOne`: the convolution group of points of `μ_1`
   is multiplicatively equivalent to `PUnit`.
 * `TauCeti.RootsOfUnityGroup.convPoint_one_eq_one`: every convolution point of `μ_1` is the
@@ -47,39 +45,16 @@ universe u v
 
 variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
-/-- The subgroup of first roots of unity is a subsingleton: every element is `1`. -/
-instance subsingleton_rootsOfUnity_one : Subsingleton (rootsOfUnity 1 A) where
-  allEq ζ η := by
-    ext
-    have hζ : ((ζ : Aˣ) : A) = 1 := by
-      simpa using ζ.prop
-    have hη : ((η : Aˣ) : A) = 1 := by
-      simpa using η.prop
-    rw [hζ, hη]
-
-/-- The unique first root of unity is `1`. -/
-@[simp]
-theorem rootsOfUnity_one_eq_one (ζ : rootsOfUnity 1 A) : (ζ : Aˣ) = 1 :=
-  congrArg Subtype.val (Subsingleton.elim ζ 1)
-
-/-- Coercing the unique first root of unity to the value algebra gives `1`. -/
-theorem rootsOfUnity_one_val (ζ : rootsOfUnity 1 A) : ((ζ : Aˣ) : A) = 1 := by
-  rw [rootsOfUnity_one_eq_one]
-  rfl
-
 /-- The functor of points of `μ_1` is the one-element group.
 
 This is the `n = 1` specialization of `RootsOfUnityGroup.pointsMulEquiv`, followed by the
 unique equivalence from `rootsOfUnity 1 A` to `PUnit`. -/
 noncomputable def pointsMulEquivOne :
-    WithConv (MonoidAlgebra R (Multiplicative (ZMod 1)) →ₐ[R] A) ≃* PUnit.{1} where
-  toFun _ := PUnit.unit
-  invFun _ := (pointsMulEquiv (R := R) (A := A) 1).symm 1
-  left_inv f := by
-    apply (pointsMulEquiv (R := R) (A := A) 1).injective
-    exact Subsingleton.elim _ _
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
+    WithConv (MonoidAlgebra R (Multiplicative (ZMod 1)) →ₐ[R] A) ≃* PUnit.{1} := by
+  letI : Inhabited (WithConv (MonoidAlgebra R (Multiplicative (ZMod 1)) →ₐ[R] A)) := ⟨1⟩
+  haveI : Unique (WithConv (MonoidAlgebra R (Multiplicative (ZMod 1)) →ₐ[R] A)) :=
+    (pointsMulEquiv (R := R) (A := A) 1).injective.unique
+  exact MulEquiv.ofUnique
 
 /-- The equivalence from `μ_1`-points to `PUnit` sends every point to the unique element. -/
 @[simp]
@@ -94,8 +69,8 @@ trivial first root of unity. -/
 theorem pointsMulEquivOne_symm_apply (u : PUnit.{1}) :
     (pointsMulEquivOne (R := R) (A := A)).symm u =
       (pointsMulEquiv (R := R) (A := A) 1).symm 1 := by
-  cases u
-  rfl
+  apply (pointsMulEquiv (R := R) (A := A) 1).injective
+  exact Subsingleton.elim _ _
 
 /-- Every convolution point of `μ_1` is the identity point. -/
 theorem convPoint_one_eq_one
@@ -116,7 +91,9 @@ theorem convPoint_one_generator
     (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod 1)) →ₐ[R] A)) :
     f.ofConv (MonoidAlgebra.single (generator 1) (1 : R)) = 1 := by
   have h := pointsMulEquiv_apply (R := R) (A := A) 1 f
-  simpa using h.symm
+  rw [← h]
+  exact congrArg (fun u : Aˣ => (u : A))
+    (congrArg Subtype.val (Subsingleton.elim (pointsMulEquiv (R := R) (A := A) 1 f) 1))
 
 section Naturality
 
