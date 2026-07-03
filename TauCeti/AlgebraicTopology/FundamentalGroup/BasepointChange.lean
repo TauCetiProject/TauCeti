@@ -79,6 +79,23 @@ lemma le_basepointChangeSubgroup_iff (γ : Path x₀ x₁)
         (f := (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ))
         (K := H) (x := g)).2 (hK g hg)
 
+/-- To prove an inclusion out of a basepoint-changed subgroup, it suffices to prove the
+corresponding inclusion after comapping along the path-conjugation isomorphism. -/
+lemma basepointChangeSubgroup_le_iff (γ : Path x₀ x₁)
+    (H : Subgroup (_root_.FundamentalGroup X x₀))
+    (K : Subgroup (_root_.FundamentalGroup X x₁)) :
+    basepointChangeSubgroup γ H ≤ K ↔
+      H ≤ K.comap ((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ :
+        _root_.FundamentalGroup X x₀ →* _root_.FundamentalGroup X x₁)) := by
+  rw [basepointChangeSubgroup]
+  exact Subgroup.map_le_iff_le_comap
+
+/-- Basepoint-change transport of fundamental-group subgroups is monotone. -/
+lemma basepointChangeSubgroup_mono (γ : Path x₀ x₁)
+    {H K : Subgroup (_root_.FundamentalGroup X x₀)} (hHK : H ≤ K) :
+    basepointChangeSubgroup γ H ≤ basepointChangeSubgroup γ K := by
+  exact Subgroup.map_mono hHK
+
 /-- Normality of a fundamental-group subgroup is preserved by basepoint-change transport. -/
 instance basepointChangeSubgroup.normal (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀)) [hH : H.Normal] :
@@ -86,6 +103,14 @@ instance basepointChangeSubgroup.normal (γ : Path x₀ x₁)
   hH.map ((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ :
     _root_.FundamentalGroup X x₀ →* _root_.FundamentalGroup X x₁))
     (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).surjective
+
+/-- A basepoint-changed subgroup is normal if and only if the original subgroup is normal. -/
+lemma basepointChangeSubgroup_normal_iff (γ : Path x₀ x₁)
+    (H : Subgroup (_root_.FundamentalGroup X x₀)) :
+    (basepointChangeSubgroup γ H).Normal ↔ H.Normal := by
+  simpa [basepointChangeSubgroup] using
+    (MulEquiv.normal_map_iff
+      (f := _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) (H := H))
 
 /-- The normalizer quotient `N(H) / H` transported along a basepoint-change path. -/
 noncomputable def basepointChangeNormalizerQuotientEquiv (γ : Path x₀ x₁)
