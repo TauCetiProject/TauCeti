@@ -18,8 +18,9 @@ result (`Crossings/AntitoneLimit.lean`) all feed into `tendsto_ae_condExp_iInf`.
 
 ## Main results
 
-- `tendsto_ae_condExp_iInf`: Lévy's downward theorem — for antitone `𝔽` and integrable `f`, the
-  sequence `μ[f | 𝔽 n]` converges a.e. to `μ[f | ⨅ n, 𝔽 n]`.
+- `tendsto_ae_condExp_iInf`: Lévy's downward theorem — for antitone `𝔽`, the sequence `μ[f | 𝔽 n]`
+  converges a.e. to `μ[f | ⨅ n, 𝔽 n]`. No integrability hypothesis is needed: when `f` is not
+  integrable both conditional expectations vanish, so the limit is the constant `0`.
 
 ## References
 
