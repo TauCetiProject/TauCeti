@@ -89,14 +89,14 @@ private lemma lintegral_upcrossings_negProcess_revCondExpFinite_eq
 private lemma ae_upcrossings_condExp_lt_top
     [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
-    (f : Ω → ℝ) (hf : Integrable f μ) {a b : ℝ} (hab : a < b) :
+    (f : Ω → ℝ) {a b : ℝ} (hab : a < b) :
     ∀ᵐ ω ∂μ, upcrossings a b (fun n => μ[f | 𝔽 n]) ω < ⊤ := by
   -- Get bound for upcrossings (forward direction)
   obtain ⟨C_up, h_C_up_finite, hC_up⟩ :=
-    upcrossings_bdd_uniform h_antitone h_le f hf (a) (b) hab
+    upcrossings_bdd_uniform (μ := μ) h_antitone h_le f (a) (b) hab
   -- Get bound for downcrossings via negated process (backward direction)
-  obtain ⟨C_down, h_C_down_finite, hC_down⟩ := upcrossings_bdd_uniform h_antitone h_le
-      (fun ω => -f ω) hf.neg (-b) (-a) (by linarith)
+  obtain ⟨C_down, h_C_down_finite, hC_down⟩ := upcrossings_bdd_uniform (μ := μ) h_antitone h_le
+      (fun ω => -f ω) (-b) (-a) (by linarith)
   -- Use max of both bounds as the uniform constant
   set C := max C_up C_down with hC_def
   have h_C_finite : C < ⊤ := max_lt h_C_up_finite h_C_down_finite
@@ -226,7 +226,7 @@ lemma exists_ae_tendsto_condExp_of_antitone
       upcrossings (↑a) (↑b) (fun n => μ[f | 𝔽 n]) ω < ⊤ := by
     simp only [ae_all_iff, eventually_imp_distrib_left]
     intro a b hab
-    exact ae_upcrossings_condExp_lt_top h_antitone h_le f hf (Rat.cast_lt.2 hab)
+    exact ae_upcrossings_condExp_lt_top h_antitone h_le f (Rat.cast_lt.2 hab)
   -- Step 3: pointwise convergence from the bounded liminf and finitely many upcrossings.
   have h_ae_conv : ∀ᵐ ω ∂μ, ∃ c, Tendsto (fun n => μ[f | 𝔽 n] ω) atTop (𝓝 c) := by
     filter_upwards [hbdd_liminf, hupcross] with ω hω₁ hω₂
