@@ -17,8 +17,10 @@ it to the upcrossing inequality.
 
 ## Main results
 
+- `martingale_revCondExpFinite`: the reversed conditional-expectation process is a martingale for
+  `revFiltration`.
 - `submartingale_revCondExpFinite`: the reversed conditional-expectation process is a submartingale
-  for `revFiltration`.
+  for `revFiltration` (derived from `martingale_revCondExpFinite`).
 
 Adapted from `cameronfreer/exchangeability` (`Probability/Martingale/Reverse.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
@@ -65,17 +67,26 @@ lemma revFiltration_apply (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Anti
     (revFiltration 𝔽 h_antitone h_le N) n = 𝔽 (N - n) := by
   simp only [revFiltration]
 
-/-- The reversed conditional-expectation process `revCondExpFinite f 𝔽 N` is a submartingale for
-the forward filtration `revFiltration 𝔽 … N`: reversing time on a finite horizon turns the antitone
-conditional-expectation family into a genuine (forward) martingale, hence a submartingale. -/
-lemma submartingale_revCondExpFinite [IsFiniteMeasure μ] (h_antitone : Antitone 𝔽)
+/-- The reversed conditional-expectation process `revCondExpFinite f 𝔽 N` is a martingale for the
+forward filtration `revFiltration 𝔽 … N`: reversing time on a finite horizon turns the antitone
+conditional-expectation family into a genuine (forward) martingale. -/
+lemma martingale_revCondExpFinite [IsFiniteMeasure μ] (h_antitone : Antitone 𝔽)
     (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω)) (f : Ω → ℝ) (N : ℕ) :
-    Submartingale (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)
+    Martingale (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)
       (revFiltration 𝔽 h_antitone h_le N) μ := by
   have hfun : (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)
       = fun n => μ[f | (revFiltration 𝔽 h_antitone h_le N) n] := by
     funext n; rw [revCondExpFinite_apply, revFiltration_apply]
   rw [hfun]
-  exact (martingale_condExp f (revFiltration 𝔽 h_antitone h_le N) μ).submartingale
+  exact martingale_condExp f (revFiltration 𝔽 h_antitone h_le N) μ
+
+/-- The reversed conditional-expectation process `revCondExpFinite f 𝔽 N` is a submartingale for the
+forward filtration `revFiltration 𝔽 … N`. It is in fact a genuine (forward) martingale; see
+`martingale_revCondExpFinite`. -/
+lemma submartingale_revCondExpFinite [IsFiniteMeasure μ] (h_antitone : Antitone 𝔽)
+    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω)) (f : Ω → ℝ) (N : ℕ) :
+    Submartingale (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)
+      (revFiltration 𝔽 h_antitone h_le N) μ :=
+  (martingale_revCondExpFinite h_antitone h_le f N).submartingale
 
 end ProbabilityTheory
