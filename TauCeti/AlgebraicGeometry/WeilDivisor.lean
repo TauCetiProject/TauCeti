@@ -157,7 +157,6 @@ maps and residue-degree factors are available. -/
 @[expose] noncomputable def pushforward (f : X → Y) : WeilDivisor X →+ WeilDivisor Y :=
   (Finsupp.lmapDomain ℤ ℤ f).toAddMonoidHom
 
-@[simp]
 lemma pushforward_apply (f : X → Y) (D : WeilDivisor X) :
     pushforward f D = D.mapDomain f :=
   rfl
@@ -165,7 +164,7 @@ lemma pushforward_apply (f : X → Y) (D : WeilDivisor X) :
 lemma coeff_pushforward [DecidableEq Y] (f : X → Y) (D : WeilDivisor X) (y : Y) :
     coeff (pushforward f D) y = ∑ x ∈ D.support with f x = y, coeff D x := by
   rcases em (y ∈ Set.range f) with ⟨x, rfl⟩ | hy
-  · simp [coeff, Finsupp.mapDomain_apply_eq_sum]
+  · simp [coeff, pushforward_apply, Finsupp.mapDomain_apply_eq_sum]
   · rw [coeff, pushforward_apply, Finsupp.mapDomain_notin_range]
     · refine (Finset.sum_eq_zero fun x hx => ?_).symm
       rw [Finset.mem_filter] at hx
