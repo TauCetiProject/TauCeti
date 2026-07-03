@@ -123,6 +123,9 @@ theorem addCircleCoe_eq_add_apply_zero [PreconnectedSpace 𝕜]
   rw [sub_zero, sub_eq_iff_eq_add] at h
   rw [h, add_comm]
 
+/-- Right translation by elements of the period subgroup, as a monoid homomorphism from the
+multiplicatively written `zmultiples p` to the deck transformation group of
+`(↑) : 𝕜 → AddCircle p`. This bundles `addRightZMultiples`. -/
 @[expose] def addRightZMultiplesHom :
     Multiplicative (zmultiples p) →* Deck ((↑) : 𝕜 → AddCircle p) where
   toFun a := addRightZMultiples a.toAdd
