@@ -45,18 +45,10 @@ namespace ProbabilityTheory
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
-/-- **Key lemma: a.e. limit of an adapted antitone sequence is `F_inf`-AEStronglyMeasurable.**
+/-- A.e. limit of an adapted antitone sequence is `⨅ n, 𝔽 n`-`AEStronglyMeasurable`.
 
-For antitone filtration 𝔽 with F_inf = ⨅ 𝔽, if each Xn is 𝔽 n-strongly-measurable and
-Xn → Xlim a.e., then Xlim is AEStronglyMeasurable[F_inf].
-
-The key observation: For antitone 𝔽 (𝔽 n decreases as n increases):
-- For n ≥ N: 𝔽 n ⊆ 𝔽 N (larger index = smaller σ-algebra)
-- So {Xn > a} ∈ 𝔽 n ⊆ 𝔽 N for n ≥ N
-- The lim sup set ⋂_N ⋃_{n≥N} {Xn > a} ∈ ⋂_N 𝔽 N = F_inf
-- Hence Xlim is F_inf-measurable (up to a.e. equality)
-
-This is crucial for showing that reverse martingale limits satisfy μ[Xlim | F_inf] = Xlim. -/
+For antitone `𝔽`, if each `g n` is `𝔽 n`-strongly-measurable and `g n → Xlim` a.e., then `Xlim`
+is `AEStronglyMeasurable[⨅ n, 𝔽 n]`. -/
 private lemma aestronglyMeasurable_iInf_of_tendsto_ae_antitone
     {𝔽 : ℕ → MeasurableSpace Ω} (h_antitone : Antitone 𝔽)
     {g : ℕ → Ω → ℝ} {Xlim : Ω → ℝ}
@@ -66,8 +58,8 @@ private lemma aestronglyMeasurable_iInf_of_tendsto_ae_antitone
   -- Compose the two `AEStronglyMeasurable` helper lemmas: first show
   -- `AEStronglyMeasurable[𝔽 N] Xlim` for each `N` by feeding the shifted
   -- sequence `g (n + N)` into `aestronglyMeasurable_of_tendsto_ae'`; then
-  -- combine over `N` via `aestronglyMeasurable_iInf_antitone`.
-  refine aestronglyMeasurable_iInf_antitone (μ := μ) h_antitone Xlim (fun N => ?_)
+  -- combine over `N` via `aestronglyMeasurable_iInf_of_antitone`.
+  refine aestronglyMeasurable_iInf_of_antitone (μ := μ) h_antitone Xlim (fun N => ?_)
   refine aestronglyMeasurable_of_tendsto_ae' (μ := μ) (f := fun n => g (n + N))
     (fun n => (hg_meas (n + N)).measurable.mono
       (h_antitone (Nat.le_add_left N n)) le_rfl) ?_

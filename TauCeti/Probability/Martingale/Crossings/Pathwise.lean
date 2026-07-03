@@ -187,7 +187,7 @@ lemma upcrossingsBefore_le_downcrossingsBefore_revProcess_succ
           -- `(τ, σ) ↦ (N - σ, N - τ)` maps these to `Y` crossings completing by time `N`.
           have h_bound : upperCrossingTime (-b) (-a)
               (negProcess (revProcess X N)) (N + 1) (k + 1) ω ≤ N :=
-            timeReversal_crossing_bound X a b hab N (k + 1) ω hn
+            upperCrossingTime_negProcess_revProcess_le X a b hab N (k + 1) ω hn
           exact Nat.lt_succ_of_le h_bound
     exact csSup_le_csSup hbdd2 hemp hsub
   · rw [Set.not_nonempty_iff_eq_empty] at hemp

@@ -11,8 +11,8 @@ limits of sequences, used when working with tail σ-algebras and reverse marting
 
 ## Main results
 
-- `aestronglyMeasurable_iInf_antitone`: `AEStronglyMeasurable` is preserved under the infimum of an
-  antitone sequence of σ-algebras.
+- `aestronglyMeasurable_iInf_of_antitone`: `AEStronglyMeasurable` is preserved under the infimum of
+  an antitone sequence of σ-algebras.
 - `aestronglyMeasurable_of_tendsto_ae'`: `AEStronglyMeasurable` for a sub-σ-algebra is
   preserved under a.e. pointwise limits.
 
@@ -37,7 +37,7 @@ For real-valued functions, if `f` is `AEStronglyMeasurable` with respect to each
 antitone (decreasing) sequence, then `f` is `AEStronglyMeasurable` with respect to their
 infimum. -/
 -- The common representative is built as the `liminf` of the per-σ-algebra witnesses.
-lemma aestronglyMeasurable_iInf_antitone
+lemma aestronglyMeasurable_iInf_of_antitone
     {α : Type*} {m₀ : MeasurableSpace α} {μ : @MeasureTheory.Measure α m₀}
     {m : ℕ → MeasurableSpace α}
     (h_anti : Antitone m)

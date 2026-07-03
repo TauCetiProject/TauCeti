@@ -5,8 +5,9 @@ public import Mathlib.Probability.Martingale.Upcrossing
 /-!
 # Time-reversal crossing bound
 
-This file proves that upcrossings in a time-reversed and negated process complete within the
-expected time bound, a key combinatorial ingredient for the reverse-martingale convergence proof.
+Reverse-martingale infrastructure bounding the completion time of upcrossings in a time-reversed,
+negated process. This is the combinatorial ingredient feeding the pathwise crossing adapter in
+`Crossings/Pathwise.lean`.
 
 ## Main definitions
 
@@ -15,12 +16,9 @@ expected time bound, a key combinatorial ingredient for the reverse-martingale c
 
 ## Main results
 
-- `timeReversal_crossing_bound`: for a process `X` with `k` upcrossings `[a→b]` completing before
-  time `N`, the time-reversed negated process `Y = negProcess (revProcess X N)` has its `k`
-  upcrossings `[-b→-a]` completing at time `≤ N`.
-
-The bijection `(τ, σ) ↦ (N - σ, N - τ)` maps upcrossings of `X` to upcrossings of `Y` in reverse
-order; the completion times are bounded via `hittingBtwn_le_of_mem`.
+- `upperCrossingTime_negProcess_revProcess_le`: for a process `X` with `k` upcrossings `[a→b]`
+  completing before time `N`, the time-reversed negated process `negProcess (revProcess X N)` has
+  its `k`-th upcrossing `[-b→-a]` completing at time `≤ N`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/TimeReversalCrossing.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
@@ -60,7 +58,7 @@ For `m ≤ k` with `X`'s `k`-th crossing completing before `N`:
 
 This captures that `Y`'s `m`-th crossing corresponds to `X`'s `(k - m + 1)`-th crossing (reversed
 order), with `Y`'s crossing ending at time `N - τ` where `τ` is the start of `X`'s crossing. -/
-private lemma timeReversal_crossing_bound_strong
+private lemma upperCrossingTime_negProcess_revProcess_le_strong
     {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N k m : ℕ) (ω : Ω)
     (hm : m ≤ k)
     (h_k : upperCrossingTime a b X N k ω < N) :
@@ -154,16 +152,15 @@ private lemma timeReversal_crossing_bound_strong
 /-- **Time-reversal crossing bound.**
 
 For a process `X` with `k` upcrossings `[a→b]` completing before time `N`, the time-reversed
-negated process `Y = negProcess (revProcess X N)` has its `k` upcrossings `[-b→-a]` completing at
+negated process `negProcess (revProcess X N)` has its `k`-th upcrossing `[-b→-a]` completing at
 time `≤ N`. -/
--- The proof uses the bijection `(τ, σ) ↦ (N - σ, N - τ)` which maps `X`'s crossings to `Y`'s
--- crossings in reverse order; the greedy upcrossing algorithm finds these crossings with
--- completion times bounded by `hittingBtwn_le_of_mem`.
-lemma timeReversal_crossing_bound
+lemma upperCrossingTime_negProcess_revProcess_le
     {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N k : ℕ) (ω : Ω)
     (h_k : upperCrossingTime a b X N k ω < N) :
     upperCrossingTime (-b) (-a) (negProcess (revProcess X N)) (N + 1) k ω ≤ N := by
-  have h := timeReversal_crossing_bound_strong X a b hab N k k ω le_rfl h_k
+  -- The `strong` version bounds this by `N - lowerCrossingTime …` via the bijection
+  -- `(τ, σ) ↦ (N - σ, N - τ)`; discard the subtraction with `Nat.sub_le`.
+  have h := upperCrossingTime_negProcess_revProcess_le_strong X a b hab N k k ω le_rfl h_k
   exact le_trans (by simpa using h) (Nat.sub_le N _)
 
 end ProbabilityTheory
