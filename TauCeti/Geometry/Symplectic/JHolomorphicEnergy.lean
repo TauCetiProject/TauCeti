@@ -60,6 +60,7 @@ variable {ω : SymplecticForm V}
 
 For a compatible pair `(ω, J)`, this is
 `g(F ∂s, F ∂s) + g(F ∂t, F ∂t)`, where `g(v,w) = ω(v, J w)`. -/
+-- `irreducible_def` supplies the public `_def` lemma while keeping this body unexposed.
 irreducible_def stdComplexLineEnergyDensity (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (F : (ℝ × ℝ) →ₗ[ℝ] V) : ℝ :=
   ω.associatedBilinForm J (F stdComplexLineReal) (F stdComplexLineReal) +
