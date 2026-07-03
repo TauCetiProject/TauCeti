@@ -69,7 +69,6 @@ namespace HopfIdeal
 @[expose] def rightTensorIdeal (I : Ideal H) : Ideal (H ⊗[R] H) :=
   Ideal.map (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I
 
-@[simp]
 theorem leftTensorIdeal_def (I : Ideal H) :
     leftTensorIdeal (R := R) (H := H) I =
       Ideal.map
@@ -77,7 +76,6 @@ theorem leftTensorIdeal_def (I : Ideal H) :
         I :=
   rfl
 
-@[simp]
 theorem rightTensorIdeal_def (I : Ideal H) :
     rightTensorIdeal (R := R) (H := H) I =
       Ideal.map
@@ -287,10 +285,10 @@ instance (I : HopfIdeal R H) : I.toIdeal.IsTwoSided :=
 theorem mem_carrier {I : HopfIdeal R H} {x : H} : x ∈ I.carrier ↔ x ∈ I :=
   Iff.rfl
 
+@[simp]
 theorem mem_toIdeal {I : HopfIdeal R H} {x : H} : x ∈ I.toIdeal ↔ x ∈ I :=
   Iff.rfl
 
-@[simp]
 theorem toIdeal_carrier (I : HopfIdeal R H) : I.toIdeal = I.carrier :=
   rfl
 
