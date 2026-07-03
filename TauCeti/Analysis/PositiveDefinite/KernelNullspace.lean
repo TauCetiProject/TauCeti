@@ -4,11 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PositiveDefinite.KernelBounds
+import TauCeti.Analysis.PositiveDefinite.KernelBounds
 public import TauCeti.Analysis.PositiveDefinite.KernelFinsupp
 
 /-!
-# The null submodule of a positive-definite kernel Gram form
+# The kernel of a positive-definite kernel Gram form
 
 This file records the next algebraic step in the GNS/Kolmogorov construction for a
 positive-definite kernel. The finitely supported Gram form from
@@ -25,13 +25,13 @@ bundle.
 
 ## Main declarations
 
-* `TauCeti.positiveDefiniteKernelFinsuppNullspace`: the null submodule of the Gram form.
-* `TauCeti.mem_positiveDefiniteKernelFinsuppNullspace`: membership means pairing to zero with
+* `TauCeti.positiveDefiniteKernelFinsuppSesqFormKer`: the null submodule of the Gram form.
+* `TauCeti.mem_positiveDefiniteKernelFinsuppSesqFormKer`: membership means pairing to zero with
   every finitely supported vector.
-* `TauCeti.positiveDefiniteKernelFinsuppForm_self_eq_zero_iff_mem_nullspace`: a positive-definite
+* `TauCeti.positiveDefiniteKernelFinsuppForm_self_eq_zero_iff_mem_ker`: a positive-definite
   kernel has zero finitely supported Gram seminorm exactly on the null submodule.
-* `TauCeti.positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_nullspace_left` and
-  `TauCeti.positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_nullspace_right`: vectors in the
+* `TauCeti.positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_ker_left` and
+  `TauCeti.positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_ker_right`: vectors in the
   null submodule pair to zero on the left and, for positive-definite kernels, on the right.
 
 ## References
@@ -51,42 +51,23 @@ open scoped ComplexOrder
 
 variable {𝕜 : Type u} [RCLike 𝕜] {α : Type v} {K : α → α → 𝕜}
 
-/-- The finitely supported Gram form of a positive-definite kernel is itself a positive-definite
-kernel on the finitely supported coefficient space. -/
-theorem positiveDefiniteKernelFinsuppForm_isPositiveDefiniteKernel
-    (hK : IsPositiveDefiniteKernel K) :
-    IsPositiveDefiniteKernel fun x y : α →₀ 𝕜 =>
-      positiveDefiniteKernelFinsuppForm K x y := by
-  classical
-  refine (isPositiveDefiniteKernel_iff.{u, max u v, 0} (𝕜 := 𝕜) (α := α →₀ 𝕜)).mpr
-    ⟨positiveDefiniteKernelFinsuppForm_conj_symm hK, ?_⟩
-  intro ι _ v c
-  let z : α →₀ 𝕜 := ∑ i, c i • v i
-  have hz := positiveDefiniteKernelFinsuppForm_self_nonneg hK z
-  have hz' : 0 ≤ positiveDefiniteKernelFinsuppSesqForm K z z := by
-    simpa [positiveDefiniteKernelFinsuppSesqForm_apply] using hz
-  convert hz' using 1
-  · rw [Finset.sum_comm]
-    simp [z, positiveDefiniteKernelFinsuppSesqForm_apply, Finset.mul_sum, mul_left_comm,
-      mul_comm]
-
 /-- The radical, or null submodule, of the finitely supported Gram form attached to a kernel.
 
 This is the submodule by which the free space `α →₀ 𝕜` is quotiented in the algebraic
 GNS/Kolmogorov construction. It is defined as the kernel of the bundled sesquilinear form, so
 membership means pairing to zero with every finitely supported vector. -/
-noncomputable def positiveDefiniteKernelFinsuppNullspace
+noncomputable def positiveDefiniteKernelFinsuppSesqFormKer
     (K : α → α → 𝕜) : Submodule 𝕜 (α →₀ 𝕜) :=
   LinearMap.ker (positiveDefiniteKernelFinsuppSesqForm K)
 
 /-- Membership in the null submodule means that the finitely supported vector pairs to zero with
 every vector. -/
 @[simp]
-theorem mem_positiveDefiniteKernelFinsuppNullspace
+theorem mem_positiveDefiniteKernelFinsuppSesqFormKer
     (x : α →₀ 𝕜) :
-    x ∈ positiveDefiniteKernelFinsuppNullspace K ↔
+    x ∈ positiveDefiniteKernelFinsuppSesqFormKer K ↔
       ∀ y : α →₀ 𝕜, positiveDefiniteKernelFinsuppForm K x y = 0 := by
-  rw [positiveDefiniteKernelFinsuppNullspace, LinearMap.mem_ker]
+  rw [positiveDefiniteKernelFinsuppSesqFormKer, LinearMap.mem_ker]
   constructor
   · intro hx y
     simpa [positiveDefiniteKernelFinsuppSesqForm_apply] using
@@ -97,26 +78,26 @@ theorem mem_positiveDefiniteKernelFinsuppNullspace
     simpa [positiveDefiniteKernelFinsuppSesqForm_apply] using hx y
 
 /-- A vector in the null submodule pairs to zero with every vector on the left. -/
-theorem positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_nullspace_left
-    {x y : α →₀ 𝕜} (hx : x ∈ positiveDefiniteKernelFinsuppNullspace K) :
+theorem positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_ker_left
+    {x y : α →₀ 𝕜} (hx : x ∈ positiveDefiniteKernelFinsuppSesqFormKer K) :
     positiveDefiniteKernelFinsuppForm K x y = 0 :=
-  (mem_positiveDefiniteKernelFinsuppNullspace (K := K) x).mp hx y
+  (mem_positiveDefiniteKernelFinsuppSesqFormKer (K := K) x).mp hx y
 
 /-- A vector in the null submodule has zero diagonal Gram value. -/
-theorem positiveDefiniteKernelFinsuppForm_self_eq_zero_of_mem_nullspace
-    {x : α →₀ 𝕜} (hx : x ∈ positiveDefiniteKernelFinsuppNullspace K) :
+theorem positiveDefiniteKernelFinsuppForm_self_eq_zero_of_mem_ker
+    {x : α →₀ 𝕜} (hx : x ∈ positiveDefiniteKernelFinsuppSesqFormKer K) :
     positiveDefiniteKernelFinsuppForm K x x = 0 :=
-  positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_nullspace_left hx
+  positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_ker_left hx
 
 /-- For a positive-definite kernel, zero finitely supported Gram seminorm characterizes the null
 submodule. -/
-theorem positiveDefiniteKernelFinsuppForm_self_eq_zero_iff_mem_nullspace
+theorem positiveDefiniteKernelFinsuppForm_self_eq_zero_iff_mem_ker
     (hK : IsPositiveDefiniteKernel K) {x : α →₀ 𝕜} :
     positiveDefiniteKernelFinsuppForm K x x = 0 ↔
-      x ∈ positiveDefiniteKernelFinsuppNullspace K := by
-  refine ⟨?_, positiveDefiniteKernelFinsuppForm_self_eq_zero_of_mem_nullspace⟩
+      x ∈ positiveDefiniteKernelFinsuppSesqFormKer K := by
+  refine ⟨?_, positiveDefiniteKernelFinsuppForm_self_eq_zero_of_mem_ker⟩
   intro hx
-  rw [mem_positiveDefiniteKernelFinsuppNullspace]
+  rw [mem_positiveDefiniteKernelFinsuppSesqFormKer]
   intro y
   exact isPositiveDefiniteKernel_eq_zero_of_apply_self_eq_zero_left
     (positiveDefiniteKernelFinsuppForm_isPositiveDefiniteKernel hK) hx
@@ -124,13 +105,13 @@ theorem positiveDefiniteKernelFinsuppForm_self_eq_zero_iff_mem_nullspace
 /-- For a conjugate-symmetric kernel, a vector in the null submodule also pairs to zero on the
 right. This is the column-vanishing form obtained from symmetry of the bundled sesquilinear
 form. -/
-theorem positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_nullspace_right_of_conj_symm
+theorem positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_ker_right_of_conj_symm
     (hsymm : ∀ a b, conj (K a b) = K b a) {x y : α →₀ 𝕜}
-    (hy : y ∈ positiveDefiniteKernelFinsuppNullspace K) :
+    (hy : y ∈ positiveDefiniteKernelFinsuppSesqFormKer K) :
     positiveDefiniteKernelFinsuppForm K x y = 0 := by
   have hzero : positiveDefiniteKernelFinsuppSesqForm K y x = 0 := by
     simpa [positiveDefiniteKernelFinsuppSesqForm_apply] using
-      positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_nullspace_left hy
+      positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_ker_left hy
   have hsymmB : (positiveDefiniteKernelFinsuppSesqForm K).IsSymm :=
     ⟨fun a b => by
       simpa [positiveDefiniteKernelFinsuppSesqForm_apply] using
@@ -140,11 +121,11 @@ theorem positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_nullspace_right_of_conj
 
 /-- For a positive-definite kernel, a vector in the null submodule also pairs to zero on the
 right. This is the column-vanishing form obtained from conjugate symmetry. -/
-theorem positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_nullspace_right
+theorem positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_ker_right
     (hK : IsPositiveDefiniteKernel K) {x y : α →₀ 𝕜}
-    (hy : y ∈ positiveDefiniteKernelFinsuppNullspace K) :
+    (hy : y ∈ positiveDefiniteKernelFinsuppSesqFormKer K) :
     positiveDefiniteKernelFinsuppForm K x y = 0 :=
-  positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_nullspace_right_of_conj_symm
+  positiveDefiniteKernelFinsuppForm_eq_zero_of_mem_ker_right_of_conj_symm
     (isPositiveDefiniteKernel_conj_symm hK) hy
 
 end TauCeti
