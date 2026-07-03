@@ -13,7 +13,9 @@ public import Mathlib.Data.Fintype.Perm
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Nat.Choose.Basic
 public import Mathlib.GroupTheory.Perm.Basic
-public import Mathlib.Data.Sym.Card
+public import Mathlib.Data.Sym.Sym2
+
+import Mathlib.Data.Sym.Card
 
 /-!
 # Grid diagrams and grid states
@@ -303,6 +305,13 @@ theorem swapColumns_apply (a b : Fin n) (x : GridState n) (c : Fin n) :
     x.swapColumns a b c = x (Equiv.swap a b c) := by
   simp [swapColumns, relabelColumns]
 
+/-- Swapping the same pair of columns twice is the identity on grid states. -/
+@[simp]
+theorem swapColumns_swapColumns (a b : Fin n) (x : GridState n) :
+    (x.swapColumns a b).swapColumns a b = x := by
+  ext c
+  simp [swapColumns]
+
 /-- The grid states obtained from `x` by transposing a pair of distinct columns.
 
 These are exactly the states a single grid rectangle can reach from `x`: the fully blocked
@@ -335,15 +344,13 @@ theorem mem_columnSwapNeighbors_comm {x y : GridState n} :
     rintro ⟨a, b, hab, rfl⟩
     rw [mem_columnSwapNeighbors]
     refine ⟨a, b, hab, ?_⟩
-    ext c
-    simp [swapColumns]
+    exact (GridState.swapColumns_swapColumns a b x).symm
   · rw [mem_columnSwapNeighbors]
     rintro ⟨a, b, hab, hxy⟩
     rw [mem_columnSwapNeighbors]
     refine ⟨a, b, hab, ?_⟩
     rw [hxy]
-    ext c
-    simp [swapColumns]
+    exact (GridState.swapColumns_swapColumns a b y).symm
 
 /-- The finite set of column-swap neighbours is the image of the off-diagonal of the
 column set: an ordered pair of distinct columns gives the state obtained by swapping
@@ -507,13 +514,6 @@ theorem swapRows_swapRows (a b : Fin n) (x : GridState n) :
     (x.swapRows a b).swapRows a b = x := by
   ext c
   simp [swapRows]
-
-/-- Swapping the same pair of columns twice is the identity on grid states. -/
-@[simp]
-theorem swapColumns_swapColumns (a b : Fin n) (x : GridState n) :
-    (x.swapColumns a b).swapColumns a b = x := by
-  ext c
-  simp [swapColumns]
 
 /-- A square is shared by a grid state and the state with columns `a` and `b` swapped exactly
 when it is a source-state square away from the two swapped columns. -/

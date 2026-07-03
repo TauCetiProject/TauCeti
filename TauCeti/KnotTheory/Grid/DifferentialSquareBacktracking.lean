@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.KnotTheory.Grid.DifferentialSquareSupport
+public import Mathlib.Data.Sym.Sym2
 
 /-!
 # Backtracking in the two-step grid differential support
@@ -61,17 +62,8 @@ theorem self_mem_twoStepColumnSwapNeighbors_of_ne (x : GridState n) {a b : Fin n
 theorem sym2_mk_eq_of_swapColumns_swapColumns_eq_self (x : GridState n) {a b c d : Fin n}
     (hab : a ≠ b) (hcd : c ≠ d) (h : (x.swapColumns a b).swapColumns c d = x) :
     s(a, b) = s(c, d) := by
-  have hcomp : ∀ k : Fin n, Equiv.swap a b (Equiv.swap c d k) = k := by
-    intro k
-    exact x.toPerm.injective
-      (by simpa [swapColumns_apply] using congrArg (fun y : GridState n => y k) h)
-  have hperm : Equiv.swap a b = Equiv.swap c d := by
-    ext k
-    have hk := hcomp (Equiv.swap c d k)
-    simpa using congrArg Fin.val hk
   have hswap : x.swapColumns a b = x.swapColumns c d := by
-    ext k
-    simp [swapColumns_apply, hperm]
+    simpa using congrArg (fun y : GridState n => y.swapColumns c d) h
   exact sym2_mk_eq_of_swapColumns_eq hab hcd hswap
 
 /-- Two nontrivial column swaps form a diagonal two-step witness exactly when they use the same
@@ -85,11 +77,12 @@ theorem swapColumns_swapColumns_eq_self_iff_sym2_mk_eq (x : GridState n) {a b c 
     rw [Sym2.eq, Sym2.rel_iff'] at hsym
     rcases hsym with hpair | hpair
     · cases hpair
-      ext k
-      simp
+      exact GridState.swapColumns_swapColumns a b x
     · cases hpair
-      ext k
-      simp [swapColumns_apply, Equiv.swap_comm]
+      rw [show x.swapColumns d c = x.swapColumns c d by
+        ext k
+        simp [swapColumns_apply, Equiv.swap_comm]]
+      exact GridState.swapColumns_swapColumns c d x
 
 /-- The source state appears in its own two-step neighbour set exactly when there is a distinct
 pair of grid columns. -/
@@ -128,15 +121,6 @@ theorem self_mem_twoStepColumnSwapNeighbors_iff_two_le (x : GridState n) :
       ⟨1, Nat.lt_of_lt_of_le (by decide) hn⟩, ?_⟩
     intro h
     exact Nat.zero_ne_one (congrArg Fin.val h)
-
-/-- Expanded existential form of `self_mem_twoStepColumnSwapNeighbors_iff_two_le`. -/
-theorem exists_twoStepColumnSwap_backtracking_iff_two_le (x : GridState n) :
-    (∃ y : GridState n,
-        (∃ c d : Fin n, ¬c = d ∧ y = x.swapColumns c d) ∧
-          ∃ c d : Fin n, ¬c = d ∧ x = y.swapColumns c d) ↔
-      2 ≤ n := by
-  simpa only [mem_twoStepColumnSwapNeighbors, mem_columnSwapNeighbors, ne_eq] using
-    x.self_mem_twoStepColumnSwapNeighbors_iff_two_le
 
 end GridState
 
