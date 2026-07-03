@@ -30,6 +30,22 @@ namespace TauCeti
 open Complex
 open scoped ComplexConjugate
 
+/-- Rotating the disc origin by a circle element fixes it. This is the `smul_zero`
+normalization for Mathlib's `Circle` action on `Complex.UnitDisc`, which is a bare
+`MulAction` and so does not get the generic `smul_zero` simp lemma. -/
+@[simp]
+lemma circle_smul_unitDisc_zero (u : Circle) : u • (0 : Complex.UnitDisc) = 0 := by
+  ext
+  simp
+
+/-- A circle rotation of a disc point vanishes exactly when the point does. This is the
+`smul_eq_zero` normalization for Mathlib's `Circle` action on `Complex.UnitDisc`. -/
+@[simp]
+lemma circle_smul_unitDisc_eq_zero_iff (u : Circle) {z : Complex.UnitDisc} :
+    u • z = 0 ↔ z = 0 := by
+  rw [← Complex.UnitDisc.coe_eq_zero, Complex.UnitDisc.coe_circle_smul, mul_eq_zero]
+  simp
+
 /--
 The standard automorphism of the complex unit disc
 `z ↦ u * (z - a) / (1 - conj a * z)`.
@@ -71,11 +87,8 @@ lemma unitDiscStandardAutomorphismEquiv_one (a : Complex.UnitDisc) :
   simp [unitDiscStandardAutomorphismEquiv]
 
 /-- The standard automorphism sends its center to zero. -/
-@[simp]
 lemma unitDiscStandardAutomorphismEquiv_self (u : Circle) (a : Complex.UnitDisc) :
     unitDiscStandardAutomorphismEquiv u a a = 0 := by
-  rw [unitDiscStandardAutomorphismEquiv_apply, unitDiscMoebius_self]
-  ext
   simp
 
 /-- The standard automorphism sends zero to `-u * a`. -/
@@ -90,12 +103,8 @@ lemma norm_unitDiscStandardAutomorphismEquiv (u : Circle) (a z : Complex.UnitDis
     Circle.norm_coe, one_mul, norm_unitDiscMoebius]
 
 /-- A standard disc automorphism vanishes exactly at its center. -/
-@[simp]
 lemma unitDiscStandardAutomorphismEquiv_eq_zero_iff (u : Circle) (a z : Complex.UnitDisc) :
     unitDiscStandardAutomorphismEquiv u a z = 0 ↔ z = a := by
-  rw [← Complex.UnitDisc.coe_inj, unitDiscStandardAutomorphismEquiv_apply,
-    Complex.UnitDisc.coe_circle_smul, Complex.UnitDisc.coe_zero, mul_eq_zero,
-    Complex.UnitDisc.coe_eq_zero, unitDiscMoebius_eq_zero_iff]
   simp
 
 /-- The scalar formula of a standard automorphism is holomorphic on the unit disc. -/
