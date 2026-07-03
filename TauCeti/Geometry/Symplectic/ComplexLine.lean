@@ -26,8 +26,8 @@ model, giving a concrete non-vacuous model for the pointwise `J`-holomorphic and
 ## Main declarations
 
 * `TauCeti.stdComplexSymplecticForm`: the standard symplectic area form on `ℂ`.
-* `TauCeti.realProdEquivComplexLine_isComplexLinearMap` and
-  `TauCeti.realProdEquivComplexLine_isSymplectomorphism`: the coordinate equivalence preserves
+* `TauCeti.isComplexLinearMap_realProdEquivComplexLine` and
+  `TauCeti.isSymplectomorphism_realProdEquivComplexLine`: the coordinate equivalence preserves
   the standard complex and symplectic structures.
 * `TauCeti.stdComplexSymplecticForm_compatible`: compatibility of the standard area form with
   the standard complex structure.
@@ -58,7 +58,7 @@ private lemma product_transport_equivRealProdCLM_symm_eq_ofComplexModule :
 
 /-- The real-coordinate equivalence from `ℝ × ℝ` to `ℂ` is complex-linear for the standard
 complex structures. -/
-lemma realProdEquivComplexLine_isComplexLinearMap :
+lemma isComplexLinearMap_realProdEquivComplexLine :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (AlmostComplexStructure.ofComplexModule ℂ)
       Complex.equivRealProdCLM.symm.toLinearEquiv.toLinearMap := by
@@ -68,7 +68,7 @@ lemma realProdEquivComplexLine_isComplexLinearMap :
 
 /-- The real-coordinate equivalence from `ℂ` to `ℝ × ℝ` is complex-linear for the standard
 complex structures. -/
-lemma complexLineEquivRealProd_isComplexLinearMap :
+lemma isComplexLinearMap_complexLineEquivRealProd :
     IsComplexLinearMap (AlmostComplexStructure.ofComplexModule ℂ)
       (AlmostComplexStructure.product ℝ)
       Complex.equivRealProdCLM.toLinearEquiv.toLinearMap := by
@@ -84,6 +84,7 @@ lemma stdComplexSymplecticForm_apply (z w : ℂ) :
   ring
 
 /-- The standard area of `(z, I z)` is the squared norm in real coordinates. -/
+@[simp]
 lemma stdComplexSymplecticForm_apply_ofComplexModule_self (z : ℂ) :
     stdComplexSymplecticForm z (AlmostComplexStructure.ofComplexModule ℂ z) =
       z.re * z.re + z.im * z.im := by
@@ -91,7 +92,7 @@ lemma stdComplexSymplecticForm_apply_ofComplexModule_self (z : ℂ) :
 
 /-- The real-coordinate equivalence from `ℝ × ℝ` to `ℂ` is a symplectomorphism for the
 standard symplectic forms. -/
-lemma realProdEquivComplexLine_isSymplectomorphism :
+lemma isSymplectomorphism_realProdEquivComplexLine :
     SymplecticForm.IsSymplectomorphism (stdSymplecticForm (V := ℝ)) stdComplexSymplecticForm
       Complex.equivRealProdCLM.symm.toLinearEquiv := by
   exact (SymplecticForm.isSymplectomorphism_iff_transport_eq
@@ -100,10 +101,10 @@ lemma realProdEquivComplexLine_isSymplectomorphism :
 
 /-- The real-coordinate equivalence from `ℂ` to `ℝ × ℝ` is a symplectomorphism for the
 standard symplectic forms. -/
-lemma complexLineEquivRealProd_isSymplectomorphism :
+lemma isSymplectomorphism_complexLineEquivRealProd :
     SymplecticForm.IsSymplectomorphism stdComplexSymplecticForm (stdSymplecticForm (V := ℝ))
       Complex.equivRealProdCLM.toLinearEquiv :=
-  realProdEquivComplexLine_isSymplectomorphism.symm
+  isSymplectomorphism_realProdEquivComplexLine.symm
 
 /-- The standard symplectic form on `ℂ` is invariant under multiplication by `I`. -/
 lemma stdComplexSymplecticForm_invariant :
@@ -127,6 +128,7 @@ lemma stdComplexSymplecticForm_compatible :
     Complex.equivRealProdCLM.symm.toLinearEquiv
 
 /-- The associated compatible metric on `ℂ` is the standard real dot product. -/
+@[simp]
 lemma stdComplexSymplecticForm_associatedBilinForm (z w : ℂ) :
     stdComplexSymplecticForm.associatedBilinForm (AlmostComplexStructure.ofComplexModule ℂ) z w =
       z.re * w.re + z.im * w.im := by
