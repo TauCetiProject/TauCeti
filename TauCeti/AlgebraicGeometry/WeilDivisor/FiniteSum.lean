@@ -344,7 +344,7 @@ lemma weightedDegree_ofFinset (w : X → ℤ) (s : Finset X) :
 @[simp]
 lemma pushforward_ofFinset (f : X → Y) (s : Finset X) :
     pushforward f (ofFinset s : WeilDivisor X) = ∑ x ∈ s, ofPoint (f x) := by
-  simpa [ofFinset] using pushforward_ofFinsetWithMultiplicity f s fun _ => 1
+  simp [ofFinset]
 
 /-- For positive weights, a named coefficient-one finite-set divisor lies in the weighted
 degree-zero subgroup exactly when the finite set is empty. -/
