@@ -142,6 +142,7 @@ theorem permReindex_apply (π : Equiv.Perm ℕ) (x : ℕ → α) (n : ℕ) :
   rfl
 
 omit [MeasurableSpace α] in
+/-- Composing `permReindex π` after `permReindex σ` reindexes by `σ * π`. -/
 @[simp]
 theorem permReindex_permReindex (π σ : Equiv.Perm ℕ) (x : ℕ → α) :
     permReindex (α := α) π (permReindex (α := α) σ x) =
