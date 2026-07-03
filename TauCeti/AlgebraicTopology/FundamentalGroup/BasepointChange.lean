@@ -19,6 +19,8 @@ attached to subgroups.
 Mathlib already supplies the fundamental-group isomorphism
 `FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are only the
 subgroup and normalizer-quotient bookkeeping needed by the universal-covers roadmap.
+For inclusion, monotonicity, and normality questions about `basepointChangeSubgroup`, unfold
+the definition and use the generic `Subgroup.map` and `MulEquiv` API.
 
 ## Main declarations
 
