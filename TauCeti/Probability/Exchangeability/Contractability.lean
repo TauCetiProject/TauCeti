@@ -4,8 +4,8 @@ public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
+import TauCeti.Probability.Exchangeability.ExchangeableAtMonotone
 import Mathlib.Order.Fin.Tuple
-import Mathlib.Logic.Equiv.Fintype
 import TauCeti.Probability.Exchangeability.FiniteMarginals
 
 /-!
@@ -87,25 +87,11 @@ theorem Exchangeable.blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : �
     have h1 : k i ≤ Finset.univ.sup k := Finset.le_sup (Finset.mem_univ i)
     have h2 : Finset.univ.sup k + 1 ≤ N := le_max_right _ _
     omega
-  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair (Fin.castLE hnN)
-    (fun i => (⟨k i, hk_bound i⟩ : Fin N))
-    (fun a b h => by
-      apply Fin.val_injective
-      exact (congrArg Fin.val h : (Fin.castLE hnN a).val = (Fin.castLE hnN b).val))
-    (fun _ _ h => hk (Fin.mk.inj h))
-  have hexch : blockLaw μ X (fun j : Fin N => (σ j).val) = prefixLaw μ X N :=
-    (hX.exchangeableAt N).permute σ
-  have hLHS : (blockLaw μ X (fun j : Fin N => (σ j).val)).map
-        (fun x : Fin N → α => fun i : Fin n => x (Fin.castLE hnN i)) = blockLaw μ X k := by
-    have hidx : (fun j : Fin N => (σ j).val) ∘ Fin.castLE hnN = k := by
-      funext i; exact congrArg Fin.val (hσ i)
-    rw [map_blockLaw_reindex μ _ (Fin.castLE hnN) (fun j => hX_meas (σ j).val), hidx]
-  have hRHS : (prefixLaw μ X N).map (fun x : Fin N → α => fun i : Fin n =>
-        x (Fin.castLE hnN i)) = prefixLaw μ X n :=
-    map_prefixLaw_castLE μ hnN (fun j => hX_meas j.val)
-  have key := congrArg
-    (Measure.map (fun x : Fin N → α => fun i : Fin n => x (Fin.castLE hnN i))) hexch
-  rwa [hLHS, hRHS] at key
+  simpa using
+    (hX.exchangeableAt N).blockLaw_eq_prefixLaw_of_injective
+      (fun i : Fin n => (⟨k i, hk_bound i⟩ : Fin N))
+      (fun _ _ h => hk (congrArg Fin.val h))
+      (fun j : Fin N => hX_meas j.val)
 
 /-- **Every exchangeable sequence with a.e. measurable coordinates is contractable**: along any
 strictly increasing finite selection `k`, `blockLaw μ X k = prefixLaw μ X m`. One direction of the
