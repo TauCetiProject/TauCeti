@@ -2,7 +2,7 @@ module
 
 public import Mathlib.Probability.Martingale.Convergence
 public import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
-public import TauCeti.Probability.Martingale.Crossings.Bounds
+import TauCeti.Probability.Martingale.Crossings.Bounds
 
 /-!
 # Crossings: antitone-filtration convergence
@@ -14,8 +14,8 @@ antitone filtration, and its identification as `μ[f | ⨅ n, 𝔽 n]`.
 
 - `condExp_exists_ae_limit_antitone`: a.e. limit existence for antitone filtrations, via the
   upcrossing inequality applied to the time-reversed martingales.
-- `tendsto_ae_condExp_iInf_aux`: the a.e. limit equals `μ[f | ⨅ n, 𝔽 n]`, via uniform integrability
-  and L¹-continuity of conditional expectation.
+- `tendsto_ae_condExp_iInf`: Lévy's downward theorem — the a.e. limit equals `μ[f | ⨅ n, 𝔽 n]`,
+  via uniform integrability and L¹-continuity of conditional expectation.
 
 Adapted from `cameronfreer/exchangeability`
 (`Probability/Martingale/Crossings/AntitoneLimit.lean`, pin
@@ -346,7 +346,7 @@ private lemma condExp_ae_eq_of_tendsto_eLpNorm
 `μ[f | ⨅ n, 𝔽 n]`. -/
 -- Uniform integrability upgrades the a.e. convergence to L¹ convergence, and L¹-continuity of
 -- conditional expectation then identifies the limit.
-lemma tendsto_ae_condExp_iInf_aux
+private lemma tendsto_ae_condExp_iInf_aux
     [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (hf : Integrable f μ) :
@@ -393,5 +393,21 @@ lemma tendsto_ae_condExp_iInf_aux
   filter_upwards [h_tendsto, hXlim_eq] with ω h_tend h_eq
   rw [h_eq]
   exact h_tend
+
+/-- **Conditional expectation converges along a decreasing filtration (Lévy's downward theorem).**
+
+For a decreasing filtration `𝔽ₙ` and integrable `f`, the sequence `μ[f | 𝔽ₙ]` converges almost
+surely to `μ[f | ⨅ₙ 𝔽ₙ]`. -/
+theorem tendsto_ae_condExp_iInf
+    [IsFiniteMeasure μ]
+    {𝔽 : ℕ → MeasurableSpace Ω}
+    (h_filtration : Antitone 𝔽)
+    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
+    (f : Ω → ℝ) (h_f_int : Integrable f μ) :
+    ∀ᵐ ω ∂μ, Tendsto
+      (fun n => μ[f | 𝔽 n] ω)
+      atTop
+      (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) :=
+  tendsto_ae_condExp_iInf_aux h_filtration h_le f h_f_int
 
 end ProbabilityTheory

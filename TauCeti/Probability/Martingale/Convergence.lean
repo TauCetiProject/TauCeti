@@ -3,11 +3,12 @@ module
 public import Mathlib.Probability.Martingale.Basic
 public import Mathlib.Probability.Martingale.Convergence
 public import Mathlib.Probability.Process.Filtration
--- The crossing/reverse-martingale implementation chain is imported non-publicly, so downstream
--- users of this module see `tendsto_ae_condExp_iInf` but not the internal helpers
--- (`condExp_exists_ae_limit_antitone`, `upcrossings_bdd_uniform`, `downcrossings`, ...). The
--- `AntitoneLimit` module transitively pulls in `Bounds` and `Pathwise`.
-import TauCeti.Probability.Martingale.Crossings.AntitoneLimit
+-- `AntitoneLimit` is imported publicly so that its flagship `tendsto_ae_condExp_iInf` is
+-- re-exported here. `AntitoneLimit` itself imports the crossing/reverse-martingale implementation
+-- chain (`Bounds`, `Pathwise`, `Reverse`) *non-publicly*, so downstream users of this module see
+-- `tendsto_ae_condExp_iInf` but not the internal helpers (`condExp_exists_ae_limit_antitone`,
+-- `upcrossings_bdd_uniform`, `downcrossings`, ...).
+public import TauCeti.Probability.Martingale.Crossings.AntitoneLimit
 
 /-!
 # Martingale convergence theorems
@@ -41,22 +42,6 @@ namespace ProbabilityTheory
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
-/-- **Conditional expectation converges along a decreasing filtration (Lévy's downward theorem).**
-
-For a decreasing filtration `𝔽ₙ` and integrable `f`, the sequence `μ[f | 𝔽ₙ]` converges almost
-surely to `μ[f | ⨅ₙ 𝔽ₙ]`. -/
-theorem tendsto_ae_condExp_iInf
-    [IsFiniteMeasure μ]
-    {𝔽 : ℕ → MeasurableSpace Ω}
-    (h_filtration : Antitone 𝔽)
-    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
-    (f : Ω → ℝ) (h_f_int : Integrable f μ) :
-    ∀ᵐ ω ∂μ, Tendsto
-      (fun n => μ[f | 𝔽 n] ω)
-      atTop
-      (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) :=
-  tendsto_ae_condExp_iInf_aux h_filtration h_le f h_f_int
-
 /-! ## Implementation notes
 
 The proof follows the upcrossing-inequality route (define upcrossings on `[a, b]`, bound their
@@ -74,8 +59,9 @@ converge to the wrong limit `μ[f | 𝔽 0]`.
    (`Martingale/Crossings/AntitoneLimit.lean`).
 4. `Integrable.uniformIntegrable_condExp` (Mathlib): uniform integrability of conditional
    expectations.
-5. `tendsto_ae_condExp_iInf_aux`: limit identification via Vitali convergence + tower property.
-6. `tendsto_ae_condExp_iInf`: wraps step 5.
+5. `tendsto_ae_condExp_iInf` (limit identification via Vitali convergence + tower property, with
+   the private helper `tendsto_ae_condExp_iInf_aux` carrying the proof, both in
+   `Martingale/Crossings/AntitoneLimit.lean`): re-exported here via the `public import` above.
 
 Mathlib dependencies: `Filtration`, `condExp_condExp_of_le` (tower property). Reverse-martingale
 convergence is *not* available in Mathlib; the chain above proves it locally for the Lévy downward
