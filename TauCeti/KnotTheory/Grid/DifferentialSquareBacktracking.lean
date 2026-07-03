@@ -114,7 +114,6 @@ theorem self_mem_twoStepColumnSwapNeighbors_of_two_le (x : GridState n) (hn : 2 
   exact Nat.zero_ne_one (congrArg Fin.val h)
 
 /-- The source state is a two-step neighbour of itself exactly in grid size at least two. -/
-@[simp]
 theorem self_mem_twoStepColumnSwapNeighbors_iff_two_le (x : GridState n) :
     x ∈ x.twoStepColumnSwapNeighbors ↔ 2 ≤ n := by
   rw [self_mem_twoStepColumnSwapNeighbors_iff_exists_pair_ne]
