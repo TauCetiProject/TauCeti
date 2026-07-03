@@ -1,21 +1,18 @@
 module
 
 public import Mathlib.Probability.Martingale.Convergence
-public import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 import TauCeti.Probability.Martingale.Crossings.Bounds
 
 /-!
-# Crossings: antitone-filtration convergence
+# Crossings: antitone-filtration limit existence
 
-The reverse-martingale convergence chain: a.e. existence of the limit of `μ[f | 𝔽 n]` along an
-antitone filtration, and its identification as `μ[f | ⨅ n, 𝔽 n]`.
+Reverse-martingale infrastructure: a.e. existence of the limit of `μ[f | 𝔽 n]` along an antitone
+filtration. The identification of this limit as `μ[f | ⨅ n, 𝔽 n]` (Lévy's downward theorem) is the
+flagship `tendsto_ae_condExp_iInf` in `Martingale/Convergence.lean`, which consumes this file.
 
 ## Main results
 
-- `condExp_exists_ae_limit_antitone`: a.e. limit existence for antitone filtrations, via the
-  upcrossing inequality applied to the time-reversed martingales.
-- `tendsto_ae_condExp_iInf`: Lévy's downward theorem — the a.e. limit equals `μ[f | ⨅ n, 𝔽 n]`,
-  via uniform integrability and L¹-continuity of conditional expectation.
+- `condExp_exists_ae_limit_antitone`: a.e. limit existence for antitone filtrations.
 
 Adapted from `cameronfreer/exchangeability`
 (`Probability/Martingale/Crossings/AntitoneLimit.lean`, pin
@@ -29,8 +26,6 @@ noncomputable section
 open MeasureTheory Filter Set Function
 
 open scoped Topology ENNReal
-
-open TauCeti.MeasureTheory
 
 namespace ProbabilityTheory
 
@@ -221,7 +216,7 @@ private lemma integrable_of_ae_tendsto_condExp
 /-- A.S. existence of the limit of `μ[f | 𝔽 n]` along an antitone filtration. -/
 -- The proof applies the upcrossing inequality to the time-reversed martingales to show that the
 -- original sequence has finitely many upcrossings and downcrossings a.e., hence converges a.e.
-private lemma condExp_exists_ae_limit_antitone
+lemma condExp_exists_ae_limit_antitone
     [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (hf : Integrable f μ) :
@@ -260,154 +255,5 @@ private lemma condExp_exists_ae_limit_antitone
     filter_upwards [h_ae_conv] with ω hω
     simpa [Xlim, hω] using Classical.choose_spec hω
   exact ⟨Xlim, integrable_of_ae_tendsto_condExp h_le f hf h_ae_tendsto, h_ae_tendsto⟩
-
-
-/-- **Key lemma: a.e. limit of an adapted antitone sequence is `F_inf`-AEStronglyMeasurable.**
-
-For antitone filtration 𝔽 with F_inf = ⨅ 𝔽, if each Xn is 𝔽 n-strongly-measurable and
-Xn → Xlim a.e., then Xlim is AEStronglyMeasurable[F_inf].
-
-The key observation: For antitone 𝔽 (𝔽 n decreases as n increases):
-- For n ≥ N: 𝔽 n ⊆ 𝔽 N (larger index = smaller σ-algebra)
-- So {Xn > a} ∈ 𝔽 n ⊆ 𝔽 N for n ≥ N
-- The lim sup set ⋂_N ⋃_{n≥N} {Xn > a} ∈ ⋂_N 𝔽 N = F_inf
-- Hence Xlim is F_inf-measurable (up to a.e. equality)
-
-This is crucial for showing that reverse martingale limits satisfy μ[Xlim | F_inf] = Xlim. -/
-private lemma aestronglyMeasurable_iInf_of_tendsto_ae_antitone
-    {𝔽 : ℕ → MeasurableSpace Ω} (h_antitone : Antitone 𝔽)
-    {g : ℕ → Ω → ℝ} {Xlim : Ω → ℝ}
-    (hg_meas : ∀ n, StronglyMeasurable[𝔽 n] (g n))
-    (h_tendsto : ∀ᵐ ω ∂μ, Tendsto (fun n => g n ω) atTop (𝓝 (Xlim ω))) :
-    AEStronglyMeasurable[⨅ n, 𝔽 n] Xlim μ := by
-  -- Compose the two `AEStronglyMeasurable` helper lemmas: first show
-  -- `AEStronglyMeasurable[𝔽 N] Xlim` for each `N` by feeding the shifted
-  -- sequence `g (n + N)` into `aestronglyMeasurable_of_tendsto_ae'`; then
-  -- combine over `N` via `aestronglyMeasurable_iInf_antitone`.
-  refine aestronglyMeasurable_iInf_antitone (μ := μ) h_antitone Xlim (fun N => ?_)
-  refine aestronglyMeasurable_of_tendsto_ae' (μ := μ) (f := fun n => g (n + N))
-    (fun n => (hg_meas (n + N)).measurable.mono
-      (h_antitone (Nat.le_add_left N n)) le_rfl) ?_
-  filter_upwards [h_tendsto] with ω hω
-  exact hω.comp (Filter.tendsto_add_atTop_nat N)
-
-/-- L¹-continuity/tower identification: if `Xn → Xlim` in `L¹` (in `eLpNorm`) and each conditional
-expectation `μ[Xn n | F]` agrees a.e. with a fixed `Y`, then `μ[Xlim | F]` agrees a.e. with `Y`. -/
--- Bound `‖μ[Xlim | F] - Y‖₁` by `‖Xlim - Xn n‖₁` (triangle inequality, `condExp_sub` linearity, the
--- L¹ contraction `eLpNorm_one_condExp_le_eLpNorm`, and the vanishing `μ[Xn n | F] - Y` term), then
--- let `n → ∞`.
-private lemma condExp_ae_eq_of_tendsto_eLpNorm
-    {F : MeasurableSpace Ω} {Xlim Y : Ω → ℝ} {Xn : ℕ → Ω → ℝ}
-    (hXlimint : Integrable Xlim μ) (hXn_int : ∀ n, Integrable (Xn n) μ)
-    (h_condExp : ∀ n, μ[Xn n | F] =ᵐ[μ] Y)
-    (hL1 : Tendsto (fun n => eLpNorm (Xlim - Xn n) 1 μ) atTop (𝓝 0)) :
-    μ[Xlim | F] =ᵐ[μ] Y := by
-  -- `Y` inherits (ambient) a.e.-strong-measurability from the conditional expectations it equals.
-  -- (No type ascription: it would force the measurability σ-algebra to `F` instead of the ambient.)
-  have hY_meas := integrable_condExp.aestronglyMeasurable.congr (h_condExp 0)
-  -- Key inequality: `‖μ[Xlim | F] - Y‖₁ ≤ ‖Xlim - Xn n‖₁` for every `n`.
-  have h_bound (n : ℕ) : eLpNorm (μ[Xlim | F] - Y) 1 μ ≤ eLpNorm (Xlim - Xn n) 1 μ := by
-    -- Triangle: `(μ[Xlim|F] - Y) = (μ[Xlim|F] - μ[Xn|F]) + (μ[Xn|F] - Y)`.
-    have htri : eLpNorm (μ[Xlim | F] - Y) 1 μ
-                ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ
-                  + eLpNorm (μ[Xn n | F] - Y) 1 μ := by
-      have : μ[Xlim | F] - Y = (μ[Xlim | F] - μ[Xn n | F]) + (μ[Xn n | F] - Y) := by ring
-      rw [this]
-      refine eLpNorm_add_le ?_ ?_ ?_
-      · exact (integrable_condExp.sub integrable_condExp).aestronglyMeasurable
-      · exact integrable_condExp.aestronglyMeasurable.sub hY_meas
-      · norm_num
-    -- Second term is `0` since `μ[Xn n | F] =ᵐ Y`.
-    have hzero : eLpNorm (μ[Xn n | F] - Y) 1 μ = 0 := by
-      have h0 : μ[Xn n | F] - Y =ᵐ[μ] 0 := by
-        filter_upwards [h_condExp n] with ω hω; simp [hω]
-      rw [eLpNorm_congr_ae h0]; simp
-    -- First term `≤ ‖Xlim - Xn‖₁` by `condExp_sub` linearity + the L¹ contraction.
-    have hfirst : eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ ≤ eLpNorm (Xlim - Xn n) 1 μ := by
-      have hsub : μ[Xlim | F] - μ[Xn n | F] =ᵐ[μ] μ[Xlim - Xn n | F] :=
-        (condExp_sub hXlimint (hXn_int n) F).symm
-      rw [eLpNorm_congr_ae hsub]
-      exact eLpNorm_one_condExp_le_eLpNorm _
-    calc eLpNorm (μ[Xlim | F] - Y) 1 μ
-        ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ + eLpNorm (μ[Xn n | F] - Y) 1 μ := htri
-      _ = eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ := by rw [hzero]; ring
-      _ ≤ eLpNorm (Xlim - Xn n) 1 μ := hfirst
-  -- Let `n → ∞`: the constant LHS is `≤` a sequence tending to `0`, hence it is `0`.
-  have h_norm_zero : eLpNorm (μ[Xlim | F] - Y) 1 μ = 0 :=
-    le_antisymm
-      (le_of_tendsto_of_tendsto tendsto_const_nhds hL1 (Eventually.of_forall h_bound)) bot_le
-  rw [eLpNorm_eq_zero_iff (integrable_condExp.aestronglyMeasurable.sub hY_meas)
-    one_ne_zero] at h_norm_zero
-  filter_upwards [h_norm_zero] with ω hω
-  simp only [Pi.zero_apply] at hω
-  exact sub_eq_zero.mp hω
-
-/-- Identification: the a.s. limit of `μ[f | 𝔽 n]` along an antitone filtration equals
-`μ[f | ⨅ n, 𝔽 n]`. -/
--- Uniform integrability upgrades the a.e. convergence to L¹ convergence, and L¹-continuity of
--- conditional expectation then identifies the limit.
-private lemma tendsto_ae_condExp_iInf_aux
-    [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
-    (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
-    (f : Ω → ℝ) (hf : Integrable f μ) :
-    ∀ᵐ ω ∂μ, Tendsto (fun n => μ[f | 𝔽 n] ω) atTop (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) := by
-  classical
-  -- 1) Get a.s. limit Xlim
-  obtain ⟨Xlim, hXlimint, h_tendsto⟩ :=
-    condExp_exists_ae_limit_antitone (μ := μ) h_antitone h_le f hf
-  -- 2) UI ⟹ L¹ convergence via Vitali
-  have hUI : UniformIntegrable (fun n => μ[f | 𝔽 n]) 1 μ := hf.uniformIntegrable_condExp h_le
-  have hL1_conv : Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - Xlim) 1 μ) atTop (𝓝 0) := by
-    apply tendsto_Lp_finite_of_tendsto_ae (hp := le_refl 1) (hp' := ENNReal.one_ne_top)
-    · intro n; exact integrable_condExp.aestronglyMeasurable
-    · exact memLp_one_iff_integrable.2 hXlimint
-    · exact hUI.unifIntegrable
-    · exact h_tendsto
-  -- `Xlim` is `AEStronglyMeasurable[⨅ n, 𝔽 n]` (a.e. limit of `𝔽 n`-strongly-measurable functions).
-  have hXlim_iInf_meas : AEStronglyMeasurable[⨅ n, 𝔽 n] Xlim μ :=
-    aestronglyMeasurable_iInf_of_tendsto_ae_antitone h_antitone
-      (fun n => stronglyMeasurable_condExp) h_tendsto
-  -- 3) Pass the limit through `condExp` at `⨅ n, 𝔽 n`. We work with the raw `⨅ n, 𝔽 n` rather than
-  -- a `set` alias: a local of type `MeasurableSpace Ω` shadows the ambient σ-algebra during the
-  -- instance synthesis triggered by the call to `condExp_ae_eq_of_tendsto_eLpNorm`.
-  -- Tower property: for every `n`, `μ[μ[f | 𝔽 n] | ⨅ n, 𝔽 n] =ᵐ μ[f | ⨅ n, 𝔽 n]`.
-  have h_tower : ∀ n, μ[μ[f | 𝔽 n] | ⨅ n, 𝔽 n] =ᵐ[μ] μ[f | ⨅ n, 𝔽 n] :=
-    fun n => condExp_condExp_of_le (iInf_le 𝔽 n) (h_le n)
-  have hiInf_le : (⨅ n, 𝔽 n) ≤ (inferInstance : MeasurableSpace Ω) :=
-    le_trans (iInf_le 𝔽 0) (h_le 0)
-  set Xn : ℕ → Ω → ℝ := fun n => μ[f | 𝔽 n] with hXn_def
-  -- Rephrase the L¹ convergence with the `Xn` abbreviation.
-  have hL1_conv_Xn : Tendsto (fun n => eLpNorm (Xlim - Xn n) 1 μ) atTop (𝓝 0) := by
-    simpa [hXn_def, eLpNorm_sub_comm] using hL1_conv
-  -- Identify `μ[Xlim | ⨅ n, 𝔽 n]` with `μ[f | ⨅ n, 𝔽 n]` by L¹-continuity of conditional
-  -- expectation (the tower property gives `μ[Xn n | ⨅ n, 𝔽 n] =ᵐ μ[f | ⨅ n, 𝔽 n]`).
-  have hCE_eqY : μ[Xlim | ⨅ n, 𝔽 n] =ᵐ[μ] μ[f | ⨅ n, 𝔽 n] :=
-    condExp_ae_eq_of_tendsto_eLpNorm hXlimint (fun _ => integrable_condExp) h_tower hL1_conv_Xn
-  -- `Xlim` is `AEStronglyMeasurable[⨅ n, 𝔽 n]` (a.e. limit of `⨅ n, 𝔽 n`-measurable functions), so
-  -- `μ[Xlim | ⨅ n, 𝔽 n] =ᵐ Xlim`; combined with `hCE_eqY` this identifies `μ[f | ⨅ n, 𝔽 n]`.
-  have hXlim_eq : μ[f | ⨅ n, 𝔽 n] =ᵐ[μ] Xlim := by
-    have hXlim_condExp_self : μ[Xlim | ⨅ n, 𝔽 n] =ᵐ[μ] Xlim :=
-      condExp_of_aestronglyMeasurable' hiInf_le hXlim_iInf_meas hXlimint
-    exact hCE_eqY.symm.trans hXlim_condExp_self
-  -- Combine `h_tendsto : μ[f | 𝔽 n] → Xlim` with `hXlim_eq : μ[f | ⨅ n, 𝔽 n] =ᵐ Xlim`.
-  filter_upwards [h_tendsto, hXlim_eq] with ω h_tend h_eq
-  rw [h_eq]
-  exact h_tend
-
-/-- **Conditional expectation converges along a decreasing filtration (Lévy's downward theorem).**
-
-For a decreasing filtration `𝔽ₙ` and integrable `f`, the sequence `μ[f | 𝔽ₙ]` converges almost
-surely to `μ[f | ⨅ₙ 𝔽ₙ]`. -/
-theorem tendsto_ae_condExp_iInf
-    [IsFiniteMeasure μ]
-    {𝔽 : ℕ → MeasurableSpace Ω}
-    (h_filtration : Antitone 𝔽)
-    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
-    (f : Ω → ℝ) (h_f_int : Integrable f μ) :
-    ∀ᵐ ω ∂μ, Tendsto
-      (fun n => μ[f | 𝔽 n] ω)
-      atTop
-      (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) :=
-  tendsto_ae_condExp_iInf_aux h_filtration h_le f h_f_int
 
 end ProbabilityTheory
