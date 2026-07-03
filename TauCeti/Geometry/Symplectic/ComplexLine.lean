@@ -84,7 +84,6 @@ lemma stdComplexSymplecticForm_apply (z w : ℂ) :
   ring
 
 /-- The associated compatible metric on `ℂ` is the standard real dot product. -/
-@[simp]
 lemma stdComplexSymplecticForm_associatedBilinForm (z w : ℂ) :
     stdComplexSymplecticForm.associatedBilinForm (AlmostComplexStructure.ofComplexModule ℂ) z w =
       z.re * w.re + z.im * w.im := by
@@ -92,7 +91,6 @@ lemma stdComplexSymplecticForm_associatedBilinForm (z w : ℂ) :
   simp [AlmostComplexStructure.ofComplexModule_apply, Complex.mul_re, Complex.mul_im]
 
 /-- The standard area of `(z, I z)` is the squared norm in real coordinates. -/
-@[simp]
 lemma stdComplexSymplecticForm_apply_ofComplexModule_self (z : ℂ) :
     stdComplexSymplecticForm z (AlmostComplexStructure.ofComplexModule ℂ z) =
       z.re * z.re + z.im * z.im := by
