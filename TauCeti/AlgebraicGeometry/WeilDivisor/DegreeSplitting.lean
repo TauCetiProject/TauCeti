@@ -158,6 +158,10 @@ lemma degreeCorrection_coe_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w
     S.degreeCorrection w h x₀ (p : S.ClassGroup) = p :=
   S.degreeCorrection_eq_self_of_mem_picZero w h x₀ p.property
 
+/-- The forward map `c ↦ (c - (deg c) • [x₀], deg c)` of the degree splitting at a weight-one
+base point `x₀`: the first component is the degree-corrected class, which lands in `picZero`,
+and the second is the weighted degree. Together with `degreeSplitInverse` this assembles the
+product decomposition `classGroupAddEquivPicZeroProdInt`. -/
 noncomputable def degreeSplitForward (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) : S.ClassGroup →+ picZero w h × ℤ :=
   ((S.degreeCorrection w h x₀).codRestrict (picZero w h)
@@ -171,6 +175,8 @@ private lemma degreeSplitForward_apply (w : X → ℤ) (h : S.IsWeightedDegreeZe
         weightedDegreeClass w h c) :=
   rfl
 
+/-- The inverse map `(p, n) ↦ p + n • [x₀]` of the degree splitting at a base point `x₀`:
+add `n` copies of the base-point class to a class of weighted degree zero. -/
 noncomputable def degreeSplitInverse (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X) :
     picZero w h × ℤ →+ S.ClassGroup :=
   (picZero w h).subtype.comp (AddMonoidHom.fst (picZero w h) ℤ) +

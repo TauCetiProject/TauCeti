@@ -129,6 +129,8 @@ instance instAddCommMonoid : AddCommMonoid (Hom R C M N) where
     rw [show (Nat.succ n • f : Hom R C M N) = f + n • f from rfl]
     rw [add_apply, add_apply, add_comm]
 
+/-- The map sending a comodule morphism to its underlying linear map, bundled as an
+additive monoid homomorphism. -/
 @[expose] def toLinearMapAddMonoidHom : Hom R C M N →+ M →ₗ[R] N where
   toFun f := f.toLinearMap
   map_zero' := zero_toLinearMap
