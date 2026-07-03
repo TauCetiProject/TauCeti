@@ -162,8 +162,8 @@ variable {q : ℕ} [Fact q.Prime]
 
 /-- Away from `2`, divisibility of an integer is the same as divisibility of its associated
 prime-discriminant radicand. In the even-prime cases the two differ by the square factor
-`4`; in all other cases they are equal. -/
-@[simp]
+`4`; in all other cases they are equal. Not a `simp` lemma: the right-hand side is again of
+the form `(q : ℤ) ∣ _`, so as a rewrite rule it matches its own output and loops. -/
 theorem dvd_primeDiscriminant_iff_dvd_radicand (D : ℤ) (hq : q ≠ 2) :
     (q : ℤ) ∣ D ↔ (q : ℤ) ∣ primeDiscriminantRadicand D := by
   have hq2 : ¬ (q : ℤ) ∣ (2 : ℤ) := by
