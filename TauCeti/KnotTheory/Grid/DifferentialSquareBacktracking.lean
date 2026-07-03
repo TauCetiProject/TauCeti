@@ -107,17 +107,15 @@ theorem self_mem_twoStepColumnSwapNeighbors_of_two_le (x : GridState n) (hn : 2 
 @[simp 1100]
 theorem self_mem_twoStepColumnSwapNeighbors_iff_two_le (x : GridState n) :
     x ∈ x.twoStepColumnSwapNeighbors ↔ 2 ≤ n := by
-  rw [self_mem_twoStepColumnSwapNeighbors_iff_exists_pair_ne]
   constructor
-  · rintro ⟨a, b, hab⟩
+  · intro hx
+    rw [self_mem_twoStepColumnSwapNeighbors_iff_exists_pair_ne] at hx
+    obtain ⟨a, b, hab⟩ := hx
     have hcard : 1 < Fintype.card (Fin n) :=
       Fintype.one_lt_card_iff.mpr ⟨a, b, hab⟩
     exact Nat.succ_le_of_lt (by simpa [Fintype.card_fin] using hcard)
   · intro hn
-    refine ⟨⟨0, Nat.lt_of_lt_of_le (by decide) hn⟩,
-      ⟨1, Nat.lt_of_lt_of_le (by decide) hn⟩, ?_⟩
-    intro h
-    exact Nat.zero_ne_one (congrArg Fin.val h)
+    exact x.self_mem_twoStepColumnSwapNeighbors_of_two_le hn
 
 end GridState
 
