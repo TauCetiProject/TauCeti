@@ -168,6 +168,7 @@ private theorem comap_coact_mem (f : Comodule.Hom R C M N) (B : Subcomodule R C 
 
 /-- The underlying submodule of an inverse-image subcomodule is the inverse image of the
 underlying submodule. -/
+@[simp]
 theorem comap_toSubmodule (B : Subcomodule R C N) (f : Comodule.Hom R C M N) :
     (B.comap f).toSubmodule = B.toSubmodule.comap f.toLinearMap :=
   rfl
@@ -191,6 +192,7 @@ theorem comap_top (f : Comodule.Hom R C M N) : (⊤ : Subcomodule R C N).comap f
   simp
 
 /-- The underlying submodule of the inverse image of the bottom subcomodule is the kernel. -/
+@[simp]
 theorem comap_bot_toSubmodule (f : Comodule.Hom R C M N) :
     ((⊥ : Subcomodule R C N).comap f).toSubmodule = LinearMap.ker f.toLinearMap := by
   ext m
@@ -253,6 +255,7 @@ def ker (f : Hom R C M N) : Subcomodule R C M :=
   (⊥ : Subcomodule R C N).comap f
 
 /-- The underlying submodule of the kernel subcomodule is the linear-map kernel. -/
+@[simp]
 theorem ker_toSubmodule (f : Hom R C M N) :
     (ker (R := R) (C := C) f).toSubmodule = LinearMap.ker f.toLinearMap :=
   Subcomodule.comap_bot_toSubmodule f

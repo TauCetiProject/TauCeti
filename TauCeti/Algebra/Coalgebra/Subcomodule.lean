@@ -161,6 +161,7 @@ instance instTop : Top (Subcomodule R C M) where
         exact tensor_mem_range_top (R := R) (C := C) (M := M)
           (Comodule.coact (R := R) (C := C) (M := M) m) }
 
+@[simp]
 theorem top_toSubmodule : (⊤ : Subcomodule R C M).toSubmodule = (⊤ : Submodule R M) :=
   rfl
 
@@ -182,6 +183,7 @@ instance instBot : Bot (Subcomodule R C M) where
         subst m
         exact ⟨0, by simp⟩ }
 
+@[simp]
 theorem bot_toSubmodule : (⊥ : Subcomodule R C M).toSubmodule = (⊥ : Submodule R M) :=
   rfl
 
@@ -229,6 +231,7 @@ private theorem image_tensor_apply (f : Comodule.Hom R C M N) (A : Subcomodule R
 
 /-- The underlying submodule of the image subcomodule is the image of the underlying
 submodule. -/
+@[simp]
 theorem map_toSubmodule (A : Subcomodule R C M) (f : Comodule.Hom R C M N) :
     (A.map f).toSubmodule = A.toSubmodule.map f.toLinearMap :=
   rfl

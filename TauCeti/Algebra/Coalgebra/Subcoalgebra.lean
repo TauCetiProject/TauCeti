@@ -146,6 +146,7 @@ instance instTop : Top (Subcoalgebra R C) where
           rcases hy with ⟨y', rfl⟩
           exact ⟨x' + y', by simp⟩ }
 
+@[simp]
 theorem top_toSubmodule : (⊤ : Subcoalgebra R C).toSubmodule = (⊤ : Submodule R C) :=
   rfl
 
@@ -167,6 +168,7 @@ instance instBot : Bot (Subcoalgebra R C) where
         subst c
         exact ⟨0, by simp⟩ }
 
+@[simp]
 theorem bot_toSubmodule : (⊥ : Subcoalgebra R C).toSubmodule = (⊥ : Submodule R C) :=
   rfl
 

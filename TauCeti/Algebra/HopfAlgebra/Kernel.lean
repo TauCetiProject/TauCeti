@@ -102,6 +102,7 @@ private theorem tensor_map_ker_eq_left_sup_right (f : H →ₐc[R] K)
       simp [hfx, BialgHom.map_antipode f x])
 
 /-- The underlying ideal of the kernel Hopf ideal is the ring-hom kernel. -/
+@[simp]
 theorem ker_toIdeal (f : H →ₐc[R] K) (hf : Function.Surjective f) :
     (ker f hf).toIdeal = RingHom.ker (f : H →ₐ[R] K) :=
   rfl
@@ -188,6 +189,7 @@ theorem kerLiftBialgEquiv_toBialgHom (f : H →ₐc[R] K) (hf : Function.Surject
   rfl
 
 /-- The Hopf-ideal kernel of the quotient morphism by `I` is `I`. -/
+@[simp]
 theorem ker_mkBialgHom (I : HopfIdeal R H) :
     ker (Bialgebra.Quotient.mkBialgHom I.toIdeal) Ideal.Quotient.mk_surjective = I := by
   ext x

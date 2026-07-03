@@ -71,6 +71,7 @@ The underlying submodule is unchanged; the map `D ⊗ D → C ⊗ C` factors thr
 
 /-- The underlying submodule is unchanged when a subcoalgebra is viewed as a subcomodule of
 the regular comodule. -/
+@[simp]
 theorem toRegularSubcomodule_toSubmodule (D : Subcoalgebra R C) :
     D.toRegularSubcomodule.toSubmodule = D.toSubmodule :=
   rfl

@@ -71,6 +71,11 @@ lemma unitDiscStandardAutomorphismEquiv_one (a : Complex.UnitDisc) :
   ext z
   simp [unitDiscStandardAutomorphismEquiv]
 
+/-- The standard automorphism sends its center to zero. -/
+lemma unitDiscStandardAutomorphismEquiv_self (u : Circle) (a : Complex.UnitDisc) :
+    unitDiscStandardAutomorphismEquiv u a a = 0 := by
+  simp
+
 /-- The standard automorphism sends zero to `-u * a`. -/
 lemma unitDiscStandardAutomorphismEquiv_apply_zero (u : Circle) (a : Complex.UnitDisc) :
     unitDiscStandardAutomorphismEquiv u a 0 = u • (-a) := by
@@ -81,6 +86,11 @@ lemma norm_unitDiscStandardAutomorphismEquiv (u : Circle) (a z : Complex.UnitDis
     ‖(unitDiscStandardAutomorphismEquiv u a z : ℂ)‖ = pseudoHyperbolicExpr (z : ℂ) (a : ℂ) := by
   rw [unitDiscStandardAutomorphismEquiv_apply, Complex.UnitDisc.coe_circle_smul, norm_mul,
     Circle.norm_coe, one_mul, norm_unitDiscMoebius]
+
+/-- A standard disc automorphism vanishes exactly at its center. -/
+lemma unitDiscStandardAutomorphismEquiv_eq_zero_iff (u : Circle) (a z : Complex.UnitDisc) :
+    unitDiscStandardAutomorphismEquiv u a z = 0 ↔ z = a := by
+  simp
 
 /-- The scalar formula of a standard automorphism is holomorphic on the unit disc. -/
 lemma differentiableOn_unitDiscStandardAutomorphismFormula_of_norm_lt_one
