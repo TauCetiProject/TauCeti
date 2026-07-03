@@ -93,9 +93,11 @@ private lemma ae_upcrossings_condExp_lt_top
     ∀ᵐ ω ∂μ, upcrossings a b (fun n => μ[f | 𝔽 n]) ω < ⊤ := by
   -- Get bound for upcrossings (forward direction)
   obtain ⟨C_up, h_C_up_finite, hC_up⟩ :=
-    upcrossings_bdd_uniform (μ := μ) h_antitone h_le f (a) (b) hab
+    exists_lintegral_upcrossings_revCondExpFinite_le_of_antitone (μ := μ) h_antitone h_le f (a) (b)
+      hab
   -- Get bound for downcrossings via negated process (backward direction)
-  obtain ⟨C_down, h_C_down_finite, hC_down⟩ := upcrossings_bdd_uniform (μ := μ) h_antitone h_le
+  obtain ⟨C_down, h_C_down_finite, hC_down⟩ :=
+    exists_lintegral_upcrossings_revCondExpFinite_le_of_antitone (μ := μ) h_antitone h_le
       (fun ω => -f ω) (-b) (-a) (by linarith)
   -- Use max of both bounds as the uniform constant
   set C := max C_up C_down with hC_def

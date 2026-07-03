@@ -12,8 +12,9 @@ top of `Pathwise.lean` and `Reverse.lean`.
 
 ## Main results
 
-- `upcrossings_bdd_uniform`: uniform-in-`N` bound on the expected number of upcrossings for the
-  reversed conditional-expectation process along an antitone filtration.
+- `exists_lintegral_upcrossings_revCondExpFinite_le_of_antitone`: uniform-in-`N` bound on the
+  expected number of upcrossings for the reversed conditional-expectation process along an antitone
+  filtration.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/Martingale/Crossings/Bounds.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
@@ -113,7 +114,7 @@ For the process obtained by reversing an antitone filtration, the expected numbe
 uniformly bounded, independent of the time horizon `N`. No integrability hypothesis is needed: when
 `f` is not integrable the reversed conditional expectations all vanish, so the bound holds with
 `C = 0`. -/
-lemma upcrossings_bdd_uniform
+lemma exists_lintegral_upcrossings_revCondExpFinite_le_of_antitone
     [IsFiniteMeasure μ]
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (a b : ℝ) (hab : a < b) :
