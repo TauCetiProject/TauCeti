@@ -12,7 +12,7 @@ flagship `tendsto_ae_condExp_iInf` in `Martingale/Convergence.lean`, which consu
 
 ## Main results
 
-- `condExp_exists_ae_limit_antitone`: a.e. limit existence for antitone filtrations.
+- `exists_ae_tendsto_condExp_of_antitone`: a.e. limit existence for antitone filtrations.
 
 Adapted from `cameronfreer/exchangeability`
 (`Probability/Martingale/Crossings/AntitoneLimit.lean`, pin
@@ -204,7 +204,7 @@ private lemma integrable_of_ae_tendsto_condExp
 /-- A.S. existence of the limit of `μ[f | 𝔽 n]` along an antitone filtration. -/
 -- The proof applies the upcrossing inequality to the time-reversed martingales to show that the
 -- original sequence has finitely many upcrossings and downcrossings a.e., hence converges a.e.
-lemma condExp_exists_ae_limit_antitone
+lemma exists_ae_tendsto_condExp_of_antitone
     [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (hf : Integrable f μ) :

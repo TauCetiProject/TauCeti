@@ -135,7 +135,7 @@ private lemma tendsto_ae_condExp_iInf_of_integrable
   -- to the wrong limit `μ[f | 𝔽 0]` instead of `μ[f | ⨅ n, 𝔽 n]`.
   -- 1) A.s. limit `Xlim` exists (upcrossing bounds on the time-reversed martingales).
   obtain ⟨Xlim, hXlimint, h_tendsto⟩ :=
-    condExp_exists_ae_limit_antitone (μ := μ) h_filtration h_le f h_f_int
+    exists_ae_tendsto_condExp_of_antitone (μ := μ) h_filtration h_le f h_f_int
   -- 2) Uniform integrability upgrades a.e. convergence to `L¹` convergence (Vitali).
   have hUI : UniformIntegrable (fun n => μ[f | 𝔽 n]) 1 μ := h_f_int.uniformIntegrable_condExp h_le
   have hL1_conv : Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - Xlim) 1 μ) atTop (𝓝 0) := by
