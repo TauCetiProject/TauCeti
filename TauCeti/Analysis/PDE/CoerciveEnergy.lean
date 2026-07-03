@@ -25,6 +25,11 @@ Accordingly this file stops at coercivity of the pointwise jet form.  The Lax--M
 solution API in `TauCeti.Analysis.InnerProductSpace.LaxMilgram` applies after Lane D builds
 the integrated weak form on the Sobolev space, not to each finite-dimensional jet fiber.
 
+Symmetry of the same zero-drift integrand is recorded in
+`TauCeti.Analysis.PDE.SymmetricEnergy`.  Consumers that need the hypotheses side by side
+should use those symmetry lemmas together with the coercivity lemmas below, preserving the
+separate API boundaries for algebraic symmetry and quantitative lower bounds.
+
 The bookkeeping follows the standard Young-inequality absorption argument used in the
 energy method, as in Evans, *Partial Differential Equations*, Chapter 6.
 
