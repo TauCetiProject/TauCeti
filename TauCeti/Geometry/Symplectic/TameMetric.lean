@@ -155,7 +155,6 @@ lemma innerProductCore_inner (h : ω.Tames J) (v w : V) :
   symmetrizedBilinForm_apply ω J v w
 
 /-- The inner product from `innerProductCore` is `J`-invariant: `⟪J v, J w⟫ = ⟪v, w⟫`. -/
-@[simp]
 lemma innerProductCore_inner_invariant (h : ω.Tames J) (v w : V) :
     @inner ℝ V h.innerProductCore.toInner (J v) (J w)
       = @inner ℝ V h.innerProductCore.toInner v w :=
