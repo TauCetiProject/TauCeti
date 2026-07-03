@@ -79,10 +79,7 @@ theorem swapColumns_swapColumns_eq_self_iff_sym2_mk_eq (x : GridState n) {a b c 
     · cases hpair
       exact GridState.swapColumns_swapColumns a b x
     · cases hpair
-      rw [show x.swapColumns d c = x.swapColumns c d by
-        ext k
-        simp [swapColumns_apply, Equiv.swap_comm]]
-      exact GridState.swapColumns_swapColumns c d x
+      simp [GridState.swapColumns_comm]
 
 /-- The source state appears in its own two-step neighbour set exactly when there is a distinct
 pair of grid columns. -/

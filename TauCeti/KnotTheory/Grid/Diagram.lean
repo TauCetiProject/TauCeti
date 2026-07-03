@@ -305,6 +305,12 @@ theorem swapColumns_apply (a b : Fin n) (x : GridState n) (c : Fin n) :
     x.swapColumns a b c = x (Equiv.swap a b c) := by
   simp [swapColumns, relabelColumns]
 
+/-- Swapping columns is symmetric in the two chosen columns. -/
+theorem swapColumns_comm (a b : Fin n) (x : GridState n) :
+    x.swapColumns a b = x.swapColumns b a := by
+  ext c
+  simp [swapColumns_apply, Equiv.swap_comm]
+
 /-- Swapping the same pair of columns twice is the identity on grid states. -/
 @[simp]
 theorem swapColumns_swapColumns (a b : Fin n) (x : GridState n) :
