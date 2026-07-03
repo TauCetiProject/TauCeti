@@ -82,11 +82,9 @@ lemma stdComplexStructure_apply (z : ℂ) :
     simp [stdComplexStructure, realProdEquivComplexLine, complexLineEquivRealProd,
       Complex.mul_re, Complex.mul_im]
 
-@[simp]
 lemma stdComplexStructure_one : stdComplexStructure 1 = Complex.I := by
   simp
 
-@[simp]
 lemma stdComplexStructure_I : stdComplexStructure Complex.I = -1 := by
   simp
 
