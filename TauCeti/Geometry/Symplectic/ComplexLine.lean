@@ -83,11 +83,21 @@ lemma stdComplexSymplecticForm_apply (z w : ℂ) :
   simp [stdComplexSymplecticForm]
   ring
 
+/-- The associated compatible metric on `ℂ` is the standard real dot product. -/
+@[simp]
+lemma stdComplexSymplecticForm_associatedBilinForm (z w : ℂ) :
+    stdComplexSymplecticForm.associatedBilinForm (AlmostComplexStructure.ofComplexModule ℂ) z w =
+      z.re * w.re + z.im * w.im := by
+  rw [SymplecticForm.associatedBilinForm_apply, stdComplexSymplecticForm_apply]
+  simp [AlmostComplexStructure.ofComplexModule_apply, Complex.mul_re, Complex.mul_im]
+
 /-- The standard area of `(z, I z)` is the squared norm in real coordinates. -/
+@[simp]
 lemma stdComplexSymplecticForm_apply_ofComplexModule_self (z : ℂ) :
     stdComplexSymplecticForm z (AlmostComplexStructure.ofComplexModule ℂ z) =
       z.re * z.re + z.im * z.im := by
-  simp [AlmostComplexStructure.ofComplexModule_apply, Complex.mul_re, Complex.mul_im]
+  rw [← SymplecticForm.associatedBilinForm_apply]
+  exact stdComplexSymplecticForm_associatedBilinForm z z
 
 /-- The real-coordinate equivalence from `ℝ × ℝ` to `ℂ` is a symplectomorphism for the
 standard symplectic forms. -/
@@ -125,12 +135,5 @@ lemma stdComplexSymplecticForm_compatible :
   rw [← product_transport_equivRealProdCLM_symm_eq_ofComplexModule]
   exact (stdSymplecticForm_compatible_product (V := ℝ)).transport
     Complex.equivRealProdCLM.symm.toLinearEquiv
-
-/-- The associated compatible metric on `ℂ` is the standard real dot product. -/
-lemma stdComplexSymplecticForm_associatedBilinForm (z w : ℂ) :
-    stdComplexSymplecticForm.associatedBilinForm (AlmostComplexStructure.ofComplexModule ℂ) z w =
-      z.re * w.re + z.im * w.im := by
-  rw [SymplecticForm.associatedBilinForm_apply, stdComplexSymplecticForm_apply]
-  simp [AlmostComplexStructure.ofComplexModule_apply, Complex.mul_re, Complex.mul_im]
 
 end TauCeti
