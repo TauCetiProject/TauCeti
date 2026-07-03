@@ -220,12 +220,6 @@ theorem measurable_reindex (φ : ℕ → ℕ) :
     Measurable (fun x : ℕ → α => fun k => x (φ k)) :=
   measurable_pi_lambda _ fun k => measurable_pi_apply (φ k)
 
-omit [MeasurableSpace Ω] in
-/-- Reindexing path space by a time permutation is measurable. -/
-theorem measurable_permReindex (π : Equiv.Perm ℕ) :
-    Measurable (permReindex (α := α) π) :=
-  measurable_reindex π
-
 /-- Reindexing a path law gives the path law of the reindexed process. -/
 theorem map_reindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
     (hX : ∀ i, AEMeasurable (X i) μ) (φ : ℕ → ℕ) :
@@ -235,13 +229,6 @@ theorem map_reindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
   rw [AEMeasurable.map_map_of_aemeasurable (measurable_reindex φ).aemeasurable
     (aemeasurable_pi_lambda _ hX)]
   rfl
-
-/-- Reindexing a path law by a time permutation gives the path law of the permuted process. -/
-theorem map_permReindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (π : Equiv.Perm ℕ) :
-    (pathLaw μ X).map (permReindex (α := α) π) =
-      pathLaw μ (fun k ω => X (π k) ω) :=
-  map_reindex_pathLaw μ hX π
 
 /-- Projecting the `φ`-reindexed path law onto its first `n` coordinates gives the law of the
 block `(X (φ 0), …, X (φ (n-1)))`. -/
