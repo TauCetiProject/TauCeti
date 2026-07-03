@@ -60,58 +60,6 @@ lemma mem_basepointChangeSubgroup (γ : Path x₀ x₁)
       ∃ h ∈ H, _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ h = g :=
   Iff.rfl
 
-/-- To prove an inclusion into a basepoint-changed subgroup, pull each element back along the
-path-conjugation isomorphism and check membership in the original subgroup. -/
-lemma le_basepointChangeSubgroup_iff (γ : Path x₀ x₁)
-    (H : Subgroup (_root_.FundamentalGroup X x₀))
-    (K : Subgroup (_root_.FundamentalGroup X x₁)) :
-    K ≤ basepointChangeSubgroup γ H ↔
-      ∀ g ∈ K, (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).symm g ∈ H := by
-  constructor
-  · intro hK g hg
-    exact
-      (Subgroup.mem_map_equiv
-        (f := (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ))
-        (K := H) (x := g)).1 (by simpa [basepointChangeSubgroup] using hK hg)
-  · intro hK g hg
-    exact
-      (Subgroup.mem_map_equiv
-        (f := (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ))
-        (K := H) (x := g)).2 (hK g hg)
-
-/-- To prove an inclusion out of a basepoint-changed subgroup, it suffices to prove the
-corresponding inclusion after comapping along the path-conjugation isomorphism. -/
-lemma basepointChangeSubgroup_le_iff (γ : Path x₀ x₁)
-    (H : Subgroup (_root_.FundamentalGroup X x₀))
-    (K : Subgroup (_root_.FundamentalGroup X x₁)) :
-    basepointChangeSubgroup γ H ≤ K ↔
-      H ≤ K.comap ((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ :
-        _root_.FundamentalGroup X x₀ →* _root_.FundamentalGroup X x₁)) := by
-  rw [basepointChangeSubgroup]
-  exact Subgroup.map_le_iff_le_comap
-
-/-- Basepoint-change transport of fundamental-group subgroups is monotone. -/
-lemma basepointChangeSubgroup_mono (γ : Path x₀ x₁)
-    {H K : Subgroup (_root_.FundamentalGroup X x₀)} (hHK : H ≤ K) :
-    basepointChangeSubgroup γ H ≤ basepointChangeSubgroup γ K := by
-  exact Subgroup.map_mono hHK
-
-/-- Normality of a fundamental-group subgroup is preserved by basepoint-change transport. -/
-instance basepointChangeSubgroup.normal (γ : Path x₀ x₁)
-    (H : Subgroup (_root_.FundamentalGroup X x₀)) [hH : H.Normal] :
-    (basepointChangeSubgroup γ H).Normal :=
-  hH.map ((_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ :
-    _root_.FundamentalGroup X x₀ →* _root_.FundamentalGroup X x₁))
-    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ).surjective
-
-/-- A basepoint-changed subgroup is normal if and only if the original subgroup is normal. -/
-lemma basepointChangeSubgroup_normal_iff (γ : Path x₀ x₁)
-    (H : Subgroup (_root_.FundamentalGroup X x₀)) :
-    (basepointChangeSubgroup γ H).Normal ↔ H.Normal := by
-  simpa [basepointChangeSubgroup] using
-    (MulEquiv.normal_map_iff
-      (f := _root_.FundamentalGroup.fundamentalGroupMulEquivOfPath γ) (H := H))
-
 /-- The normalizer quotient `N(H) / H` transported along a basepoint-change path. -/
 noncomputable def basepointChangeNormalizerQuotientEquiv (γ : Path x₀ x₁)
     (H : Subgroup (_root_.FundamentalGroup X x₀)) :
