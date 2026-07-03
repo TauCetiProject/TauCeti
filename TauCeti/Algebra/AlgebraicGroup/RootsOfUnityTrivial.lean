@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity
-public import TauCeti.Algebra.AlgebraicGroup.Trivial
 
 /-!
 # The first roots-of-unity group is trivial
@@ -87,7 +86,7 @@ theorem convPoint_one_eq_one_iff
 
 /-- Any `μ_1`-point evaluates the standard generator to `1`. -/
 @[simp]
-theorem convPoint_one_generator
+theorem convPoint_one_apply_single_generator
     (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod 1)) →ₐ[R] A)) :
     f.ofConv (MonoidAlgebra.single (generator 1) (1 : R)) = 1 := by
   have h := pointsMulEquiv_apply (R := R) (A := A) 1 f
