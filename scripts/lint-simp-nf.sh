@@ -15,6 +15,14 @@
 #   - a baseline entry that no longer violates is printed as a RATCHET reminder
 #     (delete it from the baseline in a follow-up PR), without failing.
 #
+# The remaining baseline entries are deliberate exceptions, kept after a library-wide
+# cleanup (2026-07, ~570 violations fixed): concrete-category coercion bridges that the
+# linter cannot match through reducible definitions (`ComoduleCat`/`FGComoduleCat`),
+# lemmas whose types are rewritten inside binders and so cannot be stated in normal
+# form (`NormalizerQuotientConjugation`), self-application `_trans` quirks, and a small
+# documented residue; see the wave-2/3 PR bodies (TauCeti #649-#657, #669-#673) for
+# per-entry rationale before removing or extending them.
+#
 # `@[nolint simpNF]` ratchet: silencing the linter per-declaration would bypass the
 # baseline, so every occurrence of the string `nolint simpNF` under TauCeti/ must be
 # accounted for in scripts/simp-nf-nolints-allowlist.txt (lines of `<file>:<count>`,
@@ -217,6 +225,9 @@ if [ -s "$TMP/new.txt" ]; then
   echo "Fix the lemma so its left-hand side is in simp normal form (see the linter's"
   echo "suggestion above), remove the @[simp] attribute, or — as a deliberate, commented"
   echo "exception — use @[nolint simpNF] plus an entry in $ALLOWLIST."
+  echo "If a flagged declaration is NOT in your diff, your branch likely carries a stale"
+  echo "copy of a file that main has since cleaned up (the CI build overlays your whole"
+  echo "TauCeti/ tree onto current main): merge main into your branch and re-push."
   fail "$(wc -l < "$TMP/new.txt") new simpNF violation(s); see the list above"
 fi
 
