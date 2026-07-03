@@ -177,7 +177,6 @@ theorem characteristicWeightNumerator_canonical_single (v : V) :
     P.canonicalCharacteristic_apply_add_intersection_single v
 
 /-- The characteristic weight of any characteristic covector on a plumbing basis sphere. -/
-@[simp]
 theorem characteristicWeight_single (k : P.characteristicVectors) (v : V) :
     P.characteristicWeight k (Pi.single v 1) = -((k.val v + P.weight v) / 2) := by
   rw [characteristicWeight_def, characteristicWeightNumerator_single]
