@@ -262,6 +262,25 @@ theorem positiveDefiniteKernelFinsuppSesqForm_isPosSemidef
   isNonneg := ⟨fun x => by
     simpa using positiveDefiniteKernelFinsuppForm_self_nonneg hK x⟩
 
+/-- The finitely supported Gram form of a positive-definite kernel is itself a positive-definite
+kernel on the finitely supported coefficient space. -/
+theorem positiveDefiniteKernelFinsuppForm_isPositiveDefiniteKernel
+    (hK : IsPositiveDefiniteKernel K) :
+    IsPositiveDefiniteKernel fun x y : α →₀ 𝕜 =>
+      positiveDefiniteKernelFinsuppForm K x y := by
+  classical
+  refine (isPositiveDefiniteKernel_iff.{u, max u v, 0} (𝕜 := 𝕜) (α := α →₀ 𝕜)).mpr
+    ⟨positiveDefiniteKernelFinsuppForm_conj_symm hK, ?_⟩
+  intro ι _ v c
+  let z : α →₀ 𝕜 := ∑ i, c i • v i
+  have hz := positiveDefiniteKernelFinsuppForm_self_nonneg hK z
+  have hz' : 0 ≤ positiveDefiniteKernelFinsuppSesqForm K z z := by
+    simpa [positiveDefiniteKernelFinsuppSesqForm_apply] using hz
+  convert hz' using 1
+  · rw [Finset.sum_comm]
+    simp [z, positiveDefiniteKernelFinsuppSesqForm_apply, Finset.mul_sum, mul_left_comm,
+      mul_comm]
+
 /-- The finitely supported Gram form takes the expected value on two basis vectors. -/
 @[simp]
 theorem positiveDefiniteKernelFinsuppForm_single_single (a b : α) (r s : 𝕜) :
