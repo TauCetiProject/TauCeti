@@ -32,6 +32,58 @@ namespace ProbabilityTheory
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 variable {𝔽 : ℕ → MeasurableSpace Ω}
 
+/-- Pathwise comparison: the upcrossings of `n ↦ μ[f | 𝔽 n]` on `[a, b]` before time `N` are
+bounded by the total upcrossings on `[-b, -a]` of the negated finite-horizon reverse process. -/
+private lemma upcrossingsBefore_condExp_le_upcrossings_negProcess_revCondExpFinite
+    (f : Ω → ℝ) {a b : ℝ} (hab : a < b) (N : ℕ) (ω : Ω) :
+    ↑(upcrossingsBefore a b (fun n => μ[f | 𝔽 n]) N ω)
+      ≤ upcrossings (-b) (-a) (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω := by
+  -- The `N + 1` horizon on the reversed side lets crossings completing exactly at `N` count.
+  have h_orig_le : upcrossingsBefore a b (fun n => μ[f | 𝔽 n]) N ω
+      ≤ downcrossingsBefore a b (revProcess (fun n => μ[f | 𝔽 n]) N) (N + 1) ω :=
+    upcrossingsBefore_le_downcrossingsBefore_revProcess_succ (fun n => μ[f | 𝔽 n]) a b hab N ω
+  simp only [downcrossingsBefore_eq] at h_orig_le
+  have h_rev_eq : negProcess (revProcess (fun n => μ[f | 𝔽 n]) N)
+                = negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) := by
+    funext n ω; simp only [negProcess_apply, revProcess_apply, revCondExpFinite_apply]
+  -- Pick the index `N + 1` out of the supremum defining `upcrossings`.
+  have h_to_iSup :
+      ↑(upcrossingsBefore (-b) (-a)
+          (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) (N + 1) ω)
+        ≤ upcrossings (-b) (-a) (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω := by
+    simp only [MeasureTheory.upcrossings]
+    apply le_iSup (fun M => (upcrossingsBefore (-b) (-a)
+        (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) M ω : ℝ≥0∞)) (N + 1)
+  calc ↑(upcrossingsBefore a b (fun n => μ[f | 𝔽 n]) N ω)
+      ≤ ↑(upcrossingsBefore (-b) (-a)
+            (negProcess (revProcess (fun n => μ[f | 𝔽 n]) N)) (N + 1) ω) :=
+        Nat.cast_le.mpr h_orig_le
+    _ = ↑(upcrossingsBefore (-b) (-a)
+            (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) (N + 1) ω) := by rw [h_rev_eq]
+    _ ≤ upcrossings (-b) (-a)
+            (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω := h_to_iSup
+
+/-- Finite-horizon integral step: negating commutes a.e. with the reverse conditional-expectation
+process (via `condExp_neg`), so the upcrossing integrals of the negated process and of the reverse
+process of `-f` agree. -/
+private lemma lintegral_upcrossings_negProcess_revCondExpFinite_eq
+    (f : Ω → ℝ) (a b : ℝ) (N : ℕ) :
+    ∫⁻ ω, upcrossings (-b) (-a)
+        (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω ∂μ
+      = ∫⁻ ω, upcrossings (-b) (-a)
+          (fun n => revCondExpFinite (μ := μ) (fun x => -f x) 𝔽 N n) ω ∂μ := by
+  apply lintegral_congr_ae
+  -- The two processes agree a.e. at every time index (countable intersection via `ae_all_iff`).
+  have h_ae_eq : ∀ᵐ ω ∂μ, ∀ n,
+      negProcess (fun m => revCondExpFinite (μ := μ) f 𝔽 N m) n ω =
+      revCondExpFinite (μ := μ) (fun x => -f x) 𝔽 N n ω := by
+    rw [ae_all_iff]
+    intro n
+    simp only [negProcess_apply, revCondExpFinite_apply]
+    exact (condExp_neg f (𝔽 (N - n))).symm
+  filter_upwards [h_ae_eq] with ω hω
+  simp [MeasureTheory.upcrossings, upcrossingsBefore_congr (fun k _ => hω k)]
+
 /-- Reverse-martingale upcrossing bound: for real `a < b`, the expected number of upcrossings of
 `n ↦ μ[f | 𝔽 n]` on `[a, b]` is finite, so the upcrossings are a.e. finite. -/
 private lemma ae_upcrossings_condExp_lt_top
@@ -48,83 +100,19 @@ private lemma ae_upcrossings_condExp_lt_top
   -- Use max of both bounds as the uniform constant
   set C := max C_up C_down with hC_def
   have h_C_finite : C < ⊤ := max_lt h_C_up_finite h_C_down_finite
-  -- Establish relationship between original and reversed sequence upcrossings
-  -- Key: upcrossingsBefore (original, N) ≤ upcrossings (reversed_at_N)
-  -- Bound upcrossings of original by upcrossings of negated reversed process
-  have h_le_key (N : ℕ) (ω : Ω) :
-      ↑(upcrossingsBefore (a) (b) (fun n => μ[f | 𝔽 n]) N ω)
-      ≤ upcrossings (- b) (- a)
-          (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω := by
-    -- Use the corrected inequality with N+1 horizon to avoid boundary issues
-    have h_ineq := upcrossingsBefore_le_downcrossingsBefore_revProcess_succ
-      (fun n => μ[f | 𝔽 n]) (a) (b) hab N
-    have h_orig_le : upcrossingsBefore (a) (b) (fun n => μ[f | 𝔽 n]) N ω
-        ≤ downcrossingsBefore (a) (b) (revProcess (fun n => μ[f | 𝔽 n]) N) (N + 1) ω :=
-      h_ineq ω
-    -- Expand downcrossingsBefore to upcrossingsBefore with negProcess
-    simp only [downcrossingsBefore_eq] at h_orig_le
-    -- Recognize that revProcess of condExp = revCondExpFinite
-    have h_rev_eq : negProcess (revProcess (fun n => μ[f | 𝔽 n]) N)
-                  = negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) := by
-      funext n ω; simp only [negProcess_apply, revProcess_apply, revCondExpFinite_apply]
-    -- Pick index (N+1) from the supremum definition of upcrossings
-    have h_to_iSup :
-        ↑(upcrossingsBefore (- b) (- a)
-            (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) (N + 1) ω)
-          ≤ upcrossings (- b) (- a)
-              (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω := by
-      simp only [MeasureTheory.upcrossings]
-      apply le_iSup (fun M => (upcrossingsBefore (- b) (- a)
-          (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) M ω : ℝ≥0∞)) (N + 1)
-    calc ↑(upcrossingsBefore (a) (b) (fun n => μ[f | 𝔽 n]) N ω)
-        ≤ ↑(upcrossingsBefore (- b) (- a)
-              (negProcess (revProcess (fun n => μ[f | 𝔽 n]) N)) (N + 1) ω) :=
-          Nat.cast_le.mpr h_orig_le
-      _ = ↑(upcrossingsBefore (- b) (- a)
-              (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) (N + 1) ω) := by
-            rw [h_rev_eq]
-      _ ≤ upcrossings (- b) (- a)
-              (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω := h_to_iSup
-  -- For each N, bound the expected upcrossings using the negated reversed martingale
+  -- Per-horizon `L¹` bound: compose the pathwise comparison with the negation-commutes step.
   have h_N_bound : ∀ N,
-      ∫⁻ ω, ↑(upcrossingsBefore (a) (b) (fun n => μ[f | 𝔽 n]) N ω) ∂μ ≤ C := by
-    intro N
-    calc ∫⁻ ω, ↑(upcrossingsBefore (a) (b) (fun n => μ[f | 𝔽 n]) N ω) ∂μ
-        ≤ ∫⁻ ω, upcrossings (- b) (- a)
+      ∫⁻ ω, ↑(upcrossingsBefore a b (fun n => μ[f | 𝔽 n]) N ω) ∂μ ≤ C := fun N =>
+    calc ∫⁻ ω, ↑(upcrossingsBefore a b (fun n => μ[f | 𝔽 n]) N ω) ∂μ
+        ≤ ∫⁻ ω, upcrossings (-b) (-a)
               (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω ∂μ :=
-          lintegral_mono (h_le_key N)
-      _ = ∫⁻ ω, downcrossings (a) (b) (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) ω ∂μ := by
-          -- `upcrossings (-b) (-a) (negProcess X) = downcrossings a b X` as functions
-          -- (`upcrossings_neg_flip_eq_downcrossings`), so `simp only` rewrites the integrand
-          -- under the `∫⁻` binder.
-          simp only [upcrossings_neg_flip_eq_downcrossings]
-      _ ≤ C := by
-          -- Rewrite `downcrossings(a,b,X) = upcrossings(-b,-a,-X)`
-          -- (`upcrossings_neg_flip_eq_downcrossings`), recognise
-          -- `negProcess (revCondExpFinite f) =ᵐ revCondExpFinite (-f)` (via `condExp_neg`), and
-          -- `upcrossings_bdd_uniform` to `-f` on `[-b,-a]` to get the
-          -- precomputed `C_down` bound.
-          calc ∫⁻ ω, downcrossings (a) (b) (fun n => revCondExpFinite (μ := μ) f 𝔽 N n) ω ∂μ
-              = ∫⁻ ω, upcrossings (-b) (-a)
-                  (negProcess (fun n => revCondExpFinite (μ := μ) f 𝔽 N n)) ω ∂μ := by
-                  simp only [upcrossings_neg_flip_eq_downcrossings]
-            _ = ∫⁻ ω, upcrossings (-b) (-a)
-                  (fun n => revCondExpFinite (μ := μ) (fun x => -f x) 𝔽 N n) ω ∂μ := by
-                  -- lintegral_congr_ae: processes agree ae at all times → upcrossings agree ae
-                  apply lintegral_congr_ae
-                  -- Get ae equality at each time index via countable intersection
-                  have h_ae_eq : ∀ᵐ ω ∂μ, ∀ n,
-                      negProcess (fun m => revCondExpFinite (μ := μ) f 𝔽 N m) n ω =
-                      revCondExpFinite (μ := μ) (fun x => -f x) 𝔽 N n ω := by
-                    rw [ae_all_iff]
-                    intro n
-                    simp only [negProcess_apply, revCondExpFinite_apply]
-                    exact (condExp_neg f (𝔽 (N - n))).symm
-                  filter_upwards [h_ae_eq] with ω hω
-                  simp [MeasureTheory.upcrossings,
-                        upcrossingsBefore_congr (fun k _ => hω k)]
-            _ ≤ C_down := hC_down N
-            _ ≤ C := le_max_right C_up C_down
+          lintegral_mono
+            (upcrossingsBefore_condExp_le_upcrossings_negProcess_revCondExpFinite f hab N)
+      _ = ∫⁻ ω, upcrossings (-b) (-a)
+            (fun n => revCondExpFinite (μ := μ) (fun x => -f x) 𝔽 N n) ω ∂μ :=
+          lintegral_upcrossings_negProcess_revCondExpFinite_eq f a b N
+      _ ≤ C_down := hC_down N
+      _ ≤ C := le_max_right C_up C_down
   -- The sequence `μ[f | 𝔽 n]` is adapted to the constant ambient filtration; used
   -- below for both `measurable_upcrossingsBefore` and `measurable_upcrossings`.
   let ℱ : Filtration ℕ (inferInstance : MeasurableSpace Ω) :=
