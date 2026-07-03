@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Moebius
+public import TauCeti.Analysis.Complex.UnitDisc.Basic
 
 /-!
 # Standard automorphisms of the complex unit disc
@@ -29,22 +30,6 @@ namespace TauCeti
 
 open Complex
 open scoped ComplexConjugate
-
-/-- Rotating the disc origin by a circle element fixes it. This is the `smul_zero`
-normalization for Mathlib's `Circle` action on `Complex.UnitDisc`, which is a bare
-`MulAction` and so does not get the generic `smul_zero` simp lemma. -/
-@[simp]
-lemma circle_smul_unitDisc_zero (u : Circle) : u • (0 : Complex.UnitDisc) = 0 := by
-  ext
-  simp
-
-/-- A circle rotation of a disc point vanishes exactly when the point does. This is the
-`smul_eq_zero` normalization for Mathlib's `Circle` action on `Complex.UnitDisc`. -/
-@[simp]
-lemma circle_smul_unitDisc_eq_zero_iff (u : Circle) {z : Complex.UnitDisc} :
-    u • z = 0 ↔ z = 0 := by
-  rw [← Complex.UnitDisc.coe_eq_zero, Complex.UnitDisc.coe_circle_smul, mul_eq_zero]
-  simp
 
 /--
 The standard automorphism of the complex unit disc
