@@ -12,7 +12,7 @@ exchangeable.  This is part of the Layer 0 Exchangeability roadmap item asking f
 process-level/path-law bridges.
 
 The proofs are Tau Ceti adapters around the existing `pathLaw`, `FullyExchangeable`, and
-`permReindex` API. No external formalization is ported here.
+general reindexing API. No external formalization is ported here.
 -/
 
 public section
@@ -27,19 +27,6 @@ namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
-/-- Reindexing path space by a time permutation is measurable. -/
-theorem measurable_permReindex (π : Equiv.Perm ℕ) :
-    Measurable (permReindex (α := α) π) :=
-  measurable_reindex π
-
-/-- Pushing a path law forward by a time permutation gives the path law of the reindexed
-process. -/
-theorem map_permReindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) (π : Equiv.Perm ℕ) :
-    (pathLaw μ X).map (permReindex (α := α) π) =
-      pathLaw μ (fun i ω => X (π i) ω) :=
-  map_reindex_pathLaw μ hX π
-
 /-- Full exchangeability is exactly invariance of the path law under every time permutation. -/
 theorem fullyExchangeable_iff_forall_map_permReindex_pathLaw
     (μ : Measure Ω) {X : ℕ → Ω → α} (hX : ∀ i, AEMeasurable (X i) μ) :
@@ -48,11 +35,13 @@ theorem fullyExchangeable_iff_forall_map_permReindex_pathLaw
         (pathLaw μ X).map (permReindex (α := α) π) = pathLaw μ X := by
   constructor
   · intro h π
-    rw [map_permReindex_pathLaw μ hX π]
+    rw [show (pathLaw μ X).map (permReindex (α := α) π) =
+        pathLaw μ (fun i ω => X (π i) ω) from map_reindex_pathLaw μ hX π]
     exact h.permute π
   · intro h π
     have hπ := h π
-    rwa [map_permReindex_pathLaw μ hX π] at hπ
+    rwa [show (pathLaw μ X).map (permReindex (α := α) π) =
+        pathLaw μ (fun i ω => X (π i) ω) from map_reindex_pathLaw μ hX π] at hπ
 
 /-- A fully exchangeable process has path law invariant under any time permutation. -/
 theorem FullyExchangeable.map_permReindex_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
@@ -66,7 +55,7 @@ exchangeable process. -/
 theorem FullyExchangeable.measurePreserving_permReindex {μ : Measure Ω} {X : ℕ → Ω → α}
     (h : FullyExchangeable μ X) (hX : ∀ i, AEMeasurable (X i) μ) (π : Equiv.Perm ℕ) :
     MeasurePreserving (permReindex (α := α) π) (pathLaw μ X) (pathLaw μ X) :=
-  ⟨measurable_permReindex π, h.map_permReindex_pathLaw hX π⟩
+  ⟨measurable_reindex π, h.map_permReindex_pathLaw hX π⟩
 
 /-- Full exchangeability is exactly preservation of the path law by every time-permutation
 reindexing map. -/
@@ -78,7 +67,7 @@ theorem fullyExchangeable_iff_forall_measurePreserving_permReindex
   rw [fullyExchangeable_iff_forall_map_permReindex_pathLaw μ hX]
   constructor
   · intro h π
-    exact ⟨measurable_permReindex π, h π⟩
+    exact ⟨measurable_reindex π, h π⟩
   · intro h π
     exact (h π).map_eq
 
