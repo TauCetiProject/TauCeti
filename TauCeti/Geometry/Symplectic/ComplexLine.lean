@@ -84,7 +84,6 @@ lemma stdComplexSymplecticForm_apply (z w : ℂ) :
   ring
 
 /-- The associated compatible metric on `ℂ` is the standard real dot product. -/
-@[simp]
 lemma stdComplexSymplecticForm_associatedBilinForm (z w : ℂ) :
     stdComplexSymplecticForm.associatedBilinForm (AlmostComplexStructure.ofComplexModule ℂ) z w =
       z.re * w.re + z.im * w.im := by
