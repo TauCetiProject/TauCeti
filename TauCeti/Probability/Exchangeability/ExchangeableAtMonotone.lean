@@ -15,6 +15,10 @@ the first `m` coordinates.
 The permutation-extension step reuses Mathlib's `Equiv.Perm.exists_extending_pair`; the
 measure-level projection step reuses Tau Ceti's `map_blockLaw_reindex` and
 `map_prefixLaw_castLE`.
+
+This projection argument is adapted from Tau Ceti's credited
+`Exchangeable.blockLaw_eq_prefixLaw_of_injective` proof in `Contractability.lean`, following the
+`cameronfreer/exchangeability` Layer 0 sources.
 -/
 
 public section
