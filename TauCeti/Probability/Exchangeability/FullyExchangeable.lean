@@ -108,14 +108,16 @@ theorem FullyExchangeable.measurePreserving_shift {μ : Measure Ω} {X : ℕ →
 
 /-! ## Path-law permutation reindexing -/
 
-/-- Local permutation specialization of generic path-law reindexing, kept private to avoid
-duplicating the public `map_reindex_pathLaw` API. -/
-private theorem map_permReindex_pathLaw_of_map_reindex (μ : Measure Ω) {X : ℕ → Ω → α}
+/-- Reindexing a path law by a time permutation gives the path law of the permuted process. -/
+theorem map_permReindex_pathLaw (μ : Measure Ω) {X : ℕ → Ω → α}
     (hX : ∀ i, AEMeasurable (X i) μ) (π : Equiv.Perm ℕ) :
     (pathLaw μ X).map (permReindex (α := α) π) =
       pathLaw μ (fun k ω => X (π k) ω) := by
-  change (pathLaw μ X).map (fun x : ℕ → α => fun k => x (π k)) =
-    pathLaw μ (fun k ω => X (π k) ω)
+  have hperm :
+      permReindex (α := α) π = (fun x : ℕ → α => fun k => x (π k)) := by
+    funext x k
+    rw [permReindex_apply]
+  rw [hperm]
   exact map_reindex_pathLaw μ hX π
 
 /-- Full exchangeability is exactly invariance of the path law under every time permutation. -/
@@ -126,11 +128,11 @@ theorem fullyExchangeable_iff_forall_map_permReindex_pathLaw
         (pathLaw μ X).map (permReindex (α := α) π) = pathLaw μ X := by
   constructor
   · intro h π
-    rw [map_permReindex_pathLaw_of_map_reindex μ hX π]
+    rw [map_permReindex_pathLaw μ hX π]
     exact h.permute π
   · intro h π
     have hπ := h π
-    rwa [map_permReindex_pathLaw_of_map_reindex μ hX π] at hπ
+    rwa [map_permReindex_pathLaw μ hX π] at hπ
 
 /-- A fully exchangeable process has path law invariant under any time permutation. -/
 theorem FullyExchangeable.map_permReindex_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
