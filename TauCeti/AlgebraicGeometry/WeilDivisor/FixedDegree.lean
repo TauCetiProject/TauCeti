@@ -180,7 +180,6 @@ def equivSym : EffectiveDivisorOfDegree X d ≃ Sym X d := by
 
 /-- Applying the symmetric-power equivalence is the same as applying Mathlib's multiplicity
 equivalence to the fixed-degree divisor's multiplicity function. -/
-@[simp]
 lemma equivSym_apply (D : EffectiveDivisorOfDegree X d) :
     equivSym D =
       (letI := Classical.decEq X; (Sym.equivNatSum X d).symm (equivFinsupp D)) := by
@@ -266,7 +265,7 @@ lemma equivSym_pushforward (f : X → Y) (D : EffectiveDivisorOfDegree X d) :
   classical
   apply (Sym.equivNatSum Y d).injective
   ext y
-  simp [Finsupp.toMultiset_map]
+  simp [equivSym_apply, Finsupp.toMultiset_map]
 
 end EffectiveDivisorOfDegree
 
