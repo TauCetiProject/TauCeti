@@ -98,8 +98,8 @@ theorem measurable_permReindex_exchangeableSigma (π : Equiv.Perm ℕ) :
     have hleft :
         permReindex (α := α) (π⁻¹ * σ * π) (permReindex (α := α) π x) =
           permReindex (α := α) π (permReindex (α := α) σ x) := by
-      ext n
-      simp [permReindex, Equiv.Perm.mul_apply]
+      rw [permReindex_permReindex, permReindex_permReindex]
+      simp [mul_assoc]
     simpa [Set.mem_preimage, hleft] using hx
 
 /-- An ambient-measurable observable fixed by every finitely supported reindexing is measurable
