@@ -63,7 +63,6 @@ theorem rootsOfUnity_one_eq_one (ζ : rootsOfUnity 1 A) : (ζ : Aˣ) = 1 :=
   congrArg Subtype.val (Subsingleton.elim ζ 1)
 
 /-- Coercing the unique first root of unity to the value algebra gives `1`. -/
-@[simp]
 theorem rootsOfUnity_one_val (ζ : rootsOfUnity 1 A) : ((ζ : Aˣ) : A) = 1 := by
   rw [rootsOfUnity_one_eq_one]
   rfl
