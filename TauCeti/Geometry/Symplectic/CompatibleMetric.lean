@@ -62,6 +62,7 @@ lemma associatedBilinForm_apply_right_apply (v w : V) :
 namespace Invariant
 
 /-- Pointwise form of invariance under applying `J` to both arguments. -/
+@[simp]
 lemma apply (hinv : ω.Invariant J) (v w : V) : ω (J v) (J w) = ω v w :=
   (ω.invariant_iff J).mp hinv v w
 

@@ -150,7 +150,8 @@ lemma ofComplexModule_complexModule {V : Type*} [AddCommGroup V] [Module ℝ V]
 
 /-- Decompose a complex scalar action into its real and imaginary parts, when the real scalar
 action is the one induced by the complex scalar action. -/
-private lemma re_smul_add_im_smul_I_eq_complex_smul {V : Type*}
+@[simp]
+lemma re_smul_add_im_smul_I_eq_complex_smul {V : Type*}
     [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V] (z : ℂ) (v : V) :
     z.re • v + z.im • (Complex.I • v) = z • v := by
   conv_rhs =>
