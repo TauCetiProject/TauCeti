@@ -188,6 +188,12 @@ theorem kerLiftBialgEquiv_toBialgHom (f : H →ₐc[R] K) (hf : Function.Surject
     (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal →ₐc[R] K) = kerLiftBialgHom f hf :=
   rfl
 
+/-- The kernel quotient equivalence sends a quotient class to its original image. -/
+@[simp]
+theorem kerLiftBialgEquiv_mk (f : H →ₐc[R] K) (hf : Function.Surjective f) (h : H) :
+    kerLiftBialgEquiv f hf (Ideal.Quotient.mkₐ R (ker f hf).toIdeal h) = f h := by
+  rw [kerLiftBialgEquiv_apply, kerLiftBialgHom_mk]
+
 /-- The Hopf-ideal kernel of the quotient morphism by `I` is `I`. -/
 @[simp]
 theorem ker_mkBialgHom (I : HopfIdeal R H) :
