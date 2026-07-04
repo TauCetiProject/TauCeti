@@ -39,6 +39,74 @@ namespace TauCeti
 
 universe u w
 
+namespace CommHopfAlgCat
+
+variable (R : Type u) [CommRing R]
+
+/-- The coordinate Hopf algebra of the trivial affine group over `R`.
+
+Its underlying Hopf algebra is `R` over itself. -/
+noncomputable abbrev trivial : _root_.CommHopfAlgCat.{u} R :=
+  _root_.CommHopfAlgCat.of R R
+
+/-- The coordinate morphism from the trivial affine group to an affine group.
+
+On coordinate Hopf algebras this is the bialgebra unit map `R → H`. -/
+noncomputable abbrev unit (H : _root_.CommHopfAlgCat.{u} R) :
+    trivial R ⟶ H :=
+  _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.unitBialgHom R H)
+
+/-- The coordinate morphism from an affine group to the trivial affine group.
+
+On coordinate Hopf algebras this is the bialgebra counit map `H → R`. -/
+noncomputable abbrev counit (H : _root_.CommHopfAlgCat.{u} R) :
+    H ⟶ trivial R :=
+  _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.counitBialgHom R H)
+
+variable {R}
+
+/-- The ambient coordinate unit morphism unwraps to Mathlib's bialgebra unit map. -/
+@[simp]
+lemma hom_unit (H : _root_.CommHopfAlgCat.{u} R) :
+    (unit (R := R) H).hom = _root_.Bialgebra.unitBialgHom R H :=
+  rfl
+
+/-- The ambient coordinate counit morphism unwraps to Mathlib's bialgebra counit map. -/
+@[simp]
+lemma hom_counit (H : _root_.CommHopfAlgCat.{u} R) :
+    (counit (R := R) H).hom = _root_.Bialgebra.counitBialgHom R H :=
+  rfl
+
+/-- Pointwise formula for the ambient coordinate unit map `R → H`. -/
+@[simp]
+lemma unit_apply (H : _root_.CommHopfAlgCat.{u} R) (r : R) :
+    (unit (R := R) H).hom r = algebraMap R H r :=
+  rfl
+
+/-- Pointwise formula for the ambient coordinate counit map `H → R`. -/
+@[simp]
+lemma counit_apply (H : _root_.CommHopfAlgCat.{u} R) (h : H) :
+    (counit (R := R) H).hom h = Coalgebra.counit h :=
+  _root_.Bialgebra.counitBialgHom_apply h
+
+/-- The trivial coordinate Hopf algebra is initial in the ambient coordinate category. -/
+noncomputable def trivialIsInitial :
+    IsInitial (trivial R : _root_.CommHopfAlgCat.{u} R) :=
+  IsInitial.ofUniqueHom
+    (fun H => unit (R := R) H)
+    (fun H f => by
+      apply _root_.CommHopfAlgCat.hom_ext
+      apply _root_.BialgHom.coe_toAlgHom_injective
+      exact Subsingleton.elim _ _)
+
+/-- The unique ambient morphism out of the trivial coordinate Hopf algebra is the unit. -/
+lemma eq_unit (H : _root_.CommHopfAlgCat.{u} R)
+    (f : trivial R ⟶ H) :
+    f = unit (R := R) H :=
+  (trivialIsInitial (R := R)).hom_ext f (unit (R := R) H)
+
+end CommHopfAlgCat
+
 namespace FiniteTypeCommHopfAlgCat
 
 variable (R : Type u) [CommRing R]
@@ -50,7 +118,8 @@ finite-generation of the base algebra over itself. -/
 noncomputable abbrev trivial : FiniteTypeCommHopfAlgCat.{u, u} R :=
   of R R
 
-/-- The underlying type of the finite-type trivial coordinate Hopf algebra is the base ring. -/
+/-- The underlying coordinate Hopf algebra of the finite-type trivial coordinate Hopf algebra
+is the base ring over itself. -/
 @[simp]
 lemma trivial_obj :
     (trivial R).obj = (_root_.CommHopfAlgCat.of R R) :=
@@ -64,7 +133,7 @@ On coordinate Hopf algebras this is the bialgebra unit map `R → H`, contravari
 unique morphism from the represented affine group to the terminal affine group `Spec R`. -/
 noncomputable abbrev unit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
     trivial R ⟶ H :=
-  ofHom (_root_.Bialgebra.unitBialgHom R H)
+  ObjectProperty.homMk (CommHopfAlgCat.unit (R := R) H.obj)
 
 /-- The coordinate morphism from a finite-type affine group to the trivial affine group.
 
@@ -72,13 +141,15 @@ On coordinate Hopf algebras this is the bialgebra counit map `H → R`, contrava
 identity section `Spec R → G`. -/
 noncomputable abbrev counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
     H ⟶ trivial R :=
-  ofHom (_root_.Bialgebra.counitBialgHom R H)
+  ObjectProperty.homMk (CommHopfAlgCat.counit (R := R) H.obj)
 
+/-- The finite-type coordinate unit morphism unwraps to Mathlib's bialgebra unit map. -/
 @[simp]
 lemma toBialgHom_unit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
     toBialgHom (unit H) = _root_.Bialgebra.unitBialgHom R H :=
   rfl
 
+/-- The finite-type coordinate counit morphism unwraps to Mathlib's bialgebra counit map. -/
 @[simp]
 lemma toBialgHom_counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
     toBialgHom (counit H) = _root_.Bialgebra.counitBialgHom R H :=
@@ -87,7 +158,7 @@ lemma toBialgHom_counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
 /-- Pointwise formula for the coordinate unit map `R → H`. -/
 @[simp]
 lemma unit_apply (H : FiniteTypeCommHopfAlgCat.{u, u} R) (r : R) :
-    (_root_.Bialgebra.unitBialgHom R H) r = algebraMap R H r :=
+    toBialgHom (unit H) r = algebraMap R H r :=
   rfl
 
 /-- Pointwise formula for the coordinate counit map `H → R`. -/
@@ -106,8 +177,8 @@ noncomputable def trivialIsInitial :
     (fun H => unit H)
     (fun H f => by
       apply hom_ext
-      apply _root_.BialgHom.coe_toAlgHom_injective
-      exact Subsingleton.elim _ _)
+      exact congrArg _root_.CommHopfAlgCat.Hom.hom
+        (CommHopfAlgCat.eq_unit H.obj f.hom))
 
 /-- The unique morphism out of the finite-type trivial coordinate Hopf algebra is the unit. -/
 lemma eq_unit (H : FiniteTypeCommHopfAlgCat.{u, u} R)
@@ -136,6 +207,22 @@ lemma trivialPointsMulEquiv_symm_apply (u : PUnit.{1}) :
     (trivialPointsMulEquiv (R := R) A).symm u =
       toConv (Algebra.ofId R A) :=
   TrivialGroup.pointsMulEquiv_symm_apply u
+
+variable {B : CommAlgCat.{w} R}
+
+/-- The finite-type trivial-points equivalence is natural in the value algebra. -/
+@[simp]
+theorem trivialPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
+    (f : HopfAlgebra.points (R := R) (H := trivial R) A) :
+    trivialPointsMulEquiv (R := R) B (AlgHom.mapValue (H := trivial R) φ f) =
+      trivialPointsMulEquiv (R := R) A f :=
+  TrivialGroup.pointsMulEquiv_mapValue φ f
+
+/-- Naturality of the inverse finite-type trivial-points equivalence in the value algebra. -/
+theorem mapValue_trivialPointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (u : PUnit.{1}) :
+    AlgHom.mapValue (H := trivial R) φ ((trivialPointsMulEquiv (R := R) A).symm u) =
+      (trivialPointsMulEquiv (R := R) B).symm u :=
+  TrivialGroup.mapValue_pointsMulEquiv_symm_apply φ u
 
 /-- Every point of the finite-type trivial affine group is the convolution identity. -/
 lemma trivialPoint_eq_one
