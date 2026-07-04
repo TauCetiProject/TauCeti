@@ -5,6 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantGaloisGroup
+public import Mathlib.Data.Complex.Basic
+public import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # The degree and Galois group of the `-21` prime-discriminant radicand field
