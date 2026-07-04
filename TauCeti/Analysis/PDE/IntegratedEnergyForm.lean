@@ -231,16 +231,21 @@ lemma energyFormIntegral_principal_drift_mass
     funext x
     exact energyIntegrand_principal_drift_mass_apply (a x) (b x) (c x) (U x) (V x)
   rw [hpoint]
-  let f := fun x => energyIntegrand (a x) 0 0 (U x) (V x)
-  let g := fun x => energyIntegrand 0 (b x) 0 (U x) (V x)
-  let k := fun x => energyIntegrand 0 0 (c x) (U x) (V x)
-  change (∫ x, f x + g x + k x ∂μ) =
-    (∫ x, f x ∂μ) + (∫ x, g x ∂μ) + ∫ x, k x ∂μ
   calc
-    ∫ x, f x + g x + k x ∂μ = ∫ x, (f x + g x) + k x ∂μ := by rfl
-    _ = (∫ x, f x + g x ∂μ) + ∫ x, k x ∂μ :=
+    ∫ x, energyIntegrand (a x) 0 0 (U x) (V x) +
+        energyIntegrand 0 (b x) 0 (U x) (V x) +
+          energyIntegrand 0 0 (c x) (U x) (V x) ∂μ
+        =
+        ∫ x, (energyIntegrand (a x) 0 0 (U x) (V x) +
+          energyIntegrand 0 (b x) 0 (U x) (V x)) +
+            energyIntegrand 0 0 (c x) (U x) (V x) ∂μ := by rfl
+    _ = (∫ x, energyIntegrand (a x) 0 0 (U x) (V x) +
+          energyIntegrand 0 (b x) 0 (U x) (V x) ∂μ) +
+          ∫ x, energyIntegrand 0 0 (c x) (U x) (V x) ∂μ :=
       integral_add (hprincipal.add hdrift) hmass
-    _ = (∫ x, f x ∂μ) + (∫ x, g x ∂μ) + ∫ x, k x ∂μ := by
+    _ = (∫ x, energyIntegrand (a x) 0 0 (U x) (V x) ∂μ) +
+          (∫ x, energyIntegrand 0 (b x) 0 (U x) (V x) ∂μ) +
+            ∫ x, energyIntegrand 0 0 (c x) (U x) (V x) ∂μ := by
       rw [integral_add hprincipal hdrift]
 
 variable [DecidableEq n]
@@ -335,6 +340,59 @@ lemma norm_energyFormIntegral_le_of_bounds (hLam : 0 ≤ Lam)
   simpa [mul_assoc] using
     norm_energyIntegrand_apply_le_of_bounds hLam hax hbx hcx (U x) (V x)
 
+/-- Integrated Gårding lower bound from a.e. lower ellipticity and a.e. lower-order
+coefficient hypotheses. -/
+lemma garding_energyFormIntegral_self_of_bounds (hlam : 0 < lam)
+    (ha : ∀ᵐ x ∂μ, ∀ ξ : EuclideanSpace ℝ n,
+      lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+    (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, 0 ≤ c x)
+    (hlower : Integrable
+      (fun x => lam / 2 * ‖(U x).2‖ ^ 2 - beta ^ 2 / (2 * lam) * (U x).1 ^ 2) μ)
+    (henergy : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
+    ∫ x, (lam / 2 * ‖(U x).2‖ ^ 2 - beta ^ 2 / (2 * lam) * (U x).1 ^ 2) ∂μ
+      ≤ energyFormIntegral μ a b c U U := by
+  rw [energyFormIntegral_def]
+  refine integral_mono_ae hlower henergy ?_
+  filter_upwards [ha, hb, hc] with x hax hbx hcx
+  exact garding_energyIntegrand_self_of_bounds hlam hax hbx hcx (U x)
+
+/-- Integrated Gårding lower bound with a mass floor from a.e. lower ellipticity and a.e.
+lower-order coefficient hypotheses. -/
+lemma garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds (hlam : 0 < lam)
+    (ha : ∀ᵐ x ∂μ, ∀ ξ : EuclideanSpace ℝ n,
+      lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+    (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mu ≤ c x)
+    (hlower : Integrable
+      (fun x => lam / 2 * ‖(U x).2‖ ^ 2 +
+        (mu - beta ^ 2 / (2 * lam)) * (U x).1 ^ 2) μ)
+    (henergy : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
+    ∫ x, (lam / 2 * ‖(U x).2‖ ^ 2 +
+        (mu - beta ^ 2 / (2 * lam)) * (U x).1 ^ 2) ∂μ
+      ≤ energyFormIntegral μ a b c U U := by
+  rw [energyFormIntegral_def]
+  refine integral_mono_ae hlower henergy ?_
+  filter_upwards [ha, hb, hc] with x hax hbx hcx
+  exact garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam hax hbx hcx (U x)
+
+/-- Integrated explicit coercive diagonal lower bound from a.e. lower ellipticity, a.e.
+lower-order coefficient hypotheses, and a mass floor that dominates the drift defect. -/
+lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_bounds
+    (hlam : 0 < lam)
+    (ha : ∀ᵐ x ∂μ, ∀ ξ : EuclideanSpace ℝ n,
+      lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+    (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mu ≤ c x)
+    (hmu : beta ^ 2 / (2 * lam) < mu)
+    (hlower : Integrable
+      (fun x => min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U x‖ ^ 2) μ)
+    (henergy : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
+    ∫ x, (min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U x‖ ^ 2) ∂μ
+      ≤ energyFormIntegral μ a b c U U := by
+  rw [energyFormIntegral_def]
+  refine integral_mono_ae hlower henergy ?_
+  filter_upwards [ha, hb, hc] with x hax hbx hcx
+  exact min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self
+    hlam hax hbx hcx hmu (U x)
+
 namespace UniformlyEllipticOn
 
 variable {Ω : Set X} {lam Lam beta mu : ℝ}
@@ -351,10 +409,10 @@ lemma garding_energyFormIntegral_self_on (h : UniformlyEllipticOn Ω a lam Lam)
     (henergy : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
     ∫ x, (lam / 2 * ‖(U x).2‖ ^ 2 - beta ^ 2 / (2 * lam) * (U x).1 ^ 2) ∂μ
       ≤ energyFormIntegral μ a b c U U := by
-  rw [energyFormIntegral_def]
-  refine integral_mono_ae hlower henergy ?_
-  filter_upwards [hΩ, hb, hc] with x hx hbx hcx
-  exact h.garding_energyIntegrand_self hx hbx hcx (U x)
+  refine PDE.garding_energyFormIntegral_self_of_bounds (μ := μ) (a := a) (b := b) (c := c)
+    (U := U) h.pos ?_ hb hc hlower henergy
+  filter_upwards [hΩ] with x hx
+  exact h.lower_bound hx
 
 /-- Integrated Gårding lower bound with a mass floor from uniform ellipticity and a.e.
 coefficient hypotheses. -/
@@ -368,14 +426,14 @@ lemma garding_energyFormIntegral_self_of_mass_lower_bound_on
     ∫ x, (lam / 2 * ‖(U x).2‖ ^ 2 +
         (mu - beta ^ 2 / (2 * lam)) * (U x).1 ^ 2) ∂μ
       ≤ energyFormIntegral μ a b c U U := by
-  rw [energyFormIntegral_def]
-  refine integral_mono_ae hlower henergy ?_
-  filter_upwards [hΩ, hb, hc] with x hx hbx hcx
-  exact h.garding_energyIntegrand_self_of_mass_lower_bound hx hbx hcx (U x)
+  refine PDE.garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds (μ := μ) (a := a)
+    (b := b) (c := c) (U := U) h.pos ?_ hb hc hlower henergy
+  filter_upwards [hΩ] with x hx
+  exact h.lower_bound hx
 
 /-- Integrated explicit coercive diagonal lower bound from uniform ellipticity, a.e.
 coefficient hypotheses, and a mass floor that dominates the drift defect. -/
-lemma min_coercivityConstant_mul_integral_norm_sq_le_energyFormIntegral_self_on
+lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_on
     (h : UniformlyEllipticOn Ω a lam Lam) (hΩ : ∀ᵐ x ∂μ, x ∈ Ω)
     (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mu ≤ c x)
     (hmu : beta ^ 2 / (2 * lam) < mu)
@@ -384,10 +442,10 @@ lemma min_coercivityConstant_mul_integral_norm_sq_le_energyFormIntegral_self_on
     (henergy : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
     ∫ x, (min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U x‖ ^ 2) ∂μ
       ≤ energyFormIntegral μ a b c U U := by
-  rw [energyFormIntegral_def]
-  refine integral_mono_ae hlower henergy ?_
-  filter_upwards [hΩ, hb, hc] with x hx hbx hcx
-  exact h.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hx hbx hcx hmu (U x)
+  refine PDE.integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_bounds
+    (μ := μ) (a := a) (b := b) (c := c) (U := U) h.pos ?_ hb hc hmu hlower henergy
+  filter_upwards [hΩ] with x hx
+  exact h.lower_bound hx
 
 end UniformlyEllipticOn
 
