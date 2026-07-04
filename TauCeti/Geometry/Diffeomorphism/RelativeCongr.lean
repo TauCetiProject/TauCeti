@@ -19,6 +19,13 @@ This is a small algebraic prerequisite for the geometric-topology roadmap
 topology"), where relative groups such as `Diff(M, ∂M)` are pointwise fixing subgroups. The
 `C^∞` topology and closed-subgroup statements remain later layer-3 work.
 
+The main subgroup-map statement and relative equivalence are the diffeomorphism-specialized
+analogues of Mathlib's pointwise-fixer conjugation API
+`Set.conj_mem_fixingSubgroup`, `fixingSubgroup_map_conj_eq`, and
+`fixingSubgroupEquivFixingSubgroup` from
+`Mathlib/GroupTheory/GroupAction/SubMulAction/OfFixingSubgroup.lean`, using
+`Diffeomorph.diffCongr` for conjugation by a diffeomorphism.
+
 ## Main definitions
 
 * `TauCeti.Diffeomorph.relativeDiffCongr e s`: the group isomorphism
@@ -66,8 +73,7 @@ theorem map_fixingSubgroup_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M) :
     simp [diffCongr_apply_apply, apply_eq_of_mem_fixingSubgroup hφ hx]
   · intro hψ
     refine ⟨diffCongr e.symm ψ, ?_, ?_⟩
-    · change diffCongr e.symm ψ ∈ fixingSubgroup (I := I) (n := n) s
-      rw [mem_fixingSubgroup_iff]
+    · apply mem_fixingSubgroup_of_forall
       intro x hx
       have hfix : ψ (e x) = e x :=
         apply_eq_of_mem_fixingSubgroup hψ (Set.mem_image_of_mem e hx)
