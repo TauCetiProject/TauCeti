@@ -141,8 +141,10 @@ lemma add_ofSym (s : Sym X d) (t : Sym X e) :
 fixed-degree divisors. -/
 @[simp]
 lemma coe_ofSym_append (s : Sym X d) (t : Sym X e) :
-    (ofSym (s.append t) : WeilDivisor X) = (ofSym s : WeilDivisor X) + ofSym t := by
-  rw [← coe_add, add_ofSym]
+    WeilDivisor.ofFinsupp
+        (letI := Classical.decEq X; ((Sym.equivNatSum X (d + e)) (s.append t)).1) =
+      (ofSym s : WeilDivisor X) + (ofSym t : WeilDivisor X) := by
+  rw [← coe_ofSym, ← coe_add, add_ofSym]
 
 /-- Pushforward commutes with addition of fixed-degree effective divisors. -/
 @[simp]
