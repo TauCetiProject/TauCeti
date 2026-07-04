@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.LegendrePrimeDiscriminants
+public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantExampleLists
 
 /-!
 # Concrete Legendre criteria for the first genus-field examples
