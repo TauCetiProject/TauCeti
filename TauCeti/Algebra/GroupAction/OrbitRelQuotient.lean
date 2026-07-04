@@ -31,6 +31,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   quotient by `H`-orbits.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotientPermHom`: the descended action of
   `N(H) / H` on the quotient by `H`-orbits.
+* `TauCeti.MulAction.normalizerQuotientOrbitRelQuotientIsPretransitiveOfNormal`: if `H` is
+  normal and the original action is transitive, then the descended `N(H) / H` action on the
+  `H`-orbit quotient is transitive.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff`: if the original
   action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
 -/
@@ -336,6 +339,29 @@ lemma normalizerQuotientOrbitRelQuotient_smul_mk (H : Subgroup G)
         (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((g : G) • x)
     exact normalizerQuotientOrbitRelQuotientPermHom_mk_apply (X := X) H g x
+
+/-- If `H` is normal and `G` acts transitively on `X`, then the descended `N(H) / H` action
+on the quotient by `H`-orbits is transitive. Under normality the normalizer is all of `G`,
+so a group element carrying one representative to another supplies the required normalizer
+quotient element. -/
+theorem normalizerQuotientOrbitRelQuotientIsPretransitiveOfNormal
+    [MulAction.IsPretransitive G X] (H : Subgroup G) [H.Normal] :
+    letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+    MulAction.IsPretransitive
+      (Subgroup.normalizerQuotient H) (_root_.MulAction.orbitRel.Quotient H X) := by
+  letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+  refine MulAction.IsPretransitive.mk ?_
+  intro xq yq
+  refine Quotient.inductionOn' xq ?_
+  intro x
+  refine Quotient.inductionOn' yq ?_
+  intro y
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G x y
+  let g' : _root_.Subgroup.normalizer (H : Set G) :=
+    ⟨g, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩
+  refine ⟨Subgroup.normalizerQuotientMk H g', ?_⟩
+  rw [normalizerQuotientOrbitRelQuotient_smul_mk]
+  exact congrArg Quotient.mk'' hg
 
 /-- Equality after the descended `N(H) / H` action on an `H`-orbit quotient is equality of
 normalizer-quotient elements, provided the original action is free. -/
