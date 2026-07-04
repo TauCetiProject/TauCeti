@@ -41,30 +41,32 @@ variable (K : Type*) [Field K]
 /-- The cardinality of `Cl(𝓞 K) / Cl(𝓞 K)²` divides the class number. -/
 theorem card_classGroupElementaryTwoQuotient_dvd_classNumber [NumberField K] :
     Nat.card (TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 K)) ∣ NumberField.classNumber K := by
-  rw [TauCeti.ClassGroup.ElementaryTwoQuotient, TauCeti.card_elementaryTwoQuotient_eq_index_square,
-    NumberField.classNumber]
+  rw [NumberField.classNumber]
   rw [← Nat.card_eq_fintype_card]
-  exact Subgroup.index_dvd_card (Subgroup.square (ClassGroup (𝓞 K)))
+  exact TauCeti.ClassGroup.card_elementaryTwoQuotient_dvd_card (𝓞 K)
 
 /-- The elementary-2 quotient of a number-field class group has cardinality at most the class
 number. -/
 theorem card_classGroupElementaryTwoQuotient_le_classNumber [NumberField K] :
-    Nat.card (TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 K)) ≤ NumberField.classNumber K :=
-  Nat.le_of_dvd (NumberField.classNumber_pos K) <|
-    card_classGroupElementaryTwoQuotient_dvd_classNumber K
+    Nat.card (TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 K)) ≤ NumberField.classNumber K := by
+  rw [NumberField.classNumber]
+  rw [← Nat.card_eq_fintype_card]
+  exact TauCeti.ClassGroup.card_elementaryTwoQuotient_le_card (𝓞 K)
 
 /-- The rank form of `card_classGroupElementaryTwoQuotient_dvd_classNumber`:
 `2 ^ TauCeti.ClassGroup.twoRank (𝓞 K)` divides the class number. -/
 theorem two_pow_classGroupTwoRank_dvd_classNumber [NumberField K] :
     2 ^ TauCeti.ClassGroup.twoRank (𝓞 K) ∣ NumberField.classNumber K := by
-  rw [← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank]
-  exact card_classGroupElementaryTwoQuotient_dvd_classNumber K
+  rw [NumberField.classNumber]
+  rw [← Nat.card_eq_fintype_card]
+  exact TauCeti.ClassGroup.two_pow_twoRank_dvd_card (𝓞 K)
 
 /-- The rank form of `card_classGroupElementaryTwoQuotient_le_classNumber`:
 `2 ^ TauCeti.ClassGroup.twoRank (𝓞 K)` is bounded by the class number. -/
 theorem two_pow_classGroupTwoRank_le_classNumber [NumberField K] :
     2 ^ TauCeti.ClassGroup.twoRank (𝓞 K) ≤ NumberField.classNumber K := by
-  rw [← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank]
-  exact card_classGroupElementaryTwoQuotient_le_classNumber K
+  rw [NumberField.classNumber]
+  rw [← Nat.card_eq_fintype_card]
+  exact TauCeti.ClassGroup.two_pow_twoRank_le_card (𝓞 K)
 
 end TauCeti.NumberField
