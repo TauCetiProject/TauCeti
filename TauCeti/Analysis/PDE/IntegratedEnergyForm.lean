@@ -204,15 +204,9 @@ lemma energyFormIntegral_principal_add_lowerOrder
     energyFormIntegral μ a b c U V =
       energyFormIntegral μ a (fun _ => 0) (fun _ => 0) U V +
         energyFormIntegral μ (fun _ => 0) b c U V := by
-  rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def]
-  have hpoint :
-      (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x))
-        = fun x => energyIntegrand (a x) 0 0 (U x) (V x) +
-            energyIntegrand 0 (b x) (c x) (U x) (V x) := by
-    funext x
-    exact energyIntegrand_principal_add_lowerOrder_apply (a x) (b x) (c x) (U x) (V x)
-  rw [hpoint]
-  exact integral_add hprincipal hlower
+  simpa using
+    energyFormIntegral_add μ a (fun _ => 0) (fun _ => 0) U V
+      (fun _ => 0) b c hprincipal hlower
 
 /-- The integrated full energy form splits into its principal, drift, and mass pieces. -/
 lemma energyFormIntegral_principal_drift_mass
@@ -223,32 +217,41 @@ lemma energyFormIntegral_principal_drift_mass
       energyFormIntegral μ a (fun _ => 0) (fun _ => 0) U V +
         energyFormIntegral μ (fun _ => 0) b (fun _ => 0) U V +
           energyFormIntegral μ (fun _ => 0) (fun _ => 0) c U V := by
-  rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def,
-    energyFormIntegral_def]
-  have hpoint :
-      (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x))
-        = fun x => energyIntegrand (a x) 0 0 (U x) (V x) +
-            energyIntegrand 0 (b x) 0 (U x) (V x) +
+  have hlower :
+      Integrable (fun x => energyIntegrand 0 (b x) (c x) (U x) (V x)) μ := by
+    have hpoint :
+        (fun x => energyIntegrand 0 (b x) (c x) (U x) (V x))
+          = fun x => energyIntegrand 0 (b x) 0 (U x) (V x) +
               energyIntegrand 0 0 (c x) (U x) (V x) := by
-    funext x
-    exact energyIntegrand_principal_drift_mass_apply (a x) (b x) (c x) (U x) (V x)
-  rw [hpoint]
+      funext x
+      conv_lhs =>
+        rw [← zero_add (0 : Matrix n n ℝ), ← add_zero (b x), ← zero_add (c x)]
+      exact energyIntegrand_add_apply (0 : Matrix n n ℝ) 0 (b x) 0 0 (c x) (U x) (V x)
+    have hsum : Integrable
+        (fun x => energyIntegrand 0 (b x) 0 (U x) (V x) +
+          energyIntegrand 0 0 (c x) (U x) (V x)) μ := by
+      exact (hdrift.add hmass).congr (Filter.Eventually.of_forall fun _ => rfl)
+    exact hsum.congr (Filter.Eventually.of_forall fun x => congrFun hpoint.symm x)
+  have hlower_eq :
+      energyFormIntegral μ (fun _ => 0) b c U V =
+        energyFormIntegral μ (fun _ => 0) b (fun _ => 0) U V +
+          energyFormIntegral μ (fun _ => 0) (fun _ => 0) c U V := by
+    simpa using
+      energyFormIntegral_add μ (fun _ => 0) b (fun _ => 0) U V
+        (fun _ => 0) (fun _ => 0) c hdrift hmass
   calc
-    ∫ x, energyIntegrand (a x) 0 0 (U x) (V x) +
-        energyIntegrand 0 (b x) 0 (U x) (V x) +
-          energyIntegrand 0 0 (c x) (U x) (V x) ∂μ
-        =
-        ∫ x, (energyIntegrand (a x) 0 0 (U x) (V x) +
-          energyIntegrand 0 (b x) 0 (U x) (V x)) +
-            energyIntegrand 0 0 (c x) (U x) (V x) ∂μ := by rfl
-    _ = (∫ x, energyIntegrand (a x) 0 0 (U x) (V x) +
-          energyIntegrand 0 (b x) 0 (U x) (V x) ∂μ) +
-          ∫ x, energyIntegrand 0 0 (c x) (U x) (V x) ∂μ :=
-      integral_add (hprincipal.add hdrift) hmass
-    _ = (∫ x, energyIntegrand (a x) 0 0 (U x) (V x) ∂μ) +
-          (∫ x, energyIntegrand 0 (b x) 0 (U x) (V x) ∂μ) +
-            ∫ x, energyIntegrand 0 0 (c x) (U x) (V x) ∂μ := by
-      rw [integral_add hprincipal hdrift]
+    energyFormIntegral μ a b c U V =
+        energyFormIntegral μ a (fun _ => 0) (fun _ => 0) U V +
+          energyFormIntegral μ (fun _ => 0) b c U V :=
+      energyFormIntegral_principal_add_lowerOrder μ a b c U V hprincipal hlower
+    _ = energyFormIntegral μ a (fun _ => 0) (fun _ => 0) U V +
+          (energyFormIntegral μ (fun _ => 0) b (fun _ => 0) U V +
+            energyFormIntegral μ (fun _ => 0) (fun _ => 0) c U V) := by
+      rw [hlower_eq]
+    _ = energyFormIntegral μ a (fun _ => 0) (fun _ => 0) U V +
+          energyFormIntegral μ (fun _ => 0) b (fun _ => 0) U V +
+            energyFormIntegral μ (fun _ => 0) (fun _ => 0) c U V := by
+      rw [add_assoc]
 
 variable [DecidableEq n]
 
@@ -283,16 +286,9 @@ lemma energyFormIntegral_eq_one_zero_mass_add_perturbation
     energyFormIntegral μ a b c U V =
       energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c U V +
         energyFormIntegral μ (fun x => a x - 1) b (fun _ => 0) U V := by
-  rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def]
-  have hpoint :
-      (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x))
-        = fun x => energyIntegrand (1 : Matrix n n ℝ) 0 (c x) (U x) (V x) +
-            energyIntegrand (a x - 1) (b x) 0 (U x) (V x) := by
-    funext x
-    exact energyIntegrand_eq_one_zero_mass_add_perturbation_apply
-      (a x) (b x) (c x) (U x) (V x)
-  rw [hpoint]
-  exact integral_add hmodel hpert
+  simpa using
+    energyFormIntegral_eq_one_zero_baseMass_add_perturbation μ a b c U V c hmodel
+      (by simpa using hpert)
 
 /-- The integrated `−Δ` model form is the integral of the dot product of the two gradient
 components of the jet fields. -/
