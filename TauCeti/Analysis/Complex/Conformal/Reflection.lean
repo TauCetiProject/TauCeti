@@ -19,8 +19,8 @@ real-axis Schwarz reflection principle.
 
 It also names the standard real-axis Schwarz-reflection extension
 `z ↦ if 0 ≤ z.im then f z else conj (f (conj z))`, together with the pointwise API for the
-upper and lower half-planes, upper-branch continuity and holomorphicity transfer, and the
-conjugation symmetry forced by real boundary values.
+upper and lower half-planes, upper-branch continuity and within-set differentiability
+transfer, and the conjugation symmetry forced by real boundary values.
 The private semilinear within-set helper adapts the proof pattern of Mathlib's
 `HasFDerivAt.comp_semilinear`.
 -/
@@ -66,79 +66,28 @@ lemma schwarzReflection_of_im_zero {z : ℂ} (hz : z.im = 0) :
     schwarzReflection f z = f z := by
   exact schwarzReflection_of_im_nonneg (f := f) (z := z) hz.ge
 
-/-- On the closed upper half-plane, Schwarz reflection is equal to the original function. -/
-lemma schwarzReflection_eqOn_im_nonneg :
-    EqOn (schwarzReflection f) f {z : ℂ | 0 ≤ z.im} := fun _ hz =>
-  schwarzReflection_of_im_nonneg (f := f) hz
-
-/-- On the open upper half-plane, Schwarz reflection is equal to the original function. -/
-lemma schwarzReflection_eqOn_im_pos :
-    EqOn (schwarzReflection f) f {z : ℂ | 0 < z.im} := fun _ hz =>
-  schwarzReflection_of_im_nonneg (f := f) hz.le
-
-/-- On the closed upper part of a set, Schwarz reflection is equal to the original function. -/
-lemma schwarzReflection_eqOn_inter_im_nonneg (S : Set ℂ) :
-    EqOn (schwarzReflection f) f (S ∩ {z : ℂ | 0 ≤ z.im}) := fun _ hz =>
-  schwarzReflection_of_im_nonneg (f := f) hz.2
-
-/-- On the open upper part of a set, Schwarz reflection is equal to the original function. -/
-lemma schwarzReflection_eqOn_inter_im_pos (S : Set ℂ) :
-    EqOn (schwarzReflection f) f (S ∩ {z : ℂ | 0 < z.im}) := fun _ hz =>
-  schwarzReflection_of_im_nonneg (f := f) hz.2.le
+/-- On any set contained in the closed upper half-plane, Schwarz reflection is equal to `f`. -/
+lemma schwarzReflection_eqOn_of_subset_im_nonneg (hS : ∀ z ∈ S, 0 ≤ z.im) :
+    EqOn (schwarzReflection f) f S := fun z hz =>
+  schwarzReflection_of_im_nonneg (f := f) (hS z hz)
 
 /--
-Continuity transfers from `f` to the Schwarz-reflection witness on the closed upper
-half-plane, where the witness is definitionally the upper branch.
+Continuity transfers from `f` to the Schwarz-reflection witness on any set contained in the
+closed upper half-plane, where the witness is the upper branch.
 -/
-lemma ContinuousOn.schwarzReflection_im_nonneg
-    (hf : ContinuousOn f {z : ℂ | 0 ≤ z.im}) :
-    ContinuousOn (schwarzReflection f) {z : ℂ | 0 ≤ z.im} :=
-  hf.congr (schwarzReflection_eqOn_im_nonneg (f := f))
+lemma ContinuousOn.schwarzReflection_of_subset_im_nonneg
+    (hf : ContinuousOn f S) (hS : ∀ z ∈ S, 0 ≤ z.im) :
+    ContinuousOn (schwarzReflection f) S :=
+  hf.congr (schwarzReflection_eqOn_of_subset_im_nonneg (f := f) hS)
 
 /--
-Continuity transfers from `f` to the Schwarz-reflection witness on the closed upper part of
-an arbitrary domain.
+Complex differentiability within a set transfers from `f` to the Schwarz-reflection witness
+on any set contained in the closed upper half-plane, where no reflected branch is used.
 -/
-lemma ContinuousOn.schwarzReflection_inter_im_nonneg
-    (hf : ContinuousOn f (S ∩ {z : ℂ | 0 ≤ z.im})) :
-    ContinuousOn (schwarzReflection f) (S ∩ {z : ℂ | 0 ≤ z.im}) :=
-  hf.congr (schwarzReflection_eqOn_inter_im_nonneg (f := f) S)
-
-/--
-Holomorphicity transfers from `f` to the Schwarz-reflection witness on the closed upper
-half-plane, where no reflected branch is used.
--/
-lemma DifferentiableOn.schwarzReflection_im_nonneg
-    (hf : DifferentiableOn ℂ f {z : ℂ | 0 ≤ z.im}) :
-    DifferentiableOn ℂ (schwarzReflection f) {z : ℂ | 0 ≤ z.im} :=
-  hf.congr fun _ hz => schwarzReflection_of_im_nonneg (f := f) hz
-
-/--
-Holomorphicity transfers from `f` to the Schwarz-reflection witness on the open upper
-half-plane.  This is the upper-branch half of the real-axis Schwarz-reflection witness.
--/
-lemma DifferentiableOn.schwarzReflection_im_pos
-    (hf : DifferentiableOn ℂ f {z : ℂ | 0 < z.im}) :
-    DifferentiableOn ℂ (schwarzReflection f) {z : ℂ | 0 < z.im} :=
-  hf.congr fun _ hz => schwarzReflection_of_im_nonneg (f := f) hz.le
-
-/--
-Holomorphicity transfers from `f` to the Schwarz-reflection witness on the closed upper part
-of an arbitrary domain.
--/
-lemma DifferentiableOn.schwarzReflection_inter_im_nonneg
-    (hf : DifferentiableOn ℂ f (S ∩ {z : ℂ | 0 ≤ z.im})) :
-    DifferentiableOn ℂ (schwarzReflection f) (S ∩ {z : ℂ | 0 ≤ z.im}) :=
-  hf.congr fun _ hz => schwarzReflection_of_im_nonneg (f := f) hz.2
-
-/--
-Holomorphicity transfers from `f` to the Schwarz-reflection witness on the open upper part of
-an arbitrary domain.
--/
-lemma DifferentiableOn.schwarzReflection_inter_im_pos
-    (hf : DifferentiableOn ℂ f (S ∩ {z : ℂ | 0 < z.im})) :
-    DifferentiableOn ℂ (schwarzReflection f) (S ∩ {z : ℂ | 0 < z.im}) :=
-  hf.congr fun _ hz => schwarzReflection_of_im_nonneg (f := f) hz.2.le
+lemma DifferentiableOn.schwarzReflection_of_subset_im_nonneg
+    (hf : DifferentiableOn ℂ f S) (hS : ∀ z ∈ S, 0 ≤ z.im) :
+    DifferentiableOn ℂ (schwarzReflection f) S :=
+  hf.congr fun z hz => schwarzReflection_of_im_nonneg (f := f) (hS z hz)
 
 /-- Conjugating a point in the upper half-plane evaluates the reflected lower branch. -/
 lemma schwarzReflection_conj_of_im_pos {z : ℂ} (hz : 0 < z.im) :
