@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Analysis.Complex.Basic
 
 /-!
@@ -15,7 +15,7 @@ This file records the elementary arc-FTC step used by the contour-integration ro
 `F' = f` along the image of a raw curve `γ : ℝ → ℂ`, then the contour integral of `f` along `γ`
 is the endpoint difference `F (γ b) - F (γ a)`, and hence vanishes for a closed curve. The
 statements keep the roadmap's raw-function convention and use the ordinary interval integral
-`∫ t in a..b, γ' t • f (γ t)`.
+`∫ t in a..b, f (γ t) * γ' t`.
 
 This is the Layer 2 "FTC along an arc" prerequisite for Cauchy's theorem and the later residue
 theorems. It is just the chain rule plus Mathlib's interval-integral fundamental theorem of
@@ -51,41 +51,47 @@ variable {γ γ' : ℝ → ℂ} {g G : ℂ → ℂ} {a b : ℝ}
 difference `G (γ b) - G (γ a)`. The integrability hypothesis is stated directly on the contour
 integrand, so this lemma can be used with any regularity package that supplies it. -/
 theorem contourIntegral_eq_sub_of_hasDerivAt
-    (hγ : ∀ t ∈ Set.uIcc a b, HasDerivAt γ (γ' t) t)
-    (hG : ∀ t ∈ Set.uIcc a b, HasDerivAt G (g (γ t)) (γ t))
-    (hint : IntervalIntegrable (fun t => γ' t • g (γ t)) volume a b) :
-    ∫ t in a..b, γ' t • g (γ t) = G (γ b) - G (γ a) := by
-  exact intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (fun t ht => (hG t ht).scomp t (hγ t ht)) hint
+    (hcont : ContinuousOn (G ∘ γ) (Set.uIcc a b))
+    (hγ : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt γ (γ' t) t)
+    (hG : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt G (g (γ t)) (γ t))
+    (hint : IntervalIntegrable (fun t => g (γ t) * γ' t) volume a b) :
+    ∫ t in a..b, g (γ t) * γ' t = G (γ b) - G (γ a) := by
+  refine intervalIntegral.integral_eq_sub_of_hasDeriv_right hcont ?_ hint
+  intro t ht
+  simpa only [Function.comp_apply, smul_eq_mul, mul_comm] using
+    ((hG t ht).scomp t (hγ t ht)).hasDerivWithinAt
 
 /-- **FTC along a contour, `deriv` form.** If `G' = g` along the image of a differentiable curve,
 then the contour integral written with `deriv γ` is the endpoint difference
 `G (γ b) - G (γ a)`. -/
 theorem contourIntegral_deriv_eq_sub_of_hasDerivAt
-    (hγ : ∀ t ∈ Set.uIcc a b, DifferentiableAt ℝ γ t)
-    (hG : ∀ t ∈ Set.uIcc a b, HasDerivAt G (g (γ t)) (γ t))
-    (hint : IntervalIntegrable (fun t => deriv γ t • g (γ t)) volume a b) :
-    ∫ t in a..b, deriv γ t • g (γ t) = G (γ b) - G (γ a) :=
+    (hcont : ContinuousOn (G ∘ γ) (Set.uIcc a b))
+    (hγ : ∀ t ∈ Set.Ioo (min a b) (max a b), DifferentiableAt ℝ γ t)
+    (hG : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt G (g (γ t)) (γ t))
+    (hint : IntervalIntegrable (fun t => g (γ t) * deriv γ t) volume a b) :
+    ∫ t in a..b, g (γ t) * deriv γ t = G (γ b) - G (γ a) :=
   contourIntegral_eq_sub_of_hasDerivAt
-    (γ' := fun t => deriv γ t) (fun t ht => (hγ t ht).hasDerivAt) hG hint
+    (γ' := fun t => deriv γ t) hcont (fun t ht => (hγ t ht).hasDerivAt) hG hint
 
 /-- A contour integral of an exact derivative vanishes on a closed curve, explicit-velocity form. -/
 theorem contourIntegral_eq_zero_of_hasDerivAt_of_closed
-    (hγ : ∀ t ∈ Set.uIcc a b, HasDerivAt γ (γ' t) t)
-    (hG : ∀ t ∈ Set.uIcc a b, HasDerivAt G (g (γ t)) (γ t))
-    (hint : IntervalIntegrable (fun t => γ' t • g (γ t)) volume a b)
+    (hcont : ContinuousOn (G ∘ γ) (Set.uIcc a b))
+    (hγ : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt γ (γ' t) t)
+    (hG : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt G (g (γ t)) (γ t))
+    (hint : IntervalIntegrable (fun t => g (γ t) * γ' t) volume a b)
     (hclosed : γ a = γ b) :
-    ∫ t in a..b, γ' t • g (γ t) = 0 := by
-  rw [contourIntegral_eq_sub_of_hasDerivAt hγ hG hint, hclosed, sub_self]
+    ∫ t in a..b, g (γ t) * γ' t = 0 := by
+  rw [contourIntegral_eq_sub_of_hasDerivAt hcont hγ hG hint, hclosed, sub_self]
 
 /-- A contour integral of an exact derivative vanishes on a closed curve, `deriv` form. -/
 theorem contourIntegral_deriv_eq_zero_of_hasDerivAt_of_closed
-    (hγ : ∀ t ∈ Set.uIcc a b, DifferentiableAt ℝ γ t)
-    (hG : ∀ t ∈ Set.uIcc a b, HasDerivAt G (g (γ t)) (γ t))
-    (hint : IntervalIntegrable (fun t => deriv γ t • g (γ t)) volume a b)
+    (hcont : ContinuousOn (G ∘ γ) (Set.uIcc a b))
+    (hγ : ∀ t ∈ Set.Ioo (min a b) (max a b), DifferentiableAt ℝ γ t)
+    (hG : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt G (g (γ t)) (γ t))
+    (hint : IntervalIntegrable (fun t => g (γ t) * deriv γ t) volume a b)
     (hclosed : γ a = γ b) :
-    ∫ t in a..b, deriv γ t • g (γ t) = 0 := by
-  rw [contourIntegral_deriv_eq_sub_of_hasDerivAt hγ hG hint, hclosed, sub_self]
+    ∫ t in a..b, g (γ t) * deriv γ t = 0 := by
+  rw [contourIntegral_deriv_eq_sub_of_hasDerivAt hcont hγ hG hint, hclosed, sub_self]
 
 end TauCeti.Contour
 
