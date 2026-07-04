@@ -31,67 +31,9 @@ namespace TauCeti
 
 universe u v w
 
-namespace HopfAlgebra
-
-variable {R : Type u} [CommRing R] {H : Type v} [Semiring H] [_root_.HopfAlgebra R H]
-
-/-- Pointwise form of the map on points induced by a morphism of value algebras. -/
-@[simp]
-lemma mapPoints_apply_apply {A B : CommAlgCat.{w} R} (χ : A ⟶ B)
-    (f : points (R := R) (H := H) A) (h : H) :
-    ((mapPoints (H := H) χ f).ofConv) h = χ.hom (f.ofConv h) :=
-  rfl
-
-end HopfAlgebra
-
 namespace CommHopfAlgCat
 
 variable {R : Type u} [CommRing R]
-
-/-- The quotient-points inclusion is natural in the value algebra.
-
-Post-composing a quotient point `H ⧸ I →ₐ[R] A` by `χ : A ⟶ B`, then including it as an
-ambient point of `H`, gives the same ambient `B`-point as first including it and then
-post-composing by `χ`. -/
-lemma mapPoints_quotientPointsHom (H : _root_.CommHopfAlgCat.{v} R)
-    (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
-    (χ : A ⟶ B) (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
-    HopfAlgebra.mapPoints (H := H) χ (quotientPointsHom H I A f) =
-      quotientPointsHom H I B
-        (HopfAlgebra.mapPoints (H := quotient H I) χ f) := by
-  apply WithConv.ofConv_injective
-  apply AlgHom.ext
-  intro h
-  calc
-    ((HopfAlgebra.mapPoints (H := H) χ (quotientPointsHom H I A f)).ofConv) h =
-        χ.hom (((quotientPointsHom H I A f).ofConv) h) :=
-      HopfAlgebra.mapPoints_apply_apply (H := H) χ (quotientPointsHom H I A f) h
-    _ = χ.hom (f.ofConv (Ideal.Quotient.mkₐ R I.toIdeal h)) := by
-      rw [quotientPointsHom_apply_apply]
-    _ = ((quotientPointsHom H I B
-          (HopfAlgebra.mapPoints (H := quotient H I) χ f)).ofConv) h := by
-      rw [quotientPointsHom_apply_apply,
-        HopfAlgebra.mapPoints_apply_apply (H := quotient H I)]
-
-/-- Pointwise form of naturality of the quotient-points inclusion. -/
-lemma mapPoints_quotientPointsHom_apply_apply (H : _root_.CommHopfAlgCat.{v} R)
-    (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
-    (χ : A ⟶ B) (f : HopfAlgebra.points (R := R) (H := quotient H I) A) (h : H) :
-    ((HopfAlgebra.mapPoints (H := H) χ (quotientPointsHom H I A f)).ofConv) h =
-      χ.hom (f.ofConv (Ideal.Quotient.mkₐ R I.toIdeal h)) := by
-  rw [mapPoints_quotientPointsHom, quotientPointsHom_apply_apply]
-  rfl
-
-/-- The quotient-points inclusion commutes with the functor-of-points maps as a morphism
-equality. -/
-lemma quotientPointsHom_naturality (H : _root_.CommHopfAlgCat.{v} R)
-    (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
-    (χ : A ⟶ B) :
-    quotientPointsHom H I A ≫ HopfAlgebra.mapPoints (H := H) χ =
-      HopfAlgebra.mapPoints (H := quotient H I) χ ≫ quotientPointsHom H I B := by
-  ext f h
-  exact congrArg (fun g : HopfAlgebra.points (R := R) (H := H) B => g.ofConv h)
-    (mapPoints_quotientPointsHom H I χ f)
 
 /-- Post-composition preserves the ambient-point subgroup cut out by a Hopf ideal. -/
 lemma mapPoints_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
@@ -101,25 +43,18 @@ lemma mapPoints_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     HopfAlgebra.mapPoints (H := H) χ g ∈ quotientPointsSubgroup H I B := by
   rw [mem_quotientPointsSubgroup_iff] at hg ⊢
   intro h hh
-  rw [HopfAlgebra.mapPoints_apply_apply]
+  rw [show ((HopfAlgebra.mapPoints (H := H) χ g).ofConv) h = χ.hom (g.ofConv h) from
+    HopfAlgebra.pointsFunctor_map_apply_apply (H := H) χ g h]
   rw [hg h hh, map_zero]
 
 /-- The functor-of-points map restricted to the subgroups cut out by a Hopf ideal. -/
 @[expose] noncomputable def mapQuotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
     (χ : A ⟶ B) :
-    quotientPointsSubgroup H I A →* quotientPointsSubgroup H I B where
-  toFun g :=
-    ⟨HopfAlgebra.mapPoints (H := H) χ g,
-      mapPoints_mem_quotientPointsSubgroup H I χ g.property⟩
-  map_one' := by
-    ext h
-    exact congrArg (fun f : HopfAlgebra.points (R := R) (H := H) B => f.ofConv h)
-      (HopfAlgebra.mapPoints_one (H := H) χ)
-  map_mul' g₁ g₂ := by
-    ext h
-    exact congrArg (fun f : HopfAlgebra.points (R := R) (H := H) B => f.ofConv h)
-      (HopfAlgebra.mapPoints_mul (H := H) χ g₁ g₂)
+    quotientPointsSubgroup H I A →* quotientPointsSubgroup H I B :=
+  ((HopfAlgebra.mapPoints (H := H) χ).hom.restrict (quotientPointsSubgroup H I A)).codRestrict
+    (quotientPointsSubgroup H I B)
+    fun g => mapPoints_mem_quotientPointsSubgroup H I χ g.property
 
 /-- The restricted map on cut-out subgroups is induced by the ambient functor-of-points map. -/
 @[simp]
@@ -179,11 +114,23 @@ lemma mapPoints_liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
       liftQuotientPoint H I B (HopfAlgebra.mapPoints (H := H) χ g)
         (by
           intro h hh
-          rw [HopfAlgebra.mapPoints_apply_apply]
+          rw [show ((HopfAlgebra.mapPoints (H := H) χ g).ofConv) h = χ.hom (g.ofConv h) from
+            HopfAlgebra.pointsFunctor_map_apply_apply (H := H) χ g h]
           rw [hg h hh, map_zero]) := by
   apply quotientPointsHom_injective H I B
-  rw [← mapPoints_quotientPointsHom, quotientPointsHom_liftQuotientPoint,
-    quotientPointsHom_liftQuotientPoint]
+  apply WithConv.ofConv_injective
+  apply AlgHom.ext
+  intro h
+  rw [quotientPointsHom_apply_apply, quotientPointsHom_liftQuotientPoint]
+  rw [show
+    ((HopfAlgebra.mapPoints (H := quotient H I) χ (liftQuotientPoint H I A g hg)).ofConv)
+        (Ideal.Quotient.mkₐ R I.toIdeal h) =
+      χ.hom ((liftQuotientPoint H I A g hg).ofConv (Ideal.Quotient.mkₐ R I.toIdeal h)) from
+    HopfAlgebra.pointsFunctor_map_apply_apply (H := quotient H I) χ
+      (liftQuotientPoint H I A g hg) (Ideal.Quotient.mkₐ R I.toIdeal h)]
+  rw [show ((HopfAlgebra.mapPoints (H := H) χ g).ofConv) h = χ.hom (g.ofConv h) from
+    HopfAlgebra.pointsFunctor_map_apply_apply (H := H) χ g h]
+  rw [liftQuotientPoint_mk]
 
 end CommHopfAlgCat
 
