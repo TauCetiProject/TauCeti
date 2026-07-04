@@ -31,8 +31,8 @@ whole disc, contributing `0` to the circle integral (Cauchy–Goursat), while
 
 ## Main results
 
-* `TauCeti.Contour.argumentPrinciple_local` — `∮_{C(c,R)} logDeriv f = 2πi · n` when `c` is the only
-  zero or pole of `f` in the closed disc, of order `n`.
+* `TauCeti.Contour.argumentPrinciple_local` — `∮_{C(c,R)} logDeriv f = 2πi · n` when the centre `c`,
+  of order `n`, is the only point of the closed disc that may be a zero or pole of `f`.
 
 This is a Layer 2 target of the contour-integration roadmap, feeding the argument principle and,
 ultimately, the valence formula.
