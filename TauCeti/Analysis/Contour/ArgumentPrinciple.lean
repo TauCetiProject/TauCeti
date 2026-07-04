@@ -6,19 +6,21 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.Meromorphic.NormalForm
+public import Mathlib.Analysis.Meromorphic.Order
+import Mathlib.Analysis.Meromorphic.NormalForm
 
 /-!
 # The local argument principle
 
-For `f : ℂ → ℂ` meromorphic on a closed disc `C(c, R)` whose only zero or pole is the centre `c`,
-of order `n = meromorphicOrderAt f c`, the contour integral of the logarithmic derivative recovers
-the order:
+For `f : ℂ → ℂ` meromorphic on a closed disc `C(c, R)` in which the centre `c` is the only point
+that may be a zero or pole, of order `n = meromorphicOrderAt f c`, the contour integral of the
+logarithmic derivative recovers the order:
 `∮_{C(c,R)} f'/f = 2πi · n`.
 
 This is the per-orbit input to the valence formula: the residue of `f'/f` at `c` is `ord_c f`, so
-integrating `logDeriv f = f'/f` around the circle counts (with multiplicity) the single zero or pole
-at the centre. Mathlib has `logDeriv` and `meromorphicOrderAt` but not this identity.
+integrating `logDeriv f = f'/f` around the circle counts (with multiplicity) the zero or pole at the
+centre, and vanishes when `c` too is regular (`n = 0`). Mathlib has `logDeriv` and
+`meromorphicOrderAt` but not this identity.
 
 The proof is Cauchy's theorem plus the Cauchy kernel: off `c` the hypothesis forces `f` to be
 analytic and non-vanishing, so `logDeriv f` is analytic there; near `c`, the local factorisation
@@ -97,8 +99,9 @@ private lemma circleIntegral_logDeriv_of_order_of_analyticAt_off
     have hzpow : (z - c) ^ n ≠ 0 := zpow_ne_zero n hz_sub
     have hdz : DifferentiableAt ℂ (fun w => (w - c) ^ n) z :=
       (differentiableAt_id.sub_const c).zpow (Or.inl hz_sub)
+    have hderiv : deriv (fun w => w - c) z = 1 := by simp
     have hld_sub : logDeriv (fun w => w - c) z = (z - c)⁻¹ := by
-      rw [logDeriv_apply, show deriv (fun w => w - c) z = 1 by simp, one_div]
+      rw [logDeriv_apply, hderiv, one_div]
     have hmul : (fun w => (w - c) ^ n • g w) = fun w => (w - c) ^ n * g w := by
       funext w; rw [smul_eq_mul]
     have hLF : logDeriv F z = (n : ℂ) * (z - c)⁻¹ + logDeriv g z := by
@@ -164,10 +167,11 @@ private lemma circleIntegral_logDeriv_of_order_of_analyticAt_off
   ring
 
 /-- **Local argument principle.** If `f` is meromorphic on the closed disc `C(c, R)` (`R > 0`) and
-its only zero or pole there is the centre `c`, of order `n = meromorphicOrderAt f c`, then the
-contour integral of the logarithmic derivative recovers the order:
-`∮_{C(c,R)} f'/f = 2πi · n`. The residue of `f'/f` at `c` is `ord_c f`, so the integral counts the
-single zero or pole at the centre with multiplicity. -/
+every point of the disc except possibly the centre `c` is regular (analytic and non-vanishing), then
+the contour integral of the logarithmic derivative recovers the order `n = meromorphicOrderAt f c`
+at the centre:
+`∮_{C(c,R)} f'/f = 2πi · n`. Thus the integral counts the zero (`n > 0`) or pole (`n < 0`) at the
+centre with multiplicity, and vanishes when `c` too is regular (`n = 0`). -/
 theorem argumentPrinciple_local {f : ℂ → ℂ} {c : ℂ} {R : ℝ} {n : ℤ} (hR : 0 < R)
     (hf : MeromorphicOn f (Metric.closedBall c R))
     (honly : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt f z ≠ 0 → z = c)
