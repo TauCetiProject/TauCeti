@@ -20,6 +20,13 @@ later Lane D work can consume when turning a uniformly elliptic coefficient fiel
 lower-order coefficients, and a mass lower bound into the bounded/coercive hypotheses of
 Lax--Milgram.
 
+This file deliberately leaves symmetry to `TauCeti.Analysis.PDE.SymmetricEnergy`.  For a
+zero-drift uniformly elliptic operator with symmetric principal coefficient, use
+`UniformlyEllipticOn.isCoercive_energyIntegrand_zero_drift` for the lower bound and the
+`energyIntegrand_zero_drift_flip_eq_*` lemmas for symmetry; for nonsymmetric coefficients,
+the symmetric-part API in `TauCeti.Analysis.PDE.UniformEllipticity` preserves the ellipticity
+constants before applying the same symmetry lemmas.
+
 ## Main declarations
 
 * `TauCeti.PDE.UniformlyEllipticOn.norm_energyIntegrand_apply_le`: pointwise boundedness

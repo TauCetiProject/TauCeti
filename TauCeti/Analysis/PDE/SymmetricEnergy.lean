@@ -20,6 +20,13 @@ bilinear form.  The already-existing `coefficientSymmetricPart` replaces a possi
 nonsymmetric coefficient matrix by `(A + Aᵀ) / 2`; here we prove the corresponding facts for
 the full zero-drift jet integrand.
 
+Coercivity is supplied separately by `TauCeti.Analysis.PDE.CoerciveEnergy` and its
+`UniformlyEllipticOn` wrappers.  In the zero-drift case with positive mass and a
+principal quadratic lower bound, combine
+`energyIntegrand_zero_drift_flip_eq_of_isSymm` or
+`energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq` with
+`isCoercive_energyIntegrand_zero_drift` rather than introducing a separate conjunction API.
+
 ## Main declarations
 
 * `TauCeti.PDE.energyIntegrand_zero_drift_transpose_apply`: transposing the principal
