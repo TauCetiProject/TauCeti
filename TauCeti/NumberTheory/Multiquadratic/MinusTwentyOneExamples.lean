@@ -9,22 +9,24 @@ public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantGaloisGroup
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantIndependence
 
 /-!
-# The `-21` prime-discriminant radicand field examples
+# Shared implementation for the `-21` prime-discriminant radicand field examples
 
 The worked examples in the multiquadratic roadmap identify the genus field for `ℚ(√-21)` as
 `ℚ(√-1, √-3, √-7)`, attached to the prime discriminants `-4`, `-3`, and `-7`. This file records
-the immediate Layer-0 degree and Galois-cardinality consequences needed before the actual
-genus-field comparison.
+the immediate Layer-0 degree and Galois-cardinality proof package needed before the actual
+genus-field comparison. The user-facing theorem names live in the degree and Galois modules,
+so those import paths do not re-export each other's result.
 
 The prime-discriminant convention follows the standard genus-theory convention in Cox's
 *Primes of the Form x² + ny²* and Lemmermeyer's *Reciprocity Laws*.
 
 ## Main results
 
-* `TauCeti.Multiquadratic.finrank_adjoin_I_sqrt_neg_three_sqrt_neg_seven`: the
-  worked-example degree `[ℚ(i, √-3, √-7) : ℚ] = 8`.
-* `TauCeti.Multiquadratic.card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven`: the
-  worked-example cardinality `|Gal(ℚ(i, √-3, √-7)/ℚ)| = 8`.
+* `TauCeti.Multiquadratic.MinusTwentyOne.finrank_adjoin_I_sqrt_neg_three_sqrt_neg_seven_eq`:
+  the implementation theorem for the worked-example degree `[ℚ(i, √-3, √-7) : ℚ] = 8`.
+* `TauCeti.Multiquadratic.MinusTwentyOne.card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven_eq`:
+  the implementation theorem for the worked-example cardinality
+  `|Gal(ℚ(i, √-3, √-7)/ℚ)| = 8`.
 -/
 
 public section
@@ -92,30 +94,29 @@ private theorem range_primeDiscriminantRoot :
     · exact ⟨1, by simp [primeDiscriminantRoot, hx]⟩
     · exact ⟨2, by simp [primeDiscriminantRoot, hx]⟩
 
-end MinusTwentyOne
-
-/-- **Worked example: `[ℚ(i, √-3, √-7) : ℚ] = 8`.** This is the degree of the
+/-- Implementation theorem for the worked example `[ℚ(i, √-3, √-7) : ℚ] = 8`. This is the
 multiquadratic field `ℚ(√-1, √-3, √-7)` attached to the prime discriminants `-4`, `-3`,
 and `-7` in the genus-field example for `ℚ(√-21)`. -/
-theorem finrank_adjoin_I_sqrt_neg_three_sqrt_neg_seven :
+theorem finrank_adjoin_I_sqrt_neg_three_sqrt_neg_seven_eq :
     Module.finrank ℚ
       (adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) :
         IntermediateField ℚ ℂ)
       = 8 := by
   have h := finrank_adjoin_roots_primeDiscriminantRadicands
     negFourNegThreeNegSevenPrimeDiscriminants
-    MinusTwentyOne.primeDiscriminants_isPrimeDiscriminant
-    MinusTwentyOne.primeDiscriminants_injective
-    MinusTwentyOne.primeDiscriminants_not_all_even
-    MinusTwentyOne.primeDiscriminantRoot
-    MinusTwentyOne.primeDiscriminantRoot_sq
-  rw [← MinusTwentyOne.range_primeDiscriminantRoot]
+    primeDiscriminants_isPrimeDiscriminant
+    primeDiscriminants_injective
+    primeDiscriminants_not_all_even
+    primeDiscriminantRoot
+    primeDiscriminantRoot_sq
+  rw [← range_primeDiscriminantRoot]
   exact h.trans (by norm_num [Nat.card_fin])
 
-/-- **Worked example: `|Gal(ℚ(i, √-3, √-7)/ℚ)| = 8`.** This is the Galois group of the
+/-- Implementation theorem for the worked example `|Gal(ℚ(i, √-3, √-7)/ℚ)| = 8`. This is the
+Galois group of the
 multiquadratic field `ℚ(√-1, √-3, √-7)` attached to the prime discriminants `-4`, `-3`,
 and `-7` in the genus-field example for `ℚ(√-21)`. -/
-theorem card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven :
+theorem card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven_eq :
     Nat.card
       ((adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) :
           IntermediateField ℚ ℂ)
@@ -125,12 +126,14 @@ theorem card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven :
       = 8 := by
   have h := card_aut_adjoin_roots_primeDiscriminantRadicands
     negFourNegThreeNegSevenPrimeDiscriminants
-    MinusTwentyOne.primeDiscriminants_isPrimeDiscriminant
-    MinusTwentyOne.primeDiscriminants_injective
-    MinusTwentyOne.primeDiscriminants_not_all_even
-    MinusTwentyOne.primeDiscriminantRoot
-    MinusTwentyOne.primeDiscriminantRoot_sq
-  rw [← MinusTwentyOne.range_primeDiscriminantRoot]
+    primeDiscriminants_isPrimeDiscriminant
+    primeDiscriminants_injective
+    primeDiscriminants_not_all_even
+    primeDiscriminantRoot
+    primeDiscriminantRoot_sq
+  rw [← range_primeDiscriminantRoot]
   exact h.trans (by norm_num [Nat.card_fin])
+
+end MinusTwentyOne
 
 end TauCeti.Multiquadratic
