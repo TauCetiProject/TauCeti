@@ -92,8 +92,8 @@ lemma integrable_laplaceKernel_of_nonneg (μ : Measure ℝ≥0) [IsFiniteMeasure
   ext x
   simp
 
-/-- The value of the Laplace transform at zero is the total finite mass. -/
-@[simp]
+/-- The value of the Laplace transform at zero is the total finite mass. (Not `@[simp]`: the
+current simp set already reduces `laplaceTransform μ 0`, so a simp lemma would be redundant.) -/
 lemma laplaceTransform_zero (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
     laplaceTransform μ 0 = μ.real univ := by
   simp [laplaceTransform]
