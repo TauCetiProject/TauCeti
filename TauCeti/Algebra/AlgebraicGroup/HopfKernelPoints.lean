@@ -120,9 +120,7 @@ theorem quotientPointsHom_kerQuotientPointsMulEquiv_symm (f : H →ₐc[R] K)
       CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H) (ker f hf) A q =
         AlgHom.mapDomain (A := A)
           ((CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of R H) (ker f hf)).hom) q := by
-    ext h
-    rw [CommHopfAlgCat.quotientPointsHom_apply_apply, AlgHom.mapDomain_apply_apply,
-      CommHopfAlgCat.mkQuotient_apply]
+    rw [CommHopfAlgCat.quotientPointsHom_apply, AlgHom.mapDomain_apply]
   calc
     CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H) (ker f hf) A
         ((kerQuotientPointsMulEquiv f hf A).symm g) =
