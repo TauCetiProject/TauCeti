@@ -102,7 +102,6 @@ theorem relativeDiffCongr_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
   rfl
 
 /-- Pointwise formula for the relative conjugation equivalence. -/
-@[simp]
 theorem relativeDiffCongr_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
     (φ : fixingSubgroup (I := I) (n := n) s) (y : N) :
     ((relativeDiffCongr e s φ : N ≃ₘ^n⟮J, J⟯ N) y) =
