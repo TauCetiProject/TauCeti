@@ -382,7 +382,7 @@ jobs:
               lake build
               lake exe axioms
               lake exe module-system
-              # Environment lint (Mathlib's default `#lint` set minus docBlame, plus
+              # Environment lint (the Mathlib default `#lint` set minus docBlame, plus
               # a module-system-reliable docstring scan; see the script header)
               # against the grandfathered baseline in scripts/lint-baseline.txt.
               # Script, baseline, and the @[nolint <linter>] allowlist
