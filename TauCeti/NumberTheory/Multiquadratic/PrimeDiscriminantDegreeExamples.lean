@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.LegendrePrimeDiscriminantExamples
+public import TauCeti.NumberTheory.Multiquadratic.CMField
 public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOneGalois
 
 /-!
@@ -36,61 +37,20 @@ open IntermediateField
 
 namespace TauCeti.Multiquadratic
 
-private theorem root_neg_four_five_sq (i : Fin 2) :
-    (fun i : Fin 2 => ![Complex.I, ((Real.sqrt 5 : ℝ) : ℂ)] i) i ^ 2 =
-      algebraMap ℚ ℂ
-        (((primeDiscriminantRadicand (negFourFivePrimeDiscriminants i) : ℤ) : ℚ)) := by
-  fin_cases i
-  · simp [negFourFivePrimeDiscriminants, Complex.I_sq]
-  · have h : (((Real.sqrt 5 : ℝ) : ℂ) ^ 2) = (5 : ℂ) := by
-      rw [← Complex.ofReal_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 5)]
-      norm_num
-    simpa [negFourFivePrimeDiscriminants, primeDiscriminantRadicand] using h
-
-private theorem isPrimeDiscriminant_negFourFivePrimeDiscriminants :
-    ∀ i : Fin 2, IsPrimeDiscriminant (negFourFivePrimeDiscriminants i) := by
-  intro i
-  fin_cases i
-  · simp [negFourFivePrimeDiscriminants]
-  · have h5 : IsPrimeDiscriminant (5 : ℤ) := by
-      simpa [oddPrimeDiscriminant_of_mod_four_eq_one (by norm_num : 5 % 4 = 1)]
-        using isPrimeDiscriminant_oddPrimeDiscriminant (p := 5) (by decide) (by decide)
-    simpa [negFourFivePrimeDiscriminants] using h5
-
-private theorem injective_negFourFivePrimeDiscriminants :
-    Function.Injective negFourFivePrimeDiscriminants := by
-  decide
-
-private theorem not_all_even_negFourFivePrimeDiscriminants :
-    ¬ ((∃ i : Fin 2, negFourFivePrimeDiscriminants i = -4) ∧
-      (∃ i : Fin 2, negFourFivePrimeDiscriminants i = 8) ∧
-        (∃ i : Fin 2, negFourFivePrimeDiscriminants i = -8)) := by
-  decide
-
-private theorem range_roots_neg_four_five :
-    (Set.range fun i : Fin 2 => ![Complex.I, ((Real.sqrt 5 : ℝ) : ℂ)] i)
-      = {Complex.I, ((Real.sqrt 5 : ℝ) : ℂ)} := by
-  ext x
-  simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨i, rfl⟩
-    fin_cases i <;> simp
-  · intro hx
-    rcases hx with hx | hx
-    · exact ⟨0, by simp [hx]⟩
-    · exact ⟨1, by simp [hx]⟩
-
 /-- **Worked example: `[ℚ(i, √5) : ℚ] = 4`.** This is the full-degree Layer-0 input for the
 prime-discriminant generator field attached to the `ℚ(√-5)` genus-field example. -/
 theorem finrank_adjoin_I_sqrt_five :
     Module.finrank ℚ
       (adjoin ℚ ({Complex.I, ((Real.sqrt 5 : ℝ) : ℂ)} : Set ℂ) : IntermediateField ℚ ℂ) = 4 := by
-  have h := finrank_adjoin_roots_primeDiscriminantRadicands negFourFivePrimeDiscriminants
-    isPrimeDiscriminant_negFourFivePrimeDiscriminants injective_negFourFivePrimeDiscriminants
-    not_all_even_negFourFivePrimeDiscriminants
-    (fun i : Fin 2 => ![Complex.I, ((Real.sqrt 5 : ℝ) : ℂ)] i) root_neg_four_five_sq
-  rw [range_roots_neg_four_five] at h
-  exact h.trans (by norm_num [Nat.card_fin])
+  have h := finrank_adjoin_I_sqrt_primes ![5] (by decide) (by decide)
+  have hset : insert Complex.I
+      (Set.range fun i : Fin 1 => ((Real.sqrt ((![5] : Fin 1 → ℕ) i) : ℝ) : ℂ))
+      = ({Complex.I, ((Real.sqrt 5 : ℝ) : ℂ)} : Set ℂ) := by
+    rw [Set.range_unique]
+    simp [Matrix.cons_val_fin_one]
+  rw [hset] at h
+  rw [h, Nat.card_fin]
+  norm_num
 
 private theorem root_neg_four_neg_three_neg_seven_sq (i : Fin 3) :
     (fun i : Fin 3 => ![Complex.I, sqrtNegThree, sqrtNegSeven] i) i ^ 2 =
