@@ -46,6 +46,8 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
 * `TauCeti.PDE.UniformlyEllipticOn.biUnion`: patch over a union indexed by points of a set.
 * `TauCeti.PDE.matrixBilinearForm`: the bounded bilinear form `η, ξ ↦ ηᵀ A ξ` attached to
   a coefficient matrix.
+* `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
+  continuous linear map.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
   bound controls the operator norm of the attached matrix bilinear form.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_matrixBilinearForm`: pointwise coercivity of
@@ -174,6 +176,61 @@ lemma matrixBilinearForm_smul_one_apply (c : ℝ) (η ξ : EuclideanSpace ℝ n)
 lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
   rw [matrixBilinearForm_apply, toQuadraticForm'_eq_dotProduct]
+
+/-- The principal coefficient matrix-to-bilinear-form map as a continuous linear map. -/
+noncomputable def matrixBilinearFormLinear :
+    Matrix n n ℝ →L[ℝ] EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun A =>
+        ((Matrix.toBilin' A).compl₁₂ (EuclideanSpace.equiv n ℝ).toLinearMap
+          (EuclideanSpace.equiv n ℝ).toLinearMap).toContinuousBilinearMap
+      map_add' := by
+        intro A B
+        ext η ξ
+        simp
+      map_smul' := by
+        intro r A
+        ext η ξ
+        simp }
+
+/-- Applying `matrixBilinearFormLinear` recovers `matrixBilinearForm`. -/
+@[simp]
+lemma matrixBilinearFormLinear_apply (A : Matrix n n ℝ) :
+    matrixBilinearFormLinear (n := n) A = matrixBilinearForm A :=
+  by
+    ext η ξ
+    simp [matrixBilinearFormLinear, matrixBilinearForm, Matrix.toBilin'_apply']
+
+/-- The principal coefficient-to-bilinear-form map is continuous. -/
+lemma continuous_matrixBilinearForm :
+    Continuous (fun A : Matrix n n ℝ => matrixBilinearForm A) :=
+  (matrixBilinearFormLinear (n := n)).continuous
+
+section Continuity
+
+variable [TopologicalSpace X]
+
+namespace Continuous
+
+/-- A continuous principal coefficient field gives a continuous field of principal bilinear
+forms. -/
+lemma matrixBilinearForm {a : X → Matrix n n ℝ} (ha : Continuous a) :
+    Continuous (fun x => PDE.matrixBilinearForm (a x)) :=
+  continuous_matrixBilinearForm.comp ha
+
+end Continuous
+
+namespace ContinuousOn
+
+/-- A continuous principal coefficient field on a set gives a continuous field of principal
+bilinear forms on that set. -/
+lemma matrixBilinearForm {s : Set X} {a : X → Matrix n n ℝ} (ha : ContinuousOn a s) :
+    ContinuousOn (fun x => PDE.matrixBilinearForm (a x)) s :=
+  continuous_matrixBilinearForm.comp_continuousOn ha
+
+end ContinuousOn
+
+end Continuity
 
 /-- The symmetric part `(A + Aᵀ) / 2` of a coefficient matrix.
 
