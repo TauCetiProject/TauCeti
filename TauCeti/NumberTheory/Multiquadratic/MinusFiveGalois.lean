@@ -4,10 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.NumberTheory.Multiquadratic.MinusFiveDegree
 public import TauCeti.NumberTheory.Multiquadratic.CMFieldGaloisGroup
-public import Mathlib.Data.Complex.Basic
-public import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # The Galois group of the `-5` prime-discriminant radicand field

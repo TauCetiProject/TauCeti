@@ -6,8 +6,6 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOneDegree
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantGaloisGroup
-public import Mathlib.Data.Complex.Basic
-public import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # The Galois group of the `-21` prime-discriminant radicand field
@@ -32,66 +30,6 @@ open IntermediateField
 
 namespace TauCeti.Multiquadratic
 
-/-- The three prime discriminants used for the `ℚ(√-21)` genus-field example. -/
-private def minusTwentyOnePrimeDiscriminants : Fin 3 → ℤ :=
-  negFourNegThreeNegSevenPrimeDiscriminants
-
-/-- The complex square root data for the prime discriminants `-4`, `-3`, and `-7`: the
-associated radicands are `-1`, `-3`, and `-7`, with roots `i`, `i√3`, and `i√7`. -/
-private theorem root_neg_four_neg_three_neg_seven_sq (i : Fin 3) :
-    (fun i : Fin 3 => ![Complex.I, sqrtNegThree, sqrtNegSeven] i) i ^ 2 =
-      algebraMap ℚ ℂ
-        (((primeDiscriminantRadicand (minusTwentyOnePrimeDiscriminants i) : ℤ) : ℚ)) := by
-  fin_cases i
-  · simp [minusTwentyOnePrimeDiscriminants, Complex.I_sq]
-  · have hrad : primeDiscriminantRadicand (-3) = -3 := by
-      have h := primeDiscriminantRadicand_oddPrimeDiscriminant (p := 3) (by decide)
-      simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)] using h
-    simp [minusTwentyOnePrimeDiscriminants, hrad]
-  · have hrad : primeDiscriminantRadicand (-7) = -7 := by
-      have h := primeDiscriminantRadicand_oddPrimeDiscriminant (p := 7) (by decide)
-      simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)] using h
-    simp [minusTwentyOnePrimeDiscriminants, hrad]
-
-private theorem isPrimeDiscriminant_minusTwentyOnePrimeDiscriminants :
-    ∀ i : Fin 3, IsPrimeDiscriminant (minusTwentyOnePrimeDiscriminants i) := by
-  intro i
-  fin_cases i
-  · simp [minusTwentyOnePrimeDiscriminants, negFourNegThreeNegSevenPrimeDiscriminants]
-  · have h3 : IsPrimeDiscriminant (oddPrimeDiscriminant 3) :=
-      isPrimeDiscriminant_oddPrimeDiscriminant (p := 3) (by decide) (by decide)
-    simpa [minusTwentyOnePrimeDiscriminants, negFourNegThreeNegSevenPrimeDiscriminants,
-      oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)] using h3
-  · have h7 : IsPrimeDiscriminant (oddPrimeDiscriminant 7) :=
-      isPrimeDiscriminant_oddPrimeDiscriminant (p := 7) (by decide) (by decide)
-    simpa [minusTwentyOnePrimeDiscriminants, negFourNegThreeNegSevenPrimeDiscriminants,
-      oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)] using h7
-
-private theorem minusTwentyOnePrimeDiscriminants_injective :
-    Function.Injective minusTwentyOnePrimeDiscriminants := by
-  decide
-
-private theorem not_all_even_minusTwentyOnePrimeDiscriminants :
-    ¬ ((∃ i : Fin 3, minusTwentyOnePrimeDiscriminants i = -4) ∧
-      (∃ i : Fin 3, minusTwentyOnePrimeDiscriminants i = 8) ∧
-        (∃ i : Fin 3, minusTwentyOnePrimeDiscriminants i = -8)) := by
-  decide
-
-private theorem range_roots_neg_four_neg_three_neg_seven :
-    (Set.range fun i : Fin 3 => ![Complex.I, sqrtNegThree, sqrtNegSeven] i)
-      = {Complex.I, sqrtNegThree, sqrtNegSeven} := by
-  ext x
-  simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_singleton_iff]
-  constructor
-  · intro hx
-    rcases hx with ⟨i, rfl⟩
-    fin_cases i <;> simp
-  · intro hx
-    rcases hx with hx | hx | hx
-    · exact ⟨0, by simp [hx]⟩
-    · exact ⟨1, by simp [hx]⟩
-    · exact ⟨2, by simp [hx]⟩
-
 /-- **Worked example: `|Gal(ℚ(i, √-3, √-7)/ℚ)| = 8`.** This is the Galois group of the
 multiquadratic field `ℚ(√-1, √-3, √-7)` attached to the prime discriminants `-4`, `-3`,
 and `-7` in the genus-field example for `ℚ(√-21)`. -/
@@ -104,11 +42,11 @@ theorem card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven :
           IntermediateField ℚ ℂ))
       = 8 := by
   have h := card_aut_adjoin_roots_primeDiscriminantRadicands
-    minusTwentyOnePrimeDiscriminants isPrimeDiscriminant_minusTwentyOnePrimeDiscriminants
-    minusTwentyOnePrimeDiscriminants_injective not_all_even_minusTwentyOnePrimeDiscriminants
+    MinusTwentyOne.primeDiscriminants MinusTwentyOne.isPrimeDiscriminant
+    MinusTwentyOne.injective MinusTwentyOne.not_all_even
     (fun i : Fin 3 => ![Complex.I, sqrtNegThree, sqrtNegSeven] i)
-    root_neg_four_neg_three_neg_seven_sq
-  rw [← range_roots_neg_four_neg_three_neg_seven]
+    MinusTwentyOne.root_sq
+  rw [← MinusTwentyOne.range_roots]
   exact h.trans (by norm_num [Nat.card_fin])
 
 end TauCeti.Multiquadratic

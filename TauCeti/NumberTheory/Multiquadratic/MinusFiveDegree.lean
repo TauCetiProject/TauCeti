@@ -4,10 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.NumberTheory.Multiquadratic.LegendrePrimeDiscriminantExamples
 public import TauCeti.NumberTheory.Multiquadratic.CMField
-public import Mathlib.Data.Complex.Basic
-public import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # The degree of the `-5` prime-discriminant radicand field
