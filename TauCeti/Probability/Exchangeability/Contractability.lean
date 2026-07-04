@@ -20,7 +20,8 @@ The main result is `contractable_of_exchangeable` (with dot-notation form
 contractable. The file also provides `Exchangeable.blockLaw_eq_prefixLaw_of_injective` (the
 injective-selection analogue) and `Contractable.measurePreserving_reindex` /
 `Contractable.measurePreserving_shift` (a contractable path law is invariant under strictly monotone
-time-reindexing, in particular the shift).
+time-reindexing, in particular the shift), plus the converse characterization
+`contractable_iff_forall_map_reindex_pathLaw`.
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
@@ -41,6 +42,33 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+
+/-- A strictly increasing finite selection `k : Fin m → ℕ` extends to a strictly increasing
+self-map of `ℕ`. This is the combinatorial bridge from the finite-dimensional definition of
+contractability to the path-law formulation using the monoid of strictly increasing reindexings
+`ℕ → ℕ`. -/
+private theorem exists_strictMono_nat_extending_fin {m : ℕ} {k : Fin m → ℕ} (hk : StrictMono k) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ i : Fin m, φ i.val = k i := by
+  classical
+  let C := Finset.univ.sup k + 1
+  let φ : ℕ → ℕ := fun n => if h : n < m then k ⟨n, h⟩ else n + C
+  refine ⟨φ, ?_, ?_⟩
+  · intro a b hab
+    dsimp only [φ]
+    by_cases ha : a < m
+    · by_cases hb : b < m
+      · rw [dif_pos ha, dif_pos hb]
+        exact hk (Fin.lt_def.mpr hab)
+      · rw [dif_pos ha, dif_neg hb]
+        have hle_sup : k ⟨a, ha⟩ ≤ Finset.univ.sup k :=
+          Finset.le_sup (f := k) (Finset.mem_univ (⟨a, ha⟩ : Fin m))
+        exact (Nat.lt_succ_of_le hle_sup).trans_le (Nat.le_add_left C b)
+    · by_cases hb : b < m
+      · omega
+      · rw [dif_neg ha, dif_neg hb]
+        omega
+  · intro i
+    simp [φ, i.isLt]
 
 /-- A contractable process has the same finite-dimensional block law as the corresponding
 prefix law along any strictly increasing finite index map. -/
@@ -118,6 +146,40 @@ theorem Contractable.measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω
   rw [map_reindex_prefixProj_pathLaw μ hX_meas φ n,
     map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) n]
   exact hX n (fun i : Fin n => φ i.val) (hφ.comp Fin.val_strictMono)
+
+/-- Contractability is equivalent to invariance of the path law under every strictly increasing
+time-reindexing `ℕ → ℕ`. This is the path-law form of spreadability/contractability. -/
+theorem contractable_iff_forall_map_reindex_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
+    [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ) :
+    Contractable μ X ↔
+      ∀ φ : ℕ → ℕ, StrictMono φ →
+        (pathLaw μ X).map (fun x : ℕ → α => fun k => x (φ k)) = pathLaw μ X := by
+  constructor
+  · intro hX φ hφ
+    exact (hX.measurePreserving_reindex hX_meas hφ).map_eq
+  · intro hX m k hk
+    obtain ⟨φ, hφ, hφ_eq⟩ := exists_strictMono_nat_extending_fin hk
+    have hmap := congrArg (fun ν : Measure (ℕ → α) => ν.map (prefixProj α m)) (hX φ hφ)
+    rw [map_reindex_prefixProj_pathLaw μ hX_meas φ m,
+      map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) m] at hmap
+    have hidx : (fun i : Fin m => φ i.val) = k := by
+      funext i
+      exact hφ_eq i
+    simpa [hidx] using hmap
+
+/-- Contractability is equivalent to preservation of the path law by every strictly increasing
+time-reindexing `ℕ → ℕ`. -/
+theorem contractable_iff_forall_measurePreserving_reindex {μ : Measure Ω} {X : ℕ → Ω → α}
+    [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ) :
+    Contractable μ X ↔
+      ∀ φ : ℕ → ℕ, StrictMono φ →
+        MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) (pathLaw μ X) (pathLaw μ X) := by
+  rw [contractable_iff_forall_map_reindex_pathLaw hX_meas]
+  constructor
+  · intro hX φ hφ
+    exact ⟨measurable_reindex φ, hX φ hφ⟩
+  · intro hX φ hφ
+    exact (hX φ hφ).map_eq
 
 /-- **A contractable process has a shift-invariant path law:** `shift` preserves `pathLaw μ X`. -/
 theorem Contractable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α} [IsFiniteMeasure μ]
