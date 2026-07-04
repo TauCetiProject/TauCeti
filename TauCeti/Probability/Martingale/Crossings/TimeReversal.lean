@@ -41,6 +41,13 @@ def revProcess {Ω α : Type*} (X : ℕ → Ω → α) (N : ℕ) : ℕ → Ω �
 lemma revProcess_apply {Ω α : Type*} (X : ℕ → Ω → α) (N n : ℕ) (ω : Ω) :
     revProcess X N n ω = X (N - n) ω := by rfl
 
+/-- Package `hittingBtwn_le_of_mem` for `lowerCrossingTime`: if the process value at time `i` lies
+in `Set.Iic a` and `i` sits between the `n`-th upper-crossing time and the horizon `N`, then the
+`n`-th lower-crossing time is at most `i`. -/
+private lemma lowerCrossingTime_le_of_mem {Ω : Type*} {a b : ℝ} {Z : ℕ → Ω → ℝ} {N n i : ℕ}
+    {ω : Ω} (hui : upperCrossingTime a b Z N n ω ≤ i) (hiN : i ≤ N)
+    (his : Z i ω ∈ Set.Iic a) : lowerCrossingTime a b Z N n ω ≤ i := by
+  simpa only [lowerCrossingTime] using hittingBtwn_le_of_mem hui hiN his
 
 /-- Strong version tracking the bijection explicitly.
 
@@ -115,8 +122,8 @@ private lemma upperCrossingTime_neg_revProcess_le_strong
       simp only [hY_def, Pi.neg_apply, revProcess_apply, Nat.sub_sub_self (Nat.le_of_lt hτ_lt_N)]
       linarith
     -- lowerCrossingTime X j ≥ σ (hitting starts from σ)
-    have h_lct_ge : lowerCrossingTime a b X N j ω ≥ σ := by
-      simpa [lowerCrossingTime, hσ_def] using le_hittingBtwn (Nat.le_of_lt hσ_lt_N) ω
+    have h_lct_ge : lowerCrossingTime a b X N j ω ≥ σ :=
+      hσ_def ▸ upperCrossingTime_le_lowerCrossingTime
     -- From IH: upperCrossingTime Y m' ≤ N - lowerCrossingTime X j ≤ N - σ
     have h_uct_le_Nσ : upperCrossingTime (-b) (-a) Y (N + 1) m' ω ≤ N - σ := by
       calc upperCrossingTime (-b) (-a) Y (N + 1) m' ω
@@ -125,9 +132,8 @@ private lemma upperCrossingTime_neg_revProcess_le_strong
     -- lowerCrossingTime Y m' ≤ N - σ (by hittingBtwn_le_of_mem)
     have h_Nσ_le_N1 : N - σ ≤ N + 1 := Nat.le_succ_of_le (Nat.sub_le N σ)
     have hY_Nσ_in_Iic : Y (N - σ) ω ∈ Set.Iic (-b) := hY_Nσ_le_negb
-    have h_lctY_le_Nσ : lowerCrossingTime (-b) (-a) Y (N + 1) m' ω ≤ N - σ := by
-      simpa [lowerCrossingTime] using
-        hittingBtwn_le_of_mem h_uct_le_Nσ h_Nσ_le_N1 hY_Nσ_in_Iic
+    have h_lctY_le_Nσ : lowerCrossingTime (-b) (-a) Y (N + 1) m' ω ≤ N - σ :=
+      lowerCrossingTime_le_of_mem h_uct_le_Nσ h_Nσ_le_N1 hY_Nσ_in_Iic
     -- N - σ < N - τ and lowerCrossingTime Y m' < N - τ
     have hNσ_lt_Nτ : N - σ < N - τ := Nat.sub_lt_sub_left hτ_lt_N hτ_lt_σ
     have h_lctY_le_Nτ : lowerCrossingTime (-b) (-a) Y (N + 1) m' ω ≤ N - τ :=
