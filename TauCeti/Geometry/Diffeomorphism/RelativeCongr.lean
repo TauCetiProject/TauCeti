@@ -108,7 +108,6 @@ def relativeDiffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M) :
     (MulEquiv.subgroupCongr (map_fixingSubgroup_diffCongr e s))
 
 /-- Applying `relativeDiffCongr` and then forgetting the subgroup is `Diffeomorph.diffCongr`. -/
-@[simp]
 theorem relativeDiffCongr_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
     (φ : fixingSubgroup (I := I) (n := n) s) :
     (relativeDiffCongr e s φ : N ≃ₘ^n⟮J, J⟯ N) = diffCongr e φ := by
@@ -126,7 +125,6 @@ theorem relativeDiffCongr_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
 
 /-- Applying the inverse of `relativeDiffCongr` and then forgetting the subgroup is conjugation by
 `e.symm`. -/
-@[simp]
 theorem relativeDiffCongr_symm_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
     (ψ : fixingSubgroup (I := J) (n := n) (e '' s)) :
     ((relativeDiffCongr e s).symm ψ : M ≃ₘ^n⟮I, I⟯ M) = diffCongr e.symm ψ := by
