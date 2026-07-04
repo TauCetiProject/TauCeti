@@ -107,49 +107,49 @@ lemma schwarzReflection_conj
     rw [schwarzReflection_of_im_nonneg (f := f) hpos.le]
 
 /--
-For a conjugation-symmetric domain, conjugation carries the upper half-plane part of the
+For a domain closed under conjugation, conjugation carries the upper half-plane part of the
 domain to its lower half-plane part.
 -/
 lemma image_conj_inter_im_pos_of_symmetric {Ω : Set ℂ}
-    (hsymm : ∀ z, z ∈ Ω ↔ (starRingEnd ℂ) z ∈ Ω) :
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) :
     (starRingEnd ℂ) '' (Ω ∩ {z | 0 < z.im}) = Ω ∩ {z | z.im < 0} := by
   ext z
   constructor
   · rintro ⟨w, ⟨hwΩ, hwim⟩, rfl⟩
     constructor
-    · exact (hsymm w).mp hwΩ
-    · change ((starRingEnd ℂ) w).im < 0
-      rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
-      exact neg_neg_of_pos hwim
+    · exact hΩ hwΩ
+    · exact show ((starRingEnd ℂ) w).im < 0 from by
+        rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
+        exact neg_neg_of_pos hwim
   · rintro ⟨hzΩ, hzim⟩
     refine ⟨(starRingEnd ℂ) z, ⟨?_, ?_⟩, ?_⟩
-    · exact (hsymm z).mp hzΩ
-    · change 0 < ((starRingEnd ℂ) z).im
-      rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
-      exact neg_pos.mpr hzim
+    · exact hΩ hzΩ
+    · exact show 0 < ((starRingEnd ℂ) z).im from by
+        rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
+        exact neg_pos.mpr hzim
     · rw [starRingEnd_self_apply]
 
 /--
-For a conjugation-symmetric domain, conjugation carries the lower half-plane part of the
+For a domain closed under conjugation, conjugation carries the lower half-plane part of the
 domain to its upper half-plane part.
 -/
 lemma image_conj_inter_im_neg_of_symmetric {Ω : Set ℂ}
-    (hsymm : ∀ z, z ∈ Ω ↔ (starRingEnd ℂ) z ∈ Ω) :
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) :
     (starRingEnd ℂ) '' (Ω ∩ {z | z.im < 0}) = Ω ∩ {z | 0 < z.im} := by
   ext z
   constructor
   · rintro ⟨w, ⟨hwΩ, hwim⟩, rfl⟩
     constructor
-    · exact (hsymm w).mp hwΩ
-    · change 0 < ((starRingEnd ℂ) w).im
-      rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
-      exact neg_pos.mpr hwim
+    · exact hΩ hwΩ
+    · exact show 0 < ((starRingEnd ℂ) w).im from by
+        rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
+        exact neg_pos.mpr hwim
   · rintro ⟨hzΩ, hzim⟩
     refine ⟨(starRingEnd ℂ) z, ⟨?_, ?_⟩, ?_⟩
-    · exact (hsymm z).mp hzΩ
-    · change ((starRingEnd ℂ) z).im < 0
-      rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
-      exact neg_neg_of_pos hzim
+    · exact hΩ hzΩ
+    · exact show ((starRingEnd ℂ) z).im < 0 from by
+        rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
+        exact neg_neg_of_pos hzim
     · rw [starRingEnd_self_apply]
 
 private lemma starRingEnd_eq_starL (z : ℂ) :
@@ -236,30 +236,30 @@ lemma differentiableOn_conj_conj_iff :
   · exact differentiableOn_conj_conj
 
 /--
-If a domain is symmetric under conjugation and `f` is holomorphic on its upper half-plane
+If a domain is closed under conjugation and `f` is holomorphic on its upper half-plane
 part, then the reflected branch `z ↦ conj (f (conj z))` is holomorphic on the lower
 half-plane part.
 -/
 lemma differentiableOn_conj_conj_inter_im_neg_of_symmetric {Ω : Set ℂ}
-    (hsymm : ∀ z, z ∈ Ω ↔ (starRingEnd ℂ) z ∈ Ω)
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
     (hf : DifferentiableOn ℂ f (Ω ∩ {z | 0 < z.im})) :
     DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
       (Ω ∩ {z | z.im < 0}) := by
-  simpa [image_conj_inter_im_pos_of_symmetric hsymm] using
+  simpa [image_conj_inter_im_pos_of_symmetric hΩ] using
     differentiableOn_conj_conj (S := Ω ∩ {z | 0 < z.im}) (f := f) hf
 
 /--
-On the lower half-plane part of a conjugation-symmetric domain, the explicit Schwarz
+On the lower half-plane part of a domain closed under conjugation, the explicit Schwarz
 reflection extension is holomorphic whenever the original function is holomorphic on the
 upper half-plane part.
 -/
 lemma differentiableOn_schwarzReflection_inter_im_neg_of_symmetric {Ω : Set ℂ}
-    (hsymm : ∀ z, z ∈ Ω ↔ (starRingEnd ℂ) z ∈ Ω)
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
     (hf : DifferentiableOn ℂ f (Ω ∩ {z | 0 < z.im})) :
     DifferentiableOn ℂ (schwarzReflection f) (Ω ∩ {z | z.im < 0}) := by
   intro z hz
   exact ((differentiableOn_conj_conj_inter_im_neg_of_symmetric
-    (f := f) hsymm hf) z hz).congr
+    (f := f) hΩ hf) z hz).congr
       (fun w hw => schwarzReflection_of_im_neg (f := f) hw.2)
       (schwarzReflection_of_im_neg (f := f) hz.2)
 
