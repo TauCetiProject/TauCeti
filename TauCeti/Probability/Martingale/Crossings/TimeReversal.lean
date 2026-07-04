@@ -6,8 +6,7 @@ public import Mathlib.Probability.Martingale.Upcrossing
 # Time-reversal crossing bound
 
 Reverse-martingale infrastructure bounding the completion time of upcrossings in a time-reversed,
-negated process. This is the combinatorial ingredient feeding the pathwise crossing adapter in
-`Crossings/Pathwise.lean`.
+negated process. This is a combinatorial ingredient of the reverse-martingale upcrossing argument.
 
 ## Main definitions
 
@@ -15,7 +14,7 @@ negated process. This is the combinatorial ingredient feeding the pathwise cross
 
 ## Main results
 
-- `upperCrossingTime_negProcess_revProcess_le`: for a process `X` with `k` upcrossings `[a→b]`
+- `upperCrossingTime_neg_revProcess_le`: for a process `X` with `k` upcrossings `[a→b]`
   completing before time `N`, the time-reversed negated process `-(revProcess X N)` has
   its `k`-th upcrossing `[-b→-a]` completing at time `≤ N`.
 
@@ -34,11 +33,12 @@ open scoped ENNReal
 namespace ProbabilityTheory
 
 /-- Time reversal of a stochastic process up to time `N`. -/
-def revProcess {Ω : Type*} (X : ℕ → Ω → ℝ) (N : ℕ) : ℕ → Ω → ℝ :=
+def revProcess {Ω α : Type*} (X : ℕ → Ω → α) (N : ℕ) : ℕ → Ω → α :=
   fun n ω => X (N - n) ω
 
 /-- Defining equation for `revProcess` (whose body is deliberately not `@[expose]`d). -/
-lemma revProcess_apply {Ω : Type*} (X : ℕ → Ω → ℝ) (N n : ℕ) (ω : Ω) :
+@[simp]
+lemma revProcess_apply {Ω α : Type*} (X : ℕ → Ω → α) (N n : ℕ) (ω : Ω) :
     revProcess X N n ω = X (N - n) ω := by rfl
 
 
@@ -49,7 +49,7 @@ For `m ≤ k` with `X`'s `k`-th crossing completing before `N`:
 
 This captures that `Y`'s `m`-th crossing corresponds to `X`'s `(k - m + 1)`-th crossing (reversed
 order), with `Y`'s crossing ending at time `N - τ` where `τ` is the start of `X`'s crossing. -/
-private lemma upperCrossingTime_negProcess_revProcess_le_strong
+private lemma upperCrossingTime_neg_revProcess_le_strong
     {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N k m : ℕ) (ω : Ω)
     (hm : m ≤ k)
     (h_k : upperCrossingTime a b X N k ω < N) :
@@ -109,10 +109,10 @@ private lemma upperCrossingTime_negProcess_revProcess_le_strong
       stoppedValue_lowerCrossingTime (f := X) (n := j - 1) h_neq_τ
     -- Y's level conditions at bijected times
     have hY_Nσ_le_negb : Y (N - σ) ω ≤ -b := by
-      simp only [hY_def, Pi.neg_apply, revProcess, Nat.sub_sub_self (Nat.le_of_lt hσ_lt_N)]
+      simp only [hY_def, Pi.neg_apply, revProcess_apply, Nat.sub_sub_self (Nat.le_of_lt hσ_lt_N)]
       linarith
     have hY_Nτ_ge_nega : Y (N - τ) ω ≥ -a := by
-      simp only [hY_def, Pi.neg_apply, revProcess, Nat.sub_sub_self (Nat.le_of_lt hτ_lt_N)]
+      simp only [hY_def, Pi.neg_apply, revProcess_apply, Nat.sub_sub_self (Nat.le_of_lt hτ_lt_N)]
       linarith
     -- lowerCrossingTime X j ≥ σ (hitting starts from σ)
     have h_lct_ge : lowerCrossingTime a b X N j ω ≥ σ := by
@@ -136,8 +136,8 @@ private lemma upperCrossingTime_negProcess_revProcess_le_strong
     have hY_Nτ_in_Ici : Y (N - τ) ω ∈ Set.Ici (-a) := hY_Nτ_ge_nega
     -- Final: upperCrossingTime Y (m' + 1) ≤ N - τ
     calc upperCrossingTime (-b) (-a) Y (N + 1) (m' + 1) ω
-        = hittingBtwn Y (Set.Ici (-a)) (lowerCrossingTime (-b) (-a) Y (N + 1) m' ω) (N + 1) ω := by
-          simp only [upperCrossingTime, lowerCrossingTime]; rfl
+        = hittingBtwn Y (Set.Ici (-a)) (lowerCrossingTime (-b) (-a) Y (N + 1) m' ω) (N + 1) ω :=
+          upperCrossingTime_succ_eq ω
       _ ≤ N - τ := hittingBtwn_le_of_mem h_lctY_le_Nτ h_Nτ_le_N1 hY_Nτ_in_Ici
 
 /-- **Time-reversal crossing bound.**
@@ -145,13 +145,13 @@ private lemma upperCrossingTime_negProcess_revProcess_le_strong
 For a process `X` with `k` upcrossings `[a→b]` completing before time `N`, the time-reversed
 negated process `-(revProcess X N)` has its `k`-th upcrossing `[-b→-a]` completing at
 time `≤ N`. -/
-lemma upperCrossingTime_negProcess_revProcess_le
+lemma upperCrossingTime_neg_revProcess_le
     {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N k : ℕ) (ω : Ω)
     (h_k : upperCrossingTime a b X N k ω < N) :
     upperCrossingTime (-b) (-a) (-(revProcess X N)) (N + 1) k ω ≤ N := by
   -- The `strong` version bounds this by `N - lowerCrossingTime …` via the bijection
   -- `(τ, σ) ↦ (N - σ, N - τ)`; discard the subtraction with `Nat.sub_le`.
-  have h := upperCrossingTime_negProcess_revProcess_le_strong X a b hab N k k ω le_rfl h_k
+  have h := upperCrossingTime_neg_revProcess_le_strong X a b hab N k k ω le_rfl h_k
   exact le_trans (by simpa using h) (Nat.sub_le N _)
 
 end ProbabilityTheory
