@@ -182,6 +182,7 @@ def relativeDiffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M) :
 
 /-- Applying `relativeDiffCongrOfImageEq` and then forgetting the subgroup is
 `Diffeomorph.diffCongr`. -/
+@[simp]
 theorem relativeDiffCongrOfImageEq_apply (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M} {t : Set N}
     (hst : e '' s = t) (φ : fixingSubgroup (I := I) (n := n) s) :
     (relativeDiffCongrOfImageEq e hst φ : N ≃ₘ^n⟮J, J⟯ N) = diffCongr e φ := by
@@ -189,6 +190,7 @@ theorem relativeDiffCongrOfImageEq_apply (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M
   rfl
 
 /-- Applying `relativeDiffCongr` and then forgetting the subgroup is `Diffeomorph.diffCongr`. -/
+@[simp]
 theorem relativeDiffCongr_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
     (φ : fixingSubgroup (I := I) (n := n) s) :
     (relativeDiffCongr e s φ : N ≃ₘ^n⟮J, J⟯ N) = diffCongr e φ := by
@@ -214,6 +216,7 @@ theorem relativeDiffCongr_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
 
 /-- Applying the inverse of `relativeDiffCongrOfImageEq` and then forgetting the subgroup is
 conjugation by `e.symm`. -/
+@[simp]
 theorem relativeDiffCongrOfImageEq_symm_apply (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M} {t : Set N}
     (hst : e '' s = t) (ψ : fixingSubgroup (I := J) (n := n) t) :
     ((relativeDiffCongrOfImageEq e hst).symm ψ : M ≃ₘ^n⟮I, I⟯ M) = diffCongr e.symm ψ := by
@@ -222,6 +225,7 @@ theorem relativeDiffCongrOfImageEq_symm_apply (e : M ≃ₘ^n⟮I, J⟯ N) {s : 
 
 /-- Applying the inverse of `relativeDiffCongr` and then forgetting the subgroup is conjugation by
 `e.symm`. -/
+@[simp]
 theorem relativeDiffCongr_symm_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
     (ψ : fixingSubgroup (I := J) (n := n) (e '' s)) :
     ((relativeDiffCongr e s).symm ψ : M ≃ₘ^n⟮I, I⟯ M) = diffCongr e.symm ψ := by
