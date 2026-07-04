@@ -11,13 +11,12 @@ negated process. This is the combinatorial ingredient feeding the pathwise cross
 
 ## Main definitions
 
-- `negProcess`: negation of a stochastic process.
 - `revProcess`: time reversal of a stochastic process up to a horizon `N`.
 
 ## Main results
 
 - `upperCrossingTime_negProcess_revProcess_le`: for a process `X` with `k` upcrossings `[a→b]`
-  completing before time `N`, the time-reversed negated process `negProcess (revProcess X N)` has
+  completing before time `N`, the time-reversed negated process `-(revProcess X N)` has
   its `k`-th upcrossing `[-b→-a]` completing at time `≤ N`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/TimeReversalCrossing.lean`, pin
@@ -34,17 +33,9 @@ open scoped ENNReal
 
 namespace ProbabilityTheory
 
-/-- Negation of a stochastic process. -/
-def negProcess {Ω : Type*} (X : ℕ → Ω → ℝ) : ℕ → Ω → ℝ :=
-  fun n ω => -X n ω
-
 /-- Time reversal of a stochastic process up to time `N`. -/
 def revProcess {Ω : Type*} (X : ℕ → Ω → ℝ) (N : ℕ) : ℕ → Ω → ℝ :=
   fun n ω => X (N - n) ω
-
-/-- Defining equation for `negProcess` (whose body is deliberately not `@[expose]`d). -/
-lemma negProcess_apply {Ω : Type*} (X : ℕ → Ω → ℝ) (n : ℕ) (ω : Ω) :
-    negProcess X n ω = -X n ω := by rfl
 
 /-- Defining equation for `revProcess` (whose body is deliberately not `@[expose]`d). -/
 lemma revProcess_apply {Ω : Type*} (X : ℕ → Ω → ℝ) (N n : ℕ) (ω : Ω) :
@@ -62,9 +53,9 @@ private lemma upperCrossingTime_negProcess_revProcess_le_strong
     {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N k m : ℕ) (ω : Ω)
     (hm : m ≤ k)
     (h_k : upperCrossingTime a b X N k ω < N) :
-    upperCrossingTime (-b) (-a) (negProcess (revProcess X N)) (N + 1) m ω
+    upperCrossingTime (-b) (-a) (-(revProcess X N)) (N + 1) m ω
       ≤ N - lowerCrossingTime a b X N (k - m) ω := by
-  set Y := negProcess (revProcess X N) with hY_def
+  set Y := -(revProcess X N) with hY_def
   -- All of X's crossing times are < N
   have h_j : ∀ j ≤ k, upperCrossingTime a b X N j ω < N := by
     intro j hj
@@ -118,10 +109,10 @@ private lemma upperCrossingTime_negProcess_revProcess_le_strong
       stoppedValue_lowerCrossingTime (f := X) (n := j - 1) h_neq_τ
     -- Y's level conditions at bijected times
     have hY_Nσ_le_negb : Y (N - σ) ω ≤ -b := by
-      simp only [hY_def, negProcess, revProcess, Nat.sub_sub_self (Nat.le_of_lt hσ_lt_N)]
+      simp only [hY_def, Pi.neg_apply, revProcess, Nat.sub_sub_self (Nat.le_of_lt hσ_lt_N)]
       linarith
     have hY_Nτ_ge_nega : Y (N - τ) ω ≥ -a := by
-      simp only [hY_def, negProcess, revProcess, Nat.sub_sub_self (Nat.le_of_lt hτ_lt_N)]
+      simp only [hY_def, Pi.neg_apply, revProcess, Nat.sub_sub_self (Nat.le_of_lt hτ_lt_N)]
       linarith
     -- lowerCrossingTime X j ≥ σ (hitting starts from σ)
     have h_lct_ge : lowerCrossingTime a b X N j ω ≥ σ := by
@@ -152,12 +143,12 @@ private lemma upperCrossingTime_negProcess_revProcess_le_strong
 /-- **Time-reversal crossing bound.**
 
 For a process `X` with `k` upcrossings `[a→b]` completing before time `N`, the time-reversed
-negated process `negProcess (revProcess X N)` has its `k`-th upcrossing `[-b→-a]` completing at
+negated process `-(revProcess X N)` has its `k`-th upcrossing `[-b→-a]` completing at
 time `≤ N`. -/
 lemma upperCrossingTime_negProcess_revProcess_le
     {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N k : ℕ) (ω : Ω)
     (h_k : upperCrossingTime a b X N k ω < N) :
-    upperCrossingTime (-b) (-a) (negProcess (revProcess X N)) (N + 1) k ω ≤ N := by
+    upperCrossingTime (-b) (-a) (-(revProcess X N)) (N + 1) k ω ≤ N := by
   -- The `strong` version bounds this by `N - lowerCrossingTime …` via the bijection
   -- `(τ, σ) ↦ (N - σ, N - τ)`; discard the subtraction with `Nat.sub_le`.
   have h := upperCrossingTime_negProcess_revProcess_le_strong X a b hab N k k ω le_rfl h_k
