@@ -26,7 +26,7 @@ domains and the proof only needs the vanishing of the winding number on the comp
 * `Contour.IsNullHomologous.inter`, `Contour.isNullHomologous_iInter` — combine null-homology
   hypotheses by intersecting domains.
 * `Contour.IsNullHomologous.union_left`, `Contour.IsNullHomologous.union_right` — a null-homologous
-  curve remains null-homologous after adjoining any extra part of the domain.
+  curve remains null-homologous after adjoining an extra part of the domain.
 * `Contour.isNullHomologous_empty_iff`, `Contour.isNullHomologous_univ` — the two boundary cases.
 * `Contour.IsNullHomologous.congr_windingNumber` — replace a curve by another with the same winding
   numbers outside the domain.
@@ -45,9 +45,10 @@ namespace TauCeti.Contour
 
 open Set
 
-variable {γ η : ℝ → ℂ} {a b c d : ℝ} {Ω Ω' Ω'' : Set ℂ}
+variable {γ η : ℝ → ℂ} {a b c d : ℝ} {Ω Ω' : Set ℂ}
 
 /-- A curve is null-homologous in the whole plane, since there are no exterior points. -/
+@[simp]
 theorem isNullHomologous_univ (γ : ℝ → ℂ) (a b : ℝ) :
     IsNullHomologous γ a b (Set.univ : Set ℂ) := by
   rw [isNullHomologous_iff]
@@ -55,6 +56,7 @@ theorem isNullHomologous_univ (γ : ℝ → ℂ) (a b : ℝ) :
   simp at hw
 
 /-- Null-homology in the empty set is exactly vanishing of the winding number about every point. -/
+@[simp]
 theorem isNullHomologous_empty_iff :
     IsNullHomologous γ a b (∅ : Set ℂ) ↔ ∀ w, windingNumber γ a b w = 0 := by
   rw [isNullHomologous_iff]
@@ -115,11 +117,6 @@ theorem IsNullHomologous.union_left (h : IsNullHomologous γ a b Ω) :
 theorem IsNullHomologous.union_right (h : IsNullHomologous γ a b Ω') :
     IsNullHomologous γ a b (Ω ∪ Ω') :=
   h.mono (subset_union_right)
-
-/-- Null-homology in a domain implies null-homology after adjoining two extra pieces. -/
-theorem IsNullHomologous.union_union (h : IsNullHomologous γ a b Ω) :
-    IsNullHomologous γ a b (Ω ∪ Ω' ∪ Ω'') := by
-  exact h.mono (by intro w hw; exact Or.inl (Or.inl hw))
 
 /-- If a curve is null-homologous in each of two domains, it is null-homologous in their
 intersection. -/
