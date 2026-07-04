@@ -32,6 +32,8 @@ derivative: once Lane A supplies `W^{k,p}(Ω)`, its value-gradient jets can feed
   Bochner-integrability hypotheses.
 * `TauCeti.PDE.norm_energyFormIntegral_le_of_bounds`: the integrated boundedness estimate
   obtained from the pointwise coefficient bounds.
+* `TauCeti.PDE.UniformlyEllipticOn.norm_energyFormIntegral_le_on`: the corresponding
+  boundedness estimate from uniform ellipticity on an a.e. domain.
 -/
 
 public section
@@ -395,9 +397,22 @@ lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_
 
 namespace UniformlyEllipticOn
 
-variable {Ω : Set X} {lam Lam beta mu : ℝ}
+variable {Ω : Set X} {lam Lam beta gamma mu : ℝ}
 variable {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
-variable {U : X → ℝ × EuclideanSpace ℝ n}
+variable {U V : X → ℝ × EuclideanSpace ℝ n}
+
+/-- Integrated boundedness of the energy form from uniform ellipticity and a.e. lower-order
+coefficient bounds. -/
+lemma norm_energyFormIntegral_le_on (h : UniformlyEllipticOn Ω a lam Lam)
+    (hΩ : ∀ᵐ x ∂μ, x ∈ Ω) (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta)
+    (hc : ∀ᵐ x ∂μ, ‖c x‖ ≤ gamma)
+    (hUV : Integrable (fun x => (Lam + beta + gamma) * (‖U x‖ * ‖V x‖)) μ) :
+    ‖energyFormIntegral μ a b c U V‖ ≤
+      ∫ x, ((Lam + beta + gamma) * (‖U x‖ * ‖V x‖)) ∂μ := by
+  refine PDE.norm_energyFormIntegral_le_of_bounds (μ := μ) (a := a) (b := b) (c := c)
+    (U := U) (V := V) h.upper_nonneg ?_ hb hc hUV
+  filter_upwards [hΩ] with x hx
+  exact h.upper_bound hx
 
 /-- Integrated Gårding lower bound from uniform ellipticity and a.e. lower-order
 coefficient hypotheses. -/
