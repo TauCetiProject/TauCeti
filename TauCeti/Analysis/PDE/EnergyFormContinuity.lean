@@ -37,7 +37,7 @@ namespace PDE
 open Matrix
 open scoped InnerProductSpace
 
-variable {X n : Type*} [Fintype n] [DecidableEq n]
+variable {X n : Type*} [Fintype n]
 
 /-- The coefficient triple-to-energy-integrand map as a continuous linear map. -/
 noncomputable def energyIntegrandLinear :

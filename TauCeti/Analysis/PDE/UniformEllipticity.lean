@@ -105,15 +105,30 @@ Mathlib's bounded-bilinear-form and Lax--Milgram APIs once the corresponding Sob
 are available. -/
 noncomputable def matrixBilinearForm (A : Matrix n n ℝ) :
     EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
-  (A.toBilin'.comp (EuclideanSpace.equiv n ℝ).toLinearMap
-    (EuclideanSpace.equiv n ℝ).toLinearMap).toContinuousBilinearMap
+  LinearMap.toContinuousBilinearMap
+    { toFun := fun η =>
+        { toFun := fun ξ => ∑ i, η i * ∑ j, A i j * ξ j
+          map_add' := by
+            intro ξ ζ
+            simp [mul_add, Finset.sum_add_distrib]
+          map_smul' := by
+            intro r ξ
+            simp [mul_left_comm, Finset.mul_sum] }
+      map_add' := by
+        intro η θ
+        ext ξ
+        simp [add_mul, Finset.sum_add_distrib]
+      map_smul' := by
+        intro r η
+        ext ξ
+        simp [mul_assoc, mul_left_comm, Finset.mul_sum] }
 
+omit [DecidableEq n] in
 /-- The matrix bilinear form is the dot-product expression `ηᵀ A ξ`. -/
 @[simp]
 lemma matrixBilinearForm_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A η ξ = η ⬝ᵥ (A *ᵥ ξ) := by
-  rw [matrixBilinearForm, LinearMap.toContinuousBilinearMap_apply,
-    LinearMap.BilinForm.comp_apply, Matrix.toBilin'_apply']
+  rw [matrixBilinearForm, LinearMap.toContinuousBilinearMap_apply]
   rfl
 
 /-- The matrix bilinear form associated to the identity matrix is the Euclidean dot product. -/
@@ -141,6 +156,7 @@ lemma toQuadraticForm'_add (A B : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
   rw [toQuadraticForm'_eq_dotProduct, toQuadraticForm'_eq_dotProduct,
     toQuadraticForm'_eq_dotProduct, add_mulVec, dotProduct_add]
 
+omit [DecidableEq n] in
 /-- Matrix bilinear forms are linear in scalar multiplication of the coefficient matrix. -/
 lemma matrixBilinearForm_smul_apply (c : ℝ) (A : Matrix n n ℝ)
     (η ξ : EuclideanSpace ℝ n) :
@@ -148,6 +164,7 @@ lemma matrixBilinearForm_smul_apply (c : ℝ) (A : Matrix n n ℝ)
   rw [matrixBilinearForm_apply, matrixBilinearForm_apply, smul_mulVec, dotProduct_smul]
   simp [smul_eq_mul]
 
+omit [DecidableEq n] in
 /-- Matrix bilinear forms are additive in the coefficient matrix. -/
 lemma matrixBilinearForm_add_apply (A B : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm (A + B) η ξ = matrixBilinearForm A η ξ + matrixBilinearForm B η ξ := by
@@ -161,6 +178,7 @@ lemma toQuadraticForm'_transpose (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n
   rw [toQuadraticForm'_eq_dotProduct, toQuadraticForm'_eq_dotProduct,
     Matrix.dotProduct_transpose_mulVec]
 
+omit [DecidableEq n] in
 /-- Transposing the coefficient matrix swaps the arguments of the bundled matrix bilinear
 form. -/
 lemma matrixBilinearForm_transpose_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
@@ -177,34 +195,37 @@ lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
   rw [matrixBilinearForm_apply, toQuadraticForm'_eq_dotProduct]
 
+omit [DecidableEq n] in
 /-- The principal coefficient matrix-to-bilinear-form map as a continuous linear map. -/
 noncomputable def matrixBilinearFormLinear :
     Matrix n n ℝ →L[ℝ] EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
   LinearMap.toContinuousLinearMap
     { toFun := fun A =>
-        ((Matrix.toBilin' A).compl₁₂ (EuclideanSpace.equiv n ℝ).toLinearMap
-          (EuclideanSpace.equiv n ℝ).toLinearMap).toContinuousBilinearMap
+        matrixBilinearForm A
       map_add' := by
         intro A B
         ext η ξ
-        simp
+        exact matrixBilinearForm_add_apply A B η ξ
       map_smul' := by
         intro r A
         ext η ξ
-        simp }
+        exact matrixBilinearForm_smul_apply r A η ξ }
 
+omit [DecidableEq n] in
 /-- Applying `matrixBilinearFormLinear` recovers `matrixBilinearForm`. -/
 @[simp]
 lemma matrixBilinearFormLinear_apply (A : Matrix n n ℝ) :
     matrixBilinearFormLinear (n := n) A = matrixBilinearForm A :=
   by
     ext η ξ
-    simp [matrixBilinearFormLinear, matrixBilinearForm, Matrix.toBilin'_apply']
+    simp [matrixBilinearFormLinear]
 
+omit [DecidableEq n] in
 /-- The principal coefficient-to-bilinear-form map is continuous. -/
 lemma continuous_matrixBilinearForm :
     Continuous (fun A : Matrix n n ℝ => matrixBilinearForm A) :=
-  (matrixBilinearFormLinear (n := n)).continuous
+  (matrixBilinearFormLinear (n := n)).continuous.congr fun A =>
+    matrixBilinearFormLinear_apply A
 
 section Continuity
 
@@ -212,6 +233,7 @@ variable [TopologicalSpace X]
 
 namespace Continuous
 
+omit [DecidableEq n] in
 /-- A continuous principal coefficient field gives a continuous field of principal bilinear
 forms. -/
 lemma matrixBilinearForm {a : X → Matrix n n ℝ} (ha : Continuous a) :
@@ -222,6 +244,7 @@ end Continuous
 
 namespace ContinuousOn
 
+omit [DecidableEq n] in
 /-- A continuous principal coefficient field on a set gives a continuous field of principal
 bilinear forms on that set. -/
 lemma matrixBilinearForm {s : Set X} {a : X → Matrix n n ℝ} (ha : ContinuousOn a s) :
@@ -263,6 +286,7 @@ lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ)
     toQuadraticForm'_transpose]
   ring
 
+omit [DecidableEq n] in
 /-- The bundled bilinear form of the symmetric part is the average of the original bilinear
 form and its transpose. -/
 lemma matrixBilinearForm_coefficientSymmetricPart_apply (A : Matrix n n ℝ)
@@ -273,6 +297,7 @@ lemma matrixBilinearForm_coefficientSymmetricPart_apply (A : Matrix n n ℝ)
     matrixBilinearForm_transpose_apply]
   ring
 
+omit [DecidableEq n] in
 /-- A pointwise bilinear upper bound gives the corresponding norm estimate for the bundled
 continuous bilinear form. -/
 lemma norm_matrixBilinearForm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
@@ -281,6 +306,7 @@ lemma norm_matrixBilinearForm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : ℝ}
     ‖matrixBilinearForm A η ξ‖ ≤ Lam * ‖η‖ * ‖ξ‖ := by
   simpa [Real.norm_eq_abs] using hA η ξ
 
+omit [DecidableEq n] in
 /-- A pointwise bilinear upper bound controls the operator norm of the bundled matrix
 bilinear form.
 
@@ -294,6 +320,7 @@ lemma matrixBilinearForm_opNorm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : �
   intro η ξ
   exact norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
 
+omit [DecidableEq n] in
 /-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
 matrix bilinear form. -/
 lemma matrixBilinearForm_apply_norm_le_of_upper_bound {A : Matrix n n ℝ} {Lam R S : ℝ}

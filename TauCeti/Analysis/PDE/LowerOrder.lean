@@ -27,8 +27,7 @@ in that shape.
 ## Main declarations
 
 * `TauCeti.PDE.driftForm`, `TauCeti.PDE.massForm`: the pointwise lower-order forms.
-* `TauCeti.PDE.driftFormLinear`, `TauCeti.PDE.massFormLinear`: coefficient-to-form maps as
-  continuous linear maps.
+* `TauCeti.PDE.driftFormLinear`: the drift coefficient-to-form map as a continuous linear map.
 * `TauCeti.PDE.norm_driftForm_apply_le` and `TauCeti.PDE.opNorm_driftForm_le`.
 * `TauCeti.PDE.norm_massForm_apply_le` and `TauCeti.PDE.opNorm_massForm_le`.
 * Bound-by-a-constant and radius-restricted variants for both forms.
@@ -86,20 +85,6 @@ lemma driftFormLinear_apply (b : EuclideanSpace ℝ n) :
     intro ξ
     simp [driftFormLinear, driftForm]
 
-/-- The mass coefficient-to-form map as a continuous linear map. -/
-noncomputable def massFormLinear : ℝ →L[ℝ] ℝ →L[ℝ] ℝ →L[ℝ] ℝ :=
-  ContinuousLinearMap.toSpanSingleton ℝ (ContinuousLinearMap.mul ℝ ℝ)
-
-/-- Applying `massFormLinear` recovers `massForm`. -/
-@[simp]
-lemma massFormLinear_apply (c : ℝ) : massFormLinear c = massForm c :=
-  by
-    apply ContinuousLinearMap.ext
-    intro u
-    apply ContinuousLinearMap.ext
-    intro v
-    simp [massFormLinear, massForm]
-
 /-- The drift coefficient-to-form map is continuous. -/
 lemma continuous_driftForm :
     Continuous (fun b : EuclideanSpace ℝ n => driftForm b) :=
@@ -107,7 +92,13 @@ lemma continuous_driftForm :
 
 /-- The mass coefficient-to-form map is continuous. -/
 lemma continuous_massForm : Continuous (fun c : ℝ => massForm c) :=
-  massFormLinear.continuous.congr fun c => massFormLinear_apply c
+  (ContinuousLinearMap.toSpanSingleton ℝ (ContinuousLinearMap.mul ℝ ℝ)).continuous.congr fun c =>
+    by
+      apply ContinuousLinearMap.ext
+      intro u
+      apply ContinuousLinearMap.ext
+      intro v
+      simp [massForm]
 
 section Continuity
 
