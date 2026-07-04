@@ -4,7 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PDE.EnergyFormIntegrability
+public import TauCeti.Analysis.PDE.EnergyFormLinearity
+public import TauCeti.Analysis.PDE.UniformEllipticEnergy
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -29,7 +30,7 @@ derivative: once Lane A supplies `W^{k,p}(Ω)`, its value-gradient jets can feed
   `TauCeti.PDE.energyFormIntegral_smul_left`, and
   `TauCeti.PDE.energyFormIntegral_smul_right`: bilinearity identities under the usual
   Bochner-integrability hypotheses.
-* `TauCeti.PDE.norm_energyFormIntegral_le_of_bound`: the integrated boundedness estimate
+* `TauCeti.PDE.norm_energyFormIntegral_le_of_bounds`: the integrated boundedness estimate
   obtained from the pointwise coefficient bounds.
 -/
 
@@ -87,11 +88,13 @@ lemma energyFormIntegral_add_left
     energyFormIntegral μ a b c (fun x => U x + W x) V =
       energyFormIntegral μ a b c U V + energyFormIntegral μ a b c W V := by
   rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def]
-  rw [show (∫ x, (energyIntegrand (a x) (b x) (c x) ((fun y => U y + W y) x) (V x)) ∂μ)
-      = ∫ x, (energyIntegrand (a x) (b x) (c x) (U x) (V x) +
-          energyIntegrand (a x) (b x) (c x) (W x) (V x)) ∂μ by
-    apply MeasureTheory.integral_congr_ae
-    exact Filter.Eventually.of_forall fun x => by simp]
+  have hpoint :
+      (fun x => energyIntegrand (a x) (b x) (c x) (U x + W x) (V x))
+        = fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x) +
+            energyIntegrand (a x) (b x) (c x) (W x) (V x) := by
+    funext x
+    simp
+  rw [hpoint]
   exact integral_add hU hW
 
 /-- Additivity in the right jet field, assuming the two summand energy densities are
@@ -102,12 +105,13 @@ lemma energyFormIntegral_add_right
     energyFormIntegral μ a b c U (fun x => V x + W x) =
       energyFormIntegral μ a b c U V + energyFormIntegral μ a b c U W := by
   rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def]
-  rw [show (∫ x, (energyIntegrand (a x) (b x) (c x) (U x) ((fun y => V y + W y) x)) ∂μ)
-      = ∫ x, (energyIntegrand (a x) (b x) (c x) (U x) (V x) +
-          energyIntegrand (a x) (b x) (c x) (U x) (W x)) ∂μ by
-    apply MeasureTheory.integral_congr_ae
-    exact Filter.Eventually.of_forall fun x =>
-      map_add (energyIntegrand (a x) (b x) (c x) (U x)) (V x) (W x)]
+  have hpoint :
+      (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x + W x))
+        = fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x) +
+            energyIntegrand (a x) (b x) (c x) (U x) (W x) := by
+    funext x
+    exact map_add (energyIntegrand (a x) (b x) (c x) (U x)) (V x) (W x)
+  rw [hpoint]
   exact integral_add hV hW
 
 /-- Homogeneity in the left jet field. -/
@@ -115,10 +119,12 @@ lemma energyFormIntegral_smul_left (r : ℝ) :
     energyFormIntegral μ a b c (fun x => r • U x) V =
       r * energyFormIntegral μ a b c U V := by
   rw [energyFormIntegral_def, energyFormIntegral_def]
-  rw [show (∫ x, (energyIntegrand (a x) (b x) (c x) ((fun y => r • U y) x) (V x)) ∂μ)
-      = ∫ x, (r • energyIntegrand (a x) (b x) (c x) (U x) (V x)) ∂μ by
-    apply MeasureTheory.integral_congr_ae
-    exact Filter.Eventually.of_forall fun x => by simp]
+  have hpoint :
+      (fun x => energyIntegrand (a x) (b x) (c x) (r • U x) (V x))
+        = fun x => r • energyIntegrand (a x) (b x) (c x) (U x) (V x) := by
+    funext x
+    simp
+  rw [hpoint]
   rw [MeasureTheory.integral_smul]
   rfl
 
@@ -127,14 +133,159 @@ lemma energyFormIntegral_smul_right (r : ℝ) :
     energyFormIntegral μ a b c U (fun x => r • V x) =
       r * energyFormIntegral μ a b c U V := by
   rw [energyFormIntegral_def, energyFormIntegral_def]
-  rw [show (∫ x, (energyIntegrand (a x) (b x) (c x) (U x) ((fun y => r • V y) x)) ∂μ)
-      = ∫ x, (r • energyIntegrand (a x) (b x) (c x) (U x) (V x)) ∂μ by
-    apply MeasureTheory.integral_congr_ae
-    exact Filter.Eventually.of_forall fun x => by simp]
+  have hpoint :
+      (fun x => energyIntegrand (a x) (b x) (c x) (U x) (r • V x))
+        = fun x => r • energyIntegrand (a x) (b x) (c x) (U x) (V x) := by
+    funext x
+    simp
+  rw [hpoint]
   rw [MeasureTheory.integral_smul]
   rfl
 
+variable (a' : X → Matrix n n ℝ) (b' : X → EuclideanSpace ℝ n) (c' : X → ℝ)
+variable (m : X → ℝ) (r : ℝ)
+
+/-- The integrated energy form is additive in the coefficient triple, under the corresponding
+integrability assumptions for the two summand densities. -/
+lemma energyFormIntegral_add
+    (h : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x)) μ)
+    (h' : Integrable (fun x => energyIntegrand (a' x) (b' x) (c' x) (U x) (V x)) μ) :
+    energyFormIntegral μ (fun x => a x + a' x) (fun x => b x + b' x) (fun x => c x + c' x)
+        U V =
+      energyFormIntegral μ a b c U V + energyFormIntegral μ a' b' c' U V := by
+  rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def]
+  have hpoint :
+      (fun x => energyIntegrand (a x + a' x) (b x + b' x) (c x + c' x) (U x) (V x))
+        = fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x) +
+            energyIntegrand (a' x) (b' x) (c' x) (U x) (V x) := by
+    funext x
+    exact energyIntegrand_add_apply (a x) (a' x) (b x) (b' x) (c x) (c' x) (U x) (V x)
+  rw [hpoint]
+  exact integral_add h h'
+
+/-- The integrated energy form is subtractive in the coefficient triple, under the
+corresponding integrability assumptions for the two densities. -/
+lemma energyFormIntegral_sub
+    (h : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x)) μ)
+    (h' : Integrable (fun x => energyIntegrand (a' x) (b' x) (c' x) (U x) (V x)) μ) :
+    energyFormIntegral μ (fun x => a x - a' x) (fun x => b x - b' x) (fun x => c x - c' x)
+        U V =
+      energyFormIntegral μ a b c U V - energyFormIntegral μ a' b' c' U V := by
+  rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def]
+  have hpoint :
+      (fun x => energyIntegrand (a x - a' x) (b x - b' x) (c x - c' x) (U x) (V x))
+        = fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x) -
+            energyIntegrand (a' x) (b' x) (c' x) (U x) (V x) := by
+    funext x
+    exact energyIntegrand_sub_apply (a x) (a' x) (b x) (b' x) (c x) (c' x) (U x) (V x)
+  rw [hpoint]
+  exact integral_sub h h'
+
+/-- The integrated energy form is homogeneous in the coefficient triple. -/
+lemma energyFormIntegral_smul :
+    energyFormIntegral μ (fun x => r • a x) (fun x => r • b x) (fun x => r * c x) U V =
+      r * energyFormIntegral μ a b c U V := by
+  rw [energyFormIntegral_def, energyFormIntegral_def]
+  have hpoint :
+      (fun x => energyIntegrand (r • a x) (r • b x) (r * c x) (U x) (V x))
+        = fun x => r • energyIntegrand (a x) (b x) (c x) (U x) (V x) := by
+    funext x
+    simp
+  rw [hpoint]
+  rw [MeasureTheory.integral_smul]
+  rfl
+
+/-- The integrated full energy form splits into its principal and lower-order parts. -/
+lemma energyFormIntegral_principal_add_lowerOrder
+    (hprincipal : Integrable (fun x => energyIntegrand (a x) 0 0 (U x) (V x)) μ)
+    (hlower : Integrable (fun x => energyIntegrand 0 (b x) (c x) (U x) (V x)) μ) :
+    energyFormIntegral μ a b c U V =
+      energyFormIntegral μ a (fun _ => 0) (fun _ => 0) U V +
+        energyFormIntegral μ (fun _ => 0) b c U V := by
+  rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def]
+  have hpoint :
+      (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x))
+        = fun x => energyIntegrand (a x) 0 0 (U x) (V x) +
+            energyIntegrand 0 (b x) (c x) (U x) (V x) := by
+    funext x
+    exact energyIntegrand_principal_add_lowerOrder_apply (a x) (b x) (c x) (U x) (V x)
+  rw [hpoint]
+  exact integral_add hprincipal hlower
+
+/-- The integrated full energy form splits into its principal, drift, and mass pieces. -/
+lemma energyFormIntegral_principal_drift_mass
+    (hprincipal : Integrable (fun x => energyIntegrand (a x) 0 0 (U x) (V x)) μ)
+    (hdrift : Integrable (fun x => energyIntegrand 0 (b x) 0 (U x) (V x)) μ)
+    (hmass : Integrable (fun x => energyIntegrand 0 0 (c x) (U x) (V x)) μ) :
+    energyFormIntegral μ a b c U V =
+      energyFormIntegral μ a (fun _ => 0) (fun _ => 0) U V +
+        energyFormIntegral μ (fun _ => 0) b (fun _ => 0) U V +
+          energyFormIntegral μ (fun _ => 0) (fun _ => 0) c U V := by
+  rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def,
+    energyFormIntegral_def]
+  have hpoint :
+      (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x))
+        = fun x => energyIntegrand (a x) 0 0 (U x) (V x) +
+            energyIntegrand 0 (b x) 0 (U x) (V x) +
+              energyIntegrand 0 0 (c x) (U x) (V x) := by
+    funext x
+    exact energyIntegrand_principal_drift_mass_apply (a x) (b x) (c x) (U x) (V x)
+  rw [hpoint]
+  let f := fun x => energyIntegrand (a x) 0 0 (U x) (V x)
+  let g := fun x => energyIntegrand 0 (b x) 0 (U x) (V x)
+  let k := fun x => energyIntegrand 0 0 (c x) (U x) (V x)
+  change (∫ x, f x + g x + k x ∂μ) =
+    (∫ x, f x ∂μ) + (∫ x, g x ∂μ) + ∫ x, k x ∂μ
+  calc
+    ∫ x, f x + g x + k x ∂μ = ∫ x, (f x + g x) + k x ∂μ := by rfl
+    _ = (∫ x, f x + g x ∂μ) + ∫ x, k x ∂μ :=
+      integral_add (hprincipal.add hdrift) hmass
+    _ = (∫ x, f x ∂μ) + (∫ x, g x ∂μ) + ∫ x, k x ∂μ := by
+      rw [integral_add hprincipal hdrift]
+
 variable [DecidableEq n]
+
+/-- The integrated full energy form is a shifted-Laplacian model plus the residual
+coefficient perturbation. -/
+lemma energyFormIntegral_eq_one_zero_baseMass_add_perturbation
+    (hmodel : Integrable
+      (fun x => energyIntegrand (1 : Matrix n n ℝ) 0 (m x) (U x) (V x)) μ)
+    (hpert : Integrable
+      (fun x => energyIntegrand (a x - 1) (b x) (c x - m x) (U x) (V x)) μ) :
+    energyFormIntegral μ a b c U V =
+      energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U V +
+        energyFormIntegral μ (fun x => a x - 1) b (fun x => c x - m x) U V := by
+  rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def]
+  have hpoint :
+      (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x))
+        = fun x => energyIntegrand (1 : Matrix n n ℝ) 0 (m x) (U x) (V x) +
+            energyIntegrand (a x - 1) (b x) (c x - m x) (U x) (V x) := by
+    funext x
+    exact energyIntegrand_eq_one_zero_baseMass_add_perturbation_apply
+      (a x) (b x) (c x) (m x) (U x) (V x)
+  rw [hpoint]
+  exact integral_add hmodel hpert
+
+/-- The integrated full energy form is the shifted-Laplacian form with the same mass plus the
+principal-and-drift perturbation. -/
+lemma energyFormIntegral_eq_one_zero_mass_add_perturbation
+    (hmodel : Integrable
+      (fun x => energyIntegrand (1 : Matrix n n ℝ) 0 (c x) (U x) (V x)) μ)
+    (hpert : Integrable
+      (fun x => energyIntegrand (a x - 1) (b x) 0 (U x) (V x)) μ) :
+    energyFormIntegral μ a b c U V =
+      energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c U V +
+        energyFormIntegral μ (fun x => a x - 1) b (fun _ => 0) U V := by
+  rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def]
+  have hpoint :
+      (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x))
+        = fun x => energyIntegrand (1 : Matrix n n ℝ) 0 (c x) (U x) (V x) +
+            energyIntegrand (a x - 1) (b x) 0 (U x) (V x) := by
+    funext x
+    exact energyIntegrand_eq_one_zero_mass_add_perturbation_apply
+      (a x) (b x) (c x) (U x) (V x)
+  rw [hpoint]
+  exact integral_add hmodel hpert
 
 /-- The integrated `−Δ` model form is the integral of the dot product of the two gradient
 components of the jet fields. -/
@@ -166,22 +317,79 @@ lemma energyFormIntegral_one_zero_mass_self (m : X → ℝ) :
 variable {Lam beta gamma : ℝ}
 
 omit [DecidableEq n] in
-/-- Integrated boundedness of the raw-jet energy form from pointwise coefficient bounds.
+/-- Integrated boundedness of the raw-jet energy form from a.e. coefficient bounds.
 
 This is the scalar integral version of `norm_energyIntegrand_apply_le_of_bounds`: if the
 pointwise jet product `‖U x‖ * ‖V x‖` is integrable, the absolute value of the integrated form
 is bounded by `(Λ + β + γ)` times its integral. -/
-lemma norm_energyFormIntegral_le_of_bound (hLam : 0 ≤ Lam)
-    (ha : ∀ x, ∀ η ξ : EuclideanSpace ℝ n,
+lemma norm_energyFormIntegral_le_of_bounds (hLam : 0 ≤ Lam)
+    (ha : ∀ᵐ x ∂μ, ∀ η ξ : EuclideanSpace ℝ n,
       |η ⬝ᵥ (a x *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    (hb : ∀ x, ‖b x‖ ≤ beta) (hc : ∀ x, ‖c x‖ ≤ gamma)
+    (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, ‖c x‖ ≤ gamma)
     (hUV : Integrable (fun x => (Lam + beta + gamma) * (‖U x‖ * ‖V x‖)) μ) :
     ‖energyFormIntegral μ a b c U V‖ ≤
       ∫ x, ((Lam + beta + gamma) * (‖U x‖ * ‖V x‖)) ∂μ := by
   rw [energyFormIntegral_def]
-  refine norm_integral_le_of_norm_le hUV (Filter.Eventually.of_forall fun x => ?_)
+  refine norm_integral_le_of_norm_le hUV ?_
+  filter_upwards [ha, hb, hc] with x hax hbx hcx
   simpa [mul_assoc] using
-    norm_energyIntegrand_apply_le_of_bounds hLam (ha x) (hb x) (hc x) (U x) (V x)
+    norm_energyIntegrand_apply_le_of_bounds hLam hax hbx hcx (U x) (V x)
+
+namespace UniformlyEllipticOn
+
+variable {Ω : Set X} {lam Lam beta mu : ℝ}
+variable {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
+variable {U : X → ℝ × EuclideanSpace ℝ n}
+
+/-- Integrated Gårding lower bound from uniform ellipticity and a.e. lower-order
+coefficient hypotheses. -/
+lemma garding_energyFormIntegral_self_on (h : UniformlyEllipticOn Ω a lam Lam)
+    (hΩ : ∀ᵐ x ∂μ, x ∈ Ω) (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta)
+    (hc : ∀ᵐ x ∂μ, 0 ≤ c x)
+    (hlower : Integrable
+      (fun x => lam / 2 * ‖(U x).2‖ ^ 2 - beta ^ 2 / (2 * lam) * (U x).1 ^ 2) μ)
+    (henergy : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
+    ∫ x, (lam / 2 * ‖(U x).2‖ ^ 2 - beta ^ 2 / (2 * lam) * (U x).1 ^ 2) ∂μ
+      ≤ energyFormIntegral μ a b c U U := by
+  rw [energyFormIntegral_def]
+  refine integral_mono_ae hlower henergy ?_
+  filter_upwards [hΩ, hb, hc] with x hx hbx hcx
+  exact h.garding_energyIntegrand_self hx hbx hcx (U x)
+
+/-- Integrated Gårding lower bound with a mass floor from uniform ellipticity and a.e.
+coefficient hypotheses. -/
+lemma garding_energyFormIntegral_self_of_mass_lower_bound_on
+    (h : UniformlyEllipticOn Ω a lam Lam) (hΩ : ∀ᵐ x ∂μ, x ∈ Ω)
+    (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mu ≤ c x)
+    (hlower : Integrable
+      (fun x => lam / 2 * ‖(U x).2‖ ^ 2 +
+        (mu - beta ^ 2 / (2 * lam)) * (U x).1 ^ 2) μ)
+    (henergy : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
+    ∫ x, (lam / 2 * ‖(U x).2‖ ^ 2 +
+        (mu - beta ^ 2 / (2 * lam)) * (U x).1 ^ 2) ∂μ
+      ≤ energyFormIntegral μ a b c U U := by
+  rw [energyFormIntegral_def]
+  refine integral_mono_ae hlower henergy ?_
+  filter_upwards [hΩ, hb, hc] with x hx hbx hcx
+  exact h.garding_energyIntegrand_self_of_mass_lower_bound hx hbx hcx (U x)
+
+/-- Integrated explicit coercive diagonal lower bound from uniform ellipticity, a.e.
+coefficient hypotheses, and a mass floor that dominates the drift defect. -/
+lemma min_coercivityConstant_mul_integral_norm_sq_le_energyFormIntegral_self_on
+    (h : UniformlyEllipticOn Ω a lam Lam) (hΩ : ∀ᵐ x ∂μ, x ∈ Ω)
+    (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mu ≤ c x)
+    (hmu : beta ^ 2 / (2 * lam) < mu)
+    (hlower : Integrable
+      (fun x => min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U x‖ ^ 2) μ)
+    (henergy : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
+    ∫ x, (min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U x‖ ^ 2) ∂μ
+      ≤ energyFormIntegral μ a b c U U := by
+  rw [energyFormIntegral_def]
+  refine integral_mono_ae hlower henergy ?_
+  filter_upwards [hΩ, hb, hc] with x hx hbx hcx
+  exact h.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hx hbx hcx hmu (U x)
+
+end UniformlyEllipticOn
 
 end PDE
 
