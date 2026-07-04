@@ -33,7 +33,11 @@ calculus.
 
 This is routine API around Mathlib's
 `intervalIntegral.integral_eq_sub_of_hasDerivAt`, following the contour-integral convention in
-the Hungerbühler--Wasem contour-integration roadmap; no formal source is vendored.
+the Hungerbühler--Wasem contour-integration roadmap. The Layer 2 Arc FTC roadmap item is migrated
+and cleaned from the AINTLIB `LeanModularForms` sources
+`ForMathlib/GeneralizedResidueTheory/CauchyPrimitive.lean`,
+`ForMathlib/GeneralizedResidueTheory/ArcCalculus.lean`, and `ForMathlib/ArcFTC*.lean`; no formal
+source is vendored here.
 -/
 
 public section
