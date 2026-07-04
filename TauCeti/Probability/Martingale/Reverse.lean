@@ -37,7 +37,7 @@ open MeasureTheory Filter
 
 namespace MeasureTheory
 
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {𝔽 : ℕ → MeasurableSpace Ω}
+variable {Ω : Type*} {m0 : MeasurableSpace Ω} {μ : Measure[m0] Ω} {𝔽 : ℕ → MeasurableSpace Ω}
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Reverse filtration on a finite horizon `N`: its level `n` is `𝔽 (N - n)`. Used for
@@ -45,8 +45,8 @@ finite-horizon time reversal of an antitone family `𝔽`. -/
 -- This is a (forward, increasing) filtration because `k ≤ ℓ` gives `N - ℓ ≤ N - k`, so
 -- antitonicity of `𝔽` yields `𝔽 (N - k) ≤ 𝔽 (N - ℓ)`.
 def revFiltration (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Antitone 𝔽)
-    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
-    (N : ℕ) : Filtration ℕ (inferInstance : MeasurableSpace Ω) where
+    (h_le : ∀ n, 𝔽 n ≤ m0)
+    (N : ℕ) : Filtration ℕ m0 where
   seq := fun n => 𝔽 (N - n)
   mono' := by
     intro i j hij
@@ -67,7 +67,7 @@ lemma revCondExpFinite_apply (f : Ω → E) (𝔽 : ℕ → MeasurableSpace Ω) 
 /-- Levels of the reverse filtration: `revFiltration 𝔽 … N` at `n` is `𝔽 (N - n)`. -/
 @[simp]
 lemma revFiltration_apply (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Antitone 𝔽)
-    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω)) (N n : ℕ) :
+    (h_le : ∀ n, 𝔽 n ≤ m0) (N n : ℕ) :
     (revFiltration 𝔽 h_antitone h_le N) n = 𝔽 (N - n) := by
   simp only [revFiltration]
 
