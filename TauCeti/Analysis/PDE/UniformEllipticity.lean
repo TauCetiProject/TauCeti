@@ -106,30 +106,17 @@ are available. -/
 noncomputable def matrixBilinearForm (A : Matrix n n ℝ) :
     EuclideanSpace ℝ n →L[ℝ] EuclideanSpace ℝ n →L[ℝ] ℝ :=
   LinearMap.toContinuousBilinearMap
-    { toFun := fun η =>
-        { toFun := fun ξ => ∑ i, η i * ∑ j, A i j * ξ j
-          map_add' := by
-            intro ξ ζ
-            simp [mul_add, Finset.sum_add_distrib]
-          map_smul' := by
-            intro r ξ
-            simp [mul_left_comm, Finset.mul_sum] }
-      map_add' := by
-        intro η θ
-        ext ξ
-        simp [add_mul, Finset.sum_add_distrib]
-      map_smul' := by
-        intro r η
-        ext ξ
-        simp [mul_assoc, mul_left_comm, Finset.mul_sum] }
+    ((Matrix.toBilin'Aux A).comp (EuclideanSpace.equiv n ℝ).toLinearEquiv.toLinearMap
+      (EuclideanSpace.equiv n ℝ).toLinearEquiv.toLinearMap)
 
 omit [DecidableEq n] in
 /-- The matrix bilinear form is the dot-product expression `ηᵀ A ξ`. -/
 @[simp]
 lemma matrixBilinearForm_apply (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A η ξ = η ⬝ᵥ (A *ᵥ ξ) := by
-  rw [matrixBilinearForm, LinearMap.toContinuousBilinearMap_apply]
-  rfl
+  rw [matrixBilinearForm, LinearMap.toContinuousBilinearMap_apply, LinearMap.BilinForm.comp_apply]
+  simp [Matrix.toBilin'Aux, Matrix.toLinearMap₂'Aux, Matrix.mulVec, dotProduct, Finset.mul_sum,
+    mul_left_comm, mul_comm]
 
 /-- The matrix bilinear form associated to the identity matrix is the Euclidean dot product. -/
 lemma matrixBilinearForm_one_apply (η ξ : EuclideanSpace ℝ n) :
