@@ -375,82 +375,6 @@ lemma energyFormIntegral_one_zero_mass_self [DecidableEq n] (m : X → ℝ) :
 
 variable {Lam beta gamma : ℝ}
 
-/-- Weighted Young inequality used to absorb the first-order drift term. -/
-private lemma mul_norm_abs_le_half_mul_sq_add (hlam : 0 < lam) (beta u r : ℝ) :
-    beta * r * |u| ≤ lam / 2 * r ^ 2 + beta ^ 2 / (2 * lam) * u ^ 2 := by
-  have hkey := two_mul_le_add_sq (lam * r) (beta * |u|)
-  rw [mul_pow, mul_pow, sq_abs] at hkey
-  have h2lam : (0 : ℝ) < 2 * lam := mul_pos two_pos hlam
-  rw [← sub_nonneg]
-  have expand : lam / 2 * r ^ 2 + beta ^ 2 / (2 * lam) * u ^ 2 - beta * r * |u|
-      = (lam ^ 2 * r ^ 2 + beta ^ 2 * u ^ 2 - 2 * lam * beta * r * |u|)
-          / (2 * lam) := by
-    field_simp
-  rw [expand]
-  apply div_nonneg _ h2lam.le
-  nlinarith [hkey]
-
-/-- Pointwise Gårding inequality from a dot-product lower bound, avoiding the
-`Matrix.toQuadraticForm'` API. -/
-private lemma garding_energyIntegrand_self_of_dotProduct_lower_bound {A : Matrix n n ℝ}
-    {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ} (hlam : 0 < lam)
-    (ha : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ))
-    (hb : ‖b₀‖ ≤ beta) (hc : 0 ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
-    lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2
-      ≤ energyIntegrand A b₀ c₀ U U := by
-  rw [energyIntegrand_apply, matrixBilinearForm_apply, driftForm_apply, massForm_apply]
-  have hA : lam * ‖U.2‖ ^ 2 ≤ U.2 ⬝ᵥ (A *ᵥ U.2) := ha U.2
-  have hM : 0 ≤ c₀ * U.1 ^ 2 := mul_nonneg hc (sq_nonneg _)
-  have hbip : |⟪b₀, U.2⟫_ℝ| ≤ beta * ‖U.2‖ :=
-    (abs_real_inner_le_norm b₀ U.2).trans
-      (mul_le_mul_of_nonneg_right hb (norm_nonneg _))
-  have hD : -(beta * ‖U.2‖ * |U.1|) ≤ ⟪b₀, U.2⟫_ℝ * U.1 := by
-    have habs : |⟪b₀, U.2⟫_ℝ * U.1| ≤ beta * ‖U.2‖ * |U.1| := by
-      rw [abs_mul]
-      exact mul_le_mul_of_nonneg_right hbip (abs_nonneg _)
-    have := neg_abs_le (⟪b₀, U.2⟫_ℝ * U.1)
-    linarith
-  have hYoung : beta * ‖U.2‖ * |U.1| ≤
-      lam / 2 * ‖U.2‖ ^ 2 + beta ^ 2 / (2 * lam) * U.1 ^ 2 :=
-    mul_norm_abs_le_half_mul_sq_add hlam beta U.1 ‖U.2‖
-  nlinarith [hA, hM, hD, hYoung]
-
-/-- Pointwise mass-floor Gårding inequality from a dot-product lower bound. -/
-private lemma garding_energyIntegrand_self_of_mass_lower_bound_of_dotProduct_lower_bound
-    {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ} (hlam : 0 < lam)
-    (ha : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ))
-    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
-    lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
-      ≤ energyIntegrand A b₀ c₀ U U := by
-  have hdecomp : energyIntegrand A b₀ c₀ U U
-      = energyIntegrand A b₀ (c₀ - mu) U U + mu * U.1 ^ 2 := by
-    rw [energyIntegrand_apply, energyIntegrand_apply, massForm_apply, massForm_apply]
-    ring
-  have hgard := garding_energyIntegrand_self_of_dotProduct_lower_bound
-    (beta := beta) hlam ha hb (sub_nonneg.mpr hc) U
-  rw [hdecomp]
-  have hrw : lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
-      = lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2 + mu * U.1 ^ 2 := by
-    ring
-  rw [hrw]
-  linarith [hgard]
-
-/-- Explicit coercive diagonal lower bound from a dot-product lower bound. -/
-private lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self_of_dotProduct_lower_bound
-    {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ} (hlam : 0 < lam)
-    (ha : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ))
-    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
-    (U : ℝ × EuclideanSpace ℝ n) :
-    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
-      ≤ energyIntegrand A b₀ c₀ U U := by
-  have hhalf : 0 < lam / 2 := half_pos hlam
-  have hdef : 0 < mu - beta ^ 2 / (2 * lam) := sub_pos.mpr hmu
-  have hnorm := min_mul_prod_norm_sq_le_add hhalf.le hdef.le U
-  rw [Real.norm_eq_abs, sq_abs] at hnorm
-  exact hnorm.trans
-    (garding_energyIntegrand_self_of_mass_lower_bound_of_dotProduct_lower_bound
-      (beta := beta) (mu := mu) hlam ha hb hc U)
-
 /-- Integrated boundedness of the raw-jet energy form from a.e. coefficient bounds.
 
 This is the scalar integral version of `norm_energyIntegrand_apply_le_of_bounds`: if the
@@ -483,7 +407,9 @@ lemma garding_energyFormIntegral_self_of_bounds (hlam : 0 < lam)
   rw [energyFormIntegral_def]
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
-  exact garding_energyIntegrand_self_of_dotProduct_lower_bound hlam hax hbx hcx (U x)
+  letI := Classical.decEq n
+  exact garding_energyIntegrand_self_of_bounds hlam
+    (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx (U x)
 
 /-- Integrated Gårding lower bound with a mass floor from a.e. lower ellipticity and a.e.
 lower-order coefficient hypotheses. -/
@@ -501,8 +427,9 @@ lemma garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds (hlam : 0 < 
   rw [energyFormIntegral_def]
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
-  exact garding_energyIntegrand_self_of_mass_lower_bound_of_dotProduct_lower_bound
-    hlam hax hbx hcx (U x)
+  letI := Classical.decEq n
+  exact garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam
+    (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx (U x)
 
 /-- Integrated explicit coercive diagonal lower bound from a.e. lower ellipticity, a.e.
 lower-order coefficient hypotheses, and a mass floor that dominates the drift defect. -/
@@ -520,8 +447,9 @@ lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_
   rw [energyFormIntegral_def]
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
-  exact min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self_of_dotProduct_lower_bound
-    hlam hax hbx hcx hmu (U x)
+  letI := Classical.decEq n
+  exact min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hlam
+    (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx hmu (U x)
 
 namespace UniformlyEllipticOn
 
