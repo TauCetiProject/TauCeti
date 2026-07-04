@@ -24,10 +24,10 @@ following the roadmap and Mathlib style.
 
 * `stronglyMeasurable_energyIntegrand` and `aestronglyMeasurable_energyIntegrand`: measurable
   coefficient fields give a measurable field of pointwise energy integrands.
-* `stronglyMeasurable_energyIntegrand_apply` and `aestronglyMeasurable_energyIntegrand_apply`:
-  fixed-jet scalar evaluations are measurable.
-* `aestronglyMeasurable_energyIntegrand_apply₂`: a.e. strongly measurable coefficient fields and
-  a.e. strongly measurable jet fields give an a.e. strongly measurable scalar energy density.
+* `stronglyMeasurable_energyIntegrand_apply`, `stronglyMeasurable_energyIntegrand_apply₂`,
+  `aestronglyMeasurable_energyIntegrand_apply`, and
+  `aestronglyMeasurable_energyIntegrand_apply₂`: scalar evaluations on fixed or measurable jet
+  fields are measurable.
 -/
 
 public section
@@ -48,6 +48,22 @@ lemma stronglyMeasurable_energyIntegrand {a : α → Matrix n n ℝ} {b : α →
     StronglyMeasurable (fun x => PDE.energyIntegrand (a x) (b x) (c x)) :=
   continuous_energyIntegrand.comp_stronglyMeasurable (ha.prodMk (hb.prodMk hc))
 
+/-- Strongly measurable coefficient fields and strongly measurable jet fields give a strongly
+measurable scalar energy density. -/
+lemma stronglyMeasurable_energyIntegrand_apply₂ {a : α → Matrix n n ℝ}
+    {b : α → EuclideanSpace ℝ n} {c : α → ℝ} {U V : α → ℝ × EuclideanSpace ℝ n}
+    (ha : StronglyMeasurable a) (hb : StronglyMeasurable b) (hc : StronglyMeasurable c)
+    (hU : StronglyMeasurable U) (hV : StronglyMeasurable V) :
+    StronglyMeasurable (fun x => PDE.energyIntegrand (a x) (b x) (c x) (U x) (V x)) := by
+  let Jet := ℝ × EuclideanSpace ℝ n
+  have hform : StronglyMeasurable (fun x => PDE.energyIntegrand (a x) (b x) (c x)) :=
+    stronglyMeasurable_energyIntegrand ha hb hc
+  have hcont : Continuous (fun p : (Jet →L[ℝ] Jet →L[ℝ] ℝ) × Jet × Jet =>
+      p.1 p.2.1 p.2.2) := by
+    exact (continuous_fst.clm_apply (continuous_fst.comp continuous_snd)).clm_apply
+      (continuous_snd.comp continuous_snd)
+  exact hcont.comp_stronglyMeasurable (hform.prodMk (hU.prodMk hV))
+
 /-- Strongly measurable coefficient fields give strongly measurable scalar evaluations of the
 pointwise energy integrand on fixed jets. -/
 lemma stronglyMeasurable_energyIntegrand_apply {a : α → Matrix n n ℝ}
@@ -55,9 +71,8 @@ lemma stronglyMeasurable_energyIntegrand_apply {a : α → Matrix n n ℝ}
     (ha : StronglyMeasurable a) (hb : StronglyMeasurable b) (hc : StronglyMeasurable c)
     (U V : ℝ × EuclideanSpace ℝ n) :
     StronglyMeasurable (fun x => PDE.energyIntegrand (a x) (b x) (c x) U V) :=
-  StronglyMeasurable.apply_continuousLinearMap
-    (StronglyMeasurable.apply_continuousLinearMap
-      (stronglyMeasurable_energyIntegrand ha hb hc) U) V
+  stronglyMeasurable_energyIntegrand_apply₂ ha hb hc stronglyMeasurable_const
+    stronglyMeasurable_const
 
 variable {μ : MeasureTheory.Measure α}
 
