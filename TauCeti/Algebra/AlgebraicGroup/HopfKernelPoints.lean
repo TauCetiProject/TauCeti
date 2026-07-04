@@ -126,9 +126,7 @@ theorem quotientPointsHom_kerQuotientPointsMulEquiv_symm (f : H →ₐc[R] K)
   rw [CommHopfAlgCat.quotientPointsHom_apply_apply]
   rw [kerQuotientPointsMulEquiv, MulEquiv.symm_symm, AlgHom.mapDomainMulEquiv_apply,
     AlgHom.mapDomain_apply_apply, BialgEquiv.coe_toBialgHom,
-    show (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal → K)
-        (Ideal.Quotient.mkₐ R (ker f hf).toIdeal h) = f h from kerLiftBialgEquiv_mk f hf h,
-    AlgHom.mapDomain_apply_apply]
+    kerLiftBialgEquiv_mk f hf h, AlgHom.mapDomain_apply_apply]
 
 /-- For an arbitrary point of `H ⧸ ker f`, the quotient-points inclusion agrees with first
 identifying it as a `K`-point and then pre-composing along `f`. -/
