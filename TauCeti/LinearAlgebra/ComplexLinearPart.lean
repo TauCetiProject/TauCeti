@@ -151,6 +151,29 @@ theorem IsComplexLinear.neg {F : V →ₗ[ℝ] W} (h : IsComplexLinear J J' F) :
     IsComplexLinear J J' (-F) :=
   isComplexLinear_of_apply fun v => by simp [h.apply v]
 
+/-- Complex-linearity is unchanged after negating both source and target endomorphisms. -/
+theorem IsComplexLinear.neg_structures {F : V →ₗ[ℝ] W} (h : IsComplexLinear J J' F) :
+    IsComplexLinear (-J) (-J') F :=
+  isComplexLinear_of_apply fun v => by simp [h.apply v]
+
+/-- If a map is complex-linear after negating both endomorphisms, then it was complex-linear
+before the sign change. -/
+theorem IsComplexLinear.of_neg_structures {F : V →ₗ[ℝ] W}
+    (h : IsComplexLinear (-J) (-J') F) : IsComplexLinear J J' F :=
+  isComplexLinear_of_apply fun v => by
+    simpa using congrArg Neg.neg (h.apply v)
+
+/-- Negating both source and target endomorphisms leaves complex-linearity unchanged. -/
+theorem isComplexLinear_neg_neg_iff {F : V →ₗ[ℝ] W} :
+    IsComplexLinear (-J) (-J') F ↔ IsComplexLinear J J' F :=
+  ⟨fun hF => hF.of_neg_structures, fun hF => hF.neg_structures⟩
+
+/-- Negating both source and target endomorphisms is an involutive change of notation for
+complex-linearity. -/
+theorem isComplexLinear_iff_neg_neg {F : V →ₗ[ℝ] W} :
+    IsComplexLinear J J' F ↔ IsComplexLinear (-J) (-J') F :=
+  isComplexLinear_neg_neg_iff.symm
+
 /-- The negation of a complex-antilinear map is complex antilinear. -/
 theorem IsComplexAntilinear.neg {F : V →ₗ[ℝ] W} (h : IsComplexAntilinear J J' F) :
     IsComplexAntilinear J J' (-F) :=

@@ -208,6 +208,40 @@ lemma IsComplexLinearMap.neg {J : AlmostComplexStructure V} {J' : AlmostComplexS
     IsComplexLinearMap J J' (-F) :=
   IsComplexLinear.neg hF
 
+/-- Complex-linearity is unchanged after negating both the source and target almost complex
+structures. -/
+lemma IsComplexLinearMap.neg_structures {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {F : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F) :
+    IsComplexLinearMap (-J) (-J') F := by
+  change IsComplexLinear (-J).toLinearMap (-J').toLinearMap F
+  simpa using
+    (IsComplexLinear.neg_structures (J := J.toLinearMap) (J' := J'.toLinearMap) (F := F) hF)
+
+/-- If a map is complex-linear after negating both structures, then it was complex-linear before
+the sign change. -/
+lemma IsComplexLinearMap.of_neg_structures {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {F : V →ₗ[ℝ] W}
+    (hF : IsComplexLinearMap (-J) (-J') F) : IsComplexLinearMap J J' F := by
+  change IsComplexLinear J.toLinearMap J'.toLinearMap F
+  have hF' : IsComplexLinear (-J.toLinearMap) (-J'.toLinearMap) F := by
+    change F.comp (-J.toLinearMap) = (-J'.toLinearMap).comp F
+    exact hF
+  exact IsComplexLinear.of_neg_structures hF'
+
+/-- Negating both almost complex structures leaves the complex-linearity condition unchanged. -/
+@[simp]
+lemma isComplexLinearMap_neg_neg_iff {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {F : V →ₗ[ℝ] W} :
+    IsComplexLinearMap (-J) (-J') F ↔ IsComplexLinearMap J J' F :=
+  ⟨fun hF => hF.of_neg_structures, fun hF => hF.neg_structures⟩
+
+/-- Negating both almost complex structures is an involutive change of notation for
+complex-linearity. -/
+lemma isComplexLinearMap_iff_neg_neg {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {F : V →ₗ[ℝ] W} :
+    IsComplexLinearMap J J' F ↔ IsComplexLinearMap (-J) (-J') F :=
+  isComplexLinearMap_neg_neg_iff.symm
+
 /-- Complex-linear maps are closed under subtraction. -/
 lemma IsComplexLinearMap.sub {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {F G : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F)

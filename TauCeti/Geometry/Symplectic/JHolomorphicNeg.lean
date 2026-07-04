@@ -24,9 +24,6 @@ linear algebra.
 
 ## Main declarations
 
-* `TauCeti.IsComplexLinearMap.neg_structures`: complex-linearity survives negating source and
-  target almost complex structures.
-* `TauCeti.isComplexLinearMap_neg_neg_iff`: the corresponding equivalence.
 * `TauCeti.IsJHolomorphicAt.neg_structures`,
   `TauCeti.IsJHolomorphicWithinAt.neg_structures`,
   `TauCeti.IsJHolomorphicOn.neg_structures`, and
@@ -43,46 +40,6 @@ public section
 namespace TauCeti
 
 variable {V W : Type*}
-
-section Linear
-
-variable [AddCommGroup V] [Module ℝ V]
-variable [AddCommGroup W] [Module ℝ W]
-
-variable {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
-variable {F : V →ₗ[ℝ] W}
-
-namespace IsComplexLinearMap
-
-/-- Complex-linearity is unchanged after negating both the source and target almost complex
-structures. -/
-lemma neg_structures (hF : IsComplexLinearMap J J' F) : IsComplexLinearMap (-J) (-J') F := by
-  rw [isComplexLinearMap_iff_apply]
-  intro v
-  have hFv := (isComplexLinearMap_iff_apply J J' F).mp hF v
-  simp [hFv]
-
-/-- If a map is complex-linear after negating both structures, then it was complex-linear before
-the sign change. -/
-lemma of_neg_structures (hF : IsComplexLinearMap (-J) (-J') F) : IsComplexLinearMap J J' F := by
-  rw [isComplexLinearMap_iff_apply] at hF ⊢
-  intro v
-  simpa using congrArg Neg.neg (hF v)
-
-end IsComplexLinearMap
-
-/-- Negating both almost complex structures leaves the complex-linearity condition unchanged. -/
-lemma isComplexLinearMap_neg_neg_iff :
-    IsComplexLinearMap (-J) (-J') F ↔ IsComplexLinearMap J J' F :=
-  ⟨fun hF => hF.of_neg_structures, fun hF => hF.neg_structures⟩
-
-/-- Negating both almost complex structures is an involutive change of notation for
-complex-linearity. -/
-lemma isComplexLinearMap_iff_neg_neg :
-    IsComplexLinearMap J J' F ↔ IsComplexLinearMap (-J) (-J') F :=
-  isComplexLinearMap_neg_neg_iff.symm
-
-end Linear
 
 section JHolomorphic
 
@@ -102,6 +59,7 @@ lemma neg_structures (hf : IsJHolomorphicAt J J' f x) :
 end IsJHolomorphicAt
 
 /-- Negating both almost complex structures leaves pointwise `J`-holomorphicity unchanged. -/
+@[simp]
 lemma isJHolomorphicAt_neg_neg_iff :
     IsJHolomorphicAt (-J) (-J') f x ↔ IsJHolomorphicAt J J' f x :=
   ⟨fun hf => ⟨hf.choose, hf.hasFDerivAt, hf.derivative_isComplexLinear.of_neg_structures⟩,
@@ -123,6 +81,7 @@ lemma neg_structures (hf : IsJHolomorphicWithinAt J J' f s x) :
 end IsJHolomorphicWithinAt
 
 /-- Negating both almost complex structures leaves within-set `J`-holomorphicity unchanged. -/
+@[simp]
 lemma isJHolomorphicWithinAt_neg_neg_iff :
     IsJHolomorphicWithinAt (-J) (-J') f s x ↔ IsJHolomorphicWithinAt J J' f s x :=
   ⟨fun hf =>
@@ -145,6 +104,7 @@ lemma neg_structures (hf : IsJHolomorphicOn J J' f s) :
 end IsJHolomorphicOn
 
 /-- Negating both almost complex structures leaves setwise `J`-holomorphicity unchanged. -/
+@[simp]
 lemma isJHolomorphicOn_neg_neg_iff :
     IsJHolomorphicOn (-J) (-J') f s ↔ IsJHolomorphicOn J J' f s :=
   ⟨fun hf x hx => (isJHolomorphicWithinAt_neg_neg_iff (x := x)).mp (hf x hx),
@@ -165,6 +125,7 @@ lemma neg_structures (hf : IsJHolomorphic J J' f) : IsJHolomorphic (-J) (-J') f 
 end IsJHolomorphic
 
 /-- Negating both almost complex structures leaves global `J`-holomorphicity unchanged. -/
+@[simp]
 lemma isJHolomorphic_neg_neg_iff :
     IsJHolomorphic (-J) (-J') f ↔ IsJHolomorphic J J' f :=
   ⟨fun hf x => (isJHolomorphicAt_neg_neg_iff (x := x)).mp (hf x),
