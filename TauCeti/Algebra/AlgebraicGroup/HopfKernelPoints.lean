@@ -68,8 +68,15 @@ bialgebra equivalence `K ≃ₐc[R] H ⧸ ker f`. -/
 @[simp]
 theorem kerQuotientPointsMulEquiv_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
-    (g : HopfAlgebra.points (R := R) (H := H ⧸ (ker f hf).toIdeal) A) :
-    kerQuotientPointsMulEquiv f hf A g =
+    (g : WithConv (H ⧸ RingHom.ker (f : H →ₐ[R] K) →ₐ[R] A)) :
+    @DFunLike.coe
+        (@MulEquiv (WithConv (H ⧸ RingHom.ker (f : H →ₐ[R] K) →ₐ[R] A))
+          (WithConv (K →ₐ[R] A))
+          (inferInstanceAs (Mul (WithConv (H ⧸ (ker f hf).toIdeal →ₐ[R] A))))
+          inferInstance)
+        (WithConv (H ⧸ RingHom.ker (f : H →ₐ[R] K) →ₐ[R] A))
+        (fun _ => WithConv (K →ₐ[R] A)) EquivLike.toFunLike
+        (kerQuotientPointsMulEquiv f hf A) g =
       AlgHom.mapDomain ((kerLiftBialgEquiv f hf).symm : K →ₐc[R] H ⧸ (ker f hf).toIdeal) g :=
   AlgHom.mapDomainMulEquiv_symm_apply (A := A) (kerLiftBialgEquiv f hf) g
 
@@ -79,7 +86,8 @@ theorem kerQuotientPointsMulEquiv_apply_apply (f : H →ₐc[R] K)
     (g : HopfAlgebra.points (R := R) (H := H ⧸ (ker f hf).toIdeal) A) (k : K) :
     (kerQuotientPointsMulEquiv f hf A g).ofConv k =
       g.ofConv ((kerLiftBialgEquiv f hf).symm k) := by
-  rw [kerQuotientPointsMulEquiv_apply]
+  change (AlgHom.mapDomain
+      ((kerLiftBialgEquiv f hf).symm : K →ₐc[R] H ⧸ (ker f hf).toIdeal) g).ofConv k = _
   rfl
 
 /-- The inverse kernel-quotient points equivalence acts by pre-composition with the quotient
@@ -87,8 +95,11 @@ bialgebra equivalence `H ⧸ ker f ≃ₐc[R] K`. -/
 @[simp]
 theorem kerQuotientPointsMulEquiv_symm_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
-    (g : HopfAlgebra.points (R := R) (H := K) A) :
-    (kerQuotientPointsMulEquiv f hf A).symm g =
+    (g : WithConv (K →ₐ[R] A)) :
+    (@MulEquiv.symm (WithConv (H ⧸ RingHom.ker (f : H →ₐ[R] K) →ₐ[R] A))
+        (WithConv (K →ₐ[R] A))
+        (inferInstanceAs (Mul (WithConv (H ⧸ (ker f hf).toIdeal →ₐ[R] A))))
+        inferInstance (kerQuotientPointsMulEquiv f hf A)) g =
       AlgHom.mapDomain (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal →ₐc[R] K) g :=
   AlgHom.mapDomainMulEquiv_apply (A := A) (kerLiftBialgEquiv f hf) g
 
@@ -98,7 +109,8 @@ theorem kerQuotientPointsMulEquiv_symm_apply_apply (f : H →ₐc[R] K)
     (g : HopfAlgebra.points (R := R) (H := K) A) (q : H ⧸ (ker f hf).toIdeal) :
     ((kerQuotientPointsMulEquiv f hf A).symm g).ofConv q =
       g.ofConv (kerLiftBialgEquiv f hf q) := by
-  rw [kerQuotientPointsMulEquiv_symm_apply]
+  change (AlgHom.mapDomain
+      (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal →ₐc[R] K) g).ofConv q = _
   rfl
 
 /-- Including the quotient point attached to a `K`-point back into ambient `H`-points is
