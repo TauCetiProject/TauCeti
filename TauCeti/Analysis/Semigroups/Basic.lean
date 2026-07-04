@@ -14,7 +14,7 @@ public import Mathlib.Analysis.Normed.Operator.BanachSteinhaus
 This file contains the foundational C₀-semigroup structures, the nonnegative-time API
 (`map_zero`, `map_add`, `continuousAt_zero`, and their pointwise/tendsto forms),
 the `realOperator` real-time shim,
-operator-norm local boundedness, and strong continuity of real-time orbits.
+operator-norm local boundedness, and strong continuity within the nonnegative half-line.
 
 ## References
 Ported and adapted (Apache 2.0) from `mrdouglasny/hille-yosida`; references include
@@ -424,45 +424,29 @@ theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt
   · exact S.strongContWithinAt_left x t₀ ht₀
   · exact S.strongContWithinAt_right x t₀ ht₀
 
-/-- The real-time orbit of a strongly continuous semigroup is continuous on all real time.
-
-The shim `S.realOperator t = S t.toNNReal` is constant on negative times and agrees with the
-nonnegative-time semigroup on `[0, ∞)`. -/
-theorem StronglyContinuousSemigroup.continuous_realOperator_orbit
-    (S : StronglyContinuousSemigroup X) (x : X) :
-    Continuous fun t : ℝ => S.realOperator t x := by
-  rw [← continuousOn_univ]
-  have h_nonpos : ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.Iic 0) := by
-    refine ((continuous_const : Continuous fun _ : ℝ => x).continuousOn).congr fun t ht => ?_
-    simp only [Set.mem_Iic] at ht
-    rw [realOperator, Real.toNNReal_of_nonpos ht, S.map_zero_apply]
-  have h_nonneg : ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.Ici 0) :=
-    fun t ht => S.realOperator_continuousWithinAt x t ht
-  have h_union := h_nonpos.union_of_isClosed h_nonneg isClosed_Iic isClosed_Ici
-  have h_cover : Set.Iic (0 : ℝ) ∪ Set.Ici 0 = Set.univ := by
-    ext t
-    simp
-  simpa [h_cover] using h_union
-
 /-- The real-time orbit of a strongly continuous semigroup is continuous on the nonnegative
 half-line. -/
 theorem StronglyContinuousSemigroup.continuousOn_realOperator_orbit
     (S : StronglyContinuousSemigroup X) (x : X) :
     ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.Ici 0) :=
-  (S.continuous_realOperator_orbit x).continuousOn
+  fun t ht => S.realOperator_continuousWithinAt x t ht
 
-/-- At any real time, the real-time orbit of a strongly continuous semigroup is ordinarily
-continuous. -/
+/-- At any positive real time, the real-time orbit of a strongly continuous semigroup is
+ordinarily continuous. -/
 theorem StronglyContinuousSemigroup.continuousAt_realOperator_orbit
-    (S : StronglyContinuousSemigroup X) (x : X) (t : ℝ) :
+    (S : StronglyContinuousSemigroup X) (x : X) {t : ℝ} (ht : 0 < t) :
     ContinuousAt (fun u : ℝ => S.realOperator u x) t :=
-  (S.continuous_realOperator_orbit x).continuousAt
+  (S.realOperator_continuousWithinAt x t ht.le).continuousAt (Ici_mem_nhds ht)
 
-/-- The real-time orbit is continuous on every compact interval. -/
+/-- The real-time orbit is continuous on compact intervals with nonnegative endpoints. -/
 theorem StronglyContinuousSemigroup.continuousOn_realOperator_orbit_uIcc
-    (S : StronglyContinuousSemigroup X) (x : X) (a b : ℝ) :
+    (S : StronglyContinuousSemigroup X) (x : X) {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
     ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.uIcc a b) :=
-  (S.continuous_realOperator_orbit x).continuousOn
+  (S.continuousOn_realOperator_orbit x).mono fun t ht => by
+    rw [Set.mem_Ici]
+    rcases Set.mem_uIcc.mp ht with ⟨hat, htb⟩ | ⟨hbt, hta⟩
+    · exact le_trans ha hat
+    · exact le_trans hb hbt
 
 end TauCeti.Semigroups
 
