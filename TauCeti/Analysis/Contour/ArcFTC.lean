@@ -23,11 +23,11 @@ calculus.
 
 ## Main results
 
-* `Contour.contourIntegral_eq_sub_of_hasDerivAt` — an explicit-velocity form using a supplied
+* `Contour.integral_comp_mul_eq_sub_of_hasDerivAt` — an explicit-velocity form using a supplied
   derivative `γ'`.
-* `Contour.contourIntegral_deriv_eq_sub_of_hasDerivAt` — the same statement with `deriv γ`.
-* `Contour.contourIntegral_eq_zero_of_hasDerivAt_of_closed` and
-  `Contour.contourIntegral_deriv_eq_zero_of_hasDerivAt_of_closed` — closed-curve corollaries.
+* `Contour.integral_comp_mul_deriv_eq_sub_of_hasDerivAt` — the same statement with `deriv γ`.
+* `Contour.integral_comp_mul_eq_zero_of_hasDerivAt_of_closed` and
+  `Contour.integral_comp_mul_deriv_eq_zero_of_hasDerivAt_of_closed` — closed-curve corollaries.
 
 ## Provenance
 
@@ -50,7 +50,7 @@ variable {γ γ' : ℝ → ℂ} {g G : ℂ → ℂ} {a b : ℝ}
 `γ` and `G' = g` at the points `γ t`, then the contour integral of `g` along `γ` is the endpoint
 difference `G (γ b) - G (γ a)`. The integrability hypothesis is stated directly on the contour
 integrand, so this lemma can be used with any regularity package that supplies it. -/
-theorem contourIntegral_eq_sub_of_hasDerivAt
+theorem integral_comp_mul_eq_sub_of_hasDerivAt
     (hcont : ContinuousOn (G ∘ γ) (Set.uIcc a b))
     (hγ : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt γ (γ' t) t)
     (hG : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt G (g (γ t)) (γ t))
@@ -64,34 +64,34 @@ theorem contourIntegral_eq_sub_of_hasDerivAt
 /-- **FTC along a contour, `deriv` form.** If `G' = g` along the image of a differentiable curve,
 then the contour integral written with `deriv γ` is the endpoint difference
 `G (γ b) - G (γ a)`. -/
-theorem contourIntegral_deriv_eq_sub_of_hasDerivAt
+theorem integral_comp_mul_deriv_eq_sub_of_hasDerivAt
     (hcont : ContinuousOn (G ∘ γ) (Set.uIcc a b))
     (hγ : ∀ t ∈ Set.Ioo (min a b) (max a b), DifferentiableAt ℝ γ t)
     (hG : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt G (g (γ t)) (γ t))
     (hint : IntervalIntegrable (fun t => g (γ t) * deriv γ t) volume a b) :
     ∫ t in a..b, g (γ t) * deriv γ t = G (γ b) - G (γ a) :=
-  contourIntegral_eq_sub_of_hasDerivAt
+  integral_comp_mul_eq_sub_of_hasDerivAt
     (γ' := fun t => deriv γ t) hcont (fun t ht => (hγ t ht).hasDerivAt) hG hint
 
 /-- A contour integral of an exact derivative vanishes on a closed curve, explicit-velocity form. -/
-theorem contourIntegral_eq_zero_of_hasDerivAt_of_closed
+theorem integral_comp_mul_eq_zero_of_hasDerivAt_of_closed
     (hcont : ContinuousOn (G ∘ γ) (Set.uIcc a b))
     (hγ : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt γ (γ' t) t)
     (hG : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt G (g (γ t)) (γ t))
     (hint : IntervalIntegrable (fun t => g (γ t) * γ' t) volume a b)
     (hclosed : γ a = γ b) :
     ∫ t in a..b, g (γ t) * γ' t = 0 := by
-  rw [contourIntegral_eq_sub_of_hasDerivAt hcont hγ hG hint, hclosed, sub_self]
+  rw [integral_comp_mul_eq_sub_of_hasDerivAt hcont hγ hG hint, hclosed, sub_self]
 
 /-- A contour integral of an exact derivative vanishes on a closed curve, `deriv` form. -/
-theorem contourIntegral_deriv_eq_zero_of_hasDerivAt_of_closed
+theorem integral_comp_mul_deriv_eq_zero_of_hasDerivAt_of_closed
     (hcont : ContinuousOn (G ∘ γ) (Set.uIcc a b))
     (hγ : ∀ t ∈ Set.Ioo (min a b) (max a b), DifferentiableAt ℝ γ t)
     (hG : ∀ t ∈ Set.Ioo (min a b) (max a b), HasDerivAt G (g (γ t)) (γ t))
     (hint : IntervalIntegrable (fun t => g (γ t) * deriv γ t) volume a b)
     (hclosed : γ a = γ b) :
     ∫ t in a..b, g (γ t) * deriv γ t = 0 := by
-  rw [contourIntegral_deriv_eq_sub_of_hasDerivAt hcont hγ hG hint, hclosed, sub_self]
+  rw [integral_comp_mul_deriv_eq_sub_of_hasDerivAt hcont hγ hG hint, hclosed, sub_self]
 
 end TauCeti.Contour
 
