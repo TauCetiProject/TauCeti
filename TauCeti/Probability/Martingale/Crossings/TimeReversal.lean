@@ -1,5 +1,6 @@
 module
 
+public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Probability.Martingale.Upcrossing
 
 /-!
@@ -14,9 +15,9 @@ negated process. This is a combinatorial ingredient of the reverse-martingale up
 
 ## Main results
 
-- `upperCrossingTime_neg_revProcess_le`: for a process `X` with `k` upcrossings `[a→b]`
-  completing before time `N`, the time-reversed negated process `-(revProcess X N)` has
-  its `k`-th upcrossing `[-b→-a]` completing at time `≤ N`.
+- `MeasureTheory.upperCrossingTime_neg_revProcess_le`: for a process `X` with `k`
+  upcrossings `[a→b]` completing before time `N`, the time-reversed negated process
+  `-(revProcess X N)` has its `k`-th upcrossing `[-b→-a]` completing at time `≤ N`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/TimeReversalCrossing.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
@@ -30,24 +31,21 @@ open MeasureTheory
 
 open scoped ENNReal
 
-namespace ProbabilityTheory
+namespace MeasureTheory
 
-/-- Time reversal of a stochastic process up to time `N`. -/
+/-- Time reversal of a stochastic process up to time `N`, using Mathlib's horizon reversal
+`Polynomial.revAt`. For `n ≤ N` this is `X (N - n)`; see `revProcess_apply_of_le`. -/
 def revProcess {Ω α : Type*} (X : ℕ → Ω → α) (N : ℕ) : ℕ → Ω → α :=
-  fun n ω => X (N - n) ω
+  fun n ω => X (Polynomial.revAt N n) ω
 
 /-- Defining equation for `revProcess` (whose body is deliberately not `@[expose]`d). -/
 @[simp]
 lemma revProcess_apply {Ω α : Type*} (X : ℕ → Ω → α) (N n : ℕ) (ω : Ω) :
-    revProcess X N n ω = X (N - n) ω := by rfl
+    revProcess X N n ω = X (Polynomial.revAt N n) ω := by rfl
 
-/-- Package `hittingBtwn_le_of_mem` for `lowerCrossingTime`: if the process value at time `i` lies
-in `Set.Iic a` and `i` sits between the `n`-th upper-crossing time and the horizon `N`, then the
-`n`-th lower-crossing time is at most `i`. -/
-private lemma lowerCrossingTime_le_of_mem {Ω : Type*} {a b : ℝ} {Z : ℕ → Ω → ℝ} {N n i : ℕ}
-    {ω : Ω} (hui : upperCrossingTime a b Z N n ω ≤ i) (hiN : i ≤ N)
-    (his : Z i ω ∈ Set.Iic a) : lowerCrossingTime a b Z N n ω ≤ i := by
-  simpa only [lowerCrossingTime] using hittingBtwn_le_of_mem hui hiN his
+/-- Below the horizon, `Polynomial.revAt N` is genuine subtraction, so `revProcess` reverses. -/
+lemma revProcess_apply_of_le {Ω α : Type*} (X : ℕ → Ω → α) {N n : ℕ} (h : n ≤ N) (ω : Ω) :
+    revProcess X N n ω = X (N - n) ω := by simp [revProcess, Polynomial.revAt_le h]
 
 /-- Strong version tracking the bijection explicitly.
 
@@ -116,10 +114,14 @@ private lemma upperCrossingTime_neg_revProcess_le_strong
       stoppedValue_lowerCrossingTime (f := X) (n := j - 1) h_neq_τ
     -- Y's level conditions at bijected times
     have hY_Nσ_le_negb : Y (N - σ) ω ≤ -b := by
-      simp only [hY_def, Pi.neg_apply, revProcess_apply, Nat.sub_sub_self (Nat.le_of_lt hσ_lt_N)]
+      have hrev : revProcess X N (N - σ) ω = X σ ω := by
+        rw [revProcess_apply_of_le X (Nat.sub_le N σ) ω, Nat.sub_sub_self (Nat.le_of_lt hσ_lt_N)]
+      simp only [hY_def, Pi.neg_apply, hrev]
       linarith
     have hY_Nτ_ge_nega : Y (N - τ) ω ≥ -a := by
-      simp only [hY_def, Pi.neg_apply, revProcess_apply, Nat.sub_sub_self (Nat.le_of_lt hτ_lt_N)]
+      have hrev : revProcess X N (N - τ) ω = X τ ω := by
+        rw [revProcess_apply_of_le X (Nat.sub_le N τ) ω, Nat.sub_sub_self (Nat.le_of_lt hτ_lt_N)]
+      simp only [hY_def, Pi.neg_apply, hrev]
       linarith
     -- lowerCrossingTime X j ≥ σ (hitting starts from σ)
     have h_lct_ge : lowerCrossingTime a b X N j ω ≥ σ :=
@@ -132,8 +134,9 @@ private lemma upperCrossingTime_neg_revProcess_le_strong
     -- lowerCrossingTime Y m' ≤ N - σ (by hittingBtwn_le_of_mem)
     have h_Nσ_le_N1 : N - σ ≤ N + 1 := Nat.le_succ_of_le (Nat.sub_le N σ)
     have hY_Nσ_in_Iic : Y (N - σ) ω ∈ Set.Iic (-b) := hY_Nσ_le_negb
-    have h_lctY_le_Nσ : lowerCrossingTime (-b) (-a) Y (N + 1) m' ω ≤ N - σ :=
-      lowerCrossingTime_le_of_mem h_uct_le_Nσ h_Nσ_le_N1 hY_Nσ_in_Iic
+    have h_lctY_le_Nσ : lowerCrossingTime (-b) (-a) Y (N + 1) m' ω ≤ N - σ := by
+      simpa only [lowerCrossingTime] using
+        hittingBtwn_le_of_mem h_uct_le_Nσ h_Nσ_le_N1 hY_Nσ_in_Iic
     -- N - σ < N - τ and lowerCrossingTime Y m' < N - τ
     have hNσ_lt_Nτ : N - σ < N - τ := Nat.sub_lt_sub_left hτ_lt_N hτ_lt_σ
     have h_lctY_le_Nτ : lowerCrossingTime (-b) (-a) Y (N + 1) m' ω ≤ N - τ :=
@@ -160,4 +163,4 @@ lemma upperCrossingTime_neg_revProcess_le
   have h := upperCrossingTime_neg_revProcess_le_strong X a b hab N k k ω le_rfl h_k
   exact le_trans (by simpa using h) (Nat.sub_le N _)
 
-end ProbabilityTheory
+end MeasureTheory
