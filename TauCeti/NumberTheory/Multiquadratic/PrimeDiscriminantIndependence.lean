@@ -35,6 +35,8 @@ satisfies this criterion automatically.
   consumes.
 * `TauCeti.Multiquadratic.finrank_adjoin_roots_primeDiscriminantRadicands`: the multiquadratic
   compositum of the roots of `radicand D i` over such a family has degree `2^|ι|`.
+* The `_of_forall_isEvenPrimeDiscriminant_eq` variants: the same independence and degree
+  theorems under an `at most one even prime discriminant` hypothesis.
 -/
 
 public section
@@ -232,6 +234,43 @@ theorem not_isSquare_prod_primeDiscriminantRadicands {ι : Type*} (D : ι → �
         · exact hboth ⟨⟨i, hi, hi8⟩, ⟨j, hj, hjm8⟩⟩
         · exact hboth ⟨⟨j, hj, hj8⟩, ⟨i, hi, him8⟩⟩)
 
+/-- A prime-discriminant family with at most one even prime discriminant cannot contain the three
+even prime discriminants `-4`, `8`, and `-8` simultaneously.
+
+The hypothesis is stated extensionally: any two indices whose discriminants are even prime
+discriminants must carry the same discriminant value. This is the form supplied by the
+prime-discriminant factorization of a quadratic discriminant, where there is only one 2-adic
+factor. -/
+theorem not_all_three_evenPrimeDiscriminants_of_forall_isEvenPrimeDiscriminant_eq {ι : Type*}
+    {D : ι → ℤ}
+    (heven_unique : ∀ i j,
+      IsEvenPrimeDiscriminant (D i) → IsEvenPrimeDiscriminant (D j) → D i = D j) :
+    ¬ ((∃ i, D i = -4) ∧ (∃ i, D i = 8) ∧ (∃ i, D i = -8)) := by
+  rintro ⟨⟨i4, hi4⟩, ⟨i8, hi8⟩, _⟩
+  have hD : D i4 = D i8 :=
+    heven_unique i4 i8 (hi4.symm ▸ isEvenPrimeDiscriminant_neg_four)
+      (hi8.symm ▸ isEvenPrimeDiscriminant_eight)
+  omega
+
+/-- **Square-class independence for prime-discriminant families with at most one even factor.**
+Let `D : ι → ℤ` be an injective family of prime discriminants, and assume any two even prime
+discriminants in the family are equal as integers. Then no nonempty subset product of the
+associated radicands `primeDiscriminantRadicand (D i)` is a rational square.
+
+This is the genus-field specialization of
+`not_isSquare_prod_primeDiscriminantRadicands`: the prime discriminants dividing a quadratic
+discriminant have at most one even member, so the exceptional product
+`(-1) * 2 * (-2) = 4` cannot occur. -/
+theorem not_isSquare_prod_primeDiscriminantRadicands_of_forall_isEvenPrimeDiscriminant_eq
+    {ι : Type*} (D : ι → ℤ) (hD : ∀ i, IsPrimeDiscriminant (D i))
+    (hinj : Function.Injective D)
+    (heven_unique : ∀ i j,
+      IsEvenPrimeDiscriminant (D i) → IsEvenPrimeDiscriminant (D j) → D i = D j) :
+    ∀ S : Finset ι, S.Nonempty →
+      ¬ IsSquare (∏ i ∈ S, ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) := by
+  exact not_isSquare_prod_primeDiscriminantRadicands D hD hinj
+    (not_all_three_evenPrimeDiscriminants_of_forall_isEvenPrimeDiscriminant_eq heven_unique)
+
 /-- **Full degree for adjoining roots of prime-discriminant radicands.** Over any field `L ⊇ ℚ`
 carrying square roots `root i` of the radicands of an injective family of prime discriminants not
 containing all three even prime discriminants, the compositum `ℚ(root i : i)` has degree `2^|ι|`.
@@ -247,6 +286,25 @@ theorem finrank_adjoin_roots_primeDiscriminantRadicands {ι : Type*} [Finite ι]
     Module.finrank ℚ (IntermediateField.adjoin ℚ (Set.range root)) = 2 ^ Nat.card ι :=
   finrank_adjoin_range hroot
     (not_isSquare_prod_primeDiscriminantRadicands D hD hinj heven)
+
+/-- **Full degree for adjoining roots of prime-discriminant radicands with at most one even
+factor.** If `D : ι → ℤ` is an injective finite family of prime discriminants with at most one
+even member, then adjoining square roots of the associated radicands gives a multiquadratic field
+of degree `2 ^ Nat.card ι`.
+
+This is the degree theorem in the form needed for genus-field generator lists coming from prime
+discriminants of a quadratic discriminant. -/
+theorem finrank_adjoin_roots_primeDiscriminantRadicands_of_forall_isEvenPrimeDiscriminant_eq
+    {ι : Type*} [Finite ι] {L : Type*} [Field L] [Algebra ℚ L] (D : ι → ℤ)
+    (hD : ∀ i, IsPrimeDiscriminant (D i)) (hinj : Function.Injective D)
+    (heven_unique : ∀ i j,
+      IsEvenPrimeDiscriminant (D i) → IsEvenPrimeDiscriminant (D j) → D i = D j)
+    (root : ι → L)
+    (hroot : ∀ i, root i ^ 2 = algebraMap ℚ L ((primeDiscriminantRadicand (D i) : ℤ) : ℚ)) :
+    Module.finrank ℚ (IntermediateField.adjoin ℚ (Set.range root)) = 2 ^ Nat.card ι :=
+  finrank_adjoin_roots_primeDiscriminantRadicands D hD hinj
+    (not_all_three_evenPrimeDiscriminants_of_forall_isEvenPrimeDiscriminant_eq heven_unique) root
+    hroot
 
 /-- **Worked example.** The prime discriminants `-4` and `5` divide the discriminant `-20` of
 `ℚ(√-5)`, and are its genus-field generators (`ℚ(√-5)` has genus field `ℚ(√-1, √5)`). They are
