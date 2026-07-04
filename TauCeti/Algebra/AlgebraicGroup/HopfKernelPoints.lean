@@ -66,16 +66,14 @@ Contravariantly, this is induced by the bialgebra equivalence
 `H ⧸ ker f ≃ₐc[R] K` from the Hopf-algebra first isomorphism theorem. -/
 noncomputable def kerQuotientPointsMulEquiv (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R) :
-    HopfAlgebra.points (R := R) (H := H ⧸ (ker f hf).toIdeal) A ≃*
-      HopfAlgebra.points (R := R) (H := K) A :=
+    WithConv (H ⧸ (ker f hf).toIdeal →ₐ[R] A) ≃* WithConv (K →ₐ[R] A) :=
   (AlgHom.mapDomainMulEquiv (A := A) (kerLiftBialgEquiv f hf)).symm
 
 /-- The kernel quotient point equivalence acts by pre-composition with the inverse
 bialgebra equivalence `K ≃ₐc[R] H ⧸ ker f`. -/
-@[simp]
 theorem kerQuotientPointsMulEquiv_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
-    (g : HopfAlgebra.points (R := R) (H := H ⧸ (ker f hf).toIdeal) A) :
+    (g : WithConv (H ⧸ RingHom.ker (f : H →ₐ[R] K) →ₐ[R] A)) :
     kerQuotientPointsMulEquiv f hf A g =
       AlgHom.mapDomain (A := A)
         ((kerLiftBialgEquiv f hf).symm : K →ₐc[R] H ⧸ (ker f hf).toIdeal) g := by
@@ -83,10 +81,9 @@ theorem kerQuotientPointsMulEquiv_apply (f : H →ₐc[R] K)
 
 /-- The inverse kernel quotient point equivalence acts by pre-composition with the
 bialgebra equivalence `H ⧸ ker f ≃ₐc[R] K`. -/
-@[simp]
 theorem kerQuotientPointsMulEquiv_symm_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
-    (g : HopfAlgebra.points (R := R) (H := K) A) :
+    (g : WithConv (K →ₐ[R] A)) :
     (kerQuotientPointsMulEquiv f hf A).symm g =
       AlgHom.mapDomain (A := A) (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal →ₐc[R] K)
         g := by
