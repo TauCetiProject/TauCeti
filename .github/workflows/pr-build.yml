@@ -371,29 +371,17 @@ jobs:
           LAKE_NO_CACHE: "true"
         run: |
           export PATH="$HOME/.local/bin:$HOME/.elan/bin:$PATH"
+          # The sandboxed build/audit/lint body lives in the TRUSTED base script
+          # scripts/sandbox-build.sh (scripts/ routes to a human, so a PR cannot edit it
+          # here). Keeping the landrun `bash -c` payload a fixed, comment-free one-liner
+          # is deliberate: a comment's apostrophe once closed this single-quoted string
+          # early and reddened every PR build (#694). All prose now lives in the script.
           landrun --rox /usr --rox /etc \
             --rw /dev/null --rox /dev/zero --rox /dev/urandom --rox /dev/random \
             --rox "$HOME/.elan" --rox "$PWD/base" --rw "$PWD/base/.lake" \
             --env PATH --env HOME --env CI \
             --env LAKE_NO_CACHE --env LAKE_ARTIFACT_CACHE --env LAKE_RESTORE_ARTIFACTS --env LAKE_CACHE_DIR \
-            -- bash -euxo pipefail -c '
-              cd base
-              export TMPDIR="$PWD/.lake/tmp"
-              lake build
-              lake exe axioms
-              lake exe module-system
-              # Environment lint (the Mathlib default `#lint` set minus docBlame, plus
-              # a module-system-reliable docstring scan; see the script header)
-              # against the grandfathered baseline in scripts/lint-baseline.txt.
-              # Script, baseline, and the @[nolint <linter>] allowlist
-              # (scripts/lint-nolints-allowlist.txt) are the TRUSTED base copies
-              # (scripts/ routes to a human, so a PR cannot edit them here); it
-              # elaborates the PR code, which is why it runs inside this landrun
-              # sandbox, and its report parsing is fail-closed (see the SECURITY
-              # MODEL in the script). Fails on new violations or unaccounted nolints;
-              # fixed baseline entries are printed as a ratchet reminder only.
-              bash scripts/lint-env.sh
-            '
+            -- bash -euxo pipefail -c 'cd base && exec bash scripts/sandbox-build.sh'
 
       - name: Report build and bump-guard statuses to the PR head commit
         if: always()
