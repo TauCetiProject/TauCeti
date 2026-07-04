@@ -47,7 +47,7 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 self-map of `ℕ`. This is the combinatorial bridge from the finite-dimensional definition of
 contractability to the path-law formulation using the monoid of strictly increasing reindexings
 `ℕ → ℕ`. -/
-theorem exists_strictMono_nat_extending_fin {m : ℕ} {k : Fin m → ℕ} (hk : StrictMono k) :
+private theorem exists_strictMono_nat_extending_fin {m : ℕ} {k : Fin m → ℕ} (hk : StrictMono k) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ i : Fin m, φ i.val = k i := by
   classical
   let C := Finset.univ.sup k + 1
@@ -58,7 +58,7 @@ theorem exists_strictMono_nat_extending_fin {m : ℕ} {k : Fin m → ℕ} (hk : 
     by_cases ha : a < m
     · by_cases hb : b < m
       · rw [dif_pos ha, dif_pos hb]
-        exact hk (show (⟨a, ha⟩ : Fin m) < ⟨b, hb⟩ from hab)
+        exact hk (Fin.lt_def.mpr hab)
       · rw [dif_pos ha, dif_neg hb]
         have hle_sup : k ⟨a, ha⟩ ≤ Finset.univ.sup k :=
           Finset.le_sup (f := k) (Finset.mem_univ (⟨a, ha⟩ : Fin m))
