@@ -42,6 +42,9 @@ square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGroup` f
   the quotient and the 2-torsion subgroup have equal cardinality.
 * `TauCeti.ClassGroup.twoRank` and `card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|Cl(R)/Cl(R)²| = 2 ^ twoRank`.
+* `TauCeti.ClassGroup.card_elementaryTwoQuotient_dvd_card` and
+  `TauCeti.ClassGroup.two_pow_twoRank_dvd_card`: the quotient cardinality and its rank form divide
+  the class-group cardinality.
 -/
 
 public section
@@ -187,11 +190,36 @@ theorem twoRank_eq_of_mulEquiv {S : Type*} [CommRing S] [IsDomain S]
     twoRank R = twoRank S :=
   TauCeti.twoRank_eq_of_mulEquiv (G := ClassGroup R) (H := ClassGroup S) e
 
+/-- The cardinality of `Cl(R)/Cl(R)²` divides the cardinality of `Cl(R)` when the class group is
+finite, and more generally in Mathlib's cardinal arithmetic. -/
+theorem card_elementaryTwoQuotient_dvd_card :
+    Nat.card (ElementaryTwoQuotient R) ∣ Nat.card (ClassGroup R) :=
+  TauCeti.card_elementaryTwoQuotient_dvd_card (ClassGroup R)
+
+/-- Rank form of `TauCeti.ClassGroup.card_elementaryTwoQuotient_dvd_card`:
+`2 ^ TauCeti.ClassGroup.twoRank R` divides the cardinality of `Cl(R)` when `Cl(R)/Cl(R)²`
+is finite-dimensional. -/
+theorem two_pow_twoRank_dvd_card [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)] :
+    2 ^ twoRank R ∣ Nat.card (ClassGroup R) :=
+  TauCeti.two_pow_twoRank_dvd_card (ClassGroup R)
+
 variable [Finite (ClassGroup R)]
 
 /-- A finite class group has finite-dimensional elementary-2 quotient. -/
 instance : Module.Finite (ZMod 2) (ElementaryTwoQuotient R) := by
   infer_instance
+
+/-- The elementary-2 quotient of a finite class group has cardinality at most the class-group
+cardinality. -/
+theorem card_elementaryTwoQuotient_le_card :
+    Nat.card (ElementaryTwoQuotient R) ≤ Nat.card (ClassGroup R) :=
+  TauCeti.card_elementaryTwoQuotient_le_card (ClassGroup R)
+
+/-- Rank form of `TauCeti.ClassGroup.card_elementaryTwoQuotient_le_card`:
+`2 ^ TauCeti.ClassGroup.twoRank R` is bounded by the cardinality of `Cl(R)`. -/
+theorem two_pow_twoRank_le_card :
+    2 ^ twoRank R ≤ Nat.card (ClassGroup R) :=
+  TauCeti.two_pow_twoRank_le_card (ClassGroup R)
 
 /-- **The maximal elementary-2 quotient and the 2-torsion subgroup have the same cardinality.**
 `|Cl(R)/Cl(R)²| = |Cl(R)[2]|`. -/
