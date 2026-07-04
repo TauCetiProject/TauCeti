@@ -25,6 +25,10 @@ dictionary.
 
 * `TauCeti.HopfIdeal.kerQuotientPointsMulEquiv`: the equivalence between points of the
   kernel quotient and points of the codomain.
+* `TauCeti.HopfIdeal.kerQuotientPointsMulEquiv_apply`: its action by pre-composition with the
+  inverse kernel quotient equivalence.
+* `TauCeti.HopfIdeal.kerQuotientPointsMulEquiv_symm_apply`: its inverse action by
+  pre-composition with the kernel quotient equivalence.
 * `TauCeti.HopfIdeal.quotientPointsHom_kerQuotientPointsMulEquiv_symm`: compatibility of
   the inverse equivalence with the quotient-points inclusion.
 * `TauCeti.HopfIdeal.quotientPointsHom_ker_eq_mapDomain`: the corresponding compatibility
@@ -65,6 +69,28 @@ noncomputable def kerQuotientPointsMulEquiv (f : H →ₐc[R] K)
     HopfAlgebra.points (R := R) (H := H ⧸ (ker f hf).toIdeal) A ≃*
       HopfAlgebra.points (R := R) (H := K) A :=
   (AlgHom.mapDomainMulEquiv (A := A) (kerLiftBialgEquiv f hf)).symm
+
+/-- The kernel quotient point equivalence acts by pre-composition with the inverse
+bialgebra equivalence `K ≃ₐc[R] H ⧸ ker f`. -/
+@[simp]
+theorem kerQuotientPointsMulEquiv_apply (f : H →ₐc[R] K)
+    (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
+    (g : HopfAlgebra.points (R := R) (H := H ⧸ (ker f hf).toIdeal) A) :
+    kerQuotientPointsMulEquiv f hf A g =
+      AlgHom.mapDomain (A := A)
+        ((kerLiftBialgEquiv f hf).symm : K →ₐc[R] H ⧸ (ker f hf).toIdeal) g := by
+  rw [kerQuotientPointsMulEquiv, AlgHom.mapDomainMulEquiv_symm_apply]
+
+/-- The inverse kernel quotient point equivalence acts by pre-composition with the
+bialgebra equivalence `H ⧸ ker f ≃ₐc[R] K`. -/
+@[simp]
+theorem kerQuotientPointsMulEquiv_symm_apply (f : H →ₐc[R] K)
+    (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
+    (g : HopfAlgebra.points (R := R) (H := K) A) :
+    (kerQuotientPointsMulEquiv f hf A).symm g =
+      AlgHom.mapDomain (A := A) (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal →ₐc[R] K)
+        g := by
+  rw [kerQuotientPointsMulEquiv, MulEquiv.symm_symm, AlgHom.mapDomainMulEquiv_apply]
 
 end RingSource
 
