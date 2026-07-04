@@ -88,15 +88,21 @@ private theorem range_primeDiscriminantRoot :
 
 /-- Packaged roots and hypotheses for the `-21` prime-discriminant examples. -/
 structure PrimeDiscriminantPackage where
+  /-- The three chosen square roots attached to the prime discriminants `-4`, `-3`, and `-7`. -/
   root : Fin 3 → ℂ
+  /-- Each chosen root squares to the radicand associated to its prime discriminant. -/
   root_sq : ∀ i, root i ^ 2 =
     algebraMap ℚ ℂ
       (((primeDiscriminantRadicand (negFourNegThreeNegSevenPrimeDiscriminants i) : ℤ) : ℚ))
+  /-- The entries `-4`, `-3`, and `-7` are prime discriminants. -/
   isPrimeDiscriminant : ∀ i, IsPrimeDiscriminant (negFourNegThreeNegSevenPrimeDiscriminants i)
+  /-- The three prime discriminants in the package are pairwise distinct. -/
   injective : Function.Injective negFourNegThreeNegSevenPrimeDiscriminants
+  /-- The package does not contain all three even prime discriminants. -/
   not_all_even : ¬ ((∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -4) ∧
     (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = 8) ∧
       (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -8))
+  /-- The chosen roots are exactly `√-1`, `√-3`, and `√-7`. -/
   range_root : Set.range root = {Complex.I, sqrtNegThree, sqrtNegSeven}
 
 /-- The reusable root package for the `ℚ(√-1, √-3, √-7)` worked examples. -/
