@@ -42,7 +42,7 @@ theorem card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven :
           IntermediateField ℚ ℂ))
       = 8 := by
   have h := card_aut_adjoin_roots_primeDiscriminantRadicands
-    MinusTwentyOne.primeDiscriminants MinusTwentyOne.isPrimeDiscriminant
+    negFourNegThreeNegSevenPrimeDiscriminants MinusTwentyOne.isPrimeDiscriminant
     MinusTwentyOne.injective MinusTwentyOne.not_all_even
     (fun i : Fin 3 => ![Complex.I, sqrtNegThree, sqrtNegSeven] i)
     MinusTwentyOne.root_sq
