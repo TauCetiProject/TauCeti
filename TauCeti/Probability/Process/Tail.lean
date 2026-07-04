@@ -286,29 +286,18 @@ theorem comap_le_comap_processCons (x : Ω → α) (t : Ω → ℕ → α) :
 omit [MeasurableSpace Ω] in
 /-- Consing a head onto a sequence-valued random variable joins their σ-algebras:
 `σ(processCons x t) = σ(x) ⊔ σ(t)`. -/
+@[simp]
 theorem comap_processCons_eq_sup (x : Ω → α) (t : Ω → ℕ → α) :
     MeasurableSpace.comap (processCons x t) inferInstance
       = MeasurableSpace.comap x inferInstance ⊔ MeasurableSpace.comap t inferInstance := by
-  apply le_antisymm
-  · -- `σ(processCons x t) ≤ σ(x) ⊔ σ(t)`, by factoring through the measurable pair `(x, t)`.
-    rintro s ⟨S, hS, rfl⟩
-    have hx : @Measurable Ω α (MeasurableSpace.comap x inferInstance) inferInstance x :=
-      Measurable.of_comap_le le_rfl
-    have ht : @Measurable Ω (ℕ → α) (MeasurableSpace.comap t inferInstance) inferInstance t :=
-      Measurable.of_comap_le le_rfl
-    have hpair : @Measurable Ω (α × (ℕ → α))
-        (MeasurableSpace.comap x inferInstance ⊔ MeasurableSpace.comap t inferInstance)
-        inferInstance (fun ω => (x ω, t ω)) :=
-      (hx.mono le_sup_left le_rfl).prodMk (ht.mono le_sup_right le_rfl)
-    have hcons : Measurable (processCons (Prod.fst : α × (ℕ → α) → α) Prod.snd) :=
-      measurable_processCons measurable_fst fun n => (measurable_pi_apply n).comp measurable_snd
-    have hfactor : processCons x t
-        = processCons (Prod.fst : α × (ℕ → α) → α) Prod.snd ∘ fun ω => (x ω, t ω) := rfl
-    rw [hfactor, Set.preimage_comp]
-    exact hpair (hcons hS)
-  · refine sup_le ?_ (comap_le_comap_processCons x t)
-    rintro s ⟨S, hS, rfl⟩
-    exact ⟨{f | f 0 ∈ S}, measurable_pi_apply 0 hS, by ext ω; simp [processCons_zero]⟩
+  -- `σ` of a sequence is the join of its coordinate `σ`s; split off the head coordinate.
+  rw [MeasurableSpace.comap_process_pi (fun n ω => processCons x t ω n), ← sup_iSup_nat_succ]
+  refine congr_arg₂ _ ?_ ?_
+  · -- Head: coordinate `0` of the cons is `x`.
+    simp only [processCons_zero]
+  · -- Tail: coordinates `n + 1` of the cons reassemble `t`.
+    simp only [processCons_succ]
+    rw [← MeasurableSpace.comap_process_pi (fun n ω => t ω n)]
 
 end Probability
 
