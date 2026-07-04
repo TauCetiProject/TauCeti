@@ -19,8 +19,7 @@ real-axis Schwarz reflection principle.
 
 It also names the standard real-axis Schwarz-reflection extension
 `z ↦ if 0 ≤ z.im then f z else conj (f (conj z))`, together with the pointwise API for the
-upper and lower half-planes, upper-branch continuity and within-set differentiability
-transfer, and the conjugation symmetry forced by real boundary values.
+upper and lower half-planes and the conjugation symmetry forced by real boundary values.
 The private semilinear within-set helper adapts the proof pattern of Mathlib's
 `HasFDerivAt.comp_semilinear`.
 -/
@@ -65,29 +64,6 @@ lemma schwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
 lemma schwarzReflection_of_im_zero {z : ℂ} (hz : z.im = 0) :
     schwarzReflection f z = f z := by
   exact schwarzReflection_of_im_nonneg (f := f) (z := z) hz.ge
-
-/-- On any set contained in the closed upper half-plane, Schwarz reflection is equal to `f`. -/
-lemma schwarzReflection_eqOn_of_subset_im_nonneg (hS : ∀ z ∈ S, 0 ≤ z.im) :
-    EqOn (schwarzReflection f) f S := fun z hz =>
-  schwarzReflection_of_im_nonneg (f := f) (hS z hz)
-
-/--
-Continuity transfers from `f` to the Schwarz-reflection witness on any set contained in the
-closed upper half-plane, where the witness is the upper branch.
--/
-lemma ContinuousOn.schwarzReflection_of_subset_im_nonneg
-    (hf : ContinuousOn f S) (hS : ∀ z ∈ S, 0 ≤ z.im) :
-    ContinuousOn (schwarzReflection f) S :=
-  hf.congr (schwarzReflection_eqOn_of_subset_im_nonneg (f := f) hS)
-
-/--
-Complex differentiability within a set transfers from `f` to the Schwarz-reflection witness
-on any set contained in the closed upper half-plane, where no reflected branch is used.
--/
-lemma DifferentiableOn.schwarzReflection_of_subset_im_nonneg
-    (hf : DifferentiableOn ℂ f S) (hS : ∀ z ∈ S, 0 ≤ z.im) :
-    DifferentiableOn ℂ (schwarzReflection f) S :=
-  hf.congr fun z hz => schwarzReflection_of_im_nonneg (f := f) (hS z hz)
 
 /-- Conjugating a point in the upper half-plane evaluates the reflected lower branch. -/
 lemma schwarzReflection_conj_of_im_pos {z : ℂ} (hz : 0 < z.im) :
