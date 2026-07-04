@@ -60,13 +60,6 @@ theorem continuousAt_realOperator_orbit_of_pos (S : StronglyContinuousSemigroup 
     {t : ℝ} (ht : 0 < t) : ContinuousAt (fun u : ℝ => S.realOperator u x) t :=
   (S.realOperator_continuousWithinAt x t ht.le).continuousAt (Ici_mem_nhds ht)
 
-omit [CompleteSpace X] in
-/-- The orbit is continuous at `0` along the nonnegative half-line. This is the half-line form
-of the structure's strong-continuity axiom, stated for the real-time shim. -/
-theorem continuousWithinAt_realOperator_orbit_zero (S : StronglyContinuousSemigroup X) (x : X) :
-    ContinuousWithinAt (fun t : ℝ => S.realOperator t x) (Set.Ici 0) 0 :=
-  S.realOperator_continuousWithinAt_zero x
-
 /-- The real-time orbit is continuous on every compact interval with nonnegative endpoints. -/
 theorem continuousOn_realOperator_orbit_uIcc (S : StronglyContinuousSemigroup X) (x : X)
     {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
