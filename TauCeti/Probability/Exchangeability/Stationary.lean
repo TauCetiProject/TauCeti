@@ -58,11 +58,11 @@ theorem Contractable.map_processShift_eq_pathLaw {μ : Measure Ω} {X : ℕ → 
 
 /-- Prefix laws are unchanged after shifting a contractable process by any finite amount. -/
 theorem Contractable.map_prefixProj_shift_iterate_pathLaw_eq_prefixLaw {μ : Measure Ω}
-    {X : ℕ → Ω → α} [IsFiniteMeasure μ] (hX : Contractable μ X)
+    {X : ℕ → Ω → α} (hX : Contractable μ X)
     (hX_meas : ∀ i, AEMeasurable (X i) μ) (n m : ℕ) :
     ((pathLaw μ X).map ((shift α)^[n])).map (prefixProj α m) = prefixLaw μ X m := by
-  rw [hX.map_shift_iterate_pathLaw hX_meas n,
-    map_prefixProj_pathLaw μ (aemeasurable_pi_lambda _ hX_meas) m]
+  rw [map_prefixProj_shift_iterate_pathLaw μ hX_meas n m]
+  exact hX m (fun i : Fin m => i.val + n) (fun _ _ h => Nat.add_lt_add_right h n)
 
 /-- **An exchangeable process has a shift-invariant path law.** -/
 theorem Exchangeable.measurePreserving_shift {μ : Measure Ω} {X : ℕ → Ω → α}
@@ -100,7 +100,7 @@ theorem Exchangeable.map_processShift_eq_pathLaw {μ : Measure Ω} {X : ℕ → 
 
 /-- Prefix laws are unchanged after shifting an exchangeable process by any finite amount. -/
 theorem Exchangeable.map_prefixProj_shift_iterate_pathLaw_eq_prefixLaw {μ : Measure Ω}
-    {X : ℕ → Ω → α} [IsFiniteMeasure μ] (hX : Exchangeable μ X)
+    {X : ℕ → Ω → α} (hX : Exchangeable μ X)
     (hX_meas : ∀ i, AEMeasurable (X i) μ) (n m : ℕ) :
     ((pathLaw μ X).map ((shift α)^[n])).map (prefixProj α m) = prefixLaw μ X m :=
   (hX.contractable hX_meas).map_prefixProj_shift_iterate_pathLaw_eq_prefixLaw hX_meas n m
