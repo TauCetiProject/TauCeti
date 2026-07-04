@@ -22,8 +22,6 @@ matching the roadmap's bounded-measurable-coefficient hypotheses.
 
 ## Main declarations
 
-* `TauCeti.PDE.integrable_energyIntegrand_apply₂_of_bound`: a scalar energy density is integrable
-  when it is a.e. bounded.
 * `TauCeti.PDE.integrable_energyIntegrand_apply₂_of_bounds`: coefficient bounds and bounded jet
   fields give scalar-density integrability.
 * `TauCeti.PDE.integrable_energyIntegrand_apply_of_bounds`: the fixed-jet specialization.
@@ -41,17 +39,6 @@ open scoped InnerProductSpace
 variable {α n : Type*} [MeasurableSpace α] [Fintype n]
 variable {μ : Measure α}
 
-/-- A measurable scalar energy density is integrable on a finite-measure space when it is a.e.
-bounded. -/
-lemma integrable_energyIntegrand_apply₂_of_bound [IsFiniteMeasure μ] {a : α → Matrix n n ℝ}
-    {b : α → EuclideanSpace ℝ n} {c : α → ℝ} {U V : α → ℝ × EuclideanSpace ℝ n}
-    (ha : AEStronglyMeasurable a μ) (hb : AEStronglyMeasurable b μ)
-    (hc : AEStronglyMeasurable c μ) (hU : AEStronglyMeasurable U μ)
-    (hV : AEStronglyMeasurable V μ) (C : ℝ)
-    (hC : ∀ᵐ x ∂μ, ‖energyIntegrand (a x) (b x) (c x) (U x) (V x)‖ ≤ C) :
-    Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x)) μ :=
-  Integrable.of_bound (aestronglyMeasurable_energyIntegrand_apply₂ ha hb hc hU hV) C hC
-
 /-- Bounded measurable coefficient fields and bounded measurable jet fields give an integrable
 scalar energy density on a finite-measure space. -/
 lemma integrable_energyIntegrand_apply₂_of_bounds [IsFiniteMeasure μ]
@@ -68,7 +55,7 @@ lemma integrable_energyIntegrand_apply₂_of_bounds [IsFiniteMeasure μ]
     (hU_bound : ∀ᵐ x ∂μ, ‖U x‖ ≤ R)
     (hV_bound : ∀ᵐ x ∂μ, ‖V x‖ ≤ S) :
     Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x)) μ := by
-  refine integrable_energyIntegrand_apply₂_of_bound ha hb hc hU hV
+  refine Integrable.of_bound (aestronglyMeasurable_energyIntegrand_apply₂ ha hb hc hU hV)
     ((Lam + beta + gamma) * R * S) ?_
   filter_upwards [ha_bound, hb_bound, hc_bound, hU_bound, hV_bound] with x hA hb₀ hc₀ hUx hVx
   have hbase := norm_energyIntegrand_apply_le_of_bounds hLam hA hb₀ hc₀ (U x) (V x)
