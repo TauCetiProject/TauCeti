@@ -123,6 +123,7 @@ variable [CommRing H] [Ring K] [HopfAlgebra R H] [HopfAlgebra R K]
 
 /-- Including the quotient point attached to a `K`-point back into ambient `H`-points is
 pre-composition along the original surjective Hopf algebra morphism. -/
+@[simp]
 theorem quotientPointsHom_kerQuotientPointsMulEquiv_symm (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : HopfAlgebra.points (R := R) (H := K) A) :
@@ -139,6 +140,7 @@ theorem quotientPointsHom_kerQuotientPointsMulEquiv_symm (f : H →ₐc[R] K)
 
 /-- For an arbitrary point of `H ⧸ ker f`, the quotient-points inclusion agrees with first
 identifying it as a `K`-point and then pre-composing along `f`. -/
+@[simp]
 theorem quotientPointsHom_ker_eq_mapDomain (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : HopfAlgebra.points (R := R) (H := H ⧸ (ker f hf).toIdeal) A) :
