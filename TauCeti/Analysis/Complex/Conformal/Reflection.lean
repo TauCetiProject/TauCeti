@@ -20,6 +20,9 @@ real-axis Schwarz reflection principle.
 It also names the standard real-axis Schwarz-reflection extension
 `z ↦ if 0 ≤ z.im then f z else conj (f (conj z))`, together with the pointwise API for the
 upper and lower half-planes and the conjugation symmetry forced by real boundary values.
+The closed upper branch is intentionally exposed through the pointwise simplifier
+`schwarzReflection_of_im_nonneg`; continuity and differentiability transfers on subsets of
+that branch are obtained from Mathlib's congruence lemmas rather than separate wrapper API.
 The private semilinear within-set helper adapts the proof pattern of Mathlib's
 `HasFDerivAt.comp_semilinear`.
 -/
