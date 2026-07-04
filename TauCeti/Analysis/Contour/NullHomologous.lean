@@ -68,13 +68,6 @@ theorem isNullHomologous_empty_of_forall_windingNumber_eq_zero
     IsNullHomologous γ a b (∅ : Set ℂ) :=
   isNullHomologous_empty_iff.2 h
 
-/-- A curve null-homologous in the empty set is null-homologous in every set. -/
-theorem IsNullHomologous.of_empty (h : IsNullHomologous γ a b (∅ : Set ℂ)) :
-    IsNullHomologous γ a b Ω := by
-  rw [isNullHomologous_iff] at h ⊢
-  intro w hw
-  exact h w (by simp)
-
 /-- Null-homology is monotone in the ambient domain: enlarging the domain shrinks its complement. -/
 theorem IsNullHomologous.mono (h : IsNullHomologous γ a b Ω) (hΩ : Ω ⊆ Ω') :
     IsNullHomologous γ a b Ω' := by
@@ -82,12 +75,15 @@ theorem IsNullHomologous.mono (h : IsNullHomologous γ a b Ω) (hΩ : Ω ⊆ Ω'
   intro w hw
   exact h w (fun hwΩ => hw (hΩ hwΩ))
 
+/-- A curve null-homologous in the empty set is null-homologous in every set. -/
+theorem IsNullHomologous.of_empty (h : IsNullHomologous γ a b (∅ : Set ℂ)) :
+    IsNullHomologous γ a b Ω :=
+  h.mono (empty_subset Ω)
+
 /-- A complement-subset form of `Contour.IsNullHomologous.mono`. -/
 theorem IsNullHomologous.mono_compl (h : IsNullHomologous γ a b Ω) (hΩ : Ω'ᶜ ⊆ Ωᶜ) :
-    IsNullHomologous γ a b Ω' := by
-  rw [isNullHomologous_iff] at h ⊢
-  intro w hw
-  exact h w (hΩ hw)
+    IsNullHomologous γ a b Ω' :=
+  h.mono (Set.compl_subset_compl.mp hΩ)
 
 /-- It suffices to prove winding-number vanishing on any set containing the complement of `Ω`. -/
 theorem isNullHomologous_of_compl_subset {E : Set ℂ} (hE : Ωᶜ ⊆ E)
