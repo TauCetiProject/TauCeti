@@ -50,11 +50,18 @@ integrand against a measure.
 For a Sobolev function `u`, the intended jet field is `x ↦ (u x, ∇u x)`.  This definition stays
 at the raw-jet level because the roadmap's weak-derivative Sobolev spaces are a separate
 prerequisite. -/
--- `irreducible_def` supplies the public `_def` lemma while keeping this body unexposed.
-noncomputable irreducible_def energyFormIntegral (μ : Measure X) (a : X → Matrix n n ℝ)
+public noncomputable def energyFormIntegral (μ : Measure X) (a : X → Matrix n n ℝ)
     (b : X → EuclideanSpace ℝ n) (c : X → ℝ)
     (U V : X → ℝ × EuclideanSpace ℝ n) : ℝ :=
   ∫ x, (energyIntegrand (a x) (b x) (c x) (U x) (V x)) ∂μ
+
+/-- Unfolding rule for the integrated energy form. -/
+theorem energyFormIntegral_def (μ : Measure X) (a : X → Matrix n n ℝ)
+    (b : X → EuclideanSpace ℝ n) (c : X → ℝ)
+    (U V : X → ℝ × EuclideanSpace ℝ n) :
+    energyFormIntegral μ a b c U V =
+      ∫ x, (energyIntegrand (a x) (b x) (c x) (U x) (V x)) ∂μ :=
+  by simp [energyFormIntegral]
 
 variable (μ : Measure X) (a : X → Matrix n n ℝ)
 variable (b : X → EuclideanSpace ℝ n) (c : X → ℝ)
