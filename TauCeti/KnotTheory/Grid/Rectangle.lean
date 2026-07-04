@@ -190,6 +190,11 @@ theorem card_interior :
     R.interior.card = R.columnInterior.card * R.rowInterior.card := by
   simp [interior, Finset.card_product]
 
+/-- In a grid of size at most two, every toroidal rectangle has empty interior. -/
+theorem interior_eq_empty_of_le_two (hn : n ≤ 2) (R : GridRectangle n) : R.interior = ∅ := by
+  ext p
+  simp [interior, columnInterior, Grid.cIoo_eq_empty_of_le_two hn R.left R.right]
+
 /-- A rectangle is empty for a grid state when the state has no point in its interior. -/
 def IsEmptyFor (x : GridState n) : Prop :=
   Disjoint R.interior x.pointSet
@@ -205,6 +210,12 @@ theorem isEmptyFor_iff (x : GridState n) :
   · intro h p hp q hq hpq
     subst hpq
     exact h p hp hq
+
+/-- In a grid of size at most two, every toroidal rectangle is empty for every grid state. -/
+theorem isEmptyFor_of_le_two (hn : n ≤ 2) (R : GridRectangle n) (x : GridState n) :
+    R.IsEmptyFor x := by
+  rw [IsEmptyFor, R.interior_eq_empty_of_le_two hn]
+  simp
 
 /-- A rectangle avoids the markings of a grid diagram when its interior contains no `O` or
 `X` marking. -/
@@ -227,6 +238,12 @@ theorem avoidsMarkings_iff (G : GridDiagram n) :
     R.AvoidsMarkings G ↔
       Disjoint R.interior G.OSet ∧ Disjoint R.interior G.XSet := by
   rw [AvoidsMarkings, Finset.disjoint_union_right]
+
+/-- In a grid of size at most two, every toroidal rectangle avoids every diagram's markings. -/
+theorem avoidsMarkings_of_le_two (hn : n ≤ 2) (R : GridRectangle n) (G : GridDiagram n) :
+    R.AvoidsMarkings G := by
+  rw [AvoidsMarkings, R.interior_eq_empty_of_le_two hn]
+  simp
 
 /-- Marking avoidance is unchanged by swapping the `O` and `X` markings, since it only refers to
 the union of the two marking sets. -/
@@ -565,12 +582,22 @@ theorem isEmpty_of_mem_emptyRectangles {R : GridRectangleBetween x y}
     (hR : R ∈ emptyRectangles x y) : R.IsEmpty :=
   (mem_emptyRectangles R).mp hR
 
+/-- In grid size at most two, every oriented rectangle between grid states is empty. -/
+theorem isEmpty_of_le_two (hn : n ≤ 2) (R : GridRectangleBetween x y) : R.IsEmpty :=
+  R.toGridRectangle.isEmptyFor_of_le_two hn x
+
 /-- Empty rectangles are a subset of all rectangles between the same two states. -/
 theorem emptyRectangles_subset_all (x y : GridState n) :
     emptyRectangles x y ⊆ all x y := by
   classical
   intro R hR
   simp [emptyRectangles] at hR ⊢
+
+/-- In grid size at most two, the empty rectangles are all oriented rectangles. -/
+theorem emptyRectangles_eq_all_of_le_two (hn : n ≤ 2) (x y : GridState n) :
+    emptyRectangles x y = all x y := by
+  ext R
+  simp [isEmpty_of_le_two hn R]
 
 /-- There are no empty rectangles from a grid state to itself. -/
 @[simp]

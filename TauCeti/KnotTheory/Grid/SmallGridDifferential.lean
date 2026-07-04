@@ -4,8 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.DifferentialSupportCardinality
-import Mathlib.Tactic
+public import TauCeti.KnotTheory.Grid.Complex
 import TauCeti.KnotTheory.Grid.RectangleCount
 
 /-!
@@ -45,61 +44,6 @@ public section
 
 namespace TauCeti
 
-namespace Grid
-
-variable {n : ℕ}
-
-/-- In a grid of size at most two, every open cyclic interval is empty. There are no grid points
-strictly between two endpoints on either of the two complementary arcs. -/
-theorem cIoo_eq_empty_of_le_two (hn : n ≤ 2) (a b : Fin n) : cIoo a b = ∅ := by
-  by_cases hab : a = b
-  · simp [hab]
-  · apply Finset.card_eq_zero.mp
-    have hsum := card_cIoo_add_card_cIoo_swap hab
-    have hcard : (cIoo a b).card = 0 := by omega
-    exact hcard
-
-end Grid
-
-namespace GridRectangle
-
-variable {n : ℕ}
-
-/-- In a grid of size at most two, every toroidal rectangle has empty interior. -/
-theorem interior_eq_empty_of_le_two (hn : n ≤ 2) (R : GridRectangle n) : R.interior = ∅ := by
-  ext p
-  simp [interior, columnInterior, Grid.cIoo_eq_empty_of_le_two hn R.left R.right]
-
-/-- In a grid of size at most two, every toroidal rectangle is empty for every grid state. -/
-theorem isEmptyFor_of_le_two (hn : n ≤ 2) (R : GridRectangle n) (x : GridState n) :
-    R.IsEmptyFor x := by
-  rw [IsEmptyFor, R.interior_eq_empty_of_le_two hn]
-  simp
-
-/-- In a grid of size at most two, every toroidal rectangle avoids every diagram's markings. -/
-theorem avoidsMarkings_of_le_two (hn : n ≤ 2) (R : GridRectangle n) (G : GridDiagram n) :
-    R.AvoidsMarkings G := by
-  rw [AvoidsMarkings, R.interior_eq_empty_of_le_two hn]
-  simp
-
-end GridRectangle
-
-namespace GridRectangleBetween
-
-variable {n : ℕ} {x y : GridState n}
-
-/-- In grid size at most two, every oriented rectangle between grid states is empty. -/
-theorem isEmpty_of_le_two (hn : n ≤ 2) (R : GridRectangleBetween x y) : R.IsEmpty :=
-  R.toGridRectangle.isEmptyFor_of_le_two hn x
-
-/-- In grid size at most two, the empty rectangles are all oriented rectangles. -/
-theorem emptyRectangles_eq_all_of_le_two (hn : n ≤ 2) (x y : GridState n) :
-    emptyRectangles x y = all x y := by
-  ext R
-  simp [isEmpty_of_le_two hn R]
-
-end GridRectangleBetween
-
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
@@ -128,12 +72,26 @@ theorem fullyBlockedRectangleCount_eq_zero_of_le_two (hn : n ≤ 2) (x y : GridS
   · rw [GridRectangleBetween.card_all_eq_two_of_nonempty h]
     exact ZMod.natCast_self 2
 
+/-- Every fully blocked rectangle coefficient vanishes on every `2 × 2` grid. -/
+@[simp]
+theorem fullyBlockedRectangleCount_eq_zero_of_two
+    (G : GridDiagram 2) (x y : GridState 2) :
+    G.fullyBlockedRectangleCount x y = 0 :=
+  G.fullyBlockedRectangleCount_eq_zero_of_le_two le_rfl x y
+
 /-- The fully blocked differential of one generator vanishes in grid size at most two. -/
 theorem fullyBlockedDifferentialOnGenerator_eq_zero_of_le_two
     (hn : n ≤ 2) (x : GridState n) :
     G.fullyBlockedDifferentialOnGenerator x = 0 := by
   ext y
   simp [fullyBlockedRectangleCount_eq_zero_of_le_two G hn x y]
+
+/-- The fully blocked differential of one generator vanishes on every `2 × 2` grid. -/
+@[simp]
+theorem fullyBlockedDifferentialOnGenerator_eq_zero_of_two
+    (G : GridDiagram 2) (x : GridState 2) :
+    G.fullyBlockedDifferentialOnGenerator x = 0 :=
+  G.fullyBlockedDifferentialOnGenerator_eq_zero_of_le_two le_rfl x
 
 /-- The fully blocked differential is zero on every chain in grid size at most two. -/
 theorem fullyBlockedDifferential_eq_zero_of_le_two (hn : n ≤ 2) :
@@ -143,6 +101,7 @@ theorem fullyBlockedDifferential_eq_zero_of_le_two (hn : n ≤ 2) :
 
 /-- The fully blocked differential is zero on every `2 × 2` grid. This is the first
 nontrivial cancellation sanity check for the rectangle-count definition. -/
+@[simp]
 theorem fullyBlockedDifferential_eq_zero_of_two (G : GridDiagram 2) :
     G.fullyBlockedDifferential =
       (0 : GridChain (ZMod 2) 2 →ₗ[ZMod 2] GridChain (ZMod 2) 2) :=
