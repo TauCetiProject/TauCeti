@@ -26,6 +26,8 @@ topology"), where relative groups such as `Diff(M, ∂M)` are pointwise fixing s
 
 ## Main results
 
+* `TauCeti.Diffeomorph.map_fixingSubgroup_diffCongr`: conjugation maps the pointwise fixer of
+  `s` onto the pointwise fixer of `e '' s`.
 * `TauCeti.Diffeomorph.diffCongr_mem_fixingSubgroup_image`: conjugating a diffeomorphism fixing
   `s` gives one fixing `e '' s`.
 * `TauCeti.Diffeomorph.relativeDiffCongr_apply`: the underlying diffeomorphism is
@@ -51,47 +53,59 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 namespace Diffeomorph
 
+/-- Conjugation by `e` maps the subgroup fixing `s` pointwise onto the subgroup fixing `e '' s`
+pointwise. -/
+theorem map_fixingSubgroup_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M) :
+    (fixingSubgroup (I := I) (n := n) s).map (diffCongr e).toMonoidHom =
+      fixingSubgroup (I := J) (n := n) (e '' s) := by
+  ext ψ
+  constructor
+  · rintro ⟨φ, hφ, rfl⟩
+    rw [mem_fixingSubgroup_iff]
+    rintro y ⟨x, hx, rfl⟩
+    simp [diffCongr_apply_apply, apply_eq_of_mem_fixingSubgroup hφ hx]
+  · intro hψ
+    refine ⟨diffCongr e.symm ψ, ?_, ?_⟩
+    · change diffCongr e.symm ψ ∈ fixingSubgroup (I := I) (n := n) s
+      rw [mem_fixingSubgroup_iff]
+      intro x hx
+      have hfix : ψ (e x) = e x :=
+        apply_eq_of_mem_fixingSubgroup hψ (Set.mem_image_of_mem e hx)
+      calc
+        diffCongr e.symm ψ x = e.symm (ψ (e.symm.symm x)) := by
+          rw [diffCongr_apply_apply]
+        _ = e.symm (ψ (e x)) :=
+          congrArg (fun y => e.symm (ψ y)) (e.toEquiv.symm_symm_apply x)
+        _ = x := by simpa using congrArg e.symm hfix
+    · ext y
+      simp [diffCongr_apply_apply]
+
 /-- Conjugating by `e` sends diffeomorphisms fixing `s` pointwise to diffeomorphisms fixing
 `e '' s` pointwise. -/
 theorem diffCongr_mem_fixingSubgroup_image (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M}
     {φ : M ≃ₘ^n⟮I, I⟯ M} (hφ : φ ∈ fixingSubgroup (I := I) (n := n) s) :
     diffCongr e φ ∈ fixingSubgroup (I := J) (n := n) (e '' s) := by
-  rw [mem_fixingSubgroup_iff]
-  rintro y ⟨x, hx, rfl⟩
-  simp [diffCongr_apply_apply, apply_eq_of_mem_fixingSubgroup hφ hx]
+  rw [← map_fixingSubgroup_diffCongr e s]
+  exact ⟨φ, hφ, rfl⟩
 
 /-- Conjugating by `e.symm` sends diffeomorphisms fixing `e '' s` pointwise back to
 diffeomorphisms fixing `s` pointwise. -/
 theorem diffCongr_symm_mem_fixingSubgroup (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M}
     {ψ : N ≃ₘ^n⟮J, J⟯ N} (hψ : ψ ∈ fixingSubgroup (I := J) (n := n) (e '' s)) :
     diffCongr e.symm ψ ∈ fixingSubgroup (I := I) (n := n) s := by
-  rw [mem_fixingSubgroup_iff]
-  intro x hx
-  have hfix : ψ (e x) = e x :=
-    apply_eq_of_mem_fixingSubgroup hψ (Set.mem_image_of_mem e hx)
-  calc
-    diffCongr e.symm ψ x = e.symm (ψ (e.symm.symm x)) := by
-      rw [diffCongr_apply_apply]
-    _ = e.symm (ψ (e x)) :=
-      congrArg (fun y => e.symm (ψ y)) (e.toEquiv.symm_symm_apply x)
-    _ = x := by simpa using congrArg e.symm hfix
+  have hmap : ψ ∈ (fixingSubgroup (I := I) (n := n) s).map (diffCongr e).toMonoidHom := by
+    rw [map_fixingSubgroup_diffCongr e s]
+    exact hψ
+  rcases hmap with ⟨φ, hφ, rfl⟩
+  simpa [diffCongr_symm] using hφ
 
 /-- Conjugation by a diffeomorphism identifies the relative diffeomorphism group fixing `s`
 pointwise with the relative diffeomorphism group fixing the image subset `e '' s` pointwise. -/
 def relativeDiffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M) :
     fixingSubgroup (I := I) (n := n) s ≃*
-      fixingSubgroup (I := J) (n := n) (e '' s) where
-  toFun φ := ⟨diffCongr e φ, diffCongr_mem_fixingSubgroup_image e φ.property⟩
-  invFun ψ := ⟨diffCongr e.symm ψ, diffCongr_symm_mem_fixingSubgroup e ψ.property⟩
-  left_inv φ := by
-    ext x
-    simp [diffCongr_apply_apply]
-  right_inv ψ := by
-    ext y
-    simp [diffCongr_apply_apply]
-  map_mul' φ ψ := by
-    ext y
-    simp [diffCongr_apply_apply]
+      fixingSubgroup (I := J) (n := n) (e '' s) :=
+  ((diffCongr e).subgroupMap (fixingSubgroup (I := I) (n := n) s)).trans
+    (MulEquiv.subgroupCongr (map_fixingSubgroup_diffCongr e s))
 
 /-- Applying `relativeDiffCongr` and then forgetting the subgroup is `Diffeomorph.diffCongr`. -/
 @[simp]
@@ -102,6 +116,7 @@ theorem relativeDiffCongr_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
   rfl
 
 /-- Pointwise formula for the relative conjugation equivalence. -/
+@[simp, grind =]
 theorem relativeDiffCongr_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
     (φ : fixingSubgroup (I := I) (n := n) s) (y : N) :
     ((relativeDiffCongr e s φ : N ≃ₘ^n⟮J, J⟯ N) y) =
@@ -117,6 +132,15 @@ theorem relativeDiffCongr_symm_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
     ((relativeDiffCongr e s).symm ψ : M ≃ₘ^n⟮I, I⟯ M) = diffCongr e.symm ψ := by
   ext x
   rfl
+
+/-- Pointwise formula for the inverse relative conjugation equivalence. -/
+@[simp, grind =]
+theorem relativeDiffCongr_symm_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
+    (ψ : fixingSubgroup (I := J) (n := n) (e '' s)) (x : M) :
+    (((relativeDiffCongr e s).symm ψ : M ≃ₘ^n⟮I, I⟯ M) x) =
+      e.symm ((ψ : N ≃ₘ^n⟮J, J⟯ N) (e x)) := by
+  rw [relativeDiffCongr_symm_apply]
+  exact diffCongr_apply_apply e.symm ψ x
 
 end Diffeomorph
 
