@@ -424,8 +424,14 @@ theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt
   · exact S.strongContWithinAt_left x t₀ ht₀
   · exact S.strongContWithinAt_right x t₀ ht₀
 
+omit [CompleteSpace X] in
+private theorem StronglyContinuousSemigroup.realOperator_apply_eq_toNNReal
+    (S : StronglyContinuousSemigroup X) (x : X) (t : ℝ) :
+    S.realOperator t x = S t.toNNReal x :=
+  rfl
+
 /-- The real-time orbit of a strongly continuous semigroup is continuous on all real times. -/
-theorem StronglyContinuousSemigroup.continuous_realOperator_orbit
+theorem StronglyContinuousSemigroup.realOperator_continuous
     (S : StronglyContinuousSemigroup X) (x : X) :
     Continuous (fun t : ℝ => S.realOperator t x) := by
   rw [continuous_iff_continuousAt]
@@ -439,28 +445,15 @@ theorem StronglyContinuousSemigroup.continuous_realOperator_orbit
         (continuous_real_toNNReal.continuousAt (x := (0 : ℝ))).tendsto
     have h_orbit : Filter.Tendsto (fun t : ℝ≥0 => S t x) (nhds 0) (nhds x) :=
       S.continuousAt_zero_tendsto x
-    simpa [ContinuousAt, realOperator, Function.comp_def] using h_orbit.comp h_toNNReal
+    have h_comp : Filter.Tendsto (fun u : ℝ => S u.toNNReal x) (nhds 0) (nhds x) :=
+      h_orbit.comp h_toNNReal
+    rw [ContinuousAt]
+    rw [show S.realOperator (0 : ℝ) x = x by
+      rw [S.realOperator_apply_eq_toNNReal]
+      simp]
+    exact h_comp.congr' (Filter.Eventually.of_forall fun u =>
+      (S.realOperator_apply_eq_toNNReal x u).symm)
   · exact (S.realOperator_continuousWithinAt x t ht.le).continuousAt (Ici_mem_nhds ht)
-
-/-- The real-time orbit of a strongly continuous semigroup is continuous on the nonnegative
-half-line. -/
-theorem StronglyContinuousSemigroup.continuousOn_realOperator_orbit
-    (S : StronglyContinuousSemigroup X) (x : X) :
-    ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.Ici 0) :=
-  (S.continuous_realOperator_orbit x).continuousOn
-
-/-- At any real time, the real-time orbit of a strongly continuous semigroup is ordinarily
-continuous. -/
-theorem StronglyContinuousSemigroup.continuousAt_realOperator_orbit
-    (S : StronglyContinuousSemigroup X) (x : X) (t : ℝ) :
-    ContinuousAt (fun u : ℝ => S.realOperator u x) t :=
-  (S.continuous_realOperator_orbit x).continuousAt
-
-/-- The real-time orbit is continuous on compact intervals. -/
-theorem StronglyContinuousSemigroup.continuousOn_realOperator_orbit_uIcc
-    (S : StronglyContinuousSemigroup X) (x : X) (a b : ℝ) :
-    ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.uIcc a b) :=
-  (S.continuous_realOperator_orbit x).continuousOn
 
 end TauCeti.Semigroups
 
