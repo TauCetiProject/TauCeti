@@ -25,6 +25,19 @@ public section
 
 namespace TauCeti
 
+namespace Sym
+
+variable {X Y : Type*} {d e : ℕ}
+
+/-- Mapping a function over an appended symmetric-power point is the append of the mapped
+symmetric-power points. -/
+@[simp]
+theorem map_append (f : X → Y) (s : Sym X d) (t : Sym X e) :
+    Sym.map f (s.append t) = (Sym.map f s).append (Sym.map f t) :=
+  Subtype.ext <| by simp [Sym.map, Sym.append]
+
+end Sym
+
 namespace AlgebraicGeometry
 
 namespace WeilDivisor
@@ -39,6 +52,7 @@ noncomputable section
 abbrev zero (X : Type*) : EffectiveDivisorOfDegree X 0 :=
   ⟨0, isEffective_zero, degree_zero⟩
 
+/-- The underlying Weil divisor of the degree-zero effective divisor is zero. -/
 @[simp]
 lemma coe_zero : (zero X : WeilDivisor X) = 0 :=
   rfl
@@ -49,11 +63,13 @@ abbrev add (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e)
   ⟨(D : WeilDivisor X) + E, D.isEffective.add E.isEffective, by
     simp [degree_add, D.degree_eq, E.degree_eq]⟩
 
+/-- The underlying Weil divisor of a fixed-degree sum is the sum of the underlying divisors. -/
 @[simp]
 lemma coe_add (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
     (add D E : WeilDivisor X) = (D : WeilDivisor X) + E :=
   rfl
 
+/-- The coefficient of a fixed-degree sum is the sum of the coefficients. -/
 @[simp]
 lemma coeff_add (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) (x : X) :
     coeff (add D E : WeilDivisor X) x = coeff (D : WeilDivisor X) x + coeff E x := by
@@ -84,27 +100,6 @@ lemma multiplicityFinsupp_add (D : EffectiveDivisorOfDegree X d)
     D.sum_multiplicityFinsupp E.sum_multiplicityFinsupp
   rw [ofFinsupp_multiplicityFinsupp_eq D, ofFinsupp_multiplicityFinsupp_eq E] at h
   rw [h, multiplicityFinsupp_ofFinsupp]
-
-/-- Addition of fixed-degree effective divisors is commutative on underlying Weil divisors. -/
-lemma coe_add_comm (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
-    (add D E : WeilDivisor X) = (add E D : WeilDivisor X) := by
-  simp [add_comm]
-
-/-- Addition of fixed-degree effective divisors is associative on underlying Weil divisors. -/
-lemma coe_add_assoc {f : ℕ} (D : EffectiveDivisorOfDegree X d)
-    (E : EffectiveDivisorOfDegree X e) (F : EffectiveDivisorOfDegree X f) :
-    (add (add D E) F : WeilDivisor X) = (add D (add E F) : WeilDivisor X) := by
-  simp [add_assoc]
-
-/-- Adding the degree-zero effective divisor on the right preserves the underlying divisor. -/
-lemma coe_add_zero (D : EffectiveDivisorOfDegree X d) :
-    (add D (zero X) : WeilDivisor X) = D := by
-  simp
-
-/-- Adding the degree-zero effective divisor on the left preserves the underlying divisor. -/
-lemma coe_zero_add (D : EffectiveDivisorOfDegree X d) :
-    (add (zero X) D : WeilDivisor X) = D := by
-  simp
 
 /-- The symmetric-power equivalence sends fixed-degree divisor addition to `Sym.append`. -/
 @[simp]
@@ -144,7 +139,7 @@ lemma equivSym_pushforward_add (f : X → Y) (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     equivSym ((add D E).pushforward f) =
       (Sym.map f (equivSym D)).append (Sym.map f (equivSym E)) := by
-  rw [pushforward_add, equivSym_add, equivSym_pushforward, equivSym_pushforward]
+  rw [equivSym_pushforward, equivSym_add, Sym.map_append]
 
 end
 
