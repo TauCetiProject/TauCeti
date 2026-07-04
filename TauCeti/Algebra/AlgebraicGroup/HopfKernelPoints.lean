@@ -93,16 +93,24 @@ theorem quotientPointsHom_kerQuotientPointsMulEquiv_symm (f : H →ₐc[R] K)
           (HopfAlgebra.points (R := R) (H := K) A) _ _
           (kerQuotientPointsMulEquiv f hf A)) g) =
       AlgHom.mapDomain f g := by
-  apply WithConv.ofConv_injective
-  apply AlgHom.ext
-  intro h
-  change ((CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H) (ker f hf) A
-        ((kerQuotientPointsMulEquiv f hf A).symm g)).ofConv) h =
-    ((AlgHom.mapDomain f) g).ofConv h
-  rw [CommHopfAlgCat.quotientPointsHom_apply_apply]
-  rw [kerQuotientPointsMulEquiv, MulEquiv.symm_symm, AlgHom.mapDomainMulEquiv_apply,
-    AlgHom.mapDomain_apply_apply, BialgEquiv.coe_toBialgHom,
-    kerLiftBialgEquiv_apply, kerLiftBialgHom_mk, AlgHom.mapDomain_apply_apply]
+  have hquot_apply (q : HopfAlgebra.points (R := R) (H := H ⧸ (ker f hf).toIdeal) A) :
+      CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H) (ker f hf) A q =
+        AlgHom.mapDomain (A := A)
+          ((CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of R H) (ker f hf)).hom) q := by
+    ext h
+    rw [CommHopfAlgCat.quotientPointsHom_apply_apply, AlgHom.mapDomain_apply_apply,
+      CommHopfAlgCat.mkQuotient_apply]
+  calc
+    CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H) (ker f hf) A
+        ((kerQuotientPointsMulEquiv f hf A).symm g) =
+        AlgHom.mapDomain (A := A)
+          ((CommHopfAlgCat.mkQuotient (_root_.CommHopfAlgCat.of R H) (ker f hf)).hom)
+          ((kerQuotientPointsMulEquiv f hf A).symm g) :=
+      hquot_apply ((kerQuotientPointsMulEquiv f hf A).symm g)
+    _ = AlgHom.mapDomain f g := by
+      rw [kerQuotientPointsMulEquiv, MulEquiv.symm_symm, AlgHom.mapDomainMulEquiv_apply,
+        ← MonoidHom.comp_apply, ← AlgHom.mapDomain_comp, CommHopfAlgCat.hom_mkQuotient,
+        kerLiftBialgEquiv_toBialgHom, kerLiftBialgHom_comp_mkBialgHom]
 
 /-- For an arbitrary point of `H ⧸ ker f`, the quotient-points inclusion agrees with first
 identifying it as a `K`-point and then pre-composing along `f`. -/
@@ -121,18 +129,6 @@ theorem quotientPointsHom_ker_eq_mapDomain (f : H →ₐc[R] K)
   convert quotientPointsHom_kerQuotientPointsMulEquiv_symm f hf A
     (kerQuotientPointsMulEquiv f hf A g)
   exact (MulEquiv.symm_apply_apply (kerQuotientPointsMulEquiv f hf A) g).symm
-
-/-- The image of a codomain point under the kernel-quotient inclusion belongs to the
-subgroup of ambient points cut out by the kernel Hopf ideal. -/
-theorem mapDomain_mem_quotientPointsSubgroup_ker (f : H →ₐc[R] K)
-    (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
-    (g : HopfAlgebra.points (R := R) (H := K) A) :
-    AlgHom.mapDomain f g ∈
-      CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) (ker f hf) A := by
-  rw [← quotientPointsHom_kerQuotientPointsMulEquiv_symm f hf A g]
-  exact CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup
-    (_root_.CommHopfAlgCat.of R H) (ker f hf) A
-    ((kerQuotientPointsMulEquiv f hf A).symm g)
 
 end CommSource
 
