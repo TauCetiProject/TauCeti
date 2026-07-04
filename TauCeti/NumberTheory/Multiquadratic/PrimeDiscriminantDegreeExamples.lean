@@ -6,7 +6,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.LegendrePrimeDiscriminantExamples
 public import TauCeti.NumberTheory.Multiquadratic.CMField
-public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOneGalois
+public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantIndependence
 
 /-!
 # Degrees of the first prime-discriminant generator fields
@@ -51,59 +51,6 @@ theorem finrank_adjoin_I_sqrt_five :
   rw [hset] at h
   rw [h, Nat.card_fin]
   norm_num
-
-private theorem root_neg_four_neg_three_neg_seven_sq (i : Fin 3) :
-    (fun i : Fin 3 => ![Complex.I, sqrtNegThree, sqrtNegSeven] i) i ^ 2 =
-      algebraMap ℚ ℂ
-        (((primeDiscriminantRadicand (negFourNegThreeNegSevenPrimeDiscriminants i) : ℤ) : ℚ)) := by
-  fin_cases i
-  · simp [negFourNegThreeNegSevenPrimeDiscriminants, Complex.I_sq]
-  · have hrad : primeDiscriminantRadicand (-3) = -3 := by
-      have h := primeDiscriminantRadicand_oddPrimeDiscriminant (p := 3) (by decide)
-      simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)] using h
-    simp [negFourNegThreeNegSevenPrimeDiscriminants, hrad]
-  · have hrad : primeDiscriminantRadicand (-7) = -7 := by
-      have h := primeDiscriminantRadicand_oddPrimeDiscriminant (p := 7) (by decide)
-      simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)] using h
-    simp [negFourNegThreeNegSevenPrimeDiscriminants, hrad]
-
-private theorem isPrimeDiscriminant_negFourNegThreeNegSevenPrimeDiscriminants :
-    ∀ i : Fin 3, IsPrimeDiscriminant (negFourNegThreeNegSevenPrimeDiscriminants i) := by
-  intro i
-  fin_cases i
-  · simp [negFourNegThreeNegSevenPrimeDiscriminants]
-  · have h3 : IsPrimeDiscriminant (oddPrimeDiscriminant 3) :=
-      isPrimeDiscriminant_oddPrimeDiscriminant (p := 3) (by decide) (by decide)
-    simpa [negFourNegThreeNegSevenPrimeDiscriminants,
-      oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)] using h3
-  · have h7 : IsPrimeDiscriminant (oddPrimeDiscriminant 7) :=
-      isPrimeDiscriminant_oddPrimeDiscriminant (p := 7) (by decide) (by decide)
-    simpa [negFourNegThreeNegSevenPrimeDiscriminants,
-      oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)] using h7
-
-private theorem injective_negFourNegThreeNegSevenPrimeDiscriminants :
-    Function.Injective negFourNegThreeNegSevenPrimeDiscriminants := by
-  decide
-
-private theorem not_all_even_negFourNegThreeNegSevenPrimeDiscriminants :
-    ¬ ((∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -4) ∧
-      (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = 8) ∧
-        (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -8)) := by
-  decide
-
-private theorem range_roots_neg_four_neg_three_neg_seven :
-    (Set.range fun i : Fin 3 => ![Complex.I, sqrtNegThree, sqrtNegSeven] i)
-      = {Complex.I, sqrtNegThree, sqrtNegSeven} := by
-  ext x
-  simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨i, rfl⟩
-    fin_cases i <;> simp
-  · intro hx
-    rcases hx with hx | hx | hx
-    · exact ⟨0, by simp [hx]⟩
-    · exact ⟨1, by simp [hx]⟩
-    · exact ⟨2, by simp [hx]⟩
 
 /-- **Worked example: `[ℚ(i, √-3, √-7) : ℚ] = 8`.** This is the full-degree Layer-0 input for
 the prime-discriminant generator field attached to the `ℚ(√-21)` genus-field example. -/
