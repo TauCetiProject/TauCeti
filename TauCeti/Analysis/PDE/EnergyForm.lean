@@ -92,6 +92,7 @@ noncomputable def energyIntegrand (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n
         (ContinuousLinearMap.fst ℝ ℝ (EuclideanSpace ℝ n))
         (ContinuousLinearMap.fst ℝ ℝ (EuclideanSpace ℝ n))
 
+omit [DecidableEq n] in
 /-- The jet form evaluates to `⟨a ∇u, ∇v⟩ + ⟪b, ∇u⟫ v + c u v` on jets `U`, `V`. -/
 @[simp]
 lemma energyIntegrand_apply (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n) (c : ℝ)
@@ -158,6 +159,7 @@ private lemma abs_dotProduct_one_mulVec_le (η ξ : EuclideanSpace ℝ n) :
   simpa [EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm] using
     abs_real_inner_le_norm η ξ
 
+omit [DecidableEq n] in
 /-- Pointwise boundedness of the jet form with explicit constant `Λ + β + γ`: the principal,
 drift, and mass contributions are each controlled by the corresponding constant times the jet
 norms. -/
@@ -209,6 +211,7 @@ lemma norm_energyIntegrand_apply_le_of_bounds (hLam : 0 ≤ Lam)
         add_le_add (add_le_add hmat hdrift) hmass
     _ = (Lam + beta + gamma) * ‖U‖ * ‖V‖ := by ring
 
+omit [DecidableEq n] in
 /-- Pointwise boundedness on a domain, obtained by applying
 `norm_energyIntegrand_apply_le_of_bounds` at `x`. -/
 lemma norm_energyIntegrand_apply_le_of_bounds_on (hLam : 0 ≤ Lam)
@@ -220,6 +223,7 @@ lemma norm_energyIntegrand_apply_le_of_bounds_on (hLam : 0 ≤ Lam)
     ‖energyIntegrand (a x) (b x) (c x) U V‖ ≤ (Lam + beta + gamma) * ‖U‖ * ‖V‖ :=
   norm_energyIntegrand_apply_le_of_bounds hLam (ha hx) (hb hx) (hc hx) U V
 
+omit [DecidableEq n] in
 /-- The operator norm of the jet form is at most `Λ + β + γ`. This is the boundedness
 hypothesis of Lax--Milgram, with the constant explicit in the ellipticity, drift, and mass
 bounds. -/
@@ -253,6 +257,7 @@ lemma opNorm_energyIntegrand_one_zero_mass_le (c : ℝ) :
       (gamma := ‖c‖) zero_le_one
       (fun η ξ => abs_dotProduct_one_mulVec_le η ξ) (by simp) le_rfl
 
+omit [DecidableEq n] in
 /-- Operator-norm boundedness on a domain, obtained by applying
 `opNorm_energyIntegrand_le_of_bounds` at `x`. -/
 lemma opNorm_energyIntegrand_le_of_bounds_on (hLam : 0 ≤ Lam)
