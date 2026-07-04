@@ -23,8 +23,6 @@ mathematics is vendored.
 
 public section
 
-namespace TauCeti
-
 namespace Sym
 
 variable {X Y : Type*} {d e : ℕ}
@@ -34,9 +32,11 @@ symmetric-power points. -/
 @[simp]
 theorem map_append (f : X → Y) (s : Sym X d) (t : Sym X e) :
     Sym.map f (s.append t) = (Sym.map f s).append (Sym.map f t) :=
-  Subtype.ext <| by simp [Sym.map, Sym.append]
+  Subtype.ext <| by simp [Multiset.map_add]
 
 end Sym
+
+namespace TauCeti
 
 namespace AlgebraicGeometry
 
@@ -47,15 +47,6 @@ namespace EffectiveDivisorOfDegree
 variable {X Y : Type*} {d e : ℕ}
 
 noncomputable section
-
-/-- The zero effective divisor, regarded as the unique effective divisor of degree `0`. -/
-abbrev zero (X : Type*) : EffectiveDivisorOfDegree X 0 :=
-  ⟨0, isEffective_zero, degree_zero⟩
-
-/-- The underlying Weil divisor of the degree-zero effective divisor is zero. -/
-@[simp]
-lemma coe_zero : (zero X : WeilDivisor X) = 0 :=
-  rfl
 
 /-- Add fixed-degree effective divisors.  The degree index records additivity of degree. -/
 abbrev add (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
@@ -75,6 +66,34 @@ lemma coeff_add (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree
     coeff (add D E : WeilDivisor X) x = coeff (D : WeilDivisor X) x + coeff E x := by
   rw [coe_add, WeilDivisor.coeff_add]
 
+/-- Zero is a left identity for fixed-degree effective-divisor addition. -/
+@[simp]
+lemma zero_add (D : EffectiveDivisorOfDegree X d) :
+    add (zero X) D = EffectiveDivisorOfDegree.cast (Nat.zero_add d).symm D := by
+  ext
+  simp
+
+/-- Zero is a right identity for fixed-degree effective-divisor addition. -/
+@[simp]
+lemma add_zero (D : EffectiveDivisorOfDegree X d) :
+    add D (zero X) = EffectiveDivisorOfDegree.cast (Nat.add_zero d).symm D := by
+  ext
+  simp
+
+/-- Fixed-degree effective-divisor addition is commutative, up to the degree-index cast. -/
+lemma add_comm (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
+    add D E = EffectiveDivisorOfDegree.cast (Nat.add_comm e d) (add E D) := by
+  ext
+  simp [Int.add_comm]
+
+/-- Fixed-degree effective-divisor addition is associative, up to the degree-index cast. -/
+lemma add_assoc {n : ℕ} (D : EffectiveDivisorOfDegree X d)
+    (E : EffectiveDivisorOfDegree X e) (F : EffectiveDivisorOfDegree X n) :
+    add (add D E) F =
+      EffectiveDivisorOfDegree.cast (Nat.add_assoc d e n).symm (add D (add E F)) := by
+  ext
+  simp [Int.add_assoc]
+
 /-- Adding divisors built from finitely supported multiplicities corresponds to adding their
 multiplicity functions. -/
 @[simp]
@@ -88,7 +107,6 @@ lemma add_ofFinsupp (m n : X →₀ ℕ) (hm : m.sum (fun _ k => k) = d)
         · simp) := by
   apply Subtype.ext
   ext x
-  rw [coe_add, coe_ofFinsupp, coe_ofFinsupp, coe_ofFinsupp, WeilDivisor.coeff_add]
   simp
 
 /-- The multiplicity function of a sum is the sum of the multiplicity functions. -/
@@ -121,6 +139,7 @@ lemma add_ofSym (s : Sym X d) (t : Sym X e) :
 
 /-- The divisor associated to an appended symmetric-power point is the sum of the associated
 fixed-degree divisors. -/
+@[simp]
 lemma coe_ofSym_append (s : Sym X d) (t : Sym X e) :
     (ofSym (s.append t) : WeilDivisor X) = (ofSym s : WeilDivisor X) + ofSym t := by
   rw [← coe_add, add_ofSym]
@@ -131,7 +150,7 @@ lemma pushforward_add (f : X → Y) (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     (add D E).pushforward f = add (D.pushforward f) (E.pushforward f) := by
   ext
-  rw [coe_pushforward, coe_add, coe_add, coe_pushforward, coe_pushforward, map_add]
+  simp [WeilDivisor.pushforward_add]
 
 /-- On symmetric powers, pushforward compatibility for fixed-degree divisor addition is the
 usual compatibility of `Sym.map` with `Sym.append`. -/

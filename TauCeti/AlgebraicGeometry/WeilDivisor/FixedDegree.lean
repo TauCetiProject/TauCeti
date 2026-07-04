@@ -48,6 +48,34 @@ namespace EffectiveDivisorOfDegree
 lemma ext {D E : EffectiveDivisorOfDegree X d} (h : (D : WeilDivisor X) = E) : D = E :=
   Subtype.ext h
 
+/-- The zero effective divisor, regarded as the unique effective divisor of degree `0`. -/
+abbrev zero (X : Type*) : EffectiveDivisorOfDegree X 0 :=
+  ⟨0, isEffective_zero, degree_zero⟩
+
+/-- The underlying Weil divisor of the degree-zero effective divisor is zero. -/
+@[simp]
+lemma coe_zero : (zero X : WeilDivisor X) = 0 :=
+  rfl
+
+/-- Change the degree index of a fixed-degree effective divisor along an equality. -/
+@[expose]
+protected def cast {d e : ℕ} (h : d = e) :
+    EffectiveDivisorOfDegree X d ≃ EffectiveDivisorOfDegree X e where
+  toFun D := ⟨D, D.property.1, D.property.2.trans (by exact_mod_cast h)⟩
+  invFun D := ⟨D, D.property.1, D.property.2.trans (by exact_mod_cast h.symm)⟩
+
+/-- Changing the degree index along `rfl` leaves a fixed-degree divisor unchanged. -/
+@[simp]
+lemma cast_rfl (D : EffectiveDivisorOfDegree X d) :
+    EffectiveDivisorOfDegree.cast rfl D = D :=
+  rfl
+
+/-- Changing the degree index does not change the underlying Weil divisor. -/
+@[simp]
+lemma coe_cast {d e : ℕ} (h : d = e) (D : EffectiveDivisorOfDegree X d) :
+    (EffectiveDivisorOfDegree.cast h D : WeilDivisor X) = D :=
+  rfl
+
 @[simp]
 lemma isEffective (D : EffectiveDivisorOfDegree X d) : IsEffective (D : WeilDivisor X) :=
   D.property.1
