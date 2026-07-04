@@ -77,10 +77,7 @@ theorem kerQuotientPointsMulEquiv_mapValue_apply (f : H →ₐc[R] K)
     kerQuotientPointsMulEquiv f hf B
         (AlgHom.mapValue (H := H ⧸ (ker f hf).toIdeal) χ.hom g) =
       AlgHom.mapValue (H := K) χ.hom (kerQuotientPointsMulEquiv f hf A g) := by
-  rw [kerQuotientPointsMulEquiv, kerQuotientPointsMulEquiv,
-    AlgHom.mapDomainMulEquiv_symm_apply, AlgHom.mapDomainMulEquiv_symm_apply]
-  exact DFunLike.congr_fun (AlgHom.mapValue_mapDomain
-    ((kerLiftBialgEquiv f hf).symm : K →ₐc[R] H ⧸ (ker f hf).toIdeal) χ.hom) g
+  exact AlgHom.mapDomainMulEquiv_symm_mapValue_apply (kerLiftBialgEquiv f hf) χ.hom g
 
 /-- Pointwise naturality of the inverse kernel-quotient points equivalence in the value algebra. -/
 theorem kerQuotientPointsMulEquiv_symm_mapValue_apply (f : H →ₐc[R] K)
@@ -90,10 +87,7 @@ theorem kerQuotientPointsMulEquiv_symm_mapValue_apply (f : H →ₐc[R] K)
         (AlgHom.mapValue (H := K) χ.hom g) =
       AlgHom.mapValue (H := H ⧸ (ker f hf).toIdeal) χ.hom
         ((kerQuotientPointsMulEquiv f hf A).symm g) := by
-  rw [kerQuotientPointsMulEquiv, kerQuotientPointsMulEquiv, MulEquiv.symm_symm,
-    MulEquiv.symm_symm, AlgHom.mapDomainMulEquiv_apply, AlgHom.mapDomainMulEquiv_apply]
-  exact DFunLike.congr_fun (AlgHom.mapValue_mapDomain
-    (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal →ₐc[R] K) χ.hom) g
+  exact AlgHom.mapDomainMulEquiv_mapValue_apply (kerLiftBialgEquiv f hf) χ.hom g
 
 /-- The kernel-quotient points equivalence is natural in the value algebra. -/
 theorem kerQuotientPointsMulEquiv_mapValue (f : H →ₐc[R] K)
@@ -126,7 +120,7 @@ theorem quotientPointsHom_kerQuotientPointsMulEquiv_symm (f : H →ₐc[R] K)
   rw [CommHopfAlgCat.quotientPointsHom_apply_apply]
   rw [kerQuotientPointsMulEquiv, MulEquiv.symm_symm, AlgHom.mapDomainMulEquiv_apply,
     AlgHom.mapDomain_apply_apply, BialgEquiv.coe_toBialgHom,
-    kerLiftBialgEquiv_mk f hf h, AlgHom.mapDomain_apply_apply]
+    kerLiftBialgEquiv_apply, kerLiftBialgHom_mk, AlgHom.mapDomain_apply_apply]
 
 /-- For an arbitrary point of `H ⧸ ker f`, the quotient-points inclusion agrees with first
 identifying it as a `K`-point and then pre-composing along `f`. -/

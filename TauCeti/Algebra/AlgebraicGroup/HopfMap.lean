@@ -180,6 +180,22 @@ lemma mapValue_mapDomain (φ : H₁ →ₐc[R] H₂) (χ : A →ₐ[R] B) :
   rw [MonoidHom.comp_apply, MonoidHom.comp_apply, mapDomain_apply, mapValue_apply,
     mapDomain_apply, mapValue_apply, toConv_ofConv, toConv_ofConv, AlgHom.comp_assoc]
 
+/-- Pointwise naturality of `mapDomainMulEquiv` in the value algebra. -/
+lemma mapDomainMulEquiv_mapValue_apply (e : H₁ ≃ₐc[R] H₂) (χ : A →ₐ[R] B)
+    (f : WithConv (H₂ →ₐ[R] A)) :
+    mapDomainMulEquiv (A := B) e (mapValue (H := H₂) χ f) =
+      mapValue (H := H₁) χ (mapDomainMulEquiv (A := A) e f) := by
+  exact DFunLike.congr_fun (mapValue_mapDomain (H₁ := H₁) (H₂ := H₂)
+    (e : H₁ →ₐc[R] H₂) χ) f
+
+/-- Pointwise naturality of the inverse of `mapDomainMulEquiv` in the value algebra. -/
+lemma mapDomainMulEquiv_symm_mapValue_apply (e : H₁ ≃ₐc[R] H₂) (χ : A →ₐ[R] B)
+    (f : WithConv (H₁ →ₐ[R] A)) :
+    (mapDomainMulEquiv (A := B) e).symm (mapValue (H := H₁) χ f) =
+      mapValue (H := H₂) χ ((mapDomainMulEquiv (A := A) e).symm f) := by
+  exact DFunLike.congr_fun (mapValue_mapDomain (H₁ := H₂) (H₂ := H₁)
+    (e.symm : H₂ →ₐc[R] H₁) χ) f
+
 end BialgebraMapValue
 
 section Hopf
