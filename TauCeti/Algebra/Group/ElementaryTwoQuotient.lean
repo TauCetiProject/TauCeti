@@ -56,8 +56,7 @@ names around it. The cardinality identity is still expressed through the squarin
 * `TauCeti.twoRank` and `TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|G/G²| = 2 ^ twoRank`.
 * `TauCeti.card_elementaryTwoQuotient_dvd_card` and
-  `TauCeti.two_pow_twoRank_dvd_card`: for finite `G`, the quotient cardinality and its rank form
-  divide `|G|`.
+  `TauCeti.two_pow_twoRank_dvd_card`: the quotient cardinality and its rank form divide `|G|`.
 -/
 
 public section
@@ -316,6 +315,13 @@ theorem card_elementaryTwoQuotient_dvd_card :
   rw [card_elementaryTwoQuotient_eq_index_square]
   exact Subgroup.index_dvd_card (Subgroup.square G)
 
+/-- Rank form of `TauCeti.card_elementaryTwoQuotient_dvd_card`: when `G / G²` is a finite
+`ZMod 2`-vector space, `2 ^ TauCeti.twoRank G` divides `|G|`. -/
+theorem two_pow_twoRank_dvd_card [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] :
+    2 ^ twoRank G ∣ Nat.card G := by
+  rw [← card_elementaryTwoQuotient_eq_two_pow_twoRank]
+  exact card_elementaryTwoQuotient_dvd_card G
+
 section FiniteCardinality
 
 variable [Finite G]
@@ -325,13 +331,6 @@ group cardinality. -/
 theorem card_elementaryTwoQuotient_le_card :
     Nat.card (ElementaryTwoQuotient G) ≤ Nat.card G :=
   Nat.le_of_dvd Nat.card_pos (card_elementaryTwoQuotient_dvd_card G)
-
-/-- Rank form of `TauCeti.card_elementaryTwoQuotient_dvd_card`: for a finite commutative group
-`G`, `2 ^ TauCeti.twoRank G` divides `|G|`. -/
-theorem two_pow_twoRank_dvd_card :
-    2 ^ twoRank G ∣ Nat.card G := by
-  rw [← card_elementaryTwoQuotient_eq_two_pow_twoRank]
-  exact card_elementaryTwoQuotient_dvd_card G
 
 /-- Rank form of `TauCeti.card_elementaryTwoQuotient_le_card`: for a finite commutative group
 `G`, `2 ^ TauCeti.twoRank G` is at most `|G|`. -/

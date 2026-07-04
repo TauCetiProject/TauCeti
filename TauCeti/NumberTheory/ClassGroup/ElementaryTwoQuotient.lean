@@ -43,8 +43,8 @@ square-class group `Kˣ ⧸ (Kˣ)²` of `TauCeti.FieldTheory.SquareClassGroup` f
 * `TauCeti.ClassGroup.twoRank` and `card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|Cl(R)/Cl(R)²| = 2 ^ twoRank`.
 * `TauCeti.ClassGroup.card_elementaryTwoQuotient_dvd_card` and
-  `TauCeti.ClassGroup.two_pow_twoRank_dvd_card`: for a finite class group, the quotient
-  cardinality and its rank form divide the class number.
+  `TauCeti.ClassGroup.two_pow_twoRank_dvd_card`: the quotient cardinality and its rank form divide
+  the class-group cardinality.
 -/
 
 public section
@@ -196,6 +196,13 @@ theorem card_elementaryTwoQuotient_dvd_card :
     Nat.card (ElementaryTwoQuotient R) ∣ Nat.card (ClassGroup R) :=
   TauCeti.card_elementaryTwoQuotient_dvd_card (ClassGroup R)
 
+/-- Rank form of `TauCeti.ClassGroup.card_elementaryTwoQuotient_dvd_card`:
+`2 ^ TauCeti.ClassGroup.twoRank R` divides the cardinality of `Cl(R)` when `Cl(R)/Cl(R)²`
+is finite-dimensional. -/
+theorem two_pow_twoRank_dvd_card [Module.Finite (ZMod 2) (ElementaryTwoQuotient R)] :
+    2 ^ twoRank R ∣ Nat.card (ClassGroup R) :=
+  TauCeti.two_pow_twoRank_dvd_card (ClassGroup R)
+
 variable [Finite (ClassGroup R)]
 
 /-- A finite class group has finite-dimensional elementary-2 quotient. -/
@@ -207,12 +214,6 @@ cardinality. -/
 theorem card_elementaryTwoQuotient_le_card :
     Nat.card (ElementaryTwoQuotient R) ≤ Nat.card (ClassGroup R) :=
   TauCeti.card_elementaryTwoQuotient_le_card (ClassGroup R)
-
-/-- Rank form of `TauCeti.ClassGroup.card_elementaryTwoQuotient_dvd_card`:
-`2 ^ TauCeti.ClassGroup.twoRank R` divides the cardinality of `Cl(R)`. -/
-theorem two_pow_twoRank_dvd_card :
-    2 ^ twoRank R ∣ Nat.card (ClassGroup R) :=
-  TauCeti.two_pow_twoRank_dvd_card (ClassGroup R)
 
 /-- Rank form of `TauCeti.ClassGroup.card_elementaryTwoQuotient_le_card`:
 `2 ^ TauCeti.ClassGroup.twoRank R` is bounded by the cardinality of `Cl(R)`. -/
