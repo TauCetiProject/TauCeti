@@ -118,15 +118,13 @@ lemma image_conj_inter_im_pos_of_symmetric {Ω : Set ℂ}
   · rintro ⟨w, ⟨hwΩ, hwim⟩, rfl⟩
     constructor
     · exact hΩ hwΩ
-    · exact show ((starRingEnd ℂ) w).im < 0 from by
-        rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
-        exact neg_neg_of_pos hwim
+    · rw [Set.mem_setOf_eq, starRingEnd_apply, Complex.star_def, Complex.conj_im]
+      exact neg_neg_of_pos hwim
   · rintro ⟨hzΩ, hzim⟩
     refine ⟨(starRingEnd ℂ) z, ⟨?_, ?_⟩, ?_⟩
     · exact hΩ hzΩ
-    · exact show 0 < ((starRingEnd ℂ) z).im from by
-        rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
-        exact neg_pos.mpr hzim
+    · rw [Set.mem_setOf_eq, starRingEnd_apply, Complex.star_def, Complex.conj_im]
+      exact neg_pos.mpr hzim
     · rw [starRingEnd_self_apply]
 
 /--
@@ -141,15 +139,13 @@ lemma image_conj_inter_im_neg_of_symmetric {Ω : Set ℂ}
   · rintro ⟨w, ⟨hwΩ, hwim⟩, rfl⟩
     constructor
     · exact hΩ hwΩ
-    · exact show 0 < ((starRingEnd ℂ) w).im from by
-        rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
-        exact neg_pos.mpr hwim
+    · rw [Set.mem_setOf_eq, starRingEnd_apply, Complex.star_def, Complex.conj_im]
+      exact neg_pos.mpr hwim
   · rintro ⟨hzΩ, hzim⟩
     refine ⟨(starRingEnd ℂ) z, ⟨?_, ?_⟩, ?_⟩
     · exact hΩ hzΩ
-    · exact show ((starRingEnd ℂ) z).im < 0 from by
-        rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
-        exact neg_neg_of_pos hzim
+    · rw [Set.mem_setOf_eq, starRingEnd_apply, Complex.star_def, Complex.conj_im]
+      exact neg_neg_of_pos hzim
     · rw [starRingEnd_self_apply]
 
 private lemma starRingEnd_eq_starL (z : ℂ) :
