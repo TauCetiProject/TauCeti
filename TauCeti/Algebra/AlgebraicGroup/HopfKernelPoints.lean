@@ -127,12 +127,27 @@ pre-composition along the original surjective Hopf algebra morphism. -/
 theorem quotientPointsHom_kerQuotientPointsMulEquiv_symm (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : HopfAlgebra.points (R := R) (H := K) A) :
-    CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H) (ker f hf) A
-        ((kerQuotientPointsMulEquiv f hf A).symm g) =
+    (@ConcreteCategory.hom GrpCat GrpCat.instCategory (fun X Y => X →* Y) GrpCat.carrier
+        (fun _ _ => MonoidHom.instFunLike) GrpCat.instConcreteCategoryMonoidHomCarrier
+        (@HopfAlgebra.points R _ (H ⧸ RingHom.ker (f : H →ₐ[R] K))
+          (Ideal.Quotient.semiring (ker f hf).toIdeal)
+          (HopfAlgebra.Quotient.instQuotientIdeal (ker f hf).toIdeal) A)
+        (HopfAlgebra.points (R := R) (H := H) A)
+        (CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H) (ker f hf) A)
+      )
+        ((@MulEquiv.symm
+          (@HopfAlgebra.points R _ (H ⧸ RingHom.ker (f : H →ₐ[R] K))
+            (Ideal.Quotient.semiring (ker f hf).toIdeal)
+            (HopfAlgebra.Quotient.instQuotientIdeal (ker f hf).toIdeal) A)
+          (HopfAlgebra.points (R := R) (H := K) A) _ _
+          (kerQuotientPointsMulEquiv f hf A)) g) =
       AlgHom.mapDomain f g := by
   apply WithConv.ofConv_injective
   apply AlgHom.ext
   intro h
+  change ((CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H) (ker f hf) A
+        ((kerQuotientPointsMulEquiv f hf A).symm g)).ofConv) h =
+    ((AlgHom.mapDomain f) g).ofConv h
   rw [CommHopfAlgCat.quotientPointsHom_apply_apply]
   rw [kerQuotientPointsMulEquiv, MulEquiv.symm_symm, AlgHom.mapDomainMulEquiv_apply,
     AlgHom.mapDomain_apply_apply, BialgEquiv.coe_toBialgHom,
@@ -144,12 +159,17 @@ identifying it as a `K`-point and then pre-composing along `f`. -/
 theorem quotientPointsHom_ker_eq_mapDomain (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : HopfAlgebra.points (R := R) (H := H ⧸ (ker f hf).toIdeal) A) :
-    CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H) (ker f hf) A g =
+    (@ConcreteCategory.hom GrpCat GrpCat.instCategory (fun X Y => X →* Y) GrpCat.carrier
+        (fun _ _ => MonoidHom.instFunLike) GrpCat.instConcreteCategoryMonoidHomCarrier
+        (@HopfAlgebra.points R _ (H ⧸ RingHom.ker (f : H →ₐ[R] K))
+          (Ideal.Quotient.semiring (ker f hf).toIdeal)
+          (HopfAlgebra.Quotient.instQuotientIdeal (ker f hf).toIdeal) A)
+        (HopfAlgebra.points (R := R) (H := H) A)
+        (CommHopfAlgCat.quotientPointsHom (_root_.CommHopfAlgCat.of R H) (ker f hf) A)) g =
       AlgHom.mapDomain f (kerQuotientPointsMulEquiv f hf A g) := by
-  have h :=
-    quotientPointsHom_kerQuotientPointsMulEquiv_symm f hf A
-      (kerQuotientPointsMulEquiv f hf A g)
-  rwa [MulEquiv.symm_apply_apply] at h
+  convert quotientPointsHom_kerQuotientPointsMulEquiv_symm f hf A
+    (kerQuotientPointsMulEquiv f hf A g)
+  exact (MulEquiv.symm_apply_apply (kerQuotientPointsMulEquiv f hf A) g).symm
 
 /-- The image of a codomain point under the kernel-quotient inclusion belongs to the
 subgroup of ambient points cut out by the kernel Hopf ideal. -/
