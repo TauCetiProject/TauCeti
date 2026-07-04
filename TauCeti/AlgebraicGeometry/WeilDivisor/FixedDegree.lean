@@ -58,7 +58,6 @@ lemma coe_zero : (zero X : WeilDivisor X) = 0 :=
   rfl
 
 /-- Change the degree index of a fixed-degree effective divisor along an equality. -/
-@[expose]
 protected def cast {d e : ℕ} (h : d = e) :
     EffectiveDivisorOfDegree X d ≃ EffectiveDivisorOfDegree X e where
   toFun D := ⟨D, D.property.1, D.property.2.trans (by exact_mod_cast h)⟩
@@ -68,13 +67,14 @@ protected def cast {d e : ℕ} (h : d = e) :
 @[simp]
 lemma cast_rfl (D : EffectiveDivisorOfDegree X d) :
     EffectiveDivisorOfDegree.cast rfl D = D :=
-  rfl
+  Subtype.ext rfl
 
 /-- Changing the degree index does not change the underlying Weil divisor. -/
 @[simp]
 lemma coe_cast {d e : ℕ} (h : d = e) (D : EffectiveDivisorOfDegree X d) :
-    (EffectiveDivisorOfDegree.cast h D : WeilDivisor X) = D :=
-  rfl
+    (EffectiveDivisorOfDegree.cast h D : WeilDivisor X) = D := by
+  subst e
+  simp
 
 @[simp]
 lemma isEffective (D : EffectiveDivisorOfDegree X d) : IsEffective (D : WeilDivisor X) :=
