@@ -35,17 +35,38 @@ namespace CommHopfAlgCat
 
 variable {R : Type u} [CommRing R]
 
+/-- The quotient-points inclusion is natural in the value algebra. -/
+@[simp]
+lemma mapPoints_quotientPointsHom (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
+    (χ : A ⟶ B) (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
+    HopfAlgebra.mapPoints (H := H) χ (quotientPointsHom H I A f) =
+      quotientPointsHom H I B (HopfAlgebra.mapPoints (H := quotient H I) χ f) :=
+  by
+    apply WithConv.ofConv_injective
+    apply AlgHom.ext
+    intro h
+    calc
+      ((HopfAlgebra.mapPoints (H := H) χ (quotientPointsHom H I A f)).ofConv) h
+          = χ.hom ((quotientPointsHom H I A f).ofConv h) := rfl
+      _ = χ.hom (f.ofConv (Ideal.Quotient.mkₐ R I.toIdeal h)) := by
+        rw [quotientPointsHom_apply_apply]
+      _ = ((HopfAlgebra.mapPoints (H := quotient H I) χ f).ofConv)
+          (Ideal.Quotient.mkₐ R I.toIdeal h) := rfl
+      _ = ((quotientPointsHom H I B (HopfAlgebra.mapPoints (H := quotient H I) χ f)).ofConv)
+          h := by
+        rw [quotientPointsHom_apply_apply]
+
 /-- Post-composition preserves the ambient-point subgroup cut out by a Hopf ideal. -/
 lemma mapPoints_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
     (χ : A ⟶ B) {g : HopfAlgebra.points (R := R) (H := H) A}
     (hg : g ∈ quotientPointsSubgroup H I A) :
     HopfAlgebra.mapPoints (H := H) χ g ∈ quotientPointsSubgroup H I B := by
-  rw [mem_quotientPointsSubgroup_iff] at hg ⊢
-  intro h hh
-  rw [show ((HopfAlgebra.mapPoints (H := H) χ g).ofConv) h = χ.hom (g.ofConv h) from
-    HopfAlgebra.pointsFunctor_map_apply_apply (H := H) χ g h]
-  rw [hg h hh, map_zero]
+  rw [mem_quotientPointsSubgroup_iff] at hg
+  rw [← quotientPointsHom_liftQuotientPoint H I A g hg]
+  rw [mapPoints_quotientPointsHom]
+  exact quotientPointsHom_mem_quotientPointsSubgroup H I B _
 
 /-- The functor-of-points map restricted to the subgroups cut out by a Hopf ideal. -/
 @[expose] noncomputable def mapQuotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
@@ -114,23 +135,12 @@ lemma mapPoints_liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
       liftQuotientPoint H I B (HopfAlgebra.mapPoints (H := H) χ g)
         (by
           intro h hh
-          rw [show ((HopfAlgebra.mapPoints (H := H) χ g).ofConv) h = χ.hom (g.ofConv h) from
-            HopfAlgebra.pointsFunctor_map_apply_apply (H := H) χ g h]
-          rw [hg h hh, map_zero]) := by
+          exact (mem_quotientPointsSubgroup_iff H I B _).mp
+            (mapPoints_mem_quotientPointsSubgroup H I χ
+              ((mem_quotientPointsSubgroup_iff H I A g).mpr hg)) h hh) := by
   apply quotientPointsHom_injective H I B
-  apply WithConv.ofConv_injective
-  apply AlgHom.ext
-  intro h
-  rw [quotientPointsHom_apply_apply, quotientPointsHom_liftQuotientPoint]
-  rw [show
-    ((HopfAlgebra.mapPoints (H := quotient H I) χ (liftQuotientPoint H I A g hg)).ofConv)
-        (Ideal.Quotient.mkₐ R I.toIdeal h) =
-      χ.hom ((liftQuotientPoint H I A g hg).ofConv (Ideal.Quotient.mkₐ R I.toIdeal h)) from
-    HopfAlgebra.pointsFunctor_map_apply_apply (H := quotient H I) χ
-      (liftQuotientPoint H I A g hg) (Ideal.Quotient.mkₐ R I.toIdeal h)]
-  rw [show ((HopfAlgebra.mapPoints (H := H) χ g).ofConv) h = χ.hom (g.ofConv h) from
-    HopfAlgebra.pointsFunctor_map_apply_apply (H := H) χ g h]
-  rw [liftQuotientPoint_mk]
+  rw [← mapPoints_quotientPointsHom, quotientPointsHom_liftQuotientPoint,
+    quotientPointsHom_liftQuotientPoint]
 
 end CommHopfAlgCat
 

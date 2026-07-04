@@ -80,6 +80,15 @@ lemma mapPointsFunctor_app_apply_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ 
     (((mapPointsFunctor φ).app A f).ofConv) h = f.ofConv (φ.hom h) := by
   exact AlgHom.mapDomain_apply_apply (A := A) φ.hom f h
 
+/-- The point map induced by a coordinate morphism is natural in the value algebra. -/
+@[simp]
+lemma mapPointsFunctor_naturality {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
+    {A B : CommAlgCat.{w} R} (χ : A ⟶ B)
+    (f : HopfAlgebra.points (R := R) (H := K) A) :
+    HopfAlgebra.mapPoints (H := H) χ ((mapPointsFunctor φ).app A f) =
+      (mapPointsFunctor φ).app B (HopfAlgebra.mapPoints (H := K) χ f) := by
+  rfl
+
 /-- Pre-composition with a surjective coordinate morphism is injective on points. -/
 lemma mapPointsFunctor_app_injective_of_surjective {H K : CommHopfAlgCat.{v} R}
     (φ : H ⟶ K) (hφ : Function.Surjective φ.hom) (A : CommAlgCat.{w} R) :
