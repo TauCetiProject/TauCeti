@@ -77,7 +77,14 @@ theorem kerQuotientPointsMulEquiv_mapValue_apply (f : H →ₐc[R] K)
     kerQuotientPointsMulEquiv f hf B
         (AlgHom.mapValue (H := H ⧸ (ker f hf).toIdeal) χ.hom g) =
       AlgHom.mapValue (H := K) χ.hom (kerQuotientPointsMulEquiv f hf A g) := by
-  exact AlgHom.mapDomainMulEquiv_symm_mapValue_apply (kerLiftBialgEquiv f hf) χ.hom g
+  unfold kerQuotientPointsMulEquiv
+  rw [AlgHom.mapDomainMulEquiv_symm_apply, AlgHom.mapDomainMulEquiv_symm_apply]
+  have h :=
+    DFunLike.congr_fun (AlgHom.mapValue_mapDomain (H₁ := K)
+    (H₂ := H ⧸ (ker f hf).toIdeal) ((kerLiftBialgEquiv f hf).symm : K →ₐc[R]
+      H ⧸ (ker f hf).toIdeal) χ.hom) g
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply] at h
+  exact h
 
 /-- Pointwise naturality of the inverse kernel-quotient points equivalence in the value algebra. -/
 theorem kerQuotientPointsMulEquiv_symm_mapValue_apply (f : H →ₐc[R] K)
@@ -87,7 +94,15 @@ theorem kerQuotientPointsMulEquiv_symm_mapValue_apply (f : H →ₐc[R] K)
         (AlgHom.mapValue (H := K) χ.hom g) =
       AlgHom.mapValue (H := H ⧸ (ker f hf).toIdeal) χ.hom
         ((kerQuotientPointsMulEquiv f hf A).symm g) := by
-  exact AlgHom.mapDomainMulEquiv_mapValue_apply (kerLiftBialgEquiv f hf) χ.hom g
+  unfold kerQuotientPointsMulEquiv
+  simp only [MulEquiv.symm_symm]
+  rw [AlgHom.mapDomainMulEquiv_apply, AlgHom.mapDomainMulEquiv_apply]
+  have h :=
+    DFunLike.congr_fun (AlgHom.mapValue_mapDomain (H₁ := H ⧸ (ker f hf).toIdeal)
+    (H₂ := K)
+    (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal →ₐc[R] K) χ.hom) g
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply] at h
+  exact h
 
 /-- The kernel-quotient points equivalence is natural in the value algebra. -/
 theorem kerQuotientPointsMulEquiv_mapValue (f : H →ₐc[R] K)
