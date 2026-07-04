@@ -69,9 +69,11 @@ private lemma logDeriv_eq_of_eventuallyEq {f g : ℂ → ℂ} {z : ℂ} (h : f =
     logDeriv f z = logDeriv g z := by
   rw [logDeriv_apply, logDeriv_apply, h.deriv_eq, h.eq_of_nhds]
 
-/-- **Core Cauchy–Goursat computation for the argument principle.** If `F` is meromorphic at the
-centre `c` with `meromorphicOrderAt F c = n`, and is analytic and non-vanishing everywhere else on
-the closed disc, then `∮_{C(c,R)} logDeriv F = 2πi · n`. -/
+/-- **Core computation for the argument principle.** If `F` is meromorphic at the centre `c` with
+`meromorphicOrderAt F c = n`, and is analytic and non-vanishing everywhere else on the closed disc,
+then `∮_{C(c,R)} logDeriv F = 2πi · n`. The local factorisation `F = (· - c) ^ n • g` makes
+`(· - c)·logDeriv F` extend continuously to `c` with value `n`, and Mathlib's removable-singularity
+Cauchy kernel formula evaluates the resulting integral. -/
 private lemma circleIntegral_logDeriv_of_order_of_analyticAt_off
     {F : ℂ → ℂ} {c : ℂ} {R : ℝ} {n : ℤ} (hR : 0 < R) (hmero : MeromorphicAt F c)
     (hord : meromorphicOrderAt F c = (n : WithTop ℤ))
@@ -80,10 +82,9 @@ private lemma circleIntegral_logDeriv_of_order_of_analyticAt_off
   -- Local factorisation at the centre: `F = (· - c) ^ n • g` on a punctured neighbourhood.
   obtain ⟨g, hg_an, hg_ne, hg_eq⟩ := (meromorphicOrderAt_eq_int_iff hmero).1 hord
   have hlg : AnalyticAt ℂ (logDeriv g) c := analyticAt_logDeriv_of_analyticAt hg_an hg_ne
-  set φ : ℂ → ℂ := fun z => logDeriv F z - (n : ℂ) * (z - c)⁻¹ with hφ_def
-  set ψ : ℂ → ℂ := Function.update φ c (logDeriv g c) with hψ_def
-  -- (A) The remainder agrees with `logDeriv g` near `c`.
-  have hAφ : φ =ᶠ[𝓝[≠] c] logDeriv g := by
+  -- Near the centre, `logDeriv F = n·(· - c)⁻¹ + logDeriv g`, hence `(· - c)·logDeriv F → n`.
+  have hEq : (fun z => (z - c) * logDeriv F z) =ᶠ[𝓝[≠] c]
+      fun z => (n : ℂ) + (z - c) * logDeriv g z := by
     -- Lift the punctured factorisation to germ-agreement at each nearby point.
     have hFH : ∀ᶠ z in 𝓝[≠] c, F =ᶠ[𝓝 z] fun w => (w - c) ^ n • g w := by
       obtain ⟨U, hU_open, hcU, hU_sub⟩ := mem_nhdsWithin.1 hg_eq
@@ -94,8 +95,7 @@ private lemma circleIntegral_logDeriv_of_order_of_analyticAt_off
     filter_upwards [hFH, hg_an.eventually_analyticAt.filter_mono nhdsWithin_le_nhds,
       (hg_an.continuousAt.eventually_ne hg_ne).filter_mono nhdsWithin_le_nhds,
       self_mem_nhdsWithin] with z hz_FH hz_gan hz_gne hz_ne
-    have hz_ne' : z ≠ c := hz_ne
-    have hz_sub : z - c ≠ 0 := sub_ne_zero.2 hz_ne'
+    have hz_sub : z - c ≠ 0 := sub_ne_zero.2 hz_ne
     have hzpow : (z - c) ^ n ≠ 0 := zpow_ne_zero n hz_sub
     have hdz : DifferentiableAt ℂ (fun w => (w - c) ^ n) z :=
       (differentiableAt_id.sub_const c).zpow (Or.inl hz_sub)
@@ -108,63 +108,37 @@ private lemma circleIntegral_logDeriv_of_order_of_analyticAt_off
       rw [logDeriv_eq_of_eventuallyEq hz_FH, hmul,
         logDeriv_mul z hzpow hz_gne hdz hz_gan.differentiableAt,
         logDeriv_fun_zpow (f := fun w => w - c) (differentiableAt_id.sub_const c) n, hld_sub]
-    simp only [hφ_def]; rw [hLF]; ring
-  -- (A') Hence `ψ` agrees with `logDeriv g` on a full neighbourhood of `c`.
-  have hAψ : ψ =ᶠ[𝓝 c] logDeriv g := by
-    refine eventuallyEq_nhds_of_eventuallyEq_nhdsNE ?_ ?_
-    · refine (?_ : ψ =ᶠ[𝓝[≠] c] φ).trans hAφ
-      rw [hψ_def]; exact Function.update_eventuallyEq_nhdsNE φ c c (logDeriv g c)
-    · rw [hψ_def, Function.update_self]
-  -- (B) `ψ` is differentiable throughout the closed disc.
-  have hψ_diff : ∀ z ∈ closedBall c R, DifferentiableAt ℂ ψ z := by
-    intro z hz
-    by_cases hzc : z = c
-    · subst hzc
-      exact hlg.differentiableAt.congr_of_eventuallyEq hAψ
-    · have hφz : DifferentiableAt ℂ φ z := by
-        have h1 : AnalyticAt ℂ (logDeriv F) z :=
-          analyticAt_logDeriv_of_analyticAt (hoff z hz hzc).1 (hoff z hz hzc).2
-        have h2 : DifferentiableAt ℂ (fun w => (n : ℂ) * (w - c)⁻¹) z :=
-          (differentiableAt_const _).mul ((differentiableAt_id.sub_const _).inv
-            (sub_ne_zero.2 hzc))
-        exact h1.differentiableAt.sub h2
-      have hne : ψ =ᶠ[𝓝 z] φ := by
-        filter_upwards [compl_singleton_mem_nhds hzc] with w hw
-        rw [hψ_def, Function.update_of_ne hw]
-      exact hφz.congr_of_eventuallyEq hne
-  -- On the circle every point is off the centre (`R > 0`), so `ψ` and `φ` agree there.
-  have hsphere_ne : ∀ z ∈ sphere c R, z ≠ c := by
-    intro z hz h
-    rw [mem_sphere_iff_norm, h, sub_self, norm_zero] at hz
-    exact hR.ne' hz.symm
-  have hφψ_sphere : Set.EqOn φ ψ (sphere c R) := fun z hz => by
-    rw [hψ_def, Function.update_of_ne (hsphere_ne z hz)]
-  have hsub : sphere c R ⊆ closedBall c R := sphere_subset_closedBall
-  have hψ_cont : ContinuousOn ψ (sphere c R) := fun z hz =>
-    (hψ_diff z (hsub hz)).continuousAt.continuousWithinAt
-  have hφ_cont : ContinuousOn φ (sphere c R) := hψ_cont.congr hφψ_sphere
-  -- `∮ φ = ∮ ψ = 0` by Cauchy–Goursat, since `ψ` is differentiable on the whole disc.
-  have hφ0 : circleIntegral φ c R = 0 := by
-    rw [circleIntegral.integral_congr hR.le hφψ_sphere]
-    exact circleIntegral_eq_zero_of_differentiable_on_off_countable hR.le Set.countable_empty
-      (fun z hz => (hψ_diff z hz).continuousAt.continuousWithinAt)
-      (fun z hz => hψ_diff z (ball_subset_closedBall hz.1))
-  -- Integrability of the two summands on the circle.
-  have hφ_int : CircleIntegrable φ c R := hφ_cont.circleIntegrable hR.le
-  have hinv_cont : ContinuousOn (fun z => (n : ℂ) * (z - c)⁻¹) (sphere c R) :=
-    continuousOn_const.mul <| (continuousOn_id.sub continuousOn_const).inv₀
-      fun z hz => sub_ne_zero.2 (hsphere_ne z hz)
-  have hinv_int : CircleIntegrable (fun z => (n : ℂ) * (z - c)⁻¹) c R :=
-    hinv_cont.circleIntegrable hR.le
-  -- Split `logDeriv F = φ + n·(· - c)⁻¹` and evaluate.
-  have hsplit : circleIntegral (logDeriv F) c R
-      = circleIntegral φ c R + circleIntegral (fun z => (n : ℂ) * (z - c)⁻¹) c R := by
-    rw [← circleIntegral.integral_add hφ_int hinv_int]
-    congr 1 with z
-    simp only [hφ_def]; ring
-  rw [hsplit, hφ0, circleIntegral.integral_const_mul,
-    circleIntegral.integral_sub_center_inv c hR.ne']
-  ring
+    rw [hLF]; linear_combination (n : ℂ) * mul_inv_cancel₀ hz_sub
+  -- The bracketed function extends continuously to the centre with value `n`.
+  have hlim : Tendsto (fun z => (z - c) * logDeriv F z) (𝓝[≠] c) (𝓝 (n : ℂ)) := by
+    refine Tendsto.congr' hEq.symm ?_
+    have hz_sub : Tendsto (fun z : ℂ => z - c) (𝓝[≠] c) (𝓝 0) := by
+      have h : Tendsto (fun z : ℂ => z - c) (𝓝 c) (𝓝 (c - c)) :=
+        (continuous_id.sub continuous_const).tendsto c
+      rw [sub_self] at h
+      exact h.mono_left nhdsWithin_le_nhds
+    have hprod := hz_sub.mul (hlg.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)
+    simpa using hprod.const_add (n : ℂ)
+  -- `(· - c)·logDeriv F` is analytic off the centre.
+  have hG_off : ∀ z ∈ closedBall c R, z ≠ c →
+      AnalyticAt ℂ (fun w => (w - c) * logDeriv F w) z := fun z hz hzc =>
+    (analyticAt_id.sub analyticAt_const).mul
+      (analyticAt_logDeriv_of_analyticAt (hoff z hz hzc).1 (hoff z hz hzc).2)
+  -- Mathlib's packaged removable-singularity Cauchy kernel formula evaluates the integral.
+  have key := circleIntegral_sub_center_inv_smul_of_differentiable_on_off_countable_of_tendsto
+    (f := fun z => (z - c) * logDeriv F z) hR Set.countable_empty
+    (fun z hz => (hG_off z hz.1 hz.2).continuousAt.continuousWithinAt)
+    (fun z hz => (hG_off z (ball_subset_closedBall hz.1.1) hz.1.2).differentiableAt) hlim
+  calc circleIntegral (logDeriv F) c R
+      = ∮ z in C(c, R), (z - c)⁻¹ • ((z - c) * logDeriv F z) := by
+        refine circleIntegral.integral_congr hR.le fun z hz => ?_
+        have hzc : z ≠ c := by
+          intro h
+          rw [mem_sphere_iff_norm, h, sub_self, norm_zero] at hz
+          exact hR.ne' hz.symm
+        rw [smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ (sub_ne_zero.2 hzc), one_mul]
+    _ = (2 * (π : ℂ) * I) • (n : ℂ) := key
+    _ = 2 * (π : ℂ) * I * (n : ℂ) := by rw [smul_eq_mul]
 
 /-- **Local argument principle.** If `f` is meromorphic on the closed disc `C(c, R)` (`R > 0`) and
 every point of the disc except possibly the centre `c` is regular (analytic and non-vanishing), then
