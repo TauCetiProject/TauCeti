@@ -193,7 +193,7 @@ theorem normalizerQuotientSubgroupFiberOrbitIsPretransitiveOfNormal
 /-- For a regular map and a normal deck subgroup, the descended `N(H) / H` action on each
 subgroup fibre quotient is transitive. This is the fibre-action half of the regular-cover
 specialization from the normalizer quotient to an ordinary quotient by a normal subgroup. -/
-theorem regularNormalizerQuotientSubgroupFiberOrbitIsPretransitiveOfNormal
+theorem normalizerQuotientSubgroupFiberOrbitIsPretransitiveOfNormal_of_isRegular
     (hreg : IsRegular p) (H : Subgroup (Deck p)) [H.Normal] :
     MulAction.IsPretransitive
       (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) := by
