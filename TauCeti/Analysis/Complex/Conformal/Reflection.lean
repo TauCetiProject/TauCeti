@@ -65,6 +65,24 @@ lemma schwarzReflection_of_im_zero {z : ℂ} (hz : z.im = 0) :
     schwarzReflection f z = f z := by
   exact schwarzReflection_of_im_nonneg (f := f) (z := z) hz.ge
 
+/--
+On the closed upper part of a set, continuity transfers from `f` to the explicit
+Schwarz-reflection witness.
+-/
+lemma continuousOn_schwarzReflection_inter_im_nonneg
+    (hf : ContinuousOn f (S ∩ {z : ℂ | 0 ≤ z.im})) :
+    ContinuousOn (schwarzReflection f) (S ∩ {z : ℂ | 0 ≤ z.im}) :=
+  hf.congr fun _ hz => schwarzReflection_of_im_nonneg (f := f) hz.2
+
+/--
+On the open upper part of a set, holomorphicity transfers from `f` to the explicit
+Schwarz-reflection witness.
+-/
+lemma differentiableOn_schwarzReflection_inter_im_pos
+    (hf : DifferentiableOn ℂ f (S ∩ {z : ℂ | 0 < z.im})) :
+    DifferentiableOn ℂ (schwarzReflection f) (S ∩ {z : ℂ | 0 < z.im}) :=
+  hf.congr fun _ hz => schwarzReflection_of_im_nonneg (f := f) hz.2.le
+
 /-- Conjugating a point in the upper half-plane evaluates the reflected lower branch. -/
 lemma schwarzReflection_conj_of_im_pos {z : ℂ} (hz : 0 < z.im) :
     schwarzReflection f ((starRingEnd ℂ) z) = (starRingEnd ℂ) (f z) := by
