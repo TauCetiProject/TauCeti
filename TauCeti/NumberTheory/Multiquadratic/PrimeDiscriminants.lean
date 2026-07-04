@@ -41,6 +41,15 @@ public section
 
 namespace TauCeti.Multiquadratic
 
+/-- The prime-discriminant list `[-4, 5]` for the genus-field generators of `ℚ(√-5)`. -/
+abbrev negFourFivePrimeDiscriminants : Fin 2 → ℤ :=
+  ![(-4 : ℤ), 5]
+
+/-- The prime-discriminant list `[-4, -3, -7]` for the genus-field generators of
+`ℚ(√-21)`. -/
+abbrev negFourNegThreeNegSevenPrimeDiscriminants : Fin 3 → ℤ :=
+  ![(-4 : ℤ), -3, -7]
+
 /-- The prime discriminants: the even prime discriminants `-4`, `8`, `-8`, together with
 the odd prime discriminants `p*` for odd natural primes `p`. -/
 def IsPrimeDiscriminant (D : ℤ) : Prop :=

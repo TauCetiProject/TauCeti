@@ -31,15 +31,6 @@ public section
 
 namespace TauCeti.Multiquadratic
 
-/-- The prime-discriminant list `[-4, 5]` for the genus-field generators of `ℚ(√-5)`. -/
-abbrev negFourFivePrimeDiscriminants : Fin 2 → ℤ :=
-  ![(-4 : ℤ), 5]
-
-/-- The prime-discriminant list `[-4, -3, -7]` for the genus-field generators of
-`ℚ(√-21)`. -/
-abbrev negFourNegThreeNegSevenPrimeDiscriminants : Fin 3 → ℤ :=
-  ![(-4 : ℤ), -3, -7]
-
 /-- **The `ℚ(√-5)` genus-field character condition.** For an odd prime `p`, the Legendre
 symbols of the prime-discriminant list `[-4, 5]` are all `1` exactly when
 `p ≡ 1 (mod 4)` and the reciprocal symbol `(p / 5)` is `1`. -/
