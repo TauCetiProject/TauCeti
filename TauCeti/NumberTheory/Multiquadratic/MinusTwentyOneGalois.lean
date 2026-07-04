@@ -6,15 +6,14 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOneData
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantGaloisGroup
-import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOneExamples
+public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOneExamples
 
 /-!
 # The Galois group of the `-21` prime-discriminant radicand field
 
 This file exposes the Galois-cardinality worked example for `ℚ(√-1, √-3, √-7)`. Its proof uses
-the shared private prime-discriminant setup in
-`TauCeti.NumberTheory.Multiquadratic.MinusTwentyOneExamples`, without re-exporting the degree
-worked example.
+the shared prime-discriminant proof package in
+`TauCeti.NumberTheory.Multiquadratic.MinusTwentyOneExamples`.
 
 ## Main result
 
@@ -39,6 +38,6 @@ theorem card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven :
         (adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) :
           IntermediateField ℚ ℂ))
       = 8 :=
-  MinusTwentyOne.card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven_eq
+  MinusTwentyOne.adjoin_I_sqrt_neg_three_sqrt_neg_seven_degree_and_card.2
 
 end TauCeti.Multiquadratic

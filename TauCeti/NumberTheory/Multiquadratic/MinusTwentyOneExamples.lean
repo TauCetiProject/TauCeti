@@ -20,13 +20,10 @@ so those import paths do not re-export each other's result.
 The prime-discriminant convention follows the standard genus-theory convention in Cox's
 *Primes of the Form x² + ny²* and Lemmermeyer's *Reciprocity Laws*.
 
-## Main results
+## Main result
 
-* `TauCeti.Multiquadratic.MinusTwentyOne.finrank_adjoin_I_sqrt_neg_three_sqrt_neg_seven_eq`:
-  the implementation theorem for the worked-example degree `[ℚ(i, √-3, √-7) : ℚ] = 8`.
-* `TauCeti.Multiquadratic.MinusTwentyOne.card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven_eq`:
-  the implementation theorem for the worked-example cardinality
-  `|Gal(ℚ(i, √-3, √-7)/ℚ)| = 8`.
+* `TauCeti.Multiquadratic.MinusTwentyOne.adjoin_I_sqrt_neg_three_sqrt_neg_seven_degree_and_card`:
+  the shared packaged proof of the worked-example degree and Galois-cardinality facts.
 -/
 
 public section
@@ -94,45 +91,42 @@ private theorem range_primeDiscriminantRoot :
     · exact ⟨1, by simp [primeDiscriminantRoot, hx]⟩
     · exact ⟨2, by simp [primeDiscriminantRoot, hx]⟩
 
-/-- Implementation theorem for the worked example `[ℚ(i, √-3, √-7) : ℚ] = 8`. This is the
-multiquadratic field `ℚ(√-1, √-3, √-7)` attached to the prime discriminants `-4`, `-3`,
-and `-7` in the genus-field example for `ℚ(√-21)`. -/
-theorem finrank_adjoin_I_sqrt_neg_three_sqrt_neg_seven_eq :
+/-- Shared proof package for the worked example `ℚ(i, √-3, √-7)`. It records both the degree
+`[ℚ(i, √-3, √-7) : ℚ] = 8` and the Galois-cardinality fact
+`|Gal(ℚ(i, √-3, √-7)/ℚ)| = 8`, using the common prime-discriminant setup for `-4`, `-3`, and
+`-7`. The user-facing theorem names are the projections exposed by the degree and Galois
+modules. -/
+theorem adjoin_I_sqrt_neg_three_sqrt_neg_seven_degree_and_card :
     Module.finrank ℚ
-      (adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) :
-        IntermediateField ℚ ℂ)
-      = 8 := by
-  have h := finrank_adjoin_roots_primeDiscriminantRadicands
-    negFourNegThreeNegSevenPrimeDiscriminants
-    primeDiscriminants_isPrimeDiscriminant
-    primeDiscriminants_injective
-    primeDiscriminants_not_all_even
-    primeDiscriminantRoot
-    primeDiscriminantRoot_sq
-  rw [← range_primeDiscriminantRoot]
-  exact h.trans (by norm_num [Nat.card_fin])
-
-/-- Implementation theorem for the worked example `|Gal(ℚ(i, √-3, √-7)/ℚ)| = 8`. This is the
-Galois group of the
-multiquadratic field `ℚ(√-1, √-3, √-7)` attached to the prime discriminants `-4`, `-3`,
-and `-7` in the genus-field example for `ℚ(√-21)`. -/
-theorem card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven_eq :
-    Nat.card
-      ((adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) :
-          IntermediateField ℚ ℂ)
-          ≃ₐ[ℚ]
         (adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) :
-          IntermediateField ℚ ℂ))
-      = 8 := by
-  have h := card_aut_adjoin_roots_primeDiscriminantRadicands
-    negFourNegThreeNegSevenPrimeDiscriminants
-    primeDiscriminants_isPrimeDiscriminant
-    primeDiscriminants_injective
-    primeDiscriminants_not_all_even
-    primeDiscriminantRoot
-    primeDiscriminantRoot_sq
-  rw [← range_primeDiscriminantRoot]
-  exact h.trans (by norm_num [Nat.card_fin])
+          IntermediateField ℚ ℂ)
+        = 8 ∧
+      Nat.card
+        ((adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) :
+            IntermediateField ℚ ℂ)
+            ≃ₐ[ℚ]
+          (adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) :
+            IntermediateField ℚ ℂ))
+        = 8 := by
+  constructor
+  · have h := finrank_adjoin_roots_primeDiscriminantRadicands
+      negFourNegThreeNegSevenPrimeDiscriminants
+      primeDiscriminants_isPrimeDiscriminant
+      primeDiscriminants_injective
+      primeDiscriminants_not_all_even
+      primeDiscriminantRoot
+      primeDiscriminantRoot_sq
+    rw [← range_primeDiscriminantRoot]
+    exact h.trans (by norm_num [Nat.card_fin])
+  · have h := card_aut_adjoin_roots_primeDiscriminantRadicands
+      negFourNegThreeNegSevenPrimeDiscriminants
+      primeDiscriminants_isPrimeDiscriminant
+      primeDiscriminants_injective
+      primeDiscriminants_not_all_even
+      primeDiscriminantRoot
+      primeDiscriminantRoot_sq
+    rw [← range_primeDiscriminantRoot]
+    exact h.trans (by norm_num [Nat.card_fin])
 
 end MinusTwentyOne
 
