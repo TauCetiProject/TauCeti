@@ -197,7 +197,7 @@ theorem relativeDiffCongr_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
   exact relativeDiffCongrOfImageEq_apply e rfl φ
 
 /-- Pointwise formula for the named-target relative conjugation equivalence. -/
-@[simp, grind =]
+@[grind =]
 theorem relativeDiffCongrOfImageEq_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M} {t : Set N}
     (hst : e '' s = t) (φ : fixingSubgroup (I := I) (n := n) s) (y : N) :
     ((relativeDiffCongrOfImageEq e hst φ : N ≃ₘ^n⟮J, J⟯ N) y) =
@@ -206,7 +206,7 @@ theorem relativeDiffCongrOfImageEq_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) {s :
   exact diffCongr_apply_apply e φ y
 
 /-- Pointwise formula for the relative conjugation equivalence. -/
-@[simp, grind =]
+@[grind =]
 theorem relativeDiffCongr_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
     (φ : fixingSubgroup (I := I) (n := n) s) (y : N) :
     ((relativeDiffCongr e s φ : N ≃ₘ^n⟮J, J⟯ N) y) =
@@ -232,7 +232,7 @@ theorem relativeDiffCongr_symm_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
   exact relativeDiffCongrOfImageEq_symm_apply e rfl ψ
 
 /-- Pointwise formula for the inverse named-target relative conjugation equivalence. -/
-@[simp, grind =]
+@[grind =]
 theorem relativeDiffCongrOfImageEq_symm_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N)
     {s : Set M} {t : Set N} (hst : e '' s = t)
     (ψ : fixingSubgroup (I := J) (n := n) t) (x : M) :
@@ -242,7 +242,7 @@ theorem relativeDiffCongrOfImageEq_symm_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N)
   exact diffCongr_apply_apply e.symm ψ x
 
 /-- Pointwise formula for the inverse relative conjugation equivalence. -/
-@[simp, grind =]
+@[grind =]
 theorem relativeDiffCongr_symm_apply_apply (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M)
     (ψ : fixingSubgroup (I := J) (n := n) (e '' s)) (x : M) :
     (((relativeDiffCongr e s).symm ψ : M ≃ₘ^n⟮I, I⟯ M) x) =
