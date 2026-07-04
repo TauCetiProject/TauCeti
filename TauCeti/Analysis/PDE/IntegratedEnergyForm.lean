@@ -82,6 +82,61 @@ lemma energyFormIntegral_congr_ae {a' : X → Matrix n n ℝ} {b' : X → Euclid
   filter_upwards [ha, hb, hc, hU, hV] with x hax hbx hcx hUx hVx
   simp [hax, hbx, hcx, hUx, hVx]
 
+/-- The integrated energy form vanishes when the left jet field is zero. -/
+@[simp]
+lemma energyFormIntegral_zero_left :
+    energyFormIntegral μ a b c (fun _ => 0) V = 0 := by
+  simp [energyFormIntegral_def]
+
+/-- The integrated energy form vanishes when the right jet field is zero. -/
+@[simp]
+lemma energyFormIntegral_zero_right :
+    energyFormIntegral μ a b c U (fun _ => 0) = 0 := by
+  simp [energyFormIntegral_def]
+
+/-- The zero coefficient triple gives the zero integrated energy form. -/
+@[simp]
+lemma energyFormIntegral_zero_coefficients :
+    energyFormIntegral μ (fun _ => 0) (fun _ => 0) (fun _ => 0) U V = 0 := by
+  simp [energyFormIntegral_def]
+
+/-- Negating the left jet field negates the integrated energy form. -/
+@[simp]
+lemma energyFormIntegral_neg_left :
+    energyFormIntegral μ a b c (fun x => -U x) V = -energyFormIntegral μ a b c U V := by
+  rw [energyFormIntegral_def, energyFormIntegral_def]
+  have hpoint :
+      (fun x => energyIntegrand (a x) (b x) (c x) (-U x) (V x))
+        = fun x => -energyIntegrand (a x) (b x) (c x) (U x) (V x) := by
+    funext x
+    simp
+  rw [hpoint, MeasureTheory.integral_neg]
+
+/-- Negating the right jet field negates the integrated energy form. -/
+@[simp]
+lemma energyFormIntegral_neg_right :
+    energyFormIntegral μ a b c U (fun x => -V x) = -energyFormIntegral μ a b c U V := by
+  rw [energyFormIntegral_def, energyFormIntegral_def]
+  have hpoint :
+      (fun x => energyIntegrand (a x) (b x) (c x) (U x) (-V x))
+        = fun x => -energyIntegrand (a x) (b x) (c x) (U x) (V x) := by
+    funext x
+    exact map_neg (energyIntegrand (a x) (b x) (c x) (U x)) (V x)
+  rw [hpoint, MeasureTheory.integral_neg]
+
+/-- Negating the coefficient triple negates the integrated energy form. -/
+@[simp]
+lemma energyFormIntegral_neg_coefficients :
+    energyFormIntegral μ (fun x => -a x) (fun x => -b x) (fun x => -c x) U V =
+      -energyFormIntegral μ a b c U V := by
+  rw [energyFormIntegral_def, energyFormIntegral_def]
+  have hpoint :
+      (fun x => energyIntegrand (-a x) (-b x) (-c x) (U x) (V x))
+        = fun x => -energyIntegrand (a x) (b x) (c x) (U x) (V x) := by
+    funext x
+    exact energyIntegrand_neg_apply (a x) (b x) (c x) (U x) (V x)
+  rw [hpoint, MeasureTheory.integral_neg]
+
 /-- Additivity in the left jet field, assuming the two summand energy densities are
 integrable. -/
 lemma energyFormIntegral_add_left
@@ -128,7 +183,7 @@ lemma energyFormIntegral_smul_left (r : ℝ) :
     simp
   rw [hpoint]
   rw [MeasureTheory.integral_smul]
-  rfl
+  simp [smul_eq_mul]
 
 /-- Homogeneity in the right jet field. -/
 lemma energyFormIntegral_smul_right (r : ℝ) :
@@ -142,7 +197,7 @@ lemma energyFormIntegral_smul_right (r : ℝ) :
     simp
   rw [hpoint]
   rw [MeasureTheory.integral_smul]
-  rfl
+  simp [smul_eq_mul]
 
 variable (a' : X → Matrix n n ℝ) (b' : X → EuclideanSpace ℝ n) (c' : X → ℝ)
 variable (m : X → ℝ) (r : ℝ)
@@ -195,7 +250,7 @@ lemma energyFormIntegral_smul :
     simp
   rw [hpoint]
   rw [MeasureTheory.integral_smul]
-  rfl
+  simp [smul_eq_mul]
 
 /-- The integrated full energy form splits into its principal and lower-order parts. -/
 lemma energyFormIntegral_principal_add_lowerOrder
@@ -253,11 +308,9 @@ lemma energyFormIntegral_principal_drift_mass
             energyFormIntegral μ (fun _ => 0) (fun _ => 0) c U V := by
       rw [add_assoc]
 
-variable [DecidableEq n]
-
 /-- The integrated full energy form is a shifted-Laplacian model plus the residual
 coefficient perturbation. -/
-lemma energyFormIntegral_eq_one_zero_baseMass_add_perturbation
+lemma energyFormIntegral_eq_one_zero_baseMass_add_perturbation [DecidableEq n]
     (hmodel : Integrable
       (fun x => energyIntegrand (1 : Matrix n n ℝ) 0 (m x) (U x) (V x)) μ)
     (hpert : Integrable
@@ -278,7 +331,7 @@ lemma energyFormIntegral_eq_one_zero_baseMass_add_perturbation
 
 /-- The integrated full energy form is the shifted-Laplacian form with the same mass plus the
 principal-and-drift perturbation. -/
-lemma energyFormIntegral_eq_one_zero_mass_add_perturbation
+lemma energyFormIntegral_eq_one_zero_mass_add_perturbation [DecidableEq n]
     (hmodel : Integrable
       (fun x => energyIntegrand (1 : Matrix n n ℝ) 0 (c x) (U x) (V x)) μ)
     (hpert : Integrable
@@ -292,14 +345,17 @@ lemma energyFormIntegral_eq_one_zero_mass_add_perturbation
 
 /-- The integrated `−Δ` model form is the integral of the dot product of the two gradient
 components of the jet fields. -/
-lemma energyFormIntegral_one_zero_zero :
+lemma energyFormIntegral_one_zero_zero [DecidableEq n] :
     energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) (fun _ => 0) U V =
       ∫ x, ((V x).2 ⬝ᵥ (U x).2) ∂μ := by
-  simp [energyFormIntegral_def]
+  rw [energyFormIntegral_def]
+  apply MeasureTheory.integral_congr_ae
+  exact Filter.Eventually.of_forall fun x =>
+    energyIntegrand_one_zero_zero_apply (U x) (V x)
 
 /-- The integrated shifted Laplacian model form `−Δ + c` is the sum of the Dirichlet density
 and the mass density. -/
-lemma energyFormIntegral_one_zero_mass (m : X → ℝ) :
+lemma energyFormIntegral_one_zero_mass [DecidableEq n] (m : X → ℝ) :
     energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U V =
       ∫ x, ((V x).2 ⬝ᵥ (U x).2 + m x * (U x).1 * (V x).1) ∂μ := by
   rw [energyFormIntegral_def]
@@ -309,7 +365,7 @@ lemma energyFormIntegral_one_zero_mass (m : X → ℝ) :
 
 /-- The diagonal of the integrated shifted Laplacian model is the integral of
 `‖∇u‖² + c u²` at the jet level. -/
-lemma energyFormIntegral_one_zero_mass_self (m : X → ℝ) :
+lemma energyFormIntegral_one_zero_mass_self [DecidableEq n] (m : X → ℝ) :
     energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U U =
       ∫ x, (‖(U x).2‖ ^ 2 + m x * (U x).1 ^ 2) ∂μ := by
   rw [energyFormIntegral_def]
@@ -319,7 +375,82 @@ lemma energyFormIntegral_one_zero_mass_self (m : X → ℝ) :
 
 variable {Lam beta gamma : ℝ}
 
-omit [DecidableEq n] in
+/-- Weighted Young inequality used to absorb the first-order drift term. -/
+private lemma mul_norm_abs_le_half_mul_sq_add (hlam : 0 < lam) (beta u r : ℝ) :
+    beta * r * |u| ≤ lam / 2 * r ^ 2 + beta ^ 2 / (2 * lam) * u ^ 2 := by
+  have hkey := two_mul_le_add_sq (lam * r) (beta * |u|)
+  rw [mul_pow, mul_pow, sq_abs] at hkey
+  have h2lam : (0 : ℝ) < 2 * lam := mul_pos two_pos hlam
+  rw [← sub_nonneg]
+  have expand : lam / 2 * r ^ 2 + beta ^ 2 / (2 * lam) * u ^ 2 - beta * r * |u|
+      = (lam ^ 2 * r ^ 2 + beta ^ 2 * u ^ 2 - 2 * lam * beta * r * |u|)
+          / (2 * lam) := by
+    field_simp
+  rw [expand]
+  apply div_nonneg _ h2lam.le
+  nlinarith [hkey]
+
+/-- Pointwise Gårding inequality from a dot-product lower bound, avoiding the
+`Matrix.toQuadraticForm'` API. -/
+private lemma garding_energyIntegrand_self_of_dotProduct_lower_bound {A : Matrix n n ℝ}
+    {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ} (hlam : 0 < lam)
+    (ha : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ))
+    (hb : ‖b₀‖ ≤ beta) (hc : 0 ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
+    lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2
+      ≤ energyIntegrand A b₀ c₀ U U := by
+  rw [energyIntegrand_apply, matrixBilinearForm_apply, driftForm_apply, massForm_apply]
+  have hA : lam * ‖U.2‖ ^ 2 ≤ U.2 ⬝ᵥ (A *ᵥ U.2) := ha U.2
+  have hM : 0 ≤ c₀ * U.1 ^ 2 := mul_nonneg hc (sq_nonneg _)
+  have hbip : |⟪b₀, U.2⟫_ℝ| ≤ beta * ‖U.2‖ :=
+    (abs_real_inner_le_norm b₀ U.2).trans
+      (mul_le_mul_of_nonneg_right hb (norm_nonneg _))
+  have hD : -(beta * ‖U.2‖ * |U.1|) ≤ ⟪b₀, U.2⟫_ℝ * U.1 := by
+    have habs : |⟪b₀, U.2⟫_ℝ * U.1| ≤ beta * ‖U.2‖ * |U.1| := by
+      rw [abs_mul]
+      exact mul_le_mul_of_nonneg_right hbip (abs_nonneg _)
+    have := neg_abs_le (⟪b₀, U.2⟫_ℝ * U.1)
+    linarith
+  have hYoung : beta * ‖U.2‖ * |U.1| ≤
+      lam / 2 * ‖U.2‖ ^ 2 + beta ^ 2 / (2 * lam) * U.1 ^ 2 :=
+    mul_norm_abs_le_half_mul_sq_add hlam beta U.1 ‖U.2‖
+  nlinarith [hA, hM, hD, hYoung]
+
+/-- Pointwise mass-floor Gårding inequality from a dot-product lower bound. -/
+private lemma garding_energyIntegrand_self_of_mass_lower_bound_of_dotProduct_lower_bound
+    {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ} (hlam : 0 < lam)
+    (ha : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ))
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (U : ℝ × EuclideanSpace ℝ n) :
+    lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
+      ≤ energyIntegrand A b₀ c₀ U U := by
+  have hdecomp : energyIntegrand A b₀ c₀ U U
+      = energyIntegrand A b₀ (c₀ - mu) U U + mu * U.1 ^ 2 := by
+    rw [energyIntegrand_apply, energyIntegrand_apply, massForm_apply, massForm_apply]
+    ring
+  have hgard := garding_energyIntegrand_self_of_dotProduct_lower_bound
+    (beta := beta) hlam ha hb (sub_nonneg.mpr hc) U
+  rw [hdecomp]
+  have hrw : lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
+      = lam / 2 * ‖U.2‖ ^ 2 - beta ^ 2 / (2 * lam) * U.1 ^ 2 + mu * U.1 ^ 2 := by
+    ring
+  rw [hrw]
+  linarith [hgard]
+
+/-- Explicit coercive diagonal lower bound from a dot-product lower bound. -/
+private lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self_of_dotProduct_lower_bound
+    {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ} (hlam : 0 < lam)
+    (ha : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ))
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
+      ≤ energyIntegrand A b₀ c₀ U U := by
+  have hhalf : 0 < lam / 2 := half_pos hlam
+  have hdef : 0 < mu - beta ^ 2 / (2 * lam) := sub_pos.mpr hmu
+  have hnorm := min_mul_prod_norm_sq_le_add hhalf.le hdef.le U
+  rw [Real.norm_eq_abs, sq_abs] at hnorm
+  exact hnorm.trans
+    (garding_energyIntegrand_self_of_mass_lower_bound_of_dotProduct_lower_bound
+      (beta := beta) (mu := mu) hlam ha hb hc U)
+
 /-- Integrated boundedness of the raw-jet energy form from a.e. coefficient bounds.
 
 This is the scalar integral version of `norm_energyIntegrand_apply_le_of_bounds`: if the
@@ -342,7 +473,7 @@ lemma norm_energyFormIntegral_le_of_bounds (hLam : 0 ≤ Lam)
 coefficient hypotheses. -/
 lemma garding_energyFormIntegral_self_of_bounds (hlam : 0 < lam)
     (ha : ∀ᵐ x ∂μ, ∀ ξ : EuclideanSpace ℝ n,
-      lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+      lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ))
     (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, 0 ≤ c x)
     (hlower : Integrable
       (fun x => lam / 2 * ‖(U x).2‖ ^ 2 - beta ^ 2 / (2 * lam) * (U x).1 ^ 2) μ)
@@ -352,13 +483,13 @@ lemma garding_energyFormIntegral_self_of_bounds (hlam : 0 < lam)
   rw [energyFormIntegral_def]
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
-  exact garding_energyIntegrand_self_of_bounds hlam hax hbx hcx (U x)
+  exact garding_energyIntegrand_self_of_dotProduct_lower_bound hlam hax hbx hcx (U x)
 
 /-- Integrated Gårding lower bound with a mass floor from a.e. lower ellipticity and a.e.
 lower-order coefficient hypotheses. -/
 lemma garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds (hlam : 0 < lam)
     (ha : ∀ᵐ x ∂μ, ∀ ξ : EuclideanSpace ℝ n,
-      lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+      lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ))
     (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mu ≤ c x)
     (hlower : Integrable
       (fun x => lam / 2 * ‖(U x).2‖ ^ 2 +
@@ -370,14 +501,15 @@ lemma garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds (hlam : 0 < 
   rw [energyFormIntegral_def]
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
-  exact garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam hax hbx hcx (U x)
+  exact garding_energyIntegrand_self_of_mass_lower_bound_of_dotProduct_lower_bound
+    hlam hax hbx hcx (U x)
 
 /-- Integrated explicit coercive diagonal lower bound from a.e. lower ellipticity, a.e.
 lower-order coefficient hypotheses, and a mass floor that dominates the drift defect. -/
 lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_bounds
     (hlam : 0 < lam)
     (ha : ∀ᵐ x ∂μ, ∀ ξ : EuclideanSpace ℝ n,
-      lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+      lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ))
     (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mu ≤ c x)
     (hmu : beta ^ 2 / (2 * lam) < mu)
     (hlower : Integrable
@@ -388,11 +520,12 @@ lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_
   rw [energyFormIntegral_def]
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
-  exact min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self
+  exact min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self_of_dotProduct_lower_bound
     hlam hax hbx hcx hmu (U x)
 
 namespace UniformlyEllipticOn
 
+variable [DecidableEq n]
 variable {Ω : Set X} {lam Lam beta gamma mu : ℝ}
 variable {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
 variable {U V : X → ℝ × EuclideanSpace ℝ n}
@@ -423,7 +556,8 @@ lemma garding_energyFormIntegral_self_on (h : UniformlyEllipticOn Ω a lam Lam)
   refine PDE.garding_energyFormIntegral_self_of_bounds (μ := μ) (a := a) (b := b) (c := c)
     (U := U) h.pos ?_ hb hc hlower henergy
   filter_upwards [hΩ] with x hx
-  exact h.lower_bound hx
+  intro ξ
+  simpa [toQuadraticForm'_eq_dotProduct] using h.lower_bound hx ξ
 
 /-- Integrated Gårding lower bound with a mass floor from uniform ellipticity and a.e.
 coefficient hypotheses. -/
@@ -440,7 +574,8 @@ lemma garding_energyFormIntegral_self_of_mass_lower_bound_on
   refine PDE.garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds (μ := μ) (a := a)
     (b := b) (c := c) (U := U) h.pos ?_ hb hc hlower henergy
   filter_upwards [hΩ] with x hx
-  exact h.lower_bound hx
+  intro ξ
+  simpa [toQuadraticForm'_eq_dotProduct] using h.lower_bound hx ξ
 
 /-- Integrated explicit coercive diagonal lower bound from uniform ellipticity, a.e.
 coefficient hypotheses, and a mass floor that dominates the drift defect. -/
@@ -456,7 +591,8 @@ lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_on
   refine PDE.integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_bounds
     (μ := μ) (a := a) (b := b) (c := c) (U := U) h.pos ?_ hb hc hmu hlower henergy
   filter_upwards [hΩ] with x hx
-  exact h.lower_bound hx
+  intro ξ
+  simpa [toQuadraticForm'_eq_dotProduct] using h.lower_bound hx ξ
 
 end UniformlyEllipticOn
 
