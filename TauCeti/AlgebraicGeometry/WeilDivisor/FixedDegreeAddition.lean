@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import TauCeti.Data.Sym.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FixedDegree
 
 /-!
@@ -22,19 +23,6 @@ mathematics is vendored.
 -/
 
 public section
-
-namespace Sym
-
-variable {X Y : Type*} {d e : ℕ}
-
-/-- Mapping a function over an appended symmetric-power point is the append of the mapped
-symmetric-power points. -/
-@[simp]
-theorem map_append (f : X → Y) (s : Sym X d) (t : Sym X e) :
-    Sym.map f (s.append t) = (Sym.map f s).append (Sym.map f t) :=
-  Subtype.ext <| by simp [Multiset.map_add]
-
-end Sym
 
 namespace TauCeti
 
