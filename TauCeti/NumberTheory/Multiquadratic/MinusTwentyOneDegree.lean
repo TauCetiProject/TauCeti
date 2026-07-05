@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.MinusTwentyOneData
-public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantIndependence
+public import TauCeti.NumberTheory.Multiquadratic.Degree
 
 /-!
 # The degree of the `-21` prime-discriminant radicand field
@@ -30,15 +30,26 @@ theorem finrank_adjoin_I_sqrt_neg_three_sqrt_neg_seven :
       (IntermediateField.adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) :
         IntermediateField ℚ ℂ)
       = 8 := by
-  have h := finrank_adjoin_roots_primeDiscriminantRadicands
-    negFourNegThreeNegSevenPrimeDiscriminants
-    negFourNegThreeNegSevenPrimeDiscriminants_isPrimeDiscriminant
-    negFourNegThreeNegSevenPrimeDiscriminants_injective
-    negFourNegThreeNegSevenPrimeDiscriminants_not_all_even
-    negFourNegThreeNegSevenPrimeDiscriminantRoots
+  have h := finrank_adjoin_range
+    (d := fun i =>
+      (((primeDiscriminantRadicand
+        (negFourNegThreeNegSevenPrimeDiscriminants i) : ℤ) : ℚ)))
+    (root := negFourNegThreeNegSevenPrimeDiscriminantRoots)
     negFourNegThreeNegSevenPrimeDiscriminantRoots_sq
-  rw [← range_negFourNegThreeNegSevenPrimeDiscriminantRoots]
-  exact h.trans (by norm_num [Nat.card_fin])
+    not_isSquare_prod_negFourNegThreeNegSevenPrimeDiscriminantRadicands
+  rw [show ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) =
+    Set.range negFourNegThreeNegSevenPrimeDiscriminantRoots by
+      ext x
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Set.mem_range]
+      constructor
+      · intro hx
+        rcases hx with hx | hx | hx
+        · exact ⟨0, by simp [negFourNegThreeNegSevenPrimeDiscriminantRoots, hx]⟩
+        · exact ⟨1, by simp [negFourNegThreeNegSevenPrimeDiscriminantRoots, hx]⟩
+        · exact ⟨2, by simp [negFourNegThreeNegSevenPrimeDiscriminantRoots, hx]⟩
+      · rintro ⟨i, rfl⟩
+        fin_cases i <;> simp [negFourNegThreeNegSevenPrimeDiscriminantRoots]]
+  simpa [Nat.card_fin] using h
 
 end
 
