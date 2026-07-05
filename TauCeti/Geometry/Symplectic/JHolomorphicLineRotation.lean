@@ -28,7 +28,6 @@ local holomorphicity or area-density convention.
   complex structure preserves and reflects complex-linearity.
 * `TauCeti.SymplecticForm.symplecticForm_comp_stdComplexLineProduct`: the ordered area density is
   unchanged by this source quarter-turn.
-* The corresponding complex-linearity lemma for the half-turn `-id`.
 
 The sign convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: the standard source complex structure sends `∂s` to `∂t`.
@@ -104,29 +103,11 @@ lemma isComplexLinearMap_comp_toLinearMap_iff :
     IsComplexLinearMap J₀ J (F₀.comp J₀.toLinearMap) ↔ IsComplexLinearMap J₀ J F₀ :=
   ⟨fun hF => hF.of_comp_toLinearMap, fun hF => hF.comp_toLinearMap⟩
 
-/-- Precomposing a complex-linear map by the half-turn `-id` again gives a complex-linear map. -/
-lemma IsComplexLinearMap.comp_neg
-    (hF : IsComplexLinearMap J₀ J F₀) :
-    IsComplexLinearMap J₀ J (F₀.comp (-LinearMap.id : U →ₗ[ℝ] U)) := by
-  rw [isComplexLinearMap_iff_apply] at hF ⊢
-  intro v
-  simp [hF v]
-
 /-- Negating a map preserves and reflects complex-linearity. -/
 @[simp]
 lemma isComplexLinearMap_neg_iff :
     IsComplexLinearMap J₀ J (-F₀) ↔ IsComplexLinearMap J₀ J F₀ :=
   ⟨fun hF => by simpa using hF.neg, fun hF => hF.neg⟩
-
-/-- Precomposition by the half-turn `-id` preserves and reflects complex-linearity. -/
-lemma isComplexLinearMap_comp_neg_iff :
-    IsComplexLinearMap J₀ J (F₀.comp (-LinearMap.id : U →ₗ[ℝ] U)) ↔
-        IsComplexLinearMap J₀ J F₀ := by
-  have hcomp : F₀.comp (-LinearMap.id : U →ₗ[ℝ] U) = -F₀ := by
-    ext v
-    simp
-  rw [hcomp]
-  exact isComplexLinearMap_neg_iff
 
 end ComplexLinear
 
