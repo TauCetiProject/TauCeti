@@ -208,6 +208,30 @@ lemma IsComplexLinearMap.neg {J : AlmostComplexStructure V} {J' : AlmostComplexS
     IsComplexLinearMap J J' (-F) :=
   IsComplexLinear.neg hF
 
+/-- Complex-linearity is unchanged after negating both the source and target almost complex
+structures. -/
+lemma IsComplexLinearMap.neg_neg {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {F : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F) :
+    IsComplexLinearMap (-J) (-J') F := by
+  rw [isComplexLinearMap_iff_isComplexLinear] at hF ⊢
+  simpa [AlmostComplexStructure.neg_toLinearMap] using
+    (IsComplexLinear.neg_neg (J := J.toLinearMap) (J' := J'.toLinearMap) (F := F) hF)
+
+/-- If a map is complex-linear after negating both structures, then it was complex-linear before
+the sign change. -/
+lemma IsComplexLinearMap.of_neg_neg {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {F : V →ₗ[ℝ] W}
+    (hF : IsComplexLinearMap (-J) (-J') F) : IsComplexLinearMap J J' F := by
+  rw [isComplexLinearMap_iff_isComplexLinear] at hF ⊢
+  exact IsComplexLinear.of_neg_neg (by simpa [AlmostComplexStructure.neg_toLinearMap] using hF)
+
+/-- Negating both almost complex structures leaves the complex-linearity condition unchanged. -/
+@[simp]
+lemma isComplexLinearMap_neg_neg_iff {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {F : V →ₗ[ℝ] W} :
+    IsComplexLinearMap (-J) (-J') F ↔ IsComplexLinearMap J J' F :=
+  ⟨fun hF => hF.of_neg_neg, fun hF => hF.neg_neg⟩
+
 /-- Complex-linear maps are closed under subtraction. -/
 lemma IsComplexLinearMap.sub {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
     {F G : V →ₗ[ℝ] W} (hF : IsComplexLinearMap J J' F)
