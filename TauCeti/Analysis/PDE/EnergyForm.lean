@@ -72,6 +72,8 @@ open scoped InnerProductSpace
 
 variable {X n : Type*} [Fintype n]
 
+noncomputable local instance energyFormDecidableEq : DecidableEq n := Classical.decEq n
+
 /-- The pointwise weak-form (energy) integrand of a divergence-form operator
 `L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u`, as a bundled continuous bilinear form on jets
 `(value, gradient) ∈ ℝ × EuclideanSpace ℝ n`.
@@ -102,7 +104,7 @@ lemma energyIntegrand_apply (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n) (c :
   simp [energyIntegrand]
 
 /-- The diagonal of the jet form, the energy density `⟨a ∇u, ∇u⟩ + ⟪b, ∇u⟫ u + c u²`. -/
-lemma energyIntegrand_self [DecidableEq n] (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n)
+lemma energyIntegrand_self (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n)
     (c : ℝ) (U : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand A b c U U
       = A.toQuadraticForm' U.2 + ⟪b, U.2⟫_ℝ * U.1 + c * U.1 ^ 2 := by
@@ -111,26 +113,26 @@ lemma energyIntegrand_self [DecidableEq n] (A : Matrix n n ℝ) (b : EuclideanSp
 
 /-- The Laplacian model `−Δ` (`a = 1`, no drift, no mass) has jet form the Dirichlet
 integrand `⟨∇u, ∇v⟩`. -/
-lemma energyIntegrand_one_zero_zero_apply [DecidableEq n] (U V : ℝ × EuclideanSpace ℝ n) :
+lemma energyIntegrand_one_zero_zero_apply (U V : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (1 : Matrix n n ℝ) 0 0 U V = V.2 ⬝ᵥ U.2 := by
   simp [energyIntegrand_apply]
 
 /-- The diagonal of the Laplacian model's jet form is the Dirichlet energy density `‖∇u‖²`. -/
-lemma energyIntegrand_one_zero_zero_self [DecidableEq n] (U : ℝ × EuclideanSpace ℝ n) :
+lemma energyIntegrand_one_zero_zero_self (U : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (1 : Matrix n n ℝ) 0 0 U U = ‖U.2‖ ^ 2 := by
   rw [energyIntegrand_self, toQuadraticForm'_one]
   simp
 
 /-- The shifted Laplacian model `-Δ + c` has jet form
 `(U, V) ↦ ∇u · ∇v + c u v`. -/
-lemma energyIntegrand_one_zero_mass_apply [DecidableEq n] (c : ℝ)
+lemma energyIntegrand_one_zero_mass_apply (c : ℝ)
     (U V : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (1 : Matrix n n ℝ) 0 c U V = V.2 ⬝ᵥ U.2 + c * U.1 * V.1 := by
   simp [energyIntegrand_apply, massForm_apply]
 
 /-- The shifted Laplacian model `-Δ + c` has diagonal jet density
 `‖∇u‖² + c u²`. -/
-lemma energyIntegrand_one_zero_mass_self [DecidableEq n] (c : ℝ)
+lemma energyIntegrand_one_zero_mass_self (c : ℝ)
     (U : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (1 : Matrix n n ℝ) 0 c U U = ‖U.2‖ ^ 2 + c * U.1 ^ 2 := by
   rw [energyIntegrand_self, toQuadraticForm'_one]
@@ -155,7 +157,7 @@ private lemma mul_norm_abs_le_half_mul_sq_add (hlam : 0 < lam) (beta u : ℝ) (r
   apply div_nonneg _ h2lam.le
   nlinarith [hkey]
 
-private lemma abs_dotProduct_one_mulVec_le [DecidableEq n] (η ξ : EuclideanSpace ℝ n) :
+private lemma abs_dotProduct_one_mulVec_le (η ξ : EuclideanSpace ℝ n) :
     |η ⬝ᵥ ((1 : Matrix n n ℝ) *ᵥ ξ)| ≤ 1 * ‖η‖ * ‖ξ‖ := by
   rw [one_mulVec, one_mul]
   simpa [EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm] using
@@ -239,7 +241,7 @@ lemma opNorm_energyIntegrand_le_of_bounds (hLam : 0 ≤ Lam)
   exact norm_energyIntegrand_apply_le_of_bounds hLam ha hb hc U V
 
 /-- Pointwise boundedness of the shifted Laplacian jet form with constant `1 + ‖c‖`. -/
-lemma norm_energyIntegrand_one_zero_mass_apply_le [DecidableEq n] (c : ℝ)
+lemma norm_energyIntegrand_one_zero_mass_apply_le (c : ℝ)
     (U V : ℝ × EuclideanSpace ℝ n) :
     ‖energyIntegrand (1 : Matrix n n ℝ) 0 c U V‖ ≤
       (1 + ‖c‖) * ‖U‖ * ‖V‖ := by
@@ -249,7 +251,7 @@ lemma norm_energyIntegrand_one_zero_mass_apply_le [DecidableEq n] (c : ℝ)
       (fun η ξ => abs_dotProduct_one_mulVec_le η ξ) (by simp) le_rfl U V
 
 /-- Operator-norm boundedness of the shifted Laplacian jet form with constant `1 + ‖c‖`. -/
-lemma opNorm_energyIntegrand_one_zero_mass_le [DecidableEq n] (c : ℝ) :
+lemma opNorm_energyIntegrand_one_zero_mass_le (c : ℝ) :
     ‖energyIntegrand (1 : Matrix n n ℝ) 0 c‖ ≤ 1 + ‖c‖ := by
   simpa using
     opNorm_energyIntegrand_le_of_bounds (n := n) (Lam := 1) (beta := 0) (b₀ := 0)
@@ -271,7 +273,7 @@ diagonal of the jet form is bounded below by `(λ/2)‖∇u‖² − (β²/2λ)|
 floor `λ‖∇u‖²` pays for the drift term via Young's inequality, leaving half the floor and a
 mass defect proportional to `β²/λ`. Integrating over `Ω` this is Gårding's inequality
 `a(u, u) ≥ (λ/2)‖∇u‖²_{L²} − (β²/2λ)‖u‖²_{L²}`. -/
-lemma garding_energyIntegrand_self_of_bounds [DecidableEq n] (hlam : 0 < lam)
+lemma garding_energyIntegrand_self_of_bounds (hlam : 0 < lam)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hQ : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hb : ‖b₀‖ ≤ beta) (hc : 0 ≤ c₀)
@@ -297,7 +299,7 @@ lemma garding_energyIntegrand_self_of_bounds [DecidableEq n] (hlam : 0 < lam)
 
 /-- Pointwise Gårding inequality on a domain, obtained by applying
 `garding_energyIntegrand_self_of_bounds` at `x`. -/
-lemma garding_energyIntegrand_self_of_bounds_on [DecidableEq n] (hlam : 0 < lam)
+lemma garding_energyIntegrand_self_of_bounds_on (hlam : 0 < lam)
     (hQ : ∀ ⦃x⦄, x ∈ Ω → ∀ ξ : EuclideanSpace ℝ n,
       lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
     (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)

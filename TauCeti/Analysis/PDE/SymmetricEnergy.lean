@@ -53,6 +53,8 @@ open Matrix
 
 variable {X n : Type*} [Fintype n]
 
+noncomputable local instance symmetricEnergyDecidableEq : DecidableEq n := Classical.decEq n
+
 /-- With zero drift, transposing the principal coefficient swaps the two jet arguments. -/
 lemma energyIntegrand_zero_drift_transpose_apply (A : Matrix n n ℝ) (c : ℝ)
     (U V : ℝ × EuclideanSpace ℝ n) :
@@ -86,7 +88,7 @@ lemma energyIntegrand_zero_drift_flip_eq_of_isSymm {A : Matrix n n ℝ} (hA : A.
   exact energyIntegrand_zero_drift_comm_of_isSymm hA c V U
 
 /-- The identity principal coefficient gives a symmetric zero-drift jet form. -/
-lemma energyIntegrand_one_zero_drift_comm [DecidableEq n] (c : ℝ)
+lemma energyIntegrand_one_zero_drift_comm (c : ℝ)
     (U V : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (1 : Matrix n n ℝ) 0 c U V =
       energyIntegrand (1 : Matrix n n ℝ) 0 c V U :=
@@ -143,7 +145,7 @@ lemma energyIntegrand_zero_drift_flip_eq_on {Ω : Set X} {a : X → Matrix n n �
   energyIntegrand_zero_drift_flip_eq_of_isSymm (ha hx) (c x)
 
 /-- Bundled symmetry of the shifted Laplacian jet form. -/
-lemma energyIntegrand_one_zero_mass_flip_eq [DecidableEq n] (c : ℝ) :
+lemma energyIntegrand_one_zero_mass_flip_eq (c : ℝ) :
     (energyIntegrand (1 : Matrix n n ℝ) 0 c).flip =
       energyIntegrand (1 : Matrix n n ℝ) 0 c :=
   energyIntegrand_zero_drift_flip_eq_of_isSymm isSymm_one c

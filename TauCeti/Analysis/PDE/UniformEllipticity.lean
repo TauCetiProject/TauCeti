@@ -266,6 +266,7 @@ lemma coefficientSymmetricPart_apply (A : Matrix n n ℝ) (i j : n) :
 
 omit [Fintype n] [DecidableEq n] in
 /-- A symmetric coefficient matrix is unchanged by taking its symmetric part. -/
+@[simp]
 lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm) :
     coefficientSymmetricPart A = A := by
   ext i j

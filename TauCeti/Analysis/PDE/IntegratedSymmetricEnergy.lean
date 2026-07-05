@@ -22,6 +22,8 @@ integrand.
 
 ## Main declarations
 
+* `TauCeti.PDE.energyFormIntegral_zero_drift_transpose_apply`: transposing the principal
+  coefficient swaps the two jet fields under the integral.
 * `TauCeti.PDE.energyFormIntegral_zero_drift_comm_of_isSymm_ae`: a.e. symmetric principal
   coefficients make the zero-drift integrated form symmetric.
 * `TauCeti.PDE.energyFormIntegral_zero_drift_swap_eq_of_isSymm_ae`: bundled symmetry of the
@@ -44,9 +46,24 @@ namespace PDE
 open MeasureTheory Matrix
 
 variable {X n : Type*} [MeasurableSpace X] [Fintype n]
+
+noncomputable local instance integratedSymmetricEnergyDecidableEq : DecidableEq n :=
+  Classical.decEq n
+
 variable {μ : Measure X}
 variable {a : X → Matrix n n ℝ} {c : X → ℝ}
 variable {U V : X → ℝ × EuclideanSpace ℝ n}
+
+/-- With zero drift, transposing the principal coefficient swaps the two jet fields under the
+integral. -/
+lemma energyFormIntegral_zero_drift_transpose_apply :
+    energyFormIntegral μ (fun x => (a x)ᵀ) (fun _ => 0) c U V =
+      energyFormIntegral μ a (fun _ => 0) c V U := by
+  classical
+  rw [energyFormIntegral_def, energyFormIntegral_def]
+  refine integral_congr_ae ?_
+  exact Filter.Eventually.of_forall fun x =>
+    energyIntegrand_zero_drift_transpose_apply (a x) (c x) (U x) (V x)
 
 /-- A.e. symmetric principal coefficients make the zero-drift integrated energy form
 symmetric. -/
@@ -54,10 +71,20 @@ lemma energyFormIntegral_zero_drift_comm_of_isSymm_ae
     (ha : ∀ᵐ x ∂μ, (a x).IsSymm) :
     energyFormIntegral μ a (fun _ => 0) c U V =
       energyFormIntegral μ a (fun _ => 0) c V U := by
-  rw [energyFormIntegral_def, energyFormIntegral_def]
-  refine integral_congr_ae ?_
-  filter_upwards [ha] with x hx
-  exact energyIntegrand_zero_drift_comm_of_isSymm hx (c x) (U x) (V x)
+  calc
+    energyFormIntegral μ a (fun _ => 0) c U V =
+        energyFormIntegral μ (fun x => (a x)ᵀ) (fun _ => 0) c U V := by
+      refine energyFormIntegral_congr_ae (μ := μ) (a := a) (b := fun _ => 0) (c := c)
+        (U := U) (V := V) (a' := fun x => (a x)ᵀ) (b' := fun _ => 0) (c' := c)
+        (U' := U) (V' := V) ?_ ?_ ?_ ?_ ?_
+      · filter_upwards [ha] with x hx
+        exact hx.eq.symm
+      · rfl
+      · rfl
+      · rfl
+      · rfl
+    _ = energyFormIntegral μ a (fun _ => 0) c V U :=
+      energyFormIntegral_zero_drift_transpose_apply
 
 /-- Bundled-map form of symmetry for a zero-drift integrated energy form with a.e. symmetric
 principal coefficients. -/
@@ -69,14 +96,24 @@ lemma energyFormIntegral_zero_drift_swap_eq_of_isSymm_ae
   funext U V
   exact energyFormIntegral_zero_drift_comm_of_isSymm_ae (a := a) (c := c) (U := V) (V := U) ha
 
+/-- Symmetry on a domain when the measure is a.e. supported there and the principal
+coefficients are pointwise symmetric on that domain. -/
+lemma energyFormIntegral_zero_drift_comm_on {Ω : Set X}
+    (hΩ : ∀ᵐ x ∂μ, x ∈ Ω) (ha : ∀ ⦃x⦄, x ∈ Ω → (a x).IsSymm) :
+    energyFormIntegral μ a (fun _ => 0) c U V =
+      energyFormIntegral μ a (fun _ => 0) c V U :=
+  energyFormIntegral_zero_drift_comm_of_isSymm_ae
+    (hΩ.mono fun _ hx => ha hx)
+
 /-- Bundled-map symmetry on a domain when the measure is a.e. supported there and the
 principal coefficients are pointwise symmetric on that domain. -/
 lemma energyFormIntegral_zero_drift_swap_eq_on {Ω : Set X}
     (hΩ : ∀ᵐ x ∂μ, x ∈ Ω) (ha : ∀ ⦃x⦄, x ∈ Ω → (a x).IsSymm) :
     Function.swap (energyFormIntegral μ a (fun _ => 0) c) =
-      energyFormIntegral μ a (fun _ => 0) c :=
-  energyFormIntegral_zero_drift_swap_eq_of_isSymm_ae
-    (hΩ.mono fun _ hx => ha hx)
+      energyFormIntegral μ a (fun _ => 0) c := by
+  funext U V
+  exact energyFormIntegral_zero_drift_comm_on
+    (a := a) (c := c) (U := V) (V := U) hΩ ha
 
 /-- The symmetric-part zero-drift integrated energy form is symmetric. -/
 lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_comm :
@@ -95,14 +132,14 @@ lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_swap_eq :
     (Filter.Eventually.of_forall fun _ => coefficientSymmetricPart_isSymm _)
 
 /-- The shifted-Laplacian model integrated form `-Δ + c` is symmetric. -/
-lemma energyFormIntegral_one_zero_mass_comm [DecidableEq n] :
+lemma energyFormIntegral_one_zero_mass_comm :
     energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c U V =
       energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c V U :=
   energyFormIntegral_zero_drift_comm_of_isSymm_ae
     (Filter.Eventually.of_forall fun _ => isSymm_one)
 
 /-- Bundled symmetry of the shifted-Laplacian model integrated form `-Δ + c`. -/
-lemma energyFormIntegral_one_zero_mass_swap_eq [DecidableEq n] :
+lemma energyFormIntegral_one_zero_mass_swap_eq :
     Function.swap (energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c) =
       energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c :=
   energyFormIntegral_zero_drift_swap_eq_of_isSymm_ae
@@ -115,6 +152,7 @@ principal quadratic form is unchanged pointwise. -/
 lemma energyFormIntegral_coefficientSymmetricPart_self {b : X → EuclideanSpace ℝ n} :
     energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) b c U U =
       energyFormIntegral μ a b c U U := by
+  classical
   rw [energyFormIntegral_def, energyFormIntegral_def]
   refine integral_congr_ae ?_
   exact Filter.Eventually.of_forall fun x =>
@@ -128,6 +166,7 @@ lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_apply
     energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) (fun _ => 0) c U V =
       (energyFormIntegral μ a (fun _ => 0) c U V +
         energyFormIntegral μ a (fun _ => 0) c V U) / 2 := by
+  classical
   rw [energyFormIntegral_def, energyFormIntegral_def, energyFormIntegral_def]
   have hpoint :
       (fun x => energyIntegrand (coefficientSymmetricPart (a x)) 0 (c x) (U x) (V x)) =
@@ -144,6 +183,7 @@ lemma energyFormIntegral_coefficientSymmetricPart_eq_of_isSymm_ae {b : X → Euc
     (ha : ∀ᵐ x ∂μ, (a x).IsSymm) :
     energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) b c U V =
       energyFormIntegral μ a b c U V := by
+  classical
   rw [energyFormIntegral_def, energyFormIntegral_def]
   refine integral_congr_ae ?_
   filter_upwards [ha] with x hx
