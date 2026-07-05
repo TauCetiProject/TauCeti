@@ -12,7 +12,11 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.FixedDegreeAddition
 
 This file records fixed-degree effective-divisor and symmetric-power compatibility for the
 formal Abel-Jacobi divisor class map.  For an effective divisor `D` of degree `d`, the
-underlying divisor-level map sends
+underlying weighted divisor-level map sends
+
+`D ↦ [D - weightedDegree w D • [x₀]] ∈ Pic⁰`.
+
+Its unweighted specialization sends
 
 `D ↦ [D - deg(D) • [x₀]] ∈ Pic⁰`,
 
@@ -61,11 +65,21 @@ lemma weightedAbelJacobiDivisorClass_cast (w : X → ℤ) (h : S.IsWeightedDegre
   simp
 
 /-- The weighted Abel-Jacobi class of the zero effective divisor is zero. -/
-lemma weightedAbelJacobiDivisorClass_zero_effective (w : X → ℤ)
+lemma weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_zero (w : X → ℤ)
     (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) :
     S.weightedAbelJacobiDivisorClass w h hx₀ (EffectiveDivisorOfDegree.zero X) = 0 := by
   simp
+
+/-- Adding fixed-degree effective divisors sends their weighted Abel-Jacobi class to the sum
+of the two classes. -/
+lemma weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_add (w : X → ℤ)
+    (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1)
+    (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
+    S.weightedAbelJacobiDivisorClass w h hx₀ (EffectiveDivisorOfDegree.add D E) =
+      S.weightedAbelJacobiDivisorClass w h hx₀ (D : WeilDivisor X) +
+        S.weightedAbelJacobiDivisorClass w h hx₀ (E : WeilDivisor X) := by
+  exact S.weightedAbelJacobiDivisorClass_add w h hx₀ D E
 
 /-- Appending symmetric-power divisors sends their weighted Abel-Jacobi class to the sum of
 the two classes. -/
@@ -75,7 +89,7 @@ lemma weightedAbelJacobiDivisorClass_ofSym_append (w : X → ℤ) (h : S.IsWeigh
       S.weightedAbelJacobiDivisorClass w h hx₀ (EffectiveDivisorOfDegree.ofSym s) +
         S.weightedAbelJacobiDivisorClass w h hx₀ (EffectiveDivisorOfDegree.ofSym t) := by
   rw [← EffectiveDivisorOfDegree.add_ofSym]
-  exact S.weightedAbelJacobiDivisorClass_add w h hx₀
+  exact S.weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_add w h hx₀
     (EffectiveDivisorOfDegree.ofSym s) (EffectiveDivisorOfDegree.ofSym t)
 
 /-! ### Unweighted fixed-degree Abel-Jacobi classes -/
@@ -91,9 +105,21 @@ lemma unweightedAbelJacobiDivisorClass_cast (h : S.IsUnweightedDegreeZero) (x₀
   simp
 
 /-- The unweighted Abel-Jacobi class of the zero effective divisor is zero. -/
-lemma unweightedAbelJacobiDivisorClass_zero_effective (h : S.IsUnweightedDegreeZero) (x₀ : X) :
+lemma unweightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_zero
+    (h : S.IsUnweightedDegreeZero) (x₀ : X) :
     S.unweightedAbelJacobiDivisorClass h x₀ (EffectiveDivisorOfDegree.zero X) = 0 := by
   simp
+
+/-- Adding fixed-degree effective divisors sends their unweighted Abel-Jacobi class to the sum
+of the two classes. -/
+lemma unweightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_add
+    (h : S.IsUnweightedDegreeZero) (x₀ : X)
+    (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
+    S.unweightedAbelJacobiDivisorClass h x₀ (EffectiveDivisorOfDegree.add D E) =
+      S.unweightedAbelJacobiDivisorClass h x₀ (D : WeilDivisor X) +
+        S.unweightedAbelJacobiDivisorClass h x₀ (E : WeilDivisor X) := by
+  exact map_add (S.unweightedAbelJacobiDivisorClass h x₀)
+    (D : WeilDivisor X) (E : WeilDivisor X)
 
 /-- Appending symmetric-power divisors sends their unweighted Abel-Jacobi class to the sum of
 the two classes. -/
@@ -104,9 +130,8 @@ lemma unweightedAbelJacobiDivisorClass_ofSym_append (h : S.IsUnweightedDegreeZer
       S.unweightedAbelJacobiDivisorClass h x₀ (EffectiveDivisorOfDegree.ofSym t)
       := by
   rw [← EffectiveDivisorOfDegree.add_ofSym]
-  exact map_add (S.unweightedAbelJacobiDivisorClass h x₀)
-    (EffectiveDivisorOfDegree.ofSym s : WeilDivisor X)
-    (EffectiveDivisorOfDegree.ofSym t : WeilDivisor X)
+  exact S.unweightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_add h x₀
+    (EffectiveDivisorOfDegree.ofSym s) (EffectiveDivisorOfDegree.ofSym t)
 
 end
 
