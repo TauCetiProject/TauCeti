@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Analytic.Order
 
 /-!
 # The residue of a meromorphic function
@@ -31,6 +33,10 @@ As an unconditional value it is junk (`0`) when `f` is not meromorphic at `z₀`
 * `TauCeti.Contour.residue_eq_of_order_lt_zero` — the characteristic value: from a reduced local
   presentation `f =ᶠ[𝓝[≠] z₀] (· − z₀) ^ n • g` with `g` analytic, `g z₀ ≠ 0`, and `n < 0`, the
   residue is `iteratedDeriv (−1 − n) g z₀ / (−1 − n)!`, independently of the presentation.
+* `TauCeti.Contour.residue_eq_of_eventuallyEq_zpow_smul` — the same value from any presentation
+  `f =ᶠ[𝓝[≠] z₀] (· − z₀) ^ n • g` with `g` analytic and `n ≤ −1`, dropping `g z₀ ≠ 0`.
+* `TauCeti.Contour.residue_add`, `TauCeti.Contour.residue_const_mul`,
+  `TauCeti.Contour.residue_sub` — the residue is linear in `f` (over functions meromorphic at `z₀`).
 * `TauCeti.Contour.residue_congr_nhdsNE` — the residue depends only on the germ of `f` on a
   punctured neighborhood of `z₀`.
 * `TauCeti.Contour.residue_eq_zero_of_analyticAt` — the residue vanishes where `f` is analytic.
@@ -164,6 +170,179 @@ theorem residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one {f : ℂ → �
   rw [huntop] at hg_eq
   rw [residue_eq_of_order_lt_zero (by decide) hg_an hg_ne hg_eq, htc]
   norm_num [iteratedDeriv_zero]
+
+/-- **Taylor-shift invariance of the residue coefficient.** For `h` analytic at `z₀`, dividing the
+`(p + i)`-th derivative at `z₀` of `(· − z₀) ^ p · h` by `(p + i)!` gives the same value as dividing
+the `i`-th derivative of `h` by `i!`: multiplying an analytic germ by `(· − z₀) ^ p` shifts its
+Taylor coefficients up by `p` without changing them. Only the top Leibniz term of the product rule
+survives, since `(· − z₀) ^ p` and its first `p − 1` derivatives vanish at `z₀`. -/
+private lemma iteratedDeriv_pow_sub_mul_div_factorial {z₀ : ℂ} (p i : ℕ) {h : ℂ → ℂ}
+    (hh : AnalyticAt ℂ h z₀) :
+    iteratedDeriv (p + i) (fun z => (z - z₀) ^ p * h z) z₀ / ((p + i).factorial : ℂ)
+      = iteratedDeriv i h z₀ / (i.factorial : ℂ) := by
+  have hpow_pd : ∀ j : ℕ, iteratedDeriv j (fun z : ℂ => (z - z₀) ^ p) z₀
+      = ((if j = p then p.factorial else 0 : ℕ) : ℂ) := by
+    intro j
+    have hrw : (fun z : ℂ => (z - z₀) ^ p) = fun z : ℂ => (fun w : ℂ => w ^ p) (z + (-z₀)) := by
+      funext z; rw [sub_eq_add_neg]
+    rw [hrw, iteratedDeriv_comp_add_const j (fun w : ℂ => w ^ p) (-z₀)]
+    simp only [add_neg_cancel, iteratedDeriv_fun_pow_zero]
+  have hleib : iteratedDeriv (p + i) (fun z => (z - z₀) ^ p * h z) z₀
+      = ((p + i).choose p * p.factorial : ℕ) * iteratedDeriv i h z₀ := by
+    rw [show (fun z => (z - z₀) ^ p * h z) = (fun z : ℂ => (z - z₀) ^ p) * h from rfl,
+      iteratedDeriv_mul (by fun_prop) hh.contDiffAt, Finset.sum_eq_single p]
+    · rw [hpow_pd p, Nat.add_sub_cancel_left, if_pos rfl]; push_cast; ring
+    · intro j _ hjp; rw [hpow_pd j, if_neg hjp]; push_cast; ring
+    · intro hp
+      exact absurd (Finset.mem_range.mpr (Nat.lt_succ_of_le (Nat.le_add_right p i))) hp
+  have hfac_pi : ((p + i).factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
+  have hfac_i : (i.factorial : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
+  have hid : (((p + i).choose p * p.factorial : ℕ) : ℂ) * (i.factorial : ℂ)
+      = ((p + i).factorial : ℂ) := by
+    have h := Nat.choose_mul_factorial_mul_factorial (Nat.le_add_right p i)
+    rw [Nat.add_sub_cancel_left] at h
+    exact_mod_cast h
+  rw [hleib, div_eq_div_iff hfac_pi hfac_i]
+  linear_combination iteratedDeriv i h z₀ * hid
+
+/-- **Generalized characteristic value of the residue.** If `f z = (z − z₀) ^ n • g z` near `z₀` (on
+the punctured neighborhood) with `g` analytic at `z₀` and `n ≤ −1`, then the residue is the Taylor
+coefficient `iteratedDeriv (−1 − n) g z₀ / (−1 − n)!`. Unlike `residue_eq_of_order_lt_zero` this
+drops the hypothesis `g z₀ ≠ 0`, so the presentation exponent `n` need not be the meromorphic order
+of `f`: `g` may itself vanish at `z₀` (making `f` analytic, residue `0`) and the formula holds. -/
+theorem residue_eq_of_eventuallyEq_zpow_smul {f g : ℂ → ℂ} {z₀ : ℂ} {n : ℤ}
+    (hn : n ≤ -1) (hg : AnalyticAt ℂ g z₀)
+    (hfg : f =ᶠ[𝓝[≠] z₀] fun z => (z - z₀) ^ n • g z) :
+    residue f z₀ = iteratedDeriv (-1 - n).toNat g z₀ / ((-1 - n).toNat.factorial : ℂ) := by
+  have hf : MeromorphicAt f z₀ :=
+    MeromorphicAt.iff_eventuallyEq_zpow_smul_analyticAt.mpr ⟨n, g, hg, hfg⟩
+  have hord_eq : meromorphicOrderAt f z₀ = (n : WithTop ℤ) + meromorphicOrderAt g z₀ := by
+    rw [meromorphicOrderAt_congr hfg,
+      show (fun z => (z - z₀) ^ n • g z) = ((fun x : ℂ => x - z₀) ^ n) • g from rfl,
+      meromorphicOrderAt_smul (by fun_prop) hg.meromorphicAt, meromorphicOrderAt_zpow_id_sub_const]
+  rcases lt_or_ge (meromorphicOrderAt f z₀) 0 with ha | ha
+  · -- Pole: reduce to `residue_eq_of_order_lt_zero` at the true order, then shift back to `g`.
+    have hle : (n : WithTop ℤ) ≤ meromorphicOrderAt f z₀ :=
+      hord_eq ▸ le_add_of_nonneg_right hg.meromorphicOrderAt_nonneg
+    obtain ⟨g₀, hg₀_an, hg₀_ne, hf_eq⟩ := (meromorphicOrderAt_ne_top_iff hf).1 (ne_top_of_lt ha)
+    set a := (meromorphicOrderAt f z₀).untop₀ with ha_def
+    have hcoe : (a : WithTop ℤ) = meromorphicOrderAt f z₀ :=
+      WithTop.coe_untop₀_of_ne_top (ne_top_of_lt ha)
+    have ha_lt : a < 0 := by rw [← WithTop.coe_lt_coe, hcoe]; exact_mod_cast ha
+    have hna : n ≤ a := by rw [← WithTop.coe_le_coe, hcoe]; exact hle
+    rw [residue_eq_of_order_lt_zero ha_lt hg₀_an hg₀_ne hf_eq]
+    have hg_eqNE : g =ᶠ[𝓝[≠] z₀] fun z => (z - z₀) ^ (a - n).toNat • g₀ z := by
+      filter_upwards [hfg, hf_eq, self_mem_nhdsWithin] with z hz1 hz2 hz3
+      have hzne : z - z₀ ≠ 0 := sub_ne_zero.mpr hz3
+      have heq : (z - z₀) ^ n • g z = (z - z₀) ^ a • g₀ z := hz1.symm.trans hz2
+      rw [smul_eq_mul, smul_eq_mul] at heq
+      rw [smul_eq_mul]
+      have h2 : (z - z₀) ^ a = (z - z₀) ^ n * (z - z₀) ^ (a - n).toNat := by
+        rw [← zpow_natCast (z - z₀) (a - n).toNat, ← zpow_add₀ hzne, Int.toNat_of_nonneg (by omega)]
+        congr 1; omega
+      rw [h2, mul_assoc] at heq
+      exact mul_left_cancel₀ (zpow_ne_zero n hzne) heq
+    have hana : AnalyticAt ℂ (fun z => (z - z₀) ^ (a - n).toNat • g₀ z) z₀ := by
+      simp only [smul_eq_mul]
+      exact ((analyticAt_id.sub analyticAt_const).pow _).mul hg₀_an
+    have hg_eq : g =ᶠ[𝓝 z₀] fun z => (z - z₀) ^ (a - n).toNat • g₀ z :=
+      (hg.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hana.continuousAt).1 hg_eqNE
+    have hsum : (a - n).toNat + (-1 - a).toNat = (-1 - n).toNat := by omega
+    rw [hg_eq.iteratedDeriv_eq (-1 - n).toNat]
+    simp only [smul_eq_mul]
+    rw [← hsum, iteratedDeriv_pow_sub_mul_div_factorial (a - n).toNat (-1 - a).toNat hg₀_an]
+  · -- No pole: `f` is analytic (residue `0`) and `g` vanishes to order `> −1 − n` (right side `0`).
+    rw [residue_eq_zero_of_meromorphicOrderAt_nonneg ha]
+    have hvanish : iteratedDeriv (-1 - n).toNat g z₀ = 0 := by
+      refine (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hg).1 ?_ _ (Nat.lt_succ_self _)
+      rcases eq_or_ne (analyticOrderAt g z₀) ⊤ with htop | htop
+      · rw [htop]; exact le_top
+      · lift analyticOrderAt g z₀ to ℕ using htop with m hm
+        rw [Nat.cast_le]
+        have hcompute : meromorphicOrderAt g z₀ = ((m : ℤ) : WithTop ℤ) := by
+          rw [hg.meromorphicOrderAt_eq, ← hm]; simp
+        have h0 : (0 : WithTop ℤ) ≤ (n : WithTop ℤ) + ((m : ℤ) : WithTop ℤ) := by
+          rw [← hcompute, ← hord_eq]; exact ha
+        rw [← WithTop.coe_add, ← WithTop.coe_zero, WithTop.coe_le_coe] at h0
+        omega
+    rw [hvanish, zero_div]
+
+/-- Any meromorphic `f` admits an analytic presentation `f z = (z − z₀) ^ m • φ z` near `z₀` at any
+exponent `m` at or below its meromorphic order (padding the reduced presentation with a nonnegative
+power of `z − z₀`). The factor `φ` is analytic but may vanish at `z₀` when `m` is strictly below the
+order. Used to bring two meromorphic functions to a common exponent before adding their residues. -/
+private lemma exists_analyticAt_eventuallyEq_zpow_smul {f : ℂ → ℂ} {z₀ : ℂ} {m : ℤ}
+    (hf : MeromorphicAt f z₀) (hm : (m : WithTop ℤ) ≤ meromorphicOrderAt f z₀) :
+    ∃ φ : ℂ → ℂ, AnalyticAt ℂ φ z₀ ∧ f =ᶠ[𝓝[≠] z₀] fun z => (z - z₀) ^ m • φ z := by
+  rcases eq_or_ne (meromorphicOrderAt f z₀) ⊤ with htop | htop
+  · refine ⟨fun _ => 0, analyticAt_const, ?_⟩
+    filter_upwards [meromorphicOrderAt_eq_top_iff.1 htop] with z hz
+    simp [hz]
+  · obtain ⟨g₀, hg₀_an, _, hf_eq⟩ := (meromorphicOrderAt_ne_top_iff hf).1 htop
+    set a := (meromorphicOrderAt f z₀).untop₀ with ha_def
+    have hma : m ≤ a := by
+      rw [← WithTop.coe_le_coe, WithTop.coe_untop₀_of_ne_top htop]; exact hm
+    refine ⟨fun z => (z - z₀) ^ (a - m).toNat • g₀ z, ?_, ?_⟩
+    · simp only [smul_eq_mul]
+      exact ((analyticAt_id.sub analyticAt_const).pow _).mul hg₀_an
+    · filter_upwards [hf_eq, self_mem_nhdsWithin] with z hz1 hz2
+      have hzne : z - z₀ ≠ 0 := sub_ne_zero.mpr hz2
+      have hexp : m + ((a - m).toNat : ℤ) = a := by omega
+      rw [hz1, smul_eq_mul, smul_eq_mul, smul_eq_mul, ← mul_assoc,
+        ← zpow_natCast (z - z₀) (a - m).toNat, ← zpow_add₀ hzne, hexp]
+
+/-- **Additivity of the residue.** The residue is additive on functions meromorphic at `z₀`. -/
+theorem residue_add {f g : ℂ → ℂ} {z₀ : ℂ} (hf : MeromorphicAt f z₀) (hg : MeromorphicAt g z₀) :
+    residue (f + g) z₀ = residue f z₀ + residue g z₀ := by
+  obtain ⟨m, hm1, hmf, hmg⟩ : ∃ m : ℤ, m ≤ -1 ∧ (m : WithTop ℤ) ≤ meromorphicOrderAt f z₀ ∧
+      (m : WithTop ℤ) ≤ meromorphicOrderAt g z₀ := by
+    refine ⟨min (min (meromorphicOrderAt f z₀).untop₀ (meromorphicOrderAt g z₀).untop₀) (-1),
+      min_le_right _ _, ?_, ?_⟩
+    · rcases eq_or_ne (meromorphicOrderAt f z₀) ⊤ with h | h
+      · rw [h]; exact le_top
+      · rw [← WithTop.coe_untop₀_of_ne_top h, WithTop.coe_le_coe]
+        exact (min_le_left _ _).trans (min_le_left _ _)
+    · rcases eq_or_ne (meromorphicOrderAt g z₀) ⊤ with h | h
+      · rw [h]; exact le_top
+      · rw [← WithTop.coe_untop₀_of_ne_top h, WithTop.coe_le_coe]
+        exact (min_le_left _ _).trans (min_le_right _ _)
+  obtain ⟨φf, hφf_an, hφf_eq⟩ := exists_analyticAt_eventuallyEq_zpow_smul hf hmf
+  obtain ⟨φg, hφg_an, hφg_eq⟩ := exists_analyticAt_eventuallyEq_zpow_smul hg hmg
+  have hφfg_eq : (f + g) =ᶠ[𝓝[≠] z₀] fun z => (z - z₀) ^ m • (φf + φg) z := by
+    filter_upwards [hφf_eq, hφg_eq] with z hz1 hz2
+    simp only [Pi.add_apply, hz1, hz2, smul_add]
+  rw [residue_eq_of_eventuallyEq_zpow_smul hm1 hφf_an hφf_eq,
+    residue_eq_of_eventuallyEq_zpow_smul hm1 hφg_an hφg_eq,
+    residue_eq_of_eventuallyEq_zpow_smul hm1 (hφf_an.add hφg_an) hφfg_eq,
+    iteratedDeriv_add hφf_an.contDiffAt hφg_an.contDiffAt, add_div]
+
+/-- **Scaling of the residue.** Scaling `f` by a constant scales its residue by that constant. -/
+theorem residue_const_mul {f : ℂ → ℂ} {z₀ : ℂ} (c : ℂ) (hf : MeromorphicAt f z₀) :
+    residue (fun z => c * f z) z₀ = c * residue f z₀ := by
+  obtain ⟨m, hm1, hmf⟩ : ∃ m : ℤ, m ≤ -1 ∧ (m : WithTop ℤ) ≤ meromorphicOrderAt f z₀ := by
+    refine ⟨min (meromorphicOrderAt f z₀).untop₀ (-1), min_le_right _ _, ?_⟩
+    rcases eq_or_ne (meromorphicOrderAt f z₀) ⊤ with h | h
+    · rw [h]; exact le_top
+    · rw [← WithTop.coe_untop₀_of_ne_top h, WithTop.coe_le_coe]; exact min_le_left _ _
+  obtain ⟨φ, hφ_an, hφ_eq⟩ := exists_analyticAt_eventuallyEq_zpow_smul hf hmf
+  have hcφ_an : AnalyticAt ℂ (fun z => c * φ z) z₀ := analyticAt_const.mul hφ_an
+  have hcf_eq : (fun z => c * f z) =ᶠ[𝓝[≠] z₀] fun z => (z - z₀) ^ m • (fun z => c * φ z) z := by
+    filter_upwards [hφ_eq] with z hz
+    simp only [hz, smul_eq_mul]; ring
+  rw [residue_eq_of_eventuallyEq_zpow_smul hm1 hφ_an hφ_eq,
+    residue_eq_of_eventuallyEq_zpow_smul hm1 hcφ_an hcf_eq,
+    iteratedDeriv_const_mul_field c φ, mul_div_assoc]
+
+/-- **Subtractivity of the residue.** The residue distributes over subtraction of meromorphic
+functions; the `−1` scaling case of `residue_add` and `residue_const_mul`. -/
+theorem residue_sub {f g : ℂ → ℂ} {z₀ : ℂ} (hf : MeromorphicAt f z₀) (hg : MeromorphicAt g z₀) :
+    residue (f - g) z₀ = residue f z₀ - residue g z₀ := by
+  have hng : MeromorphicAt (fun z => (-1 : ℂ) * g z) z₀ :=
+    analyticAt_const.meromorphicAt.mul hg
+  have heq : f - g = f + fun z => (-1 : ℂ) * g z := by
+    funext z; simp only [Pi.sub_apply, Pi.add_apply, neg_one_mul]; ring
+  rw [heq, residue_add hf hng, residue_const_mul (-1) hg]
+  ring
 
 end TauCeti.Contour
 
