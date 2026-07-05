@@ -320,6 +320,7 @@ theorem residue_add {f g : ℂ → ℂ} {z₀ : ℂ} (hf : MeromorphicAt f z₀)
     iteratedDeriv_add hφf_an.contDiffAt hφg_an.contDiffAt, add_div]
 
 /-- **Scaling of the residue.** Scaling `f` by a constant scales its residue by that constant. -/
+@[simp]
 theorem residue_const_mul {f : ℂ → ℂ} {z₀ : ℂ} (c : ℂ) (hf : MeromorphicAt f z₀) :
     residue (fun z => c * f z) z₀ = c * residue f z₀ := by
   obtain ⟨m, hm1, hmf⟩ : ∃ m : ℤ, m ≤ -1 ∧ (m : WithTop ℤ) ≤ meromorphicOrderAt f z₀ := by
