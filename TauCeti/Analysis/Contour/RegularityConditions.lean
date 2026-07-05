@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Algebra.Order.ToIntervalMod
 
 /-!
 # The Hungerbühler–Wasem crossing angle and regularity condition (B)
@@ -22,10 +23,10 @@ entry/exit tangents of `γ` there, through a sector-cancellation identity.
 
 ## Main definitions
 
-* `crossingAngle γ t₀` — the angle `arg L₊ − arg (−L₋)` between the exit tangent `L₊` and the
-  reversed entry tangent `−L₋`. Here `L₋` and `L₊` are the one-sided limits of `deriv γ` from the
-  left and right at `t₀`. As a `limUnder`-based value it is junk when a one-sided tangent fails to
-  exist; it computes the opening angle of the model sector at a corner of a piecewise-`C¹` curve.
+* `crossingAngle γ t₀` — the model-sector opening angle in `[0, 2π)`, from the exit tangent `L₊` to
+  the reversed entry tangent `−L₋` (`mod 2π`), where `L₋`, `L₊` are the one-sided limits of
+  `deriv γ` from the left and right at `t₀`. Junk when a one-sided tangent fails to exist; a smooth
+  crossing gives `π`. Meaningful at the corners/crossings of a piecewise-`C¹` curve.
 * `ConditionB γ a b f` — HW condition (B): at every interior on-curve singularity of `f`, the
   crossing angle is a rational multiple of `π`, and the Laurent principal part of `f` there
   resonates with that angle for each surviving higher-order coefficient (sector cancellation).
@@ -56,13 +57,15 @@ open Filter Topology
 
 namespace TauCeti.Contour
 
-/-- **Crossing angle** of a curve `γ : ℝ → ℂ` at an interior time `t₀`: the angle
-`arg L₊ − arg (−L₋)` between the exit tangent `L₊` and the reversed entry tangent `−L₋`, where
-`L₋ = lim_{t → t₀⁻} γ'(t)` and `L₊ = lim_{t → t₀⁺} γ'(t)` are the one-sided limits of the derivative
-of `γ`. As a `limUnder`-based value it is junk when a one-sided tangent fails to exist; it computes
-the opening angle of the model sector at a corner of a piecewise-`C¹` curve (HW §3). -/
+/-- **Crossing angle** of `γ : ℝ → ℂ` at an interior time `t₀`, valued in `[0, 2π)`: the opening
+angle of the model sector, from the exit tangent `L₊` to the reversed entry tangent `−L₋`, taken
+`mod 2π`. Here `L₋ = lim_{t → t₀⁻} γ'(t)`, `L₊ = lim_{t → t₀⁺} γ'(t)` are the one-sided limits of
+`deriv γ`. The normalization keeps it nonnegative: a **smooth** crossing (`L₊ = L₋`) gives `π`, as
+in HW §3. As a `limUnder`-based value it is junk when a one-sided tangent fails to exist; it is
+meaningful at the corners/crossings of a piecewise-`C¹` curve. -/
 def crossingAngle (γ : ℝ → ℂ) (t₀ : ℝ) : ℝ :=
-  Complex.arg (limUnder (𝓝[>] t₀) (deriv γ)) - Complex.arg (-limUnder (𝓝[<] t₀) (deriv γ))
+  toIcoMod Real.two_pi_pos 0
+    (Complex.arg (-limUnder (𝓝[<] t₀) (deriv γ)) - Complex.arg (limUnder (𝓝[>] t₀) (deriv γ)))
 
 /-- **Hungerbühler–Wasem condition (B)** for `f` along `γ` on `[a, b]`, imposed at each interior
 time `t₀ ∈ (a, b)` where `f` fails to be analytic at `γ t₀` — the on-curve singularities of `f`.
