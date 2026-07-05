@@ -41,7 +41,8 @@ of `f` (which fails at an on-curve singularity), never silently identifying the 
 
 * `hasCauchyPV_iff`, `cauchyPVExists_iff` — restate the predicates as their defining existentials,
   so consumers can characterize them without unfolding the definitions.
-* `HasCauchyPV.intro`, `CauchyPVExists.intro` — build the predicates from a witnessing set `S`.
+* `HasCauchyPV.intro` builds the predicate from a witnessing set `S` and its two clauses, while
+  `CauchyPVExists.intro` builds existence from a `HasCauchyPV` witness.
 * `HasCauchyPVAt.hasCauchyPV`, `CauchyPVExistsAt.cauchyPVExists` — the single-point principal value
   at `z₀` is the set-level principal value with `S = {z₀}`: the excision `‖γ t − z₀‖ > ε` is exactly
   the `S = {z₀}` case of the set excision.
@@ -198,14 +199,14 @@ theorem HasCauchyPV.const_mul {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {
     rw [← intervalIntegral.integral_const_mul]
     exact intervalIntegral.integral_congr fun t _ => (hbody ε t).symm
 
-/-- **Congruence along the curve.** If `f` and `g` agree along `γ` on `[a, b]`, they share the same
-principal value there, with the same excision set: the excised integrand reads `f` only through its
-values `f (γ t)` for `t ∈ [a, b]`. -/
+/-- **Congruence along the curve.** If `f` and `g` agree along `γ` on the open interval `Set.uIoo a
+b`, they share the same principal value there, with the same excision set (the endpoints are
+invisible to the interval integral; the excised integrand reads `f` only through `f (γ t)`). -/
 theorem HasCauchyPV.congr_along_curve {γ : ℝ → ℂ} {a b : ℝ} {f g : ℂ → ℂ} {v : ℂ}
-    (h : HasCauchyPV γ a b f v) (hfg : ∀ t ∈ Set.uIcc a b, f (γ t) = g (γ t)) :
+    (h : HasCauchyPV γ a b f v) (hfg : ∀ t ∈ Set.uIoo a b, f (γ t) = g (γ t)) :
     HasCauchyPV γ a b g v := by
   obtain ⟨S, hint, htend⟩ := h
-  have hbody : ∀ ε : ℝ, ∀ t ∈ Set.uIcc a b,
+  have hbody : ∀ ε : ℝ, ∀ t ∈ Set.uIoo a b,
       (if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then 0 else f (γ t) * deriv γ t)
         = if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then 0 else g (γ t) * deriv γ t := by
     intro ε t ht
@@ -214,9 +215,13 @@ theorem HasCauchyPV.congr_along_curve {γ : ℝ → ℂ} {a b : ℝ} {f g : ℂ 
     · simp [hc, hfg t ht]
   refine ⟨S, ?_, ?_⟩
   · filter_upwards [hint] with ε hε
-    exact (intervalIntegrable_congr fun t ht => hbody ε t (Set.uIoc_subset_uIcc ht)).mp hε
+    exact (intervalIntegrable_congr_uIoo fun t ht => hbody ε t ht).mp hε
   · refine htend.congr fun ε => ?_
-    exact intervalIntegral.integral_congr fun t ht => hbody ε t ht
+    exact intervalIntegral.integral_congr_uIoo fun t ht => hbody ε t ht
+
+/-- Existence form of `HasCauchyPV.zero`: the principal value of the zero integrand exists. -/
+theorem CauchyPVExists.zero {γ : ℝ → ℂ} {a b : ℝ} : CauchyPVExists γ a b (fun _ => 0) :=
+  .intro HasCauchyPV.zero
 
 /-- Existence form of `HasCauchyPV.const_mul`: if the principal value of `f` exists, so does that of
 `fun z => c * f z`. -/
@@ -225,10 +230,10 @@ theorem CauchyPVExists.const_mul {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ
   let ⟨_, hv⟩ := cauchyPVExists_iff.mp h
   ⟨_, hv.const_mul c⟩
 
-/-- Existence form of `HasCauchyPV.congr_along_curve`: agreement along `γ` on `[a, b]` transports
-existence of the principal value from `f` to `g`. -/
+/-- Existence form of `HasCauchyPV.congr_along_curve`: agreement along `γ` on `Set.uIoo a b`
+transports existence of the principal value from `f` to `g`. -/
 theorem CauchyPVExists.congr_along_curve {γ : ℝ → ℂ} {a b : ℝ} {f g : ℂ → ℂ}
-    (h : CauchyPVExists γ a b f) (hfg : ∀ t ∈ Set.uIcc a b, f (γ t) = g (γ t)) :
+    (h : CauchyPVExists γ a b f) (hfg : ∀ t ∈ Set.uIoo a b, f (γ t) = g (γ t)) :
     CauchyPVExists γ a b g :=
   let ⟨_, hv⟩ := cauchyPVExists_iff.mp h
   ⟨_, hv.congr_along_curve hfg⟩
