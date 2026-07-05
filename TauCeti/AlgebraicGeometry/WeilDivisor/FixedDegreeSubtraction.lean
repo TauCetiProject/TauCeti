@@ -93,6 +93,7 @@ lemma equivFinsupp_subOfLe_coe (D : EffectiveDivisorOfDegree X e)
 
 /-- Under the symmetric-power equivalence, a residual divisor is represented by the truncated
 difference of multiplicity functions. -/
+@[simp]
 lemma equivSym_subOfLe (D : EffectiveDivisorOfDegree X e) (E : EffectiveDivisorOfDegree X d)
     (hED : (E : WeilDivisor X) ≤ D) :
     equivSym (subOfLe D E hED) =
