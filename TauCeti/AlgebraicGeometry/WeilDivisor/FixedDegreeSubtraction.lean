@@ -85,7 +85,6 @@ lemma multiplicityFinsupp_subOfLE (D : EffectiveDivisorOfDegree X e)
 
 /-- The finitely supported multiplicity representation of a residual divisor is the
 truncated difference of the representations of the original divisors. -/
-@[simp]
 lemma equivFinsupp_subOfLE_coe (D : EffectiveDivisorOfDegree X e)
     (E : EffectiveDivisorOfDegree X d) (hED : (E : WeilDivisor X) ≤ D) :
     (equivFinsupp (subOfLE D E hED) : X →₀ ℕ) =
