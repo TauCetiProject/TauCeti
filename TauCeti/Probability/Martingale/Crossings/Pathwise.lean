@@ -35,7 +35,8 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 variable {𝔽 : ℕ → MeasurableSpace Ω}
 
 /-- Helper: hitting respects pointwise equality on `[n, m]`. -/
-private lemma hitting_congr {Ω β : Type*} {u v : ℕ → Ω → β} {s : Set β} {n m : ℕ} {ω : Ω}
+private lemma hitting_congr {Ω β ι : Type*} [Preorder ι] [InfSet ι] {u v : ι → Ω → β}
+    {s : Set β} {n m : ι} {ω : Ω}
     (h : ∀ k, n ≤ k → k ≤ m → u k ω = v k ω) :
     hittingBtwn u s n m ω = hittingBtwn v s n m ω := by
   simp only [hittingBtwn]
@@ -67,8 +68,8 @@ private lemma hitting_congr {Ω β : Type*} {u v : ℕ → Ω → β} {s : Set �
     simp only [if_neg hex, if_neg hex']
 
 /-- Helper: `upperCrossingTime` respects pointwise equality on `[0, N]`. -/
-private lemma upperCrossingTime_congr {Ω : Type*} {a b : ℝ} {f g : ℕ → Ω → ℝ} {N : ℕ} {ω : Ω}
-    (h : ∀ n ≤ N, f n ω = g n ω) :
+private lemma upperCrossingTime_congr {Ω ι : Type*} [Preorder ι] [OrderBot ι] [InfSet ι]
+    {a b : ℝ} {f g : ι → Ω → ℝ} {N : ι} {ω : Ω} (h : ∀ n ≤ N, f n ω = g n ω) :
     ∀ k, upperCrossingTime a b f N k ω = upperCrossingTime a b g N k ω := by
   intro k
   induction k with
@@ -88,8 +89,8 @@ private lemma upperCrossingTime_congr {Ω : Type*} {a b : ℝ} {f g : ℕ → Ω
     exact h k hk_ub
 
 /-- Helper: `upcrossingsBefore` is invariant under pointwise equality on `[0, N]`. -/
-lemma upcrossingsBefore_congr {Ω : Type*} {a b : ℝ} {f g : ℕ → Ω → ℝ} {N : ℕ} {ω : Ω}
-    (h : ∀ n ≤ N, f n ω = g n ω) :
+lemma upcrossingsBefore_congr {Ω ι : Type*} [Preorder ι] [OrderBot ι] [InfSet ι]
+    {a b : ℝ} {f g : ι → Ω → ℝ} {N : ι} {ω : Ω} (h : ∀ n ≤ N, f n ω = g n ω) :
     upcrossingsBefore a b f N ω = upcrossingsBefore a b g N ω := by
   simp [upcrossingsBefore, upperCrossingTime_congr h]
 
@@ -160,9 +161,10 @@ lemma upcrossingsBefore_le_upcrossingsBefore_neg_revProcess_succ
   · simp [hN]
   by_cases hemp : {n | upperCrossingTime a b X N n ω < N}.Nonempty
   · -- Mathlib's boundedness of the completed-crossing index set on the reversed side.
+    have hneg : -b < -a := by linarith
     have hbdd : BddAbove
         {n | upperCrossingTime (-b) (-a) (-(revProcess X N)) (N + 1) n ω < N + 1} :=
-      upperCrossingTime_lt_bddAbove (show (-b) < (-a) by linarith)
+      upperCrossingTime_lt_bddAbove hneg
     have hsub : {n | upperCrossingTime a b X N n ω < N} ⊆
         {n | upperCrossingTime (-b) (-a) (-(revProcess X N)) (N + 1) n ω < N + 1} := by
       intro n hn
