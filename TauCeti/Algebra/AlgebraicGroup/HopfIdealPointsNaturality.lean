@@ -76,6 +76,22 @@ lemma mapPoints_mem_quotientPointsSubgroup (H : _root_.CommHopfAlgCat.{v} R)
     ext g h
     rfl
 
+/-- The object part of the subgroup functor is the cut-out point subgroup. -/
+@[simp]
+lemma quotientPointsSubgroupFunctor_obj (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
+    (quotientPointsSubgroupFunctor (R := R) H I).obj A =
+      GrpCat.of (quotientPointsSubgroup H I A) :=
+  rfl
+
+/-- The map part of the subgroup functor is the restricted value-algebra map. -/
+@[simp]
+lemma quotientPointsSubgroupFunctor_map (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) {A B : CommAlgCat.{w} R} (χ : A ⟶ B) :
+    (quotientPointsSubgroupFunctor (R := R) H I).map χ =
+      GrpCat.ofHom (mapQuotientPointsSubgroup H I χ) :=
+  rfl
+
 /-- The subgroup functor includes naturally into the ambient functor of points. -/
 @[expose] noncomputable def quotientPointsSubgroupIncl (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) :
@@ -151,6 +167,9 @@ private lemma liftQuotientPointHom_apply (H : _root_.CommHopfAlgCat.{v} R)
     liftQuotientPointHom H I A g =
       liftQuotientPoint H I A g ((mem_quotientPointsSubgroup_iff H I A g).mp g.property) := by
   apply quotientPointsHom_injective H I A
+  -- `liftQuotientPointHom` is the `toMonoidHom` of the inverse equivalence returned by
+  -- `MonoidHom.ofInjective`; this coercion exposes the underlying inverse application so the
+  -- standard `apply_ofInjective_symm` lemma can rewrite it.
   change (quotientPointsHom H I A).hom
       (((MonoidHom.ofInjective (f := (quotientPointsHom H I A).hom)
         (quotientPointsHom_injective H I A)).symm) g) =
@@ -218,6 +237,25 @@ noncomputable def quotientPointsSubgroupNatIso (H : _root_.CommHopfAlgCat.{v} R)
       intro A B χ
       ext f
       exact (quotientPointsSubgroupFunctor_map_quotientPointsHom_aux H I χ f).symm)
+
+/-- The natural isomorphism's forward component is the quotient-subgroup component isomorphism. -/
+@[simp]
+lemma quotientPointsSubgroupNatIso_hom_app_apply (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
+    (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
+    (quotientPointsSubgroupNatIso H I).hom.app A f =
+      (⟨quotientPointsHom H I A f, quotientPointsHom_mem_quotientPointsSubgroup H I A f⟩ :
+        quotientPointsSubgroup H I A) := by
+  exact quotientPointsSubgroupIso_hom_apply H I A f
+
+/-- The natural isomorphism's inverse component is the quotient lift of a subgroup point. -/
+@[simp]
+lemma quotientPointsSubgroupNatIso_inv_app_apply (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
+    (g : quotientPointsSubgroup H I A) :
+    (quotientPointsSubgroupNatIso H I).inv.app A g =
+      liftQuotientPoint H I A g ((mem_quotientPointsSubgroup_iff H I A g).mp g.property) := by
+  exact quotientPointsSubgroupIso_inv_apply H I A g
 
 /-- The image of a quotient point under the subgroup functor is its mapped quotient point,
 viewed inside the cut-out subgroup. -/
