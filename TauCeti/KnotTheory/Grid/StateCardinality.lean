@@ -27,6 +27,8 @@ the free `ZMod 2`-module on `GridState n`.
 * `TauCeti.GridState.subsingletonOfLeOne`: for `n ≤ 1`, grid states are unique.
 * `TauCeti.GridState.card_zero`, `TauCeti.GridState.card_one`, `TauCeti.GridState.card_two`:
   small-grid cardinalities used as sanity checks for later computations.
+* `TauCeti.GridState.twoByTwoId`, `TauCeti.GridState.twoByTwoSwap`, and
+  `TauCeti.GridDiagram.twoByTwo`: the two named states and standard diagram in grid size two.
 
 ## References
 
@@ -129,6 +131,104 @@ theorem eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap (x : GridState 2) :
   · exact Or.inl (by rw [Equiv.eq_symm_apply, equivPerm_apply, h])
   · exact Or.inr (by rw [Equiv.eq_symm_apply, equivPerm_apply, h])
 
+/-- The identity grid state on a `2 × 2` grid. -/
+@[expose]
+noncomputable def twoByTwoId : GridState 2 :=
+  Classical.choose <| show ∃ x : GridState 2, x 0 = 0 ∧ x 1 = 1 from ⟨⟨1⟩, rfl, rfl⟩
+
+/-- The transposition grid state on a `2 × 2` grid. -/
+@[expose]
+noncomputable def twoByTwoSwap : GridState 2 :=
+  Classical.choose <| show ∃ x : GridState 2, x 0 = 1 ∧ x 1 = 0 from
+    ⟨⟨Equiv.swap (0 : Fin 2) 1⟩, by simp, by simp⟩
+
+/-- The identity two-by-two state sends column `0` to row `0`. -/
+@[simp]
+theorem twoByTwoId_zero : twoByTwoId 0 = 0 :=
+  (Classical.choose_spec <| show ∃ x : GridState 2, x 0 = 0 ∧ x 1 = 1 from
+    ⟨⟨1⟩, rfl, rfl⟩).1
+
+/-- The identity two-by-two state sends column `1` to row `1`. -/
+@[simp]
+theorem twoByTwoId_one : twoByTwoId 1 = 1 :=
+  (Classical.choose_spec <| show ∃ x : GridState 2, x 0 = 0 ∧ x 1 = 1 from
+    ⟨⟨1⟩, rfl, rfl⟩).2
+
+/-- The transposition two-by-two state sends column `0` to row `1`. -/
+@[simp]
+theorem twoByTwoSwap_zero : twoByTwoSwap 0 = 1 := by
+  exact (Classical.choose_spec <| show ∃ x : GridState 2, x 0 = 1 ∧ x 1 = 0 from
+    ⟨⟨Equiv.swap (0 : Fin 2) 1⟩, by simp, by simp⟩).1
+
+/-- The transposition two-by-two state sends column `1` to row `0`. -/
+@[simp]
+theorem twoByTwoSwap_one : twoByTwoSwap 1 = 0 := by
+  exact (Classical.choose_spec <| show ∃ x : GridState 2, x 0 = 1 ∧ x 1 = 0 from
+    ⟨⟨Equiv.swap (0 : Fin 2) 1⟩, by simp, by simp⟩).2
+
+/-- The two named `2 × 2` grid states are distinct. -/
+theorem twoByTwoId_ne_twoByTwoSwap : twoByTwoId ≠ twoByTwoSwap := by
+  intro h
+  exact (Fin.zero_ne_one : (0 : Fin 2) ≠ 1) (by
+    simpa using congrArg (fun x : GridState 2 => x 0) h)
+
 end GridState
+
+namespace GridDiagram
+
+/-- The standard `2 × 2` grid diagram with `O` markings on the identity state and `X`
+markings on the transposition state. This is the usual smallest grid diagram for the unknot. -/
+@[expose]
+noncomputable def twoByTwo : GridDiagram 2 :=
+  Classical.choose <| show
+    ∃ G : GridDiagram 2, G.O = GridState.twoByTwoId ∧ G.X = GridState.twoByTwoSwap from
+    ⟨{ O := GridState.twoByTwoId
+       X := GridState.twoByTwoSwap
+       disjoint := by
+        intro c h
+        fin_cases c <;> simp at h },
+      rfl, rfl⟩
+
+/-- The `O`-marking state of the standard two-by-two diagram is the identity state. -/
+@[simp]
+theorem twoByTwo_O : twoByTwo.O = GridState.twoByTwoId :=
+  (Classical.choose_spec <| show
+      ∃ G : GridDiagram 2, G.O = GridState.twoByTwoId ∧ G.X = GridState.twoByTwoSwap from
+    ⟨{ O := GridState.twoByTwoId
+       X := GridState.twoByTwoSwap
+       disjoint := by
+        intro c h
+        fin_cases c <;> simp at h },
+      rfl, rfl⟩).1
+
+/-- The `X`-marking state of the standard two-by-two diagram is the transposition state. -/
+@[simp]
+theorem twoByTwo_X : twoByTwo.X = GridState.twoByTwoSwap :=
+  (Classical.choose_spec <| show
+      ∃ G : GridDiagram 2, G.O = GridState.twoByTwoId ∧ G.X = GridState.twoByTwoSwap from
+    ⟨{ O := GridState.twoByTwoId
+       X := GridState.twoByTwoSwap
+       disjoint := by
+        intro c h
+        fin_cases c <;> simp at h },
+      rfl, rfl⟩).2
+
+/-- The standard two-by-two diagram has `O` markings at `(0,0)` and `(1,1)`. -/
+@[simp]
+theorem twoByTwo_OSet :
+    twoByTwo.OSet = {(0, 0), (1, 1)} := by
+  ext p
+  rcases p with ⟨c, r⟩
+  fin_cases c <;> fin_cases r <;> simp [OSet]
+
+/-- The standard two-by-two diagram has `X` markings at `(0,1)` and `(1,0)`. -/
+@[simp]
+theorem twoByTwo_XSet :
+    twoByTwo.XSet = {(0, 1), (1, 0)} := by
+  ext p
+  rcases p with ⟨c, r⟩
+  fin_cases c <;> fin_cases r <;> simp [XSet]
+
+end GridDiagram
 
 end TauCeti
