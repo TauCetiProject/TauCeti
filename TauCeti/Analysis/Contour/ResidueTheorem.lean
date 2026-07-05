@@ -165,6 +165,7 @@ private lemma residueTheorem_step {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
         < (∑ s ∈ S, (-(meromorphicOrderAt F s).untop₀).toNat) ∧
       (circleIntegral G c R = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, residue G s →
         circleIntegral F c R = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, residue F s) := by
+  -- Boundary facts: `S` avoids the circle, so `F` is analytic — hence integrable — there.
   have hmem_cb : ∀ s ∈ S, s ∈ closedBall c R :=
     fun s hs => ball_subset_closedBall (hS (Finset.mem_coe.2 hs))
   have hsphere_notS : ∀ z ∈ sphere c R, z ∉ S := by
@@ -174,6 +175,7 @@ private lemma residueTheorem_step {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
   have hF_int : CircleIntegrable F c R :=
     circleIntegrable_of_analyticOn_sphere hR.le fun z hz =>
       hF_off z (sphere_subset_closedBall hz) (hsphere_notS z hz)
+  -- Laurent data at the pole `s₀`: a non-vanishing germ `g` and the (negative) order `n₀`.
   have hs₀_ball : s₀ ∈ ball c R := hS (Finset.mem_coe.2 hs₀S)
   have hF_mero_s₀ : MeromorphicAt F s₀ := hF_mero s₀ (hmem_cb s₀ hs₀S)
   have hord_ne_top : meromorphicOrderAt F s₀ ≠ ⊤ := ne_top_of_lt hs₀_neg
@@ -182,6 +184,7 @@ private lemma residueTheorem_step {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
   have hFs₀ : meromorphicOrderAt F s₀ = (n₀ : WithTop ℤ) :=
     (WithTop.coe_untop₀_of_ne_top hord_ne_top).symm
   have hn₀_neg : n₀ < 0 := by rw [hFs₀] at hs₀_neg; exact_mod_cast hs₀_neg
+  -- Peel the leading term `P = g s₀ · (· − s₀) ^ n₀`; set `G := F − P`, still analytic off `S`.
   set P : ℂ → ℂ := fun z => g s₀ * (z - s₀) ^ n₀ with hP_def
   set G : ℂ → ℂ := fun z => F z - P z with hG_def
   have hP_an_off : ∀ z, z ≠ s₀ → AnalyticAt ℂ P z := fun z hz =>
@@ -191,6 +194,7 @@ private lemma residueTheorem_step {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
   have hG_off : ∀ z ∈ closedBall c R, z ∉ S → AnalyticAt ℂ G z := by
     intro z hz hzS
     exact (hF_off z hz hzS).sub (hP_an_off z fun h => hzS (h ▸ hs₀S))
+  -- Total pole depth strictly drops: the order at `s₀` rises above `n₀`, and nowhere else falls.
   have hG_germ : G =ᶠ[𝓝[≠] s₀] fun z => (z - s₀) ^ n₀ • g z - g s₀ • (z - s₀) ^ n₀ := by
     filter_upwards [hF_germ] with z hz
     simp only [hG_def, hP_def, hz, smul_eq_mul]
@@ -208,6 +212,7 @@ private lemma residueTheorem_step {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
       have hadd := meromorphicOrderAt_add (hF_mero s (hmem_cb s hs))
         ((hP_mero s (hmem_cb s hs)).neg)
       rwa [← meromorphicOrderAt_neg, ← sub_eq_add_neg] at hadd
+  -- Split `∮ F = ∮ G + ∮ P` and `∑ res F = ∑ res G + ∑ res P`, transferring `G`'s formula to `F`.
   have hP_int : CircleIntegrable P c R :=
     circleIntegrable_of_analyticOn_sphere hR.le fun z hz =>
       hP_an_off z fun h => hsphere_notS z hz (h ▸ hs₀S)
