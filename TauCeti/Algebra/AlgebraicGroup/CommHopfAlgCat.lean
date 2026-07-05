@@ -85,7 +85,7 @@ lemma mapPointsFunctor_app_apply_apply {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ 
 lemma mapPointsFunctor_naturality {H K : CommHopfAlgCat.{v} R} (φ : H ⟶ K)
     {A B : CommAlgCat.{w} R} (χ : A ⟶ B)
     (f : HopfAlgebra.points (R := R) (H := K) A) :
-    HopfAlgebra.mapPoints (H := H) χ ((mapPointsFunctor φ).app A f) =
+    HopfAlgebra.mapPoints (H := H) χ (toConv (f.ofConv.comp (φ.hom : H →ₐ[R] K))) =
       (mapPointsFunctor φ).app B (HopfAlgebra.mapPoints (H := K) χ f) := by
   rfl
 
