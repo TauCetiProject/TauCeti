@@ -26,8 +26,8 @@ stated up to that normal form.
 
 ## Main results
 
-* `TauCeti.Contour.classicalResidueTheorem_circle_of_neg` — the sharp support form: only the poles
-  (points of negative meromorphic order) need lie in `S`.
+* `TauCeti.Contour.classicalResidueTheorem_circle_of_meromorphicOrderAt_neg` — the sharp support
+  form: only the poles (points of negative meromorphic order) need lie in `S`.
 * `TauCeti.Contour.classicalResidueTheorem_circle` — the roadmap form, asking every point of nonzero
   meromorphic order to lie in `S`; a direct corollary since residues at non-poles vanish.
 
@@ -235,7 +235,7 @@ private lemma residueTheorem_aux {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
         by_cases hzS : z ∈ S
         · exact hpole z hzS
         · exact (hF_off z hz hzS).meromorphicOrderAt_nonneg
-      rw [circleIntegral_eq_zero_of_nonneg_meromorphicOrderAt hR hF_mero hnonneg,
+      rw [circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg hR hF_mero hnonneg,
         Finset.sum_eq_zero fun s hs =>
           residue_eq_zero_of_meromorphicOrderAt_nonneg (hnonneg s (hmem_cb s hs))]
       ring
@@ -247,8 +247,8 @@ the contour integral of `f` around the boundary circle is `2πi` times the sum o
 `∮_{C(c,R)} f = 2πi · ∑_{s ∈ S} residue f s`.
 `S` need only contain the poles (the points of negative meromorphic order); residues at points of
 nonnegative order vanish, so listing extra points leaves the sum unchanged. -/
-theorem classicalResidueTheorem_circle_of_neg {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 < R)
-    (S : Finset ℂ) (hf : MeromorphicOn f (Metric.closedBall c R))
+theorem classicalResidueTheorem_circle_of_meromorphicOrderAt_neg {f : ℂ → ℂ} {c : ℂ} {R : ℝ}
+    (hR : 0 < R) (S : Finset ℂ) (hf : MeromorphicOn f (Metric.closedBall c R))
     (hS : (S : Set ℂ) ⊆ Metric.ball c R)
     (hsupp : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt f z < 0 → z ∈ S) :
     circleIntegral f c R = 2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, residue f s) := by
@@ -279,13 +279,14 @@ theorem classicalResidueTheorem_circle_of_neg {f : ℂ → ℂ} {c : ℂ} {R : �
 /-- **The classical residue theorem on a circle** (roadmap form). If `f` is meromorphic on the
 closed disc `C(c, R)` (`R > 0`) and every point of nonzero meromorphic order lies in a finite set
 `S` inside the open disc, then `∮_{C(c,R)} f = 2πi · ∑_{s ∈ S} residue f s`. Since residues at
-non-poles vanish only the poles matter, so `classicalResidueTheorem_circle_of_neg` proves the same
+non-poles vanish, `classicalResidueTheorem_circle_of_meromorphicOrderAt_neg` proves the same
 conclusion asking only the poles (points of negative order) to lie in `S`. -/
 theorem classicalResidueTheorem_circle {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset ℂ)
     (hf : MeromorphicOn f (Metric.closedBall c R))
     (hS : (S : Set ℂ) ⊆ Metric.ball c R)
     (hsupp : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt f z ≠ 0 → z ∈ S) :
     circleIntegral f c R = 2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, residue f s) :=
-  classicalResidueTheorem_circle_of_neg hR S hf hS fun z hz h => hsupp z hz (ne_of_lt h)
+  classicalResidueTheorem_circle_of_meromorphicOrderAt_neg hR S hf hS
+    fun z hz h => hsupp z hz (ne_of_lt h)
 
 end TauCeti.Contour

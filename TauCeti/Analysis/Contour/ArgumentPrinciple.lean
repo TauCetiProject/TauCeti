@@ -173,7 +173,7 @@ theorem argumentPrinciple {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 < R) (S 
   -- `A := logDeriv F - P` is pole-free (the principal part cancels each simple pole of
   -- `logDeriv F`), so its circle integral vanishes.
   have hA0 : circleIntegral (fun z => logDeriv F z - P z) c R = 0 := by
-    refine circleIntegral_eq_zero_of_nonneg_meromorphicOrderAt hR (hlogF_mero.sub hP_mero) ?_
+    refine circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg hR (hlogF_mero.sub hP_mero) ?_
     intro z hz
     by_cases hzS : z ∈ S
     · -- Pole point: the principal part cancels the simple pole of `logDeriv F`.

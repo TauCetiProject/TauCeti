@@ -23,7 +23,7 @@ which is genuinely analytic throughout the disc.
 
 ## Main results
 
-* `TauCeti.Contour.circleIntegral_eq_zero_of_nonneg_meromorphicOrderAt` — the vanishing of the
+* `TauCeti.Contour.circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg` — the vanishing of the
   circle integral of a pole-free meromorphic function.
 
 ## Provenance
@@ -41,7 +41,7 @@ namespace TauCeti.Contour
 /-- **Cauchy–Goursat for a pole-free meromorphic function.** If `A` is meromorphic on the closed
 disc `C(c, R)` (`R > 0`) and has non-negative meromorphic order at every point of the disc, then
 `∮_{C(c,R)} A = 0`. -/
-lemma circleIntegral_eq_zero_of_nonneg_meromorphicOrderAt {A : ℂ → ℂ} {c : ℂ} {R : ℝ}
+lemma circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg {A : ℂ → ℂ} {c : ℂ} {R : ℝ}
     (hR : 0 < R) (hA : MeromorphicOn A (closedBall c R))
     (hord : ∀ z ∈ closedBall c R, 0 ≤ meromorphicOrderAt A z) :
     circleIntegral A c R = 0 := by
