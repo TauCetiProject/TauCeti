@@ -88,7 +88,6 @@ lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_flip_eq :
     (Filter.Eventually.of_forall fun _ => coefficientSymmetricPart_isSymm _)
 
 /-- Bundled symmetry of the shifted-Laplacian model integrated form `-Δ + c`. -/
-@[simp]
 lemma energyFormIntegral_one_zero_mass_flip_eq [DecidableEq n] :
     Function.swap (energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c) =
       energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c :=
