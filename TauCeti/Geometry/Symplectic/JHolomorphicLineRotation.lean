@@ -63,28 +63,6 @@ lemma comp_stdComplexLineProduct_apply_stdComplexLineImag (F : (ℝ × ℝ) →�
     _ = F (-stdComplexLineReal) := by rw [AlmostComplexStructure.product_apply_stdComplexLineImag]
     _ = -F stdComplexLineReal := by rw [map_neg]
 
-/-- Precomposing a standard-line linear map by the half-turn `-id` negates the real coordinate
-value. -/
-@[simp]
-lemma comp_neg_apply_stdComplexLineReal (F : (ℝ × ℝ) →ₗ[ℝ] V) :
-    (F.comp (-LinearMap.id : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ)) stdComplexLineReal =
-      -F stdComplexLineReal := by
-  calc
-    (F.comp (-LinearMap.id : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ)) stdComplexLineReal =
-        F (-stdComplexLineReal) := rfl
-    _ = -F stdComplexLineReal := by rw [map_neg]
-
-/-- Precomposing a standard-line linear map by the half-turn `-id` negates the imaginary
-coordinate value. -/
-@[simp]
-lemma comp_neg_apply_stdComplexLineImag (F : (ℝ × ℝ) →ₗ[ℝ] V) :
-    (F.comp (-LinearMap.id : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ)) stdComplexLineImag =
-      -F stdComplexLineImag := by
-  calc
-    (F.comp (-LinearMap.id : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ)) stdComplexLineImag =
-        F (-stdComplexLineImag) := rfl
-    _ = -F stdComplexLineImag := by rw [map_neg]
-
 end LinearMap
 
 section ComplexLinear
@@ -139,18 +117,19 @@ lemma IsComplexLinearMap.comp_neg
   rw [isComplexLinearMap_stdComplexLine_iff] at hF ⊢
   simp [hF]
 
+/-- Negating a standard-line map preserves and reflects complex-linearity. -/
+@[simp]
+lemma isComplexLinearMap_neg_iff :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (-F) ↔
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F :=
+  ⟨fun hF => by simpa using hF.neg, fun hF => hF.neg⟩
+
 /-- Precomposition by the half-turn `-id` preserves and reflects complex-linearity of maps from
 the standard complex line. -/
-@[simp]
 lemma isComplexLinearMap_comp_neg_iff :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (F.comp (-LinearMap.id : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ)) ↔
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (-F) ↔
         IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F := by
-  constructor
-  · intro hF
-    have hrot := hF.comp_neg
-    simpa using hrot
-  · exact fun hF => hF.comp_neg
+  simp
 
 end ComplexLinear
 
@@ -158,16 +137,12 @@ namespace SymplecticForm
 
 variable {ω : SymplecticForm V}
 
-/-- Precomposition by the standard source complex structure preserves the ordered symplectic area
-density `ω(F ∂s, F ∂t)`. -/
+/-- Normalized form of the ordered area-density identity after precomposing by the standard
+source complex structure. -/
 @[simp]
 lemma symplecticForm_comp_stdComplexLineProduct (F : (ℝ × ℝ) →ₗ[ℝ] V) :
-    ω ((F.comp (AlmostComplexStructure.product ℝ).toLinearMap) stdComplexLineReal)
-        ((F.comp (AlmostComplexStructure.product ℝ).toLinearMap) stdComplexLineImag) =
+    -(ω.toBilinForm (F stdComplexLineImag)) (F stdComplexLineReal) =
       ω (F stdComplexLineReal) (F stdComplexLineImag) := by
-  simp only [LinearMap.comp_stdComplexLineProduct_apply_stdComplexLineReal,
-    LinearMap.comp_stdComplexLineProduct_apply_stdComplexLineImag]
-  rw [map_neg]
   exact ω.neg_eq (F stdComplexLineImag) (F stdComplexLineReal)
 
 end SymplecticForm
