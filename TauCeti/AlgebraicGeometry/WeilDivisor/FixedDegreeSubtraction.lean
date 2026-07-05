@@ -13,9 +13,8 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.FixedDegreeAddition
 This file records the residual effective divisor obtained by subtracting an effective
 sub-divisor from a fixed-degree effective Weil divisor. If `E ≤ D`, with `D` of degree `e`
 and `E` of degree `d`, then `D - E` is effective of degree `e - d`. The cancellation lemmas
-show that this operation is inverse to the degree-indexed addition operation from
-`TauCeti.AlgebraicGeometry.WeilDivisor.FixedDegreeAddition`, up to the unavoidable casts in
-the natural-number degree index.
+show that adding the residual back recovers the original divisor, up to the unavoidable casts
+in the natural-number degree index.
 
 This is formal divisor bookkeeping for the Jacobian challenge roadmap's Layer C symmetric-power
 lane (`TauCetiRoadmap/JacobianChallenge/README.md`, "Relative effective Cartier divisors and
@@ -38,23 +37,13 @@ variable {X : Type*} {d e : ℕ}
 
 noncomputable section
 
-/-- If a fixed-degree effective divisor is coefficientwise below another, its degree index is
-also bounded above. -/
-lemma degree_le_of_le {D : EffectiveDivisorOfDegree X d} {E : EffectiveDivisorOfDegree X e}
-    (hDE : (D : WeilDivisor X) ≤ E) : d ≤ e := by
-  have hdeg : degree (D : WeilDivisor X) ≤ degree (E : WeilDivisor X) :=
-    WeilDivisor.degree_le_of_le hDE
-  have hde : (d : ℤ) ≤ e := by
-    simpa [D.degree_eq, E.degree_eq] using hdeg
-  exact_mod_cast hde
-
 /-- The residual fixed-degree effective divisor `D - E`, defined when `E ≤ D`.
 
 If `D` has degree `e` and `E` has degree `d`, the residual has degree `e - d`. -/
 abbrev subOfLE (D : EffectiveDivisorOfDegree X e) (E : EffectiveDivisorOfDegree X d)
     (hED : (E : WeilDivisor X) ≤ D) : EffectiveDivisorOfDegree X (e - d) :=
   ⟨(D : WeilDivisor X) - E, le_iff_isEffective_sub.mp hED, by
-    have hde : d ≤ e := degree_le_of_le hED
+    have hde : d ≤ e := EffectiveDivisorOfDegree.degree_le_of_le hED
     rw [degree_sub, D.degree_eq, E.degree_eq]
     exact (Int.ofNat_sub hde).symm⟩
 
@@ -74,6 +63,51 @@ lemma coeff_subOfLE (D : EffectiveDivisorOfDegree X e) (E : EffectiveDivisorOfDe
       coeff (D : WeilDivisor X) x - coeff (E : WeilDivisor X) x := by
   rw [coe_subOfLE, WeilDivisor.coeff_sub]
 
+/-- The multiplicity function of a residual divisor is the truncated difference of the
+multiplicity functions. -/
+@[simp]
+lemma multiplicityFinsupp_subOfLE (D : EffectiveDivisorOfDegree X e)
+    (E : EffectiveDivisorOfDegree X d) (hED : (E : WeilDivisor X) ≤ D) :
+    (subOfLE D E hED).multiplicityFinsupp =
+      D.multiplicityFinsupp - E.multiplicityFinsupp := by
+  ext x
+  simp only [multiplicityFinsupp_apply, WeilDivisor.coeff_sub]
+  change ((coeff (D : WeilDivisor X) x - coeff (E : WeilDivisor X) x).toNat) =
+    (coeff (D : WeilDivisor X) x).toNat - (coeff (E : WeilDivisor X) x).toNat
+  have hcoeff : coeff (E : WeilDivisor X) x ≤ coeff (D : WeilDivisor X) x :=
+    WeilDivisor.coeff_le_coeff hED x
+  have hnat : (coeff (E : WeilDivisor X) x).toNat ≤ (coeff (D : WeilDivisor X) x).toNat :=
+    Int.toNat_le_toNat hcoeff
+  apply Nat.cast_injective (R := ℤ)
+  rw [Int.toNat_sub_of_le hcoeff, Nat.cast_sub hnat]
+  rw [Int.toNat_of_nonneg ((isEffective_iff (D : WeilDivisor X)).mp D.isEffective x),
+    Int.toNat_of_nonneg ((isEffective_iff (E : WeilDivisor X)).mp E.isEffective x)]
+
+/-- The finitely supported multiplicity representation of a residual divisor is the
+truncated difference of the representations of the original divisors. -/
+@[simp]
+lemma equivFinsupp_subOfLE_coe (D : EffectiveDivisorOfDegree X e)
+    (E : EffectiveDivisorOfDegree X d) (hED : (E : WeilDivisor X) ≤ D) :
+    (equivFinsupp (subOfLE D E hED) : X →₀ ℕ) =
+      (equivFinsupp D : X →₀ ℕ) - (equivFinsupp E : X →₀ ℕ) := by
+  simp
+
+/-- Under the symmetric-power equivalence, a residual divisor is represented by the truncated
+difference of multiplicity functions. -/
+lemma equivSym_subOfLE (D : EffectiveDivisorOfDegree X e) (E : EffectiveDivisorOfDegree X d)
+    (hED : (E : WeilDivisor X) ≤ D) :
+    equivSym (subOfLE D E hED) =
+      (letI := Classical.decEq X;
+        (Sym.equivNatSum X (e - d)).symm
+          ⟨D.multiplicityFinsupp - E.multiplicityFinsupp, by
+            rw [← multiplicityFinsupp_subOfLE D E hED]
+            exact (subOfLE D E hED).sum_multiplicityFinsupp⟩) := by
+  classical
+  rw [equivSym_apply]
+  congr 1
+  ext x
+  simp
+
 /-- The degree of the residual divisor is the difference of the degree indices. -/
 lemma degree_subOfLE (D : EffectiveDivisorOfDegree X e) (E : EffectiveDivisorOfDegree X d)
     (hED : (E : WeilDivisor X) ≤ D) :
@@ -86,7 +120,8 @@ identifying `d + (e - d)` with `e`. -/
 lemma add_subOfLE (D : EffectiveDivisorOfDegree X e) (E : EffectiveDivisorOfDegree X d)
     (hED : (E : WeilDivisor X) ≤ D) :
     add E (subOfLE D E hED) =
-      EffectiveDivisorOfDegree.cast (Nat.add_sub_of_le (degree_le_of_le hED)).symm D := by
+      EffectiveDivisorOfDegree.cast
+        (Nat.add_sub_of_le (EffectiveDivisorOfDegree.degree_le_of_le hED)).symm D := by
   ext
   simp
 
@@ -96,7 +131,8 @@ identifying `(e - d) + d` with `e`. -/
 lemma subOfLE_add (D : EffectiveDivisorOfDegree X e) (E : EffectiveDivisorOfDegree X d)
     (hED : (E : WeilDivisor X) ≤ D) :
     add (subOfLE D E hED) E =
-      EffectiveDivisorOfDegree.cast (Nat.sub_add_cancel (degree_le_of_le hED)).symm D := by
+      EffectiveDivisorOfDegree.cast
+        (Nat.sub_add_cancel (EffectiveDivisorOfDegree.degree_le_of_le hED)).symm D := by
   ext
   simp [sub_add_cancel]
 
