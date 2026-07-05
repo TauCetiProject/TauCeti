@@ -27,6 +27,10 @@ identify the deck group of the cover attached to `H` with `N(H) / H`.
   from `N(H) / H`.
 * `TauCeti.Deck.instNormalizerQuotientSubgroupFiberOrbitMulAction`: the resulting action of
   `N(H) / H` on `SubgroupFiberOrbitQuotient H b`.
+* `TauCeti.Deck.normalizerQuotientSubgroupFiberOrbitIsPretransitive`: transitivity of this
+  descended action when the normalizer action on the fibre is transitive.
+* `TauCeti.Deck.instNormalizerQuotientSubgroupFiberOrbitIsPretransitiveOfNormal`: the
+  normal-subgroup instance for this descended action.
 * `TauCeti.Deck.instNormalizerQuotientSubgroupFiberOrbitIsCancelSMul`: freeness of this
   descended action when the deck action on the fibre is free.
 
@@ -177,6 +181,45 @@ lemma normalizerQuotient_mk_of_mem_smul_subgroupFiberOrbitClass
       subgroupFiberOrbitClass H e := by
   rw [normalizerQuotient_smul_subgroupFiberOrbitClass]
   exact (subgroupFiberOrbitClass_eq_iff H (φ • e) e).2 ⟨⟨φ, hφ⟩, rfl⟩
+
+/-- If the normalizer of `H` acts transitively on the chosen fibre, then the descended
+`N(H) / H` action on the quotient of that fibre by `H`-orbits is transitive. -/
+theorem normalizerQuotientSubgroupFiberOrbitIsPretransitive
+    (H : Subgroup (Deck p))
+    [MulAction.IsPretransitive (_root_.Subgroup.normalizer (H : Set (Deck p))) (p ⁻¹' {b})] :
+    MulAction.IsPretransitive
+      (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) :=
+  TauCeti.MulAction.normalizerQuotientOrbitRelQuotientIsPretransitive
+    (X := p ⁻¹' {b}) H
+
+/-- If `H` is normal and the deck action on the chosen fibre is transitive, then the
+descended `N(H) / H` action on the quotient of that fibre by `H`-orbits is transitive. -/
+theorem normalizerQuotientSubgroupFiberOrbitIsPretransitiveOfNormal
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] :
+    MulAction.IsPretransitive
+      (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) :=
+  TauCeti.MulAction.normalizerQuotientOrbitRelQuotientIsPretransitiveOfNormal
+    (X := p ⁻¹' {b}) H
+
+/-- The normalizer quotient acts transitively on a normal subgroup fibre quotient whenever the
+deck action on the fibre is transitive. -/
+noncomputable instance instNormalizerQuotientSubgroupFiberOrbitIsPretransitiveOfNormal
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] :
+    MulAction.IsPretransitive
+      (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) :=
+  normalizerQuotientSubgroupFiberOrbitIsPretransitiveOfNormal H
+
+/-- For a regular map and a normal deck subgroup, the descended `N(H) / H` action on each
+subgroup fibre quotient is transitive. This is the fibre-action half of the regular-cover
+specialization from the normalizer quotient to an ordinary quotient by a normal subgroup. -/
+theorem normalizerQuotientSubgroupFiberOrbitIsPretransitiveOfNormal_of_isRegular
+    (hreg : IsRegular p) (H : Subgroup (Deck p)) [H.Normal] :
+    MulAction.IsPretransitive
+      (Subgroup.normalizerQuotient H) (SubgroupFiberOrbitQuotient H b) := by
+  letI := hreg.fiber_isPretransitive b
+  exact normalizerQuotientSubgroupFiberOrbitIsPretransitiveOfNormal H
 
 /-- Equality after the `N(H) / H` action on an `H`-fibre quotient is equality of
 normalizer-quotient elements, provided the deck action on that fibre is free. -/
