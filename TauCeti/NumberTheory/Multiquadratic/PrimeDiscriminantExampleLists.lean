@@ -68,8 +68,8 @@ theorem injective_negFourNegThreeNegSevenPrimeDiscriminants :
     Function.Injective negFourNegThreeNegSevenPrimeDiscriminants := by
   decide
 
-/-- The `[-4, -3, -7]` list is not the all-even list `[-4, 8, -8]`. -/
-theorem not_all_even_negFourNegThreeNegSevenPrimeDiscriminants :
+/-- The `[-4, -3, -7]` list does not contain all three even prime discriminants. -/
+theorem not_all_three_evenPrimeDiscriminants_negFourNegThreeNegSevenPrimeDiscriminants :
     ¬ ((∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -4) ∧
       (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = 8) ∧
         (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -8)) := by

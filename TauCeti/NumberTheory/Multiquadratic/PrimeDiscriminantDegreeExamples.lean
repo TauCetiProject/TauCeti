@@ -44,7 +44,7 @@ theorem finrank_adjoin_I_sqrt_neg_three_sqrt_neg_seven :
     negFourNegThreeNegSevenPrimeDiscriminants
     isPrimeDiscriminant_negFourNegThreeNegSevenPrimeDiscriminants
     injective_negFourNegThreeNegSevenPrimeDiscriminants
-    not_all_even_negFourNegThreeNegSevenPrimeDiscriminants
+    not_all_three_evenPrimeDiscriminants_negFourNegThreeNegSevenPrimeDiscriminants
     (fun i : Fin 3 => ![Complex.I, sqrtNegNat 3, sqrtNegNat 7] i)
     root_neg_four_neg_three_neg_seven_sq
   rw [range_roots_neg_four_neg_three_neg_seven] at h
