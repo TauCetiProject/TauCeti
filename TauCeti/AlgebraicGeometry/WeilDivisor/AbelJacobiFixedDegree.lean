@@ -51,7 +51,6 @@ noncomputable section
 
 /-- Changing only the degree index of a fixed-degree divisor does not change its weighted
 Abel-Jacobi class. -/
-@[simp]
 lemma weightedAbelJacobiDivisorClass_cast (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) {d e : ℕ} (hde : d = e)
     (D : EffectiveDivisorOfDegree X d) :
@@ -62,7 +61,6 @@ lemma weightedAbelJacobiDivisorClass_cast (w : X → ℤ) (h : S.IsWeightedDegre
   simp
 
 /-- The weighted Abel-Jacobi class of the zero effective divisor is zero. -/
-@[simp]
 lemma weightedAbelJacobiDivisorClass_zero_effective (w : X → ℤ)
     (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) :
@@ -71,7 +69,6 @@ lemma weightedAbelJacobiDivisorClass_zero_effective (w : X → ℤ)
 
 /-- Appending symmetric-power divisors sends their weighted Abel-Jacobi class to the sum of
 the two classes. -/
-@[simp]
 lemma weightedAbelJacobiDivisorClass_ofSym_append (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (s : Sym X d) (t : Sym X e) :
     S.weightedAbelJacobiDivisorClass w h hx₀ (EffectiveDivisorOfDegree.ofSym (s.append t)) =
@@ -85,7 +82,6 @@ lemma weightedAbelJacobiDivisorClass_ofSym_append (w : X → ℤ) (h : S.IsWeigh
 
 /-- Changing only the degree index of a fixed-degree divisor does not change its unweighted
 Abel-Jacobi class. -/
-@[simp]
 lemma unweightedAbelJacobiDivisorClass_cast (h : S.IsUnweightedDegreeZero) (x₀ : X)
     {d e : ℕ} (hde : d = e) (D : EffectiveDivisorOfDegree X d) :
     S.unweightedAbelJacobiDivisorClass h x₀
@@ -95,14 +91,12 @@ lemma unweightedAbelJacobiDivisorClass_cast (h : S.IsUnweightedDegreeZero) (x₀
   simp
 
 /-- The unweighted Abel-Jacobi class of the zero effective divisor is zero. -/
-@[simp]
 lemma unweightedAbelJacobiDivisorClass_zero_effective (h : S.IsUnweightedDegreeZero) (x₀ : X) :
     S.unweightedAbelJacobiDivisorClass h x₀ (EffectiveDivisorOfDegree.zero X) = 0 := by
   simp
 
 /-- Appending symmetric-power divisors sends their unweighted Abel-Jacobi class to the sum of
 the two classes. -/
-@[simp]
 lemma unweightedAbelJacobiDivisorClass_ofSym_append (h : S.IsUnweightedDegreeZero) (x₀ : X)
     (s : Sym X d) (t : Sym X e) :
     S.unweightedAbelJacobiDivisorClass h x₀ (EffectiveDivisorOfDegree.ofSym (s.append t)) =
