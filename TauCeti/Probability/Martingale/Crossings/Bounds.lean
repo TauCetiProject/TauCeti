@@ -251,11 +251,9 @@ private lemma lintegral_upcrossings_le_of_forall_lintegral_upcrossingsBefore_le
 set_option linter.unusedVariables false in
 /-- Uniform crossing bound for the antitone conditional-expectation sequence.
 
-For an antitone filtration `𝔽` and integrable `f`, the expected number of upcrossings of the genuine
+For an antitone filtration `𝔽` and integrable `f`, the expected number of upcrossings of the
 conditional-expectation process `n ↦ μ[f | 𝔽 n]` on any interval `[a, b]` is finite. This is the
-roadmap-shape bound used by the antitone-limit (Lévy downward) argument; it is obtained by
-transferring the per-horizon reversed-surrogate bound `lintegral_upcrossings_revCEFinite_bdd`
-through the pathwise time-reversal comparison. -/
+crossing bound consumed by the antitone-limit (Lévy downward) argument. -/
 theorem upcrossings_bdd_uniform [IsFiniteMeasure μ] (h_antitone : Antitone 𝔽)
     (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω)) (f : Ω → ℝ) (hf : Integrable f μ)
     (a b : ℝ) (hab : a < b) :
