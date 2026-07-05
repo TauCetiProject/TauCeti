@@ -19,7 +19,7 @@ exchangeability implications from conditionally i.i.d. processes live in
 
 These declarations follow the roadmap signatures in
 `TauCetiRoadmap/Exchangeability/README.md` and
-`TauCetiRoadmap/Exchangeability/Targets.lean`, Layer 0, refining the existential
+`TauCetiRoadmap/Exchangeability/Suggested.lean`, Layer 0, refining the existential
 `ConditionallyIID` of the roadmap into a named-directing-measure relation
 (`ConditionallyIIDWith`) plus its existential wrapper. They are adapted from the
 `cameronfreer/exchangeability` Layer 0 sources pinned at
