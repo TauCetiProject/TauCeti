@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.GroupAction.Transitive
 public import TauCeti.Algebra.Group.NormalizerQuotient
 
 /-!
@@ -349,19 +350,14 @@ theorem normalizerQuotientOrbitRelQuotientIsPretransitive
     MulAction.IsPretransitive
       (Subgroup.normalizerQuotient H) (_root_.MulAction.orbitRel.Quotient H X) := by
   letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
-  refine MulAction.IsPretransitive.mk ?_
-  intro xq yq
-  refine Quotient.inductionOn' xq ?_
-  intro x
-  refine Quotient.inductionOn' yq ?_
-  intro y
-  obtain ⟨g, hg⟩ :=
-    MulAction.exists_smul_eq (_root_.Subgroup.normalizer (H : Set G)) x y
-  refine ⟨Subgroup.normalizerQuotientMk H g, ?_⟩
-  rw [normalizerQuotientOrbitRelQuotient_smul_mk]
-  exact congrArg Quotient.mk'' (show (g : G) • x = y by
-    change (g : G) • x = y at hg
-    exact hg)
+  let φ : _root_.Subgroup.normalizer (H : Set G) → Subgroup.normalizerQuotient H :=
+    Subgroup.normalizerQuotientMk H
+  let f : X →ₑ[φ] _root_.MulAction.orbitRel.Quotient H X := {
+    toFun := Quotient.mk''
+    map_smul' g x := by
+      exact (normalizerQuotientOrbitRelQuotient_smul_mk (X := X) H g x).symm }
+  exact MulAction.IsPretransitive.of_surjective_map
+    (f := f) Quotient.mk''_surjective inferInstance
 
 /-- If `H` is normal and `G` acts transitively on `X`, then the descended `N(H) / H` action
 on the quotient by `H`-orbits is transitive. -/
@@ -374,8 +370,7 @@ theorem normalizerQuotientOrbitRelQuotientIsPretransitiveOfNormal
     MulAction.IsPretransitive.mk fun x y => by
       obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G x y
       refine ⟨⟨g, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩, ?_⟩
-      change g • x = y
-      exact hg
+      simpa using hg
   exact normalizerQuotientOrbitRelQuotientIsPretransitive (X := X) H
 
 /-- Equality after the descended `N(H) / H` action on an `H`-orbit quotient is equality of
