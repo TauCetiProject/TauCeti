@@ -64,7 +64,7 @@ theorem sqrtNegSeven_sq : sqrtNegSeven ^ 2 = (-7 : ℂ) := by
   simpa [sqrtNegSeven] using I_mul_real_sqrt_nat_sq 7
 
 /-- Each entry of the concrete list `[-4, -3, -7]` is a prime discriminant. -/
-private theorem negFourNegThreeNegSevenPrimeDiscriminants_isPrimeDiscriminant :
+private theorem isPrimeDiscriminant_negFourNegThreeNegSevenPrimeDiscriminants :
     ∀ i : Fin 3, IsPrimeDiscriminant (negFourNegThreeNegSevenPrimeDiscriminants i) := by
   intro i
   fin_cases i
@@ -84,7 +84,7 @@ private theorem negFourNegThreeNegSevenPrimeDiscriminants_injective :
   decide
 
 /-- The concrete list `[-4, -3, -7]` does not contain all three even prime discriminants. -/
-private theorem negFourNegThreeNegSevenPrimeDiscriminants_not_all_even :
+private theorem negFourNegThreeNegSevenPrimeDiscriminants_not_all_three_evenPrimeDiscriminants :
     ¬ ((∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -4) ∧
       (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = 8) ∧
         (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -8)) := by
@@ -141,8 +141,8 @@ theorem not_isSquare_prod_negFourNegThreeNegSevenPrimeDiscriminantRadicands :
             (negFourNegThreeNegSevenPrimeDiscriminants i) : ℤ) : ℚ))) := by
   exact not_isSquare_prod_primeDiscriminantRadicands
     negFourNegThreeNegSevenPrimeDiscriminants
-    negFourNegThreeNegSevenPrimeDiscriminants_isPrimeDiscriminant
+    isPrimeDiscriminant_negFourNegThreeNegSevenPrimeDiscriminants
     negFourNegThreeNegSevenPrimeDiscriminants_injective
-    negFourNegThreeNegSevenPrimeDiscriminants_not_all_even
+    negFourNegThreeNegSevenPrimeDiscriminants_not_all_three_evenPrimeDiscriminants
 
 end TauCeti.Multiquadratic
