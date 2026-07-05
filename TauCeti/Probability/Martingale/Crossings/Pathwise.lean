@@ -5,19 +5,19 @@ public import TauCeti.Probability.Martingale.Crossings.TimeReversal
 /-!
 # Crossings: pathwise reversal lemmas
 
-Pathwise reversal lemmas relating upcrossings of a process to downcrossings of its time reversal.
-No filtration / integrability content here — this is the purely combinatorial / pathwise layer.
-
-## Main definitions
-
-- `downcrossingsBefore`: downcrossings before time `N`.
-- `downcrossings`: total downcrossings (supremum over all time horizons).
+Pathwise reversal lemmas relating upcrossings of a process to upcrossings of its negated time
+reversal. Downcrossings are not reintroduced here: Mathlib's `upcrossings (-b) (-a) (-X)` already
+*is* the downcrossing count, so we phrase everything through Mathlib's `upcrossings` /
+`upcrossingsBefore` of the negated process. No filtration / integrability content here — this is the
+purely combinatorial / pathwise layer.
 
 ## Main results
 
-- `upcrossings_neg_flip_eq_downcrossings`: `up(-b, -a, -X) = down(a, b, X)`.
-- `upcrossingsBefore_le_downcrossingsBefore_revProcess_succ`: the upcrossing–downcrossing
-  inequality with shifted horizon.
+- `upcrossingsBefore_congr` / `upcrossingsBefore_succ_congr`: `upcrossingsBefore` (at horizon `N`,
+  resp. the free-boundary horizon `N + 1`) depends only on the path values on `[0, N]`.
+- `upcrossingsBefore_le_upcrossingsBefore_neg_revProcess_succ`: the reversal bound — upcrossings of
+  `X` on `[a, b]` before time `N` are bounded by upcrossings of the negated time reversal
+  `-(revProcess X N)` on `[-b, -a]` before time `N + 1`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/Martingale/Crossings/Pathwise.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
@@ -29,37 +29,10 @@ noncomputable section
 
 open MeasureTheory Set
 
-open scoped ENNReal
-
 namespace MeasureTheory
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 variable {𝔽 : ℕ → MeasurableSpace Ω}
-
-/-- Downcrossings before `N`: defined as upcrossings of the negated process with flipped interval.
-Returns a random variable `Ω → ℕ`. -/
-noncomputable def downcrossingsBefore {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) (N : ℕ) :
-    Ω → ℕ :=
-  upcrossingsBefore (-b) (-a) (-X) N
-
-/-- Total downcrossings: supremum over all time horizons. -/
-noncomputable def downcrossings {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) : Ω → ℝ≥0∞ :=
-  fun ω => ⨆ N, ((downcrossingsBefore a b X N ω : ℕ) : ℝ≥0∞)
-
-/-- Defining equation for `downcrossingsBefore` (whose body is deliberately not `@[expose]`d). -/
-private lemma downcrossingsBefore_eq {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) (N : ℕ) :
-    downcrossingsBefore a b X N = upcrossingsBefore (-b) (-a) (-X) N := by rfl
-
-/-- **Identity 1:** upcrossings of the negated process = downcrossings of the original.
-Negation flips crossing direction: `up(-b, -a, -X) = down(a, b, X)`. -/
-private lemma upcrossings_neg_flip_eq_downcrossings {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) :
-    upcrossings (-b) (-a) (-X) = downcrossings a b X := by rfl
-
-/-- **Identity 2:** downcrossings of the negated process = upcrossings of the original.
-Negation flips crossing direction: `down(-b, -a, -X) = up(a, b, X)`. -/
-private lemma downcrossings_neg_flip_eq_upcrossings {Ω : Type*} (a b : ℝ) (X : ℕ → Ω → ℝ) :
-    downcrossings (-b) (-a) (-X) = upcrossings a b X := by
-  unfold downcrossings downcrossingsBefore upcrossings; simp
 
 /-- Helper: hitting respects pointwise equality on `[n, m]`. -/
 private lemma hitting_congr {Ω β : Type*} {u v : ℕ → Ω → β} {s : Set β} {n m : ℕ} {ω : Ω}
@@ -170,83 +143,45 @@ lemma upcrossingsBefore_succ_congr {Ω : Type*} {a b : ℝ} {f g : ℕ → Ω �
     upcrossingsBefore a b f (N + 1) ω = upcrossingsBefore a b g (N + 1) ω := by
   simp [upcrossingsBefore, upperCrossingTime_succ_congr h]
 
-/-- Index is bounded by completion time when `upperCrossingTime < N`.
-If the `n`-th crossing completes before time `N`, then `n < N`. -/
-private lemma upperCrossingTime_lt_imp_index_lt {Ω : Type*} {a b : ℝ} {f : ℕ → Ω → ℝ}
-    {N n : ℕ} {ω : Ω} (hab : a < b) (h : upperCrossingTime a b f N n ω < N) :
-    n < N := by
-  -- `upperCrossingTime` is strictly increasing on `{k | upperCrossingTime k < N}`, so `k ≤
-  -- upperCrossingTime k` there, giving `k < N`. Prove `n ≤ upperCrossingTime n` by induction.
-  suffices h_le : n ≤ upperCrossingTime a b f N n ω by omega
-  induction n with
-  | zero =>
-    simp only [upperCrossingTime_zero, Pi.bot_apply, bot_eq_zero', le_refl]
-  | succ n ih =>
-    have h_neN : upperCrossingTime a b f N (n + 1) ω ≠ N := ne_of_lt h
-    have h_strict : upperCrossingTime a b f N n ω < upperCrossingTime a b f N (n + 1) ω :=
-      upperCrossingTime_lt_succ hab h_neN
-    have h_n_lt : upperCrossingTime a b f N n ω < N := lt_trans h_strict h
-    have ih_n : n ≤ upperCrossingTime a b f N n ω := ih h_n_lt
-    omega
-
-/-- One-way inequality: the upcrossings of `X` on `[a, b]` before time `N` are bounded by the
-downcrossings of the time-reversed process `revProcess X N` before time `N + 1`. The extra `N + 1`
-horizon on the reversed side is what makes crossings completing exactly at time `N` count. -/
+/-- Reversed-crossing bound: the upcrossings of `X` on `[a, b]` before time `N` are bounded by the
+upcrossings of the negated time-reversed process `-(revProcess X N)` on `[-b, -a]` before time
+`N + 1`. The extra `N + 1` horizon on the reversed side is what makes crossings completing exactly
+at time `N` count. -/
 -- Via the bijection `(τ, σ) ↦ (N - σ, N - τ)` mapping `X` upcrossings to reversed-process
--- upcrossings: when `τ = 0` the reversed crossing completes at time `N`, which the `N + 1` horizon
--- includes since `N < N + 1`.
-private lemma upcrossingsBefore_le_downcrossingsBefore_revProcess_succ
-    {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N : ℕ) :
-    (fun ω => upcrossingsBefore a b X N ω)
-      ≤ (fun ω => downcrossingsBefore a b (revProcess X N) (N + 1) ω) := by
+-- upcrossings (packaged in `upperCrossingTime_neg_revProcess_le`): when `τ = 0` the reversed
+-- crossing completes at time `N`, which the `N + 1` horizon includes since `N < N + 1`.
+lemma upcrossingsBefore_le_upcrossingsBefore_neg_revProcess_succ
+    {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N : ℕ) (ω : Ω) :
+    upcrossingsBefore a b X N ω
+      ≤ upcrossingsBefore (-b) (-a) (-(revProcess X N)) (N + 1) ω := by
   classical
-  intro ω
-  simp only [downcrossingsBefore, upcrossingsBefore]
+  simp only [upcrossingsBefore]
   by_cases hN : N = 0
   · simp [hN]
   by_cases hemp : {n | upperCrossingTime a b X N n ω < N}.Nonempty
-  · have hbdd1 : BddAbove {n | upperCrossingTime a b X N n ω < N} := by
-      use N
-      simp only [mem_upperBounds, Set.mem_setOf_eq]
-      intro n hn
-      exact Nat.le_of_lt (upperCrossingTime_lt_imp_index_lt hab hn)
-    have hbdd2 : BddAbove
-        {n | upperCrossingTime (-b) (-a) (-(revProcess X N)) (N + 1) n ω < N + 1} := by
-      use N + 1
-      simp only [mem_upperBounds, Set.mem_setOf_eq]
-      intro n hn
-      exact Nat.le_of_lt (upperCrossingTime_lt_imp_index_lt (by linarith) hn)
+  · -- Mathlib's boundedness of the completed-crossing index set on the reversed side.
+    have hbdd : BddAbove
+        {n | upperCrossingTime (-b) (-a) (-(revProcess X N)) (N + 1) n ω < N + 1} :=
+      upperCrossingTime_lt_bddAbove (show (-b) < (-a) by linarith)
     have hsub : {n | upperCrossingTime a b X N n ω < N} ⊆
         {n | upperCrossingTime (-b) (-a) (-(revProcess X N)) (N + 1) n ω < N + 1} := by
       intro n hn
       simp only [Set.mem_setOf_eq] at hn ⊢
       -- With horizon `N + 1` the bijection works: crossings completing at time `N` are now counted
       -- since `N < N + 1`.
-      induction n using Nat.strong_induction_on with
-      | _ n ih =>
-        match n with
-        | 0 =>
-          simp only [upperCrossingTime_zero]
-          exact Nat.zero_lt_succ N
-        | k + 1 =>
-          -- `hn` says `X` has `k + 1` complete crossings before time `N`; the bijection
-          -- `(τ, σ) ↦ (N - σ, N - τ)` maps these to `Y` crossings completing by time `N`.
-          have h_bound : upperCrossingTime (-b) (-a)
-              (-(revProcess X N)) (N + 1) (k + 1) ω ≤ N :=
-            upperCrossingTime_neg_revProcess_le X a b hab N (k + 1) ω hn
-          exact Nat.lt_succ_of_le h_bound
-    exact csSup_le_csSup hbdd2 hemp hsub
+      cases n with
+      | zero =>
+        simp only [upperCrossingTime_zero]
+        exact Nat.zero_lt_succ N
+      | succ k =>
+        -- `hn` says `X` has `k + 1` complete crossings before time `N`; the bijection
+        -- `(τ, σ) ↦ (N - σ, N - τ)` maps these to reversed crossings completing by time `N`.
+        have h_bound : upperCrossingTime (-b) (-a)
+            (-(revProcess X N)) (N + 1) (k + 1) ω ≤ N :=
+          upperCrossingTime_neg_revProcess_le X a b hab N (k + 1) ω hn
+        exact Nat.lt_succ_of_le h_bound
+    exact csSup_le_csSup hbdd hemp hsub
   · rw [Set.not_nonempty_iff_eq_empty] at hemp
     simp [hemp]
-
-/-- Combined reversed-crossing bound in `upcrossingsBefore` form: the upcrossings of `X` on `[a, b]`
-before time `N` are bounded by the upcrossings of the negated time-reversed process `-(revProcess X
-N)` on `[-b, -a]` before time `N + 1`. -/
-lemma upcrossingsBefore_le_upcrossingsBefore_neg_revProcess_succ
-    {Ω : Type*} (X : ℕ → Ω → ℝ) (a b : ℝ) (hab : a < b) (N : ℕ) (ω : Ω) :
-    upcrossingsBefore a b X N ω
-      ≤ upcrossingsBefore (-b) (-a) (-(revProcess X N)) (N + 1) ω := by
-  have h := upcrossingsBefore_le_downcrossingsBefore_revProcess_succ X a b hab N ω
-  rwa [downcrossingsBefore_eq] at h
 
 end MeasureTheory
