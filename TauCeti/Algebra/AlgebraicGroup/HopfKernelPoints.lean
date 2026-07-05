@@ -72,6 +72,7 @@ noncomputable def quotientKerPointsMulEquiv (f : H →ₐc[R] K)
 
 /-- The quotient-kernel point equivalence acts by pre-composition with the inverse
 bialgebra equivalence `K ≃ₐc[R] H ⧸ ker f`. -/
+@[simp]
 theorem quotientKerPointsMulEquiv_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : WithConv (H ⧸ (ker f hf).toIdeal →ₐ[R] A)) :
@@ -82,6 +83,7 @@ theorem quotientKerPointsMulEquiv_apply (f : H →ₐc[R] K)
 
 /-- The inverse quotient-kernel point equivalence acts by pre-composition with the
 bialgebra equivalence `H ⧸ ker f ≃ₐc[R] K`. -/
+@[simp]
 theorem quotientKerPointsMulEquiv_symm_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : WithConv (K →ₐ[R] A)) :
