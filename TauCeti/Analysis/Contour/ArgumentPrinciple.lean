@@ -39,6 +39,8 @@ meaningless — since the results are stated up to the meromorphic normal form o
 * `TauCeti.Contour.argumentPrinciple_local` — the special case `S = {c}`:
   `∮_{C(c,R)} logDeriv f = 2πi · n` when the centre `c`, of order `n`, is the only point of the
   closed disc that may have nonzero meromorphic order.
+* `TauCeti.Contour.circleIntegral_eq_zero_of_nonneg_meromorphicOrderAt` — Cauchy–Goursat: the
+  circle integral of a meromorphic function with no poles inside the disc vanishes.
 
 These are Layer 2 targets of the contour-integration roadmap, feeding the argument principle and,
 ultimately, the valence formula.
@@ -118,9 +120,9 @@ private lemma logDeriv_eventuallyEq_principalPart {F : ℂ → ℂ} {s : ℂ} {n
   exact logDeriv_zpow_sub_mul hz_ne hz_gne hz_gan.differentiableAt
 
 /-- **Cauchy–Goursat for a pole-free meromorphic function.** If `A` is meromorphic on the closed
-disc `C(c, R)` (`R > 0`) and has non-negative meromorphic order at every point — so its normal form
-is analytic throughout the disc — then `∮_{C(c,R)} A = 0`. -/
-private lemma circleIntegral_eq_zero_of_nonneg_meromorphicOrderAt {A : ℂ → ℂ} {c : ℂ} {R : ℝ}
+disc `C(c, R)` (`R > 0`) and has non-negative meromorphic order at every point of the disc, then
+`∮_{C(c,R)} A = 0`. -/
+lemma circleIntegral_eq_zero_of_nonneg_meromorphicOrderAt {A : ℂ → ℂ} {c : ℂ} {R : ℝ}
     (hR : 0 < R) (hA : MeromorphicOn A (closedBall c R))
     (hord : ∀ z ∈ closedBall c R, 0 ≤ meromorphicOrderAt A z) :
     circleIntegral A c R = 0 := by
