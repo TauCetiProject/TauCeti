@@ -15,8 +15,8 @@ identity `μ[𝟙_H | mF ⊔ mG] =ᵐ μ[𝟙_H | mG]` on conditional expectatio
 * `condExp_indicator_sup_eq_of_condIndep` — the converse projection: from `CondIndep mG mF mH`,
   conditioning an `mH`-measurable indicator on the join `mF ⊔ mG` collapses to conditioning on `mG`.
 
-Both are intended for the de Finetti block-product factorisation / prefix-deletion drop-info step — the
-standard conditional-independence characterisation of the de Finetti route; see Kallenberg,
+Both are intended for the de Finetti block-product factorisation / prefix-deletion drop-info step —
+the standard conditional-independence characterisation of the de Finetti route; see Kallenberg,
 *Probabilistic Symmetries and Invariance Principles* (Springer, 2005). Adapted from
 `cameronfreer/exchangeability` (`Probability/CondExp.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`).
