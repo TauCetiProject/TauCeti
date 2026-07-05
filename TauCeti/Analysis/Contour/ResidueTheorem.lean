@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.Analysis.Contour.Residue
-import TauCeti.Analysis.Contour.ArgumentPrinciple
+import TauCeti.Analysis.Contour.CauchyGoursat
 import Mathlib.Analysis.Meromorphic.NormalForm
 
 /-!
@@ -18,11 +18,11 @@ For `f` meromorphic on a closed disc `C(c, R)` (`R > 0`) whose poles are contain
 sum of the residues over `S`:
 `∮_{C(c,R)} f = 2πi · ∑_{s ∈ S} residue f s`.
 
-The hypothesis on `S` asks only that every point of *nonzero* meromorphic order lie in `S`; `S` is
-thus a superset of the pole set (and may list removable points or zeros, whose residues are `0` and
-so do not affect the sum). No pointwise regularity of the raw function `f` is required — `f` may
-take isolated "wrong values" where it disagrees with its meromorphic normal form — since both sides
-are stated up to that normal form.
+The hypothesis on `S` asks only that every pole — every point of *negative* meromorphic order — lie
+in `S`. `S` may list further points (zeros, or removable/regular points), whose residues are `0` and
+so do not affect the sum. No pointwise regularity of the raw function `f` is required — `f` may take
+isolated "wrong values" where it disagrees with its meromorphic normal form — since both sides are
+stated up to that normal form.
 
 ## Main results
 
@@ -82,8 +82,9 @@ private lemma circleIntegral_const_mul_zpow_sub {c s₀ : ℂ} {R : ℝ} {n : �
   -- Residue of the pure monomial: the Taylor coefficient of the constant `1` at index `−1 − n`.
   have hresQ : residue (fun z => (z - s₀) ^ n) s₀
       = (if (-1 - n).toNat = 0 then (1 : ℂ) else 0) / ((-1 - n).toNat.factorial : ℂ) := by
-    rw [residue_eq_of_order_lt_zero hn analyticAt_const one_ne_zero
-      (Filter.Eventually.of_forall fun z => by simp), iteratedDeriv_const]
+    have h1 : AnalyticAt ℂ (fun _ : ℂ => (1 : ℂ)) s₀ := analyticAt_const
+    rw [residue_eq_of_eventuallyEq_zpow_smul (by omega : n ≤ -1) h1
+      (Filter.Eventually.of_forall fun z => by simp [smul_eq_mul]), iteratedDeriv_const]
   rw [residue_const_mul a hQ_mero, hresQ]
   rcases eq_or_ne n (-1) with hn1 | hn1
   · subst hn1
@@ -216,16 +217,15 @@ private lemma residueTheorem_aux {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
       ring
 
 /-- **The classical residue theorem on a circle.** If `f` is meromorphic on the closed disc
-`C(c, R)` (`R > 0`) and every point of nonzero meromorphic order lies in a finite set `S` inside the
-open disc, then the contour integral of `f` around the boundary circle is `2πi` times the sum of the
-residues over `S`:
+`C(c, R)` (`R > 0`) and every pole lies in a finite set `S` inside the open disc, then the contour
+integral of `f` around the boundary circle is `2πi` times the sum of the residues over `S`:
 `∮_{C(c,R)} f = 2πi · ∑_{s ∈ S} residue f s`.
-`S` need only contain the poles (and any zeros or removable points); residues at points of
-nonnegative order vanish, so a larger `S` leaves the sum unchanged. -/
+`S` need only contain the poles (the points of negative meromorphic order); residues at points of
+nonnegative order vanish, so listing extra points leaves the sum unchanged. -/
 theorem classicalResidueTheorem_circle {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset ℂ)
     (hf : MeromorphicOn f (Metric.closedBall c R))
     (hS : (S : Set ℂ) ⊆ Metric.ball c R)
-    (hsupp : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt f z ≠ 0 → z ∈ S) :
+    (hsupp : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt f z < 0 → z ∈ S) :
     circleIntegral f c R = 2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, residue f s) := by
   -- Pass to the meromorphic normal form `F` of `f`: it is genuinely analytic off `S` (whereas raw
   -- `f` may take isolated "wrong values"), and the circle integral and residues are unchanged.
@@ -236,10 +236,9 @@ theorem classicalResidueTheorem_circle {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR
     fun z hz => meromorphicOrderAt_toMeromorphicNFOn hf hz
   have hF_off : ∀ z ∈ closedBall c R, z ∉ S → AnalyticAt ℂ F z := by
     intro z hz hzS
-    have h0 : meromorphicOrderAt F z = 0 := by
-      rw [hordF z hz]; by_contra h; exact hzS (hsupp z hz h)
-    exact (meromorphicNFOn_toMeromorphicNFOn f _ hz).meromorphicOrderAt_nonneg_iff_analyticAt.1
-      h0.symm.le
+    have h0 : 0 ≤ meromorphicOrderAt F z := by
+      rw [hordF z hz]; by_contra h; exact hzS (hsupp z hz (not_le.1 h))
+    exact (meromorphicNFOn_toMeromorphicNFOn f _ hz).meromorphicOrderAt_nonneg_iff_analyticAt.1 h0
   have htransfer_int : circleIntegral f c R = circleIntegral F c R := by
     refine circleIntegral.circleIntegral_congr_codiscreteWithin ?_ hR.ne'
     have hspU : sphere c |R| ⊆ closedBall c R := by
