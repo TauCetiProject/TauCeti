@@ -80,11 +80,10 @@ lemma hom_counit (H : _root_.CommHopfAlgCat.{u} R) :
 /-- Pointwise formula for the ambient coordinate unit map `R → H`. -/
 @[simp]
 lemma unit_apply (H : _root_.CommHopfAlgCat.{u} R) (r : R) :
-    (unit (R := R) H).hom r = algebraMap R H r :=
+    (_root_.Bialgebra.unitBialgHom R H) r = algebraMap R H r :=
   rfl
 
 /-- Pointwise formula for the ambient coordinate counit map `H → R`. -/
-@[simp]
 lemma counit_apply (H : _root_.CommHopfAlgCat.{u} R) (h : H) :
     (counit (R := R) H).hom h = Coalgebra.counit h :=
   _root_.Bialgebra.counitBialgHom_apply h
@@ -158,11 +157,10 @@ lemma toBialgHom_counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
 /-- Pointwise formula for the coordinate unit map `R → H`. -/
 @[simp]
 lemma unit_apply (H : FiniteTypeCommHopfAlgCat.{u, u} R) (r : R) :
-    toBialgHom (unit H) r = algebraMap R H r :=
+    (_root_.Bialgebra.unitBialgHom R H.obj) r = algebraMap R H r :=
   rfl
 
 /-- Pointwise formula for the coordinate counit map `H → R`. -/
-@[simp]
 lemma counit_apply (H : FiniteTypeCommHopfAlgCat.{u, u} R) (h : H) :
     toBialgHom (counit H) h = Coalgebra.counit h :=
   _root_.Bialgebra.counitBialgHom_apply h
@@ -211,7 +209,6 @@ lemma trivialPointsMulEquiv_symm_apply (u : PUnit.{1}) :
 variable {B : CommAlgCat.{w} R}
 
 /-- The finite-type trivial-points equivalence is natural in the value algebra. -/
-@[simp]
 theorem trivialPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (f : HopfAlgebra.points (R := R) (H := trivial R) A) :
     trivialPointsMulEquiv (R := R) B (AlgHom.mapValue (H := trivial R) φ f) =
