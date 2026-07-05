@@ -450,6 +450,12 @@ theorem HasCauchyPV.cauchyPV_eq {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
   rw [cauchyPV, dif_pos hex]
   exact hex.choose_spec.unique h
 
+/-- The value form of `HasCauchyPV.zero`: the principal value of the zero integrand is `0`. -/
+@[simp]
+theorem cauchyPV_zero {γ : ℝ → ℂ} {a b : ℝ} :
+    cauchyPV γ a b (fun _ => 0) = 0 :=
+  HasCauchyPV.zero.cauchyPV_eq
+
 /-- If the set-level principal value exists, it holds at the canonical value `cauchyPV`. This
 recovers a `HasCauchyPV` statement from mere existence. -/
 theorem CauchyPVExists.hasCauchyPV_cauchyPV {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
