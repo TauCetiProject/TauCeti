@@ -26,7 +26,6 @@ local holomorphicity or area-density convention.
   the source quarter-turn.
 * `TauCeti.isComplexLinearMap_comp_toLinearMap_iff`: precomposition by the source almost
   complex structure preserves and reflects complex-linearity.
-* `TauCeti.isComplexLinearMap_comp_stdComplexLineProduct_iff`: the standard-line specialization.
 * `TauCeti.SymplecticForm.symplecticForm_comp_stdComplexLineProduct`: the ordered area density is
   unchanged by this source quarter-turn.
 * The corresponding complex-linearity lemma for the half-turn `-id`.
@@ -81,13 +80,6 @@ lemma isComplexLinearMap_toLinearMap :
   intro v
   rfl
 
-/-- The standard source quarter-turn is complex-linear as a map from the standard complex line
-to itself. -/
-lemma isComplexLinearMap_stdComplexLineProduct :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
-      (AlmostComplexStructure.product ℝ).toLinearMap :=
-  isComplexLinearMap_toLinearMap
-
 /-- Precomposing a complex-linear map by the source almost complex structure again gives a
 complex-linear map. -/
 lemma IsComplexLinearMap.comp_toLinearMap
@@ -112,30 +104,6 @@ lemma isComplexLinearMap_comp_toLinearMap_iff :
     IsComplexLinearMap J₀ J (F₀.comp J₀.toLinearMap) ↔ IsComplexLinearMap J₀ J F₀ :=
   ⟨fun hF => hF.of_comp_toLinearMap, fun hF => hF.comp_toLinearMap⟩
 
-/-- Precomposing a complex-linear map from the standard complex line by the source quarter-turn
-again gives a complex-linear map. -/
-lemma IsComplexLinearMap.comp_stdComplexLineProduct
-    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (F.comp (AlmostComplexStructure.product ℝ).toLinearMap) :=
-  hF.comp_toLinearMap
-
-/-- If precomposition by the source quarter-turn is complex-linear, then the original map was
-complex-linear. -/
-lemma IsComplexLinearMap.of_comp_stdComplexLineProduct
-    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (F.comp (AlmostComplexStructure.product ℝ).toLinearMap)) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F :=
-  hF.of_comp_toLinearMap
-
-/-- Precomposition by the source quarter-turn preserves and reflects complex-linearity of maps
-from the standard complex line. -/
-lemma isComplexLinearMap_comp_stdComplexLineProduct_iff :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (F.comp (AlmostComplexStructure.product ℝ).toLinearMap) ↔
-        IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F :=
-  isComplexLinearMap_comp_toLinearMap_iff
-
 /-- Precomposing a complex-linear map by the half-turn `-id` again gives a complex-linear map. -/
 lemma IsComplexLinearMap.comp_neg
     (hF : IsComplexLinearMap J₀ J F₀) :
@@ -151,6 +119,7 @@ lemma isComplexLinearMap_neg_iff :
   ⟨fun hF => by simpa using hF.neg, fun hF => hF.neg⟩
 
 /-- Precomposition by the half-turn `-id` preserves and reflects complex-linearity. -/
+@[simp]
 lemma isComplexLinearMap_comp_neg_iff :
     IsComplexLinearMap J₀ J (F₀.comp (-LinearMap.id : U →ₗ[ℝ] U)) ↔
         IsComplexLinearMap J₀ J F₀ := by
