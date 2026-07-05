@@ -53,14 +53,6 @@ open Matrix
 
 variable {X n : Type*} [Fintype n]
 
-omit [Fintype n] in
-/-- A symmetric coefficient matrix is unchanged by taking its symmetric part. -/
-lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm) :
-    coefficientSymmetricPart A = A := by
-  ext i j
-  rw [coefficientSymmetricPart_apply, hA.apply i j]
-  ring
-
 /-- With zero drift, transposing the principal coefficient swaps the two jet arguments. -/
 lemma energyIntegrand_zero_drift_transpose_apply (A : Matrix n n ℝ) (c : ℝ)
     (U V : ℝ × EuclideanSpace ℝ n) :
