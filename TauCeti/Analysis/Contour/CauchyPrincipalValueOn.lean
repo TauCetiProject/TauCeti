@@ -25,8 +25,9 @@ versus `MeromorphicOn` (on a set). The **finite excision set** `S` is bound **ex
 the predicate is intrinsic to `(γ, f)` and stays faithful to the roadmap's `S`-free signature: it
 holds when *some* finite set satisfies the two clauses. A prescribed set — for instance the pole set
 of the generalized residue theorem, with intended value `2πi · ∑_{s ∈ S} n_γ(s) · res f s` — can be
-used as the witness once its integrability and `Tendsto` clauses have been proved; this file neither
-proves that a particular set satisfies them nor that enlarging a witness leaves the limit unchanged.
+used as the witness once its integrability and `Tendsto` clauses have been proved. Enlarging a
+witness leaves the limit unchanged, so the value is well-defined (`HasCauchyPV.unique`), named by
+`cauchyPV`; this file does not prove that any particular set satisfies the clauses.
 
 As with `HasCauchyPVAt`, the predicate carries a truncated-**integrability** clause alongside the
 `Tendsto` clause. Without it the `Tendsto` clause alone would be met vacuously by integrands whose
@@ -54,9 +55,14 @@ of `f` (which fails at an on-curve singularity), never silently identifying the 
   singularity of `f` obstructs integrability).
 * `HasCauchyPV.zero`, `HasCauchyPV.const_mul`, `HasCauchyPV.congr_along_curve` (and their
   `CauchyPVExists` forms) — the excision-set-preserving operations: the zero integrand, scaling by a
-  constant, and replacing `f` by a function agreeing with it along `γ`. These need no change of the
-  witnessing set; the multi-point `add`/`sum`/uniqueness API, which requires reconciling *different*
-  excision sets (an enlargement-inertness argument), is deferred to a follow-up.
+  constant, and replacing `f` by a function agreeing with it along `γ`; these need no change of the
+  witnessing set.
+* `HasCauchyPV.unique`, `cauchyPV`, `HasCauchyPV.cauchyPV_eq`, `cauchyPV_zero`,
+  `CauchyPVExists.hasCauchyPV_cauchyPV` — the value is well-defined (independent of the witnessing
+  set), so `cauchyPV γ a b f` names it (junk value `0` when none exists).
+* `HasCauchyPV.add`, `HasCauchyPV.sum` (and their `CauchyPVExists` forms) — additivity in `f`;
+  reconciling the summands' *different* excision sets on their union needs a `Measurable γ`
+  hypothesis, unlike the excision-set-preserving operations above.
 
 ## Provenance
 
