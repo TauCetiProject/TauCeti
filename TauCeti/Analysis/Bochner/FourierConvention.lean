@@ -45,17 +45,25 @@ namespace TauCeti
 variable {V : Type*} [SeminormedAddCommGroup V] [InnerProductSpace ℝ V]
   [MeasurableSpace V] {μ : Measure V}
 
-/-- The Fourier-convention integral of a finite measure, written with the atom
-`exp (-2πi⟪a, q⟫)`, is Mathlib's characteristic function evaluated at `(-2π) • a`. -/
+/-- The Fourier-convention integral of a finite measure, written in exponential normal form,
+is Mathlib's characteristic function evaluated at `(-2π) • a`. -/
 @[simp]
-theorem integral_fourierAtom_eq_charFun_neg_two_pi_smul (a : V) :
-    ∫ q, fourierAtom a q ∂μ = MeasureTheory.charFun μ ((-2 * Real.pi) • a) := by
+theorem integral_exp_neg_two_pi_inner_eq_charFun_neg_two_pi_smul (a : V) :
+    ∫ q, Complex.exp (-(2 * Real.pi * Complex.I * (inner ℝ q a : ℝ))) ∂μ =
+      MeasureTheory.charFun μ ((-2 * Real.pi) • a) := by
   rw [MeasureTheory.charFun_apply]
   refine integral_congr_ae (.of_forall fun q => ?_)
-  rw [fourierAtom_apply]
-  congr 1
   simp only [inner_smul_right, Complex.ofReal_mul, Complex.ofReal_ofNat, Complex.ofReal_neg]
   ring_nf
+
+/-- The Fourier-convention integral of a finite measure, written with the atom
+`exp (-2πi⟪a, q⟫)`, is Mathlib's characteristic function evaluated at `(-2π) • a`. -/
+theorem integral_fourierAtom_eq_charFun_neg_two_pi_smul (a : V) :
+    ∫ q, fourierAtom a q ∂μ = MeasureTheory.charFun μ ((-2 * Real.pi) • a) := by
+  rw [show (∫ q, fourierAtom a q ∂μ) =
+      ∫ q, Complex.exp (-(2 * Real.pi * Complex.I * (inner ℝ q a : ℝ))) ∂μ by
+    simp only [fourierAtom_apply, neg_mul]]
+  exact integral_exp_neg_two_pi_inner_eq_charFun_neg_two_pi_smul (μ := μ) a
 
 variable {W : Type*} [SeminormedAddCommGroup W] [InnerProductSpace ℝ W]
   [MeasurableSpace W] [OpensMeasurableSpace W] {ν : Measure W} [IsFiniteMeasure ν]
