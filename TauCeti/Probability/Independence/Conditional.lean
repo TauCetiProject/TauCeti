@@ -85,6 +85,14 @@ theorem condIndep_of_indicator_condExp_eq {Ω : Type*} {mΩ : MeasurableSpace Ω
   rw [h_f1f2] at h_prod
   simpa only [hf1, hf2] using h_prod
 
+/-- Pointwise product with the constant-`1` indicator of `s` restricts a function to the
+indicator of `s`. Lets indicator products be rewritten without pointwise case splits. -/
+private lemma mul_indicator_one_eq_indicator {Ω : Type*} (s : Set Ω) (φ : Ω → ℝ) :
+    φ * s.indicator (fun _ => (1 : ℝ)) = s.indicator φ := by
+  funext ω
+  rw [Pi.mul_apply, ← Set.indicator_mul_right]
+  simp
+
 /-- Rectangle step for `condExp_indicator_sup_eq_of_condIndep`: over a rectangle `tF ∩ tG` (`tF`
 `mF`-measurable, `tG` `mG`-measurable), the conditional expectation given `mG` of an
 `mH`-measurable indicator integrates to the same value as the indicator itself. -/
@@ -105,16 +113,12 @@ private lemma setIntegral_condExp_indicator_eq_on_rectangle {Ω : Type*} {mΩ : 
   have hInt_ce : Integrable (μ[f | mG]) μ := integrable_condExp
   have h_mul_eq_indicator :
       (fun ω => μ[f | mG] ω * gB ω) = tF.indicator (μ[f | mG]) := by
-    funext ω; by_cases hω : ω ∈ tF
-    · simp only [hgB_def, Set.indicator_of_mem hω, mul_one]
-    · simp only [hgB_def, Set.indicator_of_notMem hω, mul_zero]
+    rw [hgB_def]; exact mul_indicator_one_eq_indicator tF (μ[f | mG])
   have hint_prod : Integrable (fun ω => μ[f | mG] ω * gB ω) μ := by
     simpa only [h_mul_eq_indicator] using hInt_ce.indicator htF_m0
   have hint_B : Integrable gB μ := Integrable.indicator (integrable_const 1) htF_m0
   have hfg : (f * gB) = (tF ∩ H).indicator (fun _ => (1 : ℝ)) := by
-    funext ω
-    simp only [Pi.mul_apply, hf_def, hgB_def, Set.indicator_apply, Set.mem_inter_iff]
-    by_cases h1 : ω ∈ tF <;> by_cases h2 : ω ∈ H <;> simp [h1, h2]
+    rw [hgB_def, mul_indicator_one_eq_indicator, hf_def, Set.indicator_indicator]
   have hprod_int : Integrable (f * gB) μ := by
     rw [hfg]
     exact Integrable.indicator (integrable_const 1) ((hmF _ htF).inter (hmH _ hH))
@@ -146,9 +150,7 @@ private lemma setIntegral_condExp_indicator_eq_on_rectangle {Ω : Type*} {mΩ : 
     _ = ∫ x in tG, (f * gB) x ∂μ := setIntegral_condExp hmG hprod_int htG
     _ = ∫ x in tF ∩ tG, f x ∂μ := by
         have h_fg : (f * gB) = tF.indicator f := by
-          funext ω; simp only [Pi.mul_apply]; by_cases hω : ω ∈ tF
-          · simp only [hgB_def, Set.indicator_of_mem hω, mul_one]
-          · simp only [hgB_def, Set.indicator_of_notMem hω, mul_zero]
+          rw [hgB_def, mul_indicator_one_eq_indicator]
         rw [h_fg, Set.inter_comm tF, setIntegral_indicator htF_m0]
 
 /-- **Projection from conditional independence.** If `mF` and `mH` are conditionally independent
