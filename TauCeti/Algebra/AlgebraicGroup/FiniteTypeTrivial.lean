@@ -78,7 +78,7 @@ lemma hom_counit (H : _root_.CommHopfAlgCat.{u} R) :
 /-- Pointwise formula for the ambient coordinate unit map `R → H`. -/
 @[simp]
 lemma unit_apply (H : _root_.CommHopfAlgCat.{u} R) (r : R) :
-    (unit (R := R) H).hom r = algebraMap R H r :=
+    (_root_.Bialgebra.unitBialgHom R H) r = algebraMap R H r :=
   rfl
 
 /-- Pointwise formula for the ambient coordinate counit map `H → R`. -/
@@ -155,7 +155,7 @@ lemma toBialgHom_counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
 /-- Pointwise formula for the coordinate unit map `R → H`. -/
 @[simp]
 lemma unit_apply (H : FiniteTypeCommHopfAlgCat.{u, u} R) (r : R) :
-    toBialgHom (unit H) r = algebraMap R H r :=
+    (_root_.Bialgebra.unitBialgHom R H.obj) r = algebraMap R H r :=
   rfl
 
 /-- Pointwise formula for the coordinate counit map `H → R`. -/
