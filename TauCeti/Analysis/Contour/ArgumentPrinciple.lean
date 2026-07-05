@@ -13,26 +13,29 @@ import Mathlib.Analysis.Meromorphic.NormalForm
 # The local argument principle
 
 For `f : ℂ → ℂ` meromorphic on a closed disc `C(c, R)` in which the centre `c` is the only point
-that may be a zero or pole, of order `n = meromorphicOrderAt f c`, the contour integral of the
-logarithmic derivative recovers the order:
+that may have nonzero meromorphic order `n = meromorphicOrderAt f c` (every other point being at
+worst a removable singularity), the contour integral of the logarithmic derivative recovers that
+order:
 `∮_{C(c,R)} f'/f = 2πi · n`.
 
 This is the per-orbit input to the valence formula: the residue of `f'/f` at `c` is `ord_c f`, so
 integrating `logDeriv f = f'/f` around the circle counts (with multiplicity) the zero or pole at the
-centre, and vanishes when `c` too is regular (`n = 0`). Mathlib has `logDeriv` and
-`meromorphicOrderAt` but not this identity.
+centre, and vanishes when `c` too has order `0`. Mathlib has `logDeriv` and `meromorphicOrderAt`
+but not this identity.
 
-The proof is Cauchy's theorem plus the Cauchy kernel: off `c` the hypothesis forces `f` to be
-analytic and non-vanishing, so `logDeriv f` is analytic there; near `c`, the local factorisation
-`f = (· − c) ^ n • g` (with `g` analytic, `g c ≠ 0`) gives `logDeriv f = n · (· − c)⁻¹ + logDeriv g`
-with `logDeriv g` analytic. Hence `logDeriv f − n · (· − c)⁻¹` extends holomorphically across the
-whole disc, contributing `0` to the circle integral (Cauchy–Goursat), while
-`∮ n · (· − c)⁻¹ = n · 2πi` (`circleIntegral.integral_sub_center_inv`).
+The proof passes to the meromorphic normal form `F` of `f` on the disc. Unlike raw `f` — which may
+carry isolated removable "wrong values" off `c` where `logDeriv f` is meaningless — `F` is genuinely
+analytic and non-vanishing at every non-central point, so `logDeriv F` is analytic there; near `c`,
+the local factorisation `F = (· − c) ^ n • g` (with `g` analytic, `g c ≠ 0`) gives
+`logDeriv F = n · (· − c)⁻¹ + logDeriv g` with `logDeriv g` analytic, so `(· − c) · logDeriv F`
+extends continuously across `c` with value `n`. Mathlib's removable-singularity Cauchy kernel
+formula then yields `∮ logDeriv F = 2πi · n`, and circle congruence (`F = f` off a discrete set)
+transfers the value back to `logDeriv f`.
 
 ## Main results
 
 * `TauCeti.Contour.argumentPrinciple_local` — `∮_{C(c,R)} logDeriv f = 2πi · n` when the centre `c`,
-  of order `n`, is the only point of the closed disc that may be a zero or pole of `f`.
+  of order `n`, is the only point of the closed disc that may have nonzero meromorphic order.
 
 This is a Layer 2 target of the contour-integration roadmap, feeding the argument principle and,
 ultimately, the valence formula.
@@ -69,6 +72,22 @@ private lemma logDeriv_eq_of_eventuallyEq {f g : ℂ → ℂ} {z : ℂ} (h : f =
     logDeriv f z = logDeriv g z := by
   rw [logDeriv_apply, logDeriv_apply, h.deriv_eq, h.eq_of_nhds]
 
+/-- Logarithmic derivative of a local factorisation `(· - c) ^ n · g`, away from the base point `c`.
+Since `logDeriv` turns products into sums and `logDeriv ((· - c) ^ n) = n · (· - c)⁻¹`, we get
+`logDeriv ((· - c) ^ n · g) = n · (· - c)⁻¹ + logDeriv g`. -/
+private lemma logDeriv_zpow_sub_mul {g : ℂ → ℂ} {c z : ℂ} {n : ℤ} (hz : z ≠ c) (hg_ne : g z ≠ 0)
+    (hg_diff : DifferentiableAt ℂ g z) :
+    logDeriv (fun w => (w - c) ^ n * g w) z = (n : ℂ) * (z - c)⁻¹ + logDeriv g z := by
+  have hz_sub : z - c ≠ 0 := sub_ne_zero.2 hz
+  have hzpow : (z - c) ^ n ≠ 0 := zpow_ne_zero n hz_sub
+  have hdz : DifferentiableAt ℂ (fun w => (w - c) ^ n) z :=
+    (differentiableAt_id.sub_const c).zpow (Or.inl hz_sub)
+  have hld_sub : logDeriv (fun w => w - c) z = (z - c)⁻¹ := by
+    have hderiv : deriv (fun w => w - c) z = 1 := by simp
+    rw [logDeriv_apply, hderiv, one_div]
+  rw [logDeriv_mul z hzpow hg_ne hdz hg_diff,
+    logDeriv_fun_zpow (f := fun w => w - c) (differentiableAt_id.sub_const c) n, hld_sub]
+
 /-- **Core computation for the argument principle.** If `F` is meromorphic at the centre `c` with
 `meromorphicOrderAt F c = n`, and is analytic and non-vanishing everywhere else on the closed disc,
 then `∮_{C(c,R)} logDeriv F = 2πi · n`. The local factorisation `F = (· - c) ^ n • g` makes
@@ -96,18 +115,11 @@ private lemma circleIntegral_logDeriv_of_order_of_analyticAt_off
       (hg_an.continuousAt.eventually_ne hg_ne).filter_mono nhdsWithin_le_nhds,
       self_mem_nhdsWithin] with z hz_FH hz_gan hz_gne hz_ne
     have hz_sub : z - c ≠ 0 := sub_ne_zero.2 hz_ne
-    have hzpow : (z - c) ^ n ≠ 0 := zpow_ne_zero n hz_sub
-    have hdz : DifferentiableAt ℂ (fun w => (w - c) ^ n) z :=
-      (differentiableAt_id.sub_const c).zpow (Or.inl hz_sub)
-    have hderiv : deriv (fun w => w - c) z = 1 := by simp
-    have hld_sub : logDeriv (fun w => w - c) z = (z - c)⁻¹ := by
-      rw [logDeriv_apply, hderiv, one_div]
     have hmul : (fun w => (w - c) ^ n • g w) = fun w => (w - c) ^ n * g w := by
       funext w; rw [smul_eq_mul]
     have hLF : logDeriv F z = (n : ℂ) * (z - c)⁻¹ + logDeriv g z := by
-      rw [logDeriv_eq_of_eventuallyEq hz_FH, hmul,
-        logDeriv_mul z hzpow hz_gne hdz hz_gan.differentiableAt,
-        logDeriv_fun_zpow (f := fun w => w - c) (differentiableAt_id.sub_const c) n, hld_sub]
+      rw [logDeriv_eq_of_eventuallyEq hz_FH, hmul]
+      exact logDeriv_zpow_sub_mul hz_ne hz_gne hz_gan.differentiableAt
     rw [hLF]; linear_combination (n : ℂ) * mul_inv_cancel₀ hz_sub
   -- The bracketed function extends continuously to the centre with value `n`.
   have hlim : Tendsto (fun z => (z - c) * logDeriv F z) (𝓝[≠] c) (𝓝 (n : ℂ)) := by
@@ -141,11 +153,13 @@ private lemma circleIntegral_logDeriv_of_order_of_analyticAt_off
     _ = 2 * (π : ℂ) * I * (n : ℂ) := by rw [smul_eq_mul]
 
 /-- **Local argument principle.** If `f` is meromorphic on the closed disc `C(c, R)` (`R > 0`) and
-every point of the disc except possibly the centre `c` is regular (analytic and non-vanishing), then
-the contour integral of the logarithmic derivative recovers the order `n = meromorphicOrderAt f c`
-at the centre:
+the centre `c` is the only point of the disc that may have nonzero meromorphic order — every other
+point is at worst a removable singularity — then the contour integral of the logarithmic derivative
+recovers the order `n = meromorphicOrderAt f c` at the centre:
 `∮_{C(c,R)} f'/f = 2πi · n`. Thus the integral counts the zero (`n > 0`) or pole (`n < 0`) at the
-centre with multiplicity, and vanishes when `c` too is regular (`n = 0`). -/
+centre with multiplicity, and vanishes when `c` too has order `0`. The proof passes to the
+meromorphic normal form of `f`, which — unlike raw `f` — is genuinely analytic and non-vanishing at
+every non-central point of the disc; `f` itself may take isolated "wrong values" off `c`. -/
 theorem argumentPrinciple_local {f : ℂ → ℂ} {c : ℂ} {R : ℝ} {n : ℤ} (hR : 0 < R)
     (hf : MeromorphicOn f (Metric.closedBall c R))
     (honly : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt f z ≠ 0 → z = c)
