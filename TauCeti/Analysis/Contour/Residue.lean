@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-import Mathlib.Analysis.Analytic.Order
 
 /-!
 # The residue of a meromorphic function
@@ -36,7 +35,8 @@ As an unconditional value it is junk (`0`) when `f` is not meromorphic at `z₀`
 * `TauCeti.Contour.residue_eq_of_eventuallyEq_zpow_smul` — the same value from any presentation
   `f =ᶠ[𝓝[≠] z₀] (· − z₀) ^ n • g` with `g` analytic and `n ≤ −1`, dropping `g z₀ ≠ 0`.
 * `TauCeti.Contour.residue_add`, `TauCeti.Contour.residue_const_mul`,
-  `TauCeti.Contour.residue_sub` — the residue is linear in `f` (over functions meromorphic at `z₀`).
+  `TauCeti.Contour.residue_smul`, `TauCeti.Contour.residue_sub`, `TauCeti.Contour.residue_sum` — the
+  residue is linear in `f` (over functions meromorphic at `z₀`), including over finite sums.
 * `TauCeti.Contour.residue_congr_nhdsNE` — the residue depends only on the germ of `f` on a
   punctured neighborhood of `z₀`.
 * `TauCeti.Contour.residue_eq_zero_of_analyticAt` — the residue vanishes where `f` is analytic.
@@ -189,8 +189,8 @@ private lemma iteratedDeriv_pow_sub_mul_div_factorial {z₀ : ℂ} (p i : ℕ) {
     simp only [add_neg_cancel, iteratedDeriv_fun_pow_zero]
   have hleib : iteratedDeriv (p + i) (fun z => (z - z₀) ^ p * h z) z₀
       = ((p + i).choose p * p.factorial : ℕ) * iteratedDeriv i h z₀ := by
-    rw [show (fun z => (z - z₀) ^ p * h z) = (fun z : ℂ => (z - z₀) ^ p) * h from rfl,
-      iteratedDeriv_mul (by fun_prop) hh.contDiffAt, Finset.sum_eq_single p]
+    rw [iteratedDeriv_fun_mul (f := fun z : ℂ => (z - z₀) ^ p) (g := h) (by fun_prop)
+        hh.contDiffAt, Finset.sum_eq_single p]
     · rw [hpow_pd p, Nat.add_sub_cancel_left, if_pos rfl]; push_cast; ring
     · intro j _ hjp; rw [hpow_pd j, if_neg hjp]; push_cast; ring
     · intro hp
@@ -209,7 +209,8 @@ private lemma iteratedDeriv_pow_sub_mul_div_factorial {z₀ : ℂ} (p i : ℕ) {
 the punctured neighborhood) with `g` analytic at `z₀` and `n ≤ −1`, then the residue is the Taylor
 coefficient `iteratedDeriv (−1 − n) g z₀ / (−1 − n)!`. Unlike `residue_eq_of_order_lt_zero` this
 drops the hypothesis `g z₀ ≠ 0`, so the presentation exponent `n` need not be the meromorphic order
-of `f`: `g` may itself vanish at `z₀` (making `f` analytic, residue `0`) and the formula holds. -/
+of `f`: `g` may vanish at `z₀`, raising the true pole order above `n`; only when `g`'s vanishing
+order is at least `-n` is `f` analytic (residue `0`). -/
 theorem residue_eq_of_eventuallyEq_zpow_smul {f g : ℂ → ℂ} {z₀ : ℂ} {n : ℤ}
     (hn : n ≤ -1) (hg : AnalyticAt ℂ g z₀)
     (hfg : f =ᶠ[𝓝[≠] z₀] fun z => (z - z₀) ^ n • g z) :
@@ -217,8 +218,9 @@ theorem residue_eq_of_eventuallyEq_zpow_smul {f g : ℂ → ℂ} {z₀ : ℂ} {n
   have hf : MeromorphicAt f z₀ :=
     MeromorphicAt.iff_eventuallyEq_zpow_smul_analyticAt.mpr ⟨n, g, hg, hfg⟩
   have hord_eq : meromorphicOrderAt f z₀ = (n : WithTop ℤ) + meromorphicOrderAt g z₀ := by
-    rw [meromorphicOrderAt_congr hfg,
-      show (fun z => (z - z₀) ^ n • g z) = ((fun x : ℂ => x - z₀) ^ n) • g from rfl,
+    have hsmul : (fun z => (z - z₀) ^ n • g z) = ((fun x : ℂ => x - z₀) ^ n) • g := by
+      funext z; simp only [Pi.smul_apply', Pi.pow_apply]
+    rw [meromorphicOrderAt_congr hfg, hsmul,
       meromorphicOrderAt_smul (by fun_prop) hg.meromorphicAt, meromorphicOrderAt_zpow_id_sub_const]
   rcases lt_or_ge (meromorphicOrderAt f z₀) 0 with ha | ha
   · -- Pole: reduce to `residue_eq_of_order_lt_zero` at the true order, then shift back to `g`.
@@ -292,6 +294,7 @@ private lemma exists_analyticAt_eventuallyEq_zpow_smul {f : ℂ → ℂ} {z₀ :
         ← zpow_natCast (z - z₀) (a - m).toNat, ← zpow_add₀ hzne, hexp]
 
 /-- **Additivity of the residue.** The residue is additive on functions meromorphic at `z₀`. -/
+@[simp]
 theorem residue_add {f g : ℂ → ℂ} {z₀ : ℂ} (hf : MeromorphicAt f z₀) (hg : MeromorphicAt g z₀) :
     residue (f + g) z₀ = residue f z₀ + residue g z₀ := by
   obtain ⟨m, hm1, hmf, hmg⟩ : ∃ m : ℤ, m ≤ -1 ∧ (m : WithTop ℤ) ≤ meromorphicOrderAt f z₀ ∧
@@ -333,8 +336,17 @@ theorem residue_const_mul {f : ℂ → ℂ} {z₀ : ℂ} (c : ℂ) (hf : Meromor
     residue_eq_of_eventuallyEq_zpow_smul hm1 hcφ_an hcf_eq,
     iteratedDeriv_const_mul_field c φ, mul_div_assoc]
 
+/-- **Scaling of the residue (pointwise `•`).** The residue commutes with scalar multiplication;
+the `Pi.smul` companion to `residue_const_mul`. -/
+@[simp]
+theorem residue_smul {f : ℂ → ℂ} {z₀ : ℂ} (c : ℂ) (hf : MeromorphicAt f z₀) :
+    residue (c • f) z₀ = c • residue f z₀ := by
+  have hcf : (c • f) = fun z => c * f z := by funext z; rw [Pi.smul_apply, smul_eq_mul]
+  rw [hcf, residue_const_mul c hf, smul_eq_mul]
+
 /-- **Subtractivity of the residue.** The residue distributes over subtraction of meromorphic
 functions; the `−1` scaling case of `residue_add` and `residue_const_mul`. -/
+@[simp]
 theorem residue_sub {f g : ℂ → ℂ} {z₀ : ℂ} (hf : MeromorphicAt f z₀) (hg : MeromorphicAt g z₀) :
     residue (f - g) z₀ = residue f z₀ - residue g z₀ := by
   have hng : MeromorphicAt (fun z => (-1 : ℂ) * g z) z₀ :=
@@ -343,6 +355,21 @@ theorem residue_sub {f g : ℂ → ℂ} {z₀ : ℂ} (hf : MeromorphicAt f z₀)
     funext z; simp only [Pi.sub_apply, Pi.add_apply, neg_one_mul]; ring
   rw [heq, residue_add hf hng, residue_const_mul (-1) hg]
   ring
+
+/-- **The residue of a finite sum.** For a finite family of functions meromorphic at `z₀`, the
+residue of the sum is the sum of the residues — the form consumed by the residue theorem. -/
+@[simp]
+theorem residue_sum {ι : Type*} (s : Finset ι) {f : ι → ℂ → ℂ} {z₀ : ℂ}
+    (hf : ∀ i ∈ s, MeromorphicAt (f i) z₀) :
+    residue (∑ i ∈ s, f i) z₀ = ∑ i ∈ s, residue (f i) z₀ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp only [Finset.sum_empty]; exact residue_eq_zero_of_analyticAt analyticAt_const
+  | insert a s ha ih =>
+    rw [Finset.sum_insert ha, Finset.sum_insert ha,
+      residue_add (hf a (Finset.mem_insert_self a s))
+        (MeromorphicAt.sum fun i hi => hf i (Finset.mem_insert_of_mem hi)),
+      ih fun i hi => hf i (Finset.mem_insert_of_mem hi)]
 
 end TauCeti.Contour
 
