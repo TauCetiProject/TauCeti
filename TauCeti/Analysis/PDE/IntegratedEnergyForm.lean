@@ -329,6 +329,8 @@ lemma energyFormIntegral_eq_one_zero_baseMass_add_perturbation
     funext x
     exact energyIntegrand_eq_one_zero_baseMass_add_perturbation_apply
       (a x) (b x) (c x) (m x) (U x) (V x)
+  -- After unfolding all three forms, expose the left integrand as a function application so
+  -- the pointwise function equality `hpoint` rewrites the integral before `integral_add`.
   change ∫ x, (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x)) x ∂μ =
       energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U V +
         energyFormIntegral μ (fun x => a x - 1) b (fun x => c x - m x) U V
