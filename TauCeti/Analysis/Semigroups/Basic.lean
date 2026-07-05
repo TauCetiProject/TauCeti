@@ -424,6 +424,20 @@ theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt
   · exact S.strongContWithinAt_left x t₀ ht₀
   · exact S.strongContWithinAt_right x t₀ ht₀
 
+/-- The real-time orbit of a strongly continuous semigroup is continuous on the
+nonnegative half-line. -/
+theorem StronglyContinuousSemigroup.realOperator_continuousOn_Ici
+    (S : StronglyContinuousSemigroup X) (x : X) :
+    ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.Ici 0) := by
+  intro t ht
+  exact S.realOperator_continuousWithinAt x t ht
+
+/-- The real-time orbit of a strongly continuous semigroup is continuous at positive times. -/
+theorem StronglyContinuousSemigroup.realOperator_continuousAt_of_pos
+    (S : StronglyContinuousSemigroup X) (x : X) {t : ℝ} (ht : 0 < t) :
+    ContinuousAt (fun u : ℝ => S.realOperator u x) t :=
+  (S.realOperator_continuousWithinAt x t ht.le).continuousAt (Ici_mem_nhds ht)
+
 end TauCeti.Semigroups
 
 end
