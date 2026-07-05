@@ -163,12 +163,6 @@ theorem IsComplexLinear.of_neg_neg {F : V →ₗ[ℝ] W}
   isComplexLinear_of_apply fun v => by
     simpa using congrArg Neg.neg (h.apply v)
 
-/-- Negating both source and target endomorphisms leaves complex-linearity unchanged. -/
-@[simp]
-theorem isComplexLinear_neg_neg_iff {F : V →ₗ[ℝ] W} :
-    IsComplexLinear (-J) (-J') F ↔ IsComplexLinear J J' F :=
-  ⟨fun hF => hF.of_neg_neg, fun hF => hF.neg_neg⟩
-
 /-- The negation of a complex-antilinear map is complex antilinear. -/
 theorem IsComplexAntilinear.neg {F : V →ₗ[ℝ] W} (h : IsComplexAntilinear J J' F) :
     IsComplexAntilinear J J' (-F) :=
@@ -185,12 +179,6 @@ theorem IsComplexAntilinear.of_neg_neg {F : V →ₗ[ℝ] W}
     (h : IsComplexAntilinear (-J) (-J') F) : IsComplexAntilinear J J' F :=
   isComplexAntilinear_of_apply fun v => by
     simpa using congrArg Neg.neg (h.apply v)
-
-/-- Negating both source and target endomorphisms leaves complex-antilinearity unchanged. -/
-@[simp]
-theorem isComplexAntilinear_neg_neg_iff {F : V →ₗ[ℝ] W} :
-    IsComplexAntilinear (-J) (-J') F ↔ IsComplexAntilinear J J' F :=
-  ⟨fun hF => hF.of_neg_neg, fun hF => hF.neg_neg⟩
 
 /-- The composite of two complex-linear maps is complex linear. -/
 theorem IsComplexLinear.comp {F : V →ₗ[ℝ] W} {G : W →ₗ[ℝ] U}
