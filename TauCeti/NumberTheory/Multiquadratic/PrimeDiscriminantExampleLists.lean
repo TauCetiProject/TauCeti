@@ -13,7 +13,9 @@ public import Mathlib.Data.Complex.Basic
 
 The multiquadratic roadmap's genus-field worked examples use the prime-discriminant lists
 `[-4, 5]` for `ℚ(√-5)` and `[-4, -3, -7]` for `ℚ(√-21)`. This file gives those shared lists
-a neutral home for the Legendre-character, degree, and Galois worked examples.
+a neutral home for the Legendre-character, degree, and Galois worked examples, together with
+the shared witness bundle (prime-discriminant, injectivity, parity, and root-square facts) for
+the `[-4, -3, -7]` list reused by the `ℚ(√-21)` degree and Galois examples.
 -/
 
 public section
@@ -46,20 +48,65 @@ theorem sqrtNegNat_sq (n : ℕ) : sqrtNegNat n ^ 2 = -(n : ℂ) := by
     _ = -(n : ℂ) := by
       simp [Complex.I_sq, hsqrt]
 
-/-- Compatibility name for the chosen complex square root of `-3`. -/
-noncomputable abbrev sqrtNegThree : ℂ :=
-  sqrtNegNat 3
+/-- Each entry of the `[-4, -3, -7]` list is a prime discriminant. -/
+theorem isPrimeDiscriminant_negFourNegThreeNegSevenPrimeDiscriminants :
+    ∀ i : Fin 3, IsPrimeDiscriminant (negFourNegThreeNegSevenPrimeDiscriminants i) := by
+  intro i
+  fin_cases i
+  · simp [negFourNegThreeNegSevenPrimeDiscriminants]
+  · have h3 : IsPrimeDiscriminant (oddPrimeDiscriminant 3) :=
+      isPrimeDiscriminant_oddPrimeDiscriminant (p := 3) (by decide) (by decide)
+    simpa [negFourNegThreeNegSevenPrimeDiscriminants,
+      oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)] using h3
+  · have h7 : IsPrimeDiscriminant (oddPrimeDiscriminant 7) :=
+      isPrimeDiscriminant_oddPrimeDiscriminant (p := 7) (by decide) (by decide)
+    simpa [negFourNegThreeNegSevenPrimeDiscriminants,
+      oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)] using h7
 
-/-- Compatibility name for the chosen complex square root of `-7`. -/
-noncomputable abbrev sqrtNegSeven : ℂ :=
-  sqrtNegNat 7
+/-- The `[-4, -3, -7]` list has no repeated entries. -/
+theorem injective_negFourNegThreeNegSevenPrimeDiscriminants :
+    Function.Injective negFourNegThreeNegSevenPrimeDiscriminants := by
+  decide
 
-/-- The chosen root `sqrtNegThree` squares to `-3`. -/
-theorem sqrtNegThree_sq : sqrtNegThree ^ 2 = -(3 : ℂ) :=
-  sqrtNegNat_sq 3
+/-- The `[-4, -3, -7]` list is not the all-even list `[-4, 8, -8]`. -/
+theorem not_all_even_negFourNegThreeNegSevenPrimeDiscriminants :
+    ¬ ((∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -4) ∧
+      (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = 8) ∧
+        (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -8)) := by
+  decide
 
-/-- The chosen root `sqrtNegSeven` squares to `-7`. -/
-theorem sqrtNegSeven_sq : sqrtNegSeven ^ 2 = -(7 : ℂ) :=
-  sqrtNegNat_sq 7
+/-- The complex square root data for the prime discriminants `-4`, `-3`, and `-7`: the
+associated radicands are `-1`, `-3`, and `-7`, with roots `i`, `i√3`, and `i√7`. -/
+theorem root_neg_four_neg_three_neg_seven_sq (i : Fin 3) :
+    (fun i : Fin 3 => ![Complex.I, sqrtNegNat 3, sqrtNegNat 7] i) i ^ 2 =
+      algebraMap ℚ ℂ
+        (((primeDiscriminantRadicand
+          (negFourNegThreeNegSevenPrimeDiscriminants i) : ℤ) : ℚ)) := by
+  fin_cases i
+  · simp [negFourNegThreeNegSevenPrimeDiscriminants, Complex.I_sq]
+  · have hrad : primeDiscriminantRadicand (-3) = -3 := by
+      have h := primeDiscriminantRadicand_oddPrimeDiscriminant (p := 3) (by decide)
+      simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)] using h
+    simp [negFourNegThreeNegSevenPrimeDiscriminants, hrad]
+  · have hrad : primeDiscriminantRadicand (-7) = -7 := by
+      have h := primeDiscriminantRadicand_oddPrimeDiscriminant (p := 7) (by decide)
+      simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)] using h
+    simp [negFourNegThreeNegSevenPrimeDiscriminants, hrad]
+
+/-- The range of the chosen `√-21` root family is `{i, √-3, √-7}`. -/
+theorem range_roots_neg_four_neg_three_neg_seven :
+    (Set.range fun i : Fin 3 => ![Complex.I, sqrtNegNat 3, sqrtNegNat 7] i)
+      = {Complex.I, sqrtNegNat 3, sqrtNegNat 7} := by
+  ext x
+  simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_singleton_iff]
+  constructor
+  · intro hx
+    rcases hx with ⟨i, rfl⟩
+    fin_cases i <;> simp
+  · intro hx
+    rcases hx with hx | hx | hx
+    · exact ⟨0, by simp [hx]⟩
+    · exact ⟨1, by simp [hx]⟩
+    · exact ⟨2, by simp [hx]⟩
 
 end TauCeti.Multiquadratic
