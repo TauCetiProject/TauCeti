@@ -1,7 +1,8 @@
 module
 
-public import TauCeti.Probability.Martingale.Reverse
-public import TauCeti.Probability.Martingale.Crossings.Pathwise
+public import Mathlib.Probability.Martingale.Upcrossing
+import TauCeti.Probability.Martingale.Reverse
+import TauCeti.Probability.Martingale.Crossings.Pathwise
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 
 /-!
@@ -245,17 +246,13 @@ private lemma lintegral_upcrossings_le_of_forall_lintegral_upcrossingsBefore_le
   -- Conclude via `upcrossings = ⨆ N, upcrossingsBefore N`.
   simpa [MeasureTheory.upcrossings, hU] using h_iSup.le.trans hbound
 
--- `hf` is intentionally not consumed: the transfer is pathwise, so the bound holds for all `f`.
--- The hypothesis fixes the genuine (integrable) regime this bound targets and is the precondition
--- the antitone-limit consumer relies on to read `n ↦ μ[f | 𝔽 n]` as the honest condExp process.
-set_option linter.unusedVariables false in
 /-- Uniform crossing bound for the antitone conditional-expectation sequence.
 
-For an antitone filtration `𝔽` and integrable `f`, the expected number of upcrossings of the
-conditional-expectation process `n ↦ μ[f | 𝔽 n]` on any interval `[a, b]` is finite. This is the
-crossing bound consumed by the antitone-limit (Lévy downward) argument. -/
+For an antitone filtration `𝔽`, the expected number of upcrossings of the conditional-expectation
+process `n ↦ μ[f | 𝔽 n]` on any interval `[a, b]` is finite. This is the crossing bound consumed by
+the antitone-limit (Lévy downward) argument. -/
 theorem upcrossings_bdd_uniform [IsFiniteMeasure μ] (h_antitone : Antitone 𝔽)
-    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω)) (f : Ω → ℝ) (hf : Integrable f μ)
+    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω)) (f : Ω → ℝ)
     (a b : ℝ) (hab : a < b) :
     ∃ C : ENNReal, C < ⊤ ∧ ∫⁻ ω, upcrossings (↑a) (↑b) (fun n => μ[f | 𝔽 n]) ω ∂μ ≤ C := by
   -- Downcrossings-side surrogate bound: apply the (private) reversed-process bound to `-f` on the
