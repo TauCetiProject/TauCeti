@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Order
+public import TauCeti.AlgebraicGeometry.WeilDivisor.FixedDegree
 public import Mathlib.Algebra.Order.Hom.Monoid
 
 /-!
@@ -154,6 +155,22 @@ lemma eq_of_le_of_degree_eq {D E : WeilDivisor X} (hDE : D ≤ E) (hdeg : degree
 lemma strictMono_degree : StrictMono (degree : WeilDivisor X → ℤ) := by
   intro D E hDE
   exact degree_lt_of_le_of_ne hDE.le hDE.ne'.symm
+
+namespace EffectiveDivisorOfDegree
+
+variable {d e : ℕ}
+
+/-- If a fixed-degree effective divisor is coefficientwise below another, its degree index is
+also bounded above. -/
+lemma degree_le_of_le {D : EffectiveDivisorOfDegree X d} {E : EffectiveDivisorOfDegree X e}
+    (hDE : (D : WeilDivisor X) ≤ E) : d ≤ e := by
+  have hdeg : degree (D : WeilDivisor X) ≤ degree (E : WeilDivisor X) :=
+    WeilDivisor.degree_le_of_le hDE
+  have hde : (d : ℤ) ≤ e := by
+    simpa [D.degree_eq, E.degree_eq] using hdeg
+  exact_mod_cast hde
+
+end EffectiveDivisorOfDegree
 
 end WeilDivisor
 
