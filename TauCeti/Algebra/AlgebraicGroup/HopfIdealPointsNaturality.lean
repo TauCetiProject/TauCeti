@@ -243,7 +243,10 @@ noncomputable def quotientPointsSubgroupNatIso (H : _root_.CommHopfAlgCat.{v} R)
 lemma quotientPointsSubgroupNatIso_hom_app_apply (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
-    (quotientPointsSubgroupNatIso H I).hom.app A f =
+    CategoryTheory.ConcreteCategory.hom
+        (X := HopfAlgebra.pointsFunctor (R := R) (H := quotient H I).obj A)
+        (Y := GrpCat.of (quotientPointsSubgroup H I A))
+        ((quotientPointsSubgroupNatIso H I).hom.app A) f =
       (⟨quotientPointsHom H I A f, quotientPointsHom_mem_quotientPointsSubgroup H I A f⟩ :
         quotientPointsSubgroup H I A) := by
   exact quotientPointsSubgroupIso_hom_apply H I A f
@@ -253,7 +256,10 @@ lemma quotientPointsSubgroupNatIso_hom_app_apply (H : _root_.CommHopfAlgCat.{v} 
 lemma quotientPointsSubgroupNatIso_inv_app_apply (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
     (g : quotientPointsSubgroup H I A) :
-    (quotientPointsSubgroupNatIso H I).inv.app A g =
+    CategoryTheory.ConcreteCategory.hom
+        (X := GrpCat.of (quotientPointsSubgroup H I A))
+        (Y := HopfAlgebra.pointsFunctor (R := R) (H := quotient H I).obj A)
+        ((quotientPointsSubgroupNatIso H I).inv.app A) g =
       liftQuotientPoint H I A g ((mem_quotientPointsSubgroup_iff H I A g).mp g.property) := by
   exact quotientPointsSubgroupIso_inv_apply H I A g
 
