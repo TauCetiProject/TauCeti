@@ -18,12 +18,12 @@ eventually `IntervalIntegrable` and its integral tends to `v` as `ε → 0⁺`.
 
 This is the set-level (`…On`) companion of `HasCauchyPVAt` (`CauchyPrincipalValue.lean`), which
 excises a single prescribed point `z₀`; the naming mirrors Mathlib's `MeromorphicAt` (at a point)
-versus `MeromorphicOn` (on a set). The singular set `S` is bound **existentially**, so the predicate
-is intrinsic to `(γ, f)` and stays faithful to the roadmap's `S`-free signature: it holds when
-*some* finite excision set satisfies the two clauses. Any prescribed set (for instance the pole set
-`S` in the generalized residue theorem, whose value is `2πi · ∑_{s ∈ S} n_γ(s) · res f s`) witnesses
-the existential directly. Morally one covers the on-curve singularities of `f`, enlarging past them
-being inert as `ε → 0⁺`; but that inertness is a downstream result and is not established here.
+versus `MeromorphicOn` (on a set). The **finite excision set** `S` is bound **existentially**, so
+the predicate is intrinsic to `(γ, f)` and stays faithful to the roadmap's `S`-free signature: it
+holds when *some* finite set satisfies the two clauses. A prescribed set — for instance the pole set
+of the generalized residue theorem, with intended value `2πi · ∑_{s ∈ S} n_γ(s) · res f s` — can be
+used as the witness once its integrability and `Tendsto` clauses have been proved; this file neither
+proves that a particular set satisfies them nor that enlarging a witness leaves the limit unchanged.
 
 As with `HasCauchyPVAt`, the predicate carries a truncated-**integrability** clause alongside the
 `Tendsto` clause. Without it the `Tendsto` clause alone would be met vacuously by integrands whose
@@ -160,8 +160,7 @@ theorem CauchyPVExistsAt.cauchyPVExists {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ 
 
 /-- **Integrable integrand.** If the ordinary contour integrand `t ↦ f (γ t) · γ'(t)` is
 `IntervalIntegrable` on `[a, b]`, then the empty excision (`S = ∅`) is inert, so the principal value
-exists and equals the ordinary contour integral `∫_a^b f (γ t) · γ'(t) dt`. This applies in
-particular when no singularity of `f` lies on `γ`, which is what secures the integrability. -/
+exists and equals the ordinary contour integral `∫_a^b f (γ t) · γ'(t) dt`. -/
 theorem HasCauchyPV.of_integrable {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
     (hf_int : IntervalIntegrable (fun t => f (γ t) * deriv γ t) MeasureTheory.volume a b) :
     HasCauchyPV γ a b f (∫ t in a..b, f (γ t) * deriv γ t) := by
