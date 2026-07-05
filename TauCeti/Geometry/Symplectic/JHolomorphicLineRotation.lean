@@ -119,7 +119,6 @@ lemma isComplexLinearMap_neg_iff :
   ⟨fun hF => by simpa using hF.neg, fun hF => hF.neg⟩
 
 /-- Precomposition by the half-turn `-id` preserves and reflects complex-linearity. -/
-@[simp]
 lemma isComplexLinearMap_comp_neg_iff :
     IsComplexLinearMap J₀ J (F₀.comp (-LinearMap.id : U →ₗ[ℝ] U)) ↔
         IsComplexLinearMap J₀ J F₀ := by
