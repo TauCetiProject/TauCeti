@@ -83,7 +83,6 @@ lemma isComplexLinearMap_toLinearMap :
 
 /-- The standard source quarter-turn is complex-linear as a map from the standard complex line
 to itself. -/
-@[simp]
 lemma isComplexLinearMap_stdComplexLineProduct :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
       (AlmostComplexStructure.product ℝ).toLinearMap :=
@@ -131,7 +130,6 @@ lemma IsComplexLinearMap.of_comp_stdComplexLineProduct
 
 /-- Precomposition by the source quarter-turn preserves and reflects complex-linearity of maps
 from the standard complex line. -/
-@[simp]
 lemma isComplexLinearMap_comp_stdComplexLineProduct_iff :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (F.comp (AlmostComplexStructure.product ℝ).toLinearMap) ↔
@@ -170,7 +168,6 @@ variable {ω : SymplecticForm V}
 
 /-- The ordered area density is unchanged after precomposing by the standard source complex
 structure. -/
-@[simp]
 lemma symplecticForm_comp_stdComplexLineProduct (F : (ℝ × ℝ) →ₗ[ℝ] V) :
     ω ((F.comp (AlmostComplexStructure.product ℝ).toLinearMap) stdComplexLineReal)
         ((F.comp (AlmostComplexStructure.product ℝ).toLinearMap) stdComplexLineImag) =
