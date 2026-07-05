@@ -11,8 +11,11 @@ public import TauCeti.Geometry.Symplectic.JHolomorphicLine
 
 This file records the first reparametrization facts for real-linear maps from the standard
 complex line. Precomposing `F : ℝ × ℝ →ₗ[ℝ] V` by the standard source almost complex structure
-is the quarter-turn `(∂s, ∂t) ↦ (∂t, -∂s)`. It preserves the Cauchy--Riemann condition for
-complex-linear maps and the oriented symplectic area density `ω(F ∂s, F ∂t)`.
+is the quarter-turn `(∂s, ∂t) ↦ (∂t, -∂s)`, recorded here as coordinate formulas together with
+its effect on the oriented symplectic area density `ω(F ∂s, F ∂t)`. Preservation and reflection
+of the Cauchy--Riemann condition, and the area-density invariance, hold for an arbitrary source
+almost complex structure and are stated generally in `AlmostComplex.lean`; this file only
+specialises the area-density fact to the standard-line coordinates.
 
 These are pointwise linear-algebra statements, not a global reparametrization theorem for
 curves. They are the local bookkeeping needed before the analytic Heegaard Floer roadmap's disk
@@ -24,8 +27,6 @@ local holomorphicity or area-density convention.
 * `TauCeti.LinearMap.comp_stdComplexLineProduct_apply_stdComplexLineReal` and
   `TauCeti.LinearMap.comp_stdComplexLineProduct_apply_stdComplexLineImag`: coordinate formulas for
   the source quarter-turn.
-* `TauCeti.isComplexLinearMap_comp_toLinearMap_iff`: precomposition by the source almost
-  complex structure preserves and reflects complex-linearity.
 * `TauCeti.SymplecticForm.symplecticForm_comp_stdComplexLineProduct`: the ordered area density is
   unchanged by this source quarter-turn.
 
@@ -37,7 +38,7 @@ public section
 
 namespace TauCeti
 
-variable {U V : Type*} [AddCommGroup V] [Module ℝ V]
+variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
 namespace LinearMap
 
@@ -64,66 +65,20 @@ lemma comp_stdComplexLineProduct_apply_stdComplexLineImag (F : (ℝ × ℝ) →�
 
 end LinearMap
 
-section ComplexLinear
-
-variable [AddCommGroup U] [Module ℝ U]
-variable {J₀ : AlmostComplexStructure U} {J : AlmostComplexStructure V}
-variable {F₀ : U →ₗ[ℝ] V}
-variable {F : (ℝ × ℝ) →ₗ[ℝ] V}
-
-/-- An almost complex structure is complex-linear as a map from its module to itself. -/
-@[simp]
-lemma isComplexLinearMap_toLinearMap :
-    IsComplexLinearMap J₀ J₀ J₀.toLinearMap := by
-  rw [isComplexLinearMap_iff_apply]
-  intro v
-  rfl
-
-/-- Precomposing a complex-linear map by the source almost complex structure again gives a
-complex-linear map. -/
-lemma IsComplexLinearMap.comp_toLinearMap
-    (hF : IsComplexLinearMap J₀ J F₀) :
-    IsComplexLinearMap J₀ J (F₀.comp J₀.toLinearMap) :=
-  hF.comp isComplexLinearMap_toLinearMap
-
-/-- If precomposition by the source almost complex structure is complex-linear, then the original
-map was complex-linear. -/
-lemma IsComplexLinearMap.of_comp_toLinearMap
-    (hF : IsComplexLinearMap J₀ J (F₀.comp J₀.toLinearMap)) :
-    IsComplexLinearMap J₀ J F₀ := by
-  rw [isComplexLinearMap_iff_apply] at hF ⊢
-  intro v
-  have hJ := congrArg J (hF v)
-  simpa using hJ.symm
-
-/-- Precomposition by the source almost complex structure preserves and reflects
-complex-linearity. -/
-@[simp]
-lemma isComplexLinearMap_comp_toLinearMap_iff :
-    IsComplexLinearMap J₀ J (F₀.comp J₀.toLinearMap) ↔ IsComplexLinearMap J₀ J F₀ :=
-  ⟨fun hF => hF.of_comp_toLinearMap, fun hF => hF.comp_toLinearMap⟩
-
-/-- Negating a map preserves and reflects complex-linearity. -/
-@[simp]
-lemma isComplexLinearMap_neg_iff :
-    IsComplexLinearMap J₀ J (-F₀) ↔ IsComplexLinearMap J₀ J F₀ :=
-  ⟨fun hF => by simpa using hF.neg, fun hF => hF.neg⟩
-
-end ComplexLinear
-
 namespace SymplecticForm
 
 variable {ω : SymplecticForm V}
 
 /-- The ordered area density is unchanged after precomposing by the standard source complex
-structure. -/
+structure. This specialises `symplecticForm_comp_almostComplexStructure` to the standard-line
+coordinates. -/
 lemma symplecticForm_comp_stdComplexLineProduct (F : (ℝ × ℝ) →ₗ[ℝ] V) :
     ω ((F.comp (AlmostComplexStructure.product ℝ).toLinearMap) stdComplexLineReal)
         ((F.comp (AlmostComplexStructure.product ℝ).toLinearMap) stdComplexLineImag) =
       ω (F stdComplexLineReal) (F stdComplexLineImag) := by
-  rw [LinearMap.comp_stdComplexLineProduct_apply_stdComplexLineReal,
-    LinearMap.comp_stdComplexLineProduct_apply_stdComplexLineImag]
-  simpa using ω.neg_eq (F stdComplexLineImag) (F stdComplexLineReal)
+  have h := ω.symplecticForm_comp_almostComplexStructure (AlmostComplexStructure.product ℝ) F
+    stdComplexLineReal
+  rwa [AlmostComplexStructure.product_apply_stdComplexLineReal] at h
 
 end SymplecticForm
 
