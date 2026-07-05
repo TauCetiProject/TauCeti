@@ -58,33 +58,47 @@ open Filter Topology
 namespace TauCeti.Contour
 
 /-- **Crossing angle** of `γ : ℝ → ℂ` at an interior time `t₀`, valued in `[0, 2π)`: the opening
-angle of the model sector, from the exit tangent `L₊` to the reversed entry tangent `−L₋`, taken
+angle of the model sector, from the reversed entry tangent `−L₋` to the exit tangent `L₊`, taken
 `mod 2π`. Here `L₋ = lim_{t → t₀⁻} γ'(t)`, `L₊ = lim_{t → t₀⁺} γ'(t)` are the one-sided limits of
 `deriv γ`. The normalization keeps it nonnegative: a **smooth** crossing (`L₊ = L₋`) gives `π`, as
 in HW §3. As a `limUnder`-based value it is junk when a one-sided tangent fails to exist; it is
 meaningful at the corners/crossings of a piecewise-`C¹` curve. -/
 def crossingAngle (γ : ℝ → ℂ) (t₀ : ℝ) : ℝ :=
   toIcoMod Real.two_pi_pos 0
-    (Complex.arg (-limUnder (𝓝[<] t₀) (deriv γ)) - Complex.arg (limUnder (𝓝[>] t₀) (deriv γ)))
+    (Complex.arg (limUnder (𝓝[>] t₀) (deriv γ)) - Complex.arg (-limUnder (𝓝[<] t₀) (deriv γ)))
 
-/-- **Hungerbühler–Wasem condition (B)** for `f` along `γ` on `[a, b]`, imposed at each interior
-time `t₀ ∈ (a, b)` where `f` fails to be analytic at `γ t₀` — the on-curve singularities of `f`.
-One of the two regularity conditions (with (A′)) that make the Cauchy principal value `PV ∮_γ f`
-exist in the generalized residue theorem, governing poles of order `> 1` via sector cancellation.
-The singular set is detected intrinsically through `¬ AnalyticAt`, so the predicate is `S`-free. -/
+/-- **Basepoint crossing angle** of a closed curve `γ` on `[a, b]`, valued in `[0, 2π)`: the opening
+angle at the join `γ a = γ b`, from the reversed incoming tangent `−L₋` to the outgoing tangent
+`L₊`, where `L₋ = lim_{t → b⁻} γ'(t)` and `L₊ = lim_{t → a⁺} γ'(t)`. This is `crossingAngle`'s
+analogue at the basepoint, where the two tangents come from opposite ends of `[a, b]`; a smooth join
+(`L₊ = L₋`) gives `π`. -/
+def basepointAngle (γ : ℝ → ℂ) (a b : ℝ) : ℝ :=
+  toIcoMod Real.two_pi_pos 0
+    (Complex.arg (limUnder (𝓝[>] a) (deriv γ)) - Complex.arg (-limUnder (𝓝[<] b) (deriv γ)))
+
+/-- **Sector compatibility** of `f` at an on-curve singularity `z₀` whose sector opens at angle `θ`
+(the Hungerbühler–Wasem condition at one crossing): `θ` is a rational multiple `p·π/q` of `π`
+(`q ≠ 0`, `p`, `q` coprime), and `f`'s finite Laurent principal part plus analytic remainder near
+`z₀` has its surviving higher-order coefficients (`coeff k ≠ 0`, `k ≥ 1`) resonate with `θ` under
+the sector-cancellation identity `k · θ ∈ 2π · ℤ`. -/
+def SectorCompatible (f : ℂ → ℂ) (z₀ : ℂ) (θ : ℝ) : Prop :=
+  (∃ p q : ℕ, q ≠ 0 ∧ Nat.Coprime p q ∧ θ = (p : ℝ) * Real.pi / (q : ℝ)) ∧
+    ∃ (N : ℕ) (coeff : Fin N → ℂ) (g : ℂ → ℂ), AnalyticAt ℂ g z₀ ∧
+      (∀ᶠ z in 𝓝[≠] z₀, f z = g z + ∑ k : Fin N, coeff k / (z - z₀) ^ (k.val + 1)) ∧
+        ∀ k : Fin N, coeff k ≠ 0 → 1 ≤ k.val → ∃ m : ℤ, (k.val : ℝ) * θ = (m : ℝ) * (2 * Real.pi)
+
+/-- **Hungerbühler–Wasem condition (B)** for `f` along `γ` on `[a, b]`: at each on-curve singularity
+of `f` (where `f` is not analytic at `γ t₀`) the sector is compatible (`SectorCompatible`), so
+poles of order `> 1` cancel and `PV ∮_γ f` exists in the generalized residue theorem. Imposed at
+each *interior* crossing `t₀ ∈ (a, b)` and at the *basepoint* `γ a` (via `basepointAngle`), so a
+join singularity `γ a = γ b` is not left free. Singularities are found intrinsically via
+`¬ AnalyticAt`, so the predicate is `S`-free. -/
 structure ConditionB (γ : ℝ → ℂ) (a b : ℝ) (f : ℂ → ℂ) : Prop where
-  /-- At each interior on-curve singularity of `f`, the crossing angle of `γ` is a rational multiple
-  `p·π/q` of `π` (`q ≠ 0`, `p`, `q` coprime) — the sector opens at a commensurable angle. -/
-  angle_rational : ∀ t₀ ∈ Set.Ioo a b, ¬ AnalyticAt ℂ f (γ t₀) →
-    ∃ p q : ℕ, q ≠ 0 ∧ Nat.Coprime p q ∧ crossingAngle γ t₀ = (p : ℝ) * Real.pi / (q : ℝ)
-  /-- At each interior on-curve singularity of `f`, `f` has a finite Laurent principal part
-  `∑_{k < N} coeff k · (z − γ t₀)^{-(k+1)}` plus an analytic remainder `g` near `γ t₀`, whose
-  surviving higher-order coefficients (`coeff k ≠ 0`, `k ≥ 1`) resonate with the crossing angle
-  under the sector-cancellation identity `k · crossingAngle γ t₀ ∈ 2π · ℤ`. -/
-  laurent_compatible : ∀ t₀ ∈ Set.Ioo a b, ¬ AnalyticAt ℂ f (γ t₀) →
-    ∃ (N : ℕ) (coeff : Fin N → ℂ) (g : ℂ → ℂ), AnalyticAt ℂ g (γ t₀) ∧
-      (∀ᶠ z in 𝓝[≠] (γ t₀), f z = g z + ∑ k : Fin N, coeff k / (z - γ t₀) ^ (k.val + 1)) ∧
-        ∀ k : Fin N, coeff k ≠ 0 → 1 ≤ k.val →
-          ∃ m : ℤ, (k.val : ℝ) * crossingAngle γ t₀ = (m : ℝ) * (2 * Real.pi)
+  /-- At each interior on-curve singularity of `f`, the crossing sector at `γ t₀` is compatible. -/
+  interior : ∀ t₀ ∈ Set.Ioo a b, ¬ AnalyticAt ℂ f (γ t₀) →
+    SectorCompatible f (γ t₀) (crossingAngle γ t₀)
+  /-- If the basepoint `γ a` (`= γ b` for a closed curve) is an on-curve singularity of `f`, its
+  join sector is compatible — the endpoint case the `interior` clause cannot reach. -/
+  basepoint : ¬ AnalyticAt ℂ f (γ a) → SectorCompatible f (γ a) (basepointAngle γ a b)
 
 end TauCeti.Contour
