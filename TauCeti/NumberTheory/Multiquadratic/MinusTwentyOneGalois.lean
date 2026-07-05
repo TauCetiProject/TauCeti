@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantDegreeExamples
+public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantExampleLists
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantGaloisGroup
 
 /-!

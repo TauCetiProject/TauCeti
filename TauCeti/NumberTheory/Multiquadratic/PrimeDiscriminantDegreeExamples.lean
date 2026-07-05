@@ -6,8 +6,6 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantExampleLists
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantIndependence
-public import Mathlib.Analysis.Real.Sqrt
-public import Mathlib.Data.Complex.Basic
 
 /-!
 # Degree examples for prime-discriminant multiquadratic fields
@@ -34,23 +32,6 @@ public section
 open IntermediateField
 
 namespace TauCeti.Multiquadratic
-
-/-- The chosen complex square root of `-n`, namely `i√n`. -/
-noncomputable abbrev sqrtNegNat (n : ℕ) : ℂ :=
-  Complex.I * ((Real.sqrt n : ℝ) : ℂ)
-
-/-- The chosen root `sqrtNegNat n` squares to `-n`. -/
-@[simp]
-theorem sqrtNegNat_sq (n : ℕ) : sqrtNegNat n ^ 2 = -(n : ℂ) := by
-  have hsqrt : (((Real.sqrt n : ℝ) : ℂ) ^ 2) = (n : ℂ) := by
-    rw [← Complex.ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg n)]
-    norm_num
-  calc
-    (Complex.I * ((Real.sqrt n : ℝ) : ℂ)) ^ 2 =
-        Complex.I ^ 2 * (((Real.sqrt n : ℝ) : ℂ) ^ 2) := by
-      ring
-    _ = -(n : ℂ) := by
-      simp [Complex.I_sq, hsqrt]
 
 /-- The complex square root data for the prime discriminants `-4`, `-3`, and `-7`: the
 associated radicands are `-1`, `-3`, and `-7`, with roots `i`, `i√3`, and `i√7`. -/
