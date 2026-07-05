@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Meromorphic.Order
 import Mathlib.Analysis.Meromorphic.NormalForm
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Contour.CauchyGoursat
 
 /-!
 # The argument principle
@@ -117,31 +118,6 @@ private lemma logDeriv_eventuallyEq_principalPart {F : ℂ → ℂ} {s : ℂ} {n
   rw [logDeriv_eq_of_eventuallyEq hz_FH, hmul]
   exact logDeriv_zpow_sub_mul hz_ne hz_gne hz_gan.differentiableAt
 
-/-- **Cauchy–Goursat for a pole-free meromorphic function.** If `A` is meromorphic on the closed
-disc `C(c, R)` (`R > 0`) and has non-negative meromorphic order at every point — so its normal form
-is analytic throughout the disc — then `∮_{C(c,R)} A = 0`. -/
-private lemma circleIntegral_eq_zero_of_nonneg_meromorphicOrderAt {A : ℂ → ℂ} {c : ℂ} {R : ℝ}
-    (hR : 0 < R) (hA : MeromorphicOn A (closedBall c R))
-    (hord : ∀ z ∈ closedBall c R, 0 ≤ meromorphicOrderAt A z) :
-    circleIntegral A c R = 0 := by
-  have hB_nf : MeromorphicNFOn (toMeromorphicNFOn A (closedBall c R)) (closedBall c R) :=
-    meromorphicNFOn_toMeromorphicNFOn A (closedBall c R)
-  -- The normal form of `A` is analytic on the whole disc.
-  have hB_an : AnalyticOnNhd ℂ (toMeromorphicNFOn A (closedBall c R)) (closedBall c R) := by
-    intro z hz
-    refine (hB_nf hz).meromorphicOrderAt_nonneg_iff_analyticAt.1 ?_
-    rw [meromorphicOrderAt_toMeromorphicNFOn hA hz]
-    exact hord z hz
-  have hB0 : circleIntegral (toMeromorphicNFOn A (closedBall c R)) c R = 0 :=
-    circleIntegral_eq_zero_of_differentiable_on_off_countable hR.le Set.countable_empty
-      (fun z hz => (hB_an z hz).continuousAt.continuousWithinAt)
-      (fun z hz => (hB_an z (ball_subset_closedBall hz.1)).differentiableAt)
-  -- The circle integral only sees `A` up to a discrete set, so it agrees with its normal form.
-  rw [← hB0]
-  refine circleIntegral.circleIntegral_congr_codiscreteWithin ?_ hR.ne'
-  have hspU : sphere c |R| ⊆ closedBall c R := by rw [abs_of_pos hR]; exact sphere_subset_closedBall
-  exact (toMeromorphicNFOn_eqOn_codiscrete hA).filter_mono (Filter.codiscreteWithin_mono hspU)
-
 /-- **The argument principle.** If `f` is meromorphic on the closed disc `C(c, R)` (`R > 0`) with
 all its nonzero-order points contained in a finite set `S` inside the open disc, with orders `ord`,
 then the contour integral of the logarithmic derivative counts the zeros minus the poles with
@@ -197,7 +173,7 @@ theorem argumentPrinciple {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 < R) (S 
   -- `A := logDeriv F - P` is pole-free (the principal part cancels each simple pole of
   -- `logDeriv F`), so its circle integral vanishes.
   have hA0 : circleIntegral (fun z => logDeriv F z - P z) c R = 0 := by
-    refine circleIntegral_eq_zero_of_nonneg_meromorphicOrderAt hR (hlogF_mero.sub hP_mero) ?_
+    refine circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg hR.le (hlogF_mero.sub hP_mero) ?_
     intro z hz
     by_cases hzS : z ∈ S
     · -- Pole point: the principal part cancels the simple pole of `logDeriv F`.
