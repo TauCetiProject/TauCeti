@@ -13,10 +13,9 @@ top of `Pathwise.lean` and `Reverse.lean`.
 
 ## Main results
 
-- `upcrossings_bdd_uniform`: a uniform crossing bound for the antitone conditional-expectation
-  sequence `n ↦ μ[f | 𝔽 n]` along an antitone filtration, for integrable `f`. Proved by transferring
-  a per-horizon reversed-surrogate bound (`lintegral_upcrossings_revCEFinite_bdd`, kept private) to
-  the antitone sequence via the pathwise time-reversal comparison.
+- `exists_lintegral_upcrossings_condExp_le` (roadmap alias `upcrossings_bdd_uniform`): a uniform
+  crossing bound for the antitone conditional-expectation sequence `n ↦ μ[f | 𝔽 n]`, for integrable
+  `f`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/Martingale/Crossings/Bounds.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
@@ -209,7 +208,7 @@ For an antitone filtration `𝔽` and integrable `f`, the expected number of upc
 conditional-expectation process `n ↦ μ[f | 𝔽 n]` on any interval `[a, b]` is finite — the L¹
 reverse-martingale upcrossing bound. This is the crossing bound consumed by the antitone-limit
 (Lévy downward) argument. -/
-theorem upcrossings_bdd_uniform [IsFiniteMeasure μ] (h_antitone : Antitone 𝔽)
+theorem exists_lintegral_upcrossings_condExp_le [IsFiniteMeasure μ] (h_antitone : Antitone 𝔽)
     (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω)) (f : Ω → ℝ) (hf : Integrable f μ)
     (a b : ℝ) (hab : a < b) :
     ∃ C : ENNReal, C < ⊤ ∧ ∫⁻ ω, upcrossings (↑a) (↑b) (fun n => μ[f | 𝔽 n]) ω ∂μ ≤ C := by
@@ -240,5 +239,9 @@ theorem upcrossings_bdd_uniform [IsFiniteMeasure μ] (h_antitone : Antitone 𝔽
     fun n => stronglyMeasurable_condExp.mono (h_le n)
   -- Upgrade the per-horizon bound to the total upcrossings integral (monotone convergence in `N`).
   exact lintegral_upcrossings_le_of_forall_lintegral_upcrossingsBefore_le h_adapted hab h_N_bound
+
+/-- Roadmap Layer 4 target name (`TauCetiRoadmap/Exchangeability`) for the uniform upcrossing bound
+`exists_lintegral_upcrossings_condExp_le`. -/
+alias upcrossings_bdd_uniform := exists_lintegral_upcrossings_condExp_le
 
 end MeasureTheory
