@@ -59,7 +59,6 @@ noncomputable abbrev weightedAbelMapOfDegree (w : X → ℤ) (h : S.IsWeightedDe
 
 /-- Coercing the fixed-degree weighted Abel map to the class group gives the class of the
 degree-corrected divisor. -/
-@[simp]
 lemma coe_weightedAbelMapOfDegree (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (D : EffectiveDivisorOfDegree X d) :
     (S.weightedAbelMapOfDegree w h hx₀ d D : S.ClassGroup) =
@@ -138,7 +137,6 @@ noncomputable abbrev unweightedAbelMapOfDegree (h : S.IsUnweightedDegreeZero) (x
 
 /-- Coercing the fixed-degree unweighted Abel map to the class group gives the class of
 `D - d • [x₀]`, expressed using the underlying divisor's degree. -/
-@[simp]
 lemma coe_unweightedAbelMapOfDegree (h : S.IsUnweightedDegreeZero) (x₀ : X)
     (D : EffectiveDivisorOfDegree X d) :
     (S.unweightedAbelMapOfDegree h x₀ d D : S.ClassGroup) =
