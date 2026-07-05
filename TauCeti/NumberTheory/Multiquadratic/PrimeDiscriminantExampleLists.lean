@@ -55,12 +55,10 @@ noncomputable abbrev sqrtNegSeven : ℂ :=
   sqrtNegNat 7
 
 /-- The chosen root `sqrtNegThree` squares to `-3`. -/
-@[simp]
 theorem sqrtNegThree_sq : sqrtNegThree ^ 2 = -(3 : ℂ) :=
   sqrtNegNat_sq 3
 
 /-- The chosen root `sqrtNegSeven` squares to `-7`. -/
-@[simp]
 theorem sqrtNegSeven_sq : sqrtNegSeven ^ 2 = -(7 : ℂ) :=
   sqrtNegNat_sq 7
 
