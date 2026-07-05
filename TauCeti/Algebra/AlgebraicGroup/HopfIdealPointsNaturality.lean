@@ -140,22 +140,24 @@ lemma mapQuotientPointsSubgroup_comp (H : _root_.CommHopfAlgCat.{v} R)
         (mapQuotientPointsSubgroup H I χ) := by
   exact congrArg GrpCat.Hom.hom ((quotientPointsSubgroupFunctor (R := R) H I).map_comp χ ψ)
 
-/-- The inverse map from a cut-out subgroup point to the corresponding quotient point. -/
-noncomputable def liftQuotientPointHom (H : _root_.CommHopfAlgCat.{v} R)
+private noncomputable def liftQuotientPointHom (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
-    quotientPointsSubgroup H I A →* HopfAlgebra.points (R := R) (H := quotient H I) A where
-  toFun g := liftQuotientPoint H I A g
-    ((mem_quotientPointsSubgroup_iff H I A g).mp g.property)
-  map_one' := by
-    apply quotientPointsHom_injective H I A
-    rw [quotientPointsHom_liftQuotientPoint, map_one]
-    rfl
-  map_mul' := by
-    intro g₁ g₂
-    apply quotientPointsHom_injective H I A
-    rw [quotientPointsHom_liftQuotientPoint, map_mul, quotientPointsHom_liftQuotientPoint,
-      quotientPointsHom_liftQuotientPoint]
-    rfl
+    quotientPointsSubgroup H I A →* HopfAlgebra.points (R := R) (H := quotient H I) A :=
+  ((MonoidHom.ofInjective (f := (quotientPointsHom H I A).hom)
+    (quotientPointsHom_injective H I A)).symm).toMonoidHom
+
+private lemma liftQuotientPointHom_apply (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R) (g : quotientPointsSubgroup H I A) :
+    liftQuotientPointHom H I A g =
+      liftQuotientPoint H I A g ((mem_quotientPointsSubgroup_iff H I A g).mp g.property) := by
+  apply quotientPointsHom_injective H I A
+  change (quotientPointsHom H I A).hom
+      (((MonoidHom.ofInjective (f := (quotientPointsHom H I A).hom)
+        (quotientPointsHom_injective H I A)).symm) g) =
+    (quotientPointsHom H I A).hom
+      (liftQuotientPoint H I A g
+        ((mem_quotientPointsSubgroup_iff H I A g).mp g.property))
+  rw [MonoidHom.apply_ofInjective_symm, quotientPointsHom_liftQuotientPoint]
 
 private lemma liftQuotientPointHom_naturality (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) {A B : CommAlgCat.{w} R} (χ : A ⟶ B)
@@ -164,48 +166,36 @@ private lemma liftQuotientPointHom_naturality (H : _root_.CommHopfAlgCat.{v} R)
       liftQuotientPointHom H I B (mapQuotientPointsSubgroup H I χ g) := by
   apply quotientPointsHom_injective H I B
   rw [← mapPoints_quotientPointsHom H I χ]
-  -- Expose the concrete lift maps after applying injectivity to the quotient-points inclusion.
-  change HopfAlgebra.mapPoints (H := H) χ
-      (quotientPointsHom H I A
-        (liftQuotientPoint H I A g
-          ((mem_quotientPointsSubgroup_iff H I A g).mp g.property))) =
-    quotientPointsHom H I B
-      (liftQuotientPoint H I B (mapQuotientPointsSubgroup H I χ g)
-        ((mem_quotientPointsSubgroup_iff H I B (mapQuotientPointsSubgroup H I χ g)).mp
-          (mapQuotientPointsSubgroup H I χ g).property))
+  rw [liftQuotientPointHom_apply, liftQuotientPointHom_apply]
   rw [quotientPointsHom_liftQuotientPoint, quotientPointsHom_liftQuotientPoint]
   rfl
 
 /-- The component isomorphism between quotient points and the cut-out subgroup. -/
-noncomputable def quotientPointsSubgroupIso (H : _root_.CommHopfAlgCat.{v} R)
+@[expose] noncomputable def quotientPointsSubgroupIso (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
     GrpCat.of (HopfAlgebra.points (R := R) (H := quotient H I) A) ≅
-      GrpCat.of (quotientPointsSubgroup H I A) where
-  hom := GrpCat.ofHom ((quotientPointsHom H I A).hom.codRestrict
-    (quotientPointsSubgroup H I A)
-    (quotientPointsHom_mem_quotientPointsSubgroup H I A))
-  inv := GrpCat.ofHom (liftQuotientPointHom H I A)
-  hom_inv_id := by
-    apply GrpCat.hom_ext
-    apply MonoidHom.ext
-    intro g
-    -- The component iso is bundled in `GrpCat`; expose the underlying quotient lift.
-    change liftQuotientPoint H I A (quotientPointsHom H I A g)
-        ((mem_quotientPointsSubgroup_iff H I A (quotientPointsHom H I A g)).mp
-          (quotientPointsHom_mem_quotientPointsSubgroup H I A g)) =
-      g
-    apply quotientPointsHom_injective H I A
-    rw [quotientPointsHom_liftQuotientPoint]
-  inv_hom_id := by
-    apply GrpCat.hom_ext
-    apply MonoidHom.ext
-    intro g
-    -- The component iso is bundled in `GrpCat`; expose the underlying quotient inclusion.
-    change (⟨quotientPointsHom H I A (liftQuotientPointHom H I A g),
-        quotientPointsHom_mem_quotientPointsSubgroup H I A _⟩ :
-        quotientPointsSubgroup H I A) = g
-    exact Subtype.ext (quotientPointsHom_liftQuotientPoint H I A g
-      ((mem_quotientPointsSubgroup_iff H I A g).mp g.property))
+      GrpCat.of (quotientPointsSubgroup H I A) :=
+  (MonoidHom.ofInjective (f := (quotientPointsHom H I A).hom)
+    (quotientPointsHom_injective H I A)).toGrpIso
+
+/-- The component isomorphism sends a quotient point to its included ambient point. -/
+@[simp]
+lemma quotientPointsSubgroupIso_hom_apply (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
+    (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
+    (quotientPointsSubgroupIso H I A).hom f =
+      (⟨quotientPointsHom H I A f, quotientPointsHom_mem_quotientPointsSubgroup H I A f⟩ :
+        quotientPointsSubgroup H I A) :=
+  Subtype.ext rfl
+
+/-- The inverse component is the quotient point factoring the included ambient point. -/
+@[simp]
+lemma quotientPointsSubgroupIso_inv_apply (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
+    (g : quotientPointsSubgroup H I A) :
+    (quotientPointsSubgroupIso H I A).inv g =
+      liftQuotientPoint H I A g ((mem_quotientPointsSubgroup_iff H I A g).mp g.property) := by
+  exact liftQuotientPointHom_apply H I A g
 
 private lemma quotientPointsSubgroupFunctor_map_quotientPointsHom_aux
     (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
@@ -253,9 +243,9 @@ lemma mapPoints_liftQuotientPoint (H : _root_.CommHopfAlgCat.{v} R)
           exact (mem_quotientPointsSubgroup_iff H I B _).mp
             (mapPoints_mem_quotientPointsSubgroup H I χ
               ((mem_quotientPointsSubgroup_iff H I A g).mpr hg)) h hh) := by
-  exact liftQuotientPointHom_naturality H I χ
-    (⟨g, (mem_quotientPointsSubgroup_iff H I A g).mpr hg⟩ :
-      quotientPointsSubgroup H I A)
+  apply quotientPointsHom_injective H I B
+  rw [← mapPoints_quotientPointsHom H I χ, quotientPointsHom_liftQuotientPoint,
+    quotientPointsHom_liftQuotientPoint]
 
 end CommHopfAlgCat
 
