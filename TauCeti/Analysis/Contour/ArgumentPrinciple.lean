@@ -13,9 +13,9 @@ import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 /-!
 # The argument principle
 
-For `f : ℂ → ℂ` meromorphic on a closed disc `C(c, R)` whose zeros and poles form a finite set `S`
-inside the open disc, with integer orders `ord`, the contour integral of the logarithmic derivative
-counts them with multiplicity:
+For `f : ℂ → ℂ` meromorphic on a closed disc `C(c, R)` whose nonzero-order points are contained in a
+finite set `S` inside the open disc, on which `ord z = meromorphicOrderAt f z`, the contour integral
+of the logarithmic derivative counts the zeros and poles with multiplicity:
 `∮_{C(c,R)} f'/f = 2πi · ∑_{z ∈ S} ord z`.
 
 The order `ord z = meromorphicOrderAt f z` is positive at a zero and negative at a pole, so the
@@ -33,8 +33,9 @@ meaningless — since the results are stated up to the meromorphic normal form o
 
 ## Main results
 
-* `TauCeti.Contour.argumentPrinciple` — `∮_{C(c,R)} logDeriv f = 2πi · ∑_{z ∈ S} ord z` when the
-  nonzero-order points form a finite set `S` inside the open disc, with orders `ord`.
+* `TauCeti.Contour.argumentPrinciple` — `∮_{C(c,R)} logDeriv f = 2πi · ∑_{z ∈ S} ord z` when all
+  nonzero-order points are contained in a finite set `S` inside the open disc, with `ord` agreeing
+  with `meromorphicOrderAt f` on `S`.
 * `TauCeti.Contour.argumentPrinciple_local` — the special case `S = {c}`:
   `∮_{C(c,R)} logDeriv f = 2πi · n` when the centre `c`, of order `n`, is the only point of the
   closed disc that may have nonzero meromorphic order.
