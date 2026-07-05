@@ -12,7 +12,7 @@ has the same product-mixture law, so the exchangeability proof is just the speci
 the permuted and identity selections of `Fin n`.
 
 The resulting exchangeability theorem is one of the Layer 0 bridges listed in
-`TauCetiRoadmap/Exchangeability/Targets.lean`; the contractability corollaries use the same
+`TauCetiRoadmap/Exchangeability/Suggested.lean`; the contractability corollaries use the same
 injective-block identity, since strictly increasing finite selections are injective.
 
 These declarations follow the `cameronfreer/exchangeability` Layer 0 implication lattice

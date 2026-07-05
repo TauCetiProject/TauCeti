@@ -86,10 +86,10 @@ instance : PartialOrder (Subcoalgebra R C) :=
 theorem mem_carrier {D : Subcoalgebra R C} {c : C} : c ∈ D.carrier ↔ c ∈ D :=
   Iff.rfl
 
+@[simp]
 theorem mem_toSubmodule {D : Subcoalgebra R C} {c : C} : c ∈ D.toSubmodule ↔ c ∈ D :=
   Iff.rfl
 
-@[simp]
 theorem toSubmodule_carrier (D : Subcoalgebra R C) : D.toSubmodule = D.carrier :=
   rfl
 

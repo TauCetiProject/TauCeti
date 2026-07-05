@@ -38,7 +38,7 @@ namespace PDE
 
 open Matrix
 
-variable {n : Type*} [Fintype n] [DecidableEq n]
+variable {n : Type*} [Fintype n]
 
 variable (A B : Matrix n n ℝ) (b d : EuclideanSpace ℝ n) (c e m r : ℝ)
 variable (U V : ℝ × EuclideanSpace ℝ n)
@@ -157,6 +157,8 @@ lemma energyIntegrand_principal_drift_mass_apply :
         energyIntegrand 0 0 c U V := by
   rw [energyIntegrand_principal_drift_mass]
   rfl
+
+variable [DecidableEq n]
 
 /-- The full energy integrand is the sum of a shifted Laplacian model with chosen base mass
 and the residual perturbation of the coefficient triple. -/

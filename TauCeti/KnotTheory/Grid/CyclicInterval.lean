@@ -267,6 +267,16 @@ theorem card_cIoo_add_card_cIoo_swap {a b : Fin n} (h : a ≠ b) :
     Finset.card_univ, Fintype.card_fin] at hcard
   exact hcard
 
+/-- In a grid of size at most two, every open cyclic interval is empty. There are no grid points
+strictly between two endpoints on either of the two complementary arcs. -/
+theorem cIoo_eq_empty_of_le_two (hn : n ≤ 2) (a b : Fin n) : cIoo a b = ∅ := by
+  by_cases hab : a = b
+  · simp [hab]
+  · apply Finset.card_eq_zero.mp
+    have hsum := card_cIoo_add_card_cIoo_swap hab
+    have hcard : (cIoo a b).card = 0 := by omega
+    exact hcard
+
 /-- A clockwise open cyclic interval reversed by `Fin.rev` is the clockwise open cyclic interval
 with the two endpoints reversed and exchanged.
 

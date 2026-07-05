@@ -283,6 +283,22 @@ theorem comap_le_comap_processCons (x : Ω → α) (t : Ω → ℕ → α) :
         rw [processTail_processCons]
     _ ≤ MeasurableSpace.comap (processCons x t) inferInstance := comap_processTail_le
 
+omit [MeasurableSpace Ω] in
+/-- Consing a head onto a sequence-valued random variable joins their σ-algebras:
+`σ(processCons x t) = σ(x) ⊔ σ(t)`. -/
+@[simp]
+theorem comap_processCons_eq_sup (x : Ω → α) (t : Ω → ℕ → α) :
+    MeasurableSpace.comap (processCons x t) inferInstance
+      = MeasurableSpace.comap x inferInstance ⊔ MeasurableSpace.comap t inferInstance := by
+  -- `σ` of a sequence is the join of its coordinate `σ`s; split off the head coordinate.
+  rw [MeasurableSpace.comap_process_pi (fun n ω => processCons x t ω n), ← sup_iSup_nat_succ]
+  refine congr_arg₂ _ ?_ ?_
+  · -- Head: coordinate `0` of the cons is `x`.
+    simp only [processCons_zero]
+  · -- Tail: coordinates `n + 1` of the cons reassemble `t`.
+    simp only [processCons_succ]
+    rw [← MeasurableSpace.comap_process_pi (fun n ω => t ω n)]
+
 end Probability
 
 end TauCeti

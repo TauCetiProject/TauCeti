@@ -55,6 +55,8 @@ names around it. The cardinality identity is still expressed through the squarin
 * `TauCeti.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|G/G²| = |{g | g² = 1}|`.
 * `TauCeti.twoRank` and `TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
   `|G/G²| = 2 ^ twoRank`.
+* `TauCeti.card_elementaryTwoQuotient_dvd_card` and
+  `TauCeti.two_pow_twoRank_dvd_card`: the quotient cardinality and its rank form divide `|G|`.
 -/
 
 public section
@@ -305,6 +307,39 @@ theorem card_elementaryTwoQuotient_eq_two_pow_twoRank
     [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] :
     Nat.card (ElementaryTwoQuotient G) = 2 ^ twoRank G := by
   rw [twoRank, Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod]
+
+/-- The cardinality of the maximal elementary-2 quotient of a commutative group divides the group
+cardinality. -/
+theorem card_elementaryTwoQuotient_dvd_card :
+    Nat.card (ElementaryTwoQuotient G) ∣ Nat.card G := by
+  rw [card_elementaryTwoQuotient_eq_index_square]
+  exact Subgroup.index_dvd_card (Subgroup.square G)
+
+/-- Rank form of `TauCeti.card_elementaryTwoQuotient_dvd_card`: when `G / G²` is a finite
+`ZMod 2`-vector space, `2 ^ TauCeti.twoRank G` divides `|G|`. -/
+theorem two_pow_twoRank_dvd_card [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] :
+    2 ^ twoRank G ∣ Nat.card G := by
+  rw [← card_elementaryTwoQuotient_eq_two_pow_twoRank]
+  exact card_elementaryTwoQuotient_dvd_card G
+
+section FiniteCardinality
+
+variable [Finite G]
+
+/-- The maximal elementary-2 quotient of a finite commutative group has cardinality at most the
+group cardinality. -/
+theorem card_elementaryTwoQuotient_le_card :
+    Nat.card (ElementaryTwoQuotient G) ≤ Nat.card G :=
+  Nat.le_of_dvd Nat.card_pos (card_elementaryTwoQuotient_dvd_card G)
+
+/-- Rank form of `TauCeti.card_elementaryTwoQuotient_le_card`: for a finite commutative group
+`G`, `2 ^ TauCeti.twoRank G` is at most `|G|`. -/
+theorem two_pow_twoRank_le_card :
+    2 ^ twoRank G ≤ Nat.card G := by
+  rw [← card_elementaryTwoQuotient_eq_two_pow_twoRank]
+  exact card_elementaryTwoQuotient_le_card G
+
+end FiniteCardinality
 
 /-- Multiplicatively equivalent commutative groups have elementary-2 quotients with the same
 `ZMod 2` finrank. -/

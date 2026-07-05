@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.GroupAction.Transitive
 public import TauCeti.Algebra.Group.NormalizerQuotient
 
 /-!
@@ -31,6 +32,9 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   quotient by `H`-orbits.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotientPermHom`: the descended action of
   `N(H) / H` on the quotient by `H`-orbits.
+* `TauCeti.MulAction.normalizerQuotientOrbitRelQuotientIsPretransitive`: if the normalizer
+  acts transitively, then the descended `N(H) / H` action on the `H`-orbit quotient is
+  transitive.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff`: if the original
   action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
 -/
@@ -336,6 +340,38 @@ lemma normalizerQuotientOrbitRelQuotient_smul_mk (H : Subgroup G)
         (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((g : G) • x)
     exact normalizerQuotientOrbitRelQuotientPermHom_mk_apply (X := X) H g x
+
+/-- If the normalizer of `H` acts transitively on `X`, then the descended `N(H) / H` action on
+the quotient by `H`-orbits is transitive. -/
+theorem normalizerQuotientOrbitRelQuotientIsPretransitive
+    (H : Subgroup G)
+    [MulAction.IsPretransitive (_root_.Subgroup.normalizer (H : Set G)) X] :
+    letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+    MulAction.IsPretransitive
+      (Subgroup.normalizerQuotient H) (_root_.MulAction.orbitRel.Quotient H X) := by
+  letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+  let φ : _root_.Subgroup.normalizer (H : Set G) → Subgroup.normalizerQuotient H :=
+    Subgroup.normalizerQuotientMk H
+  let f : X →ₑ[φ] _root_.MulAction.orbitRel.Quotient H X := {
+    toFun := Quotient.mk''
+    map_smul' g x := by
+      exact (normalizerQuotientOrbitRelQuotient_smul_mk (X := X) H g x).symm }
+  exact MulAction.IsPretransitive.of_surjective_map
+    (f := f) Quotient.mk''_surjective inferInstance
+
+/-- If `H` is normal and `G` acts transitively on `X`, then the descended `N(H) / H` action
+on the quotient by `H`-orbits is transitive. -/
+theorem normalizerQuotientOrbitRelQuotientIsPretransitiveOfNormal
+    [MulAction.IsPretransitive G X] (H : Subgroup G) [H.Normal] :
+    letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+    MulAction.IsPretransitive
+      (Subgroup.normalizerQuotient H) (_root_.MulAction.orbitRel.Quotient H X) := by
+  letI : MulAction.IsPretransitive (_root_.Subgroup.normalizer (H : Set G)) X :=
+    MulAction.IsPretransitive.mk fun x y => by
+      obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G x y
+      refine ⟨⟨g, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩, ?_⟩
+      simpa using hg
+  exact normalizerQuotientOrbitRelQuotientIsPretransitive (X := X) H
 
 /-- Equality after the descended `N(H) / H` action on an `H`-orbit quotient is equality of
 normalizer-quotient elements, provided the original action is free. -/

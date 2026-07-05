@@ -70,10 +70,6 @@ theorem toLinearMap_injective :
 instance : CoeFun (AlmostComplexStructure V) fun _ => V → V :=
   ⟨fun J => J.toLinearMap⟩
 
-@[simp]
-lemma coe_toLinearMap (J : AlmostComplexStructure V) :
-    ⇑J.toLinearMap = J := rfl
-
 /-- Applying `J` twice gives `-v`. -/
 @[simp]
 lemma apply_apply (J : AlmostComplexStructure V) (v : V) : J (J v) = -v := by
