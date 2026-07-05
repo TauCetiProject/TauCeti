@@ -5,8 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.Bochner.CharFunPositiveDefinite
+public import TauCeti.Analysis.PositiveDefinite.FourierAtom
 public import TauCeti.Analysis.PositiveDefinite.Pullback
-public import TauCeti.Analysis.PositiveDefinite.SemigroupGroupFourierLaplace
 
 /-!
 # Fourier-convention characteristic functions
@@ -25,11 +25,8 @@ function API item asking for "a stated Fourier-convention conversion lemma betwe
 
 * `TauCeti.integral_fourierAtom_eq_charFun_neg_two_pi_smul`: the Fourier-convention integral is
   `charFun μ ((-2π) • a)`.
-* `TauCeti.charFun_eq_integral_fourierAtom_neg_inv_two_pi_smul`: the inverse conversion.
 * `TauCeti.fourierConventionCharFun_isPositiveDefiniteKernel`: the Fourier-convention
   translation-invariant kernel of a finite measure is positive definite.
-* `TauCeti.continuous_fourierConventionCharFun_and_isPositiveDefinite_of_star_eq_neg`:
-  the Fourier-convention transform of a finite measure is continuous and positive definite.
 
 ## References
 
@@ -50,6 +47,7 @@ variable {V : Type*} [SeminormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 /-- The Fourier-convention integral of a finite measure, written with the atom
 `exp (-2πi⟪a, q⟫)`, is Mathlib's characteristic function evaluated at `(-2π) • a`. -/
+@[simp]
 theorem integral_fourierAtom_eq_charFun_neg_two_pi_smul (a : V) :
     ∫ q, fourierAtom a q ∂μ = MeasureTheory.charFun μ ((-2 * Real.pi) • a) := by
   rw [MeasureTheory.charFun_apply]
@@ -59,35 +57,8 @@ theorem integral_fourierAtom_eq_charFun_neg_two_pi_smul (a : V) :
   simp only [inner_smul_right, Complex.ofReal_mul, Complex.ofReal_ofNat, Complex.ofReal_neg]
   ring_nf
 
-/-- Mathlib's characteristic function is the Fourier-convention integral at the rescaled
-frequency `-(2π)⁻¹ • t`. -/
-theorem charFun_eq_integral_fourierAtom_neg_inv_two_pi_smul (t : V) :
-    MeasureTheory.charFun μ t = ∫ q, fourierAtom (-((2 * Real.pi)⁻¹) • t) q ∂μ := by
-  rw [integral_fourierAtom_eq_charFun_neg_two_pi_smul]
-  congr 1
-  rw [smul_smul]
-  have hscale : (-2 * Real.pi) * (-(2 * Real.pi)⁻¹) = (1 : ℝ) := by
-    field_simp [Real.pi_ne_zero]
-  rw [hscale, one_smul]
-
-section Topology
-
-variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
-  [MeasurableSpace W] [BorelSpace W] {ν : Measure W} [IsFiniteMeasure ν]
-
-/-- The Fourier-convention transform of a finite measure is continuous. This is just Mathlib's
-continuity of `charFun`, transported through the `-2π` rescaling. -/
-theorem continuous_fourierConventionCharFun [SecondCountableTopology W] :
-    Continuous fun a : W => ∫ q, fourierAtom a q ∂ν := by
-  have hchar :
-      Continuous fun a : W => MeasureTheory.charFun ν ((-2 * Real.pi) • a) :=
-    by
-      simpa [Function.comp_def] using
-        (MeasureTheory.continuous_charFun (μ := ν)).comp
-          ((continuous_id : Continuous fun a : W => a).const_smul (-2 * Real.pi))
-  convert hchar using 1
-  ext a
-  exact integral_fourierAtom_eq_charFun_neg_two_pi_smul (μ := ν) a
+variable {W : Type*} [SeminormedAddCommGroup W] [InnerProductSpace ℝ W]
+  [MeasurableSpace W] [OpensMeasurableSpace W] {ν : Measure W} [IsFiniteMeasure ν]
 
 /-- The Fourier-convention transform of a finite measure is positive definite for any additive
 group involution that is explicitly negation. This transports the positive-definiteness of
@@ -117,14 +88,24 @@ theorem fourierConventionCharFun_isPositiveDefiniteKernel :
   congr 1
   simp [smul_sub]
 
-/-- The Fourier-convention transform of a finite measure is continuous and positive definite,
-provided the chosen involution on the ambient additive group is negation. -/
-theorem continuous_fourierConventionCharFun_and_isPositiveDefinite_of_star_eq_neg
-    [SecondCountableTopology W] [StarAddMonoid W] (hstar : ∀ x : W, star x = -x) :
-    Continuous (fun a : W => ∫ q, fourierAtom a q ∂ν) ∧
-      IsPositiveDefinite (fun a : W => ∫ q, fourierAtom a q ∂ν) :=
-  ⟨continuous_fourierConventionCharFun,
-    fourierConventionCharFun_isPositiveDefinite_of_star_eq_neg hstar⟩
+section Topology
+
+variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+  [MeasurableSpace W] [BorelSpace W] {ν : Measure W} [IsFiniteMeasure ν]
+
+/-- The Fourier-convention transform of a finite measure is continuous. This is just Mathlib's
+continuity of `charFun`, transported through the `-2π` rescaling. -/
+theorem continuous_fourierConventionCharFun [SecondCountableTopology W] :
+    Continuous fun a : W => ∫ q, fourierAtom a q ∂ν := by
+  have hchar :
+      Continuous fun a : W => MeasureTheory.charFun ν ((-2 * Real.pi) • a) :=
+    by
+      simpa [Function.comp_def] using
+        (MeasureTheory.continuous_charFun (μ := ν)).comp
+          ((continuous_id : Continuous fun a : W => a).const_smul (-2 * Real.pi))
+  convert hchar using 1
+  ext a
+  exact integral_fourierAtom_eq_charFun_neg_two_pi_smul (μ := ν) a
 
 end Topology
 
