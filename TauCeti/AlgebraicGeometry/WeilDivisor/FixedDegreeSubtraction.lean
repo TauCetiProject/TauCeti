@@ -75,7 +75,6 @@ lemma coeff_subOfLE (D : EffectiveDivisorOfDegree X e) (E : EffectiveDivisorOfDe
   rw [coe_subOfLE, WeilDivisor.coeff_sub]
 
 /-- The degree of the residual divisor is the difference of the degree indices. -/
-@[simp]
 lemma degree_subOfLE (D : EffectiveDivisorOfDegree X e) (E : EffectiveDivisorOfDegree X d)
     (hED : (E : WeilDivisor X) ≤ D) :
     degree (subOfLE D E hED : WeilDivisor X) = ((e - d : ℕ) : ℤ) :=
