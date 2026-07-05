@@ -426,7 +426,7 @@ theorem StronglyContinuousSemigroup.realOperator_continuousWithinAt
 
 /-- The real-time orbit of a strongly continuous semigroup is continuous on the
 nonnegative half-line. -/
-theorem StronglyContinuousSemigroup.realOperator_continuousOn_nonnegative
+theorem StronglyContinuousSemigroup.realOperator_continuousOn_Ici
     (S : StronglyContinuousSemigroup X) (x : X) :
     ContinuousOn (fun t : ℝ => S.realOperator t x) (Set.Ici 0) := by
   intro t ht
