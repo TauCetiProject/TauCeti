@@ -5,21 +5,22 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 
 /-!
-# Conditional independence from an indicator conditional-expectation criterion
+# Conditional independence and the indicator conditional-expectation projection
 
-`condIndep_of_indicator_condExp_eq` — the "drop-information" adapter for Mathlib's
-`ProbabilityTheory.CondIndep`, used by the de Finetti block-product factorisation: it builds
-`CondIndep mG mF mH` from the criterion `μ[𝟙_H | mF ⊔ mG] =ᵐ μ[𝟙_H | mG]` (for all `mH`-measurable
-`H`).
+The two directions relating Mathlib's `ProbabilityTheory.CondIndep` to the "drop-information"
+identity `μ[𝟙_H | mF ⊔ mG] =ᵐ μ[𝟙_H | mG]` on conditional expectations of indicators:
 
-It is a layer over Mathlib's `condIndep_iff` (`.2` direction); the work is pulling the indicator
-factors through the conditional expectation (`condExp_mul_of_aestronglyMeasurable_*`) and the tower
-property (`condExp_condExp_of_le`). (The forward product-formula direction is Mathlib's
-`condIndep_iff … |>.mp` applied directly, so no wrapper is provided here.)
+* `condIndep_of_indicator_condExp_eq` — builds `CondIndep mG mF mH` from that criterion (for all
+  `mH`-measurable `H`); a layer over Mathlib's `condIndep_iff` (`.2` direction). (The forward
+  product-formula direction is Mathlib's `condIndep_iff … |>.mp` applied directly, so no wrapper is
+  provided here.)
+* `condExp_indicator_sup_eq_of_condIndep` — the converse projection: from `CondIndep mG mF mH`,
+  conditioning an `mH`-measurable indicator on the join `mF ⊔ mG` collapses to conditioning on `mG`.
 
-The "drop-information" step is the standard conditional-independence characterisation of the de
-Finetti route; see Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer,
-2005). Adapted from `cameronfreer/exchangeability` (`Probability/CondExp.lean`, pin
+Both are used by the de Finetti block-product factorisation / prefix-deletion drop-info step — the
+standard conditional-independence characterisation of the de Finetti route; see Kallenberg,
+*Probabilistic Symmetries and Invariance Principles* (Springer, 2005). Adapted from
+`cameronfreer/exchangeability` (`Probability/CondExp.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`).
 -/
 
@@ -86,13 +87,80 @@ theorem condIndep_of_indicator_condExp_eq {Ω : Type*} {mΩ : MeasurableSpace Ω
   rw [h_f1f2] at h_prod
   simpa only [hf1, hf2] using h_prod
 
+/-- Rectangle step for `condExp_indicator_sup_eq_of_condIndep`: over a rectangle `tF ∩ tG` (`tF`
+`mF`-measurable, `tG` `mG`-measurable), the conditional expectation given `mG` of an
+`mH`-measurable indicator integrates to the same value as the indicator itself. This is where the
+conditional independence of `mF` and `mH` given `mG` enters, through Mathlib's `condIndep_iff`
+product formula. -/
+private lemma setIntegral_condExp_indicator_eq_on_rectangle {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    [StandardBorelSpace Ω] {μ : @Measure Ω mΩ} [IsFiniteMeasure μ]
+    {mF mG mH : MeasurableSpace Ω}
+    (hmF : mF ≤ mΩ) (hmG : mG ≤ mΩ) (hmH : mH ≤ mΩ)
+    (hCI : CondIndep mG mF mH hmG μ)
+    {H : Set Ω} (hH : MeasurableSet[mH] H)
+    {tF tG : Set Ω} (htF : MeasurableSet[mF] tF) (htG : MeasurableSet[mG] tG) :
+    ∫ x in tF ∩ tG, (μ[H.indicator (fun _ => (1 : ℝ)) | mG]) x ∂μ
+      = ∫ x in tF ∩ tG, H.indicator (fun _ => (1 : ℝ)) x ∂μ := by
+  classical
+  let m0 : MeasurableSpace Ω := mΩ
+  set f : Ω → ℝ := H.indicator (fun _ => (1 : ℝ)) with hf_def
+  have htF_m0 : MeasurableSet[m0] tF := hmF _ htF
+  set gB : Ω → ℝ := tF.indicator (fun _ => (1 : ℝ)) with hgB_def
+  have hInt_ce : Integrable (μ[f | mG]) μ := integrable_condExp
+  have h_mul_eq_indicator :
+      (fun ω => μ[f | mG] ω * gB ω) = tF.indicator (μ[f | mG]) := by
+    funext ω; by_cases hω : ω ∈ tF
+    · simp only [hgB_def, Set.indicator_of_mem hω, mul_one]
+    · simp only [hgB_def, Set.indicator_of_notMem hω, mul_zero]
+  have hint_prod : Integrable (fun ω => μ[f | mG] ω * gB ω) μ := by
+    simpa only [h_mul_eq_indicator] using hInt_ce.indicator htF_m0
+  have hint_B : Integrable gB μ := Integrable.indicator (integrable_const 1) htF_m0
+  have hfg : (f * gB) = (tF ∩ H).indicator (fun _ => (1 : ℝ)) := by
+    funext ω
+    simp only [Pi.mul_apply, hf_def, hgB_def, Set.indicator_apply, Set.mem_inter_iff]
+    by_cases h1 : ω ∈ tF <;> by_cases h2 : ω ∈ H <;> simp [h1, h2]
+  have hprod_int : Integrable (f * gB) μ := by
+    rw [hfg]
+    exact Integrable.indicator (integrable_const 1) ((hmF _ htF).inter (hmH _ hH))
+  have hprodf : μ[f * gB | mG] =ᵐ[μ] μ[f | mG] * μ[gB | mG] := by
+    rw [hfg]
+    exact ((condIndep_iff mG mF mH hmG hmF hmH μ).mp hCI _ _ htF hH).trans
+      (Filter.EventuallyEq.of_eq (mul_comm _ _))
+  have h_pull : μ[(μ[f | mG]) * gB | mG] =ᵐ[μ] (μ[f | mG]) * μ[gB | mG] :=
+    condExp_mul_of_aestronglyMeasurable_left
+      stronglyMeasurable_condExp.aestronglyMeasurable hint_prod hint_B
+  calc ∫ x in tF ∩ tG, (μ[f | mG]) x ∂μ
+      = ∫ x in tG, (μ[f | mG] * gB) x ∂μ := by
+        have hh1 : ∫ ω in tG ∩ tF, μ[f | mG] ω ∂μ
+            = ∫ ω in tG, tF.indicator (μ[f | mG]) ω ∂μ := by
+          rw [setIntegral_indicator htF_m0]
+        have hh2 : ∫ ω in tG, tF.indicator (μ[f | mG]) ω ∂μ
+            = ∫ ω in tG, μ[f | mG] ω * gB ω ∂μ := by rw [h_mul_eq_indicator]
+        rw [Set.inter_comm]; exact hh1.trans hh2
+    _ = ∫ x in tG, (μ[f | mG] * μ[gB | mG]) x ∂μ := by
+        have h_set_eq : ∫ x in tG, μ[(μ[f | mG]) * gB | mG] x ∂μ
+            = ∫ x in tG, ((μ[f | mG]) * gB) x ∂μ :=
+          setIntegral_condExp hmG hint_prod htG
+        rw [← h_set_eq]
+        exact setIntegral_congr_ae (hmG _ htG)
+          (by filter_upwards [h_pull] with x hx _; exact hx)
+    _ = ∫ x in tG, (μ[f * gB | mG]) x ∂μ :=
+        setIntegral_congr_ae (hmG _ htG)
+          (by filter_upwards [hprodf] with x hx _; exact hx.symm)
+    _ = ∫ x in tG, (f * gB) x ∂μ := setIntegral_condExp hmG hprod_int htG
+    _ = ∫ x in tF ∩ tG, f x ∂μ := by
+        have h_fg : (f * gB) = tF.indicator f := by
+          funext ω; simp only [Pi.mul_apply]; by_cases hω : ω ∈ tF
+          · simp only [hgB_def, Set.indicator_of_mem hω, mul_one]
+          · simp only [hgB_def, Set.indicator_of_notMem hω, mul_zero]
+        rw [h_fg, Set.inter_comm tF, setIntegral_indicator htF_m0]
+
 /-- **Projection from conditional independence.** If `mF` and `mH` are conditionally independent
 given `mG` (in the sense of Mathlib's `ProbabilityTheory.CondIndep`), then conditioning the
 indicator of an `mH`-measurable set `H` on the join `mF ⊔ mG` collapses to conditioning on `mG`.
-This is the converse of `condIndep_of_indicator_condExp_eq`; the proof is π-system uniqueness of
-conditional expectation combined with Mathlib's `condIndep_iff` product formula. -/
+This is the converse of `condIndep_of_indicator_condExp_eq`. -/
 theorem condExp_indicator_sup_eq_of_condIndep {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    [StandardBorelSpace Ω] {μ : @Measure Ω mΩ} [IsProbabilityMeasure μ]
+    [StandardBorelSpace Ω] {μ : @Measure Ω mΩ} [IsFiniteMeasure μ]
     {mF mG mH : MeasurableSpace Ω}
     (hmF : mF ≤ mΩ) (hmG : mG ≤ mΩ) (hmH : mH ≤ mΩ)
     (hCI : CondIndep mG mF mH hmG μ)
@@ -133,56 +201,7 @@ theorem condExp_indicator_sup_eq_of_condIndep {Ω : Type*} {mΩ : MeasurableSpac
       (C := fun s _ => ∫ x in s, (μ[f | mG]) x ∂μ = ∫ x in s, f x ∂μ) hgen hpi
     · simp
     · rintro t ⟨tF, tG, htF, htG, rfl⟩
-      have htF_m0 : MeasurableSet[m0] tF := hmF _ htF
-      set gB : Ω → ℝ := tF.indicator (fun _ => (1 : ℝ)) with hgB_def
-      have hInt_ce : Integrable (μ[f | mG]) μ := integrable_condExp
-      have h_mul_eq_indicator :
-          (fun ω => μ[f | mG] ω * gB ω) = tF.indicator (μ[f | mG]) := by
-        funext ω; by_cases hω : ω ∈ tF
-        · simp only [hgB_def, Set.indicator_of_mem hω, mul_one]
-        · simp only [hgB_def, Set.indicator_of_notMem hω, mul_zero]
-      have hint_prod : Integrable (fun ω => μ[f | mG] ω * gB ω) μ := by
-        simpa only [h_mul_eq_indicator] using hInt_ce.indicator htF_m0
-      have hint_B : Integrable gB μ := Integrable.indicator (integrable_const 1) htF_m0
-      have hfg : (f * gB) = (tF ∩ H).indicator (fun _ => (1 : ℝ)) := by
-        funext ω
-        simp only [Pi.mul_apply, f, hgB_def, Set.indicator_apply, Set.mem_inter_iff]
-        by_cases h1 : ω ∈ tF <;> by_cases h2 : ω ∈ H <;> simp [h1, h2]
-      have hprod_int : Integrable (f * gB) μ := by
-        rw [hfg]
-        exact Integrable.indicator (integrable_const 1) ((hmF _ htF).inter (hmH _ hH))
-      have hprodf : μ[f * gB | mG] =ᵐ[μ] μ[f | mG] * μ[gB | mG] := by
-        rw [hfg]
-        exact ((condIndep_iff mG mF mH hmG hmF hmH μ).mp hCI _ _ htF hH).trans
-          (Filter.EventuallyEq.of_eq (mul_comm _ _))
-      have h_pull : μ[(μ[f | mG]) * gB | mG] =ᵐ[μ] (μ[f | mG]) * μ[gB | mG] :=
-        condExp_mul_of_aestronglyMeasurable_left
-          stronglyMeasurable_condExp.aestronglyMeasurable hint_prod hint_B
-      calc ∫ x in tF ∩ tG, (μ[f | mG]) x ∂μ
-          = ∫ x in tG, (μ[f | mG] * gB) x ∂μ := by
-            have hh1 : ∫ ω in tG ∩ tF, μ[f | mG] ω ∂μ
-                = ∫ ω in tG, tF.indicator (μ[f | mG]) ω ∂μ := by
-              rw [setIntegral_indicator htF_m0]
-            have hh2 : ∫ ω in tG, tF.indicator (μ[f | mG]) ω ∂μ
-                = ∫ ω in tG, μ[f | mG] ω * gB ω ∂μ := by rw [h_mul_eq_indicator]
-            rw [Set.inter_comm]; exact hh1.trans hh2
-        _ = ∫ x in tG, (μ[f | mG] * μ[gB | mG]) x ∂μ := by
-            have h_set_eq : ∫ x in tG, μ[(μ[f | mG]) * gB | mG] x ∂μ
-                = ∫ x in tG, ((μ[f | mG]) * gB) x ∂μ :=
-              setIntegral_condExp hmG hint_prod htG
-            rw [← h_set_eq]
-            exact setIntegral_congr_ae (hmG _ htG)
-              (by filter_upwards [h_pull] with x hx _; exact hx)
-        _ = ∫ x in tG, (μ[f * gB | mG]) x ∂μ :=
-            setIntegral_congr_ae (hmG _ htG)
-              (by filter_upwards [hprodf] with x hx _; exact hx.symm)
-        _ = ∫ x in tG, (f * gB) x ∂μ := setIntegral_condExp hmG hprod_int htG
-        _ = ∫ x in tF ∩ tG, f x ∂μ := by
-            have h_fg : (f * gB) = tF.indicator f := by
-              funext ω; simp only [Pi.mul_apply]; by_cases hω : ω ∈ tF
-              · simp only [hgB_def, Set.indicator_of_mem hω, mul_one]
-              · simp only [hgB_def, Set.indicator_of_notMem hω, mul_zero]
-            rw [h_fg, Set.inter_comm tF, setIntegral_indicator htF_m0]
+      exact setIntegral_condExp_indicator_eq_on_rectangle hmF hmG hmH hCI hH htF htG
     · intro t htm ht_ind
       have h_add : ∫ x in t, (μ[f | mG]) x ∂μ + ∫ x in tᶜ, (μ[f | mG]) x ∂μ
           = ∫ x, (μ[f | mG]) x ∂μ :=
