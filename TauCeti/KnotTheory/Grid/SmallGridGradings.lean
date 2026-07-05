@@ -31,10 +31,6 @@ gradings in this concrete diagram.
 
 ## Main results
 
-* `TauCeti.GridState.eq_twoByTwoId_or_eq_twoByTwoSwap`: the two named states exhaust
-  the generators in grid size two.
-* `TauCeti.GridDiagram.fullyBlockedDifferential_twoByTwo`: the fully blocked differential
-  on the standard `2 × 2` diagram is zero.
 * `TauCeti.GridDiagram.maslovOℤ_twoByTwo_twoByTwoId`,
   `TauCeti.GridDiagram.maslovXℤ_twoByTwo_twoByTwoId`,
   `TauCeti.GridDiagram.alexander_twoByTwo_twoByTwoId`, and the corresponding `twoByTwoSwap`
@@ -89,14 +85,6 @@ theorem twoByTwoId_ne_twoByTwoSwap : twoByTwoId ≠ twoByTwoSwap := by
   intro h
   exact Fin.zero_ne_one (congrArg (fun x : GridState 2 => x 0) h)
 
-/-- The two grid states on a `2 × 2` grid are exactly the identity state and the transposition
-state. -/
-theorem eq_twoByTwoId_or_eq_twoByTwoSwap (x : GridState 2) :
-    x = twoByTwoId ∨ x = twoByTwoSwap := by
-  have hx := eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap x
-  rw [equivPerm_symm_apply, equivPerm_symm_apply] at hx
-  simpa [twoByTwoId, twoByTwoSwap] using hx
-
 /-- The finite set of all `2 × 2` grid states is the two explicit states. -/
 theorem univ_two :
     (Finset.univ : Finset (GridState 2)) = {twoByTwoId, twoByTwoSwap} := by
@@ -104,7 +92,9 @@ theorem univ_two :
   constructor
   · intro _
     exact (Finset.mem_insert.mpr <|
-      (eq_twoByTwoId_or_eq_twoByTwoSwap x).elim Or.inl fun h => Or.inr <| by simpa using h)
+      (eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap x).elim
+        (fun h => Or.inl <| by simpa [equivPerm_symm_apply, twoByTwoId] using h)
+        fun h => Or.inr <| by simpa [equivPerm_symm_apply, twoByTwoSwap] using h)
   · intro _
     simp
 
@@ -145,12 +135,6 @@ theorem twoByTwo_XSet :
   ext p
   rcases p with ⟨c, r⟩
   fin_cases c <;> fin_cases r <;> simp [XSet, GridState.twoByTwoSwap]
-
-/-- The fully blocked differential of the standard two-by-two grid diagram is zero. -/
-theorem fullyBlockedDifferential_twoByTwo :
-    twoByTwo.fullyBlockedDifferential =
-      (0 : GridChain (ZMod 2) 2 →ₗ[ZMod 2] GridChain (ZMod 2) 2) :=
-  twoByTwo.fullyBlockedDifferential_eq_zero_of_two
 
 /-- The integer `O`-Maslov grading of the identity generator in the standard two-by-two
 diagram is `1`. -/
@@ -207,9 +191,13 @@ theorem alexander_twoByTwo_twoByTwoSwap :
 gradings. -/
 theorem alexander_twoByTwo_eq_neg_one_or_eq_zero (x : GridState 2) :
     twoByTwo.alexander x = -1 ∨ twoByTwo.alexander x = 0 := by
-  rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap x with rfl | rfl
-  · exact Or.inl alexander_twoByTwo_twoByTwoId
-  · exact Or.inr alexander_twoByTwo_twoByTwoSwap
+  rcases GridState.eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap x with hx | hx
+  · rw [show x = GridState.twoByTwoId by
+      simpa [GridState.equivPerm_symm_apply, GridState.twoByTwoId] using hx]
+    exact Or.inl alexander_twoByTwo_twoByTwoId
+  · rw [show x = GridState.twoByTwoSwap by
+      simpa [GridState.equivPerm_symm_apply, GridState.twoByTwoSwap] using hx]
+    exact Or.inr alexander_twoByTwo_twoByTwoSwap
 
 end GridDiagram
 
