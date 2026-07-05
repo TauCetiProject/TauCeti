@@ -235,7 +235,7 @@ private lemma residueTheorem_aux {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
         by_cases hzS : z ∈ S
         · exact hpole z hzS
         · exact (hF_off z hz hzS).meromorphicOrderAt_nonneg
-      rw [circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg hR hF_mero hnonneg,
+      rw [circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg hR.le hF_mero hnonneg,
         Finset.sum_eq_zero fun s hs =>
           residue_eq_zero_of_meromorphicOrderAt_nonneg (hnonneg s (hmem_cb s hs))]
       ring

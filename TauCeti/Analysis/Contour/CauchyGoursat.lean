@@ -12,7 +12,7 @@ import Mathlib.Analysis.Meromorphic.NormalForm
 /-!
 # Cauchy–Goursat for a pole-free meromorphic function
 
-If `A` is meromorphic on a closed disc `C(c, R)` (`R > 0`) and has non-negative meromorphic order at
+If `A` is meromorphic on a closed disc `C(c, R)` (`R ≥ 0`) and has non-negative meromorphic order at
 every point of the disc, then the contour integral of `A` around the boundary circle vanishes:
 `∮_{C(c,R)} A = 0`.
 
@@ -39,12 +39,14 @@ open Metric Complex
 namespace TauCeti.Contour
 
 /-- **Cauchy–Goursat for a pole-free meromorphic function.** If `A` is meromorphic on the closed
-disc `C(c, R)` (`R > 0`) and has non-negative meromorphic order at every point of the disc, then
+disc `C(c, R)` (`R ≥ 0`) and has non-negative meromorphic order at every point of the disc, then
 `∮_{C(c,R)} A = 0`. -/
 lemma circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg {A : ℂ → ℂ} {c : ℂ} {R : ℝ}
-    (hR : 0 < R) (hA : MeromorphicOn A (closedBall c R))
+    (hR : 0 ≤ R) (hA : MeromorphicOn A (closedBall c R))
     (hord : ∀ z ∈ closedBall c R, 0 ≤ meromorphicOrderAt A z) :
     circleIntegral A c R = 0 := by
+  rcases hR.eq_or_lt with hR0 | hR0
+  · rw [← hR0]; exact circleIntegral.integral_radius_zero A c
   have hB_nf : MeromorphicNFOn (toMeromorphicNFOn A (closedBall c R)) (closedBall c R) :=
     meromorphicNFOn_toMeromorphicNFOn A (closedBall c R)
   -- The normal form of `A` is analytic on the whole disc.
@@ -54,13 +56,14 @@ lemma circleIntegral_eq_zero_of_meromorphicOrderAt_nonneg {A : ℂ → ℂ} {c :
     rw [meromorphicOrderAt_toMeromorphicNFOn hA hz]
     exact hord z hz
   have hB0 : circleIntegral (toMeromorphicNFOn A (closedBall c R)) c R = 0 :=
-    circleIntegral_eq_zero_of_differentiable_on_off_countable hR.le Set.countable_empty
+    circleIntegral_eq_zero_of_differentiable_on_off_countable hR0.le Set.countable_empty
       (fun z hz => (hB_an z hz).continuousAt.continuousWithinAt)
       (fun z hz => (hB_an z (ball_subset_closedBall hz.1)).differentiableAt)
   -- The circle integral only sees `A` up to a discrete set, so it agrees with its normal form.
   rw [← hB0]
-  refine circleIntegral.circleIntegral_congr_codiscreteWithin ?_ hR.ne'
-  have hspU : sphere c |R| ⊆ closedBall c R := by rw [abs_of_pos hR]; exact sphere_subset_closedBall
+  refine circleIntegral.circleIntegral_congr_codiscreteWithin ?_ hR0.ne'
+  have hspU : sphere c |R| ⊆ closedBall c R := by
+    rw [abs_of_pos hR0]; exact sphere_subset_closedBall
   exact (toMeromorphicNFOn_eqOn_codiscrete hA).filter_mono (Filter.codiscreteWithin_mono hspU)
 
 end TauCeti.Contour
