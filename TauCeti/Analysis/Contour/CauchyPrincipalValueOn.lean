@@ -464,4 +464,111 @@ theorem CauchyPVExists.hasCauchyPV_cauchyPV {γ : ℝ → ℂ} {a b : ℝ} {f : 
   rw [hv.cauchyPV_eq]
   exact hv
 
+/-- Enlarging the excision set preserves interval-integrability of the truncated integrand: the
+extra excision at `S'` only zeroes the integrand on the measurable set `γ ⁻¹' ⋃ s ∈ S', closedBall
+s ε`, so integrability transfers from `S` to `S ∪ S'`. Needs `γ` measurable. -/
+private theorem truncatedIntegrand_union_integrable {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
+    (hγ : Measurable γ) {S : Finset ℂ} {ε : ℝ} (S' : Finset ℂ)
+    (h : IntervalIntegrable (truncatedIntegrand γ f S ε) MeasureTheory.volume a b) :
+    IntervalIntegrable (truncatedIntegrand γ f (S ∪ S') ε) MeasureTheory.volume a b := by
+  have hset : MeasurableSet {t : ℝ | ∃ s ∈ S', ‖γ t - s‖ ≤ ε} := by
+    have he : {t : ℝ | ∃ s ∈ S', ‖γ t - s‖ ≤ ε} = γ ⁻¹' ⋃ s ∈ S', Metric.closedBall s ε := by
+      ext t
+      simp only [Set.mem_setOf_eq, Set.mem_preimage, Set.mem_iUnion, Metric.mem_closedBall,
+        dist_eq_norm, exists_prop]
+    rw [he]
+    exact hγ (Finset.measurableSet_biUnion S' fun s _ => measurableSet_closedBall)
+  have hid : truncatedIntegrand γ f (S ∪ S') ε
+      = Set.indicator {t : ℝ | ¬ ∃ s ∈ S', ‖γ t - s‖ ≤ ε} (truncatedIntegrand γ f S ε) := by
+    funext t
+    have hunion : (∃ s ∈ S ∪ S', ‖γ t - s‖ ≤ ε)
+        ↔ (∃ s ∈ S, ‖γ t - s‖ ≤ ε) ∨ ∃ s ∈ S', ‖γ t - s‖ ≤ ε := by
+      constructor
+      · rintro ⟨s, hs, hle⟩
+        rcases Finset.mem_union.mp hs with h' | h'
+        exacts [Or.inl ⟨s, h', hle⟩, Or.inr ⟨s, h', hle⟩]
+      · rintro (⟨s, hs, hle⟩ | ⟨s, hs, hle⟩)
+        exacts [⟨s, Finset.mem_union_left _ hs, hle⟩, ⟨s, Finset.mem_union_right _ hs, hle⟩]
+    simp only [truncatedIntegrand, hunion, Set.indicator_apply, Set.mem_setOf_eq]
+    by_cases h1 : ∃ s ∈ S, ‖γ t - s‖ ≤ ε <;> by_cases h2 : ∃ s ∈ S', ‖γ t - s‖ ≤ ε <;>
+      simp [h1, h2]
+  rw [intervalIntegrable_iff] at h
+  rw [hid, intervalIntegrable_iff]
+  exact h.indicator hset.compl
+
+/-- **Additivity.** The set-level principal value is additive: if `f₁` and `f₂` each have a
+principal value along `γ`, so does `f₁ + f₂`, with the sum as value. The summands may excise
+different finite sets, reconciled on the union `S₁ ∪ S₂`; this needs `γ` measurable, unlike
+`const_mul`, which reuses a single excision set. -/
+theorem HasCauchyPV.add {γ : ℝ → ℂ} {a b : ℝ} {f₁ f₂ : ℂ → ℂ} {v₁ v₂ : ℂ}
+    (hγ : Measurable γ) (h₁ : HasCauchyPV γ a b f₁ v₁) (h₂ : HasCauchyPV γ a b f₂ v₂) :
+    HasCauchyPV γ a b (fun z => f₁ z + f₂ z) (v₁ + v₂) := by
+  obtain ⟨S₁, hint₁, htend₁⟩ := h₁
+  obtain ⟨S₂, hint₂, htend₂⟩ := h₂
+  have hint₁' : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      IntervalIntegrable (truncatedIntegrand γ f₁ S₁ ε) MeasureTheory.volume a b := hint₁
+  have hint₂' : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      IntervalIntegrable (truncatedIntegrand γ f₂ S₂ ε) MeasureTheory.volume a b := hint₂
+  have htend₁' : Tendsto (fun ε => ∫ t in a..b, truncatedIntegrand γ f₁ S₁ ε t)
+      (𝓝[>] (0 : ℝ)) (𝓝 v₁) := htend₁
+  have htend₂' : Tendsto (fun ε => ∫ t in a..b, truncatedIntegrand γ f₂ S₂ ε t)
+      (𝓝[>] (0 : ℝ)) (𝓝 v₂) := htend₂
+  have hI1 : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      IntervalIntegrable (truncatedIntegrand γ f₁ (S₁ ∪ S₂) ε) MeasureTheory.volume a b :=
+    hint₁'.mono fun ε hε => truncatedIntegrand_union_integrable hγ S₂ hε
+  have hI2 : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      IntervalIntegrable (truncatedIntegrand γ f₂ (S₁ ∪ S₂) ε) MeasureTheory.volume a b := by
+    have hc := hint₂'.mono fun ε hε => truncatedIntegrand_union_integrable hγ S₁ hε
+    simpa only [Finset.union_comm S₂ S₁] using hc
+  have hT1 : Tendsto (fun ε => ∫ t in a..b, truncatedIntegrand γ f₁ (S₁ ∪ S₂) ε t)
+      (𝓝[>] (0 : ℝ)) (𝓝 v₁) := by
+    simpa using htend₁'.sub (tendsto_integral_truncatedIntegrand_sub S₁ (S₁ ∪ S₂) hint₁' hI1)
+  have hT2 : Tendsto (fun ε => ∫ t in a..b, truncatedIntegrand γ f₂ (S₁ ∪ S₂) ε t)
+      (𝓝[>] (0 : ℝ)) (𝓝 v₂) := by
+    simpa using htend₂'.sub (tendsto_integral_truncatedIntegrand_sub S₂ (S₁ ∪ S₂) hint₂' hI2)
+  refine ⟨S₁ ∪ S₂, ?_, ?_⟩
+  · filter_upwards [hI1, hI2] with ε h1 h2
+    refine (intervalIntegrable_congr (g := fun t => truncatedIntegrand γ f₁ (S₁ ∪ S₂) ε t
+      + truncatedIntegrand γ f₂ (S₁ ∪ S₂) ε t) fun t _ => ?_).mpr (h1.add h2)
+    simp only [truncatedIntegrand]; split_ifs <;> ring
+  · refine Filter.Tendsto.congr' ?_ (hT1.add hT2)
+    filter_upwards [hI1, hI2] with ε h1 h2
+    rw [← intervalIntegral.integral_add h1 h2]
+    exact intervalIntegral.integral_congr fun t _ => by
+      simp only [truncatedIntegrand]; split_ifs <;> ring
+
+/-- **Finite additivity.** A finite sum of set-level principal values is the principal value of the
+summed integrand — the additive companion to `HasCauchyPV.const_mul`, built from `zero` and `add`
+(hence the `γ`-measurability hypothesis). -/
+theorem HasCauchyPV.sum {ι : Type*} {γ : ℝ → ℂ} {a b : ℝ} {f : ι → ℂ → ℂ} {v : ι → ℂ}
+    {s : Finset ι} (hγ : Measurable γ) (h : ∀ i ∈ s, HasCauchyPV γ a b (f i) (v i)) :
+    HasCauchyPV γ a b (fun z => ∑ i ∈ s, f i z) (∑ i ∈ s, v i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using HasCauchyPV.zero
+  | @insert j s hj ih =>
+    simp only [Finset.sum_insert hj]
+    exact (h j (Finset.mem_insert_self j s)).add hγ
+      (ih fun i hi => h i (Finset.mem_insert_of_mem hi))
+
+/-- Existence form of `HasCauchyPV.add`. -/
+theorem CauchyPVExists.add {γ : ℝ → ℂ} {a b : ℝ} {f g : ℂ → ℂ} (hγ : Measurable γ)
+    (hf : CauchyPVExists γ a b f) (hg : CauchyPVExists γ a b g) :
+    CauchyPVExists γ a b (fun z => f z + g z) :=
+  let ⟨_, hvf⟩ := cauchyPVExists_iff.mp hf
+  let ⟨_, hvg⟩ := cauchyPVExists_iff.mp hg
+  ⟨_, hvf.add hγ hvg⟩
+
+/-- Existence form of `HasCauchyPV.sum`. -/
+theorem CauchyPVExists.sum {ι : Type*} {γ : ℝ → ℂ} {a b : ℝ} {f : ι → ℂ → ℂ} {s : Finset ι}
+    (hγ : Measurable γ) (h : ∀ i ∈ s, CauchyPVExists γ a b (f i)) :
+    CauchyPVExists γ a b (fun z => ∑ i ∈ s, f i z) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact ⟨0, by simpa using HasCauchyPV.zero⟩
+  | @insert j s hj ih =>
+    simp only [Finset.sum_insert hj]
+    exact CauchyPVExists.add hγ (h j (Finset.mem_insert_self j s))
+      (ih fun i hi => h i (Finset.mem_insert_of_mem hi))
+
 end TauCeti.Contour
