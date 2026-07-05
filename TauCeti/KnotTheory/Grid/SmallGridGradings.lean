@@ -98,19 +98,16 @@ private theorem twoByTwoSwap_pairCard_id :
   simp
 
 /-- The integer `O`-Maslov grading of the `O`-marking state is always `1`. -/
-@[simp]
 theorem maslovOℤ_O {n : ℕ} (G : GridDiagram n) : G.maslovOℤ G.O = 1 := by
   rw [maslovOℤ_eq_card]
   ring
 
 /-- The integer `X`-Maslov grading of the `X`-marking state is always `1`. -/
-@[simp]
 theorem maslovXℤ_X {n : ℕ} (G : GridDiagram n) : G.maslovXℤ G.X = 1 := by
   rw [maslovXℤ_eq_card]
   ring
 
 /-- In a `2 × 2` diagram, the integer `X`-Maslov grading of the `O`-marking state is `2`. -/
-@[simp]
 theorem maslovXℤ_O_of_two (G : GridDiagram 2) : G.maslovXℤ G.O = 2 := by
   rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap G.O with hO | hO
   · rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap G.X with hX | hX
@@ -129,7 +126,6 @@ theorem maslovXℤ_O_of_two (G : GridDiagram 2) : G.maslovXℤ G.O = 2 := by
       exact G.disjoint 0 (by simp [hO, hX])
 
 /-- In a `2 × 2` diagram, the integer `O`-Maslov grading of the `X`-marking state is `2`. -/
-@[simp]
 theorem maslovOℤ_X_of_two (G : GridDiagram 2) : G.maslovOℤ G.X = 2 := by
   rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap G.O with hO | hO
   · rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap G.X with hX | hX
@@ -148,26 +144,22 @@ theorem maslovOℤ_X_of_two (G : GridDiagram 2) : G.maslovOℤ G.X = 2 := by
       exact G.disjoint 0 (by simp [hO, hX])
 
 /-- Twice the Alexander grading of the `O`-marking state in a `2 × 2` diagram is `-2`. -/
-@[simp]
 theorem alexanderTwoℤ_O_of_two (G : GridDiagram 2) : G.alexanderTwoℤ G.O = -2 := by
   rw [alexanderTwoℤ_def, maslovOℤ_O, maslovXℤ_O_of_two]
   norm_num
 
 /-- Twice the Alexander grading of the `X`-marking state in a `2 × 2` diagram is `0`. -/
-@[simp]
 theorem alexanderTwoℤ_X_of_two (G : GridDiagram 2) : G.alexanderTwoℤ G.X = 0 := by
   rw [alexanderTwoℤ_def, maslovOℤ_X_of_two, maslovXℤ_X]
   norm_num
 
 /-- The Alexander grading of the `O`-marking state in a `2 × 2` diagram is `-1`. -/
-@[simp]
 theorem alexander_O_of_two (G : GridDiagram 2) : G.alexander G.O = -1 := by
   rw [alexander_def, G.maslovO_eq_intCast, G.maslovX_eq_intCast]
   rw [maslovOℤ_O, maslovXℤ_O_of_two]
   norm_num
 
 /-- The Alexander grading of the `X`-marking state in a `2 × 2` diagram is `0`. -/
-@[simp]
 theorem alexander_X_of_two (G : GridDiagram 2) : G.alexander G.X = 0 := by
   rw [alexander_def, G.maslovO_eq_intCast, G.maslovX_eq_intCast]
   rw [maslovOℤ_X_of_two, maslovXℤ_X]
@@ -175,55 +167,47 @@ theorem alexander_X_of_two (G : GridDiagram 2) : G.alexander G.X = 0 := by
 
 /-- The integer `O`-Maslov grading of the identity generator in the standard two-by-two
 diagram is `1`. -/
-@[simp]
 theorem maslovOℤ_twoByTwo_twoByTwoId :
     twoByTwo.maslovOℤ GridState.twoByTwoId = 1 := by
   simpa using maslovOℤ_O twoByTwo
 
 /-- The integer `X`-Maslov grading of the identity generator in the standard two-by-two
 diagram is `2`. -/
-@[simp]
 theorem maslovXℤ_twoByTwo_twoByTwoId :
     twoByTwo.maslovXℤ GridState.twoByTwoId = 2 := by
   simpa using maslovXℤ_O_of_two twoByTwo
 
 /-- Twice the Alexander grading of the identity generator in the standard two-by-two diagram
 is `-2`. -/
-@[simp]
 theorem alexanderTwoℤ_twoByTwo_twoByTwoId :
     twoByTwo.alexanderTwoℤ GridState.twoByTwoId = -2 := by
   simpa using alexanderTwoℤ_O_of_two twoByTwo
 
 /-- The Alexander grading of the identity generator in the standard two-by-two diagram is `-1`. -/
-@[simp]
 theorem alexander_twoByTwo_twoByTwoId :
     twoByTwo.alexander GridState.twoByTwoId = -1 := by
   simpa using alexander_O_of_two twoByTwo
 
 /-- The integer `O`-Maslov grading of the transposition generator in the standard two-by-two
 diagram is `2`. -/
-@[simp]
 theorem maslovOℤ_twoByTwo_twoByTwoSwap :
     twoByTwo.maslovOℤ GridState.twoByTwoSwap = 2 := by
   simpa using maslovOℤ_X_of_two twoByTwo
 
 /-- The integer `X`-Maslov grading of the transposition generator in the standard two-by-two
 diagram is `1`. -/
-@[simp]
 theorem maslovXℤ_twoByTwo_twoByTwoSwap :
     twoByTwo.maslovXℤ GridState.twoByTwoSwap = 1 := by
   simpa using maslovXℤ_X twoByTwo
 
 /-- Twice the Alexander grading of the transposition generator in the standard two-by-two
 diagram is `0`. -/
-@[simp]
 theorem alexanderTwoℤ_twoByTwo_twoByTwoSwap :
     twoByTwo.alexanderTwoℤ GridState.twoByTwoSwap = 0 := by
   simpa using alexanderTwoℤ_X_of_two twoByTwo
 
 /-- The Alexander grading of the transposition generator in the standard two-by-two diagram
 is `0`. -/
-@[simp]
 theorem alexander_twoByTwo_twoByTwoSwap :
     twoByTwo.alexander GridState.twoByTwoSwap = 0 := by
   simpa using alexander_X_of_two twoByTwo
