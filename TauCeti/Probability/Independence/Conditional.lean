@@ -11,13 +11,11 @@ The two directions relating Mathlib's `ProbabilityTheory.CondIndep` to the "drop
 identity `μ[𝟙_H | mF ⊔ mG] =ᵐ μ[𝟙_H | mG]` on conditional expectations of indicators:
 
 * `condIndep_of_indicator_condExp_eq` — builds `CondIndep mG mF mH` from that criterion (for all
-  `mH`-measurable `H`); a layer over Mathlib's `condIndep_iff` (`.2` direction). (The forward
-  product-formula direction is Mathlib's `condIndep_iff … |>.mp` applied directly, so no wrapper is
-  provided here.)
+  `mH`-measurable `H`).
 * `condExp_indicator_sup_eq_of_condIndep` — the converse projection: from `CondIndep mG mF mH`,
   conditioning an `mH`-measurable indicator on the join `mF ⊔ mG` collapses to conditioning on `mG`.
 
-Both are used by the de Finetti block-product factorisation / prefix-deletion drop-info step — the
+Both are intended for the de Finetti block-product factorisation / prefix-deletion drop-info step — the
 standard conditional-independence characterisation of the de Finetti route; see Kallenberg,
 *Probabilistic Symmetries and Invariance Principles* (Springer, 2005). Adapted from
 `cameronfreer/exchangeability` (`Probability/CondExp.lean`, pin
@@ -89,9 +87,7 @@ theorem condIndep_of_indicator_condExp_eq {Ω : Type*} {mΩ : MeasurableSpace Ω
 
 /-- Rectangle step for `condExp_indicator_sup_eq_of_condIndep`: over a rectangle `tF ∩ tG` (`tF`
 `mF`-measurable, `tG` `mG`-measurable), the conditional expectation given `mG` of an
-`mH`-measurable indicator integrates to the same value as the indicator itself. This is where the
-conditional independence of `mF` and `mH` given `mG` enters, through Mathlib's `condIndep_iff`
-product formula. -/
+`mH`-measurable indicator integrates to the same value as the indicator itself. -/
 private lemma setIntegral_condExp_indicator_eq_on_rectangle {Ω : Type*} {mΩ : MeasurableSpace Ω}
     [StandardBorelSpace Ω] {μ : @Measure Ω mΩ} [IsFiniteMeasure μ]
     {mF mG mH : MeasurableSpace Ω}
