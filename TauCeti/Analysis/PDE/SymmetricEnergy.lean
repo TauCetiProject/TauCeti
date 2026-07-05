@@ -53,6 +53,7 @@ open Matrix
 
 variable {X n : Type*} [Fintype n]
 
+/-- Local classical decidable equality for finite coordinate indices in symmetry proofs. -/
 noncomputable local instance symmetricEnergyDecidableEq : DecidableEq n := Classical.decEq n
 
 /-- With zero drift, transposing the principal coefficient swaps the two jet arguments. -/

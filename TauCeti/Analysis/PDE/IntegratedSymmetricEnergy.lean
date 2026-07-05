@@ -47,6 +47,8 @@ open MeasureTheory Matrix
 
 variable {X n : Type*} [MeasurableSpace X] [Fintype n]
 
+/-- Local classical decidable equality for finite coordinate indices in integrated symmetry
+proofs. -/
 noncomputable local instance integratedSymmetricEnergyDecidableEq : DecidableEq n :=
   Classical.decEq n
 

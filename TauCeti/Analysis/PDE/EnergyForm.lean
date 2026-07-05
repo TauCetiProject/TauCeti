@@ -72,6 +72,7 @@ open scoped InnerProductSpace
 
 variable {X n : Type*} [Fintype n]
 
+/-- Local classical decidable equality for finite coordinate indices in energy-form proofs. -/
 noncomputable local instance energyFormDecidableEq : DecidableEq n := Classical.decEq n
 
 /-- The pointwise weak-form (energy) integrand of a divergence-form operator

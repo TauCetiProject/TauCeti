@@ -48,6 +48,7 @@ open scoped InnerProductSpace
 
 variable {X n : Type*} [Fintype n]
 
+/-- Local classical decidable equality for finite coordinate indices in perturbation proofs. -/
 noncomputable local instance coercivePerturbationDecidableEq : DecidableEq n :=
   Classical.decEq n
 

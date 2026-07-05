@@ -47,6 +47,7 @@ open scoped InnerProductSpace
 
 variable {X n : Type*} [MeasurableSpace X] [Fintype n]
 
+/-- Local classical decidable equality for finite coordinate indices in integrated energy proofs. -/
 noncomputable local instance integratedEnergyFormDecidableEq : DecidableEq n := Classical.decEq n
 
 /-- The scalar energy form obtained by integrating the divergence-form pointwise jet
