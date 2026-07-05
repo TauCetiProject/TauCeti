@@ -28,9 +28,9 @@ integrand.
   principal coefficient by its symmetric part gives a symmetric zero-drift integrated form.
 * `TauCeti.PDE.energyFormIntegral_coefficientSymmetricPart_self`: the diagonal integrated
   energy is unchanged by replacing the principal coefficient by its symmetric part.
-* `TauCeti.PDE.energyFormIntegral_coefficientSymmetricPart_zero_drift`: the symmetric-part
-  zero-drift form is the average of the original form and its transpose, under the natural
-  integrability hypotheses.
+* `TauCeti.PDE.energyFormIntegral_coefficientSymmetricPart_zero_drift_apply`: the
+  symmetric-part zero-drift form is the average of the original form and its transpose, under the
+  natural integrability hypotheses.
 * `TauCeti.PDE.energyFormIntegral_one_zero_mass_comm`: the shifted-Laplacian model form is
   symmetric.
 -/
@@ -86,6 +86,7 @@ lemma energyFormIntegral_one_zero_mass_comm [DecidableEq n] :
 /-- Replacing the principal coefficient by its symmetric part does not change the diagonal
 integrated energy.  The drift and mass coefficients are arbitrary, since the diagonal
 principal quadratic form is unchanged pointwise. -/
+@[simp]
 lemma energyFormIntegral_coefficientSymmetricPart_self {b : X → EuclideanSpace ℝ n} :
     energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) b c U U =
       energyFormIntegral μ a b c U U := by
@@ -103,7 +104,7 @@ lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_self :
 
 /-- The symmetric-part zero-drift integrated form is the average of the original zero-drift
 form and its transpose, assuming the two original scalar densities are integrable. -/
-lemma energyFormIntegral_coefficientSymmetricPart_zero_drift
+lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_apply
     (hUV : Integrable (fun x => energyIntegrand (a x) 0 (c x) (U x) (V x)) μ)
     (hVU : Integrable (fun x => energyIntegrand (a x) 0 (c x) (V x) (U x)) μ) :
     energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) (fun _ => 0) c U V =
@@ -119,12 +120,12 @@ lemma energyFormIntegral_coefficientSymmetricPart_zero_drift
   rw [hpoint]
   rw [integral_div, integral_add hUV hVU]
 
-/-- For symmetric principal coefficients, replacing by the symmetric part leaves the
-zero-drift integrated form unchanged. -/
-lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_eq_of_isSymm_ae
+/-- For symmetric principal coefficients, replacing by the symmetric part leaves the integrated
+form unchanged. -/
+lemma energyFormIntegral_coefficientSymmetricPart_eq_of_isSymm_ae {b : X → EuclideanSpace ℝ n}
     (ha : ∀ᵐ x ∂μ, (a x).IsSymm) :
-    energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) (fun _ => 0) c U V =
-      energyFormIntegral μ a (fun _ => 0) c U V := by
+    energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) b c U V =
+      energyFormIntegral μ a b c U V := by
   rw [energyFormIntegral_def, energyFormIntegral_def]
   refine integral_congr_ae ?_
   filter_upwards [ha] with x hx
@@ -137,12 +138,12 @@ lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_eq_of_isSymm_ae
   simp [hcoeff]
 
 /-- Domain-supported version of
-`energyFormIntegral_coefficientSymmetricPart_zero_drift_eq_of_isSymm_ae`. -/
-lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_eq_on {Ω : Set X}
+`energyFormIntegral_coefficientSymmetricPart_eq_of_isSymm_ae`. -/
+lemma energyFormIntegral_coefficientSymmetricPart_eq_on {b : X → EuclideanSpace ℝ n} {Ω : Set X}
     (hΩ : ∀ᵐ x ∂μ, x ∈ Ω) (ha : ∀ ⦃x⦄, x ∈ Ω → (a x).IsSymm) :
-    energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) (fun _ => 0) c U V =
-      energyFormIntegral μ a (fun _ => 0) c U V :=
-  energyFormIntegral_coefficientSymmetricPart_zero_drift_eq_of_isSymm_ae
+    energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) b c U V =
+      energyFormIntegral μ a b c U V :=
+  energyFormIntegral_coefficientSymmetricPart_eq_of_isSymm_ae
     (hΩ.mono fun _ hx => ha hx)
 
 end PDE
