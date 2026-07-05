@@ -147,7 +147,6 @@ theorem twoByTwo_XSet :
   fin_cases c <;> fin_cases r <;> simp [XSet, GridState.twoByTwoSwap]
 
 /-- The fully blocked differential of the standard two-by-two grid diagram is zero. -/
-@[simp]
 theorem fullyBlockedDifferential_twoByTwo :
     twoByTwo.fullyBlockedDifferential =
       (0 : GridChain (ZMod 2) 2 →ₗ[ZMod 2] GridChain (ZMod 2) 2) :=
