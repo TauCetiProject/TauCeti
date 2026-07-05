@@ -41,7 +41,7 @@ normalization; its value also follows from Mathlib's `circleIntegral.integral_su
 
 The `windingNumber_modelSector`, `windingNumber_at_i`, `windingNumber_at_rho`, and
 `windingNumber_circle` corollaries are the named Layer 1 targets of
-`ContourIntegration/Targets.lean`, derived from the general arbitrary-interval statement.
+`ContourIntegration/Suggested.lean`, derived from the general arbitrary-interval statement.
 
 ## Provenance
 

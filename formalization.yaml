@@ -87,6 +87,6 @@ alignment:
   note: >
     The human-authored roadmaps in the TauCetiRoadmap repo are the closest thing to a
     blueprint. Each roadmap (e.g. UniversalCovers, JacobianChallenge, ReductiveGroups)
-    states its goals as sorry-allowed signatures in its Targets.lean; the matching
+    states its goals as sorry-allowed signatures in its Suggested.lean; the matching
     sorry-free development lives (or will live) under TauCeti/.
   roadmaps: "https://github.com/TauCetiProject/TauCetiRoadmap"

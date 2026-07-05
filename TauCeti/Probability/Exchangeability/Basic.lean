@@ -15,7 +15,7 @@ hypotheses enter only in lemmas that compose `Measure.map`s.
 
 These declarations follow the roadmap signatures in
 `TauCetiRoadmap/Exchangeability/README.md` and
-`TauCetiRoadmap/Exchangeability/Targets.lean`, Layer 0. They are adapted from the
+`TauCetiRoadmap/Exchangeability/Suggested.lean`, Layer 0. They are adapted from the
 `cameronfreer/exchangeability` Layer 0 sources pinned at
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses.
 -/
