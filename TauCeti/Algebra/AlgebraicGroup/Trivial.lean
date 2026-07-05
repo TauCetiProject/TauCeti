@@ -4,8 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.Terminal
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
+public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 
 /-!
 # The trivial affine group
@@ -17,8 +16,8 @@ homomorphism `R →ₐ[R] A`, namely `Algebra.ofId R A`; consequently the convol
 `A`-points is the one-element group `PUnit`.
 
 This is the terminal-object example in the Hopf-algebra/functor-of-points side of the
-ReductiveGroups roadmap, Layer 0. It is the identity object needed by the product and affine
-group scheme dictionary: `Spec R` over `Spec R` represents the trivial group-valued functor.
+ReductiveGroups roadmap, Layer 0. It is the identity object needed by the product dictionary:
+`Spec R` over `Spec R` represents the trivial group-valued functor.
 
 ## Main declarations
 
@@ -34,78 +33,11 @@ canonical Hopf algebra structure on `R` over itself from `Mathlib.RingTheory.Hop
 
 public section
 
-open CategoryTheory CategoryTheory.Limits WithConv
+open WithConv
 
 namespace TauCeti
 
 universe u v w
-
-namespace CommHopfAlgCat
-
-variable (R : Type u) [CommRing R]
-
-/-- The coordinate Hopf algebra of the trivial affine group over `R`.
-
-Its underlying Hopf algebra is `R` over itself. -/
-noncomputable abbrev trivial : _root_.CommHopfAlgCat.{u} R :=
-  _root_.CommHopfAlgCat.of R R
-
-/-- The coordinate morphism from the trivial affine group to an affine group.
-
-On coordinate Hopf algebras this is the bialgebra unit map `R → H`. -/
-noncomputable abbrev unit (H : _root_.CommHopfAlgCat.{u} R) :
-    trivial R ⟶ H :=
-  _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.unitBialgHom R H)
-
-/-- The coordinate morphism from an affine group to the trivial affine group.
-
-On coordinate Hopf algebras this is the bialgebra counit map `H → R`. -/
-noncomputable abbrev counit (H : _root_.CommHopfAlgCat.{u} R) :
-    H ⟶ trivial R :=
-  _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.counitBialgHom R H)
-
-variable {R}
-
-/-- The ambient coordinate unit morphism unwraps to Mathlib's bialgebra unit map. -/
-@[simp]
-lemma hom_unit (H : _root_.CommHopfAlgCat.{u} R) :
-    (unit (R := R) H).hom = _root_.Bialgebra.unitBialgHom R H :=
-  rfl
-
-/-- The ambient coordinate counit morphism unwraps to Mathlib's bialgebra counit map. -/
-@[simp]
-lemma hom_counit (H : _root_.CommHopfAlgCat.{u} R) :
-    (counit (R := R) H).hom = _root_.Bialgebra.counitBialgHom R H :=
-  rfl
-
-/-- Pointwise formula for the ambient coordinate unit map `R → H`. -/
-@[simp]
-lemma unit_apply (H : _root_.CommHopfAlgCat.{u} R) (r : R) :
-    (_root_.Bialgebra.unitBialgHom R H) r = algebraMap R H r :=
-  rfl
-
-/-- Pointwise formula for the ambient coordinate counit map `H → R`. -/
-lemma counit_apply (H : _root_.CommHopfAlgCat.{u} R) (h : H) :
-    (counit (R := R) H).hom h = Coalgebra.counit h :=
-  _root_.Bialgebra.counitBialgHom_apply h
-
-/-- The trivial coordinate Hopf algebra is initial in the ambient coordinate category. -/
-noncomputable def trivialIsInitial :
-    IsInitial (trivial R : _root_.CommHopfAlgCat.{u} R) :=
-  IsInitial.ofUniqueHom
-    (fun H => unit (R := R) H)
-    (fun H f => by
-      apply _root_.CommHopfAlgCat.hom_ext
-      apply _root_.BialgHom.coe_toAlgHom_injective
-      exact Subsingleton.elim _ _)
-
-/-- The unique ambient morphism out of the trivial coordinate Hopf algebra is the unit. -/
-lemma eq_unit (H : _root_.CommHopfAlgCat.{u} R)
-    (f : trivial R ⟶ H) :
-    f = unit (R := R) H :=
-  (trivialIsInitial (R := R)).hom_ext f (unit (R := R) H)
-
-end CommHopfAlgCat
 
 namespace TrivialGroup
 

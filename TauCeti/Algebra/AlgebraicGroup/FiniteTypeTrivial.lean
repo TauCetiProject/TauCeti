@@ -35,7 +35,7 @@ open CategoryTheory CategoryTheory.Limits WithConv
 
 namespace TauCeti
 
-universe u
+universe u v w
 
 namespace FiniteTypeCommHopfAlgCat
 
@@ -63,7 +63,8 @@ On coordinate Hopf algebras this is the bialgebra unit map `R → H`, contravari
 unique morphism from the represented affine group to the terminal affine group `Spec R`. -/
 noncomputable abbrev unit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
     trivial R ⟶ H :=
-  ObjectProperty.homMk (CommHopfAlgCat.unit (R := R) H.obj)
+  ObjectProperty.homMk
+    (_root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.unitBialgHom R H.obj))
 
 /-- The coordinate morphism from a finite-type affine group to the trivial affine group.
 
@@ -71,7 +72,8 @@ On coordinate Hopf algebras this is the bialgebra counit map `H → R`, contrava
 identity section `Spec R → G`. -/
 noncomputable abbrev counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
     H ⟶ trivial R :=
-  ObjectProperty.homMk (CommHopfAlgCat.counit (R := R) H.obj)
+  ObjectProperty.homMk
+    (_root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.counitBialgHom R H.obj))
 
 /-- The finite-type coordinate unit morphism unwraps to Mathlib's bialgebra unit map. -/
 @[simp]
@@ -88,7 +90,7 @@ lemma toBialgHom_counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
 /-- Pointwise formula for the coordinate unit map `R → H`. -/
 @[simp]
 lemma unit_apply (H : FiniteTypeCommHopfAlgCat.{u, u} R) (r : R) :
-    (_root_.Bialgebra.unitBialgHom R H.obj) r = algebraMap R H r :=
+    toBialgHom (unit H) r = algebraMap R H r :=
   rfl
 
 /-- Pointwise formula for the coordinate counit map `H → R`. -/
@@ -107,8 +109,8 @@ noncomputable def trivialIsInitial :
     (fun H => unit H)
     (fun H f => by
       apply hom_ext
-      exact congrArg _root_.CommHopfAlgCat.Hom.hom
-        (CommHopfAlgCat.eq_unit H.obj f.hom))
+      apply _root_.BialgHom.coe_toAlgHom_injective
+      exact Subsingleton.elim _ _)
 
 /-- The unique morphism out of the finite-type trivial coordinate Hopf algebra is the unit. -/
 lemma eq_unit (H : FiniteTypeCommHopfAlgCat.{u, u} R)
@@ -116,7 +118,7 @@ lemma eq_unit (H : FiniteTypeCommHopfAlgCat.{u, u} R)
     f = unit H :=
   (trivialIsInitial (R := R)).hom_ext f (unit H)
 
-variable (A : CommAlgCat.{u} R)
+variable (A : CommAlgCat.{v} R)
 
 /-- The functor of points of the finite-type trivial affine group is the one-element group. -/
 noncomputable def trivialPointsMulEquiv :
@@ -135,7 +137,7 @@ theorem trivialPointsMulEquiv_symm_apply (u : PUnit.{1}) :
     (trivialPointsMulEquiv A).symm u = toConv (Algebra.ofId R A) :=
   TrivialGroup.pointsMulEquiv_symm_apply (R := R) (A := A) u
 
-variable {B : CommAlgCat.{u} R}
+variable {B : CommAlgCat.{w} R}
 
 /-- The finite-type trivial-group points equivalence is natural in the value algebra. -/
 theorem trivialPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
