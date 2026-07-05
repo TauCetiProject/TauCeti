@@ -100,6 +100,18 @@ private lemma circleIntegral_const_mul_zpow_sub {c s₀ : ℂ} {R : ℝ} {n : �
       if_neg (by omega)]
     ring
 
+/-- The peeled leading term `a·(· − s₀) ^ n` (`n < 0`, pole at `s₀ ∈ S ⊆ ball c R`) has its
+residue sum over `S` concentrated at `s₀`: `∮ = 2πi · ∑_{s ∈ S} residue s`. -/
+private lemma circleIntegral_leadingTerm_eq_residueSum {c : ℂ} {R : ℝ} (a : ℂ) {s₀ : ℂ}
+    (hs₀ : s₀ ∈ ball c R) {n : ℤ} (hn : n < 0) (S : Finset ℂ) (hs₀S : s₀ ∈ S) :
+    circleIntegral (fun z => a * (z - s₀) ^ n) c R
+      = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, residue (fun z => a * (z - s₀) ^ n) s := by
+  have hP_an : ∀ s, s ≠ s₀ → AnalyticAt ℂ (fun z => a * (z - s₀) ^ n) s := fun s hne =>
+    analyticAt_const.mul ((analyticAt_id.sub analyticAt_const).fun_zpow (sub_ne_zero.2 hne))
+  rw [Finset.sum_eq_single_of_mem s₀ hs₀S fun s _ hne =>
+    residue_eq_zero_of_analyticAt (hP_an s hne)]
+  exact circleIntegral_const_mul_zpow_sub a hs₀ hn
+
 /-- Pole depth `(-order.untop₀).toNat` does not increase when the order stays at or above a minimum
 taken with a nonnegative order: if `min oF oP ≤ oG` and `0 ≤ oP`, the depth of `oG` is at most that
 of `oF`. (`oG` is the order of `F − P` where `P` is analytic — `oP ≥ 0` — at the point.) -/
@@ -135,6 +147,11 @@ private lemma depthTerm_lt_of_lt {n : ℤ} {oG : WithTop ℤ} (hn : n < 0)
     have hng : n < g := by exact_mod_cast hlt
     omega
 
+/-- A function analytic on the boundary circle `sphere c R` is circle-integrable. -/
+private lemma circleIntegrable_of_analyticOn_sphere {A : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 ≤ R)
+    (hA : ∀ z ∈ sphere c R, AnalyticAt ℂ A z) : CircleIntegrable A c R :=
+  ContinuousOn.circleIntegrable hR fun z hz => (hA z hz).continuousAt.continuousWithinAt
+
 /-- One pole-peeling step of the residue theorem. Given `F` analytic off the finite set `S` with a
 pole at `s₀ ∈ S`, subtracting the leading Laurent term at `s₀` yields `G` that is still analytic off
 `S`, has strictly smaller total pole depth, and whose residue formula implies that of `F`. -/
@@ -155,8 +172,8 @@ private lemma residueTheorem_step {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
     rw [mem_sphere] at hz
     exact absurd hz (ne_of_lt (mem_ball.1 (hS (Finset.mem_coe.2 hzS))))
   have hF_int : CircleIntegrable F c R :=
-    ContinuousOn.circleIntegrable hR.le fun z hz =>
-      (hF_off z (sphere_subset_closedBall hz) (hsphere_notS z hz)).continuousAt.continuousWithinAt
+    circleIntegrable_of_analyticOn_sphere hR.le fun z hz =>
+      hF_off z (sphere_subset_closedBall hz) (hsphere_notS z hz)
   have hs₀_ball : s₀ ∈ ball c R := hS (Finset.mem_coe.2 hs₀S)
   have hF_mero_s₀ : MeromorphicAt F s₀ := hF_mero s₀ (hmem_cb s₀ hs₀S)
   have hord_ne_top : meromorphicOrderAt F s₀ ≠ ⊤ := ne_top_of_lt hs₀_neg
@@ -192,16 +209,13 @@ private lemma residueTheorem_step {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
         ((hP_mero s (hmem_cb s hs)).neg)
       rwa [← meromorphicOrderAt_neg, ← sub_eq_add_neg] at hadd
   have hP_int : CircleIntegrable P c R :=
-    ContinuousOn.circleIntegrable hR.le fun z hz =>
-      (hP_an_off z fun h => hsphere_notS z hz (h ▸ hs₀S)).continuousAt.continuousWithinAt
+    circleIntegrable_of_analyticOn_sphere hR.le fun z hz =>
+      hP_an_off z fun h => hsphere_notS z hz (h ▸ hs₀S)
   have hint : circleIntegral F c R = circleIntegral G c R + circleIntegral P c R := by
     have hFGP : F = fun z => G z + P z := by funext z; simp only [hG_def]; ring
     rw [hFGP]; exact circleIntegral.integral_add (hF_int.sub hP_int) hP_int
-  have hP_res_sum : ∑ s ∈ S, residue P s = residue P s₀ :=
-    Finset.sum_eq_single_of_mem s₀ hs₀S
-      fun s _ hne => residue_eq_zero_of_analyticAt (hP_an_off s hne)
   have hPint : circleIntegral P c R = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, residue P s := by
-    rw [hP_res_sum, hP_def]; exact circleIntegral_const_mul_zpow_sub (g s₀) hs₀_ball hn₀_neg
+    rw [hP_def]; exact circleIntegral_leadingTerm_eq_residueSum (g s₀) hs₀_ball hn₀_neg S hs₀S
   have hres_add : ∑ s ∈ S, residue F s = (∑ s ∈ S, residue G s) + ∑ s ∈ S, residue P s := by
     rw [← Finset.sum_add_distrib]
     refine Finset.sum_congr rfl fun s hs => ?_
