@@ -53,7 +53,7 @@ variable {R : Type u} [CommRing R]
 
 Contravariantly, this is the closed-subgroup inclusion on points: it sends a point of the
 quotient Hopf algebra to its composite with the quotient map from `H`. -/
-noncomputable def quotientPointsHom (H : _root_.CommHopfAlgCat.{v} R)
+@[expose] noncomputable def quotientPointsHom (H : _root_.CommHopfAlgCat.{v} R)
     (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
     HopfAlgebra.points (R := R) (H := quotient H I) A ⟶
       HopfAlgebra.points (R := R) (H := H) A :=
