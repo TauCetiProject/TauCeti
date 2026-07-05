@@ -60,10 +60,8 @@ theorem integral_exp_neg_two_pi_inner_eq_charFun_neg_two_pi_smul (a : V) :
 `exp (-2πi⟪a, q⟫)`, is Mathlib's characteristic function evaluated at `(-2π) • a`. -/
 theorem integral_fourierAtom_eq_charFun_neg_two_pi_smul (a : V) :
     ∫ q, fourierAtom a q ∂μ = MeasureTheory.charFun μ ((-2 * Real.pi) • a) := by
-  rw [show (∫ q, fourierAtom a q ∂μ) =
-      ∫ q, Complex.exp (-(2 * Real.pi * Complex.I * (inner ℝ q a : ℝ))) ∂μ by
-    simp only [fourierAtom_apply, neg_mul]]
-  exact integral_exp_neg_two_pi_inner_eq_charFun_neg_two_pi_smul (μ := μ) a
+  simpa only [fourierAtom_apply, neg_mul] using
+    integral_exp_neg_two_pi_inner_eq_charFun_neg_two_pi_smul (μ := μ) a
 
 variable {W : Type*} [SeminormedAddCommGroup W] [InnerProductSpace ℝ W]
   [MeasurableSpace W] [OpensMeasurableSpace W] {ν : Measure W} [IsFiniteMeasure ν]
