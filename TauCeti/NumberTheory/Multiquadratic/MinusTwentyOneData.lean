@@ -16,6 +16,17 @@ the corresponding roots `i`, `i√3`, and `i√7` of the radicands `-1`, `-3`, a
 This file keeps those concrete roots and elementary list facts separate from the degree and
 Galois-cardinality consequences, so those examples can share data without depending on each
 other.
+
+## Main definitions
+
+* `TauCeti.Multiquadratic.negFourNegThreeNegSevenPrimeDiscriminantRoots`: the concrete root
+  vector `[i, √-3, √-7]`.
+* `TauCeti.Multiquadratic.negFourNegThreeNegSevenPrimeDiscriminants_isPrimeDiscriminant`: each
+  member of `[-4, -3, -7]` is a prime discriminant.
+* `TauCeti.Multiquadratic.negFourNegThreeNegSevenPrimeDiscriminantRoots_sq`: the square of each
+  root is the radicand attached to the corresponding prime discriminant.
+* `TauCeti.Multiquadratic.range_negFourNegThreeNegSevenPrimeDiscriminantRoots`: the range of the
+  root vector is `{i, √-3, √-7}`.
 -/
 
 public section
@@ -52,5 +63,73 @@ noncomputable abbrev sqrtNegSeven : ℂ :=
 @[simp]
 theorem sqrtNegSeven_sq : sqrtNegSeven ^ 2 = (-7 : ℂ) := by
   simpa [sqrtNegSeven] using I_mul_real_sqrt_nat_sq 7
+
+/-- Each entry of the concrete list `[-4, -3, -7]` is a prime discriminant. -/
+theorem negFourNegThreeNegSevenPrimeDiscriminants_isPrimeDiscriminant :
+    ∀ i : Fin 3, IsPrimeDiscriminant (negFourNegThreeNegSevenPrimeDiscriminants i) := by
+  intro i
+  fin_cases i
+  · simp [negFourNegThreeNegSevenPrimeDiscriminants]
+  · have h3 : IsPrimeDiscriminant (oddPrimeDiscriminant 3) :=
+      isPrimeDiscriminant_oddPrimeDiscriminant (p := 3) (by decide) (by decide)
+    simpa [negFourNegThreeNegSevenPrimeDiscriminants,
+      oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)] using h3
+  · have h7 : IsPrimeDiscriminant (oddPrimeDiscriminant 7) :=
+      isPrimeDiscriminant_oddPrimeDiscriminant (p := 7) (by decide) (by decide)
+    simpa [negFourNegThreeNegSevenPrimeDiscriminants,
+      oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)] using h7
+
+/-- The concrete list `[-4, -3, -7]` is injective. -/
+theorem negFourNegThreeNegSevenPrimeDiscriminants_injective :
+    Function.Injective negFourNegThreeNegSevenPrimeDiscriminants := by
+  decide
+
+/-- The concrete list `[-4, -3, -7]` does not contain all three even prime discriminants. -/
+theorem negFourNegThreeNegSevenPrimeDiscriminants_not_all_even :
+    ¬ ((∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -4) ∧
+      (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = 8) ∧
+        (∃ i : Fin 3, negFourNegThreeNegSevenPrimeDiscriminants i = -8)) := by
+  decide
+
+/-- The concrete roots `[i, √-3, √-7]` for the prime-discriminant list `[-4, -3, -7]`. -/
+noncomputable abbrev negFourNegThreeNegSevenPrimeDiscriminantRoots : Fin 3 → ℂ :=
+  ![Complex.I, sqrtNegThree, sqrtNegSeven]
+
+/-- Each concrete root squares to the radicand attached to the corresponding prime
+discriminant in `[-4, -3, -7]`. -/
+theorem negFourNegThreeNegSevenPrimeDiscriminantRoots_sq (i : Fin 3) :
+    negFourNegThreeNegSevenPrimeDiscriminantRoots i ^ 2 =
+      algebraMap ℚ ℂ
+        (((primeDiscriminantRadicand
+          (negFourNegThreeNegSevenPrimeDiscriminants i) : ℤ) : ℚ)) := by
+  fin_cases i
+  · simp [negFourNegThreeNegSevenPrimeDiscriminantRoots,
+      negFourNegThreeNegSevenPrimeDiscriminants, Complex.I_sq]
+  · have hrad : primeDiscriminantRadicand (-3) = -3 := by
+      have h := primeDiscriminantRadicand_oddPrimeDiscriminant (p := 3) (by decide)
+      simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 3 % 4 = 3)] using h
+    simp [negFourNegThreeNegSevenPrimeDiscriminantRoots,
+      negFourNegThreeNegSevenPrimeDiscriminants, hrad]
+  · have hrad : primeDiscriminantRadicand (-7) = -7 := by
+      have h := primeDiscriminantRadicand_oddPrimeDiscriminant (p := 7) (by decide)
+      simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)] using h
+    simp [negFourNegThreeNegSevenPrimeDiscriminantRoots,
+      negFourNegThreeNegSevenPrimeDiscriminants, hrad]
+
+/-- The concrete root vector `[i, √-3, √-7]` has range `{i, √-3, √-7}`. -/
+theorem range_negFourNegThreeNegSevenPrimeDiscriminantRoots :
+    Set.range negFourNegThreeNegSevenPrimeDiscriminantRoots =
+      {Complex.I, sqrtNegThree, sqrtNegSeven} := by
+  ext x
+  simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_singleton_iff]
+  constructor
+  · intro hx
+    rcases hx with ⟨i, rfl⟩
+    fin_cases i <;> simp [negFourNegThreeNegSevenPrimeDiscriminantRoots]
+  · intro hx
+    rcases hx with hx | hx | hx
+    · exact ⟨0, by simp [negFourNegThreeNegSevenPrimeDiscriminantRoots, hx]⟩
+    · exact ⟨1, by simp [negFourNegThreeNegSevenPrimeDiscriminantRoots, hx]⟩
+    · exact ⟨2, by simp [negFourNegThreeNegSevenPrimeDiscriminantRoots, hx]⟩
 
 end TauCeti.Multiquadratic
