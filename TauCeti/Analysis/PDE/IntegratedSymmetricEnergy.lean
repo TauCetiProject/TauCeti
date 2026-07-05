@@ -24,15 +24,15 @@ integrand.
 
 * `TauCeti.PDE.energyFormIntegral_zero_drift_comm_of_isSymm_ae`: a.e. symmetric principal
   coefficients make the zero-drift integrated form symmetric.
-* `TauCeti.PDE.energyFormIntegral_coefficientSymmetricPart_zero_drift_comm`: replacing the
-  principal coefficient by its symmetric part gives a symmetric zero-drift integrated form.
+* `TauCeti.PDE.energyFormIntegral_zero_drift_flip_eq_of_isSymm_ae`: bundled symmetry of the
+  zero-drift integrated form under a.e. symmetric principal coefficients.
 * `TauCeti.PDE.energyFormIntegral_coefficientSymmetricPart_self`: the diagonal integrated
   energy is unchanged by replacing the principal coefficient by its symmetric part.
 * `TauCeti.PDE.energyFormIntegral_coefficientSymmetricPart_zero_drift_apply`: the
   symmetric-part zero-drift form is the average of the original form and its transpose, under the
   natural integrability hypotheses.
-* `TauCeti.PDE.energyFormIntegral_one_zero_mass_comm`: the shifted-Laplacian model form is
-  symmetric.
+* `TauCeti.PDE.energyFormIntegral_one_zero_mass_flip_eq`: bundled symmetry of the
+  shifted-Laplacian model form.
 -/
 
 public section
@@ -59,28 +59,40 @@ lemma energyFormIntegral_zero_drift_comm_of_isSymm_ae
   filter_upwards [ha] with x hx
   exact energyIntegrand_zero_drift_comm_of_isSymm hx (c x) (U x) (V x)
 
-/-- Pointwise symmetric principal coefficients on a domain make the zero-drift integrated
-energy form symmetric when the measure is a.e. supported on that domain. -/
-lemma energyFormIntegral_zero_drift_comm_on {Ω : Set X}
+/-- Bundled-map form of symmetry for a zero-drift integrated energy form with a.e. symmetric
+principal coefficients. -/
+@[simp]
+lemma energyFormIntegral_zero_drift_flip_eq_of_isSymm_ae
+    (ha : ∀ᵐ x ∂μ, (a x).IsSymm) :
+    Function.swap (energyFormIntegral μ a (fun _ => 0) c) =
+      energyFormIntegral μ a (fun _ => 0) c := by
+  funext U V
+  exact energyFormIntegral_zero_drift_comm_of_isSymm_ae (a := a) (c := c) (U := V) (V := U) ha
+
+/-- Bundled-map symmetry on a domain when the measure is a.e. supported there and the
+principal coefficients are pointwise symmetric on that domain. -/
+lemma energyFormIntegral_zero_drift_flip_eq_on {Ω : Set X}
     (hΩ : ∀ᵐ x ∂μ, x ∈ Ω) (ha : ∀ ⦃x⦄, x ∈ Ω → (a x).IsSymm) :
-    energyFormIntegral μ a (fun _ => 0) c U V =
-      energyFormIntegral μ a (fun _ => 0) c V U :=
-  energyFormIntegral_zero_drift_comm_of_isSymm_ae
+    Function.swap (energyFormIntegral μ a (fun _ => 0) c) =
+      energyFormIntegral μ a (fun _ => 0) c :=
+  energyFormIntegral_zero_drift_flip_eq_of_isSymm_ae
     (hΩ.mono fun _ hx => ha hx)
 
-/-- The symmetric part of any principal coefficient field gives a symmetric zero-drift
-integrated energy form. -/
-lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_comm :
-    energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) (fun _ => 0) c U V =
-      energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) (fun _ => 0) c V U :=
-  energyFormIntegral_zero_drift_comm_of_isSymm_ae
+/-- Bundled-map symmetry for the symmetric-part zero-drift integrated energy form. -/
+@[simp]
+lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_flip_eq :
+    Function.swap
+        (energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) (fun _ => 0) c) =
+      energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) (fun _ => 0) c :=
+  energyFormIntegral_zero_drift_flip_eq_of_isSymm_ae
     (Filter.Eventually.of_forall fun _ => coefficientSymmetricPart_isSymm _)
 
-/-- The shifted-Laplacian model integrated form `-Δ + c` is symmetric. -/
-lemma energyFormIntegral_one_zero_mass_comm [DecidableEq n] :
-    energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c U V =
-      energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c V U :=
-  energyFormIntegral_zero_drift_comm_of_isSymm_ae
+/-- Bundled symmetry of the shifted-Laplacian model integrated form `-Δ + c`. -/
+@[simp]
+lemma energyFormIntegral_one_zero_mass_flip_eq [DecidableEq n] :
+    Function.swap (energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c) =
+      energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) c :=
+  energyFormIntegral_zero_drift_flip_eq_of_isSymm_ae
     (Filter.Eventually.of_forall fun _ => isSymm_one)
 
 /-- Replacing the principal coefficient by its symmetric part does not change the diagonal
@@ -94,13 +106,6 @@ lemma energyFormIntegral_coefficientSymmetricPart_self {b : X → EuclideanSpace
   refine integral_congr_ae ?_
   exact Filter.Eventually.of_forall fun x =>
     energyIntegrand_coefficientSymmetricPart_self (a x) (b x) (c x) (U x)
-
-/-- Replacing a coefficient field by its symmetric part does not change the diagonal
-zero-drift integrated energy. -/
-lemma energyFormIntegral_coefficientSymmetricPart_zero_drift_self :
-    energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) (fun _ => 0) c U U =
-      energyFormIntegral μ a (fun _ => 0) c U U :=
-  energyFormIntegral_coefficientSymmetricPart_self
 
 /-- The symmetric-part zero-drift integrated form is the average of the original zero-drift
 form and its transpose, assuming the two original scalar densities are integrable. -/
@@ -129,22 +134,7 @@ lemma energyFormIntegral_coefficientSymmetricPart_eq_of_isSymm_ae {b : X → Euc
   rw [energyFormIntegral_def, energyFormIntegral_def]
   refine integral_congr_ae ?_
   filter_upwards [ha] with x hx
-  have hcoeff : coefficientSymmetricPart (a x) = a x := by
-    ext i j
-    have hji : a x j i = a x i j := by
-      simpa [Matrix.transpose_apply] using congrFun (congrFun hx.eq i) j
-    rw [coefficientSymmetricPart_apply, hji]
-    ring
-  simp [hcoeff]
-
-/-- Domain-supported version of
-`energyFormIntegral_coefficientSymmetricPart_eq_of_isSymm_ae`. -/
-lemma energyFormIntegral_coefficientSymmetricPart_eq_on {b : X → EuclideanSpace ℝ n} {Ω : Set X}
-    (hΩ : ∀ᵐ x ∂μ, x ∈ Ω) (ha : ∀ ⦃x⦄, x ∈ Ω → (a x).IsSymm) :
-    energyFormIntegral μ (fun x => coefficientSymmetricPart (a x)) b c U V =
-      energyFormIntegral μ a b c U V :=
-  energyFormIntegral_coefficientSymmetricPart_eq_of_isSymm_ae
-    (hΩ.mono fun _ hx => ha hx)
+  simp [coefficientSymmetricPart_eq_self_of_isSymm hx]
 
 end PDE
 
