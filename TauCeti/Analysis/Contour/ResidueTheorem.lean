@@ -26,7 +26,10 @@ stated up to that normal form.
 
 ## Main results
 
-* `TauCeti.Contour.classicalResidueTheorem_circle` — the classical residue theorem on a circle.
+* `TauCeti.Contour.classicalResidueTheorem_circle_of_neg` — the sharp support form: only the poles
+  (points of negative meromorphic order) need lie in `S`.
+* `TauCeti.Contour.classicalResidueTheorem_circle` — the roadmap form, asking every point of nonzero
+  meromorphic order to lie in `S`; a direct corollary since residues at non-poles vanish.
 
 This is a Layer 2 target of the contour-integration roadmap: the special case of the
 Hungerbühler–Wasem generalized residue theorem (HW Thm 3.3) for a round circle, feeding the valence
@@ -132,9 +135,84 @@ private lemma depthTerm_lt_of_lt {n : ℤ} {oG : WithTop ℤ} (hn : n < 0)
     have hng : n < g := by exact_mod_cast hlt
     omega
 
+/-- One pole-peeling step of the residue theorem. Given `F` analytic off the finite set `S` with a
+pole at `s₀ ∈ S`, subtracting the leading Laurent term at `s₀` yields `G` that is still analytic off
+`S`, has strictly smaller total pole depth, and whose residue formula implies that of `F`. -/
+private lemma residueTheorem_step {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset ℂ)
+    (hS : (S : Set ℂ) ⊆ ball c R) {F : ℂ → ℂ} (hF_mero : MeromorphicOn F (closedBall c R))
+    (hF_off : ∀ z ∈ closedBall c R, z ∉ S → AnalyticAt ℂ F z)
+    {s₀ : ℂ} (hs₀S : s₀ ∈ S) (hs₀_neg : meromorphicOrderAt F s₀ < 0) :
+    ∃ G : ℂ → ℂ, MeromorphicOn G (closedBall c R) ∧
+      (∀ z ∈ closedBall c R, z ∉ S → AnalyticAt ℂ G z) ∧
+      (∑ s ∈ S, (-(meromorphicOrderAt G s).untop₀).toNat)
+        < (∑ s ∈ S, (-(meromorphicOrderAt F s).untop₀).toNat) ∧
+      (circleIntegral G c R = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, residue G s →
+        circleIntegral F c R = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, residue F s) := by
+  have hmem_cb : ∀ s ∈ S, s ∈ closedBall c R :=
+    fun s hs => ball_subset_closedBall (hS (Finset.mem_coe.2 hs))
+  have hsphere_notS : ∀ z ∈ sphere c R, z ∉ S := by
+    intro z hz hzS
+    rw [mem_sphere] at hz
+    exact absurd hz (ne_of_lt (mem_ball.1 (hS (Finset.mem_coe.2 hzS))))
+  have hF_int : CircleIntegrable F c R :=
+    ContinuousOn.circleIntegrable hR.le fun z hz =>
+      (hF_off z (sphere_subset_closedBall hz) (hsphere_notS z hz)).continuousAt.continuousWithinAt
+  have hs₀_ball : s₀ ∈ ball c R := hS (Finset.mem_coe.2 hs₀S)
+  have hF_mero_s₀ : MeromorphicAt F s₀ := hF_mero s₀ (hmem_cb s₀ hs₀S)
+  have hord_ne_top : meromorphicOrderAt F s₀ ≠ ⊤ := ne_top_of_lt hs₀_neg
+  obtain ⟨g, hg_an, hg_ne, hF_germ⟩ := (meromorphicOrderAt_ne_top_iff hF_mero_s₀).1 hord_ne_top
+  set n₀ : ℤ := (meromorphicOrderAt F s₀).untop₀ with hn₀_def
+  have hFs₀ : meromorphicOrderAt F s₀ = (n₀ : WithTop ℤ) :=
+    (WithTop.coe_untop₀_of_ne_top hord_ne_top).symm
+  have hn₀_neg : n₀ < 0 := by rw [hFs₀] at hs₀_neg; exact_mod_cast hs₀_neg
+  set P : ℂ → ℂ := fun z => g s₀ * (z - s₀) ^ n₀ with hP_def
+  set G : ℂ → ℂ := fun z => F z - P z with hG_def
+  have hP_an_off : ∀ z, z ≠ s₀ → AnalyticAt ℂ P z := fun z hz =>
+    analyticAt_const.mul ((analyticAt_id.sub analyticAt_const).fun_zpow (sub_ne_zero.2 hz))
+  have hP_mero : MeromorphicOn P (closedBall c R) := fun z _ => by rw [hP_def]; fun_prop
+  have hG_mero : MeromorphicOn G (closedBall c R) := hF_mero.sub hP_mero
+  have hG_off : ∀ z ∈ closedBall c R, z ∉ S → AnalyticAt ℂ G z := by
+    intro z hz hzS
+    exact (hF_off z hz hzS).sub (hP_an_off z fun h => hzS (h ▸ hs₀S))
+  have hG_germ : G =ᶠ[𝓝[≠] s₀] fun z => (z - s₀) ^ n₀ • g z - g s₀ • (z - s₀) ^ n₀ := by
+    filter_upwards [hF_germ] with z hz
+    simp only [hG_def, hP_def, hz, smul_eq_mul]
+  have hG_ord_s₀ : (n₀ : WithTop ℤ) < meromorphicOrderAt G s₀ := by
+    rw [meromorphicOrderAt_congr hG_germ]; exact meromorphicOrderAt_sub_leadingTerm_gt hg_an
+  have hdepth_s₀ : (-(meromorphicOrderAt G s₀).untop₀).toNat
+      < (-(meromorphicOrderAt F s₀).untop₀).toNat := by
+    rw [← hn₀_def]; exact depthTerm_lt_of_lt hn₀_neg hG_ord_s₀
+  have hdepth_lt : (∑ s ∈ S, (-(meromorphicOrderAt G s).untop₀).toNat)
+      < (∑ s ∈ S, (-(meromorphicOrderAt F s).untop₀).toNat) := by
+    refine Finset.sum_lt_sum (fun s hs => ?_) ⟨s₀, hs₀S, hdepth_s₀⟩
+    by_cases hss₀ : s = s₀
+    · subst hss₀; exact le_of_lt hdepth_s₀
+    · refine depthTerm_le_of_sub (hP_an_off s hss₀).meromorphicOrderAt_nonneg ?_
+      have hadd := meromorphicOrderAt_add (hF_mero s (hmem_cb s hs))
+        ((hP_mero s (hmem_cb s hs)).neg)
+      rwa [← meromorphicOrderAt_neg, ← sub_eq_add_neg] at hadd
+  have hP_int : CircleIntegrable P c R :=
+    ContinuousOn.circleIntegrable hR.le fun z hz =>
+      (hP_an_off z fun h => hsphere_notS z hz (h ▸ hs₀S)).continuousAt.continuousWithinAt
+  have hint : circleIntegral F c R = circleIntegral G c R + circleIntegral P c R := by
+    have hFGP : F = fun z => G z + P z := by funext z; simp only [hG_def]; ring
+    rw [hFGP]; exact circleIntegral.integral_add (hF_int.sub hP_int) hP_int
+  have hP_res_sum : ∑ s ∈ S, residue P s = residue P s₀ :=
+    Finset.sum_eq_single_of_mem s₀ hs₀S
+      fun s _ hne => residue_eq_zero_of_analyticAt (hP_an_off s hne)
+  have hPint : circleIntegral P c R = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, residue P s := by
+    rw [hP_res_sum, hP_def]; exact circleIntegral_const_mul_zpow_sub (g s₀) hs₀_ball hn₀_neg
+  have hres_add : ∑ s ∈ S, residue F s = (∑ s ∈ S, residue G s) + ∑ s ∈ S, residue P s := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun s hs => ?_
+    have hFGP : F = G + P := by funext z; simp only [hG_def, Pi.add_apply]; ring
+    rw [hFGP, residue_add (hG_mero s (hmem_cb s hs)) (hP_mero s (hmem_cb s hs))]
+  exact ⟨G, hG_mero, hG_off, hdepth_lt, fun hG_eq => by rw [hint, hG_eq, hPint, hres_add]; ring⟩
+
 /-- The residue theorem for a function `F` analytic off the finite set `S` (so `S` contains every
 pole and `F` is continuous on the boundary circle): `∮ F = 2πi · ∑_{s ∈ S} residue F s`. The
-parameter `d` is the total pole depth `∑_{s ∈ S} (-(order F s).untop₀).toNat`. -/
+parameter `d` is the total pole depth `∑_{s ∈ S} (-(order F s).untop₀).toNat`, carried by the strong
+induction that peels one pole per step via `residueTheorem_step`. -/
 private lemma residueTheorem_aux {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset ℂ)
     (hS : (S : Set ℂ) ⊆ ball c R) (d : ℕ) : ∀ F : ℂ → ℂ, MeromorphicOn F (closedBall c R) →
       (∀ z ∈ closedBall c R, z ∉ S → AnalyticAt ℂ F z) →
@@ -145,66 +223,12 @@ private lemma residueTheorem_aux {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
     intro F hF_mero hF_off hdepth
     have hmem_cb : ∀ s ∈ S, s ∈ closedBall c R :=
       fun s hs => ball_subset_closedBall (hS (Finset.mem_coe.2 hs))
-    have hsphere_notS : ∀ z ∈ sphere c R, z ∉ S := by
-      intro z hz hzS
-      rw [mem_sphere] at hz
-      exact absurd hz (ne_of_lt (mem_ball.1 (hS (Finset.mem_coe.2 hzS))))
-    have hF_int : CircleIntegrable F c R :=
-      ContinuousOn.circleIntegrable hR.le fun z hz =>
-        (hF_off z (sphere_subset_closedBall hz) (hsphere_notS z hz)).continuousAt.continuousWithinAt
     by_cases hpole : ∃ s₀ ∈ S, meromorphicOrderAt F s₀ < 0
     · obtain ⟨s₀, hs₀S, hs₀_neg⟩ := hpole
-      have hs₀_ball : s₀ ∈ ball c R := hS (Finset.mem_coe.2 hs₀S)
-      have hF_mero_s₀ : MeromorphicAt F s₀ := hF_mero s₀ (hmem_cb s₀ hs₀S)
-      have hord_ne_top : meromorphicOrderAt F s₀ ≠ ⊤ := ne_top_of_lt hs₀_neg
-      obtain ⟨g, hg_an, hg_ne, hF_germ⟩ := (meromorphicOrderAt_ne_top_iff hF_mero_s₀).1 hord_ne_top
-      set n₀ : ℤ := (meromorphicOrderAt F s₀).untop₀ with hn₀_def
-      have hFs₀ : meromorphicOrderAt F s₀ = (n₀ : WithTop ℤ) :=
-        (WithTop.coe_untop₀_of_ne_top hord_ne_top).symm
-      have hn₀_neg : n₀ < 0 := by rw [hFs₀] at hs₀_neg; exact_mod_cast hs₀_neg
-      set P : ℂ → ℂ := fun z => g s₀ * (z - s₀) ^ n₀ with hP_def
-      set G : ℂ → ℂ := fun z => F z - P z with hG_def
-      have hP_an_off : ∀ z, z ≠ s₀ → AnalyticAt ℂ P z := fun z hz =>
-        analyticAt_const.mul ((analyticAt_id.sub analyticAt_const).fun_zpow (sub_ne_zero.2 hz))
-      have hP_mero : MeromorphicOn P (closedBall c R) := fun z _ => by rw [hP_def]; fun_prop
-      have hG_mero : MeromorphicOn G (closedBall c R) := hF_mero.sub hP_mero
-      have hG_off : ∀ z ∈ closedBall c R, z ∉ S → AnalyticAt ℂ G z := by
-        intro z hz hzS
-        exact (hF_off z hz hzS).sub (hP_an_off z fun h => hzS (h ▸ hs₀S))
-      have hG_germ : G =ᶠ[𝓝[≠] s₀] fun z => (z - s₀) ^ n₀ • g z - g s₀ • (z - s₀) ^ n₀ := by
-        filter_upwards [hF_germ] with z hz
-        simp only [hG_def, hP_def, hz, smul_eq_mul]
-      have hG_ord_s₀ : (n₀ : WithTop ℤ) < meromorphicOrderAt G s₀ := by
-        rw [meromorphicOrderAt_congr hG_germ]; exact meromorphicOrderAt_sub_leadingTerm_gt hg_an
-      have hdepth_s₀ : (-(meromorphicOrderAt G s₀).untop₀).toNat
-          < (-(meromorphicOrderAt F s₀).untop₀).toNat := by
-        rw [← hn₀_def]; exact depthTerm_lt_of_lt hn₀_neg hG_ord_s₀
-      have hdepth_lt : (∑ s ∈ S, (-(meromorphicOrderAt G s).untop₀).toNat) < d := by
-        rw [← hdepth]
-        refine Finset.sum_lt_sum (fun s hs => ?_) ⟨s₀, hs₀S, hdepth_s₀⟩
-        by_cases hss₀ : s = s₀
-        · subst hss₀; exact le_of_lt hdepth_s₀
-        · refine depthTerm_le_of_sub (hP_an_off s hss₀).meromorphicOrderAt_nonneg ?_
-          have hadd := meromorphicOrderAt_add (hF_mero s (hmem_cb s hs))
-            ((hP_mero s (hmem_cb s hs)).neg)
-          rwa [← meromorphicOrderAt_neg, ← sub_eq_add_neg] at hadd
-      have hP_int : CircleIntegrable P c R :=
-        ContinuousOn.circleIntegrable hR.le fun z hz =>
-          (hP_an_off z fun h => hsphere_notS z hz (h ▸ hs₀S)).continuousAt.continuousWithinAt
-      have hint : circleIntegral F c R = circleIntegral G c R + circleIntegral P c R := by
-        have hFGP : F = fun z => G z + P z := by funext z; simp only [hG_def]; ring
-        rw [hFGP]; exact circleIntegral.integral_add (hF_int.sub hP_int) hP_int
-      have hP_res_sum : ∑ s ∈ S, residue P s = residue P s₀ :=
-        Finset.sum_eq_single_of_mem s₀ hs₀S
-          fun s _ hne => residue_eq_zero_of_analyticAt (hP_an_off s hne)
-      have hPint : circleIntegral P c R = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, residue P s := by
-        rw [hP_res_sum, hP_def]; exact circleIntegral_const_mul_zpow_sub (g s₀) hs₀_ball hn₀_neg
-      have hres_add : ∑ s ∈ S, residue F s = (∑ s ∈ S, residue G s) + ∑ s ∈ S, residue P s := by
-        rw [← Finset.sum_add_distrib]
-        refine Finset.sum_congr rfl fun s hs => ?_
-        have hFGP : F = G + P := by funext z; simp only [hG_def, Pi.add_apply]; ring
-        rw [hFGP, residue_add (hG_mero s (hmem_cb s hs)) (hP_mero s (hmem_cb s hs))]
-      rw [hint, ih _ hdepth_lt G hG_mero hG_off rfl, hPint, hres_add]; ring
+      obtain ⟨G, hG_mero, hG_off, hdepth_lt, hreduce⟩ :=
+        residueTheorem_step hR S hS hF_mero hF_off hs₀S hs₀_neg
+      refine hreduce (ih _ ?_ G hG_mero hG_off rfl)
+      rw [← hdepth]; exact hdepth_lt
     · simp only [not_exists, not_and, not_lt] at hpole
       have hnonneg : ∀ z ∈ closedBall c R, 0 ≤ meromorphicOrderAt F z := by
         intro z hz
@@ -216,14 +240,15 @@ private lemma residueTheorem_aux {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset �
           residue_eq_zero_of_meromorphicOrderAt_nonneg (hnonneg s (hmem_cb s hs))]
       ring
 
-/-- **The classical residue theorem on a circle.** If `f` is meromorphic on the closed disc
-`C(c, R)` (`R > 0`) and every pole lies in a finite set `S` inside the open disc, then the contour
-integral of `f` around the boundary circle is `2πi` times the sum of the residues over `S`:
+/-- **The classical residue theorem on a circle** (sharp support form). If `f` is meromorphic on the
+closed disc `C(c, R)` (`R > 0`) and every pole lies in a finite set `S` inside the open disc, then
+the contour integral of `f` around the boundary circle is `2πi` times the sum of the residues over
+`S`:
 `∮_{C(c,R)} f = 2πi · ∑_{s ∈ S} residue f s`.
 `S` need only contain the poles (the points of negative meromorphic order); residues at points of
 nonnegative order vanish, so listing extra points leaves the sum unchanged. -/
-theorem classicalResidueTheorem_circle {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset ℂ)
-    (hf : MeromorphicOn f (Metric.closedBall c R))
+theorem classicalResidueTheorem_circle_of_neg {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 < R)
+    (S : Finset ℂ) (hf : MeromorphicOn f (Metric.closedBall c R))
     (hS : (S : Set ℂ) ⊆ Metric.ball c R)
     (hsupp : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt f z < 0 → z ∈ S) :
     circleIntegral f c R = 2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, residue f s) := by
@@ -250,5 +275,17 @@ theorem classicalResidueTheorem_circle {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR
         (ball_subset_closedBall (hS (Finset.mem_coe.2 hs)))).symm
   rw [htransfer_int, Finset.sum_congr rfl htransfer_res]
   exact residueTheorem_aux hR S hS _ F hF_mero hF_off rfl
+
+/-- **The classical residue theorem on a circle** (roadmap form). If `f` is meromorphic on the
+closed disc `C(c, R)` (`R > 0`) and every point of nonzero meromorphic order lies in a finite set
+`S` inside the open disc, then `∮_{C(c,R)} f = 2πi · ∑_{s ∈ S} residue f s`. Since residues at
+non-poles vanish only the poles matter, so `classicalResidueTheorem_circle_of_neg` proves the same
+conclusion asking only the poles (points of negative order) to lie in `S`. -/
+theorem classicalResidueTheorem_circle {f : ℂ → ℂ} {c : ℂ} {R : ℝ} (hR : 0 < R) (S : Finset ℂ)
+    (hf : MeromorphicOn f (Metric.closedBall c R))
+    (hS : (S : Set ℂ) ⊆ Metric.ball c R)
+    (hsupp : ∀ z ∈ Metric.closedBall c R, meromorphicOrderAt f z ≠ 0 → z ∈ S) :
+    circleIntegral f c R = 2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, residue f s) :=
+  classicalResidueTheorem_circle_of_neg hR S hf hS fun z hz h => hsupp z hz (ne_of_lt h)
 
 end TauCeti.Contour
