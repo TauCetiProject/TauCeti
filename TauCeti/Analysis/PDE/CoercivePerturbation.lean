@@ -46,7 +46,11 @@ namespace PDE
 open Matrix
 open scoped InnerProductSpace
 
-variable {X n : Type*} [Fintype n] [DecidableEq n]
+variable {X n : Type*} [Fintype n]
+
+/-- Local classical decidable equality for finite coordinate indices in perturbation proofs. -/
+noncomputable local instance coercivePerturbationDecidableEq : DecidableEq n :=
+  Classical.decEq n
 
 variable {A B : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ d lam mu beta : ℝ}
 

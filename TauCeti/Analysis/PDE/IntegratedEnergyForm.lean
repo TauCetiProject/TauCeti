@@ -47,6 +47,9 @@ open scoped InnerProductSpace
 
 variable {X n : Type*} [MeasurableSpace X] [Fintype n]
 
+/-- Local classical decidable equality for finite coordinate indices in integrated energy proofs. -/
+noncomputable local instance integratedEnergyFormDecidableEq : DecidableEq n := Classical.decEq n
+
 /-- The scalar energy form obtained by integrating the divergence-form pointwise jet
 integrand against a measure.
 
@@ -310,7 +313,7 @@ lemma energyFormIntegral_principal_drift_mass
 
 /-- The integrated full energy form is a shifted-Laplacian model plus the residual
 coefficient perturbation. -/
-lemma energyFormIntegral_eq_one_zero_baseMass_add_perturbation [DecidableEq n]
+lemma energyFormIntegral_eq_one_zero_baseMass_add_perturbation
     (hmodel : Integrable
       (fun x => energyIntegrand (1 : Matrix n n ℝ) 0 (m x) (U x) (V x)) μ)
     (hpert : Integrable
@@ -326,12 +329,17 @@ lemma energyFormIntegral_eq_one_zero_baseMass_add_perturbation [DecidableEq n]
     funext x
     exact energyIntegrand_eq_one_zero_baseMass_add_perturbation_apply
       (a x) (b x) (c x) (m x) (U x) (V x)
+  -- After unfolding all three forms, expose the left integrand as a function application so
+  -- the pointwise function equality `hpoint` rewrites the integral before `integral_add`.
+  change ∫ x, (fun x => energyIntegrand (a x) (b x) (c x) (U x) (V x)) x ∂μ =
+      energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U V +
+        energyFormIntegral μ (fun x => a x - 1) b (fun x => c x - m x) U V
   rw [hpoint]
   exact integral_add hmodel hpert
 
 /-- The integrated full energy form is the shifted-Laplacian form with the same mass plus the
 principal-and-drift perturbation. -/
-lemma energyFormIntegral_eq_one_zero_mass_add_perturbation [DecidableEq n]
+lemma energyFormIntegral_eq_one_zero_mass_add_perturbation
     (hmodel : Integrable
       (fun x => energyIntegrand (1 : Matrix n n ℝ) 0 (c x) (U x) (V x)) μ)
     (hpert : Integrable
@@ -345,33 +353,33 @@ lemma energyFormIntegral_eq_one_zero_mass_add_perturbation [DecidableEq n]
 
 /-- The integrated `−Δ` model form is the integral of the dot product of the two gradient
 components of the jet fields. -/
-lemma energyFormIntegral_one_zero_zero [DecidableEq n] :
+lemma energyFormIntegral_one_zero_zero :
     energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) (fun _ => 0) U V =
       ∫ x, ((V x).2 ⬝ᵥ (U x).2) ∂μ := by
   rw [energyFormIntegral_def]
   apply MeasureTheory.integral_congr_ae
   exact Filter.Eventually.of_forall fun x =>
-    energyIntegrand_one_zero_zero_apply (U x) (V x)
+    by simp
 
 /-- The integrated shifted Laplacian model form `−Δ + c` is the sum of the Dirichlet density
 and the mass density. -/
-lemma energyFormIntegral_one_zero_mass [DecidableEq n] (m : X → ℝ) :
+lemma energyFormIntegral_one_zero_mass (m : X → ℝ) :
     energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U V =
       ∫ x, ((V x).2 ⬝ᵥ (U x).2 + m x * (U x).1 * (V x).1) ∂μ := by
   rw [energyFormIntegral_def]
   apply MeasureTheory.integral_congr_ae
   exact Filter.Eventually.of_forall fun x =>
-    energyIntegrand_one_zero_mass_apply (m x) (U x) (V x)
+    by simp
 
 /-- The diagonal of the integrated shifted Laplacian model is the integral of
 `‖∇u‖² + c u²` at the jet level. -/
-lemma energyFormIntegral_one_zero_mass_self [DecidableEq n] (m : X → ℝ) :
+lemma energyFormIntegral_one_zero_mass_self (m : X → ℝ) :
     energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U U =
       ∫ x, (‖(U x).2‖ ^ 2 + m x * (U x).1 ^ 2) ∂μ := by
   rw [energyFormIntegral_def]
   apply MeasureTheory.integral_congr_ae
   exact Filter.Eventually.of_forall fun x =>
-    energyIntegrand_one_zero_mass_self (m x) (U x)
+    by simpa using energyIntegrand_one_zero_mass_self (m x) (U x)
 
 variable {Lam beta gamma : ℝ}
 
@@ -407,7 +415,6 @@ lemma garding_energyFormIntegral_self_of_bounds (hlam : 0 < lam)
   rw [energyFormIntegral_def]
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
-  letI := Classical.decEq n
   exact garding_energyIntegrand_self_of_bounds hlam
     (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx (U x)
 
@@ -427,7 +434,6 @@ lemma garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds (hlam : 0 < 
   rw [energyFormIntegral_def]
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
-  letI := Classical.decEq n
   exact garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam
     (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx (U x)
 
@@ -447,13 +453,11 @@ lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_
   rw [energyFormIntegral_def]
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
-  letI := Classical.decEq n
   exact min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hlam
     (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx hmu (U x)
 
 namespace UniformlyEllipticOn
 
-variable [DecidableEq n]
 variable {Ω : Set X} {lam Lam beta gamma mu : ℝ}
 variable {a : X → Matrix n n ℝ} {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
 variable {U V : X → ℝ × EuclideanSpace ℝ n}

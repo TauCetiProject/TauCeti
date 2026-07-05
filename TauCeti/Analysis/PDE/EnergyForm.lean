@@ -70,7 +70,10 @@ namespace PDE
 open Matrix
 open scoped InnerProductSpace
 
-variable {X n : Type*} [Fintype n] [DecidableEq n]
+variable {X n : Type*} [Fintype n]
+
+/-- Local classical decidable equality for finite coordinate indices in energy-form proofs. -/
+noncomputable local instance energyFormDecidableEq : DecidableEq n := Classical.decEq n
 
 /-- The pointwise weak-form (energy) integrand of a divergence-form operator
 `L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u`, as a bundled continuous bilinear form on jets
@@ -82,6 +85,7 @@ On jets `U = (u, ∇u)` and `V = (v, ∇v)` it evaluates to
 once the energy form is integrated over the Sobolev space. -/
 noncomputable def energyIntegrand (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n) (c : ℝ) :
     (ℝ × EuclideanSpace ℝ n) →L[ℝ] (ℝ × EuclideanSpace ℝ n) →L[ℝ] ℝ :=
+  letI := Classical.decEq n
   (matrixBilinearForm A).flip.bilinearComp
       (ContinuousLinearMap.snd ℝ ℝ (EuclideanSpace ℝ n))
       (ContinuousLinearMap.snd ℝ ℝ (EuclideanSpace ℝ n))
@@ -92,7 +96,6 @@ noncomputable def energyIntegrand (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n
         (ContinuousLinearMap.fst ℝ ℝ (EuclideanSpace ℝ n))
         (ContinuousLinearMap.fst ℝ ℝ (EuclideanSpace ℝ n))
 
-omit [DecidableEq n] in
 /-- The jet form evaluates to `⟨a ∇u, ∇v⟩ + ⟪b, ∇u⟫ v + c u v` on jets `U`, `V`. -/
 @[simp]
 lemma energyIntegrand_apply (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n) (c : ℝ)
@@ -102,8 +105,8 @@ lemma energyIntegrand_apply (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n) (c :
   simp [energyIntegrand]
 
 /-- The diagonal of the jet form, the energy density `⟨a ∇u, ∇u⟩ + ⟪b, ∇u⟫ u + c u²`. -/
-lemma energyIntegrand_self (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n) (c : ℝ)
-    (U : ℝ × EuclideanSpace ℝ n) :
+lemma energyIntegrand_self (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n)
+    (c : ℝ) (U : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand A b c U U
       = A.toQuadraticForm' U.2 + ⟪b, U.2⟫_ℝ * U.1 + c * U.1 ^ 2 := by
   rw [energyIntegrand_apply, matrixBilinearForm_self, driftForm_apply, massForm_apply]
@@ -123,13 +126,15 @@ lemma energyIntegrand_one_zero_zero_self (U : ℝ × EuclideanSpace ℝ n) :
 
 /-- The shifted Laplacian model `-Δ + c` has jet form
 `(U, V) ↦ ∇u · ∇v + c u v`. -/
-lemma energyIntegrand_one_zero_mass_apply (c : ℝ) (U V : ℝ × EuclideanSpace ℝ n) :
+lemma energyIntegrand_one_zero_mass_apply (c : ℝ)
+    (U V : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (1 : Matrix n n ℝ) 0 c U V = V.2 ⬝ᵥ U.2 + c * U.1 * V.1 := by
   simp [energyIntegrand_apply, massForm_apply]
 
 /-- The shifted Laplacian model `-Δ + c` has diagonal jet density
 `‖∇u‖² + c u²`. -/
-lemma energyIntegrand_one_zero_mass_self (c : ℝ) (U : ℝ × EuclideanSpace ℝ n) :
+lemma energyIntegrand_one_zero_mass_self (c : ℝ)
+    (U : ℝ × EuclideanSpace ℝ n) :
     energyIntegrand (1 : Matrix n n ℝ) 0 c U U = ‖U.2‖ ^ 2 + c * U.1 ^ 2 := by
   rw [energyIntegrand_self, toQuadraticForm'_one]
   simp
@@ -159,7 +164,6 @@ private lemma abs_dotProduct_one_mulVec_le (η ξ : EuclideanSpace ℝ n) :
   simpa [EuclideanSpace.inner_eq_star_dotProduct, dotProduct_comm] using
     abs_real_inner_le_norm η ξ
 
-omit [DecidableEq n] in
 /-- Pointwise boundedness of the jet form with explicit constant `Λ + β + γ`: the principal,
 drift, and mass contributions are each controlled by the corresponding constant times the jet
 norms. -/
@@ -211,7 +215,6 @@ lemma norm_energyIntegrand_apply_le_of_bounds (hLam : 0 ≤ Lam)
         add_le_add (add_le_add hmat hdrift) hmass
     _ = (Lam + beta + gamma) * ‖U‖ * ‖V‖ := by ring
 
-omit [DecidableEq n] in
 /-- Pointwise boundedness on a domain, obtained by applying
 `norm_energyIntegrand_apply_le_of_bounds` at `x`. -/
 lemma norm_energyIntegrand_apply_le_of_bounds_on (hLam : 0 ≤ Lam)
@@ -223,7 +226,6 @@ lemma norm_energyIntegrand_apply_le_of_bounds_on (hLam : 0 ≤ Lam)
     ‖energyIntegrand (a x) (b x) (c x) U V‖ ≤ (Lam + beta + gamma) * ‖U‖ * ‖V‖ :=
   norm_energyIntegrand_apply_le_of_bounds hLam (ha hx) (hb hx) (hc hx) U V
 
-omit [DecidableEq n] in
 /-- The operator norm of the jet form is at most `Λ + β + γ`. This is the boundedness
 hypothesis of Lax--Milgram, with the constant explicit in the ellipticity, drift, and mass
 bounds. -/
@@ -257,7 +259,6 @@ lemma opNorm_energyIntegrand_one_zero_mass_le (c : ℝ) :
       (gamma := ‖c‖) zero_le_one
       (fun η ξ => abs_dotProduct_one_mulVec_le η ξ) (by simp) le_rfl
 
-omit [DecidableEq n] in
 /-- Operator-norm boundedness on a domain, obtained by applying
 `opNorm_energyIntegrand_le_of_bounds` at `x`. -/
 lemma opNorm_energyIntegrand_le_of_bounds_on (hLam : 0 ≤ Lam)

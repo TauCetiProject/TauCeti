@@ -264,6 +264,15 @@ lemma coefficientSymmetricPart_apply (A : Matrix n n ℝ) (i j : n) :
     coefficientSymmetricPart A i j = (A i j + A j i) / 2 := by
   simp [coefficientSymmetricPart, div_eq_mul_inv, mul_comm]
 
+omit [Fintype n] [DecidableEq n] in
+/-- A symmetric coefficient matrix is unchanged by taking its symmetric part. -/
+@[simp]
+lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm) :
+    coefficientSymmetricPart A = A := by
+  ext i j
+  rw [coefficientSymmetricPart_apply, hA.apply i j]
+  ring
+
 /-- The symmetric part has the same quadratic form as the original coefficient matrix. -/
 @[simp]
 lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ)
