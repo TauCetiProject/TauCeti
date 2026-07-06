@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
 
 /-!
 # The trivial affine group
@@ -21,6 +21,13 @@ ReductiveGroups roadmap, Layer 0. It is the identity object needed by the produc
 
 ## Main declarations
 
+* `TauCeti.CommHopfAlgCat.trivial`: the base ring as a commutative Hopf algebra over itself.
+* `TauCeti.CommHopfAlgCat.unit`: the bialgebra unit as the unique morphism out of the
+  trivial coordinate Hopf algebra.
+* `TauCeti.CommHopfAlgCat.counit`: the bialgebra counit as the morphism to the trivial
+  coordinate Hopf algebra.
+* `TauCeti.CommHopfAlgCat.trivialIsInitial`: the base-ring Hopf algebra is initial in the
+  coordinate category.
 * `TauCeti.TrivialGroup.pointsMulEquiv`: the convolution group of points is `PUnit`.
 * `TauCeti.TrivialGroup.pointsMulEquiv_mapValue`: the equivalence is natural in the value
   algebra.
@@ -33,11 +40,85 @@ canonical Hopf algebra structure on `R` over itself from `Mathlib.RingTheory.Hop
 
 public section
 
-open WithConv
+open CategoryTheory CategoryTheory.Limits WithConv
 
 namespace TauCeti
 
 universe u v w
+
+namespace CommHopfAlgCat
+
+variable (R : Type u) [CommRing R]
+
+/-- The coordinate Hopf algebra of the trivial affine group over `R`. -/
+noncomputable abbrev trivial : _root_.CommHopfAlgCat.{u} R :=
+  _root_.CommHopfAlgCat.of R R
+
+/-- The trivial coordinate Hopf algebra is the base ring over itself. -/
+@[simp]
+lemma trivial_obj :
+    (trivial R) = (_root_.CommHopfAlgCat.of R R) :=
+  rfl
+
+variable {R}
+
+/-- The coordinate morphism from the trivial affine group to an affine group.
+
+On coordinate Hopf algebras this is the bialgebra unit map `R → H`. -/
+noncomputable abbrev unit (H : _root_.CommHopfAlgCat.{u} R) :
+    trivial R ⟶ H :=
+  _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.unitBialgHom R H)
+
+/-- The coordinate morphism from an affine group to the trivial affine group.
+
+On coordinate Hopf algebras this is the bialgebra counit map `H → R`. -/
+noncomputable abbrev counit (H : _root_.CommHopfAlgCat.{u} R) :
+    H ⟶ trivial R :=
+  _root_.CommHopfAlgCat.ofHom (_root_.Bialgebra.counitBialgHom R H)
+
+/-- The coordinate unit morphism unwraps to Mathlib's bialgebra unit map. -/
+@[simp]
+lemma hom_unit (H : _root_.CommHopfAlgCat.{u} R) :
+    (unit H).hom = _root_.Bialgebra.unitBialgHom R H :=
+  rfl
+
+/-- The coordinate counit morphism unwraps to Mathlib's bialgebra counit map. -/
+@[simp]
+lemma hom_counit (H : _root_.CommHopfAlgCat.{u} R) :
+    (counit H).hom = _root_.Bialgebra.counitBialgHom R H :=
+  rfl
+
+/-- Pointwise formula for the coordinate unit map `R → H`. -/
+lemma unit_apply (H : _root_.CommHopfAlgCat.{u} R) (r : R) :
+    (unit H).hom r = algebraMap R H r :=
+  rfl
+
+/-- Pointwise formula for the coordinate counit map `H → R`. -/
+@[simp]
+lemma counit_apply (H : _root_.CommHopfAlgCat.{u} R) (h : H) :
+    (counit H).hom h = Coalgebra.counit h :=
+  _root_.Bialgebra.counitBialgHom_apply h
+
+/-- The trivial coordinate Hopf algebra is initial in the coordinate category.
+
+Equivalently, in the opposite affine-group-scheme direction it represents the terminal object
+`Spec R` over the base. -/
+noncomputable def trivialIsInitial :
+    IsInitial (trivial R : _root_.CommHopfAlgCat.{u} R) :=
+  IsInitial.ofUniqueHom
+    (fun H => unit H)
+    (fun H f => by
+      apply _root_.CommHopfAlgCat.hom_ext
+      apply _root_.BialgHom.coe_toAlgHom_injective
+      exact Subsingleton.elim _ _)
+
+/-- The unique morphism out of the trivial coordinate Hopf algebra is the unit. -/
+lemma eq_unit (H : _root_.CommHopfAlgCat.{u} R)
+    (f : trivial R ⟶ H) :
+    f = unit H :=
+  (trivialIsInitial (R := R)).hom_ext f (unit H)
+
+end CommHopfAlgCat
 
 namespace TrivialGroup
 
