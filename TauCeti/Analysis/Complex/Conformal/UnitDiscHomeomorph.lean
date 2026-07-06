@@ -33,7 +33,9 @@ open scoped ComplexConjugate
 lemma continuous_unitDiscMoebius (a : Complex.UnitDisc) :
     Continuous (unitDiscMoebius a) := by
   rw [Complex.UnitDisc.isEmbedding_coe.continuous_iff]
-  -- The embedding criterion reduces continuity to the scalar coercion of the bundled disc.
+  -- `isEmbedding_coe.continuous_iff` transports continuity through the fixed subtype
+  -- embedding `Complex.UnitDisc → ℂ`; the remaining defeq is the standard coercion of a
+  -- bundled disc-valued function to its scalar coordinate.
   change Continuous fun z : Complex.UnitDisc => (unitDiscMoebius a z : ℂ)
   simp only [coe_unitDiscMoebius]
   simpa only [Function.comp_def] using
@@ -46,11 +48,12 @@ noncomputable def unitDiscMoebiusHomeomorph (a : Complex.UnitDisc) :
     Complex.UnitDisc ≃ₜ Complex.UnitDisc where
   toEquiv := unitDiscMoebiusEquiv a
   continuous_toFun := by
-    -- The homeomorphism field is the bundled equivalence function.
+    -- `Homeomorph` extends `Equiv`, so the forward continuity field is definitionally the
+    -- function of the supplied `toEquiv`; this is the canonical projection used by Mathlib.
     change Continuous fun z : Complex.UnitDisc => unitDiscMoebiusEquiv a z
     simpa only [unitDiscMoebiusEquiv_apply] using continuous_unitDiscMoebius a
   continuous_invFun := by
-    -- The inverse field is the bundled equivalence inverse function.
+    -- As above, the inverse continuity field projects to the inverse function of `toEquiv`.
     change Continuous fun z : Complex.UnitDisc => (unitDiscMoebiusEquiv a).symm z
     rw [unitDiscMoebiusEquiv_symm]
     simpa only [unitDiscMoebiusEquiv_apply] using continuous_unitDiscMoebius (-a)
@@ -68,7 +71,8 @@ lemma unitDiscMoebiusHomeomorph_toEquiv (a : Complex.UnitDisc) :
   by
     apply Equiv.ext
     intro z
-    -- `Homeomorph.toEquiv` is the bundled homeomorphism function.
+    -- Extensionality reduces equality of the projected equivalences to equality of their
+    -- applications; `Homeomorph` stores this application in the inherited `Equiv.toFun`.
     change unitDiscMoebiusHomeomorph a z = unitDiscMoebiusEquiv a z
     rw [unitDiscMoebiusHomeomorph_apply, unitDiscMoebiusEquiv_apply]
 
@@ -77,7 +81,8 @@ lemma unitDiscMoebiusHomeomorph_toEquiv (a : Complex.UnitDisc) :
 lemma unitDiscMoebiusHomeomorph_symm (a : Complex.UnitDisc) :
     (unitDiscMoebiusHomeomorph a).symm = unitDiscMoebiusHomeomorph (-a) := by
   ext z
-  -- `Homeomorph.symm` exposes the inverse function through the bundled `Equiv`.
+  -- `Homeomorph.symm` is defined in Mathlib by replacing `toEquiv` with `toEquiv.symm`;
+  -- after extensionality this stable projection is exactly the inverse equivalence formula.
   change ((unitDiscMoebiusEquiv a).symm z : ℂ) = (unitDiscMoebiusHomeomorph (-a) z : ℂ)
   rw [unitDiscMoebiusEquiv_symm, unitDiscMoebiusEquiv_apply, unitDiscMoebiusHomeomorph_apply]
 
@@ -108,7 +113,9 @@ lemma unitDiscStandardAutomorphismHomeomorph_apply
       unitDiscStandardAutomorphismEquiv u a z :=
   by
   rw [unitDiscStandardAutomorphismEquiv_apply]
-  -- The left side is the bundled homeomorphism composition, while the right side is smul notation.
+  -- The homeomorphism is defined as `Homeomorph.trans` with Mathlib's `Homeomorph.smul`;
+  -- unfolding the application aligns that structure-level composition with the existing
+  -- equivalence formula, whose last step is written with ordinary scalar action notation.
   change Homeomorph.smul u (unitDiscMoebiusHomeomorph a z) =
     u • unitDiscMoebius a z
   rw [unitDiscMoebiusHomeomorph_apply]
@@ -134,12 +141,16 @@ lemma unitDiscStandardAutomorphismHomeomorph_symm
       (Homeomorph.smul u⁻¹).trans (unitDiscMoebiusHomeomorph (-a)) := by
   apply Homeomorph.ext
   intro z
-  -- `Homeomorph.symm` applies through the inverse of the underlying equivalence.
+  -- `Homeomorph.symm` is specified through the inverse of `toEquiv`; exposing that
+  -- projection lets us reuse the already-proved inverse formula for the underlying
+  -- standard automorphism equivalence.
   change ((unitDiscStandardAutomorphismHomeomorph u a).toEquiv).symm z =
     unitDiscMoebiusHomeomorph (-a) ((Homeomorph.smul u⁻¹) z)
   rw [congrArg Equiv.symm (unitDiscStandardAutomorphismHomeomorph_toEquiv u a),
     unitDiscStandardAutomorphismEquiv_symm]
-  -- The equivalence formula uses `MulAction.toPerm`, while the homeomorphism formula uses `smul`.
+  -- The equivalence-side inverse is expressed with `MulAction.toPerm`; the homeomorphism
+  -- side uses `Homeomorph.smul`. Their named application lemmas reduce both to the same
+  -- scalar action, so the remaining projection is only this wrapper comparison.
   change unitDiscMoebiusEquiv (-a) ((MulAction.toPerm u⁻¹ : Equiv.Perm Complex.UnitDisc) z) =
     unitDiscMoebiusHomeomorph (-a) ((Homeomorph.smul u⁻¹) z)
   rw [unitDiscMoebiusEquiv_apply, unitDiscMoebiusHomeomorph_apply, Homeomorph.smul_apply,
