@@ -63,12 +63,10 @@ theorem mem_fullyBlockedBoundaries (c : GridChain (ZMod 2) n) :
   Iff.rfl
 
 /-- The zero chain is a fully blocked cycle. -/
-@[simp]
 theorem zero_mem_fullyBlockedCycles : (0 : GridChain (ZMod 2) n) ∈ G.fullyBlockedCycles := by
   simp [fullyBlockedCycles]
 
 /-- The zero chain is a fully blocked boundary. -/
-@[simp]
 theorem zero_mem_fullyBlockedBoundaries :
     (0 : GridChain (ZMod 2) n) ∈ G.fullyBlockedBoundaries := by
   exact Submodule.zero_mem G.fullyBlockedBoundaries
