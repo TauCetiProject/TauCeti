@@ -28,6 +28,8 @@ Alexander gradings in this concrete diagram.
   `TauCeti.GridDiagram.maslovXℤ_twoByTwo_twoByTwoId`,
   `TauCeti.GridDiagram.alexander_twoByTwo_twoByTwoId`, and the corresponding `twoByTwoSwap`
   lemmas: the exact small-grid bigrading data.
+* `TauCeti.GridDiagram.alexander_eq_neg_one_or_eq_zero_of_two`: in any `2 × 2` diagram every
+  generator has Alexander grading `-1` or `0`.
 
 ## References
 
@@ -41,71 +43,51 @@ public section
 
 namespace TauCeti
 
-namespace GridState
-
-private theorem eq_twoByTwoId_or_eq_twoByTwoSwap (x : GridState 2) :
-    x = twoByTwoId ∨ x = twoByTwoSwap :=
-  (eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap x).elim
-    (fun h => Or.inl <| by
-      ext c
-      fin_cases c <;> simp [h])
-    fun h => Or.inr <| by
-      ext c
-      fin_cases c <;> simp [h]
-
-end GridState
-
 namespace GridDiagram
 
 private theorem twoByTwoId_pairCard_self :
     (Finset.univ.filter fun p : Fin 2 × Fin 2 =>
       p.1 < p.2 ∧ GridState.twoByTwoId p.1 < GridState.twoByTwoId p.2).card = 1 := by
-  rw [show Finset.univ.filter (fun p : Fin 2 × Fin 2 =>
-      p.1 < p.2 ∧ GridState.twoByTwoId p.1 < GridState.twoByTwoId p.2) = {(0, 1)} by
+  have hfilter : (Finset.univ.filter fun p : Fin 2 × Fin 2 =>
+      p.1 < p.2 ∧ GridState.twoByTwoId p.1 < GridState.twoByTwoId p.2) = {(0, 1)} := by
     ext p
     rcases p with ⟨c, r⟩
-    fin_cases c <;> fin_cases r <;> simp]
+    fin_cases c <;> fin_cases r <;> simp
+  rw [hfilter]
   simp
 
 private theorem twoByTwoSwap_pairCard_self :
     (Finset.univ.filter fun p : Fin 2 × Fin 2 =>
       p.1 < p.2 ∧ GridState.twoByTwoSwap p.1 < GridState.twoByTwoSwap p.2).card = 0 := by
-  rw [show Finset.univ.filter (fun p : Fin 2 × Fin 2 =>
-      p.1 < p.2 ∧ GridState.twoByTwoSwap p.1 < GridState.twoByTwoSwap p.2) = ∅ by
+  have hfilter : (Finset.univ.filter fun p : Fin 2 × Fin 2 =>
+      p.1 < p.2 ∧ GridState.twoByTwoSwap p.1 < GridState.twoByTwoSwap p.2) = ∅ := by
     ext p
     rcases p with ⟨c, r⟩
-    fin_cases c <;> fin_cases r <;> simp]
+    fin_cases c <;> fin_cases r <;> simp
+  rw [hfilter]
   simp
 
 private theorem twoByTwoId_pairCard_swap :
     (Finset.univ.filter fun p : Fin 2 × Fin 2 =>
       p.1 < p.2 ∧ GridState.twoByTwoId p.1 < GridState.twoByTwoSwap p.2).card = 0 := by
-  rw [show Finset.univ.filter (fun p : Fin 2 × Fin 2 =>
-      p.1 < p.2 ∧ GridState.twoByTwoId p.1 < GridState.twoByTwoSwap p.2) = ∅ by
+  have hfilter : (Finset.univ.filter fun p : Fin 2 × Fin 2 =>
+      p.1 < p.2 ∧ GridState.twoByTwoId p.1 < GridState.twoByTwoSwap p.2) = ∅ := by
     ext p
     rcases p with ⟨c, r⟩
-    fin_cases c <;> fin_cases r <;> simp]
+    fin_cases c <;> fin_cases r <;> simp
+  rw [hfilter]
   simp
 
 private theorem twoByTwoSwap_pairCard_id :
     (Finset.univ.filter fun p : Fin 2 × Fin 2 =>
       p.1 < p.2 ∧ GridState.twoByTwoSwap p.1 < GridState.twoByTwoId p.2).card = 0 := by
-  rw [show Finset.univ.filter (fun p : Fin 2 × Fin 2 =>
-      p.1 < p.2 ∧ GridState.twoByTwoSwap p.1 < GridState.twoByTwoId p.2) = ∅ by
+  have hfilter : (Finset.univ.filter fun p : Fin 2 × Fin 2 =>
+      p.1 < p.2 ∧ GridState.twoByTwoSwap p.1 < GridState.twoByTwoId p.2) = ∅ := by
     ext p
     rcases p with ⟨c, r⟩
-    fin_cases c <;> fin_cases r <;> simp]
+    fin_cases c <;> fin_cases r <;> simp
+  rw [hfilter]
   simp
-
-/-- The integer `O`-Maslov grading of the `O`-marking state is always `1`. -/
-theorem maslovOℤ_O {n : ℕ} (G : GridDiagram n) : G.maslovOℤ G.O = 1 := by
-  rw [maslovOℤ_eq_card]
-  ring
-
-/-- The integer `X`-Maslov grading of the `X`-marking state is always `1`. -/
-theorem maslovXℤ_X {n : ℕ} (G : GridDiagram n) : G.maslovXℤ G.X = 1 := by
-  rw [maslovXℤ_eq_card]
-  ring
 
 /-- In a `2 × 2` diagram, the integer `X`-Maslov grading of the `O`-marking state is `2`. -/
 theorem maslovXℤ_O_of_two (G : GridDiagram 2) : G.maslovXℤ G.O = 2 := by
@@ -212,15 +194,27 @@ theorem alexander_twoByTwo_twoByTwoSwap :
     twoByTwo.alexander GridState.twoByTwoSwap = 0 := by
   simpa using alexander_X_of_two twoByTwo
 
+/-- Every generator of an arbitrary `2 × 2` diagram has one of the two computed Alexander
+gradings: `-1` on the `O`-marking state and `0` on the `X`-marking state. -/
+theorem alexander_eq_neg_one_or_eq_zero_of_two (G : GridDiagram 2) (x : GridState 2) :
+    G.alexander x = -1 ∨ G.alexander x = 0 := by
+  have hx : x = G.O ∨ x = G.X := by
+    rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap x with hx | hx <;>
+      rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap G.O with hO | hO <;>
+      rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap G.X with hX | hX <;>
+      first
+        | exact Or.inl (hx.trans hO.symm)
+        | exact Or.inr (hx.trans hX.symm)
+        | exact absurd (show G.O 0 = G.X 0 by simp [hO, hX]) (G.disjoint 0)
+  rcases hx with hx | hx
+  · exact Or.inl (by rw [hx]; exact alexander_O_of_two G)
+  · exact Or.inr (by rw [hx]; exact alexander_X_of_two G)
+
 /-- Every generator of the standard two-by-two diagram has one of the two computed Alexander
 gradings. -/
 theorem alexander_twoByTwo_eq_neg_one_or_eq_zero (x : GridState 2) :
-    twoByTwo.alexander x = -1 ∨ twoByTwo.alexander x = 0 := by
-  rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap x with hx | hx
-  · rw [hx]
-    exact Or.inl alexander_twoByTwo_twoByTwoId
-  · rw [hx]
-    exact Or.inr alexander_twoByTwo_twoByTwoSwap
+    twoByTwo.alexander x = -1 ∨ twoByTwo.alexander x = 0 :=
+  alexander_eq_neg_one_or_eq_zero_of_two twoByTwo x
 
 end GridDiagram
 

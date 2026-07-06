@@ -29,6 +29,8 @@ the free `ZMod 2`-module on `GridState n`.
   small-grid cardinalities used as sanity checks for later computations.
 * `TauCeti.GridState.twoByTwoId`, `TauCeti.GridState.twoByTwoSwap`, and
   `TauCeti.GridDiagram.twoByTwo`: the two named states and standard diagram in grid size two.
+* `TauCeti.GridState.eq_twoByTwoId_or_eq_twoByTwoSwap`: every `2 × 2` grid state is one of the
+  two named states.
 
 ## References
 
@@ -171,6 +173,17 @@ theorem twoByTwoId_ne_twoByTwoSwap : twoByTwoId ≠ twoByTwoSwap := by
   intro h
   exact (Fin.zero_ne_one : (0 : Fin 2) ≠ 1) (by
     simpa using congrArg (fun x : GridState 2 => x 0) h)
+
+/-- Every `2 × 2` grid state is either the identity state or the transposition state. -/
+theorem eq_twoByTwoId_or_eq_twoByTwoSwap (x : GridState 2) :
+    x = twoByTwoId ∨ x = twoByTwoSwap :=
+  (eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap x).elim
+    (fun h => Or.inl <| by
+      ext c
+      fin_cases c <;> simp [h])
+    fun h => Or.inr <| by
+      ext c
+      fin_cases c <;> simp [h]
 
 end GridState
 
