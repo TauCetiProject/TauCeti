@@ -257,7 +257,7 @@ theorem alexander_eq_neg_one_or_eq_zero_of_two (G : GridDiagram 2) (x : GridStat
       first
         | exact Or.inl (hx.trans hO.symm)
         | exact Or.inr (hx.trans hX.symm)
-        | exact absurd (show G.O 0 = G.X 0 by simp [hO, hX]) (G.disjoint 0)
+        | exact False.elim ((G.disjoint 0) (by simp [hO, hX]))
   rcases hx with hx | hx
   · exact Or.inl (by rw [hx]; exact alexander_O_of_two G)
   · exact Or.inr (by rw [hx]; exact alexander_X_of_two G)
