@@ -25,8 +25,8 @@ endomorphisms:
 These bridges live together because they all identify the process-level symmetry
 `FullyExchangeable μ X` with corresponding path-law invariance statements. They are thin: they
 reuse the merged Layer 0 API and Mathlib — finite-marginal uniqueness (`FiniteMarginals`), the
-contractability bridge (`Contractability`), generic path-law reindexing, and
-`Equiv.Perm.exists_extending_pair` — rather than new measure theory.
+contractability bridge (`Contractability`), generic path-law reindexing, and the permutation
+wrappers in `PermutationExtension` — rather than new measure theory.
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned at
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses.
@@ -58,9 +58,8 @@ theorem FullyExchangeable.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω → �
     (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) (n : ℕ) :
     ExchangeableAt μ X n := by
   intro σ
-  obtain ⟨π, hπ⟩ :=
-    Equiv.Perm.exists_extending_pair (fun i : Fin n => i.val) (fun i => (σ i).val)
-      Fin.val_injective (fun _ _ h => σ.injective (Fin.val_injective h))
+  obtain ⟨π, hπ⟩ := exists_perm_nat_extending (fun i : Fin n => (σ i).val)
+    (fun _ _ h => σ.injective (Fin.val_injective h))
   have hidx : (fun j : Fin n => π j.val) = fun j : Fin n => (σ j).val := by
     funext j; exact hπ j
   calc blockLaw μ X (fun j : Fin n => (σ j).val)

@@ -12,8 +12,8 @@ coordinates have permutation-invariant law, then so do the first `m` coordinates
 `Fin m` to one of `Fin n`, use exchangeability at `n`, and project the `n`-prefix law back to
 the first `m` coordinates.
 
-The permutation-extension step reuses Mathlib's `Equiv.Perm.exists_extending_pair`; the
-measure-level projection step reuses Tau Ceti's `map_blockLaw_reindex` and
+The permutation-extension step reuses Tau Ceti's `exists_perm_extending_castLE`; the measure-level
+projection step reuses Tau Ceti's `map_blockLaw_reindex` and
 `map_prefixLaw_castLE`.
 
 This projection argument is adapted from Tau Ceti's credited
@@ -43,8 +43,7 @@ theorem blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : ℕ → Ω →
     blockLaw μ X (fun i : Fin m => (k i).val) = prefixLaw μ X m := by
   have hmn : m ≤ n := by
     simpa using Fintype.card_le_of_injective k hk
-  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair (Fin.castLE hmn) k
-    (fun _ _ h => Fin.castLE_injective hmn h) hk
+  obtain ⟨σ, hσ⟩ := exists_perm_extending_castLE hmn k hk
   have hperm : blockLaw μ X (fun j : Fin n => (σ j).val) = prefixLaw μ X n := h.permute σ
   have hLHS :
       (blockLaw μ X (fun j : Fin n => (σ j).val)).map
