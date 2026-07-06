@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import Mathlib.Topology.Algebra.ConstMulAction
 
 /-!
 # Basic API for the complex unit disc
@@ -37,5 +38,17 @@ lemma circle_smul_eq_zero_iff (u : Circle) {z : _root_.Complex.UnitDisc} :
   simp
 
 end Complex.UnitDisc
+
+/-- A fixed circle rotation is continuous on the bundled open disc. -/
+lemma continuous_circle_smul_unitDisc (u : Circle) :
+    Continuous fun z : Complex.UnitDisc => u • z := by
+  rw [Complex.UnitDisc.isEmbedding_coe.continuous_iff]
+  exact ((continuous_const (y := (u : ℂ))).mul Complex.UnitDisc.continuous_coe).congr fun z => by
+    simp only [Function.comp_def, Complex.UnitDisc.coe_circle_smul, Pi.mul_apply]
+
+/-- Circle rotations act continuously on the bundled open unit disc. -/
+instance instContinuousConstSMulCircleUnitDisc :
+    ContinuousConstSMul Circle Complex.UnitDisc where
+  continuous_const_smul := continuous_circle_smul_unitDisc
 
 end TauCeti

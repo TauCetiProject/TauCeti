@@ -15,7 +15,8 @@ This file packages the standard Moebius factor
 the elementary automorphism API used by the Schwarz--Pick and disc-automorphism layer of
 the conformal-mapping roadmap: the map sends `a` to `0`, its norm is the
 pseudo-hyperbolic expression from `z` to `a`, and the inverse is the factor with center
-`-a`.
+`-a`.  The same map is also bundled as an equivalence and as a homeomorphism of the
+unit disc.
 
 This L2 material is coordinated with the upstream Mathlib RMT effort in
 leanprover-community/mathlib4#33505.  Mathlib already contains the preceding human-curated
@@ -177,5 +178,72 @@ lemma unitDiscMoebiusEquiv_apply (a z : Complex.UnitDisc) :
 lemma unitDiscMoebiusEquiv_symm (a : Complex.UnitDisc) :
     (unitDiscMoebiusEquiv a).symm = unitDiscMoebiusEquiv (-a) :=
   Equiv.ext fun _ => rfl
+
+/-- The unit-disc Moebius factor is continuous as a map of the bundled open disc. -/
+lemma continuous_unitDiscMoebius (a : Complex.UnitDisc) :
+    Continuous (unitDiscMoebius a) := by
+  rw [Complex.UnitDisc.isEmbedding_coe.continuous_iff]
+  simpa only [Function.comp_def, coe_unitDiscMoebius] using
+    (differentiableOn_unitDiscMoebiusFormula a).continuousOn.comp_continuous
+      Complex.UnitDisc.continuous_coe
+      (fun z => by simpa [mem_ball_zero_iff] using Complex.UnitDisc.norm_lt_one z)
+
+/-- The standard Moebius self-map of the unit disc, bundled as a homeomorphism. -/
+noncomputable def unitDiscMoebiusHomeomorph (a : Complex.UnitDisc) :
+    Complex.UnitDisc ≃ₜ Complex.UnitDisc where
+  toEquiv := unitDiscMoebiusEquiv a
+  continuous_toFun := by
+    exact (continuous_unitDiscMoebius a).congr fun z => by
+      calc
+        unitDiscMoebius a z = unitDiscMoebiusEquiv a z :=
+          (unitDiscMoebiusEquiv_apply a z).symm
+        _ = (unitDiscMoebiusEquiv a).toFun z := rfl
+  continuous_invFun := by
+    exact (continuous_unitDiscMoebius (-a)).congr fun z => by
+      calc
+        unitDiscMoebius (-a) z = unitDiscMoebiusEquiv (-a) z :=
+          (unitDiscMoebiusEquiv_apply (-a) z).symm
+        _ = (unitDiscMoebiusEquiv a).symm z := by
+          rw [unitDiscMoebiusEquiv_symm]
+        _ = (unitDiscMoebiusEquiv a).invFun z := rfl
+
+/-- The Moebius homeomorphism applies by the existing Moebius factor. -/
+@[simp]
+lemma unitDiscMoebiusHomeomorph_apply (a z : Complex.UnitDisc) :
+    unitDiscMoebiusHomeomorph a z = unitDiscMoebius a z :=
+  unitDiscMoebiusEquiv_apply a z
+
+/-- The underlying equivalence of the Moebius homeomorphism is the existing equivalence. -/
+@[simp]
+lemma unitDiscMoebiusHomeomorph_toEquiv (a : Complex.UnitDisc) :
+    (unitDiscMoebiusHomeomorph a).toEquiv = unitDiscMoebiusEquiv a :=
+  by
+    ext z
+    calc
+      ((unitDiscMoebiusHomeomorph a).toEquiv z : ℂ)
+          = (unitDiscMoebiusHomeomorph a z : ℂ) := rfl
+      _ = (unitDiscMoebiusEquiv a z : ℂ) := by
+        rw [unitDiscMoebiusHomeomorph_apply, unitDiscMoebiusEquiv_apply]
+
+/-- The inverse Moebius homeomorphism is the Moebius homeomorphism centered at `-a`. -/
+@[simp]
+lemma unitDiscMoebiusHomeomorph_symm (a : Complex.UnitDisc) :
+    (unitDiscMoebiusHomeomorph a).symm = unitDiscMoebiusHomeomorph (-a) := by
+  ext z
+  calc
+    ((unitDiscMoebiusHomeomorph a).symm z : ℂ)
+        = ((unitDiscMoebiusEquiv a).symm z : ℂ) := rfl
+    _ = (unitDiscMoebiusHomeomorph (-a) z : ℂ) := by
+      rw [unitDiscMoebiusEquiv_symm, unitDiscMoebiusEquiv_apply,
+        unitDiscMoebiusHomeomorph_apply]
+
+/-- The scalar formula for the Moebius homeomorphism. -/
+@[norm_cast]
+lemma coe_unitDiscMoebiusHomeomorph_apply (a z : Complex.UnitDisc) :
+    (unitDiscMoebiusHomeomorph a z : ℂ) =
+      ((z : ℂ) - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * (z : ℂ)) :=
+  by
+    rw [unitDiscMoebiusHomeomorph_apply]
+    exact coe_unitDiscMoebius a z
 
 end TauCeti
