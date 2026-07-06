@@ -88,6 +88,22 @@ noncomputable def trivialPointsMulEquiv :
   right_inv _ := rfl
   map_mul' _ _ := rfl
 
+/-- The finite-type trivial-points equivalence sends every point to the unique element of
+`PUnit`. -/
+@[simp]
+theorem trivialPointsMulEquiv_apply
+    (f : HopfAlgebra.points (R := R) (H := trivial R) A) :
+    trivialPointsMulEquiv A f = PUnit.unit :=
+  rfl
+
+/-- The inverse finite-type trivial-points equivalence sends the unique element of `PUnit` to
+`Algebra.ofId`. -/
+@[simp]
+theorem trivialPointsMulEquiv_symm_apply (u : PUnit.{1}) :
+    (trivialPointsMulEquiv A).symm u = toConv (Algebra.ofId R A) := by
+  cases u
+  rfl
+
 variable {A} {B : CommAlgCat.{w} R}
 
 /-- The finite-type trivial-points equivalence is natural in the value algebra. -/

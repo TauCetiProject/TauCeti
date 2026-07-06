@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat
+public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 
 /-!
 # The trivial affine group
@@ -33,7 +33,7 @@ canonical Hopf algebra structure on `R` over itself from `Mathlib.RingTheory.Hop
 
 public section
 
-open CategoryTheory CategoryTheory.Limits WithConv
+open WithConv
 
 namespace TauCeti
 
