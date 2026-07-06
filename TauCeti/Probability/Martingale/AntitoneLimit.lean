@@ -52,23 +52,16 @@ private lemma ae_upcrossings_condExp_lt_top
   -- Finite integral (`exists_lintegral_upcrossings_condExp_le`) ⇒ a.e. finite (`ae_lt_top`).
   exact ae_lt_top (h_adapted.measurable_upcrossings hab) (lt_of_le_of_lt hC hC_finite).ne
 
-/-- A.S. existence of the limit of `μ[f | 𝔽 n]` along an antitone filtration. -/
+/-- A.S. existence of the limit of `μ[f | 𝔽 n]` for integrable `f` along an antitone filtration —
+the L¹ reverse-martingale (Lévy downward) limit. -/
 -- The proof applies the upcrossing inequality to the time-reversed martingales to show that the
 -- original sequence has finitely many upcrossings and downcrossings a.e., hence converges a.e.
 lemma exists_integrable_tendsto_ae_condExp_of_antitone
     [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
-    (f : Ω → ℝ) :
+    (f : Ω → ℝ) (hf : Integrable f μ) :
     ∃ Xlim, (Integrable Xlim μ ∧
            ∀ᵐ ω ∂μ, Tendsto (fun n => μ[f | 𝔽 n] ω) atTop (𝓝 (Xlim ω))) := by
-  by_cases hf : Integrable f μ
-  swap
-  · -- Non-integrable `f`: `μ[f | 𝔽 n] = 0` for all `n`, so the constant limit `0` works.
-    refine ⟨0, integrable_zero Ω ℝ μ, ?_⟩
-    filter_upwards with ω
-    simp only [condExp_of_not_integrable hf, Pi.zero_apply]
-    exact tendsto_const_nhds
-  -- Integrable `f`: the genuine reverse-martingale a.e. limit.
   -- L¹ bound and its finite `NNReal` form.
   have hL1_bdd : ∀ n, eLpNorm (μ[f | 𝔽 n]) 1 μ ≤ eLpNorm f 1 μ :=
     fun n => eLpNorm_one_condExp_le_eLpNorm _
