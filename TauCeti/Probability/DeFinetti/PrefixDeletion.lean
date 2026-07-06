@@ -30,7 +30,7 @@ far tail, so conditioning the `X r`-indicator on `σ(U) ⊔ σ(W)` collapses to 
 
 The public interface consists of two theorems:
 
-* `Contractable.condIndep_coord_prefix_tail` — the conditional-independence statement (primary result):
+* `Contractable.condIndep_coord_prefix_tail` — the primary conditional-independence statement:
   for a contractable process and `r ≤ m`, `X r` is conditionally independent of the prefix `U`
   given the far tail `W = processShift X (m+1)`, packaged as a `ProbabilityTheory.CondIndep` object.
 * `Contractable.condExp_indicator_prefix_sup_tail_eq` — the prefix-deletion drop-info identity read
