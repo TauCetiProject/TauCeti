@@ -10,8 +10,7 @@ import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.MeasurableSpace.Prod
-import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import Mathlib.Probability.Independence.Conditional
+public import Mathlib.Probability.Independence.Conditional
 import TauCeti.Probability.Independence.Conditional
 import TauCeti.Probability.Process.Tail
 
@@ -29,14 +28,16 @@ far tail, so conditioning the `X r`-indicator on `σ(U) ⊔ σ(W)` collapses to 
 
 ## Main results
 
-The public interface is just the theorem consumed downstream:
+The public interface consists of two theorems:
 
-* `Contractable.condExp_Xr_indicator_eq` — the prefix-deletion drop-info identity (main target):
-  for a contractable process and `r ≤ m`,
-  `μ[𝟙_{(X r)⁻¹ B} | σ(U) ⊔ σ(W)] =ᵐ μ[𝟙_{(X r)⁻¹ B} | σ(W)]`, i.e. `X r` is conditionally
-  independent of the prefix `U` given the far tail `W`.
+* `Contractable.condIndep_Xr_prefix_tail` — the conditional-independence statement (primary result):
+  for a contractable process and `r ≤ m`, `X r` is conditionally independent of the prefix `U`
+  given the far tail `W = processShift X (m+1)`, packaged as a `ProbabilityTheory.CondIndep` object.
+* `Contractable.condExp_indicator_prefix_sup_tail_eq` — the prefix-deletion drop-info identity read
+  off from that conditional independence: for `r ≤ m` and a measurable `B`,
+  `μ[𝟙_{(X r)⁻¹ B} | σ(U) ⊔ σ(W)] =ᵐ μ[𝟙_{(X r)⁻¹ B} | σ(W)]`.
 
-The pair-law/Kallenberg-1.3 engine feeding the drop-info identity is internal proof machinery,
+The pair-law/Kallenberg-1.3 engine feeding the conditional independence is internal proof machinery,
 kept `private` to this module; the conditional-independence projection step is imported from
 `TauCeti.Probability.Independence.Conditional`.
 
@@ -66,7 +67,7 @@ private def phi0 (r m : ℕ) : ℕ → ℕ := fun n => if n < r then n else n + 
 /-- Injection `φ₁` for contractability: indices `0,…,r, m+1, m+2, …` (skips `r+1,…,m`). -/
 private def phi1 (r m : ℕ) : ℕ → ℕ := fun n => if n ≤ r then n else n + (m - r)
 
-private lemma phi0_strictMono (r m : ℕ) (_hr : r ≤ m) : StrictMono (phi0 r m) := by
+private lemma phi0_strictMono (r m : ℕ) : StrictMono (phi0 r m) := by
   intro i j hij
   simp only [phi0]
   by_cases hi : i < r
@@ -79,7 +80,7 @@ private lemma phi0_strictMono (r m : ℕ) (_hr : r ≤ m) : StrictMono (phi0 r m
     simp only [hj, if_false]
     omega
 
-private lemma phi1_strictMono (r m : ℕ) (_hr : r ≤ m) : StrictMono (phi1 r m) := by
+private lemma phi1_strictMono (r m : ℕ) : StrictMono (phi1 r m) := by
   intro i j hij
   simp only [phi1]
   by_cases hi : i ≤ r
@@ -182,8 +183,8 @@ private lemma pair_law_eq_of_contractable [IsFiniteMeasure μ]
   have hseq1_eq : seq1 = fun ω (i : ℕ) => X (phi1 r m i) ω :=
     funext fun ω => funext fun n => h_seq1 ω n
   have h_seq_eq : Measure.map seq0 μ = Measure.map seq1 μ := by
-    rw [hseq0_eq, hseq1_eq, hreindex (phi0 r m) (phi0_strictMono r m hr),
-      hreindex (phi1 r m) (phi1_strictMono r m hr)]
+    rw [hseq0_eq, hseq1_eq, hreindex (phi0 r m) (phi0_strictMono r m),
+      hreindex (phi1 r m) (phi1_strictMono r m)]
   -- Pull back via `split`.
   have h0 : Measure.map (fun ω => (U ω, W ω)) μ = Measure.map (split ∘ seq0) μ :=
     congrArg (Measure.map · μ) <| funext fun ω => (h_split_concat (U ω, W ω)).symm
@@ -330,34 +331,19 @@ private lemma condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ]
       rw [h]; exact ⟨zero_le_one, le_rfl⟩
     · have h : φ ω = 0 := Set.indicator_of_notMem hω _
       rw [h]; exact ⟨le_rfl, zero_le_one⟩
-  have hμ₁_bdd : ∀ᵐ ω ∂μ, 0 ≤ μ₁ ω ∧ μ₁ ω ≤ 1 := by
-    have h1 : ∀ᵐ ω ∂μ, 0 ≤ μ₁ ω := condExp_nonneg (ae_of_all μ fun ω => (hφ_bdd ω).1)
-    have h2 : ∀ᵐ ω ∂μ, μ₁ ω ≤ 1 := by
-      have hc : μ[(fun _ => (1 : ℝ)) | mW] = fun _ => 1 := condExp_const hmW_le (1 : ℝ)
-      have hmono := condExp_mono (m := mW) hφ_int (integrable_const 1)
-          (ae_of_all μ fun ω => (hφ_bdd ω).2)
-      filter_upwards [hmono] with ω h1
-      calc μ₁ ω ≤ μ[(fun _ => (1 : ℝ)) | mW] ω := h1
-        _ = 1 := congrFun hc ω
-    filter_upwards [h1, h2] with ω h1 h2 using ⟨h1, h2⟩
-  have hμ₂_bdd : ∀ᵐ ω ∂μ, 0 ≤ μ₂ ω ∧ μ₂ ω ≤ 1 := by
-    have h1 : ∀ᵐ ω ∂μ, 0 ≤ μ₂ ω := condExp_nonneg (ae_of_all μ fun ω => (hφ_bdd ω).1)
-    have h2 : ∀ᵐ ω ∂μ, μ₂ ω ≤ 1 := by
-      have hc : μ[(fun _ => (1 : ℝ)) | mW'] = fun _ => 1 := condExp_const hmW'_le (1 : ℝ)
-      have hmono := condExp_mono (m := mW') hφ_int (integrable_const 1)
-          (ae_of_all μ fun ω => (hφ_bdd ω).2)
-      filter_upwards [hmono] with ω h1
-      calc μ₂ ω ≤ μ[(fun _ => (1 : ℝ)) | mW'] ω := h1
-        _ = 1 := congrFun hc ω
-    filter_upwards [h1, h2] with ω h1 h2 using ⟨h1, h2⟩
+  -- `|φ| ≤ 1` a.e., so each conditional expectation `μ[φ | ·]` inherits the same bound via
+  -- Mathlib's `ae_bdd_condExp_of_ae_bdd`; the helper is applied once per σ-algebra below.
+  have hφ_abs : ∀ᵐ ω ∂μ, |φ ω| ≤ ((1 : NNReal) : ℝ) := by
+    filter_upwards with ω
+    rw [abs_of_nonneg (hφ_bdd ω).1, NNReal.coe_one]; exact (hφ_bdd ω).2
+  have condExp_abs_le : ∀ m' : MeasurableSpace Ω, ∀ᵐ ω ∂μ, |μ[φ | m'] ω| ≤ 1 := fun m' => by
+    simpa using ae_bdd_condExp_of_ae_bdd (m := m') (R := 1) hφ_abs
   have hμ₁_int : Integrable μ₁ μ := integrable_condExp
   have hμ₂_int : Integrable μ₂ μ := integrable_condExp
   have hμ₁_bound : ∀ᵐ ω ∂μ, ‖μ₁ ω‖ ≤ 1 := by
-    filter_upwards [hμ₁_bdd] with ω ⟨h0, h1⟩
-    rw [Real.norm_eq_abs, abs_le]; constructor <;> linarith
+    filter_upwards [condExp_abs_le mW] with ω hω; rwa [Real.norm_eq_abs, hμ₁_def]
   have hμ₂_bound : ∀ᵐ ω ∂μ, ‖μ₂ ω‖ ≤ 1 := by
-    filter_upwards [hμ₂_bdd] with ω ⟨h0, h1⟩
-    rw [Real.norm_eq_abs, abs_le]; constructor <;> linarith
+    filter_upwards [condExp_abs_le mW'] with ω hω; rwa [Real.norm_eq_abs, hμ₂_def]
   have hμ₁sq_int : Integrable (fun ω => μ₁ ω * μ₁ ω) μ :=
     hμ₁_int.bdd_mul hμ₁_int.aestronglyMeasurable hμ₁_bound
   have hμ₂sq_int : Integrable (fun ω => μ₂ ω * μ₂ ω) μ :=
@@ -389,8 +375,10 @@ private lemma condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ]
   have h_diff_zero : ∀ᵐ ω ∂μ, (μ₂ ω - μ₁ ω) ^ 2 = 0 := by
     have h_diff_int : Integrable (μ₂ - μ₁) μ := hμ₂_int.sub hμ₁_int
     have h_diff_bound : ∀ᵐ ω ∂μ, ‖(μ₂ - μ₁) ω‖ ≤ 2 := by
-      filter_upwards [hμ₁_bdd, hμ₂_bdd] with ω ⟨h0₁, h1₁⟩ ⟨h0₂, h1₂⟩
-      simp only [Pi.sub_apply]; rw [Real.norm_eq_abs, abs_le]; constructor <;> linarith
+      filter_upwards [hμ₁_bound, hμ₂_bound] with ω h₁ h₂
+      rw [Real.norm_eq_abs, abs_le] at h₁ h₂
+      simp only [Pi.sub_apply]
+      rw [Real.norm_eq_abs, abs_le]; constructor <;> linarith [h₁.1, h₁.2, h₂.1, h₂.2]
     have h_sq_int : Integrable (fun ω => (μ₂ ω - μ₁ ω) ^ 2) μ := by
       have h_sq_eq_mul : (fun ω => (μ₂ ω - μ₁ ω) ^ 2)
           = fun ω => (μ₂ - μ₁) ω * (μ₂ - μ₁) ω := by funext ω; simp only [Pi.sub_apply]; ring
@@ -422,13 +410,51 @@ private lemma condExp_indicator_eq_of_contractable [IsFiniteMeasure μ]
     (pair_law_eq_of_contractable hContr hX_meas r m hrm)
     (comap_le_comap_processCons (fun ω => X r ω) W) hA
 
-/-! ### The prefix-deletion identity (main target) -/
+/-! ### Conditional independence and the prefix-deletion identity (main target) -/
+
+/-- **Prefix/tail conditional independence.** For a contractable process and `r ≤ m`, the value
+`X r` is conditionally independent of the length-`r` prefix `U` given the far tail
+`W = processShift X (m+1)`, packaged as Mathlib's `ProbabilityTheory.CondIndep` object.  This is the
+primary result; the prefix-deletion drop-info identity is read off from it below. -/
+theorem Contractable.condIndep_Xr_prefix_tail [StandardBorelSpace Ω] [IsFiniteMeasure μ]
+    {X : ℕ → Ω → α} (hContr : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
+    {r m : ℕ} (hrm : r ≤ m) :
+    let U := fun ω : Ω => (fun i : Fin r => X i ω)
+    let W := processShift X (m + 1)
+    CondIndep (MeasurableSpace.comap W inferInstance)
+      (MeasurableSpace.comap (X r) inferInstance) (MeasurableSpace.comap U inferInstance)
+      (measurable_processShift fun n => hX_meas (m + 1 + n)).comap_le μ := by
+  intro U W
+  let W' : Ω → ℕ → α := processCons (X r) W
+  have hU_meas : Measurable U := measurable_pi_lambda _ fun i => hX_meas i.val
+  have hW_meas : Measurable W := measurable_processShift fun n => hX_meas (m + 1 + n)
+  have hmU : MeasurableSpace.comap U inferInstance ≤ ‹MeasurableSpace Ω› := hU_meas.comap_le
+  have hmW : MeasurableSpace.comap W inferInstance ≤ ‹MeasurableSpace Ω› := hW_meas.comap_le
+  have hmXr : MeasurableSpace.comap (X r) inferInstance ≤ ‹MeasurableSpace Ω› :=
+    (hX_meas r).comap_le
+  -- `σ(W') = σ(X r) ⊔ σ(W)`, since `W'` conses `X r` onto the far tail `W`.
+  have h_sup : MeasurableSpace.comap W' inferInstance
+      = MeasurableSpace.comap (X r) inferInstance ⊔ MeasurableSpace.comap W inferInstance :=
+    comap_processCons_eq_sup (X r) W
+  -- Drop-`X r` form: conditioning a prefix indicator on `σ(X r) ⊔ σ(W)` collapses to `σ(W)`,
+  -- supplied by the private drop-info wrapper `condExp_indicator_eq_of_contractable`.
+  have h_drop : ∀ H, MeasurableSet[MeasurableSpace.comap U inferInstance] H →
+      μ[H.indicator (fun _ => (1 : ℝ))
+          | MeasurableSpace.comap (X r) inferInstance ⊔ MeasurableSpace.comap W inferInstance]
+        =ᵐ[μ]
+      μ[H.indicator (fun _ => (1 : ℝ)) | MeasurableSpace.comap W inferInstance] := by
+    rintro H ⟨A, hA, rfl⟩
+    have h := condExp_indicator_eq_of_contractable hContr hX_meas hrm hA
+    rw [← h_sup]
+    exact h
+  -- `CondIndep σ(W) σ(X r) σ(U)`: `X r` and the prefix `U` are independent given the far tail.
+  exact condIndep_of_indicator_condExp_eq hmXr hmW hmU h_drop
 
 /-- **Prefix-deletion conditional-expectation identity.** For a contractable process and `r ≤ m`,
 conditioning the indicator of `X r` on `σ(U) ⊔ σ(W)` equals conditioning on `σ(W)`, where `U` is the
-length-`r` prefix and `W = processShift X (m+1)` is the far tail.  Equivalently, `X r` is
-conditionally independent of the prefix given the far tail. -/
-lemma Contractable.condExp_Xr_indicator_eq [StandardBorelSpace Ω] [IsFiniteMeasure μ]
+length-`r` prefix and `W = processShift X (m+1)` is the far tail.  This is read off from the
+prefix/tail conditional independence `Contractable.condIndep_Xr_prefix_tail`. -/
+theorem Contractable.condExp_indicator_prefix_sup_tail_eq [StandardBorelSpace Ω] [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hContr : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     {r m : ℕ} (hrm : r ≤ m) {B : Set α} (hB : MeasurableSet B) :
     let Y := X r
@@ -439,36 +465,15 @@ lemma Contractable.condExp_Xr_indicator_eq [StandardBorelSpace Ω] [IsFiniteMeas
       =ᵐ[μ]
     μ[(Y ⁻¹' B).indicator (fun _ => (1 : ℝ)) | MeasurableSpace.comap W inferInstance] := by
   intro Y U W
-  let W' : Ω → ℕ → α := processCons (X r) W
   have hU_meas : Measurable U := measurable_pi_lambda _ fun i => hX_meas i.val
   have hW_meas : Measurable W := measurable_processShift fun n => hX_meas (m + 1 + n)
-  have hW'_meas : Measurable W' :=
-    measurable_processCons (hX_meas r) fun n => (measurable_pi_apply n).comp hW_meas
   have hmU : MeasurableSpace.comap U inferInstance ≤ ‹MeasurableSpace Ω› := hU_meas.comap_le
   have hmW : MeasurableSpace.comap W inferInstance ≤ ‹MeasurableSpace Ω› := hW_meas.comap_le
   have hmXr : MeasurableSpace.comap (X r) inferInstance ≤ ‹MeasurableSpace Ω› :=
     (hX_meas r).comap_le
-  -- `σ(W') = σ(X r) ⊔ σ(W)`, since `W'` conses `X r` onto the far tail `W`.
-  have h_sup : MeasurableSpace.comap W' inferInstance
-      = MeasurableSpace.comap (X r) inferInstance ⊔ MeasurableSpace.comap W inferInstance :=
-    comap_processCons_eq_sup (X r) W
-  -- Drop-`X r` form: conditioning a prefix indicator on `σ(X r) ⊔ σ(W)` collapses to `σ(W)`.
-  have h_drop : ∀ H, MeasurableSet[MeasurableSpace.comap U inferInstance] H →
-      μ[H.indicator (fun _ => (1 : ℝ))
-          | MeasurableSpace.comap (X r) inferInstance ⊔ MeasurableSpace.comap W inferInstance]
-        =ᵐ[μ]
-      μ[H.indicator (fun _ => (1 : ℝ)) | MeasurableSpace.comap W inferInstance] := by
-    rintro H ⟨A, hA, rfl⟩
-    have h := condExp_indicator_eq_of_law_eq_of_comap_le U W W' hU_meas hW_meas hW'_meas
-      (pair_law_eq_of_contractable hContr hX_meas r m hrm)
-      (comap_le_comap_processCons (X r) W) hA
-    rw [← h_sup]
-    exact h
-  -- `CondIndep σ(W) σ(X r) σ(U)`, symmetrised to `CondIndep σ(W) σ(U) σ(X r)`.
-  have h_CI : CondIndep (MeasurableSpace.comap W inferInstance)
-      (MeasurableSpace.comap (X r) inferInstance) (MeasurableSpace.comap U inferInstance) hmW μ :=
-    condIndep_of_indicator_condExp_eq hmXr hmW hmU h_drop
-  exact condExp_indicator_sup_eq_of_condIndep hmU hmW hmXr h_CI.symm ⟨B, hB, rfl⟩
+  -- Symmetrise `CondIndep σ(W) σ(X r) σ(U)` to `CondIndep σ(W) σ(U) σ(X r)` and project.
+  exact condExp_indicator_sup_eq_of_condIndep hmU hmW hmXr
+    (Contractable.condIndep_Xr_prefix_tail hContr hX_meas hrm).symm ⟨B, hB, rfl⟩
 
 end Probability
 
