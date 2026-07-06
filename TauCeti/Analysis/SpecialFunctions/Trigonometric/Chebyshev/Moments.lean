@@ -11,15 +11,14 @@ public import TauCeti.MeasureTheory.Function.PolynomialMemLp
 /-!
 # Polynomial moments for the Chebyshev `T` measure
 
-This file records the bare-polynomial `L¹` and `L²` consequences of compact support for
-Mathlib's Chebyshev orthogonality measure `Polynomial.Chebyshev.measureT`.
+This file records the bare-polynomial `L²` consequences of compact support for Mathlib's
+Chebyshev orthogonality measure `Polynomial.Chebyshev.measureT`.
 
 The normalized Chebyshev modes and their orthonormality live in
 `TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure`.  The lemmas here are the
 un-normalized consumer forms needed on the way to the roadmap's Chebyshev Hilbert-basis target:
-all monomial moments are finite, every real polynomial evaluation is integrable and square
-integrable, and these statements are available after casting real-valued functions to any
-`[RCLike 𝕜]` scalar field.
+every real polynomial evaluation is square integrable, and this statement is available after
+casting real-valued functions to any `[RCLike 𝕜]` scalar field.
 -/
 
 public section
@@ -28,27 +27,10 @@ namespace TauCeti
 
 open MeasureTheory Polynomial.Chebyshev
 
-/-- Every monomial has a finite moment with respect to the Chebyshev `T` measure. -/
-lemma integrable_pow_measureT (k : ℕ) :
-    Integrable (fun x : ℝ => x ^ k) Polynomial.Chebyshev.measureT :=
-  integrable_measureT (by fun_prop)
-
-/-- A real polynomial evaluation is integrable with respect to the Chebyshev `T` measure. -/
-lemma integrable_eval_measureT (q : Polynomial ℝ) :
-    Integrable (fun x : ℝ => q.eval x) Polynomial.Chebyshev.measureT :=
-  integrable_eval_of_forall_integrable_pow integrable_pow_measureT q
-
-/-- A real polynomial evaluation, cast to any `RCLike` scalar field, is integrable with respect
-to the Chebyshev `T` measure. -/
-lemma integrable_algebraMap_eval_measureT {𝕜 : Type*} [RCLike 𝕜] (q : Polynomial ℝ) :
-    Integrable (fun x : ℝ => (algebraMap ℝ 𝕜) (q.eval x))
-      Polynomial.Chebyshev.measureT := by
-  simpa only [RCLike.algebraMap_eq_ofReal] using (integrable_eval_measureT q).ofReal (𝕜 := 𝕜)
-
 /-- A real polynomial evaluation lies in `L²` with respect to the Chebyshev `T` measure. -/
 lemma memLp_two_eval_measureT (q : Polynomial ℝ) :
     MemLp (fun x : ℝ => q.eval x) 2 Polynomial.Chebyshev.measureT :=
-  memLp_two_eval_of_forall_integrable_pow integrable_pow_measureT q
+  memLp_two_eval_of_forall_integrable_pow (fun _ => integrable_measureT (by fun_prop)) q
 
 /-- A real polynomial evaluation, cast to any `RCLike` scalar field, lies in `L²` with respect
 to the Chebyshev `T` measure. -/
@@ -57,28 +39,5 @@ lemma memLp_two_algebraMap_eval_measureT {𝕜 : Type*} [RCLike 𝕜] (q : Polyn
       Polynomial.Chebyshev.measureT := by
   simpa only [RCLike.algebraMap_eq_ofReal] using
     (memLp_two_eval_measureT q).ofReal (K := 𝕜)
-
-/-- The `n`th Chebyshev `T` polynomial evaluation is integrable with respect to `measureT`. -/
-lemma integrable_eval_T_real_measureT (n : ℕ) :
-    Integrable (fun x : ℝ => (T ℝ n).eval x) Polynomial.Chebyshev.measureT :=
-  integrable_eval_measureT (T ℝ n)
-
-/-- The scalar-cast `n`th Chebyshev `T` polynomial evaluation is integrable with respect to
-`measureT`. -/
-lemma integrable_algebraMap_eval_T_real_measureT {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
-    Integrable (fun x : ℝ => (algebraMap ℝ 𝕜) ((T ℝ n).eval x))
-      Polynomial.Chebyshev.measureT :=
-  integrable_algebraMap_eval_measureT (𝕜 := 𝕜) (T ℝ n)
-
-/-- The `n`th Chebyshev `T` polynomial evaluation lies in `L²(measureT)`. -/
-lemma memLp_two_eval_T_real_measureT (n : ℕ) :
-    MemLp (fun x : ℝ => (T ℝ n).eval x) 2 Polynomial.Chebyshev.measureT :=
-  memLp_two_eval_measureT (T ℝ n)
-
-/-- The scalar-cast `n`th Chebyshev `T` polynomial evaluation lies in `L²(measureT)`. -/
-lemma memLp_two_algebraMap_eval_T_real_measureT {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
-    MemLp (fun x : ℝ => (algebraMap ℝ 𝕜) ((T ℝ n).eval x)) 2
-      Polynomial.Chebyshev.measureT :=
-  memLp_two_algebraMap_eval_measureT (𝕜 := 𝕜) (T ℝ n)
 
 end TauCeti
