@@ -27,6 +27,10 @@ the free `ZMod 2`-module on `GridState n`.
 * `TauCeti.GridState.subsingletonOfLeOne`: for `n ≤ 1`, grid states are unique.
 * `TauCeti.GridState.card_zero`, `TauCeti.GridState.card_one`, `TauCeti.GridState.card_two`:
   small-grid cardinalities used as sanity checks for later computations.
+* `TauCeti.GridState.twoByTwoId` and `TauCeti.GridState.twoByTwoSwap`: the two named states in
+  grid size two.
+* `TauCeti.GridState.eq_twoByTwoId_or_eq_twoByTwoSwap`: every `2 × 2` grid state is one of the
+  two named states.
 
 ## References
 
@@ -128,6 +132,43 @@ theorem eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap (x : GridState 2) :
   rcases hx with h | h
   · exact Or.inl (by rw [Equiv.eq_symm_apply, equivPerm_apply, h])
   · exact Or.inr (by rw [Equiv.eq_symm_apply, equivPerm_apply, h])
+
+/-- The identity grid state on a `2 × 2` grid. -/
+abbrev twoByTwoId : GridState 2 :=
+  (equivPerm 2).symm 1
+
+/-- The transposition grid state on a `2 × 2` grid. -/
+abbrev twoByTwoSwap : GridState 2 :=
+  (equivPerm 2).symm (Equiv.swap 0 1)
+
+/-- The identity two-by-two state sends column `0` to row `0`. -/
+@[simp]
+theorem twoByTwoId_zero : twoByTwoId 0 = 0 :=
+  rfl
+
+/-- The identity two-by-two state sends column `1` to row `1`. -/
+@[simp]
+theorem twoByTwoId_one : twoByTwoId 1 = 1 :=
+  rfl
+
+/-- The transposition two-by-two state sends column `0` to row `1`. -/
+theorem twoByTwoSwap_zero : twoByTwoSwap 0 = 1 := by
+  simp [twoByTwoSwap]
+
+/-- The transposition two-by-two state sends column `1` to row `0`. -/
+theorem twoByTwoSwap_one : twoByTwoSwap 1 = 0 := by
+  simp [twoByTwoSwap]
+
+/-- The two named `2 × 2` grid states are distinct. -/
+theorem twoByTwoId_ne_twoByTwoSwap : twoByTwoId ≠ twoByTwoSwap := by
+  intro h
+  exact (Fin.zero_ne_one : (0 : Fin 2) ≠ 1) (by
+    simpa using congrArg (fun x : GridState 2 => x 0) h)
+
+/-- Every `2 × 2` grid state is either the identity state or the transposition state. -/
+theorem eq_twoByTwoId_or_eq_twoByTwoSwap (x : GridState 2) :
+    x = twoByTwoId ∨ x = twoByTwoSwap :=
+  by simpa [twoByTwoId, twoByTwoSwap] using eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap x
 
 end GridState
 

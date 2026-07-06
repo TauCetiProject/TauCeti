@@ -49,6 +49,8 @@ so `M_O(x)` is an integer. The same computation handles `M_X`.
 * `TauCeti.GridDiagram.maslovOℤ_eq_card`, `TauCeti.GridDiagram.maslovXℤ_eq_card`: the integer
   Maslov gradings written entirely as counts over column indices, so they evaluate on an
   explicit grid without unfolding any point-pair product.
+* `TauCeti.GridDiagram.maslovOℤ_O`, `TauCeti.GridDiagram.maslovXℤ_X`: the integer Maslov grading
+  of a marking state against its own markings is always `1`.
 
 ## References
 
@@ -121,6 +123,16 @@ theorem maslovXℤ_eq_card (x : GridState n) :
   rw [maslovXℤ_def, XSet, GridState.I_self_pointSet_eq_card x,
     GridState.JNum_pointSet_eq_card x G.X, GridState.I_self_pointSet_eq_card G.X]
   push_cast
+  ring
+
+/-- The integer `O`-Maslov grading of the `O`-marking state is always `1`. -/
+theorem maslovOℤ_O : G.maslovOℤ G.O = 1 := by
+  rw [maslovOℤ_eq_card]
+  ring
+
+/-- The integer `X`-Maslov grading of the `X`-marking state is always `1`. -/
+theorem maslovXℤ_X : G.maslovXℤ G.X = 1 := by
+  rw [maslovXℤ_eq_card]
   ring
 
 /-- The rational `O`-Maslov grading is the cast of its integer counterpart: `M_O` is an
