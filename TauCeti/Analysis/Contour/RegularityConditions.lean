@@ -9,7 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Meromorphic.Order
-public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Algebra.Order.ToIntervalMod
 
 /-!
@@ -21,10 +20,10 @@ conditions at its on-curve singularities: the geometric flatness condition **(A�
 sector-cancellation condition **(B)**, the two regularity hypotheses of the generalized residue
 theorem (HW Thm 3.3), evaluating the Cauchy principal value `PV ∮_γ f`. Condition (A′) asks that
 at each prescribed singularity `s ∈ S` the curve `γ` be **flat of order equal to the order of `f`'s
-pole there** — transversal at a simple pole, flatter at a higher-order pole — so it meets `s` as a
-finite union of model sectors. Condition (B) governs poles of order `> 1`, coupling the Laurent
-principal part of `f` at each such pole with the entry/exit tangents of `γ` there, via a
-sector-cancellation identity; simple poles need no sector condition.
+pole there** — with a one-sided tangent line at a simple pole, hugged ever tighter at a higher-order
+pole — so it meets `s` as a finite union of model sectors. Condition (B) governs poles of order
+`> 1`, coupling the Laurent principal part of `f` at each such pole with the entry/exit tangents of
+`γ` there, via a sector-cancellation identity; simple poles need no sector condition.
 
 ## Main definitions
 
@@ -37,7 +36,7 @@ sector-cancellation identity; simple poles need no sector condition.
   from the reversed incoming tangent at `b` to the outgoing tangent at `a`.
 * `FlatOfOrder γ t₀ n` — `γ` is **flat of order `n`** at `t₀` (HW Def. 3.2): from each side the
   perpendicular distance from `γ t` to a one-sided tangent line at `γ t₀` is `o(‖γ t − γ t₀‖ⁿ)`.
-  Order `1` is a transversal crossing; larger `n` hugs the line more tightly.
+  Order `1` gives a one-sided tangent line; larger `n` hugs the line more tightly.
 * `FlatOfOrderBasepoint γ a b n` — the analogue at the join `γ a = γ b` of a closed curve, for the
   outgoing branch at `a` (from the right) and the incoming branch at `b` (from the left).
 * `ConditionAprime γ a b f S` — HW condition (A′), a structure requiring `γ` to meet each `s ∈ S`
@@ -180,8 +179,8 @@ one-sided **tangent line** through `γ t₀`, its perpendicular distance to that
 than `‖γ t − γ t₀‖ⁿ`. There are nonzero one-sided directions `v_plus` (right) and `v_minus` (left)
 for which the component of `γ t − γ t₀` orthogonal to `v` — of length
 `|((γ t − γ t₀) · conj v).im| / ‖v‖`, the distance from `γ t` to the line `γ t₀ + ℝ • v` — is
-`o(‖γ t − γ t₀‖ⁿ)` as `t → t₀⁺`, symmetrically as `t → t₀⁻`. Order `1` is a transversal crossing;
-larger `n` forces it to hug the line ever more tightly. Distance is measured to the tangent
+`o(‖γ t − γ t₀‖ⁿ)` as `t → t₀⁺`, symmetrically as `t → t₀⁻`. Order `1` is first-order tangency to a
+line; larger `n` forces it to hug the line ever more tightly. Distance is measured to the tangent
 *line*, not to a moving point on it, so flatness ignores the along-tangent speed, as in HW. -/
 def FlatOfOrder (γ : ℝ → ℂ) (t₀ : ℝ) (n : ℕ) : Prop :=
   ∃ v_plus v_minus : ℂ, v_plus ≠ 0 ∧ v_minus ≠ 0 ∧
@@ -199,10 +198,32 @@ def FlatOfOrderBasepoint (γ : ℝ → ℂ) (a b : ℝ) (n : ℕ) : Prop :=
     (fun t => |((γ t - γ a) * star v_plus).im| / ‖v_plus‖) =o[𝓝[>] a] (fun t => ‖γ t - γ a‖ ^ n) ∧
     (fun t => |((γ t - γ b) * star v_minus).im| / ‖v_minus‖) =o[𝓝[<] b] (fun t => ‖γ t - γ b‖ ^ n)
 
+/-- `FlatOfOrder` unfolded: the one-sided little-o clauses that build the flatness hypothesis, so
+downstream code can construct or destruct it without unfolding the definition. -/
+theorem flatOfOrder_iff {γ : ℝ → ℂ} {t₀ : ℝ} {n : ℕ} :
+    FlatOfOrder γ t₀ n ↔
+      ∃ v_plus v_minus : ℂ, v_plus ≠ 0 ∧ v_minus ≠ 0 ∧
+        (fun t => |((γ t - γ t₀) * star v_plus).im| / ‖v_plus‖)
+            =o[𝓝[>] t₀] (fun t => ‖γ t - γ t₀‖ ^ n) ∧
+        (fun t => |((γ t - γ t₀) * star v_minus).im| / ‖v_minus‖)
+            =o[𝓝[<] t₀] (fun t => ‖γ t - γ t₀‖ ^ n) :=
+  Iff.rfl
+
+/-- `FlatOfOrderBasepoint` unfolded: the two one-sided little-o clauses (outgoing at `a`, incoming
+at `b`) that build the basepoint flatness hypothesis, exposed without unfolding the definition. -/
+theorem flatOfOrderBasepoint_iff {γ : ℝ → ℂ} {a b : ℝ} {n : ℕ} :
+    FlatOfOrderBasepoint γ a b n ↔
+      ∃ v_plus v_minus : ℂ, v_plus ≠ 0 ∧ v_minus ≠ 0 ∧
+        (fun t => |((γ t - γ a) * star v_plus).im| / ‖v_plus‖)
+            =o[𝓝[>] a] (fun t => ‖γ t - γ a‖ ^ n) ∧
+        (fun t => |((γ t - γ b) * star v_minus).im| / ‖v_minus‖)
+            =o[𝓝[<] b] (fun t => ‖γ t - γ b‖ ^ n) :=
+  Iff.rfl
+
 /-- **Hungerbühler–Wasem condition (A′)** for `γ` along `[a, b]`, at the prescribed singular set `S`
 of the integrand `f`: `γ` meets each singularity only **finitely often** and is **flat** to the
 order of `f`'s pole there. Wherever `γ` meets a point of `S` at which `f` has a pole of order `n`,
-the curve is flat of order `n` — transversal at a simple pole, flatter at a higher-order pole; the
+the curve is flat of order `n` — tangent to a line at a simple pole, flatter at a higher pole; the
 crossings being finite, the singularity is met as a *finite* union of model sectors. Together with
 condition (B) it is a regularity hypothesis of the generalized residue theorem (HW Thm 3.3). It is
 imposed at each *interior* crossing `t₀ ∈ (a, b)` and the *basepoint* `γ a` (`= γ b` for a closed
