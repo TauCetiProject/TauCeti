@@ -61,6 +61,9 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
 
 * D. Chafaï, *Aspects of the Bernstein theorem* (2013).
 * R. Schilling, R. Song, Z. Vondraček, *Bernstein Functions* (de Gruyter, 2nd ed. 2012), Ch. 1.
+* Formal source: `HilleYosida/BernsteinChafai.lean` (our hille-yosida formalization) — the Lean
+  proofs of `chafai_identity` and the Bernstein→Laplace kernel convergence were adapted from it
+  (the `chafai_identity` left `sorry` there is completed here).
 -/
 
 public section

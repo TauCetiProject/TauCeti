@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.CompletelyMonotone.LaplaceRepresentation
 public import TauCeti.Analysis.CompletelyMonotone.BernsteinMeasures
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureExt
 public import Mathlib.MeasureTheory.Measure.TightNormed
@@ -137,7 +136,7 @@ private lemma shiftedMeasure_closedBall_compl_le
                 ∫ p : ℝ≥0, Real.exp (-(x * (p : ℝ))) ∂μ := by
               rw [integral_sub h_one h_exp]
         _ = μ.real univ - laplaceTransform μ x := by
-              simp [laplaceTransform]
+              simp [laplaceTransform_apply]
         _ = f δ - f (x + δ) := by
               have h0 := hμ.eq_laplaceTransform (t := 0) le_rfl
               have hxrep := hμ.eq_laplaceTransform (t := x) hx.le
@@ -410,7 +409,7 @@ theorem exists_representsLaplace_of_isCompletelyMonotone
       exact integrable_laplaceKernel_of_nonneg _ ht
     calc
       laplaceTransform ν t
-          = ∫ p, Real.exp (-(t * (p : ℝ))) ∂ν := rfl
+          = ∫ p, Real.exp (-(t * (p : ℝ))) ∂ν := laplaceTransform_apply ν t
       _ = (∫ p, Real.exp (-(t * (p : ℝ))) ∂μ) +
             ∫ p, Real.exp (-(t * (p : ℝ))) ∂(ENNReal.ofReal L •
               Measure.dirac (0 : ℝ≥0)) := by
@@ -605,10 +604,11 @@ theorem exists_representsLaplace_of_isClosedCompletelyMonotone
   have hshift_laplace :
       Tendsto (fun n => ∫ p, Real.exp (-(t * (p : ℝ))) ∂(μ n)) (U : Filter ℕ)
         (nhds (f t)) := by
-    simpa [laplaceTransform] using hlaplace_U
+    simpa [laplaceTransform_apply] using hlaplace_U
   have hweak_laplace :
       Tendsto (fun n => ∫ p, Real.exp (-(t * (p : ℝ))) ∂(μ n)) (U : Filter ℕ)
-        (nhds (∫ p, Real.exp (-(t * (p : ℝ))) ∂μ₀)) := by
+        (nhds (laplaceTransform μ₀ t)) := by
+    rw [laplaceTransform_apply]
     simpa using hweak (laplaceKernelBoundedContinuous ht)
   exact tendsto_nhds_unique hshift_laplace hweak_laplace
 
@@ -628,7 +628,7 @@ private lemma integral_laplaceExpGenerator_pow_eq
     ∫ x, (laplaceExpGenerator x) ^ n ∂μ =
       ∫ x, (laplaceExpGenerator x) ^ n ∂ν := by
   have hn : 0 ≤ (n : ℝ) := by exact_mod_cast Nat.zero_le n
-  simpa [laplaceTransform, laplaceExpGenerator_pow] using h (n : ℝ) hn
+  simpa [laplaceTransform_apply, laplaceExpGenerator_pow] using h (n : ℝ) hn
 
 private lemma integral_aeval_laplaceExpGenerator_eq
     {μ ν : Measure ℝ≥0} [IsFiniteMeasure μ] [IsFiniteMeasure ν]

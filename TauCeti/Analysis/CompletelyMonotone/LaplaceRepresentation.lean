@@ -42,13 +42,14 @@ namespace TauCeti
 The theorem statements in this file use the transform only for `0 ≤ t`; for negative `t`, the
 Bochner integral is still a total Lean term, but may be the default value when the integrand is not
 integrable. -/
-noncomputable abbrev laplaceTransform (μ : Measure ℝ≥0) (t : ℝ) : ℝ :=
+noncomputable def laplaceTransform (μ : Measure ℝ≥0) (t : ℝ) : ℝ :=
   ∫ x, Real.exp (-(t * (x : ℝ))) ∂μ
 
 /-- The defining formula for `laplaceTransform`. -/
 @[simp]
 lemma laplaceTransform_apply (μ : Measure ℝ≥0) (t : ℝ) :
-    laplaceTransform μ t = ∫ x, Real.exp (-(t * (x : ℝ))) ∂μ := rfl
+    laplaceTransform μ t = ∫ x, Real.exp (-(t * (x : ℝ))) ∂μ := by
+  rw [laplaceTransform]
 
 /-- The Laplace kernel is measurable as a function of the measure variable. -/
 lemma measurable_laplaceKernel (t : ℝ) :
@@ -105,14 +106,12 @@ lemma laplaceTransform_nonneg (μ : Measure ℝ≥0) (t : ℝ) :
 
 /-! ## Easy direction: finite measures give completely monotone Laplace transforms -/
 
-/-- The Laplace transform of a finite measure on `ℝ≥0` is continuous on `[0, ∞)`.
-
-This is dominated convergence in the parameter `t`, using the constant function `1` as an
-integrable dominating function on the half-line. -/
+/-- The Laplace transform of a finite measure on `ℝ≥0` is continuous on `[0, ∞)`. -/
 theorem laplaceTransform_continuousOn_halfLine (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
     ContinuousOn (laplaceTransform μ) (Ici 0) := by
-  simpa [laplaceTransform] using
-    continuousOn_of_dominated (μ := μ)
+  -- Dominated convergence in the parameter `t`, with the constant `1` as an integrable
+  -- dominating function on the half-line.
+  refine (continuousOn_of_dominated (μ := μ)
       (F := fun (t : ℝ) (x : ℝ≥0) => Real.exp (-(t * (x : ℝ))))
       (bound := fun _ : ℝ≥0 => (1 : ℝ)) (s := Ici (0 : ℝ))
       (by
@@ -128,7 +127,9 @@ theorem laplaceTransform_continuousOn_halfLine (μ : Measure ℝ≥0) [IsFiniteM
       (by
         refine Filter.Eventually.of_forall fun x => ?_
         exact (by fun_prop :
-          Continuous fun t : ℝ => Real.exp (-(t * (x : ℝ)))).continuousOn)
+          Continuous fun t : ℝ => Real.exp (-(t * (x : ℝ)))).continuousOn)).congr ?_
+  intro t _
+  simp only [laplaceTransform_apply]
 
 /-- The `n`-th signed moment kernel integral attached to a Laplace transform.
 
