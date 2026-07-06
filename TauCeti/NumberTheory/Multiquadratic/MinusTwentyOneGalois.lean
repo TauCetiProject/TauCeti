@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantExampleLists
+public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantExampleRoots
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantGaloisGroup
 
 /-!
@@ -37,10 +37,10 @@ multiquadratic field `ℚ(√-1, √-3, √-7)` attached to the prime discrimina
 and `-7` in the genus-field example for `ℚ(√-21)`. -/
 theorem card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven :
     Nat.card
-      ((adjoin ℚ ({Complex.I, sqrtNegNat 3, sqrtNegNat 7} : Set ℂ) :
+      ((adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) :
           IntermediateField ℚ ℂ)
           ≃ₐ[ℚ]
-        (adjoin ℚ ({Complex.I, sqrtNegNat 3, sqrtNegNat 7} : Set ℂ) :
+        (adjoin ℚ ({Complex.I, sqrtNegThree, sqrtNegSeven} : Set ℂ) :
           IntermediateField ℚ ℂ))
       = 8 := by
   have h := card_aut_adjoin_roots_primeDiscriminantRadicands
@@ -48,7 +48,7 @@ theorem card_aut_adjoin_I_sqrt_neg_three_sqrt_neg_seven :
     isPrimeDiscriminant_negFourNegThreeNegSevenPrimeDiscriminants
     injective_negFourNegThreeNegSevenPrimeDiscriminants
     not_all_three_evenPrimeDiscriminants_negFourNegThreeNegSevenPrimeDiscriminants
-    (fun i : Fin 3 => ![Complex.I, sqrtNegNat 3, sqrtNegNat 7] i)
+    (fun i : Fin 3 => ![Complex.I, sqrtNegThree, sqrtNegSeven] i)
     root_neg_four_neg_three_neg_seven_sq
   rw [← range_roots_neg_four_neg_three_neg_seven]
   exact h.trans (by norm_num [Nat.card_fin])
