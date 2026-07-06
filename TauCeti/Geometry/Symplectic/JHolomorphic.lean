@@ -28,6 +28,8 @@ different Cauchy--Riemann convention.
 * `IsJHolomorphicWithinAt`: a map has a complex-linear Frechet derivative within a set.
 * `IsJHolomorphicOn` and `IsJHolomorphic`: setwise and global versions.
 
+It also records the immediate differentiability and continuity consequences of these predicates.
+
 The Cauchy--Riemann equation `df ∘ J = J' ∘ df` is real-linear in `df`, so a continuous
 real-linear map is `J`-holomorphic exactly when it is complex-linear, and `J`-holomorphic maps
 are closed under pointwise sums, differences, and real scalar multiples:
@@ -140,6 +142,20 @@ lemma IsJHolomorphicAt.differentiableAt {J : AlmostComplexStructure V}
     DifferentiableAt ℝ f x :=
   hf.hasFDerivAt.differentiableAt
 
+/-- A pointwise `J`-holomorphic map is continuous at the point. -/
+lemma IsJHolomorphicAt.continuousAt {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {x : V}
+    (hf : IsJHolomorphicAt J J' f x) :
+    ContinuousAt f x :=
+  hf.hasFDerivAt.continuousAt
+
+/-- A pointwise `J`-holomorphic map is continuous within any source set at the point. -/
+lemma IsJHolomorphicAt.continuousWithinAt {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicAt J J' f x) :
+    ContinuousWithinAt f s x :=
+  hf.continuousAt.continuousWithinAt
+
 /-- The Frechet derivative of a `J`-holomorphic map is complex-linear. -/
 lemma IsJHolomorphicAt.fderiv_isComplexLinear {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {f : V → W} {x : V}
@@ -184,6 +200,13 @@ lemma IsJHolomorphicWithinAt.differentiableWithinAt {J : AlmostComplexStructure 
     DifferentiableWithinAt ℝ f s x :=
   hf.hasFDerivWithinAt.differentiableWithinAt
 
+/-- A map that is `J`-holomorphic within a set is continuous within that set at the point. -/
+lemma IsJHolomorphicWithinAt.continuousWithinAt {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicWithinAt J J' f s x) :
+    ContinuousWithinAt f s x :=
+  hf.hasFDerivWithinAt.continuousWithinAt
+
 /-- The within-set Frechet derivative is complex-linear when the set has unique derivatives. -/
 lemma IsJHolomorphicWithinAt.fderivWithin_isComplexLinear {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
@@ -207,6 +230,30 @@ lemma IsJHolomorphicWithinAt.isJHolomorphicAt_of_mem_nhds {J : AlmostComplexStru
     IsJHolomorphicAt J J' f x :=
   ⟨hf.choose, (hasFDerivWithinAt_of_mem_nhds hs).mp hf.hasFDerivWithinAt,
     hf.derivative_isComplexLinear⟩
+
+/-- A map that is `J`-holomorphic within a neighborhood of the point is continuous at the
+point. -/
+lemma IsJHolomorphicWithinAt.continuousAt_of_mem_nhds {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicWithinAt J J' f s x) (hs : s ∈ nhds x) :
+    ContinuousAt f x :=
+  hf.continuousWithinAt.continuousAt hs
+
+/-- A map that is `J`-holomorphic within a neighborhood of the point is differentiable at the
+point. -/
+lemma IsJHolomorphicWithinAt.differentiableAt_of_mem_nhds {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicWithinAt J J' f s x) (hs : s ∈ nhds x) :
+    DifferentiableAt ℝ f x :=
+  (hf.isJHolomorphicAt_of_mem_nhds hs).differentiableAt
+
+/-- A map that is `J`-holomorphic within a set is continuous within every smaller source set at
+the point. -/
+lemma IsJHolomorphicWithinAt.continuousWithinAt_mono {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s t : Set V} {x : V}
+    (hf : IsJHolomorphicWithinAt J J' f s x) (hts : t ⊆ s) :
+    ContinuousWithinAt f t x :=
+  hf.continuousWithinAt.mono hts
 
 /-- A constant map is `J`-holomorphic at every point. -/
 @[simp]
@@ -299,12 +346,112 @@ lemma IsJHolomorphicOn.mono {J : AlmostComplexStructure V} {J' : AlmostComplexSt
     let hfx := hf x (hst hx)
     ⟨hfx.choose, hfx.hasFDerivWithinAt.mono hst, hfx.derivative_isComplexLinear⟩
 
+/-- A map that is `J`-holomorphic on a set is differentiable on that set. -/
+lemma IsJHolomorphicOn.differentiableOn {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V}
+    (hf : IsJHolomorphicOn J J' f s) :
+    DifferentiableOn ℝ f s :=
+  fun x hx => (hf x hx).differentiableWithinAt
+
+/-- A map that is `J`-holomorphic on a set is differentiable within that set at each of its
+points. -/
+lemma IsJHolomorphicOn.differentiableWithinAt {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicOn J J' f s) (hx : x ∈ s) :
+    DifferentiableWithinAt ℝ f s x :=
+  (hf x hx).differentiableWithinAt
+
+/-- A map that is `J`-holomorphic on a set is continuous on that set. -/
+lemma IsJHolomorphicOn.continuousOn {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V}
+    (hf : IsJHolomorphicOn J J' f s) :
+    ContinuousOn f s :=
+  fun x hx => (hf x hx).continuousWithinAt
+
+/-- A map that is `J`-holomorphic on a set is continuous within that set at each of its points. -/
+lemma IsJHolomorphicOn.continuousWithinAt {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicOn J J' f s) (hx : x ∈ s) :
+    ContinuousWithinAt f s x :=
+  (hf x hx).continuousWithinAt
+
+/-- A map that is `J`-holomorphic on a neighborhood of a point is differentiable at that point. -/
+lemma IsJHolomorphicOn.differentiableAt_of_mem_nhds {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicOn J J' f s) (hs : s ∈ nhds x) :
+    DifferentiableAt ℝ f x :=
+  (hf x (mem_of_mem_nhds hs)).differentiableAt_of_mem_nhds hs
+
+/-- A map that is `J`-holomorphic on a neighborhood of a point is continuous at that point. -/
+lemma IsJHolomorphicOn.continuousAt_of_mem_nhds {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicOn J J' f s) (hs : s ∈ nhds x) :
+    ContinuousAt f x :=
+  (hf x (mem_of_mem_nhds hs)).continuousAt_of_mem_nhds hs
+
+/-- A map that is `J`-holomorphic on an open set is pointwise differentiable at each point of
+that set. -/
+lemma IsJHolomorphicOn.differentiableAt_of_isOpen {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicOn J J' f s) (hs : IsOpen s) (hx : x ∈ s) :
+    DifferentiableAt ℝ f x :=
+  hf.differentiableAt_of_mem_nhds (hs.mem_nhds hx)
+
+/-- A map that is `J`-holomorphic on an open set is continuous at each point of that set. -/
+lemma IsJHolomorphicOn.continuousAt_of_isOpen {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W} {s : Set V} {x : V}
+    (hf : IsJHolomorphicOn J J' f s) (hs : IsOpen s) (hx : x ∈ s) :
+    ContinuousAt f x :=
+  hf.continuousAt_of_mem_nhds (hs.mem_nhds hx)
+
 /-- A globally `J`-holomorphic map is `J`-holomorphic on every set. -/
 lemma IsJHolomorphic.isJHolomorphicOn {J : AlmostComplexStructure V}
     {J' : AlmostComplexStructure W} {f : V → W}
     (hf : IsJHolomorphic J J' f) (s : Set V) :
     IsJHolomorphicOn J J' f s :=
   fun x _ => (hf x).isJHolomorphicWithinAt
+
+/-- A globally `J`-holomorphic map is differentiable. -/
+lemma IsJHolomorphic.differentiable {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W}
+    (hf : IsJHolomorphic J J' f) :
+    Differentiable ℝ f :=
+  fun x => (hf x).differentiableAt
+
+/-- A globally `J`-holomorphic map is differentiable at every point. -/
+lemma IsJHolomorphic.differentiableAt {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W}
+    (hf : IsJHolomorphic J J' f) (x : V) :
+    DifferentiableAt ℝ f x :=
+  (hf x).differentiableAt
+
+/-- A globally `J`-holomorphic map is continuous. -/
+lemma IsJHolomorphic.continuous {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W}
+    (hf : IsJHolomorphic J J' f) :
+    Continuous f :=
+  continuous_iff_continuousAt.mpr fun x => (hf x).continuousAt
+
+/-- A globally `J`-holomorphic map is continuous at every point. -/
+lemma IsJHolomorphic.continuousAt {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W}
+    (hf : IsJHolomorphic J J' f) (x : V) :
+    ContinuousAt f x :=
+  (hf x).continuousAt
+
+/-- A globally `J`-holomorphic map is differentiable on every source set. -/
+lemma IsJHolomorphic.differentiableOn {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W}
+    (hf : IsJHolomorphic J J' f) (s : Set V) :
+    DifferentiableOn ℝ f s :=
+  (hf.isJHolomorphicOn s).differentiableOn
+
+/-- A globally `J`-holomorphic map is continuous on every source set. -/
+lemma IsJHolomorphic.continuousOn {J : AlmostComplexStructure V}
+    {J' : AlmostComplexStructure W} {f : V → W}
+    (hf : IsJHolomorphic J J' f) (s : Set V) :
+    ContinuousOn f s :=
+  (hf.isJHolomorphicOn s).continuousOn
 
 /-- A constant map is globally `J`-holomorphic. -/
 @[simp]
