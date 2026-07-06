@@ -21,7 +21,7 @@ sector-cancellation condition **(B)**, the two regularity hypotheses of the gene
 theorem (HW Thm 3.3), evaluating the Cauchy principal value `PV ∮_γ f`. Condition (A′) asks that
 at each prescribed singularity `s ∈ S` the curve `γ` be **flat of order equal to the order of `f`'s
 pole there** — with a one-sided tangent line at a simple pole, hugged ever tighter at a higher-order
-pole — so it meets `s` as a finite union of model sectors. Condition (B) governs poles of order
+pole — and that it meet each `s` only finitely often. Condition (B) governs poles of order
 `> 1`, coupling the Laurent principal part of `f` at each such pole with the entry/exit tangents of
 `γ` there, via a sector-cancellation identity; simple poles need no sector condition.
 
@@ -223,15 +223,15 @@ theorem flatOfOrderBasepoint_iff {γ : ℝ → ℂ} {a b : ℝ} {n : ℕ} :
 /-- **Hungerbühler–Wasem condition (A′)** for `γ` along `[a, b]`, at the prescribed singular set `S`
 of the integrand `f`: `γ` meets each singularity only **finitely often** and is **flat** to the
 order of `f`'s pole there. Wherever `γ` meets a point of `S` at which `f` has a pole of order `n`,
-the curve is flat of order `n` — tangent to a line at a simple pole, flatter at a higher pole; the
-crossings being finite, the singularity is met as a *finite* union of model sectors. Together with
+the curve is flat of order `n` — tangent to a line at a simple pole, flatter at a higher pole — and
+each such `s` is met only finitely often. Together with
 condition (B) it is a regularity hypothesis of the generalized residue theorem (HW Thm 3.3). It is
 imposed at each *interior* crossing `t₀ ∈ (a, b)` and the *basepoint* `γ a` (`= γ b` for a closed
 curve), so a join singularity is not left free. Pole orders are read from `f` via
 `meromorphicOrderAt`; `S` selects the singularities to constrain. -/
 structure ConditionAprime (γ : ℝ → ℂ) (a b : ℝ) (f : ℂ → ℂ) (S : Finset ℂ) : Prop where
-  /-- Each prescribed singularity is met only **finitely often** on `[a, b]`, so the indentation
-  around it is a *finite* union of model sectors. -/
+  /-- Each prescribed singularity `s ∈ S` is met only **finitely often** on `[a, b]`: the crossing
+  set `[a, b] ∩ γ ⁻¹' {s}` is finite. -/
   finite_crossings : ∀ s ∈ S, (Set.Icc a b ∩ γ ⁻¹' {s}).Finite
   /-- At each interior crossing of a prescribed singularity where `f` has a pole of order `n`, the
   curve `γ` is flat of order `n`. -/
