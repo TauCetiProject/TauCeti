@@ -367,8 +367,9 @@ pair `(v, J₀ v)` to `(J₀ v, -v)`, which has the same symplectic area. This i
 @[simp]
 lemma symplecticForm_comp_almostComplexStructure {U : Type*} [AddCommGroup U] [Module ℝ U]
     (ω : SymplecticForm V) (J₀ : AlmostComplexStructure U) (F : U →ₗ[ℝ] V) (v : U) :
-    -ω (F (J₀.toLinearMap v)) (F v) = ω (F v) (F (J₀.toLinearMap v)) :=
-  ω.neg_eq (F (J₀.toLinearMap v)) (F v)
+    ω ((F.comp J₀.toLinearMap) v) ((F.comp J₀.toLinearMap) (J₀ v)) =
+      ω (F v) (F (J₀.toLinearMap v)) :=
+  bilinForm_comp_almostComplexStructure ω.isAlt J₀ F v
 
 /-- A symplectic form is reflexive as an orthogonality relation. -/
 lemma isRefl (ω : SymplecticForm V) : ω.toBilinForm.IsRefl :=
