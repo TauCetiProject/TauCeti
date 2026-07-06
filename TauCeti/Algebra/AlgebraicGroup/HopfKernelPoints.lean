@@ -73,7 +73,6 @@ noncomputable def quotientKerPointsMulEquiv (f : H →ₐc[R] K)
 
 /-- The quotient-kernel point equivalence acts by pre-composition with the inverse
 bialgebra equivalence `K ≃ₐc[R] H ⧸ ker f`. -/
-@[simp]
 theorem quotientKerPointsMulEquiv_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : WithConv (H ⧸ (ker f hf).toIdeal →ₐ[R] A)) :
@@ -84,7 +83,6 @@ theorem quotientKerPointsMulEquiv_apply (f : H →ₐc[R] K)
 
 /-- The inverse quotient-kernel point equivalence acts by pre-composition with the
 bialgebra equivalence `H ⧸ ker f ≃ₐc[R] K`. -/
-@[simp]
 theorem quotientKerPointsMulEquiv_symm_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : WithConv (K →ₐ[R] A)) :
@@ -126,7 +124,6 @@ variable [CommRing H] [Ring K] [HopfAlgebra R H] [HopfAlgebra R K]
 
 /-- Including the quotient point attached to a `K`-point back into ambient `H`-points is
 pre-composition along the original surjective Hopf algebra morphism. -/
-@[simp]
 theorem quotientPointsHom_quotientKerPointsMulEquiv_symm_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : HopfAlgebra.points (R := R) (H := K) A) :
@@ -140,7 +137,6 @@ theorem quotientPointsHom_quotientKerPointsMulEquiv_symm_apply (f : H →ₐc[R]
 
 /-- For an arbitrary point of `H ⧸ ker f`, the quotient-points inclusion agrees with first
 identifying it as a `K`-point and then pre-composing along `f`. -/
-@[simp]
 theorem quotientPointsHom_quotientKerPointsMulEquiv_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : HopfAlgebra.points (R := R) (H := H ⧸ (ker f hf).toIdeal) A) :
