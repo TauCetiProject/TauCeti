@@ -27,7 +27,7 @@ public section
 
 namespace TauCeti
 
-open Complex Metric
+open Complex Metric Set
 open scoped ComplexConjugate
 
 /-- The standard Moebius factor of the unit disc sending `a` to `0`. -/
@@ -79,6 +79,24 @@ lemma unitDiscMoebius_eq_zero_iff (a z : Complex.UnitDisc) :
   rw [← Complex.UnitDisc.coe_inj, Complex.UnitDisc.coe_zero, norm_eq_zero.symm,
     norm_unitDiscMoebius]
   exact pseudoHyperbolicExpr_eq_zero_iff_unitDisc z a
+
+/-- The scalar unit-disc Moebius formula maps the open unit disc to itself. -/
+lemma unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one {a : ℂ} (ha : ‖a‖ < 1) :
+    MapsTo
+      (fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z))
+      (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
+  intro z hz
+  rw [mem_ball_zero_iff, ← pseudoHyperbolicExpr_def]
+  exact
+    pseudoHyperbolicExpr_lt_one_of_norm_lt_one
+      (by simpa only [mem_ball_zero_iff] using hz) ha
+
+/-- The scalar formula of a unit-disc Moebius factor maps the open unit disc to itself. -/
+lemma unitDiscMoebiusFormula_mapsTo_ball (a : Complex.UnitDisc) :
+    MapsTo
+      (fun z : ℂ => (z - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * z))
+      (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) :=
+  unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one a.norm_lt_one
 
 /-- The scalar Moebius formula with center of norm less than one is holomorphic on the unit disc. -/
 lemma differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha : ‖a‖ < 1) :

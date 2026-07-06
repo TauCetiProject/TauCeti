@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.Complex.Schwarz
-public import TauCeti.Analysis.Complex.Conformal.UnitDiscAutomorphism
+public import TauCeti.Analysis.Complex.Conformal.Moebius
 
 /-!
 # Schwarz--Pick for the pseudo-hyperbolic expression
@@ -33,29 +33,11 @@ namespace TauCeti
 open Complex Metric Set
 open scoped ComplexConjugate
 
-/-- The scalar unit-disc Moebius formula maps the open unit disc to itself. -/
-lemma unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one {a : ℂ} (ha : ‖a‖ < 1) :
-    MapsTo
-      (fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z))
-      (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-  intro z hz
-  rw [mem_ball_zero_iff, ← pseudoHyperbolicExpr_def]
-  exact
-    pseudoHyperbolicExpr_lt_one_of_norm_lt_one
-      (by simpa only [mem_ball_zero_iff] using hz) ha
-
-/-- The scalar formula of a unit-disc Moebius factor maps the open unit disc to itself. -/
-lemma unitDiscMoebiusFormula_mapsTo_ball (a : Complex.UnitDisc) :
-    MapsTo
-      (fun z : ℂ => (z - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * z))
-      (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) :=
-  unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one a.norm_lt_one
-
 /--
 The Schwarz--Pick contraction estimate for the pseudo-hyperbolic expression on the open unit
 disc.
 -/
-theorem schwarzPick_pseudoHyperbolicExpr {f : ℂ → ℂ}
+theorem pseudoHyperbolicExpr_map_le {f : ℂ → ℂ}
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
     (hmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
     {z w : ℂ} (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
@@ -101,24 +83,14 @@ theorem schwarzPick_pseudoHyperbolicExpr {f : ℂ → ℂ}
     simpa [ξ] using unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one
       (a := w) hw_norm hz
   have hsource_ξ : source ξ = z := by
-    have hden : 1 - (starRingEnd ℂ) w * z ≠ 0 :=
-      one_sub_conj_mul_ne_zero_of_norm_lt_one hz_norm hw_norm
-    have hnorm : 1 - (starRingEnd ℂ) w * w ≠ 0 :=
-      one_sub_conj_mul_ne_zero_of_norm_lt_one hw_norm hw_norm
-    have hden₂ :
-        1 + (starRingEnd ℂ) w * ((z - w) / (1 - (starRingEnd ℂ) w * z)) =
-          (1 - (starRingEnd ℂ) w * w) / (1 - (starRingEnd ℂ) w * z) := by
-      field_simp [hden]
-      ring
-    have hden_comm : 1 - z * (starRingEnd ℂ) w ≠ 0 := by
-      simpa [mul_comm] using hden
-    have hnorm_comm : 1 - w * (starRingEnd ℂ) w ≠ 0 := by
-      simpa [mul_comm] using hnorm
-    dsimp [source, ξ]
-    simp only [map_neg, neg_mul, sub_neg_eq_add]
-    rw [hden₂]
-    field_simp [hden_comm, hnorm_comm]
-    ring_nf
+    let wD : Complex.UnitDisc := Complex.UnitDisc.mk w hw_norm
+    let zD : Complex.UnitDisc := Complex.UnitDisc.mk z hz_norm
+    have hξ : ξ = (unitDiscMoebius wD zD : ℂ) := by
+      simp [ξ, wD, zD]
+    have hcomp : unitDiscMoebius (-wD) (unitDiscMoebius wD zD) = zD := by
+      exact congr_fun (unitDiscMoebius_neg_comp_unitDiscMoebius wD) zD
+    have hcoe := congrArg (fun u : Complex.UnitDisc => (u : ℂ)) hcomp
+    simpa [source, hξ, wD, zD] using hcoe
   have hg_ξ : g ξ = target (f z) := by
     simp [g, hsource_ξ]
   have hξ_norm : ‖ξ‖ < 1 := by
@@ -132,21 +104,21 @@ theorem schwarzPick_pseudoHyperbolicExpr {f : ℂ → ℂ}
       rw [pseudoHyperbolicExpr_def]
 
 /-- The raw norm-quotient form of Schwarz--Pick. -/
-theorem schwarzPick_norm_div_le {f : ℂ → ℂ}
+theorem norm_div_sub_le {f : ℂ → ℂ}
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
     (hmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
     {z w : ℂ} (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
     ‖(f z - f w) / (1 - (starRingEnd ℂ) (f w) * f z)‖
       ≤ ‖(z - w) / (1 - (starRingEnd ℂ) w * z)‖ :=
   by
-    simpa [pseudoHyperbolicExpr_def] using schwarzPick_pseudoHyperbolicExpr hf hmaps hz hw
+    simpa [pseudoHyperbolicExpr_def] using pseudoHyperbolicExpr_map_le hf hmaps hz hw
 
 /-- Bundled unit-disc form of the Schwarz--Pick contraction estimate. -/
-theorem schwarzPick_pseudoHyperbolicExpr_unitDisc {f : ℂ → ℂ}
+theorem pseudoHyperbolicExpr_map_le_unitDisc {f : ℂ → ℂ}
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
     (hmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
     (z w : Complex.UnitDisc) :
     pseudoHyperbolicExpr (f z) (f w) ≤ pseudoHyperbolicExpr (z : ℂ) (w : ℂ) :=
-  schwarzPick_pseudoHyperbolicExpr hf hmaps z.property w.property
+  pseudoHyperbolicExpr_map_le hf hmaps z.property w.property
 
 end TauCeti
