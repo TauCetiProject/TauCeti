@@ -51,8 +51,7 @@ theorem exists_perm_nat_extending {n : ℕ} (k : Fin n → ℕ) (hk : Function.I
   Equiv.Perm.exists_extending_pair (fun i : Fin n => i.val) k Fin.val_injective hk
 
 /-- A strictly monotone finite selection `k : Fin m → ℕ` extends to a strictly increasing
-self-map of `ℕ`.  The extension agrees with `k` on the first `m` inputs and then follows
-the identity shifted above the finite range of `k`. -/
+self-map of `ℕ` that agrees with `k` on the first `m` inputs. -/
 theorem exists_strictMono_nat_extending_fin {m : ℕ} {k : Fin m → ℕ} (hk : StrictMono k) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ i : Fin m, φ i.val = k i := by
   classical
