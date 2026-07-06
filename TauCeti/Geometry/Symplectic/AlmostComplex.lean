@@ -304,6 +304,25 @@ lemma isComplexLinearMap_comp_almostComplexStructure_toLinearMap_iff
 
 end ComplexLinearMap
 
+/-- The ordered pairing `B (F v) (F (J₀ v))` of an alternating bilinear form `B` is unchanged when
+both arguments are precomposed by a source almost complex structure `J₀`: rotating the source by
+`J₀` sends the pair `(v, J₀ v)` to `(J₀ v, -v)`, and alternation leaves the pairing unchanged.
+
+Only alternation of `B` is used, so the statement lives at the `LinearMap.BilinForm` level; the
+`SymplecticForm` corollary is `SymplecticForm.symplecticForm_comp_almostComplexStructure`. -/
+lemma bilinForm_comp_almostComplexStructure {U V : Type*} [AddCommGroup U] [Module ℝ U]
+    [AddCommGroup V] [Module ℝ V] {B : LinearMap.BilinForm ℝ V} (hB : B.IsAlt)
+    (J₀ : AlmostComplexStructure U) (F : U →ₗ[ℝ] V) (v : U) :
+    B ((F.comp J₀.toLinearMap) v) ((F.comp J₀.toLinearMap) (J₀ v)) = B (F v) (F (J₀ v)) := by
+  have h1 : (F.comp J₀.toLinearMap) v = F (J₀ v) := rfl
+  have h2 : (F.comp J₀.toLinearMap) (J₀ v) = -F v :=
+    calc
+      (F.comp J₀.toLinearMap) (J₀ v) = F (J₀ (J₀ v)) := rfl
+      _ = F (-v) := by rw [J₀.apply_apply]
+      _ = -F v := by rw [map_neg]
+  rw [h1, h2]
+  simpa using hB.neg_eq (F (J₀ v)) (F v)
+
 /-- A symplectic form on a real module is an alternating, nondegenerate bilinear form.
 
 This is the pointwise linear-algebra notion. Closedness of a differential form belongs to the
@@ -343,19 +362,14 @@ lemma neg_eq (ω : SymplecticForm V) (v w : V) :
 
 /-- The ordered area density `ω (F v) (F (J₀ v))` is unchanged when both arguments are
 precomposed by a source almost complex structure `J₀`: rotating the source by `J₀` sends the
-pair `(v, J₀ v)` to `(J₀ v, -v)`, which has the same symplectic area. -/
+pair `(v, J₀ v)` to `(J₀ v, -v)`, which has the same symplectic area. This is the automation-facing
+`SymplecticForm` corollary of `bilinForm_comp_almostComplexStructure`. -/
+@[simp]
 lemma symplecticForm_comp_almostComplexStructure {U : Type*} [AddCommGroup U] [Module ℝ U]
     (ω : SymplecticForm V) (J₀ : AlmostComplexStructure U) (F : U →ₗ[ℝ] V) (v : U) :
     ω ((F.comp J₀.toLinearMap) v) ((F.comp J₀.toLinearMap) (J₀ v)) =
-      ω (F v) (F (J₀ v)) := by
-  have h1 : (F.comp J₀.toLinearMap) v = F (J₀ v) := rfl
-  have h2 : (F.comp J₀.toLinearMap) (J₀ v) = -F v :=
-    calc
-      (F.comp J₀.toLinearMap) (J₀ v) = F (J₀ (J₀ v)) := rfl
-      _ = F (-v) := by rw [J₀.apply_apply]
-      _ = -F v := by rw [map_neg]
-  rw [h1, h2]
-  simpa using ω.neg_eq (F (J₀ v)) (F v)
+      ω (F v) (F (J₀ v)) :=
+  bilinForm_comp_almostComplexStructure ω.isAlt J₀ F v
 
 /-- A symplectic form is reflexive as an orthogonality relation. -/
 lemma isRefl (ω : SymplecticForm V) : ω.toBilinForm.IsRefl :=
