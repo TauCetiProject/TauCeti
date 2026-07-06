@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Algebra.Polynomial
-public import TauCeti.RingTheory.Polynomial.Hermite.Derivative
+public import TauCeti.RingTheory.Polynomial.Hermite.Basic
 
 /-!
 # Basic Hermite functions
@@ -57,27 +57,22 @@ lemma sqrt_factorial_mul_sqrt_pi_ne_zero (n : ℕ) :
     Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi) ≠ 0 :=
   (sqrt_factorial_mul_sqrt_pi_pos n).ne'
 
-/-- The Gaussian envelope used in the Hermite functions. -/
-noncomputable def gaussianEnvelope (x : ℝ) : ℝ :=
+private noncomputable def gaussianEnvelope (x : ℝ) : ℝ :=
   Real.exp (-(x ^ 2 / 2))
 
-/-- The defining equation for the Gaussian envelope. -/
 @[simp]
-lemma gaussianEnvelope_def (x : ℝ) :
+private lemma gaussianEnvelope_def (x : ℝ) :
     gaussianEnvelope x = Real.exp (-(x ^ 2 / 2)) :=
   gaussianEnvelope.eq_1 x
 
-/-- The Gaussian envelope is positive. -/
-lemma gaussianEnvelope_pos (x : ℝ) : 0 < gaussianEnvelope x := by
+private lemma gaussianEnvelope_pos (x : ℝ) : 0 < gaussianEnvelope x := by
   exact Real.exp_pos _
 
-/-- The Gaussian envelope is continuous. -/
-lemma continuous_gaussianEnvelope : Continuous gaussianEnvelope := by
+private lemma continuous_gaussianEnvelope : Continuous gaussianEnvelope := by
   unfold gaussianEnvelope
   exact Real.continuous_exp.comp (((continuous_id.pow 2).div_const 2).neg)
 
-/-- The Gaussian envelope is smooth. -/
-lemma contDiff_gaussianEnvelope : ContDiff ℝ ⊤ gaussianEnvelope := by
+private lemma contDiff_gaussianEnvelope : ContDiff ℝ ⊤ gaussianEnvelope := by
   unfold gaussianEnvelope
   exact Real.contDiff_exp.comp (((contDiff_id.pow 2).div_const 2).neg)
 
@@ -101,25 +96,24 @@ lemma contDiff_hermiteFunction (n : ℕ) : ContDiff ℝ ⊤ (hermiteFunction n) 
   exact ((contDiff_hermiteFunction_poly n).mul contDiff_gaussianEnvelope).div_const
     (Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi))
 
-/-- The zeroth Hermite function is the Gaussian envelope divided by `sqrt (sqrt π)`. -/
+/-- The zeroth Hermite function is the Gaussian divided by `sqrt (sqrt π)`. -/
 @[simp]
 lemma hermiteFunction_zero (x : ℝ) :
-    hermiteFunction 0 x = gaussianEnvelope x / Real.sqrt (Real.sqrt Real.pi) := by
-  simp [hermiteFunction, gaussianEnvelope]
+    hermiteFunction 0 x = Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) := by
+  simp [hermiteFunction]
 
 /-- The first Hermite function is `sqrt 2 * x` times the zeroth Hermite function. -/
 @[simp]
 lemma hermiteFunction_one (x : ℝ) :
     hermiteFunction 1 x = Real.sqrt 2 * x * hermiteFunction 0 x := by
   rw [hermiteFunction_zero]
-  simp only [hermiteFunction, hermite_one, aeval_X, Nat.factorial_one, Nat.cast_one, one_mul,
-    gaussianEnvelope_def]
+  simp only [hermiteFunction, hermite_one, aeval_X, Nat.factorial_one, Nat.cast_one, one_mul]
   ring
 
 /-- The first Hermite function as an explicit scalar multiple of the Gaussian envelope. -/
 lemma hermiteFunction_one_eq (x : ℝ) :
     hermiteFunction 1 x =
-      Real.sqrt 2 * x * gaussianEnvelope x / Real.sqrt (Real.sqrt Real.pi) := by
+      Real.sqrt 2 * x * Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) := by
   rw [hermiteFunction_one, hermiteFunction_zero]
   ring
 
@@ -132,9 +126,9 @@ private lemma aeval_hermite_two (x : ℝ) :
 /-- The second Hermite function in pointwise form. -/
 lemma hermiteFunction_two (x : ℝ) :
     hermiteFunction 2 x =
-      ((x * Real.sqrt 2) ^ 2 - 1) * gaussianEnvelope x /
+      ((x * Real.sqrt 2) ^ 2 - 1) * Real.exp (-(x ^ 2 / 2)) /
         Real.sqrt ((2 : ℝ) * Real.sqrt Real.pi) := by
-  rw [hermiteFunction_def, gaussianEnvelope_def, aeval_hermite_two]
+  rw [hermiteFunction_def, aeval_hermite_two]
   norm_num [Nat.factorial]
 
 end TauCeti
