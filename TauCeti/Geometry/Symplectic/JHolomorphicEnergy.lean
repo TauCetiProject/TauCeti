@@ -22,6 +22,13 @@ Under a taming symplectic form the density is moreover nondegenerate: it is nonn
 real-linear map, vanishes exactly for the zero map, and is positive otherwise. The
 Frechet-derivative versions specialize this to pointwise and within-set `J`-holomorphic maps.
 
+For an *arbitrary* real-linear map the density obeys the **Wirtinger inequality**
+`2 ω(F ∂s, F ∂t) ≤ g(F ∂s, F ∂s) + g(F ∂t, F ∂t)`, the pointwise form of `E(u) ≥ ∫ u^*ω`: the
+difference is the Cauchy--Riemann defect square `g(F ∂s + J (F ∂t), F ∂s + J (F ∂t))`, which
+vanishes exactly when `F` is complex linear, so the inequality is an equality precisely for
+`J`-holomorphic maps. This is the linear-algebra content behind "`J`-holomorphic curves minimize
+energy in their homology class".
+
 The statements here are still pointwise linear algebra and Frechet-derivative calculus. They are
 the local identities that the later holomorphic-curve energy theory will integrate over strips
 or disks.
@@ -41,6 +48,15 @@ or disks.
   Frechet-derivative versions.
 * `TauCeti.SymplecticForm.prod_stdComplexLineEnergyDensity`: product-target energy density is
   the sum of the factor energy densities.
+* `TauCeti.SymplecticForm.stdComplexLineEnergyDensity_sub_two_mul_symplecticForm`: the Wirtinger
+  identity `energyDensity F - 2 ω(F ∂s, F ∂t) = g(F ∂s + J (F ∂t), F ∂s + J (F ∂t))`.
+* `TauCeti.SymplecticForm.two_mul_symplecticForm_le_stdComplexLineEnergyDensity`: the Wirtinger
+  inequality `2 ω(F ∂s, F ∂t) ≤ energyDensity F` for a compatible pair, with the
+  Frechet-derivative corollaries
+  `TauCeti.SymplecticForm.two_mul_symplecticForm_fderiv_le_stdComplexLineEnergyDensity` and
+  `TauCeti.SymplecticForm.two_mul_symplecticForm_fderivWithin_le_stdComplexLineEnergyDensity`.
+* `TauCeti.SymplecticForm.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm_iff`: equality
+  holds exactly for complex-linear (`J`-holomorphic) maps.
 
 The convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: for a compatible pair, `g(·, ·) = ω(·, J ·)` and `du(∂t) = J du(∂s)`.
@@ -370,5 +386,83 @@ lemma fderivWithin_stdComplexLineEnergyDensity_pos (hω : ω.Tames J)
     (ω := ω) (J := J) (f := f) (s := s) (x := x) hω).mpr hfderiv
 
 end IsJHolomorphicWithinAt
+
+namespace SymplecticForm
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V]
+variable {J : AlmostComplexStructure V} {ω : SymplecticForm V}
+
+/-- The Wirtinger identity out of the standard complex line: the standard energy density minus
+twice the symplectic area density is the Cauchy--Riemann defect square
+`g(F ∂s + J (F ∂t), F ∂s + J (F ∂t))`. Needs only `J`-invariance of `ω`. -/
+lemma stdComplexLineEnergyDensity_sub_two_mul_symplecticForm (hinv : ω.Invariant J)
+    (F : (ℝ × ℝ) →ₗ[ℝ] V) :
+    ω.stdComplexLineEnergyDensity J F -
+        2 * ω (F stdComplexLineReal) (F stdComplexLineImag) =
+      ω.associatedBilinForm J (F stdComplexLineReal + J (F stdComplexLineImag))
+        (F stdComplexLineReal + J (F stdComplexLineImag)) := by
+  rw [stdComplexLineEnergyDensity_def]
+  linarith [hinv.associatedBilinForm_add_apply_self (F stdComplexLineReal) (F stdComplexLineImag)]
+
+/-- **Wirtinger inequality.** For a compatible pair `(ω, J)` and any real-linear map out of the
+standard complex line, twice the symplectic area density of the ordered coordinate pair is at
+most the standard energy density: the local form of `E(u) ≥ ∫ u^*ω`. -/
+lemma two_mul_symplecticForm_le_stdComplexLineEnergyDensity (hcompat : ω.Compatible J)
+    (F : (ℝ × ℝ) →ₗ[ℝ] V) :
+    2 * ω (F stdComplexLineReal) (F stdComplexLineImag) ≤
+      ω.stdComplexLineEnergyDensity J F := by
+  have hid := stdComplexLineEnergyDensity_sub_two_mul_symplecticForm hcompat.invariant F
+  have hnn : 0 ≤ ω.associatedBilinForm J (F stdComplexLineReal + J (F stdComplexLineImag))
+      (F stdComplexLineReal + J (F stdComplexLineImag)) :=
+    hcompat.associatedBilinForm_self_nonneg _
+  linarith
+
+/-- The Wirtinger inequality is an equality exactly when the map is complex linear, that is,
+`J`-holomorphic out of the standard complex line: the energy density then equals twice the
+symplectic area density. -/
+lemma stdComplexLineEnergyDensity_eq_two_mul_symplecticForm_iff (hcompat : ω.Compatible J)
+    (F : (ℝ × ℝ) →ₗ[ℝ] V) :
+    ω.stdComplexLineEnergyDensity J F =
+        2 * ω (F stdComplexLineReal) (F stdComplexLineImag) ↔
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) J F := by
+  refine ⟨fun heq => ?_, fun hF => hF.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm⟩
+  have hid := stdComplexLineEnergyDensity_sub_two_mul_symplecticForm hcompat.invariant F
+  have hz : ω.associatedBilinForm J (F stdComplexLineReal + J (F stdComplexLineImag))
+      (F stdComplexLineReal + J (F stdComplexLineImag)) = 0 := by
+    rw [← hid, heq]; ring
+  have hw : F stdComplexLineReal + J (F stdComplexLineImag) = 0 :=
+    (hcompat.associatedBilinForm_self_eq_zero).mp hz
+  have key : J (F stdComplexLineReal) = F stdComplexLineImag := by
+    simpa using congrArg (fun x => J x) (add_eq_zero_iff_eq_neg.mp hw)
+  rw [isComplexLinearMap_stdComplexLine_iff]
+  exact key.symm
+
+section Fderiv
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+variable {J : AlmostComplexStructure W} {ω : SymplecticForm W}
+variable {f : ℝ × ℝ → W}
+
+/-- The Wirtinger inequality for the Frechet derivative of any map from the standard complex
+line: twice the symplectic area density of the derivative's coordinate pair is at most its
+standard energy density. -/
+lemma two_mul_symplecticForm_fderiv_le_stdComplexLineEnergyDensity (hcompat : ω.Compatible J)
+    (x : ℝ × ℝ) :
+    2 * ω (fderiv ℝ f x stdComplexLineReal) (fderiv ℝ f x stdComplexLineImag) ≤
+      ω.stdComplexLineEnergyDensity J (fderiv ℝ f x).toLinearMap :=
+  two_mul_symplecticForm_le_stdComplexLineEnergyDensity hcompat (fderiv ℝ f x).toLinearMap
+
+/-- The Wirtinger inequality for the within-set Frechet derivative of any map from the standard
+complex line. -/
+lemma two_mul_symplecticForm_fderivWithin_le_stdComplexLineEnergyDensity
+    (hcompat : ω.Compatible J) (s : Set (ℝ × ℝ)) (x : ℝ × ℝ) :
+    2 * ω (fderivWithin ℝ f s x stdComplexLineReal)
+        (fderivWithin ℝ f s x stdComplexLineImag) ≤
+      ω.stdComplexLineEnergyDensity J (fderivWithin ℝ f s x).toLinearMap :=
+  two_mul_symplecticForm_le_stdComplexLineEnergyDensity hcompat (fderivWithin ℝ f s x).toLinearMap
+
+end Fderiv
+
+end SymplecticForm
 
 end TauCeti
