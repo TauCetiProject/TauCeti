@@ -357,7 +357,7 @@ lemma normalizerQuotientOrbitRelQuotient_smul_mk (H : Subgroup G)
 `H`-orbit quotient with the normalizer quotient `N(H) / H`. The representative convention is
 the same as Mathlib's `equivSubgroupOrbitsQuotientGroup`: the class of `g • x` corresponds to
 the class of `g⁻¹`. -/
-@[expose] noncomputable def orbitRelQuotientEquivNormalizerQuotientOfNormal
+noncomputable def orbitRelQuotientEquivNormalizerQuotientOfNormal
     [MulAction.IsPretransitive G X] [IsCancelSMul G X]
     (H : Subgroup G) [H.Normal] (x : X) :
     _root_.MulAction.orbitRel.Quotient H X ≃ Subgroup.normalizerQuotient H :=

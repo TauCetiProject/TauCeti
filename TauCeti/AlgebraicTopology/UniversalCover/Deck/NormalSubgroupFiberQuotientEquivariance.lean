@@ -10,8 +10,9 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Deck.NormalizerQuotientFi
 /-!
 # Equivariance for normal deck-subgroup fibre quotients
 
-For a normal subgroup `H ≤ Deck p`, the quotient of a fibre by `H` is already identified
-with the normalizer quotient `N(H) / H`. This file records how that identification interacts
+For a normal subgroup `H ≤ Deck p`, the existing free-transitive fibre-action equivalence
+identifies the quotient of a fibre by `H` with the normalizer quotient `N(H) / H`. This file
+records how that identification, and its regular preconnected-cover specialization, interacts
 with the descended `N(H) / H` action on the fibre quotient.
 
 The orientation is important: the existing fibre-quotient equivalence sends the orbit class
@@ -85,8 +86,17 @@ lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_
     (a : Subgroup.normalizerQuotient H) (x : SubgroupFiberOrbitQuotient H b) :
     subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e (a • x) =
       subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e x * a⁻¹ := by
-  exact TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_inv
-    (G := Deck p) (X := p ⁻¹' {b}) H e a x
+  obtain ⟨φ, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H a
+  refine Quotient.inductionOn' x ?_
+  intro e'
+  obtain ⟨ψ, hψ⟩ := MulAction.exists_smul_eq (Deck p) e e'
+  rw [← hψ, ← subgroupFiberOrbitClass_eq_mk H (ψ • e),
+    Subgroup.normalizerQuotientMk_apply,
+    normalizerQuotient_smul_subgroupFiberOrbitClass, ← mul_smul,
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul,
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul]
+  apply (Subgroup.normalizerQuotientEquivQuotientOfNormal H).injective
+  simp [mul_inv_rev]
 
 /-- For a regular preconnected covering map, the normal-subgroup fibre quotient equivalence
 turns the descended normalizer-quotient action into right multiplication by the inverse. -/

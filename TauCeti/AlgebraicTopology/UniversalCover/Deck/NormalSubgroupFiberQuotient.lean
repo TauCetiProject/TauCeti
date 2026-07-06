@@ -49,7 +49,7 @@ transitive.
 
 Under normality, `N(H) = Deck p`, so this is the fibre-level version of the regular-cover
 specialization from `N(H) / H` to `Deck p / H`. -/
-@[expose] noncomputable def subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal
+noncomputable def subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal
     [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
     SubgroupFiberOrbitQuotient H b ≃ Subgroup.normalizerQuotient H :=
@@ -76,8 +76,23 @@ lemma normalizerQuotientEquivQuotientOfNormal_subgroupFiberOrbitQuotientEquiv
     Subgroup.normalizerQuotientEquivQuotientOfNormal H
         (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e x) =
       subgroupFiberOrbitQuotientEquivQuotientGroup H e x := by
-  exact (Subgroup.normalizerQuotientEquivQuotientOfNormal H).toEquiv.apply_symm_apply
-    (subgroupFiberOrbitQuotientEquivQuotientGroup H e x)
+  refine Quotient.inductionOn' x ?_
+  intro e'
+  obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Deck p) e e'
+  rw [← hφ]
+  -- The deck-specific normalizer quotient equivalence is a wrapper around the generic
+  -- orbit-relation equivalence; the quotient-group equivalence is kept opaque.
+  change
+    Subgroup.normalizerQuotientEquivQuotientOfNormal H
+        (TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal
+          (G := Deck p) (X := p ⁻¹' {b}) H e
+          (Quotient.mk'' (φ • e) : _root_.MulAction.orbitRel.Quotient H (p ⁻¹' {b}))) =
+      subgroupFiberOrbitQuotientEquivQuotientGroup H e
+        (subgroupFiberOrbitClass H (φ • e))
+  rw [TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_apply_smul,
+    subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul,
+    Subgroup.normalizerQuotientEquivQuotientOfNormal_mk]
+  rfl
 
 /-- For a regular cover, the normal-subgroup fibre quotient equivalence, followed by the
 normalizer quotient's normal-case comparison, is the existing equivalence to `Deck p ⧸ H`. -/
@@ -178,9 +193,8 @@ lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_inv_smul
         (subgroupFiberOrbitClass H (φ⁻¹ • e)) =
       Subgroup.normalizerQuotientMk H
         ⟨φ, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
-  rw [subgroupFiberOrbitClass_eq_mk]
-  rw [subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal]
-  simp
+  simpa only [inv_inv] using
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul H e φ⁻¹
 
 /-- For a regular cover, the normal-subgroup fibre quotient equivalence sends the class of
 `φ⁻¹ • e` to the normalizer-quotient class of `φ`. -/

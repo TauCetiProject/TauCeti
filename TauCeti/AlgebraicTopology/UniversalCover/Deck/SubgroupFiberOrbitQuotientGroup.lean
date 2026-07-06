@@ -116,7 +116,7 @@ private lemma quotientGroup_quotientBot_mk (φ : Deck p) :
 
 /-- The subgroup-fibre orbit quotient is equivalent to the quotient of the deck group by the
 subgroup, once the deck action on the chosen fibre is free and transitive. -/
-@[expose] noncomputable def subgroupFiberOrbitQuotientEquivQuotientGroup
+noncomputable def subgroupFiberOrbitQuotientEquivQuotientGroup
     [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
     (H : Subgroup (Deck p)) (e : p ⁻¹' {b}) :
     SubgroupFiberOrbitQuotient H b ≃ Deck p ⧸ H :=
