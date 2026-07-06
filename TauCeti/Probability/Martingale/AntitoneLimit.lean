@@ -13,7 +13,7 @@ Layer-4 result that will consume this existence lemma.
 ## Main results
 
 - `exists_integrable_tendsto_ae_condExp_of_antitone` (roadmap alias
-  `condExp_exists_ae_limit_antitone`): a.e. limit existence for antitone filtrations.
+  `condExp_exists_ae_limit_of_antitone`): a.e. limit existence for antitone filtrations.
 
 Adapted from `cameronfreer/exchangeability`
 (`Probability/Martingale/Crossings/AntitoneLimit.lean`, pin
@@ -105,6 +105,6 @@ lemma exists_integrable_tendsto_ae_condExp_of_antitone
     h_ae_tendsto⟩
 
 /-- Roadmap Layer 4 target name for `exists_integrable_tendsto_ae_condExp_of_antitone`. -/
-alias condExp_exists_ae_limit_antitone := exists_integrable_tendsto_ae_condExp_of_antitone
+alias condExp_exists_ae_limit_of_antitone := exists_integrable_tendsto_ae_condExp_of_antitone
 
 end MeasureTheory
