@@ -290,8 +290,17 @@ lemma IsComplexLinearMap.of_comp_almostComplexStructure_toLinearMap
     IsComplexLinearMap J J' F := by
   rw [isComplexLinearMap_iff_apply] at hF ⊢
   intro v
-  have hJ := congrArg J' (hF v)
-  simpa using hJ.symm
+  have hrot : -F v = J' (F (J v)) := by
+    calc
+      -F v = F (-v) := (map_neg F v).symm
+      _ = F (J (J v)) := by rw [J.apply_apply]
+      _ = J' (F (J v)) := hF v
+  have hneg : -J' (F v) = -F (J v) := by
+    calc
+      -J' (F v) = J' (-F v) := (map_neg J'.toLinearMap (F v)).symm
+      _ = J' (J' (F (J v))) := congrArg J' hrot
+      _ = -F (J v) := J'.apply_apply (F (J v))
+  exact neg_injective hneg.symm
 
 /-- Precomposition by the source almost complex structure preserves and reflects
 complex-linearity. -/
