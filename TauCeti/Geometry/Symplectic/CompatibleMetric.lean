@@ -34,6 +34,8 @@ against exactly this metric.
   `g(J v, J w) = g(v, w)`.
 * `TauCeti.SymplecticForm.Invariant.associatedBilinForm_skewAdjoint`: `J` is `g`-skew-adjoint,
   `g(J v, w) = -g(v, J w)`.
+* `TauCeti.SymplecticForm.Invariant.associatedBilinForm_add_apply_self`: the symmetric
+  polarization identity for `g(a + J b, a + J b)`.
 * `TauCeti.SymplecticForm.Compatible.associatedBilinForm_nondegenerate`: the metric is
   nondegenerate.
 * `TauCeti.SymplecticForm.Compatible.innerProductCore`: the metric of a compatible pair as an
@@ -86,6 +88,19 @@ lemma associatedBilinForm_invariant (hinv : ω.Invariant J) (v w : V) :
 lemma associatedBilinForm_skewAdjoint (hinv : ω.Invariant J) (v w : V) :
     ω.associatedBilinForm J (J v) w = -ω.associatedBilinForm J v (J w) := by
   rw [hinv.associatedBilinForm_apply_left_apply, associatedBilinForm_apply_right_apply, neg_neg]
+
+/-- The polarization identity for the associated metric of a `J`-invariant form:
+`g(a + J b, a + J b) = g(a, a) + g(b, b) - 2 ω(a, b)`, where
+`g = ω.associatedBilinForm J`. -/
+lemma associatedBilinForm_add_apply_self (hinv : ω.Invariant J) (a b : V) :
+    ω.associatedBilinForm J (a + J b) (a + J b) =
+      ω.associatedBilinForm J a a + ω.associatedBilinForm J b b - 2 * ω a b := by
+  have hpol := hinv.associatedBilinForm_isSymm.polarization a (J b)
+  have hcross : ω.associatedBilinForm J a (J b) = -ω a b :=
+    associatedBilinForm_apply_right_apply a b
+  have hself : ω.associatedBilinForm J (J b) (J b) = ω.associatedBilinForm J b b :=
+    ω.associatedBilinForm_apply_apply_self_eq J b
+  linarith
 
 end Invariant
 

@@ -392,29 +392,6 @@ namespace SymplecticForm
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 variable {J : AlmostComplexStructure V} {ω : SymplecticForm V}
 
-/-- The polarization identity behind the Wirtinger inequality: for a `J`-invariant form,
-`g(a + J b, a + J b) = g(a, a) + g(b, b) - 2 ω(a, b)`, where `g = ω.associatedBilinForm J`.
-
-Only invariance is used; taming is needed for the sign of the left side, not for the identity. -/
-lemma Invariant.associatedBilinForm_add_apply_self (hinv : ω.Invariant J) (a b : V) :
-    ω.associatedBilinForm J (a + J b) (a + J b) =
-      ω.associatedBilinForm J a a + ω.associatedBilinForm J b b - 2 * ω a b := by
-  have hcross : ω.associatedBilinForm J a (J b) = -(ω a b) := by
-    rw [associatedBilinForm_apply, AlmostComplexStructure.apply_apply]
-    exact map_neg (ω.toBilinForm a) b
-  have hswap : ω.associatedBilinForm J (J b) a = ω.associatedBilinForm J a (J b) := by
-    rw [associatedBilinForm_apply, associatedBilinForm_apply]
-    exact hinv.associatedBilinForm_apply_swap (J b) a
-  have hself : ω.associatedBilinForm J (J b) (J b) = ω.associatedBilinForm J b b :=
-    ω.associatedBilinForm_apply_apply_self_eq J b
-  have hexpand : ω.associatedBilinForm J (a + J b) (a + J b) =
-      ω.associatedBilinForm J a a + ω.associatedBilinForm J a (J b) +
-        ω.associatedBilinForm J (J b) a + ω.associatedBilinForm J (J b) (J b) := by
-    simp only [map_add, LinearMap.add_apply]
-    ring
-  rw [hexpand, hswap, hcross, hself]
-  ring
-
 /-- The Wirtinger identity out of the standard complex line: the standard energy density minus
 twice the symplectic area density is the Cauchy--Riemann defect square
 `g(F ∂s + J (F ∂t), F ∂s + J (F ∂t))`. Needs only `J`-invariance of `ω`. -/
@@ -436,11 +413,8 @@ lemma two_mul_symplecticForm_le_stdComplexLineEnergyDensity (hcompat : ω.Compat
       ω.stdComplexLineEnergyDensity J F := by
   have hid := stdComplexLineEnergyDensity_sub_two_mul_symplecticForm hcompat.invariant F
   have hnn : 0 ≤ ω.associatedBilinForm J (F stdComplexLineReal + J (F stdComplexLineImag))
-      (F stdComplexLineReal + J (F stdComplexLineImag)) := by
-    rw [associatedBilinForm_apply]
-    rcases eq_or_ne (F stdComplexLineReal + J (F stdComplexLineImag)) 0 with h | h
-    · rw [h]; simp
-    · exact (hcompat.tames _ h).le
+      (F stdComplexLineReal + J (F stdComplexLineImag)) :=
+    hcompat.associatedBilinForm_self_nonneg _
   linarith
 
 /-- The Wirtinger inequality is an equality exactly when the map is complex linear, that is,
@@ -456,11 +430,8 @@ lemma stdComplexLineEnergyDensity_eq_two_mul_symplecticForm_iff (hcompat : ω.Co
   have hz : ω.associatedBilinForm J (F stdComplexLineReal + J (F stdComplexLineImag))
       (F stdComplexLineReal + J (F stdComplexLineImag)) = 0 := by
     rw [← hid, heq]; ring
-  have hw : F stdComplexLineReal + J (F stdComplexLineImag) = 0 := by
-    by_contra h
-    have hpos := hcompat.tames _ h
-    rw [associatedBilinForm_apply] at hz
-    linarith
+  have hw : F stdComplexLineReal + J (F stdComplexLineImag) = 0 :=
+    (hcompat.associatedBilinForm_self_eq_zero).mp hz
   have key : J (F stdComplexLineReal) = F stdComplexLineImag := by
     simpa using congrArg (fun x => J x) (add_eq_zero_iff_eq_neg.mp hw)
   rw [isComplexLinearMap_stdComplexLine_iff]
