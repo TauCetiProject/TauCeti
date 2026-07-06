@@ -12,15 +12,18 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Algebra.Order.ToIntervalMod
 
 /-!
-# The Hungerbühler–Wasem crossing angle and regularity condition (B)
+# The Hungerbühler–Wasem crossing angle and regularity conditions (A′) and (B)
 
 For a curve `γ : ℝ → ℂ` on `[a, b]` and an integrand `f : ℂ → ℂ`, this file defines the **crossing
-angle** of `γ` at a time and the Hungerbühler–Wasem regularity **condition (B)** at the higher-order
-on-curve poles of `f`. Condition (B) is one of the two regularity hypotheses (with condition (A′),
-the transversal-approach/flatness condition) of the generalized residue theorem (HW Thm 3.3), the
-theorem that evaluates the Cauchy principal value `PV ∮_γ f`. It governs poles of order `> 1`,
-coupling the Laurent principal part of `f` at each such pole with the entry/exit tangents of `γ`
-there, through a sector-cancellation identity; simple poles need no sector condition.
+angle** and the **flatness** of `γ` at a time, and the roadmap's two Hungerbühler–Wasem regularity
+conditions at its on-curve singularities: the geometric flatness condition **(A′)** and the analytic
+sector-cancellation condition **(B)**, the two regularity hypotheses of the generalized residue
+theorem (HW Thm 3.3), evaluating the Cauchy principal value `PV ∮_γ f`. Condition (A′) asks that
+at each prescribed singularity `s ∈ S` the curve `γ` be **flat of order equal to the order of `f`'s
+pole there** — with a one-sided tangent line at a simple pole, hugged ever tighter at a higher-order
+pole — and that it meet each `s` only finitely often. Condition (B) governs poles of order
+`> 1`, coupling the Laurent principal part of `f` at each such pole with the entry/exit tangents of
+`γ` there, via a sector-cancellation identity; simple poles need no sector condition.
 
 ## Main definitions
 
@@ -31,6 +34,15 @@ there, through a sector-cancellation identity; simple poles need no sector condi
   piecewise-`C¹` curve.
 * `basepointAngle γ a b` — the analogous opening angle at the join `γ a = γ b` of a closed curve,
   from the reversed incoming tangent at `b` to the outgoing tangent at `a`.
+* `FlatOfOrder γ t₀ n` — `γ` is **flat of order `n`** at `t₀` (HW Def. 3.2): from each side the
+  perpendicular distance from `γ t` to a one-sided tangent line at `γ t₀` is `o(‖γ t − γ t₀‖ⁿ)`.
+  Order `1` gives a one-sided tangent line; larger `n` hugs the line more tightly.
+* `FlatOfOrderBasepoint γ a b n` — the analogue at the join `γ a = γ b` of a closed curve, for the
+  outgoing branch at `a` (from the right) and the incoming branch at `b` (from the left).
+* `ConditionAprime γ a b f S` — HW condition (A′), a structure requiring `γ` to meet each `s ∈ S`
+  finitely often (`finite_crossings`) and be flat of order `n` wherever `f` has a pole of order `n`
+  there (`interior`, `basepoint`). Pole orders come from `f` via `meromorphicOrderAt`; `S` selects
+  the singularities.
 * `SectorCompatible f z₀ θ` — the one-crossing Hungerbühler–Wasem sector condition, a structure with
   fields `angle_rational` (`θ` is a rational multiple of `π`) and `laurent_compatible` (the Laurent
   principal part of `f` at `z₀` resonates with `θ`).
@@ -38,16 +50,20 @@ there, through a sector-cancellation identity; simple poles need no sector condi
   higher-order (order `> 1`) on-curve pole of `f`: at each interior crossing (`ConditionB.interior`)
   and at the basepoint (`ConditionB.basepoint`).
 
-Higher-order on-curve poles are detected **intrinsically** as the times `t₀` where
-`meromorphicOrderAt f (γ t₀) < -1` (a pole of order `> 1`), so the predicate is `S`-free and depends
-only on `(γ, f)`, matching the roadmap signature and the way the generalized residue theorem
-consumes it.
+Both conditions read the on-curve pole orders of `f` from `meromorphicOrderAt`. Condition (B) needs
+no explicit singular set — it fires **intrinsically** at the times `t₀` where
+`meromorphicOrderAt f (γ t₀) < -1` (a pole of order `> 1`), so it is `S`-free. Condition (A′) is
+imposed at the prescribed set `S` (selecting the singularities), with the required flatness order
+taken from `f`. Both match the roadmap signatures and the way the residue theorem consumes them.
 
 ## Provenance
 
-Migrated and adapted from the AINTLIB `LeanModularForms` project (`angleAtCrossing` and
-`SatisfiesConditionB`), specialised to the raw-function (`γ : ℝ → ℂ` on `[a, b]`) design of the
-contour-integration roadmap, with the singular set detected intrinsically rather than prescribed.
+Migrated and adapted from the AINTLIB `LeanModularForms` project (`angleAtCrossing`, `FlatOfOrder`,
+and `SatisfiesConditionB`), specialised to the raw-function (`γ : ℝ → ℂ` on `[a, b]`) design of the
+contour-integration roadmap. `FlatOfOrder` here uses HW Def. 3.2's tangent-*line* (orthogonal
+projection) distance, so it is speed-independent at every order. Condition (A′) matches the flatness
+order to `f`'s pole order at each `s ∈ S`; condition (B) detects the higher-order poles of
+`f` intrinsically via `meromorphicOrderAt`.
 
 ## References
 
@@ -157,6 +173,86 @@ theorem basepointAngle_eq_pi {γ : ℝ → ℂ} {a b : ℝ}
     basepointAngle γ a b = Real.pi := by
   rw [basepointAngle, h]
   exact toIcoMod_arg_sub_arg_neg hL
+
+/-- **Flatness of order `n`** of `γ : ℝ → ℂ` at `t₀` (HW Def. 3.2): from each side, `γ` hugs a
+one-sided **tangent line** through `γ t₀`, its perpendicular distance to that line vanishing faster
+than `‖γ t − γ t₀‖ⁿ`. There are nonzero one-sided directions `v_plus` (right) and `v_minus` (left)
+for which the component of `γ t − γ t₀` orthogonal to `v` — of length
+`|((γ t − γ t₀) · conj v).im| / ‖v‖`, the distance from `γ t` to the line `γ t₀ + ℝ • v` — is
+`o(‖γ t − γ t₀‖ⁿ)` as `t → t₀⁺`, symmetrically as `t → t₀⁻`. Order `1` is first-order tangency to a
+line; larger `n` forces it to hug the line ever more tightly. Distance is measured to the tangent
+*line*, not to a moving point on it, so flatness ignores the along-tangent speed, as in HW. -/
+def FlatOfOrder (γ : ℝ → ℂ) (t₀ : ℝ) (n : ℕ) : Prop :=
+  ∃ v_plus v_minus : ℂ, v_plus ≠ 0 ∧ v_minus ≠ 0 ∧
+    (fun t => |((γ t - γ t₀) * star v_plus).im| / ‖v_plus‖)
+        =o[𝓝[>] t₀] (fun t => ‖γ t - γ t₀‖ ^ n) ∧
+    (fun t => |((γ t - γ t₀) * star v_minus).im| / ‖v_minus‖)
+        =o[𝓝[<] t₀] (fun t => ‖γ t - γ t₀‖ ^ n)
+
+/-- **Flatness of order `n` at the basepoint** of a closed curve `γ` on `[a, b]`, at the join
+`γ a = γ b`: the outgoing branch at `a` (from the right) and the incoming branch at `b` (from the
+left) each hug their one-sided tangent line in the perpendicular sense of `FlatOfOrder`, to order
+`n`. The two branches come from opposite ends of `[a, b]`. -/
+def FlatOfOrderBasepoint (γ : ℝ → ℂ) (a b : ℝ) (n : ℕ) : Prop :=
+  ∃ v_plus v_minus : ℂ, v_plus ≠ 0 ∧ v_minus ≠ 0 ∧
+    (fun t => |((γ t - γ a) * star v_plus).im| / ‖v_plus‖) =o[𝓝[>] a] (fun t => ‖γ t - γ a‖ ^ n) ∧
+    (fun t => |((γ t - γ b) * star v_minus).im| / ‖v_minus‖) =o[𝓝[<] b] (fun t => ‖γ t - γ b‖ ^ n)
+
+/-- `FlatOfOrder` unfolded: the one-sided little-o clauses that build the flatness hypothesis, so
+downstream code can construct or destruct it without unfolding the definition. -/
+theorem flatOfOrder_iff {γ : ℝ → ℂ} {t₀ : ℝ} {n : ℕ} :
+    FlatOfOrder γ t₀ n ↔
+      ∃ v_plus v_minus : ℂ, v_plus ≠ 0 ∧ v_minus ≠ 0 ∧
+        (fun t => |((γ t - γ t₀) * star v_plus).im| / ‖v_plus‖)
+            =o[𝓝[>] t₀] (fun t => ‖γ t - γ t₀‖ ^ n) ∧
+        (fun t => |((γ t - γ t₀) * star v_minus).im| / ‖v_minus‖)
+            =o[𝓝[<] t₀] (fun t => ‖γ t - γ t₀‖ ^ n) :=
+  Iff.rfl
+
+/-- `FlatOfOrderBasepoint` unfolded: the two one-sided little-o clauses (outgoing at `a`, incoming
+at `b`) that build the basepoint flatness hypothesis, exposed without unfolding the definition. -/
+theorem flatOfOrderBasepoint_iff {γ : ℝ → ℂ} {a b : ℝ} {n : ℕ} :
+    FlatOfOrderBasepoint γ a b n ↔
+      ∃ v_plus v_minus : ℂ, v_plus ≠ 0 ∧ v_minus ≠ 0 ∧
+        (fun t => |((γ t - γ a) * star v_plus).im| / ‖v_plus‖)
+            =o[𝓝[>] a] (fun t => ‖γ t - γ a‖ ^ n) ∧
+        (fun t => |((γ t - γ b) * star v_minus).im| / ‖v_minus‖)
+            =o[𝓝[<] b] (fun t => ‖γ t - γ b‖ ^ n) :=
+  Iff.rfl
+
+/-- **Hungerbühler–Wasem condition (A′)** for `γ` along `[a, b]`, at the prescribed singular set `S`
+of the integrand `f`: `γ` meets each singularity only **finitely often** and is **flat** to the
+order of `f`'s pole there. Wherever `γ` meets a point of `S` at which `f` has a pole of order `n`,
+the curve is flat of order `n` — tangent to a line at a simple pole, flatter at a higher pole — and
+each such `s` is met only finitely often. Together with
+condition (B) it is a regularity hypothesis of the generalized residue theorem (HW Thm 3.3). It is
+imposed at each *interior* crossing `t₀ ∈ (a, b)` and the *basepoint* `γ a` (`= γ b` for a closed
+curve), so a join singularity is not left free. Pole orders are read from `f` via
+`meromorphicOrderAt`; `S` selects the singularities to constrain. -/
+structure ConditionAprime (γ : ℝ → ℂ) (a b : ℝ) (f : ℂ → ℂ) (S : Finset ℂ) : Prop where
+  /-- Each prescribed singularity `s ∈ S` is met only **finitely often** on `[a, b]`: the crossing
+  set `[a, b] ∩ γ ⁻¹' {s}` is finite. -/
+  finite_crossings : ∀ s ∈ S, (Set.Icc a b ∩ γ ⁻¹' {s}).Finite
+  /-- At each interior crossing of a prescribed singularity where `f` has a pole of order `n`, the
+  curve `γ` is flat of order `n`. -/
+  interior : ∀ t₀ ∈ Set.Ioo a b, γ t₀ ∈ S → ∀ n : ℕ, 1 ≤ n →
+    meromorphicOrderAt f (γ t₀) = (-(n : ℤ) : WithTop ℤ) → FlatOfOrder γ t₀ n
+  /-- If the basepoint `γ a` (`= γ b`) is a prescribed singularity where `f` has a
+  pole of order `n`, then `γ` is flat of order `n` across the join. -/
+  basepoint : γ a ∈ S → ∀ n : ℕ, 1 ≤ n →
+    meromorphicOrderAt f (γ a) = (-(n : ℤ) : WithTop ℤ) → FlatOfOrderBasepoint γ a b n
+
+/-- Characterization of `ConditionAprime` by its three clauses, for rewriting the hypothesis into
+the `finite_crossings ∧ interior ∧ basepoint` conjunction (and back via the anonymous constructor).
+-/
+theorem conditionAprime_iff {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {S : Finset ℂ} :
+    ConditionAprime γ a b f S ↔
+      (∀ s ∈ S, (Set.Icc a b ∩ γ ⁻¹' {s}).Finite) ∧
+      (∀ t₀ ∈ Set.Ioo a b, γ t₀ ∈ S → ∀ n : ℕ, 1 ≤ n →
+          meromorphicOrderAt f (γ t₀) = (-(n : ℤ) : WithTop ℤ) → FlatOfOrder γ t₀ n) ∧
+        (γ a ∈ S → ∀ n : ℕ, 1 ≤ n →
+          meromorphicOrderAt f (γ a) = (-(n : ℤ) : WithTop ℤ) → FlatOfOrderBasepoint γ a b n) :=
+  ⟨fun h => ⟨h.finite_crossings, h.interior, h.basepoint⟩, fun h => ⟨h.1, h.2.1, h.2.2⟩⟩
 
 /-- **Sector compatibility** of `f` at an on-curve singularity `z₀` whose sector opens at angle `θ`
 (the Hungerbühler–Wasem condition at one crossing): the angle is a rational multiple of `π` and the
