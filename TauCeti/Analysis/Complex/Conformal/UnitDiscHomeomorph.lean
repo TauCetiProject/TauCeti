@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Topology.Homeomorph.Defs
+public import Mathlib.Topology.Algebra.ConstMulAction
 public import TauCeti.Analysis.Complex.Conformal.UnitDiscAutomorphism
 
 /-!
@@ -36,12 +36,10 @@ lemma continuous_unitDiscMoebius (a : Complex.UnitDisc) :
   rw [Complex.UnitDisc.isEmbedding_coe.continuous_iff]
   change Continuous fun z : Complex.UnitDisc => (unitDiscMoebius a z : ℂ)
   simp only [coe_unitDiscMoebius]
-  exact
-    (Complex.UnitDisc.continuous_coe.sub continuous_const).div
-      (continuous_const.sub
-        ((continuous_const : Continuous fun _ : Complex.UnitDisc => (starRingEnd ℂ) (a : ℂ)).mul
-          Complex.UnitDisc.continuous_coe))
-      (fun z => one_sub_conj_mul_ne_zero_unitDisc z a)
+  simpa only [Function.comp_def] using
+    (differentiableOn_unitDiscMoebiusFormula a).continuousOn.comp_continuous
+      Complex.UnitDisc.continuous_coe
+      (fun z => by simpa [mem_ball_zero_iff] using Complex.UnitDisc.norm_lt_one z)
 
 /-- A fixed circle rotation is continuous on the bundled open disc. -/
 lemma continuous_circle_smul_unitDisc (u : Circle) :
@@ -50,6 +48,11 @@ lemma continuous_circle_smul_unitDisc (u : Circle) :
   change Continuous fun z : Complex.UnitDisc => ((u • z : Complex.UnitDisc) : ℂ)
   simp only [Complex.UnitDisc.coe_circle_smul]
   exact continuous_const.mul Complex.UnitDisc.continuous_coe
+
+/-- Circle rotations act continuously on the bundled open unit disc. -/
+instance instContinuousConstSMulCircleUnitDisc :
+    ContinuousConstSMul Circle Complex.UnitDisc where
+  continuous_const_smul := continuous_circle_smul_unitDisc
 
 /-- The standard Moebius self-map of the unit disc, bundled as a homeomorphism. -/
 @[expose] noncomputable def unitDiscMoebiusHomeomorph (a : Complex.UnitDisc) :
@@ -92,35 +95,6 @@ lemma coe_unitDiscMoebiusHomeomorph_apply (a z : Complex.UnitDisc) :
     rw [unitDiscMoebiusHomeomorph_apply]
     exact coe_unitDiscMoebius a z
 
-/-- A fixed circle rotation of the open unit disc, bundled as a homeomorphism. -/
-@[expose] noncomputable def circleSmulUnitDiscHomeomorph (u : Circle) :
-    Complex.UnitDisc ≃ₜ Complex.UnitDisc where
-  toEquiv := MulAction.toPerm u
-  continuous_toFun := continuous_circle_smul_unitDisc u
-  continuous_invFun := by
-    change Continuous fun z : Complex.UnitDisc => u⁻¹ • z
-    exact continuous_circle_smul_unitDisc u⁻¹
-
-/-- The circle-rotation homeomorphism applies by scalar multiplication. -/
-@[simp]
-lemma circleSmulUnitDiscHomeomorph_apply (u : Circle) (z : Complex.UnitDisc) :
-    circleSmulUnitDiscHomeomorph u z = u • z :=
-  rfl
-
-/-- The underlying equivalence of the circle-rotation homeomorphism is the action permutation. -/
-@[simp]
-lemma circleSmulUnitDiscHomeomorph_toEquiv (u : Circle) :
-    (circleSmulUnitDiscHomeomorph u).toEquiv =
-      (MulAction.toPerm u : Equiv.Perm Complex.UnitDisc) :=
-  rfl
-
-/-- The inverse circle-rotation homeomorphism is rotation by the inverse circle element. -/
-@[simp]
-lemma circleSmulUnitDiscHomeomorph_symm (u : Circle) :
-    (circleSmulUnitDiscHomeomorph u).symm = circleSmulUnitDiscHomeomorph u⁻¹ := by
-  ext z
-  rfl
-
 /--
 The standard automorphism of the complex unit disc, bundled as a homeomorphism.
 
@@ -129,7 +103,7 @@ circle rotation by `u`.
 -/
 @[expose] noncomputable def unitDiscStandardAutomorphismHomeomorph
     (u : Circle) (a : Complex.UnitDisc) : Complex.UnitDisc ≃ₜ Complex.UnitDisc :=
-  (unitDiscMoebiusHomeomorph a).trans (circleSmulUnitDiscHomeomorph u)
+  (unitDiscMoebiusHomeomorph a).trans (Homeomorph.smul u)
 
 /-- The standard automorphism homeomorphism applies by the existing equivalence formula. -/
 @[simp]
@@ -139,9 +113,10 @@ lemma unitDiscStandardAutomorphismHomeomorph_apply
       unitDiscStandardAutomorphismEquiv u a z :=
   by
   rw [unitDiscStandardAutomorphismEquiv_apply]
-  change circleSmulUnitDiscHomeomorph u (unitDiscMoebiusHomeomorph a z) =
+  change Homeomorph.smul u (unitDiscMoebiusHomeomorph a z) =
     u • unitDiscMoebius a z
-  rw [circleSmulUnitDiscHomeomorph_apply, unitDiscMoebiusHomeomorph_apply]
+  rw [unitDiscMoebiusHomeomorph_apply]
+  rfl
 
 /-- The underlying equivalence of the standard automorphism homeomorphism is the existing one. -/
 @[simp]
@@ -169,7 +144,7 @@ lemma coe_unitDiscStandardAutomorphismHomeomorph_apply
 @[simp]
 lemma unitDiscStandardAutomorphismHomeomorph_zero (u : Circle) :
     unitDiscStandardAutomorphismHomeomorph u 0 =
-      circleSmulUnitDiscHomeomorph u := by
+      Homeomorph.smul u := by
   ext z
   simp [unitDiscStandardAutomorphismHomeomorph]
 
