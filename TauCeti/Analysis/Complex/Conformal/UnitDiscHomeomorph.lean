@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Topology.Algebra.ConstMulAction
 public import TauCeti.Analysis.Complex.Conformal.UnitDiscAutomorphism
 
 /-!
@@ -34,6 +33,7 @@ open scoped ComplexConjugate
 lemma continuous_unitDiscMoebius (a : Complex.UnitDisc) :
     Continuous (unitDiscMoebius a) := by
   rw [Complex.UnitDisc.isEmbedding_coe.continuous_iff]
+  -- The embedding criterion reduces continuity to the scalar coercion of the bundled disc.
   change Continuous fun z : Complex.UnitDisc => (unitDiscMoebius a z : ℂ)
   simp only [coe_unitDiscMoebius]
   simpa only [Function.comp_def] using
@@ -41,27 +41,16 @@ lemma continuous_unitDiscMoebius (a : Complex.UnitDisc) :
       Complex.UnitDisc.continuous_coe
       (fun z => by simpa [mem_ball_zero_iff] using Complex.UnitDisc.norm_lt_one z)
 
-/-- A fixed circle rotation is continuous on the bundled open disc. -/
-lemma continuous_circle_smul_unitDisc (u : Circle) :
-    Continuous fun z : Complex.UnitDisc => u • z := by
-  rw [Complex.UnitDisc.isEmbedding_coe.continuous_iff]
-  change Continuous fun z : Complex.UnitDisc => ((u • z : Complex.UnitDisc) : ℂ)
-  simp only [Complex.UnitDisc.coe_circle_smul]
-  exact continuous_const.mul Complex.UnitDisc.continuous_coe
-
-/-- Circle rotations act continuously on the bundled open unit disc. -/
-instance instContinuousConstSMulCircleUnitDisc :
-    ContinuousConstSMul Circle Complex.UnitDisc where
-  continuous_const_smul := continuous_circle_smul_unitDisc
-
 /-- The standard Moebius self-map of the unit disc, bundled as a homeomorphism. -/
-@[expose] noncomputable def unitDiscMoebiusHomeomorph (a : Complex.UnitDisc) :
+noncomputable def unitDiscMoebiusHomeomorph (a : Complex.UnitDisc) :
     Complex.UnitDisc ≃ₜ Complex.UnitDisc where
   toEquiv := unitDiscMoebiusEquiv a
   continuous_toFun := by
+    -- The homeomorphism field is the bundled equivalence function.
     change Continuous fun z : Complex.UnitDisc => unitDiscMoebiusEquiv a z
     simpa only [unitDiscMoebiusEquiv_apply] using continuous_unitDiscMoebius a
   continuous_invFun := by
+    -- The inverse field is the bundled equivalence inverse function.
     change Continuous fun z : Complex.UnitDisc => (unitDiscMoebiusEquiv a).symm z
     rw [unitDiscMoebiusEquiv_symm]
     simpa only [unitDiscMoebiusEquiv_apply] using continuous_unitDiscMoebius (-a)
@@ -76,13 +65,19 @@ lemma unitDiscMoebiusHomeomorph_apply (a z : Complex.UnitDisc) :
 @[simp]
 lemma unitDiscMoebiusHomeomorph_toEquiv (a : Complex.UnitDisc) :
     (unitDiscMoebiusHomeomorph a).toEquiv = unitDiscMoebiusEquiv a :=
-  rfl
+  by
+    apply Equiv.ext
+    intro z
+    -- `Homeomorph.toEquiv` is the bundled homeomorphism function.
+    change unitDiscMoebiusHomeomorph a z = unitDiscMoebiusEquiv a z
+    rw [unitDiscMoebiusHomeomorph_apply, unitDiscMoebiusEquiv_apply]
 
 /-- The inverse Moebius homeomorphism is the Moebius homeomorphism centered at `-a`. -/
 @[simp]
 lemma unitDiscMoebiusHomeomorph_symm (a : Complex.UnitDisc) :
     (unitDiscMoebiusHomeomorph a).symm = unitDiscMoebiusHomeomorph (-a) := by
   ext z
+  -- `Homeomorph.symm` exposes the inverse function through the bundled `Equiv`.
   change ((unitDiscMoebiusEquiv a).symm z : ℂ) = (unitDiscMoebiusHomeomorph (-a) z : ℂ)
   rw [unitDiscMoebiusEquiv_symm, unitDiscMoebiusEquiv_apply, unitDiscMoebiusHomeomorph_apply]
 
@@ -101,7 +96,7 @@ The standard automorphism of the complex unit disc, bundled as a homeomorphism.
 It is the composition of the Moebius homeomorphism sending `a` to `0` with the fixed
 circle rotation by `u`.
 -/
-@[expose] noncomputable def unitDiscStandardAutomorphismHomeomorph
+noncomputable def unitDiscStandardAutomorphismHomeomorph
     (u : Circle) (a : Complex.UnitDisc) : Complex.UnitDisc ≃ₜ Complex.UnitDisc :=
   (unitDiscMoebiusHomeomorph a).trans (Homeomorph.smul u)
 
@@ -113,6 +108,7 @@ lemma unitDiscStandardAutomorphismHomeomorph_apply
       unitDiscStandardAutomorphismEquiv u a z :=
   by
   rw [unitDiscStandardAutomorphismEquiv_apply]
+  -- The left side is the bundled homeomorphism composition, while the right side is smul notation.
   change Homeomorph.smul u (unitDiscMoebiusHomeomorph a z) =
     u • unitDiscMoebius a z
   rw [unitDiscMoebiusHomeomorph_apply]
@@ -128,6 +124,26 @@ lemma unitDiscStandardAutomorphismHomeomorph_toEquiv
     ext z
     exact congrArg (fun w : Complex.UnitDisc => (w : ℂ))
       (unitDiscStandardAutomorphismHomeomorph_apply u a z)
+
+/-- The inverse standard automorphism homeomorphism is inverse rotation followed by the
+inverse Moebius homeomorphism. -/
+@[simp]
+lemma unitDiscStandardAutomorphismHomeomorph_symm
+    (u : Circle) (a : Complex.UnitDisc) :
+    (unitDiscStandardAutomorphismHomeomorph u a).symm =
+      (Homeomorph.smul u⁻¹).trans (unitDiscMoebiusHomeomorph (-a)) := by
+  apply Homeomorph.ext
+  intro z
+  -- `Homeomorph.symm` applies through the inverse of the underlying equivalence.
+  change ((unitDiscStandardAutomorphismHomeomorph u a).toEquiv).symm z =
+    unitDiscMoebiusHomeomorph (-a) ((Homeomorph.smul u⁻¹) z)
+  rw [congrArg Equiv.symm (unitDiscStandardAutomorphismHomeomorph_toEquiv u a),
+    unitDiscStandardAutomorphismEquiv_symm]
+  -- The equivalence formula uses `MulAction.toPerm`, while the homeomorphism formula uses `smul`.
+  change unitDiscMoebiusEquiv (-a) ((MulAction.toPerm u⁻¹ : Equiv.Perm Complex.UnitDisc) z) =
+    unitDiscMoebiusHomeomorph (-a) ((Homeomorph.smul u⁻¹) z)
+  rw [unitDiscMoebiusEquiv_apply, unitDiscMoebiusHomeomorph_apply, Homeomorph.smul_apply,
+    MulAction.toPerm_apply]
 
 /-- The scalar formula for the standard disc-automorphism homeomorphism. -/
 @[norm_cast]
