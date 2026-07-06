@@ -93,38 +93,8 @@ theorem quotientPointsSubgroup_bot (H : _root_.CommHopfAlgCat.{v} R)
     intro h hh
     rw [HopfIdeal.mem_bot.mp hh, map_zero]
 
-/-- The natural inclusion of subgroup functors associated to `I ≤ J`. -/
-@[expose] noncomputable def quotientPointsSubgroupInclusion
-    (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J) :
-    quotientPointsSubgroupFunctor (R := R) H J ⟶
-      quotientPointsSubgroupFunctor (R := R) H I where
-  app A := GrpCat.ofHom (Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ A))
-  naturality {A B} χ := by
-    simp only [quotientPointsSubgroupFunctor_obj, quotientPointsSubgroupFunctor_map]
-    rw [← GrpCat.ofHom_comp, ← GrpCat.ofHom_comp]
-    apply GrpCat.hom_ext
-    apply MonoidHom.ext
-    intro g
-    apply Subtype.ext
-    change (Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ B)
-        (mapQuotientPointsSubgroup H J χ g) :
-          HopfAlgebra.points (R := R) (H := H) B) =
-      (mapQuotientPointsSubgroup H I χ
-        (Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ A) g) :
-          HopfAlgebra.points (R := R) (H := H) B)
-    rw [coe_mapQuotientPointsSubgroup_apply, Subgroup.coe_inclusion,
-      Subgroup.coe_inclusion, coe_mapQuotientPointsSubgroup_apply]
-
-/-- The component of `quotientPointsSubgroupInclusion` is the subgroup inclusion. -/
-@[simp]
-lemma quotientPointsSubgroupInclusion_app
-    (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
-    (A : CommAlgCat.{w} R) :
-    (quotientPointsSubgroupInclusion (R := R) H hIJ).app A =
-      GrpCat.ofHom (Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ A)) :=
-  rfl
-
 /-- The subgroup inclusions associated to `I ≤ J` commute with maps of value algebras. -/
+@[simp]
 theorem mapQuotientPointsSubgroup_inclusion_apply
     (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
     {A B : CommAlgCat.{w} R} (χ : A ⟶ B) (g : quotientPointsSubgroup H J A) :
@@ -135,6 +105,29 @@ theorem mapQuotientPointsSubgroup_inclusion_apply
   apply Subtype.ext
   rw [coe_mapQuotientPointsSubgroup_apply, Subgroup.coe_inclusion, Subgroup.coe_inclusion,
     coe_mapQuotientPointsSubgroup_apply]
+
+/-- The natural inclusion of subgroup functors associated to `I ≤ J`. -/
+noncomputable abbrev quotientPointsSubgroupInclusion
+    (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J) :
+    quotientPointsSubgroupFunctor (R := R) H J ⟶
+      quotientPointsSubgroupFunctor (R := R) H I where
+  app A := GrpCat.ofHom (Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ A))
+  naturality {A B} χ := by
+    simp only [quotientPointsSubgroupFunctor_obj, quotientPointsSubgroupFunctor_map]
+    rw [← GrpCat.ofHom_comp, ← GrpCat.ofHom_comp]
+    apply GrpCat.hom_ext
+    apply MonoidHom.ext
+    intro g
+    exact mapQuotientPointsSubgroup_inclusion_apply H hIJ χ g
+
+/-- The component of `quotientPointsSubgroupInclusion` is the subgroup inclusion. -/
+@[simp]
+lemma quotientPointsSubgroupInclusion_app
+    (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
+    (A : CommAlgCat.{w} R) :
+    (quotientPointsSubgroupInclusion (R := R) H hIJ).app A =
+      GrpCat.ofHom (Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ A)) :=
+  rfl
 
 end CommHopfAlgCat
 
