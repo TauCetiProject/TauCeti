@@ -385,7 +385,7 @@ lemma orbitRelQuotientEquivNormalizerQuotientOfNormal_symm_mk
     (H : Subgroup G) [H.Normal] (x : X)
     (g : _root_.Subgroup.normalizer (H : Set G)) :
     (orbitRelQuotientEquivNormalizerQuotientOfNormal H x).symm
-        (Subgroup.normalizerQuotientMk H g) =
+        (g : Subgroup.normalizerQuotient H) =
       (Quotient.mk'' ((g : G)⁻¹ • x) : _root_.MulAction.orbitRel.Quotient H X) := by
   change (MulAction.equivSubgroupOrbitsQuotientGroup x H).symm
       (Subgroup.normalizerQuotientEquivQuotientOfNormal H
@@ -405,6 +405,7 @@ lemma orbitRelQuotientEquivNormalizerQuotientOfNormal_apply_smul
       Subgroup.normalizerQuotientMk H
         ⟨g⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
   rw [(orbitRelQuotientEquivNormalizerQuotientOfNormal H x).apply_eq_iff_eq_symm_apply]
+  rw [Subgroup.normalizerQuotientMk_apply]
   rw [orbitRelQuotientEquivNormalizerQuotientOfNormal_symm_mk]
   simp
 
