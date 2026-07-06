@@ -12,7 +12,8 @@ Layer-4 result that will consume this existence lemma.
 
 ## Main results
 
-- `condExp_exists_ae_limit_of_antitone`: a.e. limit existence for antitone filtrations.
+- `exists_integrable_tendsto_ae_condExp_of_antitone` (roadmap alias
+  `condExp_exists_ae_limit_antitone`): a.e. limit existence for antitone filtrations.
 
 Adapted from `cameronfreer/exchangeability`
 (`Probability/Martingale/Crossings/AntitoneLimit.lean`, pin
@@ -54,12 +55,20 @@ private lemma ae_upcrossings_condExp_lt_top
 /-- A.S. existence of the limit of `μ[f | 𝔽 n]` along an antitone filtration. -/
 -- The proof applies the upcrossing inequality to the time-reversed martingales to show that the
 -- original sequence has finitely many upcrossings and downcrossings a.e., hence converges a.e.
-lemma condExp_exists_ae_limit_of_antitone
+lemma exists_integrable_tendsto_ae_condExp_of_antitone
     [IsFiniteMeasure μ] {𝔽 : ℕ → MeasurableSpace Ω}
     (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
-    (f : Ω → ℝ) (hf : Integrable f μ) :
+    (f : Ω → ℝ) :
     ∃ Xlim, (Integrable Xlim μ ∧
            ∀ᵐ ω ∂μ, Tendsto (fun n => μ[f | 𝔽 n] ω) atTop (𝓝 (Xlim ω))) := by
+  by_cases hf : Integrable f μ
+  swap
+  · -- Non-integrable `f`: `μ[f | 𝔽 n] = 0` for all `n`, so the constant limit `0` works.
+    refine ⟨0, integrable_zero Ω ℝ μ, ?_⟩
+    filter_upwards with ω
+    simp only [condExp_of_not_integrable hf, Pi.zero_apply]
+    exact tendsto_const_nhds
+  -- Integrable `f`: the genuine reverse-martingale a.e. limit.
   -- L¹ bound and its finite `NNReal` form.
   have hL1_bdd : ∀ n, eLpNorm (μ[f | 𝔽 n]) 1 μ ≤ eLpNorm f 1 μ :=
     fun n => eLpNorm_one_condExp_le_eLpNorm _
@@ -94,5 +103,8 @@ lemma condExp_exists_ae_limit_of_antitone
     simpa [Xlim, hω] using Classical.choose_spec hω
   exact ⟨Xlim, (hf.uniformIntegrable_condExp h_le).integrable_of_ae_tendsto h_ae_tendsto,
     h_ae_tendsto⟩
+
+/-- Roadmap Layer 4 target name for `exists_integrable_tendsto_ae_condExp_of_antitone`. -/
+alias condExp_exists_ae_limit_antitone := exists_integrable_tendsto_ae_condExp_of_antitone
 
 end MeasureTheory
