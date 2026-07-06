@@ -35,6 +35,7 @@ prerequisite for the homology Cauchy theorem and the generalized residue theorem
 * `Contour.IsPiecewiseC1On.of_breakpoints`, `Contour.IsPiecewiseC1On.exists_breakpoints` —
   introduce the predicate from, and eliminate it to, a finite breakpoint witness.
 * `Contour.IsPiecewiseC1On.mono` — restrict the regularity to a subinterval `[[c, d]] ⊆ [[a, b]]`.
+* `Contour.isPiecewiseC1On_comm`, `Contour.IsPiecewiseC1On.symm` — endpoint-swap invariance.
 
 ## Provenance
 
@@ -122,5 +123,13 @@ theorem IsPiecewiseC1On.mono (h : IsPiecewiseC1On γ a b) {c d : ℝ}
     refine hdis ?_ hxuv
     simp only [Finset.coe_filter, Set.mem_setOf_eq]
     exact ⟨hxp, lt_of_le_of_lt hlu hxuv.1, lt_of_lt_of_le hxuv.2 hvu⟩
+
+/-- Piecewise-`C¹` regularity is symmetric in the endpoints, since `[[a, b]] = [[b, a]]`. -/
+theorem isPiecewiseC1On_comm : IsPiecewiseC1On γ a b ↔ IsPiecewiseC1On γ b a := by
+  simp only [isPiecewiseC1On_iff, Set.uIcc_comm a b, min_comm a b, max_comm a b]
+
+/-- Piecewise-`C¹` regularity is invariant under swapping the endpoints of the interval. -/
+theorem IsPiecewiseC1On.symm (h : IsPiecewiseC1On γ a b) : IsPiecewiseC1On γ b a :=
+  isPiecewiseC1On_comm.mp h
 
 end TauCeti.Contour
