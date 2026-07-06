@@ -16,14 +16,17 @@ public import Mathlib.Algebra.Order.ToIntervalMod
 # The Hungerbühler–Wasem crossing angle and regularity conditions (A′) and (B)
 
 For a curve `γ : ℝ → ℂ` on `[a, b]` and an integrand `f : ℂ → ℂ`, this file defines the **crossing
-angle** and the **flatness** of `γ` at a time, and the two Hungerbühler–Wasem regularity conditions
-at its on-curve singularities: the geometric transversal-approach condition **(A′)** and the
-analytic sector-cancellation condition **(B)**. Together they are the two regularity hypotheses of
-the generalized residue theorem (HW Thm 3.3), evaluating the Cauchy principal value `PV ∮_γ f`.
-Condition (A′) asks that `γ` approach each prescribed on-curve singularity transversally (flat of
-order `1`), so it is met as a finite union of model sectors. Condition (B) governs poles of order
-`> 1`, coupling the Laurent principal part of `f` at each such pole with the entry/exit tangents of
-`γ` there, through a sector-cancellation identity; simple poles need no sector condition.
+angle** and the **flatness** of `γ` at a time, and the roadmap's two Hungerbühler–Wasem regularity
+conditions at its on-curve singularities: the geometric transversal-approach condition **(A′)** and
+the analytic sector-cancellation condition **(B)**, the two regularity hypotheses of the generalized
+residue theorem (HW Thm 3.3), which evaluates the Cauchy principal value `PV ∮_γ f`. Condition (A′)
+asks that `γ` approach each prescribed on-curve singularity transversally (flat of order `1`) — its
+order-`1` form, exact for simple poles (the reach of this development, whose valence-formula
+target uses `f′/f`); the full higher-order (A′), matching flatness to pole order, needs order data
+absent from the f-free roadmap signature and is left as a roadmap-signature question. Condition (B)
+governs poles of order `> 1`, coupling the Laurent principal part of `f` at each such pole with the
+entry/exit tangents of `γ` there, via a sector-cancellation identity; simple poles need no sector
+condition.
 
 ## Main definitions
 
@@ -34,15 +37,16 @@ order `1`), so it is met as a finite union of model sectors. Condition (B) gover
   piecewise-`C¹` curve.
 * `basepointAngle γ a b` — the analogous opening angle at the join `γ a = γ b` of a closed curve,
   from the reversed incoming tangent at `b` to the outgoing tangent at `a`.
-* `FlatOfOrder γ t₀ n` — `γ` is **flat of order `n`** at `t₀`: from each side, `γ` deviates from a
-  one-sided tangent line by `o(‖γ t − γ t₀‖ⁿ)`. Order `1` is a transversal crossing; larger `n`
-  forces the approach to hug the tangent ever more tightly.
+* `FlatOfOrder γ t₀ n` — `γ` is **flat of order `n`** at `t₀` (parametrized-tangent form): from each
+  side, `γ` deviates from a one-sided tangent line by `o(‖γ t − γ t₀‖ⁿ)`. Order `1` is a transversal
+  crossing (HW's flatness for immersions); see its docstring for the `n ≥ 2` caveat vs HW Def. 3.2.
 * `FlatOfOrderBasepoint γ a b n` — the analogue at the join `γ a = γ b` of a closed curve, matching
   the outgoing tangent at `a` (from the right) with the incoming tangent at `b` (from the left).
-* `ConditionAprime γ a b S` — HW condition (A′), a structure asking that `γ` be flat of order `1` at
-  every crossing of every prescribed singularity `s ∈ S`: at each interior crossing
-  (`ConditionAprime.interior`) and at the basepoint (`ConditionAprime.basepoint`). It is purely
-  geometric — it does not refer to `f`; the matching to pole orders is carried by condition (B).
+* `ConditionAprime γ a b S` — the roadmap's condition (A′) target in transversal (order-`1`) form: a
+  structure asking `γ` be flat of order `1` at every crossing of every singularity `s ∈ S`,
+  at each interior crossing (`ConditionAprime.interior`) and at the basepoint
+  (`ConditionAprime.basepoint`). Purely geometric (f-free), exact for simple poles; its docstring
+  explains why the full higher-order HW (A′) is a roadmap-signature question.
 * `SectorCompatible f z₀ θ` — the one-crossing Hungerbühler–Wasem sector condition, a structure with
   fields `angle_rational` (`θ` is a rational multiple of `π`) and `laurent_compatible` (the Laurent
   principal part of `f` at `z₀` resonates with `θ`).
@@ -172,11 +176,14 @@ theorem basepointAngle_eq_pi {γ : ℝ → ℂ} {a b : ℝ}
   rw [basepointAngle, h]
   exact toIcoMod_arg_sub_arg_neg hL
 
-/-- **Flatness of order `n`** of `γ : ℝ → ℂ` at a time `t₀` (HW §3): from each side, `γ` agrees with
-a one-sided tangent line up to `o(‖γ t − γ t₀‖ⁿ)`. There are one-sided velocities `t_plus` (right)
-and `t_minus` (left) with `‖γ t − (γ t₀ + (t − t₀) • t_plus)‖ = o(‖γ t − γ t₀‖ⁿ)` as `t → t₀⁺`, and
-symmetrically as `t → t₀⁻`. Order `1` is a transversal crossing (a one-sided tangent exists); larger
-`n` forces the approach to hug the tangent ever more tightly. -/
+/-- **Flatness of order `n`** of `γ : ℝ → ℂ` at a time `t₀`, in *parametrized-tangent* form: from
+each side there is a one-sided velocity (`t_plus` right, `t_minus` left) with
+`‖γ t − (γ t₀ + (t − t₀) • t_plus)‖ = o(‖γ t − γ t₀‖ⁿ)` as `t → t₀⁺`, symmetrically as `t → t₀⁻`
+(migrated from AINTLIB). At order `1` for an immersion (nonzero one-sided velocity — any genuine
+contour crossing) this is HW's flatness: `γ` has a one-sided tangent. For `n ≥ 2` it is *stricter*
+than HW Def. 3.2, measuring deviation from the tangent *line* (orthogonal projection) rather than
+the parametrized tangent *point*; the two coincide when the along-tangent speed is linear. Only the
+order-`1` case is used below (by `ConditionAprime`). -/
 def FlatOfOrder (γ : ℝ → ℂ) (t₀ : ℝ) (n : ℕ) : Prop :=
   ∃ t_plus t_minus : ℂ,
     (fun t => ‖γ t - (γ t₀ + (t - t₀) • t_plus)‖) =o[𝓝[>] t₀] (fun t => ‖γ t - γ t₀‖ ^ n) ∧
@@ -192,13 +199,19 @@ def FlatOfOrderBasepoint (γ : ℝ → ℂ) (a b : ℝ) (n : ℕ) : Prop :=
     (fun t => ‖γ t - (γ a + (t - a) • t_plus)‖) =o[𝓝[>] a] (fun t => ‖γ t - γ a‖ ^ n) ∧
     (fun t => ‖γ t - (γ b + (t - b) • t_minus)‖) =o[𝓝[<] b] (fun t => ‖γ t - γ b‖ ^ n)
 
-/-- **Hungerbühler–Wasem condition (A′)** for `γ` along `[a, b]` at the prescribed singular set `S`:
-`γ` approaches each `s ∈ S` transversally, i.e. is **flat of order `1`** at every time it meets `s`,
-so it meets `s` as a finite union of model sectors. Together with condition (B) it is one of the two
-regularity hypotheses of the generalized residue theorem (HW Thm 3.3). Imposed at each *interior*
-crossing `t₀ ∈ (a, b)` and at the *basepoint* `γ a` (`= γ b` for a closed curve), so a join
-singularity is not left free. This is the purely geometric condition — it does not refer to `f`; the
-matching to the pole orders of `f` at higher-order poles is carried by condition (B). -/
+/-- The roadmap's **condition (A′)** target, in transversal (order-`1`) form: `γ` approaches each
+prescribed singularity `s ∈ S` **transversally** — flat of order `1` at every time it meets `s` — so
+it meets `s` as finitely many model sectors, at each *interior* crossing `t₀ ∈ (a, b)` and at the
+*basepoint* `γ a` (`= γ b` for a closed curve), leaving no join singularity free. It is the purely
+geometric half of the roadmap's A′/B split (A′ on the set `S`; the analytic data in condition (B)),
+and does not refer to `f`.
+
+This order-`1` form is **exact for simple poles**, this development's reach (the valence formula
+applies the residue theorem to `f′/f`, whose poles are all simple). It is **not** the full
+higher-order HW condition (A′): faithful HW (A) demands flatness of order equal to the *pole
+order*, which needs the pole orders of `f`. The roadmap signature `ConditionAprime (γ)(a b)(S)` is
+f-free and `S` carries no order data, so that matching cannot be expressed here; supplying it is
+a roadmap-signature decision, not settled in this file. -/
 structure ConditionAprime (γ : ℝ → ℂ) (a b : ℝ) (S : Finset ℂ) : Prop where
   /-- At each interior time where `γ` meets a prescribed singularity, `γ` crosses transversally,
   i.e. is flat of order `1`. -/
