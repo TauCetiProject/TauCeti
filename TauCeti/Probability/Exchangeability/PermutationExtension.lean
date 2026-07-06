@@ -11,13 +11,12 @@ This file records the combinatorial extension lemmas used in the Layer 0
 exchangeability API:
 
 * strictly increasing finite subsequences extend to strictly increasing self-maps of `ℕ`.
-* finite selections inside a larger finite prefix extend to permutations of that prefix.
-* finite selections in `ℕ` extend to permutations of `ℕ`.
+* finite selections inside a larger finite prefix, or in `ℕ`, extend to permutations by Mathlib's
+  `Equiv.Perm.exists_extending_pair`, which this module publicly re-exports.
 
-The finite permutation-extension steps are thin specializations of Mathlib's
-`Equiv.Perm.exists_extending_pair`. The strict-monotone `ℕ` extension helper is adapted from the
-`cameronfreer/exchangeability` Layer 0 sources pinned at
-`e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses.
+The strict-monotone `ℕ` extension helper is adapted from the `cameronfreer/exchangeability`
+Layer 0 sources pinned at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names
+and hypotheses.
 -/
 
 public section
@@ -25,27 +24,6 @@ public section
 namespace TauCeti
 
 namespace Probability
-
-/-- An injective finite selection `k : Fin m → Fin n`, with `m ≤ n`, extends to a permutation
-of `Fin n` that sends the standard first-`m` inclusion to `k`. -/
-theorem exists_perm_extending_castLE {m n : ℕ} (hmn : m ≤ n) {k : Fin m → Fin n}
-    (hk : Function.Injective k) :
-    ∃ σ : Equiv.Perm (Fin n), ∀ i, σ (Fin.castLE hmn i) = k i :=
-  Equiv.Perm.exists_extending_pair (Fin.castLE hmn) k
-    (fun _ _ h => Fin.castLE_injective hmn h) hk
-
-/-- A strictly monotone finite selection `k : Fin m → Fin n`, with `m ≤ n`, extends to a
-permutation of `Fin n` that sends the standard first-`m` inclusion to `k`. -/
-theorem exists_perm_extending_strictMono {m n : ℕ} (hmn : m ≤ n) {k : Fin m → Fin n}
-    (hk : StrictMono k) :
-    ∃ σ : Equiv.Perm (Fin n), ∀ i, σ (Fin.castLE hmn i) = k i :=
-  exists_perm_extending_castLE hmn hk.injective
-
-/-- An injective finite selection `k : Fin n → ℕ` extends to a permutation of `ℕ` that agrees
-with `k` on the first `n` inputs. -/
-theorem exists_perm_nat_extending {n : ℕ} {k : Fin n → ℕ} (hk : Function.Injective k) :
-    ∃ σ : Equiv.Perm ℕ, ∀ i : Fin n, σ i.val = k i :=
-  Equiv.Perm.exists_extending_pair (fun i : Fin n => i.val) k Fin.val_injective hk
 
 /-- A strictly monotone finite selection `k : Fin m → ℕ` extends to a strictly increasing
 self-map of `ℕ` that agrees with `k` on the first `m` inputs. -/

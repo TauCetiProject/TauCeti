@@ -58,7 +58,8 @@ theorem FullyExchangeable.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω → �
     (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) (n : ℕ) :
     ExchangeableAt μ X n := by
   intro σ
-  obtain ⟨π, hπ⟩ := exists_perm_nat_extending
+  obtain ⟨π, hπ⟩ := Equiv.Perm.exists_extending_pair (fun i : Fin n => i.val)
+    (fun i : Fin n => (σ i).val) Fin.val_injective
     (fun _ _ h => σ.injective (Fin.val_injective h))
   have hidx : (fun j : Fin n => π j.val) = fun j : Fin n => (σ j).val := by
     funext j; exact hπ j

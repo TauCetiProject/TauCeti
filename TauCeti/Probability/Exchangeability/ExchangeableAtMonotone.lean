@@ -42,7 +42,8 @@ theorem blockLaw_eq_prefixLaw_of_injective {μ : Measure Ω} {X : ℕ → Ω →
     blockLaw μ X (fun i : Fin m => (k i).val) = prefixLaw μ X m := by
   have hmn : m ≤ n := by
     simpa using Fintype.card_le_of_injective k hk
-  obtain ⟨σ, hσ⟩ := exists_perm_extending_castLE hmn hk
+  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair (Fin.castLE hmn) k
+    (fun _ _ h => Fin.castLE_injective hmn h) hk
   have hperm : blockLaw μ X (fun j : Fin n => (σ j).val) = prefixLaw μ X n := h.permute σ
   have hLHS :
       (blockLaw μ X (fun j : Fin n => (σ j).val)).map
