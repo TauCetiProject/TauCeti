@@ -81,9 +81,8 @@ theorem quotientKerPointsMulEquiv_apply (f : H →ₐc[R] K)
         ((kerLiftBialgEquiv f hf).symm : K →ₐc[R] H ⧸ (ker f hf).toIdeal) g := by
   rw [quotientKerPointsMulEquiv, AlgHom.mapDomainMulEquiv_symm_apply]
 
-/-- Simp-normal form of `quotientKerPointsMulEquiv_apply`, with the quotient by the
+/-- Normalized-kernel form of `quotientKerPointsMulEquiv_apply`, with the quotient by the
 ring-hom kernel after simplifying `(ker f hf).toIdeal`. -/
-@[simp]
 theorem quotientKerPointsMulEquiv_apply_ringHomKer (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : WithConv (H ⧸ RingHom.ker (f : H →ₐ[R] K) →ₐ[R] A)) :
@@ -102,9 +101,8 @@ theorem quotientKerPointsMulEquiv_symm_apply (f : H →ₐc[R] K)
         (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal →ₐc[R] K) g := by
   rw [quotientKerPointsMulEquiv, MulEquiv.symm_symm, AlgHom.mapDomainMulEquiv_apply]
 
-/-- Simp-normal form of `quotientKerPointsMulEquiv_symm_apply`, with the source quotient
-normalized through `ker_toIdeal`. -/
-@[simp]
+/-- Normalized-kernel form of `quotientKerPointsMulEquiv_symm_apply`, with the source
+quotient normalized through `ker_toIdeal`. -/
 theorem quotientKerPointsMulEquiv_symm_apply_ringHomKer (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : WithConv (K →ₐ[R] A)) :
@@ -157,8 +155,7 @@ theorem quotientPointsHom_quotientKerPointsMulEquiv_symm_apply (f : H →ₐc[R]
     AlgHom.mapDomain_apply_apply, kerLiftBialgEquiv_toBialgHom, kerLiftBialgHom_mk]
   rw [AlgHom.mapDomain_apply_apply]
 
-/-- Pointwise simp form of `quotientPointsHom_quotientKerPointsMulEquiv_symm_apply`. -/
-@[simp]
+/-- Pointwise form of `quotientPointsHom_quotientKerPointsMulEquiv_symm_apply`. -/
 theorem quotientPointsHom_quotientKerPointsMulEquiv_symm_apply_apply
     (f : H →ₐc[R] K) (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : HopfAlgebra.points (R := R) (H := K) A) (h : H) :
@@ -177,8 +174,7 @@ theorem quotientPointsHom_quotientKerPointsMulEquiv_apply (f : H →ₐc[R] K)
     (quotientKerPointsMulEquiv f hf A g)
   exact (MulEquiv.symm_apply_apply (quotientKerPointsMulEquiv f hf A) g).symm
 
-/-- Pointwise simp form of `quotientPointsHom_quotientKerPointsMulEquiv_apply`. -/
-@[simp]
+/-- Pointwise form of `quotientPointsHom_quotientKerPointsMulEquiv_apply`. -/
 theorem quotientPointsHom_quotientKerPointsMulEquiv_apply_apply (f : H →ₐc[R] K)
     (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
     (g : HopfAlgebra.points (R := R) (H := H ⧸ (ker f hf).toIdeal) A) (h : H) :
