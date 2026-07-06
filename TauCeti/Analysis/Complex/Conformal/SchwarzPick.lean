@@ -4,8 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Analysis.Complex.Schwarz
-public import TauCeti.Analysis.Complex.Conformal.Moebius
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
+public import Mathlib.Data.Set.Function
+public import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
+import Mathlib.Analysis.Complex.Schwarz
+import TauCeti.Analysis.Complex.Conformal.Moebius
 
 /-!
 # Schwarz--Pick for the pseudo-hyperbolic expression
@@ -14,10 +17,8 @@ This file proves the Schwarz--Pick contraction estimate for holomorphic self-map
 complex unit disc, stated using Tau Ceti's pseudo-hyperbolic expression
 `pseudoHyperbolicExpr z w = ‖(z - w) / (1 - conj w * z)‖`.
 
-The proof uses the standard reduction to Mathlib's Schwarz lemma: conjugate the source by the
-disc Moebius factor sending `w` to `0`, conjugate the target by the factor sending `f w` to
-`0`, and apply `Complex.norm_le_norm_of_mapsTo_ball` to the resulting holomorphic disc
-self-map fixing `0`.
+It provides both the pseudo-hyperbolic expression statement and a raw norm-quotient corollary,
+plus a bundled `Complex.UnitDisc` form for callers working directly with disc points.
 
 This advances the conformal-mapping roadmap's L2 Schwarz--Pick target.  It reuses Mathlib's
 Schwarz lemma and Tau Ceti's unit-disc Moebius API.  As with the rest of the L0--L3
@@ -83,14 +84,9 @@ theorem pseudoHyperbolicExpr_map_le {f : ℂ → ℂ}
     simpa [ξ] using unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one
       (a := w) hw_norm hz
   have hsource_ξ : source ξ = z := by
-    let wD : Complex.UnitDisc := Complex.UnitDisc.mk w hw_norm
-    let zD : Complex.UnitDisc := Complex.UnitDisc.mk z hz_norm
-    have hξ : ξ = (unitDiscMoebius wD zD : ℂ) := by
-      simp [ξ, wD, zD]
-    have hcomp : unitDiscMoebius (-wD) (unitDiscMoebius wD zD) = zD := by
-      exact congr_fun (unitDiscMoebius_neg_comp_unitDiscMoebius wD) zD
-    have hcoe := congrArg (fun u : Complex.UnitDisc => (u : ℂ)) hcomp
-    simpa [source, hξ, wD, zD] using hcoe
+    simpa [source, ξ] using
+      unitDiscMoebiusFormula_neg_apply_unitDiscMoebiusFormula (a := w) (z := z) hw_norm
+        hz_norm
   have hg_ξ : g ξ = target (f z) := by
     simp [g, hsource_ξ]
   have hξ_norm : ‖ξ‖ < 1 := by
@@ -104,7 +100,7 @@ theorem pseudoHyperbolicExpr_map_le {f : ℂ → ℂ}
       rw [pseudoHyperbolicExpr_def]
 
 /-- The raw norm-quotient form of Schwarz--Pick. -/
-theorem norm_div_sub_le {f : ℂ → ℂ}
+theorem pseudoHyperbolicExpr_map_norm_div_le {f : ℂ → ℂ}
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
     (hmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
     {z w : ℂ} (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :

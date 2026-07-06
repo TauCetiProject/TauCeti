@@ -161,6 +161,21 @@ private lemma unitDiscMoebius_neg_apply_unitDiscMoebius_apply (a z : Complex.Uni
   simpa [sub_neg_eq_add] using
     unitDiscMoebius_neg_apply_unitDiscMoebius_apply_scalar hden₁ hnorm
 
+/--
+The scalar Moebius factor centered at `-a` is the inverse of the scalar factor centered at
+`a` on the open unit disc.
+-/
+lemma unitDiscMoebiusFormula_neg_apply_unitDiscMoebiusFormula {a z : ℂ}
+    (ha : ‖a‖ < 1) (hz : ‖z‖ < 1) :
+    (((z - a) / (1 - (starRingEnd ℂ) a * z)) - (-a)) /
+        (1 - (starRingEnd ℂ) (-a) * ((z - a) / (1 - (starRingEnd ℂ) a * z))) = z := by
+  let aD : Complex.UnitDisc := Complex.UnitDisc.mk a ha
+  let zD : Complex.UnitDisc := Complex.UnitDisc.mk z hz
+  have h :
+      unitDiscMoebius (-aD) (unitDiscMoebius aD zD) = zD :=
+    unitDiscMoebius_neg_apply_unitDiscMoebius_apply aD zD
+  exact congrArg (fun u : Complex.UnitDisc => (u : ℂ)) h
+
 /-- The inverse of the unit-disc Moebius factor centered at `a` is the factor centered at `-a`. -/
 @[simp]
 lemma unitDiscMoebius_neg_comp_unitDiscMoebius (a : Complex.UnitDisc) :
