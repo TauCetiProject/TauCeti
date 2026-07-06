@@ -1,7 +1,7 @@
 module
 
-public import Mathlib.Logic.Equiv.Fintype
 public import Mathlib.Order.Fin.Basic
+public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Data.Finset.Lattice.Fold
 
 /-!
