@@ -8,7 +8,6 @@ public import TauCeti.KnotTheory.Grid.GradingInteger
 public import TauCeti.KnotTheory.Grid.StateCardinality
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
 
 /-!
 # The standard two-by-two grid grading computation
