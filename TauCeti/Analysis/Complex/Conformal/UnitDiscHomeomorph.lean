@@ -11,10 +11,10 @@ public import TauCeti.Analysis.Complex.Conformal.UnitDiscAutomorphism
 
 This file packages the standard unit-disc automorphisms from
 `TauCeti.Analysis.Complex.Conformal.UnitDiscAutomorphism` as homeomorphisms of
-`Complex.UnitDisc`.  The underlying maps are the existing equivalences
-`unitDiscMoebiusEquiv` and `unitDiscStandardAutomorphismEquiv`; this file adds the
-continuity API needed before treating the disc automorphisms as a topological automorphism
-group in the Schwarz--Pick layer of the conformal-mapping roadmap.
+`Complex.UnitDisc`.  The underlying map is the existing equivalence
+`unitDiscStandardAutomorphismEquiv`; this file adds the continuity API needed before treating
+the disc automorphisms as a topological automorphism group in the Schwarz--Pick layer of the
+conformal-mapping roadmap.
 
 This L2 material is coordinated with the upstream Mathlib RMT effort in
 leanprover-community/mathlib4#33505.  Mathlib already contains the preceding human-curated
@@ -28,73 +28,6 @@ namespace TauCeti
 
 open Complex
 open scoped ComplexConjugate
-
-/-- The unit-disc Moebius factor is continuous as a map of the bundled open disc. -/
-lemma continuous_unitDiscMoebius (a : Complex.UnitDisc) :
-    Continuous (unitDiscMoebius a) := by
-  rw [Complex.UnitDisc.isEmbedding_coe.continuous_iff]
-  simpa only [Function.comp_def, coe_unitDiscMoebius] using
-    (differentiableOn_unitDiscMoebiusFormula a).continuousOn.comp_continuous
-      Complex.UnitDisc.continuous_coe
-      (fun z => by simpa [mem_ball_zero_iff] using Complex.UnitDisc.norm_lt_one z)
-
-/-- The standard Moebius self-map of the unit disc, bundled as a homeomorphism. -/
-noncomputable def unitDiscMoebiusHomeomorph (a : Complex.UnitDisc) :
-    Complex.UnitDisc ≃ₜ Complex.UnitDisc where
-  toEquiv := unitDiscMoebiusEquiv a
-  continuous_toFun := by
-    exact (continuous_unitDiscMoebius a).congr fun z => by
-      calc
-        unitDiscMoebius a z = unitDiscMoebiusEquiv a z :=
-          (unitDiscMoebiusEquiv_apply a z).symm
-        _ = (unitDiscMoebiusEquiv a).toFun z := rfl
-  continuous_invFun := by
-    exact (continuous_unitDiscMoebius (-a)).congr fun z => by
-      calc
-        unitDiscMoebius (-a) z = unitDiscMoebiusEquiv (-a) z :=
-          (unitDiscMoebiusEquiv_apply (-a) z).symm
-        _ = (unitDiscMoebiusEquiv a).symm z := by
-          rw [unitDiscMoebiusEquiv_symm]
-        _ = (unitDiscMoebiusEquiv a).invFun z := rfl
-
-/-- The Moebius homeomorphism applies by the existing Moebius factor. -/
-@[simp]
-lemma unitDiscMoebiusHomeomorph_apply (a z : Complex.UnitDisc) :
-    unitDiscMoebiusHomeomorph a z = unitDiscMoebius a z :=
-  unitDiscMoebiusEquiv_apply a z
-
-/-- The underlying equivalence of the Moebius homeomorphism is the existing equivalence. -/
-@[simp]
-lemma unitDiscMoebiusHomeomorph_toEquiv (a : Complex.UnitDisc) :
-    (unitDiscMoebiusHomeomorph a).toEquiv = unitDiscMoebiusEquiv a :=
-  by
-    ext z
-    calc
-      ((unitDiscMoebiusHomeomorph a).toEquiv z : ℂ)
-          = (unitDiscMoebiusHomeomorph a z : ℂ) := rfl
-      _ = (unitDiscMoebiusEquiv a z : ℂ) := by
-        rw [unitDiscMoebiusHomeomorph_apply, unitDiscMoebiusEquiv_apply]
-
-/-- The inverse Moebius homeomorphism is the Moebius homeomorphism centered at `-a`. -/
-@[simp]
-lemma unitDiscMoebiusHomeomorph_symm (a : Complex.UnitDisc) :
-    (unitDiscMoebiusHomeomorph a).symm = unitDiscMoebiusHomeomorph (-a) := by
-  ext z
-  calc
-    ((unitDiscMoebiusHomeomorph a).symm z : ℂ)
-        = ((unitDiscMoebiusEquiv a).symm z : ℂ) := rfl
-    _ = (unitDiscMoebiusHomeomorph (-a) z : ℂ) := by
-      rw [unitDiscMoebiusEquiv_symm, unitDiscMoebiusEquiv_apply,
-        unitDiscMoebiusHomeomorph_apply]
-
-/-- The scalar formula for the Moebius homeomorphism. -/
-@[norm_cast]
-lemma coe_unitDiscMoebiusHomeomorph_apply (a z : Complex.UnitDisc) :
-    (unitDiscMoebiusHomeomorph a z : ℂ) =
-      ((z : ℂ) - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * (z : ℂ)) :=
-  by
-    rw [unitDiscMoebiusHomeomorph_apply]
-    exact coe_unitDiscMoebius a z
 
 /--
 The standard automorphism of the complex unit disc, bundled as a homeomorphism.
