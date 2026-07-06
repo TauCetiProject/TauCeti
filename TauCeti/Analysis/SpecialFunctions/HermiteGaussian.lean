@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import Mathlib.Probability.Distributions.Gaussian.Real
