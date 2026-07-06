@@ -2,7 +2,7 @@ module
 
 public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
-import Mathlib.Logic.Equiv.Fintype
+import TauCeti.Probability.Exchangeability.PermutationExtension
 import TauCeti.Probability.Exchangeability.FiniteMarginals
 import TauCeti.Probability.Exchangeability.Contractability
 
@@ -58,9 +58,8 @@ theorem FullyExchangeable.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω → �
     (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) (n : ℕ) :
     ExchangeableAt μ X n := by
   intro σ
-  obtain ⟨π, hπ⟩ :=
-    Equiv.Perm.exists_extending_pair (fun i : Fin n => i.val) (fun i : Fin n => (σ i).val)
-      Fin.val_injective (fun _ _ h => σ.injective (Fin.val_injective h))
+  obtain ⟨π, hπ⟩ := exists_perm_nat_extending
+    (fun _ _ h => σ.injective (Fin.val_injective h))
   have hidx : (fun j : Fin n => π j.val) = fun j : Fin n => (σ j).val := by
     funext j; exact hπ j
   calc blockLaw μ X (fun j : Fin n => (σ j).val)
