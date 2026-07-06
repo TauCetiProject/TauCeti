@@ -23,8 +23,6 @@ value algebra.
 
 * `CommHopfAlgCat.quotientPointsSubgroup_antitone`: the cut-out point subgroup is antitone in
   the Hopf ideal.
-* `CommHopfAlgCat.quotientPointsSubgroupInclusion`: the inclusion hom
-  `G_J(A) →* G_I(A)` for `I ≤ J`.
 * `CommHopfAlgCat.mapQuotientPointsSubgroup_inclusion`: these inclusions commute with
   post-composition in the value algebra.
 
@@ -93,72 +91,17 @@ theorem quotientPointsSubgroup_bot (H : _root_.CommHopfAlgCat.{v} R)
     intro h hh
     rw [HopfIdeal.mem_bot.mp hh, map_zero]
 
-/-- For `I ≤ J`, the inclusion of point subgroups cut out by Hopf ideals,
-`G_J(A) →* G_I(A)`. -/
-@[expose] noncomputable def quotientPointsSubgroupInclusion
-    (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
-    (A : CommAlgCat.{w} R) :
-    quotientPointsSubgroup H J A →* quotientPointsSubgroup H I A :=
-  Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ A)
-
-/-- The inclusion between cut-out point subgroups is the identity on ambient points. -/
-@[simp]
-theorem quotientPointsSubgroupInclusion_apply
-    (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
-    (A : CommAlgCat.{w} R) (g : quotientPointsSubgroup H J A) :
-    quotientPointsSubgroupInclusion H hIJ A g =
-      ⟨g, mem_quotientPointsSubgroup_of_le H hIJ A g.property⟩ :=
-  rfl
-
-/-- Coercing the inclusion between cut-out point subgroups gives the same ambient point. -/
-@[simp]
-theorem coe_quotientPointsSubgroupInclusion_apply
-    (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
-    (A : CommAlgCat.{w} R) (g : quotientPointsSubgroup H J A) :
-    (quotientPointsSubgroupInclusion H hIJ A g :
-      HopfAlgebra.points (R := R) (H := H) A) = g :=
-  rfl
-
-/-- Pointwise form of the inclusion between cut-out point subgroups. -/
-@[simp]
-theorem quotientPointsSubgroupInclusion_apply_apply
-    (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
-    (A : CommAlgCat.{w} R) (g : quotientPointsSubgroup H J A) (h : H) :
-    ((quotientPointsSubgroupInclusion H hIJ A g :
-      HopfAlgebra.points (R := R) (H := H) A).ofConv) h = g.val.ofConv h :=
-  rfl
-
-/-- Inclusions of cut-out point subgroups compose along chains of Hopf ideals. -/
-@[simp]
-theorem quotientPointsSubgroupInclusion_comp
-    (H : _root_.CommHopfAlgCat.{v} R) {I J K : HopfIdeal R H}
-    (hIJ : I ≤ J) (hJK : J ≤ K) (A : CommAlgCat.{w} R) :
-    (quotientPointsSubgroupInclusion H hIJ A).comp
-        (quotientPointsSubgroupInclusion H hJK A) =
-      quotientPointsSubgroupInclusion H (hIJ.trans hJK) A := by
-  ext g
-  rfl
-
-/-- The inclusion for `I ≤ I` is the identity homomorphism. -/
-@[simp]
-theorem quotientPointsSubgroupInclusion_refl
-    (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) (A : CommAlgCat.{w} R) :
-    quotientPointsSubgroupInclusion H (le_refl I) A =
-      MonoidHom.id (quotientPointsSubgroup H I A) := by
-  ext g
-  rfl
-
 /-- The subgroup inclusions associated to `I ≤ J` commute with maps of value algebras. -/
 theorem mapQuotientPointsSubgroup_inclusion
     (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J)
     {A B : CommAlgCat.{w} R} (χ : A ⟶ B) (g : quotientPointsSubgroup H J A) :
     mapQuotientPointsSubgroup H I χ
-        (quotientPointsSubgroupInclusion H hIJ A g) =
-      quotientPointsSubgroupInclusion H hIJ B
+        (Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ A) g) =
+      Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ B)
         (mapQuotientPointsSubgroup H J χ g) := by
   apply Subtype.ext
-  rw [coe_mapQuotientPointsSubgroup_apply, coe_quotientPointsSubgroupInclusion_apply,
-    coe_quotientPointsSubgroupInclusion_apply, coe_mapQuotientPointsSubgroup_apply]
+  rw [coe_mapQuotientPointsSubgroup_apply, Subgroup.coe_inclusion, Subgroup.coe_inclusion,
+    coe_mapQuotientPointsSubgroup_apply]
 
 end CommHopfAlgCat
 
