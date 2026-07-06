@@ -107,7 +107,7 @@ theorem mapQuotientPointsSubgroup_inclusion_apply
     coe_mapQuotientPointsSubgroup_apply]
 
 /-- The natural inclusion of subgroup functors associated to `I ≤ J`. -/
-noncomputable abbrev quotientPointsSubgroupInclusion
+@[expose] noncomputable def quotientPointsSubgroupInclusion
     (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J) :
     quotientPointsSubgroupFunctor (R := R) H J ⟶
       quotientPointsSubgroupFunctor (R := R) H I where
@@ -128,6 +128,28 @@ lemma quotientPointsSubgroupInclusion_app
     (quotientPointsSubgroupInclusion (R := R) H hIJ).app A =
       GrpCat.ofHom (Subgroup.inclusion (quotientPointsSubgroup_le_of_le H hIJ A)) :=
   rfl
+
+/-- The inclusion associated to reflexivity is the identity natural transformation. -/
+@[simp]
+lemma quotientPointsSubgroupInclusion_refl
+    (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
+    quotientPointsSubgroupInclusion (R := R) H (le_refl I) =
+      𝟙 (quotientPointsSubgroupFunctor (R := R) H I) := by
+  ext A g
+  exact SubgroupClass.inclusion_self g
+
+/-- Inclusions of quotient point subgroup functors compose along transitive ideal inclusions. -/
+@[simp]
+lemma quotientPointsSubgroupInclusion_comp
+    (H : _root_.CommHopfAlgCat.{v} R) {I J K : HopfIdeal R H}
+    (hIJ : I ≤ J) (hJK : J ≤ K) :
+    quotientPointsSubgroupInclusion (R := R) H hJK ≫
+        quotientPointsSubgroupInclusion (R := R) H hIJ =
+      quotientPointsSubgroupInclusion (R := R) H (hIJ.trans hJK) := by
+  ext A g
+  exact SubgroupClass.inclusion_inclusion
+    (quotientPointsSubgroup_le_of_le H hJK A)
+    (quotientPointsSubgroup_le_of_le H hIJ A) g
 
 end CommHopfAlgCat
 
