@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.Trivial
 
 /-!
 # The finite-type trivial affine group
@@ -75,6 +74,36 @@ lemma eq_unit (H : FiniteTypeCommHopfAlgCat.{u, u} R)
     (f : trivial R ⟶ H) :
     f = ofHom (_root_.Bialgebra.unitBialgHom R H) :=
   (trivialIsInitial (R := R)).hom_ext f (ofHom (_root_.Bialgebra.unitBialgHom R H))
+
+variable (A : CommAlgCat.{w} R)
+
+/-- The functor of points of the finite-type trivial affine group is the one-element group. -/
+noncomputable def trivialPointsMulEquiv :
+    HopfAlgebra.points (R := R) (H := trivial R) A ≃* PUnit.{1} where
+  toFun _ := PUnit.unit
+  invFun _ := toConv (Algebra.ofId R A)
+  left_inv f := by
+    apply WithConv.ofConv_injective
+    exact Subsingleton.elim _ _
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+
+variable {A} {B : CommAlgCat.{w} R}
+
+/-- The finite-type trivial-points equivalence is natural in the value algebra. -/
+@[simp]
+theorem trivialPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
+    (f : HopfAlgebra.points (R := R) (H := trivial R) A) :
+    trivialPointsMulEquiv B (AlgHom.mapValue (H := trivial R) φ f) =
+      trivialPointsMulEquiv A f :=
+  rfl
+
+/-- Naturality of the inverse finite-type trivial-points equivalence in the value algebra. -/
+theorem mapValue_trivialPointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (u : PUnit.{1}) :
+    AlgHom.mapValue (H := trivial R) φ ((trivialPointsMulEquiv A).symm u) =
+      (trivialPointsMulEquiv B).symm u := by
+  apply (trivialPointsMulEquiv B).injective
+  rw [trivialPointsMulEquiv_mapValue]
 
 end FiniteTypeCommHopfAlgCat
 
