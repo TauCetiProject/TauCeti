@@ -5,10 +5,11 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import TauCeti.Probability.Process.Tail
 public import TauCeti.Probability.Exchangeability.Cylinder
 public import TauCeti.Probability.Exchangeability.Contractability
-import Mathlib.Probability.Independence.Conditional
+-- `PrefixDeletion` (its canonical dependency) `public import`s both
+-- `Mathlib.Probability.Independence.Conditional` (for `CondIndep`/`condIndep_iff`) and
+-- `…PathSpace.ProcessShift`, so those transit through this non-public import and are not repeated.
 import TauCeti.Probability.DeFinetti.PrefixDeletion
 import TauCeti.Probability.DeFinetti.CondExpConvergence
-import TauCeti.Probability.Exchangeability.PathSpace.ProcessShift
 
 /-!
 # Future-level factorization for the de Finetti martingale route
@@ -22,9 +23,9 @@ is phrased through Mathlib's `ProbabilityTheory.CondIndep`.
 * `condExp_blockIndicatorProd_future_ae_eq_prod` — for `r ≤ m + 1`, the conditional expectation of
   the length-`r` prefix indicator product factors as the product of the single-coordinate
   conditional expectations, with every coordinate replaced by `X 0`. The conditional-independence
-  step is fed through Mathlib's product formula `ProbabilityTheory.condIndep_iff`, using the private
-  helper `block_coord_condIndep` (Kallenberg's Lemma 1.3 input, packaged from the prefix/tail
-  conditional independence `Contractable.condIndep_coord_prefix_tail`).
+  step feeds the merged prefix/tail conditional independence
+  `Contractable.condIndep_coord_prefix_tail` (Kallenberg's Lemma 1.3 input) directly into Mathlib's
+  product formula `ProbabilityTheory.condIndep_iff`.
 
 Adapted from `cameronfreer/exchangeability`
 (`DeFinetti/ViaMartingale/Factorization.lean`: `block_coord_condIndep`,
@@ -76,32 +77,6 @@ private lemma measurableSet_blockCylinder_comap_prefix (X : ℕ → Ω → α) {
   ⟨Set.univ.pi fun j : Fin r => C j, MeasurableSet.univ_pi fun j => hC j,
     by rw [blockCylinder_eq_preimage_univ_pi]⟩
 
-/-- **Conditional independence of prefix and coordinate given the future (Kallenberg 1.3).**
-
-For a contractable process `X` and `r ≤ m`, the length-`r` prefix block `σ(X 0, …, X (r-1))` and the
-single coordinate `σ(X r)` are conditionally independent given the future `tailFamily X (m+1)`, as
-Mathlib's `CondIndep`. This is Kallenberg's Lemma 1.3 input, packaged from the prefix/tail
-conditional independence `Contractable.condIndep_coord_prefix_tail`. -/
-private lemma block_coord_condIndep
-    [StandardBorelSpace Ω]
-    {μ : Measure Ω} [IsFiniteMeasure μ]
-    (X : ℕ → Ω → α) (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
-    {r m : ℕ} (hrm : r ≤ m) :
-    CondIndep (tailFamily X (m + 1))
-      (MeasurableSpace.comap (fun (ω : Ω) (i : Fin r) => X (i : ℕ) ω) inferInstance)
-      (MeasurableSpace.comap (X r) inferInstance)
-      (tailFamily_le_ambient (m + 1) fun k _ => hX_meas k) μ := by
-  -- Identify the far tail `σ(processShift X (m+1))` with the future σ-algebra `tailFamily X (m+1)`.
-  have hW_eq : MeasurableSpace.comap (processShift X (m + 1)) inferInstance
-      = tailFamily X (m + 1) := by
-    rw [tailFamily_eq_comap_shift X (m + 1)]
-    congr 1
-    funext ω n
-    exact processShift_apply X (m + 1) n ω
-  -- Symmetrise the #723 prefix/tail conditional independence and transport along `hW_eq`.
-  simp only [← hW_eq]
-  exact (Contractable.condIndep_coord_prefix_tail hX hX_meas hrm).symm
-
 /-- **Finite-level future factorization.**
 
 For a contractable process and any future level `m` with `r ≤ m + 1`, the conditional expectation of
@@ -143,6 +118,21 @@ lemma condExp_blockIndicatorProd_future_ae_eq_prod
       exact measurableSet_blockCylinder_comap_prefix X _ fun j => hC (Fin.castSucc j)
     have hB_meas : MeasurableSet[MeasurableSpace.comap (X r) inferInstance] pre :=
       ⟨C (Fin.last r), hC _, hpre.symm⟩
+    -- Prefix/coordinate conditional independence given the future (Kallenberg 1.3), straight from
+    -- #723: symmetrise `condIndep_coord_prefix_tail` and transport it along the identification
+    -- `σ(processShift X (m+1)) = tailFamily X (m+1)`.
+    have hci : CondIndep (tailFamily X (m + 1))
+        (MeasurableSpace.comap (fun (ω : Ω) (i : Fin r) => X (i : ℕ) ω) inferInstance)
+        (MeasurableSpace.comap (X r) inferInstance)
+        (tailFamily_le_ambient (m + 1) fun k _ => hX_meas k) μ := by
+      have hW_eq : MeasurableSpace.comap (processShift X (m + 1)) inferInstance
+          = tailFamily X (m + 1) := by
+        rw [tailFamily_eq_comap_shift X (m + 1)]
+        congr 1
+        funext ω n
+        exact processShift_apply X (m + 1) n ω
+      simp only [← hW_eq]
+      exact (Contractable.condIndep_coord_prefix_tail hX hX_meas hrm).symm
     -- CondIndep → condExp product formula, via Mathlib's `condIndep_iff`.
     have hbridge := (condIndep_iff (tailFamily X (m + 1))
         (MeasurableSpace.comap (fun (ω : Ω) (i : Fin r) => X (i : ℕ) ω) inferInstance)
@@ -151,7 +141,7 @@ lemma condExp_blockIndicatorProd_future_ae_eq_prod
         ((measurable_pi_lambda (fun (ω : Ω) (i : Fin r) => X (i : ℕ) ω)
             fun i => hX_meas i).comap_le)
         ((hX_meas r).comap_le) μ).mp
-      (block_coord_condIndep X hX hX_meas hrm) cyl pre hA_meas hB_meas
+      hci cyl pre hA_meas hB_meas
     have hcyl_ce : μ[cyl.indicator (fun _ => (1 : ℝ)) | tailFamily X (m + 1)]
         =ᵐ[μ] (fun ω => ∏ i : Fin r,
           μ[Set.indicator (C (Fin.castSucc i)) (fun _ => (1 : ℝ)) ∘ X 0
