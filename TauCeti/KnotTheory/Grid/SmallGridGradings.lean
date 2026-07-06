@@ -46,40 +46,22 @@ namespace GridDiagram
 
 /-- The standard `2 × 2` grid diagram with `O` markings on the identity state and `X`
 markings on the transposition state. This is the usual smallest grid diagram for the unknot. -/
-@[expose]
-noncomputable def twoByTwo : GridDiagram 2 :=
-  Classical.choose <| show
-    ∃ G : GridDiagram 2, G.O = GridState.twoByTwoId ∧ G.X = GridState.twoByTwoSwap from
-    ⟨{ O := GridState.twoByTwoId
-       X := GridState.twoByTwoSwap
-       disjoint := by
-        intro c h
-        fin_cases c <;> simp at h },
-      rfl, rfl⟩
+abbrev twoByTwo : GridDiagram 2 where
+  O := GridState.twoByTwoId
+  X := GridState.twoByTwoSwap
+  disjoint := by
+    intro c h
+    fin_cases c <;> simp at h
 
 /-- The `O`-marking state of the standard two-by-two diagram is the identity state. -/
 @[simp]
 theorem twoByTwo_O : twoByTwo.O = GridState.twoByTwoId :=
-  (Classical.choose_spec <| show
-      ∃ G : GridDiagram 2, G.O = GridState.twoByTwoId ∧ G.X = GridState.twoByTwoSwap from
-    ⟨{ O := GridState.twoByTwoId
-       X := GridState.twoByTwoSwap
-       disjoint := by
-        intro c h
-        fin_cases c <;> simp at h },
-      rfl, rfl⟩).1
+  rfl
 
 /-- The `X`-marking state of the standard two-by-two diagram is the transposition state. -/
 @[simp]
 theorem twoByTwo_X : twoByTwo.X = GridState.twoByTwoSwap :=
-  (Classical.choose_spec <| show
-      ∃ G : GridDiagram 2, G.O = GridState.twoByTwoId ∧ G.X = GridState.twoByTwoSwap from
-    ⟨{ O := GridState.twoByTwoId
-       X := GridState.twoByTwoSwap
-       disjoint := by
-        intro c h
-        fin_cases c <;> simp at h },
-      rfl, rfl⟩).2
+  rfl
 
 /-- The standard two-by-two diagram has `O` markings at `(0,0)` and `(1,1)`. -/
 @[simp]
@@ -161,21 +143,7 @@ theorem maslovXℤ_O_of_two (G : GridDiagram 2) : G.maslovXℤ G.O = 2 := by
 
 /-- In a `2 × 2` diagram, the integer `O`-Maslov grading of the `X`-marking state is `2`. -/
 theorem maslovOℤ_X_of_two (G : GridDiagram 2) : G.maslovOℤ G.X = 2 := by
-  rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap G.O with hO | hO
-  · rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap G.X with hX | hX
-    · exfalso
-      exact G.disjoint 0 (by simp [hO, hX])
-    · rw [maslovOℤ_eq_card, hO, hX]
-      rw [twoByTwoSwap_pairCard_self, twoByTwoSwap_pairCard_id, twoByTwoId_pairCard_swap,
-        twoByTwoId_pairCard_self]
-      norm_num
-  · rcases GridState.eq_twoByTwoId_or_eq_twoByTwoSwap G.X with hX | hX
-    · rw [maslovOℤ_eq_card, hO, hX]
-      rw [twoByTwoId_pairCard_self, twoByTwoId_pairCard_swap, twoByTwoSwap_pairCard_id,
-        twoByTwoSwap_pairCard_self]
-      norm_num
-    · exfalso
-      exact G.disjoint 0 (by simp [hO, hX])
+  simpa using maslovXℤ_O_of_two G.swapMarkings
 
 /-- Twice the Alexander grading of the `O`-marking state in a `2 × 2` diagram is `-2`. -/
 theorem alexanderTwoℤ_O_of_two (G : GridDiagram 2) : G.alexanderTwoℤ G.O = -2 := by
@@ -246,8 +214,7 @@ theorem alexander_twoByTwo_twoByTwoSwap :
     twoByTwo.alexander GridState.twoByTwoSwap = 0 := by
   simpa using alexander_X_of_two twoByTwo
 
-/-- Every generator of an arbitrary `2 × 2` diagram has one of the two computed Alexander
-gradings: `-1` on the `O`-marking state and `0` on the `X`-marking state. -/
+/-- Every generator of an arbitrary `2 × 2` diagram has Alexander grading `-1` or `0`. -/
 theorem alexander_eq_neg_one_or_eq_zero_of_two (G : GridDiagram 2) (x : GridState 2) :
     G.alexander x = -1 ∨ G.alexander x = 0 := by
   have hx : x = G.O ∨ x = G.X := by

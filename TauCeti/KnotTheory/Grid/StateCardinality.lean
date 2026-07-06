@@ -134,39 +134,32 @@ theorem eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap (x : GridState 2) :
   · exact Or.inr (by rw [Equiv.eq_symm_apply, equivPerm_apply, h])
 
 /-- The identity grid state on a `2 × 2` grid. -/
-@[expose]
-noncomputable def twoByTwoId : GridState 2 :=
-  Classical.choose <| show ∃ x : GridState 2, x 0 = 0 ∧ x 1 = 1 from ⟨⟨1⟩, rfl, rfl⟩
+abbrev twoByTwoId : GridState 2 :=
+  (equivPerm 2).symm 1
 
 /-- The transposition grid state on a `2 × 2` grid. -/
-@[expose]
-noncomputable def twoByTwoSwap : GridState 2 :=
-  Classical.choose <| show ∃ x : GridState 2, x 0 = 1 ∧ x 1 = 0 from
-    ⟨⟨Equiv.swap (0 : Fin 2) 1⟩, by simp, by simp⟩
+abbrev twoByTwoSwap : GridState 2 :=
+  (equivPerm 2).symm (Equiv.swap 0 1)
 
 /-- The identity two-by-two state sends column `0` to row `0`. -/
 @[simp]
 theorem twoByTwoId_zero : twoByTwoId 0 = 0 :=
-  (Classical.choose_spec <| show ∃ x : GridState 2, x 0 = 0 ∧ x 1 = 1 from
-    ⟨⟨1⟩, rfl, rfl⟩).1
+  rfl
 
 /-- The identity two-by-two state sends column `1` to row `1`. -/
 @[simp]
 theorem twoByTwoId_one : twoByTwoId 1 = 1 :=
-  (Classical.choose_spec <| show ∃ x : GridState 2, x 0 = 0 ∧ x 1 = 1 from
-    ⟨⟨1⟩, rfl, rfl⟩).2
+  rfl
 
 /-- The transposition two-by-two state sends column `0` to row `1`. -/
 @[simp]
 theorem twoByTwoSwap_zero : twoByTwoSwap 0 = 1 := by
-  exact (Classical.choose_spec <| show ∃ x : GridState 2, x 0 = 1 ∧ x 1 = 0 from
-    ⟨⟨Equiv.swap (0 : Fin 2) 1⟩, by simp, by simp⟩).1
+  simp [twoByTwoSwap]
 
 /-- The transposition two-by-two state sends column `1` to row `0`. -/
 @[simp]
 theorem twoByTwoSwap_one : twoByTwoSwap 1 = 0 := by
-  exact (Classical.choose_spec <| show ∃ x : GridState 2, x 0 = 1 ∧ x 1 = 0 from
-    ⟨⟨Equiv.swap (0 : Fin 2) 1⟩, by simp, by simp⟩).2
+  simp [twoByTwoSwap]
 
 /-- The two named `2 × 2` grid states are distinct. -/
 theorem twoByTwoId_ne_twoByTwoSwap : twoByTwoId ≠ twoByTwoSwap := by
@@ -177,13 +170,7 @@ theorem twoByTwoId_ne_twoByTwoSwap : twoByTwoId ≠ twoByTwoSwap := by
 /-- Every `2 × 2` grid state is either the identity state or the transposition state. -/
 theorem eq_twoByTwoId_or_eq_twoByTwoSwap (x : GridState 2) :
     x = twoByTwoId ∨ x = twoByTwoSwap :=
-  (eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap x).elim
-    (fun h => Or.inl <| by
-      ext c
-      fin_cases c <;> simp [h])
-    fun h => Or.inr <| by
-      ext c
-      fin_cases c <;> simp [h]
+  by simpa [twoByTwoId, twoByTwoSwap] using eq_equivPerm_symm_one_or_eq_equivPerm_symm_swap x
 
 end GridState
 
