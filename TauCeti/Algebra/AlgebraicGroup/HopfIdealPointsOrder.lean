@@ -73,7 +73,6 @@ theorem mem_quotientPointsSubgroup_of_le (H : _root_.CommHopfAlgCat.{v} R)
   quotientPointsSubgroup_le_of_le H hIJ A hg
 
 /-- If `I = J`, then the point subgroups cut out by `I` and `J` are equal. -/
-@[simp]
 theorem quotientPointsSubgroup_eq_of_eq (H : _root_.CommHopfAlgCat.{v} R)
     {I J : HopfIdeal R H} (hIJ : I = J) (A : CommAlgCat.{w} R) :
     quotientPointsSubgroup H I A = quotientPointsSubgroup H J A := by
