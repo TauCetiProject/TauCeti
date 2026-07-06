@@ -49,12 +49,12 @@ transitive.
 
 Under normality, `N(H) = Deck p`, so this is the fibre-level version of the regular-cover
 specialization from `N(H) / H` to `Deck p / H`. -/
-noncomputable def subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal
+@[expose] noncomputable def subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal
     [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
     SubgroupFiberOrbitQuotient H b ≃ Subgroup.normalizerQuotient H :=
-  (subgroupFiberOrbitQuotientEquivQuotientGroup H e).trans
-    (Subgroup.normalizerQuotientEquivQuotientOfNormal H).toEquiv.symm
+  TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal
+    (G := Deck p) (X := p ⁻¹' {b}) H e
 
 /-- For a regular preconnected covering and a normal subgroup `H ≤ Deck p`, the quotient of a
 fibre by the restricted `H`-action is the normalizer quotient `N(H) / H`. -/
@@ -178,6 +178,8 @@ lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_inv_smul
         (subgroupFiberOrbitClass H (φ⁻¹ • e)) =
       Subgroup.normalizerQuotientMk H
         ⟨φ, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
+  rw [subgroupFiberOrbitClass_eq_mk]
+  rw [subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal]
   simp
 
 /-- For a regular cover, the normal-subgroup fibre quotient equivalence sends the class of

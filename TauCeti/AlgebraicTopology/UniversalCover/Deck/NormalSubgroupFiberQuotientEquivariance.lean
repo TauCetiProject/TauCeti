@@ -21,9 +21,9 @@ multiplication by `a⁻¹`.
 
 ## Main declarations
 
-* `TauCeti.Deck.subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul`:
+* `TauCeti.Deck.subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_inv`:
   the `N(H) / H` action becomes right multiplication by the inverse.
-* `TauCeti.Deck.regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul`:
+* the regular `..._map_smul_eq_mul_inv` wrapper:
   the same statement for a regular preconnected covering map.
 * Inverse-form lemmas for applying the inverse equivalence after right multiplication.
 
@@ -51,18 +51,15 @@ private lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_a
         (hreg.fiber_isPretransitive b) (fiber_isCancelSMul (b := b) hp) H _ e x := by
   letI := hreg.fiber_isPretransitive b
   letI := fiber_isCancelSMul (b := b) hp
+  apply (Subgroup.normalizerQuotientEquivQuotientOfNormal H).injective
   refine Quotient.inductionOn' x ?_
   intro e'
   obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Deck p) e e'
-  rw [← hφ]
-  -- Quotient induction exposes the raw quotient representative; the public API uses the
-  -- deck-specific `subgroupFiberOrbitClass` notation for the same representative.
-  change regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal hp hreg H e
-        (subgroupFiberOrbitClass H (φ • e)) =
-      subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e
-        (subgroupFiberOrbitClass H (φ • e))
-  rw [regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul,
-    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul]
+  rw [← hφ, ← subgroupFiberOrbitClass_eq_mk H (φ • e),
+    normalizerQuotientEquivQuotientOfNormal_regularSubgroupFiberOrbitQuotientEquiv,
+    normalizerQuotientEquivQuotientOfNormal_subgroupFiberOrbitQuotientEquiv,
+    regularSubgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul,
+    subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul]
 
 private lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_apply_eq
     [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
@@ -82,39 +79,19 @@ private lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_s
 action is right multiplication by the inverse. This is the representative-free form of the
 convention that `φ • e` maps to the class of `φ⁻¹`. -/
 @[simp]
-lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul
+lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_inv
     [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b})
     (a : Subgroup.normalizerQuotient H) (x : SubgroupFiberOrbitQuotient H b) :
     subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e (a • x) =
       subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e x * a⁻¹ := by
-  obtain ⟨α, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H a
-  refine Quotient.inductionOn' x ?_
-  intro e'
-  obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Deck p) e e'
-  rw [← hφ]
-  -- Expose the representative of `a` so the descended action can rewrite on orbit classes.
-  change subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e
-        ((Subgroup.normalizerQuotientMk H α) • subgroupFiberOrbitClass H (φ • e)) =
-      subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e
-          (subgroupFiberOrbitClass H (φ • e)) *
-        (Subgroup.normalizerQuotientMk H α)⁻¹
-  rw [Subgroup.normalizerQuotientMk_apply, normalizerQuotient_smul_subgroupFiberOrbitClass,
-    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul]
-  -- After rewriting the action, unfold the equivalence on the translated representative.
-  change subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e
-        (subgroupFiberOrbitClass H (((α : Deck p) * φ) • e)) =
-      Subgroup.normalizerQuotientMk H
-          ⟨φ⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ *
-        (α : Subgroup.normalizerQuotient H)⁻¹
-  rw [subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul]
-  apply (Subgroup.normalizerQuotientEquivQuotientOfNormal H).injective
-  simp [mul_inv_rev]
+  exact TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_inv
+    (G := Deck p) (X := p ⁻¹' {b}) H e a x
 
 /-- For a regular preconnected covering map, the normal-subgroup fibre quotient equivalence
 turns the descended normalizer-quotient action into right multiplication by the inverse. -/
 @[simp]
-lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul
+lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_inv
     [TopologicalSpace B] [PreconnectedSpace E] (hp : IsCoveringMap p) (hreg : IsRegular p)
     (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b})
     (a : Subgroup.normalizerQuotient H) (x : SubgroupFiberOrbitQuotient H b) :
@@ -124,7 +101,7 @@ lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul
   letI := fiber_isCancelSMul (b := b) hp
   rw [regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_eq,
     regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_eq]
-  exact subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul H e a x
+  exact subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_inv H e a x
 
 /-- Applying the inverse normal-subgroup fibre quotient equivalence after right multiplication
 by `a⁻¹` is the same as acting by `a` on the fibre quotient. -/
@@ -135,7 +112,8 @@ lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_mul_inv
     (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e).symm (y * a⁻¹) =
       a • (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e).symm y := by
   apply (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e).injective
-  rw [Equiv.apply_symm_apply, subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul,
+  rw [Equiv.apply_symm_apply,
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_inv,
     Equiv.apply_symm_apply]
 
 /-- For a regular preconnected covering map, applying the inverse normal-subgroup fibre
