@@ -5,9 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.CompletelyMonotone.BernsteinMeasures
-public import Mathlib.MeasureTheory.Measure.FiniteMeasureExt
 public import Mathlib.MeasureTheory.Measure.TightNormed
-public import Mathlib.RingTheory.Adjoin.Polynomial.Basic
 public import TauCeti.MeasureTheory.Measure.Prokhorov
 
 /-!
@@ -15,14 +13,13 @@ public import TauCeti.MeasureTheory.Measure.Prokhorov
 
 This file proves the finite-measure form of the Hausdorff--Bernstein--Widder theorem for
 completely monotone functions on the closed half-line. It imports the Laplace-transform helper
-API and proves the Chafaï extraction, uniqueness, and headline existence and unique-existence
-statements.
+API (including the Laplace uniqueness theorems) and proves the Chafaï extraction and the headline
+existence and unique-existence statements.
 
 ## Main declarations
 
 * `TauCeti.exists_representsLaplace_of_isCompletelyMonotone`
 * `TauCeti.exists_representsLaplace_of_isClosedCompletelyMonotone`
-* `TauCeti.laplaceTransform_ext`, `TauCeti.laplaceTransform_unique`
 * `TauCeti.hausdorff_bernstein_widder`, `TauCeti.hausdorff_bernstein_widder_unique`
 * `TauCeti.bernstein`, `TauCeti.bernstein_unique` (roadmap-facing aliases)
 * `TauCeti.existsUnique_representsLaplace_of_isCompletelyMonotone`
@@ -32,8 +29,8 @@ statements.
 The finite-measure representation is the Hausdorff--Bernstein--Widder theorem, after
 S. Bernstein (1928) and D. V. Widder, *The Laplace Transform*, Chapter IV. The extraction
 argument follows the Bernstein-kernel proof described by D. Chafaï (2013). This file performs
-the Chafaï measure extraction, convergence-to-Laplace assembly, uniqueness proof, and headline
-existence and unique-existence statements.
+the Chafaï measure extraction, convergence-to-Laplace assembly, and headline existence and
+unique-existence statements (Laplace uniqueness lives in `LaplaceRepresentation.lean`).
 
 * Roadmap: `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part B (Bernstein theorem
   milestone).
@@ -42,7 +39,7 @@ existence and unique-existence statements.
 public section
 
 open MeasureTheory Set Filter
-open scoped BoundedContinuousFunction ContDiff ENNReal NNReal Pointwise Polynomial Topology
+open scoped BoundedContinuousFunction ContDiff ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -612,98 +609,6 @@ theorem exists_representsLaplace_of_isClosedCompletelyMonotone
     rw [laplaceTransform_apply]
     simpa using hweak (laplaceKernelBoundedContinuous ht)
   exact tendsto_nhds_unique hshift_laplace hweak_laplace
-
-/-! ## Uniqueness -/
-
-private noncomputable def laplaceExpGenerator : ℝ≥0 →ᵇ ℝ :=
-  laplaceKernelBoundedContinuous (x := (1 : ℝ)) (by norm_num)
-
-private lemma laplaceExpGenerator_pow (n : ℕ) (x : ℝ≥0) :
-    (laplaceExpGenerator x) ^ n = Real.exp (-((n : ℝ) * (x : ℝ))) := by
-  rw [laplaceExpGenerator, laplaceKernelBoundedContinuous_apply]
-  simp [← Real.exp_nat_mul]
-
-private lemma integral_laplaceExpGenerator_pow_eq
-    {μ ν : Measure ℝ≥0} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    (h : ∀ t : ℝ, 0 ≤ t → laplaceTransform μ t = laplaceTransform ν t) (n : ℕ) :
-    ∫ x, (laplaceExpGenerator x) ^ n ∂μ =
-      ∫ x, (laplaceExpGenerator x) ^ n ∂ν := by
-  have hn : 0 ≤ (n : ℝ) := by exact_mod_cast Nat.zero_le n
-  simpa [laplaceTransform_apply, laplaceExpGenerator_pow] using h (n : ℝ) hn
-
-private lemma integral_aeval_laplaceExpGenerator_eq
-    {μ ν : Measure ℝ≥0} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    (h : ∀ t : ℝ, 0 ≤ t → laplaceTransform μ t = laplaceTransform ν t) (p : ℝ[X]) :
-    ∫ x, ((Polynomial.aeval laplaceExpGenerator) p : ℝ≥0 →ᵇ ℝ) x ∂μ =
-      ∫ x, ((Polynomial.aeval laplaceExpGenerator) p : ℝ≥0 →ᵇ ℝ) x ∂ν := by
-  rw [Polynomial.aeval_eq_sum_range laplaceExpGenerator]
-  simp only [BoundedContinuousFunction.coe_sum, Finset.sum_apply]
-  rw [integral_finsetSum _ (fun i _ =>
-    BoundedContinuousFunction.integrable μ ((p.coeff i) • laplaceExpGenerator ^ i))]
-  rw [integral_finsetSum _ (fun i _ =>
-    BoundedContinuousFunction.integrable ν ((p.coeff i) • laplaceExpGenerator ^ i))]
-  refine Finset.sum_congr rfl ?_
-  intro i _hi
-  simp only [BoundedContinuousFunction.coe_smul, BoundedContinuousFunction.coe_pow, Pi.pow_apply,
-    smul_eq_mul]
-  rw [integral_const_mul, integral_const_mul, integral_laplaceExpGenerator_pow_eq h i]
-
-private lemma laplaceExpGenerator_star : star laplaceExpGenerator = laplaceExpGenerator := by
-  ext x
-  rw [laplaceExpGenerator, laplaceKernelBoundedContinuous_apply]
-  simp
-
-private lemma mem_laplaceExpGenerator_adjoin_exists_aeval
-    {g : ℝ≥0 →ᵇ ℝ}
-    (hg : g ∈ StarAlgebra.adjoin ℝ ({laplaceExpGenerator} : Set (ℝ≥0 →ᵇ ℝ))) :
-    ∃ p : ℝ[X], (Polynomial.aeval laplaceExpGenerator) p = g := by
-  have hg' : g ∈
-      (StarAlgebra.adjoin ℝ ({laplaceExpGenerator} : Set (ℝ≥0 →ᵇ ℝ))).toSubalgebra := hg
-  rw [StarAlgebra.adjoin_toSubalgebra] at hg'
-  rw [Set.star_singleton, laplaceExpGenerator_star, Set.union_self] at hg'
-  exact Algebra.adjoin_mem_exists_aeval ℝ laplaceExpGenerator hg'
-
-private lemma laplaceExpGenerator_adjoin_separatesPoints :
-    ((StarAlgebra.adjoin ℝ ({laplaceExpGenerator} : Set (ℝ≥0 →ᵇ ℝ))).map
-      (BoundedContinuousFunction.toContinuousMapStarₐ ℝ)).SeparatesPoints := by
-  intro x y hxy
-  refine ⟨(laplaceExpGenerator : ℝ≥0 → ℝ), ?_, ?_⟩
-  · -- Coerce the bounded continuous generator to the plain function used by `SeparatesPoints`.
-    refine ⟨BoundedContinuousFunction.toContinuousMap laplaceExpGenerator, ?_, rfl⟩
-    -- The mapped star subalgebra contains the continuous-map coercion of the generator.
-    exact StarSubalgebra.mem_map.mpr
-      ⟨laplaceExpGenerator, StarAlgebra.self_mem_adjoin_singleton ℝ laplaceExpGenerator, rfl⟩
-  · intro h
-    apply hxy
-    have hlog := congrArg Real.log h
-    simpa [laplaceExpGenerator, laplaceKernelBoundedContinuous_apply] using hlog
-
-/-- Finite measures on `ℝ≥0` are determined by their Laplace transforms on `[0, ∞)`.
-
-This applies Mathlib's finite-measure extensionality theorem for point-separating star
-subalgebras of bounded continuous functions to the star subalgebra generated by
-`x ↦ exp (-x)`. Its powers are the Laplace kernels at natural parameters. -/
-theorem laplaceTransform_ext
-    {μ ν : Measure ℝ≥0} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    (h : ∀ t : ℝ, 0 ≤ t → laplaceTransform μ t = laplaceTransform ν t) :
-    μ = ν := by
-  exact MeasureTheory.ext_of_forall_mem_subalgebra_integral_eq_of_polish
-    (P := μ) (P' := ν)
-    (A := StarAlgebra.adjoin ℝ ({laplaceExpGenerator} : Set (ℝ≥0 →ᵇ ℝ)))
-    laplaceExpGenerator_adjoin_separatesPoints
-    (fun g hg => by
-      obtain ⟨p, rfl⟩ := mem_laplaceExpGenerator_adjoin_exists_aeval hg
-      exact integral_aeval_laplaceExpGenerator_eq h p)
-
-/-- A function has at most one finite representing measure. -/
-theorem laplaceTransform_unique
-    {f : ℝ → ℝ} {μ ν : Measure ℝ≥0}
-    (hμ : RepresentsLaplace f μ) (hν : RepresentsLaplace f ν) :
-    μ = ν := by
-  letI := hμ.isFiniteMeasure
-  letI := hν.isFiniteMeasure
-  exact laplaceTransform_ext fun t ht => by
-    rw [← hμ.eq_laplaceTransform ht, ← hν.eq_laplaceTransform ht]
 
 /-! ## Headline theorem -/
 
