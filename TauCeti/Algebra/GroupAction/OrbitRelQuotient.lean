@@ -387,6 +387,8 @@ lemma orbitRelQuotientEquivNormalizerQuotientOfNormal_symm_mk
     (orbitRelQuotientEquivNormalizerQuotientOfNormal H x).symm
         (g : Subgroup.normalizerQuotient H) =
       (Quotient.mk'' ((g : G)⁻¹ • x) : _root_.MulAction.orbitRel.Quotient H X) := by
+  -- The new equivalence is definitionally Mathlib's orbit-quotient equivalence transposed
+  -- across the normal-subgroup comparison `N(H) / H ≃ G ⧸ H`.
   change (MulAction.equivSubgroupOrbitsQuotientGroup x H).symm
       (Subgroup.normalizerQuotientEquivQuotientOfNormal H
         (Subgroup.normalizerQuotientMk H g)) =
