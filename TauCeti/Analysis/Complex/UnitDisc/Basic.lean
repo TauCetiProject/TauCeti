@@ -43,12 +43,8 @@ end Complex.UnitDisc
 lemma continuous_circle_smul_unitDisc (u : Circle) :
     Continuous fun z : Complex.UnitDisc => u • z := by
   rw [Complex.UnitDisc.isEmbedding_coe.continuous_iff]
-  -- `isEmbedding_coe.continuous_iff` intentionally transports the goal through the
-  -- subtype embedding `Complex.UnitDisc → ℂ`.  There is no separate coercion lemma for an
-  -- arbitrary bundled target function, so this stable subtype defeq exposes the scalar map.
-  change Continuous fun z : Complex.UnitDisc => ((u • z : Complex.UnitDisc) : ℂ)
-  simp only [Complex.UnitDisc.coe_circle_smul]
-  exact continuous_const.mul Complex.UnitDisc.continuous_coe
+  exact ((continuous_const (y := (u : ℂ))).mul Complex.UnitDisc.continuous_coe).congr fun z => by
+    simp only [Function.comp_def, Complex.UnitDisc.coe_circle_smul, Pi.mul_apply]
 
 /-- Circle rotations act continuously on the bundled open unit disc. -/
 instance instContinuousConstSMulCircleUnitDisc :
