@@ -94,7 +94,6 @@ lemma unit_apply (H : _root_.CommHopfAlgCat.{u} R) (r : R) :
   rfl
 
 /-- Pointwise formula for the coordinate counit map `H → R`. -/
-@[simp]
 lemma counit_apply (H : _root_.CommHopfAlgCat.{u} R) (h : H) :
     (counit H).hom h = Coalgebra.counit h :=
   _root_.Bialgebra.counitBialgHom_apply h
