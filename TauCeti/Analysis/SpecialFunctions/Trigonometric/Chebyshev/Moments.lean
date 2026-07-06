@@ -5,8 +5,8 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Codex
 -/
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure
-public import TauCeti.MeasureTheory.Function.PolynomialMemLp
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
+import TauCeti.MeasureTheory.Function.PolynomialMemLp
 
 /-!
 # Polynomial moments for the Chebyshev `T` measure
