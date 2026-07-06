@@ -107,7 +107,7 @@ lemma laplaceTransform_nonneg (μ : Measure ℝ≥0) (t : ℝ) :
 /-! ## Easy direction: finite measures give completely monotone Laplace transforms -/
 
 /-- The Laplace transform of a finite measure on `ℝ≥0` is continuous on `[0, ∞)`. -/
-theorem laplaceTransform_continuousOn_halfLine (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
+theorem continuousOn_Ici_laplaceTransform (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
     ContinuousOn (laplaceTransform μ) (Ici 0) := by
   -- Dominated convergence in the parameter `t`, with the constant `1` as an integrable
   -- dominating function on the half-line.
@@ -440,7 +440,7 @@ private lemma iteratedDerivWithin_laplaceTransform_eq_laplaceMomentTransform_Ici
 
 /-- If all moments of the representing measure are finite, its Laplace transform is smooth on the
 closed half-line in the existing `iteratedDerivWithin` sense. -/
-lemma laplaceTransform_contDiffOn_Ici_of_moments
+lemma contDiffOn_Ici_laplaceTransform_of_moments
     (μ : Measure ℝ≥0)
     (hmom : ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ) :
     ContDiffOn ℝ (⊤ : ℕ∞) (laplaceTransform μ) (Ici 0) := by
@@ -489,7 +489,7 @@ private lemma iteratedDeriv_laplaceTransform_eq_laplaceMomentTransform
       exact (hasDerivAt_laplaceMomentTransform μ n ht).deriv
 
 /-- A finite-measure Laplace transform is smooth on the open half-line. -/
-lemma laplaceTransform_contDiffOn_Ioi (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
+lemma contDiffOn_Ioi_laplaceTransform (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
     ContDiffOn ℝ (⊤ : ℕ∞) (laplaceTransform μ) (Ioi 0) := by
   refine contDiffOn_of_differentiableOn_deriv (𝕜 := ℝ) (n := (⊤ : ℕ∞))
     (s := Ioi (0 : ℝ)) (f := laplaceTransform μ) ?_
@@ -501,29 +501,29 @@ lemma laplaceTransform_contDiffOn_Ioi (μ : Measure ℝ≥0) [IsFiniteMeasure μ
     iteratedDerivWithin_laplaceTransform_eq_laplaceMomentTransform μ m ht
 
 /-- Every finite-measure Laplace transform is completely monotone on `(0, ∞)`. -/
-theorem laplaceTransform_isCompletelyMonotoneOnIoi
+theorem isCompletelyMonotoneOnIoi_laplaceTransform
     (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :
     IsCompletelyMonotoneOnIoi (laplaceTransform μ) := by
-  refine ⟨laplaceTransform_contDiffOn_Ioi μ, fun n t ht => ?_⟩
+  refine ⟨contDiffOn_Ioi_laplaceTransform μ, fun n t ht => ?_⟩
   rw [iteratedDeriv_laplaceTransform_eq_laplaceMomentTransform μ n ht]
   exact neg_one_pow_mul_laplaceMomentTransform_nonneg μ n t
 
 /-- The Laplace transform of a finite measure is completely monotone in the closed-half-line
 roadmap sense. -/
-theorem laplaceTransform_isClosedCompletelyMonotone
+theorem isClosedCompletelyMonotone_laplaceTransform
     (μ : Measure ℝ≥0) [hμ : IsFiniteMeasure μ] :
     IsClosedCompletelyMonotone (laplaceTransform μ) :=
   isClosedCompletelyMonotone_iff.mpr
-    ⟨laplaceTransform_continuousOn_halfLine μ, laplaceTransform_isCompletelyMonotoneOnIoi μ⟩
+    ⟨continuousOn_Ici_laplaceTransform μ, isCompletelyMonotoneOnIoi_laplaceTransform μ⟩
 
 /-- Strong easy direction: with all moments finite, the Laplace transform satisfies the existing
 `IsCompletelyMonotone` predicate using derivatives within `[0, ∞)`. -/
-theorem laplaceTransform_isCompletelyMonotone_of_moments
+theorem isCompletelyMonotone_laplaceTransform_of_moments
     (μ : Measure ℝ≥0)
     (hmom : ∀ n : ℕ, Integrable (fun x : ℝ≥0 => (x : ℝ) ^ n) μ) :
     IsCompletelyMonotone (laplaceTransform μ) := by
   haveI : IsFiniteMeasure μ := isFiniteMeasure_of_integrable_moments μ hmom
-  refine ⟨laplaceTransform_contDiffOn_Ici_of_moments μ hmom, fun n t ht => ?_⟩
+  refine ⟨contDiffOn_Ici_laplaceTransform_of_moments μ hmom, fun n t ht => ?_⟩
   rw [iteratedDerivWithin_laplaceTransform_eq_laplaceMomentTransform_Ici μ hmom n ht]
   exact neg_one_pow_mul_laplaceMomentTransform_nonneg μ n t
 

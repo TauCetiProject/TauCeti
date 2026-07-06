@@ -24,6 +24,7 @@ statements.
 * `TauCeti.exists_representsLaplace_of_isClosedCompletelyMonotone`
 * `TauCeti.laplaceTransform_ext`, `TauCeti.laplaceTransform_unique`
 * `TauCeti.hausdorff_bernstein_widder`, `TauCeti.hausdorff_bernstein_widder_unique`
+* `TauCeti.bernstein`, `TauCeti.bernstein_unique` (roadmap-facing aliases)
 * `TauCeti.existsUnique_representsLaplace_of_isCompletelyMonotone`
 
 ## References
@@ -762,17 +763,24 @@ theorem hausdorff_bernstein_widder (f : ℝ → ℝ) :
     (fun _f hf => exists_representsLaplace_of_isClosedCompletelyMonotone hf)
     (fun μ hμ => by
       letI := hμ
-      exact laplaceTransform_isClosedCompletelyMonotone μ) f
+      exact isClosedCompletelyMonotone_laplaceTransform μ) f
 
 /-- Unique-existence form of the Hausdorff--Bernstein--Widder theorem. -/
 theorem hausdorff_bernstein_widder_unique (f : ℝ → ℝ) :
     IsClosedCompletelyMonotone f ↔ ∃! μ : Measure ℝ≥0, RepresentsLaplace f μ :=
   hausdorff_bernstein_widder_unique_of_hausdorff_bernstein_widder
-    (hausdorff_bernstein_widder_of_exists_of_laplaceTransform
-      (fun _f hf => exists_representsLaplace_of_isClosedCompletelyMonotone hf)
-      (fun μ hμ => by
-        letI := hμ
-        exact laplaceTransform_isClosedCompletelyMonotone μ)) f
+    (fun f => hausdorff_bernstein_widder f) f
+
+/-- **Bernstein's theorem** — the roadmap-facing name for `hausdorff_bernstein_widder`. -/
+theorem bernstein (f : ℝ → ℝ) :
+    IsClosedCompletelyMonotone f ↔ ∃ μ : Measure ℝ≥0, RepresentsLaplace f μ :=
+  hausdorff_bernstein_widder f
+
+/-- Unique-existence Bernstein theorem — the roadmap-facing name for
+`hausdorff_bernstein_widder_unique`. -/
+theorem bernstein_unique (f : ℝ → ℝ) :
+    IsClosedCompletelyMonotone f ↔ ∃! μ : Measure ℝ≥0, RepresentsLaplace f μ :=
+  hausdorff_bernstein_widder_unique f
 
 /-- Strong-predicate unique-existence corollary of the Bernstein theorem. -/
 theorem existsUnique_representsLaplace_of_isCompletelyMonotone
