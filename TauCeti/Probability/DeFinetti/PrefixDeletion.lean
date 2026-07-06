@@ -30,7 +30,7 @@ far tail, so conditioning the `X r`-indicator on `σ(U) ⊔ σ(W)` collapses to 
 
 The public interface consists of two theorems:
 
-* `Contractable.condIndep_Xr_prefix_tail` — the conditional-independence statement (primary result):
+* `Contractable.condIndep_coord_prefix_tail` — the conditional-independence statement (primary result):
   for a contractable process and `r ≤ m`, `X r` is conditionally independent of the prefix `U`
   given the far tail `W = processShift X (m+1)`, packaged as a `ProbabilityTheory.CondIndep` object.
 * `Contractable.condExp_indicator_prefix_sup_tail_eq` — the prefix-deletion drop-info identity read
@@ -416,7 +416,7 @@ private lemma condExp_indicator_eq_of_contractable [IsFiniteMeasure μ]
 `X r` is conditionally independent of the length-`r` prefix `U` given the far tail
 `W = processShift X (m+1)`, packaged as Mathlib's `ProbabilityTheory.CondIndep` object.  This is the
 primary result; the prefix-deletion drop-info identity is read off from it below. -/
-theorem Contractable.condIndep_Xr_prefix_tail [StandardBorelSpace Ω] [IsFiniteMeasure μ]
+theorem Contractable.condIndep_coord_prefix_tail [StandardBorelSpace Ω] [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hContr : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     {r m : ℕ} (hrm : r ≤ m) :
     let U := fun ω : Ω => (fun i : Fin r => X i ω)
@@ -453,7 +453,7 @@ theorem Contractable.condIndep_Xr_prefix_tail [StandardBorelSpace Ω] [IsFiniteM
 /-- **Prefix-deletion conditional-expectation identity.** For a contractable process and `r ≤ m`,
 conditioning the indicator of `X r` on `σ(U) ⊔ σ(W)` equals conditioning on `σ(W)`, where `U` is the
 length-`r` prefix and `W = processShift X (m+1)` is the far tail.  This is read off from the
-prefix/tail conditional independence `Contractable.condIndep_Xr_prefix_tail`. -/
+prefix/tail conditional independence `Contractable.condIndep_coord_prefix_tail`. -/
 theorem Contractable.condExp_indicator_prefix_sup_tail_eq [StandardBorelSpace Ω] [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hContr : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     {r m : ℕ} (hrm : r ≤ m) {B : Set α} (hB : MeasurableSet B) :
@@ -473,7 +473,7 @@ theorem Contractable.condExp_indicator_prefix_sup_tail_eq [StandardBorelSpace Ω
     (hX_meas r).comap_le
   -- Symmetrise `CondIndep σ(W) σ(X r) σ(U)` to `CondIndep σ(W) σ(U) σ(X r)` and project.
   exact condExp_indicator_sup_eq_of_condIndep hmU hmW hmXr
-    (Contractable.condIndep_Xr_prefix_tail hContr hX_meas hrm).symm ⟨B, hB, rfl⟩
+    (Contractable.condIndep_coord_prefix_tail hContr hX_meas hrm).symm ⟨B, hB, rfl⟩
 
 end Probability
 
