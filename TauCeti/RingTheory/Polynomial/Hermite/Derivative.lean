@@ -86,4 +86,9 @@ theorem _root_.Polynomial.hermite_add_two (n : ℕ) :
     hermite (n + 2) = X * hermite (n + 1) - (n + 1) • hermite n := by
   rw [hermite_succ (n + 1), derivative_hermite_succ]
 
+/-- The second probabilists' Hermite polynomial is `X^2 - 1`. -/
+theorem _root_.Polynomial.hermite_two : hermite 2 = X ^ 2 - C 1 := by
+  rw [hermite_add_two 0, hermite_one, hermite_zero]
+  simp [pow_two]
+
 end TauCeti

@@ -6,10 +6,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Codex
 -/
 public import Mathlib.Analysis.Calculus.ContDiff.Polynomial
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
-public import Mathlib.RingTheory.Polynomial.Hermite.Gaussian
 public import Mathlib.Topology.Algebra.Polynomial
+public import TauCeti.RingTheory.Polynomial.Hermite.Derivative
 
 /-!
 # Basic Hermite functions
@@ -20,7 +21,7 @@ probabilists' Hermite polynomial evaluated at `x * sqrt 2`, multiplied by the
 Gaussian envelope `exp (-x^2 / 2)`.
 
 The API here is deliberately pointwise: the definition, continuity and
-smoothness, and the first two explicit functions.  Orthogonality, `L²`
+smoothness, and the first three base formulas `ψ₀`, `ψ₁`, and `ψ₂`. Orthogonality, `L²`
 packaging, and the oscillator identities are later milestones built on this
 basic object.
 -/
@@ -45,16 +46,16 @@ lemma hermiteFunction_def (n : ℕ) (x : ℝ) :
         Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi) :=
   hermiteFunction.eq_1 n x
 
-/-- The normalization denominator for the Hermite function is positive. -/
-lemma hermiteFunction_denom_pos (n : ℕ) :
+/-- The square root normalization factor in the Hermite function is positive. -/
+lemma sqrt_factorial_mul_sqrt_pi_pos (n : ℕ) :
     0 < Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi) := by
   refine Real.sqrt_pos.2 (mul_pos ?_ (Real.sqrt_pos.2 Real.pi_pos))
   positivity
 
-/-- The normalization denominator for the Hermite function is nonzero. -/
-lemma hermiteFunction_denom_ne_zero (n : ℕ) :
+/-- The square root normalization factor in the Hermite function is nonzero. -/
+lemma sqrt_factorial_mul_sqrt_pi_ne_zero (n : ℕ) :
     Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi) ≠ 0 :=
-  (hermiteFunction_denom_pos n).ne'
+  (sqrt_factorial_mul_sqrt_pi_pos n).ne'
 
 /-- The Gaussian envelope used in the Hermite functions. -/
 noncomputable def gaussianEnvelope (x : ℝ) : ℝ :=
@@ -72,45 +73,33 @@ lemma gaussianEnvelope_pos (x : ℝ) : 0 < gaussianEnvelope x := by
 
 /-- The Gaussian envelope is continuous. -/
 lemma continuous_gaussianEnvelope : Continuous gaussianEnvelope := by
-  rw [show gaussianEnvelope = (fun x : ℝ => Real.exp (-(x ^ 2 / 2))) by
-    funext x
-    rfl]
+  unfold gaussianEnvelope
   exact Real.continuous_exp.comp (((continuous_id.pow 2).div_const 2).neg)
 
 /-- The Gaussian envelope is smooth. -/
 lemma contDiff_gaussianEnvelope : ContDiff ℝ ⊤ gaussianEnvelope := by
-  rw [show gaussianEnvelope = (fun x : ℝ => Real.exp (-(x ^ 2 / 2))) by
-    funext x
-    rfl]
-  exact ((contDiff_id.pow 2).div_const 2).neg.exp
+  unfold gaussianEnvelope
+  exact Real.contDiff_exp.comp (((contDiff_id.pow 2).div_const 2).neg)
 
-/-- The polynomial part `x ↦ Hₙ(x√2)` of the Hermite function is continuous. -/
-lemma continuous_hermiteFunction_poly (n : ℕ) :
+private lemma continuous_hermiteFunction_poly (n : ℕ) :
     Continuous fun x : ℝ => aeval (x * Real.sqrt 2) (hermite n) :=
   (hermite n).continuous_aeval.comp (continuous_id.mul continuous_const)
 
-/-- The polynomial part `x ↦ Hₙ(x√2)` of the Hermite function is smooth. -/
-lemma contDiff_hermiteFunction_poly (n : ℕ) :
+private lemma contDiff_hermiteFunction_poly (n : ℕ) :
     ContDiff ℝ ⊤ fun x : ℝ => aeval (x * Real.sqrt 2) (hermite n) :=
   (hermite n).contDiff_aeval ⊤ |>.comp (contDiff_id.mul contDiff_const)
 
 /-- The real Hermite functions are continuous. -/
 lemma continuous_hermiteFunction (n : ℕ) : Continuous (hermiteFunction n) := by
-  rw [show hermiteFunction n =
-      (fun x : ℝ => aeval (x * Real.sqrt 2) (hermite n) * gaussianEnvelope x *
-        (Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi))⁻¹) by
-    funext x
-    simp [hermiteFunction, gaussianEnvelope, div_eq_mul_inv, mul_assoc]]
-  exact ((continuous_hermiteFunction_poly n).mul continuous_gaussianEnvelope).mul continuous_const
+  unfold hermiteFunction
+  exact ((continuous_hermiteFunction_poly n).mul continuous_gaussianEnvelope).div_const
+    (Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi))
 
 /-- The real Hermite functions are smooth. -/
 lemma contDiff_hermiteFunction (n : ℕ) : ContDiff ℝ ⊤ (hermiteFunction n) := by
-  rw [show hermiteFunction n =
-      (fun x : ℝ => aeval (x * Real.sqrt 2) (hermite n) * gaussianEnvelope x *
-        (Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi))⁻¹) by
-    funext x
-    simp [hermiteFunction, gaussianEnvelope, div_eq_mul_inv, mul_assoc]]
-  exact ((contDiff_hermiteFunction_poly n).mul contDiff_gaussianEnvelope).mul contDiff_const
+  unfold hermiteFunction
+  exact ((contDiff_hermiteFunction_poly n).mul contDiff_gaussianEnvelope).div_const
+    (Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi))
 
 /-- The zeroth Hermite function is the Gaussian envelope divided by `sqrt (sqrt π)`. -/
 @[simp]
@@ -119,6 +108,7 @@ lemma hermiteFunction_zero (x : ℝ) :
   simp [hermiteFunction, gaussianEnvelope]
 
 /-- The first Hermite function is `sqrt 2 * x` times the zeroth Hermite function. -/
+@[simp]
 lemma hermiteFunction_one (x : ℝ) :
     hermiteFunction 1 x = Real.sqrt 2 * x * hermiteFunction 0 x := by
   rw [hermiteFunction_zero]
@@ -134,9 +124,9 @@ lemma hermiteFunction_one_eq (x : ℝ) :
   ring
 
 /-- The second probabilists' Hermite polynomial is `X^2 - 1`, evaluated over `ℝ`. -/
-lemma aeval_hermite_two (x : ℝ) :
+private lemma aeval_hermite_two (x : ℝ) :
     aeval x (hermite 2) = x ^ 2 - 1 := by
-  rw [show (2 : ℕ) = 1 + 1 by norm_num, hermite_succ, hermite_one]
+  rw [Polynomial.hermite_two]
   simp [pow_two]
 
 /-- The second Hermite function in pointwise form. -/
