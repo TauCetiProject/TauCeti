@@ -40,10 +40,10 @@ sector-cancellation identity; simple poles need no sector condition.
   Order `1` is a transversal crossing; larger `n` hugs the line more tightly.
 * `FlatOfOrderBasepoint γ a b n` — the analogue at the join `γ a = γ b` of a closed curve, for the
   outgoing branch at `a` (from the right) and the incoming branch at `b` (from the left).
-* `ConditionAprime γ a b f S` — HW condition (A′), a structure requiring `γ` to be flat of order `n`
-  wherever it meets a prescribed singularity `s ∈ S` at which `f` has a pole of order `n`: at each
-  interior crossing (`ConditionAprime.interior`) and at the basepoint (`ConditionAprime.basepoint`).
-  The pole orders are read from `f` via `meromorphicOrderAt`; `S` selects the singularities.
+* `ConditionAprime γ a b f S` — HW condition (A′), a structure requiring `γ` to meet each `s ∈ S`
+  finitely often (`finite_crossings`) and be flat of order `n` wherever `f` has a pole of order `n`
+  there (`interior`, `basepoint`). Pole orders come from `f` via `meromorphicOrderAt`; `S` selects
+  the singularities.
 * `SectorCompatible f z₀ θ` — the one-crossing Hungerbühler–Wasem sector condition, a structure with
   fields `angle_rational` (`θ` is a rational multiple of `π`) and `laurent_compatible` (the Laurent
   principal part of `f` at `z₀` resonates with `θ`).
@@ -200,15 +200,18 @@ def FlatOfOrderBasepoint (γ : ℝ → ℂ) (a b : ℝ) (n : ℕ) : Prop :=
     (fun t => |((γ t - γ b) * star v_minus).im| / ‖v_minus‖) =o[𝓝[<] b] (fun t => ‖γ t - γ b‖ ^ n)
 
 /-- **Hungerbühler–Wasem condition (A′)** for `γ` along `[a, b]`, at the prescribed singular set `S`
-of the integrand `f`: at each singularity `γ` is **flat of order equal to the order of `f`'s
-pole there**. Wherever `γ` meets a point of `S` at which `f` has a pole of order `n`, the curve is
-flat of order `n` — transversal at a simple pole, flatter at a higher-order pole — so it meets the
-singularity as a finite union of model sectors. Together with condition (B) it is a regularity
-hypothesis of the generalized residue theorem (HW Thm 3.3). Imposed at each *interior* crossing
-`t₀ ∈ (a, b)` and the *basepoint* `γ a` (`= γ b` for a closed curve), so a join singularity is not
-left free. The pole orders are read from `f` via `meromorphicOrderAt`; `S` selects the singularities
-to constrain. -/
+of the integrand `f`: `γ` meets each singularity only **finitely often** and is **flat** to the
+order of `f`'s pole there. Wherever `γ` meets a point of `S` at which `f` has a pole of order `n`,
+the curve is flat of order `n` — transversal at a simple pole, flatter at a higher-order pole; the
+crossings being finite, the singularity is met as a *finite* union of model sectors. Together with
+condition (B) it is a regularity hypothesis of the generalized residue theorem (HW Thm 3.3). It is
+imposed at each *interior* crossing `t₀ ∈ (a, b)` and the *basepoint* `γ a` (`= γ b` for a closed
+curve), so a join singularity is not left free. Pole orders are read from `f` via
+`meromorphicOrderAt`; `S` selects the singularities to constrain. -/
 structure ConditionAprime (γ : ℝ → ℂ) (a b : ℝ) (f : ℂ → ℂ) (S : Finset ℂ) : Prop where
+  /-- Each prescribed singularity is met only **finitely often** on `[a, b]`, so the indentation
+  around it is a *finite* union of model sectors. -/
+  finite_crossings : ∀ s ∈ S, (Set.Icc a b ∩ γ ⁻¹' {s}).Finite
   /-- At each interior crossing of a prescribed singularity where `f` has a pole of order `n`, the
   curve `γ` is flat of order `n`. -/
   interior : ∀ t₀ ∈ Set.Ioo a b, γ t₀ ∈ S → ∀ n : ℕ, 1 ≤ n →
@@ -218,15 +221,17 @@ structure ConditionAprime (γ : ℝ → ℂ) (a b : ℝ) (f : ℂ → ℂ) (S : 
   basepoint : γ a ∈ S → ∀ n : ℕ, 1 ≤ n →
     meromorphicOrderAt f (γ a) = (-(n : ℤ) : WithTop ℤ) → FlatOfOrderBasepoint γ a b n
 
-/-- Characterization of `ConditionAprime` by its two clauses, for rewriting the hypothesis into the
-`interior ∧ basepoint` conjunction (and back via the anonymous constructor). -/
+/-- Characterization of `ConditionAprime` by its three clauses, for rewriting the hypothesis into
+the `finite_crossings ∧ interior ∧ basepoint` conjunction (and back via the anonymous constructor).
+-/
 theorem conditionAprime_iff {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {S : Finset ℂ} :
     ConditionAprime γ a b f S ↔
+      (∀ s ∈ S, (Set.Icc a b ∩ γ ⁻¹' {s}).Finite) ∧
       (∀ t₀ ∈ Set.Ioo a b, γ t₀ ∈ S → ∀ n : ℕ, 1 ≤ n →
           meromorphicOrderAt f (γ t₀) = (-(n : ℤ) : WithTop ℤ) → FlatOfOrder γ t₀ n) ∧
         (γ a ∈ S → ∀ n : ℕ, 1 ≤ n →
           meromorphicOrderAt f (γ a) = (-(n : ℤ) : WithTop ℤ) → FlatOfOrderBasepoint γ a b n) :=
-  ⟨fun h => ⟨h.interior, h.basepoint⟩, fun h => ⟨h.1, h.2⟩⟩
+  ⟨fun h => ⟨h.finite_crossings, h.interior, h.basepoint⟩, fun h => ⟨h.1, h.2.1, h.2.2⟩⟩
 
 /-- **Sector compatibility** of `f` at an on-curve singularity `z₀` whose sector opens at angle `θ`
 (the Hungerbühler–Wasem condition at one crossing): the angle is a rational multiple of `π` and the
