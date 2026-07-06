@@ -152,12 +152,10 @@ theorem twoByTwoId_one : twoByTwoId 1 = 1 :=
   rfl
 
 /-- The transposition two-by-two state sends column `0` to row `1`. -/
-@[simp]
 theorem twoByTwoSwap_zero : twoByTwoSwap 0 = 1 := by
   simp [twoByTwoSwap]
 
 /-- The transposition two-by-two state sends column `1` to row `0`. -/
-@[simp]
 theorem twoByTwoSwap_one : twoByTwoSwap 1 = 0 := by
   simp [twoByTwoSwap]
 
