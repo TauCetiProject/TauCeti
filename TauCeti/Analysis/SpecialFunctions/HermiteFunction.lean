@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Algebra.Polynomial
-public import TauCeti.RingTheory.Polynomial.Hermite.Basic
+public import TauCeti.RingTheory.Polynomial.Hermite.Derivative
 
 /-!
 # Basic Hermite functions
@@ -120,7 +120,7 @@ lemma hermiteFunction_one_eq (x : ℝ) :
 /-- The second probabilists' Hermite polynomial is `X^2 - 1`, evaluated over `ℝ`. -/
 private lemma aeval_hermite_two (x : ℝ) :
     aeval x (hermite 2) = x ^ 2 - 1 := by
-  rw [Polynomial.hermite_two]
+  rw [Polynomial.hermite_add_two 0, hermite_one, hermite_zero]
   simp [pow_two]
 
 /-- The second Hermite function in pointwise form. -/
