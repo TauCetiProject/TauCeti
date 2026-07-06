@@ -13,11 +13,12 @@ exchangeability API:
 
 * strictly increasing finite subsequences extend to strictly increasing self-maps of `ℕ`.
 
-These declarations discharge the finite-extension prerequisites named in
-`TauCetiRoadmap/Exchangeability/README.md`, Layer 0. They are adapted from the
-`cameronfreer/exchangeability` Layer 0 sources pinned at
-`e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses. Finite
-permutation extensions should use Mathlib's `Equiv.Perm.exists_extending_pair` directly.
+The finite permutation-extension step named in
+`TauCetiRoadmap/Exchangeability/README.md`, Layer 0, is supplied by Mathlib's
+`Equiv.Perm.exists_extending_pair` and re-exported here. The declaration below records the
+separate strict-monotone `ℕ` extension helper used by the contractability API. It is adapted from
+the `cameronfreer/exchangeability` Layer 0 sources pinned at
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses.
 -/
 
 public section
