@@ -362,14 +362,12 @@ lemma neg_eq (ω : SymplecticForm V) (v w : V) :
 
 /-- The ordered area density `ω (F v) (F (J₀ v))` is unchanged when both arguments are
 precomposed by a source almost complex structure `J₀`: rotating the source by `J₀` sends the
-pair `(v, J₀ v)` to `(J₀ v, -v)`, which has the same symplectic area. This is the automation-facing
+pair `(v, J₀ v)` to `(J₀ v, -v)`, which has the same symplectic area. This is the
 `SymplecticForm` corollary of `bilinForm_comp_almostComplexStructure`. -/
-@[simp]
 lemma symplecticForm_comp_almostComplexStructure {U : Type*} [AddCommGroup U] [Module ℝ U]
     (ω : SymplecticForm V) (J₀ : AlmostComplexStructure U) (F : U →ₗ[ℝ] V) (v : U) :
-    -(ω.toBilinForm (F (J₀.toLinearMap v))) (F v) =
-      ω (F v) (F (J₀.toLinearMap v)) :=
-  ω.isAlt.neg_eq (F (J₀.toLinearMap v)) (F v)
+    ω ((F.comp J₀.toLinearMap) v) ((F.comp J₀.toLinearMap) (J₀ v)) = ω (F v) (F (J₀ v)) :=
+  bilinForm_comp_almostComplexStructure ω.isAlt J₀ F v
 
 /-- A symplectic form is reflexive as an orthogonality relation. -/
 lemma isRefl (ω : SymplecticForm V) : ω.toBilinForm.IsRefl :=
