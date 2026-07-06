@@ -5,7 +5,7 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Claude
 -/
-public import TauCeti.RingTheory.Polynomial.Hermite.Basic
+public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 
 /-!
 # Derivatives and the three-term recurrence of the probabilists' Hermite polynomials
