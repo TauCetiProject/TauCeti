@@ -4,6 +4,7 @@ public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
+import TauCeti.Probability.Exchangeability.PermutationExtension
 import TauCeti.Probability.Exchangeability.ExchangeableAtMonotone
 import Mathlib.Order.Fin.Tuple
 import TauCeti.Probability.Exchangeability.FiniteMarginals
@@ -25,10 +26,9 @@ time-reindexing, in particular the shift), plus the converse characterization
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned
 at `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses; the
-combinatorial core is Mathlib's `Equiv.Perm.exists_extending_pair` (Cameron Freer, Mathlib
-#34599). `Contractable.pairLaw_eq` is adapted from `DeFinetti/ViaMartingale/FutureRectangles.lean`
-(`contractable_dist_eq`) in the same repo, reproved via the reindexing route below rather than the
-reference's rectangle π-system.
+combinatorial core now lives in `PermutationExtension.lean`. `Contractable.pairLaw_eq` is adapted
+from `DeFinetti/ViaMartingale/FutureRectangles.lean` (`contractable_dist_eq`) in the same repo,
+reproved via the reindexing route below rather than the reference's rectangle π-system.
 -/
 
 public section
@@ -42,33 +42,6 @@ namespace TauCeti
 namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
-
-/-- A strictly increasing finite selection `k : Fin m → ℕ` extends to a strictly increasing
-self-map of `ℕ`. This is the combinatorial bridge from the finite-dimensional definition of
-contractability to the path-law formulation using the monoid of strictly increasing reindexings
-`ℕ → ℕ`. -/
-private theorem exists_strictMono_nat_extending_fin {m : ℕ} {k : Fin m → ℕ} (hk : StrictMono k) :
-    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ i : Fin m, φ i.val = k i := by
-  classical
-  let C := Finset.univ.sup k + 1
-  let φ : ℕ → ℕ := fun n => if h : n < m then k ⟨n, h⟩ else n + C
-  refine ⟨φ, ?_, ?_⟩
-  · intro a b hab
-    dsimp only [φ]
-    by_cases ha : a < m
-    · by_cases hb : b < m
-      · rw [dif_pos ha, dif_pos hb]
-        exact hk (Fin.lt_def.mpr hab)
-      · rw [dif_pos ha, dif_neg hb]
-        have hle_sup : k ⟨a, ha⟩ ≤ Finset.univ.sup k :=
-          Finset.le_sup (f := k) (Finset.mem_univ (⟨a, ha⟩ : Fin m))
-        exact (Nat.lt_succ_of_le hle_sup).trans_le (Nat.le_add_left C b)
-    · by_cases hb : b < m
-      · omega
-      · rw [dif_neg ha, dif_neg hb]
-        omega
-  · intro i
-    simp [φ, i.isLt]
 
 /-- A contractable process has the same finite-dimensional block law as the corresponding
 prefix law along any strictly increasing finite index map. -/

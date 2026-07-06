@@ -2,9 +2,9 @@ module
 
 public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
+import TauCeti.Probability.Exchangeability.PermutationExtension
 import TauCeti.Probability.Exchangeability.FiniteMarginals
 import TauCeti.Probability.Exchangeability.Contractability
-import Mathlib.Logic.Equiv.Fintype
 
 /-!
 # Full exchangeability and path-law bridges
@@ -26,7 +26,7 @@ These bridges live together because they all identify the process-level symmetry
 `FullyExchangeable μ X` with corresponding path-law invariance statements. They are thin: they
 reuse the merged Layer 0 API and Mathlib — finite-marginal uniqueness (`FiniteMarginals`), the
 contractability bridge (`Contractability`), generic path-law reindexing, and
-`Equiv.Perm.exists_extending_pair` — rather than new measure theory.
+`exists_perm_nat_extending_fin` — rather than new measure theory.
 
 These declarations are adapted from the `cameronfreer/exchangeability` Layer 0 sources pinned at
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`, with Tau Ceti API names and hypotheses.
@@ -44,13 +44,6 @@ namespace Probability
 
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
-/-- A permutation of `Fin n` is the restriction of some permutation of `ℕ`: there is `π : Perm ℕ`
-with `π i = σ i` on `{0, …, n-1}`. Thin wrapper over `Equiv.Perm.exists_extending_pair`. -/
-private theorem exists_perm_nat_extending {n : ℕ} (σ : Equiv.Perm (Fin n)) :
-    ∃ π : Equiv.Perm ℕ, ∀ i : Fin n, π i.val = (σ i).val :=
-  Equiv.Perm.exists_extending_pair (fun i : Fin n => i.val) (fun i => (σ i).val)
-    Fin.val_injective (fun _ _ h => σ.injective (Fin.val_injective h))
-
 /-- The first-`n` prefix marginal of the `π`-reindexed path law is the block law along the
 selection `j ↦ π j`. -/
 private theorem map_reindex_prefixProj {μ : Measure Ω} {X : ℕ → Ω → α}
@@ -65,7 +58,7 @@ theorem FullyExchangeable.exchangeableAt {μ : Measure Ω} {X : ℕ → Ω → �
     (hX : FullyExchangeable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) (n : ℕ) :
     ExchangeableAt μ X n := by
   intro σ
-  obtain ⟨π, hπ⟩ := exists_perm_nat_extending σ
+  obtain ⟨π, hπ⟩ := exists_perm_nat_extending_fin σ
   have hidx : (fun j : Fin n => π j.val) = fun j : Fin n => (σ j).val := by
     funext j; exact hπ j
   calc blockLaw μ X (fun j : Fin n => (σ j).val)

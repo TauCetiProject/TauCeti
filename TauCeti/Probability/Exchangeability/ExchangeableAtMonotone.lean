@@ -1,7 +1,7 @@
 module
 
 public import TauCeti.Probability.Exchangeability.Basic
-import Mathlib.Logic.Equiv.Fintype
+import TauCeti.Probability.Exchangeability.PermutationExtension
 
 /-!
 # Monotonicity of finite exchangeability
@@ -12,9 +12,9 @@ coordinates have permutation-invariant law, then so do the first `m` coordinates
 `Fin m` to one of `Fin n`, use exchangeability at `n`, and project the `n`-prefix law back to
 the first `m` coordinates.
 
-The permutation-extension step reuses Mathlib's `Equiv.Perm.exists_extending_pair`; the
-measure-level projection step reuses Tau Ceti's `map_blockLaw_reindex` and
-`map_prefixLaw_castLE`.
+The permutation-extension step reuses Tau Ceti's public
+`exists_perm_extending_castLE`; the measure-level projection step reuses Tau Ceti's
+`map_blockLaw_reindex` and `map_prefixLaw_castLE`.
 
 This projection argument is adapted from Tau Ceti's credited
 `Exchangeable.blockLaw_eq_prefixLaw_of_injective` proof in `Contractability.lean`, following the
@@ -34,16 +34,6 @@ namespace Probability
 variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
 
 namespace ExchangeableAt
-
-/-- An injective map `k : Fin m → Fin n` extends across the canonical inclusion
-`Fin.castLE hmn` to a permutation of `Fin n`. -/
-private theorem exists_perm_extending_castLE {m n : ℕ} (hmn : m ≤ n)
-    (k : Fin m → Fin n) (hk : Function.Injective k) :
-    ∃ σ : Equiv.Perm (Fin n),
-      ∀ i : Fin m, σ (Fin.castLE hmn i) = k i :=
-  Equiv.Perm.exists_extending_pair (Fin.castLE hmn) k
-    (fun _ _ h => Fin.castLE_injective hmn h)
-    hk
 
 /-- An exchangeable `n`-prefix has the prefix law on every injective `m`-subselection inside
 that prefix. -/
