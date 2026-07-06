@@ -21,7 +21,7 @@ counit maps.
 
 This is Layer 0 infrastructure for the ReductiveGroups roadmap: the finite-type
 coordinate-Hopf-algebra model needs the terminal affine group object over the base, separate
-from the already available raw Hopf-algebra points calculation.
+from the already available raw Hopf-algebra points calculation in `TrivialGroup.pointsMulEquiv`.
 
 ## References
 
@@ -63,7 +63,7 @@ On coordinate Hopf algebras this is the bialgebra unit map `R → H`, contravari
 unique morphism from the represented affine group to the terminal affine group `Spec R`. -/
 noncomputable abbrev unit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
     trivial R ⟶ H :=
-  ofHom (CommHopfAlgCat.unit H.obj).hom
+  ofHom (_root_.Bialgebra.unitBialgHom R H)
 
 /-- The coordinate morphism from a finite-type affine group to the trivial affine group.
 
@@ -71,7 +71,7 @@ On coordinate Hopf algebras this is the bialgebra counit map `H → R`, contrava
 identity section `Spec R → G`. -/
 noncomputable abbrev counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
     H ⟶ trivial R :=
-  ofHom (CommHopfAlgCat.counit H.obj).hom
+  ofHom (_root_.Bialgebra.counitBialgHom R H)
 
 /-- The finite-type coordinate unit morphism unwraps to Mathlib's bialgebra unit map. -/
 @[simp]
@@ -105,52 +105,14 @@ noncomputable def trivialIsInitial :
     (fun H => unit H)
     (fun H f => by
       apply hom_ext
-      exact congrArg (fun g : CommHopfAlgCat.trivial R ⟶ H.obj => g.hom)
-        (CommHopfAlgCat.eq_unit H.obj f.hom))
+      apply _root_.BialgHom.coe_toAlgHom_injective
+      exact Subsingleton.elim _ _)
 
 /-- The unique morphism out of the finite-type trivial coordinate Hopf algebra is the unit. -/
 lemma eq_unit (H : FiniteTypeCommHopfAlgCat.{u, u} R)
     (f : trivial R ⟶ H) :
     f = unit H :=
-  by
-    apply hom_ext
-    exact congrArg (fun g : CommHopfAlgCat.trivial R ⟶ H.obj => g.hom)
-      (CommHopfAlgCat.eq_unit H.obj f.hom)
-
-variable (A : CommAlgCat.{v} R)
-
-/-- The functor of points of the finite-type trivial affine group is the one-element group. -/
-noncomputable def trivialPointsMulEquiv :
-    HopfAlgebra.points (R := R) (H := trivial R) A ≃* PUnit.{1} :=
-  TrivialGroup.pointsMulEquiv (R := R) (A := A)
-
-/-- The finite-type trivial-group points equivalence sends every point to `PUnit.unit`. -/
-@[simp]
-theorem trivialPointsMulEquiv_apply (f : HopfAlgebra.points (R := R) (H := trivial R) A) :
-    trivialPointsMulEquiv A f = PUnit.unit :=
-  TrivialGroup.pointsMulEquiv_apply (R := R) (A := A) f
-
-/-- The inverse finite-type trivial-group points equivalence gives the unique point. -/
-@[simp]
-theorem trivialPointsMulEquiv_symm_apply (u : PUnit.{1}) :
-    (trivialPointsMulEquiv A).symm u = toConv (Algebra.ofId R A) :=
-  TrivialGroup.pointsMulEquiv_symm_apply (R := R) (A := A) u
-
-variable {B : CommAlgCat.{w} R}
-
-/-- The finite-type trivial-group points equivalence is natural in the value algebra. -/
-theorem trivialPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
-    (f : HopfAlgebra.points (R := R) (H := trivial R) A) :
-    trivialPointsMulEquiv B (AlgHom.mapValue (H := trivial R) φ f) =
-      trivialPointsMulEquiv A f :=
-  TrivialGroup.pointsMulEquiv_mapValue (R := R) (A := A) (B := B) φ f
-
-/-- Naturality of the inverse finite-type trivial-group points equivalence in the value
-algebra. -/
-theorem mapValue_trivialPointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (u : PUnit.{1}) :
-    AlgHom.mapValue (H := trivial R) φ ((trivialPointsMulEquiv A).symm u) =
-      (trivialPointsMulEquiv B).symm u :=
-  TrivialGroup.mapValue_pointsMulEquiv_symm_apply (R := R) (A := A) (B := B) φ u
+  (trivialIsInitial (R := R)).hom_ext f (unit H)
 
 end FiniteTypeCommHopfAlgCat
 
