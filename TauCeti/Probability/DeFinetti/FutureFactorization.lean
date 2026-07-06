@@ -5,8 +5,8 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import TauCeti.Probability.Process.Tail
 public import TauCeti.Probability.Exchangeability.Cylinder
 public import TauCeti.Probability.Exchangeability.Contractability
--- `CondIndep` appears in the public signature of `block_coord_condIndep`, so this is a `public
--- import`. `…PathSpace.ProcessShift` (used only in that lemma's proof) transits through the
+-- `CondIndep` appears in the public signature of `condIndep_prefix_coord_future`, so this is a
+-- `public import`. `…PathSpace.ProcessShift` (used only in that lemma's proof) transits through the
 -- non-public `import PrefixDeletion` — which `public import`s it — so it is not repeated here.
 public import Mathlib.Probability.Independence.Conditional
 import TauCeti.Probability.DeFinetti.PrefixDeletion
@@ -21,14 +21,14 @@ is phrased through Mathlib's `ProbabilityTheory.CondIndep`.
 
 ## Main results
 
-* `block_coord_condIndep` — for `r ≤ m`, the length-`r` prefix block and the single coordinate `X r`
-  are conditionally independent given the future `tailFamily X (m+1)` (Mathlib's `CondIndep`).
-  This is Kallenberg's Lemma 1.3 input at the `tailFamily` interface, so downstream route files
-  reuse it directly rather than re-deriving the `σ(processShift)` ↔ `tailFamily` identification.
+* `condIndep_prefix_coord_future` — for `r ≤ m`, the length-`r` prefix block and the single
+  coordinate `X r` are conditionally independent given the future `tailFamily X (m+1)` (Mathlib's
+  `CondIndep`). This is Kallenberg's Lemma 1.3 input at the `tailFamily` interface, so downstream
+  route files reuse it directly rather than re-deriving the `σ(processShift)` ↔ `tailFamily` step.
 * `condExp_blockIndicatorProd_future_ae_eq_prod` — for `r ≤ m + 1`, the conditional expectation of
   the length-`r` prefix indicator product factors as the product of the single-coordinate
-  conditional expectations, with every coordinate replaced by `X 0`, feeding `block_coord_condIndep`
-  into Mathlib's product formula `ProbabilityTheory.condIndep_iff`.
+  conditional expectations, with every coordinate replaced by `X 0`, feeding the CondIndep lemma
+  above into Mathlib's product formula `ProbabilityTheory.condIndep_iff`.
 
 Adapted from `cameronfreer/exchangeability`
 (`DeFinetti/ViaMartingale/Factorization.lean`: `block_coord_condIndep`,
@@ -88,7 +88,7 @@ Mathlib's `CondIndep`. This is Kallenberg's Lemma 1.3 input **at the `tailFamily
 adapts the merged prefix/tail conditional independence `Contractable.condIndep_coord_prefix_tail`
 (stated over `σ(processShift X (m+1))`) onto the future σ-algebra, so downstream route files reuse
 the Kallenberg input directly without re-deriving the `σ(processShift) = tailFamily` step. -/
-lemma block_coord_condIndep
+lemma condIndep_prefix_coord_future
     [StandardBorelSpace Ω]
     {μ : Measure Ω} [IsFiniteMeasure μ]
     (X : ℕ → Ω → α) (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
@@ -150,7 +150,7 @@ lemma condExp_blockIndicatorProd_future_ae_eq_prod
     have hB_meas : MeasurableSet[MeasurableSpace.comap (X r) inferInstance] pre :=
       ⟨C (Fin.last r), hC _, hpre.symm⟩
     -- CondIndep → condExp product formula, via Mathlib's `condIndep_iff`, feeding the
-    -- `tailFamily`-interface Kallenberg input `block_coord_condIndep`.
+    -- `tailFamily`-interface Kallenberg input `condIndep_prefix_coord_future`.
     have hbridge := (condIndep_iff (tailFamily X (m + 1))
         (MeasurableSpace.comap (fun (ω : Ω) (i : Fin r) => X (i : ℕ) ω) inferInstance)
         (MeasurableSpace.comap (X r) inferInstance)
@@ -158,7 +158,7 @@ lemma condExp_blockIndicatorProd_future_ae_eq_prod
         ((measurable_pi_lambda (fun (ω : Ω) (i : Fin r) => X (i : ℕ) ω)
             fun i => hX_meas i).comap_le)
         ((hX_meas r).comap_le) μ).mp
-      (block_coord_condIndep X hX hX_meas hrm) cyl pre hA_meas hB_meas
+      (condIndep_prefix_coord_future X hX hX_meas hrm) cyl pre hA_meas hB_meas
     have hcyl_ce : μ[cyl.indicator (fun _ => (1 : ℝ)) | tailFamily X (m + 1)]
         =ᵐ[μ] (fun ω => ∏ i : Fin r,
           μ[Set.indicator (C (Fin.castSucc i)) (fun _ => (1 : ℝ)) ∘ X 0
