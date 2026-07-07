@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.CompletelyMonotone.BernsteinMeasures
+public import TauCeti.Analysis.CompletelyMonotone.Bernstein.Measures
 public import Mathlib.MeasureTheory.Measure.TightNormed
 public import TauCeti.MeasureTheory.Measure.Prokhorov
 
@@ -21,7 +21,6 @@ existence and unique-existence statements.
 * `TauCeti.exists_representsLaplace_of_isCompletelyMonotone`
 * `TauCeti.exists_representsLaplace_of_isClosedCompletelyMonotone`
 * `TauCeti.hausdorff_bernstein_widder`, `TauCeti.hausdorff_bernstein_widder_unique`
-* `TauCeti.bernstein` (roadmap-facing name for the unique-existence theorem)
 * `TauCeti.existsUnique_representsLaplace_of_isCompletelyMonotone`
 
 ## References
@@ -700,13 +699,6 @@ theorem hausdorff_bernstein_widder_unique (f : ℝ → ℝ) :
     IsClosedCompletelyMonotone f ↔ ∃! μ : Measure ℝ≥0, RepresentsLaplace f μ :=
   hausdorff_bernstein_widder_unique_of_hausdorff_bernstein_widder
     (fun f => hausdorff_bernstein_widder f) f
-
-/-- **Bernstein's theorem** — the roadmap-facing name (`bernstein`): a completely monotone function
-on the closed half-line has a *unique* finite representing measure. The mere-existence form is
-`hausdorff_bernstein_widder`. -/
-theorem bernstein (f : ℝ → ℝ) :
-    IsClosedCompletelyMonotone f ↔ ∃! μ : Measure ℝ≥0, RepresentsLaplace f μ :=
-  hausdorff_bernstein_widder_unique f
 
 /-- Strong-predicate unique-existence corollary of the Bernstein theorem: derived from the general
 closed-half-line unique theorem via the predicate implication. -/
