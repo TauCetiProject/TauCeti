@@ -92,7 +92,6 @@ theorem characteristicUpperFaceExponent_add_upperFace_comm
 
 /-- The lower-then-upper mixed codimension-two square has the same total `U`-exponent as the
 upper-then-lower path to the same corner. -/
-@[simp]
 theorem characteristicLowerFaceExponent_add_upperFace_comm
     (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
     characteristicLowerFaceExponent P k C v +
@@ -112,7 +111,6 @@ theorem characteristicLowerFaceExponent_add_upperFace_comm
 
 /-- The upper-then-lower mixed codimension-two square has the same total `U`-exponent as the
 lower-then-upper path to the same corner. -/
-@[simp]
 theorem characteristicUpperFaceExponent_add_lowerFace_comm
     (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
     characteristicUpperFaceExponent P k C (v := v) hv +
