@@ -55,7 +55,6 @@ private theorem characteristicLowerFaceExponent_natCast_lowerFace
   rw [lowerFace_def]
 
 /-- The lower-lower codimension-two square has the same total `U`-exponent along either path. -/
-@[simp]
 theorem characteristicLowerFaceExponent_add_lowerFace_comm
     (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
     characteristicLowerFaceExponent P k C v +
@@ -74,7 +73,6 @@ theorem characteristicLowerFaceExponent_add_lowerFace_comm
   omega
 
 /-- The upper-upper codimension-two square has the same total `U`-exponent along either path. -/
-@[simp]
 theorem characteristicUpperFaceExponent_add_upperFace_comm
     (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
     characteristicUpperFaceExponent P k C (v := v) hv +
