@@ -11,16 +11,24 @@ sequence of σ-algebras, used when working with tail σ-algebras and reverse mar
 
 ## Main results
 
+- `aestronglyMeasurable_of_tendsto_ae'`: an a.e. pointwise limit of `AEStronglyMeasurable[m]`
+  functions is `AEStronglyMeasurable[m]`, for an arbitrary measurable space `m` on `α`, unrelated to
+  the measure's ambient σ-algebra `m₀` (Mathlib's `aestronglyMeasurable_of_tendsto_ae` covers only
+  the `m = m₀` case).
 - `aestronglyMeasurable_iInf_of_antitone`: if a function is `AEStronglyMeasurable` with respect to
   each σ-algebra in an antitone sequence, then it is `AEStronglyMeasurable` with respect to their
   infimum.
+- `aestronglyMeasurable_iInf_of_tendsto_ae_antitone`: an a.e. limit of a sequence adapted to an
+  antitone family `𝔽` is `AEStronglyMeasurable[⨅ n, 𝔽 n]`.
 
 The result holds for a codomain in any second-countable conditionally complete linear order with the
 order topology and Borel σ-algebra (`ℝ` qualifies). The witness σ-algebras `m N` need not be related
 to the measure's ambient σ-algebra `m₀`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/SigmaAlgebraHelpers.lean`, pin
-`e0532e59ceff23edab44dda9ab0655debbc9cc22`). This sub-σ-algebra statement has no Mathlib equivalent.
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`); the two a.e.-limit lemmas
+(`aestronglyMeasurable_of_tendsto_ae'`, `aestronglyMeasurable_iInf_of_tendsto_ae_antitone`) are
+adapted from the same source. These general-`m` / antitone statements have no Mathlib equivalent.
 Written Mathlib-shaped for eventual upstreaming.
 -/
 
@@ -29,6 +37,8 @@ public section
 noncomputable section
 
 open MeasureTheory Filter
+
+open scoped Topology
 
 namespace TauCeti
 
@@ -88,6 +98,69 @@ lemma aestronglyMeasurable_iInf_of_antitone
     exact h_meas.stronglyMeasurable
   -- Step 6: Conclude AEStronglyMeasurable
   exact ⟨h, h_sm, h_ae_eq⟩
+
+/-- A.e. pointwise limit of `AEStronglyMeasurable[m]` functions is `AEStronglyMeasurable[m]`, for an
+arbitrary measurable space `m` on `α` (no assumed relation to the measure's ambient σ-algebra `m₀`).
+Mathlib's `aestronglyMeasurable_of_tendsto_ae` covers only the `m = m₀` case. -/
+-- The witness is the pointwise `limsup` of the strongly measurable representatives of the `f n`.
+-- The order-codomain assumptions are inherited from `Measurable.limsup` (`BorelSpace.Order`):
+-- unlike the ambient case, Mathlib has no pseudo-metrizable a.e.-limit lemma for a non-ambient `m`,
+-- so the `limsup` witness is the only route. This lemma and the two below are consumed by the
+-- reverse-martingale Lévy-downward theorem `MeasureTheory.tendsto_ae_condExp_iInf`.
+lemma aestronglyMeasurable_of_tendsto_ae'
+    {α : Type*} {m₀ : MeasurableSpace α} {μ : @MeasureTheory.Measure α m₀}
+    {m : MeasurableSpace α}
+    {f : ℕ → α → β} {g : α → β}
+    (hf : ∀ n, @MeasureTheory.AEStronglyMeasurable α β _ m m₀ (f n) μ)
+    (hlim : ∀ᵐ x ∂μ, Filter.Tendsto (fun n => f n x) Filter.atTop (nhds (g x))) :
+    @MeasureTheory.AEStronglyMeasurable α β _ m m₀ g μ := by
+  -- Strongly measurable representatives of the `f n`.
+  let f' : ℕ → α → β := fun n => (hf n).mk (f n)
+  have hf'_sm : ∀ n, @MeasureTheory.StronglyMeasurable α β _ m (f' n) :=
+    fun n => (hf n).stronglyMeasurable_mk
+  have hf'_meas : ∀ n, @Measurable α β m _ (f' n) := fun n => (hf'_sm n).measurable
+  have hf'_ae : ∀ n, f n =ᵐ[μ] f' n := fun n => (hf n).ae_eq_mk
+  -- Use the `limsup` of the representatives as the witness.
+  let h := fun x => Filter.atTop.limsup (fun n => f' n x)
+  have h_meas : @Measurable α β m _ h := by
+    haveI : MeasurableSpace α := m
+    exact Measurable.limsup hf'_meas
+  -- `h = g` a.e.: on the set where `f n = f' n` for all `n` and `f n → g`, `limsup (f' ·) = g`.
+  have h_ae_eq : h =ᵐ[μ] g := by
+    have h_all_eq : ∀ᵐ x ∂μ, ∀ n, f n x = f' n x := MeasureTheory.ae_all_iff.mpr hf'_ae
+    filter_upwards [h_all_eq, hlim] with x hx hxlim
+    have hlim' : Filter.Tendsto (fun n => f' n x) Filter.atTop (nhds (g x)) := by
+      simpa only [fun n => (hx n)] using hxlim
+    exact Filter.Tendsto.limsup_eq hlim'
+  have h_sm : @MeasureTheory.StronglyMeasurable α β _ m h := by
+    haveI : MeasurableSpace α := m
+    exact h_meas.stronglyMeasurable
+  exact ⟨h, h_sm, h_ae_eq.symm⟩
+
+/-- A.e. limit of an adapted antitone sequence is `⨅ n, 𝔽 n`-`AEStronglyMeasurable`.
+
+For antitone `𝔽`, if each `g n` is `𝔽 n`-a.e.-strongly-measurable and `g n → Xlim` a.e., then `Xlim`
+is `AEStronglyMeasurable[⨅ n, 𝔽 n]`. Codomain `β` at the same order level as the rest of this
+section (`ℝ` qualifies). -/
+lemma aestronglyMeasurable_iInf_of_tendsto_ae_antitone
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {𝔽 : ℕ → MeasurableSpace Ω} (h_antitone : Antitone 𝔽)
+    {g : ℕ → Ω → β} {Xlim : Ω → β}
+    (hg_meas : ∀ n, AEStronglyMeasurable[𝔽 n] (g n) μ)
+    (h_tendsto : ∀ᵐ ω ∂μ, Tendsto (fun n => g n ω) atTop (𝓝 (Xlim ω))) :
+    AEStronglyMeasurable[⨅ n, 𝔽 n] Xlim μ := by
+  -- Compose the two `AEStronglyMeasurable` helper lemmas: first show
+  -- `AEStronglyMeasurable[𝔽 N] Xlim` for each `N` by feeding the shifted sequence `g (n + N)` into
+  -- `aestronglyMeasurable_of_tendsto_ae'` (each shifted term is `𝔽 N`-`AEStronglyMeasurable` by
+  -- antitonicity — take its `𝔽 (n+N)`-measurable representative, `mono` it up to `𝔽 N`); then
+  -- combine over `N` via `aestronglyMeasurable_iInf_of_antitone`.
+  refine aestronglyMeasurable_iInf_of_antitone (μ := μ) h_antitone Xlim (fun N => ?_)
+  refine aestronglyMeasurable_of_tendsto_ae' (μ := μ) (f := fun n => g (n + N))
+    (fun n => (((hg_meas (n + N)).stronglyMeasurable_mk.mono
+      (h_antitone (Nat.le_add_left N n))).aestronglyMeasurable).congr
+      (hg_meas (n + N)).ae_eq_mk.symm) ?_
+  filter_upwards [h_tendsto] with ω hω
+  exact hω.comp (Filter.tendsto_add_atTop_nat N)
 
 end MeasureTheory
 

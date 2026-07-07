@@ -1,27 +1,33 @@
 module
 
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
+-- Non-public: `eLpNorm_one_condExp_le_eLpNorm` (the L¹ contraction of conditional expectation) is
+-- used only inside the proof of the L¹-continuity lemma below, not in any public signature.
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 
 /-!
-# Conditional expectation of an indicator under pair-law equality
+# Generic conditional-expectation facts
 
-`condExp_indicator_eq_of_pair_law_eq`: if the pairs `(Y, Z)` and `(Y', Z)` have the same law, then
-for every measurable `B` the conditional expectations of `𝟙_B ∘ Y` and `𝟙_B ∘ Y'` given `σ(Z)` agree
-almost everywhere.
+- `condExp_indicator_eq_of_pair_law_eq`: if `(Y, Z)` and `(Y', Z)` have the same law, then for
+  measurable `B` the conditional expectations of `𝟙_B ∘ Y` and `𝟙_B ∘ Y'` given `σ(Z)` agree a.e.
+- `condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm`: L¹-continuity of conditional
+  expectation — if `Xn → Xlim` in L¹ (in `eLpNorm`) and each `μ[Xn n | F]` agrees a.e. with a fixed
+  `Y`, then `μ[Xlim | F]` agrees a.e. with `Y`.
 
-This is a generic conditional-expectation fact (no exchangeability/tail/directing-measure
-hypotheses); it is the bridge that turns a pair-law (distributional) equality into a
-conditional-expectation identity, consumed by the de Finetti block-product factorisation.
+Both are generic conditional-expectation facts (no exchangeability/tail/directing-measure
+hypotheses), each the bridge for a downstream construction.
 
-Adapted from `cameronfreer/exchangeability` (`Probability/CondExp.lean`, pin
-`e0532e59ceff23edab44dda9ab0655debbc9cc22`).
+Adapted from `cameronfreer/exchangeability` (`Probability/CondExp.lean` and
+`Probability/Martingale/Convergence.lean`, pin `e0532e59ceff23edab44dda9ab0655debbc9cc22`).
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory
+open MeasureTheory Filter
+
+open scoped Topology
 
 namespace TauCeti
 
@@ -72,6 +78,54 @@ theorem condExp_indicator_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : Measurable
       ext ω; simp only [hf'_def, Function.comp_apply, Set.indicator, Set.mem_preimage]
     rw [hf'_eq]; exact hint Y' hY'
   simp_rw [h_lhs, h_rhs_ce, h_rhs, h_meas_eq]
+
+/-- **L¹-continuity of conditional expectation.** If `Xn → Xlim` in `L¹` (in `eLpNorm`) and each
+`μ[Xn n | F]` agrees a.e. with a fixed `Y`, then `μ[Xlim | F]` agrees a.e. with `Y`. -/
+-- Stated for an arbitrary conditioning σ-algebra `F` (no `F ≤ m₀`, no `[SigmaFinite (μ.trim)]`):
+-- the bound goes through Mathlib's L¹ contraction `eLpNorm_one_condExp_le_eLpNorm`, which holds at
+-- every `F` via the `condExp = 0` convention — whereas `condExpL1CLM` would require both. Proof:
+-- bound `‖μ[Xlim|F] - Y‖₁` by `‖Xlim - Xn n‖₁` (triangle + `condExp_sub` + the contraction + the
+-- vanishing `μ[Xn n|F] - Y` term), then let `n → ∞`. Consumed by the reverse-martingale
+-- Lévy-downward theorem `MeasureTheory.tendsto_ae_condExp_iInf`.
+lemma condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm
+    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {F : MeasurableSpace Ω} {Xlim Y : Ω → ℝ} {Xn : ℕ → Ω → ℝ}
+    (hXlimint : Integrable Xlim μ) (hXn_int : ∀ n, Integrable (Xn n) μ)
+    (h_condExp : ∀ n, μ[Xn n | F] =ᵐ[μ] Y)
+    (hL1 : Tendsto (fun n => eLpNorm (Xlim - Xn n) 1 μ) atTop (𝓝 0)) :
+    μ[Xlim | F] =ᵐ[μ] Y := by
+  have hY_meas := integrable_condExp.aestronglyMeasurable.congr (h_condExp 0)
+  have h_bound (n : ℕ) : eLpNorm (μ[Xlim | F] - Y) 1 μ ≤ eLpNorm (Xlim - Xn n) 1 μ := by
+    have htri : eLpNorm (μ[Xlim | F] - Y) 1 μ
+                ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ
+                  + eLpNorm (μ[Xn n | F] - Y) 1 μ := by
+      have : μ[Xlim | F] - Y = (μ[Xlim | F] - μ[Xn n | F]) + (μ[Xn n | F] - Y) := by ring
+      rw [this]
+      refine eLpNorm_add_le ?_ ?_ ?_
+      · exact (integrable_condExp.sub integrable_condExp).aestronglyMeasurable
+      · exact integrable_condExp.aestronglyMeasurable.sub hY_meas
+      · norm_num
+    have hzero : eLpNorm (μ[Xn n | F] - Y) 1 μ = 0 := by
+      have h0 : μ[Xn n | F] - Y =ᵐ[μ] 0 := by
+        filter_upwards [h_condExp n] with ω hω; simp [hω]
+      rw [eLpNorm_congr_ae h0]; simp
+    have hfirst : eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ ≤ eLpNorm (Xlim - Xn n) 1 μ := by
+      have hsub : μ[Xlim | F] - μ[Xn n | F] =ᵐ[μ] μ[Xlim - Xn n | F] :=
+        (condExp_sub hXlimint (hXn_int n) F).symm
+      rw [eLpNorm_congr_ae hsub]
+      exact eLpNorm_one_condExp_le_eLpNorm _
+    calc eLpNorm (μ[Xlim | F] - Y) 1 μ
+        ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ + eLpNorm (μ[Xn n | F] - Y) 1 μ := htri
+      _ = eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ := by rw [hzero]; ring
+      _ ≤ eLpNorm (Xlim - Xn n) 1 μ := hfirst
+  have h_norm_zero : eLpNorm (μ[Xlim | F] - Y) 1 μ = 0 :=
+    le_antisymm
+      (le_of_tendsto_of_tendsto tendsto_const_nhds hL1 (Eventually.of_forall h_bound)) bot_le
+  rw [eLpNorm_eq_zero_iff (integrable_condExp.aestronglyMeasurable.sub hY_meas)
+    one_ne_zero] at h_norm_zero
+  filter_upwards [h_norm_zero] with ω hω
+  simp only [Pi.zero_apply] at hω
+  exact sub_eq_zero.mp hω
 
 end MeasureTheory
 
