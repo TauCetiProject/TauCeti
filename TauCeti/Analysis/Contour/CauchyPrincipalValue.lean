@@ -58,6 +58,8 @@ versus `MeromorphicOn` (on a set).
 * `HasCauchyPVAt.of_avoidance` — if `γ` avoids `z₀` on `[a, b]` and the integrand is integrable
   there, the principal value is the ordinary integral (`cauchyPVExistsAt_of_avoidance` is the
   existence form).
+* `HasCauchyPVAt.symm`, `CauchyPVExistsAt.symm`, `cauchyPVAt_symm` — reversing the interval
+  orientation negates the single-point principal value.
 * `HasCauchyPVAt.concat` — the principal values on `[a, b]` and `[b, c]` add
   (`CauchyPVExistsAt.concat` is the existence form).
 
@@ -317,6 +319,32 @@ theorem CauchyPVExistsAt.sum {ι : Type*} {γ : ℝ → ℂ} {a b : ℝ} {z₀ :
     obtain ⟨Lj, hLj⟩ := h j (Finset.mem_insert_self j s)
     obtain ⟨Ls, hLs⟩ := ih fun i hi => h i (Finset.mem_insert_of_mem hi)
     exact ⟨Lj + Ls, by simpa only [Finset.sum_insert hj] using hLj.add hLs⟩
+
+/-- Reversing the interval orientation negates a single-point Cauchy principal value. -/
+theorem HasCauchyPVAt.symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ L : ℂ}
+    (h : HasCauchyPVAt γ a b f z₀ L) :
+    HasCauchyPVAt γ b a f z₀ (-L) := by
+  refine HasCauchyPVAt.intro ?_ ?_
+  · filter_upwards [h.eventually_intervalIntegrable] with ε hε
+    exact hε.symm
+  · refine Filter.Tendsto.congr (fun ε => ?_) h.tendsto.neg
+    exact (intervalIntegral.integral_symm (f :=
+      fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) a b).symm
+
+/-- Existence of a single-point Cauchy principal value is invariant under reversing the interval
+orientation. -/
+theorem CauchyPVExistsAt.symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
+    (h : CauchyPVExistsAt γ a b f z₀) :
+    CauchyPVExistsAt γ b a f z₀ :=
+  let ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
+  cauchyPVExistsAt_iff.mpr ⟨_, hL.symm⟩
+
+/-- Value form of `HasCauchyPVAt.symm`: if the single-point principal value exists on `[a, b]`,
+then the value on `[b, a]` is its negative. -/
+theorem cauchyPVAt_symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
+    (h : CauchyPVExistsAt γ a b f z₀) :
+    cauchyPVAt γ b a f z₀ = -cauchyPVAt γ a b f z₀ :=
+  h.hasCauchyPVAt_cauchyPVAt.symm.cauchyPVAt_eq
 
 /-- Existence form of `HasCauchyPVAt.concat`. -/
 theorem CauchyPVExistsAt.concat {γ : ℝ → ℂ} {a b c : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}

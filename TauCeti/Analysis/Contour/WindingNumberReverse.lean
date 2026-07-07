@@ -9,13 +9,11 @@ public import TauCeti.Analysis.Contour.CauchyPrincipalValueOn
 public import TauCeti.Analysis.Contour.NullHomologous
 
 /-!
-# Orientation reversal for contour principal values and winding numbers
+# Orientation reversal for contour winding numbers
 
-This file records the basic orientation-reversal API for the Cauchy principal values used by the
-contour-integration roadmap and for the generalized winding number. Reversing the interval
-orientation sends each truncated contour integral to its negative, so both the single-point and
-set-level principal values change sign; the same is therefore true for
-`Contour.windingNumber`.
+This file records the basic orientation-reversal API for the generalized winding number.
+Reversing the interval orientation negates the single-point Cauchy principal value defining
+`Contour.windingNumber`, so the winding number itself changes sign.
 
 These lemmas are bookkeeping for the roadmap's curve and cycle layer. Cycles are oriented formal
 combinations of curves, and finite decompositions of curves into avoiding pieces and model sectors
@@ -23,9 +21,6 @@ need both concatenation and orientation reversal.
 
 ## Main results
 
-* `Contour.HasCauchyPVAt.symm`, `Contour.cauchyPVAt_symm` — reversal for the pointwise principal
-  value.
-* `Contour.HasCauchyPV.symm`, `Contour.cauchyPV_symm` — reversal for the set-level principal value.
 * `Contour.windingNumber_symm` — the generalized winding number changes sign when the interval is
   reversed.
 * `Contour.IsNullHomologous.symm`, `Contour.IsNullHomologous.symm_of_avoidance` — null-homology is
@@ -46,54 +41,7 @@ open Filter Topology
 
 namespace TauCeti.Contour
 
-variable {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ L v : ℂ} {Ω : Set ℂ}
-
-/-- Reversing the interval orientation negates a single-point Cauchy principal value. -/
-theorem HasCauchyPVAt.symm (h : HasCauchyPVAt γ a b f z₀ L) :
-    HasCauchyPVAt γ b a f z₀ (-L) := by
-  refine HasCauchyPVAt.intro ?_ ?_
-  · filter_upwards [h.eventually_intervalIntegrable] with ε hε
-    exact hε.symm
-  · refine Filter.Tendsto.congr (fun ε => ?_) h.tendsto.neg
-    exact (intervalIntegral.integral_symm (f :=
-      fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) a b).symm
-
-/-- Existence of a single-point Cauchy principal value is invariant under reversing the interval
-orientation. -/
-theorem CauchyPVExistsAt.symm (h : CauchyPVExistsAt γ a b f z₀) :
-    CauchyPVExistsAt γ b a f z₀ :=
-  let ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
-  cauchyPVExistsAt_iff.mpr ⟨_, hL.symm⟩
-
-/-- Value form of `HasCauchyPVAt.symm`: if the single-point principal value exists on `[a, b]`,
-then the value on `[b, a]` is its negative. -/
-theorem cauchyPVAt_symm (h : CauchyPVExistsAt γ a b f z₀) :
-    cauchyPVAt γ b a f z₀ = -cauchyPVAt γ a b f z₀ :=
-  h.hasCauchyPVAt_cauchyPVAt.symm.cauchyPVAt_eq
-
-/-- Reversing the interval orientation negates a set-level Cauchy principal value. -/
-theorem HasCauchyPV.symm (h : HasCauchyPV γ a b f v) :
-    HasCauchyPV γ b a f (-v) := by
-  obtain ⟨S, hint, htend⟩ := hasCauchyPV_iff.mp h
-  refine HasCauchyPV.intro S ?_ ?_
-  · filter_upwards [hint] with ε hε
-    exact hε.symm
-  · refine Filter.Tendsto.congr (fun ε => ?_) htend.neg
-    exact (intervalIntegral.integral_symm (f :=
-      fun t => if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then 0 else f (γ t) * deriv γ t) a b).symm
-
-/-- Existence of a set-level Cauchy principal value is invariant under reversing the interval
-orientation. -/
-theorem CauchyPVExists.symm (h : CauchyPVExists γ a b f) :
-    CauchyPVExists γ b a f :=
-  let ⟨_, hv⟩ := cauchyPVExists_iff.mp h
-  cauchyPVExists_iff.mpr ⟨_, hv.symm⟩
-
-/-- Value form of `HasCauchyPV.symm`: if the set-level principal value exists on `[a, b]`, then
-the value on `[b, a]` is its negative. -/
-theorem cauchyPV_symm (h : CauchyPVExists γ a b f) :
-    cauchyPV γ b a f = -cauchyPV γ a b f :=
-  h.hasCauchyPV_cauchyPV.symm.cauchyPV_eq
+variable {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} {Ω : Set ℂ}
 
 /-- The kernel integrand used to define the generalized winding number about `z₀`. This local
 abbreviation keeps the orientation-reversal statements readable. -/
