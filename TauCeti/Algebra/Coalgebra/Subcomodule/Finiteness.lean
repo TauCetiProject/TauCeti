@@ -15,8 +15,9 @@ Images of finitely generated subcomodules were already available in the base fil
 add the corresponding named range lemma and the noetherian inverse-image and kernel lemmas.
 
 This is Layer 1 infrastructure for the ReductiveGroups roadmap target on finite-dimensional
-subcomodules and the finite-dimensional comodule category. Over a noetherian base, kernels
-and inverse images of comodule morphisms remain finitely generated, so the usual categorical
+subcomodules and the finite-dimensional comodule category. Kernels and inverse images of
+comodule morphisms are finitely generated when the source module is noetherian, and hence
+for finitely generated source comodules over a noetherian ring, so the usual categorical
 constructions stay inside the finite-comodule subcategory.
 
 ## Main declarations
@@ -40,6 +41,33 @@ namespace TauCeti
 universe u v w x
 
 variable {R : Type u} {C : Type v} {M : Type w} {N : Type x}
+
+section Semiring
+
+variable [CommSemiring R]
+variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable [AddCommMonoid M] [Module R M] [Comodule R C M]
+variable [AddCommMonoid N] [Module R N] [Comodule R C N]
+
+namespace Comodule
+
+namespace Hom
+
+/-- The range of a comodule morphism out of a finitely generated comodule is finitely
+generated as an `R`-module. -/
+theorem range_finite (f : Hom R C M N) [Module.Finite R M] :
+    Module.Finite R (range (R := R) (C := C) f).toSubmodule := by
+  rw [range_toSubmodule]
+  infer_instance
+
+end Hom
+
+end Comodule
+
+end Semiring
+
+section Ring
+
 variable [CommRing R]
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Flat R C]
 variable [AddCommMonoid M] [Module R M] [Comodule R C M]
@@ -70,14 +98,6 @@ namespace Comodule
 
 namespace Hom
 
-omit [Module.Flat R C] in
-/-- The range of a comodule morphism out of a finitely generated comodule is finitely
-generated as an `R`-module. -/
-theorem range_finite (f : Hom R C M N) [Module.Finite R M] :
-    Module.Finite R (range (R := R) (C := C) f).toSubmodule := by
-  rw [range_toSubmodule]
-  infer_instance
-
 /-- In a noetherian source module, the kernel subcomodule of a comodule morphism is finitely
 generated as an `R`-module. -/
 theorem ker_finite_of_isNoetherian [IsNoetherian R M] (f : Hom R C M N) :
@@ -97,5 +117,7 @@ theorem ker_finite_of_finite [IsNoetherianRing R] [Module.Finite R M]
 end Hom
 
 end Comodule
+
+end Ring
 
 end TauCeti
