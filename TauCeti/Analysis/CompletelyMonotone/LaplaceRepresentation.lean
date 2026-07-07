@@ -115,10 +115,14 @@ lemma laplaceTransform_add (μ ν : Measure ℝ≥0) [IsFiniteMeasure μ] [IsFin
   exact integral_add_measure (integrable_laplaceKernel_of_nonneg μ ht)
     (integrable_laplaceKernel_of_nonneg ν ht)
 
-/-- Scaling the measure by `c : ℝ≥0∞` scales the Laplace transform by `c.toReal`. -/
-lemma laplaceTransform_smul (c : ℝ≥0∞) (μ : Measure ℝ≥0) (t : ℝ) :
-    laplaceTransform (c • μ) t = c.toReal * laplaceTransform μ t := by
-  simp only [laplaceTransform_apply, integral_smul_measure, smul_eq_mul]
+/-- Scaling the measure by a finite scalar `c : ℝ≥0` scales the Laplace transform by `c`.
+
+Stated for `c : ℝ≥0` rather than `ℝ≥0∞`: at the infinite scalar `∞ • μ` (infinite mass) the
+Bochner integral returns its junk value and `∞.toReal = 0`, so an `ℝ≥0∞` form would falsely read
+"scaling by infinity gives `0`". -/
+lemma laplaceTransform_smul (c : ℝ≥0) (μ : Measure ℝ≥0) (t : ℝ) :
+    laplaceTransform ((c : ℝ≥0∞) • μ) t = (c : ℝ) * laplaceTransform μ t := by
+  simp only [laplaceTransform_apply, integral_smul_measure, ENNReal.coe_toReal, smul_eq_mul]
 
 /-- The Laplace transform of the Dirac mass at `x₀` is the exponential kernel `exp (-(t · x₀))`;
 the point masses are the building blocks of the representing mixtures. (Not `@[simp]`: the simp set
@@ -614,7 +618,7 @@ protected lemma smul {f : ℝ → ℝ} {μ : Measure ℝ≥0} (c : ℝ≥0)
     rw [Measure.smul_apply, smul_eq_mul]
     exact ENNReal.mul_lt_top ENNReal.coe_lt_top (measure_lt_top μ univ)
   refine ⟨inferInstance, fun t ht => ?_⟩
-  rw [laplaceTransform_smul, ENNReal.coe_toReal, ← hf.eq_laplaceTransform ht]
+  rw [laplaceTransform_smul, ← hf.eq_laplaceTransform ht]
 
 end RepresentsLaplace
 
