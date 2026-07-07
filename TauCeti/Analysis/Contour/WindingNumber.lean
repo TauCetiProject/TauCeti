@@ -24,6 +24,8 @@ value does not exist.
 
 ## Main results
 
+* `TauCeti.Contour.windingNumber_eq_cauchyPVAt` — characteristic value lemma for the raw
+  `cauchyPVAt` defining value.
 * `TauCeti.Contour.windingNumber_eq_of_hasCauchyPVAt` — evaluate `windingNumber` from a Cauchy
   principal-value witness, without unfolding the definition.
 * `TauCeti.Contour.isNullHomologous_iff` — restates `IsNullHomologous` as its vanishing condition,
@@ -61,13 +63,21 @@ integral; as a `limUnder`-based value it is junk when the principal value does n
 def windingNumber (γ : ℝ → ℂ) (a b : ℝ) (z₀ : ℂ) : ℂ :=
   (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * cauchyPVAt γ a b (fun z => (z - z₀)⁻¹) z₀
 
+/-- **Characteristic value lemma.** The generalized winding number is the normalized raw
+single-point principal-value value. This is the public, module-safe form of the definition for
+value-level rewrites. -/
+theorem windingNumber_eq_cauchyPVAt {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} :
+    windingNumber γ a b z₀ =
+      (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * cauchyPVAt γ a b (fun z => (z - z₀)⁻¹) z₀ :=
+  (rfl)
+
 /-- **Characteristic value lemma.** From a Cauchy principal-value witness for `(· − z₀)⁻¹` along
 `γ`, the generalized winding number is the normalized value `(2πi)⁻¹ · L`. This evaluates
 `windingNumber` through the `HasCauchyPVAt` predicate without unfolding the definition. -/
 theorem windingNumber_eq_of_hasCauchyPVAt {γ : ℝ → ℂ} {a b : ℝ} {z₀ L : ℂ}
     (h : HasCauchyPVAt γ a b (fun z => (z - z₀)⁻¹) z₀ L) :
     windingNumber γ a b z₀ = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * L := by
-  rw [windingNumber, h.cauchyPVAt_eq]
+  rw [windingNumber_eq_cauchyPVAt, h.cauchyPVAt_eq]
 
 /-- A curve `γ` on `[a, b]` is **null-homologous** in `Ω` when its generalized winding number
 about every point outside `Ω` vanishes — the hypothesis of the homology form of Cauchy's theorem
