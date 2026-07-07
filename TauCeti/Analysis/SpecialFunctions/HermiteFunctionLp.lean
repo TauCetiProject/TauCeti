@@ -117,17 +117,20 @@ lemma coeFn_hermiteFunctionLp_two :
 the roadmap's Hermite-function orthonormality target, using Mathlib's Gaussian integral. -/
 @[simp]
 lemma integral_hermiteFunction_zero_mul_self :
-    ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x = 1 := by
+    ∫ x : ℝ,
+      Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
+        (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)) = 1 := by
   have hsqrt_sqrt_pi_sq :
       Real.sqrt (Real.sqrt Real.pi) ^ 2 = Real.sqrt Real.pi := by
     rw [Real.sq_sqrt (Real.sqrt_nonneg Real.pi)]
   calc
-    ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x
+    ∫ x : ℝ,
+      Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
+        (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi))
         = ∫ x : ℝ,
             Real.exp (-x ^ 2) / Real.sqrt (Real.sqrt Real.pi) ^ 2 := by
           refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
           dsimp only
-          rw [hermiteFunction_zero x]
           have henv : Real.exp (-(x ^ 2 / 2)) * Real.exp (-(x ^ 2 / 2)) =
               Real.exp (-x ^ 2) := by
             rw [← Real.exp_add]
@@ -151,7 +154,8 @@ lemma integral_hermiteFunction_zero_mul_self :
 scalar field. -/
 @[simp]
 lemma inner_hermiteFunctionLp_zero_zero :
-    inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0) = 1 := by
+    (↑‖hermiteFunctionLp 𝕜 0‖ ^ 2 : 𝕜) = 1 := by
+  rw [← inner_self_eq_norm_sq_to_K]
   have hinner : ∀ a b : ℝ,
       inner 𝕜 ((algebraMap ℝ 𝕜) a) ((algebraMap ℝ 𝕜) b) =
         (algebraMap ℝ 𝕜) (a * b) := by
@@ -166,7 +170,8 @@ lemma inner_hermiteFunctionLp_zero_zero :
           rw [hx]
           exact hinner (hermiteFunction 0 x) (hermiteFunction 0 x)
     _ = 1 := by
-          rw [integral_ofReal, integral_hermiteFunction_zero_mul_self]
-          simp
+          rw [integral_ofReal]
+          simpa only [hermiteFunction_zero, map_one] using
+            congrArg (algebraMap ℝ 𝕜) integral_hermiteFunction_zero_mul_self
 
 end TauCeti
