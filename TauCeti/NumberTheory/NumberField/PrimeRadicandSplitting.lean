@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.NumberField.MultiquadraticSplitting
+import TauCeti.NumberTheory.NumberField.Internal.PrimeDivisibility
 -- `LegendreEvenPrimeDiscriminant` supplies the supplementary law for the radicand `2`, used
 -- only inside a proof below, so it is not re-exported.
 import TauCeti.NumberTheory.Multiquadratic.LegendreEvenPrimeDiscriminant
@@ -109,10 +110,8 @@ theorem ncard_primesOver_sqrt_two_three_iff_mod_eight (r : Fin 2 → K)
     {q : ℕ} [Fact q.Prime] (htwo : q ≠ 2) (hthree : q ≠ 3) :
     (primesOver (span {(q : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔
       (q % 8 = 1 ∨ q % 8 = 7) ∧ legendreSym q (3 : ℤ) = 1 := by
-  exact (ncard_primesOver_sqrt_two_three_iff r hr htop htwo hthree).trans
-    (by
-      simpa [Multiquadratic.evenPrimeDiscriminantRadicand_eight] using
-        (Multiquadratic.legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff
-          (q := q) htwo).and Iff.rfl)
+  have h := ncard_primesOver_sqrt_primes_iff (![2, 3] : Fin 2 → ℕ) (by decide) r hr htop htwo
+    (fun i => by fin_cases i <;> simp [htwo, hthree])
+  exact h.trans (forall_legendreSym_two_three_eq_one_iff_mod_eight htwo)
 
 end TauCeti.NumberField

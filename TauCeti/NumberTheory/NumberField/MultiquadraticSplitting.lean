@@ -26,20 +26,12 @@ This is the general (compositum) case; the base case `n = 1` is `ncard_primesOve
   mod `p`.
 -/
 
-public section
-
 open Polynomial NumberField Ideal Module MulAction
 open scoped Pointwise
 
 namespace TauCeti.NumberField
 
-/-- A rational prime `p` different from a natural prime `l` does not divide `l`, viewed as an
-integer. -/
-theorem not_intCast_prime_dvd_natPrime {p l : ℕ} [Fact p.Prime]
-    (hl : l.Prime) (hne : p ≠ l) : ¬ (p : ℤ) ∣ (l : ℤ) := by
-  intro h
-  have hp_dvd_l : p ∣ l := by exact_mod_cast h
-  exact hne ((Nat.prime_dvd_prime_iff_eq Fact.out hl).mp hp_dvd_l)
+public section
 
 variable {K : Type*} [Field K] [NumberField K]
 
@@ -279,5 +271,7 @@ theorem ncard_primesOver_multiquadratic_iff {ι : Type*} [Finite ι] (d : ι →
     legendreSym_eq_one_of_ncard_primesOver_eq_finrank d r hr (hcop i) Q hsplit, fun hqr => ?_⟩
   rw [ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot K Q]
   exact stabilizer_eq_bot_of_forall_legendreSym_eq_one d r hr htop hodd hcop hqr Q
+
+end
 
 end TauCeti.NumberField

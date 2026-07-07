@@ -6,6 +6,7 @@ module
 
 public import TauCeti.NumberTheory.Multiquadratic.LegendrePrimeDiscriminantExamples
 public import TauCeti.NumberTheory.NumberField.PrimeDiscriminantSplitting
+import TauCeti.NumberTheory.NumberField.Internal.PrimeDivisibility
 
 /-!
 # Complete splitting criteria for the first genus-field examples
