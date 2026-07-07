@@ -26,9 +26,11 @@ comfortably.
 
 * `TauCeti.Subcomodule.comap`: inverse image of a subcomodule under a comodule morphism.
 * `TauCeti.Subcomodule.mem_comap`, `comap_toSubmodule`: characteristic API.
+* `TauCeti.Subcomodule.comap_finite`: inverse images into noetherian modules are finite.
 * `TauCeti.Subcomodule.map_le_iff_le_comap`, `gc_map_comap`: the usual image/preimage
   Galois connection.
 * `TauCeti.Subcomodule.comap_bot_toSubmodule`: the bottom inverse image as a kernel.
+* `TauCeti.Comodule.Hom.ker_finite`: kernels in noetherian modules are finite.
 
 ## References
 
@@ -173,6 +175,12 @@ theorem comap_toSubmodule (B : Subcomodule R C N) (f : Comodule.Hom R C M N) :
     (B.comap f).toSubmodule = B.toSubmodule.comap f.toLinearMap :=
   rfl
 
+/-- The inverse image of a subcomodule into a noetherian module is finitely generated as an
+`R`-module. -/
+theorem comap_finite (B : Subcomodule R C N) (f : Comodule.Hom R C M N)
+    [IsNoetherian R M] : Module.Finite R (B.comap f).toSubmodule := by
+  exact (B.comap f).finite
+
 /-- Membership in an inverse-image subcomodule. -/
 @[simp]
 theorem mem_comap {B : Subcomodule R C N} {f : Comodule.Hom R C M N} {m : M} :
@@ -259,6 +267,12 @@ def ker (f : Hom R C M N) : Subcomodule R C M :=
 theorem ker_toSubmodule (f : Hom R C M N) :
     (ker (R := R) (C := C) f).toSubmodule = LinearMap.ker f.toLinearMap :=
   Subcomodule.comap_bot_toSubmodule f
+
+/-- The kernel of a comodule morphism out of a noetherian module is finitely generated as an
+`R`-module. -/
+theorem ker_finite (f : Hom R C M N) [IsNoetherian R M] :
+    Module.Finite R (ker (R := R) (C := C) f).toSubmodule := by
+  exact (ker (R := R) (C := C) f).finite
 
 /-- Membership in the kernel subcomodule is vanishing under the morphism. -/
 @[simp]
