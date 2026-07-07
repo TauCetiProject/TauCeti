@@ -45,12 +45,6 @@ private theorem not_intCast_prime_dvd_neg_four {p : ℕ} [Fact p.Prime] (hodd : 
     exact Nat.Prime.dvd_of_dvd_pow Fact.out hpow
   exact hodd ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp hp_dvd_two)
 
-private theorem not_intCast_prime_dvd_natPrime {p l : ℕ} [Fact p.Prime]
-    (hl : l.Prime) (hne : p ≠ l) : ¬ (p : ℤ) ∣ (l : ℤ) := by
-  intro h
-  have hp_dvd_l : p ∣ l := by exact_mod_cast h
-  exact hne ((Nat.prime_dvd_prime_iff_eq Fact.out hl).mp hp_dvd_l)
-
 private theorem forall_not_dvd_negFourFivePrimeDiscriminants {p : ℕ} [Fact p.Prime]
     (hodd : p ≠ 2) (hfive : p ≠ 5) :
     ∀ i, ¬ (p : ℤ) ∣ TauCeti.Multiquadratic.negFourFivePrimeDiscriminants i := by

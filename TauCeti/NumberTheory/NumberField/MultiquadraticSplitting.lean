@@ -33,6 +33,14 @@ open scoped Pointwise
 
 namespace TauCeti.NumberField
 
+/-- A rational prime `p` different from a natural prime `l` does not divide `l`, viewed as an
+integer. -/
+theorem not_intCast_prime_dvd_natPrime {p l : ℕ} [Fact p.Prime]
+    (hl : l.Prime) (hne : p ≠ l) : ¬ (p : ℤ) ∣ (l : ℤ) := by
+  intro h
+  have hp_dvd_l : p ∣ l := by exact_mod_cast h
+  exact hne ((Nat.prime_dvd_prime_iff_eq Fact.out hl).mp hp_dvd_l)
+
 variable {K : Type*} [Field K] [NumberField K]
 
 omit [NumberField K] in

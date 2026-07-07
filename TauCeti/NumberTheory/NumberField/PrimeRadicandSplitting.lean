@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
 public import TauCeti.NumberTheory.NumberField.MultiquadraticSplitting
 -- `LegendreEvenPrimeDiscriminant` supplies the supplementary law for the radicand `2`, used
 -- only inside a proof below, so it is not re-exported.
@@ -27,8 +26,6 @@ splitting of an odd prime away from `2` and `3` is equivalent to both Legendre s
 
 * `TauCeti.NumberField.ncard_primesOver_sqrt_primes_iff`: complete splitting in
   `ℚ(√pᵢ : i)` is equivalent to `legendreSym q (pᵢ) = 1` for every `i`.
-* `TauCeti.NumberField.forall_legendreSym_two_three_eq_one_iff`: the two-entry character
-  condition for the radicands `2` and `3` is exactly the conjunction of the two symbols.
 * `TauCeti.NumberField.ncard_primesOver_sqrt_two_three_iff`: the concrete
   `ℚ(√2, √3)` worked-example form.
 * `TauCeti.NumberField.ncard_primesOver_sqrt_two_three_iff_mod_eight`: the same criterion
@@ -47,10 +44,8 @@ variable {K : Type*} [Field K] [NumberField K]
 corresponding integer radicands. -/
 private theorem forall_not_intCast_prime_dvd_natPrimes {ι : Type*} (p : ι → ℕ)
     (hp : ∀ i, (p i).Prime) {q : ℕ} [Fact q.Prime] (hne : ∀ i, q ≠ p i) :
-    ∀ i, ¬ (q : ℤ) ∣ (p i : ℤ) := by
-  intro i h
-  have hq_dvd_p : q ∣ p i := by exact_mod_cast h
-  exact hne i ((Nat.prime_dvd_prime_iff_eq Fact.out (hp i)).mp hq_dvd_p)
+    ∀ i, ¬ (q : ℤ) ∣ (p i : ℤ) :=
+  fun i => not_intCast_prime_dvd_natPrime (hp i) (hne i)
 
 /-- **Prime-radicand multiquadratic splitting law.** Let `K` be generated over `ℚ` by square
 roots of a finite family of rational primes `p i`. If `q` is an odd rational prime distinct from
@@ -69,7 +64,7 @@ theorem ncard_primesOver_sqrt_primes_iff {ι : Type*} [Finite ι] (p : ι → �
 /-- The Legendre-symbol condition for the two radicands `2` and `3`, written without the
 `Fin 2` dependent family. This is the character side of the `ℚ(√2, √3)` complete-splitting
 criterion. -/
-theorem forall_legendreSym_two_three_eq_one_iff {q : ℕ} [Fact q.Prime] :
+private theorem forall_legendreSym_two_three_eq_one_iff {q : ℕ} [Fact q.Prime] :
     (∀ i : Fin 2, legendreSym q ((![2, 3] : Fin 2 → ℕ) i : ℤ) = 1) ↔
       legendreSym q (2 : ℤ) = 1 ∧ legendreSym q (3 : ℤ) = 1 := by
   constructor
@@ -89,7 +84,7 @@ theorem legendreSym_two_eq_one_iff {q : ℕ} [Fact q.Prime] (htwo : q ≠ 2) :
 
 /-- The character condition for the radicands `2` and `3`, with the `√2` condition expanded
 using the supplementary law for `2`. -/
-theorem forall_legendreSym_two_three_eq_one_iff_mod_eight {q : ℕ} [Fact q.Prime]
+private theorem forall_legendreSym_two_three_eq_one_iff_mod_eight {q : ℕ} [Fact q.Prime]
     (htwo : q ≠ 2) :
     (∀ i : Fin 2, legendreSym q ((![2, 3] : Fin 2 → ℕ) i : ℤ) = 1) ↔
       (q % 8 = 1 ∨ q % 8 = 7) ∧ legendreSym q (3 : ℤ) = 1 := by
