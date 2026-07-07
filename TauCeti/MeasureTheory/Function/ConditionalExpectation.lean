@@ -2,7 +2,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 -- Non-public: `eLpNorm_one_condExp_le_eLpNorm` (the L¹ contraction of conditional expectation) is
--- used only inside the proof of `condExp_ae_eq_of_tendsto_eLpNorm`, not in any public signature.
+-- used only inside the proof of the L¹-continuity lemma below, not in any public signature.
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 
 /-!
@@ -10,9 +10,9 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 
 - `condExp_indicator_eq_of_pair_law_eq`: if `(Y, Z)` and `(Y', Z)` have the same law, then for
   measurable `B` the conditional expectations of `𝟙_B ∘ Y` and `𝟙_B ∘ Y'` given `σ(Z)` agree a.e.
-- `condExp_ae_eq_of_tendsto_eLpNorm`: L¹-continuity of conditional expectation — if `Xn → Xlim` in
-  L¹ (in `eLpNorm`) and each `μ[Xn n | F]` agrees a.e. with a fixed `Y`, then `μ[Xlim | F]` agrees
-  a.e. with `Y`.
+- `condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm`: L¹-continuity of conditional
+  expectation — if `Xn → Xlim` in L¹ (in `eLpNorm`) and each `μ[Xn n | F]` agrees a.e. with a fixed
+  `Y`, then `μ[Xlim | F]` agrees a.e. with `Y`.
 
 Both are generic conditional-expectation facts (no exchangeability/tail/directing-measure
 hypotheses), each the bridge for a downstream construction.
@@ -87,7 +87,7 @@ theorem condExp_indicator_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : Measurable
 -- bound `‖μ[Xlim|F] - Y‖₁` by `‖Xlim - Xn n‖₁` (triangle + `condExp_sub` + the contraction + the
 -- vanishing `μ[Xn n|F] - Y` term), then let `n → ∞`. Consumed by the reverse-martingale
 -- Lévy-downward theorem `MeasureTheory.tendsto_ae_condExp_iInf`.
-lemma condExp_ae_eq_of_tendsto_eLpNorm
+lemma condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm
     {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
     {F : MeasurableSpace Ω} {Xlim Y : Ω → ℝ} {Xn : ℕ → Ω → ℝ}
     (hXlimint : Integrable Xlim μ) (hXn_int : ∀ n, Integrable (Xn n) μ)

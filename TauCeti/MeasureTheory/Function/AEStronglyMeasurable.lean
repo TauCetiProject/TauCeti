@@ -12,8 +12,9 @@ sequence of σ-algebras, used when working with tail σ-algebras and reverse mar
 ## Main results
 
 - `aestronglyMeasurable_of_tendsto_ae'`: an a.e. pointwise limit of `AEStronglyMeasurable[m]`
-  functions is `AEStronglyMeasurable[m]`, for a sub-σ-algebra `m` unrelated to the measure's ambient
-  σ-algebra `m₀` (Mathlib's `aestronglyMeasurable_of_tendsto_ae` covers only the `m = m₀` case).
+  functions is `AEStronglyMeasurable[m]`, for an arbitrary measurable space `m` on `α`, unrelated to
+  the measure's ambient σ-algebra `m₀` (Mathlib's `aestronglyMeasurable_of_tendsto_ae` covers only
+  the `m = m₀` case).
 - `aestronglyMeasurable_iInf_of_antitone`: if a function is `AEStronglyMeasurable` with respect to
   each σ-algebra in an antitone sequence, then it is `AEStronglyMeasurable` with respect to their
   infimum.
@@ -25,7 +26,9 @@ order topology and Borel σ-algebra (`ℝ` qualifies). The witness σ-algebras `
 to the measure's ambient σ-algebra `m₀`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/SigmaAlgebraHelpers.lean`, pin
-`e0532e59ceff23edab44dda9ab0655debbc9cc22`). This sub-σ-algebra statement has no Mathlib equivalent.
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`); the two a.e.-limit lemmas
+(`aestronglyMeasurable_of_tendsto_ae'`, `aestronglyMeasurable_iInf_of_tendsto_ae_antitone`) are
+adapted from the same source. These general-`m` / antitone statements have no Mathlib equivalent.
 Written Mathlib-shaped for eventual upstreaming.
 -/
 
@@ -96,12 +99,12 @@ lemma aestronglyMeasurable_iInf_of_antitone
   -- Step 6: Conclude AEStronglyMeasurable
   exact ⟨h, h_sm, h_ae_eq⟩
 
-/-- A.e. pointwise limit of `AEStronglyMeasurable[m]` functions is `AEStronglyMeasurable[m]`, for a
-sub-σ-algebra `m` with no assumed relation to the measure's ambient σ-algebra `m₀`. Mathlib's
-`aestronglyMeasurable_of_tendsto_ae` covers only the `m = m₀` case. -/
+/-- A.e. pointwise limit of `AEStronglyMeasurable[m]` functions is `AEStronglyMeasurable[m]`, for an
+arbitrary measurable space `m` on `α` (no assumed relation to the measure's ambient σ-algebra `m₀`).
+Mathlib's `aestronglyMeasurable_of_tendsto_ae` covers only the `m = m₀` case. -/
 -- The witness is the pointwise `limsup` of the strongly measurable representatives of the `f n`.
 -- The order-codomain assumptions are inherited from `Measurable.limsup` (`BorelSpace.Order`):
--- unlike the ambient case, Mathlib has no pseudo-metrizable a.e.-limit lemma for a sub-σ-algebra,
+-- unlike the ambient case, Mathlib has no pseudo-metrizable a.e.-limit lemma for a non-ambient `m`,
 -- so the `limsup` witness is the only route. This lemma and the two below are consumed by the
 -- reverse-martingale Lévy-downward theorem `MeasureTheory.tendsto_ae_condExp_iInf`.
 lemma aestronglyMeasurable_of_tendsto_ae'
