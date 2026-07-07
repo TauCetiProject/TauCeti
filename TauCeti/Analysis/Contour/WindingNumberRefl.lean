@@ -140,12 +140,6 @@ theorem windingNumber_eq_zero_of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b)
   subst b
   exact windingNumber_refl γ a z₀
 
-/-- A pointwise zero form of `windingNumber_refl`, convenient when the curve and endpoint are
-implicit. -/
-theorem windingNumber_eq_zero_refl :
-    windingNumber γ a a z₀ = 0 :=
-  windingNumber_refl γ a z₀
-
 /-- Every zero-length parameter interval is null-homologous in every ambient set. -/
 theorem IsNullHomologous.refl (γ : ℝ → ℂ) (a : ℝ) (Ω : Set ℂ) :
     IsNullHomologous γ a a Ω := by
@@ -159,12 +153,6 @@ theorem IsNullHomologous.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (Ω 
     IsNullHomologous γ a b Ω := by
   subst b
   exact IsNullHomologous.refl γ a Ω
-
-/-- A zero-length interval is null-homologous in the empty ambient set; equivalently all its winding
-numbers vanish. -/
-theorem isNullHomologous_empty_refl (γ : ℝ → ℂ) (a : ℝ) :
-    IsNullHomologous γ a a (∅ : Set ℂ) :=
-  IsNullHomologous.refl γ a ∅
 
 end TauCeti.Contour
 
