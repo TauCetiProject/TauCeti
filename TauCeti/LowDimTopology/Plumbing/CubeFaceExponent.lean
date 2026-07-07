@@ -46,7 +46,16 @@ variable {V : Type*} [DecidableEq V] [Fintype V]
 variable (P : PlumbingGraph V) (k : P.characteristicVectors)
 variable (C : PlumbingCube V) {v w : V}
 
+private theorem characteristicLowerFaceExponent_natCast_lowerFace
+    (hv : v ∈ C.directions) :
+    (characteristicLowerFaceExponent P k C v : ℤ) =
+      characteristicWeight P k C - characteristicWeight P k (C.lowerFace v hv) := by
+  rw [characteristicLowerFaceExponent_natCast]
+  congr
+  rw [lowerFace_def]
+
 /-- The lower-lower codimension-two square has the same total `U`-exponent along either path. -/
+@[simp]
 theorem characteristicLowerFaceExponent_add_lowerFace_comm
     (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
     characteristicLowerFaceExponent P k C v +
@@ -55,16 +64,17 @@ theorem characteristicLowerFaceExponent_add_lowerFace_comm
         characteristicLowerFaceExponent P k (C.lowerFace w hw) v := by
   apply Nat.cast_injective (R := ℤ)
   rw [Int.natCast_add, Int.natCast_add]
-  rw [characteristicLowerFaceExponent_natCast, characteristicLowerFaceExponent_natCast,
-    characteristicLowerFaceExponent_natCast, characteristicLowerFaceExponent_natCast]
-  simp only [lowerFace_def]
-  have hcorner :
-      (C.eraseDirection v).eraseDirection w = (C.eraseDirection w).eraseDirection v := by
-    simpa [lowerFace_def] using C.lowerFace_lowerFace_comm hv hw hne
-  rw [hcorner]
+  rw [characteristicLowerFaceExponent_natCast_lowerFace P k C hv,
+    characteristicLowerFaceExponent_natCast_lowerFace P k (C.lowerFace v hv)
+      (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne.symm hw),
+    characteristicLowerFaceExponent_natCast_lowerFace P k C hw,
+    characteristicLowerFaceExponent_natCast_lowerFace P k (C.lowerFace w hw)
+      (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv)]
+  rw [C.lowerFace_lowerFace_comm hv hw hne]
   omega
 
 /-- The upper-upper codimension-two square has the same total `U`-exponent along either path. -/
+@[simp]
 theorem characteristicUpperFaceExponent_add_upperFace_comm
     (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
     characteristicUpperFaceExponent P k C (v := v) hv +
@@ -84,6 +94,7 @@ theorem characteristicUpperFaceExponent_add_upperFace_comm
 
 /-- The lower-then-upper mixed codimension-two square has the same total `U`-exponent as the
 upper-then-lower path to the same corner. -/
+@[simp]
 theorem characteristicLowerFaceExponent_add_upperFace_comm
     (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
     characteristicLowerFaceExponent P k C v +
@@ -94,20 +105,16 @@ theorem characteristicLowerFaceExponent_add_upperFace_comm
         characteristicLowerFaceExponent P k (C.upperFace w hw) v := by
   apply Nat.cast_injective (R := ℤ)
   rw [Int.natCast_add, Int.natCast_add]
-  rw [characteristicLowerFaceExponent_natCast P k C v,
+  rw [characteristicLowerFaceExponent_natCast_lowerFace P k C hv,
     characteristicUpperFaceExponent_natCast, characteristicUpperFaceExponent_natCast,
-    characteristicLowerFaceExponent_natCast P k (C.upperFace w hw) v]
-  simp only [lowerFace_def]
-  have hcorner :
-      (C.eraseDirection v).upperFace w
-          (by rw [eraseDirection_directions]; exact Finset.mem_erase_of_ne_of_mem hne.symm hw) =
-        (C.upperFace w hw).eraseDirection v := by
-    simpa [lowerFace_def] using C.lowerFace_upperFace_comm hv hw hne
-  rw [hcorner]
+    characteristicLowerFaceExponent_natCast_lowerFace P k (C.upperFace w hw)
+      (by rw [upperFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv)]
+  rw [C.lowerFace_upperFace_comm hv hw hne]
   omega
 
 /-- The upper-then-lower mixed codimension-two square has the same total `U`-exponent as the
 lower-then-upper path to the same corner. -/
+@[simp]
 theorem characteristicUpperFaceExponent_add_lowerFace_comm
     (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
     characteristicUpperFaceExponent P k C (v := v) hv +
