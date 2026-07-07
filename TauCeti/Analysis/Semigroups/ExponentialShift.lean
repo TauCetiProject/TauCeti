@@ -31,6 +31,11 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X
 
 namespace StronglyContinuousSemigroup
 
+-- `expShift`'s body is exposed (`@[expose] section`) so that its `irreducible_def`
+-- unfolding lemma `expShift_def` type-checks at the module interface; the definition
+-- stays irreducible for tactics, only its body becomes visible across modules.
+@[expose] section
+
 /-- The exponential shift of a C₀-semigroup by `lambda`.
 
 At nonnegative time `t`, this is the semigroup `exp (-lambda t) • S(t)`.  It shifts
@@ -56,6 +61,8 @@ irreducible_def expShift (S : StronglyContinuousSemigroup X) (lambda : ℝ) :
       simpa using h_cont.tendsto
     have h_orbit := S.continuousAt_zero_tendsto x
     simpa [ContinuousAt, S.map_zero_apply] using h_exp.smul h_orbit
+
+end
 
 omit [CompleteSpace X] in
 /-- The native nonnegative-time operator of the exponential shift. -/
@@ -142,6 +149,10 @@ theorem expShift {S : StronglyContinuousSemigroup X} {ω M lambda : ℝ}
 
 end HasGrowthBound
 
+-- Exposed for the same reason as `expShift`: keeps `expShiftContraction_def` type-checking
+-- at the module interface while the definition stays irreducible for tactics.
+@[expose] section
+
 /-- A semigroup with growth bound `(lambda, 1)` becomes a contraction semigroup after
 exponential shifting by `lambda`. -/
 irreducible_def expShiftContraction (S : StronglyContinuousSemigroup X) (lambda : ℝ)
@@ -153,6 +164,8 @@ irreducible_def expShiftContraction (S : StronglyContinuousSemigroup X) (lambda 
     rw [realOperator_coe] at hbound
     rw [sub_self, zero_mul, Real.exp_zero, mul_one] at hbound
     exact hbound
+
+end
 
 omit [CompleteSpace X] in
 /-- The C₀-semigroup underlying `expShiftContraction` is the exponential shift. -/
