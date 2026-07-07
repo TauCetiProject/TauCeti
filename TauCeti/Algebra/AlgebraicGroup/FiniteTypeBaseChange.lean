@@ -49,23 +49,6 @@ namespace FiniteTypeCommHopfAlgCat
 
 variable {k : Type u} {K : Type w} [CommRing k] [CommRing K] [Algebra k K]
 
-/-- Restrict a commutative `K`-algebra to a commutative `k`-algebra along `k → K`. -/
-noncomputable abbrev restrictScalarsCommAlgCat (A : CommAlgCat.{max w v} K) :
-    CommAlgCat.{max w v} k :=
-  letI : Algebra k A := Algebra.compHom A (algebraMap k K)
-  CommAlgCat.of k A
-
-/-- Restrict a morphism of commutative `K`-algebras to a morphism of commutative
-`k`-algebras. -/
-noncomputable abbrev restrictScalarsCommAlgCatMap {A B : CommAlgCat.{max w v} K}
-    (χ : A ⟶ B) : restrictScalarsCommAlgCat (k := k) A ⟶
-      restrictScalarsCommAlgCat (k := k) B :=
-  letI : Algebra k A := Algebra.compHom A (algebraMap k K)
-  letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
-  letI : Algebra k B := Algebra.compHom B (algebraMap k K)
-  letI : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
-  CommAlgCat.ofHom (χ.hom.restrictScalars k)
-
 /-- Base change of a finite-type commutative Hopf algebra along `k → K`.
 
 The underlying coordinate Hopf algebra is `K ⊗[k] H`, with the tensor-product Hopf algebra
@@ -136,7 +119,7 @@ variable (A : CommAlgCat.{max w v} K)
 on the same algebra, with scalars restricted from `K` to `k`. -/
 noncomputable def baseChangePointsMulEquiv (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
     HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A ≃*
-      HopfAlgebra.points (R := k) (H := H) (restrictScalarsCommAlgCat (k := k) A) :=
+      HopfAlgebra.points (R := k) (H := H) (CommAlgCat.restrictScalars (k := k) A) :=
   letI : Algebra k A := Algebra.compHom A (algebraMap k K)
   letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
   (AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := H) (R := A)).symm
@@ -155,7 +138,7 @@ lemma baseChangePointsMulEquiv_apply_apply (H : FiniteTypeCommHopfAlgCat.{u, v} 
 @[simp]
 lemma baseChangePointsMulEquiv_symm_apply_tmul
     (H : FiniteTypeCommHopfAlgCat.{u, v} k)
-    (f : HopfAlgebra.points (R := k) (H := H) (restrictScalarsCommAlgCat (k := k) A))
+    (f : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.restrictScalars (k := k) A))
     (s : K) (h : H) :
     ((baseChangePointsMulEquiv (K := K) A H).symm f).ofConv (s ⊗ₜ[k] h) = s • f.ofConv h :=
   letI : Algebra k A := Algebra.compHom A (algebraMap k K)
@@ -169,15 +152,28 @@ lemma baseChangePointsMulEquiv_mapValue
     {B : CommAlgCat.{max w v} K} (H : FiniteTypeCommHopfAlgCat.{u, v} k)
     (χ : A ⟶ B) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A) :
     baseChangePointsMulEquiv (K := K) B H (HopfAlgebra.mapPoints (H := baseChange (K := K) H) χ f) =
-      HopfAlgebra.mapPoints (H := H) (restrictScalarsCommAlgCatMap (k := k) χ)
+      HopfAlgebra.mapPoints (H := H) (CommAlgCat.restrictScalarsMap (k := k) χ)
         (baseChangePointsMulEquiv (K := K) A H f) := by
   letI : Algebra k A := Algebra.compHom A (algebraMap k K)
   letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
   letI : Algebra k B := Algebra.compHom B (algebraMap k K)
   letI : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
-  simpa [baseChangePointsMulEquiv, HopfAlgebra.mapPoints, restrictScalarsCommAlgCatMap]
+  simpa [baseChangePointsMulEquiv, HopfAlgebra.mapPoints, CommAlgCat.restrictScalarsMap]
     using AlgHom.baseChangePointsMulEquiv_symm_mapValue (k := k) (K := K) (A := H)
       (R := A) (S := B) χ.hom f
+
+/-- The base-change points equivalence is natural in the coordinate Hopf algebra. -/
+lemma baseChangePointsMulEquiv_mapDomain {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
+    (φ : H ⟶ L) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) L) A) :
+    baseChangePointsMulEquiv (K := K) A H
+        (AlgHom.mapDomain (A := A) (toBialgHom (baseChangeMap (K := K) φ)) f) =
+      AlgHom.mapDomain (A := CommAlgCat.restrictScalars (k := k) A) (toBialgHom φ)
+        (baseChangePointsMulEquiv (K := K) A L f) := by
+  letI : Algebra k A := Algebra.compHom A (algebraMap k K)
+  letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
+  simpa [baseChangePointsMulEquiv, toBialgHom_baseChangeMap]
+    using AlgHom.baseChangePointsMulEquiv_symm_mapDomain (k := k) (K := K)
+      (A := H) (B := L) (R := A) (toBialgHom φ) f
 
 end FiniteTypeCommHopfAlgCat
 
