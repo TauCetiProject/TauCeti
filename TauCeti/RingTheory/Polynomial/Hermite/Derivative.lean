@@ -5,10 +5,11 @@ Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Claude
 -/
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 
 /-!
-# Derivatives and the three-term recurrence of the probabilists' Hermite polynomials
+# Derivatives, recurrence, and parity of the probabilists' Hermite polynomials
 
 Mathlib's `Mathlib/RingTheory/Polynomial/Hermite/Basic.lean` defines `Polynomial.hermite` by the
 one-step recursion `hermite (n + 1) = X * hermite n - derivative (hermite n)` and develops its
@@ -27,8 +28,8 @@ inputs (target **A1**) of the `OrthogonalL2Bases` roadmap: the lowering identity
 content behind the weighted-pairing integration-by-parts recursion
 `∫ p · H_{n+1} · w = ∫ p' · Hₙ · w` and behind the Hermite generating function, and the three-term
 recurrence is the standard form `Hₙ₊₁ = X·Hₙ - n·Hₙ₋₁` that orthogonal-polynomial arguments
-consume. They mirror Mathlib's existing Hermite file and are stated in the `Polynomial` namespace as
-upstream candidates.
+consume. The parity theorem records `Hₙ(-x) = (-1)ⁿ Hₙ(x)` over any commutative ring. They mirror
+Mathlib's existing Hermite file and are stated in the `Polynomial` namespace as upstream candidates.
 -/
 
 public section
@@ -85,5 +86,29 @@ i.e. `H_{m+1} = X·H_m - m·H_{m-1}`. -/
 theorem _root_.Polynomial.hermite_add_two (n : ℕ) :
     hermite (n + 2) = X * hermite (n + 1) - (n + 1) • hermite n := by
   rw [hermite_succ (n + 1), derivative_hermite_succ]
+
+/-! ## Parity -/
+
+/-- **Parity of the Hermite polynomials.** `Hₙ(-x) = (-1)ⁿ Hₙ(x)` in any commutative ring: a
+coefficient of `hermite n` in degree `k` can be nonzero only when `n + k` is even
+(`Polynomial.coeff_hermite_of_odd_add`), so `k` and `n` share parity and `(-x)ᵏ = (-1)ⁿ xᵏ` on every
+surviving monomial. -/
+@[simp]
+theorem _root_.Polynomial.hermite_aeval_neg {R : Type*} [CommRing R] (n : ℕ) (x : R) :
+    aeval (-x) (hermite n) = (-1) ^ n * aeval x (hermite n) := by
+  rw [aeval_eq_sum_range, aeval_eq_sum_range, Finset.mul_sum]
+  apply Finset.sum_congr rfl
+  intro k _
+  by_cases hodd : Odd (n + k)
+  · rw [coeff_hermite_of_odd_add hodd]; simp
+  · rw [Nat.not_odd_iff_even] at hodd
+    rw [zsmul_eq_mul, zsmul_eq_mul]
+    have hpow : (-x) ^ k = (-1) ^ n * x ^ k := by
+      rcases Nat.even_or_odd n with hn | hn
+      · rw [Even.neg_pow ((Nat.even_add.mp hodd).mp hn), Even.neg_one_pow hn, one_mul]
+      · have hk : Odd k := Nat.not_even_iff_odd.mp fun hke =>
+          (Nat.not_even_iff_odd.mpr hn) ((Nat.even_add.mp hodd).mpr hke)
+        rw [Odd.neg_pow hk, Odd.neg_one_pow hn]; ring
+    rw [hpow]; ring
 
 end TauCeti

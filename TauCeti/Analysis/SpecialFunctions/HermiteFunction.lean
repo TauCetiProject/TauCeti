@@ -21,9 +21,9 @@ probabilists' Hermite polynomial evaluated at `x * sqrt 2`, multiplied by the
 Gaussian envelope `exp (-x^2 / 2)`.
 
 The API here is deliberately pointwise: the definition, continuity and
-smoothness, and the first three base formulas `ψ₀`, `ψ₁`, and `ψ₂`. Orthogonality, `L²`
-packaging, and the oscillator identities are later milestones built on this
-basic object.
+smoothness, the first three base formulas `ψ₀`, `ψ₁`, and `ψ₂`, and the parity formula
+`ψₙ(-x) = (-1)ⁿ ψₙ(x)`. Orthogonality, `L²` packaging, and the oscillator identities are later
+milestones built on this basic object.
 -/
 
 public section
@@ -130,5 +130,17 @@ lemma hermiteFunction_two (x : ℝ) :
         Real.sqrt ((2 : ℝ) * Real.sqrt Real.pi) := by
   rw [hermiteFunction_def, aeval_hermite_two]
   norm_num [Nat.factorial]
+
+/-! ## Parity -/
+
+/-- **Target A2 (parity).** `ψₙ(-x) = (-1)ⁿ ψₙ(x)`: the Gaussian envelope `exp(-x²/2)` is even and
+the polynomial factor `Hₙ(x√2)` carries the parity of `Hₙ` (`Polynomial.hermite_aeval_neg`). -/
+@[simp]
+theorem hermiteFunction_neg (n : ℕ) (x : ℝ) :
+    hermiteFunction n (-x) = (-1) ^ n * hermiteFunction n x := by
+  have h1 : (-x) * Real.sqrt 2 = -(x * Real.sqrt 2) := by ring
+  have h2 : ((-x) ^ 2 / 2 : ℝ) = x ^ 2 / 2 := by ring
+  rw [hermiteFunction_def, hermiteFunction_def, h1, Polynomial.hermite_aeval_neg, h2]
+  ring
 
 end TauCeti
