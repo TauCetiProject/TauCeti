@@ -341,6 +341,13 @@ theorem range_toSubmodule (f : Hom R C M N) :
     (range (R := R) (C := C) f).toSubmodule = LinearMap.range f.toLinearMap := by
   rw [range, Subcomodule.map_top_toSubmodule]
 
+/-- The range of a comodule morphism out of a finitely generated comodule is finitely
+generated as an `R`-module. -/
+theorem range_finite (f : Hom R C M N) [Module.Finite R M] :
+    Module.Finite R (range (R := R) (C := C) f).toSubmodule := by
+  rw [range_toSubmodule]
+  infer_instance
+
 @[simp]
 theorem mem_range {f : Hom R C M N} {n : N} :
     n ∈ range (R := R) (C := C) f ↔ ∃ m, f m = n := by
