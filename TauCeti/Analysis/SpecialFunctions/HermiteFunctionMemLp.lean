@@ -98,9 +98,8 @@ theorem memLp_two_hermiteFunction (n : ℕ) : MemLp (hermiteFunction n) 2 volume
 the roadmap's Hermite-function orthonormality target. -/
 @[simp]
 lemma integral_hermiteFunction_zero_mul_self :
-    ∫ x : ℝ,
-        Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
-          (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)) = 1 := by
+    ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x = 1 := by
+  simp only [hermiteFunction_zero]
   have hsqrt_sqrt_pi_sq :
       Real.sqrt (Real.sqrt Real.pi) ^ 2 = Real.sqrt Real.pi := by
     rw [Real.sq_sqrt (Real.sqrt_nonneg Real.pi)]
