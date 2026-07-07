@@ -158,7 +158,6 @@ lemma quotientMapOfLe_mk (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H}
 
 /-- Composing the quotient map `H ⟶ H ⧸ I` with the quotient-to-quotient morphism for
 `I ≤ J` gives the quotient map `H ⟶ H ⧸ J`. -/
-@[simp]
 lemma mkQuotient_comp_quotientMapOfLe (H : _root_.CommHopfAlgCat.{v} R)
     {I J : HopfIdeal R H} (hIJ : I ≤ J) :
     mkQuotient H I ≫ quotientMapOfLe H hIJ = mkQuotient H J :=
