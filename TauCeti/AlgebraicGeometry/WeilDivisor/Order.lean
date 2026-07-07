@@ -140,6 +140,25 @@ lemma support_posPart_disjoint_negPart (D : WeilDivisor X) :
   · exact hxp (by rwa [inf_eq_left.mpr h] at hinf)
   · exact hxn (by rwa [inf_eq_right.mpr h] at hinf)
 
+/-- Removing the pointwise infimum from each of two divisors leaves parts with disjoint support:
+their infimum vanishes. Coefficientwise this is `posPart_inf_negPart_eq_zero` for the difference
+`coeff D x - coeff E x`. -/
+lemma inf_sub_inf_sub_inf_eq_zero (D E : WeilDivisor X) :
+    (D - D ⊓ E) ⊓ (E - D ⊓ E) = 0 := by
+  ext x
+  rw [coeff_inf, coeff_sub, coeff_sub, coeff_inf, coeff_zero]
+  set a := coeff D x
+  set b := coeff E x
+  have hleft : a - (a ⊓ b) = (a - b)⁺ := by
+    rcases le_total a b with hab | hba
+    · rw [inf_eq_left.mpr hab, sub_self, posPart_eq_zero.mpr (sub_nonpos.mpr hab)]
+    · rw [inf_eq_right.mpr hba, posPart_eq_self.mpr (sub_nonneg.mpr hba)]
+  have hright : b - (a ⊓ b) = (a - b)⁻ := by
+    rcases le_total a b with hab | hba
+    · rw [inf_eq_left.mpr hab, negPart_eq_neg.mpr (sub_nonpos.mpr hab), neg_sub]
+    · rw [inf_eq_right.mpr hba, sub_self, negPart_eq_zero.mpr (sub_nonneg.mpr hba)]
+  rw [hleft, hright, posPart_inf_negPart_eq_zero]
+
 /-- A divisor is effective exactly when its negative part vanishes. -/
 lemma negPart_eq_zero_iff_isEffective {D : WeilDivisor X} : D⁻ = 0 ↔ IsEffective D := by
   rw [negPart_eq_zero, isEffective_iff_zero_le]
