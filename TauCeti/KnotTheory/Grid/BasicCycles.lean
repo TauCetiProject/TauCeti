@@ -61,26 +61,6 @@ theorem mem_fullyBlockedBoundaries (c : GridChain (ZMod 2) n) :
     rw [fullyBlockedBoundaries]
     exact LinearMap.mem_range
 
-/-- The zero chain is a fully blocked cycle. -/
-theorem zero_mem_fullyBlockedCycles : (0 : GridChain (ZMod 2) n) ∈ G.fullyBlockedCycles := by
-  simp [fullyBlockedCycles]
-
-/-- The zero chain is a fully blocked boundary. -/
-theorem zero_mem_fullyBlockedBoundaries :
-    (0 : GridChain (ZMod 2) n) ∈ G.fullyBlockedBoundaries := by
-  exact Submodule.zero_mem G.fullyBlockedBoundaries
-
-/-- The differential of a cycle is zero, as an element of the chain module. -/
-theorem fullyBlockedDifferential_eq_zero_of_mem_cycles
-    {c : GridChain (ZMod 2) n} (hc : c ∈ G.fullyBlockedCycles) :
-    G.fullyBlockedDifferential c = 0 :=
-  (G.mem_fullyBlockedCycles c).mp hc
-
-/-- The differential of a chain is always a boundary. -/
-theorem fullyBlockedDifferential_mem_boundaries (c : GridChain (ZMod 2) n) :
-    G.fullyBlockedDifferential c ∈ G.fullyBlockedBoundaries :=
-  (G.mem_fullyBlockedBoundaries (G.fullyBlockedDifferential c)).mpr ⟨c, rfl⟩
-
 /-- Boundaries lie in cycles once the fully blocked differential is square-zero. -/
 theorem fullyBlockedBoundaries_le_cycles
     (hsq : G.fullyBlockedDifferential.comp G.fullyBlockedDifferential = 0) :
