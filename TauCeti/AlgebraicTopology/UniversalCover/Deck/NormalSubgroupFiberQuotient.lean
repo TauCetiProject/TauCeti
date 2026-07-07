@@ -168,6 +168,25 @@ lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul
     Subgroup.normalizerQuotientEquivQuotientOfNormal_mk]
   rfl
 
+/-- The normal-subgroup fibre quotient equivalence is the generic normal-subgroup
+orbit-quotient equivalence applied to the deck action on the fibre. This bridge lets deck-level
+consumers reuse the generic orbit-quotient API without depending on the (opaque) wrapper
+definition. -/
+lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_eq
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e =
+      TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal
+        (G := Deck p) (X := p ⁻¹' {b}) H e := by
+  ext x
+  refine Quotient.inductionOn' x ?_
+  intro e'
+  obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Deck p) e e'
+  rw [← hφ, ← subgroupFiberOrbitClass_eq_mk H (φ • e),
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul,
+    subgroupFiberOrbitClass_eq_mk,
+    TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_apply_smul]
+
 /-- For a regular cover, the normal-subgroup fibre quotient equivalence sends the class of
 `φ • e` to the normalizer-quotient class of `φ⁻¹`. -/
 @[simp]

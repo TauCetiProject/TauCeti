@@ -86,17 +86,9 @@ lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_
     (a : Subgroup.normalizerQuotient H) (x : SubgroupFiberOrbitQuotient H b) :
     subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e (a • x) =
       subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e x * a⁻¹ := by
-  obtain ⟨φ, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H a
-  refine Quotient.inductionOn' x ?_
-  intro e'
-  obtain ⟨ψ, hψ⟩ := MulAction.exists_smul_eq (Deck p) e e'
-  rw [← hψ, ← subgroupFiberOrbitClass_eq_mk H (ψ • e),
-    Subgroup.normalizerQuotientMk_apply,
-    normalizerQuotient_smul_subgroupFiberOrbitClass, ← mul_smul,
-    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul,
-    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul]
-  apply (Subgroup.normalizerQuotientEquivQuotientOfNormal H).injective
-  simp [mul_inv_rev]
+  rw [subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_eq]
+  exact TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_inv
+    (G := Deck p) (X := p ⁻¹' {b}) H e a x
 
 /-- For a regular preconnected covering map, the normal-subgroup fibre quotient equivalence
 turns the descended normalizer-quotient action into right multiplication by the inverse. -/
@@ -121,10 +113,9 @@ lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_symm_mul_inv
     (a y : Subgroup.normalizerQuotient H) :
     (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e).symm (y * a⁻¹) =
       a • (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e).symm y := by
-  apply (subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e).injective
-  rw [Equiv.apply_symm_apply,
-    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_inv,
-    Equiv.apply_symm_apply]
+  rw [subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_eq]
+  exact TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_symm_mul_inv
+    (G := Deck p) (X := p ⁻¹' {b}) H e a y
 
 /-- For a regular preconnected covering map, applying the inverse normal-subgroup fibre
 quotient equivalence after right multiplication by `a⁻¹` is the same as acting by `a` on the
