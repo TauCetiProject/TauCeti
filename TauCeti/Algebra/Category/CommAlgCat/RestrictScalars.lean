@@ -18,9 +18,9 @@ Mathlib provides the analogous `AlgCat.restrictScalars` on the
 
 ## Main declarations
 
-* `TauCeti.CommAlgCat.restrictScalars`: the underlying commutative `k`-algebra of a commutative
-  `K`-algebra.
-* `TauCeti.CommAlgCat.restrictScalarsFunctor`: the restriction-of-scalars functor
+* `TauCeti.CommAlgCat.restrictScalarsObj`: the underlying commutative `k`-algebra of a
+  commutative `K`-algebra.
+* `TauCeti.CommAlgCat.restrictScalars`: the restriction-of-scalars functor
   `CommAlgCat K ⥤ CommAlgCat k` along `k → K`.
 -/
 
@@ -37,7 +37,7 @@ universe x u w
 variable {k : Type u} {K : Type w} [CommRing k] [CommRing K] [Algebra k K]
 
 /-- Restrict a commutative `K`-algebra to a commutative `k`-algebra along `k → K`. -/
-noncomputable abbrev restrictScalars (A : _root_.CommAlgCat.{x} K) :
+noncomputable abbrev restrictScalarsObj (A : _root_.CommAlgCat.{x} K) :
     _root_.CommAlgCat.{x} k :=
   letI : Algebra k A := Algebra.compHom A (algebraMap k K)
   _root_.CommAlgCat.of k A
@@ -45,7 +45,7 @@ noncomputable abbrev restrictScalars (A : _root_.CommAlgCat.{x} K) :
 /-- Restrict a morphism of commutative `K`-algebras to a morphism of commutative
 `k`-algebras. -/
 noncomputable abbrev restrictScalarsMap {A B : _root_.CommAlgCat.{x} K}
-    (χ : A ⟶ B) : restrictScalars (k := k) A ⟶ restrictScalars (k := k) B :=
+    (χ : A ⟶ B) : restrictScalarsObj (k := k) A ⟶ restrictScalarsObj (k := k) B :=
   letI : Algebra k A := Algebra.compHom A (algebraMap k K)
   letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
   letI : Algebra k B := Algebra.compHom B (algebraMap k K)
@@ -53,21 +53,21 @@ noncomputable abbrev restrictScalarsMap {A B : _root_.CommAlgCat.{x} K}
   _root_.CommAlgCat.ofHom (χ.hom.restrictScalars k)
 
 /-- The restriction-of-scalars functor `CommAlgCat K ⥤ CommAlgCat k` along `k → K`. -/
-@[expose] noncomputable def restrictScalarsFunctor :
+@[expose] noncomputable def restrictScalars :
     _root_.CommAlgCat.{x} K ⥤ _root_.CommAlgCat.{x} k where
-  obj A := restrictScalars (k := k) A
+  obj A := restrictScalarsObj (k := k) A
   map χ := restrictScalarsMap (k := k) χ
 
-/-- The object part of `restrictScalarsFunctor` is restriction of scalars on algebras. -/
+/-- The object part of `restrictScalars` is restriction of scalars on algebras. -/
 @[simp]
-lemma restrictScalarsFunctor_obj (A : _root_.CommAlgCat.{x} K) :
-    (restrictScalarsFunctor (k := k) (K := K)).obj A = restrictScalars (k := k) A :=
+lemma restrictScalars_obj (A : _root_.CommAlgCat.{x} K) :
+    (restrictScalars (k := k) (K := K)).obj A = restrictScalarsObj (k := k) A :=
   rfl
 
-/-- The morphism part of `restrictScalarsFunctor` is restriction of scalars on morphisms. -/
+/-- The morphism part of `restrictScalars` is restriction of scalars on morphisms. -/
 @[simp]
-lemma restrictScalarsFunctor_map {A B : _root_.CommAlgCat.{x} K} (χ : A ⟶ B) :
-    (restrictScalarsFunctor (k := k) (K := K)).map χ = restrictScalarsMap (k := k) χ :=
+lemma restrictScalars_map {A B : _root_.CommAlgCat.{x} K} (χ : A ⟶ B) :
+    (restrictScalars (k := k) (K := K)).map χ = restrictScalarsMap (k := k) χ :=
   rfl
 
 end CommAlgCat
