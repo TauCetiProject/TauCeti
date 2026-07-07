@@ -118,7 +118,12 @@ lemma restrictScalars_map_hom (f : k →+* K) {A B : _root_.CommAlgCat.{x} K} (�
 @[simp]
 lemma restrictScalars_map_apply (f : k →+* K) {A B : _root_.CommAlgCat.{x} K}
     (χ : A ⟶ B) (a : A) :
-    (restrictScalars f).map χ a = χ a :=
+    (letI : Algebra k K := f.toAlgebra
+     letI : Algebra k A := Algebra.compHom A f
+     letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
+     letI : Algebra k B := Algebra.compHom B f
+     letI : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
+     χ.hom.restrictScalars k) a = χ a :=
   rfl
 
 end CommAlgCat
