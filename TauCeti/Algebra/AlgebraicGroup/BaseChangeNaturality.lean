@@ -6,7 +6,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfMap
-public import Mathlib.Algebra.Category.CommAlgCat.Basic
 
 /-!
 # Naturality of base-changed points
@@ -40,33 +39,8 @@ This builds on Mathlib's tensor-product bialgebra map
 public section
 
 open TensorProduct WithConv
-open CategoryTheory
 
 namespace TauCeti
-
-universe u v w
-
-namespace CommAlgCat
-
-variable {k : Type u} {K : Type w} [CommRing k] [CommRing K] [Algebra k K]
-
-/-- Restrict a commutative `K`-algebra to a commutative `k`-algebra along `k → K`. -/
-noncomputable abbrev restrictScalars (A : _root_.CommAlgCat.{max w v} K) :
-    _root_.CommAlgCat.{max w v} k :=
-  letI : Algebra k A := Algebra.compHom A (algebraMap k K)
-  _root_.CommAlgCat.of k A
-
-/-- Restrict a morphism of commutative `K`-algebras to a morphism of commutative
-`k`-algebras. -/
-noncomputable abbrev restrictScalarsMap {A B : _root_.CommAlgCat.{max w v} K}
-    (χ : A ⟶ B) : restrictScalars (k := k) A ⟶ restrictScalars (k := k) B :=
-  letI : Algebra k A := Algebra.compHom A (algebraMap k K)
-  letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
-  letI : Algebra k B := Algebra.compHom B (algebraMap k K)
-  letI : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
-  _root_.CommAlgCat.ofHom (χ.hom.restrictScalars k)
-
-end CommAlgCat
 
 namespace AlgHom
 

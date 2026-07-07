@@ -6,6 +6,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.BaseChangeNaturality
 public import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
+public import TauCeti.Algebra.Category.CommAlgCat.RestrictScalars
 public import Mathlib.RingTheory.FiniteStability
 
 /-!
@@ -43,7 +44,7 @@ open CategoryTheory TensorProduct WithConv
 
 namespace TauCeti
 
-universe u v w
+universe u v w x
 
 namespace FiniteTypeCommHopfAlgCat
 
@@ -113,7 +114,7 @@ lemma baseChangeFunctor_map {H L : FiniteTypeCommHopfAlgCat.{u, v} k} (φ : H �
     (baseChangeFunctor (K := K)).map φ = baseChangeMap (K := K) φ :=
   rfl
 
-variable (A : CommAlgCat.{max w v} K)
+variable (A : CommAlgCat.{x} K)
 
 /-- The points of the base-changed finite-type Hopf algebra are the original points evaluated
 on the same algebra, with scalars restricted from `K` to `k`. -/
@@ -149,18 +150,25 @@ variable {A}
 
 /-- The base-change points equivalence is natural in the value algebra. -/
 lemma baseChangePointsMulEquiv_mapValue
-    {B : CommAlgCat.{max w v} K} (H : FiniteTypeCommHopfAlgCat.{u, v} k)
+    {B : CommAlgCat.{x} K} (H : FiniteTypeCommHopfAlgCat.{u, v} k)
     (χ : A ⟶ B) (f : HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A) :
     baseChangePointsMulEquiv (K := K) B H (HopfAlgebra.mapPoints (H := baseChange (K := K) H) χ f) =
-      HopfAlgebra.mapPoints (H := H) (CommAlgCat.restrictScalarsMap (k := k) χ)
+      HopfAlgebra.mapPoints (H := H) ((CommAlgCat.restrictScalarsFunctor (k := k)).map χ)
         (baseChangePointsMulEquiv (K := K) A H f) := by
   letI : Algebra k A := Algebra.compHom A (algebraMap k K)
   letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
   letI : Algebra k B := Algebra.compHom B (algebraMap k K)
   letI : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
-  simpa [baseChangePointsMulEquiv, HopfAlgebra.mapPoints, CommAlgCat.restrictScalarsMap]
-    using AlgHom.baseChangePointsMulEquiv_symm_mapValue (k := k) (K := K) (A := H)
-      (R := A) (S := B) χ.hom f
+  -- `restrictScalarsFunctor.map χ` is definitionally `restrictScalarsMap χ`, so it suffices to
+  -- prove the statement for the underlying restriction-of-scalars morphism.
+  have key : baseChangePointsMulEquiv (K := K) B H
+        (HopfAlgebra.mapPoints (H := baseChange (K := K) H) χ f) =
+      HopfAlgebra.mapPoints (H := H) (CommAlgCat.restrictScalarsMap (k := k) χ)
+        (baseChangePointsMulEquiv (K := K) A H f) := by
+    simpa [baseChangePointsMulEquiv, HopfAlgebra.mapPoints, CommAlgCat.restrictScalarsMap]
+      using AlgHom.baseChangePointsMulEquiv_symm_mapValue (k := k) (K := K) (A := H)
+        (R := A) (S := B) χ.hom f
+  exact key
 
 /-- The base-change points equivalence is natural in the coordinate Hopf algebra. -/
 lemma baseChangePointsMulEquiv_mapDomain {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
