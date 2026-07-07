@@ -8,6 +8,15 @@ public import Mathlib.Data.Int.Basic
 public import Mathlib.Data.Nat.Prime.Basic
 public import Mathlib.Logic.Basic
 
+/-!
+# Prime divisibility helpers
+
+This file collects internal NumberField bookkeeping about rational primes and
+integer divisibility. The lemmas here support coprimality side conditions in
+splitting computations without exposing those proof details from the main
+splitting API files.
+-/
+
 public section
 
 namespace TauCeti.NumberField.Internal
