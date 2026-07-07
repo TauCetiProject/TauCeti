@@ -62,27 +62,13 @@ theorem ncard_primesOver_sqrt_primes_iff {ι : Type*} [Finite ι] (p : ι → �
   ncard_primesOver_multiquadratic_iff (d := fun i => (p i : ℤ)) (r := r) hr htop hodd
     (forall_not_intCast_prime_dvd_natPrimes p hp hne)
 
-/-- The Legendre-symbol condition for the two radicands `2` and `3`, written without the
-`Fin 2` dependent family. This is the character side of the `ℚ(√2, √3)` complete-splitting
-criterion. -/
-private theorem forall_legendreSym_two_three_eq_one_iff {q : ℕ} [Fact q.Prime] :
-    (∀ i : Fin 2, legendreSym q ((![2, 3] : Fin 2 → ℕ) i : ℤ) = 1) ↔
-      legendreSym q (2 : ℤ) = 1 ∧ legendreSym q (3 : ℤ) = 1 := by
-  constructor
-  · intro hleg
-    exact ⟨hleg 0, hleg 1⟩
-  · rintro ⟨h2, h3⟩ i
-    fin_cases i
-    · simpa using h2
-    · simpa using h3
-
 /-- The character condition for the radicands `2` and `3`, with the `√2` condition expanded
 using the supplementary law for `2`. -/
 private theorem forall_legendreSym_two_three_eq_one_iff_mod_eight {q : ℕ} [Fact q.Prime]
     (htwo : q ≠ 2) :
     (∀ i : Fin 2, legendreSym q ((![2, 3] : Fin 2 → ℕ) i : ℤ) = 1) ↔
       (q % 8 = 1 ∨ q % 8 = 7) ∧ legendreSym q (3 : ℤ) = 1 := by
-  rw [forall_legendreSym_two_three_eq_one_iff]
+  simp only [Fin.forall_fin_two]
   simpa [Multiquadratic.evenPrimeDiscriminantRadicand_eight] using
     (Multiquadratic.legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff
       (q := q) htwo).and Iff.rfl
@@ -98,7 +84,7 @@ theorem ncard_primesOver_sqrt_two_three_iff (r : Fin 2 → K)
       legendreSym q (2 : ℤ) = 1 ∧ legendreSym q (3 : ℤ) = 1 := by
   have h := ncard_primesOver_sqrt_primes_iff (![2, 3] : Fin 2 → ℕ) (by decide) r hr htop htwo
     (fun i => by fin_cases i <;> simp [htwo, hthree])
-  exact h.trans forall_legendreSym_two_three_eq_one_iff
+  exact h.trans (by simp [Fin.forall_fin_two])
 
 /-- **Complete splitting for `ℚ(√2, √3)`, with the `√2` character expanded.** Let `K` be
 generated over `ℚ` by square roots of `2` and `3`. A rational prime `q` different from `2` and
