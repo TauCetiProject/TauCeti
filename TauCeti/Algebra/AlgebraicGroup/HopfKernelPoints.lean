@@ -81,16 +81,6 @@ theorem quotientKerPointsMulEquiv_apply (f : H →ₐc[R] K)
         ((kerLiftBialgEquiv f hf).symm : K →ₐc[R] H ⧸ (ker f hf).toIdeal) g := by
   rw [quotientKerPointsMulEquiv, AlgHom.mapDomainMulEquiv_symm_apply]
 
-/-- Normalized-kernel form of `quotientKerPointsMulEquiv_apply`, with the quotient by the
-ring-hom kernel after simplifying `(ker f hf).toIdeal`. -/
-theorem quotientKerPointsMulEquiv_apply_ringHomKer (f : H →ₐc[R] K)
-    (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
-    (g : WithConv (H ⧸ RingHom.ker (f : H →ₐ[R] K) →ₐ[R] A)) :
-    quotientKerPointsMulEquiv f hf A g =
-      AlgHom.mapDomain (A := A)
-        ((kerLiftBialgEquiv f hf).symm : K →ₐc[R] H ⧸ (ker f hf).toIdeal) g := by
-  rw [quotientKerPointsMulEquiv_apply]
-
 /-- The inverse quotient-kernel point equivalence acts by pre-composition with the
 bialgebra equivalence `H ⧸ ker f ≃ₐc[R] K`. -/
 theorem quotientKerPointsMulEquiv_symm_apply (f : H →ₐc[R] K)
@@ -100,16 +90,6 @@ theorem quotientKerPointsMulEquiv_symm_apply (f : H →ₐc[R] K)
       AlgHom.mapDomain (A := A)
         (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal →ₐc[R] K) g := by
   rw [quotientKerPointsMulEquiv, MulEquiv.symm_symm, AlgHom.mapDomainMulEquiv_apply]
-
-/-- Normalized-kernel form of `quotientKerPointsMulEquiv_symm_apply`, with the source
-quotient normalized through `ker_toIdeal`. -/
-theorem quotientKerPointsMulEquiv_symm_apply_ringHomKer (f : H →ₐc[R] K)
-    (hf : Function.Surjective f) (A : CommAlgCat.{x} R)
-    (g : WithConv (K →ₐ[R] A)) :
-    (quotientKerPointsMulEquiv f hf A).symm g =
-      AlgHom.mapDomain (A := A)
-        (kerLiftBialgEquiv f hf : H ⧸ (ker f hf).toIdeal →ₐc[R] K) g := by
-  rw [quotientKerPointsMulEquiv_symm_apply]
 
 /-- The quotient-kernel point equivalence is natural in the value algebra. -/
 theorem quotientKerPointsMulEquiv_mapValue {B : Type*} [CommRing B] [Algebra R B]
