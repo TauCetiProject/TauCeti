@@ -84,9 +84,11 @@ theorem pseudoHyperbolicExpr_map_le {f : ℂ → ℂ}
     simpa [ξ] using unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one
       (a := w) hw_norm hz
   have hsource_ξ : source ξ = z := by
-    simpa [source, ξ] using
-      unitDiscMoebiusFormula_neg_apply_unitDiscMoebiusFormula (a := w) (z := z) hw_norm
-        hz_norm
+    have h := congrArg (fun u : Complex.UnitDisc => (u : ℂ))
+      (congr_fun (unitDiscMoebius_neg_comp_unitDiscMoebius (Complex.UnitDisc.mk w hw_norm))
+        (Complex.UnitDisc.mk z hz_norm))
+    simpa [source, ξ, coe_unitDiscMoebius, Complex.UnitDisc.coe_neg, Complex.UnitDisc.coe_mk,
+      sub_neg_eq_add] using h
   have hg_ξ : g ξ = target (f z) := by
     simp [g, hsource_ξ]
   have hξ_norm : ‖ξ‖ < 1 := by
