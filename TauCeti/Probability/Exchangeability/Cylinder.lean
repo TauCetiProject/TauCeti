@@ -111,6 +111,26 @@ theorem blockIndicatorProd_empty (X : ℕ → Ω → α) (k : Fin 0 → ℕ) (C 
   funext ω
   simp [blockIndicatorProd]
 
+omit [MeasurableSpace Ω] [MeasurableSpace α] in
+/-- **Successor split of the indicator product.** Splitting off the last selected coordinate, the
+length-`r+1` indicator product equals the indicator of the length-`r` prefix cylinder intersected
+with the last coordinate's preimage. The `Fin 0` companion is `blockIndicatorProd_empty`. -/
+theorem blockIndicatorProd_succ_eq_indicator_inter (X : ℕ → Ω → α) {r : ℕ} (k : Fin (r + 1) → ℕ)
+    (C : Fin (r + 1) → Set α) :
+    blockIndicatorProd X k C
+      = (blockCylinder X (fun i : Fin r => k i.castSucc) (fun j => C j.castSucc)
+          ∩ X (k (Fin.last r)) ⁻¹' C (Fin.last r)).indicator (fun _ => (1 : ℝ)) := by
+  have hsplit : blockIndicatorProd X k C
+      = fun ω => blockIndicatorProd X (fun i : Fin r => k i.castSucc) (fun j => C j.castSucc) ω
+          * (C (Fin.last r)).indicator (fun _ => (1 : ℝ)) (X (k (Fin.last r)) ω) := by
+    funext ω
+    simp only [blockIndicatorProd_apply]
+    rw [Fin.prod_univ_castSucc]
+  rw [hsplit, blockIndicatorProd_eq_indicator]
+  funext ω
+  by_cases hc : ω ∈ blockCylinder X (fun i : Fin r => k i.castSucc) (fun j => C j.castSucc) <;>
+    by_cases hp : X (k (Fin.last r)) ω ∈ C (Fin.last r) <;> simp [hc, hp]
+
 /-- The block cylinder is null-measurable when the selected coordinates are a.e. measurable. -/
 theorem nullMeasurableSet_blockCylinder {μ : Measure Ω} {X : ℕ → Ω → α} {m : ℕ} {k : Fin m → ℕ}
     {C : Fin m → Set α} (hX : ∀ i, AEMeasurable (X (k i)) μ) (hC : ∀ i, MeasurableSet (C i)) :
