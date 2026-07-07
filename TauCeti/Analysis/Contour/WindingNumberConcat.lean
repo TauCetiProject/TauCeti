@@ -75,14 +75,6 @@ theorem windingNumber_concat
   exact windingNumber_eq_add_of_hasCauchyPVAt
     h_ab.hasCauchyPVAt_cauchyPVAt h_bc.hasCauchyPVAt_cauchyPVAt
 
-/-- Existence form for the principal value defining the winding number on a concatenated
-interval. -/
-theorem cauchyPVExistsAt_windingNumber_concat
-    (h_ab : CauchyPVExistsAt γ a b κ[z₀] z₀)
-    (h_bc : CauchyPVExistsAt γ b c κ[z₀] z₀) :
-    CauchyPVExistsAt γ a c κ[z₀] z₀ :=
-  h_ab.concat h_bc
-
 /-- If the winding numbers about `z₀` vanish on two adjacent intervals, and the two corresponding
 principal values exist, then the winding number about `z₀` also vanishes on the concatenated
 interval. -/
