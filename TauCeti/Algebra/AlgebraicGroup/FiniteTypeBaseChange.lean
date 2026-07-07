@@ -86,7 +86,6 @@ lemma toBialgHom_baseChangeMap {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
       _root_.Bialgebra.TensorProduct.map (_root_.BialgHom.id K K) (toBialgHom φ) :=
   rfl
 
-@[simp]
 lemma baseChangeMap_apply_tmul {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
     (φ : H ⟶ L) (s : K) (h : H) :
     toBialgHom (baseChangeMap (K := K) φ) (s ⊗ₜ[k] h) = s ⊗ₜ[k] toBialgHom φ h := by
