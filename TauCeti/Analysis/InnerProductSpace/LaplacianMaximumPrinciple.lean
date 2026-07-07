@@ -41,7 +41,7 @@ open InnerProductSpace Laplacian Topology
 
 /-- If every interior point of a compact set is forbidden from being a local maximum, then a
 continuous function on the compact set has a maximum point on the frontier. -/
-theorem exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax {X β : Type*}
+private theorem exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax {X β : Type*}
     [TopologicalSpace X] [TopologicalSpace β] [LinearOrder β] [ClosedIciTopology β] {K : Set X}
     (hK : IsCompact K) (hne : K.Nonempty) {f : X → β} (hcont : ContinuousOn f K)
     (hnot : ∀ ⦃x⦄, x ∈ interior K → ¬ IsLocalMax f x) :
@@ -55,7 +55,7 @@ theorem exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax {X β 
 
 /-- If every interior point of a compact set is forbidden from being a local minimum, then a
 continuous function on the compact set has a minimum point on the frontier. -/
-theorem exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin {X β : Type*}
+private theorem exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin {X β : Type*}
     [TopologicalSpace X] [TopologicalSpace β] [LinearOrder β] [ClosedIicTopology β] {K : Set X}
     (hK : IsCompact K) (hne : K.Nonempty) {f : X → β} (hcont : ContinuousOn f K)
     (hnot : ∀ ⦃x⦄, x ∈ interior K → ¬ IsLocalMin f x) :
@@ -92,14 +92,8 @@ theorem exists_mem_frontier_isMinOn_of_laplacian_neg {K : Set E} (hK : IsCompact
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hlap : ∀ ⦃x⦄, x ∈ interior K → Δ f x < 0) :
     ∃ x ∈ frontier K, IsMinOn f K x := by
-  obtain ⟨x, hxfrontier, hxmax⟩ :=
-    exists_mem_frontier_isMaxOn_of_laplacian_pos hK hne (hcont.neg)
-      (fun {x} hxint => (hcd (x := x) hxint).neg)
-      (fun {x} hxint => by simpa [laplacian_neg] using neg_pos.2 (hlap (x := x) hxint))
-  refine ⟨x, hxfrontier, ?_⟩
-  intro y hyK
-  have hneg : -f y ≤ -f x := by simpa using hxmax hyK
-  exact neg_le_neg_iff.mp hneg
+  exact exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin hK hne hcont
+    fun {x} hxint => not_isLocalMin_of_laplacian_neg (hcd (x := x) hxint) (hlap (x := x) hxint)
 
 end TauCeti
 
