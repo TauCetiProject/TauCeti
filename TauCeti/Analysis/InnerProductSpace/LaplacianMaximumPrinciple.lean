@@ -15,6 +15,10 @@ obstruction: a `C²` scalar function with `0 < Δ f x` has no local maximum at `
 turns that local statement into the compact-set boundary form used as the first maximum-principle
 handoff in the PDE roadmap.
 
+The compact-to-boundary handoff uses Mathlib's `IsCompact.exists_isMaxOn` /
+`IsCompact.exists_isMinOn` extreme-value APIs and `IsMaxOn.isLocalMax` /
+`IsMinOn.isLocalMin` localization APIs.
+
 If a continuous function on a compact set has positive Laplacian at every interior point where
 the second derivative is available, then some maximum point lies on the frontier.  The dual
 minimum statement holds for negative Laplacian.
@@ -35,6 +39,34 @@ namespace TauCeti
 
 open InnerProductSpace Laplacian Topology
 
+/-- If every interior point of a compact set is forbidden from being a local maximum, then a
+continuous function on the compact set has a maximum point on the frontier. -/
+theorem exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax {X β : Type*}
+    [TopologicalSpace X] [TopologicalSpace β] [LinearOrder β] [ClosedIciTopology β] {K : Set X}
+    (hK : IsCompact K) (hne : K.Nonempty) {f : X → β} (hcont : ContinuousOn f K)
+    (hnot : ∀ ⦃x⦄, x ∈ interior K → ¬ IsLocalMax f x) :
+    ∃ x ∈ frontier K, IsMaxOn f K x := by
+  obtain ⟨x, hxK, hxmax⟩ := hK.exists_isMaxOn hne hcont
+  refine ⟨x, ?_, hxmax⟩
+  rw [frontier]
+  refine ⟨subset_closure hxK, ?_⟩
+  intro hxint
+  exact hnot hxint (hxmax.isLocalMax (mem_interior_iff_mem_nhds.mp hxint))
+
+/-- If every interior point of a compact set is forbidden from being a local minimum, then a
+continuous function on the compact set has a minimum point on the frontier. -/
+theorem exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin {X β : Type*}
+    [TopologicalSpace X] [TopologicalSpace β] [LinearOrder β] [ClosedIicTopology β] {K : Set X}
+    (hK : IsCompact K) (hne : K.Nonempty) {f : X → β} (hcont : ContinuousOn f K)
+    (hnot : ∀ ⦃x⦄, x ∈ interior K → ¬ IsLocalMin f x) :
+    ∃ x ∈ frontier K, IsMinOn f K x := by
+  obtain ⟨x, hxK, hxmin⟩ := hK.exists_isMinOn hne hcont
+  refine ⟨x, ?_, hxmin⟩
+  rw [frontier]
+  refine ⟨subset_closure hxK, ?_⟩
+  intro hxint
+  exact hnot hxint (hxmin.isLocalMin (mem_interior_iff_mem_nhds.mp hxint))
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- **Boundary maximum principle for strictly subharmonic functions.**
@@ -47,13 +79,8 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_pos {K : Set E} (hK : IsCompact
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hlap : ∀ ⦃x⦄, x ∈ interior K → 0 < Δ f x) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  obtain ⟨x, hxK, hxmax⟩ := hK.exists_isMaxOn hne hcont
-  refine ⟨x, ?_, hxmax⟩
-  rw [frontier]
-  refine ⟨subset_closure hxK, ?_⟩
-  intro hxint
-  exact not_isLocalMax_of_laplacian_pos (hcd hxint) (hlap hxint)
-    (hxmax.isLocalMax (mem_interior_iff_mem_nhds.mp hxint))
+  exact exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax hK hne hcont
+    fun {x} hxint => not_isLocalMax_of_laplacian_pos (hcd (x := x) hxint) (hlap (x := x) hxint)
 
 /-- **Boundary minimum principle for strictly superharmonic functions.**
 
@@ -65,13 +92,14 @@ theorem exists_mem_frontier_isMinOn_of_laplacian_neg {K : Set E} (hK : IsCompact
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hlap : ∀ ⦃x⦄, x ∈ interior K → Δ f x < 0) :
     ∃ x ∈ frontier K, IsMinOn f K x := by
-  obtain ⟨x, hxK, hxmin⟩ := hK.exists_isMinOn hne hcont
-  refine ⟨x, ?_, hxmin⟩
-  rw [frontier]
-  refine ⟨subset_closure hxK, ?_⟩
-  intro hxint
-  exact not_isLocalMin_of_laplacian_neg (hcd hxint) (hlap hxint)
-    (hxmin.isLocalMin (mem_interior_iff_mem_nhds.mp hxint))
+  obtain ⟨x, hxfrontier, hxmax⟩ :=
+    exists_mem_frontier_isMaxOn_of_laplacian_pos hK hne (hcont.neg)
+      (fun {x} hxint => (hcd (x := x) hxint).neg)
+      (fun {x} hxint => by simpa [laplacian_neg] using neg_pos.2 (hlap (x := x) hxint))
+  refine ⟨x, hxfrontier, ?_⟩
+  intro y hyK
+  have hneg : -f y ≤ -f x := by simpa using hxmax hyK
+  exact neg_le_neg_iff.mp hneg
 
 end TauCeti
 
