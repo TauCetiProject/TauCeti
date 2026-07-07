@@ -50,13 +50,12 @@ variable {n : ℕ} (G : GridDiagram n)
 formula for the fully blocked differential. -/
 @[simp]
 theorem fullyBlockedDifferential_sq_single_apply (x z : GridState n) :
-    G.fullyBlockedDifferential
-        (G.fullyBlockedDifferential (Finsupp.single x (1 : ZMod 2))) z =
+    (Finsupp.sum (G.fullyBlockedDifferentialOnGenerator x) fun y a =>
+        a * G.fullyBlockedRectangleCount y z) =
       ∑ y : GridState n, G.fullyBlockedRectangleCount x y *
         G.fullyBlockedRectangleCount y z := by
   classical
-  rw [fullyBlockedDifferential_apply_apply, fullyBlockedDifferential_single,
-    Finsupp.sum_fintype]
+  rw [Finsupp.sum_fintype]
   · simp
   · simp
 
@@ -67,7 +66,8 @@ theorem sum_fullyBlockedRectangleCount_mul_eq_zero_of_notMem_twoStep
     (∑ y : GridState n, G.fullyBlockedRectangleCount x y *
       G.fullyBlockedRectangleCount y z) = 0 := by
   rw [← G.fullyBlockedDifferential_sq_single_apply x z]
-  exact G.fullyBlockedDifferential_sq_single_apply_eq_zero_of_notMem_twoStep x hz
+  simpa [fullyBlockedDifferential_apply_apply, fullyBlockedDifferential_single] using
+    G.fullyBlockedDifferential_sq_single_apply_eq_zero_of_notMem_twoStep x hz
 
 /-- The square of the fully blocked differential vanishes on a generator exactly when every
 length-two rectangle-count coefficient sum out of that generator vanishes. -/
@@ -80,9 +80,11 @@ theorem fullyBlockedDifferential_sq_single_eq_zero_iff (x : GridState n) :
   constructor
   · intro h z
     rw [← G.fullyBlockedDifferential_sq_single_apply x z]
+    rw [← fullyBlockedDifferential_apply_apply, ← fullyBlockedDifferential_single]
     exact congrArg (fun c : GridChain (ZMod 2) n => c z) h
   · intro h
     ext z
+    rw [fullyBlockedDifferential_apply_apply, fullyBlockedDifferential_single]
     rw [G.fullyBlockedDifferential_sq_single_apply x z, h z]
     rfl
 
