@@ -96,7 +96,6 @@ lemma restrictScalars_map (f : k →+* K) {A B : _root_.CommAlgCat.{x} K} (χ : 
 
 /-- The underlying algebra hom of `restrictScalars.map` is restriction of scalars on the
 original algebra hom. -/
-@[simp]
 lemma restrictScalars_map_hom (f : k →+* K) {A B : _root_.CommAlgCat.{x} K} (χ : A ⟶ B) :
     ((restrictScalars f).map χ).hom =
       letI : Algebra k K := f.toAlgebra

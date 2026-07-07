@@ -71,7 +71,6 @@ lemma hom_baseChangeMap {H L : _root_.CommHopfAlgCat.{v} k}
   rfl
 
 /-- On pure tensors, `baseChangeMap` applies the original morphism to the second factor. -/
-@[simp]
 lemma baseChangeMap_apply_tmul {H L : _root_.CommHopfAlgCat.{v} k}
     (φ : H ⟶ L) (s : K) (h : H) :
     (baseChangeMap (K := K) φ).hom (s ⊗ₜ[k] h) = s ⊗ₜ[k] φ.hom h := by

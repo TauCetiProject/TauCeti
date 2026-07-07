@@ -73,7 +73,6 @@ lemma toBialgHom_baseChangeMap {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
   rfl
 
 /-- On pure tensors, `baseChangeMap` applies the original morphism to the second factor. -/
-@[simp]
 lemma baseChangeMap_apply_tmul {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
     (φ : H ⟶ L) (s : K) (h : H) :
     toBialgHom (baseChangeMap (K := K) φ) (s ⊗ₜ[k] h) = s ⊗ₜ[k] toBialgHom φ h :=
