@@ -182,7 +182,6 @@ lemma coeff_rightResidual (D : EffectiveDivisorOfDegree X d)
   rw [coe_rightResidual, WeilDivisor.coeff_sub, coeff_inf]
 
 /-- The multiplicity function of the left residual is the truncated multiplicity difference. -/
-@[simp]
 lemma multiplicityFinsupp_leftResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     (leftResidual D E).multiplicityFinsupp =
@@ -190,7 +189,6 @@ lemma multiplicityFinsupp_leftResidual (D : EffectiveDivisorOfDegree X d)
   multiplicityFinsupp_subOfLe D (inf D E) (inf_le_left D E)
 
 /-- The multiplicity function of the right residual is the truncated multiplicity difference. -/
-@[simp]
 lemma multiplicityFinsupp_rightResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     (rightResidual D E).multiplicityFinsupp =
@@ -199,7 +197,6 @@ lemma multiplicityFinsupp_rightResidual (D : EffectiveDivisorOfDegree X d)
 
 /-- The symmetric-power representative of the left residual is the truncated multiplicity
 difference from the left divisor. -/
-@[simp]
 lemma equivSym_leftResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     equivSym (leftResidual D E) =
@@ -212,7 +209,6 @@ lemma equivSym_leftResidual (D : EffectiveDivisorOfDegree X d)
 
 /-- The symmetric-power representative of the right residual is the truncated multiplicity
 difference from the right divisor. -/
-@[simp]
 lemma equivSym_rightResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     equivSym (rightResidual D E) =
