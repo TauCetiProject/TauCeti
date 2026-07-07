@@ -146,7 +146,9 @@ theorem segRatio_eq_one_of_le {γ : ℝ → ℂ} {w : ℂ} {s_j s_jp1 t : ℝ}
     segRatio γ w s_j s_jp1 t = 1 := by
   rw [segRatio, segClamp_eq_left h ht, div_self h_ne]
 
-private theorem segRatio_eq_self_div {γ : ℝ → ℂ} {w : ℂ} {s_j s_jp1 t : ℝ}
+/-- On its segment (`s_j ≤ t ≤ s_{j+1}`), the segment ratio is `(γ t - w) / (γ s_j - w)` — the
+primary meaning of `segRatio`. -/
+theorem segRatio_eq_self_div {γ : ℝ → ℂ} {w : ℂ} {s_j s_jp1 t : ℝ}
     (ht_lo : s_j ≤ t) (ht_hi : t ≤ s_jp1) :
     segRatio γ w s_j s_jp1 t = (γ t - w) / (γ s_j - w) := by
   rw [segRatio, segClamp_eq_self ht_lo ht_hi]
@@ -215,8 +217,10 @@ private theorem segRatio_mem_slitPlane
 
 /-! ### Telescoping product over a partition -/
 
-/-- Telescoping product in `ℂ` over `Finset.range`. For `a : ℕ → ℂ` nonzero on
-indices `0..k`, the product `∏ j ∈ range k, a (j+1)/a j = a k / a 0`. -/
+/-- Telescoping product in `ℂ` over `Finset.range`. For `a : ℕ → ℂ` nonzero on indices `0..k`,
+`∏ j ∈ range k, a (j+1)/a j = a k / a 0`. This is the field analogue of the group telescoping lemma
+`Finset.prod_range_div`, proved directly since `ℂ` is not a group under multiplication and the
+factors are nonzero only under the hypothesis `ha`. -/
 private lemma prod_range_div_complex (a : ℕ → ℂ) (k : ℕ)
     (ha : ∀ j ≤ k, a j ≠ 0) :
     ∏ j ∈ Finset.range k, (a (j + 1) / a j) = a k / a 0 := by
@@ -291,12 +295,10 @@ private theorem continuousOn_im_log_segRatio {γ : ℝ → ℂ}
 /-- For a nonzero complex number `z`, `exp(I · Im(log z)) = z / ↑‖z‖`. -/
 private lemma exp_I_log_im_eq_div_norm {z : ℂ} (hz : z ≠ 0) :
     Complex.exp (Complex.I * ((Complex.log z).im : ℂ)) = z / (‖z‖ : ℂ) := by
-  have h_split : Complex.I * ((Complex.log z).im : ℂ) =
-      Complex.log z - ((Complex.log z).re : ℂ) := by
-    rw [mul_comm, eq_sub_iff_add_eq, add_comm]
-    exact Complex.re_add_im (Complex.log z)
-  rw [h_split, Complex.exp_sub, Complex.exp_log hz, Complex.log_re,
-      ← Complex.ofReal_exp, Real.exp_log (norm_pos_iff.mpr hz)]
+  have hz' : (‖z‖ : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr hz)
+  rw [eq_div_iff hz', Complex.log_im, mul_comm Complex.I (Complex.arg z : ℂ)]
+  conv_rhs => rw [← Complex.norm_mul_exp_arg_mul_I z]
+  ring
 
 /-! ### Partition-segment existence -/
 
@@ -465,11 +467,12 @@ theorem segment_log_FTC
     {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} (hab : a ≤ b) {P : Set ℝ} (hP_count : P.Countable)
     (hγ_cont : ContinuousOn γ (Icc a b))
     (hγ_diff : ∀ t ∈ Ioo a b \ P, HasDerivAt γ (deriv γ t) t)
-    (h_a_ne : γ a - w ≠ 0)
     (h_slit : ∀ t ∈ Icc a b, (γ t - w) / (γ a - w) ∈ Complex.slitPlane)
     (h_int : IntervalIntegrable
       (fun t ↦ deriv γ t / (γ t - w)) MeasureTheory.volume a b) :
     ∫ t in a..b, deriv γ t / (γ t - w) = Complex.log ((γ b - w) / (γ a - w)) := by
+  have h_a_ne : γ a - w ≠ 0 := fun h ↦
+    Complex.slitPlane_ne_zero (h_slit a ⟨le_rfl, hab⟩) (by rw [h, zero_div])
   set F : ℝ → ℂ := fun t ↦ Complex.log ((γ t - w) / (γ a - w))
   have hF_cont : ContinuousOn F (Icc a b) :=
     ContinuousOn.clog ((hγ_cont.sub continuousOn_const).div_const _) h_slit
