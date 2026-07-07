@@ -17,8 +17,8 @@ This file proves the Schwarz--Pick contraction estimate for holomorphic self-map
 complex unit disc, stated using Tau Ceti's pseudo-hyperbolic expression
 `pseudoHyperbolicExpr z w = ‖(z - w) / (1 - conj w * z)‖`.
 
-It provides both the pseudo-hyperbolic expression statement and a raw norm-quotient corollary,
-plus a bundled `Complex.UnitDisc` form for callers working directly with disc points.
+It provides the pseudo-hyperbolic expression statement, plus a bundled `Complex.UnitDisc` form
+for callers working directly with disc points.
 
 This advances the conformal-mapping roadmap's L2 Schwarz--Pick target.  It reuses Mathlib's
 Schwarz lemma and Tau Ceti's unit-disc Moebius API.  As with the rest of the L0--L3
@@ -43,6 +43,9 @@ theorem pseudoHyperbolicExpr_map_le {f : ℂ → ℂ}
     (hmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
     {z w : ℂ} (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
     pseudoHyperbolicExpr (f z) (f w) ≤ pseudoHyperbolicExpr z w := by
+  -- Conjugate `f` by the disc automorphisms sending `w ↦ 0` and `f w ↦ 0`, so the conjugated
+  -- map `g = target ∘ f ∘ source` fixes `0`.  Mathlib's Schwarz lemma at `0` then gives
+  -- `‖g ξ‖ ≤ ‖ξ‖`, which unwinds to the pseudo-hyperbolic contraction at `z`, `w`.
   let source : ℂ → ℂ :=
     fun ξ => (ξ - (-(w : ℂ))) / (1 - (starRingEnd ℂ) (-(w : ℂ)) * ξ)
   let target : ℂ → ℂ :=
@@ -100,16 +103,6 @@ theorem pseudoHyperbolicExpr_map_le {f : ℂ → ℂ}
       exact Complex.norm_le_norm_of_mapsTo_ball hg_diff hg_maps_closed hg_zero hξ_norm
     _ = pseudoHyperbolicExpr z w := by
       rw [pseudoHyperbolicExpr_def]
-
-/-- The raw norm-quotient form of Schwarz--Pick. -/
-theorem pseudoHyperbolicExpr_map_norm_div_le {f : ℂ → ℂ}
-    (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
-    (hmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
-    {z w : ℂ} (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
-    ‖(f z - f w) / (1 - (starRingEnd ℂ) (f w) * f z)‖
-      ≤ ‖(z - w) / (1 - (starRingEnd ℂ) w * z)‖ :=
-  by
-    simpa [pseudoHyperbolicExpr_def] using pseudoHyperbolicExpr_map_le hf hmaps hz hw
 
 /-- Bundled unit-disc form of the Schwarz--Pick contraction estimate. -/
 theorem pseudoHyperbolicExpr_map_le_unitDisc {f : ℂ → ℂ}
