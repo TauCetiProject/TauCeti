@@ -6,7 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Claude
 -/
 public import TauCeti.Analysis.SpecialFunctions.HermiteFunction
-public import TauCeti.Probability.Distributions.Gaussian.HermiteMemLp
+public import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 
 /-!
 # Integrability and `L²` membership of the Hermite functions
