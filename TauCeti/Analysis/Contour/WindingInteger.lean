@@ -18,17 +18,24 @@ and nowhere zero, so it admits a continuous *argument lift* `θ : ℝ → ℝ` w
 generalized winding number: for a closed curve the total argument change `θ 1 - θ 0` is an integer
 multiple of `2π`.
 
-The lift is built on a uniform partition `0 = s₀ < ⋯ < s_N = 1` fine enough that each segment
-`(γ t - w) / (γ (s j) - w)` lands in a rotated slit plane `ball (1, 1/2) ⊆ slitPlane`, where
+The lift is built on a uniform partition `0 = s₀ < ⋯ < s_N = 1` fine enough that each segment ratio
+`(γ t - w) / (γ (s j) - w)` stays within distance `1/2` of `1`, hence in `Complex.slitPlane`, where
 `Complex.log` extracts a single-valued argument; the segment contributions telescope to the global
-lift. Alongside it we prove the per-segment fundamental theorem of calculus for `1 / (γ - w)`.
+lift. Alongside it we prove that the integral of a logarithmic derivative `γ' / (γ - w)` over a
+segment equals the difference of `Complex.log`s at the endpoints.
+
+Mathlib's `Complex.exists_continuousOn_eqOn_exp_comp` already gives a continuous logarithm (hence
+argument) branch for a nowhere-zero continuous function on a simply connected open set. The explicit
+partition-and-`segRatio` construction here is retained because the downstream winding-number
+integral is evaluated segment by segment, which needs the partition data that the bare-existence
+API does not expose.
 
 ## Main results
 
 * `TauCeti.Contour.exists_continuous_arg_lift_with_partition` — a continuous argument lift for a
   curve continuous on `[0, 1]` and avoiding `w`, together with its partition witness.
-* `TauCeti.Contour.segment_log_FTC` — on a segment where `γ` avoids `w` and stays in a slit plane,
-  `∫ γ' / (γ - w) = log ((γ b - w) / (γ a - w))`.
+* `TauCeti.Contour.integral_deriv_div_sub_eq_log` — on a segment where `γ` avoids `w` and stays in a
+  slit plane, `∫ γ' / (γ - w) = log ((γ b - w) / (γ a - w))`.
 * `TauCeti.Contour.segRatio` and its evaluation lemmas — the segment-ratio building block used to
   assemble the index integral downstream.
 
@@ -85,25 +92,13 @@ private theorem exists_uniform_modulus_avoiding {γ : ℝ → ℂ} {w : ℂ}
   rw [← Complex.dist_eq]
   exact h_unif t ht s hs (by rwa [Real.dist_eq])
 
-/-! ### Slit-plane containment for small balls -/
+/-! ### Segment-ratio helpers
 
-/-- The closed ball of radius `1/2` around `1` is contained in `Complex.slitPlane`. -/
-private theorem mem_slitPlane_of_ball_one (z : ℂ) (hz : ‖z - 1‖ < 1 / 2) :
-    z ∈ Complex.slitPlane := by
-  rw [Complex.mem_slitPlane_iff]
-  left
-  have h_re : |z.re - 1| < 1 / 2 :=
-    (by simpa using Complex.abs_re_le_norm (z - 1) : |z.re - 1| ≤ ‖z - 1‖).trans_lt hz
-  rw [abs_sub_lt_iff] at h_re; linarith
-
-/-! ### W-1 helpers (deferred main theorem)
-
-The main `exists_continuous_arg_lift_with_partition` theorem is deferred — it uses
-the telescoping-sum approach with `Finset.sum` over `N` partition segments,
-each contributing `Im(log(segRatio j t))` where `segRatio j t` lies in
-`ball(1, 1/2) ⊆ slitPlane` by W-0 + `mem_slitPlane_of_ball_one`.
-
-Helper definitions and theorems for this construction are below. -/
+The continuous argument lift below is assembled from a uniform partition of `[0, 1]`: on each
+segment the ratio `(γ t - w) / (γ (s j) - w)` lies within distance `1/2` of `1`, hence in
+`Complex.slitPlane` (via Mathlib's `Complex.ball_one_subset_slitPlane`), where `Complex.log`
+extracts a single-valued argument; the `Im (log ·)` contributions telescope across the partition.
+The definitions and lemmas supporting that construction follow. -/
 
 /-- Helper: clamp `t` to `[s_j, s_{j+1}]`. For partition segment `j`. -/
 private def segClamp (s_j s_jp1 t : ℝ) : ℝ := max s_j (min t s_jp1)
@@ -155,7 +150,7 @@ theorem segRatio_eq_self_div {γ : ℝ → ℂ} {w : ℂ} {s_j s_jp1 t : ℝ}
 
 /-- After its segment (`s_{j+1} ≤ t`), the segment ratio equals the full endpoint ratio
 `(γ s_{j+1} - w) / (γ s_j - w)`. -/
-theorem segRatio_eq_full {γ : ℝ → ℂ} {w : ℂ} {s_j s_jp1 t : ℝ}
+theorem segRatio_eq_endpoint_div_of_le {γ : ℝ → ℂ} {w : ℂ} {s_j s_jp1 t : ℝ}
     (h : s_j ≤ s_jp1) (ht : s_jp1 ≤ t) :
     segRatio γ w s_j s_jp1 t = (γ s_jp1 - w) / (γ s_j - w) := by
   rw [segRatio, segClamp_eq_right h ht]
@@ -212,8 +207,10 @@ private theorem segRatio_mem_slitPlane
     {s_j s_jp1 : ℝ} (hsj : s_j ∈ Icc (0 : ℝ) 1) (hsjp1 : s_jp1 ∈ Icc (0 : ℝ) 1)
     (h_le : s_j ≤ s_jp1) (h_mesh : s_jp1 - s_j < δ') (t : ℝ) :
     segRatio γ w s_j s_jp1 t ∈ Complex.slitPlane :=
-  mem_slitPlane_of_ball_one _
-    (segRatio_mem_ball_one hρ_pos h_dist_lb h_unif hsj hsjp1 h_le h_mesh t)
+  Complex.ball_one_subset_slitPlane <| by
+    rw [Metric.mem_ball, Complex.dist_eq]
+    exact (segRatio_mem_ball_one hρ_pos h_dist_lb h_unif hsj hsjp1 h_le h_mesh t).trans
+      (by norm_num)
 
 /-! ### Telescoping product over a partition -/
 
@@ -262,7 +259,7 @@ private theorem prod_segRatio_telescope
       segRatio γ w (s j) (s (j + 1)) t = (γ (s (j + 1)) - w) / (γ (s j) - w) := by
     intro j hj
     rw [Finset.mem_range] at hj
-    refine segRatio_eq_full (hs_mono (Nat.le_succ _)) ?_
+    refine segRatio_eq_endpoint_div_of_le (hs_mono (Nat.le_succ _)) ?_
     exact (hs_mono (Nat.succ_le_of_lt hj)).trans hk_lo
   rw [Finset.prod_congr rfl h_range_k_eq]
   -- Middle term: segRatio at index k = (γ t - w) / (γ s_k - w)
@@ -459,29 +456,29 @@ theorem exists_continuous_arg_lift_with_partition
 
 /-! ### Per-segment FTC for `1 / (γ - w)` -/
 
-/-- **Per-segment fundamental theorem of calculus for `1 / (γ - w)`.** If `γ` is continuous on
-`[a, b]`, differentiable off a countable set, avoids `w`, and the ratio `(γ t - w) / (γ a - w)`
+/-- **Integral of a logarithmic derivative equals a log difference.** If `γ` is continuous on
+`[a, b]`, has derivative `γ'` off a countable set, avoids `w`, and the ratio `(γ t - w) / (γ a - w)`
 stays in `Complex.slitPlane` throughout, then
 `∫ t in a..b, γ' t / (γ t - w) = log ((γ b - w) / (γ a - w))`. -/
-theorem segment_log_FTC
-    {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} (hab : a ≤ b) {P : Set ℝ} (hP_count : P.Countable)
+theorem integral_deriv_div_sub_eq_log
+    {γ γ' : ℝ → ℂ} {w : ℂ} {a b : ℝ} (hab : a ≤ b) {P : Set ℝ} (hP_count : P.Countable)
     (hγ_cont : ContinuousOn γ (Icc a b))
-    (hγ_diff : ∀ t ∈ Ioo a b \ P, HasDerivAt γ (deriv γ t) t)
+    (hγ_diff : ∀ t ∈ Ioo a b \ P, HasDerivAt γ (γ' t) t)
     (h_slit : ∀ t ∈ Icc a b, (γ t - w) / (γ a - w) ∈ Complex.slitPlane)
     (h_int : IntervalIntegrable
-      (fun t ↦ deriv γ t / (γ t - w)) MeasureTheory.volume a b) :
-    ∫ t in a..b, deriv γ t / (γ t - w) = Complex.log ((γ b - w) / (γ a - w)) := by
+      (fun t ↦ γ' t / (γ t - w)) MeasureTheory.volume a b) :
+    ∫ t in a..b, γ' t / (γ t - w) = Complex.log ((γ b - w) / (γ a - w)) := by
   have h_a_ne : γ a - w ≠ 0 := fun h ↦
     Complex.slitPlane_ne_zero (h_slit a ⟨le_rfl, hab⟩) (by rw [h, zero_div])
   set F : ℝ → ℂ := fun t ↦ Complex.log ((γ t - w) / (γ a - w))
   have hF_cont : ContinuousOn F (Icc a b) :=
     ContinuousOn.clog ((hγ_cont.sub continuousOn_const).div_const _) h_slit
   have hF_deriv : ∀ t ∈ Ioo a b \ P,
-      HasDerivAt F (deriv γ t / (γ t - w)) t := by
+      HasDerivAt F (γ' t / (γ t - w)) t := by
     intro t ht
     have ht_Icc : t ∈ Icc a b := Ioo_subset_Icc_self ht.1
     have h_inner : HasDerivAt (fun t ↦ (γ t - w) / (γ a - w))
-        (deriv γ t / (γ a - w)) t :=
+        (γ' t / (γ a - w)) t :=
       ((hγ_diff t ht).sub_const w).div_const _
     have h_slit_t : (γ t - w) / (γ a - w) ∈ Complex.slitPlane := h_slit t ht_Icc
     have h_log := h_inner.clog_real h_slit_t
@@ -492,6 +489,7 @@ theorem segment_log_FTC
   have h_FTC := MeasureTheory.integral_eq_of_hasDerivAt_off_countable_of_le _ _ hab hP_count
     hF_cont hF_deriv h_int
   rw [h_FTC]
+  -- unfold the `set`-bound `F` at the endpoints (`F t = log ((γ t - w) / (γ a - w))`)
   change Complex.log ((γ b - w) / (γ a - w)) - Complex.log ((γ a - w) / (γ a - w)) =
        Complex.log ((γ b - w) / (γ a - w))
   rw [div_self h_a_ne, Complex.log_one, sub_zero]
