@@ -464,6 +464,40 @@ theorem cauchyPV_zero {γ : ℝ → ℂ} {a b : ℝ} :
     cauchyPV γ a b (fun _ => 0) = 0 :=
   HasCauchyPV.zero.cauchyPV_eq
 
+/-- The set-level Cauchy principal value over a zero-length interval is `0`. -/
+theorem HasCauchyPV.refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) :
+    HasCauchyPV γ a a f 0 := by
+  simpa only [intervalIntegral.integral_same] using
+    HasCauchyPV.of_integrable (γ := γ) (a := a) (b := a) (f := f) IntervalIntegrable.refl
+
+/-- If the two endpoints are equal, the set-level Cauchy principal value is `0`. -/
+theorem HasCauchyPV.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) :
+    HasCauchyPV γ a b f 0 := by
+  subst b
+  exact HasCauchyPV.refl γ a f
+
+/-- Existence form of `HasCauchyPV.refl`: a zero-length interval always has a set-level Cauchy
+principal value. -/
+theorem CauchyPVExists.refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) :
+    CauchyPVExists γ a a f :=
+  CauchyPVExists.intro (HasCauchyPV.refl γ a f)
+
+/-- Existence form of `HasCauchyPV.of_eq`. -/
+theorem CauchyPVExists.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) :
+    CauchyPVExists γ a b f :=
+  CauchyPVExists.intro (HasCauchyPV.of_eq γ hab f)
+
+/-- Value form of `HasCauchyPV.refl`: the set-level Cauchy principal value on `[a, a]` is `0`. -/
+@[simp]
+theorem cauchyPV_refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) :
+    cauchyPV γ a a f = 0 :=
+  (HasCauchyPV.refl γ a f).cauchyPV_eq
+
+/-- Value form of `HasCauchyPV.of_eq`. -/
+theorem cauchyPV_eq_zero_of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) :
+    cauchyPV γ a b f = 0 :=
+  (HasCauchyPV.of_eq γ hab f).cauchyPV_eq
+
 /-- If the set-level principal value exists, it holds at the canonical value `cauchyPV`. This
 recovers a `HasCauchyPV` statement from mere existence. -/
 theorem CauchyPVExists.hasCauchyPV_cauchyPV {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
