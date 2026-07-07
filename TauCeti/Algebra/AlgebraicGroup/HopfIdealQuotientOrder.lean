@@ -70,7 +70,6 @@ noncomputable abbrev quotientMapOfLe (H : _root_.CommHopfAlgCat.{v} R)
 
 /-- The quotient-to-quotient morphism sends the class of `h` modulo `I` to its class
 modulo `J`. -/
-@[simp]
 lemma quotientMapOfLe_mk (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H}
     (hIJ : I ≤ J) (h : H) :
     (quotientMapOfLe H hIJ).hom (Ideal.Quotient.mkₐ R I.toIdeal h) =
@@ -79,7 +78,6 @@ lemma quotientMapOfLe_mk (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H}
 
 /-- Composing the quotient map `H ⟶ H ⧸ I` with the quotient-to-quotient morphism for
 `I ≤ J` gives the quotient map `H ⟶ H ⧸ J`. -/
-@[simp]
 lemma mkQuotient_comp_quotientMapOfLe (H : _root_.CommHopfAlgCat.{v} R)
     {I J : HopfIdeal R H} (hIJ : I ≤ J) :
     mkQuotient H I ≫ quotientMapOfLe H hIJ = mkQuotient H J :=
@@ -170,7 +168,6 @@ lemma forget₂_commHopfAlgCat_map_quotientMapOfLe
 
 /-- The finite-type quotient-to-quotient morphism sends the class of `h` modulo `I` to its
 class modulo `J`. -/
-@[simp]
 lemma quotientMapOfLe_mk (H : FiniteTypeCommHopfAlgCat.{u, v} R)
     {I J : HopfIdeal R H} (hIJ : I ≤ J) (h : H) :
     (toBialgHom (quotientMapOfLe H hIJ)) (Ideal.Quotient.mkₐ R I.toIdeal h) =
