@@ -121,8 +121,8 @@ lemma laplaceTransform_smul (c : ℝ≥0∞) (μ : Measure ℝ≥0) (t : ℝ) :
   simp only [laplaceTransform_apply, integral_smul_measure, smul_eq_mul]
 
 /-- The Laplace transform of the Dirac mass at `x₀` is the exponential kernel `exp (-(t · x₀))`;
-the point masses are the building blocks of the representing mixtures. -/
-@[simp]
+the point masses are the building blocks of the representing mixtures. (Not `@[simp]`: the simp set
+already reduces `laplaceTransform (Measure.dirac x₀) t` via `laplaceTransform_apply`.) -/
 lemma laplaceTransform_dirac (x₀ : ℝ≥0) (t : ℝ) :
     laplaceTransform (Measure.dirac x₀) t = Real.exp (-(t * (x₀ : ℝ))) := by
   simp only [laplaceTransform_apply, integral_dirac]
