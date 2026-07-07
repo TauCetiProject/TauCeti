@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.RingTheory.Finiteness.Basic
+public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule
 
 /-!
@@ -24,6 +25,7 @@ subcomodules and the fundamental theorem of comodules. Later work can use
 
 * `TauCeti.Subcomodule`: a submodule stable under the coaction.
 * `TauCeti.Subcomodule.toSubmodule`: the underlying submodule.
+* `TauCeti.Subcomodule.finite`: subcomodules of noetherian modules are finite.
 * `⊤` and `⊥`: the full and zero subcomodules.
 * `TauCeti.Subcomodule.map`: the image of a subcomodule under a comodule morphism.
 * `TauCeti.Subcomodule.map_finite`: images preserve finite generation of the underlying
@@ -103,6 +105,11 @@ theorem mem_toSubmodule {N : Subcomodule R C M} {m : M} : m ∈ N.toSubmodule �
 
 theorem toSubmodule_carrier (N : Subcomodule R C M) : N.toSubmodule = N.carrier :=
   rfl
+
+/-- A subcomodule of a noetherian module is finitely generated as an `R`-module. -/
+theorem finite (N : Subcomodule R C M) [IsNoetherian R M] :
+    Module.Finite R N.toSubmodule := by
+  infer_instance
 
 theorem le_def {N P : Subcomodule R C M} : N ≤ P ↔ ∀ ⦃m : M⦄, m ∈ N → m ∈ P :=
   Iff.rfl

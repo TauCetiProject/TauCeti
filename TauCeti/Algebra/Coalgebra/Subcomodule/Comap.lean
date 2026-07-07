@@ -179,8 +179,7 @@ theorem comap_toSubmodule (B : Subcomodule R C N) (f : Comodule.Hom R C M N) :
 `R`-module. -/
 theorem comap_finite (B : Subcomodule R C N) (f : Comodule.Hom R C M N)
     [IsNoetherian R M] : Module.Finite R (B.comap f).toSubmodule := by
-  rw [comap_toSubmodule]
-  infer_instance
+  exact (B.comap f).finite
 
 /-- Membership in an inverse-image subcomodule. -/
 @[simp]
@@ -273,8 +272,7 @@ theorem ker_toSubmodule (f : Hom R C M N) :
 `R`-module. -/
 theorem ker_finite (f : Hom R C M N) [IsNoetherian R M] :
     Module.Finite R (ker (R := R) (C := C) f).toSubmodule := by
-  rw [ker_toSubmodule]
-  infer_instance
+  exact (ker (R := R) (C := C) f).finite
 
 /-- Membership in the kernel subcomodule is vanishing under the morphism. -/
 @[simp]
