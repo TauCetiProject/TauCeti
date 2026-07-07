@@ -106,6 +106,27 @@ lemma laplaceTransform_nonneg (μ : Measure ℝ≥0) (t : ℝ) :
     0 ≤ laplaceTransform μ t := by
   exact integral_nonneg fun x => Real.exp_nonneg _
 
+/-- Additivity of the Laplace transform in the measure, on the nonnegative half-line where the
+kernel is integrable. -/
+lemma laplaceTransform_add (μ ν : Measure ℝ≥0) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    {t : ℝ} (ht : 0 ≤ t) :
+    laplaceTransform (μ + ν) t = laplaceTransform μ t + laplaceTransform ν t := by
+  simp only [laplaceTransform_apply]
+  exact integral_add_measure (integrable_laplaceKernel_of_nonneg μ ht)
+    (integrable_laplaceKernel_of_nonneg ν ht)
+
+/-- Scaling the measure by `c : ℝ≥0∞` scales the Laplace transform by `c.toReal`. -/
+lemma laplaceTransform_smul (c : ℝ≥0∞) (μ : Measure ℝ≥0) (t : ℝ) :
+    laplaceTransform (c • μ) t = c.toReal * laplaceTransform μ t := by
+  simp only [laplaceTransform_apply, integral_smul_measure, smul_eq_mul]
+
+/-- The Laplace transform of the Dirac mass at `x₀` is the exponential kernel `exp (-(t · x₀))`;
+the point masses are the building blocks of the representing mixtures. -/
+@[simp]
+lemma laplaceTransform_dirac (x₀ : ℝ≥0) (t : ℝ) :
+    laplaceTransform (Measure.dirac x₀) t = Real.exp (-(t * (x₀ : ℝ))) := by
+  simp only [laplaceTransform_apply, integral_dirac]
+
 /-! ## Easy direction: finite measures give completely monotone Laplace transforms -/
 
 /-- The Laplace transform of a finite measure on `ℝ≥0` is continuous on `[0, ∞)`. -/
@@ -224,6 +245,48 @@ private lemma integrable_laplaceMomentTransform_of_nonneg (μ : Measure ℝ≥0)
     _ ≤ (x : ℝ) ^ n := by
           simpa [mul_one] using mul_le_mul_of_nonneg_left hexp_le hpow
 
+/-- Pointwise derivative in the parameter of the signed Laplace moment kernel
+`y ↦ (-x)ⁿ · exp(-(y · x))`. Reused for the differentiation-under-the-integral step. -/
+private lemma hasDerivAt_laplaceMomentKernel (n : ℕ) (x : ℝ≥0) (y : ℝ) :
+    HasDerivAt (fun y : ℝ => (-(x : ℝ)) ^ n * Real.exp (-(y * (x : ℝ))))
+      ((-(x : ℝ)) ^ (n + 1) * Real.exp (-(y * (x : ℝ)))) y := by
+  have hlin : HasDerivAt (fun y : ℝ => -(y * (x : ℝ))) (-(x : ℝ)) y := by
+    have hmul : HasDerivAt (fun y : ℝ => y * (x : ℝ)) (x : ℝ) y :=
+      hasDerivAt_mul_const (x : ℝ)
+    exact hmul.neg
+  have hder := hlin.exp.const_mul ((-(x : ℝ)) ^ n)
+  simpa [pow_succ, mul_assoc, mul_comm, mul_left_comm] using hder
+
+/-- Ball-local domination for the derivative kernel: on `Metric.ball t (t/2)` (with `0 < t`) the
+derivative kernel `(-x)ⁿ⁺¹ · exp(-(y · x))` is bounded by the constant `C` supplied for
+`x ↦ xⁿ⁺¹ · exp(-((t/2)·x))` by `exists_bound_pow_mul_exp_neg`. This is the dominating bound in the
+differentiation-under-the-integral step. -/
+private lemma norm_laplaceMomentKernel_deriv_le_on_ball
+    {n : ℕ} {t : ℝ} {C : ℝ}
+    (hC : ∀ x : ℝ, 0 ≤ x → ‖x ^ (n + 1) * Real.exp (-((t / 2) * x))‖ ≤ C)
+    (x : ℝ≥0) {y : ℝ} (hy : y ∈ Metric.ball t (t / 2)) :
+    ‖(-(x : ℝ)) ^ (n + 1) * Real.exp (-(y * (x : ℝ)))‖ ≤ C := by
+  have hypos : t / 2 ≤ y := by
+    have hdist : dist y t < t / 2 := hy
+    rw [Real.dist_eq] at hdist
+    have hleft := (abs_lt.mp hdist).1
+    linarith
+  have hnonneg : 0 ≤ (x : ℝ) := x.2
+  have hle_exp : Real.exp (-(y * (x : ℝ))) ≤ Real.exp (-((t / 2) * (x : ℝ))) :=
+    Real.exp_le_exp.mpr (neg_le_neg (mul_le_mul_of_nonneg_right hypos hnonneg))
+  have hpow_nonneg : 0 ≤ (x : ℝ) ^ (n + 1) := pow_nonneg hnonneg _
+  calc
+    ‖(-(x : ℝ)) ^ (n + 1) * Real.exp (-(y * (x : ℝ)))‖
+        = (x : ℝ) ^ (n + 1) * Real.exp (-(y * (x : ℝ))) := by
+          rw [norm_mul, norm_pow, Real.norm_eq_abs, abs_neg, abs_of_nonneg hnonneg,
+            Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+    _ ≤ (x : ℝ) ^ (n + 1) * Real.exp (-((t / 2) * (x : ℝ))) :=
+          mul_le_mul_of_nonneg_left hle_exp hpow_nonneg
+    _ = ‖(x : ℝ) ^ (n + 1) * Real.exp (-((t / 2) * (x : ℝ)))‖ := by
+          rw [norm_mul, norm_pow, Real.norm_eq_abs, abs_of_nonneg hnonneg,
+            Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+    _ ≤ C := hC (x : ℝ) x.2
+
 /-- Differentiation under the integral for the signed Laplace moment kernels on `(0, ∞)`. -/
 private lemma hasDerivAt_laplaceMomentTransform (μ : Measure ℝ≥0) [IsFiniteMeasure μ]
     (n : ℕ) {t : ℝ} (ht : 0 < t) :
@@ -255,38 +318,12 @@ private lemma hasDerivAt_laplaceMomentTransform (μ : Measure ℝ≥0) [IsFinite
       (by
         refine Filter.Eventually.of_forall fun x => ?_
         intro y hy
-        have hypos : t / 2 ≤ y := by
-          have hdist : dist y t < t / 2 := hy
-          rw [Real.dist_eq] at hdist
-          have hleft := (abs_lt.mp hdist).1
-          linarith
-        have hnonneg : 0 ≤ (x : ℝ) := x.2
-        have hle_exp :
-            Real.exp (-(y * (x : ℝ))) ≤ Real.exp (-((t / 2) * (x : ℝ))) := by
-          exact Real.exp_le_exp.mpr
-            (neg_le_neg (mul_le_mul_of_nonneg_right hypos hnonneg))
-        have hpow_nonneg : 0 ≤ (x : ℝ) ^ (n + 1) := pow_nonneg hnonneg _
-        calc
-          ‖(-(x : ℝ)) ^ (n + 1) * Real.exp (-(y * (x : ℝ)))‖
-              = (x : ℝ) ^ (n + 1) * Real.exp (-(y * (x : ℝ))) := by
-                rw [norm_mul, norm_pow, Real.norm_eq_abs, abs_neg, abs_of_nonneg hnonneg,
-                  Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
-          _ ≤ (x : ℝ) ^ (n + 1) * Real.exp (-((t / 2) * (x : ℝ))) := by
-                exact mul_le_mul_of_nonneg_left hle_exp hpow_nonneg
-          _ = ‖(x : ℝ) ^ (n + 1) * Real.exp (-((t / 2) * (x : ℝ)))‖ := by
-                rw [norm_mul, norm_pow, Real.norm_eq_abs, abs_of_nonneg hnonneg,
-                  Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
-          _ ≤ C := hC (x : ℝ) x.2)
+        exact norm_laplaceMomentKernel_deriv_le_on_ball hC x hy)
       (integrable_const C)
       (by
         refine Filter.Eventually.of_forall fun x => ?_
         intro y _hy
-        have hlin : HasDerivAt (fun y : ℝ => -(y * (x : ℝ))) (-(x : ℝ)) y := by
-          have hmul : HasDerivAt (fun y : ℝ => y * (x : ℝ)) (x : ℝ) y :=
-            hasDerivAt_mul_const (x : ℝ)
-          exact hmul.neg
-        have hder := hlin.exp.const_mul ((-(x : ℝ)) ^ n)
-        simpa [pow_succ, mul_assoc, mul_comm, mul_left_comm] using hder)
+        exact hasDerivAt_laplaceMomentKernel n x y)
   have hmoment_fun :
       laplaceMomentTransform μ n =
         (fun y : ℝ => ∫ x : ℝ≥0, (-(x : ℝ)) ^ n * Real.exp (-(y * (x : ℝ))) ∂μ) := by
@@ -557,7 +594,35 @@ lemma eq_laplaceTransform (h : RepresentsLaplace f μ) {t : ℝ} (ht : 0 ≤ t) 
     f t = laplaceTransform μ t :=
   h.2 t ht
 
+/-- The sum of two representing measures represents the sum of the functions. -/
+protected lemma add {f g : ℝ → ℝ} {μ ν : Measure ℝ≥0}
+    (hf : RepresentsLaplace f μ) (hg : RepresentsLaplace g ν) :
+    RepresentsLaplace (f + g) (μ + ν) := by
+  haveI := hf.isFiniteMeasure
+  haveI := hg.isFiniteMeasure
+  refine ⟨inferInstance, fun t ht => ?_⟩
+  rw [Pi.add_apply, hf.eq_laplaceTransform ht, hg.eq_laplaceTransform ht,
+    laplaceTransform_add μ ν ht]
+
+/-- Scaling a representing measure by `c : ℝ≥0` represents the scaled function. -/
+protected lemma smul {f : ℝ → ℝ} {μ : Measure ℝ≥0} (c : ℝ≥0)
+    (hf : RepresentsLaplace f μ) :
+    RepresentsLaplace (fun t => (c : ℝ) * f t) ((c : ℝ≥0∞) • μ) := by
+  haveI := hf.isFiniteMeasure
+  haveI : IsFiniteMeasure ((c : ℝ≥0∞) • μ) := by
+    refine ⟨?_⟩
+    rw [Measure.smul_apply, smul_eq_mul]
+    exact ENNReal.mul_lt_top ENNReal.coe_lt_top (measure_lt_top μ univ)
+  refine ⟨inferInstance, fun t ht => ?_⟩
+  rw [laplaceTransform_smul, ENNReal.coe_toReal, ← hf.eq_laplaceTransform ht]
+
 end RepresentsLaplace
+
+/-- The Dirac mass at `x₀` represents the exponential kernel `t ↦ exp (-(t · x₀))`. -/
+lemma representsLaplace_dirac (x₀ : ℝ≥0) :
+    RepresentsLaplace (fun t : ℝ => Real.exp (-(t * (x₀ : ℝ)))) (Measure.dirac x₀) := by
+  refine ⟨inferInstance, fun t _ht => ?_⟩
+  rw [laplaceTransform_dirac]
 
 /-! ## Uniqueness: finite measures are determined by their Laplace transforms -/
 
