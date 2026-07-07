@@ -56,13 +56,16 @@ theorem tendsto_ae_condExp_iInf
     [IsFiniteMeasure μ]
     {𝔽 : ℕ → MeasurableSpace Ω}
     (h_filtration : Antitone 𝔽)
-    (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω))
+    (h_le0 : 𝔽 0 ≤ (inferInstance : MeasurableSpace Ω))
     (f : Ω → ℝ) (h_f_int : Integrable f μ) :
     ∀ᵐ ω ∂μ, Tendsto
       (fun n => μ[f | 𝔽 n] ω)
       atTop
       (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) := by
   classical
+  -- Only `𝔽 0 ≤ m₀` is assumed; antitonicity upgrades it to `𝔽 n ≤ m₀` for every `n`.
+  have h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω) :=
+    fun n => (h_filtration (Nat.zero_le n)).trans h_le0
   -- We follow the upcrossing-inequality route rather than reindexing by `ℕᵒᵈ`: for antitone `𝔽`,
   -- `⨆ i : ℕᵒᵈ, 𝔽 i.ofDual = 𝔽 0`, so dualising and applying Lévy's *upward* theorem would converge
   -- to the wrong limit `μ[f | 𝔽 0]` instead of `μ[f | ⨅ n, 𝔽 n]`.
