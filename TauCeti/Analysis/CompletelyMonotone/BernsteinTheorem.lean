@@ -21,7 +21,7 @@ existence and unique-existence statements.
 * `TauCeti.exists_representsLaplace_of_isCompletelyMonotone`
 * `TauCeti.exists_representsLaplace_of_isClosedCompletelyMonotone`
 * `TauCeti.hausdorff_bernstein_widder`, `TauCeti.hausdorff_bernstein_widder_unique`
-* `TauCeti.bernstein`, `TauCeti.bernstein_unique` (roadmap-facing aliases)
+* `TauCeti.bernstein` (roadmap-facing name for the unique-existence theorem)
 * `TauCeti.existsUnique_representsLaplace_of_isCompletelyMonotone`
 
 ## References
@@ -676,25 +676,19 @@ theorem hausdorff_bernstein_widder_unique (f : ℝ → ℝ) :
   hausdorff_bernstein_widder_unique_of_hausdorff_bernstein_widder
     (fun f => hausdorff_bernstein_widder f) f
 
-/-- **Bernstein's theorem** — the roadmap-facing name for `hausdorff_bernstein_widder`. -/
+/-- **Bernstein's theorem** — the roadmap-facing name (`bernstein`): a completely monotone function
+on the closed half-line has a *unique* finite representing measure. The mere-existence form is
+`hausdorff_bernstein_widder`. -/
 theorem bernstein (f : ℝ → ℝ) :
-    IsClosedCompletelyMonotone f ↔ ∃ μ : Measure ℝ≥0, RepresentsLaplace f μ :=
-  hausdorff_bernstein_widder f
-
-/-- Unique-existence Bernstein theorem — the roadmap-facing name for
-`hausdorff_bernstein_widder_unique`. -/
-theorem bernstein_unique (f : ℝ → ℝ) :
     IsClosedCompletelyMonotone f ↔ ∃! μ : Measure ℝ≥0, RepresentsLaplace f μ :=
   hausdorff_bernstein_widder_unique f
 
-/-- Strong-predicate unique-existence corollary of the Bernstein theorem. -/
+/-- Strong-predicate unique-existence corollary of the Bernstein theorem: derived from the general
+closed-half-line unique theorem via the predicate implication. -/
 theorem existsUnique_representsLaplace_of_isCompletelyMonotone
     {f : ℝ → ℝ} (hcm : IsCompletelyMonotone f) :
-    ∃! μ : Measure ℝ≥0, RepresentsLaplace f μ := by
-  obtain ⟨μ, hμ⟩ :=
-    exists_representsLaplace_of_isCompletelyMonotone hcm
-  exact ⟨μ, hμ, fun ν hν =>
-    (laplaceTransform_unique (f := f) (μ := μ) (ν := ν) hμ hν).symm⟩
+    ∃! μ : Measure ℝ≥0, RepresentsLaplace f μ :=
+  (hausdorff_bernstein_widder_unique f).mp (IsClosedCompletelyMonotone.of_isCompletelyMonotone hcm)
 
 
 end TauCeti
