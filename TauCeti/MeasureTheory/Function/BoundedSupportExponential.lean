@@ -28,7 +28,7 @@ namespace TauCeti
 
 open MeasureTheory
 
-variable {α 𝕜 β : Type*} [NormedAddCommGroup α] [MeasurableSpace α] [BorelSpace α]
+variable {α 𝕜 β : Type*} [NormedAddCommGroup α] [MeasurableSpace α] [OpensMeasurableSpace α]
 variable [RCLike 𝕜] [SecondCountableTopologyEither α 𝕜] [NormedAddCommGroup β]
 variable [NormedSpace 𝕜 β] {μ : Measure α} {g : α → β}
 
