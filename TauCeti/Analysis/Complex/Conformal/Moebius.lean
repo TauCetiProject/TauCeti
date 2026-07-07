@@ -81,7 +81,7 @@ lemma unitDiscMoebius_eq_zero_iff (a z : Complex.UnitDisc) :
   exact pseudoHyperbolicExpr_eq_zero_iff_unitDisc z a
 
 /-- The scalar unit-disc Moebius formula maps the open unit disc to itself. -/
-lemma unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one {a : ℂ} (ha : ‖a‖ < 1) :
+lemma mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha : ‖a‖ < 1) :
     MapsTo
       (fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z))
       (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
@@ -92,11 +92,11 @@ lemma unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one {a : ℂ} (ha : ‖a‖ 
       (by simpa only [mem_ball_zero_iff] using hz) ha
 
 /-- The scalar formula of a unit-disc Moebius factor maps the open unit disc to itself. -/
-lemma unitDiscMoebiusFormula_mapsTo_ball (a : Complex.UnitDisc) :
+lemma mapsTo_ball_unitDiscMoebiusFormula (a : Complex.UnitDisc) :
     MapsTo
       (fun z : ℂ => (z - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * z))
       (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) :=
-  unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one a.norm_lt_one
+  mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one a.norm_lt_one
 
 /-- The scalar Moebius formula with center of norm less than one is holomorphic on the unit disc. -/
 lemma differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha : ‖a‖ < 1) :

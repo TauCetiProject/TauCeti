@@ -57,10 +57,10 @@ theorem pseudoHyperbolicExpr_map_le {f : ℂ → ℂ}
   have hfw_norm : ‖f w‖ < 1 := by
     simpa [mem_ball_zero_iff] using hfw
   have hsource_maps : MapsTo source (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-    simpa [source] using unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one
+    simpa [source] using mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one
       (a := -(w : ℂ)) (by simpa using hw_norm)
   have htarget_maps : MapsTo target (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-    simpa [target] using unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one
+    simpa [target] using mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one
       (a := f w) hfw_norm
   have hg_maps_ball : MapsTo g (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
     intro ξ hξ
@@ -84,7 +84,7 @@ theorem pseudoHyperbolicExpr_map_le {f : ℂ → ℂ}
     simpa [mem_ball_zero_iff] using hz
   let ξ : ℂ := (z - w) / (1 - (starRingEnd ℂ) w * z)
   have hξ_mem : ξ ∈ ball (0 : ℂ) 1 := by
-    simpa [ξ] using unitDiscMoebiusFormula_mapsTo_ball_of_norm_lt_one
+    simpa [ξ] using mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one
       (a := w) hw_norm hz
   have hsource_ξ : source ξ = z := by
     have h := congrArg (fun u : Complex.UnitDisc => (u : ℂ))
