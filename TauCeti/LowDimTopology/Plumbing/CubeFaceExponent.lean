@@ -46,13 +46,18 @@ variable {V : Type*} [DecidableEq V] [Fintype V]
 variable (P : PlumbingGraph V) (k : P.characteristicVectors)
 variable (C : PlumbingCube V) {v w : V}
 
-private theorem characteristicLowerFaceExponent_natCast_lowerFace
+/-- The lower-face exponent, cast back to `ℤ`, is the difference between the bundled cube weight
+and the lower face weight. -/
+theorem characteristicLowerFaceExponent_natCast_lowerFace
     (hv : v ∈ C.directions) :
     (characteristicLowerFaceExponent P k C v : ℤ) =
       characteristicWeight P k C - characteristicWeight P k (C.lowerFace v hv) := by
   rw [characteristicLowerFaceExponent_natCast]
-  congr
-  rw [lowerFace_def]
+  have hface : C.eraseDirection v = C.lowerFace v hv := by
+    apply PlumbingCube.ext
+    · simp
+    · simp
+  rw [hface]
 
 /-- The lower-lower codimension-two square has the same total `U`-exponent along either path. -/
 theorem characteristicLowerFaceExponent_add_lowerFace_comm
