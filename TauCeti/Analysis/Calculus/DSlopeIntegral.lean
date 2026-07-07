@@ -6,7 +6,6 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Analysis.Calculus.DSlope
-public import Mathlib.Analysis.Complex.Convex
 public import Mathlib.Analysis.Complex.Liouville
 public import Mathlib.Analysis.Complex.RemovableSingularity
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -28,11 +27,10 @@ map `(c, w) ↦ dslope f c w`: joint continuity and a Cauchy bound on its `w`-de
 ## Main results
 
 * `TauCeti.dslope_eq_integral_deriv` — the integral representation on an open convex set.
-* `TauCeti.continuousOn_dslope_prod` — joint continuity of `(c, w) ↦ dslope f c w` on `U ×ˢ U`,
-  `U` open convex.
-* `TauCeti.continuousOn_dslope_prod_open` — joint continuity on `U ×ˢ U` for arbitrary open `U`.
-* `TauCeti.continuousOn_dslope_first_arg_open` — continuity of `c ↦ dslope f c w₀` on open `U`.
-* `TauCeti.deriv_dslope_bounded_on_compact_open` — a uniform Cauchy bound on `deriv (dslope f c) w`
+* `TauCeti.continuousOn_dslope_prod` — joint continuity of `(c, w) ↦ dslope f c w` on `U ×ˢ U` for
+  arbitrary open `U`.
+* `TauCeti.continuousOn_dslope_first_arg` — continuity of `c ↦ dslope f c w₀` on open `U`.
+* `TauCeti.deriv_dslope_bounded_on_compact` — a uniform bound on `‖deriv (dslope f c) w‖`
   for `c` in a compact subset of `U` and `w` near a point of `U`.
 
 ## Provenance
@@ -76,10 +74,8 @@ theorem dslope_eq_integral_deriv {U : Set ℂ} (hU : Convex ℝ U) (hU_open : Is
   · have hne : w - c ≠ 0 := sub_ne_zero.mpr hwc
     have h_mul : (w - c) * ∫ t in (0 : ℝ)..1, deriv f (c + t • (w - c)) = f w - f c := by
       rwa [← smul_eq_mul]
-    rw [dslope_of_ne f hwc, slope_def_module, smul_eq_mul]
-    rw [show (w - c)⁻¹ * (f w - f c) = ∫ t in (0 : ℝ)..1, deriv f (c + t • (w - c))
-      from ?_]
-    rw [← h_mul, ← mul_assoc, inv_mul_cancel₀ hne, one_mul]
+    rw [dslope_of_ne f hwc, slope_def_module, smul_eq_mul, ← h_mul, ← mul_assoc,
+      inv_mul_cancel₀ hne, one_mul]
 
 private lemma exists_compact_tube_prod {U : Set ℂ} (hU : Convex ℝ U) (hU_open : IsOpen U)
     {c₀ w₀ : ℂ} (hc₀ : c₀ ∈ U) (hw₀ : w₀ ∈ U) :
@@ -110,13 +106,14 @@ private lemma exists_compact_tube_prod {U : Set ℂ} (hU : Convex ℝ U) (hU_ope
     refine ⟨(c, w, t), ⟨?_, ?_, ht⟩, ?_⟩
     · rw [Metric.mem_closedBall]; linarith
     · rw [Metric.mem_closedBall]; linarith
-    · change (1 - t) • c + t • w = c + t • (w - c)
+    · -- beta-reduce the applied image map to its evaluated form before `module`
+      change (1 - t) • c + t • w = c + t • (w - c)
       module
 
 /-- Joint continuity of `(c, w) ↦ dslope f c w` on `U × U` for `f` differentiable
 on open convex `U`. -/
-theorem continuousOn_dslope_prod {U : Set ℂ} (hU : Convex ℝ U) (hU_open : IsOpen U)
-    (hf : DifferentiableOn ℂ f U) :
+private theorem continuousOn_dslope_prod_of_convex {U : Set ℂ} (hU : Convex ℝ U)
+    (hU_open : IsOpen U) (hf : DifferentiableOn ℂ f U) :
     ContinuousOn (fun p : ℂ × ℂ ↦ dslope f p.1 p.2) (U ×ˢ U) := by
   rintro ⟨c₀, w₀⟩ ⟨hc₀, hw₀⟩
   obtain ⟨ε, hε_pos, K, hK_sub, hK_compact, hK_tube⟩ :=
@@ -159,26 +156,16 @@ theorem continuousOn_dslope_prod {U : Set ℂ} (hU : Convex ℝ U) (hU_open : Is
     exact (h_deriv_contU.continuousAt (hU_open.mem_nhds hmem)).comp_of_eq
       (by continuity : Continuous _).continuousAt rfl
 
-/-- **Joint continuity of `dslope` on any open set** (without convexity).
-
-The convex `continuousOn_dslope_prod` proof uses `dslope_eq_integral_deriv` which
-requires the segment `[c, w]` to lie in `U`. For non-convex `U`, the segment may
-exit `U`, so this proof splits cases:
-
-* Off-diagonal `c₀ ≠ w₀`: `dslope f c w = (f w − f c)/(w − c)` for `w ≠ c`, and
-  this equality holds eventually near `(c₀, w₀)` (since `w₀ − c₀ ≠ 0`).
-  Continuity of `f` on `U` then gives joint continuity of the quotient.
-* Diagonal `c₀ = w₀`: any open ball around `c₀` inside `U` is convex, so the
-  convex theorem `continuousOn_dslope_prod` applies on the ball, giving
-  `ContinuousAt` at `(c₀, c₀)`. -/
-theorem continuousOn_dslope_prod_open {U : Set ℂ} (hU_open : IsOpen U)
+/-- **Joint continuity of `(c, w) ↦ dslope f c w` on `U ×ˢ U`** for `f` differentiable on an
+arbitrary open set `U` (no convexity assumption). -/
+theorem continuousOn_dslope_prod {U : Set ℂ} (hU_open : IsOpen U)
     (hf : DifferentiableOn ℂ f U) :
     ContinuousOn (fun p : ℂ × ℂ ↦ dslope f p.1 p.2) (U ×ˢ U) := by
   rintro ⟨c₀, w₀⟩ ⟨hc₀, hw₀⟩
   by_cases h_eq : c₀ = w₀
   · subst h_eq
     obtain ⟨ρ, hρ_pos, hρ_sub⟩ := Metric.isOpen_iff.mp hU_open c₀ hc₀
-    exact ((continuousOn_dslope_prod (convex_ball c₀ ρ) Metric.isOpen_ball
+    exact ((continuousOn_dslope_prod_of_convex (convex_ball c₀ ρ) Metric.isOpen_ball
       (hf.mono hρ_sub)).continuousAt ((Metric.isOpen_ball.prod
         Metric.isOpen_ball).mem_nhds ⟨Metric.mem_ball_self hρ_pos,
           Metric.mem_ball_self hρ_pos⟩)).continuousWithinAt
@@ -203,21 +190,19 @@ theorem continuousOn_dslope_prod_open {U : Set ℂ} (hU_open : IsOpen U)
     exact (h_quot_cont.congr h_eq_nbhd.symm).continuousWithinAt
 
 /-- **Continuity of `c ↦ dslope f c w₀` on any open set `U`** (no convexity).
-Follows from `continuousOn_dslope_prod_open` by partial application. -/
-theorem continuousOn_dslope_first_arg_open {U : Set ℂ} (hU_open : IsOpen U)
+Follows from `continuousOn_dslope_prod` by partial application. -/
+theorem continuousOn_dslope_first_arg {U : Set ℂ} (hU_open : IsOpen U)
     (hf : DifferentiableOn ℂ f U) {w₀ : ℂ} (hw₀ : w₀ ∈ U) :
     ContinuousOn (fun c ↦ dslope f c w₀) U := by
   rw [show (fun c : ℂ ↦ dslope f c w₀) =
     (fun p : ℂ × ℂ ↦ dslope f p.1 p.2) ∘ (fun c : ℂ ↦ (c, w₀)) from rfl]
-  exact (continuousOn_dslope_prod_open hU_open hf).comp
+  exact (continuousOn_dslope_prod hU_open hf).comp
     (continuous_id.prodMk continuous_const).continuousOn fun c hc ↦ ⟨hc, hw₀⟩
 
-/-- **Uniform bound on `deriv (dslope f c) w`** for `c` in a compact subset of an
-open set `U` and `w` in a ball around `w₀ ∈ U`. Cauchy's estimate applied to
-`dslope f c` (analytic on `U` by `Complex.differentiableOn_dslope`). The bound is
-`2M/ρ` where `M = sup_{(c, z) ∈ K_c × closedBall w₀ (3ρ/2)} ‖dslope f c z‖`
-(finite by joint continuity on a compact set). -/
-theorem deriv_dslope_bounded_on_compact_open {U : Set ℂ} (hU_open : IsOpen U)
+/-- **Uniform bound on `deriv (dslope f c) w`.** For `f` differentiable on an open set `U`, with `c`
+ranging over a compact subset of `U` and `w` over a small ball around a point `w₀ ∈ U`, the norm
+`‖deriv (dslope f c) w‖` is bounded by a single constant. -/
+theorem deriv_dslope_bounded_on_compact {U : Set ℂ} (hU_open : IsOpen U)
     (hf : DifferentiableOn ℂ f U) {K_c : Set ℂ} (hK_compact : IsCompact K_c)
     (hK_sub : K_c ⊆ U) {w₀ : ℂ} (hw₀ : w₀ ∈ U) :
     ∃ C > 0, ∃ δ > 0, ∀ c ∈ K_c, ∀ w ∈ Metric.ball w₀ δ,
@@ -233,7 +218,7 @@ theorem deriv_dslope_bounded_on_compact_open {U : Set ℂ} (hU_open : IsOpen U)
   have hKprod_compact : IsCompact (K_c ×ˢ Metric.closedBall w₀ (3 * ρ / 2)) :=
     hK_compact.prod (isCompact_closedBall _ _)
   obtain ⟨M, hM⟩ :=
-    hKprod_compact.bddAbove_image ((continuousOn_dslope_prod_open hU_open hf).mono hK_sub_prod).norm
+    hKprod_compact.bddAbove_image ((continuousOn_dslope_prod hU_open hf).mono hK_sub_prod).norm
   refine ⟨max M 0 / (ρ / 2) + 1, by positivity, ρ / 2, by positivity, ?_⟩
   intro c hc w hw
   rw [Metric.mem_ball] at hw
