@@ -48,6 +48,7 @@ variable {n : ℕ} (G : GridDiagram n)
 /-- The coefficient of `∂ (∂ x)` at `z` is the finite sum over all intermediate grid states
 `y` of the product of the two rectangle-count coefficients. This is the matrix multiplication
 formula for the fully blocked differential. -/
+@[simp]
 theorem fullyBlockedDifferential_sq_single_apply (x z : GridState n) :
     G.fullyBlockedDifferential
         (G.fullyBlockedDifferential (Finsupp.single x (1 : ZMod 2))) z =
