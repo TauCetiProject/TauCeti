@@ -28,6 +28,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq`: for a
   normal subgroup, equality of two translates in the `H`-orbit quotient is equality of the
   corresponding inverse representatives in `N(H) / H`.
+* `TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal`: in a free transitive
+  action, the quotient by a normal subgroup is the normalizer quotient `N(H) / H`.
 * `TauCeti.MulAction.normalizerOrbitRelQuotientPermHom`: the normalizer action on the
   quotient by `H`-orbits.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotientPermHom`: the descended action of
@@ -176,6 +178,16 @@ lemma orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq [IsCancelSMu
     Subgroup.normalizerQuotientMk_eq_iff_div_mem, div_eq_mul_inv, inv_inv,
     (inferInstance : H.Normal).mem_comm_iff, ← inv_mem_iff]
   simp [mul_inv_rev]
+
+/-- Mathlib's subgroup-orbit quotient equivalence sends the coset of `g` back to the orbit
+class of `g⁻¹ • x`. -/
+private lemma equivSubgroupOrbitsQuotientGroup_symm_mk
+    [MulAction.IsPretransitive G X] [IsCancelSMul G X]
+    (H : Subgroup G) (x : X) (g : G) :
+    (MulAction.equivSubgroupOrbitsQuotientGroup x H).symm
+        (QuotientGroup.mk (s := H) g) =
+      (Quotient.mk'' (g⁻¹ • x) : _root_.MulAction.orbitRel.Quotient H X) :=
+  rfl
 
 private lemma normalizer_smul_mem_orbit (H : Subgroup G)
     (g : _root_.Subgroup.normalizer (H : Set G))
@@ -340,6 +352,101 @@ lemma normalizerQuotientOrbitRelQuotient_smul_mk (H : Subgroup G)
         (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((g : G) • x)
     exact normalizerQuotientOrbitRelQuotientPermHom_mk_apply (X := X) H g x
+
+/-- In a free transitive action, quotienting by a normal subgroup `H` identifies the
+`H`-orbit quotient with the normalizer quotient `N(H) / H`. The representative convention is
+the same as Mathlib's `equivSubgroupOrbitsQuotientGroup`: the class of `g • x` corresponds to
+the class of `g⁻¹`. -/
+noncomputable def orbitRelQuotientEquivNormalizerQuotientOfNormal
+    [MulAction.IsPretransitive G X] [IsCancelSMul G X]
+    (H : Subgroup G) [H.Normal] (x : X) :
+    _root_.MulAction.orbitRel.Quotient H X ≃ Subgroup.normalizerQuotient H :=
+  (MulAction.equivSubgroupOrbitsQuotientGroup x H).trans
+    (Subgroup.normalizerQuotientEquivQuotientOfNormal H).toEquiv.symm
+
+/-- The normal-subgroup orbit quotient equivalence, followed by the normalizer quotient's
+normal-case comparison, is Mathlib's equivalence to `G ⧸ H`. -/
+@[simp]
+lemma normalizerQuotientEquivQuotientOfNormal_orbitRelQuotientEquivNormalizerQuotientOfNormal
+    [MulAction.IsPretransitive G X] [IsCancelSMul G X]
+    (H : Subgroup G) [H.Normal] (x₀ : X)
+    (x : _root_.MulAction.orbitRel.Quotient H X) :
+    Subgroup.normalizerQuotientEquivQuotientOfNormal H
+        (orbitRelQuotientEquivNormalizerQuotientOfNormal H x₀ x) =
+      MulAction.equivSubgroupOrbitsQuotientGroup x₀ H x :=
+  (Subgroup.normalizerQuotientEquivQuotientOfNormal H).toEquiv.apply_symm_apply
+    (MulAction.equivSubgroupOrbitsQuotientGroup x₀ H x)
+
+/-- The inverse normal-subgroup orbit-quotient equivalence sends a normalizer representative
+to the orbit class of its inverse acting on the base point. -/
+@[simp]
+lemma orbitRelQuotientEquivNormalizerQuotientOfNormal_symm_mk
+    [MulAction.IsPretransitive G X] [IsCancelSMul G X]
+    (H : Subgroup G) [H.Normal] (x : X)
+    (g : _root_.Subgroup.normalizer (H : Set G)) :
+    (orbitRelQuotientEquivNormalizerQuotientOfNormal H x).symm
+        (g : Subgroup.normalizerQuotient H) =
+      (Quotient.mk'' ((g : G)⁻¹ • x) : _root_.MulAction.orbitRel.Quotient H X) := by
+  -- The new equivalence is definitionally Mathlib's orbit-quotient equivalence transposed
+  -- across the normal-subgroup comparison `N(H) / H ≃ G ⧸ H`.
+  change (MulAction.equivSubgroupOrbitsQuotientGroup x H).symm
+      (Subgroup.normalizerQuotientEquivQuotientOfNormal H
+        (Subgroup.normalizerQuotientMk H g)) =
+    (Quotient.mk'' ((g : G)⁻¹ • x) : _root_.MulAction.orbitRel.Quotient H X)
+  rw [Subgroup.normalizerQuotientEquivQuotientOfNormal_mk]
+  exact equivSubgroupOrbitsQuotientGroup_symm_mk H x (g : G)
+
+/-- The normal-subgroup orbit-quotient equivalence sends the class of `g • x` to the
+normalizer-quotient class of `g⁻¹`. -/
+@[simp]
+lemma orbitRelQuotientEquivNormalizerQuotientOfNormal_apply_smul
+    [MulAction.IsPretransitive G X] [IsCancelSMul G X]
+    (H : Subgroup G) [H.Normal] (x : X) (g : G) :
+    orbitRelQuotientEquivNormalizerQuotientOfNormal H x
+        (Quotient.mk'' (g • x) : _root_.MulAction.orbitRel.Quotient H X) =
+      Subgroup.normalizerQuotientMk H
+        ⟨g⁻¹, by simp [_root_.Subgroup.normalizer_eq_top (H := H)]⟩ := by
+  rw [(orbitRelQuotientEquivNormalizerQuotientOfNormal H x).apply_eq_iff_eq_symm_apply]
+  rw [Subgroup.normalizerQuotientMk_apply]
+  rw [orbitRelQuotientEquivNormalizerQuotientOfNormal_symm_mk]
+  simp
+
+/-- Under the normal-subgroup orbit-quotient equivalence, the descended normalizer-quotient
+action is right multiplication by the inverse. -/
+@[simp]
+lemma orbitRelQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_inv
+    [MulAction.IsPretransitive G X] [IsCancelSMul G X]
+    (H : Subgroup G) [H.Normal] (x₀ : X)
+    (a : Subgroup.normalizerQuotient H)
+    (x : _root_.MulAction.orbitRel.Quotient H X) :
+    letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+    orbitRelQuotientEquivNormalizerQuotientOfNormal H x₀ (a • x) =
+      orbitRelQuotientEquivNormalizerQuotientOfNormal H x₀ x * a⁻¹ := by
+  letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+  obtain ⟨g, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H a
+  refine Quotient.inductionOn' x ?_
+  intro x
+  obtain ⟨k, hk⟩ := MulAction.exists_smul_eq G x₀ x
+  rw [← hk]
+  rw [normalizerQuotientOrbitRelQuotient_smul_mk, ← mul_smul,
+    orbitRelQuotientEquivNormalizerQuotientOfNormal_apply_smul,
+    orbitRelQuotientEquivNormalizerQuotientOfNormal_apply_smul]
+  apply (Subgroup.normalizerQuotientEquivQuotientOfNormal H).injective
+  simp [mul_inv_rev]
+
+/-- Applying the inverse normal-subgroup orbit-quotient equivalence after right
+multiplication by `a⁻¹` is the same as acting by `a` on the orbit quotient. -/
+lemma orbitRelQuotientEquivNormalizerQuotientOfNormal_symm_mul_inv
+    [MulAction.IsPretransitive G X] [IsCancelSMul G X]
+    (H : Subgroup G) [H.Normal] (x₀ : X) (a y : Subgroup.normalizerQuotient H) :
+    letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+    (orbitRelQuotientEquivNormalizerQuotientOfNormal H x₀).symm (y * a⁻¹) =
+      a • (orbitRelQuotientEquivNormalizerQuotientOfNormal H x₀).symm y := by
+  letI := normalizerQuotientOrbitRelQuotientMulAction (X := X) H
+  apply (orbitRelQuotientEquivNormalizerQuotientOfNormal H x₀).injective
+  rw [Equiv.apply_symm_apply,
+    orbitRelQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_inv,
+    Equiv.apply_symm_apply]
 
 /-- If the normalizer of `H` acts transitively on `X`, then the descended `N(H) / H` action on
 the quotient by `H`-orbits is transitive. -/
