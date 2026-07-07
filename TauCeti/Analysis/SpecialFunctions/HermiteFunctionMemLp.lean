@@ -7,6 +7,7 @@ Authors: Claude
 -/
 public import TauCeti.Analysis.SpecialFunctions.HermiteFunction
 public import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
+import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 
 /-!
 # Integrability and `L²` membership of the Hermite functions
@@ -88,5 +89,46 @@ theorem memLp_two_hermiteFunction (n : ℕ) : MemLp (hermiteFunction n) 2 volume
     rw [hermiteFunction_def, div_pow, mul_pow, henv, eval_pow, eval_hermiteComp]
   rw [hfun]
   exact (integrable_eval_mul_exp_neg_sq _).div_const _
+
+/-! ## Zeroth-mode normalization -/
+
+/-- The zeroth Hermite function has square integral one. This is the `n = 0` boundary case of
+the roadmap's Hermite-function orthonormality target. -/
+@[simp]
+lemma integral_hermiteFunction_zero_mul_self :
+    ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x = 1 := by
+  have hsqrt_sqrt_pi_sq :
+      Real.sqrt (Real.sqrt Real.pi) ^ 2 = Real.sqrt Real.pi := by
+    rw [Real.sq_sqrt (Real.sqrt_nonneg Real.pi)]
+  calc
+    ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x
+        = ∫ x : ℝ,
+            Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
+              (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)) := by
+          refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+          dsimp only
+          rw [hermiteFunction_zero]
+    _ = ∫ x : ℝ,
+          Real.exp (-x ^ 2) / Real.sqrt (Real.sqrt Real.pi) ^ 2 := by
+          refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+          dsimp only
+          have henv : Real.exp (-(x ^ 2 / 2)) * Real.exp (-(x ^ 2 / 2)) =
+              Real.exp (-x ^ 2) := by
+            rw [← Real.exp_add]
+            congr 1
+            ring
+          rw [div_mul_div_comm, henv]
+          ring_nf
+    _ = (Real.sqrt (Real.sqrt Real.pi) ^ 2)⁻¹ * ∫ x : ℝ, Real.exp (-x ^ 2) := by
+          rw [← integral_const_mul]
+          refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+          ring
+    _ = 1 := by
+          have hgauss : ∫ x : ℝ, Real.exp (-x ^ 2) = Real.sqrt Real.pi := by
+            convert integral_gaussian (1 : ℝ) using 1
+            · ring_nf
+            · ring_nf
+          rw [hgauss, hsqrt_sqrt_pi_sq]
+          field_simp [Real.sqrt_ne_zero'.mpr (Real.sqrt_pos.2 Real.pi_pos)]
 
 end TauCeti

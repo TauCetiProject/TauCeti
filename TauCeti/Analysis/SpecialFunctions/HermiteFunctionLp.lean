@@ -6,7 +6,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Codex
 -/
 public import TauCeti.Analysis.SpecialFunctions.HermiteFunctionMemLp
-import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 
 /-!
 # Hermite functions as `L²` vectors
@@ -37,22 +36,6 @@ theorem memLp_two_algebraMap_hermiteFunction (n : ℕ) :
   simpa only [RCLike.algebraMap_eq_ofReal] using
     (memLp_two_hermiteFunction n).ofReal (K := 𝕜)
 
-/-- The scalar-cast zeroth Hermite function lies in `L²(volume)`. -/
-theorem memLp_two_algebraMap_hermiteFunction_zero :
-    MemLp (fun x : ℝ =>
-      (algebraMap ℝ 𝕜) (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi))) 2 volume := by
-  simpa only [hermiteFunction_zero] using
-    (memLp_two_algebraMap_hermiteFunction (𝕜 := 𝕜) 0)
-
-/-- The scalar-cast first Hermite function lies in `L²(volume)`. -/
-theorem memLp_two_algebraMap_hermiteFunction_one :
-    MemLp (fun x : ℝ =>
-      (algebraMap ℝ 𝕜)
-        (Real.sqrt 2 * x * Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi))) 2
-      volume := by
-  simpa only [hermiteFunction_one_eq] using
-    (memLp_two_algebraMap_hermiteFunction (𝕜 := 𝕜) 1)
-
 /-! ## `Lp` packaging -/
 
 /-- The `n`th Hermite function as a vector of `L²(ℝ, volume; 𝕜)`, with the real pointwise
@@ -75,87 +58,13 @@ lemma coeFn_hermiteFunctionLp_real (n : ℕ) :
   filter_upwards [coeFn_hermiteFunctionLp (𝕜 := ℝ) n] with x hx
   simpa using hx
 
-/-- The zeroth `Lp` Hermite function is represented by the Gaussian envelope with its
-normalization. -/
-lemma coeFn_hermiteFunctionLp_zero :
-    ⇑(hermiteFunctionLp 𝕜 0) =ᵐ[volume]
-      fun x : ℝ =>
-        (algebraMap ℝ 𝕜) (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)) := by
-  filter_upwards [coeFn_hermiteFunctionLp (𝕜 := 𝕜) 0] with x hx
-  simpa only [hermiteFunction_zero] using hx
-
-/-- The first `Lp` Hermite function is represented by `sqrt 2 * x` times the zeroth
-pointwise Hermite function. -/
-lemma coeFn_hermiteFunctionLp_one :
-    ⇑(hermiteFunctionLp 𝕜 1) =ᵐ[volume]
-      fun x : ℝ => (algebraMap ℝ 𝕜) (Real.sqrt 2 * x * hermiteFunction 0 x) := by
-  filter_upwards [coeFn_hermiteFunctionLp (𝕜 := 𝕜) 1] with x hx
-  simpa only [hermiteFunction_one] using hx
-
-/-- The first `Lp` Hermite function in fully expanded pointwise form. -/
-lemma coeFn_hermiteFunctionLp_one_eq :
-    ⇑(hermiteFunctionLp 𝕜 1) =ᵐ[volume]
-      fun x : ℝ =>
-        (algebraMap ℝ 𝕜)
-          (Real.sqrt 2 * x * Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)) := by
-  filter_upwards [coeFn_hermiteFunctionLp (𝕜 := 𝕜) 1] with x hx
-  simpa only [hermiteFunction_one_eq] using hx
-
-/-- The second `Lp` Hermite function in pointwise form. -/
-lemma coeFn_hermiteFunctionLp_two :
-    ⇑(hermiteFunctionLp 𝕜 2) =ᵐ[volume]
-      fun x : ℝ =>
-        (algebraMap ℝ 𝕜)
-          (((x * Real.sqrt 2) ^ 2 - 1) * Real.exp (-(x ^ 2 / 2)) /
-            Real.sqrt ((2 : ℝ) * Real.sqrt Real.pi)) := by
-  filter_upwards [coeFn_hermiteFunctionLp (𝕜 := 𝕜) 2] with x hx
-  simpa only [hermiteFunction_two] using hx
-
 /-! ## Zeroth-mode normalization -/
-
-/-- The zeroth Hermite function has square integral one. This is the `n = 0` boundary case of
-the roadmap's Hermite-function orthonormality target, using Mathlib's Gaussian integral. -/
-@[simp]
-lemma integral_hermiteFunction_zero_mul_self :
-    ∫ x : ℝ,
-      Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
-        (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)) = 1 := by
-  have hsqrt_sqrt_pi_sq :
-      Real.sqrt (Real.sqrt Real.pi) ^ 2 = Real.sqrt Real.pi := by
-    rw [Real.sq_sqrt (Real.sqrt_nonneg Real.pi)]
-  calc
-    ∫ x : ℝ,
-      Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
-        (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi))
-        = ∫ x : ℝ,
-            Real.exp (-x ^ 2) / Real.sqrt (Real.sqrt Real.pi) ^ 2 := by
-          refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-          dsimp only
-          have henv : Real.exp (-(x ^ 2 / 2)) * Real.exp (-(x ^ 2 / 2)) =
-              Real.exp (-x ^ 2) := by
-            rw [← Real.exp_add]
-            congr 1
-            ring
-          rw [div_mul_div_comm, henv]
-          ring_nf
-    _ = (Real.sqrt (Real.sqrt Real.pi) ^ 2)⁻¹ * ∫ x : ℝ, Real.exp (-x ^ 2) := by
-          rw [← integral_const_mul]
-          refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-          ring
-    _ = 1 := by
-          have hgauss : ∫ x : ℝ, Real.exp (-x ^ 2) = Real.sqrt Real.pi := by
-            convert integral_gaussian (1 : ℝ) using 1
-            · ring_nf
-            · ring_nf
-          rw [hgauss, hsqrt_sqrt_pi_sq]
-          field_simp [Real.sqrt_ne_zero'.mpr (Real.sqrt_pos.2 Real.pi_pos)]
 
 /-- The zeroth `Lp` Hermite function has inner product one with itself, over any `RCLike`
 scalar field. -/
 @[simp]
 lemma inner_hermiteFunctionLp_zero_zero :
-    (↑‖hermiteFunctionLp 𝕜 0‖ ^ 2 : 𝕜) = 1 := by
-  rw [← inner_self_eq_norm_sq_to_K]
+    inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0) = 1 := by
   have hinner : ∀ a b : ℝ,
       inner 𝕜 ((algebraMap ℝ 𝕜) a) ((algebraMap ℝ 𝕜) b) =
         (algebraMap ℝ 𝕜) (a * b) := by
