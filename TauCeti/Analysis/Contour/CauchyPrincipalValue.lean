@@ -343,14 +343,10 @@ theorem HasCauchyPVAt.translate {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
   refine HasCauchyPVAt.intro ?_ ?_
   · filter_upwards [h.eventually_intervalIntegrable] with ε hε
     refine (intervalIntegrable_congr fun t _ => ?_).mpr hε
-    by_cases hεt : ‖γ t - z₀‖ > ε
-    · simp [hεt]
-    · simp [hεt]
+    simp [add_sub_add_right_eq_sub, add_sub_cancel_right, deriv_add_const]
   · refine h.tendsto.congr fun ε => ?_
     refine intervalIntegral.integral_congr fun t _ => ?_
-    by_cases hεt : ‖γ t - z₀‖ > ε
-    · simp [hεt]
-    · simp [hεt]
+    simp [add_sub_add_right_eq_sub, add_sub_cancel_right, deriv_add_const]
 
 /-- Existence form of `HasCauchyPVAt.translate`: simultaneous translation preserves existence of a
 single-point Cauchy principal value. -/
@@ -369,9 +365,7 @@ theorem cauchyPVAt_translate {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z
   congr 1
   ext ε
   refine intervalIntegral.integral_congr fun t _ => ?_
-  by_cases hεt : ‖γ t - z₀‖ > ε
-  · simp [hεt]
-  · simp [hεt]
+  simp [add_sub_add_right_eq_sub, add_sub_cancel_right, deriv_add_const]
 
 /-- Reversing the interval orientation negates a single-point Cauchy principal value. -/
 theorem HasCauchyPVAt.symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ L : ℂ}

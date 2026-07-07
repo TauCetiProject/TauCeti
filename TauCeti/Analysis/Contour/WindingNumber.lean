@@ -60,7 +60,6 @@ namespace TauCeti.Contour
 principal-value normalization of the index integral for a curve `γ : ℝ → ℂ` on `[a, b]` and any
 point `z₀`. See `windingNumber_eq_integral_of_avoidance` for its reduction to the ordinary index
 integral; as a `limUnder`-based value it is junk when the principal value does not exist. -/
-@[expose]
 def windingNumber (γ : ℝ → ℂ) (a b : ℝ) (z₀ : ℂ) : ℂ :=
   (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * cauchyPVAt γ a b (fun z => (z - z₀)⁻¹) z₀
 
@@ -70,7 +69,7 @@ value-level rewrites. -/
 theorem windingNumber_eq_cauchyPVAt {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} :
     windingNumber γ a b z₀ =
       (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * cauchyPVAt γ a b (fun z => (z - z₀)⁻¹) z₀ :=
-  rfl
+  (rfl)
 
 /-- **Characteristic value lemma.** From a Cauchy principal-value witness for `(· − z₀)⁻¹` along
 `γ`, the generalized winding number is the normalized value `(2πi)⁻¹ · L`. This evaluates

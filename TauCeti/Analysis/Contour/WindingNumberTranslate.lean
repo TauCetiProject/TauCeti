@@ -58,12 +58,6 @@ theorem windingNumber_translate (c : ℂ) :
     congr 1
     ring
 
-/-- Pointwise vanishing of a winding number is preserved by simultaneous translation of the curve
-and the base point. -/
-theorem windingNumber_eq_zero_translate (hzero : windingNumber γ a b z₀ = 0) (c : ℂ) :
-    windingNumber (fun t => γ t + c) a b (z₀ + c) = 0 := by
-  rw [windingNumber_translate c, hzero]
-
 /-- Null-homology is preserved by translating the curve and the ambient set together. -/
 theorem IsNullHomologous.translate (h : IsNullHomologous γ a b Ω) (c : ℂ) :
     IsNullHomologous (fun t => γ t + c) a b ((fun z => z + c) '' Ω) := by
@@ -73,8 +67,8 @@ theorem IsNullHomologous.translate (h : IsNullHomologous γ a b Ω) (c : ℂ) :
     intro hzΩ
     exact hz ⟨z - c, hzΩ, by ring⟩
   have hpoint : z = (z - c) + c := by ring
-  rw [hpoint]
-  exact windingNumber_eq_zero_translate (h (z - c) hz_sub) c
+  rw [hpoint, windingNumber_translate c]
+  exact h (z - c) hz_sub
 
 end TauCeti.Contour
 
