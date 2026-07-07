@@ -76,6 +76,21 @@ private lemma regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_s
     regularSubgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_eq,
     Equiv.apply_symm_apply]
 
+private lemma subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_eq
+    [MulAction.IsPretransitive (Deck p) (p ⁻¹' {b})] [IsCancelSMul (Deck p) (p ⁻¹' {b})]
+    (H : Subgroup (Deck p)) [H.Normal] (e : p ⁻¹' {b}) :
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal H e =
+      TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal
+        (G := Deck p) (X := p ⁻¹' {b}) H e := by
+  ext x
+  refine Quotient.inductionOn' x ?_
+  intro e'
+  obtain ⟨φ, hφ⟩ := MulAction.exists_smul_eq (Deck p) e e'
+  rw [← hφ, ← subgroupFiberOrbitClass_eq_mk H (φ • e),
+    subgroupFiberOrbitQuotientEquivNormalizerQuotientOfNormal_apply_smul,
+    subgroupFiberOrbitClass_eq_mk,
+    TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_apply_smul]
+
 /-- Under the normal-subgroup fibre quotient equivalence, the descended normalizer-quotient
 action is right multiplication by the inverse. This is the representative-free form of the
 convention that `φ • e` maps to the class of `φ⁻¹`. -/
