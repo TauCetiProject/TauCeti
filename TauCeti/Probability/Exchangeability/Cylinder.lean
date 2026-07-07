@@ -111,6 +111,8 @@ theorem blockIndicatorProd_empty (X : ℕ → Ω → α) (k : Fin 0 → ℕ) (C 
   funext ω
   simp [blockIndicatorProd]
 
+-- Adapted from `cameronfreer/exchangeability` (`DeFinetti/ViaMartingale/IndicatorAlgebra.lean`,
+-- pin `e0532e59ceff23edab44dda9ab0655debbc9cc22`), matching this file's module-level credit.
 omit [MeasurableSpace Ω] [MeasurableSpace α] in
 /-- **Successor split of the indicator product.** Splitting off the last selected coordinate, the
 length-`r+1` indicator product equals the indicator of the length-`r` prefix cylinder intersected
