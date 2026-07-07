@@ -64,7 +64,8 @@ lemma coeFn_hermiteFunctionLp_real (n : ℕ) :
 scalar field. -/
 @[simp]
 lemma inner_hermiteFunctionLp_zero_zero :
-    inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0) = 1 := by
+    (↑‖hermiteFunctionLp 𝕜 0‖ ^ 2 : 𝕜) = 1 := by
+  rw [← inner_self_eq_norm_sq_to_K]
   have hinner : ∀ a b : ℝ,
       inner 𝕜 ((algebraMap ℝ 𝕜) a) ((algebraMap ℝ 𝕜) b) =
         (algebraMap ℝ 𝕜) (a * b) := by
@@ -80,7 +81,7 @@ lemma inner_hermiteFunctionLp_zero_zero :
           exact hinner (hermiteFunction 0 x) (hermiteFunction 0 x)
     _ = 1 := by
           rw [integral_ofReal]
-          simpa only [map_one] using
+          simpa only [hermiteFunction_zero, map_one] using
             congrArg (algebraMap ℝ 𝕜) integral_hermiteFunction_zero_mul_self
 
 end TauCeti
