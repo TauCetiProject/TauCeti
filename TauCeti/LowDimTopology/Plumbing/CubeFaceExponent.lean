@@ -26,6 +26,8 @@ the same codimension-two generator; the lemmas here add that they also carry the
 * `TauCeti.PlumbingCube.characteristicUpperFaceExponent_add_upperFace_comm`: upper-upper square.
 * `TauCeti.PlumbingCube.characteristicLowerFaceExponent_add_upperFace_comm`: lower-then-upper
   equals upper-then-lower.
+* `TauCeti.PlumbingCube.characteristicUpperFaceExponent_add_lowerFace_comm`: upper-then-lower
+  equals lower-then-upper.
 
 ## References
 
@@ -103,6 +105,19 @@ theorem characteristicLowerFaceExponent_add_upperFace_comm
     simpa [lowerFace_def] using C.lowerFace_upperFace_comm hv hw hne
   rw [hcorner]
   omega
+
+/-- The upper-then-lower mixed codimension-two square has the same total `U`-exponent as the
+lower-then-upper path to the same corner. -/
+theorem characteristicUpperFaceExponent_add_lowerFace_comm
+    (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
+    characteristicUpperFaceExponent P k C (v := v) hv +
+        characteristicLowerFaceExponent P k (C.upperFace v hv) w =
+      characteristicLowerFaceExponent P k C w +
+        characteristicUpperFaceExponent P k (C.lowerFace w hw)
+          (v := v)
+          (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv) := by
+  simpa [add_comm] using (characteristicLowerFaceExponent_add_upperFace_comm
+    (P := P) (k := k) (C := C) (v := w) (w := v) hw hv hne.symm).symm
 
 end PlumbingCube
 
