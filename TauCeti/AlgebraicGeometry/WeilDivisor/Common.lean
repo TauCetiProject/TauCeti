@@ -54,7 +54,6 @@ lemma coe_commonPart (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfD
   rfl
 
 /-- The coefficient of the common part is the minimum of the two coefficients. -/
-@[simp]
 lemma coeff_commonPart (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e)
     (x : X) :
     coeff (commonPart D E : WeilDivisor X) x =
@@ -130,7 +129,6 @@ lemma coe_rightResidual (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisor
   rfl
 
 /-- The coefficient of the left residual is `coeff D x - min (coeff D x) (coeff E x)`. -/
-@[simp]
 lemma coeff_leftResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) (x : X) :
     coeff (leftResidual D E : WeilDivisor X) x =
@@ -139,7 +137,6 @@ lemma coeff_leftResidual (D : EffectiveDivisorOfDegree X d)
   rw [coe_leftResidual, WeilDivisor.coeff_sub, coeff_commonPart]
 
 /-- The coefficient of the right residual is `coeff E x - min (coeff D x) (coeff E x)`. -/
-@[simp]
 lemma coeff_rightResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) (x : X) :
     coeff (rightResidual D E : WeilDivisor X) x =
@@ -161,7 +158,6 @@ private lemma sub_inf_inf_sub_inf_eq_zero (a b : ℤ) :
 
 /-- The two residual divisors left after removing the common part are coefficientwise
 disjoint. -/
-@[simp]
 lemma leftResidual_inf_rightResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     ((leftResidual D E : WeilDivisor X) ⊓ rightResidual D E) = 0 := by
@@ -171,7 +167,6 @@ lemma leftResidual_inf_rightResidual (D : EffectiveDivisorOfDegree X d)
 
 /-- Removing the common part from the left divisor and adding it back recovers the left
 divisor, up to the natural degree-index cast. -/
-@[simp]
 lemma leftResidual_add_commonPart (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     add (leftResidual D E) (commonPart D E) =
@@ -181,7 +176,6 @@ lemma leftResidual_add_commonPart (D : EffectiveDivisorOfDegree X d)
 
 /-- Adding the common part before the left residual also recovers the left divisor, up to the
 natural degree-index cast. -/
-@[simp]
 lemma commonPart_add_leftResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     add (commonPart D E) (leftResidual D E) =
@@ -191,7 +185,6 @@ lemma commonPart_add_leftResidual (D : EffectiveDivisorOfDegree X d)
 
 /-- Removing the common part from the right divisor and adding it back recovers the right
 divisor, up to the natural degree-index cast. -/
-@[simp]
 lemma rightResidual_add_commonPart (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     add (rightResidual D E) (commonPart D E) =
@@ -201,7 +194,6 @@ lemma rightResidual_add_commonPart (D : EffectiveDivisorOfDegree X d)
 
 /-- Adding the common part before the right residual also recovers the right divisor, up to the
 natural degree-index cast. -/
-@[simp]
 lemma commonPart_add_rightResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     add (commonPart D E) (rightResidual D E) =
