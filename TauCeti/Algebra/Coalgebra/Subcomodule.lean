@@ -26,6 +26,8 @@ subcomodules and the fundamental theorem of comodules. Later work can use
 * `TauCeti.Subcomodule.toSubmodule`: the underlying submodule.
 * `⊤` and `⊥`: the full and zero subcomodules.
 * `TauCeti.Subcomodule.map`: the image of a subcomodule under a comodule morphism.
+* `TauCeti.Subcomodule.map_finite`: images preserve finite generation of the underlying
+  submodule.
 * `TauCeti.Comodule.Hom.range`: the image subcomodule of a comodule morphism.
 
 ## References
