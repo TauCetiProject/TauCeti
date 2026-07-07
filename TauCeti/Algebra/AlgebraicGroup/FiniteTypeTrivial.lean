@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.FiniteTypeCommHopfAlgCat
+public import TauCeti.Algebra.AlgebraicGroup.Trivial
 
 /-!
 # The finite-type trivial affine group
@@ -94,6 +95,13 @@ lemma counit_apply (H : FiniteTypeCommHopfAlgCat.{u, u} R) (h : H) :
     toBialgHom (counit H) h = Coalgebra.counit h :=
   _root_.Bialgebra.counitBialgHom_apply h
 
+/-- The counit retracts the unit back to the identity of the trivial coordinate Hopf algebra. -/
+lemma unit_comp_counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
+    unit H ≫ counit H = 𝟙 (trivial R) := by
+  apply hom_ext
+  apply _root_.BialgHom.coe_toAlgHom_injective
+  exact Subsingleton.elim _ _
+
 /-- The finite-type trivial coordinate Hopf algebra is initial in the coordinate category.
 
 Equivalently, in the opposite affine-group-scheme direction it represents the terminal
@@ -117,14 +125,8 @@ variable (A : CommAlgCat.{w} R)
 
 /-- The functor of points of the finite-type trivial affine group is the one-element group. -/
 noncomputable def trivialPointsMulEquiv :
-    HopfAlgebra.points (R := R) (H := trivial R) A ≃* PUnit.{1} where
-  toFun _ := PUnit.unit
-  invFun _ := toConv (Algebra.ofId R A)
-  left_inv f := by
-    apply WithConv.ofConv_injective
-    exact Subsingleton.elim _ _
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
+    HopfAlgebra.points (R := R) (H := trivial R) A ≃* PUnit.{1} :=
+  TrivialGroup.pointsMulEquiv (R := R) (A := A)
 
 /-- The finite-type trivial-points equivalence sends every point to the unique element of
 `PUnit`. -/
@@ -132,15 +134,14 @@ noncomputable def trivialPointsMulEquiv :
 theorem trivialPointsMulEquiv_apply
     (f : HopfAlgebra.points (R := R) (H := trivial R) A) :
     trivialPointsMulEquiv A f = PUnit.unit :=
-  rfl
+  TrivialGroup.pointsMulEquiv_apply (R := R) (A := A) f
 
 /-- The inverse finite-type trivial-points equivalence sends the unique element of `PUnit` to
 `Algebra.ofId`. -/
 @[simp]
 theorem trivialPointsMulEquiv_symm_apply (u : PUnit.{1}) :
-    (trivialPointsMulEquiv A).symm u = toConv (Algebra.ofId R A) := by
-  cases u
-  rfl
+    (trivialPointsMulEquiv A).symm u = toConv (Algebra.ofId R A) :=
+  TrivialGroup.pointsMulEquiv_symm_apply (R := R) (A := A) u
 
 variable {A} {B : CommAlgCat.{w} R}
 
@@ -150,14 +151,13 @@ theorem trivialPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (f : HopfAlgebra.points (R := R) (H := trivial R) A) :
     trivialPointsMulEquiv B (AlgHom.mapValue (H := trivial R) φ f) =
       trivialPointsMulEquiv A f :=
-  rfl
+  TrivialGroup.pointsMulEquiv_mapValue (R := R) (A := A) (B := B) φ f
 
 /-- Naturality of the inverse finite-type trivial-points equivalence in the value algebra. -/
 theorem mapValue_trivialPointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (u : PUnit.{1}) :
     AlgHom.mapValue (H := trivial R) φ ((trivialPointsMulEquiv A).symm u) =
-      (trivialPointsMulEquiv B).symm u := by
-  apply (trivialPointsMulEquiv B).injective
-  rw [trivialPointsMulEquiv_mapValue]
+      (trivialPointsMulEquiv B).symm u :=
+  TrivialGroup.mapValue_pointsMulEquiv_symm_apply (R := R) (A := A) (B := B) φ u
 
 end FiniteTypeCommHopfAlgCat
 
