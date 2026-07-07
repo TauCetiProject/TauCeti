@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 /-!
 # Exponential moments from bounded support
 
-This file records a small compact-support integrability principle used by the
+This file records a small bounded-support integrability principle used by the
 `OrthogonalL2Bases` roadmap's moment-determinacy route.  If a measure is supported where the
 argument norm is essentially bounded, multiplying an integrable function by any exponential
 weight `exp (a * ‖x‖)` preserves integrability.  On `ℝ`, this gives the corresponding
@@ -28,8 +28,9 @@ namespace TauCeti
 
 open MeasureTheory
 
-variable {α 𝕜 : Type*} [NormedAddCommGroup α] [MeasurableSpace α] [BorelSpace α]
-variable [RCLike 𝕜] [SecondCountableTopologyEither α 𝕜] {μ : Measure α} {g : α → 𝕜}
+variable {α 𝕜 β : Type*} [NormedAddCommGroup α] [MeasurableSpace α] [BorelSpace α]
+variable [RCLike 𝕜] [SecondCountableTopologyEither α 𝕜] [NormedAddCommGroup β]
+variable [NormedSpace 𝕜 β] {μ : Measure α} {g : α → β}
 
 /-- Multiplication by `exp (a * ‖x‖)` preserves integrability on a measure whose support is
 essentially contained in a closed ball. -/
@@ -51,7 +52,7 @@ protected theorem Integrable.exp_norm_smul_of_ae_norm_le (hg : Integrable g μ) 
     Real.exp_le_exp.mpr (hmul_left.trans hmul_right)
 
 /-- Real-line version of `Integrable.exp_norm_smul_of_ae_norm_le`, stated with `|x|`. -/
-protected theorem Integrable.exp_abs_smul_of_ae_abs_le {μ : Measure ℝ} {g : ℝ → 𝕜}
+protected theorem Integrable.exp_abs_smul_of_ae_abs_le {μ : Measure ℝ} {g : ℝ → β}
     (hg : Integrable g μ) (a R : ℝ) (hR : ∀ᵐ x ∂μ, |x| ≤ R) :
     Integrable (fun x : ℝ => (Real.exp (a * |x|) : 𝕜) • g x) μ := by
   simpa [Real.norm_eq_abs] using

@@ -3,7 +3,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Real
-import TauCeti.MeasureTheory.Function.CompactSupportExponential
+import TauCeti.MeasureTheory.Function.BoundedSupportExponential
 import Mathlib.Topology.Algebra.Polynomial
 
 /-!
