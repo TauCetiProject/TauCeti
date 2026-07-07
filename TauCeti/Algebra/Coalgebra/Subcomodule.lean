@@ -29,6 +29,7 @@ subcomodules and the fundamental theorem of comodules. Later work can use
 * `TauCeti.Subcomodule.map_finite`: images preserve finite generation of the underlying
   submodule.
 * `TauCeti.Comodule.Hom.range`: the image subcomodule of a comodule morphism.
+* `TauCeti.Comodule.Hom.range_finite`: ranges of morphisms out of finite modules are finite.
 
 ## References
 
@@ -342,6 +343,13 @@ def range (f : Hom R C M N) : Subcomodule R C N :=
 theorem range_toSubmodule (f : Hom R C M N) :
     (range (R := R) (C := C) f).toSubmodule = LinearMap.range f.toLinearMap := by
   rw [range, Subcomodule.map_top_toSubmodule]
+
+/-- The range of a comodule morphism out of a finitely generated module is finitely generated
+as an `R`-module. -/
+theorem range_finite (f : Hom R C M N) [Module.Finite R M] :
+    Module.Finite R (range (R := R) (C := C) f).toSubmodule := by
+  rw [range_toSubmodule]
+  infer_instance
 
 @[simp]
 theorem mem_range {f : Hom R C M N} {n : N} :
