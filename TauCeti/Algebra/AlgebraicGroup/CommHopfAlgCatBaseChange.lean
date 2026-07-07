@@ -121,7 +121,7 @@ lemma baseChangeFunctor_map {H L : _root_.CommHopfAlgCat.{v} k} (φ : H ⟶ L) :
 
 variable (A : CommAlgCat.{x} K)
 
-/-- The points of the base-changed finite-type Hopf algebra are the original points evaluated
+/-- The points of the base-changed Hopf algebra are the original points evaluated
 on the same algebra, with scalars restricted from `K` to `k`. -/
 noncomputable def baseChangePointsMulEquiv (H : _root_.CommHopfAlgCat.{v} k) :
     HopfAlgebra.points (R := K) (H := baseChange (K := K) H) A ≃*

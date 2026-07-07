@@ -94,18 +94,6 @@ lemma restrictScalars_map (f : k →+* K) {A B : _root_.CommAlgCat.{x} K} (χ : 
     (restrictScalars f).map χ = restrictScalarsMap f χ :=
   (rfl)
 
-/-- The underlying algebra hom of `restrictScalars.map` is restriction of scalars on the
-original algebra hom. -/
-lemma restrictScalars_map_hom (f : k →+* K) {A B : _root_.CommAlgCat.{x} K} (χ : A ⟶ B) :
-    ((restrictScalars f).map χ).hom =
-      letI : Algebra k K := f.toAlgebra
-      letI : Algebra k A := Algebra.compHom A f
-      letI : IsScalarTower k K A := IsScalarTower.of_algebraMap_eq' rfl
-      letI : Algebra k B := Algebra.compHom B f
-      letI : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
-      χ.hom.restrictScalars k :=
-  (rfl)
-
 end CommAlgCat
 
 end TauCeti
