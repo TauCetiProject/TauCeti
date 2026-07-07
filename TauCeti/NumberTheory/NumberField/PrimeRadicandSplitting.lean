@@ -70,7 +70,6 @@ theorem ncard_primesOver_sqrtPrimes_iff {ι : Type*} [Finite ι] (p : ι → ℕ
 /-- The Legendre-symbol condition for the two radicands `2` and `3`, written without the
 `Fin 2` dependent family. This is the character side of the `ℚ(√2, √3)` complete-splitting
 criterion. -/
-@[simp]
 theorem forall_legendreSym_two_three_eq_one_iff {q : ℕ} [Fact q.Prime] :
     (∀ i : Fin 2, legendreSym q ((![2, 3] : Fin 2 → ℕ) i : ℤ) = 1) ↔
       legendreSym q (2 : ℤ) = 1 ∧ legendreSym q (3 : ℤ) = 1 := by
