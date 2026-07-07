@@ -21,8 +21,9 @@ result (`Martingale/AntitoneLimit.lean`) all feed into `condExp_tendsto_iInf`.
 ## Main results
 
 - `tendsto_ae_condExp_iInf`: Lévy's downward theorem — for antitone `𝔽` and integrable `f`, the
-  sequence `μ[f | 𝔽 n]` converges a.e. to `μ[f | ⨅ n, 𝔽 n]` (the reverse-martingale limit). The
-  roadmap Layer-4 handle `condExp_tendsto_iInf` is exposed as an `alias`.
+  sequence `μ[f | 𝔽 n]` converges a.e. to `μ[f | ⨅ n, 𝔽 n]` (the reverse-martingale limit). This is
+  the roadmap Layer-4 target (roadmap README name `condExp_tendsto_iInf`), spelled in the Mathlib
+  convergence-API grammar (conclusion-first) required by the naming convention.
 
 ## References
 
@@ -111,10 +112,5 @@ theorem tendsto_ae_condExp_iInf
   filter_upwards [h_tendsto, hXlim_eq] with ω h_tend h_eq
   rw [h_eq]
   exact h_tend
-
-/-- The exact roadmap Layer-4 target name, exposed as the roadmap handle. The primary theorem
-`tendsto_ae_condExp_iInf` uses the Mathlib convergence-API grammar (`tendsto_ae_…`); this `alias`
-gives downstream users the roadmap identifier. -/
-alias condExp_tendsto_iInf := tendsto_ae_condExp_iInf
 
 end MeasureTheory
