@@ -16,13 +16,17 @@ Hopf-algebra category this object is initial: the unique morphism from `R` to a 
 Hopf algebra is the bialgebra unit map `R → H`. Contravariantly, this is the terminal object
 `Spec R` over `Spec R` in the affine-group-scheme dictionary.
 
+The file also records the counit morphism `H → R` and the pointwise formulas for the unit and
+counit maps.
+
 This is Layer 0 infrastructure for the ReductiveGroups roadmap: the finite-type
 coordinate-Hopf-algebra model needs the terminal affine group object over the base, separate
 from the already available raw Hopf-algebra points calculation in `TrivialGroup.pointsMulEquiv`.
 
 ## References
 
-The bialgebra unit map is Mathlib's `Bialgebra.unitBialgHom`.
+The bialgebra unit and counit maps are Mathlib's `Bialgebra.unitBialgHom` and
+`Bialgebra.counitBialgHom`.
 -/
 
 public section
@@ -72,6 +76,25 @@ lemma unit_apply (H : FiniteTypeCommHopfAlgCat.{u, u} R) (r : R) :
     toBialgHom (unit H) r = algebraMap R H r :=
   rfl
 
+/-- The coordinate morphism from a finite-type affine group to the trivial affine group.
+
+On coordinate Hopf algebras this is the bialgebra counit map `H → R`, contravariant to the
+identity section `Spec R → G`. -/
+noncomputable abbrev counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
+    H ⟶ trivial R :=
+  ofHom (_root_.Bialgebra.counitBialgHom R H)
+
+/-- The finite-type coordinate counit morphism unwraps to Mathlib's bialgebra counit map. -/
+@[simp]
+lemma toBialgHom_counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
+    toBialgHom (counit H) = _root_.Bialgebra.counitBialgHom R H :=
+  rfl
+
+/-- Pointwise formula for the coordinate counit map `H → R`. -/
+lemma counit_apply (H : FiniteTypeCommHopfAlgCat.{u, u} R) (h : H) :
+    toBialgHom (counit H) h = Coalgebra.counit h :=
+  _root_.Bialgebra.counitBialgHom_apply h
+
 /-- The finite-type trivial coordinate Hopf algebra is initial in the coordinate category.
 
 Equivalently, in the opposite affine-group-scheme direction it represents the terminal
@@ -91,7 +114,7 @@ lemma eq_unit (H : FiniteTypeCommHopfAlgCat.{u, u} R)
     f = unit H :=
   (trivialIsInitial (R := R)).hom_ext f (unit H)
 
-variable (A : CommAlgCat.{w} R)
+variable (A : CommAlgCat.{v} R)
 
 /-- The functor of points of the finite-type trivial affine group is the one-element group. -/
 noncomputable def trivialPointsMulEquiv :
@@ -113,7 +136,7 @@ theorem trivialPointsMulEquiv_symm_apply (u : PUnit.{1}) :
     (trivialPointsMulEquiv A).symm u = toConv (Algebra.ofId R A) :=
   TrivialGroup.pointsMulEquiv_symm_apply (R := R) (A := A) u
 
-variable {A} {B : CommAlgCat.{w} R}
+variable {A : CommAlgCat.{v} R} {B : CommAlgCat.{w} R}
 
 /-- The finite-type trivial-points equivalence is natural in the value algebra.
 
