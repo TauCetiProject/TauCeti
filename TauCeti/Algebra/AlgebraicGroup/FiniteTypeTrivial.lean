@@ -145,8 +145,10 @@ theorem trivialPointsMulEquiv_symm_apply (u : PUnit.{1}) :
 
 variable {A} {B : CommAlgCat.{w} R}
 
-/-- The finite-type trivial-points equivalence is natural in the value algebra. -/
-@[simp]
+/-- The finite-type trivial-points equivalence is natural in the value algebra.
+
+This is not a `simp` lemma: `trivialPointsMulEquiv_apply` already rewrites both sides to
+`PUnit.unit`, so tagging it `@[simp]` would leave its left-hand side out of normal form. -/
 theorem trivialPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (f : HopfAlgebra.points (R := R) (H := trivial R) A) :
     trivialPointsMulEquiv B (AlgHom.mapValue (H := trivial R) φ f) =
