@@ -266,14 +266,6 @@ theorem characteristicLowerFaceExponent_natCast [Fintype V] (P : PlumbingGraph V
     simp [characteristicLowerFaceExponent_def, characteristicWeight_def, eraseDirection_base,
       eraseDirection_directions]
 
-/-- The lower-face exponent, cast back to `ℤ`, is the difference between the bundled cube weight
-and the lower face weight. -/
-theorem characteristicLowerFaceExponent_natCast_lowerFace [Fintype V] (P : PlumbingGraph V)
-    (k : P.characteristicVectors) (C : PlumbingCube V) {v : V} (hv : v ∈ C.directions) :
-    (characteristicLowerFaceExponent P k C v : ℤ) =
-      characteristicWeight P k C - characteristicWeight P k (C.lowerFace v hv) := by
-  simp [lowerFace_def]
-
 /-- The upper-face exponent, cast back to `ℤ`, is the difference between the bundled cube weight
 and the upper face weight. -/
 @[simp]

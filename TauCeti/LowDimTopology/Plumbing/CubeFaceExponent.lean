@@ -53,13 +53,13 @@ theorem characteristicLowerFaceExponent_add_lowerFace_comm
         characteristicLowerFaceExponent P k (C.lowerFace w hw) v := by
   apply Nat.cast_injective (R := ℤ)
   rw [Int.natCast_add, Int.natCast_add]
-  rw [characteristicLowerFaceExponent_natCast_lowerFace P k C hv,
-    characteristicLowerFaceExponent_natCast_lowerFace P k (C.lowerFace v hv)
-      (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne.symm hw),
-    characteristicLowerFaceExponent_natCast_lowerFace P k C hw,
-    characteristicLowerFaceExponent_natCast_lowerFace P k (C.lowerFace w hw)
-      (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv)]
-  rw [C.lowerFace_lowerFace_comm hv hw hne]
+  rw [characteristicLowerFaceExponent_natCast, characteristicLowerFaceExponent_natCast,
+    characteristicLowerFaceExponent_natCast, characteristicLowerFaceExponent_natCast]
+  simp only [lowerFace_def]
+  have hcorner :
+      (C.eraseDirection v).eraseDirection w = (C.eraseDirection w).eraseDirection v := by
+    simpa [lowerFace_def] using C.lowerFace_lowerFace_comm hv hw hne
+  rw [hcorner]
   omega
 
 /-- The upper-upper codimension-two square has the same total `U`-exponent along either path. -/
@@ -92,11 +92,16 @@ theorem characteristicLowerFaceExponent_add_upperFace_comm
         characteristicLowerFaceExponent P k (C.upperFace w hw) v := by
   apply Nat.cast_injective (R := ℤ)
   rw [Int.natCast_add, Int.natCast_add]
-  rw [characteristicLowerFaceExponent_natCast_lowerFace P k C hv,
+  rw [characteristicLowerFaceExponent_natCast P k C v,
     characteristicUpperFaceExponent_natCast, characteristicUpperFaceExponent_natCast,
-    characteristicLowerFaceExponent_natCast_lowerFace P k (C.upperFace w hw)
-      (by rw [upperFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv)]
-  rw [C.lowerFace_upperFace_comm hv hw hne]
+    characteristicLowerFaceExponent_natCast P k (C.upperFace w hw) v]
+  simp only [lowerFace_def]
+  have hcorner :
+      (C.eraseDirection v).upperFace w
+          (by rw [eraseDirection_directions]; exact Finset.mem_erase_of_ne_of_mem hne.symm hw) =
+        (C.upperFace w hw).eraseDirection v := by
+    simpa [lowerFace_def] using C.lowerFace_upperFace_comm hv hw hne
+  rw [hcorner]
   omega
 
 end PlumbingCube
