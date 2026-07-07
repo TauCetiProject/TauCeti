@@ -77,7 +77,7 @@ lemma restrictScalarsMap_hom {A B : _root_.CommAlgCat.{x} K}
   rfl
 
 /-- The restriction-of-scalars functor `CommAlgCat K ⥤ CommAlgCat k` along `f : k →+* K`. -/
-@[expose] noncomputable def restrictScalars (f : k →+* K) :
+noncomputable abbrev restrictScalars (f : k →+* K) :
     _root_.CommAlgCat.{x} K ⥤ _root_.CommAlgCat.{x} k where
   obj A := restrictScalarsObj f A
   map χ := restrictScalarsMap f χ
@@ -86,13 +86,13 @@ lemma restrictScalarsMap_hom {A B : _root_.CommAlgCat.{x} K}
 @[simp]
 lemma restrictScalars_obj (f : k →+* K) (A : _root_.CommAlgCat.{x} K) :
     (restrictScalars f).obj A = restrictScalarsObj f A :=
-  rfl
+  (rfl)
 
 /-- The morphism part of `restrictScalars` is restriction of scalars on morphisms. -/
 @[simp]
 lemma restrictScalars_map (f : k →+* K) {A B : _root_.CommAlgCat.{x} K} (χ : A ⟶ B) :
     (restrictScalars f).map χ = restrictScalarsMap f χ :=
-  rfl
+  (rfl)
 
 /-- The underlying algebra hom of `restrictScalars.map` is restriction of scalars on the
 original algebra hom. -/
@@ -105,7 +105,7 @@ lemma restrictScalars_map_hom (f : k →+* K) {A B : _root_.CommAlgCat.{x} K} (�
       letI : Algebra k B := Algebra.compHom B f
       letI : IsScalarTower k K B := IsScalarTower.of_algebraMap_eq' rfl
       χ.hom.restrictScalars k :=
-  rfl
+  (rfl)
 
 end CommAlgCat
 

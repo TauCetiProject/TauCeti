@@ -71,6 +71,7 @@ lemma hom_baseChangeMap {H L : _root_.CommHopfAlgCat.{v} k}
   rfl
 
 /-- On pure tensors, `baseChangeMap` applies the original morphism to the second factor. -/
+@[simp]
 lemma baseChangeMap_apply_tmul {H L : _root_.CommHopfAlgCat.{v} k}
     (φ : H ⟶ L) (s : K) (h : H) :
     (baseChangeMap (K := K) φ).hom (s ⊗ₜ[k] h) = s ⊗ₜ[k] φ.hom h := by
@@ -78,7 +79,7 @@ lemma baseChangeMap_apply_tmul {H L : _root_.CommHopfAlgCat.{v} k}
     _root_.BialgHom.id_apply]
 
 /-- Base change is functorial on commutative Hopf algebras. -/
-@[expose] noncomputable def baseChangeFunctor :
+noncomputable abbrev baseChangeFunctor :
     _root_.CommHopfAlgCat.{v} k ⥤ _root_.CommHopfAlgCat.{max w v} K where
   obj H := baseChange (K := K) H
   map φ := baseChangeMap (K := K) φ
@@ -111,13 +112,13 @@ lemma baseChangeMap_apply_tmul {H L : _root_.CommHopfAlgCat.{v} k}
 @[simp]
 lemma baseChangeFunctor_obj (H : _root_.CommHopfAlgCat.{v} k) :
     (baseChangeFunctor (K := K)).obj H = baseChange (K := K) H :=
-  rfl
+  (rfl)
 
 /-- The morphism part of `baseChangeFunctor` is scalar extension of coordinate morphisms. -/
 @[simp]
 lemma baseChangeFunctor_map {H L : _root_.CommHopfAlgCat.{v} k} (φ : H ⟶ L) :
     (baseChangeFunctor (K := K)).map φ = baseChangeMap (K := K) φ :=
-  rfl
+  (rfl)
 
 variable (A : CommAlgCat.{x} K)
 

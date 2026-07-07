@@ -73,13 +73,14 @@ lemma toBialgHom_baseChangeMap {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
   rfl
 
 /-- On pure tensors, `baseChangeMap` applies the original morphism to the second factor. -/
+@[simp]
 lemma baseChangeMap_apply_tmul {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
     (φ : H ⟶ L) (s : K) (h : H) :
     toBialgHom (baseChangeMap (K := K) φ) (s ⊗ₜ[k] h) = s ⊗ₜ[k] toBialgHom φ h :=
   CommHopfAlgCat.baseChangeMap_apply_tmul (K := K) φ.hom s h
 
 /-- Base change is functorial on finite-type commutative Hopf algebras. -/
-@[expose] noncomputable def baseChangeFunctor :
+noncomputable abbrev baseChangeFunctor :
     FiniteTypeCommHopfAlgCat.{u, v} k ⥤ FiniteTypeCommHopfAlgCat.{w, max w v} K where
   obj H := baseChange (K := K) H
   map φ := baseChangeMap (K := K) φ
@@ -96,13 +97,13 @@ lemma baseChangeMap_apply_tmul {H L : FiniteTypeCommHopfAlgCat.{u, v} k}
 @[simp]
 lemma baseChangeFunctor_obj (H : FiniteTypeCommHopfAlgCat.{u, v} k) :
     (baseChangeFunctor (K := K)).obj H = baseChange (K := K) H :=
-  rfl
+  (rfl)
 
 /-- The morphism part of `baseChangeFunctor` is scalar extension of coordinate morphisms. -/
 @[simp]
 lemma baseChangeFunctor_map {H L : FiniteTypeCommHopfAlgCat.{u, v} k} (φ : H ⟶ L) :
     (baseChangeFunctor (K := K)).map φ = baseChangeMap (K := K) φ :=
-  rfl
+  (rfl)
 
 variable (A : CommAlgCat.{x} K)
 
