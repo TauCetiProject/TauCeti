@@ -37,22 +37,6 @@ open InnerProductSpace Laplacian Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- A maximum over a set becomes a local maximum when the maximizing point is an interior point
-of the set. -/
-theorem IsMaxOn.isLocalMax_of_mem_interior {f : E → ℝ} {s : Set E} {x : E}
-    (hmax : IsMaxOn f s x) (hx : x ∈ interior s) :
-    IsLocalMax f x :=
-  hmax.isLocalMax (mem_interior_iff_mem_nhds.mp hx)
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- A minimum over a set becomes a local minimum when the minimizing point is an interior point
-of the set. -/
-theorem IsMinOn.isLocalMin_of_mem_interior {f : E → ℝ} {s : Set E} {x : E}
-    (hmin : IsMinOn f s x) (hx : x ∈ interior s) :
-    IsLocalMin f x :=
-  hmin.isLocalMin (mem_interior_iff_mem_nhds.mp hx)
-
 /-- **Boundary maximum principle for strictly subharmonic functions.**
 
 Let `K` be compact and nonempty. If `f` is continuous on `K`, is `C²` at every interior point,
@@ -69,7 +53,7 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_pos {K : Set E} (hK : IsCompact
   refine ⟨subset_closure hxK, ?_⟩
   intro hxint
   exact not_isLocalMax_of_laplacian_pos (hcd hxint) (hlap hxint)
-    (IsMaxOn.isLocalMax_of_mem_interior hxmax hxint)
+    (hxmax.isLocalMax (mem_interior_iff_mem_nhds.mp hxint))
 
 /-- **Boundary minimum principle for strictly superharmonic functions.**
 
@@ -87,7 +71,7 @@ theorem exists_mem_frontier_isMinOn_of_laplacian_neg {K : Set E} (hK : IsCompact
   refine ⟨subset_closure hxK, ?_⟩
   intro hxint
   exact not_isLocalMin_of_laplacian_neg (hcd hxint) (hlap hxint)
-    (IsMinOn.isLocalMin_of_mem_interior hxmin hxint)
+    (hxmin.isLocalMin (mem_interior_iff_mem_nhds.mp hxint))
 
 end TauCeti
 
