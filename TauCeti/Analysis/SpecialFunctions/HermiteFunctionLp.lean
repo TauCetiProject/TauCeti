@@ -64,13 +64,13 @@ lemma coeFn_hermiteFunctionLp_real (n : ℕ) :
 scalar field. -/
 @[simp]
 lemma inner_hermiteFunctionLp_zero_zero :
-    inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0) = 1 := by
+    (↑‖hermiteFunctionLp 𝕜 0‖ ^ 2 : 𝕜) = 1 := by
   have hinner : ∀ a b : ℝ,
       inner 𝕜 ((algebraMap ℝ 𝕜) a) ((algebraMap ℝ 𝕜) b) =
         (algebraMap ℝ 𝕜) (a * b) := by
     intro a b
     simp [RCLike.inner_apply, RCLike.conj_ofReal, map_mul, mul_comm]
-  rw [MeasureTheory.L2.inner_def]
+  rw [← inner_self_eq_norm_sq_to_K, MeasureTheory.L2.inner_def]
   calc
     ∫ x : ℝ, inner 𝕜 ((hermiteFunctionLp 𝕜 0) x) ((hermiteFunctionLp 𝕜 0) x) ∂volume
         = ∫ x : ℝ, (algebraMap ℝ 𝕜) (hermiteFunction 0 x * hermiteFunction 0 x) := by
@@ -80,7 +80,7 @@ lemma inner_hermiteFunctionLp_zero_zero :
           exact hinner (hermiteFunction 0 x) (hermiteFunction 0 x)
     _ = 1 := by
           rw [integral_ofReal]
-          simpa only [hermiteFunction_zero, map_one] using
+          simpa only [hermiteFunction_zero, map_one, map_mul] using
             congrArg (algebraMap ℝ 𝕜) integral_hermiteFunction_zero_mul_self
 
 end TauCeti
