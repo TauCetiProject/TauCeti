@@ -31,11 +31,6 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X
 
 namespace StronglyContinuousSemigroup
 
--- `expShift`'s body is exposed (`@[expose] section`) so that its `irreducible_def`
--- unfolding lemma `expShift_def` type-checks at the module interface; the definition
--- stays irreducible for tactics, only its body becomes visible across modules.
-@[expose] section
-
 /-- The exponential shift of a C₀-semigroup by `lambda`.
 
 At nonnegative time `t`, this is the semigroup `exp (-lambda t) • S(t)`.  It shifts
@@ -52,7 +47,7 @@ irreducible_def expShift (S : StronglyContinuousSemigroup X) (lambda : ℝ) :
     congr 1
     rw [← Real.exp_add]
     congr 1
-    ring_nf
+    ring
   continuousAt_zero' x := by
     have h_exp : Filter.Tendsto (fun t : ℝ≥0 => Real.exp (-(lambda * (t : ℝ))))
         (nhds 0) (nhds 1) := by
@@ -61,8 +56,6 @@ irreducible_def expShift (S : StronglyContinuousSemigroup X) (lambda : ℝ) :
       simpa using h_cont.tendsto
     have h_orbit := S.continuousAt_zero_tendsto x
     simpa [ContinuousAt, S.map_zero_apply] using h_exp.smul h_orbit
-
-end
 
 omit [CompleteSpace X] in
 /-- The native nonnegative-time operator of the exponential shift. -/
@@ -96,7 +89,7 @@ theorem expShift_expShift (S : StronglyContinuousSemigroup X) (lambda μ : ℝ) 
   simp only [expShift_apply_apply]
   rw [smul_smul, ← Real.exp_add]
   congr 1
-  ring_nf
+  ring
 
 omit [CompleteSpace X] in
 /-- Real-time form of the shifted operator at nonnegative times. -/
@@ -124,7 +117,7 @@ theorem expShift_realOperator_apply_of_nonneg (S : StronglyContinuousSemigroup X
     (S.expShift lambda).realOperator t x =
       Real.exp (-(lambda * t)) • S.realOperator t x := by
   rw [S.expShift_realOperator_of_nonneg lambda t ht]
-  rfl
+  rw [smul_apply]
 
 namespace HasGrowthBound
 
@@ -145,13 +138,9 @@ theorem expShift {S : StronglyContinuousSemigroup X} {ω M lambda : ℝ}
     _ = M * Real.exp ((ω - lambda) * t) := by
         rw [← Real.exp_add]
         congr 1
-        ring_nf
+        ring
 
 end HasGrowthBound
-
--- Exposed for the same reason as `expShift`: keeps `expShiftContraction_def` type-checking
--- at the module interface while the definition stays irreducible for tactics.
-@[expose] section
 
 /-- A semigroup with growth bound `(lambda, 1)` becomes a contraction semigroup after
 exponential shifting by `lambda`. -/
@@ -164,8 +153,6 @@ irreducible_def expShiftContraction (S : StronglyContinuousSemigroup X) (lambda 
     rw [realOperator_coe] at hbound
     rw [sub_self, zero_mul, Real.exp_zero, mul_one] at hbound
     exact hbound
-
-end
 
 omit [CompleteSpace X] in
 /-- The C₀-semigroup underlying `expShiftContraction` is the exponential shift. -/
