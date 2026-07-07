@@ -26,8 +26,6 @@ the same codimension-two generator; the lemmas here add that they also carry the
 * `TauCeti.PlumbingCube.characteristicUpperFaceExponent_add_upperFace_comm`: upper-upper square.
 * `TauCeti.PlumbingCube.characteristicLowerFaceExponent_add_upperFace_comm`: lower-then-upper
   equals upper-then-lower.
-* `TauCeti.PlumbingCube.characteristicUpperFaceExponent_add_lowerFace_comm`: upper-then-lower
-  equals lower-then-upper.
 
 ## References
 
@@ -46,14 +44,7 @@ variable {V : Type*} [DecidableEq V] [DecidableEq (V → ℤ)] [Fintype V]
 variable (P : PlumbingGraph V) (k : P.characteristicVectors)
 variable (C : PlumbingCube V) {v w : V}
 
-private theorem characteristicLowerFaceExponent_natCast_lowerFace
-    {C : PlumbingCube V} {v : V} (hv : v ∈ C.directions) :
-    (characteristicLowerFaceExponent P k C v : ℤ) =
-      characteristicWeight P k C - characteristicWeight P k (C.lowerFace v hv) := by
-  simp [lowerFace_def]
-
-/-- The lower-lower codimension-two square has the same total `U`-exponent along either path.
-Both sides telescope to the ambient cube weight minus the common lower-lower corner weight. -/
+/-- The lower-lower codimension-two square has the same total `U`-exponent along either path. -/
 theorem characteristicLowerFaceExponent_add_lowerFace_comm
     (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
     characteristicLowerFaceExponent P k C v +
@@ -62,17 +53,16 @@ theorem characteristicLowerFaceExponent_add_lowerFace_comm
         characteristicLowerFaceExponent P k (C.lowerFace w hw) v := by
   apply Nat.cast_injective (R := ℤ)
   rw [Int.natCast_add, Int.natCast_add]
-  rw [characteristicLowerFaceExponent_natCast_lowerFace P k hv,
-    characteristicLowerFaceExponent_natCast_lowerFace P k
+  rw [characteristicLowerFaceExponent_natCast_lowerFace P k C hv,
+    characteristicLowerFaceExponent_natCast_lowerFace P k (C.lowerFace v hv)
       (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne.symm hw),
-    characteristicLowerFaceExponent_natCast_lowerFace P k hw,
-    characteristicLowerFaceExponent_natCast_lowerFace P k
+    characteristicLowerFaceExponent_natCast_lowerFace P k C hw,
+    characteristicLowerFaceExponent_natCast_lowerFace P k (C.lowerFace w hw)
       (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv)]
   rw [C.lowerFace_lowerFace_comm hv hw hne]
   omega
 
-/-- The upper-upper codimension-two square has the same total `U`-exponent along either path.
-Both sides telescope to the ambient cube weight minus the common upper-upper corner weight. -/
+/-- The upper-upper codimension-two square has the same total `U`-exponent along either path. -/
 theorem characteristicUpperFaceExponent_add_upperFace_comm
     (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
     characteristicUpperFaceExponent P k C (v := v) hv +
@@ -102,26 +92,12 @@ theorem characteristicLowerFaceExponent_add_upperFace_comm
         characteristicLowerFaceExponent P k (C.upperFace w hw) v := by
   apply Nat.cast_injective (R := ℤ)
   rw [Int.natCast_add, Int.natCast_add]
-  rw [characteristicLowerFaceExponent_natCast_lowerFace P k hv,
+  rw [characteristicLowerFaceExponent_natCast_lowerFace P k C hv,
     characteristicUpperFaceExponent_natCast, characteristicUpperFaceExponent_natCast,
-    characteristicLowerFaceExponent_natCast_lowerFace P k
+    characteristicLowerFaceExponent_natCast_lowerFace P k (C.upperFace w hw)
       (by rw [upperFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv)]
   rw [C.lowerFace_upperFace_comm hv hw hne]
   omega
-
-/-- The upper-then-lower mixed codimension-two square has the same total `U`-exponent as the
-lower-then-upper path to the same corner. This is the symmetric mixed-face form convenient when a
-calculation starts with the upper face in the first direction. -/
-theorem characteristicUpperFaceExponent_add_lowerFace_comm
-    (hv : v ∈ C.directions) (hw : w ∈ C.directions) (hne : v ≠ w) :
-    characteristicUpperFaceExponent P k C (v := v) hv +
-        characteristicLowerFaceExponent P k (C.upperFace v hv) w =
-      characteristicLowerFaceExponent P k C w +
-        characteristicUpperFaceExponent P k (C.lowerFace w hw)
-          (v := v)
-          (by rw [lowerFace_directions]; exact Finset.mem_erase_of_ne_of_mem hne hv) := by
-  rw [add_comm, characteristicLowerFaceExponent_add_upperFace_comm P k C hw hv hne.symm]
-  rw [add_comm]
 
 end PlumbingCube
 
