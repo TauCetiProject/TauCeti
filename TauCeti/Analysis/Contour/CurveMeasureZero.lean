@@ -24,7 +24,6 @@ integral formula step of the homology Cauchy theorem: a piecewise-`C¹` contour 
 
 ## Main results
 
-* `Contour.hausdorffMeasure_two_real_zero` — `μH[2]` vanishes on every subset of `ℝ`.
 * `Contour.volume_image_zero_of_lipschitzOnWith` — a curve Lipschitz on `s ⊆ ℝ` has null image.
 * `Contour.exists_mem_notMem_image_of_isOpen_of_lipschitzOnWith` — an open nonempty set contains a
   point off the image of such a curve.
@@ -43,19 +42,14 @@ namespace TauCeti.Contour
 
 open MeasureTheory Measure Set
 
-/-- The `2`-dimensional Hausdorff measure on `ℝ` vanishes on every set, since `finrank ℝ ℝ = 1 < 2`.
--/
-theorem hausdorffMeasure_two_real_zero (s : Set ℝ) : (μH[2] : Measure ℝ) s = 0 := by
-  have h : (μH[2] : Measure ℝ) = 0 :=
-    Real.hausdorffMeasure_of_finrank_lt (by simp [Module.finrank_self])
-  simp [h]
-
 /-- The `2`-dimensional Hausdorff measure of the image of `s ⊆ ℝ` under a map `f : ℝ → ℂ` that is
-Lipschitz on `s` is zero. -/
+Lipschitz on `s` is zero, since `μH[2]` vanishes on `ℝ` (`finrank ℝ ℝ = 1 < 2`). -/
 theorem hausdorffMeasure_two_image_zero_of_lipschitzOnWith {K : NNReal} {f : ℝ → ℂ} {s : Set ℝ}
     (hf : LipschitzOnWith K f s) : μH[2] (f '' s) = 0 := by
+  have h0 : (μH[2] : Measure ℝ) = 0 :=
+    Real.hausdorffMeasure_of_finrank_lt (by simp [Module.finrank_self])
   have h_le := hf.hausdorffMeasure_image_le (d := 2) (by norm_num)
-  rw [hausdorffMeasure_two_real_zero s] at h_le
+  rw [h0] at h_le
   simpa using h_le
 
 /-- The Lebesgue volume in `ℂ` of the image of `s ⊆ ℝ` under a map Lipschitz on `s` is zero: volume
