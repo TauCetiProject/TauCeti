@@ -5,7 +5,6 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.Analysis.Contour.CauchyPrincipalValueOn
 public import TauCeti.Analysis.Contour.NullHomologous
 
 /-!
