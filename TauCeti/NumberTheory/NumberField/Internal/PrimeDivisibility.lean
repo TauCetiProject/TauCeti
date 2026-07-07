@@ -15,7 +15,7 @@ number-field splitting examples.
 
 public section
 
-namespace TauCeti.NumberField
+namespace TauCeti.NumberField.Internal
 
 /-- A rational prime `p` different from a natural prime `l` does not divide `l`, viewed as an
 integer. -/
@@ -25,4 +25,4 @@ theorem not_intCast_prime_dvd_natPrime {p l : ℕ} [Fact p.Prime]
   have hp_dvd_l : p ∣ l := by exact_mod_cast h
   exact hne ((Nat.prime_dvd_prime_iff_eq Fact.out hl).mp hp_dvd_l)
 
-end TauCeti.NumberField
+end TauCeti.NumberField.Internal

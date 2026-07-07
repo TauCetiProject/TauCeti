@@ -46,7 +46,7 @@ corresponding integer radicands. -/
 private theorem forall_not_intCast_prime_dvd_natPrimes {ι : Type*} (p : ι → ℕ)
     (hp : ∀ i, (p i).Prime) {q : ℕ} [Fact q.Prime] (hne : ∀ i, q ≠ p i) :
     ∀ i, ¬ (q : ℤ) ∣ (p i : ℤ) :=
-  fun i => not_intCast_prime_dvd_natPrime (hp i) (hne i)
+  fun i => Internal.not_intCast_prime_dvd_natPrime (hp i) (hne i)
 
 /-- **Prime-radicand multiquadratic splitting law.** Let `K` be generated over `ℚ` by square
 roots of a finite family of rational primes `p i`. If `q` is an odd rational prime distinct from

@@ -52,7 +52,7 @@ private theorem forall_not_dvd_negFourFivePrimeDiscriminants {p : ℕ} [Fact p.P
   intro i
   fin_cases i
   · exact not_intCast_prime_dvd_neg_four hodd
-  · exact not_intCast_prime_dvd_natPrime (by decide : Nat.Prime 5) hfive
+  · exact Internal.not_intCast_prime_dvd_natPrime (by decide : Nat.Prime 5) hfive
 
 private theorem forall_not_dvd_negFourNegThreeNegSevenPrimeDiscriminants {p : ℕ} [Fact p.Prime]
     (hodd : p ≠ 2) (hthree : p ≠ 3) (hseven : p ≠ 7) :
@@ -61,8 +61,8 @@ private theorem forall_not_dvd_negFourNegThreeNegSevenPrimeDiscriminants {p : �
   intro i
   fin_cases i
   · exact not_intCast_prime_dvd_neg_four hodd
-  · simpa using not_intCast_prime_dvd_natPrime (by decide : Nat.Prime 3) hthree
-  · simpa using not_intCast_prime_dvd_natPrime (by decide : Nat.Prime 7) hseven
+  · simpa using Internal.not_intCast_prime_dvd_natPrime (by decide : Nat.Prime 3) hthree
+  · simpa using Internal.not_intCast_prime_dvd_natPrime (by decide : Nat.Prime 7) hseven
 
 /-- **Complete splitting for the `ℚ(√-5)` genus-field generator list.** Let `K` be generated
 by square roots of the radicands attached to `[-4, 5]`, namely `-1` and `5`. An odd prime
