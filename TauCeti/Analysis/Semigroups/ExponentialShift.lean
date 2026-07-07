@@ -35,7 +35,7 @@ namespace StronglyContinuousSemigroup
 
 At nonnegative time `t`, this is the semigroup `exp (-lambda t) • S(t)`.  It shifts
 growth exponents by subtracting `lambda`; see `HasGrowthBound.expShift`. -/
-@[expose] def expShift (S : StronglyContinuousSemigroup X) (lambda : ℝ) :
+irreducible_def expShift (S : StronglyContinuousSemigroup X) (lambda : ℝ) :
     StronglyContinuousSemigroup X where
   toFun t := Real.exp (-(lambda * (t : ℝ))) • S t
   map_zero' := by
@@ -62,14 +62,16 @@ omit [CompleteSpace X] in
 @[simp]
 theorem expShift_apply (S : StronglyContinuousSemigroup X) (lambda : ℝ) (t : ℝ≥0) :
     S.expShift lambda t = Real.exp (-(lambda * (t : ℝ))) • S t :=
-  rfl
+  by
+    rw [expShift_def]
+    rfl
 
 omit [CompleteSpace X] in
 /-- Pointwise form of `StronglyContinuousSemigroup.expShift_apply`. -/
 theorem expShift_apply_apply (S : StronglyContinuousSemigroup X) (lambda : ℝ)
     (t : ℝ≥0) (x : X) :
     S.expShift lambda t x = Real.exp (-(lambda * (t : ℝ))) • S t x :=
-  rfl
+  by rw [expShift_apply, smul_apply]
 
 omit [CompleteSpace X] in
 /-- The zero exponential shift is the original semigroup. -/
@@ -99,7 +101,8 @@ theorem expShift_realOperator_of_nonneg (S : StronglyContinuousSemigroup X)
     (S.expShift lambda).realOperator t
         = (S.expShift lambda).realOperator (t.toNNReal : ℝ) := by rw [ht_coe]
     _ = (S.expShift lambda) t.toNNReal := by rw [realOperator_coe]
-    _ = Real.exp (-(lambda * (t.toNNReal : ℝ))) • S t.toNNReal := rfl
+    _ = Real.exp (-(lambda * (t.toNNReal : ℝ))) • S t.toNNReal := by
+        rw [expShift_apply]
     _ = Real.exp (-(lambda * t)) • S.realOperator t := by
         have hS : S.realOperator t = S t.toNNReal := by
           calc
@@ -131,9 +134,8 @@ theorem expShift {S : StronglyContinuousSemigroup X} {ω M lambda : ℝ}
         rw [Real.norm_eq_abs, abs_of_nonneg (Real.exp_nonneg _)]
     _ ≤ Real.exp (-(lambda * t)) * (M * Real.exp (ω * t)) :=
         mul_le_mul_of_nonneg_left (hb.bound t ht) (Real.exp_nonneg _)
+    _ = M * (Real.exp (-(lambda * t)) * Real.exp (ω * t)) := by ring
     _ = M * Real.exp ((ω - lambda) * t) := by
-        rw [show Real.exp (-(lambda * t)) * (M * Real.exp (ω * t)) =
-            M * (Real.exp (-(lambda * t)) * Real.exp (ω * t)) by ring]
         rw [← Real.exp_add]
         congr 1
         ring_nf
@@ -142,7 +144,7 @@ end HasGrowthBound
 
 /-- A semigroup with growth bound `(lambda, 1)` becomes a contraction semigroup after
 exponential shifting by `lambda`. -/
-@[expose] def expShiftContraction (S : StronglyContinuousSemigroup X) (lambda : ℝ)
+irreducible_def expShiftContraction (S : StronglyContinuousSemigroup X) (lambda : ℝ)
     (hb : S.HasGrowthBound lambda 1) : ContractionSemigroup X where
   toStronglyContinuousSemigroup := S.expShift lambda
   contracting t := by
@@ -158,7 +160,7 @@ omit [CompleteSpace X] in
 theorem expShiftContraction_toStronglyContinuousSemigroup
     (S : StronglyContinuousSemigroup X) (lambda : ℝ) (hb : S.HasGrowthBound lambda 1) :
     (S.expShiftContraction lambda hb).toStronglyContinuousSemigroup = S.expShift lambda :=
-  rfl
+  by rw [expShiftContraction_def]
 
 omit [CompleteSpace X] in
 /-- Native operator formula for `expShiftContraction`. -/
@@ -166,7 +168,12 @@ omit [CompleteSpace X] in
 theorem expShiftContraction_apply (S : StronglyContinuousSemigroup X) (lambda : ℝ)
     (hb : S.HasGrowthBound lambda 1) (t : ℝ≥0) :
     S.expShiftContraction lambda hb t = Real.exp (-(lambda * (t : ℝ))) • S t :=
-  rfl
+  by
+    calc
+      S.expShiftContraction lambda hb t =
+          (S.expShiftContraction lambda hb).toStronglyContinuousSemigroup t := rfl
+      _ = Real.exp (-(lambda * (t : ℝ))) • S t := by
+          rw [expShiftContraction_toStronglyContinuousSemigroup, expShift_apply]
 
 end StronglyContinuousSemigroup
 

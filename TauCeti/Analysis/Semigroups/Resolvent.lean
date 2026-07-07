@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.Semigroups.Generator
-public import TauCeti.Analysis.Semigroups.GrowthBound
+public import TauCeti.Analysis.Semigroups.ExponentialShift
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.MeasureTheory.Integral.ExpDecay
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -200,28 +200,6 @@ private theorem StronglyContinuousSemigroup.resolvent_shift_identity
   simp only [smul_sub, sub_smul, one_smul]
   abel
 
-private def StronglyContinuousSemigroup.expScaled
-    (S : StronglyContinuousSemigroup X) (lambda : ℝ) : StronglyContinuousSemigroup X where
-  toFun t := Real.exp (-(lambda * (t : ℝ))) • S t
-  map_zero' := by
-    rw [NNReal.coe_zero, mul_zero, neg_zero, Real.exp_zero, one_smul, S.map_zero]
-  map_add' s t := by
-    ext x
-    simp only [NNReal.coe_add, ContinuousLinearMap.comp_apply, smul_apply]
-    rw [S.map_add_apply, map_smul, smul_smul]
-    congr 1
-    rw [← Real.exp_add]
-    congr 1
-    ring
-  continuousAt_zero' x := by
-    have h_exp : Filter.Tendsto (fun t : ℝ≥0 => Real.exp (-(lambda * (t : ℝ))))
-        (nhds 0) (nhds 1) := by
-      have h_cont : ContinuousAt (fun t : ℝ≥0 => Real.exp (-(lambda * (t : ℝ)))) 0 :=
-        (Real.continuous_exp.comp ((continuous_const.mul continuous_subtype_val).neg)).continuousAt
-      simpa using h_cont.tendsto
-    have h := h_exp.smul (S.continuousAt_zero_tendsto x)
-    simpa [ContinuousAt, S.map_zero_apply] using h
-
 /-- The integral average `(1/t) • ∫_{(0,t]} e^{-λu} S(u)x du` of the resolvent integrand
 tends to `x` as `t → 0⁺`. -/
 private theorem StronglyContinuousSemigroup.tendsto_average_resolvent_integrand
@@ -229,7 +207,7 @@ private theorem StronglyContinuousSemigroup.tendsto_average_resolvent_integrand
     Filter.Tendsto
       (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, Real.exp (-(lambda * u)) • S.realOperator u x)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds x) := by
-  let T := S.expScaled lambda
+  let T := S.expShift lambda
   have h := T.tendsto_average_orbit_zero x
   refine h.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
@@ -237,14 +215,7 @@ private theorem StronglyContinuousSemigroup.tendsto_average_resolvent_integrand
   apply MeasureTheory.setIntegral_congr_fun measurableSet_Ioc
   intro u hu
   have hu_nonneg : 0 ≤ u := hu.1.le
-  have hu_toNN : ((u.toNNReal : ℝ) = u) := Real.coe_toNNReal u hu_nonneg
-  calc
-    (T.realOperator u) x = (T.realOperator (u.toNNReal : ℝ)) x := by rw [hu_toNN]
-    _ = T u.toNNReal x := by rw [T.realOperator_coe u.toNNReal]
-    _ = (Real.exp (-(lambda * (u.toNNReal : ℝ))) • S u.toNNReal) x := by rfl
-    _ = Real.exp (-(lambda * (u.toNNReal : ℝ))) • S u.toNNReal x := by rw [smul_apply]
-    _ = Real.exp (-(lambda * u)) • (S.realOperator u) x := by
-        rw [← S.realOperator_coe u.toNNReal, hu_toNN]
+  exact S.expShift_realOperator_apply_of_nonneg lambda u hu_nonneg x
 
 
 /-- The generator difference quotient for `R(λ)x` converges to `λ R(λ)x - x`. -/
