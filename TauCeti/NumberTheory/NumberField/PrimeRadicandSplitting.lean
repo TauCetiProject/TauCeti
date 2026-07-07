@@ -75,20 +75,16 @@ private theorem forall_legendreSym_two_three_eq_one_iff {q : ℕ} [Fact q.Prime]
     · simpa using h2
     · simpa using h3
 
-/-- The supplementary law for the `√2` character, stated in the form used by the
-`ℚ(√2, √3)` splitting criterion. -/
-theorem legendreSym_two_eq_one_iff {q : ℕ} [Fact q.Prime] (htwo : q ≠ 2) :
-    legendreSym q (2 : ℤ) = 1 ↔ q % 8 = 1 ∨ q % 8 = 7 := by
-  rw [← Multiquadratic.evenPrimeDiscriminantRadicand_eight]
-  exact Multiquadratic.legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff htwo
-
 /-- The character condition for the radicands `2` and `3`, with the `√2` condition expanded
 using the supplementary law for `2`. -/
 private theorem forall_legendreSym_two_three_eq_one_iff_mod_eight {q : ℕ} [Fact q.Prime]
     (htwo : q ≠ 2) :
     (∀ i : Fin 2, legendreSym q ((![2, 3] : Fin 2 → ℕ) i : ℤ) = 1) ↔
       (q % 8 = 1 ∨ q % 8 = 7) ∧ legendreSym q (3 : ℤ) = 1 := by
-  rw [forall_legendreSym_two_three_eq_one_iff, legendreSym_two_eq_one_iff htwo]
+  rw [forall_legendreSym_two_three_eq_one_iff]
+  simpa [Multiquadratic.evenPrimeDiscriminantRadicand_eight] using
+    (Multiquadratic.legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff
+      (q := q) htwo).and Iff.rfl
 
 /-- **Complete splitting for `ℚ(√2, √3)`.** Let `K` be generated over `ℚ` by square roots of
 `2` and `3`. A rational prime `q` different from `2` and `3` splits completely in `K` exactly
@@ -114,6 +110,9 @@ theorem ncard_primesOver_sqrt_two_three_iff_mod_eight (r : Fin 2 → K)
     (primesOver (span {(q : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔
       (q % 8 = 1 ∨ q % 8 = 7) ∧ legendreSym q (3 : ℤ) = 1 := by
   exact (ncard_primesOver_sqrt_two_three_iff r hr htop htwo hthree).trans
-    (by rw [legendreSym_two_eq_one_iff htwo])
+    (by
+      simpa [Multiquadratic.evenPrimeDiscriminantRadicand_eight] using
+        (Multiquadratic.legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff
+          (q := q) htwo).and Iff.rfl)
 
 end TauCeti.NumberField
