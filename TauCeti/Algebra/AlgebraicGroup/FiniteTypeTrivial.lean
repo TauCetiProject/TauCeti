@@ -16,17 +16,13 @@ Hopf-algebra category this object is initial: the unique morphism from `R` to a 
 Hopf algebra is the bialgebra unit map `R → H`. Contravariantly, this is the terminal object
 `Spec R` over `Spec R` in the affine-group-scheme dictionary.
 
-The file also records the counit morphism `H → R` and the pointwise formulas for the unit and
-counit maps.
-
 This is Layer 0 infrastructure for the ReductiveGroups roadmap: the finite-type
 coordinate-Hopf-algebra model needs the terminal affine group object over the base, separate
 from the already available raw Hopf-algebra points calculation in `TrivialGroup.pointsMulEquiv`.
 
 ## References
 
-The bialgebra unit and counit maps are Mathlib's `Bialgebra.unitBialgHom` and
-`Bialgebra.counitBialgHom`.
+The bialgebra unit map is Mathlib's `Bialgebra.unitBialgHom`.
 -/
 
 public section
@@ -65,42 +61,16 @@ noncomputable abbrev unit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
     trivial R ⟶ H :=
   ofHom (_root_.Bialgebra.unitBialgHom R H)
 
-/-- The coordinate morphism from a finite-type affine group to the trivial affine group.
-
-On coordinate Hopf algebras this is the bialgebra counit map `H → R`, contravariant to the
-identity section `Spec R → G`. -/
-noncomputable abbrev counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
-    H ⟶ trivial R :=
-  ofHom (_root_.Bialgebra.counitBialgHom R H)
-
 /-- The finite-type coordinate unit morphism unwraps to Mathlib's bialgebra unit map. -/
 @[simp]
 lemma toBialgHom_unit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
     toBialgHom (unit H) = _root_.Bialgebra.unitBialgHom R H :=
   rfl
 
-/-- The finite-type coordinate counit morphism unwraps to Mathlib's bialgebra counit map. -/
-@[simp]
-lemma toBialgHom_counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
-    toBialgHom (counit H) = _root_.Bialgebra.counitBialgHom R H :=
-  rfl
-
 /-- Pointwise formula for the coordinate unit map `R → H`. -/
 lemma unit_apply (H : FiniteTypeCommHopfAlgCat.{u, u} R) (r : R) :
     toBialgHom (unit H) r = algebraMap R H r :=
   rfl
-
-/-- Pointwise formula for the coordinate counit map `H → R`. -/
-lemma counit_apply (H : FiniteTypeCommHopfAlgCat.{u, u} R) (h : H) :
-    toBialgHom (counit H) h = Coalgebra.counit h :=
-  _root_.Bialgebra.counitBialgHom_apply h
-
-/-- The counit retracts the unit back to the identity of the trivial coordinate Hopf algebra. -/
-lemma unit_comp_counit (H : FiniteTypeCommHopfAlgCat.{u, u} R) :
-    unit H ≫ counit H = 𝟙 (trivial R) := by
-  apply hom_ext
-  apply _root_.BialgHom.coe_toAlgHom_injective
-  exact Subsingleton.elim _ _
 
 /-- The finite-type trivial coordinate Hopf algebra is initial in the coordinate category.
 
