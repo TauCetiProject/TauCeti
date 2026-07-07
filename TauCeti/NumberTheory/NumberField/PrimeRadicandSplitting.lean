@@ -6,6 +6,9 @@ module
 
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
 public import TauCeti.NumberTheory.NumberField.MultiquadraticSplitting
+-- `LegendreEvenPrimeDiscriminant` supplies the supplementary law for the radicand `2`, used
+-- only inside a proof below, so it is not re-exported.
+import TauCeti.NumberTheory.Multiquadratic.LegendreEvenPrimeDiscriminant
 
 /-!
 # Prime-radicand splitting in multiquadratic fields
@@ -22,13 +25,13 @@ splitting of an odd prime away from `2` and `3` is equivalent to both Legendre s
 
 ## Main results
 
-* `TauCeti.NumberField.ncard_primesOver_sqrtPrimes_iff`: complete splitting in
+* `TauCeti.NumberField.ncard_primesOver_sqrt_primes_iff`: complete splitting in
   `ℚ(√pᵢ : i)` is equivalent to `legendreSym q (pᵢ) = 1` for every `i`.
 * `TauCeti.NumberField.forall_legendreSym_two_three_eq_one_iff`: the two-entry character
   condition for the radicands `2` and `3` is exactly the conjunction of the two symbols.
-* `TauCeti.NumberField.ncard_primesOver_sqrt_two_sqrt_three_iff`: the concrete
+* `TauCeti.NumberField.ncard_primesOver_sqrt_two_three_iff`: the concrete
   `ℚ(√2, √3)` worked-example form.
-* `TauCeti.NumberField.ncard_primesOver_sqrt_two_sqrt_three_iff_mod_eight`: the same criterion
+* `TauCeti.NumberField.ncard_primesOver_sqrt_two_three_iff_mod_eight`: the same criterion
   with the `√2` condition expanded as `q ≡ 1, 7 (mod 8)`.
 -/
 
@@ -40,24 +43,20 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-private theorem not_intCast_prime_dvd_natPrime {q p : ℕ} [Fact q.Prime]
-    (hp : p.Prime) (hne : q ≠ p) : ¬ (q : ℤ) ∣ (p : ℤ) := by
-  intro h
-  have hq_dvd_p : q ∣ p := by exact_mod_cast h
-  exact hne ((Nat.prime_dvd_prime_iff_eq Fact.out hp).mp hq_dvd_p)
-
 /-- A rational prime `q` different from every prime in a family `p` divides none of the
 corresponding integer radicands. -/
-theorem forall_not_intCast_prime_dvd_natPrimes {ι : Type*} (p : ι → ℕ)
+private theorem forall_not_intCast_prime_dvd_natPrimes {ι : Type*} (p : ι → ℕ)
     (hp : ∀ i, (p i).Prime) {q : ℕ} [Fact q.Prime] (hne : ∀ i, q ≠ p i) :
-    ∀ i, ¬ (q : ℤ) ∣ (p i : ℤ) :=
-  fun i => not_intCast_prime_dvd_natPrime (hp i) (hne i)
+    ∀ i, ¬ (q : ℤ) ∣ (p i : ℤ) := by
+  intro i h
+  have hq_dvd_p : q ∣ p i := by exact_mod_cast h
+  exact hne i ((Nat.prime_dvd_prime_iff_eq Fact.out (hp i)).mp hq_dvd_p)
 
 /-- **Prime-radicand multiquadratic splitting law.** Let `K` be generated over `ℚ` by square
 roots of a finite family of rational primes `p i`. If `q` is an odd rational prime distinct from
 every `p i`, then `q` splits completely in `K` exactly when every `p i` is a quadratic residue
 modulo `q`. -/
-theorem ncard_primesOver_sqrtPrimes_iff {ι : Type*} [Finite ι] (p : ι → ℕ)
+theorem ncard_primesOver_sqrt_primes_iff {ι : Type*} [Finite ι] (p : ι → ℕ)
     (hp : ∀ i, (p i).Prime) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (p i : ℤ))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
@@ -85,14 +84,8 @@ theorem forall_legendreSym_two_three_eq_one_iff {q : ℕ} [Fact q.Prime] :
 `ℚ(√2, √3)` splitting criterion. -/
 theorem legendreSym_two_eq_one_iff {q : ℕ} [Fact q.Prime] (htwo : q ≠ 2) :
     legendreSym q (2 : ℤ) = 1 ↔ q % 8 = 1 ∨ q % 8 = 7 := by
-  have h2z : ((2 : ℤ) : ZMod q) ≠ 0 := by
-    have hnd : ¬ q ∣ 2 := fun h => htwo
-      ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp h)
-    intro h0
-    exact hnd ((CharP.cast_eq_zero_iff (ZMod q) q 2).mp (by exact_mod_cast h0))
-  rw [legendreSym.eq_one_iff q h2z]
-  norm_num
-  exact ZMod.exists_sq_eq_two_iff htwo
+  rw [← Multiquadratic.evenPrimeDiscriminantRadicand_eight]
+  exact Multiquadratic.legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff htwo
 
 /-- The character condition for the radicands `2` and `3`, with the `√2` condition expanded
 using the supplementary law for `2`. -/
@@ -105,13 +98,13 @@ theorem forall_legendreSym_two_three_eq_one_iff_mod_eight {q : ℕ} [Fact q.Prim
 /-- **Complete splitting for `ℚ(√2, √3)`.** Let `K` be generated over `ℚ` by square roots of
 `2` and `3`. A rational prime `q` different from `2` and `3` splits completely in `K` exactly
 when both `2` and `3` are quadratic residues modulo `q`. -/
-theorem ncard_primesOver_sqrt_two_sqrt_three_iff (r : Fin 2 → K)
+theorem ncard_primesOver_sqrt_two_three_iff (r : Fin 2 → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K ((![2, 3] : Fin 2 → ℕ) i : ℤ))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     {q : ℕ} [Fact q.Prime] (htwo : q ≠ 2) (hthree : q ≠ 3) :
     (primesOver (span {(q : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔
       legendreSym q (2 : ℤ) = 1 ∧ legendreSym q (3 : ℤ) = 1 := by
-  have h := ncard_primesOver_sqrtPrimes_iff (![2, 3] : Fin 2 → ℕ) (by decide) r hr htop htwo
+  have h := ncard_primesOver_sqrt_primes_iff (![2, 3] : Fin 2 → ℕ) (by decide) r hr htop htwo
     (fun i => by fin_cases i <;> simp [htwo, hthree])
   exact h.trans forall_legendreSym_two_three_eq_one_iff
 
@@ -119,13 +112,13 @@ theorem ncard_primesOver_sqrt_two_sqrt_three_iff (r : Fin 2 → K)
 generated over `ℚ` by square roots of `2` and `3`. A rational prime `q` different from `2` and
 `3` splits completely in `K` exactly when `q ≡ 1` or `7` modulo `8` and `3` is a quadratic
 residue modulo `q`. -/
-theorem ncard_primesOver_sqrt_two_sqrt_three_iff_mod_eight (r : Fin 2 → K)
+theorem ncard_primesOver_sqrt_two_three_iff_mod_eight (r : Fin 2 → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K ((![2, 3] : Fin 2 → ℕ) i : ℤ))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     {q : ℕ} [Fact q.Prime] (htwo : q ≠ 2) (hthree : q ≠ 3) :
     (primesOver (span {(q : ℤ)}) (𝓞 K)).ncard = finrank ℚ K ↔
       (q % 8 = 1 ∨ q % 8 = 7) ∧ legendreSym q (3 : ℤ) = 1 := by
-  exact (ncard_primesOver_sqrt_two_sqrt_three_iff r hr htop htwo hthree).trans
+  exact (ncard_primesOver_sqrt_two_three_iff r hr htop htwo hthree).trans
     (by rw [legendreSym_two_eq_one_iff htwo])
 
 end TauCeti.NumberField
