@@ -42,7 +42,7 @@ namespace TauCeti
 
 namespace PlumbingCube
 
-variable {V : Type*} [DecidableEq V] [DecidableEq (V → ℤ)] [Fintype V]
+variable {V : Type*} [DecidableEq V] [Fintype V]
 variable (P : PlumbingGraph V) (k : P.characteristicVectors)
 variable (C : PlumbingCube V) {v w : V}
 
