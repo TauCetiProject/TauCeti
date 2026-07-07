@@ -106,6 +106,8 @@ theorem map_mk (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) :
     map f hf (⟦p⟧ : HomotopyGroup N X x) = ⟦GenLoop.map f hf p⟧ :=
   rfl
 
+/-- Identity law: the map induced by the identity continuous map is the identity on homotopy
+classes. -/
 @[simp]
 theorem map_id_apply (a : HomotopyGroup N X x) :
     map (ContinuousMap.id X) rfl a = a := by
@@ -114,6 +116,8 @@ theorem map_id_apply (a : HomotopyGroup N X x) :
     rw [map_mk, GenLoop.map_id]
     rfl
 
+/-- Composition law: the map induced by a composite continuous map is the composite of the
+induced maps on homotopy classes. -/
 @[simp]
 theorem map_comp_apply (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y)
     (a : HomotopyGroup N X x) :
@@ -139,6 +143,22 @@ theorem mapHom_apply [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
     (a : HomotopyGroup N X x) :
     mapHom f hf a = map f hf a :=
   rfl
+
+/-- Identity law for the bundled homomorphism: the induced monoid homomorphism of the identity
+continuous map is the identity homomorphism. -/
+@[simp]
+theorem mapHom_id [DecidableEq N] [Nonempty N] :
+    mapHom (ContinuousMap.id X) rfl = MonoidHom.id (HomotopyGroup N X x) :=
+  MonoidHom.ext fun a => map_id_apply a
+
+/-- Composition law for the bundled homomorphism: the induced monoid homomorphism of a composite
+continuous map is the composite of the induced homomorphisms. -/
+@[simp]
+theorem mapHom_comp [DecidableEq N] [Nonempty N] (g : C(Y, Z)) (hg : g y = z)
+    (f : C(X, Y)) (hf : f x = y) :
+    (mapHom g hg).comp (mapHom f hf) = mapHom (N := N) (g.comp f) (by simp [hf, hg]) :=
+  MonoidHom.ext fun a => by
+    simp only [MonoidHom.coe_comp, Function.comp_apply, mapHom_apply, map_comp_apply]
 
 @[simp]
 theorem map_mul [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
