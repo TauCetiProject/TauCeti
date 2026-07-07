@@ -548,9 +548,11 @@ namespace RepresentsLaplace
 variable {f : ℝ → ℝ} {μ : Measure ℝ≥0}
 
 /-- A representing measure is finite. -/
+@[grind →]
 lemma isFiniteMeasure (h : RepresentsLaplace f μ) : IsFiniteMeasure μ := h.1
 
 /-- A representing measure has the advertised Laplace-transform values on `[0, ∞)`. -/
+@[grind =>]
 lemma eq_laplaceTransform (h : RepresentsLaplace f μ) {t : ℝ} (ht : 0 ≤ t) :
     f t = laplaceTransform μ t :=
   h.2 t ht

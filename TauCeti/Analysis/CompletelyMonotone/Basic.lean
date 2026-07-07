@@ -370,9 +370,11 @@ namespace IsClosedCompletelyMonotone
 variable {f g : ℝ → ℝ}
 
 /-- A closed-half-line completely monotone function is continuous on `[0, ∞)`. -/
+@[grind →]
 lemma continuousOn (hf : IsClosedCompletelyMonotone f) : ContinuousOn f (Ici 0) := hf.1
 
 /-- A closed-half-line completely monotone function is completely monotone on `(0, ∞)`. -/
+@[grind =>]
 lemma isCompletelyMonotoneOnIoi (hf : IsClosedCompletelyMonotone f) :
     IsCompletelyMonotoneOnIoi f := hf.2
 
@@ -426,6 +428,7 @@ lemma nonneg_zero (hf : IsClosedCompletelyMonotone f) : 0 ≤ f 0 := by
   exact hf.isCompletelyMonotoneOnIoi.nonneg (by positivity)
 
 /-- A closed-half-line completely monotone function is nonnegative on `[0, ∞)`. -/
+@[grind =>]
 lemma nonneg (hf : IsClosedCompletelyMonotone f) {t : ℝ} (ht : 0 ≤ t) : 0 ≤ f t := by
   rcases ht.eq_or_lt with rfl | ht_pos
   · exact hf.nonneg_zero
