@@ -74,13 +74,7 @@ theorem pseudoHyperbolicExpr_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha
     (mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one ha)
     (differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one ha')
     (mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one ha') ?_ hz hw
-  intro ζ hζ
-  have hζn : ‖ζ‖ < 1 := mem_ball_zero_iff.mp hζ
-  have h := congrArg (fun u : Complex.UnitDisc => (u : ℂ))
-    (congr_fun (unitDiscMoebius_neg_comp_unitDiscMoebius (Complex.UnitDisc.mk a ha))
-      (Complex.UnitDisc.mk ζ hζn))
-  simpa [coe_unitDiscMoebius, Complex.UnitDisc.coe_neg, Complex.UnitDisc.coe_mk, map_neg,
-    neg_mul, sub_neg_eq_add] using h
+  exact leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one ha
 
 /-- **Moebius invariance (bundled form).** The bundled unit-disc Moebius factor
 `unitDiscMoebius a` preserves the pseudo-hyperbolic expression. -/

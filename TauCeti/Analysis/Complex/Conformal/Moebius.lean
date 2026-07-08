@@ -175,6 +175,22 @@ lemma unitDiscMoebius_comp_unitDiscMoebius_neg (a : Complex.UnitDisc) :
     unitDiscMoebius a ∘ unitDiscMoebius (-a) = id := by
   simpa using unitDiscMoebius_neg_comp_unitDiscMoebius (-a)
 
+/-- The scalar unit-disc Moebius formula centered at `-a` is a left inverse for the scalar
+formula centered at `a` on the open unit disc. -/
+lemma leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha : ‖a‖ < 1) :
+    LeftInvOn
+      (fun z : ℂ => (z - (-a)) / (1 - (starRingEnd ℂ) (-a) * z))
+      (fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z))
+      (ball (0 : ℂ) 1) := by
+  intro z hz
+  have hz_norm : ‖z‖ < 1 := by
+    simpa [mem_ball_zero_iff] using hz
+  have h := congrArg (fun u : Complex.UnitDisc => (u : ℂ))
+    (congr_fun (unitDiscMoebius_neg_comp_unitDiscMoebius (Complex.UnitDisc.mk a ha))
+      (Complex.UnitDisc.mk z hz_norm))
+  simpa [coe_unitDiscMoebius, Complex.UnitDisc.coe_neg, Complex.UnitDisc.coe_mk, map_neg,
+    neg_mul, sub_neg_eq_add] using h
+
 /-- The standard Moebius self-equivalence of the unit disc sending `a` to `0`. -/
 noncomputable def unitDiscMoebiusEquiv (a : Complex.UnitDisc) :
     Complex.UnitDisc ≃ Complex.UnitDisc where
