@@ -130,10 +130,8 @@ private lemma integral_hermiteFunction_zero_mul_self_expanded :
 
 /-- The zeroth Hermite function has square integral one. This is the `n = 0` boundary case of
 the roadmap's Hermite-function orthonormality target. -/
-@[simp]
 lemma integral_hermiteFunction_zero_mul_self :
-    ∫ x : ℝ, Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
-      (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)) = 1 :=
-  integral_hermiteFunction_zero_mul_self_expanded
+    ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x = 1 := by
+  simpa only [hermiteFunction_zero] using integral_hermiteFunction_zero_mul_self_expanded
 
 end TauCeti
