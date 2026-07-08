@@ -237,7 +237,6 @@ theorem liftQ_comp_mkQ (f : Comodule.Hom R C M P)
   simp
 
 /-- Alias for `Subcomodule.liftQ_comp_mkQ`, named after Mathlib's quotient API. -/
-@[simp]
 theorem liftQ_mkQ (f : Comodule.Hom R C M P)
     (hf : N ≤ Comodule.Hom.ker (R := R) (C := C) f) :
     (N.liftQ f hf).comp N.mkQ = f :=
