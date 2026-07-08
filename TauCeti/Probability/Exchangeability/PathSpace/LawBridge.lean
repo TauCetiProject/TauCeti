@@ -1,6 +1,8 @@
 module
 
+public import TauCeti.Probability.Exchangeability.Contractability
 public import TauCeti.Probability.Exchangeability.FullyExchangeable
+public import TauCeti.Probability.Exchangeability.PathSpace.ContractableLaw
 public import TauCeti.Probability.Exchangeability.PathSpace.Law
 
 /-!
@@ -9,11 +11,13 @@ public import TauCeti.Probability.Exchangeability.PathSpace.Law
 This file connects the process-level `FullyExchangeable`/`Exchangeable` predicates with the
 path-space `ExchangeableLaw` predicate: a process is fully exchangeable exactly when its
 `pathLaw` is an exchangeable path-space law, and (under a finite base law) finite exchangeability
-is the same statement.
+is the same statement. It also connects process-level contractability with the path-space
+`ContractableLaw` predicate.
 
 The bridges realize the Layer 0 roadmap item asking for process-level ↔ path-law bridges in both
 directions. They reuse the existing `FullyExchangeable` path-law bridge from
-`FullyExchangeable.lean`; no measure-theoretic infrastructure is vendored.
+`FullyExchangeable.lean` and the contractability bridge from `Contractability.lean`; no
+measure-theoretic infrastructure is vendored.
 -/
 
 public section
@@ -60,6 +64,25 @@ theorem exchangeable_of_exchangeableLaw_pathLaw {μ : Measure Ω} {X : ℕ → �
     (hρ : ExchangeableLaw (pathLaw μ X)) :
     Exchangeable μ X :=
   (exchangeable_iff_exchangeableLaw_pathLaw hX_meas).2 hρ
+
+/-- A contractable process has a contractable path law. -/
+theorem Contractable.contractableLaw_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
+    [IsFiniteMeasure μ] (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
+    ContractableLaw (pathLaw μ X) :=
+  ContractableLaw.intro fun _ hφ => (hX.measurePreserving_reindex hX_meas hφ).map_eq
+
+/-- Contractability of a process is equivalent to contractability of its path law. -/
+theorem contractable_iff_contractableLaw_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
+    [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ) :
+    Contractable μ X ↔ ContractableLaw (pathLaw μ X) := by
+  rw [contractable_iff_forall_map_reindex_pathLaw hX_meas, contractableLaw_iff]
+
+/-- If a process has a contractable path law, then the process is contractable. -/
+theorem contractable_of_contractableLaw_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
+    [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ)
+    (hρ : ContractableLaw (pathLaw μ X)) :
+    Contractable μ X :=
+  (contractable_iff_contractableLaw_pathLaw hX_meas).2 hρ
 
 end Probability
 
