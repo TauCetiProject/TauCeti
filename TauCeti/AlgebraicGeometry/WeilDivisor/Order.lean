@@ -105,6 +105,11 @@ lemma isEffective_inf_iff {D E : WeilDivisor X} :
   · rintro ⟨hD, hE⟩
     exact le_inf hD hE
 
+/-- Removing the infimum from each of two Weil divisors leaves disjoint residual divisors. -/
+lemma sub_inf_inf_sub_inf_eq_zero (D E : WeilDivisor X) :
+    ((D - D ⊓ E) ⊓ (E - D ⊓ E)) = 0 := by
+  rw [← inf_sub, sub_self]
+
 /-! ### Positive and negative parts -/
 
 /-- The coefficient of the positive part is the positive part of the coefficient. -/
