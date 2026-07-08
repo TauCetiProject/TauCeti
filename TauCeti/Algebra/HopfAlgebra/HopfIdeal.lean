@@ -82,66 +82,6 @@ theorem rightTensorIdeal_def (I : Ideal H) :
         (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I :=
   rfl
 
-/-- The left tensor inclusion sends elements of `I` into `I ⊗ H`. -/
-theorem includeLeft_mem_leftTensorIdeal {I : Ideal H} {x : H} (hx : x ∈ I) :
-    Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H) x ∈
-      leftTensorIdeal (R := R) (H := H) I :=
-  Ideal.mem_map_of_mem _ hx
-
-/-- The right tensor inclusion sends elements of `I` into `H ⊗ I`. -/
-theorem includeRight_mem_rightTensorIdeal {I : Ideal H} {x : H} (hx : x ∈ I) :
-    Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H) x ∈
-      rightTensorIdeal (R := R) (H := H) I :=
-  Ideal.mem_map_of_mem _ hx
-
-/-- A pure tensor `x ⊗ₜ y` with `x ∈ I` lies in `I ⊗ H`. -/
-theorem tmul_mem_leftTensorIdeal {I : Ideal H} {x : H} (hx : x ∈ I) (y : H) :
-    x ⊗ₜ[R] y ∈ leftTensorIdeal (R := R) (H := H) I := by
-  have h : x ⊗ₜ[R] y =
-      Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H) y *
-        Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H) x := by
-    rw [Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply,
-      Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
-  rw [h]
-  exact Ideal.mul_mem_left _ _ (includeLeft_mem_leftTensorIdeal (R := R) (H := H) hx)
-
-/-- A pure tensor `x ⊗ₜ y` with `y ∈ I` lies in `H ⊗ I`. -/
-theorem tmul_mem_rightTensorIdeal {I : Ideal H} (x : H) {y : H} (hy : y ∈ I) :
-    x ⊗ₜ[R] y ∈ rightTensorIdeal (R := R) (H := H) I := by
-  have h : x ⊗ₜ[R] y =
-      Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H) x *
-        Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H) y := by
-    rw [Algebra.TensorProduct.includeLeft_apply, Algebra.TensorProduct.includeRight_apply,
-      Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
-  rw [h]
-  exact Ideal.mul_mem_left _ _ (includeRight_mem_rightTensorIdeal (R := R) (H := H) hy)
-
-theorem mem_leftTensorIdeal {I : Ideal H} {x : H ⊗[R] H} :
-    x ∈ leftTensorIdeal (R := R) (H := H) I ↔
-      x ∈ Ideal.map
-        (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom
-        I :=
-  Iff.rfl
-
-theorem mem_rightTensorIdeal {I : Ideal H} {x : H ⊗[R] H} :
-    x ∈ rightTensorIdeal (R := R) (H := H) I ↔
-      x ∈ Ideal.map
-        (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I :=
-  Iff.rfl
-
-theorem leftTensorIdeal_le_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
-    leftTensorIdeal (R := R) (H := H) I ≤ J ↔
-      I ≤ Ideal.comap
-        (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom
-        J := by
-  exact Ideal.map_le_iff_le_comap
-
-theorem rightTensorIdeal_le_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
-    rightTensorIdeal (R := R) (H := H) I ≤ J ↔
-      I ≤ Ideal.comap
-        (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom J := by
-  exact Ideal.map_le_iff_le_comap
-
 /-- The construction `I ↦ I ⊗ H` is monotone. -/
 theorem leftTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
     leftTensorIdeal (R := R) (H := H) I ≤ leftTensorIdeal (R := R) (H := H) J :=
@@ -151,51 +91,6 @@ theorem leftTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
 theorem rightTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
     rightTensorIdeal (R := R) (H := H) I ≤ rightTensorIdeal (R := R) (H := H) J :=
   Ideal.map_mono hIJ
-
-/-- The construction `I ↦ I ⊗ H` distributes over arbitrary suprema of ideals. -/
-@[simp]
-theorem leftTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
-    leftTensorIdeal (R := R) (H := H) (⨆ i, I i) =
-      ⨆ i, leftTensorIdeal (R := R) (H := H) (I i) :=
-  Ideal.map_iSup
-    (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I
-
-/-- The construction `I ↦ H ⊗ I` distributes over arbitrary suprema of ideals. -/
-@[simp]
-theorem rightTensorIdeal_iSup {ι : Sort*} (I : ι → Ideal H) :
-    rightTensorIdeal (R := R) (H := H) (⨆ i, I i) =
-      ⨆ i, rightTensorIdeal (R := R) (H := H) (I i) :=
-  Ideal.map_iSup
-    (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I
-
-/-- The construction `I ↦ I ⊗ H` distributes over joins of ideals. -/
-@[simp]
-theorem leftTensorIdeal_sup (I J : Ideal H) :
-    leftTensorIdeal (R := R) (H := H) (I ⊔ J) =
-      leftTensorIdeal (R := R) (H := H) I ⊔ leftTensorIdeal (R := R) (H := H) J :=
-  Ideal.map_sup
-    (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom I J
-
-/-- The construction `I ↦ H ⊗ I` distributes over joins of ideals. -/
-@[simp]
-theorem rightTensorIdeal_sup (I J : Ideal H) :
-    rightTensorIdeal (R := R) (H := H) (I ⊔ J) =
-      rightTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) J :=
-  Ideal.map_sup
-    (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I J
-
-theorem le_leftTensorIdeal_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
-    J ≤ leftTensorIdeal (R := R) (H := H) I ↔
-      J ≤ Ideal.map
-        (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom
-        I :=
-  Iff.rfl
-
-theorem le_rightTensorIdeal_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
-    J ≤ rightTensorIdeal (R := R) (H := H) I ↔
-      J ≤ Ideal.map
-        (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I :=
-  Iff.rfl
 
 /-- TauCeti's `leftTensorIdeal I` (`I ⊗ H`), viewed as an `R`-submodule, is the range of
 `rTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeLeft_eq`. -/
