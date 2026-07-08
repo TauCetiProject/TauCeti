@@ -32,7 +32,7 @@ applies) across the change of variables `gaussianReal μ v = volume.withDensity 
 with `integrable_withDensity_iff`. Applied to the polynomial `Hₙ(·√2)` with `v = 1` this gives the
 `L¹` membership, and to its square with `v = ½` (whose envelope `exp(-x²)` is `ψₙ²` up to the
 constant) the `L²` membership. The zeroth-mode normalization additionally uses Mathlib's Gaussian
-integral formula.
+density normalization `integral_gaussianPDFReal_eq_one`.
 
 Mathlib's Gaussian density API (`gaussianReal_of_var_ne_zero`, `measurable_gaussianPDF`,
 `gaussianPDFReal_def`), `integrable_withDensity_iff`, `memLp_two_iff_integrable_sq`, and the
@@ -98,35 +98,19 @@ theorem memLp_two_hermiteFunction (n : ℕ) : MemLp (hermiteFunction n) 2 volume
 private lemma integral_hermiteFunction_zero_mul_self_expanded :
     ∫ x : ℝ, Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
       (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)) = 1 := by
-  have hsqrt_sqrt_pi_sq :
-      Real.sqrt (Real.sqrt Real.pi) ^ 2 = Real.sqrt Real.pi := by
-    rw [Real.sq_sqrt (Real.sqrt_nonneg Real.pi)]
-  calc
-    ∫ x : ℝ,
-        Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
-          (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi))
-        = ∫ x : ℝ,
-        Real.exp (-x ^ 2) / Real.sqrt (Real.sqrt Real.pi) ^ 2 := by
-        refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-        dsimp only
-        have henv : Real.exp (-(x ^ 2 / 2)) * Real.exp (-(x ^ 2 / 2)) =
-            Real.exp (-x ^ 2) := by
-          rw [← Real.exp_add]
-          congr 1
-          ring
-        rw [div_mul_div_comm, henv]
-        ring_nf
-    _ = (Real.sqrt (Real.sqrt Real.pi) ^ 2)⁻¹ * ∫ x : ℝ, Real.exp (-x ^ 2) := by
-        rw [← integral_const_mul]
-        refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-        ring
-    _ = 1 := by
-        have hgauss : ∫ x : ℝ, Real.exp (-x ^ 2) = Real.sqrt Real.pi := by
-          convert integral_gaussian (1 : ℝ) using 1
-          · ring_nf
-          · ring_nf
-        rw [hgauss, hsqrt_sqrt_pi_sq]
-        field_simp [Real.sqrt_ne_zero'.mpr (Real.sqrt_pos.2 Real.pi_pos)]
+  -- The integrand is the normalized Gaussian density `gaussianPDFReal 0 (1/2)`, so this is the
+  -- `μ = 0`, `v = 1/2` case of Mathlib's `integral_gaussianPDFReal_eq_one`.
+  rw [← integral_gaussianPDFReal_eq_one 0 (v := (1 / 2 : ℝ≥0)) (by norm_num)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  have hden : Real.sqrt (Real.sqrt Real.pi) * Real.sqrt (Real.sqrt Real.pi) =
+      Real.sqrt Real.pi := Real.mul_self_sqrt (Real.sqrt_nonneg _)
+  have hexp : Real.exp (-(x ^ 2 / 2)) * Real.exp (-(x ^ 2 / 2)) = Real.exp (-x ^ 2) := by
+    rw [← Real.exp_add]; congr 1; ring
+  have hv : ((1 / 2 : ℝ≥0) : ℝ) = 1 / 2 := by push_cast; ring
+  simp only [gaussianPDFReal]
+  rw [div_mul_div_comm, hexp, hden, hv, sub_zero,
+    show (2 : ℝ) * Real.pi * (1 / 2) = Real.pi by ring, show (2 : ℝ) * (1 / 2) = 1 by ring,
+    div_one, div_eq_inv_mul]
 
 /-- The zeroth Hermite function has square integral one. This is the `n = 0` boundary case of
 the roadmap's Hermite-function orthonormality target. -/
