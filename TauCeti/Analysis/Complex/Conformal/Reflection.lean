@@ -21,8 +21,8 @@ It also names the standard real-axis Schwarz-reflection extension
 `z ↦ if 0 ≤ z.im then f z else conj (f (conj z))`, together with the pointwise API for the
 upper and lower half-planes and the conjugation symmetry forced by real boundary values.
 The closed upper branch is intentionally exposed through the pointwise simplifier
-`schwarzReflection_of_im_nonneg`; continuity and differentiability transfers on subsets of
-that branch are obtained from Mathlib's congruence lemmas rather than separate wrapper API.
+`schwarzReflection_of_im_nonneg`, with subset-level wrappers for branch agreement and
+differentiability transfer.
 The private semilinear within-set helper adapts the proof pattern of Mathlib's
 `HasFDerivAt.comp_semilinear`.
 -/
@@ -68,6 +68,20 @@ lemma schwarzReflection_of_im_zero {z : ℂ} (hz : z.im = 0) :
     schwarzReflection f z = f z := by
   exact schwarzReflection_of_im_nonneg (f := f) (z := z) hz.ge
 
+/-- On any subset of the closed upper half-plane, Schwarz reflection agrees with the original
+function. -/
+lemma eqOn_schwarzReflection_of_subset_im_nonneg
+    (hS : S ⊆ {z : ℂ | 0 ≤ z.im}) :
+    Set.EqOn (schwarzReflection f) f S :=
+  fun _ hz => schwarzReflection_of_im_nonneg (f := f) (hS hz)
+
+/-- On any subset of the lower half-plane, Schwarz reflection agrees with the reflected
+branch. -/
+lemma eqOn_schwarzReflection_of_subset_im_neg
+    (hS : S ⊆ {z : ℂ | z.im < 0}) :
+    Set.EqOn (schwarzReflection f) (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) S :=
+  fun _ hz => schwarzReflection_of_im_neg (f := f) (hS hz)
+
 /-- Conjugating a point in the upper half-plane evaluates the reflected lower branch. -/
 lemma schwarzReflection_conj_of_im_pos {z : ℂ} (hz : 0 < z.im) :
     schwarzReflection f ((starRingEnd ℂ) z) = (starRingEnd ℂ) (f z) := by
@@ -108,6 +122,26 @@ lemma schwarzReflection_conj
     exact (Complex.conj_eq_iff_im.mpr (hreal hzero)).symm
   · rw [schwarzReflection_conj_of_im_pos (f := f) hpos]
     rw [schwarzReflection_of_im_nonneg (f := f) hpos.le]
+
+/--
+On a domain where the original function is real-valued on the real axis, the Schwarz-reflection
+extension is conjugation-symmetric at each point of the domain.
+-/
+lemma schwarzReflection_conj_of_real_on_axis {Ω : Set ℂ}
+    (hreal : ∀ z ∈ Ω, z.im = 0 → (f z).im = 0) {z : ℂ} (hz : z ∈ Ω) :
+    schwarzReflection f ((starRingEnd ℂ) z) =
+      (starRingEnd ℂ) (schwarzReflection f z) :=
+  schwarzReflection_conj (f := f) z fun hz0 => hreal z hz hz0
+
+/--
+On a domain where the original function is real-valued on the real axis, the Schwarz-reflection
+extension is conjugation-symmetric on that domain.
+-/
+lemma eqOn_schwarzReflection_conj_of_real_on_axis {Ω : Set ℂ}
+    (hreal : ∀ z ∈ Ω, z.im = 0 → (f z).im = 0) :
+    Set.EqOn (fun z => schwarzReflection f ((starRingEnd ℂ) z))
+      (fun z => (starRingEnd ℂ) (schwarzReflection f z)) Ω := fun _ hz =>
+  schwarzReflection_conj_of_real_on_axis (f := f) hreal hz
 
 /--
 For a domain closed under conjugation, conjugation carries the upper half-plane part of the
@@ -214,6 +248,15 @@ lemma differentiableOn_conj_conj (hf : DifferentiableOn ℂ f S) :
     rw [hw]
   rw [hfun, hset]
   exact hstar.differentiableWithinAt
+
+/--
+On any subset of the closed upper half-plane, the explicit Schwarz-reflection extension is
+holomorphic whenever the original function is.
+-/
+lemma differentiableOn_schwarzReflection_of_subset_im_nonneg
+    (hS : S ⊆ {z : ℂ | 0 ≤ z.im}) (hf : DifferentiableOn ℂ f S) :
+    DifferentiableOn ℂ (schwarzReflection f) S :=
+  hf.congr fun _ hz => eqOn_schwarzReflection_of_subset_im_nonneg (f := f) hS hz
 
 /--
 Conjugating both source and target preserves holomorphicity on domains, in both directions.
