@@ -14,12 +14,11 @@ of per-segment logarithm increments:
 
 `∫ t in a..b, (γ t - w)⁻¹ * deriv γ t = ∑ j < N, Complex.log ((γ (s (j+1)) - w) / (γ (s j) - w))`.
 
-The proof splits the integral over the partition with `sum_integral_adjacent_intervals` and
-evaluates each segment with the per-segment logarithmic-derivative FTC
-`integral_inv_sub_mul_deriv_eq_log`; the slit-plane hypothesis on each segment is exactly what the
-argument-lift partition supplies. This is the first half of showing the winding number of a closed
-curve is an integer: for a closed curve the real parts of these increments telescope away and the
-imaginary parts sum to the total argument change.
+The per-segment slit-plane hypothesis is exactly the data the continuous argument-lift partition
+supplies, so this evaluation bridges that partition to the winding-number computation. It is the
+first half of showing the winding number of a closed curve is an integer: for a closed curve the
+real parts of these increments telescope away and the imaginary parts sum to the total argument
+change.
 
 ## Provenance
 
