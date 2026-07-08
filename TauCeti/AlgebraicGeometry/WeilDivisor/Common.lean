@@ -30,9 +30,16 @@ namespace AlgebraicGeometry
 
 namespace WeilDivisor
 
+variable {X : Type*}
+
+/-- Removing the infimum from each of two Weil divisors leaves disjoint residual divisors. -/
+lemma sub_inf_inf_sub_inf_eq_zero (D E : WeilDivisor X) :
+    ((D - D ⊓ E) ⊓ (E - D ⊓ E)) = 0 := by
+  rw [← inf_sub, sub_self]
+
 namespace EffectiveDivisorOfDegree
 
-variable {X : Type*} {d e : ℕ}
+variable {d e : ℕ}
 
 noncomputable section
 
@@ -227,7 +234,7 @@ lemma leftResidual_inf_rightResidual_eq_zero (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     ((leftResidual D E : WeilDivisor X) ⊓ rightResidual D E) = 0 := by
   rw [coe_leftResidual, coe_rightResidual, coe_inf]
-  rw [← inf_sub, sub_self]
+  exact sub_inf_inf_sub_inf_eq_zero (D : WeilDivisor X) E
 
 /-- Removing the common part from the left divisor and adding it back recovers the left
 divisor, up to the natural degree-index cast. -/
