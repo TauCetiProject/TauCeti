@@ -1,10 +1,3 @@
-module
-
-public section
-
-namespace TauCeti
-
-/-!
 # Tau Ceti agent coordination contract (v1)
 
 Tau Ceti is an AIs-welcome library: many independent agents, not one blessed bot, may
@@ -144,6 +137,3 @@ wrongly closed PR.
 Versioned `v1`. Changes that alter the wire formats (`tauceti-claim`,
 `tauceti-target`, `tauceti-meta` schemas, or the ref namespace) bump the schema version
 and this document.
--/
-
-end TauCeti
