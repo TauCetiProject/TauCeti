@@ -1,8 +1,15 @@
 module
 
-public import TauCeti.Probability.DeFinetti.FutureFactorization
--- Non-public: `tendsto_ae_condExp_iInf` (Lévy's downward theorem) is used only inside the proof
--- below, not in the exported statement of `condExp_blockIndicatorProd_tailProcess_ae_eq_prod`.
+-- Public: the modules whose symbols appear in the exported statement.
+public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
+public import Mathlib.MeasureTheory.Constructions.Polish.Basic
+public import TauCeti.Probability.Process.Tail
+public import TauCeti.Probability.Exchangeability.Cylinder
+public import TauCeti.Probability.Exchangeability.Contractability
+-- Non-public: used only inside the proof, absent from the exported statement —
+-- `condExp_blockIndicatorProd_future_ae_eq_prod` (finite-level factorization) and
+-- `tendsto_ae_condExp_iInf` (Lévy's downward theorem).
+import TauCeti.Probability.DeFinetti.FutureFactorization
 import TauCeti.Probability.Martingale.Convergence
 
 /-!
