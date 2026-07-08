@@ -37,13 +37,13 @@ namespace TauCeti.Contour
 
 /-- **Index integral as a sum of segment logarithm increments.** For a monotone partition
 `a = s 0 ≤ ⋯ ≤ s N = b` of `[a, b]` with `γ` continuous there, differentiable off a countable set
-`P`, avoiding `w` at each node, and with the normalized segment ratio `(γ t - w) / (γ (s j) - w)` in
-`Complex.slitPlane` on each `[s j, s (j+1)]`, the index integral of `(γ t - w)⁻¹ * deriv γ t` equals
-the sum of the per-segment `Complex.log` increments. -/
+`P`, and with the normalized segment ratio `(γ t - w) / (γ (s j) - w)` in `Complex.slitPlane` on
+each `[s j, s (j+1)]`, the index integral of `(γ t - w)⁻¹ * deriv γ t` equals the sum of the
+per-segment `Complex.log` increments. -/
 theorem integral_inv_sub_mul_deriv_eq_sum_log {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
     {N : ℕ} {s : ℕ → ℝ} (hP : P.Countable)
     (hs_zero : s 0 = a) (hs_N : s N = b) (hs_mono : Monotone s)
-    (hs_in : ∀ j ≤ N, s j ∈ Icc a b) (hγ_cont : ContinuousOn γ (Icc a b))
+    (hγ_cont : ContinuousOn γ (Icc a b))
     (hγ_diff : ∀ t ∈ Ioo a b \ P, DifferentiableAt ℝ γ t)
     (h_slit : ∀ j, j < N → ∀ t ∈ Icc (s j) (s (j + 1)),
       (γ t - w) / (γ (s j) - w) ∈ slitPlane)
@@ -51,6 +51,8 @@ theorem integral_inv_sub_mul_deriv_eq_sum_log {γ : ℝ → ℂ} {w : ℂ} {a b 
     ∫ t in a..b, (γ t - w)⁻¹ * deriv γ t
       = ∑ j ∈ Finset.range N, Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w)) := by
   have hab : a ≤ b := by have := hs_mono (Nat.zero_le N); rwa [hs_zero, hs_N] at this
+  have hs_in : ∀ j ≤ N, s j ∈ Icc a b := fun j hj ↦
+    ⟨by rw [← hs_zero]; exact hs_mono (Nat.zero_le j), by rw [← hs_N]; exact hs_mono hj⟩
   have hmono_seg : ∀ j, s j ≤ s (j + 1) := fun j ↦ hs_mono (Nat.le_succ j)
   have h_int_seg : ∀ k < N,
       IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume (s k) (s (k + 1)) := by
