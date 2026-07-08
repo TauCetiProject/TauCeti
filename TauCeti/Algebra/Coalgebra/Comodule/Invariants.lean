@@ -131,7 +131,8 @@ theorem mapInvariants_coe_apply (f : Hom R C M N) (m : invariants R C M) :
 /-- The invariants functor sends the identity morphism to the identity. -/
 @[simp]
 theorem mapInvariants_id :
-    mapInvariants (Hom.id R C M) = LinearMap.id := by
+    mapInvariants (CategoryTheory.CategoryStruct.id (ComoduleCat.of R C M)) = LinearMap.id := by
+  change mapInvariants (Hom.id R C (ComoduleCat.of R C M)) = LinearMap.id
   refine LinearMap.ext fun m => Subtype.ext ?_
   simp only [mapInvariants_coe_apply, Hom.id_apply, LinearMap.id_coe, id_eq]
 
