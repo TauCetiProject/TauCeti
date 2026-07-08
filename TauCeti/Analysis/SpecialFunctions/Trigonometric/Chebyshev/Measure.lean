@@ -3,6 +3,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Real
+import TauCeti.MeasureTheory.Function.BoundedSupportExponential
 import Mathlib.Topology.Algebra.Polynomial
 
 /-!
@@ -147,24 +148,14 @@ private lemma ae_mem_Icc_measureT :
 
 This is the compact-support consumer form used by the Chebyshev completeness
 argument. -/
-lemma integrable_exp_mul_abs_smul_measureT {𝕜 : Type*} [RCLike 𝕜] {g : ℝ → 𝕜} (a : ℝ)
+lemma integrable_exp_mul_abs_smul_measureT {𝕜 β : Type*} [RCLike 𝕜] [NormedAddCommGroup β]
+    [NormedSpace 𝕜 β] {g : ℝ → β} (a : ℝ)
     (hg : Integrable g Polynomial.Chebyshev.measureT) :
     Integrable (fun x : ℝ => (Real.exp (a * |x|) : 𝕜) • g x)
       Polynomial.Chebyshev.measureT := by
-  have h_exp : AEStronglyMeasurable (fun x : ℝ => (Real.exp (a * |x|) : 𝕜))
-      Polynomial.Chebyshev.measureT := by
-    exact (RCLike.continuous_ofReal.comp (by fun_prop)).aestronglyMeasurable
-  refine hg.bdd_smul (Real.exp |a|) h_exp ?_
-  filter_upwards [ae_mem_Icc_measureT] with x hx
-  have hx_abs : |x| ≤ 1 := abs_le.mpr hx
-  have hmul : a * |x| ≤ |a| := by
-    calc
-      a * |x| ≤ |a| * |x| := by
-        exact mul_le_mul_of_nonneg_right (le_abs_self a) (abs_nonneg x)
-      _ ≤ |a| * 1 := by
-        exact mul_le_mul_of_nonneg_left hx_abs (abs_nonneg a)
-      _ = |a| := mul_one _
-  simpa [RCLike.norm_ofReal] using Real.exp_le_exp.mpr hmul
+  exact Integrable.exp_abs_smul_of_ae_abs_le hg a 1 (by
+    filter_upwards [ae_mem_Icc_measureT] with x hx
+    exact abs_le.mpr hx)
 
 /-! ### `L²` consumer forms -/
 

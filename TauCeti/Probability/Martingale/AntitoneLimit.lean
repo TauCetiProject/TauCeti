@@ -65,7 +65,7 @@ lemma exists_integrable_tendsto_ae_condExp_of_antitone
            ∀ᵐ ω ∂μ, Tendsto (fun n => μ[f | 𝔽 n] ω) atTop (𝓝 (Xlim ω))) := by
   -- L¹ bound and its finite `NNReal` form.
   have hL1_bdd : ∀ n, eLpNorm (μ[f | 𝔽 n]) 1 μ ≤ eLpNorm f 1 μ :=
-    fun n => TauCeti.MeasureTheory.eLpNorm_condExp_le_eLpNorm_real _
+    fun n => eLpNorm_condExp_le_eLpNorm _ le_rfl
   have hf_Lp_ne_top : eLpNorm f 1 μ ≠ ⊤ := (memLp_one_iff_integrable.2 hf).eLpNorm_ne_top
   set R := (eLpNorm f 1 μ).toNNReal with hR_def
   have hR : eLpNorm f 1 μ = ↑R := (ENNReal.coe_toNNReal hf_Lp_ne_top).symm
