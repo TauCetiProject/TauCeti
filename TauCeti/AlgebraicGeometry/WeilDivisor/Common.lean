@@ -32,11 +32,6 @@ namespace WeilDivisor
 
 variable {X : Type*}
 
-/-- Removing the infimum from each of two Weil divisors leaves disjoint residual divisors. -/
-lemma sub_inf_inf_sub_inf_eq_zero (D E : WeilDivisor X) :
-    ((D - D ⊓ E) ⊓ (E - D ⊓ E)) = 0 := by
-  rw [← inf_sub, sub_self]
-
 namespace EffectiveDivisorOfDegree
 
 variable {d e : ℕ}
