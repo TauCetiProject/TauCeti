@@ -22,15 +22,15 @@ here as `IdentDistrib` facts:
 
 * `Contractable.identDistrib_coord`: every coordinate `X i` is identically distributed to
   every other coordinate `X j`;
-* `Contractable.identDistrib_pair`: for `i < j` the pair `(X i, X j)` is identically
-  distributed to `(X 0, X 1)`.
+* `Contractable.identDistrib_pair`: for `i < j` and `k < l` the pair `(X i, X j)` is
+  identically distributed to `(X k, X l)`.
 
 For a real-valued sequence these give the uniform first- and second-moment structure:
 
 * `Contractable.integral_coord_eq`: all coordinate means agree;
 * `Contractable.variance_coord_eq`: all coordinate variances agree;
-* `Contractable.covariance_eq_of_lt`: every off-diagonal covariance `cov[X i, X j; μ]`
-  (`i < j`) equals `cov[X 0, X 1; μ]`.
+* `Contractable.covariance_eq_of_lt`: any two off-diagonal covariances agree,
+  `cov[X i, X j; μ] = cov[X k, X l; μ]` for `i < j` and `k < l`.
 
 The `IdentDistrib` and moment machinery is Mathlib's (`ProbabilityTheory.IdentDistrib`,
 `ProbabilityTheory.covariance`, `ProbabilityTheory.variance`); the contractability input is
@@ -89,16 +89,16 @@ theorem Contractable.identDistrib_coord (hX : Contractable μ X)
       hX.map_single (fun _ => i), hX.map_single (fun _ => j)]
 
 /-- **Increasing pairs of a contractable process are identically distributed.** For a
-contractable process `X` with a.e. measurable coordinates and `i < j`, the pair `(X i, X j)`
-has the same joint law as `(X 0, X 1)`. -/
+contractable process `X` with a.e. measurable coordinates and `i < j`, `k < l`, the pair
+`(X i, X j)` has the same joint law as `(X k, X l)`. -/
 theorem Contractable.identDistrib_pair (hX : Contractable μ X)
-    (hX_meas : ∀ n, AEMeasurable (X n) μ) {i j : ℕ} (hij : i < j) :
-    IdentDistrib (fun ω => (X i ω, X j ω)) (fun ω => (X 0 ω, X 1 ω)) μ μ where
+    (hX_meas : ∀ n, AEMeasurable (X n) μ) {i j k l : ℕ} (hij : i < j) (hkl : k < l) :
+    IdentDistrib (fun ω => (X i ω, X j ω)) (fun ω => (X k ω, X l ω)) μ μ where
   aemeasurable_fst := (hX_meas i).prodMk (hX_meas j)
-  aemeasurable_snd := (hX_meas 0).prodMk (hX_meas 1)
+  aemeasurable_snd := (hX_meas k).prodMk (hX_meas l)
   map_eq := by
-    rw [← map_pairEval_blockLaw i j hX_meas, ← map_pairEval_blockLaw 0 1 hX_meas,
-      hX.map_pair hij, hX.map_pair Nat.zero_lt_one]
+    rw [← map_pairEval_blockLaw i j hX_meas, ← map_pairEval_blockLaw k l hX_meas,
+      hX.map_pair hij, hX.map_pair hkl]
 
 end IdentDistrib
 
@@ -121,30 +121,30 @@ theorem Contractable.variance_coord_eq (hX : Contractable μ X)
   (hX.identDistrib_coord hX_meas i j).variance_eq
 
 /-- **Uniform covariances from contractability.** For a contractable real-valued process with
-`L²` coordinates, every off-diagonal covariance `cov[X i, X j; μ]` with `i < j` equals the
-single covariance `cov[X 0, X 1; μ]`. -/
+`L²` coordinates, any two off-diagonal covariances agree: `cov[X i, X j; μ] = cov[X k, X l; μ]`
+whenever `i < j` and `k < l`. -/
 theorem Contractable.covariance_eq_of_lt [IsProbabilityMeasure μ] (hX : Contractable μ X)
-    (hX_L2 : ∀ n, MemLp (X n) 2 μ) {i j : ℕ} (hij : i < j) :
-    cov[X i, X j; μ] = cov[X 0, X 1; μ] := by
+    (hX_L2 : ∀ n, MemLp (X n) 2 μ) {i j k l : ℕ} (hij : i < j) (hkl : k < l) :
+    cov[X i, X j; μ] = cov[X k, X l; μ] := by
   have hmeas : ∀ n, AEMeasurable (X n) μ := fun n => (hX_L2 n).aestronglyMeasurable.aemeasurable
-  have hmul : μ[X i * X j] = μ[X 0 * X 1] := by
-    have h := (hX.identDistrib_pair hmeas hij).comp (measurable_fst.mul measurable_snd)
+  have hmul : μ[X i * X j] = μ[X k * X l] := by
+    have h := (hX.identDistrib_pair hmeas hij hkl).comp (measurable_fst.mul measurable_snd)
     simpa [Function.comp, Pi.mul_apply] using h.integral_eq
-  rw [covariance_eq_sub (hX_L2 i) (hX_L2 j), covariance_eq_sub (hX_L2 0) (hX_L2 1), hmul]
+  rw [covariance_eq_sub (hX_L2 i) (hX_L2 j), covariance_eq_sub (hX_L2 k) (hX_L2 l), hmul]
   simp only [hX.integral_coord_eq hmeas i 0, hX.integral_coord_eq hmeas j 0,
-    hX.integral_coord_eq hmeas 1 0]
+    hX.integral_coord_eq hmeas k 0, hX.integral_coord_eq hmeas l 0]
 
 /-- **The uniform covariance structure of a contractable L² sequence.** A contractable
 real-valued process with `L²` coordinates has constant coordinate means and variances, and a
-single common off-diagonal covariance `cov[X 0, X 1; μ]`. This is the seed of the Layer 3 L²
-route to de Finetti. -/
+single common off-diagonal covariance: any two increasing pairs have equal covariance. This is
+the seed of the Layer 3 L² route to de Finetti. -/
 theorem contractable_covariance_structure [IsProbabilityMeasure μ] (hX : Contractable μ X)
     (hX_L2 : ∀ n, MemLp (X n) 2 μ) :
     (∀ i j, μ[X i] = μ[X j]) ∧ (∀ i j, Var[X i; μ] = Var[X j; μ]) ∧
-      (∀ i j, i < j → cov[X i, X j; μ] = cov[X 0, X 1; μ]) := by
+      (∀ i j k l, i < j → k < l → cov[X i, X j; μ] = cov[X k, X l; μ]) := by
   have hmeas : ∀ n, AEMeasurable (X n) μ := fun n => (hX_L2 n).aestronglyMeasurable.aemeasurable
   exact ⟨fun i j => hX.integral_coord_eq hmeas i j, fun i j => hX.variance_coord_eq hmeas i j,
-    fun _ _ hij => hX.covariance_eq_of_lt hX_L2 hij⟩
+    fun _ _ _ _ hij hkl => hX.covariance_eq_of_lt hX_L2 hij hkl⟩
 
 end Real
 
