@@ -75,15 +75,17 @@ theorem condExp_blockIndicatorProd_ae_eq_prod_of_iCondIndepFun_tailProcess
   rw [Finset.prod_apply]
   exact Finset.prod_congr rfl fun i _ => hω i
 
-/-- **Block law of a rectangle as a directing-measure mixture** (given tail conditional
-independence). The block law of the rectangle `∏ᵢ C i` is the `μ`-average of the directing-measure
-product `∏ i, directingMeasure μ X ω (C i)`. -/
-theorem blockLaw_eq_lintegral_prod_directingMeasure_of_iCondIndepFun_tailProcess
+/-- **Block law of a rectangle as a directing-measure mixture, from the tail factorization.** If the
+tail conditional expectation of the block-indicator product is a.e. the directing-measure product,
+then the block law of the rectangle `∏ᵢ C i` is the `μ`-average of that product. This is the shared
+integration core (real-integral to `lintegral` conversion) behind both the tail-conditional-
+independence mixture below and the contractability mixture in `Summit`. -/
+theorem blockLaw_eq_lintegral_prod_directingMeasure_of_condExp_ae_eq
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
-    {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
+    {X : ℕ → Ω → α} (hX_meas : ∀ n, Measurable (X n))
     {m : ℕ} {k : Fin m → ℕ} {C : Fin m → Set α} (hC : ∀ i, MeasurableSet (C i))
-    (hCI : iCondIndepFun (m := fun _ : Fin m => (inferInstance : MeasurableSpace α))
-      (tailProcess X) (tailProcess_le_ambient 0 fun j _ => hX_meas j) (fun i => X (k i)) μ) :
+    (hfac : μ[blockIndicatorProd X k C | tailProcess X]
+      =ᵐ[μ] fun ω => ∏ i, (directingMeasure μ X ω).real (C i)) :
     blockLaw μ X k (Set.univ.pi C) = ∫⁻ ω, ∏ i, directingMeasure μ X ω (C i) ∂μ := by
   classical
   have hTail : tailProcess X ≤ mΩ := tailProcess_le_ambient 0 fun j _ => hX_meas j
@@ -104,8 +106,7 @@ theorem blockLaw_eq_lintegral_prod_directingMeasure_of_iCondIndepFun_tailProcess
   have hbl : (blockLaw μ X k (Set.univ.pi C)).toReal = ∫ ω, g ω ∂μ := by
     rw [← integral_blockIndicatorProd (fun i => (hX_meas (k i)).aemeasurable) hC,
       ← integral_condExp hTail]
-    exact integral_congr_ae
-      (condExp_blockIndicatorProd_ae_eq_prod_of_iCondIndepFun_tailProcess hX hX_meas hC hCI)
+    exact integral_congr_ae hfac
   have hbl_ne : blockLaw μ X k (Set.univ.pi C) ≠ ⊤ := by
     rw [blockLaw_blockCylinder X (fun i => (hX_meas (k i)).aemeasurable) hC]
     exact measure_ne_top μ _
@@ -116,6 +117,19 @@ theorem blockLaw_eq_lintegral_prod_directingMeasure_of_iCondIndepFun_tailProcess
   simp only [hg, measureReal_def]
   rw [ENNReal.ofReal_prod_of_nonneg fun i _ => ENNReal.toReal_nonneg]
   exact Finset.prod_congr rfl fun i _ => ENNReal.ofReal_toReal (measure_ne_top _ _)
+
+/-- **Block law of a rectangle as a directing-measure mixture** (given tail conditional
+independence). The block law of the rectangle `∏ᵢ C i` is the `μ`-average of the directing-measure
+product `∏ i, directingMeasure μ X ω (C i)`. -/
+theorem blockLaw_eq_lintegral_prod_directingMeasure_of_iCondIndepFun_tailProcess
+    [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
+    {m : ℕ} {k : Fin m → ℕ} {C : Fin m → Set α} (hC : ∀ i, MeasurableSet (C i))
+    (hCI : iCondIndepFun (m := fun _ : Fin m => (inferInstance : MeasurableSpace α))
+      (tailProcess X) (tailProcess_le_ambient 0 fun j _ => hX_meas j) (fun i => X (k i)) μ) :
+    blockLaw μ X k (Set.univ.pi C) = ∫⁻ ω, ∏ i, directingMeasure μ X ω (C i) ∂μ :=
+  blockLaw_eq_lintegral_prod_directingMeasure_of_condExp_ae_eq hX_meas hC
+    (condExp_blockIndicatorProd_ae_eq_prod_of_iCondIndepFun_tailProcess hX hX_meas hC hCI)
 
 /-- **de Finetti reduces to conditional independence over the tail** (directing-measure form). If
 every finite injective selection of coordinates of a contractable process is conditionally

@@ -1,9 +1,14 @@
 module
 
-public import TauCeti.Probability.DeFinetti.TailFactorization
-public import TauCeti.Probability.DeFinetti.BlockFactorization
--- Non-public: `Tuple.sort` (sorting an injective selection into increasing order) is used only
--- inside the injective-reduction proof, not in any exported statement.
+-- Public: the modules whose symbols appear in the exported statements.
+public import Mathlib.MeasureTheory.Constructions.Polish.Basic
+public import TauCeti.Probability.Exchangeability.Contractability
+public import TauCeti.Probability.Exchangeability.ConditionallyIID
+public import TauCeti.Probability.DeFinetti.DirectingMeasure
+-- Non-public: used only inside proofs — the tail factorization, the shared integration core, and
+-- `Tuple.sort` (for the injective reduction).
+import TauCeti.Probability.DeFinetti.TailFactorization
+import TauCeti.Probability.DeFinetti.BlockFactorization
 import Mathlib.Data.Fin.Tuple.Sort
 
 /-!
@@ -22,7 +27,8 @@ what `conditionallyIIDWith_of_forall_rectangles` consumes.
 * `conditionallyIID_of_contractable` — the existential form.
 * `conditionallyIID_of_exchangeable` — the exchangeable form (via `contractable_of_exchangeable`).
 
-Adapted from `cameronfreer/exchangeability`
+The reverse-martingale ("third") proof follows Kallenberg, *Probabilistic Symmetries and Invariance
+Principles*, Theorem 1.1 (pp. 26–28). Adapted from `cameronfreer/exchangeability`
 (`DeFinetti/TheoremViaMartingale.lean`: `conditionallyIID_of_contractable`, `deFinetti`).
 -/
 
@@ -63,38 +69,9 @@ private theorem blockLaw_prefix_eq_lintegral_prod_directingMeasure
     {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     {r : ℕ} {B : Fin r → Set α} (hB : ∀ i, MeasurableSet (B i)) :
     blockLaw μ X (fun i : Fin r => (i : ℕ)) (Set.univ.pi B)
-      = ∫⁻ ω, ∏ i, directingMeasure μ X ω (B i) ∂μ := by
-  classical
-  have hTail : tailProcess X ≤ mΩ := tailProcess_le_ambient 0 fun j _ => hX_meas j
-  haveI : IsFiniteMeasure (μ.trim hTail) := isFiniteMeasure_trim hTail
-  set g : Ω → ℝ := fun ω => ∏ i, (directingMeasure μ X ω).real (B i) with hg
-  have hg_meas : Measurable g :=
-    Finset.measurable_prod _ fun i _ =>
-      (measurable_directingMeasure_coe hTail (hB i)).ennreal_toReal
-  have hg_bound : ∀ ω, ‖g ω‖ ≤ 1 := fun ω => by
-    have hval : g ω = ∏ i, ((directingMeasure μ X ω) (B i)).toReal := by
-      simp only [hg, measureReal_def]
-    rw [hval, Real.norm_of_nonneg (Finset.prod_nonneg fun i _ => ENNReal.toReal_nonneg)]
-    refine Finset.prod_le_one (fun i _ => ENNReal.toReal_nonneg) fun i _ => ?_
-    exact ENNReal.toReal_le_of_le_ofReal zero_le_one
-      (by rw [ENNReal.ofReal_one]; exact (measure_mono (Set.subset_univ _)).trans_eq measure_univ)
-  have hg_int : Integrable g μ :=
-    (integrable_const (1 : ℝ)).mono' hg_meas.aestronglyMeasurable (ae_of_all _ hg_bound)
-  have hbl : (blockLaw μ X (fun i : Fin r => (i : ℕ)) (Set.univ.pi B)).toReal = ∫ ω, g ω ∂μ := by
-    rw [← integral_blockIndicatorProd (fun i => (hX_meas _).aemeasurable) hB,
-      ← integral_condExp hTail]
-    exact integral_congr_ae
-      (condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure hX hX_meas hB)
-  have hbl_ne : blockLaw μ X (fun i : Fin r => (i : ℕ)) (Set.univ.pi B) ≠ ⊤ := by
-    rw [blockLaw_blockCylinder X (fun i => (hX_meas _).aemeasurable) hB]
-    exact measure_ne_top μ _
-  rw [← ENNReal.ofReal_toReal hbl_ne, hbl,
-    ofReal_integral_eq_lintegral_ofReal hg_int (ae_of_all _ fun ω =>
-      Finset.prod_nonneg fun i _ => ENNReal.toReal_nonneg)]
-  refine lintegral_congr fun ω => ?_
-  simp only [hg, measureReal_def]
-  rw [ENNReal.ofReal_prod_of_nonneg fun i _ => ENNReal.toReal_nonneg]
-  exact Finset.prod_congr rfl fun i _ => ENNReal.ofReal_toReal (measure_ne_top _ _)
+      = ∫⁻ ω, ∏ i, directingMeasure μ X ω (B i) ∂μ :=
+  blockLaw_eq_lintegral_prod_directingMeasure_of_condExp_ae_eq hX_meas hB
+    (condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure hX hX_meas hB)
 
 /-- For a contractable process and a strictly increasing selection `k`, the block law of the
 rectangle `∏ᵢ B i` is the `μ`-average of the directing-measure product. -/
