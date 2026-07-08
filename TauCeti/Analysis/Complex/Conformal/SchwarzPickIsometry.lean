@@ -27,9 +27,9 @@ The results are:
 * `pseudoHyperbolicExpr_unitDiscStandardAutomorphismEquiv` — every standard disc automorphism
   `z ↦ u * (z - a) / (1 - conj a * z)` is a pseudo-hyperbolic isometry.
 
-Together these say that the pseudo-hyperbolic expression is a conformal invariant: the disc
-automorphism group `Aut(𝔻)` acts by isometries of the pseudo-hyperbolic (hence hyperbolic)
-metric, the geometric content behind the Schwarz--Pick lemma.
+Together these say that the pseudo-hyperbolic expression is preserved by holomorphic
+self-maps of the disc with a holomorphic self-map left inverse, and by the standard
+automorphisms bundled as `unitDiscStandardAutomorphismEquiv`.
 
 This advances the conformal-mapping roadmap's L2 Schwarz--Pick / disc-automorphism target,
 building directly on Tau Ceti's `pseudoHyperbolicExpr_map_le` (Mathlib's Schwarz lemma) and
@@ -61,6 +61,7 @@ theorem pseudoHyperbolicExpr_map_eq {f g : ℂ → ℂ}
 
 /-- **Moebius invariance (scalar form).** The Moebius factor `z ↦ (z - a) / (1 - conj a * z)`
 with `‖a‖ < 1` is a pseudo-hyperbolic isometry of the open unit disc. -/
+@[simp]
 theorem pseudoHyperbolicExpr_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha : ‖a‖ < 1)
     {z w : ℂ} (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
     pseudoHyperbolicExpr ((z - a) / (1 - (starRingEnd ℂ) a * z))
@@ -78,6 +79,7 @@ theorem pseudoHyperbolicExpr_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha
 
 /-- **Moebius invariance (bundled form).** The bundled unit-disc Moebius factor
 `unitDiscMoebius a` preserves the pseudo-hyperbolic expression. -/
+@[simp]
 theorem pseudoHyperbolicExpr_unitDiscMoebius (a z w : Complex.UnitDisc) :
     pseudoHyperbolicExpr (unitDiscMoebius a z : ℂ) (unitDiscMoebius a w : ℂ)
       = pseudoHyperbolicExpr (z : ℂ) (w : ℂ) := by
@@ -85,9 +87,9 @@ theorem pseudoHyperbolicExpr_unitDiscMoebius (a z w : Complex.UnitDisc) :
   exact pseudoHyperbolicExpr_unitDiscMoebiusFormula_of_norm_lt_one a.norm_lt_one
     z.property w.property
 
-/-- **Automorphism invariance.** Every standard disc automorphism
-`z ↦ u * (z - a) / (1 - conj a * z)` is a pseudo-hyperbolic isometry: the disc automorphism
-group acts by isometries of the pseudo-hyperbolic metric. -/
+/-- **Standard automorphism invariance.** Every standard disc automorphism bundled as
+`unitDiscStandardAutomorphismEquiv u a` preserves the pseudo-hyperbolic expression. -/
+@[simp]
 theorem pseudoHyperbolicExpr_unitDiscStandardAutomorphismEquiv
     (u : Circle) (a z w : Complex.UnitDisc) :
     pseudoHyperbolicExpr (unitDiscStandardAutomorphismEquiv u a z : ℂ)
