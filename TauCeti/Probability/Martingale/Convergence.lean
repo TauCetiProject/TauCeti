@@ -16,14 +16,14 @@ Lévy's downward theorem for conditional expectations along a decreasing filtrat
 This is the flagship of the reverse-martingale infrastructure: the finite-horizon reversal
 (`Martingale/Reverse.lean`), the pathwise crossing adapters (`Martingale/Crossings/`), the
 reverse-martingale upcrossing bound (`Crossings/Bounds.lean`), and the antitone-limit existence
-result (`Martingale/AntitoneLimit.lean`) all feed into `condExp_tendsto_iInf`.
+result (`Martingale/AntitoneLimit.lean`) all feed into `tendsto_ae_condExp_iInf`.
 
 ## Main results
 
 - `tendsto_ae_condExp_iInf`: Lévy's downward theorem — for antitone `𝔽` and integrable `f`, the
   sequence `μ[f | 𝔽 n]` converges a.e. to `μ[f | ⨅ n, 𝔽 n]` (the reverse-martingale limit). This is
-  the roadmap Layer-4 target (roadmap README name `condExp_tendsto_iInf`), spelled in the Mathlib
-  convergence-API grammar (conclusion-first) required by the naming convention.
+  the roadmap Layer-4 target, spelled in the Mathlib convergence-API grammar (conclusion-first)
+  required by the naming convention.
 
 ## References
 
