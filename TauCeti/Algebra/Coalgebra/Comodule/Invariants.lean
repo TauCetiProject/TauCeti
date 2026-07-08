@@ -140,9 +140,9 @@ theorem mapInvariants_coe_apply (g : GroupLike R C) (f : Hom R C M N)
 /-- The invariants functor sends the identity morphism to the identity. -/
 @[simp]
 theorem mapInvariants_id (g : GroupLike R C) :
-    mapInvariants g (Hom.id R C M) = LinearMap.id := by
+    mapInvariants g (CategoryTheory.CategoryStruct.id (ComoduleCat.of R C M)) = LinearMap.id := by
   refine LinearMap.ext fun m => Subtype.ext ?_
-  simp only [mapInvariants_coe_apply, Hom.id_apply, LinearMap.id_coe, id_eq]
+  rfl
 
 /-- The invariants functor preserves composition. -/
 @[simp]
@@ -179,7 +179,6 @@ theorem Hom.ofInvariant_apply (g : GroupLike R C) (m : invariants R C M g) (r : 
   exact LinearMap.toSpanSingleton_apply R M (m : M) r
 
 /-- The value of `Hom.ofInvariant m` at `1` is `m`. -/
-@[simp]
 theorem Hom.ofInvariant_one (g : GroupLike R C) (m : invariants R C M g) :
     letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
     (Hom.ofInvariant g m) 1 = (m : M) := by
