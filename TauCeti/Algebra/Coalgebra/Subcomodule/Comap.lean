@@ -114,7 +114,7 @@ private theorem tensor_mem_range_comap {M₁ : Type w} {N₁ : Type x}
 omit [Coalgebra R C] [Comodule R C M] [Comodule R C N] [Module.Flat R C] in
 /-- Tensoring a quotient map with `C` kills tensors whose left factor lies in the
 submodule being quotiented. -/
-theorem rTensor_mkQ_map_subtype {N₁ : Type x} [AddCommGroup N₁] [Module R N₁]
+private theorem rTensor_mkQ_map_subtype {N₁ : Type x} [AddCommGroup N₁] [Module R N₁]
     (B : Submodule R N₁) (t : B ⊗[R] C) :
     LinearMap.rTensor C B.mkQ
         (TensorProduct.map B.subtype (LinearMap.id : C →ₗ[R] C) t) = 0 := by

@@ -50,6 +50,22 @@ namespace Subcomodule
 
 variable (N : Subcomodule R C M)
 
+omit [Coalgebra R C] [Comodule R C M] in
+private theorem rTensor_mkQ_map_subtype {N₁ : Type w} [AddCommGroup N₁] [Module R N₁]
+    (B : Submodule R N₁) (t : B ⊗[R] C) :
+    LinearMap.rTensor C B.mkQ
+        (TensorProduct.map B.subtype (LinearMap.id : C →ₗ[R] C) t) = 0 := by
+  induction t with
+  | zero => simp
+  | tmul b c =>
+      have hb : B.mkQ (b : N₁) = 0 := by
+        rw [Submodule.mkQ_apply]
+        exact (Submodule.Quotient.mk_eq_zero B).2 b.property
+      rw [LinearMap.rTensor_def]
+      simp [hb]
+  | add x y hx hy =>
+      simp [hx, hy]
+
 /-- The composite `(N.mkQ ⊗ id) ∘ ρ` vanishes on a subcomodule `N`, so the coaction
 descends to the quotient by `N`. -/
 theorem le_ker_tensorProduct_mkQ_comp_coact :
@@ -82,6 +98,8 @@ theorem quotientCoact_mk (m : M) :
 instance instComoduleQuotient : Comodule R C (M ⧸ N.toSubmodule) where
   coact := N.quotientCoact
   coassoc := by
+    -- Check coassociativity after precomposing with the quotient map, then rewrite both
+    -- quotient coactions to the defining descended map.
     apply Submodule.linearMap_qext
     ext m
     have hquot :
@@ -93,6 +111,9 @@ instance instComoduleQuotient : Comodule R C (M ⧸ N.toSubmodule) where
     rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
       Submodule.mkQ_apply, quotientCoact_mk, LinearMap.rTensor_map]
     rw [hquot]
+    -- Naturality of tensor associativity moves the quotient map past the original
+    -- coassociativity square; the last two steps use coassociativity of `M` and functoriality of
+    -- `lTensor`.
     calc
       TensorProduct.assoc R (M ⧸ N.toSubmodule) C C
           (TensorProduct.map
