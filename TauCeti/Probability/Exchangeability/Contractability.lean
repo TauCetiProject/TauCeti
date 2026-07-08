@@ -4,6 +4,7 @@ public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
+public import Mathlib.Probability.IdentDistrib
 import TauCeti.Probability.Exchangeability.PermutationExtension
 import TauCeti.Probability.Exchangeability.ExchangeableAtMonotone
 import Mathlib.Order.Fin.Tuple
@@ -35,7 +36,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory
+open MeasureTheory ProbabilityTheory
 
 namespace TauCeti
 
@@ -61,6 +62,52 @@ theorem Contractable.map_pair {μ : Measure Ω} {X : ℕ → Ω → α} (h : Con
     {i j : ℕ} (hij : i < j) :
     blockLaw μ X ![i, j] = prefixLaw μ X 2 :=
   h.map (strictMono_vecEmpty.vecCons hij)
+
+/-- Evaluating the one-coordinate block law `blockLaw μ X (fun _ => i)` at its single
+coordinate recovers the law of `X i`. -/
+private theorem map_coordEval_blockLaw {μ : Measure Ω} {X : ℕ → Ω → α}
+    (i : ℕ) (hX_meas : ∀ n, AEMeasurable (X n) μ) :
+    (blockLaw μ X (fun _ : Fin 1 => i)).map (fun v : Fin 1 → α => v 0) = μ.map (X i) := by
+  rw [blockLaw_def, AEMeasurable.map_map_of_aemeasurable (measurable_pi_apply 0).aemeasurable
+    (aemeasurable_pi_lambda _ fun _ => hX_meas i)]
+  rfl
+
+/-- Evaluating the two-coordinate block law `blockLaw μ X ![i, j]` at its two coordinates
+recovers the joint law of `(X i, X j)`. -/
+private theorem map_pairEval_blockLaw {μ : Measure Ω} {X : ℕ → Ω → α}
+    (i j : ℕ) (hX_meas : ∀ n, AEMeasurable (X n) μ) :
+    (blockLaw μ X ![i, j]).map (fun v : Fin 2 → α => (v 0, v 1))
+      = μ.map (fun ω => (X i ω, X j ω)) := by
+  have hcomp : ((fun v : Fin 2 → α => (v 0, v 1)) ∘ fun ω (l : Fin 2) => X (![i, j] l) ω)
+      = fun ω => (X i ω, X j ω) := by
+    funext ω
+    simp [Function.comp, Matrix.cons_val_zero, Matrix.cons_val_one]
+  rw [blockLaw_def, AEMeasurable.map_map_of_aemeasurable
+    ((measurable_pi_apply 0).prodMk (measurable_pi_apply 1)).aemeasurable
+    (aemeasurable_pi_lambda _ fun l => hX_meas (![i, j] l)), hcomp]
+
+/-- **Coordinates of a contractable process are identically distributed.** For a contractable
+process `X` with a.e. measurable coordinates, `X i` and `X j` have the same law. -/
+theorem Contractable.identDistrib_coord {μ : Measure Ω} {X : ℕ → Ω → α} (hX : Contractable μ X)
+    (hX_meas : ∀ n, AEMeasurable (X n) μ) (i j : ℕ) :
+    IdentDistrib (X i) (X j) μ μ where
+  aemeasurable_fst := hX_meas i
+  aemeasurable_snd := hX_meas j
+  map_eq := by
+    rw [← map_coordEval_blockLaw i hX_meas, ← map_coordEval_blockLaw j hX_meas,
+      hX.map_single (fun _ => i), hX.map_single (fun _ => j)]
+
+/-- **Increasing pairs of a contractable process are identically distributed.** For a
+contractable process `X` with a.e. measurable coordinates and `i < j`, `k < l`, the pair
+`(X i, X j)` has the same joint law as `(X k, X l)`. -/
+theorem Contractable.identDistrib_pair {μ : Measure Ω} {X : ℕ → Ω → α} (hX : Contractable μ X)
+    (hX_meas : ∀ n, AEMeasurable (X n) μ) {i j k l : ℕ} (hij : i < j) (hkl : k < l) :
+    IdentDistrib (fun ω => (X i ω, X j ω)) (fun ω => (X k ω, X l ω)) μ μ where
+  aemeasurable_fst := (hX_meas i).prodMk (hX_meas j)
+  aemeasurable_snd := (hX_meas k).prodMk (hX_meas l)
+  map_eq := by
+    rw [← map_pairEval_blockLaw i j hX_meas, ← map_pairEval_blockLaw k l hX_meas,
+      hX.map_pair hij, hX.map_pair hkl]
 
 /-- Contractability is preserved by passing to a strictly increasing subsequence. -/
 theorem Contractable.comp {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
