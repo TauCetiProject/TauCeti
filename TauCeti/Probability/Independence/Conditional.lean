@@ -3,6 +3,7 @@ module
 public import Mathlib.Probability.Independence.Conditional
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
+import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.MeasureTheory.Integral.Bochner.Set
@@ -378,13 +379,14 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ]
       rw [h]; exact ⟨zero_le_one, le_rfl⟩
     · have h : φ ω = 0 := Set.indicator_of_notMem hω _
       rw [h]; exact ⟨le_rfl, zero_le_one⟩
-  -- `|φ| ≤ 1` a.e., so each conditional expectation `μ[φ | ·]` inherits the same bound via
-  -- Mathlib's `ae_bdd_condExp_of_ae_bdd`; the helper is applied once per σ-algebra below.
+  -- `|φ| ≤ 1` a.e., so each conditional expectation `μ[φ | ·]` inherits the same bound; the helper
+  -- is applied once per σ-algebra below.
   have hφ_abs : ∀ᵐ ω ∂μ, |φ ω| ≤ ((1 : NNReal) : ℝ) := by
     filter_upwards with ω
     rw [abs_of_nonneg (hφ_bdd ω).1, NNReal.coe_one]; exact (hφ_bdd ω).2
   have condExp_abs_le : ∀ m' : MeasurableSpace Ω, ∀ᵐ ω ∂μ, |μ[φ | m'] ω| ≤ 1 := fun m' => by
-    simpa using ae_bdd_condExp_of_ae_bdd (m := m') (R := 1) hφ_abs
+    simpa using
+      TauCeti.MeasureTheory.ae_bdd_abs_condExp_of_ae_bdd_abs_real (m := m') (R := 1) hφ_abs
   have hμ₁_int : Integrable μ₁ μ := integrable_condExp
   have hμ₂_int : Integrable μ₂ μ := integrable_condExp
   have hμ₁_bound : ∀ᵐ ω ∂μ, ‖μ₁ ω‖ ≤ 1 := by
