@@ -33,6 +33,19 @@ namespace MeasureTheory
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 variable {𝔽 : ℕ → MeasurableSpace Ω}
 
+omit [MeasurableSpace Ω] in
+private lemma eLpNorm_one_condExp_le_eLpNorm_stable {m m0 : MeasurableSpace Ω}
+    {μ : @Measure Ω m0} (f : Ω → ℝ) :
+    eLpNorm (μ[f | m]) 1 μ ≤ eLpNorm f 1 μ := by
+  by_cases hf : Integrable f μ
+  · rw [eLpNorm_one_eq_lintegral_enorm, eLpNorm_one_eq_lintegral_enorm,
+      ← ofReal_integral_norm_eq_lintegral_enorm integrable_condExp,
+      ← ofReal_integral_norm_eq_lintegral_enorm hf]
+    simp_rw [Real.norm_eq_abs]
+    exact ENNReal.ofReal_le_ofReal (integral_abs_condExp_le f)
+  · rw [condExp_of_not_integrable hf, eLpNorm_zero]
+    exact zero_le
+
 /-- Reverse-martingale upcrossing bound: for real `a < b`, the expected number of upcrossings of
 `n ↦ μ[f | 𝔽 n]` on `[a, b]` is finite, so the upcrossings are a.e. finite. -/
 private lemma ae_upcrossings_condExp_lt_top
@@ -64,7 +77,7 @@ lemma exists_integrable_tendsto_ae_condExp_of_antitone
            ∀ᵐ ω ∂μ, Tendsto (fun n => μ[f | 𝔽 n] ω) atTop (𝓝 (Xlim ω))) := by
   -- L¹ bound and its finite `NNReal` form.
   have hL1_bdd : ∀ n, eLpNorm (μ[f | 𝔽 n]) 1 μ ≤ eLpNorm f 1 μ :=
-    fun n => eLpNorm_one_condExp_le_eLpNorm _
+    fun n => eLpNorm_one_condExp_le_eLpNorm_stable (μ := μ) (m := 𝔽 n) _
   have hf_Lp_ne_top : eLpNorm f 1 μ ≠ ⊤ := (memLp_one_iff_integrable.2 hf).eLpNorm_ne_top
   set R := (eLpNorm f 1 μ).toNNReal with hR_def
   have hR : eLpNorm f 1 μ = ↑R := (ENNReal.coe_toNNReal hf_Lp_ne_top).symm
