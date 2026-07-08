@@ -19,14 +19,11 @@ and specializes it to the concrete disc automorphisms.
 
 The results are:
 
-* `pseudoHyperbolicExpr_const_mul` — rotation invariance, `‖c‖ = 1 ⇒
-  pseudoHyperbolicExpr (c * z) (c * w) = pseudoHyperbolicExpr z w` (an algebraic identity,
-  the rotation half of the automorphism group);
 * `pseudoHyperbolicExpr_map_eq` — the Schwarz--Pick equality for any holomorphic self-map of
   the disc with a holomorphic self-map left inverse;
-* `pseudoHyperbolicExpr_unitDiscMoebiusFormula` / `pseudoHyperbolicExpr_unitDiscMoebius` —
-  the Moebius factor `z ↦ (z - a) / (1 - conj a * z)` is a pseudo-hyperbolic isometry, in
-  scalar and bundled `Complex.UnitDisc` form;
+* `pseudoHyperbolicExpr_unitDiscMoebiusFormula_of_norm_lt_one` /
+  `pseudoHyperbolicExpr_unitDiscMoebius` — the Moebius factor `z ↦ (z - a) / (1 - conj a * z)`
+  is a pseudo-hyperbolic isometry, in scalar and bundled `Complex.UnitDisc` form;
 * `pseudoHyperbolicExpr_unitDiscStandardAutomorphismEquiv` — every standard disc automorphism
   `z ↦ u * (z - a) / (1 - conj a * z)` is a pseudo-hyperbolic isometry.
 
@@ -49,25 +46,6 @@ namespace TauCeti
 open Complex Metric Set
 open scoped ComplexConjugate
 
-/-- **Rotation invariance.** Multiplying both arguments by a unit-modulus constant leaves the
-pseudo-hyperbolic expression unchanged.  This is the rotation half of the disc-automorphism
-group; unlike the general isometry statement below it is a purely algebraic identity valid
-for all `z`, `w`. -/
-theorem pseudoHyperbolicExpr_const_mul {c : ℂ} (hc : ‖c‖ = 1) (z w : ℂ) :
-    pseudoHyperbolicExpr (c * z) (c * w) = pseudoHyperbolicExpr z w := by
-  have hcc : (starRingEnd ℂ) c * c = 1 := by
-    rw [mul_comm, Complex.mul_conj, Complex.normSq_eq_norm_sq, hc]
-    norm_num
-  have hden : (starRingEnd ℂ) (c * w) * (c * z) = (starRingEnd ℂ) w * z := by
-    rw [map_mul]
-    calc (starRingEnd ℂ) c * (starRingEnd ℂ) w * (c * z)
-        = ((starRingEnd ℂ) c * c) * ((starRingEnd ℂ) w * z) := by ring
-      _ = (starRingEnd ℂ) w * z := by rw [hcc, one_mul]
-  rw [pseudoHyperbolicExpr_def, pseudoHyperbolicExpr_def,
-    show c * z - c * w = c * (z - w) by ring,
-    show (1 : ℂ) - (starRingEnd ℂ) (c * w) * (c * z) = 1 - (starRingEnd ℂ) w * z by rw [hden],
-    mul_div_assoc, norm_mul, hc, one_mul]
-
 /-- **Schwarz--Pick equality.** A holomorphic self-map of the unit disc that admits a
 holomorphic self-map left inverse preserves the pseudo-hyperbolic expression: the Schwarz--Pick
 contraction, applied to the map and to its inverse, forces equality. -/
@@ -83,7 +61,7 @@ theorem pseudoHyperbolicExpr_map_eq {f g : ℂ → ℂ}
 
 /-- **Moebius invariance (scalar form).** The Moebius factor `z ↦ (z - a) / (1 - conj a * z)`
 with `‖a‖ < 1` is a pseudo-hyperbolic isometry of the open unit disc. -/
-theorem pseudoHyperbolicExpr_unitDiscMoebiusFormula {a : ℂ} (ha : ‖a‖ < 1)
+theorem pseudoHyperbolicExpr_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha : ‖a‖ < 1)
     {z w : ℂ} (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
     pseudoHyperbolicExpr ((z - a) / (1 - (starRingEnd ℂ) a * z))
         ((w - a) / (1 - (starRingEnd ℂ) a * w))
@@ -110,7 +88,8 @@ theorem pseudoHyperbolicExpr_unitDiscMoebius (a z w : Complex.UnitDisc) :
     pseudoHyperbolicExpr (unitDiscMoebius a z : ℂ) (unitDiscMoebius a w : ℂ)
       = pseudoHyperbolicExpr (z : ℂ) (w : ℂ) := by
   rw [coe_unitDiscMoebius, coe_unitDiscMoebius]
-  exact pseudoHyperbolicExpr_unitDiscMoebiusFormula a.norm_lt_one z.property w.property
+  exact pseudoHyperbolicExpr_unitDiscMoebiusFormula_of_norm_lt_one a.norm_lt_one
+    z.property w.property
 
 /-- **Automorphism invariance.** Every standard disc automorphism
 `z ↦ u * (z - a) / (1 - conj a * z)` is a pseudo-hyperbolic isometry: the disc automorphism
@@ -123,6 +102,7 @@ theorem pseudoHyperbolicExpr_unitDiscStandardAutomorphismEquiv
   rw [coe_unitDiscStandardAutomorphismEquiv_apply,
     coe_unitDiscStandardAutomorphismEquiv_apply,
     pseudoHyperbolicExpr_const_mul (Circle.norm_coe u)]
-  exact pseudoHyperbolicExpr_unitDiscMoebiusFormula a.norm_lt_one z.property w.property
+  exact pseudoHyperbolicExpr_unitDiscMoebiusFormula_of_norm_lt_one a.norm_lt_one
+    z.property w.property
 
 end TauCeti
