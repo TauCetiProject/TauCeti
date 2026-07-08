@@ -62,8 +62,11 @@ lemma coeFn_hermiteFunctionLp_real (n : ℕ) :
 /-! ## Zeroth-mode normalization -/
 
 /-- The zeroth `Lp` Hermite function has inner product one with itself, over any `RCLike`
-scalar field. -/
-@[simp]
+scalar field.
+
+This is not a `simp` lemma: `inner_self_eq_norm_sq_to_K` rewrites the left-hand side to
+`(‖·‖ : 𝕜) ^ 2`, so the simp-normal statement of this normalization is the unit-norm lemma
+`norm_hermiteFunctionLp_zero` below. -/
 lemma inner_hermiteFunctionLp_zero_zero :
     inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0) = 1 := by
   calc
@@ -77,5 +80,13 @@ lemma inner_hermiteFunctionLp_zero_zero :
           (hermiteFunction 0 x) (hermiteFunction 0 x)
     _ = 1 := by
         rw [integral_ofReal, integral_hermiteFunction_zero_mul_self, RCLike.ofReal_one]
+
+/-- The zeroth `Lp` Hermite function is a unit vector, over any `RCLike` scalar field. -/
+@[simp]
+lemma norm_hermiteFunctionLp_zero : ‖hermiteFunctionLp 𝕜 0‖ = 1 := by
+  have h := inner_hermiteFunctionLp_zero_zero (𝕜 := 𝕜)
+  rw [inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow] at h
+  have h2 : ‖hermiteFunctionLp 𝕜 0‖ ^ 2 = 1 := by exact_mod_cast h
+  rw [← Real.sqrt_one, ← h2, Real.sqrt_sq (norm_nonneg _)]
 
 end TauCeti
