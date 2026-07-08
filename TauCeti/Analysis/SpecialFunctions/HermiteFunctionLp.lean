@@ -63,7 +63,7 @@ lemma coeFn_hermiteFunctionLp_real (n : ℕ) :
 
 /-- The zeroth `Lp` Hermite function has inner product one with itself, over any `RCLike`
 scalar field. -/
-@[simp] lemma inner_hermiteFunctionLp_zero_zero :
+lemma inner_hermiteFunctionLp_zero_zero :
     inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0) = 1 := by
   calc
     inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0)
