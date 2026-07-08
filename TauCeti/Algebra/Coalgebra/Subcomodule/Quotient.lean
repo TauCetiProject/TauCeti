@@ -43,28 +43,12 @@ universe u v w
 
 variable {R : Type u} {C : Type v} {M : Type w}
 variable [CommRing R]
-variable [AddCommGroup C] [Module R C] [Coalgebra R C]
+variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable [AddCommGroup M] [Module R M] [Comodule R C M]
 
 namespace Subcomodule
 
 variable (N : Subcomodule R C M)
-
-omit [Coalgebra R C] [Comodule R C M] in
-private theorem rTensor_mkQ_map_subtype {N₁ : Type w} [AddCommGroup N₁] [Module R N₁]
-    (B : Submodule R N₁) (t : B ⊗[R] C) :
-    LinearMap.rTensor C B.mkQ
-        (TensorProduct.map B.subtype (LinearMap.id : C →ₗ[R] C) t) = 0 := by
-  induction t with
-  | zero => simp
-  | tmul b c =>
-      have hb : B.mkQ (b : N₁) = 0 := by
-        rw [Submodule.mkQ_apply]
-        exact (Submodule.Quotient.mk_eq_zero B).2 b.property
-      rw [LinearMap.rTensor_def]
-      simp [hb]
-  | add x y hx hy =>
-      simp [hx, hy]
 
 /-- The composite `(N.mkQ ⊗ id) ∘ ρ` vanishes on a subcomodule `N`, so the coaction
 descends to the quotient by `N`. -/
@@ -177,7 +161,8 @@ instance instComoduleQuotient : Comodule R C (M ⧸ N.toSubmodule) where
       _ = ((TensorProduct.mk R (M ⧸ N.toSubmodule) R).flip 1)
             (Submodule.Quotient.mk m) := by
           rw [Comodule.lTensor_counit_coact]
-          rfl
+          simp only [LinearMap.flip_apply, TensorProduct.mk_apply, TensorProduct.map_tmul,
+            LinearMap.id_coe, id_eq, Submodule.mkQ_apply]
 
 /-- The coaction on the quotient comodule is `Subcomodule.quotientCoact`. -/
 @[simp]
@@ -208,37 +193,41 @@ theorem mkQ_surjective : Function.Surjective N.mkQ := by
   obtain ⟨m, hm⟩ := N.toSubmodule.mkQ_surjective q
   exact ⟨m, by rw [N.mkQ_apply]; exact hm⟩
 
-variable {P : Type*} [AddCommGroup P] [Module R P] [Comodule R C P]
+variable {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R C P]
 
 /-- A comodule morphism out of `M` that vanishes on `N` descends to the quotient by `N`. -/
 def liftQ (f : Comodule.Hom R C M P) (hf : N.toSubmodule ≤ LinearMap.ker f.toLinearMap) :
-    Comodule.Hom R C (M ⧸ N.toSubmodule) P where
-  toLinearMap := N.toSubmodule.liftQ f.toLinearMap hf
-  map_coact := by
-    apply Submodule.linearMap_qext
-    ext m
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, quotient_comodule_coact]
-    rw [Submodule.mkQ_apply]
-    rw [quotientCoact_mk]
-    rw [LinearMap.comp_apply, LinearMap.comp_apply]
-    rw [Submodule.mkQ_apply]
-    rw [Submodule.liftQ_apply]
-    calc
-      TensorProduct.map (N.toSubmodule.liftQ f.toLinearMap hf)
-          (LinearMap.id : C →ₗ[R] C)
-          (TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)
-            (Comodule.coact (R := R) (C := C) (M := M) m)) =
-        TensorProduct.map f.toLinearMap (LinearMap.id : C →ₗ[R] C)
-          (Comodule.coact (R := R) (C := C) (M := M) m) := by
-          simp [TensorProduct.map_map]
-      _ = Comodule.coact (R := R) (C := C) (M := P) (f m) := by
-          exact Comodule.Hom.map_coact_apply f m
+    Comodule.Hom R C (M ⧸ N.toSubmodule) P :=
+  -- `Submodule.liftQ` and the tensor rewrites need an additive group on the codomain, which we
+  -- derive from its `R`-module structure while the exported API stays at the monoid level.
+  letI : AddCommGroup P := Module.addCommMonoidToAddCommGroup R (M := P)
+  { toLinearMap := N.toSubmodule.liftQ f.toLinearMap hf
+    map_coact := by
+      apply Submodule.linearMap_qext
+      ext m
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, quotient_comodule_coact]
+      rw [Submodule.mkQ_apply]
+      rw [quotientCoact_mk]
+      rw [LinearMap.comp_apply, LinearMap.comp_apply]
+      rw [Submodule.mkQ_apply]
+      rw [Submodule.liftQ_apply]
+      calc
+        TensorProduct.map (N.toSubmodule.liftQ f.toLinearMap hf)
+            (LinearMap.id : C →ₗ[R] C)
+            (TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)
+              (Comodule.coact (R := R) (C := C) (M := M) m)) =
+          TensorProduct.map f.toLinearMap (LinearMap.id : C →ₗ[R] C)
+            (Comodule.coact (R := R) (C := C) (M := M) m) := by
+            simp [TensorProduct.map_map]
+        _ = Comodule.coact (R := R) (C := C) (M := P) (f m) := by
+            exact Comodule.Hom.map_coact_apply f m }
 
 /-- The descended quotient morphism applied to a quotient class. -/
 @[simp]
 theorem liftQ_apply (f : Comodule.Hom R C M P)
     (hf : N.toSubmodule ≤ LinearMap.ker f.toLinearMap) (m : M) :
     N.liftQ f hf (Submodule.Quotient.mk m) = f m :=
+  letI : AddCommGroup P := Module.addCommMonoidToAddCommGroup R (M := P)
   Submodule.liftQ_apply _ _ _
 
 /-- Precomposing the descended quotient morphism with the quotient map recovers the original
