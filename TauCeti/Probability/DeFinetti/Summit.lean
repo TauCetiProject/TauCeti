@@ -16,9 +16,11 @@ what `conditionallyIIDWith_of_forall_rectangles` consumes.
 
 ## Main results
 
-* `conditionallyIID_of_contractable` — a contractable process on a standard Borel space is
-  conditionally i.i.d. (directed by `directingProbabilityMeasure μ X`).
-* `deFinetti` — its exchangeable form (via `contractable_of_exchangeable`).
+* `conditionallyIIDWith_of_contractable` — a contractable process on a standard Borel space is
+  conditionally i.i.d. with directing measure `directingProbabilityMeasure μ X` (the tail
+  conditional law).
+* `conditionallyIID_of_contractable` — the existential form.
+* `conditionallyIID_of_exchangeable` — the exchangeable form (via `contractable_of_exchangeable`).
 
 Adapted from `cameronfreer/exchangeability`
 (`DeFinetti/TheoremViaMartingale.lean`: `conditionallyIID_of_contractable`, `deFinetti`).
@@ -36,13 +38,10 @@ namespace Probability
 
 variable {Ω α : Type*} {mΩ : MeasurableSpace Ω} [MeasurableSpace α]
 
-/-- **Prefix block factorization into the directing measure.** For a contractable process, the
-conditional expectation of the length-`r` prefix indicator product given the tail σ-algebra factors
-as the product of directing-measure evaluations on the coordinate sets. This is the unconditional
-(contractability-only) analogue of the merged block factorization that assumes tail conditional
-independence: the tail factorization supplies the product form, and each coordinate's tail
-conditional law is the directing measure. -/
-theorem condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure
+/-- For a contractable process, the conditional expectation of the length-`r` prefix indicator
+product given the tail σ-algebra `tailProcess X` is a.e. the product of directing-measure
+evaluations `∏ i, (directingMeasure μ X ω).real (C i)` on the coordinate sets. -/
+private theorem condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     {r : ℕ} {C : Fin r → Set α} (hC : ∀ i, MeasurableSet (C i)) :
@@ -57,10 +56,9 @@ theorem condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure
   rw [hf]
   exact Finset.prod_congr rfl fun i _ => hk i
 
-/-- **Prefix rectangle mixture identity.** For a contractable process, the block law of the
-length-`r` prefix rectangle `∏ᵢ B i` is the `μ`-average of the directing-measure product. The
-unconditional (contractability-only) prefix analogue of the merged iCondIndepFun mixture. -/
-theorem blockLaw_prefix_eq_lintegral_prod_directingMeasure
+/-- For a contractable process, the block law of the length-`r` prefix rectangle `∏ᵢ B i` is the
+`μ`-average `∫⁻ ∏ᵢ (directingMeasure μ X ω) (B i)` of the directing-measure product. -/
+private theorem blockLaw_prefix_eq_lintegral_prod_directingMeasure
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     {r : ℕ} {B : Fin r → Set α} (hB : ∀ i, MeasurableSet (B i)) :
@@ -98,10 +96,9 @@ theorem blockLaw_prefix_eq_lintegral_prod_directingMeasure
   rw [ENNReal.ofReal_prod_of_nonneg fun i _ => ENNReal.toReal_nonneg]
   exact Finset.prod_congr rfl fun i _ => ENNReal.ofReal_toReal (measure_ne_top _ _)
 
-/-- **Strict-monotone rectangle mixture identity.** For a contractable process and a strictly
-increasing selection `k`, the block law of the rectangle `∏ᵢ B i` is the `μ`-average of the
-directing-measure product. Contractability collapses the selection to the prefix. -/
-theorem blockLaw_strictMono_eq_lintegral_prod_directingMeasure
+/-- For a contractable process and a strictly increasing selection `k`, the block law of the
+rectangle `∏ᵢ B i` is the `μ`-average of the directing-measure product. -/
+private theorem blockLaw_strictMono_eq_lintegral_prod_directingMeasure
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     {m : ℕ} {k : Fin m → ℕ} (hk : StrictMono k)
@@ -110,11 +107,9 @@ theorem blockLaw_strictMono_eq_lintegral_prod_directingMeasure
   rw [hX m k hk]
   exact blockLaw_prefix_eq_lintegral_prod_directingMeasure hX hX_meas hB
 
-/-- **Injective rectangle mixture identity.** For a contractable process and any injective
-(distinct) selection `k`, the block law of the rectangle `∏ᵢ B i` is the `μ`-average of the
-directing-measure product. Sorting `k` into increasing order reduces this to the strict-monotone
-case; the sorting permutation only permutes the rectangle sides. -/
-theorem blockLaw_injective_eq_lintegral_prod_directingMeasure
+/-- For a contractable process and any injective (distinct) selection `k`, the block law of the
+rectangle `∏ᵢ B i` is the `μ`-average of the directing-measure product. -/
+private theorem blockLaw_injective_eq_lintegral_prod_directingMeasure
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     {m : ℕ} {k : Fin m → ℕ} (hk : Function.Injective k)
@@ -140,24 +135,31 @@ theorem blockLaw_injective_eq_lintegral_prod_directingMeasure
   refine lintegral_congr fun ω => ?_
   exact Equiv.prod_comp e fun j => directingMeasure μ X ω (B j)
 
-/-- **de Finetti's theorem (reverse-martingale route): contractable ⇒ conditionally i.i.d.** A
-contractable process on a standard Borel space is conditionally i.i.d., directed by the tail
-conditional law `directingProbabilityMeasure μ X`. -/
-theorem conditionallyIID_of_contractable
+/-- **de Finetti's theorem (reverse-martingale route), directed form.** A contractable process on a
+standard Borel space is conditionally i.i.d. **with** directing measure the tail conditional law
+`directingProbabilityMeasure μ X`. -/
+theorem conditionallyIIDWith_of_contractable
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n)) :
-    ConditionallyIID μ X := by
+    ConditionallyIIDWith μ X (directingProbabilityMeasure μ X) := by
   have hTail : tailProcess X ≤ mΩ := tailProcess_le_ambient 0 fun j _ => hX_meas j
-  refine ConditionallyIID.of_directing
-    (conditionallyIIDWith_of_forall_rectangles
-      (measurable_directingProbabilityMeasure (μ := μ) hTail) ?_)
+  refine conditionallyIIDWith_of_forall_rectangles
+    (measurable_directingProbabilityMeasure (μ := μ) hTail) ?_
   intro m k hk B hB
   rw [blockLaw_injective_eq_lintegral_prod_directingMeasure hX hX_meas hk hB]
   simp only [directingProbabilityMeasure_toMeasure]
 
+/-- **de Finetti's theorem (reverse-martingale route): contractable ⇒ conditionally i.i.d.** A
+contractable process on a standard Borel space is conditionally i.i.d. -/
+theorem conditionallyIID_of_contractable
+    [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n)) :
+    ConditionallyIID μ X :=
+  ConditionallyIID.of_directing (conditionallyIIDWith_of_contractable hX hX_meas)
+
 /-- **de Finetti's theorem (reverse-martingale route): exchangeable ⇒ conditionally i.i.d.** An
 exchangeable process on a standard Borel space is conditionally i.i.d. -/
-theorem deFinetti
+theorem conditionallyIID_of_exchangeable
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX : Exchangeable μ X) (hX_meas : ∀ n, Measurable (X n)) :
     ConditionallyIID μ X :=
