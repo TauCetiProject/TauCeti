@@ -75,43 +75,12 @@ lemma eqOn_schwarzReflection_of_subset_im_nonneg
     Set.EqOn (schwarzReflection f) f S :=
   fun _ hz => schwarzReflection_of_im_nonneg (f := f) (hS hz)
 
-/-- On the closed upper half-plane, Schwarz reflection agrees with the original function. -/
-lemma eqOn_schwarzReflection_im_nonneg :
-    Set.EqOn (schwarzReflection f) f {z : ℂ | 0 ≤ z.im} :=
-  eqOn_schwarzReflection_of_subset_im_nonneg
-    (f := f) (S := {z : ℂ | 0 ≤ z.im}) Subset.rfl
-
-/--
-On the closed upper half-plane part of a domain, Schwarz reflection agrees with the original
-function.
--/
-lemma eqOn_schwarzReflection_inter_im_nonneg (Ω : Set ℂ) :
-    Set.EqOn (schwarzReflection f) f (Ω ∩ {z : ℂ | 0 ≤ z.im}) :=
-  eqOn_schwarzReflection_of_subset_im_nonneg (f := f)
-    (S := Ω ∩ {z : ℂ | 0 ≤ z.im}) inter_subset_right
-
 /-- On any subset of the lower half-plane, Schwarz reflection agrees with the reflected
 branch. -/
 lemma eqOn_schwarzReflection_of_subset_im_neg
     (hS : S ⊆ {z : ℂ | z.im < 0}) :
     Set.EqOn (schwarzReflection f) (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) S :=
   fun _ hz => schwarzReflection_of_im_neg (f := f) (hS hz)
-
-/-- On the lower half-plane, Schwarz reflection agrees with the reflected branch. -/
-lemma eqOn_schwarzReflection_im_neg :
-    Set.EqOn (schwarzReflection f) (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
-      {z : ℂ | z.im < 0} :=
-  eqOn_schwarzReflection_of_subset_im_neg
-    (f := f) (S := {z : ℂ | z.im < 0}) Subset.rfl
-
-/--
-On the lower half-plane part of a domain, Schwarz reflection agrees with the reflected branch.
--/
-lemma eqOn_schwarzReflection_inter_im_neg (Ω : Set ℂ) :
-    Set.EqOn (schwarzReflection f) (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
-      (Ω ∩ {z : ℂ | z.im < 0}) :=
-  eqOn_schwarzReflection_of_subset_im_neg (f := f)
-    (S := Ω ∩ {z : ℂ | z.im < 0}) inter_subset_right
 
 /-- Conjugating a point in the upper half-plane evaluates the reflected lower branch. -/
 lemma schwarzReflection_conj_of_im_pos {z : ℂ} (hz : 0 < z.im) :
@@ -201,15 +170,6 @@ lemma image_conj_inter_im_pos_of_symmetric {Ω : Set ℂ}
     · rw [starRingEnd_self_apply]
 
 /--
-For a conjugation-symmetric domain, conjugation carries the upper half-plane part of the domain
-to its lower half-plane part.
--/
-lemma image_conj_inter_im_pos_of_mem_iff {Ω : Set ℂ}
-    (hΩ : ∀ z, z ∈ Ω ↔ (starRingEnd ℂ) z ∈ Ω) :
-    (starRingEnd ℂ) '' (Ω ∩ {z | 0 < z.im}) = Ω ∩ {z | z.im < 0} :=
-  image_conj_inter_im_pos_of_symmetric (mapsTo_conj_of_mem_iff hΩ)
-
-/--
 For a domain closed under conjugation, conjugation carries the lower half-plane part of the
 domain to its upper half-plane part.
 -/
@@ -229,15 +189,6 @@ lemma image_conj_inter_im_neg_of_symmetric {Ω : Set ℂ}
     · rw [Set.mem_setOf_eq, starRingEnd_apply, Complex.star_def, Complex.conj_im]
       exact neg_neg_of_pos hzim
     · rw [starRingEnd_self_apply]
-
-/--
-For a conjugation-symmetric domain, conjugation carries the lower half-plane part of the domain
-to its upper half-plane part.
--/
-lemma image_conj_inter_im_neg_of_mem_iff {Ω : Set ℂ}
-    (hΩ : ∀ z, z ∈ Ω ↔ (starRingEnd ℂ) z ∈ Ω) :
-    (starRingEnd ℂ) '' (Ω ∩ {z | z.im < 0}) = Ω ∩ {z | 0 < z.im} :=
-  image_conj_inter_im_neg_of_symmetric (mapsTo_conj_of_mem_iff hΩ)
 
 private lemma starRingEnd_eq_starL (z : ℂ) :
     (starRingEnd ℂ) z = (starL ℂ : ℂ ≃L⋆[ℂ] ℂ) z := by
@@ -313,26 +264,6 @@ lemma differentiableOn_schwarzReflection_of_subset_im_nonneg
   hf.congr fun _ hz => eqOn_schwarzReflection_of_subset_im_nonneg (f := f) hS hz
 
 /--
-On the open upper half-plane, the explicit Schwarz-reflection extension is holomorphic whenever
-the original function is.
--/
-lemma differentiableOn_schwarzReflection_im_pos
-    (hf : DifferentiableOn ℂ f {z : ℂ | 0 < z.im}) :
-    DifferentiableOn ℂ (schwarzReflection f) {z : ℂ | 0 < z.im} :=
-  differentiableOn_schwarzReflection_of_subset_im_nonneg
-    (f := f) (S := {z : ℂ | 0 < z.im}) (fun z hz => show 0 ≤ z.im from hz.le) hf
-
-/--
-On the open upper half-plane part of a domain, the explicit Schwarz-reflection extension is
-holomorphic whenever the original function is.
--/
-lemma differentiableOn_schwarzReflection_inter_im_pos {Ω : Set ℂ}
-    (hf : DifferentiableOn ℂ f (Ω ∩ {z | 0 < z.im})) :
-    DifferentiableOn ℂ (schwarzReflection f) (Ω ∩ {z | 0 < z.im}) :=
-  differentiableOn_schwarzReflection_of_subset_im_nonneg
-    (f := f) (S := Ω ∩ {z | 0 < z.im}) (fun z hz => show 0 ≤ z.im from hz.2.le) hf
-
-/--
 Conjugating both source and target preserves holomorphicity on domains, in both directions.
 -/
 @[simp]
@@ -365,17 +296,6 @@ lemma differentiableOn_conj_conj_inter_im_neg_of_symmetric {Ω : Set ℂ}
     differentiableOn_conj_conj (S := Ω ∩ {z | 0 < z.im}) (f := f) hf
 
 /--
-On a conjugation-symmetric domain, conjugating source and target carries holomorphicity from the
-upper half-plane part to the lower half-plane part.
--/
-lemma differentiableOn_conj_conj_inter_im_neg_of_mem_iff {Ω : Set ℂ}
-    (hΩ : ∀ z, z ∈ Ω ↔ (starRingEnd ℂ) z ∈ Ω)
-    (hf : DifferentiableOn ℂ f (Ω ∩ {z | 0 < z.im})) :
-    DifferentiableOn ℂ (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
-      (Ω ∩ {z | z.im < 0}) :=
-  differentiableOn_conj_conj_inter_im_neg_of_symmetric (mapsTo_conj_of_mem_iff hΩ) hf
-
-/--
 On the lower half-plane part of a domain closed under conjugation, the explicit Schwarz
 reflection extension is holomorphic whenever the original function is holomorphic on the
 upper half-plane part.
@@ -389,17 +309,5 @@ lemma differentiableOn_schwarzReflection_inter_im_neg_of_symmetric {Ω : Set ℂ
     (f := f) hΩ hf) z hz).congr
       (fun w hw => schwarzReflection_of_im_neg (f := f) hw.2)
       (schwarzReflection_of_im_neg (f := f) hz.2)
-
-/--
-On the lower half-plane part of a conjugation-symmetric domain, the explicit Schwarz-reflection
-extension is holomorphic whenever the original function is holomorphic on the upper half-plane
-part.
--/
-lemma differentiableOn_schwarzReflection_inter_im_neg_of_mem_iff {Ω : Set ℂ}
-    (hΩ : ∀ z, z ∈ Ω ↔ (starRingEnd ℂ) z ∈ Ω)
-    (hf : DifferentiableOn ℂ f (Ω ∩ {z | 0 < z.im})) :
-    DifferentiableOn ℂ (schwarzReflection f) (Ω ∩ {z | z.im < 0}) :=
-  differentiableOn_schwarzReflection_inter_im_neg_of_symmetric
-    (mapsTo_conj_of_mem_iff hΩ) hf
 
 end TauCeti

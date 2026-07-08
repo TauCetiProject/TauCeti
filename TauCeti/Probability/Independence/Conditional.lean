@@ -360,13 +360,10 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ]
     μ[(X ⁻¹' A).indicator (fun _ => (1 : ℝ)) | MeasurableSpace.comap W inferInstance] := by
   have h_sq_eq_raw := integral_sq_condExp_eq_of_pair_law X W W' hX hW hW' h_law hA
   let φ : Ω → ℝ := (X ⁻¹' A).indicator (fun _ => (1 : ℝ))
-  let mΩ : MeasurableSpace Ω := inferInstance
   let mW : MeasurableSpace Ω := MeasurableSpace.comap W inferInstance
   let mW' : MeasurableSpace Ω := MeasurableSpace.comap W' inferInstance
-  have hmW_le : mW ≤ mΩ := by
-    simpa [mΩ, mW] using measurable_iff_comap_le.mp hW
-  have hmW'_le : mW' ≤ mΩ := by
-    simpa [mΩ, mW'] using measurable_iff_comap_le.mp hW'
+  have hmW_le : mW ≤ _ := measurable_iff_comap_le.mp hW
+  have hmW'_le : mW' ≤ _ := measurable_iff_comap_le.mp hW'
   haveI hσW : SigmaFinite (μ.trim hmW_le) :=
     (inferInstance : IsFiniteMeasure (μ.trim hmW_le)).toSigmaFinite
   haveI hσW' : SigmaFinite (μ.trim hmW'_le) :=
