@@ -4,47 +4,51 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import Mathlib.Algebra.Module.Submodule.EqLocus
+public import TauCeti.Algebra.Coalgebra.Comodule.Hom
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 
 /-!
-# Invariants of a comodule
+# Coinvariants of a comodule
 
 For a coalgebra `C` over `R`, a group-like element `g : GroupLike R C`, and a right
-`C`-comodule `M`, the **invariants relative to `g`** are the vectors whose coaction is
-`ρ(m) = m ⊗ g`. In a bialgebra, the usual invariants are the specialization `g = 1`. Under the
-representation ⇆ comodule dictionary of the reductive-groups roadmap, these are the fixed
-vectors for the corresponding affine monoid scheme representation; in the Hopf-algebra case,
-this recovers the usual affine group scheme interpretation.
+`C`-comodule `M`, the **coinvariants relative to `g`** are the vectors whose coaction is
+`ρ(m) = m ⊗ g`. In a bialgebra, the specialization `g = 1` is the comodule-theoretic form of
+the usual fixed-vector construction. Under the representation ⇆ comodule dictionary of the
+reductive-groups roadmap, this is the affine monoid scheme fixed-point functor; in the
+Hopf-algebra case, it recovers the usual affine group scheme interpretation.
 
-The invariants form an `R`-submodule, the equalizer of the two linear maps `ρ` and
-`m ↦ m ⊗ g`. Two structural facts pin the definition down: the group-like comodule (the
-coaction `m ↦ m ⊗ g`) is all invariants, and comodule morphisms carry invariants to
-invariants, so `M ↦ M^{co g}` is functorial. On the regular comodule the element `g : C` is
-invariant, since `g` is group-like.
+The coinvariants form an `R`-submodule, the equalizer of the two linear maps `ρ` and
+`m ↦ m ⊗ g`. Two structural facts pin the definition down: the group-like comodule attached
+to `g` is all coinvariants, and comodule morphisms carry coinvariants relative to `g` to
+coinvariants relative to `g`, so `M ↦ M^{co g}` is functorial. On the regular comodule the
+element `g : C` is coinvariant, since `g` is group-like.
 
 This is Layer 1 infrastructure for the reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap, "representations = comodules"): the invariants
-functor `V ↦ V^{coC}` is the comodule-theoretic fixed-point functor, a prerequisite for the
+(`ReductiveGroups/README.md` in TauCetiRoadmap, "representations = comodules"): the
+coinvariants functor is the comodule-theoretic fixed-point functor, a prerequisite for the
 complete-reducibility (linear reductivity) statements of Layer 6 and for the Hom-space
 computations underlying Tannakian reconstruction. It is built on the existing comodule and
 trivial-comodule API.
 
 ## Main definitions
 
-* `TauCeti.Comodule.invariants`: the submodule of invariants of a right comodule.
-* `TauCeti.Comodule.Hom.mapInvariants`: a comodule morphism restricted to invariants.
+* `TauCeti.Comodule.coinvariants`: the submodule of coinvariants of a right comodule.
+* `TauCeti.Comodule.Hom.mapCoinvariants`: a comodule morphism restricted to coinvariants.
 
 ## Main results
 
-* `TauCeti.Comodule.mem_invariants`: `m` is invariant iff `ρ(m) = m ⊗ g`.
-* `TauCeti.Comodule.invariants_groupLike`: a group-like comodule is all invariants.
-* `TauCeti.Comodule.groupLike_mem_invariants_self`: `g` is invariant in the regular comodule.
-* `TauCeti.Comodule.Hom.map_mem_invariants`, `mapInvariants_id`, `mapInvariants_comp`:
-  functoriality of the invariants.
+* `TauCeti.Comodule.mem_coinvariants`: `m` is coinvariant iff `ρ(m) = m ⊗ g`.
+* `TauCeti.Comodule.coinvariants_groupLike_eq_top`: a group-like comodule has all vectors
+  coinvariant.
+* `TauCeti.Comodule.groupLike_mem_coinvariants_self`: `g` is coinvariant in the regular
+  comodule.
+* `TauCeti.Comodule.Hom.map_mem_coinvariants`, `mapCoinvariants_id`, `mapCoinvariants_comp`:
+  functoriality of coinvariants.
 
 ## References
 
-The invariants (coinvariants) of a comodule are standard; see for example Sweedler,
+The coinvariants of a comodule are standard; see for example Sweedler,
 *Hopf Algebras*, Chapter 3. This realizes the fixed-point functor of the
 representation ⇆ comodule dictionary in Layer 1 of the Tau Ceti reductive-groups roadmap.
 -/
@@ -67,49 +71,43 @@ variable [AddCommMonoid N] [Module R N]
 variable [AddCommMonoid P] [Module R P]
 
 variable (R C M) in
-/-- The invariants of a right `C`-comodule `M` relative to a group-like element
-`g : GroupLike R C`: the `R`-submodule of vectors `m` with `ρ(m) = m ⊗ g`. In a bialgebra,
-taking `g = 1` gives the usual invariant vectors. -/
-def invariants (g : GroupLike R C) [Comodule R C M] : Submodule R M where
-  carrier := {m | coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] (g : C)}
-  add_mem' {a b} ha hb := by
-    simp only [Set.mem_setOf_eq] at *
-    rw [map_add, ha, hb, TensorProduct.add_tmul]
-  zero_mem' := by
-    simp only [Set.mem_setOf_eq]
-    rw [map_zero, TensorProduct.zero_tmul]
-  smul_mem' r m hm := by
-    simp only [Set.mem_setOf_eq] at *
-    rw [map_smul, hm, TensorProduct.smul_tmul']
+/-- The coinvariants of a right `C`-comodule `M` relative to a group-like element
+`g : GroupLike R C`: the equalizer of the coaction and the group-like coaction
+`m ↦ m ⊗ g`. -/
+def coinvariants (g : GroupLike R C) [Comodule R C M] : Submodule R M :=
+  LinearMap.eqLocus (coact (R := R) (C := C) (M := M))
+    (Comodule.groupLikeCoact (R := R) (C := C) (M := M) g)
 
-/-- A vector is invariant exactly when its coaction is `m ⊗ g`. -/
+/-- A vector is coinvariant exactly when its coaction is `m ⊗ g`. -/
 @[simp]
-theorem mem_invariants (g : GroupLike R C) [Comodule R C M] {m : M} :
-    m ∈ invariants R C M g ↔ coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] (g : C) :=
-  Iff.rfl
+theorem mem_coinvariants (g : GroupLike R C) [Comodule R C M] {m : M} :
+    m ∈ coinvariants R C M g ↔ coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] (g : C) := by
+  rw [coinvariants, LinearMap.mem_eqLocus]
+  rfl
 
-/-- An invariant vector, unfolded: its coaction is `m ⊗ g`. -/
-theorem coact_eq_of_mem_invariants (g : GroupLike R C) [Comodule R C M] {m : M}
-    (hm : m ∈ invariants R C M g) :
+/-- A coinvariant vector, unfolded: its coaction is `m ⊗ g`. -/
+theorem coact_eq_of_mem_coinvariants (g : GroupLike R C) [Comodule R C M] {m : M}
+    (hm : m ∈ coinvariants R C M g) :
     coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] (g : C) :=
-  (mem_invariants g).1 hm
+  (mem_coinvariants g).1 hm
 
 section GroupLike
 
 variable (g : GroupLike R C)
 
-/-- The group-like comodule (coaction `m ↦ m ⊗ g`) is all invariants. -/
-theorem invariants_groupLike :
+/-- The group-like comodule attached to `g` has all vectors coinvariant. -/
+theorem coinvariants_groupLike_eq_top :
     letI : Comodule R C M := Comodule.groupLike (R := R) (C := C) (M := M) g
-    invariants R C M g = ⊤ := by
+    coinvariants R C M g = ⊤ := by
   letI : Comodule R C M := Comodule.groupLike (R := R) (C := C) (M := M) g
-  ext m
-  simp
+  change LinearMap.eqLocus (Comodule.groupLikeCoact (R := R) (C := C) (M := M) g)
+    (Comodule.groupLikeCoact (R := R) (C := C) (M := M) g) = ⊤
+  exact LinearMap.eqLocus_same _
 
-/-- The regular comodule has `g` among its invariants: `g` is group-like, so
+/-- The regular comodule has `g` among its coinvariants: `g` is group-like, so
 `Δ g = g ⊗ g`. -/
-theorem groupLike_mem_invariants_self : (g : C) ∈ invariants R C C g := by
-  rw [mem_invariants, instSelf_coact, g.isGroupLikeElem_val.comul_eq_tmul_self]
+theorem groupLike_mem_coinvariants_self : (g : C) ∈ coinvariants R C C g := by
+  rw [mem_coinvariants, instSelf_coact, g.isGroupLikeElem_val.comul_eq_tmul_self]
 
 end GroupLike
 
@@ -117,39 +115,40 @@ namespace Hom
 
 variable [Comodule R C M] [Comodule R C N] [Comodule R C P]
 
-/-- Comodule morphisms carry invariants to invariants: if `ρ(m) = m ⊗ g` then
+/-- Comodule morphisms carry coinvariants to coinvariants: if `ρ(m) = m ⊗ g` then
 `ρ(f m) = (f ⊗ id)(m ⊗ g) = f m ⊗ g`. -/
-theorem map_mem_invariants (g : GroupLike R C) (f : Hom R C M N) {m : M}
-    (hm : m ∈ invariants R C M g) :
-    f m ∈ invariants R C N g := by
-  rw [mem_invariants] at hm ⊢
+theorem map_mem_coinvariants (g : GroupLike R C) (f : Hom R C M N) {m : M}
+    (hm : m ∈ coinvariants R C M g) :
+    f m ∈ coinvariants R C N g := by
+  rw [mem_coinvariants] at hm ⊢
   rw [← map_coact_apply f m, hm, TensorProduct.map_tmul, LinearMap.id_apply, coe_toLinearMap]
 
-/-- A comodule morphism restricted to invariants, as an `R`-linear map `M^{coC} → N^{coC}`. -/
-def mapInvariants (g : GroupLike R C) (f : Hom R C M N) :
-    invariants R C M g →ₗ[R] invariants R C N g :=
-  f.toLinearMap.restrict fun _ hm => map_mem_invariants g f hm
+/-- A comodule morphism restricted to coinvariants relative to the same group-like element
+`g`, as an `R`-linear map `M^{co g} → N^{co g}`. -/
+def mapCoinvariants (g : GroupLike R C) (f : Hom R C M N) :
+    coinvariants R C M g →ₗ[R] coinvariants R C N g :=
+  f.toLinearMap.restrict fun _ hm => map_mem_coinvariants g f hm
 
-/-- `mapInvariants f` acts as the underlying map of `f` on invariant vectors. -/
+/-- `mapCoinvariants f` acts as the underlying map of `f` on coinvariant vectors. -/
 @[simp]
-theorem mapInvariants_coe_apply (g : GroupLike R C) (f : Hom R C M N)
-    (m : invariants R C M g) :
-    (mapInvariants g f m : N) = f (m : M) :=
+theorem mapCoinvariants_coe_apply (g : GroupLike R C) (f : Hom R C M N)
+    (m : coinvariants R C M g) :
+    (mapCoinvariants g f m : N) = f (m : M) :=
   LinearMap.coe_restrict_apply _ m
 
-/-- The invariants functor sends the identity morphism to the identity. -/
+/-- The coinvariants functor sends the identity morphism to the identity. -/
 @[simp]
-theorem mapInvariants_id (g : GroupLike R C) :
-    mapInvariants g (CategoryTheory.CategoryStruct.id (ComoduleCat.of R C M)) = LinearMap.id := by
+theorem mapCoinvariants_id (g : GroupLike R C) :
+    mapCoinvariants g (CategoryTheory.CategoryStruct.id (ComoduleCat.of R C M)) = LinearMap.id := by
   refine LinearMap.ext fun m => Subtype.ext ?_
   rfl
 
-/-- The invariants functor preserves composition. -/
+/-- The coinvariants functor preserves composition. -/
 @[simp]
-theorem mapInvariants_comp (g : GroupLike R C) (h : Hom R C N P) (f : Hom R C M N) :
-    mapInvariants g (h.comp f) = (mapInvariants g h).comp (mapInvariants g f) := by
+theorem mapCoinvariants_comp (g : GroupLike R C) (h : Hom R C N P) (f : Hom R C M N) :
+    mapCoinvariants g (h.comp f) = (mapCoinvariants g h).comp (mapCoinvariants g f) := by
   refine LinearMap.ext fun m => Subtype.ext ?_
-  simp only [mapInvariants_coe_apply, Hom.comp_apply, LinearMap.comp_apply]
+  simp only [mapCoinvariants_coe_apply, Hom.comp_apply, LinearMap.comp_apply]
 
 end Hom
 
@@ -157,9 +156,9 @@ section UniversalProperty
 
 variable [Comodule R C M]
 
-/-- The comodule morphism `R → M` from the trivial comodule `R` determined by an invariant
-vector `m`, namely `r ↦ r • m`. -/
-noncomputable def Hom.ofInvariant (g : GroupLike R C) (m : invariants R C M g) :
+/-- The comodule morphism from the group-like comodule on `R` attached to `g`, determined by
+a coinvariant vector `m`, namely `r ↦ r • m`. -/
+noncomputable def Hom.ofCoinvariant (g : GroupLike R C) (m : coinvariants R C M g) :
     letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
     Hom R C R M :=
   letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
@@ -168,68 +167,76 @@ noncomputable def Hom.ofInvariant (g : GroupLike R C) (m : invariants R C M g) :
       refine LinearMap.ext_ring ?_
       simp only [LinearMap.comp_apply, Comodule.groupLike_coact_apply, TensorProduct.map_tmul,
         LinearMap.toSpanSingleton_apply, LinearMap.id_coe, id_eq, one_smul,
-        coact_eq_of_mem_invariants g m.2] }
+        coact_eq_of_mem_coinvariants g m.2] }
 
-/-- The morphism `Hom.ofInvariant g m` sends `r` to `r • m`. -/
+/-- The morphism `Hom.ofCoinvariant g m` sends `r` to `r • m`. -/
 @[simp]
-theorem Hom.ofInvariant_apply (g : GroupLike R C) (m : invariants R C M g) (r : R) :
+theorem Hom.ofCoinvariant_apply (g : GroupLike R C) (m : coinvariants R C M g) (r : R) :
     letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
-    (Hom.ofInvariant g m) r = r • (m : M) := by
+    (Hom.ofCoinvariant g m) r = r • (m : M) := by
   letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
   exact LinearMap.toSpanSingleton_apply R M (m : M) r
 
-/-- The value of `Hom.ofInvariant m` at `1` is `m`. -/
-theorem Hom.ofInvariant_one (g : GroupLike R C) (m : invariants R C M g) :
+/-- The value of `Hom.ofCoinvariant m` at `1` is `m`. -/
+theorem Hom.ofCoinvariant_one (g : GroupLike R C) (m : coinvariants R C M g) :
     letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
-    (Hom.ofInvariant g m) 1 = (m : M) := by
+    (Hom.ofCoinvariant g m) 1 = (m : M) := by
   simp
 
-/-- Evaluating a comodule morphism out of the trivial comodule `R` at `1` yields an invariant
-vector: `ρ(f 1) = (f ⊗ id)(1 ⊗ g) = f 1 ⊗ g`. -/
-theorem Hom.map_one_mem_invariants (g : GroupLike R C)
+/-- Evaluating a comodule morphism out of the group-like comodule on `R` attached to `g` at
+`1` yields a coinvariant vector: `ρ(f 1) = (f ⊗ id)(1 ⊗ g) = f 1 ⊗ g`. -/
+theorem Hom.map_one_mem_coinvariants (g : GroupLike R C)
     (f : letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g;
       Hom R C R M) :
     letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
-    f 1 ∈ invariants R C M g := by
+    f 1 ∈ coinvariants R C M g := by
   letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
-  rw [mem_invariants, ← Hom.map_coact_apply f 1, Comodule.groupLike_coact_apply,
+  rw [mem_coinvariants, ← Hom.map_coact_apply f 1, Comodule.groupLike_coact_apply,
     TensorProduct.map_tmul, LinearMap.id_apply, Hom.coe_toLinearMap]
 
-/-- The invariants of a comodule `M` are exactly the comodule morphisms from the trivial
-comodule `R`: `M^{coC} ≃ Hom(𝟙, M)`, the fixed vectors being the morphisms out of the unit
-representation. The equivalence sends an invariant vector `m` to `r ↦ r • m` and a morphism `f`
-to `f 1`. -/
-@[expose] noncomputable def invariantsEquivHom (g : GroupLike R C) :
+/-- The coinvariants of a comodule `M` relative to `g` are linearly equivalent to the
+comodule morphisms from the group-like comodule on `R` attached to `g`. The equivalence sends
+a coinvariant vector `m` to `r ↦ r • m` and a morphism `f` to `f 1`. -/
+@[expose] noncomputable def coinvariantsEquivHom (g : GroupLike R C) :
     letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
-    invariants R C M g ≃ Hom R C R M :=
+    coinvariants R C M g ≃ₗ[R] Hom R C R M :=
   letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
-  { toFun := Hom.ofInvariant g
-    invFun := fun f => ⟨f 1, Hom.map_one_mem_invariants g f⟩
-    left_inv := fun m => Subtype.ext (Hom.ofInvariant_one g m)
+  { toFun := Hom.ofCoinvariant g
+    invFun := fun f => ⟨f 1, Hom.map_one_mem_coinvariants g f⟩
+    left_inv := fun m => Subtype.ext (Hom.ofCoinvariant_one g m)
     right_inv := fun f => by
       apply Comodule.Hom.ext
       intro r
-      rw [Hom.ofInvariant_apply]
+      rw [Hom.ofCoinvariant_apply]
       calc
         r • f 1 = f.toLinearMap (r • 1) := (map_smul f.toLinearMap r 1).symm
         _ = f r := by
           rw [smul_eq_mul, mul_one]
-          rfl }
+          rfl
+    map_add' := fun m n => by
+      apply Comodule.Hom.ext
+      intro r
+      simp [smul_add]
+    map_smul' := fun r m => by
+      apply Comodule.Hom.ext
+      intro s
+      simp [smul_comm r s (m : M)] }
 
-/-- `invariantsEquivHom` sends an invariant vector `m` to the morphism `r ↦ r • m`. -/
+/-- `coinvariantsEquivHom` sends a coinvariant vector `m` to the morphism `r ↦ r • m`. -/
 @[simp]
-theorem invariantsEquivHom_apply (g : GroupLike R C) (m : invariants R C M g) :
+theorem coinvariantsEquivHom_apply (g : GroupLike R C) (m : coinvariants R C M g) :
     letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
-    invariantsEquivHom g m = Hom.ofInvariant g m :=
+    coinvariantsEquivHom g m = Hom.ofCoinvariant g m :=
   rfl
 
-/-- The inverse of `invariantsEquivHom` sends a morphism `f` to the invariant vector `f 1`. -/
+/-- The inverse of `coinvariantsEquivHom` sends a morphism `f` to the coinvariant vector
+`f 1`. -/
 @[simp]
-theorem invariantsEquivHom_symm_apply_coe (g : GroupLike R C)
+theorem coinvariantsEquivHom_symm_apply_coe (g : GroupLike R C)
     (f : letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g;
       Hom R C R M) :
     letI : Comodule R C R := Comodule.groupLike (R := R) (C := C) (M := R) g
-    (invariantsEquivHom g).symm f = f 1 :=
+    (coinvariantsEquivHom g).symm f = f 1 :=
   rfl
 
 end UniversalProperty
