@@ -43,43 +43,6 @@ namespace TauCeti
 
 namespace Probability
 
-private lemma ae_bdd_condExp_of_ae_bdd_stable {Ω : Type*} {m m0 : MeasurableSpace Ω}
-    {μ : @Measure Ω m0} {R : NNReal} {f : Ω → ℝ}
-    (hbdd : ∀ᵐ x ∂μ, |f x| ≤ R) :
-    ∀ᵐ x ∂μ, |(μ[f | m]) x| ≤ R := by
-  by_cases hnm : m ≤ m0
-  · by_cases hfint : Integrable f μ
-    · by_contra h
-      change μ _ ≠ 0 at h
-      simp only [← pos_iff_ne_zero, Set.compl_def, Set.mem_setOf_eq, not_le] at h
-      suffices μ.real {x | ↑R < |(μ[f|m]) x|} * ↑R <
-          μ.real {x | ↑R < |(μ[f|m]) x|} * ↑R by
-        exact this.ne rfl
-      refine lt_of_lt_of_le (setIntegral_gt_gt R.coe_nonneg ?_ h.ne') ?_
-      · exact integrable_condExp.abs.integrableOn
-      refine (_root_.MeasureTheory.setIntegral_abs_condExp_le ?_ _).trans ?_
-      · simp_rw [← Real.norm_eq_abs]
-        exact @measurableSet_lt _ _ _ _ _ m _ _ _ _ _ measurable_const
-          (stronglyMeasurable_condExp (μ := μ) (m := m) (f := f)).norm.measurable
-      simp only [← smul_eq_mul, ← setIntegral_const]
-      refine setIntegral_mono_ae hfint.abs.integrableOn ?_ hbdd
-      refine ⟨aestronglyMeasurable_const, lt_of_le_of_lt ?_
-        (integrable_condExp.integrableOn :
-          IntegrableOn (μ[f|m]) {x | ↑R < |(μ[f|m]) x|} μ).2⟩
-      refine setLIntegral_mono
-        ?_ fun x hx => ?_
-      · have hmeas := ((stronglyMeasurable_condExp (μ := μ) (m := m) (f := f)).mono hnm)
-        exact hmeas.measurable.nnnorm.coe_nnreal_ennreal
-      rw [enorm_eq_nnnorm, enorm_eq_nnnorm, ENNReal.coe_le_coe,
-        Real.nnnorm_of_nonneg R.coe_nonneg]
-      exact Subtype.mk_le_mk.2 (le_of_lt hx)
-    · simp_rw [condExp_of_not_integrable hfint]
-      filter_upwards [hbdd] with x hx
-      rw [Pi.zero_apply, abs_zero]
-      exact (abs_nonneg _).trans hx
-  · simp_rw [condExp_of_not_le hnm, Pi.zero_apply, abs_zero]
-    exact ae_of_all μ fun _ => R.coe_nonneg
-
 /-- **Conditional independence from the drop-information criterion.** If conditioning `𝟙_H` on
 `mF ⊔ mG` is a.e. the same as conditioning on `mG` (for every `mH`-measurable `H`), then `mF` and
 `mH` are conditionally independent given `mG`. -/
