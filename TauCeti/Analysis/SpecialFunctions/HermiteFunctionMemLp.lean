@@ -96,7 +96,6 @@ theorem memLp_two_hermiteFunction (n : ℕ) : MemLp (hermiteFunction n) 2 volume
 
 /-- The zeroth Hermite function has square integral one. This is the `n = 0` boundary case of
 the roadmap's Hermite-function orthonormality target. -/
-@[simp]
 lemma integral_hermiteFunction_zero_mul_self :
     ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x = 1 := by
   simp only [hermiteFunction_zero]
