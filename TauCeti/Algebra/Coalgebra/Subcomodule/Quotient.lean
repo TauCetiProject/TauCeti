@@ -85,26 +85,69 @@ theorem quotientCoact_mk (m : M) :
         (Comodule.coact (R := R) (C := C) (M := M) m) :=
   Submodule.liftQ_apply _ _ _
 
+private theorem quotientCoact_comp_mkQ :
+    N.quotientCoact.comp N.toSubmodule.mkQ =
+      (TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)).comp
+        (Comodule.coact (R := R) (C := C) (M := M)) := by
+  ext m
+  exact N.quotientCoact_mk m
+
+private theorem tensor_assoc_quotient_coact (m : M) :
+    TensorProduct.assoc R (M ⧸ N.toSubmodule) C C
+        (TensorProduct.map
+          ((TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)).comp
+            (Comodule.coact (R := R) (C := C) (M := M)))
+          (LinearMap.id : C →ₗ[R] C)
+          (Comodule.coact (R := R) (C := C) (M := M) m)) =
+      Coalgebra.comul.lTensor (M ⧸ N.toSubmodule)
+        (TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)
+          (Comodule.coact (R := R) (C := C) (M := M) m)) := by
+  calc
+    TensorProduct.assoc R (M ⧸ N.toSubmodule) C C
+        (TensorProduct.map
+          ((TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)).comp
+            (Comodule.coact (R := R) (C := C) (M := M)))
+          (LinearMap.id : C →ₗ[R] C)
+          (Comodule.coact (R := R) (C := C) (M := M) m)) =
+        TensorProduct.assoc R (M ⧸ N.toSubmodule) C C
+          (TensorProduct.map
+            (TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C))
+            (LinearMap.id : C →ₗ[R] C)
+            ((Comodule.coact (R := R) (C := C) (M := M)).rTensor C
+              (Comodule.coact (R := R) (C := C) (M := M) m))) := by
+          rw [LinearMap.rTensor_def, TensorProduct.map_map]
+          simp
+    _ =
+        TensorProduct.map N.toSubmodule.mkQ
+          (TensorProduct.map (LinearMap.id : C →ₗ[R] C) (LinearMap.id : C →ₗ[R] C))
+          (TensorProduct.assoc R M C C
+            ((Comodule.coact (R := R) (C := C) (M := M)).rTensor C
+              (Comodule.coact (R := R) (C := C) (M := M) m))) := by
+          exact
+            (TensorProduct.map_map_assoc N.toSubmodule.mkQ LinearMap.id LinearMap.id _).symm
+    _ =
+        TensorProduct.map N.toSubmodule.mkQ
+          (LinearMap.id : C ⊗[R] C →ₗ[R] C ⊗[R] C)
+          (Coalgebra.comul.lTensor M
+            (Comodule.coact (R := R) (C := C) (M := M) m)) := by
+          rw [Comodule.coassoc_apply]
+          simp
+    _ =
+        Coalgebra.comul.lTensor (M ⧸ N.toSubmodule)
+          (TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)
+            (Comodule.coact (R := R) (C := C) (M := M) m)) := by
+          rw [LinearMap.lTensor_map]
+          simp
+
 /-- The quotient of a right comodule by a subcomodule inherits a right-comodule structure. -/
 instance instComoduleQuotient : Comodule R C (M ⧸ N.toSubmodule) where
   coact := N.quotientCoact
   coassoc := by
-    -- Check coassociativity after precomposing with the quotient map, then rewrite both
-    -- quotient coactions to the defining descended map.
     apply Submodule.linearMap_qext
     ext m
-    have hquot :
-        N.quotientCoact.comp N.toSubmodule.mkQ =
-          (TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)).comp
-            (Comodule.coact (R := R) (C := C) (M := M)) := by
-      ext m
-      exact N.quotientCoact_mk m
     rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
       Submodule.mkQ_apply, quotientCoact_mk, LinearMap.rTensor_map]
-    rw [hquot]
-    -- Naturality of tensor associativity moves the quotient map past the original
-    -- coassociativity square; the last two steps use coassociativity of `M` and functoriality of
-    -- `lTensor`.
+    rw [N.quotientCoact_comp_mkQ]
     calc
       TensorProduct.assoc R (M ⧸ N.toSubmodule) C C
           (TensorProduct.map
@@ -112,35 +155,10 @@ instance instComoduleQuotient : Comodule R C (M ⧸ N.toSubmodule) where
               (Comodule.coact (R := R) (C := C) (M := M)))
             (LinearMap.id : C →ₗ[R] C)
             (Comodule.coact (R := R) (C := C) (M := M) m)) =
-          TensorProduct.assoc R (M ⧸ N.toSubmodule) C C
-            (TensorProduct.map
-              (TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C))
-              (LinearMap.id : C →ₗ[R] C)
-              ((Comodule.coact (R := R) (C := C) (M := M)).rTensor C
-                (Comodule.coact (R := R) (C := C) (M := M) m))) := by
-            rw [LinearMap.rTensor_def, TensorProduct.map_map]
-            simp
-      _ =
-          TensorProduct.map N.toSubmodule.mkQ
-            (TensorProduct.map (LinearMap.id : C →ₗ[R] C) (LinearMap.id : C →ₗ[R] C))
-            (TensorProduct.assoc R M C C
-              ((Comodule.coact (R := R) (C := C) (M := M)).rTensor C
-                (Comodule.coact (R := R) (C := C) (M := M) m))) := by
-            exact
-              (TensorProduct.map_map_assoc N.toSubmodule.mkQ LinearMap.id LinearMap.id _).symm
-      _ =
-          TensorProduct.map N.toSubmodule.mkQ
-            (LinearMap.id : C ⊗[R] C →ₗ[R] C ⊗[R] C)
-            (Coalgebra.comul.lTensor M
-              (Comodule.coact (R := R) (C := C) (M := M) m)) := by
-            rw [Comodule.coassoc_apply]
-            simp
-      _ =
           Coalgebra.comul.lTensor (M ⧸ N.toSubmodule)
             (TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)
               (Comodule.coact (R := R) (C := C) (M := M) m)) := by
-            rw [LinearMap.lTensor_map]
-            simp
+            exact N.tensor_assoc_quotient_coact m
       _ = (LinearMap.lTensor (M ⧸ N.toSubmodule) Coalgebra.comul ∘ₗ N.quotientCoact)
             (Submodule.Quotient.mk m) := by
             rw [LinearMap.comp_apply, quotientCoact_mk]
