@@ -6,7 +6,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Codex
 -/
 public import TauCeti.Analysis.SpecialFunctions.HermiteFunctionMemLp
-import TauCeti.Analysis.InnerProductSpace.RCLike
 
 /-!
 # Hermite functions as `L²` vectors
@@ -28,6 +27,11 @@ namespace TauCeti
 open MeasureTheory Polynomial
 
 variable {𝕜 : Type*} [RCLike 𝕜]
+
+private lemma inner_algebraMap_algebraMap (a b : ℝ) :
+    inner 𝕜 ((algebraMap ℝ 𝕜) a) ((algebraMap ℝ 𝕜) b) =
+      (algebraMap ℝ 𝕜) (a * b) := by
+  simp [RCLike.inner_apply, RCLike.conj_ofReal, map_mul, mul_comm]
 
 /-! ## Scalar-cast `L²` membership -/
 
