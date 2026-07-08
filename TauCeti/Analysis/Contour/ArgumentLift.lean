@@ -136,12 +136,12 @@ theorem segRatio_eq_one_of_le {γ : ℝ → ℂ} {w : ℂ} {s_j s_jp1 t : ℝ}
     segRatio γ w s_j s_jp1 t = 1 := by
   rw [segRatio, segClamp_eq_left ht, div_self h_ne]
 
-/-- On its segment (`s_j ≤ t ≤ s_{j+1}`), the segment ratio is `(γ t - w) / (γ s_j - w)` — the
+/-- On its segment (`t ∈ [s_j, s_{j+1}]`), the segment ratio is `(γ t - w) / (γ s_j - w)` — the
 primary meaning of `segRatio`. -/
-theorem segRatio_eq_self_div {γ : ℝ → ℂ} {w : ℂ} {s_j s_jp1 t : ℝ}
-    (ht_lo : s_j ≤ t) (ht_hi : t ≤ s_jp1) :
+theorem segRatio_eq_div_of_mem_Icc {γ : ℝ → ℂ} {w : ℂ} {s_j s_jp1 t : ℝ}
+    (ht : t ∈ Set.Icc s_j s_jp1) :
     segRatio γ w s_j s_jp1 t = (γ t - w) / (γ s_j - w) := by
-  rw [segRatio, segClamp_eq_self ht_lo ht_hi]
+  rw [segRatio, segClamp_eq_self ht.1 ht.2]
 
 /-- After its segment (`s_{j+1} ≤ t`), the segment ratio equals the full endpoint ratio
 `(γ s_{j+1} - w) / (γ s_j - w)`. -/
@@ -262,7 +262,7 @@ private theorem prod_segRatio_telescope
     exact (hs_mono (Nat.succ_le_of_lt hj)).trans hk_lo
   rw [Finset.prod_congr rfl h_range_k_eq]
   -- Middle term: segRatio at index k = (γ t - w) / (γ s_k - w)
-  rw [segRatio_eq_self_div hk_lo hk_hi]
+  rw [segRatio_eq_div_of_mem_Icc ⟨hk_lo, hk_hi⟩]
   -- Apply telescoping lemma to range k product
   rw [prod_range_div_complex (fun j ↦ γ (s j) - w) k
         (fun j hj ↦ h_avoid j (hj.trans hk.le))]
@@ -301,7 +301,7 @@ private lemma exp_I_log_im_eq_div_norm {z : ℂ} (hz : z ≠ 0) :
 /-- If `z = z0 · ∏ zs j` with `z0` and each factor `zs j` nonzero, then
 `z = ‖z‖ · exp (I · θ)` with `θ = arg z0 + ∑ Im (log (zs j))`: the arguments of the factors add
 and the norms multiply out to `‖z‖`. This packages the argument bookkeeping of the continuous
-lift, whose telescoped product `(γ 0 - w) · ∏ segRatio = γ t - w` has exactly this shape. -/
+lift, whose telescoped product `(γ a - w) · ∏ segRatio = γ t - w` has exactly this shape. -/
 private lemma polar_form_of_prod {N : ℕ} {z0 : ℂ} {zs : ℕ → ℂ} {z : ℂ}
     (hz0 : z0 ≠ 0) (hzs : ∀ j ∈ Finset.range N, zs j ≠ 0)
     (hprod : z0 * ∏ j ∈ Finset.range N, zs j = z) :
@@ -427,7 +427,7 @@ theorem exists_continuous_arg_lift_with_partition
   have h_slit : ∀ j, j < N → ∀ t ∈ Icc (s j) (s (j + 1)),
       (γ t - w) / (γ (s j) - w) ∈ Complex.slitPlane := by
     intro j hj t ht
-    rw [← segRatio_eq_self_div ht.1 ht.2]
+    rw [← segRatio_eq_div_of_mem_Icc ht]
     have h_mesh_j : s (j + 1) - s j < δ' := by rw [hs_mesh j]; exact hN_mesh
     exact segRatio_mem_slitPlane hρ_pos h_dist_lb h_unif
       (hs_in j hj.le) (hs_in (j + 1) hj) (hs_le j) h_mesh_j t
