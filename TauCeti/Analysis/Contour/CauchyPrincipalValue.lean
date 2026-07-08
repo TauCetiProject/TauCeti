@@ -245,6 +245,43 @@ theorem cauchyPVAt_zero {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} :
     cauchyPVAt γ a b (fun _ => 0) z₀ = 0 :=
   HasCauchyPVAt.zero.cauchyPVAt_eq
 
+/-- The Cauchy principal value at a single point over a zero-length interval is `0`. -/
+theorem HasCauchyPVAt.refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) :
+    HasCauchyPVAt γ a a f z₀ 0 := by
+  refine HasCauchyPVAt.intro ?_ ?_
+  · filter_upwards with ε
+    exact IntervalIntegrable.refl
+  · simpa only [intervalIntegral.integral_same] using tendsto_const_nhds (x := (0 : ℂ))
+
+/-- If the two endpoints are equal, the single-point Cauchy principal value is `0`. -/
+theorem HasCauchyPVAt.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) (z₀ : ℂ) :
+    HasCauchyPVAt γ a b f z₀ 0 := by
+  subst b
+  exact HasCauchyPVAt.refl γ a f z₀
+
+/-- Existence form of `HasCauchyPVAt.refl`: a zero-length interval always has a single-point
+Cauchy principal value. -/
+theorem CauchyPVExistsAt.refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) :
+    CauchyPVExistsAt γ a a f z₀ :=
+  CauchyPVExistsAt.intro (HasCauchyPVAt.refl γ a f z₀)
+
+/-- Existence form of `HasCauchyPVAt.of_eq`. -/
+theorem CauchyPVExistsAt.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) (z₀ : ℂ) :
+    CauchyPVExistsAt γ a b f z₀ :=
+  CauchyPVExistsAt.intro (HasCauchyPVAt.of_eq γ hab f z₀)
+
+/-- Value form of `HasCauchyPVAt.refl`: the single-point Cauchy principal value on `[a, a]` is
+`0`. -/
+@[simp]
+theorem cauchyPVAt_same (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) :
+    cauchyPVAt γ a a f z₀ = 0 :=
+  (HasCauchyPVAt.refl γ a f z₀).cauchyPVAt_eq
+
+/-- Value form of `HasCauchyPVAt.of_eq`. -/
+theorem cauchyPVAt_eq_zero_of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) (z₀ : ℂ) :
+    cauchyPVAt γ a b f z₀ = 0 :=
+  (HasCauchyPVAt.of_eq γ hab f z₀).cauchyPVAt_eq
+
 /-- **Finite additivity.** The principal value of a finite sum of integrands is the sum of their
 principal values. With `HasCauchyPVAt.zero` and `HasCauchyPVAt.add` this extends the `ℂ`-linearity
 of the principal value to finite sums, as the generalized residue theorem's residue sum needs. -/
