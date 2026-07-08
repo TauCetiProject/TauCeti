@@ -81,15 +81,14 @@ theorem pseudoHyperbolicExpr_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha
 `unitDiscMoebius a` preserves the pseudo-hyperbolic expression. -/
 @[simp]
 theorem pseudoHyperbolicExpr_unitDiscMoebius (a z w : Complex.UnitDisc) :
-    pseudoHyperbolicExpr (unitDiscMoebius a z : ℂ) (unitDiscMoebius a w : ℂ)
+    pseudoHyperbolicExpr (((z : ℂ) - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * (z : ℂ)))
+        (((w : ℂ) - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * (w : ℂ)))
       = pseudoHyperbolicExpr (z : ℂ) (w : ℂ) := by
-  rw [coe_unitDiscMoebius, coe_unitDiscMoebius]
   exact pseudoHyperbolicExpr_unitDiscMoebiusFormula_of_norm_lt_one a.norm_lt_one
     z.property w.property
 
 /-- **Standard automorphism invariance.** Every standard disc automorphism bundled as
 `unitDiscStandardAutomorphismEquiv u a` preserves the pseudo-hyperbolic expression. -/
-@[simp]
 theorem pseudoHyperbolicExpr_unitDiscStandardAutomorphismEquiv
     (u : Circle) (a z w : Complex.UnitDisc) :
     pseudoHyperbolicExpr (unitDiscStandardAutomorphismEquiv u a z : ℂ)
