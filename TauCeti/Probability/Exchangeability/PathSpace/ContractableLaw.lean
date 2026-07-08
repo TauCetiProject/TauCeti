@@ -52,7 +52,6 @@ theorem contractableLaw_iff {ρ : Measure (ℕ → α)} :
   Iff.rfl
 
 /-- The defining invariance of a contractable path law. -/
-@[simp]
 theorem ContractableLaw.map_reindex {ρ : Measure (ℕ → α)}
     (hρ : ContractableLaw ρ)
     {φ : ℕ → ℕ} (hφ : StrictMono φ) :
@@ -128,14 +127,12 @@ theorem ContractableLaw.measurePreserving_shift_iterate {ρ : Measure (ℕ → �
   (hρ.measurePreserving_shift).iterate n
 
 /-- The one-sided shift leaves a contractable path law unchanged. -/
-@[simp]
 theorem ContractableLaw.map_shift {ρ : Measure (ℕ → α)}
     (hρ : ContractableLaw ρ) :
     ρ.map (shift α) = ρ :=
   (ContractableLaw.measurePreserving_shift hρ).map_eq
 
 /-- Iterating the one-sided shift leaves a contractable path law unchanged. -/
-@[simp]
 theorem ContractableLaw.map_shift_iterate {ρ : Measure (ℕ → α)}
     (hρ : ContractableLaw ρ) (n : ℕ) :
     ρ.map ((shift α)^[n]) = ρ :=
