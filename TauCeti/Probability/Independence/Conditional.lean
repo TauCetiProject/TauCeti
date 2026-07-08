@@ -360,10 +360,13 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ]
     μ[(X ⁻¹' A).indicator (fun _ => (1 : ℝ)) | MeasurableSpace.comap W inferInstance] := by
   have h_sq_eq_raw := integral_sq_condExp_eq_of_pair_law X W W' hX hW hW' h_law hA
   let φ : Ω → ℝ := (X ⁻¹' A).indicator (fun _ => (1 : ℝ))
+  let mΩ : MeasurableSpace Ω := inferInstance
   let mW : MeasurableSpace Ω := MeasurableSpace.comap W inferInstance
   let mW' : MeasurableSpace Ω := MeasurableSpace.comap W' inferInstance
-  have hmW_le : mW ≤ _ := measurable_iff_comap_le.mp hW
-  have hmW'_le : mW' ≤ _ := measurable_iff_comap_le.mp hW'
+  have hmW_le : mW ≤ mΩ := by
+    simpa [mΩ, mW] using measurable_iff_comap_le.mp hW
+  have hmW'_le : mW' ≤ mΩ := by
+    simpa [mΩ, mW'] using measurable_iff_comap_le.mp hW'
   haveI hσW : SigmaFinite (μ.trim hmW_le) :=
     (inferInstance : IsFiniteMeasure (μ.trim hmW_le)).toSigmaFinite
   haveI hσW' : SigmaFinite (μ.trim hmW'_le) :=
@@ -378,19 +381,30 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ]
       rw [h]; exact ⟨zero_le_one, le_rfl⟩
     · have h : φ ω = 0 := Set.indicator_of_notMem hω _
       rw [h]; exact ⟨le_rfl, zero_le_one⟩
-  -- `|φ| ≤ 1` a.e., so each conditional expectation `μ[φ | ·]` inherits the same bound via
-  -- Mathlib's `ae_bdd_condExp_of_ae_bdd`; the helper is applied once per σ-algebra below.
-  have hφ_abs : ∀ᵐ ω ∂μ, |φ ω| ≤ ((1 : NNReal) : ℝ) := by
+  have hφ_nonneg : ∀ᵐ ω ∂μ, 0 ≤ φ ω := by
     filter_upwards with ω
-    rw [abs_of_nonneg (hφ_bdd ω).1, NNReal.coe_one]; exact (hφ_bdd ω).2
-  have condExp_abs_le : ∀ m' : MeasurableSpace Ω, ∀ᵐ ω ∂μ, |μ[φ | m'] ω| ≤ 1 := fun m' => by
-    simpa using ae_bdd_condExp_of_ae_bdd (m := m') (R := 1) hφ_abs
+    exact (hφ_bdd ω).1
+  have hφ_le_one : ∀ᵐ ω ∂μ, φ ω ≤ (1 : ℝ) := by
+    filter_upwards with ω
+    exact (hφ_bdd ω).2
+  have condExp_abs_le :
+      ∀ (m' : MeasurableSpace Ω), m' ≤ mΩ →
+        ∀ᵐ ω ∂μ, |μ[φ | m'] ω| ≤ 1 := fun m' hm' => by
+    have h_nonneg : 0 ≤ᵐ[μ] μ[φ | m'] := condExp_nonneg hφ_nonneg
+    have h_le_const : μ[φ | m'] ≤ᵐ[μ] μ[fun _ => (1 : ℝ) | m'] :=
+      condExp_mono hφ_int (integrable_const (1 : ℝ)) hφ_le_one
+    have h_const : μ[fun _ => (1 : ℝ) | m'] = fun _ => (1 : ℝ) :=
+      condExp_const (μ := μ) hm' (1 : ℝ)
+    rw [h_const] at h_le_const
+    filter_upwards [h_nonneg, h_le_const] with ω h_nonnegω h_leω
+    rw [abs_of_nonneg h_nonnegω]
+    exact h_leω
   have hμ₁_int : Integrable μ₁ μ := integrable_condExp
   have hμ₂_int : Integrable μ₂ μ := integrable_condExp
   have hμ₁_bound : ∀ᵐ ω ∂μ, ‖μ₁ ω‖ ≤ 1 := by
-    filter_upwards [condExp_abs_le mW] with ω hω; rwa [Real.norm_eq_abs, hμ₁_def]
+    filter_upwards [condExp_abs_le mW hmW_le] with ω hω; rwa [Real.norm_eq_abs, hμ₁_def]
   have hμ₂_bound : ∀ᵐ ω ∂μ, ‖μ₂ ω‖ ≤ 1 := by
-    filter_upwards [condExp_abs_le mW'] with ω hω; rwa [Real.norm_eq_abs, hμ₂_def]
+    filter_upwards [condExp_abs_le mW' hmW'_le] with ω hω; rwa [Real.norm_eq_abs, hμ₂_def]
   have hμ₁sq_int : Integrable (fun ω => μ₁ ω * μ₁ ω) μ :=
     hμ₁_int.bdd_mul hμ₁_int.aestronglyMeasurable hμ₁_bound
   have hμ₂sq_int : Integrable (fun ω => μ₂ ω * μ₂ ω) μ :=
