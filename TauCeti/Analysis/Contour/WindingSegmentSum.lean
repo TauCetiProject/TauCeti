@@ -3,6 +3,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Data.Complex.BigOperators
 import TauCeti.Analysis.Contour.LogDerivFTC
 
 /-!
@@ -27,6 +28,11 @@ increments telescope away and the imaginary parts sum to the total argument chan
   `γ' t / (γ t - w)` form with an explicit derivative witness.
 * `TauCeti.Contour.integral_inv_sub_mul_deriv_eq_sum_log` — its `deriv γ` specialization with the
   winding integrand `(γ t - w)⁻¹ * deriv γ t`.
+* `TauCeti.Contour.integral_deriv_div_sub_eq_log_norm_add_I_mul_sum_log_im` — the real/imaginary
+  refinement of the partition sum: a real logarithm-of-modulus increment plus `I` times the
+  imaginary segment logarithm sum.
+* `TauCeti.Contour.integral_inv_sub_mul_deriv_eq_log_norm_add_I_mul_sum_log_im` — its `deriv γ`
+  specialization with the winding integrand.
 
 ## Provenance
 
@@ -98,5 +104,69 @@ theorem integral_inv_sub_mul_deriv_eq_sum_log {γ : ℝ → ℂ} {w : ℂ} {a b 
   rw [hfun]
   exact integral_deriv_div_sub_eq_sum_log (γ' := deriv γ) hP hs_zero hs_N hs_mono hγ_cont
     (fun t ht ↦ (hγ_diff t ht).hasDerivAt) h_slit (hfun ▸ h_int)
+
+/-- **Real/imaginary decomposition of the index integral (explicit velocity).** Refining
+`integral_deriv_div_sub_eq_sum_log`, over the same slit-compatible monotone partition the integral
+of `γ' t / (γ t - w)` splits into a real logarithm-of-modulus increment
+`Real.log ‖γ b - w‖ - Real.log ‖γ a - w‖` plus `I` times the imaginary part of the segment
+logarithm sum. For a closed curve the real increment vanishes, isolating the total argument
+change. -/
+theorem integral_deriv_div_sub_eq_log_norm_add_I_mul_sum_log_im {γ γ' : ℝ → ℂ} {w : ℂ}
+    {a b : ℝ} {P : Set ℝ} {N : ℕ} {s : ℕ → ℝ} (hP : P.Countable)
+    (hs_zero : s 0 = a) (hs_N : s N = b) (hs_mono : Monotone s)
+    (hγ_cont : ContinuousOn γ (Icc a b))
+    (hγ_diff : ∀ t ∈ Ioo a b \ P, HasDerivAt γ (γ' t) t)
+    (h_slit : ∀ j, j < N → ∀ t ∈ Icc (s j) (s (j + 1)),
+      (γ t - w) / (γ (s j) - w) ∈ slitPlane)
+    (h_int : IntervalIntegrable (fun t ↦ γ' t / (γ t - w)) volume a b) :
+    ∫ t in a..b, γ' t / (γ t - w)
+      = ((Real.log ‖γ b - w‖ - Real.log ‖γ a - w‖ : ℝ) : ℂ)
+        + Complex.I * ((∑ j ∈ Finset.range N,
+            (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).im : ℝ) : ℂ) := by
+  rw [integral_deriv_div_sub_eq_sum_log hP hs_zero hs_N hs_mono hγ_cont hγ_diff h_slit h_int]
+  have hmono_seg : ∀ j, s j ≤ s (j + 1) := fun j ↦ hs_mono (Nat.le_succ j)
+  have hne : ∀ j, j < N → γ (s j) - w ≠ 0 ∧ γ (s (j + 1)) - w ≠ 0 := fun j hj ↦
+    ⟨(div_ne_zero_iff.mp (slitPlane_ne_zero
+        (h_slit j hj (s j) (left_mem_Icc.mpr (hmono_seg j))))).1,
+      (div_ne_zero_iff.mp (slitPlane_ne_zero
+        (h_slit j hj (s (j + 1)) (right_mem_Icc.mpr (hmono_seg j))))).1⟩
+  apply Complex.ext
+  · simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re, Complex.I_im,
+      Complex.ofReal_im, zero_mul, mul_zero, sub_zero, add_zero]
+    rw [Complex.re_sum]
+    calc ∑ j ∈ Finset.range N, (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).re
+        = ∑ j ∈ Finset.range N, (Real.log ‖γ (s (j + 1)) - w‖ - Real.log ‖γ (s j) - w‖) := by
+          refine Finset.sum_congr rfl fun j hj ↦ ?_
+          rw [Finset.mem_range] at hj
+          rw [Complex.log_re, norm_div,
+            Real.log_div (norm_ne_zero_iff.mpr (hne j hj).2) (norm_ne_zero_iff.mpr (hne j hj).1)]
+      _ = Real.log ‖γ (s N) - w‖ - Real.log ‖γ (s 0) - w‖ :=
+          Finset.sum_range_sub (fun j ↦ Real.log ‖γ (s j) - w‖) N
+      _ = Real.log ‖γ b - w‖ - Real.log ‖γ a - w‖ := by rw [hs_N, hs_zero]
+  · simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.I_re, Complex.I_im,
+      Complex.ofReal_re, zero_mul, zero_add, one_mul]
+    exact Complex.im_sum _ _
+
+/-- **Winding-integrand form of the index-integral decomposition.** The `γ' = deriv γ`
+specialization of `integral_deriv_div_sub_eq_log_norm_add_I_mul_sum_log_im`, stated with the
+winding integrand `(γ t - w)⁻¹ * deriv γ t`, as consumed by the closed-curve winding-number
+computation. -/
+theorem integral_inv_sub_mul_deriv_eq_log_norm_add_I_mul_sum_log_im {γ : ℝ → ℂ} {w : ℂ}
+    {a b : ℝ} {P : Set ℝ} {N : ℕ} {s : ℕ → ℝ} (hP : P.Countable)
+    (hs_zero : s 0 = a) (hs_N : s N = b) (hs_mono : Monotone s)
+    (hγ_cont : ContinuousOn γ (Icc a b))
+    (hγ_diff : ∀ t ∈ Ioo a b \ P, DifferentiableAt ℝ γ t)
+    (h_slit : ∀ j, j < N → ∀ t ∈ Icc (s j) (s (j + 1)),
+      (γ t - w) / (γ (s j) - w) ∈ slitPlane)
+    (h_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
+    ∫ t in a..b, (γ t - w)⁻¹ * deriv γ t
+      = ((Real.log ‖γ b - w‖ - Real.log ‖γ a - w‖ : ℝ) : ℂ)
+        + Complex.I * ((∑ j ∈ Finset.range N,
+            (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).im : ℝ) : ℂ) := by
+  have hfun : (fun t ↦ (γ t - w)⁻¹ * deriv γ t) = fun t ↦ deriv γ t / (γ t - w) := by
+    funext t; rw [div_eq_mul_inv, mul_comm]
+  rw [hfun]
+  exact integral_deriv_div_sub_eq_log_norm_add_I_mul_sum_log_im (γ' := deriv γ) hP hs_zero hs_N
+    hs_mono hγ_cont (fun t ht ↦ (hγ_diff t ht).hasDerivAt) h_slit (hfun ▸ h_int)
 
 end TauCeti.Contour

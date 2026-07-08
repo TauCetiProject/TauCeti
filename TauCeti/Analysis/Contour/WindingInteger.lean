@@ -1,37 +1,28 @@
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Analysis.SpecialFunctions.Complex.Log
-public import Mathlib.Analysis.SpecialFunctions.Log.Basic
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.Contour.WindingNumber
-import Mathlib.Data.Complex.BigOperators
+import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import TauCeti.Analysis.Contour.WindingSegmentSum
 import TauCeti.Analysis.Contour.ArgumentLift
 
 /-!
 # The winding number of a closed curve is an integer
 
-For a closed curve `γ` on `[a, b]` (with `γ a = γ b`) that avoids `w`, the generalized winding
-number `windingNumber γ a b w` is an integer. The index integral is evaluated over a continuous
-argument-lift partition (`exists_continuousOn_arg_lift_with_partition`): it splits into a real
-logarithm-of-modulus increment plus `I` times the imaginary part of the segment logarithm sum
-(`contourIntegral_inv_re_im_decomp`). For a closed curve the modulus increment telescopes to zero,
-so the integral is `I` times the total argument change `θ b - θ a`; closedness makes
-`exp (I * (θ b - θ a)) = 1`, whence `θ b - θ a` is an integer multiple of `2π` and the winding
-number is that integer.
+For a curve `γ` on an interval that returns to its start (`γ a = γ b`) and avoids a point `w`, its
+generalized winding number about `w` is an integer. This is the integrality step on the
+Hungerbühler–Wasem path (HW Thm 3.3): combined with continuity of the winding number in the point,
+it makes the winding number locally constant on the complement of the curve — the input to the
+homology form of Cauchy's theorem.
 
 ## Main results
 
-* `TauCeti.Contour.contourIntegral_inv_re_im_decomp` — real/imaginary decomposition of the index
-  integral over a slit-compatible monotone partition.
 * `TauCeti.Contour.exists_int_windingNumber_of_closed` — the generalized winding number of a closed
   curve is an integer.
 
 ## Provenance
 
-Adapted from `hasGeneralizedWindingNumber_integer_of_closed` in `WindingInteger.lean` of the
-AINTLIB `LeanModularForms` development, restated for a raw `γ : ℝ → ℂ` on `[a, b]`.
+Adapted from `hasGeneralizedWindingNumber_integer_of_closed` in `WindingInteger.lean` of the AINTLIB
+`LeanModularForms` development, restated for a raw `γ : ℝ → ℂ` on an oriented interval.
 -/
 
 public section
@@ -42,52 +33,12 @@ open scoped Interval
 
 namespace TauCeti.Contour
 
-/-- **Real/imaginary decomposition of the index integral.** Over a slit-compatible monotone
-partition, the index integral splits into a real logarithm-of-modulus increment plus `I` times the
-imaginary part of the segment logarithm sum. For a closed curve the real part vanishes. -/
-theorem contourIntegral_inv_re_im_decomp {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
-    {N : ℕ} {s : ℕ → ℝ} (hP : P.Countable)
-    (hs_zero : s 0 = a) (hs_N : s N = b) (hs_mono : Monotone s)
-    (hγ_cont : ContinuousOn γ (Icc a b))
-    (hγ_diff : ∀ t ∈ Ioo a b \ P, DifferentiableAt ℝ γ t)
-    (h_slit : ∀ j, j < N → ∀ t ∈ Icc (s j) (s (j + 1)),
-      (γ t - w) / (γ (s j) - w) ∈ slitPlane)
-    (h_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
-    ∫ t in a..b, (γ t - w)⁻¹ * deriv γ t
-      = ((Real.log ‖γ b - w‖ - Real.log ‖γ a - w‖ : ℝ) : ℂ)
-        + Complex.I * ((∑ j ∈ Finset.range N,
-            (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).im : ℝ) : ℂ) := by
-  rw [integral_inv_sub_mul_deriv_eq_sum_log hP hs_zero hs_N hs_mono hγ_cont hγ_diff h_slit h_int]
-  have hmono_seg : ∀ j, s j ≤ s (j + 1) := fun j ↦ hs_mono (Nat.le_succ j)
-  have hne : ∀ j, j < N → γ (s j) - w ≠ 0 ∧ γ (s (j + 1)) - w ≠ 0 := fun j hj ↦
-    ⟨(div_ne_zero_iff.mp (slitPlane_ne_zero
-        (h_slit j hj (s j) (left_mem_Icc.mpr (hmono_seg j))))).1,
-      (div_ne_zero_iff.mp (slitPlane_ne_zero
-        (h_slit j hj (s (j + 1)) (right_mem_Icc.mpr (hmono_seg j))))).1⟩
-  apply Complex.ext
-  · simp only [Complex.add_re, Complex.ofReal_re, Complex.mul_re, Complex.I_re, Complex.I_im,
-      Complex.ofReal_im, zero_mul, mul_zero, sub_zero, add_zero]
-    rw [Complex.re_sum]
-    calc ∑ j ∈ Finset.range N, (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).re
-        = ∑ j ∈ Finset.range N, (Real.log ‖γ (s (j + 1)) - w‖ - Real.log ‖γ (s j) - w‖) := by
-          refine Finset.sum_congr rfl fun j hj ↦ ?_
-          rw [Finset.mem_range] at hj
-          rw [Complex.log_re, norm_div,
-            Real.log_div (norm_ne_zero_iff.mpr (hne j hj).2) (norm_ne_zero_iff.mpr (hne j hj).1)]
-      _ = Real.log ‖γ (s N) - w‖ - Real.log ‖γ (s 0) - w‖ :=
-          Finset.sum_range_sub (fun j ↦ Real.log ‖γ (s j) - w‖) N
-      _ = Real.log ‖γ b - w‖ - Real.log ‖γ a - w‖ := by rw [hs_N, hs_zero]
-  · simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.I_re, Complex.I_im,
-      Complex.ofReal_re, zero_mul, zero_add, one_mul]
-    exact Complex.im_sum _ _
-
-/-- **The winding number of a closed curve is an integer.** For a closed curve `γ` (with
-`γ a = γ b`) that is continuous on `[a, b]`, differentiable off a countable set `P`, avoids `w`
-throughout, and has an interval-integrable index integrand, the generalized winding number
-`windingNumber γ a b w` is an integer. Along a continuous argument lift the index integral equals
-`I` times the total argument change; closedness forces the modulus increment to vanish and the
-argument change to be an integer multiple of `2π`. -/
-theorem exists_int_windingNumber_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
+/-- The `a ≤ b` case of `exists_int_windingNumber_of_closed`. The index integral is evaluated over a
+continuous argument-lift partition and split into a real logarithm-of-modulus increment plus `I`
+times the total argument change; closedness kills the modulus increment and forces the argument
+change to be an integer multiple of `2π`. The general oriented-interval statement reduces to this by
+orientation reversal. -/
+private theorem exists_int_windingNumber_of_closed_of_le {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
     (hab : a ≤ b) (hclosed : γ a = γ b) (hP : P.Countable)
     (hγ_cont : ContinuousOn γ (Icc a b))
     (hγ_diff : ∀ t ∈ Ioo a b \ P, DifferentiableAt ℝ γ t)
@@ -98,8 +49,8 @@ theorem exists_int_windingNumber_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : �
     exists_continuousOn_arg_lift_with_partition hab hγ_cont h_avoid
   have hla := h_lift a (left_mem_Icc.mpr hab)
   have hlb := h_lift b (right_mem_Icc.mpr hab)
-  have hint :=
-    contourIntegral_inv_re_im_decomp hP hs_zero hs_N hs_mono hγ_cont hγ_diff h_slit h_int
+  have hint := integral_inv_sub_mul_deriv_eq_log_norm_add_I_mul_sum_log_im hP hs_zero hs_N hs_mono
+    hγ_cont hγ_diff h_slit h_int
   have hnorm_ne : (‖γ a - w‖ : ℂ) ≠ 0 := by
     rw [ne_eq, Complex.ofReal_eq_zero, norm_eq_zero, sub_eq_zero]
     exact h_avoid a (left_mem_Icc.mpr hab)
@@ -138,9 +89,9 @@ theorem exists_int_windingNumber_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : �
       rw [← mul_sub, ← Complex.ofReal_sub, hEdiff]
     rw [h1, Complex.exp_sub, hEab, div_self (Complex.exp_ne_zero _)]
   obtain ⟨n, hn⟩ := Complex.exp_eq_one_iff.mp hexp_one
+  have hlog_zero : Real.log ‖γ b - w‖ - Real.log ‖γ a - w‖ = 0 := by rw [hclosed, sub_self]
   have hint' : (∫ t in a..b, (γ t - w)⁻¹ * deriv γ t) = Complex.I * (Se : ℂ) := by
-    rw [hint, show Real.log ‖γ b - w‖ - Real.log ‖γ a - w‖ = 0 by rw [hclosed, sub_self],
-      Complex.ofReal_zero, zero_add]
+    rw [hint, hlog_zero, Complex.ofReal_zero, zero_add]
   refine ⟨n, ?_⟩
   have hcont_u : ContinuousOn γ (Set.uIcc a b) := by rw [Set.uIcc_of_le hab]; exact hγ_cont
   have havoid_u : ∀ t ∈ Set.uIcc a b, γ t ≠ w := by rw [Set.uIcc_of_le hab]; exact h_avoid
@@ -150,5 +101,36 @@ theorem exists_int_windingNumber_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : �
   rw [windingNumber_eq_integral_of_avoidance hcont_u havoid_u h_int, hint', hn,
     mul_comm (n : ℂ) (2 * (Real.pi : ℂ) * Complex.I), ← mul_assoc,
     inv_mul_cancel₀ h2πI_ne, one_mul]
+
+/-- **The winding number of a closed curve is an integer.** For a curve `γ` on the oriented interval
+with endpoints `a`, `b` that returns to its start (`γ a = γ b`), is continuous on `Set.uIcc a b`,
+differentiable off a countable set `P`, avoids `w` throughout `Set.uIcc a b`, and has an
+interval-integrable index integrand `(γ · - w)⁻¹ * deriv γ`, the generalized winding number
+`windingNumber γ a b w` is an integer. -/
+theorem exists_int_windingNumber_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
+    (hclosed : γ a = γ b) (hP : P.Countable)
+    (hγ_cont : ContinuousOn γ (Set.uIcc a b))
+    (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
+    (h_avoid : ∀ t ∈ Set.uIcc a b, γ t ≠ w)
+    (h_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
+    ∃ n : ℤ, windingNumber γ a b w = n := by
+  rcases le_total a b with hab | hba
+  · rw [Set.uIcc_of_le hab] at hγ_cont h_avoid
+    rw [min_eq_left hab, max_eq_right hab] at hγ_diff
+    exact exists_int_windingNumber_of_closed_of_le hab hclosed hP hγ_cont hγ_diff h_avoid h_int
+  · have hcont_ba : ContinuousOn γ (Icc b a) := by rw [← Set.uIcc_of_ge hba]; exact hγ_cont
+    have havoid_ba : ∀ t ∈ Icc b a, γ t ≠ w := fun t ht ↦
+      h_avoid t (by rw [Set.uIcc_of_ge hba]; exact ht)
+    rw [min_eq_right hba, max_eq_left hba] at hγ_diff
+    obtain ⟨m, hm⟩ := exists_int_windingNumber_of_closed_of_le hba hclosed.symm hP hcont_ba
+      hγ_diff havoid_ba h_int.symm
+    refine ⟨-m, ?_⟩
+    have hrev : windingNumber γ a b w = -windingNumber γ b a w := by
+      rw [windingNumber_eq_integral_of_avoidance hγ_cont h_avoid h_int,
+        windingNumber_eq_integral_of_avoidance (by rw [Set.uIcc_comm]; exact hγ_cont)
+          (fun t ht ↦ h_avoid t (by rw [Set.uIcc_comm] at ht; exact ht)) h_int.symm,
+        intervalIntegral.integral_symm a b]
+      ring
+    rw [hrev, hm]; push_cast; ring
 
 end TauCeti.Contour
