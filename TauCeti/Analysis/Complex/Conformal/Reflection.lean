@@ -123,11 +123,6 @@ lemma schwarzReflection_conj
   · rw [schwarzReflection_conj_of_im_pos (f := f) hpos]
     rw [schwarzReflection_of_im_nonneg (f := f) hpos.le]
 
-/-- A symmetric-domain membership criterion gives the one-sided `MapsTo` form used below. -/
-lemma mapsTo_conj_of_mem_iff {Ω : Set ℂ}
-    (hΩ : ∀ z, z ∈ Ω ↔ (starRingEnd ℂ) z ∈ Ω) :
-    Set.MapsTo (starRingEnd ℂ) Ω Ω := fun z hz => (hΩ z).mp hz
-
 /--
 On a domain where the original function is real-valued on the real axis, the Schwarz-reflection
 extension is conjugation-symmetric at each point of the domain.
