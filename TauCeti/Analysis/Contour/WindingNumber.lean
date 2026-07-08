@@ -96,20 +96,6 @@ theorem isNullHomologous_iff {γ : ℝ → ℂ} {a b : ℝ} {Ω : Set ℂ} :
     IsNullHomologous γ a b Ω ↔ ∀ w ∉ Ω, windingNumber γ a b w = 0 :=
   Iff.rfl
 
-/-- Every zero-length parameter interval is null-homologous in every ambient set. -/
-theorem IsNullHomologous.refl (γ : ℝ → ℂ) (a : ℝ) (Ω : Set ℂ) :
-    IsNullHomologous γ a a Ω := by
-  rw [isNullHomologous_iff]
-  intro z _hz
-  exact windingNumber_same γ a z
-
-/-- If the two endpoints are equal, the parameter interval is null-homologous in every ambient
-set. -/
-theorem IsNullHomologous.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (Ω : Set ℂ) :
-    IsNullHomologous γ a b Ω := by
-  subst b
-  exact IsNullHomologous.refl γ a Ω
-
 /-- If `γ` is continuous on `[a, b]`, avoids `z₀` there, and the index integrand is
 interval-integrable, the generalized winding number is the ordinary index integral: the principal
 value collapses to `(2πi)⁻¹ · ∮_γ dz/(z − z₀)`. -/
