@@ -296,6 +296,41 @@ private lemma exp_I_log_im_eq_div_norm {z : ℂ} (hz : z ≠ 0) :
   conv_rhs => rw [← Complex.norm_mul_exp_arg_mul_I z]
   ring
 
+/-! ### Polar form of a product -/
+
+/-- If `z = z0 · ∏ zs j` with `z0` and each factor `zs j` nonzero, then
+`z = ‖z‖ · exp (I · θ)` with `θ = arg z0 + ∑ Im (log (zs j))`: the arguments of the factors add
+and the norms multiply out to `‖z‖`. This packages the argument bookkeeping of the continuous
+lift, whose telescoped product `(γ 0 - w) · ∏ segRatio = γ t - w` has exactly this shape. -/
+private lemma polar_form_of_prod {N : ℕ} {z0 : ℂ} {zs : ℕ → ℂ} {z : ℂ}
+    (hz0 : z0 ≠ 0) (hzs : ∀ j ∈ Finset.range N, zs j ≠ 0)
+    (hprod : z0 * ∏ j ∈ Finset.range N, zs j = z) :
+    z = (‖z‖ : ℂ) * Complex.exp (Complex.I *
+      ((Complex.arg z0 + ∑ j ∈ Finset.range N, (Complex.log (zs j)).im : ℝ) : ℂ)) := by
+  have hz : z ≠ 0 := by
+    rw [← hprod]; exact mul_ne_zero hz0 (Finset.prod_ne_zero_iff.mpr hzs)
+  have h_theta_cast :
+      ((Complex.arg z0 + ∑ j ∈ Finset.range N, (Complex.log (zs j)).im : ℝ) : ℂ) =
+      (Complex.arg z0 : ℂ) + ∑ j ∈ Finset.range N, ((Complex.log (zs j)).im : ℂ) := by
+    push_cast; rfl
+  have h_exp_split :
+      Complex.exp (Complex.I *
+        ((Complex.arg z0 + ∑ j ∈ Finset.range N, (Complex.log (zs j)).im : ℝ) : ℂ)) =
+      Complex.exp (Complex.I * (Complex.arg z0 : ℂ)) *
+        ∏ j ∈ Finset.range N, Complex.exp (Complex.I * ((Complex.log (zs j)).im : ℂ)) := by
+    rw [h_theta_cast, mul_add, Complex.exp_add, Finset.mul_sum, Complex.exp_sum]
+  have h_arg : Complex.exp (Complex.I * (Complex.arg z0 : ℂ)) = z0 / ((‖z0‖ : ℝ) : ℂ) := by
+    rw [← Complex.log_im z0]; exact exp_I_log_im_eq_div_norm hz0
+  have h_z_eq : ∀ j ∈ Finset.range N,
+      Complex.exp (Complex.I * ((Complex.log (zs j)).im : ℂ)) = zs j / ((‖zs j‖ : ℝ) : ℂ) :=
+    fun j hj ↦ exp_I_log_im_eq_div_norm (hzs j hj)
+  have h_norm_prod_real : (‖z0‖ : ℝ) * (∏ j ∈ Finset.range N, ‖zs j‖) = ‖z‖ := by
+    rw [← Complex.norm_prod, ← norm_mul, hprod]
+  have h_norm_ne : ((‖z‖ : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr hz)
+  rw [h_exp_split, h_arg, Finset.prod_congr rfl h_z_eq, Finset.prod_div_distrib,
+      div_mul_div_comm, ← Complex.ofReal_prod, ← Complex.ofReal_mul, h_norm_prod_real, hprod,
+      mul_div_cancel₀ _ h_norm_ne]
+
 /-! ### Covering segment -/
 
 /-- On a monotone partition covering `[s 0, s N]`, every point `t` with `s 0 ≤ t ≤ s N` lies in
@@ -407,7 +442,6 @@ theorem exists_continuous_arg_lift_with_partition
     rw [hs_mesh j]; exact hN_mesh
   -- Lift property
   · intro t ht
-    have h_avoid_t : γ t - w ≠ 0 := sub_ne_zero.mpr (h_avoid t ht)
     have h_avoid_a : γ a - w ≠ 0 :=
       sub_ne_zero.mpr (h_avoid a ⟨le_rfl, hab⟩)
     have h_cov_lo : s 0 ≤ t := by rw [hs_zero]; exact ht.1
@@ -426,43 +460,8 @@ theorem exists_continuous_arg_lift_with_partition
     have h_prod_eq : (γ a - w) *
         ∏ j ∈ Finset.range N, segRatio γ w (s j) (s (j + 1)) t = γ t - w := by
       rw [h_telescope, mul_div_cancel₀ _ h_avoid_a]
-    have h_theta_cast :
-        ((Complex.arg (γ a - w) +
-          ∑ j ∈ Finset.range N,
-            (Complex.log (segRatio γ w (s j) (s (j + 1)) t)).im : ℝ) : ℂ) =
-        (Complex.arg (γ a - w) : ℂ) +
-        ∑ j ∈ Finset.range N,
-          ((Complex.log (segRatio γ w (s j) (s (j + 1)) t)).im : ℂ) := by
-      push_cast
-      rfl
-    have h_exp_split :
-        Complex.exp (Complex.I *
-          ((Complex.arg (γ a - w) +
-            ∑ j ∈ Finset.range N,
-              (Complex.log (segRatio γ w (s j) (s (j + 1)) t)).im : ℝ) : ℂ)) =
-        Complex.exp (Complex.I * (Complex.arg (γ a - w) : ℂ)) *
-          ∏ j ∈ Finset.range N,
-            Complex.exp (Complex.I *
-              ((Complex.log (segRatio γ w (s j) (s (j + 1)) t)).im : ℂ)) := by
-      rw [h_theta_cast, mul_add, Complex.exp_add, Finset.mul_sum, Complex.exp_sum]
-    have h_arg : Complex.exp (Complex.I * (Complex.arg (γ a - w) : ℂ)) =
-        (γ a - w) / ((‖γ a - w‖ : ℝ) : ℂ) := by
-      rw [← Complex.log_im (γ a - w)]
-      exact exp_I_log_im_eq_div_norm h_avoid_a
-    have h_z_eq : ∀ j ∈ Finset.range N,
-        Complex.exp (Complex.I *
-          ((Complex.log (segRatio γ w (s j) (s (j + 1)) t)).im : ℂ)) =
-          segRatio γ w (s j) (s (j + 1)) t /
-            ((‖segRatio γ w (s j) (s (j + 1)) t‖ : ℝ) : ℂ) :=
-      fun j hj ↦ exp_I_log_im_eq_div_norm (h_ratio_ne j hj)
-    have h_norm_prod_real : (‖γ a - w‖ : ℝ) *
-        (∏ j ∈ Finset.range N, ‖segRatio γ w (s j) (s (j + 1)) t‖) = ‖γ t - w‖ := by
-      rw [← Complex.norm_prod, ← norm_mul, h_prod_eq]
-    have h_norm_t_ne : ((‖γ t - w‖ : ℝ) : ℂ) ≠ 0 :=
-      Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr h_avoid_t)
-    rw [h_exp_split, h_arg, Finset.prod_congr rfl h_z_eq, Finset.prod_div_distrib,
-        div_mul_div_comm, ← Complex.ofReal_prod, ← Complex.ofReal_mul,
-        h_norm_prod_real, h_prod_eq, mul_div_cancel₀ _ h_norm_t_ne]
+    exact polar_form_of_prod (zs := fun j ↦ segRatio γ w (s j) (s (j + 1)) t)
+      h_avoid_a h_ratio_ne h_prod_eq
 
 end TauCeti.Contour
 
