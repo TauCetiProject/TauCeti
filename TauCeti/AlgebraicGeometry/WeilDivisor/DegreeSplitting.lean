@@ -254,44 +254,6 @@ lemma classGroupAddEquivPicZeroProdInt_coe_picZero (w : X → ℤ) (h : S.IsWeig
   · exact S.degreeCorrection_coe_picZero w h x₀ p
   · exact (mem_picZero w h).mp p.property
 
-/-! ### The unweighted specialization -/
-
-/-- The unweighted/algebraically closed specialization of the splitting: with unweighted-degree
-zero principal divisors and any base point (its weight is the constant `1`), the class group
-splits as `unweightedPicZero × ℤ`. -/
-noncomputable def classGroupAddEquivUnweightedPicZeroProdInt (h : S.IsUnweightedDegreeZero)
-    (x₀ : X) : S.ClassGroup ≃+ unweightedPicZero h × ℤ :=
-  S.classGroupAddEquivPicZeroProdInt (fun _ => (1 : ℤ)) h (x₀ := x₀) rfl
-
-@[simp]
-lemma classGroupAddEquivUnweightedPicZeroProdInt_apply (h : S.IsUnweightedDegreeZero)
-    (x₀ : X) (c : S.ClassGroup) :
-    S.classGroupAddEquivUnweightedPicZeroProdInt h x₀ c =
-      (⟨S.degreeCorrection (fun _ => (1 : ℤ)) h x₀ c,
-          S.degreeCorrection_mem_picZero (fun _ => (1 : ℤ)) h rfl c⟩,
-        unweightedDegreeClass h c) :=
-  rfl
-
-@[simp]
-lemma classGroupAddEquivUnweightedPicZeroProdInt_symm_apply (h : S.IsUnweightedDegreeZero)
-    (x₀ : X) (p : unweightedPicZero h) (n : ℤ) :
-    (S.classGroupAddEquivUnweightedPicZeroProdInt h x₀).symm (p, n) =
-      (p : S.ClassGroup) + n • S.divisorClass (ofPoint x₀) :=
-  S.classGroupAddEquivPicZeroProdInt_symm_apply (fun _ => (1 : ℤ)) h rfl p n
-
-/-- Under the unweighted splitting, a coerced `unweightedPicZero` class has `Pic⁰` component
-itself and degree component `0`. -/
-lemma classGroupAddEquivUnweightedPicZeroProdInt_coe_unweightedPicZero
-    (h : S.IsUnweightedDegreeZero) (x₀ : X) (p : unweightedPicZero h) :
-    S.classGroupAddEquivUnweightedPicZeroProdInt h x₀ (p : S.ClassGroup) = (p, 0) :=
-  S.classGroupAddEquivPicZeroProdInt_coe_picZero (fun _ => (1 : ℤ)) h rfl p
-
-/-- With unweighted-degree-zero principal divisors and a base point, the unweighted degree is
-surjective onto `ℤ`. -/
-lemma unweightedDegreeClass_surjective (h : S.IsUnweightedDegreeZero) (x₀ : X) :
-    Function.Surjective (unweightedDegreeClass h) :=
-  S.weightedDegreeClass_surjective (fun _ => (1 : ℤ)) h (x₀ := x₀) rfl
-
 end OrderSystem
 
 end WeilDivisor

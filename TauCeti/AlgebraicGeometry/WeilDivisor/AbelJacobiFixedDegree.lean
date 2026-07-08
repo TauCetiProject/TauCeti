@@ -16,16 +16,13 @@ underlying weighted divisor-level map sends
 
 `D ↦ [D - weightedDegree w D • [x₀]] ∈ Pic⁰`.
 
-Its unweighted specialization sends
-
-`D ↦ [D - deg(D) • [x₀]] ∈ Pic⁰`,
-
-and therefore models the divisor-class shadow of the Abel map on symmetric powers
+At the constant weight `1` this specializes to `D ↦ [D - deg(D) • [x₀]] ∈ Pic⁰`, and
+therefore models the divisor-class shadow of the Abel map on symmetric powers
 `Symᵈ X → Pic⁰ X`, `D ↦ 𝒪_X(D - d·x₀)`.
 
 The file does not introduce a parallel fixed-degree Abel-map API.  It states the required
 fixed-degree and `Sym.append` facts directly in terms of the existing divisor-level
-homomorphisms `weightedAbelJacobiDivisorClass` and `unweightedAbelJacobiDivisorClass`.
+homomorphism `weightedAbelJacobiDivisorClass`.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer C/D, "Relative effective
 Cartier divisors and symmetric powers `Symᵈ X`" and the Abel-map lane
@@ -90,47 +87,6 @@ lemma weightedAbelJacobiDivisorClass_ofSym_append (w : X → ℤ) (h : S.IsWeigh
         S.weightedAbelJacobiDivisorClass w h hx₀ (EffectiveDivisorOfDegree.ofSym t) := by
   rw [← EffectiveDivisorOfDegree.add_ofSym]
   exact S.weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_add w h hx₀
-    (EffectiveDivisorOfDegree.ofSym s) (EffectiveDivisorOfDegree.ofSym t)
-
-/-! ### Unweighted fixed-degree Abel-Jacobi classes -/
-
-/-- Changing only the degree index of a fixed-degree divisor does not change its unweighted
-Abel-Jacobi class. -/
-lemma unweightedAbelJacobiDivisorClass_cast (h : S.IsUnweightedDegreeZero) (x₀ : X)
-    {d e : ℕ} (hde : d = e) (D : EffectiveDivisorOfDegree X d) :
-    S.unweightedAbelJacobiDivisorClass h x₀
-        (WeilDivisor.EffectiveDivisorOfDegree.cast hde D : WeilDivisor X) =
-      S.unweightedAbelJacobiDivisorClass h x₀ (D : WeilDivisor X) := by
-  subst e
-  simp
-
-/-- The unweighted Abel-Jacobi class of the zero effective divisor is zero. -/
-lemma unweightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_zero
-    (h : S.IsUnweightedDegreeZero) (x₀ : X) :
-    S.unweightedAbelJacobiDivisorClass h x₀ (EffectiveDivisorOfDegree.zero X) = 0 := by
-  simp
-
-/-- Adding fixed-degree effective divisors sends their unweighted Abel-Jacobi class to the sum
-of the two classes. -/
-lemma unweightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_add
-    (h : S.IsUnweightedDegreeZero) (x₀ : X)
-    (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
-    S.unweightedAbelJacobiDivisorClass h x₀ (EffectiveDivisorOfDegree.add D E) =
-      S.unweightedAbelJacobiDivisorClass h x₀ (D : WeilDivisor X) +
-        S.unweightedAbelJacobiDivisorClass h x₀ (E : WeilDivisor X) := by
-  exact map_add (S.unweightedAbelJacobiDivisorClass h x₀)
-    (D : WeilDivisor X) (E : WeilDivisor X)
-
-/-- Appending symmetric-power divisors sends their unweighted Abel-Jacobi class to the sum of
-the two classes. -/
-lemma unweightedAbelJacobiDivisorClass_ofSym_append (h : S.IsUnweightedDegreeZero) (x₀ : X)
-    (s : Sym X d) (t : Sym X e) :
-    S.unweightedAbelJacobiDivisorClass h x₀ (EffectiveDivisorOfDegree.ofSym (s.append t)) =
-    S.unweightedAbelJacobiDivisorClass h x₀ (EffectiveDivisorOfDegree.ofSym s) +
-      S.unweightedAbelJacobiDivisorClass h x₀ (EffectiveDivisorOfDegree.ofSym t)
-      := by
-  rw [← EffectiveDivisorOfDegree.add_ofSym]
-  exact S.unweightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_add h x₀
     (EffectiveDivisorOfDegree.ofSym s) (EffectiveDivisorOfDegree.ofSym t)
 
 end
