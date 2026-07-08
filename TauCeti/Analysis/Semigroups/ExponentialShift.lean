@@ -31,11 +31,12 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X
 
 namespace StronglyContinuousSemigroup
 
+omit [CompleteSpace X] in
 /-- The exponential shift of a C₀-semigroup by `lambda`.
 
 At nonnegative time `t`, this is the semigroup `exp (-lambda t) • S(t)`.  It shifts
 growth exponents by subtracting `lambda`; see `HasGrowthBound.expShift`. -/
-@[expose] def expShift (S : StronglyContinuousSemigroup X) (lambda : ℝ) :
+irreducible_def expShift (S : StronglyContinuousSemigroup X) (lambda : ℝ) :
     StronglyContinuousSemigroup X where
   toFun t := Real.exp (-(lambda * (t : ℝ))) • S t
   map_zero' := by
@@ -62,7 +63,9 @@ omit [CompleteSpace X] in
 @[simp]
 theorem expShift_apply (S : StronglyContinuousSemigroup X) (lambda : ℝ) (t : ℝ≥0) :
     S.expShift lambda t = Real.exp (-(lambda * (t : ℝ))) • S t :=
-  rfl
+  by
+    rw [expShift_def]
+    rfl
 
 omit [CompleteSpace X] in
 /-- Pointwise form of `StronglyContinuousSemigroup.expShift_apply`. -/
@@ -81,6 +84,7 @@ theorem expShift_zero (S : StronglyContinuousSemigroup X) :
 
 omit [CompleteSpace X] in
 /-- Successive exponential shifts add their parameters. -/
+@[simp]
 theorem expShift_expShift (S : StronglyContinuousSemigroup X) (lambda μ : ℝ) :
     (S.expShift lambda).expShift μ = S.expShift (lambda + μ) := by
   ext t x
@@ -123,7 +127,7 @@ omit [CompleteSpace X] in
 /-- Exponential shifting subtracts the shift parameter from the growth exponent. -/
 theorem expShift {S : StronglyContinuousSemigroup X} {ω M lambda : ℝ}
     (hb : S.HasGrowthBound ω M) : (S.expShift lambda).HasGrowthBound (ω - lambda) M := by
-  refine hasGrowthBound_of_bound hb.one_le (fun t ht => ?_)
+  refine StronglyContinuousSemigroup.hasGrowthBound_of_bound hb.one_le (fun t ht => ?_)
   rw [S.expShift_realOperator_of_nonneg lambda t ht]
   calc ‖Real.exp (-(lambda * t)) • S.realOperator t‖
       ≤ ‖Real.exp (-(lambda * t))‖ * ‖S.realOperator t‖ :=
@@ -140,9 +144,10 @@ theorem expShift {S : StronglyContinuousSemigroup X} {ω M lambda : ℝ}
 
 end HasGrowthBound
 
+omit [CompleteSpace X] in
 /-- A semigroup with growth bound `(lambda, 1)` becomes a contraction semigroup after
 exponential shifting by `lambda`. -/
-@[expose] def expShiftContraction (S : StronglyContinuousSemigroup X) (lambda : ℝ)
+irreducible_def expShiftContraction (S : StronglyContinuousSemigroup X) (lambda : ℝ)
     (hb : S.HasGrowthBound lambda 1) : ContractionSemigroup X where
   toStronglyContinuousSemigroup := S.expShift lambda
   contracting t := by
@@ -158,7 +163,7 @@ omit [CompleteSpace X] in
 theorem expShiftContraction_toStronglyContinuousSemigroup
     (S : StronglyContinuousSemigroup X) (lambda : ℝ) (hb : S.HasGrowthBound lambda 1) :
     (S.expShiftContraction lambda hb).toStronglyContinuousSemigroup = S.expShift lambda :=
-  rfl
+  by rw [expShiftContraction_def]
 
 omit [CompleteSpace X] in
 /-- Native operator formula for `expShiftContraction`. -/

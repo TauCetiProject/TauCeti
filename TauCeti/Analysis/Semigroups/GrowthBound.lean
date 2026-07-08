@@ -54,7 +54,7 @@ theorem StronglyContinuousSemigroup.HasGrowthBound.bound
 omit [CompleteSpace X] in
 /-- Constructor for a growth bound from the multiplicative lower bound and operator-norm
 estimate. -/
-theorem StronglyContinuousSemigroup.hasGrowthBound_of_bound
+public theorem StronglyContinuousSemigroup.hasGrowthBound_of_bound
     {S : StronglyContinuousSemigroup X} {ω M : ℝ} (hM : 1 ≤ M)
     (hbound : ∀ (t : ℝ), 0 ≤ t → ‖S.realOperator t‖ ≤ M * Real.exp (ω * t)) :
     S.HasGrowthBound ω M := by
