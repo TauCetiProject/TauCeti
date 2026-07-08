@@ -61,12 +61,13 @@ lemma coeFn_hermiteFunctionLp_real (n : ℕ) :
 
 /-! ## Zeroth-mode normalization -/
 
-/-- The zeroth `Lp` Hermite function has inner product one with itself, over any `RCLike`
-scalar field. -/
+/-- The squared norm of the zeroth `Lp` Hermite function is one, over any `RCLike` scalar field. -/
 @[simp] lemma inner_self_hermiteFunctionLp_zero :
-    inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0) = 1 := by
-  calc
-    inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0)
+    (↑‖hermiteFunctionLp 𝕜 0‖ : 𝕜) ^ 2 = 1 := by
+  have hinner :
+      inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0) = 1 := by
+    calc
+      inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0)
         = ∫ x : ℝ, (algebraMap ℝ 𝕜) (hermiteFunction 0 x * hermiteFunction 0 x) := by
           rw [MeasureTheory.L2.inner_def]
           refine integral_congr_ae ?_
@@ -74,9 +75,12 @@ scalar field. -/
           rw [hx]
           exact inner_algebraMap_algebraMap (𝕜 := 𝕜)
             (hermiteFunction 0 x) (hermiteFunction 0 x)
-    _ = 1 := by
+      _ = 1 := by
           rw [integral_ofReal]
+          have hzero : ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x = 1 := by
+            simpa only [hermiteFunction_zero] using integral_hermiteFunction_zero_mul_self
           simpa only [map_one] using
-            congrArg (algebraMap ℝ 𝕜) integral_hermiteFunction_zero_mul_self
+            congrArg (algebraMap ℝ 𝕜) hzero
+  simpa only [inner_self_eq_norm_sq_to_K] using hinner
 
 end TauCeti
