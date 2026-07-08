@@ -5,8 +5,8 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import TauCeti.Probability.Exchangeability.Contractability
 public import TauCeti.Probability.Exchangeability.ConditionallyIID
 public import TauCeti.Probability.DeFinetti.DirectingMeasure
--- Non-public: used only inside proofs — the tail factorization, the shared integration core, and
--- `Tuple.sort` (for the injective reduction).
+-- Non-public: used only inside proofs — the tail factorization, the block-law integration lemma,
+-- and `Tuple.sort` (for the injective reduction).
 import TauCeti.Probability.DeFinetti.TailFactorization
 import TauCeti.Probability.DeFinetti.BlockFactorization
 import Mathlib.Data.Fin.Tuple.Sort
@@ -112,7 +112,7 @@ private theorem blockLaw_injective_eq_lintegral_prod_directingMeasure
   refine lintegral_congr fun ω => ?_
   exact Equiv.prod_comp e fun j => directingMeasure μ X ω (B j)
 
-/-- **de Finetti's theorem (reverse-martingale route), directed form.** A contractable process on a
+/-- **de Finetti's theorem, directed form.** A contractable process on a
 standard Borel space is conditionally i.i.d. **with** directing measure the tail conditional law
 `directingProbabilityMeasure μ X`. -/
 theorem conditionallyIIDWith_of_contractable
@@ -126,7 +126,7 @@ theorem conditionallyIIDWith_of_contractable
   rw [blockLaw_injective_eq_lintegral_prod_directingMeasure hX hX_meas hk hB]
   simp only [directingProbabilityMeasure_toMeasure]
 
-/-- **de Finetti's theorem (reverse-martingale route): contractable ⇒ conditionally i.i.d.** A
+/-- **de Finetti's theorem: contractable ⇒ conditionally i.i.d.** A
 contractable process on a standard Borel space is conditionally i.i.d. -/
 theorem conditionallyIID_of_contractable
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
@@ -134,7 +134,7 @@ theorem conditionallyIID_of_contractable
     ConditionallyIID μ X :=
   ConditionallyIID.of_directing (conditionallyIIDWith_of_contractable hX hX_meas)
 
-/-- **de Finetti's theorem (reverse-martingale route): exchangeable ⇒ conditionally i.i.d.** An
+/-- **de Finetti's theorem: exchangeable ⇒ conditionally i.i.d.** An
 exchangeable process on a standard Borel space is conditionally i.i.d. -/
 theorem conditionallyIID_of_exchangeable
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
@@ -142,6 +142,9 @@ theorem conditionallyIID_of_exchangeable
     ConditionallyIID μ X :=
   conditionallyIID_of_contractable
     (contractable_of_exchangeable hX fun i => (hX_meas i).aemeasurable) hX_meas
+
+/-- Roadmap-facing alias for `conditionallyIID_of_exchangeable`. -/
+alias deFinetti := conditionallyIID_of_exchangeable
 
 end Probability
 

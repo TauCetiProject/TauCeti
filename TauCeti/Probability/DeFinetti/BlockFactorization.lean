@@ -75,11 +75,10 @@ theorem condExp_blockIndicatorProd_ae_eq_prod_of_iCondIndepFun_tailProcess
   rw [Finset.prod_apply]
   exact Finset.prod_congr rfl fun i _ => hω i
 
-/-- **Block law of a rectangle as a directing-measure mixture, from the tail factorization.** If the
-tail conditional expectation of the block-indicator product is a.e. the directing-measure product,
-then the block law of the rectangle `∏ᵢ C i` is the `μ`-average of that product. This is the shared
-integration core (real-integral to `lintegral` conversion) behind both the tail-conditional-
-independence mixture below and the contractability mixture in `Summit`. -/
+/-- **Block law of a rectangle as a directing-measure mixture.** If the tail conditional expectation
+of the block-indicator product is a.e. the directing-measure product
+`∏ i, (directingMeasure μ X ω).real (C i)`, then the block law of the rectangle `∏ᵢ C i` is the
+`μ`-average `∫⁻ ∏ᵢ (directingMeasure μ X ω) (C i)` of that product. -/
 theorem blockLaw_eq_lintegral_prod_directingMeasure_of_condExp_ae_eq
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX_meas : ∀ n, Measurable (X n))
