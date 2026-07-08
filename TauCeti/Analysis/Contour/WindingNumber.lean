@@ -24,8 +24,11 @@ value does not exist.
 
 ## Main results
 
+* `TauCeti.Contour.windingNumber_eq_cauchyPVAt` — characteristic value lemma for the raw
+  `cauchyPVAt` defining value.
 * `TauCeti.Contour.windingNumber_eq_of_hasCauchyPVAt` — evaluate `windingNumber` from a Cauchy
   principal-value witness, without unfolding the definition.
+* `TauCeti.Contour.windingNumber_same` — the generalized winding number on `[a, a]` is `0`.
 * `TauCeti.Contour.isNullHomologous_iff` — restates `IsNullHomologous` as its vanishing condition,
   so consumers use the predicate without unfolding its hidden body.
 * `TauCeti.Contour.windingNumber_eq_integral_of_avoidance` — reduces `windingNumber` to the ordinary
@@ -61,13 +64,35 @@ integral; as a `limUnder`-based value it is junk when the principal value does n
 def windingNumber (γ : ℝ → ℂ) (a b : ℝ) (z₀ : ℂ) : ℂ :=
   (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * cauchyPVAt γ a b (fun z => (z - z₀)⁻¹) z₀
 
+/-- **Characteristic value lemma.** The generalized winding number is the normalized raw
+single-point principal-value value. This is the public, module-safe form of the definition for
+value-level rewrites. -/
+theorem windingNumber_eq_cauchyPVAt {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} :
+    windingNumber γ a b z₀ =
+      (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * cauchyPVAt γ a b (fun z => (z - z₀)⁻¹) z₀ :=
+  (rfl)
+
 /-- **Characteristic value lemma.** From a Cauchy principal-value witness for `(· − z₀)⁻¹` along
 `γ`, the generalized winding number is the normalized value `(2πi)⁻¹ · L`. This evaluates
 `windingNumber` through the `HasCauchyPVAt` predicate without unfolding the definition. -/
 theorem windingNumber_eq_of_hasCauchyPVAt {γ : ℝ → ℂ} {a b : ℝ} {z₀ L : ℂ}
     (h : HasCauchyPVAt γ a b (fun z => (z - z₀)⁻¹) z₀ L) :
     windingNumber γ a b z₀ = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * L := by
-  rw [windingNumber, h.cauchyPVAt_eq]
+  rw [windingNumber_eq_cauchyPVAt, h.cauchyPVAt_eq]
+
+/-- The generalized winding number over a zero-length interval is `0`. -/
+@[simp]
+theorem windingNumber_same (γ : ℝ → ℂ) (a : ℝ) (z₀ : ℂ) :
+    windingNumber γ a a z₀ = 0 := by
+  rw [windingNumber_eq_of_hasCauchyPVAt
+    (HasCauchyPVAt.refl γ a (fun z : ℂ => (z - z₀)⁻¹) z₀)]
+  ring
+
+/-- If the two endpoints are equal, the generalized winding number is `0`. -/
+theorem windingNumber_eq_zero_of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (z₀ : ℂ) :
+    windingNumber γ a b z₀ = 0 := by
+  subst b
+  exact windingNumber_same γ a z₀
 
 /-- A curve `γ` on `[a, b]` is **null-homologous** in `Ω` when its generalized winding number
 about every point outside `Ω` vanishes — the hypothesis of the homology form of Cauchy's theorem

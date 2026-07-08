@@ -28,6 +28,8 @@ domains and the proof only needs the vanishing of the winding number on the comp
 * `Contour.IsNullHomologous.union_left`, `Contour.IsNullHomologous.union_right` — a null-homologous
   curve remains null-homologous after adjoining an extra part of the domain.
 * `Contour.isNullHomologous_empty_iff`, `Contour.isNullHomologous_univ` — the two boundary cases.
+* `Contour.IsNullHomologous.refl`, `Contour.IsNullHomologous.of_eq` — a zero-length parameter
+  interval is null-homologous in every ambient set.
 * `Contour.IsNullHomologous.congr_windingNumber` — replace a curve by another with the same winding
   numbers outside the domain.
 
@@ -61,6 +63,20 @@ theorem isNullHomologous_empty_iff :
     IsNullHomologous γ a b (∅ : Set ℂ) ↔ ∀ w, windingNumber γ a b w = 0 := by
   rw [isNullHomologous_iff]
   simp
+
+/-- Every zero-length parameter interval is null-homologous in every ambient set. -/
+theorem IsNullHomologous.refl (γ : ℝ → ℂ) (a : ℝ) (Ω : Set ℂ) :
+    IsNullHomologous γ a a Ω := by
+  rw [isNullHomologous_iff]
+  intro z _hz
+  exact windingNumber_same γ a z
+
+/-- If the two endpoints are equal, the parameter interval is null-homologous in every ambient
+set. -/
+theorem IsNullHomologous.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (Ω : Set ℂ) :
+    IsNullHomologous γ a b Ω := by
+  subst b
+  exact IsNullHomologous.refl γ a Ω
 
 /-- If every winding number vanishes, then the curve is null-homologous in the empty set. -/
 theorem isNullHomologous_empty_of_forall_windingNumber_eq_zero

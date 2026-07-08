@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Topology.Order.Compact
 
@@ -51,13 +52,18 @@ versus `MeromorphicOn` (on a set).
   `HasCauchyPVAt.cauchyPVAt_eq`, `HasCauchyPVAt.unique` — the value and its uniqueness;
   `cauchyPVExistsAt_iff`, `CauchyPVExistsAt.intro`, `CauchyPVExistsAt.hasCauchyPVAt_cauchyPVAt` —
   package/unpack existence and recover the predicate at `cauchyPVAt`.
-* `HasCauchyPVAt.congr_along_curve` — the integrand only matters along `γ` on `[a, b]`;
+* `HasCauchyPVAt.congr_along_curve`, `cauchyPVAt_congr_along_curve` — the integrand only matters
+  along `γ` on `[a, b]`;
   `HasCauchyPVAt.zero`, `HasCauchyPVAt.const_mul`, `HasCauchyPVAt.add`, `HasCauchyPVAt.sum` (and the
   `CauchyPVExistsAt` forms) — the principal value is `ℂ`-linear in the integrand, including over
   finite sums.
 * `HasCauchyPVAt.of_avoidance` — if `γ` avoids `z₀` on `[a, b]` and the integrand is integrable
   there, the principal value is the ordinary integral (`cauchyPVExistsAt_of_avoidance` is the
   existence form).
+* `HasCauchyPVAt.translate`, `CauchyPVExistsAt.translate`, `cauchyPVAt_translate` — simultaneous
+  translation of the curve, point, and integrand preserves the principal value.
+* `HasCauchyPVAt.symm`, `CauchyPVExistsAt.symm`, `cauchyPVAt_symm` — reversing the interval
+  orientation negates the single-point principal value.
 * `HasCauchyPVAt.concat` — the principal values on `[a, b]` and `[b, c]` add
   (`CauchyPVExistsAt.concat` is the existence form).
 
@@ -181,6 +187,17 @@ theorem HasCauchyPVAt.congr_along_curve {γ : ℝ → ℂ} {a b : ℝ} {f g : �
   · refine Filter.Tendsto.congr (fun ε => intervalIntegral.integral_congr_uIoo fun t ht => ?_) h.2
     simp only [h_eq t ht]
 
+/-- Value form of `HasCauchyPVAt.congr_along_curve`: the raw `cauchyPVAt` value only depends on
+the integrand along `γ` on the open interval between `a` and `b`. -/
+theorem cauchyPVAt_congr_along_curve {γ : ℝ → ℂ} {a b : ℝ} {f g : ℂ → ℂ} {z₀ : ℂ}
+    (h_eq : ∀ t ∈ Set.uIoo a b, f (γ t) = g (γ t)) :
+    cauchyPVAt γ a b f z₀ = cauchyPVAt γ a b g z₀ := by
+  unfold cauchyPVAt
+  congr 1
+  ext ε
+  refine intervalIntegral.integral_congr_uIoo fun t ht => ?_
+  simp only [h_eq t ht]
+
 /-- Scalar multiplication: if the principal value of `f` is `L`, that of `c • f` is `c • L`. -/
 theorem HasCauchyPVAt.const_mul {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ} {L : ℂ}
     (h : HasCauchyPVAt γ a b f z₀ L) (c : ℂ) :
@@ -227,6 +244,43 @@ theorem HasCauchyPVAt.zero {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} :
 theorem cauchyPVAt_zero {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} :
     cauchyPVAt γ a b (fun _ => 0) z₀ = 0 :=
   HasCauchyPVAt.zero.cauchyPVAt_eq
+
+/-- The Cauchy principal value at a single point over a zero-length interval is `0`. -/
+theorem HasCauchyPVAt.refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) :
+    HasCauchyPVAt γ a a f z₀ 0 := by
+  refine HasCauchyPVAt.intro ?_ ?_
+  · filter_upwards with ε
+    exact IntervalIntegrable.refl
+  · simpa only [intervalIntegral.integral_same] using tendsto_const_nhds (x := (0 : ℂ))
+
+/-- If the two endpoints are equal, the single-point Cauchy principal value is `0`. -/
+theorem HasCauchyPVAt.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) (z₀ : ℂ) :
+    HasCauchyPVAt γ a b f z₀ 0 := by
+  subst b
+  exact HasCauchyPVAt.refl γ a f z₀
+
+/-- Existence form of `HasCauchyPVAt.refl`: a zero-length interval always has a single-point
+Cauchy principal value. -/
+theorem CauchyPVExistsAt.refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) :
+    CauchyPVExistsAt γ a a f z₀ :=
+  CauchyPVExistsAt.intro (HasCauchyPVAt.refl γ a f z₀)
+
+/-- Existence form of `HasCauchyPVAt.of_eq`. -/
+theorem CauchyPVExistsAt.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) (z₀ : ℂ) :
+    CauchyPVExistsAt γ a b f z₀ :=
+  CauchyPVExistsAt.intro (HasCauchyPVAt.of_eq γ hab f z₀)
+
+/-- Value form of `HasCauchyPVAt.refl`: the single-point Cauchy principal value on `[a, a]` is
+`0`. -/
+@[simp]
+theorem cauchyPVAt_same (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) :
+    cauchyPVAt γ a a f z₀ = 0 :=
+  (HasCauchyPVAt.refl γ a f z₀).cauchyPVAt_eq
+
+/-- Value form of `HasCauchyPVAt.of_eq`. -/
+theorem cauchyPVAt_eq_zero_of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) (z₀ : ℂ) :
+    cauchyPVAt γ a b f z₀ = 0 :=
+  (HasCauchyPVAt.of_eq γ hab f z₀).cauchyPVAt_eq
 
 /-- **Finite additivity.** The principal value of a finite sum of integrands is the sum of their
 principal values. With `HasCauchyPVAt.zero` and `HasCauchyPVAt.add` this extends the `ℂ`-linearity
@@ -317,6 +371,64 @@ theorem CauchyPVExistsAt.sum {ι : Type*} {γ : ℝ → ℂ} {a b : ℝ} {z₀ :
     obtain ⟨Lj, hLj⟩ := h j (Finset.mem_insert_self j s)
     obtain ⟨Ls, hLs⟩ := ih fun i hi => h i (Finset.mem_insert_of_mem hi)
     exact ⟨Lj + Ls, by simpa only [Finset.sum_insert hj] using hLj.add hLs⟩
+
+/-- Simultaneously translating the curve and the excision point preserves a single-point Cauchy
+principal value, provided the integrand is translated back by the same amount. -/
+theorem HasCauchyPVAt.translate {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ L : ℂ}
+    (h : HasCauchyPVAt γ a b f z₀ L) (c : ℂ) :
+    HasCauchyPVAt (fun t => γ t + c) a b (fun z => f (z - c)) (z₀ + c) L := by
+  refine HasCauchyPVAt.intro ?_ ?_
+  · filter_upwards [h.eventually_intervalIntegrable] with ε hε
+    refine (intervalIntegrable_congr fun t _ => ?_).mpr hε
+    simp [add_sub_add_right_eq_sub, add_sub_cancel_right, deriv_add_const]
+  · refine h.tendsto.congr fun ε => ?_
+    refine intervalIntegral.integral_congr fun t _ => ?_
+    simp [add_sub_add_right_eq_sub, add_sub_cancel_right, deriv_add_const]
+
+/-- Existence form of `HasCauchyPVAt.translate`: simultaneous translation preserves existence of a
+single-point Cauchy principal value. -/
+theorem CauchyPVExistsAt.translate {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
+    (h : CauchyPVExistsAt γ a b f z₀) (c : ℂ) :
+    CauchyPVExistsAt (fun t => γ t + c) a b (fun z => f (z - c)) (z₀ + c) :=
+  let ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
+  CauchyPVExistsAt.intro (hL.translate c)
+
+/-- Value form of `HasCauchyPVAt.translate`: simultaneous translation preserves the single-point
+Cauchy principal value. -/
+theorem cauchyPVAt_translate {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ} (c : ℂ) :
+    cauchyPVAt (fun t => γ t + c) a b (fun z => f (z - c)) (z₀ + c)
+      = cauchyPVAt γ a b f z₀ := by
+  unfold cauchyPVAt
+  congr 1
+  ext ε
+  refine intervalIntegral.integral_congr fun t _ => ?_
+  simp [add_sub_add_right_eq_sub, add_sub_cancel_right, deriv_add_const]
+
+/-- Reversing the interval orientation negates a single-point Cauchy principal value. -/
+theorem HasCauchyPVAt.symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ L : ℂ}
+    (h : HasCauchyPVAt γ a b f z₀ L) :
+    HasCauchyPVAt γ b a f z₀ (-L) := by
+  refine HasCauchyPVAt.intro ?_ ?_
+  · filter_upwards [h.eventually_intervalIntegrable] with ε hε
+    exact hε.symm
+  · refine Filter.Tendsto.congr (fun ε => ?_) h.tendsto.neg
+    exact (intervalIntegral.integral_symm (f :=
+      fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) a b).symm
+
+/-- Existence of a single-point Cauchy principal value is invariant under reversing the interval
+orientation. -/
+theorem CauchyPVExistsAt.symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
+    (h : CauchyPVExistsAt γ a b f z₀) :
+    CauchyPVExistsAt γ b a f z₀ :=
+  let ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
+  cauchyPVExistsAt_iff.mpr ⟨_, hL.symm⟩
+
+/-- Value form of `HasCauchyPVAt.symm`: if the single-point principal value exists on `[a, b]`,
+then the value on `[b, a]` is its negative. -/
+theorem cauchyPVAt_symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
+    (h : CauchyPVExistsAt γ a b f z₀) :
+    cauchyPVAt γ b a f z₀ = -cauchyPVAt γ a b f z₀ :=
+  h.hasCauchyPVAt_cauchyPVAt.symm.cauchyPVAt_eq
 
 /-- Existence form of `HasCauchyPVAt.concat`. -/
 theorem CauchyPVExistsAt.concat {γ : ℝ → ℂ} {a b c : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}

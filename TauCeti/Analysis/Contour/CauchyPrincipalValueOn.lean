@@ -60,6 +60,8 @@ of `f` (which fails at an on-curve singularity), never silently identifying the 
 * `HasCauchyPV.unique`, `cauchyPV`, `HasCauchyPV.cauchyPV_eq`, `cauchyPV_zero`,
   `CauchyPVExists.hasCauchyPV_cauchyPV` — the value is well-defined (independent of the witnessing
   set), so `cauchyPV γ a b f` names it (junk value `0` when none exists).
+* `HasCauchyPV.symm`, `CauchyPVExists.symm`, `cauchyPV_symm` — reversing the interval orientation
+  negates the set-level principal value.
 * `HasCauchyPV.add`, `HasCauchyPV.sum` (and their `CauchyPVExists` forms) — additivity in `f`;
   reconciling the summands' *different* excision sets on their union needs a `Measurable γ`
   hypothesis, unlike the excision-set-preserving operations above.
@@ -462,6 +464,40 @@ theorem cauchyPV_zero {γ : ℝ → ℂ} {a b : ℝ} :
     cauchyPV γ a b (fun _ => 0) = 0 :=
   HasCauchyPV.zero.cauchyPV_eq
 
+/-- The set-level Cauchy principal value over a zero-length interval is `0`. -/
+theorem HasCauchyPV.refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) :
+    HasCauchyPV γ a a f 0 := by
+  simpa only [intervalIntegral.integral_same] using
+    HasCauchyPV.of_integrable (γ := γ) (a := a) (b := a) (f := f) IntervalIntegrable.refl
+
+/-- If the two endpoints are equal, the set-level Cauchy principal value is `0`. -/
+theorem HasCauchyPV.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) :
+    HasCauchyPV γ a b f 0 := by
+  subst b
+  exact HasCauchyPV.refl γ a f
+
+/-- Existence form of `HasCauchyPV.refl`: a zero-length interval always has a set-level Cauchy
+principal value. -/
+theorem CauchyPVExists.refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) :
+    CauchyPVExists γ a a f :=
+  CauchyPVExists.intro (HasCauchyPV.refl γ a f)
+
+/-- Existence form of `HasCauchyPV.of_eq`. -/
+theorem CauchyPVExists.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) :
+    CauchyPVExists γ a b f :=
+  CauchyPVExists.intro (HasCauchyPV.of_eq γ hab f)
+
+/-- Value form of `HasCauchyPV.refl`: the set-level Cauchy principal value on `[a, a]` is `0`. -/
+@[simp]
+theorem cauchyPV_same (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) :
+    cauchyPV γ a a f = 0 :=
+  (HasCauchyPV.refl γ a f).cauchyPV_eq
+
+/-- Value form of `HasCauchyPV.of_eq`. -/
+theorem cauchyPV_eq_zero_of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) :
+    cauchyPV γ a b f = 0 :=
+  (HasCauchyPV.of_eq γ hab f).cauchyPV_eq
+
 /-- If the set-level principal value exists, it holds at the canonical value `cauchyPV`. This
 recovers a `HasCauchyPV` statement from mere existence. -/
 theorem CauchyPVExists.hasCauchyPV_cauchyPV {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
@@ -469,6 +505,33 @@ theorem CauchyPVExists.hasCauchyPV_cauchyPV {γ : ℝ → ℂ} {a b : ℝ} {f : 
   obtain ⟨v, hv⟩ := h
   rw [hv.cauchyPV_eq]
   exact hv
+
+/-- Reversing the interval orientation negates a set-level Cauchy principal value. -/
+theorem HasCauchyPV.symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {v : ℂ}
+    (h : HasCauchyPV γ a b f v) :
+    HasCauchyPV γ b a f (-v) := by
+  obtain ⟨S, hint, htend⟩ := hasCauchyPV_iff.mp h
+  refine HasCauchyPV.intro S ?_ ?_
+  · filter_upwards [hint] with ε hε
+    exact hε.symm
+  · refine Filter.Tendsto.congr (fun ε => ?_) htend.neg
+    exact (intervalIntegral.integral_symm (f :=
+      fun t => if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then 0 else f (γ t) * deriv γ t) a b).symm
+
+/-- Existence of a set-level Cauchy principal value is invariant under reversing the interval
+orientation. -/
+theorem CauchyPVExists.symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
+    (h : CauchyPVExists γ a b f) :
+    CauchyPVExists γ b a f :=
+  let ⟨_, hv⟩ := cauchyPVExists_iff.mp h
+  cauchyPVExists_iff.mpr ⟨_, hv.symm⟩
+
+/-- Value form of `HasCauchyPV.symm`: if the set-level principal value exists on `[a, b]`, then
+the value on `[b, a]` is its negative. -/
+theorem cauchyPV_symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
+    (h : CauchyPVExists γ a b f) :
+    cauchyPV γ b a f = -cauchyPV γ a b f :=
+  h.hasCauchyPV_cauchyPV.symm.cauchyPV_eq
 
 /-- Enlarging the excision set preserves interval-integrability of the truncated integrand: the
 extra excision at `S'` only zeroes the integrand on the measurable set `γ ⁻¹' ⋃ s ∈ S', closedBall
