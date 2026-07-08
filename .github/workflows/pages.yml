@@ -8,12 +8,15 @@ name: Pages
 # build time and cannot drift. The examples project is built first; its Mathlib oleans
 # come from the cache, not a from-scratch rebuild.
 #
-# The Statistics page's two "lines of code by date" charts are regenerated here, at
-# deploy time, straight from git history (see scripts/loc_graph.py) — they are not
-# committed state. The daily `schedule` below redeploys the site so the charts track
-# the project as it grows. (This replaces the old loc-graph workflow, which committed
-# the SVGs to main on a schedule; main now sits behind a merge queue that refuses
-# direct pushes, so generating the charts in this build is the only way they refresh.)
+# The Statistics page's "lines of code by date" charts are regenerated here, at deploy
+# time, straight from git history (see scripts/loc_graph.py) — they are not committed
+# state. The per-roadmap chart (scripts/loc_roadmap_graph.py) is regenerated the same
+# way, but from the PR labels rather than git, since roadmap attribution lives in the
+# `roadmap/<Area>` labels; it reads them via gh (hence pull-requests: read below). The
+# daily `schedule` below redeploys the site so the charts track the project as it grows.
+# (This replaces the old loc-graph workflow, which committed the SVGs to main on a
+# schedule; main now sits behind a merge queue that refuses direct pushes, so generating
+# the charts in this build is the only way they refresh.)
 
 on:
   push:
@@ -21,6 +24,7 @@ on:
     paths:
       - 'web/**'
       - 'scripts/loc_graph.py'
+      - 'scripts/loc_roadmap_graph.py'
       - '.github/workflows/pages.yml'
   schedule:
     - cron: "0 6 * * *"   # Daily 06:00 UTC: refresh the lines-of-code charts
@@ -30,6 +34,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: read   # the per-roadmap chart reads PR labels via gh (scripts/loc_roadmap_graph.py)
 
 concurrency:
   group: pages
@@ -73,6 +78,20 @@ jobs:
             --title "Tau Ceti Roadmap — lines written" --accent "#5eead4" \
             --out web/static_files/loc-roadmap.svg \
             TauCetiRoadmap TauCetiRoadmap.lean
+
+      # The per-roadmap chart is built from the PR labels (roadmap attribution is not in
+      # git), so it queries gh rather than walking commits. A gh failure here must not sink
+      # the whole deploy — the committed fallback SVG stays in place if the query fails.
+      - name: Regenerate the per-roadmap chart into static_files
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/loc_roadmap_graph.py \
+            --repo "${{ github.repository }}" \
+            --title "Tau Ceti — lines of Lean per roadmap" \
+            --out web/static_files/loc-per-roadmap.svg \
+          || echo "::warning::per-roadmap chart generation failed; keeping the committed fallback SVG"
 
       - name: Install elan
         run: |
