@@ -1,0 +1,106 @@
+module
+
+public import TauCeti.Probability.DeFinetti.FutureFactorization
+public import TauCeti.Probability.Martingale.Convergence
+
+/-!
+# Tail-level factorization for the de Finetti martingale route
+
+For a contractable process `X`, this file passes the finite-level future factorization
+(`condExp_blockIndicatorProd_future_ae_eq_prod`, at `tailFamily X (m+1)`) to the **tail** σ-algebra
+`tailProcess X`, by Lévy's downward theorem (`tendsto_ae_condExp_iInf`) along the
+antitone future family.
+
+## Main result
+
+* `condExp_blockIndicatorProd_tail_factor` — for a contractable process, the conditional expectation
+  of the length-`r` prefix indicator product given the tail σ-algebra factors as the product of the
+  single-coordinate (all replaced by `X 0`) tail conditional expectations.
+
+Adapted from `cameronfreer/exchangeability`
+(`DeFinetti/ViaMartingale/Factorization.lean`: `tail_factorization_from_future`).
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory ProbabilityTheory Filter
+open scoped MeasureTheory Topology
+
+namespace TauCeti
+
+namespace Probability
+
+variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+
+/-- **Tail-level factorization.**
+
+For a contractable process, the conditional expectation of the length-`r` prefix indicator product
+given the tail σ-algebra `tailProcess X` factors:
+```
+μ[∏ i<r 𝟙_{X i ∈ C i} | 𝒯_X] = ∏ i<r μ[𝟙_{X 0 ∈ C i} | 𝒯_X]   a.e.
+```
+This passes the finite-level future factorization to the tail using reverse-martingale (Lévy
+downward) convergence along the antitone future family `tailFamily X`. -/
+lemma condExp_blockIndicatorProd_tail_factor
+    [StandardBorelSpace Ω] [StandardBorelSpace α]
+    {μ : Measure Ω} [IsFiniteMeasure μ]
+    (X : ℕ → Ω → α) (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
+    (r : ℕ) (C : Fin r → Set α) (hC : ∀ i, MeasurableSet (C i)) :
+    μ[blockIndicatorProd X (fun i : Fin r => (i : ℕ)) C | tailProcess X]
+      =ᵐ[μ]
+    (fun ω => ∏ i : Fin r,
+      μ[Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0 | tailProcess X] ω) := by
+  classical
+  -- Reverse-martingale convergence: `μ[f | tailFamily X (m+1)] → μ[f | tailProcess X]` a.e.
+  have hconv : ∀ f : Ω → ℝ, Integrable f μ → ∀ᵐ ω ∂μ,
+      Tendsto (fun m => μ[f | tailFamily X (m + 1)] ω) atTop
+        (𝓝 (μ[f | tailProcess X] ω)) := by
+    intro f hf
+    -- `tendsto_ae_condExp_iInf` takes the index-0 bound `𝔽 0 ≤ m₀` (antitonicity supplies the rest)
+    -- and the integrability of `f`.
+    have h := tendsto_ae_condExp_iInf (μ := μ) (tailFamily_antitone X)
+      (tailFamily_le_ambient 0 fun k _ => hX_meas k) f hf
+    rw [← tailProcess_eq_iInf_tailFamily X] at h
+    filter_upwards [h] with ω hω using hω.comp (tendsto_add_atTop_nat 1)
+  -- The integrands are bounded indicators, hence integrable under the finite measure.
+  have hint_coord : ∀ i : Fin r, Integrable (Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0) μ := by
+    intro i
+    have heq : (Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0)
+        = (X 0 ⁻¹' C i).indicator (fun _ => (1 : ℝ)) := by
+      ext ω; simp only [Function.comp_apply, Set.indicator, Set.mem_preimage]
+    rw [heq]; exact (integrable_const (1 : ℝ)).indicator ((hX_meas 0) (hC i))
+  -- LHS converges to the tail conditional expectation of the block.
+  have h_lhs := hconv (blockIndicatorProd X (fun i : Fin r => (i : ℕ)) C)
+    (integrable_blockIndicatorProd (fun i => (hX_meas _).aemeasurable) hC)
+  -- RHS: the finite product of the convergent single-coordinate factors converges.
+  have h_rhs : ∀ᵐ ω ∂μ,
+      Tendsto (fun m => ∏ i : Fin r,
+          μ[Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0 | tailFamily X (m + 1)] ω) atTop
+        (𝓝 (∏ i : Fin r,
+          μ[Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0 | tailProcess X] ω)) := by
+    have hfac : ∀ᵐ ω ∂μ, ∀ i : Fin r,
+        Tendsto (fun m => μ[Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0
+            | tailFamily X (m + 1)] ω) atTop
+          (𝓝 (μ[Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0 | tailProcess X] ω)) :=
+      ae_all_iff.mpr fun i => hconv _ (hint_coord i)
+    filter_upwards [hfac] with ω hω using tendsto_finsetProd _ fun i _ => hω i
+  -- Equality of the two sequences at each finite level `m ≥ r`.
+  have h_fact : ∀ᵐ ω ∂μ, ∀ m, r ≤ m →
+      μ[blockIndicatorProd X (fun i : Fin r => (i : ℕ)) C | tailFamily X (m + 1)] ω
+        = ∏ i : Fin r,
+            μ[Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0 | tailFamily X (m + 1)] ω := by
+    rw [ae_all_iff]
+    intro m
+    by_cases hm : r ≤ m
+    · filter_upwards [condExp_blockIndicatorProd_future_ae_eq_prod X hX hX_meas m r C hC (by omega)]
+        with ω hω _ using hω
+    · exact ae_of_all _ fun ω h => absurd h hm
+  filter_upwards [h_lhs, h_rhs, h_fact] with ω hl hr hf
+  refine tendsto_nhds_unique hl (hr.congr' ?_)
+  filter_upwards [eventually_ge_atTop r] with m hm using (hf m hm).symm
+
+end Probability
+
+end TauCeti
