@@ -9,7 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.HermiteFunction
 public import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 
 /-!
-# Integrability and `L²` membership of the Hermite functions
+# Integrability, `L²` membership, and normalization of the Hermite functions
 
 This file continues the object API for the Hermite functions
 `ψₙ(x) = Hₙ(x√2) exp(-x²/2) / √(n!√π)` (`TauCeti.hermiteFunction`), adding the regularity facts
@@ -18,17 +18,20 @@ the `OrthogonalL2Bases` roadmap's **A2** milestone lists and its **A3** basis co
 * `TauCeti.integrable_hermiteFunction` — every `ψₙ` is integrable against Lebesgue measure;
 * `TauCeti.memLp_two_hermiteFunction` — every `ψₙ` is in `L²(volume)`, the membership the
   `hermiteFunctionLp`/`hermiteHilbertBasis` layer needs to package `ψₙ` as an `Lp` element.
+* `TauCeti.integral_hermiteFunction_zero_mul_self` — the zeroth Hermite function has square
+  integral one.
 
-The analytic input is a single reusable engine, `TauCeti.integrable_eval_mul_gaussianEnvelope`: a
-real polynomial evaluated pointwise, times a Gaussian envelope `exp(-(x - μ)²/(2v))` of any center
-`μ` and positive variance `v`, is Lebesgue-integrable. It is obtained by transporting the
-polynomial's integrability against the Gaussian *measure* `gaussianReal μ v` (all of whose moments
-are finite,
+The membership results use the reusable engine
+`TauCeti.integrable_eval_mul_gaussianEnvelope`: a real polynomial evaluated pointwise, times a
+Gaussian envelope `exp(-(x - μ)²/(2v))` of any center `μ` and positive variance `v`, is
+Lebesgue-integrable. It is obtained by transporting the polynomial's integrability against the
+Gaussian *measure* `gaussianReal μ v` (all of whose moments are finite,
 `TauCeti.integrable_pow_gaussianReal`, so `TauCeti.integrable_eval_of_forall_integrable_pow`
 applies) across the change of variables `gaussianReal μ v = volume.withDensity (gaussianPDF μ v)`
 with `integrable_withDensity_iff`. Applied to the polynomial `Hₙ(·√2)` with `v = 1` this gives the
 `L¹` membership, and to its square with `v = ½` (whose envelope `exp(-x²)` is `ψₙ²` up to the
-constant) the `L²` membership.
+constant) the `L²` membership. The zeroth-mode normalization additionally uses Mathlib's Gaussian
+density normalization `integral_gaussianPDFReal_eq_one`.
 
 Mathlib's Gaussian density API (`gaussianReal_of_var_ne_zero`, `measurable_gaussianPDF`,
 `gaussianPDFReal_def`), `integrable_withDensity_iff`, `memLp_two_iff_integrable_sq`, and the
@@ -88,5 +91,30 @@ theorem memLp_two_hermiteFunction (n : ℕ) : MemLp (hermiteFunction n) 2 volume
     rw [hermiteFunction_def, div_pow, mul_pow, henv, eval_pow, eval_hermiteComp]
   rw [hfun]
   exact (integrable_eval_mul_exp_neg_sq _).div_const _
+
+/-! ## Zeroth-mode normalization -/
+
+private lemma integral_hermiteFunction_zero_mul_self_expanded :
+    ∫ x : ℝ, Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
+      (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)) = 1 := by
+  -- The integrand is the normalized Gaussian density `gaussianPDFReal 0 (1/2)`, so this is the
+  -- `μ = 0`, `v = 1/2` case of Mathlib's `integral_gaussianPDFReal_eq_one`.
+  rw [← integral_gaussianPDFReal_eq_one 0 (v := (1 / 2 : ℝ≥0)) (by norm_num)]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  have hden : Real.sqrt (Real.sqrt Real.pi) * Real.sqrt (Real.sqrt Real.pi) =
+      Real.sqrt Real.pi := Real.mul_self_sqrt (Real.sqrt_nonneg _)
+  have hexp : Real.exp (-(x ^ 2 / 2)) * Real.exp (-(x ^ 2 / 2)) = Real.exp (-x ^ 2) := by
+    rw [← Real.exp_add]; congr 1; ring
+  have hv : ((1 / 2 : ℝ≥0) : ℝ) = 1 / 2 := by push_cast; ring
+  have hpi : (2 : ℝ) * Real.pi * (1 / 2) = Real.pi := by ring
+  have htwo : (2 : ℝ) * (1 / 2) = 1 := by ring
+  simp only [gaussianPDFReal]
+  rw [div_mul_div_comm, hexp, hden, hv, sub_zero, hpi, htwo, div_one, div_eq_inv_mul]
+
+/-- The zeroth Hermite function has square integral one. This is the `n = 0` boundary case of
+the roadmap's Hermite-function orthonormality target. -/
+lemma integral_hermiteFunction_zero_mul_self :
+    ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x = 1 := by
+  simpa only [hermiteFunction_zero] using integral_hermiteFunction_zero_mul_self_expanded
 
 end TauCeti
