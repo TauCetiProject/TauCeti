@@ -165,7 +165,7 @@ theorem quotient_comodule_coact :
   rfl
 
 /-- The quotient map by a subcomodule as a comodule morphism. -/
-abbrev mkQ : Comodule.Hom R C M (M ⧸ N.toSubmodule) where
+@[expose] def mkQ : Comodule.Hom R C M (M ⧸ N.toSubmodule) where
   toLinearMap := N.toSubmodule.mkQ
   map_coact := by
     ext m
@@ -182,35 +182,28 @@ theorem mkQ_apply (m : M) : N.mkQ m = Submodule.Quotient.mk m :=
   rfl
 
 /-- The quotient comodule morphism is surjective. -/
-theorem mkQ_surjective : Function.Surjective N.mkQ :=
-  N.toSubmodule.mkQ_surjective
+theorem mkQ_surjective : Function.Surjective N.mkQ := by
+  intro q
+  obtain ⟨m, hm⟩ := N.toSubmodule.mkQ_surjective q
+  exact ⟨m, by rw [N.mkQ_apply]; exact hm⟩
 
-variable [Module.Flat R C]
 variable {P : Type*} [AddCommGroup P] [Module R P] [Comodule R C P]
 
 /-- A comodule morphism out of `M` that vanishes on `N` descends to the quotient by `N`. -/
-def liftQ (f : Comodule.Hom R C M P) (hf : N ≤ Comodule.Hom.ker (R := R) (C := C) f) :
+def liftQ (f : Comodule.Hom R C M P) (hf : N.toSubmodule ≤ LinearMap.ker f.toLinearMap) :
     Comodule.Hom R C (M ⧸ N.toSubmodule) P where
-  toLinearMap :=
-    N.toSubmodule.liftQ f.toLinearMap (by
-      intro m hm
-      rw [LinearMap.mem_ker]
-      exact Comodule.Hom.mem_ker.mp (hf (by simpa using hm)))
+  toLinearMap := N.toSubmodule.liftQ f.toLinearMap hf
   map_coact := by
     apply Submodule.linearMap_qext
     ext m
     rw [LinearMap.comp_apply, LinearMap.comp_apply, quotient_comodule_coact]
-    rw [show N.toSubmodule.mkQ m = Submodule.Quotient.mk m from rfl]
+    rw [Submodule.mkQ_apply]
     rw [quotientCoact_mk]
     rw [LinearMap.comp_apply, LinearMap.comp_apply]
-    rw [show N.toSubmodule.mkQ m = Submodule.Quotient.mk m from rfl]
+    rw [Submodule.mkQ_apply]
     rw [Submodule.liftQ_apply]
     calc
-      TensorProduct.map
-          (N.toSubmodule.liftQ f.toLinearMap (by
-            intro m hm
-            rw [LinearMap.mem_ker]
-            exact Comodule.Hom.mem_ker.mp (hf (by simpa using hm))))
+      TensorProduct.map (N.toSubmodule.liftQ f.toLinearMap hf)
           (LinearMap.id : C →ₗ[R] C)
           (TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)
             (Comodule.coact (R := R) (C := C) (M := M) m)) =
@@ -223,26 +216,19 @@ def liftQ (f : Comodule.Hom R C M P) (hf : N ≤ Comodule.Hom.ker (R := R) (C :=
 /-- The descended quotient morphism applied to a quotient class. -/
 @[simp]
 theorem liftQ_apply (f : Comodule.Hom R C M P)
-    (hf : N ≤ Comodule.Hom.ker (R := R) (C := C) f) (m : M) :
+    (hf : N.toSubmodule ≤ LinearMap.ker f.toLinearMap) (m : M) :
     N.liftQ f hf (Submodule.Quotient.mk m) = f m :=
   Submodule.liftQ_apply _ _ _
 
 /-- Precomposing the descended quotient morphism with the quotient map recovers the original
 morphism. -/
 @[simp]
-theorem liftQ_comp_mkQ (f : Comodule.Hom R C M P)
-    (hf : N ≤ Comodule.Hom.ker (R := R) (C := C) f) :
+theorem liftQ_mkQ (f : Comodule.Hom R C M P)
+    (hf : N.toSubmodule ≤ LinearMap.ker f.toLinearMap) :
     (N.liftQ f hf).comp N.mkQ = f := by
   ext m
   simp
 
-/-- Alias for `Subcomodule.liftQ_comp_mkQ`, named after Mathlib's quotient API. -/
-theorem liftQ_mkQ (f : Comodule.Hom R C M P)
-    (hf : N ≤ Comodule.Hom.ker (R := R) (C := C) f) :
-    (N.liftQ f hf).comp N.mkQ = f :=
-  N.liftQ_comp_mkQ f hf
-
-omit [Module.Flat R C] in
 /-- Two morphisms out of a quotient are equal if they agree after precomposition with the
 quotient map. -/
 theorem hom_ext {f g : Comodule.Hom R C (M ⧸ N.toSubmodule) P}
@@ -253,18 +239,20 @@ theorem hom_ext {f g : Comodule.Hom R C (M ⧸ N.toSubmodule) P}
 
 /-- Uniqueness of the morphism descended to a quotient. -/
 theorem liftQ_unique (f : Comodule.Hom R C M P)
-    (hf : N ≤ Comodule.Hom.ker (R := R) (C := C) f)
+    (hf : N.toSubmodule ≤ LinearMap.ker f.toLinearMap)
     (g : Comodule.Hom R C (M ⧸ N.toSubmodule) P) (hg : g.comp N.mkQ = f) :
     g = N.liftQ f hf := by
   apply N.hom_ext
-  rw [hg, liftQ_comp_mkQ]
+  rw [hg, liftQ_mkQ]
+
+variable [Module.Flat R C]
 
 /-- The kernel of the quotient comodule morphism is the subcomodule being quotiented. -/
 @[simp]
 theorem ker_mkQ : Comodule.Hom.ker (R := R) (C := C) N.mkQ = N := by
   ext m
   rw [Comodule.Hom.mem_ker, mkQ_apply, Submodule.Quotient.mk_eq_zero]
-  rfl
+  exact Subcomodule.mem_toSubmodule
 
 end Subcomodule
 
