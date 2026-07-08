@@ -34,40 +34,6 @@ namespace MeasureTheory
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 variable {𝔽 : ℕ → MeasurableSpace Ω}
 
-omit [MeasurableSpace Ω] in
-private theorem eLpNorm_condExp_one_le_eLpNorm {m m0 : MeasurableSpace Ω} {μ : Measure Ω}
-    (f : Ω → ℝ) : eLpNorm (μ[f | m]) 1 μ ≤ eLpNorm f 1 μ := by
-  by_cases hf : Integrable f μ
-  swap; · rw [condExp_of_not_integrable hf, eLpNorm_zero]; exact zero_le
-  by_cases hm : m ≤ m0
-  swap; · rw [condExp_of_not_le hm, eLpNorm_zero]; exact zero_le
-  by_cases hsig : SigmaFinite (μ.trim hm)
-  swap; · rw [condExp_of_not_sigmaFinite hm hsig, eLpNorm_zero]; exact zero_le
-  calc
-    eLpNorm (μ[f | m]) 1 μ ≤ eLpNorm (μ[(|f|) | m]) 1 μ := by
-      refine eLpNorm_mono_ae ?_
-      filter_upwards [condExp_mono hf hf.abs
-        (ae_of_all μ (fun x => le_abs_self (f x) : ∀ x, f x ≤ |f x|)),
-        (condExp_neg ..).symm.le.trans (condExp_mono hf.neg hf.abs
-          (ae_of_all μ (fun x => neg_le_abs (f x) : ∀ x, -f x ≤ |f x|)))] with x hx₁ hx₂
-      exact abs_le_abs hx₁ hx₂
-    _ = eLpNorm f 1 μ := by
-      rw [eLpNorm_one_eq_lintegral_enorm, eLpNorm_one_eq_lintegral_enorm,
-        ← ENNReal.toReal_eq_toReal_iff' (hasFiniteIntegral_iff_enorm.mp integrable_condExp.2).ne
-          (hasFiniteIntegral_iff_enorm.mp hf.2).ne,
-        ← integral_norm_eq_lintegral_enorm
-          (stronglyMeasurable_condExp.mono hm).aestronglyMeasurable,
-        ← integral_norm_eq_lintegral_enorm hf.1]
-      simp_rw [Real.norm_eq_abs]
-      rw (config := { occs := .pos [2] }) [← integral_condExp hm]
-      refine integral_congr_ae ?_
-      have : 0 ≤ᵐ[μ] μ[(|f|) | m] := by
-        rw [← condExp_zero]
-        exact condExp_mono (integrable_zero _ _ _) hf.abs
-          (ae_of_all μ (fun x => abs_nonneg (f x) : ∀ x, 0 ≤ |f x|))
-      filter_upwards [this] with x hx
-      exact abs_eq_self.2 hx
-
 /-- Positive-part L¹ bound for the reversed conditional-expectation process: for integrable `f`,
 the integral of `(revCEFinite f 𝔽 N M · - a)⁺` is bounded by `‖f‖₁ + |a| · μ(univ)`,
 uniformly in the horizon `N` and the time `M`. -/
@@ -104,7 +70,7 @@ private lemma lintegral_pos_part_revCEFinite_le
         rw [hconv]
         calc eLpNorm (revCEFinite (μ := μ) f 𝔽 N M) 1 μ
             ≤ eLpNorm f 1 μ := by
-                rw [revCEFinite_apply]; exact eLpNorm_condExp_one_le_eLpNorm f
+                rw [revCEFinite_apply]; exact eLpNorm_condExp_le_eLpNorm f le_rfl
           _ = ENNReal.ofReal (eLpNorm f 1 μ).toReal := by
               rw [ENNReal.ofReal_toReal]
               exact (memLp_one_iff_integrable.mpr hf).eLpNorm_ne_top
