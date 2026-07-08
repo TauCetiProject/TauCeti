@@ -7,7 +7,6 @@ Authors: Claude
 -/
 public import TauCeti.Analysis.SpecialFunctions.HermiteFunction
 public import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
-import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 
 /-!
 # Integrability, `L²` membership, and normalization of the Hermite functions
@@ -107,10 +106,10 @@ private lemma integral_hermiteFunction_zero_mul_self_expanded :
   have hexp : Real.exp (-(x ^ 2 / 2)) * Real.exp (-(x ^ 2 / 2)) = Real.exp (-x ^ 2) := by
     rw [← Real.exp_add]; congr 1; ring
   have hv : ((1 / 2 : ℝ≥0) : ℝ) = 1 / 2 := by push_cast; ring
+  have hpi : (2 : ℝ) * Real.pi * (1 / 2) = Real.pi := by ring
+  have htwo : (2 : ℝ) * (1 / 2) = 1 := by ring
   simp only [gaussianPDFReal]
-  rw [div_mul_div_comm, hexp, hden, hv, sub_zero,
-    show (2 : ℝ) * Real.pi * (1 / 2) = Real.pi by ring, show (2 : ℝ) * (1 / 2) = 1 by ring,
-    div_one, div_eq_inv_mul]
+  rw [div_mul_div_comm, hexp, hden, hv, sub_zero, hpi, htwo, div_one, div_eq_inv_mul]
 
 /-- The zeroth Hermite function has square integral one. This is the `n = 0` boundary case of
 the roadmap's Hermite-function orthonormality target. -/
