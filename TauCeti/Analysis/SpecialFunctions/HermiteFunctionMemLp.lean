@@ -132,7 +132,8 @@ private lemma integral_hermiteFunction_zero_mul_self_expanded :
 the roadmap's Hermite-function orthonormality target. -/
 @[simp]
 lemma integral_hermiteFunction_zero_mul_self :
-    ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x = 1 := by
-  simpa only [hermiteFunction_zero] using integral_hermiteFunction_zero_mul_self_expanded
+    ∫ x : ℝ, Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
+      (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)) = 1 :=
+  integral_hermiteFunction_zero_mul_self_expanded
 
 end TauCeti
