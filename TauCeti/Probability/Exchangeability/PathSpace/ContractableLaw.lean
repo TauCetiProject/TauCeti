@@ -1,7 +1,7 @@
 module
 
-public import TauCeti.Probability.Exchangeability.Contractability
-public import TauCeti.Probability.Exchangeability.PathSpace.Shift
+public import TauCeti.Probability.Exchangeability.FiniteMarginals
+public import TauCeti.Probability.Exchangeability.PathSpace.Law
 
 /-!
 # Contractable laws on path space
@@ -13,9 +13,10 @@ The process-level predicate `Contractable μ X` remains the main stochastic-proc
 factorization and path-space dynamics.
 
 This is the contractability analogue of `ExchangeableLaw`. It realizes the Exchangeability
-roadmap's Layer 0 request for process-level ↔ path-law bridges and for the characterization
-of contractability by strictly increasing maps `ℕ → ℕ`. It reuses the existing Tau Ceti
-bridge `contractable_iff_forall_map_reindex_pathLaw`; no Mathlib infrastructure is vendored.
+roadmap's Layer 0 request for the characterization of contractability by strictly increasing
+maps `ℕ → ℕ`, with finite-dimensional marginal consequences. The process-level ↔ path-law
+bridges live in `TauCeti.Probability.Exchangeability.PathSpace.LawBridge`, which imports this
+file and `Contractability`; no Mathlib infrastructure is vendored.
 -/
 
 public section
@@ -51,9 +52,9 @@ theorem contractableLaw_iff {ρ : Measure (ℕ → α)} :
   Iff.rfl
 
 /-- The defining invariance of a contractable path law. -/
+@[simp]
 theorem ContractableLaw.map_reindex {ρ : Measure (ℕ → α)}
-    (hρ : ∀ φ : ℕ → ℕ, StrictMono φ →
-      ρ.map (fun x : ℕ → α => fun k => x (φ k)) = ρ)
+    (hρ : ContractableLaw ρ)
     {φ : ℕ → ℕ} (hφ : StrictMono φ) :
     ρ.map (fun x : ℕ → α => fun k => x (φ k)) = ρ :=
   hρ φ hφ
@@ -76,6 +77,44 @@ theorem contractableLaw_iff_forall_measurePreserving_reindex {ρ : Measure (ℕ 
   · intro hρ φ hφ
     exact (hρ φ hφ).map_eq
 
+/-- The finite marginal of a contractable path law along any strictly increasing selection
+`k : Fin n → ℕ` equals its first-`n` prefix marginal. -/
+theorem ContractableLaw.map_prefixProj_of_strictMono {ρ : Measure (ℕ → α)}
+    (hρ : ContractableLaw ρ) {n : ℕ} {k : Fin n → ℕ} (hk : StrictMono k) :
+    ρ.map (fun x : ℕ → α => fun i : Fin n => x (k i)) =
+      ρ.map (prefixProj α n) := by
+  obtain ⟨φ, hφ, hφ_eq⟩ := exists_strictMono_nat_extending_fin hk
+  have hmap := congrArg (fun ν : Measure (ℕ → α) => ν.map (prefixProj α n))
+    (hρ.map_reindex hφ)
+  rw [map_reindex_prefixProj] at hmap
+  have hidx :
+      (fun x : ℕ → α => fun i : Fin n => x (φ i.val)) =
+        fun x : ℕ → α => fun i : Fin n => x (k i) := by
+    funext x i
+    rw [hφ_eq i]
+  simpa [hidx] using hmap
+
+/-- For finite path laws, contractability is equivalently invariance of every finite-dimensional
+marginal under strictly increasing finite selections. -/
+theorem contractableLaw_iff_forall_map_prefixProj_of_strictMono {ρ : Measure (ℕ → α)}
+    [IsFiniteMeasure ρ] :
+    ContractableLaw ρ ↔
+      ∀ n (k : Fin n → ℕ), StrictMono k →
+        ρ.map (fun x : ℕ → α => fun i : Fin n => x (k i)) =
+          ρ.map (prefixProj α n) := by
+  constructor
+  · intro hρ n k hk
+    exact hρ.map_prefixProj_of_strictMono hk
+  · intro hρ
+    refine ContractableLaw.intro ?_
+    intro φ hφ
+    haveI : IsFiniteMeasure (ρ.map (fun x : ℕ → α => fun k => x (φ k))) := by
+      infer_instance
+    refine measure_eq_of_prefixProj_map_eq ?_
+    intro n
+    rw [map_reindex_prefixProj]
+    exact hρ n (fun i : Fin n => φ i.val) (hφ.comp Fin.val_strictMono)
+
 /-- A contractable path law is preserved by the one-sided shift. -/
 theorem ContractableLaw.measurePreserving_shift {ρ : Measure (ℕ → α)}
     (hρ : ContractableLaw ρ) :
@@ -91,37 +130,16 @@ theorem ContractableLaw.measurePreserving_shift_iterate {ρ : Measure (ℕ → �
 /-- The one-sided shift leaves a contractable path law unchanged. -/
 @[simp]
 theorem ContractableLaw.map_shift {ρ : Measure (ℕ → α)}
-    (hρ : ∀ φ : ℕ → ℕ, StrictMono φ →
-      ρ.map (fun x : ℕ → α => fun k => x (φ k)) = ρ) :
+    (hρ : ContractableLaw ρ) :
     ρ.map (shift α) = ρ :=
   (ContractableLaw.measurePreserving_shift hρ).map_eq
 
 /-- Iterating the one-sided shift leaves a contractable path law unchanged. -/
 @[simp]
 theorem ContractableLaw.map_shift_iterate {ρ : Measure (ℕ → α)}
-    (hρ : ∀ φ : ℕ → ℕ, StrictMono φ →
-      ρ.map (fun x : ℕ → α => fun k => x (φ k)) = ρ) (n : ℕ) :
+    (hρ : ContractableLaw ρ) (n : ℕ) :
     ρ.map ((shift α)^[n]) = ρ :=
   (ContractableLaw.measurePreserving_shift_iterate hρ n).map_eq
-
-/-- A contractable process has a contractable path law. -/
-theorem Contractable.contractableLaw_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
-    [IsFiniteMeasure μ] (hX : Contractable μ X) (hX_meas : ∀ i, AEMeasurable (X i) μ) :
-    ContractableLaw (pathLaw μ X) :=
-  ContractableLaw.intro fun _ hφ => (hX.measurePreserving_reindex hX_meas hφ).map_eq
-
-/-- Contractability of a process is equivalent to contractability of its path law. -/
-theorem contractable_iff_contractableLaw_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
-    [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ) :
-    Contractable μ X ↔ ContractableLaw (pathLaw μ X) := by
-  rw [contractable_iff_forall_map_reindex_pathLaw hX_meas, contractableLaw_iff]
-
-/-- If a process has a contractable path law, then the process is contractable. -/
-theorem contractable_of_contractableLaw_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
-    [IsFiniteMeasure μ] (hX_meas : ∀ i, AEMeasurable (X i) μ)
-    (hρ : ContractableLaw (pathLaw μ X)) :
-    Contractable μ X :=
-  (contractable_iff_contractableLaw_pathLaw hX_meas).2 hρ
 
 end Probability
 
