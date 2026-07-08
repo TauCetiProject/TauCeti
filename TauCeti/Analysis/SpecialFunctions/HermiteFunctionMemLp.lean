@@ -95,9 +95,7 @@ theorem memLp_two_hermiteFunction (n : ℕ) : MemLp (hermiteFunction n) 2 volume
 
 /-! ## Zeroth-mode normalization -/
 
-/-- The zeroth Hermite function has square integral one. This is the `n = 0` boundary case of
-the roadmap's Hermite-function orthonormality target. -/
-@[simp] lemma integral_hermiteFunction_zero_mul_self :
+private lemma integral_hermiteFunction_zero_mul_self_expanded :
     ∫ x : ℝ, Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi) *
       (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)) = 1 := by
   have hsqrt_sqrt_pi_sq :
@@ -129,5 +127,11 @@ the roadmap's Hermite-function orthonormality target. -/
           · ring_nf
         rw [hgauss, hsqrt_sqrt_pi_sq]
         field_simp [Real.sqrt_ne_zero'.mpr (Real.sqrt_pos.2 Real.pi_pos)]
+
+/-- The zeroth Hermite function has square integral one. This is the `n = 0` boundary case of
+the roadmap's Hermite-function orthonormality target. -/
+@[simp] lemma integral_hermiteFunction_zero_mul_self :
+    ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x = 1 := by
+  simpa only [hermiteFunction_zero] using integral_hermiteFunction_zero_mul_self_expanded
 
 end TauCeti
