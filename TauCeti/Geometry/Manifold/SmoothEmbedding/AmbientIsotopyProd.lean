@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.AmbientIsotopyClass
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.AmbientIsotopy
 public import TauCeti.Topology.Homotopy.IsotopyProd
 
 /-!
@@ -26,8 +26,6 @@ embeddings is again ambient isotopic, with the statement phrased entirely in the
 * `TauCeti.SmoothEmbedding.AmbientIsotopic.prodMap`: products preserve ambient isotopy of bundled
   smooth embeddings.
 * `TauCeti.SmoothEmbedding.AmbientIsotopic.prodMap_setoid`: the same fact in setoid-relation form.
-* `TauCeti.SmoothEmbedding.AmbientIsotopyClass.prodMap`: products of embeddings descend to
-  products of ambient-isotopy classes.
 -/
 
 public section
@@ -85,33 +83,6 @@ theorem prodMap_setoid
   setoid_r_iff.2 (prodMap (setoid_r_iff.1 hff') (setoid_r_iff.1 hgg'))
 
 end AmbientIsotopic
-
-namespace AmbientIsotopyClass
-
-/-- The product of ambient-isotopy classes of bundled smooth embeddings.
-
-This is the quotient-level operation induced by `SmoothEmbedding.prodMap`, using product closure
-of ambient isotopy of bundled smooth embeddings. -/
-def prodMap [IsManifold I₁ n M₁] [IsManifold I₂ n M₂]
-    [IsManifold J₁ n N₁] [IsManifold J₂ n N₂] :
-    AmbientIsotopyClass I₁ J₁ n M₁ N₁ →
-      AmbientIsotopyClass I₂ J₂ n M₂ N₂ →
-        AmbientIsotopyClass (I₁.prod I₂) (J₁.prod J₂) n (M₁ × M₂) (N₁ × N₂) :=
-  map₂ (fun f g => f.prodMap g) fun {f f'} hff' {g g'} hgg' =>
-    AmbientIsotopic.prodMap (f := f) (f' := f') (g := g) (g' := g') hff' hgg'
-
-/-- Computation rule for `AmbientIsotopyClass.prodMap` on representatives. -/
-@[simp]
-theorem prodMap_mk_mk [IsManifold I₁ n M₁] [IsManifold I₂ n M₂]
-    [IsManifold J₁ n N₁] [IsManifold J₂ n N₂]
-    (f : SmoothEmbedding I₁ J₁ n M₁ N₁) (g : SmoothEmbedding I₂ J₂ n M₂ N₂) :
-    prodMap (mk f) (mk g) = mk (f.prodMap g) :=
-  map₂_mk_mk (fun f g => f.prodMap g)
-    (fun {f f'} hff' {g g'} hgg' =>
-      AmbientIsotopic.prodMap (f := f) (f' := f') (g := g) (g' := g') hff' hgg')
-    f g
-
-end AmbientIsotopyClass
 
 end SmoothEmbedding
 
