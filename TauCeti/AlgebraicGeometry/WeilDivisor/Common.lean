@@ -56,7 +56,6 @@ lemma coe_inf (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X
   Classical.choose_spec (exists_inf D E)
 
 /-- The coefficient of the common part is the minimum of the two coefficients. -/
-@[simp]
 lemma coeff_inf (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e)
     (x : X) :
     coeff (inf D E : WeilDivisor X) x =
@@ -171,7 +170,6 @@ lemma coe_rightResidual (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisor
   Classical.choose_spec (exists_rightResidual D E)
 
 /-- The coefficient of the left residual is `coeff D x - min (coeff D x) (coeff E x)`. -/
-@[simp]
 lemma coeff_leftResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) (x : X) :
     coeff (leftResidual D E : WeilDivisor X) x =
@@ -180,7 +178,6 @@ lemma coeff_leftResidual (D : EffectiveDivisorOfDegree X d)
   rw [coe_leftResidual, WeilDivisor.coeff_sub, coeff_inf]
 
 /-- The coefficient of the right residual is `coeff E x - min (coeff D x) (coeff E x)`. -/
-@[simp]
 lemma coeff_rightResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) (x : X) :
     coeff (rightResidual D E : WeilDivisor X) x =
