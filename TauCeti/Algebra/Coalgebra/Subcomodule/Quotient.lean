@@ -50,9 +50,7 @@ namespace Subcomodule
 
 variable (N : Subcomodule R C M)
 
-/-- The composite `(N.mkQ ⊗ id) ∘ ρ` vanishes on a subcomodule `N`, so the coaction
-descends to the quotient by `N`. -/
-theorem le_ker_tensorProduct_mkQ_comp_coact :
+private theorem le_ker_tensorProduct_mkQ_comp_coact :
     N.toSubmodule ≤
       LinearMap.ker
         ((TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)).comp
