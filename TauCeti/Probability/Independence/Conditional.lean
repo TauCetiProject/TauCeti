@@ -43,6 +43,41 @@ namespace TauCeti
 
 namespace Probability
 
+private theorem ae_bdd_abs_condExp_le_of_ae_bdd_abs {Ω : Type*} [MeasurableSpace Ω]
+    {m m0 : MeasurableSpace Ω} {μ : Measure Ω} {R : NNReal} {f : Ω → ℝ}
+    (hbdd : ∀ᵐ x ∂μ, |f x| ≤ R) :
+    ∀ᵐ x ∂μ, |(μ[f | m]) x| ≤ R := by
+  by_cases hnm : m ≤ m0
+  swap
+  · simp_rw [condExp_of_not_le hnm, Pi.zero_apply, abs_zero]
+    exact ae_of_all μ fun _ => R.coe_nonneg
+  by_cases hfint : Integrable f μ
+  swap
+  · simp_rw [condExp_of_not_integrable hfint]
+    filter_upwards [hbdd] with x hx
+    rw [Pi.zero_apply, abs_zero]
+    exact (abs_nonneg _).trans hx
+  by_contra h
+  change μ _ ≠ 0 at h
+  simp only [← pos_iff_ne_zero, Set.compl_def, Set.mem_setOf_eq, not_le] at h
+  suffices μ.real {x | ↑R < |(μ[f | m]) x|} * ↑R <
+      μ.real {x | ↑R < |(μ[f | m]) x|} * ↑R by
+    exact this.ne rfl
+  refine lt_of_lt_of_le (setIntegral_gt_gt R.coe_nonneg ?_ h.ne') ?_
+  · exact integrable_condExp.abs.integrableOn
+  refine (setIntegral_abs_condExp_le ?_ _).trans ?_
+  · simp_rw [← Real.norm_eq_abs]
+    exact @measurableSet_lt _ _ _ _ _ m _ _ _ _ _ measurable_const
+      stronglyMeasurable_condExp.norm.measurable
+  simp only [← smul_eq_mul, ← setIntegral_const]
+  refine setIntegral_mono_ae hfint.abs.integrableOn ?_ hbdd
+  refine ⟨aestronglyMeasurable_const, lt_of_le_of_lt ?_
+    (integrable_condExp.integrableOn : IntegrableOn (μ[f | m]) {x | ↑R < |(μ[f | m]) x|} μ).2⟩
+  refine setLIntegral_mono
+    (stronglyMeasurable_condExp.mono hnm).measurable.nnnorm.coe_nnreal_ennreal fun x hx => ?_
+  rw [enorm_eq_nnnorm, enorm_eq_nnnorm, ENNReal.coe_le_coe, Real.nnnorm_of_nonneg R.coe_nonneg]
+  exact Subtype.mk_le_mk.2 (le_of_lt hx)
+
 /-- **Conditional independence from the drop-information criterion.** If conditioning `𝟙_H` on
 `mF ⊔ mG` is a.e. the same as conditioning on `mG` (for every `mH`-measurable `H`), then `mF` and
 `mH` are conditionally independent given `mG`. -/
@@ -379,12 +414,12 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ]
     · have h : φ ω = 0 := Set.indicator_of_notMem hω _
       rw [h]; exact ⟨le_rfl, zero_le_one⟩
   -- `|φ| ≤ 1` a.e., so each conditional expectation `μ[φ | ·]` inherits the same bound via
-  -- Mathlib's `ae_bdd_condExp_of_ae_bdd`; the helper is applied once per σ-algebra below.
+  -- Mathlib's `ae_bdd_abs_condExp_of_ae_bdd_abs`; the helper is applied once per σ-algebra below.
   have hφ_abs : ∀ᵐ ω ∂μ, |φ ω| ≤ ((1 : NNReal) : ℝ) := by
     filter_upwards with ω
     rw [abs_of_nonneg (hφ_bdd ω).1, NNReal.coe_one]; exact (hφ_bdd ω).2
   have condExp_abs_le : ∀ m' : MeasurableSpace Ω, ∀ᵐ ω ∂μ, |μ[φ | m'] ω| ≤ 1 := fun m' => by
-    simpa using ae_bdd_condExp_of_ae_bdd (m := m') (R := 1) hφ_abs
+    simpa using ae_bdd_abs_condExp_le_of_ae_bdd_abs (m := m') (R := 1) hφ_abs
   have hμ₁_int : Integrable μ₁ μ := integrable_condExp
   have hμ₂_int : Integrable μ₂ μ := integrable_condExp
   have hμ₁_bound : ∀ᵐ ω ∂μ, ‖μ₁ ω‖ ≤ 1 := by

@@ -33,6 +33,40 @@ namespace MeasureTheory
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 variable {𝔽 : ℕ → MeasurableSpace Ω}
 
+omit [MeasurableSpace Ω] in
+private theorem eLpNorm_condExp_one_le_eLpNorm {m m0 : MeasurableSpace Ω} {μ : Measure Ω}
+    (f : Ω → ℝ) : eLpNorm (μ[f | m]) 1 μ ≤ eLpNorm f 1 μ := by
+  by_cases hf : Integrable f μ
+  swap; · rw [condExp_of_not_integrable hf, eLpNorm_zero]; exact zero_le
+  by_cases hm : m ≤ m0
+  swap; · rw [condExp_of_not_le hm, eLpNorm_zero]; exact zero_le
+  by_cases hsig : SigmaFinite (μ.trim hm)
+  swap; · rw [condExp_of_not_sigmaFinite hm hsig, eLpNorm_zero]; exact zero_le
+  calc
+    eLpNorm (μ[f | m]) 1 μ ≤ eLpNorm (μ[(|f|) | m]) 1 μ := by
+      refine eLpNorm_mono_ae ?_
+      filter_upwards [condExp_mono hf hf.abs
+        (ae_of_all μ (fun x => le_abs_self (f x) : ∀ x, f x ≤ |f x|)),
+        (condExp_neg ..).symm.le.trans (condExp_mono hf.neg hf.abs
+          (ae_of_all μ (fun x => neg_le_abs (f x) : ∀ x, -f x ≤ |f x|)))] with x hx₁ hx₂
+      exact abs_le_abs hx₁ hx₂
+    _ = eLpNorm f 1 μ := by
+      rw [eLpNorm_one_eq_lintegral_enorm, eLpNorm_one_eq_lintegral_enorm,
+        ← ENNReal.toReal_eq_toReal_iff' (hasFiniteIntegral_iff_enorm.mp integrable_condExp.2).ne
+          (hasFiniteIntegral_iff_enorm.mp hf.2).ne,
+        ← integral_norm_eq_lintegral_enorm
+          (stronglyMeasurable_condExp.mono hm).aestronglyMeasurable,
+        ← integral_norm_eq_lintegral_enorm hf.1]
+      simp_rw [Real.norm_eq_abs]
+      rw (config := { occs := .pos [2] }) [← integral_condExp hm]
+      refine integral_congr_ae ?_
+      have : 0 ≤ᵐ[μ] μ[(|f|) | m] := by
+        rw [← condExp_zero]
+        exact condExp_mono (integrable_zero _ _ _) hf.abs
+          (ae_of_all μ (fun x => abs_nonneg (f x) : ∀ x, 0 ≤ |f x|))
+      filter_upwards [this] with x hx
+      exact abs_eq_self.2 hx
+
 /-- Reverse-martingale upcrossing bound: for real `a < b`, the expected number of upcrossings of
 `n ↦ μ[f | 𝔽 n]` on `[a, b]` is finite, so the upcrossings are a.e. finite. -/
 private lemma ae_upcrossings_condExp_lt_top
@@ -64,7 +98,7 @@ lemma exists_integrable_tendsto_ae_condExp_of_antitone
            ∀ᵐ ω ∂μ, Tendsto (fun n => μ[f | 𝔽 n] ω) atTop (𝓝 (Xlim ω))) := by
   -- L¹ bound and its finite `NNReal` form.
   have hL1_bdd : ∀ n, eLpNorm (μ[f | 𝔽 n]) 1 μ ≤ eLpNorm f 1 μ :=
-    fun n => eLpNorm_one_condExp_le_eLpNorm _
+    fun n => eLpNorm_condExp_one_le_eLpNorm _
   have hf_Lp_ne_top : eLpNorm f 1 μ ≠ ⊤ := (memLp_one_iff_integrable.2 hf).eLpNorm_ne_top
   set R := (eLpNorm f 1 μ).toNNReal with hR_def
   have hR : eLpNorm f 1 μ = ↑R := (ENNReal.coe_toNNReal hf_Lp_ne_top).symm
