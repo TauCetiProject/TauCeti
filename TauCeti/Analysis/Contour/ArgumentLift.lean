@@ -10,11 +10,11 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 /-!
 # Continuous argument lift for a point-avoiding curve
 
-For a continuous curve `γ : ℝ → ℂ` avoiding a point `w`, the function `t ↦ γ t - w` is continuous
-and nowhere zero, so it admits a continuous *argument lift* `θ : ℝ → ℝ` with
-`γ t - w = ‖γ t - w‖ · exp (i θ t)`. This is the geometric heart of the integer-valuedness of the
-generalized winding number: for a closed curve the total argument change `θ b - θ a` is an integer
-multiple of `2π`.
+For a curve `γ : ℝ → ℂ` continuous on `[a, b]` and avoiding a point `w`, the function
+`t ↦ γ t - w` is nowhere zero there, so on `[a, b]` it admits a real-valued *argument lift* `θ`,
+continuous on `[a, b]`, with `γ t - w = ‖γ t - w‖ · exp (i θ t)` for `t ∈ [a, b]`. This is the
+geometric heart of the integer-valuedness of the generalized winding number: for a closed
+curve the total argument change `θ b - θ a` is an integer multiple of `2π`.
 
 The lift is built on a partition `a = s₀ ≤ ⋯ ≤ s_N = b` fine enough that each segment ratio
 `(γ t - w) / (γ (s j) - w)` stays within distance `1/2` of `1`, hence in `Complex.slitPlane`, where
@@ -29,8 +29,8 @@ API does not expose.
 
 ## Main results
 
-* `TauCeti.Contour.exists_continuous_arg_lift_with_partition` — a continuous argument lift for a
-  curve continuous on `[a, b]` and avoiding `w`, together with a monotone partition witness.
+* `TauCeti.Contour.exists_continuousOn_arg_lift_with_partition` — a real argument lift, continuous
+  on `[a, b]`, for a curve continuous there and avoiding `w`, plus a monotone partition witness.
 * `TauCeti.Contour.segRatio` and its evaluation lemmas — the segment-ratio building block used to
   assemble the index integral downstream.
 
@@ -355,14 +355,14 @@ private lemma exists_covering_segment {N : ℕ} (hN : 0 < N) {s : ℕ → ℝ} (
     · have hMk : M ≤ k := by omega
       exact (hmono hMk).trans hk_spec
 
-/-! ### Main theorem: continuous argument lift -/
+/-! ### Main theorem: argument lift on `[a, b]` -/
 
-/-- **Continuous argument lift with a partition.** For `γ` continuous on `[a, b]` (`a ≤ b`) and
-avoiding `w`, there is a monotone partition `a = s 0 ≤ ⋯ ≤ s N = b` and a continuous real function
-`θ t = arg (γ a - w) + ∑_{j < N} (log (segRatio γ w (s j) (s (j+1)) t)).im` on `[a, b]` satisfying
-`γ t - w = ‖γ t - w‖ · exp (I · θ t)`. Each node has `γ (s j) ≠ w`, and on each segment `j` the
-ratio `(γ t - w) / (γ (s j) - w)` lies in `Complex.slitPlane`. -/
-theorem exists_continuous_arg_lift_with_partition
+/-- **Argument lift on `[a, b]`, with a partition.** For `γ` continuous on `[a, b]` (`a ≤ b`) and
+avoiding `w`, there is a monotone partition `a = s 0 ≤ ⋯ ≤ s N = b` and a real function
+`θ t = arg (γ a - w) + ∑_{j < N} (log (segRatio γ w (s j) (s (j+1)) t)).im`, continuous on `[a, b]`,
+satisfying `γ t - w = ‖γ t - w‖ · exp (I · θ t)` there. Each node has `γ (s j) ≠ w`, and on each
+segment `j` the ratio `(γ t - w) / (γ (s j) - w)` lies in `Complex.slitPlane`. -/
+theorem exists_continuousOn_arg_lift_with_partition
     {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} (hab : a ≤ b)
     (hγ : ContinuousOn γ (Icc a b))
     (h_avoid : ∀ t ∈ Icc a b, γ t ≠ w) :
