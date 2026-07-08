@@ -175,38 +175,19 @@ lemma continuous_normalizedChebyshevT (n : ℕ) :
   ((T ℝ n).continuous.div_const _).congr fun x => (normalizedChebyshevT_def n x).symm
 
 /-- The real normalized Chebyshev `T` mode lies in `L²(measureT)`. -/
-lemma memLp_normalized_eval_T_real_measureT (n : ℕ) :
-    MemLp (fun x : ℝ => (T ℝ n).eval x / Real.sqrt (chebyshevTNormSq n)) 2
-      Polynomial.Chebyshev.measureT := by
-  have hcont : Continuous fun x : ℝ =>
-      (T ℝ n).eval x / Real.sqrt (chebyshevTNormSq n) :=
-    (T ℝ n).continuous.div_const _
+lemma memLp_normalizedChebyshevT_measureT (n : ℕ) :
+    MemLp (normalizedChebyshevT n) 2 Polynomial.Chebyshev.measureT := by
+  have hcont : Continuous (normalizedChebyshevT n) := continuous_normalizedChebyshevT n
   rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
   exact integrable_measureT (hcont.pow 2).continuousOn
 
-/-- The real normalized Chebyshev `T` mode lies in `L²(measureT)`. -/
-lemma memLp_normalizedChebyshevT_measureT (n : ℕ) :
-    MemLp (normalizedChebyshevT n) 2 Polynomial.Chebyshev.measureT := by
-  convert memLp_normalized_eval_T_real_measureT n using 1
-  ext x
-  rw [normalizedChebyshevT_def]
-
 /-- The scalar-cast normalized Chebyshev `T` mode lies in `L²(measureT)`, in
 the form consumed by the family-generic orthogonality-to-Hilbert-basis bridge. -/
-lemma memLp_algebraMap_normalized_eval_T_real_measureT {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
-    MemLp (fun x : ℝ =>
-        (algebraMap ℝ 𝕜) ((T ℝ n).eval x / Real.sqrt (chebyshevTNormSq n))) 2
-      Polynomial.Chebyshev.measureT := by
-  simpa only [← RCLike.algebraMap_eq_ofReal] using
-    (memLp_normalized_eval_T_real_measureT n).ofReal (K := 𝕜)
-
-/-- The scalar-cast normalized Chebyshev `T` mode lies in `L²(measureT)`. -/
 lemma memLp_algebraMap_normalizedChebyshevT_measureT {𝕜 : Type*} [RCLike 𝕜] (n : ℕ) :
     MemLp (fun x : ℝ => (algebraMap ℝ 𝕜) (normalizedChebyshevT n x)) 2
       Polynomial.Chebyshev.measureT := by
-  convert memLp_algebraMap_normalized_eval_T_real_measureT (𝕜 := 𝕜) n using 1
-  ext x
-  rw [normalizedChebyshevT_def]
+  simpa only [← RCLike.algebraMap_eq_ofReal] using
+    (memLp_normalizedChebyshevT_measureT n).ofReal (K := 𝕜)
 
 /-- The normalized Chebyshev `T` mode as a vector of `L²(measureT)`. -/
 noncomputable def normalizedChebyshevTLp (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
