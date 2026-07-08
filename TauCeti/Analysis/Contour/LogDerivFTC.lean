@@ -1,23 +1,34 @@
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 
 /-!
 # Fundamental theorem of calculus for a logarithmic-derivative integrand
 
-For a curve `γ : ℝ → ℂ` continuous on `[a, b]`, differentiable off a countable set `P`, and such
-that the normalized ratio `(γ t - w) / (γ a - w)` stays in `Complex.slitPlane` on `[a, b]`, the
-integral of the logarithmic-derivative-type integrand `γ' t / (γ t - w)` evaluates in closed form:
+For a function `f : ℝ → ℂ` continuous on `[a, b]`, differentiable off a countable set `P`, and
+staying in `Complex.slitPlane` on `[a, b]`, the principal `Complex.log ∘ f` is a single-valued
+antiderivative of the logarithmic-derivative integrand `f' t / f t`, so
 
-`∫ t in a..b, γ' t / (γ t - w) = Complex.log ((γ b - w) / (γ a - w))`.
+`∫ t in a..b, f' t / f t = Complex.log (f b) - Complex.log (f a)`.
 
-The antiderivative is `t ↦ Complex.log ((γ t - w) / (γ a - w))`: on the slit plane the principal
-`Complex.log` is a single-valued branch, its `t`-derivative is exactly the integrand, and its value
-at `a` is `Complex.log 1 = 0`. The exceptional set `P` accommodates the finitely many breakpoints of
-a piecewise-`C¹` contour, and the oriented interval `[a, b]` needs no `a ≤ b` orientation
-assumption. This is the per-segment step used downstream to turn the winding-number integral into a
-sum of `Complex.log` argument increments.
+Specializing to `f t = (γ t - w) / (γ a - w)` for a curve `γ` avoiding `w` gives the contour form
+used downstream, `∫ t in a..b, γ' t / (γ t - w) = Complex.log ((γ b - w) / (γ a - w))`, where the
+normalization by `γ a - w` is what keeps the ratio in the slit plane and makes the value at the
+basepoint `a` equal to `Complex.log 1 = 0`. The exceptional set `P` accommodates the finitely many
+breakpoints of a piecewise-`C¹` contour, and the oriented interval `[a, b]` needs no `a ≤ b`
+assumption.
+
+## Main results
+
+* `TauCeti.Contour.integral_deriv_div_eq_log_sub_log` — the slit-plane logarithmic-derivative FTC in
+  general `f' / f` form.
+* `TauCeti.Contour.integral_deriv_div_sub_eq_log` — its contour specialization to
+  `f t = (γ t - w) / (γ a - w)`, the per-segment step for evaluating the winding-number integral as
+  a sum of `Complex.log` argument increments.
 
 ## Provenance
 
@@ -33,41 +44,42 @@ open scoped Interval
 
 namespace TauCeti.Contour
 
-/-- **FTC for a logarithmic-derivative integrand.** For `γ` continuous on `[a, b]`, differentiable
-off a countable set `P`, with the normalized ratio `(γ t - w) / (γ a - w)` in `Complex.slitPlane`
-throughout `[a, b]`, and with `t ↦ γ' t / (γ t - w)` interval-integrable, the integral of that
-integrand over `a..b` equals `Complex.log ((γ b - w) / (γ a - w))`. -/
+/-- **Logarithmic-derivative FTC on the slit plane.** For `f` continuous on `[a, b]`, differentiable
+off a countable set `P`, taking values in `Complex.slitPlane` throughout `[a, b]`, and with `f' / f`
+interval-integrable, the integral of `f' t / f t` over `a..b` telescopes through the single-valued
+branch `Complex.log ∘ f`:
+`∫ t in a..b, f' t / f t = Complex.log (f b) - Complex.log (f a)`. -/
+theorem integral_deriv_div_eq_log_sub_log {f f' : ℝ → ℂ} {a b : ℝ} {P : Set ℝ}
+    (hP : P.Countable) (hf_cont : ContinuousOn f (uIcc a b))
+    (hf_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, HasDerivAt f (f' t) t)
+    (h_slit : ∀ t ∈ uIcc a b, f t ∈ slitPlane)
+    (h_int : IntervalIntegrable (fun t ↦ f' t / f t) volume a b) :
+    ∫ t in a..b, f' t / f t = Complex.log (f b) - Complex.log (f a) :=
+  integral_eq_of_hasDerivAt_off_countable (fun t ↦ Complex.log (f t)) (fun t ↦ f' t / f t) hP
+    (hf_cont.clog h_slit)
+    (fun t ht ↦ (hf_diff t ht).clog_real (h_slit t (Ioo_subset_Icc_self ht.1))) h_int
+
+/-- **FTC for a contour logarithmic-derivative integrand.** The `f t = (γ t - w) / (γ a - w)`
+specialization of `integral_deriv_div_eq_log_sub_log`: for `γ` continuous on `[a, b]` and
+differentiable off a countable set `P`, with the normalized ratio in `Complex.slitPlane` throughout
+`[a, b]` and `t ↦ γ' t / (γ t - w)` interval-integrable, the integral of that integrand over `a..b`
+equals `Complex.log ((γ b - w) / (γ a - w))`. -/
 theorem integral_deriv_div_sub_eq_log {γ γ' : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
     (hP : P.Countable) (hγ_cont : ContinuousOn γ (uIcc a b))
     (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, HasDerivAt γ (γ' t) t)
     (h_slit : ∀ t ∈ uIcc a b, (γ t - w) / (γ a - w) ∈ slitPlane)
     (h_int : IntervalIntegrable (fun t ↦ γ' t / (γ t - w)) volume a b) :
     ∫ t in a..b, γ' t / (γ t - w) = Complex.log ((γ b - w) / (γ a - w)) := by
-  -- The basepoint is off the target, since the ratio at `a` would otherwise be `0 ∉ slitPlane`.
   have h_a_ne : γ a - w ≠ 0 := by
     intro h0
     have h1 := h_slit a left_mem_uIcc
     rw [h0, div_zero] at h1
     exact zero_notMem_slitPlane h1
-  -- The antiderivative `F t = log ((γ t - w) / (γ a - w))` is continuous on `[a, b]`.
-  have hF_cont : ContinuousOn (fun t ↦ Complex.log ((γ t - w) / (γ a - w))) (uIcc a b) :=
-    ((hγ_cont.sub continuousOn_const).div_const _).clog h_slit
-  -- Off `P`, its derivative is the integrand `γ' t / (γ t - w)`.
-  have hF_deriv : ∀ t ∈ Ioo (min a b) (max a b) \ P,
-      HasDerivAt (fun t ↦ Complex.log ((γ t - w) / (γ a - w))) (γ' t / (γ t - w)) t := by
-    intro t ht
-    have ht_uIcc : t ∈ uIcc a b := Ioo_subset_Icc_self ht.1
-    have h_ratio := h_slit t ht_uIcc
-    have ht_ne : γ t - w ≠ 0 := (div_ne_zero_iff.mp (slitPlane_ne_zero h_ratio)).1
-    have hgd : HasDerivAt (fun t ↦ (γ t - w) / (γ a - w)) (γ' t / (γ a - w)) t :=
-      ((hγ_diff t ht).sub_const w).div_const _
-    have hclog := hgd.clog_real h_ratio
-    have heq : γ' t / (γ a - w) / ((γ t - w) / (γ a - w)) = γ' t / (γ t - w) := by
-      field_simp
-    rwa [heq] at hclog
-  -- Apply the off-countable FTC and simplify the endpoints.
-  rw [integral_eq_of_hasDerivAt_off_countable (fun t ↦ Complex.log ((γ t - w) / (γ a - w)))
-    (fun t ↦ γ' t / (γ t - w)) hP hF_cont hF_deriv h_int, div_self h_a_ne, Complex.log_one,
-    sub_zero]
+  have hfun : (fun t ↦ γ' t / (γ a - w) / ((γ t - w) / (γ a - w)))
+      = fun t ↦ γ' t / (γ t - w) := funext fun t ↦ div_div_div_cancel_right₀ h_a_ne _ _
+  have hgen := integral_deriv_div_eq_log_sub_log (f := fun t ↦ (γ t - w) / (γ a - w))
+    (f' := fun t ↦ γ' t / (γ a - w)) hP ((hγ_cont.sub continuousOn_const).div_const _)
+    (fun t ht ↦ ((hγ_diff t ht).sub_const w).div_const _) h_slit (by rw [hfun]; exact h_int)
+  rwa [hfun, div_self h_a_ne, Complex.log_one, sub_zero] at hgen
 
 end TauCeti.Contour
