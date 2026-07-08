@@ -53,26 +53,6 @@ variable [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Flat R C]
 variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 
-omit [Coalgebra R C] [Comodule R C M] [Comodule R C N] [Module.Flat R C] in
-/-- Tensoring a quotient map with `C` kills tensors whose left factor lies in the
-submodule being quotiented. This is the shared tensor/quotient vanishing step used by both the
-comap and quotient subcomodule constructions. -/
-theorem rTensor_mkQ_map_subtype {N₁ : Type*} [AddCommGroup N₁] [Module R N₁]
-    (B : Submodule R N₁) (t : B ⊗[R] C) :
-    LinearMap.rTensor C B.mkQ
-        (TensorProduct.map B.subtype (LinearMap.id : C →ₗ[R] C) t) = 0 := by
-  letI : AddCommGroup C := Module.addCommMonoidToAddCommGroup R (M := C)
-  induction t with
-  | zero => simp
-  | tmul b c =>
-      have hb : B.mkQ (b : N₁) = 0 := by
-        rw [Submodule.mkQ_apply]
-        exact (Submodule.Quotient.mk_eq_zero B).2 b.property
-      rw [LinearMap.rTensor_def]
-      simp [hb]
-  | add x y hx hy =>
-      simp [hx, hy]
-
 namespace Subcomodule
 
 private theorem ker_rangeRestrict_mkQ_comp {M₁ : Type w} {N₁ : Type x}
@@ -154,7 +134,13 @@ private theorem coact_mem_range_comap_toLinearMap
     (Comodule.coact (R := R) (C := C) (M := N) (f.toLinearMap m)) = 0
   rcases B.coact_mem hm with ⟨t, ht⟩
   rw [← ht]
-  exact rTensor_mkQ_map_subtype (R := R) (C := C) (N₁ := N) B.toSubmodule t
+  -- Tensoring the quotient map with `C` kills the range of `subtype ⊗ id`, by right exactness
+  -- of the tensor product (`rTensor_mkQ`).
+  have h : LinearMap.rTensor C B.toSubmodule.subtype t ∈
+      LinearMap.ker (LinearMap.rTensor C B.toSubmodule.mkQ) := by
+    rw [rTensor_mkQ]
+    exact LinearMap.mem_range_self _ _
+  exact h
 
 private theorem comap_coact_mem (f : Comodule.Hom R C M N) (B : Subcomodule R C N)
     {m : M} (hm : m ∈ B.toSubmodule.comap f.toLinearMap) :

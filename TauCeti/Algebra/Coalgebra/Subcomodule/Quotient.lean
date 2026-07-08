@@ -61,7 +61,14 @@ theorem le_ker_tensorProduct_mkQ_comp_coact :
   rw [LinearMap.mem_ker, LinearMap.comp_apply]
   rcases N.coact_mem hm with ⟨t, ht⟩
   rw [← ht]
-  exact rTensor_mkQ_map_subtype (R := R) (C := C) (N₁ := M) N.toSubmodule t
+  -- Tensoring the quotient map with `C` kills the range of `subtype ⊗ id`, by right exactness
+  -- of the tensor product (`rTensor_mkQ`).
+  letI : AddCommGroup C := Module.addCommMonoidToAddCommGroup R (M := C)
+  have h : LinearMap.rTensor C N.toSubmodule.subtype t ∈
+      LinearMap.ker (LinearMap.rTensor C N.toSubmodule.mkQ) := by
+    rw [rTensor_mkQ]
+    exact LinearMap.mem_range_self _ _
+  exact h
 
 /-- The coaction induced on the quotient by a subcomodule. -/
 def quotientCoact : M ⧸ N.toSubmodule →ₗ[R] (M ⧸ N.toSubmodule) ⊗[R] C :=
