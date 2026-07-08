@@ -52,6 +52,16 @@ theorem StronglyContinuousSemigroup.HasGrowthBound.bound
   exact hb.2 t ht
 
 omit [CompleteSpace X] in
+/-- Constructor for a growth bound from the multiplicative lower bound and operator-norm
+estimate. -/
+public theorem StronglyContinuousSemigroup.hasGrowthBound_of_bound
+    {S : StronglyContinuousSemigroup X} {ω M : ℝ} (hM : 1 ≤ M)
+    (hbound : ∀ (t : ℝ), 0 ≤ t → ‖S.realOperator t‖ ≤ M * Real.exp (ω * t)) :
+    S.HasGrowthBound ω M := by
+  unfold StronglyContinuousSemigroup.HasGrowthBound
+  exact ⟨hM, hbound⟩
+
+omit [CompleteSpace X] in
 /-- A growth bound can be weakened by increasing both the exponential rate and the multiplicative
 constant. -/
 theorem StronglyContinuousSemigroup.HasGrowthBound.mono
