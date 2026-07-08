@@ -112,30 +112,32 @@ lemma le_inf {F : WeilDivisor X} {D : EffectiveDivisorOfDegree X d}
   exact _root_.le_inf hFD hFE
 
 /-- The common part is the left input exactly when the left input is below the right input. -/
-lemma inf_eq_left_iff_le {D : EffectiveDivisorOfDegree X d}
+lemma inf_eq_left {D : EffectiveDivisorOfDegree X d}
     {E : EffectiveDivisorOfDegree X e} :
     (inf D E : WeilDivisor X) = D ↔ (D : WeilDivisor X) ≤ E := by
   rw [coe_inf]
-  exact inf_eq_left
+  exact _root_.inf_eq_left
 
 /-- The common part is the right input exactly when the right input is below the left input. -/
-lemma inf_eq_right_iff_le {D : EffectiveDivisorOfDegree X d}
+lemma inf_eq_right {D : EffectiveDivisorOfDegree X d}
     {E : EffectiveDivisorOfDegree X e} :
     (inf D E : WeilDivisor X) = E ↔ (E : WeilDivisor X) ≤ D := by
   rw [coe_inf]
-  exact inf_eq_right
+  exact _root_.inf_eq_right
 
 /-- The degree of the common part is bounded by the left degree index. -/
 lemma degree_inf_le_left (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     (degree ((D : WeilDivisor X) ⊓ E)).toNat ≤ d :=
-  degree_le_of_le (inf_le_left D E)
+  by
+    simpa [coe_inf] using degree_le_of_le (inf_le_left D E)
 
 /-- The degree of the common part is bounded by the right degree index. -/
 lemma degree_inf_le_right (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     (degree ((D : WeilDivisor X) ⊓ E)).toNat ≤ e :=
-  degree_le_of_le (inf_le_right D E)
+  by
+    simpa [coe_inf] using degree_le_of_le (inf_le_right D E)
 
 /-- The residual part of the left divisor after removing the common part.
 
