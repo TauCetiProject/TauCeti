@@ -3,6 +3,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.Real
+import TauCeti.Analysis.InnerProductSpace.RCLike
 import Mathlib.Topology.Algebra.Polynomial
 
 /-!
@@ -263,11 +264,6 @@ lemma integral_normalizedChebyshevT_mul_normalizedChebyshevT_measureT_eq_ite (m 
 lemma inner_normalizedChebyshevTLp {𝕜 : Type*} [RCLike 𝕜] (m n : ℕ) :
     inner 𝕜 (normalizedChebyshevTLp 𝕜 m) (normalizedChebyshevTLp 𝕜 n) =
       if m = n then 1 else 0 := by
-  have hinner : ∀ a b : ℝ,
-      inner 𝕜 ((algebraMap ℝ 𝕜) a) ((algebraMap ℝ 𝕜) b) =
-        (algebraMap ℝ 𝕜) (a * b) := by
-    intro a b
-    simp [RCLike.inner_apply, RCLike.conj_ofReal, map_mul, mul_comm]
   calc
     inner 𝕜 (normalizedChebyshevTLp 𝕜 m) (normalizedChebyshevTLp 𝕜 n)
         = ∫ x, (algebraMap ℝ 𝕜) (normalizedChebyshevT m x * normalizedChebyshevT n x)
@@ -277,7 +273,8 @@ lemma inner_normalizedChebyshevTLp {𝕜 : Type*} [RCLike 𝕜] (m n : ℕ) :
           filter_upwards [coeFn_normalizedChebyshevTLp (𝕜 := 𝕜) m,
             coeFn_normalizedChebyshevTLp (𝕜 := 𝕜) n] with x hxm hxn
           rw [hxm, hxn]
-          exact hinner (normalizedChebyshevT m x) (normalizedChebyshevT n x)
+          exact inner_algebraMap_algebraMap (𝕜 := 𝕜)
+            (normalizedChebyshevT m x) (normalizedChebyshevT n x)
     _ = if m = n then 1 else 0 :=
           by
             rw [integral_ofReal,

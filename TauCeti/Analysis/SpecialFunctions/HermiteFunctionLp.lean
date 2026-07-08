@@ -6,6 +6,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Codex
 -/
 public import TauCeti.Analysis.SpecialFunctions.HermiteFunctionMemLp
+import TauCeti.Analysis.InnerProductSpace.RCLike
 
 /-!
 # Hermite functions as `L²` vectors
@@ -62,13 +63,9 @@ lemma coeFn_hermiteFunctionLp_real (n : ℕ) :
 
 /-- The zeroth `Lp` Hermite function has inner product one with itself, over any `RCLike`
 scalar field. -/
-lemma inner_hermiteFunctionLp_zero_zero :
+@[simp]
+lemma inner_self_hermiteFunctionLp_zero :
     inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0) = 1 := by
-  have hinner : ∀ a b : ℝ,
-      inner 𝕜 ((algebraMap ℝ 𝕜) a) ((algebraMap ℝ 𝕜) b) =
-        (algebraMap ℝ 𝕜) (a * b) := by
-    intro a b
-    simp [RCLike.inner_apply, RCLike.conj_ofReal, map_mul, mul_comm]
   calc
     inner 𝕜 (hermiteFunctionLp 𝕜 0) (hermiteFunctionLp 𝕜 0)
         = ∫ x : ℝ, (algebraMap ℝ 𝕜) (hermiteFunction 0 x * hermiteFunction 0 x) := by
@@ -76,7 +73,8 @@ lemma inner_hermiteFunctionLp_zero_zero :
           refine integral_congr_ae ?_
           filter_upwards [coeFn_hermiteFunctionLp (𝕜 := 𝕜) 0] with x hx
           rw [hx]
-          exact hinner (hermiteFunction 0 x) (hermiteFunction 0 x)
+          exact inner_algebraMap_algebraMap (𝕜 := 𝕜)
+            (hermiteFunction 0 x) (hermiteFunction 0 x)
     _ = 1 := by
           rw [integral_ofReal]
           simpa only [map_one] using
