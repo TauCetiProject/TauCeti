@@ -29,6 +29,8 @@ assumption.
 * `TauCeti.Contour.integral_deriv_div_sub_eq_log` — its contour specialization to
   `f t = (γ t - w) / (γ a - w)`, the per-segment step for evaluating the winding-number integral as
   a sum of `Complex.log` argument increments.
+* `TauCeti.Contour.integral_inv_sub_mul_deriv_eq_log` — the `deriv γ` form with the winding-integral
+  integrand `(γ t - w)⁻¹ * deriv γ t`, ready for the downstream winding sum.
 
 ## Provenance
 
@@ -81,5 +83,22 @@ theorem integral_deriv_div_sub_eq_log {γ γ' : ℝ → ℂ} {w : ℂ} {a b : �
     (f' := fun t ↦ γ' t / (γ a - w)) hP ((hγ_cont.sub continuousOn_const).div_const _)
     (fun t ht ↦ ((hγ_diff t ht).sub_const w).div_const _) h_slit (by rw [hfun]; exact h_int)
   rwa [hfun, div_self h_a_ne, Complex.log_one, sub_zero] at hgen
+
+/-- **Winding-integrand form of the contour log-derivative FTC.** The `γ' = deriv γ` specialization
+of `integral_deriv_div_sub_eq_log`, stated with the winding-integral integrand
+`(γ t - w)⁻¹ * deriv γ t` in both the integrability hypothesis and the conclusion (matching the
+`g (γ t) * deriv γ t` shape of `integral_comp_mul_deriv_eq_sub_of_hasDerivAt` and the winding API),
+so a downstream winding sum can apply it per segment without rearranging the integrand. -/
+theorem integral_inv_sub_mul_deriv_eq_log {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
+    (hP : P.Countable) (hγ_cont : ContinuousOn γ (uIcc a b))
+    (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
+    (h_slit : ∀ t ∈ uIcc a b, (γ t - w) / (γ a - w) ∈ slitPlane)
+    (h_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
+    ∫ t in a..b, (γ t - w)⁻¹ * deriv γ t = Complex.log ((γ b - w) / (γ a - w)) := by
+  have hfun : (fun t ↦ (γ t - w)⁻¹ * deriv γ t) = fun t ↦ deriv γ t / (γ t - w) := by
+    funext t; rw [div_eq_mul_inv, mul_comm]
+  rw [hfun]
+  exact integral_deriv_div_sub_eq_log (γ' := deriv γ) hP hγ_cont
+    (fun t ht ↦ (hγ_diff t ht).hasDerivAt) h_slit (hfun ▸ h_int)
 
 end TauCeti.Contour
