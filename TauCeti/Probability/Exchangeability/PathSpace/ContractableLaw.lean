@@ -51,8 +51,9 @@ theorem contractableLaw_iff {ρ : Measure (ℕ → α)} :
   Iff.rfl
 
 /-- The defining invariance of a contractable path law. -/
-@[simp]
-theorem ContractableLaw.map_reindex {ρ : Measure (ℕ → α)} (hρ : ContractableLaw ρ)
+theorem ContractableLaw.map_reindex {ρ : Measure (ℕ → α)}
+    (hρ : ∀ φ : ℕ → ℕ, StrictMono φ →
+      ρ.map (fun x : ℕ → α => fun k => x (φ k)) = ρ)
     {φ : ℕ → ℕ} (hφ : StrictMono φ) :
     ρ.map (fun x : ℕ → α => fun k => x (φ k)) = ρ :=
   hρ φ hφ
@@ -61,7 +62,7 @@ theorem ContractableLaw.map_reindex {ρ : Measure (ℕ → α)} (hρ : Contracta
 theorem ContractableLaw.measurePreserving_reindex {ρ : Measure (ℕ → α)}
     (hρ : ContractableLaw ρ) {φ : ℕ → ℕ} (hφ : StrictMono φ) :
     MeasurePreserving (fun x : ℕ → α => fun k => x (φ k)) ρ ρ :=
-  ⟨measurable_reindex φ, hρ.map_reindex hφ⟩
+  ⟨measurable_reindex φ, ContractableLaw.map_reindex hρ hφ⟩
 
 /-- Path-law contractability is equivalently measure preservation by every strictly increasing
 time reindexing. -/
@@ -89,16 +90,19 @@ theorem ContractableLaw.measurePreserving_shift_iterate {ρ : Measure (ℕ → �
 
 /-- The one-sided shift leaves a contractable path law unchanged. -/
 @[simp]
-theorem ContractableLaw.map_shift {ρ : Measure (ℕ → α)} (hρ : ContractableLaw ρ) :
+theorem ContractableLaw.map_shift {ρ : Measure (ℕ → α)}
+    (hρ : ∀ φ : ℕ → ℕ, StrictMono φ →
+      ρ.map (fun x : ℕ → α => fun k => x (φ k)) = ρ) :
     ρ.map (shift α) = ρ :=
-  hρ.measurePreserving_shift.map_eq
+  (ContractableLaw.measurePreserving_shift hρ).map_eq
 
 /-- Iterating the one-sided shift leaves a contractable path law unchanged. -/
 @[simp]
 theorem ContractableLaw.map_shift_iterate {ρ : Measure (ℕ → α)}
-    (hρ : ContractableLaw ρ) (n : ℕ) :
+    (hρ : ∀ φ : ℕ → ℕ, StrictMono φ →
+      ρ.map (fun x : ℕ → α => fun k => x (φ k)) = ρ) (n : ℕ) :
     ρ.map ((shift α)^[n]) = ρ :=
-  (hρ.measurePreserving_shift_iterate n).map_eq
+  (ContractableLaw.measurePreserving_shift_iterate hρ n).map_eq
 
 /-- A contractable process has a contractable path law. -/
 theorem Contractable.contractableLaw_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
