@@ -1,21 +1,22 @@
 module
 
 public import TauCeti.Probability.DeFinetti.FutureFactorization
-public import TauCeti.Probability.Martingale.Convergence
+-- Non-public: `tendsto_ae_condExp_iInf` (Lévy's downward theorem) is used only inside the proof
+-- below, not in the exported statement of `condExp_blockIndicatorProd_tailProcess_ae_eq_prod`.
+import TauCeti.Probability.Martingale.Convergence
 
 /-!
 # Tail-level factorization for the de Finetti martingale route
 
-For a contractable process `X`, this file passes the finite-level future factorization
-(`condExp_blockIndicatorProd_future_ae_eq_prod`, at `tailFamily X (m+1)`) to the **tail** σ-algebra
-`tailProcess X`, by Lévy's downward theorem (`tendsto_ae_condExp_iInf`) along the
-antitone future family.
+For a contractable process `X`, this file factors the conditional expectation of a prefix indicator
+product given the **tail** σ-algebra `tailProcess X` into a product of single-coordinate tail
+conditional expectations — the tail-level input to the de Finetti martingale route.
 
 ## Main result
 
-* `condExp_blockIndicatorProd_tail_factor` — for a contractable process, the conditional expectation
-  of the length-`r` prefix indicator product given the tail σ-algebra factors as the product of the
-  single-coordinate (all replaced by `X 0`) tail conditional expectations.
+* `condExp_blockIndicatorProd_tailProcess_ae_eq_prod` — for a contractable process, the conditional
+  expectation of the length-`r` prefix indicator product given the tail σ-algebra factors as the
+  product of the single-coordinate (all replaced by `X 0`) tail conditional expectations.
 
 Adapted from `cameronfreer/exchangeability`
 (`DeFinetti/ViaMartingale/Factorization.lean`: `tail_factorization_from_future`).
@@ -40,10 +41,8 @@ For a contractable process, the conditional expectation of the length-`r` prefix
 given the tail σ-algebra `tailProcess X` factors:
 ```
 μ[∏ i<r 𝟙_{X i ∈ C i} | 𝒯_X] = ∏ i<r μ[𝟙_{X 0 ∈ C i} | 𝒯_X]   a.e.
-```
-This passes the finite-level future factorization to the tail using reverse-martingale (Lévy
-downward) convergence along the antitone future family `tailFamily X`. -/
-lemma condExp_blockIndicatorProd_tail_factor
+``` -/
+lemma condExp_blockIndicatorProd_tailProcess_ae_eq_prod
     [StandardBorelSpace Ω]
     {μ : Measure Ω} [IsFiniteMeasure μ]
     (X : ℕ → Ω → α) (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
