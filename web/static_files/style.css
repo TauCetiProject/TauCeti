@@ -187,6 +187,9 @@ a.card:hover { transform: translateY(-3px); border-color: var(--teal); text-deco
 /* Statistics page: the two figures stack, each chart fills its width. */
 .loc-graphs { display: flex; flex-direction: column; gap: 2rem; margin: 2rem 0; }
 .loc-figure { margin: 0; }
+/* The per-roadmap chart stands on its own (wider, with a legend), so it gets the same
+   vertical rhythm the stacked pair has between them. */
+.loc-figure-wide { margin: 2rem 0; }
 .loc-graph { display: block; width: 100%; height: auto; }
 .loc-figure figcaption {
   color: var(--muted);
