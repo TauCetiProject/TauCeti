@@ -210,18 +210,23 @@ private theorem segRatio_mem_slitPlane
 /-! ### Telescoping product over a partition -/
 
 /-- Telescoping product in `ℂ` over `Finset.range`. For `a : ℕ → ℂ` nonzero on indices `0..k`,
-`∏ j ∈ range k, a (j+1)/a j = a k / a 0`. This is the field analogue of the group telescoping lemma
-`Finset.prod_range_div`, proved directly since `ℂ` is not a group under multiplication and the
-factors are nonzero only under the hypothesis `ha`. -/
+`∏ j ∈ range k, a (j+1)/a j = a k / a 0`. The nonzero-field analogue of the group telescoping lemma
+`Finset.prod_range_div`, obtained from it by lifting the nonzero values into `ℂˣ`. -/
 private lemma prod_range_div_complex (a : ℕ → ℂ) (k : ℕ)
     (ha : ∀ j ≤ k, a j ≠ 0) :
     ∏ j ∈ Finset.range k, (a (j + 1) / a j) = a k / a 0 := by
-  induction k with
-  | zero => simp [div_self (ha 0 le_rfl)]
-  | succ n ih =>
-    rw [Finset.prod_range_succ, ih (fun j hj ↦ ha j (by omega)),
-        div_mul_div_comm, mul_comm (a n) (a (n + 1)),
-        mul_div_mul_right _ _ (ha n (by omega))]
+  classical
+  set u : ℕ → ℂˣ := fun j ↦ if h : a j = 0 then 1 else Units.mk0 (a j) h with hu_def
+  have hu : ∀ j ≤ k, (u j : ℂ) = a j := by
+    intro j hj; simp only [hu_def, dif_neg (ha j hj), Units.val_mk0]
+  have hstep : ∏ j ∈ Finset.range k, (a (j + 1) / a j)
+      = ((∏ j ∈ Finset.range k, u (j + 1) / u j : ℂˣ) : ℂ) := by
+    rw [Units.coe_prod]
+    refine Finset.prod_congr rfl fun j hj ↦ ?_
+    rw [Finset.mem_range] at hj
+    rw [Units.val_div_eq_div_val, hu (j + 1) hj, hu j hj.le]
+  rw [hstep, Finset.prod_range_div u k, Units.val_div_eq_div_val, hu k le_rfl,
+    hu 0 (Nat.zero_le k)]
 
 /-- Telescoping product: for `t ∈ [s_k, s_{k+1}]` along a monotone partition
 `s : ℕ → ℝ` with `γ(s_j) ≠ w` for `0 ≤ j ≤ N`, the product
