@@ -24,11 +24,11 @@ linear algebra.
 
 ## Main declarations
 
-* `TauCeti.IsJHolomorphicAt.neg_neg`,
-  `TauCeti.IsJHolomorphicWithinAt.neg_neg`,
-  `TauCeti.IsJHolomorphicOn.neg_neg`, and
-  `TauCeti.IsJHolomorphic.neg_neg`: the four map-level forms.
-* `TauCeti.isJHolomorphicAt_neg_neg_iff` and its within-set, setwise, and global analogues:
+* `TauCeti.IsConstJHolomorphicAt.neg_neg`,
+  `TauCeti.IsConstJHolomorphicWithinAt.neg_neg`,
+  `TauCeti.IsConstJHolomorphicOn.neg_neg`, and
+  `TauCeti.IsConstJHolomorphic.neg_neg`: the four map-level forms.
+* `TauCeti.isConstJHolomorphicAt_neg_neg_iff` and its within-set, setwise, and global analogues:
   rewrite-friendly equivalences.
 
 The convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
@@ -49,68 +49,68 @@ variable [NormedAddCommGroup W] [NormedSpace ℝ W]
 variable {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
 variable {f : V → W} {s : Set V} {x : V}
 
-namespace IsJHolomorphicAt
+namespace IsConstJHolomorphicAt
 
 /-- Pointwise `J`-holomorphicity is unchanged after negating both almost complex structures. -/
-lemma neg_neg (hf : IsJHolomorphicAt J J' f x) :
-    IsJHolomorphicAt (-J) (-J') f x :=
+lemma neg_neg (hf : IsConstJHolomorphicAt J J' f x) :
+    IsConstJHolomorphicAt (-J) (-J') f x :=
   ⟨hf.choose, hf.hasFDerivAt, hf.derivative_isComplexLinear.neg_neg⟩
 
-end IsJHolomorphicAt
+end IsConstJHolomorphicAt
 
 /-- Negating both almost complex structures leaves pointwise `J`-holomorphicity unchanged. -/
 @[simp]
-lemma isJHolomorphicAt_neg_neg_iff :
-    IsJHolomorphicAt (-J) (-J') f x ↔ IsJHolomorphicAt J J' f x :=
+lemma isConstJHolomorphicAt_neg_neg_iff :
+    IsConstJHolomorphicAt (-J) (-J') f x ↔ IsConstJHolomorphicAt J J' f x :=
   ⟨fun hf => ⟨hf.choose, hf.hasFDerivAt, hf.derivative_isComplexLinear.of_neg_neg⟩,
     fun hf => hf.neg_neg⟩
 
-namespace IsJHolomorphicWithinAt
+namespace IsConstJHolomorphicWithinAt
 
 /-- Within-set `J`-holomorphicity is unchanged after negating both almost complex structures. -/
-lemma neg_neg (hf : IsJHolomorphicWithinAt J J' f s x) :
-    IsJHolomorphicWithinAt (-J) (-J') f s x :=
+lemma neg_neg (hf : IsConstJHolomorphicWithinAt J J' f s x) :
+    IsConstJHolomorphicWithinAt (-J) (-J') f s x :=
   ⟨hf.choose, hf.hasFDerivWithinAt, hf.derivative_isComplexLinear.neg_neg⟩
 
-end IsJHolomorphicWithinAt
+end IsConstJHolomorphicWithinAt
 
 /-- Negating both almost complex structures leaves within-set `J`-holomorphicity unchanged. -/
 @[simp]
-lemma isJHolomorphicWithinAt_neg_neg_iff :
-    IsJHolomorphicWithinAt (-J) (-J') f s x ↔ IsJHolomorphicWithinAt J J' f s x :=
+lemma isConstJHolomorphicWithinAt_neg_neg_iff :
+    IsConstJHolomorphicWithinAt (-J) (-J') f s x ↔ IsConstJHolomorphicWithinAt J J' f s x :=
   ⟨fun hf =>
     ⟨hf.choose, hf.hasFDerivWithinAt, hf.derivative_isComplexLinear.of_neg_neg⟩,
     fun hf => hf.neg_neg⟩
 
-namespace IsJHolomorphicOn
+namespace IsConstJHolomorphicOn
 
 /-- Setwise `J`-holomorphicity is unchanged after negating both almost complex structures. -/
-lemma neg_neg (hf : IsJHolomorphicOn J J' f s) :
-    IsJHolomorphicOn (-J) (-J') f s :=
+lemma neg_neg (hf : IsConstJHolomorphicOn J J' f s) :
+    IsConstJHolomorphicOn (-J) (-J') f s :=
   fun x hx => (hf x hx).neg_neg
 
-end IsJHolomorphicOn
+end IsConstJHolomorphicOn
 
 /-- Negating both almost complex structures leaves setwise `J`-holomorphicity unchanged. -/
 @[simp]
-lemma isJHolomorphicOn_neg_neg_iff :
-    IsJHolomorphicOn (-J) (-J') f s ↔ IsJHolomorphicOn J J' f s :=
-  ⟨fun hf x hx => (isJHolomorphicWithinAt_neg_neg_iff (x := x)).mp (hf x hx),
+lemma isConstJHolomorphicOn_neg_neg_iff :
+    IsConstJHolomorphicOn (-J) (-J') f s ↔ IsConstJHolomorphicOn J J' f s :=
+  ⟨fun hf x hx => (isConstJHolomorphicWithinAt_neg_neg_iff (x := x)).mp (hf x hx),
     fun hf => hf.neg_neg⟩
 
-namespace IsJHolomorphic
+namespace IsConstJHolomorphic
 
 /-- Global `J`-holomorphicity is unchanged after negating both almost complex structures. -/
-lemma neg_neg (hf : IsJHolomorphic J J' f) : IsJHolomorphic (-J) (-J') f :=
+lemma neg_neg (hf : IsConstJHolomorphic J J' f) : IsConstJHolomorphic (-J) (-J') f :=
   fun x => (hf x).neg_neg
 
-end IsJHolomorphic
+end IsConstJHolomorphic
 
 /-- Negating both almost complex structures leaves global `J`-holomorphicity unchanged. -/
 @[simp]
-lemma isJHolomorphic_neg_neg_iff :
-    IsJHolomorphic (-J) (-J') f ↔ IsJHolomorphic J J' f :=
-  ⟨fun hf x => (isJHolomorphicAt_neg_neg_iff (x := x)).mp (hf x),
+lemma isConstJHolomorphic_neg_neg_iff :
+    IsConstJHolomorphic (-J) (-J') f ↔ IsConstJHolomorphic J J' f :=
+  ⟨fun hf x => (isConstJHolomorphicAt_neg_neg_iff (x := x)).mp (hf x),
     fun hf => hf.neg_neg⟩
 
 end JHolomorphic

@@ -39,13 +39,14 @@ or disks.
   real-linear map from the standard complex line.
 * `TauCeti.IsComplexLinearMap.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm`:
   for a complex-linear map, energy density is twice symplectic area density.
-* `TauCeti.IsJHolomorphicAt.fderiv_stdComplexLineEnergyDensity_eq_two_mul_symplecticForm`:
+* `TauCeti.IsConstJHolomorphicAt.fderiv_stdComplexLineEnergyDensity_eq_two_mul_symplecticForm`:
   the corresponding Frechet-derivative statement for a pointwise `J`-holomorphic map.
 * `TauCeti.SymplecticForm.stdComplexLineEnergyDensity_pos` and
   `TauCeti.SymplecticForm.stdComplexLineEnergyDensity_eq_zero_iff`: nondegeneracy of the density
-  under tameness, with `TauCeti.IsJHolomorphicAt.fderiv_stdComplexLineEnergyDensity_eq_zero_iff`
-  and `TauCeti.IsJHolomorphicWithinAt.fderivWithin_stdComplexLineEnergyDensity_eq_zero_iff` the
-  Frechet-derivative versions.
+  under tameness, with
+  `TauCeti.IsConstJHolomorphicAt.fderiv_stdComplexLineEnergyDensity_eq_zero_iff` and
+  `TauCeti.IsConstJHolomorphicWithinAt.fderivWithin_stdComplexLineEnergyDensity_eq_zero_iff`
+  the Frechet-derivative versions.
 * `TauCeti.SymplecticForm.prod_stdComplexLineEnergyDensity`: product-target energy density is
   the sum of the factor energy densities.
 * `TauCeti.SymplecticForm.stdComplexLineEnergyDensity_sub_two_mul_symplecticForm`: the Wirtinger
@@ -255,7 +256,7 @@ lemma stdComplexLineEnergyDensity_eq_two_mul_symplecticForm
 
 end IsComplexLinearMap
 
-namespace IsJHolomorphicAt
+namespace IsConstJHolomorphicAt
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 variable {J : AlmostComplexStructure V} {ω : SymplecticForm V}
@@ -264,7 +265,7 @@ variable {f : ℝ × ℝ → V} {x : ℝ × ℝ}
 /-- For a pointwise `J`-holomorphic map from the standard complex line, the
 associated-bilinear-form diagonal of the `∂t` derivative equals that of the `∂s` derivative. -/
 lemma associatedBilinForm_fderiv_stdComplexLineImag_self_eq
-    (hf : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x) :
+    (hf : IsConstJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x) :
     ω.associatedBilinForm J (fderiv ℝ f x stdComplexLineImag)
         (fderiv ℝ f x stdComplexLineImag) =
       ω.associatedBilinForm J (fderiv ℝ f x stdComplexLineReal)
@@ -274,7 +275,7 @@ lemma associatedBilinForm_fderiv_stdComplexLineImag_self_eq
 /-- For a pointwise `J`-holomorphic map from the standard complex line, the `∂s`
 associated-bilinear-form diagonal is the symplectic area density `ω(∂s u, ∂t u)`. -/
 lemma associatedBilinForm_fderiv_stdComplexLineReal_self_eq_symplecticForm
-    (hf : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x) :
+    (hf : IsConstJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x) :
     ω.associatedBilinForm J (fderiv ℝ f x stdComplexLineReal)
         (fderiv ℝ f x stdComplexLineReal) =
       ω (fderiv ℝ f x stdComplexLineReal) (fderiv ℝ f x stdComplexLineImag) :=
@@ -283,7 +284,7 @@ lemma associatedBilinForm_fderiv_stdComplexLineReal_self_eq_symplecticForm
 /-- For a pointwise `J`-holomorphic map from the standard complex line, the derivative's
 standard energy density is twice its symplectic area density. -/
 lemma fderiv_stdComplexLineEnergyDensity_eq_two_mul_symplecticForm
-    (hf : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x) :
+    (hf : IsConstJHolomorphicAt (AlmostComplexStructure.product ℝ) J f x) :
     ω.stdComplexLineEnergyDensity J (fderiv ℝ f x).toLinearMap =
       2 * ω (fderiv ℝ f x stdComplexLineReal) (fderiv ℝ f x stdComplexLineImag) :=
   hf.fderiv_isComplexLinear.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm
@@ -313,9 +314,9 @@ lemma fderiv_stdComplexLineEnergyDensity_pos (hω : ω.Tames J)
   (fderiv_stdComplexLineEnergyDensity_pos_iff (ω := ω) (J := J) (f := f) (x := x) hω).mpr
     hfderiv
 
-end IsJHolomorphicAt
+end IsConstJHolomorphicAt
 
-namespace IsJHolomorphicWithinAt
+namespace IsConstJHolomorphicWithinAt
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 variable {J : AlmostComplexStructure V} {ω : SymplecticForm V}
@@ -325,7 +326,7 @@ variable {f : ℝ × ℝ → V} {s : Set (ℝ × ℝ)} {x : ℝ × ℝ}
 associated-bilinear-form diagonal of the `∂t` derivative equals that of the `∂s` derivative,
 provided derivatives within the set are unique. -/
 lemma associatedBilinForm_fderivWithin_stdComplexLineImag_self_eq
-    (hf : IsJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J f s x)
+    (hf : IsConstJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J f s x)
     (hs : UniqueDiffWithinAt ℝ s x) :
     ω.associatedBilinForm J (fderivWithin ℝ f s x stdComplexLineImag)
         (fderivWithin ℝ f s x stdComplexLineImag) =
@@ -337,7 +338,7 @@ lemma associatedBilinForm_fderivWithin_stdComplexLineImag_self_eq
 associated-bilinear-form diagonal is the symplectic area density `ω(∂s u, ∂t u)`,
 provided derivatives within the set are unique. -/
 lemma associatedBilinForm_fderivWithin_stdComplexLineReal_self_eq_symplecticForm
-    (hf : IsJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J f s x)
+    (hf : IsConstJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J f s x)
     (hs : UniqueDiffWithinAt ℝ s x) :
     ω.associatedBilinForm J (fderivWithin ℝ f s x stdComplexLineReal)
         (fderivWithin ℝ f s x stdComplexLineReal) =
@@ -351,7 +352,7 @@ lemma associatedBilinForm_fderivWithin_stdComplexLineReal_self_eq_symplecticForm
 standard energy density is twice its symplectic area density, provided derivatives within the
 set are unique. -/
 lemma fderivWithin_stdComplexLineEnergyDensity_eq_two_mul_symplecticForm
-    (hf : IsJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J f s x)
+    (hf : IsConstJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J f s x)
     (hs : UniqueDiffWithinAt ℝ s x) :
     ω.stdComplexLineEnergyDensity J (fderivWithin ℝ f s x).toLinearMap =
       2 * ω (fderivWithin ℝ f s x stdComplexLineReal)
@@ -385,7 +386,7 @@ lemma fderivWithin_stdComplexLineEnergyDensity_pos (hω : ω.Tames J)
   (fderivWithin_stdComplexLineEnergyDensity_pos_iff
     (ω := ω) (J := J) (f := f) (s := s) (x := x) hω).mpr hfderiv
 
-end IsJHolomorphicWithinAt
+end IsConstJHolomorphicWithinAt
 
 namespace SymplecticForm
 
