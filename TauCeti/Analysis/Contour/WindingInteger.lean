@@ -8,8 +8,10 @@ import TauCeti.Analysis.Contour.ArgumentLift
 /-!
 # The winding number of a closed curve is an integer
 
-For a curve `γ` on an interval that returns to its start (`γ a = γ b`) and avoids a point `w`, its
-generalized winding number about `w` is an integer. This is the integrality step on the
+For a curve `γ` on an interval that returns to its start (`γ a = γ b`), avoids a point `w`, and is
+regular enough — continuous, differentiable off a countable set, with an interval-integrable index
+integrand — its generalized winding number about `w` is an integer (see
+`exists_int_windingNumber_of_closed` for the exact hypotheses). This is the integrality step on the
 Hungerbühler–Wasem path (HW Thm 3.3): combined with continuity of the winding number in the point,
 it makes the winding number locally constant on the complement of the curve — the input to the
 homology form of Cauchy's theorem.
@@ -33,11 +35,10 @@ open scoped Interval
 
 namespace TauCeti.Contour
 
-/-- The `a ≤ b` case of `exists_int_windingNumber_of_closed`. The index integral is evaluated over a
-continuous argument-lift partition and split into a real logarithm-of-modulus increment plus `I`
-times the total argument change; closedness kills the modulus increment and forces the argument
-change to be an integer multiple of `2π`. The general oriented-interval statement reduces to this by
-orientation reversal. -/
+/-- The nonnegative-orientation (`a ≤ b`) case of `exists_int_windingNumber_of_closed`: under the
+same continuity, differentiability-off-a-countable-set, avoidance, and interval-integrability
+assumptions on `[a, b]`, the winding number of the closed curve `γ` about `w` is an integer. The
+general oriented-interval statement reduces to this case by orientation reversal. -/
 private theorem exists_int_windingNumber_of_closed_of_le {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
     (hab : a ≤ b) (hclosed : γ a = γ b) (hP : P.Countable)
     (hγ_cont : ContinuousOn γ (Icc a b))
@@ -45,15 +46,20 @@ private theorem exists_int_windingNumber_of_closed_of_le {γ : ℝ → ℂ} {w :
     (h_avoid : ∀ t ∈ Icc a b, γ t ≠ w)
     (h_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
     ∃ n : ℤ, windingNumber γ a b w = n := by
+  -- The argument lift gives a monotone partition with per-segment slit-plane bounds and, at each
+  -- `t`, the polar form `γ t - w = ‖γ t - w‖ · exp (I · θ t)` with `θ t = arg (γ a - w) + (sum)`.
   obtain ⟨N, s, _, hs_zero, hs_N, hs_mono, _, hs_avoid, h_slit, _, h_lift⟩ :=
     exists_continuousOn_arg_lift_with_partition hab hγ_cont h_avoid
   have hla := h_lift a (left_mem_Icc.mpr hab)
   have hlb := h_lift b (right_mem_Icc.mpr hab)
+  -- Split the index integral into a modulus increment plus `I` times the argument-sum.
   have hint := integral_inv_sub_mul_deriv_eq_log_norm_add_I_mul_sum_log_im hP hs_zero hs_N hs_mono
     hγ_cont hγ_diff h_slit h_int
   have hnorm_ne : (‖γ a - w‖ : ℂ) ≠ 0 := by
     rw [ne_eq, Complex.ofReal_eq_zero, norm_eq_zero, sub_eq_zero]
     exact h_avoid a (left_mem_Icc.mpr hab)
+  -- Endpoint values of the argument sum: at `a` every segment ratio is `1` (sum `= 0`), and at `b`
+  -- every segment ratio is the full endpoint ratio (sum `=` the decomposition's sum).
   have hsa : (∑ j ∈ Finset.range N,
       (Complex.log (segRatio γ w (s j) (s (j + 1)) a)).im) = 0 := by
     refine Finset.sum_eq_zero fun j hj ↦ ?_
@@ -68,6 +74,7 @@ private theorem exists_int_windingNumber_of_closed_of_le {γ : ℝ → ℂ} {w :
     rw [Finset.mem_range] at hj
     have hb_ge : s (j + 1) ≤ b := by rw [← hs_N]; exact hs_mono hj
     rw [segRatio_eq_endpoint_div_of_le (hs_mono (Nat.le_succ j)) hb_ge]
+  -- Abbreviate the segment sums and the lifted endpoint arguments `θ a = Ea`, `θ b = Eb`.
   set Se : ℝ := ∑ j ∈ Finset.range N,
     (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).im with hSe_def
   set Sa : ℝ := ∑ j ∈ Finset.range N,
@@ -76,6 +83,8 @@ private theorem exists_int_windingNumber_of_closed_of_le {γ : ℝ → ℂ} {w :
     (Complex.log (segRatio γ w (s j) (s (j + 1)) b)).im with hSb_def
   set Ea : ℝ := Complex.arg (γ a - w) + Sa with hEa_def
   set Eb : ℝ := Complex.arg (γ a - w) + Sb with hEb_def
+  -- Closedness `γ a = γ b` equates the two polar forms, so the lifted exponentials agree; hence,
+  -- since `Eb - Ea = Se`, exponential periodicity gives `exp (I · Se) = 1`.
   have hEab : Complex.exp (Complex.I * (Ea : ℂ)) = Complex.exp (Complex.I * (Eb : ℂ)) := by
     refine mul_left_cancel₀ hnorm_ne ?_
     calc (‖γ a - w‖ : ℂ) * Complex.exp (Complex.I * (Ea : ℂ))
@@ -88,6 +97,8 @@ private theorem exists_int_windingNumber_of_closed_of_le {γ : ℝ → ℂ} {w :
     have h1 : Complex.I * (Se : ℂ) = Complex.I * (Eb : ℂ) - Complex.I * (Ea : ℂ) := by
       rw [← mul_sub, ← Complex.ofReal_sub, hEdiff]
     rw [h1, Complex.exp_sub, hEab, div_self (Complex.exp_ne_zero _)]
+  -- So `I · Se = n · (2π i)` for some integer `n`, and closedness kills the modulus increment,
+  -- leaving `∫ = I · Se`. Converting through the avoidance form of `windingNumber` reads off `n`.
   obtain ⟨n, hn⟩ := Complex.exp_eq_one_iff.mp hexp_one
   have hlog_zero : Real.log ‖γ b - w‖ - Real.log ‖γ a - w‖ = 0 := by rw [hclosed, sub_self]
   have hint' : (∫ t in a..b, (γ t - w)⁻¹ * deriv γ t) = Complex.I * (Se : ℂ) := by
@@ -115,10 +126,13 @@ theorem exists_int_windingNumber_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : �
     (h_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
     ∃ n : ℤ, windingNumber γ a b w = n := by
   rcases le_total a b with hab | hba
-  · rw [Set.uIcc_of_le hab] at hγ_cont h_avoid
+  · -- Forward orientation: apply the core directly on `[a, b] = uIcc a b`.
+    rw [Set.uIcc_of_le hab] at hγ_cont h_avoid
     rw [min_eq_left hab, max_eq_right hab] at hγ_diff
     exact exists_int_windingNumber_of_closed_of_le hab hclosed hP hγ_cont hγ_diff h_avoid h_int
-  · have hcont_ba : ContinuousOn γ (Icc b a) := by rw [← Set.uIcc_of_ge hba]; exact hγ_cont
+  · -- Reversed orientation: the core on `[b, a]` gives `windingNumber γ b a w = m`, and
+    -- `windingNumber γ a b w = -windingNumber γ b a w` by `integral_symm`, so `n = -m`.
+    have hcont_ba : ContinuousOn γ (Icc b a) := by rw [← Set.uIcc_of_ge hba]; exact hγ_cont
     have havoid_ba : ∀ t ∈ Icc b a, γ t ≠ w := fun t ht ↦
       h_avoid t (by rw [Set.uIcc_of_ge hba]; exact ht)
     rw [min_eq_right hba, max_eq_left hba] at hγ_diff
