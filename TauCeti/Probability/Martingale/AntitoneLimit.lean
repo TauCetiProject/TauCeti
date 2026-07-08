@@ -1,7 +1,6 @@
 module
 
 public import Mathlib.Probability.Martingale.Convergence
-import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.Probability.Martingale.Crossings.Bounds
 
 /-!

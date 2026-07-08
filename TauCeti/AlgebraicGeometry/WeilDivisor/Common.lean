@@ -137,37 +137,29 @@ lemma degree_inf_le_right (D : EffectiveDivisorOfDegree X d)
     (degree ((D : WeilDivisor X) ⊓ E)).toNat ≤ e :=
   degree_le_of_le (inf_le_right D E)
 
-private lemma exists_leftResidual (D : EffectiveDivisorOfDegree X d)
-    (E : EffectiveDivisorOfDegree X e) :
-    ∃ F : EffectiveDivisorOfDegree X (d - (degree ((D : WeilDivisor X) ⊓ E)).toNat),
-      (F : WeilDivisor X) = (D : WeilDivisor X) - inf D E :=
-  ⟨subOfLe D (inf D E) (inf_le_left D E), by rw [coe_subOfLe]⟩
+/-- The residual part of the left divisor after removing the common part.
 
-/-- The residual part of the left divisor after removing the common part. -/
+It is the fixed-degree difference `D - (D ⊓ E)`, available since the common part lies below `D`. -/
 def leftResidual (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
     EffectiveDivisorOfDegree X (d - (degree ((D : WeilDivisor X) ⊓ E)).toNat) :=
-  Classical.choose (exists_leftResidual D E)
+  subOfLe D (inf D E) (inf_le_left D E)
 
-private lemma exists_rightResidual (D : EffectiveDivisorOfDegree X d)
-    (E : EffectiveDivisorOfDegree X e) :
-    ∃ F : EffectiveDivisorOfDegree X (e - (degree ((D : WeilDivisor X) ⊓ E)).toNat),
-      (F : WeilDivisor X) = (E : WeilDivisor X) - inf D E :=
-  ⟨subOfLe E (inf D E) (inf_le_right D E), by rw [coe_subOfLe]⟩
+/-- The residual part of the right divisor after removing the common part.
 
-/-- The residual part of the right divisor after removing the common part. -/
+It is the fixed-degree difference `E - (D ⊓ E)`, available since the common part lies below `E`. -/
 def rightResidual (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
     EffectiveDivisorOfDegree X (e - (degree ((D : WeilDivisor X) ⊓ E)).toNat) :=
-  Classical.choose (exists_rightResidual D E)
+  subOfLe E (inf D E) (inf_le_right D E)
 
 @[simp]
 lemma coe_leftResidual (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
     (leftResidual D E : WeilDivisor X) = (D : WeilDivisor X) - inf D E :=
-  Classical.choose_spec (exists_leftResidual D E)
+  coe_subOfLe D (inf D E) (inf_le_left D E)
 
 @[simp]
 lemma coe_rightResidual (D : EffectiveDivisorOfDegree X d) (E : EffectiveDivisorOfDegree X e) :
     (rightResidual D E : WeilDivisor X) = (E : WeilDivisor X) - inf D E :=
-  Classical.choose_spec (exists_rightResidual D E)
+  coe_subOfLe E (inf D E) (inf_le_right D E)
 
 /-- The coefficient of the left residual is `coeff D x - min (coeff D x) (coeff E x)`. -/
 lemma coeff_leftResidual (D : EffectiveDivisorOfDegree X d)
@@ -190,46 +182,16 @@ lemma coeff_rightResidual (D : EffectiveDivisorOfDegree X d)
 lemma multiplicityFinsupp_leftResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     (leftResidual D E).multiplicityFinsupp =
-      D.multiplicityFinsupp - (inf D E).multiplicityFinsupp := by
-  ext x
-  rw [multiplicityFinsupp_apply, coeff_leftResidual, Finsupp.tsub_apply,
-    multiplicityFinsupp_apply, multiplicityFinsupp_apply]
-  rw [coeff_inf]
-  have hinf : coeff (D : WeilDivisor X) x ⊓ coeff (E : WeilDivisor X) x ≤
-      coeff (D : WeilDivisor X) x := _root_.inf_le_left
-  have hnat : (coeff (D : WeilDivisor X) x ⊓ coeff (E : WeilDivisor X) x).toNat ≤
-      (coeff (D : WeilDivisor X) x).toNat :=
-    Int.toNat_le_toNat hinf
-  have hD := (isEffective_iff (D : WeilDivisor X)).mp D.isEffective x
-  have hE := (isEffective_iff (E : WeilDivisor X)).mp E.isEffective x
-  have hmin : 0 ≤ coeff (D : WeilDivisor X) x ⊓ coeff (E : WeilDivisor X) x :=
-    _root_.le_inf hD hE
-  apply Nat.cast_injective (R := ℤ)
-  rw [Int.toNat_sub_of_le hinf, Nat.cast_sub hnat]
-  rw [Int.toNat_of_nonneg hD, Int.toNat_of_nonneg hmin]
+      D.multiplicityFinsupp - (inf D E).multiplicityFinsupp :=
+  multiplicityFinsupp_subOfLe D (inf D E) (inf_le_left D E)
 
 /-- The multiplicity function of the right residual is the truncated multiplicity difference. -/
 @[simp]
 lemma multiplicityFinsupp_rightResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     (rightResidual D E).multiplicityFinsupp =
-      E.multiplicityFinsupp - (inf D E).multiplicityFinsupp := by
-  ext x
-  rw [multiplicityFinsupp_apply, coeff_rightResidual, Finsupp.tsub_apply,
-    multiplicityFinsupp_apply, multiplicityFinsupp_apply]
-  rw [coeff_inf]
-  have hinf : coeff (D : WeilDivisor X) x ⊓ coeff (E : WeilDivisor X) x ≤
-      coeff (E : WeilDivisor X) x := _root_.inf_le_right
-  have hnat : (coeff (D : WeilDivisor X) x ⊓ coeff (E : WeilDivisor X) x).toNat ≤
-      (coeff (E : WeilDivisor X) x).toNat :=
-    Int.toNat_le_toNat hinf
-  have hD := (isEffective_iff (D : WeilDivisor X)).mp D.isEffective x
-  have hE := (isEffective_iff (E : WeilDivisor X)).mp E.isEffective x
-  have hmin : 0 ≤ coeff (D : WeilDivisor X) x ⊓ coeff (E : WeilDivisor X) x :=
-    _root_.le_inf hD hE
-  apply Nat.cast_injective (R := ℤ)
-  rw [Int.toNat_sub_of_le hinf, Nat.cast_sub hnat]
-  rw [Int.toNat_of_nonneg hE, Int.toNat_of_nonneg hmin]
+      E.multiplicityFinsupp - (inf D E).multiplicityFinsupp :=
+  multiplicityFinsupp_subOfLe E (inf D E) (inf_le_right D E)
 
 /-- The symmetric-power representative of the left residual is the truncated multiplicity
 difference from the left divisor. -/
@@ -241,12 +203,8 @@ lemma equivSym_leftResidual (D : EffectiveDivisorOfDegree X d)
         (Sym.equivNatSum X (d - (degree ((D : WeilDivisor X) ⊓ E)).toNat)).symm
           ⟨D.multiplicityFinsupp - (inf D E).multiplicityFinsupp, by
             rw [← multiplicityFinsupp_leftResidual D E]
-            exact (leftResidual D E).sum_multiplicityFinsupp⟩) := by
-  classical
-  rw [equivSym_apply]
-  congr 1
-  ext x
-  simp
+            exact (leftResidual D E).sum_multiplicityFinsupp⟩) :=
+  equivSym_subOfLe D (inf D E) (inf_le_left D E)
 
 /-- The symmetric-power representative of the right residual is the truncated multiplicity
 difference from the right divisor. -/
@@ -258,12 +216,8 @@ lemma equivSym_rightResidual (D : EffectiveDivisorOfDegree X d)
         (Sym.equivNatSum X (e - (degree ((D : WeilDivisor X) ⊓ E)).toNat)).symm
           ⟨E.multiplicityFinsupp - (inf D E).multiplicityFinsupp, by
             rw [← multiplicityFinsupp_rightResidual D E]
-            exact (rightResidual D E).sum_multiplicityFinsupp⟩) := by
-  classical
-  rw [equivSym_apply]
-  congr 1
-  ext x
-  simp
+            exact (rightResidual D E).sum_multiplicityFinsupp⟩) :=
+  equivSym_subOfLe E (inf D E) (inf_le_right D E)
 
 /-- The two residual divisors left after removing the common part are coefficientwise
 disjoint. -/
@@ -280,9 +234,8 @@ lemma leftResidual_add_inf (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     add (leftResidual D E) (inf D E) =
       EffectiveDivisorOfDegree.cast
-        (Nat.sub_add_cancel (degree_inf_le_left D E)).symm D := by
-  ext
-  simp [sub_add_cancel]
+        (Nat.sub_add_cancel (degree_inf_le_left D E)).symm D :=
+  subOfLe_add D (inf D E) (inf_le_left D E)
 
 /-- Adding the common part before the left residual also recovers the left divisor, up to the
 natural degree-index cast. -/
@@ -291,9 +244,8 @@ lemma inf_add_leftResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     add (inf D E) (leftResidual D E) =
       EffectiveDivisorOfDegree.cast
-        (Nat.add_sub_of_le (degree_inf_le_left D E)).symm D := by
-  ext
-  simp
+        (Nat.add_sub_of_le (degree_inf_le_left D E)).symm D :=
+  add_subOfLe D (inf D E) (inf_le_left D E)
 
 /-- Removing the common part from the right divisor and adding it back recovers the right
 divisor, up to the natural degree-index cast. -/
@@ -302,9 +254,8 @@ lemma rightResidual_add_inf (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     add (rightResidual D E) (inf D E) =
       EffectiveDivisorOfDegree.cast
-        (Nat.sub_add_cancel (degree_inf_le_right D E)).symm E := by
-  ext
-  simp [sub_add_cancel]
+        (Nat.sub_add_cancel (degree_inf_le_right D E)).symm E :=
+  subOfLe_add E (inf D E) (inf_le_right D E)
 
 /-- Adding the common part before the right residual also recovers the right divisor, up to the
 natural degree-index cast. -/
@@ -313,9 +264,8 @@ lemma inf_add_rightResidual (D : EffectiveDivisorOfDegree X d)
     (E : EffectiveDivisorOfDegree X e) :
     add (inf D E) (rightResidual D E) =
       EffectiveDivisorOfDegree.cast
-        (Nat.add_sub_of_le (degree_inf_le_right D E)).symm E := by
-  ext
-  simp
+        (Nat.add_sub_of_le (degree_inf_le_right D E)).symm E :=
+  add_subOfLe E (inf D E) (inf_le_right D E)
 
 end
 

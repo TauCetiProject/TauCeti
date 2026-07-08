@@ -3,7 +3,6 @@ module
 public import Mathlib.Probability.Independence.Conditional
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
-import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.MeasureTheory.Integral.Bochner.Set

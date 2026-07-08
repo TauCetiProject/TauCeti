@@ -1,7 +1,6 @@
 module
 
 public import Mathlib.Probability.Martingale.Upcrossing
-import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.Probability.Martingale.Reverse
 import TauCeti.Probability.Martingale.Crossings.Pathwise
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
