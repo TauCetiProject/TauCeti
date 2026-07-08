@@ -44,7 +44,7 @@ given the tail σ-algebra `tailProcess X` factors:
 This passes the finite-level future factorization to the tail using reverse-martingale (Lévy
 downward) convergence along the antitone future family `tailFamily X`. -/
 lemma condExp_blockIndicatorProd_tail_factor
-    [StandardBorelSpace Ω] [StandardBorelSpace α]
+    [StandardBorelSpace Ω]
     {μ : Measure Ω} [IsFiniteMeasure μ]
     (X : ℕ → Ω → α) (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
     (r : ℕ) (C : Fin r → Set α) (hC : ∀ i, MeasurableSet (C i)) :
