@@ -80,6 +80,27 @@ lemma pseudoHyperbolicExpr_zero_right (z : ℂ) : pseudoHyperbolicExpr z 0 = ‖
 lemma pseudoHyperbolicExpr_zero_left (w : ℂ) : pseudoHyperbolicExpr 0 w = ‖w‖ := by
   simp [pseudoHyperbolicExpr]
 
+/-- **Rotation invariance.** Multiplying both arguments by a unit-modulus constant leaves the
+pseudo-hyperbolic expression unchanged.  This is a purely algebraic identity valid for all
+`z`, `w`; it is the rotation half of the disc-automorphism group. -/
+@[simp]
+lemma pseudoHyperbolicExpr_const_mul {c : ℂ} (hc : ‖c‖ = 1) (z w : ℂ) :
+    pseudoHyperbolicExpr (c * z) (c * w) = pseudoHyperbolicExpr z w := by
+  have hcc : (starRingEnd ℂ) c * c = 1 := by
+    rw [mul_comm, Complex.mul_conj, Complex.normSq_eq_norm_sq, hc]
+    norm_num
+  have hden : (starRingEnd ℂ) (c * w) * (c * z) = (starRingEnd ℂ) w * z := by
+    rw [map_mul]
+    calc (starRingEnd ℂ) c * (starRingEnd ℂ) w * (c * z)
+        = ((starRingEnd ℂ) c * c) * ((starRingEnd ℂ) w * z) := by ring
+      _ = (starRingEnd ℂ) w * z := by rw [hcc, one_mul]
+  have hnum : c * z - c * w = c * (z - w) := by ring
+  have hden' : (1 : ℂ) - (starRingEnd ℂ) (c * w) * (c * z) =
+      1 - (starRingEnd ℂ) w * z := by
+    rw [hden]
+  rw [pseudoHyperbolicExpr_def, pseudoHyperbolicExpr_def, hnum, hden',
+    mul_div_assoc, norm_mul, hc, one_mul]
+
 /-- If the denominator is nonzero, zero pseudo-hyperbolic expression characterizes equality. -/
 lemma pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero {z w : ℂ}
     (hden : 1 - (starRingEnd ℂ) w * z ≠ 0) :
