@@ -70,7 +70,7 @@ private lemma lintegral_pos_part_revCEFinite_le
         rw [hconv]
         calc eLpNorm (revCEFinite (μ := μ) f 𝔽 N M) 1 μ
             ≤ eLpNorm f 1 μ := by
-                rw [revCEFinite_apply]; exact eLpNorm_one_condExp_le_eLpNorm f
+                rw [revCEFinite_apply]; exact eLpNorm_condExp_le_eLpNorm f le_rfl
           _ = ENNReal.ofReal (eLpNorm f 1 μ).toReal := by
               rw [ENNReal.ofReal_toReal]
               exact (memLp_one_iff_integrable.mpr hf).eLpNorm_ne_top

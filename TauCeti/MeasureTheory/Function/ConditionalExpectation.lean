@@ -1,7 +1,7 @@
 module
 
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
--- Non-public: `eLpNorm_one_condExp_le_eLpNorm` (the L¹ contraction of conditional expectation) is
+-- Non-public: `eLpNorm_condExp_le_eLpNorm` (the Lᵖ contraction of conditional expectation) is
 -- used only inside the proof of the L¹-continuity lemma below, not in any public signature.
 import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 
@@ -82,7 +82,7 @@ theorem condExp_indicator_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : Measurable
 /-- **L¹-continuity of conditional expectation.** If `Xn → Xlim` in `L¹` (in `eLpNorm`) and each
 `μ[Xn n | F]` agrees a.e. with a fixed `Y`, then `μ[Xlim | F]` agrees a.e. with `Y`. -/
 -- Stated for an arbitrary conditioning σ-algebra `F` (no `F ≤ m₀`, no `[SigmaFinite (μ.trim)]`):
--- the bound goes through Mathlib's L¹ contraction `eLpNorm_one_condExp_le_eLpNorm`, which holds at
+-- the bound goes through Mathlib's Lᵖ contraction `eLpNorm_condExp_le_eLpNorm`, which holds at
 -- every `F` via the `condExp = 0` convention — whereas `condExpL1CLM` would require both. Proof:
 -- bound `‖μ[Xlim|F] - Y‖₁` by `‖Xlim - Xn n‖₁` (triangle + `condExp_sub` + the contraction + the
 -- vanishing `μ[Xn n|F] - Y` term), then let `n → ∞`. Consumed by the reverse-martingale
@@ -113,7 +113,7 @@ lemma condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm
       have hsub : μ[Xlim | F] - μ[Xn n | F] =ᵐ[μ] μ[Xlim - Xn n | F] :=
         (condExp_sub hXlimint (hXn_int n) F).symm
       rw [eLpNorm_congr_ae hsub]
-      exact eLpNorm_one_condExp_le_eLpNorm _
+      exact eLpNorm_condExp_le_eLpNorm _ le_rfl
     calc eLpNorm (μ[Xlim | F] - Y) 1 μ
         ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ + eLpNorm (μ[Xn n | F] - Y) 1 μ := htri
       _ = eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ := by rw [hzero]; ring
