@@ -1,7 +1,6 @@
 module
 
 public import TauCeti.Probability.Exchangeability.Contractability
-public import Mathlib.Probability.Moments.Variance
 
 /-!
 # The covariance structure of a contractable L² sequence
