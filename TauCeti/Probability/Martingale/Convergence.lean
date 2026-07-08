@@ -1,0 +1,116 @@
+module
+
+public import Mathlib.Probability.Martingale.Convergence
+-- Non-public: `AntitoneLimit` supplies the a.e.-limit-existence lemma, and the generic
+-- `AEStronglyMeasurable` / `ConditionalExpectation` helpers the `⨅`-measurability and L¹-continuity
+-- steps — all used only in proofs, so they are not re-exported through the flagship path.
+import TauCeti.Probability.Martingale.AntitoneLimit
+import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
+import TauCeti.MeasureTheory.Function.ConditionalExpectation
+
+/-!
+# Martingale convergence theorems
+
+Lévy's downward theorem for conditional expectations along a decreasing filtration.
+
+This is the flagship of the reverse-martingale infrastructure: the finite-horizon reversal
+(`Martingale/Reverse.lean`), the pathwise crossing adapters (`Martingale/Crossings/`), the
+reverse-martingale upcrossing bound (`Crossings/Bounds.lean`), and the antitone-limit existence
+result (`Martingale/AntitoneLimit.lean`) all feed into `condExp_tendsto_iInf`.
+
+## Main results
+
+- `tendsto_ae_condExp_iInf`: Lévy's downward theorem — for antitone `𝔽` and integrable `f`, the
+  sequence `μ[f | 𝔽 n]` converges a.e. to `μ[f | ⨅ n, 𝔽 n]` (the reverse-martingale limit). This is
+  the roadmap Layer-4 target (roadmap README name `condExp_tendsto_iInf`), spelled in the Mathlib
+  convergence-API grammar (conclusion-first) required by the naming convention.
+
+## References
+
+* Kallenberg, *Probabilistic Symmetries and Invariance Principles* (2005), Section 1
+* Durrett, *Probability: Theory and Examples* (2019), Section 5.5
+* Williams, *Probability with Martingales* (1991), Theorem 12.12
+
+Adapted from `cameronfreer/exchangeability` (`Probability/Martingale/Convergence.lean`, pin
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`). Written Mathlib-shaped for eventual upstreaming.
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory Filter
+
+open scoped Topology ENNReal
+
+open TauCeti.MeasureTheory
+
+namespace MeasureTheory
+
+variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+
+/-- **Conditional expectation converges along a decreasing filtration (Lévy's downward theorem).**
+
+For a decreasing filtration `𝔽ₙ` and integrable `f`, the sequence `μ[f | 𝔽ₙ]` converges almost
+surely to `μ[f | ⨅ₙ 𝔽ₙ]` — the reverse-martingale (Lévy downward) limit. -/
+theorem tendsto_ae_condExp_iInf
+    [IsFiniteMeasure μ]
+    {𝔽 : ℕ → MeasurableSpace Ω}
+    (h_filtration : Antitone 𝔽)
+    (h_le0 : 𝔽 0 ≤ (inferInstance : MeasurableSpace Ω))
+    (f : Ω → ℝ) (h_f_int : Integrable f μ) :
+    ∀ᵐ ω ∂μ, Tendsto
+      (fun n => μ[f | 𝔽 n] ω)
+      atTop
+      (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) := by
+  classical
+  -- Only `𝔽 0 ≤ m₀` is assumed; antitonicity upgrades it to `𝔽 n ≤ m₀` for every `n`.
+  have h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω) :=
+    fun n => (h_filtration (Nat.zero_le n)).trans h_le0
+  -- We follow the upcrossing-inequality route rather than reindexing by `ℕᵒᵈ`: for antitone `𝔽`,
+  -- `⨆ i : ℕᵒᵈ, 𝔽 i.ofDual = 𝔽 0`, so dualising and applying Lévy's *upward* theorem would converge
+  -- to the wrong limit `μ[f | 𝔽 0]` instead of `μ[f | ⨅ n, 𝔽 n]`.
+  -- 1) A.s. limit `Xlim` exists (upcrossing bounds on the time-reversed martingales).
+  obtain ⟨Xlim, hXlimint, h_tendsto⟩ :=
+    exists_integrable_tendsto_ae_condExp_of_antitone (μ := μ) h_filtration h_le f h_f_int
+  -- 2) Uniform integrability upgrades a.e. convergence to `L¹` convergence (Vitali).
+  have hUI : UniformIntegrable (fun n => μ[f | 𝔽 n]) 1 μ := h_f_int.uniformIntegrable_condExp h_le
+  have hL1_conv : Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - Xlim) 1 μ) atTop (𝓝 0) := by
+    apply tendsto_Lp_finite_of_tendsto_ae (hp := le_refl 1) (hp' := ENNReal.one_ne_top)
+    · intro n; exact integrable_condExp.aestronglyMeasurable
+    · exact memLp_one_iff_integrable.2 hXlimint
+    · exact hUI.unifIntegrable
+    · exact h_tendsto
+  -- `Xlim` is `AEStronglyMeasurable[⨅ n, 𝔽 n]` (a.e. limit of `𝔽 n`-strongly-measurable functions).
+  have hXlim_iInf_meas : AEStronglyMeasurable[⨅ n, 𝔽 n] Xlim μ :=
+    aestronglyMeasurable_iInf_of_tendsto_ae_antitone h_filtration
+      (fun n => stronglyMeasurable_condExp.aestronglyMeasurable) h_tendsto
+  -- 3) Pass the limit through `condExp` at `⨅ n, 𝔽 n`. We work with the raw `⨅ n, 𝔽 n` rather than
+  -- a `set` alias: a local of type `MeasurableSpace Ω` shadows the ambient σ-algebra during the
+  -- instance synthesis triggered by the L¹-continuity call below.
+  -- Tower property: for every `n`, `μ[μ[f | 𝔽 n] | ⨅ n, 𝔽 n] =ᵐ μ[f | ⨅ n, 𝔽 n]`.
+  have h_tower : ∀ n, μ[μ[f | 𝔽 n] | ⨅ n, 𝔽 n] =ᵐ[μ] μ[f | ⨅ n, 𝔽 n] :=
+    fun n => condExp_condExp_of_le (iInf_le 𝔽 n) (h_le n)
+  have hiInf_le : (⨅ n, 𝔽 n) ≤ (inferInstance : MeasurableSpace Ω) :=
+    le_trans (iInf_le 𝔽 0) (h_le 0)
+  set Xn : ℕ → Ω → ℝ := fun n => μ[f | 𝔽 n] with hXn_def
+  -- Rephrase the L¹ convergence with the `Xn` abbreviation.
+  have hL1_conv_Xn : Tendsto (fun n => eLpNorm (Xlim - Xn n) 1 μ) atTop (𝓝 0) := by
+    simpa [hXn_def, eLpNorm_sub_comm] using hL1_conv
+  -- Identify `μ[Xlim | ⨅ n, 𝔽 n]` with `μ[f | ⨅ n, 𝔽 n]` by L¹-continuity of conditional
+  -- expectation (the tower property gives `μ[Xn n | ⨅ n, 𝔽 n] =ᵐ μ[f | ⨅ n, 𝔽 n]`).
+  have hCE_eqY : μ[Xlim | ⨅ n, 𝔽 n] =ᵐ[μ] μ[f | ⨅ n, 𝔽 n] :=
+    condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm hXlimint
+      (fun _ => integrable_condExp) h_tower hL1_conv_Xn
+  -- `Xlim` is `AEStronglyMeasurable[⨅ n, 𝔽 n]` (a.e. limit of `⨅ n, 𝔽 n`-measurable functions), so
+  -- `μ[Xlim | ⨅ n, 𝔽 n] =ᵐ Xlim`; combined with `hCE_eqY` this identifies `μ[f | ⨅ n, 𝔽 n]`.
+  have hXlim_eq : μ[f | ⨅ n, 𝔽 n] =ᵐ[μ] Xlim := by
+    have hXlim_condExp_self : μ[Xlim | ⨅ n, 𝔽 n] =ᵐ[μ] Xlim :=
+      condExp_of_aestronglyMeasurable' hiInf_le hXlim_iInf_meas hXlimint
+    exact hCE_eqY.symm.trans hXlim_condExp_self
+  -- Combine `h_tendsto : μ[f | 𝔽 n] → Xlim` with `hXlim_eq : μ[f | ⨅ n, 𝔽 n] =ᵐ Xlim`.
+  filter_upwards [h_tendsto, hXlim_eq] with ω h_tend h_eq
+  rw [h_eq]
+  exact h_tend
+
+end MeasureTheory
