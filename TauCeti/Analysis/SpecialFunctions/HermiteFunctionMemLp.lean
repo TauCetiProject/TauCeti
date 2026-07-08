@@ -22,16 +22,17 @@ the `OrthogonalL2Bases` roadmap's **A2** milestone lists and its **A3** basis co
 * `TauCeti.integral_hermiteFunction_zero_mul_self` — the zeroth Hermite function has square
   integral one.
 
-The analytic input is a single reusable engine, `TauCeti.integrable_eval_mul_gaussianEnvelope`: a
-real polynomial evaluated pointwise, times a Gaussian envelope `exp(-(x - μ)²/(2v))` of any center
-`μ` and positive variance `v`, is Lebesgue-integrable. It is obtained by transporting the
-polynomial's integrability against the Gaussian *measure* `gaussianReal μ v` (all of whose moments
-are finite,
+The membership results use the reusable engine
+`TauCeti.integrable_eval_mul_gaussianEnvelope`: a real polynomial evaluated pointwise, times a
+Gaussian envelope `exp(-(x - μ)²/(2v))` of any center `μ` and positive variance `v`, is
+Lebesgue-integrable. It is obtained by transporting the polynomial's integrability against the
+Gaussian *measure* `gaussianReal μ v` (all of whose moments are finite,
 `TauCeti.integrable_pow_gaussianReal`, so `TauCeti.integrable_eval_of_forall_integrable_pow`
 applies) across the change of variables `gaussianReal μ v = volume.withDensity (gaussianPDF μ v)`
 with `integrable_withDensity_iff`. Applied to the polynomial `Hₙ(·√2)` with `v = 1` this gives the
 `L¹` membership, and to its square with `v = ½` (whose envelope `exp(-x²)` is `ψₙ²` up to the
-constant) the `L²` membership.
+constant) the `L²` membership. The zeroth-mode normalization additionally uses Mathlib's Gaussian
+integral formula.
 
 Mathlib's Gaussian density API (`gaussianReal_of_var_ne_zero`, `measurable_gaussianPDF`,
 `gaussianPDFReal_def`), `integrable_withDensity_iff`, `memLp_two_iff_integrable_sq`, and the
@@ -96,7 +97,7 @@ theorem memLp_two_hermiteFunction (n : ℕ) : MemLp (hermiteFunction n) 2 volume
 
 /-- The zeroth Hermite function has square integral one. This is the `n = 0` boundary case of
 the roadmap's Hermite-function orthonormality target. -/
-lemma integral_hermiteFunction_zero_mul_self :
+@[simp] lemma integral_hermiteFunction_zero_mul_self :
     ∫ x : ℝ, hermiteFunction 0 x * hermiteFunction 0 x = 1 := by
   simp only [hermiteFunction_zero]
   have hsqrt_sqrt_pi_sq :
