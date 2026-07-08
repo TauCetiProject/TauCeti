@@ -26,6 +26,7 @@ value does not exist.
 
 * `TauCeti.Contour.windingNumber_eq_of_hasCauchyPVAt` — evaluate `windingNumber` from a Cauchy
   principal-value witness, without unfolding the definition.
+* `TauCeti.Contour.windingNumber_same` — the generalized winding number on `[a, a]` is `0`.
 * `TauCeti.Contour.isNullHomologous_iff` — restates `IsNullHomologous` as its vanishing condition,
   so consumers use the predicate without unfolding its hidden body.
 * `TauCeti.Contour.windingNumber_eq_integral_of_avoidance` — reduces `windingNumber` to the ordinary
@@ -69,6 +70,20 @@ theorem windingNumber_eq_of_hasCauchyPVAt {γ : ℝ → ℂ} {a b : ℝ} {z₀ L
     windingNumber γ a b z₀ = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * L := by
   rw [windingNumber, h.cauchyPVAt_eq]
 
+/-- The generalized winding number over a zero-length interval is `0`. -/
+@[simp]
+theorem windingNumber_same (γ : ℝ → ℂ) (a : ℝ) (z₀ : ℂ) :
+    windingNumber γ a a z₀ = 0 := by
+  rw [windingNumber_eq_of_hasCauchyPVAt
+    (HasCauchyPVAt.refl γ a (fun z : ℂ => (z - z₀)⁻¹) z₀)]
+  ring
+
+/-- If the two endpoints are equal, the generalized winding number is `0`. -/
+theorem windingNumber_eq_zero_of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (z₀ : ℂ) :
+    windingNumber γ a b z₀ = 0 := by
+  subst b
+  exact windingNumber_same γ a z₀
+
 /-- A curve `γ` on `[a, b]` is **null-homologous** in `Ω` when its generalized winding number
 about every point outside `Ω` vanishes — the hypothesis of the homology form of Cauchy's theorem
 and of the Hungerbühler–Wasem residue theorem (HW Thm 3.3). -/
@@ -80,6 +95,20 @@ predicate without unfolding its hidden body. -/
 theorem isNullHomologous_iff {γ : ℝ → ℂ} {a b : ℝ} {Ω : Set ℂ} :
     IsNullHomologous γ a b Ω ↔ ∀ w ∉ Ω, windingNumber γ a b w = 0 :=
   Iff.rfl
+
+/-- Every zero-length parameter interval is null-homologous in every ambient set. -/
+theorem IsNullHomologous.refl (γ : ℝ → ℂ) (a : ℝ) (Ω : Set ℂ) :
+    IsNullHomologous γ a a Ω := by
+  rw [isNullHomologous_iff]
+  intro z _hz
+  exact windingNumber_same γ a z
+
+/-- If the two endpoints are equal, the parameter interval is null-homologous in every ambient
+set. -/
+theorem IsNullHomologous.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (Ω : Set ℂ) :
+    IsNullHomologous γ a b Ω := by
+  subst b
+  exact IsNullHomologous.refl γ a Ω
 
 /-- If `γ` is continuous on `[a, b]`, avoids `z₀` there, and the index integrand is
 interval-integrable, the generalized winding number is the ordinary index integral: the principal

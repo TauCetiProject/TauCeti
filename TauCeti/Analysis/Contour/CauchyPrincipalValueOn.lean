@@ -489,7 +489,7 @@ theorem CauchyPVExists.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : �
 
 /-- Value form of `HasCauchyPV.refl`: the set-level Cauchy principal value on `[a, a]` is `0`. -/
 @[simp]
-theorem cauchyPV_refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) :
+theorem cauchyPV_same (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) :
     cauchyPV γ a a f = 0 :=
   (HasCauchyPV.refl γ a f).cauchyPV_eq
 

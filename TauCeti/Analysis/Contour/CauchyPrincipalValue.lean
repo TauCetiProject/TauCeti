@@ -258,7 +258,7 @@ theorem CauchyPVExistsAt.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f :
 /-- Value form of `HasCauchyPVAt.refl`: the single-point Cauchy principal value on `[a, a]` is
 `0`. -/
 @[simp]
-theorem cauchyPVAt_refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) :
+theorem cauchyPVAt_same (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) :
     cauchyPVAt γ a a f z₀ = 0 :=
   (HasCauchyPVAt.refl γ a f z₀).cauchyPVAt_eq
 
