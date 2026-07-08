@@ -59,14 +59,8 @@ private theorem le_ker_tensorProduct_mkQ_comp_coact :
   rw [LinearMap.mem_ker, LinearMap.comp_apply]
   rcases N.coact_mem hm with ⟨t, ht⟩
   rw [← ht]
-  -- Tensoring the quotient map with `C` kills the range of `subtype ⊗ id`, by right exactness
-  -- of the tensor product (`rTensor_mkQ`).
   letI : AddCommGroup C := Module.addCommMonoidToAddCommGroup R (M := C)
-  have h : LinearMap.rTensor C N.toSubmodule.subtype t ∈
-      LinearMap.ker (LinearMap.rTensor C N.toSubmodule.mkQ) := by
-    rw [rTensor_mkQ]
-    exact LinearMap.mem_range_self _ _
-  exact h
+  exact rTensor_mkQ_map_subtype (R := R) (C := C) N.toSubmodule t
 
 /-- The coaction induced on the quotient by a subcomodule. -/
 def quotientCoact : M ⧸ N.toSubmodule →ₗ[R] (M ⧸ N.toSubmodule) ⊗[R] C :=
@@ -83,7 +77,8 @@ theorem quotientCoact_mk (m : M) :
         (Comodule.coact (R := R) (C := C) (M := M) m) :=
   Submodule.liftQ_apply _ _ _
 
-private theorem quotientCoact_comp_mkQ :
+/-- The descended quotient coaction is characterized after precomposition with the quotient map. -/
+theorem quotientCoact_comp_mkQ :
     N.quotientCoact.comp N.toSubmodule.mkQ =
       (TensorProduct.map N.toSubmodule.mkQ (LinearMap.id : C →ₗ[R] C)).comp
         (Comodule.coact (R := R) (C := C) (M := M)) := by
@@ -189,7 +184,7 @@ instance instComoduleQuotient : Comodule R C (M ⧸ N.toSubmodule) where
 
 /-- The coaction on the quotient comodule is `Subcomodule.quotientCoact`. -/
 @[simp]
-theorem quotient_comodule_coact :
+theorem quotient_coact :
     Comodule.coact (R := R) (C := C) (M := M ⧸ N.toSubmodule) = N.quotientCoact :=
   rfl
 
@@ -228,7 +223,7 @@ def liftQ (f : Comodule.Hom R C M P) (hf : N.toSubmodule ≤ LinearMap.ker f.toL
     map_coact := by
       apply Submodule.linearMap_qext
       ext m
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, quotient_comodule_coact]
+      rw [LinearMap.comp_apply, LinearMap.comp_apply, quotient_coact]
       rw [Submodule.mkQ_apply]
       rw [quotientCoact_mk]
       rw [LinearMap.comp_apply, LinearMap.comp_apply]
@@ -252,6 +247,22 @@ theorem liftQ_apply (f : Comodule.Hom R C M P)
     N.liftQ f hf (Submodule.Quotient.mk m) = f m :=
   letI : AddCommGroup P := Module.addCommMonoidToAddCommGroup R (M := P)
   Submodule.liftQ_apply _ _ _
+
+/-- The underlying linear map of the descended quotient morphism is the quotient-module lift. -/
+@[simp]
+theorem liftQ_toLinearMap (f : Comodule.Hom R C M P)
+    (hf : N.toSubmodule ≤ LinearMap.ker f.toLinearMap) :
+    (N.liftQ f hf).toLinearMap =
+      letI : AddCommGroup P := Module.addCommMonoidToAddCommGroup R (M := P)
+      N.toSubmodule.liftQ f.toLinearMap hf := by
+  letI : AddCommGroup P := Module.addCommMonoidToAddCommGroup R (M := P)
+  apply Submodule.linearMap_qext
+  ext m
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply]
+  change (N.liftQ f hf) (Submodule.Quotient.mk m) =
+    (N.toSubmodule.liftQ f.toLinearMap hf) (Submodule.Quotient.mk m)
+  rw [liftQ_apply, Submodule.liftQ_apply]
+  rfl
 
 /-- Precomposing the descended quotient morphism with the quotient map recovers the original
 morphism. -/

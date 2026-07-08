@@ -55,6 +55,18 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 namespace Subcomodule
 
+omit [Coalgebra R C] [Module.Flat R C] [Comodule R C M] [Comodule R C N] in
+/-- Tensoring a quotient map with `C` kills the range of `subtype ⊗ id`. -/
+theorem rTensor_mkQ_map_subtype {N₁ : Type x}
+    [AddCommGroup N₁] [Module R N₁] (B : Submodule R N₁) (t : B ⊗[R] C) :
+    LinearMap.rTensor C B.mkQ (LinearMap.rTensor C B.subtype t) = 0 := by
+  letI : AddCommGroup C := Module.addCommMonoidToAddCommGroup R (M := C)
+  have h : LinearMap.rTensor C B.subtype t ∈
+      LinearMap.ker (LinearMap.rTensor C B.mkQ) := by
+    rw [rTensor_mkQ]
+    exact LinearMap.mem_range_self _ _
+  exact h
+
 private theorem ker_rangeRestrict_mkQ_comp {M₁ : Type w} {N₁ : Type x}
     [AddCommGroup M₁] [Module R M₁] [AddCommGroup N₁] [Module R N₁]
     (B : Submodule R N₁) (f : M₁ →ₗ[R] N₁) :
@@ -134,13 +146,7 @@ private theorem coact_mem_range_comap_toLinearMap
     (Comodule.coact (R := R) (C := C) (M := N) (f.toLinearMap m)) = 0
   rcases B.coact_mem hm with ⟨t, ht⟩
   rw [← ht]
-  -- Tensoring the quotient map with `C` kills the range of `subtype ⊗ id`, by right exactness
-  -- of the tensor product (`rTensor_mkQ`).
-  have h : LinearMap.rTensor C B.toSubmodule.subtype t ∈
-      LinearMap.ker (LinearMap.rTensor C B.toSubmodule.mkQ) := by
-    rw [rTensor_mkQ]
-    exact LinearMap.mem_range_self _ _
-  exact h
+  exact rTensor_mkQ_map_subtype (R := R) (C := C) B.toSubmodule t
 
 private theorem comap_coact_mem (f : Comodule.Hom R C M N) (B : Subcomodule R C N)
     {m : M} (hm : m ∈ B.toSubmodule.comap f.toLinearMap) :
