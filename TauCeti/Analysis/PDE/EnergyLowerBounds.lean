@@ -58,7 +58,10 @@ namespace PDE
 open Matrix
 open scoped InnerProductSpace
 
-variable {X n : Type*} [Fintype n] [DecidableEq n]
+variable {X n : Type*} [Fintype n]
+
+/-- Local classical decidable equality for finite coordinate indices in lower-bound proofs. -/
+noncomputable local instance energyLowerBoundsDecidableEq : DecidableEq n := Classical.decEq n
 
 variable {lam mu beta : ℝ}
 
