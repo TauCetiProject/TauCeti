@@ -504,6 +504,58 @@ lemma weightedDegree_coe_weightedDegreeZeroSubgroup (w : X → ℤ)
     (D : weightedDegreeZeroSubgroup w) : weightedDegree w (D : WeilDivisor X) = 0 :=
   D.property
 
+/-- The unweighted degree-zero subgroup is the weight-one weighted-degree-zero subgroup. -/
+@[expose]
+def degreeZeroSubgroupEquivWeightedDegreeZeroOne :
+    degreeZeroSubgroup X ≃+ weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) where
+  toFun D := ⟨D, by
+    rw [mem_weightedDegreeZeroSubgroup, weightedDegree_one_eq_degree]
+    exact degree_coe_degreeZeroSubgroup D⟩
+  invFun D := ⟨D, by
+    rw [mem_degreeZeroSubgroup, ← weightedDegree_one_eq_degree]
+    exact weightedDegree_coe_weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) D⟩
+  left_inv D := by
+    ext
+    rfl
+  right_inv D := by
+    ext
+    rfl
+  map_add' D E := by
+    ext
+    rfl
+
+@[simp]
+lemma degreeZeroSubgroupEquivWeightedDegreeZeroOne_apply
+    (D : degreeZeroSubgroup X) :
+    degreeZeroSubgroupEquivWeightedDegreeZeroOne D =
+      ⟨(D : WeilDivisor X), by
+        rw [mem_weightedDegreeZeroSubgroup, weightedDegree_one_eq_degree]
+        exact degree_coe_degreeZeroSubgroup D⟩ := by
+  ext
+  rfl
+
+@[simp]
+lemma coe_degreeZeroSubgroupEquivWeightedDegreeZeroOne_apply
+    (D : degreeZeroSubgroup X) :
+    (degreeZeroSubgroupEquivWeightedDegreeZeroOne D : WeilDivisor X) = D :=
+  rfl
+
+@[simp]
+lemma degreeZeroSubgroupEquivWeightedDegreeZeroOne_symm_apply
+    (D : weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ))) :
+    (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D =
+      ⟨(D : WeilDivisor X), by
+        rw [mem_degreeZeroSubgroup, ← weightedDegree_one_eq_degree]
+        exact weightedDegree_coe_weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ)) D⟩ := by
+  ext
+  rfl
+
+@[simp]
+lemma coe_degreeZeroSubgroupEquivWeightedDegreeZeroOne_symm_apply
+    (D : weightedDegreeZeroSubgroup (fun _ : X => (1 : ℤ))) :
+    ((degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D : WeilDivisor X) = D :=
+  rfl
+
 /-- The degree-corrected representative of a divisor in the weighted degree-zero divisor group.
 
 For a weight-one base point `x₀`, this is `D - weightedDegree(D) • [x₀]`, viewed as a
