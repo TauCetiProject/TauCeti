@@ -105,7 +105,7 @@ theorem classNumber_adjoinRoot_sqrt_neg_five_le :
 `{1, i}`: the equality companion of the effective discriminant bound turns the trace-form value
 `disc ℚ {1, i} = 4·(-1) = -4` into the field discriminant. -/
 private theorem discr_eq_neg_four_of_isCyclotomicExtension {K : Type*} [Field K]
-    [NumberField K] [CharZero K] [IsCyclotomicExtension {4} ℚ K] :
+    [NumberField K] [IsCyclotomicExtension {4} ℚ K] :
     NumberField.discr K = -4 := by
   classical
   set ζ : K := IsCyclotomicExtension.zeta 4 ℚ K with hζdef
@@ -130,28 +130,11 @@ private theorem discr_eq_neg_four_of_isCyclotomicExtension {K : Type*} [Field K]
     have hcast : algebraMap ℚ K (q ^ 2) = algebraMap ℚ K (-1) := by rw [map_pow, hq]; exact hζ2
     have hq2 : q ^ 2 = -1 := RingHom.injective _ hcast
     nlinarith [sq_nonneg q]
-  -- `{1, i}` is a `ℚ`-basis of algebraic integers.
-  have hζne : ζ ≠ 0 := by
-    intro h
-    exact hζnotmem ⟨0, by rw [map_zero]; exact h.symm⟩
-  have hli : LinearIndependent ℚ ![1, ζ] := by
-    rw [linearIndependent_fin2]
-    refine ⟨by simpa using hζne, ?_⟩
-    intro c hc
-    simp only [Matrix.cons_val_one, Matrix.cons_val_zero] at hc
-    rw [Algebra.smul_def] at hc
-    refine hζnotmem ⟨c⁻¹, ?_⟩
-    rw [map_inv₀]
-    exact inv_eq_of_mul_eq_one_right hc
-  have hcard : Fintype.card (Fin 2) = finrank ℚ K := by rw [Fintype.card_fin]; exact hfin.symm
-  set b := basisOfLinearIndependentOfCardEqFinrank' ![1, ζ] hli hcard with hb_def
-  have hbcoe : ⇑b = ![1, ζ] := coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
   have hζint : IsIntegral ℤ ζ := hζ.isIntegral (by norm_num)
-  have hb_int : ∀ i, IsIntegral ℤ (b i) := by
-    intro i
-    fin_cases i
-    · simpa [hbcoe] using (isIntegral_one : IsIntegral ℤ (1 : K))
-    · simpa [hbcoe] using hζint
+  -- `{1, i}` is a `ℚ`-basis of algebraic integers.
+  rcases TauCeti.NumberField.exists_basis_eq_fin_two_of_notMem_range_of_isIntegral
+      hfin hζnotmem hζint with
+    ⟨b, hbcoe, hb_int⟩
   -- `{1, i}` is the integral power basis of `𝒪_{ℚ(i)}`, so its `ℤ`-span is all of `𝒪_{ℚ(i)}`.
   have hb0 : b 0 = (1 : K) := by rw [hbcoe]; rfl
   have hb1 : b 1 = ζ := by rw [hbcoe]; rfl

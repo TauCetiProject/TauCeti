@@ -55,17 +55,13 @@ namespace TauCeti
 
 namespace NumberField
 
-/-- For a quadratic number field `K` and an element `x : K` whose square is an integer
-`a` and which is not rational, the field discriminant satisfies `|d_K| ≤ 4·|a|`. -/
-theorem abs_discr_le_of_sq_intCast {K : Type*} [Field K] [NumberField K]
-    {x : K} {a : ℤ} (hfin : finrank ℚ K = 2)
-    (hx2 : x ^ 2 = algebraMap ℤ K a) (hx : x ∉ (algebraMap ℚ K).range) :
-    |(NumberField.discr K : ℚ)| ≤ 4 * |(a : ℚ)| := by
+/-- In a quadratic number field, an integral non-rational element `x` gives a `ℚ`-basis
+`{1, x}` consisting of algebraic integers. -/
+theorem exists_basis_eq_fin_two_of_notMem_range_of_isIntegral {K : Type*} [Field K]
+    [NumberField K] {x : K} (hfin : finrank ℚ K = 2)
+    (hx : x ∉ (algebraMap ℚ K).range) (hxint : IsIntegral ℤ x) :
+    ∃ b : Basis (Fin 2) ℚ K, ⇑b = ![1, x] ∧ ∀ i, IsIntegral ℤ (b i) := by
   classical
-  -- The square root also satisfies `x² = (a : ℚ)` through the `ℚ`-algebra structure.
-  have hcast : algebraMap ℤ K a = algebraMap ℚ K (a : ℚ) := by
-    rw [IsScalarTower.algebraMap_apply ℤ ℚ K, eq_intCast (algebraMap ℤ ℚ) a]
-  have hx2' : x ^ 2 = algebraMap ℚ K (a : ℚ) := hx2.trans hcast
   -- `x ≠ 0`, else `x = algebraMap ℚ K 0` would be rational.
   have hxne : x ≠ 0 := by
     rintro rfl
@@ -85,16 +81,30 @@ theorem abs_discr_le_of_sq_intCast {K : Type*} [Field K] [NumberField K]
     rw [Fintype.card_fin]; exact hfin.symm
   set b := basisOfLinearIndependentOfCardEqFinrank' ![1, x] hli hcard with hb_def
   have hbcoe : ⇑b = ![1, x] := coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
+  refine ⟨b, hbcoe, ?_⟩
+  intro i
+  fin_cases i
+  · simpa [hbcoe] using (isIntegral_one : IsIntegral ℤ (1 : K))
+  · simpa [hbcoe] using hxint
+
+/-- For a quadratic number field `K` and an element `x : K` whose square is an integer
+`a` and which is not rational, the field discriminant satisfies `|d_K| ≤ 4·|a|`. -/
+theorem abs_discr_le_of_sq_intCast {K : Type*} [Field K] [NumberField K]
+    {x : K} {a : ℤ} (hfin : finrank ℚ K = 2)
+    (hx2 : x ^ 2 = algebraMap ℤ K a) (hx : x ∉ (algebraMap ℚ K).range) :
+    |(NumberField.discr K : ℚ)| ≤ 4 * |(a : ℚ)| := by
+  classical
+  -- The square root also satisfies `x² = (a : ℚ)` through the `ℚ`-algebra structure.
+  have hcast : algebraMap ℤ K a = algebraMap ℚ K (a : ℚ) := by
+    rw [IsScalarTower.algebraMap_apply ℤ ℚ K, eq_intCast (algebraMap ℤ ℚ) a]
+  have hx2' : x ^ 2 = algebraMap ℚ K (a : ℚ) := hx2.trans hcast
   -- The basis consists of algebraic integers: `1` is integral, and `x` is a root of `X² - a`.
   have hxint : IsIntegral ℤ x := by
     refine ⟨Polynomial.X ^ 2 - Polynomial.C a,
       Polynomial.monic_X_pow_sub_C a (by norm_num), ?_⟩
     rw [Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, Polynomial.eval₂_C, ← hx2, sub_self]
-  have hb_int : ∀ i, IsIntegral ℤ (b i) := by
-    intro i
-    fin_cases i
-    · simpa [hbcoe] using (isIntegral_one : IsIntegral ℤ (1 : K))
-    · simpa [hbcoe] using hxint
+  rcases exists_basis_eq_fin_two_of_notMem_range_of_isIntegral hfin hx hxint with
+    ⟨b, hbcoe, hb_int⟩
   -- Combine the effective bound with the trace-form evaluation `disc ℚ {1, x} = 4·a`.
   have hmain := TauCeti.NumberField.abs_discr_le_of_basis_isIntegral b hb_int
   rw [hbcoe, TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap hfin hx2' hx] at hmain
