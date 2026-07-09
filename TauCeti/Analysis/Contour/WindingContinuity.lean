@@ -35,20 +35,6 @@ open scoped Interval
 
 namespace TauCeti.Contour
 
-/-- **Integrability of the index integrand for a point off the curve.** If `w` stays a positive
-distance `ε` from `γ` on `[a, b]` (so `γ · - w` is nowhere zero and `(γ · - w)⁻¹` is continuous)
-and `deriv γ` is interval-integrable, then `(γ t - w)⁻¹ * deriv γ t` is interval-integrable, being
-a continuous factor times an integrable one. -/
-private theorem intervalIntegrable_inv_sub_mul_deriv {γ : ℝ → ℂ} {w : ℂ} {a b ε : ℝ} (hab : a ≤ b)
-    (hε_pos : 0 < ε) (h_dist : ∀ t ∈ Icc a b, ε ≤ ‖γ t - w‖) (hγ_cont : ContinuousOn γ (Icc a b))
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
-    IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b := by
-  have h_ne : ∀ t ∈ Icc a b, γ t - w ≠ 0 := fun t ht ↦
-    norm_pos_iff.mp (lt_of_lt_of_le hε_pos (h_dist t ht))
-  have hcont : ContinuousOn (fun t ↦ (γ t - w)⁻¹) (Set.uIcc a b) := by
-    rw [Set.uIcc_of_le hab]; exact (hγ_cont.sub continuousOn_const).inv₀ h_ne
-  exact hderiv_int.continuousOn_mul hcont
-
 /-- The `a ≤ b` case of `continuousAt_windingNumber_of_avoidance`. -/
 private theorem continuousAt_windingNumber_of_avoidance_of_le {γ : ℝ → ℂ} {w₀ : ℂ} {a b : ℝ}
     (hab : a ≤ b) (hγ_cont : ContinuousOn γ (Icc a b)) (h_avoid : ∀ t ∈ Icc a b, γ t ≠ w₀)
@@ -74,10 +60,11 @@ private theorem continuousAt_windingNumber_of_avoidance_of_le {γ : ℝ → ℂ}
   have h_eq_nbhd : (fun w ↦ windingNumber γ a b w) =ᶠ[nhds w₀]
       fun w ↦ (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * ∫ t in a..b, F w t := by
     filter_upwards [Metric.ball_mem_nhds w₀ hε_pos] with w hw
-    refine windingNumber_eq_integral_of_avoidance ?_ ?_
-      (intervalIntegrable_inv_sub_mul_deriv hab hε_pos (h_dist_lb w hw) hγ_cont hderiv_int)
-    · rw [Set.uIcc_of_le hab]; exact hγ_cont
-    · rw [Set.uIcc_of_le hab]; exact fun t ht ↦ sub_ne_zero.mp (h_ne w hw t ht)
+    have hcont' : ContinuousOn γ (Set.uIcc a b) := by rw [Set.uIcc_of_le hab]; exact hγ_cont
+    have hoff' : ∀ t ∈ Set.uIcc a b, γ t ≠ w := by
+      rw [Set.uIcc_of_le hab]; exact fun t ht ↦ sub_ne_zero.mp (h_ne w hw t ht)
+    exact windingNumber_eq_integral_of_avoidance hcont' hoff'
+      (intervalIntegrable_inv_sub_mul_deriv hcont' hoff' hderiv_int)
   refine ContinuousAt.congr ?_ h_eq_nbhd.symm
   refine ContinuousAt.mul continuousAt_const ?_
   refine intervalIntegral.continuousAt_of_dominated_interval (bound := fun t ↦ ε⁻¹ * ‖deriv γ t‖)
@@ -125,8 +112,7 @@ theorem continuousAt_windingNumber_of_avoidance {γ : ℝ → ℂ} {w₀ : ℂ} 
       have hcont_u : ContinuousOn γ (Set.uIcc b a) := by rw [Set.uIcc_of_le hba]; exact hγ_cont
       have havoid_u : ∀ t ∈ Set.uIcc b a, γ t ≠ w := by
         rw [Set.uIcc_of_le hba]; exact fun t ht ↦ sub_ne_zero.mp (h_ne t ht)
-      have hintg := intervalIntegrable_inv_sub_mul_deriv hba hε_pos (h_dist_lb w hw) hγ_cont
-        hderiv_int.symm
+      have hintg := intervalIntegrable_inv_sub_mul_deriv hcont_u havoid_u hderiv_int.symm
       exact windingNumber_symm (cauchyPVExistsAt_of_avoidance hcont_u havoid_u hintg)
     exact hcore.neg.congr h_eq.symm
 

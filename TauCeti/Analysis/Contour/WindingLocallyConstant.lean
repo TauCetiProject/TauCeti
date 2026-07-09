@@ -54,8 +54,7 @@ theorem isLocallyConstant_windingNumber_of_closed {γ : ℝ → ℂ} {a b : ℝ}
   -- `(γ · - w)⁻¹` times the integrable derivative.
   have hII : ∀ w : ℂ, (∀ t ∈ uIcc a b, γ t ≠ w) →
       IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b := fun w hw ↦
-    hderiv_int.continuousOn_mul
-      ((hγ_cont.sub continuousOn_const).inv₀ fun t ht ↦ sub_ne_zero.mpr (hw t ht))
+    intervalIntegrable_inv_sub_mul_deriv hγ_cont hw hderiv_int
   rw [IsLocallyConstant.iff_eventually_eq]
   rintro ⟨w₀, hw₀⟩
   -- A uniform lower bound `ρ ≤ ‖γ t - w₀‖`; on `ball w₀ (ρ / 2)` every point stays off `γ`, so the
