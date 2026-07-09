@@ -23,6 +23,13 @@ matching Minkowski lower bound).
 * `TauCeti.NumberField.abs_discr_le_of_basis_isIntegral`: `|d_K| ≤ |disc b|` for a
   `ℚ`-basis `b` consisting of algebraic integers.
 
+The remaining declarations are its consumer forms, converting the rational basis-discriminant
+bound into the natural-number and integer-absolute-value shapes that concrete trace-form
+computations (for example the roadmap's `ℚ(i)` worked example) carry:
+`abs_discr_le_of_basis_isIntegral_of_abs_discr_le`,
+`natAbs_discr_le_of_basis_isIntegral_of_discr_eq_int` and its `_of_natAbs_le`/`_eq_nat` variants,
+and `abs_discr_le_int_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le`.
+
 ## Provenance
 
 Migrated from
@@ -79,5 +86,57 @@ theorem abs_discr_le_of_basis_isIntegral {K : Type*} [Field K] [NumberField K]
   · refine le_mul_of_one_le_left (abs_nonneg _) ?_
     rw [abs_pow]
     exact one_le_pow₀ (by exact_mod_cast Int.one_le_abs hd0)
+
+/-- If the discriminant of an algebraic-integer basis is bounded by `B`, then the number-field
+discriminant is bounded by the same rational number. -/
+theorem abs_discr_le_of_basis_isIntegral_of_abs_discr_le {K : Type*} [Field K] [NumberField K]
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℚ K)
+    (hb : ∀ i, IsIntegral ℤ (b i)) {B : ℚ}
+    (hB : |Algebra.discr ℚ (b : ι → K)| ≤ B) :
+    |(NumberField.discr K : ℚ)| ≤ B :=
+  (abs_discr_le_of_basis_isIntegral b hb).trans hB
+
+/-- If the trace-form discriminant of an algebraic-integer basis computes to the integer `d`, then
+the natural absolute discriminant of the number field is at most `d.natAbs`. -/
+theorem natAbs_discr_le_of_basis_isIntegral_of_discr_eq_int {K : Type*} [Field K] [NumberField K]
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℚ K)
+    (hb : ∀ i, IsIntegral ℤ (b i)) {d : ℤ}
+    (hdisc : Algebra.discr ℚ (b : ι → K) = (d : ℚ)) :
+    (NumberField.discr K).natAbs ≤ d.natAbs := by
+  have hq : |(NumberField.discr K : ℚ)| ≤ |(d : ℚ)| := by
+    simpa [hdisc] using abs_discr_le_of_basis_isIntegral b hb
+  rw [← Nat.cast_le (α := ℤ), Nat.cast_natAbs, Nat.cast_natAbs]
+  exact_mod_cast hq
+
+/-- If the trace-form discriminant of an algebraic-integer basis computes to the integer `d`, and
+`d.natAbs ≤ D`, then `(NumberField.discr K).natAbs ≤ D`. -/
+theorem natAbs_discr_le_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le
+    {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℚ K) (hb : ∀ i, IsIntegral ℤ (b i)) {d : ℤ} {D : ℕ}
+    (hdisc : Algebra.discr ℚ (b : ι → K) = (d : ℚ)) (hd : d.natAbs ≤ D) :
+    (NumberField.discr K).natAbs ≤ D :=
+  (natAbs_discr_le_of_basis_isIntegral_of_discr_eq_int b hb hdisc).trans hd
+
+/-- If the trace-form discriminant of an algebraic-integer basis computes to the natural number
+`D`, then `(NumberField.discr K).natAbs ≤ D`. -/
+theorem natAbs_discr_le_of_basis_isIntegral_of_discr_eq_nat
+    {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℚ K) (hb : ∀ i, IsIntegral ℤ (b i)) {D : ℕ}
+    (hdisc : Algebra.discr ℚ (b : ι → K) = (D : ℚ)) :
+    (NumberField.discr K).natAbs ≤ D := by
+  exact natAbs_discr_le_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le
+    b hb (d := (D : ℤ)) (by simpa using hdisc) (by simp)
+
+/-- If the trace-form discriminant of an algebraic-integer basis computes to an integer `d` with
+`d.natAbs ≤ D`, the same natural-number discriminant bound may be read as an integer absolute-value
+bound. -/
+theorem abs_discr_le_int_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le
+    {K : Type*} [Field K] [NumberField K] {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℚ K) (hb : ∀ i, IsIntegral ℤ (b i)) {d : ℤ} {D : ℕ}
+    (hdisc : Algebra.discr ℚ (b : ι → K) = (d : ℚ)) (hd : d.natAbs ≤ D) :
+    |NumberField.discr K| ≤ (D : ℤ) := by
+  rw [Int.abs_eq_natAbs]
+  exact_mod_cast
+    natAbs_discr_le_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le b hb hdisc hd
 
 end TauCeti.NumberField

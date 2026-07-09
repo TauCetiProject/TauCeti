@@ -84,14 +84,6 @@ exists) is the generator value at `x`. -/
 private def StronglyContinuousSemigroup.genQuot (S : StronglyContinuousSemigroup X)
     (x : X) (t : ℝ) : X := (1 / t) • (S.realOperator t x - x)
 
-/-- Membership predicate for the generator's domain: the difference quotient
-`(S t x - x)/t` converges as `t → 0⁺` ([EN] Def. II.1.2, [Linares] Def. 2).
-Equivalently `x ∈ S.domain`; the generator itself is the `LinearPMap`
-`StronglyContinuousSemigroup.generator`. -/
-private def StronglyContinuousSemigroup.IsInGeneratorDomain (S : StronglyContinuousSemigroup X)
-    (x : X) : Prop :=
-  ∃ Ax : X, Filter.Tendsto (S.genQuot x) (nhdsWithin 0 (Set.Ioi 0)) (nhds Ax)
-
 omit [CompleteSpace X] in
 /-- The generator difference quotient is additive in the limit. -/
 private theorem StronglyContinuousSemigroup.genQuot_tendsto_add

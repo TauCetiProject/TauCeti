@@ -8,12 +8,15 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Transport
 
 /-!
-# Transporting `J`-holomorphic maps along linear coordinate changes
+# Transporting constant-structure `J`-holomorphic maps along linear coordinate changes
 
-This file records that the local `J`-holomorphic predicate is invariant under continuous
-real-linear changes of source and target coordinates. If `f : V → W` is `J`-holomorphic and
+This file records that the local constant-structure `J`-holomorphic predicate is invariant under
+continuous
+real-linear changes of source and target coordinates. If `f : V → W` is constant-structure
+`J`-holomorphic and
 `eV : V ≃L[ℝ] V'`, `eW : W ≃L[ℝ] W'`, then the transported map
-`v' ↦ eW (f (eV.symm v'))` is `J`-holomorphic for the transported almost complex structures.
+`v' ↦ eW (f (eV.symm v'))` is constant-structure `J`-holomorphic for the transported almost complex
+structures.
 
 These are the chart-change lemmas needed before the analytic Heegaard Floer roadmap upgrades the
 normed-vector-space Cauchy--Riemann equation to tangent charts on almost complex manifolds. The
@@ -22,18 +25,23 @@ almost complex structures themselves are transported by the linear-algebra API i
 
 ## Main declarations
 
-* `TauCeti.IsJHolomorphicAt.transport`: pointwise transport of `J`-holomorphicity.
-* `TauCeti.IsJHolomorphicWithinAt.transport`: within-set transport along a source coordinate
+* `TauCeti.IsConstStructureJHolomorphicAt.transport`: pointwise transport of constant-structure
+`J`-holomorphicity.
+* `TauCeti.IsConstStructureJHolomorphicWithinAt.transport`: within-set transport along a source
+coordinate
   change whose inverse maps the transported source set back into the original source set.
-* `TauCeti.IsJHolomorphicOn.transport` and `TauCeti.IsJHolomorphic.transport`: setwise and
+* `TauCeti.IsConstStructureJHolomorphicOn.transport` and
+`TauCeti.IsConstStructureJHolomorphic.transport`: setwise and
   global transport.
-* `TauCeti.isJHolomorphicAt_transport_iff`,
-  `TauCeti.isJHolomorphicWithinAt_transport_iff`, `TauCeti.isJHolomorphicOn_transport_iff`,
-  and `TauCeti.isJHolomorphic_transport_iff`: transport equivalences, obtained by applying the
+* `TauCeti.isConstStructureJHolomorphicAt_transport_iff`,
+  `TauCeti.isConstStructureJHolomorphicWithinAt_transport_iff`,
+  `TauCeti.isConstStructureJHolomorphicOn_transport_iff`,
+  and `TauCeti.isConstStructureJHolomorphic_transport_iff`: transport equivalences, obtained by
+  applying the
   forward statement in both directions.
 
 The convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
-Section 2.1: `J`-holomorphicity is the Cauchy--Riemann equation
+Section 2.1: constant-structure `J`-holomorphicity is the Cauchy--Riemann equation
 `df ∘ J = J' ∘ df`, and coordinate changes conjugate both `J` and `df`.
 -/
 
@@ -52,107 +60,123 @@ section Transport
 
 variable {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
 
-/-- Transport a pointwise `J`-holomorphic map along continuous real-linear equivalences of the
+/-- Transport a pointwise constant-structure `J`-holomorphic map along continuous real-linear
+equivalences of the
 source and target coordinates. -/
-lemma IsJHolomorphicAt.transport {f : V → W} {x : V} (hf : IsJHolomorphicAt J J' f x)
+lemma IsConstStructureJHolomorphicAt.transport {f : V → W} {x : V}
+    (hf : IsConstStructureJHolomorphicAt J J' f x)
     (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
-    IsJHolomorphicAt (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
+    IsConstStructureJHolomorphicAt (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
       (fun y : V' => eW (f (eV.symm y))) (eV x) := by
   have hsource :
-      IsJHolomorphicAt (J.transport eV.toLinearEquiv) J (fun y : V' => eV.symm y) (eV x) :=
-    (isJHolomorphicAt_continuousLinearMap_iff eV.symm.toContinuousLinearMap (eV x)).mpr
+      IsConstStructureJHolomorphicAt (J.transport eV.toLinearEquiv) J
+        (fun y : V' => eV.symm y) (eV x) :=
+    (isConstStructureJHolomorphicAt_continuousLinearMap_iff eV.symm.toContinuousLinearMap
+      (eV x)).mpr
       (AlmostComplexStructure.isComplexLinearMap_symm_transport J eV.toLinearEquiv)
   have htarget :
-      IsJHolomorphicAt J' (J'.transport eW.toLinearEquiv) (fun y : W => eW y)
+      IsConstStructureJHolomorphicAt J' (J'.transport eW.toLinearEquiv) (fun y : W => eW y)
         (f (eV.symm (eV x))) :=
-    (isJHolomorphicAt_continuousLinearMap_iff eW.toContinuousLinearMap
+    (isConstStructureJHolomorphicAt_continuousLinearMap_iff eW.toContinuousLinearMap
       (f (eV.symm (eV x)))).mpr
       (AlmostComplexStructure.isComplexLinearMap_transport J' eW.toLinearEquiv)
-  have hmiddle : IsJHolomorphicAt J J' f (eV.symm (eV x)) := by
+  have hmiddle : IsConstStructureJHolomorphicAt J J' f (eV.symm (eV x)) := by
     simpa
   simpa [Function.comp_def] using
-    IsJHolomorphicAt.comp
+    IsConstStructureJHolomorphicAt.comp
       (J := J.transport eV.toLinearEquiv) (J' := J') (J'' := J'.transport eW.toLinearEquiv)
       (f := fun y : V' => f (eV.symm y)) (g := fun y : W => eW y) (x := eV x)
       htarget (hmiddle.comp hsource)
 
-/-- Transport a within-set `J`-holomorphic map along continuous real-linear equivalences of the
+/-- Transport a within-set constant-structure `J`-holomorphic map along continuous real-linear
+equivalences of the
 source and target coordinates, for any target-domain set whose points map back into the
 original source set. -/
-lemma IsJHolomorphicWithinAt.transport {f : V → W} {s : Set V} {x : V} {t : Set V'}
-    (hf : IsJHolomorphicWithinAt J J' f s x) (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
+lemma IsConstStructureJHolomorphicWithinAt.transport {f : V → W} {s : Set V} {x : V} {t : Set V'}
+    (hf : IsConstStructureJHolomorphicWithinAt J J' f s x) (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
     Set.MapsTo (fun y : V' => eV.symm y) t s →
-    IsJHolomorphicWithinAt (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
+    IsConstStructureJHolomorphicWithinAt (J.transport eV.toLinearEquiv)
+      (J'.transport eW.toLinearEquiv)
       (fun y : V' => eW (f (eV.symm y))) t (eV x) := by
   intro hts
   have hsourceAt :
-      IsJHolomorphicAt (J.transport eV.toLinearEquiv) J (fun y : V' => eV.symm y) (eV x) :=
-    (isJHolomorphicAt_continuousLinearMap_iff eV.symm.toContinuousLinearMap (eV x)).mpr
+      IsConstStructureJHolomorphicAt (J.transport eV.toLinearEquiv) J
+        (fun y : V' => eV.symm y) (eV x) :=
+    (isConstStructureJHolomorphicAt_continuousLinearMap_iff eV.symm.toContinuousLinearMap
+      (eV x)).mpr
       (AlmostComplexStructure.isComplexLinearMap_symm_transport J eV.toLinearEquiv)
   have hsource :
-      IsJHolomorphicWithinAt (J.transport eV.toLinearEquiv) J
+      IsConstStructureJHolomorphicWithinAt (J.transport eV.toLinearEquiv) J
         (fun y : V' => eV.symm y) t (eV x) :=
-    hsourceAt.isJHolomorphicWithinAt
+    hsourceAt.isConstStructureJHolomorphicWithinAt
   have htargetAt :
-      IsJHolomorphicAt J' (J'.transport eW.toLinearEquiv) (fun y : W => eW y)
+      IsConstStructureJHolomorphicAt J' (J'.transport eW.toLinearEquiv) (fun y : W => eW y)
         (f (eV.symm (eV x))) :=
-    (isJHolomorphicAt_continuousLinearMap_iff eW.toContinuousLinearMap
+    (isConstStructureJHolomorphicAt_continuousLinearMap_iff eW.toContinuousLinearMap
       (f (eV.symm (eV x)))).mpr
       (AlmostComplexStructure.isComplexLinearMap_transport J' eW.toLinearEquiv)
   have htarget :
-      IsJHolomorphicWithinAt J' (J'.transport eW.toLinearEquiv)
+      IsConstStructureJHolomorphicWithinAt J' (J'.transport eW.toLinearEquiv)
         (fun y : W => eW y) Set.univ (f (eV.symm (eV x))) :=
-    htargetAt.isJHolomorphicWithinAt
-  have hmiddle : IsJHolomorphicWithinAt J J' f s (eV.symm (eV x)) := by
+    htargetAt.isConstStructureJHolomorphicWithinAt
+  have hmiddle : IsConstStructureJHolomorphicWithinAt J J' f s (eV.symm (eV x)) := by
     simpa
-  have hinner : IsJHolomorphicWithinAt (J.transport eV.toLinearEquiv) J'
+  have hinner : IsConstStructureJHolomorphicWithinAt (J.transport eV.toLinearEquiv) J'
       (fun y : V' => f (eV.symm y)) t (eV x) := by
     simpa [Function.comp_def] using hmiddle.comp hsource hts
   simpa [Function.comp_def] using
-    IsJHolomorphicWithinAt.comp
+    IsConstStructureJHolomorphicWithinAt.comp
       (J := J.transport eV.toLinearEquiv) (J' := J') (J'' := J'.transport eW.toLinearEquiv)
       (f := fun y : V' => f (eV.symm y)) (g := fun y : W => eW y) (s := t)
       (t := Set.univ) (x := eV x) htarget hinner (fun _ _ => Set.mem_univ _)
 
-/-- Transport a setwise `J`-holomorphic map along continuous real-linear equivalences of the
+/-- Transport a setwise constant-structure `J`-holomorphic map along continuous real-linear
+equivalences of the
 source and target coordinates, for any target-domain set whose points map back into the
 original source set. -/
-lemma IsJHolomorphicOn.transport {f : V → W} {s : Set V} {t : Set V'}
-    (hf : IsJHolomorphicOn J J' f s) (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
+lemma IsConstStructureJHolomorphicOn.transport {f : V → W} {s : Set V} {t : Set V'}
+    (hf : IsConstStructureJHolomorphicOn J J' f s) (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
     Set.MapsTo (fun y : V' => eV.symm y) t s →
-    IsJHolomorphicOn (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
+    IsConstStructureJHolomorphicOn (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
       (fun y : V' => eW (f (eV.symm y))) t := by
-  intro hts y hy
-  simpa [eV.apply_symm_apply y] using (hf (eV.symm y) (hts hy)).transport eV eW hts
+  intro hts
+  exact isConstStructureJHolomorphicOn_of_forall fun y hy => by
+    simpa [eV.apply_symm_apply y] using
+      (hf.isConstStructureJHolomorphicWithinAt (hts hy)).transport eV eW hts
 
-/-- Transport a globally `J`-holomorphic map along continuous real-linear equivalences of the
+/-- Transport a globally constant-structure `J`-holomorphic map along continuous real-linear
+equivalences of the
 source and target coordinates. -/
-lemma IsJHolomorphic.transport {f : V → W} (hf : IsJHolomorphic J J' f)
+lemma IsConstStructureJHolomorphic.transport {f : V → W} (hf : IsConstStructureJHolomorphic J J' f)
     (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
-    IsJHolomorphic (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
+    IsConstStructureJHolomorphic (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
       (fun y : V' => eW (f (eV.symm y))) := by
-  intro y
-  simpa [eV.apply_symm_apply y] using (hf (eV.symm y)).transport eV eW
+  exact isConstStructureJHolomorphic_of_forall fun y => by
+    simpa [eV.apply_symm_apply y] using
+      (hf.isConstStructureJHolomorphicAt (eV.symm y)).transport eV eW
 
-/-- Pointwise `J`-holomorphicity is invariant under continuous real-linear coordinate changes. -/
+/-- Pointwise constant-structure `J`-holomorphicity is invariant under continuous real-linear
+coordinate changes. -/
 @[simp]
-lemma isJHolomorphicAt_transport_iff (f : V → W) (x : V)
+lemma isConstStructureJHolomorphicAt_transport_iff (f : V → W) (x : V)
     (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
-    IsJHolomorphicAt (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
-      (fun y : V' => eW (f (eV.symm y))) (eV x) ↔ IsJHolomorphicAt J J' f x := by
+    IsConstStructureJHolomorphicAt (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
+      (fun y : V' => eW (f (eV.symm y))) (eV x) ↔ IsConstStructureJHolomorphicAt J J' f x := by
   refine ⟨fun h => ?_, fun h => h.transport eV eW⟩
   have hback := h.transport eV.symm eW.symm
   simpa [AlmostComplexStructure.transport_symm_transport, eV.symm_apply_apply,
     eW.symm_apply_apply] using hback
 
-/-- Within-set `J`-holomorphicity is invariant under continuous real-linear coordinate
+/-- Within-set constant-structure `J`-holomorphicity is invariant under continuous real-linear
+coordinate
 changes, with the source set sent to its image. -/
 @[simp]
-lemma isJHolomorphicWithinAt_transport_iff (f : V → W) (s : Set V) (x : V)
+lemma isConstStructureJHolomorphicWithinAt_transport_iff (f : V → W) (s : Set V) (x : V)
     (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
-    IsJHolomorphicWithinAt (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
+    IsConstStructureJHolomorphicWithinAt (J.transport eV.toLinearEquiv)
+      (J'.transport eW.toLinearEquiv)
       (fun y : V' => eW (f (eV.symm y))) (eV '' s) (eV x) ↔
-        IsJHolomorphicWithinAt J J' f s x := by
+        IsConstStructureJHolomorphicWithinAt J J' f s x := by
   refine ⟨fun h => ?_, fun h => h.transport eV eW ?_⟩
   · have hmaps : Set.MapsTo (fun y : V => eV.symm.symm y) s (eV '' s) := by
       intro y hy
@@ -164,26 +188,32 @@ lemma isJHolomorphicWithinAt_transport_iff (f : V → W) (s : Set V) (x : V)
   · rintro y ⟨z, hz, rfl⟩
     simpa using hz
 
-/-- Setwise `J`-holomorphicity is invariant under continuous real-linear coordinate changes,
+/-- Setwise constant-structure `J`-holomorphicity is invariant under continuous real-linear
+coordinate changes,
 with the source set sent to its image. -/
 @[simp]
-lemma isJHolomorphicOn_transport_iff (f : V → W) (s : Set V)
+lemma isConstStructureJHolomorphicOn_transport_iff (f : V → W) (s : Set V)
     (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
-    IsJHolomorphicOn (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
-      (fun y : V' => eW (f (eV.symm y))) (eV '' s) ↔ IsJHolomorphicOn J J' f s := by
-  refine ⟨fun h x hx => ?_, fun h => h.transport eV eW ?_⟩
-  · exact (isJHolomorphicWithinAt_transport_iff f s x eV eW).mp (h (eV x) ⟨x, hx, rfl⟩)
+    IsConstStructureJHolomorphicOn (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
+      (fun y : V' => eW (f (eV.symm y))) (eV '' s) ↔ IsConstStructureJHolomorphicOn J J' f s := by
+  refine ⟨fun h => isConstStructureJHolomorphicOn_of_forall fun x hx => ?_,
+    fun h => h.transport eV eW ?_⟩
+  · exact (isConstStructureJHolomorphicWithinAt_transport_iff f s x eV eW).mp
+      (h.isConstStructureJHolomorphicWithinAt ⟨x, hx, rfl⟩)
   · rintro y ⟨z, hz, rfl⟩
     simpa using hz
 
-/-- Global `J`-holomorphicity is invariant under continuous real-linear coordinate changes. -/
+/-- Global constant-structure `J`-holomorphicity is invariant under continuous real-linear
+coordinate changes. -/
 @[simp]
-lemma isJHolomorphic_transport_iff (f : V → W)
+lemma isConstStructureJHolomorphic_transport_iff (f : V → W)
     (eV : V ≃L[ℝ] V') (eW : W ≃L[ℝ] W') :
-    IsJHolomorphic (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
-      (fun y : V' => eW (f (eV.symm y))) ↔ IsJHolomorphic J J' f := by
-  refine ⟨fun h x => ?_, fun h => h.transport eV eW⟩
-  exact (isJHolomorphicAt_transport_iff f x eV eW).mp (h (eV x))
+    IsConstStructureJHolomorphic (J.transport eV.toLinearEquiv) (J'.transport eW.toLinearEquiv)
+      (fun y : V' => eW (f (eV.symm y))) ↔ IsConstStructureJHolomorphic J J' f := by
+  refine ⟨fun h => isConstStructureJHolomorphic_of_forall fun x => ?_,
+    fun h => h.transport eV eW⟩
+  exact (isConstStructureJHolomorphicAt_transport_iff f x eV eW).mp
+    (h.isConstStructureJHolomorphicAt (eV x))
 
 end Transport
 

@@ -94,41 +94,4 @@ theorem _root_.HilbertBasis.mapₗᵢ_symm_self
   rw [_root_.HilbertBasis.mapₗᵢ_trans]
   simp
 
-/-- Transporting Hilbert bases across a fixed linear isometric equivalence is an equivalence. -/
-protected noncomputable def _root_.HilbertBasis.mapₗᵢEquiv (e : E ≃ₗᵢ[𝕜] F) :
-    _root_.HilbertBasis ι 𝕜 E ≃ _root_.HilbertBasis ι 𝕜 F where
-  toFun b := b.mapₗᵢ e
-  invFun b := b.mapₗᵢ e.symm
-  left_inv b := by simp
-  right_inv b := by simp
-
-/-- Transporting Hilbert bases across a fixed linear isometric equivalence is injective. -/
-theorem _root_.HilbertBasis.mapₗᵢ_injective (e : E ≃ₗᵢ[𝕜] F) :
-    Function.Injective (fun b : _root_.HilbertBasis ι 𝕜 E => b.mapₗᵢ e) :=
-  (_root_.HilbertBasis.mapₗᵢEquiv e).injective
-
-/-- Every Hilbert basis of the target is the transport of a Hilbert basis of the source. -/
-theorem _root_.HilbertBasis.mapₗᵢ_surjective (e : E ≃ₗᵢ[𝕜] F) :
-    Function.Surjective (fun b : _root_.HilbertBasis ι 𝕜 E => b.mapₗᵢ e) :=
-  (_root_.HilbertBasis.mapₗᵢEquiv e).surjective
-
-/-- Transporting Hilbert bases across a fixed linear isometric equivalence is bijective. -/
-theorem _root_.HilbertBasis.mapₗᵢ_bijective (e : E ≃ₗᵢ[𝕜] F) :
-    Function.Bijective (fun b : _root_.HilbertBasis ι 𝕜 E => b.mapₗᵢ e) :=
-  (_root_.HilbertBasis.mapₗᵢEquiv e).bijective
-
-/-- Equality after transporting a Hilbert basis across an isometry is the same as equality after
-transporting the right-hand side back across the inverse isometry. -/
-theorem _root_.HilbertBasis.mapₗᵢ_eq_iff
-    (b : _root_.HilbertBasis ι 𝕜 E) (c : _root_.HilbertBasis ι 𝕜 F) (e : E ≃ₗᵢ[𝕜] F) :
-    b.mapₗᵢ e = c ↔ b = c.mapₗᵢ e.symm :=
-  (_root_.HilbertBasis.mapₗᵢEquiv e).apply_eq_iff_eq_symm_apply
-
-/-- Equality to a transported Hilbert basis is the same as equality after transporting the
-left-hand side back across the inverse isometry. -/
-theorem _root_.HilbertBasis.eq_mapₗᵢ_iff
-    (c : _root_.HilbertBasis ι 𝕜 F) (b : _root_.HilbertBasis ι 𝕜 E) (e : E ≃ₗᵢ[𝕜] F) :
-    c = b.mapₗᵢ e ↔ c.mapₗᵢ e.symm = b := by
-  rw [eq_comm, _root_.HilbertBasis.mapₗᵢ_eq_iff, eq_comm]
-
 end TauCeti
