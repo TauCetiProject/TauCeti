@@ -5,36 +5,28 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 
 /-!
 # Generic lemmas for iterated derivatives within sets
 
-This file records calculus lemmas about `iteratedDerivWithin` and interval integrals that are
-independent of any completely-monotone or Bernstein-function structure.
+This file records calculus lemmas about `iteratedDerivWithin` that are independent of any
+completely-monotone or Bernstein-function structure.
 
 ## Main declarations
 
 * `TauCeti.ContDiffOn.hasDerivAt_iteratedDerivWithin`: differentiability of an
   `iteratedDerivWithin` on a neighbourhood inside a unique-differentiability set.
-* `TauCeti.ContDiffAt.iteratedDerivWithin_Icc_eq_Ici`: agreement of iterated derivatives within
-  `Icc x T` and `Ici a` at strict interior points.
-* `TauCeti.ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc`,
-  `TauCeti.ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_zero_left`,
-  `TauCeti.ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici`: finite-interval
-  fundamental-theorem identities for first iterated derivatives within intervals.
-* `TauCeti.ContDiffOn.tendsto_integral_neg_iteratedDerivWithin_one_Icc_atTop`: convergence of
-  the finite-interval primitive under convergence at infinity.
+For the plain fundamental-theorem identity on a compact interval use Mathlib's
+`intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc` together with
+`iteratedDerivWithin_one`.
 -/
 
 public section
 
-open MeasureTheory Set intervalIntegral Filter
+open Set Filter
 open scoped ContDiff Topology
 
 namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E}
 
 /-- At a point `x` in the interior of a unique-differentiability set `s` (`s ∈ 𝓝 x`),
 the derivative of the `k`-th iterated derivative-within-`s` of a `C^(k+1)` function is the
@@ -45,73 +37,8 @@ theorem ContDiffOn.hasDerivAt_iteratedDerivWithin
     (hf : ContDiffOn 𝕜 ((k + 1 : ℕ) : WithTop ℕ∞) g s)
     (hs : UniqueDiffOn 𝕜 s) {x : 𝕜} (hx : s ∈ nhds x) :
     HasDerivAt (iteratedDerivWithin k g s) (iteratedDerivWithin (k + 1) g s x) x := by
-  have hklt : (k : WithTop ℕ∞) < ((k + 1 : ℕ) : WithTop ℕ∞) := by
-    exact_mod_cast (Nat.lt_succ_self k)
-  have hda := (hf.differentiableOn_iteratedDerivWithin
-    hklt hs).hasDerivAt hx
-  have hval : iteratedDerivWithin (k + 1) g s x =
-      deriv (iteratedDerivWithin k g s) x := by
-    rw [iteratedDerivWithin_succ, derivWithin_of_mem_nhds hx]
-  rw [hval]; exact hda
-
-/-- `iteratedDerivWithin` on `Icc x T` agrees with `iteratedDerivWithin` on `Ici a` at interior
-points, since both equal `iteratedDeriv n f t` under local smoothness at `t`. -/
-lemma ContDiffAt.iteratedDerivWithin_Icc_eq_Ici {n : ℕ}
-    {a x T t : ℝ} (hf : ContDiffAt ℝ (n : WithTop ℕ∞) f t) (ht_lo : a < t)
-    (ht : t ∈ Ioo x T) :
-    iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici a) t := by
-  have hxT : x < T := lt_trans ht.1 ht.2
-  rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT) hf
-        (Ioo_subset_Icc_self ht),
-      ← iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici a) hf
-        (mem_Ici.mpr ht_lo.le)]
-
-/-- The fundamental-theorem identity
-`f x - f T = ∫ₓᵀ -f'` on a compact interval, with the derivative represented as the first
-iterated derivative within that interval. -/
-lemma ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc {x T : ℝ}
-    [CompleteSpace E] (hf : ContDiffOn ℝ 1 f (Icc x T)) (hxT : x ≤ T) :
-    f x - f T = ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t := by
-  have hFTC := intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc hf hxT
-  rw [iteratedDerivWithin_one]
-  rw [intervalIntegral.integral_neg, hFTC, neg_sub]
-
-/-- The zero-left specialization of
-`ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc`. -/
-lemma ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_zero_left {T : ℝ}
-    [CompleteSpace E] (hf : ContDiffOn ℝ 1 f (Icc 0 T)) (hT : 0 ≤ T) :
-    ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t = f 0 - f T := by
-  exact (ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc hf hT).symm
-
-/-- The interval integral of `-f'` with the `T`-dependent set `Icc x T` equals the integral with
-the fixed set `Ici a`, under local smoothness at the strict interior points. The derivative is
-represented as `iteratedDerivWithin 1`. -/
-lemma ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici
-    {a x T : ℝ} (hf : ∀ t ∈ Ioo x T, ContDiffAt ℝ 1 f t) (hax : a ≤ x) (hxT : x ≤ T) :
-    ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t =
-    ∫ t in x..T, -iteratedDerivWithin 1 f (Ici a) t := by
-  apply intervalIntegral.integral_congr_uIoo
-  intro t ht
-  rw [uIoo_of_le hxT] at ht
-  have ha_lt : a < t := lt_of_le_of_lt hax ht.1
-  have hxT_pos : x < T := lt_trans ht.1 ht.2
-  have hcda : ContDiffAt ℝ 1 f t := hf t ht
-  simp only [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT_pos) hcda
-      (Ioo_subset_Icc_self ht),
-    iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici a) hcda
-      (mem_Ici.mpr ha_lt.le)]
-
-/-- The integral `∫ₐᵀ (-f') dt → f(a) - L` as `T → ∞`, assuming smoothness on
-`[a, ∞)` and convergence of `f` to `L` at infinity. The derivative is represented as
-`iteratedDerivWithin 1`. -/
-lemma ContDiffOn.tendsto_integral_neg_iteratedDerivWithin_one_Icc_atTop
-    [CompleteSpace E] {a : ℝ} (hf : ContDiffOn ℝ 1 f (Ici a)) {L : E}
-    (hL : Tendsto f atTop (nhds L)) :
-    Tendsto (fun T => ∫ t in a..T, -iteratedDerivWithin 1 f (Icc a T) t) atTop
-        (nhds (f a - L)) := by
-  refine Tendsto.congr' (EventuallyEq.symm ?_) (Tendsto.sub tendsto_const_nhds hL)
-  exact (eventually_gt_atTop a).mono fun T hT =>
-    (ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc
-      (hf.mono Icc_subset_Ici_self) hT.le).symm
+  rw [iteratedDerivWithin_succ, derivWithin_of_mem_nhds hx]
+  exact (hf.differentiableOn_iteratedDerivWithin
+    (by exact_mod_cast Nat.lt_succ_self k) hs).hasDerivAt hx
 
 end TauCeti

@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
 public import TauCeti.Algebra.AlgebraicGroup.HopfMap
 
@@ -67,12 +66,6 @@ variable {R : Type u} {A : Type v} {G : Type w} {G' : Type w'} {G'' : Type w''}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 variable [CommGroup G] [CommGroup G'] [CommGroup G'']
 
-@[simp]
-private theorem mapDomainBialgHom_single_one (φ : G →* G') (g : G) :
-    MonoidAlgebra.mapDomainBialgHom R φ (MonoidAlgebra.single g (1 : R)) =
-      MonoidAlgebra.single (φ g) 1 := by
-  rw [MonoidAlgebra.mapDomainBialgHom_apply, MonoidAlgebra.mapDomain_single]
-
 /-- **The diagonalizable group is contravariant in the abelian group.** A group homomorphism
 `φ : G →* G'` induces, by pre-composition with the bialgebra map `R[G] →ₐc[R] R[G']`, a
 homomorphism of convolution groups of points `D(G')(A) → D(G)(A)`. -/
@@ -125,7 +118,9 @@ theorem charOfPoint_comp (φ : G →* G') (f : MonoidAlgebra R G' →ₐ[R] A) :
       (charOfPoint f).comp φ := by
   ext g
   rw [charOfPoint_apply_coe, AlgHom.comp_apply, MonoidHom.comp_apply, charOfPoint_apply_coe,
-    BialgHom.coe_toAlgHom (MonoidAlgebra.mapDomainBialgHom R φ), mapDomainBialgHom_single_one]
+    BialgHom.coe_toAlgHom (MonoidAlgebra.mapDomainBialgHom R φ),
+    MonoidAlgebra.mapDomainBialgHom, _root_.BialgHom.ofAlgHom_apply,
+    MonoidAlgebra.mapDomainAlgHom_apply, MonoidAlgebra.mapDomain_single]
 
 /-- **The points homomorphism is precomposition of characters.** Under the identification of
 points of `D(G)` with characters of `G`, the homomorphism `pointsMap φ` induced by
