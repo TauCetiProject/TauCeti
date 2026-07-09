@@ -132,7 +132,7 @@ lemma schwarzReflection_conj
 At a real-axis point where `f` has a real value, `f` commutes with conjugation:
 `f z = conj (f (conj z))`.
 -/
-lemma apply_eq_conj_apply_conj_of_im_zero_of_apply_im_zero
+private lemma apply_eq_conj_apply_conj_of_im_zero_of_apply_im_zero
     {z : ℂ} (hz : z.im = 0) (hreal : (f z).im = 0) :
     f z = (starRingEnd ℂ) (f ((starRingEnd ℂ) z)) := by
   have hzconj : (starRingEnd ℂ) z = z := by
