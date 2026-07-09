@@ -48,9 +48,9 @@ variable {γ : Type*} [MeasurableSpace γ] [NormedAddCommGroup γ] [NormedSpace 
 /-- **Equal means from contractability.** For a contractable process with values in a normed
 real vector space, all coordinate expectations agree. -/
 theorem Contractable.integral_coord_eq (hZ : Contractable μ Z)
-    (hZ_meas : ∀ n, AEMeasurable (Z n) μ) (i j : ℕ) :
+    {i j : ℕ} (hi_meas : AEMeasurable (Z i) μ) (hj_meas : AEMeasurable (Z j) μ) :
     μ[Z i] = μ[Z j] :=
-  (hZ.identDistrib_coord hZ_meas i j).integral_eq
+  (hZ.identDistrib_coord hi_meas hj_meas).integral_eq
 
 section Real
 
@@ -59,19 +59,22 @@ variable {X : ℕ → Ω → ℝ}
 /-- **Equal variances from contractability.** For a contractable real-valued process, all
 coordinate variances agree. -/
 theorem Contractable.variance_coord_eq (hX : Contractable μ X)
-    (hX_meas : ∀ n, AEMeasurable (X n) μ) (i j : ℕ) :
+    {i j : ℕ} (hi_meas : AEMeasurable (X i) μ) (hj_meas : AEMeasurable (X j) μ) :
     Var[X i; μ] = Var[X j; μ] :=
-  (hX.identDistrib_coord hX_meas i j).variance_eq
+  (hX.identDistrib_coord hi_meas hj_meas).variance_eq
 
 /-- **Uniform covariances from contractability.** For a contractable real-valued process with
 a.e. measurable coordinates, any two off-diagonal covariances agree:
 `cov[X i, X j; μ] = cov[X k, X l; μ]` whenever `i < j` and `k < l`. -/
 theorem Contractable.covariance_eq_of_lt (hX : Contractable μ X)
-    (hX_meas : ∀ n, AEMeasurable (X n) μ) {i j k l : ℕ} (hij : i < j) (hkl : k < l) :
+    {i j k l : ℕ} (hi_meas : AEMeasurable (X i) μ) (hj_meas : AEMeasurable (X j) μ)
+    (hk_meas : AEMeasurable (X k) μ) (hl_meas : AEMeasurable (X l) μ)
+    (hij : i < j) (hkl : k < l) :
     cov[X i, X j; μ] = cov[X k, X l; μ] := by
   let F : Ω → ℝ × ℝ := fun ω => (X i ω, X j ω)
   let G : Ω → ℝ × ℝ := fun ω => (X k ω, X l ω)
-  have hpair : IdentDistrib F G μ μ := hX.identDistrib_pair hX_meas hij hkl
+  have hpair : IdentDistrib F G μ μ :=
+    hX.identDistrib_pair hi_meas hj_meas hk_meas hl_meas hij hkl
   have hF : HasLaw F (μ.map F) μ := ⟨hpair.aemeasurable_fst, rfl⟩
   have hG : HasLaw G (μ.map F) μ := hpair.hasLaw hF
   calc
@@ -87,18 +90,20 @@ theorem Contractable.covariance_eq_of_lt (hX : Contractable μ X)
 process with a.e. measurable coordinates, any two off-diagonal covariances agree:
 `cov[X i, X j; μ] = cov[X k, X l; μ]` whenever `i ≠ j` and `k ≠ l`. -/
 theorem Contractable.covariance_eq_of_ne (hX : Contractable μ X)
-    (hX_meas : ∀ n, AEMeasurable (X n) μ) {i j k l : ℕ} (hij : i ≠ j) (hkl : k ≠ l) :
+    {i j k l : ℕ} (hi_meas : AEMeasurable (X i) μ) (hj_meas : AEMeasurable (X j) μ)
+    (hk_meas : AEMeasurable (X k) μ) (hl_meas : AEMeasurable (X l) μ)
+    (hij : i ≠ j) (hkl : k ≠ l) :
     cov[X i, X j; μ] = cov[X k, X l; μ] := by
   rcases lt_or_gt_of_ne hij with hij_lt | hji_lt
   · rcases lt_or_gt_of_ne hkl with hkl_lt | hlk_lt
-    · exact hX.covariance_eq_of_lt hX_meas hij_lt hkl_lt
+    · exact hX.covariance_eq_of_lt hi_meas hj_meas hk_meas hl_meas hij_lt hkl_lt
     · rw [covariance_comm (X k) (X l)]
-      exact hX.covariance_eq_of_lt hX_meas hij_lt hlk_lt
+      exact hX.covariance_eq_of_lt hi_meas hj_meas hl_meas hk_meas hij_lt hlk_lt
   · rw [covariance_comm (X i) (X j)]
     rcases lt_or_gt_of_ne hkl with hkl_lt | hlk_lt
-    · exact hX.covariance_eq_of_lt hX_meas hji_lt hkl_lt
+    · exact hX.covariance_eq_of_lt hj_meas hi_meas hk_meas hl_meas hji_lt hkl_lt
     · rw [covariance_comm (X k) (X l)]
-      exact hX.covariance_eq_of_lt hX_meas hji_lt hlk_lt
+      exact hX.covariance_eq_of_lt hj_meas hi_meas hl_meas hk_meas hji_lt hlk_lt
 
 /-- **The uniform covariance structure of a contractable L² sequence.** A contractable
 real-valued process with `L²` coordinates has constant coordinate means and variances, and a
@@ -108,8 +113,10 @@ theorem contractable_covariance_structure (hX : Contractable μ X) (hX_L2 : ∀ 
     (∀ i j, μ[X i] = μ[X j]) ∧ (∀ i j, Var[X i; μ] = Var[X j; μ]) ∧
       (∀ i j k l, i ≠ j → k ≠ l → cov[X i, X j; μ] = cov[X k, X l; μ]) := by
   have hmeas : ∀ n, AEMeasurable (X n) μ := fun n => (hX_L2 n).aestronglyMeasurable.aemeasurable
-  exact ⟨fun i j => hX.integral_coord_eq hmeas i j, fun i j => hX.variance_coord_eq hmeas i j,
-    fun _ _ _ _ hij hkl => hX.covariance_eq_of_ne hmeas hij hkl⟩
+  exact ⟨fun i j => hX.integral_coord_eq (hmeas i) (hmeas j),
+    fun i j => hX.variance_coord_eq (hmeas i) (hmeas j),
+    fun i j k l hij hkl => hX.covariance_eq_of_ne (hmeas i) (hmeas j) (hmeas k) (hmeas l)
+      hij hkl⟩
 
 end Real
 

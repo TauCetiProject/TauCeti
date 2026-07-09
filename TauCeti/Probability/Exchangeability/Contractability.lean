@@ -63,51 +63,74 @@ theorem Contractable.map_pair {μ : Measure Ω} {X : ℕ → Ω → α} (h : Con
     blockLaw μ X ![i, j] = prefixLaw μ X 2 :=
   h.map (strictMono_vecEmpty.vecCons hij)
 
-/-- Evaluating the one-coordinate block law `blockLaw μ X (fun _ => i)` at its single
-coordinate recovers the law of `X i`. -/
-private theorem map_coordEval_blockLaw {μ : Measure Ω} {X : ℕ → Ω → α}
-    (i : ℕ) (hX_meas : ∀ n, AEMeasurable (X n) μ) :
-    (blockLaw μ X (fun _ : Fin 1 => i)).map (fun v : Fin 1 → α => v 0) = μ.map (X i) := by
-  rw [blockLaw_def, AEMeasurable.map_map_of_aemeasurable (measurable_pi_apply 0).aemeasurable
-    (aemeasurable_pi_lambda _ fun _ => hX_meas i)]
-  rfl
-
-/-- Evaluating the two-coordinate block law `blockLaw μ X ![i, j]` at its two coordinates
-recovers the joint law of `(X i, X j)`. -/
-private theorem map_pairEval_blockLaw {μ : Measure Ω} {X : ℕ → Ω → α}
-    (i j : ℕ) (hX_meas : ∀ n, AEMeasurable (X n) μ) :
-    (blockLaw μ X ![i, j]).map (fun v : Fin 2 → α => (v 0, v 1))
-      = μ.map (fun ω => (X i ω, X j ω)) := by
-  have hcomp : ((fun v : Fin 2 → α => (v 0, v 1)) ∘ fun ω (l : Fin 2) => X (![i, j] l) ω)
-      = fun ω => (X i ω, X j ω) := by
-    funext ω
-    simp [Function.comp, Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [blockLaw_def, AEMeasurable.map_map_of_aemeasurable
-    ((measurable_pi_apply 0).prodMk (measurable_pi_apply 1)).aemeasurable
-    (aemeasurable_pi_lambda _ fun l => hX_meas (![i, j] l)), hcomp]
+/-- **Finite blocks of a contractable process are identically distributed.** For a contractable
+process `X`, any two strictly increasing finite coordinate selections have the same joint law. -/
+theorem Contractable.identDistrib_block {μ : Measure Ω} {X : ℕ → Ω → α}
+    (hX : Contractable μ X) {m : ℕ} {k l : Fin m → ℕ} (hk : StrictMono k) (hl : StrictMono l)
+    (hk_meas : ∀ r, AEMeasurable (X (k r)) μ)
+    (hl_meas : ∀ r, AEMeasurable (X (l r)) μ) :
+    IdentDistrib (fun ω r => X (k r) ω) (fun ω r => X (l r) ω) μ μ where
+  aemeasurable_fst := aemeasurable_pi_lambda _ hk_meas
+  aemeasurable_snd := aemeasurable_pi_lambda _ hl_meas
+  map_eq := by
+    simpa [blockLaw_def] using (hX.map hk).trans (hX.map hl).symm
 
 /-- **Coordinates of a contractable process are identically distributed.** For a contractable
-process `X` with a.e. measurable coordinates, `X i` and `X j` have the same law. -/
+process `X`, any two a.e. measurable coordinates `X i` and `X j` have the same law. -/
 theorem Contractable.identDistrib_coord {μ : Measure Ω} {X : ℕ → Ω → α} (hX : Contractable μ X)
-    (hX_meas : ∀ n, AEMeasurable (X n) μ) (i j : ℕ) :
+    {i j : ℕ} (hi_meas : AEMeasurable (X i) μ) (hj_meas : AEMeasurable (X j) μ) :
     IdentDistrib (X i) (X j) μ μ where
-  aemeasurable_fst := hX_meas i
-  aemeasurable_snd := hX_meas j
+  aemeasurable_fst := hi_meas
+  aemeasurable_snd := hj_meas
   map_eq := by
-    rw [← map_coordEval_blockLaw i hX_meas, ← map_coordEval_blockLaw j hX_meas,
-      hX.map_single (fun _ => i), hX.map_single (fun _ => j)]
+    let eval : (Fin 1 → α) → α := fun v => v 0
+    have heval : AEMeasurable eval
+        (μ.map fun (ω : Ω) (r : Fin 1) => X ((fun _ : Fin 1 => i) r) ω) :=
+      (measurable_pi_apply (0 : Fin 1)).aemeasurable
+    have hblock := hX.identDistrib_block
+      (Subsingleton.strictMono (fun _ : Fin 1 => i))
+      (Subsingleton.strictMono (fun _ : Fin 1 => j)) (fun _ => hi_meas) (fun _ => hj_meas)
+    have hmap := congrArg (fun ν : Measure (Fin 1 → α) => ν.map eval) hblock.map_eq
+    rw [AEMeasurable.map_map_of_aemeasurable heval hblock.aemeasurable_fst,
+      AEMeasurable.map_map_of_aemeasurable (by rwa [hblock.map_eq] at heval)
+        hblock.aemeasurable_snd] at hmap
+    change μ.map (eval ∘ (fun (ω : Ω) (r : Fin 1) => X ((fun _ : Fin 1 => i) r) ω)) =
+      μ.map (eval ∘ (fun (ω : Ω) (r : Fin 1) => X ((fun _ : Fin 1 => j) r) ω))
+    simpa [eval, Function.comp] using hmap
 
 /-- **Increasing pairs of a contractable process are identically distributed.** For a
-contractable process `X` with a.e. measurable coordinates and `i < j`, `k < l`, the pair
-`(X i, X j)` has the same joint law as `(X k, X l)`. -/
+contractable process `X`, if the four selected coordinates are a.e. measurable and `i < j`,
+`k < l`, then `(X i, X j)` has the same joint law as `(X k, X l)`. -/
 theorem Contractable.identDistrib_pair {μ : Measure Ω} {X : ℕ → Ω → α} (hX : Contractable μ X)
-    (hX_meas : ∀ n, AEMeasurable (X n) μ) {i j k l : ℕ} (hij : i < j) (hkl : k < l) :
+    {i j k l : ℕ} (hi_meas : AEMeasurable (X i) μ) (hj_meas : AEMeasurable (X j) μ)
+    (hk_meas : AEMeasurable (X k) μ) (hl_meas : AEMeasurable (X l) μ)
+    (hij : i < j) (hkl : k < l) :
     IdentDistrib (fun ω => (X i ω, X j ω)) (fun ω => (X k ω, X l ω)) μ μ where
-  aemeasurable_fst := (hX_meas i).prodMk (hX_meas j)
-  aemeasurable_snd := (hX_meas k).prodMk (hX_meas l)
+  aemeasurable_fst := hi_meas.prodMk hj_meas
+  aemeasurable_snd := hk_meas.prodMk hl_meas
   map_eq := by
-    rw [← map_pairEval_blockLaw i j hX_meas, ← map_pairEval_blockLaw k l hX_meas,
-      hX.map_pair hij, hX.map_pair hkl]
+    let eval : (Fin 2 → α) → α × α := fun v => (v 0, v 1)
+    have hblock := hX.identDistrib_block (strictMono_vecEmpty.vecCons hij)
+      (strictMono_vecEmpty.vecCons hkl)
+      (fun r => by
+        fin_cases r
+        · simpa [Matrix.cons_val_zero] using hi_meas
+        · simpa [Matrix.cons_val_one] using hj_meas)
+      (fun r => by
+        fin_cases r
+        · simpa [Matrix.cons_val_zero] using hk_meas
+        · simpa [Matrix.cons_val_one] using hl_meas)
+    have heval : AEMeasurable eval
+        (μ.map fun (ω : Ω) (r : Fin 2) => X (![i, j] r) ω) :=
+      ((measurable_pi_apply (0 : Fin 2)).prodMk
+        (measurable_pi_apply (1 : Fin 2))).aemeasurable
+    have hmap := congrArg (fun ν : Measure (Fin 2 → α) => ν.map eval) hblock.map_eq
+    rw [AEMeasurable.map_map_of_aemeasurable heval hblock.aemeasurable_fst,
+      AEMeasurable.map_map_of_aemeasurable (by rwa [hblock.map_eq] at heval)
+        hblock.aemeasurable_snd] at hmap
+    change μ.map (eval ∘ (fun (ω : Ω) (r : Fin 2) => X (![i, j] r) ω)) =
+      μ.map (eval ∘ (fun (ω : Ω) (r : Fin 2) => X (![k, l] r) ω))
+    simpa [eval, Function.comp, Matrix.cons_val_zero, Matrix.cons_val_one] using hmap
 
 /-- Contractability is preserved by passing to a strictly increasing subsequence. -/
 theorem Contractable.comp {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
