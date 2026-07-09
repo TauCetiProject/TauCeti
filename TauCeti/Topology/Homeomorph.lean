@@ -25,6 +25,7 @@ variable {M : Type*} [TopologicalSpace M]
 namespace Homeomorph
 
 /-- A homeomorphism transports eventual equality at a neighbourhood filter. -/
+@[simp]
 theorem eventuallyEq_comp_iff (e : M ≃ₜ N) (f g : N → Z) (x : M) :
     (f ∘ e =ᶠ[𝓝 x] g ∘ e) ↔ (f =ᶠ[𝓝 (e x)] g) := by
   rw [← e.map_nhds_eq x]
