@@ -94,4 +94,38 @@ theorem isLocallyConstant_windingNumber_of_closed {γ : ℝ → ℂ} {a b : ℝ}
       (𝓝 ⟨w₀, hw₀⟩) (𝓝 w₀) := continuous_subtype_val.continuousAt
   exact hval.eventually hball
 
+/-- **The winding number vanishes on a ball around an off-curve null point.** For a closed curve
+`γ` (differentiable off a countable set, continuous on `uIcc a b`, with interval-integrable
+derivative), if the winding number about an off-curve point `w` is `0`, then it is `0` throughout a
+ball around `w` that stays off the curve. This is the local matching input for Dixon's argument: the
+off-curve set is open, so the subtype-open set on which local constancy pins the winding number to
+`0` pushes forward, along the open inclusion `Subtype.val`, to a `ℂ`-ball. -/
+theorem exists_ball_windingNumber_zero {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
+    (hclosed : γ a = γ b) (hP : P.Countable) (hγ_cont : ContinuousOn γ (uIcc a b))
+    (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
+    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
+    (hoff : ∀ t ∈ uIcc a b, γ t ≠ w) (hw_zero : windingNumber γ a b w = 0) :
+    ∃ ε > 0, ∀ w' ∈ Metric.ball w ε,
+      (∀ t ∈ uIcc a b, γ t ≠ w') ∧ windingNumber γ a b w' = 0 := by
+  obtain ⟨ε₁, hε₁, h_dist⟩ := exists_ball_dist_curve_lower_bound hγ_cont hoff
+  -- The off-curve set is open: it is the complement of the compact curve image.
+  have hSopen : IsOpen {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} := by
+    have hset : {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} = (γ '' uIcc a b)ᶜ := by
+      ext z
+      simp only [Set.mem_setOf_eq, Set.mem_compl_iff, Set.mem_image, not_exists, not_and, ne_eq]
+    rw [hset]
+    exact (isCompact_uIcc.image_of_continuousOn hγ_cont).isClosed.isOpen_compl
+  -- The winding number is locally constant off the curve, so it is `0` on a subtype-open set
+  -- around `w`; push that set forward along the open inclusion to a `ℂ`-ball.
+  have hlc := isLocallyConstant_windingNumber_of_closed hclosed hP hγ_cont hγ_diff hderiv_int
+  obtain ⟨V, hV_open, hwV, hV_const⟩ := hlc.exists_open ⟨w, hoff⟩
+  have hVℂ : IsOpen (Subtype.val '' V) := hSopen.isOpenMap_subtype_val V hV_open
+  obtain ⟨ε₂, hε₂, hball₂⟩ := Metric.isOpen_iff.mp hVℂ w ⟨⟨w, hoff⟩, hwV, rfl⟩
+  refine ⟨min ε₁ ε₂, lt_min hε₁ hε₂, fun w' hw' ↦ ⟨fun t ht ↦ ?_, ?_⟩⟩
+  · exact sub_ne_zero.mp (norm_pos_iff.mp (lt_of_lt_of_le hε₁
+      (h_dist w' (Metric.ball_subset_ball (min_le_left _ _) hw') t ht)))
+  · obtain ⟨p, hpV, hpeq⟩ := hball₂ (Metric.ball_subset_ball (min_le_right _ _) hw')
+    rw [← hpeq, hV_const p hpV]
+    exact hw_zero
+
 end TauCeti.Contour
