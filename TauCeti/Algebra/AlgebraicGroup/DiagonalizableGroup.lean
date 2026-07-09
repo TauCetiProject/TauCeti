@@ -223,15 +223,8 @@ private theorem toMultiplicativeAlgEquiv_T (n : ℤ) :
     AddMonoidAlgebra.toMultiplicativeAlgEquiv (R := R) R ℤ (LaurentPolynomial.T n) =
       MonoidAlgebra.single (Multiplicative.ofAdd n) 1 := by
   simp only [AddMonoidAlgebra.toMultiplicativeAlgEquiv, AlgEquiv.coe_mk,
-    AddMonoidAlgebra.toMultiplicative, Equiv.coe_fn_mk,
-    LaurentPolynomial.T]
-  -- After unfolding `toMultiplicative`, the remaining term is the bundled `MonoidAlgebra`
-  -- version of `Finsupp.mapDomain_single`.
-  change MonoidAlgebra.ofCoeff
-      (Finsupp.mapDomain (⇑Multiplicative.ofAdd) (Finsupp.single n (1 : R))) =
-    MonoidAlgebra.single (Multiplicative.ofAdd n) 1
-  rw [Finsupp.mapDomain_single]
-  rfl
+    AddMonoidAlgebra.toMultiplicative, Equiv.coe_fn_mk, LaurentPolynomial.T,
+    AddMonoidAlgebra.coeff_single, Finsupp.mapDomain_single, MonoidAlgebra.ofCoeff_single]
 
 /-- The group-algebra presentation of `D(Multiplicative ℤ)` agrees with the
 Laurent-polynomial multiplicative group `𝔾ₘ` of `TauCeti.MultiplicativeGroup`: reading a point
