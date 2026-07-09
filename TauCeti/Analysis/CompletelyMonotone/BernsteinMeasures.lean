@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.CompletelyMonotone.Closure
 public import TauCeti.Analysis.CompletelyMonotone.Integral
 
@@ -1176,14 +1177,11 @@ private lemma integral_neg_iteratedDerivWithin_one_Ici_eq_Icc
   apply ae_of_all
   intro t ht
   rw [uIoc_of_le hxT.le] at ht
-  have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
   have hcda : ContDiffAt ℝ (↑1 : WithTop ℕ∞) f t :=
-    (hcm.contDiffOn.of_le (nat_le_top 1)).contDiffAt (Ici_mem_nhds ht_pos)
+    (hcm.contDiffOn.of_le (nat_le_top 1)).contDiffAt
+      (Ici_mem_nhds (lt_of_le_of_lt hx ht.1))
   congr 1
-  rw [iteratedDerivWithin_eq_iteratedDeriv
-      (uniqueDiffOn_Icc hxT) hcda (Ioc_subset_Icc_self ht),
-    iteratedDerivWithin_eq_iteratedDeriv
-      (uniqueDiffOn_Ici 0) hcda (mem_Ici.mpr ht_pos.le)]
+  exact (ContDiffAt.iteratedDerivWithin_Icc_eq_Ici hcda hx hxT ht.1.le ht.2).symm
 
 private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (n : ℕ) (hn : 1 ≤ n) (x : ℝ) (hx : 0 ≤ x)

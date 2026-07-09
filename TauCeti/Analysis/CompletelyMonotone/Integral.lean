@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import TauCeti.Analysis.CompletelyMonotone.Basic
 
 /-!
@@ -122,9 +122,7 @@ lemma IsCompletelyMonotone.neg_iteratedDerivWithin_one_integrableOn
   have hderiv : ∀ t ∈ Ioi 0,
       HasDerivAt f (iteratedDerivWithin 1 f (Ici 0) t) t := by
     intro t ht
-    simpa using ContDiffOn.hasDerivAt_iteratedDerivWithin
-      (k := 0) (hcm.contDiffOn.of_le (nat_le_top _)) (uniqueDiffOn_Ici 0)
-      (Ici_mem_nhds ht)
+    exact hcm.hasDerivAt_iteratedDerivWithin_succ 0 ht
   have hneg : ∀ t ∈ Ioi 0, iteratedDerivWithin 1 f (Ici 0) t ≤ 0 :=
     fun t ht => hcm.iteratedDerivWithin_one_nonpos ht.le
   exact (integrableOn_Ioi_deriv_of_nonpos hcont hderiv hneg hL).neg
@@ -138,9 +136,7 @@ lemma IsCompletelyMonotone.integral_Ioi_neg_iteratedDerivWithin_one
   have hderiv : ∀ t ∈ Ioi 0,
       HasDerivAt f (iteratedDerivWithin 1 f (Ici 0) t) t := by
     intro t ht
-    simpa using ContDiffOn.hasDerivAt_iteratedDerivWithin
-      (k := 0) (hcm.contDiffOn.of_le (nat_le_top _)) (uniqueDiffOn_Ici 0)
-      (Ici_mem_nhds ht)
+    exact hcm.hasDerivAt_iteratedDerivWithin_succ 0 ht
   have hneg : ∀ t ∈ Ioi 0, iteratedDerivWithin 1 f (Ici 0) t ≤ 0 :=
     fun t ht => hcm.iteratedDerivWithin_one_nonpos ht.le
   have hFTC :
