@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.PositiveDefinite.Basic
+import TauCeti.Analysis.PositiveDefinite.KernelClosure
 
 /-!
 # Weighted closure for positive-definite functions
@@ -13,7 +14,8 @@ This file adds the weighted finite-mixture and Schur-power API for
 `TauCeti.IsPositiveDefinite`, the positive-definite-function predicate on an involutive additive
 monoid. The basic file already proves binary sums, nonnegative complex scalar multiples, pointwise
 products, and unweighted finite sums/products. Here we package the forms used by examples and
-finite approximations: finite nonnegative weighted sums, real-weighted variants, and powers.
+finite approximations: finite nonnegative weighted sums, real-weighted variants, and powers. The
+weighted sum API is available in scalar (`•`) notation.
 
 This advances `TauCetiRoadmap/OneParameterSemigroups/README.md`, Part C, the positive-definite
 functions API asking for closure under sums and products before the Bochner and BCR representation
@@ -82,12 +84,8 @@ theorem sum_real_const_mul {ι : Type*} {s : Finset ι} {w : ι → ℝ} {F : ι
 
 /-- Schur powers of a positive-definite function are positive definite. -/
 theorem pow {F : M → ℂ} (hF : IsPositiveDefinite F) (n : ℕ) :
-    IsPositiveDefinite (fun x => F x ^ n) := by
-  induction n with
-  | zero =>
-      simpa using isPositiveDefinite_const (M := M) (k := (1 : ℂ)) zero_le_one
-  | succ n ih =>
-      simpa [pow_succ] using ih.mul hF
+    IsPositiveDefinite (fun x => F x ^ n) :=
+  of_isPositiveDefiniteKernel (isPositiveDefiniteKernel_pow hF.isPositiveDefiniteKernel n)
 
 section Values
 
