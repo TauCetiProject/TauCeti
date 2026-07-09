@@ -21,6 +21,23 @@ generalized to this continuous topological setting. Later knot-equivalence found
 intended to specialize this continuous relation to smooth embeddings `S¹ ↪ M`; the same
 notion also underlies locally flat isotopy, diffeotopies, and concordance.
 
+## A warning: non-ambient isotopy is degenerate for knots
+
+The non-ambient relation `Isotopy`/`Isotopic` is *not* the right equivalence for classical knot
+theory: for a compact `1`-submanifold of `S³` (or `ℝ³`) it collapses every tame knot to the
+unknot. Shrink the arc carrying the knotting steadily to a point; each time slice stays an
+embedding, and joint injectivity across the levels together with compactness (a continuous
+injection of a compact space into a Hausdorff space is an embedding) keeps the total map
+`I × X → I × Y` an embedding, so the shrinking is a genuine `Isotopy`. Thus continuous,
+non-ambient isotopy distinguishes no tame knots. *Ambient* isotopy is the relation with
+knot-theoretic content — an ambient isotopy induces a homeomorphism of the knot complements,
+which a mere isotopy need not — so knot invariants must be built on `AmbientIsotopy` and the
+`AmbientIsotopic` equivalence, never on `Isotopy`/`Isotopic`. This degeneracy is specific to the
+*continuous* isotopy of *compact* (tame) knots: it says nothing about ambient isotopy, and it
+fails in the smooth category, where pulling an arc tight to a point is not smooth at the final
+time. See Burde--Zieschang, *Knots*, Chapter 1 §A, which introduces ambient isotopy
+(Definition 1.2) precisely because the naive isotopy of Definition 1.1 is too coarse for knots.
+
 ## Main definitions
 
 * `TauCeti.Isotopy f₀ f₁`: a homotopy from `f₀` to `f₁` whose total level-preserving map is a
@@ -125,7 +142,12 @@ private theorem isInducing_restrict_of_embedding {Z W A : Type*} [TopologicalSpa
   rwa [Function.comp_assoc, Homeomorph.self_comp_symm, Function.comp_id] at h2
 
 /-- An **isotopy** between `f₀ f₁ : C(X, Y)` is a homotopy whose level-preserving total map
-`I × X → I × Y` is a topological embedding. -/
+`I × X → I × Y` is a topological embedding.
+
+As an equivalence this relation is degenerate for classical knot theory: continuous, non-ambient
+isotopy collapses every tame knot in `S³`/`ℝ³` to the unknot (shrink the knotted arc to a point),
+so it is no finer than "both endpoints are embeddings". Use `AmbientIsotopy`/`AmbientIsotopic` for
+knot equivalence; see the module docstring for the argument and the Burde--Zieschang reference. -/
 structure Isotopy (f₀ f₁ : C(X, Y)) extends Homotopy f₀ f₁ where
   /-- the level-preserving total map of an isotopy is a topological embedding -/
   isEmbedding_total' : IsEmbedding fun p : I × X => (p.1, toFun p)
@@ -348,7 +370,11 @@ instance instHomotopyLike : HomotopyLike (Isotopy f₀ f₁) f₀ f₁ where
 
 end Isotopy
 
-/-- Two maps `f₀ f₁ : C(X, Y)` are **isotopic** if there is an isotopy between them. -/
+/-- Two maps `f₀ f₁ : C(X, Y)` are **isotopic** if there is an isotopy between them.
+
+Warning: for classical knot theory this relation is degenerate — continuous, non-ambient isotopy
+identifies every tame knot in `S³`/`ℝ³` with the unknot (see the module docstring), so knot
+invariants must be built on `AmbientIsotopic`, not on `Isotopic`. -/
 @[expose] def Isotopic (f₀ f₁ : C(X, Y)) : Prop :=
   Nonempty (Isotopy f₀ f₁)
 
