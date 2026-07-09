@@ -60,7 +60,13 @@ private theorem le_ker_tensorProduct_mkQ_comp_coact :
   rcases N.coact_mem hm with ⟨t, ht⟩
   rw [← ht]
   letI : AddCommGroup C := Module.addCommMonoidToAddCommGroup R (M := C)
-  exact rTensor_mkQ_map_subtype (R := R) (C := C) N.toSubmodule t
+  change LinearMap.rTensor C N.carrier.mkQ
+    (LinearMap.rTensor C N.carrier.subtype t) = 0
+  have h : LinearMap.rTensor C N.carrier.subtype t ∈
+      LinearMap.ker (LinearMap.rTensor C N.carrier.mkQ) := by
+    rw [rTensor_mkQ]
+    exact LinearMap.mem_range_self _ _
+  exact h
 
 /-- The coaction induced on the quotient by a subcomodule. -/
 def quotientCoact : M ⧸ N.toSubmodule →ₗ[R] (M ⧸ N.toSubmodule) ⊗[R] C :=
