@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.MultiquadraticSplitting
+public import TauCeti.NumberTheory.Multiquadratic.MultiquadraticSplitting
 -- `LegendreEvenPrimeDiscriminant` supplies the supplementary law for the radicand `2`, used
 -- only inside a proof below, so it is not re-exported.
 import TauCeti.NumberTheory.Multiquadratic.LegendreEvenPrimeDiscriminant

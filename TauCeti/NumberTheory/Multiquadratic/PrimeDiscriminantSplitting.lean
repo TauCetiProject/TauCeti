@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.LegendrePrimeDiscriminants
-public import TauCeti.NumberTheory.NumberField.MultiquadraticSplitting
+public import TauCeti.NumberTheory.Multiquadratic.MultiquadraticSplitting
 
 /-!
 # Prime-discriminant splitting in multiquadratic fields
