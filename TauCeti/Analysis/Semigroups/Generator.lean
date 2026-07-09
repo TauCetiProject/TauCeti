@@ -45,9 +45,9 @@ private theorem tendsto_average_Ioc_zero_of_continuousOn_Ici
       HasDerivWithinAt (fun u => ∫ t in (0 : ℝ)..u, g t) (g 0) (Set.Ioi 0) 0 :=
     (intervalIntegral.integral_hasDerivWithinAt_right IntervalIntegrable.refl hmeas
       hg0).Ioi_of_Ici
-  rw [hasDerivWithinAt_iff_tendsto_slope,
-    Set.sdiff_singleton_eq_self (by simp : (0 : ℝ) ∉ Set.Ioi 0)] at h_ftc
-  refine h_ftc.congr' ?_
+  have h_slope :=
+    (hasDerivWithinAt_iff_tendsto_slope' (by simp : (0 : ℝ) ∉ Set.Ioi 0)).mp h_ftc
+  refine h_slope.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
   rw [slope_def_module, sub_zero, intervalIntegral.integral_same, sub_zero,
     intervalIntegral.integral_of_le ht.le, one_div]
@@ -176,10 +176,8 @@ theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
     Filter.Tendsto
       (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, S.realOperator u x)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds x) := by
-  have h_cont_Ioi : ContinuousOn (fun u => S.realOperator u x) (Set.Ioi 0) := by
-    intro u hu
-    exact ((S.realOperator_continuousWithinAt x u hu.le).continuousAt
-      (Ici_mem_nhds hu)).continuousWithinAt
+  have h_cont_Ioi : ContinuousOn (fun u => S.realOperator u x) (Set.Ioi 0) :=
+    (S.realOperator_continuousOn_Ici x).mono Set.Ioi_subset_Ici_self
   have h := tendsto_average_Ioc_zero_of_continuousOn_Ici
     (g := fun u => S.realOperator u x)
     (h_cont_Ioi.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Ioi 0)
