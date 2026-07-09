@@ -66,21 +66,6 @@ private lemma contDiffAt_homothety (a : E) (c : ℝ) (x : E) :
     fun_prop
   simpa [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add] using h
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
-/-- Precomposition by a homeomorphism transports vanishing in a neighbourhood. -/
-private theorem eventuallyEq_zero_comp_homeomorph_iff (h : E ≃ₜ E) (g : E → F) (x : E) :
-    (g ∘ h =ᶠ[𝓝 x] 0) ↔ (g =ᶠ[𝓝 (h x)] 0) := by
-  rw [← h.map_nhds_eq x]
-  constructor
-  · intro hyp
-    refine Filter.eventually_map.mpr ?_
-    filter_upwards [hyp] with y hy
-    simpa using hy
-  · intro hyp
-    have hyp' := Filter.eventually_map.mp hyp
-    filter_upwards [hyp'] with y hy
-    simpa using hy
-
 /-- **Harmonicity is invariant under nonzero homothety.**
 
 For `c ≠ 0`, the function `y ↦ f (AffineMap.homothety a c y)` is harmonic at `x` iff `f`
@@ -133,11 +118,21 @@ theorem harmonicAt_comp_homothety_right_iff (a : E) (c : ℝ) (hc : c ≠ 0) {f 
       have h' : Δ f ∘ e =ᶠ[𝓝 x] 0 := by
         filter_upwards [h] with y hy
         exact hzero (by simpa [Function.comp_apply] using hy)
-      have hmain := (eventuallyEq_zero_comp_homeomorph_iff e (Δ f) x).1 h'
+      have hmain : Δ f =ᶠ[𝓝 (e x)] (0 : E → F) := by
+        rw [← e.map_nhds_eq x]
+        exact ((Filter.eventuallyEq_map (f := 𝓝 x) (m := e) (f₁ := Δ f)
+          (f₂ := (0 : E → F))).symm).1 (by simpa using h')
       simpa [he x] using hmain
     · intro h
-      have h' : Δ f ∘ e =ᶠ[𝓝 x] 0 :=
-        (eventuallyEq_zero_comp_homeomorph_iff e (Δ f) x).2 (by simpa [he x] using h)
+      have h' : Δ f ∘ e =ᶠ[𝓝 x] 0 := by
+        have hmain : Δ f =ᶠ[𝓝 (e x)] (0 : E → F) := by
+          simpa [he x] using h
+        rw [← e.map_nhds_eq x] at hmain
+        -- `Filter.eventuallyEq_map` compares `g ∘ e` with `g' ∘ e`; reshape the zero side as
+        -- `0 ∘ e` (definitionally `0`) so it applies to `hmain`.
+        change Δ f ∘ e =ᶠ[𝓝 x] (0 : E → F) ∘ e
+        exact ((Filter.eventuallyEq_map (f := 𝓝 x) (m := e) (f₁ := Δ f)
+          (f₂ := (0 : E → F))).symm).2 hmain
       filter_upwards [h'] with y hy
       -- Unfold the scaled composition produced by `hscale` at this point.
       change c ^ 2 • ((Δ f ∘ e) y) = 0
