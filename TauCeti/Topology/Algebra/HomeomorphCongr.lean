@@ -40,12 +40,9 @@ public section
 
 namespace TauCeti
 
-open Topology
-
 variable {M : Type*} [TopologicalSpace M]
   {N : Type*} [TopologicalSpace N]
   {P : Type*} [TopologicalSpace P]
-  {Z : Type*}
 
 namespace Homeomorph
 

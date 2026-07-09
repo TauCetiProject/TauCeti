@@ -4,8 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-import TauCeti.Topology.Homeomorph
-
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import TauCeti.Analysis.InnerProductSpace.Laplacian
@@ -55,8 +53,14 @@ theorem harmonicAt_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') 
     simpa using this
   have hlap : (Δ (f ∘ l) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (l x)] 0) := by
     rw [laplacian_comp_linearIsometryEquiv_right l f]
-    have := Homeomorph.eventuallyEq_comp_iff l.toHomeomorph (Δ f) (0 : E' → F) x
-    rwa [LinearIsometryEquiv.coe_toHomeomorph] at this
+    change (Δ f ∘ l.toHomeomorph =ᶠ[𝓝 x] 0) ↔
+      (Δ f =ᶠ[𝓝 (l.toHomeomorph x)] 0)
+    rw [← l.toHomeomorph.map_nhds_eq x]
+    change (Δ f ∘ l.toHomeomorph =ᶠ[𝓝 x] (0 : E' → F) ∘ l.toHomeomorph) ↔
+      (Δ f =ᶠ[Filter.map l.toHomeomorph (𝓝 x)] (0 : E' → F))
+    exact
+      (Filter.eventuallyEq_map (f := 𝓝 x) (m := l.toHomeomorph) (f₁ := Δ f)
+        (f₂ := (0 : E' → F))).symm
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 
 /-- **Harmonicity is invariant under translation.** The function `y ↦ f (y + a)` is harmonic
@@ -77,12 +81,16 @@ theorem harmonicAt_comp_add_right_iff {f : E → F} {x a : E} :
       exact h.comp x hψ
   have hlap : (Δ (fun y ↦ f (y + a)) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (x + a)] 0) := by
     rw [laplacian_comp_add_right f a]
-    have := Homeomorph.eventuallyEq_comp_iff (Homeomorph.addRight a) (Δ f) (0 : E → F) x
-    -- `Homeomorph.eventuallyEq_comp_iff` exposes the pulled-back zero as a lambda;
-    -- reshape it to the overloaded zero function used by the Laplacian statement.
+    change ((fun y : E ↦ Δ f (y + a)) =ᶠ[𝓝 x] 0) ↔
+      (Δ f =ᶠ[𝓝 ((Homeomorph.addRight a) x)] 0)
+    rw [← (Homeomorph.addRight a).map_nhds_eq x]
+    -- `Filter.eventuallyEq_map` exposes the pulled-back zero as a lambda; reshape it
+    -- to the overloaded zero function used by the Laplacian statement.
     change ((fun y : E ↦ Δ f (y + a)) =ᶠ[𝓝 x] fun _ : E ↦ (0 : F)) ↔
-      (Δ f =ᶠ[𝓝 (x + a)] 0)
-    simpa [Function.comp_def] using this
+      (Δ f =ᶠ[Filter.map (Homeomorph.addRight a) (𝓝 x)] 0)
+    simpa [Function.comp_def] using
+      (Filter.eventuallyEq_map (f := 𝓝 x) (m := Homeomorph.addRight a) (f₁ := Δ f)
+        (f₂ := (0 : E → F))).symm
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 
 /-- **Harmonicity is invariant under affine isometries.** For an affine isometry equivalence
