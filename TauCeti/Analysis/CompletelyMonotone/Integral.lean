@@ -5,7 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.CompletelyMonotone.Basic
 
 /-!
@@ -89,6 +90,31 @@ private lemma IsCompletelyMonotone.iteratedDerivWithin_one_nonpos
     (hf : IsCompletelyMonotone f) {t : ℝ} (ht : 0 ≤ t) :
     iteratedDerivWithin 1 f (Ici 0) t ≤ 0 := by
   rw [iteratedDerivWithin_one]; exact hf.derivWithin_nonpos ht
+
+/-- On a compact interval in `[0, ∞)`, the integral of `-f'` for a completely monotone
+function is the endpoint drop, with the derivative taken within `[0, ∞)`. -/
+lemma IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub
+    (hcm : IsCompletelyMonotone f) {x T : ℝ} (hx : 0 ≤ x) (hxT : x < T) :
+    ∫ t in x..T, -iteratedDerivWithin 1 f (Ici 0) t = f x - f T := by
+  have htransfer :
+      ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t =
+      ∫ t in x..T, -iteratedDerivWithin 1 f (Ici 0) t := by
+    apply intervalIntegral.integral_congr_uIoo
+    intro t ht
+    rw [uIoo_of_le hxT.le] at ht
+    have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
+    have hcda : ContDiffAt ℝ (1 : WithTop ℕ∞) f t :=
+      (hcm.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (nat_le_top _)
+    exact congrArg Neg.neg (by
+      rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT) hcda
+          ⟨ht.1.le, ht.2.le⟩,
+        iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcda
+          (mem_Ici.mpr ht_pos.le)])
+  rw [← htransfer]
+  simpa [iteratedDerivWithin_one, intervalIntegral.integral_neg, neg_sub] using
+    congrArg Neg.neg (intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc
+      ((hcm.contDiffOn.mono
+        (Icc_subset_Ici_self.trans (Ici_subset_Ici.mpr hx))).of_le (nat_le_top _)) hxT.le)
 
 /-- `-f'` is integrable on `(0, ∞)` for a completely monotone function, where the derivative is
 taken within the closed half-line `[0, ∞)`. -/

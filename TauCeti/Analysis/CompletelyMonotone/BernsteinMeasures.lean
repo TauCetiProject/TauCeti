@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.CompletelyMonotone.Closure
 public import TauCeti.Analysis.CompletelyMonotone.Integral
@@ -620,29 +619,6 @@ lemma chafaiMeasure_zero (f : ℝ → ℝ) : chafaiMeasure f 0 = 0 := by
 lemma chafaiRescaled_zero (f : ℝ → ℝ) : chafaiRescaled f 0 = 0 := by
   rw [chafaiRescaled_eq_map, chafaiMeasure_zero, Measure.map_zero]
 
-private lemma integral_neg_iteratedDerivWithin_one_Ici_eq_sub (hcm : IsCompletelyMonotone f)
-    {x T : ℝ} (hx : 0 ≤ x) (hxT : x < T) :
-    ∫ t in x..T, -iteratedDerivWithin 1 f (Ici 0) t = f x - f T := by
-  have htransfer :
-      ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t =
-      ∫ t in x..T, -iteratedDerivWithin 1 f (Ici 0) t := by
-    apply intervalIntegral.integral_congr_uIoo
-    intro t ht
-    rw [uIoo_of_le hxT.le] at ht
-    have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
-    have hcda : ContDiffAt ℝ (1 : WithTop ℕ∞) f t :=
-      (hcm.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (nat_le_top _)
-    exact congrArg Neg.neg (by
-      rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT) hcda
-          ⟨ht.1.le, ht.2.le⟩,
-        iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcda
-          (mem_Ici.mpr ht_pos.le)])
-  rw [← htransfer]
-  simpa [iteratedDerivWithin_one, intervalIntegral.integral_neg, neg_sub] using
-    congrArg Neg.neg (intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc
-      ((hcm.contDiffOn.mono
-        (Icc_subset_Ici_self.trans (Ici_subset_Ici.mpr hx))).of_le (nat_le_top _)) hxT.le)
-
 private lemma integral_chafaiDensity_one_eq (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (T : ℝ) (hT : 0 < T) :
     ∫ t in (0 : ℝ)..T, chafaiDensity f 1 t = f 0 - f T := by
@@ -650,7 +626,7 @@ private lemma integral_chafaiDensity_one_eq (f : ℝ → ℝ) (hcm : IsCompletel
       ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t :=
     intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun t _ => chafaiDensity_one t)
   rw [h1]
-  exact integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm le_rfl hT
+  exact IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm le_rfl hT
 
 private lemma integral_chafaiDensity_le_sub (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (j : ℕ) (hj : 1 ≤ j) (T : ℝ) (hT : 0 < T) :
@@ -1221,7 +1197,7 @@ private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
       refine Tendsto.congr' ?_ (Tendsto.sub tendsto_const_nhds hL)
       filter_upwards [eventually_gt_atTop (max x 1)] with T hT
       have hxT : x < T := lt_of_le_of_lt (le_max_left x 1) hT
-      exact (integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm hx hxT).symm
+      exact (IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm hx hxT).symm
     · -- Inductive step `n = k+1`: integrate by parts once and pass to the limit.
       have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
       have ih_applied := ih hk1
