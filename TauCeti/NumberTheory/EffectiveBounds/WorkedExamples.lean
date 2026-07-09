@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.Cyclotomic.Basic
 import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import TauCeti.NumberTheory.EffectiveBounds.ClassNumber
 import TauCeti.NumberTheory.EffectiveBounds.DiscriminantEquality
-import TauCeti.FieldTheory.Trace
+import TauCeti.NumberTheory.EffectiveBounds.TraceForm
 import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
