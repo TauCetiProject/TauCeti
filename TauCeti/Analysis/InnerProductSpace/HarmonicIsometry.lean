@@ -7,7 +7,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import TauCeti.Analysis.InnerProductSpace.Laplacian
-public import TauCeti.Topology.Algebra.HomeomorphCongr
 
 /-!
 # Geometric invariance of harmonic functions
@@ -45,6 +44,21 @@ variable
   {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+private theorem eventuallyEq_comp_homeomorph_zero_iff {M : Type*} [TopologicalSpace M]
+    {N : Type*} [TopologicalSpace N] {Z : Type*} [Zero Z] (e : M ≃ₜ N) (f : N → Z)
+    (x : M) :
+    (f ∘ e =ᶠ[𝓝 x] 0) ↔ (f =ᶠ[𝓝 (e x)] 0) := by
+  rw [← e.map_nhds_eq x]
+  constructor
+  · intro hyp
+    refine Filter.eventually_map.mpr ?_
+    filter_upwards [hyp] with y hy
+    simpa using hy
+  · intro hyp
+    have hyp' := Filter.eventually_map.mp hyp
+    filter_upwards [hyp'] with y hy
+    simpa using hy
+
 /-- **Harmonicity is invariant under isometric changes of variable.** For a linear isometry
 equivalence `l`, the function `f ∘ l` is harmonic at `x` iff `f` is harmonic at `l x`. -/
 theorem harmonicAt_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') {f : E' → F}
@@ -54,7 +68,7 @@ theorem harmonicAt_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') 
     simpa using this
   have hlap : (Δ (f ∘ l) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (l x)] 0) := by
     rw [laplacian_comp_linearIsometryEquiv_right l f]
-    have := TauCeti.Homeomorph.eventuallyEq_comp_zero_iff l.toHomeomorph (Δ f) x
+    have := eventuallyEq_comp_homeomorph_zero_iff l.toHomeomorph (Δ f) x
     rwa [LinearIsometryEquiv.coe_toHomeomorph] at this
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 
@@ -76,7 +90,7 @@ theorem harmonicAt_comp_add_right_iff {f : E → F} {x a : E} :
       exact h.comp x hψ
   have hlap : (Δ (fun y ↦ f (y + a)) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (x + a)] 0) := by
     rw [laplacian_comp_add_right f a]
-    have := TauCeti.Homeomorph.eventuallyEq_comp_zero_iff (Homeomorph.addRight a) (Δ f) x
+    have := eventuallyEq_comp_homeomorph_zero_iff (Homeomorph.addRight a) (Δ f) x
     simpa [Function.comp_def] using this
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 

@@ -44,6 +44,21 @@ variable
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+private theorem eventuallyEq_comp_homeomorph_zero_iff {M : Type*} [TopologicalSpace M]
+    {N : Type*} [TopologicalSpace N] {Z : Type*} [Zero Z] (e : M ≃ₜ N) (f : N → Z)
+    (x : M) :
+    (f ∘ e =ᶠ[𝓝 x] 0) ↔ (f =ᶠ[𝓝 (e x)] 0) := by
+  rw [← e.map_nhds_eq x]
+  constructor
+  · intro hyp
+    refine Filter.eventually_map.mpr ?_
+    filter_upwards [hyp] with y hy
+    simpa using hy
+  · intro hyp
+    have hyp' := Filter.eventually_map.mp hyp
+    filter_upwards [hyp'] with y hy
+    simpa using hy
+
 /-- Homotheties of a finite-dimensional normed affine space are homeomorphisms when the scale is
 nonzero. -/
 private abbrev homothetyHomeomorph (a : E) (c : ℝ) (hc : c ≠ 0) : E ≃ₜ E :=
@@ -118,11 +133,11 @@ theorem harmonicAt_comp_homothety_right_iff (a : E) (c : ℝ) (hc : c ≠ 0) {f 
       have h' : Δ f ∘ e =ᶠ[𝓝 x] 0 := by
         filter_upwards [h] with y hy
         exact hzero (by simpa [Function.comp_apply] using hy)
-      have hmain := (TauCeti.Homeomorph.eventuallyEq_comp_zero_iff e (Δ f) x).1 h'
+      have hmain := (eventuallyEq_comp_homeomorph_zero_iff e (Δ f) x).1 h'
       simpa [he x] using hmain
     · intro h
       have h' : Δ f ∘ e =ᶠ[𝓝 x] 0 :=
-        (TauCeti.Homeomorph.eventuallyEq_comp_zero_iff e (Δ f) x).2 (by simpa [he x] using h)
+        (eventuallyEq_comp_homeomorph_zero_iff e (Δ f) x).2 (by simpa [he x] using h)
       filter_upwards [h'] with y hy
       -- Unfold the scaled composition produced by `hscale` at this point.
       change c ^ 2 • ((Δ f ∘ e) y) = 0
