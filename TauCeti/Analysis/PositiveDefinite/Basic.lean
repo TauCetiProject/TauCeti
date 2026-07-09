@@ -8,6 +8,7 @@ public import Mathlib.Analysis.Complex.Order
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Algebra.QuadraticDiscriminant
 public import Mathlib.Algebra.BigOperators.Fin
+public import TauCeti.Analysis.PositiveDefinite.Kernel
 
 /-!
 # Positive-definite functions on an involutive additive monoid
@@ -50,6 +51,10 @@ here. The continuity theory and Bochner's representation theorem are later miles
 * `TauCeti.IsPositiveDefinite.norm_apply_le_map_zero_re_of_add_star_eq_zero`: `‖F a‖ ≤ (F 0).re`
   when `a + star a = 0`, with the additive-group corollary
   `TauCeti.IsPositiveDefinite.norm_apply_le_map_zero_re_of_star_eq_neg` for `star a = -a`.
+* `TauCeti.IsPositiveDefinite.isPositiveDefiniteKernel`: a positive-definite function gives the
+  positive-definite kernel `fun a b => F (a + star b)`.
+* `TauCeti.IsPositiveDefinite.of_isPositiveDefiniteKernel`: conversely, if the kernel
+  `fun a b => F (a + star b)` is positive definite then `F` is positive definite.
 * `TauCeti.IsPositiveDefinite.gram_posSemidef`: Gram matrices of a positive-definite
   function are positive semidefinite.
 * `TauCeti.IsPositiveDefinite.add`, `TauCeti.IsPositiveDefinite.sum`,
@@ -246,7 +251,8 @@ theorem const_mul {k : ℂ} (hk : 0 ≤ k) (hF : IsPositiveDefinite F) :
   rw [hpull]
   exact mul_nonneg hk (hF n d v)
 
-private theorem kernel_form_nonneg (hF : IsPositiveDefinite F) {ι : Type*} [Fintype ι]
+/-- The kernel-form quadratic sum attached to a positive-definite function is nonnegative. -/
+theorem kernel_form_nonneg (hF : IsPositiveDefinite F) {ι : Type*} [Fintype ι]
     (v : ι → M) (x : ι → ℂ) :
     0 ≤ ∑ i, ∑ j, conj (x i) * x j * F (v i + star (v j)) := by
   have h := hF.sum_nonneg (fun i => conj (x i)) v
@@ -254,28 +260,28 @@ private theorem kernel_form_nonneg (hF : IsPositiveDefinite F) {ι : Type*} [Fin
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   rw [Complex.conj_conj]
 
+/-- A positive-definite function `F` induces the positive-definite kernel `K(a, b) = F(a + b⋆)`.
+This is the forward half of the function ↔ kernel correspondence. -/
+theorem isPositiveDefiniteKernel (hF : IsPositiveDefinite F) :
+    IsPositiveDefiniteKernel (fun a b => F (a + star b)) :=
+  isPositiveDefiniteKernel_iff.mpr
+    ⟨fun a b => hF.conj_symm b a, fun {_ι : Type} _ v x => hF.kernel_form_nonneg v x⟩
+
+/-- If the kernel `K(a, b) = F(a + b⋆)` is positive definite, then so is the function `F`. This is
+the reverse half of the function ↔ kernel correspondence. -/
+theorem of_isPositiveDefiniteKernel
+    (hK : IsPositiveDefiniteKernel (fun a b => F (a + star b))) : IsPositiveDefinite F := by
+  obtain ⟨_, hpos⟩ := isPositiveDefiniteKernel_iff.mp hK
+  intro n c v
+  have h := hpos v (fun i => conj (c i))
+  refine le_of_le_of_eq h ?_
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  rw [Complex.conj_conj]
+
 /-- The Gram matrix of a positive-definite function is positive semidefinite. -/
 theorem gram_posSemidef (hF : IsPositiveDefinite F) {ι : Type*} (v : ι → M) :
-    Matrix.PosSemidef (fun i j => F (v i + star (v j))) := by
-  classical
-  refine ⟨?_, ?_⟩
-  · ext i j
-    rw [Matrix.conjTranspose_apply, ← starRingEnd_apply]
-    exact hF.conj_symm (v i) (v j)
-  · intro x
-    have h := hF.kernel_form_nonneg (fun i : x.support => v (i : ι))
-      (fun i : x.support => x (i : ι))
-    have h' :
-        0 ≤ ∑ i ∈ x.support, ∑ j ∈ x.support,
-          star (x i) * (F (v i + star (v j)) * x j) := by
-      convert h using 1
-      rw [Finset.sum_subtype x.support (by intro a; rfl)]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      rw [Finset.sum_subtype x.support (by intro a; rfl)]
-      refine Finset.sum_congr rfl fun j _ => ?_
-      rw [starRingEnd_apply]
-      ring
-    simpa [Finsupp.sum, mul_assoc] using h'
+    Matrix.PosSemidef (fun i j => F (v i + star (v j))) :=
+  isPositiveDefiniteKernel_comp hF.isPositiveDefiniteKernel v
 
 /-- Positive-definite functions are closed under pointwise multiplication (Schur product). -/
 theorem mul (hF : IsPositiveDefinite F) (hG : IsPositiveDefinite G) :
