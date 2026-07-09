@@ -69,22 +69,6 @@ private theorem h2_factor_mul_num_aestronglyMeasurable {g : ℝ → ℂ}
     AEStronglyMeasurable (fun t ↦ g t * (f (γ t) * deriv γ t)) (volume.restrict (Ι a b)) :=
   ((hg.mono Set.uIoc_subset_uIcc).aestronglyMeasurable measurableSet_uIoc).mul hnum
 
-/-- Points in the `ρ/2`-ball about an off-curve `w` stay `ρ/2` away from the curve. -/
-private theorem h2_ball_dist {ρ : ℝ} (hρ_dist : ∀ t ∈ uIcc a b, ρ ≤ ‖γ t - w‖)
-    {w' : ℂ} (hw' : w' ∈ Metric.ball w (ρ / 2)) (t : ℝ) (ht : t ∈ uIcc a b) :
-    ρ / 2 ≤ ‖γ t - w'‖ := by
-  rw [Metric.mem_ball, Complex.dist_eq] at hw'
-  have h := norm_sub_norm_le (γ t - w) (w' - w)
-  rw [sub_sub_sub_cancel_right] at h
-  linarith [hρ_dist t ht]
-
-/-- On the `ρ/2`-ball, every point stays off the curve. -/
-private theorem h2_ball_avoids {ρ : ℝ} (hρ_pos : 0 < ρ) (hρ_dist : ∀ t ∈ uIcc a b, ρ ≤ ‖γ t - w‖)
-    {w' : ℂ} (hw' : w' ∈ Metric.ball w (ρ / 2)) : ∀ t ∈ uIcc a b, γ t ≠ w' := fun t ht heq ↦ by
-  have hd := h2_ball_dist hρ_dist hw' t ht
-  rw [heq, sub_self, norm_zero] at hd
-  linarith
-
 /-- On a ball of radius `ε` about the off-curve point, the squared-pole derivative integrand is
 bounded by `ε⁻² · ‖numerator‖`. -/
 private theorem h2_deriv_bound {ε : ℝ} (hε_pos : 0 < ε) {w' : ℂ}
@@ -101,8 +85,9 @@ theorem differentiableAt_dixonH2 (hγ_cont : ContinuousOn γ (uIcc a b))
     (hoff : ∀ t ∈ uIcc a b, γ t ≠ w)
     (h_cauchy_int : IntervalIntegrable (fun t ↦ f (γ t) / (γ t - w) * deriv γ t) volume a b) :
     DifferentiableAt ℂ (dixonH2 f γ a b) w := by
-  obtain ⟨ρ, hρ_pos, hρ_dist⟩ := exists_curve_dist_lower_bound hγ_cont hoff
-  have hε_pos : 0 < ρ / 2 := half_pos hρ_pos
+  obtain ⟨ε, hε_pos, h_dist_lb⟩ := exists_ball_dist_curve_lower_bound hγ_cont hoff
+  have avoid : ∀ w' ∈ Metric.ball w ε, ∀ t ∈ uIcc a b, γ t ≠ w' := fun w' hw' t ht ↦
+    sub_ne_zero.mp (norm_pos_iff.mp (lt_of_lt_of_le hε_pos (h_dist_lb w' hw' t ht)))
   -- Multiplying the Cauchy integrand by the continuous factor `γ · - w` recovers the numerator.
   have h_factor_cont : ContinuousOn (fun t ↦ γ t - w) (uIcc a b) := hγ_cont.sub continuousOn_const
   have h_num_int : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b := by
@@ -120,19 +105,19 @@ theorem differentiableAt_dixonH2 (hγ_cont : ContinuousOn γ (uIcc a b))
   refine ((intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le (𝕜 := ℂ)
     (F := fun w' t ↦ (γ t - w')⁻¹ * (f (γ t) * deriv γ t))
     (F' := fun w' t ↦ (γ t - w')⁻¹ ^ 2 * (f (γ t) * deriv γ t))
-    (bound := fun t ↦ (ρ / 2)⁻¹ ^ 2 * ‖f (γ t) * deriv γ t‖)
+    (bound := fun t ↦ ε⁻¹ ^ 2 * ‖f (γ t) * deriv γ t‖)
     (Metric.ball_mem_nhds w hε_pos) ?_
     (h_num_int.continuousOn_mul (h2_kernel_continuousOn hγ_cont hoff))
     (h2_factor_mul_num_aestronglyMeasurable ((h2_kernel_continuousOn hγ_cont hoff).pow 2) hnum)
     (Filter.Eventually.of_forall fun t ht w' hw' ↦ h2_deriv_bound hε_pos
-      (fun s hs ↦ h2_ball_dist hρ_dist hw' s hs) (Set.uIoc_subset_uIcc ht))
-    (h_num_int.norm.const_mul ((ρ / 2)⁻¹ ^ 2))
+      (h_dist_lb w' hw') (Set.uIoc_subset_uIcc ht))
+    (h_num_int.norm.const_mul (ε⁻¹ ^ 2))
     (Filter.Eventually.of_forall fun t ht w' hw' ↦ h2_pole_hasDerivAt (f (γ t) * deriv γ t) (γ t)
-      w' (sub_ne_zero.mpr (h2_ball_avoids hρ_pos hρ_dist hw' t (Set.uIoc_subset_uIcc ht))))).2
+      w' (sub_ne_zero.mpr (avoid w' hw' t (Set.uIoc_subset_uIcc ht))))).2
     ).differentiableAt
   · filter_upwards [Metric.ball_mem_nhds w hε_pos] with w' hw'
     exact h2_factor_mul_num_aestronglyMeasurable
-      (h2_kernel_continuousOn hγ_cont (h2_ball_avoids hρ_pos hρ_dist hw')) hnum
+      (h2_kernel_continuousOn hγ_cont (avoid w' hw')) hnum
 
 end
 
