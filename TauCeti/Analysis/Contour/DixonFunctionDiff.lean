@@ -23,10 +23,9 @@ there, so the `h₁`/`h₂` identity collapses.
 
 ## Main results
 
-* `TauCeti.Contour.differentiable_dixonFunction_of_windingNumber_zero_near` — the gluing core:
-  `dixonFunction f U γ a b` is entire given a local off-`U` winding-vanishing hypothesis.
 * `TauCeti.Contour.differentiable_dixonFunction` — `dixonFunction f U γ a b` is entire for a
-  null-homologous closed curve.
+  null-homologous closed curve. It is built from a private gluing core that takes the off-`U`
+  winding-vanishing hypothesis directly, which the null-homologous case then discharges.
 
 This is the analyticity input to the Liouville step of Dixon's proof of the homology form of
 Cauchy's theorem (`homologyCauchyTheorem`, `TauCetiRoadmap/ContourIntegration/Suggested.lean`).
@@ -68,7 +67,7 @@ holomorphic `dixonH1`; off `U` (hence off the curve) it agrees with the holomorp
 the two pieces match across `∂U` because the local winding hypothesis collapses the `h₁`/`h₂`
 identity. This is the gluing core; `differentiable_dixonFunction` discharges the local hypothesis
 for a null-homologous closed curve. -/
-theorem differentiable_dixonFunction_of_windingNumber_zero_near (hU : IsOpen U)
+private theorem differentiable_dixonFunction_of_windingNumber_zero_near (hU : IsOpen U)
     (hf : DifferentiableOn ℂ f U) (hγ_cont : ContinuousOn γ (uIcc a b))
     (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
