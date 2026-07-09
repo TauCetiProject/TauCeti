@@ -142,13 +142,11 @@ theorem subpath_trans {x y : X} (p : Path x y)
   simp only [← mk_trans, eq]
   exact ⟨Path.Homotopy.subpathTransSubpath p a b c⟩
 
-@[simp]
 theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
     mk (p.subpath a a) = refl (p a) := by
   simp only [← mk_refl, eq]
   rw [Path.subpath_self]
 
-@[simp]
 theorem subpath_zero_one {x y : X} (p : Path x y) :
     mk (p.subpath 0 1) = (mk p).cast (by simp) (by simp) := by
   simp only [← mk_cast, eq]
