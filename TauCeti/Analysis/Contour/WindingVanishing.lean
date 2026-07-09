@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.WindingNumber
 import TauCeti.Analysis.Contour.WindingInteger
+import TauCeti.Analysis.Contour.CurveIntegralBound
 
 /-!
 # The winding number vanishes far from a bounded closed curve
@@ -46,34 +47,6 @@ private theorem norm_inv_two_pi_I : ‖(2 * (Real.pi : ℂ) * Complex.I)⁻¹‖
       by push_cast; ring, norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs,
     abs_of_pos (by positivity)]
 
-/-- **Index-integral decay bound.** For a curve contained in the closed ball of radius `R` and a
-point `w` with `R < ‖w‖`, the index integral `∮_γ dz/(z - w)` is bounded by
-`(∫ ‖deriv γ‖) / (‖w‖ - R)`: pointwise `‖(γ t - w)⁻¹‖ ≤ (‖w‖ - R)⁻¹`, and the `L¹` norm of the
-derivative is finite. -/
-private theorem norm_index_integral_le_of_far {γ : ℝ → ℂ} {a b R : ℝ} {w : ℂ}
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
-    (hR : ∀ t ∈ uIcc a b, ‖γ t‖ ≤ R) (hw : R < ‖w‖) :
-    ‖∫ t in a..b, (γ t - w)⁻¹ * deriv γ t‖ ≤ (∫ t in Ι a b, ‖deriv γ t‖) / (‖w‖ - R) := by
-  have hpos : 0 < ‖w‖ - R := by linarith
-  have h_dist_lb : ∀ t ∈ uIcc a b, ‖w‖ - R ≤ ‖γ t - w‖ := fun t ht => by
-    have h := norm_sub_norm_le w (γ t)
-    rw [norm_sub_rev] at h
-    linarith [hR t ht]
-  have h_ae : ∀ᵐ t ∂volume.restrict (Ι a b),
-      ‖(γ t - w)⁻¹ * deriv γ t‖ ≤ (‖w‖ - R)⁻¹ * ‖deriv γ t‖ := by
-    refine ae_restrict_of_forall_mem measurableSet_uIoc fun t ht => ?_
-    rw [norm_mul, norm_inv]
-    exact mul_le_mul_of_nonneg_right (inv_anti₀ hpos (h_dist_lb t (uIoc_subset_uIcc ht)))
-      (norm_nonneg _)
-  calc ‖∫ t in a..b, (γ t - w)⁻¹ * deriv γ t‖
-      ≤ ∫ t in Ι a b, ‖(γ t - w)⁻¹ * deriv γ t‖ :=
-        intervalIntegral.norm_integral_le_integral_norm_uIoc
-    _ ≤ ∫ t in Ι a b, (‖w‖ - R)⁻¹ * ‖deriv γ t‖ :=
-        integral_mono_of_nonneg (ae_of_all _ fun _ ↦ norm_nonneg _)
-          (hderiv_int.norm.const_mul _).def' h_ae
-    _ = (‖w‖ - R)⁻¹ * ∫ t in Ι a b, ‖deriv γ t‖ := integral_const_mul _ _
-    _ = (∫ t in Ι a b, ‖deriv γ t‖) / (‖w‖ - R) := inv_mul_eq_div _ _
-
 /-- **The winding number vanishes for a point far from a bounded closed curve.** If the closed curve
 `γ` lies in the closed ball of radius `R` and `‖w‖` exceeds `R + (∫ ‖deriv γ‖) / (2π)`, then the
 integer-valued winding number about `w` has absolute value below `1`, hence is `0`. -/
@@ -98,7 +71,7 @@ private theorem windingNumber_eq_zero_of_far {γ : ℝ → ℂ} {a b R : ℝ} {P
     rw [windingNumber_eq_integral_of_avoidance hγ_cont h_off
         (intervalIntegrable_inv_sub_mul_deriv hγ_cont h_off hderiv_int),
       norm_mul, norm_inv_two_pi_I]
-    exact mul_le_mul_of_nonneg_left (norm_index_integral_le_of_far hderiv_int hR hwR)
+    exact mul_le_mul_of_nonneg_left (norm_integral_inv_sub_mul_le hderiv_int hR hwR)
       (by positivity)
   have h_lt_one : (2 * Real.pi)⁻¹ * ((∫ t in Ι a b, ‖deriv γ t‖) / (‖w‖ - R)) < 1 := by
     have key : (∫ t in Ι a b, ‖deriv γ t‖) / (2 * Real.pi) < ‖w‖ - R := by
