@@ -6,8 +6,9 @@ module
 
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import TauCeti.NumberTheory.EffectiveBounds.IdealCount
-public import TauCeti.NumberTheory.EffectiveBounds.Discriminant
-public import TauCeti.NumberTheory.EffectiveBounds.UnitSquares
+public import TauCeti.Algebra.Group.ElementaryTwoQuotient
+import TauCeti.NumberTheory.EffectiveBounds.Discriminant
+import TauCeti.NumberTheory.EffectiveBounds.UnitSquares
 
 /-!
 # An effective class-number bound

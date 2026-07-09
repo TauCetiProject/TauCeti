@@ -5,10 +5,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
-public import TauCeti.FieldTheory.Trace
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
-public import Mathlib.Algebra.Polynomial.Monic
+import TauCeti.FieldTheory.Trace
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import Mathlib.Algebra.Polynomial.Monic
 
 /-!
 # An effective discriminant bound from a basis of algebraic integers
