@@ -42,11 +42,6 @@ namespace TauCeti.Contour
 
 variable {f : ℂ → ℂ} {γ : ℝ → ℂ} {a b : ℝ}
 
-/-- The exterior `{w | R < ‖w‖}` of a closed ball is a cocompact neighbourhood of infinity. -/
-private lemma setOf_norm_gt_mem_cocompact (R : ℝ) : {w : ℂ | R < ‖w‖} ∈ cocompact ℂ :=
-  mem_cocompact.mpr
-    ⟨Metric.closedBall 0 R, isCompact_closedBall 0 R, fun _ hw ↦ by simpa using hw⟩
-
 /-- **Norm bound for `dixonH2`.** When `‖w‖ > R` and `R` bounds `‖γ‖`, `M_f` bounds `‖f ∘ γ‖`, and
 `M_d` bounds `‖deriv γ‖` on `uIcc a b`, the Cauchy-type integral is bounded by
 `M_f · M_d / (‖w‖ - R) · |b - a|`. -/
@@ -78,8 +73,9 @@ theorem dixonH2_tendsto_zero {R M_f M_d : ℝ}
   rw [Metric.tendsto_nhds]
   intro ε hε
   simp only [dist_zero_right]
-  filter_upwards [setOf_norm_gt_mem_cocompact (max R (R + M_f * M_d * |b - a| / ε))] with
-    w (hw : max R (R + M_f * M_d * |b - a| / ε) < ‖w‖)
+  filter_upwards [(isCompact_closedBall (0 : ℂ)
+      (max R (R + M_f * M_d * |b - a| / ε))).compl_mem_cocompact] with w hw
+  rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hw
   have hRw : R < ‖w‖ := lt_of_le_of_lt (le_max_left _ _) hw
   have hpos : 0 < ‖w‖ - R := by linarith
   calc ‖dixonH2 f γ a b w‖
