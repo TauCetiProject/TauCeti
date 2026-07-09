@@ -7,10 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected
 public import TauCeti.Topology.Homotopy.Path
-public import Mathlib.Topology.Constructions
-public import Mathlib.Topology.Order
-public import Mathlib.Topology.Defs.Induced
-public import Mathlib.Topology.Connected.LocallyPathConnected
 
 /-!
 # Semilocally simple connectivity on sets

@@ -6,6 +6,7 @@ Authors: Kim Morrison
 module
 
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnectedOn
+import Mathlib.Topology.Order
 
 /-!
 # Discreteness of path-homotopy fibres
@@ -28,7 +29,7 @@ variable {X : Type*} [TopologicalSpace X]
 /-! ### Tube data structures -/
 
 /-- A proof-local partition of the unit interval `[0, 1]` into `n` segments. -/
-public structure IntervalPartition (n : ℕ) where
+structure IntervalPartition (n : ℕ) where
   /-- The partition points. -/
   t : Fin (n + 1) → unitInterval
   /-- The partition points are monotone. -/
@@ -54,7 +55,7 @@ end IntervalPartition
 
 /-- Data for a tubular neighborhood in an SLSC space: segment neighborhoods, point
 neighborhoods at all partition points, and the openness/path-connectedness/SLSC subset data. -/
-public structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
+structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
   /-- Segment neighborhoods -/
   U : Fin n → Set X
   /-- Point neighborhoods at ALL partition points (including endpoints) -/
