@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Algebra.Bialgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
 public import TauCeti.Algebra.AlgebraicGroup.HopfMap
 
@@ -120,7 +119,8 @@ theorem charOfPoint_comp (φ : G →* G') (f : MonoidAlgebra R G' →ₐ[R] A) :
   ext g
   rw [charOfPoint_apply_coe, AlgHom.comp_apply, MonoidHom.comp_apply, charOfPoint_apply_coe,
     BialgHom.coe_toAlgHom (MonoidAlgebra.mapDomainBialgHom R φ),
-    TauCeti.MonoidAlgebra.mapDomainBialgHom_single]
+    MonoidAlgebra.mapDomainBialgHom, _root_.BialgHom.ofAlgHom_apply,
+    MonoidAlgebra.mapDomainAlgHom_apply, MonoidAlgebra.mapDomain_single]
 
 /-- **The points homomorphism is precomposition of characters.** Under the identification of
 points of `D(G)` with characters of `G`, the homomorphism `pointsMap φ` induced by
