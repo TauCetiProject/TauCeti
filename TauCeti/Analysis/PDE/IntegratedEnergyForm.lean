@@ -454,7 +454,7 @@ lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
   exact min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hlam
-    (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx hmu (U x)
+    (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx hmu.le (U x)
 
 namespace UniformlyEllipticOn
 

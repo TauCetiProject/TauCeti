@@ -11,9 +11,9 @@ public import TauCeti.Analysis.PDE.EnergyForm
 
 The file `TauCeti.Analysis.PDE.EnergyForm` gives the pointwise energy integrand for a
 divergence-form operator together with its pointwise Gårding lower bound.  This file refines
-that Gårding estimate into an explicit positive-constant diagonal lower bound
+that Gårding estimate into an explicit diagonal lower bound
 `min (λ/2) (μ − β²/2λ) · ‖U‖² ≤ energyIntegrand A b c U U`, once the zeroth-order mass
-coefficient has a lower bound that dominates the drift defect `β²/2λ`.
+coefficient has a lower bound that non-strictly dominates the drift defect `β²/2λ`.
 
 These are pointwise finite-dimensional statements on the jet fibre `ℝ × EuclideanSpace ℝ n`.
 They are **not** coercivity of a bilinear form in the sense of `IsCoercive`, and they are not
@@ -44,7 +44,7 @@ energy method, as in Evans, *Partial Differential Equations*, Chapter 6.
 * `TauCeti.PDE.garding_energyIntegrand_self_of_mass_lower_bound_of_bounds`: pointwise
   Gårding lower bound with a mass floor.
 * `TauCeti.PDE.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self`: explicit
-  positive-constant diagonal estimate from the mass-floor lower bound.
+  diagonal estimate from the mass-floor lower bound.
 * `TauCeti.PDE.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self`: explicit
   zero-drift diagonal lower bound from a principal quadratic lower bound and nonnegative mass.
 -/
@@ -124,18 +124,18 @@ lemma min_coercivityConstant_pos (hlam : 0 < lam) (hmu : beta ^ 2 / (2 * lam) < 
     0 < min (lam / 2) (mu - beta ^ 2 / (2 * lam)) :=
   lt_min (half_pos hlam) (sub_pos.mpr hmu)
 
-/-- The mass-floor Gårding lower bound implies the explicit coercive diagonal estimate with
-constant `min (λ / 2) (μ - β² / (2λ))`. -/
+/-- The mass-floor Gårding lower bound implies the explicit diagonal estimate with constant
+`min (λ / 2) (μ - β² / (2λ))`, assuming this second coefficient is nonnegative. -/
 lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self (hlam : 0 < lam)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
-    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) ≤ mu)
     (U : ℝ × EuclideanSpace ℝ n) :
     min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
       ≤ energyIntegrand A b₀ c₀ U U := by
   have hhalf : 0 < lam / 2 := half_pos hlam
-  have hdef : 0 < mu - beta ^ 2 / (2 * lam) := sub_pos.mpr hmu
-  have hnorm := min_mul_prod_norm_sq_le_add hhalf.le hdef.le U
+  have hdef : 0 ≤ mu - beta ^ 2 / (2 * lam) := sub_nonneg.mpr hmu
+  have hnorm := min_mul_prod_norm_sq_le_add hhalf.le hdef U
   rw [Real.norm_eq_abs, sq_abs] at hnorm
   exact hnorm.trans
     (garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam hA hb hc U)

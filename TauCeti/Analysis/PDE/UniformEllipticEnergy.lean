@@ -42,7 +42,7 @@ the same symmetry lemmas.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyIntegrand_self_of_mass_lower_bound`:
   the pointwise Gårding lower bound with a mass floor.
 * `TauCeti.PDE.UniformlyEllipticOn.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self`:
-  the explicit positive-constant diagonal estimate when the mass floor dominates the
+  the explicit diagonal estimate when the mass floor non-strictly dominates the
   drift defect.
 * `TauCeti.PDE.UniformlyEllipticOn.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self`:
   the zero-drift diagonal estimate from uniform ellipticity and nonnegative mass.
@@ -167,12 +167,12 @@ lemma garding_energyIntegrand_self_of_mass_lower_bound_on
       ≤ energyIntegrand (a x) (b x) (c x) U U :=
   h.garding_energyIntegrand_self_of_mass_lower_bound hx (hb hx) (hc hx) U
 
-/-- The lower-bound estimate implies the explicit coercive diagonal estimate with constant
-`min (λ / 2) (μ - β² / (2λ))`. -/
+/-- The lower-bound estimate implies the explicit diagonal estimate with constant
+`min (λ / 2) (μ - β² / (2λ))`, assuming this second coefficient is nonnegative. -/
 lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self
     (h : UniformlyEllipticOn Ω a lam Lam)
     {x : X} (hx : x ∈ Ω) {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
-    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) ≤ mu)
     (U : ℝ × EuclideanSpace ℝ n) :
     min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
       ≤ energyIntegrand (a x) b₀ c₀ U U :=
@@ -186,7 +186,7 @@ lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self_on
     {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
     (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)
     (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x)
-    (hmu : beta ^ 2 / (2 * lam) < mu) {x : X} (hx : x ∈ Ω)
+    (hmu : beta ^ 2 / (2 * lam) ≤ mu) {x : X} (hx : x ∈ Ω)
     (U : ℝ × EuclideanSpace ℝ n) :
     min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
       ≤ energyIntegrand (a x) (b x) (c x) U U :=
