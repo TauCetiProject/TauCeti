@@ -136,11 +136,11 @@ theorem StronglyContinuousSemigroup.existsGrowthBound
       simp only [Nat.cast_zero, S.realOperator_zero]
       exact ContinuousLinearMap.norm_id_le
     | succ k ih =>
-      have : (↑(k + 1) : ℝ) = 1 + ↑k := by push_cast; ring
-      rw [this, S.realOperator_add 1 ↑k (by linarith) (Nat.cast_nonneg k)]
-      calc ‖(S.realOperator 1).comp (S.realOperator ↑k)‖
-          ≤ ‖S.realOperator 1‖ * ‖S.realOperator ↑k‖ :=
-            ContinuousLinearMap.opNorm_comp_le _ _
+      calc ‖S.realOperator (↑(k + 1) : ℝ)‖
+          = ‖S.realOperator (1 + ↑k)‖ := by
+            rw [Nat.cast_add, Nat.cast_one, add_comm]
+        _ ≤ ‖S.realOperator 1‖ * ‖S.realOperator ↑k‖ :=
+            S.norm_realOperator_add_le 1 ↑k (by linarith) (Nat.cast_nonneg k)
         _ ≤ M * M ^ k :=
             mul_le_mul (hMbound 1 (by linarith) le_rfl) ih (norm_nonneg _) (by linarith)
         _ = M ^ (k + 1) := by ring
@@ -149,13 +149,11 @@ theorem StronglyContinuousSemigroup.existsGrowthBound
   have hfrac_nn : 0 ≤ t - ↑n := sub_nonneg.mpr hn_le
   have hfrac_le1 : t - ↑n ≤ 1 := by
     have := Nat.lt_floor_add_one t; linarith
-  have h_eq : (t - ↑n) + ↑n = t := by ring
-  have h_sg := S.realOperator_add (t - ↑n) ↑n hfrac_nn (Nat.cast_nonneg n)
-  rw [h_eq] at h_sg
-  rw [h_sg]
-  calc ‖(S.realOperator (t - ↑n)).comp (S.realOperator ↑n)‖
-      ≤ ‖S.realOperator (t - ↑n)‖ * ‖S.realOperator ↑n‖ :=
-        ContinuousLinearMap.opNorm_comp_le _ _
+  calc ‖S.realOperator t‖
+      = ‖S.realOperator ((t - ↑n) + ↑n)‖ := by
+        rw [sub_add_cancel]
+    _ ≤ ‖S.realOperator (t - ↑n)‖ * ‖S.realOperator ↑n‖ :=
+        S.norm_realOperator_add_le _ _ hfrac_nn (Nat.cast_nonneg n)
     _ ≤ M * M ^ n :=
         mul_le_mul (hMbound _ hfrac_nn hfrac_le1) (h_int_bound n) (norm_nonneg _) (by linarith)
     _ ≤ M * Real.exp (Real.log M * t) := by

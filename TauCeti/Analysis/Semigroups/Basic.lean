@@ -95,6 +95,13 @@ theorem map_add_apply (S : StronglyContinuousSemigroup X) (s t : ℝ≥0) (x : X
   rfl
 
 omit [CompleteSpace X] in
+/-- Submultiplicativity of the native nonnegative-time operator norm. -/
+theorem norm_map_add_le (S : StronglyContinuousSemigroup X) (s t : ℝ≥0) :
+    ‖S (s + t)‖ ≤ ‖S s‖ * ‖S t‖ := by
+  rw [S.map_add]
+  exact ContinuousLinearMap.opNorm_comp_le _ _
+
+omit [CompleteSpace X] in
 /-- Strong continuity at zero for the native nonnegative-time action. -/
 theorem continuousAt_zero (S : StronglyContinuousSemigroup X) (x : X) :
     ContinuousAt (fun t : ℝ≥0 => S t x) 0 :=
@@ -131,6 +138,16 @@ theorem realOperator_add (S : StronglyContinuousSemigroup X) (s t : ℝ) (hs : 0
     S.realOperator (s + t) = (S.realOperator s).comp (S.realOperator t) := by
   rw [realOperator, realOperator, realOperator, Real.toNNReal_add hs ht]
   exact S.map_add' s.toNNReal t.toNNReal
+
+omit [CompleteSpace X] in
+/-- Submultiplicativity of the real-time operator norm at nonnegative times: the semigroup law
+`S.realOperator (s + t) = S.realOperator s ∘ S.realOperator t` bounds the norm of the composite
+by the product of the norms. -/
+theorem norm_realOperator_add_le (S : StronglyContinuousSemigroup X) (s t : ℝ)
+    (hs : 0 ≤ s) (ht : 0 ≤ t) :
+    ‖S.realOperator (s + t)‖ ≤ ‖S.realOperator s‖ * ‖S.realOperator t‖ := by
+  rw [realOperator, realOperator, realOperator, Real.toNNReal_add hs ht]
+  exact S.norm_map_add_le s.toNNReal t.toNNReal
 
 omit [CompleteSpace X] in
 /-- Strong continuity at zero of `t ↦ S.realOperator t x` along `0 ≤ t`. -/
@@ -313,13 +330,11 @@ private theorem StronglyContinuousSemigroup.normBoundedOnInterval
       have htk_le : t - ↑k ≤ 1 := by
         push_cast [Nat.succ_eq_add_one] at htn; linarith
       have hk_nn : (0 : ℝ) ≤ ↑k := Nat.cast_nonneg k
-      have h_eq : t = (t - ↑k) + ↑k := by ring
-      have h_sg := S.realOperator_add (t - ↑k) ↑k htk_nn hk_nn
-      rw [← h_eq] at h_sg
-      rw [h_sg]
-      calc ‖(S.realOperator (t - ↑k)).comp (S.realOperator ↑k)‖
-          ≤ ‖S.realOperator (t - ↑k)‖ * ‖S.realOperator ↑k‖ :=
-            ContinuousLinearMap.opNorm_comp_le _ _
+      calc ‖S.realOperator t‖
+          = ‖S.realOperator ((t - ↑k) + ↑k)‖ := by
+            rw [sub_add_cancel]
+        _ ≤ ‖S.realOperator (t - ↑k)‖ * ‖S.realOperator ↑k‖ :=
+            S.norm_realOperator_add_le _ _ htk_nn hk_nn
         _ ≤ M * C_k :=
             mul_le_mul (hMbound _ htk_nn htk_le) (hC_k_bound ↑k hk_nn le_rfl)
               (norm_nonneg _) (le_of_lt hM_pos)
