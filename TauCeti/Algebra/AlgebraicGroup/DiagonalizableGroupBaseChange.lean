@@ -130,7 +130,8 @@ theorem baseChangePointsMulEquiv_mapDomain (φ : G →* G')
   ext g
   simp only [baseChangePointsMulEquiv_apply_coe, MonoidHom.comp_apply,
     AlgHom.mapDomain_apply_apply, _root_.Bialgebra.TensorProduct.map_tmul,
-    _root_.BialgHom.id_apply, MonoidAlgebra.mapDomainBialgHom_apply,
+    _root_.BialgHom.id_apply, MonoidAlgebra.mapDomainBialgHom,
+    _root_.BialgHom.ofAlgHom_apply, MonoidAlgebra.mapDomainAlgHom_apply,
     MonoidAlgebra.mapDomain_single]
 
 /-- Mapping the base-changed point attached to a character is precomposition of that character
