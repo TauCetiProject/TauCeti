@@ -5,8 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Algebra.BigOperators.Pi
-public import Mathlib.Algebra.Group.Pi.Lemmas
-public import Mathlib.Algebra.Group.Prod
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.Algebra.Group.ElementaryTwoQuotient
 
@@ -23,10 +21,11 @@ is `G/G² × H/H²`, and the same holds for a finite indexed product. Reading `Z
 and `TauCeti.twoRank (∀ i, G i) = ∑ i, TauCeti.twoRank (G i)`.
 
 This is the structural tool behind computing a class group's 2-rank from a decomposition: a finite
-abelian group is a product of cyclic groups, and its 2-rank (the quantity the genus-field theorems
-of Layer 2 of the multiquadratic roadmap, `TauCetiRoadmap/Multiquadratic/README.md`, compute) is the
-number of even-order factors. For instance the class group `(ℤ/2)²` of `ℚ(√-21)` has 2-rank
-`1 + 1 = 2`, matching the `t - 1 = 3 - 1` count of ramified primes in the worked examples.
+abelian group is a product of cyclic groups, and its 2-rank is the number of even-order factors.
+This product additivity supports the Layer 2 class-group quotient API and the later Layer 3
+genus-field/2-rank theorem in the multiquadratic roadmap. For instance the class group `(ℤ/2)²`
+of `ℚ(√-21)` has 2-rank `1 + 1 = 2`, matching the `t - 1 = 3 - 1` count of ramified primes in the
+worked examples.
 
 ## Main results
 
@@ -101,12 +100,7 @@ noncomputable def elementaryTwoQuotientProdLinearEquiv (G H : Type*) [CommGroup 
     (elementaryTwoQuotientProdLinearEquiv G H).symm
         (elementaryTwoQuotientMk a, elementaryTwoQuotientMk b) =
       elementaryTwoQuotientMk (a, b) := by
-  -- Unfold the equiv's bundled `invFun` across the `≃ₗ` symm coercion.
-  change elementaryTwoQuotientMap (MonoidHom.inl G H) (elementaryTwoQuotientMk a) +
-      elementaryTwoQuotientMap (MonoidHom.inr G H) (elementaryTwoQuotientMk b) =
-    elementaryTwoQuotientMk (a, b)
-  rw [elementaryTwoQuotientMap_mk, elementaryTwoQuotientMap_mk, ← elementaryTwoQuotientMk_mul,
-    inl_mul_inr_eq]
+  rw [LinearEquiv.symm_apply_eq, elementaryTwoQuotientProdLinearEquiv_mk]
 
 /-- **The 2-rank is additive over products.** For commutative groups whose elementary-2 quotients
 are finite-dimensional, `twoRank (G × H) = twoRank G + twoRank H`. -/
@@ -128,18 +122,18 @@ end Prod
 
 section Pi
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] (G : ι → Type*) [∀ i, CommGroup (G i)]
+variable {ι : Type*} [Fintype ι] (G : ι → Type*) [∀ i, CommGroup (G i)]
 
 omit [Fintype ι] in
 /-- Evaluating at `j` after the single-support inclusion at `j` is the identity. -/
-private theorem evalMonoidHom_comp_mulSingle_self (j : ι) :
+private theorem evalMonoidHom_comp_mulSingle_self [DecidableEq ι] (j : ι) :
     (Pi.evalMonoidHom G j).comp (MonoidHom.mulSingle G j) = MonoidHom.id (G j) := by
   ext x
   simp [Pi.mulSingle_eq_same]
 
 omit [Fintype ι] in
 /-- Evaluating at `j` after the single-support inclusion at a different index is trivial. -/
-private theorem evalMonoidHom_comp_mulSingle_ne {i j : ι} (h : i ≠ j) :
+private theorem evalMonoidHom_comp_mulSingle_ne [DecidableEq ι] {i j : ι} (h : i ≠ j) :
     (Pi.evalMonoidHom G j).comp (MonoidHom.mulSingle G i) = 1 := by
   ext x
   simp [Pi.mulSingle_eq_of_ne (Ne.symm h)]
@@ -149,33 +143,39 @@ quotients.** For a finite family of commutative groups `G i`, the class map iden
 `(∀ i, G i)/(…)²` with `∀ i, (G i)/(G i)²` `ZMod 2`-linearly: the evaluation maps induce the
 components, and the single-support inclusions `Pi.mulSingle` induce the inverse. -/
 noncomputable def elementaryTwoQuotientPiLinearEquiv :
-    ElementaryTwoQuotient (∀ i, G i) ≃ₗ[ZMod 2] ∀ i, ElementaryTwoQuotient (G i) where
-  toFun x i := elementaryTwoQuotientMap (Pi.evalMonoidHom G i) x
-  map_add' x y := by
-    funext i
-    simp only [map_add, Pi.add_apply]
-  map_smul' c x := by
-    funext i
-    simp only [map_smul, Pi.smul_apply, RingHom.id_apply]
-  invFun p := ∑ i, elementaryTwoQuotientMap (MonoidHom.mulSingle G i) (p i)
-  left_inv x := by
-    obtain ⟨g, rfl⟩ := elementaryTwoQuotientMk_surjective (G := ∀ i, G i) x
-    simp only [elementaryTwoQuotientMap_mk]
-    rw [← elementaryTwoQuotientMk_prod]
-    exact congrArg _ (Finset.univ_prod_mulSingle g)
-  right_inv p := by
-    funext j
-    -- Beta-reduce the bundled `toFun`/`invFun` at index `j` so `map_sum` can fire on the sum.
-    change elementaryTwoQuotientMap (Pi.evalMonoidHom G j)
-        (∑ i, elementaryTwoQuotientMap (MonoidHom.mulSingle G i) (p i)) = p j
-    rw [map_sum, Finset.sum_eq_single j]
-    · rw [← elementaryTwoQuotientMap_comp_apply, evalMonoidHom_comp_mulSingle_self,
-        elementaryTwoQuotientMap_id_apply]
-    · intro i _ hij
-      rw [← elementaryTwoQuotientMap_comp_apply, evalMonoidHom_comp_mulSingle_ne G hij]
-      rw [elementaryTwoQuotientMap_one_apply]
-    · intro hj
-      exact absurd (Finset.mem_univ j) hj
+    ElementaryTwoQuotient (∀ i, G i) ≃ₗ[ZMod 2] ∀ i, ElementaryTwoQuotient (G i) := by
+  classical
+  exact
+    { toFun := fun x i => elementaryTwoQuotientMap (Pi.evalMonoidHom G i) x
+      map_add' := by
+        intro x y
+        funext i
+        simp only [map_add, Pi.add_apply]
+      map_smul' := by
+        intro c x
+        funext i
+        simp only [map_smul, Pi.smul_apply, RingHom.id_apply]
+      invFun := fun p => ∑ i, elementaryTwoQuotientMap (MonoidHom.mulSingle G i) (p i)
+      left_inv := by
+        intro x
+        obtain ⟨g, rfl⟩ := elementaryTwoQuotientMk_surjective (G := ∀ i, G i) x
+        simp only [elementaryTwoQuotientMap_mk]
+        rw [← elementaryTwoQuotientMk_prod]
+        exact congrArg _ (Finset.univ_prod_mulSingle g)
+      right_inv := by
+        intro p
+        funext j
+        -- Beta-reduce the bundled `toFun`/`invFun` at index `j` so `map_sum` can fire on the sum.
+        change elementaryTwoQuotientMap (Pi.evalMonoidHom G j)
+            (∑ i, elementaryTwoQuotientMap (MonoidHom.mulSingle G i) (p i)) = p j
+        rw [map_sum, Finset.sum_eq_single j]
+        · rw [← elementaryTwoQuotientMap_comp_apply, evalMonoidHom_comp_mulSingle_self,
+            elementaryTwoQuotientMap_id_apply]
+        · intro i _ hij
+          rw [← elementaryTwoQuotientMap_comp_apply, evalMonoidHom_comp_mulSingle_ne G hij]
+          rw [elementaryTwoQuotientMap_one_apply]
+        · intro hj
+          exact absurd (Finset.mem_univ j) hj }
 
 /-- The indexed-product equivalence sends the class of `g` to the family of componentwise
 classes. -/
@@ -191,14 +191,9 @@ of the assembled family. -/
 @[simp] theorem elementaryTwoQuotientPiLinearEquiv_symm_mk (g : ∀ i, G i) :
     (elementaryTwoQuotientPiLinearEquiv G).symm (fun i => elementaryTwoQuotientMk (g i)) =
       elementaryTwoQuotientMk g := by
-  -- Unfold the equiv's bundled `invFun` across the `≃ₗ` symm coercion.
-  change ∑ i, elementaryTwoQuotientMap (MonoidHom.mulSingle G i) (elementaryTwoQuotientMk (g i)) =
-    elementaryTwoQuotientMk g
-  simp only [elementaryTwoQuotientMap_mk]
-  rw [← elementaryTwoQuotientMk_prod]
-  exact congrArg _ (Finset.univ_prod_mulSingle g)
+  classical
+  rw [LinearEquiv.symm_apply_eq, elementaryTwoQuotientPiLinearEquiv_mk]
 
-omit [DecidableEq ι] in
 /-- **The 2-rank is additive over finite indexed products.** For a finite family of commutative
 groups whose elementary-2 quotients are finite-dimensional,
 `twoRank (∀ i, G i) = ∑ i, twoRank (G i)`. -/
@@ -208,7 +203,6 @@ theorem twoRank_pi [∀ i, Module.Finite (ZMod 2) (ElementaryTwoQuotient (G i))]
   rw [twoRank_def, (elementaryTwoQuotientPiLinearEquiv G).finrank_eq, Module.finrank_pi_fintype]
   simp only [twoRank_def]
 
-omit [DecidableEq ι] in
 /-- The cardinality reading of `TauCeti.elementaryTwoQuotientPiLinearEquiv`:
 `|(∀ i, G i)/(…)²| = ∏ i, |(G i)/(G i)²|`. -/
 theorem card_elementaryTwoQuotient_pi :
