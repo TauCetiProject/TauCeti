@@ -21,7 +21,7 @@ nonsymmetric coefficient matrix by `(A + Aᵀ) / 2`; here we prove the correspon
 the full zero-drift jet integrand.
 
 The quantitative diagonal lower bounds are supplied separately by
-`TauCeti.Analysis.PDE.CoerciveEnergy` and its `UniformlyEllipticOn` wrappers.  In the
+`TauCeti.Analysis.PDE.EnergyLowerBounds` and its `UniformlyEllipticOn` wrappers.  In the
 zero-drift case with positive mass and a principal quadratic lower bound, combine
 `energyIntegrand_zero_drift_flip_eq_of_isSymm` or
 `energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq` with

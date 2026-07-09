@@ -4,12 +4,12 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PDE.CoerciveEnergy
+public import TauCeti.Analysis.PDE.EnergyLowerBounds
 
 /-!
 # Energy-integrand estimates from uniform ellipticity
 
-`TauCeti.Analysis.PDE.EnergyForm` and `TauCeti.Analysis.PDE.CoerciveEnergy` prove the
+`TauCeti.Analysis.PDE.EnergyForm` and `TauCeti.Analysis.PDE.EnergyLowerBounds` prove the
 pointwise estimates for divergence-form energy integrands from raw coefficient bounds.
 This file packages the same estimates for callers that hold the roadmap's named principal
 coefficient hypothesis `UniformlyEllipticOn Ω a λ Λ`.
@@ -23,7 +23,7 @@ diagonal lower bounds that the integrated inequality of
 
 This file deliberately leaves symmetry to `TauCeti.Analysis.PDE.SymmetricEnergy`.  For a
 zero-drift uniformly elliptic operator with symmetric principal coefficient, use
-`UniformlyEllipticOn.min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self` for the
+`UniformlyEllipticOn.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self` for the
 diagonal lower bound and the `energyIntegrand_zero_drift_flip_eq_*` lemmas for symmetry; for
 nonsymmetric coefficients, the symmetric-part API in
 `TauCeti.Analysis.PDE.UniformEllipticity` preserves the ellipticity constants before applying
@@ -41,7 +41,7 @@ the same symmetry lemmas.
   `UniformlyEllipticOn`.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyIntegrand_self_of_mass_lower_bound`:
   the pointwise Gårding lower bound with a mass floor.
-* `TauCeti.PDE.UniformlyEllipticOn.min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self`:
+* `TauCeti.PDE.UniformlyEllipticOn.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self`:
   the explicit diagonal estimate when the mass floor non-strictly dominates the
   drift defect.
 * `TauCeti.PDE.UniformlyEllipticOn.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self`:
@@ -169,23 +169,23 @@ lemma garding_energyIntegrand_self_of_mass_lower_bound_on
 
 /-- The lower-bound estimate implies the explicit diagonal estimate with constant
 `min (λ / 2) (μ - β² / (2λ))`, assuming this second coefficient is nonnegative. -/
-lemma min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self
+lemma min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self
     (h : UniformlyEllipticOn Ω a lam Lam)
     {x : X} (hx : x ∈ Ω) {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) ≤ mu)
     (U : ℝ × EuclideanSpace ℝ n) :
     min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
       ≤ energyIntegrand (a x) b₀ c₀ U U :=
-  PDE.min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self h.pos (h.lower_bound hx)
+  PDE.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self h.pos (h.lower_bound hx)
     hb hc hmu U
 
-grind_pattern min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self =>
+grind_pattern min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self =>
   UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, ‖b₀‖ ≤ beta, mu ≤ c₀,
   energyIntegrand (a x) b₀ c₀ U U
 
 /-- The coefficient-field version of the explicit diagonal lower-bound estimate from
 uniform ellipticity and a mass floor. -/
-lemma min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self_on
+lemma min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self_on
     (h : UniformlyEllipticOn Ω a lam Lam)
     {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
     (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)
@@ -194,7 +194,7 @@ lemma min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self_on
     (U : ℝ × EuclideanSpace ℝ n) :
     min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
       ≤ energyIntegrand (a x) (b x) (c x) U U :=
-  h.min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self hx (hb hx) (hc hx) hmu U
+  h.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self hx (hb hx) (hc hx) hmu U
 
 /-- Zero-drift diagonal lower bound for a uniformly elliptic principal coefficient and a
 nonnegative mass coefficient. -/
