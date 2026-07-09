@@ -141,12 +141,10 @@ theorem pointsMap_injective (φ : G →* G') (hφ : Function.Surjective φ) :
     Function.Injective (pointsMap (R := R) (A := A) φ) := by
   intro f g hfg
   apply (pointsMulEquiv (R := R) (A := A) (G := G')).injective
-  rw [pointsMulEquiv_apply, pointsMulEquiv_apply]
-  refine MonoidHom.ext fun y => ?_
-  obtain ⟨x, rfl⟩ := hφ y
   have hchar : (pointsMulEquiv f).comp φ = (pointsMulEquiv g).comp φ := by
     rw [← pointsMulEquiv_pointsMap, ← pointsMulEquiv_pointsMap, hfg]
-  exact DFunLike.congr_fun hchar x
+  exact DFunLike.coe_injective
+    (hφ.injective_comp_right (funext fun x => DFunLike.congr_fun hchar x))
 
 /-- Mapping the point attached to a character is precomposition of that character by `φ`. -/
 theorem pointsMap_pointsMulEquiv_symm_apply (φ : G →* G') (χ : G' →* Aˣ) :
