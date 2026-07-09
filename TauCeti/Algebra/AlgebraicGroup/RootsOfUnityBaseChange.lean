@@ -20,7 +20,7 @@ The construction first restricts a base-changed point along
 `RootsOfUnityGroup.pointsMulEquiv`.
 The characteristic lemmas spell out that the equivalence reads a point on the base-changed
 standard generator `1 ⊗ single (ofAdd 1) 1`, how the inverse point evaluates on scalar
-multiples of that generator, and how the equivalence is natural in the value algebra.
+multiples of that generator.
 
 This is part of the ReductiveGroups roadmap worked examples: `μ_n = D(ℤ/n)` in the
 diagonalizable-groups lane, together with the Layer 0 base-change target for Hopf algebras and
@@ -37,9 +37,6 @@ their functors of points.
 * `TauCeti.RootsOfUnityGroup.baseChangePointsMulEquiv_symm_apply_single_generator`: the
   inverse equivalence sends a root of unity to the base-changed point taking the standard
   generator to it.
-* `TauCeti.RootsOfUnityGroup.baseChangePointsMulEquiv_mapValue`: naturality in the value
-  algebra.
-
 ## References
 
 The generic algebra base-change calculation is Tau Ceti's
@@ -112,31 +109,6 @@ lemma baseChangePointsMulEquiv_symm_apply_single_generator (n : ℕ) (ζ : roots
         (1 ⊗ₜ[k] MonoidAlgebra.single (generator n) (1 : k)) =
       ((ζ : Aˣ) : A) := by
   rw [baseChangePointsMulEquiv_symm_apply_tmul_single_generator]
-  simp
-
-variable {B : Type*} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower k K B]
-
-/-- The base-changed roots-of-unity points equivalence is natural in the value algebra:
-post-composing a point with a `K`-algebra map applies the induced map on roots of unity. -/
-lemma baseChangePointsMulEquiv_mapValue (n : ℕ) (φ : A →ₐ[K] B)
-    (f : WithConv (K ⊗[k] MonoidAlgebra k (Multiplicative (ZMod n)) →ₐ[K] A)) :
-    baseChangePointsMulEquiv (k := k) (K := K) (A := B) n
-        (AlgHom.mapValue (H := K ⊗[k] MonoidAlgebra k (Multiplicative (ZMod n))) φ f) =
-      restrictRootsOfUnity φ.toMonoidHom n
-        (baseChangePointsMulEquiv (k := k) (K := K) (A := A) n f) := by
-  ext
-  simp [baseChangePointsMulEquiv_apply]
-
-/-- Naturality of the inverse base-changed roots-of-unity points equivalence in the value
-algebra. -/
-lemma mapValue_baseChangePointsMulEquiv_symm_apply (n : ℕ) (φ : A →ₐ[K] B)
-    (ζ : rootsOfUnity n A) :
-    AlgHom.mapValue (H := K ⊗[k] MonoidAlgebra k (Multiplicative (ZMod n))) φ
-        ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) n).symm ζ) =
-      (baseChangePointsMulEquiv (k := k) (K := K) (A := B) n).symm
-        (restrictRootsOfUnity φ.toMonoidHom n ζ) := by
-  apply (baseChangePointsMulEquiv (k := k) (K := K) (A := B) n).injective
-  rw [baseChangePointsMulEquiv_mapValue]
   simp
 
 end RootsOfUnityGroup

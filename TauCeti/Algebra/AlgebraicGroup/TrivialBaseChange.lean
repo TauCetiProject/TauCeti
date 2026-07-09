@@ -18,8 +18,8 @@ calculation: for every commutative `K`-algebra `A`, the convolution group of
 
 This is the terminal-object worked example for the ReductiveGroups roadmap, Layer 0: the
 Hopf-algebra/functor-of-points dictionary needs both the terminal object over `Spec k` and
-compatibility with base change. The file packages the base-change point equivalence, tensor-value
-normal forms, identity and inverse normal forms, and naturality in the value algebra.
+compatibility with base change. The file packages the base-change point equivalence,
+tensor-value normal forms, and identity and inverse normal forms.
 
 ## Main declarations
 
@@ -27,9 +27,6 @@ normal forms, identity and inverse normal forms, and naturality in the value alg
   `PUnit`.
 * `TauCeti.TrivialGroup.baseChangePointsMulEquiv_symm_apply_tmul`: the unique point sends
   `s ⊗ r` to `s • algebraMap k A r`.
-* `TauCeti.TrivialGroup.baseChangePointsMulEquiv_mapValue`: the equivalence is natural in
-  the value algebra.
-
 ## References
 
 This reuses Tau Ceti's `AlgHom.baseChangePointsMulEquiv` and
@@ -46,7 +43,7 @@ namespace TauCeti
 
 namespace TrivialGroup
 
-universe u v w w'
+universe u v w
 
 variable {k : Type u} {K : Type v} {A : Type w}
 variable [CommSemiring k] [CommSemiring K] [CommSemiring A]
@@ -119,40 +116,6 @@ theorem convPoint_apply_tmul (f : WithConv (K ⊗[k] k →ₐ[K] A)) (s : K) (r 
 theorem convInv_apply_tmul (f : WithConv (K ⊗[k] k →ₐ[K] A)) (s : K) (r : k) :
     (f⁻¹).ofConv (s ⊗ₜ[k] r) = s • algebraMap k A r := by
   rw [baseChangeConvPoint_eq_one (f⁻¹), convPoint_apply_tmul]
-
-section Naturality
-
-variable {B : Type w'} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower k K B]
-
-/-- The base-changed trivial-group points equivalence is natural in the value algebra. -/
-theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
-    (f : WithConv (K ⊗[k] k →ₐ[K] A)) :
-    baseChangePointsMulEquiv (k := k) (K := K) (A := B)
-        (AlgHom.mapValue (H := K ⊗[k] k) φ f) =
-      baseChangePointsMulEquiv (k := k) (K := K) (A := A) f :=
-  Subsingleton.elim _ _
-
-/-- Naturality of the inverse base-changed trivial-group points equivalence in the value
-algebra. -/
-theorem mapValue_baseChangePointsMulEquiv_symm_apply (φ : A →ₐ[K] B) (u : PUnit.{1}) :
-    AlgHom.mapValue (H := K ⊗[k] k) φ
-        ((baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u) =
-      (baseChangePointsMulEquiv (k := k) (K := K) (A := B)).symm u := by
-  apply (baseChangePointsMulEquiv (k := k) (K := K) (A := B)).injective
-  rw [baseChangePointsMulEquiv_mapValue]
-
-/-- Pointwise naturality of the unique base-changed trivial-group point in the value
-algebra. -/
-theorem mapValue_baseChangePointsMulEquiv_symm_apply_tmul
-    (φ : A →ₐ[K] B) (u : PUnit.{1}) (s : K) (r : k) :
-    (AlgHom.mapValue (H := K ⊗[k] k) φ
-        ((baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u)).ofConv
-        (s ⊗ₜ[k] r) =
-      s • algebraMap k B r := by
-  rw [mapValue_baseChangePointsMulEquiv_symm_apply,
-    baseChangePointsMulEquiv_symm_apply_tmul]
-
-end Naturality
 
 end TrivialGroup
 
