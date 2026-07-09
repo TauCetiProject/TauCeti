@@ -21,7 +21,7 @@ Measurability:
   is the measurable-input form.
 * the constant-coordinate (`fun _ : Fin m => ν ω`) specializations
   `measurable_probabilityMeasure_pi_const_toMeasure` and
-  `aemeasurable_probabilityMeasure_pi_const_toMeasure`, used by `ConditionallyIIDWith`.
+  `aemeasurable_probabilityMeasure_pi_const_toMeasure`.
 
 Bind-evaluation of the mixture `μ.bind fun ω => (ProbabilityMeasure.pi fun i => ν i ω).toMeasure`:
 * `bind_probabilityMeasure_pi_apply` — evaluation on a measurable set as the integral of the product
@@ -96,7 +96,7 @@ theorem aemeasurable_probabilityMeasure_pi_toMeasure_of_measurable
   aemeasurable_probabilityMeasure_pi_toMeasure ν fun i => (hν i).aemeasurable
 
 /-- Constant-coordinate specialization of `measurable_probabilityMeasure_pi_toMeasure`: the random
-product `ω ↦ (ν ω)^{⊗ Fin m}` is measurable. This is the form `ConditionallyIIDWith` uses. -/
+product `ω ↦ (ν ω)^{⊗ Fin m}` is measurable. -/
 @[fun_prop]
 theorem measurable_probabilityMeasure_pi_const_toMeasure {α : Type*} [MeasurableSpace α] {m : ℕ}
     (ν : Ω → ProbabilityMeasure α) (hν : Measurable ν) :
@@ -110,12 +110,6 @@ theorem aemeasurable_probabilityMeasure_pi_const_toMeasure {α : Type*} [Measura
     (ν : Ω → ProbabilityMeasure α) (hν : AEMeasurable ν μ) :
     AEMeasurable (fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure) μ :=
   aemeasurable_probabilityMeasure_pi_toMeasure (fun _ => ν) (fun _ => hν)
-
-/-- Measurable-input corollary of `aemeasurable_probabilityMeasure_pi_const_toMeasure`. -/
-theorem aemeasurable_probabilityMeasure_pi_const_toMeasure_of_measurable {α : Type*}
-    [MeasurableSpace α] {m : ℕ} (ν : Ω → ProbabilityMeasure α) (hν : Measurable ν) :
-    AEMeasurable (fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure) μ :=
-  aemeasurable_probabilityMeasure_pi_const_toMeasure ν hν.aemeasurable
 
 /-- **Bind-evaluation.** Evaluating the mixture
 `μ.bind fun ω => (ProbabilityMeasure.pi fun i => ν i ω).toMeasure` on a measurable set `s` gives
