@@ -129,6 +129,21 @@ theorem mem_rightTensorIdeal {I : Ideal H} {x : H ⊗[R] H} :
         (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I :=
   Iff.rfl
 
+/-- The order universal property for `I ⊗ H`. -/
+theorem leftTensorIdeal_le_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
+    leftTensorIdeal (R := R) (H := H) I ≤ J ↔
+      I ≤ Ideal.comap
+        (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom
+        J :=
+  Ideal.map_le_iff_le_comap
+
+/-- The order universal property for `H ⊗ I`. -/
+theorem rightTensorIdeal_le_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
+    rightTensorIdeal (R := R) (H := H) I ≤ J ↔
+      I ≤ Ideal.comap
+        (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom J :=
+  Ideal.map_le_iff_le_comap
+
 /-- The construction `I ↦ I ⊗ H` is monotone. -/
 theorem leftTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
     leftTensorIdeal (R := R) (H := H) I ≤ leftTensorIdeal (R := R) (H := H) J :=
