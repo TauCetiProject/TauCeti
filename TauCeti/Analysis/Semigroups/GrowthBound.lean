@@ -136,9 +136,10 @@ theorem StronglyContinuousSemigroup.existsGrowthBound
       simp only [Nat.cast_zero, S.realOperator_zero]
       exact ContinuousLinearMap.norm_id_le
     | succ k ih =>
-      rw [show (↑(k + 1) : ℝ) = 1 + ↑k from by push_cast; ring]
-      calc ‖S.realOperator (1 + ↑k)‖
-          ≤ ‖S.realOperator 1‖ * ‖S.realOperator ↑k‖ :=
+      calc ‖S.realOperator (↑(k + 1) : ℝ)‖
+          = ‖S.realOperator (1 + ↑k)‖ := by
+            rw [Nat.cast_add, Nat.cast_one, add_comm]
+        _ ≤ ‖S.realOperator 1‖ * ‖S.realOperator ↑k‖ :=
             S.norm_realOperator_add_le 1 ↑k (by linarith) (Nat.cast_nonneg k)
         _ ≤ M * M ^ k :=
             mul_le_mul (hMbound 1 (by linarith) le_rfl) ih (norm_nonneg _) (by linarith)
@@ -150,7 +151,7 @@ theorem StronglyContinuousSemigroup.existsGrowthBound
     have := Nat.lt_floor_add_one t; linarith
   calc ‖S.realOperator t‖
       = ‖S.realOperator ((t - ↑n) + ↑n)‖ := by
-        rw [show (t - ↑n) + ↑n = t from by ring]
+        rw [sub_add_cancel]
     _ ≤ ‖S.realOperator (t - ↑n)‖ * ‖S.realOperator ↑n‖ :=
         S.norm_realOperator_add_le _ _ hfrac_nn (Nat.cast_nonneg n)
     _ ≤ M * M ^ n :=

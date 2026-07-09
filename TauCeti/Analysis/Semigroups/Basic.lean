@@ -95,6 +95,13 @@ theorem map_add_apply (S : StronglyContinuousSemigroup X) (s t : ℝ≥0) (x : X
   rfl
 
 omit [CompleteSpace X] in
+/-- Submultiplicativity of the native nonnegative-time operator norm. -/
+theorem norm_map_add_le (S : StronglyContinuousSemigroup X) (s t : ℝ≥0) :
+    ‖S (s + t)‖ ≤ ‖S s‖ * ‖S t‖ := by
+  rw [S.map_add]
+  exact ContinuousLinearMap.opNorm_comp_le _ _
+
+omit [CompleteSpace X] in
 /-- Strong continuity at zero for the native nonnegative-time action. -/
 theorem continuousAt_zero (S : StronglyContinuousSemigroup X) (x : X) :
     ContinuousAt (fun t : ℝ≥0 => S t x) 0 :=
@@ -139,8 +146,8 @@ by the product of the norms. -/
 theorem norm_realOperator_add_le (S : StronglyContinuousSemigroup X) (s t : ℝ)
     (hs : 0 ≤ s) (ht : 0 ≤ t) :
     ‖S.realOperator (s + t)‖ ≤ ‖S.realOperator s‖ * ‖S.realOperator t‖ := by
-  rw [S.realOperator_add s t hs ht]
-  exact ContinuousLinearMap.opNorm_comp_le _ _
+  rw [realOperator, realOperator, realOperator, Real.toNNReal_add hs ht]
+  exact S.norm_map_add_le s.toNNReal t.toNNReal
 
 omit [CompleteSpace X] in
 /-- Strong continuity at zero of `t ↦ S.realOperator t x` along `0 ≤ t`. -/
@@ -325,7 +332,7 @@ private theorem StronglyContinuousSemigroup.normBoundedOnInterval
       have hk_nn : (0 : ℝ) ≤ ↑k := Nat.cast_nonneg k
       calc ‖S.realOperator t‖
           = ‖S.realOperator ((t - ↑k) + ↑k)‖ := by
-            rw [show (t - ↑k) + ↑k = t from by ring]
+            rw [sub_add_cancel]
         _ ≤ ‖S.realOperator (t - ↑k)‖ * ‖S.realOperator ↑k‖ :=
             S.norm_realOperator_add_le _ _ htk_nn hk_nn
         _ ≤ M * C_k :=
