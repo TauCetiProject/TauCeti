@@ -98,6 +98,12 @@ lemma weightedDegreeClass_surjective (w : X → ℤ) (h : S.IsWeightedDegreeZero
   Function.RightInverse.surjective fun n =>
     S.weightedDegreeClass_degreeSection_of_weight_one w h hx₀ n
 
+/-- With a chosen point, the descended unweighted degree is surjective onto `ℤ`. This is the
+constant-weight-one specialization of `weightedDegreeClass_surjective`. -/
+lemma unweightedDegreeClass_surjective (h : S.IsUnweightedDegreeZero) (x₀ : X) :
+    Function.Surjective (unweightedDegreeClass h) := by
+  exact S.weightedDegreeClass_surjective (fun _ => (1 : ℤ)) h (x₀ := x₀) rfl
+
 /-- With a weight-one base point, the degree section is injective. -/
 lemma degreeSection_injective (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) : Function.Injective (S.degreeSection x₀) :=
