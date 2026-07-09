@@ -10,9 +10,8 @@ This file opens the Layer 3 (L²) lane of the Exchangeability roadmap
 standard-Borel de Finetti route"), whose first analytic input is the *uniform covariance
 structure of a contractable L² sequence* (`contractable_covariance_structure`). It also
 supplies the two Layer 3 preliminaries listed before it — "equality of means and integrals
-from equal one-dimensional laws" and "equality of pair covariances from equal
-two-dimensional laws". The latter appears first in the reusable form
-`covariance_eq_of_identDistrib_pair`, then specializes to contractable processes.
+from equal one-dimensional laws" and "equality of pair covariances from equal two-dimensional
+laws".
 
 For a real-valued contractable sequence, the one- and two-coordinate `IdentDistrib` facts in
 `TauCeti.Probability.Exchangeability.Contractability` give the uniform first- and second-moment
@@ -43,35 +42,19 @@ namespace Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
+variable {γ : Type*} [MeasurableSpace γ] [NormedAddCommGroup γ] [NormedSpace ℝ γ]
+  [BorelSpace γ] {Z : ℕ → Ω → γ}
+
+/-- **Equal means from contractability.** For a contractable process with values in a normed
+real vector space, all coordinate expectations agree. -/
+theorem Contractable.integral_coord_eq (hZ : Contractable μ Z)
+    (hZ_meas : ∀ n, AEMeasurable (Z n) μ) (i j : ℕ) :
+    μ[Z i] = μ[Z j] :=
+  (hZ.identDistrib_coord hZ_meas i j).integral_eq
+
 section Real
 
 variable {X : ℕ → Ω → ℝ}
-
-/-- **Equal covariance from equal pair laws.** If the two-dimensional laws of `(X, Y)` under
-`μ` and `(X', Y')` under `ν` agree, then their covariances agree. -/
-theorem covariance_eq_of_identDistrib_pair {Ω' : Type*} [MeasurableSpace Ω']
-    {ν : Measure Ω'} {X Y : Ω → ℝ} {X' Y' : Ω' → ℝ}
-    (h : IdentDistrib (fun ω => (X ω, Y ω)) (fun ω => (X' ω, Y' ω)) μ ν) :
-    cov[X, Y; μ] = cov[X', Y'; ν] := by
-  let F : Ω → ℝ × ℝ := fun ω => (X ω, Y ω)
-  let G : Ω' → ℝ × ℝ := fun ω => (X' ω, Y' ω)
-  calc
-    cov[X, Y; μ] = cov[Prod.fst, Prod.snd; μ.map F] := by
-      rw [covariance_map measurable_fst.aestronglyMeasurable measurable_snd.aestronglyMeasurable
-        h.aemeasurable_fst]
-      rfl
-    _ = cov[Prod.fst, Prod.snd; ν.map G] := by rw [h.map_eq]
-    _ = cov[X', Y'; ν] := by
-      rw [covariance_map measurable_fst.aestronglyMeasurable measurable_snd.aestronglyMeasurable
-        h.aemeasurable_snd]
-      rfl
-
-/-- **Equal means from contractability.** For a contractable real-valued process, all
-coordinate expectations agree. -/
-theorem Contractable.integral_coord_eq (hX : Contractable μ X)
-    (hX_meas : ∀ n, AEMeasurable (X n) μ) (i j : ℕ) :
-    μ[X i] = μ[X j] :=
-  (hX.identDistrib_coord hX_meas i j).integral_eq
 
 /-- **Equal variances from contractability.** For a contractable real-valued process, all
 coordinate variances agree. -/
@@ -86,7 +69,19 @@ a.e. measurable coordinates, any two off-diagonal covariances agree:
 theorem Contractable.covariance_eq_of_lt (hX : Contractable μ X)
     (hX_meas : ∀ n, AEMeasurable (X n) μ) {i j k l : ℕ} (hij : i < j) (hkl : k < l) :
     cov[X i, X j; μ] = cov[X k, X l; μ] := by
-  exact covariance_eq_of_identDistrib_pair (hX.identDistrib_pair hX_meas hij hkl)
+  let F : Ω → ℝ × ℝ := fun ω => (X i ω, X j ω)
+  let G : Ω → ℝ × ℝ := fun ω => (X k ω, X l ω)
+  have hpair : IdentDistrib F G μ μ := hX.identDistrib_pair hX_meas hij hkl
+  have hF : HasLaw F (μ.map F) μ := ⟨hpair.aemeasurable_fst, rfl⟩
+  have hG : HasLaw G (μ.map F) μ := hpair.hasLaw hF
+  calc
+    cov[X i, X j; μ] = cov[Prod.fst, Prod.snd; μ.map F] := by
+      simpa [F] using
+        hF.covariance_fun_comp measurable_fst.aemeasurable measurable_snd.aemeasurable
+    _ = cov[X k, X l; μ] := by
+      symm
+      simpa [G] using
+        hG.covariance_fun_comp measurable_fst.aemeasurable measurable_snd.aemeasurable
 
 /-- **Uniform off-diagonal covariances from contractability.** For a contractable real-valued
 process with a.e. measurable coordinates, any two off-diagonal covariances agree:
@@ -109,8 +104,7 @@ theorem Contractable.covariance_eq_of_ne (hX : Contractable μ X)
 real-valued process with `L²` coordinates has constant coordinate means and variances, and a
 single common off-diagonal covariance: any two unequal-index pairs have equal covariance. This
 is the seed of the Layer 3 L² route to de Finetti. -/
-theorem contractable_covariance_structure [IsProbabilityMeasure μ] (hX : Contractable μ X)
-    (hX_L2 : ∀ n, MemLp (X n) 2 μ) :
+theorem contractable_covariance_structure (hX : Contractable μ X) (hX_L2 : ∀ n, MemLp (X n) 2 μ) :
     (∀ i j, μ[X i] = μ[X j]) ∧ (∀ i j, Var[X i; μ] = Var[X j; μ]) ∧
       (∀ i j k l, i ≠ j → k ≠ l → cov[X i, X j; μ] = cov[X k, X l; μ]) := by
   have hmeas : ∀ n, AEMeasurable (X n) μ := fun n => (hX_L2 n).aestronglyMeasurable.aemeasurable
