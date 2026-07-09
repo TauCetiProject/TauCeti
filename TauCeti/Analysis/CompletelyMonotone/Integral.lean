@@ -43,6 +43,18 @@ namespace TauCeti
 
 variable {f : ℝ → ℝ}
 
+private lemma nat_le_top (n : ℕ) : (n : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
+
+/-- For a completely monotone function the `n`-th iterated derivative within a compact interval
+`[x, T]` agrees with the one taken within the half-line `[0, ∞)` at any strictly positive interior
+point. Complete monotonicity supplies the local `ContDiffAt` hypothesis; the set comparison itself
+is `ContDiffAt.iteratedDerivWithin_Icc_eq_Ici`. -/
+private lemma IsCompletelyMonotone.iteratedDerivWithin_Icc_eq_Ici (hf : IsCompletelyMonotone f)
+    {x T t : ℝ} {n : ℕ} (ht_pos : 0 < t) (ht : t ∈ Ioo x T) :
+    iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici 0) t :=
+  ContDiffAt.iteratedDerivWithin_Icc_eq_Ici
+    ((hf.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (nat_le_top _)) ht_pos ht
+
 namespace IsCompletelyMonotone
 
 /-- **CM sign of the Taylor remainder.** For a completely monotone function the Taylor
@@ -64,10 +76,7 @@ lemma neg_one_pow_mul_taylor_remainder_nonneg (hf : IsCompletelyMonotone f) {x T
             (pow_nonneg (sub_nonneg.mpr ht.2.le) _))
             (by
               have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
-              have hcda : ContDiffAt ℝ (n : WithTop ℕ∞) f t :=
-                (hf.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (by
-                  exact_mod_cast le_top)
-              rw [ContDiffAt.iteratedDerivWithin_Icc_eq_Ici hcda ht_pos ht]
+              rw [hf.iteratedDerivWithin_Icc_eq_Ici ht_pos ht]
               exact hf.neg_one_pow_mul_iteratedDerivWithin_nonneg n ht_pos.le)
       _ = _ := by ring
   have h_mem : ∀ᵐ t ∂volume.restrict (Icc x T), t ∈ Ioo x T := by
@@ -78,8 +87,6 @@ lemma neg_one_pow_mul_taylor_remainder_nonneg (hf : IsCompletelyMonotone f) {x T
 end IsCompletelyMonotone
 
 /-! ## Smoothness-index helpers -/
-
-private lemma nat_le_top (n : ℕ) : (n : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
 
 /-- The first iterated derivative within `[0, ∞)` of a completely monotone function is
 nonpositive (the `derivWithin` sign condition restated for `iteratedDerivWithin 1`). -/
@@ -100,9 +107,7 @@ lemma IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub
     intro t ht
     rw [uIoo_of_le hxT.le] at ht
     have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
-    have hcda : ContDiffAt ℝ (1 : WithTop ℕ∞) f t :=
-      (hcm.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (nat_le_top _)
-    exact congrArg Neg.neg (ContDiffAt.iteratedDerivWithin_Icc_eq_Ici hcda ht_pos ht)
+    exact congrArg Neg.neg (hcm.iteratedDerivWithin_Icc_eq_Ici ht_pos ht)
   rw [← htransfer]
   simpa [iteratedDerivWithin_one, intervalIntegral.integral_neg, neg_sub] using
     congrArg Neg.neg (intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc
