@@ -9,8 +9,6 @@ public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.Algebra.Polynomial.SpecificDegree
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 public import TauCeti.NumberTheory.EffectiveBounds.QuadraticClassNumber
-public import TauCeti.NumberTheory.EffectiveBounds.DiscriminantEquality
-public import TauCeti.FieldTheory.Trace
 
 /-!
 # Worked examples: the effective bounds on the named quadratic fields
@@ -28,28 +26,21 @@ For `ℚ(√-5)` we take `AdjoinRoot (X² + 5)` over `ℚ` (a field because `X²
 having no rational root), a degree-two number field with a square root of `-5`, and feed it to
 `TauCeti.NumberField.classNumber_le_natAbs_of_sq_intCast`.
 
-For `ℚ(i)` the class-number-style *upper* bound `|d_K| ≤ 4` is not enough: the criterion asks
-for the *exact* discriminant, which needs the ring of integers. We take `ℚ(i)` as the fourth
-cyclotomic field `CyclotomicField 4 ℚ`, whose ring of integers `ℤ[ζ₄] = ℤ[i]` Mathlib supplies
-via `IsPrimitiveRoot.integralPowerBasisOfPrimePow` (`4 = 2²`). Its integral power basis `{1, i}`
-feeds `TauCeti.NumberField.discr_eq_of_integralBasis`, and the trace-form evaluation
-`disc ℚ {1, i} = 4·i² = -4` (`TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap`) then pins
-`d_{ℚ(i)} = -4`, hence `|d_{ℚ(i)}| = 4`.
+For `ℚ(i)` we take the fourth cyclotomic field `CyclotomicField 4 ℚ` and specialize Mathlib's
+cyclotomic discriminant formula, giving `d_{ℚ(i)} = -4` and hence `|d_{ℚ(i)}| = 4`.
 
 ## Main results
 
 * `TauCeti.NumberField.WorkedExamples.classNumber_adjoinRoot_sqrt_neg_five_le`: `h ≤ 320` for
   `ℚ(√-5)`.
-* `TauCeti.NumberField.WorkedExamples.discr_cyclotomicField_four`: `d_{ℚ(i)} = -4`, with
-  `abs_discr_cyclotomicField_four` and `natAbs_discr_cyclotomicField_four` its absolute-value
-  forms recovering `|d_{ℚ(i)}| = 4`.
+* Non-public examples specialize `IsCyclotomicExtension.Rat.discr` and
+  `IsCyclotomicExtension.Rat.natAbs_discr` to recover `d_{ℚ(i)} = -4` and `|d_{ℚ(i)}| = 4`.
 
 ## Provenance
 
-No formal code is vendored. The effective bounds consumed here (`abs_discr_le_of_basis_isIntegral`,
-`classNumber_le_bound`, and the quadratic and equality corollaries) carry their own attribution to
-`kim-em/erdos-unit-distance`; the `NumberField` constructions and the arithmetic specialisations
-are new.
+No formal code is vendored. The effective bounds consumed here (`classNumber_le_bound` and the
+quadratic corollary) carry their own attribution to `kim-em/erdos-unit-distance`; the
+`NumberField` construction for `ℚ(√-5)` and the arithmetic specialisations are new.
 -/
 
 public section
@@ -97,66 +88,36 @@ theorem classNumber_adjoinRoot_sqrt_neg_five_le :
   have := classNumber_le_natAbs_of_sq_intCast hfin hx2 hx
   simpa using this
 
-/-! ### `ℚ(i)`: the discriminant bound recovers `|d| = 4` -/
+/-! ### `ℚ(i)`: Mathlib's cyclotomic discriminant formula recovers `|d| = 4` -/
 
-/-- **The discriminant of `ℚ(i)`.** Modelling `ℚ(i)` as the fourth cyclotomic field, the field
-discriminant is exactly `-4`. Combined with the trace-form evaluation of `{1, i}` and the
-integral basis supplied by the cyclotomic ring of integers, this is the roadmap's `ℚ(i)` worked
-example for the effective discriminant bound. -/
-theorem discr_cyclotomicField_four :
-    NumberField.discr (CyclotomicField 4 ℚ) = -4 := by
-  haveI : NeZero ((4 : ℕ) : ℚ) := ⟨by norm_num⟩
-  haveI hcyc4 : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
+/-- As a non-public worked example, Mathlib's cyclotomic discriminant formula gives
+`d_{ℚ(i)} = -4` for the fourth cyclotomic field. -/
+example : NumberField.discr (CyclotomicField 4 ℚ) = -4 := by
+  haveI : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
     CyclotomicField.isCyclotomicExtension 4 ℚ
-  have h42 : (2 : ℕ) ^ 2 = 4 := by norm_num
-  haveI hcyc : IsCyclotomicExtension {(2 : ℕ) ^ 2} ℚ (CyclotomicField 4 ℚ) := by
-    rw [h42]; exact hcyc4
-  have hζ4 : IsPrimitiveRoot (IsCyclotomicExtension.zeta 4 ℚ (CyclotomicField 4 ℚ)) 4 :=
-    IsCyclotomicExtension.zeta_spec 4 ℚ _
-  set ζ : CyclotomicField 4 ℚ := IsCyclotomicExtension.zeta 4 ℚ (CyclotomicField 4 ℚ) with hζdef
-  have hζ : IsPrimitiveRoot ζ ((2 : ℕ) ^ 2) := by rw [h42]; exact hζ4
-  -- `[ℚ(i) : ℚ] = φ(4) = 2`.
-  have hfin : finrank ℚ (CyclotomicField 4 ℚ) = 2 := by
-    rw [IsCyclotomicExtension.finrank _ (cyclotomic.irreducible_rat (n := 4) (by norm_num))]; decide
-  -- `i² = -1`.
-  have hsq : ζ ^ 2 = algebraMap ℚ (CyclotomicField 4 ℚ) (-1 : ℚ) := by
-    have h4 : (ζ ^ 2) ^ 2 = 1 := by rw [← pow_mul]; exact hζ4.pow_eq_one
-    have hne : ζ ^ 2 ≠ 1 := hζ4.pow_ne_one_of_pos_of_lt (by norm_num) (by norm_num)
-    rw [map_neg, map_one]
-    exact (sq_eq_one_iff.mp h4).resolve_left hne
-  -- `i ∉ ℚ`: else `-1` would be a rational square.
-  have hnotmem : ζ ∉ (algebraMap ℚ (CyclotomicField 4 ℚ)).range := by
-    rintro ⟨q, hq⟩
-    have h1 : algebraMap ℚ (CyclotomicField 4 ℚ) (q ^ 2) =
-        algebraMap ℚ (CyclotomicField 4 ℚ) (-1 : ℚ) := by rw [map_pow, hq, hsq]
-    nlinarith [sq_nonneg q, (algebraMap ℚ (CyclotomicField 4 ℚ)).injective h1]
-  -- The integral power basis `{1, i}` of the ring of integers `ℤ[i]`.
-  let pb : PowerBasis ℤ (𝓞 (CyclotomicField 4 ℚ)) := hζ.integralPowerBasisOfPrimePow
-  have hdim : pb.dim = 2 := by
-    change hζ.integralPowerBasisOfPrimePow.dim = 2
-    rw [IsPrimitiveRoot.integralPowerBasisOfPrimePow_dim]; decide
-  have hgen : algebraMap (𝓞 (CyclotomicField 4 ℚ)) (CyclotomicField 4 ℚ) pb.gen = ζ := by
-    change algebraMap _ _ hζ.integralPowerBasisOfPrimePow.gen = ζ
-    rw [hζ.integralPowerBasisOfPrimePow_gen]; rfl
-  let c : Basis (Fin 2) ℤ (𝓞 (CyclotomicField 4 ℚ)) := pb.basis.reindex (finCongr hdim)
-  have hcfun : (fun i => algebraMap (𝓞 (CyclotomicField 4 ℚ)) (CyclotomicField 4 ℚ) (c i)) =
-      ![1, ζ] := by
-    funext i
-    fin_cases i <;>
-      simp [c, Basis.reindex_apply, pb.basis_eq_pow, hgen]
-  have key := TauCeti.NumberField.discr_eq_of_integralBasis c
-  rw [hcfun, TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap hfin hsq hnotmem] at key
-  have hQ : (NumberField.discr (CyclotomicField 4 ℚ) : ℚ) = -4 := by rw [← key]; ring
-  exact_mod_cast hQ
+  have hpf : Nat.primeFactors 4 = {2} := by
+    rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
+    exact Nat.primeFactors_prime_pow (by norm_num : 2 ≠ 0) (by decide : Nat.Prime 2)
+  have hφ : Nat.totient 4 = 2 := by
+    rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
+    rw [Nat.totient_prime_pow (by decide : Nat.Prime 2) (by norm_num : 0 < 2)]
+    norm_num
+  rw [IsCyclotomicExtension.Rat.discr (n := 4) (K := CyclotomicField 4 ℚ), hpf, hφ]
+  norm_num
 
-/-- The absolute value of the discriminant of `ℚ(i)` is `4`. -/
-theorem abs_discr_cyclotomicField_four :
-    |NumberField.discr (CyclotomicField 4 ℚ)| = 4 := by
-  rw [discr_cyclotomicField_four]; decide
-
-/-- `|d_{ℚ(i)}| = 4` in `natAbs` form. -/
-theorem natAbs_discr_cyclotomicField_four :
-    (NumberField.discr (CyclotomicField 4 ℚ)).natAbs = 4 := by
-  rw [discr_cyclotomicField_four]; rfl
+/-- As a non-public worked example, Mathlib's absolute cyclotomic discriminant formula gives
+`|d_{ℚ(i)}| = 4` for the fourth cyclotomic field. -/
+example : (NumberField.discr (CyclotomicField 4 ℚ)).natAbs = 4 := by
+  haveI : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
+    CyclotomicField.isCyclotomicExtension 4 ℚ
+  have hpf : Nat.primeFactors 4 = {2} := by
+    rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
+    exact Nat.primeFactors_prime_pow (by norm_num : 2 ≠ 0) (by decide : Nat.Prime 2)
+  have hφ : Nat.totient 4 = 2 := by
+    rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
+    rw [Nat.totient_prime_pow (by decide : Nat.Prime 2) (by norm_num : 0 < 2)]
+    norm_num
+  rw [IsCyclotomicExtension.Rat.natAbs_discr (n := 4) (K := CyclotomicField 4 ℚ), hpf, hφ]
+  norm_num
 
 end TauCeti.NumberField.WorkedExamples
