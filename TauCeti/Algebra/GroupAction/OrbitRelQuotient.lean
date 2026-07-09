@@ -41,7 +41,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
 * `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk` and
   `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE`: the representative convention of
-  Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions.
+  Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions, with
+  `TauCeti.MulAction.orbitRelQuotientMapOfLE_mk` recording the induced map on representatives.
 -/
 
 public section
@@ -206,6 +207,15 @@ lemma equivSubgroupOrbitsQuotientGroup_apply_smul
     (MulAction.equivSubgroupOrbitsQuotientGroup x H).apply_symm_apply
     (QuotientGroup.mk (s := H) g⁻¹)
 
+/-- The quotient map induced by an inclusion of acting subgroups sends a representative to the
+same representative in the larger orbit quotient. -/
+@[simp]
+lemma orbitRelQuotientMapOfLE_mk {H K : Subgroup G} (hHK : H ≤ K) (x : X) :
+    Setoid.map_of_le (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
+        (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
+      (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient K X) :=
+  Quotient.map'_mk'' id (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK) x
+
 /-- The subgroup-orbit quotient equivalence is natural in subgroup inclusions. -/
 @[simp]
 lemma equivSubgroupOrbitsQuotientGroup_mapOfLE
@@ -220,11 +230,7 @@ lemma equivSubgroupOrbitsQuotientGroup_mapOfLE
   obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G x₀ x'
   rw [← hg]
   rw [equivSubgroupOrbitsQuotientGroup_apply_smul]
-  rw [show Setoid.map_of_le (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
-      (Quotient.mk'' (g • x₀) : _root_.MulAction.orbitRel.Quotient H X) =
-        (Quotient.mk'' (g • x₀) : _root_.MulAction.orbitRel.Quotient K X) by
-    exact
-      (Quotient.map'_mk'' id (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK) (g • x₀))]
+  rw [orbitRelQuotientMapOfLE_mk hHK]
   rw [equivSubgroupOrbitsQuotientGroup_apply_smul, Subgroup.quotientMapOfLE_apply_mk]
 
 private lemma normalizer_smul_mem_orbit (H : Subgroup G)
