@@ -20,6 +20,8 @@ Morrison's Mathlib universal-cover drafts, especially
 [#42](https://github.com/TauCetiProject/TauCeti/pull/42).
 -/
 
+public section
+
 noncomputable section
 
 open CategoryTheory Filter FundamentalGroupoid Set Topology TauCeti
@@ -341,7 +343,7 @@ equals the class of `p` itself. This packages `Path.Homotopic.Quotient.subpath_z
 together with `part.t_zero` / `part.t_last`, sidestepping the dependent-type "motive"
 obstruction one hits when rewriting `part.t 0 = 0` / `part.t (Fin.last n) = 1` directly
 through `subpath`. -/
-private theorem Path.Homotopic.Quotient.cast_mk_subpath_part_endpoints
+theorem Path.Homotopic.Quotient.cast_mk_subpath_part_endpoints
     {x y : X} (p : Path x y) {n : ℕ} (part : IntervalPartition n)
     (h₁ : x = p (part.t 0)) (h₂ : y = p (part.t (Fin.last n))) :
     (Path.Homotopic.Quotient.mk (p.subpath (part.t 0) (part.t (Fin.last n)))).cast h₁ h₂ =
@@ -354,13 +356,13 @@ private theorem Path.Homotopic.Quotient.cast_mk_subpath_part_endpoints
 
 /-- The first partition point is the source of a path. This names the endpoint cast used when
 turning the first rung into an honest loop at the source. -/
-private theorem Path.source_eq_eval_partition_zero {x y : X} (p : Path x y)
+theorem Path.source_eq_eval_partition_zero {x y : X} (p : Path x y)
     {n : ℕ} (part : IntervalPartition n) : x = p (part.t 0) := by
   rw [part.t_zero, p.source]
 
 /-- The last partition point is the target of a path. This names the endpoint cast used when
 turning the final rung into an honest path between the targets. -/
-private theorem Path.target_eq_eval_partition_last {x y : X} (p : Path x y)
+theorem Path.target_eq_eval_partition_last {x y : X} (p : Path x y)
     {n : ℕ} (part : IntervalPartition n) : y = p (part.t (Fin.last n)) := by
   rw [part.t_last, p.target]
 
