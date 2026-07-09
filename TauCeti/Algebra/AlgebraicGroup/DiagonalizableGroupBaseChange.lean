@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.BaseChangeNaturality
+public import TauCeti.Algebra.AlgebraicGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupFunctoriality
 
 /-!
