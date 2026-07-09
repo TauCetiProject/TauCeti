@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.ContinuousAmbientIsotopyProd
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.AmbientIsotopy
 
 /-!
 # Compatibility import for products of smooth-embedding ambient isotopies
