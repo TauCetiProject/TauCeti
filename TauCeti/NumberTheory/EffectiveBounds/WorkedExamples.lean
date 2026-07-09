@@ -8,8 +8,12 @@ public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
+public import TauCeti.NumberTheory.EffectiveBounds.DiscriminantEquality
+public import TauCeti.FieldTheory.Trace
 import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.Algebra.Polynomial.SpecificDegree
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import TauCeti.NumberTheory.EffectiveBounds.QuadraticClassNumber
 
 /-!
@@ -19,19 +23,23 @@ The effective-bounds roadmap keeps its estimates honest with two arithmetic work
 each asking that a general bound be exercised on a *named* number field rather than a
 same-shape analogue:
 
-* the cyclotomic discriminant formula gives `|d_{ℚ(i)}| = 4`;
+* the discriminant bound recovers `|d_{ℚ(i)}| = 4` from the integral basis `{1, i}`;
 * the class-number bound is non-vacuous on `ℚ(√-5)`, giving `h ≤ 64·5`.
 
-This file realises the class-number worked example on a concrete `NumberField` instance and
-records the exact cyclotomic discriminant computation for `ℚ(i)`. The `ℚ(i)` computation here
-does not prove the discriminant by the basis-and-bound route.
+This file realises both worked examples on concrete `NumberField` instances, each exercising
+the repo's own effective-bound machinery rather than citing a closed formula from Mathlib.
 
 For `ℚ(√-5)` we take `AdjoinRoot (X² + 5)` over `ℚ` (a field because `X² + 5` is irreducible,
 having no rational root), a degree-two number field with a square root of `-5`, and feed it to
 `TauCeti.NumberField.classNumber_le_natAbs_of_sq_intCast`.
 
-For `ℚ(i)` we take the fourth cyclotomic field `CyclotomicField 4 ℚ` and specialize Mathlib's
-prime-power cyclotomic discriminant formula, giving `d_{ℚ(i)} = -4` and hence
+For `ℚ(i)` we take the fourth cyclotomic field `CyclotomicField 4 ℚ`, whose primitive fourth
+root of unity `ζ` satisfies `ζ² = -1` and generates `ℚ(i)`. The pair `{1, ζ}` is a `ℤ`-basis
+of the ring of integers (Mathlib's integral power basis of a cyclotomic `𝒪_K`), so the repo's
+equality companion of the discriminant bound
+(`TauCeti.NumberField.discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int`) turns the
+trace-form evaluation `disc ℚ {1, ζ} = 4·(-1) = -4`
+(`TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap`) into `d_{ℚ(i)} = -4` exactly, whence
 `|d_{ℚ(i)}| = 4`.
 
 ## Main results
@@ -43,9 +51,10 @@ prime-power cyclotomic discriminant formula, giving `d_{ℚ(i)} = -4` and hence
 
 ## Provenance
 
-No formal code is vendored. The effective bounds consumed here (`classNumber_le_bound` and the
-quadratic corollary) carry their own attribution to `kim-em/erdos-unit-distance`; the
-`NumberField` construction for `ℚ(√-5)` and the arithmetic specialisations are new.
+No formal code is vendored. The effective bounds consumed here (`classNumber_le_bound`, the
+quadratic class-number corollary, the discriminant-equality companion, and the square-root
+trace-form diagonalisation) carry their own attribution to `kim-em/erdos-unit-distance`; the
+`NumberField` constructions for `ℚ(√-5)` and `ℚ(i)` and the arithmetic specialisations are new.
 -/
 
 public section
@@ -90,19 +99,99 @@ theorem classNumber_adjoinRoot_sqrt_neg_five_le :
   have := classNumber_le_natAbs_of_sq_intCast hfin hx2 hx
   simpa using this
 
-/-! ### `ℚ(i)`: Mathlib's cyclotomic discriminant formula recovers `|d| = 4` -/
+/-! ### `ℚ(i)`: the discriminant bound recovers `|d| = 4` from the basis `{1, i}` -/
 
-/-- **The discriminant of `ℚ(i)`.** Mathlib's cyclotomic discriminant formula gives
-`d_{ℚ(i)} = -4` for the fourth cyclotomic field. -/
+/-- The discriminant of a fourth cyclotomic field is `-4`, recovered from the integral basis
+`{1, i}`: the equality companion of the effective discriminant bound turns the trace-form value
+`disc ℚ {1, i} = 4·(-1) = -4` into the field discriminant. -/
+private theorem discr_eq_neg_four_of_isCyclotomicExtension {K : Type*} [Field K]
+    [NumberField K] [CharZero K] [IsCyclotomicExtension {4} ℚ K] :
+    NumberField.discr K = -4 := by
+  classical
+  set ζ : K := IsCyclotomicExtension.zeta 4 ℚ K with hζdef
+  have hζ : IsPrimitiveRoot ζ 4 := IsCyclotomicExtension.zeta_spec 4 ℚ K
+  -- `[ℚ(i) : ℚ] = φ 4 = 2`.
+  have hfin : finrank ℚ K = 2 := by
+    rw [IsCyclotomicExtension.finrank K
+      (Polynomial.cyclotomic.irreducible_rat (n := 4) (by norm_num))]
+    decide
+  -- The primitive fourth root of unity is a square root of `-1`.
+  have h4 : ζ ^ 4 = 1 := hζ.pow_eq_one
+  have hne : ζ ^ 2 ≠ 1 := hζ.pow_ne_one_of_pos_of_lt (by norm_num) (by norm_num)
+  have hfac : (ζ ^ 2 - 1) * (ζ ^ 2 + 1) = 0 := by linear_combination h4
+  have hζ2K : ζ ^ 2 = -1 := by
+    rcases mul_eq_zero.mp hfac with h | h
+    · exact absurd (sub_eq_zero.mp h) hne
+    · linear_combination h
+  have hζ2 : ζ ^ 2 = algebraMap ℚ K (-1) := by rw [hζ2K]; simp
+  -- `i` is not rational, else `-1` would be a rational square.
+  have hζnotmem : ζ ∉ (algebraMap ℚ K).range := by
+    rintro ⟨q, hq⟩
+    have hcast : algebraMap ℚ K (q ^ 2) = algebraMap ℚ K (-1) := by rw [map_pow, hq]; exact hζ2
+    have hq2 : q ^ 2 = -1 := RingHom.injective _ hcast
+    nlinarith [sq_nonneg q]
+  -- `{1, i}` is a `ℚ`-basis of algebraic integers.
+  have hζne : ζ ≠ 0 := by
+    intro h
+    exact hζnotmem ⟨0, by rw [map_zero]; exact h.symm⟩
+  have hli : LinearIndependent ℚ ![1, ζ] := by
+    rw [linearIndependent_fin2]
+    refine ⟨by simpa using hζne, ?_⟩
+    intro c hc
+    simp only [Matrix.cons_val_one, Matrix.cons_val_zero] at hc
+    rw [Algebra.smul_def] at hc
+    refine hζnotmem ⟨c⁻¹, ?_⟩
+    rw [map_inv₀]
+    exact inv_eq_of_mul_eq_one_right hc
+  have hcard : Fintype.card (Fin 2) = finrank ℚ K := by rw [Fintype.card_fin]; exact hfin.symm
+  set b := basisOfLinearIndependentOfCardEqFinrank' ![1, ζ] hli hcard with hb_def
+  have hbcoe : ⇑b = ![1, ζ] := coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
+  have hζint : IsIntegral ℤ ζ := hζ.isIntegral (by norm_num)
+  have hb_int : ∀ i, IsIntegral ℤ (b i) := by
+    intro i
+    fin_cases i
+    · simpa [hbcoe] using (isIntegral_one : IsIntegral ℤ (1 : K))
+    · simpa [hbcoe] using hζint
+  -- `{1, i}` is the integral power basis of `𝒪_{ℚ(i)}`, so its `ℤ`-span is all of `𝒪_{ℚ(i)}`.
+  have hb0 : b 0 = (1 : K) := by rw [hbcoe]; rfl
+  have hb1 : b 1 = ζ := by rw [hbcoe]; rfl
+  have hspan : Submodule.span ℤ (Set.range fun i => (⟨b i, hb_int i⟩ : 𝓞 K)) = ⊤ := by
+    set pb := hζ.integralPowerBasis with hpb
+    have hgen : pb.gen = hζ.toInteger := hζ.integralPowerBasis_gen
+    have hdim : pb.dim = 2 := by rw [hpb, hζ.integralPowerBasis_dim]; decide
+    -- `1` and `i` themselves lie in the span, as the two vectors of the family.
+    have h1 : (1 : 𝓞 K) ∈ Submodule.span ℤ (Set.range fun i => (⟨b i, hb_int i⟩ : 𝓞 K)) :=
+      Submodule.subset_span ⟨0, Subtype.ext hb0⟩
+    have hi : hζ.toInteger ∈ Submodule.span ℤ (Set.range fun i => (⟨b i, hb_int i⟩ : 𝓞 K)) :=
+      Submodule.subset_span ⟨1, Subtype.ext hb1⟩
+    -- Every vector of the integral power basis is `i ^ 0 = 1` or `i ^ 1 = i`.
+    have hpow : ∀ i : Fin pb.dim, pb.basis i ∈
+        Submodule.span ℤ (Set.range fun i => (⟨b i, hb_int i⟩ : 𝓞 K)) := by
+      intro i
+      rw [pb.basis_eq_pow, hgen]
+      have hlt : (i : ℕ) < 2 := hdim ▸ i.isLt
+      have hcase : (i : ℕ) = 0 ∨ (i : ℕ) = 1 := by omega
+      rcases hcase with h | h <;> rw [h]
+      · rw [pow_zero]; exact h1
+      · rw [pow_one]; exact hi
+    refine le_antisymm le_top ?_
+    refine le_trans (le_of_eq pb.basis.span_eq.symm) ?_
+    exact Submodule.span_le.mpr (Set.range_subset_iff.mpr hpow)
+  -- The trace form evaluates `disc ℚ {1, i} = -4`.
+  have hdiscr : Algebra.discr ℚ (b : Fin 2 → K) = ((-4 : ℤ) : ℚ) := by
+    rw [hbcoe, TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap hfin hζ2 hζnotmem]
+    push_cast
+    norm_num
+  exact discr_eq_of_basis_isIntegral_of_span_eq_top_of_discr_eq_int b hb_int hspan hdiscr
+
+/-- **The discriminant of `ℚ(i)`.** Recovering `d_{ℚ(i)} = -4` from the integral basis
+`{1, i}` of the fourth cyclotomic field: the equality companion of the effective discriminant
+bound turns the trace-form value `disc ℚ {1, i} = 4·(-1) = -4` into the field discriminant. -/
 @[simp]
 theorem discr_cyclotomicField_four : NumberField.discr (CyclotomicField 4 ℚ) = -4 := by
-  haveI : IsCyclotomicExtension {2 ^ (1 + 1)} ℚ (CyclotomicField 4 ℚ) := by
-    have h : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
-      CyclotomicField.isCyclotomicExtension 4 ℚ
-    simpa using h
-  rw [IsCyclotomicExtension.Rat.discr_prime_pow_succ (p := 2) (k := 1)
-    (K := CyclotomicField 4 ℚ)]
-  norm_num
+  haveI : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
+    CyclotomicField.isCyclotomicExtension 4 ℚ
+  exact discr_eq_neg_four_of_isCyclotomicExtension
 
 /-- **The absolute discriminant of `ℚ(i)`.** The fourth cyclotomic field has absolute
 discriminant `4`, obtained from the signed discriminant worked example. -/
