@@ -6,9 +6,10 @@ public import TauCeti.Probability.Exchangeability.Contractability
 public import TauCeti.Probability.Exchangeability.ConditionallyIID
 public import TauCeti.Probability.DeFinetti.DirectingMeasure
 -- Non-public: used only inside proofs — the tail factorization, the block-law integration lemma,
--- and `Tuple.sort` (for the injective reduction).
+-- the path-law transfer / contractability bridge, and `Tuple.sort` (for the injective reduction).
 import TauCeti.Probability.DeFinetti.TailFactorization
 import TauCeti.Probability.DeFinetti.BlockFactorization
+import TauCeti.Probability.Exchangeability.ConditionallyIIDMap
 import TauCeti.Probability.Exchangeability.PathSpace.LawBridge
 import Mathlib.Data.Fin.Tuple.Sort
 
@@ -25,8 +26,6 @@ what `conditionallyIIDWith_of_forall_rectangles` consumes.
 * `conditionallyIIDWith_of_contractable` — a contractable process on a standard Borel sample space
   is conditionally i.i.d. with directing measure `directingProbabilityMeasure μ X` (the tail
   conditional law).
-* `conditionallyIID_of_conditionallyIID_pathLaw` — path-law transfer to an arbitrary measurable
-  sample space.
 * `conditionallyIID_of_contractable` — the existential form, for a contractable process on an
   arbitrary measurable sample space (state space still standard Borel).
 * `conditionallyIID_of_exchangeable` — the exchangeable form (via `contractable_of_exchangeable`).
@@ -137,36 +136,6 @@ private theorem conditionallyIID_of_contractable_standardBorelOmega
     {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n)) :
     ConditionallyIID μ X :=
   ConditionallyIID.of_directing (conditionallyIIDWith_of_contractable hX hX_meas)
-
-/-- **Transfer of conditional i.i.d.-ness along the path law.** If the coordinate process on path
-space is conditionally i.i.d. under `pathLaw μ X`, then `X` is conditionally i.i.d. under `μ`. -/
-theorem conditionallyIID_of_conditionallyIID_pathLaw {Ω α : Type*} [MeasurableSpace Ω]
-    [MeasurableSpace α] {μ : Measure Ω} {X : ℕ → Ω → α} (hX_meas : ∀ n, Measurable (X n))
-    (h : ConditionallyIID (pathLaw μ X) fun n p => p n) :
-    ConditionallyIID μ X := by
-  obtain ⟨ν, hν⟩ := h.exists_directing
-  have hφ : Measurable (fun ω => fun i => X i ω : Ω → ℕ → α) := measurable_pi_lambda _ hX_meas
-  refine ConditionallyIID.of_directing
-    (ConditionallyIIDWith.intro (hν.measurable_directing.comp hφ) ?_)
-  intro m k hk
-  have hcoord : Measurable (fun p : ℕ → α => fun i : Fin m => p (k i)) :=
-    measurable_pi_lambda _ fun i => measurable_pi_apply (k i)
-  have hg : Measurable
-      (fun p : ℕ → α => (ProbabilityMeasure.pi fun _ : Fin m => ν p).toMeasure) :=
-    TauCeti.MeasureTheory.measurable_probabilityMeasure_pi_const_toMeasure ν
-      hν.measurable_directing
-  calc blockLaw μ X k
-      = blockLaw (pathLaw μ X) (fun n p => p n) k := by
-          simp only [blockLaw_def, pathLaw_def]
-          rw [Measure.map_map hcoord hφ]
-          rfl
-    _ = (pathLaw μ X).bind fun p => (ProbabilityMeasure.pi fun _ : Fin m => ν p).toMeasure :=
-          hν.map k hk
-    _ = μ.bind fun ω =>
-          (ProbabilityMeasure.pi fun _ : Fin m => ν (fun i => X i ω)).toMeasure := by
-          simp only [pathLaw_def, Measure.bind]
-          rw [Measure.map_map hg hφ]
-          rfl
 
 /-- **de Finetti's theorem: contractable ⇒ conditionally i.i.d.** A contractable process valued in
 a standard Borel space, on an arbitrary measurable sample space, is conditionally i.i.d. -/
