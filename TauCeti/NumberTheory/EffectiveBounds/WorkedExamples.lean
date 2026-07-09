@@ -11,9 +11,8 @@ import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import TauCeti.NumberTheory.EffectiveBounds.ClassNumber
 import TauCeti.NumberTheory.EffectiveBounds.DiscriminantEquality
 import TauCeti.NumberTheory.EffectiveBounds.TraceForm
+import TauCeti.NumberTheory.NumberField.Internal.QuadraticIntegralBasis
 import Mathlib.FieldTheory.KummerPolynomial
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
 /-!
 # Worked examples: the effective bounds on the named quadratic fields
@@ -101,38 +100,6 @@ theorem classNumber_adjoinRoot_sqrt_neg_five_le :
 
 /-! ### `ℚ(i)`: the discriminant bound recovers `|d| = 4` from the basis `{1, i}` -/
 
-/-- In a quadratic number field, an integral non-rational element `x` gives the private
-`ℚ`-basis `{1, x}` used by the worked-example proof. -/
-private theorem exists_basis_eq_one_self_of_notMem_range_of_isIntegral {K : Type*} [Field K]
-    [NumberField K] {x : K} (hfin : finrank ℚ K = 2)
-    (hx : x ∉ (algebraMap ℚ K).range) (hxint : IsIntegral ℤ x) :
-    ∃ b : Basis (Fin 2) ℚ K, ⇑b = ![1, x] ∧ ∀ i, IsIntegral ℤ (b i) := by
-  classical
-  -- `x ≠ 0`, else `x = algebraMap ℚ K 0` would be rational.
-  have hxne : x ≠ 0 := by
-    rintro rfl
-    exact hx ⟨0, by rw [map_zero]⟩
-  -- `{1, x}` is linearly independent over `ℚ`: `x` is nonzero and not a `ℚ`-multiple of `1`.
-  have hli : LinearIndependent ℚ ![1, x] := by
-    rw [linearIndependent_fin2]
-    refine ⟨by simpa using hxne, ?_⟩
-    intro c hc
-    simp only [Matrix.cons_val_one, Matrix.cons_val_zero] at hc
-    rw [Algebra.smul_def] at hc
-    refine hx ⟨c⁻¹, ?_⟩
-    rw [map_inv₀]
-    exact inv_eq_of_mul_eq_one_right hc
-  -- A linearly independent family of `finrank` vectors is a basis.
-  have hcard : Fintype.card (Fin 2) = finrank ℚ K := by
-    rw [Fintype.card_fin]; exact hfin.symm
-  set b := basisOfLinearIndependentOfCardEqFinrank' ![1, x] hli hcard with hb_def
-  have hbcoe : ⇑b = ![1, x] := coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
-  refine ⟨b, hbcoe, ?_⟩
-  intro i
-  fin_cases i
-  · simpa [hbcoe] using (isIntegral_one : IsIntegral ℤ (1 : K))
-  · simpa [hbcoe] using hxint
-
 /-- The discriminant of a fourth cyclotomic field is `-4`, recovered from the integral basis
 `{1, i}`: the equality companion of the effective discriminant bound turns the trace-form value
 `disc ℚ {1, i} = 4·(-1) = -4` into the field discriminant. -/
@@ -164,7 +131,7 @@ private theorem discr_eq_neg_four_of_isCyclotomicExtension {K : Type*} [Field K]
     nlinarith [sq_nonneg q]
   have hζint : IsIntegral ℤ ζ := hζ.isIntegral (by norm_num)
   -- `{1, i}` is a `ℚ`-basis of algebraic integers.
-  rcases exists_basis_eq_one_self_of_notMem_range_of_isIntegral hfin hζnotmem hζint with
+  rcases Internal.exists_basis_eq_one_self_of_notMem_range_of_isIntegral hfin hζnotmem hζint with
     ⟨b, hbcoe, hb_int⟩
   -- `{1, i}` is the integral power basis of `𝒪_{ℚ(i)}`, so its `ℤ`-span is all of `𝒪_{ℚ(i)}`.
   have hb0 : b 0 = (1 : K) := by rw [hbcoe]; rfl
