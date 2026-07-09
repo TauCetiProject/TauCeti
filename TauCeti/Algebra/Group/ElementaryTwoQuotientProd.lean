@@ -92,11 +92,8 @@ noncomputable def elementaryTwoQuotientProdLinearEquiv (G H : Type*) [CommGroup 
     (p : G × H) :
     elementaryTwoQuotientProdLinearEquiv G H (elementaryTwoQuotientMk p) =
       (elementaryTwoQuotientMk p.1, elementaryTwoQuotientMk p.2) := by
-  -- Unfold the equiv's bundled `toFun` across the `≃ₗ` coercion, then reduce the projections.
-  change (elementaryTwoQuotientMap (MonoidHom.fst G H) (elementaryTwoQuotientMk p),
-      elementaryTwoQuotientMap (MonoidHom.snd G H) (elementaryTwoQuotientMk p)) =
-    (elementaryTwoQuotientMk p.1, elementaryTwoQuotientMk p.2)
-  simp only [elementaryTwoQuotientMap_mk, MonoidHom.coe_fst, MonoidHom.coe_snd]
+  simp only [elementaryTwoQuotientProdLinearEquiv, LinearEquiv.coe_mk, LinearMap.coe_mk,
+    AddHom.coe_mk, elementaryTwoQuotientMap_mk, MonoidHom.coe_fst, MonoidHom.coe_snd]
 
 /-- The inverse product equivalence sends a pair of classes to the class of the pair. -/
 @[simp] theorem elementaryTwoQuotientProdLinearEquiv_symm_mk (G H : Type*)
@@ -186,11 +183,8 @@ classes. -/
     elementaryTwoQuotientPiLinearEquiv G (elementaryTwoQuotientMk g) =
       fun i => elementaryTwoQuotientMk (g i) := by
   funext i
-  -- Unfold the equiv's bundled `toFun` at index `i` across the `≃ₗ` coercion.
-  change elementaryTwoQuotientMap (Pi.evalMonoidHom G i) (elementaryTwoQuotientMk g) =
-    elementaryTwoQuotientMk (g i)
-  rw [elementaryTwoQuotientMap_mk]
-  rfl
+  simp only [elementaryTwoQuotientPiLinearEquiv, LinearEquiv.coe_mk, LinearMap.coe_mk,
+    AddHom.coe_mk, elementaryTwoQuotientMap_mk, Pi.evalMonoidHom_apply]
 
 /-- The inverse indexed-product equivalence sends a family of componentwise classes to the class
 of the assembled family. -/
