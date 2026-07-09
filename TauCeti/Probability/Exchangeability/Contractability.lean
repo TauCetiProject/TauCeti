@@ -79,24 +79,12 @@ theorem Contractable.identDistrib_block {μ : Measure Ω} {X : ℕ → Ω → α
 process `X`, any two a.e. measurable coordinates `X i` and `X j` have the same law. -/
 theorem Contractable.identDistrib_coord {μ : Measure Ω} {X : ℕ → Ω → α} (hX : Contractable μ X)
     {i j : ℕ} (hi_meas : AEMeasurable (X i) μ) (hj_meas : AEMeasurable (X j) μ) :
-    IdentDistrib (X i) (X j) μ μ where
-  aemeasurable_fst := hi_meas
-  aemeasurable_snd := hj_meas
-  map_eq := by
-    let eval : (Fin 1 → α) → α := fun v => v 0
-    have heval : AEMeasurable eval
-        (μ.map fun (ω : Ω) (r : Fin 1) => X ((fun _ : Fin 1 => i) r) ω) :=
-      (measurable_pi_apply (0 : Fin 1)).aemeasurable
-    have hblock := hX.identDistrib_block
-      (Subsingleton.strictMono (fun _ : Fin 1 => i))
-      (Subsingleton.strictMono (fun _ : Fin 1 => j)) (fun _ => hi_meas) (fun _ => hj_meas)
-    have hmap := congrArg (fun ν : Measure (Fin 1 → α) => ν.map eval) hblock.map_eq
-    rw [AEMeasurable.map_map_of_aemeasurable heval hblock.aemeasurable_fst,
-      AEMeasurable.map_map_of_aemeasurable (by rwa [hblock.map_eq] at heval)
-        hblock.aemeasurable_snd] at hmap
-    change μ.map (eval ∘ (fun (ω : Ω) (r : Fin 1) => X ((fun _ : Fin 1 => i) r) ω)) =
-      μ.map (eval ∘ (fun (ω : Ω) (r : Fin 1) => X ((fun _ : Fin 1 => j) r) ω))
-    simpa [eval, Function.comp] using hmap
+    IdentDistrib (X i) (X j) μ μ := by
+  have hblock := hX.identDistrib_block
+    (Subsingleton.strictMono (fun _ : Fin 1 => i))
+    (Subsingleton.strictMono (fun _ : Fin 1 => j)) (fun _ => hi_meas) (fun _ => hj_meas)
+  have hcomp := hblock.comp (measurable_pi_apply (0 : Fin 1))
+  convert hcomp using 1 <;> funext ω <;> simp [Function.comp]
 
 /-- **Increasing pairs of a contractable process are identically distributed.** For a
 contractable process `X`, if the four selected coordinates are a.e. measurable and `i < j`,
@@ -105,32 +93,21 @@ theorem Contractable.identDistrib_pair {μ : Measure Ω} {X : ℕ → Ω → α}
     {i j k l : ℕ} (hi_meas : AEMeasurable (X i) μ) (hj_meas : AEMeasurable (X j) μ)
     (hk_meas : AEMeasurable (X k) μ) (hl_meas : AEMeasurable (X l) μ)
     (hij : i < j) (hkl : k < l) :
-    IdentDistrib (fun ω => (X i ω, X j ω)) (fun ω => (X k ω, X l ω)) μ μ where
-  aemeasurable_fst := hi_meas.prodMk hj_meas
-  aemeasurable_snd := hk_meas.prodMk hl_meas
-  map_eq := by
-    let eval : (Fin 2 → α) → α × α := fun v => (v 0, v 1)
-    have hblock := hX.identDistrib_block (strictMono_vecEmpty.vecCons hij)
-      (strictMono_vecEmpty.vecCons hkl)
-      (fun r => by
-        fin_cases r
-        · simpa [Matrix.cons_val_zero] using hi_meas
-        · simpa [Matrix.cons_val_one] using hj_meas)
-      (fun r => by
-        fin_cases r
-        · simpa [Matrix.cons_val_zero] using hk_meas
-        · simpa [Matrix.cons_val_one] using hl_meas)
-    have heval : AEMeasurable eval
-        (μ.map fun (ω : Ω) (r : Fin 2) => X (![i, j] r) ω) :=
-      ((measurable_pi_apply (0 : Fin 2)).prodMk
-        (measurable_pi_apply (1 : Fin 2))).aemeasurable
-    have hmap := congrArg (fun ν : Measure (Fin 2 → α) => ν.map eval) hblock.map_eq
-    rw [AEMeasurable.map_map_of_aemeasurable heval hblock.aemeasurable_fst,
-      AEMeasurable.map_map_of_aemeasurable (by rwa [hblock.map_eq] at heval)
-        hblock.aemeasurable_snd] at hmap
-    change μ.map (eval ∘ (fun (ω : Ω) (r : Fin 2) => X (![i, j] r) ω)) =
-      μ.map (eval ∘ (fun (ω : Ω) (r : Fin 2) => X (![k, l] r) ω))
-    simpa [eval, Function.comp, Matrix.cons_val_zero, Matrix.cons_val_one] using hmap
+    IdentDistrib (fun ω => (X i ω, X j ω)) (fun ω => (X k ω, X l ω)) μ μ := by
+  have hblock := hX.identDistrib_block (strictMono_vecEmpty.vecCons hij)
+    (strictMono_vecEmpty.vecCons hkl)
+    (fun r => by
+      fin_cases r
+      · simpa [Matrix.cons_val_zero] using hi_meas
+      · simpa [Matrix.cons_val_one] using hj_meas)
+    (fun r => by
+      fin_cases r
+      · simpa [Matrix.cons_val_zero] using hk_meas
+      · simpa [Matrix.cons_val_one] using hl_meas)
+  have hcomp := hblock.comp
+    ((measurable_pi_apply (0 : Fin 2)).prodMk (measurable_pi_apply (1 : Fin 2)))
+  convert hcomp using 1 <;> funext ω <;>
+    simp [Function.comp, Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- Contractability is preserved by passing to a strictly increasing subsequence. -/
 theorem Contractable.comp {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)
