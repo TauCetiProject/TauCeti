@@ -7,15 +7,10 @@ module
 
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected
 public import TauCeti.Topology.Homotopy.Path
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
-public import Mathlib.Topology.Path
-public import Mathlib.Topology.Homotopy.Path
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Order
 public import Mathlib.Topology.Defs.Induced
 public import Mathlib.Topology.Connected.LocallyPathConnected
-public import Mathlib.Topology.UnitInterval
 
 /-!
 # Semilocally simple connectivity on sets
@@ -25,7 +20,8 @@ universal-cover construction. It is adapted from the Mathlib drafts
 [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 [#31576](https://github.com/leanprover-community/mathlib4/pull/31576), and
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292) by Kim Morrison, for
-Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap.
+Stage 0.1 of the `TauCetiRoadmap/UniversalCovers` roadmap, following the earlier Tau Ceti
+work in [#42](https://github.com/TauCetiProject/TauCeti/pull/42).
 -/
 
 noncomputable section
@@ -33,6 +29,17 @@ noncomputable section
 open CategoryTheory Filter FundamentalGroupoid Set Topology TauCeti
 
 variable {X : Type*} [TopologicalSpace X]
+
+namespace FundamentalGroup
+
+/-- Mapping a loop class represented by a path is represented by mapping that path. -/
+theorem map_fromPath {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) (base : X)
+    (q : Path base base) :
+    FundamentalGroup.map f base (FundamentalGroup.fromPath ⟦q⟧) =
+      FundamentalGroup.fromPath ⟦q.map f.continuous⟧ := by
+  rfl
+
+end FundamentalGroup
 
 /-! ### SemilocallySimplyConnectedAt -/
 
@@ -76,7 +83,8 @@ public theorem semilocallySimplyConnectedAt_iff {x : X} :
     rw [MonoidHom.range_eq_bot_iff] at h_range
     have h_map_eq : FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ u'
         (FundamentalGroup.fromPath ⟦γ_U⟧) =
-      FundamentalGroup.fromPath ⟦γ_U.map continuous_subtype_val⟧ := rfl
+      FundamentalGroup.fromPath ⟦γ_U.map continuous_subtype_val⟧ :=
+        FundamentalGroup.map_fromPath ⟨Subtype.val, continuous_subtype_val⟩ u' γ_U
     have h_map : FundamentalGroup.fromPath ⟦γ_U.map continuous_subtype_val⟧ =
         FundamentalGroup.fromPath ⟦Path.refl u⟧ := by
       rw [← h_map_eq, h_range]; rfl
@@ -93,7 +101,8 @@ public theorem semilocallySimplyConnectedAt_iff {x : X} :
     have hhom := hU_loops_null (γ'.map continuous_subtype_val) hrange
     have h_map_eq : FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ base
         (FundamentalGroup.fromPath ⟦γ'⟧) =
-      FundamentalGroup.fromPath ⟦γ'.map continuous_subtype_val⟧ := rfl
+      FundamentalGroup.fromPath ⟦γ'.map continuous_subtype_val⟧ :=
+        FundamentalGroup.map_fromPath ⟨Subtype.val, continuous_subtype_val⟩ base γ'
     rw [h_map_eq, Quotient.sound hhom]
     rfl
 

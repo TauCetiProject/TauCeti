@@ -5,12 +5,7 @@ Authors: Kim Morrison
 -/
 module
 
-public import Mathlib.Topology.UnitInterval
-public import Mathlib.Topology.Path
 public import Mathlib.Topology.Subpath
-public import Mathlib.Topology.Homotopy.Path
-public import Mathlib.Topology.Connected.PathConnected
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 
 /-!
 # Path homotopy helpers
@@ -18,7 +13,8 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 Small path and path-homotopy quotient lemmas used by the universal-cover construction. The
 quotient subpath identities are adapted from Kim Morrison's Mathlib universal-cover drafts,
 especially [#31576](https://github.com/leanprover-community/mathlib4/pull/31576) and
-[#38292](https://github.com/leanprover-community/mathlib4/pull/38292).
+[#38292](https://github.com/leanprover-community/mathlib4/pull/38292), following the earlier
+Tau Ceti work in [#42](https://github.com/TauCetiProject/TauCeti/pull/42).
 -/
 
 public section
@@ -55,36 +51,24 @@ theorem map_codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val)
 
 end Path
 
-/-- A partition of the unit interval `[0, 1]` into `n` segments.
-This bundles a monotone sequence `0 = t 0 ≤ ... ≤ t (Fin.last n) = 1`. -/
-structure IntervalPartition (n : ℕ) where
-  /-- The partition points. -/
-  t : Fin (n + 1) → unitInterval
-  /-- The partition points are monotone. -/
-  mono : Monotone t
-  /-- The first partition point is `0`. -/
-  t_zero : t 0 = 0
-  /-- The last partition point is `1`. -/
-  t_last : t (Fin.last n) = 1
-
-namespace IntervalPartition
-
-attribute [simp, grind =] t_zero t_last
-
-/-- `IntervalPartition 0` is empty: a single partition point cannot be simultaneously
-`0` and `1`. -/
-instance : IsEmpty (IntervalPartition 0) where
-  false part := by
-    have h0 : part.t 0 = 0 := part.t_zero
-    have h1 : part.t 0 = 1 := part.t_last
-    exact zero_ne_one (h0.symm.trans h1)
-
-end IntervalPartition
-
 namespace Path
 variable {X : Type*} [TopologicalSpace X] {x y : X}
 
 namespace Homotopic.Quotient
+
+/-- The quotient topology on path-homotopy classes. This instance is load-bearing:
+`Path.Homotopic.Quotient` is a `def` over `Quotient`, and instance search does not unfold it to
+find the generic `TopologicalSpace (Quotient _)`. -/
+instance instTopologicalSpace (x₀ x : X) :
+    TopologicalSpace (Path.Homotopic.Quotient x₀ x) :=
+  inferInstanceAs (TopologicalSpace (Quotient _))
+
+/-- A set of path-homotopy classes is open exactly when its preimage under quotient
+construction is open. -/
+theorem isOpen_iff_preimage_mk {x₀ x₁ : X} {S : Set (Path.Homotopic.Quotient x₀ x₁)} :
+    IsOpen S ↔ IsOpen ((Path.Homotopic.Quotient.mk : Path x₀ x₁ →
+      Path.Homotopic.Quotient x₀ x₁) ⁻¹' S) :=
+  Iff.rfl
 
 /-- In the path-homotopy quotient, concatenating adjacent subpaths of `p` gives the larger
 subpath from the first endpoint to the last endpoint. -/
@@ -97,6 +81,7 @@ theorem subpath_trans {x y : X} (p : Path x y)
   exact ⟨Path.Homotopy.subpathTransSubpath p a b c⟩
 
 /-- A degenerate subpath represents the reflexivity class at its endpoint. -/
+@[simp]
 theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
     mk (p.subpath a a) = refl (p a) := by
   simp only [← mk_refl, eq]
@@ -104,6 +89,7 @@ theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
 
 /-- The full `[0,1]` subpath represents the original path, up to the endpoint casts inserted by
 `Path.subpath`. -/
+@[simp]
 theorem subpath_zero_one {x y : X} (p : Path x y) :
     mk (p.subpath 0 1) = (mk p).cast (by simp) (by simp) := by
   simp only [← mk_cast, eq]

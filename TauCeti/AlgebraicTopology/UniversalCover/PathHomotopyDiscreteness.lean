@@ -15,7 +15,8 @@ discrete in semilocally simply connected, locally path-connected spaces. It is a
 Morrison's Mathlib universal-cover drafts, especially
 [#31576](https://github.com/leanprover-community/mathlib4/pull/31576) and
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292), for Stage 0.1 of the
-`TauCetiRoadmap/UniversalCovers` roadmap.
+`TauCetiRoadmap/UniversalCovers` roadmap, following the earlier Tau Ceti work in
+[#42](https://github.com/TauCetiProject/TauCeti/pull/42).
 -/
 
 noncomputable section
@@ -26,9 +27,34 @@ variable {X : Type*} [TopologicalSpace X]
 
 /-! ### Tube data structures -/
 
+/-- A proof-local partition of the unit interval `[0, 1]` into `n` segments. -/
+structure IntervalPartition (n : ℕ) where
+  /-- The partition points. -/
+  t : Fin (n + 1) → unitInterval
+  /-- The partition points are monotone. -/
+  mono : Monotone t
+  /-- The first partition point is `0`. -/
+  t_zero : t 0 = 0
+  /-- The last partition point is `1`. -/
+  t_last : t (Fin.last n) = 1
+
+namespace IntervalPartition
+
+attribute [simp, grind =] t_zero t_last
+
+/-- `IntervalPartition 0` is empty: a single partition point cannot be simultaneously
+`0` and `1`. -/
+instance : IsEmpty (IntervalPartition 0) where
+  false part := by
+    have h0 : part.t 0 = 0 := part.t_zero
+    have h1 : part.t 0 = 1 := part.t_last
+    exact zero_ne_one (h0.symm.trans h1)
+
+end IntervalPartition
+
 /-- Data for a tubular neighborhood in an SLSC space: segment neighborhoods, point
 neighborhoods at all partition points, and the openness/path-connectedness/SLSC subset data. -/
-public structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
+structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
   /-- Segment neighborhoods -/
   U : Fin n → Set X
   /-- Point neighborhoods at ALL partition points (including endpoints) -/
@@ -561,11 +587,7 @@ theorem Path.paste_segment_homotopies_pathHomotopyTrivial {x y : X} {n : ℕ} (�
       Path.last_rung_nullhomotopic_of_range_subset_pathHomotopyTrivial γ γ' part α Uₙ hUₙ h_αₙ_in_Uₙ
   exact (Path.Homotopic.trans_right_of_nullhomotopic h_αₙ_null).symm.trans h_source
 
-/-- Given a path γ in an SLSC space, paths in the tube around γ are homotopic to γ.
-This is the main result that combines all the previous lemmas:
-1. Construct rung paths α_i using path-connectedness of V neighborhoods
-2. For each segment, apply segment_rung_homotopy to get γ_i·α_{i+1} ≃ α_i·γ'_i
-3. Use paste_segment_homotopies to get γ ≃ γ' by telescoping cancellation -/
+/-- Any fixed-endpoint path in the same tube as `γ` is homotopic to `γ`. -/
 theorem Path.tube_subset_homotopy_class {x y : X} {n : ℕ}
     (γ : Path x y) (part : IntervalPartition n) (T : TubeData X n)
     (hγ : PathInTube γ part T)
@@ -583,14 +605,9 @@ theorem Path.tube_subset_homotopy_class {x y : X} {n : ℕ}
       Path.Homotopic.trans_right_of_nullhomotopic (γ₀ := γ) hρ_null
     exact hρ.symm.trans hdrop
 
-/--
-If semilocal simple connectivity holds along `p` in a locally path-connected space, then `p`
-has an open tubular neighborhood contained in its homotopy class.
-
-This shows that the SLSC property gives us not just any open set around p, but specifically
-an open set where ALL paths are homotopic to p. This is what makes homotopy classes open.
--/
-public theorem Path.exists_open_tubular_neighborhood_in_homotopy_class
+/-- If semilocal simple connectivity holds along `p` in a locally path-connected space, then
+`p` has an open neighborhood in the path space contained in its homotopy class. -/
+public theorem Path.exists_isOpen_mem_subset_setOf_homotopic
     [LocallyPathConnectedSpace X] {x y : X} (p : Path x y)
     (hslsc : SemilocallySimplyConnectedOn (Set.range p)) :
     ∃ (T : Set (Path x y)), IsOpen T ∧ p ∈ T ∧ T ⊆ {p' | Path.Homotopic p' p} := by
@@ -608,25 +625,27 @@ public theorem Path.exists_open_tubular_neighborhood_in_homotopy_class
     · exact hp_in_tube
     · exact hp'
 
-/-- In an SLSC locally path-connected space, for any path `p`, the set of paths homotopic to `p`
-is open. -/
-public theorem Path.isOpen_setOf_homotopic [SemilocallySimplyConnectedSpace X]
-    [LocallyPathConnectedSpace X] {x y : X} (p : Path x y) :
+/-- If semilocal simple connectivity holds along every representative of the homotopy class of
+`p`, then that homotopy class is open in the path space. -/
+public theorem Path.isOpen_setOf_homotopic_of_semilocallySimplyConnectedOn
+    [LocallyPathConnectedSpace X] {x y : X} (p : Path x y)
+    (hslsc : ∀ q : Path x y, Path.Homotopic q p →
+      SemilocallySimplyConnectedOn (Set.range q)) :
     IsOpen {p' : Path x y | Path.Homotopic p' p} := by
   apply isOpen_iff_mem_nhds.mpr
   intro q hq
   obtain ⟨T, hT_open, hqT, hT_subset⟩ :=
-    exists_open_tubular_neighborhood_in_homotopy_class q
-      (SemilocallySimplyConnectedOn.of_semilocallySimplyConnectedSpace (Set.range q))
+    exists_isOpen_mem_subset_setOf_homotopic q (hslsc q hq)
   rw [mem_nhds_iff]
   refine ⟨T, fun p' hp' ↦ (hT_subset hp').trans hq, hT_open, hqT⟩
 
-/-- The quotient topology on `Path.Homotopic.Quotient x₀ x`. This instance is load-bearing:
-`Path.Homotopic.Quotient` is a `def` over `Quotient`, and instance search does not unfold it to
-find the generic `TopologicalSpace (Quotient _)` (removing this breaks `instDiscreteTopology`). -/
-public instance Path.Homotopic.Quotient.instTopologicalSpace (x₀ x : X) :
-    TopologicalSpace (Path.Homotopic.Quotient x₀ x) :=
-  inferInstanceAs (TopologicalSpace (Quotient _))
+/-- In an SLSC locally path-connected space, for any path `p`, the set of paths homotopic to `p`
+is open. -/
+public theorem Path.isOpen_setOf_homotopic [SemilocallySimplyConnectedSpace X]
+    [LocallyPathConnectedSpace X] {x y : X} (p : Path x y) :
+    IsOpen {p' : Path x y | Path.Homotopic p' p} :=
+  p.isOpen_setOf_homotopic_of_semilocallySimplyConnectedOn
+    fun q _ ↦ SemilocallySimplyConnectedOn.of_semilocallySimplyConnectedSpace (Set.range q)
 
 /--
 In a semilocally simply connected, locally path-connected space, the quotient of paths by
@@ -639,15 +658,9 @@ public instance Path.Homotopic.Quotient.instDiscreteTopology
   intro a
   induction a using Quotient.inductionOn with
   | h p =>
-    -- Reframe through the quotient/coinduced topology: opens in the quotient are preimages
-    -- under `Path.Homotopic.Quotient.mk`.
-    change IsOpen ((Path.Homotopic.Quotient.mk : Path x y → Path.Homotopic.Quotient x y) ⁻¹'
-      ({⟦p⟧} : Set (Path.Homotopic.Quotient x y)))
-    have heq :
-        (Path.Homotopic.Quotient.mk : Path x y → Path.Homotopic.Quotient x y) ⁻¹' {⟦p⟧} =
-          {p' : Path x y | Path.Homotopic p' p} :=
-      Set.ext fun _ ↦ Path.Homotopic.Quotient.eq
-    rw [heq]
-    exact isOpen_setOf_homotopic p
+    rw [Path.Homotopic.Quotient.isOpen_iff_preimage_mk]
+    convert isOpen_setOf_homotopic p using 1
+    ext p'
+    exact Path.Homotopic.Quotient.eq
 
 end
