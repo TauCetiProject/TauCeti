@@ -222,9 +222,8 @@ it sends `T n` to the group-like `single (ofAdd n) 1` of `R[Multiplicative ℤ]`
 private theorem toMultiplicativeAlgEquiv_T (n : ℤ) :
     AddMonoidAlgebra.toMultiplicativeAlgEquiv (R := R) R ℤ (LaurentPolynomial.T n) =
       MonoidAlgebra.single (Multiplicative.ofAdd n) 1 := by
-  simp only [AddMonoidAlgebra.toMultiplicativeAlgEquiv, AlgEquiv.coe_mk,
-    AddMonoidAlgebra.toMultiplicative, Equiv.coe_fn_mk,
-    LaurentPolynomial.T, Finsupp.mapDomain_single]
+  change Finsupp.mapDomain Multiplicative.ofAdd (LaurentPolynomial.T n) = _
+  rw [LaurentPolynomial.T, Finsupp.mapDomain_single]
 
 /-- The group-algebra presentation of `D(Multiplicative ℤ)` agrees with the
 Laurent-polynomial multiplicative group `𝔾ₘ` of `TauCeti.MultiplicativeGroup`: reading a point
