@@ -17,8 +17,7 @@ Measurability:
   `ω ↦ (ProbabilityMeasure.pi fun i => ν i ω).toMeasure` is measurable, for measurable coordinate
   kernels `ν i`.
 * `aemeasurable_probabilityMeasure_pi_toMeasure` — the same map is `AEMeasurable` from
-  a.e.-measurable coordinate kernels (`∀ i, AEMeasurable (ν i) μ`); the `_of_measurable` corollary
-  is the measurable-input form.
+  a.e.-measurable coordinate kernels (`∀ i, AEMeasurable (ν i) μ`).
 * the constant-coordinate (`fun _ : Fin m => ν ω`) specializations
   `measurable_probabilityMeasure_pi_const_toMeasure` and
   `aemeasurable_probabilityMeasure_pi_const_toMeasure`, used by `ConditionallyIIDWith`.
@@ -88,12 +87,6 @@ theorem aemeasurable_probabilityMeasure_pi_toMeasure
     AEMeasurable (fun ω => (ProbabilityMeasure.pi fun i => ν i ω).toMeasure) μ :=
   (measurable_subtype_coe.comp measurable_probabilityMeasure_pi).comp_aemeasurable
     (aemeasurable_pi_lambda _ hν)
-
-/-- Measurable-input corollary of `aemeasurable_probabilityMeasure_pi_toMeasure`. -/
-theorem aemeasurable_probabilityMeasure_pi_toMeasure_of_measurable
-    (ν : ∀ i, Ω → ProbabilityMeasure (α i)) (hν : ∀ i, Measurable (ν i)) :
-    AEMeasurable (fun ω => (ProbabilityMeasure.pi fun i => ν i ω).toMeasure) μ :=
-  aemeasurable_probabilityMeasure_pi_toMeasure ν fun i => (hν i).aemeasurable
 
 /-- Constant-coordinate specialization of `measurable_probabilityMeasure_pi_toMeasure`: the random
 product `ω ↦ (ν ω)^{⊗ Fin m}` is measurable. This is the form `ConditionallyIIDWith` uses. -/
