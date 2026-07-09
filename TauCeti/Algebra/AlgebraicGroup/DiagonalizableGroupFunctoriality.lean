@@ -67,8 +67,10 @@ variable {R : Type u} {A : Type v} {G : Type w} {G' : Type w'} {G'' : Type w''}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 variable [CommGroup G] [CommGroup G'] [CommGroup G'']
 
+/-- The bialgebra map induced by a group homomorphism sends a group-like generator to the
+corresponding group-like generator. -/
 @[simp]
-private theorem mapDomainBialgHom_single_one (φ : G →* G') (g : G) :
+theorem mapDomainBialgHom_single_one (φ : G →* G') (g : G) :
     MonoidAlgebra.mapDomainBialgHom R φ (MonoidAlgebra.single g (1 : R)) =
       MonoidAlgebra.single (φ g) 1 := by
   rw [MonoidAlgebra.mapDomainBialgHom, BialgHom.ofAlgHom_apply,

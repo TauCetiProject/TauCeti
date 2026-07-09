@@ -52,7 +52,8 @@ lane.
 
 The freshman's-dream identity `(x - y) ^ p = x ^ p - y ^ p` in characteristic `p` is Mathlib's
 `sub_pow_char`; the monomial power law `single m r ^ n = single (m ^ n) (r ^ n)` is Mathlib's
-`MonoidAlgebra.single_pow`; injectivity of `single` in its index is `Finsupp.single_left_injective`.
+`MonoidAlgebra.single_pow`; injectivity of `single` in its index is
+`MonoidAlgebra.single_left_injective`.
 The characteristic of the group algebra is transported from that of `R` along the injective
 `algebraMap` (`charP_of_injective_algebraMap` with `FaithfulSMul.algebraMap_injective`). The
 roots-of-unity group `μ_n = D(ℤ/n)` and its standard generator are Tau Ceti's
