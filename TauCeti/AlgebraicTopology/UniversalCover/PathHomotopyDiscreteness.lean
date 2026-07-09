@@ -20,8 +20,6 @@ Morrison's Mathlib universal-cover drafts, especially
 [#42](https://github.com/TauCetiProject/TauCeti/pull/42).
 -/
 
-public section
-
 noncomputable section
 
 open CategoryTheory Filter FundamentalGroupoid Set Topology TauCeti

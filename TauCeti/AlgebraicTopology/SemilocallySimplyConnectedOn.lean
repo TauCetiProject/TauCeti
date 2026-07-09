@@ -5,6 +5,7 @@ Authors: Kim Morrison
 -/
 module
 
+public import TauCeti.AlgebraicTopology.FundamentalGroup
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected
 public import TauCeti.Topology.Homotopy.Path
 
@@ -25,17 +26,6 @@ noncomputable section
 open CategoryTheory Filter FundamentalGroupoid Set Topology TauCeti
 
 variable {X : Type*} [TopologicalSpace X]
-
-namespace FundamentalGroup
-
-/-- Mapping a loop class represented by a path is represented by mapping that path. -/
-theorem map_fromPath {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) (base : X)
-    (q : Path base base) :
-    FundamentalGroup.map f base (FundamentalGroup.fromPath ⟦q⟧) =
-      FundamentalGroup.fromPath ⟦q.map f.continuous⟧ := by
-  rfl
-
-end FundamentalGroup
 
 /-! ### SemilocallySimplyConnectedAt -/
 
