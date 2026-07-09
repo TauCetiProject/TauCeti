@@ -8,7 +8,7 @@ public import Mathlib.Analysis.Complex.Order
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Algebra.QuadraticDiscriminant
 public import Mathlib.Algebra.BigOperators.Fin
-import TauCeti.Analysis.PositiveDefinite.Kernel
+public import TauCeti.Analysis.PositiveDefinite.Kernel
 
 /-!
 # Positive-definite functions on an involutive additive monoid
@@ -247,20 +247,36 @@ theorem const_mul {k : ℂ} (hk : 0 ≤ k) (hF : IsPositiveDefinite F) :
   rw [hpull]
   exact mul_nonneg hk (hF n d v)
 
+private theorem kernel_form_nonneg (hF : IsPositiveDefinite F) {ι : Type*} [Fintype ι]
+    (v : ι → M) (x : ι → ℂ) :
+    0 ≤ ∑ i, ∑ j, conj (x i) * x j * F (v i + star (v j)) := by
+  have h := hF.sum_nonneg (fun i => conj (x i)) v
+  refine le_of_le_of_eq h ?_
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  rw [Complex.conj_conj]
+
+/-- A positive-definite function `F` induces the positive-definite kernel `K(a, b) = F(a + b⋆)`.
+This is the forward half of the function ↔ kernel correspondence. -/
+theorem isPositiveDefiniteKernel (hF : IsPositiveDefinite F) :
+    IsPositiveDefiniteKernel (fun a b => F (a + star b)) :=
+  isPositiveDefiniteKernel_iff.mpr
+    ⟨fun a b => hF.conj_symm b a, fun {_ι : Type} _ v x => hF.kernel_form_nonneg v x⟩
+
+/-- If the kernel `K(a, b) = F(a + b⋆)` is positive definite, then so is the function `F`. This is
+the reverse half of the function ↔ kernel correspondence. -/
+theorem of_isPositiveDefiniteKernel
+    (hK : IsPositiveDefiniteKernel (fun a b => F (a + star b))) : IsPositiveDefinite F := by
+  obtain ⟨_, hpos⟩ := isPositiveDefiniteKernel_iff.mp hK
+  intro n c v
+  have h := hpos v (fun i => conj (c i))
+  refine le_of_le_of_eq h ?_
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  rw [Complex.conj_conj]
+
 /-- The Gram matrix of a positive-definite function is positive semidefinite. -/
 theorem gram_posSemidef (hF : IsPositiveDefinite F) {ι : Type*} (v : ι → M) :
-    Matrix.PosSemidef (fun i j => F (v i + star (v j))) := by
-  have hform : ∀ {κ : Type} (_ : Fintype κ) (w : κ → M) (x : κ → ℂ),
-      0 ≤ ∑ i, ∑ j, conj (x i) * x j * F (w i + star (w j)) := by
-    intro κ _ w x
-    have h := hF.sum_nonneg (fun i => conj (x i)) w
-    refine le_of_le_of_eq h ?_
-    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-    rw [Complex.conj_conj]
-  have hK : IsPositiveDefiniteKernel (fun a b => F (a + star b)) :=
-    isPositiveDefiniteKernel_iff.mpr ⟨fun a b => hF.conj_symm b a,
-      fun {_κ : Type} _ w x => hform inferInstance w x⟩
-  exact isPositiveDefiniteKernel_comp hK v
+    Matrix.PosSemidef (fun i j => F (v i + star (v j))) :=
+  isPositiveDefiniteKernel_comp hF.isPositiveDefiniteKernel v
 
 /-- Positive-definite functions are closed under pointwise multiplication (Schur product). -/
 theorem mul (hF : IsPositiveDefinite F) (hG : IsPositiveDefinite G) :
