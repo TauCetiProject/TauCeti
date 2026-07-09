@@ -129,18 +129,20 @@ theorem mem_rightTensorIdeal {I : Ideal H} {x : H ⊗[R] H} :
         (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I :=
   Iff.rfl
 
+/-- The order universal property for `I ⊗ H`. -/
 theorem leftTensorIdeal_le_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
     leftTensorIdeal (R := R) (H := H) I ≤ J ↔
       I ≤ Ideal.comap
         (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom
-        J := by
-  exact Ideal.map_le_iff_le_comap
+        J :=
+  Ideal.map_le_iff_le_comap
 
+/-- The order universal property for `H ⊗ I`. -/
 theorem rightTensorIdeal_le_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
     rightTensorIdeal (R := R) (H := H) I ≤ J ↔
       I ≤ Ideal.comap
-        (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom J := by
-  exact Ideal.map_le_iff_le_comap
+        (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom J :=
+  Ideal.map_le_iff_le_comap
 
 /-- The construction `I ↦ I ⊗ H` is monotone. -/
 theorem leftTensorIdeal_mono {I J : Ideal H} (hIJ : I ≤ J) :
@@ -183,19 +185,6 @@ theorem rightTensorIdeal_sup (I J : Ideal H) :
       rightTensorIdeal (R := R) (H := H) I ⊔ rightTensorIdeal (R := R) (H := H) J :=
   Ideal.map_sup
     (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I J
-
-theorem le_leftTensorIdeal_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
-    J ≤ leftTensorIdeal (R := R) (H := H) I ↔
-      J ≤ Ideal.map
-        (Algebra.TensorProduct.includeLeft (R := R) (S := R) (A := H) (B := H)).toRingHom
-        I :=
-  Iff.rfl
-
-theorem le_rightTensorIdeal_iff {I : Ideal H} {J : Ideal (H ⊗[R] H)} :
-    J ≤ rightTensorIdeal (R := R) (H := H) I ↔
-      J ≤ Ideal.map
-        (Algebra.TensorProduct.includeRight (R := R) (A := H) (B := H)).toRingHom I :=
-  Iff.rfl
 
 /-- TauCeti's `leftTensorIdeal I` (`I ⊗ H`), viewed as an `R`-submodule, is the range of
 `rTensor H (I.restrictScalars R).subtype`. This is Mathlib's `Ideal.map_includeLeft_eq`. -/

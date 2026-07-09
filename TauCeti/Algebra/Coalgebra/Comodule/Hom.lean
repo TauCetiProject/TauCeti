@@ -95,17 +95,12 @@ theorem add_apply (f g : Hom R C M N) (m : M) : (f + g) m = f m + g m :=
 theorem smul_apply (r : R) (f : Hom R C M N) (m : M) : (r • f) m = r • f m :=
   rfl
 
-/-- Natural-number scalar multiplication of comodule morphisms, defined by repeated
-pointwise addition. -/
-instance instNSMul : SMul ℕ (Hom R C M N) where
-  smul n f := n.rec 0 fun _ g => f + g
-
-/-- Comodule morphisms form an additive commutative monoid under pointwise zero, addition,
-and natural-number scalar multiplication. -/
+/-- Comodule morphisms form an additive commutative monoid under pointwise zero and
+addition, with the default natural-number scalar multiplication `nsmulRec`. -/
 instance instAddCommMonoid : AddCommMonoid (Hom R C M N) where
   zero := 0
   add := (· + ·)
-  nsmul := (· • ·)
+  nsmul := nsmulRec
   zero_add f := by
     ext m
     simp
@@ -118,16 +113,6 @@ instance instAddCommMonoid : AddCommMonoid (Hom R C M N) where
   add_comm f g := by
     ext m
     simp [add_comm]
-  -- These fields verify that the custom primitive `SMul ℕ` instance agrees with the
-  -- `AddCommMonoid` nsmul convention. Unfolding it exposes definitional equalities, after
-  -- which the successor case only differs by commutativity of pointwise addition.
-  nsmul_zero f := by
-    ext m
-    rw [show ((0 : ℕ) • f : Hom R C M N) = 0 from rfl]
-  nsmul_succ n f := by
-    ext m
-    rw [show (Nat.succ n • f : Hom R C M N) = f + n • f from rfl]
-    rw [add_apply, add_apply, add_comm]
 
 /-- The map sending a comodule morphism to its underlying linear map, bundled as an
 additive monoid homomorphism. -/

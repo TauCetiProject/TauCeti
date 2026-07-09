@@ -141,33 +141,6 @@ lemma weightedAbelJacobiClass_sub_coe (w : X → ℤ) (hdeg : S.IsWeightedDegree
   rw [coe_weightedAbelJacobiClass, coe_weightedAbelJacobiClass, ← map_sub,
     weightedPointBaseDifference_sub_same_base w hxy]
 
-/-! ### Unweighted specialization -/
-
-/-- Changing the base point in the unweighted abstract Abel-Jacobi class is translation by
-the existing Abel-Jacobi class of `x₀` based at `y₀`. -/
-lemma unweightedAbelJacobiClass_change_base (hdeg : S.IsUnweightedDegreeZero) (x₀ y₀ x : X) :
-    S.unweightedAbelJacobiClass hdeg y₀ x =
-      S.unweightedAbelJacobiClass hdeg x₀ x +
-        S.unweightedAbelJacobiClass hdeg y₀ x₀ := by
-  have h := S.weightedAbelJacobiClass_change_base (fun _ : X => (1 : ℤ)) hdeg (x₀ := x₀)
-    (y₀ := y₀) rfl rfl x
-  rw [S.weightedBasepointChangeClass_eq_abelJacobiClass (fun _ : X => (1 : ℤ)) hdeg
-    (x₀ := x₀) (y₀ := y₀) rfl rfl] at h
-  apply Subtype.ext
-  have h' := congr_arg Subtype.val h
-  simpa only [coe_unweightedAbelJacobiClass, coe_weightedAbelJacobiClass,
-    weightedPointBaseDifference_eq_pointDifference, AddMemClass.coe_add,
-    AddSubgroupClass.coe_zsmul, one_zsmul] using h'
-
-/-- The class `[x] - [y]` is the difference of two Abel-Jacobi classes with the same base point. -/
-lemma unweightedAbelJacobiClass_sub_coe (hdeg : S.IsUnweightedDegreeZero) (x₀ x y : X) :
-    (S.unweightedAbelJacobiClass hdeg x₀ x : S.ClassGroup) -
-        (S.unweightedAbelJacobiClass hdeg x₀ y : S.ClassGroup) =
-      S.divisorClass (pointDifference x y) := by
-  simpa only [unweightedAbelJacobiClass] using
-    S.weightedAbelJacobiClass_sub_coe (fun _ : X => (1 : ℤ)) hdeg (x₀ := x₀)
-      (x := x) (y := y) rfl rfl
-
 end OrderSystem
 
 end WeilDivisor

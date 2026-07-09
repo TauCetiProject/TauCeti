@@ -48,62 +48,6 @@ public section
 
 namespace TauCeti
 
-namespace MulAction
-
-/-- Mathlib's subgroup-orbit quotient equivalence sends the coset of `g` back to the orbit
-class of `g⁻¹ • x`. This exposes that representative convention once, so later lemmas can
-rewrite through a named theorem rather than relying directly on definitional equality. -/
-private lemma equivSubgroupOrbitsQuotientGroup_symm_mk
-    {G X : Type*} [Group G] [MulAction G X] [MulAction.IsPretransitive G X]
-    [IsCancelSMul G X] (H : Subgroup G) (x : X) (g : G) :
-    (MulAction.equivSubgroupOrbitsQuotientGroup x H).symm
-        (QuotientGroup.mk (s := H) g) =
-      (Quotient.mk'' (g⁻¹ • x) : MulAction.orbitRel.Quotient H X) :=
-  rfl
-
-/-- The subgroup-orbit quotient equivalence sends the orbit class of `g • x` to the coset
-of `g⁻¹`. -/
-private lemma equivSubgroupOrbitsQuotientGroup_apply_smul
-    {G X : Type*} [Group G] [MulAction G X] [MulAction.IsPretransitive G X]
-    [IsCancelSMul G X] (H : Subgroup G) (x : X) (g : G) :
-    MulAction.equivSubgroupOrbitsQuotientGroup x H
-        (Quotient.mk'' (g • x) : MulAction.orbitRel.Quotient H X) =
-      QuotientGroup.mk (s := H) g⁻¹ := by
-  simpa [equivSubgroupOrbitsQuotientGroup_symm_mk, inv_inv] using
-    (MulAction.equivSubgroupOrbitsQuotientGroup x H).apply_symm_apply
-    (QuotientGroup.mk (s := H) g⁻¹)
-
-/-- `Setoid.map_of_le` sends a representative of the smaller orbit relation to the same
-representative for the larger orbit relation. -/
-private lemma orbitRel_mapOfLE_mk
-    {G X : Type*} [Group G] [MulAction G X] {H K : Subgroup G} (hHK : H ≤ K) (x : X) :
-    Setoid.map_of_le
-        (_root_.TauCeti.MulAction.orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
-        (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
-      (Quotient.mk'' x : MulAction.orbitRel.Quotient K X) :=
-  rfl
-
-/-- The subgroup-orbit quotient equivalence is natural in subgroup inclusions. -/
-@[simp]
-private lemma equivSubgroupOrbitsQuotientGroup_mapOfLE
-    {G X : Type*} [Group G] [MulAction G X] [MulAction.IsPretransitive G X]
-    [IsCancelSMul G X] {H K : Subgroup G} (hHK : H ≤ K) (x₀ : X)
-    (x : MulAction.orbitRel.Quotient H X) :
-    Subgroup.quotientMapOfLE hHK
-        (MulAction.equivSubgroupOrbitsQuotientGroup x₀ H x) =
-      MulAction.equivSubgroupOrbitsQuotientGroup x₀ K
-        (Setoid.map_of_le
-          (_root_.TauCeti.MulAction.orbitRel_le_of_subgroup_le (G := G) (X := X) hHK) x) := by
-  refine Quotient.inductionOn' x ?_
-  intro x'
-  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G x₀ x'
-  rw [← hg]
-  rw [equivSubgroupOrbitsQuotientGroup_apply_smul]
-  rw [orbitRel_mapOfLE_mk hHK]
-  rw [equivSubgroupOrbitsQuotientGroup_apply_smul, Subgroup.quotientMapOfLE_apply_mk]
-
-end MulAction
-
 namespace Deck
 
 variable {E B : Type*} [TopologicalSpace E] {p : E → B} {b : B}
@@ -140,8 +84,8 @@ lemma subgroupFiberOrbitQuotientEquivQuotientGroup_symm_mk
     (subgroupFiberOrbitQuotientEquivQuotientGroup H e).symm
         (QuotientGroup.mk (s := H) φ) =
       subgroupFiberOrbitClass H (φ⁻¹ • e) := by
-  simpa [subgroupFiberOrbitQuotientEquivQuotientGroup, subgroupFiberOrbitClass_eq_mk] using
-    MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk H e φ
+  simp [subgroupFiberOrbitQuotientEquivQuotientGroup, subgroupFiberOrbitClass_eq_mk,
+    MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk H e φ]
 
 /-- For a regular cover, the inverse quotient equivalence sends the coset of a deck
 transformation `φ` to the `H`-orbit class of `φ⁻¹ • e`. -/

@@ -7,7 +7,7 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic
 
 /-!
-# The standard complex line as a source for `J`-holomorphic maps
+# The standard complex line as a source for constant-structure `J`-holomorphic maps
 
 This file records the elementary Cauchy--Riemann bookkeeping for maps whose source is the
 standard complex line, represented as `ℝ × ℝ` with the almost complex structure
@@ -15,7 +15,8 @@ standard complex line, represented as `ℝ × ℝ` with the almost complex struc
 
 For a real-linear map out of this source, complex-linearity says exactly that the image of the
 imaginary coordinate vector is `J` applied to the image of the real coordinate vector. Thus the
-linear map, and in particular the Frechet derivative of a `J`-holomorphic map from the standard
+linear map, and in particular the Frechet derivative of a constant-structure `J`-holomorphic map
+from the standard
 line, is determined by its `s`-direction.
 
 The final lemmas translate this into the first pointwise area estimate used by the analytic
@@ -37,9 +38,10 @@ calculus API needed before the holomorphic-curve energy and elliptic estimates i
   `F : ℝ × ℝ →ₗ[ℝ] V`, `F (0, 1) = J (F (1, 0))`.
 * `TauCeti.IsComplexLinearMap.apply_stdComplexLine`: such an `F` is determined by
   `F (1, 0)`, via `F (s, t) = s • v + t • J v`.
-* `TauCeti.IsJHolomorphicAt.fderiv_stdComplexLineImag` and
-  `TauCeti.IsJHolomorphicAt.fderiv_stdComplexLine_apply`: the corresponding statements for
-  Frechet derivatives of `J`-holomorphic maps.
+* `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLineImag` and
+  `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLine_apply`: the corresponding statements
+  for
+  Frechet derivatives of constant-structure `J`-holomorphic maps.
 * `TauCeti.IsComplexLinearMap.symplecticForm_apply_apply_*`: nonnegativity and positivity of
   `ω(F v, F (J v))` for a complex-linear map under tameness.
 * `TauCeti.IsComplexLinearMap.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_*`:
@@ -236,54 +238,58 @@ end IsComplexLinearMap
 
 end Linear
 
-namespace IsJHolomorphicAt
+namespace IsConstStructureJHolomorphicAt
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 variable {J' : AlmostComplexStructure W} {f : ℝ × ℝ → W} {x z : ℝ × ℝ}
 
-/-- For a `J`-holomorphic map from the standard complex line, the Frechet derivative in the
+/-- For a constant-structure `J`-holomorphic map from the standard complex line, the Frechet
+derivative in the
 imaginary coordinate direction is `J` applied to the derivative in the real coordinate direction. -/
 lemma fderiv_stdComplexLineImag
-    (hf : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J' f x) :
+    (hf : IsConstStructureJHolomorphicAt (AlmostComplexStructure.product ℝ) J' f x) :
     fderiv ℝ f x stdComplexLineImag = J' (fderiv ℝ f x stdComplexLineReal) := by
   simpa [stdComplexLineImag] using hf.fderiv_apply_commute (v := stdComplexLineReal)
 
-/-- The Frechet derivative of a `J`-holomorphic map from the standard complex line is determined
+/-- The Frechet derivative of a constant-structure `J`-holomorphic map from the standard complex
+line is determined
 by its real-coordinate value. -/
 lemma fderiv_stdComplexLine_apply
-    (hf : IsJHolomorphicAt (AlmostComplexStructure.product ℝ) J' f x) (z : ℝ × ℝ) :
+    (hf : IsConstStructureJHolomorphicAt (AlmostComplexStructure.product ℝ) J' f x) (z : ℝ × ℝ) :
     fderiv ℝ f x z =
       z.1 • fderiv ℝ f x stdComplexLineReal +
         z.2 • J' (fderiv ℝ f x stdComplexLineReal) := by
   exact hf.fderiv_isComplexLinear.apply_stdComplexLine z
 
-end IsJHolomorphicAt
+end IsConstStructureJHolomorphicAt
 
-namespace IsJHolomorphicWithinAt
+namespace IsConstStructureJHolomorphicWithinAt
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 variable {J' : AlmostComplexStructure W} {f : ℝ × ℝ → W} {s : Set (ℝ × ℝ)} {x : ℝ × ℝ}
 
-/-- For a within-set `J`-holomorphic map from the standard complex line, the Frechet derivative
+/-- For a within-set constant-structure `J`-holomorphic map from the standard complex line, the
+Frechet derivative
 within the set sends the imaginary coordinate direction to `J` applied to the real direction,
 provided derivatives within the set are unique. -/
 lemma fderivWithin_stdComplexLineImag
-    (hf : IsJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J' f s x)
+    (hf : IsConstStructureJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J' f s x)
     (hs : UniqueDiffWithinAt ℝ s x) :
     fderivWithin ℝ f s x stdComplexLineImag =
       J' (fderivWithin ℝ f s x stdComplexLineReal) := by
   simpa [stdComplexLineImag] using hf.fderivWithin_apply_commute hs (v := stdComplexLineReal)
 
-/-- The within-set Frechet derivative of a `J`-holomorphic map from the standard complex line is
+/-- The within-set Frechet derivative of a constant-structure `J`-holomorphic map from the standard
+complex line is
 determined by its real-coordinate value when derivatives within the set are unique. -/
 lemma fderivWithin_stdComplexLine_apply
-    (hf : IsJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J' f s x)
+    (hf : IsConstStructureJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J' f s x)
     (hs : UniqueDiffWithinAt ℝ s x) (z : ℝ × ℝ) :
     fderivWithin ℝ f s x z =
       z.1 • fderivWithin ℝ f s x stdComplexLineReal +
         z.2 • J' (fderivWithin ℝ f s x stdComplexLineReal) := by
   exact (hf.fderivWithin_isComplexLinear hs).apply_stdComplexLine z
 
-end IsJHolomorphicWithinAt
+end IsConstStructureJHolomorphicWithinAt
 
 end TauCeti
