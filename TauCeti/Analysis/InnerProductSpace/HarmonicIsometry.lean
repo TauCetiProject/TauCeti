@@ -7,6 +7,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import TauCeti.Analysis.InnerProductSpace.Laplacian
+public import TauCeti.Topology.Algebra.HomeomorphCongr
 
 /-!
 # Geometric invariance of harmonic functions
@@ -44,24 +45,6 @@ variable
   {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [InnerProductSpace ℝ E']
-  [FiniteDimensional ℝ E'] [NormedSpace ℝ F] in
-/-- Precomposition by a homeomorphism transports vanishing in a neighbourhood: `g ∘ h` vanishes
-near `x` iff `g` vanishes near `h x`. Used to transport `Δ f =ᶠ 0` across the changes of
-variable in this file and in `HarmonicDilation.lean`. -/
-theorem eventuallyEq_zero_comp_homeomorph_iff (h : E ≃ₜ E') (g : E' → F) (x : E) :
-    (g ∘ h =ᶠ[𝓝 x] 0) ↔ (g =ᶠ[𝓝 (h x)] 0) := by
-  rw [← h.map_nhds_eq x]
-  constructor
-  · intro hyp
-    refine Filter.eventually_map.mpr ?_
-    filter_upwards [hyp] with y hy
-    simpa using hy
-  · intro hyp
-    have hyp' := Filter.eventually_map.mp hyp
-    filter_upwards [hyp'] with y hy
-    simpa using hy
-
 /-- **Harmonicity is invariant under isometric changes of variable.** For a linear isometry
 equivalence `l`, the function `f ∘ l` is harmonic at `x` iff `f` is harmonic at `l x`. -/
 theorem harmonicAt_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') {f : E' → F}
@@ -71,7 +54,7 @@ theorem harmonicAt_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') 
     simpa using this
   have hlap : (Δ (f ∘ l) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (l x)] 0) := by
     rw [laplacian_comp_linearIsometryEquiv_right l f]
-    have := eventuallyEq_zero_comp_homeomorph_iff l.toHomeomorph (Δ f) x
+    have := TauCeti.Homeomorph.eventuallyEq_comp_zero_iff l.toHomeomorph (Δ f) x
     rwa [LinearIsometryEquiv.coe_toHomeomorph] at this
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 
@@ -93,7 +76,7 @@ theorem harmonicAt_comp_add_right_iff {f : E → F} {x a : E} :
       exact h.comp x hψ
   have hlap : (Δ (fun y ↦ f (y + a)) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (x + a)] 0) := by
     rw [laplacian_comp_add_right f a]
-    have := eventuallyEq_zero_comp_homeomorph_iff (Homeomorph.addRight a) (Δ f) x
+    have := TauCeti.Homeomorph.eventuallyEq_comp_zero_iff (Homeomorph.addRight a) (Δ f) x
     simpa [Function.comp_def] using this
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 

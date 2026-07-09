@@ -118,11 +118,11 @@ theorem harmonicAt_comp_homothety_right_iff (a : E) (c : ℝ) (hc : c ≠ 0) {f 
       have h' : Δ f ∘ e =ᶠ[𝓝 x] 0 := by
         filter_upwards [h] with y hy
         exact hzero (by simpa [Function.comp_apply] using hy)
-      have hmain := (eventuallyEq_zero_comp_homeomorph_iff e (Δ f) x).1 h'
+      have hmain := (TauCeti.Homeomorph.eventuallyEq_comp_zero_iff e (Δ f) x).1 h'
       simpa [he x] using hmain
     · intro h
       have h' : Δ f ∘ e =ᶠ[𝓝 x] 0 :=
-        (eventuallyEq_zero_comp_homeomorph_iff e (Δ f) x).2 (by simpa [he x] using h)
+        (TauCeti.Homeomorph.eventuallyEq_comp_zero_iff e (Δ f) x).2 (by simpa [he x] using h)
       filter_upwards [h'] with y hy
       -- Unfold the scaled composition produced by `hscale` at this point.
       change c ^ 2 • ((Δ f ∘ e) y) = 0
