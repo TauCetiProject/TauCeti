@@ -198,6 +198,7 @@ lemma degreeZeroClassHom_surjective (h : S.IsUnweightedDegreeZero) :
   obtain ⟨D, hD⟩ :=
     S.weightedDegreeZeroClassHom_surjective (w := fun _ : X => (1 : ℤ)) h c
   exact ⟨(degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D, by
+    -- Expose the weight-one transport so the weighted surjectivity witness applies directly.
     change S.weightedDegreeZeroClassHom (fun _ : X => (1 : ℤ)) h
         (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)
           ((degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X)).symm D)) = c
@@ -208,6 +209,7 @@ lemma degreeZeroClassHom_eq_zero_iff
     (h : S.IsUnweightedDegreeZero) {D : degreeZeroSubgroup X} :
     S.degreeZeroClassHom h D = 0 ↔
       (D : WeilDivisor X) ∈ S.principalSubgroup := by
+  -- Unfold the unweighted wrapper to the constant-weight-one weighted class map.
   change S.weightedDegreeZeroClassHom (fun _ : X => (1 : ℤ)) h
       (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X) D) = 0 ↔
     (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X) D : WeilDivisor X) ∈
@@ -277,6 +279,7 @@ lemma degreeZeroQuotientEquivPicZero_mk
       (QuotientAddGroup.mk D) = S.degreeZeroClassHom h D := by
   rw [degreeZeroQuotientEquivPicZero, AddEquiv.trans_apply,
     degreeZeroQuotientEquivWeightedDegreeZeroOne_mk]
+  -- After quotient transport, the target statement is exactly the weighted quotient lemma.
   change S.weightedDegreeZeroQuotientEquivPicZero (fun _ : X => (1 : ℤ)) h
       (QuotientAddGroup.mk (degreeZeroSubgroupEquivWeightedDegreeZeroOne (X := X) D)) =
     S.degreeZeroClassHom h D
