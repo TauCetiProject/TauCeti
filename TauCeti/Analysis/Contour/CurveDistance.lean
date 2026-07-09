@@ -19,11 +19,13 @@ a uniform positive lower bound `ρ` on `‖γ t - w‖` over `[a, b]`.
 ## Main results
 
 * `TauCeti.Contour.exists_curve_dist_lower_bound` — the uniform positive distance lower bound.
+* `TauCeti.Contour.exists_ball_dist_curve_lower_bound` — the same lower bound made uniform over a
+  whole ball of points around the avoided point.
 
-This small support lemma is shared by the argument-lift partition
+These small support lemmas are shared by the argument-lift partition
 (`exists_uniform_modulus_avoiding`, feeding the integer-valuedness of the winding number) and by the
-continuity of the winding number in the point (`exists_ball_dist_curve_lb`) — both prerequisites for
-the homology form of Cauchy's theorem (roadmap `homologyCauchyTheorem`).
+continuity of the winding number in the point (`continuousAt_windingNumber_of_avoidance`) — both
+prerequisites for the homology form of Cauchy's theorem (roadmap `homologyCauchyTheorem`).
 -/
 
 public section
@@ -47,5 +49,22 @@ theorem exists_curve_dist_lower_bound {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ}
     fun t ht ↦ ?_⟩
   have h1 := Metric.infDist_le_dist_of_mem (x := w) (mem_image_of_mem γ ht)
   rwa [Complex.dist_eq, norm_sub_rev] at h1
+
+/-- **Uniform distance to the curve on a neighbourhood of an avoided point.** If `γ` is continuous
+on the interval with endpoints `a`, `b` and avoids `w₀` there, then there is a radius `ε > 0` such
+that every `w` within `ε` of `w₀` stays at distance at least `ε` from the whole curve: for all
+`t ∈ Set.uIcc a b`, `ε ≤ ‖γ t - w‖`. Take `ε = ρ / 2` for the uniform distance `ρ` to `w₀` of
+`exists_curve_dist_lower_bound`; a point `w` within `ρ / 2` of `w₀` then stays `ρ / 2` from `γ` by
+the triangle inequality. Stated on the oriented interval `Set.uIcc a b`. -/
+theorem exists_ball_dist_curve_lower_bound {γ : ℝ → ℂ} {w₀ : ℂ} {a b : ℝ}
+    (hγ : ContinuousOn γ (uIcc a b)) (h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w₀) :
+    ∃ ε > 0, ∀ w ∈ Metric.ball w₀ ε, ∀ t ∈ uIcc a b, ε ≤ ‖γ t - w‖ := by
+  obtain ⟨ρ, hρ_pos, h_dist_lb⟩ := exists_curve_dist_lower_bound hγ h_avoid
+  refine ⟨ρ / 2, half_pos hρ_pos, fun w hw t ht ↦ ?_⟩
+  rw [Metric.mem_ball, Complex.dist_eq] at hw
+  have htri : ‖γ t - w₀‖ - ‖w - w₀‖ ≤ ‖γ t - w‖ := by
+    have h := norm_sub_norm_le (γ t - w₀) (w - w₀)
+    rwa [sub_sub_sub_cancel_right] at h
+  linarith [h_dist_lb t ht]
 
 end TauCeti.Contour
