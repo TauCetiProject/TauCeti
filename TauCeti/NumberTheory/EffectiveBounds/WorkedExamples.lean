@@ -5,10 +5,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.AdjoinRoot
-public import Mathlib.Algebra.Polynomial.SpecificDegree
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
-public import TauCeti.NumberTheory.EffectiveBounds.QuadraticClassNumber
+import Mathlib.Algebra.Polynomial.SpecificDegree
+import TauCeti.NumberTheory.EffectiveBounds.QuadraticClassNumber
 
 /-!
 # Worked examples: the effective bounds on the named quadratic fields
@@ -17,7 +18,7 @@ The effective-bounds roadmap keeps its estimates honest with two arithmetic work
 each asking that a general bound be exercised on a *named* number field rather than a
 same-shape analogue:
 
-* the discriminant bound recovers `|d_{ℚ(i)}| = 4`;
+* the cyclotomic discriminant formula gives `|d_{ℚ(i)}| = 4`;
 * the class-number bound is non-vacuous on `ℚ(√-5)`, giving `h ≤ 64·5`.
 
 This file realises both on concrete `NumberField` instances.
