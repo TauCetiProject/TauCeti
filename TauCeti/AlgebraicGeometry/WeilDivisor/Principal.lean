@@ -318,22 +318,6 @@ lemma unweightedDegreeClass_divisorClass (h : S.IsUnweightedDegreeZero) (D : Wei
     unweightedDegreeClass h (S.divisorClass D) = degree D := by
   rw [unweightedDegreeClass, weightedDegreeClass_divisorClass, weightedDegree_one_eq_degree]
 
-/-- The unweighted-degree-zero part of the divisor class group, for the algebraically
-closed/unweighted specialization: `picZero` at the constant weight `1`. For curves over a
-general field, use `picZero` with residue-field-degree weights. -/
-@[expose]
-noncomputable def unweightedPicZero (h : S.IsUnweightedDegreeZero) : AddSubgroup S.ClassGroup :=
-  picZero (fun _ => (1 : ℤ)) h
-
-lemma mem_unweightedPicZero (h : S.IsUnweightedDegreeZero) {c : S.ClassGroup} :
-    c ∈ unweightedPicZero h ↔ unweightedDegreeClass h c = 0 :=
-  AddMonoidHom.mem_ker
-
-@[simp]
-lemma divisorClass_mem_unweightedPicZero (h : S.IsUnweightedDegreeZero) {D : WeilDivisor X} :
-    S.divisorClass D ∈ unweightedPicZero h ↔ degree D = 0 := by
-  rw [mem_unweightedPicZero, unweightedDegreeClass_divisorClass]
-
 end OrderSystem
 
 end WeilDivisor

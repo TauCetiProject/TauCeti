@@ -13,8 +13,8 @@ This file adds the point-level divisor-class shadow of the Abel-Jacobi map to th
 Layer A divisor API.  Once the Jacobian is constructed as `Pic⁰(X)`, the Abel-Jacobi morphism
 attached to a base point `x₀` sends a point `x` to the degree-zero line bundle
 `𝒪_X(x - x₀)` over an algebraically closed field.  For closed points over a non-algebraically
-closed field, the degree-corrected divisor is `x - deg(x) x₀`, when `x₀` has residue degree
-`1`.
+closed field, the weighted-degree-corrected divisor is `x - w(x) x₀`, when `x₀` has residue
+degree `1`.
 
 Here the geometry is still abstracted to an `OrderSystem` and an integer-valued weight
 `w : X → ℤ`.  We define the formal divisor `[x] - w(x)[x₀]`, prove it has weighted degree zero
@@ -93,51 +93,6 @@ lemma weightedAbelJacobiClass_eq_iff_linearlyEquivalent (w : X → ℤ)
       S.LinearlyEquivalent (weightedPointBaseDifference w x₀ x)
         (weightedPointBaseDifference w x₀ y) := by
   rw [S.weightedAbelJacobiClass_eq_iff_divisorClass w hdeg hx₀, S.divisorClass_eq_iff]
-
-/-- The unweighted abstract Abel-Jacobi class `x ↦ [[x] - [x₀]]` in the abstract `Pic⁰`
-subgroup. -/
-noncomputable def unweightedAbelJacobiClass (hdeg : S.IsUnweightedDegreeZero) (x₀ x : X) :
-    unweightedPicZero hdeg :=
-  S.weightedAbelJacobiClass (fun _ => (1 : ℤ)) hdeg (x₀ := x₀) rfl x
-
-/-- Coercing the unweighted Abel-Jacobi class to the class group gives the divisor class of
-`[x] - [x₀]`. This exposes the unweighted specialization in the expected class-group form. -/
-@[simp]
-lemma coe_unweightedAbelJacobiClass (hdeg : S.IsUnweightedDegreeZero) (x₀ x : X) :
-    (S.unweightedAbelJacobiClass hdeg x₀ x : S.ClassGroup) =
-      S.divisorClass (pointDifference x x₀) := by
-  simp [unweightedAbelJacobiClass]
-
-/-- The unweighted abstract Abel-Jacobi class sends the base point to zero. -/
-@[simp]
-lemma unweightedAbelJacobiClass_base (hdeg : S.IsUnweightedDegreeZero) (x₀ : X) :
-    S.unweightedAbelJacobiClass hdeg x₀ x₀ = 0 := by
-  apply Subtype.ext
-  simp [unweightedAbelJacobiClass]
-
-/-- Equality of unweighted Abel-Jacobi classes is equality of the corresponding divisor
-classes. -/
-lemma unweightedAbelJacobiClass_eq_iff_divisorClass (hdeg : S.IsUnweightedDegreeZero)
-    (x₀ : X) {x y : X} :
-    S.unweightedAbelJacobiClass hdeg x₀ x = S.unweightedAbelJacobiClass hdeg x₀ y ↔
-      S.divisorClass (pointDifference x x₀) = S.divisorClass (pointDifference y x₀) := by
-  constructor
-  · intro h
-    rw [← S.coe_unweightedAbelJacobiClass hdeg x₀ x,
-      ← S.coe_unweightedAbelJacobiClass hdeg x₀ y]
-    exact congr_arg Subtype.val h
-  · intro h
-    apply Subtype.ext
-    rwa [S.coe_unweightedAbelJacobiClass hdeg x₀ x,
-      S.coe_unweightedAbelJacobiClass hdeg x₀ y]
-
-/-- Equality of unweighted Abel-Jacobi classes is linear equivalence of the point-difference
-divisors. -/
-lemma unweightedAbelJacobiClass_eq_iff_linearlyEquivalent (hdeg : S.IsUnweightedDegreeZero)
-    (x₀ : X) {x y : X} :
-    S.unweightedAbelJacobiClass hdeg x₀ x = S.unweightedAbelJacobiClass hdeg x₀ y ↔
-      S.LinearlyEquivalent (pointDifference x x₀) (pointDifference y x₀) := by
-  rw [S.unweightedAbelJacobiClass_eq_iff_divisorClass hdeg x₀, S.divisorClass_eq_iff]
 
 end OrderSystem
 

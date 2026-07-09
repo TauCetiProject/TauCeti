@@ -17,18 +17,19 @@ For an `OrderSystem S` on a type of points `X` whose principal divisors have wei
 zero, `WeilDivisor.Principal` builds the descended weighted degree `weightedDegreeClass` on the
 class group `Cl(X)` and its kernel `picZero`, the abstract `Pic⁰`. Here we add the missing
 structural fact: a base point `x₀` with weight `w x₀ = 1` (the residue-field degree of a
-`k`-rational point is `1`) makes the degree map split.
+`k`-rational point is `1`) makes the descended weighted degree map split.
 
 Concretely the class `[x₀]` provides a degree-one element, so `n ↦ n • [x₀]` is a group-theoretic
-section `degreeSection` of `weightedDegreeClass`. The degree map is therefore surjective, and the
-class group decomposes as the internal direct sum of `picZero` and the line spanned by `[x₀]`:
+section `degreeSection` of `weightedDegreeClass w h`. The descended weighted degree map is
+therefore surjective, and the class group decomposes as the internal direct sum of `picZero` and
+the line spanned by `[x₀]`:
 
 `Cl(X) ≃+ picZero × ℤ`.
 
 This is the abstract shadow of the geometric statement that, once a `k`-rational point is chosen,
 the full Picard group `Pic(X)` of a smooth proper curve splits as `Pic⁰(X) ⊕ ℤ` by the degree.
-Without a rational point the degree map need not be surjective (its image is `d·ℤ` for the
-index `d` of the residue degrees), so the weight-one hypothesis is essential and the
+Without a rational point the weighted degree map need not be surjective (its image is `d·ℤ`
+for the index `d` of the residue degrees), so the weight-one hypothesis is essential and the
 construction is non-vacuous.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "`Pic⁰ X = ker deg` (as an
@@ -105,9 +106,9 @@ lemma degreeSection_injective (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
 
 /-! ### The product decomposition -/
 
-/-- The degree-correction homomorphism `c ↦ c - (deg c) • [x₀]`. With a weight-one base point
-its image lands in `picZero`, and together with `degreeSection` it splits the class group as
-`picZero × ℤ`. -/
+/-- The degree-correction homomorphism
+`c ↦ c - (weightedDegreeClass w h c) • [x₀]`. With a weight-one base point its image lands in
+`picZero`, and together with `degreeSection` it splits the class group as `picZero × ℤ`. -/
 noncomputable def degreeCorrection (w : X → ℤ) (h : S.IsWeightedDegreeZero w) (x₀ : X) :
     S.ClassGroup →+ S.ClassGroup :=
   AddMonoidHom.id S.ClassGroup - (S.degreeSection x₀).comp (weightedDegreeClass w h)
@@ -158,10 +159,12 @@ lemma degreeCorrection_coe_picZero (w : X → ℤ) (h : S.IsWeightedDegreeZero w
     S.degreeCorrection w h x₀ (p : S.ClassGroup) = p :=
   S.degreeCorrection_eq_self_of_mem_picZero w h x₀ p.property
 
-/-- The forward map `c ↦ (c - (deg c) • [x₀], deg c)` of the degree splitting at a weight-one
-base point `x₀`: the first component is the degree-corrected class, which lands in `picZero`,
-and the second is the weighted degree. Together with `degreeSplitInverse` this assembles the
-product decomposition `classGroupAddEquivPicZeroProdInt`. -/
+/-- The forward map
+`c ↦ (c - (weightedDegreeClass w h c) • [x₀], weightedDegreeClass w h c)` of the degree splitting
+at a weight-one base point `x₀`: the first component is the weighted-degree-corrected class,
+which lands in `picZero`, and the second is the descended weighted degree. Together with
+`degreeSplitInverse` this assembles the product decomposition
+`classGroupAddEquivPicZeroProdInt`. -/
 noncomputable def degreeSplitForward (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) : S.ClassGroup →+ picZero w h × ℤ :=
   ((S.degreeCorrection w h x₀).codRestrict (picZero w h)
@@ -216,10 +219,10 @@ private lemma degreeSplitForward_degreeSplitInverse (w : X → ℤ) (h : S.IsWei
 /-- The class group of an order system with weighted-degree-zero principal divisors and a
 weight-one base point splits as the direct product of the abstract `Pic⁰` and `ℤ`.
 
-The forward map sends a class `c` to its degree-corrected part `c - (deg c)·[x₀]` in `picZero`
-together with its degree `deg c`; the inverse sends `(p, n)` to `p + n·[x₀]`. This is the
-abstract form of the splitting `Pic(X) ≃ Pic⁰(X) ⊕ ℤ` of a smooth proper curve with a rational
-point. -/
+The forward map sends a class `c` to its weighted-degree-corrected part
+`c - (weightedDegreeClass w h c) • [x₀]` in `picZero` together with
+`weightedDegreeClass w h c`; the inverse sends `(p, n)` to `p + n • [x₀]`. This is the abstract
+form of the splitting `Pic(X) ≃ Pic⁰(X) ⊕ ℤ` of a smooth proper curve with a rational point. -/
 noncomputable def classGroupAddEquivPicZeroProdInt (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) :
     S.ClassGroup ≃+ picZero w h × ℤ :=
@@ -253,44 +256,6 @@ lemma classGroupAddEquivPicZeroProdInt_coe_picZero (w : X → ℤ) (h : S.IsWeig
   refine Prod.ext (Subtype.ext ?_) ?_
   · exact S.degreeCorrection_coe_picZero w h x₀ p
   · exact (mem_picZero w h).mp p.property
-
-/-! ### The unweighted specialization -/
-
-/-- The unweighted/algebraically closed specialization of the splitting: with unweighted-degree
-zero principal divisors and any base point (its weight is the constant `1`), the class group
-splits as `unweightedPicZero × ℤ`. -/
-noncomputable def classGroupAddEquivUnweightedPicZeroProdInt (h : S.IsUnweightedDegreeZero)
-    (x₀ : X) : S.ClassGroup ≃+ unweightedPicZero h × ℤ :=
-  S.classGroupAddEquivPicZeroProdInt (fun _ => (1 : ℤ)) h (x₀ := x₀) rfl
-
-@[simp]
-lemma classGroupAddEquivUnweightedPicZeroProdInt_apply (h : S.IsUnweightedDegreeZero)
-    (x₀ : X) (c : S.ClassGroup) :
-    S.classGroupAddEquivUnweightedPicZeroProdInt h x₀ c =
-      (⟨S.degreeCorrection (fun _ => (1 : ℤ)) h x₀ c,
-          S.degreeCorrection_mem_picZero (fun _ => (1 : ℤ)) h rfl c⟩,
-        unweightedDegreeClass h c) :=
-  rfl
-
-@[simp]
-lemma classGroupAddEquivUnweightedPicZeroProdInt_symm_apply (h : S.IsUnweightedDegreeZero)
-    (x₀ : X) (p : unweightedPicZero h) (n : ℤ) :
-    (S.classGroupAddEquivUnweightedPicZeroProdInt h x₀).symm (p, n) =
-      (p : S.ClassGroup) + n • S.divisorClass (ofPoint x₀) :=
-  S.classGroupAddEquivPicZeroProdInt_symm_apply (fun _ => (1 : ℤ)) h rfl p n
-
-/-- Under the unweighted splitting, a coerced `unweightedPicZero` class has `Pic⁰` component
-itself and degree component `0`. -/
-lemma classGroupAddEquivUnweightedPicZeroProdInt_coe_unweightedPicZero
-    (h : S.IsUnweightedDegreeZero) (x₀ : X) (p : unweightedPicZero h) :
-    S.classGroupAddEquivUnweightedPicZeroProdInt h x₀ (p : S.ClassGroup) = (p, 0) :=
-  S.classGroupAddEquivPicZeroProdInt_coe_picZero (fun _ => (1 : ℤ)) h rfl p
-
-/-- With unweighted-degree-zero principal divisors and a base point, the unweighted degree is
-surjective onto `ℤ`. -/
-lemma unweightedDegreeClass_surjective (h : S.IsUnweightedDegreeZero) (x₀ : X) :
-    Function.Surjective (unweightedDegreeClass h) :=
-  S.weightedDegreeClass_surjective (fun _ => (1 : ℤ)) h (x₀ := x₀) rfl
 
 end OrderSystem
 

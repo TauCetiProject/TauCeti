@@ -105,54 +105,6 @@ lemma weightedAbelJacobiDivisorClass_eq_of_weightedDegree_eq_zero (w : X → ℤ
   rw [S.weightedAbelJacobiDivisorClass_change_base w h hx₀ hy₀ D, hD, zero_zsmul,
     add_zero]
 
-/-! ### Unweighted specialization -/
-
-/-- Changing the base point in the unweighted Abel-Jacobi divisor sum adds the ordinary degree
-times the corresponding point Abel-Jacobi class. -/
-lemma unweightedAbelJacobiDivisorClass_change_base (h : S.IsUnweightedDegreeZero)
-    (x₀ y₀ : X) (D : WeilDivisor X) :
-    S.unweightedAbelJacobiDivisorClass h y₀ D =
-      S.unweightedAbelJacobiDivisorClass h x₀ D +
-        degree D • S.unweightedAbelJacobiClass h y₀ x₀ := by
-  -- `IsUnweightedDegreeZero` is the constant-weight-one weighted condition by definition.
-  let hweighted : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ)) := h
-  have hchange :=
-    S.weightedAbelJacobiDivisorClass_change_base (fun _ : X => (1 : ℤ))
-      hweighted (x₀ := x₀) (y₀ := y₀) rfl rfl D
-  rw [S.weightedBasepointChangeClass_eq_abelJacobiClass (fun _ : X => (1 : ℤ))
-    hweighted (x₀ := x₀) (y₀ := y₀) rfl rfl] at hchange
-  apply Subtype.ext
-  have hchange' := congr_arg Subtype.val hchange
-  simpa only [coe_unweightedAbelJacobiDivisorClass_apply, coe_weightedAbelJacobiDivisorClass_apply,
-    weightedDegree_one_eq_degree, coe_unweightedAbelJacobiClass, coe_weightedAbelJacobiClass,
-    weightedPointBaseDifference_eq_pointDifference, AddMemClass.coe_add,
-    AddSubgroupClass.coe_zsmul] using hchange'
-
-/-- In the class group, the difference between unweighted Abel-Jacobi divisor sums with two
-base points is the degree times `[x₀] - [y₀]`. -/
-lemma unweightedAbelJacobiDivisorClass_sub_change_base_coe (h : S.IsUnweightedDegreeZero)
-    (x₀ y₀ : X) (D : WeilDivisor X) :
-    (S.unweightedAbelJacobiDivisorClass h y₀ D : S.ClassGroup) -
-        (S.unweightedAbelJacobiDivisorClass h x₀ D : S.ClassGroup) =
-      degree D • S.divisorClass (pointDifference x₀ y₀) := by
-  -- `IsUnweightedDegreeZero` is the constant-weight-one weighted condition by definition.
-  let hweighted : S.IsWeightedDegreeZero (fun _ : X => (1 : ℤ)) := h
-  have hchange :=
-    S.degreeCorrection_change_base (fun _ : X => (1 : ℤ)) hweighted x₀ y₀ (S.divisorClass D)
-  rw [weightedDegreeClass_divisorClass, weightedDegree_one_eq_degree] at hchange
-  rw [coe_unweightedAbelJacobiDivisorClass_apply, coe_unweightedAbelJacobiDivisorClass_apply,
-    ← weightedDegree_one_eq_degree D,
-    ← S.degreeCorrection_divisorClass (fun _ : X => (1 : ℤ)) h y₀ D,
-    ← S.degreeCorrection_divisorClass (fun _ : X => (1 : ℤ)) h x₀ D]
-  rw [hchange, weightedDegree_one_eq_degree, add_sub_cancel_left]
-
-/-- An unweighted degree-zero divisor has an Abel-Jacobi sum independent of the base point. -/
-lemma unweightedAbelJacobiDivisorClass_eq_of_degree_eq_zero (h : S.IsUnweightedDegreeZero)
-    (x₀ y₀ : X) {D : WeilDivisor X} (hD : degree D = 0) :
-    S.unweightedAbelJacobiDivisorClass h x₀ D =
-      S.unweightedAbelJacobiDivisorClass h y₀ D := by
-  rw [S.unweightedAbelJacobiDivisorClass_change_base h x₀ y₀ D, hD, zero_zsmul, add_zero]
-
 end OrderSystem
 
 end WeilDivisor
