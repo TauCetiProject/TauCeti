@@ -12,9 +12,8 @@ public import TauCeti.Analysis.PositiveDefinite.Kernel
 
 A positive-definite function `F : M → ℂ` on an involutive additive monoid and a positive-definite
 kernel `K : M → M → ℂ` are two views of the same data, linked by the assignment
-`K(a, b) = F(a + b⋆)`. This file packages the forward and reverse correspondence from
-`TauCeti.Analysis.PositiveDefinite.Basic` as an iff, and records the translation-invariant group
-specialization.
+`K(a, b) = F(a + b⋆)`. This file records the forward and reverse correspondence, packages them
+as an iff, and records the translation-invariant group specialization.
 
 Both predicates express nonnegativity of finite quadratic forms, with
 `IsPositiveDefiniteKernel` using Mathlib's `Matrix.PosSemidef` convention for the two-variable
@@ -59,6 +58,36 @@ open scoped ComplexOrder
 namespace TauCeti
 
 variable {M : Type*} [AddMonoid M] [StarAddMonoid M] {F : M → ℂ}
+
+namespace IsPositiveDefinite
+
+private theorem kernel_form_nonneg (hF : IsPositiveDefinite F) {ι : Type*} [Fintype ι]
+    (v : ι → M) (x : ι → ℂ) :
+    0 ≤ ∑ i, ∑ j, conj (x i) * x j * F (v i + star (v j)) := by
+  have h := hF.sum_nonneg (fun i => conj (x i)) v
+  refine le_of_le_of_eq h ?_
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  rw [Complex.conj_conj]
+
+/-- A positive-definite function `F` induces the positive-definite kernel `K(a, b) = F(a + b⋆)`.
+This is the forward half of the function ↔ kernel correspondence. -/
+theorem isPositiveDefiniteKernel (hF : IsPositiveDefinite F) :
+    IsPositiveDefiniteKernel (fun a b => F (a + star b)) :=
+  isPositiveDefiniteKernel_iff.mpr
+    ⟨fun a b => hF.conj_symm b a, fun {_ι : Type} _ v x => hF.kernel_form_nonneg v x⟩
+
+/-- If the kernel `K(a, b) = F(a + b⋆)` is positive definite, then so is the function `F`. This is
+the reverse half of the function ↔ kernel correspondence. -/
+theorem of_isPositiveDefiniteKernel
+    (hK : IsPositiveDefiniteKernel (fun a b => F (a + star b))) : IsPositiveDefinite F := by
+  obtain ⟨_, hpos⟩ := isPositiveDefiniteKernel_iff.mp hK
+  intro n c v
+  have h := hpos v (fun i => conj (c i))
+  refine le_of_le_of_eq h ?_
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  rw [Complex.conj_conj]
+
+end IsPositiveDefinite
 
 /-- A function `F` on an involutive additive monoid is positive definite if and only if the
 two-variable kernel `K(a, b) = F(a + b⋆)` is positive definite. -/
