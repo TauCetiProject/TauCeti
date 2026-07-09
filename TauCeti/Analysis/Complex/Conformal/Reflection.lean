@@ -277,23 +277,33 @@ lemma continuousOn_schwarzReflection_inter_im_neg_of_symmetric {Ω : Set ℂ}
       (schwarzReflection_of_im_neg (f := f) hz.2)
 
 /--
-If `f` is continuous and takes real values on the real axis, then its explicit
-Schwarz-reflection extension is continuous on the plane.
+If `f` is continuous on the closed upper half-plane and takes real values on the real axis,
+then its explicit Schwarz-reflection extension is continuous on the plane.
 -/
 lemma continuous_schwarzReflection
-    (hf : Continuous f) (hreal : ∀ z : ℂ, z.im = 0 → (f z).im = 0) :
+    (hf : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hreal : ∀ z : ℂ, z.im = 0 → (f z).im = 0) :
     Continuous (schwarzReflection f) := by
+  have hUclosed : IsClosed {z : ℂ | 0 ≤ z.im} :=
+    isClosed_Ici.preimage Complex.continuous_im
+  have himg : (starRingEnd ℂ) '' {z : ℂ | 0 ≤ z.im} = {z : ℂ | z.im ≤ 0} := by
+    ext w
+    simp only [Set.mem_image, Set.mem_setOf_eq]
+    constructor
+    · rintro ⟨x, hx, rfl⟩
+      simpa using hx
+    · intro hw
+      exact ⟨(starRingEnd ℂ) w, by simpa using hw, by simp⟩
   have hpiece :
       Continuous fun z : ℂ =>
         if 0 ≤ z.im then f z else (starRingEnd ℂ) (f ((starRingEnd ℂ) z)) := by
-    refine Continuous.if ?_ hf ?_
+    refine continuous_if ?_ ?_ ?_
     · intro z hz
-      have hzim : z.im = 0 := by
-        have hz' : z ∈ Complex.im ⁻¹' frontier (Set.Ici (0 : ℝ)) := by
-          simpa [Complex.frontier_preimage_im] using hz
-        simpa [frontier_Ici] using hz'
+      have hzim : z.im = 0 := by simpa using hz
       exact schwarzReflection_branch_eq_of_im_zero (f := f) hzim (hreal z hzim)
-    · fun_prop
+    · rwa [hUclosed.closure_eq]
+    · rw [show closure {x : ℂ | ¬ 0 ≤ x.im} = {z : ℂ | z.im ≤ 0} by simp [not_le], ← himg]
+      exact continuousOn_conj_conj (S := {z : ℂ | 0 ≤ z.im}) (f := f) hf
   convert hpiece with z
   exact (schwarzReflection_def f z).symm
 
