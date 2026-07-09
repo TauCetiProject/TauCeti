@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup
-public import TauCeti.Algebra.AlgebraicGroup.BaseChangeNaturality
+public import TauCeti.Algebra.AlgebraicGroup.BaseChange
 
 /-!
 # Base change of additive-group points
@@ -118,32 +118,6 @@ theorem toAdd_baseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
     toAdd_baseChangePointsMulEquiv_apply, AlgHom.mapValue_apply, ofConv_toConv,
     AlgHom.comp_apply]
   rw [LinearMap.restrictScalars_apply, AlgHom.toLinearMap_apply]
-
-/-- Naturality of the base-changed vector-group points equivalence in the value algebra. -/
-theorem baseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
-    (F : WithConv (K ⊗[k] SymmetricAlgebra k M →ₐ[K] A)) :
-    baseChangePointsMulEquiv
-        (AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k M) ψ F) =
-      Multiplicative.ofAdd
-        ((ψ.toLinearMap.restrictScalars k).comp
-          (Multiplicative.toAdd
-            (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (M := M) F))) := by
-  simp only [baseChangePointsMulEquiv, MulEquiv.trans_apply,
-    AlgHom.baseChangePointsMulEquiv_symm_mapValue, pointsMulEquiv_mapValue]
-  congr 1
-
-/-- Naturality of the inverse base-changed vector-group points equivalence in the value
-algebra. -/
-theorem mapValue_baseChangePointsMulEquiv_symm_apply (ψ : A →ₐ[K] B)
-    (φ : Multiplicative (M →ₗ[k] A)) :
-    AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k M) ψ
-        ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (M := M)).symm φ) =
-      (baseChangePointsMulEquiv (k := k) (K := K) (A := B) (M := M)).symm
-        (Multiplicative.ofAdd ((ψ.toLinearMap.restrictScalars k).comp
-          (Multiplicative.toAdd φ))) := by
-  apply (baseChangePointsMulEquiv (k := k) (K := K) (A := B) (M := M)).injective
-  rw [baseChangePointsMulEquiv_mapValue]
-  simp
 
 section Ga
 
