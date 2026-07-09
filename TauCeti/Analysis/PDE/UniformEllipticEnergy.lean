@@ -179,6 +179,10 @@ lemma min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self
   PDE.min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self h.pos (h.lower_bound hx)
     hb hc hmu U
 
+grind_pattern min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self =>
+  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, ‖b₀‖ ≤ beta, mu ≤ c₀,
+  energyIntegrand (a x) b₀ c₀ U U
+
 /-- The coefficient-field version of the explicit diagonal lower-bound estimate from
 uniform ellipticity and a mass floor. -/
 lemma min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self_on
@@ -201,6 +205,9 @@ lemma min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self
     min lam c₀ * ‖U‖ ^ 2 ≤ energyIntegrand (a x) 0 c₀ U U :=
   PDE.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self h.pos.le
     (h.lower_bound hx) hc U
+
+grind_pattern min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self =>
+  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, 0 ≤ c₀, energyIntegrand (a x) 0 c₀ U U
 
 /-- The coefficient-field version of the zero-drift diagonal lower bound from uniform
 ellipticity and nonnegative mass. -/
