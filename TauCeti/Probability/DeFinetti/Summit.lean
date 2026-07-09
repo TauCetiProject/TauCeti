@@ -162,9 +162,6 @@ theorem conditionallyIID_of_exchangeable {Ω α : Type*} [MeasurableSpace Ω] [M
   conditionallyIID_of_contractable
     (contractable_of_exchangeable hX fun i => (hX_meas i).aemeasurable) hX_meas
 
-/-- Roadmap-facing alias for `conditionallyIID_of_exchangeable`. -/
-alias deFinetti := conditionallyIID_of_exchangeable
-
 end Probability
 
 end TauCeti
