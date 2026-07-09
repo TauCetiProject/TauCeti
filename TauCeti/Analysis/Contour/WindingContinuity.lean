@@ -35,17 +35,6 @@ open scoped Interval
 
 namespace TauCeti.Contour
 
-/-- **Integrability of the index integrand for a point off the curve.** If `γ` is continuous on
-`Set.uIcc a b` and avoids `w` there (so `(γ · - w)⁻¹` is continuous) and `deriv γ` is
-interval-integrable, then `(γ t - w)⁻¹ * deriv γ t` is interval-integrable, being a continuous
-factor times an integrable one. -/
-theorem intervalIntegrable_inv_sub_mul_deriv {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ}
-    (hγ_cont : ContinuousOn γ (Set.uIcc a b)) (hoff : ∀ t ∈ Set.uIcc a b, γ t ≠ w)
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
-    IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b :=
-  hderiv_int.continuousOn_mul ((hγ_cont.sub continuousOn_const).inv₀
-    fun t ht ↦ sub_ne_zero.mpr (hoff t ht))
-
 /-- The `a ≤ b` case of `continuousAt_windingNumber_of_avoidance`. -/
 private theorem continuousAt_windingNumber_of_avoidance_of_le {γ : ℝ → ℂ} {w₀ : ℂ} {a b : ℝ}
     (hab : a ≤ b) (hγ_cont : ContinuousOn γ (Icc a b)) (h_avoid : ∀ t ∈ Icc a b, γ t ≠ w₀)
