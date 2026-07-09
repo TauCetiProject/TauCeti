@@ -39,7 +39,6 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   transitive.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff`: if the original
   action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
-* `TauCeti.Setoid.map_of_le_mk`: the representative convention for `Setoid.map_of_le`.
 * `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk` and
   `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE`: the representative convention of
   Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions.
@@ -48,20 +47,6 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 public section
 
 namespace TauCeti
-
-namespace Setoid
-
-variable {α : Type*}
-
-/-- `Setoid.map_of_le` sends a representative for the smaller setoid to the same representative
-for the larger setoid. -/
-@[simp]
-theorem map_of_le_mk {s t : Setoid α} (h : s ≤ t) (x : α) :
-    _root_.Setoid.map_of_le h (Quotient.mk'' x : Quotient s) =
-      (Quotient.mk'' x : Quotient t) :=
-  rfl
-
-end Setoid
 
 namespace MulAction
 
@@ -235,7 +220,11 @@ lemma equivSubgroupOrbitsQuotientGroup_mapOfLE
   obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G x₀ x'
   rw [← hg]
   rw [equivSubgroupOrbitsQuotientGroup_apply_smul]
-  rw [TauCeti.Setoid.map_of_le_mk]
+  rw [show Setoid.map_of_le (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
+      (Quotient.mk'' (g • x₀) : _root_.MulAction.orbitRel.Quotient H X) =
+        (Quotient.mk'' (g • x₀) : _root_.MulAction.orbitRel.Quotient K X) by
+    exact
+      (Quotient.map'_mk'' id (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK) (g • x₀))]
   rw [equivSubgroupOrbitsQuotientGroup_apply_smul, Subgroup.quotientMapOfLE_apply_mk]
 
 private lemma normalizer_smul_mem_orbit (H : Subgroup G)
