@@ -33,6 +33,7 @@ source comodule. It is built on the existing comodule and trivial-comodule API.
 ## Main definitions
 
 * `TauCeti.Comodule.coinvariants`: the submodule of coinvariants of a right comodule.
+* `TauCeti.Comodule.invariants`: the bialgebraic fixed-vector specialization at `g = 1`.
 * `TauCeti.Comodule.Hom.mapCoinvariants`: a comodule morphism restricted to coinvariants.
 
 ## Main results
@@ -238,6 +239,89 @@ theorem coinvariantsEquivHom_symm_apply_coe (g : GroupLike R C)
   rfl
 
 end UniversalProperty
+
+end Comodule
+
+namespace Comodule
+
+universe u v w x
+
+variable {R : Type u} {C : Type v} {M : Type w} {N : Type x}
+variable [CommSemiring R] [Semiring C] [Bialgebra R C]
+variable [AddCommMonoid M] [Module R M]
+variable [AddCommMonoid N] [Module R N]
+
+section Invariants
+
+variable (R C M) in
+/-- The invariants, or fixed vectors, of a right comodule over a bialgebra: the specialization
+of `coinvariants` to the unit group-like element. -/
+abbrev invariants [Comodule R C M] : Submodule R M :=
+  coinvariants R C M (1 : GroupLike R C)
+
+/-- A vector is invariant exactly when its coaction is `m ⊗ 1`. -/
+@[simp]
+theorem mem_invariants [Comodule R C M] {m : M} :
+    m ∈ invariants R C M ↔ coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] (1 : C) :=
+  mem_coinvariants (R := R) (C := C) (M := M) (1 : GroupLike R C)
+
+/-- An invariant vector, unfolded: its coaction is `m ⊗ 1`. -/
+theorem coact_eq_of_mem_invariants [Comodule R C M] {m : M}
+    (hm : m ∈ invariants R C M) :
+    coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] (1 : C) :=
+  (mem_invariants (R := R) (C := C) (M := M)).1 hm
+
+namespace Hom
+
+variable [Comodule R C M] [Comodule R C N]
+
+/-- Comodule morphisms carry invariants to invariants. -/
+theorem map_mem_invariants (f : Hom R C M N) {m : M} (hm : m ∈ invariants R C M) :
+    f m ∈ invariants R C N :=
+  map_mem_coinvariants (R := R) (C := C) (M := M) (N := N) (1 : GroupLike R C) f hm
+
+/-- A comodule morphism restricted to invariants, as an `R`-linear map
+`M^{co 1} → N^{co 1}`. -/
+abbrev mapInvariants (f : Hom R C M N) : invariants R C M →ₗ[R] invariants R C N :=
+  mapCoinvariants (R := R) (C := C) (M := M) (N := N) (1 : GroupLike R C) f
+
+/-- `mapInvariants f` acts as the underlying map of `f` on invariant vectors. -/
+@[simp]
+theorem mapInvariants_coe_apply (f : Hom R C M N) (m : invariants R C M) :
+    (mapInvariants (R := R) (C := C) f m : N) = f (m : M) :=
+  mapCoinvariants_coe_apply (R := R) (C := C) (M := M) (N := N)
+    (1 : GroupLike R C) f m
+
+end Hom
+
+variable [Comodule R C M]
+
+/-- The invariant vectors of a comodule `M` are linearly equivalent to the comodule morphisms
+from the trivial comodule on `R`. The equivalence sends an invariant vector `m` to `r ↦ r • m`
+and a morphism `f` to `f 1`. -/
+noncomputable abbrev invariantsEquivHom :
+    letI : Comodule R C R := Comodule.trivial (R := R) (C := C) (M := R)
+    invariants R C M ≃ₗ[R] Hom R C R M :=
+  coinvariantsEquivHom (R := R) (C := C) (M := M) (1 : GroupLike R C)
+
+/-- `invariantsEquivHom` sends an invariant vector `m` to the morphism `r ↦ r • m`. -/
+@[simp]
+theorem invariantsEquivHom_apply (m : invariants R C M) :
+    letI : Comodule R C R := Comodule.trivial (R := R) (C := C) (M := R)
+    invariantsEquivHom (R := R) (C := C) (M := M) m =
+      Hom.ofCoinvariant (R := R) (C := C) (M := M) (1 : GroupLike R C) m :=
+  rfl
+
+/-- The inverse of `invariantsEquivHom` sends a morphism `f` to the invariant vector `f 1`. -/
+@[simp]
+theorem invariantsEquivHom_symm_apply_coe
+    (f : letI : Comodule R C R := Comodule.trivial (R := R) (C := C) (M := R);
+      Hom R C R M) :
+    letI : Comodule R C R := Comodule.trivial (R := R) (C := C) (M := R)
+    (invariantsEquivHom (R := R) (C := C) (M := M)).symm f = f 1 :=
+  rfl
+
+end Invariants
 
 end Comodule
 
