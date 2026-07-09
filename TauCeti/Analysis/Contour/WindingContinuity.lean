@@ -35,23 +35,6 @@ open scoped Interval
 
 namespace TauCeti.Contour
 
-/-- **Uniform distance to the curve near an avoided point.** If `γ` is continuous on the compact
-interval `[a, b]` and avoids `w₀` there, then there is a radius `ε > 0` such that every `w` within
-`ε` of `w₀` stays at distance at least `ε` from the whole curve `γ '' [a, b]`. Uses the distance to
-the compact image `Metric.infDist w₀ (γ '' Icc a b)`. -/
-private theorem exists_ball_dist_curve_lower_bound {γ : ℝ → ℂ} {w₀ : ℂ} {a b : ℝ} (hab : a ≤ b)
-    (hγ_cont : ContinuousOn γ (Icc a b)) (h_avoid : ∀ t ∈ Icc a b, γ t ≠ w₀) :
-    ∃ ε > 0, ∀ w ∈ Metric.ball w₀ ε, ∀ t ∈ Icc a b, ε ≤ ‖γ t - w‖ := by
-  obtain ⟨ρ, hρ_pos, h_dist_lb⟩ := exists_curve_dist_lower_bound
-    (by rw [Set.uIcc_of_le hab]; exact hγ_cont) (by rw [Set.uIcc_of_le hab]; exact h_avoid)
-  rw [Set.uIcc_of_le hab] at h_dist_lb
-  refine ⟨ρ / 2, half_pos hρ_pos, fun w hw t ht ↦ ?_⟩
-  rw [Metric.mem_ball, Complex.dist_eq] at hw
-  have h2 : ‖γ t - w₀‖ - ‖w - w₀‖ ≤ ‖γ t - w‖ := by
-    have h := norm_sub_norm_le (γ t - w₀) (w - w₀)
-    rwa [sub_sub_sub_cancel_right] at h
-  linarith [h_dist_lb t ht]
-
 /-- **Integrability of the index integrand for a point off the curve.** If `w` stays a positive
 distance `ε` from `γ` on `[a, b]` (so `γ · - w` is nowhere zero and `(γ · - w)⁻¹` is continuous)
 and `deriv γ` is interval-integrable, then `(γ t - w)⁻¹ * deriv γ t` is interval-integrable, being
@@ -71,7 +54,9 @@ private theorem continuousAt_windingNumber_of_avoidance_of_le {γ : ℝ → ℂ}
     (hab : a ≤ b) (hγ_cont : ContinuousOn γ (Icc a b)) (h_avoid : ∀ t ∈ Icc a b, γ t ≠ w₀)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
     ContinuousAt (fun w ↦ windingNumber γ a b w) w₀ := by
-  obtain ⟨ε, hε_pos, h_dist_lb⟩ := exists_ball_dist_curve_lower_bound hab hγ_cont h_avoid
+  obtain ⟨ε, hε_pos, h_dist_lb⟩ := exists_ball_dist_curve_lower_bound
+    (by rw [Set.uIcc_of_le hab]; exact hγ_cont) (by rw [Set.uIcc_of_le hab]; exact h_avoid)
+  rw [Set.uIcc_of_le hab] at h_dist_lb
   set F : ℂ → ℝ → ℂ := fun w t ↦ (γ t - w)⁻¹ * deriv γ t with hF_def
   have h_ne : ∀ w ∈ Metric.ball w₀ ε, ∀ t ∈ Icc a b, γ t - w ≠ 0 := fun w hw t ht ↦
     norm_pos_iff.mp (lt_of_lt_of_le hε_pos (h_dist_lb w hw t ht))
@@ -130,7 +115,9 @@ theorem continuousAt_windingNumber_of_avoidance {γ : ℝ → ℂ} {w₀ : ℂ} 
   · rw [Set.uIcc_of_ge hba] at hγ_cont h_avoid
     have hcore :=
       continuousAt_windingNumber_of_avoidance_of_le hba hγ_cont h_avoid hderiv_int.symm
-    obtain ⟨ε, hε_pos, h_dist_lb⟩ := exists_ball_dist_curve_lower_bound hba hγ_cont h_avoid
+    obtain ⟨ε, hε_pos, h_dist_lb⟩ := exists_ball_dist_curve_lower_bound
+      (by rw [Set.uIcc_of_le hba]; exact hγ_cont) (by rw [Set.uIcc_of_le hba]; exact h_avoid)
+    rw [Set.uIcc_of_le hba] at h_dist_lb
     have h_eq : (fun w ↦ windingNumber γ a b w) =ᶠ[nhds w₀] fun w ↦ -windingNumber γ b a w := by
       filter_upwards [Metric.ball_mem_nhds w₀ hε_pos] with w hw
       have h_ne : ∀ t ∈ Icc b a, γ t - w ≠ 0 := fun t ht ↦
