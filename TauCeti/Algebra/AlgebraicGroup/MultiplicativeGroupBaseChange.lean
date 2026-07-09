@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.BaseChangeNaturality
 public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup
 
 /-!
@@ -18,10 +18,8 @@ out of `K ⊗[k] k[T;T⁻¹]` is the unit group `Aˣ`.
 The equivalence first restricts a base-changed point along `f ↦ f (1 ⊗ T)` using
 `AlgHom.baseChangePointsMulEquiv`, then applies the Laurent-polynomial calculation
 `MultiplicativeGroup.pointsMulEquiv`. The characteristic lemmas give the values on
-`1 ⊗ T` and on the inverse map at pure tensors `s ⊗ C r * T n`. Naturality in the value
-algebra is not restated here: it is the composite of the generic base-change naturality
-(`TauCeti.AlgHom.mapValue_baseChangePointsMulEquiv`) with the naturality of the `k`-points
-calculation (`TauCeti.MultiplicativeGroup.pointsMulEquiv_mapValue`).
+`1 ⊗ T`, on the inverse map at pure tensors `s ⊗ C r * T n`, and naturality in the value
+algebra.
 
 This is the direct Laurent-polynomial `𝔾_m` worked example for the ReductiveGroups roadmap,
 Layer 0 ("R-points as a group" and "Base change. `K ⊗[k] A` as a Hopf algebra over `K`"),
@@ -35,6 +33,8 @@ alongside the more general diagonalizable and split-torus base-change APIs.
   point on the base-changed coordinate `1 ⊗ T`.
 * `TauCeti.MultiplicativeGroup.baseChangePointsMulEquiv_symm_apply_tmul_C_mul_T`: the inverse
   equivalence evaluates pure Laurent monomials `s ⊗ C r * T n`.
+* `TauCeti.MultiplicativeGroup.baseChangePointsMulEquiv_mapValue`: the equivalence is
+  natural in the value algebra.
 
 ## References
 
@@ -52,7 +52,7 @@ namespace TauCeti
 
 namespace MultiplicativeGroup
 
-universe u v w
+universe u v w w'
 
 variable {k : Type u} {K : Type v} {A : Type w}
 variable [CommSemiring k] [CommSemiring K] [CommSemiring A]
@@ -106,6 +106,32 @@ theorem baseChangePointsMulEquiv_symm_apply_T (u : Aˣ) :
         (1 ⊗ₜ[k] LaurentPolynomial.T 1) =
       (u : A) := by
   rw [baseChangePointsMulEquiv_symm_apply_tmul_T]
+  simp
+
+variable {B : Type w'} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower k K B]
+
+/-- Reading a base-changed `𝔾_m` point as a unit is natural in the value algebra:
+post-composing the point with a `K`-algebra map applies the induced map on unit groups. -/
+theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
+    (f : WithConv (K ⊗[k] k[T;T⁻¹] →ₐ[K] A)) :
+    baseChangePointsMulEquiv
+        (AlgHom.mapValue (H := K ⊗[k] k[T;T⁻¹]) φ f) =
+      Units.map φ.toMonoidHom
+        (baseChangePointsMulEquiv (k := k) (K := K) (A := A) f) := by
+  simp only [baseChangePointsMulEquiv, MulEquiv.trans_apply,
+    AlgHom.baseChangePointsMulEquiv_symm_mapValue, pointsMulEquiv_mapValue]
+  ext
+  simp [Units.coe_map]
+
+/-- Naturality of the inverse base-changed multiplicative-group points equivalence in the
+value algebra. -/
+theorem mapValue_baseChangePointsMulEquiv_symm_apply (φ : A →ₐ[K] B) (u : Aˣ) :
+    AlgHom.mapValue (H := K ⊗[k] k[T;T⁻¹]) φ
+        ((baseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm u) =
+      (baseChangePointsMulEquiv (k := k) (K := K) (A := B)).symm
+        (Units.map φ.toMonoidHom u) := by
+  apply (baseChangePointsMulEquiv (k := k) (K := K) (A := B)).injective
+  rw [baseChangePointsMulEquiv_mapValue]
   simp
 
 end MultiplicativeGroup
