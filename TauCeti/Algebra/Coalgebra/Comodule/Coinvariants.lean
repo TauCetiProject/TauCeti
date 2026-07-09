@@ -261,6 +261,7 @@ abbrev invariants [Comodule R C M] : Submodule R M :=
   coinvariants R C M (1 : GroupLike R C)
 
 /-- A vector is invariant exactly when its coaction is `m ⊗ 1`. -/
+@[simp]
 theorem mem_invariants [Comodule R C M] {m : M} :
     m ∈ invariants R C M ↔ coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] (1 : C) :=
   mem_coinvariants (R := R) (C := C) (M := M) (1 : GroupLike R C)
@@ -286,6 +287,7 @@ abbrev mapInvariants (f : Hom R C M N) : invariants R C M →ₗ[R] invariants R
   mapCoinvariants (R := R) (C := C) (M := M) (N := N) (1 : GroupLike R C) f
 
 /-- `mapInvariants f` acts as the underlying map of `f` on invariant vectors. -/
+@[simp]
 theorem mapInvariants_coe_apply (f : Hom R C M N) (m : invariants R C M) :
     (mapInvariants (R := R) (C := C) f m : N) = f (m : M) :=
   mapCoinvariants_coe_apply (R := R) (C := C) (M := M) (N := N)
@@ -301,6 +303,7 @@ theorem mapInvariants_id :
 variable [Comodule R C P]
 
 /-- The invariants functor preserves composition. -/
+@[simp]
 theorem mapInvariants_comp (h : Hom R C N P) (f : Hom R C M N) :
     mapInvariants (R := R) (C := C) (M := M) (N := P) (h.comp f) =
       (mapInvariants (R := R) (C := C) (M := N) (N := P) h).comp
@@ -319,7 +322,7 @@ noncomputable abbrev invariantsEquivHom :
     letI : Comodule R C R := Comodule.trivial (R := R) (C := C) (M := R)
     invariants R C M ≃ₗ[R] Hom R C R M :=
   by
-    simpa [Comodule.trivial_eq_groupLike_one] using
+    simpa [trivial_eq_groupLike_one] using
       (coinvariantsEquivHom (R := R) (C := C) (M := M) (1 : GroupLike R C))
 
 /-- `invariantsEquivHom` sends an invariant vector `m` to the morphism `r ↦ r • m`. -/
@@ -328,7 +331,8 @@ theorem invariantsEquivHom_apply (m : invariants R C M) :
     letI : Comodule R C R := Comodule.trivial (R := R) (C := C) (M := R)
     invariantsEquivHom (R := R) (C := C) (M := M) m =
       Hom.ofCoinvariant (R := R) (C := C) (M := M) (1 : GroupLike R C) m :=
-  rfl
+  by
+    exact coinvariantsEquivHom_apply (R := R) (C := C) (M := M) (1 : GroupLike R C) m
 
 /-- The inverse of `invariantsEquivHom` sends a morphism `f` to the invariant vector `f 1`. -/
 @[simp]
@@ -337,7 +341,9 @@ theorem invariantsEquivHom_symm_apply_coe
       Hom R C R M) :
     letI : Comodule R C R := Comodule.trivial (R := R) (C := C) (M := R)
     (invariantsEquivHom (R := R) (C := C) (M := M)).symm f = f 1 :=
-  rfl
+  by
+    exact coinvariantsEquivHom_symm_apply_coe (R := R) (C := C) (M := M)
+      (1 : GroupLike R C) f
 
 end Invariants
 
