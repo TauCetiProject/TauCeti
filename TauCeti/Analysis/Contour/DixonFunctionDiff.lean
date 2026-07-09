@@ -58,14 +58,6 @@ private theorem cauchy_integrand_intervalIntegrable (hf : DifferentiableOn ℂ f
   hderiv_int.continuousOn_mul (((hf.continuousOn.comp hγ_cont hγU).div
     (hγ_cont.sub continuousOn_const) fun t ht ↦ sub_ne_zero.mpr (hoff t ht)))
 
-/-- The index integrand `(γ · - w)⁻¹ · deriv γ` is interval-integrable for `w` off the curve. -/
-private theorem base_integrand_intervalIntegrable (hγ_cont : ContinuousOn γ (uIcc a b))
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
-    (hoff : ∀ t ∈ uIcc a b, γ t ≠ w) :
-    IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b :=
-  hderiv_int.continuousOn_mul ((hγ_cont.sub continuousOn_const).inv₀
-    fun t ht ↦ sub_ne_zero.mpr (hoff t ht))
-
 /-- Near an off-curve point where the winding number vanishes, it vanishes throughout a ball (and
 the ball stays off the curve): the winding number is locally constant off the closed curve. -/
 private theorem exists_ball_windingNumber_zero (hclosed : γ a = γ b) (hP : P.Countable)
@@ -122,7 +114,7 @@ theorem differentiable_dixonFunction (hU : IsOpen U) (hf : DifferentiableOn ℂ 
     by_cases hw'U : w' ∈ U
     · rw [dixonFunction_eq_dixonH1 hw'U, dixonH1_eq_dixonH2_sub_windingNumber_mul_f hγ_cont hoff'
         (cauchy_integrand_intervalIntegrable hf hγ_cont hγU hderiv_int hoff')
-        (base_integrand_intervalIntegrable hγ_cont hderiv_int hoff'), hwz']
+        (intervalIntegrable_inv_sub_mul_deriv hγ_cont hoff' hderiv_int), hwz']
       ring
     · rw [dixonFunction_eq_dixonH2 hw'U]
 
