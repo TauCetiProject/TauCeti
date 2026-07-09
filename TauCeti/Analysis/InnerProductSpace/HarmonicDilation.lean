@@ -128,6 +128,8 @@ theorem harmonicAt_comp_homothety_right_iff (a : E) (c : ℝ) (hc : c ≠ 0) {f 
         have hmain : Δ f =ᶠ[𝓝 (e x)] (0 : E → F) := by
           simpa [he x] using h
         rw [← e.map_nhds_eq x] at hmain
+        -- `Filter.eventuallyEq_map` compares `g ∘ e` with `g' ∘ e`; reshape the zero side as
+        -- `0 ∘ e` (definitionally `0`) so it applies to `hmain`.
         change Δ f ∘ e =ᶠ[𝓝 x] (0 : E → F) ∘ e
         exact ((Filter.eventuallyEq_map (f := 𝓝 x) (m := e) (f₁ := Δ f)
           (f₂ := (0 : E → F))).symm).2 hmain

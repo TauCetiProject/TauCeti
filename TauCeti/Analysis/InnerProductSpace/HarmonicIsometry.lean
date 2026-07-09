@@ -53,9 +53,13 @@ theorem harmonicAt_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') 
     simpa using this
   have hlap : (Δ (f ∘ l) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (l x)] 0) := by
     rw [laplacian_comp_linearIsometryEquiv_right l f]
+    -- View precomposition by `l` as precomposition by the homeomorphism `l.toHomeomorph`
+    -- (definitionally the same map) so `map_nhds_eq` can transport the neighbourhood filter.
     change (Δ f ∘ l.toHomeomorph =ᶠ[𝓝 x] 0) ↔
       (Δ f =ᶠ[𝓝 (l.toHomeomorph x)] 0)
     rw [← l.toHomeomorph.map_nhds_eq x]
+    -- `Filter.eventuallyEq_map` reads `g =ᶠ[map h l] g' ↔ g ∘ h =ᶠ[l] g' ∘ h`; write the zero
+    -- side as `0 ∘ l.toHomeomorph` (definitionally `0`) to land in that shape.
     change (Δ f ∘ l.toHomeomorph =ᶠ[𝓝 x] (0 : E' → F) ∘ l.toHomeomorph) ↔
       (Δ f =ᶠ[Filter.map l.toHomeomorph (𝓝 x)] (0 : E' → F))
     exact (Filter.eventuallyEq_map (f := 𝓝 x) (m := l.toHomeomorph) (f₁ := Δ f)
@@ -80,9 +84,13 @@ theorem harmonicAt_comp_add_right_iff {f : E → F} {x a : E} :
       exact h.comp x hψ
   have hlap : (Δ (fun y ↦ f (y + a)) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (x + a)] 0) := by
     rw [laplacian_comp_add_right f a]
+    -- Rephrase translation as precomposition with the homeomorphism `Homeomorph.addRight a`
+    -- (definitionally the same map) so `map_nhds_eq` can transport the neighbourhood filter.
     change ((fun y : E ↦ Δ f (y + a)) =ᶠ[𝓝 x] 0) ↔
       (Δ f =ᶠ[𝓝 ((Homeomorph.addRight a) x)] 0)
     rw [← (Homeomorph.addRight a).map_nhds_eq x]
+    -- Match `Filter.eventuallyEq_map` (`g =ᶠ[map h l] g' ↔ g ∘ h =ᶠ[l] g' ∘ h`) by writing the
+    -- zero side as `0 ∘ addRight a` (definitionally `0`).
     change (Δ f ∘ Homeomorph.addRight a =ᶠ[𝓝 x]
         (0 : E → F) ∘ Homeomorph.addRight a) ↔
       (Δ f =ᶠ[Filter.map (Homeomorph.addRight a) (𝓝 x)] (0 : E → F))
