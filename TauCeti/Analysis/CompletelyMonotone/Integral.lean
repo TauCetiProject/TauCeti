@@ -10,21 +10,15 @@ public import TauCeti.Analysis.CompletelyMonotone.Basic
 /-!
 # Integral lemmas for completely monotone functions
 
-FTC wrappers, Taylor-remainder sign bounds, and improper-integral facts about completely monotone
-functions.
+Taylor-remainder sign bounds and improper-integral facts about completely monotone functions.
 
 These extend the object API in `CompletelyMonotone/Basic.lean` with the sign of the Taylor
-integral remainder, finite-interval fundamental-theorem identities specialized to completely
-monotone functions, and improper-integral facts for the first derivative within `[0, ∞)`.
+integral remainder and improper-integral facts for the first derivative within `[0, ∞)`.
 
 ## Main declarations
 
 * `TauCeti.IsCompletelyMonotone.neg_one_pow_mul_taylor_remainder_nonneg`: the Taylor integral
   remainder has sign `(-1)ⁿ`.
-* `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc`,
-  `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc_zero_left`:
-  finite-interval fundamental-theorem identities specialized to completely monotone
-  functions.
 * `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici`:
   transfer of the first-derivative integral from the interval-dependent differentiability set
   `Icc 0 T` to the fixed half-line `Ici 0`.
@@ -52,17 +46,6 @@ variable {f : ℝ → ℝ}
 
 namespace IsCompletelyMonotone
 
-/-- `iteratedDerivWithin` on `Icc x T` agrees with `iteratedDerivWithin` on `Ici 0` at interior
-points, since both equal `iteratedDeriv n f t` when `0 < t`. -/
-lemma iteratedDerivWithin_Icc_eq_Ici {n : ℕ} (hf : IsCompletelyMonotone f)
-    {x T t : ℝ} (ht_pos : 0 < t) (ht : t ∈ Ioo x T) :
-    iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici 0) t := by
-  have hcda : ContDiffAt ℝ (n : WithTop ℕ∞) f t :=
-    (hf.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (by exact_mod_cast le_top)
-  rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc (lt_trans ht.1 ht.2)) hcda
-        (Ioo_subset_Icc_self ht),
-      ← iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcda (mem_Ici.mpr ht_pos.le)]
-
 /-- **CM sign of the Taylor remainder.** For a completely monotone function the Taylor
 integral remainder `∫ₓᵀ (T-t)ⁿ⁻¹/(n-1)! · f⁽ⁿ⁾(t) dt` has sign `(-1)ⁿ`:
 `0 ≤ (-1)ⁿ` times it. -/
@@ -80,33 +63,21 @@ lemma neg_one_pow_mul_taylor_remainder_nonneg (hf : IsCompletelyMonotone f) {x T
           ((-1 : ℝ) ^ n * iteratedDerivWithin n f (Icc x T) t) :=
           mul_nonneg (mul_nonneg (inv_nonneg.mpr (Nat.cast_nonneg _))
             (pow_nonneg (sub_nonneg.mpr ht.2.le) _))
-            (by rw [hf.iteratedDerivWithin_Icc_eq_Ici (lt_of_le_of_lt hx ht.1) ht]
-                exact hf.neg_one_pow_mul_iteratedDerivWithin_nonneg n
-                  (lt_of_le_of_lt hx ht.1).le)
+            (by
+              have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
+              have hcda : ContDiffAt ℝ (n : WithTop ℕ∞) f t :=
+                (hf.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (by
+                  exact_mod_cast le_top)
+              rw [iteratedDerivWithin_eq_iteratedDeriv
+                    (uniqueDiffOn_Icc (lt_trans ht.1 ht.2)) hcda (Ioo_subset_Icc_self ht),
+                  ← iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcda
+                    (mem_Ici.mpr ht_pos.le)]
+              exact hf.neg_one_pow_mul_iteratedDerivWithin_nonneg n ht_pos.le)
       _ = _ := by ring
   have h_mem : ∀ᵐ t ∂volume.restrict (Icc x T), t ∈ Ioo x T := by
     rw [ae_restrict_iff' measurableSet_Icc]
     exact (Ioo_ae_eq_Icc (a := x) (b := T)).mono (fun t h ht => h.mpr ht)
   exact h_mem.mono fun t ht => by simp only [Pi.zero_apply]; exact hIoo t ht
-
-/-- For a completely monotone `f` the `n = 1` fundamental-theorem identity gives
-`f(x) - f(T) = ∫ₓᵀ (-f'(t)) dt`, with `f'` represented by `iteratedDerivWithin 1` on
-`Icc x T`. -/
-lemma integral_neg_iteratedDerivWithin_one_Icc (hf : IsCompletelyMonotone f)
-    (x T : ℝ) (hx : 0 ≤ x) (hxT : x ≤ T) :
-    f x - f T = ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t := by
-  have hsubset : Icc x T ⊆ Ici 0 := Icc_subset_Ici_self.trans (Ici_subset_Ici.mpr hx)
-  have hcm_Icc : ContDiffOn ℝ 1 f (Icc x T) :=
-    (hf.contDiffOn.mono hsubset).of_le (by exact_mod_cast le_top)
-  rw [iteratedDerivWithin_one, intervalIntegral.integral_neg,
-    intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc hcm_Icc hxT, neg_sub]
-
-/-- The zero-left integral identity `∫₀ᵀ (-f') = f(0) - f(T)` for a completely monotone
-function. -/
-lemma integral_neg_iteratedDerivWithin_one_Icc_zero_left
-    (hf : IsCompletelyMonotone f) (T : ℝ) (hT : 0 ≤ T) :
-    ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t = f 0 - f T := by
-  exact (hf.integral_neg_iteratedDerivWithin_one_Icc 0 T le_rfl hT).symm
 
 end IsCompletelyMonotone
 
@@ -169,8 +140,11 @@ lemma IsCompletelyMonotone.neg_iteratedDerivWithin_one_integrableOn
           rw [uIoc_of_le hT.le] at ht
           simp only [Real.norm_eq_abs]
           rw [abs_of_nonneg (by linarith [hcm.iteratedDerivWithin_one_nonpos ht.1.le])])
-      rw [this, ← hcm.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici T hT.le,
-        hcm.integral_neg_iteratedDerivWithin_one_Icc_zero_left T hT.le]
+      rw [this, ← hcm.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici T hT.le]
+      have hcm_Icc : ContDiffOn ℝ 1 f (Icc 0 T) :=
+        (hcm.contDiffOn.mono Icc_subset_Ici_self).of_le (nat_le_top _)
+      rw [iteratedDerivWithin_one, intervalIntegral.integral_neg,
+        intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc hcm_Icc hT.le, neg_sub]
     exact Tendsto.congr' (EventuallyEq.symm hnorm) (Tendsto.sub tendsto_const_nhds hL)
 
 /-- The improper integral `∫₀^∞ (-f') dt = f(0) - L` for completely monotone functions. -/
@@ -183,8 +157,13 @@ lemma IsCompletelyMonotone.integral_Ioi_neg_iteratedDerivWithin_one
       -iteratedDerivWithin 1 f (Ici 0) t) atTop (nhds (f 0 - L)) :=
     Tendsto.congr'
       ((eventually_gt_atTop 0).mono fun T hT =>
-        ((hcm.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici T hT.le).symm.trans
-          (hcm.integral_neg_iteratedDerivWithin_one_Icc_zero_left T hT.le)).symm)
+        by
+          simp only
+          rw [← hcm.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici T hT.le]
+          have hcm_Icc : ContDiffOn ℝ 1 f (Icc 0 T) :=
+            (hcm.contDiffOn.mono Icc_subset_Ici_self).of_le (nat_le_top _)
+          rw [iteratedDerivWithin_one, intervalIntegral.integral_neg,
+            intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc hcm_Icc hT.le, neg_sub])
       (Tendsto.sub tendsto_const_nhds hL)
   exact tendsto_nhds_unique htend htend2
 

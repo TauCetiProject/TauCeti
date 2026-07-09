@@ -41,12 +41,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E}
 
 /-- At a point `x` in the interior of a unique-differentiability set `s` (`s ∈ 𝓝 x`),
 the derivative of the `k`-th iterated derivative-within-`s` of a `C^(k+1)` function is the
-`(k+1)`-th iterated derivative-within-`s`.
-
-This is Mathlib's `ContDiffOn.differentiableOn_iteratedDerivWithin` followed by
-`DifferentiableOn.hasDerivAt`, with the derivative value rewritten through
-`iteratedDerivWithin_succ`; it is kept as a named lemma because the completely-monotone
-development invokes this composite repeatedly. -/
+`(k+1)`-th iterated derivative-within-`s`. -/
 theorem ContDiffOn.hasDerivAt_iteratedDerivWithin
     {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     {g : 𝕜 → E} {s : Set 𝕜} {k : ℕ}
