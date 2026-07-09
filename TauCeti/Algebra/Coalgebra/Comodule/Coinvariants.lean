@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Algebra.Module.Submodule.EqLocus
-public import TauCeti.Algebra.Coalgebra.Comodule.Hom
 public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 
 /-!
@@ -25,11 +24,11 @@ coinvariants relative to `g`, so `M ↦ M^{co g}` is functorial. On the regular 
 element `g : C` is coinvariant, since `g` is group-like.
 
 This is Layer 1 infrastructure for the reductive-groups roadmap
-(`ReductiveGroups/README.md` in TauCetiRoadmap, "representations = comodules"): the
-coinvariants functor is the comodule-theoretic fixed-point functor, a prerequisite for the
-complete-reducibility (linear reductivity) statements of Layer 6 and for the Hom-space
-computations underlying Tannakian reconstruction. It is built on the existing comodule and
-trivial-comodule API.
+(`ReductiveGroups/README.md` in TauCetiRoadmap, "representations = comodules"): the `g = 1`
+specialization gives the comodule-theoretic fixed-vector/invariants functor needed for the
+complete-reducibility (linear reductivity) statements of Layer 6, while the relative
+`g`-coinvariants developed here support the same Hom-space calculation for any group-like
+source comodule. It is built on the existing comodule and trivial-comodule API.
 
 ## Main definitions
 
@@ -49,8 +48,8 @@ trivial-comodule API.
 ## References
 
 The coinvariants of a comodule are standard; see for example Sweedler,
-*Hopf Algebras*, Chapter 3. This realizes the fixed-point functor of the
-representation ⇆ comodule dictionary in Layer 1 of the Tau Ceti reductive-groups roadmap.
+*Hopf Algebras*, Chapter 3. The `g = 1` specialization realizes the fixed-point functor of
+the representation ⇆ comodule dictionary in Layer 1 of the Tau Ceti reductive-groups roadmap.
 -/
 
 public section
@@ -100,9 +99,8 @@ theorem coinvariants_groupLike_eq_top :
     letI : Comodule R C M := Comodule.groupLike (R := R) (C := C) (M := M) g
     coinvariants R C M g = ⊤ := by
   letI : Comodule R C M := Comodule.groupLike (R := R) (C := C) (M := M) g
-  change LinearMap.eqLocus (Comodule.groupLikeCoact (R := R) (C := C) (M := M) g)
-    (Comodule.groupLikeCoact (R := R) (C := C) (M := M) g) = ⊤
-  exact LinearMap.eqLocus_same _
+  ext m
+  simp [mem_coinvariants]
 
 /-- The regular comodule has `g` among its coinvariants: `g` is group-like, so
 `Δ g = g ⊗ g`. -/
