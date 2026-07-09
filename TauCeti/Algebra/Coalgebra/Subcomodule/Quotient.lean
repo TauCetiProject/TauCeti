@@ -212,7 +212,6 @@ theorem mkQ_apply (m : M) : N.mkQ m = Submodule.Quotient.mk m :=
   rfl
 
 /-- The quotient comodule morphism sends exactly the subcomodule to zero. -/
-@[simp]
 theorem mkQ_eq_zero_iff (m : M) : N.mkQ m = 0 ↔ m ∈ N := by
   rw [mkQ_apply, Submodule.Quotient.mk_eq_zero]
   exact Subcomodule.mem_toSubmodule
