@@ -83,8 +83,8 @@ theorem toMultZMod_ofAdd (n : ℕ) (k : ℤ) :
   simp [toMultZMod]
 
 /-- The multiplicative quotient sends the `𝔾ₘ` generator `Multiplicative.ofAdd 1` to the
-`μ_n` generator `Multiplicative.ofAdd 1`. -/
-@[simp]
+`μ_n` generator `Multiplicative.ofAdd 1`. This is not a `simp` lemma: `simp` already reduces
+the left-hand side to `generator n` via `toMultZMod_ofAdd` and `Int.cast_one`. -/
 theorem toMultZMod_ofAdd_one (n : ℕ) :
     toMultZMod n (Multiplicative.ofAdd 1) = generator n := by
   rw [toMultZMod_ofAdd, Int.cast_one]
