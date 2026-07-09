@@ -28,7 +28,7 @@ variable {X : Type*} [TopologicalSpace X]
 
 /-- Data for a tubular neighborhood in an SLSC space: segment neighborhoods, point
 neighborhoods at all partition points, and the openness/path-connectedness/SLSC subset data. -/
-structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
+public structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
   /-- Segment neighborhoods -/
   U : Fin n → Set X
   /-- Point neighborhoods at ALL partition points (including endpoints) -/

@@ -32,7 +32,7 @@ variable {X : Type*} [TopologicalSpace X]
 /-- Restrict a path whose image lies in a subset to a path in the corresponding subtype.
 The source and target are the given subtype endpoints, and coercing the restricted path back to
 `X` recovers the original path pointwise. -/
-irreducible_def codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val)
+def codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val)
     (hmem : ∀ t, γ t ∈ s) :
     Path x y where
   toFun := s.codRestrict γ hmem
@@ -44,7 +44,7 @@ irreducible_def codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val)
 theorem codRestrict_coe {s : Set X} {x y : s} (γ : Path x.val y.val)
     (hmem : ∀ t, γ t ∈ s) (t : I) :
     (γ.codRestrict hmem t : X) = γ t := by
-  simp [codRestrict_def]
+  rfl
 
 @[simp]
 theorem map_codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val)
@@ -97,7 +97,6 @@ theorem subpath_trans {x y : X} (p : Path x y)
   exact ⟨Path.Homotopy.subpathTransSubpath p a b c⟩
 
 /-- A degenerate subpath represents the reflexivity class at its endpoint. -/
-@[simp]
 theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
     mk (p.subpath a a) = refl (p a) := by
   simp only [← mk_refl, eq]
@@ -105,7 +104,6 @@ theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
 
 /-- The full `[0,1]` subpath represents the original path, up to the endpoint casts inserted by
 `Path.subpath`. -/
-@[simp]
 theorem subpath_zero_one {x y : X} (p : Path x y) :
     mk (p.subpath 0 1) = (mk p).cast (by simp) (by simp) := by
   simp only [← mk_cast, eq]
