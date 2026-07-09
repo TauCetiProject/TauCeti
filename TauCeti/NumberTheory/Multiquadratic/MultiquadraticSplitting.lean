@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 public import Mathlib.LinearAlgebra.Dimension.DivisionRing
 public import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
 public import TauCeti.NumberTheory.Multiquadratic.Galois
-public import TauCeti.NumberTheory.Multiquadratic.SplitsCompletely
+public import TauCeti.NumberTheory.NumberField.SplitsCompletely
 
 /-!
 # The prime-splitting law for a multiquadratic field
