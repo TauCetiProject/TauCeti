@@ -195,7 +195,8 @@ lemma equivSubgroupOrbitsQuotientGroup_symm_mk
 
 /-- The subgroup-orbit quotient equivalence sends the orbit class of `g • x` to the coset
 of `g⁻¹`. -/
-private lemma equivSubgroupOrbitsQuotientGroup_apply_smul
+@[simp]
+lemma equivSubgroupOrbitsQuotientGroup_apply_smul
     [MulAction.IsPretransitive G X] [IsCancelSMul G X] (H : Subgroup G) (x : X) (g : G) :
     MulAction.equivSubgroupOrbitsQuotientGroup x H
         (Quotient.mk'' (g • x) : _root_.MulAction.orbitRel.Quotient H X) =
@@ -206,7 +207,8 @@ private lemma equivSubgroupOrbitsQuotientGroup_apply_smul
 
 /-- `Setoid.map_of_le` sends a representative of the smaller orbit relation to the same
 representative for the larger orbit relation. -/
-private lemma orbitRel_mapOfLE_mk {H K : Subgroup G} (hHK : H ≤ K) (x : X) :
+@[simp]
+lemma orbitRel_mapOfLE_mk {H K : Subgroup G} (hHK : H ≤ K) (x : X) :
     Setoid.map_of_le (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
         (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
       (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient K X) :=
