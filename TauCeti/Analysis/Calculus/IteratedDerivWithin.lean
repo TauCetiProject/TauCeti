@@ -80,8 +80,8 @@ lemma ContDiffOn.tendsto_integral_neg_iteratedDerivWithin_one_Icc_atTop
         (nhds (f a - L)) := by
   refine Tendsto.congr' (EventuallyEq.symm ?_) (Tendsto.sub tendsto_const_nhds hL)
   filter_upwards [eventually_ge_atTop a] with T hT
-  rw [iteratedDerivWithin_one, intervalIntegral.integral_neg,
-    intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc
-      (hf.mono Icc_subset_Ici_self) hT, neg_sub]
+  simpa [iteratedDerivWithin_one, intervalIntegral.integral_neg, neg_sub] using
+    congrArg Neg.neg (intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc
+      (hf.mono Icc_subset_Ici_self) hT)
 
 end TauCeti
