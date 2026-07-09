@@ -153,10 +153,14 @@ theorem baseChangePointsMulEquiv_mapDomain (φ : G →* G')
             (MonoidAlgebra.mapDomainBialgHom k φ)) f) =
       (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (G := G') f).comp φ := by
   ext g
+  have hsingle :
+      MonoidAlgebra.mapDomainBialgHom k φ (MonoidAlgebra.single g (1 : k)) =
+        MonoidAlgebra.single (φ g) 1 := by
+    rw [MonoidAlgebra.mapDomainBialgHom, _root_.BialgHom.ofAlgHom_apply,
+      MonoidAlgebra.mapDomainAlgHom_apply, MonoidAlgebra.mapDomain_single]
   simp only [baseChangePointsMulEquiv_apply_coe, MonoidHom.comp_apply,
     AlgHom.mapDomain_apply_apply, _root_.Bialgebra.TensorProduct.map_tmul,
-    _root_.BialgHom.id_apply, MonoidAlgebra.mapDomainBialgHom_apply,
-    MonoidAlgebra.mapDomain_single]
+    _root_.BialgHom.id_apply, hsingle]
 
 /-- Mapping the base-changed point attached to a character is precomposition of that character
 by the homomorphism of character groups. -/

@@ -91,7 +91,7 @@ theorem single_sub_one_ne_zero [Nontrivial R] {g : G} (hg : g ≠ 1) :
     MonoidAlgebra.single g (1 : R) - 1 ≠ 0 := by
   rw [sub_ne_zero, MonoidAlgebra.one_def]
   intro h
-  exact hg (Finsupp.single_left_injective one_ne_zero h)
+  exact hg (MonoidAlgebra.single_left_injective one_ne_zero h)
 
 /-- **A diagonalizable group with `p`-torsion is non-reduced in characteristic `p`.** If `R` has
 characteristic `p` and `G` has a nontrivial element `g` with `g ^ p = 1`, then the coordinate

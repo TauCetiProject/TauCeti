@@ -71,7 +71,8 @@ variable [CommGroup G] [CommGroup G'] [CommGroup G'']
 private theorem mapDomainBialgHom_single_one (φ : G →* G') (g : G) :
     MonoidAlgebra.mapDomainBialgHom R φ (MonoidAlgebra.single g (1 : R)) =
       MonoidAlgebra.single (φ g) 1 := by
-  rw [MonoidAlgebra.mapDomainBialgHom_apply, MonoidAlgebra.mapDomain_single]
+  rw [MonoidAlgebra.mapDomainBialgHom, BialgHom.ofAlgHom_apply,
+    MonoidAlgebra.mapDomainAlgHom_apply, MonoidAlgebra.mapDomain_single]
 
 /-- **The diagonalizable group is contravariant in the abelian group.** A group homomorphism
 `φ : G →* G'` induces, by pre-composition with the bialgebra map `R[G] →ₐc[R] R[G']`, a
