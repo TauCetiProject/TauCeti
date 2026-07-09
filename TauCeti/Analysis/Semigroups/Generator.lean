@@ -32,24 +32,21 @@ namespace TauCeti.Semigroups
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 
-/-- The integral averages `(1/t) • ∫_{(0,t]} g u du` of a function continuous on
-`[0, ∞)` tend to `g 0` as `t → 0⁺`. -/
+/-- The integral averages `(1/t) • ∫_{(0,t]} g u du` of a function continuous at `0` from
+the right tend to `g 0` as `t → 0⁺`. -/
 private theorem tendsto_average_Ioc_zero_of_continuousOn_Ici
-    {g : ℝ → X} (hg : ContinuousOn g (Set.Ici 0)) :
+    {g : ℝ → X}
+    (hmeas : StronglyMeasurableAtFilter g (nhdsWithin (0 : ℝ) (Set.Ioi 0)) volume)
+    (hg0 : ContinuousWithinAt g (Set.Ioi 0) 0) :
     Filter.Tendsto
       (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, g u)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds (g 0)) := by
-  have hmeas : StronglyMeasurableAtFilter g (nhdsWithin (0 : ℝ) (Set.Ioi 0)) volume :=
-    (hg.mono Set.Ioi_subset_Ici_self).stronglyMeasurableAtFilter_nhdsWithin
-      measurableSet_Ioi 0
-  have h_ftc : HasDerivWithinAt (fun u => ∫ t in (0 : ℝ)..u, g t) (g 0) (Set.Ici 0) 0 :=
-    intervalIntegral.integral_hasDerivWithinAt_right IntervalIntegrable.refl hmeas
-      ((hg 0 Set.self_mem_Ici).mono Set.Ioi_subset_Ici_self)
-  have hset : Set.Ici (0 : ℝ) \ {0} = Set.Ioi 0 := by
-    ext x
-    simp only [Set.mem_sdiff, Set.mem_Ici, Set.mem_singleton_iff, Set.mem_Ioi]
-    exact ⟨fun ⟨h1, h2⟩ => h1.lt_of_ne (Ne.symm h2), fun h => ⟨h.le, h.ne'⟩⟩
-  rw [hasDerivWithinAt_iff_tendsto_slope, hset] at h_ftc
+  have h_ftc :
+      HasDerivWithinAt (fun u => ∫ t in (0 : ℝ)..u, g t) (g 0) (Set.Ioi 0) 0 :=
+    (intervalIntegral.integral_hasDerivWithinAt_right IntervalIntegrable.refl hmeas
+      hg0).Ioi_of_Ici
+  rw [hasDerivWithinAt_iff_tendsto_slope,
+    Set.sdiff_singleton_eq_self (by simp : (0 : ℝ) ∉ Set.Ioi 0)] at h_ftc
   refine h_ftc.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
   rw [slope_def_module, sub_zero, intervalIntegral.integral_same, sub_zero,
@@ -179,8 +176,14 @@ theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
     Filter.Tendsto
       (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, S.realOperator u x)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds x) := by
+  have h_cont_Ioi : ContinuousOn (fun u => S.realOperator u x) (Set.Ioi 0) := by
+    intro u hu
+    exact ((S.realOperator_continuousWithinAt x u hu.le).continuousAt
+      (Ici_mem_nhds hu)).continuousWithinAt
   have h := tendsto_average_Ioc_zero_of_continuousOn_Ici
-    (g := fun u => S.realOperator u x) (fun u hu => S.realOperator_continuousWithinAt x u hu)
+    (g := fun u => S.realOperator u x)
+    (h_cont_Ioi.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Ioi 0)
+    ((S.realOperator_continuousWithinAt x 0 le_rfl).mono Set.Ioi_subset_Ici_self)
   simpa using h
 
 private theorem StronglyContinuousSemigroup.intervalIntegrable_orbit
