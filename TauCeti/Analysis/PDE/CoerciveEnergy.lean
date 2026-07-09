@@ -43,7 +43,7 @@ energy method, as in Evans, *Partial Differential Equations*, Chapter 6.
   the diagonal estimates.
 * `TauCeti.PDE.garding_energyIntegrand_self_of_mass_lower_bound_of_bounds`: pointwise
   Gårding lower bound with a mass floor.
-* `TauCeti.PDE.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self`: explicit
+* `TauCeti.PDE.min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self`: explicit
   diagonal estimate from the mass-floor lower bound.
 * `TauCeti.PDE.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self`: explicit
   zero-drift diagonal lower bound from a principal quadratic lower bound and nonnegative mass.
@@ -120,13 +120,13 @@ lemma garding_energyIntegrand_self_of_mass_lower_bound_of_bounds_on {Ω : Set X}
 
 /-- Positivity of the explicit diagonal lower-bound constant under the mass-floor dominance
 condition `β² / (2λ) < μ`. -/
-lemma min_coercivityConstant_pos (hlam : 0 < lam) (hmu : beta ^ 2 / (2 * lam) < mu) :
+lemma min_diagonalLowerBound_pos (hlam : 0 < lam) (hmu : beta ^ 2 / (2 * lam) < mu) :
     0 < min (lam / 2) (mu - beta ^ 2 / (2 * lam)) :=
   lt_min (half_pos hlam) (sub_pos.mpr hmu)
 
 /-- The mass-floor Gårding lower bound implies the explicit diagonal estimate with constant
 `min (λ / 2) (μ - β² / (2λ))`, assuming this second coefficient is nonnegative. -/
-lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self (hlam : 0 < lam)
+lemma min_diagonalLowerBound_mul_norm_sq_le_energyIntegrand_self (hlam : 0 < lam)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (hA : ∀ ξ : EuclideanSpace ℝ n, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
     (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) ≤ mu)
