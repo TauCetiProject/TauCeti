@@ -32,9 +32,9 @@ namespace TauCeti.Semigroups
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 
-/-- The integral averages `(1/t) • ∫_{(0,t]} g u du` of a function continuous at `0` from
-the right tend to `g 0` as `t → 0⁺`. -/
-private theorem tendsto_average_Ioc_zero_of_continuousOn_Ici
+/-- The integral averages `(1/t) • ∫_{(0,t]} g u du` of a function that is locally strongly
+measurable and continuous at `0` from the right tend to `g 0` as `t → 0⁺`. -/
+private theorem tendsto_average_Ioc_zero_of_stronglyMeasurableAtFilter_continuousWithinAt_Ioi
     {g : ℝ → X}
     (hmeas : StronglyMeasurableAtFilter g (nhdsWithin (0 : ℝ) (Set.Ioi 0)) volume)
     (hg0 : ContinuousWithinAt g (Set.Ioi 0) 0) :
@@ -178,7 +178,7 @@ theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
       (nhdsWithin 0 (Set.Ioi 0)) (nhds x) := by
   have h_cont_Ioi : ContinuousOn (fun u => S.realOperator u x) (Set.Ioi 0) :=
     (S.realOperator_continuousOn_Ici x).mono Set.Ioi_subset_Ici_self
-  have h := tendsto_average_Ioc_zero_of_continuousOn_Ici
+  have h := tendsto_average_Ioc_zero_of_stronglyMeasurableAtFilter_continuousWithinAt_Ioi
     (g := fun u => S.realOperator u x)
     (h_cont_Ioi.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Ioi 0)
     ((S.realOperator_continuousWithinAt x 0 le_rfl).mono Set.Ioi_subset_Ici_self)
