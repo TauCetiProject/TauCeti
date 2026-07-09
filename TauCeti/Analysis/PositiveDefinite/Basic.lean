@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.Complex.Order
-public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Algebra.BigOperators.Fin
 public import TauCeti.Analysis.PositiveDefinite.Kernel
 public import TauCeti.Analysis.PositiveDefinite.KernelBounds
@@ -199,8 +198,7 @@ private theorem kernel_form_nonneg (hF : IsPositiveDefinite F) {ι : Type*} [Fin
   rw [Complex.conj_conj]
 
 /-- A positive-definite function `F` induces the positive-definite kernel `K(a, b) = F(a + b⋆)`.
-This is the forward half of the function ↔ kernel correspondence, and the primitive through which
-`F`'s closure and boundedness API is derived from the kernel calculus. -/
+This is the forward half of the function ↔ kernel correspondence. -/
 theorem isPositiveDefiniteKernel (hF : IsPositiveDefinite F) :
     IsPositiveDefiniteKernel (fun a b => F (a + star b)) :=
   isPositiveDefiniteKernel_iff.mpr
