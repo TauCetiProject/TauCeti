@@ -108,22 +108,6 @@ theorem diffCongr_mem_fixingSubgroup_image (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set
   rw [← map_fixingSubgroup_diffCongr e s]
   exact ⟨φ, hφ, rfl⟩
 
-/-- Conjugating by `e` sends diffeomorphisms fixing `s` pointwise to diffeomorphisms fixing any
-subset of the image of `s`. -/
-theorem diffCongr_mem_fixingSubgroup_of_subset_image (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M}
-    {t : Set N} (ht : t ⊆ e '' s) {φ : M ≃ₘ^n⟮I, I⟯ M}
-    (hφ : φ ∈ fixingSubgroup (I := I) (n := n) s) :
-    diffCongr e φ ∈ fixingSubgroup (I := J) (n := n) t := by
-  exact fixingSubgroup_antitone ht (diffCongr_mem_fixingSubgroup_image e hφ)
-
-/-- Conjugating by `e` sends diffeomorphisms fixing `s` pointwise to diffeomorphisms fixing a
-named target `t` pointwise, when `t` is the image of `s`. -/
-theorem diffCongr_mem_fixingSubgroup_of_image_eq (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M} {t : Set N}
-    (hst : e '' s = t) {φ : M ≃ₘ^n⟮I, I⟯ M}
-    (hφ : φ ∈ fixingSubgroup (I := I) (n := n) s) :
-    diffCongr e φ ∈ fixingSubgroup (I := J) (n := n) t := by
-  exact diffCongr_mem_fixingSubgroup_of_subset_image e hst.ge hφ
-
 /-- Conjugating by `e.symm` sends diffeomorphisms fixing `e '' s` pointwise back to
 diffeomorphisms fixing `s` pointwise. -/
 theorem diffCongr_symm_mem_fixingSubgroup (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M}
@@ -134,22 +118,6 @@ theorem diffCongr_symm_mem_fixingSubgroup (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set 
     exact hψ
   rcases hmap with ⟨φ, hφ, rfl⟩
   simpa [diffCongr_symm] using hφ
-
-/-- Conjugating by `e.symm` sends diffeomorphisms fixing a superset of `e '' s` pointwise back to
-diffeomorphisms fixing `s` pointwise. -/
-theorem diffCongr_symm_mem_fixingSubgroup_of_image_subset (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M}
-    {t : Set N} (ht : e '' s ⊆ t) {ψ : N ≃ₘ^n⟮J, J⟯ N}
-    (hψ : ψ ∈ fixingSubgroup (I := J) (n := n) t) :
-    diffCongr e.symm ψ ∈ fixingSubgroup (I := I) (n := n) s := by
-  exact diffCongr_symm_mem_fixingSubgroup e (fixingSubgroup_antitone ht hψ)
-
-/-- Conjugating by `e.symm` sends diffeomorphisms fixing a named target `t` pointwise back to
-diffeomorphisms fixing `s` pointwise, when `t` is the image of `s`. -/
-theorem diffCongr_symm_mem_fixingSubgroup_of_image_eq (e : M ≃ₘ^n⟮I, J⟯ N) {s : Set M}
-    {t : Set N} (hst : e '' s = t) {ψ : N ≃ₘ^n⟮J, J⟯ N}
-    (hψ : ψ ∈ fixingSubgroup (I := J) (n := n) t) :
-    diffCongr e.symm ψ ∈ fixingSubgroup (I := I) (n := n) s := by
-  exact diffCongr_symm_mem_fixingSubgroup_of_image_subset e hst.le hψ
 
 /-- Conjugation by a diffeomorphism identifies the relative diffeomorphism group fixing `s`
 pointwise with the relative diffeomorphism group fixing a named target `t` pointwise, when `t` is
