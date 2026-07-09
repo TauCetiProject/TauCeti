@@ -39,8 +39,6 @@ energy method, as in Evans, *Partial Differential Equations*, Chapter 6.
 
 ## Main declarations
 
-* `TauCeti.PDE.min_mul_prod_norm_sq_le_add`: product sup-norm lower-bound bridge for
-  the diagonal estimates.
 * `TauCeti.PDE.garding_energyIntegrand_self_of_mass_lower_bound_of_bounds`: pointwise
   Gårding lower bound with a mass floor.
 * `TauCeti.PDE.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self`: explicit
@@ -67,7 +65,7 @@ variable {lam mu beta : ℝ}
 
 /-- The square of the product sup norm is controlled by the two squared coordinate norms
 with the smaller coefficient. -/
-lemma min_mul_prod_norm_sq_le_add (hlam : 0 ≤ lam) (hmu : 0 ≤ mu)
+private lemma min_mul_prod_norm_sq_le_add (hlam : 0 ≤ lam) (hmu : 0 ≤ mu)
     {E F : Type*} [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] (U : E × F) :
     min lam mu * ‖U‖ ^ 2 ≤ lam * ‖U.2‖ ^ 2 + mu * ‖U.1‖ ^ 2 := by
   have hmin_lam : min lam mu ≤ lam := min_le_left _ _
@@ -120,12 +118,6 @@ lemma garding_energyIntegrand_self_of_mass_lower_bound_of_bounds_on {Ω : Set X}
     lam / 2 * ‖U.2‖ ^ 2 + (mu - beta ^ 2 / (2 * lam)) * U.1 ^ 2
       ≤ energyIntegrand (a x) (b x) (c x) U U :=
   garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam (hA hx) (hb hx) (hc hx) U
-
-/-- Positivity of the explicit diagonal lower-bound constant under the mass-floor dominance
-condition `β² / (2λ) < μ`. -/
-lemma min_diagonal_lower_bound_pos (hlam : 0 < lam) (hmu : beta ^ 2 / (2 * lam) < mu) :
-    0 < min (lam / 2) (mu - beta ^ 2 / (2 * lam)) :=
-  lt_min (half_pos hlam) (sub_pos.mpr hmu)
 
 /-- The mass-floor Gårding lower bound implies the explicit diagonal estimate with constant
 `min (λ / 2) (μ - β² / (2λ))`, assuming this second coefficient is nonnegative. -/
