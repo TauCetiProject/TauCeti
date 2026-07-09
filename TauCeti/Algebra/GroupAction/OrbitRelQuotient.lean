@@ -7,6 +7,7 @@ module
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
 public import TauCeti.Algebra.Group.NormalizerQuotient
+public import TauCeti.Data.Setoid.Basic
 
 /-!
 # Generic orbit-relation quotient helpers
@@ -41,25 +42,12 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
 * `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk` and
   `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE`: the representative convention of
-  Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions, with
-  `TauCeti.Setoid.map_of_le_mk` recording the induced map on representatives.
+  Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions.
 -/
 
 public section
 
 namespace TauCeti
-
-namespace Setoid
-
-/-- The quotient map induced by a setoid inequality sends a representative to the same
-representative in the larger quotient. -/
-@[simp]
-lemma map_of_le_mk {α : Type*} {s t : Setoid α} (h : s ≤ t) (x : α) :
-    _root_.Setoid.map_of_le h (Quotient.mk'' x : Quotient s) =
-      (Quotient.mk'' x : Quotient t) :=
-  Quotient.map'_mk'' id h x
-
-end Setoid
 
 namespace MulAction
 
