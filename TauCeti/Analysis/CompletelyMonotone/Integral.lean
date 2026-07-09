@@ -12,15 +12,19 @@ public import TauCeti.Analysis.CompletelyMonotone.Basic
 /-!
 # Integral lemmas for completely monotone functions
 
-Taylor-remainder sign bounds and improper-integral facts about completely monotone functions.
+Taylor-remainder sign bounds and finite- and improper-integral facts about completely monotone
+functions.
 
 These extend the object API in `CompletelyMonotone/Basic.lean` with the sign of the Taylor
-integral remainder and improper-integral facts for the first derivative within `[0, ∞)`.
+integral remainder, the finite-interval integral-of-`(-f')` identity, and improper-integral facts
+for the first derivative within `[0, ∞)`.
 
 ## Main declarations
 
 * `TauCeti.IsCompletelyMonotone.neg_one_pow_mul_taylor_remainder_nonneg`: the Taylor integral
   remainder has sign `(-1)ⁿ`.
+* `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub`: on a compact
+  interval in `[0, ∞)`, the integral of `-f'` is the endpoint drop `f x - f T`.
 * `TauCeti.IsCompletelyMonotone.neg_iteratedDerivWithin_one_integrableOn`,
   `TauCeti.IsCompletelyMonotone.integral_Ioi_neg_iteratedDerivWithin_one`: integrability and the
   improper integral of `-f'` on `(0, ∞)`, represented as `iteratedDerivWithin 1`.
