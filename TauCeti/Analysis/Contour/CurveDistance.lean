@@ -53,9 +53,7 @@ theorem exists_curve_dist_lower_bound {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ}
 /-- **Uniform distance to the curve on a neighbourhood of an avoided point.** If `γ` is continuous
 on the interval with endpoints `a`, `b` and avoids `w₀` there, then there is a radius `ε > 0` such
 that every `w` within `ε` of `w₀` stays at distance at least `ε` from the whole curve: for all
-`t ∈ Set.uIcc a b`, `ε ≤ ‖γ t - w‖`. Take `ε = ρ / 2` for the uniform distance `ρ` to `w₀` of
-`exists_curve_dist_lower_bound`; a point `w` within `ρ / 2` of `w₀` then stays `ρ / 2` from `γ` by
-the triangle inequality. Stated on the oriented interval `Set.uIcc a b`. -/
+`t ∈ Set.uIcc a b`, `ε ≤ ‖γ t - w‖`. Stated on the oriented interval `Set.uIcc a b`. -/
 theorem exists_ball_dist_curve_lower_bound {γ : ℝ → ℂ} {w₀ : ℂ} {a b : ℝ}
     (hγ : ContinuousOn γ (uIcc a b)) (h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w₀) :
     ∃ ε > 0, ∀ w ∈ Metric.ball w₀ ε, ∀ t ∈ uIcc a b, ε ≤ ‖γ t - w‖ := by
