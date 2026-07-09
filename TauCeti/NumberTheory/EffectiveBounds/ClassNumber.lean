@@ -41,9 +41,11 @@ example needs.
 
 ## Provenance
 
-Migrated from
+The general class-number estimate was migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the
 formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture.
+The product and quadratic specializations are local corollaries combining that estimate with the
+migrated discriminant and unit-square bounds.
 -/
 
 public section

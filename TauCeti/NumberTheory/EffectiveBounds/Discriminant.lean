@@ -42,11 +42,12 @@ The final section evaluates the bound on a quadratic square-root field: for `K =
 
 ## Provenance
 
-Migrated from
+The general algebraic-integer basis discriminant bound was migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the
 formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance
 conjecture, where this was a discriminant input to a class-number bound; the statement holds
-over an arbitrary number field.
+over an arbitrary number field. The quadratic closed-form bounds are local compositions of this
+bound with the trace-form calculation for a square-root basis.
 -/
 
 public section
