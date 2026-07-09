@@ -5,6 +5,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
+import TauCeti.FieldTheory.Trace
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import Mathlib.Algebra.Polynomial.Monic
 
 /-!
 # An effective discriminant bound from a basis of algebraic integers
@@ -30,13 +34,20 @@ computations (for example the roadmap's `ℚ(i)` worked example) carry:
 `natAbs_discr_le_of_basis_isIntegral_of_discr_eq_int` and its `_of_natAbs_le`/`_eq_nat` variants,
 and `abs_discr_le_int_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le`.
 
+The final section evaluates the bound on a quadratic square-root field: for `K = ℚ(x)` with
+`x² = a ∈ ℤ` and `x ∉ ℚ`, the `{1, x}` trace-form discriminant is `4·a`, giving the closed form
+`|d_K| ≤ 4·|a|` (`abs_discr_le_of_sq_intCast`, and its integer form
+`abs_discr_le_int_of_sq_intCast`). This is the tool the roadmap's quadratic worked examples need:
+`ℚ(i)` (`a = -1`) gives `|d_K| ≤ 4`, and `ℚ(√-5)` (`a = -5`) gives `|d_K| ≤ 20`.
+
 ## Provenance
 
-Migrated from
+The general algebraic-integer basis discriminant bound was migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the
 formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance
 conjecture, where this was a discriminant input to a class-number bound; the statement holds
-over an arbitrary number field.
+over an arbitrary number field. The quadratic closed-form bounds are local compositions of this
+bound with the trace-form calculation for a square-root basis.
 -/
 
 public section
@@ -138,5 +149,58 @@ theorem abs_discr_le_int_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le
   rw [Int.abs_eq_natAbs]
   exact_mod_cast
     natAbs_discr_le_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le b hb hdisc hd
+
+/-- For a quadratic number field `K` and an element `x : K` whose square is an integer
+`a` and which is not rational, the field discriminant satisfies `|d_K| ≤ 4·|a|`. -/
+theorem abs_discr_le_of_sq_intCast {K : Type*} [Field K] [NumberField K]
+    {x : K} {a : ℤ} (hfin : finrank ℚ K = 2)
+    (hx2 : x ^ 2 = algebraMap ℤ K a) (hx : x ∉ (algebraMap ℚ K).range) :
+    |(NumberField.discr K : ℚ)| ≤ 4 * |(a : ℚ)| := by
+  classical
+  -- The square root also satisfies `x² = (a : ℚ)` through the `ℚ`-algebra structure.
+  have hcast : algebraMap ℤ K a = algebraMap ℚ K (a : ℚ) := by
+    rw [IsScalarTower.algebraMap_apply ℤ ℚ K, eq_intCast (algebraMap ℤ ℚ) a]
+  have hx2' : x ^ 2 = algebraMap ℚ K (a : ℚ) := hx2.trans hcast
+  -- `x ≠ 0`, else `x = algebraMap ℚ K 0` would be rational.
+  have hxne : x ≠ 0 := by
+    rintro rfl
+    exact hx ⟨0, by rw [map_zero]⟩
+  -- `{1, x}` is linearly independent over `ℚ`: `x` is nonzero and not a `ℚ`-multiple of `1`.
+  have hli : LinearIndependent ℚ ![1, x] := by
+    rw [linearIndependent_fin2]
+    refine ⟨by simpa using hxne, ?_⟩
+    intro c hc
+    simp only [Matrix.cons_val_one, Matrix.cons_val_zero] at hc
+    rw [Algebra.smul_def] at hc
+    refine hx ⟨c⁻¹, ?_⟩
+    rw [map_inv₀]
+    exact inv_eq_of_mul_eq_one_right hc
+  -- A linearly independent family of `finrank` vectors is a basis.
+  have hcard : Fintype.card (Fin 2) = finrank ℚ K := by
+    rw [Fintype.card_fin]; exact hfin.symm
+  set b := basisOfLinearIndependentOfCardEqFinrank' ![1, x] hli hcard with hb_def
+  have hbcoe : ⇑b = ![1, x] := coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
+  -- The basis consists of algebraic integers: `1` is integral, and `x` is a root of `X² - a`.
+  have hxint : IsIntegral ℤ x := by
+    refine ⟨Polynomial.X ^ 2 - Polynomial.C a,
+      Polynomial.monic_X_pow_sub_C a (by norm_num), ?_⟩
+    rw [Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, Polynomial.eval₂_C, ← hx2, sub_self]
+  have hb_int : ∀ i, IsIntegral ℤ (b i) := by
+    intro i
+    fin_cases i
+    · simpa [hbcoe] using (isIntegral_one : IsIntegral ℤ (1 : K))
+    · simpa [hbcoe] using hxint
+  -- Combine the effective bound with the trace-form evaluation `disc ℚ {1, x} = 4·a`.
+  have hmain := TauCeti.NumberField.abs_discr_le_of_basis_isIntegral b hb_int
+  rw [hbcoe, TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap hfin hx2' hx] at hmain
+  simpa [abs_mul] using hmain
+
+/-- The integer form of the quadratic discriminant bound: `|d_K| ≤ 4·|a|` over `ℤ`, for a
+quadratic field `K` with `x² = a ∈ ℤ` and `x ∉ ℚ`. -/
+theorem abs_discr_le_int_of_sq_intCast {K : Type*} [Field K] [NumberField K]
+    {x : K} {a : ℤ} (hfin : finrank ℚ K = 2)
+    (hx2 : x ^ 2 = algebraMap ℤ K a) (hx : x ∉ (algebraMap ℚ K).range) :
+    |NumberField.discr K| ≤ 4 * |a| := by
+  exact_mod_cast abs_discr_le_of_sq_intCast hfin hx2 hx
 
 end TauCeti.NumberField
