@@ -93,7 +93,7 @@ theorem toMultZMod_ofAdd_one (n : ℕ) :
 `ℤ ↠ ℤ/n` under the diagonalizable functor: precomposition with the surjection
 `R[Multiplicative ℤ] ↠ R[Multiplicative (ZMod n)]` of coordinate Hopf algebras carries a
 point of `μ_n = D(ℤ/n)` to a point of `𝔾ₘ = D(ℤ)`. -/
-noncomputable abbrev inclusion (n : ℕ) :
+noncomputable def inclusion (n : ℕ) :
     WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A) →*
       WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) :=
   DiagonalizableGroup.pointsMap (toMultZMod n)
@@ -102,7 +102,7 @@ noncomputable abbrev inclusion (n : ℕ) :
 theorem inclusion_apply (n : ℕ)
     (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
     inclusion n f = DiagonalizableGroup.pointsMap (toMultZMod n) f :=
-  rfl
+  by rfl
 
 /-- **Reading the character of an included point.** The character of `inclusion n f`, a point of
 `𝔾ₘ`, is the `μ_n` character of `f` precomposed with the quotient `ℤ ↠ ℤ/n`. -/
