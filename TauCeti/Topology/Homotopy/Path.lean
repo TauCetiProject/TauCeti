@@ -36,12 +36,14 @@ def codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val)
   source' := Subtype.ext γ.source
   target' := Subtype.ext γ.target
 
+/-- The underlying point of `γ.codRestrict hmem` at time `t` is just `γ t`, viewed in `X`. -/
 @[simp]
 theorem codRestrict_coe {s : Set X} {x y : s} (γ : Path x.val y.val)
     (hmem : ∀ t, γ t ∈ s) (t : I) :
     (γ.codRestrict hmem t : X) = γ t := by
   rfl
 
+/-- Mapping `γ.codRestrict hmem` back along the subtype inclusion recovers `γ`. -/
 @[simp]
 theorem map_codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val)
     (hmem : ∀ t, γ t ∈ s) :
@@ -123,6 +125,7 @@ theorem of_trans_symm {γ γ' : Path x₀ x₁}
 namespace Quotient
 variable {x₀ x₁ : X}
 
+/-- Casting the reflexivity class at `x` along `h : y = x` gives the reflexivity class at `y`. -/
 @[simp, grind =]
 theorem refl_cast {x y : X} (h : y = x) : (refl x).cast h h = refl y := by
   cases h; rfl
