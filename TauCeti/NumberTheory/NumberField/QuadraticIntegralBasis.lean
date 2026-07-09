@@ -11,12 +11,12 @@ import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 /-!
 # The `{1, x}` integral basis of a quadratic field
 
-This is a proof-side helper for the effective discriminant bound and its worked examples: in a
-quadratic number field `K`, an algebraic integer `x` that is not rational produces the `ℚ`-basis
-`{1, x}` consisting of algebraic integers. Both the general square-root discriminant bound
-(`TauCeti.NumberField.abs_discr_le_of_sq_intCast`) and the `ℚ(i)` worked example feed this basis
-into the trace-form discriminant machinery, so the construction lives here rather than inside the
-public discriminant API.
+In a quadratic number field `K`, an algebraic integer `x` that is not rational yields the
+`ℚ`-basis `{1, x}` of `K`, all of whose members are algebraic integers. This is the standard
+integral power basis attached to a primitive integral generator of a quadratic field, and it is
+the natural input to the trace-form discriminant machinery. It is stated here as reusable
+number-field API; the effective discriminant bound and the `ℚ(i)` worked example are among its
+consumers.
 -/
 
 public section

@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.Cyclotomic.Basic
 import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 import TauCeti.NumberTheory.EffectiveBounds.ClassNumber
 import TauCeti.NumberTheory.EffectiveBounds.DiscriminantEquality
-import TauCeti.NumberTheory.EffectiveBounds.QuadraticIntegralBasis
+import TauCeti.NumberTheory.NumberField.QuadraticIntegralBasis
 import TauCeti.FieldTheory.Trace
 import Mathlib.FieldTheory.KummerPolynomial
 

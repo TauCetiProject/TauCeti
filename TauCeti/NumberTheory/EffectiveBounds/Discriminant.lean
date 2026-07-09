@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
-import TauCeti.NumberTheory.EffectiveBounds.QuadraticIntegralBasis
+import TauCeti.NumberTheory.NumberField.QuadraticIntegralBasis
 import TauCeti.FieldTheory.Trace
 import Mathlib.Algebra.Polynomial.Monic
 
