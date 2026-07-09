@@ -11,14 +11,14 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.FixedDegreeAddition
 # Fixed-degree compatibility for Abel-Jacobi divisor classes
 
 This file records fixed-degree effective-divisor and symmetric-power compatibility for the
-formal Abel-Jacobi divisor class map.  For an effective divisor `D` of degree `d`, the
-underlying weighted divisor-level map sends
+formal Abel-Jacobi divisor class map.  For an effective divisor `D`, the underlying weighted
+divisor-level map sends
 
 `D ↦ [D - weightedDegree w D • [x₀]] ∈ Pic⁰`.
 
-At the constant weight `1` this specializes to `D ↦ [D - deg(D) • [x₀]] ∈ Pic⁰`, and
-therefore models the divisor-class shadow of the Abel map on symmetric powers
-`Symᵈ X → Pic⁰ X`, `D ↦ 𝒪_X(D - d·x₀)`.
+At the constant weight `1` this specializes to `D ↦ [D - deg(D) • [x₀]] ∈ Pic⁰`, and for
+ordinary degree-`d` divisors therefore models the divisor-class shadow of the Abel map on
+symmetric powers `Symᵈ X → Pic⁰ X`, `D ↦ 𝒪_X(D - d·x₀)`.
 
 The file does not introduce a parallel fixed-degree Abel-map API.  It states the required
 fixed-degree and `Sym.append` facts directly in terms of the existing divisor-level

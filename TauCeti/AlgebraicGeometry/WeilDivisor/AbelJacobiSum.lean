@@ -16,10 +16,10 @@ point `x₀`, the degree splitting
 
 `Cl(X) ≃+ Pic⁰(X) × ℤ`
 
-has first component `c ↦ c - deg(c) · [x₀]`. Composing this component with the divisor-class
-map gives the additive Abel-Jacobi sum of a formal divisor:
+has first component `c ↦ c - (weightedDegreeClass w h c) · [x₀]`. Composing this component
+with the divisor-class map gives the additive Abel-Jacobi sum of a formal divisor:
 
-`D ↦ [D - deg(D) · x₀] ∈ Pic⁰`.
+`D ↦ [D - weightedDegree w D · x₀] ∈ Pic⁰`.
 
 For a divisor `D = ∑ nₓ[x]`, this is the finite sum `∑ nₓ AJ(x)`. This is the formal
 divisor-class shadow of the Abel maps `D ↦ 𝒪_X(D - d x₀)` used later to construct the
@@ -61,16 +61,16 @@ private lemma zsmul_ofPoint_eq_single (n : ℤ) (x : X) :
 
 /-- The additive Abel-Jacobi sum of a Weil divisor.
 
-For a divisor `D`, this is the class of `D - deg(D) • [x₀]` in the abstract weighted
-degree-zero Picard group. On point divisors it recovers `weightedAbelJacobiClass`, and on
-finite sums it is the corresponding sum of point Abel-Jacobi classes. -/
+For a divisor `D`, this is the class of `D - weightedDegree w D • [x₀]` in the abstract
+weighted-degree-zero Picard group. On point divisors it recovers `weightedAbelJacobiClass`,
+and on finite sums it is the corresponding sum of point Abel-Jacobi classes. -/
 noncomputable def weightedAbelJacobiDivisorClass (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) : WeilDivisor X →+ picZero w h :=
   ((S.degreeCorrection w h x₀).comp S.divisorClass).codRestrict (picZero w h) fun D =>
     S.degreeCorrection_mem_picZero w h hx₀ (S.divisorClass D)
 
 /-- Coercing the weighted Abel-Jacobi sum to the class group gives the divisor class of
-`D - deg(D) • [x₀]`. This is the canonical class-group form of the construction. -/
+`D - weightedDegree w D • [x₀]`. This is the canonical class-group form of the construction. -/
 @[simp]
 lemma coe_weightedAbelJacobiDivisorClass_apply (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) (D : WeilDivisor X) :

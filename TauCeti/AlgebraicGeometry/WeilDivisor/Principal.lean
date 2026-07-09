@@ -300,6 +300,12 @@ constant weight `1`, appropriate for the algebraically closed/unweighted formal 
 @[expose] def IsUnweightedDegreeZero : Prop :=
   S.IsWeightedDegreeZero fun _ => (1 : ℤ)
 
+lemma IsUnweightedDegreeZero.principalSubgroup_le_ker (h : S.IsUnweightedDegreeZero) :
+    S.principalSubgroup ≤ (degree : WeilDivisor X →+ ℤ).ker := by
+  intro D hD
+  rw [AddMonoidHom.mem_ker, ← weightedDegree_one_eq_degree D]
+  exact h.principalSubgroup_le_weightedDegree_ker hD
+
 /-- The unweighted degree map on divisor classes, for the algebraically closed/unweighted
 specialization: the descended degree `weightedDegreeClass` at the constant weight `1`. For
 curves over a general field, use `weightedDegreeClass`. -/

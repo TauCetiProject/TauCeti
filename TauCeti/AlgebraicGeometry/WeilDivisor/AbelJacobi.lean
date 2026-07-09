@@ -13,8 +13,8 @@ This file adds the point-level divisor-class shadow of the Abel-Jacobi map to th
 Layer A divisor API.  Once the Jacobian is constructed as `Pic⁰(X)`, the Abel-Jacobi morphism
 attached to a base point `x₀` sends a point `x` to the degree-zero line bundle
 `𝒪_X(x - x₀)` over an algebraically closed field.  For closed points over a non-algebraically
-closed field, the degree-corrected divisor is `x - deg(x) x₀`, when `x₀` has residue degree
-`1`.
+closed field, the weighted-degree-corrected divisor is `x - w(x) x₀`, when `x₀` has residue
+degree `1`.
 
 Here the geometry is still abstracted to an `OrderSystem` and an integer-valued weight
 `w : X → ℤ`.  We define the formal divisor `[x] - w(x)[x₀]`, prove it has weighted degree zero
