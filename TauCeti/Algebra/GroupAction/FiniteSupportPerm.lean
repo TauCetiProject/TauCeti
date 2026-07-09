@@ -17,8 +17,6 @@ public section
 
 namespace TauCeti
 
-variable {ι : Type*}
-
 /-- Constructor for Mathlib's finite-support predicate from an eventual fixedness bound. -/
 theorem finite_compl_fixedBy_of_eventually_eq_self {π : Equiv.Perm ℕ}
     (hπ : ∃ N, ∀ n, N ≤ n → π n = n) : (MulAction.fixedBy ℕ π)ᶜ.Finite := by
@@ -44,10 +42,10 @@ theorem finite_compl_fixedBy_iff_eventually_eq_self {π : Equiv.Perm ℕ} :
     (MulAction.fixedBy ℕ π)ᶜ.Finite ↔ ∃ N, ∀ n, N ≤ n → π n = n :=
   ⟨finite_compl_fixedBy_eventually_eq_self, finite_compl_fixedBy_of_eventually_eq_self⟩
 
-/-- Conjugating a permutation preserves Mathlib's finite-support predicate. -/
-theorem finite_compl_fixedBy_conj {π σ : Equiv.Perm ι}
-    (hσ : (MulAction.fixedBy ι σ)ᶜ.Finite) :
-    (MulAction.fixedBy ι (π⁻¹ * σ * π))ᶜ.Finite := by
-  simpa [Set.smul_set_compl, MulAction.smul_fixedBy] using hσ.smul_set (a := π⁻¹)
+/-- Conjugating an acting group element preserves Mathlib's finite-support predicate. -/
+theorem finite_compl_fixedBy_conj {G α : Type*} [Group G] [MulAction G α] {g h : G}
+    (hh : (MulAction.fixedBy α h)ᶜ.Finite) :
+    (MulAction.fixedBy α (g⁻¹ * h * g))ᶜ.Finite := by
+  simpa [Set.smul_set_compl, MulAction.smul_fixedBy] using hh.smul_set (a := g⁻¹)
 
 end TauCeti
