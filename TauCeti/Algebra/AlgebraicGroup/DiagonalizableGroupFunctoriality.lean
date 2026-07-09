@@ -134,6 +134,20 @@ theorem pointsMulEquiv_pointsMap (φ : G →* G') (f : WithConv (MonoidAlgebra R
     pointsMulEquiv (pointsMap (A := A) φ f) = (pointsMulEquiv f).comp φ := by
   rw [pointsMap_apply, pointsMulEquiv_apply, ofConv_toConv, pointsMulEquiv_apply, charOfPoint_comp]
 
+/-- If `φ` is surjective, then the induced contravariant map on diagonalizable-group points is
+injective. Under the character identification this is injectivity of precomposition by a
+surjective homomorphism. -/
+theorem pointsMap_injective (φ : G →* G') (hφ : Function.Surjective φ) :
+    Function.Injective (pointsMap (R := R) (A := A) φ) := by
+  intro f g hfg
+  apply (pointsMulEquiv (R := R) (A := A) (G := G')).injective
+  rw [pointsMulEquiv_apply, pointsMulEquiv_apply]
+  refine MonoidHom.ext fun y => ?_
+  obtain ⟨x, rfl⟩ := hφ y
+  have hchar : (pointsMulEquiv f).comp φ = (pointsMulEquiv g).comp φ := by
+    rw [← pointsMulEquiv_pointsMap, ← pointsMulEquiv_pointsMap, hfg]
+  exact DFunLike.congr_fun hchar x
+
 /-- Mapping the point attached to a character is precomposition of that character by `φ`. -/
 theorem pointsMap_pointsMulEquiv_symm_apply (φ : G →* G') (χ : G' →* Aˣ) :
     pointsMap (R := R) (A := A) φ ((pointsMulEquiv (R := R) (A := A) (G := G')).symm χ) =

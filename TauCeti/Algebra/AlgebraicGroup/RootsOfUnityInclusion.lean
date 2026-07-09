@@ -93,7 +93,7 @@ theorem toMultZMod_ofAdd_one (n : ℕ) :
 `ℤ ↠ ℤ/n` under the diagonalizable functor: precomposition with the surjection
 `R[Multiplicative ℤ] ↠ R[Multiplicative (ZMod n)]` of coordinate Hopf algebras carries a
 point of `μ_n = D(ℤ/n)` to a point of `𝔾ₘ = D(ℤ)`. -/
-@[expose] noncomputable def inclusion (n : ℕ) :
+noncomputable abbrev inclusion (n : ℕ) :
     WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A) →*
       WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) :=
   DiagonalizableGroup.pointsMap (toMultZMod n)
@@ -150,16 +150,8 @@ induced points homomorphism `μ_n(A) → 𝔾ₘ(A)` is injective. -/
 theorem inclusion_injective (n : ℕ) :
     Function.Injective (inclusion (R := R) (A := A) n) := by
   intro f g hfg
-  apply (DiagonalizableGroup.pointsMulEquiv (R := R) (A := A)
-    (G := Multiplicative (ZMod n))).injective
-  rw [DiagonalizableGroup.pointsMulEquiv_apply, DiagonalizableGroup.pointsMulEquiv_apply]
-  -- Precomposition with the surjection `toMultZMod n` is injective on characters.
-  refine MonoidHom.ext fun y => ?_
-  obtain ⟨x, rfl⟩ := toMultZMod_surjective n y
-  have hchar : (DiagonalizableGroup.charOfPoint f.ofConv).comp (toMultZMod n) =
-      (DiagonalizableGroup.charOfPoint g.ofConv).comp (toMultZMod n) := by
-    rw [← charOfPoint_inclusion, ← charOfPoint_inclusion, hfg]
-  exact DFunLike.congr_fun hchar x
+  exact DiagonalizableGroup.pointsMap_injective (toMultZMod n) (toMultZMod_surjective n)
+    (by rwa [← inclusion_apply, ← inclusion_apply])
 
 variable {B : Type*} [CommSemiring B] [Algebra R B]
 
