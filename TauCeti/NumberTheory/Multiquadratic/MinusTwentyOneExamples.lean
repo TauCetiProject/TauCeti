@@ -5,10 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantExampleLists
-public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantIndependence
 public import TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantGaloisGroup
-public import Mathlib.Analysis.Real.Sqrt
-public import Mathlib.Data.Complex.Basic
 
 /-!
 # The `ℚ(√-21)` genus-field worked example
@@ -79,7 +76,7 @@ theorem sqrtNegSeven_sq : sqrtNegSeven ^ 2 = (-7 : ℂ) := by
 
 /-- The complex square root data for the prime discriminants `-4`, `-3`, and `-7`: the
 associated radicands are `-1`, `-3`, and `-7`, with roots `i`, `i√3`, and `i√7`. -/
-theorem root_neg_four_neg_three_neg_seven_sq (i : Fin 3) :
+private theorem root_neg_four_neg_three_neg_seven_sq (i : Fin 3) :
     (fun i : Fin 3 => ![Complex.I, sqrtNegThree, sqrtNegSeven] i) i ^ 2 =
       algebraMap ℚ ℂ
         (((primeDiscriminantRadicand
@@ -95,8 +92,9 @@ theorem root_neg_four_neg_three_neg_seven_sq (i : Fin 3) :
       simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)] using h
     simp [negFourNegThreeNegSevenPrimeDiscriminants, hrad]
 
-/-- The range of the chosen `√-21` root family is `{i, √-3, √-7}`. -/
-theorem range_roots_neg_four_neg_three_neg_seven :
+/-- The range of the chosen prime-discriminant root family for the `ℚ(√-21)` example is
+`{i, √-3, √-7}`. -/
+private theorem range_roots_neg_four_neg_three_neg_seven :
     (Set.range fun i : Fin 3 => ![Complex.I, sqrtNegThree, sqrtNegSeven] i)
       = {Complex.I, sqrtNegThree, sqrtNegSeven} := by
   ext x
