@@ -47,13 +47,18 @@ private lemma nat_le_top (n : ℕ) : (n : WithTop ℕ∞) ≤ ∞ := by exact_mo
 
 /-- For a completely monotone function the `n`-th iterated derivative within a compact interval
 `[x, T]` agrees with the one taken within the half-line `[0, ∞)` at any strictly positive interior
-point. Complete monotonicity supplies the local `ContDiffAt` hypothesis; the set comparison itself
-is `ContDiffAt.iteratedDerivWithin_Icc_eq_Ici`. -/
+point. Complete monotonicity supplies the local `ContDiffAt` hypothesis, and both sides reduce to
+the unrestricted iterated derivative at `t`. -/
 private lemma IsCompletelyMonotone.iteratedDerivWithin_Icc_eq_Ici (hf : IsCompletelyMonotone f)
     {x T t : ℝ} {n : ℕ} (ht_pos : 0 < t) (ht : t ∈ Ioo x T) :
-    iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici 0) t :=
-  ContDiffAt.iteratedDerivWithin_Icc_eq_Ici
-    ((hf.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (nat_le_top _)) ht_pos ht
+    iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici 0) t := by
+  have hcont : ContDiffAt ℝ (n : WithTop ℕ∞) f t :=
+    (hf.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (nat_le_top _)
+  have hxT : x < T := lt_trans ht.1 ht.2
+  rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT) hcont
+        (Ioo_subset_Icc_self ht),
+      ← iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcont
+        (mem_Ici.mpr ht_pos.le)]
 
 namespace IsCompletelyMonotone
 
@@ -98,21 +103,24 @@ private lemma IsCompletelyMonotone.iteratedDerivWithin_one_nonpos
 /-- On a compact interval in `[0, ∞)`, the integral of `-f'` for a completely monotone
 function is the endpoint drop, with the derivative taken within `[0, ∞)`. -/
 lemma IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub
-    (hcm : IsCompletelyMonotone f) {x T : ℝ} (hx : 0 ≤ x) (hxT : x < T) :
+    (hcm : IsCompletelyMonotone f) {x T : ℝ} (hx : 0 ≤ x) (hxT : x ≤ T) :
     ∫ t in x..T, -iteratedDerivWithin 1 f (Ici 0) t = f x - f T := by
+  by_cases h_eq : x = T
+  · subst T
+    simp
   have htransfer :
       ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t =
       ∫ t in x..T, -iteratedDerivWithin 1 f (Ici 0) t := by
     apply intervalIntegral.integral_congr_uIoo
     intro t ht
-    rw [uIoo_of_le hxT.le] at ht
+    rw [uIoo_of_le hxT] at ht
     have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
     exact congrArg Neg.neg (hcm.iteratedDerivWithin_Icc_eq_Ici ht_pos ht)
   rw [← htransfer]
   simpa [iteratedDerivWithin_one, intervalIntegral.integral_neg, neg_sub] using
     congrArg Neg.neg (intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc
       ((hcm.contDiffOn.mono
-        (Icc_subset_Ici_self.trans (Ici_subset_Ici.mpr hx))).of_le (nat_le_top _)) hxT.le)
+        (Icc_subset_Ici_self.trans (Ici_subset_Ici.mpr hx))).of_le (nat_le_top _)) hxT)
 
 /-- `-f'` is integrable on `(0, ∞)` for a completely monotone function, where the derivative is
 taken within the closed half-line `[0, ∞)`. -/

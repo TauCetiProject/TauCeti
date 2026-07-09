@@ -626,7 +626,7 @@ private lemma integral_chafaiDensity_one_eq (f : ℝ → ℝ) (hcm : IsCompletel
       ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t :=
     intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun t _ => chafaiDensity_one t)
   rw [h1]
-  exact IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm le_rfl hT
+  exact IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm le_rfl hT.le
 
 private lemma integral_chafaiDensity_le_sub (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (j : ℕ) (hj : 1 ≤ j) (T : ℝ) (hT : 0 < T) :
@@ -1197,7 +1197,8 @@ private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
       refine Tendsto.congr' ?_ (Tendsto.sub tendsto_const_nhds hL)
       filter_upwards [eventually_gt_atTop (max x 1)] with T hT
       have hxT : x < T := lt_of_le_of_lt (le_max_left x 1) hT
-      exact (IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm hx hxT).symm
+      exact
+        (IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm hx hxT.le).symm
     · -- Inductive step `n = k+1`: integrate by parts once and pass to the limit.
       have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
       have ih_applied := ih hk1
