@@ -20,9 +20,9 @@ analyticity of Dixon's glued function.
 
 ## Main results
 
-* `TauCeti.Contour.dixonH2_differentiableAt` — `fun w ↦ dixonH2 f γ a b w` is complex-differentiable
-  at every point off the curve, given continuity of `γ` and interval-integrability of the numerator
-  `f (γ ·) · deriv γ`.
+* `TauCeti.Contour.differentiableAt_dixonH2` — `fun w ↦ dixonH2 f γ a b w` is complex-differentiable
+  at every point off the curve, given continuity of `γ` and interval-integrability of the Cauchy
+  integrand `f (γ ·) / (γ · - w) · deriv γ`.
 
 This feeds the `homologyCauchyTheorem` roadmap target
 (`TauCetiRoadmap/ContourIntegration/Suggested.lean`, Layer 3, Dixon's argument).
@@ -31,9 +31,9 @@ This feeds the `homologyCauchyTheorem` roadmap target
 
 Adapted from `dixonH2_differentiableAt` / `dixonH2_differentiableAt_of_regular` in `DixonDiff.lean`
 of the AINTLIB `LeanModularForms` development, restated for a raw `γ : ℝ → ℂ` on an oriented
-interval and phrased with the integrable numerator `f (γ ·) · deriv γ` (weaker than a continuous
-`f` and a separately integrable derivative). See J. D. Dixon, *A brief proof of Cauchy's integral
-theorem* (1971).
+interval and phrased with the integrable Cauchy integrand (weaker than a continuous `f` and a
+separately integrable derivative). See J. D. Dixon, *A brief proof of Cauchy's integral theorem*
+(1971).
 -/
 
 public section
@@ -95,14 +95,22 @@ private theorem h2_deriv_bound {ε : ℝ} (hε_pos : 0 < ε) {w' : ℂ}
   exact h_dist t ht
 
 /-- **`dixonH2` is holomorphic in the point, off the curve.** If `γ` is continuous on `uIcc a b`
-and avoids `w` there, and the numerator `f (γ ·) · deriv γ` is interval-integrable, then
-`fun w ↦ dixonH2 f γ a b w` is complex-differentiable at `w`. -/
-theorem dixonH2_differentiableAt (hγ_cont : ContinuousOn γ (uIcc a b))
+and avoids `w` there, and the Cauchy integrand `f (γ ·) / (γ · - w) · deriv γ` is
+interval-integrable, then `fun w ↦ dixonH2 f γ a b w` is complex-differentiable at `w`. -/
+theorem differentiableAt_dixonH2 (hγ_cont : ContinuousOn γ (uIcc a b))
     (hoff : ∀ t ∈ uIcc a b, γ t ≠ w)
-    (h_num_int : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b) :
+    (h_cauchy_int : IntervalIntegrable (fun t ↦ f (γ t) / (γ t - w) * deriv γ t) volume a b) :
     DifferentiableAt ℂ (dixonH2 f γ a b) w := by
   obtain ⟨ρ, hρ_pos, hρ_dist⟩ := exists_curve_dist_lower_bound hγ_cont hoff
   have hε_pos : 0 < ρ / 2 := half_pos hρ_pos
+  -- Multiplying the Cauchy integrand by the continuous factor `γ · - w` recovers the numerator.
+  have h_factor_cont : ContinuousOn (fun t ↦ γ t - w) (uIcc a b) := hγ_cont.sub continuousOn_const
+  have h_num_int : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b := by
+    rw [intervalIntegrable_iff]
+    refine (intervalIntegrable_iff.mp
+      (h_cauchy_int.continuousOn_mul h_factor_cont)).congr_fun (fun t ht ↦ ?_) measurableSet_uIoc
+    have hne : γ t - w ≠ 0 := sub_ne_zero.mpr (hoff t (Set.uIoc_subset_uIcc ht))
+    field_simp
   have hnum := (intervalIntegrable_iff.mp h_num_int).aestronglyMeasurable
   have h_eq : dixonH2 f γ a b = fun w' ↦ ∫ t in a..b, (γ t - w')⁻¹ * (f (γ t) * deriv γ t) := by
     funext w'
