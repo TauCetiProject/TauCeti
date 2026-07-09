@@ -13,34 +13,9 @@ public import Mathlib.Topology.Order.Basic
 /-!
 # Based paths
 
-For a topological space `X` and basepoint `x₀ : X`, this file introduces the space
-`BasedPath x₀` of continuous maps `γ : C(I, X)` with `γ 0 = x₀`, topologised as a subspace
-of the compact-open topology on `C(I, X)`. It then develops the path-component machinery of
-`endpoint ⁻¹' U` that feeds the universal-cover construction.
-
-This file is adapted from the Mathlib draft
+This file introduces the compact-open based-path space `BasedPath x₀` and the path-component
+machinery of `endpoint ⁻¹' U` used in the universal-cover construction. It is adapted from
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292) by Kim Morrison.
-
-## Main definitions
-
-* `BasedPath x₀`: the compact-open space of based paths out of `x₀`.
-* `BasedPath.endpoint`, `BasedPath.toPath`, `BasedPath.ofPath`, `BasedPath.append`:
-  basic API for operating on based paths.
-* `Path.initialSegmentFamily`: the family `t ↦ γ|_[0, t]` of initial segments of a path.
-
-## Main results
-
-* `BasedPath.isOpenMap_endpoint`: the endpoint map `BasedPath x₀ → X` is open when `X` is
-  locally path-connected.
-* `BasedPath.joinedIn_preimage_of_append`: appending a path inside `U` moves a based path
-  within the same path component of `endpoint ⁻¹' U`.
-* `BasedPath.exists_open_nhd_pathComponent_preimage`: when semilocal simple connectivity holds
-  along a based path, every based path landing in an open set `U` has an open
-  neighbourhood of based paths joined to it inside `endpoint ⁻¹' U`.
-* `BasedPath.isOpen_pathComponent_preimage`: in a semilocally simply connected, locally
-  path-connected space, path components of `endpoint ⁻¹' U` (for good `U`) are open.
-* `BasedPath.pathComponent_preimage_saturated`: path components of `endpoint ⁻¹' U` are
-  invariant under endpoint-preserving homotopy.
 -/
 
 open scoped unitInterval

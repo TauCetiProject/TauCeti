@@ -15,14 +15,7 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 /-!
 # Universal-cover prelude
 
-Declarations from the universal-cover work in
-[mathlib4#38292](https://github.com/leanprover-community/mathlib4/pull/38292) (Kim Morrison) that
-are not yet in the pinned Mathlib. Several supporting declarations also come from
-[mathlib4#31449](https://github.com/leanprover-community/mathlib4/pull/31449) (Kim Morrison).
-
-When the pinned Mathlib advances past these upstream declarations, this shim should be removed
-declaration-by-declaration in the same bump PR that switches downstream imports to Mathlib's
-versions.
+Shim declarations from upstream universal-cover work not yet in the pinned Mathlib.
 -/
 
 public section
