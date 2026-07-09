@@ -44,19 +44,6 @@ variable
   {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-    [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
-    [NormedAddCommGroup F] [NormedSpace ℝ F] in
-/-- Eventual equality to zero is transported by precomposition with a homeomorphism. -/
-theorem eventuallyEq_zero_comp_homeomorph_iff {X Y Z : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [Zero Z] (h : X ≃ₜ Y) (g : Y → Z) (x : X) :
-    (g ∘ h =ᶠ[𝓝 x] 0) ↔ (g =ᶠ[𝓝 (h x)] 0) := by
-  rw [← h.map_nhds_eq x]
-  change (g ∘ h =ᶠ[𝓝 x] (0 : Y → Z) ∘ h) ↔
-    (g =ᶠ[Filter.map h (𝓝 x)] (0 : Y → Z))
-  exact (Filter.eventuallyEq_map (f := 𝓝 x) (m := h) (f₁ := g)
-    (f₂ := (0 : Y → Z))).symm
-
 /-- **Harmonicity is invariant under isometric changes of variable.** For a linear isometry
 equivalence `l`, the function `f ∘ l` is harmonic at `x` iff `f` is harmonic at `l x`. -/
 theorem harmonicAt_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') {f : E' → F}
@@ -68,7 +55,11 @@ theorem harmonicAt_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') 
     rw [laplacian_comp_linearIsometryEquiv_right l f]
     change (Δ f ∘ l.toHomeomorph =ᶠ[𝓝 x] 0) ↔
       (Δ f =ᶠ[𝓝 (l.toHomeomorph x)] 0)
-    exact eventuallyEq_zero_comp_homeomorph_iff l.toHomeomorph (Δ f) x
+    rw [← l.toHomeomorph.map_nhds_eq x]
+    change (Δ f ∘ l.toHomeomorph =ᶠ[𝓝 x] (0 : E' → F) ∘ l.toHomeomorph) ↔
+      (Δ f =ᶠ[Filter.map l.toHomeomorph (𝓝 x)] (0 : E' → F))
+    exact (Filter.eventuallyEq_map (f := 𝓝 x) (m := l.toHomeomorph) (f₁ := Δ f)
+      (f₂ := (0 : E' → F))).symm
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 
 /-- **Harmonicity is invariant under translation.** The function `y ↦ f (y + a)` is harmonic
@@ -91,8 +82,12 @@ theorem harmonicAt_comp_add_right_iff {f : E → F} {x a : E} :
     rw [laplacian_comp_add_right f a]
     change ((fun y : E ↦ Δ f (y + a)) =ᶠ[𝓝 x] 0) ↔
       (Δ f =ᶠ[𝓝 ((Homeomorph.addRight a) x)] 0)
-    simpa [Function.comp_def] using
-      eventuallyEq_zero_comp_homeomorph_iff (Homeomorph.addRight a) (Δ f) x
+    rw [← (Homeomorph.addRight a).map_nhds_eq x]
+    change (Δ f ∘ Homeomorph.addRight a =ᶠ[𝓝 x]
+        (0 : E → F) ∘ Homeomorph.addRight a) ↔
+      (Δ f =ᶠ[Filter.map (Homeomorph.addRight a) (𝓝 x)] (0 : E → F))
+    exact (Filter.eventuallyEq_map (f := 𝓝 x) (m := Homeomorph.addRight a) (f₁ := Δ f)
+      (f₂ := (0 : E → F))).symm
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 
 /-- **Harmonicity is invariant under affine isometries.** For an affine isometry equivalence
