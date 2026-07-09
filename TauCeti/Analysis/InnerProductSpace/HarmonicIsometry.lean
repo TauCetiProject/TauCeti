@@ -78,6 +78,8 @@ theorem harmonicAt_comp_add_right_iff {f : E → F} {x a : E} :
   have hlap : (Δ (fun y ↦ f (y + a)) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (x + a)] 0) := by
     rw [laplacian_comp_add_right f a]
     have := Homeomorph.eventuallyEq_comp_iff (Homeomorph.addRight a) (Δ f) (0 : E → F) x
+    -- `Homeomorph.eventuallyEq_comp_iff` exposes the pulled-back zero as a lambda;
+    -- reshape it to the overloaded zero function used by the Laplacian statement.
     change ((fun y : E ↦ Δ f (y + a)) =ᶠ[𝓝 x] fun _ : E ↦ (0 : F)) ↔
       (Δ f =ᶠ[𝓝 (x + a)] 0)
     simpa [Function.comp_def] using this
