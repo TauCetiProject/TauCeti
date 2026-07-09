@@ -19,8 +19,9 @@ homeomorphism. These are the point-set foundations that the geometric-topology r
 The definitions follow Burde--Zieschang, *Knots*, Chapter 1, Definitions 1.1 and 1.2,
 generalized to this continuous topological setting. The non-ambient relation is the general
 point-set notion of isotopy; later knot-equivalence foundations should use ambient isotopy,
-specialized as needed to smooth embeddings `S¹ ↪ M`. The same non-ambient notion also underlies
-locally flat isotopy, diffeotopies, and concordance.
+specialized as needed to smooth embeddings `S¹ ↪ M`. Later geometric-topology foundations
+specialize these isotopy and ambient-isotopy notions as appropriate for locally flat isotopy,
+diffeotopies, and concordance.
 
 ## A warning: non-ambient isotopy is degenerate for knots
 
