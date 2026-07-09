@@ -138,10 +138,13 @@ at every point of `s`. -/
 public def SemilocallySimplyConnectedOn (s : Set X) : Prop :=
   ∀ x ∈ s, SemilocallySimplyConnectedAt x
 
+/-- Extract the pointwise `SemilocallySimplyConnectedAt x` statement from
+`SemilocallySimplyConnectedOn s` and `x ∈ s`. -/
 public theorem SemilocallySimplyConnectedOn.at (h : SemilocallySimplyConnectedOn s) (hx : x ∈ s) :
     SemilocallySimplyConnectedAt x :=
   h x hx
 
+/-- Semilocal simple connectivity on a set restricts to any subset. -/
 public theorem SemilocallySimplyConnectedOn.mono (h : SemilocallySimplyConnectedOn t)
     (hst : s ⊆ t) : SemilocallySimplyConnectedOn s :=
   fun x hx ↦ h x (hst hx)
@@ -258,39 +261,39 @@ homotopic (so path homotopy classes are determined by endpoints).
 
 This is `semilocallySimplyConnectedAt_iff_paths.mp` repackaged with the
 `IsPathHomotopyTrivial` abstraction, which is the form most downstream users consume. -/
-public theorem SemilocallySimplyConnectedAt.exists_pathHomotopyTrivial_neighborhood {x : X}
+public theorem SemilocallySimplyConnectedAt.exists_isOpen_mem_isPathHomotopyTrivial {x : X}
     (h : SemilocallySimplyConnectedAt x) :
     ∃ U : Set X, IsOpen U ∧ x ∈ U ∧ IsPathHomotopyTrivial U :=
   semilocallySimplyConnectedAt_iff_paths.mp h
 
 /-- In a locally path-connected semilocally simply connected space, every point has an open
 path-homotopy-trivial neighborhood. -/
-public theorem exists_pathHomotopyTrivial_neighborhood
+public theorem exists_isOpen_mem_isPathHomotopyTrivial
     [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] (x : X) :
     ∃ U : Set X, IsOpen U ∧ x ∈ U ∧ IsPathHomotopyTrivial U := by
   have hx := SemilocallySimplyConnectedAt.of_semilocallySimplyConnectedSpace x
-  exact hx.exists_pathHomotopyTrivial_neighborhood
+  exact hx.exists_isOpen_mem_isPathHomotopyTrivial
 
 /-- An SLSC neighborhood can be chosen to be path-connected. In a locally path-connected space,
 we can use the path component of x in an SLSC neighborhood V to get a neighborhood that is both
 open, path-connected, and has the SLSC property (paths with same endpoints in U are homotopic). -/
-public theorem SemilocallySimplyConnectedAt.exists_pathConnected_pathHomotopyTrivial_neighborhood
+public theorem SemilocallySimplyConnectedAt.exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial
     [LocallyPathConnectedSpace X] {x : X} (h : SemilocallySimplyConnectedAt x) :
     ∃ U : Set X, IsOpen U ∧ x ∈ U ∧ IsPathConnected U ∧ IsPathHomotopyTrivial U := by
   -- Take the path component of `x` in any SLSC neighborhood `V`. It is open by local
   -- path-connectedness, path-connected by construction, and inherits SLSC from `V` by
   -- composing the range subsets through `pathComponentIn_subset : pathComponentIn V x ⊆ V`.
-  obtain ⟨V, hV_open, hx_in_V, hV_slsc⟩ := h.exists_pathHomotopyTrivial_neighborhood
+  obtain ⟨V, hV_open, hx_in_V, hV_slsc⟩ := h.exists_isOpen_mem_isPathHomotopyTrivial
   refine ⟨pathComponentIn V x, hV_open.pathComponentIn x, mem_pathComponentIn_self hx_in_V,
     isPathConnected_pathComponentIn hx_in_V, fun _ _ p q hp hq ↦ ?_⟩
   exact hV_slsc.apply p q (hp.trans pathComponentIn_subset) (hq.trans pathComponentIn_subset)
 
 /-- In a locally path-connected semilocally simply connected space, every point has an open,
 path-connected, path-homotopy-trivial neighborhood. -/
-public theorem exists_pathConnected_pathHomotopyTrivial_neighborhood
+public theorem exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial
     [SemilocallySimplyConnectedSpace X] [LocallyPathConnectedSpace X] (x : X) :
     ∃ U : Set X, IsOpen U ∧ x ∈ U ∧ IsPathConnected U ∧ IsPathHomotopyTrivial U := by
   have hx := SemilocallySimplyConnectedAt.of_semilocallySimplyConnectedSpace x
-  exact hx.exists_pathConnected_pathHomotopyTrivial_neighborhood
+  exact hx.exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial
 
 end

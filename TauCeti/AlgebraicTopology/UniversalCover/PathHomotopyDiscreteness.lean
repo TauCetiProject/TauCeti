@@ -29,7 +29,7 @@ variable {X : Type*} [TopologicalSpace X]
 /-! ### Tube data structures -/
 
 /-- A proof-local partition of the unit interval `[0, 1]` into `n` segments. -/
-public structure IntervalPartition (n : ℕ) where
+structure IntervalPartition (n : ℕ) where
   /-- The partition points. -/
   t : Fin (n + 1) → unitInterval
   /-- The partition points are monotone. -/
@@ -55,7 +55,7 @@ end IntervalPartition
 
 /-- Data for a tubular neighborhood in an SLSC space: segment neighborhoods, point
 neighborhoods at all partition points, and the openness/path-connectedness/SLSC subset data. -/
-public structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
+structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
   /-- Segment neighborhoods -/
   U : Fin n → Set X
   /-- Point neighborhoods at ALL partition points (including endpoints) -/
@@ -186,15 +186,16 @@ private theorem Path.exists_vertexNeighborhood_family [LocallyPathConnectedSpace
   · intro i
     exact hV_right i.succ i rfl
 
-/-- If `X` is locally path-connected and SLSC along the range of `γ`, then `γ` has tube data
-around it. -/
-theorem Path.exists_partition_in_pathHomotopyTrivial_neighborhoods
+/-- If `X` is locally path-connected and SLSC along the range of `γ`, then `γ` lies in a
+path-homotopy-trivial tube. -/
+theorem Path.exists_pathHomotopyTrivial_tube
     [LocallyPathConnectedSpace X] {x y : X}
     (γ : Path x y) (hslsc : SemilocallySimplyConnectedOn (Set.range γ)) :
     ∃ (n : ℕ) (part : IntervalPartition n) (T : TubeData X n), PathInTube γ part T := by
   obtain ⟨n, part, h_partition⟩ := γ.exists_partition_with_property
     (fun U ↦ IsPathConnected U ∧ IsPathHomotopyTrivial U)
-    (fun z hz ↦ (hslsc.at hz).exists_pathConnected_pathHomotopyTrivial_neighborhood)
+    (fun z hz ↦
+      (hslsc.at hz).exists_isOpen_mem_isPathConnected_isPathHomotopyTrivial)
   choose U hU_open hU_prop hU_contains using h_partition
   obtain ⟨V, hV_open, hV_pathConn, hγ_in_V, hV_left, hV_right⟩ :=
     Path.exists_vertexNeighborhood_family part.mono hU_open hU_contains
@@ -614,7 +615,7 @@ public theorem Path.exists_isOpen_mem_subset_setOf_homotopic
     ∃ (T : Set (Path x y)), IsOpen T ∧ p ∈ T ∧ T ⊆ {p' | Path.Homotopic p' p} := by
   -- Step 1: Get partition and SLSC neighborhoods
   obtain ⟨n, part, T_data, hp_in_tube⟩ :=
-    p.exists_partition_in_pathHomotopyTrivial_neighborhoods hslsc
+    p.exists_pathHomotopyTrivial_tube hslsc
   refine ⟨T_data.toSet part, ?_, ?_, ?_⟩
   · -- Show `T` is open.
     exact T_data.isOpen part
@@ -648,20 +649,30 @@ public theorem Path.isOpen_setOf_homotopic [SemilocallySimplyConnectedSpace X]
   p.isOpen_setOf_homotopic_of_semilocallySimplyConnectedOn
     fun q _ ↦ SemilocallySimplyConnectedOn.of_semilocallySimplyConnectedSpace (Set.range q)
 
-/--
-In a semilocally simply connected, locally path-connected space, the quotient of paths by
-homotopy has discrete topology.
--/
-public instance Path.Homotopic.Quotient.instDiscreteTopology
-    [SemilocallySimplyConnectedSpace X] [LocallyPathConnectedSpace X] {x y : X} :
+/-- If semilocal simple connectivity holds along every fixed-endpoint path, the
+fixed-endpoint path-homotopy quotient is discrete. -/
+public theorem Path.Homotopic.Quotient.discreteTopology_of_semilocallySimplyConnectedOn
+    [LocallyPathConnectedSpace X] {x y : X}
+    (hslsc : ∀ p : Path x y, SemilocallySimplyConnectedOn (Set.range p)) :
     DiscreteTopology (Path.Homotopic.Quotient x y) := by
   rw [discreteTopology_iff_isOpen_singleton]
   intro a
   induction a using Quotient.inductionOn with
   | h p =>
     rw [Path.Homotopic.Quotient.isOpen_iff_preimage_mk]
-    convert isOpen_setOf_homotopic p using 1
+    convert p.isOpen_setOf_homotopic_of_semilocallySimplyConnectedOn
+      (fun q _ ↦ hslsc q) using 1
     ext p'
     exact Path.Homotopic.Quotient.eq
+
+/--
+In a semilocally simply connected, locally path-connected space, the quotient of paths by
+homotopy has discrete topology.
+-/
+public instance Path.Homotopic.Quotient.instDiscreteTopology
+    [SemilocallySimplyConnectedSpace X] [LocallyPathConnectedSpace X] {x y : X} :
+    DiscreteTopology (Path.Homotopic.Quotient x y) :=
+  Path.Homotopic.Quotient.discreteTopology_of_semilocallySimplyConnectedOn
+    fun p ↦ SemilocallySimplyConnectedOn.of_semilocallySimplyConnectedSpace (Set.range p)
 
 end
