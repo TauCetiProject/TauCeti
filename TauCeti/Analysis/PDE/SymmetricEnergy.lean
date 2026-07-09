@@ -20,12 +20,13 @@ bilinear form.  The already-existing `coefficientSymmetricPart` replaces a possi
 nonsymmetric coefficient matrix by `(A + Aᵀ) / 2`; here we prove the corresponding facts for
 the full zero-drift jet integrand.
 
-Coercivity is supplied separately by `TauCeti.Analysis.PDE.CoerciveEnergy` and its
-`UniformlyEllipticOn` wrappers.  In the zero-drift case with positive mass and a
-principal quadratic lower bound, combine
+The quantitative diagonal lower bounds are supplied separately by
+`TauCeti.Analysis.PDE.EnergyLowerBounds` and its `UniformlyEllipticOn` wrappers.  In the
+zero-drift case with positive mass and a principal quadratic lower bound, combine
 `energyIntegrand_zero_drift_flip_eq_of_isSymm` or
 `energyIntegrand_coefficientSymmetricPart_zero_drift_flip_eq` with
-`isCoercive_energyIntegrand_zero_drift` rather than introducing a separate conjunction API.
+`min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self` rather than introducing a
+separate conjunction API.
 
 ## Main declarations
 
@@ -73,11 +74,11 @@ lemma energyIntegrand_zero_drift_comm_of_isSymm {A : Matrix n n ℝ} (hA : A.IsS
 
 /-- Bundled-map form of symmetry for the zero-drift jet integrand.
 
-Downstream energy forms that need the same integrand to be both symmetric and coercive pair
-this with `isCoercive_energyIntegrand_zero_drift`.  For a nonsymmetric principal coefficient,
-first pass to `coefficientSymmetricPart` using the uniform ellipticity API in
-`TauCeti.Analysis.PDE.UniformEllipticity`, then apply this lemma to the symmetric
-coefficient field. -/
+Downstream energy forms that need the same integrand to be both symmetric and bounded below
+pair this with `min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self`.  For a
+nonsymmetric principal coefficient, first pass to `coefficientSymmetricPart` using the uniform
+ellipticity API in `TauCeti.Analysis.PDE.UniformEllipticity`, then apply this lemma to the
+symmetric coefficient field. -/
 @[simp]
 lemma energyIntegrand_zero_drift_flip_eq_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm)
     (c : ℝ) :

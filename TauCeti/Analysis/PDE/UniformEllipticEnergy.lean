@@ -4,28 +4,30 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PDE.CoerciveEnergy
+public import TauCeti.Analysis.PDE.EnergyLowerBounds
 
 /-!
 # Energy-integrand estimates from uniform ellipticity
 
-`TauCeti.Analysis.PDE.EnergyForm` and `TauCeti.Analysis.PDE.CoerciveEnergy` prove the
+`TauCeti.Analysis.PDE.EnergyForm` and `TauCeti.Analysis.PDE.EnergyLowerBounds` prove the
 pointwise estimates for divergence-form energy integrands from raw coefficient bounds.
 This file packages the same estimates for callers that hold the roadmap's named principal
 coefficient hypothesis `UniformlyEllipticOn Ω a λ Λ`.
 
 The statements are still pointwise finite-dimensional estimates on jets
-`ℝ × EuclideanSpace ℝ n`, not integrated Sobolev-space theorems. They are the API that
-later Lane D work can consume when turning a uniformly elliptic coefficient field, bounded
-lower-order coefficients, and a mass lower bound into the bounded/coercive hypotheses of
-Lax--Milgram.
+`ℝ × EuclideanSpace ℝ n`, not integrated Sobolev-space theorems, and they are not the
+hypothesis of Lax--Milgram: that needs coercivity of the *integrated* form on a complete
+inner-product (H¹-type) space, later Lane A/D work.  They are the pointwise boundedness and
+diagonal lower bounds that the integrated inequality of
+`TauCeti.Analysis.PDE.IntegratedEnergyForm` consumes after integrating over the domain.
 
 This file deliberately leaves symmetry to `TauCeti.Analysis.PDE.SymmetricEnergy`.  For a
 zero-drift uniformly elliptic operator with symmetric principal coefficient, use
-`UniformlyEllipticOn.isCoercive_energyIntegrand_zero_drift` for the lower bound and the
-`energyIntegrand_zero_drift_flip_eq_*` lemmas for symmetry; for nonsymmetric coefficients,
-the symmetric-part API in `TauCeti.Analysis.PDE.UniformEllipticity` preserves the ellipticity
-constants before applying the same symmetry lemmas.
+`UniformlyEllipticOn.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self` for the
+diagonal lower bound and the `energyIntegrand_zero_drift_flip_eq_*` lemmas for symmetry; for
+nonsymmetric coefficients, the symmetric-part API in
+`TauCeti.Analysis.PDE.UniformEllipticity` preserves the ellipticity constants before applying
+the same symmetry lemmas.
 
 ## Main declarations
 
@@ -39,13 +41,11 @@ constants before applying the same symmetry lemmas.
   `UniformlyEllipticOn`.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyIntegrand_self_of_mass_lower_bound`:
   the pointwise Gårding lower bound with a mass floor.
-* `TauCeti.PDE.UniformlyEllipticOn.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self`:
-  the explicit positive-constant diagonal estimate when the mass floor dominates the
+* `TauCeti.PDE.UniformlyEllipticOn.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self`:
+  the explicit diagonal estimate when the mass floor non-strictly dominates the
   drift defect.
-* `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand`: coercivity when the
-  pointwise mass lower bound dominates the first-order drift defect.
-* `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyIntegrand_zero_drift`: the zero-drift
-  specialization, needing only a positive mass coefficient.
+* `TauCeti.PDE.UniformlyEllipticOn.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self`:
+  the zero-drift diagonal estimate from uniform ellipticity and nonnegative mass.
 * The corresponding `_on` lemmas apply these estimates to coefficient fields
   `b : X → EuclideanSpace ℝ n` and `c : X → ℝ` on `Ω`.
 -/
@@ -167,79 +167,56 @@ lemma garding_energyIntegrand_self_of_mass_lower_bound_on
       ≤ energyIntegrand (a x) (b x) (c x) U U :=
   h.garding_energyIntegrand_self_of_mass_lower_bound hx (hb hx) (hc hx) U
 
-/-- The lower-bound estimate implies the explicit coercive diagonal estimate with constant
-`min (λ / 2) (μ - β² / (2λ))`. -/
-lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self
+/-- The lower-bound estimate implies the explicit diagonal estimate with constant
+`min (λ / 2) (μ - β² / (2λ))`, assuming this second coefficient is nonnegative. -/
+lemma min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self
     (h : UniformlyEllipticOn Ω a lam Lam)
     {x : X} (hx : x ∈ Ω) {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
-    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) < mu)
+    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀) (hmu : beta ^ 2 / (2 * lam) ≤ mu)
     (U : ℝ × EuclideanSpace ℝ n) :
     min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
       ≤ energyIntegrand (a x) b₀ c₀ U U :=
-  PDE.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self h.pos (h.lower_bound hx)
+  PDE.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self h.pos (h.lower_bound hx)
     hb hc hmu U
 
-/-- The coefficient-field version of the explicit coercive diagonal estimate from
+grind_pattern min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self =>
+  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, ‖b₀‖ ≤ beta, mu ≤ c₀,
+  energyIntegrand (a x) b₀ c₀ U U
+
+/-- The coefficient-field version of the explicit diagonal lower-bound estimate from
 uniform ellipticity and a mass floor. -/
-lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self_on
+lemma min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self_on
     (h : UniformlyEllipticOn Ω a lam Lam)
     {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
     (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)
     (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x)
-    (hmu : beta ^ 2 / (2 * lam) < mu) {x : X} (hx : x ∈ Ω)
+    (hmu : beta ^ 2 / (2 * lam) ≤ mu) {x : X} (hx : x ∈ Ω)
     (U : ℝ × EuclideanSpace ℝ n) :
     min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
       ≤ energyIntegrand (a x) (b x) (c x) U U :=
-  h.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hx (hb hx) (hc hx) hmu U
+  h.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self hx (hb hx) (hc hx) hmu U
 
-/-- Pointwise coercivity of the energy integrand from uniform ellipticity, a drift bound,
-and a mass lower bound that dominates the drift defect.
+/-- Zero-drift diagonal lower bound for a uniformly elliptic principal coefficient and a
+nonnegative mass coefficient. -/
+lemma min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self
+    (h : UniformlyEllipticOn Ω a lam Lam)
+    {x : X} (hx : x ∈ Ω) {c₀ : ℝ} (hc : 0 ≤ c₀)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    min lam c₀ * ‖U‖ ^ 2 ≤ energyIntegrand (a x) 0 c₀ U U :=
+  PDE.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self h.pos.le
+    (h.lower_bound hx) hc U
 
-This is the `UniformlyEllipticOn` wrapper around
-`isCoercive_energyIntegrand_of_bounds`: at each point of `Ω`, if
-`β² / (2λ) < μ ≤ c₀`, then the jet bilinear form is coercive. -/
-lemma isCoercive_energyIntegrand (h : UniformlyEllipticOn Ω a lam Lam)
-    {x : X} (hx : x ∈ Ω) {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
-    (hb : ‖b₀‖ ≤ beta) (hc : mu ≤ c₀)
-    (hmu : beta ^ 2 / (2 * lam) < mu) :
-    IsCoercive (energyIntegrand (a x) b₀ c₀) :=
-  isCoercive_energyIntegrand_of_bounds h.pos (h.lower_bound hx) hb hc hmu
+grind_pattern min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self =>
+  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, 0 ≤ c₀, energyIntegrand (a x) 0 c₀ U U
 
-grind_pattern isCoercive_energyIntegrand =>
-  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, ‖b₀‖ ≤ beta, mu ≤ c₀,
-  beta ^ 2 / (2 * lam) < mu, IsCoercive (energyIntegrand (a x) b₀ c₀)
-
-/-- Pointwise coercivity on a domain for coefficient fields, from uniform ellipticity, a drift
-bound, and a mass lower bound that dominates the drift defect. -/
-lemma isCoercive_energyIntegrand_on (h : UniformlyEllipticOn Ω a lam Lam)
-    {b : X → EuclideanSpace ℝ n} {c : X → ℝ}
-    (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ beta)
-    (hc : ∀ ⦃x⦄, x ∈ Ω → mu ≤ c x)
-    (hmu : beta ^ 2 / (2 * lam) < mu) {x : X} (hx : x ∈ Ω) :
-    IsCoercive (energyIntegrand (a x) (b x) (c x)) :=
-  h.isCoercive_energyIntegrand hx (hb hx) (hc hx) hmu
-
-/-- The zero-drift coercivity specialization for a uniformly elliptic principal coefficient.
-
-At each point of `Ω`, a positive mass coefficient makes
-`energyIntegrand (a x) 0 c₀` coercive. -/
-lemma isCoercive_energyIntegrand_zero_drift (h : UniformlyEllipticOn Ω a lam Lam)
-    {x : X} (hx : x ∈ Ω) {c₀ : ℝ} (hc : 0 < c₀) :
-    IsCoercive (energyIntegrand (a x) 0 c₀) :=
-  PDE.isCoercive_energyIntegrand_zero_drift h.pos hc (h.lower_bound hx)
-
-grind_pattern isCoercive_energyIntegrand_zero_drift =>
-  UniformlyEllipticOn Ω a lam Lam, x ∈ Ω, 0 < c₀,
-  IsCoercive (energyIntegrand (a x) 0 c₀)
-
-/-- The zero-drift coercivity specialization on a domain for a mass coefficient field.
-
-At each point of `Ω`, a positive mass field makes `energyIntegrand (a x) 0 (c x)`
-coercive. -/
-lemma isCoercive_energyIntegrand_zero_drift_on (h : UniformlyEllipticOn Ω a lam Lam)
-    {c : X → ℝ} (hc : ∀ ⦃x⦄, x ∈ Ω → 0 < c x) {x : X} (hx : x ∈ Ω) :
-    IsCoercive (energyIntegrand (a x) 0 (c x)) :=
-  h.isCoercive_energyIntegrand_zero_drift hx (hc hx)
+/-- The coefficient-field version of the zero-drift diagonal lower bound from uniform
+ellipticity and nonnegative mass. -/
+lemma min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self_on
+    (h : UniformlyEllipticOn Ω a lam Lam)
+    {c : X → ℝ} (hc : ∀ ⦃x⦄, x ∈ Ω → 0 ≤ c x) {x : X} (hx : x ∈ Ω)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    min lam (c x) * ‖U‖ ^ 2 ≤ energyIntegrand (a x) 0 (c x) U U :=
+  h.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self hx (hc hx) U
 
 end UniformlyEllipticOn
 

@@ -437,14 +437,14 @@ lemma garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds (hlam : 0 < 
   exact garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam
     (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx (U x)
 
-/-- Integrated explicit coercive diagonal lower bound from a.e. lower ellipticity, a.e.
+/-- Integrated explicit diagonal lower bound from a.e. lower ellipticity, a.e.
 lower-order coefficient hypotheses, and a mass floor that dominates the drift defect. -/
-lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_bounds
+lemma integral_min_diagonal_lower_bound_mul_norm_sq_le_energyFormIntegral_self_of_bounds
     (hlam : 0 < lam)
     (ha : ∀ᵐ x ∂μ, ∀ ξ : EuclideanSpace ℝ n,
       lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ))
     (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mu ≤ c x)
-    (hmu : beta ^ 2 / (2 * lam) < mu)
+    (hmu : beta ^ 2 / (2 * lam) ≤ mu)
     (hlower : Integrable
       (fun x => min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U x‖ ^ 2) μ)
     (henergy : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
@@ -453,7 +453,7 @@ lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_
   rw [energyFormIntegral_def]
   refine integral_mono_ae hlower henergy ?_
   filter_upwards [ha, hb, hc] with x hax hbx hcx
-  exact min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hlam
+  exact min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self hlam
     (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx hmu (U x)
 
 namespace UniformlyEllipticOn
@@ -509,18 +509,18 @@ lemma garding_energyFormIntegral_self_of_mass_lower_bound_on
   intro ξ
   simpa [toQuadraticForm'_eq_dotProduct] using h.lower_bound hx ξ
 
-/-- Integrated explicit coercive diagonal lower bound from uniform ellipticity, a.e.
+/-- Integrated explicit diagonal lower bound from uniform ellipticity, a.e.
 coefficient hypotheses, and a mass floor that dominates the drift defect. -/
-lemma integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_on
+lemma integral_min_diagonal_lower_bound_mul_norm_sq_le_energyFormIntegral_self_on
     (h : UniformlyEllipticOn Ω a lam Lam) (hΩ : ∀ᵐ x ∂μ, x ∈ Ω)
     (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mu ≤ c x)
-    (hmu : beta ^ 2 / (2 * lam) < mu)
+    (hmu : beta ^ 2 / (2 * lam) ≤ mu)
     (hlower : Integrable
       (fun x => min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U x‖ ^ 2) μ)
     (henergy : Integrable (fun x => energyIntegrand (a x) (b x) (c x) (U x) (U x)) μ) :
     ∫ x, (min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U x‖ ^ 2) ∂μ
       ≤ energyFormIntegral μ a b c U U := by
-  refine PDE.integral_min_coercivityConstant_mul_norm_sq_le_energyFormIntegral_self_of_bounds
+  refine PDE.integral_min_diagonal_lower_bound_mul_norm_sq_le_energyFormIntegral_self_of_bounds
     (μ := μ) (a := a) (b := b) (c := c) (U := U) h.pos ?_ hb hc hmu hlower henergy
   filter_upwards [hΩ] with x hx
   intro ξ
