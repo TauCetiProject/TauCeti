@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Contour.DixonDef
 import TauCeti.Analysis.Calculus.DSlopeIntegral
 import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
-import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 /-!
@@ -23,7 +22,8 @@ integrand stays holomorphic even for `w` on the curve.
 ## Main results
 
 * `TauCeti.Contour.differentiableOn_dixonH1` — `fun w ↦ dixonH1 f γ a b w` is complex-differentiable
-  on `U`, for `f` differentiable on the open set `U`, `γ` a `C¹` curve with image in `U`.
+  on `U`, for `f` differentiable on the open set `U` and `γ` continuous on `uIcc a b` with
+  interval-integrable derivative and image in `U`.
 
 This feeds the `homologyCauchyTheorem` roadmap target
 (`TauCetiRoadmap/ContourIntegration/Suggested.lean`, Layer 3, Dixon's argument).
@@ -32,8 +32,8 @@ This feeds the `homologyCauchyTheorem` roadmap target
 
 Adapted from `dixonH1_differentiableOn` / `dixonH1_differentiableOn_of_regular_open_full` in
 `DixonDiff.lean` of the AINTLIB `LeanModularForms` development, restated for a raw `γ : ℝ → ℂ` on an
-oriented interval with `C¹` regularity supplied as `ContinuousOn (deriv γ)`. See J. D. Dixon,
-*A brief proof of Cauchy's integral theorem* (1971).
+oriented interval with the curve's derivative required only to be interval-integrable. See
+J. D. Dixon, *A brief proof of Cauchy's integral theorem* (1971).
 -/
 
 public section
@@ -89,11 +89,12 @@ private theorem exists_seq_ne_add_mem_tendsto (hU : IsOpen U) (hw₀ : w₀ ∈ 
       abs_of_pos (by positivity)]
     linarith [div_le_self (a := ρ / 2) (by linarith)
       (by linarith [Nat.cast_nonneg (α := ℝ) n] : (1 : ℝ) ≤ (n : ℝ) + 1)]
-  · rw [show (0 : ℂ) = ((0 : ℝ) : ℂ) from rfl]
-    refine (Complex.continuous_ofReal.tendsto _).comp ?_
-    simpa [div_eq_mul_inv] using
-      ((tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).inv_tendsto_atTop).const_mul
-        (ρ / 2)
+  · have h_real : Filter.Tendsto (fun n : ℕ ↦ ρ / 2 / ((n : ℝ) + 1)) Filter.atTop (𝓝 0) := by
+      simpa [div_eq_mul_inv] using
+        ((tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds).inv_tendsto_atTop).const_mul
+          (ρ / 2)
+    have h := (Complex.continuous_ofReal.tendsto (0 : ℝ)).comp h_real
+    rwa [Complex.ofReal_zero] at h
 
 /-- Each difference quotient `t ↦ (dslope f (γ t) (w₀ + s) − dslope f (γ t) w₀) / s · deriv γ t`
 is a.e. strongly measurable, being a continuous factor times `deriv γ`. -/
@@ -128,33 +129,30 @@ private theorem dslope_deriv_mul_deriv_aestronglyMeasurable (hU : IsOpen U)
       Filter.Eventually.of_forall fun n h ↦ hs_ne n (add_left_cancel (h.trans (add_zero w₀).symm))⟩
   have h_q_eq : ∀ n, (dslope f (γ t) (w₀ + s n) - dslope f (γ t) w₀) / s n * deriv γ t =
       slope (dslope f (γ t)) w₀ (w₀ + s n) * deriv γ t := fun n ↦ by
-    rw [slope_def_field, show w₀ + s n - w₀ = s n by ring]
+    have hsub : w₀ + s n - w₀ = s n := by ring
+    rw [slope_def_field, hsub]
   simp_rw [h_q_eq]
   exact (h_diff.hasDerivAt.tendsto_slope.comp hy).mul_const _
 
-/-- Near `w₀`, the derivative integrand is dominated by the constant `C · D`, where `C` bounds
-`deriv (dslope f c)` (Cauchy's estimate) and `D` bounds `deriv γ`. -/
-private theorem dslope_deriv_product_norm_bound {C D δ : ℝ}
+/-- Near `w₀`, the derivative integrand is dominated by `C · ‖deriv γ t‖`, where `C` bounds
+`deriv (dslope f c)` (Cauchy's estimate) uniformly for `c` on the curve. -/
+private theorem dslope_deriv_product_norm_bound {C δ : ℝ}
     (h_dslope_bd : ∀ c ∈ γ '' uIcc a b, ∀ w ∈ Metric.ball w₀ δ, ‖deriv (dslope f c) w‖ ≤ C)
-    (hD : ∀ t ∈ uIcc a b, ‖deriv γ t‖ ≤ D) {ε : ℝ}
-    (hball : Metric.ball w₀ ε ⊆ Metric.ball w₀ δ) :
+    {ε : ℝ} (hball : Metric.ball w₀ ε ⊆ Metric.ball w₀ δ) :
     ∀ᵐ t, t ∈ Ι a b → ∀ w ∈ Metric.ball w₀ ε,
-      ‖deriv (dslope f (γ t)) w * deriv γ t‖ ≤ C * D := by
+      ‖deriv (dslope f (γ t)) w * deriv γ t‖ ≤ C * ‖deriv γ t‖ := by
   refine Filter.Eventually.of_forall fun t ht w hw ↦ ?_
-  have hCb : ‖deriv (dslope f (γ t)) w‖ ≤ C :=
-    h_dslope_bd (γ t) ⟨t, Set.uIoc_subset_uIcc ht, rfl⟩ w (hball hw)
   rw [norm_mul]
-  exact mul_le_mul hCb (hD t (Set.uIoc_subset_uIcc ht)) (norm_nonneg _)
-    (le_trans (norm_nonneg _) hCb)
+  exact mul_le_mul_of_nonneg_right
+    (h_dslope_bd (γ t) ⟨t, Set.uIoc_subset_uIcc ht, rfl⟩ w (hball hw)) (norm_nonneg _)
 
 /-- Pointwise differentiability of `dixonH1`'s integral form at `w₀ ∈ U`, via the parametric
 Leibniz rule with `F' w t = deriv (dslope f (γ t)) w · deriv γ t`, dominated near `w₀` by Cauchy's
 estimate on a ball avoiding the boundary of `U`. -/
 private theorem differentiableAt_dixonH1_integral (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
     (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
-    (hderiv_cont : ContinuousOn (deriv γ) (uIcc a b)) (hw₀ : w₀ ∈ U) :
+    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) (hw₀ : w₀ ∈ U) :
     DifferentiableAt ℂ (fun w ↦ ∫ t in a..b, dslope f w (γ t) * deriv γ t) w₀ := by
-  obtain ⟨D, hD⟩ := isCompact_uIcc.bddAbove_image hderiv_cont.norm
   have hK_compact : IsCompact (γ '' uIcc a b) := isCompact_uIcc.image_of_continuousOn hγ_cont
   have hK_sub : γ '' uIcc a b ⊆ U := fun _ ⟨t, ht, hz⟩ ↦ hz ▸ hγU t ht
   obtain ⟨C, hC_pos, δ, hδ_pos, h_dslope_bd⟩ :=
@@ -166,12 +164,11 @@ private theorem differentiableAt_dixonH1_integral (hU : IsOpen U) (hf : Differen
   refine (intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le (𝕜 := ℂ)
     (F := fun w t ↦ dslope f w (γ t) * deriv γ t)
     (F' := fun w t ↦ deriv (dslope f (γ t)) w * deriv γ t)
-    (bound := fun _ ↦ C * D) (Metric.ball_mem_nhds w₀ hε_pos) ?_
-    (((dslope_comp_curve_continuousOn hU hf hγ_cont hγU hw₀).mul hderiv_cont).intervalIntegrable)
+    (bound := fun t ↦ C * ‖deriv γ t‖) (Metric.ball_mem_nhds w₀ hε_pos) ?_
+    (hderiv_int.continuousOn_mul (dslope_comp_curve_continuousOn hU hf hγ_cont hγU hw₀))
     (dslope_deriv_mul_deriv_aestronglyMeasurable hU hf hγ_cont hγU hw₀)
-    (dslope_deriv_product_norm_bound h_dslope_bd (fun t ht ↦ hD ⟨t, ht, rfl⟩)
-      (Metric.ball_subset_ball (min_le_left δ εU)))
-    intervalIntegrable_const ?_).2.differentiableAt
+    (dslope_deriv_product_norm_bound h_dslope_bd (Metric.ball_subset_ball (min_le_left δ εU)))
+    (hderiv_int.norm.const_mul C) ?_).2.differentiableAt
   · filter_upwards [Metric.ball_mem_nhds w₀ hε_pos] with w hw
     exact factor_mul_deriv_aestronglyMeasurable
       (dslope_comp_curve_continuousOn hU hf hγ_cont hγU (hball_U hw))
@@ -179,17 +176,17 @@ private theorem differentiableAt_dixonH1_integral (hU : IsOpen U) (hf : Differen
     exact (dslope_first_arg_hasDerivAt hU hf (hγU t (Set.uIoc_subset_uIcc ht))
       (hball_U hw)).mul_const (deriv γ t)
 
-/-- **`dixonH1` is holomorphic on the region.** For `f` differentiable on the open set `U`, and a
-`C¹` curve `γ` (continuous with `ContinuousOn (deriv γ)`) whose image lies in `U`, the map
+/-- **`dixonH1` is holomorphic on the region.** For `f` differentiable on the open set `U`, and `γ`
+continuous on `uIcc a b` with `deriv γ` interval-integrable and image in `U`, the map
 `fun w ↦ dixonH1 f γ a b w` is complex-differentiable on `U`. -/
 theorem differentiableOn_dixonH1 (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
     (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
-    (hderiv_cont : ContinuousOn (deriv γ) (uIcc a b)) :
+    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) :
     DifferentiableOn ℂ (dixonH1 f γ a b) U := by
   have h_eq : dixonH1 f γ a b = fun w ↦ ∫ t in a..b, dslope f w (γ t) * deriv γ t :=
     funext fun w ↦ dixonH1_def f γ a b w
   rw [h_eq]
-  exact fun w₀ hw₀ ↦ (differentiableAt_dixonH1_integral hU hf hγ_cont hγU hderiv_cont
+  exact fun w₀ hw₀ ↦ (differentiableAt_dixonH1_integral hU hf hγ_cont hγU hderiv_int
     hw₀).differentiableWithinAt
 
 end
