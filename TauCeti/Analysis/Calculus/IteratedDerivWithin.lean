@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 
 /-!
 # Generic lemmas for iterated derivatives within sets
@@ -24,7 +23,7 @@ For the plain fundamental-theorem identity on a compact interval use Mathlib's
 
 public section
 
-open MeasureTheory Set intervalIntegral Filter
+open Set Filter
 open scoped ContDiff Topology
 
 namespace TauCeti
