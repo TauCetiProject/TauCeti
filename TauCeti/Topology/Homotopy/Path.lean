@@ -32,7 +32,8 @@ variable {X : Type*} [TopologicalSpace X]
 /-- Restrict a path whose image lies in a subset to a path in the corresponding subtype.
 The source and target are the given subtype endpoints, and coercing the restricted path back to
 `X` recovers the original path pointwise. -/
-abbrev codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val) (hmem : ∀ t, γ t ∈ s) :
+irreducible_def codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val)
+    (hmem : ∀ t, γ t ∈ s) :
     Path x y where
   toFun := s.codRestrict γ hmem
   continuous_toFun := γ.continuous.codRestrict hmem
@@ -42,53 +43,43 @@ abbrev codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val) (hmem : ∀ t, 
 @[simp]
 theorem codRestrict_coe {s : Set X} {x y : s} (γ : Path x.val y.val)
     (hmem : ∀ t, γ t ∈ s) (t : I) :
-    (γ.codRestrict hmem t : X) = γ t := rfl
+    (γ.codRestrict hmem t : X) = γ t := by
+  simp [codRestrict_def]
 
 @[simp]
 theorem map_codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val)
     (hmem : ∀ t, γ t ∈ s) :
-    (γ.codRestrict hmem).map continuous_subtype_val = γ := rfl
-
-/-- Generic Lebesgue partition lemma for paths: given an open cover of a path's range, there is a
-finite partition of `[0,1]` such that each segment lies entirely in one set from the cover. -/
-theorem exists_partition_in_cover
-    {ι : Type*} (U : ι → Set X) (hU_open : ∀ i, IsOpen (U i))
-    {x y : X} (γ : Path x y) (hU_cover : ∀ s : unitInterval, ∃ i, γ s ∈ U i) :
-    ∃ (n : ℕ) (t : Fin (n + 1) → unitInterval),
-      Monotone t ∧ t 0 = 0 ∧ t (Fin.last n) = 1 ∧
-      (∀ i : Fin n, ∃ j : ι,
-        ∀ s : unitInterval, (t i.castSucc : ℝ) ≤ s ∧ s ≤ (t i.succ : ℝ) → γ s ∈ U j) := by
-  obtain ⟨t, ht0, ht_mono, ⟨N, hN⟩, ht_cover⟩ :=
-    exists_monotone_Icc_subset_open_cover_unitInterval
-      (fun i ↦ (hU_open i).preimage γ.continuous)
-      (fun s _ ↦ by
-        obtain ⟨i, hi⟩ := hU_cover s
-        exact Set.mem_iUnion.2 ⟨i, hi⟩)
-  refine ⟨N, fun k ↦ t (k : ℕ), fun _ _ hij ↦ ht_mono hij, ?_, ?_, fun i ↦ ?_⟩
-  · simpa using ht0
-  · simpa using hN N le_rfl
-  · obtain ⟨j, hj⟩ := ht_cover i
-    exact ⟨j, fun s hs ↦ hj ⟨hs.1, hs.2⟩⟩
-
-/-- Generic Lebesgue partition lemma for paths, neighborhood version: if every point on a path
-has a neighborhood with property `P`, then there is a partition such that each segment lies in an
-open set with property `P`. -/
-theorem exists_partition_with_property {x y : X} (γ : Path x y) (P : Set X → Prop)
-    (h : ∀ z ∈ Set.range γ, ∃ U : Set X, IsOpen U ∧ z ∈ U ∧ P U) :
-    ∃ (n : ℕ) (t : Fin (n + 1) → unitInterval),
-      Monotone t ∧ t 0 = 0 ∧ t (Fin.last n) = 1 ∧
-      (∀ i : Fin n, ∃ U : Set X, IsOpen U ∧ P U ∧
-        ∀ s : unitInterval, (t i.castSucc : ℝ) ≤ s ∧ s ≤ (t i.succ : ℝ) → γ s ∈ U) := by
-  choose U hU_open hU_mem hU_P using h
-  obtain ⟨n, t, h_mono, h_start, h_end, h_segments⟩ :=
-    exists_partition_in_cover (fun z : Set.range γ ↦ U z.val z.property)
-      (fun z ↦ hU_open z.val z.property) γ fun s ↦
-        ⟨⟨γ s, ⟨s, rfl⟩⟩, hU_mem (γ s) ⟨s, rfl⟩⟩
-  refine ⟨n, t, h_mono, h_start, h_end, fun i ↦ ?_⟩
-  obtain ⟨⟨z, hz⟩, h_seg⟩ := h_segments i
-  exact ⟨U z hz, hU_open z hz, hU_P z hz, h_seg⟩
+    (γ.codRestrict hmem).map continuous_subtype_val = γ := by
+  ext t
+  simp
 
 end Path
+
+/-- A partition of the unit interval `[0, 1]` into `n` segments.
+This bundles a monotone sequence `0 = t 0 ≤ ... ≤ t (Fin.last n) = 1`. -/
+structure IntervalPartition (n : ℕ) where
+  /-- The partition points. -/
+  t : Fin (n + 1) → unitInterval
+  /-- The partition points are monotone. -/
+  mono : Monotone t
+  /-- The first partition point is `0`. -/
+  t_zero : t 0 = 0
+  /-- The last partition point is `1`. -/
+  t_last : t (Fin.last n) = 1
+
+namespace IntervalPartition
+
+attribute [simp, grind =] t_zero t_last
+
+/-- `IntervalPartition 0` is empty: a single partition point cannot be simultaneously
+`0` and `1`. -/
+instance : IsEmpty (IntervalPartition 0) where
+  false part := by
+    have h0 : part.t 0 = 0 := part.t_zero
+    have h1 : part.t 0 = 1 := part.t_last
+    exact zero_ne_one (h0.symm.trans h1)
+
+end IntervalPartition
 
 namespace Path
 variable {X : Type*} [TopologicalSpace X] {x y : X}
@@ -106,6 +97,7 @@ theorem subpath_trans {x y : X} (p : Path x y)
   exact ⟨Path.Homotopy.subpathTransSubpath p a b c⟩
 
 /-- A degenerate subpath represents the reflexivity class at its endpoint. -/
+@[simp]
 theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
     mk (p.subpath a a) = refl (p a) := by
   simp only [← mk_refl, eq]
@@ -113,6 +105,7 @@ theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
 
 /-- The full `[0,1]` subpath represents the original path, up to the endpoint casts inserted by
 `Path.subpath`. -/
+@[simp]
 theorem subpath_zero_one {x y : X} (p : Path x y) :
     mk (p.subpath 0 1) = (mk p).cast (by simp) (by simp) := by
   simp only [← mk_cast, eq]

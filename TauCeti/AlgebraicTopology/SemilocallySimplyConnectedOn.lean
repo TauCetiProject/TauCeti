@@ -44,7 +44,8 @@ public def SemilocallySimplyConnectedAt (x : X) : Prop :=
     (FundamentalGroup.map (⟨Subtype.val, continuous_subtype_val⟩ : C(U, X)) base).range = ⊥
 
 /-- Simply connected spaces are semilocally simply connected at every point. -/
-public theorem SemilocallySimplyConnectedAt.of_simplyConnected [SimplyConnectedSpace X] (x : X) :
+public theorem SemilocallySimplyConnectedAt.of_simplyConnectedSpace
+    [SimplyConnectedSpace X] (x : X) :
     SemilocallySimplyConnectedAt x :=
   ⟨univ, univ_mem, fun base ↦ by
     simp only [MonoidHom.range_eq_bot_iff]
@@ -148,21 +149,30 @@ to lie inside `U`. -/
 public def IsPathHomotopyTrivial (U : Set X) : Prop :=
   ∀ ⦃a b : X⦄ (p q : Path a b), range p ⊆ U → range q ⊆ U → Path.Homotopic p q
 
+/-- Unfold `IsPathHomotopyTrivial U` as the assertion that any two same-endpoint paths whose
+ranges lie in `U` are homotopic in the ambient space `X`. -/
 public theorem isPathHomotopyTrivial_iff {U : Set X} :
     IsPathHomotopyTrivial U ↔
       ∀ ⦃a b : X⦄ (p q : Path a b), range p ⊆ U → range q ⊆ U → Path.Homotopic p q :=
   Iff.rfl
 
+/-- Apply path-homotopy triviality of `U` to compare two same-endpoint paths in `X` whose
+ranges both lie in `U`. -/
 public theorem IsPathHomotopyTrivial.apply {U : Set X} (hU : IsPathHomotopyTrivial U)
     ⦃a b : X⦄ (p q : Path a b) (hp : range p ⊆ U) (hq : range q ⊆ U) :
     Path.Homotopic p q :=
   hU p q hp hq
+
+/-- Package the ambient homotopy comparison property for all same-endpoint paths with ranges in
+`U` as `IsPathHomotopyTrivial U`. -/
 public theorem IsPathHomotopyTrivial.mk {U : Set X}
     (hU : ∀ ⦃a b : X⦄ (p q : Path a b), range p ⊆ U → range q ⊆ U →
       Path.Homotopic p q) :
     IsPathHomotopyTrivial U :=
   hU
 
+/-- Set-level characterization of `SemilocallySimplyConnectedOn`: every point of `s` has an
+open neighborhood in which every loop is nullhomotopic in the ambient space. -/
 public theorem semilocallySimplyConnectedOn_iff :
     SemilocallySimplyConnectedOn s ↔
     ∀ x ∈ s, ∃ U : Set X, IsOpen U ∧ x ∈ U ∧
@@ -170,6 +180,9 @@ public theorem semilocallySimplyConnectedOn_iff :
         Path.Homotopic γ (Path.refl u) :=
   forall₂_congr fun _ _ ↦ semilocallySimplyConnectedAt_iff
 
+/-- Set-level path characterization of `SemilocallySimplyConnectedOn`: every point of `s` has an
+open neighborhood in which same-endpoint paths with ranges in that neighborhood are homotopic in
+the ambient space. -/
 public theorem semilocallySimplyConnectedOn_iff_paths :
     SemilocallySimplyConnectedOn s ↔
     ∀ x ∈ s, ∃ U : Set X, IsOpen U ∧ x ∈ U ∧
@@ -189,12 +202,7 @@ covering-space theory, so the bridge below is stated under `[LocallyPathConnecte
 
 /-- On a locally path-connected space, the based class
 `TauCeti.SemilocallySimplyConnectedSpace` implies the unbased pointwise predicate
-`SemilocallySimplyConnectedAt` at every point.
-
-Given a based neighbourhood `U` of `x` in which every loop at `x` is null-homotopic, the path
-component `U'` of `x` in `U` is open (local path-connectedness), path-connected, and contained in
-`U`. Any loop `γ` based at `u ∈ U'` is conjugated by a path `δ : x ⤳ u` inside `U'` to a loop at
-`x` with range in `U`, which is null-homotopic; conjugating back kills `γ`. -/
+`SemilocallySimplyConnectedAt` at every point. -/
 public theorem SemilocallySimplyConnectedAt.of_semilocallySimplyConnectedSpace
     [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X] (x : X) :
     SemilocallySimplyConnectedAt x := by

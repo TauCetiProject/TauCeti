@@ -26,37 +26,9 @@ variable {X : Type*} [TopologicalSpace X]
 
 /-! ### Tube data structures -/
 
-/-- A partition of the unit interval [0,1] into n segments.
-This bundles a monotone sequence 0 = t₀ ≤ t₁ ≤ ... ≤ tₙ = 1. -/
--- If this proves more generally useful, we should move it to `UnitInterval.lean`
--- and provide further API (e.g. compositions, induction principles, ...)
-public structure IntervalPartition (n : ℕ) where
-  /-- Partition points 0 = t₀ ≤ t₁ ≤ ... ≤ tₙ = 1 -/
-  t : Fin (n + 1) → unitInterval
-  /-- t is monotone -/
-  mono : Monotone t
-  /-- t starts at 0 -/
-  t_zero : t 0 = 0
-  /-- t ends at 1 -/
-  t_last : t (Fin.last n) = 1
-
-namespace IntervalPartition
-
-attribute [simp, grind =] t_zero t_last
-
-/-- `IntervalPartition 0` is empty: a single partition point cannot be simultaneously
-`0` (by `t_zero`) and `1` (by `t_last`). -/
-public instance : IsEmpty (IntervalPartition 0) where
-  false part := by
-    have h0 : part.t 0 = 0 := part.t_zero
-    have h1 : part.t 0 = 1 := part.t_last
-    exact zero_ne_one (h0.symm.trans h1)
-
-end IntervalPartition
-
 /-- Data for a tubular neighborhood in an SLSC space: segment neighborhoods, point
 neighborhoods at all partition points, and the openness/path-connectedness/SLSC subset data. -/
-public structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
+structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
   /-- Segment neighborhoods -/
   U : Fin n → Set X
   /-- Point neighborhoods at ALL partition points (including endpoints) -/
@@ -78,7 +50,7 @@ public structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) where
 This means:
 1. γ stays in the segment neighborhoods U[i] on each interval [t[i], t[i+1]]
 2. γ passes through the point neighborhoods V[j] at ALL partition points -/
-public structure PathInTube {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
+structure PathInTube {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
     (γ : Path x y) (part : IntervalPartition n) (T : TubeData X n) : Prop where
   /-- γ stays in the segment neighborhoods U[i] on each interval [t[i], t[i+1]] -/
   stays_in_U : ∀ i (s : unitInterval),
@@ -87,7 +59,7 @@ public structure PathInTube {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
   passes_through_V : ∀ j, γ (part.t j) ∈ T.V j
 
 /-- If γ is in a tube, then its subpath on segment i has range in U[i]. -/
-public lemma PathInTube.subpath_range_subset {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
+lemma PathInTube.subpath_range_subset {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
     {γ : Path x y} {part : IntervalPartition n} {T : TubeData X n}
     (hγ : PathInTube γ part T) (i : Fin n) :
     Set.range (γ.subpath (part.t i.castSucc) (part.t i.succ)) ⊆ T.U i := by
@@ -100,14 +72,40 @@ public lemma PathInTube.subpath_range_subset {X : Type*} [TopologicalSpace X] {x
       ⟨Set.Icc.le_convexComb h_mono t, Set.Icc.convexComb_le h_mono t⟩
 
 /-- Convert TubeData with partition to the set of paths in the tube -/
-public def TubeData.toSet {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
+def TubeData.toSet {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
     (part : IntervalPartition n) (T : TubeData X n) : Set (Path x y) :=
   {γ | PathInTube γ part T}
 
-@[simp] public theorem TubeData.mem_toSet_iff {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
+@[simp] theorem TubeData.mem_toSet_iff {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
     (part : IntervalPartition n) (T : TubeData X n) (γ : Path x y) :
     γ ∈ T.toSet part ↔ PathInTube γ part T :=
   Iff.rfl
+
+/-- File-local adapter from Mathlib's unit-interval open-cover partition lemma to the segment
+data needed by the tube construction. -/
+private theorem Path.exists_partition_with_property {x y : X} (γ : Path x y)
+    (P : Set X → Prop)
+    (h : ∀ z ∈ Set.range γ, ∃ U : Set X, IsOpen U ∧ z ∈ U ∧ P U) :
+    ∃ (n : ℕ) (part : IntervalPartition n),
+      ∀ i : Fin n, ∃ U : Set X, IsOpen U ∧ P U ∧
+        ∀ s : unitInterval, (part.t i.castSucc : ℝ) ≤ s ∧ s ≤ (part.t i.succ : ℝ) →
+          γ s ∈ U := by
+  choose U hU_open hU_mem hU_P using h
+  obtain ⟨t, ht0, ht_mono, ⟨N, hN⟩, ht_cover⟩ :=
+    exists_monotone_Icc_subset_open_cover_unitInterval
+      (fun z : Set.range γ ↦ (hU_open z.val z.property).preimage γ.continuous)
+      (fun s _ ↦
+        Set.mem_iUnion.2
+          ⟨⟨γ s, ⟨s, rfl⟩⟩, hU_mem (γ s) ⟨s, rfl⟩⟩)
+  let part : IntervalPartition N := {
+    t := fun k ↦ t (k : ℕ)
+    mono := fun _ _ hij ↦ ht_mono hij
+    t_zero := by simpa using ht0
+    t_last := by simpa using hN N le_rfl
+  }
+  refine ⟨N, part, fun i ↦ ?_⟩
+  obtain ⟨⟨z, hz⟩, h_seg⟩ := ht_cover i
+  exact ⟨U z hz, hU_open z hz, hU_P z hz, fun s hs ↦ h_seg ⟨hs.1, hs.2⟩⟩
 
 /-- Given segment neighborhoods covering each subpath of `γ`, construct the vertex neighborhoods
 as path components of the finite intersections of adjacent segment neighborhoods. -/
@@ -161,23 +159,18 @@ private theorem Path.exists_vertexNeighborhood_family [LocallyPathConnectedSpace
   · intro i
     exact hV_right i.succ i rfl
 
-/-- If `X` is SLSC along the range of `γ`, then `γ` has tube data around it. -/
-public theorem Path.exists_partition_in_pathHomotopyTrivial_neighborhoods
+/-- If `X` is locally path-connected and SLSC along the range of `γ`, then `γ` has tube data
+around it. -/
+theorem Path.exists_partition_in_pathHomotopyTrivial_neighborhoods
     [LocallyPathConnectedSpace X] {x y : X}
     (γ : Path x y) (hslsc : SemilocallySimplyConnectedOn (Set.range γ)) :
     ∃ (n : ℕ) (part : IntervalPartition n) (T : TubeData X n), PathInTube γ part T := by
-  obtain ⟨n, t, h_mono, h_start, h_end, h_partition⟩ := γ.exists_partition_with_property
+  obtain ⟨n, part, h_partition⟩ := γ.exists_partition_with_property
     (fun U ↦ IsPathConnected U ∧ IsPathHomotopyTrivial U)
     (fun z hz ↦ (hslsc.at hz).exists_pathConnected_pathHomotopyTrivial_neighborhood)
   choose U hU_open hU_prop hU_contains using h_partition
   obtain ⟨V, hV_open, hV_pathConn, hγ_in_V, hV_left, hV_right⟩ :=
-    Path.exists_vertexNeighborhood_family h_mono hU_open hU_contains
-  let part : IntervalPartition n := {
-    t := t
-    mono := h_mono
-    t_zero := h_start
-    t_last := h_end
-  }
+    Path.exists_vertexNeighborhood_family part.mono hU_open hU_contains
   let T : TubeData X n := {
     U := U
     V := V
@@ -194,7 +187,7 @@ public theorem Path.exists_partition_in_pathHomotopyTrivial_neighborhoods
 /-- Given open segment and vertex families, the corresponding raw tube set is open in the path
 space. This compact-open statement only uses openness of the two families, not the full SLSC tube
 data carried by `TubeData`. -/
-public theorem isOpen_pathTube {x y : X} {n : ℕ}
+theorem isOpen_pathTube {x y : X} {n : ℕ}
     (part : IntervalPartition n) (U : Fin n → Set X) (V : Fin (n + 1) → Set X)
     (hU_open : ∀ i, IsOpen (U i)) (hV_open : ∀ j, IsOpen (V j)) :
     IsOpen {γ' : Path x y |
@@ -251,7 +244,7 @@ public theorem isOpen_pathTube {x y : X} {n : ℕ}
   exact hA.inter hB
 
 /-- Given a partition and tube data, the set of paths in the tube is open in the path space. -/
-public theorem TubeData.isOpen {x y : X} {n : ℕ}
+theorem TubeData.isOpen {x y : X} {n : ℕ}
     (part : IntervalPartition n) (T : TubeData X n) :
     IsOpen (T.toSet (x := x) (y := y) part) := by
   have : T.toSet (x := x) (y := y) part =
@@ -447,7 +440,7 @@ theorem Path.paste_segment_homotopies {x y y' : X} {n : ℕ}
   exact h_final.symm.trans ((h_chain (Fin.last n)).trans h_base)
 
 /-- A loop in an SLSC neighborhood is null-homotopic if its range lies in that neighborhood. -/
-public theorem Path.nullhomotopic_of_range_subset_pathHomotopyTrivial {x : X} (γ : Path x x)
+theorem Path.nullhomotopic_of_range_subset_pathHomotopyTrivial {x : X} (γ : Path x x)
     (U : Set X) (hU : IsPathHomotopyTrivial U)
     (hγU : Set.range γ ⊆ U) :
     Path.Homotopic γ (Path.refl x) :=
@@ -515,7 +508,7 @@ theorem Path.paste_segment_homotopies_pathHomotopyTrivial_source {x y y' : X} {n
 
 /-- Variable-endpoint tube theorem: paths in the same tube as `γ` are homotopic to `γ`
 followed by the final endpoint rung. -/
-public theorem Path.tube_subset_homotopy_class_source {x y y' : X} {n : ℕ}
+theorem Path.tube_subset_homotopy_class_source {x y y' : X} {n : ℕ}
     (γ : Path x y) (part : IntervalPartition n) (T : TubeData X n)
     (hγ : PathInTube γ part T)
     (γ' : Path x y') (hγ' : PathInTube γ' part T) :
@@ -573,7 +566,7 @@ This is the main result that combines all the previous lemmas:
 1. Construct rung paths α_i using path-connectedness of V neighborhoods
 2. For each segment, apply segment_rung_homotopy to get γ_i·α_{i+1} ≃ α_i·γ'_i
 3. Use paste_segment_homotopies to get γ ≃ γ' by telescoping cancellation -/
-public theorem Path.tube_subset_homotopy_class {x y : X} {n : ℕ}
+theorem Path.tube_subset_homotopy_class {x y : X} {n : ℕ}
     (γ : Path x y) (part : IntervalPartition n) (T : TubeData X n)
     (hγ : PathInTube γ part T)
     (γ' : Path x y) (hγ' : PathInTube γ' part T) :
