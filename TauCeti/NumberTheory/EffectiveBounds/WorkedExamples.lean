@@ -33,8 +33,8 @@ cyclotomic discriminant formula, giving `d_{ℚ(i)} = -4` and hence `|d_{ℚ(i)}
 
 * `TauCeti.NumberField.WorkedExamples.classNumber_adjoinRoot_sqrt_neg_five_le`: `h ≤ 320` for
   `ℚ(√-5)`.
-* Non-public examples specialize `IsCyclotomicExtension.Rat.discr` and
-  `IsCyclotomicExtension.Rat.natAbs_discr` to recover `d_{ℚ(i)} = -4` and `|d_{ℚ(i)}| = 4`.
+* `TauCeti.NumberField.WorkedExamples.discr_cyclotomicField_four`: `d_{ℚ(i)} = -4`.
+* `TauCeti.NumberField.WorkedExamples.natAbs_discr_cyclotomicField_four`: `|d_{ℚ(i)}| = 4`.
 
 ## Provenance
 
@@ -90,34 +90,30 @@ theorem classNumber_adjoinRoot_sqrt_neg_five_le :
 
 /-! ### `ℚ(i)`: Mathlib's cyclotomic discriminant formula recovers `|d| = 4` -/
 
-/-- As a non-public worked example, Mathlib's cyclotomic discriminant formula gives
-`d_{ℚ(i)} = -4` for the fourth cyclotomic field. -/
-example : NumberField.discr (CyclotomicField 4 ℚ) = -4 := by
-  haveI : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
-    CyclotomicField.isCyclotomicExtension 4 ℚ
-  have hpf : Nat.primeFactors 4 = {2} := by
-    rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
-    exact Nat.primeFactors_prime_pow (by norm_num : 2 ≠ 0) (by decide : Nat.Prime 2)
-  have hφ : Nat.totient 4 = 2 := by
-    rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
-    rw [Nat.totient_prime_pow (by decide : Nat.Prime 2) (by norm_num : 0 < 2)]
-    norm_num
-  rw [IsCyclotomicExtension.Rat.discr (n := 4) (K := CyclotomicField 4 ℚ), hpf, hφ]
+private lemma primeFactors_four : Nat.primeFactors 4 = {2} := by
+  rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
+  exact Nat.primeFactors_prime_pow (by norm_num : 2 ≠ 0) (by decide : Nat.Prime 2)
+
+private lemma totient_four : Nat.totient 4 = 2 := by
+  rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
+  rw [Nat.totient_prime_pow (by decide : Nat.Prime 2) (by norm_num : 0 < 2)]
   norm_num
 
-/-- As a non-public worked example, Mathlib's absolute cyclotomic discriminant formula gives
-`|d_{ℚ(i)}| = 4` for the fourth cyclotomic field. -/
-example : (NumberField.discr (CyclotomicField 4 ℚ)).natAbs = 4 := by
+/-- **The discriminant of `ℚ(i)`.** Mathlib's cyclotomic discriminant formula gives
+`d_{ℚ(i)} = -4` for the fourth cyclotomic field, which is the roadmap's exact-discriminant
+worked example. -/
+theorem discr_cyclotomicField_four : NumberField.discr (CyclotomicField 4 ℚ) = -4 := by
   haveI : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
     CyclotomicField.isCyclotomicExtension 4 ℚ
-  have hpf : Nat.primeFactors 4 = {2} := by
-    rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
-    exact Nat.primeFactors_prime_pow (by norm_num : 2 ≠ 0) (by decide : Nat.Prime 2)
-  have hφ : Nat.totient 4 = 2 := by
-    rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
-    rw [Nat.totient_prime_pow (by decide : Nat.Prime 2) (by norm_num : 0 < 2)]
-    norm_num
-  rw [IsCyclotomicExtension.Rat.natAbs_discr (n := 4) (K := CyclotomicField 4 ℚ), hpf, hφ]
+  rw [IsCyclotomicExtension.Rat.discr (n := 4) (K := CyclotomicField 4 ℚ),
+    primeFactors_four, totient_four]
+  norm_num
+
+/-- **The absolute discriminant of `ℚ(i)`.** The fourth cyclotomic field has absolute
+discriminant `4`, obtained from the signed discriminant worked example. -/
+theorem natAbs_discr_cyclotomicField_four :
+    (NumberField.discr (CyclotomicField 4 ℚ)).natAbs = 4 := by
+  rw [discr_cyclotomicField_four]
   norm_num
 
 end TauCeti.NumberField.WorkedExamples
