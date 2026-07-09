@@ -18,12 +18,16 @@ For a closed curve `γ` (so `γ a = γ b`) that is continuous on `Set.uIcc a b`,
 countable set, with interval-integrable derivative, the generalized winding number
 `fun w ↦ windingNumber γ a b w`, viewed as a function on the points off the curve, is locally
 constant (`isLocallyConstant_windingNumber_of_closed`). It is the ingredient Dixon's argument uses
-for the homology form of Cauchy's theorem (roadmap `homologyCauchyTheorem`).
+for the homology form of Cauchy's theorem (roadmap `homologyCauchyTheorem`). As a corollary,
+`exists_ball_windingNumber_zero` packages the local matching data Dixon needs: around an off-curve
+point where the winding number vanishes, it vanishes on a whole ball that stays off the curve.
 
 ## Main results
 
 * `TauCeti.Contour.isLocallyConstant_windingNumber_of_closed` — the winding number is locally
   constant on the complement of a closed curve.
+* `TauCeti.Contour.exists_ball_windingNumber_zero` — around an off-curve point where the winding
+  number vanishes, it vanishes on a whole ball that stays off the curve.
 
 ## Provenance
 
