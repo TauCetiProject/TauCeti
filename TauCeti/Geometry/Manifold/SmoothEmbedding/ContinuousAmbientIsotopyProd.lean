@@ -86,6 +86,20 @@ theorem prodMap_setoid
 
 end ContinuousAmbientIsotopic
 
+namespace AmbientIsotopic
+
+/-- Deprecated compatibility alias for the old smooth-embedding product ambient-isotopy theorem
+name. -/
+@[deprecated ContinuousAmbientIsotopic.prodMap (since := "2026-07-09")]
+alias prodMap := ContinuousAmbientIsotopic.prodMap
+
+/-- Deprecated compatibility alias for the old smooth-embedding product ambient-isotopy setoid
+theorem name. -/
+@[deprecated ContinuousAmbientIsotopic.prodMap_setoid (since := "2026-07-09")]
+alias prodMap_setoid := ContinuousAmbientIsotopic.prodMap_setoid
+
+end AmbientIsotopic
+
 end SmoothEmbedding
 
 end TauCeti
