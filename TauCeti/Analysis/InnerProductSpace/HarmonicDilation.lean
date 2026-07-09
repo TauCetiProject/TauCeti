@@ -66,21 +66,6 @@ private lemma contDiffAt_homothety (a : E) (c : ℝ) (x : E) :
     fun_prop
   simpa [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add] using h
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
-/-- Precomposition by a homeomorphism transports vanishing in a neighbourhood. -/
-private theorem eventuallyEq_zero_comp_homeomorph_iff (h : E ≃ₜ E) (g : E → F) (x : E) :
-    (g ∘ h =ᶠ[𝓝 x] 0) ↔ (g =ᶠ[𝓝 (h x)] 0) := by
-  rw [← h.map_nhds_eq x]
-  constructor
-  · intro hyp
-    refine Filter.eventually_map.mpr ?_
-    filter_upwards [hyp] with y hy
-    simpa using hy
-  · intro hyp
-    have hyp' := Filter.eventually_map.mp hyp
-    filter_upwards [hyp'] with y hy
-    simpa using hy
-
 /-- **Harmonicity is invariant under nonzero homothety.**
 
 For `c ≠ 0`, the function `y ↦ f (AffineMap.homothety a c y)` is harmonic at `x` iff `f`

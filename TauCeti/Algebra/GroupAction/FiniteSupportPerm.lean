@@ -4,6 +4,7 @@ public import Mathlib.GroupTheory.GroupAction.FixedPoints
 public import Mathlib.Algebra.Group.Action.End
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Algebra.Group.Pointwise.Set.Finite
 
 /-!
 # Finitely supported permutations
@@ -47,12 +48,6 @@ theorem finite_compl_fixedBy_iff_eventually_eq_self {π : Equiv.Perm ℕ} :
 theorem finite_compl_fixedBy_conj {π σ : Equiv.Perm ι}
     (hσ : (MulAction.fixedBy ι σ)ᶜ.Finite) :
     (MulAction.fixedBy ι (π⁻¹ * σ * π))ᶜ.Finite := by
-  refine (hσ.image π.symm).subset fun n hn => ?_
-  refine ⟨π n, ?_, by simp⟩
-  have hn' : π.symm (σ (π n)) ≠ n := by
-    simpa [MulAction.mem_fixedBy, Equiv.Perm.smul_def, Equiv.Perm.mul_apply] using hn
-  rw [Set.mem_compl_iff, MulAction.mem_fixedBy, Equiv.Perm.smul_def]
-  intro hfixed
-  exact hn' (by simp [hfixed])
+  simpa [Set.smul_set_compl, MulAction.smul_fixedBy] using hσ.smul_set (a := π⁻¹)
 
 end TauCeti

@@ -47,8 +47,9 @@ variable
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [InnerProductSpace ℝ E']
   [FiniteDimensional ℝ E'] [NormedSpace ℝ F] in
 /-- Precomposition by a homeomorphism transports vanishing in a neighbourhood: `g ∘ h` vanishes
-near `x` iff `g` vanishes near `h x`. -/
-private theorem eventuallyEq_zero_comp_homeomorph_iff (h : E ≃ₜ E') (g : E' → F) (x : E) :
+near `x` iff `g` vanishes near `h x`. Used to transport `Δ f =ᶠ 0` across the changes of
+variable in this file and in `HarmonicDilation.lean`. -/
+theorem eventuallyEq_zero_comp_homeomorph_iff (h : E ≃ₜ E') (g : E' → F) (x : E) :
     (g ∘ h =ᶠ[𝓝 x] 0) ↔ (g =ᶠ[𝓝 (h x)] 0) := by
   rw [← h.map_nhds_eq x]
   constructor
