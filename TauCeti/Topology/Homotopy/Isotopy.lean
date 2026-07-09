@@ -17,33 +17,29 @@ homotopy from the identity of `Y` whose level-preserving total map `I × Y → I
 homeomorphism. These are the point-set foundations that the geometric-topology roadmap
 (`TauCetiRoadmap/GeometricTopology`) asks for once, in full generality, before specialising.
 The definitions follow Burde--Zieschang, *Knots*, Chapter 1, Definitions 1.1 and 1.2,
-generalized to this continuous topological setting. Later knot-equivalence foundations are
-intended to specialize this continuous relation to smooth embeddings `S¹ ↪ M`; the same
-notion also underlies locally flat isotopy, diffeotopies, and concordance.
+generalized to this continuous topological setting. The non-ambient relation is the general
+point-set notion of isotopy; later knot-equivalence foundations should use ambient isotopy,
+specialized as needed to smooth embeddings `S¹ ↪ M`. The same non-ambient notion also underlies
+locally flat isotopy, diffeotopies, and concordance.
 
 ## A warning: non-ambient isotopy is degenerate for knots
 
 The non-ambient relation `Isotopy`/`Isotopic` is *not* the right equivalence for classical knot
-theory: for a compact `1`-submanifold of `S³` (or `ℝ³`) it collapses every tame knot to the
-unknot. Shrink the arc carrying the knotting steadily to a point; each time slice stays an
-embedding, and joint injectivity across the levels together with compactness (a continuous
-injection of a compact space into a Hausdorff space is an embedding) keeps the total map
-`I × X → I × Y` an embedding, so the shrinking is a genuine `Isotopy`. Thus continuous,
-non-ambient isotopy distinguishes no tame knots. *Ambient* isotopy is the relation with
-knot-theoretic content — an ambient isotopy induces a homeomorphism of the knot complements,
-which a mere isotopy need not — so knot invariants must be built on `AmbientIsotopy` and the
-`AmbientIsotopic` equivalence, never on `Isotopy`/`Isotopic`. This degeneracy is specific to the
-*continuous* isotopy of *compact* (tame) knots: it says nothing about ambient isotopy, and it
-fails in the smooth category, where pulling an arc tight to a point is not smooth at the final
-time. See Burde--Zieschang, *Knots*, Chapter 1 §A, which introduces ambient isotopy
-(Definition 1.2) precisely because the naive isotopy of Definition 1.1 is too coarse for knots.
+theory. It records a moving embedded image, but it need not extend to a motion of the ambient
+space and therefore need not preserve knot complements. *Ambient* isotopy is the relation with
+knot-theoretic content: an ambient isotopy induces a homeomorphism of complements, so knot
+invariants must be built on `AmbientIsotopy` and the `AmbientIsotopic` equivalence from
+`TauCeti.Topology.Homotopy.AmbientIsotopic`, not on `Isotopy`/`Isotopic`. See
+Burde--Zieschang, *Knots*, Chapter 1 §A, where ambient isotopy (Definition 1.2) is introduced
+after the naive isotopy of Definition 1.1.
 
 ## Main definitions
 
 * `TauCeti.Isotopy f₀ f₁`: a homotopy from `f₀` to `f₁` whose total level-preserving map is a
   topological embedding.
 * `TauCeti.Isotopic f₀ f₁`: the proposition that such an isotopy exists. This is the reusable
-  relation downstream knot-equivalence and ambient-isotopy layers traffic in.
+  general non-ambient relation; knot-equivalence layers should instead use `AmbientIsotopic` from
+  `TauCeti.Topology.Homotopy.AmbientIsotopic`.
 * `TauCeti.AmbientIsotopy Y`: a homotopy of `Y` from the identity whose total
   level-preserving map is a homeomorphism.
 * `TauCeti.AmbientIsotopy.trans` / `TauCeti.AmbientIsotopy.symm`: the composition and inverse of
@@ -144,10 +140,10 @@ private theorem isInducing_restrict_of_embedding {Z W A : Type*} [TopologicalSpa
 /-- An **isotopy** between `f₀ f₁ : C(X, Y)` is a homotopy whose level-preserving total map
 `I × X → I × Y` is a topological embedding.
 
-As an equivalence this relation is degenerate for classical knot theory: continuous, non-ambient
-isotopy collapses every tame knot in `S³`/`ℝ³` to the unknot (shrink the knotted arc to a point),
-so it is no finer than "both endpoints are embeddings". Use `AmbientIsotopy`/`AmbientIsotopic` for
-knot equivalence; see the module docstring for the argument and the Burde--Zieschang reference. -/
+As an equivalence this non-ambient relation is too coarse for classical knot theory: it need not
+extend to a motion of the ambient space and therefore need not preserve knot complements. Use
+`AmbientIsotopy`/`AmbientIsotopic` for knot equivalence; see the module docstring and the
+Burde--Zieschang reference. -/
 structure Isotopy (f₀ f₁ : C(X, Y)) extends Homotopy f₀ f₁ where
   /-- the level-preserving total map of an isotopy is a topological embedding -/
   isEmbedding_total' : IsEmbedding fun p : I × X => (p.1, toFun p)
@@ -372,9 +368,8 @@ end Isotopy
 
 /-- Two maps `f₀ f₁ : C(X, Y)` are **isotopic** if there is an isotopy between them.
 
-Warning: for classical knot theory this relation is degenerate — continuous, non-ambient isotopy
-identifies every tame knot in `S³`/`ℝ³` with the unknot (see the module docstring), so knot
-invariants must be built on `AmbientIsotopic`, not on `Isotopic`. -/
+Warning: for classical knot theory this non-ambient relation is too coarse: it need not preserve
+knot complements, so knot invariants must be built on `AmbientIsotopic`, not on `Isotopic`. -/
 @[expose] def Isotopic (f₀ f₁ : C(X, Y)) : Prop :=
   Nonempty (Isotopy f₀ f₁)
 
