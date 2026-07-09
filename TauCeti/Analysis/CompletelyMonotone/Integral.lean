@@ -23,7 +23,8 @@ monotone functions, and improper-integral facts for the first derivative within 
   remainder has sign `(-1)ⁿ`.
 * `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc`,
   `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc_zero_left`:
-  compatibility wrappers for the smooth finite-interval identities.
+  finite-interval fundamental-theorem identities specialized to completely monotone
+  functions.
 * `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici`:
   transfer of the first-derivative integral from the interval-dependent differentiability set
   `Icc 0 T` to the fixed half-line `Ici 0`.
@@ -58,7 +59,9 @@ lemma iteratedDerivWithin_Icc_eq_Ici {n : ℕ} (hf : IsCompletelyMonotone f)
     iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici 0) t := by
   have hcda : ContDiffAt ℝ (n : WithTop ℕ∞) f t :=
     (hf.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (by exact_mod_cast le_top)
-  exact ContDiffAt.iteratedDerivWithin_Icc_eq_Ici (a := 0) hcda ht_pos ht
+  rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc (lt_trans ht.1 ht.2)) hcda
+        (Ioo_subset_Icc_self ht),
+      ← iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcda (mem_Ici.mpr ht_pos.le)]
 
 /-- **CM sign of the Taylor remainder.** For a completely monotone function the Taylor
 integral remainder `∫ₓᵀ (T-t)ⁿ⁻¹/(n-1)! · f⁽ⁿ⁾(t) dt` has sign `(-1)ⁿ`:
@@ -95,7 +98,8 @@ lemma integral_neg_iteratedDerivWithin_one_Icc (hf : IsCompletelyMonotone f)
   have hsubset : Icc x T ⊆ Ici 0 := Icc_subset_Ici_self.trans (Ici_subset_Ici.mpr hx)
   have hcm_Icc : ContDiffOn ℝ 1 f (Icc x T) :=
     (hf.contDiffOn.mono hsubset).of_le (by exact_mod_cast le_top)
-  exact ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc hcm_Icc hxT
+  rw [iteratedDerivWithin_one, intervalIntegral.integral_neg,
+    intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc hcm_Icc hxT, neg_sub]
 
 /-- The zero-left integral identity `∫₀ᵀ (-f') = f(0) - f(T)` for a completely monotone
 function. -/
