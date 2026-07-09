@@ -93,7 +93,6 @@ theorem classNumber_adjoinRoot_sqrt_neg_five_le :
 /-- **The discriminant of `ℚ(i)`.** Mathlib's cyclotomic discriminant formula gives
 `d_{ℚ(i)} = -4` for the fourth cyclotomic field, which is the roadmap's exact-discriminant
 worked example. -/
-@[simp]
 theorem discr_cyclotomicField_four : NumberField.discr (CyclotomicField 4 ℚ) = -4 := by
   haveI : IsCyclotomicExtension {2 ^ (1 + 1)} ℚ (CyclotomicField 4 ℚ) := by
     have h : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
@@ -105,6 +104,7 @@ theorem discr_cyclotomicField_four : NumberField.discr (CyclotomicField 4 ℚ) =
 
 /-- **The absolute discriminant of `ℚ(i)`.** The fourth cyclotomic field has absolute
 discriminant `4`, obtained from the signed discriminant worked example. -/
+@[simp]
 theorem natAbs_discr_cyclotomicField_four :
     (NumberField.discr (CyclotomicField 4 ℚ)).natAbs = 4 := by
   rw [discr_cyclotomicField_four]
