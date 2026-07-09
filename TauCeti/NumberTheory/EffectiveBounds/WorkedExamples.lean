@@ -6,12 +6,13 @@ module
 
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.AdjoinRoot
-public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
+public import Mathlib.NumberTheory.Cyclotomic.Basic
+import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
+import TauCeti.NumberTheory.EffectiveBounds.ClassNumber
 import TauCeti.NumberTheory.EffectiveBounds.DiscriminantEquality
+import TauCeti.NumberTheory.EffectiveBounds.QuadraticIntegralBasis
 import TauCeti.FieldTheory.Trace
 import Mathlib.FieldTheory.KummerPolynomial
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.NumberTheory.EffectiveBounds.QuadraticClassNumber
 
 /-!
 # Worked examples: the effective bounds on the named quadratic fields

@@ -5,9 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
+import TauCeti.NumberTheory.EffectiveBounds.QuadraticIntegralBasis
 import TauCeti.FieldTheory.Trace
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import Mathlib.Algebra.Polynomial.Monic
 
 /-!
@@ -149,38 +148,6 @@ theorem abs_discr_le_int_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le
   rw [Int.abs_eq_natAbs]
   exact_mod_cast
     natAbs_discr_le_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le b hb hdisc hd
-
-/-- In a quadratic number field, an integral non-rational element `x` gives a `ℚ`-basis
-`{1, x}` consisting of algebraic integers. -/
-theorem exists_basis_eq_one_self_of_notMem_range_of_isIntegral {K : Type*} [Field K]
-    [NumberField K] {x : K} (hfin : finrank ℚ K = 2)
-    (hx : x ∉ (algebraMap ℚ K).range) (hxint : IsIntegral ℤ x) :
-    ∃ b : Basis (Fin 2) ℚ K, ⇑b = ![1, x] ∧ ∀ i, IsIntegral ℤ (b i) := by
-  classical
-  -- `x ≠ 0`, else `x = algebraMap ℚ K 0` would be rational.
-  have hxne : x ≠ 0 := by
-    rintro rfl
-    exact hx ⟨0, by rw [map_zero]⟩
-  -- `{1, x}` is linearly independent over `ℚ`: `x` is nonzero and not a `ℚ`-multiple of `1`.
-  have hli : LinearIndependent ℚ ![1, x] := by
-    rw [linearIndependent_fin2]
-    refine ⟨by simpa using hxne, ?_⟩
-    intro c hc
-    simp only [Matrix.cons_val_one, Matrix.cons_val_zero] at hc
-    rw [Algebra.smul_def] at hc
-    refine hx ⟨c⁻¹, ?_⟩
-    rw [map_inv₀]
-    exact inv_eq_of_mul_eq_one_right hc
-  -- A linearly independent family of `finrank` vectors is a basis.
-  have hcard : Fintype.card (Fin 2) = finrank ℚ K := by
-    rw [Fintype.card_fin]; exact hfin.symm
-  set b := basisOfLinearIndependentOfCardEqFinrank' ![1, x] hli hcard with hb_def
-  have hbcoe : ⇑b = ![1, x] := coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
-  refine ⟨b, hbcoe, ?_⟩
-  intro i
-  fin_cases i
-  · simpa [hbcoe] using (isIntegral_one : IsIntegral ℤ (1 : K))
-  · simpa [hbcoe] using hxint
 
 /-- For a quadratic number field `K` and an element `x : K` whose square is an integer
 `a` and which is not rational, the field discriminant satisfies `|d_K| ≤ 4·|a|`. -/
