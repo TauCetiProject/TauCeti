@@ -105,7 +105,6 @@ theorem discr_cyclotomicField_four : NumberField.discr (CyclotomicField 4 ℚ) =
 
 /-- **The absolute discriminant of `ℚ(i)`.** The fourth cyclotomic field has absolute
 discriminant `4`, obtained from the signed discriminant worked example. -/
-@[simp]
 theorem natAbs_discr_cyclotomicField_four :
     (NumberField.discr (CyclotomicField 4 ℚ)).natAbs = 4 := by
   rw [discr_cyclotomicField_four]
