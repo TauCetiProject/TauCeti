@@ -17,7 +17,7 @@ The effective-bounds roadmap keeps its estimates honest with two arithmetic work
 each asking that a general bound be exercised on a *named* number field rather than a
 same-shape analogue:
 
-* the discriminant bound recovers `|d_{ℚ(i)}| = 4` from the basis `{1, i}`;
+* the discriminant bound recovers `|d_{ℚ(i)}| = 4`;
 * the class-number bound is non-vacuous on `ℚ(√-5)`, giving `h ≤ 64·5`.
 
 This file realises both on concrete `NumberField` instances.
@@ -27,7 +27,8 @@ having no rational root), a degree-two number field with a square root of `-5`, 
 `TauCeti.NumberField.classNumber_le_natAbs_of_sq_intCast`.
 
 For `ℚ(i)` we take the fourth cyclotomic field `CyclotomicField 4 ℚ` and specialize Mathlib's
-cyclotomic discriminant formula, giving `d_{ℚ(i)} = -4` and hence `|d_{ℚ(i)}| = 4`.
+prime-power cyclotomic discriminant formula, giving `d_{ℚ(i)} = -4` and hence
+`|d_{ℚ(i)}| = 4`.
 
 ## Main results
 
@@ -90,27 +91,22 @@ theorem classNumber_adjoinRoot_sqrt_neg_five_le :
 
 /-! ### `ℚ(i)`: Mathlib's cyclotomic discriminant formula recovers `|d| = 4` -/
 
-private lemma primeFactors_four : Nat.primeFactors 4 = {2} := by
-  rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
-  exact Nat.primeFactors_prime_pow (by norm_num : 2 ≠ 0) (by decide : Nat.Prime 2)
-
-private lemma totient_four : Nat.totient 4 = 2 := by
-  rw [show (4 : ℕ) = 2 ^ 2 by norm_num]
-  rw [Nat.totient_prime_pow (by decide : Nat.Prime 2) (by norm_num : 0 < 2)]
-  norm_num
-
 /-- **The discriminant of `ℚ(i)`.** Mathlib's cyclotomic discriminant formula gives
 `d_{ℚ(i)} = -4` for the fourth cyclotomic field, which is the roadmap's exact-discriminant
 worked example. -/
+@[simp]
 theorem discr_cyclotomicField_four : NumberField.discr (CyclotomicField 4 ℚ) = -4 := by
-  haveI : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
-    CyclotomicField.isCyclotomicExtension 4 ℚ
-  rw [IsCyclotomicExtension.Rat.discr (n := 4) (K := CyclotomicField 4 ℚ),
-    primeFactors_four, totient_four]
+  haveI : IsCyclotomicExtension {2 ^ (1 + 1)} ℚ (CyclotomicField 4 ℚ) := by
+    have h : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
+      CyclotomicField.isCyclotomicExtension 4 ℚ
+    simpa using h
+  rw [IsCyclotomicExtension.Rat.discr_prime_pow_succ (p := 2) (k := 1)
+    (K := CyclotomicField 4 ℚ)]
   norm_num
 
 /-- **The absolute discriminant of `ℚ(i)`.** The fourth cyclotomic field has absolute
 discriminant `4`, obtained from the signed discriminant worked example. -/
+@[simp]
 theorem natAbs_discr_cyclotomicField_four :
     (NumberField.discr (CyclotomicField 4 ℚ)).natAbs = 4 := by
   rw [discr_cyclotomicField_four]
