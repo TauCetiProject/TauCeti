@@ -62,11 +62,9 @@ private theorem le_ker_tensorProduct_mkQ_comp_coact :
   letI : AddCommGroup C := Module.addCommMonoidToAddCommGroup R (M := C)
   change LinearMap.rTensor C N.carrier.mkQ
     (LinearMap.rTensor C N.carrier.subtype t) = 0
-  have h : LinearMap.rTensor C N.carrier.subtype t ∈
-      LinearMap.ker (LinearMap.rTensor C N.carrier.mkQ) := by
-    rw [rTensor_mkQ]
-    exact LinearMap.mem_range_self _ _
-  exact h
+  rw [← LinearMap.mem_ker, rTensor_mkQ]
+  exact
+    (LinearMap.mem_range_self (LinearMap.rTensor C N.carrier.subtype) t)
 
 /-- The coaction induced on the quotient by a subcomodule. -/
 def quotientCoact : M ⧸ N.toSubmodule →ₗ[R] (M ⧸ N.toSubmodule) ⊗[R] C :=
@@ -265,6 +263,9 @@ theorem liftQ_toLinearMap (f : Comodule.Hom R C M P)
   apply Submodule.linearMap_qext
   ext m
   rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply]
+  -- The left side is the bundled comodule morphism's coercion, while the right side is the
+  -- quotient-module lift used as its underlying linear map; extensionality has reduced the goal
+  -- to this definitional conversion on quotient representatives.
   change (N.liftQ f hf) (Submodule.Quotient.mk m) =
     (N.toSubmodule.liftQ f.toLinearMap hf) (Submodule.Quotient.mk m)
   rw [liftQ_apply, Submodule.liftQ_apply]

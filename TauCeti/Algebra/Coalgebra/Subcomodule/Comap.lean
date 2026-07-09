@@ -136,11 +136,9 @@ private theorem coact_mem_range_comap_toLinearMap
   rw [← ht]
   change LinearMap.rTensor C B.carrier.mkQ
     (LinearMap.rTensor C B.carrier.subtype t) = 0
-  have h : LinearMap.rTensor C B.carrier.subtype t ∈
-      LinearMap.ker (LinearMap.rTensor C B.carrier.mkQ) := by
-    rw [rTensor_mkQ]
-    exact LinearMap.mem_range_self _ _
-  exact h
+  rw [← LinearMap.mem_ker, rTensor_mkQ]
+  exact
+    (LinearMap.mem_range_self (LinearMap.rTensor C B.carrier.subtype) t)
 
 private theorem comap_coact_mem (f : Comodule.Hom R C M N) (B : Subcomodule R C N)
     {m : M} (hm : m ∈ B.toSubmodule.comap f.toLinearMap) :
