@@ -15,18 +15,21 @@ Dixon's proof of the homology form of Cauchy's theorem hinges on a single auxili
 is analytic on all of `ℂ`. This file records its two constituent integrals and the algebraic
 identity relating them; the analyticity, boundedness, and Liouville steps are developed downstream.
 
-For a curve `γ : ℝ → ℂ` on the oriented interval with endpoints `a`, `b` and a holomorphic `f`:
+For a curve `γ : ℝ → ℂ` on the oriented interval with endpoints `a`, `b` and a function `f`:
 
 * `dixonH1 f γ a b w = ∫ t in a..b, dslope f w (γ t) * deriv γ t` — built from the *difference
-  quotient* `dslope f w (γ t) = (f (γ t) - f w) / (γ t - w)` (which extends continuously through
-  `γ t = w`, where it is `deriv f w`), so it is defined for **every** `w`, including points on `γ`.
+  quotient* `dslope f w z`, which equals `(f z - f w) / (z - w)` for `z ≠ w` and `deriv f w` at
+  `z = w`, so the integrand is defined for **every** `w`, including points on `γ`.
 * `dixonH2 f γ a b w = ∫ t in a..b, f (γ t) / (γ t - w) * deriv γ t` — the Cauchy-type integral,
   defined for `w` off the curve.
-* `dixonFunction f U γ a b w` — glues the two: `dixonH1` on `U`, `dixonH2` on its complement.
+* `dixonFunction f U γ a b w` — selects `dixonH1` on `U` and `dixonH2` on its complement.
+
+Each definition is `irreducible_def`, exposing a public `*_def` equation lemma while keeping the
+body opaque.
 
 ## Main results
 
-* `TauCeti.Contour.dixonH1_eq_dixonH2_sub_winding` — for `w` off the curve,
+* `TauCeti.Contour.dixonH1_eq_dixonH2_sub_windingNumber_mul_f` — for `w` off the curve,
   `dixonH1 f γ a b w = dixonH2 f γ a b w - 2πi · n(γ, w) · f w`, where `n(γ, w)` is the generalized
   `windingNumber`. This is what makes `dixonFunction` well-glued across `∂U`.
 
@@ -50,22 +53,23 @@ open scoped Real Interval
 
 namespace TauCeti.Contour
 
-/-- **Dixon's `h₁` integral** `∫ t in a..b, dslope f w (γ t) * deriv γ t`. Because the difference
-quotient `dslope f w z = (f z - f w) / (z - w)` extends continuously through `z = w` (taking the
-value `deriv f w`), this integral is defined for *every* `w`, including points on the curve `γ`. -/
-noncomputable def dixonH1 (f : ℂ → ℂ) (γ : ℝ → ℂ) (a b : ℝ) (w : ℂ) : ℂ :=
+/-- **Dixon's `h₁` integral** `∫ t in a..b, dslope f w (γ t) * deriv γ t`. The difference quotient
+`dslope f w z` equals `(f z - f w) / (z - w)` for `z ≠ w` and `deriv f w` at `z = w`, so the
+integrand is defined for *every* `w`, including points on the curve `γ`. -/
+noncomputable irreducible_def dixonH1 (f : ℂ → ℂ) (γ : ℝ → ℂ) (a b : ℝ) (w : ℂ) : ℂ :=
   ∫ t in a..b, dslope f w (γ t) * deriv γ t
 
-/-- **Dixon's `h₂` integral** `∫ t in a..b, f (γ t) / (γ t - w) * deriv γ t`. This is the ordinary
+/-- **Dixon's `h₂` integral** `∫ t in a..b, f (γ t) / (γ t - w) * deriv γ t`, the ordinary
 Cauchy-type integral, defined for `w` off the curve. -/
-noncomputable def dixonH2 (f : ℂ → ℂ) (γ : ℝ → ℂ) (a b : ℝ) (w : ℂ) : ℂ :=
+noncomputable irreducible_def dixonH2 (f : ℂ → ℂ) (γ : ℝ → ℂ) (a b : ℝ) (w : ℂ) : ℂ :=
   ∫ t in a..b, f (γ t) / (γ t - w) * deriv γ t
 
 open Classical in
-/-- **Dixon's glued function** `dixonH1` on `U`, `dixonH2` on its complement. The two pieces agree
-on the overlap by `dixonH1_eq_dixonH2_sub_winding` together with null-homology, which is what makes
-the glued function analytic on all of `ℂ`. -/
-noncomputable def dixonFunction (f : ℂ → ℂ) (U : Set ℂ) (γ : ℝ → ℂ) (a b : ℝ) (w : ℂ) : ℂ :=
+/-- **Dixon's glued function**: `dixonH1` on `U`, `dixonH2` on its complement. That these two pieces
+glue, under null-homology, into a function analytic on all of `ℂ` is the downstream content of
+Dixon's argument, established in later results; here the function is only defined. -/
+noncomputable irreducible_def dixonFunction (f : ℂ → ℂ) (U : Set ℂ) (γ : ℝ → ℂ) (a b : ℝ)
+    (w : ℂ) : ℂ :=
   if w ∈ U then dixonH1 f γ a b w else dixonH2 f γ a b w
 
 /-- Off the curve, the `dslope` integrand splits into the Cauchy-type integrand minus the
@@ -82,10 +86,9 @@ private theorem fw_div_eq (f : ℂ → ℂ) (γ : ℝ → ℂ) (w : ℂ) :
   funext t; rw [div_eq_mul_inv, mul_assoc]
 
 /-- **The `h₁`/`h₂` identity.** For `w` off the curve, `dixonH1 f γ a b w` differs from
-`dixonH2 f γ a b w` by exactly `2πi · n(γ, w) · f w`, the generalized winding number scaled by
-`f w`. The proof expands `dslope f w (γ t) = (f (γ t) - f w) / (γ t - w)`, splits the integral, and
-identifies the second piece with `f w · ∫ (γ · - w)⁻¹ · deriv γ = 2πi · n(γ, w) · f w`. -/
-theorem dixonH1_eq_dixonH2_sub_winding {f : ℂ → ℂ} {γ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
+`dixonH2 f γ a b w` by exactly `2πi · n(γ, w) · f w`, the generalized winding number of `γ` about
+`w` scaled by `f w`. -/
+theorem dixonH1_eq_dixonH2_sub_windingNumber_mul_f {f : ℂ → ℂ} {γ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
     (h_cont : ContinuousOn γ (uIcc a b)) (hoff : ∀ t ∈ uIcc a b, γ t ≠ w)
     (h_cauchy_int : IntervalIntegrable (fun t ↦ f (γ t) / (γ t - w) * deriv γ t) volume a b)
     (h_base_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
@@ -97,20 +100,21 @@ theorem dixonH1_eq_dixonH2_sub_winding {f : ℂ → ℂ} {γ : ℝ → ℂ} {a b
       mul_inv_cancel₀ Complex.two_pi_I_ne_zero, one_mul]
   have h_fw_div_int : IntervalIntegrable (fun t ↦ f w / (γ t - w) * deriv γ t) volume a b :=
     (fw_div_eq f γ w) ▸ (h_base_int.const_mul (f w))
-  simp only [dixonH1, dixonH2]
-  rw [intervalIntegral.integral_congr (dslope_integrand_eq hoff),
+  rw [dixonH1_def, dixonH2_def, intervalIntegral.integral_congr (dslope_integrand_eq hoff),
     intervalIntegral.integral_sub h_cauchy_int h_fw_div_int, fw_div_eq,
     intervalIntegral.integral_const_mul, hw_int]
   ring
 
 /-- On `U`, the glued Dixon function is `dixonH1`. -/
+@[simp]
 theorem dixonFunction_eq_dixonH1 {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
     (hw : w ∈ U) : dixonFunction f U γ a b w = dixonH1 f γ a b w := by
-  rw [dixonFunction, if_pos hw]
+  rw [dixonFunction_def, if_pos hw]
 
 /-- Off `U`, the glued Dixon function is `dixonH2`. -/
+@[simp]
 theorem dixonFunction_eq_dixonH2 {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
     (hw : w ∉ U) : dixonFunction f U γ a b w = dixonH2 f γ a b w := by
-  rw [dixonFunction, if_neg hw]
+  rw [dixonFunction_def, if_neg hw]
 
 end TauCeti.Contour
