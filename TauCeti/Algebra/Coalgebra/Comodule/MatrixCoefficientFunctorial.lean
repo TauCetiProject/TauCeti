@@ -13,4 +13,7 @@ This module preserves the old
 `TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficientFunctorial` import path after the
 transport-specific matrix-coefficient lemmas moved to
 `TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficientTransport`.
+
+Keeping this public re-export is intentional downstream compatibility for users that still
+imported the old public module name when the declarations were moved.
 -/
