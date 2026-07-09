@@ -18,8 +18,11 @@ there, and `C¹` on each piece between finitely many breakpoints. This file intr
 that regularity as a predicate `Contour.IsPiecewiseC1On γ a b` on the raw function `γ` itself —
 following the roadmap's function-based design, with no bundled path type — together with its API.
 
-The predicate is the hypothesis a "regularity package" supplies to the raw contour-integral lemmas
-(for example the fundamental theorem of calculus along a contour in `Contour.ArcFTC`), and it is a
+The predicate is the regularity a "regularity package" will use to *discharge* the integrand-level
+hypotheses — continuity, pointwise differentiability, and integrability — that the raw
+contour-integral lemmas take directly. Those lemmas do not consume the predicate themselves: the
+fundamental theorem of calculus along a contour in `Contour.ArcFTC`, for instance, is stated on the
+integrand so it works with any regularity package that supplies these hypotheses. The predicate is a
 prerequisite for the homology Cauchy theorem and the generalized residue theorem.
 
 ## Main definitions
