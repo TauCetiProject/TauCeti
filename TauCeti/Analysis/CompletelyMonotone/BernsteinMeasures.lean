@@ -625,7 +625,9 @@ private lemma integral_chafaiDensity_one_eq (f : ℝ → ℝ) (hcm : IsCompletel
   have h1 : ∫ t in (0 : ℝ)..T, chafaiDensity f 1 t =
       ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t :=
     intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun t _ => chafaiDensity_one t)
-  rw [h1, ← hcm.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici T hT.le]
+  rw [h1, ← ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici
+    (fun t ht => (hcm.contDiffOn.contDiffAt (Ici_mem_nhds ht.1)).of_le (nat_le_top _))
+    le_rfl hT.le]
   simpa [iteratedDerivWithin_one, intervalIntegral.integral_neg, neg_sub] using
     congrArg Neg.neg (intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc
       ((hcm.contDiffOn.mono Icc_subset_Ici_self).of_le (nat_le_top _)) hT.le)

@@ -19,9 +19,6 @@ integral remainder and improper-integral facts for the first derivative within `
 
 * `TauCeti.IsCompletelyMonotone.neg_one_pow_mul_taylor_remainder_nonneg`: the Taylor integral
   remainder has sign `(-1)ⁿ`.
-* `TauCeti.IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici`:
-  transfer of the first-derivative integral from the interval-dependent differentiability set
-  `Icc 0 T` to the fixed half-line `Ici 0`.
 * `TauCeti.IsCompletelyMonotone.neg_iteratedDerivWithin_one_integrableOn`,
   `TauCeti.IsCompletelyMonotone.integral_Ioi_neg_iteratedDerivWithin_one`: integrability and the
   improper integral of `-f'` on `(0, ∞)`, represented as `iteratedDerivWithin 1`.
@@ -96,25 +93,6 @@ private lemma IsCompletelyMonotone.iteratedDerivWithin_one_nonpos
     (hf : IsCompletelyMonotone f) {t : ℝ} (ht : 0 ≤ t) :
     iteratedDerivWithin 1 f (Ici 0) t ≤ 0 := by
   rw [iteratedDerivWithin_one]; exact hf.derivWithin_nonpos ht
-
-/-- The interval integral of `-f'` with the `T`-dependent set `Icc 0 T` equals the integral with
-the fixed set `Ici 0` for a completely monotone function. -/
-lemma IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici
-    (hcm : IsCompletelyMonotone f) (T : ℝ) (hT : 0 ≤ T) :
-    ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t =
-    ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t := by
-  exact ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici
-    (fun t ht => (hcm.contDiffOn.contDiffAt (Ici_mem_nhds ht.1)).of_le (nat_le_top _))
-    le_rfl hT
-
-/-- The integral `∫₀ᵀ (-f') dt → f(0) - L` as `T → ∞`, where `L = lim f(t)`. This is
-the key uniform bound for the tightness argument in Bernstein's theorem. -/
-lemma IsCompletelyMonotone.tendsto_integral_neg_iteratedDerivWithin_one_Icc_atTop
-    (hcm : IsCompletelyMonotone f) {L : ℝ} (hL : Tendsto f atTop (nhds L)) :
-    Tendsto (fun T => ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Icc 0 T) t) atTop
-        (nhds (f 0 - L)) :=
-  ContDiffOn.tendsto_integral_neg_iteratedDerivWithin_one_Icc_atTop
-    (a := 0) (hcm.contDiffOn.of_le (nat_le_top _)) hL
 
 /-- `-f'` is integrable on `(0, ∞)` for a completely monotone function, where the derivative is
 taken within the closed half-line `[0, ∞)`. -/
