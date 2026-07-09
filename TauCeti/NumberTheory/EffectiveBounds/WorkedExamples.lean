@@ -8,6 +8,7 @@ public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
+import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import TauCeti.NumberTheory.EffectiveBounds.QuadraticClassNumber
 
@@ -57,11 +58,8 @@ namespace TauCeti.NumberField.WorkedExamples
 /-- `X² + 5` is irreducible over `ℚ`: a monic quadratic with no rational root (a rational
 square is nonnegative, but `-5 < 0`). -/
 instance : Fact (Irreducible (X ^ 2 - C (-5 : ℚ))) := ⟨by
-  apply irreducible_of_degree_le_three_of_not_isRoot
-  · rw [natDegree_X_pow_sub_C]; decide
-  · intro x hx
-    rw [IsRoot, eval_sub, eval_pow, eval_X, eval_C] at hx
-    nlinarith [sq_nonneg x]⟩
+  exact (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mpr
+    (fun q hq => by nlinarith [sq_nonneg q])⟩
 
 /-- **The class-number bound on `ℚ(√-5)`.** The class number of `ℚ(√-5)`, modelled as
 `AdjoinRoot (X² + 5)`, is at most `64·5 = 320`; this is the roadmap's non-vacuity worked
@@ -107,6 +105,7 @@ theorem discr_cyclotomicField_four : NumberField.discr (CyclotomicField 4 ℚ) =
 
 /-- **The absolute discriminant of `ℚ(i)`.** The fourth cyclotomic field has absolute
 discriminant `4`, obtained from the signed discriminant worked example. -/
+@[simp]
 theorem natAbs_discr_cyclotomicField_four :
     (NumberField.discr (CyclotomicField 4 ℚ)).natAbs = 4 := by
   rw [discr_cyclotomicField_four]
