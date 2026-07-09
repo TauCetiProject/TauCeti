@@ -193,35 +193,14 @@ theorem abs_discr_le_of_sq_intCast {K : Type*} [Field K] [NumberField K]
   have hcast : algebraMap ℤ K a = algebraMap ℚ K (a : ℚ) := by
     rw [IsScalarTower.algebraMap_apply ℤ ℚ K, eq_intCast (algebraMap ℤ ℚ) a]
   have hx2' : x ^ 2 = algebraMap ℚ K (a : ℚ) := hx2.trans hcast
-  -- `x ≠ 0`, else `x = algebraMap ℚ K 0` would be rational.
-  have hxne : x ≠ 0 := by
-    rintro rfl
-    exact hx ⟨0, by rw [map_zero]⟩
-  -- `{1, x}` is linearly independent over `ℚ`: `x` is nonzero and not a `ℚ`-multiple of `1`.
-  have hli : LinearIndependent ℚ ![1, x] := by
-    rw [linearIndependent_fin2]
-    refine ⟨by simpa using hxne, ?_⟩
-    intro c hc
-    simp only [Matrix.cons_val_one, Matrix.cons_val_zero] at hc
-    rw [Algebra.smul_def] at hc
-    refine hx ⟨c⁻¹, ?_⟩
-    rw [map_inv₀]
-    exact inv_eq_of_mul_eq_one_right hc
-  -- A linearly independent family of `finrank` vectors is a basis.
-  have hcard : Fintype.card (Fin 2) = finrank ℚ K := by
-    rw [Fintype.card_fin]; exact hfin.symm
-  set b := basisOfLinearIndependentOfCardEqFinrank' ![1, x] hli hcard with hb_def
-  have hbcoe : ⇑b = ![1, x] := coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
-  -- The basis consists of algebraic integers: `1` is integral, and `x` is a root of `X² - a`.
+  -- The square root is an algebraic integer: it is a root of the monic `X² - a`.
   have hxint : IsIntegral ℤ x := by
     refine ⟨Polynomial.X ^ 2 - Polynomial.C a,
       Polynomial.monic_X_pow_sub_C a (by norm_num), ?_⟩
     rw [Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, Polynomial.eval₂_C, ← hx2, sub_self]
-  have hb_int : ∀ i, IsIntegral ℤ (b i) := by
-    intro i
-    fin_cases i
-    · simpa [hbcoe] using (isIntegral_one : IsIntegral ℤ (1 : K))
-    · simpa [hbcoe] using hxint
+  -- `{1, x}` is a `ℚ`-basis of algebraic integers.
+  rcases exists_basis_eq_fin_two_of_notMem_range_of_isIntegral hfin hx hxint with
+    ⟨b, hbcoe, hb_int⟩
   -- Combine the effective bound with the trace-form evaluation `disc ℚ {1, x} = 4·a`.
   have hmain := TauCeti.NumberField.abs_discr_le_of_basis_isIntegral b hb_int
   rw [hbcoe, TauCeti.Algebra.discr_one_elem_eq_of_sq_algebraMap hfin hx2' hx] at hmain
