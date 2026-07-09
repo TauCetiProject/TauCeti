@@ -6,7 +6,7 @@ public import TauCeti.Probability.Exchangeability.Contractability
 public import TauCeti.Probability.Exchangeability.ConditionallyIID
 public import TauCeti.Probability.DeFinetti.DirectingMeasure
 -- Non-public: used only inside proofs — the tail factorization, the block-law integration lemma,
--- the path-law transfer / contractability bridge, and `Tuple.sort` (for the injective reduction).
+-- the path-law transfer and contractability bridges, and `Tuple.sort` (injective reduction).
 import TauCeti.Probability.DeFinetti.TailFactorization
 import TauCeti.Probability.DeFinetti.BlockFactorization
 import TauCeti.Probability.Exchangeability.ConditionallyIIDMap
