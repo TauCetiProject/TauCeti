@@ -29,7 +29,8 @@ body opaque.
 
 ## Main results
 
-* `TauCeti.Contour.dixonH1_eq_dixonH2_sub_windingNumber_mul_f` — for `w` off the curve,
+* `TauCeti.Contour.dixonH1_eq_dixonH2_sub_windingNumber_mul_f` — for `γ` continuous on `uIcc a b`
+  and `w` off the curve, with the index and Cauchy-type integrands interval-integrable,
   `dixonH1 f γ a b w = dixonH2 f γ a b w - 2πi · n(γ, w) · f w`, where `n(γ, w)` is the generalized
   `windingNumber`. This is what makes `dixonFunction` well-glued across `∂U`.
 
@@ -85,7 +86,8 @@ private theorem fw_div_eq (f : ℂ → ℂ) (γ : ℝ → ℂ) (w : ℂ) :
     (fun t ↦ f w / (γ t - w) * deriv γ t) = fun t ↦ f w * ((γ t - w)⁻¹ * deriv γ t) := by
   funext t; rw [div_eq_mul_inv, mul_assoc]
 
-/-- **The `h₁`/`h₂` identity.** For `w` off the curve, `dixonH1 f γ a b w` differs from
+/-- **The `h₁`/`h₂` identity.** For `γ` continuous on `uIcc a b` and `w` off the curve, with the
+index and Cauchy-type integrands interval-integrable, `dixonH1 f γ a b w` differs from
 `dixonH2 f γ a b w` by exactly `2πi · n(γ, w) · f w`, the generalized winding number of `γ` about
 `w` scaled by `f w`. -/
 theorem dixonH1_eq_dixonH2_sub_windingNumber_mul_f {f : ℂ → ℂ} {γ : ℝ → ℂ} {a b : ℝ} {w : ℂ}
