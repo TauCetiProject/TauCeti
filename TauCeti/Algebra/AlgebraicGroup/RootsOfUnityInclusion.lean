@@ -121,11 +121,10 @@ of unity `RootsOfUnityGroup.pointsMulEquiv n f`. -/
 @[simp]
 theorem charOfPoint_inclusion_ofAdd_one (n : ℕ)
     (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
-    DiagonalizableGroup.charOfPoint (inclusion n f).ofConv (Multiplicative.ofAdd 1) =
+    DiagonalizableGroup.charOfPoint f.ofConv (Multiplicative.ofAdd 1) =
       (RootsOfUnityGroup.pointsMulEquiv n f : Aˣ) := by
   apply Units.ext
-  rw [charOfPoint_inclusion, MonoidHom.comp_apply, toMultZMod_ofAdd_one,
-    DiagonalizableGroup.charOfPoint_apply_coe, pointsMulEquiv_apply]
+  rw [DiagonalizableGroup.charOfPoint_apply_coe, pointsMulEquiv_apply]
 
 /-- The same identification against the canonical Laurent-polynomial `𝔾ₘ` of
 `TauCeti.MultiplicativeGroup`: pushing the included point along
@@ -134,11 +133,18 @@ returns the underlying unit of the root of unity. -/
 @[simp]
 theorem multiplicativeGroup_pointEquiv_inclusion (n : ℕ)
     (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
-    MultiplicativeGroup.pointEquiv
-        ((inclusion n f).ofConv.comp
+    Units.map (inclusion n f).ofConv
+        (MultiplicativeGroup.unitOfPoint
           (AddMonoidAlgebra.toMultiplicativeAlgEquiv R ℤ).toAlgHom) =
       (RootsOfUnityGroup.pointsMulEquiv n f : Aˣ) := by
-  rw [← DiagonalizableGroup.multiplicativeGroup_pointEquiv_apply,
+  change Units.map ((inclusion n f).ofConv).toMonoidHom
+        (MultiplicativeGroup.unitOfPoint
+          (AddMonoidAlgebra.toMultiplicativeAlgEquiv R ℤ).toAlgHom) =
+      (RootsOfUnityGroup.pointsMulEquiv n f : Aˣ)
+  rw [← MultiplicativeGroup.unitOfPoint_comp,
+    ← MultiplicativeGroup.pointEquiv_apply,
+    ← DiagonalizableGroup.multiplicativeGroup_pointEquiv_apply]
+  rw [charOfPoint_inclusion, MonoidHom.comp_apply, toMultZMod_ofAdd_one,
     charOfPoint_inclusion_ofAdd_one]
 
 /-- The multiplicative quotient `ℤ ↠ ℤ/n` is surjective. -/
