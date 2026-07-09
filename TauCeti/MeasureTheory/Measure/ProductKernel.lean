@@ -111,12 +111,6 @@ theorem aemeasurable_probabilityMeasure_pi_const_toMeasure {α : Type*} [Measura
     AEMeasurable (fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure) μ :=
   aemeasurable_probabilityMeasure_pi_toMeasure (fun _ => ν) (fun _ => hν)
 
-/-- Measurable-input corollary of `aemeasurable_probabilityMeasure_pi_const_toMeasure`. -/
-theorem aemeasurable_probabilityMeasure_pi_const_toMeasure_of_measurable {α : Type*}
-    [MeasurableSpace α] {m : ℕ} (ν : Ω → ProbabilityMeasure α) (hν : Measurable ν) :
-    AEMeasurable (fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure) μ :=
-  aemeasurable_probabilityMeasure_pi_toMeasure_of_measurable (fun _ => ν) (fun _ => hν)
-
 /-- **Bind-evaluation.** Evaluating the mixture
 `μ.bind fun ω => (ProbabilityMeasure.pi fun i => ν i ω).toMeasure` on a measurable set `s` gives
 `∫⁻ ω, … s ∂μ`, requiring only a.e.-measurability of each coordinate kernel `ν i`. -/

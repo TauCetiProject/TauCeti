@@ -69,8 +69,8 @@ theorem ConditionallyIIDWith.map_values {μ : Measure Ω} {X : ℕ → Ω → α
       measurable_pi_lambda _ fun i => hf.comp (measurable_pi_apply i)
     have hg : AEMeasurable
         (fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure) μ :=
-      MeasureTheory.aemeasurable_probabilityMeasure_pi_const_toMeasure_of_measurable ν
-        h.measurable_directing
+      MeasureTheory.aemeasurable_probabilityMeasure_pi_toMeasure_of_measurable (fun _ : Fin m => ν)
+        (fun _ => h.measurable_directing)
     calc
       blockLaw μ (fun i ω => f (X i ω)) k
           = (blockLaw μ X k).map fun x : Fin m → α => fun i => f (x i) :=
