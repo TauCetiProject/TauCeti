@@ -6,3 +6,8 @@ module
 
 public import TauCeti.NumberTheory.EffectiveBounds.HermiteCount
 
+/-!
+This module is kept as a compatibility import path for downstream files that imported the
+former Hermite-count `natAbs` wrapper. The declarations now live in
+`TauCeti.NumberTheory.EffectiveBounds.HermiteCount`.
+-/
