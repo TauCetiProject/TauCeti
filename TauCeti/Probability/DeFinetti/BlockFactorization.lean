@@ -4,6 +4,9 @@ public import TauCeti.Probability.DeFinetti.DirectingMeasureCoord
 public import TauCeti.Probability.Exchangeability.Cylinder
 public import TauCeti.Probability.Exchangeability.ConditionallyIID
 public import Mathlib.Probability.Independence.Conditional
+-- Non-public: the merged tail factorization `condExp_blockIndicatorProd_tailProcess_ae_eq_prod` is
+-- used only inside the private prefix-mixture proof below.
+import TauCeti.Probability.DeFinetti.TailFactorization
 
 /-!
 # Block-product factorisation of the conditional expectation
@@ -79,7 +82,7 @@ theorem condExp_blockIndicatorProd_ae_eq_prod_of_iCondIndepFun_tailProcess
 of the block-indicator product is a.e. the directing-measure product
 `∏ i, (directingMeasure μ X ω).real (C i)`, then the block law of the rectangle `∏ᵢ C i` is the
 `μ`-average `∫⁻ ∏ᵢ (directingMeasure μ X ω) (C i)` of that product. -/
-theorem blockLaw_eq_lintegral_prod_directingMeasure_of_condExp_ae_eq
+private theorem blockLaw_eq_lintegral_prod_directingMeasure_of_condExp_ae_eq
     [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
     {X : ℕ → Ω → α} (hX_meas : ∀ n, Measurable (X n))
     {m : ℕ} {k : Fin m → ℕ} {C : Fin m → Set α} (hC : ∀ i, MeasurableSet (C i))
@@ -162,6 +165,36 @@ theorem conditionallyIID_of_iCondIndepFun_tailProcess
     ConditionallyIID μ X :=
   ConditionallyIID.of_directing
     (conditionallyIIDWith_of_iCondIndepFun_tailProcess hX hX_meas hCI)
+
+/-- For a contractable process, the conditional expectation of the length-`r` prefix indicator
+product given the tail σ-algebra `tailProcess X` is a.e. the product of directing-measure
+evaluations `∏ i, (directingMeasure μ X ω).real (C i)` on the coordinate sets. -/
+private theorem condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure
+    [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
+    {r : ℕ} {C : Fin r → Set α} (hC : ∀ i, MeasurableSet (C i)) :
+    μ[blockIndicatorProd X (fun i : Fin r => (i : ℕ)) C | tailProcess X]
+      =ᵐ[μ] fun ω => ∏ i : Fin r, (directingMeasure μ X ω).real (C i) := by
+  have hfac := condExp_blockIndicatorProd_tailProcess_ae_eq_prod X hX hX_meas r C hC
+  have key : ∀ᵐ ω ∂μ, ∀ i : Fin r,
+      μ[Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0 | tailProcess X] ω
+        = (directingMeasure μ X ω).real (C i) :=
+    ae_all_iff.mpr fun i => (hX.directingMeasure_ae_eq_condExp_coord hX_meas 0 (hC i)).symm
+  filter_upwards [hfac, key] with ω hf hk
+  rw [hf]
+  exact Finset.prod_congr rfl fun i _ => hk i
+
+/-- **Prefix rectangle mixture (from contractability).** For a contractable process, the block law
+of the length-`r` prefix rectangle `∏ᵢ B i` is the `μ`-average
+`∫⁻ ∏ᵢ (directingMeasure μ X ω) (B i)` of the directing-measure product. -/
+theorem blockLaw_prefix_eq_lintegral_prod_directingMeasure
+    [StandardBorelSpace Ω] [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω} [IsFiniteMeasure μ]
+    {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
+    {r : ℕ} {B : Fin r → Set α} (hB : ∀ i, MeasurableSet (B i)) :
+    blockLaw μ X (fun i : Fin r => (i : ℕ)) (Set.univ.pi B)
+      = ∫⁻ ω, ∏ i, directingMeasure μ X ω (B i) ∂μ :=
+  blockLaw_eq_lintegral_prod_directingMeasure_of_condExp_ae_eq hX_meas hB
+    (condExp_blockIndicatorProd_prefix_ae_eq_prod_directingMeasure hX hX_meas hB)
 
 end Probability
 
