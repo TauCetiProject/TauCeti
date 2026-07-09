@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.ContinuousAmbientIsotopyProd
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.AmbientIsotopy
 
 /-!
 # Deprecated compatibility import for products of smooth-embedding ambient isotopies
@@ -15,3 +16,25 @@ isotopy API was renamed to
 -/
 
 public section
+
+namespace TauCeti
+
+namespace SmoothEmbedding
+
+namespace AmbientIsotopic
+
+/-- Deprecated compatibility alias for the old smooth-embedding product ambient-isotopy theorem
+name. -/
+@[deprecated ContinuousAmbientIsotopic.prodMap (since := "2026-07-09")]
+alias prodMap := ContinuousAmbientIsotopic.prodMap
+
+/-- Deprecated compatibility alias for the old smooth-embedding product ambient-isotopy setoid
+theorem name. -/
+@[deprecated ContinuousAmbientIsotopic.prodMap_setoid (since := "2026-07-09")]
+alias prodMap_setoid := ContinuousAmbientIsotopic.prodMap_setoid
+
+end AmbientIsotopic
+
+end SmoothEmbedding
+
+end TauCeti

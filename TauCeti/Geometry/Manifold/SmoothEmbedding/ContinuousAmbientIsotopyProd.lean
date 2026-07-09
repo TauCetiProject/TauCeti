@@ -68,13 +68,10 @@ then the bundled product embedding `f.prodMap g` is continuously ambient isotopi
 theorem prodMap (hff' : ContinuousAmbientIsotopic f f') (hgg' : ContinuousAmbientIsotopic g g') :
     ContinuousAmbientIsotopic (f.prodMap g) (f'.prodMap g') := by
   rw [continuousAmbientIsotopic_def] at hff' hgg' ⊢
-  obtain ⟨Φ, hΦ⟩ :=
-    TauCeti.AmbientIsotopic.prodMap (TauCeti.ambientIsotopic_def.2 hff')
-      (TauCeti.ambientIsotopic_def.2 hgg')
-  refine ⟨Φ, ContinuousMap.ext fun x => ?_⟩
-  rcases x with ⟨x₁, x₂⟩
-  simpa [toContinuousMap_apply, prodMap_apply] using
-    congr_fun (congrArg DFunLike.coe hΦ) (x₁, x₂)
+  exact TauCeti.ambientIsotopic_def.1 <| by
+    simpa [toContinuousMap_prodMap] using
+      TauCeti.AmbientIsotopic.prodMap (TauCeti.ambientIsotopic_def.2 hff')
+        (TauCeti.ambientIsotopic_def.2 hgg')
 
 /-- Product closure for the continuous-ambient-isotopy setoid on bundled smooth embeddings. -/
 theorem prodMap_setoid
@@ -85,20 +82,6 @@ theorem prodMap_setoid
   setoid_r_iff.2 (prodMap (setoid_r_iff.1 hff') (setoid_r_iff.1 hgg'))
 
 end ContinuousAmbientIsotopic
-
-namespace AmbientIsotopic
-
-/-- Deprecated compatibility alias for the old smooth-embedding product ambient-isotopy theorem
-name. -/
-@[deprecated ContinuousAmbientIsotopic.prodMap (since := "2026-07-09")]
-alias prodMap := ContinuousAmbientIsotopic.prodMap
-
-/-- Deprecated compatibility alias for the old smooth-embedding product ambient-isotopy setoid
-theorem name. -/
-@[deprecated ContinuousAmbientIsotopic.prodMap_setoid (since := "2026-07-09")]
-alias prodMap_setoid := ContinuousAmbientIsotopic.prodMap_setoid
-
-end AmbientIsotopic
 
 end SmoothEmbedding
 
