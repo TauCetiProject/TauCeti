@@ -369,9 +369,9 @@ lemma IsConstStructureJHolomorphicAt.prodMap {f : V → V'} {g : W → W'} {p : 
     (hf : IsConstStructureJHolomorphicAt J₁ K₁ f p.1)
     (hg : IsConstStructureJHolomorphicAt J₂ K₂ g p.2) :
     IsConstStructureJHolomorphicAt (J₁.prod J₂) (K₁.prod K₂) (Prod.map f g) p := by
-  simpa [Prod.map] using
-    ((hf.comp (isConstStructureJHolomorphicAt_fst J₁ J₂ p)).prodMk
-      (hg.comp (isConstStructureJHolomorphicAt_snd J₁ J₂ p)))
+  refine isConstStructureJHolomorphicAt_of_hasFDerivAt
+    (HasFDerivAt.prodMap (p := p) hf.hasFDerivAt hg.hasFDerivAt) ?_
+  exact hf.derivative_isComplexLinear.prodMap hg.derivative_isComplexLinear
 
 /-- The product map of two maps constant-structure `J`-holomorphic within the coordinate images of a
 product-source
@@ -380,10 +380,10 @@ lemma IsConstStructureJHolomorphicWithinAt.prodMap {f : V → V'} {g : W → W'}
     {p : V × W} (hf : IsConstStructureJHolomorphicWithinAt J₁ K₁ f (Prod.fst '' u) p.1)
     (hg : IsConstStructureJHolomorphicWithinAt J₂ K₂ g (Prod.snd '' u) p.2) :
     IsConstStructureJHolomorphicWithinAt (J₁.prod J₂) (K₁.prod K₂) (Prod.map f g) u p := by
-  simpa [Prod.map] using
-    ((hf.comp (isConstStructureJHolomorphicWithinAt_fst J₁ J₂ u p)
-      (fun q hq => ⟨q, hq, rfl⟩)).prodMk
-      (hg.comp (isConstStructureJHolomorphicWithinAt_snd J₁ J₂ u p) (fun q hq => ⟨q, hq, rfl⟩)))
+  refine isConstStructureJHolomorphicWithinAt_of_hasFDerivWithinAt
+    (HasFDerivWithinAt.prodMap (p := p) (s := u) hf.hasFDerivWithinAt
+      hg.hasFDerivWithinAt) ?_
+  exact hf.derivative_isComplexLinear.prodMap hg.derivative_isComplexLinear
 
 /-- The product map of two maps constant-structure `J`-holomorphic within sets is constant-structure
 `J`-holomorphic within the
