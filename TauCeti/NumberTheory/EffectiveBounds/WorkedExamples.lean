@@ -22,7 +22,9 @@ same-shape analogue:
 * the cyclotomic discriminant formula gives `|d_{ℚ(i)}| = 4`;
 * the class-number bound is non-vacuous on `ℚ(√-5)`, giving `h ≤ 64·5`.
 
-This file realises both on concrete `NumberField` instances.
+This file realises the class-number worked example on a concrete `NumberField` instance and
+records the exact cyclotomic discriminant computation for `ℚ(i)`. The `ℚ(i)` computation here
+does not prove the discriminant by the basis-and-bound route.
 
 For `ℚ(√-5)` we take `AdjoinRoot (X² + 5)` over `ℚ` (a field because `X² + 5` is irreducible,
 having no rational root), a degree-two number field with a square root of `-5`, and feed it to
@@ -91,8 +93,8 @@ theorem classNumber_adjoinRoot_sqrt_neg_five_le :
 /-! ### `ℚ(i)`: Mathlib's cyclotomic discriminant formula recovers `|d| = 4` -/
 
 /-- **The discriminant of `ℚ(i)`.** Mathlib's cyclotomic discriminant formula gives
-`d_{ℚ(i)} = -4` for the fourth cyclotomic field, which is the roadmap's exact-discriminant
-worked example. -/
+`d_{ℚ(i)} = -4` for the fourth cyclotomic field. -/
+@[simp]
 theorem discr_cyclotomicField_four : NumberField.discr (CyclotomicField 4 ℚ) = -4 := by
   haveI : IsCyclotomicExtension {2 ^ (1 + 1)} ℚ (CyclotomicField 4 ℚ) := by
     have h : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
