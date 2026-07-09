@@ -20,8 +20,6 @@ Morrison's Mathlib universal-cover drafts, especially
 [#42](https://github.com/TauCetiProject/TauCeti/pull/42).
 -/
 
-public section
-
 noncomputable section
 
 open CategoryTheory Filter FundamentalGroupoid Set Topology TauCeti
@@ -294,10 +292,10 @@ theorem TubeData.isOpen {x y : X} {n : ℕ}
 
 /-! ### Construction of "rung" paths for the ladder homotopy -/
 
-/-- Given two paths γ and γ' in a tube with partition points t_i, we can construct connecting
-"rung" paths α_i from γ(t_i) to γ'(t_i), where each rung αᵢ lies in neighborhoods Uᵢ₋₁ and Uᵢ
-(the neighborhoods of the adjacent segments). In the variable-endpoint case, the final rung
-connects the possibly different endpoints. -/
+/-- Given two paths `γ` and `γ'` in a tube, construct connecting rung paths at every partition
+point. Each rung lies in its vertex neighborhood `V j`; for every segment `i`, the left and
+right boundary rungs lie in the segment neighborhood `U i`, so only interior rungs are required
+to lie in both adjacent segment neighborhoods. -/
 theorem Path.exists_rung_paths {x y y' : X} {n : ℕ} (γ : Path x y) (γ' : Path x y')
     (part : IntervalPartition n) (T : TubeData X n)
     (hγ : PathInTube γ part T) (hγ' : PathInTube γ' part T) :
@@ -322,10 +320,8 @@ theorem Path.exists_rung_paths {x y y' : X} {n : ℕ} (γ : Path x y) (γ' : Pat
 
 /-! ### Single segment homotopy: the key step in the ladder construction -/
 
-/-- For a single segment i, the path γ_i · α_{i+1} (along γ then down the next rung) is
-homotopic to α_i · γ'_i (down the current rung then along γ'). Both paths lie entirely in
-the SLSC neighborhood U_i, and since they share endpoints, the SLSC property implies they
-are homotopic. This is the crucial "rectangle" homotopy for each segment. -/
+/-- For a single segment in a path-homotopy-trivial set `U`, the path `γ.trans α_end` is
+homotopic to `α_start.trans γ'` when all four paths have range in `U`. -/
 theorem Path.segment_rung_homotopy {a b c d : X} (U : Set X)
     (hU : IsPathHomotopyTrivial U)
     (γ : Path a b) (γ' : Path c d) (α_start : Path a c) (α_end : Path b d)
@@ -469,7 +465,7 @@ theorem Path.paste_segment_homotopies {x y y' : X} {n : ℕ}
   -- Now combine everything: γ · α_n ≃ γ_aux n ≃ γ_aux 0 ≃ α_0 · γ'
   exact h_final.symm.trans ((h_chain (Fin.last n)).trans h_base)
 
-/-- A loop in an SLSC neighborhood is null-homotopic if its range lies in that neighborhood. -/
+/-- A loop whose range lies in a path-homotopy-trivial set is null-homotopic. -/
 theorem Path.nullhomotopic_of_range_subset_pathHomotopyTrivial {x : X} (γ : Path x x)
     (U : Set X) (hU : IsPathHomotopyTrivial U)
     (hγU : Set.range γ ⊆ U) :
@@ -506,12 +502,9 @@ private theorem Path.last_rung_nullhomotopic_of_range_subset_pathHomotopyTrivial
   apply Path.nullhomotopic_of_range_subset_pathHomotopyTrivial αₙ Uₙ hUₙ
   simpa only [αₙ, Path.cast_coe] using h_αₙ_in_Uₙ
 
-/-- One-sided specialization of `paste_segment_homotopies` that kills the source loop.
-
-Given the same rectangle homotopies, plus:
-- U₀ is an SLSC neighborhood containing the range of α 0
-
-Then `γ'` is homotopic to `γ` followed by the final rung. -/
+/-- One-sided specialization of `paste_segment_homotopies` that kills the source loop when the
+first rung has range in a path-homotopy-trivial set. Then `γ'` is homotopic to `γ` followed by
+the final rung. -/
 theorem Path.paste_segment_homotopies_pathHomotopyTrivial_source {x y y' : X} {n : ℕ}
     (γ : Path x y) (γ' : Path x y')
     (part : IntervalPartition n)

@@ -81,6 +81,7 @@ theorem subpath_trans {x y : X} (p : Path x y)
   exact ⟨Path.Homotopy.subpathTransSubpath p a b c⟩
 
 /-- A degenerate subpath represents the reflexivity class at its endpoint. -/
+@[simp]
 theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
     mk (p.subpath a a) = refl (p a) := by
   simp only [← mk_refl, eq]
@@ -88,6 +89,7 @@ theorem subpath_self {x y : X} (p : Path x y) (a : unitInterval) :
 
 /-- The full `[0,1]` subpath represents the original path, up to the endpoint casts inserted by
 `Path.subpath`. -/
+@[simp]
 theorem subpath_zero_one {x y : X} (p : Path x y) :
     mk (p.subpath 0 1) = (mk p).cast (by simp) (by simp) := by
   simp only [← mk_cast, eq]
