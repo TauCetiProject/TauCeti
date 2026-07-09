@@ -16,7 +16,8 @@ import TauCeti.Analysis.Contour.CurveDistance
 
 Dixon's glued function `dixonFunction f U γ a b` — equal to `dixonH1` on `U` and `dixonH2` off `U`
 — is complex-differentiable on all of `ℂ` when `f` is holomorphic on the open set `U` and the
-closed curve `γ` lives in `U`, is null-homologous there, and is closed and piecewise `C¹`. On `U`
+curve `γ` lives in `U`, is null-homologous there, is closed, and is differentiable off a countable
+set with interval-integrable derivative. On `U`
 it agrees with the holomorphic `dixonH1`; off `U` (hence off the curve) it agrees with the
 holomorphic `dixonH2`, and the two pieces match across `∂U` because the winding number vanishes
 there, so the `h₁`/`h₂` identity collapses.
@@ -96,9 +97,9 @@ private theorem exists_ball_windingNumber_zero (hclosed : γ a = γ b) (hP : P.C
     exact hw_zero
 
 /-- **The Dixon function is entire.** For `f` differentiable on the open set `U`, a closed curve `γ`
-that is `C¹`-off-a-countable-set, continuous on `uIcc a b` with interval-integrable derivative,
-image in `U`, and null-homologous in `U`, the glued function `dixonFunction f U γ a b` is
-complex-differentiable on all of `ℂ`. -/
+that is continuous on `uIcc a b`, differentiable off a countable subset, with interval-integrable
+derivative, image in `U`, and null-homologous in `U`, the glued function `dixonFunction f U γ a b`
+is complex-differentiable on all of `ℂ`. -/
 theorem differentiable_dixonFunction (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
     (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) (hclosed : γ a = γ b)
