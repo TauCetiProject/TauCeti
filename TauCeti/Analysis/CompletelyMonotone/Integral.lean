@@ -117,54 +117,36 @@ lemma IsCompletelyMonotone.neg_iteratedDerivWithin_one_integrableOn
     (hcm : IsCompletelyMonotone f) :
     IntegrableOn (fun t => -iteratedDerivWithin 1 f (Ici 0) t) (Ioi 0) := by
   obtain ⟨L, hL, -⟩ := hcm.exists_nonneg_tendsto_atTop
-  -- Reduce the improper-integrability criterion to convergence of the interval integrals of
-  -- the nonnegative function `-f'`.
-  apply integrableOn_Ioi_of_intervalIntegral_norm_tendsto (f 0 - L) 0
-      (l := atTop) (b := id)
-  -- Local integrability on each compact interval follows from continuity of the derivative
-  -- within the fixed half-line.
-  · intro T
-    exact ((hcm.contDiffOn.continuousOn_iteratedDerivWithin (nat_le_top _)
-      (uniqueDiffOn_Ici 0)).neg.mono Icc_subset_Ici_self).integrableOn_compact
-        isCompact_Icc |>.mono_set Ioc_subset_Icc_self
-  · exact tendsto_id
-  -- On positive intervals the norm drops because `f' ≤ 0`; the finite-interval FTC identity
-  -- then identifies the primitive with `f(0) - f(T)`.
-  · have hnorm : ∀ᶠ T in atTop, (∫ t in (0 : ℝ)..id T,
-        ‖(fun t => -iteratedDerivWithin 1 f (Ici 0) t) t‖) = f 0 - f T := by
-      filter_upwards [eventually_gt_atTop 0] with T hT
-      simp only [id]
-      have : (∫ t in (0 : ℝ)..T, ‖(fun t => -iteratedDerivWithin 1 f (Ici 0) t) t‖) =
-              ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t :=
-        intervalIntegral.integral_congr_ae (ae_of_all _ fun t ht => by
-          rw [uIoc_of_le hT.le] at ht
-          simp only [Real.norm_eq_abs]
-          rw [abs_of_nonneg (by linarith [hcm.iteratedDerivWithin_one_nonpos ht.1.le])])
-      rw [this, ← hcm.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici T hT.le]
-      have hcm_Icc : ContDiffOn ℝ 1 f (Icc 0 T) :=
-        (hcm.contDiffOn.mono Icc_subset_Ici_self).of_le (nat_le_top _)
-      rw [iteratedDerivWithin_one, intervalIntegral.integral_neg,
-        intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc hcm_Icc hT.le, neg_sub]
-    exact Tendsto.congr' (EventuallyEq.symm hnorm) (Tendsto.sub tendsto_const_nhds hL)
+  have hcont : ContinuousWithinAt f (Ici 0) 0 :=
+    hcm.contDiffOn.continuousOn.continuousWithinAt self_mem_Ici
+  have hderiv : ∀ t ∈ Ioi 0,
+      HasDerivAt f (iteratedDerivWithin 1 f (Ici 0) t) t := by
+    intro t ht
+    simpa using ContDiffOn.hasDerivAt_iteratedDerivWithin
+      (k := 0) (hcm.contDiffOn.of_le (nat_le_top _)) (uniqueDiffOn_Ici 0)
+      (Ici_mem_nhds ht)
+  have hneg : ∀ t ∈ Ioi 0, iteratedDerivWithin 1 f (Ici 0) t ≤ 0 :=
+    fun t ht => hcm.iteratedDerivWithin_one_nonpos ht.le
+  exact (integrableOn_Ioi_deriv_of_nonpos hcont hderiv hneg hL).neg
 
 /-- The improper integral `∫₀^∞ (-f') dt = f(0) - L` for completely monotone functions. -/
 lemma IsCompletelyMonotone.integral_Ioi_neg_iteratedDerivWithin_one
     (hcm : IsCompletelyMonotone f) {L : ℝ} (hL : Tendsto f atTop (nhds L)) :
     ∫ t in Ioi 0, -iteratedDerivWithin 1 f (Ici 0) t = f 0 - L := by
-  have hint := hcm.neg_iteratedDerivWithin_one_integrableOn
-  have htend := intervalIntegral_tendsto_integral_Ioi 0 hint tendsto_id
-  have htend2 : Tendsto (fun T => ∫ t in (0 : ℝ)..T,
-      -iteratedDerivWithin 1 f (Ici 0) t) atTop (nhds (f 0 - L)) :=
-    Tendsto.congr'
-      ((eventually_gt_atTop 0).mono fun T hT =>
-        by
-          simp only
-          rw [← hcm.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici T hT.le]
-          have hcm_Icc : ContDiffOn ℝ 1 f (Icc 0 T) :=
-            (hcm.contDiffOn.mono Icc_subset_Ici_self).of_le (nat_le_top _)
-          rw [iteratedDerivWithin_one, intervalIntegral.integral_neg,
-            intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc hcm_Icc hT.le, neg_sub])
-      (Tendsto.sub tendsto_const_nhds hL)
-  exact tendsto_nhds_unique htend htend2
+  have hcont : ContinuousWithinAt f (Ici 0) 0 :=
+    hcm.contDiffOn.continuousOn.continuousWithinAt self_mem_Ici
+  have hderiv : ∀ t ∈ Ioi 0,
+      HasDerivAt f (iteratedDerivWithin 1 f (Ici 0) t) t := by
+    intro t ht
+    simpa using ContDiffOn.hasDerivAt_iteratedDerivWithin
+      (k := 0) (hcm.contDiffOn.of_le (nat_le_top _)) (uniqueDiffOn_Ici 0)
+      (Ici_mem_nhds ht)
+  have hneg : ∀ t ∈ Ioi 0, iteratedDerivWithin 1 f (Ici 0) t ≤ 0 :=
+    fun t ht => hcm.iteratedDerivWithin_one_nonpos ht.le
+  have hFTC :
+      ∫ t in Ioi 0, iteratedDerivWithin 1 f (Ici 0) t = L - f 0 :=
+    integral_Ioi_of_hasDerivAt_of_nonpos hcont hderiv hneg hL
+  rw [MeasureTheory.integral_neg, hFTC]
+  ring
 
 end TauCeti
