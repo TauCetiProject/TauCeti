@@ -152,7 +152,7 @@ theorem abs_discr_le_int_of_basis_isIntegral_of_discr_eq_int_of_natAbs_le
 
 /-- In a quadratic number field, an integral non-rational element `x` gives a `ℚ`-basis
 `{1, x}` consisting of algebraic integers. -/
-theorem exists_basis_eq_fin_two_of_notMem_range_of_isIntegral {K : Type*} [Field K]
+theorem exists_basis_eq_one_self_of_notMem_range_of_isIntegral {K : Type*} [Field K]
     [NumberField K] {x : K} (hfin : finrank ℚ K = 2)
     (hx : x ∉ (algebraMap ℚ K).range) (hxint : IsIntegral ℤ x) :
     ∃ b : Basis (Fin 2) ℚ K, ⇑b = ![1, x] ∧ ∀ i, IsIntegral ℤ (b i) := by
@@ -199,7 +199,7 @@ theorem abs_discr_le_of_sq_intCast {K : Type*} [Field K] [NumberField K]
       Polynomial.monic_X_pow_sub_C a (by norm_num), ?_⟩
     rw [Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, Polynomial.eval₂_C, ← hx2, sub_self]
   -- `{1, x}` is a `ℚ`-basis of algebraic integers.
-  rcases exists_basis_eq_fin_two_of_notMem_range_of_isIntegral hfin hx hxint with
+  rcases exists_basis_eq_one_self_of_notMem_range_of_isIntegral hfin hx hxint with
     ⟨b, hbcoe, hb_int⟩
   -- Combine the effective bound with the trace-form evaluation `disc ℚ {1, x} = 4·a`.
   have hmain := TauCeti.NumberField.abs_discr_le_of_basis_isIntegral b hb_int

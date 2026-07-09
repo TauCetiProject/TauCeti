@@ -4,12 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
-public import TauCeti.NumberTheory.EffectiveBounds.DiscriminantEquality
-public import TauCeti.FieldTheory.Trace
+import TauCeti.NumberTheory.EffectiveBounds.DiscriminantEquality
+import TauCeti.FieldTheory.Trace
 import Mathlib.FieldTheory.KummerPolynomial
 import Mathlib.Algebra.Polynomial.SpecificDegree
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
@@ -132,7 +131,7 @@ private theorem discr_eq_neg_four_of_isCyclotomicExtension {K : Type*} [Field K]
     nlinarith [sq_nonneg q]
   have hζint : IsIntegral ℤ ζ := hζ.isIntegral (by norm_num)
   -- `{1, i}` is a `ℚ`-basis of algebraic integers.
-  rcases TauCeti.NumberField.exists_basis_eq_fin_two_of_notMem_range_of_isIntegral
+  rcases TauCeti.NumberField.exists_basis_eq_one_self_of_notMem_range_of_isIntegral
       hfin hζnotmem hζint with
     ⟨b, hbcoe, hb_int⟩
   -- `{1, i}` is the integral power basis of `𝒪_{ℚ(i)}`, so its `ℤ`-span is all of `𝒪_{ℚ(i)}`.
