@@ -106,6 +106,7 @@ theorem inclusion_apply (n : ℕ)
 
 /-- **Reading the character of an included point.** The character of `inclusion n f`, a point of
 `𝔾ₘ`, is the `μ_n` character of `f` precomposed with the quotient `ℤ ↠ ℤ/n`. -/
+@[simp]
 theorem charOfPoint_inclusion (n : ℕ)
     (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
     DiagonalizableGroup.charOfPoint (inclusion n f).ofConv =
@@ -117,6 +118,7 @@ theorem charOfPoint_inclusion (n : ℕ)
 /-- **The inclusion is the inclusion of roots of unity.** Reading the included point on the
 `𝔾ₘ` group-algebra generator `Multiplicative.ofAdd 1` returns the underlying unit of the root
 of unity `RootsOfUnityGroup.pointsMulEquiv n f`. -/
+@[simp]
 theorem charOfPoint_inclusion_ofAdd_one (n : ℕ)
     (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
     DiagonalizableGroup.charOfPoint (inclusion n f).ofConv (Multiplicative.ofAdd 1) =
@@ -129,6 +131,7 @@ theorem charOfPoint_inclusion_ofAdd_one (n : ℕ)
 `TauCeti.MultiplicativeGroup`: pushing the included point along
 `AddMonoidAlgebra.toMultiplicativeAlgEquiv` and reading it with `MultiplicativeGroup.pointEquiv`
 returns the underlying unit of the root of unity. -/
+@[simp]
 theorem multiplicativeGroup_pointEquiv_inclusion (n : ℕ)
     (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
     MultiplicativeGroup.pointEquiv
