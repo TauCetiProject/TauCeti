@@ -67,11 +67,8 @@ lemma neg_one_pow_mul_taylor_remainder_nonneg (hf : IsCompletelyMonotone f) {x T
               have hcda : ContDiffAt ℝ (n : WithTop ℕ∞) f t :=
                 (hf.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (by
                   exact_mod_cast le_top)
-              rw [iteratedDerivWithin_eq_iteratedDeriv
-                (uniqueDiffOn_Icc (lt_trans ht.1 ht.2)) hcda ⟨ht.1.le, ht.2.le⟩]
-              simpa [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcda
-                (mem_Ici.mpr ht_pos.le)] using
-                hf.neg_one_pow_mul_iteratedDerivWithin_nonneg n ht_pos.le)
+              rw [ContDiffAt.iteratedDerivWithin_Icc_eq_Ici hcda ht_pos ht]
+              exact hf.neg_one_pow_mul_iteratedDerivWithin_nonneg n ht_pos.le)
       _ = _ := by ring
   have h_mem : ∀ᵐ t ∂volume.restrict (Icc x T), t ∈ Ioo x T := by
     rw [ae_restrict_iff' measurableSet_Icc]
@@ -105,11 +102,7 @@ lemma IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub
     have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
     have hcda : ContDiffAt ℝ (1 : WithTop ℕ∞) f t :=
       (hcm.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (nat_le_top _)
-    exact congrArg Neg.neg (by
-      rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT) hcda
-          ⟨ht.1.le, ht.2.le⟩,
-        iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcda
-          (mem_Ici.mpr ht_pos.le)])
+    exact congrArg Neg.neg (ContDiffAt.iteratedDerivWithin_Icc_eq_Ici hcda ht_pos ht)
   rw [← htransfer]
   simpa [iteratedDerivWithin_one, intervalIntegral.integral_neg, neg_sub] using
     congrArg Neg.neg (intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc

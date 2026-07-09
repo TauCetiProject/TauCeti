@@ -16,6 +16,8 @@ completely-monotone or Bernstein-function structure.
 
 * `TauCeti.ContDiffOn.hasDerivAt_iteratedDerivWithin`: differentiability of an
   `iteratedDerivWithin` on a neighbourhood inside a unique-differentiability set.
+* `TauCeti.ContDiffAt.iteratedDerivWithin_Icc_eq_Ici`: agreement of iterated derivatives within
+  `Icc x T` and `Ici a` at strict interior points.
 For the plain fundamental-theorem identity on a compact interval use Mathlib's
 `intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc` together with
 `iteratedDerivWithin_one`.
@@ -40,5 +42,18 @@ theorem ContDiffOn.hasDerivAt_iteratedDerivWithin
   rw [iteratedDerivWithin_succ, derivWithin_of_mem_nhds hx]
   exact (hf.differentiableOn_iteratedDerivWithin
     (by exact_mod_cast Nat.lt_succ_self k) hs).hasDerivAt hx
+
+/-- `iteratedDerivWithin` on `Icc x T` agrees with `iteratedDerivWithin` on `Ici a` at interior
+points, since both equal `iteratedDeriv n f t` under local smoothness at `t`. -/
+lemma ContDiffAt.iteratedDerivWithin_Icc_eq_Ici
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E} {n : ℕ}
+    {a x T t : ℝ} (hf : ContDiffAt ℝ (n : WithTop ℕ∞) f t) (ht_lo : a < t)
+    (ht : t ∈ Ioo x T) :
+    iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici a) t := by
+  have hxT : x < T := lt_trans ht.1 ht.2
+  rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT) hf
+        (Ioo_subset_Icc_self ht),
+      ← iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici a) hf
+        (mem_Ici.mpr ht_lo.le)]
 
 end TauCeti
