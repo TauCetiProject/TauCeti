@@ -16,11 +16,10 @@ if `K` is a `k`-algebra and `A` is a commutative `K`-algebra, then the convoluti
 `K`-algebra maps out of `K ⊗[k] SymmetricAlgebra k M` is the additive monoid of `k`-linear
 maps `M →ₗ[k] A`.
 
-The equivalence first restricts a base-changed point along
-`m ↦ 1 ⊗ ι(m)` using `AlgHom.baseChangePointsMulEquiv`, then applies
-`AdditiveGroup.pointsMulEquiv`. The characteristic lemmas spell out the generator values,
-the inverse map on scalar multiples of generators, naturality in the value algebra, and the
-one-dimensional additive group `𝔾ₐ`.
+The equivalence first restricts a base-changed point along `m ↦ 1 ⊗ ι(m)` using
+`AlgHom.baseChangePointsMulEquiv`, then applies `AdditiveGroup.pointsMulEquiv`. The
+characteristic lemmas spell out the generator values, the inverse map on scalar multiples of
+generators, and the one-dimensional additive group `𝔾ₐ`.
 
 This is the additive-group worked example from the ReductiveGroups roadmap, combined with
 the Layer 0 base-change target for coordinate bialgebras and their functors of points.
@@ -101,48 +100,6 @@ theorem baseChangePointsMulEquiv_symm_apply_ι
   rw [baseChangePointsMulEquiv_symm_apply_tmul_ι]
   simp
 
-variable {B : Type*} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower k K B]
-
-/-- The base-changed vector-group points equivalence is natural in the value algebra:
-post-composing a point with a `K`-algebra map post-composes the corresponding `k`-linear map. -/
-theorem toAdd_baseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
-    (F : WithConv (K ⊗[k] SymmetricAlgebra k M →ₐ[K] A)) :
-    Multiplicative.toAdd
-        (baseChangePointsMulEquiv
-          (AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k M) ψ F)) =
-      (ψ.toLinearMap.restrictScalars k).comp
-        (Multiplicative.toAdd
-          (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (M := M) F)) := by
-  ext m
-  rw [toAdd_baseChangePointsMulEquiv_apply, LinearMap.comp_apply,
-    toAdd_baseChangePointsMulEquiv_apply, AlgHom.mapValue_apply, ofConv_toConv,
-    AlgHom.comp_apply]
-  rw [LinearMap.restrictScalars_apply, AlgHom.toLinearMap_apply]
-
-/-- Naturality of the base-changed vector-group points equivalence in the value algebra. -/
-theorem baseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
-    (F : WithConv (K ⊗[k] SymmetricAlgebra k M →ₐ[K] A)) :
-    baseChangePointsMulEquiv
-        (AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k M) ψ F) =
-      Multiplicative.ofAdd
-        ((ψ.toLinearMap.restrictScalars k).comp
-          (Multiplicative.toAdd
-            (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (M := M) F))) := by
-  exact congrArg Multiplicative.ofAdd (toAdd_baseChangePointsMulEquiv_mapValue ψ F)
-
-/-- Naturality of the inverse base-changed vector-group points equivalence in the value
-algebra. -/
-theorem mapValue_baseChangePointsMulEquiv_symm_apply (ψ : A →ₐ[K] B)
-    (φ : Multiplicative (M →ₗ[k] A)) :
-    AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k M) ψ
-        ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (M := M)).symm φ) =
-      (baseChangePointsMulEquiv (k := k) (K := K) (A := B) (M := M)).symm
-        (Multiplicative.ofAdd ((ψ.toLinearMap.restrictScalars k).comp
-          (Multiplicative.toAdd φ))) := by
-  apply (baseChangePointsMulEquiv (k := k) (K := K) (A := B) (M := M)).injective
-  rw [baseChangePointsMulEquiv_mapValue]
-  simp
-
 section Ga
 
 variable {A : Type w} [CommSemiring A]
@@ -175,42 +132,6 @@ theorem gaBaseChangePointsMulEquiv_symm_apply_ι (a : Multiplicative A) :
   rw [gaBaseChangePointsMulEquiv, MulEquiv.symm_trans_apply,
     baseChangePointsMulEquiv_symm_apply_ι]
   simp
-
-/-- Reading a base-changed `𝔾ₐ`-point as an element of the value algebra is natural in the
-value algebra: post-composing the point with a `K`-algebra map applies that map to the
-corresponding element. -/
-theorem toAdd_gaBaseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
-    (F : WithConv (K ⊗[k] SymmetricAlgebra k k →ₐ[K] A)) :
-    Multiplicative.toAdd
-        (gaBaseChangePointsMulEquiv
-          (AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k k) ψ F)) =
-      ψ (Multiplicative.toAdd
-        (gaBaseChangePointsMulEquiv (k := k) (K := K) (A := A) F)) := by
-  rw [toAdd_gaBaseChangePointsMulEquiv, toAdd_gaBaseChangePointsMulEquiv,
-    AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
-
-/-- The base-changed `𝔾ₐ` points equivalence is natural in the value algebra. -/
-theorem gaBaseChangePointsMulEquiv_mapValue (ψ : A →ₐ[K] B)
-    (F : WithConv (K ⊗[k] SymmetricAlgebra k k →ₐ[K] A)) :
-    gaBaseChangePointsMulEquiv
-        (AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k k) ψ F) =
-      Multiplicative.ofAdd
-        (ψ (Multiplicative.toAdd
-          (gaBaseChangePointsMulEquiv (k := k) (K := K) (A := A) F))) := by
-  exact congrArg Multiplicative.ofAdd (toAdd_gaBaseChangePointsMulEquiv_mapValue ψ F)
-
-/-- Naturality of the inverse base-changed `𝔾ₐ` points equivalence in the value algebra. -/
-theorem mapValue_gaBaseChangePointsMulEquiv_symm_apply (ψ : A →ₐ[K] B)
-    (a : Multiplicative A) :
-    AlgHom.mapValue (H := K ⊗[k] SymmetricAlgebra k k) ψ
-        ((gaBaseChangePointsMulEquiv (k := k) (K := K) (A := A)).symm a) =
-      (gaBaseChangePointsMulEquiv (k := k) (K := K) (A := B)).symm
-        (Multiplicative.ofAdd (ψ (Multiplicative.toAdd a))) := by
-  apply (gaBaseChangePointsMulEquiv (k := k) (K := K) (A := B)).injective
-  rw [gaBaseChangePointsMulEquiv_mapValue]
-  rw [(gaBaseChangePointsMulEquiv (k := k) (K := K) (A := A)).apply_symm_apply a]
-  exact ((gaBaseChangePointsMulEquiv (k := k) (K := K) (A := B)).apply_symm_apply
-    (Multiplicative.ofAdd (ψ (Multiplicative.toAdd a)))).symm
 
 end Ga
 
