@@ -42,12 +42,24 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk` and
   `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE`: the representative convention of
   Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions, with
-  `TauCeti.MulAction.orbitRelQuotientMapOfLE_mk` recording the induced map on representatives.
+  `TauCeti.Setoid.map_of_le_mk` recording the induced map on representatives.
 -/
 
 public section
 
 namespace TauCeti
+
+namespace Setoid
+
+/-- The quotient map induced by a setoid inequality sends a representative to the same
+representative in the larger quotient. -/
+@[simp]
+lemma map_of_le_mk {α : Type*} {s t : Setoid α} (h : s ≤ t) (x : α) :
+    _root_.Setoid.map_of_le h (Quotient.mk'' x : Quotient s) =
+      (Quotient.mk'' x : Quotient t) :=
+  Quotient.map'_mk'' id h x
+
+end Setoid
 
 namespace MulAction
 
@@ -207,14 +219,11 @@ lemma equivSubgroupOrbitsQuotientGroup_apply_smul
     (MulAction.equivSubgroupOrbitsQuotientGroup x H).apply_symm_apply
     (QuotientGroup.mk (s := H) g⁻¹)
 
-/-- The quotient map induced by an inclusion of acting subgroups sends a representative to the
-same representative in the larger orbit quotient. -/
-@[simp]
-lemma orbitRelQuotientMapOfLE_mk {H K : Subgroup G} (hHK : H ≤ K) (x : X) :
+private lemma orbitRelQuotientMapOfLE_mk {H K : Subgroup G} (hHK : H ≤ K) (x : X) :
     Setoid.map_of_le (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
         (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
       (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient K X) :=
-  Quotient.map'_mk'' id (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK) x
+  TauCeti.Setoid.map_of_le_mk (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK) x
 
 /-- The subgroup-orbit quotient equivalence is natural in subgroup inclusions. -/
 @[simp]
