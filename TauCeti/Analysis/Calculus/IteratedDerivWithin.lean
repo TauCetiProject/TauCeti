@@ -17,8 +17,6 @@ independent of any completely-monotone or Bernstein-function structure.
 
 * `TauCeti.ContDiffOn.hasDerivAt_iteratedDerivWithin`: differentiability of an
   `iteratedDerivWithin` on a neighbourhood inside a unique-differentiability set.
-* `TauCeti.ContDiffAt.iteratedDerivWithin_Icc_eq_Ici`: pointwise agreement of
-  `iteratedDerivWithin` on a compact interval and a containing half-line.
 * `TauCeti.ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici`: transfer of the
   first-derivative interval integral from the `T`-dependent set `Icc x T` to the fixed
   half-line `Ici a`.
@@ -52,16 +50,12 @@ theorem ContDiffOn.hasDerivAt_iteratedDerivWithin
   exact (hf.differentiableOn_iteratedDerivWithin
     (by exact_mod_cast Nat.lt_succ_self k) hs).hasDerivAt hx
 
-/-- At a point of `[x, T]` contained in `[a, ∞)`, `iteratedDerivWithin`
-computed on `[x, T]` agrees with `iteratedDerivWithin` computed on `[a, ∞)`. -/
-lemma ContDiffAt.iteratedDerivWithin_Icc_eq_Ici {n : ℕ} {a x T t : ℝ}
-    (hf : ContDiffAt ℝ (n : WithTop ℕ∞) f t) (hax : a ≤ x) (hxT : x < T)
-    (hxt : x ≤ t) (htT : t ≤ T) :
-    iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici a) t := by
-  rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT) hf
-    ⟨hxt, htT⟩,
-    iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici a) hf
-      (mem_Ici.mpr (le_trans hax hxt))]
+private lemma ContDiffAt.iteratedDerivWithin_eq_of_mem_uniqueDiffOn {n : ℕ} {s u : Set ℝ}
+    {t : ℝ} (hf : ContDiffAt ℝ (n : WithTop ℕ∞) f t) (hs : UniqueDiffOn ℝ s)
+    (hu : UniqueDiffOn ℝ u) (hts : t ∈ s) (htu : t ∈ u) :
+    iteratedDerivWithin n f s t = iteratedDerivWithin n f u t := by
+  rw [iteratedDerivWithin_eq_iteratedDeriv hs hf hts,
+    iteratedDerivWithin_eq_iteratedDeriv hu hf htu]
 
 /-- The interval integral of `-f'` with the `T`-dependent set `Icc x T` equals the integral with
 the fixed set `Ici a`, under local smoothness at the strict interior points. The derivative is
@@ -74,8 +68,9 @@ lemma ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici
   intro t ht
   rw [uIoo_of_le hxT] at ht
   exact congrArg Neg.neg
-    (ContDiffAt.iteratedDerivWithin_Icc_eq_Ici (hf t ht) hax (lt_trans ht.1 ht.2)
-      ht.1.le ht.2.le)
+    (ContDiffAt.iteratedDerivWithin_eq_of_mem_uniqueDiffOn (hf t ht)
+      (uniqueDiffOn_Icc (lt_trans ht.1 ht.2)) (uniqueDiffOn_Ici a)
+      ⟨ht.1.le, ht.2.le⟩ (mem_Ici.mpr (le_trans hax ht.1.le)))
 
 /-- The integral `∫ₐᵀ (-f') dt → f(a) - L` as `T → ∞`, assuming smoothness on
 `[a, ∞)` and convergence of `f` to `L` at infinity. The derivative is represented as

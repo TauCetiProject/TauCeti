@@ -46,6 +46,13 @@ variable {f : ℝ → ℝ}
 
 namespace IsCompletelyMonotone
 
+private lemma iteratedDerivWithin_Icc_eq_Ici {n : ℕ} {x T t : ℝ}
+    (hf : ContDiffAt ℝ (n : WithTop ℕ∞) f t) (ht0 : 0 ≤ t) (hxT : x < T)
+    (hxt : x ≤ t) (htT : t ≤ T) :
+    iteratedDerivWithin n f (Icc x T) t = iteratedDerivWithin n f (Ici 0) t := by
+  rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc hxT) hf ⟨hxt, htT⟩,
+    iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hf (mem_Ici.mpr ht0)]
+
 /-- **CM sign of the Taylor remainder.** For a completely monotone function the Taylor
 integral remainder `∫ₓᵀ (T-t)ⁿ⁻¹/(n-1)! · f⁽ⁿ⁾(t) dt` has sign `(-1)ⁿ`:
 `0 ≤ (-1)ⁿ` times it. -/
@@ -68,10 +75,8 @@ lemma neg_one_pow_mul_taylor_remainder_nonneg (hf : IsCompletelyMonotone f) {x T
               have hcda : ContDiffAt ℝ (n : WithTop ℕ∞) f t :=
                 (hf.contDiffOn.contDiffAt (Ici_mem_nhds ht_pos)).of_le (by
                   exact_mod_cast le_top)
-              rw [iteratedDerivWithin_eq_iteratedDeriv
-                    (uniqueDiffOn_Icc (lt_trans ht.1 ht.2)) hcda (Ioo_subset_Icc_self ht),
-                  ← iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcda
-                    (mem_Ici.mpr ht_pos.le)]
+              rw [iteratedDerivWithin_Icc_eq_Ici hcda ht_pos.le (lt_trans ht.1 ht.2)
+                ht.1.le ht.2.le]
               exact hf.neg_one_pow_mul_iteratedDerivWithin_nonneg n ht_pos.le)
       _ = _ := by ring
   have h_mem : ∀ᵐ t ∂volume.restrict (Icc x T), t ∈ Ioo x T := by

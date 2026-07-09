@@ -1168,21 +1168,6 @@ private lemma ibp_kernel_integrableOn (f : ℝ → ℝ) (hcm : IsCompletelyMonot
       _ = (-1 : ℝ) ^ k / ↑(k - 1).factorial * t ^ (k - 1) *
           iteratedDerivWithin k f (Ici 0) t := by field_simp
 
-private lemma integral_neg_iteratedDerivWithin_one_Ici_eq_Icc
-    (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
-    {x T : ℝ} (hx : 0 ≤ x) (hxT : x < T) :
-    (∫ t in x..T, -iteratedDerivWithin 1 f (Ici 0) t) =
-      ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t := by
-  apply intervalIntegral.integral_congr_ae
-  apply ae_of_all
-  intro t ht
-  rw [uIoc_of_le hxT.le] at ht
-  have hcda : ContDiffAt ℝ (↑1 : WithTop ℕ∞) f t :=
-    (hcm.contDiffOn.of_le (nat_le_top 1)).contDiffAt
-      (Ici_mem_nhds (lt_of_le_of_lt hx ht.1))
-  congr 1
-  exact (ContDiffAt.iteratedDerivWithin_Icc_eq_Ici hcda hx hxT ht.1.le ht.2).symm
-
 private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (n : ℕ) (hn : 1 ≤ n) (x : ℝ) (hx : 0 ≤ x)
     (L : ℝ) (hL : Tendsto f atTop (nhds L)) :
@@ -1214,7 +1199,9 @@ private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
       refine Tendsto.congr' ?_ (Tendsto.sub tendsto_const_nhds hL)
       filter_upwards [eventually_gt_atTop (max x 1)] with T hT
       have hxT : x < T := lt_of_le_of_lt (le_max_left x 1) hT
-      rw [integral_neg_iteratedDerivWithin_one_Ici_eq_Icc f hcm hx hxT]
+      rw [← ContDiffOn.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici
+        (fun t ht => (hcm.contDiffOn.contDiffAt
+          (Ici_mem_nhds (lt_of_le_of_lt hx ht.1))).of_le (nat_le_top _)) hx hxT.le]
       simpa [iteratedDerivWithin_one, intervalIntegral.integral_neg, neg_sub] using
         (congrArg Neg.neg (intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc
           ((hcm.contDiffOn.mono
