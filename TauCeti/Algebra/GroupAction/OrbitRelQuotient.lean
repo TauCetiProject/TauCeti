@@ -39,6 +39,7 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   transitive.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff`: if the original
   action is free, then the descended `N(H) / H` action on the `H`-orbit quotient is free.
+* `TauCeti.Setoid.map_of_le_mk`: the representative convention for `Setoid.map_of_le`.
 * `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk` and
   `TauCeti.MulAction.equivSubgroupOrbitsQuotientGroup_mapOfLE`: the representative convention of
   Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions.
@@ -47,6 +48,20 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 public section
 
 namespace TauCeti
+
+namespace Setoid
+
+variable {α : Type*}
+
+/-- `Setoid.map_of_le` sends a representative for the smaller setoid to the same representative
+for the larger setoid. -/
+@[simp]
+theorem map_of_le_mk {s t : Setoid α} (h : s ≤ t) (x : α) :
+    _root_.Setoid.map_of_le h (Quotient.mk'' x : Quotient s) =
+      (Quotient.mk'' x : Quotient t) :=
+  rfl
+
+end Setoid
 
 namespace MulAction
 
@@ -185,6 +200,7 @@ lemma orbitRelQuotient_smul_eq_smul_iff_normalizerQuotientMk_inv_eq [IsCancelSMu
 /-- Mathlib's subgroup-orbit quotient equivalence sends the coset of `g` back to the orbit
 class of `g⁻¹ • x`. This records the representative convention once, so later lemmas can
 rewrite through a named theorem rather than relying directly on definitional equality. -/
+@[simp]
 lemma equivSubgroupOrbitsQuotientGroup_symm_mk
     [MulAction.IsPretransitive G X] [IsCancelSMul G X]
     (H : Subgroup G) (x : X) (g : G) :
@@ -205,15 +221,6 @@ lemma equivSubgroupOrbitsQuotientGroup_apply_smul
     (MulAction.equivSubgroupOrbitsQuotientGroup x H).apply_symm_apply
     (QuotientGroup.mk (s := H) g⁻¹)
 
-/-- `Setoid.map_of_le` sends a representative of the smaller orbit relation to the same
-representative for the larger orbit relation. -/
-@[simp]
-lemma orbitRel_mapOfLE_mk {H K : Subgroup G} (hHK : H ≤ K) (x : X) :
-    Setoid.map_of_le (orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
-        (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient H X) =
-      (Quotient.mk'' x : _root_.MulAction.orbitRel.Quotient K X) :=
-  rfl
-
 /-- The subgroup-orbit quotient equivalence is natural in subgroup inclusions. -/
 @[simp]
 lemma equivSubgroupOrbitsQuotientGroup_mapOfLE
@@ -228,7 +235,7 @@ lemma equivSubgroupOrbitsQuotientGroup_mapOfLE
   obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G x₀ x'
   rw [← hg]
   rw [equivSubgroupOrbitsQuotientGroup_apply_smul]
-  rw [orbitRel_mapOfLE_mk hHK]
+  rw [TauCeti.Setoid.map_of_le_mk]
   rw [equivSubgroupOrbitsQuotientGroup_apply_smul, Subgroup.quotientMapOfLE_apply_mk]
 
 private lemma normalizer_smul_mem_orbit (H : Subgroup G)

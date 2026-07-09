@@ -84,8 +84,8 @@ lemma subgroupFiberOrbitQuotientEquivQuotientGroup_symm_mk
     (subgroupFiberOrbitQuotientEquivQuotientGroup H e).symm
         (QuotientGroup.mk (s := H) φ) =
       subgroupFiberOrbitClass H (φ⁻¹ • e) := by
-  simpa [subgroupFiberOrbitQuotientEquivQuotientGroup, subgroupFiberOrbitClass_eq_mk] using
-    MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk H e φ
+  simp [subgroupFiberOrbitQuotientEquivQuotientGroup, subgroupFiberOrbitClass_eq_mk,
+    MulAction.equivSubgroupOrbitsQuotientGroup_symm_mk H e φ]
 
 /-- For a regular cover, the inverse quotient equivalence sends the coset of a deck
 transformation `φ` to the `H`-orbit class of `φ⁻¹ • e`. -/
