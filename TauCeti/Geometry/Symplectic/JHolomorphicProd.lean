@@ -248,14 +248,12 @@ variable (J₁ : AlmostComplexStructure V) (J₂ : AlmostComplexStructure W)
 
 /-- The affine inclusion of the first coordinate into a product is constant-structure
 `J`-holomorphic. -/
-@[simp]
 lemma isConstStructureJHolomorphicAt_prodMk_left (w₀ : W) (v : V) :
     IsConstStructureJHolomorphicAt J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) v :=
   (isConstStructureJHolomorphicAt_id J₁ v).prodMk (isConstStructureJHolomorphicAt_const J₁ J₂ w₀ v)
 
 /-- The affine inclusion of the second coordinate into a product is constant-structure
 `J`-holomorphic. -/
-@[simp]
 lemma isConstStructureJHolomorphicAt_prodMk_right (v₀ : V) (w : W) :
     IsConstStructureJHolomorphicAt J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) w :=
   (isConstStructureJHolomorphicAt_const J₂ J₁ v₀ w).prodMk (isConstStructureJHolomorphicAt_id J₂ w)
@@ -263,7 +261,6 @@ lemma isConstStructureJHolomorphicAt_prodMk_right (v₀ : V) (w : W) :
 /-- The affine inclusion of the first coordinate into a product is constant-structure
 `J`-holomorphic within
 every set. -/
-@[simp]
 lemma isConstStructureJHolomorphicWithinAt_prodMk_left (w₀ : W) (s : Set V) (v : V) :
     IsConstStructureJHolomorphicWithinAt J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) s v :=
   (isConstStructureJHolomorphicAt_prodMk_left J₁ J₂ w₀ v).isConstStructureJHolomorphicWithinAt
@@ -271,7 +268,6 @@ lemma isConstStructureJHolomorphicWithinAt_prodMk_left (w₀ : W) (s : Set V) (v
 /-- The affine inclusion of the second coordinate into a product is constant-structure
 `J`-holomorphic within
 every set. -/
-@[simp]
 lemma isConstStructureJHolomorphicWithinAt_prodMk_right (v₀ : V) (s : Set W) (w : W) :
     IsConstStructureJHolomorphicWithinAt J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) s w :=
   (isConstStructureJHolomorphicAt_prodMk_right J₁ J₂ v₀ w).isConstStructureJHolomorphicWithinAt
@@ -279,7 +275,6 @@ lemma isConstStructureJHolomorphicWithinAt_prodMk_right (v₀ : V) (s : Set W) (
 /-- The affine inclusion of the first coordinate into a product is constant-structure
 `J`-holomorphic on every
 set. -/
-@[simp]
 lemma isConstStructureJHolomorphicOn_prodMk_left (w₀ : W) (s : Set V) :
     IsConstStructureJHolomorphicOn J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) s :=
   isConstStructureJHolomorphicOn_of_forall fun v _ =>
@@ -288,7 +283,6 @@ lemma isConstStructureJHolomorphicOn_prodMk_left (w₀ : W) (s : Set V) :
 /-- The affine inclusion of the second coordinate into a product is constant-structure
 `J`-holomorphic on every
 set. -/
-@[simp]
 lemma isConstStructureJHolomorphicOn_prodMk_right (v₀ : V) (s : Set W) :
     IsConstStructureJHolomorphicOn J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) s :=
   isConstStructureJHolomorphicOn_of_forall fun w _ =>
@@ -296,7 +290,6 @@ lemma isConstStructureJHolomorphicOn_prodMk_right (v₀ : V) (s : Set W) :
 
 /-- The affine inclusion of the first coordinate into a product is globally
 constant-structure `J`-holomorphic. -/
-@[simp]
 lemma isConstStructureJHolomorphic_prodMk_left (w₀ : W) :
     IsConstStructureJHolomorphic J₁ (J₁.prod J₂) (fun v' : V => (v', w₀)) :=
   isConstStructureJHolomorphic_of_forall fun v =>
@@ -304,7 +297,6 @@ lemma isConstStructureJHolomorphic_prodMk_left (w₀ : W) :
 
 /-- The affine inclusion of the second coordinate into a product is globally
 constant-structure `J`-holomorphic. -/
-@[simp]
 lemma isConstStructureJHolomorphic_prodMk_right (v₀ : V) :
     IsConstStructureJHolomorphic J₂ (J₁.prod J₂) (fun w' : W => (v₀, w')) :=
   isConstStructureJHolomorphic_of_forall fun w =>
