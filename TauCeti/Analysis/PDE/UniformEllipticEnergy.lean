@@ -44,6 +44,8 @@ the same symmetry lemmas.
 * `TauCeti.PDE.UniformlyEllipticOn.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self`:
   the explicit positive-constant diagonal estimate when the mass floor dominates the
   drift defect.
+* `TauCeti.PDE.UniformlyEllipticOn.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self`:
+  the zero-drift diagonal estimate from uniform ellipticity and nonnegative mass.
 * The corresponding `_on` lemmas apply these estimates to coefficient fields
   `b : X → EuclideanSpace ℝ n` and `c : X → ℝ` on `Ω`.
 -/
@@ -189,6 +191,25 @@ lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self_on
     min (lam / 2) (mu - beta ^ 2 / (2 * lam)) * ‖U‖ ^ 2
       ≤ energyIntegrand (a x) (b x) (c x) U U :=
   h.min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self hx (hb hx) (hc hx) hmu U
+
+/-- Zero-drift diagonal lower bound for a uniformly elliptic principal coefficient and a
+nonnegative mass coefficient. -/
+lemma min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self
+    (h : UniformlyEllipticOn Ω a lam Lam)
+    {x : X} (hx : x ∈ Ω) {c₀ : ℝ} (hc : 0 ≤ c₀)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    min lam c₀ * ‖U‖ ^ 2 ≤ energyIntegrand (a x) 0 c₀ U U :=
+  PDE.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self h.pos.le
+    (h.lower_bound hx) hc U
+
+/-- The coefficient-field version of the zero-drift diagonal lower bound from uniform
+ellipticity and nonnegative mass. -/
+lemma min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self_on
+    (h : UniformlyEllipticOn Ω a lam Lam)
+    {c : X → ℝ} (hc : ∀ ⦃x⦄, x ∈ Ω → 0 ≤ c x) {x : X} (hx : x ∈ Ω)
+    (U : ℝ × EuclideanSpace ℝ n) :
+    min lam (c x) * ‖U‖ ^ 2 ≤ energyIntegrand (a x) 0 (c x) U U :=
+  h.min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self hx (hc hx) U
 
 end UniformlyEllipticOn
 

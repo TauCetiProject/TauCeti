@@ -118,6 +118,12 @@ lemma garding_energyIntegrand_self_of_mass_lower_bound_of_bounds_on {Ω : Set X}
       ≤ energyIntegrand (a x) (b x) (c x) U U :=
   garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam (hA hx) (hb hx) (hc hx) U
 
+/-- Positivity of the explicit diagonal lower-bound constant under the mass-floor dominance
+condition `β² / (2λ) < μ`. -/
+lemma min_coercivityConstant_pos (hlam : 0 < lam) (hmu : beta ^ 2 / (2 * lam) < mu) :
+    0 < min (lam / 2) (mu - beta ^ 2 / (2 * lam)) :=
+  lt_min (half_pos hlam) (sub_pos.mpr hmu)
+
 /-- The mass-floor Gårding lower bound implies the explicit coercive diagonal estimate with
 constant `min (λ / 2) (μ - β² / (2λ))`. -/
 lemma min_coercivityConstant_mul_norm_sq_le_energyIntegrand_self (hlam : 0 < lam)
