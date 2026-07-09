@@ -221,6 +221,12 @@ trivial one should be selected explicitly with `Comodule.trivial`. -/
 def trivial : Comodule R C M :=
   groupLike (R := R) (C := C) (M := M) (1 : GroupLike R C)
 
+/-- The trivial comodule is the group-like comodule for the unit group-like element. -/
+theorem trivial_eq_groupLike_one :
+    (trivial (R := R) (C := C) (M := M) : Comodule R C M) =
+      groupLike (R := R) (C := C) (M := M) (1 : GroupLike R C) :=
+  rfl
+
 section Trivial
 
 attribute [local instance] trivial

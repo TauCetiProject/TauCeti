@@ -163,12 +163,6 @@ variable {M : Type w} [AddCommMonoid M] [Module R M]
 
 attribute [local instance] trivial
 
-/-- The trivial comodule is the group-like comodule for the unit group-like element. -/
-theorem trivial_eq_groupLike_one :
-    (trivial (R := R) (C := C) (M := M) : Comodule R C M) =
-      groupLike (R := R) (C := C) (M := M) (1 : GroupLike R C) :=
-  rfl
-
 /-- A matrix coefficient of a trivial comodule lies in the line spanned by `1`. -/
 theorem trivial_matrixCoefficient_mem_span_singleton_one (φ : M →ₗ[R] R) (m : M) :
     matrixCoefficient (R := R) (C := C) φ m ∈ Submodule.span R ({1} : Set C) := by

@@ -13,9 +13,9 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Trivial
 For a coalgebra `C` over `R`, a group-like element `g : GroupLike R C`, and a right
 `C`-comodule `M`, the **coinvariants relative to `g`** are the vectors whose coaction is
 `ρ(m) = m ⊗ g`. In a bialgebra, the specialization `g = 1` is the comodule-theoretic form of
-the usual fixed-vector construction. Under the representation ⇆ comodule dictionary of the
-reductive-groups roadmap, this is the affine monoid scheme fixed-point functor; in the
-Hopf-algebra case, it recovers the usual affine group scheme interpretation.
+the usual fixed-vector construction. Under the representation ⇆ comodule dictionary in the
+commutative bialgebra or Hopf-algebra setting of the reductive-groups roadmap, this
+specialization is the affine monoid or affine group scheme fixed-point functor.
 
 The coinvariants form an `R`-submodule, the equalizer of the two linear maps `ρ` and
 `m ↦ m ⊗ g`. Two structural facts pin the definition down: the group-like comodule attached
@@ -261,6 +261,7 @@ abbrev invariants [Comodule R C M] : Submodule R M :=
   coinvariants R C M (1 : GroupLike R C)
 
 /-- A vector is invariant exactly when its coaction is `m ⊗ 1`. -/
+@[simp]
 theorem mem_invariants [Comodule R C M] {m : M} :
     m ∈ invariants R C M ↔ coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] (1 : C) :=
   mem_coinvariants (R := R) (C := C) (M := M) (1 : GroupLike R C)
@@ -286,6 +287,7 @@ abbrev mapInvariants (f : Hom R C M N) : invariants R C M →ₗ[R] invariants R
   mapCoinvariants (R := R) (C := C) (M := M) (N := N) (1 : GroupLike R C) f
 
 /-- `mapInvariants f` acts as the underlying map of `f` on invariant vectors. -/
+@[simp]
 theorem mapInvariants_coe_apply (f : Hom R C M N) (m : invariants R C M) :
     (mapInvariants (R := R) (C := C) f m : N) = f (m : M) :=
   mapCoinvariants_coe_apply (R := R) (C := C) (M := M) (N := N)
@@ -301,6 +303,7 @@ theorem mapInvariants_id :
 variable [Comodule R C P]
 
 /-- The invariants functor preserves composition. -/
+@[simp]
 theorem mapInvariants_comp (h : Hom R C N P) (f : Hom R C M N) :
     mapInvariants (R := R) (C := C) (M := M) (N := P) (h.comp f) =
       (mapInvariants (R := R) (C := C) (M := N) (N := P) h).comp
@@ -318,7 +321,9 @@ and a morphism `f` to `f 1`. -/
 noncomputable abbrev invariantsEquivHom :
     letI : Comodule R C R := Comodule.trivial (R := R) (C := C) (M := R)
     invariants R C M ≃ₗ[R] Hom R C R M :=
-  coinvariantsEquivHom (R := R) (C := C) (M := M) (1 : GroupLike R C)
+  by
+    simpa [Comodule.trivial_eq_groupLike_one] using
+      (coinvariantsEquivHom (R := R) (C := C) (M := M) (1 : GroupLike R C))
 
 /-- `invariantsEquivHom` sends an invariant vector `m` to the morphism `r ↦ r • m`. -/
 @[simp]
