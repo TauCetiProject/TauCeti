@@ -8,8 +8,8 @@ public import Mathlib.Analysis.Complex.Order
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Algebra.BigOperators.Fin
 public import TauCeti.Analysis.PositiveDefinite.Kernel
-public import TauCeti.Analysis.PositiveDefinite.KernelBounds
-public import TauCeti.Analysis.PositiveDefinite.KernelClosure
+import TauCeti.Analysis.PositiveDefinite.KernelBounds
+import TauCeti.Analysis.PositiveDefinite.KernelClosure
 
 /-!
 # Positive-definite functions on an involutive additive monoid
