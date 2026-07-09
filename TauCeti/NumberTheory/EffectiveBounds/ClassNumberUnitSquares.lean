@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.EffectiveBounds.ClassNumber
+public import TauCeti.NumberTheory.EffectiveBounds.UnitSquaresCorollaries
 
 /-!
 # Compatibility import for class-number/unit-square bounds

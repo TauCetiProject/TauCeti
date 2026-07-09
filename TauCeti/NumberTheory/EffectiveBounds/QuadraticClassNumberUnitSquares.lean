@@ -4,7 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.NumberTheory.EffectiveBounds.ClassNumber
+public import TauCeti.NumberTheory.EffectiveBounds.ClassNumberUnitSquares
+public import TauCeti.NumberTheory.EffectiveBounds.QuadraticDiscriminant
 
 /-!
 # Compatibility import for quadratic class-number/unit-square bounds
