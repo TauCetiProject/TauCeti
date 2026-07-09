@@ -218,9 +218,7 @@ theorem of_isPositiveDefiniteKernel
   rw [Complex.conj_conj]
 
 /-- The Cauchy–Schwarz inequality for a positive-definite function: the squared norm of an
-off-diagonal value is bounded by the product of the two diagonal values. This is the function-form
-image of the kernel Cauchy–Schwarz inequality `TauCeti.isPositiveDefiniteKernel_normSq_le`
-transported through the kernel `K(a, b) = F(a + b⋆)`. -/
+off-diagonal value is bounded by the product of the two diagonal values. -/
 theorem normSq_le (hF : IsPositiveDefinite F) (a b : M) :
     Complex.normSq (F (a + star b))
       ≤ (F (a + star a)).re * (F (b + star b)).re := by
@@ -246,30 +244,25 @@ theorem norm_apply_le_map_zero_re_of_star_eq_neg (hH : IsPositiveDefinite H)
 
 end Group
 
-/-- Positive-definite functions are closed under addition. This is the function-form image of
-`TauCeti.isPositiveDefiniteKernel_add` through the kernel `K(a, b) = F(a + b⋆)`. -/
+/-- Positive-definite functions are closed under addition. -/
 theorem add (hF : IsPositiveDefinite F) (hG : IsPositiveDefinite G) :
     IsPositiveDefinite (fun x => F x + G x) :=
   of_isPositiveDefiniteKernel
     (isPositiveDefiniteKernel_add hF.isPositiveDefiniteKernel hG.isPositiveDefiniteKernel)
 
-/-- Positive-definite functions are closed under multiplication by a nonnegative complex scalar.
-This is the function-form image of `TauCeti.isPositiveDefiniteKernel_smul_of_nonneg`. -/
+/-- Positive-definite functions are closed under multiplication by a nonnegative complex scalar. -/
 theorem const_mul {k : ℂ} (hk : 0 ≤ k) (hF : IsPositiveDefinite F) :
     IsPositiveDefinite (fun x => k * F x) :=
   of_isPositiveDefiniteKernel <| by
     simpa only [smul_eq_mul] using
       isPositiveDefiniteKernel_smul_of_nonneg hk hF.isPositiveDefiniteKernel
 
-/-- The Gram matrix of a positive-definite function on any finite family is positive
-semidefinite. This is the finite submatrix of the kernel `K(a, b) = F(a + b⋆)`. -/
-theorem gram_posSemidef (hF : IsPositiveDefinite F) {ι : Type*} [Finite ι] (v : ι → M) :
+/-- The Gram matrix of a positive-definite function is positive semidefinite. -/
+theorem gram_posSemidef (hF : IsPositiveDefinite F) {ι : Type*} (v : ι → M) :
     Matrix.PosSemidef (fun i j => F (v i + star (v j))) :=
   isPositiveDefiniteKernel_comp hF.isPositiveDefiniteKernel v
 
-/-- Positive-definite functions are closed under pointwise multiplication (Schur product). This is
-the function-form image of `TauCeti.isPositiveDefiniteKernel_mul`, which is the Schur product
-theorem for the kernels. -/
+/-- Positive-definite functions are closed under pointwise multiplication (Schur product). -/
 theorem mul (hF : IsPositiveDefinite F) (hG : IsPositiveDefinite G) :
     IsPositiveDefinite (fun x => F x * G x) :=
   of_isPositiveDefiniteKernel
@@ -277,8 +270,7 @@ theorem mul (hF : IsPositiveDefinite F) (hG : IsPositiveDefinite G) :
 
 end IsPositiveDefinite
 
-/-- A nonnegative real constant is a positive-definite function. This is the function-form image
-of `TauCeti.isPositiveDefiniteKernel_const_of_nonneg`. -/
+/-- A nonnegative real constant is a positive-definite function. -/
 theorem isPositiveDefinite_const {k : ℂ} (hk : 0 ≤ k) :
     IsPositiveDefinite (fun _ : M => k) :=
   IsPositiveDefinite.of_isPositiveDefiniteKernel (isPositiveDefiniteKernel_const_of_nonneg hk)
@@ -289,16 +281,14 @@ theorem isPositiveDefinite_zero : IsPositiveDefinite (fun _ : M => (0 : ℂ)) :=
 
 namespace IsPositiveDefinite
 
-/-- Positive-definite functions are closed under finite sums. This is the function-form image of
-`TauCeti.isPositiveDefiniteKernel_sum`. -/
+/-- Positive-definite functions are closed under finite sums. -/
 theorem sum {ι : Type*} {s : Finset ι} {F : ι → M → ℂ}
     (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :
     IsPositiveDefinite (fun x => ∑ i ∈ s, F i x) :=
   of_isPositiveDefiniteKernel
     (isPositiveDefiniteKernel_sum fun i hi => (hF i hi).isPositiveDefiniteKernel)
 
-/-- Positive-definite functions are closed under finite products (Schur product). This is the
-function-form image of `TauCeti.isPositiveDefiniteKernel_prod`. -/
+/-- Positive-definite functions are closed under finite products (Schur product). -/
 theorem prod {ι : Type*} {s : Finset ι} {F : ι → M → ℂ}
     (hF : ∀ i ∈ s, IsPositiveDefinite (F i)) :
     IsPositiveDefinite (fun x => ∏ i ∈ s, F i x) :=

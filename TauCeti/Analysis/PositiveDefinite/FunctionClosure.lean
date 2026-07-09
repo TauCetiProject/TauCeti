@@ -70,8 +70,7 @@ theorem sum_real_smul {ι : Type*} {s : Finset ι} {w : ι → ℝ} {F : ι → 
     IsPositiveDefinite (fun x => ∑ i ∈ s, w i • F i x) :=
   sum fun i hi => (hF i hi).real_smul (hw i hi)
 
-/-- Schur powers of a positive-definite function are positive definite. This is the function-form
-image of `TauCeti.isPositiveDefiniteKernel_pow`. -/
+/-- Schur powers of a positive-definite function are positive definite. -/
 theorem pow {F : M → ℂ} (hF : IsPositiveDefinite F) (n : ℕ) :
     IsPositiveDefinite (fun x => F x ^ n) :=
   of_isPositiveDefiniteKernel (isPositiveDefiniteKernel_pow hF.isPositiveDefiniteKernel n)
