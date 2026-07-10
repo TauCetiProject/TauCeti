@@ -122,26 +122,23 @@ private theorem id_genQuot_tendsto (x : X) :
 /-- Every vector lies in the generator domain of the identity semigroup. -/
 theorem mem_id_domain (x : X) :
     x ∈ (StronglyContinuousSemigroup.id X).domain :=
-  ((StronglyContinuousSemigroup.id X).mem_domain_iff_tendsto x).mpr ⟨0, id_genQuot_tendsto x⟩
+  ((StronglyContinuousSemigroup.id X).generator_eq_toPMap_top_of_forall_tendsto 0
+    (by simpa using id_genQuot_tendsto (X := X))).1.ge trivial
 
 /-- The generator domain of the identity semigroup is all of the space. -/
 @[simp]
 theorem id_domain_eq_top :
-    (StronglyContinuousSemigroup.id X).domain = ⊤ := by
-  ext x
-  simp [mem_id_domain]
+    (StronglyContinuousSemigroup.id X).domain = ⊤ :=
+  ((StronglyContinuousSemigroup.id X).generator_eq_toPMap_top_of_forall_tendsto 0
+    (by simpa using id_genQuot_tendsto (X := X))).1
 
 /-- The generator of the identity semigroup is the zero operator. -/
 @[simp]
 theorem id_generator_eq_zero :
     (StronglyContinuousSemigroup.id X).generator = 0 := by
-  refine LinearPMap.ext ?_ ?_
-  · rw [(StronglyContinuousSemigroup.id X).generator_domain, id_domain_eq_top,
-      LinearPMap.zero_domain]
-  · intro x _ _
-    rw [LinearPMap.zero_apply]
-    exact (StronglyContinuousSemigroup.id X).generator_eq_of_tendsto (mem_id_domain x)
-      (id_genQuot_tendsto x)
+  rw [((StronglyContinuousSemigroup.id X).generator_eq_toPMap_top_of_forall_tendsto 0
+    (by simpa using id_genQuot_tendsto (X := X))).2]
+  rfl
 
 end StronglyContinuousSemigroup
 

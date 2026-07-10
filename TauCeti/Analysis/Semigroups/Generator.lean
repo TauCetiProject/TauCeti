@@ -168,6 +168,25 @@ theorem StronglyContinuousSemigroup.generator_eq_of_tendsto
       exact hx⟩ = y :=
   tendsto_nhds_unique (S.generator_tendsto ⟨x, hx⟩) h
 
+omit [CompleteSpace X] in
+/-- If every generator difference quotient converges to `L x` for a linear operator `L`, then
+the generator domain is the whole space and the generator is `L` as a total `LinearPMap`. -/
+theorem StronglyContinuousSemigroup.generator_eq_toPMap_top_of_forall_tendsto
+    (S : StronglyContinuousSemigroup X) (L : X →ₗ[ℝ] X)
+    (h : ∀ x, Filter.Tendsto (fun t => (1 / t) • (S.realOperator t x - x))
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds (L x))) :
+    S.domain = ⊤ ∧ S.generator = L.toPMap ⊤ := by
+  have hmem : ∀ x, x ∈ S.domain := fun x => (S.mem_domain_iff_tendsto x).mpr ⟨L x, h x⟩
+  have hdomain : S.domain = ⊤ := by
+    ext x
+    simp [hmem x]
+  refine ⟨hdomain, ?_⟩
+  refine LinearPMap.ext ?_ ?_
+  · rw [S.generator_domain, hdomain, LinearMap.toPMap_domain]
+  · intro x _ _
+    rw [LinearMap.toPMap_apply]
+    exact S.generator_eq_of_tendsto (hmem x) (h x)
+
 
 
 /-- The integral average `(1/t) • ∫_{(0,t]} S(u)x du` of the orbit tends to `x` as `t → 0⁺`. -/
