@@ -12,8 +12,10 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Dedekind
 For a Dedekind domain `R` with fraction field `K`, `TauCeti.AlgebraicGeometry.WeilDivisor.Dedekind`
 turns the height-one spectrum of `R` into the points of an affine curve and packages the order of
 vanishing of a rational function as the order system `OrderSystem.ofDedekindDomain R K`. This file
-adds the *Cartier* side of that picture: the invertible fractional ideals of `R`, which are the
-line bundles / Cartier divisors of the affine curve, and identifies them with Weil divisors.
+adds the *Cartier* side of that picture: the invertible fractional ideals of `R` are the Cartier
+divisors of the affine curve, and this file identifies them with Weil divisors. The line-bundle /
+Picard-group language belongs to the later quotient-level comparison and is not part of this
+divisor-level statement.
 
 Concretely, a nonzero fractional ideal `I` has a well-defined `v`-adic multiplicity
 `FractionalIdeal.count K v I` at each height-one prime `v`, zero for all but finitely many `v`, so
@@ -65,7 +67,7 @@ of the `v`-adic multiplicities of `I` over the height-one primes `v` of `R`, as 
 the group of invertible fractional ideals to the free Weil-divisor group. The multiplicity is zero
 for all but finitely many `v` (`FractionalIdeal.finite_factors`), and the multiplicativity of
 `FractionalIdeal.count` makes this additive. -/
-@[expose] noncomputable def fractionalIdealDivisor :
+noncomputable def fractionalIdealDivisor :
     Additive (FractionalIdeal R⁰ K)ˣ →+ WeilDivisor (HeightOneSpectrum R) where
   toFun I := Finsupp.ofSupportFinite
     (fun v => FractionalIdeal.count K v (Units.val (Additive.toMul I)))
@@ -139,15 +141,17 @@ lemma fractionalIdealDivisor_surjective :
 fractional ideals of a Dedekind domain `R` is isomorphic to the free Weil-divisor group on the
 height-one primes of `R`, by taking `v`-adic multiplicities. The inverse sends a divisor `D` to the
 fractional ideal `∏_v v^(D v)`. -/
-@[expose] noncomputable def fractionalIdealDivisorAddEquiv :
+noncomputable def fractionalIdealDivisorAddEquiv :
     Additive (FractionalIdeal R⁰ K)ˣ ≃+ WeilDivisor (HeightOneSpectrum R) :=
   AddEquiv.ofBijective (fractionalIdealDivisor R K)
     ⟨fractionalIdealDivisor_injective R K, fractionalIdealDivisor_surjective R K⟩
 
+/-- On forward application the packaged equivalence `fractionalIdealDivisorAddEquiv` agrees with the
+underlying homomorphism `fractionalIdealDivisor`. -/
 @[simp]
 lemma fractionalIdealDivisorAddEquiv_apply (I : Additive (FractionalIdeal R⁰ K)ˣ) :
-    fractionalIdealDivisorAddEquiv R K I = fractionalIdealDivisor R K I :=
-  rfl
+    fractionalIdealDivisorAddEquiv R K I = fractionalIdealDivisor R K I := by
+  rw [fractionalIdealDivisorAddEquiv, AddEquiv.ofBijective_apply]
 
 /-- The inverse of `fractionalIdealDivisorAddEquiv` sends a Weil divisor `D` to the invertible
 fractional ideal `∏_v v^(D v)`: the product of the prime ideals `v.asIdeal` raised to the
