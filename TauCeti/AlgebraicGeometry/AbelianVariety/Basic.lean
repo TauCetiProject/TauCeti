@@ -45,7 +45,7 @@ mathematics is vendored; the proofs reuse Mathlib's `Over`/`GrpObj` monoidal API
 
 public section
 
-open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicGeometry
+open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicGeometry MonObj
 
 namespace TauCeti
 
@@ -130,6 +130,36 @@ lemma ofGeometricallyIntegral_toOver (G : Over (Spec (.of K))) [GrpObj G]
     (ofGeometricallyIntegral G).toOver = G :=
   (rfl)
 
+/-- The unit of `ofGeometricallyIntegral G` is the unit of `G`. -/
+@[simp]
+lemma ofGeometricallyIntegral_one (G : Over (Spec (.of K))) [GrpObj G]
+    [IsProper G.hom] [GeometricallyIntegral G.hom] :
+    η[(ofGeometricallyIntegral G).toOver] ≫
+        eqToHom (ofGeometricallyIntegral_toOver G) = η[G] := by
+  unfold ofGeometricallyIntegral
+  simp
+
+/-- The multiplication of `ofGeometricallyIntegral G` is the multiplication of `G`. -/
+@[simp]
+lemma ofGeometricallyIntegral_mul (G : Over (Spec (.of K))) [GrpObj G]
+    [IsProper G.hom] [GeometricallyIntegral G.hom] :
+    μ[(ofGeometricallyIntegral G).toOver] ≫
+        eqToHom (ofGeometricallyIntegral_toOver G) =
+      (eqToHom (ofGeometricallyIntegral_toOver G) ⊗ₘ
+          eqToHom (ofGeometricallyIntegral_toOver G)) ≫ μ[G] := by
+  unfold ofGeometricallyIntegral
+  simp
+
+/-- The inverse of `ofGeometricallyIntegral G` is the inverse of `G`. -/
+@[simp]
+lemma ofGeometricallyIntegral_inv (G : Over (Spec (.of K))) [GrpObj G]
+    [IsProper G.hom] [GeometricallyIntegral G.hom] :
+    ι[(ofGeometricallyIntegral G).toOver] ≫
+        eqToHom (ofGeometricallyIntegral_toOver G) =
+      eqToHom (ofGeometricallyIntegral_toOver G) ≫ ι[G] := by
+  unfold ofGeometricallyIntegral
+  simp
+
 /-! ### Base change along a field extension -/
 
 /-- The base change of an abelian variety along a field extension `K → L`, obtained by pulling
@@ -154,6 +184,41 @@ lemma baseChange_toOver (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K
     (A.baseChange L).toOver =
       (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj A.toOver :=
   (rfl)
+
+/-- The unit of a base-changed abelian variety is the pullback of the original unit, with the
+monoidal comparison for `Over.pullback`. -/
+@[simp]
+lemma baseChange_one (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
+    η[(A.baseChange L).toOver] ≫ eqToHom (baseChange_toOver A L) =
+      Functor.LaxMonoidal.ε
+        (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))) ≫
+        (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map η[A.toOver] :=
+  by
+    unfold baseChange
+    simp
+
+/-- The multiplication of a base-changed abelian variety is the pullback of the original
+multiplication, with the monoidal comparison for `Over.pullback`. -/
+@[simp]
+lemma baseChange_mul (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
+    μ[(A.baseChange L).toOver] ≫ eqToHom (baseChange_toOver A L) =
+      (eqToHom (baseChange_toOver A L) ⊗ₘ eqToHom (baseChange_toOver A L)) ≫
+        Functor.LaxMonoidal.μ
+        (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))) A.toOver A.toOver ≫
+        (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map μ[A.toOver] :=
+  by
+    unfold baseChange
+    simp
+
+/-- The inverse of a base-changed abelian variety is the pullback of the original inverse. -/
+@[simp]
+lemma baseChange_inv (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
+    ι[(A.baseChange L).toOver] ≫ eqToHom (baseChange_toOver A L) =
+      eqToHom (baseChange_toOver A L) ≫
+      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map ι[A.toOver] :=
+  by
+    unfold baseChange
+    simp
 
 /-- The underlying scheme of a base change is the fibre product of the abelian variety with
 `Spec L` over `Spec K`. -/
