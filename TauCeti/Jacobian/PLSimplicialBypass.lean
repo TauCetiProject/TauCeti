@@ -13,7 +13,7 @@ This file defines the Euler characteristic, genus, and homology groups for
 finite simplicial complexes, acting as a combinatorial bypass for topological
 properties required in the Jacobian construction.
 
-This advances the Tau Ceti Jacobian roadmap.
+This advances the roadmap at TauCetiRoadmap/JacobianChallenge/README.md.
 -/
 
 public section
