@@ -26,6 +26,8 @@ there, so the `h₁`/`h₂` identity collapses.
 * `TauCeti.Contour.differentiable_dixonFunction` — `dixonFunction f U γ a b` is entire for a
   null-homologous closed curve. It is built from a private gluing core that takes the off-`U`
   winding-vanishing hypothesis directly, which the null-homologous case then discharges.
+* `TauCeti.Contour.cauchy_integrand_intervalIntegrable` — the `dixonH2` integrand
+  `f (γ ·) / (γ · - w) · deriv γ` is interval-integrable for `w` off the curve.
 
 This is the analyticity input to the Liouville step of Dixon's proof of the homology form of
 Cauchy's theorem (`homologyCauchyTheorem`, `TauCetiRoadmap/ContourIntegration/Suggested.lean`).
@@ -49,9 +51,12 @@ section
 
 variable {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {P : Set ℝ} {w : ℂ}
 
-/-- The Cauchy-type integrand `f (γ ·) / (γ · - w) · deriv γ` is interval-integrable for `w` off the
-curve: a continuous factor (using `f` continuous on `U ⊇ γ`) times the integrable derivative. -/
-private theorem cauchy_integrand_intervalIntegrable (hf : DifferentiableOn ℂ f U)
+/-- **The Cauchy-type integrand is interval-integrable.** `f (γ ·) / (γ · - w) · deriv γ` is
+interval-integrable for `w` off the curve: a continuous factor (using `f` continuous on `U ⊇ γ`,
+`γ` continuous, and `γ` avoiding `w`) times the interval-integrable derivative. This is the
+integrand of `dixonH2 f γ a b w`, and supplies the `h_cauchy_int` hypothesis of
+`dixonH1_eq_dixonH2_sub_windingNumber_mul_f`. -/
+theorem cauchy_integrand_intervalIntegrable (hf : DifferentiableOn ℂ f U)
     (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
     (hoff : ∀ t ∈ uIcc a b, γ t ≠ w) :
