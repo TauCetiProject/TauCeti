@@ -139,7 +139,7 @@ quotient of the corresponding multiplicative element. -/
   rw [Nat.card_congr elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv.toEquiv, Nat.card_zmod]
 
 /-- The elementary-2 quotient of `Multiplicative (ZMod 2)` has cardinality `2`. -/
-@[simp] theorem card_elementaryTwoQuotient_multiplicative_zmod_two :
+theorem card_elementaryTwoQuotient_multiplicative_zmod_two :
     Nat.card (ElementaryTwoQuotient (Multiplicative (ZMod 2))) = 2 := by
   simpa only [Nat.card_eq_fintype_card]
     using fintype_card_elementaryTwoQuotient_multiplicative_zmod_two
@@ -151,7 +151,7 @@ quotient of the corresponding multiplicative element. -/
   norm_num
 
 /-- The multiplicative cyclic group of order two has 2-rank `1`. -/
-@[simp] theorem twoRank_multiplicative_zmod_two : twoRank (Multiplicative (ZMod 2)) = 1 := by
+theorem twoRank_multiplicative_zmod_two : twoRank (Multiplicative (ZMod 2)) = 1 := by
   simpa only [twoRank_def] using finrank_elementaryTwoQuotient_multiplicative_zmod_two
 
 /-- A finite product of copies of the multiplicative cyclic group of order two has 2-rank equal
@@ -166,7 +166,7 @@ to the number of factors. -/
 
 /-- A finite product of copies of the multiplicative cyclic group of order two has 2-rank equal
 to the number of factors. -/
-@[simp] theorem twoRank_pi_multiplicative_zmod_two {ι : Type*} [Fintype ι] :
+theorem twoRank_pi_multiplicative_zmod_two {ι : Type*} [Fintype ι] :
     twoRank (ι → Multiplicative (ZMod 2)) = Fintype.card ι := by
   simpa only [twoRank_def] using finrank_elementaryTwoQuotient_pi_multiplicative_zmod_two
 
@@ -189,7 +189,7 @@ cardinality `2 ^ |ι|`. -/
   exact finrank_elementaryTwoQuotient_pi_multiplicative_zmod_two
 
 /-- The natural multiplicative tag on `(ZMod 2)^ι` has 2-rank equal to the number of factors. -/
-@[simp] theorem twoRank_multiplicative_pi_zmod_two {ι : Type*} [Fintype ι] :
+theorem twoRank_multiplicative_pi_zmod_two {ι : Type*} [Fintype ι] :
     twoRank (Multiplicative (ι → ZMod 2)) = Fintype.card ι := by
   simpa only [twoRank_def] using finrank_elementaryTwoQuotient_multiplicative_pi_zmod_two
 
