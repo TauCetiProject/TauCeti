@@ -33,6 +33,10 @@ complex structure while preserving the Cauchy--Riemann equation.
 * `TauCeti.IsConstStructureJHolomorphicAt.comp_stdComplexLineConj` and
   `TauCeti.IsConstStructureJHolomorphicAt.comp_neg_stdComplexLineConj`: precomposition by
   reflection changes the source complex structure by a sign.
+* `TauCeti.IsConstStructureJHolomorphicWithinAt.comp_stdComplexLineConj`,
+  `TauCeti.IsConstStructureJHolomorphicOn.comp_stdComplexLineConj`, and their negated variants:
+  the within-set and setwise forms of the same precomposition, taking the reflection's
+  `Set.MapsTo` hypothesis needed for boundary/domain-restricted reflection arguments.
 
 The sign convention follows McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: `du ∘ j = J ∘ du`. Since conjugation satisfies `dc ∘ j = (-j) ∘ dc`, reflected
@@ -195,5 +199,65 @@ lemma comp_neg_stdComplexLineConj
     (hf.isConstStructureJHolomorphicAt (stdComplexLineConjCLM x)).comp_neg_stdComplexLineConj
 
 end IsConstStructureJHolomorphic
+
+namespace IsConstStructureJHolomorphicWithinAt
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+variable {J : AlmostComplexStructure W} {f : ℝ × ℝ → W} {s t : Set (ℝ × ℝ)} {x : ℝ × ℝ}
+
+/-- Precomposing a within-set constant-structure `J`-holomorphic map by standard-line conjugation
+changes the source structure from the standard one to its negation, provided reflection maps the
+reflected source set into the original one. -/
+lemma comp_stdComplexLineConj
+    (hf : IsConstStructureJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J f t
+      (stdComplexLineConjCLM x))
+    (hst : Set.MapsTo stdComplexLineConjCLM s t) :
+    IsConstStructureJHolomorphicWithinAt (-(AlmostComplexStructure.product ℝ)) J
+      (fun z => f (stdComplexLineConjCLM z)) s x :=
+  hf.comp
+    (isConstStructureJHolomorphic_neg_stdComplexLineConj.isConstStructureJHolomorphicAt
+      x).isConstStructureJHolomorphicWithinAt hst
+
+/-- Precomposing a within-set constant-structure `J`-holomorphic map whose source has the negated
+standard structure by standard-line conjugation restores the standard source structure, provided
+reflection maps the reflected source set into the original one. -/
+lemma comp_neg_stdComplexLineConj
+    (hf : IsConstStructureJHolomorphicWithinAt (-(AlmostComplexStructure.product ℝ)) J f t
+      (stdComplexLineConjCLM x))
+    (hst : Set.MapsTo stdComplexLineConjCLM s t) :
+    IsConstStructureJHolomorphicWithinAt (AlmostComplexStructure.product ℝ) J
+      (fun z => f (stdComplexLineConjCLM z)) s x :=
+  hf.comp
+    (isConstStructureJHolomorphic_stdComplexLineConj.isConstStructureJHolomorphicAt
+      x).isConstStructureJHolomorphicWithinAt hst
+
+end IsConstStructureJHolomorphicWithinAt
+
+namespace IsConstStructureJHolomorphicOn
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+variable {J : AlmostComplexStructure W} {f : ℝ × ℝ → W} {s t : Set (ℝ × ℝ)}
+
+/-- Precomposing a setwise constant-structure `J`-holomorphic map by standard-line conjugation
+changes the source structure from the standard one to its negation, provided reflection maps the
+reflected source set into the original one. -/
+lemma comp_stdComplexLineConj
+    (hf : IsConstStructureJHolomorphicOn (AlmostComplexStructure.product ℝ) J f t)
+    (hst : Set.MapsTo stdComplexLineConjCLM s t) :
+    IsConstStructureJHolomorphicOn (-(AlmostComplexStructure.product ℝ)) J
+      (fun z => f (stdComplexLineConjCLM z)) s :=
+  hf.comp (isConstStructureJHolomorphic_neg_stdComplexLineConj.isConstStructureJHolomorphicOn s) hst
+
+/-- Precomposing a setwise constant-structure `J`-holomorphic map whose source has the negated
+standard structure by standard-line conjugation restores the standard source structure, provided
+reflection maps the reflected source set into the original one. -/
+lemma comp_neg_stdComplexLineConj
+    (hf : IsConstStructureJHolomorphicOn (-(AlmostComplexStructure.product ℝ)) J f t)
+    (hst : Set.MapsTo stdComplexLineConjCLM s t) :
+    IsConstStructureJHolomorphicOn (AlmostComplexStructure.product ℝ) J
+      (fun z => f (stdComplexLineConjCLM z)) s :=
+  hf.comp (isConstStructureJHolomorphic_stdComplexLineConj.isConstStructureJHolomorphicOn s) hst
+
+end IsConstStructureJHolomorphicOn
 
 end TauCeti
