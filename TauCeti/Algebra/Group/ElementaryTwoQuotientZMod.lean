@@ -36,6 +36,8 @@ private theorem range_lsmul_two_additive_eq_bot_of_forall_sq_eq_one {G : Type*} 
     LinearMap.range (LinearMap.lsmul ℤ (Additive G) ((2 : ℕ) : ℤ)) = ⊥ := by
   rw [LinearMap.range_eq_bot]
   ext y
+  -- `ext` leaves `LinearMap.lsmul ℤ (Additive G) 2 y = 0`; `LinearMap.lsmul_apply` unfolds this to
+  -- the scalar action `(2 : ℤ) • y`, which is definitionally the goal here.
   change ((2 : ℤ) • y) = 0
   apply Additive.toMul.injective
   simpa [toMul_zsmul, pow_two, zpow_two] using hG (Additive.toMul y)
@@ -72,6 +74,13 @@ noncomputable def elementaryTwoQuotientAddEquivOfForallSqEqOne (G : Type*) [Comm
           (Submodule.Quotient.mk (Additive.ofMul g))) = Additive.ofMul g
   rfl
 
+/-- The inverse exponent-two quotient equivalence sends `Additive.ofMul g` to the class of `g`. -/
+@[simp] theorem elementaryTwoQuotientAddEquivOfForallSqEqOne_symm_apply {G : Type*} [CommGroup G]
+    (hG : ∀ g : G, g ^ 2 = 1) (x : Additive G) :
+    (elementaryTwoQuotientAddEquivOfForallSqEqOne G hG).symm x =
+      elementaryTwoQuotientMk (Additive.toMul x) := by
+  rw [AddEquiv.symm_apply_eq, elementaryTwoQuotientAddEquivOfForallSqEqOne_mk, ofMul_toMul]
+
 /-- The additive copy of an exponent-two commutative group is killed by doubling. -/
 theorem two_nsmul_additive_eq_zero_of_forall_sq_eq_one {G : Type*} [CommGroup G]
     (hG : ∀ g : G, g ^ 2 = 1) (g : Additive G) :
@@ -106,6 +115,17 @@ noncomputable def elementaryTwoQuotientLinearEquivOfForallSqEqOne (G : Type*) [C
   letI : Module (ZMod 2) (Additive G) :=
     AddCommGroup.zmodModule (n := 2) (two_nsmul_additive_eq_zero_of_forall_sq_eq_one hG)
   exact elementaryTwoQuotientAddEquivOfForallSqEqOne_mk hG g
+
+/-- The inverse exponent-two linear equivalence sends `Additive.ofMul g` to the class of `g`. -/
+@[simp] theorem elementaryTwoQuotientLinearEquivOfForallSqEqOne_symm_apply {G : Type*} [CommGroup G]
+    (hG : ∀ g : G, g ^ 2 = 1) (x : Additive G) :
+    letI : Module (ZMod 2) (Additive G) :=
+      AddCommGroup.zmodModule (n := 2) (two_nsmul_additive_eq_zero_of_forall_sq_eq_one hG)
+    (elementaryTwoQuotientLinearEquivOfForallSqEqOne G hG).symm x =
+      elementaryTwoQuotientMk (Additive.toMul x) := by
+  letI : Module (ZMod 2) (Additive G) :=
+    AddCommGroup.zmodModule (n := 2) (two_nsmul_additive_eq_zero_of_forall_sq_eq_one hG)
+  rw [LinearEquiv.symm_apply_eq, elementaryTwoQuotientLinearEquivOfForallSqEqOne_mk, ofMul_toMul]
 
 /-- In `Multiplicative (ZMod 2)`, every element squares to `1`. -/
 @[simp] theorem sq_multiplicative_zmod_two (g : Multiplicative (ZMod 2)) : g ^ 2 = 1 := by
