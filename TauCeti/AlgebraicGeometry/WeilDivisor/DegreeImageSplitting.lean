@@ -4,15 +4,16 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor.DegreeImage
 public import TauCeti.AlgebraicGeometry.WeilDivisor.DegreeSplitting
 
 /-!
 # The degree image and quotient at a weight-one base point
 
-This file specialises the general degree-image and degree-quotient API of
-`TauCeti.AlgebraicGeometry.WeilDivisor.DegreeImage` to the presence of a weight-one base point,
-using the splitting theory of `TauCeti.AlgebraicGeometry.WeilDivisor.DegreeSplitting`.
+This file gives the weight-one counterparts of the general degree-image and degree-quotient
+results of `TauCeti.AlgebraicGeometry.WeilDivisor.DegreeImage`, using the splitting theory of
+`TauCeti.AlgebraicGeometry.WeilDivisor.DegreeSplitting`. It depends only on `DegreeSplitting`:
+these corollaries specialise to a weight-one base point, so they are proved directly from the
+splitting surjectivity and section rather than from the general `DegreeImage` API.
 
 `DegreeImage` computes the image of the descended weighted degree unconditionally,
 `(weightedDegreeClass w h).range = AddSubgroup.closure (Set.range w)`, and identifies the degree
@@ -29,8 +30,8 @@ weight-one base point makes the descended weighted degree *surjective*, with the
   `Cl(X) ≃+ picZero × ℤ`, exhibiting the degree as the projection to the `ℤ` factor.
 
 This advances the same `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A targets as
-`DegreeImage`; it reuses that file's degree-image API, `DegreeSplitting`'s `degreeSection` /
-`weightedDegreeClass_surjective`, and Mathlib's `QuotientAddGroup.quotientKerEquivOfRightInverse`.
+`DegreeImage`; it reuses `DegreeSplitting`'s `degreeSection` / `weightedDegreeClass_surjective`
+and Mathlib's `QuotientAddGroup.quotientKerEquivOfRightInverse`.
 -/
 
 public section
