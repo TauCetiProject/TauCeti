@@ -71,7 +71,8 @@ private theorem windingNumber_eq_zero_of_far {γ : ℝ → ℂ} {a b R : ℝ} {P
     rw [windingNumber_eq_integral_of_avoidance hγ_cont h_off
         (intervalIntegrable_inv_sub_mul_deriv hγ_cont h_off hderiv_int),
       norm_mul, norm_inv_two_pi_I]
-    exact mul_le_mul_of_nonneg_left (norm_integral_inv_sub_mul_le hderiv_int hR hwR)
+    exact mul_le_mul_of_nonneg_left
+      (norm_integral_inv_sub_mul_le hderiv_int (fun t ht ↦ hR t (uIoc_subset_uIcc ht)) hwR)
       (by positivity)
   have h_lt_one : (2 * Real.pi)⁻¹ * ((∫ t in Ι a b, ‖deriv γ t‖) / (‖w‖ - R)) < 1 := by
     have key : (∫ t in Ι a b, ‖deriv γ t‖) / (2 * Real.pi) < ‖w‖ - R := by
