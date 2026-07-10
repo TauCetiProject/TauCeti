@@ -37,28 +37,36 @@ It performs the following steps:
 3. Uses specific `simp` naturality lemmas and the category theory simplifier (`aesop_cat`)
    to discharge the remaining goal.
 -/
-@[nolint tacticDocs]
-macro (name := monoidalChase) "monoidal_chase" : tactic => `(tactic|
-  focus
-    try pure_coherence
-    try coherence
-    try simp only [
-      CategoryTheory.Category.assoc,
-      CategoryTheory.Category.id_comp,
-      CategoryTheory.Category.comp_id,
-      CategoryTheory.MonoidalCategory.tensor_id,
-      CategoryTheory.MonoidalCategory.tensor_comp,
-      CategoryTheory.MonoidalCategory.associator_naturality,
-      CategoryTheory.MonoidalCategory.leftUnitor_naturality,
-      CategoryTheory.MonoidalCategory.rightUnitor_naturality,
-      CategoryTheory.MonoidalCategory.pentagon,
-      CategoryTheory.MonoidalCategory.triangle,
-      CategoryTheory.Iso.hom_inv_id,
-      CategoryTheory.Iso.inv_hom_id,
-      CategoryTheory.Iso.hom_inv_id_assoc,
-      CategoryTheory.Iso.inv_hom_id_assoc
-    ]
-    try aesop_cat
-)
+syntax (name := monoidalChase) "monoidal_chase" : tactic
+
+/--
+`monoidal_chase` automates the process of rewriting associativity and unit coherences
+in monoidal categories.
+-/
+tactic_extension monoidalChase
+
+macro_rules
+  | `(tactic| monoidal_chase) => `(tactic|
+      focus
+        try pure_coherence
+        try coherence
+        try simp only [
+          CategoryTheory.Category.assoc,
+          CategoryTheory.Category.id_comp,
+          CategoryTheory.Category.comp_id,
+          CategoryTheory.MonoidalCategory.tensor_id,
+          CategoryTheory.MonoidalCategory.tensor_comp,
+          CategoryTheory.MonoidalCategory.associator_naturality,
+          CategoryTheory.MonoidalCategory.leftUnitor_naturality,
+          CategoryTheory.MonoidalCategory.rightUnitor_naturality,
+          CategoryTheory.MonoidalCategory.pentagon,
+          CategoryTheory.MonoidalCategory.triangle,
+          CategoryTheory.Iso.hom_inv_id,
+          CategoryTheory.Iso.inv_hom_id,
+          CategoryTheory.Iso.hom_inv_id_assoc,
+          CategoryTheory.Iso.inv_hom_id_assoc
+        ]
+        try aesop_cat
+    )
 
 end TauCeti.Tactic
