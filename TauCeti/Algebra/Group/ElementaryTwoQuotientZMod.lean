@@ -87,7 +87,7 @@ quotient of the corresponding multiplicative element. -/
   rw [Nat.card_congr elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv.toEquiv, Nat.card_zmod]
 
 /-- The elementary-2 quotient of `Multiplicative (ZMod 2)` has cardinality `2`. -/
-@[simp] theorem card_elementaryTwoQuotient_multiplicative_zmod_two :
+theorem card_elementaryTwoQuotient_multiplicative_zmod_two :
     Nat.card (ElementaryTwoQuotient (Multiplicative (ZMod 2))) = 2 := by
   simpa only [Nat.card_eq_fintype_card]
     using fintype_card_elementaryTwoQuotient_multiplicative_zmod_two
