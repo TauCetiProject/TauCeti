@@ -157,6 +157,40 @@ lemma weightedAbelJacobiDivisorClass_eq_iff_linearlyEquivalent
         (E - weightedDegree w E • ofPoint x₀) := by
   rw [S.weightedAbelJacobiDivisorClass_eq_iff_divisorClass w h hx₀, S.divisorClass_eq_iff]
 
+/-- If two divisors have the same weighted degree, equality of their weighted Abel-Jacobi
+classes is exactly linear equivalence of the original divisors.
+
+The equal-degree hypothesis is essential: the Abel-Jacobi class only records the `Pic⁰`
+component of the divisor class after subtracting the same degree from the chosen base point. -/
+lemma weightedAbelJacobiDivisorClass_eq_iff_linearlyEquivalent_of_weightedDegree_eq
+    (w : X → ℤ) (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1)
+    {D E : WeilDivisor X} (hDE : weightedDegree w D = weightedDegree w E) :
+    S.weightedAbelJacobiDivisorClass w h hx₀ D =
+        S.weightedAbelJacobiDivisorClass w h hx₀ E ↔
+      S.LinearlyEquivalent D E := by
+  rw [S.weightedAbelJacobiDivisorClass_eq_iff_linearlyEquivalent w h hx₀, hDE]
+  constructor
+  · intro hlin
+    have hlin' :=
+      LinearlyEquivalent.add_right (S := S) hlin (weightedDegree w E • ofPoint x₀)
+    simpa only [sub_add_cancel] using hlin'
+  · intro hlin
+    have hlin' :=
+      LinearlyEquivalent.add_right (S := S) hlin (-(weightedDegree w E • ofPoint x₀))
+    simpa only [sub_eq_add_neg] using hlin'
+
+/-- In the unweighted theory, equal-degree divisors have the same Abel-Jacobi class exactly when
+they are linearly equivalent. -/
+lemma weightedAbelJacobiDivisorClass_one_eq_iff_linearlyEquivalent_of_degree_eq
+    (h : S.IsUnweightedDegreeZero) (x₀ : X) {D E : WeilDivisor X}
+    (hDE : degree D = degree E) :
+    S.weightedAbelJacobiDivisorClass (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl D =
+        S.weightedAbelJacobiDivisorClass (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl E ↔
+      S.LinearlyEquivalent D E := by
+  refine S.weightedAbelJacobiDivisorClass_eq_iff_linearlyEquivalent_of_weightedDegree_eq
+    (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl ?_
+  simpa only [weightedDegree_one_eq_degree] using hDE
+
 /-- The Abel-Jacobi sum is invariant under linear equivalence of divisors with the same
 weighted degree. -/
 lemma weightedAbelJacobiDivisorClass_eq_of_linearlyEquivalent
