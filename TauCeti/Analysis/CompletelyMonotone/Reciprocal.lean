@@ -24,6 +24,8 @@ special case `a = 1`; its representing measure `e^{-x} dx` is the exponential di
 
 * `TauCeti.isCompletelyMonotone_inv_const_add`: for `a > 0`, the reciprocal `t ↦ (a + t)⁻¹` is
   completely monotone.
+* `TauCeti.isCompletelyMonotone_one_div_const_add`: the `t ↦ 1 / (a + t)` phrasing of the same
+  resolvent kernel.
 * `TauCeti.isCompletelyMonotone_one_div_one_add`: the roadmap acceptance example
   `t ↦ 1 / (1 + t)`.
 
@@ -78,14 +80,16 @@ theorem isCompletelyMonotone_inv_const_add {a : ℝ} (ha : 0 < a) :
   rw [hrw]
   exact mul_nonneg (mul_nonneg (sq_nonneg _) (Nat.cast_nonneg _)) hzpow
 
+/-- For `a > 0`, the reciprocal `t ↦ 1 / (a + t)` is completely monotone. This is the `1 / (a + t)`
+phrasing of the resolvent kernel `isCompletelyMonotone_inv_const_add`. -/
+theorem isCompletelyMonotone_one_div_const_add {a : ℝ} (ha : 0 < a) :
+    IsCompletelyMonotone (fun t => 1 / (a + t)) := by
+  simpa only [one_div] using isCompletelyMonotone_inv_const_add ha
+
 /-- The roadmap acceptance example: `t ↦ 1 / (1 + t)` is completely monotone. Its representing
 measure under Bernstein's theorem is the exponential distribution `e^{-x} dx`. -/
 theorem isCompletelyMonotone_one_div_one_add :
-    IsCompletelyMonotone (fun t => 1 / (1 + t)) := by
-  have heq : (fun t : ℝ => 1 / (1 + t)) = fun t => (1 + t)⁻¹ := by
-    funext t
-    rw [one_div]
-  rw [heq]
-  exact isCompletelyMonotone_inv_const_add one_pos
+    IsCompletelyMonotone (fun t => 1 / (1 + t)) :=
+  isCompletelyMonotone_one_div_const_add one_pos
 
 end TauCeti
