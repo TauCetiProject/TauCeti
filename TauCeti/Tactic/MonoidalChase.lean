@@ -37,7 +37,7 @@ It performs the following steps:
 3. Uses specific `simp` naturality lemmas and the category theory simplifier (`aesop_cat`)
    to discharge the remaining goal.
 -/
-syntax "monoidal_chase" : tactic
+syntax (name := monoidalChase) "monoidal_chase" : tactic
 
 macro_rules
 | `(tactic| monoidal_chase) => `(tactic|
