@@ -360,39 +360,45 @@ theorem finrank_elementaryTwoQuotient_eq_of_mulEquiv (e : G ≃* H) :
 theorem twoRank_eq_of_mulEquiv (e : G ≃* H) : twoRank G = twoRank H :=
   finrank_elementaryTwoQuotient_eq_of_mulEquiv (G := G) (H := H) e
 
-/-- The doubling submodule of `Additive G` is zero when every element of `G` squares to `1`. -/
-private theorem range_lsmul_two_additive_eq_bot_of_forall_sq_eq_one {G : Type*} [CommGroup G]
-    (hG : ∀ g : G, g ^ 2 = 1) :
-    LinearMap.range (LinearMap.lsmul ℤ (Additive G) ((2 : ℕ) : ℤ)) = ⊥ := by
-  rw [LinearMap.range_eq_bot]
-  ext y
-  rw [LinearMap.lsmul_apply]
-  -- `LinearMap.lsmul_apply` leaves the goal as `((2 : ℕ) : ℤ) • y = 0`; the `show` restates it
-  -- with the syntactic numeral `(2 : ℤ)` (the same cast up to defeq) so that `zpow_two` fires,
-  -- after which the doubled element vanishes because `g ^ 2 = 1` transports through `Additive`.
-  exact show ((2 : ℤ) • y) = 0 by
-    apply Additive.toMul.injective
-    simpa [toMul_zsmul, pow_two, zpow_two] using hG (Additive.toMul y)
-
-private theorem range_lsmul_two_additive_toAddSubgroup_eq_bot_of_forall_sq_eq_one
-    {G : Type*} [CommGroup G] (hG : ∀ g : G, g ^ 2 = 1) :
-    (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ((2 : ℕ) : ℤ))).toAddSubgroup = ⊥ := by
-  rw [range_lsmul_two_additive_eq_bot_of_forall_sq_eq_one hG]
-  rfl
-
 private theorem submoduleQuotient_mk_eq_quotientAddGroup_mk {A : Type*} [AddCommGroup A]
     (S : Submodule ℤ A) (a : A) :
     (Submodule.Quotient.mk (p := S) a : A ⧸ S) = QuotientAddGroup.mk a := rfl
 
+/-- The `ModN` model of `G/G²` sends the class of `g` to the class of `Additive.ofMul g` in the
+quotient by the additive square subgroup. This restates
+`TauCeti.elementaryTwoQuotientEquivSquareQuotient` on representatives, bridging the
+`Submodule.Quotient` and `QuotientAddGroup` wrappers, and is kept private to the file. -/
+private theorem elementaryTwoQuotientEquivSquareQuotient_mk {G : Type*} [CommGroup G] (g : G) :
+    elementaryTwoQuotientEquivSquareQuotient G (elementaryTwoQuotientMk g) =
+      QuotientAddGroup.mk (Additive.ofMul g) := by
+  rw [elementaryTwoQuotientMk_eq_mkQ, submoduleQuotient_mk_eq_quotientAddGroup_mk,
+    elementaryTwoQuotientEquivSquareQuotient]
+  rfl
+
+/-- The subgroup of squares is trivial when every element of `G` squares to `1`. -/
+private theorem square_toAddSubgroup_eq_bot_of_forall_sq_eq_one {G : Type*} [CommGroup G]
+    (hG : ∀ g : G, g ^ 2 = 1) :
+    (Subgroup.square G).toAddSubgroup = ⊥ := by
+  have hsq : Subgroup.square G = ⊥ := by
+    rw [eq_bot_iff]
+    rintro x hx
+    obtain ⟨r, rfl⟩ := Subgroup.mem_square.mp hx
+    rw [Subgroup.mem_bot, ← pow_two]
+    exact hG r
+  rw [hsq]
+  exact Subgroup.toAddSubgroup.map_bot
+
 /-- If every element of a commutative group squares to `1`, then its elementary-2 quotient
-is additively equivalent to the group itself. -/
+is additively equivalent to the group itself. This routes through the general
+`TauCeti.elementaryTwoQuotientEquivSquareQuotient` identification of `G/G²` with the quotient by
+the additive square subgroup, which is trivial under the hypothesis. -/
 noncomputable def elementaryTwoQuotientAddEquivOfForallSqEqOne (G : Type*) [CommGroup G]
     (hG : ∀ g : G, g ^ 2 = 1) :
     ElementaryTwoQuotient G ≃+ Additive G :=
-  ((QuotientAddGroup.quotientAddEquivOfEq
-    (range_lsmul_two_additive_toAddSubgroup_eq_bot_of_forall_sq_eq_one hG)).trans
-      (QuotientAddGroup.quotientBot :
-        Additive G ⧸ (⊥ : AddSubgroup (Additive G)) ≃+ Additive G))
+  (elementaryTwoQuotientEquivSquareQuotient G).trans
+    ((QuotientAddGroup.quotientAddEquivOfEq
+      (square_toAddSubgroup_eq_bot_of_forall_sq_eq_one hG)).trans
+        QuotientAddGroup.quotientBot)
 
 /-- The exponent-two quotient equivalence sends the class of `g` to `g`, with the additive
 type tag. -/
@@ -400,23 +406,9 @@ type tag. -/
     (hG : ∀ g : G, g ^ 2 = 1) (g : G) :
     elementaryTwoQuotientAddEquivOfForallSqEqOne G hG (elementaryTwoQuotientMk g) =
       Additive.ofMul g := by
-  rw [elementaryTwoQuotientMk_eq_mkQ]
-  unfold elementaryTwoQuotientAddEquivOfForallSqEqOne
-  rw [submoduleQuotient_mk_eq_quotientAddGroup_mk]
-  -- `ElementaryTwoQuotient G` is the `Submodule.Quotient` wrapper around the `QuotientAddGroup`
-  -- quotient by the doubling subgroup: definitionally equal, but the two carry different
-  -- coercion instances, so `AddEquiv.trans_apply` cannot fire on the `Submodule.Quotient` form.
-  -- Restate the goal in the `QuotientAddGroup` shape (the bridge that mk-level rewriting cannot
-  -- perform on the equiv application), then the named `quotientAddEquivOfEq_mk` reduces the inner
-  -- class and the canonical `quotientBot` iso computes on the representative.
-  exact
-    show (QuotientAddGroup.quotientBot :
-      Additive G ⧸ (⊥ : AddSubgroup (Additive G)) ≃+ Additive G)
-        ((QuotientAddGroup.quotientAddEquivOfEq
-          (range_lsmul_two_additive_toAddSubgroup_eq_bot_of_forall_sq_eq_one hG))
-            (QuotientAddGroup.mk (Additive.ofMul g))) = Additive.ofMul g from by
-      rw [QuotientAddGroup.quotientAddEquivOfEq_mk]
-      rfl
+  rw [elementaryTwoQuotientAddEquivOfForallSqEqOne, AddEquiv.trans_apply, AddEquiv.trans_apply,
+    elementaryTwoQuotientEquivSquareQuotient_mk, QuotientAddGroup.quotientAddEquivOfEq_mk]
+  rfl
 
 /-- The inverse exponent-two quotient equivalence sends `g` to its class in `G/G^2`. -/
 @[simp] theorem elementaryTwoQuotientAddEquivOfForallSqEqOne_symm_apply {G : Type*}
