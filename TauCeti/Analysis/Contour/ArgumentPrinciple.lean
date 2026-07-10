@@ -96,8 +96,9 @@ private lemma logDeriv_zpow_sub_mul {g : ℂ → ℂ} {c z : ℂ} {n : ℤ} (hz 
 meromorphic of order `n`, the logarithmic derivative equals its simple-pole principal part
 `n · (· - s)⁻¹` plus an analytic term: there is `g` analytic and non-vanishing at `s` (the local
 factor of `F = (· - s) ^ n • g`) with `logDeriv F = n · (· - s)⁻¹ + logDeriv g` on a punctured
-neighbourhood of `s`. -/
-private lemma logDeriv_eventuallyEq_principalPart {F : ℂ → ℂ} {s : ℂ} {n : ℤ}
+neighbourhood of `s`. Exposed for the residue-form of the argument principle
+(`TauCeti.Contour.residue_logDeriv`). -/
+theorem logDeriv_eventuallyEq_principalPart {F : ℂ → ℂ} {s : ℂ} {n : ℤ}
     (hF : MeromorphicAt F s) (hn : meromorphicOrderAt F s = (n : WithTop ℤ)) :
     ∃ g : ℂ → ℂ, AnalyticAt ℂ g s ∧ g s ≠ 0 ∧
       logDeriv F =ᶠ[𝓝[≠] s] fun z => (n : ℂ) * (z - s)⁻¹ + logDeriv g z := by
