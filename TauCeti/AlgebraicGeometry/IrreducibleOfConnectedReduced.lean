@@ -165,13 +165,15 @@ private noncomputable def equiv_clean (R : Type*) [CommRing R] :
     rw [zeroLocus_ideal_mem_irreducibleComponents, q.property.1.1.radical]
     exact q.property⟩
   invFun c := ⟨vanishingIdeal c.val, by
-    have hcClosed : IsClosed c.val := isClosed_of_mem_irreducibleComponents c.val c.property
+    have hcClosed : IsClosed c.val :=
+      isClosed_of_mem_irreducibleComponents c.val c.property
     have hcIrred : IsIrreducible c.val := c.property.1
     rw [isIrreducible_iff_vanishingIdeal_isPrime] at hcIrred
     refine ⟨⟨hcIrred, bot_le⟩, fun I hI hIsub ↦ ?_⟩
     haveI : I.IsPrime := hI.left
     have h2 : IsIrreducible (zeroLocus (I : Set R)) := by
-      rw [isIrreducible_iff_vanishingIdeal_isPrime, vanishingIdeal_zeroLocus_eq_radical, Ideal.IsPrime.radical hI.left]
+      rw [isIrreducible_iff_vanishingIdeal_isPrime, vanishingIdeal_zeroLocus_eq_radical,
+        Ideal.IsPrime.radical hI.left]
       exact hI.left
     have hSub' : c.val ⊆ zeroLocus (I : Set R) := by
       rw [← closure_eq_iff_isClosed.mpr hcClosed]
@@ -186,11 +188,13 @@ private noncomputable def equiv_clean (R : Type*) [CommRing R] :
     exact q.property.1.1.radical)
   right_inv c := Subtype.ext (by
     dsimp
-    have hcClosed : IsClosed c.val := isClosed_of_mem_irreducibleComponents c.val c.property
+    have hcClosed : IsClosed c.val :=
+      isClosed_of_mem_irreducibleComponents c.val c.property
     rw [zeroLocus_vanishingIdeal_eq_closure, closure_eq_iff_isClosed.mpr hcClosed])
 
 private lemma equiv_clean_val {R : Type*} [CommRing R] (q : minimalPrimes R) :
-    ((equiv_clean R q : irreducibleComponents (PrimeSpectrum R)) : Set (PrimeSpectrum R)) = zeroLocus q.val :=
+    ((equiv_clean R q : irreducibleComponents (PrimeSpectrum R)) :
+      Set (PrimeSpectrum R)) = zeroLocus q.val :=
   rfl
 
 /-- Auxiliary declaration. -/
