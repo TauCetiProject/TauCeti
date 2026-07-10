@@ -24,6 +24,10 @@ open Opposite
 
 namespace TauCeti.Jacobian
 
+/--
+Constructs a group object from a functor to `AddCommGrpCat` that is representable
+after composing with the forgetful functor.
+-/
 @[reducible]
 noncomputable def representable_AddCommGrp_GrpObj {C_ : Type v} [Category C_]
     [CartesianMonoidalCategory C_] (F : C_ᵒᵖ ⥤ AddCommGrpCat.{w})
