@@ -14,7 +14,7 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.WithinZpow
 This file adds a second family of concrete completely monotone functions to the
 `OneParameterSemigroups` roadmap, alongside the exponentials `t ↦ e^{-x t}` already in
 `TauCeti.Analysis.CompletelyMonotone.Basic`: the **reciprocals of affine functions**
-`t ↦ (a + t)⁻¹` with `a > 0`, and their integer powers `t ↦ (a + t)^{-k}`.
+`t ↦ (a + t)⁻¹` with `a > 0`, and their reciprocal powers `t ↦ ((a + t) ^ k)⁻¹`.
 
 These are the resolvent kernels `t ↦ (λ + t)⁻¹` that Part A of the roadmap builds a semigroup
 theory around, and they are among the basic Stieltjes (resolvent) kernels appearing in Stieltjes
@@ -25,13 +25,10 @@ special case `a = 1`; its representing measure `e^{-x} dx` is the exponential di
 
 * `TauCeti.isCompletelyMonotone_inv_const_add`: for `a > 0`, the reciprocal `t ↦ (a + t)⁻¹` is
   completely monotone.
-* `TauCeti.isCompletelyMonotone_one_div_const_add`: the same statement in `1 / (a + t)` form.
 * `TauCeti.isCompletelyMonotone_one_div_one_add`: the roadmap acceptance example
   `t ↦ 1 / (1 + t)`.
 * `TauCeti.isCompletelyMonotone_inv_pow_const_add`: for `a > 0` and `k : ℕ`, the reciprocal power
   `t ↦ ((a + t) ^ k)⁻¹` is completely monotone.
-* `TauCeti.isCompletelyMonotone_zpow_neg_const_add`: the same building block in the integer-power
-  form `t ↦ (a + t) ^ (-k)`.
 
 ## References
 
@@ -84,19 +81,15 @@ theorem isCompletelyMonotone_inv_const_add {a : ℝ} (ha : 0 < a) :
   rw [hrw]
   exact mul_nonneg (mul_nonneg (sq_nonneg _) (Nat.cast_nonneg _)) hzpow
 
-/-- For `a > 0`, the function `t ↦ 1 / (a + t)` is completely monotone (the `1 / _` phrasing of
-`isCompletelyMonotone_inv_const_add`). -/
-theorem isCompletelyMonotone_one_div_const_add {a : ℝ} (ha : 0 < a) :
-    IsCompletelyMonotone (fun t => 1 / (a + t)) := by
-  have heq : (fun t : ℝ => 1 / (a + t)) = fun t => (a + t)⁻¹ := by funext t; rw [one_div]
-  rw [heq]
-  exact isCompletelyMonotone_inv_const_add ha
-
 /-- The roadmap acceptance example: `t ↦ 1 / (1 + t)` is completely monotone. Its representing
 measure under Bernstein's theorem is the exponential distribution `e^{-x} dx`. -/
 theorem isCompletelyMonotone_one_div_one_add :
-    IsCompletelyMonotone (fun t => 1 / (1 + t)) :=
-  isCompletelyMonotone_one_div_const_add one_pos
+    IsCompletelyMonotone (fun t => 1 / (1 + t)) := by
+  have heq : (fun t : ℝ => 1 / (1 + t)) = fun t => (1 + t)⁻¹ := by
+    funext t
+    rw [one_div]
+  rw [heq]
+  exact isCompletelyMonotone_inv_const_add one_pos
 
 /-- For `a > 0` and any natural power `k`, the reciprocal power `t ↦ ((a + t) ^ k)⁻¹` is completely
 monotone. -/
@@ -105,15 +98,6 @@ theorem isCompletelyMonotone_inv_pow_const_add {a : ℝ} (ha : 0 < a) (k : ℕ) 
   have h := (isCompletelyMonotone_inv_const_add ha).pow k
   have heq : ((fun t : ℝ => (a + t)⁻¹) ^ k) = fun t => ((a + t) ^ k)⁻¹ := by
     funext t; simp [Pi.pow_apply, inv_pow]
-  rwa [heq] at h
-
-/-- For `a > 0` and `k : ℕ`, the integer-power building block `t ↦ (a + t) ^ (-k)` is completely
-monotone (the `zpow` phrasing of `isCompletelyMonotone_inv_pow_const_add`). -/
-theorem isCompletelyMonotone_zpow_neg_const_add {a : ℝ} (ha : 0 < a) (k : ℕ) :
-    IsCompletelyMonotone (fun t => (a + t) ^ (-(k : ℤ))) := by
-  have h := isCompletelyMonotone_inv_pow_const_add ha k
-  have heq : (fun t : ℝ => ((a + t) ^ k)⁻¹) = fun t => (a + t) ^ (-(k : ℤ)) := by
-    funext t; rw [zpow_neg, zpow_natCast]
   rwa [heq] at h
 
 end TauCeti
