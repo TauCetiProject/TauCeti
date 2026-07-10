@@ -157,6 +157,7 @@ lemma fractionalIdealDivisorAddEquiv_apply (I : Additive (FractionalIdeal R⁰ K
 fractional ideal `∏_v v^(D v)`: the product of the prime ideals `v.asIdeal` raised to the
 multiplicities `D v`. This gives the canonical formula for the inverse, which
 `AddEquiv.ofBijective` otherwise leaves as an unspecified choice inverse. -/
+@[simp]
 lemma fractionalIdealDivisorAddEquiv_symm_apply (D : WeilDivisor (HeightOneSpectrum R)) :
     (fractionalIdealDivisorAddEquiv R K).symm D =
       Additive.ofMul (Units.mk0 (D.prod fun v e => (v.asIdeal : FractionalIdeal R⁰ K) ^ e)
@@ -174,6 +175,7 @@ variable {R K}
 principal divisor of `x`: the isomorphism carries principal fractional ideals to principal divisors.
 This is the compatibility on principal elements needed to later identify the ideal class group with
 the divisor class group `Cl(X)`; that quotient-level isomorphism is not proved here. -/
+@[simp]
 lemma fractionalIdealDivisor_toPrincipalIdeal (x : Kˣ) :
     fractionalIdealDivisor R K (Additive.ofMul (toPrincipalIdeal R K x)) =
       (OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul x) := by
@@ -184,6 +186,7 @@ lemma fractionalIdealDivisor_toPrincipalIdeal (x : Kˣ) :
 /-- Applying the isomorphism `fractionalIdealDivisorAddEquiv` to the principal fractional ideal
 `(x)` of a nonzero rational function `x` yields the principal divisor of `x`, restating
 `fractionalIdealDivisor_toPrincipalIdeal` for the packaged equivalence. -/
+@[simp]
 lemma fractionalIdealDivisorAddEquiv_toPrincipalIdeal (x : Kˣ) :
     fractionalIdealDivisorAddEquiv R K (Additive.ofMul (toPrincipalIdeal R K x)) =
       (OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul x) :=
@@ -191,6 +194,7 @@ lemma fractionalIdealDivisorAddEquiv_toPrincipalIdeal (x : Kˣ) :
 
 /-- The divisor of a prime `v`, regarded as an invertible fractional ideal, is the point divisor
 `[v]`. This is the non-vacuity check identifying the divisor map on generators. -/
+@[simp]
 lemma fractionalIdealDivisor_asIdeal (v : HeightOneSpectrum R) :
     fractionalIdealDivisor R K
         (Additive.ofMul (Units.mk0 (v.asIdeal : FractionalIdeal R⁰ K)
