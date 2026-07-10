@@ -60,11 +60,11 @@ lemma weightedDegreeClass_range_eq_top_of_weight_one (w : X → ℤ) (h : S.IsWe
   intro n
   simpa using AddSubgroup.zsmul_mem (AddSubgroup.closure (Set.range w)) h1 n
 
-/-- **The degree quotient at a rational point.** With a weight-one base point the degree section
-`n ↦ n • [x₀]` is a genuine right inverse of the descended weighted degree, so the class group
-modulo the abstract `Pic⁰` is `ℤ`, `Cl(X) ⧸ Pic⁰ ≃+ ℤ`, with an explicit inverse. Together with
-`DegreeSplitting`'s `Cl(X) ≃+ picZero × ℤ` this exhibits the degree as the projection to the `ℤ`
-factor. -/
+/-- **The degree quotient at a weight-one base point.** With a weight-one base point the degree
+section `n ↦ n • [x₀]` is a genuine right inverse of the descended weighted degree, so the class
+group modulo the abstract `Pic⁰` is `ℤ`, `Cl(X) ⧸ Pic⁰ ≃+ ℤ`, with an explicit inverse. Together
+with `DegreeSplitting`'s `Cl(X) ≃+ picZero × ℤ` this exhibits the degree as the projection to the
+`ℤ` factor. -/
 @[expose] noncomputable def classGroupQuotientPicZeroEquivIntOfWeightOne (w : X → ℤ)
     (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1) :
     S.ClassGroup ⧸ picZero w h ≃+ ℤ :=
