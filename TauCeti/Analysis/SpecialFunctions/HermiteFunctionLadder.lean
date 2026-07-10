@@ -46,18 +46,6 @@ namespace TauCeti
 
 open Polynomial
 
-/-- The three-term recurrence for the probabilists' Hermite polynomials, evaluated at a point:
-`y·H_{m+1}(y) = H_{m+2}(y) + (m+1)·Hₘ(y)`. This is just the `aeval y` image of the polynomial
-recurrence `Polynomial.hermite_add_two` (`H_{m+2} = X·H_{m+1} - (m+1)·Hₘ`), rearranged to isolate
-the `y·H_{m+1}` term the ladder proofs consume. -/
-private lemma aeval_hermite_add_two (m : ℕ) (y : ℝ) :
-    y * aeval y (hermite (m + 1)) =
-      aeval y (hermite (m + 1 + 1)) + ((m : ℝ) + 1) * aeval y (hermite m) := by
-  have h := congrArg (aeval y) (hermite_add_two m)
-  rw [map_sub, map_mul, map_nsmul, aeval_X, nsmul_eq_mul] at h
-  push_cast at h
-  linear_combination -h
-
 /-- The Hermite normalization `√(n!·√π)` at successor index: `√((n+1)!·√π) = √(n+1)·√(n!·√π)`. -/
 private lemma normFactor_succ (n : ℕ) :
     Real.sqrt (((n + 1).factorial : ℝ) * Real.sqrt Real.pi)
@@ -68,12 +56,17 @@ private lemma normFactor_succ (n : ℕ) :
   push_cast
   ring
 
-/-- `2·√(k/2) = √(2k)`: the coefficient identity behind the ladder-operator normalizations. -/
-private lemma two_mul_sqrt_half (k : ℝ) : 2 * Real.sqrt (k / 2) = Real.sqrt (2 * k) := by
-  -- regroup `2·k = 4·(k/2)` so the square factor `√4 = 2` splits off `√(k/2)`
-  rw [show (2 : ℝ) * k = 4 * (k / 2) by ring, Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 4),
-    show Real.sqrt 4 = 2 by
-      rw [show (4 : ℝ) = 2 ^ 2 by norm_num]; exact Real.sqrt_sq (by norm_num)]
+/-- `√4 = 2`, used to split the square factor out of `√(2k)`. -/
+private lemma sqrt_four : Real.sqrt 4 = 2 := by
+  rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+
+/-- `2·√(k/2) = √(2k)`: the coefficient identity behind the ladder-operator normalizations.
+Regroup `2·k = 4·(k/2)` so the square factor `√4 = 2` splits off `√(k/2)`. -/
+private lemma two_mul_sqrt_half (k : ℝ) : 2 * Real.sqrt (k / 2) = Real.sqrt (2 * k) :=
+  calc 2 * Real.sqrt (k / 2)
+      = Real.sqrt 4 * Real.sqrt (k / 2) := by rw [sqrt_four]
+    _ = Real.sqrt (4 * (k / 2)) := (Real.sqrt_mul (by norm_num) _).symm
+    _ = Real.sqrt (2 * k) := by congr 1; ring
 
 /-- `√(1/2)·√2 = 1`: the coefficient collapsing the `n = 0` boundary of the ladder relations, where
 the `√((n+1)/2) = √(1/2)` prefactor meets the `√2` from the `x√2` argument of `H₀`. -/
@@ -118,11 +111,17 @@ theorem mul_hermiteFunction (n : ℕ) (x : ℝ) :
   · -- `n = 0`: the `√(n/2)` term drops out and the prefactor `√(1/2)·√2` collapses to `1`
     simp only [Nat.cast_zero, zero_add, Nat.zero_sub, hermiteFunction_one, zero_div,
       Real.sqrt_zero, zero_mul, add_zero]
-    rw [show Real.sqrt (1 / 2) * (Real.sqrt 2 * x * hermiteFunction 0 x)
-          = (Real.sqrt (1 / 2) * Real.sqrt 2) * (x * hermiteFunction 0 x) by ring,
-      sqrt_half_mul_sqrt_two, one_mul]
+    linear_combination (-(x * hermiteFunction 0 x)) * sqrt_half_mul_sqrt_two
   · -- successor case: reduce to the recurrence `√2·x·Hₘ₊₁ = Hₘ₊₂ + (m+1)·Hₘ`
-    have hrec := aeval_hermite_add_two m (x * Real.sqrt 2)
+    -- the `aeval (x√2)` image of the three-term recurrence `Polynomial.hermite_add_two`
+    -- (`H_{m+2} = X·H_{m+1} - (m+1)·Hₘ`), rearranged to isolate the `(x√2)·H_{m+1}` term
+    have hrec : (x * Real.sqrt 2) * aeval (x * Real.sqrt 2) (hermite (m + 1)) =
+        aeval (x * Real.sqrt 2) (hermite (m + 1 + 1))
+          + ((m : ℝ) + 1) * aeval (x * Real.sqrt 2) (hermite m) := by
+      have h := congrArg (aeval (x * Real.sqrt 2)) (hermite_add_two m)
+      rw [map_sub, map_mul, map_nsmul, aeval_X, nsmul_eq_mul] at h
+      push_cast at h
+      linear_combination -h
     simp only [Nat.add_sub_cancel]
     rw [hermiteFunction_def, hermiteFunction_def, hermiteFunction_def,
       Real.sqrt_div (by positivity), Real.sqrt_div (by positivity)]
