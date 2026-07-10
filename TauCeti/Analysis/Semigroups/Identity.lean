@@ -53,66 +53,9 @@ theorem id_apply (t : ℝ≥0) :
 
 /-- Pointwise form of `StronglyContinuousSemigroup.id_apply`. -/
 theorem id_apply_apply (t : ℝ≥0) (x : X) :
-    (StronglyContinuousSemigroup.id X) t x = x :=
-  by
-    rw [id_apply]
-    rfl
-
-/-- The identity semigroup has the contraction growth bound `(0, 1)`. -/
-theorem id_hasGrowthBound :
-    (StronglyContinuousSemigroup.id X).HasGrowthBound 0 1 :=
-  StronglyContinuousSemigroup.hasGrowthBound_of_bound le_rfl (fun t ht => by
-    have ht_coe : ((t.toNNReal : ℝ) = t) := Real.coe_toNNReal t ht
-    rw [← ht_coe, StronglyContinuousSemigroup.realOperator_coe, id_apply]
-    simpa using (ContinuousLinearMap.norm_id_le (𝕜 := ℝ) (E := X)))
-
-variable [CompleteSpace X]
-
-omit [CompleteSpace X] in
-/-- Every vector lies in the generator domain of the identity semigroup. -/
-theorem mem_id_domain (x : X) :
-    x ∈ (StronglyContinuousSemigroup.id X).domain := by
-  rw [(StronglyContinuousSemigroup.id X).mem_domain_iff_tendsto]
-  refine ⟨0, ?_⟩
-  refine (tendsto_const_nhds : Filter.Tendsto (fun _ : ℝ => (0 : X))
-    (nhdsWithin 0 (Set.Ioi 0)) (nhds 0)).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with t ht
-  have ht_coe : ((t.toNNReal : ℝ) = t) := Real.coe_toNNReal t ht.le
-  rw [← ht_coe, StronglyContinuousSemigroup.realOperator_coe, id_apply_apply, sub_self,
-    smul_zero]
-
-omit [CompleteSpace X] in
-/-- The generator domain of the identity semigroup is all of the space. -/
-@[simp]
-theorem id_domain :
-    (StronglyContinuousSemigroup.id X).domain = ⊤ := by
-  ext x
-  simp [mem_id_domain]
-
-omit [CompleteSpace X] in
-/-- The generator of the identity semigroup is the zero operator on its domain. -/
-theorem id_generator_apply (x : (StronglyContinuousSemigroup.id X).domain) :
-    (StronglyContinuousSemigroup.id X).generator
-      ⟨(x : X), by
-        rw [(StronglyContinuousSemigroup.id X).generator_domain]
-        exact x.property⟩ = 0 := by
-  refine (StronglyContinuousSemigroup.id X).generator_eq_of_tendsto x.property ?_
-  refine (tendsto_const_nhds : Filter.Tendsto (fun _ : ℝ => (0 : X))
-    (nhdsWithin 0 (Set.Ioi 0)) (nhds 0)).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with t ht
-  have ht_coe : ((t.toNNReal : ℝ) = t) := Real.coe_toNNReal t ht.le
-  rw [← ht_coe, StronglyContinuousSemigroup.realOperator_coe, id_apply_apply, sub_self,
-    smul_zero]
-
-omit [CompleteSpace X] in
-/-- The identity semigroup's generator sends every ambient vector to zero after coercing
-through its all-space domain. -/
-theorem id_generator_apply_of_mem (x : X) (hx : x ∈ (StronglyContinuousSemigroup.id X).domain) :
-    (StronglyContinuousSemigroup.id X).generator
-      ⟨x, by
-        rw [(StronglyContinuousSemigroup.id X).generator_domain]
-        exact hx⟩ = 0 :=
-  id_generator_apply ⟨x, hx⟩
+    (StronglyContinuousSemigroup.id X) t x = x := by
+  rw [id_apply]
+  exact ContinuousLinearMap.id_apply x
 
 end StronglyContinuousSemigroup
 
@@ -122,8 +65,13 @@ namespace ContractionSemigroup
 def id : ContractionSemigroup X where
   toStronglyContinuousSemigroup := StronglyContinuousSemigroup.id X
   contracting _ := by
+    -- The contraction field exposes the raw `toFun`, which is definitionally the identity
+    -- operator; no rewrite lemma reaches through the structure projection, so `change`
+    -- restates the goal for `ContinuousLinearMap.norm_id_le`.
     change ‖ContinuousLinearMap.id ℝ X‖ ≤ 1
     exact ContinuousLinearMap.norm_id_le
+
+variable {X}
 
 /-- The identity contraction semigroup is constantly the identity operator. -/
 @[simp]
@@ -135,10 +83,9 @@ theorem id_apply (t : ℝ≥0) :
 
 /-- Pointwise form of `ContractionSemigroup.id_apply`. -/
 theorem id_apply_apply (t : ℝ≥0) (x : X) :
-    (ContractionSemigroup.id X) t x = x :=
-  by
-    rw [id_apply]
-    rfl
+    (ContractionSemigroup.id X) t x = x := by
+  rw [id_apply]
+  exact ContinuousLinearMap.id_apply x
 
 /-- The C₀-semigroup underlying the identity contraction semigroup. -/
 @[simp]
@@ -149,6 +96,54 @@ theorem id_toStronglyContinuousSemigroup :
     rw [ContractionSemigroup.id]
 
 end ContractionSemigroup
+
+namespace StronglyContinuousSemigroup
+
+variable {X}
+
+/-- The identity semigroup has the contraction growth bound `(0, 1)`. -/
+theorem id_hasGrowthBound :
+    (StronglyContinuousSemigroup.id X).HasGrowthBound 0 1 := by
+  rw [← ContractionSemigroup.id_toStronglyContinuousSemigroup]
+  exact (ContractionSemigroup.id X).hasGrowthBound
+
+/-- The difference quotient `(S t x - x)/t` of the identity semigroup is identically zero,
+hence tends to `0` as `t → 0⁺`. -/
+private theorem id_genQuot_tendsto (x : X) :
+    Filter.Tendsto (fun t => (1 / t) • ((StronglyContinuousSemigroup.id X).realOperator t x - x))
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) := by
+  refine (tendsto_const_nhds : Filter.Tendsto (fun _ : ℝ => (0 : X))
+    (nhdsWithin 0 (Set.Ioi 0)) (nhds 0)).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with t ht
+  have ht_coe : ((t.toNNReal : ℝ) = t) := Real.coe_toNNReal t ht.le
+  rw [← ht_coe, StronglyContinuousSemigroup.realOperator_coe, id_apply_apply, sub_self,
+    smul_zero]
+
+/-- Every vector lies in the generator domain of the identity semigroup. -/
+theorem mem_id_domain (x : X) :
+    x ∈ (StronglyContinuousSemigroup.id X).domain :=
+  ((StronglyContinuousSemigroup.id X).mem_domain_iff_tendsto x).mpr ⟨0, id_genQuot_tendsto x⟩
+
+/-- The generator domain of the identity semigroup is all of the space. -/
+@[simp]
+theorem id_domain_eq_top :
+    (StronglyContinuousSemigroup.id X).domain = ⊤ := by
+  ext x
+  simp [mem_id_domain]
+
+/-- The generator of the identity semigroup is the zero operator. -/
+@[simp]
+theorem id_generator :
+    (StronglyContinuousSemigroup.id X).generator = 0 := by
+  refine LinearPMap.ext ?_ ?_
+  · rw [(StronglyContinuousSemigroup.id X).generator_domain, id_domain_eq_top,
+      LinearPMap.zero_domain]
+  · intro x _ _
+    rw [LinearPMap.zero_apply]
+    exact (StronglyContinuousSemigroup.id X).generator_eq_of_tendsto (mem_id_domain x)
+      (id_genQuot_tendsto x)
+
+end StronglyContinuousSemigroup
 
 end TauCeti.Semigroups
 
