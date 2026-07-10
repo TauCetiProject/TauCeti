@@ -12,9 +12,9 @@ public import TauCeti.Analysis.Contour.NullHomologous
 
 This file records the basic nonzero-scaling API for the generalized winding number. Multiplying
 both the curve and the distinguished point by the same nonzero complex number leaves the index
-principal value unchanged, so the winding number is invariant. Null-homology is likewise preserved,
-but only under the pointwise `CauchyPVExistsAt` hypothesis for the exterior points (supplied
-outright in the avoided-pole wrapper).
+principal value unchanged, so the winding number and null-homology are invariant. Scaling only
+reindexes the excision radius by the order-isomorphism `ε ↦ ε / ‖c‖`, so no principal-value
+existence hypothesis is needed.
 
 These lemmas are bookkeeping for the roadmap's curve and cycle layer. The geometry of the
 generalized winding number is local at a crossing or sector; after translating the crossing point
@@ -29,12 +29,9 @@ sector computation.
   can obtain the scaled `HasCauchyPVAt` / `CauchyPVExistsAt` fact and chain further
   principal-value APIs.
 * `Contour.windingNumber_const_mul` — multiplying the curve and base point by the same nonzero
-  complex number preserves the generalized winding number, under the principal-value existence
-  hypothesis for the original kernel.
+  complex number preserves the generalized winding number.
 * `Contour.IsNullHomologous.const_mul` — null-homology is preserved by nonzero complex scaling of
-  both the curve and the ambient set, provided the pointwise principal values defining the original
-  exterior winding numbers exist (`Contour.IsNullHomologous.const_mul_of_avoidance` supplies this
-  hypothesis in the avoided-pole case).
+  both the curve and the ambient set.
 
 ## Provenance
 
@@ -77,25 +74,27 @@ theorem cauchyPVExistsAt_windingKernel_const_mul
   CauchyPVExistsAt.intro (hasCauchyPVAt_windingKernel_const_mul hL hc)
 
 /-- The generalized winding number is invariant under simultaneous multiplication of the curve
-and the base point by a nonzero complex number, provided the original principal value exists. -/
-theorem windingNumber_const_mul (h : CauchyPVExistsAt γ a b κ[z₀] z₀) (hc : c ≠ 0) :
+and the base point by a nonzero complex number. -/
+theorem windingNumber_const_mul (hc : c ≠ 0) :
     windingNumber (fun t => c * γ t) a b (c * z₀) = windingNumber γ a b z₀ := by
-  rw [windingNumber_eq_of_hasCauchyPVAt
-      (hasCauchyPVAt_windingKernel_const_mul h.hasCauchyPVAt_cauchyPVAt hc),
-    windingNumber_eq_of_hasCauchyPVAt h.hasCauchyPVAt_cauchyPVAt]
+  rw [windingNumber_eq_cauchyPVAt, windingNumber_eq_cauchyPVAt]
+  congr 1
+  rw [cauchyPVAt_congr_along_curve (γ := fun t => c * γ t)
+    (f := κ[c * z₀]) (g := fun z => c⁻¹ * κ[z₀] (c⁻¹ * z)) (z₀ := c * z₀)]
+  · exact cauchyPVAt_const_mul_curve (γ := γ) (a := a) (b := b) (f := κ[z₀]) (z₀ := z₀) hc
+  · intro t _
+    -- `κ[c * z₀] (c * γ t)` agrees with the rescaled kernel `c⁻¹ * κ[z₀] (c⁻¹ * (c * γ t))`.
+    simp only [inv_mul_cancel_left₀ hc]
+    rw [← mul_sub, mul_inv]
 
 /-- Pointwise vanishing of a winding number is preserved by simultaneous multiplication of the
-curve and base point by a nonzero complex number, under the original principal-value existence
-hypothesis. -/
-theorem windingNumber_eq_zero_const_mul (hzero : windingNumber γ a b z₀ = 0)
-    (hpv : CauchyPVExistsAt γ a b κ[z₀] z₀) (hc : c ≠ 0) :
+curve and base point by a nonzero complex number. -/
+theorem windingNumber_eq_zero_const_mul (hzero : windingNumber γ a b z₀ = 0) (hc : c ≠ 0) :
     windingNumber (fun t => c * γ t) a b (c * z₀) = 0 := by
-  rw [windingNumber_const_mul hpv hc, hzero]
+  rw [windingNumber_const_mul hc, hzero]
 
-/-- Null-homology is preserved by nonzero complex scaling, provided the pointwise principal values
-defining the original exterior winding numbers exist. -/
-theorem IsNullHomologous.const_mul (h : IsNullHomologous γ a b Ω)
-    (hpv : ∀ z ∉ Ω, CauchyPVExistsAt γ a b κ[z] z) (hc : c ≠ 0) :
+/-- Null-homology is preserved by nonzero complex scaling of both the curve and the ambient set. -/
+theorem IsNullHomologous.const_mul (h : IsNullHomologous γ a b Ω) (hc : c ≠ 0) :
     IsNullHomologous (fun t => c * γ t) a b ((fun z => c * z) '' Ω) := by
   rw [isNullHomologous_iff] at h ⊢
   intro z hz
@@ -104,24 +103,7 @@ theorem IsNullHomologous.const_mul (h : IsNullHomologous γ a b Ω)
     exact hz ⟨c⁻¹ * z, hzΩ, by field_simp [hc]⟩
   have hz_eq : z = c * (c⁻¹ * z) := by field_simp [hc]
   rw [hz_eq]
-  exact windingNumber_eq_zero_const_mul (h (c⁻¹ * z) hpre_not_mem)
-    (hpv (c⁻¹ * z) hpre_not_mem) hc
-
-/-- Null-homology is preserved by nonzero complex scaling in the ordinary avoided-pole case. If the
-curve lies in `Ω`, every exterior point of the scaled ambient set is avoided by the scaled curve, so
-the required original principal values are ordinary integrals. -/
-theorem IsNullHomologous.const_mul_of_avoidance (h : IsNullHomologous γ a b Ω)
-    (hγ : ∀ t ∈ Set.uIcc a b, γ t ∈ Ω)
-    (hcont : ContinuousOn γ (Set.uIcc a b))
-    (hint : ∀ z ∉ Ω,
-      IntervalIntegrable (fun t => (γ t - z)⁻¹ * deriv γ t) MeasureTheory.volume a b)
-    (hc : c ≠ 0) :
-    IsNullHomologous (fun t => c * γ t) a b ((fun z => c * z) '' Ω) := by
-  refine h.const_mul ?_ hc
-  intro z hz
-  refine cauchyPVExistsAt_of_avoidance hcont ?_ (hint z hz)
-  intro t ht htz
-  exact hz (htz ▸ hγ t ht)
+  exact windingNumber_eq_zero_const_mul (h (c⁻¹ * z) hpre_not_mem) hc
 
 end TauCeti.Contour
 
