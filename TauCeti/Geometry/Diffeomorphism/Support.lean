@@ -10,24 +10,21 @@ public import TauCeti.Geometry.Diffeomorphism.RelativeCongr
 # Supports of diffeomorphisms
 
 For a self-diffeomorphism, its point-set support is the set of points it moves. This file records
-the elementary algebra of supports and packages the subgroup of diffeomorphisms supported in a
-chosen subset.
+the elementary algebra of supports.
 
 This is a small algebraic prerequisite for the geometric-topology roadmap
 (`TauCetiRoadmap/GeometricTopology/README.md`, layer 3, "diffeomorphism groups with the C^∞
 topology"). Relative groups such as `Diff(M, ∂M)` are pointwise fixing subgroups; equivalently,
-they are groups of diffeomorphisms supported in the complement of the relative set. The future
-`C^∞` topology can then state closed relative subgroups and compact-support variants on top of
-this algebraic API.
+they are groups of diffeomorphisms supported in the complement of the relative set, i.e. with
+support contained in the ambient set. Membership in such a group is `support φ ⊆ s`, which is
+`_root_.mem_fixingSubgroup_compl_iff_movedBy_subset` applied to the fixing subgroup of `sᶜ`.
 
 ## Main definitions
 
 * `TauCeti.Diffeomorph.support φ`: the set of points moved by a self-diffeomorphism `φ`.
-* `TauCeti.Diffeomorph.supportedSubgroup s`: self-diffeomorphisms whose support is contained in
-  `s`.
 
-The proofs use only the existing Tau Ceti diffeomorphism group and relative-conjugation API, plus
-Mathlib's set and subgroup infrastructure.
+The proofs use only the existing Tau Ceti diffeomorphism group and conjugation API, plus
+Mathlib's set infrastructure.
 -/
 
 public section
@@ -117,76 +114,6 @@ theorem support_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (φ : M ≃ₘ^n⟮I, I�
   · rintro ⟨x, hx, rfl⟩
     rw [mem_support_iff, diffCongr_apply_apply]
     simpa using hx
-
-/-- A self-diffeomorphism is supported in `s` when it moves no point outside `s`. -/
-def supportedSubgroup (s : Set M) : Subgroup (M ≃ₘ^n⟮I, I⟯ M) :=
-  fixingSubgroup (I := I) (n := n) sᶜ
-
-@[simp]
-theorem mem_supportedSubgroup_iff {s : Set M} {φ : M ≃ₘ^n⟮I, I⟯ M} :
-    φ ∈ supportedSubgroup (I := I) (n := n) s ↔ support φ ⊆ s := by
-  rw [supportedSubgroup, mem_fixingSubgroup_iff]
-  constructor
-  · intro h x hx
-    by_contra hxs
-    exact hx (h x hxs)
-  · intro h x hx
-    by_contra hfix
-    exact hx (h hfix)
-
-/-- Membership in `supportedSubgroup s` can be proved by showing all moved points lie in `s`. -/
-theorem mem_supportedSubgroup_of_support_subset {s : Set M} {φ : M ≃ₘ^n⟮I, I⟯ M}
-    (hφ : support φ ⊆ s) : φ ∈ supportedSubgroup (I := I) (n := n) s :=
-  mem_supportedSubgroup_iff.mpr hφ
-
-/-- A diffeomorphism supported in `s` fixes every point outside `s`. -/
-theorem apply_eq_of_mem_supportedSubgroup {s : Set M} {φ : M ≃ₘ^n⟮I, I⟯ M}
-    (hφ : φ ∈ supportedSubgroup (I := I) (n := n) s) {x : M} (hx : x ∉ s) : φ x = x :=
-  (mem_fixingSubgroup_iff.mp hφ) x hx
-
-/-- Diffeomorphisms supported in the empty set form the trivial subgroup. -/
-@[simp]
-theorem supportedSubgroup_empty :
-    supportedSubgroup (I := I) (M := M) (n := n) (∅ : Set M) = ⊥ := by
-  rw [supportedSubgroup]
-  simp
-
-/-- Every self-diffeomorphism is supported in the whole space. -/
-@[simp]
-theorem supportedSubgroup_univ :
-    supportedSubgroup (I := I) (M := M) (n := n) (Set.univ : Set M) = ⊤ := by
-  rw [supportedSubgroup]
-  simp
-
-/-- Support containment is monotone in the supporting set. -/
-theorem supportedSubgroup_mono {s t : Set M} (hst : s ⊆ t) :
-    supportedSubgroup (I := I) (n := n) s ≤ supportedSubgroup (I := I) (n := n) t := by
-  intro φ hφ
-  exact mem_supportedSubgroup_iff.mpr ((mem_supportedSubgroup_iff.mp hφ).trans hst)
-
-/-- Conjugation transports the subgroup supported in `s` to the subgroup supported in `e '' s`. -/
-theorem map_supportedSubgroup_diffCongr (e : M ≃ₘ^n⟮I, J⟯ N) (s : Set M) :
-    (supportedSubgroup (I := I) (n := n) s).map (diffCongr e).toMonoidHom =
-      supportedSubgroup (I := J) (n := n) (e '' s) := by
-  ext ψ
-  constructor
-  · rintro ⟨φ, hφ, rfl⟩
-    rw [mem_supportedSubgroup_iff]
-    have hsupp : support (diffCongr e φ) ⊆ e '' s := by
-      rw [support_diffCongr]
-      exact Set.image_mono (mem_supportedSubgroup_iff.mp hφ)
-    simpa using hsupp
-  · intro hψ
-    refine ⟨diffCongr e.symm ψ, ?_, ?_⟩
-    · have hsupp : support (diffCongr e.symm ψ) ⊆ s := by
-        rw [support_diffCongr]
-        intro x hx
-        rcases hx with ⟨y, hy, rfl⟩
-        rcases mem_supportedSubgroup_iff.mp hψ hy with ⟨z, hz, rfl⟩
-        simpa using hz
-      exact mem_supportedSubgroup_iff.mpr hsupp
-    · ext y
-      simp [diffCongr_apply_apply]
 
 end Diffeomorph
 
