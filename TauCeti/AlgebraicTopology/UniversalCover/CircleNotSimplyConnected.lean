@@ -52,14 +52,14 @@ namespace AddCircle
 variable (p : ℝ)
 
 /-- The fundamental group of the circle `AddCircle p` (`p ≠ 0`), based at any point `x`, is
-nontrivial: it contains loops of every winding number. -/
+nontrivial. See `fundamentalGroupMulEquiv` for the full winding-number classification. -/
 theorem nontrivial_fundamentalGroup (hp : p ≠ 0) (x : AddCircle p) :
     Nontrivial (FundamentalGroup (AddCircle p) x) := by
   obtain ⟨e, rfl⟩ := QuotientAddGroup.mk_surjective x
   exact (fundamentalGroupMulEquiv p hp ⟨e, rfl⟩).toEquiv.nontrivial
 
 /-- The fundamental group of the circle `AddCircle p` (`p ≠ 0`), based at any point `x`, is
-infinite: distinct winding numbers give distinct loop classes. -/
+infinite. See `fundamentalGroupMulEquiv` for the full winding-number classification. -/
 theorem infinite_fundamentalGroup (hp : p ≠ 0) (x : AddCircle p) :
     Infinite (FundamentalGroup (AddCircle p) x) := by
   obtain ⟨e, rfl⟩ := QuotientAddGroup.mk_surjective x
