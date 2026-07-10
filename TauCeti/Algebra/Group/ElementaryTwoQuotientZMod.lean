@@ -30,64 +30,102 @@ public section
 
 namespace TauCeti
 
+/-- The doubling submodule of `Additive G` is zero when every element of `G` squares to `1`. -/
+private theorem range_lsmul_two_additive_eq_bot_of_forall_sq_eq_one {G : Type*} [CommGroup G]
+    (hG : ∀ g : G, g ^ 2 = 1) :
+    LinearMap.range (LinearMap.lsmul ℤ (Additive G) ((2 : ℕ) : ℤ)) = ⊥ := by
+  rw [LinearMap.range_eq_bot]
+  ext y
+  change ((2 : ℤ) • y) = 0
+  apply Additive.toMul.injective
+  simpa [toMul_zsmul, pow_two, zpow_two] using hG (Additive.toMul y)
+
+private theorem range_lsmul_two_additive_toAddSubgroup_eq_bot_of_forall_sq_eq_one
+    {G : Type*} [CommGroup G] (hG : ∀ g : G, g ^ 2 = 1) :
+    (LinearMap.range (LinearMap.lsmul ℤ (Additive G) ((2 : ℕ) : ℤ))).toAddSubgroup = ⊥ := by
+  rw [range_lsmul_two_additive_eq_bot_of_forall_sq_eq_one hG]
+  rfl
+
+/-- If every element of a commutative group squares to `1`, then its elementary-2 quotient is
+additively equivalent to the group itself. -/
+noncomputable def elementaryTwoQuotientAddEquivOfForallSqEqOne (G : Type*) [CommGroup G]
+    (hG : ∀ g : G, g ^ 2 = 1) :
+    ElementaryTwoQuotient G ≃+ Additive G :=
+  ((QuotientAddGroup.quotientAddEquivOfEq
+    (range_lsmul_two_additive_toAddSubgroup_eq_bot_of_forall_sq_eq_one hG)).trans
+      (QuotientAddGroup.quotientBot :
+        Additive G ⧸ (⊥ : AddSubgroup (Additive G)) ≃+ Additive G))
+
+/-- The exponent-two quotient equivalence sends the class of `g` to `Additive.ofMul g`. -/
+@[simp] theorem elementaryTwoQuotientAddEquivOfForallSqEqOne_mk {G : Type*} [CommGroup G]
+    (hG : ∀ g : G, g ^ 2 = 1) (g : G) :
+    elementaryTwoQuotientAddEquivOfForallSqEqOne G hG (elementaryTwoQuotientMk g) =
+      Additive.ofMul g := by
+  rw [elementaryTwoQuotientMk_eq_mkQ]
+  unfold elementaryTwoQuotientAddEquivOfForallSqEqOne
+  -- Mathlib has no simp lemma for this `quotientAddEquivOfEq` followed by `quotientBot`;
+  -- after exposing that composed bridge, the representative computation is definitional.
+  change (QuotientAddGroup.quotientBot :
+    Additive G ⧸ (⊥ : AddSubgroup (Additive G)) ≃+ Additive G)
+      ((QuotientAddGroup.quotientAddEquivOfEq
+        (range_lsmul_two_additive_toAddSubgroup_eq_bot_of_forall_sq_eq_one hG))
+          (Submodule.Quotient.mk (Additive.ofMul g))) = Additive.ofMul g
+  rfl
+
+/-- The additive copy of an exponent-two commutative group is killed by doubling. -/
+theorem two_nsmul_additive_eq_zero_of_forall_sq_eq_one {G : Type*} [CommGroup G]
+    (hG : ∀ g : G, g ^ 2 = 1) (g : Additive G) :
+    2 • g = 0 := by
+  cases g with
+  | ofMul g =>
+    apply Additive.toMul.injective
+    simpa [toMul_nsmul] using hG g
+
+/-- If every element of a commutative group squares to `1`, then its elementary-2 quotient is
+`ZMod 2`-linearly equivalent to the group itself, using the induced `ZMod 2`-module structure on
+the additive copy of the group. -/
+noncomputable def elementaryTwoQuotientLinearEquivOfForallSqEqOne (G : Type*) [CommGroup G]
+    (hG : ∀ g : G, g ^ 2 = 1) :
+    letI : Module (ZMod 2) (Additive G) :=
+      AddCommGroup.zmodModule (n := 2) (two_nsmul_additive_eq_zero_of_forall_sq_eq_one hG)
+    ElementaryTwoQuotient G ≃ₗ[ZMod 2] Additive G := by
+  letI : Module (ZMod 2) (Additive G) :=
+    AddCommGroup.zmodModule (n := 2) (two_nsmul_additive_eq_zero_of_forall_sq_eq_one hG)
+  exact
+    { elementaryTwoQuotientAddEquivOfForallSqEqOne G hG with
+      map_smul' := fun c x => ZMod.map_smul (elementaryTwoQuotientAddEquivOfForallSqEqOne G hG)
+        c x }
+
+/-- The exponent-two linear equivalence sends the class of `g` to `Additive.ofMul g`. -/
+@[simp] theorem elementaryTwoQuotientLinearEquivOfForallSqEqOne_mk {G : Type*} [CommGroup G]
+    (hG : ∀ g : G, g ^ 2 = 1) (g : G) :
+    letI : Module (ZMod 2) (Additive G) :=
+      AddCommGroup.zmodModule (n := 2) (two_nsmul_additive_eq_zero_of_forall_sq_eq_one hG)
+    elementaryTwoQuotientLinearEquivOfForallSqEqOne G hG (elementaryTwoQuotientMk g) =
+      Additive.ofMul g := by
+  letI : Module (ZMod 2) (Additive G) :=
+    AddCommGroup.zmodModule (n := 2) (two_nsmul_additive_eq_zero_of_forall_sq_eq_one hG)
+  exact elementaryTwoQuotientAddEquivOfForallSqEqOne_mk hG g
+
 /-- In `Multiplicative (ZMod 2)`, every element squares to `1`. -/
 @[simp] theorem sq_multiplicative_zmod_two (g : Multiplicative (ZMod 2)) : g ^ 2 = 1 := by
   rw [pow_two]
   apply Multiplicative.toAdd.injective
   exact CharTwo.add_self_eq_zero (Multiplicative.toAdd g)
 
-/-- The doubling submodule of `Additive (Multiplicative (ZMod 2))` is zero. This is the
-`ModN` model's version of the fact that every element of `Multiplicative (ZMod 2)` has square
-`1`. -/
-private theorem range_lsmul_two_additive_multiplicative_zmod_two_eq_bot :
-    LinearMap.range
-        (LinearMap.lsmul ℤ (Additive (Multiplicative (ZMod 2))) ((2 : ℕ) : ℤ)) = ⊥ := by
-  rw [LinearMap.range_eq_bot]
-  ext y
-  cases y with
-  | ofMul g =>
-    apply Additive.toMul.injective
-    simp only [LinearMap.lsmul_apply, toMul_zsmul]
-    exact sq_multiplicative_zmod_two g
-
-/-- The additive subgroup underlying the doubling submodule of
-`Additive (Multiplicative (ZMod 2))` is zero. -/
-private theorem range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot :
-    (LinearMap.range
-      (LinearMap.lsmul ℤ (Additive (Multiplicative (ZMod 2))) ((2 : ℕ) : ℤ))).toAddSubgroup =
-        ⊥ := by
-  rw [range_lsmul_two_additive_multiplicative_zmod_two_eq_bot]
-  rfl
-
 /-- The maximal elementary-2 quotient of `Multiplicative (ZMod 2)` is additively equivalent to
 `ZMod 2`: the doubling submodule is zero, so the quotient is the original additive group. -/
 private noncomputable def elementaryTwoQuotientMultiplicativeZModTwoAddEquiv :
     ElementaryTwoQuotient (Multiplicative (ZMod 2)) ≃+ ZMod 2 :=
-  ((QuotientAddGroup.quotientAddEquivOfEq
-    range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot).trans
-      (QuotientAddGroup.quotientBot :
-        Additive (Multiplicative (ZMod 2)) ⧸
-          (⊥ : AddSubgroup (Additive (Multiplicative (ZMod 2)))) ≃+
-            Additive (Multiplicative (ZMod 2)))).trans
-              (AddEquiv.additiveMultiplicative (ZMod 2))
+  (elementaryTwoQuotientAddEquivOfForallSqEqOne
+    (Multiplicative (ZMod 2)) sq_multiplicative_zmod_two).trans
+      (AddEquiv.additiveMultiplicative (ZMod 2))
 
 private theorem elementaryTwoQuotientMultiplicativeZModTwoAddEquiv_mk
     (g : Multiplicative (ZMod 2)) :
     elementaryTwoQuotientMultiplicativeZModTwoAddEquiv (elementaryTwoQuotientMk g) =
       Multiplicative.toAdd g := by
-  rw [elementaryTwoQuotientMk_eq_mkQ]
-  unfold elementaryTwoQuotientMultiplicativeZModTwoAddEquiv
-  -- Mathlib has no simp lemma for this `quotientAddEquivOfEq` followed by `quotientBot`;
-  -- after exposing that composed bridge, the representative computation is definitional.
-  change (AddEquiv.additiveMultiplicative (ZMod 2))
-    ((QuotientAddGroup.quotientBot :
-      Additive (Multiplicative (ZMod 2)) ⧸
-        (⊥ : AddSubgroup (Additive (Multiplicative (ZMod 2)))) ≃+
-          Additive (Multiplicative (ZMod 2)))
-      ((QuotientAddGroup.quotientAddEquivOfEq
-        range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot)
-          (Submodule.Quotient.mk (Additive.ofMul g)))) = Multiplicative.toAdd g
-  rfl
+  simp [elementaryTwoQuotientMultiplicativeZModTwoAddEquiv]
 
 /-- The maximal elementary-2 quotient of `Multiplicative (ZMod 2)` is the one-dimensional
 `ZMod 2`-vector space `ZMod 2`. -/
@@ -126,7 +164,7 @@ quotient of the corresponding multiplicative element. -/
   rw [Nat.card_congr elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv.toEquiv, Nat.card_zmod]
 
 /-- The elementary-2 quotient of `Multiplicative (ZMod 2)` has cardinality `2`. -/
-theorem card_elementaryTwoQuotient_multiplicative_zmod_two :
+@[simp] theorem card_elementaryTwoQuotient_multiplicative_zmod_two :
     Nat.card (ElementaryTwoQuotient (Multiplicative (ZMod 2))) = 2 := by
   simpa only [Nat.card_eq_fintype_card]
     using fintype_card_elementaryTwoQuotient_multiplicative_zmod_two
@@ -138,7 +176,7 @@ theorem card_elementaryTwoQuotient_multiplicative_zmod_two :
   norm_num
 
 /-- The multiplicative cyclic group of order two has 2-rank `1`. -/
-theorem twoRank_multiplicative_zmod_two : twoRank (Multiplicative (ZMod 2)) = 1 := by
+@[simp] theorem twoRank_multiplicative_zmod_two : twoRank (Multiplicative (ZMod 2)) = 1 := by
   simpa only [twoRank_def] using finrank_elementaryTwoQuotient_multiplicative_zmod_two
 
 /-- A finite product of copies of the multiplicative cyclic group of order two has 2-rank equal
@@ -153,7 +191,7 @@ to the number of factors. -/
 
 /-- A finite product of copies of the multiplicative cyclic group of order two has 2-rank equal
 to the number of factors. -/
-theorem twoRank_pi_multiplicative_zmod_two {ι : Type*} [Fintype ι] :
+@[simp] theorem twoRank_pi_multiplicative_zmod_two {ι : Type*} [Fintype ι] :
     twoRank (ι → Multiplicative (ZMod 2)) = Fintype.card ι := by
   simpa only [twoRank_def] using finrank_elementaryTwoQuotient_pi_multiplicative_zmod_two
 
@@ -176,7 +214,7 @@ cardinality `2 ^ |ι|`. -/
   exact finrank_elementaryTwoQuotient_pi_multiplicative_zmod_two
 
 /-- The natural multiplicative tag on `(ZMod 2)^ι` has 2-rank equal to the number of factors. -/
-theorem twoRank_multiplicative_pi_zmod_two {ι : Type*} [Fintype ι] :
+@[simp] theorem twoRank_multiplicative_pi_zmod_two {ι : Type*} [Fintype ι] :
     twoRank (Multiplicative (ι → ZMod 2)) = Fintype.card ι := by
   simpa only [twoRank_def] using finrank_elementaryTwoQuotient_multiplicative_pi_zmod_two
 
