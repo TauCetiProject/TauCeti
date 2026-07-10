@@ -54,7 +54,8 @@ theorem pseudoHyperbolicExpr_map_le {f : ℂ → ℂ}
   have hw_norm : ‖w‖ < 1 := by
     simpa [mem_ball_zero_iff] using hw
   -- The conjugate `g` is a holomorphic self-map of the disc fixing the origin (shared scaffold).
-  obtain ⟨hg_diff, hg_maps_ball, hg_zero⟩ := schwarzPickConjugate hf hmaps hw_norm
+  obtain ⟨hg_diff, hg_maps_ball, hg_zero⟩ :=
+    differentiableOn_and_mapsTo_ball_and_apply_zero_schwarzPickConjugate hf hmaps hw_norm
   have hg_maps_closed : MapsTo g (ball (0 : ℂ) 1) (closedBall (0 : ℂ) 1) := by
     intro ξ hξ
     exact ball_subset_closedBall (hg_maps_ball hξ)

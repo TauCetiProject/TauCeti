@@ -154,7 +154,7 @@ source) and at `f a` (on the target) yields a holomorphic self-map of the disc t
 origin.  This is the common scaffold of the finite and infinitesimal Schwarz--Pick estimates:
 applying Schwarz's lemma at `0` to the conjugate `g` unwinds to the contraction estimate for
 `f`. -/
-lemma schwarzPickConjugate {f : ℂ → ℂ}
+lemma differentiableOn_and_mapsTo_ball_and_apply_zero_schwarzPickConjugate {f : ℂ → ℂ}
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
     (hmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1)) {a : ℂ} (ha : ‖a‖ < 1) :
     DifferentiableOn ℂ

@@ -54,7 +54,8 @@ theorem norm_deriv_div_one_sub_norm_sq_le {f : ℂ → ℂ}
   let target : ℂ → ℂ := fun η => (η - f z) / (1 - (starRingEnd ℂ) (f z) * η)
   let g : ℂ → ℂ := target ∘ f ∘ source
   -- The conjugate `g` is a holomorphic self-map of the disc fixing the origin (shared scaffold).
-  obtain ⟨hg_diff, hg_maps, hg_zero'⟩ := schwarzPickConjugate hf hmaps hz1
+  obtain ⟨hg_diff, hg_maps, hg_zero'⟩ :=
+    differentiableOn_and_mapsTo_ball_and_apply_zero_schwarzPickConjugate hf hmaps hz1
   have hg_zero : g 0 = 0 := hg_zero'
   have hsource_zero : source 0 = z := by
     simp [source]
