@@ -165,7 +165,8 @@ theorem abs_discr_le_of_sq_intCast {K : Type*} [Field K] [NumberField K]
     refine ⟨Polynomial.X ^ 2 - Polynomial.C a,
       Polynomial.monic_X_pow_sub_C a (by norm_num), ?_⟩
     rw [Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, Polynomial.eval₂_C, ← hx2, sub_self]
-  -- The shared `{1, x}` integral basis of the quadratic field.
+  -- The shared `{1, x}` rational basis of the quadratic field, whose vectors are algebraic
+  -- integers.
   obtain ⟨b, hbcoe, hb_int⟩ :=
     Internal.exists_basis_eq_one_self_of_notMem_range_of_isIntegral hfin hx hxint
   -- Combine the effective bound with the trace-form evaluation `disc ℚ {1, x} = 4·a`.
