@@ -56,7 +56,7 @@ variable [AddCommMonoid N] [Module R N]
 the two `C`-components.
 
 On pure tensors it sends `(m ⊗ c) ⊗ (n ⊗ d)` to `(m ⊗ n) ⊗ cd`. -/
-irreducible_def tensorCombine :
+def tensorCombine :
     (M ⊗[R] C) ⊗[R] (N ⊗[R] C) →ₗ[R] (M ⊗[R] N) ⊗[R] C :=
   TensorProduct.map (LinearMap.id : M ⊗[R] N →ₗ[R] M ⊗[R] N) (LinearMap.mul' R C) ∘ₗ
     (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap
@@ -67,7 +67,7 @@ theorem tensorCombine_tmul_tmul (m : M) (c : C) (n : N) (d : C) :
     tensorCombine (R := R) (C := C) (M := M) (N := N)
         ((m ⊗ₜ[R] c) ⊗ₜ[R] (n ⊗ₜ[R] d)) =
       (m ⊗ₜ[R] n) ⊗ₜ[R] (c * d) := by
-  simp [tensorCombine_def]
+  simp [tensorCombine]
 
 variable {M' : Type y} {N' : Type z}
 variable [AddCommMonoid M'] [Module R M']
@@ -80,7 +80,7 @@ theorem tensorCombine_natural (f : M →ₗ[R] M') (g : N →ₗ[R] N') :
       tensorCombine (R := R) (C := C) (M := M') (N := N') ∘ₗ
         TensorProduct.map (TensorProduct.map f (LinearMap.id : C →ₗ[R] C))
           (TensorProduct.map g (LinearMap.id : C →ₗ[R] C)) := by
-  rw [tensorCombine_def, tensorCombine_def]
+  rw [tensorCombine, tensorCombine]
   have h := TensorProduct.tensorTensorTensorComm_comp_map (R := R) (M := M) (N := C)
     (P := N) (Q := C) (S := M') (T := C) (V := N') (W := C) f
     (LinearMap.id : C →ₗ[R] C) g (LinearMap.id : C →ₗ[R] C)
@@ -122,7 +122,7 @@ variable [Coalgebra R C] [Comodule R C M] [Comodule R C N]
 /-- The diagonal coaction map on the tensor product of two right comodules over a bialgebra.
 
 The later full tensor-product comodule structure uses this as its coaction. -/
-irreducible_def tensorCoact : M ⊗[R] N →ₗ[R] (M ⊗[R] N) ⊗[R] C :=
+def tensorCoact : M ⊗[R] N →ₗ[R] (M ⊗[R] N) ⊗[R] C :=
   tensorCombine (R := R) (C := C) (M := M) (N := N) ∘ₗ
     TensorProduct.map (coact (R := R) (C := C) (M := M))
       (coact (R := R) (C := C) (M := N))
@@ -134,7 +134,7 @@ theorem tensorCoact_tmul (m : M) (n : N) :
       tensorCombine (R := R) (C := C) (M := M) (N := N)
         (coact (R := R) (C := C) (M := M) m ⊗ₜ[R]
           coact (R := R) (C := C) (M := N) n) := by
-  simp [tensorCoact_def]
+  simp [tensorCoact]
 
 variable [Comodule R C M'] [Comodule R C N']
 
@@ -145,7 +145,7 @@ theorem tensorCoact_natural (f : Hom R C M M') (g : Hom R C N N') :
         tensorCoact (R := R) (C := C) (M := M) (N := N) =
       tensorCoact (R := R) (C := C) (M := M') (N := N') ∘ₗ
         TensorProduct.map f.toLinearMap g.toLinearMap := by
-  rw [tensorCoact_def, tensorCoact_def, ← LinearMap.comp_assoc, tensorCombine_natural,
+  rw [tensorCoact, tensorCoact, ← LinearMap.comp_assoc, tensorCombine_natural,
     LinearMap.comp_assoc, LinearMap.comp_assoc]
   congr 1
   rw [← TensorProduct.map_comp, ← TensorProduct.map_comp, Hom.map_coact_eq, Hom.map_coact_eq]
