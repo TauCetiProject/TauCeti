@@ -35,9 +35,8 @@ only the later polynomial-facing layers specialize to `Measure ℝ`.
 * `TauCeti.weightL2Isometry_apply` — the forward map is multiplication by `√w`.
 * `TauCeti.weightL2Isometry_symm_apply` — the inverse map is multiplication by `(√w)⁻¹`.
 
-The load-bearing analytic fact is `eLpNorm_sqrt_smul_withDensity`: the `L²(μ)` seminorm of `√w · g`
-equals the `L²(w·μ)` seminorm of `g`, proved from the `withDensity` change-of-variables for
-`lintegral`.
+The file also provides the underlying `L²` seminorm identity: the `L²(μ)` seminorm of `√w · g`
+equals the `L²(w·μ)` seminorm of `g`.
 -/
 
 public section
@@ -51,10 +50,10 @@ open scoped ENNReal NNReal
 variable {𝕜 : Type*} [RCLike 𝕜] {α : Type*} [MeasurableSpace α] (μ : Measure α) (w : α → ℝ)
 
 /-- **Core seminorm identity.** The `L²(μ)` seminorm of `√w · g` equals the `L²(w·μ)` seminorm of
-`g`, where `w·μ = μ.withDensity (ENNReal.ofReal ∘ w)`. Only `0 ≤ w` almost everywhere is used (via
-`hwpos`); the exponent `2` is handled through the `lintegral`-of-`rpow` description of `eLpNorm`. -/
-theorem eLpNorm_sqrt_smul_withDensity (hwm : AEMeasurable w μ) (hwpos : ∀ᵐ x ∂μ, 0 < w x)
-    (g : α → 𝕜) :
+`g`, where `w·μ = μ.withDensity (ENNReal.ofReal ∘ w)`. Only nonnegativity of `w` almost everywhere
+is needed. -/
+private theorem eLpNorm_sqrt_smul_withDensity (hwm : AEMeasurable w μ)
+    (hw_nonneg : ∀ᵐ x ∂μ, 0 ≤ w x) (g : α → 𝕜) :
     eLpNorm (fun x => Real.sqrt (w x) • g x) 2 μ
       = eLpNorm g 2 (μ.withDensity fun x => ENNReal.ofReal (w x)) := by
   have h2z : (2 : ℝ≥0∞) ≠ 0 := by norm_num
@@ -66,14 +65,14 @@ theorem eLpNorm_sqrt_smul_withDensity (hwm : AEMeasurable w μ) (hwpos : ∀ᵐ 
   rw [lintegral_withDensity_eq_lintegral_mul_non_measurable₀ μ hwm.ennreal_ofReal
     (Filter.Eventually.of_forall fun x => ENNReal.ofReal_lt_top)]
   refine lintegral_congr_ae ?_
-  filter_upwards [hwpos] with x hx
+  filter_upwards [hw_nonneg] with x hx
   have hsqnn : (0 : ℝ) ≤ Real.sqrt (w x) := Real.sqrt_nonneg _
   simp only [Pi.mul_apply]
   rw [enorm_smul, Real.enorm_of_nonneg hsqnn,
     ENNReal.mul_rpow_of_nonneg _ _ (by norm_num : (0 : ℝ) ≤ 2)]
   congr 1
   rw [ENNReal.ofReal_rpow_of_nonneg hsqnn (by norm_num : (0 : ℝ) ≤ 2),
-    show (2 : ℝ) = ((2 : ℕ) : ℝ) by norm_num, Real.rpow_natCast, Real.sq_sqrt hx.le]
+    Real.rpow_two, Real.sq_sqrt hx]
 
 /-- `w · μ` is absolutely continuous with respect to `μ` (always holds). -/
 private theorem withDensity_ac :
@@ -93,7 +92,7 @@ private theorem memLp_sqrt_smul (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEMeasu
     MemLp (fun x => Real.sqrt (w x) • (f : α → 𝕜) x) 2 μ := by
   refine ⟨(hwm.sqrt.aestronglyMeasurable).smul
     ((Lp.aestronglyMeasurable f).mono_ac (ac_withDensity μ w hwpos hwm)), ?_⟩
-  rw [eLpNorm_sqrt_smul_withDensity μ w hwm hwpos]
+  rw [eLpNorm_sqrt_smul_withDensity μ w hwm (hwpos.mono fun _ h => h.le)]
   exact Lp.eLpNorm_lt_top f
 
 /-- The inverse direction `(√w)⁻¹ · g` of a class in `L²(μ)` is in `L²(w·μ)`. -/
@@ -104,7 +103,7 @@ private theorem memLp_inv_sqrt_smul (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEM
   have hasm : AEStronglyMeasurable (fun x => (Real.sqrt (w x))⁻¹ • (g : α → 𝕜) x) μ :=
     (hwm.sqrt.inv.aestronglyMeasurable).smul (Lp.aestronglyMeasurable g)
   refine ⟨hasm.mono_ac (withDensity_ac μ w), ?_⟩
-  rw [← eLpNorm_sqrt_smul_withDensity μ w hwm hwpos]
+  rw [← eLpNorm_sqrt_smul_withDensity μ w hwm (hwpos.mono fun _ h => h.le)]
   refine (eLpNorm_congr_ae ?_).trans_lt (Lp.eLpNorm_lt_top g)
   filter_upwards [hwpos] with x hx
   rw [smul_smul, mul_inv_cancel₀ (Real.sqrt_pos.2 hx).ne', one_smul]
@@ -147,9 +146,12 @@ noncomputable def weightL2Isometry (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEMe
           hwpos] with x h1 h2 hx
         rw [h1, h2, smul_smul, mul_inv_cancel₀ (Real.sqrt_pos.2 hx).ne', one_smul] }
   norm_map' := fun f => by
+    -- The forward map is definitionally `MemLp.toLp (√w • f)`; expose that representative so that
+    -- `Lp.norm_toLp` fires, then discharge the norm through the core seminorm identity.
     change ‖MemLp.toLp (fun x => Real.sqrt (w x) • (f : α → 𝕜) x)
       (memLp_sqrt_smul μ w hwpos hwm f)‖ = ‖f‖
-    rw [Lp.norm_toLp, Lp.norm_def, eLpNorm_sqrt_smul_withDensity μ w hwm hwpos]
+    rw [Lp.norm_toLp, Lp.norm_def,
+      eLpNorm_sqrt_smul_withDensity μ w hwm (hwpos.mono fun _ h => h.le)]
 
 /-- The forward isometry is multiplication by `√w`. -/
 theorem weightL2Isometry_apply (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEMeasurable w μ)
