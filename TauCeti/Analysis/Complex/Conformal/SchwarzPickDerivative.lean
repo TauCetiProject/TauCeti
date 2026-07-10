@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Data.Set.Function
 import Mathlib.Analysis.Complex.Schwarz
