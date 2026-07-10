@@ -6,6 +6,7 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule
+import Mathlib.Tactic.IrreducibleDef
 
 /-!
 # The tensor-product coaction map for comodules over a bialgebra
@@ -58,24 +59,11 @@ variable [AddCommMonoid N] [Module R N]
 /-- Combine two coacted tensor factors by shuffling the middle factors together and multiplying
 the two `C`-components.
 
-On pure tensors it sends `(m ⊗ c) ⊗ (n ⊗ d)` to `(m ⊗ n) ⊗ cd`.
-
-The body is exposed through the `tensorCombine_def` equation lemma and the definition is then
-marked `irreducible`, so downstream code depends only on `tensorCombine_def` and the
-characteristic lemmas below rather than on the shuffle/multiplication body by reduction. -/
-@[expose] noncomputable def tensorCombine :
+On pure tensors it sends `(m ⊗ c) ⊗ (n ⊗ d)` to `(m ⊗ n) ⊗ cd`. -/
+noncomputable irreducible_def tensorCombine :
     (M ⊗[R] C) ⊗[R] (N ⊗[R] C) →ₗ[R] (M ⊗[R] N) ⊗[R] C :=
   TensorProduct.map (LinearMap.id : M ⊗[R] N →ₗ[R] M ⊗[R] N) (LinearMap.mul' R C) ∘ₗ
     (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap
-
-/-- The defining equation of `tensorCombine`, kept as the sole handle on its opaque body. -/
-theorem tensorCombine_def :
-    tensorCombine (R := R) (C := C) (M := M) (N := N) =
-      TensorProduct.map (LinearMap.id : M ⊗[R] N →ₗ[R] M ⊗[R] N) (LinearMap.mul' R C) ∘ₗ
-        (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap :=
-  rfl
-
-attribute [irreducible] tensorCombine
 
 /-- `tensorCombine` sends `(m ⊗ c) ⊗ (n ⊗ d)` to `(m ⊗ n) ⊗ cd`. -/
 @[simp]
@@ -139,30 +127,14 @@ section Coact
 
 /-- The diagonal coaction map on the tensor product of two right comodules over a bialgebra.
 
-The later full tensor-product comodule structure uses this as its coaction.
-
-The body is exposed through the `tensorCoact_def` equation lemma and the definition is then
-marked `irreducible`, so downstream code depends only on the characteristic coaction lemmas
-`tensorCoact_tmul` and `tensorCoact_natural` rather than on this composition by reduction. -/
-@[expose] noncomputable def tensorCoact [Semiring C] [Bialgebra R C]
+The later full tensor-product comodule structure uses this map as its coaction. -/
+noncomputable irreducible_def tensorCoact [Semiring C] [Bialgebra R C]
     [AddCommMonoid M] [Module R M] [Comodule R C M]
     [AddCommMonoid N] [Module R N] [Comodule R C N] :
     M ⊗[R] N →ₗ[R] (M ⊗[R] N) ⊗[R] C :=
   tensorCombine (R := R) (C := C) (M := M) (N := N) ∘ₗ
     TensorProduct.map (coact (R := R) (C := C) (M := M))
       (coact (R := R) (C := C) (M := N))
-
-/-- The defining equation of `tensorCoact`, kept as the sole handle on its opaque body. -/
-theorem tensorCoact_def [Semiring C] [Bialgebra R C]
-    [AddCommMonoid M] [Module R M] [Comodule R C M]
-    [AddCommMonoid N] [Module R N] [Comodule R C N] :
-    tensorCoact (R := R) (C := C) (M := M) (N := N) =
-      tensorCombine (R := R) (C := C) (M := M) (N := N) ∘ₗ
-        TensorProduct.map (coact (R := R) (C := C) (M := M))
-          (coact (R := R) (C := C) (M := N)) :=
-  rfl
-
-attribute [irreducible] tensorCoact
 
 /-- The tensor-product coaction, before expanding the two component coactions. -/
 @[simp]
@@ -173,8 +145,7 @@ theorem tensorCoact_tmul [Semiring C] [Bialgebra R C]
       tensorCombine (R := R) (C := C) (M := M) (N := N)
         (coact (R := R) (C := C) (M := M) m ⊗ₜ[R]
           coact (R := R) (C := C) (M := N) n) := by
-  rw [tensorCoact_def (R := R) (C := C) (M := M) (N := N)]
-  rfl
+  simp [tensorCoact_def (R := R) (C := C) (M := M) (N := N)]
 
 variable {M' : Type y} {N' : Type z}
 
@@ -190,15 +161,13 @@ theorem tensorCoact_natural [Semiring C] [Bialgebra R C]
         tensorCoact (R := R) (C := C) (M := M) (N := N) =
         tensorCoact (R := R) (C := C) (M := M') (N := N') ∘ₗ
         TensorProduct.map f.toLinearMap g.toLinearMap := by
-  rw [tensorCoact_def (R := R) (C := C) (M := M) (N := N),
-    tensorCoact_def (R := R) (C := C) (M := M') (N := N'), ← LinearMap.comp_assoc,
-    tensorCombine_natural,
-    LinearMap.comp_assoc, LinearMap.comp_assoc]
-  rw [tensorCombine_def (R := R) (C := C) (M := M') (N := N')]
-  rw [LinearMap.comp_assoc]
-  rw [← TensorProduct.map_comp, Hom.map_coact_eq, Hom.map_coact_eq]
-  rw [← TensorProduct.map_comp]
-  rw [← LinearMap.comp_assoc]
+  apply TensorProduct.ext'
+  intro m n
+  have hcombine := LinearMap.congr_fun
+    (tensorCombine_natural (R := R) (C := C) (M := M) (N := N)
+      (M' := M') (N' := N') f.toLinearMap g.toLinearMap)
+    (coact (R := R) (C := C) (M := M) m ⊗ₜ[R] coact (R := R) (C := C) (M := N) n)
+  simpa [tensorCoact_tmul, Hom.map_coact_apply] using hcombine
 
 end Coact
 
