@@ -90,11 +90,21 @@ theorem ofBounded_apply (A : X →L[ℝ] X) (t : ℝ≥0) :
     (ofBounded A) t = exp ((t : ℝ) • A) := by
   rw [ofBounded]; rfl
 
+/-- The operator of `ofBounded A` at nonnegative time `t`, applied to `x`, is `exp (t • A) x`. -/
+theorem ofBounded_apply_apply (A : X →L[ℝ] X) (t : ℝ≥0) (x : X) :
+    (ofBounded A) t x = exp ((t : ℝ) • A) x := by
+  rw [ofBounded_apply]
+
 /-- The real-time operator of `ofBounded A` at `t ≥ 0` is `exp (t • A)`. -/
 theorem ofBounded_realOperator_of_nonneg (A : X →L[ℝ] X) {t : ℝ} (ht : 0 ≤ t) :
     (ofBounded A).realOperator t = exp (t • A) := by
   have ht_coe : ((t.toNNReal : ℝ) = t) := Real.coe_toNNReal t ht
   rw [← ht_coe, realOperator_coe, ofBounded_apply]
+
+/-- The real-time operator of `ofBounded A` at `t ≥ 0`, applied to `x`, is `exp (t • A) x`. -/
+theorem ofBounded_realOperator_apply_of_nonneg (A : X →L[ℝ] X) {t : ℝ} (ht : 0 ≤ t) (x : X) :
+    (ofBounded A).realOperator t x = exp (t • A) x := by
+  rw [ofBounded_realOperator_of_nonneg A ht]
 
 /-- The bounded-generator semigroup is norm-continuous in nonnegative time. -/
 theorem ofBounded_continuous (A : X →L[ℝ] X) :
@@ -124,9 +134,12 @@ private theorem ofBounded_genQuot_tendsto (A : X →L[ℝ] X) (x : X) :
       (nhdsWithin 0 (Set.Ioi 0)) (nhds (A x)) := by
   -- `u ↦ exp (u • A) x` is differentiable at `0` with derivative `A x`.
   have h1 : HasDerivAt (fun u : ℝ => exp (u • A)) A 0 := by
-    simpa using hasDerivAt_exp_smul_const A (0 : ℝ)
+    -- The derivative `exp (0 • A) * A` normalizes to `A` via `0 • A = 0`, `exp 0 = 1`, `1 * A = A`.
+    simpa only [zero_smul, exp_zero, one_mul] using hasDerivAt_exp_smul_const A (0 : ℝ)
   have hD : HasDerivAt (fun u : ℝ => exp (u • A) x) (A x) 0 := by
-    simpa using HasDerivAt.clm_apply h1 (hasDerivAt_const (0 : ℝ) x)
+    -- The derivative `A x + exp (0 • A) 0` normalizes to `A x` via `_ 0 = 0`, `_ + 0 = _`.
+    have h := HasDerivAt.clm_apply h1 (hasDerivAt_const (0 : ℝ) x)
+    rwa [ContinuousLinearMap.map_zero, add_zero] at h
   rw [hasDerivAt_iff_tendsto_slope] at hD
   have hmono : nhdsWithin (0 : ℝ) (Set.Ioi 0) ≤ nhdsWithin 0 {(0 : ℝ)}ᶜ :=
     nhdsWithin_mono _ fun y hy => ne_of_gt hy
@@ -141,21 +154,21 @@ private theorem ofBounded_genQuot_tendsto (A : X →L[ℝ] X) (x : X) :
 /-- Every vector lies in the generator domain of `ofBounded A`: its generator is bounded. -/
 theorem mem_ofBounded_domain (A : X →L[ℝ] X) (x : X) :
     x ∈ (ofBounded A).domain :=
-  ((ofBounded A).generator_eq_toPMap_top_of_forall_tendsto A
+  ((ofBounded A).generator_eq_toPMap_top_of_forall_tendsto (A : X →ₗ[ℝ] X)
     (ofBounded_genQuot_tendsto A)).1.ge trivial
 
 /-- The generator domain of `ofBounded A` is the whole space. -/
 @[simp]
 theorem ofBounded_domain_eq_top (A : X →L[ℝ] X) :
     (ofBounded A).domain = ⊤ :=
-  ((ofBounded A).generator_eq_toPMap_top_of_forall_tendsto A
+  ((ofBounded A).generator_eq_toPMap_top_of_forall_tendsto (A : X →ₗ[ℝ] X)
     (ofBounded_genQuot_tendsto A)).1
 
 /-- The generator of `ofBounded A` is `A` itself, viewed as a total unbounded operator. -/
 @[simp]
 theorem ofBounded_generator (A : X →L[ℝ] X) :
     (ofBounded A).generator = (A : X →ₗ[ℝ] X).toPMap ⊤ :=
-  ((ofBounded A).generator_eq_toPMap_top_of_forall_tendsto A
+  ((ofBounded A).generator_eq_toPMap_top_of_forall_tendsto (A : X →ₗ[ℝ] X)
     (ofBounded_genQuot_tendsto A)).2
 
 end StronglyContinuousSemigroup
