@@ -75,27 +75,14 @@ theorem dixonH2_norm_le {R M : ℝ}
     exact hM t ht
   exact intervalIntegral.norm_integral_le_of_norm_le_const h_ptwise
 
-/-- **`dixonH2 f γ a b` tends to `0` along `cocompact ℂ`.** For `‖w‖` large the norm bound
-`M · |b - a| / (‖w‖ - R)` is below any `ε > 0`. -/
+/-- **`dixonH2 f γ a b` tends to `0` along `cocompact ℂ`.** The norm bound `dixonH2_norm_le` has the
+form `C / (‖w‖ - R)` with `C = M * |b - a|`, so `tendsto_zero_cocompact_of_norm_le_div` applies. -/
 theorem dixonH2_tendsto_zero {R M : ℝ}
     (hR : ∀ t ∈ uIcc a b, ‖γ t‖ ≤ R) (hM : ∀ t ∈ uIcc a b, ‖f (γ t) * deriv γ t‖ ≤ M) :
     Tendsto (dixonH2 f γ a b) (cocompact ℂ) (nhds 0) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  simp only [dist_zero_right]
-  filter_upwards [(isCompact_closedBall (0 : ℂ)
-      (max R (R + M * |b - a| / ε))).compl_mem_cocompact] with w hw
-  rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hw
-  have hRw : R < ‖w‖ := lt_of_le_of_lt (le_max_left _ _) hw
-  have hpos : 0 < ‖w‖ - R := by linarith
-  calc ‖dixonH2 f γ a b w‖
-      ≤ M / (‖w‖ - R) * |b - a| := dixonH2_norm_le hR hM hRw
-    _ < ε := by
-        rw [div_mul_eq_mul_div, div_lt_iff₀ hpos]
-        have h2 : M * |b - a| / ε < ‖w‖ - R := by
-          linarith [lt_of_le_of_lt (le_max_right _ _) hw]
-        rw [div_lt_iff₀ hε] at h2
-        linarith [mul_comm ε (‖w‖ - R)]
+  refine tendsto_zero_cocompact_of_norm_le_div (R := R) (C := M * |b - a|) fun w hw ↦ ?_
+  rw [← div_mul_eq_mul_div]
+  exact dixonH2_norm_le hR hM hw
 
 /-- **`L¹` norm bound for `dixonH2`.** When `‖w‖ > R`, `R` bounds `‖γ‖` on `uIcc a b`, and the
 weight `f (γ ·) * deriv γ` is interval-integrable, `dixonH2` is bounded by that weight's `L¹` norm
@@ -111,28 +98,13 @@ theorem dixonH2_norm_le_of_integrable {R : ℝ} (hR : ∀ t ∈ uIcc a b, ‖γ 
   rw [dixonH2_def, hcongr]
   exact norm_integral_inv_sub_mul_le hg (fun t ht ↦ hR t (uIoc_subset_uIcc ht)) hw
 
-/-- **`dixonH2 f γ a b` tends to `0` along `cocompact ℂ` (`L¹` form).** For `‖w‖` large the bound
-`(∫ ‖f (γ ·) * deriv γ‖) / (‖w‖ - R)` is below any `ε > 0`; the interval-integrable weight replaces
-the uniform bound of `dixonH2_tendsto_zero`. -/
+/-- **`dixonH2 f γ a b` tends to `0` along `cocompact ℂ` (`L¹` form).** The `L¹` norm bound
+`dixonH2_norm_le_of_integrable` is already of the form `C / (‖w‖ - R)`, so
+`tendsto_zero_cocompact_of_norm_le_div` applies; the interval-integrable weight replaces the uniform
+bound of `dixonH2_tendsto_zero`. -/
 theorem dixonH2_tendsto_zero_of_integrable {R : ℝ} (hR : ∀ t ∈ uIcc a b, ‖γ t‖ ≤ R)
     (hg : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b) :
-    Tendsto (dixonH2 f γ a b) (cocompact ℂ) (nhds 0) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  simp only [dist_zero_right]
-  set D := ∫ t in Ι a b, ‖f (γ t) * deriv γ t‖
-  filter_upwards [(isCompact_closedBall (0 : ℂ)
-      (max R (R + D / ε))).compl_mem_cocompact] with w hw
-  rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hw
-  have hRw : R < ‖w‖ := lt_of_le_of_lt (le_max_left _ _) hw
-  have hpos : 0 < ‖w‖ - R := by linarith
-  calc ‖dixonH2 f γ a b w‖
-      ≤ D / (‖w‖ - R) := dixonH2_norm_le_of_integrable hR hg hRw
-    _ < ε := by
-        rw [div_lt_iff₀ hpos]
-        have h2 : D / ε < ‖w‖ - R := by
-          linarith [lt_of_le_of_lt (le_max_right _ _) hw]
-        rw [div_lt_iff₀ hε] at h2
-        linarith [mul_comm ε (‖w‖ - R)]
+    Tendsto (dixonH2 f γ a b) (cocompact ℂ) (nhds 0) :=
+  tendsto_zero_cocompact_of_norm_le_div fun _ hw ↦ dixonH2_norm_le_of_integrable hR hg hw
 
 end TauCeti.Contour
