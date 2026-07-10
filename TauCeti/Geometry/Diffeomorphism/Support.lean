@@ -56,7 +56,6 @@ theorem mem_support_iff {φ : M ≃ₘ^n⟮I, I⟯ M} {x : M} :
     x ∈ support φ ↔ φ x ≠ x :=
   Iff.rfl
 
-@[simp]
 theorem notMem_support_iff {φ : M ≃ₘ^n⟮I, I⟯ M} {x : M} :
     x ∉ support φ ↔ φ x = x := by
   rw [support, Set.mem_setOf_eq, not_not]
