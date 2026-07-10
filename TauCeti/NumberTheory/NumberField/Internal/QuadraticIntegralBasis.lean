@@ -9,10 +9,11 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 
 /-!
-# The `{1, x}` integral basis of a quadratic number field
+# The `{1, x}` rational basis of algebraic integers in a quadratic number field
 
 Internal helper: in a quadratic number field `K`, an integral element `x` that is not rational
-packages the pair `{1, x}` as a `ℚ`-basis of algebraic integers. This construction is shared by
+packages the pair `{1, x}` as a `ℚ`-basis of `K` whose two vectors are algebraic integers. It is
+*not* claimed to be a `ℤ`-basis of the full ring of integers `𝓞 K`. This construction is shared by
 the effective discriminant bound `TauCeti.NumberField.abs_discr_le_of_sq_intCast` and the
 roadmap's `ℚ(i)` discriminant worked example, so it lives in the generic `NumberField.Internal`
 namespace rather than being duplicated inline or exposed from either headline API file.
