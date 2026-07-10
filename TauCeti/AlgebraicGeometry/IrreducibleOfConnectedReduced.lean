@@ -158,41 +158,58 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
 
 
 
+/-- Equivalence between minimal primes and irreducible components. -/
+private noncomputable def equiv_clean (R : Type*) [CommRing R] :
+    minimalPrimes R ≃ irreducibleComponents (PrimeSpectrum R) where
+  toFun q := ⟨zeroLocus q.val, by
+    rw [zeroLocus_ideal_mem_irreducibleComponents, q.property.1.1.radical]
+    exact q.property⟩
+  invFun c := ⟨vanishingIdeal c.val, by
+    have hcClosed : IsClosed c.val := isClosed_of_mem_irreducibleComponents c.val c.property
+    have hcIrred : IsIrreducible c.val := c.property.1
+    rw [isIrreducible_iff_vanishingIdeal_isPrime] at hcIrred
+    refine ⟨⟨hcIrred, bot_le⟩, fun I hI hIsub ↦ ?_⟩
+    haveI : I.IsPrime := hI.left
+    have h2 : IsIrreducible (zeroLocus (I : Set R)) := by
+      rw [isIrreducible_iff_vanishingIdeal_isPrime, vanishingIdeal_zeroLocus_eq_radical, Ideal.IsPrime.radical hI.left]
+      exact hI.left
+    have hSub' : c.val ⊆ zeroLocus (I : Set R) := by
+      rw [← closure_eq_iff_isClosed.mpr hcClosed]
+      rw [← zeroLocus_vanishingIdeal_eq_closure]
+      exact zeroLocus_anti_mono_ideal hIsub
+    have hEq := c.property.2 h2 hSub'
+    have hEq_val : c.val = zeroLocus (I : Set R) := hSub'.antisymm hEq
+    rw [hEq_val, vanishingIdeal_zeroLocus_eq_radical, Ideal.IsPrime.radical hI.left]⟩
+  left_inv q := Subtype.ext (by
+    dsimp
+    rw [vanishingIdeal_zeroLocus_eq_radical]
+    exact q.property.1.1.radical)
+  right_inv c := Subtype.ext (by
+    dsimp
+    have hcClosed : IsClosed c.val := isClosed_of_mem_irreducibleComponents c.val c.property
+    rw [zeroLocus_vanishingIdeal_eq_closure, closure_eq_iff_isClosed.mpr hcClosed])
+
+private lemma equiv_clean_val {R : Type*} [CommRing R] (q : minimalPrimes R) :
+    ((equiv_clean R q : irreducibleComponents (PrimeSpectrum R)) : Set (PrimeSpectrum R)) = zeroLocus q.val :=
+  rfl
+
 /-- Auxiliary declaration. -/
-private def irreducibleComponentsContainingEquivMinimalPrimesLe (R : Type*)
+private noncomputable def irreducibleComponentsContainingEquivMinimalPrimesLe (R : Type*)
     [CommRing R] (p : PrimeSpectrum R) :
     { c : irreducibleComponents (PrimeSpectrum R) // p ∈ (c : Set (PrimeSpectrum R)) } ≃
-      { q : minimalPrimes R // q.val ≤ p.asIdeal } where
-  toFun c := ⟨⟨vanishingIdeal c.val.val, by
-    have hcClosed := isClosed_of_mem_irreducibleComponents c.val.val c.val.property
-    rw [vanishingIdeal_mem_minimalPrimes, closure_eq_iff_isClosed.mpr hcClosed]
-    exact c.val.property⟩, by
-      have hcClosed := isClosed_of_mem_irreducibleComponents c.val.val c.val.property
-      have hp : p ∈ closure (c.val.val) := by
-        rw [closure_eq_iff_isClosed.mpr hcClosed]
-        exact c.property
-      rw [← zeroLocus_vanishingIdeal_eq_closure] at hp
-      rw [mem_zeroLocus] at hp
-      exact hp⟩
-  invFun q := ⟨⟨zeroLocus q.val.val, by
-    rw [zeroLocus_ideal_mem_irreducibleComponents, q.val.property.1.1.radical]
-    exact q.val.property⟩, by
-      rw [mem_zeroLocus]
-      exact q.property⟩
-  left_inv c := Subtype.ext <| Subtype.ext <| by
-    dsimp
-    have hcClosed := isClosed_of_mem_irreducibleComponents c.val.val c.val.property
-    rw [zeroLocus_vanishingIdeal_eq_closure, closure_eq_iff_isClosed.mpr hcClosed]
-  right_inv q := Subtype.ext <| Subtype.ext <| by
-    dsimp
-    rw [vanishingIdeal_zeroLocus_eq_radical, q.val.property.1.1.radical]
+      { q : minimalPrimes R // q.val ≤ p.asIdeal } :=
+  Equiv.subtypeEquiv (equiv_clean R).symm (fun c ↦ by
+    obtain ⟨q, rfl⟩ := (equiv_clean R).surjective c
+    rw [Equiv.symm_apply_apply]
+    rw [equiv_clean_val, mem_zeroLocus, SetLike.coe_subset_coe]
+  )
 
 /-- For an affine scheme Spec R, the minimal prime ideals of the local ring (stalk)
 at a point p (which is a prime ideal of R) are in bijection with the irreducible components
 of Spec R containing p.
 This is the affine case of the bijection between minimal primes of stalks and irreducible
 components containing the point. -/
-private def equiv_minimalPrimes_irreducibleComponents_spec
+private noncomputable def equiv_minimalPrimes_irreducibleComponents_spec
     (R : Type*) [CommRing R] (p : PrimeSpectrum R) :
     minimalPrimes (Localization.AtPrime p.asIdeal) ≃
       { c : irreducibleComponents (PrimeSpectrum R) // p ∈ (c : Set (PrimeSpectrum R)) } :=
