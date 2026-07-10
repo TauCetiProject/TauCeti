@@ -17,7 +17,7 @@ rewriting associativity and unit coherences in monoidal categories. It is
 primarily used to prove equalities of morphisms such as isomorphisms of
 pullback and pushforward sheaves.
 
-This advances the Tau Ceti Jacobian roadmap.
+This advances the roadmap at TauCetiRoadmap/JacobianChallenge/README.md.
 -/
 
 public section
