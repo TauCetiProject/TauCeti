@@ -173,6 +173,13 @@ private lemma normSq_one_sub_conj_mul_sub_normSq_sub (z w : ℂ) :
   rw [hre]
   ring_nf
 
+/-- **Poincaré defect identity (norm form).** The difference of the squared norms of the Moebius
+denominator and numerator factors is the product of the two hyperbolic defects:
+`‖1 - conj w * z‖ ^ 2 - ‖z - w‖ ^ 2 = (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2)`. -/
+lemma norm_sq_one_sub_conj_mul_sub_norm_sq_sub (z w : ℂ) :
+    ‖(1 : ℂ) - (starRingEnd ℂ) w * z‖ ^ 2 - ‖z - w‖ ^ 2 = (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2) := by
+  simpa only [Complex.normSq_eq_norm_sq] using normSq_one_sub_conj_mul_sub_normSq_sub z w
+
 /-- For two points of norm less than one, the numerator norm is smaller than the denominator
 norm in the pseudo-hyperbolic expression. -/
 lemma norm_sub_lt_norm_one_sub_conj_mul_of_norm_lt_one {z w : ℂ}
