@@ -102,14 +102,8 @@ lemma support_ofPoint (x : X) : (ofPoint x).support = {x} :=
 `ofPoint`/`Finsupp.single` bridge in its integer-scaled form, shared by the divisor files that
 expand a divisor into its point contributions. -/
 lemma single_eq_zsmul_ofPoint (a : X) (b : ℤ) :
-    (Finsupp.single a b : WeilDivisor X) = b • ofPoint a := by
-  have h : ofPoint a = Finsupp.single a (1 : ℤ) := by
-    ext y
-    by_cases hy : y = a
-    · subst y
-      rw [coeff_ofPoint_self, coeff, Finsupp.single_eq_same]
-    · rw [coeff_ofPoint_of_ne hy, coeff, Finsupp.single_eq_of_ne hy]
-  rw [h, Finsupp.smul_single_one]
+    (Finsupp.single a b : WeilDivisor X) = b • ofPoint a :=
+  (Finsupp.smul_single_one a b).symm
 
 /-- A divisor is effective when every coefficient is nonnegative. -/
 def IsEffective (D : WeilDivisor X) : Prop :=
