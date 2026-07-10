@@ -6,7 +6,6 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroupProduct
 public import TauCeti.AlgebraicTopology.UniversalCover.CircleFundamentalGroup
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Analysis.Convex.Contractible
 
 /-!
@@ -31,10 +30,6 @@ contractible line, so its fundamental group agrees with that of the circle.
 
 ## Main declarations
 
-* `TauCeti.FundamentalGroup.prodMulEquivRight`: for simply connected `Y`, the projection
-  `π₁(X × Y, (x, y)) ≃* π₁(X, x)`.
-* `TauCeti.FundamentalGroup.prodMulEquivLeft`: for simply connected `X`, the projection
-  `π₁(X × Y, (x, y)) ≃* π₁(Y, y)`.
 * `TauCeti.AddCircle.cylinderFundamentalGroupMulEquiv`: for a nonzero real period and any
   simply connected `Y`, `π₁(AddCircle p × Y, (x, y)) ≃* Multiplicative ℤ`.
 * `TauCeti.AddCircle.realCylinderFundamentalGroupMulEquiv`: the standard infinite cylinder
@@ -51,54 +46,17 @@ open Path.Homotopic
 
 noncomputable section
 
-variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-
-/-- When the second factor `Y` is simply connected, the projection to `X` induces an
-isomorphism `π₁(X × Y, (x, y)) ≃* π₁(X, x)`: the fundamental group of a product with a
-simply connected space is that of the remaining factor. -/
-@[expose] def FundamentalGroup.prodMulEquivRight [SimplyConnectedSpace Y] (x : X) (y : Y) :
-    FundamentalGroup (X × Y) (x, y) ≃* FundamentalGroup X x :=
-  haveI : Unique (FundamentalGroup Y y) := uniqueOfSubsingleton 1
-  (FundamentalGroup.prodMulEquiv x y).trans MulEquiv.prodUnique
-
-@[simp]
-theorem FundamentalGroup.prodMulEquivRight_apply [SimplyConnectedSpace Y] (x : X) (y : Y)
-    (γ : FundamentalGroup (X × Y) (x, y)) :
-    FundamentalGroup.prodMulEquivRight x y γ =
-      FundamentalGroup.map (ContinuousMap.fst : C(X × Y, X)) (x, y) γ :=
-  rfl
-
-@[simp]
-theorem FundamentalGroup.prodMulEquivRight_symm_apply [SimplyConnectedSpace Y] (x : X) (y : Y)
-    (γ : FundamentalGroup X x) :
-    (FundamentalGroup.prodMulEquivRight x y).symm γ =
-      (FundamentalGroup.prodMulEquiv x y).symm (γ, 1) :=
-  rfl
-
-/-- When the first factor `X` is simply connected, the projection to `Y` induces an
-isomorphism `π₁(X × Y, (x, y)) ≃* π₁(Y, y)`. -/
-@[expose] def FundamentalGroup.prodMulEquivLeft [SimplyConnectedSpace X] (x : X) (y : Y) :
-    FundamentalGroup (X × Y) (x, y) ≃* FundamentalGroup Y y :=
-  haveI : Unique (FundamentalGroup X x) := uniqueOfSubsingleton 1
-  (FundamentalGroup.prodMulEquiv x y).trans MulEquiv.uniqueProd
-
-@[simp]
-theorem FundamentalGroup.prodMulEquivLeft_apply [SimplyConnectedSpace X] (x : X) (y : Y)
-    (γ : FundamentalGroup (X × Y) (x, y)) :
-    FundamentalGroup.prodMulEquivLeft x y γ =
-      FundamentalGroup.map (ContinuousMap.snd : C(X × Y, Y)) (x, y) γ :=
-  rfl
-
-@[simp]
-theorem FundamentalGroup.prodMulEquivLeft_symm_apply [SimplyConnectedSpace X] (x : X) (y : Y)
-    (γ : FundamentalGroup Y y) :
-    (FundamentalGroup.prodMulEquivLeft x y).symm γ =
-      (FundamentalGroup.prodMulEquiv x y).symm (1, γ) :=
-  rfl
-
 namespace AddCircle
 
 variable {p : ℝ}
+
+/-- The standard lift `0 : ℝ` of the basepoint `0 : AddCircle p`. -/
+@[expose] def zeroLift (p : ℝ) : ((↑) : ℝ → AddCircle p) ⁻¹' {(0 : AddCircle p)} :=
+  ⟨0, by simp⟩
+
+@[simp]
+lemma zeroLift_coe (p : ℝ) : ((zeroLift p : ((↑) : ℝ → AddCircle p) ⁻¹' {0}) : ℝ) = 0 :=
+  rfl
 
 /-- The fundamental group of a cylinder `AddCircle p × Y` over a simply connected space `Y`,
 based at any point `(x, y)` with a chosen lift `e` of `x`, is infinite cyclic:
@@ -107,7 +65,7 @@ integer that the circle-projected loop winds around `AddCircle p`. -/
 def cylinderFundamentalGroupMulEquiv (hp : p ≠ 0) {Y : Type*} [TopologicalSpace Y]
     [SimplyConnectedSpace Y] {x : AddCircle p} (e : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) (y : Y) :
     FundamentalGroup (AddCircle p × Y) (x, y) ≃* Multiplicative ℤ :=
-  (FundamentalGroup.prodMulEquivRight x y).trans (fundamentalGroupMulEquiv p hp e)
+  (FundamentalGroup.prodMulEquivFst x y).trans (fundamentalGroupMulEquiv p hp e)
 
 /-- Characterization of the integer assigned by `cylinderFundamentalGroupMulEquiv`: a loop
 class maps to `n` exactly when the circle-projected loop's monodromy translates the chosen
@@ -121,7 +79,7 @@ lemma cylinderFundamentalGroupMulEquiv_apply_eq_iff (hp : p ≠ 0) {Y : Type*}
         (FundamentalGroup.map (ContinuousMap.fst : C(AddCircle p × Y, AddCircle p)) (x, y) γ) e :
           ℝ) = (e : ℝ) + n.toAdd • p := by
   simp only [cylinderFundamentalGroupMulEquiv, MulEquiv.trans_apply,
-    FundamentalGroup.prodMulEquivRight_apply]
+    FundamentalGroup.prodMulEquivFst_apply]
   exact fundamentalGroupMulEquiv_apply_eq_iff p hp e _ n
 
 /-- The circle projection of `cylinderFundamentalGroupMulEquiv.symm n` is the circle loop
@@ -133,10 +91,11 @@ lemma cylinderFundamentalGroupMulEquiv_symm_fst (hp : p ≠ 0) {Y : Type*} [Topo
         ((cylinderFundamentalGroupMulEquiv hp e y).symm n) =
       (fundamentalGroupMulEquiv p hp e).symm n := by
   rw [cylinderFundamentalGroupMulEquiv, MulEquiv.symm_trans_apply,
-    ← FundamentalGroup.prodMulEquivRight_apply, MulEquiv.apply_symm_apply]
+    ← FundamentalGroup.prodMulEquivFst_apply, MulEquiv.apply_symm_apply]
 
 /-- The inverse of the cylinder equivalence has circle-projected monodromy translation
 `n • p`. -/
+@[simp]
 lemma cylinderFundamentalGroupMulEquiv_symm_monodromy (hp : p ≠ 0) {Y : Type*}
     [TopologicalSpace Y] [SimplyConnectedSpace Y] {x : AddCircle p}
     (e : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) (y : Y) (n : Multiplicative ℤ) :
@@ -156,7 +115,7 @@ lemma cylinderFundamentalGroupMulEquiv_eq_one_iff (hp : p ≠ 0) {Y : Type*} [To
         (FundamentalGroup.map (ContinuousMap.fst : C(AddCircle p × Y, AddCircle p)) (x, y) γ)
           e = e := by
   simp only [cylinderFundamentalGroupMulEquiv, MulEquiv.trans_apply,
-    FundamentalGroup.prodMulEquivRight_apply]
+    FundamentalGroup.prodMulEquivFst_apply]
   exact fundamentalGroupMulEquiv_eq_one_iff p hp e _
 
 /-- The fundamental group of the standard infinite cylinder `AddCircle p × ℝ`, based at
@@ -165,7 +124,57 @@ contractible, hence simply connected, so the cylinder's fundamental group is tha
 circle. -/
 def realCylinderFundamentalGroupMulEquiv (hp : p ≠ 0) :
     FundamentalGroup (AddCircle p × ℝ) (0, 0) ≃* Multiplicative ℤ :=
-  cylinderFundamentalGroupMulEquiv hp ⟨0, by simp⟩ 0
+  cylinderFundamentalGroupMulEquiv hp (zeroLift p) 0
+
+/-- Characterization of the integer assigned by the standard infinite-cylinder
+specialization. -/
+lemma realCylinderFundamentalGroupMulEquiv_apply_eq_iff (hp : p ≠ 0)
+    (γ : FundamentalGroup (AddCircle p × ℝ) (0, 0)) (n : Multiplicative ℤ) :
+    realCylinderFundamentalGroupMulEquiv hp γ = n ↔
+      ((AddCircle.isCoveringMap_coe p).monodromy
+        (FundamentalGroup.map (ContinuousMap.fst : C(AddCircle p × ℝ, AddCircle p)) (0, 0) γ)
+          (zeroLift p) : ℝ) = n.toAdd • p := by
+  rw [realCylinderFundamentalGroupMulEquiv]
+  simpa using cylinderFundamentalGroupMulEquiv_apply_eq_iff hp (zeroLift p) 0 γ n
+
+@[simp]
+lemma realCylinderFundamentalGroupMulEquiv_apply (hp : p ≠ 0)
+    (γ : FundamentalGroup (AddCircle p × ℝ) (0, 0)) :
+    realCylinderFundamentalGroupMulEquiv hp γ =
+      cylinderFundamentalGroupMulEquiv hp (zeroLift p) 0 γ := by
+  apply (realCylinderFundamentalGroupMulEquiv_apply_eq_iff hp γ _).2
+  simpa using (cylinderFundamentalGroupMulEquiv_apply_eq_iff hp (zeroLift p) 0 γ _).1 rfl
+
+@[simp]
+lemma realCylinderFundamentalGroupMulEquiv_symm_apply (hp : p ≠ 0) (n : Multiplicative ℤ) :
+    (realCylinderFundamentalGroupMulEquiv hp).symm n =
+      (cylinderFundamentalGroupMulEquiv hp (zeroLift p) 0).symm n := by
+  apply (realCylinderFundamentalGroupMulEquiv hp).injective
+  rw [MulEquiv.apply_symm_apply, realCylinderFundamentalGroupMulEquiv_apply,
+    MulEquiv.apply_symm_apply]
+
+/-- The inverse of the standard infinite-cylinder specialization has monodromy translation
+`n • p`. -/
+@[simp]
+lemma realCylinderFundamentalGroupMulEquiv_symm_monodromy (hp : p ≠ 0)
+    (n : Multiplicative ℤ) :
+    ((AddCircle.isCoveringMap_coe p).monodromy
+      (FundamentalGroup.map (ContinuousMap.fst : C(AddCircle p × ℝ, AddCircle p)) (0, 0)
+        ((realCylinderFundamentalGroupMulEquiv hp).symm n)) (zeroLift p) : ℝ) =
+      n.toAdd • p := by
+  rw [realCylinderFundamentalGroupMulEquiv]
+  simpa using cylinderFundamentalGroupMulEquiv_symm_monodromy hp (zeroLift p) 0 n
+
+/-- A loop class maps to `1` under the standard infinite-cylinder specialization exactly when
+the circle-projected loop's monodromy fixes the zero lift. -/
+lemma realCylinderFundamentalGroupMulEquiv_eq_one_iff (hp : p ≠ 0)
+    (γ : FundamentalGroup (AddCircle p × ℝ) (0, 0)) :
+    realCylinderFundamentalGroupMulEquiv hp γ = 1 ↔
+      (AddCircle.isCoveringMap_coe p).monodromy
+        (FundamentalGroup.map (ContinuousMap.fst : C(AddCircle p × ℝ, AddCircle p)) (0, 0) γ)
+          (zeroLift p) = zeroLift p := by
+  rw [realCylinderFundamentalGroupMulEquiv]
+  exact cylinderFundamentalGroupMulEquiv_eq_one_iff hp (zeroLift p) 0 γ
 
 end AddCircle
 
@@ -176,6 +185,53 @@ based at `(0, 0)`, is `ℤ`: `FundamentalGroup (UnitAddCircle × ℝ) (0, 0) ≃
 def cylinderFundamentalGroupMulEquiv :
     FundamentalGroup (UnitAddCircle × ℝ) (0, 0) ≃* Multiplicative ℤ :=
   AddCircle.realCylinderFundamentalGroupMulEquiv one_ne_zero
+
+/-- Characterization of the integer assigned by the unit-circle cylinder equivalence. -/
+lemma cylinderFundamentalGroupMulEquiv_apply_eq_iff
+    (γ : FundamentalGroup (UnitAddCircle × ℝ) (0, 0)) (n : Multiplicative ℤ) :
+    cylinderFundamentalGroupMulEquiv γ = n ↔
+      ((AddCircle.isCoveringMap_coe 1).monodromy
+        (FundamentalGroup.map (ContinuousMap.fst : C(UnitAddCircle × ℝ, UnitAddCircle)) (0, 0)
+          γ) (AddCircle.zeroLift 1) : ℝ) = n.toAdd := by
+  simpa [cylinderFundamentalGroupMulEquiv] using
+    AddCircle.realCylinderFundamentalGroupMulEquiv_apply_eq_iff one_ne_zero γ n
+
+@[simp]
+lemma cylinderFundamentalGroupMulEquiv_apply
+    (γ : FundamentalGroup (UnitAddCircle × ℝ) (0, 0)) :
+    cylinderFundamentalGroupMulEquiv γ =
+      AddCircle.realCylinderFundamentalGroupMulEquiv one_ne_zero γ := by
+  apply (cylinderFundamentalGroupMulEquiv_apply_eq_iff γ _).2
+  simpa using
+    (AddCircle.realCylinderFundamentalGroupMulEquiv_apply_eq_iff one_ne_zero γ _).1 rfl
+
+@[simp]
+lemma cylinderFundamentalGroupMulEquiv_symm_apply (n : Multiplicative ℤ) :
+    cylinderFundamentalGroupMulEquiv.symm n =
+      (AddCircle.realCylinderFundamentalGroupMulEquiv one_ne_zero).symm n := by
+  apply cylinderFundamentalGroupMulEquiv.injective
+  rw [MulEquiv.apply_symm_apply, cylinderFundamentalGroupMulEquiv_apply,
+    MulEquiv.apply_symm_apply]
+
+/-- The inverse of the unit-circle cylinder equivalence has monodromy translation by `n`. -/
+@[simp]
+lemma cylinderFundamentalGroupMulEquiv_symm_monodromy (n : Multiplicative ℤ) :
+    ((AddCircle.isCoveringMap_coe 1).monodromy
+      (FundamentalGroup.map (ContinuousMap.fst : C(UnitAddCircle × ℝ, UnitAddCircle)) (0, 0)
+        (cylinderFundamentalGroupMulEquiv.symm n)) (AddCircle.zeroLift 1) : ℝ) = n.toAdd := by
+  rw [cylinderFundamentalGroupMulEquiv]
+  simpa using AddCircle.realCylinderFundamentalGroupMulEquiv_symm_monodromy one_ne_zero n
+
+/-- A unit-circle cylinder loop class maps to `1` exactly when the circle-projected loop's
+monodromy fixes the zero lift. -/
+lemma cylinderFundamentalGroupMulEquiv_eq_one_iff
+    (γ : FundamentalGroup (UnitAddCircle × ℝ) (0, 0)) :
+    cylinderFundamentalGroupMulEquiv γ = 1 ↔
+      (AddCircle.isCoveringMap_coe 1).monodromy
+        (FundamentalGroup.map (ContinuousMap.fst : C(UnitAddCircle × ℝ, UnitAddCircle)) (0, 0)
+          γ) (AddCircle.zeroLift 1) = AddCircle.zeroLift 1 := by
+  simpa [cylinderFundamentalGroupMulEquiv] using
+    AddCircle.realCylinderFundamentalGroupMulEquiv_eq_one_iff one_ne_zero γ
 
 end UnitAddCircle
 
