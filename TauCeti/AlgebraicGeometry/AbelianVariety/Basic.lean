@@ -7,6 +7,7 @@ module
 public import Mathlib.AlgebraicGeometry.Group.Abelian
 public import Mathlib.AlgebraicGeometry.Group.Smooth
 public import Mathlib.AlgebraicGeometry.Geometrically.Connected
+public import Mathlib.Topology.KrullDimension
 
 /-!
 # Abelian varieties
@@ -29,6 +30,7 @@ hypotheses we derive:
 * `AbelianVariety.isIntegral`: the underlying scheme is integral;
 * `AbelianVariety.smooth` and `AbelianVariety.geometricallyConnected`: the roadmap's geometric
   hypotheses derived from geometric integrality;
+* `AbelianVariety.dim`: the topological Krull dimension of the underlying scheme;
 * `AbelianVariety.ofGeometricallyIntegral`: a constructor from the geometrically integral package
   used by Mathlib's rigidity theorem;
 * `AbelianVariety.baseChange`: the base change of an abelian variety along a field extension
@@ -92,6 +94,16 @@ attribute [instance] AbelianVariety.grpObj AbelianVariety.isProper
 /-- The underlying scheme of an abelian variety. -/
 noncomputable abbrev toScheme (A : AbelianVariety K) : Scheme.{u} :=
   A.toOver.left
+
+/-- The dimension of an abelian variety, defined as the topological Krull dimension of its
+underlying scheme. -/
+noncomputable abbrev dim (A : AbelianVariety K) : WithBot ℕ∞ :=
+  topologicalKrullDim A.toScheme
+
+@[simp]
+lemma dim_def (A : AbelianVariety K) :
+    A.dim = topologicalKrullDim A.toScheme :=
+  rfl
 
 /-- An abelian variety is smooth over the base field. -/
 instance smooth (A : AbelianVariety K) : Smooth A.toOver.hom := by
@@ -227,6 +239,14 @@ lemma baseChange_toScheme (A : AbelianVariety K) (L : Type u) [Field L] [Algebra
     (A.baseChange L).toScheme =
       Limits.pullback A.toOver.hom (Spec.map (CommRingCat.ofHom (algebraMap K L))) := by
   simp only [toScheme, baseChange_toOver, Over.pullback_obj_left]
+
+@[simp]
+lemma baseChange_dim (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
+    (A.baseChange L).dim =
+      topologicalKrullDim
+        (Limits.pullback A.toOver.hom
+          (Spec.map (CommRingCat.ofHom (algebraMap K L))) : Scheme.{u}) := by
+  rw [dim, baseChange_toScheme]
 
 end AbelianVariety
 
