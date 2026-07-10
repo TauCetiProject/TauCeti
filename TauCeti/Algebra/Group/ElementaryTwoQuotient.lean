@@ -389,9 +389,9 @@ private theorem square_toAddSubgroup_eq_bot_of_forall_sq_eq_one {G : Type*} [Com
   exact Subgroup.toAddSubgroup.map_bot
 
 /-- If every element of a commutative group squares to `1`, then its elementary-2 quotient
-is additively equivalent to the group itself. This routes through the general
-`TauCeti.elementaryTwoQuotientEquivSquareQuotient` identification of `G/G²` with the quotient by
-the additive square subgroup, which is trivial under the hypothesis. -/
+is additively equivalent to the group itself. -/
+-- This routes through the general `elementaryTwoQuotientEquivSquareQuotient` identification of
+-- `G/G²` with the quotient by the additive square subgroup, which is trivial under the hypothesis.
 noncomputable def elementaryTwoQuotientAddEquivOfForallSqEqOne (G : Type*) [CommGroup G]
     (hG : ∀ g : G, g ^ 2 = 1) :
     ElementaryTwoQuotient G ≃+ Additive G :=
