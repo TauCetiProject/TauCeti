@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import Mathlib.FieldTheory.Finiteness
+public import Mathlib.LinearAlgebra.Projectivization.Cardinality
 public import TauCeti.NumberTheory.Multiquadratic.SubfieldDegree
 public import TauCeti.NumberTheory.Multiquadratic.CoprimeSquarefree
 
@@ -53,37 +53,17 @@ section LinearAlgebra
 
 variable {M : Type*} [AddCommGroup M] [Module (ZMod 2) M] [FiniteDimensional (ZMod 2) M]
 
+omit [FiniteDimensional (ZMod 2) M] in
 /-- **Lines of an `𝔽₂`-space are counted by its nonzero vectors.** Over `𝔽₂` the only nonzero
 scalar is `1`, so distinct nonzero vectors span distinct lines and every line is spanned by a
 nonzero vector; hence the `1`-dimensional subspaces of a finite `𝔽₂`-space `M` number
 `|M| - 1`. -/
 private theorem card_finrank_eq_one [Fintype M] :
     Nat.card {W : Submodule (ZMod 2) M // finrank (ZMod 2) W = 1} = Fintype.card M - 1 := by
-  classical
-  -- `v ↦ 𝔽₂ ∙ v` is a bijection from the nonzero vectors onto the lines.
-  have hbij : Function.Bijective
-      (fun v : {v : M // v ≠ 0} =>
-        (⟨(ZMod 2) ∙ (v : M), finrank_span_singleton v.2⟩ :
-          {W : Submodule (ZMod 2) M // finrank (ZMod 2) W = 1})) := by
-    constructor
-    · rintro ⟨v, hv⟩ ⟨w, hw⟩ hvw
-      have hspan : (ZMod 2) ∙ v = (ZMod 2) ∙ w := congrArg Subtype.val hvw
-      have hmem : w ∈ (ZMod 2) ∙ v := by rw [hspan]; exact Submodule.mem_span_singleton_self w
-      obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 hmem
-      have hc0 : c ≠ 0 := by rintro rfl; exact hw (by simpa using hc.symm)
-      have key : ∀ c : ZMod 2, c ≠ 0 → c = 1 := by decide
-      have hc1 : c = 1 := key c hc0
-      have hwv : w = v := by rw [← hc, hc1, one_smul]
-      exact Subtype.ext hwv.symm
-    · rintro ⟨W, hW⟩
-      obtain ⟨v, hvW, hv0⟩ := W.exists_mem_ne_zero_of_ne_bot (by
-        rintro rfl; simp [finrank_bot] at hW)
-      refine ⟨⟨v, hv0⟩, Subtype.ext ?_⟩
-      exact Submodule.eq_of_le_of_finrank_eq
-        (Submodule.span_le.2 (Set.singleton_subset_iff.2 hvW))
-        (by rw [finrank_span_singleton hv0, hW])
-  rw [← Nat.card_congr (Equiv.ofBijective _ hbij), Nat.card_eq_fintype_card,
-    Fintype.card_subtype_compl (p := fun v : M => v = 0), Fintype.card_subtype_eq]
+  -- The lines of `M` are the points of `ℙ 𝔽₂ M`, whose cardinality is `(|M| - 1) / (|𝔽₂| - 1)`.
+  rw [← Nat.card_congr (Projectivization.equivSubmodule (ZMod 2) M),
+    Projectivization.card'' (ZMod 2) M]
+  simp [ZMod.card, Nat.card_eq_fintype_card]
 
 variable {V : Type*} [AddCommGroup V] [Module (ZMod 2) V] [FiniteDimensional (ZMod 2) V]
 
@@ -101,9 +81,13 @@ private theorem card_hyperplane (n : ℕ) (hn : finrank (ZMod 2) V = n) :
       ≃ {W : Submodule (ZMod 2) (Module.Dual (ZMod 2) V) // finrank (ZMod 2) W = 1} :=
     Equiv.subtypeEquiv (Subspace.orderIsoFiniteDimensional.toEquiv.trans OrderDual.ofDual)
       (fun U => by
+        -- `orderIsoFiniteDimensional` sends `U` to `toDual U.dualAnnihilator`, so after `ofDual`
+        -- the transported subspace is `U.dualAnnihilator`; name that transport rather than relying
+        -- on it silently in the goal.
+        have himg : ((Subspace.orderIsoFiniteDimensional.toEquiv.trans OrderDual.ofDual) U :
+            Submodule (ZMod 2) (Module.Dual (ZMod 2) V)) = U.dualAnnihilator := rfl
+        rw [himg]
         have h := Subspace.finrank_add_finrank_dualAnnihilator_eq U
-        change finrank (ZMod 2) U + 1 = finrank (ZMod 2) V ↔
-          finrank (ZMod 2) U.dualAnnihilator = 1
         omega)
   rw [Nat.card_congr hequiv, card_finrank_eq_one, Module.card_eq_pow_finrank (K := ZMod 2),
     Subspace.dual_finrank_eq, ZMod.card]
@@ -115,8 +99,8 @@ variable {K L : Type*} [Field K] [Field L] [Algebra K L] {ι : Type*}
 
 /-- **The number of quadratic subfields of a multiquadratic field is `2ⁿ - 1`.** Under
 square-class independence (and `2 ≠ 0`), the multiquadratic field `M = K(rootᵢ : i)`, of degree
-`2 ^ |ι|` over `K`, has exactly `2 ^ |ι| - 1` intermediate fields of degree `2` over `K`. These are
-the hyperplanes of the `𝔽₂`-subspace lattice, one for each nonempty square-class of radicands. -/
+`2 ^ |ι|` over `K`, has exactly `2 ^ |ι| - 1` intermediate fields of degree `2` over `K`. The count
+is that of the hyperplanes of the `𝔽₂`-subspace lattice. -/
 theorem card_quadratic_intermediateField_adjoin_range [Finite ι] [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
@@ -135,11 +119,11 @@ theorem card_quadratic_intermediateField_adjoin_range [Finite ι] [NeZero (2 : K
     (by rw [Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card])
 
 /-- **Worked example: `ℚ(√2, √3)` has exactly `3` quadratic subfields.** The smallest nontrivial
-multiquadratic field, of degree `4`, has `2² - 1 = 3` subfields of degree `2` over `ℚ`, namely
-`ℚ(√2)`, `ℚ(√3)`, and `ℚ(√6)`. The radicands `2` and `3` are coprime, squarefree, and not units,
-so `card_quadratic_intermediateField_adjoin_range` applies through
+multiquadratic field, of degree `4`, has `2² - 1 = 3` subfields of degree `2` over `ℚ`. The
+radicands `2` and `3` are coprime, squarefree, and not units, so
+`card_quadratic_intermediateField_adjoin_range` applies through
 `not_isSquare_prod_of_coprime_squarefree_rat`. -/
-theorem card_quadratic_subfield_sqrt_two_three :
+theorem card_quadratic_intermediateField_adjoin_sqrt_two_three :
     Nat.card {F : IntermediateField ℚ
         (adjoin ℚ {Real.sqrt 2, Real.sqrt 3} : IntermediateField ℚ ℝ) //
           Module.finrank ℚ F = 2} = 3 := by
