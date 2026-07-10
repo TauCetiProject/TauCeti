@@ -31,7 +31,7 @@ public section
 namespace TauCeti
 
 /-- In `Multiplicative (ZMod 2)`, every element squares to `1`. -/
-@[simp] theorem sq_multiplicative_zmod_two (g : Multiplicative (ZMod 2)) : g ^ 2 = 1 := by
+@[simp] theorem sq_eq_one_multiplicative_zmod_two (g : Multiplicative (ZMod 2)) : g ^ 2 = 1 := by
   rw [pow_two]
   apply Multiplicative.toAdd.injective
   exact CharTwo.add_self_eq_zero (Multiplicative.toAdd g)
@@ -41,7 +41,7 @@ namespace TauCeti
 private noncomputable def elementaryTwoQuotientMultiplicativeZModTwoAddEquiv :
     ElementaryTwoQuotient (Multiplicative (ZMod 2)) ≃+ ZMod 2 :=
   (elementaryTwoQuotientAddEquivOfForallSqEqOne
-    (Multiplicative (ZMod 2)) sq_multiplicative_zmod_two).trans
+    (Multiplicative (ZMod 2)) sq_eq_one_multiplicative_zmod_two).trans
       (AddEquiv.additiveMultiplicative (ZMod 2))
 
 private theorem elementaryTwoQuotientMultiplicativeZModTwoAddEquiv_mk
