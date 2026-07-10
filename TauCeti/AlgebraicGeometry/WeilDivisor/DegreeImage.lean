@@ -164,6 +164,17 @@ lemma classGroupQuotientPicZeroEquivInt_mk (w : X → ℤ) (h : S.IsWeightedDegr
       weightedDegreeClass w h c :=
   rfl
 
+/-- The inverse of `classGroupQuotientPicZeroEquivInt` sends `weightedDegreeClass w h c` back to
+the class `[c]`. Since `weightedDegreeClass w h` is surjective this characterises the inverse on
+all of `ℤ`, so downstream code need not unfold the choice-based right inverse. -/
+@[simp]
+lemma classGroupQuotientPicZeroEquivInt_symm_weightedDegreeClass (w : X → ℤ)
+    (h : S.IsWeightedDegreeZero w)
+    (hsurj : Function.Surjective (weightedDegreeClass w h)) (c : S.ClassGroup) :
+    (S.classGroupQuotientPicZeroEquivInt w h hsurj).symm (weightedDegreeClass w h c) =
+      QuotientAddGroup.mk c := by
+  rw [AddEquiv.symm_apply_eq, classGroupQuotientPicZeroEquivInt_mk]
+
 /-- **The degree quotient at a rational point.** With a weight-one base point the degree section
 `n ↦ n • [x₀]` is a genuine right inverse of the descended weighted degree, so the class group
 modulo the abstract `Pic⁰` is `ℤ`, `Cl(X) ⧸ Pic⁰ ≃+ ℤ`, with an explicit inverse. Together with
