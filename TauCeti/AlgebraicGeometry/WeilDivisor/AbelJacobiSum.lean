@@ -45,17 +45,9 @@ namespace OrderSystem
 
 variable (S : OrderSystem X G)
 
-private lemma ofPoint_eq_single_one (x : X) :
-    ofPoint x = Finsupp.single x (1 : ℤ) := by
-  ext y
-  by_cases hy : y = x
-  · subst y
-    rw [coeff_ofPoint_self, coeff, Finsupp.single_eq_same]
-  · rw [coeff_ofPoint_of_ne hy, coeff, Finsupp.single_eq_of_ne hy]
-
 private lemma zsmul_ofPoint_eq_single (n : ℤ) (x : X) :
-    n • ofPoint x = Finsupp.single x n := by
-  rw [ofPoint_eq_single_one, Finsupp.smul_single_one]
+    n • ofPoint x = Finsupp.single x n :=
+  (single_eq_zsmul_ofPoint x n).symm
 
 /-! ### Weighted Abel-Jacobi sums -/
 

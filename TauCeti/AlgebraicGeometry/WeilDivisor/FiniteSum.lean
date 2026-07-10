@@ -40,12 +40,7 @@ noncomputable section
 
 /-- The point divisor `ofPoint x` is the single spike `Finsupp.single x 1`. -/
 private lemma ofPoint_eq_single (x : X) : ofPoint x = Finsupp.single x 1 := by
-  ext y
-  rcases eq_or_ne y x with rfl | hyx
-  · rw [coeff_ofPoint_self]
-    exact Finsupp.single_eq_same.symm
-  · rw [coeff_ofPoint_of_ne hyx]
-    exact (Finsupp.single_eq_of_ne hyx).symm
+  rw [single_eq_zsmul_ofPoint, one_smul]
 
 /-! ### Finitely supported multiplicities -/
 
