@@ -58,17 +58,13 @@ variable [AddCommMonoid N] [Module R N]
 /-- Combine two coacted tensor factors by shuffling the middle factors together and multiplying
 the two `C`-components.
 
-On pure tensors it sends `(m ⊗ c) ⊗ (n ⊗ d)` to `(m ⊗ n) ⊗ cd`. -/
-@[expose] def tensorCombine :
+On pure tensors it sends `(m ⊗ c) ⊗ (n ⊗ d)` to `(m ⊗ n) ⊗ cd`. The body is kept unexposed;
+the public API is the generated `tensorCombine_def` equation together with the simp and
+naturality lemmas below. -/
+irreducible_def tensorCombine :
     (M ⊗[R] C) ⊗[R] (N ⊗[R] C) →ₗ[R] (M ⊗[R] N) ⊗[R] C :=
   TensorProduct.map (LinearMap.id : M ⊗[R] N →ₗ[R] M ⊗[R] N) (LinearMap.mul' R C) ∘ₗ
     (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap
-
-/-- The combining map is the tensor shuffling map followed by multiplication on `C`. -/
-theorem tensorCombine_def :
-    tensorCombine (R := R) (C := C) (M := M) (N := N) =
-      TensorProduct.map (LinearMap.id : M ⊗[R] N →ₗ[R] M ⊗[R] N) (LinearMap.mul' R C) ∘ₗ
-        (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap := rfl
 
 /-- `tensorCombine` sends `(m ⊗ c) ⊗ (n ⊗ d)` to `(m ⊗ n) ⊗ cd`. -/
 @[simp]
@@ -132,23 +128,16 @@ section Coact
 
 /-- The diagonal coaction map on the tensor product of two right comodules over a bialgebra.
 
-The later full tensor-product comodule structure uses this as its coaction. -/
-@[expose] def tensorCoact [Semiring C] [Bialgebra R C]
+The later full tensor-product comodule structure uses this as its coaction. The body is kept
+unexposed; the public API is the generated `tensorCoact_def` equation together with the simp
+and naturality lemmas below. -/
+irreducible_def tensorCoact [Semiring C] [Bialgebra R C]
     [AddCommMonoid M] [Module R M] [Comodule R C M]
     [AddCommMonoid N] [Module R N] [Comodule R C N] :
     M ⊗[R] N →ₗ[R] (M ⊗[R] N) ⊗[R] C :=
   tensorCombine (R := R) (C := C) (M := M) (N := N) ∘ₗ
     TensorProduct.map (coact (R := R) (C := C) (M := M))
       (coact (R := R) (C := C) (M := N))
-
-/-- The tensor-product coaction combines the two component coactions. -/
-theorem tensorCoact_def [Semiring C] [Bialgebra R C]
-    [AddCommMonoid M] [Module R M] [Comodule R C M]
-    [AddCommMonoid N] [Module R N] [Comodule R C N] :
-    tensorCoact (R := R) (C := C) (M := M) (N := N) =
-      tensorCombine (R := R) (C := C) (M := M) (N := N) ∘ₗ
-        TensorProduct.map (coact (R := R) (C := C) (M := M))
-          (coact (R := R) (C := C) (M := N)) := rfl
 
 /-- The tensor-product coaction, before expanding the two component coactions. -/
 @[simp]
