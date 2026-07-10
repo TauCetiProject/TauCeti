@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.WeilDivisor.DegreeImage
 public import TauCeti.AlgebraicGeometry.WeilDivisor.DegreeSplitting
 
 /-!
@@ -11,9 +12,9 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.DegreeSplitting
 
 This file gives the weight-one counterparts of the general degree-image and degree-quotient
 results of `TauCeti.AlgebraicGeometry.WeilDivisor.DegreeImage`, using the splitting theory of
-`TauCeti.AlgebraicGeometry.WeilDivisor.DegreeSplitting`. It depends only on `DegreeSplitting`:
-these corollaries specialise to a weight-one base point, so they are proved directly from the
-splitting surjectivity and section rather than from the general `DegreeImage` API.
+`TauCeti.AlgebraicGeometry.WeilDivisor.DegreeSplitting`. These corollaries specialise to a
+weight-one base point: the range statement is derived from the general degree-image API, while
+the quotient equivalence keeps the explicit inverse supplied by the splitting section.
 
 `DegreeImage` computes the image of the descended weighted degree unconditionally,
 `(weightedDegreeClass w h).range = AddSubgroup.closure (Set.range w)`, and identifies the degree
@@ -30,8 +31,9 @@ weight-one base point makes the descended weighted degree *surjective*, with the
   `Cl(X) ≃+ picZero × ℤ`, exhibiting the degree as the projection to the `ℤ` factor.
 
 This advances the same `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A targets as
-`DegreeImage`; it reuses `DegreeSplitting`'s `degreeSection` / `weightedDegreeClass_surjective`
-and Mathlib's `QuotientAddGroup.quotientKerEquivOfRightInverse`.
+`DegreeImage`; it reuses `DegreeImage`'s image computation, `DegreeSplitting`'s `degreeSection` /
+`weightedDegreeClass_surjective`, and Mathlib's
+`QuotientAddGroup.quotientKerEquivOfRightInverse`.
 -/
 
 public section
@@ -47,11 +49,16 @@ variable {X : Type*} {G : Type*} [AddCommGroup G] (S : OrderSystem X G)
 namespace OrderSystem
 
 /-- With a weight-one base point the descended weighted degree hits all of `ℤ`; this is the
-`AddSubgroup`-level restatement of `weightedDegreeClass_surjective`, a special case of
-`weightedDegreeClass_range_eq_top`. -/
+weight-one specialization of `weightedDegreeClass_range_eq_top`. -/
 lemma weightedDegreeClass_range_eq_top_of_weight_one (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
-    {x₀ : X} (hx₀ : w x₀ = 1) : (weightedDegreeClass w h).range = ⊤ :=
-  AddMonoidHom.range_eq_top.mpr (S.weightedDegreeClass_surjective w h hx₀)
+    {x₀ : X} (hx₀ : w x₀ = 1) : (weightedDegreeClass w h).range = ⊤ := by
+  refine S.weightedDegreeClass_range_eq_top w h ?_
+  have h1 : (1 : ℤ) ∈ AddSubgroup.closure (Set.range w) := by
+    rw [← hx₀]
+    exact AddSubgroup.subset_closure (Set.mem_range_self x₀)
+  rw [eq_top_iff]
+  intro n
+  simpa using AddSubgroup.zsmul_mem (AddSubgroup.closure (Set.range w)) h1 n
 
 /-- **The degree quotient at a rational point.** With a weight-one base point the degree section
 `n ↦ n • [x₀]` is a genuine right inverse of the descended weighted degree, so the class group
