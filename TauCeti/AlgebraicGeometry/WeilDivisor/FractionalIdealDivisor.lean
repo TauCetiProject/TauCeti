@@ -186,7 +186,6 @@ lemma fractionalIdealDivisor_toPrincipalIdeal (x : Kˣ) :
 /-- Applying the isomorphism `fractionalIdealDivisorAddEquiv` to the principal fractional ideal
 `(x)` of a nonzero rational function `x` yields the principal divisor of `x`, restating
 `fractionalIdealDivisor_toPrincipalIdeal` for the packaged equivalence. -/
-@[simp]
 lemma fractionalIdealDivisorAddEquiv_toPrincipalIdeal (x : Kˣ) :
     fractionalIdealDivisorAddEquiv R K (Additive.ofMul (toPrincipalIdeal R K x)) =
       (OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul x) :=
