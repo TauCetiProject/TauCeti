@@ -18,14 +18,11 @@ bounded by `(∫ ‖g‖) / (‖w‖ - R)`: the distance lower bound `‖w‖ - 
 the common decay estimate behind the vanishing at infinity of both the generalized winding number
 (weight `g = deriv γ`) and Dixon's `dixonH2` (weight `g = f (γ ·) * deriv γ`); using the `L¹` norm
 rather than a uniform bound on `g` keeps it applicable to raw curves whose derivative is only
-interval-integrable. A companion lemma turns any such `C / (‖w‖ - R)` bound (for `R < ‖w‖`) into
-decay along `cocompact ℂ`, which is the shared vanishing-at-infinity step.
+interval-integrable.
 
 ## Main results
 
 * `TauCeti.Contour.norm_integral_inv_sub_mul_le` — the `(∫ ‖g‖) / (‖w‖ - R)` decay bound.
-* `TauCeti.Contour.tendsto_zero_cocompact_of_norm_le_div` — a `C / (‖w‖ - R)` bound on `‖F w‖`
-  for `R < ‖w‖` forces `F → 0` along `cocompact ℂ`.
 
 ## Provenance
 
@@ -38,9 +35,9 @@ oriented interval with an arbitrary interval-integrable weight `g`, and bounding
 
 public section
 
-open Complex MeasureTheory Set Filter
+open Complex MeasureTheory Set
 
-open scoped Interval Topology
+open scoped Interval
 
 namespace TauCeti.Contour
 
@@ -72,28 +69,5 @@ theorem norm_integral_inv_sub_mul_le {γ g : ℝ → ℂ} {a b R : ℝ} {w : ℂ
           (hg.norm.const_mul _).def' h_ae
     _ = (‖w‖ - R)⁻¹ * ∫ t in Ι a b, ‖g t‖ := integral_const_mul _ _
     _ = (∫ t in Ι a b, ‖g t‖) / (‖w‖ - R) := inv_mul_eq_div _ _
-
-/-- **A `C / (‖w‖ - R)` bound forces decay along `cocompact`.** If `‖F w‖ ≤ C / (‖w‖ - R)` for every
-`w` with `R < ‖w‖`, then `F` tends to `0` along `cocompact ℂ`: outside a large closed ball the bound
-drops below any `ε > 0`. This is the shared vanishing-at-infinity step behind the decay of the
-generalized winding number and Dixon's `dixonH2`. -/
-theorem tendsto_zero_cocompact_of_norm_le_div {F : ℂ → ℂ} {R C : ℝ}
-    (hbound : ∀ w : ℂ, R < ‖w‖ → ‖F w‖ ≤ C / (‖w‖ - R)) :
-    Tendsto F (cocompact ℂ) (nhds 0) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  simp only [dist_zero_right]
-  filter_upwards [(isCompact_closedBall (0 : ℂ)
-      (max R (R + C / ε))).compl_mem_cocompact] with w hw
-  rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hw
-  have hRw : R < ‖w‖ := lt_of_le_of_lt (le_max_left _ _) hw
-  have hpos : 0 < ‖w‖ - R := by linarith
-  calc ‖F w‖ ≤ C / (‖w‖ - R) := hbound w hRw
-    _ < ε := by
-        rw [div_lt_iff₀ hpos]
-        have h2 : C / ε < ‖w‖ - R := by
-          linarith [lt_of_le_of_lt (le_max_right _ _) hw]
-        rw [div_lt_iff₀ hε] at h2
-        linarith [mul_comm ε (‖w‖ - R)]
 
 end TauCeti.Contour
