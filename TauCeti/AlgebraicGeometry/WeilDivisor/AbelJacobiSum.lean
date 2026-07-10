@@ -45,10 +45,6 @@ namespace OrderSystem
 
 variable (S : OrderSystem X G)
 
-private lemma zsmul_ofPoint_eq_single (n : ℤ) (x : X) :
-    n • ofPoint x = Finsupp.single x n :=
-  (single_eq_zsmul_ofPoint x n).symm
-
 /-! ### Weighted Abel-Jacobi sums -/
 
 /-- The additive Abel-Jacobi sum of a Weil divisor.
@@ -120,7 +116,7 @@ lemma weightedAbelJacobiDivisorClass_eq_sum (w : X → ℤ) (h : S.IsWeightedDeg
       simp
   | single x n =>
       rw [Finsupp.sum_single_index]
-      · rw [← zsmul_ofPoint_eq_single n x,
+      · rw [single_eq_zsmul_ofPoint x n,
         S.weightedAbelJacobiDivisorClass_zsmul w h hx₀ n (ofPoint x),
         S.weightedAbelJacobiDivisorClass_ofPoint w h hx₀ x]
       · simp

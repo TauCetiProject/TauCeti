@@ -46,10 +46,6 @@ variable {X G : Type*} [AddCommGroup G] (S : OrderSystem X G)
 
 noncomputable section
 
-private lemma zsmul_ofPoint_eq_single (n : ℤ) (x : X) :
-    n • ofPoint x = Finsupp.single x n :=
-  (single_eq_zsmul_ofPoint x n).symm
-
 /-! ### Weighted quotient representatives -/
 
 /-- The quotient class of the degree-corrected representative
@@ -137,7 +133,7 @@ lemma weightedAbelJacobiQuotientClass_eq_sum (w : X → ℤ) {x₀ : X} (hx₀ :
       simp
   | single x n =>
       rw [Finsupp.sum_single_index]
-      · rw [← zsmul_ofPoint_eq_single n x,
+      · rw [single_eq_zsmul_ofPoint x n,
           S.weightedAbelJacobiQuotientClass_zsmul w hx₀ n (ofPoint x)]
       · simp
   | add D E hD hE =>
