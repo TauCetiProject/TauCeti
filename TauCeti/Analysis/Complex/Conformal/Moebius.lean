@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Add
 public import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
 
 /-!
@@ -120,12 +121,71 @@ lemma differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha : ‖
         differentiableWithinAt_id)
   exact hnum.div hden_diff hden
 
+/-- The complex derivative of the scalar unit-disc Moebius factor
+`z ↦ (z - a) / (1 - conj a * z)` at a point `p` where the denominator is nonzero.  Its value at
+`p = 0` (with center `-z`) is `1 - ‖z‖ ^ 2`, and at `p = a` it is `1 / (1 - ‖a‖ ^ 2)`, the two
+factors that appear in the infinitesimal Schwarz--Pick estimate. -/
+lemma hasDerivAt_unitDiscMoebiusFormula (a p : ℂ)
+    (hp : 1 - (starRingEnd ℂ) a * p ≠ 0) :
+    HasDerivAt (fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z))
+      ((1 - (starRingEnd ℂ) a * a) / (1 - (starRingEnd ℂ) a * p) ^ 2) p := by
+  have hn : HasDerivAt (fun z : ℂ => z - a) 1 p := (hasDerivAt_id p).sub_const a
+  have hd : HasDerivAt (fun z : ℂ => 1 - (starRingEnd ℂ) a * z) (-(starRingEnd ℂ) a) p := by
+    simpa using ((hasDerivAt_id p).const_mul ((starRingEnd ℂ) a)).const_sub 1
+  have hq := hn.div hd hp
+  have hval : (1 - (starRingEnd ℂ) a * a) / (1 - (starRingEnd ℂ) a * p) ^ 2
+      = (1 * (1 - (starRingEnd ℂ) a * p) - (p - a) * -(starRingEnd ℂ) a)
+        / (1 - (starRingEnd ℂ) a * p) ^ 2 := by
+    congr 1
+    ring
+  rw [hval]
+  exact hq
+
 /-- The scalar formula of the unit-disc Moebius factor is holomorphic on the unit disc. -/
 lemma differentiableOn_unitDiscMoebiusFormula (a : Complex.UnitDisc) :
     DifferentiableOn ℂ
       (fun z : ℂ => (z - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * z))
       (ball (0 : ℂ) 1) :=
   differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one a.norm_lt_one
+
+/-- **Schwarz--Pick conjugation scaffold.** For a holomorphic self-map `f` of the open unit
+disc and a disc point `a`, conjugating `f` by the Moebius automorphisms centred at `a` (on the
+source) and at `f a` (on the target) yields a holomorphic self-map of the disc that fixes the
+origin.  This is the common scaffold of the finite and infinitesimal Schwarz--Pick estimates:
+applying Schwarz's lemma at `0` to the conjugate `g` unwinds to the contraction estimate for
+`f`. -/
+lemma differentiableOn_and_mapsTo_ball_and_apply_zero_schwarzPickConjugate {f : ℂ → ℂ}
+    (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
+    (hmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1)) {a : ℂ} (ha : ‖a‖ < 1) :
+    DifferentiableOn ℂ
+        ((fun η => (η - f a) / (1 - (starRingEnd ℂ) (f a) * η)) ∘ f ∘
+          fun ξ => (ξ - (-a)) / (1 - (starRingEnd ℂ) (-a) * ξ)) (ball (0 : ℂ) 1) ∧
+      MapsTo
+        ((fun η => (η - f a) / (1 - (starRingEnd ℂ) (f a) * η)) ∘ f ∘
+          fun ξ => (ξ - (-a)) / (1 - (starRingEnd ℂ) (-a) * ξ)) (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) ∧
+      ((fun η => (η - f a) / (1 - (starRingEnd ℂ) (f a) * η)) ∘ f ∘
+          fun ξ => (ξ - (-a)) / (1 - (starRingEnd ℂ) (-a) * ξ)) 0 = 0 := by
+  have ha_mem : a ∈ ball (0 : ℂ) 1 := by simpa [mem_ball_zero_iff] using ha
+  have hfa_norm : ‖f a‖ < 1 := by simpa [mem_ball_zero_iff] using hmaps ha_mem
+  have hsource_maps :
+      MapsTo (fun ξ : ℂ => (ξ - (-a)) / (1 - (starRingEnd ℂ) (-a) * ξ))
+        (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) :=
+    mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one (a := -a) (by simpa using ha)
+  have htarget_maps :
+      MapsTo (fun η : ℂ => (η - f a) / (1 - (starRingEnd ℂ) (f a) * η))
+        (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) :=
+    mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one (a := f a) hfa_norm
+  have hsource_diff :
+      DifferentiableOn ℂ (fun ξ : ℂ => (ξ - (-a)) / (1 - (starRingEnd ℂ) (-a) * ξ))
+        (ball (0 : ℂ) 1) :=
+    differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one (a := -a) (by simpa using ha)
+  have htarget_diff :
+      DifferentiableOn ℂ (fun η : ℂ => (η - f a) / (1 - (starRingEnd ℂ) (f a) * η))
+        (ball (0 : ℂ) 1) :=
+    differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one (a := f a) hfa_norm
+  refine ⟨htarget_diff.comp (hf.comp hsource_diff hsource_maps) (hmaps.comp hsource_maps),
+    fun ξ hξ => htarget_maps (hmaps (hsource_maps hξ)), ?_⟩
+  simp
 
 private lemma unitDiscMoebius_neg_apply_unitDiscMoebius_apply_scalar {a z : ℂ}
     (hden : 1 - (starRingEnd ℂ) a * z ≠ 0)

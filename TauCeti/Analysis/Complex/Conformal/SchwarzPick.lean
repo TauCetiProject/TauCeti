@@ -53,33 +53,12 @@ theorem pseudoHyperbolicExpr_map_le {f : ℂ → ℂ}
   let g : ℂ → ℂ := target ∘ f ∘ source
   have hw_norm : ‖w‖ < 1 := by
     simpa [mem_ball_zero_iff] using hw
-  have hfw : f w ∈ ball (0 : ℂ) 1 := hmaps hw
-  have hfw_norm : ‖f w‖ < 1 := by
-    simpa [mem_ball_zero_iff] using hfw
-  have hsource_maps : MapsTo source (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-    simpa [source] using mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one
-      (a := -(w : ℂ)) (by simpa using hw_norm)
-  have htarget_maps : MapsTo target (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-    simpa [target] using mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one
-      (a := f w) hfw_norm
-  have hg_maps_ball : MapsTo g (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-    intro ξ hξ
-    exact htarget_maps (hmaps (hsource_maps hξ))
+  -- The conjugate `g` is a holomorphic self-map of the disc fixing the origin (shared scaffold).
+  obtain ⟨hg_diff, hg_maps_ball, hg_zero⟩ :=
+    differentiableOn_and_mapsTo_ball_and_apply_zero_schwarzPickConjugate hf hmaps hw_norm
   have hg_maps_closed : MapsTo g (ball (0 : ℂ) 1) (closedBall (0 : ℂ) 1) := by
     intro ξ hξ
     exact ball_subset_closedBall (hg_maps_ball hξ)
-  have hsource_diff : DifferentiableOn ℂ source (ball (0 : ℂ) 1) := by
-    simpa [source] using differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one
-      (a := -(w : ℂ)) (by simpa using hw_norm)
-  have htarget_diff : DifferentiableOn ℂ target (ball (0 : ℂ) 1) := by
-    simpa [target] using differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one
-      (a := f w) hfw_norm
-  have hg_diff : DifferentiableOn ℂ g (ball (0 : ℂ) 1) :=
-    htarget_diff.comp (hf.comp hsource_diff hsource_maps) (hmaps.comp hsource_maps)
-  have hg_zero : g 0 = 0 := by
-    have hsource_zero : source 0 = w := by
-      simp [source]
-    simp [g, target, hsource_zero]
   let ξ : ℂ := (z - w) / (1 - (starRingEnd ℂ) w * z)
   have hξ_mem : ξ ∈ ball (0 : ℂ) 1 := by
     simpa [ξ] using mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one
