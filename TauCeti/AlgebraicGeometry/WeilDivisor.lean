@@ -304,14 +304,9 @@ weights. The point divisors generate the free abelian group of Weil divisors and
 a subgroup of `ℤ`, it is `d·ℤ` for a unique `d ≥ 0`, the index of the weights. -/
 lemma weightedDegree_range (w : X → ℤ) :
     (weightedDegree w : WeilDivisor X →+ ℤ).range = AddSubgroup.closure (Set.range w) := by
-  apply le_antisymm
-  · rintro _ ⟨D, rfl⟩
-    rw [weightedDegree_apply, Finsupp.sum]
-    refine sum_mem fun x _ => ?_
-    exact AddSubgroup.zsmul_mem _ (AddSubgroup.subset_closure (Set.mem_range_self x)) (D x)
-  · rw [AddSubgroup.closure_le]
-    rintro _ ⟨x, rfl⟩
-    exact ⟨ofPoint x, weightedDegree_ofPoint w x⟩
+  change (Finsupp.linearCombination ℤ w).range.toAddSubgroup =
+    AddSubgroup.closure (Set.range w)
+  rw [Finsupp.range_linearCombination, Submodule.span_int_eq_addSubgroupClosure]
 
 /-- An effective divisor has nonnegative weighted degree when all weights are nonnegative. -/
 lemma IsEffective.weightedDegree_nonneg {w : X → ℤ} (hw : ∀ x, 0 ≤ w x)
