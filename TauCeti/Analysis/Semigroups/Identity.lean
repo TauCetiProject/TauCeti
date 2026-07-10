@@ -52,7 +52,6 @@ theorem id_apply (t : ℝ≥0) :
     rfl
 
 /-- Pointwise form of `StronglyContinuousSemigroup.id_apply`. -/
-@[simp]
 theorem id_apply_apply (t : ℝ≥0) (x : X) :
     (StronglyContinuousSemigroup.id X) t x = x :=
   by
@@ -135,7 +134,6 @@ theorem id_apply (t : ℝ≥0) :
     rfl
 
 /-- Pointwise form of `ContractionSemigroup.id_apply`. -/
-@[simp]
 theorem id_apply_apply (t : ℝ≥0) (x : X) :
     (ContractionSemigroup.id X) t x = x :=
   by
