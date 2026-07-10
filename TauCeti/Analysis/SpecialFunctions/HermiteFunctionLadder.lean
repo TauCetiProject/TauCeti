@@ -25,13 +25,14 @@ index:
 Adding and subtracting them yields the annihilation/creation identities for the ladder operators
 `a = (x + d/dx)/√2` and `a† = (x - d/dx)/√2`:
 
-* `TauCeti.hermiteFunction_lowering` — `x·ψₙ + ψₙ' = √(2n)·ψ_{n-1}` (so `a ψₙ = √n ψ_{n-1}`);
-* `TauCeti.hermiteFunction_raising` — `x·ψₙ - ψₙ' = √(2(n+1))·ψ_{n+1}`
-  (so `a† ψₙ = √(n+1) ψ_{n+1}`).
+* `TauCeti.mul_add_deriv_hermiteFunction` — `x·ψₙ + ψₙ' = √(2n)·ψ_{n-1}` (the annihilation
+  identity, `a ψₙ = √n ψ_{n-1}`);
+* `TauCeti.mul_sub_deriv_hermiteFunction` — `x·ψₙ - ψₙ' = √(2(n+1))·ψ_{n+1}` (the creation
+  identity, `a† ψₙ = √(n+1) ψ_{n+1}`).
 
 Both relations are purely pointwise and reduce, after clearing the Gaussian envelope and the
-normalization `√(n!√π)`, to Mathlib's three-term recurrence for `Polynomial.hermite`
-(`hermite_succ` together with `Polynomial.derivative_hermite`); no integration is involved. This is
+normalization `√(n!√π)`, to the three-term recurrence for `Polynomial.hermite`
+(`Polynomial.hermite_add_two`); no integration is involved. This is
 the level at which the roadmap wants these identities stated, so that they elevate to the ladder
 operators on `𝒮(ℝ)` / `L²(ℝ)` later without re-proof.
 
@@ -45,18 +46,17 @@ namespace TauCeti
 
 open Polynomial
 
-/-- The `n`-step three-term recurrence for the probabilists' Hermite polynomials, evaluated at a
-point: `y·Hₙ(y) = H_{n+1}(y) + n·H_{n-1}(y)`. This is Mathlib's `hermite_succ`
-(`H_{n+1} = X·Hₙ - H'ₙ`) with the derivative eliminated via `Polynomial.derivative_hermite`
-(`H'ₙ = n·H_{n-1}`). At `n = 0` the last term vanishes. -/
-private lemma aeval_hermite_recurrence (n : ℕ) (y : ℝ) :
-    y * aeval y (hermite n) =
-      aeval y (hermite (n + 1)) + (n : ℝ) * aeval y (hermite (n - 1)) := by
-  have h : aeval y (hermite (n + 1))
-      = y * aeval y (hermite n) - (n : ℝ) * aeval y (hermite (n - 1)) := by
-    rw [hermite_succ, Polynomial.derivative_hermite, map_sub, map_mul, map_nsmul, aeval_X,
-      nsmul_eq_mul]
-  rw [h]; ring
+/-- The three-term recurrence for the probabilists' Hermite polynomials, evaluated at a point:
+`y·H_{m+1}(y) = H_{m+2}(y) + (m+1)·Hₘ(y)`. This is just the `aeval y` image of the polynomial
+recurrence `Polynomial.hermite_add_two` (`H_{m+2} = X·H_{m+1} - (m+1)·Hₘ`), rearranged to isolate
+the `y·H_{m+1}` term the ladder proofs consume. -/
+private lemma aeval_hermite_add_two (m : ℕ) (y : ℝ) :
+    y * aeval y (hermite (m + 1)) =
+      aeval y (hermite (m + 1 + 1)) + ((m : ℝ) + 1) * aeval y (hermite m) := by
+  have h := congrArg (aeval y) (hermite_add_two m)
+  rw [map_sub, map_mul, map_nsmul, aeval_X, nsmul_eq_mul] at h
+  push_cast at h
+  linear_combination -h
 
 /-- The Hermite normalization `√(n!·√π)` at successor index: `√((n+1)!·√π) = √(n+1)·√(n!·√π)`. -/
 private lemma normFactor_succ (n : ℕ) :
@@ -70,26 +70,60 @@ private lemma normFactor_succ (n : ℕ) :
 
 /-- `2·√(k/2) = √(2k)`: the coefficient identity behind the ladder-operator normalizations. -/
 private lemma two_mul_sqrt_half (k : ℝ) : 2 * Real.sqrt (k / 2) = Real.sqrt (2 * k) := by
+  -- regroup `2·k = 4·(k/2)` so the square factor `√4 = 2` splits off `√(k/2)`
   rw [show (2 : ℝ) * k = 4 * (k / 2) by ring, Real.sqrt_mul (by norm_num : (0 : ℝ) ≤ 4),
     show Real.sqrt 4 = 2 by
       rw [show (4 : ℝ) = 2 ^ 2 by norm_num]; exact Real.sqrt_sq (by norm_num)]
 
+/-- `√(1/2)·√2 = 1`: the coefficient collapsing the `n = 0` boundary of the ladder relations, where
+the `√((n+1)/2) = √(1/2)` prefactor meets the `√2` from the `x√2` argument of `H₀`. -/
+private lemma sqrt_half_mul_sqrt_two : Real.sqrt (1 / 2) * Real.sqrt 2 = 1 := by
+  rw [← Real.sqrt_mul (by norm_num), show (1 : ℝ) / 2 * 2 = 1 by norm_num, Real.sqrt_one]
+
+/-- The Gaussian-weighted derivative factor produces the lower Hermite mode:
+`H'ₙ(x√2)·√2·e^{-x²/2} / √(n!√π) = √(2n)·ψ_{n-1}(x)`. This isolates the normalization bookkeeping
+that the derivative ladder relation shares with nothing else: it turns the `d/dx` of the polynomial
+part into a clean multiple of `ψ_{n-1}`, so `hasDerivAt_hermiteFunction` reduces to
+`mul_hermiteFunction` by pure algebra. At `n = 0` both sides vanish. -/
+private lemma sqrt_two_mul_aeval_derivative_hermite (n : ℕ) (x : ℝ) :
+    aeval (x * Real.sqrt 2) (derivative (hermite n)) * Real.sqrt 2 * Real.exp (-(x ^ 2 / 2))
+        / Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi)
+      = Real.sqrt (2 * (n : ℝ)) * hermiteFunction (n - 1) x := by
+  rw [Polynomial.derivative_hermite, map_nsmul, nsmul_eq_mul]
+  rcases n with _ | m
+  · simp
+  · simp only [Nat.add_sub_cancel]
+    rw [hermiteFunction_def, normFactor_succ]
+    set e := Real.exp (-((x : ℝ) ^ 2 / 2)) with he
+    set N := Real.sqrt ((m.factorial : ℝ) * Real.sqrt Real.pi) with hN
+    have hN0 : N ≠ 0 := (sqrt_factorial_mul_sqrt_pi_pos m).ne'
+    have hsm1 : Real.sqrt ((m : ℝ) + 1) ≠ 0 := (Real.sqrt_pos.mpr (by positivity)).ne'
+    have hsq : Real.sqrt ((m : ℝ) + 1) * Real.sqrt ((m : ℝ) + 1) = (m : ℝ) + 1 :=
+      Real.mul_self_sqrt (by positivity)
+    have hmul2 : Real.sqrt (2 * ((m : ℝ) + 1)) = Real.sqrt 2 * Real.sqrt ((m : ℝ) + 1) :=
+      Real.sqrt_mul (by norm_num) _
+    push_cast
+    rw [hmul2]
+    field_simp
+    linear_combination (-(e * aeval (x * Real.sqrt 2) (hermite m))) * hsq
+
 /-- **Target A2 (position ladder relation).** Multiplying `ψₙ` by `x` mixes the neighbouring modes:
 `x·ψₙ = √((n+1)/2)·ψ_{n+1} + √(n/2)·ψ_{n-1}`. -/
+@[grind =]
 theorem mul_hermiteFunction (n : ℕ) (x : ℝ) :
     x * hermiteFunction n x =
       Real.sqrt (((n : ℝ) + 1) / 2) * hermiteFunction (n + 1) x
         + Real.sqrt ((n : ℝ) / 2) * hermiteFunction (n - 1) x := by
   rcases n with _ | m
-  · simp only [Nat.cast_zero, zero_add, Nat.zero_sub, hermiteFunction_one, zero_div,
+  · -- `n = 0`: the `√(n/2)` term drops out and the prefactor `√(1/2)·√2` collapses to `1`
+    simp only [Nat.cast_zero, zero_add, Nat.zero_sub, hermiteFunction_one, zero_div,
       Real.sqrt_zero, zero_mul, add_zero]
     rw [show Real.sqrt (1 / 2) * (Real.sqrt 2 * x * hermiteFunction 0 x)
           = (Real.sqrt (1 / 2) * Real.sqrt 2) * (x * hermiteFunction 0 x) by ring,
-      ← Real.sqrt_mul (by norm_num), show (1 : ℝ) / 2 * 2 = 1 by norm_num, Real.sqrt_one,
-      one_mul]
+      sqrt_half_mul_sqrt_two, one_mul]
   · -- successor case: reduce to the recurrence `√2·x·Hₘ₊₁ = Hₘ₊₂ + (m+1)·Hₘ`
-    have hrec := aeval_hermite_recurrence (m + 1) (x * Real.sqrt 2)
-    simp only [Nat.add_sub_cancel] at hrec ⊢
+    have hrec := aeval_hermite_add_two m (x * Real.sqrt 2)
+    simp only [Nat.add_sub_cancel]
     rw [hermiteFunction_def, hermiteFunction_def, hermiteFunction_def,
       Real.sqrt_div (by positivity), Real.sqrt_div (by positivity)]
     simp only [normFactor_succ]
@@ -101,7 +135,6 @@ theorem mul_hermiteFunction (n : ℕ) (x : ℝ) :
     have hsm2 : Real.sqrt ((m : ℝ) + 1 + 1) ≠ 0 := (Real.sqrt_pos.mpr (by positivity)).ne'
     have hsq : Real.sqrt (1 + (m : ℝ)) * Real.sqrt (1 + (m : ℝ)) = 1 + (m : ℝ) :=
       Real.mul_self_sqrt (by positivity)
-    push_cast at hrec
     field_simp
     ring_nf
     ring_nf at hrec
@@ -124,42 +157,20 @@ theorem hasDerivAt_hermiteFunction (n : ℕ) (x : ℝ) :
     have hx2 : HasDerivAt (fun x : ℝ => x ^ 2 / 2) x x := by
       simpa using (hasDerivAt_pow 2 x).div_const 2
     simpa [mul_comm] using hx2.neg.exp
+  -- The derivative value from the product rule is `√2·H'ₙ(x√2)·e/N - x·ψₙ`. The first term is the
+  -- lower mode `√(2n)·ψ_{n-1}` (`sqrt_two_mul_aeval_derivative_hermite`) and `x·ψₙ` is the position
+  -- relation (`mul_hermiteFunction`), so the whole collapses to the claimed combination by algebra,
+  -- using `√(2n) = 2·√(n/2)` (`two_mul_sqrt_half`).
   have key :
       (aeval (x * Real.sqrt 2) (derivative (hermite n)) * Real.sqrt 2 * Real.exp (-(x ^ 2 / 2))
           + aeval (x * Real.sqrt 2) (hermite n) * (-x * Real.exp (-(x ^ 2 / 2))))
           / Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi)
         = Real.sqrt ((n : ℝ) / 2) * hermiteFunction (n - 1) x
           - Real.sqrt (((n : ℝ) + 1) / 2) * hermiteFunction (n + 1) x := by
-    rw [Polynomial.derivative_hermite, map_nsmul, nsmul_eq_mul]
-    rcases n with _ | m
-    · simp only [Nat.cast_zero, zero_add, Nat.zero_sub, hermiteFunction_zero, hermiteFunction_one,
-        zero_div, Real.sqrt_zero, zero_mul, hermite_zero, map_one]
-      rw [show Real.sqrt (1 / 2) * (Real.sqrt 2 * x
-            * (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi)))
-            = (Real.sqrt (1 / 2) * Real.sqrt 2)
-              * (x * (Real.exp (-(x ^ 2 / 2)) / Real.sqrt (Real.sqrt Real.pi))) by ring,
-        ← Real.sqrt_mul (by norm_num), show (1 : ℝ) / 2 * 2 = 1 by norm_num, Real.sqrt_one,
-        one_mul, Nat.factorial_zero, Nat.cast_one, one_mul]
-      ring
-    · have hrec := aeval_hermite_recurrence (m + 1) (x * Real.sqrt 2)
-      simp only [Nat.add_sub_cancel] at hrec ⊢
-      rw [hermiteFunction_def, hermiteFunction_def,
-        Real.sqrt_div (by positivity), Real.sqrt_div (by positivity)]
-      simp only [normFactor_succ]
-      set e := Real.exp (-((x : ℝ) ^ 2 / 2)) with he
-      set N := Real.sqrt ((m.factorial : ℝ) * Real.sqrt Real.pi) with hN
-      have hN0 : N ≠ 0 := (sqrt_factorial_mul_sqrt_pi_pos m).ne'
-      have hs2 : Real.sqrt 2 ≠ 0 := (Real.sqrt_pos.mpr (by norm_num)).ne'
-      have hsm1 : Real.sqrt ((m : ℝ) + 1) ≠ 0 := (Real.sqrt_pos.mpr (by positivity)).ne'
-      have hsm2 : Real.sqrt ((m : ℝ) + 1 + 1) ≠ 0 := (Real.sqrt_pos.mpr (by positivity)).ne'
-      have hsq : Real.sqrt ((m : ℝ) + 1) * Real.sqrt ((m : ℝ) + 1) = (m : ℝ) + 1 :=
-        Real.mul_self_sqrt (by positivity)
-      have hs2sq : Real.sqrt 2 * Real.sqrt 2 = 2 := Real.mul_self_sqrt (by norm_num)
-      push_cast at hrec ⊢
-      field_simp
-      linear_combination -e * hrec
-        + e * aeval (x * Real.sqrt 2) (hermite m) * ((m : ℝ) + 1) * hs2sq
-        - e * aeval (x * Real.sqrt 2) (hermite m) * hsq
+    have henv := sqrt_two_mul_aeval_derivative_hermite n x
+    have hψ := hermiteFunction_def n x
+    have h2 := two_mul_sqrt_half (n : ℝ)
+    linear_combination henv + x * hψ - mul_hermiteFunction n x - hermiteFunction (n - 1) x * h2
   have hfun : hermiteFunction n
       = fun x => aeval (x * Real.sqrt 2) (hermite n) * Real.exp (-(x ^ 2 / 2))
           / Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi) := by
@@ -168,23 +179,26 @@ theorem hasDerivAt_hermiteFunction (n : ℕ) (x : ℝ) :
   exact key ▸ (hP.mul hE).div_const (Real.sqrt ((n.factorial : ℝ) * Real.sqrt Real.pi))
 
 /-- The `deriv` form of `hasDerivAt_hermiteFunction`. -/
+@[simp, grind =]
 theorem deriv_hermiteFunction (n : ℕ) (x : ℝ) :
     deriv (hermiteFunction n) x =
       Real.sqrt ((n : ℝ) / 2) * hermiteFunction (n - 1) x
         - Real.sqrt (((n : ℝ) + 1) / 2) * hermiteFunction (n + 1) x :=
   (hasDerivAt_hermiteFunction n x).deriv
 
-/-- **Annihilation identity.** For the ladder operator `a = (x + d/dx)/√2`, `a ψₙ = √n·ψ_{n-1}`,
-here as `x·ψₙ + ψₙ' = √(2n)·ψ_{n-1}`. -/
-theorem hermiteFunction_lowering (n : ℕ) (x : ℝ) :
+/-- **Annihilation identity.** The combination `x·ψₙ + ψₙ' = √(2n)·ψ_{n-1}`; this is the ladder
+operator `a = (x + d/dx)/√2` acting as `a ψₙ = √n·ψ_{n-1}`. -/
+@[grind =]
+theorem mul_add_deriv_hermiteFunction (n : ℕ) (x : ℝ) :
     x * hermiteFunction n x + deriv (hermiteFunction n) x
       = Real.sqrt (2 * (n : ℝ)) * hermiteFunction (n - 1) x := by
   rw [mul_hermiteFunction, deriv_hermiteFunction, ← two_mul_sqrt_half (n : ℝ)]
   ring
 
-/-- **Creation identity.** For the ladder operator `a† = (x - d/dx)/√2`, `a† ψₙ = √(n+1)·ψ_{n+1}`,
-here as `x·ψₙ - ψₙ' = √(2(n+1))·ψ_{n+1}`. -/
-theorem hermiteFunction_raising (n : ℕ) (x : ℝ) :
+/-- **Creation identity.** The combination `x·ψₙ - ψₙ' = √(2(n+1))·ψ_{n+1}`; this is the ladder
+operator `a† = (x - d/dx)/√2` acting as `a† ψₙ = √(n+1)·ψ_{n+1}`. -/
+@[grind =]
+theorem mul_sub_deriv_hermiteFunction (n : ℕ) (x : ℝ) :
     x * hermiteFunction n x - deriv (hermiteFunction n) x
       = Real.sqrt (2 * ((n : ℝ) + 1)) * hermiteFunction (n + 1) x := by
   rw [mul_hermiteFunction, deriv_hermiteFunction, ← two_mul_sqrt_half ((n : ℝ) + 1)]
