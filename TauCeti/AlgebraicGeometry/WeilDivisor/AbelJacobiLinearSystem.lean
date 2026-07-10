@@ -50,7 +50,7 @@ variable {d : ℕ}
 
 /-- For effective divisors of the same fixed degree, equality of normalized Abel-Jacobi
 classes is exactly linear equivalence of the underlying divisors. -/
-lemma weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_eq_iff_linearlyEquivalent
+lemma weightedAbelJacobiDivisorClass_one_effectiveDivisorOfDegree_eq_iff_linearlyEquivalent
     (h : S.IsUnweightedDegreeZero) (x₀ : X)
     (D E : EffectiveDivisorOfDegree X d) :
     S.weightedAbelJacobiDivisorClass (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl
@@ -64,7 +64,7 @@ lemma weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_eq_iff_linearlyEqu
 
 /-- The fixed-degree Abel-Jacobi fiber through `D` is the complete linear system `|D|`, restricted
 to effective divisors of the same degree. -/
-lemma weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_eq_iff_mem_completeLinearSystem
+lemma weightedAbelJacobiDivisorClass_one_effectiveDivisorOfDegree_eq_iff_mem_completeLinearSystem
     (h : S.IsUnweightedDegreeZero) (x₀ : X)
     (D E : EffectiveDivisorOfDegree X d) :
     S.weightedAbelJacobiDivisorClass (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl
@@ -72,7 +72,7 @@ lemma weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_eq_iff_mem_complet
         S.weightedAbelJacobiDivisorClass (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl
           (D : WeilDivisor X) ↔
       (E : WeilDivisor X) ∈ S.completeLinearSystem (D : WeilDivisor X) := by
-  rw [S.weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_eq_iff_linearlyEquivalent
+  rw [S.weightedAbelJacobiDivisorClass_one_effectiveDivisorOfDegree_eq_iff_linearlyEquivalent
     h x₀ E D, S.mem_completeLinearSystem]
   constructor
   · intro hlin
@@ -81,7 +81,7 @@ lemma weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_eq_iff_mem_complet
 
 /-- As a set of fixed-degree effective divisors, the Abel-Jacobi fiber through `D` is the
 restriction of the complete linear system `|D|`. -/
-lemma setOf_weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_eq
+lemma setOf_weightedAbelJacobiDivisorClass_one_effectiveDivisorOfDegree_eq
     (h : S.IsUnweightedDegreeZero) (x₀ : X)
     (D : EffectiveDivisorOfDegree X d) :
     {E : EffectiveDivisorOfDegree X d |
@@ -92,14 +92,15 @@ lemma setOf_weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_eq
       {E : EffectiveDivisorOfDegree X d |
         (E : WeilDivisor X) ∈ S.completeLinearSystem (D : WeilDivisor X)} := by
   ext E
-  exact S.weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_eq_iff_mem_completeLinearSystem
-    h x₀ D E
+  exact
+    S.weightedAbelJacobiDivisorClass_one_effectiveDivisorOfDegree_eq_iff_mem_completeLinearSystem
+      h x₀ D E
 
 /-! ### Symmetric powers -/
 
 /-- On symmetric powers, equality of normalized Abel-Jacobi classes is exactly membership of the
 corresponding divisor in the complete linear system. -/
-lemma weightedAbelJacobiDivisorClass_ofSym_eq_iff_mem_completeLinearSystem
+lemma weightedAbelJacobiDivisorClass_one_ofSym_eq_iff_mem_completeLinearSystem
     (h : S.IsUnweightedDegreeZero) (x₀ : X) (s t : Sym X d) :
     S.weightedAbelJacobiDivisorClass (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl
         (EffectiveDivisorOfDegree.ofSym t : WeilDivisor X) =
@@ -107,12 +108,12 @@ lemma weightedAbelJacobiDivisorClass_ofSym_eq_iff_mem_completeLinearSystem
           (EffectiveDivisorOfDegree.ofSym s : WeilDivisor X) ↔
       (EffectiveDivisorOfDegree.ofSym t : WeilDivisor X) ∈
         S.completeLinearSystem (EffectiveDivisorOfDegree.ofSym s : WeilDivisor X) :=
-  S.weightedAbelJacobiDivisorClass_effectiveDivisorOfDegree_eq_iff_mem_completeLinearSystem
+  S.weightedAbelJacobiDivisorClass_one_effectiveDivisorOfDegree_eq_iff_mem_completeLinearSystem
     h x₀ (EffectiveDivisorOfDegree.ofSym s) (EffectiveDivisorOfDegree.ofSym t)
 
 /-- As a set of symmetric-power points, the Abel-Jacobi fiber through `s` is the preimage of the
 complete linear system `|ofSym s|`. -/
-lemma setOf_weightedAbelJacobiDivisorClass_ofSym_eq
+lemma setOf_weightedAbelJacobiDivisorClass_one_ofSym_eq
     (h : S.IsUnweightedDegreeZero) (x₀ : X) (s : Sym X d) :
     {t : Sym X d |
         S.weightedAbelJacobiDivisorClass (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl
@@ -123,7 +124,7 @@ lemma setOf_weightedAbelJacobiDivisorClass_ofSym_eq
         (EffectiveDivisorOfDegree.ofSym t : WeilDivisor X) ∈
           S.completeLinearSystem (EffectiveDivisorOfDegree.ofSym s : WeilDivisor X)} := by
   ext t
-  exact S.weightedAbelJacobiDivisorClass_ofSym_eq_iff_mem_completeLinearSystem h x₀ s t
+  exact S.weightedAbelJacobiDivisorClass_one_ofSym_eq_iff_mem_completeLinearSystem h x₀ s t
 
 end
 
