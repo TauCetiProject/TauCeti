@@ -91,16 +91,28 @@ theorem ofBounded_apply (A : X →L[ℝ] X) (t : ℝ≥0) :
   rw [ofBounded]; rfl
 
 /-- The real-time operator of `ofBounded A` at `t ≥ 0` is `exp (t • A)`. -/
-theorem ofBounded_realOperator (A : X →L[ℝ] X) {t : ℝ} (ht : 0 ≤ t) :
+theorem ofBounded_realOperator_of_nonneg (A : X →L[ℝ] X) {t : ℝ} (ht : 0 ≤ t) :
     (ofBounded A).realOperator t = exp (t • A) := by
   have ht_coe : ((t.toNNReal : ℝ) = t) := Real.coe_toNNReal t ht
   rw [← ht_coe, realOperator_coe, ofBounded_apply]
+
+/-- The bounded-generator semigroup is norm-continuous in nonnegative time. -/
+theorem ofBounded_continuous (A : X →L[ℝ] X) :
+    Continuous fun t : ℝ≥0 => (ofBounded A) t := by
+  simpa only [ofBounded_apply, Function.comp_def] using
+    (differentiable_exp_smul_const ℝ A).continuous.comp NNReal.continuous_coe
+
+/-- The real-time operator of `ofBounded A` is norm-continuous on the nonnegative half-line. -/
+theorem ofBounded_realOperator_continuousOn_Ici (A : X →L[ℝ] X) :
+    ContinuousOn (fun t : ℝ => (ofBounded A).realOperator t) (Set.Ici 0) := by
+  refine ((differentiable_exp_smul_const ℝ A).continuous.continuousOn).congr ?_
+  exact fun t ht => ofBounded_realOperator_of_nonneg A ht
 
 /-- The semigroup `ofBounded A` has the growth bound `(‖A‖, 1)`: `‖exp (t • A)‖ ≤ e^{‖A‖ t}`. -/
 theorem ofBounded_hasGrowthBound (A : X →L[ℝ] X) :
     (ofBounded A).HasGrowthBound ‖A‖ 1 := by
   refine hasGrowthBound_of_bound le_rfl (fun t ht => ?_)
-  rw [one_mul, ofBounded_realOperator A ht]
+  rw [one_mul, ofBounded_realOperator_of_nonneg A ht]
   calc ‖exp (t • A)‖ ≤ Real.exp ‖t • A‖ := norm_exp_le _
     _ = Real.exp (‖A‖ * t) := by
         rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht, mul_comm]
@@ -124,7 +136,7 @@ private theorem ofBounded_genQuot_tendsto (A : X →L[ℝ] X) (x : X) :
   have h0 : exp ((0 : ℝ) • A) x = x := by
     rw [zero_smul, exp_zero, ContinuousLinearMap.one_def, ContinuousLinearMap.id_apply]
   simp only [slope_def_module, sub_zero]
-  rw [ofBounded_realOperator A htpos.le, one_div, h0]
+  rw [ofBounded_realOperator_of_nonneg A htpos.le, one_div, h0]
 
 /-- Every vector lies in the generator domain of `ofBounded A`: its generator is bounded. -/
 theorem mem_ofBounded_domain (A : X →L[ℝ] X) (x : X) :
