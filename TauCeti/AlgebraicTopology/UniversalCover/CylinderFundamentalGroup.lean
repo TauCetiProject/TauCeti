@@ -126,7 +126,6 @@ lemma cylinderFundamentalGroupMulEquiv_apply_eq_iff (hp : p ≠ 0) {Y : Type*}
 
 /-- The circle projection of `cylinderFundamentalGroupMulEquiv.symm n` is the circle loop
 class the circle equivalence sends to `n`. -/
-@[simp]
 lemma cylinderFundamentalGroupMulEquiv_symm_fst (hp : p ≠ 0) {Y : Type*} [TopologicalSpace Y]
     [SimplyConnectedSpace Y] {x : AddCircle p} (e : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) (y : Y)
     (n : Multiplicative ℤ) :
