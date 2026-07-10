@@ -34,10 +34,10 @@ application built on top.
 ## Main declarations
 
 * `TauCeti.FundamentalGroup.prodMulEquiv`: `π₁(X × Y, (x, y)) ≃* π₁(X, x) × π₁(Y, y)`.
-* `TauCeti.FundamentalGroup.prodMulEquivFst`: if `Y` is simply connected, the first
-  projection induces `π₁(X × Y, (x, y)) ≃* π₁(X, x)`.
-* `TauCeti.FundamentalGroup.prodMulEquivSnd`: if `X` is simply connected, the second
-  projection induces `π₁(X × Y, (x, y)) ≃* π₁(Y, y)`.
+* `TauCeti.FundamentalGroup.prodMulEquivFst`: if `π₁(Y, y)` is trivial (for example `Y`
+  simply connected), the first projection induces `π₁(X × Y, (x, y)) ≃* π₁(X, x)`.
+* `TauCeti.FundamentalGroup.prodMulEquivSnd`: if `π₁(X, x)` is trivial (for example `X`
+  simply connected), the second projection induces `π₁(X × Y, (x, y)) ≃* π₁(Y, y)`.
 * `TauCeti.FundamentalGroup.piMulEquiv`: `π₁(Π i, X i, x) ≃* Π i, π₁(X i, x i)`.
 -/
 
@@ -82,45 +82,49 @@ theorem FundamentalGroup.prodMulEquiv_symm_apply (x : X) (y : Y)
     (FundamentalGroup.prodMulEquiv x y).symm γ = prod γ.1 γ.2 :=
   rfl
 
-/-- When the second factor `Y` is simply connected, the first projection induces an
-isomorphism `π₁(X × Y, (x, y)) ≃* π₁(X, x)`: the fundamental group of a product with a
-simply connected space is that of the remaining first factor. -/
-@[expose] def FundamentalGroup.prodMulEquivFst [SimplyConnectedSpace Y] (x : X) (y : Y) :
+/-- When the based fundamental group of the second factor `Y` at `y` is trivial (in
+particular when `Y` is simply connected), the first projection induces an isomorphism
+`π₁(X × Y, (x, y)) ≃* π₁(X, x)`: the fundamental group of a product with a factor that has no
+loops is that of the remaining first factor. -/
+@[expose] def FundamentalGroup.prodMulEquivFst (x : X) (y : Y)
+    [Subsingleton (FundamentalGroup Y y)] :
     FundamentalGroup (X × Y) (x, y) ≃* FundamentalGroup X x :=
   haveI : Unique (FundamentalGroup Y y) := uniqueOfSubsingleton 1
   (FundamentalGroup.prodMulEquiv x y).trans MulEquiv.prodUnique
 
 @[simp]
-theorem FundamentalGroup.prodMulEquivFst_apply [SimplyConnectedSpace Y] (x : X) (y : Y)
-    (γ : FundamentalGroup (X × Y) (x, y)) :
+theorem FundamentalGroup.prodMulEquivFst_apply (x : X) (y : Y)
+    [Subsingleton (FundamentalGroup Y y)] (γ : FundamentalGroup (X × Y) (x, y)) :
     FundamentalGroup.prodMulEquivFst x y γ =
       FundamentalGroup.map (ContinuousMap.fst : C(X × Y, X)) (x, y) γ :=
   rfl
 
 @[simp]
-theorem FundamentalGroup.prodMulEquivFst_symm_apply [SimplyConnectedSpace Y] (x : X) (y : Y)
-    (γ : FundamentalGroup X x) :
+theorem FundamentalGroup.prodMulEquivFst_symm_apply (x : X) (y : Y)
+    [Subsingleton (FundamentalGroup Y y)] (γ : FundamentalGroup X x) :
     (FundamentalGroup.prodMulEquivFst x y).symm γ =
       (FundamentalGroup.prodMulEquiv x y).symm (γ, 1) :=
   rfl
 
-/-- When the first factor `X` is simply connected, the second projection induces an
-isomorphism `π₁(X × Y, (x, y)) ≃* π₁(Y, y)`. -/
-@[expose] def FundamentalGroup.prodMulEquivSnd [SimplyConnectedSpace X] (x : X) (y : Y) :
+/-- When the based fundamental group of the first factor `X` at `x` is trivial (in particular
+when `X` is simply connected), the second projection induces an isomorphism
+`π₁(X × Y, (x, y)) ≃* π₁(Y, y)`. -/
+@[expose] def FundamentalGroup.prodMulEquivSnd (x : X) (y : Y)
+    [Subsingleton (FundamentalGroup X x)] :
     FundamentalGroup (X × Y) (x, y) ≃* FundamentalGroup Y y :=
   haveI : Unique (FundamentalGroup X x) := uniqueOfSubsingleton 1
   (FundamentalGroup.prodMulEquiv x y).trans MulEquiv.uniqueProd
 
 @[simp]
-theorem FundamentalGroup.prodMulEquivSnd_apply [SimplyConnectedSpace X] (x : X) (y : Y)
-    (γ : FundamentalGroup (X × Y) (x, y)) :
+theorem FundamentalGroup.prodMulEquivSnd_apply (x : X) (y : Y)
+    [Subsingleton (FundamentalGroup X x)] (γ : FundamentalGroup (X × Y) (x, y)) :
     FundamentalGroup.prodMulEquivSnd x y γ =
       FundamentalGroup.map (ContinuousMap.snd : C(X × Y, Y)) (x, y) γ :=
   rfl
 
 @[simp]
-theorem FundamentalGroup.prodMulEquivSnd_symm_apply [SimplyConnectedSpace X] (x : X) (y : Y)
-    (γ : FundamentalGroup Y y) :
+theorem FundamentalGroup.prodMulEquivSnd_symm_apply (x : X) (y : Y)
+    [Subsingleton (FundamentalGroup X x)] (γ : FundamentalGroup Y y) :
     (FundamentalGroup.prodMulEquivSnd x y).symm γ =
       (FundamentalGroup.prodMulEquiv x y).symm (1, γ) :=
   rfl

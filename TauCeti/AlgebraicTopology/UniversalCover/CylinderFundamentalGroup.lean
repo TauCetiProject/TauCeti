@@ -6,7 +6,6 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroupProduct
 public import TauCeti.AlgebraicTopology.UniversalCover.CircleFundamentalGroup
-public import Mathlib.Analysis.Convex.Contractible
 
 /-!
 # The fundamental group of a cylinder
@@ -49,14 +48,6 @@ noncomputable section
 namespace AddCircle
 
 variable {p : ℝ}
-
-/-- The standard lift `0 : ℝ` of the basepoint `0 : AddCircle p`. -/
-@[expose] def zeroLift (p : ℝ) : ((↑) : ℝ → AddCircle p) ⁻¹' {(0 : AddCircle p)} :=
-  ⟨0, by simp⟩
-
-@[simp]
-lemma zeroLift_coe (p : ℝ) : ((zeroLift p : ((↑) : ℝ → AddCircle p) ⁻¹' {0}) : ℝ) = 0 :=
-  rfl
 
 /-- The fundamental group of a cylinder `AddCircle p × Y` over a simply connected space `Y`,
 based at any point `(x, y)` with a chosen lift `e` of `x`, is infinite cyclic:

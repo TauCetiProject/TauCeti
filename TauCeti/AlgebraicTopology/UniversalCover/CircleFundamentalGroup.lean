@@ -236,6 +236,14 @@ lemma fundamentalGroupMulEquiv_eq_one_iff (hp : p ≠ 0) {x : AddCircle p}
   fundamentalGroupMulEquivInt_eq_one_iff (AddCircle.isCoveringMap_coe p)
     (not_isOfFinAddOrder_of_isAddTorsionFree hp) e γ
 
+/-- The standard lift `0 : ℝ` of the basepoint `0 : AddCircle p`. -/
+@[expose] def zeroLift (p : ℝ) : ((↑) : ℝ → AddCircle p) ⁻¹' {(0 : AddCircle p)} :=
+  ⟨0, by simp⟩
+
+@[simp]
+lemma zeroLift_coe (p : ℝ) : ((zeroLift p : ((↑) : ℝ → AddCircle p) ⁻¹' {0}) : ℝ) = 0 :=
+  rfl
+
 /-- The fundamental group of the circle `AddCircle p` based at `0`, with the lift `0 : ℝ`, is
 `Multiplicative ℤ`. -/
 noncomputable def fundamentalGroupMulEquiv_zero (hp : p ≠ 0) :
