@@ -8,6 +8,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 public import Mathlib.LinearAlgebra.Dimension.DivisionRing
 public import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
+public import Mathlib.NumberTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.Multiquadratic.Galois
 public import TauCeti.NumberTheory.NumberField.SplitsCompletely
 
@@ -92,7 +93,8 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
   let R : ι → 𝓞 K := ringGen d r hr
   rw [ncard_primesOver_eq_finrank_iff K p] at hsplit
   have hfQ : finrank (ℤ ⧸ span {(p : ℤ)}) (𝓞 K ⧸ Q) = 1 := by
-    rw [← Ideal.inertiaDeg'_eq_of_isMaximal (p := span {(p : ℤ)}) (q := Q),
+    rw [← Ideal.inertiaDeg'_algebraMap (p := span {(p : ℤ)}) (P := Q),
+      Ideal.inertiaDeg'_eq_inertiaDeg,
       ← Ideal.inertiaDegIn_eq_inertiaDeg (span {(p : ℤ)}) Q (K ≃ₐ[ℚ] K)]
     exact hsplit.2
   letI fld : Field (ℤ ⧸ span {(p : ℤ)}) := Ideal.Quotient.field _
