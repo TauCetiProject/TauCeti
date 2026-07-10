@@ -38,17 +38,13 @@ variable {X Y : Type*}
 
 noncomputable section
 
-/-- The point divisor `ofPoint x` is the single spike `Finsupp.single x 1`. -/
-private lemma ofPoint_eq_single (x : X) : ofPoint x = Finsupp.single x 1 := by
-  rw [single_eq_zsmul_ofPoint, one_smul]
-
 /-! ### Finitely supported multiplicities -/
 
 /-- Every Weil divisor is the finite sum of its coefficients times point divisors over its
 support. -/
 lemma eq_sum_coeff_smul_ofPoint (D : WeilDivisor X) :
     D = ∑ x ∈ D.support, coeff D x • ofPoint x := by
-  simp only [ofPoint_eq_single, Finsupp.smul_single, smul_eq_mul, mul_one]
+  simp only [← single_eq_zsmul_ofPoint]
   exact (Finsupp.sum_single D).symm
 
 /-- The Weil divisor associated to finitely supported natural-number multiplicities. -/
@@ -158,7 +154,7 @@ divisors. -/
 lemma ofFinsetWithMultiplicity_eq_sum (s : Finset X) (m : X → ℕ) :
     ofFinsetWithMultiplicity s m = ∑ x ∈ s, (m x : ℤ) • ofPoint x := by
   refine (Finsupp.indicator_eq_sum_single s fun x => (m x : ℤ)).trans ?_
-  simp only [ofPoint_eq_single, Finsupp.smul_single, smul_eq_mul, mul_one]
+  simp only [single_eq_zsmul_ofPoint]
 
 /-- The named finite-set divisor with multiplicities over the empty set is zero. -/
 @[simp]
