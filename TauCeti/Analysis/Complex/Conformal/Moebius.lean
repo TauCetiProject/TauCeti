@@ -5,6 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Mul
 public import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
 
 /-!
@@ -119,6 +121,26 @@ lemma differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ} (ha : ‖
       ((differentiableWithinAt_const (c := (starRingEnd ℂ) a)).mul
         differentiableWithinAt_id)
   exact hnum.div hden_diff hden
+
+/-- The complex derivative of the scalar unit-disc Moebius factor
+`z ↦ (z - a) / (1 - conj a * z)` at a point `p` where the denominator is nonzero.  Its value at
+`p = 0` (with center `-z`) is `1 - ‖z‖ ^ 2`, and at `p = a` it is `1 / (1 - ‖a‖ ^ 2)`, the two
+factors that appear in the infinitesimal Schwarz--Pick estimate. -/
+lemma hasDerivAt_unitDiscMoebiusFormula (a p : ℂ)
+    (hp : 1 - (starRingEnd ℂ) a * p ≠ 0) :
+    HasDerivAt (fun z : ℂ => (z - a) / (1 - (starRingEnd ℂ) a * z))
+      ((1 - (starRingEnd ℂ) a * a) / (1 - (starRingEnd ℂ) a * p) ^ 2) p := by
+  have hn : HasDerivAt (fun z : ℂ => z - a) 1 p := (hasDerivAt_id p).sub_const a
+  have hd : HasDerivAt (fun z : ℂ => 1 - (starRingEnd ℂ) a * z) (-(starRingEnd ℂ) a) p := by
+    simpa using ((hasDerivAt_id p).const_mul ((starRingEnd ℂ) a)).const_sub 1
+  have hq := hn.div hd hp
+  have hval : (1 - (starRingEnd ℂ) a * a) / (1 - (starRingEnd ℂ) a * p) ^ 2
+      = (1 * (1 - (starRingEnd ℂ) a * p) - (p - a) * -(starRingEnd ℂ) a)
+        / (1 - (starRingEnd ℂ) a * p) ^ 2 := by
+    congr 1
+    ring
+  rw [hval]
+  exact hq
 
 /-- The scalar formula of the unit-disc Moebius factor is holomorphic on the unit disc. -/
 lemma differentiableOn_unitDiscMoebiusFormula (a : Complex.UnitDisc) :
