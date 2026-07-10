@@ -64,7 +64,9 @@ variable {F : Type u} [AddCommGroup F] [Module 𝕜 F] [LinearOrder F] [Decidabl
 
 /-- Simplicial map between simplicial complexes. -/
 structure SimplicialMap (K : SimplicialComplex 𝕜 E) (L : SimplicialComplex 𝕜 F) where
+  /-- The underlying order-preserving map between the vertices. -/
   toOrderHom : E →o F
+  /-- Faces are mapped to faces. -/
   map_face : ∀ s ∈ K.faces, s.image toOrderHom ∈ L.faces
 
 /-- Induced map between the simplicial sets. -/
