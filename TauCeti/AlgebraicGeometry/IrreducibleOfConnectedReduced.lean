@@ -14,7 +14,7 @@ whose stalks are integral domains is an irreducible space. It deconstructs the
 bijection between minimal primes of the stalks and the irreducible components,
 and proves that such irreducible components are open and disjoint.
 
-This advances the Tau Ceti Jacobian roadmap.
+This advances the roadmap at TauCetiRoadmap/JacobianChallenge/README.md.
 -/
 
 public section
