@@ -12,7 +12,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
 
 This file defines the typeclass `IsCoherent` for sheaves of modules over a scheme.
 
-This is part of the foundations for the Tau Ceti Jacobian roadmap.
+This advances the roadmap at TauCetiRoadmap/JacobianChallenge/README.md.
 -/
 
 public section
