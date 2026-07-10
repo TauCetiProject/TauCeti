@@ -26,8 +26,8 @@ pole): at a genuine simple pole the limit is the residue, and where `f` is analy
 zero) both the residue and the limit are `0`.
 
 The converse `residue_eq_of_tendsto_sub_mul` turns the limit into a *computation* rule: if
-`(z − z₀) · f z` converges as `z → z₀`, then `f` has at most a simple pole there and the residue is
-exactly that limit. This is the direction one uses in practice to read off a residue.
+`(z − z₀) · f z` converges as `z → z₀`, then the residue is exactly that limit. This is the
+direction one uses in practice to read off a residue.
 
 ## Main results
 
@@ -122,8 +122,8 @@ theorem tendsto_sub_mul_nhds_residue (hf : MeromorphicAt f z₀)
     simpa using hsub.mul hc
 
 /-- **Computing a residue as a limit (converse).** If `f` is meromorphic at `z₀` and the product
-`(z − z₀) · f z` converges to `L` as `z → z₀`, then `f` has at most a simple pole and
-`residue f z₀ = L`. This is the direction used in practice to read off a residue. -/
+`(z − z₀) · f z` converges to `L` as `z → z₀`, then `residue f z₀ = L`. This is the direction used
+in practice to read off a residue. -/
 theorem residue_eq_of_tendsto_sub_mul {L : ℂ} (hf : MeromorphicAt f z₀)
     (h : Tendsto (fun z => (z - z₀) * f z) (𝓝[≠] z₀) (𝓝 L)) :
     residue f z₀ = L := by
