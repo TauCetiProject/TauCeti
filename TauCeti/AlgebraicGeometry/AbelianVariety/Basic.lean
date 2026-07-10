@@ -5,6 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.AlgebraicGeometry.Group.Abelian
+public import Mathlib.AlgebraicGeometry.Group.Smooth
+public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 
 /-!
 # Abelian varieties
@@ -16,9 +18,11 @@ Following Milne, an abelian variety is a *proper, geometrically integral group s
 Geometric integrality is the robust "variety" condition (it is the standing hypothesis of
 Mathlib's commutativity theorem and is stable under base change and insensitive to imperfect
 base fields); for a group scheme over a field it is equivalent to the more familiar
-smooth-plus-geometrically-connected packaging, which needs the harder "reduced connected group
-scheme is irreducible" input not yet in Mathlib. We therefore take geometric integrality as the
-definition and leave the smooth/connected reconciliation as later work.
+smooth-plus-geometrically-connected packaging. One direction of that equivalence is available and
+recorded below (`AbelianVariety.smooth`, `AbelianVariety.geometricallyConnected`), so the
+roadmap's smooth/connected interface is exposed; the reverse reconciliation needs the harder
+"reduced connected group scheme is irreducible" input not yet in Mathlib and is left as later
+work. We therefore take geometric integrality as the definition.
 
 We bundle the data as a structure `AbelianVariety K`, so that later roadmap targets can write
 `JacobianVariety X x₀ : AbelianVariety k` and refer to `(JacobianVariety X x₀).toScheme` and
@@ -31,6 +35,10 @@ hypotheses we derive:
 * `AbelianVariety.isIntegral`: the underlying scheme is integral (hence nonempty, irreducible,
   and reduced), since geometric integrality over the one-point base `Spec K` descends to
   absolute integrality;
+* `AbelianVariety.smooth` and `AbelianVariety.geometricallyConnected`: the structure morphism is
+  smooth (a geometrically reduced group scheme of finite type over a field is smooth) and
+  geometrically connected (geometric irreducibility gives connectedness), recovering the
+  roadmap's smooth/connected clauses from geometric integrality;
 * `AbelianVariety.baseChange`: the base change of an abelian variety along a field extension
   `K → L` is again an abelian variety, since properness and geometric integrality are stable
   under base change and the monoidal pullback functor carries the group-object structure.
@@ -94,6 +102,27 @@ nonempty, irreducible, and reduced. -/
 instance isIntegral (A : AbelianVariety K) : IsIntegral A.toScheme :=
   GeometricallyIntegral.isIntegral_of_subsingleton A.toOver.hom
 
+/-- An abelian variety is smooth over `Spec K`. This recovers the roadmap's "smooth" clause:
+a geometrically reduced group scheme locally of finite type over a field is smooth
+(`AlgebraicGeometry.smooth_of_grpObj`), and geometric integrality supplies geometric reducedness
+while properness supplies local finiteness of type. -/
+instance smooth (A : AbelianVariety K) : Smooth A.toOver.hom :=
+  haveI : GrpObj (Over.mk A.toOver.hom) := A.grpObj
+  smooth_of_grpObj A.toOver.hom
+
+/-- An abelian variety is geometrically connected over `Spec K`. This recovers the roadmap's
+"geometrically connected" clause: geometric integrality gives geometric irreducibility, and an
+irreducible space is connected. -/
+instance geometricallyConnected (A : AbelianVariety K) :
+    GeometricallyConnected A.toOver.hom where
+  geometrically_connectedSpace := by
+    have h : geometrically (IrreducibleSpace ·) A.toOver.hom :=
+      GeometricallyIrreducible.geometrically_irreducibleSpace ..
+    rw [geometrically_eq_universally] at h ⊢
+    refine MorphismProperty.universally_mono (fun {X Y} f hf hint hsub ↦ ?_) _ h
+    have := hf hint hsub
+    infer_instance
+
 /-! ### Base change along a field extension -/
 
 /-- The base change of an abelian variety along a field extension `K → L`, obtained by pulling
@@ -121,10 +150,11 @@ lemma baseChange_toOver (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K
 
 /-- The underlying scheme of a base change is the fibre product of the abelian variety with
 `Spec L` over `Spec K`. -/
+@[simp]
 lemma baseChange_toScheme (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
     (A.baseChange L).toScheme =
-      Limits.pullback A.toOver.hom (Spec.map (CommRingCat.ofHom (algebraMap K L))) :=
-  (rfl)
+      Limits.pullback A.toOver.hom (Spec.map (CommRingCat.ofHom (algebraMap K L))) := by
+  simp only [toScheme, baseChange_toOver, Over.pullback_obj_left]
 
 end AbelianVariety
 
