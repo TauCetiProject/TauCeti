@@ -92,7 +92,7 @@ private def irreducibleComponents_containing_equiv_of_isOpenEmbedding
 private lemma minimalPrimes_map_of_ringEquiv {A B : Type*} [CommRing A] [CommRing B]
     (e : A ≃+* B) (I : Ideal A) (hI : I ∈ minimalPrimes A) :
     Ideal.map e I ∈ minimalPrimes B := by
-  -- Unfold the definition of `minimalPrimes A` to `(⊥ : Ideal A).minimalPrimes` (i.e. `IsMinimalPrime I`).
+  -- Unfold `minimalPrimes A` to `(⊥ : Ideal A).minimalPrimes` (i.e. `IsMinimalPrime I`).
   change IsMinimalPrime I at hI
   haveI : I.IsPrime := hI.1.1
   haveI : (Ideal.map e I).IsPrime := Ideal.map_isPrime_of_equiv e
@@ -160,7 +160,7 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
       exact q.property
     haveI : q.val.val.IsPrime := q.val.property.1.1
     have hEq := IsLocalization.under_map_of_isPrime_disjoint S A ‹_› hI'
-    -- Unfold the definition of `minimalPrimes R` to express it in terms of `Ideal.under` membership.
+    -- Unfold `minimalPrimes R` to its expression in terms of `Ideal.under` membership.
     change Ideal.under R (Ideal.map (algebraMap R A) q.val.val) ∈ minimalPrimes R
     rw [hEq]
     exact q.val.property⟩
