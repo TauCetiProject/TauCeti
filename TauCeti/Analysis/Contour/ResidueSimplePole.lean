@@ -6,7 +6,6 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.Residue
-public import Mathlib.Analysis.Meromorphic.Order
 
 /-!
 # The residue at a simple pole as a limit
@@ -95,32 +94,20 @@ private theorem neg_one_le_of_zero_le_one_add {x : WithTop ℤ} (h : 0 ≤ 1 + x
 
 /-- **The residue at a simple pole is `lim_{z→z₀} (z − z₀) · f z`.** If `f` has a simple pole at
 `z₀` (`meromorphicOrderAt f z₀ = −1`), then `(z − z₀) · f z` converges to `residue f z₀` as
-`z → z₀`. The residue is the order-`(−1)` Laurent coefficient, which at a simple pole is the
-trailing coefficient `g z₀` of the analytic part `g` in `f z = (z − z₀)⁻¹ · g z`; multiplying by
-`(z − z₀)` cancels the pole, leaving `g`, which is continuous. -/
+`z → z₀`. -/
 theorem tendsto_sub_mul_nhds_residue_of_order_eq_neg_one (hord : meromorphicOrderAt f z₀ = -1) :
     Tendsto (fun z => (z - z₀) * f z) (𝓝[≠] z₀) (𝓝 (residue f z₀)) := by
   have hf : MeromorphicAt f z₀ :=
     meromorphicAt_of_meromorphicOrderAt_ne_zero (by rw [hord]; decide)
-  obtain ⟨g, hg_an, hg_ne, hg_eq⟩ := (meromorphicOrderAt_ne_top_iff hf).1 (by rw [hord]; decide)
   have huntop : (meromorphicOrderAt f z₀).untop₀ = -1 := by rw [hord]; exact WithTop.untop₀_coe (-1)
-  have hres : residue f z₀ = g z₀ := by
-    rw [residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one hord,
-      hg_an.meromorphicTrailingCoeffAt_of_eq_nhdsNE hg_eq]
-  rw [hres]
-  have hcont : Tendsto g (𝓝[≠] z₀) (𝓝 (g z₀)) :=
-    (hg_an.continuousAt.continuousWithinAt (s := {z₀}ᶜ)).tendsto
-  refine hcont.congr' ?_
-  filter_upwards [hg_eq, self_mem_nhdsWithin] with z hz hz0
-  rw [huntop] at hz
-  have hzne : z - z₀ ≠ 0 := sub_ne_zero.mpr (by simpa using hz0)
-  rw [hz, zpow_neg_one, smul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hzne, one_mul]
+  have h := hf.tendsto_nhds_meromorphicTrailingCoeffAt
+  rw [huntop, ← residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one hord] at h
+  refine h.congr fun z => ?_
+  simp [Pi.smul_apply', neg_neg, zpow_one, smul_eq_mul]
 
 /-- **The residue as a limit, at most a simple pole.** If `f` has at most a simple pole at `z₀`
-(`−1 ≤ meromorphicOrderAt f z₀`), then `(z − z₀) · f z → residue f z₀` as `z → z₀`. Splits into the
-genuine simple pole (order `−1`, via `tendsto_sub_mul_nhds_residue_of_order_eq_neg_one`) and the
-analytic case (order `≥ 0`), where both the residue and the limit vanish because `(z − z₀) → 0`
-while `f` stays bounded. -/
+(`−1 ≤ meromorphicOrderAt f z₀`), then `(z − z₀) · f z → residue f z₀` as `z → z₀`. In the analytic
+case (order `≥ 0`) both the residue and the limit are `0`. -/
 theorem tendsto_sub_mul_nhds_residue (hf : MeromorphicAt f z₀)
     (hord : -1 ≤ meromorphicOrderAt f z₀) :
     Tendsto (fun z => (z - z₀) * f z) (𝓝[≠] z₀) (𝓝 (residue f z₀)) := by
@@ -136,9 +123,7 @@ theorem tendsto_sub_mul_nhds_residue (hf : MeromorphicAt f z₀)
 
 /-- **Computing a residue as a limit (converse).** If `f` is meromorphic at `z₀` and the product
 `(z − z₀) · f z` converges to `L` as `z → z₀`, then `f` has at most a simple pole and
-`residue f z₀ = L`.
-A finite limit for `(z − z₀) · f z` forces its order to be nonnegative, hence `f` has order `≥ −1`;
-the residue is then pinned down by `tendsto_sub_mul_nhds_residue` and uniqueness of limits. -/
+`residue f z₀ = L`. This is the direction used in practice to read off a residue. -/
 theorem residue_eq_of_tendsto_sub_mul {L : ℂ} (hf : MeromorphicAt f z₀)
     (h : Tendsto (fun z => (z - z₀) * f z) (𝓝[≠] z₀) (𝓝 L)) :
     residue f z₀ = L := by
