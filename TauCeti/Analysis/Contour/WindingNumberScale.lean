@@ -51,6 +51,11 @@ variable {γ : ℝ → ℂ} {a b : ℝ} {z₀ c : ℂ} {Ω : Set ℂ}
 abbreviation keeps the scaling statements readable. -/
 local notation "κ[" z "]" => (fun w : ℂ => (w - z)⁻¹)
 
+private lemma windingKernel_const_mul_eq (hc : c ≠ 0) (w : ℂ) :
+    c⁻¹ * (c⁻¹ * (c * w) - z₀)⁻¹ = (c * w - c * z₀)⁻¹ := by
+  simp only [inv_mul_cancel_left₀ hc]
+  rw [← mul_sub, mul_inv]
+
 /-- **Index principal value under nonzero scaling.** Multiplying the curve and the base point by a
 nonzero complex number `c` transports the single-point Cauchy principal value of the winding kernel
 `κ[z₀]` about `z₀` to that of `κ[c * z₀]` about `c * z₀`, with the same value. This specializes the
@@ -61,9 +66,7 @@ theorem hasCauchyPVAt_windingKernel_const_mul
     (h : HasCauchyPVAt γ a b κ[z₀] z₀ L) (hc : c ≠ 0) :
     HasCauchyPVAt (fun t => c * γ t) a b κ[c * z₀] (c * z₀) L := by
   refine (h.const_mul_curve hc).congr_along_curve fun t _ => ?_
-  -- The rescaled winding kernel `z ↦ c⁻¹ * (c⁻¹ * z - z₀)⁻¹` agrees with `κ[c * z₀]` at `c * γ t`.
-  simp only [inv_mul_cancel_left₀ hc]
-  rw [← mul_sub, mul_inv]
+  exact windingKernel_const_mul_eq (z₀ := z₀) hc (γ t)
 
 /-- Existence form of `hasCauchyPVAt_windingKernel_const_mul`: nonzero scaling of the curve and base
 point preserves existence of the index principal value, exposed for the same downstream chaining. -/
@@ -83,13 +86,11 @@ theorem windingNumber_const_mul (hc : c ≠ 0) :
     (f := κ[c * z₀]) (g := fun z => c⁻¹ * κ[z₀] (c⁻¹ * z)) (z₀ := c * z₀)]
   · exact cauchyPVAt_const_mul_curve (γ := γ) (a := a) (b := b) (f := κ[z₀]) (z₀ := z₀) hc
   · intro t _
-    -- `κ[c * z₀] (c * γ t)` agrees with the rescaled kernel `c⁻¹ * κ[z₀] (c⁻¹ * (c * γ t))`.
-    simp only [inv_mul_cancel_left₀ hc]
-    rw [← mul_sub, mul_inv]
+    exact (windingKernel_const_mul_eq (z₀ := z₀) hc (γ t)).symm
 
 /-- Pointwise vanishing of a winding number is preserved by simultaneous multiplication of the
 curve and base point by a nonzero complex number. -/
-theorem windingNumber_eq_zero_const_mul (hzero : windingNumber γ a b z₀ = 0) (hc : c ≠ 0) :
+private theorem windingNumber_eq_zero_const_mul (hzero : windingNumber γ a b z₀ = 0) (hc : c ≠ 0) :
     windingNumber (fun t => c * γ t) a b (c * z₀) = 0 := by
   rw [windingNumber_const_mul hc, hzero]
 
