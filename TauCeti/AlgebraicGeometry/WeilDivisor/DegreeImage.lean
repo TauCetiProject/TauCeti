@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor.DegreeSplitting
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
 
 /-!
 # The image of the degree map and the degree quotient `Cl(X)/Pic⁰`
@@ -19,7 +19,10 @@ class group `Cl(X)` and its kernel `picZero`, the abstract `Pic⁰`.
 makes the descended degree *surjective* and splits `Cl(X) ≃+ picZero × ℤ`. That file's docstring
 flags the general case, where there is no weight-one point: "the image of the weighted degree map
 is `d·ℤ` for the index `d` of the residue degrees". This file supplies exactly that general
-picture.
+picture. Everything here is independent of the weight-one splitting theory, so it imports only
+`Principal`; the weight-one corollaries built on `degreeSection` /
+`weightedDegreeClass_surjective` live in the downstream
+`TauCeti.AlgebraicGeometry.WeilDivisor.DegreeImageSplitting`, after `DegreeSplitting`.
 
 The image of the weighted degree is computed unconditionally, before any principal-divisor
 hypothesis: since the point divisors generate the free abelian group of Weil divisors and
@@ -42,9 +45,9 @@ already surjective on a nonempty point type.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, "Degree" and "`Pic⁰ X =
 ker deg` (as an abstract group)", by computing the image of the degree map and identifying the
-degree quotient of the class group with it. It reuses Tau Ceti's `WeilDivisor`, `OrderSystem`,
-and `DegreeSplitting` API together with Mathlib's `AddSubgroup.closure` and first-isomorphism
-(`QuotientAddGroup.quotientKerEquivRange` / `quotientKerEquivOfRightInverse`) machinery; no
+degree quotient of the class group with it. It reuses Tau Ceti's `WeilDivisor` and `OrderSystem`
+API together with Mathlib's `AddSubgroup.closure` and first-isomorphism
+(`QuotientAddGroup.quotientKerEquivRange` / `quotientKerEquivOfSurjective`) machinery; no
 external mathematics is vendored.
 -/
 
@@ -113,13 +116,6 @@ lemma weightedDegreeClass_range_eq_top (w : X → ℤ) (h : S.IsWeightedDegreeZe
     (hw : AddSubgroup.closure (Set.range w) = ⊤) : (weightedDegreeClass w h).range = ⊤ := by
   rw [weightedDegreeClass_range, hw]
 
-/-- With a weight-one base point the descended weighted degree hits all of `ℤ`; this is the
-`AddSubgroup`-level restatement of `weightedDegreeClass_surjective`, a special case of
-`weightedDegreeClass_range_eq_top`. -/
-lemma weightedDegreeClass_range_eq_top_of_weight_one (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
-    {x₀ : X} (hx₀ : w x₀ = 1) : (weightedDegreeClass w h).range = ⊤ :=
-  AddMonoidHom.range_eq_top.mpr (S.weightedDegreeClass_surjective w h hx₀)
-
 /-! ### The degree quotient `Cl(X)/Pic⁰` -/
 
 /-- **The degree quotient.** The class group modulo the abstract `Pic⁰` is isomorphic to the image
@@ -174,31 +170,6 @@ lemma classGroupQuotientPicZeroEquivInt_symm_weightedDegreeClass (w : X → ℤ)
     (S.classGroupQuotientPicZeroEquivInt w h hsurj).symm (weightedDegreeClass w h c) =
       QuotientAddGroup.mk c := by
   rw [AddEquiv.symm_apply_eq, classGroupQuotientPicZeroEquivInt_mk]
-
-/-- **The degree quotient at a rational point.** With a weight-one base point the degree section
-`n ↦ n • [x₀]` is a genuine right inverse of the descended weighted degree, so the class group
-modulo the abstract `Pic⁰` is `ℤ`, `Cl(X) ⧸ Pic⁰ ≃+ ℤ`, with an explicit inverse. Together with
-`DegreeSplitting`'s `Cl(X) ≃+ picZero × ℤ` this exhibits the degree as the projection to the `ℤ`
-factor. -/
-@[expose] noncomputable def classGroupQuotientPicZeroEquivIntOfWeightOne (w : X → ℤ)
-    (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1) :
-    S.ClassGroup ⧸ picZero w h ≃+ ℤ :=
-  QuotientAddGroup.quotientKerEquivOfRightInverse (weightedDegreeClass w h) (S.degreeSection x₀)
-    fun n => S.weightedDegreeClass_degreeSection_of_weight_one w h hx₀ n
-
-@[simp]
-lemma classGroupQuotientPicZeroEquivIntOfWeightOne_mk (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
-    {x₀ : X} (hx₀ : w x₀ = 1) (c : S.ClassGroup) :
-    S.classGroupQuotientPicZeroEquivIntOfWeightOne w h hx₀ (QuotientAddGroup.mk c) =
-      weightedDegreeClass w h c :=
-  rfl
-
-@[simp]
-lemma classGroupQuotientPicZeroEquivIntOfWeightOne_symm_apply (w : X → ℤ)
-    (h : S.IsWeightedDegreeZero w) {x₀ : X} (hx₀ : w x₀ = 1) (n : ℤ) :
-    (S.classGroupQuotientPicZeroEquivIntOfWeightOne w h hx₀).symm n =
-      QuotientAddGroup.mk (S.degreeSection x₀ n) :=
-  rfl
 
 end OrderSystem
 
