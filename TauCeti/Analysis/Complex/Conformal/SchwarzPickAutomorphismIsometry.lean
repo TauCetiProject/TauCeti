@@ -65,20 +65,6 @@ private lemma poincare_defect_quotient {a : ℂ} (ha : ‖a‖ < 1) {z : ℂ} (h
   rw [hnum, hM]
   field_simp
 
-/-- **The Moebius factor is an infinitesimal isometry of the Poincaré metric.** For `‖a‖ < 1`
-the disc automorphism `z ↦ (z - a) / (1 - conj a * z)` attains equality in the infinitesimal
-Schwarz--Pick inequality `norm_deriv_div_one_sub_norm_sq_le`: at every point of the open unit
-disc its Poincaré metric distortion is exactly `1`. -/
-theorem norm_deriv_div_one_sub_norm_sq_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ}
-    (ha : ‖a‖ < 1) {z : ℂ} (hz : ‖z‖ < 1) :
-    ‖deriv (fun ξ : ℂ => (ξ - a) / (1 - (starRingEnd ℂ) a * ξ)) z‖
-        / (1 - ‖(z - a) / (1 - (starRingEnd ℂ) a * z)‖ ^ 2)
-      = 1 / (1 - ‖z‖ ^ 2) := by
-  have hden : (1 : ℂ) - (starRingEnd ℂ) a * z ≠ 0 :=
-    one_sub_conj_mul_ne_zero_of_norm_lt_one hz ha
-  rw [(hasDerivAt_unitDiscMoebiusFormula a z hden).deriv]
-  exact poincare_defect_quotient ha hz
-
 /-- **The standard disc automorphism is an infinitesimal isometry of the Poincaré metric.** For a
 rotation factor `u` of norm `1` and `‖a‖ < 1` the automorphism `z ↦ u * (z - a) / (1 - conj a * z)`
 attains equality in the infinitesimal Schwarz--Pick inequality at every disc point: its Poincaré
@@ -93,6 +79,20 @@ theorem norm_deriv_div_one_sub_norm_sq_unitDiscStandardAutomorphismFormula_of_no
   have hA := (hasDerivAt_unitDiscMoebiusFormula a z hden).const_mul u
   rw [hA.deriv, norm_mul, norm_mul, hu, one_mul, one_mul]
   exact poincare_defect_quotient ha hz
+
+/-- **The Moebius factor is an infinitesimal isometry of the Poincaré metric.** For `‖a‖ < 1`
+the disc automorphism `z ↦ (z - a) / (1 - conj a * z)` attains equality in the infinitesimal
+Schwarz--Pick inequality `norm_deriv_div_one_sub_norm_sq_le`: at every point of the open unit
+disc its Poincaré metric distortion is exactly `1`.  This is the `u = 1` (no rotation) case of
+`norm_deriv_div_one_sub_norm_sq_unitDiscStandardAutomorphismFormula_of_norm_lt_one`. -/
+theorem norm_deriv_div_one_sub_norm_sq_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ}
+    (ha : ‖a‖ < 1) {z : ℂ} (hz : ‖z‖ < 1) :
+    ‖deriv (fun ξ : ℂ => (ξ - a) / (1 - (starRingEnd ℂ) a * ξ)) z‖
+        / (1 - ‖(z - a) / (1 - (starRingEnd ℂ) a * z)‖ ^ 2)
+      = 1 / (1 - ‖z‖ ^ 2) := by
+  simpa only [one_mul] using
+    norm_deriv_div_one_sub_norm_sq_unitDiscStandardAutomorphismFormula_of_norm_lt_one
+      norm_one ha hz
 
 /-- Bundled unit-disc form of the automorphism Poincaré-isometry: for disc points `a z` the
 standard automorphism formula centred at `a` has Poincaré metric distortion exactly `1` at `z`. -/
