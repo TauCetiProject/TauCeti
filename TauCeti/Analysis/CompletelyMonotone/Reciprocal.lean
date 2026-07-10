@@ -4,9 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.CompletelyMonotone.Closure
-public import Mathlib.Analysis.Calculus.IteratedDeriv.WithinZpow
-public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import TauCeti.Analysis.CompletelyMonotone.Basic
+import TauCeti.Analysis.CompletelyMonotone.Closure
+import Mathlib.Analysis.Calculus.IteratedDeriv.WithinZpow
 
 /-!
 # Reciprocal building blocks are completely monotone
@@ -16,30 +16,22 @@ This file adds a second family of concrete completely monotone functions to the
 `TauCeti.Analysis.CompletelyMonotone.Basic`: the **reciprocals of affine functions**
 `t ↦ (a + t)⁻¹` with `a > 0`, and their integer powers `t ↦ (a + t)^{-k}`.
 
-These are exactly the resolvent kernels `t ↦ (λ + t)⁻¹` that Part A of the roadmap builds a
-semigroup theory around, and they are the Stieltjes building blocks whose nonnegative mixtures
-generate every Stieltjes function. The acceptance example `t ↦ 1/(1 + t)` named in Part B of the
-roadmap is the special case `a = 1`; its representing measure `e^{-x} dx` is the exponential
-distribution.
-
-The proof is a direct computation of the alternating iterated derivatives. Writing `g y = y⁻¹`,
-Mathlib's `iteratedDerivWithin_one_div` gives `g⁽ⁿ⁾(y) = (-1)ⁿ · n! · y^{-1-n}` on any open set,
-and translation invariance of the iterated derivative
-(`iteratedDeriv_comp_const_add`) transports this to `t ↦ (a + t)⁻¹`. On `[0, ∞)` the base
-`a + t` is bounded below by `a > 0`, so `(-1)ⁿ` times the `n`-th derivative is
-`n! · (a + t)^{-1-n} ≥ 0`, which is the sign-alternation condition. The smoothness clause of
-`IsCompletelyMonotone` holds because the denominator never vanishes on `[0, ∞)`. The powers then
-follow from the product closure `IsCompletelyMonotone.pow`.
+These are the resolvent kernels `t ↦ (λ + t)⁻¹` that Part A of the roadmap builds a semigroup
+theory around, and they are among the basic Stieltjes (resolvent) kernels appearing in Stieltjes
+representations. The acceptance example `t ↦ 1/(1 + t)` named in Part B of the roadmap is the
+special case `a = 1`; its representing measure `e^{-x} dx` is the exponential distribution.
 
 ## Main declarations
 
-* `TauCeti.isCompletelyMonotone_inv_add_const`: for `a > 0`, the reciprocal `t ↦ (a + t)⁻¹` is
+* `TauCeti.isCompletelyMonotone_inv_const_add`: for `a > 0`, the reciprocal `t ↦ (a + t)⁻¹` is
   completely monotone.
-* `TauCeti.isCompletelyMonotone_one_div_add_const`: the same statement in `1 / (a + t)` form.
+* `TauCeti.isCompletelyMonotone_one_div_const_add`: the same statement in `1 / (a + t)` form.
 * `TauCeti.isCompletelyMonotone_one_div_one_add`: the roadmap acceptance example
   `t ↦ 1 / (1 + t)`.
-* `TauCeti.isCompletelyMonotone_inv_pow_add_const`: for `a > 0` and `k : ℕ`, the reciprocal power
-  `t ↦ (a + t)^{-k}` is completely monotone.
+* `TauCeti.isCompletelyMonotone_inv_pow_const_add`: for `a > 0` and `k : ℕ`, the reciprocal power
+  `t ↦ ((a + t) ^ k)⁻¹` is completely monotone.
+* `TauCeti.isCompletelyMonotone_zpow_neg_const_add`: the same building block in the integer-power
+  form `t ↦ (a + t) ^ (-k)`.
 
 ## References
 
@@ -54,11 +46,9 @@ open scoped ContDiff Nat
 
 namespace TauCeti
 
-/-- For `a > 0`, the reciprocal `t ↦ (a + t)⁻¹` is completely monotone: it is smooth on
-`[0, ∞)` (the denominator stays at least `a`), and its `n`-th derivative is
-`(-1)ⁿ · n! · (a + t)^{-1-n}`, so `(-1)ⁿ` times it is the nonnegative `n! · (a + t)^{-1-n}`.
-This is the resolvent kernel `t ↦ (λ + t)⁻¹` of the roadmap's semigroup theory. -/
-theorem isCompletelyMonotone_inv_add_const {a : ℝ} (ha : 0 < a) :
+/-- For `a > 0`, the reciprocal `t ↦ (a + t)⁻¹` is completely monotone. This is the resolvent
+kernel `t ↦ (λ + t)⁻¹` of the roadmap's semigroup theory. -/
+theorem isCompletelyMonotone_inv_const_add {a : ℝ} (ha : 0 < a) :
     IsCompletelyMonotone (fun t => (a + t)⁻¹) := by
   have hpos : ∀ t : ℝ, 0 ≤ t → 0 < a + t := fun t ht => by linarith
   -- The denominator never vanishes on `[0, ∞)`, so the reciprocal is smooth there.
@@ -95,27 +85,35 @@ theorem isCompletelyMonotone_inv_add_const {a : ℝ} (ha : 0 < a) :
   exact mul_nonneg (mul_nonneg (sq_nonneg _) (Nat.cast_nonneg _)) hzpow
 
 /-- For `a > 0`, the function `t ↦ 1 / (a + t)` is completely monotone (the `1 / _` phrasing of
-`isCompletelyMonotone_inv_add_const`). -/
-theorem isCompletelyMonotone_one_div_add_const {a : ℝ} (ha : 0 < a) :
+`isCompletelyMonotone_inv_const_add`). -/
+theorem isCompletelyMonotone_one_div_const_add {a : ℝ} (ha : 0 < a) :
     IsCompletelyMonotone (fun t => 1 / (a + t)) := by
   have heq : (fun t : ℝ => 1 / (a + t)) = fun t => (a + t)⁻¹ := by funext t; rw [one_div]
   rw [heq]
-  exact isCompletelyMonotone_inv_add_const ha
+  exact isCompletelyMonotone_inv_const_add ha
 
 /-- The roadmap acceptance example: `t ↦ 1 / (1 + t)` is completely monotone. Its representing
 measure under Bernstein's theorem is the exponential distribution `e^{-x} dx`. -/
 theorem isCompletelyMonotone_one_div_one_add :
     IsCompletelyMonotone (fun t => 1 / (1 + t)) :=
-  isCompletelyMonotone_one_div_add_const one_pos
+  isCompletelyMonotone_one_div_const_add one_pos
 
-/-- For `a > 0` and any natural power `k`, the reciprocal power `t ↦ (a + t)^{-k}`, written as
-`((a + t) ^ k)⁻¹`, is completely monotone. This follows from the reciprocal case together with the
-product closure `IsCompletelyMonotone.pow`. -/
-theorem isCompletelyMonotone_inv_pow_add_const {a : ℝ} (ha : 0 < a) (k : ℕ) :
+/-- For `a > 0` and any natural power `k`, the reciprocal power `t ↦ ((a + t) ^ k)⁻¹` is completely
+monotone. -/
+theorem isCompletelyMonotone_inv_pow_const_add {a : ℝ} (ha : 0 < a) (k : ℕ) :
     IsCompletelyMonotone (fun t => ((a + t) ^ k)⁻¹) := by
-  have h := (isCompletelyMonotone_inv_add_const ha).pow k
+  have h := (isCompletelyMonotone_inv_const_add ha).pow k
   have heq : ((fun t : ℝ => (a + t)⁻¹) ^ k) = fun t => ((a + t) ^ k)⁻¹ := by
     funext t; simp [Pi.pow_apply, inv_pow]
+  rwa [heq] at h
+
+/-- For `a > 0` and `k : ℕ`, the integer-power building block `t ↦ (a + t) ^ (-k)` is completely
+monotone (the `zpow` phrasing of `isCompletelyMonotone_inv_pow_const_add`). -/
+theorem isCompletelyMonotone_zpow_neg_const_add {a : ℝ} (ha : 0 < a) (k : ℕ) :
+    IsCompletelyMonotone (fun t => (a + t) ^ (-(k : ℤ))) := by
+  have h := isCompletelyMonotone_inv_pow_const_add ha k
+  have heq : (fun t : ℝ => ((a + t) ^ k)⁻¹) = fun t => (a + t) ^ (-(k : ℤ)) := by
+    funext t; rw [zpow_neg, zpow_natCast]
   rwa [heq] at h
 
 end TauCeti
