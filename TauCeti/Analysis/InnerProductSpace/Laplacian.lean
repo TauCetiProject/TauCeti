@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.Normed.Affine.Isometry
 
@@ -37,6 +38,9 @@ corollaries, where smoothness re-enters, live in the companion files
 `TauCeti/Analysis/InnerProductSpace/HarmonicIsometry.lean` and
 `TauCeti/Analysis/InnerProductSpace/HarmonicDilation.lean`.
 
+The file also records the base second-derivative computation `laplacian_norm_sq`
+(`Δ ‖x‖² = 2 · dim E`), a reusable characteristic value of the Laplacian on the squared norm.
+
 ## Main declarations
 
 * `TauCeti.laplacian_comp_affineIsometryEquiv_right`: `Δ (f ∘ e) = (Δ f) ∘ e` for an
@@ -47,6 +51,8 @@ corollaries, where smoothness re-enters, live in the companion files
 * `TauCeti.laplacian_comp_homothety_right`: `Δ` scales by `c ^ 2` under
   `AffineMap.homothety a c`.
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
+* `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
+  squared norm.
 -/
 
 public section
@@ -180,5 +186,29 @@ theorem laplacian_comp_homothety_right (a : E) (c : ℝ) (f : E → F) :
   rw [laplacian_comp_add_right f a]
   ext x
   simp [AffineMap.homothety_apply, vsub_eq_sub, vadd_eq_add, sub_eq_add_neg, add_comm]
+
+/-- The Laplacian of the squared norm on a finite-dimensional real inner product space is twice
+the dimension. -/
+@[simp]
+theorem laplacian_norm_sq (x : E) :
+    Δ (fun y : E => ‖y‖ ^ 2) x = 2 * (Module.finrank ℝ E : ℝ) := by
+  -- The Hessian of `‖·‖²` is the constant bilinear map `2 • innerSL ℝ`.
+  have hsnd : fderiv ℝ (fderiv ℝ fun y : E => ‖y‖ ^ 2) x
+      = (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) := by
+    rw [fderiv_norm_sq]
+    exact (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
+  rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis (fun y : E => ‖y‖ ^ 2)
+    (stdOrthonormalBasis ℝ E)) x]
+  -- Each orthonormal diagonal Hessian entry equals `2`.
+  have hterm : ∀ i, iteratedFDeriv ℝ 2 (fun y : E => ‖y‖ ^ 2) x
+      ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i] = 2 := by
+    intro i
+    have hself : (innerSL ℝ (stdOrthonormalBasis ℝ E i)) (stdOrthonormalBasis ℝ E i) = (1 : ℝ) := by
+      rw [innerSL_apply_apply, real_inner_self_eq_norm_sq,
+        (stdOrthonormalBasis ℝ E).orthonormal.norm_eq_one i, one_pow]
+    rw [iteratedFDeriv_two_apply, hsnd]
+    simp [hself]
+  rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul, mul_comm]
 
 end TauCeti
