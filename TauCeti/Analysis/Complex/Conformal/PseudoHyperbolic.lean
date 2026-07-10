@@ -132,9 +132,9 @@ lemma one_sub_conj_mul_ne_zero_unitDisc (z w : Complex.UnitDisc) :
     1 - (starRingEnd ℂ) (w : ℂ) * (z : ℂ) ≠ 0 :=
   one_sub_conj_mul_ne_zero_of_norm_lt_one z.norm_lt_one w.norm_lt_one
 
-/-- For a point of norm less than one, the denominator of the Moebius factor evaluated at the
+/-- For a point of norm at most one, the denominator of the Moebius factor evaluated at the
 factor's own center has norm `1 - ‖w‖ ^ 2`. -/
-lemma norm_one_sub_conj_mul_self_of_norm_lt_one {w : ℂ} (hw : ‖w‖ < 1) :
+lemma norm_one_sub_conj_mul_self_of_norm_le_one {w : ℂ} (hw : ‖w‖ ≤ 1) :
     ‖(1 : ℂ) - (starRingEnd ℂ) w * w‖ = 1 - ‖w‖ ^ 2 := by
   have hconj : (starRingEnd ℂ) w * w = ((‖w‖ ^ 2 : ℝ) : ℂ) := by
     rw [mul_comm, Complex.mul_conj, Complex.normSq_eq_norm_sq]

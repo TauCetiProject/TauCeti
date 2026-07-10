@@ -6,10 +6,10 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Data.Set.Function
 import Mathlib.Analysis.Complex.Schwarz
-import Mathlib.Analysis.Calculus.Deriv.Comp
-public import TauCeti.Analysis.Complex.Conformal.Moebius
+import TauCeti.Analysis.Complex.Conformal.Moebius
 
 /-!
 # The infinitesimal Schwarz--Pick inequality
@@ -54,26 +54,11 @@ theorem norm_deriv_div_one_sub_norm_sq_le {f : ℂ → ℂ}
   let source : ℂ → ℂ := fun ξ => (ξ - (-z)) / (1 - (starRingEnd ℂ) (-z) * ξ)
   let target : ℂ → ℂ := fun η => (η - f z) / (1 - (starRingEnd ℂ) (f z) * η)
   let g : ℂ → ℂ := target ∘ f ∘ source
-  -- `source` and `target` map the disc into itself and are holomorphic there.
-  have hsource_maps : MapsTo source (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-    simpa [source] using mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one
-      (a := -z) (by simpa using hz1)
-  have htarget_maps : MapsTo target (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-    simpa [target] using mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one (a := f z) hfz1
-  have hsource_diff : DifferentiableOn ℂ source (ball (0 : ℂ) 1) := by
-    simpa [source] using differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one
-      (a := -z) (by simpa using hz1)
-  have htarget_diff : DifferentiableOn ℂ target (ball (0 : ℂ) 1) := by
-    simpa [target] using differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one (a := f z) hfz1
-  have hg_maps : MapsTo g (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) :=
-    fun ξ hξ => htarget_maps (hmaps (hsource_maps hξ))
-  have hg_diff : DifferentiableOn ℂ g (ball (0 : ℂ) 1) :=
-    htarget_diff.comp (hf.comp hsource_diff hsource_maps) (hmaps.comp hsource_maps)
-  -- The conjugate `g` fixes the origin.
+  -- The conjugate `g` is a holomorphic self-map of the disc fixing the origin (shared scaffold).
+  obtain ⟨hg_diff, hg_maps, hg_zero'⟩ := schwarzPickConjugate hf hmaps hz1
+  have hg_zero : g 0 = 0 := hg_zero'
   have hsource_zero : source 0 = z := by
     simp [source]
-  have hg_zero : g 0 = 0 := by
-    simp [g, target, hsource_zero]
   -- Schwarz's lemma at `0` for `g`.
   have hg_maps_closed : MapsTo g (ball (0 : ℂ) 1) (closedBall (0 : ℂ) 1) :=
     fun ξ hξ => ball_subset_closedBall (hg_maps hξ)
@@ -112,8 +97,8 @@ theorem norm_deriv_div_one_sub_norm_sq_le {f : ℂ → ℂ}
       = (1 / (1 - (starRingEnd ℂ) (f z) * f z)) * (deriv f z * (1 - (starRingEnd ℂ) z * z)) :=
     hcompg.deriv
   -- The norms of the two Moebius derivative factors.
-  have hnorm_z := norm_one_sub_conj_mul_self_of_norm_lt_one hz1
-  have hnorm_fz := norm_one_sub_conj_mul_self_of_norm_lt_one hfz1
+  have hnorm_z := norm_one_sub_conj_mul_self_of_norm_le_one hz1.le
+  have hnorm_fz := norm_one_sub_conj_mul_self_of_norm_le_one hfz1.le
   -- Assemble the norm of `deriv g 0` and conclude via Schwarz.
   have hnorm_dg : ‖deriv g 0‖ = ‖deriv f z‖ * (1 - ‖z‖ ^ 2) / (1 - ‖f z‖ ^ 2) := by
     rw [hderiv_g, norm_mul, norm_mul, norm_div, norm_one, hnorm_z, hnorm_fz]
