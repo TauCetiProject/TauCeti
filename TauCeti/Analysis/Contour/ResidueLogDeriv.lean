@@ -70,7 +70,9 @@ theorem residue_logDeriv_eq_meromorphicOrderAt {f : ℂ → ℂ} {z₀ : ℂ} {n
   have hA : MeromorphicAt (fun z => (n : ℂ) * (z - z₀)⁻¹) z₀ :=
     analyticAt_const.meromorphicAt.mul (meromorphicAt_sub_inv z₀)
   have hB : MeromorphicAt (logDeriv g) z₀ := hlogg_an.meromorphicAt
-  -- The residue only sees the germ, so pass to the split form and add residues.
+  -- The residue only sees the germ, so pass to the split form and add residues. The `show`
+  -- unfolds `Pi.add`, putting the pointwise sum into the function-sum form expected by
+  -- `residue_add`.
   rw [residue_congr_nhdsNE hgerm,
     show (fun z => (n : ℂ) * (z - z₀)⁻¹ + logDeriv g z)
         = (fun z => (n : ℂ) * (z - z₀)⁻¹) + logDeriv g from rfl,
