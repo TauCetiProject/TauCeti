@@ -112,7 +112,8 @@ lemma integral_eval_T_real_mul_eval_T_real_measureT_eq_ite (m n : ℕ) :
 
 /-! ### Exponential-moment consumer forms -/
 
-private lemma ae_mem_Icc_measureT :
+/-- The Chebyshev `T` orthogonality measure is supported on `[-1, 1]`. -/
+lemma ae_mem_Icc_measureT :
     ∀ᵐ x ∂Polynomial.Chebyshev.measureT, x ∈ Set.Icc (-1 : ℝ) 1 := by
   -- Across the `module` boundary, `measureT`'s restricted-measure definition is not
   -- unfoldable here.  Recover the support fact through the public `integral_measureT`
@@ -156,6 +157,19 @@ lemma integrable_exp_mul_abs_smul_measureT {𝕜 β : Type*} [RCLike 𝕜] [Norm
   exact Integrable.exp_abs_smul_of_ae_abs_le hg a 1 (by
     filter_upwards [ae_mem_Icc_measureT] with x hx
     exact abs_le.mpr hx)
+
+/-- The Chebyshev `T` orthogonality measure has every exponential absolute moment finite. -/
+lemma integrable_exp_abs_measureT (a : ℝ) :
+    Integrable (fun x : ℝ => Real.exp (a * |x|)) Polynomial.Chebyshev.measureT := by
+  simpa using integrable_exp_mul_abs_smul_measureT (𝕜 := ℝ) (β := ℝ) (g := fun _ : ℝ => 1) a
+    (integrable_const (1 : ℝ))
+
+/-- The scalar-cast exponential absolute moments of the Chebyshev `T` measure are finite. -/
+lemma integrable_algebraMap_exp_abs_measureT {𝕜 : Type*} [RCLike 𝕜] (a : ℝ) :
+    Integrable (fun x : ℝ => (algebraMap ℝ 𝕜) (Real.exp (a * |x|)))
+      Polynomial.Chebyshev.measureT := by
+  simpa only [RCLike.algebraMap_eq_ofReal] using
+    (integrable_exp_abs_measureT a).ofReal (𝕜 := 𝕜)
 
 /-! ### `L²` consumer forms -/
 
