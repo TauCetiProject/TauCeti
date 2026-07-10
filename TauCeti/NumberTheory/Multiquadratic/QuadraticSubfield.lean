@@ -66,23 +66,28 @@ theorem prod_root_mem_adjoin (S : Finset ι) :
     (∏ i ∈ S, root i) ∈ IntermediateField.adjoin K (Set.range root) :=
   prod_mem fun i _ => IntermediateField.subset_adjoin K _ ⟨i, rfl⟩
 
-/-- **A nonempty subset-product root generates a quadratic subfield.** Under square-class
-independence (no nonempty subset product of the radicands is a square), the subset-product root of
-a nonempty `S` lies outside `K` yet squares into `K`, so `[K(∏_{i ∈ S} root i) : K] = 2`. -/
+/-- **A subset-product root whose radicand product is not a square lies outside `K`.** If
+`∏_{i ∈ S} root i` were in `⊥`, its square `∏_{i ∈ S} d i` would be a square in `K`. -/
+private theorem prod_root_notMem_bot (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    {S : Finset ι} (hSsq : ¬ IsSquare (∏ i ∈ S, d i)) :
+    (∏ i ∈ S, root i) ∉ (⊥ : IntermediateField K L) := by
+  rw [IntermediateField.mem_bot]
+  rintro ⟨t, ht⟩
+  refine hSsq ⟨t, ?_⟩
+  have hsq : algebraMap K L (∏ i ∈ S, d i) = algebraMap K L (t * t) := by
+    rw [map_mul, ht, ← prod_root_sq hroot, sq]
+  exact FaithfulSMul.algebraMap_injective K L hsq
+
+/-- **A nonempty subset-product root generates a quadratic subfield.** When the subset product
+`∏_{i ∈ S} d i` of the radicands is not a square, the subset-product root of `S` lies outside `K`
+yet squares into `K`, so `[K(∏_{i ∈ S} root i) : K] = 2`. -/
 theorem finrank_adjoin_prod_root [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
-    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i))
-    {S : Finset ι} (hS : S.Nonempty) :
+    {S : Finset ι} (hSsq : ¬ IsSquare (∏ i ∈ S, d i)) :
     Module.finrank K (IntermediateField.adjoin K {∏ i ∈ S, root i}) = 2 := by
   have hx2 : (∏ i ∈ S, root i) ^ 2 ∈ (⊥ : IntermediateField K L) := by
     rw [prod_root_sq hroot]; exact IntermediateField.algebraMap_mem _ _
-  have hxb : (∏ i ∈ S, root i) ∉ (⊥ : IntermediateField K L) := by
-    rw [IntermediateField.mem_bot]
-    rintro ⟨t, ht⟩
-    refine hindep S hS ⟨t, ?_⟩
-    have hsq : algebraMap K L (∏ i ∈ S, d i) = algebraMap K L (t * t) := by
-      rw [map_mul, ht, ← prod_root_sq hroot, sq]
-    exact FaithfulSMul.algebraMap_injective K L hsq
+  have hxb := prod_root_notMem_bot hroot hSsq
   have h := finrank_sup_adjoin_simple_eq_mul_two (⊥ : IntermediateField K L) hx2 hxb
   rwa [bot_sup_eq, IntermediateField.finrank_bot, one_mul] at h
 
@@ -105,13 +110,7 @@ theorem adjoin_prod_root_inj [NeZero (2 : K)]
     S = T := by
   classical
   -- The subset-product root of `S` lies outside `K`, else its square `∏_{i ∈ S} d i` would be one.
-  have hxb : (∏ i ∈ S, root i) ∉ (⊥ : IntermediateField K L) := by
-    rw [IntermediateField.mem_bot]
-    rintro ⟨t, ht⟩
-    refine hindep S hS ⟨t, ?_⟩
-    have hsq : algebraMap K L (∏ i ∈ S, d i) = algebraMap K L (t * t) := by
-      rw [map_mul, ht, ← prod_root_sq hroot, sq]
-    exact FaithfulSMul.algebraMap_injective K L hsq
+  have hxb := prod_root_notMem_bot hroot (hindep S hS)
   -- Sharing a quadratic field puts the two subset products in one square class.
   have hsq : IsSquare ((∏ i ∈ S, d i) * (∏ i ∈ T, d i)) :=
     isSquare_mul_of_adjoin_simple_eq (prod_root_sq hroot S) (prod_root_sq hroot T)
