@@ -37,7 +37,10 @@ It performs the following steps:
 3. Uses specific `simp` naturality lemmas and the category theory simplifier (`aesop_cat`)
    to discharge the remaining goal.
 -/
-macro "monoidal_chase" : tactic => `(tactic|
+syntax "monoidal_chase" : tactic
+
+macro_rules
+| `(tactic| monoidal_chase) => `(tactic|
   focus
     try pure_coherence
     try coherence
