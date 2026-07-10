@@ -23,6 +23,10 @@ open CategoryTheory AlgebraicGeometry SheafOfModules
 
 namespace TauCeti.Foundations
 
+/--
+A sheaf of modules `F` over a scheme `X` is coherent if it is both
+quasi-coherent and of finite presentation.
+-/
 class IsCoherent {X : Scheme.{u}} (F : SheafOfModules.{u} X.ringCatSheaf) : Prop where
   isQuasicoherent : IsQuasicoherent.{u, u, u} F
   isCoherent : IsFinitePresentation.{u} F
