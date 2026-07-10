@@ -133,7 +133,7 @@ theorem id_domain_eq_top :
 
 /-- The generator of the identity semigroup is the zero operator. -/
 @[simp]
-theorem id_generator :
+theorem id_generator_eq_zero :
     (StronglyContinuousSemigroup.id X).generator = 0 := by
   refine LinearPMap.ext ?_ ?_
   · rw [(StronglyContinuousSemigroup.id X).generator_domain, id_domain_eq_top,
