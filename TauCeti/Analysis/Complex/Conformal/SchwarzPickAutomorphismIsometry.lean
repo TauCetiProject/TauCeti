@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.Complex.Conformal.UnitDiscAutomorphism
-public import TauCeti.Analysis.Complex.Conformal.SchwarzPickDerivative
 
 /-!
 # Disc automorphisms are infinitesimal isometries of the Poincaré metric
@@ -39,20 +38,6 @@ namespace TauCeti
 open Complex Metric Set
 open scoped ComplexConjugate
 
-/-- **Poincaré defect identity.** The difference of squared norms of the Moebius denominator and
-numerator factors is the product of the two hyperbolic defects, so the metric factors cancel:
-`‖1 - conj a * z‖ ^ 2 - ‖z - a‖ ^ 2 = (1 - ‖z‖ ^ 2) * (1 - ‖a‖ ^ 2)`. -/
-private lemma norm_sq_one_sub_conj_mul_sub_norm_sq_sub (a z : ℂ) :
-    ‖(1 : ℂ) - (starRingEnd ℂ) a * z‖ ^ 2 - ‖z - a‖ ^ 2
-      = (1 - ‖z‖ ^ 2) * (1 - ‖a‖ ^ 2) := by
-  rw [← Complex.normSq_eq_norm_sq, ← Complex.normSq_eq_norm_sq, ← Complex.normSq_eq_norm_sq,
-    ← Complex.normSq_eq_norm_sq, Complex.normSq_sub, Complex.normSq_sub, Complex.normSq_mul,
-    Complex.normSq_conj, Complex.normSq_one]
-  have hre : (1 * (starRingEnd ℂ) ((starRingEnd ℂ) a * z)).re = (z * (starRingEnd ℂ) a).re := by
-    simp [mul_comm]
-  rw [hre]
-  ring_nf
-
 /-- **Value-level equality case of the infinitesimal Schwarz--Pick lemma.** The quotient built
 from the Moebius derivative value `(1 - conj a * a) / (1 - conj a * z) ^ 2` and the Moebius
 image `(z - a) / (1 - conj a * z)` collapses to the reciprocal Poincaré factor `1 / (1 - ‖z‖ ^ 2)`.
@@ -75,7 +60,7 @@ private lemma poincare_defect_quotient {a : ℂ} (ha : ‖a‖ < 1) {z : ℂ} (h
   -- Squared norm of the Moebius image.
   have hM : 1 - ‖(z - a) / (1 - (starRingEnd ℂ) a * z)‖ ^ 2
       = (1 - ‖z‖ ^ 2) * (1 - ‖a‖ ^ 2) / ‖(1 : ℂ) - (starRingEnd ℂ) a * z‖ ^ 2 := by
-    rw [norm_div, div_pow, ← norm_sq_one_sub_conj_mul_sub_norm_sq_sub a z, sub_div,
+    rw [norm_div, div_pow, ← norm_sq_one_sub_conj_mul_sub_norm_sq_sub z a, sub_div,
       div_self hD_pos.ne']
   rw [hnum, hM]
   field_simp
@@ -84,8 +69,8 @@ private lemma poincare_defect_quotient {a : ℂ} (ha : ‖a‖ < 1) {z : ℂ} (h
 the disc automorphism `z ↦ (z - a) / (1 - conj a * z)` attains equality in the infinitesimal
 Schwarz--Pick inequality `norm_deriv_div_one_sub_norm_sq_le`: at every point of the open unit
 disc its Poincaré metric distortion is exactly `1`. -/
-theorem norm_deriv_div_one_sub_norm_sq_unitDiscMoebiusFormula {a : ℂ} (ha : ‖a‖ < 1)
-    {z : ℂ} (hz : ‖z‖ < 1) :
+theorem norm_deriv_div_one_sub_norm_sq_unitDiscMoebiusFormula_of_norm_lt_one {a : ℂ}
+    (ha : ‖a‖ < 1) {z : ℂ} (hz : ‖z‖ < 1) :
     ‖deriv (fun ξ : ℂ => (ξ - a) / (1 - (starRingEnd ℂ) a * ξ)) z‖
         / (1 - ‖(z - a) / (1 - (starRingEnd ℂ) a * z)‖ ^ 2)
       = 1 / (1 - ‖z‖ ^ 2) := by
@@ -94,20 +79,19 @@ theorem norm_deriv_div_one_sub_norm_sq_unitDiscMoebiusFormula {a : ℂ} (ha : �
   rw [(hasDerivAt_unitDiscMoebiusFormula a z hden).deriv]
   exact poincare_defect_quotient ha hz
 
-/-- **The standard disc automorphism is an infinitesimal isometry of the Poincaré metric.** For
-`u` on the unit circle and `‖a‖ < 1` the automorphism `z ↦ u * (z - a) / (1 - conj a * z)`
+/-- **The standard disc automorphism is an infinitesimal isometry of the Poincaré metric.** For a
+rotation factor `u` of norm `1` and `‖a‖ < 1` the automorphism `z ↦ u * (z - a) / (1 - conj a * z)`
 attains equality in the infinitesimal Schwarz--Pick inequality at every disc point: its Poincaré
-metric distortion is exactly `1`.  The rotation factor `u` does not change the distortion, so the
-whole group `Aut(𝔻)` acts by Poincaré isometries. -/
-theorem norm_deriv_div_one_sub_norm_sq_unitDiscStandardAutomorphismFormula (u : Circle)
-    {a : ℂ} (ha : ‖a‖ < 1) {z : ℂ} (hz : ‖z‖ < 1) :
-    ‖deriv (fun ξ : ℂ => (u : ℂ) * ((ξ - a) / (1 - (starRingEnd ℂ) a * ξ))) z‖
-        / (1 - ‖(u : ℂ) * ((z - a) / (1 - (starRingEnd ℂ) a * z))‖ ^ 2)
+metric distortion is exactly `1`.  The rotation factor `u` does not change the distortion. -/
+theorem norm_deriv_div_one_sub_norm_sq_unitDiscStandardAutomorphismFormula_of_norm_lt_one
+    {u : ℂ} (hu : ‖u‖ = 1) {a : ℂ} (ha : ‖a‖ < 1) {z : ℂ} (hz : ‖z‖ < 1) :
+    ‖deriv (fun ξ : ℂ => u * ((ξ - a) / (1 - (starRingEnd ℂ) a * ξ))) z‖
+        / (1 - ‖u * ((z - a) / (1 - (starRingEnd ℂ) a * z))‖ ^ 2)
       = 1 / (1 - ‖z‖ ^ 2) := by
   have hden : (1 : ℂ) - (starRingEnd ℂ) a * z ≠ 0 :=
     one_sub_conj_mul_ne_zero_of_norm_lt_one hz ha
-  have hA := (hasDerivAt_unitDiscMoebiusFormula a z hden).const_mul (u : ℂ)
-  rw [hA.deriv, norm_mul, norm_mul, Circle.norm_coe, one_mul, one_mul]
+  have hA := (hasDerivAt_unitDiscMoebiusFormula a z hden).const_mul u
+  rw [hA.deriv, norm_mul, norm_mul, hu, one_mul, one_mul]
   exact poincare_defect_quotient ha hz
 
 /-- Bundled unit-disc form of the automorphism Poincaré-isometry: for disc points `a z` the
@@ -119,6 +103,7 @@ theorem norm_deriv_div_one_sub_norm_sq_unitDiscStandardAutomorphismFormula_unitD
         / (1 - ‖(u : ℂ) * (((z : ℂ) - (a : ℂ)) /
           (1 - (starRingEnd ℂ) (a : ℂ) * (z : ℂ)))‖ ^ 2)
       = 1 / (1 - ‖(z : ℂ)‖ ^ 2) :=
-  norm_deriv_div_one_sub_norm_sq_unitDiscStandardAutomorphismFormula u a.norm_lt_one z.norm_lt_one
+  norm_deriv_div_one_sub_norm_sq_unitDiscStandardAutomorphismFormula_of_norm_lt_one
+    (Circle.norm_coe u) a.norm_lt_one z.norm_lt_one
 
 end TauCeti
