@@ -80,10 +80,6 @@ theorem stalkMap_formallySmooth_of_relDim [SmoothOfRelativeDimension n f]
   haveI := SmoothOfRelativeDimension.smooth n f
   stalkMap_formallySmooth f x
 
-/-- Corrected version of standardSmooth_relDim_at_stalk: stalk map is formally smooth. -/
-theorem formallySmooth_stalkMap [SmoothOfRelativeDimension n f] (x : X.carrier) :
-    (f.stalkMap x).hom.FormallySmooth :=
-  stalkMap_formallySmooth_of_relDim f n x
 
 end SmoothOfRelDimStalk
 
