@@ -14,29 +14,26 @@ public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 This file opens the Jacobian roadmap's Layer E by defining an **abelian variety** over a field
 `K`.
 
-Following the roadmap, an abelian variety is bundled as a smooth, proper, geometrically connected
-group scheme over `K`. Mathlib's current commutativity theorem assumes the stronger
-`GeometricallyIntegral` condition, so commutativity and absolute integrality are exposed below as
-conditional API under that hypothesis, together with a constructor from the geometrically integral
-package.
+Following the roadmap, an abelian variety is bundled as a proper geometrically integral group
+scheme over `K`. From geometric integrality and the group-scheme smoothness theorem we derive the
+roadmap's smooth and geometrically connected interface, while Mathlib's rigidity theorem gives
+commutativity.
 
 We bundle the data as a structure `AbelianVariety K`, so that later roadmap targets can write
 `JacobianVariety X x₀ : AbelianVariety k` and refer to `(JacobianVariety X x₀).toScheme` and
 its base changes, matching `TauCetiRoadmap/JacobianChallenge/Suggested.lean`. From the bundled
 hypotheses we derive:
 
-* `AbelianVariety.isCommMonObj_of_geometricallyIntegral`: the group law is commutative, straight
-  from Mathlib's rigidity theorem
-  `AlgebraicGeometry.isCommMonObj_of_isProper_of_geometricallyIntegral` under the extra hypothesis
-  `GeometricallyIntegral A.toOver.hom`;
-* `AbelianVariety.isIntegral_of_geometricallyIntegral`: the underlying scheme is integral under
-  the same extra hypothesis;
+* `AbelianVariety.isCommMonObj`: the group law is commutative, straight from Mathlib's rigidity
+  theorem `AlgebraicGeometry.isCommMonObj_of_isProper_of_geometricallyIntegral`;
+* `AbelianVariety.isIntegral`: the underlying scheme is integral;
+* `AbelianVariety.smooth` and `AbelianVariety.geometricallyConnected`: the roadmap's geometric
+  hypotheses derived from geometric integrality;
 * `AbelianVariety.ofGeometricallyIntegral`: a constructor from the geometrically integral package
   used by Mathlib's rigidity theorem;
 * `AbelianVariety.baseChange`: the base change of an abelian variety along a field extension
-  `K → L` is again an abelian variety, since properness, smoothness, and geometric connectedness
-  are stable under base change and the monoidal pullback functor carries the group-object
-  structure.
+  `K → L` is again an abelian variety, since properness and geometric integrality are stable under
+  base change and the monoidal pullback functor carries the group-object structure.
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E, "Abelian variety = smooth,
 proper, geometrically connected group scheme over `k`; basic API ... Commutativity is automatic
@@ -56,13 +53,25 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- An **abelian variety** over a field `K`: a smooth, proper, geometrically connected group
-scheme over `Spec K`.
+/-- A geometrically irreducible morphism is geometrically connected. -/
+lemma GeometricallyConnected.of_geometricallyIrreducible {X S : Scheme.{u}} {f : X ⟶ S}
+    [GeometricallyIrreducible f] : GeometricallyConnected f := by
+  refine ⟨?_⟩
+  have h : geometrically (IrreducibleSpace ·) f :=
+    GeometricallyIrreducible.geometrically_irreducibleSpace ..
+  rw [geometrically_eq_universally] at h ⊢
+  refine MorphismProperty.universally_mono (fun {X Y} f hf hint hsub ↦ ?_) _ h
+  have := hf hint hsub
+  infer_instance
+
+/-- An **abelian variety** over a field `K`: a proper geometrically integral group scheme over
+`Spec K`.
 
 The group-object structure lives on `toOver : Over (Spec (.of K))`; the underlying scheme is
 `toScheme = toOver.left`. The fields are the standing hypotheses of the theory: `grpObj` is the
 group law, `isProper` says the structure morphism to `Spec K` is proper, and
-`smooth` and `geometricallyConnected` record the roadmap's geometric hypotheses. -/
+`geometricallyIntegral` records the geometric hypothesis from which smoothness, geometric
+connectedness, absolute integrality, and commutativity are derived. -/
 structure AbelianVariety (K : Type u) [Field K] where
   /-- The underlying group scheme over `Spec K`. -/
   toOver : Over (Spec (.of K))
@@ -70,76 +79,74 @@ structure AbelianVariety (K : Type u) [Field K] where
   grpObj : GrpObj toOver
   /-- The structure morphism to `Spec K` is proper. -/
   isProper : IsProper toOver.hom
-  /-- The structure morphism to `Spec K` is smooth. -/
-  smooth : Smooth toOver.hom
-  /-- The structure morphism to `Spec K` is geometrically connected. -/
-  geometricallyConnected : GeometricallyConnected toOver.hom
+  /-- The structure morphism to `Spec K` is geometrically integral. -/
+  geometricallyIntegral : GeometricallyIntegral toOver.hom
 
 namespace AbelianVariety
 
 variable {K : Type u} [Field K]
 
-attribute [instance] AbelianVariety.grpObj AbelianVariety.isProper AbelianVariety.smooth
-  AbelianVariety.geometricallyConnected
+attribute [instance] AbelianVariety.grpObj AbelianVariety.isProper
+  AbelianVariety.geometricallyIntegral
 
 /-- The underlying scheme of an abelian variety. -/
 noncomputable abbrev toScheme (A : AbelianVariety K) : Scheme.{u} :=
   A.toOver.left
 
-/-- The group law of a geometrically integral abelian variety is commutative: a proper
-geometrically integral group scheme over a field is a commutative group object. This is the
-abstract rigidity theorem `AlgebraicGeometry.isCommMonObj_of_isProper_of_geometricallyIntegral`,
-packaged for the bundled `AbelianVariety`. -/
-instance isCommMonObj_of_geometricallyIntegral (A : AbelianVariety K)
-    [GeometricallyIntegral A.toOver.hom] : IsCommMonObj A.toOver :=
+/-- An abelian variety is smooth over the base field. -/
+instance smooth (A : AbelianVariety K) : Smooth A.toOver.hom := by
+  haveI : GrpObj (Over.mk A.toOver.hom) := inferInstanceAs (GrpObj A.toOver)
+  exact smooth_of_grpObj A.toOver.hom
+
+/-- An abelian variety is geometrically connected over the base field. -/
+instance geometricallyConnected (A : AbelianVariety K) :
+    GeometricallyConnected A.toOver.hom :=
+  GeometricallyConnected.of_geometricallyIrreducible
+
+/-- The group law of an abelian variety is commutative: a proper geometrically integral group
+scheme over a field is a commutative group object. This is the abstract rigidity theorem
+`AlgebraicGeometry.isCommMonObj_of_isProper_of_geometricallyIntegral`, packaged for the bundled
+`AbelianVariety`. -/
+instance isCommMonObj (A : AbelianVariety K) : IsCommMonObj A.toOver :=
   isCommMonObj_of_isProper_of_geometricallyIntegral A.toOver
 
-/-- The underlying scheme of a geometrically integral abelian variety is integral: geometric
-integrality over the one-point base `Spec K` descends to absolute integrality. In particular the
-underlying space is nonempty, irreducible, and reduced. -/
-instance isIntegral_of_geometricallyIntegral (A : AbelianVariety K)
-    [GeometricallyIntegral A.toOver.hom] : IsIntegral A.toScheme :=
+/-- The underlying scheme of an abelian variety is integral: geometric integrality over the
+one-point base `Spec K` descends to absolute integrality. In particular the underlying space is
+nonempty, irreducible, and reduced. -/
+instance isIntegral (A : AbelianVariety K) : IsIntegral A.toScheme :=
   GeometricallyIntegral.isIntegral_of_subsingleton A.toOver.hom
 
-/-- A constructor for abelian varieties from Mathlib's geometrically integral package. For a group
-scheme locally of finite type over a field, geometric integrality supplies the smoothness and
-geometric connectedness hypotheses of `AbelianVariety`. -/
+/-- A constructor for abelian varieties from Mathlib's geometrically integral package. -/
 noncomputable def ofGeometricallyIntegral (G : Over (Spec (.of K))) [GrpObj G]
     [IsProper G.hom] [GeometricallyIntegral G.hom] : AbelianVariety K where
   toOver := G
   grpObj := inferInstance
   isProper := inferInstance
-  smooth := by
-    haveI : GrpObj (Over.mk G.hom) := inferInstanceAs (GrpObj G)
-    exact smooth_of_grpObj G.hom
-  geometricallyConnected := by
-    refine ⟨?_⟩
-    have h : geometrically (IrreducibleSpace ·) G.hom :=
-      GeometricallyIrreducible.geometrically_irreducibleSpace ..
-    rw [geometrically_eq_universally] at h ⊢
-    refine MorphismProperty.universally_mono (fun {X Y} f hf hint hsub ↦ ?_) _ h
-    have := hf hint hsub
-    infer_instance
+  geometricallyIntegral := inferInstance
+
+@[simp]
+lemma ofGeometricallyIntegral_toOver (G : Over (Spec (.of K))) [GrpObj G]
+    [IsProper G.hom] [GeometricallyIntegral G.hom] :
+    (ofGeometricallyIntegral G).toOver = G :=
+  (rfl)
 
 /-! ### Base change along a field extension -/
 
 /-- The base change of an abelian variety along a field extension `K → L`, obtained by pulling
 back the group scheme along `Spec L → Spec K`.
 
-Properness, smoothness, and geometric connectedness are stable under base change, and the
-monoidal pullback functor carries the group-object structure (`Functor.grpObjObj`), so the result
-is again an abelian variety. This realizes the roadmap's base-change compatibility of the Jacobian
-at the level of abelian varieties. -/
+Properness and geometric integrality are stable under base change, and the monoidal pullback
+functor carries the group-object structure (`Functor.grpObjObj`), so the result is again an
+abelian variety. This realizes the roadmap's base-change compatibility of the Jacobian at the
+level of abelian varieties. -/
 noncomputable def baseChange (A : AbelianVariety K) (L : Type u) [Field L]
     [Algebra K L] : AbelianVariety L where
   toOver := (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj A.toOver
   grpObj := Functor.grpObjObj
   isProper := inferInstanceAs
     (IsProper (Limits.pullback.snd A.toOver.hom (Spec.map (CommRingCat.ofHom (algebraMap K L)))))
-  smooth := inferInstanceAs
-    (Smooth (Limits.pullback.snd A.toOver.hom (Spec.map (CommRingCat.ofHom (algebraMap K L)))))
-  geometricallyConnected := inferInstanceAs
-    (GeometricallyConnected (Limits.pullback.snd A.toOver.hom
+  geometricallyIntegral := inferInstanceAs
+    (GeometricallyIntegral (Limits.pullback.snd A.toOver.hom
       (Spec.map (CommRingCat.ofHom (algebraMap K L)))))
 
 @[simp]
