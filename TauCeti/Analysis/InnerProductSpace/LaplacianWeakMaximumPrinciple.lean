@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import TauCeti.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.InnerProductSpace.LaplacianMaximumPrinciple
 
 /-!
@@ -14,24 +15,18 @@ public import TauCeti.Analysis.InnerProductSpace.LaplacianMaximumPrinciple
 maximum principle: a `C²` function with `0 < Δ f` on the interior of a compact set attains its
 maximum on the frontier. That strict hypothesis is only a warm-up; the theorem PDE theory
 actually uses is the **weak maximum principle**, which relaxes `0 < Δ f` to the borderline
-`0 ≤ Δ f` (subharmonic). This file supplies it.
-
-The passage from strict to non-strict is the classical perturbation trick: for `ε > 0` the
-function `f + ε‖·‖²` is strictly subharmonic, because `Δ (‖·‖²) = 2 n` with `n = dim E > 0`, so
-the strict principle applies to it and letting `ε → 0` recovers the borderline statement. The
-supporting Laplacian computation `laplacian_norm_sq` is recorded first as a reusable fact.
+`0 ≤ Δ f` (subharmonic). This file supplies it, in bound form and in the extremum (`∃`) form.
 
 ## Main declarations
 
-* `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the squared
-  norm on a finite-dimensional real inner product space.
 * `TauCeti.le_of_laplacian_nonneg_le_frontier`: **weak maximum principle**. A continuous function
   on a compact set that is `C²` and subharmonic (`0 ≤ Δ f`) on the interior is bounded on all of
   `K` by any bound it satisfies on `frontier K`.
 * `TauCeti.ge_of_laplacian_nonpos_ge_frontier`: the dual weak minimum principle for superharmonic
   functions (`Δ f ≤ 0`).
 * `TauCeti.exists_mem_frontier_isMaxOn_of_laplacian_nonneg` /
-  `TauCeti.exists_mem_frontier_isMinOn_of_laplacian_nonpos`: a subharmonic (resp. superharmonic)
+  `TauCeti.exists_mem_frontier_isMinOn_of_laplacian_nonpos`: on a nonempty compact set in a
+  nontrivial finite-dimensional real inner product space, a subharmonic (resp. superharmonic)
   function attains a maximum (resp. minimum) on the frontier.
 -/
 
@@ -45,30 +40,6 @@ open InnerProductSpace Laplacian Topology RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- The Laplacian of the squared norm on a finite-dimensional real inner product space is twice
-the dimension. This is the second-derivative computation `Δ ‖x‖² = 2n` underlying the perturbation
-trick in the weak maximum principle. -/
-theorem laplacian_norm_sq (x : E) :
-    Δ (fun y : E => ‖y‖ ^ 2) x = 2 * (Module.finrank ℝ E : ℝ) := by
-  -- The Hessian of `‖·‖²` is the constant bilinear map `2 • innerSL ℝ`.
-  have hsnd : fderiv ℝ (fderiv ℝ fun y : E => ‖y‖ ^ 2) x
-      = (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) := by
-    rw [fderiv_norm_sq]
-    exact (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
-  rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis (fun y : E => ‖y‖ ^ 2)
-    (stdOrthonormalBasis ℝ E)) x]
-  -- Each orthonormal diagonal Hessian entry equals `2`.
-  have hterm : ∀ i, iteratedFDeriv ℝ 2 (fun y : E => ‖y‖ ^ 2) x
-      ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i] = 2 := by
-    intro i
-    have hself : (innerSL ℝ (stdOrthonormalBasis ℝ E i)) (stdOrthonormalBasis ℝ E i) = (1 : ℝ) := by
-      rw [innerSL_apply_apply, real_inner_self_eq_norm_sq,
-        (stdOrthonormalBasis ℝ E).orthonormal.norm_eq_one i, one_pow]
-    rw [iteratedFDeriv_two_apply, hsnd]
-    simp [hself]
-  rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_const, Finset.card_univ,
-    Fintype.card_fin, nsmul_eq_mul, mul_comm]
-
 section Nontrivial
 
 variable [Nontrivial E]
@@ -76,14 +47,13 @@ variable [Nontrivial E]
 /-- **Weak maximum principle for subharmonic functions.**
 
 Let `K` be compact. If `f` is continuous on `K`, is `C²` on `interior K`, and is subharmonic
-there (`0 ≤ Δ f`), then any bound `m` that `f` respects on `frontier K` bounds `f` on all of `K`.
-
-The proof perturbs `f` to the strictly subharmonic `f + ε‖·‖²`, applies the strict boundary
-maximum principle, and lets `ε → 0`. -/
+there (`0 ≤ Δ f`), then any bound `m` that `f` respects on `frontier K` bounds `f` on all of `K`. -/
 theorem le_of_laplacian_nonneg_le_frontier {K : Set E} (hK : IsCompact K) {f : E → ℝ} {m : ℝ}
     (hcont : ContinuousOn f K) (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hlap : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ Δ f x) (hbdry : ∀ ⦃x⦄, x ∈ frontier K → f x ≤ m) :
     ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
+  -- Perturb `f` to the strictly subharmonic `f + ε‖·‖²`, apply the strict boundary maximum
+  -- principle, and let `ε → 0`.
   intro x hxK
   -- `‖·‖²` is bounded above by some `C ≥ 0` on the compact set `K`.
   obtain ⟨C, hCub⟩ := hK.bddAbove_image (f := fun y : E => ‖y‖ ^ 2) (by fun_prop)
@@ -147,8 +117,9 @@ theorem ge_of_laplacian_nonpos_ge_frontier {K : Set E} (hK : IsCompact K) {f : E
   simp only [Pi.neg_apply] at hle
   linarith
 
-/-- A subharmonic (`0 ≤ Δ f`) continuous function on a compact set attains a maximum on the
-frontier. This is the `∃`-form of the weak maximum principle, mirroring
+/-- A subharmonic (`0 ≤ Δ f`) continuous function on a nonempty compact set in a nontrivial
+finite-dimensional real inner product space attains a maximum on the frontier. This is the
+`∃`-form of the weak maximum principle, mirroring
 `exists_mem_frontier_isMaxOn_of_laplacian_pos` for the strict case. -/
 theorem exists_mem_frontier_isMaxOn_of_laplacian_nonneg {K : Set E} (hK : IsCompact K)
     (hne : K.Nonempty) {f : E → ℝ} (hcont : ContinuousOn f K)
@@ -168,8 +139,8 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_nonneg {K : Set E} (hK : IsComp
   exact le_of_laplacian_nonneg_le_frontier hK hcont hcd hlap
     (fun w hw => isMaxOn_iff.mp hzmax w hw) hyK
 
-/-- A superharmonic (`Δ f ≤ 0`) continuous function on a compact set attains a minimum on the
-frontier. -/
+/-- A superharmonic (`Δ f ≤ 0`) continuous function on a nonempty compact set in a nontrivial
+finite-dimensional real inner product space attains a minimum on the frontier. -/
 theorem exists_mem_frontier_isMinOn_of_laplacian_nonpos {K : Set E} (hK : IsCompact K)
     (hne : K.Nonempty) {f : E → ℝ} (hcont : ContinuousOn f K)
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
