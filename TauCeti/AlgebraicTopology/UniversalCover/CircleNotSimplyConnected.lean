@@ -4,9 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Topology.Homotopy.Equiv
-public import Mathlib.Analysis.Convex.Contractible
-public import Mathlib.Analysis.Normed.Module.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.CircleFundamentalGroup
 
 /-!
