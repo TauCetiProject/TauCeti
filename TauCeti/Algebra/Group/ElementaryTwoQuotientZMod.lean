@@ -42,23 +42,17 @@ namespace TauCeti
 private theorem range_lsmul_two_additive_multiplicative_zmod_two_eq_bot :
     LinearMap.range
         (LinearMap.lsmul ℤ (Additive (Multiplicative (ZMod 2))) ((2 : ℕ) : ℤ)) = ⊥ := by
-  ext x
-  simp only [LinearMap.mem_range, Submodule.mem_bot]
-  constructor
-  · rintro ⟨y, rfl⟩
-    exact by
-      simpa using (show (2 : ℤ) • y = 0 by
-        cases y with
-        | ofMul g =>
-          apply Additive.toMul.injective
-          simp only [toMul_zsmul]
-          exact sq_multiplicative_zmod_two g)
-  · intro hx
-    exact ⟨0, by simp [hx]⟩
+  rw [LinearMap.range_eq_bot]
+  ext y
+  cases y with
+  | ofMul g =>
+    apply Additive.toMul.injective
+    simp only [LinearMap.lsmul_apply, toMul_zsmul]
+    exact sq_multiplicative_zmod_two g
 
 /-- The additive subgroup underlying the doubling submodule of
 `Additive (Multiplicative (ZMod 2))` is zero. -/
-theorem range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot :
+private theorem range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot :
     (LinearMap.range
       (LinearMap.lsmul ℤ (Additive (Multiplicative (ZMod 2))) ((2 : ℕ) : ℤ))).toAddSubgroup =
         ⊥ := by
@@ -67,7 +61,7 @@ theorem range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot :
 
 /-- The maximal elementary-2 quotient of `Multiplicative (ZMod 2)` is additively equivalent to
 `ZMod 2`: the doubling submodule is zero, so the quotient is the original additive group. -/
-@[expose] noncomputable def elementaryTwoQuotientMultiplicativeZModTwoAddEquiv :
+private noncomputable def elementaryTwoQuotientMultiplicativeZModTwoAddEquiv :
     ElementaryTwoQuotient (Multiplicative (ZMod 2)) ≃+ ZMod 2 :=
   ((QuotientAddGroup.quotientAddEquivOfEq
     range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot).trans
@@ -77,9 +71,27 @@ theorem range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot :
             Additive (Multiplicative (ZMod 2)))).trans
               (AddEquiv.additiveMultiplicative (ZMod 2))
 
+private theorem elementaryTwoQuotientMultiplicativeZModTwoAddEquiv_mk
+    (g : Multiplicative (ZMod 2)) :
+    elementaryTwoQuotientMultiplicativeZModTwoAddEquiv (elementaryTwoQuotientMk g) =
+      Multiplicative.toAdd g := by
+  rw [elementaryTwoQuotientMk_eq_mkQ]
+  unfold elementaryTwoQuotientMultiplicativeZModTwoAddEquiv
+  -- Mathlib has no simp lemma for this `quotientAddEquivOfEq` followed by `quotientBot`;
+  -- after exposing that composed bridge, the representative computation is definitional.
+  change (AddEquiv.additiveMultiplicative (ZMod 2))
+    ((QuotientAddGroup.quotientBot :
+      Additive (Multiplicative (ZMod 2)) ⧸
+        (⊥ : AddSubgroup (Additive (Multiplicative (ZMod 2)))) ≃+
+          Additive (Multiplicative (ZMod 2)))
+      ((QuotientAddGroup.quotientAddEquivOfEq
+        range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot)
+          (Submodule.Quotient.mk (Additive.ofMul g)))) = Multiplicative.toAdd g
+  rfl
+
 /-- The maximal elementary-2 quotient of `Multiplicative (ZMod 2)` is the one-dimensional
 `ZMod 2`-vector space `ZMod 2`. -/
-@[expose] noncomputable def elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv :
+noncomputable def elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv :
     ElementaryTwoQuotient (Multiplicative (ZMod 2)) ≃ₗ[ZMod 2] ZMod 2 where
   __ := elementaryTwoQuotientMultiplicativeZModTwoAddEquiv
   map_smul' c x := ZMod.map_smul elementaryTwoQuotientMultiplicativeZModTwoAddEquiv c x
@@ -93,16 +105,16 @@ theorem range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot :
   rw [elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv]
   change elementaryTwoQuotientMultiplicativeZModTwoAddEquiv (elementaryTwoQuotientMk g) =
     Multiplicative.toAdd g
-  rw [elementaryTwoQuotientMultiplicativeZModTwoAddEquiv, elementaryTwoQuotientMk_eq_mkQ]
-  change (AddEquiv.additiveMultiplicative (ZMod 2))
-    ((QuotientAddGroup.quotientBot :
-      Additive (Multiplicative (ZMod 2)) ⧸
-        (⊥ : AddSubgroup (Additive (Multiplicative (ZMod 2)))) ≃+
-          Additive (Multiplicative (ZMod 2)))
-      ((QuotientAddGroup.quotientAddEquivOfEq
-        range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot)
-          (Submodule.Quotient.mk (Additive.ofMul g)))) = Multiplicative.toAdd g
-  rfl
+  exact elementaryTwoQuotientMultiplicativeZModTwoAddEquiv_mk g
+
+/-- The inverse equivalence sends an element of `ZMod 2` to its class in the elementary-2
+quotient of the corresponding multiplicative element. -/
+@[simp] theorem elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv_symm_apply
+    (z : ZMod 2) :
+    (elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv).symm z =
+      elementaryTwoQuotientMk (Multiplicative.ofAdd z) := by
+  rw [LinearEquiv.symm_apply_eq, elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv_mk,
+    toAdd_ofAdd]
 
 /-- The elementary-2 quotient of `Multiplicative (ZMod 2)` has cardinality `2`. -/
 theorem card_elementaryTwoQuotient_multiplicative_zmod_two :
@@ -130,5 +142,20 @@ theorem card_elementaryTwoQuotient_pi_multiplicative_zmod_two {ι : Type*} [Fint
   rw [card_elementaryTwoQuotient_pi]
   rw [card_elementaryTwoQuotient_multiplicative_zmod_two]
   simp [Finset.prod_const]
+
+/-- The natural multiplicative tag on `(ZMod 2)^ι` has 2-rank equal to the number of factors. -/
+theorem twoRank_multiplicative_pi_zmod_two {ι : Type*} [Fintype ι] :
+    twoRank (Multiplicative (ι → ZMod 2)) = Fintype.card ι := by
+  rw [twoRank_eq_of_mulEquiv
+    (G := Multiplicative (ι → ZMod 2)) (H := ι → Multiplicative (ZMod 2))
+    (MulEquiv.funMultiplicative ι (ZMod 2))]
+  exact twoRank_pi_multiplicative_zmod_two
+
+/-- The elementary-2 quotient of the natural multiplicative tag on `(ZMod 2)^ι` has cardinality
+`2 ^ |ι|`. -/
+theorem card_elementaryTwoQuotient_multiplicative_pi_zmod_two {ι : Type*} [Fintype ι] :
+    Nat.card (ElementaryTwoQuotient (Multiplicative (ι → ZMod 2))) = 2 ^ Fintype.card ι := by
+  rw [card_elementaryTwoQuotient_eq_two_pow_twoRank]
+  rw [twoRank_multiplicative_pi_zmod_two]
 
 end TauCeti
