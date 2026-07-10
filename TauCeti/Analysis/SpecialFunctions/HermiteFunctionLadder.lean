@@ -58,7 +58,9 @@ private lemma normFactor_succ (n : ℕ) :
 
 /-- `√4 = 2`, used to split the square factor out of `√(2k)`. -/
 private lemma sqrt_four : Real.sqrt 4 = 2 := by
-  rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
+  calc
+    Real.sqrt 4 = Real.sqrt (2 ^ 2 : ℝ) := by norm_num
+    _ = 2 := Real.sqrt_sq (by norm_num)
 
 /-- `2·√(k/2) = √(2k)`: the coefficient identity behind the ladder-operator normalizations.
 Regroup `2·k = 4·(k/2)` so the square factor `√4 = 2` splits off `√(k/2)`. -/
@@ -71,7 +73,11 @@ private lemma two_mul_sqrt_half (k : ℝ) : 2 * Real.sqrt (k / 2) = Real.sqrt (2
 /-- `√(1/2)·√2 = 1`: the coefficient collapsing the `n = 0` boundary of the ladder relations, where
 the `√((n+1)/2) = √(1/2)` prefactor meets the `√2` from the `x√2` argument of `H₀`. -/
 private lemma sqrt_half_mul_sqrt_two : Real.sqrt (1 / 2) * Real.sqrt 2 = 1 := by
-  rw [← Real.sqrt_mul (by norm_num), show (1 : ℝ) / 2 * 2 = 1 by norm_num, Real.sqrt_one]
+  calc
+    Real.sqrt (1 / 2) * Real.sqrt 2 = Real.sqrt ((1 : ℝ) / 2 * 2) :=
+      (Real.sqrt_mul (by norm_num) _).symm
+    _ = Real.sqrt 1 := by norm_num
+    _ = 1 := Real.sqrt_one
 
 /-- The Gaussian-weighted derivative factor produces the lower Hermite mode:
 `H'ₙ(x√2)·√2·e^{-x²/2} / √(n!√π) = √(2n)·ψ_{n-1}(x)`. This isolates the normalization bookkeeping
