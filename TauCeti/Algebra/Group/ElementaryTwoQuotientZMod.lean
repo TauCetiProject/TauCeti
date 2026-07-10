@@ -119,24 +119,43 @@ quotient of the corresponding multiplicative element. -/
   rw [LinearEquiv.symm_apply_eq, elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv_mk,
     toAdd_ofAdd]
 
-/-- The elementary-2 quotient of `Multiplicative (ZMod 2)` has cardinality `2`. -/
-@[simp] theorem card_elementaryTwoQuotient_multiplicative_zmod_two :
-    Nat.card (ElementaryTwoQuotient (Multiplicative (ZMod 2))) = 2 := by
+/-- The elementary-2 quotient of `Multiplicative (ZMod 2)` has fintype cardinality `2`. -/
+@[simp] theorem fintype_card_elementaryTwoQuotient_multiplicative_zmod_two :
+    Fintype.card (ElementaryTwoQuotient (Multiplicative (ZMod 2))) = 2 := by
+  rw [← Nat.card_eq_fintype_card]
   rw [Nat.card_congr elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv.toEquiv, Nat.card_zmod]
 
-/-- The multiplicative cyclic group of order two has 2-rank `1`. -/
-@[simp] theorem twoRank_multiplicative_zmod_two : twoRank (Multiplicative (ZMod 2)) = 1 := by
-  rw [twoRank_def, elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv.finrank_eq]
+/-- The elementary-2 quotient of `Multiplicative (ZMod 2)` has cardinality `2`. -/
+theorem card_elementaryTwoQuotient_multiplicative_zmod_two :
+    Nat.card (ElementaryTwoQuotient (Multiplicative (ZMod 2))) = 2 := by
+  simpa only [Nat.card_eq_fintype_card]
+    using fintype_card_elementaryTwoQuotient_multiplicative_zmod_two
+
+/-- The elementary-2 quotient of the multiplicative cyclic group of order two has dimension `1`. -/
+@[simp] theorem finrank_elementaryTwoQuotient_multiplicative_zmod_two :
+    Module.finrank (ZMod 2) (ElementaryTwoQuotient (Multiplicative (ZMod 2))) = 1 := by
+  rw [elementaryTwoQuotientMultiplicativeZModTwoLinearEquiv.finrank_eq]
   norm_num
+
+/-- The multiplicative cyclic group of order two has 2-rank `1`. -/
+theorem twoRank_multiplicative_zmod_two : twoRank (Multiplicative (ZMod 2)) = 1 := by
+  simpa only [twoRank_def] using finrank_elementaryTwoQuotient_multiplicative_zmod_two
 
 /-- A finite product of copies of the multiplicative cyclic group of order two has 2-rank equal
 to the number of factors. -/
-@[simp] theorem twoRank_pi_multiplicative_zmod_two {ι : Type*} [Fintype ι] :
+@[simp] theorem finrank_elementaryTwoQuotient_pi_multiplicative_zmod_two {ι : Type*} [Fintype ι] :
+    Module.finrank (ZMod 2) (ElementaryTwoQuotient (ι → Multiplicative (ZMod 2))) =
+      Fintype.card ι := by
+  have h := twoRank_pi (G := fun _ : ι => Multiplicative (ZMod 2))
+  simp only [twoRank_def, finrank_elementaryTwoQuotient_multiplicative_zmod_two,
+    Finset.sum_const, nsmul_eq_mul, mul_one, Finset.card_univ] at h
+  exact h
+
+/-- A finite product of copies of the multiplicative cyclic group of order two has 2-rank equal
+to the number of factors. -/
+theorem twoRank_pi_multiplicative_zmod_two {ι : Type*} [Fintype ι] :
     twoRank (ι → Multiplicative (ZMod 2)) = Fintype.card ι := by
-  rw [twoRank_pi]
-  simp only [twoRank_multiplicative_zmod_two, Finset.sum_const, nsmul_eq_mul, mul_one,
-    Finset.card_univ]
-  norm_num
+  simpa only [twoRank_def] using finrank_elementaryTwoQuotient_pi_multiplicative_zmod_two
 
 /-- The elementary-2 quotient of a finite product of copies of `Multiplicative (ZMod 2)` has
 cardinality `2 ^ |ι|`. -/
@@ -147,12 +166,19 @@ cardinality `2 ^ |ι|`. -/
   simp [Finset.prod_const]
 
 /-- The natural multiplicative tag on `(ZMod 2)^ι` has 2-rank equal to the number of factors. -/
-@[simp] theorem twoRank_multiplicative_pi_zmod_two {ι : Type*} [Fintype ι] :
-    twoRank (Multiplicative (ι → ZMod 2)) = Fintype.card ι := by
-  rw [twoRank_eq_of_mulEquiv
+@[simp] theorem finrank_elementaryTwoQuotient_multiplicative_pi_zmod_two {ι : Type*}
+    [Fintype ι] :
+    Module.finrank (ZMod 2) (ElementaryTwoQuotient (Multiplicative (ι → ZMod 2))) =
+      Fintype.card ι := by
+  rw [finrank_elementaryTwoQuotient_eq_of_mulEquiv
     (G := Multiplicative (ι → ZMod 2)) (H := ι → Multiplicative (ZMod 2))
     (MulEquiv.funMultiplicative ι (ZMod 2))]
-  exact twoRank_pi_multiplicative_zmod_two
+  exact finrank_elementaryTwoQuotient_pi_multiplicative_zmod_two
+
+/-- The natural multiplicative tag on `(ZMod 2)^ι` has 2-rank equal to the number of factors. -/
+theorem twoRank_multiplicative_pi_zmod_two {ι : Type*} [Fintype ι] :
+    twoRank (Multiplicative (ι → ZMod 2)) = Fintype.card ι := by
+  simpa only [twoRank_def] using finrank_elementaryTwoQuotient_multiplicative_pi_zmod_two
 
 /-- The elementary-2 quotient of the natural multiplicative tag on `(ZMod 2)^ι` has cardinality
 `2 ^ |ι|`. -/
