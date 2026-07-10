@@ -156,10 +156,7 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
     haveI : q.val.val.IsPrime := q.val.property.1.1
     exact IsLocalization.under_map_of_isPrime_disjoint S A ‹_› hI'
 
-/-- Equivalence between minimal primes and irreducible components. -/
-noncomputable def minimalPrimesEquivIrreducibleComponents (R : Type*) [CommRing R] :
-    minimalPrimes R ≃ irreducibleComponents (PrimeSpectrum R) :=
-  (minimalPrimes.equivIrreducibleComponents R).toEquiv.trans OrderDual.ofDual
+
 
 /-- Auxiliary declaration. -/
 private def irreducibleComponentsContainingEquivMinimalPrimesLe (R : Type*)
@@ -252,24 +249,8 @@ noncomputable def equiv_minimalPrimes_irreducibleComponents {X : Scheme} (x : X.
 /-- Ring equivalence preserves the property of being an integral domain. -/
 private lemma isDomain_of_ringEquiv {A B : Type*} [CommRing A] [IsDomain A]
     [CommRing B] (e : A ≃+* B) :
-    IsDomain B := by
-  haveI : Nontrivial B := nontrivial_of_ne (e 0) (e 1) (fun h => zero_ne_one (e.injective h))
-  haveI : NoZeroDivisors B := ⟨by
-    intro x y hxy
-    have h1 : e.symm (x * y) = 0 := by
-      rw [hxy]
-      exact e.symm.map_zero
-    rw [e.symm.map_mul] at h1
-    cases mul_eq_zero.mp h1 with
-    | inl h =>
-      left
-      have hEq : e.symm x = e.symm 0 := by rw [h, e.symm.map_zero]
-      exact e.symm.injective hEq
-    | inr h =>
-      right
-      have hEq : e.symm y = e.symm 0 := by rw [h, e.symm.map_zero]
-      exact e.symm.injective hEq⟩
-  exact ⟨⟩
+    IsDomain B :=
+  e.symm.injective.isDomain (e.symm : B →+* A)
 
 /-- Auxiliary declaration. -/
 private lemma isOpen_of_open_cover {α : Type*} [TopologicalSpace α] {ι : Type*}
@@ -458,53 +439,6 @@ lemma isClosed_sUnion_other_irreducible_components {Z : Scheme.{u}} [IsLocallyNo
   · exact sUnion_irreducibleComponents
   · exact sdiff_subset
 
-/-- In a scheme whose stalks are domains, an irreducible component which is disjoint
-from all other irreducible components is open. -/
-lemma isOpen_irreducible_component_of_disjoint {Z : Scheme.{u}} [IsLocallyNoetherian Z]
-    (hStalks : ∀ x : Z.carrier, IsDomain (Z.presheaf.stalk x))
-    (c : irreducibleComponents Z.carrier)
-    (hDisj : ∀ c' : irreducibleComponents Z.carrier, c ≠ c' →
-      Disjoint (c : Set Z.carrier) (c' : Set Z.carrier)) :
-    IsOpen (c : Set Z.carrier) := by
-  have hClosed : IsClosed (⋃ c' ∈ {c' : irreducibleComponents Z.carrier | c' ≠ c},
-      (c' : Set Z.carrier)) :=
-    isClosed_sUnion_other_irreducible_components hStalks c
-  have hUniv2 : (c : Set Z.carrier) ∪ ⋃ c' ∈ {c' : irreducibleComponents Z.carrier | c' ≠ c},
-      (c' : Set Z.carrier) = univ := by
-    ext x
-    simp only [mem_union, mem_iUnion, mem_setOf_eq, mem_univ, iff_true]
-    have hx : x ∈ ⋃₀ (irreducibleComponents Z.carrier) := by
-      rw [sUnion_irreducibleComponents]
-      exact mem_univ x
-    obtain ⟨c', hc', hx_in⟩ := hx
-    by_cases h : (⟨c', hc'⟩ : irreducibleComponents Z.carrier) = c
-    · left
-      rw [← h]
-      exact hx_in
-    · right
-      exact ⟨⟨c', hc'⟩, h, hx_in⟩
-  have hDisjUnion2 : Disjoint (c : Set Z.carrier) (⋃ c' ∈ {c' : irreducibleComponents Z.carrier |
-      c' ≠ c}, (c' : Set Z.carrier)) := by
-    rw [disjoint_iUnion_right]
-    intro c'
-    rw [disjoint_iUnion_right]
-    intro hc'
-    exact hDisj c' hc'.symm
-  have hCompl2 : (c : Set Z.carrier) = (⋃ c' ∈ {c' : irreducibleComponents Z.carrier | c' ≠ c},
-      (c' : Set Z.carrier))ᶜ := by
-    apply subset_antisymm
-    · exact Disjoint.subset_compl_right hDisjUnion2
-    · intro x hx
-      have hx_univ : x ∈ (c : Set Z.carrier) ∪ ⋃ c' ∈ {c' : irreducibleComponents Z.carrier |
-          c' ≠ c}, (c' : Set Z.carrier) := by
-        rw [hUniv2]
-        exact mem_univ x
-      cases hx_univ with
-      | inl h => exact h
-      | inr h => exact False.elim (hx h)
-  rw [hCompl2]
-  exact isOpen_compl_iff.mpr hClosed
-
 /-- A topological space is irreducible if its irreducible components are disjoint
 and it is connected. Note: `hDisj` is mathematically redundant because clopen components
 in a connected space force uniqueness without needing explicit disjointness. -/
@@ -540,9 +474,7 @@ theorem irreducibleSpace_of_connected_reduced_no_embedded (Z : Scheme.{u}) [IsLo
   apply irreducible_of_connected_of_disjoint_components
   · exact disjoint_irreducible_components_of_reduced_no_embedded hStalks
   · intro c
-    apply isOpen_irreducible_component_of_disjoint hStalks
-    intro c' hc_neq
-    exact disjoint_irreducible_components_of_reduced_no_embedded hStalks c c' hc_neq
+    exact isOpen_irreducibleComponents_of_stalks_domain hStalks c
 
 end AlgebraicGeometry
 
