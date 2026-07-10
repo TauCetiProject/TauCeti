@@ -23,8 +23,8 @@ sector computation.
 
 ## Main results
 
-* `Contour.hasCauchyPVAt_windingKernel_const_mul` /
-  `Contour.cauchyPVExistsAt_windingKernel_const_mul` — the index principal value transports under
+* `Contour.hasCauchyPVAt_inv_sub_const_mul` /
+  `Contour.cauchyPVExistsAt_inv_sub_const_mul` — the index principal value transports under
   nonzero scaling of the curve and base point; these are exposed so downstream normalization steps
   can obtain the scaled `HasCauchyPVAt` / `CauchyPVExistsAt` fact and chain further
   principal-value APIs.
@@ -51,7 +51,7 @@ variable {γ : ℝ → ℂ} {a b : ℝ} {z₀ c : ℂ} {Ω : Set ℂ}
 abbreviation keeps the scaling statements readable. -/
 local notation "κ[" z "]" => (fun w : ℂ => (w - z)⁻¹)
 
-private lemma windingKernel_const_mul_eq (hc : c ≠ 0) (w : ℂ) :
+private lemma inv_sub_const_mul_eq (hc : c ≠ 0) (w : ℂ) :
     c⁻¹ * (c⁻¹ * (c * w) - z₀)⁻¹ = (c * w - c * z₀)⁻¹ := by
   simp only [inv_mul_cancel_left₀ hc]
   rw [← mul_sub, mul_inv]
@@ -62,19 +62,19 @@ nonzero complex number `c` transports the single-point Cauchy principal value of
 general `HasCauchyPVAt.const_mul_curve` to the winding kernel, where the rescaled integrand
 `z ↦ c⁻¹ * κ[z₀] (c⁻¹ * z)` agrees with `κ[c * z₀]` along the scaled curve. Exposed so downstream
 normalization steps can chain further principal-value APIs from the scaled fact. -/
-theorem hasCauchyPVAt_windingKernel_const_mul
+theorem hasCauchyPVAt_inv_sub_const_mul
     (h : HasCauchyPVAt γ a b κ[z₀] z₀ L) (hc : c ≠ 0) :
     HasCauchyPVAt (fun t => c * γ t) a b κ[c * z₀] (c * z₀) L := by
   refine (h.const_mul_curve hc).congr_along_curve fun t _ => ?_
-  exact windingKernel_const_mul_eq (z₀ := z₀) hc (γ t)
+  exact inv_sub_const_mul_eq (z₀ := z₀) hc (γ t)
 
-/-- Existence form of `hasCauchyPVAt_windingKernel_const_mul`: nonzero scaling of the curve and base
+/-- Existence form of `hasCauchyPVAt_inv_sub_const_mul`: nonzero scaling of the curve and base
 point preserves existence of the index principal value, exposed for the same downstream chaining. -/
-theorem cauchyPVExistsAt_windingKernel_const_mul
+theorem cauchyPVExistsAt_inv_sub_const_mul
     (h : CauchyPVExistsAt γ a b κ[z₀] z₀) (hc : c ≠ 0) :
     CauchyPVExistsAt (fun t => c * γ t) a b κ[c * z₀] (c * z₀) :=
   let ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
-  CauchyPVExistsAt.intro (hasCauchyPVAt_windingKernel_const_mul hL hc)
+  CauchyPVExistsAt.intro (hasCauchyPVAt_inv_sub_const_mul hL hc)
 
 /-- The generalized winding number is invariant under simultaneous multiplication of the curve
 and the base point by a nonzero complex number. -/
@@ -86,7 +86,7 @@ theorem windingNumber_const_mul (hc : c ≠ 0) :
     (f := κ[c * z₀]) (g := fun z => c⁻¹ * κ[z₀] (c⁻¹ * z)) (z₀ := c * z₀)]
   · exact cauchyPVAt_const_mul_curve (γ := γ) (a := a) (b := b) (f := κ[z₀]) (z₀ := z₀) hc
   · intro t _
-    exact (windingKernel_const_mul_eq (z₀ := z₀) hc (γ t)).symm
+    exact (inv_sub_const_mul_eq (z₀ := z₀) hc (γ t)).symm
 
 /-- Pointwise vanishing of a winding number is preserved by simultaneous multiplication of the
 curve and base point by a nonzero complex number. -/

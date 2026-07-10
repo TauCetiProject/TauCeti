@@ -428,8 +428,7 @@ private theorem truncated_const_mul_curve_eq {γ : ℝ → ℂ} {f : ℂ → ℂ
       simpa [mul_comm] using hmul'
     rw [if_pos hscaled, if_pos hεt, deriv_const_mul_field]
     simp only [inv_mul_cancel_left₀ hc]
-    rw [show c⁻¹ * f (γ t) * (c * deriv γ t) = c⁻¹ * c * (f (γ t) * deriv γ t) by ring,
-      inv_mul_cancel₀ hc, one_mul]
+    rw [mul_mul_mul_comm, inv_mul_cancel₀ hc, one_mul]
   · have hscaled : ¬ ‖c * γ t - c * z₀‖ > ε := by
       rw [← mul_sub, norm_mul, not_lt]
       rw [not_lt] at hεt
