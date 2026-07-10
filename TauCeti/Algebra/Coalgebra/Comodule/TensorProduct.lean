@@ -250,8 +250,7 @@ private theorem tensorCoact_rTensor_tensorCombine_core [Semiring C] [Bialgebra R
       | zero => simp
       | tmul n d' => simp [Algebra.TensorProduct.tmul_mul_tmul]
       | add y₁ y₂ hy₁ hy₂ =>
-          rw [TensorProduct.tmul_add, map_add, TensorProduct.add_tmul, map_add,
-            TensorProduct.add_tmul, map_add, TensorProduct.tmul_add, map_add, hy₁, hy₂]
+          simp [hy₁, hy₂, TensorProduct.tmul_add, TensorProduct.add_tmul]
   | add x₁ x₂ hx₁ hx₂ => simp [hx₁, hx₂, TensorProduct.add_tmul]
 
 private theorem tensorCoact_rTensor_tensorCombine [Semiring C] [Bialgebra R C]
@@ -409,15 +408,12 @@ private theorem tensor_id_aux [Semiring C] [Bialgebra R C]
     [AddCommMonoid N] [Module R N] [Comodule R C N] :
     tensor (R := R) (C := C) (id R C M) (id R C N) =
       id R C (M ⊗[R] N) := by
+  have h : (tensor (R := R) (C := C) (id R C M) (id R C N)).toLinearMap =
+      (id R C (M ⊗[R] N)).toLinearMap := by
+    rw [tensor_toLinearMap]
+    exact TensorProduct.map_id
   ext x
-  induction x using TensorProduct.induction_on with
-  | zero => rfl
-  | tmul m n => rfl
-  | add x₁ x₂ hx₁ hx₂ =>
-      change ((tensor (R := R) (C := C) (id R C M) (id R C N)).toLinearMap (x₁ + x₂)) =
-        (id R C (M ⊗[R] N)).toLinearMap (x₁ + x₂)
-      rw [map_add, map_add]
-      simpa only [coe_toLinearMap] using congrArg₂ (fun a b => a + b) hx₁ hx₂
+  exact LinearMap.congr_fun h x
 
 /-- Tensoring identity comodule morphisms gives the identity on the tensor-product
 comodule.
@@ -445,17 +441,12 @@ private theorem tensor_comp_aux [Semiring C] [Bialgebra R C]
     (g₂ : Hom R C N' N'') (g₁ : Hom R C N N') :
     tensor (R := R) (C := C) (comp f₂ f₁) (comp g₂ g₁) =
       comp (tensor (R := R) (C := C) f₂ g₂) (tensor (R := R) (C := C) f₁ g₁) := by
+  have h : (tensor (R := R) (C := C) (comp f₂ f₁) (comp g₂ g₁)).toLinearMap =
+      (comp (tensor (R := R) (C := C) f₂ g₂) (tensor (R := R) (C := C) f₁ g₁)).toLinearMap := by
+    rw [tensor_toLinearMap]
+    exact TensorProduct.map_comp f₂.toLinearMap g₂.toLinearMap f₁.toLinearMap g₁.toLinearMap
   ext x
-  induction x using TensorProduct.induction_on with
-  | zero => rfl
-  | tmul m n => rfl
-  | add x₁ x₂ hx₁ hx₂ =>
-      change ((tensor (R := R) (C := C) (comp f₂ f₁) (comp g₂ g₁)).toLinearMap
-          (x₁ + x₂)) =
-        (comp (tensor (R := R) (C := C) f₂ g₂) (tensor (R := R) (C := C) f₁ g₁)).toLinearMap
-          (x₁ + x₂)
-      rw [map_add, map_add]
-      simpa only [coe_toLinearMap] using congrArg₂ (fun a b => a + b) hx₁ hx₂
+  exact LinearMap.congr_fun h x
 
 /-- Tensoring composite comodule morphisms gives the composite of the tensor products. -/
 @[simp]
