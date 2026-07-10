@@ -52,13 +52,7 @@ namespace OrderSystem
 weight-one specialization of `weightedDegreeClass_range_eq_top`. -/
 lemma weightedDegreeClass_range_eq_top_of_weight_one (w : X → ℤ) (h : S.IsWeightedDegreeZero w)
     {x₀ : X} (hx₀ : w x₀ = 1) : (weightedDegreeClass w h).range = ⊤ := by
-  refine S.weightedDegreeClass_range_eq_top w h ?_
-  have h1 : (1 : ℤ) ∈ AddSubgroup.closure (Set.range w) := by
-    rw [← hx₀]
-    exact AddSubgroup.subset_closure (Set.mem_range_self x₀)
-  rw [eq_top_iff]
-  intro n
-  simpa using AddSubgroup.zsmul_mem (AddSubgroup.closure (Set.range w)) h1 n
+  exact AddMonoidHom.range_eq_top.mpr (S.weightedDegreeClass_surjective w h hx₀)
 
 /-- **The degree quotient at a weight-one base point.** With a weight-one base point the degree
 section `n ↦ n • [x₀]` is a genuine right inverse of the descended weighted degree, so the class
