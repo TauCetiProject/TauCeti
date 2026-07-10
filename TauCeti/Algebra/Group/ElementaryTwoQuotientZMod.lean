@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Algebra.CharP.Two
+public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import TauCeti.Algebra.Group.ElementaryTwoQuotientProd
 
 /-!
@@ -64,16 +65,6 @@ theorem range_lsmul_two_additive_multiplicative_zmod_two_toAddSubgroup_eq_bot :
   rw [range_lsmul_two_additive_multiplicative_zmod_two_eq_bot]
   rfl
 
-/-- The additive group underlying `Multiplicative (ZMod 2)`, wrapped once more in `Additive`,
-is canonically additively equivalent to `ZMod 2`. -/
-@[expose] noncomputable def additiveMultiplicativeZModTwoAddEquiv :
-    Additive (Multiplicative (ZMod 2)) ≃+ ZMod 2 where
-  toFun x := Multiplicative.toAdd (Additive.toMul x)
-  invFun z := Additive.ofMul (Multiplicative.ofAdd z)
-  left_inv x := by cases x; rfl
-  right_inv z := rfl
-  map_add' x y := by cases x; cases y; rfl
-
 /-- The maximal elementary-2 quotient of `Multiplicative (ZMod 2)` is additively equivalent to
 `ZMod 2`: the doubling submodule is zero, so the quotient is the original additive group. -/
 @[expose] noncomputable def elementaryTwoQuotientMultiplicativeZModTwoAddEquiv :
@@ -83,7 +74,8 @@ is canonically additively equivalent to `ZMod 2`. -/
       (QuotientAddGroup.quotientBot :
         Additive (Multiplicative (ZMod 2)) ⧸
           (⊥ : AddSubgroup (Additive (Multiplicative (ZMod 2)))) ≃+
-            Additive (Multiplicative (ZMod 2)))).trans additiveMultiplicativeZModTwoAddEquiv
+            Additive (Multiplicative (ZMod 2)))).trans
+              (AddEquiv.additiveMultiplicative (ZMod 2))
 
 /-- The maximal elementary-2 quotient of `Multiplicative (ZMod 2)` is the one-dimensional
 `ZMod 2`-vector space `ZMod 2`. -/
@@ -102,7 +94,7 @@ is canonically additively equivalent to `ZMod 2`. -/
   change elementaryTwoQuotientMultiplicativeZModTwoAddEquiv (elementaryTwoQuotientMk g) =
     Multiplicative.toAdd g
   rw [elementaryTwoQuotientMultiplicativeZModTwoAddEquiv, elementaryTwoQuotientMk_eq_mkQ]
-  change additiveMultiplicativeZModTwoAddEquiv
+  change (AddEquiv.additiveMultiplicative (ZMod 2))
     ((QuotientAddGroup.quotientBot :
       Additive (Multiplicative (ZMod 2)) ⧸
         (⊥ : AddSubgroup (Additive (Multiplicative (ZMod 2)))) ≃+
