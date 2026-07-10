@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.RingTheory.Bialgebra.TensorProduct
-public import TauCeti.Algebra.Coalgebra.ComoduleCat
+public import Mathlib.RingTheory.Bialgebra.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule
 
 /-!
 # The tensor-product coaction map for comodules over a bialgebra
@@ -48,7 +48,7 @@ universe u v w x y z
 
 variable {R : Type u} {C : Type v} {M : Type w} {N : Type x}
 variable [CommSemiring R]
-variable [Semiring C] [Bialgebra R C]
+variable [Semiring C] [Algebra R C]
 variable [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
 
@@ -60,6 +60,15 @@ On pure tensors it sends `(m ⊗ c) ⊗ (n ⊗ d)` to `(m ⊗ n) ⊗ cd`. -/
     (M ⊗[R] C) ⊗[R] (N ⊗[R] C) →ₗ[R] (M ⊗[R] N) ⊗[R] C :=
   TensorProduct.map (LinearMap.id : M ⊗[R] N →ₗ[R] M ⊗[R] N) (LinearMap.mul' R C) ∘ₗ
     (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap
+
+/-- The definition of `tensorCombine` as a shuffle followed by multiplication on the
+`C`-components. -/
+theorem tensorCombine_def :
+    tensorCombine (R := R) (C := C) (M := M) (N := N) =
+      TensorProduct.map (LinearMap.id : M ⊗[R] N →ₗ[R] M ⊗[R] N)
+          (LinearMap.mul' R C) ∘ₗ
+        (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap :=
+  rfl
 
 /-- `tensorCombine` sends `(m ⊗ c) ⊗ (n ⊗ d)` to `(m ⊗ n) ⊗ cd`. -/
 @[simp]
@@ -80,20 +89,44 @@ theorem tensorCombine_natural (f : M →ₗ[R] M') (g : N →ₗ[R] N') :
       tensorCombine (R := R) (C := C) (M := M') (N := N') ∘ₗ
         TensorProduct.map (TensorProduct.map f (LinearMap.id : C →ₗ[R] C))
           (TensorProduct.map g (LinearMap.id : C →ₗ[R] C)) := by
-  apply TensorProduct.ext'
-  intro x y
-  induction x using TensorProduct.induction_on with
-  | zero => simp
-  | tmul m c =>
-      induction y using TensorProduct.induction_on with
-      | zero => simp
-      | tmul n d => simp [tensorCombine]
-      | add y z hy hz =>
-          rw [TensorProduct.tmul_add, LinearMap.map_add, LinearMap.map_add, hy, hz]
-  | add x y hx hy =>
-      rw [TensorProduct.add_tmul, LinearMap.map_add, LinearMap.map_add, hx, hy]
+  rw [tensorCombine_def, tensorCombine_def]
+  have h := TensorProduct.tensorTensorTensorComm_comp_map (R := R) (M := M) (N := C)
+    (P := N) (Q := C) (S := M') (T := C) (V := N') (W := C) f
+    (LinearMap.id : C →ₗ[R] C) g (LinearMap.id : C →ₗ[R] C)
+  calc
+    TensorProduct.map (TensorProduct.map f g) (LinearMap.id : C →ₗ[R] C) ∘ₗ
+        (TensorProduct.map (LinearMap.id : M ⊗[R] N →ₗ[R] M ⊗[R] N)
+          (LinearMap.mul' R C) ∘ₗ
+        (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap) =
+        (TensorProduct.map (LinearMap.id : M' ⊗[R] N' →ₗ[R] M' ⊗[R] N')
+            (LinearMap.mul' R C) ∘ₗ
+          TensorProduct.map (TensorProduct.map f g)
+            (TensorProduct.map (LinearMap.id : C →ₗ[R] C) LinearMap.id)) ∘ₗ
+          (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap := by
+      rw [LinearMap.comp_assoc]
+      apply TensorProduct.ext'
+      intro x y
+      simp [TensorProduct.map_map]
+    _ = TensorProduct.map (LinearMap.id : M' ⊗[R] N' →ₗ[R] M' ⊗[R] N')
+          (LinearMap.mul' R C) ∘ₗ
+        (TensorProduct.map (TensorProduct.map f g)
+            (TensorProduct.map (LinearMap.id : C →ₗ[R] C) LinearMap.id) ∘ₗ
+          (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap) := by
+      rw [LinearMap.comp_assoc]
+    _ = TensorProduct.map (LinearMap.id : M' ⊗[R] N' →ₗ[R] M' ⊗[R] N')
+          (LinearMap.mul' R C) ∘ₗ
+        ((TensorProduct.tensorTensorTensorComm R M' C N' C).toLinearMap ∘ₗ
+          TensorProduct.map (TensorProduct.map f (LinearMap.id : C →ₗ[R] C))
+            (TensorProduct.map g (LinearMap.id : C →ₗ[R] C))) := by
+      rw [← h]
+    _ = (TensorProduct.map (LinearMap.id : M' ⊗[R] N' →ₗ[R] M' ⊗[R] N')
+          (LinearMap.mul' R C) ∘ₗ
+        (TensorProduct.tensorTensorTensorComm R M' C N' C).toLinearMap) ∘ₗ
+          TensorProduct.map (TensorProduct.map f (LinearMap.id : C →ₗ[R] C))
+            (TensorProduct.map g (LinearMap.id : C →ₗ[R] C)) := by
+      rw [LinearMap.comp_assoc]
 
-variable [Comodule R C M] [Comodule R C N]
+variable [Coalgebra R C] [Comodule R C M] [Comodule R C N]
 
 /-- The diagonal coaction map on the tensor product of two right comodules over a bialgebra.
 
@@ -102,6 +135,15 @@ The later full tensor-product comodule structure uses this as its coaction. -/
   tensorCombine (R := R) (C := C) (M := M) (N := N) ∘ₗ
     TensorProduct.map (coact (R := R) (C := C) (M := M))
       (coact (R := R) (C := C) (M := N))
+
+/-- The definition of `tensorCoact` as the tensor product of the two component coactions,
+followed by `tensorCombine`. -/
+theorem tensorCoact_def :
+    tensorCoact (R := R) (C := C) (M := M) (N := N) =
+      tensorCombine (R := R) (C := C) (M := M) (N := N) ∘ₗ
+        TensorProduct.map (coact (R := R) (C := C) (M := M))
+          (coact (R := R) (C := C) (M := N)) :=
+  rfl
 
 /-- The tensor-product coaction, before expanding the two component coactions. -/
 @[simp]
