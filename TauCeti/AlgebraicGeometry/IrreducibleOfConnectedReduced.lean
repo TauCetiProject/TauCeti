@@ -469,7 +469,8 @@ private lemma sUnion_other_eq_iUnion_other {α : Type*} (S : Set (Set α)) (c : 
 
 /-- In a scheme whose stalks are domains, the union of all irreducible components
 other than a given one is closed. -/
-lemma isClosed_sUnion_other_irreducibleComponents_of_isDomain_stalk {Z : Scheme.{u}} [IsLocallyNoetherian Z]
+lemma isClosed_sUnion_other_irreducibleComponents_of_isDomain_stalk
+    {Z : Scheme.{u}} [IsLocallyNoetherian Z]
     (hStalks : ∀ x : Z.carrier, IsDomain (Z.presheaf.stalk x))
     (c : irreducibleComponents Z.carrier) :
     IsClosed (⋃ c' ∈ {c' : irreducibleComponents Z.carrier | c' ≠ c}, (c' : Set Z.carrier)) := by
