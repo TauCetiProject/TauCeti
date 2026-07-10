@@ -37,6 +37,9 @@ direction one uses in practice to read off a residue.
   f z₀` (at most a simple pole); the analytic case gives the limit `0 = residue f z₀`.
 * `TauCeti.Contour.residue_eq_of_tendsto_sub_mul` — the converse: if `f` is meromorphic at `z₀` and
   `(z − z₀) · f z` converges to `L`, then `residue f z₀ = L`.
+* `TauCeti.Contour.residue_sub_inv` — `residue (fun z => (z − z₀)⁻¹) z₀ = 1`, and
+  `TauCeti.Contour.residue_const_mul_sub_inv` — `residue (fun z => c · (z − z₀)⁻¹) z₀ = c`: the
+  elementary simple-pole residues, read off from the converse rule.
 
 ## Provenance
 
@@ -133,6 +136,25 @@ theorem residue_eq_of_tendsto_sub_mul {L : ℂ} (hf : MeromorphicAt f z₀)
     (tendsto_nhds_iff_meromorphicOrderAt_nonneg hg).1 ⟨L, h⟩
   rw [meromorphicOrderAt_sub_mul hf] at hgnn
   exact tendsto_nhds_unique (tendsto_sub_mul_nhds_residue hf (neg_one_le_of_zero_le_one_add hgnn)) h
+
+/-- The reciprocal `(· − z₀)⁻¹` of the simple factor `(· − z₀)` is meromorphic at `z₀`. -/
+theorem meromorphicAt_sub_inv (z₀ : ℂ) : MeromorphicAt (fun z => (z - z₀)⁻¹) z₀ :=
+  ((analyticAt_id.sub analyticAt_const).meromorphicAt).inv
+
+/-- The residue of the elementary simple pole `(· − z₀)⁻¹` at `z₀` is `1`: since
+`(z − z₀) · (z − z₀)⁻¹ → 1` as `z → z₀`, the simple-pole limit formula gives the residue. -/
+@[simp]
+theorem residue_sub_inv (z₀ : ℂ) : residue (fun z => (z - z₀)⁻¹) z₀ = 1 := by
+  refine residue_eq_of_tendsto_sub_mul (meromorphicAt_sub_inv z₀) (tendsto_const_nhds.congr' ?_)
+  filter_upwards [self_mem_nhdsWithin] with z hz
+  exact (mul_inv_cancel₀ (sub_ne_zero.2 hz)).symm
+
+/-- The residue of `c · (· − z₀)⁻¹` at `z₀` is `c`: scaling the elementary simple pole scales its
+residue. -/
+@[simp]
+theorem residue_const_mul_sub_inv (c z₀ : ℂ) :
+    residue (fun z => c * (z - z₀)⁻¹) z₀ = c := by
+  rw [residue_const_mul c (meromorphicAt_sub_inv z₀), residue_sub_inv, mul_one]
 
 end TauCeti.Contour
 

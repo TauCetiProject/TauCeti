@@ -65,8 +65,9 @@ open scoped Real
 namespace TauCeti.Contour
 
 /-- At a point where a function is analytic and non-vanishing, its logarithmic derivative
-`logDeriv f = deriv f / f` is analytic. -/
-private lemma analyticAt_logDeriv_of_analyticAt {f : ℂ → ℂ} {z : ℂ} (hf : AnalyticAt ℂ f z)
+`logDeriv f = deriv f / f` is analytic. Exposed for the residue-form of the argument principle
+(`TauCeti.Contour.residue_logDeriv_eq_meromorphicOrderAt`). -/
+lemma analyticAt_logDeriv_of_analyticAt {f : ℂ → ℂ} {z : ℂ} (hf : AnalyticAt ℂ f z)
     (hz : f z ≠ 0) : AnalyticAt ℂ (logDeriv f) z := by
   rw [logDeriv]
   exact hf.deriv.div hf hz
@@ -96,8 +97,9 @@ private lemma logDeriv_zpow_sub_mul {g : ℂ → ℂ} {c z : ℂ} {n : ℤ} (hz 
 meromorphic of order `n`, the logarithmic derivative equals its simple-pole principal part
 `n · (· - s)⁻¹` plus an analytic term: there is `g` analytic and non-vanishing at `s` (the local
 factor of `F = (· - s) ^ n • g`) with `logDeriv F = n · (· - s)⁻¹ + logDeriv g` on a punctured
-neighbourhood of `s`. -/
-private lemma logDeriv_eventuallyEq_principalPart {F : ℂ → ℂ} {s : ℂ} {n : ℤ}
+neighbourhood of `s`. Exposed for the residue-form of the argument principle
+(`TauCeti.Contour.residue_logDeriv_eq_meromorphicOrderAt`). -/
+theorem logDeriv_eventuallyEq_principalPart {F : ℂ → ℂ} {s : ℂ} {n : ℤ}
     (hF : MeromorphicAt F s) (hn : meromorphicOrderAt F s = (n : WithTop ℤ)) :
     ∃ g : ℂ → ℂ, AnalyticAt ℂ g s ∧ g s ≠ 0 ∧
       logDeriv F =ᶠ[𝓝[≠] s] fun z => (n : ℂ) * (z - s)⁻¹ + logDeriv g z := by
