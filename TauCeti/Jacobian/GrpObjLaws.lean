@@ -13,7 +13,7 @@ public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Scheme
 This file defines the group object structure on a representable functor from a
 Cartesian monoidal category to the category of commutative additive groups.
 
-This advances the Tau Ceti Jacobian roadmap.
+This advances the roadmap at TauCetiRoadmap/JacobianChallenge/README.md.
 -/
 
 public section
