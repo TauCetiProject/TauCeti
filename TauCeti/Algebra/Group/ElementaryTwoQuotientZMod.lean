@@ -37,6 +37,9 @@ private theorem range_lsmul_two_additive_eq_bot_of_forall_sq_eq_one {G : Type*} 
   rw [LinearMap.range_eq_bot]
   ext y
   rw [LinearMap.lsmul_apply]
+  -- `LinearMap.lsmul_apply` leaves the goal as `((2 : ℕ) : ℤ) • y = 0`; the `show` restates it
+  -- with the syntactic numeral `(2 : ℤ)` (the same cast up to defeq) so that `zpow_two` fires,
+  -- after which the doubled element vanishes because `g ^ 2 = 1` transports through `Additive`.
   exact show ((2 : ℤ) • y) = 0 by
     apply Additive.toMul.injective
     simpa [toMul_zsmul, pow_two, zpow_two] using hG (Additive.toMul y)
@@ -70,6 +73,12 @@ type tag. -/
   rw [elementaryTwoQuotientMk_eq_mkQ]
   unfold elementaryTwoQuotientAddEquivOfForallSqEqOne
   rw [submoduleQuotient_mk_eq_quotientAddGroup_mk]
+  -- `ElementaryTwoQuotient G` is the `Submodule.Quotient` wrapper around the `QuotientAddGroup`
+  -- quotient by the doubling subgroup: definitionally equal, but the two carry different
+  -- coercion instances, so `AddEquiv.trans_apply` cannot fire on the `Submodule.Quotient` form.
+  -- Restate the goal in the `QuotientAddGroup` shape (the bridge that mk-level rewriting cannot
+  -- perform on the equiv application), then the named `quotientAddEquivOfEq_mk` reduces the inner
+  -- class and the canonical `quotientBot` iso computes on the representative.
   exact
     show (QuotientAddGroup.quotientBot :
       Additive G ⧸ (⊥ : AddSubgroup (Additive G)) ≃+ Additive G)
