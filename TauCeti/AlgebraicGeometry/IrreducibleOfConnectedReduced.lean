@@ -28,22 +28,6 @@ namespace TauCeti
 namespace AlgebraicGeometry
 
 /-- Auxiliary declaration. -/
-private lemma preimage_closure_image_eq {α β : Type*} [TopologicalSpace α] [TopologicalSpace β]
-    {f : α → β} (hf : IsOpenEmbedding f) (c : Set α) (hc : IsClosed c) :
-    f ⁻¹' (closure (f '' c)) = c :=
-  IsOpenMap.preimage_closure_image hf.isOpenMap hf.toIsEmbedding.injective hf.continuous c hc
-
-/-- Auxiliary declaration. -/
-private lemma closure_image_preimage_eq {α β : Type*} [TopologicalSpace α] [TopologicalSpace β]
-    {f : α → β} (hf : IsOpenEmbedding f) (c' : Set β) (hc' : IsClosed c')
-    (hIrred : IsIrreducible c') (hNonempty : (c' ∩ range f).Nonempty) :
-    closure (f '' (f ⁻¹' c')) = c' := by
-  rw [image_preimage_eq_inter_range]
-  exact (closure_minimal inter_subset_left hc').antisymm
-    (subset_closure_inter_of_isPreirreducible_of_isOpen
-      hIrred.2 hf.isOpenMap.isOpen_range hNonempty)
-
-/-- Auxiliary declaration. -/
 private lemma image_mem_irreducibleComponents {α β : Type*}
     [TopologicalSpace α] [TopologicalSpace β]
     {f : α → β} (hf : IsOpenEmbedding f) {c : Set α}
@@ -61,7 +45,8 @@ private lemma image_mem_irreducibleComponents {α β : Type*}
   have hSubPre : c ⊆ f ⁻¹' (closure u) :=
     image_subset_iff.mp (subset_closure.trans (hSub.trans subset_closure))
   have hEq : c = f ⁻¹' (closure u) := hSubPre.antisymm (hc.2 hPreIrred hSubPre)
-  rw [hEq, closure_image_preimage_eq hf (closure u) isClosed_closure hClIrred hClNonempty]
+  rw [hEq, closure_image_preimage_of_isPreirreducible f hf.isOpenMap (closure u)
+    (nonempty_preimage_iff.mpr hClNonempty) hClIrred.2 isClosed_closure]
   exact subset_closure
 
 /-- Auxiliary declaration. -/
@@ -81,16 +66,15 @@ private def irreducibleComponents_containing_equiv_of_isOpenEmbedding
     apply Subtype.ext
     apply Subtype.ext
     dsimp
-    exact preimage_closure_image_eq hf c.val.val
+    exact hf.isOpenMap.preimage_closure_image hf.injective hf.continuous c.val.val
       (isClosed_of_mem_irreducibleComponents c.val.val c.val.property)
   right_inv c' := by
     apply Subtype.ext
     apply Subtype.ext
     dsimp
-    have hNonempty : (c'.val.val ∩ range f).Nonempty := ⟨f x, c'.property, ⟨x, rfl⟩⟩
-    exact closure_image_preimage_eq hf c'.val.val
+    exact closure_image_preimage_of_isPreirreducible f hf.isOpenMap c'.val.val
+      ⟨x, c'.property⟩ c'.val.property.1.2
       (isClosed_of_mem_irreducibleComponents c'.val.val c'.val.property)
-      c'.val.property.1 hNonempty
 
 /-- Auxiliary declaration. -/
 private lemma minimalPrimes_map_of_ringEquiv {A B : Type*} [CommRing A] [CommRing B]
@@ -172,50 +156,39 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
     haveI : q.val.val.IsPrime := q.val.property.1.1
     exact IsLocalization.under_map_of_isPrime_disjoint S A ‹_› hI'
 
-/-- Auxiliary declaration. -/
-private def minimalPrimesEquivIrreducibleComponents (R : Type*) [CommRing R] :
-    minimalPrimes R ≃ irreducibleComponents (PrimeSpectrum R) where
-  toFun q := ⟨zeroLocus q.val, by
-    rw [zeroLocus_ideal_mem_irreducibleComponents, q.property.1.1.radical]
-    exact q.property⟩
-  invFun c := ⟨vanishingIdeal c.val, by
-    have hcClosed := isClosed_of_mem_irreducibleComponents c.val c.property
-    rw [vanishingIdeal_mem_minimalPrimes, closure_eq_iff_isClosed.mpr hcClosed]
-    exact c.property⟩
-  left_inv q := Subtype.ext
-    (by dsimp; rw [vanishingIdeal_zeroLocus_eq_radical, q.property.1.1.radical])
-  right_inv c := Subtype.ext (by
-    dsimp
-    have hcClosed := isClosed_of_mem_irreducibleComponents c.val c.property
-    rw [zeroLocus_vanishingIdeal_eq_closure, closure_eq_iff_isClosed.mpr hcClosed])
-
-/-- Auxiliary declaration. -/
-private lemma my_equiv_apply (R : Type*) [CommRing R] (q : minimalPrimes R) :
-    (minimalPrimesEquivIrreducibleComponents R q : Set (PrimeSpectrum R)) = zeroLocus q.val := by
-  rfl
-
-/-- Auxiliary declaration. -/
-private lemma mem_my_equiv_iff (R : Type*) [CommRing R]
-    (p : PrimeSpectrum R) (q : minimalPrimes R) :
-    p ∈ (minimalPrimesEquivIrreducibleComponents R q : Set (PrimeSpectrum R)) ↔
-      q.val ≤ p.asIdeal := by
-  rw [my_equiv_apply, mem_zeroLocus, SetLike.coe_subset_coe]
+/-- Equivalence between minimal primes and irreducible components. -/
+noncomputable def minimalPrimesEquivIrreducibleComponents (R : Type*) [CommRing R] :
+    minimalPrimes R ≃ irreducibleComponents (PrimeSpectrum R) :=
+  (minimalPrimes.equivIrreducibleComponents R).toEquiv.trans OrderDual.ofDual
 
 /-- Auxiliary declaration. -/
 private def irreducibleComponentsContainingEquivMinimalPrimesLe (R : Type*)
     [CommRing R] (p : PrimeSpectrum R) :
     { c : irreducibleComponents (PrimeSpectrum R) // p ∈ (c : Set (PrimeSpectrum R)) } ≃
       { q : minimalPrimes R // q.val ≤ p.asIdeal } where
-  toFun c := ⟨(minimalPrimesEquivIrreducibleComponents R).symm c.val, by
-    rw [← mem_my_equiv_iff, Equiv.apply_symm_apply]
-    exact c.property⟩
-  invFun q := ⟨minimalPrimesEquivIrreducibleComponents R q.val, by
-    rw [mem_my_equiv_iff]
-    exact q.property⟩
-  left_inv c := Subtype.ext
-    (Equiv.apply_symm_apply (minimalPrimesEquivIrreducibleComponents R) c.val)
-  right_inv q := Subtype.ext
-    (Equiv.symm_apply_apply (minimalPrimesEquivIrreducibleComponents R) q.val)
+  toFun c := ⟨⟨vanishingIdeal c.val.val, by
+    have hcClosed := isClosed_of_mem_irreducibleComponents c.val.val c.val.property
+    rw [vanishingIdeal_mem_minimalPrimes, closure_eq_iff_isClosed.mpr hcClosed]
+    exact c.val.property⟩, by
+      have hcClosed := isClosed_of_mem_irreducibleComponents c.val.val c.val.property
+      have hp : p ∈ closure (c.val.val) := by
+        rw [closure_eq_iff_isClosed.mpr hcClosed]
+        exact c.property
+      rw [← zeroLocus_vanishingIdeal_eq_closure] at hp
+      rw [mem_zeroLocus] at hp
+      exact hp⟩
+  invFun q := ⟨⟨zeroLocus q.val.val, by
+    rw [zeroLocus_ideal_mem_irreducibleComponents, q.val.property.1.1.radical]
+    exact q.val.property⟩, by
+      rw [mem_zeroLocus]
+      exact q.property⟩
+  left_inv c := Subtype.ext <| Subtype.ext <| by
+    dsimp
+    have hcClosed := isClosed_of_mem_irreducibleComponents c.val.val c.val.property
+    rw [zeroLocus_vanishingIdeal_eq_closure, closure_eq_iff_isClosed.mpr hcClosed]
+  right_inv q := Subtype.ext <| Subtype.ext <| by
+    dsimp
+    rw [vanishingIdeal_zeroLocus_eq_radical, q.val.property.1.1.radical]
 
 /-- For an affine scheme Spec R, the minimal prime ideals of the local ring (stalk)
 at a point p (which is a prime ideal of R) are in bijection with the irreducible components
