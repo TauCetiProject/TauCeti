@@ -12,7 +12,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 
 This file proves that the stalk map of a smooth morphism of schemes is formally smooth.
 
-This advances the Tau Ceti Jacobian roadmap.
+This advances the roadmap at TauCetiRoadmap/JacobianChallenge/README.md.
 
 ## Important Note
 
