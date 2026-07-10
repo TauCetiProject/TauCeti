@@ -103,7 +103,7 @@ Properness and geometric integrality are stable under base change, and the monoi
 functor carries the group-object structure (`Functor.grpObjObj`), so the result is again an
 abelian variety. This realizes the roadmap's base-change compatibility of the Jacobian at the
 level of abelian varieties. -/
-@[expose] noncomputable def baseChange (A : AbelianVariety K) (L : Type u) [Field L]
+noncomputable def baseChange (A : AbelianVariety K) (L : Type u) [Field L]
     [Algebra K L] : AbelianVariety L where
   toOver := (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj A.toOver
   grpObj := Functor.grpObjObj
@@ -117,14 +117,14 @@ level of abelian varieties. -/
 lemma baseChange_toOver (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
     (A.baseChange L).toOver =
       (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj A.toOver :=
-  rfl
+  (rfl)
 
 /-- The underlying scheme of a base change is the fibre product of the abelian variety with
 `Spec L` over `Spec K`. -/
 lemma baseChange_toScheme (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
     (A.baseChange L).toScheme =
       Limits.pullback A.toOver.hom (Spec.map (CommRingCat.ofHom (algebraMap K L))) :=
-  rfl
+  (rfl)
 
 end AbelianVariety
 
