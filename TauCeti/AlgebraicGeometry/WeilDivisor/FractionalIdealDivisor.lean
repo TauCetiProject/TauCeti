@@ -85,6 +85,8 @@ for all but finitely many `v` (`FractionalIdeal.finite_factors`), and the multip
     simp only [toMul_add, Units.val_mul]
     exact FractionalIdeal.count_mul K v (Units.ne_zero _) (Units.ne_zero _)
 
+/-- The coefficient of `fractionalIdealDivisor R K I` at a height-one prime `v` is the
+`v`-adic multiplicity `FractionalIdeal.count K v I` of the invertible fractional ideal `I`. -/
 @[simp]
 lemma coeff_fractionalIdealDivisor (I : Additive (FractionalIdeal R⁰ K)ˣ)
     (v : HeightOneSpectrum R) :
