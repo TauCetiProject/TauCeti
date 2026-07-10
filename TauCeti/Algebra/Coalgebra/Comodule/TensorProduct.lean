@@ -6,7 +6,6 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule
-import Mathlib.Tactic.IrreducibleDef
 
 /-!
 # The tensor-product coaction map for comodules over a bialgebra
@@ -60,10 +59,19 @@ variable [AddCommMonoid N] [Module R N]
 the two `C`-components.
 
 On pure tensors it sends `(m ⊗ c) ⊗ (n ⊗ d)` to `(m ⊗ n) ⊗ cd`. -/
-noncomputable irreducible_def tensorCombine :
+noncomputable def tensorCombine :
     (M ⊗[R] C) ⊗[R] (N ⊗[R] C) →ₗ[R] (M ⊗[R] N) ⊗[R] C :=
   TensorProduct.map (LinearMap.id : M ⊗[R] N →ₗ[R] M ⊗[R] N) (LinearMap.mul' R C) ∘ₗ
     (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap
+
+/-- Unfold `tensorCombine` to its defining composition. Kept `private`: the map's body is
+deliberately not exposed to downstream modules (the module system hides non-`@[expose]`d
+definition bodies), so this equation is an in-file helper for the lemmas below. -/
+private theorem tensorCombine_def :
+    tensorCombine (R := R) (C := C) (M := M) (N := N) =
+      TensorProduct.map (LinearMap.id : M ⊗[R] N →ₗ[R] M ⊗[R] N) (LinearMap.mul' R C) ∘ₗ
+        (TensorProduct.tensorTensorTensorComm R M C N C).toLinearMap :=
+  rfl
 
 /-- `tensorCombine` sends `(m ⊗ c) ⊗ (n ⊗ d)` to `(m ⊗ n) ⊗ cd`. -/
 @[simp]
@@ -128,13 +136,25 @@ section Coact
 /-- The diagonal coaction map on the tensor product of two right comodules over a bialgebra.
 
 The later full tensor-product comodule structure uses this map as its coaction. -/
-noncomputable irreducible_def tensorCoact [Semiring C] [Bialgebra R C]
+noncomputable def tensorCoact [Semiring C] [Bialgebra R C]
     [AddCommMonoid M] [Module R M] [Comodule R C M]
     [AddCommMonoid N] [Module R N] [Comodule R C N] :
     M ⊗[R] N →ₗ[R] (M ⊗[R] N) ⊗[R] C :=
   tensorCombine (R := R) (C := C) (M := M) (N := N) ∘ₗ
     TensorProduct.map (coact (R := R) (C := C) (M := M))
       (coact (R := R) (C := C) (M := N))
+
+/-- Unfold `tensorCoact` to the combining map applied to the two component coactions. Kept
+`private` for the same reason as `tensorCombine_def`: the coaction's body is not exposed
+downstream, so this equation only serves the lemmas in this file. -/
+private theorem tensorCoact_def [Semiring C] [Bialgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M]
+    [AddCommMonoid N] [Module R N] [Comodule R C N] :
+    tensorCoact (R := R) (C := C) (M := M) (N := N) =
+      tensorCombine (R := R) (C := C) (M := M) (N := N) ∘ₗ
+        TensorProduct.map (coact (R := R) (C := C) (M := M))
+          (coact (R := R) (C := C) (M := N)) :=
+  rfl
 
 /-- The tensor-product coaction, before expanding the two component coactions. -/
 @[simp]
