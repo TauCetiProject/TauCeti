@@ -153,7 +153,6 @@ lemma fractionalIdealDivisor_toPrincipalIdeal (x : Kˣ) :
   rw [coeff_fractionalIdealDivisor, coeff_principalDivisor_eq_fractionalIdeal_count]
   simp only [toMul_ofMul]
 
-@[simp]
 lemma fractionalIdealDivisorAddEquiv_toPrincipalIdeal (x : Kˣ) :
     fractionalIdealDivisorAddEquiv R K (Additive.ofMul (toPrincipalIdeal R K x)) =
       (OrderSystem.ofDedekindDomain R K).principalDivisor (Additive.ofMul x) :=
