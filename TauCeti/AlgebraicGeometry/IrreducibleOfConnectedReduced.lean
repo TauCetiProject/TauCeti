@@ -88,42 +88,31 @@ private def irreducibleComponents_containing_equiv_of_isOpenEmbedding
       ⟨x, c'.property⟩ c'.val.property.1.2
       (isClosed_of_mem_irreducibleComponents c'.val.val c'.val.property)
 
-/-- Auxiliary declaration. -/
-private lemma minimalPrimes_map_of_ringEquiv {A B : Type*} [CommRing A] [CommRing B]
-    (e : A ≃+* B) (I : Ideal A) (hI : I ∈ minimalPrimes A) :
-    Ideal.map e I ∈ minimalPrimes B := by
-  -- Unfold `minimalPrimes A` to `(⊥ : Ideal A).minimalPrimes` (i.e. `IsMinimalPrime I`).
-  change IsMinimalPrime I at hI
-  haveI : I.IsPrime := hI.1.1
-  haveI : (Ideal.map e I).IsPrime := Ideal.map_isPrime_of_equiv e
-  refine ⟨⟨‹_›, bot_le⟩, fun q hq hle ↦ ?_⟩
-  haveI : q.IsPrime := hq.1
-  have h_le : Ideal.comap e q ≤ I := by
-    have := Ideal.comap_mono (f := e) hle
-    rw [Ideal.comap_map_of_bijective e e.bijective] at this
-    exact this
-  haveI : (Ideal.comap e q).IsPrime := inferInstance
-  have h_eq := hI.eq_of_le ⟨‹_›, bot_le⟩ h_le
-  rw [← Ideal.map_comap_of_surjective e e.surjective q, h_eq]
-
-/-- Auxiliary declaration. -/
-private lemma minimalPrimes_map_iff {A B : Type*} [CommRing A] [CommRing B]
-    (e : A ≃+* B) (I : Ideal A) :
-    Ideal.map e I ∈ minimalPrimes B ↔ I ∈ minimalPrimes A := by
-  refine ⟨fun h ↦ ?_, minimalPrimes_map_of_ringEquiv e I⟩
-  have := minimalPrimes_map_of_ringEquiv e.symm (Ideal.map e I) h
-  rw [Ideal.map_symm, Ideal.comap_map_of_bijective e e.bijective] at this
-  exact this
-
 /-- Ring isomorphism preserves minimal primes. -/
 private def minimalPrimes_equiv_of_ringEquiv {A B : Type*} [CommRing A] [CommRing B]
     (e : A ≃+* B) : minimalPrimes A ≃ minimalPrimes B where
-  toFun p := ⟨Ideal.map e p.val, (minimalPrimes_map_iff e p.val).mpr p.property⟩
-  invFun q := ⟨Ideal.map e.symm q.val, (minimalPrimes_map_iff e.symm q.val).mpr q.property⟩
-  left_inv p := Subtype.ext
-    (by dsimp; rw [Ideal.map_symm, Ideal.comap_map_of_bijective e e.bijective])
-  right_inv q := Subtype.ext
-    (by dsimp; rw [Ideal.map_symm, Ideal.map_comap_of_surjective e e.surjective])
+  toFun p := ⟨Ideal.map e p.val, by
+    change _ ∈ (⊥ : Ideal B).minimalPrimes
+    have h1 := Ideal.minimalPrimes_map_of_surjective (f := e.toRingHom) e.surjective ⊥
+    have hker : RingHom.ker e.toRingHom = ⊥ :=
+      (RingHom.injective_iff_ker_eq_bot e.toRingHom).mp e.injective
+    rw [Ideal.map_bot, hker, bot_sup_eq] at h1
+    rw [h1]
+    exact Set.mem_image_of_mem _ p.property⟩
+  invFun q := ⟨Ideal.comap e q.val, by
+    change _ ∈ (⊥ : Ideal A).minimalPrimes
+    have h1 := Ideal.comap_minimalPrimes_eq_of_surjective (f := e.toRingHom) e.surjective ⊥
+    have hker : Ideal.comap e.toRingHom ⊥ = ⊥ :=
+      (RingHom.injective_iff_ker_eq_bot e.toRingHom).mp e.injective
+    rw [hker] at h1
+    rw [h1]
+    exact Set.mem_image_of_mem _ q.property⟩
+  left_inv p := Subtype.ext (by
+    dsimp
+    rw [Ideal.comap_map_of_bijective e e.bijective])
+  right_inv q := Subtype.ext (by
+    dsimp
+    rw [Ideal.map_comap_of_surjective e e.surjective])
 
 /-- Auxiliary declaration. -/
 private lemma disjoint_primeCompl_iff {R : Type*} [CommRing R] {I J : Ideal R} [I.IsPrime] :
@@ -288,29 +277,6 @@ private noncomputable def stalkMinimalPrimesEquivIrreducibleComponentsContaining
     rwa [hy] at this
   exact hEq1.trans (hEq2.trans (hEq3.trans (hEq4.trans hEq5)))
 
-/-- Ring equivalence preserves the property of being an integral domain. -/
-private lemma isDomain_of_ringEquiv {A B : Type*} [CommRing A] [IsDomain A]
-    [CommRing B] (e : A ≃+* B) :
-    IsDomain B :=
-  e.symm.injective.isDomain (e.symm : B →+* A)
-
-/-- Auxiliary declaration. -/
-private lemma isOpen_of_open_cover {α : Type*} [TopologicalSpace α] {ι : Type*}
-    (U : ι → Set α) (hUCov : (⋃ i, U i) = univ)
-    (s : Set α) (hs : ∀ i, IsOpen (s ∩ U i)) : IsOpen s := by
-  have hEq : s = ⋃ i, s ∩ U i := by
-    ext x
-    simp only [mem_iUnion, mem_inter_iff]
-    constructor
-    · intro hx
-      have hIn : x ∈ ⋃ i, U i := by rw [hUCov]; exact mem_univ x
-      rcases mem_iUnion.mp hIn with ⟨i, hi⟩
-      exact ⟨i, hx, hi⟩
-    · rintro ⟨i, hx, _⟩
-      exact hx
-  rw [hEq]
-  exact isOpen_iUnion hs
-
 /-- A point in a scheme whose stalk is a domain belongs to a unique irreducible component. -/
 lemma unique_irreducibleComponent_of_isDomain_stalk {X : Scheme} (x : X.carrier)
   (hStalks : IsDomain (X.presheaf.stalk x)) :
@@ -388,9 +354,10 @@ theorem isOpen_irreducibleComponents_of_isDomain_stalk {Z : Scheme.{u}} [IsLocal
     (hStalks : ∀ x : Z.carrier, IsDomain (Z.presheaf.stalk x))
     (c : irreducibleComponents Z.carrier) :
     IsOpen (c : Set Z.carrier) := by
-  apply isOpen_of_open_cover (fun j => Set.range (Z.affineCover.f j).1.base)
-    Z.affineCover.iUnion_range
+  rw [isOpen_iff_of_cover (fun j ↦ (Z.affineCover.f j).isOpenEmbedding.isOpen_range)
+    Z.affineCover.iUnion_range]
   intro j
+  rw [inter_comm]
   let f := Z.affineCover.f j
   have hf : IsOpenEmbedding f.1.base := f.isOpenEmbedding
   rw [← image_preimage_eq_inter_range]
@@ -399,7 +366,7 @@ theorem isOpen_irreducibleComponents_of_isDomain_stalk {Z : Scheme.{u}} [IsLocal
   have hStalksY : ∀ y : Y.carrier, IsDomain (Y.presheaf.stalk y) := by
     intro y
     haveI : IsDomain (Z.presheaf.stalk (f.1.base y)) := hStalks (f.1.base y)
-    exact isDomain_of_ringEquiv (asIso <| f.stalkMap y).commRingCatIsoToRingEquiv
+    exact (asIso <| f.stalkMap y).commRingCatIsoToRingEquiv.isDomain_iff.mp inferInstance
   by_cases hEmpty : (f.1.base ⁻¹' (c : Set Z.carrier)).Nonempty
   · have hNonempty : ((c : Set Z.carrier) ∩ Set.range f.1.base).Nonempty := by
       obtain ⟨x, hx⟩ := hEmpty
