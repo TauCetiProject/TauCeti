@@ -158,19 +158,6 @@ lemma integrable_exp_mul_abs_smul_measureT {𝕜 β : Type*} [RCLike 𝕜] [Norm
     filter_upwards [ae_mem_Icc_measureT] with x hx
     exact abs_le.mpr hx)
 
-/-- The Chebyshev `T` orthogonality measure has every exponential absolute moment finite. -/
-lemma integrable_exp_abs_measureT (a : ℝ) :
-    Integrable (fun x : ℝ => Real.exp (a * |x|)) Polynomial.Chebyshev.measureT := by
-  simpa using integrable_exp_mul_abs_smul_measureT (𝕜 := ℝ) (β := ℝ) (g := fun _ : ℝ => 1) a
-    (integrable_const (1 : ℝ))
-
-/-- The scalar-cast exponential absolute moments of the Chebyshev `T` measure are finite. -/
-lemma integrable_algebraMap_exp_abs_measureT {𝕜 : Type*} [RCLike 𝕜] (a : ℝ) :
-    Integrable (fun x : ℝ => (algebraMap ℝ 𝕜) (Real.exp (a * |x|)))
-      Polynomial.Chebyshev.measureT := by
-  simpa only [RCLike.algebraMap_eq_ofReal] using
-    (integrable_exp_abs_measureT a).ofReal (𝕜 := 𝕜)
-
 /-! ### `L²` consumer forms -/
 
 /-- The real normalized Chebyshev `T` mode, with squared norm one in `L²(measureT)`. -/
