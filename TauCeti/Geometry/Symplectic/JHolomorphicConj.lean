@@ -76,13 +76,11 @@ lemma stdComplexLineConjCLM_toLinearMap :
   rfl
 
 /-- Conjugation fixes the real coordinate vector. -/
-@[simp]
 lemma stdComplexLineConj_apply_real :
     stdComplexLineConj stdComplexLineReal = stdComplexLineReal := by
   ext <;> simp [stdComplexLineReal]
 
 /-- Conjugation negates the imaginary coordinate vector. -/
-@[simp]
 lemma stdComplexLineConj_apply_imag :
     stdComplexLineConj stdComplexLineImag = -stdComplexLineImag := by
   ext <;> simp [stdComplexLineImag]
@@ -96,7 +94,6 @@ lemma stdComplexLineConj_comp_self :
   simp [stdComplexLineConj]
 
 /-- Pointwise form of `stdComplexLineConj_comp_self`. -/
-@[simp]
 lemma stdComplexLineConj_apply_apply (z : ℝ × ℝ) :
     stdComplexLineConj (stdComplexLineConj z) = z := by
   simp
