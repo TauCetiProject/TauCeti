@@ -102,6 +102,19 @@ lemma conj_schwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
   rw [schwarzReflection_of_im_neg (f := f) hz, starRingEnd_self_apply]
 
 /--
+At a real-axis point where `f` has a real value, `f` commutes with conjugation:
+`f z = conj (f (conj z))`.
+-/
+private lemma apply_eq_conj_apply_conj_of_im_zero_of_apply_im_zero
+    {z : ℂ} (hz : z.im = 0) (hreal : (f z).im = 0) :
+    f z = (starRingEnd ℂ) (f ((starRingEnd ℂ) z)) := by
+  have hzconj : (starRingEnd ℂ) z = z := by
+    rw [starRingEnd_apply, Complex.star_def, Complex.conj_eq_iff_im]
+    exact hz
+  rw [hzconj]
+  exact (Complex.conj_eq_iff_im.mpr hreal).symm
+
+/--
 The Schwarz-reflection extension is conjugation-symmetric when the original function has real
 value at the real-axis point under consideration.
 -/
@@ -119,27 +132,11 @@ lemma schwarzReflection_conj
   · rw [schwarzReflection_of_im_zero (f := f) hzero]
     have hconj_im : ((starRingEnd ℂ) z).im = 0 := by
       rw [starRingEnd_apply, Complex.star_def, Complex.conj_im, hzero, neg_zero]
-    rw [schwarzReflection_of_im_zero (f := f) hconj_im]
-    have hzconj : (starRingEnd ℂ) z = z := by
-      rw [starRingEnd_apply, Complex.star_def, Complex.conj_eq_iff_im]
-      exact hzero
-    rw [hzconj]
-    exact (Complex.conj_eq_iff_im.mpr (hreal hzero)).symm
+    rw [schwarzReflection_of_im_zero (f := f) hconj_im,
+      apply_eq_conj_apply_conj_of_im_zero_of_apply_im_zero (f := f) hzero (hreal hzero),
+      starRingEnd_self_apply]
   · rw [schwarzReflection_conj_of_im_pos (f := f) hpos]
     rw [schwarzReflection_of_im_nonneg (f := f) hpos.le]
-
-/--
-At a real-axis point where `f` has a real value, `f` commutes with conjugation:
-`f z = conj (f (conj z))`.
--/
-private lemma apply_eq_conj_apply_conj_of_im_zero_of_apply_im_zero
-    {z : ℂ} (hz : z.im = 0) (hreal : (f z).im = 0) :
-    f z = (starRingEnd ℂ) (f ((starRingEnd ℂ) z)) := by
-  have hzconj : (starRingEnd ℂ) z = z := by
-    rw [starRingEnd_apply, Complex.star_def, Complex.conj_eq_iff_im]
-    exact hz
-  rw [hzconj]
-  exact (Complex.conj_eq_iff_im.mpr hreal).symm
 
 /--
 On a domain where the original function is real-valued on the real axis, the Schwarz-reflection
