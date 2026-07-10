@@ -420,8 +420,11 @@ private theorem tensor_id_aux [Semiring C] [Bialgebra R C]
       simpa only [coe_toLinearMap] using congrArg₂ (fun a b => a + b) hx₁ hx₂
 
 /-- Tensoring identity comodule morphisms gives the identity on the tensor-product
-comodule. -/
-@[simp]
+comodule.
+
+This is not a `simp` lemma: the ambient `ComoduleCat.ofHom_id` simp lemma rewrites the bare
+`Hom.id R C M` on the left-hand side to `𝟙 (ComoduleCat.of R C M)`, so the statement is never
+in `simp`-normal form. -/
 theorem tensor_id [Semiring C] [Bialgebra R C]
     [AddCommMonoid M] [Module R M] [Comodule R C M]
     [AddCommMonoid N] [Module R N] [Comodule R C N] :
