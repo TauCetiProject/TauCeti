@@ -27,11 +27,13 @@ namespace TauCeti
 
 namespace AlgebraicGeometry
 
+/-- Auxiliary declaration. -/
 lemma preimage_closure_image_eq {α β : Type*} [TopologicalSpace α] [TopologicalSpace β]
     {f : α → β} (hf : IsOpenEmbedding f) (c : Set α) (hc : IsClosed c) :
     f ⁻¹' (closure (f '' c)) = c :=
   IsOpenMap.preimage_closure_image hf.isOpenMap hf.toIsEmbedding.injective hf.continuous c hc
 
+/-- Auxiliary declaration. -/
 lemma closure_image_preimage_eq {α β : Type*} [TopologicalSpace α] [TopologicalSpace β]
     {f : α → β} (hf : IsOpenEmbedding f) (c' : Set β) (hc' : IsClosed c')
     (hIrred : IsIrreducible c') (hNonempty : (c' ∩ range f).Nonempty) :
@@ -41,6 +43,7 @@ lemma closure_image_preimage_eq {α β : Type*} [TopologicalSpace α] [Topologic
     (subset_closure_inter_of_isPreirreducible_of_isOpen
       hIrred.2 hf.isOpenMap.isOpen_range hNonempty)
 
+/-- Auxiliary declaration. -/
 lemma image_mem_irreducibleComponents {α β : Type*} [TopologicalSpace α] [TopologicalSpace β]
     {f : α → β} (hf : IsOpenEmbedding f) {c : Set α}
     (hc : c ∈ irreducibleComponents α) :
@@ -60,6 +63,7 @@ lemma image_mem_irreducibleComponents {α β : Type*} [TopologicalSpace α] [Top
   rw [hEq, closure_image_preimage_eq hf (closure u) isClosed_closure hClIrred hClNonempty]
   exact subset_closure
 
+/-- Auxiliary declaration. -/
 def irreducibleComponents_containing_equiv_of_isOpenEmbedding
     {α β : Type*} [TopologicalSpace α] [TopologicalSpace β]
     {f : α → β} (hf : IsOpenEmbedding f) (x : α) :
@@ -87,6 +91,7 @@ def irreducibleComponents_containing_equiv_of_isOpenEmbedding
       (isClosed_of_mem_irreducibleComponents c'.val.val c'.val.property)
       c'.val.property.1 hNonempty
 
+/-- Auxiliary declaration. -/
 lemma minimalPrimes_map_of_ringEquiv {A B : Type*} [CommRing A] [CommRing B]
     (e : A ≃+* B) (I : Ideal A) (hI : I ∈ minimalPrimes A) :
     Ideal.map e I ∈ minimalPrimes B := by
@@ -103,6 +108,7 @@ lemma minimalPrimes_map_of_ringEquiv {A B : Type*} [CommRing A] [CommRing B]
   have h_eq := hI.eq_of_le ⟨‹_›, bot_le⟩ h_le
   rw [← Ideal.map_comap_of_surjective e e.surjective q, h_eq]
 
+/-- Auxiliary declaration. -/
 lemma minimalPrimes_map_iff {A B : Type*} [CommRing A] [CommRing B] (e : A ≃+* B) (I : Ideal A) :
     Ideal.map e I ∈ minimalPrimes B ↔ I ∈ minimalPrimes A := by
   refine ⟨fun h ↦ ?_, minimalPrimes_map_of_ringEquiv e I⟩
@@ -120,10 +126,12 @@ noncomputable def minimalPrimes_equiv_of_ringEquiv {A B : Type*} [CommRing A] [C
   right_inv q := Subtype.ext
     (by dsimp; rw [Ideal.map_symm, Ideal.map_comap_of_surjective e e.surjective])
 
+/-- Auxiliary declaration. -/
 lemma disjoint_primeCompl_iff {R : Type*} [CommRing R] {I J : Ideal R} [I.IsPrime] :
     Disjoint (I.primeCompl : Set R) (J : Set R) ↔ J ≤ I :=
   Set.disjoint_compl_left_iff_subset
 
+/-- Auxiliary declaration. -/
 lemma comap_le_p_of_mem_minimalPrimes {R : Type*} [CommRing R] (p : PrimeSpectrum R)
     (S : Submonoid R) (A : Type*) [CommRing A] [Algebra R A] [IsLocalization S A]
     (hS : S = p.asIdeal.primeCompl) (q' : minimalPrimes A) :
@@ -132,6 +140,7 @@ lemma comap_le_p_of_mem_minimalPrimes {R : Type*} [CommRing R] (p : PrimeSpectru
   have hDisj := (IsLocalization.isPrime_iff_isPrime_disjoint S A q'.val).mp ‹_› |>.2
   rwa [hS, disjoint_primeCompl_iff] at hDisj
 
+/-- Auxiliary declaration. -/
 noncomputable def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : PrimeSpectrum R)
     (S : Submonoid R) (A : Type*) [CommRing A] [Algebra R A] [IsLocalization S A]
     (hS : S = p.asIdeal.primeCompl) :
@@ -161,6 +170,7 @@ noncomputable def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p 
     haveI : q.val.val.IsPrime := q.val.property.1.1
     exact IsLocalization.under_map_of_isPrime_disjoint S A ‹_› hI'
 
+/-- Auxiliary declaration. -/
 noncomputable def minimalPrimesEquivIrreducibleComponents (R : Type*) [CommRing R] :
     minimalPrimes R ≃ irreducibleComponents (PrimeSpectrum R) where
   toFun q := ⟨zeroLocus q.val, by
@@ -177,15 +187,18 @@ noncomputable def minimalPrimesEquivIrreducibleComponents (R : Type*) [CommRing 
     have hcClosed := isClosed_of_mem_irreducibleComponents c.val c.property
     rw [zeroLocus_vanishingIdeal_eq_closure, closure_eq_iff_isClosed.mpr hcClosed])
 
+/-- Auxiliary declaration. -/
 lemma my_equiv_apply (R : Type*) [CommRing R] (q : minimalPrimes R) :
     (minimalPrimesEquivIrreducibleComponents R q : Set (PrimeSpectrum R)) = zeroLocus q.val := by
   rfl
 
+/-- Auxiliary declaration. -/
 lemma mem_my_equiv_iff (R : Type*) [CommRing R] (p : PrimeSpectrum R) (q : minimalPrimes R) :
     p ∈ (minimalPrimesEquivIrreducibleComponents R q : Set (PrimeSpectrum R)) ↔
       q.val ≤ p.asIdeal := by
   rw [my_equiv_apply, mem_zeroLocus, SetLike.coe_subset_coe]
 
+/-- Auxiliary declaration. -/
 noncomputable def irreducibleComponentsContainingEquivMinimalPrimesLe (R : Type*)
     [CommRing R] (p : PrimeSpectrum R) :
     { c : irreducibleComponents (PrimeSpectrum R) // p ∈ (c : Set (PrimeSpectrum R)) } ≃
@@ -281,6 +294,7 @@ lemma isDomain_of_ringEquiv {A B : Type*} [CommRing A] [IsDomain A] [CommRing B]
       exact e.symm.injective hEq⟩
   exact ⟨⟩
 
+/-- Auxiliary declaration. -/
 lemma isOpen_of_open_cover {α : Type*} [TopologicalSpace α] {ι : Type*}
     (U : ι → Set α) (hUCov : (⋃ i, U i) = univ)
     (s : Set α) (hs : ∀ i, IsOpen (s ∩ U i)) : IsOpen s := by
@@ -328,6 +342,7 @@ lemma disjoint_irreducible_components_of_reduced_no_embedded {Z : Scheme}
   rw [hEq1, hEq2] at hneq
   exact hneq rfl
 
+/-- Auxiliary declaration. -/
 lemma isOpen_irreducibleComponents_of_pairwise_disjoint {α : Type*} [TopologicalSpace α]
     [NoetherianSpace α] (hDisj : ∀ c1 c2 : irreducibleComponents α, c1 ≠ c2 →
       Disjoint (c1 : Set α) (c2 : Set α))
@@ -396,6 +411,7 @@ theorem isOpen_irreducibleComponents_of_stalks_domain {Z : Scheme.{u}} [IsLocall
     rw [hEmpty]
     exact isOpen_empty
 
+/-- Auxiliary declaration. -/
 lemma compl_sUnion_eq_sUnion_diff {α : Type*} {S : Set (Set α)}
     (hDisj : PairwiseDisjoint S id) (hCov : ⋃₀ S = univ)
     (T : Set (Set α)) (hT : T ⊆ S) :
@@ -421,6 +437,7 @@ lemma compl_sUnion_eq_sUnion_diff {α : Type*} {S : Set (Set α)}
     subst hEq
     exact hsT htT
 
+/-- Auxiliary declaration. -/
 lemma isClosed_sUnion_of_disjoint_isOpen {α : Type*} [TopologicalSpace α]
     {S : Set (Set α)} (hDisj : PairwiseDisjoint S id) (hOpen : ∀ s ∈ S, IsOpen s)
     (hCov : ⋃₀ S = univ) (T : Set (Set α)) (hT : T ⊆ S) :
@@ -431,6 +448,7 @@ lemma isClosed_sUnion_of_disjoint_isOpen {α : Type*} [TopologicalSpace α]
   rintro s ⟨hsS, _⟩
   exact hOpen s hsS
 
+/-- Auxiliary declaration. -/
 lemma sUnion_other_eq_iUnion_other {α : Type*} (S : Set (Set α)) (c : { x // x ∈ S }) :
     (⋃ c' ∈ {c' : { x // x ∈ S } | c' ≠ c}, (c' : Set α)) = ⋃₀ (S \ {c.val}) := by
   ext x
@@ -540,6 +558,7 @@ lemma irreducible_of_connected_of_disjoint_components {α : Type*} [TopologicalS
   haveI : PreirreducibleSpace α := ⟨hIrredUniv.2⟩
   exact ⟨inferInstance⟩
 
+/-- Auxiliary declaration. -/
 theorem irreducibleSpace_of_connected_reduced_no_embedded (Z : Scheme.{u}) [IsLocallyNoetherian Z]
     [ConnectedSpace Z] (hStalks : ∀ x : Z.carrier, IsDomain (Z.presheaf.stalk x)) :
     IrreducibleSpace Z := by
