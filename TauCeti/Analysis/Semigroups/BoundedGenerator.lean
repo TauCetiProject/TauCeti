@@ -50,7 +50,7 @@ omit [CompleteSpace X] in
 /-- In the Banach algebra `X →L[ℝ] X`, the operator exponential is norm-bounded by the scalar
 exponential of the norm: `‖exp x‖ ≤ Real.exp ‖x‖`.  This is the termwise triangle inequality
 on the exponential series, using submultiplicativity `‖xⁿ‖ ≤ ‖x‖ⁿ`. -/
-private lemma norm_exp_le (x : X →L[ℝ] X) : ‖exp x‖ ≤ Real.exp ‖x‖ := by
+private lemma norm_exp_le_exp_norm (x : X →L[ℝ] X) : ‖exp x‖ ≤ Real.exp ‖x‖ := by
   rw [exp_eq_tsum ℝ]
   refine (norm_tsum_le_tsum_norm (norm_expSeries_summable' (𝕂 := ℝ) x)).trans ?_
   rw [Real.exp_eq_exp_ℝ, exp_eq_tsum ℝ]
@@ -65,7 +65,7 @@ private lemma norm_exp_le (x : X →L[ℝ] X) : ‖exp x‖ ≤ Real.exp ‖x‖
 /-- The operator exponential is additive on commuting elements of `X →L[ℝ] X`, phrased over the
 scalar field `ℝ` (the `ℚ`-algebra instance required by `NormedSpace.exp_add_of_commute` is not
 available here). -/
-private lemma exp_add_commute {x y : X →L[ℝ] X} (h : Commute x y) :
+private lemma exp_add_of_commute {x y : X →L[ℝ] X} (h : Commute x y) :
     exp (x + y) = exp x * exp y :=
   exp_add_of_commute_of_mem_ball (𝕂 := ℝ) h
     ((expSeries_radius_eq_top ℝ (X →L[ℝ] X)).symm ▸ edist_lt_top _ _)
@@ -79,7 +79,7 @@ def ofBounded (A : X →L[ℝ] X) : StronglyContinuousSemigroup X where
     rw [NNReal.coe_zero, zero_smul, exp_zero, ContinuousLinearMap.one_def]
   map_add' s t := by
     rw [NNReal.coe_add, add_smul,
-      exp_add_commute (((Commute.refl A).smul_left _).smul_right _), ContinuousLinearMap.mul_def]
+      exp_add_of_commute (((Commute.refl A).smul_left _).smul_right _), ContinuousLinearMap.mul_def]
   continuousAt_zero' x :=
     (((differentiable_exp_smul_const ℝ A).continuous.comp NNReal.continuous_coe).clm_apply
       continuous_const).continuousAt
@@ -123,7 +123,7 @@ theorem ofBounded_hasGrowthBound (A : X →L[ℝ] X) :
     (ofBounded A).HasGrowthBound ‖A‖ 1 := by
   refine hasGrowthBound_of_bound le_rfl (fun t ht => ?_)
   rw [one_mul, ofBounded_realOperator_of_nonneg A ht]
-  calc ‖exp (t • A)‖ ≤ Real.exp ‖t • A‖ := norm_exp_le _
+  calc ‖exp (t • A)‖ ≤ Real.exp ‖t • A‖ := norm_exp_le_exp_norm _
     _ = Real.exp (‖A‖ * t) := by
         rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht, mul_comm]
 
