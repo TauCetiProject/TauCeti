@@ -40,9 +40,9 @@ contractibility of a real topological vector space
 * `TauCeti.AddCircle.not_simplyConnectedSpace`: `AddCircle p` is not simply connected.
 * `TauCeti.AddCircle.not_contractibleSpace`: `AddCircle p` is not contractible.
 * `TauCeti.AddCircle.isEmpty_homeomorph_of_simplyConnectedSpace`,
-  `TauCeti.AddCircle.isEmpty_homeomorph_normedSpace`,
+  `TauCeti.AddCircle.isEmpty_homeomorph_realTopologicalVectorSpace`,
   `TauCeti.AddCircle.isEmpty_homeomorph_real`: `AddCircle p` is not homeomorphic to a simply
-  connected space, to a real normed space, or to `ℝ`.
+  connected space, to a real topological vector space, or to `ℝ`.
 * `TauCeti.UnitAddCircle.*`: the specialisations to the unit circle `S¹ = ℝ ⧸ ℤ`.
 -/
 
@@ -54,29 +54,29 @@ namespace AddCircle
 
 variable (p : ℝ)
 
-/-- The fundamental group of the circle `AddCircle p` (`p ≠ 0`), based at any point `x` with a
-chosen lift `e`, is nontrivial: it contains loops of every winding number. -/
-theorem nontrivial_fundamentalGroup (hp : p ≠ 0) {x : AddCircle p}
-    (e : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) :
-    Nontrivial (FundamentalGroup (AddCircle p) x) :=
-  (fundamentalGroupMulEquiv p hp e).toEquiv.nontrivial
+/-- The fundamental group of the circle `AddCircle p` (`p ≠ 0`), based at any point `x`, is
+nontrivial: it contains loops of every winding number. -/
+theorem nontrivial_fundamentalGroup (hp : p ≠ 0) (x : AddCircle p) :
+    Nontrivial (FundamentalGroup (AddCircle p) x) := by
+  obtain ⟨e, rfl⟩ := QuotientAddGroup.mk_surjective x
+  exact (fundamentalGroupMulEquiv p hp ⟨e, rfl⟩).toEquiv.nontrivial
 
-/-- The fundamental group of the circle `AddCircle p` (`p ≠ 0`), based at any point `x` with a
-chosen lift `e`, is infinite: distinct winding numbers give distinct loop classes. -/
-theorem infinite_fundamentalGroup (hp : p ≠ 0) {x : AddCircle p}
-    (e : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) :
-    Infinite (FundamentalGroup (AddCircle p) x) :=
-  Infinite.of_injective _ (fundamentalGroupMulEquiv p hp e).symm.injective
+/-- The fundamental group of the circle `AddCircle p` (`p ≠ 0`), based at any point `x`, is
+infinite: distinct winding numbers give distinct loop classes. -/
+theorem infinite_fundamentalGroup (hp : p ≠ 0) (x : AddCircle p) :
+    Infinite (FundamentalGroup (AddCircle p) x) := by
+  obtain ⟨e, rfl⟩ := QuotientAddGroup.mk_surjective x
+  exact Infinite.of_injective _ (fundamentalGroupMulEquiv p hp ⟨e, rfl⟩).symm.injective
 
 /-- The fundamental group of the circle `AddCircle p` (`p ≠ 0`), based at `0`, is nontrivial. -/
 theorem nontrivial_fundamentalGroup_zero (hp : p ≠ 0) :
     Nontrivial (FundamentalGroup (AddCircle p) 0) :=
-  nontrivial_fundamentalGroup p hp ⟨0, by simp⟩
+  nontrivial_fundamentalGroup p hp 0
 
 /-- The fundamental group of the circle `AddCircle p` (`p ≠ 0`), based at `0`, is infinite. -/
 theorem infinite_fundamentalGroup_zero (hp : p ≠ 0) :
     Infinite (FundamentalGroup (AddCircle p) 0) :=
-  infinite_fundamentalGroup p hp ⟨0, by simp⟩
+  infinite_fundamentalGroup p hp 0
 
 /-- The circle `AddCircle p` (`p ≠ 0`) is **not simply connected**: its fundamental group is
 nontrivial, whereas a simply connected space has a subsingleton fundamental group. -/
@@ -103,17 +103,18 @@ theorem isEmpty_homeomorph_of_simplyConnectedSpace (hp : p ≠ 0)
   have : SimplyConnectedSpace (AddCircle p) := e.toHomotopyEquiv.simplyConnectedSpace
   exact not_simplyConnectedSpace p hp this
 
-/-- The circle `AddCircle p` (`p ≠ 0`) is not homeomorphic to any real normed space, since such
-a space is contractible, hence simply connected. -/
-theorem isEmpty_homeomorph_normedSpace (hp : p ≠ 0)
-    (E : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E] :
+/-- The circle `AddCircle p` (`p ≠ 0`) is not homeomorphic to any real topological vector space
+(in particular, to any real normed space), since such a space is contractible, hence simply
+connected. -/
+theorem isEmpty_homeomorph_realTopologicalVectorSpace (hp : p ≠ 0) (E : Type*)
+    [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E] :
     IsEmpty (AddCircle p ≃ₜ E) :=
   isEmpty_homeomorph_of_simplyConnectedSpace p hp E
 
 /-- The circle `AddCircle p` (`p ≠ 0`) is not homeomorphic to the real line: the circle is not
 simply connected but `ℝ` is contractible. -/
 theorem isEmpty_homeomorph_real (hp : p ≠ 0) : IsEmpty (AddCircle p ≃ₜ ℝ) :=
-  isEmpty_homeomorph_normedSpace p hp ℝ
+  isEmpty_homeomorph_realTopologicalVectorSpace p hp ℝ
 
 end AddCircle
 
