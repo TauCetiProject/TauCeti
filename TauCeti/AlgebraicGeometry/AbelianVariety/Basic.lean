@@ -55,8 +55,10 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- A geometrically irreducible morphism is geometrically connected. -/
-lemma GeometricallyConnected.of_geometricallyIrreducible {X S : Scheme.{u}} {f : X ⟶ S}
+/-- A geometrically irreducible morphism is geometrically connected. Kept `private` as an
+implementation helper for `AbelianVariety.geometricallyConnected`; it is not part of the
+abelian-variety public interface. -/
+private lemma GeometricallyConnected.of_geometricallyIrreducible {X S : Scheme.{u}} {f : X ⟶ S}
     [GeometricallyIrreducible f] : GeometricallyConnected f := by
   refine ⟨?_⟩
   have h : geometrically (IrreducibleSpace ·) f :=
