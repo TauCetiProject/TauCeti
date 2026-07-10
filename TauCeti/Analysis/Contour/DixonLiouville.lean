@@ -60,7 +60,7 @@ private theorem dixonFunction_eventually_eq_dixonH2 (hf : DifferentiableOn ℂ f
   filter_upwards [windingNumber_eventually_zero_cocompact hclosed hP hγ_cont hγ_diff hderiv_int]
     with w ⟨hoff, hwn⟩
   exact dixonFunction_eq_dixonH2_of_windingNumber_zero hγ_cont hderiv_int
-    (cauchy_integrand_intervalIntegrable hf hγ_cont hγU hderiv_int hoff) hoff hwn
+    (cauchy_integrand_intervalIntegrable hf.continuousOn hγ_cont hγU hderiv_int hoff) hoff hwn
 
 /-- **The Dixon function tends to `0` along `cocompact ℂ`.** It eventually agrees with `dixonH2`,
 which tends to `0` by the `L¹` decay bound: the image of the compact interval `uIcc a b` is bounded
