@@ -234,6 +234,26 @@ private theorem comul_lTensor_tensorCombine [Semiring C] [Bialgebra R C]
       | add y₁ y₂ hy₁ hy₂ => simp [hy₁, hy₂, TensorProduct.tmul_add]
   | add x₁ x₂ hx₁ hx₂ => simp [hx₁, hx₂, TensorProduct.add_tmul]
 
+private theorem tensorCoact_rTensor_tensorCombine_core [Semiring C] [Bialgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M]
+    [AddCommMonoid N] [Module R N] [Comodule R C N] (x : M ⊗[R] C) (y : N ⊗[R] C)
+    (c d : C) :
+    TensorProduct.assoc R (M ⊗[R] N) C C
+        (tensorCombine (R := R) (C := C) (M := M) (N := N) (x ⊗ₜ[R] y) ⊗ₜ[R] (c * d)) =
+      tensorCombine (R := R) (C := C ⊗[R] C) (M := M) (N := N)
+        (TensorProduct.assoc R M C C (x ⊗ₜ[R] c) ⊗ₜ[R]
+          TensorProduct.assoc R N C C (y ⊗ₜ[R] d)) := by
+  induction x using TensorProduct.induction_on with
+  | zero => simp
+  | tmul m c' =>
+      induction y using TensorProduct.induction_on with
+      | zero => simp
+      | tmul n d' => simp [Algebra.TensorProduct.tmul_mul_tmul]
+      | add y₁ y₂ hy₁ hy₂ =>
+          rw [TensorProduct.tmul_add, map_add, TensorProduct.add_tmul, map_add,
+            TensorProduct.add_tmul, map_add, TensorProduct.tmul_add, map_add, hy₁, hy₂]
+  | add x₁ x₂ hx₁ hx₂ => simp [hx₁, hx₂, TensorProduct.add_tmul]
+
 private theorem tensorCoact_rTensor_tensorCombine [Semiring C] [Bialgebra R C]
     [AddCommMonoid M] [Module R M] [Comodule R C M]
     [AddCommMonoid N] [Module R N] [Comodule R C N] (x : M ⊗[R] C) (y : N ⊗[R] C) :
@@ -251,22 +271,10 @@ private theorem tensorCoact_rTensor_tensorCombine [Semiring C] [Bialgebra R C]
       induction y using TensorProduct.induction_on with
       | zero => simp
       | tmul n d =>
-          simp only [tensorCombine_tmul_tmul, LinearMap.rTensor_tmul,
-            tensorCoact_tmul]
-          generalize hxm : coact (R := R) (C := C) (M := M) m = xm
-          generalize hyn : coact (R := R) (C := C) (M := N) n = yn
-          clear hxm hyn
-          induction xm using TensorProduct.induction_on with
-          | zero => simp
-          | tmul m' c' =>
-              induction yn using TensorProduct.induction_on with
-              | zero => simp
-              | tmul n' d' => simp [Algebra.TensorProduct.tmul_mul_tmul]
-              | add y₁ y₂ hy₁ hy₂ =>
-                  rw [TensorProduct.tmul_add, map_add, TensorProduct.add_tmul, map_add, hy₁,
-                    hy₂, TensorProduct.add_tmul, map_add]
-                  rw [TensorProduct.tmul_add, map_add]
-          | add x₁ x₂ hx₁ hx₂ => simp [hx₁, hx₂, TensorProduct.add_tmul]
+          simpa only [tensorCombine_tmul_tmul, LinearMap.rTensor_tmul, tensorCoact_tmul] using
+            tensorCoact_rTensor_tensorCombine_core (R := R) (C := C) (M := M) (N := N)
+              (coact (R := R) (C := C) (M := M) m)
+              (coact (R := R) (C := C) (M := N) n) c d
       | add y₁ y₂ hy₁ hy₂ => simp [hy₁, hy₂, TensorProduct.tmul_add]
   | add x₁ x₂ hx₁ hx₂ => simp [hx₁, hx₂, TensorProduct.add_tmul]
 
@@ -309,7 +317,7 @@ theorem tensorCoact_coassoc [Semiring C] [Bialgebra R C]
             (coact (R := R) (C := C) (M := N) n)).symm
 
 /-- The tensor product of two right comodules over a bialgebra, with diagonal coaction. -/
-@[expose, implicit_reducible]
+@[implicit_reducible]
 noncomputable def TensorProduct [Semiring C] [Bialgebra R C]
     [AddCommMonoid M] [Module R M] [Comodule R C M]
     [AddCommMonoid N] [Module R N] [Comodule R C N] :
@@ -320,6 +328,13 @@ noncomputable def TensorProduct [Semiring C] [Bialgebra R C]
 
 attribute [local instance] TensorProduct
 
+private theorem TensorProduct_coact_aux [Semiring C] [Bialgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M]
+    [AddCommMonoid N] [Module R N] [Comodule R C N] :
+    coact (R := R) (C := C) (M := M ⊗[R] N) =
+      tensorCoact (R := R) (C := C) (M := M) (N := N) :=
+  rfl
+
 /-- The coaction in `Comodule.TensorProduct` is `Comodule.tensorCoact`. -/
 @[simp]
 theorem TensorProduct_coact [Semiring C] [Bialgebra R C]
@@ -327,14 +342,14 @@ theorem TensorProduct_coact [Semiring C] [Bialgebra R C]
     [AddCommMonoid N] [Module R N] [Comodule R C N] :
     coact (R := R) (C := C) (M := M ⊗[R] N) =
       tensorCoact (R := R) (C := C) (M := M) (N := N) :=
-  rfl
+  TensorProduct_coact_aux (R := R) (C := C) (M := M) (N := N)
 
 namespace Hom
 
 variable {M' : Type y} {N' : Type z}
 
 /-- Tensor two right-comodule morphisms over a bialgebra. -/
-@[expose] noncomputable def tensor [Semiring C] [Bialgebra R C]
+noncomputable def tensor [Semiring C] [Bialgebra R C]
     [AddCommMonoid M] [Module R M] [Comodule R C M]
     [AddCommMonoid N] [Module R N] [Comodule R C N]
     [AddCommMonoid M'] [Module R M'] [Comodule R C M']
@@ -344,6 +359,16 @@ variable {M' : Type y} {N' : Type z}
   toLinearMap := TensorProduct.map f.toLinearMap g.toLinearMap
   map_coact := tensorCoact_natural (R := R) (C := C) (M := M) (N := N)
     (M' := M') (N' := N') f g
+
+private theorem tensor_toLinearMap_aux [Semiring C] [Bialgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M]
+    [AddCommMonoid N] [Module R N] [Comodule R C N]
+    [AddCommMonoid M'] [Module R M'] [Comodule R C M']
+    [AddCommMonoid N'] [Module R N'] [Comodule R C N']
+    (f : Hom R C M M') (g : Hom R C N N') :
+    (tensor (R := R) (C := C) f g).toLinearMap =
+      TensorProduct.map f.toLinearMap g.toLinearMap :=
+  rfl
 
 /-- The underlying linear map of the tensor product of comodule morphisms is the tensor
 product of the underlying linear maps. -/
@@ -356,6 +381,15 @@ theorem tensor_toLinearMap [Semiring C] [Bialgebra R C]
     (f : Hom R C M M') (g : Hom R C N N') :
     (tensor (R := R) (C := C) f g).toLinearMap =
       TensorProduct.map f.toLinearMap g.toLinearMap :=
+  tensor_toLinearMap_aux (R := R) (C := C) f g
+
+private theorem tensor_tmul_aux [Semiring C] [Bialgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M]
+    [AddCommMonoid N] [Module R N] [Comodule R C N]
+    [AddCommMonoid M'] [Module R M'] [Comodule R C M']
+    [AddCommMonoid N'] [Module R N'] [Comodule R C N']
+    (f : Hom R C M M') (g : Hom R C N N') (m : M) (n : N) :
+    tensor (R := R) (C := C) f g (m ⊗ₜ[R] n) = f m ⊗ₜ[R] g n :=
   rfl
 
 /-- The tensor product of comodule morphisms acts as the tensor product of the underlying
@@ -368,7 +402,72 @@ theorem tensor_tmul [Semiring C] [Bialgebra R C]
     [AddCommMonoid N'] [Module R N'] [Comodule R C N']
     (f : Hom R C M M') (g : Hom R C N N') (m : M) (n : N) :
     tensor (R := R) (C := C) f g (m ⊗ₜ[R] n) = f m ⊗ₜ[R] g n :=
-  rfl
+  tensor_tmul_aux (R := R) (C := C) f g m n
+
+private theorem tensor_id_aux [Semiring C] [Bialgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M]
+    [AddCommMonoid N] [Module R N] [Comodule R C N] :
+    tensor (R := R) (C := C) (id R C M) (id R C N) =
+      id R C (M ⊗[R] N) := by
+  ext x
+  induction x using TensorProduct.induction_on with
+  | zero => rfl
+  | tmul m n => rfl
+  | add x₁ x₂ hx₁ hx₂ =>
+      change ((tensor (R := R) (C := C) (id R C M) (id R C N)).toLinearMap (x₁ + x₂)) =
+        (id R C (M ⊗[R] N)).toLinearMap (x₁ + x₂)
+      rw [map_add, map_add]
+      simpa only [coe_toLinearMap] using congrArg₂ (fun a b => a + b) hx₁ hx₂
+
+/-- Tensoring identity comodule morphisms gives the identity on the tensor-product
+comodule. -/
+@[simp]
+theorem tensor_id [Semiring C] [Bialgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M]
+    [AddCommMonoid N] [Module R N] [Comodule R C N] :
+    tensor (R := R) (C := C) (id R C M) (id R C N) =
+      id R C (M ⊗[R] N) := by
+  exact tensor_id_aux (R := R) (C := C) (M := M) (N := N)
+
+variable {M'' N'' : Type*}
+
+private theorem tensor_comp_aux [Semiring C] [Bialgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M]
+    [AddCommMonoid N] [Module R N] [Comodule R C N]
+    [AddCommMonoid M'] [Module R M'] [Comodule R C M']
+    [AddCommMonoid N'] [Module R N'] [Comodule R C N']
+    [AddCommMonoid M''] [Module R M''] [Comodule R C M'']
+    [AddCommMonoid N''] [Module R N''] [Comodule R C N'']
+    (f₂ : Hom R C M' M'') (f₁ : Hom R C M M')
+    (g₂ : Hom R C N' N'') (g₁ : Hom R C N N') :
+    tensor (R := R) (C := C) (comp f₂ f₁) (comp g₂ g₁) =
+      comp (tensor (R := R) (C := C) f₂ g₂) (tensor (R := R) (C := C) f₁ g₁) := by
+  ext x
+  induction x using TensorProduct.induction_on with
+  | zero => rfl
+  | tmul m n => rfl
+  | add x₁ x₂ hx₁ hx₂ =>
+      change ((tensor (R := R) (C := C) (comp f₂ f₁) (comp g₂ g₁)).toLinearMap
+          (x₁ + x₂)) =
+        (comp (tensor (R := R) (C := C) f₂ g₂) (tensor (R := R) (C := C) f₁ g₁)).toLinearMap
+          (x₁ + x₂)
+      rw [map_add, map_add]
+      simpa only [coe_toLinearMap] using congrArg₂ (fun a b => a + b) hx₁ hx₂
+
+/-- Tensoring composite comodule morphisms gives the composite of the tensor products. -/
+@[simp]
+theorem tensor_comp [Semiring C] [Bialgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M]
+    [AddCommMonoid N] [Module R N] [Comodule R C N]
+    [AddCommMonoid M'] [Module R M'] [Comodule R C M']
+    [AddCommMonoid N'] [Module R N'] [Comodule R C N']
+    [AddCommMonoid M''] [Module R M''] [Comodule R C M'']
+    [AddCommMonoid N''] [Module R N''] [Comodule R C N'']
+    (f₂ : Hom R C M' M'') (f₁ : Hom R C M M')
+    (g₂ : Hom R C N' N'') (g₁ : Hom R C N N') :
+    tensor (R := R) (C := C) (comp f₂ f₁) (comp g₂ g₁) =
+      comp (tensor (R := R) (C := C) f₂ g₂) (tensor (R := R) (C := C) f₁ g₁) := by
+  exact tensor_comp_aux (R := R) (C := C) f₂ f₁ g₂ g₁
 
 end Hom
 
