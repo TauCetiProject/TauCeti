@@ -95,7 +95,6 @@ lemma cylinderFundamentalGroupMulEquiv_symm_fst (hp : p ≠ 0) {Y : Type*} [Topo
 
 /-- The inverse of the cylinder equivalence has circle-projected monodromy translation
 `n • p`. -/
-@[simp]
 lemma cylinderFundamentalGroupMulEquiv_symm_monodromy (hp : p ≠ 0) {Y : Type*}
     [TopologicalSpace Y] [SimplyConnectedSpace Y] {x : AddCircle p}
     (e : ((↑) : ℝ → AddCircle p) ⁻¹' {x}) (y : Y) (n : Multiplicative ℤ) :
@@ -155,7 +154,6 @@ lemma realCylinderFundamentalGroupMulEquiv_symm_apply (hp : p ≠ 0) (n : Multip
 
 /-- The inverse of the standard infinite-cylinder specialization has monodromy translation
 `n • p`. -/
-@[simp]
 lemma realCylinderFundamentalGroupMulEquiv_symm_monodromy (hp : p ≠ 0)
     (n : Multiplicative ℤ) :
     ((AddCircle.isCoveringMap_coe p).monodromy
@@ -214,7 +212,6 @@ lemma cylinderFundamentalGroupMulEquiv_symm_apply (n : Multiplicative ℤ) :
     MulEquiv.apply_symm_apply]
 
 /-- The inverse of the unit-circle cylinder equivalence has monodromy translation by `n`. -/
-@[simp]
 lemma cylinderFundamentalGroupMulEquiv_symm_monodromy (n : Multiplicative ℤ) :
     ((AddCircle.isCoveringMap_coe 1).monodromy
       (FundamentalGroup.map (ContinuousMap.fst : C(UnitAddCircle × ℝ, UnitAddCircle)) (0, 0)
