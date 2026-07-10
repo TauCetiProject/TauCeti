@@ -58,7 +58,7 @@ omit [FiniteDimensional (ZMod 2) M] in
 scalar is `1`, so distinct nonzero vectors span distinct lines and every line is spanned by a
 nonzero vector; hence the `1`-dimensional subspaces of a finite `𝔽₂`-space `M` number
 `|M| - 1`. -/
-private theorem card_finrank_eq_one [Fintype M] :
+private theorem card_submodule_finrank_eq_one [Fintype M] :
     Nat.card {W : Submodule (ZMod 2) M // finrank (ZMod 2) W = 1} = Fintype.card M - 1 := by
   -- The lines of `M` are the points of `ℙ 𝔽₂ M`, whose cardinality is `(|M| - 1) / (|𝔽₂| - 1)`.
   rw [← Nat.card_congr (Projectivization.equivSubmodule (ZMod 2) M),
@@ -70,7 +70,7 @@ variable {V : Type*} [AddCommGroup V] [Module (ZMod 2) V] [FiniteDimensional (ZM
 /-- **The hyperplanes of an `n`-dimensional `𝔽₂`-space number `2ⁿ - 1`.** A subspace `U` is a
 hyperplane (`dim U + 1 = dim V`) exactly when its dual annihilator is a line; the dual-annihilator
 order isomorphism turns the hyperplanes of `V` into the lines of its dual, which
-`card_finrank_eq_one` counts. -/
+`card_submodule_finrank_eq_one` counts. -/
 private theorem card_hyperplane (n : ℕ) (hn : finrank (ZMod 2) V = n) :
     Nat.card {U : Submodule (ZMod 2) V // finrank (ZMod 2) U + 1 = n} = 2 ^ n - 1 := by
   subst hn
@@ -89,8 +89,8 @@ private theorem card_hyperplane (n : ℕ) (hn : finrank (ZMod 2) V = n) :
         rw [himg]
         have h := Subspace.finrank_add_finrank_dualAnnihilator_eq U
         omega)
-  rw [Nat.card_congr hequiv, card_finrank_eq_one, Module.card_eq_pow_finrank (K := ZMod 2),
-    Subspace.dual_finrank_eq, ZMod.card]
+  rw [Nat.card_congr hequiv, card_submodule_finrank_eq_one,
+    Module.card_eq_pow_finrank (K := ZMod 2), Subspace.dual_finrank_eq, ZMod.card]
 
 end LinearAlgebra
 
