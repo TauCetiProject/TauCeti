@@ -31,14 +31,13 @@ namespace TauCeti.Tactic
 in monoidal categories to prove equalities of morphisms (e.g., isomorphisms of 
 pullback/pushforward sheaves).
 
-
-
 It performs the following steps:
 1. Identifies and validates that the goal is an equality of morphisms in a monoidal category.
 2. Automatically applies monoidal coherence theorems (`pure_coherence`, `coherence`).
 3. Uses specific `simp` naturality lemmas and the category theory simplifier (`aesop_cat`)
    to discharge the remaining goal.
 -/
+@[nolint tacticDocs]
 macro (name := monoidalChase) "monoidal_chase" : tactic => `(tactic|
   focus
     try pure_coherence
