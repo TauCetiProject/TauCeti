@@ -90,46 +90,12 @@ private def irreducibleComponents_containing_equiv_of_isOpenEmbedding
       ⟨x, c'.property⟩ c'.val.property.1.2
       (isClosed_of_mem_irreducibleComponents c'.val.val c'.val.property)
 
-/-- Irreducibility is preserved under homeomorphism. -/
-private lemma _root_.Homeomorph.isIrreducible_image {X Y : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y]
-    (h : X ≃ₜ Y) {s : Set X} : IsIrreducible (h '' s) ↔ IsIrreducible s := by
-  constructor
-  · intro hs
-    have := hs.image h.symm h.symm.continuous.continuousOn
-    rw [← image_comp] at this
-    rwa [h.symm_comp_self, image_id] at this
-  · intro hs
-    exact hs.image h h.continuous.continuousOn
-
-/-- Irreducible components are preserved under homeomorphism. -/
-private lemma _root_.Homeomorph.mem_irreducibleComponents_image {X Y : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] (h : X ≃ₜ Y) {s : Set X} :
-    h '' s ∈ irreducibleComponents Y ↔ s ∈ irreducibleComponents X := by
-  rw [irreducibleComponents_eq_maximals_closed, irreducibleComponents_eq_maximals_closed]
-  dsimp [Maximal]
-  rw [h.isClosed_image, h.isIrreducible_image]
-  constructor
-  · rintro ⟨⟨h1, h2⟩, h3⟩
-    refine ⟨⟨h1, h2⟩, fun u hu hsu ↦ ?_⟩
-    have h4 := h3 ⟨h.isClosed_image.mpr hu.1,
-      h.isIrreducible_image.mpr hu.2⟩ (image_mono hsu)
-    exact (Set.image_subset_image_iff h.injective).mp h4
-  · rintro ⟨⟨h1, h2⟩, h3⟩
-    refine ⟨⟨h1, h2⟩, fun u hu hsu ↦ ?_⟩
-    have h4 := h3 ⟨h.symm.isClosed_image.mpr hu.1,
-      h.symm.isIrreducible_image.mpr hu.2⟩
-    have hsub : s ⊆ h.symm '' u := by
-      rwa [← Set.image_subset_image_iff h.injective, ← image_comp,
-        h.self_comp_symm, image_id]
-    rw [← Set.image_subset_image_iff h.symm.injective, ← image_comp,
-      h.symm_comp_self, image_id]
-    exact h4 hsub
-
 /-- Equivalence of irreducible components under homeomorphism. -/
 private def _root_.Homeomorph.irreducibleComponentsEquiv {X Y : Type*} [TopologicalSpace X]
     [TopologicalSpace Y] (h : X ≃ₜ Y) : irreducibleComponents X ≃ irreducibleComponents Y :=
-  (Equiv.Set.congr h.toEquiv).subtypeEquiv (fun _ ↦ h.mem_irreducibleComponents_image.symm)
+  (irreducibleComponentsEquivOfIsPreirreducibleFiber h.symm h.symm.continuous h.symm.isOpenMap
+    (fun _ ↦ (subsingleton_singleton.preimage h.symm.injective).isPreirreducible)
+    h.symm.surjective).toEquiv
 
 
 /-- A ring isomorphism induces an equivalence of minimal primes. -/
