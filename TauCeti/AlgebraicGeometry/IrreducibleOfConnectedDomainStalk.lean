@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.RingTheory.Localization.AtPrime.Basic
+
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.AlgebraicGeometry.Noetherian
@@ -255,13 +255,10 @@ noncomputable def
   let hEq2 := minimalPrimes_equiv_of_ringEquiv eStalkSpec
   let hEq3 := stalkMinimalPrimesEquivIrreducibleComponentsContainingSpec R y_spec
   have hYspec : eHomeo.symm y_spec = y := by
-    -- Use `Scheme.homeoOfIso` API to avoid unfolding internals.
-    change (Scheme.homeoOfIso g).symm (g.hom.1.1.base y) = y
-    rw [Scheme.homeoOfIso_symm, Scheme.homeoOfIso_apply]
-    -- Reduces to `g.inv.base (g.hom.base y) = y`.
-    change g.inv.1.1.base (g.hom.1.1.base y) = y
-    exact congr_fun
-      (congrArg (fun f => f.1.1.base) g.hom_inv_id) y
+    -- `y_spec = eHomeo y` by `Scheme.homeoOfIso_apply`.
+    have : eHomeo y = y_spec :=
+      Scheme.homeoOfIso_apply g y
+    exact eHomeo.symm_apply_eq.mpr this.symm
   have hEq4 : { c : irreducibleComponents (PrimeSpectrum R) //
       y_spec ∈ (c : Set (PrimeSpectrum R)) } ≃
       { c : irreducibleComponents U.carrier // y ∈ (c : Set U.carrier) } := by
@@ -274,18 +271,32 @@ noncomputable def
     rwa [hy] at this
   exact hEq1.trans (hEq2.trans (hEq3.trans (hEq4.trans hEq5)))
 
-/-- A point in a scheme whose stalk is a domain belongs to a unique irreducible component. -/
-lemma unique_irreducibleComponent_of_isDomain_stalk {X : Scheme} (x : X.carrier)
-  (hStalks : IsDomain (X.presheaf.stalk x)) :
-  ∃! c : irreducibleComponents X.carrier, x ∈ (c : Set X.carrier) := by
-  have e := stalkMinimalPrimesEquivIrreducibleComponentsContaining x
-  haveI : Unique (minimalPrimes (X.presheaf.stalk x)) := by
-    rw [IsDomain.minimalPrimes_eq_singleton_bot (X.presheaf.stalk x)]
-    exact Set.uniqueSingleton ⊥
-  haveI hUniqSub : Unique { c : irreducibleComponents X.carrier // x ∈ (c : Set X.carrier) } :=
+/-- If the stalk at `x` has a unique minimal prime, then
+`x` belongs to a unique irreducible component. -/
+lemma unique_irreducibleComponent_of_unique_minimalPrime
+    {X : Scheme} (x : X.carrier)
+    [Unique (minimalPrimes (X.presheaf.stalk x))] :
+    ∃! c : irreducibleComponents X.carrier,
+      x ∈ (c : Set X.carrier) := by
+  have e :=
+    stalkMinimalPrimesEquivIrreducibleComponentsContaining x
+  haveI hU : Unique { c : irreducibleComponents X.carrier //
+      x ∈ (c : Set X.carrier) } :=
     Equiv.unique e.symm
-  exact ⟨hUniqSub.default.1, hUniqSub.default.2,
-    fun c hc => congrArg Subtype.val (hUniqSub.uniq ⟨c, hc⟩)⟩
+  exact ⟨hU.default.1, hU.default.2,
+    fun c hc ↦ congrArg Subtype.val (hU.uniq ⟨c, hc⟩)⟩
+
+/-- A point in a scheme whose stalk is a domain belongs
+to a unique irreducible component. -/
+lemma unique_irreducibleComponent_of_isDomain_stalk
+    {X : Scheme} (x : X.carrier)
+    (hStalks : IsDomain (X.presheaf.stalk x)) :
+    ∃! c : irreducibleComponents X.carrier,
+      x ∈ (c : Set X.carrier) := by
+  haveI : Unique (minimalPrimes (X.presheaf.stalk x)) := by
+    rw [IsDomain.minimalPrimes_eq_singleton_bot]
+    exact Set.uniqueSingleton ⊥
+  exact unique_irreducibleComponent_of_unique_minimalPrime x
 
 /-- In a scheme whose stalks are domains, the irreducible components are pairwise disjoint. -/
 lemma disjoint_irreducibleComponents_of_isDomain_stalk {Z : Scheme}
