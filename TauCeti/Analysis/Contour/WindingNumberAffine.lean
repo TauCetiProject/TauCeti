@@ -47,6 +47,13 @@ variable {γ : ℝ → ℂ} {a b : ℝ} {z₀ z c d : ℂ} {Ω : Set ℂ}
 abbreviation keeps the affine principal-value statements readable. -/
 local notation "κ[" z "]" => (fun w : ℂ => (w - z)⁻¹)
 
+private lemma affine_apply_preimage (hc : c ≠ 0) (z d : ℂ) :
+    c * (c⁻¹ * (z - d)) + d = z := by
+  have hmul : c * (c⁻¹ * (z - d)) = z - d := by
+    field_simp [hc]
+  rw [hmul]
+  ring
+
 /-- **Index principal value under an affine coordinate change.** If `c ≠ 0`, applying
 `z ↦ c * z + d` to both the curve and the distinguished point transports the single-point Cauchy
 principal value of the winding kernel without changing its value. This is the composed
@@ -84,11 +91,7 @@ number of the affine image about an arbitrary point. -/
 theorem windingNumber_affine_preimage (hc : c ≠ 0) :
     windingNumber (fun t => c * γ t + d) a b z =
       windingNumber γ a b (c⁻¹ * (z - d)) := by
-  have hz : z = c * (c⁻¹ * (z - d)) + d := by
-    have hmul : c * (c⁻¹ * (z - d)) = z - d := by
-      field_simp [hc]
-    rw [hmul]
-    ring
+  have hz : z = c * (c⁻¹ * (z - d)) + d := (affine_apply_preimage hc z d).symm
   calc
     windingNumber (fun t => c * γ t + d) a b z
         = windingNumber (fun t => c * γ t + d) a b (c * (c⁻¹ * (z - d)) + d) := by
@@ -96,40 +99,14 @@ theorem windingNumber_affine_preimage (hc : c ≠ 0) :
     _ = windingNumber γ a b (c⁻¹ * (z - d)) :=
       windingNumber_affine (γ := γ) (a := a) (b := b) (z₀ := c⁻¹ * (z - d)) hc
 
-/-- Pointwise vanishing of a winding number is preserved by a simultaneous affine coordinate
-change with nonzero linear coefficient. -/
-theorem windingNumber_eq_zero_affine
-    (hzero : windingNumber γ a b z₀ = 0) (hc : c ≠ 0) :
-    windingNumber (fun t => c * γ t + d) a b (c * z₀ + d) = 0 := by
-  rw [windingNumber_affine (γ := γ) (a := a) (b := b) (z₀ := z₀) hc, hzero]
-
-/-- Pointwise vanishing of a winding number of an affine image can be checked at the inverse
-image of the target point. -/
-theorem windingNumber_eq_zero_affine_preimage
-    (hzero : windingNumber γ a b (c⁻¹ * (z - d)) = 0) (hc : c ≠ 0) :
-    windingNumber (fun t => c * γ t + d) a b z = 0 := by
-  rw [windingNumber_affine_preimage (γ := γ) (a := a) (b := b) (c := c) (d := d) hc, hzero]
-
 /-- Null-homology is preserved by affine coordinate change of the curve and ambient set, provided
 the linear coefficient is nonzero. -/
 theorem IsNullHomologous.affine (h : IsNullHomologous γ a b Ω) (hc : c ≠ 0) :
     IsNullHomologous (fun t => c * γ t + d) a b ((fun z => c * z + d) '' Ω) := by
-  rw [isNullHomologous_iff] at h ⊢
-  intro z hz
-  have hpre_not_mem : c⁻¹ * (z - d) ∉ Ω := by
-    intro hzΩ
-    exact hz ⟨c⁻¹ * (z - d), hzΩ, by
-      change c * (c⁻¹ * (z - d)) + d = z
-      have hmul : c * (c⁻¹ * (z - d)) = z - d := by
-        field_simp [hc]
-      rw [hmul]
-      ring⟩
-  rw [windingNumber_affine_preimage (γ := γ) (a := a) (b := b) (c := c) (d := d) hc]
-  exact h (c⁻¹ * (z - d)) hpre_not_mem
+  simpa [Set.image_image, Function.comp_def] using (h.const_mul hc).translate d
 
 /-- If the affine image of a curve is null-homologous in the affine image of a set, then the
-original curve is null-homologous in the original set. This is the reverse direction of
-`IsNullHomologous.affine`, using injectivity of `z ↦ c * z + d` when `c ≠ 0`. -/
+original curve is null-homologous in the original set. -/
 theorem IsNullHomologous.of_affine
     (h : IsNullHomologous (fun t => c * γ t + d) a b ((fun z => c * z + d) '' Ω))
     (hc : c ≠ 0) :
