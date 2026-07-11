@@ -15,7 +15,7 @@ Jacobian challenge roadmap (proving that a regular connected scheme is irreducib
 as regular stalks are integral domains).
 
 We prove that a locally noetherian connected scheme whose stalks are
-integral domains is irreducible (`irreducibleSpace_of_connected_of_unique_minimalPrime`
+integral domains is irreducible (`irreducibleSpace_of_connected_of_unique_minimalPrime_stalk`
 and `irreducibleSpace_of_connected_of_isDomain_stalk`).
 
 The proof proceeds by showing that the irreducible components of such
@@ -420,7 +420,7 @@ private lemma irreducibleSpace_of_connected_of_open_components {α : Type*} [Top
 
 /-- A locally noetherian connected scheme whose stalks have unique minimal
 primes is irreducible. -/
-theorem irreducibleSpace_of_connected_of_unique_minimalPrime (Z : Scheme.{u})
+theorem irreducibleSpace_of_connected_of_unique_minimalPrime_stalk (Z : Scheme.{u})
     [IsLocallyNoetherian Z]
     [ConnectedSpace Z] (hStalks : ∀ x : Z.carrier, Unique (minimalPrimes (Z.presheaf.stalk x))) :
     IrreducibleSpace Z := by
@@ -437,7 +437,7 @@ theorem irreducibleSpace_of_connected_of_isDomain_stalk (Z : Scheme.{u}) [IsLoca
     haveI := hStalks x
     rw [IsDomain.minimalPrimes_eq_singleton_bot]
     exact Set.uniqueSingleton ⊥
-  exact irreducibleSpace_of_connected_of_unique_minimalPrime Z hU
+  exact irreducibleSpace_of_connected_of_unique_minimalPrime_stalk Z hU
 
 end AlgebraicGeometry
 
