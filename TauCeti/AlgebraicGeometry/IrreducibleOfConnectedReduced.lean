@@ -40,7 +40,7 @@ namespace TauCeti
 namespace AlgebraicGeometry
 
 /-- Auxiliary declaration. -/
-private lemma image_mem_irreducibleComponents {α β : Type*}
+private lemma closure_image_mem_irreducibleComponents {α β : Type*}
     [TopologicalSpace α] [TopologicalSpace β]
     {f : α → β} (hf : IsOpenEmbedding f) {c : Set α}
     (hc : c ∈ irreducibleComponents α) :
@@ -68,7 +68,7 @@ private def irreducibleComponents_containing_equiv_of_isOpenEmbedding
     { c : irreducibleComponents α // x ∈ (c : Set α) } ≃
     { c : irreducibleComponents β // f x ∈ (c : Set β) } where
   toFun c := ⟨⟨closure (f '' c.val.val),
-    image_mem_irreducibleComponents hf c.val.property⟩, by
+    closure_image_mem_irreducibleComponents hf c.val.property⟩, by
     dsimp
     exact subset_closure (mem_image_of_mem f c.property)⟩
   invFun c' :=
@@ -166,79 +166,37 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
 
 
 
-/-- Equivalence between minimal primes and irreducible components, obtained by composing
-Mathlib's `minimalPrimes.equivIrreducibleComponents` (an `OrderIso` into the order-dual
-subtype) with `OrderDual.ofDual` to land in `irreducibleComponents` directly. -/
+/-- Equivalence between minimal primes and irreducible components
+of `PrimeSpectrum R`, built directly from the `zeroLocus`/`vanishingIdeal`
+Galois correspondence. -/
 private noncomputable def minimalPrimesEquiv (R : Type*)
     [CommRing R] :
     minimalPrimes R ≃
-      irreducibleComponents (PrimeSpectrum R) :=
-  (minimalPrimes.equivIrreducibleComponents R).toEquiv.trans
-    OrderDual.ofDual
+      irreducibleComponents (PrimeSpectrum R) where
+  toFun q := ⟨zeroLocus q.val,
+    zeroLocus_ideal_mem_irreducibleComponents.mpr <| by
+      rw [q.property.1.1.radical]; exact q.property⟩
+  invFun c := ⟨vanishingIdeal c.val, by
+    rw [← vanishingIdeal_irreducibleComponents]
+    exact Set.mem_image_of_mem _ c.property⟩
+  left_inv q := Subtype.ext <| by
+    simp only
+    rw [vanishingIdeal_zeroLocus_eq_radical,
+        q.property.1.1.radical]
+  right_inv c := Subtype.ext <| by
+    simp only
+    rw [zeroLocus_vanishingIdeal_eq_closure,
+        (isClosed_of_mem_irreducibleComponents
+          c.val c.property).closure_eq]
 
-/-- Auxiliary definition to extract the underlying set from an order-dual subtype element.
-Used to normalize through the `OrderDual` coercion in `equivIrreducibleComponents`. -/
-private def equivIrreducibleComponentsVal {R : Type*} [CommRing R]
-    (S : Set (Set (PrimeSpectrum R))) (y : (S : Type _)ᵒᵈ) :
-    Set (PrimeSpectrum R) := (OrderDual.ofDual y).val
-
-/-- The value of `equivIrreducibleComponents` at a minimal prime `q` is `zeroLocus q.val`.
-This requires manually unfolding the definition of `equivIrreducibleComponents`, because
-Mathlib defines it via `irreducibleComponents_eq_maximals_closed`, introducing a type-level
-`cast` that blocks direct `simp`/`rfl` evaluation. The `rcases h_S with rfl` trick
-eliminates the cast, reducing the goal to `closure {⟨q.val, _⟩} = zeroLocus q.val`,
-which is `PrimeSpectrum.closure_singleton`. -/
-private lemma equivIrreducibleComponents_val {R : Type*} [CommRing R]
-    (q : minimalPrimes R) :
-    equivIrreducibleComponentsVal
-      (irreducibleComponents (PrimeSpectrum R))
-      ((minimalPrimes.equivIrreducibleComponents R) q) =
-      zeroLocus q.val := by
-  -- Unfold `equivIrreducibleComponents` to expose the cast over
-  -- `irreducibleComponents_eq_maximals_closed`, then eliminate it.
-  have H : ∀ (S2 : Set (Set (PrimeSpectrum R)))
-    (h_S : {s | Maximal (fun x ↦ IsClosed x ∧ IsIrreducible x) s}
-      = S2),
-      equivIrreducibleComponentsVal S2 ((cast (congrArg
-        (f := fun (S : Set (Set (PrimeSpectrum R))) ↦
-          minimalPrimes R ≃o (S : Type _)ᵒᵈ) h_S)
-        (OrderIso.setOfMinimalIsoSetOfMaximal
-          ((show {p : Ideal R | p.IsPrime ∧ ⊥ ≤ p} ≃o
-              PrimeSpectrum R from
-            ⟨⟨fun x ↦ ⟨x.1, x.2.1⟩,
-              fun x ↦ ⟨x.1, x.2, bot_le⟩,
-              fun _ ↦ rfl, fun _ ↦ rfl⟩, Iff.rfl⟩).trans
-            ((PrimeSpectrum.pointsEquivIrreducibleCloseds R).trans
-              (IrreducibleCloseds.orderIsoSubtype'
-                (PrimeSpectrum R)).dual)))) q) =
-        zeroLocus q.val := by
-    intro S2 h_S
-    -- Eliminating the cast reduces to the concrete order isomorphism.
-    rcases h_S with rfl
-    -- The underlying set is `closure {⟨q.val, _⟩}`, which equals `zeroLocus q.val`
-    -- by `PrimeSpectrum.closure_singleton`.
-    change closure { (⟨q.val, _⟩ : PrimeSpectrum R) } =
-      zeroLocus q.val
-    exact PrimeSpectrum.closure_singleton
-      (x := ⟨q.val, _⟩)
-  exact H _ (irreducibleComponents_eq_maximals_closed
-    (PrimeSpectrum R)).symm
-
-private lemma minimalPrimesEquiv_val {R : Type*} [CommRing R]
-    (q : minimalPrimes R) :
+/-- The underlying set of `minimalPrimesEquiv R q` is `zeroLocus q.val`,
+by construction. -/
+private lemma minimalPrimesEquiv_val {R : Type*}
+    [CommRing R] (q : minimalPrimes R) :
     ((minimalPrimesEquiv R q :
       irreducibleComponents (PrimeSpectrum R)) :
-      Set (PrimeSpectrum R)) = zeroLocus q.val := by
-  -- Reduce to `equivIrreducibleComponents_val` by definitional unfolding.
-  have h_val : ((minimalPrimesEquiv R q :
-      irreducibleComponents (PrimeSpectrum R)) :
-      Set (PrimeSpectrum R)) =
-      equivIrreducibleComponentsVal
-        (irreducibleComponents (PrimeSpectrum R))
-        ((minimalPrimes.equivIrreducibleComponents R) q) :=
-    rfl
-  rw [h_val]
-  exact equivIrreducibleComponents_val q
+      Set (PrimeSpectrum R)) = zeroLocus q.val := rfl
+
 /-- Auxiliary declaration. -/
 private noncomputable def irreducibleComponentsContainingEquivMinimalPrimesLe (R : Type*)
     [CommRing R] (p : PrimeSpectrum R) :
