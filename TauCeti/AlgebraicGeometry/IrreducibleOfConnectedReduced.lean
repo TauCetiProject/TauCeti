@@ -166,47 +166,43 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
 
 
 
-/-- Equivalence between minimal primes and irreducible components
-of `PrimeSpectrum R`, built directly from the `zeroLocus`/`vanishingIdeal`
-Galois correspondence. -/
-private noncomputable def minimalPrimesEquiv (R : Type*)
-    [CommRing R] :
-    minimalPrimes R ≃
-      irreducibleComponents (PrimeSpectrum R) where
-  toFun q := ⟨zeroLocus q.val,
-    zeroLocus_ideal_mem_irreducibleComponents.mpr <| by
-      rw [q.property.1.1.radical]; exact q.property⟩
-  invFun c := ⟨vanishingIdeal c.val, by
+/-- Irreducible components of `Spec R` containing a point `p`
+correspond to minimal primes below `p`, via the
+`zeroLocus`/`vanishingIdeal` Galois correspondence. -/
+private noncomputable def
+    irreducibleComponentsContainingEquivMinimalPrimesLe
+    (R : Type*) [CommRing R] (p : PrimeSpectrum R) :
+    { c : irreducibleComponents (PrimeSpectrum R) //
+      p ∈ (c : Set (PrimeSpectrum R)) } ≃
+    { q : minimalPrimes R // q.val ≤ p.asIdeal } where
+  toFun c := ⟨⟨vanishingIdeal c.val.val, by
     rw [← vanishingIdeal_irreducibleComponents]
-    exact Set.mem_image_of_mem _ c.property⟩
-  left_inv q := Subtype.ext <| by
-    simp only
-    rw [vanishingIdeal_zeroLocus_eq_radical,
-        q.property.1.1.radical]
-  right_inv c := Subtype.ext <| by
+    exact Set.mem_image_of_mem _ c.val.property⟩, by
+    -- `p ∈ c` and `c` is closed, so `p ∈ zeroLocus (vanishingIdeal c)`,
+    -- which means `vanishingIdeal c ≤ p.asIdeal`.
+    have hCl := isClosed_of_mem_irreducibleComponents
+      _ c.val.property
+    have : p ∈ zeroLocus (vanishingIdeal c.val.val) := by
+      rw [zeroLocus_vanishingIdeal_eq_closure,
+          hCl.closure_eq]
+      exact c.property
+    rwa [mem_zeroLocus,
+         SetLike.coe_subset_coe] at this⟩
+  invFun q := ⟨⟨zeroLocus q.val.val,
+    zeroLocus_ideal_mem_irreducibleComponents.mpr <| by
+      rw [q.val.property.1.1.radical]
+      exact q.val.property⟩, by
+    rw [mem_zeroLocus, SetLike.coe_subset_coe]
+    exact q.property⟩
+  left_inv c := Subtype.ext <| Subtype.ext <| by
     simp only
     rw [zeroLocus_vanishingIdeal_eq_closure,
         (isClosed_of_mem_irreducibleComponents
-          c.val c.property).closure_eq]
-
-/-- The underlying set of `minimalPrimesEquiv R q` is `zeroLocus q.val`,
-by construction. -/
-private lemma minimalPrimesEquiv_val {R : Type*}
-    [CommRing R] (q : minimalPrimes R) :
-    ((minimalPrimesEquiv R q :
-      irreducibleComponents (PrimeSpectrum R)) :
-      Set (PrimeSpectrum R)) = zeroLocus q.val := rfl
-
-/-- Auxiliary declaration. -/
-private noncomputable def irreducibleComponentsContainingEquivMinimalPrimesLe (R : Type*)
-    [CommRing R] (p : PrimeSpectrum R) :
-    { c : irreducibleComponents (PrimeSpectrum R) // p ∈ (c : Set (PrimeSpectrum R)) } ≃
-      { q : minimalPrimes R // q.val ≤ p.asIdeal } :=
-  Equiv.subtypeEquiv (minimalPrimesEquiv R).symm (fun c ↦ by
-    obtain ⟨q, rfl⟩ := (minimalPrimesEquiv R).surjective c
-    rw [Equiv.symm_apply_apply]
-    rw [minimalPrimesEquiv_val, mem_zeroLocus, SetLike.coe_subset_coe]
-  )
+          c.val.val c.val.property).closure_eq]
+  right_inv q := Subtype.ext <| Subtype.ext <| by
+    simp only
+    rw [vanishingIdeal_zeroLocus_eq_radical,
+        q.val.property.1.1.radical]
 
 /-- For an affine scheme Spec R, the minimal prime ideals of the local ring (stalk)
 at a point p (which is a prime ideal of R) are in bijection with the irreducible components
