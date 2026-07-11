@@ -14,9 +14,10 @@ This file supplies a prerequisite for the **Standing hypotheses** target of the
 Jacobian challenge roadmap (proving that a regular connected scheme is irreducible,
 as regular stalks are integral domains).
 
-We prove that a locally noetherian connected scheme whose stalks are
-integral domains is irreducible (`irreducibleSpace_of_connected_of_unique_minimalPrime_stalk`
-and `irreducibleSpace_of_connected_of_isDomain_stalk`).
+We prove that a locally noetherian connected scheme whose stalks have unique
+minimal primes is irreducible (`irreducibleSpace_of_connected_of_unique_minimalPrime_stalk`),
+from which we deduce that such a scheme is irreducible if its stalks are
+integral domains (`irreducibleSpace_of_connected_of_isDomain_stalk`).
 
 The proof proceeds by showing that the irreducible components of such
 a scheme are pairwise disjoint and open (hence clopen), so
