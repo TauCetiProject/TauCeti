@@ -415,7 +415,7 @@ private lemma irreducibleSpace_of_connected_of_open_components {α : Type*} [Top
 
 /-- A locally noetherian connected scheme whose stalks have unique minimal
 primes is irreducible. -/
-private theorem irreducibleSpace_of_connected_of_unique_minimalPrime (Z : Scheme.{u})
+theorem irreducibleSpace_of_connected_of_unique_minimalPrime (Z : Scheme.{u})
     [IsLocallyNoetherian Z]
     [ConnectedSpace Z] (hStalks : ∀ x : Z.carrier, Unique (minimalPrimes (Z.presheaf.stalk x))) :
     IrreducibleSpace Z := by
