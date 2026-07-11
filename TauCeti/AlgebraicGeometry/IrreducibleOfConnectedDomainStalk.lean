@@ -5,8 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 
-public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
-public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.AlgebraicGeometry.Noetherian
 
 /-!
@@ -124,7 +122,8 @@ private lemma comap_le_p_of_mem_minimalPrimes {R : Type*} [CommRing R] (p : Prim
   have hDisj := (IsLocalization.isPrime_iff_isPrime_disjoint S A q'.val).mp ‹_› |>.2
   rwa [hS, disjoint_primeCompl_iff] at hDisj
 
-/-- Auxiliary declaration. -/
+/-- The minimal primes of the localization `A` of a ring `R` at the prime complement of `p`
+are in bijection with the minimal primes of `R` contained in `p`. -/
 private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : PrimeSpectrum R)
     (S : Submonoid R) (A : Type*) [CommRing A] [Algebra R A] [IsLocalization S A]
     (hS : S = p.asIdeal.primeCompl) :
@@ -132,11 +131,7 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
   toFun q' := ⟨⟨q'.val.comap (algebraMap R A), by
     have hMap := IsLocalization.minimalPrimes_map S A (⊥ : Ideal R)
     rw [Ideal.map_bot] at hMap
-    have hq' : q'.val ∈ (⊥ : Ideal A).minimalPrimes := q'.property
-    have hq_in2 : q'.val ∈ Ideal.under R ⁻¹' (⊥ : Ideal R).minimalPrimes := by
-      rwa [hMap] at hq'
-    have hq_in : Ideal.under R q'.val ∈ (⊥ : Ideal R).minimalPrimes := hq_in2
-    exact hq_in⟩, comap_le_p_of_mem_minimalPrimes p S A hS q'⟩
+    exact (Set.ext_iff.mp hMap q'.val).mp q'.property⟩, comap_le_p_of_mem_minimalPrimes p S A hS q'⟩
   invFun q := ⟨q.val.val.map (algebraMap R A), by
     have hMap := IsLocalization.minimalPrimes_map S A (⊥ : Ideal R)
     rw [Ideal.map_bot] at hMap
@@ -145,12 +140,9 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
       exact q.property
     haveI : q.val.val.IsPrime := q.val.property.1.1
     have hEq := IsLocalization.under_map_of_isPrime_disjoint S A ‹_› hI'
-    have hq_in : Ideal.under R (Ideal.map (algebraMap R A) q.val.val) ∈
-        (⊥ : Ideal R).minimalPrimes :=
+    have h_in : Ideal.under R (Ideal.map (algebraMap R A) q.val.val) ∈ minimalPrimes R :=
       hEq.symm ▸ q.val.property
-    have hq_in2 : Ideal.map (algebraMap R A) q.val.val ∈
-        Ideal.under R ⁻¹' (⊥ : Ideal R).minimalPrimes := hq_in
-    rwa [← hMap] at hq_in2⟩
+    exact (Set.ext_iff.mp hMap (Ideal.map (algebraMap R A) q.val.val)).mpr h_in⟩
   left_inv q' := Subtype.ext (IsLocalization.map_under S A q'.val)
   right_inv q := Subtype.ext <| Subtype.ext <| by
     have hI' : Disjoint (S : Set R) (q.val.val : Set R) := by
@@ -235,11 +227,11 @@ private noncomputable def stalkMinimalPrimesEquivIrreducibleComponentsContaining
 
 /-- The minimal primes of the stalk of a scheme at a point `x`
 are in bijection with the irreducible components containing `x`. -/
-private noncomputable def
-    stalkMinimalPrimesEquivIrreducibleComponentsContaining
+private lemma
+    nonempty_stalkMinimalPrimesEquivIrreducibleComponentsContaining
     {X : Scheme} (x : X.carrier) :
-    minimalPrimes (X.presheaf.stalk x) ≃
-      { c : irreducibleComponents X.carrier // x ∈ (c : Set X.carrier) } := by
+    Nonempty (minimalPrimes (X.presheaf.stalk x) ≃
+      { c : irreducibleComponents X.carrier // x ∈ (c : Set X.carrier) }) := by
   let i := X.affineCover.idx x
   let f := X.affineCover.f i
   have hf : IsOpenEmbedding f.1.base := f.isOpenEmbedding
@@ -276,7 +268,7 @@ private noncomputable def
       { c : irreducibleComponents X.carrier // x ∈ (c : Set X.carrier) } := by
     have := irreducibleComponents_containing_equiv_of_isOpenEmbedding hf y
     rwa [hy] at this
-  exact hEq1.trans (hEq2.trans (hEq3.trans (hEq4.trans hEq5)))
+  exact ⟨hEq1.trans (hEq2.trans (hEq3.trans (hEq4.trans hEq5)))⟩
 
 /-- If the stalk at `x` has a unique minimal prime, then
 `x` belongs to a unique irreducible component. -/
@@ -285,25 +277,16 @@ lemma existsUnique_irreducibleComponent_of_unique_minimalPrime
     [Unique (minimalPrimes (X.presheaf.stalk x))] :
     ∃! c : irreducibleComponents X.carrier,
       x ∈ (c : Set X.carrier) := by
-  have e :=
-    stalkMinimalPrimesEquivIrreducibleComponentsContaining x
-  haveI hU : Unique { c : irreducibleComponents X.carrier //
-      x ∈ (c : Set X.carrier) } :=
-    Equiv.unique e.symm
-  exact ⟨hU.default.1, hU.default.2,
-    fun c hc ↦ congrArg Subtype.val (hU.uniq ⟨c, hc⟩)⟩
+  have e_nonempty :=
+    nonempty_stalkMinimalPrimesEquivIrreducibleComponentsContaining x
+  exact e_nonempty.elim fun e => by
+    haveI hU : Unique { c : irreducibleComponents X.carrier //
+        x ∈ (c : Set X.carrier) } :=
+      Equiv.unique e.symm
+    exact ⟨hU.default.1, hU.default.2,
+      fun c hc ↦ congrArg Subtype.val (hU.uniq ⟨c, hc⟩)⟩
 
-/-- A point in a scheme whose stalk is a domain belongs
-to a unique irreducible component. -/
-lemma existsUnique_irreducibleComponent_of_isDomain_stalk
-    {X : Scheme} (x : X.carrier)
-    (hStalks : IsDomain (X.presheaf.stalk x)) :
-    ∃! c : irreducibleComponents X.carrier,
-      x ∈ (c : Set X.carrier) := by
-  haveI : Unique (minimalPrimes (X.presheaf.stalk x)) := by
-    rw [IsDomain.minimalPrimes_eq_singleton_bot]
-    exact Set.uniqueSingleton ⊥
-  exact existsUnique_irreducibleComponent_of_unique_minimalPrime x
+
 
 /-- In a scheme whose stalks have unique minimal primes, the irreducible
 components are pairwise disjoint. -/
@@ -323,16 +306,7 @@ lemma disjoint_irreducibleComponents_of_unique_minimalPrime {Z : Scheme}
   rw [hEq1, hEq2] at hneq
   exact hneq rfl
 
-/-- In a scheme whose stalks are domains, the irreducible components are pairwise disjoint. -/
-lemma disjoint_irreducibleComponents_of_isDomain_stalk {Z : Scheme}
-  (hStalks : ∀ x : Z.carrier, IsDomain (Z.presheaf.stalk x)) :
-  ∀ c1 c2 : irreducibleComponents Z.carrier, c1 ≠ c2 →
-    Disjoint (c1 : Set Z.carrier) (c2 : Set Z.carrier) := by
-  haveI hU : ∀ x, Unique (minimalPrimes (Z.presheaf.stalk x)) := fun x => by
-    haveI := hStalks x
-    rw [IsDomain.minimalPrimes_eq_singleton_bot]
-    exact Set.uniqueSingleton ⊥
-  exact disjoint_irreducibleComponents_of_unique_minimalPrime hU
+
 
 /-- In a topological space with finitely many irreducible components, pairwise-disjoint
 components are open. -/
@@ -377,16 +351,7 @@ private theorem isOpen_irreducibleComponents_of_affine_unique_minimalPrime {X : 
     (NoetherianSpace.finite_irreducibleComponents (α := X.carrier))
   exact disjoint_irreducibleComponents_of_unique_minimalPrime hStalks
 
-/-- In an affine locally noetherian scheme whose stalks are domains,
-every irreducible component is open. -/
-private theorem isOpen_irreducibleComponents_of_affine_isDomain_stalk {X : Scheme.{u}} [IsAffine X]
-    [IsLocallyNoetherian X] (hStalks : ∀ x : X.carrier, IsDomain (X.presheaf.stalk x))
-    (c : irreducibleComponents X.carrier) : IsOpen (c : Set X.carrier) := by
-  haveI hU : ∀ x, Unique (minimalPrimes (X.presheaf.stalk x)) := fun x => by
-    haveI := hStalks x
-    rw [IsDomain.minimalPrimes_eq_singleton_bot]
-    exact Set.uniqueSingleton ⊥
-  exact isOpen_irreducibleComponents_of_affine_unique_minimalPrime hU c
+
 
 /-- In a locally noetherian scheme whose stalks have unique minimal primes,
 every irreducible component is open. -/
@@ -420,93 +385,9 @@ theorem isOpen_irreducibleComponents_of_unique_minimalPrime {Z : Scheme.{u}} [Is
     rw [hEmpty]
     exact isOpen_empty
 
-/-- In a locally noetherian scheme whose stalks are domains,
-every irreducible component is open. -/
-theorem isOpen_irreducibleComponents_of_isDomain_stalk {Z : Scheme.{u}} [IsLocallyNoetherian Z]
-    (hStalks : ∀ x : Z.carrier, IsDomain (Z.presheaf.stalk x))
-    (c : irreducibleComponents Z.carrier) :
-    IsOpen (c : Set Z.carrier) := by
-  haveI hU : ∀ x, Unique (minimalPrimes (Z.presheaf.stalk x)) := fun x => by
-    haveI := hStalks x
-    rw [IsDomain.minimalPrimes_eq_singleton_bot]
-    exact Set.uniqueSingleton ⊥
-  exact isOpen_irreducibleComponents_of_unique_minimalPrime hU c
 
-/-- The complement of a union of a subcollection of a partition is
-the union of the remaining sets. -/
-private lemma compl_sUnion_eq_sUnion_diff {α : Type*} {S : Set (Set α)}
-    (hDisj : PairwiseDisjoint S id) (hCov : ⋃₀ S = univ)
-    (T : Set (Set α)) (hT : T ⊆ S) :
-    (⋃₀ T)ᶜ = ⋃₀ (S \ T) := by
-  ext x
-  simp only [mem_compl_iff, mem_sUnion, mem_sdiff]
-  constructor
-  · intro hx
-    have hIn : x ∈ ⋃₀ S := by
-      rw [hCov]
-      exact mem_univ x
-    rcases hIn with ⟨s, hsS, hxs⟩
-    use s
-    refine ⟨⟨hsS, ?_⟩, hxs⟩
-    intro hsT
-    exact hx ⟨s, hsT, hxs⟩
-  · rintro ⟨s, ⟨hsS, hsT⟩, hxs⟩ ⟨t, htT, hxt⟩
-    have htS := hT htT
-    have hEq : s = t := by
-      by_contra hc
-      have hDisj' := hDisj hsS htS hc
-      exact hDisj'.le_bot ⟨hxs, hxt⟩
-    subst hEq
-    exact hsT htT
 
-/-- A union of a subcollection of a partition into open sets is closed. -/
-private lemma isClosed_sUnion_of_disjoint_isOpen {α : Type*} [TopologicalSpace α]
-    {S : Set (Set α)} (hDisj : PairwiseDisjoint S id) (hOpen : ∀ s ∈ S, IsOpen s)
-    (hCov : ⋃₀ S = univ) (T : Set (Set α)) (hT : T ⊆ S) :
-    IsClosed (⋃₀ T) := by
-  rw [← isOpen_compl_iff]
-  rw [compl_sUnion_eq_sUnion_diff hDisj hCov T hT]
-  apply isOpen_sUnion
-  rintro s ⟨hsS, _⟩
-  exact hOpen s hsS
 
-/-- The union of all sets in a collection except one is the union
-of the collection with that set removed. -/
-private lemma biUnion_ne_eq_sUnion_sdiff {α : Type*} (S : Set (Set α)) (c : { x // x ∈ S }) :
-    (⋃ c' ∈ {c' : { x // x ∈ S } | c' ≠ c}, (c' : Set α)) = ⋃₀ (S \ {c.val}) := by
-  ext x
-  simp only [mem_iUnion, mem_setOf_eq, mem_sUnion, mem_sdiff, mem_singleton_iff]
-  constructor
-  · rintro ⟨c', hneq, hx⟩
-    refine ⟨c'.val, ⟨c'.property, ?_⟩, hx⟩
-    intro heq
-    apply hneq
-    exact Subtype.ext heq
-  · rintro ⟨s, ⟨hsS, hs_ne⟩, hx⟩
-    use ⟨s, hsS⟩
-    refine ⟨?_, hx⟩
-    intro heq
-    apply hs_ne
-    exact congrArg Subtype.val heq
-
-/-- In a locally noetherian scheme whose stalks are domains, the union of all
-irreducible components other than a given one is closed. -/
-private lemma isClosed_biUnion_other_irreducibleComponents_of_isDomain_stalk
-    {Z : Scheme.{u}} [IsLocallyNoetherian Z]
-    (hStalks : ∀ x : Z.carrier, IsDomain (Z.presheaf.stalk x))
-    (c : irreducibleComponents Z.carrier) :
-    IsClosed (⋃ c' ∈
-      {c' : irreducibleComponents Z.carrier | c' ≠ c},
-      (c' : Set Z.carrier)) := by
-  rw [biUnion_ne_eq_sUnion_sdiff (irreducibleComponents Z.carrier) c]
-  apply isClosed_sUnion_of_disjoint_isOpen
-  · intro c1 hc1 c2 hc2 hneq
-    exact disjoint_irreducibleComponents_of_isDomain_stalk hStalks ⟨c1, hc1⟩ ⟨c2, hc2⟩
-      (fun heq => hneq (congrArg Subtype.val heq))
-  · intro s hs
-    exact isOpen_irreducibleComponents_of_isDomain_stalk hStalks ⟨s, hs⟩
-  · exact sUnion_irreducibleComponents
-  · exact sdiff_subset
 
 /-- A connected topological space with open irreducible components is irreducible. -/
 private lemma irreducibleSpace_of_connected_of_open_components {α : Type*} [TopologicalSpace α]
