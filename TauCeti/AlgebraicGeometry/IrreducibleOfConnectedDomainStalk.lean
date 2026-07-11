@@ -106,16 +106,7 @@ private noncomputable def minimalPrimes_equiv_of_ringEquiv
     (homeomorphOfRingEquiv e).symm
   let eC_dual : (irreducibleComponents (PrimeSpectrum A))ᵒᵈ ≃
       (irreducibleComponents (PrimeSpectrum B))ᵒᵈ :=
-    { toFun := fun x ↦ OrderDual.toDual (eC.symm (OrderDual.ofDual x)),
-      invFun := fun y ↦ OrderDual.toDual (eC (OrderDual.ofDual y)),
-      left_inv := fun x ↦ by
-        change OrderDual.toDual (eC (eC.symm (OrderDual.ofDual x))) = x
-        rw [Equiv.apply_symm_apply]
-        rfl,
-      right_inv := fun y ↦ by
-        change OrderDual.toDual (eC.symm (eC (OrderDual.ofDual y))) = y
-        rw [Equiv.symm_apply_apply]
-        rfl }
+    OrderDual.toDual.symm.trans (eC.symm.trans OrderDual.toDual)
   (minimalPrimes.equivIrreducibleComponents A).toEquiv.trans
     (eC_dual.trans (minimalPrimes.equivIrreducibleComponents B).symm.toEquiv)
 
@@ -132,8 +123,6 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
     (q := fun y ↦ y.val.asIdeal ∈ minimalPrimes R)
     (IsLocalization.primeSpectrumOrderIso S A).toEquiv (by
       intro q
-      change q.asIdeal ∈ minimalPrimes A ↔
-        ((IsLocalization.primeSpectrumOrderIso S A) q).val.asIdeal ∈ minimalPrimes R
       have hMap : minimalPrimes A = Ideal.under R ⁻¹' minimalPrimes R := by
         have h := IsLocalization.minimalPrimes_map S A (⊥ : Ideal R)
         rwa [Ideal.map_bot] at h
@@ -143,11 +132,15 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
       have hq_disj := q'.val.property
       have h1 : Disjoint (p.asIdeal.primeCompl : Set R) (q'.val.val.asIdeal : Set R) := by
         rwa [← hS]
+      -- We change the definitional representation of `primeCompl` to `(p.asIdeal : Set R)ᶜ`
+      -- so that `disjoint_compl_left_iff_subset` can be matched and applied.
       change Disjoint ((p.asIdeal : Set R)ᶜ) (q'.val.val.asIdeal : Set R) at h1
       rwa [disjoint_compl_left_iff_subset] at h1⟩,
     invFun := fun q ↦
       have hq_disj : Disjoint (S : Set R) (q.val.val : Set R) := by
         rw [hS]
+        -- We change the definitional representation of `primeCompl` to `(p.asIdeal : Set R)ᶜ`
+        -- so that `disjoint_compl_left_iff_subset` can be matched and applied.
         change Disjoint ((p.asIdeal : Set R)ᶜ) (q.val.val : Set R)
         exact disjoint_compl_left_iff_subset.mpr q.property
       ⟨⟨⟨q.val.val, q.val.property.1.1⟩, hq_disj⟩, q.val.property⟩,
