@@ -10,8 +10,13 @@ public import Mathlib.AlgebraicGeometry.Noetherian
 /-!
 # Irreducibility of connected schemes with domain stalks
 
+This file supplies a prerequisite for the **Standing hypotheses** target of the
+Jacobian challenge roadmap (proving that a regular connected scheme is irreducible,
+as regular stalks are integral domains).
+
 We prove that a locally noetherian connected scheme whose stalks are
-integral domains is irreducible (`irreducibleSpace_of_connected_of_isDomain_stalk`).
+integral domains is irreducible (`irreducibleSpace_of_connected_of_unique_minimalPrime`
+and `irreducibleSpace_of_connected_of_isDomain_stalk`).
 
 The proof proceeds by showing that the irreducible components of such
 a scheme are pairwise disjoint and open (hence clopen), so
