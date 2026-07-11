@@ -10,10 +10,6 @@ contractability: an exchangeable finite measure on one-sided path space is invar
 every strictly increasing reindexing of time. The process-level theorem remains available in
 `TauCeti.Probability.Exchangeability.Contractability`; this file is the corresponding
 `ExchangeableLaw` to `ContractableLaw` adapter.
-
-The proof uses only the finite-dimensional marginal characterization of `ContractableLaw` and
-the existing finite-marginal consequence of `ExchangeableLaw`. No measure-theoretic
-infrastructure is vendored.
 -/
 
 public section
