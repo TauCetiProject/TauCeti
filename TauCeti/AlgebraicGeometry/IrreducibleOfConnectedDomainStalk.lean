@@ -250,9 +250,8 @@ private noncomputable def
     rfl
   · exact Equiv.refl _
 
-/-- For an affine scheme Spec R, the minimal prime ideals of the local ring (stalk)
-at a point p (which is a prime ideal of R) are in bijection with the irreducible components
-of Spec R containing p. -/
+/-- For an affine scheme `Spec R`, the minimal prime ideals of the local ring (stalk)
+at a point `p` are in bijection with the irreducible components of `Spec R` containing `p`. -/
 private noncomputable def stalkMinimalPrimesEquivIrreducibleComponentsContainingSpec
     (R : Type*) [CommRing R] (p : PrimeSpectrum R) :
     minimalPrimes (Localization.AtPrime p.asIdeal) ≃
