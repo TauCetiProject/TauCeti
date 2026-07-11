@@ -50,28 +50,18 @@ namespace Subcomodule
 
 variable (N : Subcomodule R C M)
 
-/-- The underlying linear inclusion of a subcomodule into the ambient comodule.
-
-This ascribes the domain as `N` itself, so it lines up with the coactions on the subtype; it is
-the submodule subtype map `N.toSubmodule.subtype` reinterpreted with that domain. -/
-def subtypeLinear : N →ₗ[R] M :=
-  N.toSubmodule.subtype
-
-omit [Module.Flat R C] in
-@[simp]
-theorem subtypeLinear_apply (n : N) : N.subtypeLinear n = (n : M) := (rfl)
-
 private theorem subtype_rTensor_injective :
-    Function.Injective (N.subtypeLinear.rTensor C) :=
-  Module.Flat.rTensor_preserves_injective_linearMap N.subtypeLinear Subtype.val_injective
+    Function.Injective ((SMulMemClass.subtype N).rTensor C) :=
+  Module.Flat.rTensor_preserves_injective_linearMap (SMulMemClass.subtype N)
+    Subtype.val_injective
 
 omit [Module.Flat R C] in
 /-- The ambient coaction of an element of a subcomodule lies in the range of the tensored
 inclusion `N ⊗ C → M ⊗ C`. -/
 private theorem coact_mem_range (n : N) :
-    ((Comodule.coact (R := R) (C := C) (M := M)).comp N.subtypeLinear) n ∈
-      LinearMap.range (N.subtypeLinear.rTensor C) := by
-  rw [LinearMap.comp_apply, LinearMap.rTensor_def, subtypeLinear_apply]
+    ((Comodule.coact (R := R) (C := C) (M := M)).comp (SMulMemClass.subtype N)) n ∈
+      LinearMap.range ((SMulMemClass.subtype N).rTensor C) := by
+  rw [LinearMap.comp_apply, LinearMap.rTensor_def, SMulMemClass.subtype_apply]
   exact N.coact_mem n.2
 
 /-- The coaction induced on the subtype of a subcomodule.
@@ -79,49 +69,49 @@ private theorem coact_mem_range (n : N) :
 It is the unique lift of the ambient coaction along `N ⊗ C → M ⊗ C`. -/
 noncomputable def inducedCoact : N →ₗ[R] N ⊗[R] C :=
   LinearMap.codRestrictOfInjective
-    ((Comodule.coact (R := R) (C := C) (M := M)).comp N.subtypeLinear)
-    (N.subtypeLinear.rTensor C) (subtype_rTensor_injective N) (coact_mem_range N)
+    ((Comodule.coact (R := R) (C := C) (M := M)).comp (SMulMemClass.subtype N))
+    ((SMulMemClass.subtype N).rTensor C) (subtype_rTensor_injective N) (coact_mem_range N)
 
 /-- The induced coaction, included back into `M ⊗ C`, is the ambient coaction. -/
 @[simp]
 theorem subtype_rTensor_inducedCoact (n : N) :
-    N.subtypeLinear.rTensor C (N.inducedCoact n) =
+    (SMulMemClass.subtype N).rTensor C (N.inducedCoact n) =
       Comodule.coact (R := R) (C := C) (M := M) n :=
   LinearMap.codRestrictOfInjective_comp_apply
-    ((Comodule.coact (R := R) (C := C) (M := M)).comp N.subtypeLinear)
-    (N.subtypeLinear.rTensor C) (subtype_rTensor_injective N) (coact_mem_range N) n
+    ((Comodule.coact (R := R) (C := C) (M := M)).comp (SMulMemClass.subtype N))
+    ((SMulMemClass.subtype N).rTensor C) (subtype_rTensor_injective N) (coact_mem_range N) n
 
 /-- The induced coaction included into the ambient tensor product, as an equality of linear maps. -/
 @[simp]
 theorem subtype_rTensor_comp_inducedCoact :
-    N.subtypeLinear.rTensor C ∘ₗ N.inducedCoact =
-      (Comodule.coact (R := R) (C := C) (M := M)).comp N.subtypeLinear := by
+    (SMulMemClass.subtype N).rTensor C ∘ₗ N.inducedCoact =
+      (Comodule.coact (R := R) (C := C) (M := M)).comp (SMulMemClass.subtype N) := by
   ext n
   exact subtype_rTensor_inducedCoact N n
 
 private theorem subtype_rTensor_tensor_injective :
-    Function.Injective ((N.subtypeLinear.rTensor C).rTensor C) :=
+    Function.Injective (((SMulMemClass.subtype N).rTensor C).rTensor C) :=
   Module.Flat.rTensor_preserves_injective_linearMap
-    (N.subtypeLinear.rTensor C) (subtype_rTensor_injective N)
+    ((SMulMemClass.subtype N).rTensor C) (subtype_rTensor_injective N)
 
 omit [Module.Flat R C] in
 private theorem subtype_rTensor_R_injective :
-    Function.Injective (N.subtypeLinear.rTensor R) :=
-  Module.Flat.rTensor_preserves_injective_linearMap N.subtypeLinear
+    Function.Injective ((SMulMemClass.subtype N).rTensor R) :=
+  Module.Flat.rTensor_preserves_injective_linearMap (SMulMemClass.subtype N)
     Subtype.val_injective
 
 private theorem map_rTensor_inducedCoact (t : N ⊗[R] C) :
-    TensorProduct.map (N.subtypeLinear.rTensor C) (LinearMap.id : C →ₗ[R] C)
+    TensorProduct.map ((SMulMemClass.subtype N).rTensor C) (LinearMap.id : C →ₗ[R] C)
         (TensorProduct.map N.inducedCoact (LinearMap.id : C →ₗ[R] C) t) =
       TensorProduct.map (Comodule.coact (R := R) (C := C) (M := M))
         (LinearMap.id : C →ₗ[R] C)
-        (TensorProduct.map N.subtypeLinear (LinearMap.id : C →ₗ[R] C) t) := by
+        (TensorProduct.map (SMulMemClass.subtype N) (LinearMap.id : C →ₗ[R] C) t) := by
   rw [TensorProduct.map_map, TensorProduct.map_map, subtype_rTensor_comp_inducedCoact]
 
 omit [Module.Flat R C] in
 private theorem assoc_symm_tmul_natural (n : N) (z : C ⊗[R] C) :
-    (TensorProduct.assoc R M C C).symm (N.subtypeLinear n ⊗ₜ[R] z) =
-      (N.subtypeLinear.rTensor C).rTensor C
+    (TensorProduct.assoc R M C C).symm (SMulMemClass.subtype N n ⊗ₜ[R] z) =
+      ((SMulMemClass.subtype N).rTensor C).rTensor C
         ((TensorProduct.assoc R N C C).symm (n ⊗ₜ[R] z)) := by
   rw [LinearMap.rTensor_def, LinearMap.rTensor_def, TensorProduct.map_map_assoc_symm]
   simp
@@ -129,8 +119,8 @@ private theorem assoc_symm_tmul_natural (n : N) (z : C ⊗[R] C) :
 omit [Module.Flat R C] in
 private theorem assoc_symm_lTensor_comul_natural (t : N ⊗[R] C) :
     (TensorProduct.assoc R M C C).symm
-        (Coalgebra.comul.lTensor M (N.subtypeLinear.rTensor C t)) =
-      (N.subtypeLinear.rTensor C).rTensor C
+        (Coalgebra.comul.lTensor M ((SMulMemClass.subtype N).rTensor C t)) =
+      ((SMulMemClass.subtype N).rTensor C).rTensor C
         ((TensorProduct.assoc R N C C).symm (Coalgebra.comul.lTensor N t)) := by
   induction t with
   | zero => simp
@@ -142,8 +132,8 @@ private theorem assoc_symm_lTensor_comul_natural (t : N ⊗[R] C) :
 
 omit [Module.Flat R C] in
 private theorem lTensor_counit_natural (t : N ⊗[R] C) :
-    N.subtypeLinear.rTensor R (Coalgebra.counit.lTensor N t) =
-      Coalgebra.counit.lTensor M (N.subtypeLinear.rTensor C t) := by
+    (SMulMemClass.subtype N).rTensor R (Coalgebra.counit.lTensor N t) =
+      Coalgebra.counit.lTensor M ((SMulMemClass.subtype N).rTensor C t) := by
   rw [← LinearMap.comp_apply, LinearMap.rTensor_comp_lTensor, ← LinearMap.comp_apply,
     LinearMap.lTensor_comp_rTensor]
 
@@ -156,12 +146,12 @@ noncomputable instance instComodule : Comodule R C N where
       (TensorProduct.assoc R N C C).symm.injective
     simp only [LinearMap.comp_apply, LinearMap.rTensor_def]
     calc
-      (N.subtypeLinear.rTensor C).rTensor C
+      ((SMulMemClass.subtype N).rTensor C).rTensor C
           ((TensorProduct.assoc R N C C).symm
             (TensorProduct.assoc R N C C
               (TensorProduct.map N.inducedCoact (LinearMap.id : C →ₗ[R] C)
                 (N.inducedCoact n)))) =
-          TensorProduct.map (N.subtypeLinear.rTensor C) (LinearMap.id : C →ₗ[R] C)
+          TensorProduct.map ((SMulMemClass.subtype N).rTensor C) (LinearMap.id : C →ₗ[R] C)
             (TensorProduct.map N.inducedCoact (LinearMap.id : C →ₗ[R] C)
               (N.inducedCoact n)) := by
             rw [LinearEquiv.symm_apply_apply, LinearMap.rTensor_def]
@@ -177,7 +167,7 @@ noncomputable instance instComodule : Comodule R C N where
             apply (TensorProduct.assoc R M C C).injective
             simp [Comodule.coassoc_apply (R := R) (C := C) (M := M)]
       _ =
-          (N.subtypeLinear.rTensor C).rTensor C
+          ((SMulMemClass.subtype N).rTensor C).rTensor C
             ((TensorProduct.assoc R N C C).symm
               (Coalgebra.comul.lTensor N (N.inducedCoact n))) := by
             rw [← assoc_symm_lTensor_comul_natural]
@@ -187,15 +177,15 @@ noncomputable instance instComodule : Comodule R C N where
     apply subtype_rTensor_R_injective N
     simp only [LinearMap.comp_apply]
     calc
-      N.subtypeLinear.rTensor R
+      (SMulMemClass.subtype N).rTensor R
           (Coalgebra.counit.lTensor N (N.inducedCoact n)) =
           Coalgebra.counit.lTensor M
-            (N.subtypeLinear.rTensor C (N.inducedCoact n)) := by
+            ((SMulMemClass.subtype N).rTensor C (N.inducedCoact n)) := by
             exact lTensor_counit_natural N (N.inducedCoact n)
       _ = (n : M) ⊗ₜ[R] 1 := by
             simp
-      _ = N.subtypeLinear.rTensor R (n ⊗ₜ[R] 1) := by
-            rw [LinearMap.rTensor_tmul, subtypeLinear_apply]
+      _ = (SMulMemClass.subtype N).rTensor R (n ⊗ₜ[R] 1) := by
+            rw [LinearMap.rTensor_tmul, SMulMemClass.subtype_apply]
 
 /-- The inherited coaction on a subcomodule is `Subcomodule.inducedCoact`. -/
 @[simp]
@@ -205,20 +195,21 @@ theorem induced_coact :
 
 /-- The inherited coaction, included back into `M ⊗ C`, is the ambient coaction. -/
 theorem subtype_rTensor_coact (n : N) :
-    N.subtypeLinear.rTensor C (Comodule.coact (R := R) (C := C) (M := N) n) =
+    (SMulMemClass.subtype N).rTensor C (Comodule.coact (R := R) (C := C) (M := N) n) =
       Comodule.coact (R := R) (C := C) (M := M) n :=
   subtype_rTensor_inducedCoact N n
 
 /-- The subtype map of a subcomodule as a morphism of right comodules. -/
 noncomputable def subtype : Comodule.Hom R C N M where
-  toLinearMap := N.subtypeLinear
+  toLinearMap := SMulMemClass.subtype N
   map_coact := by
     ext n
     exact subtype_rTensor_coact N n
 
 /-- The underlying linear map of the subcomodule inclusion is the linear inclusion. -/
 @[simp]
-theorem subtype_toLinearMap : (Subcomodule.subtype N).toLinearMap = N.subtypeLinear :=
+theorem subtype_toLinearMap :
+    (Subcomodule.subtype N).toLinearMap = SMulMemClass.subtype N :=
   (rfl)
 
 /-- The subcomodule inclusion acts as the underlying subtype coercion. -/
