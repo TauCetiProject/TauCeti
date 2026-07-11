@@ -21,6 +21,8 @@ martingale convergence argument.
 
 - `revCEFinite_martingale`: the reversed conditional-expectation process is a forward martingale for
   `revFiltration` (the finite-horizon reversal adapter for Mathlib's `martingale_condExp`).
+- `iInf_revFiltration_zero`: the infimum of the zero levels of the finite-horizon reverse
+  filtrations recovers the original infimum.
 
 `revFiltration_apply` / `revCEFinite_apply` are the `@[simp]` defining equations.
 
@@ -70,6 +72,13 @@ lemma revFiltration_apply (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Anti
     (h_le : ∀ n, 𝔽 n ≤ m0) (N n : ℕ) :
     (revFiltration 𝔽 h_antitone h_le N) n = 𝔽 (N - n) := by
   simp only [revFiltration]
+
+/-- The infimum of the zero levels of finite-horizon reverse filtrations recovers the original
+infimum. -/
+theorem iInf_revFiltration_zero (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Antitone 𝔽)
+    (h_le : ∀ n, 𝔽 n ≤ m0) :
+    (⨅ N : ℕ, (revFiltration 𝔽 h_antitone h_le N : Filtration ℕ m0) 0) = ⨅ N : ℕ, 𝔽 N := by
+  simp only [revFiltration_apply, tsub_zero]
 
 /-- Finite-horizon reversal adapter for Mathlib's `martingale_condExp`: the reversed
 conditional-expectation process `revCEFinite … N` is a genuine (forward) martingale for the forward
