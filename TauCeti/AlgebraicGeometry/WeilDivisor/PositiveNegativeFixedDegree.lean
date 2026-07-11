@@ -65,24 +65,6 @@ lemma coe_negPart (D : WeilDivisor X) :
     (negPart D : WeilDivisor X) = D⁻ :=
   rfl
 
-/-- The positive and negative fixed-degree parts reconstruct the original Weil divisor. -/
-lemma coe_posPart_sub_coe_negPart (D : WeilDivisor X) :
-    (posPart D : WeilDivisor X) - negPart D = D := by
-  rw [coe_posPart, coe_negPart, _root_.posPart_sub_negPart]
-
-/-- The degrees of the packaged positive and negative parts differ by the degree of the
-original divisor. -/
-lemma degree_posPart_sub_degree_negPart (D : WeilDivisor X) :
-    degree (posPart D : WeilDivisor X) -
-        degree (negPart D : WeilDivisor X) = degree D := by
-  simpa using WeilDivisor.degree_posPart_sub_degree_negPart D
-
-/-- The packaged positive and negative parts have disjoint support. -/
-lemma support_posPart_disjoint_negPart (D : WeilDivisor X) :
-    Disjoint (posPart D : WeilDivisor X).support
-      (negPart D : WeilDivisor X).support := by
-  simpa using WeilDivisor.support_posPart_disjoint_negPart D
-
 /-- If a divisor is already effective, its packaged positive part is the divisor itself, up to
 the degree-index cast. -/
 lemma posPart_coe_of_isEffective (D : EffectiveDivisorOfDegree X d) :
