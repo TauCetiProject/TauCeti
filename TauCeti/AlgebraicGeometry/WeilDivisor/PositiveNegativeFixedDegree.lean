@@ -65,16 +65,6 @@ lemma coe_negPart (D : WeilDivisor X) :
     (negPart D : WeilDivisor X) = D⁻ :=
   rfl
 
-/-- The coefficient of the packaged positive part is the positive part of the coefficient. -/
-lemma coeff_posPart (D : WeilDivisor X) (x : X) :
-    coeff (posPart D : WeilDivisor X) x = coeff D x ⊔ 0 :=
-  WeilDivisor.coeff_posPart D x
-
-/-- The coefficient of the packaged negative part is the negative part of the coefficient. -/
-lemma coeff_negPart (D : WeilDivisor X) (x : X) :
-    coeff (negPart D : WeilDivisor X) x = -coeff D x ⊔ 0 :=
-  WeilDivisor.coeff_negPart D x
-
 /-- The positive and negative fixed-degree parts reconstruct the original Weil divisor. -/
 lemma coe_posPart_sub_coe_negPart (D : WeilDivisor X) :
     (posPart D : WeilDivisor X) - negPart D = D := by
