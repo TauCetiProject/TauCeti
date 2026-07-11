@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor.DegreeOrder
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Order
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FixedDegree
 
 /-!
@@ -42,61 +42,61 @@ noncomputable section
 /-! ### Positive and negative parts -/
 
 /-- The positive part of a Weil divisor, packaged as an effective divisor of its own degree. -/
-abbrev positivePart (D : WeilDivisor X) :
+abbrev posPart (D : WeilDivisor X) :
     EffectiveDivisorOfDegree X (degree D⁺).toNat :=
   ⟨D⁺, WeilDivisor.isEffective_posPart D,
     (Int.toNat_of_nonneg (WeilDivisor.isEffective_posPart D).degree_nonneg).symm⟩
 
 /-- The negative part of a Weil divisor, packaged as an effective divisor of its own degree. -/
-abbrev negativePart (D : WeilDivisor X) :
+abbrev negPart (D : WeilDivisor X) :
     EffectiveDivisorOfDegree X (degree D⁻).toNat :=
   ⟨D⁻, WeilDivisor.isEffective_negPart D,
     (Int.toNat_of_nonneg (WeilDivisor.isEffective_negPart D).degree_nonneg).symm⟩
 
 /-- The underlying Weil divisor of the packaged positive part is `D⁺`. -/
 @[simp]
-lemma coe_positivePart (D : WeilDivisor X) :
-    (positivePart D : WeilDivisor X) = D⁺ :=
+lemma coe_posPart (D : WeilDivisor X) :
+    (posPart D : WeilDivisor X) = D⁺ :=
   rfl
 
 /-- The underlying Weil divisor of the packaged negative part is `D⁻`. -/
 @[simp]
-lemma coe_negativePart (D : WeilDivisor X) :
-    (negativePart D : WeilDivisor X) = D⁻ :=
+lemma coe_negPart (D : WeilDivisor X) :
+    (negPart D : WeilDivisor X) = D⁻ :=
   rfl
 
 /-- The coefficient of the packaged positive part is the positive part of the coefficient. -/
-lemma coeff_positivePart (D : WeilDivisor X) (x : X) :
-    coeff (positivePart D : WeilDivisor X) x = coeff D x ⊔ 0 :=
+lemma coeff_posPart (D : WeilDivisor X) (x : X) :
+    coeff (posPart D : WeilDivisor X) x = coeff D x ⊔ 0 :=
   WeilDivisor.coeff_posPart D x
 
 /-- The coefficient of the packaged negative part is the negative part of the coefficient. -/
-lemma coeff_negativePart (D : WeilDivisor X) (x : X) :
-    coeff (negativePart D : WeilDivisor X) x = -coeff D x ⊔ 0 :=
+lemma coeff_negPart (D : WeilDivisor X) (x : X) :
+    coeff (negPart D : WeilDivisor X) x = -coeff D x ⊔ 0 :=
   WeilDivisor.coeff_negPart D x
 
 /-- The positive and negative fixed-degree parts reconstruct the original Weil divisor. -/
-lemma coe_positivePart_sub_coe_negativePart (D : WeilDivisor X) :
-    (positivePart D : WeilDivisor X) - negativePart D = D := by
-  rw [coe_positivePart, coe_negativePart, _root_.posPart_sub_negPart]
+lemma coe_posPart_sub_coe_negPart (D : WeilDivisor X) :
+    (posPart D : WeilDivisor X) - negPart D = D := by
+  rw [coe_posPart, coe_negPart, _root_.posPart_sub_negPart]
 
 /-- The degrees of the packaged positive and negative parts differ by the degree of the
 original divisor. -/
-lemma degree_positivePart_sub_degree_negativePart (D : WeilDivisor X) :
-    degree (positivePart D : WeilDivisor X) -
-        degree (negativePart D : WeilDivisor X) = degree D := by
+lemma degree_posPart_sub_degree_negPart (D : WeilDivisor X) :
+    degree (posPart D : WeilDivisor X) -
+        degree (negPart D : WeilDivisor X) = degree D := by
   simpa using WeilDivisor.degree_posPart_sub_degree_negPart D
 
 /-- The packaged positive and negative parts have disjoint support. -/
-lemma support_positivePart_disjoint_negativePart (D : WeilDivisor X) :
-    Disjoint (positivePart D : WeilDivisor X).support
-      (negativePart D : WeilDivisor X).support := by
+lemma support_posPart_disjoint_negPart (D : WeilDivisor X) :
+    Disjoint (posPart D : WeilDivisor X).support
+      (negPart D : WeilDivisor X).support := by
   simpa using WeilDivisor.support_posPart_disjoint_negPart D
 
 /-- If a divisor is already effective, its packaged positive part is the divisor itself, up to
 the degree-index cast. -/
-lemma positivePart_coe_of_isEffective (D : EffectiveDivisorOfDegree X d) :
-    positivePart (D : WeilDivisor X) =
+lemma posPart_coe_of_isEffective (D : EffectiveDivisorOfDegree X d) :
+    posPart (D : WeilDivisor X) =
       EffectiveDivisorOfDegree.cast (by
         rw [WeilDivisor.posPart_eq_self_iff_isEffective.mpr D.isEffective, D.degree_eq]
         simp) D := by
@@ -104,8 +104,8 @@ lemma positivePart_coe_of_isEffective (D : EffectiveDivisorOfDegree X d) :
   simp [WeilDivisor.posPart_eq_self_iff_isEffective.mpr D.isEffective]
 
 /-- If a divisor is effective, its packaged negative part is the zero divisor. -/
-lemma negativePart_coe_of_isEffective (D : EffectiveDivisorOfDegree X d) :
-    negativePart (D : WeilDivisor X) =
+lemma negPart_coe_of_isEffective (D : EffectiveDivisorOfDegree X d) :
+    negPart (D : WeilDivisor X) =
       EffectiveDivisorOfDegree.cast (by
         rw [WeilDivisor.negPart_eq_zero_iff_isEffective.mpr D.isEffective]
         simp) (zero X) := by
@@ -115,8 +115,8 @@ lemma negativePart_coe_of_isEffective (D : EffectiveDivisorOfDegree X d) :
 /-! ### Point differences -/
 
 /-- For distinct points, the packaged positive part of `[x] - [y]` is `[x]`. -/
-lemma positivePart_pointDifference {x y : X} (h : x ≠ y) :
-    positivePart (WeilDivisor.pointDifference x y) =
+lemma posPart_pointDifference {x y : X} (h : x ≠ y) :
+    posPart (WeilDivisor.pointDifference x y) =
       EffectiveDivisorOfDegree.cast (by
         rw [WeilDivisor.posPart_pointDifference h, WeilDivisor.degree_ofPoint]
         simp) (ofSym (Sym.oneEquiv x)) := by
@@ -127,8 +127,8 @@ lemma positivePart_pointDifference {x y : X} (h : x ≠ y) :
   · simp [hzx]
 
 /-- For distinct points, the packaged negative part of `[x] - [y]` is `[y]`. -/
-lemma negativePart_pointDifference {x y : X} (h : x ≠ y) :
-    negativePart (WeilDivisor.pointDifference x y) =
+lemma negPart_pointDifference {x y : X} (h : x ≠ y) :
+    negPart (WeilDivisor.pointDifference x y) =
       EffectiveDivisorOfDegree.cast (by
         rw [WeilDivisor.negPart_pointDifference h, WeilDivisor.degree_ofPoint]
         simp) (ofSym (Sym.oneEquiv y)) := by
