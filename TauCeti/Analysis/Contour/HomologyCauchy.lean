@@ -5,7 +5,8 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.Analysis.Contour.CauchyIntegralFormula
+public import TauCeti.Analysis.Contour.DixonDef
+import TauCeti.Analysis.Contour.CauchyIntegralFormula
 import TauCeti.Analysis.Contour.DixonFunctionDiff
 import TauCeti.Analysis.Contour.DixonLiouville
 
