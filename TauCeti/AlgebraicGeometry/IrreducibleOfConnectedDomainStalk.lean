@@ -85,33 +85,27 @@ private def irreducibleComponents_containing_equiv_of_isOpenEmbedding
       ⟨x, c'.property⟩ c'.val.property.1.2
       (isClosed_of_mem_irreducibleComponents c'.val.val c'.val.property)
 
-/-- Ring isomorphism preserves minimal primes. -/
-private def minimalPrimes_equiv_of_ringEquiv {A B : Type*} [CommRing A] [CommRing B]
-    (e : A ≃+* B) : minimalPrimes A ≃ minimalPrimes B where
-  toFun p := ⟨Ideal.map e p.val, by
-    -- Unfold `minimalPrimes` to its definition as `(⊥ : Ideal B).minimalPrimes`.
-    change _ ∈ (⊥ : Ideal B).minimalPrimes
-    have h1 := Ideal.minimalPrimes_map_of_surjective (f := e.toRingHom) e.surjective ⊥
-    have hker : RingHom.ker e.toRingHom = ⊥ :=
-      (RingHom.injective_iff_ker_eq_bot e.toRingHom).mp e.injective
-    rw [Ideal.map_bot, hker, bot_sup_eq] at h1
-    rw [h1]
-    exact Set.mem_image_of_mem _ p.property⟩
-  invFun q := ⟨Ideal.comap e q.val, by
-    -- Unfold `minimalPrimes` to its definition as `(⊥ : Ideal A).minimalPrimes`.
-    change _ ∈ (⊥ : Ideal A).minimalPrimes
-    have h1 := Ideal.comap_minimalPrimes_eq_of_surjective (f := e.toRingHom) e.surjective ⊥
-    have hker : Ideal.comap e.toRingHom ⊥ = ⊥ :=
-      (RingHom.injective_iff_ker_eq_bot e.toRingHom).mp e.injective
-    rw [hker] at h1
-    rw [h1]
-    exact Set.mem_image_of_mem _ q.property⟩
-  left_inv p := Subtype.ext (by
-    dsimp
-    rw [Ideal.comap_map_of_bijective e e.bijective])
-  right_inv q := Subtype.ext (by
-    dsimp
-    rw [Ideal.map_comap_of_surjective e e.surjective])
+/-- Ring isomorphism preserves minimal primes,
+via `Ideal.minimalPrimes_map_of_surjective`. -/
+private noncomputable def minimalPrimes_equiv_of_ringEquiv
+    {A B : Type*} [CommRing A] [CommRing B]
+    (e : A ≃+* B) : minimalPrimes A ≃ minimalPrimes B := by
+  have hker : RingHom.ker e.toRingHom = ⊥ :=
+    (RingHom.injective_iff_ker_eq_bot _).mp e.injective
+  have himg : Ideal.map e.toRingHom '' minimalPrimes A =
+      minimalPrimes B := by
+    have h := Ideal.minimalPrimes_map_of_surjective
+      (f := e.toRingHom) e.surjective (⊥ : Ideal A)
+    rw [Ideal.map_bot, hker, bot_sup_eq] at h
+    exact h.symm
+  have hinj : Function.Injective (Ideal.map e.toRingHom) :=
+    fun I J h => by
+      rw [← Ideal.comap_map_of_bijective e.toRingHom
+            e.bijective (I := I),
+         ← Ideal.comap_map_of_bijective e.toRingHom
+            e.bijective (I := J), h]
+  exact (Equiv.Set.image _ _ hinj).trans
+    (Equiv.setCongr himg)
 
 /-- Auxiliary declaration. -/
 private lemma disjoint_primeCompl_iff {R : Type*} [CommRing R] {I J : Ideal R} [I.IsPrime] :
@@ -166,14 +160,12 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
 correspond to minimal primes below `p`, via the
 `zeroLocus`/`vanishingIdeal` Galois correspondence.
 
-Note: we build this equiv directly from Mathlib's
-`zeroLocus_ideal_mem_irreducibleComponents`,
+We build this equiv from `zeroLocus_ideal_mem_irreducibleComponents`,
 `vanishingIdeal_irreducibleComponents`,
 `vanishingIdeal_zeroLocus_eq_radical`, and
 `zeroLocus_vanishingIdeal_eq_closure` rather than restricting
 `minimalPrimes.equivIrreducibleComponents`, because the latter's
-value has no public simp lemma, so restricting it would require
-copying its internal construction to extract the underlying set. -/
+value has no public simp lemma for extracting the underlying set. -/
 private noncomputable def
     irreducibleComponentsContainingEquivMinimalPrimesLe
     (R : Type*) [CommRing R] (p : PrimeSpectrum R) :
@@ -224,10 +216,7 @@ private noncomputable def stalkMinimalPrimesEquivIrreducibleComponentsContaining
 
 
 /-- The minimal primes of the stalk of a scheme at a point `x`
-are in bijection with the irreducible components containing `x`.
-This is the general result; the domain-stalk special case
-`unique_irreducibleComponent_of_isDomain_stalk` follows
-by noting that `IsDomain` implies a unique minimal prime. -/
+are in bijection with the irreducible components containing `x`. -/
 noncomputable def
     stalkMinimalPrimesEquivIrreducibleComponentsContaining
     {X : Scheme} (x : X.carrier) :
