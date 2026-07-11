@@ -180,32 +180,32 @@ correspond to minimal primes below `p`, via the
 private noncomputable def
     irreducibleComponentsContainingEquivMinimalPrimesLe
     (R : Type*) [CommRing R] (p : PrimeSpectrum R) :
-    { c : irreducibleComponents (PrimeSpectrum R) //
-      p ∈ (c : Set (PrimeSpectrum R)) } ≃
-    { q : minimalPrimes R // q.val ≤ p.asIdeal } := by
-  let e := minimalPrimes.equivIrreducibleComponents (R := R)
-  let f : { c : irreducibleComponents (PrimeSpectrum R) // p ∈ (c : Set (PrimeSpectrum R)) } →
-      { q : minimalPrimes R // q.val ≤ p.asIdeal } := fun c =>
-    ⟨e.symm c.val, by
-      have h1 : p ∈ (c.val.val : Set (PrimeSpectrum R)) := c.property
-      have hEq := (PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure c.val.val).symm.trans
-        (isClosed_of_mem_irreducibleComponents c.val.val c.val.property).closure_eq.symm
-      have h2 : p ∈ PrimeSpectrum.zeroLocus (e.symm c.val).val := by
-        exact (congrArg (fun s => p ∈ s) hEq).symm.mp h1
-      exact PrimeSpectrum.mem_zeroLocus.mp h2⟩
-  let inv : { q : minimalPrimes R // q.val ≤ p.asIdeal } →
-      { c : irreducibleComponents (PrimeSpectrum R) // p ∈ (c : Set (PrimeSpectrum R)) } := fun q =>
-    ⟨e q.val, by
-      have hEq := (PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure (e q.val).val).symm.trans
-        (isClosed_of_mem_irreducibleComponents (e q.val).val (e q.val).property).closure_eq.symm
-      rw [hEq]
-      exact PrimeSpectrum.mem_zeroLocus.mpr q.property⟩
-  exact {
-    toFun := f,
-    invFun := inv,
-    left_inv := fun c => Subtype.ext (e.right_inv c.val),
-    right_inv := fun q => Subtype.ext (e.left_inv q.val)
-  }
+    { c : irreducibleComponents (PrimeSpectrum R) // p ∈ c.val } ≃
+    { q : minimalPrimes R // q.val ≤ p.asIdeal } where
+  toFun c :=
+    ⟨⟨PrimeSpectrum.vanishingIdeal c.val, by
+      have h := PrimeSpectrum.vanishingIdeal_irreducibleComponents (R := R)
+      rw [← h]
+      exact Set.mem_image_of_mem _ c.val.property⟩, by
+        have : p ∈ PrimeSpectrum.zeroLocus (PrimeSpectrum.vanishingIdeal c.val.val) := by
+          rw [PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure]
+          rw [isClosed_of_mem_irreducibleComponents _ c.val.property |>.closure_eq]
+          exact c.property
+        exact this⟩
+  invFun q :=
+    ⟨⟨PrimeSpectrum.zeroLocus q.val.val, by
+      have h := PrimeSpectrum.zeroLocus_minimalPrimes (R := R)
+      rw [← h]
+      exact Set.mem_image_of_mem _ q.val.property⟩, by
+        exact q.property⟩
+  left_inv c := Subtype.ext <| Subtype.ext <| by
+    dsimp
+    rw [PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure]
+    rw [isClosed_of_mem_irreducibleComponents _ c.val.property |>.closure_eq]
+  right_inv q := Subtype.ext <| Subtype.ext <| by
+    dsimp
+    exact PrimeSpectrum.vanishingIdeal_zeroLocus_eq_radical q.val.val ▸
+      q.val.property.1.1.radical
 
 /-- For an affine scheme Spec R, the minimal prime ideals of the local ring (stalk)
 at a point p (which is a prime ideal of R) are in bijection with the irreducible components
