@@ -52,13 +52,11 @@ lemma coe_ofPoint (x : X) :
   rfl
 
 /-- The coefficient of a fixed-degree point divisor at its point is `1`. -/
-@[simp]
 lemma coeff_ofPoint_self (x : X) :
     coeff (ofPoint x : WeilDivisor X) x = 1 :=
   WeilDivisor.coeff_ofPoint_self x
 
 /-- The coefficient of a fixed-degree point divisor away from its point is `0`. -/
-@[simp]
 lemma coeff_ofPoint_of_ne {x y : X} (h : y ≠ x) :
     coeff (ofPoint x : WeilDivisor X) y = 0 :=
   WeilDivisor.coeff_ofPoint_of_ne h
@@ -90,19 +88,16 @@ lemma coe_negativePart (D : WeilDivisor X) :
   rfl
 
 /-- The coefficient of the packaged positive part is the positive part of the coefficient. -/
-@[simp]
 lemma coeff_positivePart (D : WeilDivisor X) (x : X) :
     coeff (positivePart D : WeilDivisor X) x = coeff D x ⊔ 0 :=
   WeilDivisor.coeff_posPart D x
 
 /-- The coefficient of the packaged negative part is the negative part of the coefficient. -/
-@[simp]
 lemma coeff_negativePart (D : WeilDivisor X) (x : X) :
     coeff (negativePart D : WeilDivisor X) x = -coeff D x ⊔ 0 :=
   WeilDivisor.coeff_negPart D x
 
 /-- The positive and negative fixed-degree parts reconstruct the original Weil divisor. -/
-@[simp]
 lemma coe_positivePart_sub_coe_negativePart (D : WeilDivisor X) :
     (positivePart D : WeilDivisor X) - negativePart D = D := by
   rw [coe_positivePart, coe_negativePart, _root_.posPart_sub_negPart]
