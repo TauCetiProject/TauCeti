@@ -6,8 +6,8 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.CauchyIntegralFormula
-public import TauCeti.Analysis.Contour.DixonFunctionDiff
-public import TauCeti.Analysis.Contour.DixonLiouville
+import TauCeti.Analysis.Contour.DixonFunctionDiff
+import TauCeti.Analysis.Contour.DixonLiouville
 
 /-!
 # Homology Cauchy consequences of Dixon's theorem
@@ -66,25 +66,26 @@ theorem dixonH2_eq_windingNumber_mul_f_of_nullHomologous {f : ℂ → ℂ} {U : 
 
 /-- **Homology Cauchy theorem with a supplied off-curve point.** Let `γ` be a closed curve in an
 open set `U`, continuous on `uIcc a b`, differentiable off a countable set, with
-interval-integrable derivative, and null-homologous in `U`. If `f` is holomorphic on `U`, the usual
-contour integrand is interval-integrable, and `U` contains a point `w₀` not lying on the curve, then
-`∫ t in a..b, deriv γ t • f (γ t) = 0`.
-
-The proof applies the null-homologous Cauchy integral formula to
-`z ↦ (z - w₀) * f z`, whose value at `w₀` is zero. This is the immediate Dixon-theoretic
-prerequisite for the roadmap's full homology Cauchy theorem; only the off-curve-point existence
-step is not included here. -/
+interval-integrable derivative, and null-homologous in `U`. If `f` is holomorphic on `U` and `U`
+contains a point `w₀` not lying on the curve, then
+`∫ t in a..b, deriv γ t • f (γ t) = 0`. This is the immediate Dixon-theoretic prerequisite for the
+roadmap's full homology Cauchy theorem; only the off-curve-point existence step is not included
+here. -/
 theorem homologyCauchyTheorem_of_point_off_curve {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ}
     {a b : ℝ} {P : Set ℝ} {w₀ : ℂ} (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
     (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) (hclosed : γ a = γ b)
     (hP : P.Countable) (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
     (h_null : IsNullHomologous γ a b U) (hw₀U : w₀ ∈ U)
-    (hw₀off : ∀ t ∈ uIcc a b, γ t ≠ w₀)
-    (h_int : IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume a b) :
+    (hw₀off : ∀ t ∈ uIcc a b, γ t ≠ w₀) :
     ∫ t in a..b, deriv γ t • f (γ t) = 0 := by
   have hg : DifferentiableOn ℂ (fun z ↦ (z - w₀) * f z) U := by
     fun_prop
+  have h_int_mul : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b :=
+    hderiv_int.continuousOn_mul (hf.continuousOn.comp hγ_cont hγU)
+  have h_int : IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume a b := by
+    rw [intervalIntegrable_iff] at h_int_mul ⊢
+    exact h_int_mul.congr_fun (fun t _ ↦ by rw [smul_eq_mul, mul_comm]) measurableSet_uIoc
   exact intervalIntegral_deriv_smul_eq_zero_of_dixonFunction_eq_zero hγ_cont w₀ hw₀U hw₀off
     (dixonFunction_eq_zero hU hg hγ_cont hγU hderiv_int hclosed hP hγ_diff h_null w₀)
     h_int (intervalIntegrable_inv_sub_mul_deriv hγ_cont hw₀off hderiv_int)
