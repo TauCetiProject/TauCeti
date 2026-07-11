@@ -6,9 +6,9 @@ public import TauCeti.Probability.Martingale.Reverse
 /-!
 # Process tails as infima of reverse filtrations
 
-This file records the Exchangeability roadmap Layer 2 adapter identifying the process tail
-σ-algebra as the infimum of the time-zero levels of the generic finite-horizon reverse
-filtrations applied to `tailFamily X`.
+This file records the Exchangeability roadmap Layer 2 adapter specializing finite-horizon reverse
+filtrations to the process-tail family `tailFamily X`, and identifying the process tail σ-algebra
+as the infimum of their time-zero levels.
 -/
 
 public section
@@ -23,24 +23,26 @@ namespace Probability
 
 variable {Ω : Type*} {β : ℕ → Type*} [MeasurableSpace Ω] [∀ k, MeasurableSpace (β k)]
 
-private theorem iInf_revFiltration_zero (𝔽 : ℕ → MeasurableSpace Ω)
-    (h_antitone : Antitone 𝔽) (h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω)) :
-    (⨅ N : ℕ, (MeasureTheory.revFiltration 𝔽 h_antitone h_le N :
-        Filtration ℕ (inferInstance : MeasurableSpace Ω)) 0) = ⨅ N : ℕ, 𝔽 N := by
-  simp only [MeasureTheory.revFiltration_apply, tsub_zero]
+/-- Reverse filtration of the process-tail family on the finite horizon `N`. -/
+def tailReverseFiltration (X : (k : ℕ) → Ω → β k) (hX : ∀ k, Measurable (X k))
+    (N : ℕ) : Filtration ℕ (inferInstance : MeasurableSpace Ω) :=
+  MeasureTheory.revFiltration (tailFamily X) (tailFamily_antitone X)
+    (fun n => tailFamily_le_ambient n fun k _ => hX k) N
+
+/-- Level equation for the finite-horizon reverse filtration of a process tail. -/
+@[simp]
+theorem tailReverseFiltration_apply (X : (k : ℕ) → Ω → β k)
+    (hX : ∀ k, Measurable (X k)) (N n : ℕ) :
+    (tailReverseFiltration X hX N) n = tailFamily X (N - n) := by
+  simp only [tailReverseFiltration, MeasureTheory.revFiltration_apply]
 
 /-- The process tail is the infimum of the time-zero levels of the finite-horizon reverse
 filtrations attached to `tailFamily X`. -/
 theorem tailProcess_eq_iInf_revFiltration (X : (k : ℕ) → Ω → β k)
     (hX : ∀ k, Measurable (X k)) :
-    tailProcess X =
-      ⨅ N : ℕ,
-        (MeasureTheory.revFiltration (tailFamily X) (tailFamily_antitone X)
-          (fun n => tailFamily_le_ambient n fun k _ => hX k) N :
-          Filtration ℕ (inferInstance : MeasurableSpace Ω)) 0 := by
+    tailProcess X = ⨅ N : ℕ, (tailReverseFiltration X hX N) 0 := by
   rw [tailProcess_eq_iInf_tailFamily]
-  exact (iInf_revFiltration_zero (tailFamily X) (tailFamily_antitone X)
-    (fun n => tailFamily_le_ambient n fun k _ => hX k)).symm
+  simp only [tailReverseFiltration_apply, tsub_zero]
 
 end Probability
 
