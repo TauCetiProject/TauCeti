@@ -23,8 +23,7 @@ a scheme are pairwise disjoint and open (hence clopen), so
 connectedness forces a unique component.
 
 Along the way we show that the minimal primes of the stalk at a point
-and the irreducible components containing that point are in bijection
-(`nonempty_stalkMinimalPrimesEquivIrreducibleComponentsContaining`).
+and the irreducible components containing that point are in bijection.
 -/
 
 public section
@@ -154,22 +153,6 @@ private noncomputable def minimalPrimes_equiv_of_ringEquiv
   (minimalPrimes.equivIrreducibleComponents A).toEquiv.trans
     (eC_dual.trans (minimalPrimes.equivIrreducibleComponents B).symm.toEquiv)
 
-/-- An ideal is disjoint from the prime complement of a prime ideal `I`
-if and only if it is contained in `I`. -/
-private lemma disjoint_primeCompl_iff {R : Type*} [CommRing R] {I J : Ideal R} [I.IsPrime] :
-    Disjoint (I.primeCompl : Set R) (J : Set R) ↔ J ≤ I :=
-  Set.disjoint_compl_left_iff_subset
-
-/-- The pullback of a minimal prime of a localization at `p`
-is contained in `p`. -/
-private lemma comap_le_p_of_mem_minimalPrimes {R : Type*} [CommRing R] (p : PrimeSpectrum R)
-    (S : Submonoid R) (A : Type*) [CommRing A] [Algebra R A] [IsLocalization S A]
-    (hS : S = p.asIdeal.primeCompl) (q' : minimalPrimes A) :
-    q'.val.comap (algebraMap R A) ≤ p.asIdeal := by
-  haveI : q'.val.IsPrime := q'.property.1.1
-  have hDisj := (IsLocalization.isPrime_iff_isPrime_disjoint S A q'.val).mp ‹_› |>.2
-  rwa [hS, disjoint_primeCompl_iff] at hDisj
-
 /-- The minimal primes of the localization `A` of a ring `R` at the prime complement of `p`
 are in bijection with the minimal primes of `R` contained in `p`. -/
 private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : PrimeSpectrum R)
@@ -194,11 +177,13 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
       have hq_disj := q'.val.property
       have h1 : Disjoint (p.asIdeal.primeCompl : Set R) (q'.val.val.asIdeal : Set R) := by
         rwa [← hS]
-      exact (disjoint_primeCompl_iff (I := p.asIdeal)).mp h1⟩,
+      change Disjoint ((p.asIdeal : Set R)ᶜ) (q'.val.val.asIdeal : Set R) at h1
+      rwa [disjoint_compl_left_iff_subset] at h1⟩,
     invFun := fun q ↦
       have hq_disj : Disjoint (S : Set R) (q.val.val : Set R) := by
         rw [hS]
-        exact (disjoint_primeCompl_iff (I := p.asIdeal)).mpr q.property
+        change Disjoint ((p.asIdeal : Set R)ᶜ) (q.val.val : Set R)
+        exact disjoint_compl_left_iff_subset.mpr q.property
       ⟨⟨⟨q.val.val, q.val.property.1.1⟩, hq_disj⟩, q.val.property⟩,
     left_inv := fun _ ↦ rfl,
     right_inv := fun _ ↦ rfl })
