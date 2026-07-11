@@ -25,15 +25,14 @@ variable {Ω : Type*} {β : ℕ → Type*} [MeasurableSpace Ω] [∀ k, Measurab
 
 /-- The process tail is the infimum of the time-zero levels of the finite-horizon reverse
 filtrations attached to `tailFamily X`. -/
-theorem tailProcess_eq_iInf_revFiltration (X : (k : ℕ) → Ω → β k)
+theorem tailProcess_eq_iInf_revFiltration_zero (X : (k : ℕ) → Ω → β k)
     (hX : ∀ k, Measurable (X k)) :
     tailProcess X =
       ⨅ N : ℕ,
         (MeasureTheory.revFiltration (tailFamily X) (tailFamily_antitone X)
           (fun n => tailFamily_le_ambient n fun k _ => hX k) N :
           Filtration ℕ (inferInstance : MeasurableSpace Ω)) 0 := by
-  rw [tailProcess_eq_iInf_tailFamily]
-  simp only [MeasureTheory.revFiltration_apply, tsub_zero]
+  rw [tailProcess_eq_iInf_tailFamily, MeasureTheory.iInf_revFiltration_zero]
 
 end Probability
 
