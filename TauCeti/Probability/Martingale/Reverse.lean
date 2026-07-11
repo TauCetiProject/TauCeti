@@ -19,8 +19,6 @@ martingale convergence argument.
 
 ## Main results
 
-- `iInf_revFiltration_zero`: the infimum of the time-zero levels of the finite-horizon reverse
-  filtrations is the infimum of the original antitone family.
 - `revCEFinite_martingale`: the reversed conditional-expectation process is a forward martingale for
   `revFiltration` (the finite-horizon reversal adapter for Mathlib's `martingale_condExp`).
 
@@ -72,14 +70,6 @@ lemma revFiltration_apply (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Anti
     (h_le : ∀ n, 𝔽 n ≤ m0) (N n : ℕ) :
     (revFiltration 𝔽 h_antitone h_le N) n = 𝔽 (N - n) := by
   simp only [revFiltration]
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] in
-/-- The infimum of the time-zero levels of finite-horizon reverse filtrations recovers the
-infimum of the original antitone family. -/
-lemma iInf_revFiltration_zero (𝔽 : ℕ → MeasurableSpace Ω) (h_antitone : Antitone 𝔽)
-    (h_le : ∀ n, 𝔽 n ≤ m0) :
-    (⨅ N : ℕ, (revFiltration 𝔽 h_antitone h_le N) 0) = ⨅ N : ℕ, 𝔽 N := by
-  simp [revFiltration_apply]
 
 /-- Finite-horizon reversal adapter for Mathlib's `martingale_condExp`: the reversed
 conditional-expectation process `revCEFinite … N` is a genuine (forward) martingale for the forward

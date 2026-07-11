@@ -32,7 +32,8 @@ theorem tailProcess_eq_iInf_revFiltration_zero (X : (k : ℕ) → Ω → β k)
         (MeasureTheory.revFiltration (tailFamily X) (tailFamily_antitone X)
           (fun n => tailFamily_le_ambient n fun k _ => hX k) N :
           Filtration ℕ (inferInstance : MeasurableSpace Ω)) 0 := by
-  rw [tailProcess_eq_iInf_tailFamily, MeasureTheory.iInf_revFiltration_zero]
+  rw [tailProcess_eq_iInf_tailFamily]
+  simp only [MeasureTheory.revFiltration_apply, tsub_zero]
 
 end Probability
 
