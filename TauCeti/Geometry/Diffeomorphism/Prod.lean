@@ -138,8 +138,8 @@ theorem relativeProdHom_apply (s : Set M) (t : Set N)
 theorem relativeProdHom_apply_apply (s : Set M) (t : Set N)
     (p : fixingSubgroup (I := I) (n := n) s × fixingSubgroup (I := J) (n := n) t)
     (x : M × N) :
-    (relativeProdHom (I := I) (J := J) (n := n) s t p :
-      (M × N) ≃ₘ^n⟮I.prod J, I.prod J⟯ M × N) x =
+    Prod.map (fun y : M => (p.1 : M ≃ₘ^n⟮I, I⟯ M) y)
+        (fun y : N => (p.2 : N ≃ₘ^n⟮J, J⟯ N) y) x =
       ((p.1 : M ≃ₘ^n⟮I, I⟯ M) x.1, (p.2 : N ≃ₘ^n⟮J, J⟯ N) x.2) :=
   rfl
 
