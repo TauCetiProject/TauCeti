@@ -54,12 +54,12 @@ variable (N : Subcomodule R C M)
 
 This ascribes the domain as `N` itself, so it lines up with the coactions on the subtype; it is
 the submodule subtype map `N.toSubmodule.subtype` reinterpreted with that domain. -/
-@[expose] def subtypeLinear : N →ₗ[R] M :=
+def subtypeLinear : N →ₗ[R] M :=
   N.toSubmodule.subtype
 
 omit [Module.Flat R C] in
 @[simp]
-theorem subtypeLinear_apply (n : N) : N.subtypeLinear n = (n : M) := rfl
+theorem subtypeLinear_apply (n : N) : N.subtypeLinear n = (n : M) := (rfl)
 
 private theorem subtype_rTensor_injective :
     Function.Injective (N.subtypeLinear.rTensor C) :=
@@ -116,23 +116,15 @@ private theorem map_rTensor_inducedCoact (t : N ⊗[R] C) :
       TensorProduct.map (Comodule.coact (R := R) (C := C) (M := M))
         (LinearMap.id : C →ₗ[R] C)
         (TensorProduct.map N.subtypeLinear (LinearMap.id : C →ₗ[R] C) t) := by
-  induction t with
-  | zero => simp
-  | tmul n c =>
-      simp only [TensorProduct.map_tmul, LinearMap.id_coe, id_eq, subtypeLinear_apply]
-      rw [subtype_rTensor_inducedCoact]
-  | add x y hx hy => simp [hx, hy]
+  rw [TensorProduct.map_map, TensorProduct.map_map, subtype_rTensor_comp_inducedCoact]
 
 omit [Module.Flat R C] in
 private theorem assoc_symm_tmul_natural (n : N) (z : C ⊗[R] C) :
     (TensorProduct.assoc R M C C).symm (N.subtypeLinear n ⊗ₜ[R] z) =
       (N.subtypeLinear.rTensor C).rTensor C
         ((TensorProduct.assoc R N C C).symm (n ⊗ₜ[R] z)) := by
-  induction z with
-  | zero => simp
-  | tmul c₁ c₂ =>
-      simp only [TensorProduct.assoc_symm_tmul, LinearMap.rTensor_tmul]
-  | add x y hx hy => simpa [TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
+  rw [LinearMap.rTensor_def, LinearMap.rTensor_def, TensorProduct.map_map_assoc_symm]
+  simp
 
 omit [Module.Flat R C] in
 private theorem assoc_symm_lTensor_comul_natural (t : N ⊗[R] C) :
@@ -152,11 +144,8 @@ omit [Module.Flat R C] in
 private theorem lTensor_counit_natural (t : N ⊗[R] C) :
     N.subtypeLinear.rTensor R (Coalgebra.counit.lTensor N t) =
       Coalgebra.counit.lTensor M (N.subtypeLinear.rTensor C t) := by
-  induction t with
-  | zero => simp
-  | tmul n c =>
-      simp only [LinearMap.lTensor_tmul, LinearMap.rTensor_tmul]
-  | add x y hx hy => simp [hx, hy]
+  rw [← LinearMap.comp_apply, LinearMap.rTensor_comp_lTensor, ← LinearMap.comp_apply,
+    LinearMap.lTensor_comp_rTensor]
 
 /-- The subtype of a subcomodule carries the inherited right-comodule structure. -/
 noncomputable instance instComodule : Comodule R C N where
@@ -212,7 +201,7 @@ noncomputable instance instComodule : Comodule R C N where
 @[simp]
 theorem induced_coact :
     Comodule.coact (R := R) (C := C) (M := N) = N.inducedCoact :=
-  rfl
+  (rfl)
 
 /-- The inherited coaction, included back into `M ⊗ C`, is the ambient coaction. -/
 theorem subtype_rTensor_coact (n : N) :
@@ -221,7 +210,7 @@ theorem subtype_rTensor_coact (n : N) :
   subtype_rTensor_inducedCoact N n
 
 /-- The subtype map of a subcomodule as a morphism of right comodules. -/
-@[expose] noncomputable def subtype : Comodule.Hom R C N M where
+noncomputable def subtype : Comodule.Hom R C N M where
   toLinearMap := N.subtypeLinear
   map_coact := by
     ext n
@@ -230,12 +219,12 @@ theorem subtype_rTensor_coact (n : N) :
 /-- The underlying linear map of the subcomodule inclusion is the linear inclusion. -/
 @[simp]
 theorem subtype_toLinearMap : (Subcomodule.subtype N).toLinearMap = N.subtypeLinear :=
-  rfl
+  (rfl)
 
 /-- The subcomodule inclusion acts as the underlying subtype coercion. -/
 @[simp]
 theorem subtype_apply (n : N) : Subcomodule.subtype N n = n :=
-  rfl
+  (rfl)
 
 end Subcomodule
 
