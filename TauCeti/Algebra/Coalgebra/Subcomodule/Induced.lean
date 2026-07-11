@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.RingTheory.Flat.Basic
-public import TauCeti.Algebra.Coalgebra.ComoduleCat
 public import TauCeti.Algebra.Coalgebra.Subcomodule
 
 /-!
@@ -25,7 +24,6 @@ subcomodules to be usable as comodules in their own right.
 * `TauCeti.Subcomodule.inducedCoact`: the coaction on the subtype of a subcomodule.
 * `TauCeti.Subcomodule.instComodule`: the induced right-comodule structure.
 * `TauCeti.Subcomodule.subtype`: the inclusion as a comodule morphism.
-* `TauCeti.ComoduleCat.ofSubcomodule`: the bundled comodule attached to a subcomodule.
 
 ## References
 
@@ -52,13 +50,29 @@ namespace Subcomodule
 
 variable (N : Subcomodule R C M)
 
-/-- The underlying linear inclusion of a subcomodule into the ambient comodule. -/
+/-- The underlying linear inclusion of a subcomodule into the ambient comodule.
+
+This ascribes the domain as `N` itself, so it lines up with the coactions on the subtype; it is
+the submodule subtype map `N.toSubmodule.subtype` reinterpreted with that domain. -/
 @[expose] def subtypeLinear : N →ₗ[R] M :=
   N.toSubmodule.subtype
+
+omit [Module.Flat R C] in
+@[simp]
+theorem subtypeLinear_apply (n : N) : N.subtypeLinear n = (n : M) := rfl
 
 private theorem subtype_rTensor_injective :
     Function.Injective (N.subtypeLinear.rTensor C) :=
   Module.Flat.rTensor_preserves_injective_linearMap N.subtypeLinear Subtype.val_injective
+
+omit [Module.Flat R C] in
+/-- The ambient coaction of an element of a subcomodule lies in the range of the tensored
+inclusion `N ⊗ C → M ⊗ C`. -/
+private theorem coact_mem_range (n : N) :
+    ((Comodule.coact (R := R) (C := C) (M := M)).comp N.subtypeLinear) n ∈
+      LinearMap.range (N.subtypeLinear.rTensor C) := by
+  rw [LinearMap.comp_apply, LinearMap.rTensor_def, subtypeLinear_apply]
+  exact N.coact_mem n.2
 
 /-- The coaction induced on the subtype of a subcomodule.
 
@@ -66,11 +80,7 @@ It is the unique lift of the ambient coaction along `N ⊗ C → M ⊗ C`. -/
 noncomputable def inducedCoact : N →ₗ[R] N ⊗[R] C :=
   LinearMap.codRestrictOfInjective
     ((Comodule.coact (R := R) (C := C) (M := M)).comp N.subtypeLinear)
-    (N.subtypeLinear.rTensor C) (subtype_rTensor_injective N)
-    (fun n => by
-      change Comodule.coact (R := R) (C := C) (M := M) (N.carrier.subtype n) ∈
-        LinearMap.range (TensorProduct.map N.carrier.subtype (LinearMap.id : C →ₗ[R] C))
-      exact N.coact_mem n.2)
+    (N.subtypeLinear.rTensor C) (subtype_rTensor_injective N) (coact_mem_range N)
 
 /-- The induced coaction, included back into `M ⊗ C`, is the ambient coaction. -/
 @[simp]
@@ -79,11 +89,7 @@ theorem subtype_rTensor_inducedCoact (n : N) :
       Comodule.coact (R := R) (C := C) (M := M) n :=
   LinearMap.codRestrictOfInjective_comp_apply
     ((Comodule.coact (R := R) (C := C) (M := M)).comp N.subtypeLinear)
-    (N.subtypeLinear.rTensor C) (subtype_rTensor_injective N)
-    (fun n => by
-      change Comodule.coact (R := R) (C := C) (M := M) (N.carrier.subtype n) ∈
-        LinearMap.range (TensorProduct.map N.carrier.subtype (LinearMap.id : C →ₗ[R] C))
-      exact N.coact_mem n.2) n
+    (N.subtypeLinear.rTensor C) (subtype_rTensor_injective N) (coact_mem_range N) n
 
 /-- The induced coaction included into the ambient tensor product, as an equality of linear maps. -/
 @[simp]
@@ -113,11 +119,8 @@ private theorem map_rTensor_inducedCoact (t : N ⊗[R] C) :
   induction t with
   | zero => simp
   | tmul n c =>
-      simp only [TensorProduct.map_tmul, LinearMap.id_coe, id_eq]
+      simp only [TensorProduct.map_tmul, LinearMap.id_coe, id_eq, subtypeLinear_apply]
       rw [subtype_rTensor_inducedCoact]
-      change Comodule.coact (R := R) (C := C) (M := M) n ⊗ₜ[R] c =
-        Comodule.coact (R := R) (C := C) (M := M) n ⊗ₜ[R] c
-      rfl
   | add x y hx hy => simp [hx, hy]
 
 omit [Module.Flat R C] in
@@ -128,9 +131,7 @@ private theorem assoc_symm_tmul_natural (n : N) (z : C ⊗[R] C) :
   induction z with
   | zero => simp
   | tmul c₁ c₂ =>
-      change (N.subtypeLinear n ⊗ₜ[R] c₁) ⊗ₜ[R] c₂ =
-        (N.subtypeLinear n ⊗ₜ[R] c₁) ⊗ₜ[R] c₂
-      rfl
+      simp only [TensorProduct.assoc_symm_tmul, LinearMap.rTensor_tmul]
   | add x y hx hy => simpa [TensorProduct.tmul_add, map_add] using congrArg₂ (· + ·) hx hy
 
 omit [Module.Flat R C] in
@@ -153,7 +154,8 @@ private theorem lTensor_counit_natural (t : N ⊗[R] C) :
       Coalgebra.counit.lTensor M (N.subtypeLinear.rTensor C t) := by
   induction t with
   | zero => simp
-  | tmul n c => rfl
+  | tmul n c =>
+      simp only [LinearMap.lTensor_tmul, LinearMap.rTensor_tmul]
   | add x y hx hy => simp [hx, hy]
 
 /-- The subtype of a subcomodule carries the inherited right-comodule structure. -/
@@ -173,19 +175,12 @@ noncomputable instance instComodule : Comodule R C N where
           TensorProduct.map (N.subtypeLinear.rTensor C) (LinearMap.id : C →ₗ[R] C)
             (TensorProduct.map N.inducedCoact (LinearMap.id : C →ₗ[R] C)
               (N.inducedCoact n)) := by
-            rw [LinearEquiv.symm_apply_apply]
-            rfl
+            rw [LinearEquiv.symm_apply_apply, LinearMap.rTensor_def]
       _ =
           (Comodule.coact (R := R) (C := C) (M := M)).rTensor C
             (Comodule.coact (R := R) (C := C) (M := M) n) := by
             rw [map_rTensor_inducedCoact]
-            change TensorProduct.map (Comodule.coact (R := R) (C := C) (M := M))
-                (LinearMap.id : C →ₗ[R] C)
-                (N.subtypeLinear.rTensor C (N.inducedCoact n)) =
-              TensorProduct.map (Comodule.coact (R := R) (C := C) (M := M))
-                (LinearMap.id : C →ₗ[R] C)
-                (Comodule.coact (R := R) (C := C) (M := M) n)
-            rw [subtype_rTensor_inducedCoact]
+            simp only [← LinearMap.rTensor_def, subtype_rTensor_inducedCoact]
       _ =
           (TensorProduct.assoc R M C C).symm
             (Coalgebra.comul.lTensor M
@@ -211,8 +206,7 @@ noncomputable instance instComodule : Comodule R C N where
       _ = (n : M) ⊗ₜ[R] 1 := by
             simp
       _ = N.subtypeLinear.rTensor R (n ⊗ₜ[R] 1) := by
-            change (n : M) ⊗ₜ[R] 1 = (n : M) ⊗ₜ[R] 1
-            rfl
+            rw [LinearMap.rTensor_tmul, subtypeLinear_apply]
 
 /-- The inherited coaction on a subcomodule is `Subcomodule.inducedCoact`. -/
 @[simp]
@@ -228,14 +222,14 @@ theorem subtype_rTensor_coact (n : N) :
 
 /-- The subtype map of a subcomodule as a morphism of right comodules. -/
 @[expose] noncomputable def subtype : Comodule.Hom R C N M where
-  toLinearMap := N.toSubmodule.subtype
+  toLinearMap := N.subtypeLinear
   map_coact := by
     ext n
     exact subtype_rTensor_coact N n
 
-/-- The underlying linear map of the subcomodule inclusion is the submodule subtype map. -/
+/-- The underlying linear map of the subcomodule inclusion is the linear inclusion. -/
 @[simp]
-theorem subtype_toLinearMap : (Subcomodule.subtype N).toLinearMap = N.toSubmodule.subtype :=
+theorem subtype_toLinearMap : (Subcomodule.subtype N).toLinearMap = N.subtypeLinear :=
   rfl
 
 /-- The subcomodule inclusion acts as the underlying subtype coercion. -/
@@ -244,37 +238,5 @@ theorem subtype_apply (n : N) : Subcomodule.subtype N n = n :=
   rfl
 
 end Subcomodule
-
-namespace ComoduleCat
-
-variable (R C)
-
-/-- A subcomodule, bundled as a right comodule via its inherited coaction. -/
-noncomputable abbrev ofSubcomodule (N : Subcomodule R C M) :
-    _root_.TauCeti.ComoduleCat.{u, v, w} R C :=
-  _root_.TauCeti.ComoduleCat.of R C N
-
-variable {R C}
-
-/-- The bundled subcomodule has the inherited coaction. -/
-@[simp]
-theorem ofSubcomodule_coact (N : Subcomodule R C M) :
-    Comodule.coact (R := R) (C := C) (M := ofSubcomodule (R := R) (C := C) N) =
-      N.inducedCoact :=
-  rfl
-
-/-- The inclusion of a bundled subcomodule into its ambient comodule. -/
-noncomputable abbrev ofSubcomoduleSubtype (N : Subcomodule R C M) :
-    ofSubcomodule (R := R) (C := C) N ⟶ _root_.TauCeti.ComoduleCat.of R C M :=
-  Subcomodule.subtype N
-
-/-- The bundled subcomodule inclusion acts as the subtype coercion. -/
-@[simp]
-theorem ofSubcomoduleSubtype_apply (N : Subcomodule R C M)
-    (n : ofSubcomodule (R := R) (C := C) N) :
-    ofSubcomoduleSubtype (R := R) (C := C) N n = n :=
-  rfl
-
-end ComoduleCat
 
 end TauCeti
