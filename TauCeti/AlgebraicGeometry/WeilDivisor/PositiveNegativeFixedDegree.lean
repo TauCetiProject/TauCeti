@@ -39,28 +39,6 @@ variable {X : Type*} {d : ℕ}
 
 noncomputable section
 
-/-! ### Point divisors -/
-
-/-- A point divisor, packaged as an effective divisor of degree `1`. -/
-abbrev ofPoint (x : X) : EffectiveDivisorOfDegree X 1 :=
-  ⟨WeilDivisor.ofPoint x, WeilDivisor.isEffective_ofPoint x, WeilDivisor.degree_ofPoint x⟩
-
-/-- The underlying Weil divisor of a fixed-degree point divisor is the usual point divisor. -/
-@[simp]
-lemma coe_ofPoint (x : X) :
-    (ofPoint x : WeilDivisor X) = WeilDivisor.ofPoint x :=
-  rfl
-
-/-- The coefficient of a fixed-degree point divisor at its point is `1`. -/
-lemma coeff_ofPoint_self (x : X) :
-    coeff (ofPoint x : WeilDivisor X) x = 1 :=
-  WeilDivisor.coeff_ofPoint_self x
-
-/-- The coefficient of a fixed-degree point divisor away from its point is `0`. -/
-lemma coeff_ofPoint_of_ne {x y : X} (h : y ≠ x) :
-    coeff (ofPoint x : WeilDivisor X) y = 0 :=
-  WeilDivisor.coeff_ofPoint_of_ne h
-
 /-! ### Positive and negative parts -/
 
 /-- The positive part of a Weil divisor, packaged as an effective divisor of its own degree. -/
@@ -141,18 +119,24 @@ lemma positivePart_pointDifference {x y : X} (h : x ≠ y) :
     positivePart (WeilDivisor.pointDifference x y) =
       EffectiveDivisorOfDegree.cast (by
         rw [WeilDivisor.posPart_pointDifference h, WeilDivisor.degree_ofPoint]
-        simp) (ofPoint x) := by
-  ext
-  simp [WeilDivisor.posPart_pointDifference h]
+        simp) (ofSym (Sym.oneEquiv x)) := by
+  ext z
+  simp only [coe_cast, WeilDivisor.posPart_pointDifference h, coeff_ofSym]
+  rcases eq_or_ne z x with rfl | hzx
+  · simp
+  · simp [hzx]
 
 /-- For distinct points, the packaged negative part of `[x] - [y]` is `[y]`. -/
 lemma negativePart_pointDifference {x y : X} (h : x ≠ y) :
     negativePart (WeilDivisor.pointDifference x y) =
       EffectiveDivisorOfDegree.cast (by
         rw [WeilDivisor.negPart_pointDifference h, WeilDivisor.degree_ofPoint]
-        simp) (ofPoint y) := by
-  ext
-  simp [WeilDivisor.negPart_pointDifference h]
+        simp) (ofSym (Sym.oneEquiv y)) := by
+  ext z
+  simp only [coe_cast, WeilDivisor.negPart_pointDifference h, coeff_ofSym]
+  rcases eq_or_ne z y with rfl | hzy
+  · simp
+  · simp [hzy]
 
 end
 
