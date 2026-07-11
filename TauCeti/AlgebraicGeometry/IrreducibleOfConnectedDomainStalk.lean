@@ -127,66 +127,52 @@ are in bijection with the minimal primes of `R` contained in `p`. -/
 private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : PrimeSpectrum R)
     (S : Submonoid R) (A : Type*) [CommRing A] [Algebra R A] [IsLocalization S A]
     (hS : S = p.asIdeal.primeCompl) :
-    minimalPrimes A ≃ { q : minimalPrimes R // q.val ≤ p.asIdeal } where
-  toFun q' := ⟨⟨q'.val.comap (algebraMap R A), by
-    have hMap := IsLocalization.minimalPrimes_map S A (⊥ : Ideal R)
-    rw [Ideal.map_bot] at hMap
-    exact (Set.ext_iff.mp hMap q'.val).mp q'.property⟩, comap_le_p_of_mem_minimalPrimes p S A hS q'⟩
-  invFun q := ⟨q.val.val.map (algebraMap R A), by
-    have hMap := IsLocalization.minimalPrimes_map S A (⊥ : Ideal R)
-    rw [Ideal.map_bot] at hMap
-    have hI' : Disjoint (S : Set R) (q.val.val : Set R) := by
-      rw [hS, disjoint_primeCompl_iff]
-      exact q.property
-    haveI : q.val.val.IsPrime := q.val.property.1.1
-    have hEq := IsLocalization.under_map_of_isPrime_disjoint S A ‹_› hI'
-    have h_in : Ideal.under R (Ideal.map (algebraMap R A) q.val.val) ∈ minimalPrimes R :=
-      hEq.symm ▸ q.val.property
-    exact (Set.ext_iff.mp hMap (Ideal.map (algebraMap R A) q.val.val)).mpr h_in⟩
-  left_inv q' := Subtype.ext (IsLocalization.map_under S A q'.val)
-  right_inv q := Subtype.ext <| Subtype.ext <| by
-    have hI' : Disjoint (S : Set R) (q.val.val : Set R) := by
-      rw [hS, disjoint_primeCompl_iff]
-      exact q.property
-    haveI : q.val.val.IsPrime := q.val.property.1.1
-    exact IsLocalization.under_map_of_isPrime_disjoint S A ‹_› hI'
-
-/-- Mathlib's `minimalPrimes.equivIrreducibleComponents` is defined via a tactic block (`by rw ...`)
-which inserts `Eq.ndrec` making definitional equality evaluation fail with an
-`Application type mismatch` in the kernel (due to `x.2.1` on a `Set`).
-Because Mathlib provides no API lemmas for it, we must construct the equivalence manually
-using `vanishingIdeal` and `zeroLocus`. -/
-private noncomputable def vanishingIdealEquiv (R : Type*) [CommRing R] :
-    irreducibleComponents (PrimeSpectrum R) ≃ minimalPrimes R := by
-  let f : irreducibleComponents (PrimeSpectrum R) → minimalPrimes R := fun c ↦
-    ⟨vanishingIdeal c.val, by
-      have hc : IsClosed (c.val : Set (PrimeSpectrum R)) :=
-        isClosed_of_mem_irreducibleComponents c.val c.property
-      have h : closure (c.val : Set (PrimeSpectrum R)) ∈
-          irreducibleComponents (PrimeSpectrum R) := by
-        rw [hc.closure_eq]
-        exact c.property
-      exact PrimeSpectrum.vanishingIdeal_mem_minimalPrimes.mpr h⟩
-  have h_inj : Function.Injective f := fun c1 c2 h => Subtype.ext (by
-    have h1 := congrArg Subtype.val h
-    have hc1 : IsClosed (c1.val : Set (PrimeSpectrum R)) :=
-      isClosed_of_mem_irreducibleComponents c1.val c1.property
-    have hc2 : IsClosed (c2.val : Set (PrimeSpectrum R)) :=
-      isClosed_of_mem_irreducibleComponents c2.val c2.property
-    have h2 := congrArg (fun (I : Ideal R) => PrimeSpectrum.zeroLocus (I : Set R)) h1
-    rw [PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure c1.val,
-        PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure c2.val] at h2
-    rw [hc1.closure_eq, hc2.closure_eq] at h2
-    exact h2
-  )
-  have h_surj : Function.Surjective f := fun q => by
-    have h_eq := Set.ext_iff.mp
-      (PrimeSpectrum.vanishingIdeal_irreducibleComponents (R := R)) (q.val : Ideal R)
-    have hq : q.val ∈ vanishingIdeal '' irreducibleComponents (PrimeSpectrum R) :=
-      h_eq.mpr q.property
-    rcases hq with ⟨c, hc, hc_eq⟩
-    exact ⟨⟨c, hc⟩, Subtype.ext hc_eq⟩
-  exact Equiv.ofBijective f ⟨h_inj, h_surj⟩
+    minimalPrimes A ≃ { q : minimalPrimes R // q.val ≤ p.asIdeal } := by
+  let e := IsLocalization.primeSpectrumOrderIso S A
+  let f : minimalPrimes A → { q : minimalPrimes R // q.val ≤ p.asIdeal } := fun q =>
+    let q_spec : PrimeSpectrum A := ⟨q.val, q.property.1.1⟩
+    let R_spec : PrimeSpectrum R := (e q_spec : PrimeSpectrum R)
+    have hq_disj : Disjoint (S : Set R) (R_spec.asIdeal : Set R) := (e q_spec).property
+    have hq_le : R_spec.asIdeal ≤ p.asIdeal := by
+      have h1 : Disjoint (p.asIdeal.primeCompl : Set R) (R_spec.asIdeal : Set R) := by
+        rw [← hS]
+        exact hq_disj
+      exact (disjoint_primeCompl_iff (I := p.asIdeal)).mp h1
+    have hq_min : R_spec.asIdeal ∈ minimalPrimes R := by
+      have hMap := IsLocalization.minimalPrimes_map S A (⊥ : Ideal R)
+      rw [Ideal.map_bot] at hMap
+      have h1 : q.val ∈ minimalPrimes A := q.property
+      exact (Set.ext_iff.mp hMap q.val).mp h1
+    ⟨⟨R_spec.asIdeal, hq_min⟩, hq_le⟩
+  let inv : { q : minimalPrimes R // q.val ≤ p.asIdeal } → minimalPrimes A := fun q =>
+    let R_spec_Prime : PrimeSpectrum R := ⟨q.val.val, q.val.property.1.1⟩
+    have hDisj : Disjoint (S : Set R) (R_spec_Prime.asIdeal : Set R) := by
+      rw [hS]
+      exact (disjoint_primeCompl_iff (I := p.asIdeal)).mpr q.property
+    let A_spec : PrimeSpectrum A := (e.symm ⟨R_spec_Prime, hDisj⟩ : PrimeSpectrum A)
+    ⟨A_spec.asIdeal, by
+      have hMap := IsLocalization.minimalPrimes_map S A (⊥ : Ideal R)
+      rw [Ideal.map_bot] at hMap
+      haveI : q.val.val.IsPrime := q.val.property.1.1
+      have hEq := IsLocalization.under_map_of_isPrime_disjoint S A ‹_› hDisj
+      have h_in : Ideal.under R (Ideal.map (algebraMap R A) q.val.val) ∈ minimalPrimes R :=
+        hEq.symm ▸ q.val.property
+      exact (Set.ext_iff.mp hMap (Ideal.map (algebraMap R A) q.val.val)).mpr h_in⟩
+  have h_left : Function.LeftInverse inv f := fun q => by
+    apply Subtype.ext
+    let q_spec : PrimeSpectrum A := ⟨q.val, q.property.1.1⟩
+    have h1 := e.left_inv q_spec
+    exact congrArg (fun (x : PrimeSpectrum A) => x.asIdeal) h1
+  have h_right : Function.RightInverse inv f := fun q => by
+    apply Subtype.ext; apply Subtype.ext
+    let R_spec_Prime : PrimeSpectrum R := ⟨q.val.val, q.val.property.1.1⟩
+    have hDisj : Disjoint (S : Set R) (R_spec_Prime.asIdeal : Set R) := by
+      rw [hS]
+      exact (disjoint_primeCompl_iff (I := p.asIdeal)).mpr q.property
+    have h1 := e.right_inv ⟨R_spec_Prime, hDisj⟩
+    exact congrArg (fun (x : {p : PrimeSpectrum R // Disjoint (S:Set R) (p.asIdeal : Set R)}) =>
+      (x : PrimeSpectrum R).asIdeal) h1
+  exact { toFun := f, invFun := inv, left_inv := h_left, right_inv := h_right }
 
 /-- Irreducible components of `Spec R` containing a point `p`
 correspond to minimal primes below `p`, via the
@@ -197,22 +183,29 @@ private noncomputable def
     { c : irreducibleComponents (PrimeSpectrum R) //
       p ∈ (c : Set (PrimeSpectrum R)) } ≃
     { q : minimalPrimes R // q.val ≤ p.asIdeal } := by
-  let e := (vanishingIdealEquiv R)
-  refine Equiv.subtypeEquiv e (fun c => ?_)
-  have hc : IsClosed (c.val : Set (PrimeSpectrum R)) :=
-    isClosed_of_mem_irreducibleComponents c.val c.property
-  have h1 : p ∈ (c.val : Set (PrimeSpectrum R)) ↔
-      vanishingIdeal (c.val : Set (PrimeSpectrum R)) ≤ p.asIdeal :=
-    calc p ∈ (c.val : Set (PrimeSpectrum R))
-      _ ↔ p ∈ PrimeSpectrum.zeroLocus (vanishingIdeal c.val : Set R) := by
-        have h_eq : (c.val : Set (PrimeSpectrum R)) = zeroLocus (vanishingIdeal c.val) :=
-          hc.closure_eq.symm.trans
-            (PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure c.val).symm
-        exact Iff.of_eq (congrArg (fun s => p ∈ s) h_eq)
-      _ ↔ (vanishingIdeal (c.val : Set (PrimeSpectrum R)) : Set R) ⊆ p.asIdeal :=
-        PrimeSpectrum.mem_zeroLocus (x := p) (s := (vanishingIdeal c.val : Set R))
-      _ ↔ vanishingIdeal (c.val : Set (PrimeSpectrum R)) ≤ p.asIdeal := Iff.rfl
-  exact h1
+  let e := minimalPrimes.equivIrreducibleComponents (R := R)
+  let f : { c : irreducibleComponents (PrimeSpectrum R) // p ∈ (c : Set (PrimeSpectrum R)) } →
+      { q : minimalPrimes R // q.val ≤ p.asIdeal } := fun c =>
+    ⟨e.symm c.val, by
+      have h1 : p ∈ (c.val.val : Set (PrimeSpectrum R)) := c.property
+      have hEq := (PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure c.val.val).symm.trans
+        (isClosed_of_mem_irreducibleComponents c.val.val c.val.property).closure_eq.symm
+      have h2 : p ∈ PrimeSpectrum.zeroLocus (e.symm c.val).val := by
+        exact (congrArg (fun s => p ∈ s) hEq).symm.mp h1
+      exact PrimeSpectrum.mem_zeroLocus.mp h2⟩
+  let inv : { q : minimalPrimes R // q.val ≤ p.asIdeal } →
+      { c : irreducibleComponents (PrimeSpectrum R) // p ∈ (c : Set (PrimeSpectrum R)) } := fun q =>
+    ⟨e q.val, by
+      have hEq := (PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure (e q.val).val).symm.trans
+        (isClosed_of_mem_irreducibleComponents (e q.val).val (e q.val).property).closure_eq.symm
+      rw [hEq]
+      exact PrimeSpectrum.mem_zeroLocus.mpr q.property⟩
+  exact {
+    toFun := f,
+    invFun := inv,
+    left_inv := fun c => Subtype.ext (e.right_inv c.val),
+    right_inv := fun q => Subtype.ext (e.left_inv q.val)
+  }
 
 /-- For an affine scheme Spec R, the minimal prime ideals of the local ring (stalk)
 at a point p (which is a prime ideal of R) are in bijection with the irreducible components
