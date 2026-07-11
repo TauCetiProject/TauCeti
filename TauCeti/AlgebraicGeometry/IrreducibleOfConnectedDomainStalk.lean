@@ -133,8 +133,7 @@ private def _root_.Homeomorph.irreducibleComponentsEquiv {X Y : Type*} [Topologi
   (Equiv.Set.congr h.toEquiv).subtypeEquiv (fun _ ↦ h.mem_irreducibleComponents_image.symm)
 
 
-/-- Ring isomorphism preserves minimal primes,
-by transporting topological irreducible components across the prime spectrum homeomorphism. -/
+/-- A ring isomorphism induces an equivalence of minimal primes. -/
 private noncomputable def minimalPrimes_equiv_of_ringEquiv
     {A B : Type*} [CommRing A] [CommRing B] (e : A ≃+* B) :
     minimalPrimes A ≃ minimalPrimes B :=
@@ -204,7 +203,7 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
     left_inv := fun _ ↦ rfl,
     right_inv := fun _ ↦ rfl })
 
-/-- Helper lemma to rewrite the application of a cast/mpr of an `OrderIso` over subtypes. -/
+/-- Value of the cast of an order isomorphism over subtypes. -/
 private lemma val_mpr_orderIso {α : Type u} [LE α] {Y : Type u} [LE Y] {P Q : Y → Prop}
     (h : P = Q) (f : α ≃o (Subtype P)ᵒᵈ) (q : α) :
     Subtype.val (OrderDual.ofDual
@@ -233,8 +232,7 @@ private theorem val_equivIrreducibleComponents (R : Type*) [CommRing R]
   exact PrimeSpectrum.closure_singleton ⟨q.val, q.property.1.1⟩
 
 /-- Irreducible components of `Spec R` containing a point `p`
-correspond to minimal primes below `p`, via the
-`zeroLocus`/`vanishingIdeal` Galois correspondence. -/
+are in bijection with minimal primes of `R` contained in `p`. -/
 private noncomputable def
     irreducibleComponentsContainingEquivMinimalPrimesLe
     (R : Type*) [CommRing R] (p : PrimeSpectrum R) :
