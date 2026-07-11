@@ -221,7 +221,6 @@ theorem induced_coact :
   rfl
 
 /-- The inherited coaction, included back into `M ⊗ C`, is the ambient coaction. -/
-@[simp]
 theorem subtype_rTensor_coact (n : N) :
     N.subtypeLinear.rTensor C (Comodule.coact (R := R) (C := C) (M := N) n) =
       Comodule.coact (R := R) (C := C) (M := M) n :=
