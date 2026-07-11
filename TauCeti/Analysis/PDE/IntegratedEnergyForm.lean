@@ -32,6 +32,9 @@ derivative: once Lane A supplies `W^{k,p}(Ω)`, its value-gradient jets can feed
   Bochner-integrability hypotheses.
 * `TauCeti.PDE.norm_energyFormIntegral_le_of_bounds`: the integrated boundedness estimate
   obtained from the pointwise coefficient bounds.
+* `TauCeti.PDE.integral_min_lam_mass_mul_norm_sq_le_energyFormIntegral_zero_drift_self`:
+  the zero-drift integrated diagonal lower bound from a principal quadratic lower bound and
+  nonnegative mass.
 * `TauCeti.PDE.UniformlyEllipticOn.norm_energyFormIntegral_le_on`: the corresponding
   boundedness estimate from uniform ellipticity on an a.e. domain.
 -/
@@ -436,6 +439,38 @@ lemma garding_energyFormIntegral_self_of_mass_lower_bound_of_bounds (hlam : 0 < 
   filter_upwards [ha, hb, hc] with x hax hbx hcx
   exact garding_energyIntegrand_self_of_mass_lower_bound_of_bounds hlam
     (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hbx hcx (U x)
+
+/-- Integrated zero-drift diagonal lower bound from an a.e. principal quadratic lower bound
+and a.e. nonnegative mass coefficient. -/
+lemma integral_min_lam_mass_mul_norm_sq_le_energyFormIntegral_zero_drift_self
+    (hlam : 0 ≤ lam)
+    (ha : ∀ᵐ x ∂μ, ∀ ξ : EuclideanSpace ℝ n,
+      lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ))
+    (hc : ∀ᵐ x ∂μ, 0 ≤ c x)
+    (hlower : Integrable (fun x => min lam (c x) * ‖U x‖ ^ 2) μ)
+    (henergy : Integrable (fun x => energyIntegrand (a x) 0 (c x) (U x) (U x)) μ) :
+    ∫ x, (min lam (c x) * ‖U x‖ ^ 2) ∂μ
+      ≤ energyFormIntegral μ a (fun _ => 0) c U U := by
+  rw [energyFormIntegral_def]
+  refine integral_mono_ae hlower henergy ?_
+  filter_upwards [ha, hc] with x hax hcx
+  exact min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self hlam
+    (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ) hcx (U x)
+
+/-- A zero-drift diagonal integrated energy form is nonnegative when the principal quadratic
+form and mass coefficient are a.e. nonnegative. -/
+lemma energyFormIntegral_zero_drift_self_nonneg
+    (ha : ∀ᵐ x ∂μ, ∀ ξ : EuclideanSpace ℝ n, 0 ≤ ξ ⬝ᵥ (a x *ᵥ ξ))
+    (hc : ∀ᵐ x ∂μ, 0 ≤ c x) :
+    0 ≤ energyFormIntegral μ a (fun _ => 0) c U U := by
+  rw [energyFormIntegral_def]
+  refine integral_nonneg_of_ae ?_
+  filter_upwards [ha, hc] with x hax hcx
+  have hpoint :=
+    min_lam_mass_mul_norm_sq_le_energyIntegrand_zero_drift_self (lam := 0) (c₀ := c x)
+      le_rfl (fun ξ => by simpa [toQuadraticForm'_eq_dotProduct] using hax ξ)
+      hcx (U x)
+  simpa [min_eq_left hcx] using hpoint
 
 /-- Integrated explicit diagonal lower bound from a.e. lower ellipticity, a.e.
 lower-order coefficient hypotheses, and a mass floor that dominates the drift defect. -/

@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PDE.IntegratedSymmetricEnergy
+public import TauCeti.Analysis.PDE.IntegratedEnergyForm
 
 /-!
 # Lower bounds for the shifted-Laplacian energy form
@@ -64,20 +64,24 @@ lemma integral_min_one_mass_mul_norm_sq_le_energyFormIntegral_one_zero_mass_self
       (fun x => energyIntegrand (1 : Matrix n n ℝ) 0 (m x) (U x) (U x)) μ) :
     ∫ x, (min 1 (m x) * ‖U x‖ ^ 2) ∂μ
       ≤ energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U U := by
-  rw [energyFormIntegral_def]
-  refine integral_mono_ae hlower henergy ?_
-  filter_upwards [hm] with x hmx
-  exact min_one_mass_mul_norm_sq_le_energyIntegrand_one_zero_mass_self hmx (U x)
+  refine integral_min_lam_mass_mul_norm_sq_le_energyFormIntegral_zero_drift_self
+    (μ := μ) (a := fun _ => (1 : Matrix n n ℝ)) (c := m) (U := U) zero_le_one ?_ hm
+    hlower henergy
+  filter_upwards with x
+  intro ξ
+  rw [← toQuadraticForm'_eq_dotProduct, toQuadraticForm'_one]
+  simp
 
 /-- The shifted-Laplacian diagonal form is nonnegative when the mass is a.e. nonnegative. -/
 lemma energyFormIntegral_one_zero_mass_self_nonneg
     (hm : ∀ᵐ x ∂μ, 0 ≤ m x) :
     0 ≤ energyFormIntegral μ (fun _ => (1 : Matrix n n ℝ)) (fun _ => 0) m U U := by
-  rw [energyFormIntegral_def]
-  refine integral_nonneg_of_ae ?_
-  filter_upwards [hm] with x hmx
-  exact (mul_nonneg (le_min zero_le_one hmx) (sq_nonneg ‖U x‖)).trans
-    (min_one_mass_mul_norm_sq_le_energyIntegrand_one_zero_mass_self hmx (U x))
+  refine energyFormIntegral_zero_drift_self_nonneg
+    (μ := μ) (a := fun _ => (1 : Matrix n n ℝ)) (c := m) (U := U) ?_ hm
+  filter_upwards with x
+  intro ξ
+  rw [← toQuadraticForm'_eq_dotProduct, toQuadraticForm'_one]
+  exact sq_nonneg ‖ξ‖
 
 /-- The Dirichlet model `-Δ` has nonnegative diagonal energy. -/
 lemma energyFormIntegral_one_zero_zero_self_nonneg :
