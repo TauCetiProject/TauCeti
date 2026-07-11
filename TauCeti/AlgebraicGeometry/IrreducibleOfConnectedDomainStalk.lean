@@ -44,21 +44,23 @@ private lemma closure_image_mem_irreducibleComponents {α β : Type*}
     {f : α → β} (hf : IsOpenEmbedding f) {c : Set α}
     (hc : c ∈ irreducibleComponents α) :
     closure (f '' c) ∈ irreducibleComponents β := by
-  have hIrred : IsIrreducible (closure (f '' c)) :=
-    isIrreducible_iff_closure.mpr (hc.1.image f hf.continuous.continuousOn)
-  refine ⟨hIrred, fun u hu hSub => ?_⟩
-  have hClIrred : IsIrreducible (closure u) := isIrreducible_iff_closure.mpr hu
-  have ⟨x, hx⟩ := hc.1.nonempty
-  have hClNonempty : ((closure u) ∩ range f).Nonempty :=
-    ⟨f x, subset_closure (hSub (subset_closure (mem_image_of_mem f hx))), ⟨x, rfl⟩⟩
-  have hPreIrred : IsIrreducible (f ⁻¹' (closure u)) :=
-    IsIrreducible.preimage hClIrred hf hClNonempty
-  have hSubPre : c ⊆ f ⁻¹' (closure u) :=
-    image_subset_iff.mp (subset_closure.trans (hSub.trans subset_closure))
-  have hEq : c = f ⁻¹' (closure u) := hSubPre.antisymm (hc.2 hPreIrred hSubPre)
-  rw [hEq, closure_image_preimage_of_isPreirreducible f hf.isOpenMap (closure u)
-    (nonempty_preimage_iff.mpr hClNonempty) hClIrred.2 isClosed_closure]
-  exact subset_closure
+  obtain ⟨C, hC, hsub⟩ := exists_mem_irreducibleComponents_subset_of_isIrreducible
+    (closure (f '' c)) (isIrreducible_iff_closure.mpr (hc.1.image f hf.continuous.continuousOn))
+  have h_nonempty : (C ∩ range f).Nonempty := by
+    obtain ⟨x, hx⟩ := hc.1.nonempty
+    have hxC : f x ∈ C := hsub (subset_closure (mem_image_of_mem f hx))
+    exact ⟨f x, hxC, ⟨x, rfl⟩⟩
+  have h_pre := preimage_mem_irreducibleComponents hC hf h_nonempty
+  have h_eq : c = f ⁻¹' C := by
+    have h_sub : c ⊆ f ⁻¹' C := fun x hx ↦ hsub (subset_closure (mem_image_of_mem f hx))
+    exact h_sub.antisymm (hc.2 h_pre.1 h_sub)
+  have hC_eq : C = closure (f '' c) := by
+    rw [h_eq]
+    have := closure_image_preimage_of_isPreirreducible f hf.isOpenMap C
+      (by obtain ⟨_, hC_mem, ⟨x, rfl⟩⟩ := h_nonempty; exact ⟨x, hC_mem⟩) hC.1.2
+      (isClosed_of_mem_irreducibleComponents C hC)
+    exact this.symm
+  rwa [← hC_eq]
 
 /-- Given an open embedding, irreducible components containing a point `x` are
 in bijection with irreducible components containing `f x`. -/
@@ -89,27 +91,69 @@ private def irreducibleComponents_containing_equiv_of_isOpenEmbedding
       ⟨x, c'.property⟩ c'.val.property.1.2
       (isClosed_of_mem_irreducibleComponents c'.val.val c'.val.property)
 
+/-- Irreducibility is preserved under homeomorphism. -/
+private lemma _root_.Homeomorph.isIrreducible_image {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y]
+    (h : X ≃ₜ Y) {s : Set X} : IsIrreducible (h '' s) ↔ IsIrreducible s := by
+  constructor
+  · intro hs
+    have := hs.image h.symm h.symm.continuous.continuousOn
+    rw [← image_comp] at this
+    rwa [h.symm_comp_self, image_id] at this
+  · intro hs
+    exact hs.image h h.continuous.continuousOn
+
+/-- Irreducible components are preserved under homeomorphism. -/
+private lemma _root_.Homeomorph.mem_irreducibleComponents_image {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] (h : X ≃ₜ Y) {s : Set X} :
+    h '' s ∈ irreducibleComponents Y ↔ s ∈ irreducibleComponents X := by
+  rw [irreducibleComponents_eq_maximals_closed, irreducibleComponents_eq_maximals_closed]
+  dsimp [Maximal]
+  rw [h.isClosed_image, h.isIrreducible_image]
+  constructor
+  · rintro ⟨⟨h1, h2⟩, h3⟩
+    refine ⟨⟨h1, h2⟩, fun u hu hsu ↦ ?_⟩
+    have h4 := h3 ⟨h.isClosed_image.mpr hu.1,
+      h.isIrreducible_image.mpr hu.2⟩ (image_mono hsu)
+    exact (Set.image_subset_image_iff h.injective).mp h4
+  · rintro ⟨⟨h1, h2⟩, h3⟩
+    refine ⟨⟨h1, h2⟩, fun u hu hsu ↦ ?_⟩
+    have h4 := h3 ⟨h.symm.isClosed_image.mpr hu.1,
+      h.symm.isIrreducible_image.mpr hu.2⟩
+    have hsub : s ⊆ h.symm '' u := by
+      rwa [← Set.image_subset_image_iff h.injective, ← image_comp,
+        h.self_comp_symm, image_id]
+    rw [← Set.image_subset_image_iff h.symm.injective, ← image_comp,
+      h.symm_comp_self, image_id]
+    exact h4 hsub
+
+/-- Equivalence of irreducible components under homeomorphism. -/
+private def _root_.Homeomorph.irreducibleComponentsEquiv {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] (h : X ≃ₜ Y) : irreducibleComponents X ≃ irreducibleComponents Y :=
+  (Equiv.Set.congr h.toEquiv).subtypeEquiv (fun _ ↦ h.mem_irreducibleComponents_image.symm)
+
+
 /-- Ring isomorphism preserves minimal primes,
-via `Ideal.minimalPrimes_map_of_surjective`. -/
+by transporting topological irreducible components across the prime spectrum homeomorphism. -/
 private noncomputable def minimalPrimes_equiv_of_ringEquiv
-    {A B : Type*} [CommRing A] [CommRing B]
-    (e : A ≃+* B) : minimalPrimes A ≃ minimalPrimes B := by
-  have hker : RingHom.ker e.toRingHom = ⊥ :=
-    (RingHom.injective_iff_ker_eq_bot _).mp e.injective
-  have himg : Ideal.map e.toRingHom '' minimalPrimes A =
-      minimalPrimes B := by
-    have h := Ideal.minimalPrimes_map_of_surjective
-      (f := e.toRingHom) e.surjective (⊥ : Ideal A)
-    rw [Ideal.map_bot, hker, bot_sup_eq] at h
-    exact h.symm
-  have hinj : Function.Injective (Ideal.map e.toRingHom) :=
-    fun I J h => by
-      rw [← Ideal.comap_map_of_bijective e.toRingHom
-            e.bijective (I := I),
-         ← Ideal.comap_map_of_bijective e.toRingHom
-            e.bijective (I := J), h]
-  exact (Equiv.Set.image _ _ hinj).trans
-    (Equiv.setCongr himg)
+    {A B : Type*} [CommRing A] [CommRing B] (e : A ≃+* B) :
+    minimalPrimes A ≃ minimalPrimes B :=
+  let eC := Homeomorph.irreducibleComponentsEquiv
+    (homeomorphOfRingEquiv e).symm
+  let eC_dual : (irreducibleComponents (PrimeSpectrum A))ᵒᵈ ≃
+      (irreducibleComponents (PrimeSpectrum B))ᵒᵈ :=
+    { toFun := fun x ↦ OrderDual.toDual (eC.symm (OrderDual.ofDual x)),
+      invFun := fun y ↦ OrderDual.toDual (eC (OrderDual.ofDual y)),
+      left_inv := fun x ↦ by
+        change OrderDual.toDual (eC (eC.symm (OrderDual.ofDual x))) = x
+        rw [Equiv.apply_symm_apply]
+        rfl,
+      right_inv := fun y ↦ by
+        change OrderDual.toDual (eC.symm (eC (OrderDual.ofDual y))) = y
+        rw [Equiv.symm_apply_apply]
+        rfl }
+  (minimalPrimes.equivIrreducibleComponents A).toEquiv.trans
+    (eC_dual.trans (minimalPrimes.equivIrreducibleComponents B).symm.toEquiv)
 
 /-- An ideal is disjoint from the prime complement of a prime ideal `I`
 if and only if it is contained in `I`. -/
