@@ -105,7 +105,7 @@ private theorem subtype_rTensor_tensor_injective :
     (N.subtypeLinear.rTensor C) (subtype_rTensor_injective N)
 
 omit [Module.Flat R C] in
-private theorem subtype_rTensor_lTensor_injective :
+private theorem subtype_rTensor_R_injective :
     Function.Injective (N.subtypeLinear.rTensor R) :=
   Module.Flat.rTensor_preserves_injective_linearMap N.subtypeLinear
     Subtype.val_injective
@@ -184,7 +184,7 @@ noncomputable instance instComodule : Comodule R C N where
             rw [subtype_rTensor_inducedCoact]
   lTensor_counit_comp_coact := by
     ext n
-    apply subtype_rTensor_lTensor_injective N
+    apply subtype_rTensor_R_injective N
     simp only [LinearMap.comp_apply]
     calc
       N.subtypeLinear.rTensor R
