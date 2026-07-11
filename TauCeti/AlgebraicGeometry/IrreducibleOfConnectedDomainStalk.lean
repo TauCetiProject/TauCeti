@@ -127,49 +127,38 @@ private lemma comap_le_p_of_mem_minimalPrimes {R : Type*} [CommRing R] (p : Prim
   have hDisj := (IsLocalization.isPrime_iff_isPrime_disjoint S A q'.val).mp ‹_› |>.2
   rwa [hS, disjoint_primeCompl_iff] at hDisj
 
-/-- Equivalence between minimal primes of `R` and the prime spectrum elements
-whose ideal is a minimal prime. -/
-private def primeSpectrumMinimalPrimesEquiv (R : Type*) [CommRing R] :
-    minimalPrimes R ≃ { q : PrimeSpectrum R // q.asIdeal ∈ minimalPrimes R } where
-  toFun q := ⟨⟨q.val, q.property.1.1⟩, q.property⟩
-  invFun q := ⟨q.val.asIdeal, q.property⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- Helper to rearrange nested subtypes when localizing minimal primes. -/
-private def subtypeRearrange (R : Type*) [CommRing R] (p : PrimeSpectrum R) (S : Submonoid R)
-    (hS : S = p.asIdeal.primeCompl) :
-    { q' : { q : PrimeSpectrum R // Disjoint (S : Set R) (q.asIdeal : Set R) } //
-      q'.val.asIdeal ∈ minimalPrimes R } ≃
-    { q : minimalPrimes R // q.val ≤ p.asIdeal } where
-  toFun q' := ⟨⟨q'.val.val.asIdeal, q'.property⟩, by
-    have hq_disj := q'.val.property
-    have h1 : Disjoint (p.asIdeal.primeCompl : Set R) (q'.val.val.asIdeal : Set R) := by
-      rwa [← hS]
-    exact (disjoint_primeCompl_iff (I := p.asIdeal)).mp h1⟩
-  invFun q :=
-    have hq_disj : Disjoint (S : Set R) (q.val.val : Set R) := by
-      rw [hS]
-      exact (disjoint_primeCompl_iff (I := p.asIdeal)).mpr q.property
-    ⟨⟨⟨q.val.val, q.val.property.1.1⟩, hq_disj⟩, q.val.property⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
 /-- The minimal primes of the localization `A` of a ring `R` at the prime complement of `p`
 are in bijection with the minimal primes of `R` contained in `p`. -/
 private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : PrimeSpectrum R)
     (S : Submonoid R) (A : Type*) [CommRing A] [Algebra R A] [IsLocalization S A]
     (hS : S = p.asIdeal.primeCompl) :
     minimalPrimes A ≃ { q : minimalPrimes R // q.val ≤ p.asIdeal } :=
-  (primeSpectrumMinimalPrimesEquiv A).trans
-    ((Equiv.subtypeEquiv (IsLocalization.primeSpectrumOrderIso S A).toEquiv (by
+  ((Equiv.subtypeSubtypeEquivSubtype
+    (fun {I : Ideal A} (hI : I ∈ minimalPrimes A) ↦ hI.1.1)).symm.trans
+    ((PrimeSpectrum.equivSubtype A).symm.subtypeEquiv (fun _ ↦ Iff.rfl))).trans
+  ((Equiv.subtypeEquiv (p := fun x ↦ x.asIdeal ∈ minimalPrimes A)
+    (q := fun y ↦ y.val.asIdeal ∈ minimalPrimes R)
+    (IsLocalization.primeSpectrumOrderIso S A).toEquiv (by
       intro q
+      change q.asIdeal ∈ minimalPrimes A ↔
+        ((IsLocalization.primeSpectrumOrderIso S A) q).val.asIdeal ∈ minimalPrimes R
       have hMap : minimalPrimes A = Ideal.under R ⁻¹' minimalPrimes R := by
         have h := IsLocalization.minimalPrimes_map S A (⊥ : Ideal R)
         rwa [Ideal.map_bot] at h
       rw [hMap]
       rfl)).trans
-      (subtypeRearrange R p S hS))
+  { toFun := fun q' ↦ ⟨⟨q'.val.val.asIdeal, q'.property⟩, by
+      have hq_disj := q'.val.property
+      have h1 : Disjoint (p.asIdeal.primeCompl : Set R) (q'.val.val.asIdeal : Set R) := by
+        rwa [← hS]
+      exact (disjoint_primeCompl_iff (I := p.asIdeal)).mp h1⟩,
+    invFun := fun q ↦
+      have hq_disj : Disjoint (S : Set R) (q.val.val : Set R) := by
+        rw [hS]
+        exact (disjoint_primeCompl_iff (I := p.asIdeal)).mpr q.property
+      ⟨⟨⟨q.val.val, q.val.property.1.1⟩, hq_disj⟩, q.val.property⟩,
+    left_inv := fun _ ↦ rfl,
+    right_inv := fun _ ↦ rfl })
 
 /-- Helper lemma to rewrite the application of a cast/mpr of an `OrderIso` over subtypes. -/
 private lemma val_mpr_orderIso {α : Type u} [LE α] {Y : Type u} [LE Y] {P Q : Y → Prop}
@@ -291,8 +280,6 @@ private lemma existsUnique_irreducibleComponent_of_unique_minimalPrime
     exact ⟨hU.default.1, hU.default.2,
       fun c hc ↦ congrArg Subtype.val (hU.uniq ⟨c, hc⟩)⟩
 
-
-
 /-- In a scheme whose stalks have unique minimal primes, the irreducible
 components are pairwise disjoint. -/
 private lemma disjoint_irreducibleComponents_of_unique_minimalPrime {Z : Scheme}
@@ -310,8 +297,6 @@ private lemma disjoint_irreducibleComponents_of_unique_minimalPrime {Z : Scheme}
   have hEq2 : c2 = c := hcUniq c2 hx2
   rw [hEq1, hEq2] at hneq
   exact hneq rfl
-
-
 
 /-- In a topological space with finitely many irreducible components, pairwise-disjoint
 components are open. -/
@@ -356,8 +341,6 @@ private theorem isOpen_irreducibleComponents_of_affine_unique_minimalPrime {X : 
     (NoetherianSpace.finite_irreducibleComponents (α := X.carrier))
   exact disjoint_irreducibleComponents_of_unique_minimalPrime hStalks
 
-
-
 /-- In a locally noetherian scheme whose stalks have unique minimal primes,
 every irreducible component is open. -/
 private theorem isOpen_irreducibleComponents_of_unique_minimalPrime {Z : Scheme.{u}}
@@ -390,10 +373,6 @@ private theorem isOpen_irreducibleComponents_of_unique_minimalPrime {Z : Scheme.
   · rw [Set.not_nonempty_iff_eq_empty] at hEmpty
     rw [hEmpty]
     exact isOpen_empty
-
-
-
-
 
 /-- A connected topological space with open irreducible components is irreducible. -/
 private lemma irreducibleSpace_of_connected_of_open_components {α : Type*} [TopologicalSpace α]
