@@ -4,29 +4,25 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Scheme
-public import Mathlib.Topology.Irreducible
-public import Mathlib.Topology.NoetherianSpace
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
-public import Mathlib.RingTheory.Ideal.MinimalPrime.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
-public import Mathlib.AlgebraicGeometry.Cover.Open
-public import Mathlib.AlgebraicGeometry.Spec
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.AlgebraicGeometry.AffineScheme
 
 /-!
-# Irreducible components of a connected reduced scheme
+# Irreducibility of connected schemes with domain stalks
 
-This file provides the topological results needed to show that a connected scheme
-whose stalks are integral domains is an irreducible space. It deconstructs the
-bijection between minimal primes of the stalks and the irreducible components,
-and proves that such irreducible components are open and disjoint.
+We prove that a locally noetherian connected scheme whose stalks are
+integral domains is irreducible (`irreducibleSpace_of_connected_of_isDomain_stalk`).
 
-This advances the roadmap at TauCetiRoadmap/JacobianChallenge/README.md,
-heading Standing hypotheses, specifically the geometrically integral curve
-prerequisite and the substep regular + connected ⇒ irreducible.
+The proof proceeds by showing that the irreducible components of such
+a scheme are pairwise disjoint and open (hence clopen), so
+connectedness forces a unique component.
+
+Along the way we construct the bijection between minimal primes of
+the stalk at a point and the irreducible components containing that
+point (`stalkMinimalPrimesEquivIrreducibleComponentsContaining`).
 -/
 
 public section
@@ -168,7 +164,16 @@ private def minimalPrimesEquivMinimalPrimesLe {R : Type*} [CommRing R] (p : Prim
 
 /-- Irreducible components of `Spec R` containing a point `p`
 correspond to minimal primes below `p`, via the
-`zeroLocus`/`vanishingIdeal` Galois correspondence. -/
+`zeroLocus`/`vanishingIdeal` Galois correspondence.
+
+Note: we build this equiv directly from Mathlib's
+`zeroLocus_ideal_mem_irreducibleComponents`,
+`vanishingIdeal_irreducibleComponents`,
+`vanishingIdeal_zeroLocus_eq_radical`, and
+`zeroLocus_vanishingIdeal_eq_closure` rather than restricting
+`minimalPrimes.equivIrreducibleComponents`, because the latter's
+value has no public simp lemma, so restricting it would require
+copying its internal construction to extract the underlying set. -/
 private noncomputable def
     irreducibleComponentsContainingEquivMinimalPrimesLe
     (R : Type*) [CommRing R] (p : PrimeSpectrum R) :
@@ -217,14 +222,14 @@ private noncomputable def stalkMinimalPrimesEquivIrreducibleComponentsContaining
     (Localization.AtPrime p.asIdeal) rfl).trans
     (irreducibleComponentsContainingEquivMinimalPrimesLe R p).symm
 
-/-- The minimal prime ideals of the stalk of a scheme at a point x are in bijection
-with the irreducible components of the scheme containing x.
-We construct this by deconstructing the global scheme-theoretic bijection into:
-1. The topological bijection under open embeddings
-   (`irreducibleComponents_containing_equiv_of_isOpenEmbedding`).
-2. The affine spectrum case (`stalkMinimalPrimesEquivIrreducibleComponentsContainingSpec`).
-3. Stalk isomorphism and ring isomorphism preservation of minimal primes. -/
-private noncomputable def stalkMinimalPrimesEquivIrreducibleComponentsContaining
+
+/-- The minimal primes of the stalk of a scheme at a point `x`
+are in bijection with the irreducible components containing `x`.
+This is the general result; the domain-stalk special case
+`unique_irreducibleComponent_of_isDomain_stalk` follows
+by noting that `IsDomain` implies a unique minimal prime. -/
+noncomputable def
+    stalkMinimalPrimesEquivIrreducibleComponentsContaining
     {X : Scheme} (x : X.carrier) :
     minimalPrimes (X.presheaf.stalk x) ≃
       { c : irreducibleComponents X.carrier // x ∈ (c : Set X.carrier) } := by
@@ -250,8 +255,13 @@ private noncomputable def stalkMinimalPrimesEquivIrreducibleComponentsContaining
   let hEq2 := minimalPrimes_equiv_of_ringEquiv eStalkSpec
   let hEq3 := stalkMinimalPrimesEquivIrreducibleComponentsContainingSpec R y_spec
   have hYspec : eHomeo.symm y_spec = y := by
-    dsimp [y_spec, eHomeo, g]
-    simp
+    -- Use `Scheme.homeoOfIso` API to avoid unfolding internals.
+    change (Scheme.homeoOfIso g).symm (g.hom.1.1.base y) = y
+    rw [Scheme.homeoOfIso_symm, Scheme.homeoOfIso_apply]
+    -- Reduces to `g.inv.base (g.hom.base y) = y`.
+    change g.inv.1.1.base (g.hom.1.1.base y) = y
+    exact congr_fun
+      (congrArg (fun f => f.1.1.base) g.hom_inv_id) y
   have hEq4 : { c : irreducibleComponents (PrimeSpectrum R) //
       y_spec ∈ (c : Set (PrimeSpectrum R)) } ≃
       { c : irreducibleComponents U.carrier // y ∈ (c : Set U.carrier) } := by
