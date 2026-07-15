@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.PiecewiseC1On
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 
 /-!
 # Piecewise `C¹` immersions on an interval
@@ -42,6 +43,9 @@ theorem, whose singularities lie *off* the curve, needs only `IsPiecewiseC1On`.)
 * `Contour.IsPwC1ImmersionOn.of_breakpoints`, `Contour.IsPwC1ImmersionOn.exists_breakpoints` —
   introduce the predicate from, and eliminate it to, a finite breakpoint witness.
 * `Contour.isPwC1ImmersionOn_comm`, `Contour.IsPwC1ImmersionOn.symm` — endpoint-swap invariance.
+* `Contour.IsPwC1ImmersionOn.exists_deriv_right_limit`,
+  `Contour.IsPwC1ImmersionOn.exists_deriv_left_limit` — the non-zero one-sided tangent limits,
+  recovered from the within-piece derivative.
 
 ## Provenance
 
@@ -59,7 +63,7 @@ noncomputable section
 
 namespace TauCeti.Contour
 
-open Set
+open Filter Set Topology
 
 variable {γ : ℝ → ℂ} {a b : ℝ}
 
@@ -135,6 +139,84 @@ theorem isPwC1ImmersionOn_comm : IsPwC1ImmersionOn γ a b ↔ IsPwC1ImmersionOn 
 interval. -/
 theorem IsPwC1ImmersionOn.symm (h : IsPwC1ImmersionOn γ a b) : IsPwC1ImmersionOn γ b a :=
   isPwC1ImmersionOn_comm.mp h
+
+/-- Given a finite breakpoint set, every parameter `t₀ < max a b` in `[[a, b]]` has a
+breakpoint-free closed piece `[t₀, d]` to its right inside `[[a, b]]`. -/
+private theorem exists_Icc_right_avoiding {p : Finset ℝ} {t₀ : ℝ}
+    (hp : ↑p ⊆ Ioo (min a b) (max a b)) (ht₀ : t₀ ∈ Ico (min a b) (max a b)) :
+    ∃ d : ℝ, t₀ < d ∧ Icc t₀ d ⊆ uIcc a b ∧ Disjoint (↑p : Set ℝ) (Ioo t₀ d) := by
+  classical
+  set q : Finset ℝ := insert (max a b) (p.filter (t₀ < ·)) with hq_def
+  have hq_ne : q.Nonempty := ⟨max a b, Finset.mem_insert_self _ _⟩
+  refine ⟨q.min' hq_ne, ?_, ?_, ?_⟩
+  · rcases Finset.mem_insert.mp (q.min'_mem hq_ne) with hm | hm
+    · exact hm ▸ ht₀.2
+    · exact (Finset.mem_filter.mp hm).2
+  · refine (Icc_subset_Icc ht₀.1 ?_).trans Icc_min_max.subset
+    rcases Finset.mem_insert.mp (q.min'_mem hq_ne) with hm | hm
+    · exact hm.le
+    · exact (hp (Finset.mem_filter.mp hm).1).2.le
+  · rw [Set.disjoint_left]
+    intro x hxp hx
+    exact absurd (q.min'_le x (Finset.mem_insert_of_mem
+      (Finset.mem_filter.mpr ⟨Finset.mem_coe.mp hxp, hx.1⟩))) (not_le.mpr hx.2)
+
+/-- Given a finite breakpoint set, every parameter `min a b < t₀` in `[[a, b]]` has a
+breakpoint-free closed piece `[c, t₀]` to its left inside `[[a, b]]`. -/
+private theorem exists_Icc_left_avoiding {p : Finset ℝ} {t₀ : ℝ}
+    (hp : ↑p ⊆ Ioo (min a b) (max a b)) (ht₀ : t₀ ∈ Ioc (min a b) (max a b)) :
+    ∃ c : ℝ, c < t₀ ∧ Icc c t₀ ⊆ uIcc a b ∧ Disjoint (↑p : Set ℝ) (Ioo c t₀) := by
+  classical
+  set q : Finset ℝ := insert (min a b) (p.filter (· < t₀)) with hq_def
+  have hq_ne : q.Nonempty := ⟨min a b, Finset.mem_insert_self _ _⟩
+  refine ⟨q.max' hq_ne, ?_, ?_, ?_⟩
+  · rcases Finset.mem_insert.mp (q.max'_mem hq_ne) with hm | hm
+    · exact hm ▸ ht₀.1
+    · exact (Finset.mem_filter.mp hm).2
+  · refine (Icc_subset_Icc ?_ ht₀.2).trans Icc_min_max.subset
+    rcases Finset.mem_insert.mp (q.max'_mem hq_ne) with hm | hm
+    · exact hm.ge
+    · exact (hp (Finset.mem_filter.mp hm).1).1.le
+  · rw [Set.disjoint_left]
+    intro x hxp hx
+    exact absurd (q.le_max' x (Finset.mem_insert_of_mem
+      (Finset.mem_filter.mpr ⟨Finset.mem_coe.mp hxp, hx.2⟩))) (not_le.mpr hx.1)
+
+/-- **Non-zero right tangent limit of an immersion.** At every parameter `t₀ ∈ [min, max)` a
+piecewise-`C¹` immersion has a non-zero limit of `deriv γ` from the right — the one-sided
+tangent of the piece beginning at `t₀`, namely its within-piece derivative there. -/
+theorem IsPwC1ImmersionOn.exists_deriv_right_limit (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ico (min a b) (max a b)) :
+    ∃ L : ℂ, L ≠ 0 ∧ Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L) := by
+  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨d, hlt, hsub, hdisj⟩ := exists_Icc_right_avoiding hp ht₀
+  obtain ⟨hC1, hne⟩ := hpieces t₀ d hlt hsub hdisj
+  refine ⟨derivWithin γ (Icc t₀ d) t₀, hne t₀ (left_mem_Icc.mpr hlt.le), ?_⟩
+  have h1 : Tendsto (derivWithin γ (Icc t₀ d)) (𝓝[Ioo t₀ d] t₀)
+      (𝓝 (derivWithin γ (Icc t₀ d) t₀)) :=
+    (((hC1.continuousOn_derivWithin (uniqueDiffOn_Icc hlt) le_rfl) t₀
+      (left_mem_Icc.mpr hlt.le)).tendsto).mono_left (nhdsWithin_mono t₀ Ioo_subset_Icc_self)
+  rw [← nhdsWithin_Ioo_eq_nhdsGT hlt]
+  exact h1.congr' <| eventually_mem_nhdsWithin.mono fun t ht =>
+    derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)
+
+/-- **Non-zero left tangent limit of an immersion.** At every parameter `t₀ ∈ (min, max]` a
+piecewise-`C¹` immersion has a non-zero limit of `deriv γ` from the left — the one-sided tangent
+of the piece ending at `t₀`, namely its within-piece derivative there. -/
+theorem IsPwC1ImmersionOn.exists_deriv_left_limit (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ioc (min a b) (max a b)) :
+    ∃ L : ℂ, L ≠ 0 ∧ Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L) := by
+  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨c, hlt, hsub, hdisj⟩ := exists_Icc_left_avoiding hp ht₀
+  obtain ⟨hC1, hne⟩ := hpieces c t₀ hlt hsub hdisj
+  refine ⟨derivWithin γ (Icc c t₀) t₀, hne t₀ (right_mem_Icc.mpr hlt.le), ?_⟩
+  have h1 : Tendsto (derivWithin γ (Icc c t₀)) (𝓝[Ioo c t₀] t₀)
+      (𝓝 (derivWithin γ (Icc c t₀) t₀)) :=
+    (((hC1.continuousOn_derivWithin (uniqueDiffOn_Icc hlt) le_rfl) t₀
+      (right_mem_Icc.mpr hlt.le)).tendsto).mono_left (nhdsWithin_mono t₀ Ioo_subset_Icc_self)
+  rw [← nhdsWithin_Ioo_eq_nhdsLT hlt]
+  exact h1.congr' <| eventually_mem_nhdsWithin.mono fun t ht =>
+    derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)
 
 end TauCeti.Contour
 
