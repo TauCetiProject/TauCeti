@@ -6,15 +6,15 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.PwC1ImmersionOn
-import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Normed.Module.HahnBanach
 
 /-!
 # Crossing finiteness for piecewise-`C¹` immersions (HW Proposition 2.2)
 
-A piecewise-`C¹` immersion meets any given point `z₀ ∈ ℂ` at only finitely many parameters,
-provided the endpoints avoid `z₀` — Proposition 2.2 of Hungerbühler–Wasem, the geometric input
+A piecewise-`C¹` immersion meets any given point `z₀ ∈ ℂ` at only finitely many parameters —
+Proposition 2.2 of Hungerbühler–Wasem (there stated with endpoint avoidance; the one-sided
+isolation lemmas here cover the endpoints, so no avoidance is needed), the geometric input
 that makes the on-cycle singularity set of the generalized residue theorem a finite crossing
 family. It discharges the `finite_crossings` field of `Contour.ConditionAprime` for immersed
 cycles.
@@ -27,8 +27,8 @@ compact `[[a, b]]` would have an accumulation point.
 ## Main results
 
 * `Contour.IsPwC1ImmersionOn.eventually_ne_nhdsNE` — crossings of an immersion are isolated.
-* `Contour.IsPwC1ImmersionOn.finite_crossings` — **HW Proposition 2.2**: for an immersion whose
-  endpoints avoid `z₀`, the crossing set `[[a, b]] ∩ γ ⁻¹' {z₀}` is finite.
+* `Contour.IsPwC1ImmersionOn.finite_crossings` — **HW Proposition 2.2**: the crossing set
+  `[[a, b]] ∩ γ ⁻¹' {z₀}` of an immersion is finite.
 
 ## Provenance
 
@@ -192,11 +192,10 @@ theorem IsPwC1ImmersionOn.eventually_ne_nhdsNE (h : IsPwC1ImmersionOn γ a b) {t
   exact ⟨crossing_isolated_left h ⟨ht₀.1, ht₀.2.le⟩ hcross,
     crossing_isolated_right h ⟨ht₀.1.le, ht₀.2⟩ hcross⟩
 
-/-- **HW Proposition 2.2: the crossing set of a piecewise-`C¹` immersion is finite**, provided
-the endpoints avoid `z₀` — the geometric input that makes the on-cycle singularities of the
-generalized residue theorem a finite crossing family. -/
-theorem IsPwC1ImmersionOn.finite_crossings (h : IsPwC1ImmersionOn γ a b)
-    (ha : γ a ≠ z₀) (hb : γ b ≠ z₀) :
+/-- **HW Proposition 2.2: the crossing set of a piecewise-`C¹` immersion is finite** — the
+geometric input that makes the on-cycle singularities of the generalized residue theorem a
+finite crossing family. -/
+theorem IsPwC1ImmersionOn.finite_crossings (h : IsPwC1ImmersionOn γ a b) :
     (uIcc a b ∩ γ ⁻¹' {z₀}).Finite := by
   by_contra hS_inf
   obtain ⟨t₀, -, ht₀_acc⟩ := (Set.not_finite.mp hS_inf).exists_accPt_of_subset_isCompact
@@ -206,17 +205,24 @@ theorem IsPwC1ImmersionOn.finite_crossings (h : IsPwC1ImmersionOn γ a b)
     h.continuousOn.preimage_isClosed_of_isClosed huIcc isClosed_singleton
   have ht₀_mem : t₀ ∈ uIcc a b ∩ γ ⁻¹' {z₀} :=
     hcl.closure_eq ▸ mem_closure_iff_clusterPt.mpr ht₀_acc.clusterPt
-  have hmin : γ (min a b) ≠ z₀ := by
-    rcases min_cases a b with ⟨he, -⟩ | ⟨he, -⟩ <;> rw [he] <;> assumption
-  have hmax : γ (max a b) ≠ z₀ := by
-    rcases max_cases a b with ⟨he, -⟩ | ⟨he, -⟩ <;> rw [he] <;> assumption
-  have ht₀_Ioo : t₀ ∈ Ioo (min a b) (max a b) := by
-    have hIcc : t₀ ∈ Icc (min a b) (max a b) := by rw [Icc_min_max]; exact ht₀_mem.1
-    exact ⟨lt_of_le_of_ne hIcc.1 fun he => hmin (he ▸ ht₀_mem.2),
-      lt_of_le_of_ne hIcc.2 fun he => hmax (he ▸ ht₀_mem.2)⟩
-  have := h.eventually_ne_nhdsNE ht₀_Ioo ht₀_mem.2
-  rw [accPt_iff_frequently_nhdsNE] at ht₀_acc
-  exact (ht₀_acc.and_eventually this).exists.elim fun t ⟨htS, htne⟩ => htne htS.2
+  have ht₀_Icc : t₀ ∈ Icc (min a b) (max a b) := by rw [Icc_min_max]; exact ht₀_mem.1
+  rw [accPt_iff_frequently_nhdsNE, punctured_nhds_eq_nhdsWithin_sup_nhdsWithin,
+    Filter.frequently_sup] at ht₀_acc
+  rcases ht₀_acc with hfreq | hfreq
+  · rcases eq_or_lt_of_le ht₀_Icc.1 with heq | hlt
+    · have hev : ∀ᶠ t in 𝓝[<] t₀, t ∉ uIcc a b ∩ γ ⁻¹' {z₀} :=
+        eventually_nhdsWithin_of_forall fun t ht hts => absurd
+          (by rw [← Icc_min_max] at hts; exact hts.1.1) (not_le.mpr (ht.trans_le heq.ge))
+      exact (hfreq.and_eventually hev).exists.elim fun t ht => ht.2 ht.1
+    · have hev := crossing_isolated_left h ⟨hlt, ht₀_Icc.2⟩ ht₀_mem.2
+      exact (hfreq.and_eventually hev).exists.elim fun t ht => ht.2 ht.1.2
+  · rcases eq_or_lt_of_le ht₀_Icc.2 with heq | hlt
+    · have hev : ∀ᶠ t in 𝓝[>] t₀, t ∉ uIcc a b ∩ γ ⁻¹' {z₀} :=
+        eventually_nhdsWithin_of_forall fun t ht hts => absurd
+          (by rw [← Icc_min_max] at hts; exact hts.1.2) (not_le.mpr (heq.ge.trans_lt ht))
+      exact (hfreq.and_eventually hev).exists.elim fun t ht => ht.2 ht.1
+    · have hev := crossing_isolated_right h ⟨ht₀_Icc.1, hlt⟩ ht₀_mem.2
+      exact (hfreq.and_eventually hev).exists.elim fun t ht => ht.2 ht.1.2
 
 end TauCeti.Contour
 
