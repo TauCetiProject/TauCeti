@@ -6,26 +6,30 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.DixonDef
+public import TauCeti.Analysis.Contour.PiecewiseC1On
 import TauCeti.Analysis.Contour.CauchyIntegralFormula
+import TauCeti.Analysis.Contour.CurveDistance
 import TauCeti.Analysis.Contour.DixonFunctionDiff
 import TauCeti.Analysis.Contour.DixonLiouville
 
 /-!
-# Homology Cauchy consequences of Dixon's theorem
+# The homology Cauchy theorem, via Dixon's argument
 
 Dixon's argument in `DixonLiouville` proves that the glued Dixon function vanishes for a closed
 null-homologous curve. `CauchyIntegralFormula` then extracts two algebraic consequences from
-pointwise vanishing. This file packages the direct null-homologous forms:
+pointwise vanishing. This file packages the direct null-homologous forms and assembles the summit:
 
 * `dixonH2_eq_windingNumber_mul_f_of_nullHomologous` — Cauchy's integral formula at an off-curve
   point of the domain.
 * `homologyCauchyTheorem_of_point_off_curve` — the contour integral of a holomorphic function
   around such a closed null-homologous curve is zero, assuming an off-curve point in the domain is
   supplied.
-
-The explicit off-curve point hypothesis is the final local form before the full global homology
-Cauchy theorem: removing it requires a separate geometric existence lemma for the domain minus the
-curve. This file does not assert that existence theorem.
+* `homologyCauchyTheorem` — **the homology form of Cauchy's theorem** (roadmap
+  `homologyCauchyTheorem`, `TauCetiRoadmap/ContourIntegration/Suggested.lean`, Layer 3): for a
+  closed piecewise-`C¹` curve `γ`, null-homologous in an open `Ω`, and `f` holomorphic on `Ω`,
+  the contour integral `∫ t in a..b, deriv γ t • f (γ t)` vanishes. The piecewise-`C¹` regularity
+  discharges the integrand-level hypotheses via the `IsPiecewiseC1On` API, and the base point off
+  the curve comes from `exists_mem_off_curve`.
 
 ## Provenance
 
@@ -69,9 +73,9 @@ theorem dixonH2_eq_windingNumber_mul_f_of_nullHomologous {f : ℂ → ℂ} {U : 
 open set `U`, continuous on `uIcc a b`, differentiable off a countable set, with
 interval-integrable derivative, and null-homologous in `U`. If `f` is holomorphic on `U` and `U`
 contains a point `w₀` not lying on the curve, then
-`∫ t in a..b, deriv γ t • f (γ t) = 0`. This is the immediate Dixon-theoretic prerequisite for the
-roadmap's full homology Cauchy theorem; only the off-curve-point existence step is not included
-here. -/
+`∫ t in a..b, deriv γ t • f (γ t) = 0`. The integrand-level form of the homology Cauchy theorem;
+`homologyCauchyTheorem` below supplies the off-curve point and discharges the regularity from
+`IsPiecewiseC1On`. -/
 theorem homologyCauchyTheorem_of_point_off_curve {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ}
     {a b : ℝ} {P : Set ℝ} {w₀ : ℂ} (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
     (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
@@ -90,6 +94,27 @@ theorem homologyCauchyTheorem_of_point_off_curve {f : ℂ → ℂ} {U : Set ℂ}
   exact intervalIntegral_deriv_smul_eq_zero_of_dixonFunction_eq_zero hγ_cont w₀ hw₀U hw₀off
     (dixonFunction_eq_zero hU hg hγ_cont hγU hderiv_int hclosed hP hγ_diff h_null w₀)
     h_int (intervalIntegrable_inv_sub_mul_deriv hγ_cont hw₀off hderiv_int)
+
+/-- **The homology Cauchy theorem** (roadmap `homologyCauchyTheorem`, Layer 3). Let `γ` be a
+closed piecewise-`C¹` curve on `[[a, b]]`, null-homologous in an open set `Ω` containing it, and
+let `f` be holomorphic on `Ω`. Then the contour integral of `f` along `γ` vanishes:
+`∫ t in a..b, deriv γ t • f (γ t) = 0`.
+
+Dixon's argument: the piecewise-`C¹` regularity supplies continuity, differentiability off the
+finitely many breakpoints, and interval-integrability of `deriv γ` (the `IsPiecewiseC1On` API);
+the compact curve image cannot exhaust the open `Ω`, giving a base point `w₀ ∈ Ω` off the curve
+(`exists_mem_off_curve`); and `homologyCauchyTheorem_of_point_off_curve` — vanishing of the glued
+Dixon function by Liouville, then the Cauchy integral formula at `w₀` — concludes. -/
+theorem homologyCauchyTheorem {f : ℂ → ℂ} {Ω : Set ℂ} (hΩ : IsOpen Ω) (γ : ℝ → ℂ) (a b : ℝ)
+    (hγ_pc1 : IsPiecewiseC1On γ a b)
+    (hγ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hclosed : γ a = γ b)
+    (hf : DifferentiableOn ℂ f Ω)
+    (hnull : IsNullHomologous γ a b Ω) :
+    ∫ t in a..b, deriv γ t • f (γ t) = 0 := by
+  obtain ⟨P, hP, hγ_diff⟩ := hγ_pc1.exists_countable_differentiableAt
+  obtain ⟨w₀, hw₀Ω, hw₀off⟩ := exists_mem_off_curve hΩ hγ_pc1.continuousOn hγ
+  exact homologyCauchyTheorem_of_point_off_curve hΩ hf hγ_pc1.continuousOn hγ
+    hγ_pc1.intervalIntegrable_deriv hclosed hP hγ_diff hnull hw₀Ω hw₀off
 
 end TauCeti.Contour
 

@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Topology.MetricSpace.HausdorffDistance
 import Mathlib.Topology.Order.Compact
 
@@ -21,11 +22,14 @@ a uniform positive lower bound `ρ` on `‖γ t - w‖` over `[a, b]`.
 * `TauCeti.Contour.exists_curve_dist_lower_bound` — the uniform positive distance lower bound.
 * `TauCeti.Contour.exists_ball_dist_curve_lower_bound` — the same lower bound made uniform over a
   whole ball of points around the avoided point.
+* `TauCeti.Contour.exists_mem_off_curve` — an open set containing a curve contains a point off the
+  curve: the compact image cannot exhaust a nonempty open subset of the noncompact connected `ℂ`.
 
 These small support lemmas are shared by the argument-lift partition
-(`exists_uniform_modulus_avoiding`, feeding the integer-valuedness of the winding number) and by the
-continuity of the winding number in the point (`continuousAt_windingNumber_of_avoidance`) — both
-prerequisites for the homology form of Cauchy's theorem (roadmap `homologyCauchyTheorem`).
+(`exists_uniform_modulus_avoiding`, feeding the integer-valuedness of the winding number), by the
+continuity of the winding number in the point (`continuousAt_windingNumber_of_avoidance`), and by
+the homology form of Cauchy's theorem (`homologyCauchyTheorem`), whose Dixon-style proof picks its
+base point off the curve via `exists_mem_off_curve`.
 -/
 
 public section
@@ -64,5 +68,25 @@ theorem exists_ball_dist_curve_lower_bound {γ : ℝ → ℂ} {w₀ : ℂ} {a b 
     have h := norm_sub_norm_le (γ t - w₀) (w - w₀)
     rwa [sub_sub_sub_cancel_right] at h
   linarith [h_dist_lb t ht]
+
+/-- **An open set containing a curve contains a point off the curve.** If `γ` is continuous on the
+interval with endpoints `a`, `b` and maps it into an open set `Ω ⊆ ℂ`, then some `w₀ ∈ Ω` is not
+on the curve. The image is compact, so if it exhausted `Ω` then `Ω` would be a nonempty clopen
+subset of the connected `ℂ`, hence all of `ℂ` — which is not compact. This supplies the base point
+off the curve that Dixon's proof of the homology Cauchy theorem requires. -/
+theorem exists_mem_off_curve {γ : ℝ → ℂ} {Ω : Set ℂ} {a b : ℝ} (hΩ : IsOpen Ω)
+    (hγ : ContinuousOn γ (uIcc a b)) (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) :
+    ∃ w₀ ∈ Ω, ∀ t ∈ uIcc a b, γ t ≠ w₀ := by
+  by_contra hcon
+  push Not at hcon
+  have himg : γ '' uIcc a b = Ω :=
+    (image_subset_iff.mpr hγΩ).antisymm fun w hw => by
+      obtain ⟨t, ht, hts⟩ := hcon w hw
+      exact ⟨t, ht, hts⟩
+  have hcompact : IsCompact Ω := himg ▸ isCompact_uIcc.image_of_continuousOn hγ
+  haveI : PreconnectedSpace ℂ := ⟨(convex_univ : Convex ℝ (univ : Set ℂ)).isPreconnected⟩
+  have huniv : Ω = univ :=
+    IsClopen.eq_univ ⟨hcompact.isClosed, hΩ⟩ ⟨γ a, hγΩ a left_mem_uIcc⟩
+  exact noncompact_univ ℂ (huniv ▸ hcompact)
 
 end TauCeti.Contour
