@@ -115,8 +115,7 @@ theorem IsPwC1ImmersionOn.exists_breakpoints (h : IsPwC1ImmersionOn γ a b) :
   h.2
 
 /-- A piecewise-`C¹` immersion is in particular piecewise `C¹`, with the same breakpoint
-witness: on non-degenerate pieces the `C¹` clause is the immersion's own, and degenerate pieces
-are trivially `C¹`. -/
+witness. -/
 theorem IsPwC1ImmersionOn.isPiecewiseC1On (h : IsPwC1ImmersionOn γ a b) :
     IsPiecewiseC1On γ a b := by
   obtain ⟨hcont, p, hp, hpieces⟩ := h
