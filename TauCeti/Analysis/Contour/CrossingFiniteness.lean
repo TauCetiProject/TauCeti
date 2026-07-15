@@ -1,0 +1,307 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Chris Birkbeck
+-/
+module
+
+public import TauCeti.Analysis.Contour.PwC1ImmersionOn
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.Normed.Module.HahnBanach
+
+/-!
+# Crossing finiteness for piecewise-`C¹` immersions (HW Proposition 2.2)
+
+A piecewise-`C¹` immersion meets any given point `z₀ ∈ ℂ` at only finitely many parameters,
+provided the endpoints avoid `z₀` — Proposition 2.2 of Hungerbühler–Wasem, the geometric input
+that makes the on-cycle singularity set of the generalized residue theorem a finite crossing
+family. It discharges the `finite_crossings` field of `Contour.ConditionAprime` for immersed
+cycles.
+
+The mechanism: at a crossing the one-sided tangent is non-zero, so a dual functional of it makes
+`t ↦ γ t - z₀` strictly monotone in that functional on a one-sided neighbourhood, forbidding
+nearby crossings; crossings are therefore isolated, and an infinite crossing set inside the
+compact `[[a, b]]` would have an accumulation point.
+
+## Main results
+
+* `Contour.IsPwC1ImmersionOn.exists_deriv_right_limit`,
+  `Contour.IsPwC1ImmersionOn.exists_deriv_left_limit` — the non-zero one-sided tangent limits of
+  an immersion, recovered from the within-piece derivative.
+* `Contour.IsPwC1ImmersionOn.eventually_ne_nhdsNE` — crossings of an immersion are isolated.
+* `Contour.IsPwC1ImmersionOn.finite_crossings` — **HW Proposition 2.2**: for an immersion whose
+  endpoints avoid `z₀`, the crossing set `[[a, b]] ∩ γ ⁻¹' {z₀}` is finite.
+
+## Provenance
+
+Migrated from `CrossingAnalysis.lean` (`PwC1Immersion.crossingSet_finite` and the isolation
+lemmas) of the AINTLIB `LeanModularForms` development, restated for the raw curve `γ : ℝ → ℂ` on
+`[[a, b]]`: the one-sided tangent data carried there by the `left_deriv_limit` /
+`right_deriv_limit` fields of the bundled `PwC1Immersion` is here recovered from the
+`IsPwC1ImmersionOn` within-piece derivative, which also uniformises the smooth-point and
+breakpoint cases of the isolation argument. See K. Hungerbühler, M. Wasem, *Non-integer valued
+winding numbers and a generalized Residue Theorem*, arXiv:1808.00997, Proposition 2.2.
+-/
+
+public section
+
+noncomputable section
+
+namespace TauCeti.Contour
+
+open Set Filter Topology
+
+variable {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ}
+
+/-- Given a finite breakpoint set, every parameter `t₀ < max a b` in `[[a, b]]` has a
+breakpoint-free closed piece `[t₀, d]` to its right inside `[[a, b]]`. -/
+private theorem exists_Icc_right_avoiding {p : Finset ℝ} {t₀ : ℝ}
+    (hp : ↑p ⊆ Ioo (min a b) (max a b)) (ht₀ : t₀ ∈ Ico (min a b) (max a b)) :
+    ∃ d : ℝ, t₀ < d ∧ Icc t₀ d ⊆ uIcc a b ∧ Disjoint (↑p : Set ℝ) (Ioo t₀ d) := by
+  classical
+  set q : Finset ℝ := insert (max a b) (p.filter (t₀ < ·)) with hq_def
+  have hq_ne : q.Nonempty := ⟨max a b, Finset.mem_insert_self _ _⟩
+  refine ⟨q.min' hq_ne, ?_, ?_, ?_⟩
+  · rcases Finset.mem_insert.mp (q.min'_mem hq_ne) with hm | hm
+    · exact hm ▸ ht₀.2
+    · exact (Finset.mem_filter.mp hm).2
+  · refine (Icc_subset_Icc ht₀.1 ?_).trans Icc_min_max.subset
+    rcases Finset.mem_insert.mp (q.min'_mem hq_ne) with hm | hm
+    · exact hm.le
+    · exact (hp (Finset.mem_filter.mp hm).1).2.le
+  · rw [Set.disjoint_left]
+    intro x hxp hx
+    exact absurd (q.min'_le x (Finset.mem_insert_of_mem
+      (Finset.mem_filter.mpr ⟨Finset.mem_coe.mp hxp, hx.1⟩))) (not_le.mpr hx.2)
+
+/-- Given a finite breakpoint set, every parameter `min a b < t₀` in `[[a, b]]` has a
+breakpoint-free closed piece `[c, t₀]` to its left inside `[[a, b]]`. -/
+private theorem exists_Icc_left_avoiding {p : Finset ℝ} {t₀ : ℝ}
+    (hp : ↑p ⊆ Ioo (min a b) (max a b)) (ht₀ : t₀ ∈ Ioc (min a b) (max a b)) :
+    ∃ c : ℝ, c < t₀ ∧ Icc c t₀ ⊆ uIcc a b ∧ Disjoint (↑p : Set ℝ) (Ioo c t₀) := by
+  classical
+  set q : Finset ℝ := insert (min a b) (p.filter (· < t₀)) with hq_def
+  have hq_ne : q.Nonempty := ⟨min a b, Finset.mem_insert_self _ _⟩
+  refine ⟨q.max' hq_ne, ?_, ?_, ?_⟩
+  · rcases Finset.mem_insert.mp (q.max'_mem hq_ne) with hm | hm
+    · exact hm ▸ ht₀.1
+    · exact (Finset.mem_filter.mp hm).2
+  · refine (Icc_subset_Icc ?_ ht₀.2).trans Icc_min_max.subset
+    rcases Finset.mem_insert.mp (q.max'_mem hq_ne) with hm | hm
+    · exact hm.ge
+    · exact (hp (Finset.mem_filter.mp hm).1).1.le
+  · rw [Set.disjoint_left]
+    intro x hxp hx
+    exact absurd (q.le_max' x (Finset.mem_insert_of_mem
+      (Finset.mem_filter.mpr ⟨Finset.mem_coe.mp hxp, hx.2⟩))) (not_le.mpr hx.1)
+
+/-- **Non-zero right tangent limit of an immersion.** At every parameter `t₀ ∈ [min, max)` a
+piecewise-`C¹` immersion has a non-zero limit of `deriv γ` from the right — the one-sided
+tangent of the piece beginning at `t₀`, namely its within-piece derivative there. -/
+theorem IsPwC1ImmersionOn.exists_deriv_right_limit (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ico (min a b) (max a b)) :
+    ∃ L : ℂ, L ≠ 0 ∧ Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L) := by
+  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨d, hlt, hsub, hdisj⟩ := exists_Icc_right_avoiding hp ht₀
+  obtain ⟨hC1, hne⟩ := hpieces t₀ d hlt hsub hdisj
+  refine ⟨derivWithin γ (Icc t₀ d) t₀, hne t₀ (left_mem_Icc.mpr hlt.le), ?_⟩
+  have h1 : Tendsto (derivWithin γ (Icc t₀ d)) (𝓝[Ioo t₀ d] t₀)
+      (𝓝 (derivWithin γ (Icc t₀ d) t₀)) :=
+    (((hC1.continuousOn_derivWithin (uniqueDiffOn_Icc hlt) le_rfl) t₀
+      (left_mem_Icc.mpr hlt.le)).tendsto).mono_left (nhdsWithin_mono t₀ Ioo_subset_Icc_self)
+  have heq : 𝓝[Ioo t₀ d] t₀ = 𝓝[>] t₀ := by
+    rw [← Ioi_inter_Iio]
+    exact nhdsWithin_inter_of_mem' (nhdsWithin_le_nhds (Iio_mem_nhds hlt))
+  rw [← heq]
+  exact h1.congr' <| eventually_mem_nhdsWithin.mono fun t ht =>
+    derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)
+
+/-- **Non-zero left tangent limit of an immersion.** At every parameter `t₀ ∈ (min, max]` a
+piecewise-`C¹` immersion has a non-zero limit of `deriv γ` from the left — the one-sided tangent
+of the piece ending at `t₀`, namely its within-piece derivative there. -/
+theorem IsPwC1ImmersionOn.exists_deriv_left_limit (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ioc (min a b) (max a b)) :
+    ∃ L : ℂ, L ≠ 0 ∧ Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L) := by
+  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨c, hlt, hsub, hdisj⟩ := exists_Icc_left_avoiding hp ht₀
+  obtain ⟨hC1, hne⟩ := hpieces c t₀ hlt hsub hdisj
+  refine ⟨derivWithin γ (Icc c t₀) t₀, hne t₀ (right_mem_Icc.mpr hlt.le), ?_⟩
+  have h1 : Tendsto (derivWithin γ (Icc c t₀)) (𝓝[Ioo c t₀] t₀)
+      (𝓝 (derivWithin γ (Icc c t₀) t₀)) :=
+    (((hC1.continuousOn_derivWithin (uniqueDiffOn_Icc hlt) le_rfl) t₀
+      (right_mem_Icc.mpr hlt.le)).tendsto).mono_left (nhdsWithin_mono t₀ Ioo_subset_Icc_self)
+  rw [← nhdsWithin_Ioo_eq_nhdsLT hlt]
+  exact h1.congr' <| eventually_mem_nhdsWithin.mono fun t ht =>
+    derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)
+
+/-- Around any non-breakpoint interior parameter there is a closed subinterval of `[[a, b]]`
+with `t` in its interior and interior disjoint from the breakpoints. -/
+private theorem exists_Icc_mem_avoiding {p : Finset ℝ} {t : ℝ}
+    (ht : t ∈ Ioo (min a b) (max a b)) (htp : t ∉ (↑p : Set ℝ)) :
+    ∃ c d : ℝ, t ∈ Ioo c d ∧ Icc c d ⊆ uIcc a b ∧ Disjoint (↑p : Set ℝ) (Ioo c d) := by
+  have hopen : IsOpen (Ioo (min a b) (max a b) \ ↑p) :=
+    isOpen_Ioo.sdiff p.finite_toSet.isClosed
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hopen t ⟨ht, htp⟩
+  rw [Real.ball_eq_Ioo] at hball
+  refine ⟨t - ε / 2, t + ε / 2, by constructor <;> linarith, fun x hx => ?_, ?_⟩
+  · have hxs := hball (show x ∈ Ioo (t - ε) (t + ε) from ⟨by linarith [hx.1], by linarith [hx.2]⟩)
+    exact Icc_min_max.subset (Ioo_subset_Icc_self hxs.1)
+  · rw [Set.disjoint_right]
+    intro x hx
+    exact (hball (show x ∈ Ioo (t - ε) (t + ε) from
+      ⟨by linarith [hx.1], by linarith [hx.2]⟩)).2
+
+/-- Differentiability and a non-zero derivative at interior non-breakpoint parameters, relative
+to a breakpoint witness of the immersion clause. -/
+private theorem deriv_ne_zero_off_breakpoints {p : Finset ℝ}
+    (hpieces : ∀ c d : ℝ, c < d → Icc c d ⊆ uIcc a b → Disjoint (↑p : Set ℝ) (Ioo c d) →
+      ContDiffOn ℝ 1 γ (Icc c d) ∧ ∀ t ∈ Icc c d, derivWithin γ (Icc c d) t ≠ 0)
+    {t : ℝ} (ht : t ∈ Ioo (min a b) (max a b)) (htp : t ∉ (↑p : Set ℝ)) :
+    DifferentiableAt ℝ γ t ∧ deriv γ t ≠ 0 := by
+  obtain ⟨c, d, htcd, hsub, hdisj⟩ := exists_Icc_mem_avoiding ht htp
+  have hC1 : ContDiffOn ℝ 1 γ (Icc c d) := (hpieces c d (htcd.1.trans htcd.2) hsub hdisj).1
+  have hne := (hpieces c d (htcd.1.trans htcd.2) hsub hdisj).2
+  have hmem : Icc c d ∈ 𝓝 t := Icc_mem_nhds htcd.1 htcd.2
+  have hdiff : DifferentiableAt ℝ γ t :=
+    (hC1.differentiableOn one_ne_zero).differentiableAt hmem
+  have hrw : derivWithin γ (Icc c d) t = deriv γ t := derivWithin_of_mem_nhds hmem
+  exact ⟨hdiff, hrw ▸ hne t (Ioo_subset_Icc_self htcd)⟩
+
+/-- **At-most-one-crossing core.** If a continuous linear functional is positive on `deriv γ`
+throughout an open interval on which `γ` is differentiable, then that functional of `γ - z₀` is
+strictly monotone on the closed interval, so `γ` meets `z₀` at most once there. -/
+private theorem crossing_atMostOne_of_dual_deriv_pos {f : StrongDual ℝ ℂ} {c d : ℝ}
+    (hγ_cont : ContinuousOn γ (Icc c d))
+    (h_cond : ∀ t ∈ Ioo c d, DifferentiableAt ℝ γ t ∧ 0 < f (deriv γ t)) :
+    ∀ t₁ ∈ Icc c d, ∀ t₂ ∈ Icc c d, γ t₁ = z₀ → γ t₂ = z₀ → t₁ = t₂ := by
+  set g : ℝ → ℝ := fun t => f (γ t - z₀) with hg_def
+  have hg_cont : ContinuousOn g (Icc c d) :=
+    f.continuous.comp_continuousOn (hγ_cont.sub continuousOn_const)
+  have hg_deriv_pos : ∀ s ∈ interior (Icc c d), 0 < deriv g s := by
+    rw [interior_Icc]
+    intro s hs
+    obtain ⟨hs_diff, hs_pos⟩ := h_cond s hs
+    have hder : HasDerivAt (fun t => γ t - z₀) (deriv γ s) s :=
+      hs_diff.hasDerivAt.sub_const z₀
+    exact (f.hasFDerivAt.comp_hasDerivAt s hder).deriv ▸ hs_pos
+  intro t₁ ht₁ t₂ ht₂ hc₁ hc₂
+  refine (strictMonoOn_of_deriv_pos (convex_Icc c d) hg_cont hg_deriv_pos).injOn ht₁ ht₂ ?_
+  simp only [hg_def, hc₁, hc₂]
+
+/-- A nonempty open interval inside `(min a b, max a b)` has its closure inside `[[a, b]]`. -/
+private theorem Icc_subset_uIcc_of_Ioo_subset {c d : ℝ} (hcd : c < d)
+    (h : Ioo c d ⊆ Ioo (min a b) (max a b)) : Icc c d ⊆ uIcc a b := by
+  obtain ⟨t, ht⟩ := nonempty_Ioo.mpr hcd
+  have hab : min a b < max a b := (h ht).1.trans (h ht).2
+  have h2 := closure_mono h
+  rw [closure_Ioo hcd.ne, closure_Ioo hab.ne] at h2
+  exact h2.trans Icc_min_max.subset
+
+/-- The parameters near `t₀` (from the given side) that lie in the interior, avoid the
+breakpoints, and see a positive dual value of `deriv γ`. -/
+private theorem eventually_interior_off_pos {p : Finset ℝ} {t₀ : ℝ} {L : ℂ}
+    {f : StrongDual ℝ ℂ} {l : Filter ℝ} (hl : l ≤ 𝓝 t₀) (hne : ∀ᶠ t in l, t ≠ t₀)
+    (h_Ioo : ∀ᶠ t in l, t ∈ Ioo (min a b) (max a b))
+    (hL_tendsto : Tendsto (deriv γ) l (𝓝 L)) (hfL_pos : 0 < f L) :
+    ∀ᶠ t in l, (t ∈ Ioo (min a b) (max a b) ∧ t ∉ (↑p : Set ℝ)) ∧ 0 < f (deriv γ t) := by
+  have h_off : ∀ᶠ t in l, t ∉ (↑p : Set ℝ) := by
+    have hcl : IsClosed ((↑p \ {t₀} : Set ℝ)) := (p.finite_toSet.subset sdiff_subset).isClosed
+    have h1 : ∀ᶠ t in l, t ∈ (↑p \ {t₀} : Set ℝ)ᶜ :=
+      hl (hcl.isOpen_compl.mem_nhds (by simp))
+    filter_upwards [h1, hne] with t htc htne htp
+    exact htc ⟨htp, htne⟩
+  have h_pos : ∀ᶠ t in l, 0 < f (deriv γ t) :=
+    (f.continuous.continuousAt.tendsto.comp hL_tendsto).eventually (Ioi_mem_nhds hfL_pos)
+  exact (h_Ioo.and h_off).and h_pos
+
+/-- Crossings of an immersion are isolated from the right: if `γ t₀ = z₀` with
+`t₀ ∈ [min, max)`, then `γ t ≠ z₀` for `t` in a punctured right neighbourhood of `t₀`. -/
+private theorem crossing_isolated_right (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ico (min a b) (max a b)) (hcross : γ t₀ = z₀) :
+    ∀ᶠ t in 𝓝[>] t₀, γ t ≠ z₀ := by
+  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨L, hL_ne, hL_tendsto⟩ := h.exists_deriv_right_limit ht₀
+  obtain ⟨f, -, hf_L⟩ := exists_dual_vector ℝ L (norm_ne_zero_iff.mpr hL_ne)
+  have hfL_pos : (0 : ℝ) < f L := by
+    rw [hf_L]; exact_mod_cast norm_pos_iff.mpr hL_ne
+  have h_Ioo : ∀ᶠ t in 𝓝[>] t₀, t ∈ Ioo (min a b) (max a b) := by
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_lt_nhds ht₀.2),
+      self_mem_nhdsWithin] with t ht1 ht2
+    exact ⟨ht₀.1.trans_lt ht2, ht1⟩
+  have h_ev := eventually_interior_off_pos (p := p) nhdsWithin_le_nhds
+    (eventually_nhdsWithin_of_forall fun t ht => ne_of_gt ht) h_Ioo hL_tendsto hfL_pos
+  obtain ⟨d, hd_gt, hd_cond⟩ :=
+    mem_nhdsGT_iff_exists_Ioo_subset.mp (Filter.eventually_iff.mp h_ev)
+  have h_once := crossing_atMostOne_of_dual_deriv_pos (z₀ := z₀) (f := f)
+    (h.continuousOn.mono (Icc_subset_uIcc_of_Ioo_subset hd_gt fun t ht => (hd_cond ht).1.1))
+    fun t ht => ⟨(deriv_ne_zero_off_breakpoints hpieces (hd_cond ht).1.1 (hd_cond ht).1.2).1,
+      (hd_cond ht).2⟩
+  refine Filter.eventually_iff.mpr (mem_nhdsGT_iff_exists_Ioo_subset.mpr ⟨d, hd_gt, ?_⟩)
+  exact fun t ht hγt => (ne_of_gt ht.1)
+    (h_once t (Ioo_subset_Icc_self ht) t₀ (left_mem_Icc.mpr (le_of_lt hd_gt)) hγt hcross)
+
+/-- Crossings of an immersion are isolated from the left: if `γ t₀ = z₀` with
+`t₀ ∈ (min, max]`, then `γ t ≠ z₀` for `t` in a punctured left neighbourhood of `t₀`. -/
+private theorem crossing_isolated_left (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ioc (min a b) (max a b)) (hcross : γ t₀ = z₀) :
+    ∀ᶠ t in 𝓝[<] t₀, γ t ≠ z₀ := by
+  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨L, hL_ne, hL_tendsto⟩ := h.exists_deriv_left_limit ht₀
+  obtain ⟨f, -, hf_L⟩ := exists_dual_vector ℝ L (norm_ne_zero_iff.mpr hL_ne)
+  have hfL_pos : (0 : ℝ) < f L := by
+    rw [hf_L]; exact_mod_cast norm_pos_iff.mpr hL_ne
+  have h_Ioo : ∀ᶠ t in 𝓝[<] t₀, t ∈ Ioo (min a b) (max a b) := by
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds (eventually_gt_nhds ht₀.1),
+      self_mem_nhdsWithin] with t ht1 ht2
+    exact ⟨ht1, ht2.trans_le ht₀.2⟩
+  have h_ev := eventually_interior_off_pos (p := p) nhdsWithin_le_nhds
+    (eventually_nhdsWithin_of_forall fun t ht => ne_of_lt ht) h_Ioo hL_tendsto hfL_pos
+  obtain ⟨c, hc_lt, hc_cond⟩ :=
+    mem_nhdsLT_iff_exists_Ioo_subset.mp (Filter.eventually_iff.mp h_ev)
+  have h_once := crossing_atMostOne_of_dual_deriv_pos (z₀ := z₀) (f := f)
+    (h.continuousOn.mono (Icc_subset_uIcc_of_Ioo_subset hc_lt fun t ht => (hc_cond ht).1.1))
+    fun t ht => ⟨(deriv_ne_zero_off_breakpoints hpieces (hc_cond ht).1.1 (hc_cond ht).1.2).1,
+      (hc_cond ht).2⟩
+  refine Filter.eventually_iff.mpr (mem_nhdsLT_iff_exists_Ioo_subset.mpr ⟨c, hc_lt, ?_⟩)
+  exact fun t ht hγt => (ne_of_lt ht.2)
+    (h_once t (Ioo_subset_Icc_self ht) t₀ (right_mem_Icc.mpr (le_of_lt hc_lt)) hγt hcross)
+
+/-- **Crossings of an immersion are isolated**: at every interior crossing there is a punctured
+neighbourhood on which the immersion avoids `z₀`. -/
+theorem IsPwC1ImmersionOn.eventually_ne_nhdsNE (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) (hcross : γ t₀ = z₀) :
+    ∀ᶠ t in 𝓝[≠] t₀, γ t ≠ z₀ := by
+  rw [punctured_nhds_eq_nhdsWithin_sup_nhdsWithin, Filter.eventually_sup]
+  exact ⟨crossing_isolated_left h ⟨ht₀.1, ht₀.2.le⟩ hcross,
+    crossing_isolated_right h ⟨ht₀.1.le, ht₀.2⟩ hcross⟩
+
+/-- **HW Proposition 2.2: the crossing set of a piecewise-`C¹` immersion is finite**, provided
+the endpoints avoid `z₀` — the geometric input that makes the on-cycle singularities of the
+generalized residue theorem a finite crossing family. -/
+theorem IsPwC1ImmersionOn.finite_crossings (h : IsPwC1ImmersionOn γ a b)
+    (ha : γ a ≠ z₀) (hb : γ b ≠ z₀) :
+    (uIcc a b ∩ γ ⁻¹' {z₀}).Finite := by
+  by_contra hS_inf
+  obtain ⟨t₀, -, ht₀_acc⟩ := (Set.not_finite.mp hS_inf).exists_accPt_of_subset_isCompact
+    isCompact_uIcc inter_subset_left
+  have huIcc : IsClosed (uIcc a b) := by rw [← Icc_min_max]; exact isClosed_Icc
+  have hcl : IsClosed (uIcc a b ∩ γ ⁻¹' {z₀}) :=
+    h.continuousOn.preimage_isClosed_of_isClosed huIcc isClosed_singleton
+  have ht₀_mem : t₀ ∈ uIcc a b ∩ γ ⁻¹' {z₀} :=
+    hcl.closure_eq ▸ mem_closure_iff_clusterPt.mpr ht₀_acc.clusterPt
+  have hmin : γ (min a b) ≠ z₀ := by
+    rcases min_cases a b with ⟨he, -⟩ | ⟨he, -⟩ <;> rw [he] <;> assumption
+  have hmax : γ (max a b) ≠ z₀ := by
+    rcases max_cases a b with ⟨he, -⟩ | ⟨he, -⟩ <;> rw [he] <;> assumption
+  have ht₀_Ioo : t₀ ∈ Ioo (min a b) (max a b) := by
+    have hIcc : t₀ ∈ Icc (min a b) (max a b) := by rw [Icc_min_max]; exact ht₀_mem.1
+    exact ⟨lt_of_le_of_ne hIcc.1 fun he => hmin (he ▸ ht₀_mem.2),
+      lt_of_le_of_ne hIcc.2 fun he => hmax (he ▸ ht₀_mem.2)⟩
+  have := h.eventually_ne_nhdsNE ht₀_Ioo ht₀_mem.2
+  rw [accPt_iff_frequently_nhdsNE] at ht₀_acc
+  exact (ht₀_acc.and_eventually this).exists.elim fun t ⟨htS, htne⟩ => htne htS.2
+
+end TauCeti.Contour
+
+end
