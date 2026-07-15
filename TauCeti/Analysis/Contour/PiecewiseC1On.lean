@@ -50,7 +50,11 @@ prerequisite for the homology Cauchy theorem and the generalized residue theorem
 
 Adapted from the regularity fields of the `PiecewiseC1PathOn` structure in the AINTLIB
 `LeanModularForms` development, re-expressed as a predicate on a raw function `γ : ℝ → ℂ` per the
-roadmap's function-based contour design rather than as a bundled path type.
+roadmap's function-based contour design rather than as a bundled path type. The piece-level
+integrability of the derivative and its gluing across the breakpoints
+(`IsPiecewiseC1On.intervalIntegrable_deriv`) follow `ClosedPwC1Curve.deriv_intervalIntegrable_piece`
+and `ClosedPwC1Curve.deriv_extend_intervalIntegrable` in the same development's
+`PaperPwC1Immersion.lean`, restated for the raw curve.
 -/
 
 public section
