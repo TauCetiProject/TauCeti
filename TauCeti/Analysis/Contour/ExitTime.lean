@@ -231,8 +231,7 @@ theorem le_firstExitTimeLeft_of_mem {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
   le_csSup ⟨t₀, left_set_bddAbove γ t₀ δ ε s⟩ ⟨ht₁, h_far⟩
 
 /-- **The right exit time tends to `t₀` from above as `ε → 0⁺`**, provided `γ` leaves `s` on
-`(t₀, t₀ + δ]` — this makes the defining set nonempty for arbitrarily small `ε`, and any window
-time close to `t₀` bounds the `sInf`. -/
+`(t₀, t₀ + δ]`. -/
 theorem firstExitTimeRight_tendsto {γ : ℝ → E} {t₀ δ : ℝ} {s : E} (hδ : 0 < δ)
     (hγ_cont : ContinuousOn γ (Icc t₀ (t₀ + δ)))
     (h_s : γ t₀ = s) (h_leave : ∀ t ∈ Ioc t₀ (t₀ + δ), γ t ≠ s) :
