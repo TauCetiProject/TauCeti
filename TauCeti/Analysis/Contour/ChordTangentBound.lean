@@ -88,6 +88,23 @@ theorem norm_tangentDeviation {L : ℂ} (hL : L ≠ 0) (w : ℂ) :
   rw [eq_div_iff (norm_ne_zero_iff.mpr hL)]
   exact hnorm
 
+/-- The deviation norm is bounded by the vector norm: the perpendicular component is no longer
+than the vector. -/
+theorem norm_tangentDeviation_le {L : ℂ} (hL : L ≠ 0) (w : ℂ) :
+    ‖tangentDeviation w L‖ ≤ ‖w‖ := by
+  rw [norm_tangentDeviation hL]
+  calc |(w * starRingEnd ℂ L).im| / ‖L‖ ≤ ‖w * starRingEnd ℂ L‖ / ‖L‖ := by
+        gcongr; exact Complex.abs_im_le_norm _
+    _ = ‖w‖ := by rw [norm_mul, RCLike.norm_conj, mul_div_assoc,
+        div_self (norm_ne_zero_iff.mpr hL), mul_one]
+
+/-- The deviation norm is direction-line invariant: measuring against `-L` gives the same
+distance to the line `ℝ • L`. -/
+theorem norm_tangentDeviation_neg {L : ℂ} (hL : L ≠ 0) (w : ℂ) :
+    ‖tangentDeviation w (-L)‖ = ‖tangentDeviation w L‖ := by
+  rw [norm_tangentDeviation (neg_ne_zero.mpr hL), norm_tangentDeviation hL, map_neg, mul_neg,
+    Complex.neg_im, abs_neg, norm_neg]
+
 /-- **Pythagoras for the plane projection.** The squared norm of `w` decomposes into the squared
 norms of its projection on `L` and its orthogonal deviation. -/
 private theorem proj_sq_add_dev_sq (w L : ℂ) :
