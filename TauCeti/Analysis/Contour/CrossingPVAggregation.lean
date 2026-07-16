@@ -71,12 +71,12 @@ private theorem hasCauchyPVAt_of_dist_lower_bound {γ : ℝ → ℂ} {s : ℂ} {
 `[a, b]`, per-window convergence, and a positive off-window distance bound, the principal
 value at `s` exists on `[a, b]` — the between-pieces and windows concatenate. -/
 private theorem cauchyPVExistsAt_along_sorted {γ : ℝ → ℂ} {s : ℂ} {g : ℂ → ℂ}
-    {b r : ℝ} (hr_pos : 0 < r)
-    (h_int_tr : ∀ ε : ℝ, 0 < ε → ∀ l u : ℝ, l ≤ u →
+    {A b r : ℝ} (hr_pos : 0 < r)
+    (h_int_tr : ∀ ε : ℝ, 0 < ε →
       IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
-        MeasureTheory.volume l u) :
+        MeasureTheory.volume A b) :
     ∀ (sorted : List ℝ), sorted.SortedLT →
-    ∀ a : ℝ, a ≤ b → (∀ t ∈ sorted, a < t - r) → (∀ t ∈ sorted, t + r ≤ b) →
+    ∀ a : ℝ, A ≤ a → a ≤ b → (∀ t ∈ sorted, a < t - r) → (∀ t ∈ sorted, t + r ≤ b) →
       (∀ t ∈ sorted, ∀ t' ∈ sorted, t' ≠ t → 2 * r < |t - t'|) →
       (∀ t ∈ sorted, ∃ v : ℂ, Tendsto (fun ε : ℝ => ∫ u in (t - r)..(t + r),
           if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0) (𝓝[>] (0 : ℝ)) (𝓝 v)) →
@@ -86,13 +86,15 @@ private theorem cauchyPVExistsAt_along_sorted {γ : ℝ → ℂ} {s : ℂ} {g : 
   intro sorted
   induction sorted with
   | nil =>
-    intro _ a hab _ _ _ _ h_far
+    intro _ a hA hab _ _ _ _ h_far
     obtain ⟨m, hm_pos, hm⟩ := h_far
     exact CauchyPVExistsAt.intro (hasCauchyPVAt_of_dist_lower_bound hab hm_pos
       (fun u hu => hm u hu fun t ht => absurd ht (List.not_mem_nil))
-      (fun ε hε => h_int_tr ε hε a b hab))
+      (fun ε hε => (h_int_tr ε hε).mono_set (by
+        rw [uIcc_of_le hab, uIcc_of_le (hA.trans hab)]
+        exact Icc_subset_Icc hA le_rfl)))
   | cons t rest IH =>
-    intro h_sorted a hab h_lo h_hi h_pair h_win h_far
+    intro h_sorted a hA hab h_lo h_hi h_pair h_win h_far
     obtain ⟨m, hm_pos, hm⟩ := h_far
     obtain ⟨v_t, h_v_t⟩ := h_win t List.mem_cons_self
     have h_head_lo : a < t - r := h_lo t List.mem_cons_self
@@ -107,7 +109,9 @@ private theorem cauchyPVExistsAt_along_sorted {γ : ℝ → ℂ} {s : ℂ} {g : 
     have h_left : HasCauchyPVAt γ a (t - r) g s
         (∫ u in a..(t - r), g (γ u) * deriv γ u) := by
       refine hasCauchyPVAt_of_dist_lower_bound h_head_lo.le hm_pos (fun u hu => ?_)
-        (fun ε hε => h_int_tr ε hε a (t - r) h_head_lo.le)
+        (fun ε hε => (h_int_tr ε hε).mono_set (by
+          rw [uIcc_of_le h_head_lo.le, uIcc_of_le (hA.trans hab)]
+          exact Icc_subset_Icc hA (by linarith)))
       refine hm u ⟨hu.1, by linarith [hu.2]⟩ fun t' ht' h_in => ?_
       rcases List.mem_cons.mp ht' with rfl | h_rest
       · linarith [hu.2, h_in.1]
@@ -116,10 +120,13 @@ private theorem cauchyPVExistsAt_along_sorted {γ : ℝ → ℂ} {s : ℂ} {g : 
     have h_window : HasCauchyPVAt γ (t - r) (t + r) g s v_t :=
       hasCauchyPVAt_iff.mpr ⟨by
         filter_upwards [self_mem_nhdsWithin] with ε hε
-        exact h_int_tr ε hε (t - r) (t + r) (by linarith), h_v_t⟩
+        exact (h_int_tr ε hε).mono_set (by
+          rw [uIcc_of_le (show t - r ≤ t + r by linarith), uIcc_of_le (hA.trans hab)]
+          exact Icc_subset_Icc (by linarith) (by linarith)), h_v_t⟩
     -- recurse on the tail, over [t + r, b]
     obtain ⟨L_rest, h_rest⟩ := cauchyPVExistsAt_iff.mp (IH
-      ((List.pairwise_cons.mp h_sorted.pairwise).2).sortedLT (t + r) h_head_hi
+      ((List.pairwise_cons.mp h_sorted.pairwise).2).sortedLT (t + r)
+      (by linarith) h_head_hi
       (fun t' ht' => h_rest_above t' ht')
       (fun t' ht' => h_hi t' (List.mem_cons_of_mem t ht'))
       (fun t' ht' t'' ht'' hne => h_pair t' (List.mem_cons_of_mem t ht')
@@ -141,9 +148,9 @@ theorem cauchyPVExistsAt_of_perWindow_tendsto {γ : ℝ → ℂ} {s : ℂ} {g : 
     {a b r : ℝ} (hr_pos : 0 < r) (hab : a ≤ b) (crossings : Finset ℝ)
     (h_lo : ∀ t ∈ crossings, a < t - r) (h_hi : ∀ t ∈ crossings, t + r ≤ b)
     (h_pair : ∀ t ∈ crossings, ∀ t' ∈ crossings, t' ≠ t → 2 * r < |t - t'|)
-    (h_int_tr : ∀ ε : ℝ, 0 < ε → ∀ l u : ℝ, l ≤ u →
+    (h_int_tr : ∀ ε : ℝ, 0 < ε →
       IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
-        MeasureTheory.volume l u)
+        MeasureTheory.volume a b)
     (h_win : ∀ t ∈ crossings, ∃ v : ℂ, Tendsto (fun ε : ℝ => ∫ u in (t - r)..(t + r),
         if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0) (𝓝[>] (0 : ℝ)) (𝓝 v))
     (h_far : ∃ m : ℝ, 0 < m ∧ ∀ u ∈ Icc a b, (∀ t ∈ crossings, u ∉ Ioo (t - r) (t + r)) →
@@ -152,7 +159,7 @@ theorem cauchyPVExistsAt_of_perWindow_tendsto {γ : ℝ → ℂ} {s : ℂ} {g : 
   classical
   obtain ⟨m, hm_pos, hm⟩ := h_far
   exact cauchyPVExistsAt_along_sorted hr_pos h_int_tr
-    (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings) a hab
+    (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings) a le_rfl hab
     (fun t ht => h_lo t ((Finset.mem_sort _).mp ht))
     (fun t ht => h_hi t ((Finset.mem_sort _).mp ht))
     (fun t ht t' ht' hne => h_pair t ((Finset.mem_sort _).mp ht)
