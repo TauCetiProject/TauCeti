@@ -94,7 +94,7 @@ theorem JNum_singleton_left (p : Fin n × Fin n) (t : Finset (Fin n × Fin n)) :
 
 /-- No point of a set is both strictly northeast and strictly southwest of a fixed grid square, so
 the two directed neighbor sets are disjoint. -/
-theorem disjoint_filter_isSouthWest (p : Fin n × Fin n) (t : Finset (Fin n × Fin n)) :
+private theorem disjoint_filter_isSouthWest (p : Fin n × Fin n) (t : Finset (Fin n × Fin n)) :
     Disjoint (t.filter fun q => IsSouthWest p q) (t.filter fun q => IsSouthWest q p) := by
   rw [Finset.disjoint_left]
   intro q hq hq'
