@@ -78,6 +78,19 @@ theorem meromorphicPolarOrderAt_eq_one {f : ℂ → ℂ} {s : ℂ}
   rw [meromorphicPolarOrderAt_eq_of_order_eq h]
   rfl
 
+/-- The canonical polar order bounds the meromorphic order from below:
+`-(meromorphicPolarOrderAt f s) ≤ meromorphicOrderAt f s`. In particular, polar order `0` means
+the meromorphic order is nonnegative. -/
+theorem neg_meromorphicPolarOrderAt_le (f : ℂ → ℂ) (s : ℂ) :
+    (-(meromorphicPolarOrderAt f s : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s := by
+  rcases eq_or_ne (meromorphicOrderAt f s) ⊤ with h | h
+  · rw [h]; exact le_top
+  · rw [← WithTop.coe_untop₀_of_ne_top h]
+    rw [show (-(meromorphicPolarOrderAt f s : ℤ) : WithTop ℤ) =
+        ((-(meromorphicPolarOrderAt f s : ℤ) : ℤ) : WithTop ℤ) by push_cast; ring,
+      WithTop.coe_le_coe, meromorphicPolarOrderAt]
+    omega
+
 /-- Taylor decomposition of an analytic function to order `k`:
 `g z = ∑ j < k, c j * (z - s)^j + (z - s)^k * R z` with `R` analytic at `s`. Mathlib's
 `AnalyticAt.exists_eventuallyEq_sum_add_pow_mul` at the translate `g (· + s)`. -/
@@ -170,15 +183,8 @@ theorem exists_laurent_data_of_meromorphicAt {f : ℂ → ℂ} {s : ℂ} (hMero 
       AnalyticAt ℂ g s ∧
       ∀ᶠ z in 𝓝[≠] s,
         f z = g z + ∑ k : Fin (meromorphicPolarOrderAt f s), a k / (z - s) ^ (k.val + 1) := by
-  have hm : (-(meromorphicPolarOrderAt f s : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s := by
-    rcases eq_or_ne (meromorphicOrderAt f s) ⊤ with h | h
-    · rw [h]; exact le_top
-    · rw [← WithTop.coe_untop₀_of_ne_top h]
-      rw [show (-(meromorphicPolarOrderAt f s : ℤ) : WithTop ℤ) =
-          ((-(meromorphicPolarOrderAt f s : ℤ) : ℤ) : WithTop ℤ) by push_cast; ring,
-        WithTop.coe_le_coe, meromorphicPolarOrderAt]
-      omega
-  obtain ⟨g₀, hg₀_an, hg₀_eq⟩ := exists_analyticAt_eventuallyEq_zpow_smul hMero hm
+  obtain ⟨g₀, hg₀_an, hg₀_eq⟩ :=
+    exists_analyticAt_eventuallyEq_zpow_smul hMero (neg_meromorphicPolarOrderAt_le f s)
   exact laurent_data_of_zpow_factor _ hg₀_an hg₀_eq
 
 /-- The `k`-th canonical Laurent coefficient of `f` at `s`. -/
