@@ -120,8 +120,8 @@ simple pole): the curve is first-order tangent to its non-zero one-sided tangent
 perpendicular deviation from each tangent line is `o(‖γ t - γ t₀‖)`. -/
 theorem IsPwC1ImmersionOn.flatOfOrder_one (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
     (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) : FlatOfOrder γ t₀ 1 := by
-  obtain ⟨d, hd, -, hC1d, hned⟩ := h.exists_Icc_pieces_right ⟨ht₀.1.le, ht₀.2⟩
-  obtain ⟨c, hc, -, hC1c, hnec⟩ := h.exists_Icc_pieces_left ⟨ht₀.1, ht₀.2.le⟩
+  obtain ⟨d, hd, -, hC1d, hned⟩ := h.exists_Icc_piece_right ⟨ht₀.1.le, ht₀.2⟩
+  obtain ⟨c, hc, -, hC1c, hnec⟩ := h.exists_Icc_piece_left ⟨ht₀.1, ht₀.2.le⟩
   exact flatOfOrder_iff.mpr ⟨derivWithin γ (Icc t₀ d) t₀, derivWithin γ (Icc c t₀) t₀,
     hned t₀ (left_mem_Icc.mpr hd.le), hnec t₀ (right_mem_Icc.mpr hc.le),
     perp_isLittleO_right hd hC1d (hned t₀ (left_mem_Icc.mpr hd.le)),
@@ -134,9 +134,9 @@ theorem IsPwC1ImmersionOn.flatOfOrderBasepoint_one (h : IsPwC1ImmersionOn γ a b
     (hab : a < b) : FlatOfOrderBasepoint γ a b 1 := by
   have hmin : min a b = a := min_eq_left hab.le
   have hmax : max a b = b := max_eq_right hab.le
-  obtain ⟨d, hd, -, hC1d, hned⟩ := h.exists_Icc_pieces_right
+  obtain ⟨d, hd, -, hC1d, hned⟩ := h.exists_Icc_piece_right
     ⟨hmin.le, lt_of_lt_of_le hab hmax.ge⟩
-  obtain ⟨c, hc, -, hC1c, hnec⟩ := h.exists_Icc_pieces_left
+  obtain ⟨c, hc, -, hC1c, hnec⟩ := h.exists_Icc_piece_left
     ⟨hmin.le.trans_lt hab, hmax.ge⟩
   exact flatOfOrderBasepoint_iff.mpr ⟨derivWithin γ (Icc a d) a, derivWithin γ (Icc c b) b,
     hned a (left_mem_Icc.mpr hd.le), hnec b (right_mem_Icc.mpr hc.le),
