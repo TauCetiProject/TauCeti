@@ -31,15 +31,15 @@ parts converge by the annular argument limits, so the whole expression tends to
 
 The slit-plane hypotheses are taken as inputs rather than derived internally — the caller fixes
 the window radius once (for multi-crossing aggregation each crossing supplies a threshold
-radius and the minimum is used), and the companion lemmas
-`exists_chord_quotient_mem_slitPlane_right/left`,
-`exists_chord_div_tangent_mem_slitPlane_right`, and
-`exists_neg_tangent_div_chord_mem_slitPlane_left` produce radii at which they hold.
+radius and the minimum is used). The chord-quotient inputs are produced by
+`Contour.exists_chord_quotient_mem_slitPlane_right/left`; the tangent-side inputs are supplied
+externally by the window-boundary radii.
 
 ## Main results
 
-* `Contour.exists_perWindow_truncated_integral_tendsto` — the truncated window integral of the
-  simple-pole integrand converges as `ε → 0⁺`.
+* `Contour.perWindow_truncated_integral_tendsto` — the truncated window integral of the
+  simple-pole integrand converges as `ε → 0⁺`, to the log-norm difference of the window
+  boundary plus the boundary arguments.
 
 ## Provenance
 
@@ -61,18 +61,35 @@ open Filter MeasureTheory Set Topology
 /-- The `ε`-truncated simple-pole integrand is interval-integrable: off the `ε`-ball the
 integrand is dominated by `(1/ε) · ‖deriv γ‖`. -/
 private theorem intervalIntegrable_inv_sub_truncated {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
-    (hγ_meas : Measurable γ)
+    (hγ_cont : ContinuousOn γ (uIcc a b))
     (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume a b)
     {ε : ℝ} (hε : 0 < ε) :
     IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0)
       MeasureTheory.volume a b := by
-  have h_meas : Measurable
-      (fun t => if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0) := by
-    have hA : MeasurableSet {t : ℝ | ε < ‖γ t - s‖} :=
-      measurableSet_lt measurable_const ((hγ_meas.sub_const _).norm)
-    exact Measurable.ite hA ((hγ_meas.sub_const _).inv.mul (measurable_deriv _))
-      measurable_const
-  refine ((hderiv_int.norm.const_mul (1 / ε)).mono_fun h_meas.aestronglyMeasurable ?_)
+  have hK_closed : IsClosed {t ∈ uIcc a b | ‖γ t - s‖ ≤ ε} :=
+    ((hγ_cont.sub continuousOn_const).norm).preimage_isClosed_of_isClosed
+      (by rw [← Icc_min_max]; exact isClosed_Icc) isClosed_Iic
+  have h_inv_aesm : AEStronglyMeasurable (fun t => (γ t - s)⁻¹ * deriv γ t)
+      (MeasureTheory.volume.restrict (Set.uIoc a b)) := by
+    have hγ_aem : AEMeasurable γ (MeasureTheory.volume.restrict (Set.uIoc a b)) :=
+      ((hγ_cont.aestronglyMeasurable (by rw [← Icc_min_max]; exact measurableSet_Icc)
+        ).mono_measure (Measure.restrict_mono Set.uIoc_subset_uIcc le_rfl)).aemeasurable
+    exact (((hγ_aem.sub_const s).inv).mul
+      (intervalIntegrable_iff.mp hderiv_int).aestronglyMeasurable.aemeasurable
+      ).aestronglyMeasurable
+  have h_aesm : AEStronglyMeasurable
+      (fun t => if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0)
+      (MeasureTheory.volume.restrict (Set.uIoc a b)) := by
+    refine (h_inv_aesm.indicator hK_closed.measurableSet.compl).congr ?_
+    filter_upwards [MeasureTheory.ae_restrict_mem measurableSet_uIoc] with t ht
+    by_cases h_far : ‖γ t - s‖ > ε
+    · have h_mem : t ∈ {t ∈ uIcc a b | ‖γ t - s‖ ≤ ε}ᶜ :=
+        fun hK => absurd hK.2 (not_le.mpr h_far)
+      rw [Set.indicator_of_mem h_mem, if_pos h_far]
+    · have h_notMem : t ∉ {t ∈ uIcc a b | ‖γ t - s‖ ≤ ε}ᶜ := fun hKc =>
+        hKc ⟨Set.uIoc_subset_uIcc ht, not_lt.mp h_far⟩
+      rw [Set.indicator_of_notMem h_notMem, if_neg h_far]
+  refine ((hderiv_int.norm.const_mul (1 / ε)).mono_fun h_aesm ?_)
   refine Eventually.of_forall fun t => ?_
   -- β-reduce the two sides of the a.e. bound
   change ‖if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0‖ ≤ ‖1 / ε * ‖deriv γ t‖‖
@@ -143,13 +160,13 @@ private theorem log_sum_decomp {A B C D : ℂ} (hA : A ≠ 0) (hB : B ≠ 0) (hC
   push_cast
   ring
 
-/-- **The per-window principal value at a simple pole exists**: at a transverse crossing
-`γ t₀ = s` with unique crossing on the window, non-zero one-sided derivative limits, and the
-slit-plane inputs at the window radius, the `ε`-truncated window integral of
-`(γ t - s)⁻¹ * deriv γ t` converges as `ε → 0⁺`. -/
-theorem exists_perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {t₀ r : ℝ}
+/-- **The per-window principal value at a simple pole**: at a transverse crossing `γ t₀ = s`
+with unique crossing on the window, non-zero one-sided derivative limits, and the slit-plane
+inputs at the window radius, the `ε`-truncated window integral of `(γ t - s)⁻¹ * deriv γ t`
+converges as `ε → 0⁺` to the log-norm difference of the window boundary plus the two boundary
+arguments. -/
+theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {t₀ r : ℝ}
     {L_R L_L : ℂ} {P : Set ℝ} (hr_pos : 0 < r) (h_at : γ t₀ = s)
-    (hγ_meas : Measurable γ)
     (hγ_cont : ContinuousOn γ (Icc (t₀ - r) (t₀ + r)))
     (hL_R : L_R ≠ 0) (hL_L : L_L ≠ 0)
     (h_tendsto_R : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R))
@@ -163,20 +180,26 @@ theorem exists_perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ}
     (h_unique : ∀ t ∈ Icc (t₀ - r) (t₀ + r), γ t = s → t = t₀)
     (h_slit_R : ∀ a b, t₀ < a → a ≤ b → b ≤ t₀ + r →
       (γ b - s) / (γ a - s) ∈ Complex.slitPlane)
-    (h_slit_L : ∀ a b, t₀ - r ≤ a → a ≤ b → b < t₀ →
-      (γ b - s) / (γ a - s) ∈ Complex.slitPlane)
+    (h_slit_L : ∀ b, t₀ - r ≤ b → b < t₀ →
+      (γ b - s) / (γ (t₀ - r) - s) ∈ Complex.slitPlane)
     (h_slit_plus : (γ (t₀ + r) - s) / L_R ∈ Complex.slitPlane)
     (h_slit_minus : (-L_L) / (γ (t₀ - r) - s) ∈ Complex.slitPlane) :
-    ∃ v : ℂ, Tendsto (fun ε : ℝ => ∫ t in (t₀ - r)..(t₀ + r),
+    Tendsto (fun ε : ℝ => ∫ t in (t₀ - r)..(t₀ + r),
         if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0)
-      (𝓝[>] (0 : ℝ)) (𝓝 v) := by
+      (𝓝[>] (0 : ℝ))
+      (𝓝 (((Real.log ‖γ (t₀ + r) - s‖ - Real.log ‖γ (t₀ - r) - s‖ : ℝ) : ℂ) +
+        ((((-L_L) / (γ (t₀ - r) - s)).arg + ((γ (t₀ + r) - s) / L_R).arg : ℝ) : ℂ) *
+          Complex.I)) := by
   classical
   have hγ_at : ContinuousAt γ t₀ :=
     hγ_cont.continuousAt (Icc_mem_nhds (by linarith) (by linarith))
   obtain ⟨τL, τR, h_toL, h_toR, h_radL, h_radR, h_memL, h_memR, h_split⟩ :=
     exists_exit_times_truncated_integral_split hr_pos h_at hγ_cont hL_R hL_L
       h_tendsto_R h_tendsto_L h_diff_R h_diff_L h_unique (fun z => (z - s)⁻¹)
-      (fun ε hε a b _ hab _ => intervalIntegrable_inv_sub_truncated hγ_meas
+      (fun ε hε a b ha hab hb => intervalIntegrable_inv_sub_truncated
+        (hγ_cont.mono (by
+          rw [uIcc_of_le hab]
+          exact Icc_subset_Icc (by linarith) (by linarith)))
         (hderiv_int.mono_set (by
           rw [uIcc_of_le hab, uIcc_of_le (by linarith)]
           exact Icc_subset_Icc (by linarith) (by linarith))) hε)
@@ -208,9 +231,6 @@ theorem exists_perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ}
     absurd (h_unique _ (right_mem_Icc.mpr (by linarith)) h_eq) (by linarith)
   have h_ne_minus : γ (t₀ - r) - s ≠ 0 := sub_ne_zero.mpr fun h_eq =>
     absurd (h_unique _ (left_mem_Icc.mpr (by linarith)) h_eq) (by linarith)
-  refine ⟨((Real.log ‖γ (t₀ + r) - s‖ - Real.log ‖γ (t₀ - r) - s‖ : ℝ) : ℂ) +
-    ((((-L_L) / (γ (t₀ - r) - s)).arg + ((γ (t₀ + r) - s) / L_R).arg : ℝ) : ℂ) *
-      Complex.I, ?_⟩
   have h_ev : (fun ε : ℝ => ∫ t in (t₀ - r)..(t₀ + r),
       if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0) =ᶠ[𝓝[>] (0 : ℝ)]
       fun ε => ((Real.log ‖γ (t₀ + r) - s‖ - Real.log ‖γ (t₀ - r) - s‖ : ℝ) : ℂ) +
@@ -229,7 +249,7 @@ theorem exists_perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ}
         (by linarith [hτL.2]) (fun t ht h_eq => absurd (h_unique t
           ⟨by linarith [ht.1], by linarith [ht.2, hτL.2]⟩ h_eq)
           (by linarith [ht.2, hτL.2]))
-        (fun t ht => h_slit_L (t₀ - r) t le_rfl ht.1 (by linarith [ht.2, hτL.2])),
+        (fun t ht => h_slit_L t ht.1 (by linarith [ht.2, hτL.2])),
       annular_log_diff_window hP hγ_cont hγ_diffP hderiv_int hτR.2.le
         (by linarith [hτR.1]) le_rfl (fun t ht h_eq => absurd (h_unique t
           ⟨by linarith [ht.1, hτR.1], by linarith [ht.2]⟩ h_eq)
