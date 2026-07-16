@@ -218,6 +218,28 @@ theorem IsPwC1ImmersionOn.exists_deriv_left_limit (h : IsPwC1ImmersionOn γ a b)
   exact h1.congr' <| eventually_mem_nhdsWithin.mono fun t ht =>
     derivWithin_of_mem_nhds (Icc_mem_nhds ht.1 ht.2)
 
+/-- **The piece to the right of a parameter**: every `t₀ ∈ [min, max)` begins a breakpoint-free
+closed piece `[t₀, d] ⊆ [[a, b]]` on which the immersion is `C¹` with non-vanishing within-piece
+derivative. -/
+theorem IsPwC1ImmersionOn.exists_Icc_pieces_right (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ico (min a b) (max a b)) :
+    ∃ d : ℝ, t₀ < d ∧ Icc t₀ d ⊆ uIcc a b ∧ ContDiffOn ℝ 1 γ (Icc t₀ d) ∧
+      ∀ t ∈ Icc t₀ d, derivWithin γ (Icc t₀ d) t ≠ 0 := by
+  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨d, hlt, hsub, hdisj⟩ := exists_Icc_right_avoiding hp ht₀
+  exact ⟨d, hlt, hsub, hpieces t₀ d hlt hsub hdisj⟩
+
+/-- **The piece to the left of a parameter**: every `t₀ ∈ (min, max]` ends a breakpoint-free
+closed piece `[c, t₀] ⊆ [[a, b]]` on which the immersion is `C¹` with non-vanishing within-piece
+derivative. -/
+theorem IsPwC1ImmersionOn.exists_Icc_pieces_left (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ioc (min a b) (max a b)) :
+    ∃ c : ℝ, c < t₀ ∧ Icc c t₀ ⊆ uIcc a b ∧ ContDiffOn ℝ 1 γ (Icc c t₀) ∧
+      ∀ t ∈ Icc c t₀, derivWithin γ (Icc c t₀) t ≠ 0 := by
+  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨c, hlt, hsub, hdisj⟩ := exists_Icc_left_avoiding hp ht₀
+  exact ⟨c, hlt, hsub, hpieces c t₀ hlt hsub hdisj⟩
+
 end TauCeti.Contour
 
 end
