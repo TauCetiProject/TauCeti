@@ -30,7 +30,7 @@ simple poles a theorem about immersions rather than a hypothesis.
 Migrated from `isFlatOfOrder_one` of `FlatnessConditions.lean` in the AINTLIB `LeanModularForms`
 development, restated for the raw curve on `[[a, b]]`: the one-sided derivatives recovered there
 from tendsto limits are here the within-piece derivatives of `IsPwC1ImmersionOn` at the piece
-endpoints. See K. Hungerbühler, M. Wasem, *Non-integer valued winding numbers and a generalized
+endpoints. See N. Hungerbühler, M. Wasem, *Non-integer valued winding numbers and a generalized
 Residue Theorem*, arXiv:1808.00997, §3 (condition (A′) at simple poles).
 -/
 

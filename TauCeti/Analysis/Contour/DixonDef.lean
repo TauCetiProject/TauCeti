@@ -42,7 +42,7 @@ These are the building blocks of the `homologyCauchyTheorem` roadmap target
 Adapted from `dixonH1`, `dixonH2`, `dixonFunction`, and `dixonH1_eq_dixonH2_sub_winding_f` in
 `DixonDef.lean` of the AINTLIB `LeanModularForms` development, restated for a raw `γ : ℝ → ℂ` on an
 oriented interval with endpoints `a` and `b`. See J. D. Dixon, *A brief proof of Cauchy's integral
-theorem*, Proc. Amer. Math. Soc. 29 (1971), and N. Hungerbühler, J. Wasem, *A generalized notion of
+theorem*, Proc. Amer. Math. Soc. 29 (1971), and N. Hungerbühler, M. Wasem, *A generalized notion of
 winding numbers*.
 -/
 
