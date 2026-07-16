@@ -375,7 +375,7 @@ theorem residue_sum {ι : Type*} (s : Finset ι) {f : ι → ℂ → ℂ} {z₀ 
 /-- **The residue of a Laurent monomial**: `residue (a / (z - z₀)^(k+1)) z₀` is `a` for `k = 0`
 and `0` for higher-order terms. -/
 @[simp]
-theorem residue_const_div_pow_sub (a z₀ : ℂ) (k : ℕ) :
+theorem residue_const_div_sub_pow (a z₀ : ℂ) (k : ℕ) :
     residue (fun z => a / (z - z₀) ^ (k + 1)) z₀ = if k = 0 then a else 0 := by
   have hfg : (fun z => a / (z - z₀) ^ (k + 1)) =ᶠ[𝓝[≠] z₀]
       fun z => (z - z₀) ^ (-(k + 1 : ℕ) : ℤ) • a :=
@@ -406,7 +406,7 @@ theorem residue_of_laurent_expansion {f g : ℂ → ℂ} {z₀ : ℂ} {N : ℕ} 
   rw [residue_congr_nhdsNE hf_eq',
     residue_add hg.meromorphicAt (MeromorphicAt.sum fun k _ => hmono k),
     residue_eq_zero_of_analyticAt hg, zero_add, residue_sum _ fun k _ => hmono k]
-  simp only [residue_const_div_pow_sub]
+  simp only [residue_const_div_sub_pow]
   rcases Nat.eq_zero_or_pos N with rfl | hpos
   · simp
   · rw [dif_pos hpos, Finset.sum_eq_single ⟨0, hpos⟩ (fun k _ hk => if_neg fun h0 =>
