@@ -44,7 +44,7 @@ direction, not the inner-product-space machinery.
 
 Migrated from `FlatChordBound.lean` (with the `orthogonalProjectionComplex` and
 `tangentDeviation` definitions of `FlatnessConditions.lean`) of the AINTLIB `LeanModularForms`
-development. See K. Hungerbühler, M. Wasem, *Non-integer valued winding numbers and a
+development. See N. Hungerbühler, M. Wasem, *Non-integer valued winding numbers and a
 generalized Residue Theorem*, arXiv:1808.00997, §3.
 -/
 
