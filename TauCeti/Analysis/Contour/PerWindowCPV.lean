@@ -40,6 +40,8 @@ externally by the window-boundary radii.
 * `Contour.perWindow_truncated_integral_tendsto` — the truncated window integral of the
   simple-pole integrand converges as `ε → 0⁺`, to the log-norm difference of the window
   boundary plus the boundary arguments.
+* `Contour.intervalIntegrable_inv_sub_truncated` — the truncated simple-pole integrand is
+  interval-integrable at every truncation level `ε > 0`.
 
 ## Provenance
 
@@ -60,7 +62,7 @@ open Filter MeasureTheory Set Topology
 
 /-- The `ε`-truncated simple-pole integrand is interval-integrable: off the `ε`-ball the
 integrand is dominated by `(1/ε) · ‖deriv γ‖`. -/
-private theorem intervalIntegrable_inv_sub_truncated {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
+theorem intervalIntegrable_inv_sub_truncated {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
     (hγ_cont : ContinuousOn γ (uIcc a b))
     (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume a b)
     {ε : ℝ} (hε : 0 < ε) :
