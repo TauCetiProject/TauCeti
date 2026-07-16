@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.InnerProductSpace.Defs
 import TauCeti.Analysis.Calculus.OneSidedDerivLimit
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
@@ -16,8 +16,9 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 /-!
 # Strict monotonicity of the distance to a crossed point
 
-Near a transverse crossing — `γ t₀ = s` with non-zero one-sided derivative limit `L` — the
-distance `‖γ t - s‖` is strictly monotone on a one-sided closed interval at `t₀`: increasing to
+Near a transverse crossing — `γ t₀ = s` with non-zero one-sided derivative limit `L`, for a
+curve `γ : ℝ → F` into a real inner product space — the distance `‖γ t - s‖` is strictly
+monotone on a one-sided closed interval at `t₀`: increasing to
 the right, decreasing to the left. Consequently the curve exits each small disc around `s`
 exactly once on each side, which is what lets the crossing analysis of the generalized residue
 theorem invert `ε ↦ exit time` and build the excision cutoffs of the principal value.
@@ -50,12 +51,14 @@ namespace TauCeti.Contour
 
 open Filter Set Topology
 
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
 /-- **Two-sided inner-product expansion bound.** Near a one-sided derivative limit `L`, the
 derivative of `‖γ t - s‖²` (up to the factor `2`) deviates from its leading term
 `(t - t₀)‖L‖²` by at most `|t - t₀|‖L‖²/2`. Both one-sided strict-monotonicity statements read
 off their sign from this single bound. -/
-private theorem abs_inner_chord_deriv_sub_le {γ : ℝ → ℂ} {t₀ : ℝ} {s : ℂ} (h_at : γ t₀ = s)
-    {L : ℂ} (hL : L ≠ 0) {u : Set ℝ}
+private theorem abs_inner_chord_deriv_sub_le {γ : ℝ → F} {t₀ : ℝ} {s : F} (h_at : γ t₀ = s)
+    {L : F} (hL : L ≠ 0) {u : Set ℝ}
     (h_deriv : HasDerivWithinAt γ L u t₀)
     (hL_tendsto : Tendsto (deriv γ) (𝓝[u] t₀) (𝓝 L)) :
     ∀ᶠ t in 𝓝[u] t₀,
@@ -68,8 +71,8 @@ private theorem abs_inner_chord_deriv_sub_le {γ : ℝ → ℂ} {t₀ : ℝ} {s 
     filter_upwards [(Metric.tendsto_nhds.mp hL_tendsto) η hη_pos] with t ht
     rwa [dist_eq_norm] at ht
   filter_upwards [hr.def hη_pos, h_deriv_close] with t h_chord_t h_dclose_t
-  set R : ℂ := γ t - γ t₀ - (t - t₀) • L with hR_def
-  set D : ℂ := deriv γ t - L with hD_def
+  set R : F := γ t - γ t₀ - (t - t₀) • L with hR_def
+  set D : F := deriv γ t - L with hD_def
   have hR_norm : ‖R‖ ≤ η * |t - t₀| := by rwa [Real.norm_eq_abs] at h_chord_t
   have hD_norm : ‖D‖ ≤ η := le_of_lt h_dclose_t
   have h_err_LD : |inner ℝ L D| ≤ ‖L‖ * η :=
@@ -86,8 +89,8 @@ private theorem abs_inner_chord_deriv_sub_le {γ : ℝ → ℂ} {t₀ : ℝ} {s 
     exact mul_le_mul_of_nonneg_left h_err_LD (abs_nonneg _)
   have h_expand : inner ℝ (γ t - s) (deriv γ t) - (t - t₀) * ‖L‖ ^ 2 =
       (t - t₀) * inner ℝ L D + inner ℝ R L + inner ℝ R D := by
-    rw [show γ t - s = (t - t₀) • L + R by rw [hR_def, h_at]; ring,
-      show deriv γ t = L + D by rw [hD_def]; ring,
+    rw [show γ t - s = (t - t₀) • L + R by rw [hR_def, h_at]; abel,
+      show deriv γ t = L + D by rw [hD_def]; abel,
       inner_add_left, inner_add_right, inner_add_right,
       real_inner_smul_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
     ring
@@ -105,8 +108,8 @@ private theorem abs_inner_chord_deriv_sub_le {γ : ℝ → ℂ} {t₀ : ℝ} {s 
 for a curve through `s = γ t₀` with non-zero right derivative limit `L`, continuity at `t₀`,
 and eventual differentiability on the right, `‖γ t - s‖` is strictly monotone on `[t₀, t₀ + r]`
 for some `r > 0` — the curve exits each small disc around `s` exactly once. -/
-theorem exists_strictMonoOn_norm_sub_right {γ : ℝ → ℂ} {t₀ : ℝ} {s : ℂ} (h_at : γ t₀ = s)
-    {L : ℂ} (hL : L ≠ 0)
+theorem exists_strictMonoOn_norm_sub_right {γ : ℝ → F} {t₀ : ℝ} {s : F} (h_at : γ t₀ = s)
+    {L : F} (hL : L ≠ 0)
     (hL_right : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L))
     (hγ_cont : ContinuousAt γ t₀)
     (hγ_diff : ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t) :
@@ -158,8 +161,8 @@ private theorem tendsto_reflection_nhdsGT (t₀ : ℝ) :
 counterpart of `exists_strictMonoOn_norm_sub_right`, derived from it by the reflection
 `t ↦ 2t₀ - t` (which carries the left data of `γ` to right data of the reflected curve with
 derivative limit `-L`). -/
-theorem exists_strictAntiOn_norm_sub_left {γ : ℝ → ℂ} {t₀ : ℝ} {s : ℂ} (h_at : γ t₀ = s)
-    {L : ℂ} (hL : L ≠ 0)
+theorem exists_strictAntiOn_norm_sub_left {γ : ℝ → F} {t₀ : ℝ} {s : F} (h_at : γ t₀ = s)
+    {L : F} (hL : L ≠ 0)
     (hL_left : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L))
     (hγ_cont : ContinuousAt γ t₀)
     (hγ_diff : ∀ᶠ t in 𝓝[<] t₀, DifferentiableAt ℝ γ t) :
