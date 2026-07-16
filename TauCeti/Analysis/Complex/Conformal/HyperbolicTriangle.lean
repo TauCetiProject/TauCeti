@@ -40,7 +40,7 @@ Main results:
   triangle inequality against the origin;
 * `hyperbolicDist_triangle_zero` — the hyperbolic triangle inequality with the origin as the
   middle point;
-* `hyperbolicDist_triangle` / `hyperbolicDist_triangle_coe` — the full hyperbolic triangle
+* `hyperbolicDist_triangle` / `hyperbolicDist_triangle_unitDisc` — the full hyperbolic triangle
   inequality `hyperbolicDist z w ≤ hyperbolicDist z u + hyperbolicDist u w`, in ball and
   bundled `Complex.UnitDisc` form.
 
@@ -153,7 +153,7 @@ theorem hyperbolicDist_triangle_zero {z w : ℂ}
 /-- **Hyperbolic triangle inequality (bundled unit-disc form).**
 `hyperbolicDist z w ≤ hyperbolicDist z u + hyperbolicDist u w`, proved by sending the middle
 point `u` to the origin with the Moebius isometry `unitDiscMoebius u`. -/
-theorem hyperbolicDist_triangle_coe (u z w : Complex.UnitDisc) :
+theorem hyperbolicDist_triangle_unitDisc (u z w : Complex.UnitDisc) :
     hyperbolicDist (z : ℂ) (w : ℂ)
       ≤ hyperbolicDist (z : ℂ) (u : ℂ) + hyperbolicDist (u : ℂ) (w : ℂ) := by
   have hinv : ∀ p q : Complex.UnitDisc,
@@ -178,7 +178,7 @@ theorem hyperbolicDist_triangle {z w u : ℂ}
   have hwn : ‖w‖ < 1 := by simpa [mem_ball_zero_iff] using hw
   have hun : ‖u‖ < 1 := by simpa [mem_ball_zero_iff] using hu
   simpa [Complex.UnitDisc.coe_mk] using
-    hyperbolicDist_triangle_coe (Complex.UnitDisc.mk u hun)
+    hyperbolicDist_triangle_unitDisc (Complex.UnitDisc.mk u hun)
       (Complex.UnitDisc.mk z hzn) (Complex.UnitDisc.mk w hwn)
 
 end TauCeti
