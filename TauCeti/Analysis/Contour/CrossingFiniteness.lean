@@ -27,10 +27,6 @@ compact `[[a, b]]` would have an accumulation point.
 ## Main results
 
 * `Contour.IsPwC1ImmersionOn.eventually_ne_nhdsNE` — crossings of an immersion are isolated.
-* `Contour.IsPwC1ImmersionOn.exists_finset_differentiableAt` — an immersion is differentiable
-  at every interior parameter off a finite exceptional set.
-* `Contour.IsPwC1ImmersionOn.eventually_differentiableAt_right` / `_left` — eventual one-sided
-  differentiability at an interior parameter.
 * `Contour.IsPwC1ImmersionOn.finite_crossings` — **HW Proposition 2.2**: the crossing set
   `[[a, b]] ∩ γ ⁻¹' {z₀}` of an immersion is finite.
 
@@ -195,37 +191,6 @@ theorem IsPwC1ImmersionOn.eventually_ne_nhdsNE (h : IsPwC1ImmersionOn γ a b) {t
   rw [punctured_nhds_eq_nhdsWithin_sup_nhdsWithin, Filter.eventually_sup]
   exact ⟨crossing_isolated_left h ⟨ht₀.1, ht₀.2.le⟩ hcross,
     crossing_isolated_right h ⟨ht₀.1.le, ht₀.2⟩ hcross⟩
-
-/-- **Interior differentiability off a finite set**: an immersion is differentiable at every
-interior parameter off some finite exceptional set — the countable-exception hypothesis of the
-logarithmic fundamental theorem of calculus along the curve. -/
-theorem IsPwC1ImmersionOn.exists_finset_differentiableAt (h : IsPwC1ImmersionOn γ a b) :
-    ∃ p : Finset ℝ, ∀ t ∈ Ioo (min a b) (max a b) \ (↑p : Set ℝ), DifferentiableAt ℝ γ t := by
-  obtain ⟨p, -, hpieces⟩ := h.exists_breakpoints
-  exact ⟨p, fun t ht => (deriv_ne_zero_off_breakpoints hpieces ht.1 ht.2).1⟩
-
-/-- **Eventual differentiability near an interior parameter**, on any within-filter avoiding
-the parameter itself. -/
-theorem IsPwC1ImmersionOn.eventually_differentiableAt (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
-    (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) {u : Set ℝ} (hu : t₀ ∉ u) :
-    ∀ᶠ t in 𝓝[u] t₀, DifferentiableAt ℝ γ t := by
-  obtain ⟨p, hp⟩ := h.exists_finset_differentiableAt
-  have hcl : IsClosed ((↑p \ {t₀} : Set ℝ)) := (p.finite_toSet.subset sdiff_subset).isClosed
-  filter_upwards [nhdsWithin_le_nhds (hcl.isOpen_compl.mem_nhds (by simp)),
-    nhdsWithin_le_nhds (isOpen_Ioo.mem_nhds ht₀), self_mem_nhdsWithin] with t htc htIoo htu
-  exact hp t ⟨htIoo, fun htp => htc ⟨htp, fun h_eq => hu (h_eq ▸ htu)⟩⟩
-
-/-- Eventual differentiability from the right at an interior parameter. -/
-theorem IsPwC1ImmersionOn.eventually_differentiableAt_right (h : IsPwC1ImmersionOn γ a b)
-    {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) :
-    ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t :=
-  h.eventually_differentiableAt ht₀ self_notMem_Ioi
-
-/-- Eventual differentiability from the left at an interior parameter. -/
-theorem IsPwC1ImmersionOn.eventually_differentiableAt_left (h : IsPwC1ImmersionOn γ a b)
-    {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) :
-    ∀ᶠ t in 𝓝[<] t₀, DifferentiableAt ℝ γ t :=
-  h.eventually_differentiableAt ht₀ self_notMem_Iio
 
 /-- **HW Proposition 2.2: the crossing set of a piecewise-`C¹` immersion is finite** — the
 geometric input that makes the on-cycle singularities of the generalized residue theorem a

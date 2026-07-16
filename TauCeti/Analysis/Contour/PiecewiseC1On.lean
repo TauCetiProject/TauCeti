@@ -63,7 +63,7 @@ noncomputable section
 
 namespace TauCeti.Contour
 
-open MeasureTheory Set
+open Filter MeasureTheory Set Topology
 
 variable {γ : ℝ → ℂ} {a b : ℝ}
 
@@ -163,18 +163,49 @@ private theorem exists_Icc_mem_avoiding {p : Finset ℝ} {t : ℝ}
     exact (hball (show x ∈ Ioo (t - ε) (t + ε) from
       ⟨by linarith [hx.1], by linarith [hx.2]⟩)).2
 
+/-- **Differentiability off a finite set.** A piecewise-`C¹` curve is differentiable at every
+interior parameter outside a finite set — the breakpoints. -/
+theorem IsPiecewiseC1On.exists_finset_differentiableAt (h : IsPiecewiseC1On γ a b) :
+    ∃ p : Finset ℝ,
+      ∀ t ∈ Ioo (min a b) (max a b) \ (↑p : Set ℝ), DifferentiableAt ℝ γ t := by
+  obtain ⟨p, -, hC1⟩ := h.exists_breakpoints
+  refine ⟨p, fun t ht => ?_⟩
+  obtain ⟨c, d, htcd, hsub, hdisj⟩ := exists_Icc_mem_avoiding ht.1 ht.2
+  exact ((hC1 c d hsub hdisj).differentiableOn one_ne_zero).differentiableAt
+    (Icc_mem_nhds htcd.1 htcd.2)
+
 /-- **Differentiability off a countable set.** A piecewise-`C¹` curve is differentiable at every
 interior parameter outside a countable set — the breakpoints. This is the exact regularity shape
 consumed by the raw contour-integral development (Dixon's argument and the winding-number
 machinery). -/
 theorem IsPiecewiseC1On.exists_countable_differentiableAt (h : IsPiecewiseC1On γ a b) :
     ∃ P : Set ℝ, P.Countable ∧
-      ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t := by
-  obtain ⟨p, -, hC1⟩ := h.exists_breakpoints
-  refine ⟨↑p, p.countable_toSet, fun t ht => ?_⟩
-  obtain ⟨c, d, htcd, hsub, hdisj⟩ := exists_Icc_mem_avoiding ht.1 ht.2
-  exact ((hC1 c d hsub hdisj).differentiableOn one_ne_zero).differentiableAt
-    (Icc_mem_nhds htcd.1 htcd.2)
+      ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t :=
+  let ⟨p, hp⟩ := h.exists_finset_differentiableAt
+  ⟨↑p, p.countable_toSet, hp⟩
+
+/-- **Eventual differentiability near an interior parameter**, on any within-filter avoiding
+the parameter itself. -/
+theorem IsPiecewiseC1On.eventually_differentiableAt (h : IsPiecewiseC1On γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) {u : Set ℝ} (hu : t₀ ∉ u) :
+    ∀ᶠ t in 𝓝[u] t₀, DifferentiableAt ℝ γ t := by
+  obtain ⟨p, hp⟩ := h.exists_finset_differentiableAt
+  have hcl : IsClosed ((↑p \ {t₀} : Set ℝ)) := (p.finite_toSet.subset sdiff_subset).isClosed
+  filter_upwards [nhdsWithin_le_nhds (hcl.isOpen_compl.mem_nhds (by simp)),
+    nhdsWithin_le_nhds (isOpen_Ioo.mem_nhds ht₀), self_mem_nhdsWithin] with t htc htIoo htu
+  exact hp t ⟨htIoo, fun htp => htc ⟨htp, fun h_eq => hu (h_eq ▸ htu)⟩⟩
+
+/-- Eventual differentiability from the right at an interior parameter. -/
+theorem IsPiecewiseC1On.eventually_differentiableAt_right (h : IsPiecewiseC1On γ a b)
+    {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) :
+    ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t :=
+  h.eventually_differentiableAt ht₀ self_notMem_Ioi
+
+/-- Eventual differentiability from the left at an interior parameter. -/
+theorem IsPiecewiseC1On.eventually_differentiableAt_left (h : IsPiecewiseC1On γ a b)
+    {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) :
+    ∀ᶠ t in 𝓝[<] t₀, DifferentiableAt ℝ γ t :=
+  h.eventually_differentiableAt ht₀ self_notMem_Iio
 
 /-- The derivative of a curve that is `C¹` on `[c, d]` is interval-integrable on `c..d`: the
 within-interval derivative is continuous on the compact piece, and agrees with `deriv` on the
