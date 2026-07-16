@@ -168,7 +168,6 @@ theorem IsPwC1ImmersionOn.hasCauchyPVAt_pow_inv {γ : ℝ → ℂ} {a b : ℝ} {
   · obtain ⟨r₀, hr₀_pos, h_endpts, h_pair₀, -⟩ := exists_common_window_radius (P := ∅)
       hT_ne h_Ioo fun t _ => Finset.notMem_empty t
     have hρ_pos : 0 < r₀ / 2 := half_pos hr₀_pos
-    have hρ_lt : r₀ / 2 < r₀ := half_lt_self hr₀_pos
     refine hasCauchyPVAt_of_perWindow_boundary_tendsto
       (Φ := fun z => c * (-(↑(k - 1) : ℂ)⁻¹ * ((z - s) ^ (k - 1))⁻¹))
       hρ_pos hab.le T
