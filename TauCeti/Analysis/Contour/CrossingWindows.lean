@@ -29,13 +29,16 @@ scaffolding that localizes the principal-value analysis to one crossing per wind
 * `Contour.eq_of_mem_window_of_eq` — in-window uniqueness of the crossing.
 * `Contour.exists_window_dist_lower_bound` — a positive lower bound for `‖γ t - s‖` on the two
   closed half-windows excluding the crossing.
+* `Contour.exists_complement_windows_dist_lower_bound` — a positive lower bound for
+  `‖γ t - s‖` on the complement of the open crossing windows in `[a, b]`.
 
 ## Provenance
 
-Migrated from `multi_pole_common_radius`, `multi_pole_local_uniqueness`, and
-`multi_pole_local_far_bound` of `CPVExistenceMulti.lean` in the AINTLIB `LeanModularForms`
-development, restated for a raw curve over an arbitrary interval `(a, b)` (there the domain is
-the bundled `[0, 1]` of a `ClosedPwC1Immersion`), with the half-window bounds obtained from
+Migrated from `multi_pole_common_radius`, `multi_pole_local_uniqueness`,
+`multi_pole_local_far_bound` (`CPVExistenceMulti.lean`), and
+`multi_pole_smooth_complement_far_bound` (`LocalCutoffs.lean`) in the AINTLIB
+`LeanModularForms` development, restated for a raw curve over an arbitrary interval (there the
+domain is the bundled `[0, 1]` of a `ClosedPwC1Immersion`), with the half-window bounds from
 `Contour.exists_curve_dist_lower_bound` rather than a bespoke compactness argument. See
 N. Hungerbühler, M. Wasem, *Non-integer valued winding numbers and a generalized Residue
 Theorem*, arXiv:1808.00997, §3.
@@ -186,6 +189,40 @@ theorem exists_window_dist_lower_bound {γ : ℝ → ℂ} {s : ℂ} {t_i r : ℝ
   refine ⟨min ml mr, lt_min hml_pos hmr_pos, fun t ht => ?_, fun t ht => ?_⟩
   · exact (min_le_left _ _).trans (hml t (by rwa [uIcc_of_le (by linarith)]))
   · exact (min_le_right _ _).trans (hmr t (by rwa [uIcc_of_le (by linarith)]))
+
+/-- **Positive distance bound off the crossing windows**: with every value-`s` parameter of
+`[a, b]` a listed crossing, `‖γ t - s‖` is bounded below by a positive `m` on the complement of
+the open crossing windows in `[a, b]` — the far bound on the smooth part of a multi-crossing
+excision. -/
+theorem exists_complement_windows_dist_lower_bound {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
+    {crossings : Finset ℝ} (hγ_cont : ContinuousOn γ (Icc a b))
+    (h_complete : ∀ t ∈ Icc a b, γ t = s → t ∈ crossings)
+    (r_at : ℝ → ℝ) (hr_pos : ∀ t ∈ crossings, 0 < r_at t) :
+    ∃ m > 0, ∀ t ∈ Icc a b,
+      (∀ t_i ∈ crossings, t ∉ Ioo (t_i - r_at t_i) (t_i + r_at t_i)) →
+      m ≤ ‖γ t - s‖ := by
+  classical
+  set C : Set ℝ := {t ∈ Icc a b |
+    ∀ t_i ∈ crossings, t ∉ Ioo (t_i - r_at t_i) (t_i + r_at t_i)} with hC_def
+  have hC_subset : C ⊆ Icc a b := fun t ht => ht.1
+  have hC_closed : IsClosed C := by
+    have h_eq : C = Icc a b ∩ ⋂ t_i ∈ crossings, (Ioo (t_i - r_at t_i) (t_i + r_at t_i))ᶜ := by
+      ext t
+      simp only [hC_def, mem_setOf_eq, mem_inter_iff, mem_iInter, mem_compl_iff]
+    rw [h_eq]
+    exact isClosed_Icc.inter (isClosed_biInter fun _ _ => isOpen_Ioo.isClosed_compl)
+  have hC_compact : IsCompact C := isCompact_Icc.of_isClosed_subset hC_closed hC_subset
+  rcases C.eq_empty_or_nonempty with hC_empty | hC_ne
+  · refine ⟨1, one_pos, fun t ht h_avoid => absurd ?_ (notMem_empty t)⟩
+    have h_mem : t ∈ C := ⟨ht, h_avoid⟩
+    rwa [hC_empty] at h_mem
+  · obtain ⟨t_min, ht_min_mem, ht_min⟩ := hC_compact.exists_isMinOn hC_ne
+      (((hγ_cont.mono hC_subset).sub continuousOn_const).norm)
+    refine ⟨‖γ t_min - s‖, ?_, fun t ht h_avoid => ht_min ⟨ht, h_avoid⟩⟩
+    refine norm_pos_iff.mpr (sub_ne_zero.mpr fun h_eq => ?_)
+    have h_cross : t_min ∈ crossings := h_complete t_min (hC_subset ht_min_mem) h_eq
+    exact ht_min_mem.2 t_min h_cross
+      ⟨by linarith [hr_pos t_min h_cross], by linarith [hr_pos t_min h_cross]⟩
 
 end TauCeti.Contour
 
