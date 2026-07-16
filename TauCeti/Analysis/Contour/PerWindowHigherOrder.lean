@@ -199,10 +199,10 @@ theorem perWindow_higherOrder_truncated_integral_tendsto {γ : ℝ → ℂ} {s :
     filter_upwards [h_split, h_memL, h_memR] with ε hsplit hτL hτR
     have h_ne_left : ∀ t ∈ Icc (t_i - r) (τL ε), γ t ≠ s := fun t ht h_eq => by
       have := h_unique t ⟨ht.1, by linarith [ht.2, hτL.2]⟩ h_eq
-      linarith [ht.2, hτL.2, this ▸ le_refl t]
+      linarith [ht.2, hτL.2, this]
     have h_ne_right : ∀ t ∈ Icc (τR ε) (t_i + r), γ t ≠ s := fun t ht h_eq => by
       have := h_unique t ⟨by linarith [ht.1, hτR.1], ht.2⟩ h_eq
-      linarith [ht.1, hτR.1, this ▸ le_refl t]
+      linarith [ht.1, hτR.1, this]
     rw [hsplit,
       integral_pow_inv_mul_deriv_eq_sub hk c hτL.1.le hP
         (fun t ht => h_ne_left t ht)
