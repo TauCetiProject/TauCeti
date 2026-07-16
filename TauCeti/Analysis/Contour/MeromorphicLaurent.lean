@@ -161,36 +161,6 @@ private theorem laurent_data_of_zpow_factor {f g₀ : ℂ → ℂ} {s : ℂ} (k 
         pow_div_pow_neg hz_sub j.isLt]]
   exact reindex_sum_fin_neg c (z - s)
 
-/-- Factorisation of a meromorphic `f` at the canonical polar order:
-`f = (z - s)^(-meromorphicPolarOrderAt) • g₀` near `s` with `g₀` analytic (nonnegative powers of
-`z - s` are absorbed into the cofactor; `g₀ = 0` when `f` vanishes near `s`). -/
-private theorem exists_zpow_factor_at_canonical_order {f : ℂ → ℂ} {s : ℂ}
-    (hMero : MeromorphicAt f s) :
-    ∃ g₀ : ℂ → ℂ, AnalyticAt ℂ g₀ s ∧
-      ∀ᶠ z in 𝓝[≠] s, f z = (z - s) ^ (-(meromorphicPolarOrderAt f s : ℤ)) • g₀ z := by
-  by_cases h_top : meromorphicOrderAt f s = ⊤
-  · have h0 : meromorphicPolarOrderAt f s = 0 := by
-      rw [meromorphicPolarOrderAt, h_top, WithTop.untop₀_top, neg_zero, Int.toNat_zero]
-    refine ⟨fun _ => 0, analyticAt_const, ?_⟩
-    filter_upwards [meromorphicOrderAt_eq_top_iff.mp h_top] with z hz
-    rw [hz, smul_zero]
-  · obtain ⟨n, h_ord⟩ := WithTop.ne_top_iff_exists.mp h_top
-    obtain ⟨g, hg_an, _, hg_eq⟩ := (meromorphicOrderAt_eq_int_iff hMero).mp h_ord.symm
-    have h_val : (meromorphicPolarOrderAt f s : ℤ) = max (-n) 0 := by
-      rw [meromorphicPolarOrderAt_eq_of_order_eq h_ord.symm]
-      omega
-    rcases le_or_gt 0 n with hn | hn
-    · -- no pole: absorb `(z - s)^n` into the analytic cofactor
-      refine ⟨fun z => (z - s) ^ n.toNat * g z,
-        ((analyticAt_id.sub analyticAt_const).pow _).mul hg_an, ?_⟩
-      filter_upwards [hg_eq] with z hz
-      rw [hz, show -(meromorphicPolarOrderAt f s : ℤ) = 0 by omega, zpow_zero, one_smul,
-        smul_eq_mul, show n = (n.toNat : ℤ) by omega, zpow_natCast, Int.toNat_natCast]
-    · -- a pole of order `-n = meromorphicPolarOrderAt f s`
-      refine ⟨g, hg_an, ?_⟩
-      rw [show -(meromorphicPolarOrderAt f s : ℤ) = n by omega]
-      exact hg_eq
-
 /-- **Canonical Laurent data of a meromorphic function**: near `s`,
 `f = g + ∑ k, a k / (z - s)^(k+1)` with `g` analytic at `s`, where the tail length is the
 canonical polar order `meromorphicPolarOrderAt f s` — pinned, not existentially chosen, so it is
@@ -200,7 +170,15 @@ theorem exists_laurent_data_of_meromorphicAt {f : ℂ → ℂ} {s : ℂ} (hMero 
       AnalyticAt ℂ g s ∧
       ∀ᶠ z in 𝓝[≠] s,
         f z = g z + ∑ k : Fin (meromorphicPolarOrderAt f s), a k / (z - s) ^ (k.val + 1) := by
-  obtain ⟨g₀, hg₀_an, hg₀_eq⟩ := exists_zpow_factor_at_canonical_order hMero
+  have hm : (-(meromorphicPolarOrderAt f s : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s := by
+    rcases eq_or_ne (meromorphicOrderAt f s) ⊤ with h | h
+    · rw [h]; exact le_top
+    · rw [← WithTop.coe_untop₀_of_ne_top h]
+      rw [show (-(meromorphicPolarOrderAt f s : ℤ) : WithTop ℤ) =
+          ((-(meromorphicPolarOrderAt f s : ℤ) : ℤ) : WithTop ℤ) by push_cast; ring,
+        WithTop.coe_le_coe, meromorphicPolarOrderAt]
+      omega
+  obtain ⟨g₀, hg₀_an, hg₀_eq⟩ := exists_analyticAt_eventuallyEq_zpow_smul hMero hm
   exact laurent_data_of_zpow_factor _ hg₀_an hg₀_eq
 
 /-- The `k`-th canonical Laurent coefficient of `f` at `s`. -/

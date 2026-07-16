@@ -272,8 +272,9 @@ theorem residue_eq_of_eventuallyEq_zpow_smul {f g : ℂ → ℂ} {z₀ : ℂ} {n
 /-- Any meromorphic `f` admits an analytic presentation `f z = (z − z₀) ^ m • φ z` near `z₀` at any
 exponent `m` at or below its meromorphic order (padding the reduced presentation with a nonnegative
 power of `z − z₀`). The factor `φ` is analytic but may vanish at `z₀` when `m` is strictly below the
-order. Used to bring two meromorphic functions to a common exponent before adding their residues. -/
-private lemma exists_analyticAt_eventuallyEq_zpow_smul {f : ℂ → ℂ} {z₀ : ℂ} {m : ℤ}
+order. Brings two meromorphic functions to a common exponent before adding their residues, and is
+the factorisation entry point for the canonical Laurent data (`MeromorphicLaurent.lean`). -/
+lemma exists_analyticAt_eventuallyEq_zpow_smul {f : ℂ → ℂ} {z₀ : ℂ} {m : ℤ}
     (hf : MeromorphicAt f z₀) (hm : (m : WithTop ℤ) ≤ meromorphicOrderAt f z₀) :
     ∃ φ : ℂ → ℂ, AnalyticAt ℂ φ z₀ ∧ f =ᶠ[𝓝[≠] z₀] fun z => (z - z₀) ^ m • φ z := by
   rcases eq_or_ne (meromorphicOrderAt f z₀) ⊤ with htop | htop
