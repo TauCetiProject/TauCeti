@@ -226,33 +226,44 @@ order of `f`'s pole there. Wherever `γ` meets a point of `S` at which `f` has a
 the curve is flat of order `n` — tangent to a line at a simple pole, flatter at a higher pole — and
 each such `s` is met only finitely often. Together with
 condition (B) it is a regularity hypothesis of the generalized residue theorem (HW Thm 3.3). It is
-imposed at each *interior* crossing `t₀ ∈ (a, b)` and the *basepoint* `γ a` (`= γ b` for a closed
-curve), so a join singularity is not left free. Pole orders are read from `f` via
-`meromorphicOrderAt`; `S` selects the singularities to constrain. -/
+imposed at each *interior* crossing `t₀` strictly between the endpoints and at the *basepoint*
+`γ (min a b)` (`= γ (max a b)` for a closed curve), so a join singularity is not left free. The
+clauses are stated over `min`/`max`, so the condition is invariant under swapping the endpoints
+(`conditionAprime_comm`), like the curve predicates it accompanies. Pole orders are read from
+`f` via `meromorphicOrderAt`; `S` selects the singularities to constrain. -/
 structure ConditionAprime (γ : ℝ → ℂ) (a b : ℝ) (f : ℂ → ℂ) (S : Finset ℂ) : Prop where
-  /-- Each prescribed singularity `s ∈ S` is met only **finitely often** on `[a, b]`: the crossing
-  set `[a, b] ∩ γ ⁻¹' {s}` is finite. -/
-  finite_crossings : ∀ s ∈ S, (Set.Icc a b ∩ γ ⁻¹' {s}).Finite
+  /-- Each prescribed singularity `s ∈ S` is met only **finitely often** on `[[a, b]]`: the
+  crossing set `[[a, b]] ∩ γ ⁻¹' {s}` is finite. -/
+  finite_crossings : ∀ s ∈ S, (Set.uIcc a b ∩ γ ⁻¹' {s}).Finite
   /-- At each interior crossing of a prescribed singularity where `f` has a pole of order `n`, the
   curve `γ` is flat of order `n`. -/
-  interior : ∀ t₀ ∈ Set.Ioo a b, γ t₀ ∈ S → ∀ n : ℕ, 1 ≤ n →
+  interior : ∀ t₀ ∈ Set.Ioo (min a b) (max a b), γ t₀ ∈ S → ∀ n : ℕ, 1 ≤ n →
     meromorphicOrderAt f (γ t₀) = (-(n : ℤ) : WithTop ℤ) → FlatOfOrder γ t₀ n
-  /-- If the basepoint `γ a` (`= γ b`) is a prescribed singularity where `f` has a
-  pole of order `n`, then `γ` is flat of order `n` across the join. -/
-  basepoint : γ a ∈ S → ∀ n : ℕ, 1 ≤ n →
-    meromorphicOrderAt f (γ a) = (-(n : ℤ) : WithTop ℤ) → FlatOfOrderBasepoint γ a b n
+  /-- If the basepoint `γ (min a b)` (`= γ (max a b)` for a closed curve) is a prescribed
+  singularity where `f` has a pole of order `n`, then `γ` is flat of order `n` across the
+  join. -/
+  basepoint : γ (min a b) ∈ S → ∀ n : ℕ, 1 ≤ n →
+    meromorphicOrderAt f (γ (min a b)) = (-(n : ℤ) : WithTop ℤ) →
+      FlatOfOrderBasepoint γ (min a b) (max a b) n
 
 /-- Characterization of `ConditionAprime` by its three clauses, for rewriting the hypothesis into
 the `finite_crossings ∧ interior ∧ basepoint` conjunction (and back via the anonymous constructor).
 -/
 theorem conditionAprime_iff {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {S : Finset ℂ} :
     ConditionAprime γ a b f S ↔
-      (∀ s ∈ S, (Set.Icc a b ∩ γ ⁻¹' {s}).Finite) ∧
-      (∀ t₀ ∈ Set.Ioo a b, γ t₀ ∈ S → ∀ n : ℕ, 1 ≤ n →
+      (∀ s ∈ S, (Set.uIcc a b ∩ γ ⁻¹' {s}).Finite) ∧
+      (∀ t₀ ∈ Set.Ioo (min a b) (max a b), γ t₀ ∈ S → ∀ n : ℕ, 1 ≤ n →
           meromorphicOrderAt f (γ t₀) = (-(n : ℤ) : WithTop ℤ) → FlatOfOrder γ t₀ n) ∧
-        (γ a ∈ S → ∀ n : ℕ, 1 ≤ n →
-          meromorphicOrderAt f (γ a) = (-(n : ℤ) : WithTop ℤ) → FlatOfOrderBasepoint γ a b n) :=
+        (γ (min a b) ∈ S → ∀ n : ℕ, 1 ≤ n →
+          meromorphicOrderAt f (γ (min a b)) = (-(n : ℤ) : WithTop ℤ) →
+          FlatOfOrderBasepoint γ (min a b) (max a b) n) :=
   ⟨fun h => ⟨h.finite_crossings, h.interior, h.basepoint⟩, fun h => ⟨h.1, h.2.1, h.2.2⟩⟩
+
+/-- Condition (A′) is invariant under swapping the endpoints: all its clauses are stated over
+`min`/`max`. -/
+theorem conditionAprime_comm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {S : Finset ℂ} :
+    ConditionAprime γ a b f S ↔ ConditionAprime γ b a f S := by
+  rw [conditionAprime_iff, conditionAprime_iff, Set.uIcc_comm, min_comm a b, max_comm a b]
 
 /-- **Sector compatibility** of `f` at an on-curve singularity `z₀` whose sector opens at angle `θ`
 (the Hungerbühler–Wasem condition at one crossing): the angle is a rational multiple of `π` and the
@@ -283,28 +294,37 @@ theorem sectorCompatible_iff {f : ℂ → ℂ} {z₀ : ℂ} {θ : ℝ} :
 on-curve pole of `f` the crossing sector is `SectorCompatible`. Together with condition (A′)
 it is a hypothesis of the generalized residue theorem (HW Thm 3.3), where it forces the
 order-`> 1` principal parts to cancel, so that the `PV ∮_γ f` the theorem evaluates is
-well-defined. Imposed at each *interior* crossing `t₀ ∈ (a, b)` and at the *basepoint* `γ a`
-(via `basepointAngle`), so a join singularity `γ a = γ b` is not left free. Higher-order poles
-are found intrinsically via `meromorphicOrderAt f (γ t₀) < -1`; simple poles need no sector
+well-defined. Imposed at each *interior* crossing `t₀` strictly between the endpoints and at
+the *basepoint* `γ (min a b)` (via `basepointAngle`), so a join singularity is not left free;
+stated over `min`/`max`, the condition is invariant under swapping the endpoints
+(`conditionB_comm`). Higher-order poles are found intrinsically via
+`meromorphicOrderAt f (γ t₀) < -1`; simple poles need no sector
 condition, so the predicate is `S`-free. -/
 structure ConditionB (γ : ℝ → ℂ) (a b : ℝ) (f : ℂ → ℂ) : Prop where
   /-- At each interior higher-order (order `> 1`) on-curve pole of `f`, the crossing sector at
   `γ t₀` is compatible. -/
-  interior : ∀ t₀ ∈ Set.Ioo a b, meromorphicOrderAt f (γ t₀) < (-1 : ℤ) →
+  interior : ∀ t₀ ∈ Set.Ioo (min a b) (max a b), meromorphicOrderAt f (γ t₀) < (-1 : ℤ) →
     SectorCompatible f (γ t₀) (crossingAngle γ t₀)
-  /-- If the basepoint `γ a` (`= γ b` for a closed curve) is a higher-order on-curve pole of `f`,
-  its join sector is compatible — the endpoint case the `interior` clause cannot reach. -/
-  basepoint : meromorphicOrderAt f (γ a) < (-1 : ℤ) →
-    SectorCompatible f (γ a) (basepointAngle γ a b)
+  /-- If the basepoint `γ (min a b)` (`= γ (max a b)` for a closed curve) is a higher-order
+  on-curve pole of `f`, its join sector is compatible — the endpoint case the `interior` clause
+  cannot reach. -/
+  basepoint : meromorphicOrderAt f (γ (min a b)) < (-1 : ℤ) →
+    SectorCompatible f (γ (min a b)) (basepointAngle γ (min a b) (max a b))
 
 /-- Characterization of `ConditionB` by its two clauses, for rewriting the hypothesis into the
 `interior ∧ basepoint` conjunction (and back via the anonymous constructor). -/
 theorem conditionB_iff {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} :
     ConditionB γ a b f ↔
-      (∀ t₀ ∈ Set.Ioo a b, meromorphicOrderAt f (γ t₀) < (-1 : ℤ) →
+      (∀ t₀ ∈ Set.Ioo (min a b) (max a b), meromorphicOrderAt f (γ t₀) < (-1 : ℤ) →
           SectorCompatible f (γ t₀) (crossingAngle γ t₀)) ∧
-        (meromorphicOrderAt f (γ a) < (-1 : ℤ) →
-          SectorCompatible f (γ a) (basepointAngle γ a b)) :=
+        (meromorphicOrderAt f (γ (min a b)) < (-1 : ℤ) →
+          SectorCompatible f (γ (min a b)) (basepointAngle γ (min a b) (max a b))) :=
   ⟨fun h => ⟨h.interior, h.basepoint⟩, fun h => ⟨h.1, h.2⟩⟩
+
+/-- Condition (B) is invariant under swapping the endpoints: both its clauses are stated over
+`min`/`max`. -/
+theorem conditionB_comm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} :
+    ConditionB γ a b f ↔ ConditionB γ b a f := by
+  rw [conditionB_iff, conditionB_iff, min_comm a b, max_comm a b]
 
 end TauCeti.Contour
