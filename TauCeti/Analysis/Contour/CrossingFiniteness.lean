@@ -37,7 +37,7 @@ lemmas) of the AINTLIB `LeanModularForms` development, restated for the raw curv
 `[[a, b]]`: the one-sided tangent data carried there by the `left_deriv_limit` /
 `right_deriv_limit` fields of the bundled `PwC1Immersion` comes from the `IsPwC1ImmersionOn`
 tangent-limit API (`PwC1ImmersionOn.lean`), which uniformises the smooth-point and breakpoint
-cases of the isolation argument. See K. Hungerbühler, M. Wasem, *Non-integer valued
+cases of the isolation argument. See N. Hungerbühler, M. Wasem, *Non-integer valued
 winding numbers and a generalized Residue Theorem*, arXiv:1808.00997, Proposition 2.2.
 -/
 

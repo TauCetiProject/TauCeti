@@ -35,7 +35,7 @@ parts.
 The structure is migrated from `PolarPartDecomposition` of `HungerbuhlerWasem.lean` in the
 AINTLIB `LeanModularForms` development; the remainder-integral theorem is its
 `analyticRemainder_contourIntegral_zero`, which there re-runs Dixon's argument inline and here is
-a direct application of `Contour.homologyCauchyTheorem`. See K. Hungerbühler, M. Wasem,
+a direct application of `Contour.homologyCauchyTheorem`. See N. Hungerbühler, M. Wasem,
 *Non-integer valued winding numbers and a generalized Residue Theorem*, arXiv:1808.00997, §3.
 -/
 
