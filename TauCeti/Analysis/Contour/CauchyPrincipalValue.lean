@@ -136,6 +136,30 @@ theorem CauchyPVExistsAt.intro {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} 
     (h : HasCauchyPVAt γ a b f z₀ L) : CauchyPVExistsAt γ a b f z₀ :=
   ⟨L, h⟩
 
+/-- **The `ε`-truncated integrand is interval-integrable from a bound off the ball**: whenever
+`f ∘ γ` is bounded by `M` at distance `> ε` from `z₀` and the truncated integrand is
+a.e.-strongly measurable, the truncated integrand is dominated by `M · ‖deriv γ‖`. -/
+theorem intervalIntegrable_truncated_mul_deriv {γ : ℝ → ℂ} {f : ℂ → ℂ} {z₀ : ℂ}
+    {a b M ε : ℝ}
+    (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume a b)
+    (h_aesm : MeasureTheory.AEStronglyMeasurable
+      (fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0)
+      (MeasureTheory.volume.restrict (Set.uIoc a b)))
+    (h_bd : ∀ t : ℝ, ε < ‖γ t - z₀‖ → ‖f (γ t)‖ ≤ M) :
+    IntervalIntegrable (fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0)
+      MeasureTheory.volume a b := by
+  refine (hderiv_int.norm.const_mul M).mono_fun h_aesm
+    (Filter.Eventually.of_forall fun t => ?_)
+  -- β-reduce the two sides of the a.e. bound
+  change ‖if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0‖ ≤ ‖M * ‖deriv γ t‖‖
+  by_cases h_far : ‖γ t - z₀‖ > ε
+  · rw [if_pos h_far, norm_mul]
+    calc ‖f (γ t)‖ * ‖deriv γ t‖
+        ≤ M * ‖deriv γ t‖ := mul_le_mul_of_nonneg_right (h_bd t h_far) (norm_nonneg _)
+      _ ≤ ‖M * ‖deriv γ t‖‖ := le_abs_self _
+  · rw [if_neg h_far, norm_zero]
+    positivity
+
 /-- Constructor for `HasCauchyPVAt` from its two clauses — eventual integrability of the excised
 integrand and convergence of the excised integrals — without unfolding the definition. -/
 theorem HasCauchyPVAt.intro {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ} {L : ℂ}
