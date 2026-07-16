@@ -30,7 +30,7 @@ Laurent witness constrains them.
   canonical order has the canonical coefficients.
 * `Contour.ConditionAprime.flatOfOrder_of_crossing` — condition (A′) discharges the gated
   flatness hypothesis (for every index below the order; no surviving coefficient needed).
-* `Contour.ConditionB.pow_tangent_eq_of_coeff_ne_zero` — condition (B) discharges the gated
+* `Contour.ConditionB.pow_unit_tangent_eq_of_coeff_ne_zero` — condition (B) discharges the gated
   sector hypothesis.
 * `Contour.mem_Ioo_of_closed_of_ne` — on a closed curve with basepoint off `z`, every
   crossing of `z` is interior.
@@ -163,7 +163,7 @@ theorem: a surviving coefficient of index `≥ 1` makes `s` a pole of order `> 1
 condition's sector compatibility at the crossing angle carries a Laurent witness whose
 coefficients are the decomposition's by uniqueness, and its resonance transfers to the unit
 tangent powers through the crossing-angle bridge. -/
-theorem ConditionB.pow_tangent_eq_of_coeff_ne_zero {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
+theorem ConditionB.pow_unit_tangent_eq_of_coeff_ne_zero {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
     (hB : ConditionB γ a b f) {S : Finset ℂ} {U : Set ℂ}
     (decomp : PolarPartDecomposition f S U) (hU : IsOpen U) (hSU : (S : Set ℂ) ⊆ U)
     (s : S) (hMero : MeromorphicAt f ↑s)
