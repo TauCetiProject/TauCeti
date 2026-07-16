@@ -6,17 +6,18 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Data.Finset.Lattice.Fold
+public import Mathlib.Data.Finset.Max
 public import Mathlib.Order.Interval.Set.Defs
 import TauCeti.Analysis.Contour.CurveDistance
 import Mathlib.Order.Interval.Set.UnorderedInterval
+import Mathlib.Topology.MetricSpace.Infsep
 
 /-!
 # Pairwise-disjoint windows around a finite set of crossings
 
 For a finite set of crossing parameters in an open interval `(a, b)`, off a finite exceptional
-set, there is a common radius `r > 0` whose closed windows `[t_i - r, t_i + r]` stay inside
-`(a, b)`, are pairwise disjoint, and avoid the exceptional set
+set, there is a common radius `r > 0` whose closed windows `[t_i - r, t_i + r]` stay within
+`[a, b]`, are pairwise disjoint, and avoid the exceptional set
 (`exists_common_window_radius`). Inside such a window, completeness of the crossing set makes
 the crossing unique (`eq_of_mem_window_of_eq`), and the distance from the curve to the crossed
 point is bounded below off the crossing (`exists_window_dist_lower_bound`) — the geometric
@@ -48,19 +49,20 @@ namespace TauCeti.Contour
 
 open Set
 
-/-- The minimum pairwise distance of a finite set with at least two elements is positive. -/
+/-- The minimum pairwise distance of a finite set with at least two elements is positive:
+`Set.infsep` positivity for finite sets. -/
 private theorem min_pairwise_distance_pos {crossings : Finset ℝ}
     (h_card : 2 ≤ crossings.card) :
     ∃ d > 0, ∀ t₁ ∈ crossings, ∀ t₂ ∈ crossings, t₁ ≠ t₂ → d ≤ |t₁ - t₂| := by
-  obtain ⟨p, hp, q, hq, hpq⟩ := Finset.one_lt_card.mp h_card
-  obtain ⟨m, hm_mem, hm⟩ :=
-    Finset.exists_min_image ((crossings ×ˢ crossings).filter (fun p => p.1 ≠ p.2))
-      (fun p => |p.1 - p.2|)
-      ⟨(p, q), Finset.mem_filter.mpr ⟨Finset.mem_product.mpr ⟨hp, hq⟩, hpq⟩⟩
-  rw [Finset.mem_filter, Finset.mem_product] at hm_mem
-  refine ⟨|m.1 - m.2|, abs_pos.mpr (sub_ne_zero.mpr hm_mem.2), ?_⟩
-  exact fun t₁ ht₁ t₂ ht₂ ht_ne =>
-    hm (t₁, t₂) <| Finset.mem_filter.mpr ⟨Finset.mem_product.mpr ⟨ht₁, ht₂⟩, ht_ne⟩
+  have h_nt : (↑crossings : Set ℝ).Nontrivial := by
+    obtain ⟨p, hp, q, hq, hpq⟩ := Finset.one_lt_card.mp h_card
+    exact ⟨p, hp, q, hq, hpq⟩
+  refine ⟨(↑crossings : Set ℝ).infsep,
+    Set.infsep_pos.mpr ⟨crossings.finite_toSet.einfsep_pos, h_nt.einfsep_lt_top⟩,
+    fun t₁ ht₁ t₂ ht₂ ht_ne => ?_⟩
+  have h := Set.infsep_le_dist_of_mem (s := (↑crossings : Set ℝ))
+    (Finset.mem_coe.mpr ht₁) (Finset.mem_coe.mpr ht₂) ht_ne
+  rwa [Real.dist_eq] at h
 
 /-- A finite subset of the open interval `(a, b)` is uniformly separated from both
 endpoints. -/
@@ -95,8 +97,8 @@ private theorem crossings_bounded_from_exceptional {crossings P : Finset ℝ}
     exact fun t ht p hp => hm (t, p) (Finset.mem_product.mpr ⟨ht, hp⟩)
 
 /-- **The common window radius**: for a finite set of crossings in `(a, b)` avoiding a finite
-exceptional set `P`, there is `r > 0` such that every window `[t_i - r, t_i + r]` stays inside
-`(a, b)`, distinct crossings are more than `2r` apart (so the windows are pairwise disjoint),
+exceptional set `P`, there is `r > 0` such that every window `[t_i - r, t_i + r]` stays within
+`[a, b]`, distinct crossings are more than `2r` apart (so the windows are pairwise disjoint),
 and no exceptional point comes within `r` of a crossing. -/
 theorem exists_common_window_radius {a b : ℝ} {crossings P : Finset ℝ}
     (h_nonempty : crossings.Nonempty)
@@ -134,13 +136,13 @@ theorem exists_common_window_radius {a b : ℝ} {crossings P : Finset ℝ}
         (min_le_right c (min (e / 2) (d / 4))).trans (min_le_left (e / 2) (d / 4))]
 
 /-- **In-window uniqueness of the crossing**: with windows inside `[a, b]`, distinct crossings
-more than `2r` apart, and completeness — every parameter of `[a, b]` where `γ` takes the value
+more than `r` apart, and completeness — every parameter of `[a, b]` where `γ` takes the value
 `s` is a listed crossing — the only parameter of the window `[t_i - r, t_i + r]` where `γ`
 takes the value `s` is `t_i` itself. Stated for a bare function; no regularity is used. -/
 theorem eq_of_mem_window_of_eq {α : Type*} {γ : ℝ → α} {s : α} {a b : ℝ}
     {crossings : Finset ℝ} {r : ℝ}
     (h_endpts : ∀ t ∈ crossings, a + r ≤ t ∧ t ≤ b - r)
-    (h_pairwise : ∀ t ∈ crossings, ∀ t' ∈ crossings, t' ≠ t → 2 * r < |t - t'|)
+    (h_pairwise : ∀ t ∈ crossings, ∀ t' ∈ crossings, t' ≠ t → r < |t - t'|)
     (h_complete : ∀ t ∈ Icc a b, γ t = s → t ∈ crossings)
     {t_i : ℝ} (ht_i : t_i ∈ crossings)
     {t : ℝ} (ht : t ∈ Icc (t_i - r) (t_i + r)) (h_eq : γ t = s) :
