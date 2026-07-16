@@ -22,8 +22,8 @@ antiderivative `F(z) = -1/((k-1)(z-s)^(k-1))` of `z ↦ (z - s)^(-k)`:
 
 ## Main results
 
-* `Contour.antiderivative_tangent_target_eq_of_pow_eq` — under the power identity, `F` takes
-  equal values at the two chord targets `s + ε • (L₊ / ‖L₊‖)` and `s + ε • (-L₋ / ‖L₋‖)`.
+* `Contour.smul_pow_eq_of_div_norm_pow_eq` — under the power identity, the radius-`ε` chords
+  `ε • (L₊ / ‖L₊‖)` and `ε • (-L₋ / ‖L₋‖)` have equal `(k-1)`-th powers.
 * `Contour.antiderivative_diff_across_crossing_tendsto_zero` — for a curve flat of order
   `n ≥ k` at the crossing with one-sided tangents `L₋`, `L₊`, the difference of `F` along the
   curve across the crossing, evaluated at exit times from the `ε`-disc on each side, tends to
@@ -31,9 +31,9 @@ antiderivative `F(z) = -1/((k-1)(z-s)^(k-1))` of `z ↦ (z - s)^(-k)`:
 
 ## Provenance
 
-Migrated from `F_line_diff_eq_zero_under_conditionB` and
-`F_curve_diff_tendsto_zero_under_conditionB` of `SectorCancellation.lean` in the AINTLIB
-`LeanModularForms` development. There the flatness hypothesis is tangent-indexed
+Migrated from `F_line_diff_eq_zero_under_conditionB` (here pared to the underlying chord
+power identity) and `F_curve_diff_tendsto_zero_under_conditionB` of `SectorCancellation.lean`
+in the AINTLIB `LeanModularForms` development. There the flatness hypothesis is tangent-indexed
 (`IsFlatOfOrder`), so the deviation bounds feed in directly; here `Contour.FlatOfOrder`
 quantifies its witness directions existentially, and the tangent-forcing bridge
 (`FlatOfOrder.tangentDeviation_isLittleO_right/left`) recovers them. See N. Hungerbühler,
@@ -49,23 +49,22 @@ namespace TauCeti.Contour
 
 open Filter Set Topology
 
-/-- **Equal antiderivative values at the two chord targets.** For the antiderivative
-`F(z) = -1/((k-1)(z-s)^(k-1))` and tangent directions `L₊` (rightward) and `-L₋` (the left
-tangent, used inward), the values at the radius-`ε` chord targets agree under the power
-identity `(L₊ / ‖L₊‖)^(k-1) = (-L₋ / ‖L₋‖)^(k-1)` — condition (B) of Hungerbühler–Wasem. For
-`k` odd the identity holds automatically, since `k - 1` is even. -/
-theorem antiderivative_tangent_target_eq_of_pow_eq (s L_minus L_plus : ℂ) (k : ℕ)
+/-- **Equal chord powers under condition (B).** For tangent directions `L₊` (rightward) and
+`-L₋` (the left tangent, used inward), the radius-`ε` chords have equal `(k-1)`-th powers
+under the power identity `(L₊ / ‖L₊‖)^(k-1) = (-L₋ / ‖L₋‖)^(k-1)` — condition (B) of
+Hungerbühler–Wasem. When the curve is `C¹` at the crossing (`L₋ = L₊`), condition (B) holds
+automatically for `k` odd, since `(-1)^(k-1) = 1`. -/
+theorem smul_pow_eq_of_div_norm_pow_eq (L_minus L_plus : ℂ) (k : ℕ)
     (h_B : (L_plus / (‖L_plus‖ : ℂ)) ^ (k - 1) =
       ((-L_minus) / (‖L_minus‖ : ℂ)) ^ (k - 1)) (ε : ℝ) :
-    -(↑(k - 1) : ℂ)⁻¹ * (((s + (ε / ‖L_plus‖ : ℝ) • L_plus) - s) ^ (k - 1))⁻¹ =
-    -(↑(k - 1) : ℂ)⁻¹ * (((s + (ε / ‖L_minus‖ : ℝ) • (-L_minus)) - s) ^ (k - 1))⁻¹ := by
+    (((ε / ‖L_plus‖ : ℝ) • L_plus : ℂ)) ^ (k - 1) =
+    (((ε / ‖L_minus‖ : ℝ) • (-L_minus) : ℂ)) ^ (k - 1) := by
   have h_smul : ∀ (r : ℝ) (v : ℂ), ((ε / r : ℝ) • v : ℂ) = (ε : ℂ) * (v / (r : ℂ)) := by
     intro r v
     rw [Complex.real_smul]
     push_cast
     rw [div_mul_eq_mul_div, mul_div_assoc]
-  rw [add_sub_cancel_left, add_sub_cancel_left, h_smul ‖L_plus‖ L_plus,
-    h_smul ‖L_minus‖ (-L_minus), mul_pow, mul_pow, h_B]
+  rw [h_smul ‖L_plus‖ L_plus, h_smul ‖L_minus‖ (-L_minus), mul_pow, mul_pow, h_B]
 
 /-- **The antiderivative difference across a flat crossing tends to zero.** For a curve flat of
 order `n` at `t₀` over the pole `s = γ t₀`, with one-sided tangents `L₋` (left) and `L₊`
@@ -111,7 +110,9 @@ theorem antiderivative_diff_across_crossing_tendsto_zero
         (((γ t₀ + (‖γ (t_eps_plus ε) - γ t₀‖ / ‖L_plus‖ : ℝ) • L_plus) - γ t₀)
           ^ (k - 1))⁻¹ := by
     rw [hmr, norm_neg, hpr]
-    exact (antiderivative_tangent_target_eq_of_pow_eq (γ t₀) L_minus L_plus k h_B ε).symm
+    congr 2
+    rw [add_sub_cancel_left, add_sub_cancel_left]
+    exact (smul_pow_eq_of_div_norm_pow_eq L_minus L_plus k h_B ε).symm
   rw [h_targets]
   have htri : ∀ A B TR : ℂ, ‖A - B‖ ≤ ‖B - TR‖ + ‖A - TR‖ := by
     intro A B TR
