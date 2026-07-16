@@ -38,13 +38,19 @@ Where the two sides share a proof, the statement is parametrised over the within
   one-sided interval lie in the slit plane.
 * `Contour.arg_annular_quotient_tendsto_right` / `_left` — convergence of the annular
   quotient arguments along a positive cutoff `δ(ε) → 0⁺`.
+* `Contour.exists_chord_div_tangent_mem_slitPlane_right` /
+  `Contour.exists_neg_tangent_div_chord_mem_slitPlane_left` — a window radius on which the
+  boundary quotients (chord over tangent on the right, negated tangent over chord on the left)
+  lie in the slit plane, discharging the `h_slit` hypotheses of the annular lemmas.
 
 ## Provenance
 
 Migrated from `chord_div_t_tendsto`, `normalized_chord_close`, `exists_normalized_chord_*`,
 `div_mem_slitPlane_of_close_to_one`, `chord_quotient_mem_slitPlane`,
 `exists_slitPlane_chord_quotient_*`, `tendsto_arg_of_pos_smul_tendsto`, and
-`arg_*_annular_tendsto` of `CPVExistence.lean` in the AINTLIB `LeanModularForms` development.
+`arg_*_annular_tendsto` of `CPVExistence.lean`, together with
+`exists_chord_div_endpoint_slitPlane_right`/`_left` of `LocalCutoffs.lean`, in the AINTLIB
+`LeanModularForms` development.
 See N. Hungerbühler, M. Wasem, *Non-integer valued winding numbers and a generalized Residue
 Theorem*, arXiv:1808.00997, §3.
 -/
@@ -258,6 +264,64 @@ theorem arg_annular_quotient_tendsto_left
   refine (h_chord.div_const (γ (t₀ - r) - s)).congr fun ε => ?_
   push_cast
   ring
+
+/-- For `q` with `‖-q - 1‖ ≤ 1/4`, the negated inverse `-1/q` lies in the slit plane: the
+`z = 1`, `w = -q` instance of `div_mem_slitPlane_of_close_to_one`. -/
+private theorem neg_inv_mem_slitPlane_of_neg_close_to_one {q : ℂ} (hq : ‖-q - 1‖ ≤ 1 / 4) :
+    -1 / q ∈ Complex.slitPlane := by
+  have h := div_mem_slitPlane_of_close_to_one (z := 1) (w := -q) (by norm_num) hq
+  rwa [div_neg, ← neg_div] at h
+
+/-- **Boundary chord-to-tangent quotients in the slit plane (right)**: there is a window radius
+`r > 0` such that `(γ (t₀ + r') - s) / L ∈ Complex.slitPlane` for every `0 < r' ≤ r` — the
+`h_slit` input of `arg_annular_quotient_tendsto_right` at any admissible window radius. -/
+theorem exists_chord_div_tangent_mem_slitPlane_right
+    (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) (h_at : γ t₀ = s) (hL : L ≠ 0) :
+    ∃ r > 0, ∀ r', 0 < r' → r' ≤ r → (γ (t₀ + r') - s) / L ∈ Complex.slitPlane := by
+  obtain ⟨r, hr_pos, hr_close⟩ :=
+    exists_normalized_chord_bound_right h_deriv h_at hL (ρ := 1 / 4) (by norm_num)
+  refine ⟨r, hr_pos, fun r' hr'_pos hr'_le => ?_⟩
+  have h_close : ‖(γ (t₀ + r') - s) / (L * ((r' : ℝ) : ℂ)) - 1‖ ≤ 1 / 4 := by
+    rw [show ((r' : ℝ) : ℂ) = (((t₀ + r') - t₀ : ℝ) : ℂ) from by push_cast; ring]
+    exact hr_close (t₀ + r') ⟨by linarith, by linarith⟩
+  have h_div_eq : (γ (t₀ + r') - s) / L =
+      ((r' : ℝ) : ℂ) * ((γ (t₀ + r') - s) / (L * ((r' : ℝ) : ℂ))) := by
+    have hr'_ne : ((r' : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hr'_pos.ne'
+    field_simp
+  rw [h_div_eq]
+  refine ofReal_pos_mul_mem_slitPlane hr'_pos (Complex.ball_one_subset_slitPlane ?_)
+  rw [Metric.mem_ball, dist_eq_norm]
+  linarith
+
+/-- **Boundary chord-to-tangent quotients in the slit plane (left)**: there is a window radius
+`r > 0` such that `(-L) / (γ (t₀ - r') - s) ∈ Complex.slitPlane` for every `0 < r' ≤ r` — the
+`h_slit` input of `arg_annular_quotient_tendsto_left` at any admissible window radius. -/
+theorem exists_neg_tangent_div_chord_mem_slitPlane_left
+    (h_deriv : HasDerivWithinAt γ L (Iio t₀) t₀) (h_at : γ t₀ = s) (hL : L ≠ 0) :
+    ∃ r > 0, ∀ r', 0 < r' → r' ≤ r →
+      (-L) / (γ (t₀ - r') - s) ∈ Complex.slitPlane := by
+  obtain ⟨r, hr_pos, hr_close⟩ :=
+    exists_normalized_chord_bound_left h_deriv h_at hL (ρ := 1 / 4) (by norm_num)
+  refine ⟨r, hr_pos, fun r' hr'_pos hr'_le => ?_⟩
+  set q : ℂ := (γ (t₀ - r') - s) / (L * ((r' : ℝ) : ℂ)) with hq_def
+  have hq_close : ‖-q - 1‖ ≤ 1 / 4 := by
+    have h_close := hr_close (t₀ - r') ⟨by linarith, by linarith⟩
+    rw [show (((t₀ - r') - t₀ : ℝ) : ℂ) = -((r' : ℝ) : ℂ) from by push_cast; ring, mul_neg,
+      div_neg, ← hq_def] at h_close
+    exact h_close
+  have hq_ne : q ≠ 0 := by
+    intro h0
+    rw [h0, neg_zero, zero_sub, norm_neg, norm_one] at hq_close
+    norm_num at hq_close
+  have h_γ_ne : γ (t₀ - r') - s ≠ 0 := fun h0 => hq_ne (by rw [hq_def, h0, zero_div])
+  have h_eq_target : (-L) / (γ (t₀ - r') - s) = (((1 / r' : ℝ)) : ℂ) * (-1 / q) := by
+    have hr'_ne : ((r' : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hr'_pos.ne'
+    rw [hq_def]
+    push_cast
+    field_simp
+  rw [h_eq_target]
+  exact ofReal_pos_mul_mem_slitPlane (by positivity)
+    (neg_inv_mem_slitPlane_of_neg_close_to_one hq_close)
 
 end TauCeti.Contour
 
