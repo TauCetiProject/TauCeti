@@ -45,7 +45,7 @@ open Asymptotics Filter Set Topology
 variable {γ : ℝ → ℂ} {a b : ℝ}
 
 /-- The one-sided first-order tangency computation: if `γ` has one-sided derivative `L ≠ 0` at
-`t₀` within a set `s`, then along any filter `l ≤ 𝓝[s] t₀` with `l ≤ 𝓟 {t₀}ᶜ`, the perpendicular
+`t₀` within a set `s`, then along any filter `l ≤ 𝓝[s] t₀`, the perpendicular
 deviation of `γ t` from the tangent line through `γ t₀` in direction `L` is `o(‖γ t - γ t₀‖)`. -/
 private theorem perp_isLittleO_of_hasDerivWithinAt {s : Set ℝ} {t₀ : ℝ} {L : ℂ} (hL : L ≠ 0)
     (hd : HasDerivWithinAt γ L s t₀) {l : Filter ℝ} (hl : l ≤ 𝓝[s] t₀) :
@@ -91,23 +91,41 @@ private theorem perp_isLittleO_of_hasDerivWithinAt {s : Set ℝ} {t₀ : ℝ} {L
     nlinarith [hnorm, hb, abs_nonneg (t - t₀)]
   simpa [pow_one] using h1.trans_isBigO h2
 
+/-- The right-piece flatness clause: on a `C¹` piece `[t₀, d]` with non-vanishing within-piece
+derivative, the perpendicular deviation from the right tangent at `t₀` is `o(‖γ t - γ t₀‖)` from
+the right. -/
+private theorem perp_isLittleO_right {t₀ d : ℝ} (hd : t₀ < d)
+    (hC1 : ContDiffOn ℝ 1 γ (Icc t₀ d)) (hne : derivWithin γ (Icc t₀ d) t₀ ≠ 0) :
+    (fun t => |((γ t - γ t₀) * star (derivWithin γ (Icc t₀ d) t₀)).im| /
+      ‖derivWithin γ (Icc t₀ d) t₀‖) =o[𝓝[>] t₀] (fun t => ‖γ t - γ t₀‖ ^ 1) := by
+  refine perp_isLittleO_of_hasDerivWithinAt hne
+    ((hC1.differentiableOn one_ne_zero) t₀ (left_mem_Icc.mpr hd.le)).hasDerivWithinAt ?_
+  rw [← nhdsWithin_Ioo_eq_nhdsGT hd]
+  exact nhdsWithin_mono t₀ Ioo_subset_Icc_self
+
+/-- The left-piece flatness clause: on a `C¹` piece `[c, t₀]` with non-vanishing within-piece
+derivative, the perpendicular deviation from the left tangent at `t₀` is `o(‖γ t - γ t₀‖)` from
+the left. -/
+private theorem perp_isLittleO_left {c t₀ : ℝ} (hc : c < t₀)
+    (hC1 : ContDiffOn ℝ 1 γ (Icc c t₀)) (hne : derivWithin γ (Icc c t₀) t₀ ≠ 0) :
+    (fun t => |((γ t - γ t₀) * star (derivWithin γ (Icc c t₀) t₀)).im| /
+      ‖derivWithin γ (Icc c t₀) t₀‖) =o[𝓝[<] t₀] (fun t => ‖γ t - γ t₀‖ ^ 1) := by
+  refine perp_isLittleO_of_hasDerivWithinAt hne
+    ((hC1.differentiableOn one_ne_zero) t₀ (right_mem_Icc.mpr hc.le)).hasDerivWithinAt ?_
+  rw [← nhdsWithin_Ioo_eq_nhdsLT hc]
+  exact nhdsWithin_mono t₀ Ioo_subset_Icc_self
+
 /-- **An immersion is flat of order one at every interior parameter** (HW condition (A′) at a
 simple pole): the curve is first-order tangent to its non-zero one-sided tangents, so the
 perpendicular deviation from each tangent line is `o(‖γ t - γ t₀‖)`. -/
 theorem IsPwC1ImmersionOn.flatOfOrder_one (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
     (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) : FlatOfOrder γ t₀ 1 := by
-  obtain ⟨d, hd, hsubd, hC1d, hned⟩ := h.exists_Icc_pieces_right ⟨ht₀.1.le, ht₀.2⟩
-  obtain ⟨c, hc, hsubc, hC1c, hnec⟩ := h.exists_Icc_pieces_left ⟨ht₀.1, ht₀.2.le⟩
-  refine flatOfOrder_iff.mpr ⟨derivWithin γ (Icc t₀ d) t₀, derivWithin γ (Icc c t₀) t₀,
-    hned t₀ (left_mem_Icc.mpr hd.le), hnec t₀ (right_mem_Icc.mpr hc.le), ?_, ?_⟩
-  · refine perp_isLittleO_of_hasDerivWithinAt (hned t₀ (left_mem_Icc.mpr hd.le))
-      ((hC1d.differentiableOn one_ne_zero) t₀ (left_mem_Icc.mpr hd.le)).hasDerivWithinAt ?_
-    rw [← nhdsWithin_Ioo_eq_nhdsGT hd]
-    exact nhdsWithin_mono t₀ Ioo_subset_Icc_self
-  · refine perp_isLittleO_of_hasDerivWithinAt (hnec t₀ (right_mem_Icc.mpr hc.le))
-      ((hC1c.differentiableOn one_ne_zero) t₀ (right_mem_Icc.mpr hc.le)).hasDerivWithinAt ?_
-    rw [← nhdsWithin_Ioo_eq_nhdsLT hc]
-    exact nhdsWithin_mono t₀ Ioo_subset_Icc_self
+  obtain ⟨d, hd, -, hC1d, hned⟩ := h.exists_Icc_pieces_right ⟨ht₀.1.le, ht₀.2⟩
+  obtain ⟨c, hc, -, hC1c, hnec⟩ := h.exists_Icc_pieces_left ⟨ht₀.1, ht₀.2.le⟩
+  exact flatOfOrder_iff.mpr ⟨derivWithin γ (Icc t₀ d) t₀, derivWithin γ (Icc c t₀) t₀,
+    hned t₀ (left_mem_Icc.mpr hd.le), hnec t₀ (right_mem_Icc.mpr hc.le),
+    perp_isLittleO_right hd hC1d (hned t₀ (left_mem_Icc.mpr hd.le)),
+    perp_isLittleO_left hc hC1c (hnec t₀ (right_mem_Icc.mpr hc.le))⟩
 
 /-- **An immersion is flat of order one across the basepoint join** (`a < b`): the outgoing
 branch at `a` and the incoming branch at `b` are each first-order tangent to their non-zero
@@ -116,20 +134,14 @@ theorem IsPwC1ImmersionOn.flatOfOrderBasepoint_one (h : IsPwC1ImmersionOn γ a b
     (hab : a < b) : FlatOfOrderBasepoint γ a b 1 := by
   have hmin : min a b = a := min_eq_left hab.le
   have hmax : max a b = b := max_eq_right hab.le
-  obtain ⟨d, hd, hsubd, hC1d, hned⟩ := h.exists_Icc_pieces_right
+  obtain ⟨d, hd, -, hC1d, hned⟩ := h.exists_Icc_pieces_right
     ⟨hmin.le, lt_of_lt_of_le hab hmax.ge⟩
-  obtain ⟨c, hc, hsubc, hC1c, hnec⟩ := h.exists_Icc_pieces_left
+  obtain ⟨c, hc, -, hC1c, hnec⟩ := h.exists_Icc_pieces_left
     ⟨hmin.le.trans_lt hab, hmax.ge⟩
-  refine flatOfOrderBasepoint_iff.mpr ⟨derivWithin γ (Icc a d) a, derivWithin γ (Icc c b) b,
-    hned a (left_mem_Icc.mpr hd.le), hnec b (right_mem_Icc.mpr hc.le), ?_, ?_⟩
-  · refine perp_isLittleO_of_hasDerivWithinAt (hned a (left_mem_Icc.mpr hd.le))
-      ((hC1d.differentiableOn one_ne_zero) a (left_mem_Icc.mpr hd.le)).hasDerivWithinAt ?_
-    rw [← nhdsWithin_Ioo_eq_nhdsGT hd]
-    exact nhdsWithin_mono a Ioo_subset_Icc_self
-  · refine perp_isLittleO_of_hasDerivWithinAt (hnec b (right_mem_Icc.mpr hc.le))
-      ((hC1c.differentiableOn one_ne_zero) b (right_mem_Icc.mpr hc.le)).hasDerivWithinAt ?_
-    rw [← nhdsWithin_Ioo_eq_nhdsLT hc]
-    exact nhdsWithin_mono b Ioo_subset_Icc_self
+  exact flatOfOrderBasepoint_iff.mpr ⟨derivWithin γ (Icc a d) a, derivWithin γ (Icc c b) b,
+    hned a (left_mem_Icc.mpr hd.le), hnec b (right_mem_Icc.mpr hc.le),
+    perp_isLittleO_right hd hC1d (hned a (left_mem_Icc.mpr hd.le)),
+    perp_isLittleO_left hc hC1c (hnec b (right_mem_Icc.mpr hc.le))⟩
 
 end TauCeti.Contour
 
