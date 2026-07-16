@@ -195,7 +195,7 @@ theorem exists_chord_quotient_mem_slitPlane_left
 
 /-- **Positive real scaling does not move the argument**: if `Q ∈ slitPlane`, `c ε > 0`
 eventually, and `(c ε : ℂ) * f ε → Q`, then `arg (f ε) → arg Q`. -/
-theorem arg_tendsto_of_pos_mul_tendsto {l : Filter ℝ} {c : ℝ → ℝ} {f : ℝ → ℂ}
+theorem arg_tendsto_of_pos_mul_tendsto {α : Type*} {l : Filter α} {c : α → ℝ} {f : α → ℂ}
     {Q : ℂ} (hQ : Q ∈ Complex.slitPlane) (hc : ∀ᶠ ε in l, 0 < c ε)
     (h : Tendsto (fun ε => ((c ε : ℝ) : ℂ) * f ε) l (𝓝 Q)) :
     Tendsto (fun ε => (f ε).arg) l (𝓝 Q.arg) := by
@@ -207,13 +207,16 @@ theorem arg_tendsto_of_pos_mul_tendsto {l : Filter ℝ} {c : ℝ → ℝ} {f : �
 argument of the annular quotient `(γ (t₀ + r) - s) / (γ (t₀ + δ ε) - s)` converges to the
 argument of `(γ (t₀ + r) - s) / L`. -/
 theorem arg_annular_quotient_tendsto_right
-    (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) (h_at : γ t₀ = s) (hL : L ≠ 0)
+    (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) (h_at : γ t₀ = s)
     {δ : ℝ → ℝ} {r : ℝ}
     (h_slit : (γ (t₀ + r) - s) / L ∈ Complex.slitPlane)
     (hδ_pos : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < δ ε)
     (hδ_to_zero : Tendsto δ (𝓝[>] (0 : ℝ)) (𝓝[>] (0 : ℝ))) :
     Tendsto (fun ε : ℝ => Complex.arg ((γ (t₀ + r) - s) / (γ (t₀ + δ ε) - s)))
       (𝓝[>] (0 : ℝ)) (𝓝 ((γ (t₀ + r) - s) / L).arg) := by
+  have hL : L ≠ 0 := fun h0 => by
+    rw [h0, div_zero] at h_slit
+    exact Complex.zero_notMem_slitPlane h_slit
   have h_compose : Tendsto (fun ε : ℝ => t₀ + δ ε) (𝓝[>] (0 : ℝ)) (𝓝[>] t₀) := by
     rw [tendsto_nhdsWithin_iff]
     refine ⟨?_, hδ_pos.mono fun ε hε => by simpa using hε⟩
