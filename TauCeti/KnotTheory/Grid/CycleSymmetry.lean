@@ -22,7 +22,7 @@ symmetry carries cycles to cycles and boundaries to boundaries.
 Because these are equalities of submodules under a linear automorphism, they package as linear
 equivalences between the cycle (resp. boundary) submodules of a diagram and its reflected,
 rotated, or marking-swapped counterpart. These are the specified isomorphisms that the roadmap's
-"state invariance naturality-ready" convention asks for, at the chain-homology level and needing
+"state invariance naturality-ready" convention asks for, at the chain level and needing
 no square-zero input.
 
 ## Main results
