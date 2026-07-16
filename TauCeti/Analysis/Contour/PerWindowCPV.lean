@@ -21,7 +21,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Log
 
 At a transverse crossing `γ t₀ = s` with unique crossing on the window `[t₀ - r, t₀ + r]`, the
 `ε`-truncated integral of the simple-pole integrand `(γ t - s)⁻¹ * deriv γ t` over the window
-converges as `ε → 0⁺` (`exists_perWindow_truncated_integral_tendsto`). The window integral
+converges as `ε → 0⁺` (`perWindow_truncated_integral_tendsto`). The window integral
 splits at the exit times (`exists_exit_times_truncated_integral_split`); each side integral is
 the logarithm of a chord quotient by the logarithmic fundamental theorem of calculus; the
 `log ε` real parts of the two sides cancel — both exit radii are exactly `ε` — and the argument
@@ -104,35 +104,27 @@ private theorem intervalIntegrable_inv_sub_truncated {γ : ℝ → ℂ} {s : ℂ
   · rw [if_neg h_far, norm_zero]
     positivity
 
-/-- The window annular integral is the log of the chord quotient: on `[l, u]` inside the
-window, off the crossing, with the chord quotients anchored at `l` in the slit plane. -/
-private theorem annular_log_diff_window {γ : ℝ → ℂ} {s : ℂ} {t₀ r : ℝ} {P : Set ℝ}
-    (hP : P.Countable) (hγ_cont : ContinuousOn γ (Icc (t₀ - r) (t₀ + r)))
-    (hγ_diffP : ∀ t ∈ Ioo (t₀ - r) (t₀ + r) \ P, DifferentiableAt ℝ γ t)
-    (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume
-      (t₀ - r) (t₀ + r))
-    {l u : ℝ} (hlu : l ≤ u) (hl : t₀ - r ≤ l) (hu : u ≤ t₀ + r)
+/-- The winding integral is the log of the chord quotient on an ordered pole-free interval
+with the chord quotients anchored at the left endpoint in the slit plane: the `Icc`-hypothesis
+form of `integral_inv_sub_mul_deriv_eq_log`, with the integrability discharged. -/
+private theorem integral_inv_sub_mul_deriv_eq_log_window {γ : ℝ → ℂ} {s : ℂ} {P : Set ℝ}
+    {l u : ℝ} (hlu : l ≤ u) (hP : P.Countable)
+    (hγ_cont : ContinuousOn γ (Icc l u))
+    (hγ_diffP : ∀ t ∈ Ioo l u \ P, DifferentiableAt ℝ γ t)
+    (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume l u)
     (h_ne : ∀ t ∈ Icc l u, γ t ≠ s)
     (h_slit : ∀ t ∈ Icc l u, (γ t - s) / (γ l - s) ∈ Complex.slitPlane) :
     ∫ t in l..u, (γ t - s)⁻¹ * deriv γ t =
       Complex.log ((γ u - s) / (γ l - s)) := by
-  have h_sub : uIcc l u ⊆ Icc (t₀ - r) (t₀ + r) := by
-    rw [uIcc_of_le hlu]
-    exact Icc_subset_Icc hl hu
-  have hγ_cont' : ContinuousOn γ (uIcc l u) := hγ_cont.mono h_sub
+  have hγ_cont' : ContinuousOn γ (uIcc l u) := by rwa [uIcc_of_le hlu]
   refine integral_inv_sub_mul_deriv_eq_log hP hγ_cont' ?_ ?_ ?_
   · intro t ht
-    refine hγ_diffP t ⟨?_, ht.2⟩
     rw [min_eq_left hlu, max_eq_right hlu] at ht
-    exact ⟨by linarith [ht.1.1], by linarith [ht.1.2]⟩
+    exact hγ_diffP t ht
   · intro t ht
     rw [uIcc_of_le hlu] at ht
     exact h_slit t ht
-  · have h_mono : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume l u := by
-      refine hderiv_int.mono_set ?_
-      rw [uIcc_of_le hlu, uIcc_of_le (show t₀ - r ≤ t₀ + r by linarith)]
-      exact Icc_subset_Icc hl hu
-    refine intervalIntegrable_inv_sub_mul_deriv hγ_cont' (fun t ht => ?_) h_mono
+  · refine intervalIntegrable_inv_sub_mul_deriv hγ_cont' (fun t ht => ?_) hderiv_int
     rw [uIcc_of_le hlu] at ht
     exact h_ne t ht
 
@@ -168,7 +160,6 @@ arguments. -/
 theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {t₀ r : ℝ}
     {L_R L_L : ℂ} {P : Set ℝ} (hr_pos : 0 < r) (h_at : γ t₀ = s)
     (hγ_cont : ContinuousOn γ (Icc (t₀ - r) (t₀ + r)))
-    (hL_R : L_R ≠ 0) (hL_L : L_L ≠ 0)
     (h_tendsto_R : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R))
     (h_tendsto_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L))
     (h_diff_R : ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t)
@@ -191,6 +182,12 @@ theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {t₀ 
         ((((-L_L) / (γ (t₀ - r) - s)).arg + ((γ (t₀ + r) - s) / L_R).arg : ℝ) : ℂ) *
           Complex.I)) := by
   classical
+  have hL_R : L_R ≠ 0 := fun h0 => by
+    rw [h0, div_zero] at h_slit_plus
+    exact Complex.zero_notMem_slitPlane h_slit_plus
+  have hL_L : L_L ≠ 0 := fun h0 => by
+    rw [h0, neg_zero, zero_div] at h_slit_minus
+    exact Complex.zero_notMem_slitPlane h_slit_minus
   have hγ_at : ContinuousAt γ t₀ :=
     hγ_cont.continuousAt (Icc_mem_nhds (by linarith) (by linarith))
   obtain ⟨τL, τR, h_toL, h_toR, h_radL, h_radR, h_memL, h_memR, h_split⟩ :=
@@ -245,13 +242,23 @@ theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {t₀ 
       rw [← norm_pos_iff, hradR]
       exact hε_pos
     rw [hsplit,
-      annular_log_diff_window hP hγ_cont hγ_diffP hderiv_int hτL.1.le le_rfl
-        (by linarith [hτL.2]) (fun t ht h_eq => absurd (h_unique t
+      integral_inv_sub_mul_deriv_eq_log_window hτL.1.le hP
+        (hγ_cont.mono (Icc_subset_Icc le_rfl (by linarith [hτL.2])))
+        (fun t ht => hγ_diffP t ⟨⟨ht.1.1, by linarith [ht.1.2, hτL.2]⟩, ht.2⟩)
+        (hderiv_int.mono_set (by
+          rw [uIcc_of_le hτL.1.le, uIcc_of_le (show t₀ - r ≤ t₀ + r by linarith)]
+          exact Icc_subset_Icc le_rfl (by linarith [hτL.2])))
+        (fun t ht h_eq => absurd (h_unique t
           ⟨by linarith [ht.1], by linarith [ht.2, hτL.2]⟩ h_eq)
           (by linarith [ht.2, hτL.2]))
         (fun t ht => h_slit_L t ht.1 (by linarith [ht.2, hτL.2])),
-      annular_log_diff_window hP hγ_cont hγ_diffP hderiv_int hτR.2.le
-        (by linarith [hτR.1]) le_rfl (fun t ht h_eq => absurd (h_unique t
+      integral_inv_sub_mul_deriv_eq_log_window hτR.2.le hP
+        (hγ_cont.mono (Icc_subset_Icc (by linarith [hτR.1]) le_rfl))
+        (fun t ht => hγ_diffP t ⟨⟨by linarith [ht.1.1, hτR.1], ht.1.2⟩, ht.2⟩)
+        (hderiv_int.mono_set (by
+          rw [uIcc_of_le hτR.2.le, uIcc_of_le (show t₀ - r ≤ t₀ + r by linarith)]
+          exact Icc_subset_Icc (by linarith [hτR.1]) le_rfl))
+        (fun t ht h_eq => absurd (h_unique t
           ⟨by linarith [ht.1, hτR.1], by linarith [ht.2]⟩ h_eq)
           (by linarith [ht.1, hτR.1]))
         (fun t ht => h_slit_R (τR ε) t hτR.1 ht.1 ht.2),
