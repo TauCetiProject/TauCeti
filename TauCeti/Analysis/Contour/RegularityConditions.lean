@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Algebra.Order.ToIntervalMod
+import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import TauCeti.Analysis.Contour.ArgumentLift
 
 /-!
 # The Hungerbühler–Wasem crossing angle and regularity conditions (A′) and (B)
@@ -49,6 +51,11 @@ pole — and that it meet each `s` only finitely often. Condition (B) governs po
 * `ConditionB γ a b f` — HW condition (B), a structure imposing `SectorCompatible` at every
   higher-order (order `> 1`) on-curve pole of `f`: at each interior crossing (`ConditionB.interior`)
   and at the basepoint (`ConditionB.basepoint`).
+* `FlatOfOrder.of_le` / `FlatOfOrderBasepoint.of_le` and `pow_unit_tangent_eq_of_resonance` /
+  `pow_unit_tangent_eq_of_basepoint_resonance` — the consuming bridges, at interior crossings
+  and at the join: flatness restricts downward in the order, and the sector resonance
+  `k · θ ∈ 2π · ℤ` at the crossing angle is the power equation of the unit tangent
+  directions.
 
 Both conditions read the on-curve pole orders of `f` from `meromorphicOrderAt`. Condition (B) needs
 no explicit singular set — it fires **intrinsically** at the times `t₀` where
@@ -326,5 +333,111 @@ theorem conditionB_iff {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} :
 theorem conditionB_comm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} :
     ConditionB γ a b f ↔ ConditionB γ b a f := by
   rw [conditionB_iff, conditionB_iff, min_comm a b, max_comm a b]
+
+/-! ### Consuming the conditions
+
+The two bridges from the conditions' data to the raw hypotheses the principal-value theorems
+take: flatness restricts downward in the order, and the sector resonance `k · θ ∈ 2π · ℤ` at
+the crossing angle is the power equation of the unit tangent directions. -/
+
+/-- One-sided core of the downward restrictions: near `c` the chord is small, so on any
+filter within `𝓝 c` an `o(‖γ · - γ c‖ ^ n)` bound is an `o(‖γ · - γ c‖ ^ m)` bound for
+`m ≤ n`. -/
+private theorem isLittleO_chord_pow_of_le {γ : ℝ → ℂ} {c : ℝ} {u : ℝ → ℝ} {m n : ℕ}
+    {l : Filter ℝ} (hmn : m ≤ n) (h_le : l ≤ 𝓝 c) (h_cont : ContinuousAt γ c)
+    (h : u =o[l] fun t => ‖γ t - γ c‖ ^ n) : u =o[l] fun t => ‖γ t - γ c‖ ^ m := by
+  refine h.trans_isBigO (Asymptotics.IsBigO.of_bound 1 ?_)
+  have h_ev : ∀ᶠ t in 𝓝 c, ‖γ t - γ c‖ ≤ 1 := by
+    have h1 : Filter.Tendsto (fun t => γ t - γ c) (𝓝 c) (𝓝 (γ c - γ c)) :=
+      (h_cont.sub continuousAt_const).tendsto
+    rw [sub_self] at h1
+    have h0 : Filter.Tendsto (fun t => ‖γ t - γ c‖) (𝓝 c) (𝓝 0) := by
+      simpa using h1.norm
+    exact h0.eventually_le_const one_pos
+  filter_upwards [h_le h_ev] with t ht
+  rw [one_mul, Real.norm_of_nonneg (pow_nonneg (norm_nonneg _) _),
+    Real.norm_of_nonneg (pow_nonneg (norm_nonneg _) _)]
+  exact pow_le_pow_of_le_one (norm_nonneg _) ht hmn
+
+/-- **Flatness restricts downward**: a curve flat of order `n` at `t₀` is flat of every order
+`m ≤ n` — near the crossing the chord is small, so a higher power of it is the stronger
+bound. -/
+theorem FlatOfOrder.of_le {γ : ℝ → ℂ} {t₀ : ℝ} {m n : ℕ} (h : FlatOfOrder γ t₀ n)
+    (hmn : m ≤ n) (h_cont : ContinuousAt γ t₀) : FlatOfOrder γ t₀ m := by
+  obtain ⟨v_p, v_m, hv_p, hv_m, h_right, h_left⟩ := h
+  exact ⟨v_p, v_m, hv_p, hv_m,
+    isLittleO_chord_pow_of_le hmn nhdsWithin_le_nhds h_cont h_right,
+    isLittleO_chord_pow_of_le hmn nhdsWithin_le_nhds h_cont h_left⟩
+
+/-- **Basepoint flatness restricts downward**: a closed curve flat of order `n` across the
+join is flat of every order `m ≤ n` there. -/
+theorem FlatOfOrderBasepoint.of_le {γ : ℝ → ℂ} {a b : ℝ} {m n : ℕ}
+    (h : FlatOfOrderBasepoint γ a b n) (hmn : m ≤ n)
+    (h_cont_a : ContinuousAt γ a) (h_cont_b : ContinuousAt γ b) :
+    FlatOfOrderBasepoint γ a b m := by
+  obtain ⟨v_p, v_m, hv_p, hv_m, h_right, h_left⟩ := h
+  exact ⟨v_p, v_m, hv_p, hv_m,
+    isLittleO_chord_pow_of_le hmn nhdsWithin_le_nhds h_cont_a h_right,
+    isLittleO_chord_pow_of_le hmn nhdsWithin_le_nhds h_cont_b h_left⟩
+
+/-- The `[0, 2π)` representative differs from its argument by an integer multiple of `2π`. -/
+private theorem toIcoMod_two_pi_sub_witness (θ : ℝ) :
+    ∃ j : ℤ, toIcoMod Real.two_pi_pos 0 θ = θ - (j : ℝ) * (2 * Real.pi) := by
+  refine ⟨toIcoDiv Real.two_pi_pos 0 θ, ?_⟩
+  have h_sub := self_sub_toIcoMod Real.two_pi_pos 0 θ
+  rw [zsmul_eq_mul] at h_sub
+  linarith
+
+/-- Angle core of the resonance bridges: if `θ` is the angle from `-L_L` to `L_R` up to
+`2πℤ` and `k · θ ∈ 2π · ℤ`, the `k`-th powers of the unit directions agree. -/
+private theorem pow_unit_eq_of_angle_resonance {L_R L_L : ℂ} {θ : ℝ} {k : ℕ}
+    (hL_R : L_R ≠ 0) (hL_L : L_L ≠ 0)
+    (hθ : ∃ j : ℤ, θ = (Complex.arg L_R - Complex.arg (-L_L)) - (j : ℝ) * (2 * Real.pi))
+    (h_res : ∃ m : ℤ, (k : ℝ) * θ = (m : ℝ) * (2 * Real.pi)) :
+    (L_R / (‖L_R‖ : ℂ)) ^ k = ((-L_L) / (‖L_L‖ : ℂ)) ^ k := by
+  obtain ⟨j, hj⟩ := hθ
+  obtain ⟨m, hm⟩ := h_res
+  rw [hj] at hm
+  have h_real : (k : ℝ) * Complex.arg L_R
+      = (k : ℝ) * Complex.arg (-L_L) + ((m : ℝ) + (k : ℝ) * (j : ℝ)) * (2 * Real.pi) := by
+    linear_combination hm
+  rw [div_norm_eq_exp_arg_mul_I hL_R, show (‖L_L‖ : ℂ) = (‖-L_L‖ : ℂ) by rw [norm_neg],
+    div_norm_eq_exp_arg_mul_I (neg_ne_zero.mpr hL_L), ← Complex.exp_nat_mul,
+    ← Complex.exp_nat_mul, Complex.exp_eq_exp_iff_exists_int]
+  refine ⟨m + (k : ℤ) * j, ?_⟩
+  have hC := congrArg (fun x : ℝ => (x : ℂ) * Complex.I) h_real
+  push_cast at hC ⊢
+  linear_combination hC
+
+/-- **Resonance to tangent powers**: if `k · crossingAngle γ t₀` is a multiple of `2π` and the
+one-sided derivative limits at `t₀` are `L_R` and `L_L`, both non-zero, then the `k`-th powers
+of the unit tangent directions agree — the raw sector equation the higher-order
+principal-value theorems consume. -/
+theorem pow_unit_tangent_eq_of_resonance {γ : ℝ → ℂ} {t₀ : ℝ} {L_R L_L : ℂ} {k : ℕ}
+    (hL_R : L_R ≠ 0) (hL_L : L_L ≠ 0)
+    (h_R : Filter.Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R))
+    (h_L : Filter.Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L))
+    (h_res : ∃ m : ℤ, (k : ℝ) * crossingAngle γ t₀ = (m : ℝ) * (2 * Real.pi)) :
+    (L_R / (‖L_R‖ : ℂ)) ^ k = ((-L_L) / (‖L_L‖ : ℂ)) ^ k := by
+  obtain ⟨j, hj⟩ := toIcoMod_two_pi_sub_witness (Complex.arg L_R - Complex.arg (-L_L))
+  refine pow_unit_eq_of_angle_resonance hL_R hL_L ⟨j, ?_⟩ h_res
+  unfold crossingAngle
+  rw [h_R.limUnder_eq, h_L.limUnder_eq]
+  exact hj
+
+/-- **Basepoint resonance to tangent powers**: the join analogue of
+`pow_unit_tangent_eq_of_resonance`, with the outgoing tangent limit at `a` and the incoming
+tangent limit at `b` — the raw sector equation at the basepoint of a closed curve. -/
+theorem pow_unit_tangent_eq_of_basepoint_resonance {γ : ℝ → ℂ} {a b : ℝ} {L_R L_L : ℂ}
+    {k : ℕ} (hL_R : L_R ≠ 0) (hL_L : L_L ≠ 0)
+    (h_R : Filter.Tendsto (deriv γ) (𝓝[>] a) (𝓝 L_R))
+    (h_L : Filter.Tendsto (deriv γ) (𝓝[<] b) (𝓝 L_L))
+    (h_res : ∃ m : ℤ, (k : ℝ) * basepointAngle γ a b = (m : ℝ) * (2 * Real.pi)) :
+    (L_R / (‖L_R‖ : ℂ)) ^ k = ((-L_L) / (‖L_L‖ : ℂ)) ^ k := by
+  obtain ⟨j, hj⟩ := toIcoMod_two_pi_sub_witness (Complex.arg L_R - Complex.arg (-L_L))
+  refine pow_unit_eq_of_angle_resonance hL_R hL_L ⟨j, ?_⟩ h_res
+  unfold basepointAngle
+  rw [h_R.limUnder_eq, h_L.limUnder_eq]
+  exact hj
 
 end TauCeti.Contour
