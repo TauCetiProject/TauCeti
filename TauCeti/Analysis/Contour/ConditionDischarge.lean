@@ -28,8 +28,8 @@ Laurent witness constrains them.
 
 * `Contour.PolarPartDecomposition.coeff_eq_meromorphicPolarCoeffAt` — a decomposition of
   canonical order has the canonical coefficients.
-* `Contour.ConditionAprime.flatOfOrder_of_coeff_ne_zero` — condition (A′) discharges the
-  gated flatness hypothesis.
+* `Contour.ConditionAprime.flatOfOrder_of_crossing` — condition (A′) discharges the gated
+  flatness hypothesis (for every index below the order; no surviving coefficient needed).
 * `Contour.ConditionB.pow_tangent_eq_of_coeff_ne_zero` — condition (B) discharges the gated
   sector hypothesis.
 * `Contour.mem_Ioo_of_closed_of_ne` — on a closed curve with basepoint off `z`, every
@@ -138,21 +138,21 @@ end PolarPartDecomposition
 theorem: at each crossing of `s`, the pole's canonical order pins `meromorphicOrderAt`, the
 condition gives flatness of the full order, and the downward restriction gives it at each
 surviving coefficient's order. -/
-theorem ConditionAprime.flatOfOrder_of_coeff_ne_zero {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
+theorem ConditionAprime.flatOfOrder_of_crossing {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
     {S' : Finset ℂ} (hA : ConditionAprime γ a b f S') {S : Finset ℂ} {U : Set ℂ}
     (decomp : PolarPartDecomposition f S U) (s : S) (hsS' : (s : ℂ) ∈ S')
     (h_imm : IsPwC1ImmersionOn γ a b) (hab : a ≤ b)
     (h_interior : ∀ t ∈ Icc a b, γ t = (s : ℂ) → t ∈ Ioo a b)
     (h_ord : decomp.order s = meromorphicPolarOrderAt f ↑s) :
-    ∀ k : Fin (decomp.order s), 1 ≤ k.val → decomp.coeff s k ≠ 0 →
+    ∀ k : Fin (decomp.order s), 1 ≤ k.val →
       ∀ t ∈ Icc a b, γ t = (s : ℂ) → FlatOfOrder γ t (k.val + 1) := by
-  intro k hk1 _ t ht h_eq
+  intro k hk1 t ht h_eq
   have ht_Ioo := h_interior t ht h_eq
   have h_pos : 0 < meromorphicPolarOrderAt f ↑s := by
     have := k.isLt; omega
   have h_flat_full := hA.interior t (interior_mem_minmax hab ht_Ioo)
     (by rw [h_eq]; exact hsS') (meromorphicPolarOrderAt f ↑s) (by omega)
-    (by rw [h_eq]; exact meromorphicOrderAt_eq_neg_of_polarOrder_pos h_pos)
+    (by rw [h_eq]; exact meromorphicOrderAt_eq_neg_of_meromorphicPolarOrderAt_pos h_pos)
   refine h_flat_full.of_le (by have := k.isLt; omega)
     (h_imm.continuousOn.continuousAt ?_)
   rw [uIcc_of_le hab]
@@ -180,7 +180,7 @@ theorem ConditionB.pow_tangent_eq_of_coeff_ne_zero {γ : ℝ → ℂ} {a b : ℝ
   have h_gt : 1 < meromorphicPolarOrderAt f ↑s := by
     have := k.isLt; omega
   have h_sec := hB.interior t (interior_mem_minmax hab ht_Ioo)
-    (by rw [h_eq]; exact meromorphicOrderAt_lt_neg_one_of_one_lt_polarOrder h_gt)
+    (by rw [h_eq]; exact meromorphicOrderAt_lt_neg_one_of_one_lt_meromorphicPolarOrderAt h_gt)
   rw [h_eq] at h_sec
   obtain ⟨N', a', g', hg', h_exp, h_reso⟩ := h_sec.laurent_compatible
   have h_wit := laurent_coeff_eq_meromorphicPolarCoeffAt hMero hg'.continuousAt h_exp k.val
