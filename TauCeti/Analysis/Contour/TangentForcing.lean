@@ -145,102 +145,61 @@ private theorem im_mul_conj_eq_zero_of_flat_right {γ : ℝ → ℂ} {t₀ : ℝ
     exact abs_eq_zero.mp ((div_eq_zero_iff.mp h').resolve_right hv_pos.ne')
   · exact absurd (hc_le (c / 2) (by linarith)) (by linarith)
 
-/-- The forcing core (left side): the counterpart of `im_mul_conj_eq_zero_of_flat_right` from
-the left. -/
+/-- The forcing core (left side): derived from `im_mul_conj_eq_zero_of_flat_right` by the
+reflection `t ↦ 2t₀ - t`, which carries the left data of `γ` to right data of the reflected
+curve with tangent `-L` — and `Im((-L) · conj v) = 0` iff `Im(L · conj v) = 0`. -/
 private theorem im_mul_conj_eq_zero_of_flat_left {γ : ℝ → ℂ} {t₀ : ℝ} {v L : ℂ} {n : ℕ}
     (hv : v ≠ 0) (hn : 1 ≤ n)
     (h_dev : (fun t => |((γ t - γ t₀) * star v).im| / ‖v‖) =o[𝓝[<] t₀]
       fun t => ‖γ t - γ t₀‖ ^ n)
     (h_deriv : HasDerivWithinAt γ L (Iio t₀) t₀) :
     (L * starRingEnd ℂ v).im = 0 := by
-  have hv_pos : 0 < ‖v‖ := norm_pos_iff.mpr hv
-  set c : ℝ := |(L * starRingEnd ℂ v).im| / ‖v‖ with hc_def
-  have hc_nonneg : 0 ≤ c := by positivity
-  have hc_le : ∀ ε : ℝ, 0 < ε → c ≤ ε := by
-    intro ε hε
-    have herr : (fun t => γ t - γ t₀ - (t - t₀) • L) =o[𝓝[<] t₀] (fun t => t - t₀) :=
-      hasDerivWithinAt_iff_isLittleO.mp h_deriv
-    have h_growth : ∀ᶠ t in 𝓝[<] t₀, ‖γ t - γ t₀‖ ≤ (‖L‖ + 1) * (t₀ - t) := by
-      filter_upwards [herr.bound one_pos, self_mem_nhdsWithin] with t hb ht
-      have ht' : 0 < t₀ - t := sub_pos.mpr ht
-      have h1 : ‖γ t - γ t₀‖ ≤ ‖(t - t₀) • L‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := by
-        simpa using norm_add_le ((t - t₀) • L) (γ t - γ t₀ - (t - t₀) • L)
-      rw [norm_smul, Real.norm_eq_abs, abs_of_neg (by linarith : t - t₀ < 0)] at h1
-      rw [Real.norm_eq_abs, abs_of_neg (by linarith : t - t₀ < 0)] at hb
-      calc ‖γ t - γ t₀‖ ≤ -(t - t₀) * ‖L‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := h1
-        _ ≤ -(t - t₀) * ‖L‖ + 1 * -(t - t₀) := by linarith
-        _ = (‖L‖ + 1) * (t₀ - t) := by ring
-    have h_pow : ∀ᶠ t in 𝓝[<] t₀, ‖γ t - γ t₀‖ ^ n ≤ (‖L‖ + 1) ^ n * (t₀ - t) := by
-      have h_small : ∀ᶠ t in 𝓝[<] t₀, t₀ - t ≤ 1 := by
-        filter_upwards [eventually_nhdsWithin_of_eventually_nhds
-          (eventually_ge_nhds (by linarith : t₀ - 1 < t₀))] with t ht
-        linarith
-      filter_upwards [h_growth, h_small, self_mem_nhdsWithin] with t hg hs ht
-      have ht' : 0 < t₀ - t := sub_pos.mpr ht
-      calc ‖γ t - γ t₀‖ ^ n ≤ ((‖L‖ + 1) * (t₀ - t)) ^ n := by gcongr
-        _ = (‖L‖ + 1) ^ n * (t₀ - t) ^ n := by rw [mul_pow]
-        _ ≤ (‖L‖ + 1) ^ n * (t₀ - t) := by
-            gcongr
-            exact pow_le_of_le_one ht'.le hs (by omega : n ≠ 0)
-    set ε' : ℝ := ε / (2 * (‖L‖ + 1) ^ n) with hε'_def
-    have hε' : 0 < ε' := by positivity
-    have h_dev_bound := (isLittleO_iff.mp h_dev) hε'
-    have h_err_bound := (isLittleO_iff.mp herr) (c := ε / 2) (by positivity)
-    have h_all : ∀ᶠ t in 𝓝[<] t₀, c * (t₀ - t) ≤ ε * (t₀ - t) := by
-      filter_upwards [h_dev_bound, h_err_bound, h_pow, self_mem_nhdsWithin]
-        with t hd he hp ht
-      have ht' : 0 < t₀ - t := sub_pos.mpr ht
-      have h_tri : c * (t₀ - t) ≤
-          |((γ t - γ t₀) * star v).im| / ‖v‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := by
-        have h_split : ((t - t₀ : ℝ) • L) * starRingEnd ℂ v =
-            (γ t - γ t₀) * star v - (γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v := by
-          rw [Complex.star_def]
-          ring
-        have h_im : |(((t - t₀ : ℝ) • L) * starRingEnd ℂ v).im| ≤
-            |((γ t - γ t₀) * star v).im| + ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖ := by
-          rw [h_split, Complex.sub_im]
-          refine (abs_sub _ _).trans ?_
-          gcongr
-          calc |((γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v).im|
-              ≤ ‖(γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v‖ :=
-                Complex.abs_im_le_norm _
-            _ = ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖ := by
-                rw [norm_mul, RCLike.norm_conj]
-        have hc_mul : c * ‖v‖ = |(L * starRingEnd ℂ v).im| := by
-          rw [hc_def]
-          field_simp
-        have h_lhs : |(((t - t₀ : ℝ) • L) * starRingEnd ℂ v).im| = (t₀ - t) * (c * ‖v‖) := by
-          rw [Complex.real_smul, mul_assoc]
-          simp only [Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero]
-          rw [abs_mul, abs_of_neg (by linarith : t - t₀ < 0), hc_mul, neg_sub,
-            Complex.mul_im]
-        rw [h_lhs] at h_im
-        calc c * (t₀ - t) = (t₀ - t) * (c * ‖v‖) / ‖v‖ := by field_simp
-          _ ≤ (|((γ t - γ t₀) * star v).im| +
-              ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖) / ‖v‖ := by gcongr
-          _ = |((γ t - γ t₀) * star v).im| / ‖v‖ +
-              ‖γ t - γ t₀ - (t - t₀) • L‖ := by
-              rw [add_div, mul_div_assoc, div_self hv_pos.ne', mul_one]
-      rw [Real.norm_eq_abs, abs_of_neg (by linarith : t - t₀ < 0)] at he
-      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)] at hd
-      have hd' : |((γ t - γ t₀) * star v).im| / ‖v‖ ≤ ε' * ((‖L‖ + 1) ^ n * (t₀ - t)) := by
-        calc |((γ t - γ t₀) * star v).im| / ‖v‖ ≤ ε' * ‖γ t - γ t₀‖ ^ n := by
-              simpa [Real.norm_eq_abs, abs_of_nonneg (pow_nonneg (norm_nonneg _) n)] using hd
-          _ ≤ ε' * ((‖L‖ + 1) ^ n * (t₀ - t)) := by gcongr
-      have hε'_eq : ε' * (‖L‖ + 1) ^ n = ε / 2 := by
-        rw [hε'_def]
-        field_simp
-      calc c * (t₀ - t) ≤ |((γ t - γ t₀) * star v).im| / ‖v‖ +
-            ‖γ t - γ t₀ - (t - t₀) • L‖ := h_tri
-        _ ≤ ε' * ((‖L‖ + 1) ^ n * (t₀ - t)) + ε / 2 * -(t - t₀) := by
-            gcongr
-        _ = ε * (t₀ - t) := by rw [← mul_assoc, hε'_eq]; ring
-    obtain ⟨t, hct, ht⟩ := (h_all.and self_mem_nhdsWithin).exists
-    exact le_of_mul_le_mul_right hct (sub_pos.mpr ht)
-  rcases eq_or_lt_of_le hc_nonneg with h0 | hpos
-  · have h' : |(L * starRingEnd ℂ v).im| / ‖v‖ = 0 := by rw [← hc_def, ← h0]
-    exact abs_eq_zero.mp ((div_eq_zero_iff.mp h').resolve_right hv_pos.ne')
-  · exact absurd (hc_le (c / 2) (by linarith)) (by linarith)
+  have ht₀ : 2 * t₀ - t₀ = t₀ := by ring
+  have hσ : Tendsto (fun t => 2 * t₀ - t) (𝓝[>] t₀) (𝓝[<] t₀) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+    · have h : Tendsto (fun t : ℝ => 2 * t₀ - t) (𝓝 t₀) (𝓝 (2 * t₀ - t₀)) :=
+        tendsto_const_nhds.sub tendsto_id
+      rw [ht₀] at h
+      exact h.mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with t ht
+      simp only [mem_Iio]
+      linarith [mem_Ioi.mp ht]
+  have h_dev' : (fun t => |((γ (2 * t₀ - t) - γ (2 * t₀ - t₀)) * star v).im| / ‖v‖)
+      =o[𝓝[>] t₀] fun t => ‖γ (2 * t₀ - t) - γ (2 * t₀ - t₀)‖ ^ n := by
+    rw [ht₀]
+    exact h_dev.comp_tendsto hσ
+  have h_deriv' : HasDerivWithinAt (fun t => γ (2 * t₀ - t)) (-L) (Ioi t₀) t₀ := by
+    have hg : HasDerivWithinAt γ L (Iio t₀) (2 * t₀ - t₀) := by
+      rw [ht₀]
+      exact h_deriv
+    have hh : HasDerivWithinAt (fun t : ℝ => 2 * t₀ - t) (-1) (Ioi t₀) t₀ :=
+      (hasDerivWithinAt_id t₀ (Ioi t₀)).const_sub (2 * t₀)
+    have h := hg.scomp t₀ hh fun t ht => by
+      simp only [mem_Iio]
+      linarith [mem_Ioi.mp ht]
+    rw [neg_one_smul] at h
+    exact h
+  have h_im := im_mul_conj_eq_zero_of_flat_right hv hn h_dev' h_deriv'
+  rw [neg_mul, Complex.neg_im, neg_eq_zero] at h_im
+  exact h_im
+
+/-- Shared transfer step: once the flatness direction `v` is forced onto the tangent
+(`Im(L · conj v) = 0`, so `L ∈ ℝ • v`), the deviation bound against `v` becomes a deviation
+bound against `L` by line-invariance of the deviation norm. -/
+private theorem tangentDeviation_isLittleO_of_im_mul_conj_eq_zero {γ : ℝ → ℂ} {t₀ : ℝ}
+    {v L : ℂ} {n : ℕ} {l : Filter ℝ} (hv : v ≠ 0) (hL : L ≠ 0)
+    (h_im : (L * starRingEnd ℂ v).im = 0)
+    (h_dev : (fun t => |((γ t - γ t₀) * star v).im| / ‖v‖) =o[l]
+      fun t => ‖γ t - γ t₀‖ ^ n) :
+    (fun t => ‖tangentDeviation (γ t - γ t₀) L‖) =o[l]
+      fun t => ‖γ t - γ t₀‖ ^ n := by
+  obtain ⟨cc, hcc⟩ := exists_real_smul_of_im_mul_conj_eq_zero hv h_im
+  have hcc_ne : cc ≠ 0 := fun h0 => hL (by rw [hcc, h0, zero_smul])
+  have hkey : ∀ t, ‖tangentDeviation (γ t - γ t₀) L‖ =
+      |((γ t - γ t₀) * star v).im| / ‖v‖ := fun t => by
+    rw [hcc, norm_tangentDeviation_smul_real hcc_ne hv, norm_tangentDeviation hv,
+      Complex.star_def]
+  exact h_dev.congr' (Filter.Eventually.of_forall fun t => (hkey t).symm) Filter.EventuallyEq.rfl
 
 /-- **Flatness bounds the deviation against the right tangent**: from `FlatOfOrder γ t₀ n`
 (`n ≥ 1`) and a right derivative `L ≠ 0`, the perpendicular deviation against `L` itself is
@@ -252,14 +211,8 @@ theorem FlatOfOrder.tangentDeviation_isLittleO_right {γ : ℝ → ℂ} {t₀ : 
     (fun t => ‖tangentDeviation (γ t - γ t₀) L‖) =o[𝓝[>] t₀]
       fun t => ‖γ t - γ t₀‖ ^ n := by
   obtain ⟨vp, vm, hvp, hvm, hr, -⟩ := flatOfOrder_iff.mp hflat
-  obtain ⟨cc, -, hcc⟩ := exists_real_smul_of_im_mul_conj_eq_zero hvp
-    (im_mul_conj_eq_zero_of_flat_right hvp hn hr h_deriv)
-  have hcc_ne : cc ≠ 0 := fun h0 => hL (by rw [hcc, h0, zero_smul])
-  have hkey : ∀ t, ‖tangentDeviation (γ t - γ t₀) L‖ =
-      |((γ t - γ t₀) * star vp).im| / ‖vp‖ := fun t => by
-    rw [hcc, norm_tangentDeviation_smul_real hcc_ne hvp, norm_tangentDeviation hvp,
-      Complex.star_def]
-  exact hr.congr' (Filter.Eventually.of_forall fun t => (hkey t).symm) Filter.EventuallyEq.rfl
+  exact tangentDeviation_isLittleO_of_im_mul_conj_eq_zero hvp hL
+    (im_mul_conj_eq_zero_of_flat_right hvp hn hr h_deriv) hr
 
 /-- **Flatness bounds the deviation against the left tangent**: the counterpart of
 `FlatOfOrder.tangentDeviation_isLittleO_right` from the left. -/
@@ -269,14 +222,8 @@ theorem FlatOfOrder.tangentDeviation_isLittleO_left {γ : ℝ → ℂ} {t₀ : �
     (fun t => ‖tangentDeviation (γ t - γ t₀) L‖) =o[𝓝[<] t₀]
       fun t => ‖γ t - γ t₀‖ ^ n := by
   obtain ⟨vp, vm, hvp, hvm, -, hl⟩ := flatOfOrder_iff.mp hflat
-  obtain ⟨cc, -, hcc⟩ := exists_real_smul_of_im_mul_conj_eq_zero hvm
-    (im_mul_conj_eq_zero_of_flat_left hvm hn hl h_deriv)
-  have hcc_ne : cc ≠ 0 := fun h0 => hL (by rw [hcc, h0, zero_smul])
-  have hkey : ∀ t, ‖tangentDeviation (γ t - γ t₀) L‖ =
-      |((γ t - γ t₀) * star vm).im| / ‖vm‖ := fun t => by
-    rw [hcc, norm_tangentDeviation_smul_real hcc_ne hvm, norm_tangentDeviation hvm,
-      Complex.star_def]
-  exact hl.congr' (Filter.Eventually.of_forall fun t => (hkey t).symm) Filter.EventuallyEq.rfl
+  exact tangentDeviation_isLittleO_of_im_mul_conj_eq_zero hvm hL
+    (im_mul_conj_eq_zero_of_flat_left hvm hn hl h_deriv) hl
 
 end TauCeti.Contour
 

@@ -121,8 +121,8 @@ theorem norm_tangentDeviation_smul_real {c : ℝ} (hc : c ≠ 0) {L : ℂ} (hL :
 `Im(L · conj v) = 0` forces `L = c • v` for a real `c`. -/
 theorem exists_real_smul_of_im_mul_conj_eq_zero {L v : ℂ} (hv : v ≠ 0)
     (h : (L * starRingEnd ℂ v).im = 0) :
-    ∃ c : ℝ, c = (L * starRingEnd ℂ v).re / Complex.normSq v ∧ L = c • v := by
-  refine ⟨(L * starRingEnd ℂ v).re / Complex.normSq v, rfl, ?_⟩
+    ∃ c : ℝ, L = c • v := by
+  refine ⟨(L * starRingEnd ℂ v).re / Complex.normSq v, ?_⟩
   have hN : (Complex.normSq v : ℂ) ≠ 0 := by
     exact_mod_cast (Complex.normSq_pos.mpr hv).ne'
   have hLv : L * starRingEnd ℂ v = ((L * starRingEnd ℂ v).re : ℂ) :=
