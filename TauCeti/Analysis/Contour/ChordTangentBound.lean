@@ -105,6 +105,37 @@ theorem norm_tangentDeviation_neg {L : ℂ} (hL : L ≠ 0) (w : ℂ) :
   rw [norm_tangentDeviation (neg_ne_zero.mpr hL), norm_tangentDeviation hL, map_neg, mul_neg,
     Complex.neg_im, abs_neg, norm_neg]
 
+/-- The deviation norm is invariant under real rescaling of the direction: it measures the
+distance to the line `ℝ • L`. -/
+theorem norm_tangentDeviation_smul_real {c : ℝ} (hc : c ≠ 0) {L : ℂ} (hL : L ≠ 0) (w : ℂ) :
+    ‖tangentDeviation w (c • L)‖ = ‖tangentDeviation w L‖ := by
+  have hcL : (c : ℂ) * L ≠ 0 := mul_ne_zero (by exact_mod_cast hc) hL
+  rw [show c • L = (c : ℂ) * L from Complex.real_smul,
+    norm_tangentDeviation hcL, norm_tangentDeviation hL, map_mul, Complex.conj_ofReal,
+    show w * ((c : ℂ) * starRingEnd ℂ L) = (c : ℂ) * (w * starRingEnd ℂ L) by ring]
+  simp only [Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero,
+    norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_mul]
+  rw [mul_div_mul_left _ _ (abs_ne_zero.mpr hc)]
+
+/-- A complex number with real pairing against a nonzero direction lies on its real line:
+`Im(L · conj v) = 0` forces `L = c • v` for a real `c`. -/
+theorem exists_real_smul_of_im_mul_conj_eq_zero {L v : ℂ} (hv : v ≠ 0)
+    (h : (L * starRingEnd ℂ v).im = 0) :
+    ∃ c : ℝ, c = (L * starRingEnd ℂ v).re / Complex.normSq v ∧ L = c • v := by
+  refine ⟨(L * starRingEnd ℂ v).re / Complex.normSq v, rfl, ?_⟩
+  have hN : (Complex.normSq v : ℂ) ≠ 0 := by
+    exact_mod_cast (Complex.normSq_pos.mpr hv).ne'
+  have hLv : L * starRingEnd ℂ v = ((L * starRingEnd ℂ v).re : ℂ) :=
+    Complex.ext (by simp) (by simpa using h)
+  have hkey : L * (starRingEnd ℂ v * v) = ((L * starRingEnd ℂ v).re : ℂ) * v := by
+    rw [← mul_assoc, hLv]
+    simp
+  rw [show starRingEnd ℂ v * v = (Complex.normSq v : ℂ) by
+      rw [mul_comm, Complex.mul_conj]] at hkey
+  rw [Complex.real_smul, Complex.ofReal_div]
+  field_simp
+  linear_combination hkey
+
 /-- **Pythagoras for the plane projection.** The squared norm of `w` decomposes into the squared
 norms of its projection on `L` and its orthogonal deviation. -/
 private theorem proj_sq_add_dev_sq (w L : ℂ) :
