@@ -70,7 +70,7 @@ theorem chord_quotient_tendsto {u : Set ℝ} (hu : t₀ ∉ u)
 
 /-- **The normalized chord is eventually close to `1`**: for any `ρ > 0`, eventually along
 `𝓝[u] t₀`, `‖(γ t - s) / (L (t - t₀)) - 1‖ ≤ ρ`. -/
-theorem eventually_normalized_chord_close {u : Set ℝ} (hu : t₀ ∉ u)
+private theorem eventually_normalized_chord_close {u : Set ℝ} (hu : t₀ ∉ u)
     (h_deriv : HasDerivWithinAt γ L u t₀) (h_at : γ t₀ = s) (hL : L ≠ 0)
     {ρ : ℝ} (hρ_pos : 0 < ρ) :
     ∀ᶠ t in 𝓝[u] t₀, ‖(γ t - s) / (L * ((t - t₀ : ℝ) : ℂ)) - 1‖ ≤ ρ := by
