@@ -374,11 +374,13 @@ theorem residue_sum {ι : Type*} (s : Finset ι) {f : ι → ℂ → ℂ} {z₀ 
 
 /-- **The residue of a Laurent monomial**: `residue (a / (z - z₀)^(k+1)) z₀` is `a` for `k = 0`
 and `0` for higher-order terms. -/
+@[simp]
 theorem residue_const_div_pow_sub (a z₀ : ℂ) (k : ℕ) :
     residue (fun z => a / (z - z₀) ^ (k + 1)) z₀ = if k = 0 then a else 0 := by
   have hfg : (fun z => a / (z - z₀) ^ (k + 1)) =ᶠ[𝓝[≠] z₀]
       fun z => (z - z₀) ^ (-(k + 1 : ℕ) : ℤ) • a :=
     Filter.Eventually.of_forall fun z => by
+      -- `change` beta-reduces the applied lambdas; the `rw` patterns do not match otherwise.
       change a / (z - z₀) ^ (k + 1) = (z - z₀) ^ (-(k + 1 : ℕ) : ℤ) • a
       rw [smul_eq_mul, zpow_neg, zpow_natCast, mul_comm, div_eq_mul_inv]
   rw [residue_eq_of_eventuallyEq_zpow_smul (by omega) analyticAt_const hfg]
