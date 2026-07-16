@@ -17,8 +17,8 @@ the generalized winding number by the **real** integral
 
 where `x + i y = γ − w`. Writing `γ − w = x + i y` and `γ' = ẋ + i ẏ`, the winding integrand
 `(γ − w)⁻¹ · γ'` has imaginary part exactly `(x ẏ − y ẋ) / (x² + y²)` (the real integrand above,
-here with denominator `Complex.normSq (γ − w) = x² + y²`) and real part `(x ẋ + y ẏ) / (x² + y²)`;
-these are the pointwise pieces `im_inv_mul` and `re_inv_mul`. For a point *off* the curve the
+here with denominator `Complex.normSq (γ − w) = x² + y²`); this pointwise piece is the private
+helper `inv_mul_im`. For a point *off* the curve the
 winding number is a genuine integer (`exists_int_windingNumber_of_closed`), hence real, so the
 ordinary index integral `(2πi)⁻¹ ∮_γ dz/(z − w)` is purely imaginary: its real part vanishes and its
 imaginary part is the real integral above. This is the off-curve (no principal-value) case of the
@@ -27,8 +27,6 @@ real formula — the computational workhorse of Layer 1; the on-curve bounded-in
 
 ## Main results
 
-* `TauCeti.Contour.im_inv_mul` — the imaginary part `(x ẏ − y ẋ) / (x² + y²)` of `z⁻¹ · v`.
-* `TauCeti.Contour.re_inv_mul` — the real part `(x ẋ + y ẏ) / (x² + y²)` of `z⁻¹ · v`.
 * `TauCeti.Contour.windingNumber_eq_real_integral_of_closed` — the winding number of a closed curve
   off `w` equals the real bounded integral `(1 / 2π) ∫ (x ẏ − y ẋ) / (x² + y²)`.
 
@@ -38,6 +36,12 @@ This is Layer 1 of the Hungerbühler–Wasem generalized residue theorem (HW Thm
 
 * N. Hungerbühler, M. Wasem, *Non-integer valued winding numbers and a generalized Residue
   Theorem*, arXiv:1808.00997 — Prop 2.3.
+
+## Provenance
+
+The pointwise imaginary-part decomposition and the real winding formula are migrated and cleaned
+from the AINTLIB `LeanModularForms` generalized-winding-number development, restated here for a raw
+`γ : ℝ → ℂ` on an oriented interval in the vocabulary the roadmap fixes.
 -/
 
 public section
@@ -51,16 +55,9 @@ namespace TauCeti.Contour
 /-- **Imaginary part of `z⁻¹ · v`.** Writing `z = x + i y` and `v = ẋ + i ẏ`, the imaginary part of
 `z⁻¹ · v` is `(x ẏ − y ẋ) / (x² + y²)`, with `Complex.normSq z = x² + y²`. This is the Hungerbühler–
 Wasem real winding integrand (Prop 2.3). Stated for all `z`, `v` (at `z = 0` both sides are `0`). -/
-theorem im_inv_mul (z v : ℂ) :
+private theorem inv_mul_im (z v : ℂ) :
     (z⁻¹ * v).im = (z.re * v.im - z.im * v.re) / Complex.normSq z := by
-  rw [Complex.mul_im, Complex.inv_re, Complex.inv_im]; ring
-
-/-- **Real part of `z⁻¹ · v`.** Writing `z = x + i y` and `v = ẋ + i ẏ`, the real part of `z⁻¹ · v`
-is `(x ẋ + y ẏ) / (x² + y²)`, with `Complex.normSq z = x² + y²`; for `z = γ − w` this is
-`d/dt · log ‖γ − w‖`, whose integral vanishes on a closed curve. Stated for all `z`, `v`. -/
-theorem re_inv_mul (z v : ℂ) :
-    (z⁻¹ * v).re = (z.re * v.re + z.im * v.im) / Complex.normSq z := by
-  rw [Complex.mul_re, Complex.inv_re, Complex.inv_im]; ring
+  rw [inv_mul_eq_div, Complex.div_im]; ring
 
 /-- **The real bounded-integrand formula for the winding number** (Hungerbühler–Wasem Prop 2.3,
 off-curve case). For a curve `γ` on the oriented interval with endpoints `a`, `b` that returns to
@@ -73,7 +70,7 @@ avoids
 
 with bounded real integrand and no principal value. The winding number is a genuine integer here
 (`exists_int_windingNumber_of_closed`), so the index integral is purely imaginary; its imaginary
-part is this real integral (`im_inv_mul`), while its real part — the increment of `log ‖γ − w‖` —
+part is this real integral (`inv_mul_im`), while its real part — the increment of `log ‖γ − w‖` —
 vanishes by closedness. -/
 theorem windingNumber_eq_real_integral_of_closed {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} {P : Set ℝ}
     (hclosed : γ a = γ b) (hP : P.Countable)
@@ -112,7 +109,7 @@ theorem windingNumber_eq_real_integral_of_closed {γ : ℝ → ℂ} {w : ℂ} {a
           / Complex.normSq (γ t - w)) = 2 * Real.pi * (n : ℝ) := by
     have hpt : ∀ t, ((γ t - w).re * (deriv γ t).im - (γ t - w).im * (deriv γ t).re)
         / Complex.normSq (γ t - w) = ((γ t - w)⁻¹ * deriv γ t).im :=
-      fun t ↦ (im_inv_mul (γ t - w) (deriv γ t)).symm
+      fun t ↦ (inv_mul_im (γ t - w) (deriv γ t)).symm
     simp_rw [hpt, ← RCLike.im_to_complex]
     rw [intervalIntegral_im h_int, RCLike.im_to_complex, him]
   -- Assemble: `n_w(γ) = n = (1 / 2π) · (2π · n)`.
