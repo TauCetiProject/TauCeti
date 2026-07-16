@@ -102,7 +102,7 @@ end PolarPartDecomposition
 
 /-- **The total polar part** over the singular set: the sum of the canonical per-point polar
 parts. -/
-@[expose] def meromorphicPolarPartTotal {f : ℂ → ℂ} {S : Finset ℂ}
+def meromorphicPolarPartTotal {f : ℂ → ℂ} {S : Finset ℂ}
     (hMero : ∀ s ∈ S, MeromorphicAt f s) (z : ℂ) : ℂ :=
   ∑ s ∈ S.attach, meromorphicPolarPartAt (hMero s.1 s.2) z
 
@@ -110,7 +110,9 @@ parts. -/
 theorem meromorphicPolarPartTotal_eq {f : ℂ → ℂ} {S : Finset ℂ}
     (hMero : ∀ s ∈ S, MeromorphicAt f s) (z : ℂ) :
     meromorphicPolarPartTotal hMero z =
-      ∑ s ∈ S.attach, meromorphicPolarPartAt (hMero s.1 s.2) z := rfl
+      ∑ s ∈ S.attach, meromorphicPolarPartAt (hMero s.1 s.2) z := by
+  unfold meromorphicPolarPartTotal
+  rfl
 
 /-- The polar parts of the other poles are analytic at `s`. -/
 private theorem otherPolar_analyticAt {f : ℂ → ℂ} {S : Finset ℂ}
@@ -205,7 +207,7 @@ meromorphic at each `s ∈ S`, the canonical Laurent data assembles into a
 `PolarPartDecomposition f S U`: the orders are the canonical polar orders — so they are
 evaluable by callers, in particular `1` at simple poles — and the analytic remainder is
 `f` minus the total polar part, extended across the poles by its limits. -/
-@[expose] noncomputable def ofMeromorphic {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ} (hU : IsOpen U)
+noncomputable def ofMeromorphic {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ} (hU : IsOpen U)
     (hf : DifferentiableOn ℂ f (U \ (↑S : Set ℂ))) (hMero : ∀ s ∈ S, MeromorphicAt f s) :
     PolarPartDecomposition f S U where
   order s := meromorphicPolarOrderAt f s
@@ -248,21 +250,31 @@ variable {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ} {hU : IsOpen U}
 /-- The constructed order is the canonical polar order — evaluable by callers, in particular
 `1` at simple poles (`meromorphicPolarOrderAt_eq_one`). -/
 @[simp] theorem ofMeromorphic_order (s : S) :
-    (ofMeromorphic hU hf hMero).order s = meromorphicPolarOrderAt f s := rfl
+    (ofMeromorphic hU hf hMero).order s = meromorphicPolarOrderAt f s := by
+  unfold ofMeromorphic
+  rfl
 
-/-- The constructed coefficients are the canonical Laurent coefficients. -/
+/-- The constructed coefficients are the canonical Laurent coefficients, along the index
+identification `ofMeromorphic_order`. -/
 @[simp] theorem ofMeromorphic_coeff (s : S) (k : Fin ((ofMeromorphic hU hf hMero).order s)) :
-    (ofMeromorphic hU hf hMero).coeff s k = meromorphicPolarCoeffAt (hMero s s.2) k := rfl
+    (ofMeromorphic hU hf hMero).coeff s k =
+      meromorphicPolarCoeffAt (hMero s s.2) (Fin.cast (ofMeromorphic_order s) k) := by
+  unfold ofMeromorphic
+  rfl
 
 /-- The constructed polar part is the canonical polar part. -/
 @[simp] theorem ofMeromorphic_polarPart (s : S) (z : ℂ) :
-    (ofMeromorphic hU hf hMero).polarPart s z = meromorphicPolarPartAt (hMero s s.2) z := rfl
+    (ofMeromorphic hU hf hMero).polarPart s z = meromorphicPolarPartAt (hMero s s.2) z := by
+  unfold ofMeromorphic
+  rfl
 
 /-- Off the singular set, the constructed analytic remainder is `f` minus the total polar
 part. -/
 theorem ofMeromorphic_analyticRemainder {z : ℂ} (hz : z ∉ (↑S : Set ℂ)) :
     (ofMeromorphic hU hf hMero).analyticRemainder z =
-      f z - meromorphicPolarPartTotal hMero z := if_neg hz
+      f z - meromorphicPolarPartTotal hMero z := by
+  unfold ofMeromorphic
+  exact if_neg hz
 
 end PolarPartDecomposition
 
