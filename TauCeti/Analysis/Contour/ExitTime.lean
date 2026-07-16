@@ -10,7 +10,6 @@ public import Mathlib.Topology.Order.LeftRightNhds
 import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Analysis.Normed.Group.Uniform
 import Mathlib.Topology.Algebra.Group.Basic
-import Mathlib.Topology.Order.Monotone
 
 /-!
 # Exit times of a curve from small balls around a crossed point
@@ -84,16 +83,15 @@ theorem firstExitTimeRight_mem_Icc {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E} (
 /-- **Radius lower bound at the right exit time**: the `sInf` of the closed set of
 outside-the-ball times is itself outside the open ball. -/
 theorem le_norm_at_firstExitTimeRight {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
-    (hδ : 0 < δ) (hγ_cont : ContinuousOn γ (Icc t₀ (t₀ + δ)))
+    (hδ : 0 ≤ δ) (hγ_cont : ContinuousOn γ (Icc t₀ (t₀ + δ)))
     (hε_le : ε ≤ ‖γ (t₀ + δ) - s‖) :
     ε ≤ ‖γ (firstExitTimeRight γ t₀ δ s ε) - s‖ :=
   (((hγ_cont.sub continuousOn_const).norm.preimage_isClosed_of_isClosed
       isClosed_Icc isClosed_Ici).csInf_mem
-    ⟨t₀ + δ, right_endpoint_mem hδ.le hε_le⟩
+    ⟨t₀ + δ, right_endpoint_mem hδ hε_le⟩
     ⟨t₀, right_set_bddBelow γ t₀ δ ε s⟩).2
 
-/-- **The right exit time is strictly after the crossing**: at `t₀` itself the curve is at
-distance `0 < ε`, so a right neighbourhood of `t₀` is excluded from the defining set. -/
+/-- **The right exit time is strictly after the crossing** when `γ t₀ = s` and `0 < ε`. -/
 theorem lt_firstExitTimeRight {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E} (hδ : 0 < δ)
     (hγ_cont : ContinuousOn γ (Icc t₀ (t₀ + δ)))
     (h_s : γ t₀ = s) (hε_pos : 0 < ε) (hε_le : ε ≤ ‖γ (t₀ + δ) - s‖) :
@@ -113,13 +111,12 @@ theorem lt_firstExitTimeRight {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E} (hδ :
     linarith [min_le_left η δ], h_in_Icc⟩
 
 /-- **Exact radius at the right exit time**: for `0 < ε ≤ ‖γ (t₀ + δ) - s‖`, the curve is at
-distance exactly `ε` at `firstExitTimeRight γ t₀ δ s ε` — points strictly before the `sInf` are
-inside the ball, and continuity carries the strict inequality to the `sInf` itself. -/
+distance exactly `ε` at `firstExitTimeRight γ t₀ δ s ε`. -/
 theorem norm_at_firstExitTimeRight_eq {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
     (hδ : 0 < δ) (hγ_cont : ContinuousOn γ (Icc t₀ (t₀ + δ)))
     (h_s : γ t₀ = s) (hε_pos : 0 < ε) (hε_le : ε ≤ ‖γ (t₀ + δ) - s‖) :
     ‖γ (firstExitTimeRight γ t₀ δ s ε) - s‖ = ε := by
-  refine le_antisymm ?_ (le_norm_at_firstExitTimeRight hδ hγ_cont hε_le)
+  refine le_antisymm ?_ (le_norm_at_firstExitTimeRight hδ.le hγ_cont hε_le)
   set τ := firstExitTimeRight γ t₀ δ s ε
   have h_lt : t₀ < τ := lt_firstExitTimeRight hδ hγ_cont h_s hε_pos hε_le
   have h_mem : τ ∈ Icc t₀ (t₀ + δ) := firstExitTimeRight_mem_Icc hδ.le hε_le
@@ -166,12 +163,12 @@ theorem firstExitTimeLeft_mem_Icc {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E} (h
 /-- **Radius lower bound at the left exit time**: the `sSup` of the closed set of
 outside-the-ball times is itself outside the open ball. -/
 theorem le_norm_at_firstExitTimeLeft {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
-    (hδ : 0 < δ) (hγ_cont : ContinuousOn γ (Icc (t₀ - δ) t₀))
+    (hδ : 0 ≤ δ) (hγ_cont : ContinuousOn γ (Icc (t₀ - δ) t₀))
     (hε_le : ε ≤ ‖γ (t₀ - δ) - s‖) :
     ε ≤ ‖γ (firstExitTimeLeft γ t₀ δ s ε) - s‖ :=
   (((hγ_cont.sub continuousOn_const).norm.preimage_isClosed_of_isClosed
       isClosed_Icc isClosed_Ici).csSup_mem
-    ⟨t₀ - δ, left_endpoint_mem hδ.le hε_le⟩
+    ⟨t₀ - δ, left_endpoint_mem hδ hε_le⟩
     ⟨t₀, left_set_bddAbove γ t₀ δ ε s⟩).2
 
 /-- **The left exit time is strictly before the crossing**: the counterpart of
@@ -200,7 +197,7 @@ theorem norm_at_firstExitTimeLeft_eq {γ : ℝ → E} {t₀ δ ε : ℝ} {s : E}
     (hδ : 0 < δ) (hγ_cont : ContinuousOn γ (Icc (t₀ - δ) t₀))
     (h_s : γ t₀ = s) (hε_pos : 0 < ε) (hε_le : ε ≤ ‖γ (t₀ - δ) - s‖) :
     ‖γ (firstExitTimeLeft γ t₀ δ s ε) - s‖ = ε := by
-  refine le_antisymm ?_ (le_norm_at_firstExitTimeLeft hδ hγ_cont hε_le)
+  refine le_antisymm ?_ (le_norm_at_firstExitTimeLeft hδ.le hγ_cont hε_le)
   set τ := firstExitTimeLeft γ t₀ δ s ε
   have h_lt : τ < t₀ := firstExitTimeLeft_lt hδ hγ_cont h_s hε_pos hε_le
   have h_mem : τ ∈ Icc (t₀ - δ) t₀ := firstExitTimeLeft_mem_Icc hδ.le hε_le
