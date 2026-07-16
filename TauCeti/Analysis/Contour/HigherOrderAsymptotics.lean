@@ -28,14 +28,17 @@ value, up to a vanishing error.
 
 ## Main results
 
-* `Contour.hasDerivAt_antiderivative_pow_inv_complex` — the antiderivative of `1/(z-s)^k`.
-* `Contour.norm_F_diff_le_segment_bound` — the mean-value bound for `F` along a segment avoiding
+* `Contour.hasDerivAt_antiderivative_pow_inv` — the antiderivative of `1/(z-s)^k`.
+* `Contour.norm_antiderivative_diff_le_segment_bound` — the mean-value bound for the
+  antiderivative along a segment avoiding
   the pole.
 * `Contour.chord_to_tangent_isLittleO` — the chord to the tangent target is `o(‖γ t - s‖ ^ n)`
   given the deviation bound, in the tangent hemisphere.
-* `Contour.F_diff_at_tangent_target_tendsto_zero` — the parametrised core: `F`-difference to the
+* `Contour.antiderivative_diff_at_tangent_target_tendsto_zero` — the parametrised core: the
+  antiderivative difference to the
   tangent target tends to `0` for `2 ≤ k ≤ n`.
-* `Contour.F_diff_at_tangent_target_tendsto_zero_right` / `_left` — the one-sided forms, from a
+* `Contour.antiderivative_diff_at_tangent_target_tendsto_zero_right` / `_left` — the
+  one-sided forms, from a
   one-sided derivative and the deviation bound against the tangent (`+L` ray on the right, `-L`
   ray on the left).
 
@@ -62,7 +65,7 @@ open Asymptotics Complex Filter Set Topology
 
 /-- **The antiderivative of `1/(z-s)^k`** (`k ≥ 2`): the function
 `F(z) = -1/[(k-1)(z-s)^(k-1)]` has complex derivative `1/(z-s)^k` at any `z ≠ s`. -/
-theorem hasDerivAt_antiderivative_pow_inv_complex
+theorem hasDerivAt_antiderivative_pow_inv
     {s : ℂ} {k : ℕ} (hk : 2 ≤ k) {z : ℂ} (hz : z ≠ s) :
     HasDerivAt (fun w => -(↑(k - 1) : ℂ)⁻¹ * ((w - s) ^ (k - 1))⁻¹)
       (1 / (z - s) ^ k) z := by
@@ -85,7 +88,7 @@ theorem hasDerivAt_antiderivative_pow_inv_complex
 /-- **Mean-value bound for the antiderivative along a segment.** When the segment from `z₁` to
 `z₂` stays at distance `≥ ε` from `s`, the antiderivative difference satisfies
 `‖F(z₂) - F(z₁)‖ ≤ ‖z₂ - z₁‖ / ε^k`. -/
-theorem norm_F_diff_le_segment_bound
+theorem norm_antiderivative_diff_le_segment_bound
     {z₁ z₂ s : ℂ} {k : ℕ} {ε : ℝ} (hk : 2 ≤ k) (hε : 0 < ε)
     (h_seg_avoids : ∀ z ∈ segment ℝ z₁ z₂, ε ≤ ‖z - s‖) :
     ‖(-(↑(k - 1) : ℂ)⁻¹ * ((z₂ - s) ^ (k - 1))⁻¹) -
@@ -97,7 +100,7 @@ theorem norm_F_diff_le_segment_bound
     intro z hz
     have h_ne : z ≠ s := fun heq => by
       have := h_seg_avoids z hz; rw [heq, sub_self, norm_zero] at this; linarith
-    exact (hasDerivAt_antiderivative_pow_inv_complex hk h_ne).hasDerivWithinAt
+    exact (hasDerivAt_antiderivative_pow_inv hk h_ne).hasDerivWithinAt
   have h_bound : ∀ z ∈ segment ℝ z₁ z₂, ‖1 / (z - s) ^ k‖ ≤ 1 / ε ^ k := by
     intro z hz
     rw [norm_div, norm_one, norm_pow]
@@ -110,7 +113,7 @@ theorem norm_F_diff_le_segment_bound
 `(t - t₀) • L = |t - t₀| • T` for `t ∈ u` and `‖T‖ = ‖L‖` — then for `t` close to `t₀` within
 `u`, the chord `γ t - s` lies in the `+T` hemisphere (`Re((γ t - s) · conj T) ≥ 0`). On
 `Ioi t₀` this holds with `T = L`, on `Iio t₀` with `T = -L`. -/
-theorem eventually_re_smul_conj_nonneg
+private theorem eventually_re_mul_conj_nonneg
     {γ : ℝ → ℂ} {t₀ : ℝ} {s L : ℂ} {u : Set ℝ} {T : ℂ} (hL : L ≠ 0)
     (h_deriv : HasDerivWithinAt γ L u t₀) (h_s : γ t₀ = s)
     (hT : ∀ t ∈ u, (t - t₀) • L = |t - t₀| • T) (hTL : ‖T‖ = ‖L‖) :
@@ -136,7 +139,7 @@ theorem eventually_re_smul_conj_nonneg
 
 /-- With one-sided derivative `L ≠ 0` at `t₀` within `u ∌ t₀`, the curve cannot return to
 `s = γ t₀` near `t₀` within `u`. -/
-theorem eventually_ne_of_hasDerivWithinAt
+private theorem eventually_ne_of_hasDerivWithinAt
     {γ : ℝ → ℂ} {t₀ : ℝ} {s L : ℂ} {u : Set ℝ} (hu : t₀ ∉ u) (hL : L ≠ 0)
     (h_deriv : HasDerivWithinAt γ L u t₀) (h_s : γ t₀ = s) :
     ∀ᶠ t in 𝓝[u] t₀, γ t ≠ s := by
@@ -177,7 +180,7 @@ theorem chord_to_tangent_isLittleO
 
 /-- On the segment between two points equidistant (distance `d`) from `s`, every point satisfies
 `‖z - s‖² ≥ d² - ‖z₁ - z₂‖²/4`. -/
-theorem norm_sq_segment_to_pole_lower_bound
+private theorem norm_sq_segment_to_pole_lower_bound
     {z₁ z₂ s : ℂ} {d : ℝ}
     (h₁ : ‖z₁ - s‖ = d) (h₂ : ‖z₂ - s‖ = d)
     {z : ℂ} (hz : z ∈ segment ℝ z₁ z₂) :
@@ -213,7 +216,7 @@ theorem norm_sq_segment_to_pole_lower_bound
 
 /-- When the chord between two points at distance `d` from `s` is at most `d`, their segment
 stays at distance `≥ d/2` from `s`. -/
-theorem norm_segment_to_pole_lower_bound_half
+private theorem norm_segment_to_pole_lower_bound_half
     {z₁ z₂ s : ℂ} {d : ℝ}
     (h₁ : ‖z₁ - s‖ = d) (h₂ : ‖z₂ - s‖ = d) (h_chord : ‖z₁ - z₂‖ ≤ d)
     {z : ℂ} (hz : z ∈ segment ℝ z₁ z₂) :
@@ -223,36 +226,36 @@ theorem norm_segment_to_pole_lower_bound_half
       mul_self_le_mul_self (norm_nonneg _) h_chord]
   exact (abs_le_of_sq_le_sq' h_le_sq (norm_nonneg _)).2
 
-/-- For `γ t ≠ s` with the chord to the tangent target at most `‖γ t - s‖`, the antiderivative
-difference between `γ t` and the tangent target `s + (‖γ t - s‖/‖L‖) • L` is bounded by
-`(1/(‖γ t - s‖/2)^k) · chord`. -/
-theorem norm_F_diff_at_tangent_target_le
-    {γ : ℝ → ℂ} {t : ℝ} {s L : ℂ} {k : ℕ} (hk : 2 ≤ k)
-    (hL : L ≠ 0) (hw_ne : γ t ≠ s)
-    (h_chord_le : ‖γ t - (s + (‖γ t - s‖ / ‖L‖ : ℝ) • L)‖ ≤ ‖γ t - s‖) :
-    ‖(-(↑(k - 1) : ℂ)⁻¹ * ((γ t - s) ^ (k - 1))⁻¹) -
-      (-(↑(k - 1) : ℂ)⁻¹ * (((s + (‖γ t - s‖ / ‖L‖ : ℝ) • L) - s) ^ (k - 1))⁻¹)‖ ≤
-      (1 / (‖γ t - s‖ / 2) ^ k) * ‖γ t - (s + (‖γ t - s‖ / ‖L‖ : ℝ) • L)‖ := by
-  have hd_pos : 0 < ‖γ t - s‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hw_ne)
+/-- For `w ≠ s` with the chord to the tangent target at most `‖w - s‖`, the antiderivative
+difference between `w` and the tangent target `s + (‖w - s‖/‖L‖) • L` is bounded by
+`(1/(‖w - s‖/2)^k) · chord`. -/
+private theorem norm_antiderivative_diff_at_tangent_target_le
+    {w s L : ℂ} {k : ℕ} (hk : 2 ≤ k)
+    (hL : L ≠ 0) (hw_ne : w ≠ s)
+    (h_chord_le : ‖w - (s + (‖w - s‖ / ‖L‖ : ℝ) • L)‖ ≤ ‖w - s‖) :
+    ‖(-(↑(k - 1) : ℂ)⁻¹ * ((w - s) ^ (k - 1))⁻¹) -
+      (-(↑(k - 1) : ℂ)⁻¹ * (((s + (‖w - s‖ / ‖L‖ : ℝ) • L) - s) ^ (k - 1))⁻¹)‖ ≤
+      (1 / (‖w - s‖ / 2) ^ k) * ‖w - (s + (‖w - s‖ / ‖L‖ : ℝ) • L)‖ := by
+  have hd_pos : 0 < ‖w - s‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hw_ne)
   have hL_pos : 0 < ‖L‖ := norm_pos_iff.mpr hL
-  set d := ‖γ t - s‖
+  set d := ‖w - s‖
   set tgt := s + (d / ‖L‖ : ℝ) • L with htgt_def
   have h_tgt : ‖tgt - s‖ = d := by
     rw [show tgt - s = (d / ‖L‖ : ℝ) • L by simp [htgt_def], norm_smul, Real.norm_eq_abs,
       abs_of_nonneg (by positivity)]
     field_simp
-  have h_F_diff := norm_F_diff_le_segment_bound (z₁ := γ t) (z₂ := tgt) (s := s) hk
+  have h_F_diff := norm_antiderivative_diff_le_segment_bound (z₁ := w) (z₂ := tgt) (s := s) hk
     (by linarith : 0 < d / 2)
     (fun z hz => norm_segment_to_pole_lower_bound_half rfl h_tgt h_chord_le hz)
-  rw [show (-(↑(k - 1) : ℂ)⁻¹ * ((γ t - s) ^ (k - 1))⁻¹) -
+  rw [show (-(↑(k - 1) : ℂ)⁻¹ * ((w - s) ^ (k - 1))⁻¹) -
       (-(↑(k - 1) : ℂ)⁻¹ * ((tgt - s) ^ (k - 1))⁻¹) =
       -((-(↑(k - 1) : ℂ)⁻¹ * ((tgt - s) ^ (k - 1))⁻¹) -
-        (-(↑(k - 1) : ℂ)⁻¹ * ((γ t - s) ^ (k - 1))⁻¹)) by ring,
-    norm_neg, show ‖γ t - tgt‖ = ‖tgt - γ t‖ from norm_sub_rev _ _]
+        (-(↑(k - 1) : ℂ)⁻¹ * ((w - s) ^ (k - 1))⁻¹)) by ring,
+    norm_neg, show ‖w - tgt‖ = ‖tgt - w‖ from norm_sub_rev _ _]
   exact h_F_diff
 
 /-- If `chord = o(d^n)`, `d → 0` with `d > 0` eventually, and `k ≤ n`, then `chord/d^k → 0`. -/
-theorem tendsto_div_pow_zero_of_isLittleO
+private theorem tendsto_div_pow_zero_of_isLittleO
     {chord d : ℝ → ℝ} {l : Filter ℝ} {n k : ℕ}
     (h_chord : chord =o[l] (fun t => d t ^ n)) (h_d : Tendsto d l (𝓝 0))
     (h_d_pos : ∀ᶠ t in l, 0 < d t) (hkn : k ≤ n) :
@@ -281,9 +284,9 @@ theorem tendsto_div_pow_zero_of_isLittleO
 chord to the `+T` tangent target is `o(‖γ t - s‖ ^ n)` along `l`, `γ → s` off `s` along `l`, and
 `2 ≤ k ≤ n`, then `F(γ t) - F(target)` tends to `0` along `l`, for the antiderivative `F` of the
 order-`k` pole integrand. -/
-theorem F_diff_at_tangent_target_tendsto_zero
+theorem antiderivative_diff_at_tangent_target_tendsto_zero
     {γ : ℝ → ℂ} {s : ℂ} {l : Filter ℝ} {T : ℂ} {n k : ℕ}
-    (hT : T ≠ 0) (hk : 2 ≤ k) (hkn : k ≤ n) (hn1 : 1 ≤ n)
+    (hT : T ≠ 0) (hk : 2 ≤ k) (hkn : k ≤ n)
     (h_chord : (fun t => ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖) =o[l]
       fun t => ‖γ t - s‖ ^ n)
     (h_ne : ∀ᶠ t in l, γ t ≠ s) (h_to : Tendsto γ l (𝓝 s)) :
@@ -309,7 +312,7 @@ theorem F_diff_at_tangent_target_tendsto_zero
       h_d_pos] with t hb hd hdp
     calc ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖
         ≤ ‖γ t - s‖ ^ n := by simpa using hb
-      _ ≤ ‖γ t - s‖ ^ 1 := pow_le_pow_of_le_one (norm_nonneg _) hd hn1
+      _ ≤ ‖γ t - s‖ ^ 1 := pow_le_pow_of_le_one (norm_nonneg _) hd (by omega : 1 ≤ n)
       _ = ‖γ t - s‖ := pow_one _
   have h_F_diff_le : ∀ᶠ t in l,
       ‖(-(↑(k - 1) : ℂ)⁻¹ * ((γ t - s) ^ (k - 1))⁻¹) -
@@ -320,7 +323,7 @@ theorem F_diff_at_tangent_target_tendsto_zero
     have hcd' : ‖γ t - (s + (‖γ t - s‖ / ‖T‖ : ℝ) • T)‖ ≤ ‖γ t - s‖ := by
       rwa [show γ t - (s + (‖γ t - s‖ / ‖T‖ : ℝ) • T) =
             γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T by ring]
-    have h_bound := norm_F_diff_at_tangent_target_le hk hT h_ne hcd'
+    have h_bound := norm_antiderivative_diff_at_tangent_target_le hk hT h_ne hcd'
     rw [show ‖γ t - (s + (‖γ t - s‖ / ‖T‖ : ℝ) • T)‖ =
           ‖γ t - s - (‖γ t - s‖ / ‖T‖ : ℝ) • T‖ by congr 1; ring] at h_bound
     calc ‖_‖
@@ -337,47 +340,48 @@ theorem F_diff_at_tangent_target_tendsto_zero
 right at `t₀` and perpendicular deviation `o(‖γ t - s‖ ^ n)` against `L`, the antiderivative
 difference between `γ t` and the tangent target on the `+L` ray tends to `0` as `t → t₀⁺`
 (`2 ≤ k ≤ n`). -/
-theorem F_diff_at_tangent_target_tendsto_zero_right
+theorem antiderivative_diff_at_tangent_target_tendsto_zero_right
     {γ : ℝ → ℂ} {t₀ : ℝ} {s L : ℂ} {n k : ℕ}
     (hL : L ≠ 0) (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) (h_s : γ t₀ = s)
     (h_dev : (fun t => ‖tangentDeviation (γ t - s) L‖) =o[𝓝[>] t₀]
       fun t => ‖γ t - s‖ ^ n)
-    (hk : 2 ≤ k) (hkn : k ≤ n) (hn1 : 1 ≤ n) :
+    (hk : 2 ≤ k) (hkn : k ≤ n) :
     Tendsto (fun t =>
       ‖(-(↑(k - 1) : ℂ)⁻¹ * ((γ t - s) ^ (k - 1))⁻¹) -
         (-(↑(k - 1) : ℂ)⁻¹ *
           (((s + (‖γ t - s‖ / ‖L‖ : ℝ) • L) - s) ^ (k - 1))⁻¹)‖)
       (𝓝[>] t₀) (𝓝 0) := by
   have h_ne := eventually_ne_of_hasDerivWithinAt self_notMem_Ioi hL h_deriv h_s
-  have h_re := eventually_re_smul_conj_nonneg hL h_deriv h_s
+  have h_re := eventually_re_mul_conj_nonneg hL h_deriv h_s
     (fun t ht => by rw [abs_of_pos (sub_pos.mpr ht)]) rfl
-  exact F_diff_at_tangent_target_tendsto_zero hL hk hkn hn1
+  exact antiderivative_diff_at_tangent_target_tendsto_zero hL hk hkn
     (chord_to_tangent_isLittleO hL h_re h_ne h_dev) h_ne
     (h_s ▸ h_deriv.continuousWithinAt)
 
 /-- **The left-branch antiderivative asymptotics**: the counterpart of
-`F_diff_at_tangent_target_tendsto_zero_right` from the left, with the tangent target on the
+`antiderivative_diff_at_tangent_target_tendsto_zero_right` from the left, with the tangent
+target on the
 `-L` ray. -/
-theorem F_diff_at_tangent_target_tendsto_zero_left
+theorem antiderivative_diff_at_tangent_target_tendsto_zero_left
     {γ : ℝ → ℂ} {t₀ : ℝ} {s L : ℂ} {n k : ℕ}
     (hL : L ≠ 0) (h_deriv : HasDerivWithinAt γ L (Iio t₀) t₀) (h_s : γ t₀ = s)
     (h_dev : (fun t => ‖tangentDeviation (γ t - s) L‖) =o[𝓝[<] t₀]
       fun t => ‖γ t - s‖ ^ n)
-    (hk : 2 ≤ k) (hkn : k ≤ n) (hn1 : 1 ≤ n) :
+    (hk : 2 ≤ k) (hkn : k ≤ n) :
     Tendsto (fun t =>
       ‖(-(↑(k - 1) : ℂ)⁻¹ * ((γ t - s) ^ (k - 1))⁻¹) -
         (-(↑(k - 1) : ℂ)⁻¹ *
           (((s + (‖γ t - s‖ / ‖(-L)‖ : ℝ) • (-L)) - s) ^ (k - 1))⁻¹)‖)
       (𝓝[<] t₀) (𝓝 0) := by
   have h_ne := eventually_ne_of_hasDerivWithinAt self_notMem_Iio hL h_deriv h_s
-  have h_re := eventually_re_smul_conj_nonneg hL h_deriv h_s
+  have h_re := eventually_re_mul_conj_nonneg hL h_deriv h_s
     (fun t ht => by rw [abs_of_neg (sub_neg.mpr ht), neg_smul, smul_neg, neg_neg])
     (norm_neg L)
   have h_dev' : (fun t => ‖tangentDeviation (γ t - s) (-L)‖) =o[𝓝[<] t₀]
       fun t => ‖γ t - s‖ ^ n :=
     h_dev.congr' (Eventually.of_forall fun t => (norm_tangentDeviation_neg hL _).symm)
       EventuallyEq.rfl
-  exact F_diff_at_tangent_target_tendsto_zero (neg_ne_zero.mpr hL) hk hkn hn1
+  exact antiderivative_diff_at_tangent_target_tendsto_zero (neg_ne_zero.mpr hL) hk hkn
     (chord_to_tangent_isLittleO (neg_ne_zero.mpr hL) h_re h_ne h_dev') h_ne
     (h_s ▸ h_deriv.continuousWithinAt)
 
