@@ -264,28 +264,12 @@ theorem arg_annular_quotient_tendsto_left
   push_cast
   ring
 
-/-- For `q` with `‖-q - 1‖ ≤ 1/4`, the negated inverse `-1/q` stays in the unit ball around
-`1`, hence in the slit plane. -/
+/-- For `q` with `‖-q - 1‖ ≤ 1/4`, the negated inverse `-1/q` lies in the slit plane: the
+`z = 1`, `w = -q` instance of `div_mem_slitPlane_of_close_to_one`. -/
 private theorem neg_inv_mem_slitPlane_of_neg_close_to_one {q : ℂ} (hq : ‖-q - 1‖ ≤ 1 / 4) :
     -1 / q ∈ Complex.slitPlane := by
-  have hq_norm : 3 / 4 ≤ ‖q‖ := by
-    have h_rev : ‖(-1 : ℂ)‖ - ‖q‖ ≤ ‖-1 - q‖ := norm_sub_norm_le _ _
-    rw [norm_neg, norm_one, show (-1 : ℂ) - q = -q - 1 from by ring] at h_rev
-    linarith
-  have hq_ne : q ≠ 0 := fun h_eq => by
-    rw [h_eq, norm_zero] at hq_norm
-    linarith
-  have h_close : ‖(-1 / q) - 1‖ ≤ 1 / 3 := by
-    rw [show ((-1 : ℂ) / q) - 1 = -((1 + q) / q) from by field_simp; ring, norm_neg, norm_div,
-      show ‖(1 : ℂ) + q‖ = ‖-q - 1‖ from by rw [show (1 : ℂ) + q = -(-q - 1) from by ring,
-        norm_neg],
-      div_le_iff₀ (norm_pos_iff.mpr hq_ne)]
-    calc ‖-q - 1‖ ≤ 1 / 4 := hq
-      _ ≤ (1 / 3) * (3 / 4) := by norm_num
-      _ ≤ (1 / 3) * ‖q‖ := mul_le_mul_of_nonneg_left hq_norm (by norm_num)
-  exact Complex.ball_one_subset_slitPlane (by
-    rw [Metric.mem_ball, dist_eq_norm]
-    linarith)
+  have h := div_mem_slitPlane_of_close_to_one (z := 1) (w := -q) (by norm_num) hq
+  rwa [div_neg, ← neg_div] at h
 
 /-- **Boundary chord-to-tangent quotients in the slit plane (right)**: there is a window radius
 `r > 0` such that `(γ (t₀ + r') - s) / L ∈ Complex.slitPlane` for every `0 < r' ≤ r` — the
@@ -309,26 +293,28 @@ theorem exists_chord_div_tangent_mem_slitPlane_right
   linarith
 
 /-- **Boundary chord-to-tangent quotients in the slit plane (left)**: there is a window radius
-`r > 0` such that `(-L) / (γ (t₀ - r') - s) ∈ Complex.slitPlane` for every `0 < r' ≤ r` with
-`γ (t₀ - r') ≠ s` — the `h_slit` input of `arg_annular_quotient_tendsto_left` at any admissible
-window radius. The non-crossing hypothesis is supplied by the caller, typically from in-window
-uniqueness. -/
+`r > 0` such that `(-L) / (γ (t₀ - r') - s) ∈ Complex.slitPlane` for every `0 < r' ≤ r` — the
+`h_slit` input of `arg_annular_quotient_tendsto_left` at any admissible window radius. -/
 theorem exists_chord_div_tangent_mem_slitPlane_left
     (h_deriv : HasDerivWithinAt γ L (Iio t₀) t₀) (h_at : γ t₀ = s) (hL : L ≠ 0) :
-    ∃ r > 0, ∀ r', 0 < r' → r' ≤ r → γ (t₀ - r') ≠ s →
+    ∃ r > 0, ∀ r', 0 < r' → r' ≤ r →
       (-L) / (γ (t₀ - r') - s) ∈ Complex.slitPlane := by
   obtain ⟨r, hr_pos, hr_close⟩ :=
     exists_normalized_chord_bound_left h_deriv h_at hL (ρ := 1 / 4) (by norm_num)
-  refine ⟨r, hr_pos, fun r' hr'_pos hr'_le h_ne => ?_⟩
+  refine ⟨r, hr_pos, fun r' hr'_pos hr'_le => ?_⟩
   set q : ℂ := (γ (t₀ - r') - s) / (L * ((r' : ℝ) : ℂ)) with hq_def
   have hq_close : ‖-q - 1‖ ≤ 1 / 4 := by
     have h_close := hr_close (t₀ - r') ⟨by linarith, by linarith⟩
     rw [show (((t₀ - r') - t₀ : ℝ) : ℂ) = -((r' : ℝ) : ℂ) from by push_cast; ring, mul_neg,
       div_neg, ← hq_def] at h_close
     exact h_close
+  have hq_ne : q ≠ 0 := by
+    intro h0
+    rw [h0, neg_zero, zero_sub, norm_neg, norm_one] at hq_close
+    norm_num at hq_close
+  have h_γ_ne : γ (t₀ - r') - s ≠ 0 := fun h0 => hq_ne (by rw [hq_def, h0, zero_div])
   have h_eq_target : (-L) / (γ (t₀ - r') - s) = (((1 / r' : ℝ)) : ℂ) * (-1 / q) := by
     have hr'_ne : ((r' : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hr'_pos.ne'
-    have h_γ_ne : γ (t₀ - r') - s ≠ 0 := sub_ne_zero.mpr h_ne
     rw [hq_def]
     push_cast
     field_simp
