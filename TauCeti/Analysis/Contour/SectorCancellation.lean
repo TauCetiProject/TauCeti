@@ -113,12 +113,9 @@ theorem antiderivative_diff_across_crossing_tendsto_zero
     congr 2
     rw [add_sub_cancel_left, add_sub_cancel_left]
     exact (smul_pow_eq_of_div_norm_pow_eq L_minus L_plus k h_B ε).symm
-  rw [h_targets]
-  have htri : ∀ A B TR : ℂ, ‖A - B‖ ≤ ‖B - TR‖ + ‖A - TR‖ := by
-    intro A B TR
-    rw [← sub_sub_sub_cancel_right A B TR]
-    exact (norm_sub_le _ _).trans_eq (add_comm _ _)
-  exact htri _ _ _
+  rw [h_targets, norm_sub_rev (-(↑(k - 1) : ℂ)⁻¹ *
+    ((γ (t_eps_plus ε) - γ t₀) ^ (k - 1))⁻¹), add_comm]
+  exact norm_sub_le_norm_sub_add_norm_sub _ _ _
 
 end TauCeti.Contour
 
