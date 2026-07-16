@@ -182,15 +182,35 @@ private theorem exists_Icc_left_avoiding {p : Finset ℝ} {t₀ : ℝ}
     exact absurd (q.le_max' x (Finset.mem_insert_of_mem
       (Finset.mem_filter.mpr ⟨Finset.mem_coe.mp hxp, hx.2⟩))) (not_le.mpr hx.1)
 
+/-- **The piece to the right of a parameter**: every `t₀ ∈ [min, max)` begins a breakpoint-free
+closed piece `[t₀, d] ⊆ [[a, b]]` on which the immersion is `C¹` with non-vanishing within-piece
+derivative. -/
+theorem IsPwC1ImmersionOn.exists_Icc_piece_right (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ico (min a b) (max a b)) :
+    ∃ d : ℝ, t₀ < d ∧ Icc t₀ d ⊆ uIcc a b ∧ ContDiffOn ℝ 1 γ (Icc t₀ d) ∧
+      ∀ t ∈ Icc t₀ d, derivWithin γ (Icc t₀ d) t ≠ 0 := by
+  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨d, hlt, hsub, hdisj⟩ := exists_Icc_right_avoiding hp ht₀
+  exact ⟨d, hlt, hsub, hpieces t₀ d hlt hsub hdisj⟩
+
+/-- **The piece to the left of a parameter**: every `t₀ ∈ (min, max]` ends a breakpoint-free
+closed piece `[c, t₀] ⊆ [[a, b]]` on which the immersion is `C¹` with non-vanishing within-piece
+derivative. -/
+theorem IsPwC1ImmersionOn.exists_Icc_piece_left (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ioc (min a b) (max a b)) :
+    ∃ c : ℝ, c < t₀ ∧ Icc c t₀ ⊆ uIcc a b ∧ ContDiffOn ℝ 1 γ (Icc c t₀) ∧
+      ∀ t ∈ Icc c t₀, derivWithin γ (Icc c t₀) t ≠ 0 := by
+  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
+  obtain ⟨c, hlt, hsub, hdisj⟩ := exists_Icc_left_avoiding hp ht₀
+  exact ⟨c, hlt, hsub, hpieces c t₀ hlt hsub hdisj⟩
+
 /-- **Non-zero right tangent limit of an immersion.** At every parameter `t₀ ∈ [min, max)` a
 piecewise-`C¹` immersion has a non-zero limit of `deriv γ` from the right — the one-sided
 tangent of the piece beginning at `t₀`, namely its within-piece derivative there. -/
 theorem IsPwC1ImmersionOn.exists_deriv_right_limit (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
     (ht₀ : t₀ ∈ Ico (min a b) (max a b)) :
     ∃ L : ℂ, L ≠ 0 ∧ Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L) := by
-  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
-  obtain ⟨d, hlt, hsub, hdisj⟩ := exists_Icc_right_avoiding hp ht₀
-  obtain ⟨hC1, hne⟩ := hpieces t₀ d hlt hsub hdisj
+  obtain ⟨d, hlt, hsub, hC1, hne⟩ := h.exists_Icc_piece_right ht₀
   refine ⟨derivWithin γ (Icc t₀ d) t₀, hne t₀ (left_mem_Icc.mpr hlt.le), ?_⟩
   have h1 : Tendsto (derivWithin γ (Icc t₀ d)) (𝓝[Ioo t₀ d] t₀)
       (𝓝 (derivWithin γ (Icc t₀ d) t₀)) :=
@@ -206,9 +226,7 @@ of the piece ending at `t₀`, namely its within-piece derivative there. -/
 theorem IsPwC1ImmersionOn.exists_deriv_left_limit (h : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
     (ht₀ : t₀ ∈ Ioc (min a b) (max a b)) :
     ∃ L : ℂ, L ≠ 0 ∧ Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L) := by
-  obtain ⟨p, hp, hpieces⟩ := h.exists_breakpoints
-  obtain ⟨c, hlt, hsub, hdisj⟩ := exists_Icc_left_avoiding hp ht₀
-  obtain ⟨hC1, hne⟩ := hpieces c t₀ hlt hsub hdisj
+  obtain ⟨c, hlt, hsub, hC1, hne⟩ := h.exists_Icc_piece_left ht₀
   refine ⟨derivWithin γ (Icc c t₀) t₀, hne t₀ (right_mem_Icc.mpr hlt.le), ?_⟩
   have h1 : Tendsto (derivWithin γ (Icc c t₀)) (𝓝[Ioo c t₀] t₀)
       (𝓝 (derivWithin γ (Icc c t₀) t₀)) :=
