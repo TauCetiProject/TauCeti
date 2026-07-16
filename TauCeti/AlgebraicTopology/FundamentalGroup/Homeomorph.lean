@@ -34,9 +34,9 @@ the unit circle `Circle ⊆ ℂ`, obtained from the additive-circle computation 
 
 * `TauCeti.FundamentalGroup.mapOfEq_comp`: `mapOfEq g hg (mapOfEq f hf p) = mapOfEq (g.comp f) _ p`.
 * `TauCeti.FundamentalGroup.mapOfEq_id`: `mapOfEq (ContinuousMap.id X) h = id`.
-* `TauCeti.FundamentalGroup.mulEquivOfHomeomorphOfEq`: `π₁(X, x) ≃* π₁(Y, y)` from `e : X ≃ₜ Y`
+* `TauCeti.FundamentalGroup.homeomorphMulEquivOfEq`: `π₁(X, x) ≃* π₁(Y, y)` from `e : X ≃ₜ Y`
   with `e x = y`.
-* `TauCeti.FundamentalGroup.mulEquivOfHomeomorph`: `π₁(X, x) ≃* π₁(Y, e x)`.
+* `TauCeti.FundamentalGroup.homeomorphMulEquiv`: `π₁(X, x) ≃* π₁(Y, e x)`.
 -/
 
 public section
@@ -63,6 +63,7 @@ theorem mapOfEq_comp (g : C(Y, Z)) (f : C(X, Y)) (hf : f x = y) (hg : g y = z)
   rfl
 
 /-- The map induced on fundamental groups by the identity continuous map is the identity. -/
+@[simp]
 theorem mapOfEq_id (h : (ContinuousMap.id X) x = x) (p : _root_.FundamentalGroup X x) :
     _root_.FundamentalGroup.mapOfEq (ContinuousMap.id X) h p = p := by
   have key : ∀ q : Path.Homotopic.Quotient x x,
@@ -91,7 +92,7 @@ theorem mapOfEq_mapOfEq (g : C(Y, X)) (f : C(X, Y)) (hf : f x = y) (hg : g y = x
 /-- A homeomorphism `e : X ≃ₜ Y` carrying `x` to `y` induces an isomorphism of fundamental groups
 `π₁(X, x) ≃* π₁(Y, y)`. The forward map is `FundamentalGroup.mapOfEq` of `e`; the inverse is
 `FundamentalGroup.mapOfEq` of `e.symm`. -/
-@[expose] noncomputable def mulEquivOfHomeomorphOfEq (e : X ≃ₜ Y) (h : e x = y) :
+@[expose] noncomputable def homeomorphMulEquivOfEq (e : X ≃ₜ Y) (h : e x = y) :
     _root_.FundamentalGroup X x ≃* _root_.FundamentalGroup Y y where
   toFun := _root_.FundamentalGroup.mapOfEq ⟨e, e.continuous⟩ h
   invFun := _root_.FundamentalGroup.mapOfEq ⟨e.symm, e.symm.continuous⟩
@@ -107,29 +108,36 @@ theorem mapOfEq_mapOfEq (g : C(Y, X)) (f : C(X, Y)) (hf : f x = y) (hg : g y = x
   map_mul' := (_root_.FundamentalGroup.mapOfEq ⟨e, e.continuous⟩ h).map_mul
 
 @[simp]
-theorem mulEquivOfHomeomorphOfEq_apply (e : X ≃ₜ Y) (h : e x = y)
+theorem homeomorphMulEquivOfEq_apply (e : X ≃ₜ Y) (h : e x = y)
     (p : _root_.FundamentalGroup X x) :
-    mulEquivOfHomeomorphOfEq e h p = _root_.FundamentalGroup.mapOfEq ⟨e, e.continuous⟩ h p :=
+    homeomorphMulEquivOfEq e h p = _root_.FundamentalGroup.mapOfEq ⟨e, e.continuous⟩ h p :=
   rfl
 
 @[simp]
-theorem mulEquivOfHomeomorphOfEq_symm_apply (e : X ≃ₜ Y) (h : e x = y)
+theorem homeomorphMulEquivOfEq_symm_apply (e : X ≃ₜ Y) (h : e x = y)
     (q : _root_.FundamentalGroup Y y) :
-    (mulEquivOfHomeomorphOfEq e h).symm q =
+    (homeomorphMulEquivOfEq e h).symm q =
       _root_.FundamentalGroup.mapOfEq ⟨e.symm, e.symm.continuous⟩
         (show e.symm y = x by rw [← h, e.symm_apply_apply]) q :=
   rfl
 
 /-- A homeomorphism `e : X ≃ₜ Y` induces an isomorphism of fundamental groups
 `π₁(X, x) ≃* π₁(Y, e x)`. -/
-@[expose] noncomputable def mulEquivOfHomeomorph (e : X ≃ₜ Y) (x : X) :
+@[expose] noncomputable def homeomorphMulEquiv (e : X ≃ₜ Y) (x : X) :
     _root_.FundamentalGroup X x ≃* _root_.FundamentalGroup Y (e x) :=
-  mulEquivOfHomeomorphOfEq e rfl
+  homeomorphMulEquivOfEq e rfl
 
 @[simp]
-theorem mulEquivOfHomeomorph_apply (e : X ≃ₜ Y) (x : X) (p : _root_.FundamentalGroup X x) :
-    mulEquivOfHomeomorph e x p =
+theorem homeomorphMulEquiv_apply (e : X ≃ₜ Y) (x : X) (p : _root_.FundamentalGroup X x) :
+    homeomorphMulEquiv e x p =
       _root_.FundamentalGroup.mapOfEq ⟨e, e.continuous⟩ rfl p :=
+  rfl
+
+@[simp]
+theorem homeomorphMulEquiv_symm_apply (e : X ≃ₜ Y) (x : X)
+    (q : _root_.FundamentalGroup Y (e x)) :
+    (homeomorphMulEquiv e x).symm q =
+      _root_.FundamentalGroup.mapOfEq ⟨e.symm, e.symm.continuous⟩ (e.symm_apply_apply x) q :=
   rfl
 
 end FundamentalGroup
