@@ -83,7 +83,7 @@ theorem mapOfEq_congr {f₁ f₂ : C(X, Y)} (hfe : f₁ = f₂) (h₁ : f₁ x =
   rfl
 
 /-- If `g ∘ f` is the identity, then the induced map of `g` undoes the induced map of `f`. -/
-theorem mapOfEq_mapOfEq (g : C(Y, X)) (f : C(X, Y)) (hf : f x = y) (hg : g y = x)
+theorem mapOfEq_mapOfEq_of_comp_eq_id (g : C(Y, X)) (f : C(X, Y)) (hf : f x = y) (hg : g y = x)
     (hgf : g.comp f = ContinuousMap.id X) (p : _root_.FundamentalGroup X x) :
     _root_.FundamentalGroup.mapOfEq g hg (_root_.FundamentalGroup.mapOfEq f hf p) = p := by
   rw [mapOfEq_comp g f hf hg]
@@ -98,11 +98,11 @@ theorem mapOfEq_mapOfEq (g : C(Y, X)) (f : C(X, Y)) (hf : f x = y) (hg : g y = x
   invFun := _root_.FundamentalGroup.mapOfEq ⟨e.symm, e.symm.continuous⟩
     (show e.symm y = x by rw [← h, e.symm_apply_apply])
   left_inv p :=
-    mapOfEq_mapOfEq ⟨e.symm, e.symm.continuous⟩ ⟨e, e.continuous⟩ h
+    mapOfEq_mapOfEq_of_comp_eq_id ⟨e.symm, e.symm.continuous⟩ ⟨e, e.continuous⟩ h
       (show e.symm y = x by rw [← h, e.symm_apply_apply])
       (ContinuousMap.ext fun t => e.symm_apply_apply t) p
   right_inv q :=
-    mapOfEq_mapOfEq ⟨e, e.continuous⟩ ⟨e.symm, e.symm.continuous⟩
+    mapOfEq_mapOfEq_of_comp_eq_id ⟨e, e.continuous⟩ ⟨e.symm, e.symm.continuous⟩
       (show e.symm y = x by rw [← h, e.symm_apply_apply]) h
       (ContinuousMap.ext fun t => e.apply_symm_apply t) q
   map_mul' := (_root_.FundamentalGroup.mapOfEq ⟨e, e.continuous⟩ h).map_mul
