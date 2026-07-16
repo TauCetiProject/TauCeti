@@ -97,6 +97,28 @@ theorem neg_meromorphicPolarOrderAt_le (f : ℂ → ℂ) (s : ℂ) :
       WithTop.coe_le_coe, meromorphicPolarOrderAt]
     omega
 
+/-- **A positive canonical polar order pins the meromorphic order**:
+`meromorphicOrderAt f s = -(meromorphicPolarOrderAt f s)` whenever the polar order is
+positive. -/
+theorem meromorphicOrderAt_eq_neg_of_polarOrder_pos {f : ℂ → ℂ} {s : ℂ}
+    (h_pos : 0 < meromorphicPolarOrderAt f s) :
+    meromorphicOrderAt f s = (-(meromorphicPolarOrderAt f s : ℤ) : WithTop ℤ) := by
+  rcases eq_or_ne (meromorphicOrderAt f s) ⊤ with h | h
+  · rw [meromorphicPolarOrderAt, h] at h_pos
+    simp at h_pos
+  · rw [← WithTop.coe_untop₀_of_ne_top h]
+    rw [meromorphicPolarOrderAt] at h_pos ⊢
+    norm_cast
+    omega
+
+/-- **A pole of order `> 1` in the canonical sense is a pole of order `> 1` for
+`meromorphicOrderAt`** — the guard of condition (B)'s clauses. -/
+theorem meromorphicOrderAt_lt_neg_one_of_one_lt_polarOrder {f : ℂ → ℂ} {s : ℂ}
+    (h : 1 < meromorphicPolarOrderAt f s) :
+    meromorphicOrderAt f s < (-1 : ℤ) := by
+  rw [meromorphicOrderAt_eq_neg_of_polarOrder_pos (by omega)]
+  exact_mod_cast WithTop.coe_lt_coe.mpr (by omega)
+
 /-- Taylor decomposition of an analytic function to order `k`:
 `g z = ∑ j < k, c j * (z - s)^j + (z - s)^k * R z` with `R` analytic at `s`. Mathlib's
 `AnalyticAt.exists_eventuallyEq_sum_add_pow_mul` at the translate `g (· + s)`. -/
