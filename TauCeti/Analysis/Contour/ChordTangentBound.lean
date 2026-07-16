@@ -25,12 +25,11 @@ sector analysis of the generalized residue theorem consumes.
 
 ## Main definitions
 
-* `Contour.orthogonalProjectionComplex w L` — the projection of `w` on the real line `ℝ • L`.
-* `Contour.tangentDeviation w L` — the orthogonal remainder `w - orthogonalProjectionComplex w L`.
-  Its norm is the distance from `w` to the line `ℝ • L`, the quantity `Contour.FlatOfOrder`
-  bounds (`norm_tangentDeviation`).
+* `Contour.tangentDeviation w L` — the component of `w` perpendicular to the real line `ℝ • L`
+  (the remainder after subtracting the private projection on `L`). Its norm is the distance from
+  `w` to the line, the quantity `Contour.FlatOfOrder` bounds (`norm_tangentDeviation`).
 
-These are scalar formulas on `ℂ`, deliberately not routed through Mathlib's submodule-valued
+This is a scalar formula on `ℂ`, deliberately not routed through Mathlib's submodule-valued
 `orthogonalProjection`: the contour development needs only the one-line projection onto a known
 direction, not the inner-product-space machinery.
 
@@ -58,8 +57,9 @@ namespace TauCeti.Contour
 open Complex
 
 /-- **Projection of `w` on the direction `L`** in the plane: the component of `w` along the real
-line `ℝ • L`, namely `(Re(w · conj L) / ‖L‖²) • L` (zero for `L = 0`). -/
-def orthogonalProjectionComplex (w L : ℂ) : ℂ :=
+line `ℝ • L`, namely `(Re(w · conj L) / ‖L‖²) • L` (zero for `L = 0`). Implementation device for
+`tangentDeviation`; consumers work with the deviation and `norm_tangentDeviation`. -/
+private def orthogonalProjectionComplex (w L : ℂ) : ℂ :=
   ((w * starRingEnd ℂ L).re / Complex.normSq L : ℝ) • L
 
 /-- **Orthogonal deviation of `w` from the direction `L`**: the remainder
