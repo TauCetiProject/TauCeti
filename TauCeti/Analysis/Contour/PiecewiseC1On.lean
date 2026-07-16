@@ -41,8 +41,11 @@ prerequisite for the homology Cauchy theorem and the generalized residue theorem
   introduce the predicate from, and eliminate it to, a finite breakpoint witness.
 * `Contour.IsPiecewiseC1On.mono` — restrict the regularity to a subinterval `[[c, d]] ⊆ [[a, b]]`.
 * `Contour.isPiecewiseC1On_comm`, `Contour.IsPiecewiseC1On.symm` — endpoint-swap invariance.
-* `Contour.IsPiecewiseC1On.exists_countable_differentiableAt` — differentiability off a countable
-  set, in the exact shape the raw contour-integral lemmas consume.
+* `Contour.IsPiecewiseC1On.exists_finset_differentiableAt`,
+  `Contour.IsPiecewiseC1On.exists_countable_differentiableAt` — differentiability off a finite
+  (hence countable) set, in the exact shapes the raw contour-integral lemmas consume.
+* `Contour.IsPiecewiseC1On.eventually_differentiableAt` (and its `_right`/`_left` one-sided
+  corollaries) — eventual differentiability near an interior parameter.
 * `Contour.IsPiecewiseC1On.intervalIntegrable_deriv` — the derivative is interval-integrable on
   `a..b`, glued across the breakpoints from the `C¹` pieces.
 
