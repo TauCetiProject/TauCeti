@@ -13,7 +13,6 @@ import TauCeti.Analysis.Calculus.OneSidedDerivLimit
 import TauCeti.Analysis.Contour.HigherOrderAsymptotics
 import TauCeti.Analysis.Contour.SectorCancellation
 import TauCeti.Analysis.Contour.WindowSplitting
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 
 /-!
@@ -69,7 +68,7 @@ private theorem intervalIntegrable_pow_inv_mul_deriv {γ : ℝ → ℂ} {s : ℂ
 
 /-- The `ε`-truncated order-`k` polar integrand is interval-integrable: off the `ε`-ball it is
 dominated by `(‖c‖ / ε^k) · ‖deriv γ‖`. -/
-private theorem intervalIntegrable_pow_truncated {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
+private theorem intervalIntegrable_pow_inv_mul_deriv_truncated {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
     (c : ℂ) (k : ℕ) (hγ_cont : ContinuousOn γ (uIcc a b))
     (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume a b)
     {ε : ℝ} (hε : 0 < ε) :
@@ -119,7 +118,7 @@ private theorem intervalIntegrable_pow_truncated {γ : ℝ → ℂ} {s : ℂ} {a
 /-- The fundamental theorem of calculus for the order-`k` polar term along the curve, on an
 interval avoiding the pole: the integral is the boundary difference of the antiderivative
 `c · (-(k-1)⁻¹ (· - s)^{-(k-1)}) ∘ γ`. -/
-private theorem antiderivPow_FTC {γ : ℝ → ℂ} {s : ℂ} {k : ℕ} (hk : 2 ≤ k) (c : ℂ)
+private theorem integral_pow_inv_mul_deriv_eq_sub {γ : ℝ → ℂ} {s : ℂ} {k : ℕ} (hk : 2 ≤ k) (c : ℂ)
     {l u : ℝ} (hlu : l ≤ u) {P : Set ℝ} (hP : P.Countable)
     (h_ne : ∀ t ∈ Icc l u, γ t ≠ s)
     (h_diff : ∀ t ∈ Ioo l u \ P, DifferentiableAt ℝ γ t)
@@ -179,7 +178,7 @@ theorem perWindow_higherOrder_truncated_integral_tendsto {γ : ℝ → ℂ} {s :
   obtain ⟨τL, τR, h_toL, h_toR, h_radL, h_radR, h_memL, h_memR, h_split⟩ :=
     exists_exit_times_truncated_integral_split hr_pos h_at hγ_cont hL_R hL_L
       h_tendsto_R h_tendsto_L h_diff_R h_diff_L h_unique (fun z => c / (z - s) ^ k)
-      (fun ε hε a b ha hab hb => intervalIntegrable_pow_truncated c k
+      (fun ε hε a b ha hab hb => intervalIntegrable_pow_inv_mul_deriv_truncated c k
         (hγ_cont.mono (by rw [uIcc_of_le hab]; exact Icc_subset_Icc ha hb))
         (hderiv_int.mono_set (by
           rw [uIcc_of_le hab, uIcc_of_le (by linarith : t_i - r ≤ t_i + r)]
@@ -205,14 +204,14 @@ theorem perWindow_higherOrder_truncated_integral_tendsto {γ : ℝ → ℂ} {s :
       have := h_unique t ⟨by linarith [ht.1, hτR.1], ht.2⟩ h_eq
       linarith [ht.1, hτR.1, this ▸ le_refl t]
     rw [hsplit,
-      antiderivPow_FTC hk c hτL.1.le hP
+      integral_pow_inv_mul_deriv_eq_sub hk c hτL.1.le hP
         (fun t ht => h_ne_left t ht)
         (fun t ht => hγ_diffP t ⟨⟨ht.1.1, by linarith [ht.1.2, hτL.2]⟩, ht.2⟩)
         (hγ_cont.mono (Icc_subset_Icc le_rfl (by linarith [hτL.2])))
         (hderiv_int.mono_set (by
           rw [uIcc_of_le hτL.1.le, uIcc_of_le (by linarith : t_i - r ≤ t_i + r)]
           exact Icc_subset_Icc le_rfl (by linarith [hτL.2]))),
-      antiderivPow_FTC hk c hτR.2.le hP
+      integral_pow_inv_mul_deriv_eq_sub hk c hτR.2.le hP
         (fun t ht => h_ne_right t ht)
         (fun t ht => hγ_diffP t ⟨⟨by linarith [ht.1.1, hτR.1], ht.1.2⟩, ht.2⟩)
         (hγ_cont.mono (Icc_subset_Icc (by linarith [hτR.1]) le_rfl))
