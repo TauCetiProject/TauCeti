@@ -107,7 +107,7 @@ def meromorphicPolarPartTotal {f : ℂ → ℂ} {S : Finset ℂ}
   ∑ s ∈ S.attach, meromorphicPolarPartAt (hMero s.1 s.2) z
 
 /-- The total polar part, unfolded to the sum of the canonical per-point polar parts. -/
-theorem meromorphicPolarPartTotal_eq {f : ℂ → ℂ} {S : Finset ℂ}
+theorem meromorphicPolarPartTotal_eq_sum {f : ℂ → ℂ} {S : Finset ℂ}
     (hMero : ∀ s ∈ S, MeromorphicAt f s) (z : ℂ) :
     meromorphicPolarPartTotal hMero z =
       ∑ s ∈ S.attach, meromorphicPolarPartAt (hMero s.1 s.2) z := by
