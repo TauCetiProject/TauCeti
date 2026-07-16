@@ -88,6 +88,22 @@ private theorem eventually_intervalIntegrable_truncated_window {γ : ℝ → ℂ
     rw [uIcc_of_le (show t - r ≤ t + r by linarith), uIcc_of_le hab]
     exact Icc_subset_Icc (by linarith) h_hi)
 
+/-- The between-piece principal value on a subinterval of `[a, b]` keeping distance `≥ m` from
+`s`: the plain integral, with the truncated integrability restricted from `[a, b]`. Both public
+aggregations discharge their piece hypothesis through this. -/
+private theorem hasCauchyPVAt_plain_piece {γ : ℝ → ℂ} {s : ℂ} {g : ℂ → ℂ} {a b m : ℝ}
+    (hab : a ≤ b) (hm_pos : 0 < m)
+    (h_int_tr : ∀ ε : ℝ, 0 < ε →
+      IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
+        MeasureTheory.volume a b)
+    {l u : ℝ} (hA : a ≤ l) (hlu : l ≤ u) (hu : u ≤ b)
+    (h_far : ∀ t ∈ Icc l u, m ≤ ‖γ t - s‖) :
+    HasCauchyPVAt γ l u g s (∫ t in l..u, g (γ t) * deriv γ t) :=
+  hasCauchyPVAt_of_dist_lower_bound hlu hm_pos h_far
+    (fun ε hε => (h_int_tr ε hε).mono_set (by
+      rw [uIcc_of_le hlu, uIcc_of_le hab]
+      exact Icc_subset_Icc hA hu))
+
 /-- The aggregated value along a sorted crossing list: between-piece values `p` alternating
 with window values `w`. -/
 private def windowPieceSum (r : ℝ) (p : ℝ → ℝ → ℂ) (w : ℝ → ℂ) (b : ℝ) :
@@ -169,10 +185,7 @@ theorem cauchyPVExistsAt_of_perWindow_tendsto {γ : ℝ → ℂ} {s : ℂ} {g : 
   refine CauchyPVExistsAt.intro (hasCauchyPVAt_along_sorted hr_pos
     (p := fun l u => ∫ t in l..u, g (γ t) * deriv γ t)
     (w := fun t => if h : t ∈ crossings then (h_win t h).choose else 0)
-    (fun l u hA hlu hu h_far' => hasCauchyPVAt_of_dist_lower_bound hlu hm_pos h_far'
-      (fun ε hε => (h_int_tr ε hε).mono_set (by
-        rw [uIcc_of_le hlu, uIcc_of_le hab]
-        exact Icc_subset_Icc hA hu)))
+    (fun l u hA hlu hu h_far' => hasCauchyPVAt_plain_piece hab hm_pos h_int_tr hA hlu hu h_far')
     (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings) a le_rfl hab
     (fun t ht => h_lo t ((Finset.mem_sort _).mp ht))
     (fun t ht => h_hi t ((Finset.mem_sort _).mp ht))
@@ -226,10 +239,7 @@ theorem hasCauchyPVAt_of_perWindow_boundary_tendsto {γ : ℝ → ℂ} {s : ℂ}
         have h_bd := h_far' t ht
         rw [h_eq, sub_self, norm_zero] at h_bd
         linarith
-      have h0 := hasCauchyPVAt_of_dist_lower_bound hlu hm_pos h_far'
-        (fun ε hε => (h_int_tr ε hε).mono_set (by
-          rw [uIcc_of_le hlu, uIcc_of_le hab]
-          exact Icc_subset_Icc hA hu))
+      have h0 := hasCauchyPVAt_plain_piece hab hm_pos h_int_tr hA hlu hu h_far'
       rwa [h_plain_eq l u hlu h_ne] at h0)
     (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings) a le_rfl hab
     (fun t ht => h_lo t ((Finset.mem_sort _).mp ht))
