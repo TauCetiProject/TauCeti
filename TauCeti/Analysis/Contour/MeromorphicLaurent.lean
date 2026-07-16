@@ -256,11 +256,10 @@ Laurent witness, and uniqueness is what lets its resonance constraints transfer 
 canonical polar data. Internally the coefficients are total functions `ℕ → ℂ` summed over
 `Finset.range`, so expansions of different lengths compare after zero-padding. -/
 
-/-- The top coefficient of a finite principal part that agrees with an analytic function near
-`s` vanishes: multiplying by `(z - s) ^ (N + 1)` and letting `z → s`, the left side tends to
-the top coefficient and the right side to `0`. -/
-private theorem coeff_top_eq_zero_of_eventuallyEq_analytic {s : ℂ} {N : ℕ} {c : ℕ → ℂ}
-    {g : ℂ → ℂ} (hg : AnalyticAt ℂ g s)
+/-- The top coefficient of a finite principal part that agrees with a function continuous at
+`s` vanishes. -/
+private theorem coeff_top_eq_zero_of_eventuallyEq {s : ℂ} {N : ℕ} {c : ℕ → ℂ}
+    {g : ℂ → ℂ} (hg : ContinuousAt g s)
     (h_eq : ∀ᶠ z in 𝓝[≠] s,
       ∑ k ∈ Finset.range (N + 1), c k / (z - s) ^ (k + 1) = g z) :
     c N = 0 := by
@@ -294,15 +293,15 @@ private theorem coeff_top_eq_zero_of_eventuallyEq_analytic {s : ℂ} {N : ℕ} {
       simpa using (continuous_sub_right s).tendsto s
     have h_pow : Tendsto (fun z : ℂ => (z - s) ^ (N + 1)) (𝓝 s) (𝓝 0) := by
       simpa [zero_pow (Nat.succ_ne_zero N)] using h_sub.pow (N + 1)
-    have h0 := (hg.continuousAt.tendsto.mul h_pow).mono_left
+    have h0 := (hg.tendsto.mul h_pow).mono_left
       (nhdsWithin_le_nhds (s := {s}ᶜ))
     simpa using h0
   exact tendsto_nhds_unique (h_lhs.congr' h_mul) h_rhs
 
-/-- **A finite principal part agreeing with an analytic function near `s` is zero**: all its
+/-- A finite principal part agreeing with a function continuous at `s` is zero: all its
 coefficients vanish. -/
-theorem laurent_coeff_eq_zero_of_eventuallyEq_analytic {s : ℂ} {g : ℂ → ℂ}
-    (hg : AnalyticAt ℂ g s) :
+private theorem laurent_coeff_eq_zero_of_eventuallyEq {s : ℂ} {g : ℂ → ℂ}
+    (hg : ContinuousAt g s) :
     ∀ {N : ℕ} {c : ℕ → ℂ},
       (∀ᶠ z in 𝓝[≠] s, ∑ k ∈ Finset.range N, c k / (z - s) ^ (k + 1) = g z) →
       ∀ k < N, c k = 0 := by
@@ -311,7 +310,7 @@ theorem laurent_coeff_eq_zero_of_eventuallyEq_analytic {s : ℂ} {g : ℂ → �
   | zero => exact fun _ k hk => absurd hk (Nat.not_lt_zero k)
   | succ N IH =>
     intro c h_eq k hk
-    have h_top : c N = 0 := coeff_top_eq_zero_of_eventuallyEq_analytic hg h_eq
+    have h_top : c N = 0 := coeff_top_eq_zero_of_eventuallyEq hg h_eq
     have h_eq' : ∀ᶠ z in 𝓝[≠] s,
         ∑ k ∈ Finset.range N, c k / (z - s) ^ (k + 1) = g z := by
       filter_upwards [h_eq] with z hz
@@ -339,10 +338,10 @@ private theorem sum_fin_div_pow_eq_sum_range {s : ℂ} {N L : ℕ} (hNL : N ≤ 
     rw [dif_neg (Finset.mem_range.not.mp hk), zero_div]
 
 /-- **Uniqueness of finite principal-part expansions**: two expansions of the same function
-near `s` with analytic remainders have the same coefficients, compared through their
-zero-paddings. -/
+near `s` with remainders continuous at `s` have the same coefficients, compared through
+their zero-paddings. -/
 theorem laurent_coeff_unique {s : ℂ} {N M : ℕ} {a : Fin N → ℂ} {b : Fin M → ℂ}
-    {g h : ℂ → ℂ} (hg : AnalyticAt ℂ g s) (hh : AnalyticAt ℂ h s)
+    {g h : ℂ → ℂ} (hg : ContinuousAt g s) (hh : ContinuousAt h s)
     (h_eq : ∀ᶠ z in 𝓝[≠] s,
       g z + ∑ k : Fin N, a k / (z - s) ^ (k.val + 1)
         = h z + ∑ k : Fin M, b k / (z - s) ^ (k.val + 1)) (k : ℕ) :
@@ -362,22 +361,23 @@ theorem laurent_coeff_unique {s : ℂ} {N M : ℕ} {a : Fin N → ℂ} {b : Fin 
         Finset.sum_sub_distrib]
       linear_combination hz
     exact sub_eq_zero.mp
-      (laurent_coeff_eq_zero_of_eventuallyEq_analytic (hh.sub hg) h_diff k hk_lt)
+      (laurent_coeff_eq_zero_of_eventuallyEq (hh.sub hg) h_diff k hk_lt)
   · rw [dif_neg (by omega : ¬ k < N), dif_neg (by omega : ¬ k < M)]
 
 /-- **Any Laurent witness has the canonical coefficients**: an eventual finite principal-part
-expansion of a meromorphic `f` at `s` with analytic remainder agrees, coefficient by
+expansion of a meromorphic `f` at `s` with remainder continuous at `s` agrees, coefficient by
 coefficient through zero-padding, with the canonical polar data. This is what transfers the
 sector condition (B)'s resonance constraints from its own Laurent witness to
 `meromorphicPolarCoeffAt`. -/
 theorem laurent_coeff_eq_meromorphicPolarCoeffAt {f : ℂ → ℂ} {s : ℂ}
     (hMero : MeromorphicAt f s) {N : ℕ} {a : Fin N → ℂ} {g : ℂ → ℂ}
-    (hg : AnalyticAt ℂ g s)
+    (hg : ContinuousAt g s)
     (h_eq : ∀ᶠ z in 𝓝[≠] s, f z = g z + ∑ k : Fin N, a k / (z - s) ^ (k.val + 1)) (k : ℕ) :
     (if hk : k < N then a ⟨k, hk⟩ else 0)
       = (if hk : k < meromorphicPolarOrderAt f s then
           meromorphicPolarCoeffAt hMero ⟨k, hk⟩ else 0) := by
-  refine laurent_coeff_unique hg (meromorphicAnalyticPartAt_analyticAt hMero) ?_ k
+  refine laurent_coeff_unique hg
+    (meromorphicAnalyticPartAt_analyticAt hMero).continuousAt ?_ k
   filter_upwards [h_eq, eventuallyEq_meromorphicAnalyticPartAt_add_meromorphicPolarPartAt
     hMero] with z hz hz'
   rw [← hz, hz', meromorphicPolarPartAt_eq_sum]
