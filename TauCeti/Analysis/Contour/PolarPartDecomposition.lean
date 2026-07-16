@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.HomologyCauchy
 public import TauCeti.Analysis.Contour.MeromorphicLaurent
+import TauCeti.Analysis.Contour.CauchyPrincipalValue
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 /-!
@@ -310,25 +311,12 @@ theorem intervalIntegrable_polarPart_mul_deriv_truncated (decomp : PolarPartDeco
       exact Finset.measurable_sum _ fun k _ =>
         (((hγ_meas.sub_const _).pow_const _).const_div _)
     exact h_polar.mul (measurable_deriv _)
-  refine (hderiv_int.norm.const_mul M).mono_fun h_meas.aestronglyMeasurable ?_
-  refine Filter.Eventually.of_forall fun t => ?_
-  -- β-reduce the two sides of the a.e. bound
-  change ‖if ‖γ t - (s : ℂ)‖ > ε then decomp.polarPart s (γ t) * deriv γ t else 0‖ ≤
-    ‖M * ‖deriv γ t‖‖
-  by_cases h_far : ‖γ t - (s : ℂ)‖ > ε
-  · rw [if_pos h_far]
-    have h_polar_bound : ‖decomp.polarPart s (γ t)‖ ≤ M := by
-      rw [decomp.polarPart_eq s (γ t), hM_def]
-      refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ => ?_)
-      rw [norm_div, norm_pow]
-      gcongr
-    calc ‖decomp.polarPart s (γ t) * deriv γ t‖
-        = ‖decomp.polarPart s (γ t)‖ * ‖deriv γ t‖ := norm_mul _ _
-      _ ≤ M * ‖deriv γ t‖ :=
-          mul_le_mul_of_nonneg_right h_polar_bound (norm_nonneg _)
-      _ ≤ ‖M * ‖deriv γ t‖‖ := le_abs_self _
-  · rw [if_neg h_far, norm_zero]
-    positivity
+  refine intervalIntegrable_truncated_mul_deriv (f := decomp.polarPart s) (M := M)
+    hderiv_int h_meas.aestronglyMeasurable fun t h_far => ?_
+  rw [decomp.polarPart_eq s (γ t), hM_def]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ => ?_)
+  rw [norm_div, norm_pow]
+  gcongr
 
 end PolarPartDecomposition
 

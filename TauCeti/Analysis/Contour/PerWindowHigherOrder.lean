@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.Contour.RegularityConditions
+import TauCeti.Analysis.Contour.CauchyPrincipalValue
 import TauCeti.Analysis.Calculus.OneSidedDerivLimit
 import TauCeti.Analysis.Contour.HigherOrderAsymptotics
 import TauCeti.Analysis.Contour.SectorCancellation
@@ -102,18 +103,10 @@ private theorem intervalIntegrable_pow_inv_mul_deriv_truncated {γ : ℝ → ℂ
     · have h_notMem : t ∉ {t ∈ uIcc a b | ‖γ t - s‖ ≤ ε}ᶜ := fun hKc =>
         hKc ⟨Set.uIoc_subset_uIcc ht, not_lt.mp h_far⟩
       rw [Set.indicator_of_notMem h_notMem, if_neg h_far]
-  refine ((hderiv_int.norm.const_mul (‖c‖ / ε ^ k)).mono_fun h_aesm ?_)
-  refine Eventually.of_forall fun t => ?_
-  -- β-reduce the two sides of the a.e. bound
-  change ‖if ‖γ t - s‖ > ε then c / (γ t - s) ^ k * deriv γ t else 0‖ ≤
-    ‖‖c‖ / ε ^ k * ‖deriv γ t‖‖
-  by_cases h_far : ‖γ t - s‖ > ε
-  · rw [if_pos h_far, norm_mul, norm_div, norm_pow]
-    calc ‖c‖ / ‖γ t - s‖ ^ k * ‖deriv γ t‖
-        ≤ ‖c‖ / ε ^ k * ‖deriv γ t‖ := by gcongr
-      _ ≤ ‖‖c‖ / ε ^ k * ‖deriv γ t‖‖ := le_abs_self _
-  · rw [if_neg h_far, norm_zero]
-    positivity
+  refine intervalIntegrable_truncated_mul_deriv (f := fun z => c / (z - s) ^ k)
+    (M := ‖c‖ / ε ^ k) hderiv_int h_aesm fun t h_far => ?_
+  rw [norm_div, norm_pow]
+  gcongr
 
 /-- The fundamental theorem of calculus for the order-`k` polar term along the curve, on an
 interval avoiding the pole: the integral is the boundary difference of the antiderivative
