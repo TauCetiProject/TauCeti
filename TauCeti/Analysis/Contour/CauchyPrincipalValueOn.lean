@@ -638,6 +638,41 @@ theorem HasCauchyPV.sum {ι : Type*} {γ : ℝ → ℂ} {a b : ℝ} {f : ι → 
     exact (h j (Finset.mem_insert_self j s)).add hγ_cont
       (ih fun i hi => h i (Finset.mem_insert_of_mem hi))
 
+/-- **Congruence along the curve off excised points**: if `f` and `g` agree along `γ` at every
+parameter where `γ` avoids the finite set `P`, a principal value of `f` is one of `g` — the
+witnessing excision enlarges to include `P`, and off the enlarged excision the curve avoids
+`P`. Needs the curve continuous on `[[a, b]]` for the enlargement. -/
+theorem HasCauchyPV.congr_along_curve_off {γ : ℝ → ℂ} {a b : ℝ} {f g : ℂ → ℂ} {v : ℂ}
+    (hγ_cont : ContinuousOn γ (Set.uIcc a b)) (P : Finset ℂ)
+    (h : HasCauchyPV γ a b f v)
+    (h_eq : ∀ t ∈ Set.uIoo a b, γ t ∉ (P : Set ℂ) → f (γ t) = g (γ t)) :
+    HasCauchyPV γ a b g v := by
+  obtain ⟨T, hint, htend⟩ := h
+  have hint' : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      IntervalIntegrable (truncatedIntegrand γ f T ε) MeasureTheory.volume a b := hint
+  have hI : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      IntervalIntegrable (truncatedIntegrand γ f (T ∪ P) ε) MeasureTheory.volume a b :=
+    hint'.mono fun ε hε => truncatedIntegrand_union_integrable hγ_cont P hε
+  have hT : Tendsto (fun ε => ∫ t in a..b, truncatedIntegrand γ f (T ∪ P) ε t)
+      (𝓝[>] (0 : ℝ)) (𝓝 v) := by
+    have htend' : Tendsto (fun ε => ∫ t in a..b, truncatedIntegrand γ f T ε t)
+        (𝓝[>] (0 : ℝ)) (𝓝 v) := htend
+    simpa using htend'.sub (tendsto_integral_truncatedIntegrand_sub T (T ∪ P) hint' hI)
+  have h_body : ∀ ε : ℝ, 0 < ε → ∀ t ∈ Set.uIoo a b,
+      truncatedIntegrand γ f (T ∪ P) ε t = truncatedIntegrand γ g (T ∪ P) ε t := by
+    intro ε hε t ht
+    by_cases hex : ∃ s ∈ T ∪ P, ‖γ t - s‖ ≤ ε
+    · simp only [truncatedIntegrand, if_pos hex]
+    · have h_off : γ t ∉ (P : Set ℂ) := fun hp =>
+        hex ⟨γ t, Finset.mem_union_right _ (Finset.mem_coe.mp hp), by simp [hε.le]⟩
+      simp only [truncatedIntegrand, if_neg hex, h_eq t ht h_off]
+  refine ⟨T ∪ P, ?_, ?_⟩
+  · filter_upwards [hI, self_mem_nhdsWithin] with ε hε hε_pos
+    exact (intervalIntegrable_congr_uIoo fun t ht => h_body ε hε_pos t ht).mp hε
+  · refine hT.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with ε hε_pos
+    exact intervalIntegral.integral_congr_uIoo fun t ht => h_body ε hε_pos t ht
+
 /-- Existence form of `HasCauchyPV.add`. -/
 theorem CauchyPVExists.add {γ : ℝ → ℂ} {a b : ℝ} {f g : ℂ → ℂ}
     (hγ_cont : ContinuousOn γ (Set.uIcc a b))
