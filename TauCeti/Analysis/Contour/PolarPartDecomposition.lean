@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.HomologyCauchy
 public import TauCeti.Analysis.Contour.MeromorphicLaurent
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
 /-!
 # Polar-part decompositions
@@ -33,6 +34,10 @@ parts.
 * `Contour.PolarPartDecomposition.intervalIntegral_deriv_smul_analyticRemainder_eq_zero` — the
   contour integral of the analytic remainder along a closed null-homologous piecewise-`C¹` curve
   in `U` vanishes, by the homology Cauchy theorem.
+* `Contour.PolarPartDecomposition.intervalIntegrable_polarPart_truncated` — the `ε`-truncated
+  polar-part integrand along a measurable curve with interval-integrable derivative is
+  interval-integrable, for every `ε > 0` — the integrability clause of `HasCauchyPVAt` for a
+  polar part.
 
 ## Provenance
 
@@ -275,6 +280,55 @@ theorem ofMeromorphic_analyticRemainder {z : ℂ} (hz : z ∉ (↑S : Set ℂ)) 
       f z - meromorphicPolarPartTotal hMero z := by
   unfold ofMeromorphic
   exact if_neg hz
+
+/-- **The truncated polar-part integrand is interval-integrable** for every `ε > 0`: off the
+`ε`-ball around the pole, the Laurent tail is bounded by `∑ k, ‖coeff s k‖ / ε ^ (k+1)`, so the
+integrand is dominated by a constant multiple of `‖deriv γ‖` — the integrability clause of
+`HasCauchyPVAt` for a polar part along a curve crossing the pole. -/
+theorem intervalIntegrable_polarPart_truncated (decomp : PolarPartDecomposition f S U)
+    (s : S) {γ : ℝ → ℂ} {a b : ℝ} (hγ_meas : Measurable γ)
+    (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume a b)
+    {ε : ℝ} (hε : 0 < ε) :
+    IntervalIntegrable
+      (fun t => if ‖γ t - (s : ℂ)‖ > ε then decomp.polarPart s (γ t) * deriv γ t else 0)
+      MeasureTheory.volume a b := by
+  classical
+  set M : ℝ := ∑ k : Fin (decomp.order s), ‖decomp.coeff s k‖ / ε ^ (k.val + 1) with hM_def
+  have hM_nonneg : 0 ≤ M :=
+    Finset.sum_nonneg fun k _ => div_nonneg (norm_nonneg _) (pow_nonneg hε.le _)
+  have h_meas : Measurable (fun t =>
+      if ‖γ t - (s : ℂ)‖ > ε then decomp.polarPart s (γ t) * deriv γ t else 0) := by
+    have hA : MeasurableSet {t : ℝ | ε < ‖γ t - (s : ℂ)‖} :=
+      measurableSet_lt measurable_const ((hγ_meas.sub_const _).norm)
+    refine Measurable.ite hA ?_ measurable_const
+    have h_polar : Measurable fun t => decomp.polarPart s (γ t) := by
+      have h_eq : (fun t => decomp.polarPart s (γ t)) = fun t =>
+          ∑ k : Fin (decomp.order s), decomp.coeff s k / (γ t - (s : ℂ)) ^ (k.val + 1) :=
+        funext fun t => decomp.polarPart_eq s (γ t)
+      rw [h_eq]
+      exact Finset.measurable_sum _ fun k _ =>
+        (((hγ_meas.sub_const _).pow_const _).const_div _)
+    exact h_polar.mul (measurable_deriv _)
+  refine (hderiv_int.norm.const_mul M).mono_fun h_meas.aestronglyMeasurable ?_
+  refine Filter.Eventually.of_forall fun t => ?_
+  -- β-reduce the two sides of the a.e. bound
+  change ‖if ‖γ t - (s : ℂ)‖ > ε then decomp.polarPart s (γ t) * deriv γ t else 0‖ ≤
+    ‖M * ‖deriv γ t‖‖
+  by_cases h_far : ‖γ t - (s : ℂ)‖ > ε
+  · rw [if_pos h_far]
+    have h_polar_bound : ‖decomp.polarPart s (γ t)‖ ≤ M := by
+      rw [decomp.polarPart_eq s (γ t), hM_def]
+      refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ => ?_)
+      rw [norm_div, norm_pow]
+      exact div_le_div_of_nonneg_left (norm_nonneg _) (pow_pos hε _)
+        (pow_le_pow_left₀ hε.le h_far.le _)
+    calc ‖decomp.polarPart s (γ t) * deriv γ t‖
+        = ‖decomp.polarPart s (γ t)‖ * ‖deriv γ t‖ := norm_mul _ _
+      _ ≤ M * ‖deriv γ t‖ :=
+          mul_le_mul_of_nonneg_right h_polar_bound (norm_nonneg _)
+      _ ≤ ‖M * ‖deriv γ t‖‖ := le_abs_self _
+  · rw [if_neg h_far, norm_zero]
+    positivity
 
 end PolarPartDecomposition
 
