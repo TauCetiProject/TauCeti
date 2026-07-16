@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Algebra.Order.ToIntervalMod
+import Mathlib.Analysis.SpecialFunctions.Complex.Log
 
 /-!
 # The Hungerbühler–Wasem crossing angle and regularity conditions (A′) and (B)
@@ -49,6 +50,9 @@ pole — and that it meet each `s` only finitely often. Condition (B) governs po
 * `ConditionB γ a b f` — HW condition (B), a structure imposing `SectorCompatible` at every
   higher-order (order `> 1`) on-curve pole of `f`: at each interior crossing (`ConditionB.interior`)
   and at the basepoint (`ConditionB.basepoint`).
+* `FlatOfOrder.of_le` and `pow_unit_tangent_eq_of_resonance` — the consuming bridges: flatness
+  restricts downward in the order, and the sector resonance `k · θ ∈ 2π · ℤ` at the crossing
+  angle is the power equation of the unit tangent directions.
 
 Both conditions read the on-curve pole orders of `f` from `meromorphicOrderAt`. Condition (B) needs
 no explicit singular set — it fires **intrinsically** at the times `t₀` where
@@ -326,5 +330,74 @@ theorem conditionB_iff {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} :
 theorem conditionB_comm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} :
     ConditionB γ a b f ↔ ConditionB γ b a f := by
   rw [conditionB_iff, conditionB_iff, min_comm a b, max_comm a b]
+
+/-! ### Consuming the conditions
+
+The two bridges from the conditions' data to the raw hypotheses the principal-value theorems
+take: flatness restricts downward in the order, and the sector resonance `k · θ ∈ 2π · ℤ` at
+the crossing angle is the power equation of the unit tangent directions. -/
+
+/-- **Flatness restricts downward**: a curve flat of order `n` at `t₀` is flat of every order
+`m ≤ n` — near the crossing the chord is small, so a higher power of it is the stronger
+bound. -/
+theorem FlatOfOrder.of_le {γ : ℝ → ℂ} {t₀ : ℝ} {m n : ℕ} (h : FlatOfOrder γ t₀ n)
+    (hmn : m ≤ n) (h_cont : ContinuousAt γ t₀) : FlatOfOrder γ t₀ m := by
+  obtain ⟨v_p, v_m, hv_p, hv_m, h_right, h_left⟩ := h
+  have h_ev : ∀ᶠ t in 𝓝 t₀, ‖γ t - γ t₀‖ ≤ 1 := by
+    have h0 : Filter.Tendsto (fun t => ‖γ t - γ t₀‖) (𝓝 t₀) (𝓝 0) := by
+      have h1 : Filter.Tendsto (fun t => γ t - γ t₀) (𝓝 t₀) (𝓝 (γ t₀ - γ t₀)) :=
+        (h_cont.sub continuousAt_const).tendsto
+      rw [sub_self] at h1
+      simpa using h1.norm
+    exact h0.eventually_le_const one_pos
+  have h_pow : ∀ t, ‖γ t - γ t₀‖ ≤ 1 →
+      ‖‖γ t - γ t₀‖ ^ n‖ ≤ 1 * ‖‖γ t - γ t₀‖ ^ m‖ := fun t ht => by
+    rw [one_mul, Real.norm_of_nonneg (pow_nonneg (norm_nonneg _) _),
+      Real.norm_of_nonneg (pow_nonneg (norm_nonneg _) _)]
+    exact pow_le_pow_of_le_one (norm_nonneg _) ht hmn
+  refine ⟨v_p, v_m, hv_p, hv_m,
+    h_right.trans_isBigO (Asymptotics.IsBigO.of_bound 1 ?_),
+    h_left.trans_isBigO (Asymptotics.IsBigO.of_bound 1 ?_)⟩ <;>
+    · filter_upwards [nhdsWithin_le_nhds h_ev] with t ht
+      exact h_pow t ht
+
+/-- **Resonance to tangent powers**: if `k · crossingAngle γ t₀` is a multiple of `2π` and the
+one-sided derivative limits at `t₀` are `L_R` and `L_L`, both non-zero, then the `k`-th powers
+of the unit tangent directions agree — the raw sector equation the higher-order
+principal-value theorems consume. -/
+theorem pow_unit_tangent_eq_of_resonance {γ : ℝ → ℂ} {t₀ : ℝ} {L_R L_L : ℂ} {k : ℕ}
+    (hL_R : L_R ≠ 0) (hL_L : L_L ≠ 0)
+    (h_R : Filter.Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R))
+    (h_L : Filter.Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L))
+    (h_res : ∃ m : ℤ, (k : ℝ) * crossingAngle γ t₀ = (m : ℝ) * (2 * Real.pi)) :
+    (L_R / (‖L_R‖ : ℂ)) ^ k = ((-L_L) / (‖L_L‖ : ℂ)) ^ k := by
+  obtain ⟨m, hm⟩ := h_res
+  have h_mod : crossingAngle γ t₀
+      = (Complex.arg L_R - Complex.arg (-L_L))
+        - toIcoDiv Real.two_pi_pos 0 (Complex.arg L_R - Complex.arg (-L_L)) * (2 * Real.pi) := by
+    have h_sub := self_sub_toIcoMod Real.two_pi_pos 0
+      (Complex.arg L_R - Complex.arg (-L_L))
+    rw [zsmul_eq_mul] at h_sub
+    unfold crossingAngle
+    rw [h_R.limUnder_eq, h_L.limUnder_eq]
+    linarith
+  rw [h_mod] at hm
+  have h_real : (k : ℝ) * Complex.arg L_R
+      = (k : ℝ) * Complex.arg (-L_L)
+        + ((m : ℝ) + (k : ℝ) * (toIcoDiv Real.two_pi_pos 0
+            (Complex.arg L_R - Complex.arg (-L_L)) : ℤ)) * (2 * Real.pi) := by
+    linear_combination hm
+  have h_unit : ∀ w : ℂ, w ≠ 0 → w / (‖w‖ : ℂ) = Complex.exp (w.arg * Complex.I) :=
+    fun w hw => by
+      rw [div_eq_iff (by exact_mod_cast norm_ne_zero_iff.mpr hw), mul_comm]
+      exact (Complex.norm_mul_exp_arg_mul_I w).symm
+  rw [h_unit L_R hL_R, show (‖L_L‖ : ℂ) = (‖-L_L‖ : ℂ) by rw [norm_neg],
+    h_unit (-L_L) (neg_ne_zero.mpr hL_L), ← Complex.exp_nat_mul,
+    ← Complex.exp_nat_mul, Complex.exp_eq_exp_iff_exists_int]
+  refine ⟨m + (k : ℤ) * toIcoDiv Real.two_pi_pos 0
+    (Complex.arg L_R - Complex.arg (-L_L)), ?_⟩
+  have hC := congrArg (fun x : ℝ => (x : ℂ) * Complex.I) h_real
+  push_cast at hC ⊢
+  linear_combination hC
 
 end TauCeti.Contour
