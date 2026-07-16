@@ -372,6 +372,46 @@ theorem residue_sum {ι : Type*} (s : Finset ι) {f : ι → ℂ → ℂ} {z₀ 
         (MeromorphicAt.sum fun i hi => hf i (Finset.mem_insert_of_mem hi)),
       ih fun i hi => hf i (Finset.mem_insert_of_mem hi)]
 
+/-- **The residue of a Laurent monomial**: `residue (a / (z - z₀)^(k+1)) z₀` is `a` for `k = 0`
+and `0` for higher-order terms. -/
+@[simp]
+theorem residue_const_div_sub_pow (a z₀ : ℂ) (k : ℕ) :
+    residue (fun z => a / (z - z₀) ^ (k + 1)) z₀ = if k = 0 then a else 0 := by
+  have hfg : (fun z => a / (z - z₀) ^ (k + 1)) =ᶠ[𝓝[≠] z₀]
+      fun z => (z - z₀) ^ (-(k + 1 : ℕ) : ℤ) • a :=
+    Filter.Eventually.of_forall fun z => by
+      -- `change` beta-reduces the applied lambdas; the `rw` patterns do not match otherwise.
+      change a / (z - z₀) ^ (k + 1) = (z - z₀) ^ (-(k + 1 : ℕ) : ℤ) • a
+      rw [smul_eq_mul, zpow_neg, zpow_natCast, mul_comm, div_eq_mul_inv]
+  rw [residue_eq_of_eventuallyEq_zpow_smul (by omega) analyticAt_const hfg]
+  have htoNat : (-1 - (-(k + 1 : ℕ) : ℤ)).toNat = k := by omega
+  rw [htoNat, iteratedDeriv_const]
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simp
+  · simp [hk.ne']
+
+/-- **The residue from a Laurent expansion.** If `f z = g z + ∑ k, a k / (z - z₀)^(k+1)` near
+`z₀` with `g` analytic at `z₀`, then `residue f z₀` is the first Laurent coefficient `a 0` (or
+`0` for an empty expansion): the analytic part and the higher-order terms contribute nothing. -/
+theorem residue_of_laurent_expansion {f g : ℂ → ℂ} {z₀ : ℂ} {N : ℕ} {a : Fin N → ℂ}
+    (hg : AnalyticAt ℂ g z₀)
+    (hf_eq : ∀ᶠ z in 𝓝[≠] z₀, f z = g z + ∑ k : Fin N, a k / (z - z₀) ^ (k.val + 1)) :
+    residue f z₀ = if h : 0 < N then a ⟨0, h⟩ else 0 := by
+  have hmono : ∀ k : Fin N, MeromorphicAt (fun z => a k / (z - z₀) ^ (k.val + 1)) z₀ :=
+    fun k => by fun_prop
+  have hf_eq' : f =ᶠ[𝓝[≠] z₀]
+      g + ∑ k : Fin N, fun z => a k / (z - z₀) ^ (k.val + 1) := by
+    filter_upwards [hf_eq] with z hz
+    simpa [Finset.sum_apply] using hz
+  rw [residue_congr_nhdsNE hf_eq',
+    residue_add hg.meromorphicAt (MeromorphicAt.sum fun k _ => hmono k),
+    residue_eq_zero_of_analyticAt hg, zero_add, residue_sum _ fun k _ => hmono k]
+  simp only [residue_const_div_sub_pow]
+  rcases Nat.eq_zero_or_pos N with rfl | hpos
+  · simp
+  · rw [dif_pos hpos, Finset.sum_eq_single ⟨0, hpos⟩ (fun k _ hk => if_neg fun h0 =>
+      hk (Fin.ext h0)) (by simp), if_pos rfl]
+
 end TauCeti.Contour
 
 end
