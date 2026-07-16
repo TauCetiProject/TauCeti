@@ -17,9 +17,10 @@ import TauCeti.Analysis.Contour.InvSubCPVExistence
 /-!
 # The principal value of a polar part is the winding-weighted residue
 
-For a piecewise-`C¹` immersed **closed** curve whose crossings of a pole `s ∈ S` are interior,
-flat of the pole's order, and sector-compatible, the single-point Cauchy principal value of the
-polar part of `f` at `s` along the curve is `2πi · n_s(γ) · Res_s f` — the term `s` contributes
+For a piecewise-`C¹` immersed **closed** curve whose crossings of a pole `s ∈ S` are interior
+and, at every surviving higher-order coefficient, flat and sector-compatible, the single-point
+Cauchy principal value of the polar part of `f` at `s` along the curve is
+`2πi · n_s(γ) · Res_s f` — the term `s` contributes
 to the Hungerbühler–Wasem sum. The simple-pole coefficient contributes its winding-weighted
 residue by the definitional identity `windingNumber = (2πi)⁻¹ · cauchyPVAt` together with the
 existence theorem (`Contour.IsPwC1ImmersionOn.cauchyPVExistsAt_inv_sub`); every order-`k ≥ 2`
@@ -62,7 +63,8 @@ private theorem hasCauchyPVAt_polarPart_term (decomp : PolarPartDecomposition f 
     {γ : ℝ → ℂ} {a b : ℝ} (h_imm : IsPwC1ImmersionOn γ a b) (hab : a ≤ b)
     (hclosed : γ a = γ b)
     (h_interior : ∀ t ∈ Icc a b, γ t = (s : ℂ) → t ∈ Ioo a b)
-    (h_flat : ∀ t ∈ Icc a b, γ t = (s : ℂ) → FlatOfOrder γ t (decomp.order s))
+    (h_flat : ∀ k : Fin (decomp.order s), 1 ≤ k.val → decomp.coeff s k ≠ 0 →
+      ∀ t ∈ Icc a b, γ t = (s : ℂ) → FlatOfOrder γ t (k.val + 1))
     (h_B : ∀ k : Fin (decomp.order s), 1 ≤ k.val → decomp.coeff s k ≠ 0 →
       ∀ t ∈ Icc a b, γ t = (s : ℂ) → ∀ L_R L_L : ℂ,
         Tendsto (deriv γ) (𝓝[>] t) (𝓝 L_R) → Tendsto (deriv γ) (𝓝[<] t) (𝓝 L_L) →
@@ -81,13 +83,13 @@ private theorem hasCauchyPVAt_polarPart_term (decomp : PolarPartDecomposition f 
     by_cases hc : decomp.coeff s k = 0
     · exact HasCauchyPVAt.zero.congr_along_curve fun t _ => by rw [hc, zero_div]
     · have h_vanish := h_imm.hasCauchyPVAt_pow_inv hab h_interior
-        (Nat.succ_le_succ hk_pos) k.isLt h_flat
+        (Nat.succ_le_succ hk_pos) le_rfl (h_flat k hk_pos hc)
         (fun t ht h_eq => h_B k hk_pos hc t ht h_eq) (decomp.coeff s k)
       rwa [hclosed, sub_self] at h_vanish
 
 /-- **The principal value of a polar part is the winding-weighted residue**: along a closed
-piecewise-`C¹` immersion whose crossings of `s` are interior, flat of the pole's order, and
-sector-compatible at every surviving higher-order coefficient, the single-point Cauchy
+piecewise-`C¹` immersion whose crossings of `s` are interior and, at every surviving
+higher-order coefficient, flat and sector-compatible, the single-point Cauchy
 principal value of `decomp.polarPart s` at `s` is `2πi · n_s(γ) · Res_s f`. The higher-order
 coefficients contribute nothing — this is the term the Hungerbühler–Wasem sum attributes to
 `s`. -/
@@ -95,7 +97,8 @@ theorem hasCauchyPVAt_polarPart (decomp : PolarPartDecomposition f S U) (s : S)
     {γ : ℝ → ℂ} {a b : ℝ} (h_imm : IsPwC1ImmersionOn γ a b) (hab : a ≤ b)
     (hclosed : γ a = γ b)
     (h_interior : ∀ t ∈ Icc a b, γ t = (s : ℂ) → t ∈ Ioo a b)
-    (h_flat : ∀ t ∈ Icc a b, γ t = (s : ℂ) → FlatOfOrder γ t (decomp.order s))
+    (h_flat : ∀ k : Fin (decomp.order s), 1 ≤ k.val → decomp.coeff s k ≠ 0 →
+      ∀ t ∈ Icc a b, γ t = (s : ℂ) → FlatOfOrder γ t (k.val + 1))
     (h_B : ∀ k : Fin (decomp.order s), 1 ≤ k.val → decomp.coeff s k ≠ 0 →
       ∀ t ∈ Icc a b, γ t = (s : ℂ) → ∀ L_R L_L : ℂ,
         Tendsto (deriv γ) (𝓝[>] t) (𝓝 L_R) → Tendsto (deriv γ) (𝓝[<] t) (𝓝 L_L) →
