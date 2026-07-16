@@ -38,12 +38,8 @@ direction, not the inner-product-space machinery.
 
 * `Contour.norm_tangentDeviation` — `‖tangentDeviation w L‖ = |(w * conj L).im| / ‖L‖`, the
   bridge to the inline form used by `Contour.FlatOfOrder`.
-* `Contour.orthogonal_pythagoras` — `‖proj‖² + ‖deviation‖² = ‖w‖²`.
-* `Contour.real_sqrt_shortfall_le` — `ε - √(ε² - δ²) ≤ δ²/ε` for `0 ≤ δ ≤ ε`, `0 < ε`.
-* `Contour.norm_orthogonalProjection_shortfall_le` — `‖w‖ - ‖proj‖ ≤ ‖deviation‖²/‖w‖`.
-* `Contour.norm_orthogonalProjection_minus_target_eq` — in the `+L` hemisphere, the projection's
-  distance to the tangent target is exactly the norm shortfall.
-* `Contour.norm_chord_to_tangent_target_le` — the chord-to-tangent-target bound.
+* `Contour.norm_chord_to_tangent_target_le` — the chord-to-tangent-target bound (the Pythagoras
+  decomposition and square-root estimates behind it are private implementation steps).
 
 ## Provenance
 
@@ -94,7 +90,7 @@ theorem norm_tangentDeviation {L : ℂ} (hL : L ≠ 0) (w : ℂ) :
 
 /-- **Pythagoras for the plane projection.** The squared norm of `w` decomposes into the squared
 norms of its projection on `L` and its orthogonal deviation. -/
-theorem orthogonal_pythagoras (w L : ℂ) :
+private theorem proj_sq_add_dev_sq (w L : ℂ) :
     ‖orthogonalProjectionComplex w L‖ ^ 2 + ‖tangentDeviation w L‖ ^ 2 = ‖w‖ ^ 2 := by
   rcases eq_or_ne L 0 with rfl | hL
   · simp [orthogonalProjectionComplex, tangentDeviation]
@@ -119,7 +115,7 @@ theorem orthogonal_pythagoras (w L : ℂ) :
 
 /-- **Square-root shortfall bound.** For `0 ≤ δ ≤ ε` with `0 < ε`:
 `ε - √(ε² - δ²) ≤ δ²/ε`. -/
-theorem real_sqrt_shortfall_le {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 ≤ δ) (hle : δ ≤ ε) :
+private theorem sub_sqrt_le {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 ≤ δ) (hle : δ ≤ ε) :
     ε - Real.sqrt (ε ^ 2 - δ ^ 2) ≤ δ ^ 2 / ε := by
   have h_sqrt_sq : Real.sqrt (ε ^ 2 - δ ^ 2) ^ 2 = ε ^ 2 - δ ^ 2 :=
     Real.sq_sqrt (by nlinarith)
@@ -131,22 +127,22 @@ theorem real_sqrt_shortfall_le {ε δ : ℝ} (hε : 0 < ε) (hδ : 0 ≤ δ) (hl
 
 /-- **Norm shortfall of the projection.** For `‖w‖ > 0`, the projection is shorter than `w` by at
 most `‖tangentDeviation w L‖² / ‖w‖`. -/
-theorem norm_orthogonalProjection_shortfall_le {w : ℂ} (L : ℂ) (hw : 0 < ‖w‖) :
+private theorem norm_sub_norm_orthogonalProjectionComplex_le {w : ℂ} (L : ℂ) (hw : 0 < ‖w‖) :
     ‖w‖ - ‖orthogonalProjectionComplex w L‖ ≤ ‖tangentDeviation w L‖ ^ 2 / ‖w‖ := by
   have h_proj_sq : ‖orthogonalProjectionComplex w L‖ ^ 2 =
-      ‖w‖ ^ 2 - ‖tangentDeviation w L‖ ^ 2 := by linarith [orthogonal_pythagoras w L]
+      ‖w‖ ^ 2 - ‖tangentDeviation w L‖ ^ 2 := by linarith [proj_sq_add_dev_sq w L]
   have h_dev_le : ‖tangentDeviation w L‖ ≤ ‖w‖ := by
     nlinarith [h_proj_sq ▸ sq_nonneg (‖orthogonalProjectionComplex w L‖), sq_nonneg ‖w‖]
   have h_sqrt_eq : Real.sqrt (‖w‖ ^ 2 - ‖tangentDeviation w L‖ ^ 2) =
       ‖orthogonalProjectionComplex w L‖ := by
     rw [← h_proj_sq]; exact Real.sqrt_sq (norm_nonneg _)
   rw [← h_sqrt_eq]
-  exact real_sqrt_shortfall_le hw (norm_nonneg _) h_dev_le
+  exact sub_sqrt_le hw (norm_nonneg _) h_dev_le
 
 /-- **Projection-to-target distance in the `+L` hemisphere.** If `Re(w · conj L) ≥ 0`, the
 distance from the projection to the same-magnitude target `(‖w‖/‖L‖) • L` on the `+L` ray equals
 the norm shortfall `‖w‖ - ‖orthogonalProjectionComplex w L‖`. -/
-theorem norm_orthogonalProjection_minus_target_eq {w L : ℂ} (hL : L ≠ 0)
+private theorem norm_orthogonalProjectionComplex_sub_target_eq {w L : ℂ} (hL : L ≠ 0)
     (h_pos : 0 ≤ (w * starRingEnd ℂ L).re) :
     ‖orthogonalProjectionComplex w L - (‖w‖ / ‖L‖ : ℝ) • L‖ =
       ‖w‖ - ‖orthogonalProjectionComplex w L‖ := by
@@ -154,15 +150,19 @@ theorem norm_orthogonalProjection_minus_target_eq {w L : ℂ} (hL : L ≠ 0)
   have hc_nonneg : 0 ≤ c := div_nonneg h_pos (Complex.normSq_pos.mpr hL).le
   have hL_norm_pos : 0 < ‖L‖ := norm_pos_iff.mpr hL
   have h_proj_norm : ‖orthogonalProjectionComplex w L‖ = c * ‖L‖ := by
+    -- `change` unfolds the definition with the `set c` abbreviation folded in; a rewrite cannot
+    -- target the folded occurrence.
     change ‖(c : ℝ) • L‖ = c * ‖L‖
     rw [norm_smul]
     simp [abs_of_nonneg hc_nonneg]
   have h_proj_le_w : ‖orthogonalProjectionComplex w L‖ ≤ ‖w‖ := by
     have h_sq : ‖orthogonalProjectionComplex w L‖ ^ 2 ≤ ‖w‖ ^ 2 := by
-      linarith [orthogonal_pythagoras w L, sq_nonneg ‖tangentDeviation w L‖]
+      linarith [proj_sq_add_dev_sq w L, sq_nonneg ‖tangentDeviation w L‖]
     exact (abs_le_of_sq_le_sq' h_sq (norm_nonneg w)).2
   have h_c_le_div : c ≤ ‖w‖ / ‖L‖ := by
     rw [le_div_iff₀ hL_norm_pos, ← h_proj_norm]; exact h_proj_le_w
+  -- `change` unfolds `orthogonalProjectionComplex w L` to `(c : ℝ) • L` (the `set c`
+  -- abbreviation folded in); a rewrite cannot target the folded occurrence.
   change ‖(c : ℝ) • L - (‖w‖ / ‖L‖ : ℝ) • L‖ = ‖w‖ - ‖orthogonalProjectionComplex w L‖
   rw [show (c : ℝ) • L - (‖w‖ / ‖L‖ : ℝ) • L = (c - ‖w‖ / ‖L‖ : ℝ) • L by module,
     norm_smul, Real.norm_eq_abs, abs_of_nonpos (sub_nonpos.mpr h_c_le_div), h_proj_norm]
@@ -180,8 +180,8 @@ theorem norm_chord_to_tangent_target_le {w L : ℂ} (hL : L ≠ 0) (hw : 0 < ‖
       (orthogonalProjectionComplex w L - (‖w‖ / ‖L‖ : ℝ) • L) +
         tangentDeviation w L by unfold tangentDeviation; ring]
   refine (norm_add_le _ _).trans ?_
-  rw [norm_orthogonalProjection_minus_target_eq hL h_pos]
-  linarith [norm_orthogonalProjection_shortfall_le L hw]
+  rw [norm_orthogonalProjectionComplex_sub_target_eq hL h_pos]
+  linarith [norm_sub_norm_orthogonalProjectionComplex_le L hw]
 
 end TauCeti.Contour
 
