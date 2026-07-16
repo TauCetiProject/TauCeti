@@ -34,10 +34,10 @@ parts.
 * `Contour.PolarPartDecomposition.intervalIntegral_deriv_smul_analyticRemainder_eq_zero` — the
   contour integral of the analytic remainder along a closed null-homologous piecewise-`C¹` curve
   in `U` vanishes, by the homology Cauchy theorem.
-* `Contour.PolarPartDecomposition.intervalIntegrable_polarPart_truncated` — the `ε`-truncated
-  polar-part integrand along a measurable curve with interval-integrable derivative is
-  interval-integrable, for every `ε > 0` — the integrability clause of `HasCauchyPVAt` for a
-  polar part.
+* `Contour.PolarPartDecomposition.intervalIntegrable_polarPart_mul_deriv_truncated` — the
+  `ε`-truncated polar-part integrand along a measurable curve with interval-integrable
+  derivative is interval-integrable, for every `ε > 0` — the integrability clause of
+  `HasCauchyPVAt` for a polar part.
 
 ## Provenance
 
@@ -46,7 +46,10 @@ AINTLIB `LeanModularForms` development; the remainder-integral theorem is its
 `analyticRemainder_contourIntegral_zero`, which there re-runs Dixon's argument inline and here is
 a direct application of `Contour.homologyCauchyTheorem`. The constructor is migrated from
 `polarPartDecomposition_of_meromorphic` of `LaurentExtraction.lean` there, with the ℂ-indexed
-case splits replaced by `S`-indexed data throughout. See N. Hungerbühler, M. Wasem, *Non-integer
+case splits replaced by `S`-indexed data throughout; the truncated-integrand integrability
+lemma is adapted from `cpvIntegrand_polarPart_intervalIntegrable` of `MultiPoleDCT.lean`, with
+the Lipschitz bound on the curve replaced by interval-integrability of the derivative. See
+N. Hungerbühler, M. Wasem, *Non-integer
 valued winding numbers and a generalized Residue Theorem*, arXiv:1808.00997, §3.
 -/
 
@@ -285,7 +288,7 @@ theorem ofMeromorphic_analyticRemainder {z : ℂ} (hz : z ∉ (↑S : Set ℂ)) 
 `ε`-ball around the pole, the Laurent tail is bounded by `∑ k, ‖coeff s k‖ / ε ^ (k+1)`, so the
 integrand is dominated by a constant multiple of `‖deriv γ‖` — the integrability clause of
 `HasCauchyPVAt` for a polar part along a curve crossing the pole. -/
-theorem intervalIntegrable_polarPart_truncated (decomp : PolarPartDecomposition f S U)
+theorem intervalIntegrable_polarPart_mul_deriv_truncated (decomp : PolarPartDecomposition f S U)
     (s : S) {γ : ℝ → ℂ} {a b : ℝ} (hγ_meas : Measurable γ)
     (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume a b)
     {ε : ℝ} (hε : 0 < ε) :
@@ -294,8 +297,6 @@ theorem intervalIntegrable_polarPart_truncated (decomp : PolarPartDecomposition 
       MeasureTheory.volume a b := by
   classical
   set M : ℝ := ∑ k : Fin (decomp.order s), ‖decomp.coeff s k‖ / ε ^ (k.val + 1) with hM_def
-  have hM_nonneg : 0 ≤ M :=
-    Finset.sum_nonneg fun k _ => div_nonneg (norm_nonneg _) (pow_nonneg hε.le _)
   have h_meas : Measurable (fun t =>
       if ‖γ t - (s : ℂ)‖ > ε then decomp.polarPart s (γ t) * deriv γ t else 0) := by
     have hA : MeasurableSet {t : ℝ | ε < ‖γ t - (s : ℂ)‖} :=
@@ -320,8 +321,7 @@ theorem intervalIntegrable_polarPart_truncated (decomp : PolarPartDecomposition 
       rw [decomp.polarPart_eq s (γ t), hM_def]
       refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ => ?_)
       rw [norm_div, norm_pow]
-      exact div_le_div_of_nonneg_left (norm_nonneg _) (pow_pos hε _)
-        (pow_le_pow_left₀ hε.le h_far.le _)
+      gcongr
     calc ‖decomp.polarPart s (γ t) * deriv γ t‖
         = ‖decomp.polarPart s (γ t)‖ * ‖deriv γ t‖ := norm_mul _ _
       _ ≤ M * ‖deriv γ t‖ :=
