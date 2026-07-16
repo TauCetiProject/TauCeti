@@ -42,6 +42,9 @@ Where the two sides share a proof, the statement is parametrised over the within
   `Contour.exists_neg_tangent_div_chord_mem_slitPlane_left` — a window radius on which the
   boundary quotients (chord over tangent on the right, negated tangent over chord on the left)
   lie in the slit plane, discharging the `h_slit` hypotheses of the annular lemmas.
+* `Contour.exists_crossing_slitPlane_radius` — the per-crossing package: one radius carrying
+  all four slit-plane properties together with the non-zero one-sided derivatives, ready for a
+  common minimum across the crossings of a pole.
 
 ## Provenance
 
@@ -322,6 +325,37 @@ theorem exists_neg_tangent_div_chord_mem_slitPlane_left
   rw [h_eq_target]
   exact ofReal_pos_mul_mem_slitPlane (by positivity)
     (neg_inv_mem_slitPlane_of_neg_close_to_one hq_close)
+
+/-- **The per-crossing slit-plane radius package**: at a transverse crossing with non-zero
+one-sided derivatives, a single radius `r > 0` carries all four slit-plane properties — the
+two-sided chord quotients and the two boundary tangent quotients at every admissible offset —
+so a common minimum over the crossings of a pole inherits them all. -/
+theorem exists_crossing_slitPlane_radius {γ : ℝ → ℂ} {t₀ : ℝ} {s L_R L_L : ℂ}
+    (h_deriv_R : HasDerivWithinAt γ L_R (Ioi t₀) t₀)
+    (h_deriv_L : HasDerivWithinAt γ L_L (Iio t₀) t₀)
+    (h_at : γ t₀ = s) (hL_R : L_R ≠ 0) (hL_L : L_L ≠ 0) :
+    ∃ r > 0,
+      (∀ a b, t₀ < a → a ≤ b → b ≤ t₀ + r →
+        (γ b - s) / (γ a - s) ∈ Complex.slitPlane) ∧
+      (∀ a b, t₀ - r ≤ a → a ≤ b → b < t₀ →
+        (γ b - s) / (γ a - s) ∈ Complex.slitPlane) ∧
+      (∀ r', 0 < r' → r' ≤ r → (γ (t₀ + r') - s) / L_R ∈ Complex.slitPlane) ∧
+      (∀ r', 0 < r' → r' ≤ r → (-L_L) / (γ (t₀ - r') - s) ∈ Complex.slitPlane) := by
+  obtain ⟨r₁, hr₁_pos, h₁⟩ := exists_chord_quotient_mem_slitPlane_right h_deriv_R h_at hL_R
+  obtain ⟨r₂, hr₂_pos, h₂⟩ := exists_chord_quotient_mem_slitPlane_left h_deriv_L h_at hL_L
+  obtain ⟨r₃, hr₃_pos, h₃⟩ := exists_chord_div_tangent_mem_slitPlane_right h_deriv_R h_at hL_R
+  obtain ⟨r₄, hr₄_pos, h₄⟩ :=
+    exists_neg_tangent_div_chord_mem_slitPlane_left h_deriv_L h_at hL_L
+  have hr₁ : min (min r₁ r₂) (min r₃ r₄) ≤ r₁ := (min_le_left _ _).trans (min_le_left _ _)
+  have hr₂ : min (min r₁ r₂) (min r₃ r₄) ≤ r₂ := (min_le_left _ _).trans (min_le_right _ _)
+  have hr₃ : min (min r₁ r₂) (min r₃ r₄) ≤ r₃ := (min_le_right _ _).trans (min_le_left _ _)
+  have hr₄ : min (min r₁ r₂) (min r₃ r₄) ≤ r₄ := (min_le_right _ _).trans (min_le_right _ _)
+  refine ⟨min (min r₁ r₂) (min r₃ r₄),
+    lt_min (lt_min hr₁_pos hr₂_pos) (lt_min hr₃_pos hr₄_pos), ?_, ?_, ?_, ?_⟩
+  · exact fun a b ha hab hb => h₁ a b ha hab (by linarith)
+  · exact fun a b ha hab hb => h₂ a b (by linarith) hab hb
+  · exact fun r' hr' hle => h₃ r' hr' (hle.trans hr₃)
+  · exact fun r' hr' hle => h₄ r' hr' (hle.trans hr₄)
 
 end TauCeti.Contour
 
