@@ -26,9 +26,9 @@ parts.
 
 ## Main results
 
-* `Contour.PolarPartDecomposition.intervalIntegral_analyticRemainder_eq_zero` — the contour
-  integral of the analytic remainder along a closed null-homologous piecewise-`C¹` curve in `U`
-  vanishes, by the homology Cauchy theorem.
+* `Contour.PolarPartDecomposition.intervalIntegral_deriv_smul_analyticRemainder_eq_zero` — the
+  contour integral of the analytic remainder along a closed null-homologous piecewise-`C¹` curve
+  in `U` vanishes, by the homology Cauchy theorem.
 
 ## Provenance
 
@@ -51,27 +51,31 @@ open scoped Interval
 
 /-- **Polar-part decomposition** of `f` on `U` at the finite singular set `S`: explicit finite
 Laurent tails at the points of `S` whose removal from `f` leaves a function differentiable on all
-of `U`, with the residue at each `s ∈ S` read off as the first Laurent coefficient. -/
+of `U`, with the residue at each `s ∈ S` read off as the first Laurent coefficient. The data is
+indexed by `S`, so a decomposition carries nothing beyond what its laws constrain; the polar part
+is pinned for every `z` (at `z = s` the Laurent sum takes the junk value `0`, by division by
+zero in `ℂ`). -/
 structure PolarPartDecomposition (f : ℂ → ℂ) (S : Finset ℂ) (U : Set ℂ) where
-  /-- The polar part at each pole, as a function of `z`. -/
-  polarPart : ℂ → ℂ → ℂ
   /-- The order of the polar part at each pole (`0` for no pole). -/
-  order : ℂ → ℕ
+  order : S → ℕ
   /-- The Laurent coefficients of the polar part at each pole. -/
-  coeff : (s : ℂ) → Fin (order s) → ℂ
+  coeff : (s : S) → Fin (order s) → ℂ
+  /-- The polar part at each pole, as a function of `z`. -/
+  polarPart : S → ℂ → ℂ
   /-- The polar part at `s` is the explicit Laurent sum `∑ k, coeff s k / (z - s)^(k+1)`. -/
-  polarPart_eq : ∀ s ∈ S, ∀ z, z ≠ s →
-    polarPart s z = ∑ k : Fin (order s), coeff s k / (z - s) ^ (k.val + 1)
+  polarPart_eq : ∀ (s : S) (z : ℂ),
+    polarPart s z = ∑ k : Fin (order s), coeff s k / (z - (s : ℂ)) ^ (k.val + 1)
   /-- The residue at `s ∈ S` is the first Laurent coefficient, or zero for an empty polar
   part. -/
-  residue_eq : ∀ s ∈ S,
+  residue_eq : ∀ s : S,
     residue f s = if h : 0 < order s then coeff s ⟨0, h⟩ else 0
   /-- The function `f` minus the total polar part, extended to all of `U`. -/
   analyticRemainder : ℂ → ℂ
   /-- The analytic remainder is differentiable on all of `U`. -/
-  analyticRemainder_diff : DifferentiableOn ℂ analyticRemainder U
+  analyticRemainder_differentiableOn : DifferentiableOn ℂ analyticRemainder U
   /-- Off the singular set, `f` is the analytic remainder plus the total polar part. -/
-  decomp : ∀ z ∈ U \ (↑S : Set ℂ), f z = analyticRemainder z + ∑ s ∈ S, polarPart s z
+  f_eq : ∀ z ∈ U \ (↑S : Set ℂ),
+    f z = analyticRemainder z + ∑ s ∈ S.attach, polarPart s z
 
 namespace PolarPartDecomposition
 
@@ -80,12 +84,13 @@ variable {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
 /-- **The analytic remainder integrates to zero** along any closed null-homologous
 piecewise-`C¹` curve in `U` — even one passing through the poles of `f`, since the remainder
 extends differentiably to all of `U`. The homology Cauchy theorem applied to the remainder. -/
-theorem intervalIntegral_analyticRemainder_eq_zero (decomp : PolarPartDecomposition f S U)
+theorem intervalIntegral_deriv_smul_analyticRemainder_eq_zero
+    (decomp : PolarPartDecomposition f S U)
     (hU : IsOpen U) {γ : ℝ → ℂ} {a b : ℝ} (hγ_pc1 : IsPiecewiseC1On γ a b)
     (hγ : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b)
     (hnull : IsNullHomologous γ a b U) :
     ∫ t in a..b, deriv γ t • decomp.analyticRemainder (γ t) = 0 :=
-  homologyCauchyTheorem hU γ a b hγ_pc1 hγ hclosed decomp.analyticRemainder_diff hnull
+  homologyCauchyTheorem hU γ a b hγ_pc1 hγ hclosed decomp.analyticRemainder_differentiableOn hnull
 
 end PolarPartDecomposition
 
