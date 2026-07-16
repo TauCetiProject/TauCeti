@@ -38,9 +38,10 @@ Where the two sides share a proof, the statement is parametrised over the within
   one-sided interval lie in the slit plane.
 * `Contour.arg_annular_quotient_tendsto_right` / `_left` — convergence of the annular
   quotient arguments along a positive cutoff `δ(ε) → 0⁺`.
-* `Contour.exists_chord_div_tangent_mem_slitPlane_right` / `_left` — a window radius on which
-  the boundary chord-to-tangent quotients lie in the slit plane, discharging the `h_slit`
-  hypotheses of the annular lemmas.
+* `Contour.exists_chord_div_tangent_mem_slitPlane_right` /
+  `Contour.exists_neg_tangent_div_chord_mem_slitPlane_left` — a window radius on which the
+  boundary quotients (chord over tangent on the right, negated tangent over chord on the left)
+  lie in the slit plane, discharging the `h_slit` hypotheses of the annular lemmas.
 
 ## Provenance
 
@@ -295,7 +296,7 @@ theorem exists_chord_div_tangent_mem_slitPlane_right
 /-- **Boundary chord-to-tangent quotients in the slit plane (left)**: there is a window radius
 `r > 0` such that `(-L) / (γ (t₀ - r') - s) ∈ Complex.slitPlane` for every `0 < r' ≤ r` — the
 `h_slit` input of `arg_annular_quotient_tendsto_left` at any admissible window radius. -/
-theorem exists_chord_div_tangent_mem_slitPlane_left
+theorem exists_neg_tangent_div_chord_mem_slitPlane_left
     (h_deriv : HasDerivWithinAt γ L (Iio t₀) t₀) (h_at : γ t₀ = s) (hL : L ≠ 0) :
     ∃ r > 0, ∀ r', 0 < r' → r' ≤ r →
       (-L) / (γ (t₀ - r') - s) ∈ Complex.slitPlane := by
