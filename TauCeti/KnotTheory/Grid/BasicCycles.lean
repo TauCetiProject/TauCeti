@@ -18,6 +18,9 @@ square-zero theorem; instead it records the exact condition under which boundari
 
 * `TauCeti.GridDiagram.fullyBlockedCycles`: the kernel of the fully blocked differential.
 * `TauCeti.GridDiagram.fullyBlockedBoundaries`: the range of the fully blocked differential.
+* `TauCeti.GridDiagram.fullyBlockedCycles_eq_ker`,
+  `TauCeti.GridDiagram.fullyBlockedBoundaries_eq_range`: the cycle and boundary submodules
+  restated as the kernel and range of the differential.
 * `TauCeti.GridDiagram.fullyBlockedBoundaries_le_cycles`: boundaries lie in cycles whenever the
   fully blocked differential squares to zero.
 
@@ -60,6 +63,18 @@ theorem mem_fullyBlockedBoundaries (c : GridChain (ZMod 2) n) :
   by
     rw [fullyBlockedBoundaries]
     exact LinearMap.mem_range
+
+/-- The fully blocked cycle submodule is the kernel of the fully blocked differential, restated
+so that downstream files can rewrite with it without unfolding the definition. -/
+theorem fullyBlockedCycles_eq_ker :
+    G.fullyBlockedCycles = LinearMap.ker G.fullyBlockedDifferential := by
+  rw [fullyBlockedCycles]
+
+/-- The fully blocked boundary submodule is the range of the fully blocked differential, restated
+so that downstream files can rewrite with it without unfolding the definition. -/
+theorem fullyBlockedBoundaries_eq_range :
+    G.fullyBlockedBoundaries = LinearMap.range G.fullyBlockedDifferential := by
+  rw [fullyBlockedBoundaries]
 
 /-- Boundaries lie in cycles once the fully blocked differential is square-zero. -/
 theorem fullyBlockedBoundaries_le_cycles

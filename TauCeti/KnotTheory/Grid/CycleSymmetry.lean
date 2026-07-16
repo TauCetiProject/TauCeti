@@ -40,7 +40,8 @@ no square-zero input.
   `TauCeti.GridDiagram.fullyBlockedBoundariesTransposeEquiv`,
   `TauCeti.GridDiagram.fullyBlockedCyclesRotateEquiv`,
   `TauCeti.GridDiagram.fullyBlockedBoundariesRotateEquiv`: the same statements packaged as linear
-  equivalences of submodules.
+  equivalences of submodules, each characterized on elements by an `_apply` lemma recording that
+  it acts by the underlying chain relabeling.
 
 ## References
 
@@ -109,20 +110,6 @@ private theorem fullyBlockedDifferential_rotate_apply (d : GridChain (ZMod 2) n)
       GridChain.rotateEquiv (ZMod 2) n (G.fullyBlockedDifferential d) := by
   have := DFunLike.congr_fun G.fullyBlockedDifferential_rotate d
   simpa using this
-
-/-- The fully blocked cycle submodule is the kernel of the fully blocked differential, restated
-so that downstream files can rewrite with it without unfolding the definition. -/
-theorem fullyBlockedCycles_eq_ker :
-    G.fullyBlockedCycles = LinearMap.ker G.fullyBlockedDifferential := by
-  ext c
-  simp only [mem_fullyBlockedCycles, LinearMap.mem_ker]
-
-/-- The fully blocked boundary submodule is the range of the fully blocked differential, restated
-so that downstream files can rewrite with it without unfolding the definition. -/
-theorem fullyBlockedBoundaries_eq_range :
-    G.fullyBlockedBoundaries = LinearMap.range G.fullyBlockedDifferential := by
-  ext c
-  simp only [mem_fullyBlockedBoundaries, LinearMap.mem_range]
 
 /-- The transpose chain relabeling carries the fully blocked cycles of `G` onto those of
 `G.transpose`. -/
@@ -199,6 +186,38 @@ noncomputable def fullyBlockedBoundariesRotateEquiv :
     G.fullyBlockedBoundaries ≃ₗ[ZMod 2] G.rotate.fullyBlockedBoundaries :=
   ((GridChain.rotateEquiv (ZMod 2) n).submoduleMap G.fullyBlockedBoundaries).trans
     (LinearEquiv.ofEq _ _ G.fullyBlockedBoundaries_rotate)
+
+/-- The transpose cycle equivalence acts by the underlying transpose chain relabeling. -/
+@[simp]
+theorem fullyBlockedCyclesTransposeEquiv_apply (c : G.fullyBlockedCycles) :
+    (G.fullyBlockedCyclesTransposeEquiv c : GridChain (ZMod 2) n) =
+      GridChain.transposeEquiv (ZMod 2) n c := by
+  simp only [fullyBlockedCyclesTransposeEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.submoduleMap_apply]
+
+/-- The transpose boundary equivalence acts by the underlying transpose chain relabeling. -/
+@[simp]
+theorem fullyBlockedBoundariesTransposeEquiv_apply (c : G.fullyBlockedBoundaries) :
+    (G.fullyBlockedBoundariesTransposeEquiv c : GridChain (ZMod 2) n) =
+      GridChain.transposeEquiv (ZMod 2) n c := by
+  simp only [fullyBlockedBoundariesTransposeEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.submoduleMap_apply]
+
+/-- The rotation cycle equivalence acts by the underlying rotation chain relabeling. -/
+@[simp]
+theorem fullyBlockedCyclesRotateEquiv_apply (c : G.fullyBlockedCycles) :
+    (G.fullyBlockedCyclesRotateEquiv c : GridChain (ZMod 2) n) =
+      GridChain.rotateEquiv (ZMod 2) n c := by
+  simp only [fullyBlockedCyclesRotateEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.submoduleMap_apply]
+
+/-- The rotation boundary equivalence acts by the underlying rotation chain relabeling. -/
+@[simp]
+theorem fullyBlockedBoundariesRotateEquiv_apply (c : G.fullyBlockedBoundaries) :
+    (G.fullyBlockedBoundariesRotateEquiv c : GridChain (ZMod 2) n) =
+      GridChain.rotateEquiv (ZMod 2) n c := by
+  simp only [fullyBlockedBoundariesRotateEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.coe_ofEq_apply, LinearEquiv.submoduleMap_apply]
 
 end GridDiagram
 
