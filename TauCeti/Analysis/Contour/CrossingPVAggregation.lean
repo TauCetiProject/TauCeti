@@ -72,36 +72,35 @@ private theorem hasCauchyPVAt_of_dist_lower_bound {γ : ℝ → ℂ} {s : ℂ} {
   filter_upwards [self_mem_nhdsWithin] with ε hε
   exact h_int_tr ε hε
 
-/-- **Aggregation along a sorted crossing list**: with pairwise-disjoint windows interior to
-`[a, b]`, per-window convergence, and a positive off-window distance bound, the principal
-value at `s` exists on `[a, b]` — the between-pieces and windows concatenate. -/
-private theorem cauchyPVExistsAt_along_sorted {γ : ℝ → ℂ} {s : ℂ} {g : ℂ → ℂ}
-    {A b r : ℝ} (hr_pos : 0 < r)
-    (h_int_tr : ∀ ε : ℝ, 0 < ε →
-      IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
-        MeasureTheory.volume A b) :
+/-- The aggregated value along a sorted crossing list: between-piece values `p` alternating
+with window values `w`. -/
+private def windowPieceSum (r : ℝ) (p : ℝ → ℝ → ℂ) (w : ℝ → ℂ) (b : ℝ) :
+    List ℝ → ℝ → ℂ
+  | [], a => p a b
+  | t :: rest, a => p a (t - r) + w t + windowPieceSum r p w b rest (t + r)
+
+/-- **The shared aggregation induction**: with pairwise-disjoint windows interior to `[a, b]`,
+window principal values `w t`, and between-piece principal values `p l u` available on
+intervals where the curve keeps distance `≥ m` from `s`, the principal value on `[a, b]` is
+the alternating sum `windowPieceSum`. Both public aggregation theorems instantiate this. -/
+private theorem hasCauchyPVAt_along_sorted {γ : ℝ → ℂ} {s : ℂ} {g : ℂ → ℂ}
+    {p : ℝ → ℝ → ℂ} {w : ℝ → ℂ} {A b r m : ℝ} (hr_pos : 0 < r)
+    (h_piece : ∀ l u : ℝ, A ≤ l → l ≤ u → u ≤ b → (∀ t ∈ Icc l u, m ≤ ‖γ t - s‖) →
+      HasCauchyPVAt γ l u g s (p l u)) :
     ∀ (sorted : List ℝ), sorted.SortedLT →
     ∀ a : ℝ, A ≤ a → a ≤ b → (∀ t ∈ sorted, a < t - r) → (∀ t ∈ sorted, t + r ≤ b) →
       (∀ t ∈ sorted, ∀ t' ∈ sorted, t' ≠ t → 2 * r < |t - t'|) →
-      (∀ t ∈ sorted, ∃ v : ℂ, Tendsto (fun ε : ℝ => ∫ u in (t - r)..(t + r),
-          if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0) (𝓝[>] (0 : ℝ)) (𝓝 v)) →
-      (∃ m : ℝ, 0 < m ∧ ∀ u ∈ Icc a b, (∀ t ∈ sorted, u ∉ Ioo (t - r) (t + r)) →
-        m ≤ ‖γ u - s‖) →
-      CauchyPVExistsAt γ a b g s := by
+      (∀ t ∈ sorted, HasCauchyPVAt γ (t - r) (t + r) g s (w t)) →
+      (∀ u ∈ Icc a b, (∀ t ∈ sorted, u ∉ Ioo (t - r) (t + r)) → m ≤ ‖γ u - s‖) →
+      HasCauchyPVAt γ a b g s (windowPieceSum r p w b sorted a) := by
   intro sorted
   induction sorted with
   | nil =>
     intro _ a hA hab _ _ _ _ h_far
-    obtain ⟨m, hm_pos, hm⟩ := h_far
-    exact CauchyPVExistsAt.intro (hasCauchyPVAt_of_dist_lower_bound hab hm_pos
-      (fun u hu => hm u hu fun t ht => absurd ht (List.not_mem_nil))
-      (fun ε hε => (h_int_tr ε hε).mono_set (by
-        rw [uIcc_of_le hab, uIcc_of_le (hA.trans hab)]
-        exact Icc_subset_Icc hA le_rfl)))
+    exact h_piece a b hA hab le_rfl
+      fun u hu => h_far u hu fun t ht => absurd ht (List.not_mem_nil)
   | cons t rest IH =>
     intro h_sorted a hA hab h_lo h_hi h_pair h_win h_far
-    obtain ⟨m, hm_pos, hm⟩ := h_far
-    obtain ⟨v_t, h_v_t⟩ := h_win t List.mem_cons_self
     have h_head_lo : a < t - r := h_lo t List.mem_cons_self
     have h_head_hi : t + r ≤ b := h_hi t List.mem_cons_self
     have h_rest_above : ∀ t' ∈ rest, t + r < t' - r := fun t' ht' => by
@@ -110,26 +109,14 @@ private theorem cauchyPVExistsAt_along_sorted {γ : ℝ → ℂ} {s : ℂ} {g : 
         (ne_of_gt h_lt)
       rw [abs_sub_comm, abs_of_pos (by linarith)] at h_sep
       linarith
-    -- the between-piece to the left of the head window is off every window
-    have h_left : HasCauchyPVAt γ a (t - r) g s
-        (∫ u in a..(t - r), g (γ u) * deriv γ u) := by
-      refine hasCauchyPVAt_of_dist_lower_bound h_head_lo.le hm_pos (fun u hu => ?_)
-        (fun ε hε => (h_int_tr ε hε).mono_set (by
-          rw [uIcc_of_le h_head_lo.le, uIcc_of_le (hA.trans hab)]
-          exact Icc_subset_Icc hA (by linarith)))
-      refine hm u ⟨hu.1, by linarith [hu.2]⟩ fun t' ht' h_in => ?_
+    have h_left : HasCauchyPVAt γ a (t - r) g s (p a (t - r)) := by
+      refine h_piece a (t - r) hA h_head_lo.le (by linarith) fun u hu => ?_
+      refine h_far u ⟨hu.1, by linarith [hu.2]⟩ fun t' ht' h_in => ?_
       rcases List.mem_cons.mp ht' with rfl | h_rest
       · linarith [hu.2, h_in.1]
       · linarith [hu.2, h_in.1, h_rest_above t' h_rest]
-    -- the head window carries its given limit
-    have h_window : HasCauchyPVAt γ (t - r) (t + r) g s v_t :=
-      hasCauchyPVAt_iff.mpr ⟨by
-        filter_upwards [self_mem_nhdsWithin] with ε hε
-        exact (h_int_tr ε hε).mono_set (by
-          rw [uIcc_of_le (show t - r ≤ t + r by linarith), uIcc_of_le (hA.trans hab)]
-          exact Icc_subset_Icc (by linarith) (by linarith)), h_v_t⟩
-    -- recurse on the tail, over [t + r, b]
-    obtain ⟨L_rest, h_rest⟩ := cauchyPVExistsAt_iff.mp (IH
+    have h_rest : HasCauchyPVAt γ (t + r) b g s
+        (windowPieceSum r p w b rest (t + r)) := IH
       ((List.pairwise_cons.mp h_sorted.pairwise).2).sortedLT (t + r)
       (by linarith) h_head_hi
       (fun t' ht' => h_rest_above t' ht')
@@ -137,18 +124,18 @@ private theorem cauchyPVExistsAt_along_sorted {γ : ℝ → ℂ} {s : ℂ} {g : 
       (fun t' ht' t'' ht'' hne => h_pair t' (List.mem_cons_of_mem t ht')
         t'' (List.mem_cons_of_mem t ht'') hne)
       (fun t' ht' => h_win t' (List.mem_cons_of_mem t ht'))
-      ⟨m, hm_pos, fun u hu h_avoid => hm u ⟨by linarith [hu.1], hu.2⟩ fun t' ht' => by
+      (fun u hu h_avoid => h_far u ⟨by linarith [hu.1], hu.2⟩ fun t' ht' => by
         rcases List.mem_cons.mp ht' with rfl | h_rest
         · exact fun h_in => absurd hu.1 (not_le.mpr h_in.2)
-        · exact h_avoid t' h_rest⟩)
-    exact CauchyPVExistsAt.intro ((h_left.concat h_window).concat h_rest)
+        · exact h_avoid t' h_rest)
+    exact (h_left.concat (h_win t List.mem_cons_self)).concat h_rest
 
 /-- **The single-point principal value from per-window convergence**: if the `ε`-truncated
 integral of `g (γ t) * deriv γ t` converges on each crossing window (pairwise disjoint,
-interior to `[a, b]`), the truncations are integrable, and the curve keeps a positive distance
-from `s` off the windows, then the principal value at `s` exists on `[a, b]`. The per-window
-limits are hypotheses, so both the simple-pole and higher-order per-window theorems discharge
-them. -/
+interior to `[a, b]`), the truncations are integrable on `[a, b]`, and the curve keeps a
+positive distance from `s` off the windows, then the principal value at `s` exists on
+`[a, b]`. The per-window limits are hypotheses, so both the simple-pole and higher-order
+per-window theorems discharge them. -/
 theorem cauchyPVExistsAt_of_perWindow_tendsto {γ : ℝ → ℂ} {s : ℂ} {g : ℂ → ℂ}
     {a b r : ℝ} (hr_pos : 0 < r) (hab : a ≤ b) (crossings : Finset ℝ)
     (h_lo : ∀ t ∈ crossings, a < t - r) (h_hi : ∀ t ∈ crossings, t + r ≤ b)
@@ -163,100 +150,39 @@ theorem cauchyPVExistsAt_of_perWindow_tendsto {γ : ℝ → ℂ} {s : ℂ} {g : 
     CauchyPVExistsAt γ a b g s := by
   classical
   obtain ⟨m, hm_pos, hm⟩ := h_far
-  exact cauchyPVExistsAt_along_sorted hr_pos h_int_tr
+  refine CauchyPVExistsAt.intro (hasCauchyPVAt_along_sorted hr_pos
+    (p := fun l u => ∫ t in l..u, g (γ t) * deriv γ t)
+    (w := fun t => if h : t ∈ crossings then (h_win t h).choose else 0)
+    (fun l u hA hlu hu h_far' => hasCauchyPVAt_of_dist_lower_bound hlu hm_pos h_far'
+      (fun ε hε => (h_int_tr ε hε).mono_set (by
+        rw [uIcc_of_le hlu, uIcc_of_le hab]
+        exact Icc_subset_Icc hA hu)))
     (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings) a le_rfl hab
     (fun t ht => h_lo t ((Finset.mem_sort _).mp ht))
     (fun t ht => h_hi t ((Finset.mem_sort _).mp ht))
     (fun t ht t' ht' hne => h_pair t ((Finset.mem_sort _).mp ht)
       t' ((Finset.mem_sort _).mp ht') hne)
-    (fun t ht => h_win t ((Finset.mem_sort _).mp ht))
-    ⟨m, hm_pos, fun u hu h_avoid => hm u hu
-      fun t ht => h_avoid t ((Finset.mem_sort _).mpr ht)⟩
+    (fun t ht => ?_)
+    (fun u hu h_avoid => hm u hu fun t ht => h_avoid t ((Finset.mem_sort _).mpr ht)))
+  have h_mem := (Finset.mem_sort (α := ℝ) (· ≤ ·)).mp ht
+  refine hasCauchyPVAt_iff.mpr ⟨?_, ?_⟩
+  · filter_upwards [self_mem_nhdsWithin] with ε hε
+    exact (h_int_tr ε hε).mono_set (by
+      rw [uIcc_of_le (show t - r ≤ t + r by linarith), uIcc_of_le hab]
+      exact Icc_subset_Icc (by linarith [h_lo t h_mem]) (h_hi t h_mem))
+  · rw [dif_pos h_mem]
+    exact (h_win t h_mem).choose_spec
 
-/-- **Telescoping aggregation along a sorted crossing list**: when the plain integrand has the
-curve-antiderivative `Φ` on pole-free pieces and each window limit is the boundary difference
-of `Φ ∘ γ`, the principal value on `[a, b]` is the total boundary difference. -/
-private theorem hasCauchyPVAt_telescoping_along_sorted {γ : ℝ → ℂ} {s : ℂ} {g : ℂ → ℂ}
-    {Φ : ℂ → ℂ} {A b r : ℝ} (hr_pos : 0 < r)
-    (h_int_tr : ∀ ε : ℝ, 0 < ε →
-      IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
-        MeasureTheory.volume A b)
-    (h_plain_eq : ∀ l u : ℝ, l ≤ u → (∀ t ∈ Icc l u, γ t ≠ s) →
-      ∫ t in l..u, g (γ t) * deriv γ t = Φ (γ u) - Φ (γ l)) :
-    ∀ (sorted : List ℝ), sorted.SortedLT →
-    ∀ a : ℝ, A ≤ a → a ≤ b → (∀ t ∈ sorted, a < t - r) → (∀ t ∈ sorted, t + r ≤ b) →
-      (∀ t ∈ sorted, ∀ t' ∈ sorted, t' ≠ t → 2 * r < |t - t'|) →
-      (∀ t ∈ sorted, Tendsto (fun ε : ℝ => ∫ u in (t - r)..(t + r),
-          if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0) (𝓝[>] (0 : ℝ))
-          (𝓝 (Φ (γ (t + r)) - Φ (γ (t - r))))) →
-      (∃ m : ℝ, 0 < m ∧ ∀ u ∈ Icc a b, (∀ t ∈ sorted, u ∉ Ioo (t - r) (t + r)) →
-        m ≤ ‖γ u - s‖) →
-      HasCauchyPVAt γ a b g s (Φ (γ b) - Φ (γ a)) := by
-  intro sorted
-  induction sorted with
-  | nil =>
-    intro _ a hA hab _ _ _ _ h_far
-    obtain ⟨m, hm_pos, hm⟩ := h_far
-    have h_far' : ∀ u ∈ Icc a b, m ≤ ‖γ u - s‖ :=
-      fun u hu => hm u hu fun t ht => absurd ht (List.not_mem_nil)
-    have h_ne : ∀ u ∈ Icc a b, γ u ≠ s := fun u hu h_eq => by
-      have h_bd := h_far' u hu
-      rw [h_eq, sub_self, norm_zero] at h_bd
-      linarith
-    have h := hasCauchyPVAt_of_dist_lower_bound hab hm_pos h_far'
-      (fun ε hε => (h_int_tr ε hε).mono_set (by
-        rw [uIcc_of_le hab, uIcc_of_le (hA.trans hab)]
-        exact Icc_subset_Icc hA le_rfl))
-    rwa [h_plain_eq a b hab h_ne] at h
-  | cons t rest IH =>
-    intro h_sorted a hA hab h_lo h_hi h_pair h_win h_far
-    obtain ⟨m, hm_pos, hm⟩ := h_far
-    have h_head_lo : a < t - r := h_lo t List.mem_cons_self
-    have h_head_hi : t + r ≤ b := h_hi t List.mem_cons_self
-    have h_rest_above : ∀ t' ∈ rest, t + r < t' - r := fun t' ht' => by
-      have h_lt : t < t' := (List.pairwise_cons.mp h_sorted.pairwise).1 t' ht'
-      have h_sep := h_pair t List.mem_cons_self t' (List.mem_cons_of_mem t ht')
-        (ne_of_gt h_lt)
-      rw [abs_sub_comm, abs_of_pos (by linarith)] at h_sep
-      linarith
-    have h_far_left : ∀ u ∈ Icc a (t - r), m ≤ ‖γ u - s‖ := fun u hu => by
-      refine hm u ⟨hu.1, by linarith [hu.2]⟩ fun t' ht' h_in => ?_
-      rcases List.mem_cons.mp ht' with rfl | h_rest
-      · linarith [hu.2, h_in.1]
-      · linarith [hu.2, h_in.1, h_rest_above t' h_rest]
-    have h_ne_left : ∀ u ∈ Icc a (t - r), γ u ≠ s := fun u hu h_eq => by
-      have h_bd := h_far_left u hu
-      rw [h_eq, sub_self, norm_zero] at h_bd
-      linarith
-    have h_left : HasCauchyPVAt γ a (t - r) g s (Φ (γ (t - r)) - Φ (γ a)) := by
-      have h := hasCauchyPVAt_of_dist_lower_bound h_head_lo.le hm_pos h_far_left
-        (fun ε hε => (h_int_tr ε hε).mono_set (by
-          rw [uIcc_of_le h_head_lo.le, uIcc_of_le (hA.trans hab)]
-          exact Icc_subset_Icc hA (by linarith)))
-      rwa [h_plain_eq a (t - r) h_head_lo.le h_ne_left] at h
-    have h_window : HasCauchyPVAt γ (t - r) (t + r) g s
-        (Φ (γ (t + r)) - Φ (γ (t - r))) :=
-      hasCauchyPVAt_iff.mpr ⟨by
-        filter_upwards [self_mem_nhdsWithin] with ε hε
-        exact (h_int_tr ε hε).mono_set (by
-          rw [uIcc_of_le (show t - r ≤ t + r by linarith), uIcc_of_le (hA.trans hab)]
-          exact Icc_subset_Icc (by linarith) (by linarith)),
-        h_win t List.mem_cons_self⟩
-    have h_rest : HasCauchyPVAt γ (t + r) b g s (Φ (γ b) - Φ (γ (t + r))) := IH
-      ((List.pairwise_cons.mp h_sorted.pairwise).2).sortedLT (t + r)
-      (by linarith) h_head_hi
-      (fun t' ht' => h_rest_above t' ht')
-      (fun t' ht' => h_hi t' (List.mem_cons_of_mem t ht'))
-      (fun t' ht' t'' ht'' hne => h_pair t' (List.mem_cons_of_mem t ht')
-        t'' (List.mem_cons_of_mem t ht'') hne)
-      (fun t' ht' => h_win t' (List.mem_cons_of_mem t ht'))
-      ⟨m, hm_pos, fun u hu h_avoid => hm u ⟨by linarith [hu.1], hu.2⟩ fun t' ht' => by
-        rcases List.mem_cons.mp ht' with rfl | h_rest
-        · exact fun h_in => absurd hu.1 (not_le.mpr h_in.2)
-        · exact h_avoid t' h_rest⟩
-    have h_total := (h_left.concat h_window).concat h_rest
-    rwa [show Φ (γ (t - r)) - Φ (γ a) + (Φ (γ (t + r)) - Φ (γ (t - r))) +
-        (Φ (γ b) - Φ (γ (t + r))) = Φ (γ b) - Φ (γ a) from by ring] at h_total
+/-- The alternating sum telescopes when both the piece and window values are boundary
+differences of `Φ ∘ γ`. -/
+private theorem windowPieceSum_boundary {γ : ℝ → ℂ} {Φ : ℂ → ℂ} {b r : ℝ} :
+    ∀ (sorted : List ℝ) (a : ℝ),
+      windowPieceSum r (fun l u => Φ (γ u) - Φ (γ l))
+        (fun t => Φ (γ (t + r)) - Φ (γ (t - r))) b sorted a = Φ (γ b) - Φ (γ a)
+  | [], a => rfl
+  | t :: rest, a => by
+    rw [windowPieceSum, windowPieceSum_boundary rest (t + r)]
+    ring
 
 /-- **Telescoping per-window aggregation**: when the plain integrand has a curve-antiderivative
 `Φ` on pole-free pieces and each window limit is the boundary difference of `Φ ∘ γ`, the
@@ -279,15 +205,33 @@ theorem hasCauchyPVAt_of_perWindow_boundary_tendsto {γ : ℝ → ℂ} {s : ℂ}
     HasCauchyPVAt γ a b g s (Φ (γ b) - Φ (γ a)) := by
   classical
   obtain ⟨m, hm_pos, hm⟩ := h_far
-  exact hasCauchyPVAt_telescoping_along_sorted hr_pos h_int_tr h_plain_eq
+  have h := hasCauchyPVAt_along_sorted hr_pos
+    (p := fun l u => Φ (γ u) - Φ (γ l))
+    (w := fun t => Φ (γ (t + r)) - Φ (γ (t - r)))
+    (fun l u hA hlu hu h_far' => by
+      have h_ne : ∀ t ∈ Icc l u, γ t ≠ s := fun t ht h_eq => by
+        have h_bd := h_far' t ht
+        rw [h_eq, sub_self, norm_zero] at h_bd
+        linarith
+      have h0 := hasCauchyPVAt_of_dist_lower_bound hlu hm_pos h_far'
+        (fun ε hε => (h_int_tr ε hε).mono_set (by
+          rw [uIcc_of_le hlu, uIcc_of_le hab]
+          exact Icc_subset_Icc hA hu))
+      rwa [h_plain_eq l u hlu h_ne] at h0)
     (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings) a le_rfl hab
     (fun t ht => h_lo t ((Finset.mem_sort _).mp ht))
     (fun t ht => h_hi t ((Finset.mem_sort _).mp ht))
     (fun t ht t' ht' hne => h_pair t ((Finset.mem_sort _).mp ht)
       t' ((Finset.mem_sort _).mp ht') hne)
-    (fun t ht => h_win t ((Finset.mem_sort _).mp ht))
-    ⟨m, hm_pos, fun u hu h_avoid => hm u hu
-      fun t ht => h_avoid t ((Finset.mem_sort _).mpr ht)⟩
+    (fun t ht => by
+      have h_mem := (Finset.mem_sort (α := ℝ) (· ≤ ·)).mp ht
+      refine hasCauchyPVAt_iff.mpr ⟨?_, h_win t h_mem⟩
+      filter_upwards [self_mem_nhdsWithin] with ε hε
+      exact (h_int_tr ε hε).mono_set (by
+        rw [uIcc_of_le (show t - r ≤ t + r by linarith), uIcc_of_le hab]
+        exact Icc_subset_Icc (by linarith [h_lo t h_mem]) (h_hi t h_mem)))
+    (fun u hu h_avoid => hm u hu fun t ht => h_avoid t ((Finset.mem_sort _).mpr ht))
+  rwa [windowPieceSum_boundary] at h
 
 end TauCeti.Contour
 
