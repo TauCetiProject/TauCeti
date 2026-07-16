@@ -221,7 +221,7 @@ theorem hasCauchyPVAt_of_perWindow_boundary_tendsto {γ : ℝ → ℂ} {s : ℂ}
     (h_int_tr : ∀ ε : ℝ, 0 < ε →
       IntervalIntegrable (fun t => if ‖γ t - s‖ > ε then g (γ t) * deriv γ t else 0)
         MeasureTheory.volume a b)
-    (h_plain_eq : ∀ l u : ℝ, l ≤ u → (∀ t ∈ Icc l u, γ t ≠ s) →
+    (h_plain_eq : ∀ l u : ℝ, a ≤ l → l ≤ u → u ≤ b → (∀ t ∈ Icc l u, γ t ≠ s) →
       ∫ t in l..u, g (γ t) * deriv γ t = Φ (γ u) - Φ (γ l))
     (h_win : ∀ t ∈ crossings, Tendsto (fun ε : ℝ => ∫ u in (t - r)..(t + r),
         if ‖γ u - s‖ > ε then g (γ u) * deriv γ u else 0) (𝓝[>] (0 : ℝ))
@@ -240,7 +240,7 @@ theorem hasCauchyPVAt_of_perWindow_boundary_tendsto {γ : ℝ → ℂ} {s : ℂ}
         rw [h_eq, sub_self, norm_zero] at h_bd
         linarith
       have h0 := hasCauchyPVAt_plain_piece hab hm_pos h_int_tr hA hlu hu h_far'
-      rwa [h_plain_eq l u hlu h_ne] at h0)
+      rwa [h_plain_eq l u hA hlu hu h_ne] at h0)
     (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings) a le_rfl hab
     (fun t ht => h_lo t ((Finset.mem_sort _).mp ht))
     (fun t ht => h_hi t ((Finset.mem_sort _).mp ht))

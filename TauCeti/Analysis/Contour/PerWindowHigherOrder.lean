@@ -36,6 +36,10 @@ Hungerbühler–Wasem condition (B) at a higher-order pole.
 
 * `Contour.perWindow_higherOrder_truncated_integral_tendsto` — the truncated window integral
   of the order-`k` polar term converges, with the explicit boundary-difference value.
+* `Contour.integral_pow_inv_mul_deriv_eq_sub` — the fundamental theorem of calculus for the
+  order-`k` polar term along the curve, on an interval avoiding the pole.
+* `Contour.intervalIntegrable_pow_inv_mul_deriv_truncated` — the truncated order-`k` polar
+  integrand is interval-integrable at every truncation level `ε > 0`.
 
 ## Provenance
 
@@ -69,7 +73,7 @@ private theorem intervalIntegrable_pow_inv_mul_deriv {γ : ℝ → ℂ} {s : ℂ
 
 /-- The `ε`-truncated order-`k` polar integrand is interval-integrable: off the `ε`-ball it is
 dominated by `(‖c‖ / ε^k) · ‖deriv γ‖`. -/
-private theorem intervalIntegrable_pow_inv_mul_deriv_truncated {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
+theorem intervalIntegrable_pow_inv_mul_deriv_truncated {γ : ℝ → ℂ} {s : ℂ} {a b : ℝ}
     (c : ℂ) (k : ℕ) (hγ_cont : ContinuousOn γ (uIcc a b))
     (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume a b)
     {ε : ℝ} (hε : 0 < ε) :
@@ -111,7 +115,7 @@ private theorem intervalIntegrable_pow_inv_mul_deriv_truncated {γ : ℝ → ℂ
 /-- The fundamental theorem of calculus for the order-`k` polar term along the curve, on an
 interval avoiding the pole: the integral is the boundary difference of the antiderivative
 `c · (-(k-1)⁻¹ (· - s)^{-(k-1)}) ∘ γ`. -/
-private theorem integral_pow_inv_mul_deriv_eq_sub {γ : ℝ → ℂ} {s : ℂ} {k : ℕ} (hk : 2 ≤ k) (c : ℂ)
+theorem integral_pow_inv_mul_deriv_eq_sub {γ : ℝ → ℂ} {s : ℂ} {k : ℕ} (hk : 2 ≤ k) (c : ℂ)
     {l u : ℝ} (hlu : l ≤ u) {P : Set ℝ} (hP : P.Countable)
     (h_ne : ∀ t ∈ Icc l u, γ t ≠ s)
     (h_diff : ∀ t ∈ Ioo l u \ P, DifferentiableAt ℝ γ t)
