@@ -7,6 +7,7 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Homotopy.Product
+public import TauCeti.AlgebraicTopology.FundamentalGroup
 
 /-!
 # The fundamental group of a product space
@@ -87,11 +88,6 @@ theorem FundamentalGroup.prodMulEquiv_symm_apply (x : X) (y : Y)
     (γ : FundamentalGroup X x × FundamentalGroup Y y) :
     (FundamentalGroup.prodMulEquiv x y).symm γ = prod γ.1 γ.2 :=
   rfl
-
-/-- The fundamental group of a simply connected space is trivial (a unique element). -/
-instance FundamentalGroup.instUnique [SimplyConnectedSpace X] (x : X) :
-    Unique (FundamentalGroup X x) :=
-  uniqueOfSubsingleton 1
 
 /-- If the right factor is simply connected, the fundamental group of the product is the
 fundamental group of the left factor: `π₁(X × Y, (x, y)) ≃* π₁(X, x)`. It is the product

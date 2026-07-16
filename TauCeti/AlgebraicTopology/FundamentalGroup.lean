@@ -20,6 +20,8 @@ maps on fundamental groups.
   subsingleton, any induced-map range lies in any target subgroup.
 * `TauCeti.FundamentalGroup.map_range_le_of_simplyConnectedSpace`: a simply connected domain has
   induced-map range contained in any target subgroup.
+* `TauCeti.FundamentalGroup.instUnique`: the fundamental group of a simply connected space is
+  trivial (a unique element).
 -/
 
 public section
@@ -28,6 +30,11 @@ namespace TauCeti
 
 variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
 variable {A : Type*} [TopologicalSpace A]
+
+/-- The fundamental group of a simply connected space is trivial (a unique element). -/
+noncomputable instance FundamentalGroup.instUnique [SimplyConnectedSpace X] (x : X) :
+    Unique (_root_.FundamentalGroup X x) :=
+  uniqueOfSubsingleton 1
 
 /-- If the source fundamental group is subsingleton, the range of any induced map from it is
 trivial. -/
