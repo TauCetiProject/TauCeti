@@ -7,17 +7,18 @@ module
 public import Mathlib.Analysis.Complex.Schwarz
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Data.Set.Function
+public import TauCeti.Analysis.Complex.Conformal.SchwarzPickIsometry
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.Deriv.Comp
 
 /-!
 # A holomorphic automorphism of the unit disc fixing the origin is a rotation
 
 This file records the Schwarz-lemma rigidity for the complex unit disc: a holomorphic self-map
-`f` of `Metric.ball (0 : ℂ) 1` that admits a holomorphic left inverse (so `f` is a
-biholomorphic automorphism of the disc) and fixes the origin is a rotation `z ↦ c * z` for a
-constant `c` of modulus one.  Equivalently, the rotation factor is `deriv f 0`, and an
-automorphism fixing the origin with derivative `1` there is the identity.
+`f` of `Metric.ball (0 : ℂ) 1` that admits a holomorphic left inverse which is itself a self-map
+of the disc, and that fixes the origin, is a rotation `z ↦ c * z` for a constant `c` of modulus
+one.  Equivalently, the rotation factor is `deriv f 0`, and such a map with derivative `1` at
+the origin is the identity.  (The left inverse gives injectivity; that `f` is in fact a genuine
+automorphism is part of the conclusion, since a rotation is bijective.)
 
 The proof is the classical two-sided Schwarz argument.  Applying Mathlib's Schwarz lemma
 (`Complex.norm_le_norm_of_mapsTo_ball`) to `f` and to its inverse gives `‖f z‖ = ‖z‖` on the
@@ -49,36 +50,23 @@ A holomorphic self-map of the open unit disc fixing the origin and admitting a h
 inverse that is itself a self-map of the disc preserves the modulus: `‖f z‖ = ‖z‖` for every
 `z` in the disc.
 
-This is the two-sided Schwarz-lemma estimate: `‖f z‖ ≤ ‖z‖` for `f` and `‖g w‖ ≤ ‖w‖` for the
-inverse `g` combine, via `g (f z) = z`, into the reverse inequality.
+This is the `w = 0` case of the Schwarz--Pick equality `pseudoHyperbolicExpr_map_eq`, where the
+pseudo-hyperbolic expression to the origin is just the norm.
 -/
-theorem norm_map_eq_of_leftInvOn_ball_of_map_zero
+theorem norm_map_of_leftInvOn_ball_of_map_zero
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
     (hg : DifferentiableOn ℂ g (ball (0 : ℂ) 1))
     (hfmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
     (hgmaps : MapsTo g (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
     (hgf : ∀ z ∈ ball (0 : ℂ) 1, g (f z) = z) (hf0 : f 0 = 0)
     {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) : ‖f z‖ = ‖z‖ := by
-  have hg0 : g 0 = 0 := by
-    have := hgf 0 (mem_ball_self one_pos)
-    rwa [hf0] at this
-  have hfz_mem : f z ∈ ball (0 : ℂ) 1 := hfmaps hz
-  -- `‖f z‖ ≤ ‖z‖` from the Schwarz lemma applied to `f`.
-  have hle : ‖f z‖ ≤ ‖z‖ :=
-    Complex.norm_le_norm_of_mapsTo_ball hf (hfmaps.mono_right ball_subset_closedBall) hf0
-      (mem_ball_zero_iff.mp hz)
-  -- `‖z‖ = ‖g (f z)‖ ≤ ‖f z‖` from the Schwarz lemma applied to the inverse `g`.
-  have hge : ‖z‖ ≤ ‖f z‖ := by
-    have := Complex.norm_le_norm_of_mapsTo_ball hg (hgmaps.mono_right ball_subset_closedBall) hg0
-      (mem_ball_zero_iff.mp hfz_mem)
-    rwa [hgf z hz] at this
-  exact le_antisymm hle hge
+  have h := pseudoHyperbolicExpr_map_eq hf hfmaps hg hgmaps hgf hz (mem_ball_self one_pos)
+  rwa [hf0, pseudoHyperbolicExpr_zero_right, pseudoHyperbolicExpr_zero_right] at h
 
 /--
-**Rotation rigidity for the unit disc.** A holomorphic automorphism of the open unit disc
-(a self-map `f` with a holomorphic left inverse `g` that is also a self-map of the disc) fixing
-the origin is a rotation: there is a constant `c` of modulus one with `f z = c * z` throughout
-the disc.
+**Rotation rigidity for the unit disc.** A holomorphic self-map `f` of the open unit disc with a
+holomorphic left inverse `g` that is also a self-map of the disc, fixing the origin, is a
+rotation: there is a constant `c` of modulus one with `f z = c * z` throughout the disc.
 -/
 theorem exists_eqOn_const_mul_of_leftInvOn_ball_of_map_zero
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
@@ -88,7 +76,7 @@ theorem exists_eqOn_const_mul_of_leftInvOn_ball_of_map_zero
     (hgf : ∀ z ∈ ball (0 : ℂ) 1, g (f z) = z) (hf0 : f 0 = 0) :
     ∃ c : ℂ, ‖c‖ = 1 ∧ EqOn f (fun z => c * z) (ball (0 : ℂ) 1) := by
   have hnorm : ∀ z ∈ ball (0 : ℂ) 1, ‖f z‖ = ‖z‖ := fun z hz =>
-    norm_map_eq_of_leftInvOn_ball_of_map_zero hf hg hfmaps hgmaps hgf hf0 hz
+    norm_map_of_leftInvOn_ball_of_map_zero hf hg hfmaps hgmaps hgf hf0 hz
   -- Evaluate the derivative-slope at the interior point `1 / 2`.
   set z₀ : ℂ := 1 / 2 with hz₀_def
   have hz₀_mem : z₀ ∈ ball (0 : ℂ) 1 := by
@@ -115,9 +103,10 @@ theorem exists_eqOn_const_mul_of_leftInvOn_ball_of_map_zero
   simpa using h
 
 /--
-The rotation factor of an origin-fixing automorphism of the disc is its derivative at the
-origin: with the hypotheses of `exists_eqOn_const_mul_of_leftInvOn_ball_of_map_zero`, the map
-equals `z ↦ deriv f 0 * z` on the disc, and `‖deriv f 0‖ = 1`.
+The rotation factor of an origin-fixing self-map of the disc with a holomorphic self-map left
+inverse is its derivative at the origin: with the hypotheses of
+`exists_eqOn_const_mul_of_leftInvOn_ball_of_map_zero`, the map equals `z ↦ deriv f 0 * z` on the
+disc, and `‖deriv f 0‖ = 1`.
 -/
 theorem eqOn_deriv_zero_mul_of_leftInvOn_ball_of_map_zero
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
@@ -139,8 +128,9 @@ theorem eqOn_deriv_zero_mul_of_leftInvOn_ball_of_map_zero
   exact ⟨hc, hEqOn⟩
 
 /--
-**Uniqueness of the identity.** An origin-fixing holomorphic automorphism of the unit disc whose
-derivative at the origin is `1` is the identity on the disc.
+**Uniqueness of the identity.** An origin-fixing holomorphic self-map of the unit disc with a
+holomorphic self-map left inverse, whose derivative at the origin is `1`, is the identity on the
+disc.
 -/
 theorem eqOn_id_of_leftInvOn_ball_of_map_zero_of_deriv_zero_eq_one
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
