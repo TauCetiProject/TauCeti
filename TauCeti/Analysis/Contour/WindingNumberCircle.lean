@@ -16,8 +16,9 @@ For the counterclockwise circle `circleMap c R` traversed over `[0, 2π]`, this 
 generalized winding number `TauCeti.Contour.windingNumber` (Hungerbühler–Wasem Def 2.1) at two kinds
 of points:
 
-* at the **centre** `c` (an interior point) the winding number is `1`
-  (`windingNumber_circleMap_center`), and
+* at every **interior** point `w` — one with `dist w c < R` — the winding number is `1`
+  (`windingNumber_circleMap_eq_one_of_dist_lt`), in particular at the **centre** `c`
+  (`windingNumber_circleMap_center_eq_one`), and
 * at every **exterior** point `w` — one with `R < dist w c` — it is `0`
   (`windingNumber_circleMap_eq_zero_of_lt_dist`).
 
@@ -40,7 +41,9 @@ across the whole disc, so its circle integral vanishes.
   integral `∮_{C(c,R)} (z − w)⁻¹ = 0` for `R < dist w c`.
 * `TauCeti.Contour.windingNumber_circleMap_eq_circleIntegral` — off the circle, the generalized
   winding number is `(2πi)⁻¹` times the ordinary Cauchy-kernel circle integral.
-* `TauCeti.Contour.windingNumber_circleMap_center` — `n_c(circle) = 1`.
+* `TauCeti.Contour.windingNumber_circleMap_eq_one_of_dist_lt` — `n_w(circle) = 1` for any `w` inside
+  the disc.
+* `TauCeti.Contour.windingNumber_circleMap_center_eq_one` — `n_c(circle) = 1`.
 * `TauCeti.Contour.windingNumber_circleMap_eq_zero_of_lt_dist` — `n_w(circle) = 0` for `w` outside
   the disc.
 
@@ -104,11 +107,33 @@ theorem windingNumber_circleMap_eq_circleIntegral {c w : ℂ} {R : ℝ}
   simp only [circleIntegral, smul_eq_mul]
   exact intervalIntegral.integral_congr fun θ _ => mul_comm _ _
 
+/-- **`n_w(circle) = 1` inside the disc** — the interior value at an arbitrary point. For a point
+`w` strictly inside the disc (`dist w c < R`, so `0 < R`), the generalized winding number of the
+counterclockwise circle `circleMap c R` over `[0, 2π]` about `w` is `1`: the kernel integral
+`∮_{C(c,R)} (z − w)⁻¹` is `2πi` by `circleIntegral.integral_sub_inv_of_mem_ball`, and the `(2πi)⁻¹`
+normalization of `windingNumber_circleMap_eq_circleIntegral` cancels it to `1`. -/
+theorem windingNumber_circleMap_eq_one_of_dist_lt {c w : ℂ} {R : ℝ} (hw : dist w c < R) :
+    windingNumber (circleMap c R) 0 (2 * Real.pi) w = 1 := by
+  have hR : 0 < R := dist_nonneg.trans_lt hw
+  have havoid : ∀ θ, circleMap c R θ ≠ w := by
+    intro θ hθ
+    have hd : dist (circleMap c R θ) c = R := by
+      rw [mem_sphere.mp (circleMap_mem_sphere' c R θ)]
+      exact abs_of_nonneg hR.le
+    rw [hθ] at hd
+    linarith
+  rw [windingNumber_circleMap_eq_circleIntegral havoid,
+    circleIntegral.integral_sub_inv_of_mem_ball (mem_ball.mpr hw)]
+  have h2pi : (2 * (Real.pi : ℂ) * Complex.I) ≠ 0 := by
+    simp [Real.pi_ne_zero, Complex.I_ne_zero]
+  exact inv_mul_cancel₀ h2pi
+
 /-- **`n_c(circle) = 1`** — the closed-curve normalization at the centre. The generalized winding
 number of the counterclockwise circle `circleMap c R` (`R ≠ 0`) over `[0, 2π]` about its centre `c`
 is `1`, the interior value. This is the `windingNumber`-definition form of the raw-index-integral
-`windingNumber_circle`; it reconciles with `circleIntegral.integral_sub_center_inv`. -/
-theorem windingNumber_circleMap_center {c : ℂ} {R : ℝ} (hR : R ≠ 0) :
+`windingNumber_circle`; it reconciles with `circleIntegral.integral_sub_center_inv`. Unlike
+`windingNumber_circleMap_eq_one_of_dist_lt`, this covers a negative radius `R` as well. -/
+theorem windingNumber_circleMap_center_eq_one {c : ℂ} {R : ℝ} (hR : R ≠ 0) :
     windingNumber (circleMap c R) 0 (2 * Real.pi) c = 1 := by
   rw [windingNumber_circleMap_eq_circleIntegral fun _ => circleMap_ne_center hR]
   have hker : (∮ z in C(c, R), (z - c)⁻¹)
