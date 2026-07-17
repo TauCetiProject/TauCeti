@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 
 /-!
 # Functoriality of principal divisors in the group of functions
@@ -37,11 +37,18 @@ Main definitions and results:
   of divisor class groups, `weightedDegreeClass_comp_classGroupComap` (its compatibility with the
   descended weighted degree), and `classGroupComap_mem_picZero` (it carries `Pic⁰` into `Pic⁰`).
 
-This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A ("principal divisors",
-"`Cl(X)`", "`Pic⁰ X = ker deg` as an abstract group"), rounding out the class-group construction
-with its functoriality in the group of functions. No external mathematics is vendored; the proofs
-reuse Tau Ceti's `OrderSystem` API and Mathlib's `AddMonoidHom` composition laws together with the
-`OrderSystem.ClassGroup.lift` universal property.
+This supplies a prerequisite for `TauCetiRoadmap/JacobianChallenge/README.md`, Layer A, the
+"`Cl(X) ≅ Pic X`" dictionary, in its affine Dedekind form: the comparison of the order-system
+divisor class group with Mathlib's ideal class group `ClassGroup R`. The concrete order system
+`OrderSystem.ofDedekindDomain R K` (in `TauCeti.AlgebraicGeometry.WeilDivisor.Dedekind`) is valued
+in `Additive Kˣ`, and `ClassGroup R` is by definition the quotient of the invertible fractional
+ideals by `toPrincipalIdeal.range`, the image of the group homomorphism `Kˣ →* (FractionalIdeal
+R⁰ K)ˣ`. Relating the two class groups is therefore a statement about the class-group construction
+under a homomorphism *in the group of functions*, which is exactly the functoriality provided here;
+both `Dedekind` and `FractionalIdealDivisor` record that this quotient-level isomorphism is still to
+be built. No external mathematics is vendored; the proofs reuse Tau Ceti's `OrderSystem` API and
+Mathlib's `AddMonoidHom` composition laws together with the `OrderSystem.ClassGroup.lift` universal
+property.
 -/
 
 public section
@@ -73,13 +80,13 @@ at each point is `ord_x ∘ φ`.
 For `φ` an inclusion of a subgroup of rational functions, this records the order-of-vanishing data
 restricted to that subgroup; its principal divisors are the `S`-principal divisors of functions in
 the image of `φ`. -/
-@[expose] def comap (φ : G' →+ G) : OrderSystem X G' where
+def comap (φ : G' →+ G) : OrderSystem X G' where
   ord x := (S.ord x).comp φ
   finite_support g := S.finite_support (φ g)
 
 @[simp]
-lemma comap_ord (φ : G' →+ G) (x : X) : (S.comap φ).ord x = (S.ord x).comp φ :=
-  rfl
+lemma ord_comap (φ : G' →+ G) (x : X) : (S.comap φ).ord x = (S.ord x).comp φ := by
+  rw [comap]
 
 /-- The principal divisor of `g : G'` under the pulled-back order system is the `S`-principal
 divisor of `φ g`. -/
@@ -98,14 +105,14 @@ lemma principalHom_comap (φ : G' →+ G) :
 /-- Pulling back along the identity is the original order system. -/
 @[simp]
 lemma comap_id : S.comap (AddMonoidHom.id G) = S :=
-  ext_ord (by funext x; rw [comap_ord]; exact AddMonoidHom.comp_id (S.ord x))
+  ext_ord (by funext x; rw [ord_comap]; exact AddMonoidHom.comp_id (S.ord x))
 
 /-- Pulling back is contravariantly functorial: `(S.comap φ).comap ψ = S.comap (φ.comp ψ)`. -/
 lemma comap_comp (φ : G' →+ G) (ψ : G'' →+ G') :
     (S.comap φ).comap ψ = S.comap (φ.comp ψ) :=
   ext_ord (by
     funext x
-    simp only [comap_ord]
+    simp only [ord_comap]
     exact AddMonoidHom.comp_assoc ψ φ (S.ord x))
 
 /-- The principal divisors of the pulled-back order system form a subgroup of the `S`-principal
