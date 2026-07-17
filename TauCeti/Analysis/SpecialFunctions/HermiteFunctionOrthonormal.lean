@@ -91,11 +91,6 @@ theorem integral_hermiteFunction_mul_hermiteFunction (m n : ℕ) :
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- The inner product of two real scalar casts is the scalar cast of their product. -/
-private lemma inner_ofReal_ofReal (a b : ℝ) :
-    inner 𝕜 ((algebraMap ℝ 𝕜) a) ((algebraMap ℝ 𝕜) b) = (algebraMap ℝ 𝕜) (a * b) := by
-  simp [RCLike.inner_apply, RCLike.conj_ofReal, map_mul, mul_comm]
-
 /-- **Target A3 (orthonormality, inner-product form).** The `Lp` Hermite vectors satisfy
 `⟪ψₘ, ψₙ⟫ = if m = n then 1 else 0`, over any `RCLike` scalar field, by evaluating the `L²` inner
 product as the pointwise integral `integral_hermiteFunction_mul_hermiteFunction`. -/
@@ -109,7 +104,7 @@ theorem inner_hermiteFunctionLp (m n : ℕ) :
         filter_upwards [coeFn_hermiteFunctionLp (𝕜 := 𝕜) m, coeFn_hermiteFunctionLp (𝕜 := 𝕜) n]
           with x hm hn
         rw [hm, hn]
-        exact inner_ofReal_ofReal (𝕜 := 𝕜) (hermiteFunction m x) (hermiteFunction n x)
+        exact inner_algebraMap_algebraMap (𝕜 := 𝕜) (hermiteFunction m x) (hermiteFunction n x)
     _ = if m = n then (1 : 𝕜) else 0 := by
         rw [integral_ofReal, integral_hermiteFunction_mul_hermiteFunction]
         split_ifs <;> simp
