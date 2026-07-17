@@ -22,7 +22,7 @@ on, `𝔽 n = 𝔽 N` for `n ≥ N`. Two independent computations must agree:
   (`iInf_measurableSpace_eq_of_antitone_of_eventually_const`), so the Lévy downward limit
   `μ[f | ⨅ n, 𝔽 n]` is `μ[f | 𝔽 N]` (`condExp_iInf_eq_of_eventually_const`).
 
-The capstone `tendsto_ae_condExp_iInf_of_eventually_const` runs the general theorem and
+The capstone `tendsto_ae_condExp_of_eventually_const` runs the general theorem and
 rewrites its limit through the intersection collapse, recovering exactly the elementary limit:
 the two routes agree, which is what "specializes correctly" means.
 
@@ -46,9 +46,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 variable {𝔽 : ℕ → MeasurableSpace Ω}
 
 /-- The intersection of an antitone filtration that is constant from index `N` on collapses to
-the stabilized σ-algebra `𝔽 N`. This is the order fact behind the Lévy-downward specialization:
-`iInf_le` gives `⨅ n, 𝔽 n ≤ 𝔽 N`, and for the reverse inequality antitonicity handles `n ≤ N`
-while the eventual-constancy hypothesis handles `n ≥ N`. -/
+the stabilized σ-algebra `𝔽 N`. This is the order fact behind the Lévy-downward specialization. -/
 theorem iInf_measurableSpace_eq_of_antitone_of_eventually_const {Ω : Type*}
     {𝔽 : ℕ → MeasurableSpace Ω} (h_anti : Antitone 𝔽) {N : ℕ}
     (h_const : ∀ n, N ≤ n → 𝔽 n = 𝔽 N) :
@@ -90,7 +88,7 @@ constant from index `N` on, then collapse its limit through
 `condExp_iInf_eq_of_eventually_const`. The a.e. limit it delivers is `μ[f | 𝔽 N]` — exactly the
 value the sequence already reaches by the elementary
 `tendsto_condExp_of_eventually_const`. The general and elementary computations agree. -/
-theorem tendsto_ae_condExp_iInf_of_eventually_const [IsFiniteMeasure μ]
+theorem tendsto_ae_condExp_of_eventually_const [IsFiniteMeasure μ]
     (h_anti : Antitone 𝔽) (h_le0 : 𝔽 0 ≤ (inferInstance : MeasurableSpace Ω))
     {N : ℕ} (h_const : ∀ n, N ≤ n → 𝔽 n = 𝔽 N)
     (f : Ω → ℝ) (h_int : Integrable f μ) :
