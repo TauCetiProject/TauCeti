@@ -55,6 +55,13 @@ open scoped Real
 
 noncomputable section
 
+/-- The homeomorphism `AddCircle.homeomorphCircle : AddCircle (2 * π) ≃ₜ Circle` carries the
+basepoint `0` to `1`, so its inverse carries `1` back to `0`. This is the basepoint hypothesis
+that transports the additive-circle computation to `Circle`. -/
+theorem homeomorphCircle_symm_one :
+    (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm 1 = 0 := by
+  rw [Homeomorph.symm_apply_eq, AddCircle.homeomorphCircle_apply, AddCircle.toCircle_zero]
+
 /-- The fundamental group of the complex unit circle `Circle = {z : ℂ | ‖z‖ = 1}`, based at
 `1`, is `Multiplicative ℤ`: `π₁(S¹) ≅ ℤ`. It is obtained by transporting the additive-circle
 computation `TauCeti.AddCircle.fundamentalGroupMulEquiv_zero` across the homeomorphism
@@ -63,8 +70,7 @@ computation `TauCeti.AddCircle.fundamentalGroupMulEquiv_zero` across the homeomo
 def fundamentalGroupMulEquiv : FundamentalGroup Circle 1 ≃* Multiplicative ℤ :=
   (FundamentalGroup.homeomorphMulEquivOfEq
       (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
-      (by rw [Homeomorph.symm_apply_eq, AddCircle.homeomorphCircle_apply,
-        AddCircle.toCircle_zero])).trans
+      homeomorphCircle_symm_one).trans
     (AddCircle.fundamentalGroupMulEquiv_zero (2 * Real.pi) Real.two_pi_pos.ne')
 
 /-- `fundamentalGroupMulEquiv` factors as the homeomorphism-invariance isomorphism of
@@ -77,8 +83,7 @@ theorem fundamentalGroupMulEquiv_def :
     fundamentalGroupMulEquiv =
       (FundamentalGroup.homeomorphMulEquivOfEq
           (AddCircle.homeomorphCircle (T := 2 * Real.pi) Real.two_pi_pos.ne').symm
-          (by rw [Homeomorph.symm_apply_eq, AddCircle.homeomorphCircle_apply,
-            AddCircle.toCircle_zero])).trans
+          homeomorphCircle_symm_one).trans
         (AddCircle.fundamentalGroupMulEquiv_zero (2 * Real.pi) Real.two_pi_pos.ne') := by
   unfold fundamentalGroupMulEquiv
   rfl
