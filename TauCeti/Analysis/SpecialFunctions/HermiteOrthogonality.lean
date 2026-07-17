@@ -28,17 +28,14 @@ orthogonal, and self-paired to `n! · √(2π)`, in `L²` of the Gaussian weight
 * `integrable_aeval_mul_gaussian`: every polynomial is integrable against the Gaussian weight
   `e^{-x²/2}`;
 * `integral_aeval_mul_hermite_succ`, the **one-step weighted-pairing recursion**
-  `∫ p · H_{n+1} · w = ∫ p' · Hₙ · w`, a single integration by parts over `ℝ`
-  (`integral_eq_zero_of_hasDerivAt_of_integrable`) using the Rodrigues-type derivative identity
-  `(Hₙ · w)' = -(H_{n+1} · w)`;
+  `∫ p · H_{n+1} · w = ∫ p' · Hₙ · w`;
 * `integral_aeval_mul_hermite`, iterating the recursion, `∫ p · Hₙ · w = ∫ (dⁿ/dxⁿ p) · w`;
 * **Milestone (Lebesgue form)** `integral_hermite_mul_hermite_mul_gaussian`:
   `∫ x, Hₘ(x) · Hₙ(x) · e^{-x²/2} = if m = n then n! · √(2π) else 0`, obtained by peeling the larger
   index down to a constant (`Polynomial.iterate_derivative_hermite`);
 * **Milestone (Gaussian-measure form)** `integral_hermite_mul_hermite_gaussianReal`:
   `∫ x, Hₘ(x) · Hₙ(x) ∂(gaussianReal 0 1) = if m = n then n! else 0`, the Lebesgue form divided by
-  the `√(2π)` density (`ProbabilityTheory.integral_gaussianReal_eq_integral_smul`). This is the form
-  the Gaussian Hermite basis (A3′) consumes directly.
+  the `√(2π)` density. This is the form the Gaussian Hermite basis (A3′) consumes directly.
 
 The Hermite lowering identities `Polynomial.derivative_hermite`,
 `Polynomial.iterate_derivative_hermite` are reused from
@@ -77,8 +74,8 @@ private theorem integrable_aeval_mul_aeval_mul_gaussian (p q : ℤ[X]) :
     ext x; rw [map_mul]
   rw [e]; exact integrable_aeval_mul_gaussian _
 
-/-- **One-step weighted-pairing recursion** (target A1): a single integration by parts moves a
-Hermite index onto a derivative,
+/-- **One-step weighted-pairing recursion** (target A1): the weighted pairing of `p` with `H_{n+1}`
+equals the weighted pairing of its derivative `p'` with `Hₙ`,
 `∫ p · H_{n+1} · e^{-x²/2} = ∫ p' · Hₙ · e^{-x²/2}`. -/
 theorem integral_aeval_mul_hermite_succ (p : ℤ[X]) (n : ℕ) :
     (∫ x : ℝ, aeval x p * aeval x (hermite (n + 1)) * Real.exp (-(x ^ 2 / 2)))
