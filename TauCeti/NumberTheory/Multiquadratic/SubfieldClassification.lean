@@ -90,7 +90,7 @@ square-class independence, each nonempty subset `S` of the index type names the 
 
 /-- The subfield underlying `quadraticSubfieldOfFinset hroot hindep S` is
 `K(∏_{i ∈ S} root i)`. -/
-theorem quadraticSubfieldOfFinset_val [NeZero (2 : K)] (S : {S : Finset ι // S.Nonempty}) :
+@[simp] theorem quadraticSubfieldOfFinset_val [NeZero (2 : K)] (S : {S : Finset ι // S.Nonempty}) :
     (quadraticSubfieldOfFinset hroot hindep S : IntermediateField K (adjoin K (Set.range root)))
       = adjoin K {prodRootMem (K := K) root S.1} := rfl
 
