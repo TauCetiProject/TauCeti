@@ -99,7 +99,6 @@ group functors `D(M) → 𝔾ₘ`, it is induced (contravariantly) by the genera
 
 /-- **A character acts on points by evaluation.** Reading the resulting `𝔾ₘ`-point on the
 generator gives the value of the original character `χ : M →* Aˣ` at `m`. -/
-@[simp]
 theorem pointsMulEquiv_charPoints (m : M) (f : WithConv (MonoidAlgebra R M →ₐ[R] A)) :
     pointsMulEquiv (charPoints (R := R) (A := A) m f) (Multiplicative.ofAdd 1) =
       pointsMulEquiv f m := by
@@ -118,7 +117,6 @@ points.** As a homomorphism of group functors `𝔾ₘ → D(M)`, it is induced 
 
 /-- **A cocharacter acts on points by a power character.** The `𝔾ₘ`-point with generator value
 `u` is sent to the character `m ↦ u ^ (ψ m).toAdd`. -/
-@[simp]
 theorem pointsMulEquiv_cocharPoints (ψ : M →* Multiplicative ℤ)
     (f : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)) (m : M) :
     pointsMulEquiv (cocharPoints (R := R) (A := A) ψ f) m =
@@ -136,7 +134,6 @@ theorem pointsMulEquiv_cocharPoints (ψ : M →* Multiplicative ℤ)
   pointsMap (zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd n))
 
 /-- **The power endomorphism acts as `u ↦ u ^ n` on points.** -/
-@[simp]
 theorem pointsMulEquiv_powEnd (n : ℤ)
     (f : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)) :
     pointsMulEquiv (powEnd (R := R) (A := A) n f) (Multiplicative.ofAdd 1) =
