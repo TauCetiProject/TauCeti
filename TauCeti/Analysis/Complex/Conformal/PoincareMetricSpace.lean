@@ -32,7 +32,7 @@ validating that the Poincaré distance is the automorphism-invariant metric:
 * `PoincareDisc.isometry_of_hyperbolicDist_eq` — a hyperbolic-distance-preserving self-map of
   the unit disc induces a self-isometry of the Poincaré disc;
 * `PoincareDisc.isometry_unitDiscMoebius`,
-  `PoincareDisc.isometry_unitDiscStandardAutomorphism` — the disc Moebius factors and the
+  `PoincareDisc.isometry_unitDiscStandardAutomorphismEquiv` — the disc Moebius factors and the
   standard automorphisms as Poincaré isometries.
 
 This completes the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on
@@ -97,7 +97,7 @@ lemma dist_eq (z w : PoincareDisc) :
     dist z w = hyperbolicDist (toUnitDisc z : ℂ) (toUnitDisc w : ℂ) := rfl
 
 /-- The Poincaré distance from a point to the origin has the closed form `artanh ‖z‖`. -/
-lemma dist_toPoincare_zero (z : PoincareDisc) :
+lemma dist_toPoincare_zero_right (z : PoincareDisc) :
     dist z (Complex.UnitDisc.toPoincare 0) = Real.artanh ‖(toUnitDisc z : ℂ)‖ := by
   rw [dist_eq, toUnitDisc_toPoincare, Complex.UnitDisc.coe_zero, hyperbolicDist_zero_right]
 
@@ -120,7 +120,7 @@ theorem isometry_unitDiscMoebius (a : Complex.UnitDisc) :
 
 /-- Every standard disc automorphism `z ↦ u * (z - a) / (1 - conj a * z)` is a Poincaré
 self-isometry. -/
-theorem isometry_unitDiscStandardAutomorphism (u : Circle) (a : Complex.UnitDisc) :
+theorem isometry_unitDiscStandardAutomorphismEquiv (u : Circle) (a : Complex.UnitDisc) :
     Isometry fun z : PoincareDisc =>
       Complex.UnitDisc.toPoincare (unitDiscStandardAutomorphismEquiv u a (toUnitDisc z)) :=
   isometry_of_hyperbolicDist_eq fun z w =>
