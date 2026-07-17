@@ -30,11 +30,9 @@ homology uses.
 
 ## Main results
 
-* `TauCeti.PlumbingGraph.sum_intersectionMatrix_mulVec_mul`: the linear pairing of the covector
-  `A l` against a lattice point is the intersection pairing `A(x, l)`.
 * `TauCeti.PlumbingGraph.characteristicWeight_add_two_mulVec`: shifting the covector by `2 · A l`
   subtracts the intersection pairing `A(x, l)` from the weight.
-* `TauCeti.PlumbingGraph.characteristicWeight_shift_eq_translate`: the translation equivariance
+* `TauCeti.PlumbingGraph.characteristicWeight_add_two_mulVec_eq_sub`: the translation equivariance
   `χ_{k + 2·A l}(x) = χ_k(x + l) - χ_k(l)`.
 * `TauCeti.PlumbingGraph.characteristicWeight_shift_le_iff`: the sublevel sets of the two spin^c
   representatives correspond under the `l`-translation, with the constant grading shift `χ_k(l)`.
@@ -58,17 +56,6 @@ namespace PlumbingGraph
 
 variable {V : Type*} [DecidableEq V] [Fintype V] (P : PlumbingGraph V)
 
-/-- The linear pairing of the covector `A l` against a lattice point `x` is the intersection
-pairing `A(x, l)`: writing `A l` as the matrix-vector product `intersectionMatrix.mulVec l` and
-summing against `x` reassembles the bilinear form. -/
-theorem sum_intersectionMatrix_mulVec_mul (m x : V → ℤ) :
-    ∑ v, (P.intersectionMatrix.mulVec m) v * x v = P.intersectionForm x m := by
-  rw [intersectionForm_apply]
-  refine Finset.sum_congr rfl fun v _ => ?_
-  simp only [Matrix.mulVec, dotProduct]
-  rw [Finset.sum_mul]
-  exact Finset.sum_congr rfl fun j _ => by ring
-
 /-- Shifting a characteristic covector by `2 · A l`, the covector representing the same spin^c
 structure translated by `l`, subtracts the intersection pairing `A(x, l)` from the weight. This is
 the covector-shift half of the translation equivariance. -/
@@ -86,7 +73,7 @@ covector by `2 · A l` translates the weight by `l`, up to the additive constant
 The two representatives `k` and `k + 2·A l` of one spin^c structure therefore have weight functions
 that agree after translating the lattice argument by `l`; this is the weight-level statement behind
 the translation isomorphism of the associated lattice homologies. -/
-theorem characteristicWeight_shift_eq_translate (k : P.characteristicVectors) (m x : V → ℤ) :
+theorem characteristicWeight_add_two_mulVec_eq_sub (k : P.characteristicVectors) (m x : V → ℤ) :
     P.characteristicWeight
         ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩ x =
       P.characteristicWeight k (x + m) - P.characteristicWeight k m := by
@@ -101,13 +88,13 @@ theorem characteristicWeight_shift_le_iff (k : P.characteristicVectors) (m x : V
     P.characteristicWeight
         ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩ x ≤ n ↔
       P.characteristicWeight k (x + m) ≤ n + P.characteristicWeight k m := by
-  rw [characteristicWeight_shift_eq_translate]
+  rw [characteristicWeight_add_two_mulVec_eq_sub]
   omega
 
 end PlumbingGraph
 
 /-- A self-validating check on the `A₂` plumbing exercising
-`characteristicWeight_shift_eq_translate` at the shift `m = E₀`, point `x = E₁`, and canonical
+`characteristicWeight_add_two_mulVec_eq_sub` at the shift `m = E₀`, point `x = E₁`, and canonical
 covector `k`. The theorem reduces the
 shifted-covector weight `χ_{k + 2·A E₀}(E₁)` to the translate `χ_k(E₁ + E₀) - χ_k(E₀)`, which
 evaluates to `1 - 1 = 0`. -/
@@ -130,7 +117,7 @@ example :
       PlumbingGraph.characteristicWeight_canonical_single,
       PlumbingGraph.characteristicWeight_canonical_single, a2Plumbing_intersectionMatrix]
     norm_num [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons]
-  exact (a2Plumbing.characteristicWeight_shift_eq_translate
+  exact (a2Plumbing.characteristicWeight_add_two_mulVec_eq_sub
     ⟨a2Plumbing.canonicalCharacteristic,
       a2Plumbing.isCharacteristicVector_canonicalCharacteristic⟩
     (Pi.single 0 1) (Pi.single 1 1)).trans translate

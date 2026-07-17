@@ -196,6 +196,14 @@ theorem intersectionForm_single_right (x : V → ℤ) (v : V) :
     (fun j _ hj => by rw [Pi.single_eq_of_ne hj, mul_zero])
     (fun hv => absurd (Finset.mem_univ v) hv), Pi.single_eq_same, mul_one]
 
+/-- The linear pairing of the covector `A m` against a lattice point `x` is the intersection
+pairing `A(x, m)`: summing `intersectionMatrix.mulVec m` against `x` is the dot product
+`(A m) ⬝ᵥ x`, which the symmetry of the dot product turns into the bilinear form `A(x, m)`. -/
+theorem sum_intersectionMatrix_mulVec_mul (m x : V → ℤ) :
+    ∑ v, (P.intersectionMatrix.mulVec m) v * x v = P.intersectionForm x m := by
+  rw [intersectionForm, Matrix.toBilin'_apply']
+  exact dotProduct_comm _ _
+
 /-- The intersection pairing of a lattice point against a finite sum of basis spheres, as a sum of
 the individual column sums. -/
 theorem intersectionForm_sum_single_right (x : V → ℤ) (S : Finset V) :
