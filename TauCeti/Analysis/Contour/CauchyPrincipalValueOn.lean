@@ -285,6 +285,120 @@ private theorem eventually_not_exists_mem_le (z : ℂ) (S : Finset ℂ) (h : ∀
   rintro ⟨s, hs, hle⟩
   exact absurd hle (not_le.mpr (hε s hs))
 
+/-- **A separating, integrable excision radius.** If the truncated integrands for `S₁` and `S₂` are
+eventually integrable as `ε → 0⁺`, there is a single `ε₀ > 0` at which both are integrable and at
+which distinct points of `S₁` and `S₂` are more than `2 * ε₀` apart. -/
+private theorem exists_pos_separating_intervalIntegrable_truncatedIntegrand {γ : ℝ → ℂ} {a b : ℝ}
+    {f : ℂ → ℂ} (S₁ S₂ : Finset ℂ)
+    (hint₁ : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      IntervalIntegrable (truncatedIntegrand γ f S₁ ε) MeasureTheory.volume a b)
+    (hint₂ : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      IntervalIntegrable (truncatedIntegrand γ f S₂ ε) MeasureTheory.volume a b) :
+    ∃ ε₀ : ℝ, 0 < ε₀ ∧ (∀ s₁ ∈ S₁, ∀ s₂ ∈ S₂, s₁ ≠ s₂ → 2 * ε₀ < ‖s₁ - s₂‖) ∧
+      IntervalIntegrable (truncatedIntegrand γ f S₁ ε₀) MeasureTheory.volume a b ∧
+      IntervalIntegrable (truncatedIntegrand γ f S₂ ε₀) MeasureTheory.volume a b := by
+  have hdist : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
+      ∀ s₁ ∈ S₁, ∀ s₂ ∈ S₂, s₁ ≠ s₂ → 2 * ε < ‖s₁ - s₂‖ := by
+    rw [Filter.eventually_all_finset]
+    intro s₁ hs₁
+    rw [Filter.eventually_all_finset]
+    intro s₂ hs₂
+    rcases eq_or_ne s₁ s₂ with hEq | hNe
+    · exact Filter.Eventually.of_forall fun ε hne => absurd hEq hne
+    · have hpos : (0 : ℝ) < ‖s₁ - s₂‖ := by rw [norm_pos_iff, sub_ne_zero]; exact hNe
+      have h0 : ∀ᶠ ε in 𝓝 (0 : ℝ), 2 * ε < ‖s₁ - s₂‖ := by
+        filter_upwards [Iio_mem_nhds (div_pos hpos (by norm_num : (0 : ℝ) < 2))] with ε hε
+        rw [Set.mem_Iio] at hε; linarith
+      filter_upwards [nhdsWithin_le_nhds h0] with ε hε _; exact hε
+  have hev : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < ε ∧
+      (∀ s₁ ∈ S₁, ∀ s₂ ∈ S₂, s₁ ≠ s₂ → 2 * ε < ‖s₁ - s₂‖) ∧
+      IntervalIntegrable (truncatedIntegrand γ f S₁ ε) MeasureTheory.volume a b ∧
+      IntervalIntegrable (truncatedIntegrand γ f S₂ ε) MeasureTheory.volume a b := by
+    filter_upwards [self_mem_nhdsWithin, hdist, hint₁, hint₂] with ε hpos hd h1 h2
+    exact ⟨hpos, hd, h1, h2⟩
+  exact hev.exists
+
+/-- **Pointwise domination of the truncated difference.** When distinct points of `S₁` and `S₂` are
+more than `2 * ε₀` apart and `ε < ε₀`, the truncated-integrand difference at `ε` is bounded
+pointwise by the sum of the `ε₀`-truncation norms: a point excised at `ε` by one set but not the
+other is `ε₀`-far from the other set, so that set's `ε₀`-truncation already vanishes there. -/
+private theorem norm_truncatedIntegrand_sub_le {γ : ℝ → ℂ} {f : ℂ → ℂ} {S₁ S₂ : Finset ℂ}
+    {ε ε₀ : ℝ} (t : ℝ) (hεlt : ε < ε₀)
+    (hP1 : ∀ s₁ ∈ S₁, ∀ s₂ ∈ S₂, s₁ ≠ s₂ → 2 * ε₀ < ‖s₁ - s₂‖) :
+    ‖truncatedIntegrand γ f S₁ ε t - truncatedIntegrand γ f S₂ ε t‖ ≤
+      ‖truncatedIntegrand γ f S₁ ε₀ t‖ + ‖truncatedIntegrand γ f S₂ ε₀ t‖ := by
+  classical
+  simp only [truncatedIntegrand]
+  by_cases h1 : ∃ s ∈ S₁, ‖γ t - s‖ ≤ ε <;> by_cases h2 : ∃ s ∈ S₂, ‖γ t - s‖ ≤ ε
+  · simp only [if_pos h1, if_pos h2, sub_self, norm_zero]
+    positivity
+  · have hfar2 : ¬ ∃ s ∈ S₂, ‖γ t - s‖ ≤ ε₀ := by
+      rintro ⟨s₂, hs₂, hle₂⟩
+      obtain ⟨s₁, hs₁, hle₁⟩ := h1
+      have hs12 : s₁ ≠ s₂ := by rintro rfl; exact h2 ⟨s₁, hs₂, hle₁⟩
+      have htri : ‖s₁ - s₂‖ ≤ ‖γ t - s₂‖ + ‖γ t - s₁‖ := by
+        have he : s₁ - s₂ = (γ t - s₂) - (γ t - s₁) := by ring
+        rw [he]; exact norm_sub_le _ _
+      have := hP1 s₁ hs₁ s₂ hs₂ hs12
+      linarith
+    rw [if_pos h1, if_neg h2, if_neg hfar2, zero_sub, norm_neg]
+    exact le_add_of_nonneg_left (norm_nonneg _)
+  · have hfar1 : ¬ ∃ s ∈ S₁, ‖γ t - s‖ ≤ ε₀ := by
+      rintro ⟨s₁, hs₁, hle₁⟩
+      obtain ⟨s₂, hs₂, hle₂⟩ := h2
+      have hs12 : s₁ ≠ s₂ := by rintro rfl; exact h1 ⟨s₁, hs₁, hle₂⟩
+      have htri : ‖s₁ - s₂‖ ≤ ‖γ t - s₂‖ + ‖γ t - s₁‖ := by
+        have he : s₁ - s₂ = (γ t - s₂) - (γ t - s₁) := by ring
+        rw [he]; exact norm_sub_le _ _
+      have := hP1 s₁ hs₁ s₂ hs₂ hs12
+      linarith
+    rw [if_neg h1, if_pos h2, if_neg hfar1, sub_zero]
+    exact le_add_of_nonneg_right (norm_nonneg _)
+  · rw [if_neg h1, if_neg h2, sub_self, norm_zero]
+    positivity
+
+/-- **Pointwise a.e. vanishing of the truncated difference.** For almost every `t`, the
+truncated-integrand difference tends to `0` as `ε → 0⁺`: off the null set where `γ` meets `S₁ ∪ S₂`
+with nonzero derivative, either the excess `f (γ t) · γ' t` already vanishes, or `γ t` avoids both
+excision sets and both truncations eventually keep it. -/
+private theorem tendsto_truncatedIntegrand_sub_ae {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
+    (S₁ S₂ : Finset ℂ) :
+    ∀ᵐ t ∂MeasureTheory.volume, t ∈ Set.uIoc a b →
+      Tendsto (fun ε => truncatedIntegrand γ f S₁ ε t - truncatedIntegrand γ f S₂ ε t)
+        (𝓝[>] (0 : ℝ)) (𝓝 (0 : ℂ)) := by
+  classical
+  have hNcount : {t : ℝ | deriv γ t ≠ 0 ∧ γ t ∈ (↑(S₁ ∪ S₂) : Set ℂ)}.Countable := by
+    have hsub : {t : ℝ | deriv γ t ≠ 0 ∧ γ t ∈ (↑(S₁ ∪ S₂) : Set ℂ)} ⊆
+        ⋃ c ∈ (↑(S₁ ∪ S₂) : Set ℂ), {t : ℝ | γ t = c ∧ deriv γ t ≠ 0} := by
+      rintro t ⟨hd, hc⟩
+      exact Set.mem_biUnion hc ⟨rfl, hd⟩
+    exact ((S₁ ∪ S₂).finite_toSet.countable.biUnion
+      (fun c _ => countable_setOf_deriv_ne_zero_on_fiber γ c)).mono hsub
+  have hN0 : MeasureTheory.volume {t : ℝ | deriv γ t ≠ 0 ∧ γ t ∈ (↑(S₁ ∪ S₂) : Set ℂ)} = 0 :=
+    hNcount.measure_zero _
+  filter_upwards [MeasureTheory.compl_mem_ae_iff.mpr hN0] with t htN _hI
+  simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_and_or, not_not] at htN
+  rcases htN with hd | hc
+  · have hF0 : f (γ t) * deriv γ t = 0 := by rw [hd, mul_zero]
+    have hzero : (fun ε => truncatedIntegrand γ f S₁ ε t - truncatedIntegrand γ f S₂ ε t)
+        = fun _ => (0 : ℂ) := by
+      funext ε
+      simp only [truncatedIntegrand, hF0, ite_self, sub_zero]
+    rw [hzero]
+    exact tendsto_const_nhds
+  · rw [Finset.coe_union, Set.mem_union, not_or] at hc
+    obtain ⟨hc1, hc2⟩ := hc
+    have hne1 : ∀ s ∈ S₁, γ t ≠ s := by
+      intro s hs heq
+      exact hc1 (by rw [heq]; exact Finset.mem_coe.mpr hs)
+    have hne2 : ∀ s ∈ S₂, γ t ≠ s := by
+      intro s hs heq
+      exact hc2 (by rw [heq]; exact Finset.mem_coe.mpr hs)
+    refine Tendsto.congr' ?_ tendsto_const_nhds
+    filter_upwards [eventually_not_exists_mem_le (γ t) S₁ hne1,
+      eventually_not_exists_mem_le (γ t) S₂ hne2] with ε h1 h2
+    simp only [truncatedIntegrand, if_neg h1, if_neg h2, sub_self]
+
 /-- **Enlargement inertness of the excision set (difference form).** For finite excision sets `S₁`
 and `S₂` whose truncated integrands are eventually integrable, the difference of the two truncated
 contour integrals tends to `0` as `ε → 0⁺`. On the overlap the truncations agree; the mass on the
@@ -300,33 +414,8 @@ private theorem tendsto_integral_truncatedIntegrand_sub {γ : ℝ → ℂ} {a b 
       IntervalIntegrable (truncatedIntegrand γ f S₂ ε) MeasureTheory.volume a b) :
     Tendsto (fun ε => (∫ t in a..b, truncatedIntegrand γ f S₁ ε t)
         - ∫ t in a..b, truncatedIntegrand γ f S₂ ε t) (𝓝[>] (0 : ℝ)) (𝓝 0) := by
-  classical
-  -- Choose `ε₀ > 0` small enough that distinct excision points are farther than `2 * ε₀` apart,
-  -- and at which both truncated integrands are integrable.
-  obtain ⟨ε₀, hε₀pos, hP1, hII₁, hII₂⟩ : ∃ ε₀ : ℝ, 0 < ε₀ ∧
-      (∀ s₁ ∈ S₁, ∀ s₂ ∈ S₂, s₁ ≠ s₂ → 2 * ε₀ < ‖s₁ - s₂‖) ∧
-      IntervalIntegrable (truncatedIntegrand γ f S₁ ε₀) MeasureTheory.volume a b ∧
-      IntervalIntegrable (truncatedIntegrand γ f S₂ ε₀) MeasureTheory.volume a b := by
-    have hdist : ∀ᶠ ε in 𝓝[>] (0 : ℝ),
-        ∀ s₁ ∈ S₁, ∀ s₂ ∈ S₂, s₁ ≠ s₂ → 2 * ε < ‖s₁ - s₂‖ := by
-      rw [Filter.eventually_all_finset]
-      intro s₁ hs₁
-      rw [Filter.eventually_all_finset]
-      intro s₂ hs₂
-      rcases eq_or_ne s₁ s₂ with hEq | hNe
-      · exact Filter.Eventually.of_forall fun ε hne => absurd hEq hne
-      · have hpos : (0 : ℝ) < ‖s₁ - s₂‖ := by rw [norm_pos_iff, sub_ne_zero]; exact hNe
-        have h0 : ∀ᶠ ε in 𝓝 (0 : ℝ), 2 * ε < ‖s₁ - s₂‖ := by
-          filter_upwards [Iio_mem_nhds (div_pos hpos (by norm_num : (0 : ℝ) < 2))] with ε hε
-          rw [Set.mem_Iio] at hε; linarith
-        filter_upwards [nhdsWithin_le_nhds h0] with ε hε _; exact hε
-    have hev : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < ε ∧
-        (∀ s₁ ∈ S₁, ∀ s₂ ∈ S₂, s₁ ≠ s₂ → 2 * ε < ‖s₁ - s₂‖) ∧
-        IntervalIntegrable (truncatedIntegrand γ f S₁ ε) MeasureTheory.volume a b ∧
-        IntervalIntegrable (truncatedIntegrand γ f S₂ ε) MeasureTheory.volume a b := by
-      filter_upwards [self_mem_nhdsWithin, hdist, hint₁, hint₂] with ε hpos hd h1 h2
-      exact ⟨hpos, hd, h1, h2⟩
-    exact hev.exists
+  obtain ⟨ε₀, hε₀pos, hP1, hII₁, hII₂⟩ :=
+    exists_pos_separating_intervalIntegrable_truncatedIntegrand S₁ S₂ hint₁ hint₂
   have hltε₀ : ∀ᶠ ε in 𝓝[>] (0 : ℝ), ε < ε₀ := nhdsWithin_le_nhds (Iio_mem_nhds hε₀pos)
   -- Measurability of the difference integrand.
   have hmeas : ∀ᶠ ε in 𝓝[>] (0 : ℝ), MeasureTheory.AEStronglyMeasurable
@@ -339,73 +428,15 @@ private theorem tendsto_integral_truncatedIntegrand_sub {γ : ℝ → ℂ} {a b 
       ‖truncatedIntegrand γ f S₁ ε t - truncatedIntegrand γ f S₂ ε t‖ ≤
         ‖truncatedIntegrand γ f S₁ ε₀ t‖ + ‖truncatedIntegrand γ f S₂ ε₀ t‖ := by
     filter_upwards [hltε₀] with ε hεlt
-    refine MeasureTheory.ae_of_all _ (fun t _ => ?_)
-    simp only [truncatedIntegrand]
-    by_cases h1 : ∃ s ∈ S₁, ‖γ t - s‖ ≤ ε <;> by_cases h2 : ∃ s ∈ S₂, ‖γ t - s‖ ≤ ε
-    · simp only [if_pos h1, if_pos h2, sub_self, norm_zero]
-      positivity
-    · have hfar2 : ¬ ∃ s ∈ S₂, ‖γ t - s‖ ≤ ε₀ := by
-        rintro ⟨s₂, hs₂, hle₂⟩
-        obtain ⟨s₁, hs₁, hle₁⟩ := h1
-        have hs12 : s₁ ≠ s₂ := by rintro rfl; exact h2 ⟨s₁, hs₂, hle₁⟩
-        have htri : ‖s₁ - s₂‖ ≤ ‖γ t - s₂‖ + ‖γ t - s₁‖ := by
-          have he : s₁ - s₂ = (γ t - s₂) - (γ t - s₁) := by ring
-          rw [he]; exact norm_sub_le _ _
-        have := hP1 s₁ hs₁ s₂ hs₂ hs12
-        linarith
-      rw [if_pos h1, if_neg h2, if_neg hfar2, zero_sub, norm_neg]
-      exact le_add_of_nonneg_left (norm_nonneg _)
-    · have hfar1 : ¬ ∃ s ∈ S₁, ‖γ t - s‖ ≤ ε₀ := by
-        rintro ⟨s₁, hs₁, hle₁⟩
-        obtain ⟨s₂, hs₂, hle₂⟩ := h2
-        have hs12 : s₁ ≠ s₂ := by rintro rfl; exact h1 ⟨s₁, hs₁, hle₂⟩
-        have htri : ‖s₁ - s₂‖ ≤ ‖γ t - s₂‖ + ‖γ t - s₁‖ := by
-          have he : s₁ - s₂ = (γ t - s₂) - (γ t - s₁) := by ring
-          rw [he]; exact norm_sub_le _ _
-        have := hP1 s₁ hs₁ s₂ hs₂ hs12
-        linarith
-      rw [if_neg h1, if_pos h2, if_neg hfar1, sub_zero]
-      exact le_add_of_nonneg_right (norm_nonneg _)
-    · rw [if_neg h1, if_neg h2, sub_self, norm_zero]
-      positivity
+    exact MeasureTheory.ae_of_all _ (fun t _ => norm_truncatedIntegrand_sub_le t hεlt hP1)
   have hbdint : IntervalIntegrable
       (fun t => ‖truncatedIntegrand γ f S₁ ε₀ t‖ + ‖truncatedIntegrand γ f S₂ ε₀ t‖)
       MeasureTheory.volume a b := (hII₁.norm).add (hII₂.norm)
   -- Pointwise a.e. convergence to `0`: off a countable (null) set of `t`, the difference vanishes.
   have hlim : ∀ᵐ t ∂MeasureTheory.volume, t ∈ Set.uIoc a b →
       Tendsto (fun ε => truncatedIntegrand γ f S₁ ε t - truncatedIntegrand γ f S₂ ε t)
-        (𝓝[>] (0 : ℝ)) (𝓝 ((fun _ => (0 : ℂ)) t)) := by
-    have hNcount : {t : ℝ | deriv γ t ≠ 0 ∧ γ t ∈ (↑(S₁ ∪ S₂) : Set ℂ)}.Countable := by
-      have hsub : {t : ℝ | deriv γ t ≠ 0 ∧ γ t ∈ (↑(S₁ ∪ S₂) : Set ℂ)} ⊆
-          ⋃ c ∈ (↑(S₁ ∪ S₂) : Set ℂ), {t : ℝ | γ t = c ∧ deriv γ t ≠ 0} := by
-        rintro t ⟨hd, hc⟩
-        exact Set.mem_biUnion hc ⟨rfl, hd⟩
-      exact ((S₁ ∪ S₂).finite_toSet.countable.biUnion
-        (fun c _ => countable_setOf_deriv_ne_zero_on_fiber γ c)).mono hsub
-    have hN0 : MeasureTheory.volume {t : ℝ | deriv γ t ≠ 0 ∧ γ t ∈ (↑(S₁ ∪ S₂) : Set ℂ)} = 0 :=
-      hNcount.measure_zero _
-    filter_upwards [MeasureTheory.compl_mem_ae_iff.mpr hN0] with t htN _hI
-    simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_and_or, not_not] at htN
-    rcases htN with hd | hc
-    · have hF0 : f (γ t) * deriv γ t = 0 := by rw [hd, mul_zero]
-      have hzero : (fun ε => truncatedIntegrand γ f S₁ ε t - truncatedIntegrand γ f S₂ ε t)
-          = fun _ => (0 : ℂ) := by
-        funext ε
-        simp only [truncatedIntegrand, hF0, ite_self, sub_zero]
-      rw [hzero]
-      exact tendsto_const_nhds
-    · rw [Finset.coe_union, Set.mem_union, not_or] at hc
-      obtain ⟨hc1, hc2⟩ := hc
-      have hne1 : ∀ s ∈ S₁, γ t ≠ s := by
-        intro s hs heq
-        exact hc1 (by rw [heq]; exact Finset.mem_coe.mpr hs)
-      have hne2 : ∀ s ∈ S₂, γ t ≠ s := by
-        intro s hs heq
-        exact hc2 (by rw [heq]; exact Finset.mem_coe.mpr hs)
-      refine Tendsto.congr' ?_ tendsto_const_nhds
-      filter_upwards [eventually_not_exists_mem_le (γ t) S₁ hne1,
-        eventually_not_exists_mem_le (γ t) S₂ hne2] with ε h1 h2
-      simp only [truncatedIntegrand, if_neg h1, if_neg h2, sub_self]
+        (𝓝[>] (0 : ℝ)) (𝓝 ((fun _ => (0 : ℂ)) t)) :=
+    tendsto_truncatedIntegrand_sub_ae S₁ S₂
   -- Dominated convergence gives that the integral of the difference tends to `0`.
   have hDCT := intervalIntegral.tendsto_integral_filter_of_dominated_convergence
     (μ := MeasureTheory.volume) (a := a) (b := b) (l := 𝓝[>] (0 : ℝ))
