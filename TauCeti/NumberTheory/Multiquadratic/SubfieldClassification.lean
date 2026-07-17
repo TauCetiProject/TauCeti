@@ -6,6 +6,7 @@ module
 
 public import Mathlib.FieldTheory.IntermediateField.Basic
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
+public import TauCeti.Data.Finset.Basic
 public import TauCeti.NumberTheory.Multiquadratic.QuadraticSubfield
 public import TauCeti.NumberTheory.Multiquadratic.SubfieldCount
 
@@ -34,7 +35,7 @@ constructions consume.
 * `TauCeti.Multiquadratic.quadraticSubfieldOfFinset_bijective`: that assignment is a bijection.
 * `TauCeti.Multiquadratic.exists_finset_of_finrank_two`: **classification** — every quadratic
   subfield of `M` is a subset-product subfield `K(∏_{i ∈ S} root i)` for some nonempty `S`.
-* `TauCeti.Multiquadratic.quadraticSubfieldEquivNonemptyFinset`: the bijection packaged as an
+* `TauCeti.Multiquadratic.nonemptyFinsetEquivQuadraticSubfield`: the bijection packaged as an
   equivalence.
 
 ## Provenance
@@ -55,20 +56,6 @@ namespace TauCeti.Multiquadratic
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] {ι : Type*}
   {d : ι → K} {root : ι → L}
 
-/-- **The number of nonempty subsets of a finite type is `2ⁿ - 1`.** The `2ⁿ` subsets of an
-`n`-element type are the nonempty ones together with the empty set, so the nonempty ones number
-`2ⁿ - 1`. -/
-theorem card_nonempty_finset [Finite ι] :
-    Nat.card {S : Finset ι // S.Nonempty} = 2 ^ Nat.card ι - 1 := by
-  classical
-  letI := Fintype.ofFinite ι
-  have h : Fintype.card {S : Finset ι // S.Nonempty} = 2 ^ Fintype.card ι - 1 := by
-    rw [Fintype.card_subtype]
-    simp_rw [Finset.nonempty_iff_ne_empty]
-    rw [Finset.filter_ne', Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
-      Fintype.card_finset]
-  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, h]
-
 /-- The subset-product root of `S`, as an element of the multiquadratic field
 `M = K(rootᵢ : i)`. -/
 @[expose] def prodRootMem (root : ι → L) (S : Finset ι) :
@@ -87,7 +74,7 @@ theorem finrank_adjoin_prodRootMem [NeZero (2 : K)]
     Module.finrank K (adjoin K {prodRootMem (K := K) root S}) = 2 := by
   -- Transport the degree across the `M`-into-`L` lift algebra equivalence.
   rw [LinearEquiv.finrank_eq (liftAlgEquiv (adjoin K {prodRootMem (K := K) root S})).toLinearEquiv,
-    lift_adjoin_simple]
+    lift_adjoin_simple, prodRootMem_coe]
   exact finrank_adjoin_prod_root hroot hSsq
 
 variable (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
@@ -101,6 +88,12 @@ square-class independence, each nonempty subset `S` of the index type names the 
     {F : IntermediateField K (adjoin K (Set.range root)) // Module.finrank K F = 2} :=
   ⟨adjoin K {prodRootMem (K := K) root S.1}, finrank_adjoin_prodRootMem hroot (hindep S.1 S.2)⟩
 
+/-- The subfield underlying `quadraticSubfieldOfFinset hroot hindep S` is
+`K(∏_{i ∈ S} root i)`. -/
+theorem quadraticSubfieldOfFinset_val [NeZero (2 : K)] (S : {S : Finset ι // S.Nonempty}) :
+    (quadraticSubfieldOfFinset hroot hindep S : IntermediateField K (adjoin K (Set.range root)))
+      = adjoin K {prodRootMem (K := K) root S.1} := rfl
+
 include hroot hindep in
 /-- **Distinct nonempty subsets give distinct quadratic subfields.** The subset-product assignment
 `quadraticSubfieldOfFinset` is injective: this is the `M`-level reading of
@@ -110,8 +103,9 @@ theorem quadraticSubfieldOfFinset_injective [NeZero (2 : K)] :
   rintro ⟨S, hS⟩ ⟨T, hT⟩ h
   refine Subtype.ext (eq_of_adjoin_prod_root_eq hroot hindep hS ?_)
   -- The `M`-level equality of subfields lifts to an `L`-level equality of subset-product fields.
-  have h' : adjoin K {prodRootMem (K := K) root S} = adjoin K {prodRootMem (K := K) root T} :=
-    congrArg Subtype.val h
+  have h' : adjoin K {prodRootMem (K := K) root S} = adjoin K {prodRootMem (K := K) root T} := by
+    have hval := congrArg Subtype.val h
+    rwa [quadraticSubfieldOfFinset_val, quadraticSubfieldOfFinset_val] at hval
   have := congrArg IntermediateField.lift h'
   rwa [lift_adjoin_simple, lift_adjoin_simple, prodRootMem_coe, prodRootMem_coe] at this
 
@@ -136,21 +130,34 @@ theorem quadraticSubfieldOfFinset_bijective [Finite ι] [NeZero (2 : K)] :
 include hroot hindep in
 /-- **Classification of the quadratic subfields.** Under square-class independence, every quadratic
 subfield `F` of the multiquadratic field `M = K(rootᵢ : i)` is a subset-product subfield: there is a
-(unique) nonempty subset `S` with `F = K(∏_{i ∈ S} root i)`. -/
+nonempty subset `S` with `F = K(∏_{i ∈ S} root i)`. (The subset is in fact unique, by
+`quadraticSubfieldOfFinset_bijective`, but this statement asserts only existence.) -/
 theorem exists_finset_of_finrank_two [Finite ι] [NeZero (2 : K)]
     (F : IntermediateField K (adjoin K (Set.range root))) (hF : Module.finrank K F = 2) :
     ∃ S : Finset ι, S.Nonempty ∧ F = adjoin K {prodRootMem (K := K) root S} := by
   obtain ⟨⟨S, hS⟩, hSeq⟩ :=
     (quadraticSubfieldOfFinset_bijective hroot hindep).surjective ⟨F, hF⟩
-  exact ⟨S, hS, (congrArg Subtype.val hSeq).symm⟩
+  refine ⟨S, hS, ?_⟩
+  have hval := congrArg Subtype.val hSeq
+  rw [quadraticSubfieldOfFinset_val] at hval
+  exact hval.symm
 
 include hroot hindep in
 /-- **The quadratic subfields of `M` are indexed by the nonempty subsets.** The bijection
 `quadraticSubfieldOfFinset`, packaged as an equivalence between the nonempty subsets of the index
 type and the quadratic subfields of the multiquadratic field. -/
-noncomputable def quadraticSubfieldEquivNonemptyFinset [Finite ι] [NeZero (2 : K)] :
+@[expose] noncomputable def nonemptyFinsetEquivQuadraticSubfield [Finite ι] [NeZero (2 : K)] :
     {S : Finset ι // S.Nonempty} ≃
       {F : IntermediateField K (adjoin K (Set.range root)) // Module.finrank K F = 2} :=
   Equiv.ofBijective _ (quadraticSubfieldOfFinset_bijective hroot hindep)
+
+include hroot hindep in
+/-- `nonemptyFinsetEquivQuadraticSubfield` sends a nonempty subset `S` to the subset-product
+subfield `quadraticSubfieldOfFinset hroot hindep S`. -/
+@[simp] theorem nonemptyFinsetEquivQuadraticSubfield_apply [Finite ι] [NeZero (2 : K)]
+    (S : {S : Finset ι // S.Nonempty}) :
+    nonemptyFinsetEquivQuadraticSubfield hroot hindep S
+      = quadraticSubfieldOfFinset hroot hindep S :=
+  rfl
 
 end TauCeti.Multiquadratic
