@@ -48,7 +48,7 @@ noncomputable def cubeVertex (x : V → ℤ) (T : Finset V) : V → ℤ :=
 
 /-- A plumbing cube vertex is the base point shifted by the basis spheres in the chosen
 directions. This is definitionally `cubeVertex`, packaged for rewriting. -/
-theorem cubeVertex_eq_add_sum (x : V → ℤ) (T : Finset V) :
+theorem cubeVertex_def (x : V → ℤ) (T : Finset V) :
     cubeVertex x T = x + ∑ v ∈ T, Pi.single v (1 : ℤ) := by
   rw [cubeVertex]
 

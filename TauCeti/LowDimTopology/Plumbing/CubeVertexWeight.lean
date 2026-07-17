@@ -74,7 +74,6 @@ private theorem sum_mul_sum_single (k : V → ℤ) (S : Finset V) :
 coordinates in the chosen directions, plus the intersection double sum of those directions, plus
 twice the pairings of the base point against them. As the numerator carries no division, this is
 the formula a concrete cube-weight computation evaluates. -/
-@[simp]
 theorem characteristicWeightNumerator_cubeVertex (k x : V → ℤ) (S : Finset V) :
     P.characteristicWeightNumerator k (cubeVertex x S) =
       P.characteristicWeightNumerator k x + (∑ v ∈ S, k v) +
@@ -84,7 +83,7 @@ theorem characteristicWeightNumerator_cubeVertex (k x : V → ℤ) (S : Finset V
       (∑ v ∈ S, k v) + ∑ v ∈ S, ∑ w ∈ S, P.intersectionMatrix v w := by
     rw [characteristicWeightNumerator_def, sum_mul_sum_single k S,
       P.intersectionForm_sum_single_self S]
-  rw [cubeVertex_eq_add_sum, characteristicWeightNumerator_add_right, hnum,
+  rw [cubeVertex_def, characteristicWeightNumerator_add_right, hnum,
     P.intersectionForm_sum_single_right x S]
   ring
 
@@ -92,12 +91,11 @@ theorem characteristicWeightNumerator_cubeVertex (k x : V → ℤ) (S : Finset V
 `cubeVertex x S = x + ∑ v ∈ S, E_v` splits, by the polarization identity, into the base weight, the
 weight of the pure sphere sum `∑ v ∈ S, E_v`, and the linear pairings of the base point against the
 moving spheres. -/
-@[simp]
 theorem characteristicWeight_cubeVertex (k : P.characteristicVectors) (x : V → ℤ) (S : Finset V) :
     P.characteristicWeight k (cubeVertex x S) =
       P.characteristicWeight k x + P.characteristicWeight k (∑ v ∈ S, Pi.single v 1) -
         ∑ v ∈ S, ∑ i, x i * P.intersectionMatrix i v := by
-  rw [cubeVertex_eq_add_sum, characteristicWeight_add, P.intersectionForm_sum_single_right x S]
+  rw [cubeVertex_def, characteristicWeight_add, P.intersectionForm_sum_single_right x S]
 
 end PlumbingGraph
 
