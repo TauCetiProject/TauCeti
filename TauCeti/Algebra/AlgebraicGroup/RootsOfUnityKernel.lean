@@ -38,10 +38,10 @@ description of `μ_n` as a kernel.
 
 * `TauCeti.RootsOfUnityGroup.powEnd_comp_inclusion`: the `n`th power endomorphism annihilates
   `μ_n`, i.e. `powEnd n ∘ inclusion n` is trivial.
-* `TauCeti.RootsOfUnityGroup.mem_range_inclusion`: a `𝔾ₘ`-point killed by the `n`th power lies
-  in the image of the `μ_n` inclusion.
-* `TauCeti.RootsOfUnityGroup.range_inclusion`: the image of `μ_n ↪ 𝔾ₘ` is the kernel of the
-  `n`th power endomorphism of `𝔾ₘ`.
+* `TauCeti.RootsOfUnityGroup.mem_range_inclusion_iff`: a `𝔾ₘ`-point lies in the image of the
+  `μ_n` inclusion iff the `n`th power endomorphism kills it.
+* `TauCeti.RootsOfUnityGroup.range_inclusion`: as subgroups of the `𝔾ₘ`-points, the image of
+  `μ_n ↪ 𝔾ₘ` is the kernel of the `n`th power endomorphism of `𝔾ₘ`.
 
 ## References
 
@@ -90,7 +90,9 @@ endomorphism sends `g` to the identity, then `g` reads off a unit `u` with `u ^ 
 theorem mem_range_inclusion (n : ℕ)
     {g : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)}
     (hg : DiagonalizableGroup.powEnd (R := R) (A := A) (n : ℤ) g = 1) :
-    g ∈ Set.range (inclusion (R := R) (A := A) n) := by
+    g ∈ MonoidHom.range (G := WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A))
+      (N := WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A))
+      (inclusion (R := R) (A := A) n) := by
   have hun : DiagonalizableGroup.pointsMulEquiv g (Multiplicative.ofAdd (1 : ℤ)) ^ n = 1 := by
     have h1 :
         DiagonalizableGroup.pointsMulEquiv g (Multiplicative.ofAdd (1 : ℤ)) ^ (n : ℤ) = 1 := by
@@ -103,18 +105,31 @@ theorem mem_range_inclusion (n : ℕ)
   rw [DiagonalizableGroup.pointsMulEquiv_apply, charOfPoint_inclusion_ofAdd_one,
     MulEquiv.apply_symm_apply]
 
-/-- **`μ_n` is the kernel of the `n`th power endomorphism of `𝔾ₘ`.** The image of the inclusion
-`μ_n ↪ 𝔾ₘ` on points equals the set of points killed by the `n`th power endomorphism
-`DiagonalizableGroup.powEnd n`: a `𝔾ₘ`-point comes from `μ_n` exactly when its `n`th power is
-trivial. This realizes `μ_n = ker(𝔾ₘ --u ↦ uⁿ--> 𝔾ₘ)` on the functor of points. -/
+/-- **Membership in the image of `μ_n ↪ 𝔾ₘ`.** A `𝔾ₘ`-point lies in the image of the `μ_n`
+inclusion exactly when the `n`th power endomorphism kills it: `g` comes from `μ_n` iff `gⁿ = 1`. -/
+theorem mem_range_inclusion_iff (n : ℕ)
+    {g : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)} :
+    g ∈ MonoidHom.range (G := WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A))
+        (N := WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A))
+        (inclusion (R := R) (A := A) n) ↔
+      DiagonalizableGroup.powEnd (R := R) (A := A) (n : ℤ) g = 1 := by
+  refine ⟨?_, mem_range_inclusion n⟩
+  rintro ⟨f, rfl⟩
+  exact powEnd_inclusion n f
+
+/-- **`μ_n` is the kernel of the `n`th power endomorphism of `𝔾ₘ`.** As subgroups of the group of
+`𝔾ₘ`-points, the image of the inclusion `μ_n ↪ 𝔾ₘ` equals the kernel of the `n`th power
+endomorphism `DiagonalizableGroup.powEnd n`: a `𝔾ₘ`-point comes from `μ_n` exactly when its `n`th
+power is trivial. This realizes `μ_n = ker(𝔾ₘ --u ↦ uⁿ--> 𝔾ₘ)` on the functor of points. -/
 theorem range_inclusion (n : ℕ) :
-    Set.range (inclusion (R := R) (A := A) n) =
-      {g | DiagonalizableGroup.powEnd (R := R) (A := A) (n : ℤ) g = 1} := by
+    MonoidHom.range (G := WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A))
+        (N := WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A))
+        (inclusion (R := R) (A := A) n) =
+      MonoidHom.ker (G := WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A))
+        (M := WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A))
+        (DiagonalizableGroup.powEnd (R := R) (A := A) (n : ℤ)) := by
   ext g
-  constructor
-  · rintro ⟨f, rfl⟩
-    exact powEnd_inclusion n f
-  · exact fun hg => mem_range_inclusion n hg
+  rw [MonoidHom.mem_ker, mem_range_inclusion_iff]
 
 end RootsOfUnityGroup
 
