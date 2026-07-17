@@ -87,7 +87,7 @@ theorem powEnd_inclusion (n : ℕ)
 /-- **A `𝔾ₘ`-point killed by the `n`th power lies in the image of `μ_n`.** If the `n`th power
 endomorphism sends `g` to the identity, then `g` reads off a unit `u` with `u ^ n = 1`, i.e. an
 `n`th root of unity, and `g` is the image of the `μ_n`-point attached to it. -/
-theorem mem_range_inclusion (n : ℕ)
+private theorem mem_range_inclusion (n : ℕ)
     {g : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)}
     (hg : DiagonalizableGroup.powEnd (R := R) (A := A) (n : ℤ) g = 1) :
     g ∈ MonoidHom.range (G := WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A))

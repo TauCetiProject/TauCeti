@@ -122,6 +122,7 @@ theorem pointsMulEquiv_cocharPoints (ψ : M →* Multiplicative ℤ)
 off the same unit on the group-algebra generator `Multiplicative.ofAdd 1`: a character of
 `Multiplicative ℤ` is determined by its value at the generator (`MonoidHom.ext_mint`), and points
 are equivalent to characters. -/
+@[ext]
 theorem pointsMulEquiv_ext {f g : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)}
     (h : pointsMulEquiv f (Multiplicative.ofAdd (1 : ℤ)) =
         pointsMulEquiv g (Multiplicative.ofAdd (1 : ℤ))) :
