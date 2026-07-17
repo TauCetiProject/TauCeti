@@ -13,7 +13,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupFunctoriality
 diagonalizable group `D(M) = Spec R[M]`, and
 `TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupFunctoriality` records its contravariant
 functoriality `DiagonalizableGroup.pointsMap`. This file uses that functoriality to build the
-**character lattice `X*(D(M))`, the cocharacter lattice `X_*(D(M))`, and their perfect pairing**
+**character lattice `X*(D(M))`, the cocharacter lattice `X_*(D(M))`, and their pairing**
 into the endomorphism lattice of the multiplicative group, all realized on the functor of points.
 
 Throughout, the multiplicative group is `𝔾ₘ = D(Multiplicative ℤ)` in its group-algebra
@@ -70,20 +70,13 @@ namespace DiagonalizableGroup
 variable {R : Type u} {A : Type v} {M : Type w}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A] [CommGroup M]
 
-/-- Monoid homomorphisms out of `Multiplicative ℤ` are determined by their value on the
-generator `Multiplicative.ofAdd 1`. -/
-private theorem monoidHom_mint_ext {α : Type*} [Group α] {f g : Multiplicative ℤ →* α}
-    (h : f (Multiplicative.ofAdd 1) = g (Multiplicative.ofAdd 1)) : f = g := by
-  refine MonoidHom.ext fun n => ?_
-  rw [MonoidHom.apply_mint _ f n, MonoidHom.apply_mint _ g n, h]
-
 /-- Composing the generator-`Multiplicative.ofAdd a` power homomorphism after the
 generator-`Multiplicative.ofAdd b` one multiplies exponents. -/
 private theorem zpowersHom_ofAdd_comp (a b : ℤ) :
     (zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd b)).comp
         (zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd a)) =
       zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd (a * b)) := by
-  apply monoidHom_mint_ext
+  apply MonoidHom.ext_mint
   simp only [MonoidHom.comp_apply, zpowersHom_apply, toAdd_ofAdd, zpow_one]
   rw [← ofAdd_zsmul, smul_eq_mul]
 
@@ -92,7 +85,7 @@ private theorem zpowersHom_ofAdd_comp (a b : ℤ) :
 /-- **The character of `D(M)` attached to an element `m : M`, on points.** As a homomorphism of
 group functors `D(M) → 𝔾ₘ`, it is induced (contravariantly) by the generator homomorphism
 `zpowersHom M m : Multiplicative ℤ →* M`, `Multiplicative.ofAdd 1 ↦ m`. -/
-@[expose] noncomputable def charPoints (m : M) :
+noncomputable def charPoints (m : M) :
     WithConv (MonoidAlgebra R M →ₐ[R] A) →*
       WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) :=
   pointsMap (zpowersHom M m)
@@ -110,7 +103,7 @@ theorem pointsMulEquiv_charPoints (m : M) (f : WithConv (MonoidAlgebra R M →�
 /-- **The cocharacter of `D(M)` attached to a homomorphism `ψ : M →* Multiplicative ℤ`, on
 points.** As a homomorphism of group functors `𝔾ₘ → D(M)`, it is induced (contravariantly) by
 `ψ`. -/
-@[expose] noncomputable def cocharPoints (ψ : M →* Multiplicative ℤ) :
+noncomputable def cocharPoints (ψ : M →* Multiplicative ℤ) :
     WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) →*
       WithConv (MonoidAlgebra R M →ₐ[R] A) :=
   pointsMap ψ
@@ -128,7 +121,7 @@ theorem pointsMulEquiv_cocharPoints (ψ : M →* Multiplicative ℤ)
 /-- **The `n`-th power endomorphism of `𝔾ₘ`, on points.** It is induced (contravariantly) by the
 `n`-th power homomorphism `zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd n)` of
 `Multiplicative ℤ`. -/
-@[expose] noncomputable def powEnd (n : ℤ) :
+noncomputable def powEnd (n : ℤ) :
     WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) →*
       WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) :=
   pointsMap (zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd n))
@@ -146,7 +139,7 @@ theorem pointsMulEquiv_powEnd (n : ℤ)
 theorem powEnd_one : powEnd (R := R) (A := A) 1 = MonoidHom.id _ := by
   unfold powEnd
   rw [show zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd (1 : ℤ)) = MonoidHom.id _ from
-    monoidHom_mint_ext (by simp), pointsMap_id]
+    MonoidHom.ext_mint (by simp), pointsMap_id]
 
 /-- **Power endomorphisms compose by multiplying exponents:** `powEnd a ∘ powEnd b = powEnd (a*b)`.
 This is the multiplication of the endomorphism ring `End(𝔾ₘ) ≅ ℤ` on power maps. -/
@@ -159,18 +152,38 @@ theorem powEnd_comp (a b : ℤ) :
 
 /-- **The character–cocharacter pairing `⟨m, ψ⟩ : ℤ`** of a character `m : M` of `D(M)` with a
 cocharacter `ψ : M →* Multiplicative ℤ`. -/
-@[expose] def pairing (m : M) (ψ : M →* Multiplicative ℤ) : ℤ :=
+def pairing (m : M) (ψ : M →* Multiplicative ℤ) : ℤ :=
   (ψ m).toAdd
+
+/-- The pairing `⟨m, ψ⟩` is the integer `(ψ m).toAdd`. -/
+theorem pairing_def (m : M) (ψ : M →* Multiplicative ℤ) : pairing m ψ = (ψ m).toAdd := by
+  rw [pairing]
+
+/-- The pairing is additive in the character: `⟨m * m', ψ⟩ = ⟨m, ψ⟩ + ⟨m', ψ⟩`. -/
+theorem pairing_mul_left (m m' : M) (ψ : M →* Multiplicative ℤ) :
+    pairing (m * m') ψ = pairing m ψ + pairing m' ψ := by
+  simp only [pairing_def, map_mul, toAdd_mul]
+
+/-- The pairing vanishes on the identity character: `⟨1, ψ⟩ = 0`. -/
+theorem pairing_one_left (ψ : M →* Multiplicative ℤ) : pairing (1 : M) ψ = 0 := by
+  simp only [pairing_def, map_one, toAdd_one]
+
+/-- The pairing is additive in the cocharacter: `⟨m, ψ * ψ'⟩ = ⟨m, ψ⟩ + ⟨m, ψ'⟩`. -/
+theorem pairing_mul_right (m : M) (ψ ψ' : M →* Multiplicative ℤ) :
+    pairing m (ψ * ψ') = pairing m ψ + pairing m ψ' := by
+  simp only [pairing_def, MonoidHom.mul_apply, toAdd_mul]
 
 /-- **The pairing is realized as a power endomorphism of `𝔾ₘ`.** Composing the character `m`
 after the cocharacter `ψ` is the `⟨m, ψ⟩`-power endomorphism of `𝔾ₘ`, so on points it is
-`u ↦ u ^ ⟨m, ψ⟩`. This is the perfect pairing `X*(D(M)) × X_*(D(M)) → End(𝔾ₘ) = ℤ`. -/
+`u ↦ u ^ ⟨m, ψ⟩`. This realizes the character–cocharacter pairing
+`X*(D(M)) × X_*(D(M)) → End(𝔾ₘ)`, valued in the power endomorphisms (the ring `End(𝔾ₘ) ≅ ℤ`
+on the level of power maps). -/
 theorem charPoints_comp_cocharPoints (m : M) (ψ : M →* Multiplicative ℤ) :
     (charPoints (R := R) (A := A) m).comp (cocharPoints ψ) = powEnd (pairing m ψ) := by
   unfold charPoints cocharPoints powEnd pairing
   rw [← pointsMap_comp]
   congr 1
-  apply monoidHom_mint_ext
+  apply MonoidHom.ext_mint
   simp
 
 /-- The pairing evaluated through `charPoints_comp_cocharPoints`: on points, the composite of
