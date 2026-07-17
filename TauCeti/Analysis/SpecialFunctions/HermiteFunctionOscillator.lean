@@ -46,9 +46,8 @@ namespace TauCeti
 open Polynomial
 
 /-- **Second derivative of the Hermite function** (the derivative form). The Hermite function `ψₙ`
-solves `ψₙ'' = (x² - (2n+1))·ψₙ`; this states the derivative of `ψₙ'` at `x`, obtained by
-differentiating the creation identity `ψₙ' = x·ψₙ - √(2(n+1))·ψ_{n+1}` and eliminating `ψ_{n+1}'`
-via the annihilation identity at `n+1`. -/
+solves `ψₙ'' = (x² - (2n+1))·ψₙ`; this states that the derivative of `ψₙ'` at `x` equals
+`(x² - (2n+1))·ψₙ(x)`. -/
 theorem hasDerivAt_deriv_hermiteFunction (n : ℕ) (x : ℝ) :
     HasDerivAt (deriv (hermiteFunction n))
       ((x ^ 2 - (2 * n + 1)) * hermiteFunction n x) x := by
@@ -86,6 +85,7 @@ theorem hasDerivAt_deriv_hermiteFunction (n : ℕ) (x : ℝ) :
 
 /-- **Second derivative of the Hermite function.** `ψₙ'' = (x² - (2n+1))·ψₙ`; the closed form
 behind the harmonic-oscillator eigen-equation. -/
+@[simp, grind =]
 theorem deriv_deriv_hermiteFunction (n : ℕ) (x : ℝ) :
     deriv (deriv (hermiteFunction n)) x = (x ^ 2 - (2 * n + 1)) * hermiteFunction n x :=
   (hasDerivAt_deriv_hermiteFunction n x).deriv
@@ -101,6 +101,7 @@ theorem hermiteFunction_oscillator (n : ℕ) (x : ℝ) :
   ring
 
 /-- The oscillator eigen-equation phrased with `iteratedDeriv 2`. -/
+@[simp, grind =]
 theorem iteratedDeriv_two_hermiteFunction (n : ℕ) (x : ℝ) :
     iteratedDeriv 2 (hermiteFunction n) x = (x ^ 2 - (2 * n + 1)) * hermiteFunction n x := by
   rw [iteratedDeriv_succ, iteratedDeriv_one, deriv_deriv_hermiteFunction]
