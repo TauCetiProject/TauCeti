@@ -20,12 +20,12 @@ exactly the set of points killed by the `n`th power, so `μ_n` is the (scheme-th
 
 The mechanism is the worked-example points dictionary. A point of `𝔾ₘ = D(Multiplicative ℤ)` is
 determined by the unit it reads off on the generator `Multiplicative.ofAdd 1`
-(`RootsOfUnityGroup.gm_ext`). The `n`th power endomorphism raises that unit to the `n`th power
-(`DiagonalizableGroup.pointsMulEquiv_powEnd`), while an included `μ_n`-point reads off the
-underlying unit of an `n`th root of unity (`RootsOfUnityGroup.charOfPoint_inclusion_ofAdd_one`,
-here restated as `RootsOfUnityGroup.pointsMulEquiv_inclusion_ofAdd_one`), whose `n`th power is
-`1`. Conversely a `𝔾ₘ`-point read off as a unit `u` with `u ^ n = 1` is `u ∈ rootsOfUnity n A`,
-hence the image of the `μ_n`-point attached to it.
+(`DiagonalizableGroup.pointsMulEquiv_ext`). The `n`th power endomorphism raises that unit to the
+`n`th power (`DiagonalizableGroup.pointsMulEquiv_powEnd`), while an included `μ_n`-point reads off
+the underlying unit of an `n`th root of unity
+(`RootsOfUnityGroup.charOfPoint_inclusion_ofAdd_one`), whose `n`th power is `1`. Conversely a
+`𝔾ₘ`-point read off as a unit `u` with `u ^ n = 1` is `u ∈ rootsOfUnity n A`, hence the image of
+the `μ_n`-point attached to it.
 
 This is a worked-example check for the reductive-groups roadmap
 (`ReductiveGroups/README.md` in TauCetiRoadmap, Layer 4: "`μ_n = D(ℤ/n)`", "`𝔾_m = D(ℤ)`", and
@@ -36,8 +36,6 @@ description of `μ_n` as a kernel.
 
 ## Main results
 
-* `TauCeti.RootsOfUnityGroup.pointsMulEquiv_inclusion_ofAdd_one`: the included `μ_n`-point reads
-  off, on the `𝔾ₘ` generator, the underlying unit of the corresponding root of unity.
 * `TauCeti.RootsOfUnityGroup.powEnd_comp_inclusion`: the `n`th power endomorphism annihilates
   `μ_n`, i.e. `powEnd n ∘ inclusion n` is trivial.
 * `TauCeti.RootsOfUnityGroup.mem_range_inclusion`: a `𝔾ₘ`-point killed by the `n`th power lies
@@ -66,28 +64,6 @@ universe u v
 
 variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
-/-- Two points of `𝔾ₘ = D(Multiplicative ℤ)` are equal once they read off the same unit on the
-group-algebra generator `Multiplicative.ofAdd 1`: a character of `Multiplicative ℤ` is
-determined by its value at the generator (`MonoidHom.ext_mint`), and points are equivalent to
-characters. -/
-theorem gm_ext {f g : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)}
-    (h : DiagonalizableGroup.pointsMulEquiv f (Multiplicative.ofAdd (1 : ℤ)) =
-        DiagonalizableGroup.pointsMulEquiv g (Multiplicative.ofAdd (1 : ℤ))) :
-    f = g :=
-  (DiagonalizableGroup.pointsMulEquiv (R := R) (A := A) (G := Multiplicative ℤ)).injective
-    (MonoidHom.ext_mint h)
-
-/-- **Reading an included `μ_n`-point on the `𝔾ₘ` generator.** The `𝔾ₘ`-point `inclusion n f`
-reads off, on the generator `Multiplicative.ofAdd 1`, the underlying unit of the root of unity
-`RootsOfUnityGroup.pointsMulEquiv n f`. This is `charOfPoint_inclusion_ofAdd_one` restated
-through the `𝔾ₘ` points equivalence `DiagonalizableGroup.pointsMulEquiv`. -/
-theorem pointsMulEquiv_inclusion_ofAdd_one (n : ℕ)
-    (f : WithConv (MonoidAlgebra R (Multiplicative (ZMod n)) →ₐ[R] A)) :
-    DiagonalizableGroup.pointsMulEquiv (inclusion n f) (Multiplicative.ofAdd (1 : ℤ)) =
-      (pointsMulEquiv (R := R) (A := A) n f : Aˣ) := by
-  rw [DiagonalizableGroup.pointsMulEquiv_apply]
-  exact charOfPoint_inclusion_ofAdd_one n f
-
 /-- **The `n`th power endomorphism of `𝔾ₘ` annihilates `μ_n`.** Composing the power endomorphism
 `DiagonalizableGroup.powEnd n` after the inclusion `μ_n ↪ 𝔾ₘ` is the trivial homomorphism of
 group functors: every `μ_n`-point maps to a root of unity, whose `n`th power is `1`. -/
@@ -95,9 +71,9 @@ theorem powEnd_comp_inclusion (n : ℕ) :
     (DiagonalizableGroup.powEnd (R := R) (A := A) (n : ℤ)).comp (inclusion n) = 1 := by
   refine MonoidHom.ext fun f => ?_
   rw [MonoidHom.comp_apply, MonoidHom.one_apply]
-  apply gm_ext
-  rw [DiagonalizableGroup.pointsMulEquiv_powEnd, pointsMulEquiv_inclusion_ofAdd_one,
-    map_one, MonoidHom.one_apply, zpow_natCast]
+  apply DiagonalizableGroup.pointsMulEquiv_ext
+  rw [DiagonalizableGroup.pointsMulEquiv_powEnd, DiagonalizableGroup.pointsMulEquiv_apply,
+    charOfPoint_inclusion_ofAdd_one, map_one, MonoidHom.one_apply, zpow_natCast]
   exact (mem_rootsOfUnity n _).mp (SetLike.coe_mem (pointsMulEquiv (R := R) (A := A) n f))
 
 /-- The `n`th power endomorphism annihilates every `μ_n`-point, in element form. -/
@@ -122,8 +98,9 @@ theorem mem_range_inclusion (n : ℕ)
   refine ⟨(pointsMulEquiv (R := R) (A := A) n).symm
       ⟨DiagonalizableGroup.pointsMulEquiv g (Multiplicative.ofAdd (1 : ℤ)),
         (mem_rootsOfUnity n _).mpr hun⟩, ?_⟩
-  apply gm_ext
-  rw [pointsMulEquiv_inclusion_ofAdd_one, MulEquiv.apply_symm_apply]
+  apply DiagonalizableGroup.pointsMulEquiv_ext
+  rw [DiagonalizableGroup.pointsMulEquiv_apply, charOfPoint_inclusion_ofAdd_one,
+    MulEquiv.apply_symm_apply]
 
 /-- **`μ_n` is the kernel of the `n`th power endomorphism of `𝔾ₘ`.** The image of the inclusion
 `μ_n ↪ 𝔾ₘ` on points equals the set of points killed by the `n`th power endomorphism
