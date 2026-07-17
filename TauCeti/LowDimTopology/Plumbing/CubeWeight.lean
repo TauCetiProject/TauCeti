@@ -46,6 +46,12 @@ variable {V : Type*} [DecidableEq V]
 noncomputable def cubeVertex (x : V → ℤ) (T : Finset V) : V → ℤ :=
   x + ∑ v ∈ T, Pi.single v (1 : ℤ)
 
+/-- A plumbing cube vertex is the base point shifted by the basis spheres in the chosen
+directions. This is definitionally `cubeVertex`, packaged for rewriting. -/
+theorem cubeVertex_eq_add_sum (x : V → ℤ) (T : Finset V) :
+    cubeVertex x T = x + ∑ v ∈ T, Pi.single v (1 : ℤ) := by
+  rw [cubeVertex]
+
 /-- The vertex indexed by the empty subset is the base point. -/
 @[simp]
 theorem cubeVertex_empty (x : V → ℤ) : cubeVertex x ∅ = x := by

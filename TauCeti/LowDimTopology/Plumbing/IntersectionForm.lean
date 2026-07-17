@@ -186,6 +186,34 @@ theorem intersectionForm_self_add (x y : V → ℤ) :
     rw [P.intersectionForm_isSymm.eq y x]
     ring
 
+/-- The intersection pairing of a lattice point against a basis sphere is the corresponding column
+sum of the intersection matrix. -/
+theorem intersectionForm_single_right (x : V → ℤ) (v : V) :
+    P.intersectionForm x (Pi.single v 1) = ∑ i, x i * P.intersectionMatrix i v := by
+  rw [intersectionForm_apply]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Finset.sum_eq_single v
+    (fun j _ hj => by rw [Pi.single_eq_of_ne hj, mul_zero])
+    (fun hv => absurd (Finset.mem_univ v) hv), Pi.single_eq_same, mul_one]
+
+/-- The intersection pairing of a lattice point against a finite sum of basis spheres, as a sum of
+the individual column sums. -/
+theorem intersectionForm_sum_single_right (x : V → ℤ) (S : Finset V) :
+    P.intersectionForm x (∑ v ∈ S, Pi.single v 1) =
+      ∑ v ∈ S, ∑ i, x i * P.intersectionMatrix i v := by
+  rw [map_sum]
+  exact Finset.sum_congr rfl fun v _ => P.intersectionForm_single_right x v
+
+/-- The self-pairing of a finite sum of basis spheres is the double sum of the intersection-matrix
+entries over the chosen directions. -/
+theorem intersectionForm_sum_single_self (S : Finset V) :
+    P.intersectionForm (∑ v ∈ S, Pi.single v 1) (∑ w ∈ S, Pi.single w 1) =
+      ∑ v ∈ S, ∑ w ∈ S, P.intersectionMatrix v w := by
+  rw [map_sum P.intersectionForm, LinearMap.sum_apply]
+  refine Finset.sum_congr rfl fun v _ => ?_
+  rw [map_sum]
+  exact Finset.sum_congr rfl fun w _ => P.intersectionForm_single v w
+
 /-- The intersection form expanded into its framing contribution and adjacency contribution. -/
 theorem intersectionForm_apply_weight_add_adj (x y : V → ℤ) :
     P.intersectionForm x y =
