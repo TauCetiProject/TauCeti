@@ -118,6 +118,17 @@ theorem pointsMulEquiv_cocharPoints (ψ : M →* Multiplicative ℤ)
 
 /-! ### Power endomorphisms of `𝔾ₘ` -/
 
+/-- **Extensionality for `𝔾ₘ = D(Multiplicative ℤ)` points.** Two points are equal once they read
+off the same unit on the group-algebra generator `Multiplicative.ofAdd 1`: a character of
+`Multiplicative ℤ` is determined by its value at the generator (`MonoidHom.ext_mint`), and points
+are equivalent to characters. -/
+@[ext]
+theorem pointsMulEquiv_ext {f g : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)}
+    (h : pointsMulEquiv f (Multiplicative.ofAdd (1 : ℤ)) =
+        pointsMulEquiv g (Multiplicative.ofAdd (1 : ℤ))) :
+    f = g :=
+  (pointsMulEquiv (R := R) (A := A) (G := Multiplicative ℤ)).injective (MonoidHom.ext_mint h)
+
 /-- **The `n`-th power endomorphism of `𝔾ₘ`, on points.** Because `𝔾ₘ = D(Multiplicative ℤ)`,
 this is exactly the character of `𝔾ₘ` at the generator power `Multiplicative.ofAdd n`
 (`charPoints (Multiplicative.ofAdd n)`, recorded by `powEnd_eq_charPoints`); on points it acts as
