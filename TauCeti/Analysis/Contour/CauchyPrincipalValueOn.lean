@@ -321,7 +321,8 @@ private theorem exists_pos_separating_intervalIntegrable_truncatedIntegrand {γ 
 /-- **Pointwise domination of the truncated difference.** When distinct points of `S₁` and `S₂` are
 more than `2 * ε₀` apart and `ε < ε₀`, the truncated-integrand difference at `ε` is bounded
 pointwise by the sum of the `ε₀`-truncation norms: a point excised at `ε` by one set but not the
-other is `ε₀`-far from the other set, so that set's `ε₀`-truncation already vanishes there. -/
+other is, by the `2·ε₀`-separation, more than `ε₀` from that other set — so the other set's
+`ε₀`-truncation retains the full integrand value there, and that value dominates the difference. -/
 private theorem norm_truncatedIntegrand_sub_le {γ : ℝ → ℂ} {f : ℂ → ℂ} {S₁ S₂ : Finset ℂ}
     {ε ε₀ : ℝ} (t : ℝ) (hεlt : ε < ε₀)
     (hP1 : ∀ s₁ ∈ S₁, ∀ s₂ ∈ S₂, s₁ ≠ s₂ → 2 * ε₀ < ‖s₁ - s₂‖) :
