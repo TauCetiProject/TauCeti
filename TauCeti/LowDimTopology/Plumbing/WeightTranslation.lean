@@ -34,8 +34,9 @@ homology uses.
   subtracts the intersection pairing `A(x, l)` from the weight.
 * `TauCeti.PlumbingGraph.characteristicWeight_add_two_mulVec_eq_sub`: the translation equivariance
   `χ_{k + 2·A l}(x) = χ_k(x + l) - χ_k(l)`.
-* `TauCeti.PlumbingGraph.characteristicWeight_shift_le_iff`: the sublevel sets of the two spin^c
-  representatives correspond under the `l`-translation, with the constant grading shift `χ_k(l)`.
+* `TauCeti.PlumbingGraph.characteristicWeight_add_two_mulVec_le_iff`: the sublevel sets of the two
+  spin^c representatives correspond under the `l`-translation, with the constant grading shift
+  `χ_k(l)`.
 
 ## References
 
@@ -84,7 +85,8 @@ theorem characteristicWeight_add_two_mulVec_eq_sub (k : P.characteristicVectors)
 constant grading shift by `χ_k(l)`: a point `x` has shifted-covector weight at most `n` exactly when
 its `l`-translate has original weight at most `n + χ_k(l)`. This is the degree-preserving bijection
 of cubical generators underlying the spin^c invariance of lattice homology. -/
-theorem characteristicWeight_shift_le_iff (k : P.characteristicVectors) (m x : V → ℤ) (n : ℤ) :
+theorem characteristicWeight_add_two_mulVec_le_iff (k : P.characteristicVectors) (m x : V → ℤ)
+    (n : ℤ) :
     P.characteristicWeight
         ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩ x ≤ n ↔
       P.characteristicWeight k (x + m) ≤ n + P.characteristicWeight k m := by
