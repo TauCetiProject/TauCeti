@@ -114,14 +114,7 @@ counterclockwise circle `circleMap c R` over `[0, 2π]` about `w` is `1`: the ke
 normalization of `windingNumber_circleMap_eq_circleIntegral` cancels it to `1`. -/
 theorem windingNumber_circleMap_eq_one_of_dist_lt {c w : ℂ} {R : ℝ} (hw : dist w c < R) :
     windingNumber (circleMap c R) 0 (2 * Real.pi) w = 1 := by
-  have hR : 0 < R := dist_nonneg.trans_lt hw
-  have havoid : ∀ θ, circleMap c R θ ≠ w := by
-    intro θ hθ
-    have hd : dist (circleMap c R θ) c = R := by
-      rw [mem_sphere.mp (circleMap_mem_sphere' c R θ)]
-      exact abs_of_nonneg hR.le
-    rw [hθ] at hd
-    linarith
+  have havoid : ∀ θ, circleMap c R θ ≠ w := fun θ => circleMap_ne_mem_ball (mem_ball.mpr hw) θ
   rw [windingNumber_circleMap_eq_circleIntegral havoid,
     circleIntegral.integral_sub_inv_of_mem_ball (mem_ball.mpr hw)]
   have h2pi : (2 * (Real.pi : ℂ) * Complex.I) ≠ 0 := by
@@ -148,13 +141,9 @@ centre normalization. For a point `w` strictly outside the closed disc (`R < dis
 kernel is holomorphic across the disc, so the Cauchy-kernel circle integral is `0`. -/
 theorem windingNumber_circleMap_eq_zero_of_lt_dist {c w : ℂ} {R : ℝ} (hR : 0 ≤ R)
     (hw : R < dist w c) : windingNumber (circleMap c R) 0 (2 * Real.pi) w = 0 := by
-  have havoid : ∀ θ, circleMap c R θ ≠ w := by
-    intro θ hθ
-    have hd : dist (circleMap c R θ) c = R := by
-      rw [mem_sphere.mp (circleMap_mem_sphere' c R θ)]
-      exact abs_of_nonneg hR
-    rw [hθ] at hd
-    linarith
+  have havoid : ∀ θ, circleMap c R θ ≠ w := fun θ =>
+    ne_of_mem_of_not_mem (circleMap_mem_closedBall c hR θ)
+      (fun h => absurd (mem_closedBall.mp h) (not_le.mpr hw))
   rw [windingNumber_circleMap_eq_circleIntegral havoid,
     circleIntegral_sub_inv_eq_zero_of_lt_dist hR hw, mul_zero]
 
