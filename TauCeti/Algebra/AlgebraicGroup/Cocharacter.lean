@@ -118,26 +118,31 @@ theorem pointsMulEquiv_cocharPoints (ψ : M →* Multiplicative ℤ)
 
 /-! ### Power endomorphisms of `𝔾ₘ` -/
 
-/-- **The `n`-th power endomorphism of `𝔾ₘ`, on points.** It is induced (contravariantly) by the
-`n`-th power homomorphism `zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd n)` of
-`Multiplicative ℤ`. -/
+/-- **The `n`-th power endomorphism of `𝔾ₘ`, on points.** Because `𝔾ₘ = D(Multiplicative ℤ)`,
+this is exactly the character of `𝔾ₘ` at the generator power `Multiplicative.ofAdd n`
+(`charPoints (Multiplicative.ofAdd n)`, recorded by `powEnd_eq_charPoints`); on points it acts as
+`u ↦ u ^ n`. -/
 noncomputable def powEnd (n : ℤ) :
     WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) →*
       WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A) :=
-  pointsMap (zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd n))
+  charPoints (Multiplicative.ofAdd n)
+
+/-- The `n`-th power endomorphism of `𝔾ₘ` is the character of `𝔾ₘ` at `Multiplicative.ofAdd n`. -/
+theorem powEnd_eq_charPoints (n : ℤ) :
+    powEnd (R := R) (A := A) n = charPoints (Multiplicative.ofAdd n) := by
+  rw [powEnd]
 
 /-- **The power endomorphism acts as `u ↦ u ^ n` on points.** -/
 theorem pointsMulEquiv_powEnd (n : ℤ)
     (f : WithConv (MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] A)) :
     pointsMulEquiv (powEnd (R := R) (A := A) n f) (Multiplicative.ofAdd 1) =
       pointsMulEquiv f (Multiplicative.ofAdd 1) ^ n := by
-  rw [powEnd, pointsMulEquiv_pointsMap, MonoidHom.comp_apply, zpowersHom_apply,
-    toAdd_ofAdd, zpow_one, MonoidHom.apply_mint, toAdd_ofAdd]
+  rw [powEnd_eq_charPoints, pointsMulEquiv_charPoints, MonoidHom.apply_mint, toAdd_ofAdd]
 
 /-- The first power endomorphism is the identity. -/
 @[simp]
 theorem powEnd_one : powEnd (R := R) (A := A) 1 = MonoidHom.id _ := by
-  unfold powEnd
+  unfold powEnd charPoints
   rw [show zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd (1 : ℤ)) = MonoidHom.id _ from
     MonoidHom.ext_mint (by simp), pointsMap_id]
 
@@ -145,7 +150,7 @@ theorem powEnd_one : powEnd (R := R) (A := A) 1 = MonoidHom.id _ := by
 This is the multiplication of the endomorphism ring `End(𝔾ₘ) ≅ ℤ` on power maps. -/
 theorem powEnd_comp (a b : ℤ) :
     (powEnd (R := R) (A := A) a).comp (powEnd b) = powEnd (a * b) := by
-  unfold powEnd
+  unfold powEnd charPoints
   rw [← pointsMap_comp, zpowersHom_ofAdd_comp]
 
 /-! ### The character–cocharacter pairing -/
@@ -172,6 +177,10 @@ theorem pairing_one_left (ψ : M →* Multiplicative ℤ) : pairing (1 : M) ψ =
 theorem pairing_mul_right (m : M) (ψ ψ' : M →* Multiplicative ℤ) :
     pairing m (ψ * ψ') = pairing m ψ + pairing m ψ' := by
   simp only [pairing_def, MonoidHom.mul_apply, toAdd_mul]
+
+/-- The pairing vanishes on the identity cocharacter: `⟨m, 1⟩ = 0`. -/
+theorem pairing_one_right (m : M) : pairing m (1 : M →* Multiplicative ℤ) = 0 := by
+  simp only [pairing_def, MonoidHom.one_apply, toAdd_one]
 
 /-- **The pairing is realized as a power endomorphism of `𝔾ₘ`.** Composing the character `m`
 after the cocharacter `ψ` is the `⟨m, ψ⟩`-power endomorphism of `𝔾ₘ`, so on points it is
