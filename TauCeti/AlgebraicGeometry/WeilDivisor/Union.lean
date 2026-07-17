@@ -38,21 +38,6 @@ namespace WeilDivisor
 
 variable {X : Type*}
 
-/-! ### Inclusion–exclusion at the level of degrees -/
-
-/-- The lattice-ordered-group inclusion–exclusion identity for the unweighted degree:
-`deg (D ⊓ E) + deg (D ⊔ E) = deg D + deg E`. -/
-lemma degree_inf_add_degree_sup (D E : WeilDivisor X) :
-    degree (D ⊓ E) + degree (D ⊔ E) = degree D + degree E := by
-  rw [← degree_add, inf_add_sup, degree_add]
-
-/-- The lattice-ordered-group inclusion–exclusion identity for the weighted degree:
-`w-deg (D ⊓ E) + w-deg (D ⊔ E) = w-deg D + w-deg E`. -/
-lemma weightedDegree_inf_add_weightedDegree_sup (w : X → ℤ) (D E : WeilDivisor X) :
-    weightedDegree w (D ⊓ E) + weightedDegree w (D ⊔ E) =
-      weightedDegree w D + weightedDegree w E := by
-  rw [← weightedDegree_add, inf_add_sup, weightedDegree_add]
-
 namespace EffectiveDivisorOfDegree
 
 variable {d e : ℕ}
