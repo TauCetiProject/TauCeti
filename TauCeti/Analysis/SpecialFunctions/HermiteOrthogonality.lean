@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.RingTheory.Polynomial.Hermite.Basic
+public import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 public import TauCeti.RingTheory.Polynomial.Hermite.Derivative
 
 /-!
@@ -25,7 +26,7 @@ milestone **A1** of the `OrthogonalL2Bases` roadmap
 orthogonal, and self-paired to `n! · √(2π)`, in `L²` of the Gaussian weight.
 
 * `integrable_aeval_mul_gaussian`: every polynomial is integrable against the Gaussian weight
-  `e^{-x²/2}` (a monomial-by-monomial reduction to `integrable_rpow_mul_exp_neg_mul_sq`);
+  `e^{-x²/2}`;
 * `integral_aeval_mul_hermite_succ`, the **one-step weighted-pairing recursion**
   `∫ p · H_{n+1} · w = ∫ p' · Hₙ · w`, a single integration by parts over `ℝ`
   (`integral_eq_zero_of_hasDerivAt_of_integrable`) using the Rodrigues-type derivative identity
@@ -50,31 +51,13 @@ namespace TauCeti
 
 open MeasureTheory Polynomial ProbabilityTheory Real
 
-/-- Every monomial is integrable against the Gaussian weight `e^{-x²/2}`. Immediate from Mathlib's
-`integrable_rpow_mul_exp_neg_mul_sq` once the real power `x ^ (k : ℝ)` is identified with the
-natural power `x ^ k` (`Real.rpow_natCast`). -/
-theorem integrable_pow_mul_gaussian (k : ℕ) :
-    Integrable (fun x : ℝ => x ^ k * Real.exp (-(x ^ 2 / 2))) := by
-  have hb : (0 : ℝ) < 1 / 2 := by norm_num
-  have hs : (-1 : ℝ) < (k : ℝ) := by
-    have : (0 : ℝ) ≤ (k : ℝ) := by positivity
-    linarith
-  refine (integrable_rpow_mul_exp_neg_mul_sq hb hs).congr
-    (Filter.Eventually.of_forall fun x => ?_)
-  simp only [Real.rpow_natCast]
-  rw [show -(1 / 2 : ℝ) * x ^ 2 = -(x ^ 2 / 2) from by ring]
-
-/-- **Integrability of a polynomial against the Gaussian weight** `e^{-x²/2}`: a polynomial is a
-finite linear combination of monomials, each integrable by `integrable_pow_mul_gaussian`. -/
+/-- **Integrability of a polynomial against the Gaussian weight** `e^{-x²/2}`: every real
+polynomial, evaluated pointwise and multiplied by the Gaussian weight, is Lebesgue-integrable. -/
 theorem integrable_aeval_mul_gaussian (p : ℤ[X]) :
     Integrable (fun x : ℝ => aeval x p * Real.exp (-(x ^ 2 / 2))) := by
-  simp_rw [aeval_eq_sum_range (p := p), Finset.sum_mul]
-  refine integrable_finsetSum _ fun i _ => ?_
-  have e : (fun x : ℝ => p.coeff i • x ^ i * Real.exp (-(x ^ 2 / 2)))
-      = fun x : ℝ => (p.coeff i : ℝ) * (x ^ i * Real.exp (-(x ^ 2 / 2))) := by
-    ext x; rw [zsmul_eq_mul, mul_assoc]
-  rw [e]
-  exact (integrable_pow_mul_gaussian i).const_mul _
+  have h := integrable_eval_mul_gaussianEnvelope 0 (p.map (Int.castRingHom ℝ)) (w := 1) one_ne_zero
+  refine h.congr (Filter.Eventually.of_forall fun x => ?_)
+  simp only [eval_map, aeval_def, algebraMap_int_eq, sub_zero, NNReal.coe_one, mul_one, neg_div]
 
 /-- The Rodrigues-type step behind the recursion, at the level of `aeval`: from Mathlib's defining
 recursion `hermite (n+1) = X · hermite n - derivative (hermite n)`,
@@ -85,12 +68,18 @@ private theorem aeval_derivative_hermite (n : ℕ) (x : ℝ) :
     rw [hermite_succ n]; ring
   rw [h, map_sub, map_mul, aeval_X]
 
+/-- A product of two `aeval`s of polynomials against the Gaussian weight `e^{-x²/2}` is
+Lebesgue-integrable. -/
+private theorem integrable_aeval_mul_aeval_mul_gaussian (p q : ℤ[X]) :
+    Integrable (fun x : ℝ => aeval x p * aeval x q * Real.exp (-(x ^ 2 / 2))) := by
+  have e : (fun x : ℝ => aeval x p * aeval x q * Real.exp (-(x ^ 2 / 2)))
+      = fun x : ℝ => aeval x (p * q) * Real.exp (-(x ^ 2 / 2)) := by
+    ext x; rw [map_mul]
+  rw [e]; exact integrable_aeval_mul_gaussian _
+
 /-- **One-step weighted-pairing recursion** (target A1): a single integration by parts moves a
 Hermite index onto a derivative,
-`∫ p · H_{n+1} · e^{-x²/2} = ∫ p' · Hₙ · e^{-x²/2}`. The integrand is the derivative of
-`-(p · Hₙ · e^{-x²/2})` (using `(Hₙ · w)' = -(H_{n+1} · w)`), whose integral over `ℝ` vanishes by
-`integral_eq_zero_of_hasDerivAt_of_integrable` since the antiderivative and its derivative are both
-integrable. -/
+`∫ p · H_{n+1} · e^{-x²/2} = ∫ p' · Hₙ · e^{-x²/2}`. -/
 theorem integral_aeval_mul_hermite_succ (p : ℤ[X]) (n : ℕ) :
     (∫ x : ℝ, aeval x p * aeval x (hermite (n + 1)) * Real.exp (-(x ^ 2 / 2)))
       = ∫ x : ℝ, aeval x (derivative p) * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2)) := by
@@ -114,31 +103,16 @@ theorem integral_aeval_mul_hermite_succ (p : ℤ[X]) (n : ℕ) :
       rw [aeval_derivative_hermite]; ring
     rw [hval]
     exact hbase
-  have ht1 : Integrable (fun x : ℝ =>
-      aeval x (derivative p) * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2))) := by
-    have e : (fun x : ℝ => aeval x (derivative p) * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2)))
-        = fun x : ℝ => aeval x (derivative p * hermite n) * Real.exp (-(x ^ 2 / 2)) := by
-      ext x; rw [map_mul]
-    rw [e]; exact integrable_aeval_mul_gaussian _
-  have ht2 : Integrable (fun x : ℝ =>
-      aeval x p * aeval x (hermite (n + 1)) * Real.exp (-(x ^ 2 / 2))) := by
-    have e : (fun x : ℝ => aeval x p * aeval x (hermite (n + 1)) * Real.exp (-(x ^ 2 / 2)))
-        = fun x : ℝ => aeval x (p * hermite (n + 1)) * Real.exp (-(x ^ 2 / 2)) := by
-      ext x; rw [map_mul]
-    rw [e]; exact integrable_aeval_mul_gaussian _
-  have hf : Integrable (fun x : ℝ =>
-      aeval x p * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2))) := by
-    have e : (fun x : ℝ => aeval x p * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2)))
-        = fun x : ℝ => aeval x (p * hermite n) * Real.exp (-(x ^ 2 / 2)) := by
-      ext x; rw [map_mul]
-    rw [e]; exact integrable_aeval_mul_gaussian _
+  have ht1 := integrable_aeval_mul_aeval_mul_gaussian (derivative p) (hermite n)
+  have ht2 := integrable_aeval_mul_aeval_mul_gaussian p (hermite (n + 1))
+  have hf := integrable_aeval_mul_aeval_mul_gaussian p (hermite n)
   have hzero := integral_eq_zero_of_hasDerivAt_of_integrable hderiv (ht1.sub ht2) hf
   rw [integral_sub ht1 ht2] at hzero
   exact (sub_eq_zero.mp hzero).symm
 
 /-- **Iterated recursion**: pairing `p` with `Hₙ` against the Gaussian weight equals pairing the
 `n`-th derivative of `p` with `H₀ = 1`, i.e. `∫ p · Hₙ · e^{-x²/2} = ∫ (dⁿ/dxⁿ p) · e^{-x²/2}`. -/
-theorem integral_aeval_mul_hermite (p : ℤ[X]) (n : ℕ) :
+private theorem integral_aeval_mul_hermite (p : ℤ[X]) (n : ℕ) :
     (∫ x : ℝ, aeval x p * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2)))
       = ∫ x : ℝ, aeval x (derivative^[n] p) * Real.exp (-(x ^ 2 / 2)) := by
   induction n generalizing p with
@@ -147,7 +121,8 @@ theorem integral_aeval_mul_hermite (p : ℤ[X]) (n : ℕ) :
     rw [integral_aeval_mul_hermite_succ, ih (derivative p), Function.iterate_succ_apply]
 
 /-- The Gaussian integral of the bare weight: `∫ x, e^{-x²/2} = √(2π)`. -/
-theorem integral_gaussian_half : (∫ x : ℝ, Real.exp (-(x ^ 2 / 2))) = Real.sqrt (2 * π) := by
+private theorem integral_gaussian_half :
+    (∫ x : ℝ, Real.exp (-(x ^ 2 / 2))) = Real.sqrt (2 * π) := by
   have h := integral_gaussian (1 / 2)
   have e : (fun x : ℝ => Real.exp (-(1 / 2) * x ^ 2)) = fun x : ℝ => Real.exp (-(x ^ 2 / 2)) := by
     ext x; rw [show -(1 / 2 : ℝ) * x ^ 2 = -(x ^ 2 / 2) from by ring]
@@ -161,9 +136,7 @@ private theorem integral_hermite_swap (m n : ℕ) :
   congr 1; ext x; ring
 
 /-- **The Hermite orthogonality relation, Lebesgue form** (milestone A1):
-`∫ x, Hₘ(x) · Hₙ(x) · e^{-x²/2} = if m = n then n! · √(2π) else 0`. Peeling the larger index with
-`integral_aeval_mul_hermite` reduces `Hₘ` to `dⁿ/dxⁿ Hₘ`, which is `0` when `m < n`
-(degree drop) and the constant `m!` when `m = n`; the case `n < m` is symmetric. -/
+`∫ x, Hₘ(x) · Hₙ(x) · e^{-x²/2} = if m = n then n! · √(2π) else 0`. -/
 theorem integral_hermite_mul_hermite_mul_gaussian (m n : ℕ) :
     (∫ x : ℝ, aeval x (hermite m) * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2)))
       = if m = n then (n.factorial : ℝ) * Real.sqrt (2 * π) else 0 := by
