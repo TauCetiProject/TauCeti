@@ -70,8 +70,8 @@ namespace DiagonalizableGroup
 variable {R : Type u} {A : Type v} {M : Type w}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A] [CommGroup M]
 
-/-- Composing the generator-`Multiplicative.ofAdd a` power homomorphism after the
-generator-`Multiplicative.ofAdd b` one multiplies exponents. -/
+/-- Composing the generator-`Multiplicative.ofAdd b` power homomorphism after the
+generator-`Multiplicative.ofAdd a` one multiplies exponents. -/
 private theorem zpowersHom_ofAdd_comp (a b : ℤ) :
     (zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd b)).comp
         (zpowersHom (Multiplicative ℤ) (Multiplicative.ofAdd a)) =
