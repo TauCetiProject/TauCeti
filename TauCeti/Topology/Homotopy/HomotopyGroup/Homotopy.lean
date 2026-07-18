@@ -45,8 +45,8 @@ theorem map_homotopic_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) (hg : g x =
   · intro t
     simpa only [map, ContinuousMap.comp_apply, _root_.GenLoop.mk_apply] using H.apply_one (p.1 t)
   · intro t u hu
-    convert H.eq_fst t (Set.mem_singleton_iff.mpr (p.2 u hu)) using 1 <;>
-      rfl
+    change H (t, p u) = f (p u)
+    exact H.eq_fst t (Set.mem_singleton_iff.mpr (p.2 u hu))
 
 end GenLoop
 
