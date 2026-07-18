@@ -34,7 +34,7 @@ standard structure.
 ## Main declarations
 
 * `TauCeti.sqMap`: the real-coordinate squaring map `(x, y) ↦ (x² - y², 2xy)`.
-* `TauCeti.sqMap_not_isLinearMap`: `sqMap` is genuinely nonlinear.
+* `TauCeti.not_isLinearMap_sqMap`: `sqMap` is genuinely nonlinear.
 * `TauCeti.isConstStructureJHolomorphicAt_sqMap` and
   `TauCeti.isConstStructureJHolomorphic_sqMap`: `sqMap` is constant-structure `J`-holomorphic at
   every point, hence globally.
@@ -58,7 +58,7 @@ lemma sqMap_apply (p : ℝ × ℝ) : sqMap p = (p.1 ^ 2 - p.2 ^ 2, 2 * (p.1 * p.
 
 /-- `sqMap` is genuinely nonlinear: it does not commute with scalar multiplication, so it is not one
 of the linear instances of the constant-structure `J`-holomorphic predicate. -/
-lemma sqMap_not_isLinearMap : ¬ IsLinearMap ℝ sqMap := by
+lemma not_isLinearMap_sqMap : ¬ IsLinearMap ℝ sqMap := by
   intro h
   have hkey := h.map_smul 2 (1, 0)
   simp only [sqMap_apply, Prod.smul_mk, smul_eq_mul, Prod.mk.injEq] at hkey
