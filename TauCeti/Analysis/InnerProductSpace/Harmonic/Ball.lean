@@ -83,20 +83,23 @@ theorem preimage_const_add_smul_sphere (x : E) {c : 𝕜} (hc : c ≠ 0) (r : �
 /-- Membership form of `preimage_const_add_smul_ball_norm`. -/
 @[simp]
 theorem const_add_smul_mem_ball_iff (x y : E) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
-    x + c • y ∈ Metric.ball x (‖c‖ * r) ↔ y ∈ Metric.ball 0 r := by
-  exact Set.ext_iff.mp (preimage_const_add_smul_ball_norm x hc r) y
+    ‖c • y‖ < ‖c‖ * r ↔ y ∈ Metric.ball 0 r := by
+  simpa only [Set.mem_preimage, Metric.mem_ball, dist_self_add_left] using
+    Set.ext_iff.mp (preimage_const_add_smul_ball_norm x hc r) y
 
 /-- Membership form of `preimage_const_add_smul_closedBall`. -/
 @[simp]
 theorem const_add_smul_mem_closedBall_iff (x y : E) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
-    x + c • y ∈ Metric.closedBall x (‖c‖ * r) ↔ y ∈ Metric.closedBall 0 r := by
-  exact Set.ext_iff.mp (preimage_const_add_smul_closedBall x hc r) y
+    ‖c • y‖ ≤ ‖c‖ * r ↔ y ∈ Metric.closedBall 0 r := by
+  simpa only [Set.mem_preimage, Metric.mem_closedBall, dist_self_add_left] using
+    Set.ext_iff.mp (preimage_const_add_smul_closedBall x hc r) y
 
 /-- Membership form of `preimage_const_add_smul_sphere`. -/
 @[simp]
 theorem const_add_smul_mem_sphere_iff (x y : E) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
-    x + c • y ∈ Metric.sphere x (‖c‖ * r) ↔ y ∈ Metric.sphere 0 r := by
-  exact Set.ext_iff.mp (preimage_const_add_smul_sphere x hc r) y
+    ‖c • y‖ = ‖c‖ * r ↔ y ∈ Metric.sphere 0 r := by
+  simpa only [Set.mem_preimage, mem_sphere_iff_norm, add_sub_cancel_left] using
+    Set.ext_iff.mp (preimage_const_add_smul_sphere x hc r) y
 
 end Preimage
 
@@ -111,21 +114,21 @@ theorem preimage_const_add_smul_ball {E : Type*} [SeminormedAddCommGroup E] [Mod
 @[simp]
 theorem const_add_smul_mem_ball_unit_iff {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
     [NormSMulClass ℝ E] (x y : E) {r : ℝ} (hr : 0 < r) :
-    x + r • y ∈ Metric.ball x r ↔ y ∈ Metric.ball 0 1 := by
+    ‖r • y‖ < r ↔ y ∈ Metric.ball 0 1 := by
   simpa [Real.norm_of_nonneg hr.le] using const_add_smul_mem_ball_iff x y hr.ne' 1
 
 /-- Positive-radius affine normalization of membership in a closed ball to the unit closed ball. -/
 @[simp]
 theorem const_add_smul_mem_closedBall_unit_iff {E : Type*} [SeminormedAddCommGroup E]
     [Module ℝ E] [NormSMulClass ℝ E] (x y : E) {r : ℝ} (hr : 0 < r) :
-    x + r • y ∈ Metric.closedBall x r ↔ y ∈ Metric.closedBall 0 1 := by
+    ‖r • y‖ ≤ r ↔ y ∈ Metric.closedBall 0 1 := by
   simpa [Real.norm_of_nonneg hr.le] using const_add_smul_mem_closedBall_iff x y hr.ne' 1
 
 /-- Positive-radius affine normalization of membership in a sphere to the unit sphere. -/
 @[simp]
 theorem const_add_smul_mem_sphere_unit_iff {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
     [NormSMulClass ℝ E] (x y : E) {r : ℝ} (hr : 0 < r) :
-    x + r • y ∈ Metric.sphere x r ↔ y ∈ Metric.sphere 0 1 := by
+    ‖r • y‖ = r ↔ y ∈ Metric.sphere 0 1 := by
   simpa [Real.norm_of_nonneg hr.le] using const_add_smul_mem_sphere_iff x y hr.ne' 1
 
 variable
