@@ -58,22 +58,32 @@ def Hom.mk' {A B : AbelianVariety K} (f : A.toOver ⟶ B.toOver)
 abbrev Hom.toOverHom {A B : AbelianVariety K} (f : A ⟶ B) : A.toOver ⟶ B.toOver :=
   f.hom.hom.hom.hom
 
+private lemma Hom.grpHom_id (A : AbelianVariety K) :
+    (𝟙 A : A ⟶ A).hom.hom = 𝟙 (Grp.mk A.toOver) :=
+  (congrArg (fun h : CommGrp.mk A.toOver ⟶ CommGrp.mk A.toOver ↦ h.hom)
+    (InducedCategory.id_hom A)).trans
+    (CommGrp.id_hom (CommGrp.mk A.toOver))
+
+private lemma Hom.grpHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C) :
+    (f ≫ g).hom.hom = f.hom.hom ≫ g.hom.hom :=
+  (congrArg (fun h : CommGrp.mk A.toOver ⟶ CommGrp.mk C.toOver ↦ h.hom)
+    (InducedCategory.comp_hom f g)).trans
+    (CommGrp.comp_hom f.hom g.hom)
+
 /-- `toOverHom` sends the identity homomorphism to the identity over `Spec K`. -/
 @[simp]
 lemma Hom.toOverHom_id (A : AbelianVariety K) : Hom.toOverHom (𝟙 A) = 𝟙 A.toOver :=
   by
-    exact (congrArg (fun h ↦ h.hom.hom.hom) (InducedCategory.id_hom (F := fun A ↦
-      CommGrp.mk A.toOver) A)).trans ((congrArg (fun h ↦ h.hom.hom)
-        (CommGrp.id_hom (CommGrp.mk A.toOver))).trans (Grp.id_hom_hom (Grp.mk A.toOver)))
+    exact (congrArg (fun h ↦ h.hom.hom) (Hom.grpHom_id A)).trans
+      (Grp.id_hom_hom (Grp.mk A.toOver))
 
 /-- `toOverHom` sends composition to composition over `Spec K`. -/
 @[simp, reassoc]
 lemma Hom.toOverHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C) :
     Hom.toOverHom (f ≫ g) = Hom.toOverHom f ≫ Hom.toOverHom g :=
   by
-    exact (congrArg (fun h ↦ h.hom.hom.hom) (InducedCategory.comp_hom f g)).trans
-      ((congrArg (fun h ↦ h.hom.hom) (CommGrp.comp_hom f.hom g.hom)).trans
-        (Grp.comp_hom_hom f.hom.hom g.hom.hom))
+    exact (congrArg (fun h ↦ h.hom.hom) (Hom.grpHom_comp f g)).trans
+      (Grp.comp_hom_hom f.hom.hom g.hom.hom)
 
 /-- The underlying morphism over `Spec K` of a homomorphism built by `Hom.mk'` is the supplied
 morphism. -/
@@ -88,20 +98,20 @@ lemma Hom.toOverHom_mk' {A B : AbelianVariety K} (f : A.toOver ⟶ B.toOver)
         (one_f := one_f) (mul_f := mul_f))
 
 /-- A homomorphism of abelian varieties preserves the unit section. -/
-@[reassoc]
+@[simp, reassoc]
 lemma Hom.one_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     η[A.toOver] ≫ Hom.toOverHom f = η[B.toOver] :=
   IsMonHom.one_hom f.hom.hom.hom.hom
 
 /-- A homomorphism of abelian varieties preserves multiplication. -/
-@[reassoc]
+@[simp, reassoc]
 lemma Hom.mul_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     μ[A.toOver] ≫ Hom.toOverHom f =
       (Hom.toOverHom f ⊗ₘ Hom.toOverHom f) ≫ μ[B.toOver] :=
   IsMonHom.mul_hom f.hom.hom.hom.hom
 
 /-- A homomorphism of abelian varieties preserves inverses. -/
-@[reassoc]
+@[simp, reassoc]
 lemma Hom.inv_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     ι[A.toOver] ≫ Hom.toOverHom f = Hom.toOverHom f ≫ ι[B.toOver] :=
   GrpObj.inv_hom f.hom.hom.hom.hom
@@ -133,7 +143,7 @@ lemma Hom.toSchemeHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C
 
 /-- The underlying scheme morphism of an abelian-variety homomorphism commutes with the structure
 morphisms to `Spec K`. -/
-@[reassoc]
+@[simp, reassoc]
 lemma Hom.toSchemeHom_comp_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     Hom.toSchemeHom f ≫ B.toOver.hom = A.toOver.hom :=
   (Hom.toOverHom f).w
