@@ -49,7 +49,6 @@ noncomputable instance : Category (AbelianVariety K) :=
 
 /-- Construct a homomorphism of abelian varieties from a morphism over `Spec K` and proofs that it
 preserves the unit and multiplication. -/
-@[expose]
 def Hom.mk' {A B : AbelianVariety K} (f : A.toOver ⟶ B.toOver)
     (one_f : η[A.toOver] ≫ f = η[B.toOver] := by cat_disch)
     (mul_f : μ[A.toOver] ≫ f = (f ⊗ₘ f) ≫ μ[B.toOver] := by cat_disch) : A ⟶ B :=
@@ -62,13 +61,19 @@ abbrev Hom.toOverHom {A B : AbelianVariety K} (f : A ⟶ B) : A.toOver ⟶ B.toO
 /-- `toOverHom` sends the identity homomorphism to the identity over `Spec K`. -/
 @[simp]
 lemma Hom.toOverHom_id (A : AbelianVariety K) : Hom.toOverHom (𝟙 A) = 𝟙 A.toOver :=
-  rfl
+  by
+    exact (congrArg (fun h ↦ h.hom.hom.hom) (InducedCategory.id_hom (F := fun A ↦
+      CommGrp.mk A.toOver) A)).trans ((congrArg (fun h ↦ h.hom.hom)
+        (CommGrp.id_hom (CommGrp.mk A.toOver))).trans (Grp.id_hom_hom (Grp.mk A.toOver)))
 
 /-- `toOverHom` sends composition to composition over `Spec K`. -/
 @[simp, reassoc]
 lemma Hom.toOverHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C) :
     Hom.toOverHom (f ≫ g) = Hom.toOverHom f ≫ Hom.toOverHom g :=
-  rfl
+  by
+    exact (congrArg (fun h ↦ h.hom.hom.hom) (InducedCategory.comp_hom f g)).trans
+      ((congrArg (fun h ↦ h.hom.hom) (CommGrp.comp_hom f.hom g.hom)).trans
+        (Grp.comp_hom_hom f.hom.hom g.hom.hom))
 
 /-- The underlying morphism over `Spec K` of a homomorphism built by `Hom.mk'` is the supplied
 morphism. -/
@@ -77,16 +82,19 @@ lemma Hom.toOverHom_mk' {A B : AbelianVariety K} (f : A.toOver ⟶ B.toOver)
     (one_f : η[A.toOver] ≫ f = η[B.toOver] := by cat_disch)
     (mul_f : μ[A.toOver] ≫ f = (f ⊗ₘ f) ≫ μ[B.toOver] := by cat_disch) :
     Hom.toOverHom (Hom.mk' f one_f mul_f) = f :=
-  rfl
+  by
+    simpa only [Hom.toOverHom, Hom.mk', InducedCategory.homMk_hom] using
+      (Grp.homMk''_hom_hom (A := Grp.mk A.toOver) (B := Grp.mk B.toOver) f
+        (one_f := one_f) (mul_f := mul_f))
 
 /-- A homomorphism of abelian varieties preserves the unit section. -/
-@[reassoc]
+@[simp, reassoc]
 lemma Hom.one_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     η[A.toOver] ≫ Hom.toOverHom f = η[B.toOver] :=
   IsMonHom.one_hom f.hom.hom.hom.hom
 
 /-- A homomorphism of abelian varieties preserves multiplication. -/
-@[reassoc]
+@[simp, reassoc]
 lemma Hom.mul_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     μ[A.toOver] ≫ Hom.toOverHom f =
       (Hom.toOverHom f ⊗ₘ Hom.toOverHom f) ≫ μ[B.toOver] :=
