@@ -7,7 +7,7 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Homotopy.Product
-public import TauCeti.AlgebraicTopology.FundamentalGroup
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 
 /-!
 # The fundamental group of a product space
