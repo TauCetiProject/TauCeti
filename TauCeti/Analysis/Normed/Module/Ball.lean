@@ -86,13 +86,6 @@ theorem preimage_const_add_smul_ball {E : Type*} [SeminormedAddCommGroup E] [Mod
     ((fun y : E ↦ x + c • y) ⁻¹' Metric.ball x (|c| * r)) = Metric.ball 0 r := by
   simpa [Real.norm_eq_abs] using preimage_const_add_smul_ball_norm x hc r
 
-/-- Positive-radius affine normalization of membership in a ball to the unit ball. -/
-@[simp]
-theorem const_add_smul_mem_ball_unit_iff {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
-    [NormSMulClass ℝ E] (y : E) {r : ℝ} (hr : 0 < r) :
-    ‖r • y‖ < r ↔ y ∈ Metric.ball 0 1 := by
-  simpa [Real.norm_of_nonneg hr.le] using const_add_smul_mem_ball_iff y hr.ne' 1
-
 /-- Positive-radius affine normalization of membership in a closed ball to the unit closed ball. -/
 @[simp]
 theorem const_add_smul_mem_closedBall_unit_iff {E : Type*} [SeminormedAddCommGroup E]
