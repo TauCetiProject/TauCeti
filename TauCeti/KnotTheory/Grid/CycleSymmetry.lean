@@ -6,7 +6,7 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.Equiv
 public import TauCeti.KnotTheory.Grid.BasicCycles
-public import TauCeti.KnotTheory.Grid.DifferentialSymmetry
+public import TauCeti.KnotTheory.Grid.Differential.Symmetry
 
 /-!
 # Symmetries of the fully blocked grid complex act on cycles and boundaries

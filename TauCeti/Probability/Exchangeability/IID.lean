@@ -1,6 +1,6 @@
 module
 
-public import TauCeti.Probability.Exchangeability.ConditionallyIIDImplications
+public import TauCeti.Probability.Exchangeability.ConditionallyIID.Implications
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.IdentDistrib
 

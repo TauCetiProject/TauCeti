@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.RingTheory.ClassGroup.Basic
-public import TauCeti.Algebra.Group.ElementaryTwoQuotient
+public import TauCeti.Algebra.Group.ElementaryTwoQuotient.Basic
 
 /-!
 # The maximal elementary-2 quotient `Cl(R)/Cl(R)²` of a class group

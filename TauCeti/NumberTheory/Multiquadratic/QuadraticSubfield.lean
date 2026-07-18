@@ -17,9 +17,9 @@ multiquadratic field `M = K(rootᵢ : i)`, and under square-class independence t
 genuinely quadratic and pairwise distinct: the assignment `S ↦ K(∏_{i ∈ S} root i)` from the
 nonempty subsets of the index type is injective. This gives a concrete, arithmetic family of
 quadratic subfields that the genus-field constructions consume, complementing the abstract
-subfield/subspace dictionary of `TauCeti.NumberTheory.Multiquadratic.SubfieldLattice` and
-`TauCeti.NumberTheory.Multiquadratic.SubfieldDegree` (where a quadratic subfield is characterised as
-a hyperplane of `𝔽₂ⁿ`).
+subfield/subspace dictionary of `TauCeti.NumberTheory.Multiquadratic.Subfield.Lattice` and
+`TauCeti.NumberTheory.Multiquadratic.Subfield.Degree` (where a quadratic subfield is characterised
+as a hyperplane of `𝔽₂ⁿ`).
 
 The engine for distinctness is the standalone same-square-class criterion for simple quadratic
 extensions, `TauCeti.IntermediateField.isSquare_mul_of_adjoin_simple_eq`: two square roots generate

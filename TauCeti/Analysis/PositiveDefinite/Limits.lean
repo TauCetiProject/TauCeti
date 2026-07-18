@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PositiveDefinite.FunctionKernel
-public import TauCeti.Analysis.PositiveDefinite.Kernel
+public import TauCeti.Analysis.PositiveDefinite.Function.Kernel
+public import TauCeti.Analysis.PositiveDefinite.Kernel.Basic
 import Mathlib.Topology.Algebra.Monoid
 import Mathlib.Topology.Order.OrderClosed
 

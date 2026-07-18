@@ -5,12 +5,12 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.Analysis.Contour.DixonDef
+public import TauCeti.Analysis.Contour.Dixon.Def
 public import TauCeti.Analysis.Contour.PiecewiseC1On
-import TauCeti.Analysis.Contour.CauchyIntegralFormula
-import TauCeti.Analysis.Contour.CurveDistance
-import TauCeti.Analysis.Contour.DixonFunctionDiff
-import TauCeti.Analysis.Contour.DixonLiouville
+import TauCeti.Analysis.Contour.Cauchy.IntegralFormula
+import TauCeti.Analysis.Contour.Curve.Distance
+import TauCeti.Analysis.Contour.Dixon.FunctionDiff
+import TauCeti.Analysis.Contour.Dixon.Liouville
 
 /-!
 # The homology Cauchy theorem, via Dixon's argument

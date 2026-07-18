@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule
+public import TauCeti.Algebra.Coalgebra.Comodule.Basic
 
 /-!
 # Additive structure on comodule morphisms

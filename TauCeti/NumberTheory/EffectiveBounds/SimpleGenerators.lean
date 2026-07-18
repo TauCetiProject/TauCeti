@@ -6,7 +6,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Data.Int.Interval
-public import TauCeti.Algebra.Polynomial.CardRootSetUnion
+public import TauCeti.Algebra.Polynomial.Card.RootSetUnion
 public import TauCeti.FieldTheory.IntermediateField.Card
 
 /-!
@@ -20,7 +20,7 @@ lie in a finite set `T`, then the simple intermediate fields `ℚ⟮x⟯` genera
 are finite in number and no more numerous than `T`.
 
 This file specializes that root-to-field image bound to the bounded-polynomial root set: the
-bounded root set itself is counted in `TauCeti.Algebra.Polynomial.CardRootSetUnion`, the generic
+bounded root set itself is counted in `TauCeti.Algebra.Polynomial.Card.RootSetUnion`, the generic
 finite-generator-to-simple-field count lives in `TauCeti.FieldTheory.IntermediateField.Card`, and
 here we only pass from roots to the simple intermediate fields they generate.
 

@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.Analysis.Contour.Residue
+public import TauCeti.Analysis.Contour.Residue.Basic
 
 /-!
 # Canonical Laurent data of a meromorphic function

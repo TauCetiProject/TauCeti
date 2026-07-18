@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.Contour.MeromorphicLaurent
-public import TauCeti.Analysis.Contour.PolarPartDecomposition
+public import TauCeti.Analysis.Contour.PolarPart.Decomposition
 public import TauCeti.Analysis.Contour.PwC1ImmersionOn
 public import TauCeti.Analysis.Contour.RegularityConditions
 

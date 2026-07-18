@@ -13,7 +13,7 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 # Lower-order pointwise forms for divergence-form PDEs
 
 For a divergence-form operator `L u = -∂ⱼ(aⁱʲ ∂ᵢ u) + bⁱ ∂ᵢ u + c u`, the principal matrix
-coefficient lives in `TauCeti.Analysis.PDE.UniformEllipticity`. This file records the two
+coefficient lives in `TauCeti.Analysis.PDE.Uniform.Ellipticity`. This file records the two
 lower-order pointwise forms:
 
 * `u ↦ b(x) · ∇u`, the first-order drift form `driftForm (b x)`;
@@ -21,8 +21,8 @@ lower-order pointwise forms:
 
 Boundedness of the coefficients is not given its own predicate: following Mathlib, a result
 that needs a bound states it inline, as `∀ x ∈ Ω, ‖b x‖ ≤ β`, and the energy-form estimates in
-`TauCeti.Analysis.PDE.EnergyForm` and `TauCeti.Analysis.PDE.EnergyLowerBounds` take their bounds
-in that shape.
+`TauCeti.Analysis.PDE.EnergyForm.Basic` and `TauCeti.Analysis.PDE.EnergyLowerBounds` take their
+bounds in that shape.
 
 ## Main declarations
 

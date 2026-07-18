@@ -14,7 +14,7 @@ The self-diffeomorphism group `M ≃ₘ^n⟮I, I⟯ M` acts on the underlying ma
 `φ • x = φ x`. This file records that action, its faithfulness, and continuity in the point.
 
 The action formalization mirrors `TauCeti.Homeomorph.applyMulAction` in
-`TauCeti.Topology.Algebra.HomeomorphAction`,
+`TauCeti.Topology.Algebra.Homeomorph.Action`,
 which in turn follows `Equiv.Perm.applyMulAction` and the construction in Kim Morrison's
 mathlib4#40135.
 

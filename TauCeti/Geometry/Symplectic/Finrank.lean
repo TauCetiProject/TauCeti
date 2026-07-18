@@ -5,8 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Algebra.Ring.Parity
-public import TauCeti.Geometry.Symplectic.ComplexModule
-public import TauCeti.LinearAlgebra.ComplexFinrank
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+public import TauCeti.LinearAlgebra.Complex.Finrank
 
 /-!
 # An almost complex structure forces even real dimension

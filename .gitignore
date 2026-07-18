@@ -9,3 +9,6 @@
 
 __pycache__/
 *.pyc
+
+# Claude Code agent worktrees are nested checkouts, never repository content.
+.claude/worktrees/

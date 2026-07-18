@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Order
-public import TauCeti.AlgebraicGeometry.WeilDivisor.FixedDegree
+public import TauCeti.AlgebraicGeometry.WeilDivisor.FixedDegree.Basic
 
 /-!
 # Fixed-degree positive and negative parts of a Weil divisor

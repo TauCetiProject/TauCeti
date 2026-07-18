@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import TauCeti.Analysis.Contour.CrossingMonotonicity
-import TauCeti.Analysis.Contour.CrossingWindows
+import TauCeti.Analysis.Contour.Crossing.Monotonicity
+import TauCeti.Analysis.Contour.Crossing.Windows
 import TauCeti.Analysis.Contour.ExitTime
 
 /-!

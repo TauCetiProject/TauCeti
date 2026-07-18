@@ -4,13 +4,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor.AbelJacobi
+public import TauCeti.AlgebraicGeometry.WeilDivisor.AbelJacobi.Basic
 
 /-!
 # Changing the base point in the abstract Abel-Jacobi class
 
 This file adds the base-point-change calculus for the formal divisor-class shadow of the
-Abel-Jacobi map from `TauCeti.AlgebraicGeometry.WeilDivisor.AbelJacobi`.
+Abel-Jacobi map from `TauCeti.AlgebraicGeometry.WeilDivisor.AbelJacobi.Basic`.
 
 For a weight `w : X → ℤ`, a weight-one base point `x₀`, and another weight-one base point `y₀`,
 the degree-corrected point divisors satisfy
