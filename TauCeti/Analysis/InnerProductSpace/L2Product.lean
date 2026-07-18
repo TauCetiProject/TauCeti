@@ -80,6 +80,7 @@ theorem coeFn_L2prodMul [SFinite μ] [SFinite ν] (F : Lp 𝕜 2 μ) (G : Lp �
 
 /-- **The tensor inner-product identity.** The inner product of two pointwise-product vectors in
 `L²(μ ⊗ ν)` factors as the product of the inner products of the factors. -/
+@[simp]
 theorem inner_L2prodMul [SFinite μ] [SFinite ν] (F₁ F₂ : Lp 𝕜 2 μ) (G₁ G₂ : Lp 𝕜 2 ν) :
     inner 𝕜 (L2prodMul F₁ G₁) (L2prodMul F₂ G₂) = inner 𝕜 F₁ F₂ * inner 𝕜 G₁ G₂ := by
   rw [L2.inner_def]
