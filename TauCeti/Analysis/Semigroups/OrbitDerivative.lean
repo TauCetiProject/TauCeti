@@ -5,14 +5,14 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.Semigroups.Generator
-public import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Analysis.Calculus.Deriv.Slope
 
 /-!
 # Differentiability of semigroup orbits
 
-This file proves that the orbit of a vector in the infinitesimal generator domain is
-differentiable for positive time. Its derivative is obtained by applying the semigroup
-operator to the generator.
+This file characterizes membership in the infinitesimal generator domain by right
+differentiability of the orbit at zero, and identifies the right derivative there with the
+generator.
 
 ## References
 
@@ -35,7 +35,7 @@ namespace StronglyContinuousSemigroup
 
 /-- At time zero, the right derivative of the orbit of a generator-domain vector is its
 generator. -/
-theorem hasDerivWithinAt_realOperator_zero (S : StronglyContinuousSemigroup X)
+theorem realOperator_hasDerivWithinAt_zero (S : StronglyContinuousSemigroup X)
     (x : S.domain) :
     HasDerivWithinAt (fun s : ℝ => S.realOperator s (x : X))
       (S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩) (Set.Ici 0) 0 := by
@@ -44,17 +44,17 @@ theorem hasDerivWithinAt_realOperator_zero (S : StronglyContinuousSemigroup X)
   simpa [S.realOperator_zero_apply] using S.generator_tendsto x
 
 /-- The orbit of a generator-domain vector is right-differentiable at time zero. -/
-theorem differentiableWithinAt_realOperator_zero (S : StronglyContinuousSemigroup X)
+theorem realOperator_differentiableWithinAt_zero (S : StronglyContinuousSemigroup X)
     (x : S.domain) :
     DifferentiableWithinAt ℝ (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici 0) 0 :=
-  (S.hasDerivWithinAt_realOperator_zero x).differentiableWithinAt
+  (S.realOperator_hasDerivWithinAt_zero x).differentiableWithinAt
 
 /-- The right derivative at zero of the orbit of a generator-domain vector is its generator. -/
-theorem derivWithin_realOperator_zero (S : StronglyContinuousSemigroup X)
+theorem realOperator_derivWithin_zero (S : StronglyContinuousSemigroup X)
     (x : S.domain) :
     derivWithin (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici 0) 0 =
       S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩ :=
-  (S.hasDerivWithinAt_realOperator_zero x).derivWithin (uniqueDiffWithinAt_Ici 0)
+  (S.realOperator_hasDerivWithinAt_zero x).derivWithin (uniqueDiffWithinAt_Ici 0)
 
 /-- A vector belongs to the generator domain exactly when its orbit is right-differentiable
 at time zero. -/
@@ -64,7 +64,7 @@ theorem mem_domain_iff_differentiableWithinAt_realOperator_zero
       DifferentiableWithinAt ℝ (fun s : ℝ => S.realOperator s x) (Set.Ici 0) 0 := by
   constructor
   · intro hx
-    exact S.differentiableWithinAt_realOperator_zero ⟨x, hx⟩
+    exact S.realOperator_differentiableWithinAt_zero ⟨x, hx⟩
   · intro hx
     obtain ⟨y, hy⟩ := hx
     have hy' := hy.hasDerivWithinAt
