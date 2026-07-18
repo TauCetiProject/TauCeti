@@ -6,13 +6,13 @@ module
 
 public import TauCeti.Analysis.Semigroups.Resolvent
 public import TauCeti.Analysis.Semigroups.BoundedGenerator
-public import TauCeti.Analysis.Semigroups.Generator.Invariance
+public import TauCeti.Analysis.Semigroups.Generator
 
 /-!
 # Strongly continuous semigroups
 
-This module re-exports the strongly continuous semigroup, generator, growth-bound, and
-Laplace-transform resolvent API.
+This module re-exports the strongly continuous semigroup, generator, orbit-derivative,
+growth-bound, and Laplace-transform resolvent API.
 
 ## References
 Ported and adapted (Apache 2.0) from `mrdouglasny/hille-yosida`; references include
