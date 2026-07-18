@@ -119,8 +119,7 @@ theorem le_of_mul_le_laplacian_le_frontier {K : Set E} (hK : IsCompact K) {c f :
 Let `K` be compact and let `f`, `g` be continuous on `K` and `C²` on `interior K`, with a
 nonnegative coefficient `c` there. If `f` is a subsolution and `g` a supersolution of `-Δ + c`
 (`c · f ≤ Δ f` and `Δ g ≤ c · g`) and `f ≤ g` on `frontier K`, then `f ≤ g` on all of `K`. This is
-the two-function form of `le_of_mul_le_laplacian_le_frontier`, applied to the difference `f - g`
-with frontier bound `0`. -/
+the two-function form of `le_of_mul_le_laplacian_le_frontier`. -/
 theorem le_of_mul_le_laplacian_le_of_le_frontier {K : Set E} (hK : IsCompact K) {c f g : E → ℝ}
     (hfcont : ContinuousOn f K) (hgcont : ContinuousOn g K)
     (hfcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
