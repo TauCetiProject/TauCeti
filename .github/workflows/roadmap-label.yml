@@ -67,3 +67,17 @@ jobs:
           set -euo pipefail
           python3 scripts/roadmap_label.py \
             --repo "$REPO" --roadmap-dir roadmap --pr "$PR" --apply --nudge
+
+      # Advisory-only structure nudge (scripts/structure_nudge.py): one updatable
+      # marker comment when a PR adds .lean files that sit beside an existing topic
+      # subdirectory or extend a flat filename family. Never blocks: findings exit 0,
+      # failures degrade to ::warning::, and the step is continue-on-error so it can
+      # never redden this job or touch the `build` commit status.
+      - name: Structure nudge (advisory)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          python3 scripts/structure_nudge.py --repo "$REPO" --pr "$PR" --apply
