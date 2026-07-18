@@ -23,7 +23,9 @@ harmonic near `Metric.ball x r`.
 
 ## Main declarations
 
-* `TauCeti.preimage_const_add_smul_ball`: affine normalization of an open ball.
+* `TauCeti.preimage_const_add_smul_ball_norm`: affine normalization of an open ball over a
+  normed division ring.
+* `TauCeti.preimage_const_add_smul_ball`: the compatible real-scalar form.
 * `TauCeti.preimage_const_add_smul_closedBall`: affine normalization of a closed ball.
 * `TauCeti.preimage_const_add_smul_sphere`: affine normalization of a sphere.
 * `TauCeti.harmonicOnNhd_comp_add_right_ball_zero_iff`: translation-normalized harmonicity
@@ -41,13 +43,14 @@ open InnerProductSpace
 
 section Preimage
 
-variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E : Type*} [NormedDivisionRing 𝕜] [SeminormedAddCommGroup E]
+  [Module 𝕜 E] [NormSMulClass 𝕜 E]
 
 /-- The affine normalization map `y ↦ x + c • y` pulls the ball `Metric.ball x (‖c‖ * r)` back
 to `Metric.ball 0 r`, for nonzero scale `c`.  This is the characteristic ball rewrite underlying
 the harmonic ball-normalization lemmas below. -/
 @[simp]
-theorem preimage_const_add_smul_ball (x : E) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
+theorem preimage_const_add_smul_ball_norm (x : E) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
     ((fun y : E ↦ x + c • y) ⁻¹' Metric.ball x (‖c‖ * r)) = Metric.ball 0 r := by
   ext y
   simp only [Set.mem_preimage, Metric.mem_ball, dist_eq_norm, add_sub_cancel_left, sub_zero,
@@ -79,6 +82,13 @@ theorem preimage_const_add_smul_sphere (x : E) {c : 𝕜} (hc : c ≠ 0) (r : �
 
 end Preimage
 
+/-- The real-scalar form of `preimage_const_add_smul_ball_norm`. -/
+@[simp]
+theorem preimage_const_add_smul_ball {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
+    [NormSMulClass ℝ E] (x : E) {c : ℝ} (hc : c ≠ 0) (r : ℝ) :
+    ((fun y : E ↦ x + c • y) ⁻¹' Metric.ball x (|c| * r)) = Metric.ball 0 r := by
+  simpa [Real.norm_eq_abs] using preimage_const_add_smul_ball_norm x hc r
+
 variable
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -89,7 +99,7 @@ theorem harmonicOnNhd_comp_const_add_smul_ball_radius_iff (x : E) {c : ℝ} (hc 
     (r : ℝ) {f : E → F} :
     HarmonicOnNhd (fun y ↦ f (x + c • y)) (Metric.ball 0 r) ↔
       HarmonicOnNhd f (Metric.ball x (‖c‖ * r)) := by
-  rw [← preimage_const_add_smul_ball x hc r]
+  rw [← preimage_const_add_smul_ball_norm x hc r]
   exact harmonicOnNhd_comp_const_add_smul_iff x hc (f := f) (s := Metric.ball x (‖c‖ * r))
 
 /-- Translation-normalized harmonicity on a ball.  The function `y ↦ f (y + x)` is harmonic
