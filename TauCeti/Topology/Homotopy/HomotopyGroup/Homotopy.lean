@@ -31,11 +31,11 @@ namespace GenLoop
 variable {N X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
   {x : X} {y : Y}
 
-/-- Postcomposing a generalized loop with pointed-homotopic maps gives homotopic generalized
-loops. The homotopy is relative to the cube boundary because the original homotopy is fixed at
-the basepoint. -/
+/-- Postcomposing a generalized loop with maps homotopic relative to a set containing the
+basepoint gives homotopic generalized loops. The resulting homotopy is relative to the cube
+boundary. -/
 theorem map_homotopic_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) (hg : g x = y)
-    (H : f.HomotopicRel g {x}) (p : Ω^ N X x) :
+    {S : Set X} (hx : x ∈ S) (H : f.HomotopicRel g S) (p : Ω^ N X x) :
     _root_.GenLoop.Homotopic (map f hf p) (map g hg p) := by
   obtain ⟨H⟩ := H
   refine ⟨⟨⟨⟨fun tp ↦ H (tp.1, p.1 tp.2), ?_⟩, ?_, ?_⟩, ?_⟩⟩
@@ -45,8 +45,7 @@ theorem map_homotopic_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) (hg : g x =
   · intro t
     simpa only [map, ContinuousMap.comp_apply, _root_.GenLoop.mk_apply] using H.apply_one (p.1 t)
   · intro t u hu
-    change H (t, p u) = f (p u)
-    exact H.eq_fst t (Set.mem_singleton_iff.mpr (p.2 u hu))
+    exact H.eq_fst t (by rw [p.2 u hu]; exact hx)
 
 end GenLoop
 
@@ -55,20 +54,21 @@ namespace HomotopyGroup
 variable {N X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
   {x : X} {y : Y}
 
-/-- Pointed-homotopic continuous maps induce the same function on homotopy groups. -/
+/-- Continuous maps homotopic relative to a set containing the basepoint induce the same
+function on homotopy groups. -/
 theorem map_eq_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) (hg : g x = y)
-    (H : f.HomotopicRel g {x}) : map (N := N) f hf = map g hg := by
+    {S : Set X} (hx : x ∈ S) (H : f.HomotopicRel g S) : map (N := N) f hf = map g hg := by
   funext a
   refine Quotient.inductionOn a ?_
   intro p
-  exact Quotient.sound (GenLoop.map_homotopic_of_homotopicRel hf hg H p)
+  exact Quotient.sound (GenLoop.map_homotopic_of_homotopicRel hf hg hx H p)
 
-/-- Pointed-homotopic continuous maps have equal induced monoid homomorphisms on
-positive-dimensional homotopy groups. -/
+/-- Continuous maps homotopic relative to a set containing the basepoint have equal induced
+monoid homomorphisms on positive-dimensional homotopy groups. -/
 theorem mapHom_eq_of_homotopicRel [DecidableEq N] [Nonempty N] {f g : C(X, Y)}
-    (hf : f x = y) (hg : g x = y) (H : f.HomotopicRel g {x}) :
+    (hf : f x = y) (hg : g x = y) {S : Set X} (hx : x ∈ S) (H : f.HomotopicRel g S) :
     mapHom (N := N) f hf = mapHom g hg :=
-  MonoidHom.ext fun a ↦ congrFun (map_eq_of_homotopicRel hf hg H) a
+  MonoidHom.ext fun a ↦ congrFun (map_eq_of_homotopicRel hf hg hx H) a
 
 end HomotopyGroup
 
