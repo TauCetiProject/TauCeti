@@ -5,12 +5,13 @@ For each ``.lean`` file a PR **adds** under ``TauCeti/``, inspect the CamelCase
 prefixes of its basename and report, as one advisory PR comment:
 
 * an existing subdirectory the file could join (``Dir/Prefix/`` already exists);
-* an existing flat filename family it extends: at least ``ADVISORY_MIN`` sibling
-  files ``Dir/Prefix*.lean`` (token-boundary matched; an anchor module
-  ``Dir/Prefix.lean`` is reported as supplementary evidence, never as a trigger
-  by itself, since anchor-beside-extensions is the repo's blessed convention). Per the placement guidance, such a family is a *candidate for a
-  dedicated relocation PR*; the comment never prescribes a new path for the
-  added file, and never asks this PR to move other files.
+* any sibling sharing a CamelCase prefix with it, at token boundaries: two files
+  sharing a prefix should be a directory, so ``Dir/Prefix.lean`` plus
+  ``Dir/PrefixBar.lean`` triggers, in either order, as do two extensions. Per
+  the placement guidance, the same PR creates ``Dir/Prefix/``, with
+  ``Prefix.lean`` becoming ``Prefix/Basic.lean`` (or ``Prefix/Defs.lean`` when
+  definitions-only) and each ``PrefixBar.lean`` becoming ``Prefix/Bar.lean``,
+  and places the new file there: move as you add.
 
 This check is advisory by construction: findings exit ``0``, every failure is
 downgraded to a ``::warning::`` annotation and exit ``0``, and the workflow step
@@ -42,7 +43,6 @@ import re
 import subprocess
 import sys
 
-ADVISORY_MIN = 4  # flat-family size that earns a mention; advisory only, tunable
 MARKER = "<!--structure:nudge-->"
 TRACKING_ISSUE = "https://github.com/TauCetiProject/TauCeti/issues/987"
 
@@ -77,18 +77,21 @@ def candidates_for(path: str, tree: set[str]) -> list[dict]:
     sib_stems = {pathlib.PurePosixPath(t).stem for t in tree
                  if str(pathlib.PurePosixPath(t).parent) == d and t != path}
     out: list[dict] = []
-    for k in range(1, len(toks)):  # nonempty remainder only: never the bare prefix
+    # k < len(toks): the added file extends the prefix (it is a `FooBar.lean`).
+    # k == len(toks): the added file IS the prefix of existing extensions (it
+    # is the `Foo.lean` of an existing `Foo*` family).
+    for k in range(1, len(toks) + 1):
         prefix = "".join(toks[:k])
         subdir = any(t.startswith(f"{d}/{prefix}/") for t in tree)
-        anchor = f"{d}/{prefix}.lean" in tree
+        anchor = k < len(toks) and f"{d}/{prefix}.lean" in tree
         family = sorted(s for s in sib_stems if _boundary_extends(s, toks[:k]))
-        # An anchor alone is the repo's blessed `Foo.lean`-beside-extensions
-        # convention and is NOT a trigger; it is reported only as supplementary
-        # evidence when a real trigger (subdirectory or family) fires.
-        if subdir or len(family) >= ADVISORY_MIN:
+        if k == len(toks) and not (family or subdir):
+            continue  # a bare name extending nothing is just a file
+        if subdir or anchor or family:
             out.append({
                 "prefix": prefix, "dir": d, "subdir": subdir, "anchor": anchor,
                 "family_size": len(family), "examples": family[:3],
+                "is_prefix_of_family": k == len(toks),
             })
     return out
 
@@ -96,27 +99,35 @@ def candidates_for(path: str, tree: set[str]) -> list[dict]:
 def render_comment(head_sha: str, findings: dict[str, list[dict]]) -> str:
     lines = [MARKER, f"**Structure nudge** (advisory; analyzed head `{head_sha}`)", ""]
     lines.append(
-        "This never blocks anything: ignore it freely when the flat name is right. "
-        "It flags added files whose names sit next to an existing subdirectory or "
-        "extend an existing flat filename family.")
+        "This never blocks anything. It flags added files that belong in a topic "
+        "subdirectory: two files sharing a CamelCase prefix should be a directory.")
     lines.append("")
     for path, cands in sorted(findings.items()):
         lines.append(f"* `{path}`")
         for c in cands:
-            ev = []
+            loc = f"`{c['dir']}/{c['prefix']}/`"
             if c["subdir"]:
-                ev.append(f"an existing subdirectory `{c['dir']}/{c['prefix']}/` "
-                          "covers this topic; consider placing the file there")
-            if c["anchor"]:
-                ev.append(f"an anchor module `{c['dir']}/{c['prefix']}.lean` exists")
-            if c["family_size"] >= ADVISORY_MIN:
-                ex = ", ".join(f"`{e}`" for e in c["examples"])
-                ev.append(f"{c['family_size']} sibling files share the `{c['prefix']}` "
-                          f"prefix (e.g. {ex}); the family is a candidate for a "
-                          "dedicated relocation PR (do not move them in this PR)")
-            lines.append(f"  * `{c['prefix']}`: " + "; ".join(ev) + ".")
+                lines.append(f"  * `{c['prefix']}`: the subdirectory {loc} already "
+                             "exists; place the file there.")
+                continue
+            ex = ", ".join(f"`{e}`" for e in c["examples"])
+            if c["is_prefix_of_family"]:
+                lines.append(
+                    f"  * `{c['prefix']}`: existing files extend this name ({ex}); per "
+                    f"the placement guidance, move as you add: in this PR create "
+                    f"{loc} (each `{c['prefix']}Bar.lean` becomes `{c['prefix']}/Bar.lean`) "
+                    f"and place this file there as `{c['prefix']}/Basic.lean` or "
+                    f"`{c['prefix']}/Defs.lean`.")
+            else:
+                have = (f"`{c['prefix']}.lean`" + (f", {ex}" if ex else "")) if c["anchor"] else ex
+                lines.append(
+                    f"  * `{c['prefix']}`: shares the `{c['prefix']}` prefix with {have}; "
+                    f"per the placement guidance, move as you add: in this PR create "
+                    f"{loc} (`{c['prefix']}.lean` becomes `{c['prefix']}/Basic.lean` "
+                    f"or `{c['prefix']}/Defs.lean`; each `{c['prefix']}Bar.lean` becomes "
+                    f"`{c['prefix']}/Bar.lean`) and place this file there.")
     lines.append("")
-    lines.append(f"Context and the current relocation queue: {TRACKING_ISSUE}.")
+    lines.append(f"Policy and context: {TRACKING_ISSUE}.")
     return "\n".join(lines)
 
 
@@ -179,7 +190,8 @@ def run_tree_dry_run() -> int:
         for c in cands:
             n += 1
             ev = ("subdir" if c["subdir"] else "") + ("+anchor" if c["anchor"] else "") \
-                + (f"+family({c['family_size']})" if c["family_size"] >= ADVISORY_MIN else "")
+                + (f"+family({c['family_size']})" if c["family_size"] else "") \
+                + ("+isprefix" if c["is_prefix_of_family"] else "")
             print(f"{f}: {c['prefix']} [{ev.lstrip('+')}]")
     print(f"-- {n} candidate line(s) over {len(tree)} files")
     return 0
