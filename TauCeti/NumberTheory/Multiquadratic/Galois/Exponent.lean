@@ -57,9 +57,7 @@ namespace TauCeti.Multiquadratic
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] {ι : Type*}
   {d : ι → K} {root : ι → L}
 
-/-- **Every automorphism of a multiquadratic field squares to the identity.** Fixing `K` forces the
-image of each generator to have the same square as the generator, so applying the automorphism
-twice fixes the generators; this is the `pow`-form of `aut_mul_self_eq_one`. -/
+/-- **Every automorphism of a multiquadratic field squares to the identity.** -/
 theorem aut_pow_two_eq_one (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :
     σ ^ 2 = 1 := by
@@ -72,8 +70,7 @@ theorem orderOf_aut_dvd_two (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     orderOf σ ∣ 2 :=
   orderOf_dvd_of_pow_eq_one (aut_pow_two_eq_one hroot σ)
 
-/-- **A nontrivial automorphism of a multiquadratic field has order exactly two.** Its order
-divides `2` and is not `1` (which would make it the identity), so it is `2`. -/
+/-- **A nontrivial automorphism of a multiquadratic field has order exactly two.** -/
 theorem orderOf_aut_eq_two_of_ne_one (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     {σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)} (hσ : σ ≠ 1) :
     orderOf σ = 2 := by
@@ -81,26 +78,21 @@ theorem orderOf_aut_eq_two_of_ne_one (hroot : ∀ i, root i ^ 2 = algebraMap K L
   · exact absurd (orderOf_eq_one_iff.mp h) hσ
   · exact h
 
-/-- **The Galois group of a multiquadratic field has exponent dividing two.** Every automorphism is
-an involution, so the group exponent divides `2`. No square-class independence is needed. -/
+/-- **The Galois group of a multiquadratic field has exponent dividing two.** -/
 theorem aut_exponent_dvd_two (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
     Monoid.exponent (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) ∣ 2 := by
   rw [Monoid.exponent_dvd_iff_forall_pow_eq_one]
   exact fun σ => aut_pow_two_eq_one hroot σ
 
 /-- **A multiquadratic field over a nonempty family of independent radicands has a nontrivial Galois
-group.** Transported along the isomorphism `Gal(M/K) ≃ (ℤ/2)^ι`, which is nontrivial because
-`ι → ℤ/2` is over a nonempty index type. -/
+group.** -/
 theorem aut_nontrivial [Finite ι] [NeZero (2 : K)] [Nonempty ι]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
     Nontrivial (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :=
   (galoisGroupEquiv hroot hindep).toEquiv.nontrivial
 
-/-- **The Galois group of a nontrivial multiquadratic field has exponent exactly two.** Under
-square-class independence over a nonempty index type the exponent divides `2` and is not `1` (the
-group is nontrivial), hence equals `2`: `Gal(M/K)` is an elementary abelian `2`-group of positive
-rank. -/
+/-- **The Galois group of a nontrivial multiquadratic field has exponent exactly two.** -/
 theorem aut_exponent_eq_two [Finite ι] [NeZero (2 : K)] [Nonempty ι]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
