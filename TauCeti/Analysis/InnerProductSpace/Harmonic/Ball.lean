@@ -48,7 +48,8 @@ theorem harmonicOnNhd_comp_const_add_smul_ball_radius_iff (x : E) {c : ℝ} (hc 
     HarmonicOnNhd (fun y ↦ f (x + c • y)) (Metric.ball 0 r) ↔
       HarmonicOnNhd f (Metric.ball x (‖c‖ * r)) := by
   rw [← preimage_const_add_smul_ball_norm x hc r]
-  exact harmonicOnNhd_comp_const_add_smul_iff x hc (f := f) (s := Metric.ball x (‖c‖ * r))
+  simpa only [vadd_eq_add, add_comm] using
+    harmonicOnNhd_comp_const_add_smul_iff x hc (f := f) (s := Metric.ball x (‖c‖ * r))
 
 /-- Translation-normalized harmonicity on a ball. The function `y ↦ f (y + x)` is harmonic
 near the radius-`r` ball centered at `0` exactly when `f` is harmonic near the corresponding
