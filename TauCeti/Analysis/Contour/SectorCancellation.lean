@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.TangentForcing
-import TauCeti.Analysis.Contour.HigherOrderAsymptotics
+import TauCeti.Analysis.Contour.HigherOrder.Asymptotics
 
 /-!
 # Sector-even cancellation at a flat crossing

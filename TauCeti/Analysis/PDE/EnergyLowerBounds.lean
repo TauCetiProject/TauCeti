@@ -4,12 +4,12 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PDE.EnergyForm
+public import TauCeti.Analysis.PDE.EnergyForm.Basic
 
 /-!
 # Pointwise diagonal lower bounds for divergence-form energy integrands
 
-The file `TauCeti.Analysis.PDE.EnergyForm` gives the pointwise energy integrand for a
+The file `TauCeti.Analysis.PDE.EnergyForm.Basic` gives the pointwise energy integrand for a
 divergence-form operator together with its pointwise Gårding lower bound.  This file refines
 that Gårding estimate into an explicit diagonal lower bound
 `min (λ/2) (μ − β²/2λ) · ‖U‖² ≤ energyIntegrand A b c U U`, once the zeroth-order mass
@@ -21,7 +21,7 @@ the hypothesis of Lax--Milgram: `TauCeti.Analysis.InnerProductSpace.LaxMilgram` 
 coercivity of the *integrated* form on a complete inner-product (H¹-type) space, which is
 later Lane A/D work.  The genuine consumer of these pointwise bounds is the integrated
 inequality `∫ (min (λ/2) (μ − β²/2λ)) · ‖U‖² ≤ energyFormIntegral` in
-`TauCeti.Analysis.PDE.IntegratedEnergyForm`, obtained by integrating them; no
+`TauCeti.Analysis.PDE.Integrated.EnergyForm`, obtained by integrating them; no
 finite-dimensional jet fibre is fed into Lax--Milgram.
 
 The ellipticity floor, the drift bound, and the mass lower bound are all stated inline, as

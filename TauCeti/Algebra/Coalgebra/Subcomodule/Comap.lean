@@ -6,7 +6,7 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Flat.Basic
-public import TauCeti.Algebra.Coalgebra.Subcomodule
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
 /-!
 # Inverse images of subcomodules

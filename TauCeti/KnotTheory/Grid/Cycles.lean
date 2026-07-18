@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.KnotTheory.Grid.BasicCycles
-public import TauCeti.KnotTheory.Grid.SmallGridDifferential
+public import TauCeti.KnotTheory.Grid.SmallGrid.Differential
 public import TauCeti.KnotTheory.Grid.ChainCardinality
 
 /-!

@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PositiveDefinite.KernelBounds
-public import TauCeti.Analysis.PositiveDefinite.SemigroupGroup
+public import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
+public import TauCeti.Analysis.PositiveDefinite.SemigroupGroup.Basic
 
 /-!
 # Bounds for semigroup-group positive-definite functions

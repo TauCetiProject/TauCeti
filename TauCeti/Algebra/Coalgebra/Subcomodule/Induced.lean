@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.RingTheory.Flat.Basic
-public import TauCeti.Algebra.Coalgebra.Subcomodule
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
 /-!
 # The induced comodule on a subcomodule

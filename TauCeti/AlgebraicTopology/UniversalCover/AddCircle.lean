@@ -6,8 +6,8 @@ module
 
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Algebra.Group.ZMultiples
-public import TauCeti.AlgebraicTopology.UniversalCover.Deck
-public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Basic
+public import TauCeti.AlgebraicTopology.UniversalCover.Deck.Regular.Basic
 
 /-!
 # The deck transformation group of the quotient map `𝕜 → AddCircle p`

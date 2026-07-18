@@ -9,9 +9,9 @@ public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup
-public import TauCeti.Algebra.AlgebraicGroup.HopfMap
-public import TauCeti.Algebra.HopfAlgebra.HopfIdeal
+public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 
 /-!
 # The Frobenius kernel group scheme `αₚ`
@@ -32,7 +32,7 @@ The Hopf-ideal check is the freshman's dream in characteristic `p`: because `x` 
 by `add_pow_char` in the tensor-square ring. The counit vanishes on `xᵖ` since `ε x = 0`, and
 the antipode preserves `(xᵖ)` since `S(xᵖ) = (-x)ᵖ`. Mathlib's quotient Hopf-algebra instance
 then equips `R[x] / (xᵖ)` with its Hopf structure through the bridge instances of
-`TauCeti.Algebra.HopfAlgebra.HopfIdeal`.
+`TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic`.
 
 The functor of points is recovered by pre-composing points of `αₚ` with the quotient map
 `R[x] → R[x] / (xᵖ)` (a bialgebra morphism, hence a convolution homomorphism through
@@ -41,7 +41,7 @@ The functor of points is recovered by pre-composing points of `αₚ` with the q
 elements, and the pre-composition map is injective because the quotient map is surjective, so
 `αₚ(A)` is the additive group of `p`-nilpotent elements of `A` (those `a` with `aᵖ = 0`). This
 exhibits `αₚ` as a non-reduced affine group scheme, the additive companion of the `μ_p` example of
-`TauCeti.Algebra.AlgebraicGroup.GroupAlgebraNotReduced`.
+`TauCeti.Algebra.AlgebraicGroup.GroupAlgebra.NotReduced`.
 
 This is the worked example `αₚ` from the Tau Ceti reductive-groups roadmap
 (`ReductiveGroups/README.md` in TauCetiRoadmap): the standing hypotheses note that an affine
@@ -64,8 +64,8 @@ and Layer 3 develops "Hopf ideals ↔ closed subgroup schemes".
 
 The Hopf structure on the additive group is Tau Ceti's
 `TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra` and
-`TauCeti.Algebra.AlgebraicGroup.AdditiveGroup`; the Hopf-ideal quotient machinery and its
-bridge to Mathlib's quotient Hopf algebra are `TauCeti.Algebra.HopfAlgebra.HopfIdeal`. The
+`TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic`; the Hopf-ideal quotient machinery and its
+bridge to Mathlib's quotient Hopf algebra are `TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic`. The
 freshman's dream `add_pow_char` and the tensor-product bialgebra structure are from Mathlib.
 -/
 
@@ -180,7 +180,7 @@ theorem hopfIdeal_toIdeal :
   rfl
 
 /-- **The coordinate Hopf algebra of `αₚ`**, the quotient `R[x] / (xᵖ)`. It carries a Hopf
-algebra structure through the bridge instances of `TauCeti.Algebra.HopfAlgebra.HopfIdeal`. -/
+algebra structure through the bridge instances of `TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic`. -/
 noncomputable abbrev CoordinateRing : Type u :=
   SymmetricAlgebra R R ⧸ (hopfIdeal (R := R) p).toIdeal
 

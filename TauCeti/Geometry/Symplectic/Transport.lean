@@ -6,7 +6,7 @@ module
 
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
-public import TauCeti.LinearAlgebra.ComplexLinearPart
+public import TauCeti.LinearAlgebra.Complex.LinearPart
 
 /-!
 # Transporting almost complex structures along linear equivalences

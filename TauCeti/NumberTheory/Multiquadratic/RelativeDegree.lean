@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.NumberTheory.Multiquadratic.SubfieldDegree
+public import TauCeti.NumberTheory.Multiquadratic.Subfield.Degree
 
 /-!
 # Relative degrees in the multiquadratic subfield lattice
@@ -13,8 +13,8 @@ For square roots `root i` of radicands `d i` over a field `K` with `2 ≠ 0`, sq
 independence makes `M = K(rootᵢ : i)` Galois with group `(ℤ/2)ⁿ`, and the order-reversing
 bijection `TauCeti.Multiquadratic.intermediateFieldEquivSubmodule` matches each intermediate field
 `F` of `M / K` with an `𝔽₂`-subspace `U` of `ι → ℤ/2`
-(`TauCeti.NumberTheory.Multiquadratic.SubfieldLattice`).
-`TauCeti.NumberTheory.Multiquadratic.SubfieldDegree` records the **absolute** degree
+(`TauCeti.NumberTheory.Multiquadratic.Subfield.Lattice`).
+`TauCeti.NumberTheory.Multiquadratic.Subfield.Degree` records the **absolute** degree
 `[F : K] = 2 ^ (n - dim U)`; this file records the complementary **relative** degree of the whole
 multiquadratic field over `F`.
 

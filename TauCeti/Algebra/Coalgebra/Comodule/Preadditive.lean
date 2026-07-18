@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.CategoryTheory.Preadditive.Basic
-public import TauCeti.Algebra.Coalgebra.ComoduleCat
+public import TauCeti.Algebra.Coalgebra.Comodule.Cat
 
 /-!
 # Preadditive structure on comodule categories

@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.RingTheory.Bialgebra.GroupLike
-public import TauCeti.Algebra.Coalgebra.ComoduleCat
+public import TauCeti.Algebra.Coalgebra.Comodule.Cat
 
 /-!
 # Trivial comodules

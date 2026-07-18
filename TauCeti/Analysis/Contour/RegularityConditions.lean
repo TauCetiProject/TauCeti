@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
-import TauCeti.Analysis.Contour.ArgumentLift
+import TauCeti.Analysis.Contour.Argument.Lift
 
 /-!
 # The Hungerbühler–Wasem crossing angle and regularity conditions (A′) and (B)

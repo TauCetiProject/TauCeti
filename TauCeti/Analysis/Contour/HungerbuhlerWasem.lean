@@ -8,19 +8,19 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.Basic
-public import TauCeti.Analysis.Contour.CauchyPrincipalValueOn
+public import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.On
 public import TauCeti.Analysis.Contour.PwC1ImmersionOn
 public import TauCeti.Analysis.Contour.RegularityConditions
-public import TauCeti.Analysis.Contour.Residue
-public import TauCeti.Analysis.Contour.WindingNumber
+public import TauCeti.Analysis.Contour.Residue.Basic
+public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Contour.ConditionDischarge
 import TauCeti.Analysis.Contour.InvSubCPVExistence
 import TauCeti.Analysis.Contour.MeromorphicLaurent
-import TauCeti.Analysis.Contour.PolarPartDecomposition
-import TauCeti.Analysis.Contour.ResidueAssembly
-import TauCeti.Analysis.Contour.WindingNumberReverse
+import TauCeti.Analysis.Contour.PolarPart.Decomposition
+import TauCeti.Analysis.Contour.Residue.Assembly
+import TauCeti.Analysis.Contour.Winding.Number.Reverse
 import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Analysis.Contour.CrossingFiniteness
+import TauCeti.Analysis.Contour.Crossing.Finiteness
 import TauCeti.Analysis.Contour.FlatnessOne
 
 /-!

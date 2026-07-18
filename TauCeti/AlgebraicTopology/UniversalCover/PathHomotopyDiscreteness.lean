@@ -5,7 +5,7 @@ Authors: Kim Morrison
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SemilocallySimplyConnectedOn
+public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
 import Mathlib.Topology.Order
 
 /-!
