@@ -49,12 +49,12 @@ namespace TauCeti
 
 /-- The complex squaring map `z ↦ z²` on `ℝ²`, written in real coordinates under the
 identification `ℝ × ℝ ≅ ℂ` as `(x, y) ↦ (x² - y², 2xy)`. -/
-@[expose] def sqMap (p : ℝ × ℝ) : ℝ × ℝ :=
+def sqMap (p : ℝ × ℝ) : ℝ × ℝ :=
   (p.1 ^ 2 - p.2 ^ 2, 2 * (p.1 * p.2))
 
 @[simp]
 lemma sqMap_apply (p : ℝ × ℝ) : sqMap p = (p.1 ^ 2 - p.2 ^ 2, 2 * (p.1 * p.2)) :=
-  rfl
+  (rfl)
 
 /-- `sqMap` is genuinely nonlinear: it does not commute with scalar multiplication, so it is not one
 of the linear instances of the constant-structure `J`-holomorphic predicate. -/
