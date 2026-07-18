@@ -5,9 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
-public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Homotopy.Product
-public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 
 /-!
 # The fundamental group of a product space
@@ -32,20 +30,10 @@ This is the group-level input the universal-covers roadmap calls for when comput
 `TauCeti/AlgebraicTopology/UniversalCover/TorusFundamentalGroup.lean` for the torus
 application built on top.
 
-When one factor is simply connected its fundamental group is a subsingleton, so the product
-formula collapses to the fundamental group of the other factor; this is the standard fact
-that a simply connected factor does not change `π₁`. The maps are built directly from the
-same projection/product operations, using `Subsingleton (FundamentalGroup _ _)` (Mathlib's
-`SimplyConnectedSpace` instance) to discard the trivial coordinate.
-
 ## Main declarations
 
 * `TauCeti.FundamentalGroup.prodMulEquiv`: `π₁(X × Y, (x, y)) ≃* π₁(X, x) × π₁(Y, y)`.
 * `TauCeti.FundamentalGroup.piMulEquiv`: `π₁(Π i, X i, x) ≃* Π i, π₁(X i, x i)`.
-* `TauCeti.FundamentalGroup.prodMulEquivOfSimplyConnectedRight`: for simply connected `Y`,
-  `π₁(X × Y, (x, y)) ≃* π₁(X, x)`.
-* `TauCeti.FundamentalGroup.prodMulEquivOfSimplyConnectedLeft`: for simply connected `X`,
-  `π₁(X × Y, (x, y)) ≃* π₁(Y, y)`.
 -/
 
 public section
@@ -87,50 +75,6 @@ theorem FundamentalGroup.prodMulEquiv_apply (x : X) (y : Y)
 theorem FundamentalGroup.prodMulEquiv_symm_apply (x : X) (y : Y)
     (γ : FundamentalGroup X x × FundamentalGroup Y y) :
     (FundamentalGroup.prodMulEquiv x y).symm γ = prod γ.1 γ.2 :=
-  rfl
-
-/-- If the right factor is simply connected, the fundamental group of the product is the
-fundamental group of the left factor: `π₁(X × Y, (x, y)) ≃* π₁(X, x)`. It is the product
-formula `prodMulEquiv` followed by the collapse of the trivial second factor. -/
-@[expose] def FundamentalGroup.prodMulEquivOfSimplyConnectedRight [SimplyConnectedSpace Y]
-    (x : X) (y : Y) :
-    FundamentalGroup (X × Y) (x, y) ≃* FundamentalGroup X x :=
-  (FundamentalGroup.prodMulEquiv x y).trans MulEquiv.prodUnique
-
-@[simp]
-theorem FundamentalGroup.prodMulEquivOfSimplyConnectedRight_apply [SimplyConnectedSpace Y]
-    (x : X) (y : Y) (γ : FundamentalGroup (X × Y) (x, y)) :
-    FundamentalGroup.prodMulEquivOfSimplyConnectedRight x y γ =
-      FundamentalGroup.map (ContinuousMap.fst : C(X × Y, X)) (x, y) γ :=
-  rfl
-
-@[simp]
-theorem FundamentalGroup.prodMulEquivOfSimplyConnectedRight_symm_apply [SimplyConnectedSpace Y]
-    (x : X) (y : Y) (γ : FundamentalGroup X x) :
-    (FundamentalGroup.prodMulEquivOfSimplyConnectedRight x y).symm γ =
-      prod γ (1 : FundamentalGroup Y y) :=
-  rfl
-
-/-- If the left factor is simply connected, the fundamental group of the product is the
-fundamental group of the right factor: `π₁(X × Y, (x, y)) ≃* π₁(Y, y)`. It is the product
-formula `prodMulEquiv` followed by the collapse of the trivial first factor. -/
-@[expose] def FundamentalGroup.prodMulEquivOfSimplyConnectedLeft [SimplyConnectedSpace X]
-    (x : X) (y : Y) :
-    FundamentalGroup (X × Y) (x, y) ≃* FundamentalGroup Y y :=
-  (FundamentalGroup.prodMulEquiv x y).trans MulEquiv.uniqueProd
-
-@[simp]
-theorem FundamentalGroup.prodMulEquivOfSimplyConnectedLeft_apply [SimplyConnectedSpace X]
-    (x : X) (y : Y) (γ : FundamentalGroup (X × Y) (x, y)) :
-    FundamentalGroup.prodMulEquivOfSimplyConnectedLeft x y γ =
-      FundamentalGroup.map (ContinuousMap.snd : C(X × Y, Y)) (x, y) γ :=
-  rfl
-
-@[simp]
-theorem FundamentalGroup.prodMulEquivOfSimplyConnectedLeft_symm_apply [SimplyConnectedSpace X]
-    (x : X) (y : Y) (γ : FundamentalGroup Y y) :
-    (FundamentalGroup.prodMulEquivOfSimplyConnectedLeft x y).symm γ =
-      prod (1 : FundamentalGroup X x) γ :=
   rfl
 
 variable {ι : Type*} {X : ι → Type*} [∀ i, TopologicalSpace (X i)]
