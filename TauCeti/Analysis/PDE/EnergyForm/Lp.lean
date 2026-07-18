@@ -70,13 +70,6 @@ theorem energyFormLp_apply (μ : Measure X) (A : Matrix n n ℝ)
       ∫ x, energyIntegrand A b c (U x) (V x) ∂μ := by
   exact ContinuousLinearMap.lpPairing_eq_integral _ _ _
 
-/-- The value of the `L²` energy form is bounded by its operator norm times the two `L²` norms. -/
-theorem norm_energyFormLp_apply_le (μ : Measure X) (A : Matrix n n ℝ)
-    (b : EuclideanSpace ℝ n) (c : ℝ)
-    (U V : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
-    ‖energyFormLp μ A b c U V‖ ≤ ‖energyFormLp μ A b c‖ * ‖U‖ * ‖V‖ := by
-  exact (energyFormLp μ A b c).le_opNorm₂ U V
-
 /-- The Dirichlet energy form pairs the gradient components of two `L²` jets. -/
 theorem energyFormLp_one_zero_zero_apply (μ : Measure X)
     (U V : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
