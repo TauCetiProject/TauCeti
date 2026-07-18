@@ -28,7 +28,9 @@ variable {X : Type*} [TopologicalSpace X]
 
 /-! ### Tube data structures -/
 
-/-- A proof-local partition of the unit interval `[0, 1]` into `n` segments. -/
+/-- A partition of the unit interval `[0, 1]` into `n` segments, used as scaffolding for the
+tube construction below. (It is `public` only so that the `structureInType` environment linter
+can resolve its projections across the module boundary; it is not intended as reusable API.) -/
 public structure IntervalPartition (n : ℕ) : Type where
   /-- The partition points. -/
   t : Fin (n + 1) → unitInterval
@@ -54,7 +56,9 @@ instance : IsEmpty (IntervalPartition 0) where
 end IntervalPartition
 
 /-- Data for a tubular neighborhood in an SLSC space: segment neighborhoods, point
-neighborhoods at all partition points, and the openness/path-connectedness/SLSC subset data. -/
+neighborhoods at all partition points, and the openness/path-connectedness/SLSC subset data.
+Like `IntervalPartition`, this is tube scaffolding marked `public` only so the `structureInType`
+environment linter can resolve its projections; it is not intended as reusable API. -/
 public structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) : Type _ where
   /-- Segment neighborhoods -/
   U : Fin n → Set X

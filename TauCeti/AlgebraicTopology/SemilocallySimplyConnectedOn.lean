@@ -73,7 +73,9 @@ public theorem semilocallySimplyConnectedAt_iff {x : X} :
         FundamentalGroup.map_fromPath ⟨Subtype.val, continuous_subtype_val⟩ u' γ_U
     have h_map : FundamentalGroup.fromPath ⟦γ_U.map continuous_subtype_val⟧ =
         FundamentalGroup.fromPath ⟦Path.refl u⟧ := by
-      rw [← h_map_eq, h_range]; rfl
+      rw [← h_map_eq, h_range]
+      -- `fromPath ⟦Path.refl u⟧` is the identity wrapper on `⟦Path.refl u⟧ = 𝟙 (mk u) = 1`.
+      exact FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk u)
     rw [Path.map_codRestrict] at h_map
     exact Quotient.eq.mp h_map
   · -- Backward direction: small loops null implies SemilocallySimplyConnectedAt
@@ -90,7 +92,8 @@ public theorem semilocallySimplyConnectedAt_iff {x : X} :
       FundamentalGroup.fromPath ⟦γ'.map continuous_subtype_val⟧ :=
         FundamentalGroup.map_fromPath ⟨Subtype.val, continuous_subtype_val⟩ base γ'
     rw [h_map_eq, Quotient.sound hhom]
-    rfl
+    -- `fromPath ⟦Path.refl base⟧ = 𝟙 (mk base) = 1`.
+    exact (FundamentalGroupoid.id_eq_path_refl (FundamentalGroupoid.mk base.val)).symm
 
 /-- Characterization of semilocally simply connected at a point: any two paths in U between
 the same endpoints are homotopic. -/
