@@ -27,10 +27,6 @@ invariant it refines — an exponent-`2` abelian group is exactly an `𝔽₂`-v
 
 ## Main results
 
-* `TauCeti.Multiquadratic.aut_pow_two_eq_one`: every automorphism of `M` squares to the identity.
-* `TauCeti.Multiquadratic.orderOf_aut_dvd_two` and
-  `TauCeti.Multiquadratic.orderOf_aut_eq_two_of_ne_one`: each automorphism has order dividing `2`,
-  and a nontrivial one has order exactly `2`.
 * `TauCeti.Multiquadratic.aut_exponent_dvd_two`: `Monoid.exponent (Gal(M/K)) ∣ 2`, no hypothesis
   beyond the radicand equations.
 * `TauCeti.Multiquadratic.aut_nontrivial`: under square-class independence over a nonempty index
@@ -57,32 +53,11 @@ namespace TauCeti.Multiquadratic
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] {ι : Type*}
   {d : ι → K} {root : ι → L}
 
-/-- **Every automorphism of a multiquadratic field squares to the identity.** -/
-theorem aut_pow_two_eq_one (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
-    (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :
-    σ ^ 2 = 1 := by
-  rw [pow_two]
-  exact aut_mul_self_eq_one hroot σ
-
-/-- **Each automorphism of a multiquadratic field has order dividing two.** -/
-theorem orderOf_aut_dvd_two (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
-    (σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :
-    orderOf σ ∣ 2 :=
-  orderOf_dvd_of_pow_eq_one (aut_pow_two_eq_one hroot σ)
-
-/-- **A nontrivial automorphism of a multiquadratic field has order exactly two.** -/
-theorem orderOf_aut_eq_two_of_ne_one (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
-    {σ : adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)} (hσ : σ ≠ 1) :
-    orderOf σ = 2 := by
-  rcases (Nat.dvd_prime Nat.prime_two).mp (orderOf_aut_dvd_two hroot σ) with h | h
-  · exact absurd (orderOf_eq_one_iff.mp h) hσ
-  · exact h
-
 /-- **The Galois group of a multiquadratic field has exponent dividing two.** -/
 theorem aut_exponent_dvd_two (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
     Monoid.exponent (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) ∣ 2 := by
   rw [Monoid.exponent_dvd_iff_forall_pow_eq_one]
-  exact fun σ => aut_pow_two_eq_one hroot σ
+  exact fun σ => by simpa [pow_two] using aut_mul_self_eq_one hroot σ
 
 /-- **A multiquadratic field over a nonempty family of independent radicands has a nontrivial Galois
 group.** -/
