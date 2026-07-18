@@ -46,8 +46,12 @@ namespace IntervalPartition
 attribute [simp, grind =] t_zero t_last
 
 /-- `IntervalPartition 0` is empty: a single partition point cannot be simultaneously
-`0` and `1`. -/
-instance : IsEmpty (IntervalPartition 0) where
+`0` and `1`.
+
+`public` because the based-path openness argument in
+`TauCeti.AlgebraicTopology.UniversalCover.BasedPath` rules out the `n = 0` tube by
+`isEmptyElim` on the partition. -/
+public instance : IsEmpty (IntervalPartition 0) where
   false part := by
     have h0 : part.t 0 = 0 := part.t_zero
     have h1 : part.t 0 = 1 := part.t_last
@@ -80,8 +84,13 @@ public structure TubeData (X : Type*) [TopologicalSpace X] (n : ℕ) : Type _ wh
 /-- A path γ is in the tube defined by partition `part` and tube data T.
 This means:
 1. γ stays in the segment neighborhoods U[i] on each interval [t[i], t[i+1]]
-2. γ passes through the point neighborhoods V[j] at ALL partition points -/
-structure PathInTube {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
+2. γ passes through the point neighborhoods V[j] at ALL partition points
+
+`public` because the variable-endpoint based-path openness argument in
+`TauCeti.AlgebraicTopology.UniversalCover.BasedPath` builds and destructures tube membership
+directly (it refines the terminal vertex neighborhood before appealing to
+`Path.tube_subset_homotopy_class_source`); it is not otherwise part of the reusable API. -/
+public structure PathInTube {X : Type*} [TopologicalSpace X] {x y : X} {n : ℕ}
     (γ : Path x y) (part : IntervalPartition n) (T : TubeData X n) : Prop where
   /-- γ stays in the segment neighborhoods U[i] on each interval [t[i], t[i+1]] -/
   stays_in_U : ∀ i (s : unitInterval),
@@ -191,8 +200,11 @@ private theorem Path.exists_vertexNeighborhood_family [LocallyPathConnectedSpace
     exact hV_right i.succ i rfl
 
 /-- If `X` is locally path-connected and SLSC along the range of `γ`, then `γ` lies in a
-path-homotopy-trivial tube. -/
-theorem Path.exists_pathHomotopyTrivial_tube
+path-homotopy-trivial tube.
+
+`public` because `TauCeti.AlgebraicTopology.UniversalCover.BasedPath` consumes the tube (partition
+and tube data) around a based path to build an open endpoint-preimage neighborhood. -/
+public theorem Path.exists_pathHomotopyTrivial_tube
     [LocallyPathConnectedSpace X] {x y : X}
     (γ : Path x y) (hslsc : SemilocallySimplyConnectedOn (Set.range γ)) :
     ∃ (n : ℕ) (part : IntervalPartition n) (T : TubeData X n), PathInTube γ part T := by
@@ -530,8 +542,12 @@ theorem Path.paste_segment_homotopies_pathHomotopyTrivial_source {x y y' : X} {n
   exact h_paste.trans <| Path.Homotopic.trans_left_of_nullhomotopic h_α₀_null
 
 /-- Variable-endpoint tube theorem: paths in the same tube as `γ` are homotopic to `γ`
-followed by the final endpoint rung. -/
-theorem Path.tube_subset_homotopy_class_source {x y y' : X} {n : ℕ}
+followed by the final endpoint rung.
+
+`public` because `TauCeti.AlgebraicTopology.UniversalCover.BasedPath` uses exactly this
+variable-endpoint statement to move between based paths with distinct endpoints inside a common
+path component of `endpoint ⁻¹' U`; the fixed-endpoint public API does not suffice there. -/
+public theorem Path.tube_subset_homotopy_class_source {x y y' : X} {n : ℕ}
     (γ : Path x y) (part : IntervalPartition n) (T : TubeData X n)
     (hγ : PathInTube γ part T)
     (γ' : Path x y') (hγ' : PathInTube γ' part T) :
