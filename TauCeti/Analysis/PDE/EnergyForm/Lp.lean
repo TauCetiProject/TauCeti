@@ -136,11 +136,13 @@ theorem energyFormLp_coefficientSymmetricPart_zero_drift_apply (μ : Measure X)
   have hVU : Integrable (fun x => energyIntegrand A 0 c (V x) (U x)) μ :=
     memLp_one_iff_integrable.mp
       ((energyIntegrand A 0 c).memLp_of_bilin 1 (Lp.memLp V) (Lp.memLp U))
-  rw [show (fun x => energyIntegrand (coefficientSymmetricPart A) 0 c (U x) (V x)) =
-      fun x => (energyIntegrand A 0 c (U x) (V x) +
-        energyIntegrand A 0 c (V x) (U x)) / 2 by
+  have hpoint :
+      (fun x => energyIntegrand (coefficientSymmetricPart A) 0 c (U x) (V x)) =
+        fun x => (energyIntegrand A 0 c (U x) (V x) +
+          energyIntegrand A 0 c (V x) (U x)) / 2 := by
     funext x
-    exact energyIntegrand_coefficientSymmetricPart_zero_drift_apply A c (U x) (V x)]
+    exact energyIntegrand_coefficientSymmetricPart_zero_drift_apply A c (U x) (V x)
+  rw [hpoint]
   rw [integral_div, integral_add hUV hVU]
 
 /-- Transposing the principal coefficient swaps the two arguments of a zero-drift `L²` energy
