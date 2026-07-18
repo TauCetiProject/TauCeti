@@ -114,7 +114,6 @@ theorem energyFormLp_one_zero_mass_self (μ : Measure X) (c : ℝ)
 
 /-- Replacing the principal coefficient by its symmetric part does not change the diagonal
 `L²` energy form. -/
-@[simp]
 theorem energyFormLp_coefficientSymmetricPart_self (μ : Measure X) (A : Matrix n n ℝ)
     (b : EuclideanSpace ℝ n) (c : ℝ)
     (U : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
