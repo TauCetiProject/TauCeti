@@ -81,10 +81,8 @@ theorem card_sdiff_eq_one [DecidableEq ι] (h : IsFreePair K σ τ) (hcodim : h.
 
 end IsFreePair
 
-@[simp]
 theorem mem_deletion_of_isFreePair {σ τ ω : Finset ι} (h : IsFreePair K σ τ) :
-    ω ∈ deletion K σ ↔ ω ∈ K ∧ ω ≠ σ ∧ ω ≠ τ := by
-  rw [mem_deletion]
+    (ω ∈ K ∧ ¬σ ⊆ ω) ↔ ω ∈ K ∧ ω ≠ σ ∧ ω ≠ τ := by
   constructor
   · rintro ⟨hω, hσ⟩
     exact ⟨hω, fun hωσ => hσ hωσ.ge, fun hωτ => hσ (hωτ ▸ h.lower_ssubset_upper.subset)⟩
@@ -122,7 +120,8 @@ theorem exists_pair (h : ElementaryCollapsesTo K L) :
     ∃ (σ τ : Finset ι) (hfree : IsFreePair K σ τ), hfree.IsCodimensionOne ∧
       ∀ ω, ω ∈ L ↔ ω ∈ K ∧ ω ≠ σ ∧ ω ≠ τ := by
   obtain ⟨σ, τ, hfree, hcodim, rfl⟩ := h
-  exact ⟨σ, τ, hfree, hcodim, fun ω => mem_deletion_of_isFreePair K hfree⟩
+  exact ⟨σ, τ, hfree, hcodim, fun ω => by
+    simpa only [mem_deletion] using mem_deletion_of_isFreePair K hfree⟩
 
 end ElementaryCollapsesTo
 
