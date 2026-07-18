@@ -58,7 +58,7 @@ variable (R K : Type*) [CommRing R] [IsDedekindDomain R]
 Weil divisors carries the subgroup of principal fractional ideals onto the subgroup of principal
 divisors: this is `fractionalIdealDivisorAddEquiv_toPrincipalIdeal` at the level of subgroups, and
 it is exactly the compatibility needed to descend the isomorphism to the class groups. -/
-lemma map_toPrincipalIdeal_range :
+private lemma map_toPrincipalIdeal_range :
     AddSubgroup.map (fractionalIdealDivisorAddEquiv R K).toAddMonoidHom
         (Subgroup.toAddSubgroup (toPrincipalIdeal R K).range) =
       (OrderSystem.ofDedekindDomain R K).principalSubgroup := by
@@ -96,15 +96,25 @@ lemma classGroupAddEquiv_divisorClass_fractionalIdealDivisor (I : (FractionalIde
       = Additive.ofMul (ClassGroup.mk K I) := by
   rw [classGroupAddEquiv, AddEquiv.trans_apply, ← fractionalIdealDivisorAddEquiv_apply,
     OrderSystem.divisorClass_eq_mk']
+  -- `QuotientAddGroup.congr` carries `mk' G' x` to `mk' H' (e x)` definitionally, but Mathlib's
+  -- `QuotientGroup.congr_mk'` is not tagged `@[to_additive]`, so there is no additive lemma to
+  -- rewrite with; exhibit the identity to expose an `e.symm (e _)` that `symm_apply_apply` cancels.
   rw [show (QuotientAddGroup.mk' (OrderSystem.ofDedekindDomain R K).principalSubgroup)
         (fractionalIdealDivisorAddEquiv R K (Additive.ofMul I))
       = (QuotientAddGroup.congr (Subgroup.toAddSubgroup (toPrincipalIdeal R K).range)
           (OrderSystem.ofDedekindDomain R K).principalSubgroup (fractionalIdealDivisorAddEquiv R K)
-          (map_toPrincipalIdeal_range R K)) (QuotientAddGroup.mk' _ (Additive.ofMul I)) from rfl]
-  rw [AddEquiv.symm_apply_apply]
+          (map_toPrincipalIdeal_range R K)) (QuotientAddGroup.mk' _ (Additive.ofMul I)) from rfl,
+    AddEquiv.symm_apply_apply]
+  -- `QuotientAddGroup.mk' (Subgroup.toAddSubgroup H) (Additive.ofMul x)` and
+  -- `Additive.ofMul (QuotientGroup.mk' H x)` are the same term through the `Additive` type-tag on
+  -- the quotient, but no rewrite lemma bridges the two `mk'`s, so reshape by `change` before
+  -- applying `MulEquiv.toAdditive_apply_symm_apply`.
   change (MulEquiv.toAdditive (ClassGroup.equiv K)).symm
       (Additive.ofMul (QuotientGroup.mk' (toPrincipalIdeal R K).range I)) = _
   rw [MulEquiv.toAdditive_apply_symm_apply, MonoidHom.coe_toAdditive]
+  -- `MonoidHom.coe_toAdditive` leaves `Additive.ofMul (… (Additive.toMul (Additive.ofMul _)))`;
+  -- collapse the `toMul ∘ ofMul` type-tag round-trip (again a definitional identity with no
+  -- applicable rewrite lemma) so the two sides differ only inside `Additive.ofMul`.
   change Additive.ofMul
       ((ClassGroup.equiv K).symm (QuotientGroup.mk' (toPrincipalIdeal R K).range I))
       = Additive.ofMul (ClassGroup.mk K I)
@@ -133,9 +143,7 @@ lemma classGroupAddEquiv_divisorClass (D : WeilDivisor (HeightOneSpectrum R)) :
         ((fractionalIdealDivisorAddEquiv R K).symm D))) := by
   have hD : fractionalIdealDivisor R K
       (Additive.ofMul (Additive.toMul ((fractionalIdealDivisorAddEquiv R K).symm D))) = D := by
-    rw [show Additive.ofMul (Additive.toMul ((fractionalIdealDivisorAddEquiv R K).symm D))
-          = (fractionalIdealDivisorAddEquiv R K).symm D from rfl,
-      ← fractionalIdealDivisorAddEquiv_apply, AddEquiv.apply_symm_apply]
+    rw [ofMul_toMul, ← fractionalIdealDivisorAddEquiv_apply, AddEquiv.apply_symm_apply]
   conv_lhs => rw [← hD]
   rw [classGroupAddEquiv_divisorClass_fractionalIdealDivisor]
 
