@@ -34,9 +34,9 @@ variable {N X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 /-- Postcomposing a generalized loop with maps homotopic relative to a set containing the
 basepoint gives homotopic generalized loops. The resulting homotopy is relative to the cube
 boundary. -/
-theorem map_homotopic_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) (hg : g x = y)
-    {S : Set X} (hx : x ∈ S) (H : f.HomotopicRel g S) (p : Ω^ N X x) :
-    _root_.GenLoop.Homotopic (map f hf p) (map g hg p) := by
+theorem map_homotopic_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) {S : Set X}
+    (hx : x ∈ S) (H : f.HomotopicRel g S) (p : Ω^ N X x) :
+    _root_.GenLoop.Homotopic (map f hf p) (map g ((H.fst_eq_snd hx).symm.trans hf) p) := by
   obtain ⟨H⟩ := H
   refine ⟨⟨⟨⟨fun tp ↦ H (tp.1, p.1 tp.2), ?_⟩, ?_, ?_⟩, ?_⟩⟩
   · fun_prop
@@ -56,19 +56,20 @@ variable {N X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- Continuous maps homotopic relative to a set containing the basepoint induce the same
 function on homotopy groups. -/
-theorem map_eq_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) (hg : g x = y)
-    {S : Set X} (hx : x ∈ S) (H : f.HomotopicRel g S) : map (N := N) f hf = map g hg := by
+theorem map_eq_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) {S : Set X}
+    (hx : x ∈ S) (H : f.HomotopicRel g S) :
+    map (N := N) f hf = map g ((H.fst_eq_snd hx).symm.trans hf) := by
   funext a
   refine Quotient.inductionOn a ?_
   intro p
-  exact Quotient.sound (GenLoop.map_homotopic_of_homotopicRel hf hg hx H p)
+  exact Quotient.sound (GenLoop.map_homotopic_of_homotopicRel hf hx H p)
 
 /-- Continuous maps homotopic relative to a set containing the basepoint have equal induced
 monoid homomorphisms on positive-dimensional homotopy groups. -/
 theorem mapHom_eq_of_homotopicRel [DecidableEq N] [Nonempty N] {f g : C(X, Y)}
-    (hf : f x = y) (hg : g x = y) {S : Set X} (hx : x ∈ S) (H : f.HomotopicRel g S) :
-    mapHom (N := N) f hf = mapHom g hg :=
-  MonoidHom.ext fun a ↦ congrFun (map_eq_of_homotopicRel hf hg hx H) a
+    (hf : f x = y) {S : Set X} (hx : x ∈ S) (H : f.HomotopicRel g S) :
+    mapHom (N := N) f hf = mapHom g ((H.fst_eq_snd hx).symm.trans hf) :=
+  MonoidHom.ext fun a ↦ congrFun (map_eq_of_homotopicRel hf hx H) a
 
 end HomotopyGroup
 
