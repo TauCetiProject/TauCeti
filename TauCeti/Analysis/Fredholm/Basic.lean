@@ -31,7 +31,7 @@ finite-dimensional spaces are Fredholm.
 * `TauCeti.isFredholm_id` and `TauCeti.index_id`: the identity is Fredholm of index `0`.
 * `TauCeti.ContinuousLinearEquiv.isFredholm` and `TauCeti.ContinuousLinearEquiv.index_eq_zero`: a
   continuous linear equivalence is Fredholm of index `0`.
-* `TauCeti.isFredholm_of_finiteDimensional` and `TauCeti.index_eq_finrank_sub_finrank`: every
+* `TauCeti.isFredholm_of_finiteDimensional` and `TauCeti.index_eq_of_finiteDimensional`: every
   operator between finite-dimensional spaces is Fredholm, with index `dim E − dim F`.
 * `TauCeti.IsFredholm.neg`, `TauCeti.IsFredholm.smul`: Fredholmness is preserved by negation and
   by nonzero scalar multiples, with the index unchanged.
@@ -131,7 +131,7 @@ lemma isFredholm_of_finiteDimensional (T : E →L[𝕜] F) : IsFredholm T where
 
 omit [CompleteSpace 𝕜] in
 /-- Between finite-dimensional spaces the index is `dim E − dim F`, for any operator. -/
-lemma index_eq_finrank_sub_finrank (T : E →L[𝕜] F) :
+lemma index_eq_of_finiteDimensional (T : E →L[𝕜] F) :
     index T = (finrank 𝕜 E : ℤ) - finrank 𝕜 F := by
   rw [index_def, LinearMap.index_eq_of_finiteDimensional]
 
@@ -179,11 +179,25 @@ private lemma coe_comp_equiv (e : G ≃L[𝕜] E) :
       (T : E →ₗ[𝕜] F).comp (e.toLinearEquiv : G →ₗ[𝕜] E) := by
   ext x; simp
 
+/-- A linear equivalence `e : F ≃ₗ G` sends the cokernel by a submodule `p` to the cokernel by
+its image `p.map e`, linearly equivalently. Transports the cokernel along a postcomposed
+equivalence in both `equiv_comp` and `index_equiv_comp`. -/
+private noncomputable def quotientEquivMap (e : F ≃ₗ[𝕜] G) (p : Submodule 𝕜 F) :
+    (F ⧸ p) ≃ₗ[𝕜] G ⧸ p.map (e : F →ₗ[𝕜] G) :=
+  Submodule.Quotient.equiv p (p.map (e : F →ₗ[𝕜] G)) e rfl
+
+/-- The kernel of `T.comp e`, for a continuous linear equivalence `e : G ≃L[𝕜] E`, is the image
+of `ker T` under `e⁻¹`. Transports the kernel along a precomposed equivalence in both
+`comp_equiv` and `index_comp_equiv`. -/
+private lemma ker_comp_equiv (e : G ≃L[𝕜] E) :
+    LinearMap.ker ((T.comp (e : G →L[𝕜] E) : G →L[𝕜] F) : G →ₗ[𝕜] F) =
+      (LinearMap.ker (T : E →ₗ[𝕜] F)).map (e.toLinearEquiv.symm : E →ₗ[𝕜] G) := by
+  rw [coe_comp_equiv, LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm]
+
 /-- Postcomposing a Fredholm operator with a continuous linear equivalence yields a Fredholm
 operator. -/
 lemma IsFredholm.equiv_comp (hT : IsFredholm T) (e : F ≃L[𝕜] G) :
     IsFredholm ((e : F →L[𝕜] G).comp T) := by
-  haveI := hT.finiteDimensional_ker
   haveI := hT.finiteDimensional_coker
   refine ⟨?_, ?_, ?_⟩
   · rw [coe_equiv_comp, LinearMap.ker_comp_of_ker_eq_bot _
@@ -192,28 +206,27 @@ lemma IsFredholm.equiv_comp (hT : IsFredholm T) (e : F ≃L[𝕜] G) :
   · rw [coe_equiv_comp, LinearMap.range_comp]
     simpa [Submodule.map_coe] using e.isClosed_image.2 hT.isClosed_range
   · rw [coe_equiv_comp, LinearMap.range_comp]
-    exact (Submodule.Quotient.equiv _ _ e.toLinearEquiv rfl).finiteDimensional
+    exact (quotientEquivMap e.toLinearEquiv _).finiteDimensional
 
 /-- Postcomposing with a continuous linear equivalence leaves the index unchanged. -/
 @[simp] lemma index_equiv_comp (e : F ≃L[𝕜] G) :
     index ((e : F →L[𝕜] G).comp T) = index T := by
-  rw [index_eq_finrank_sub, index_eq_finrank_sub, coe_equiv_comp]
+  rw [index_eq_finrank_sub, index_eq_finrank_sub]
   congr 1
   · congr 1
-    rw [LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 e.toLinearEquiv.injective)]
+    rw [coe_equiv_comp, LinearMap.ker_comp_of_ker_eq_bot _
+      (LinearMap.ker_eq_bot.2 e.toLinearEquiv.injective)]
   · congr 1
-    rw [LinearMap.range_comp]
-    exact (LinearEquiv.finrank_eq
-      (Submodule.Quotient.equiv _ _ e.toLinearEquiv rfl)).symm
+    rw [coe_equiv_comp, LinearMap.range_comp]
+    exact (LinearEquiv.finrank_eq (quotientEquivMap e.toLinearEquiv _)).symm
 
 /-- Precomposing a Fredholm operator with a continuous linear equivalence yields a Fredholm
 operator. -/
 lemma IsFredholm.comp_equiv (hT : IsFredholm T) (e : G ≃L[𝕜] E) :
     IsFredholm (T.comp (e : G →L[𝕜] E)) := by
   haveI := hT.finiteDimensional_ker
-  haveI := hT.finiteDimensional_coker
   refine ⟨?_, ?_, ?_⟩
-  · rw [coe_comp_equiv, LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm]
+  · rw [ker_comp_equiv]
     exact (e.toLinearEquiv.symm.submoduleMap _).finiteDimensional
   · rw [coe_comp_equiv, LinearMap.range_comp_of_range_eq_top _
       (LinearMap.range_eq_top.2 e.toLinearEquiv.surjective)]
@@ -225,12 +238,12 @@ lemma IsFredholm.comp_equiv (hT : IsFredholm T) (e : G ≃L[𝕜] E) :
 /-- Precomposing with a continuous linear equivalence leaves the index unchanged. -/
 @[simp] lemma index_comp_equiv (e : G ≃L[𝕜] E) :
     index (T.comp (e : G →L[𝕜] E)) = index T := by
-  rw [index_eq_finrank_sub, index_eq_finrank_sub, coe_comp_equiv]
+  rw [index_eq_finrank_sub, index_eq_finrank_sub]
   congr 1
   · congr 1
-    rw [LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
+    rw [ker_comp_equiv, LinearEquiv.finrank_map_eq]
   · congr 1
-    rw [LinearMap.range_comp_of_range_eq_top _
+    rw [coe_comp_equiv, LinearMap.range_comp_of_range_eq_top _
       (LinearMap.range_eq_top.2 e.toLinearEquiv.surjective)]
 
 end CompEquiv
