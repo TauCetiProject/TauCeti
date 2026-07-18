@@ -126,6 +126,22 @@ theorem map_comp_apply (g : C(Y, Z)) (hg : g y = z) (f : C(X, Y)) (hf : f x = y)
   intro p
   simp
 
+/-- The induced map `HomotopyGroup.map` depends only on the underlying continuous map, not on the
+chosen proof of the basepoint equation. -/
+theorem map_congr {f₁ f₂ : C(X, Y)} (hfe : f₁ = f₂) (h₁ : f₁ x = y) (h₂ : f₂ x = y)
+    (a : HomotopyGroup N X x) :
+    map f₁ h₁ a = map f₂ h₂ a := by
+  subst hfe
+  rfl
+
+/-- If `g ∘ f` is the identity, then the induced map of `g` undoes the induced map of `f` on
+homotopy classes. -/
+theorem map_map_of_comp_eq_id (g : C(Y, X)) (f : C(X, Y)) (hf : f x = y) (hg : g y = x)
+    (hgf : g.comp f = ContinuousMap.id X) (a : HomotopyGroup N X x) :
+    map g hg (map f hf a) = a := by
+  rw [map_comp_apply]
+  exact (map_congr hgf _ rfl a).trans (map_id_apply a)
+
 /-- In positive dimensions, the map induced by a based continuous map is a monoid
 homomorphism for the standard group structure on homotopy groups. -/
 @[expose] def mapHom [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y) :
