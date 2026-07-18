@@ -54,8 +54,8 @@ variable [Nontrivial E] {K : Set E} {f g : E → ℝ}
 
 /-- **Comparison principle for the Laplacian.**
 
-Let `K` be compact, and let `f`, `g` be continuous on `K` and `C²` on `interior K`. If `g` is at
-least as subharmonic as `f` there (`Δ g ≤ Δ f`) and `f ≤ g` on `frontier K`, then `f ≤ g` on all of
+Let `K` be compact, and let `f`, `g` be continuous on `K` and `C²` on `interior K`. If `f` is at
+least as subharmonic as `g` there (`Δ g ≤ Δ f`) and `f ≤ g` on `frontier K`, then `f ≤ g` on all of
 `K`. This is the two-function form of the weak maximum principle
 `le_of_laplacian_nonneg_le_frontier`, applied to the difference `f - g`. -/
 theorem le_of_laplacian_le_of_le_frontier (hK : IsCompact K)
