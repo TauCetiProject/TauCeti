@@ -34,6 +34,9 @@ such a point either `f` is already negative (so the bound is free) or `f ≥ 0` 
 * `TauCeti.le_of_mul_le_laplacian_le_frontier`: **weak maximum principle for `-Δ + c`, `c ≥ 0`**. A
   continuous function that is `C²` on the interior with `c · f ≤ Δ f` (a subsolution of `-Δ + c`)
   and `c ≥ 0` there is bounded by any nonnegative `m` it respects on `frontier K`.
+* `TauCeti.le_of_mul_le_laplacian_le_of_le_frontier`: **comparison principle for `-Δ + c`,
+  `c ≥ 0`**. A subsolution `f` and a supersolution `g` ordered by `f ≤ g` on `frontier K` stay
+  ordered `f ≤ g` on all of `K`.
 * `TauCeti.ge_of_laplacian_le_mul_ge_frontier`: the dual weak minimum principle for supersolutions
   (`Δ f ≤ c · f`), bounded below by any nonpositive lower bound on the frontier.
 * `TauCeti.abs_le_of_laplacian_eq_mul_abs_le_frontier`: a solution of `-Δ u + c u = 0`
@@ -101,29 +104,46 @@ theorem le_of_mul_le_laplacian_le_frontier {K : Set E} (hK : IsCompact K) {c f :
         have hgcd : ContDiffAt ℝ 2 (fun y : E => f y + ε • ‖y‖ ^ 2) z := (hcd hzint).add (hεsq z)
         have hΔle : Δ (fun y : E => f y + ε • ‖y‖ ^ 2) z ≤ 0 :=
           laplacian_nonpos_of_isLocalMax hgcd hloc
-        have hΔeq : Δ (fun y : E => f y + ε • ‖y‖ ^ 2) z
-            = Δ f z + ε * (2 * (Module.finrank ℝ E : ℝ)) := by
-          have hadd : Δ (fun y : E => f y + ε • ‖y‖ ^ 2) z
-              = Δ f z + Δ (fun w : E => ε • ‖w‖ ^ 2) z := (hcd hzint).laplacian_add (hεsq z)
-          have hsmul : Δ (fun w : E => ε • ‖w‖ ^ 2) z = ε • Δ (fun w : E => ‖w‖ ^ 2) z :=
-            laplacian_smul ε (contDiff_norm_sq ℝ).contDiffAt
-          rw [hadd, hsmul, laplacian_norm_sq, smul_eq_mul]
+        rw [laplacian_add_const_smul_norm_sq ε (hcd hzint)] at hΔle
         have hΔf : 0 ≤ Δ f z := le_trans (mul_nonneg (hc hzint) hfz0) (hsub hzint)
         have hpos : 0 < ε * (2 * (Module.finrank ℝ E : ℝ)) := mul_pos hε (mul_pos two_pos hfrpos)
-        rw [hΔeq] at hΔle
         linarith
       · -- Boundary maximizer: `z ∈ frontier K`.
         exact hbdry ⟨subset_closure hzK, hzint⟩
     linarith
   -- Let `ε → 0`.
-  rcases eq_or_lt_of_le hCnonneg with hC0 | hCpos
-  · have := key 1 one_pos
-    rw [← hC0] at this
-    simpa using this
-  · refine le_of_forall_pos_le_add fun δ hδ => ?_
-    have hk := key (δ / C) (by positivity)
-    have : δ / C * C = δ := by field_simp
-    linarith
+  exact le_of_forall_pos_mul_le hCnonneg key
+
+/-- **Comparison principle for `-Δ + c` with `c ≥ 0`.**
+
+Let `K` be compact and let `f`, `g` be continuous on `K` and `C²` on `interior K`, with a
+nonnegative coefficient `c` there. If `f` is a subsolution and `g` a supersolution of `-Δ + c`
+(`c · f ≤ Δ f` and `Δ g ≤ c · g`) and `f ≤ g` on `frontier K`, then `f ≤ g` on all of `K`. This is
+the two-function form of `le_of_mul_le_laplacian_le_frontier`, applied to the difference `f - g`
+with frontier bound `0`. -/
+theorem le_of_mul_le_laplacian_le_of_le_frontier {K : Set E} (hK : IsCompact K) {c f g : E → ℝ}
+    (hfcont : ContinuousOn f K) (hgcont : ContinuousOn g K)
+    (hfcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hgcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 g x)
+    (hc : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ c x)
+    (hsub : ∀ ⦃x⦄, x ∈ interior K → c x * f x ≤ Δ f x)
+    (hsuper : ∀ ⦃x⦄, x ∈ interior K → Δ g x ≤ c x * g x)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → f x ≤ g x) :
+    ∀ ⦃x⦄, x ∈ K → f x ≤ g x := by
+  intro x hxK
+  -- Bound the difference `f - g` above by `0` via the weak maximum principle for `-Δ + c`.
+  have hdiff : ∀ ⦃y⦄, y ∈ K → (f - g) y ≤ 0 :=
+    le_of_mul_le_laplacian_le_frontier (c := c) hK le_rfl (hfcont.sub hgcont)
+      (fun y hy => (hfcd hy).sub (hgcd hy)) hc
+      (fun y hy => by
+        rw [(hfcd hy).laplacian_sub (hgcd hy), Pi.sub_apply, mul_sub]
+        linarith [hsub hy, hsuper hy])
+      (fun y hy => by
+        rw [Pi.sub_apply]
+        linarith [hbdry hy])
+  have := hdiff hxK
+  rw [Pi.sub_apply] at this
+  linarith
 
 /-- **Weak minimum principle for supersolutions of `-Δ + c` with `c ≥ 0`.**
 
@@ -149,7 +169,7 @@ theorem ge_of_laplacian_le_mul_ge_frontier {K : Set E} (hK : IsCompact K) {c f :
 
 /-- A solution of `-Δ u + c u = 0` (`Δ f = c · f`) with `c ≥ 0`, continuous on a compact set `K` and
 `C²` on its interior, is bounded on `K` by any bound `M` its absolute value respects on
-`frontier K`. Combining the maximum principle applied to `f` and to `-f`. -/
+`frontier K`. -/
 theorem abs_le_of_laplacian_eq_mul_abs_le_frontier {K : Set E} (hK : IsCompact K) {c f : E → ℝ}
     {M : ℝ} (hM : 0 ≤ M) (hcont : ContinuousOn f K)
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
