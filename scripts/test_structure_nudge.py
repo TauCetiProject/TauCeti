@@ -111,7 +111,7 @@ class TestCandidates(unittest.TestCase):
         body = sn.render_comment("abc123", findings)
         self.assertIn(sn.MARKER, body)
         self.assertIn("never blocks", body)
-        self.assertIn("preliminary PR", body)
+        self.assertIn("move as you add", body)
         self.assertIn("`Foo/Basic.lean` or `Foo/Defs.lean`", body)
         self.assertIn("as `Quux/Basic.lean` or `Quux/Defs.lean`", body)
 

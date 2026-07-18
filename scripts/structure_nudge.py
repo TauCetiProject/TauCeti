@@ -8,10 +8,10 @@ prefixes of its basename and report, as one advisory PR comment:
 * any sibling sharing a CamelCase prefix with it, at token boundaries: two files
   sharing a prefix are already a directory, so ``Dir/Prefix.lean`` plus
   ``Dir/PrefixBar.lean`` triggers, in either order, as do two extensions. Per
-  the placement guidance, the expected response is a preliminary PR creating
-  ``Dir/Prefix/``, with ``Prefix.lean`` becoming ``Prefix/Basic.lean`` (or
-  ``Prefix/Defs.lean`` when definitions-only) and each ``PrefixBar.lean``
-  becoming ``Prefix/Bar.lean``, after which the new file is added there.
+  the placement guidance, the same PR creates ``Dir/Prefix/``, with
+  ``Prefix.lean`` becoming ``Prefix/Basic.lean`` (or ``Prefix/Defs.lean`` when
+  definitions-only) and each ``PrefixBar.lean`` becoming ``Prefix/Bar.lean``,
+  and places the new file there: move as you add.
 
 This check is advisory by construction: findings exit ``0``, every failure is
 downgraded to a ``::warning::`` annotation and exit ``0``, and the workflow step
@@ -114,18 +114,18 @@ def render_comment(head_sha: str, findings: dict[str, list[dict]]) -> str:
             if c["is_prefix_of_family"]:
                 lines.append(
                     f"  * `{c['prefix']}`: existing files extend this name ({ex}); per "
-                    f"the placement guidance, relocate first: a preliminary PR creating "
-                    f"{loc} (each `{c['prefix']}Bar.lean` becomes `{c['prefix']}/Bar.lean`), "
-                    f"then add this file there as `{c['prefix']}/Basic.lean` or "
+                    f"the placement guidance, move as you add: in this PR create "
+                    f"{loc} (each `{c['prefix']}Bar.lean` becomes `{c['prefix']}/Bar.lean`) "
+                    f"and place this file there as `{c['prefix']}/Basic.lean` or "
                     f"`{c['prefix']}/Defs.lean`.")
             else:
                 have = (f"`{c['prefix']}.lean`" + (f", {ex}" if ex else "")) if c["anchor"] else ex
                 lines.append(
                     f"  * `{c['prefix']}`: shares the `{c['prefix']}` prefix with {have}; "
-                    f"per the placement guidance, relocate first: a preliminary PR "
-                    f"creating {loc} (`{c['prefix']}.lean` becomes `{c['prefix']}/Basic.lean` "
+                    f"per the placement guidance, move as you add: in this PR create "
+                    f"{loc} (`{c['prefix']}.lean` becomes `{c['prefix']}/Basic.lean` "
                     f"or `{c['prefix']}/Defs.lean`; each `{c['prefix']}Bar.lean` becomes "
-                    f"`{c['prefix']}/Bar.lean`), then add this file there.")
+                    f"`{c['prefix']}/Bar.lean`) and place this file there.")
     lines.append("")
     lines.append(f"Policy and context: {TRACKING_ISSUE}.")
     return "\n".join(lines)
