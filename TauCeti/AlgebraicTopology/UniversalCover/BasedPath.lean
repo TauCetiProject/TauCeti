@@ -513,7 +513,7 @@ In a locally path-connected space, if semilocal simple connectivity holds along 
 `α : BasedPath x₀` has endpoint in an open set `U`, then `α` has an open neighborhood `N` in
 `BasedPath x₀` such that every element of `N` has endpoint in `U` and lies in the same path
 component of `endpoint ⁻¹' U` as `α`. -/
-public theorem exists_open_nhd_pathComponent_preimage
+public theorem exists_open_nhds_pathComponent_preimage
     [LocallyPathConnectedSpace X] {U : Set X} (hU_open : IsOpen U)
     (α : BasedPath x₀) (hslsc : SemilocallySimplyConnectedOn (Set.range α.toPath))
     (hα : endpoint α ∈ U) :
@@ -620,7 +620,7 @@ public theorem isOpen_pathComponent_preimage
   intro β hβ
   have hβ_end_U : endpoint β ∈ U := hβ.target_mem
   obtain ⟨N, hN_open, hβ_N, _, hN_joined⟩ :=
-    exists_open_nhd_pathComponent_preimage hU_open
+    exists_open_nhds_pathComponent_preimage hU_open
       β
       (SemilocallySimplyConnectedOn.of_semilocallySimplyConnectedSpace (Set.range β.toPath))
       hβ_end_U
