@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.LinkStar
 
 /-!
 # Elementary collapses of simplicial complexes
@@ -82,40 +82,28 @@ theorem card_sdiff_eq_one [DecidableEq ι] (h : IsFreePair K σ τ) (hcodim : h.
 
 end IsFreePair
 
-/-- Delete the two faces in a free pair.  Uniqueness of the coface ensures that the remaining
-faces are still downward closed. -/
-def eraseFreePair {σ τ : Finset ι} (h : IsFreePair K σ τ) :
-    _root_.PreAbstractSimplicialComplex ι where
-  faces := K.faces \ {σ, τ}
-  isRelLowerSet_faces := by
-    rintro ω ⟨hω, hω_ne⟩
-    constructor
-    · exact (K.isRelLowerSet_faces hω).1
-    · intro υ hυω hυ
-      refine ⟨(K.isRelLowerSet_faces hω).2 hυω hυ, ?_⟩
-      simp only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
-      constructor
-      · intro hυσ
-        subst υ
-        rcases h.eq_lower_or_eq_upper hω hυω with hωσ | hωτ
-        · exact hω_ne (by simp [hωσ])
-        · exact hω_ne (by simp [hωτ])
-      · intro hυτ
-        subst υ
-        have hωτ := h.upper_maximal hω hυω
-        exact hω_ne (by simp [hωτ])
+/-- Delete the two faces in a free pair. -/
+def eraseFreePair {σ τ : Finset ι} (_h : IsFreePair K σ τ) :
+    _root_.PreAbstractSimplicialComplex ι :=
+  deletion K σ
 
 @[simp]
 theorem mem_eraseFreePair {σ τ ω : Finset ι} (h : IsFreePair K σ τ) :
     ω ∈ eraseFreePair K h ↔ ω ∈ K ∧ ω ≠ σ ∧ ω ≠ τ := by
-  change ω ∈ K.faces \ {σ, τ} ↔ ω ∈ K.faces ∧ ω ≠ σ ∧ ω ≠ τ
-  simp only [Set.mem_sdiff, Set.mem_insert_iff, Set.mem_singleton_iff, not_or]
+  rw [eraseFreePair, mem_deletion]
+  constructor
+  · rintro ⟨hω, hσ⟩
+    exact ⟨hω, fun hωσ => hσ hωσ.ge, fun hωτ => hσ (hωτ ▸ h.lower_ssubset_upper.subset)⟩
+  · rintro ⟨hω, hωσ, hωτ⟩
+    refine ⟨hω, fun hσω => ?_⟩
+    rcases h.eq_lower_or_eq_upper hω hσω with rfl | rfl
+    · exact hωσ rfl
+    · exact hωτ rfl
 
 /-- Deleting a free pair only removes faces. -/
 theorem eraseFreePair_le {σ τ : Finset ι} (h : IsFreePair K σ τ) :
-    eraseFreePair K h ≤ K := by
-  intro ω hω
-  exact (mem_eraseFreePair (K := K) h).mp hω |>.1
+    eraseFreePair K h ≤ K :=
+  deletion_le
 
 theorem lower_not_mem_eraseFreePair {σ τ : Finset ι} (h : IsFreePair K σ τ) :
     σ ∉ eraseFreePair K h := by
