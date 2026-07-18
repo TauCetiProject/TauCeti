@@ -52,7 +52,7 @@ class TestCandidates(unittest.TestCase):
         self.assertFalse(cands[0]["anchor"])
 
     def test_anchor_alone_is_not_a_trigger(self):
-        # Foo.lean beside FooBar.lean is the repo's blessed anchor convention.
+        # A topic file beside one extension is a normal pattern, not a family.
         self.assertEqual(
             sn.candidates_for(f"{D}/FooBar.lean", T(f"{D}/Foo.lean")), [])
 

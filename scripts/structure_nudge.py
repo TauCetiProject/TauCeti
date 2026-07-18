@@ -6,12 +6,12 @@ prefixes of its basename and report, as one advisory PR comment:
 
 * an existing subdirectory the file could join (``Dir/Prefix/`` already exists);
 * an existing flat filename family it extends: at least ``ADVISORY_MIN`` sibling
-  files ``Dir/Prefix*.lean`` (token-boundary matched; an anchor module
-  ``Dir/Prefix.lean`` is reported as supplementary evidence, never as a trigger
-  by itself, since anchor-beside-extensions is the repo's blessed convention).
-  Per the placement guidance, the expected response is a preliminary PR that
-  relocates the family into its subdirectory, with the new file then added
-  there.
+  files ``Dir/Prefix*.lean``, matched at CamelCase token boundaries. A lone
+  ``Dir/Prefix.lean`` beside one or two ``Dir/PrefixBar.lean`` files is a normal
+  pattern and never triggers; such an anchor module is mentioned only as extra
+  evidence when a large family already fires. Per the placement guidance, the
+  expected response is a preliminary PR relocating the family into its
+  subdirectory, after which the new file is added there.
 
 This check is advisory by construction: findings exit ``0``, every failure is
 downgraded to a ``::warning::`` annotation and exit ``0``, and the workflow step
@@ -83,9 +83,9 @@ def candidates_for(path: str, tree: set[str]) -> list[dict]:
         subdir = any(t.startswith(f"{d}/{prefix}/") for t in tree)
         anchor = f"{d}/{prefix}.lean" in tree
         family = sorted(s for s in sib_stems if _boundary_extends(s, toks[:k]))
-        # An anchor alone is the repo's blessed `Foo.lean`-beside-extensions
-        # convention and is NOT a trigger; it is reported only as supplementary
-        # evidence when a real trigger (subdirectory or family) fires.
+        # A topic file `Foo.lean` beside a couple of `FooBar.lean` files is a
+        # normal pattern and does not trigger on its own; the anchor is mentioned
+        # only when a subdirectory or a large family already fires.
         if subdir or len(family) >= ADVISORY_MIN:
             out.append({
                 "prefix": prefix, "dir": d, "subdir": subdir, "anchor": anchor,
