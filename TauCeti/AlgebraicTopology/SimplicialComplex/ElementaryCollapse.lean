@@ -70,6 +70,8 @@ theorem upper_maximal (h : IsFreePair K σ τ) {ω : Finset ι} (hω : ω ∈ K)
 
 end IsFreePair
 
+/-- Deleting the lower face of a free pair retains exactly the original faces other than the
+lower and upper faces. -/
 theorem mem_deletion_of_isFreePair {σ τ ω : Finset ι} (h : IsFreePair K σ τ) :
     (ω ∈ K ∧ ¬σ ⊆ ω) ↔ ω ∈ K ∧ ω ≠ σ ∧ ω ≠ τ := by
   constructor
@@ -85,6 +87,12 @@ theorem mem_deletion_of_isFreePair {σ τ ω : Finset ι} (h : IsFreePair K σ �
 codimension-one free pair. -/
 def ElementaryCollapsesTo (L : _root_.PreAbstractSimplicialComplex ι) : Prop :=
   ∃ (σ τ : Finset ι) (_h : IsFreePair K σ τ), σ ⋖ τ ∧ L = deletion K σ
+
+/-- Characterization of an elementary collapse by its codimension-one free pair. -/
+theorem elementaryCollapsesTo_iff {L : _root_.PreAbstractSimplicialComplex ι} :
+    ElementaryCollapsesTo K L ↔
+      ∃ (σ τ : Finset ι) (_h : IsFreePair K σ τ), σ ⋖ τ ∧ L = deletion K σ :=
+  Iff.rfl
 
 namespace ElementaryCollapsesTo
 
