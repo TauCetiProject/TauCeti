@@ -47,6 +47,7 @@ open scoped InnerProductSpace
 
 variable {X n : Type*} [MeasurableSpace X] [Fintype n]
 
+/-- The classical decidable equality used for finite-dimensional matrix computations. -/
 noncomputable local instance energyFormLpDecidableEq : DecidableEq n := Classical.decEq n
 
 /-- The constant-coefficient divergence-form energy form on square-integrable
