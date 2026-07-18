@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Topology.Homeomorph.Defs
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 
 /-!
