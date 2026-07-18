@@ -134,7 +134,7 @@ theorem relativeProdHom_apply (s : Set M) (t : Set N)
   rfl
 
 /-- Pointwise formula for `relativeProdHom`. -/
-@[simp, grind =]
+@[grind =]
 theorem relativeProdHom_apply_apply (s : Set M) (t : Set N)
     (p : fixingSubgroup (I := I) (n := n) s × fixingSubgroup (I := J) (n := n) t)
     (x : M × N) :
