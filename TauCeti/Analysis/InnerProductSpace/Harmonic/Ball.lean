@@ -7,14 +7,15 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Dilation
 
 /-!
-# Ball normalizations for harmonic functions
+# Ball and sphere normalizations for harmonic functions
 
 The PDE roadmap's Lane C uses translations and dilations to reduce local arguments on a ball
 `Metric.ball x r` to arguments on the unit ball.  The files
 `TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry` and
 `TauCeti.Analysis.InnerProductSpace.Harmonic.Dilation` prove the underlying invariance of
 harmonicity under translations and nonzero dilations.  This file packages the corresponding
-consumer forms for metric balls.
+consumer forms for metric balls.  It also records the corresponding set normalizations for
+closed balls and spheres used in mean-value arguments.
 
 The main statement is `harmonicOnNhd_comp_const_add_smul_ball_iff`: for `0 < r`, the
 normalized function `y ↦ f (x + r • y)` is harmonic near the unit ball if and only if `f` is
@@ -22,8 +23,9 @@ harmonic near `Metric.ball x r`.
 
 ## Main declarations
 
-* `TauCeti.preimage_const_add_smul_ball`: the affine normalization map `y ↦ x + c • y` pulls
-  `Metric.ball x (|c| * r)` back to `Metric.ball 0 r`, for nonzero scale `c`.
+* `TauCeti.preimage_const_add_smul_ball`: affine normalization of an open ball.
+* `TauCeti.preimage_const_add_smul_closedBall`: affine normalization of a closed ball.
+* `TauCeti.preimage_const_add_smul_sphere`: affine normalization of a sphere.
 * `TauCeti.harmonicOnNhd_comp_add_right_ball_zero_iff`: translation-normalized harmonicity
   on a ball.
 * `TauCeti.harmonicOnNhd_comp_const_add_smul_ball_radius_iff`: ball-level affine normalization
@@ -39,18 +41,41 @@ open InnerProductSpace
 
 section Preimage
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {𝕜 E : Type*} [NormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- The affine normalization map `y ↦ x + c • y` pulls the ball `Metric.ball x (|c| * r)` back
+/-- The affine normalization map `y ↦ x + c • y` pulls the ball `Metric.ball x (‖c‖ * r)` back
 to `Metric.ball 0 r`, for nonzero scale `c`.  This is the characteristic ball rewrite underlying
 the harmonic ball-normalization lemmas below. -/
 @[simp]
-theorem preimage_const_add_smul_ball (x : E) {c : ℝ} (hc : c ≠ 0) (r : ℝ) :
-    ((fun y : E ↦ x + c • y) ⁻¹' Metric.ball x (|c| * r)) = Metric.ball 0 r := by
+theorem preimage_const_add_smul_ball (x : E) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
+    ((fun y : E ↦ x + c • y) ⁻¹' Metric.ball x (‖c‖ * r)) = Metric.ball 0 r := by
   ext y
   simp only [Set.mem_preimage, Metric.mem_ball, dist_eq_norm, add_sub_cancel_left, sub_zero,
-    norm_smul, Real.norm_eq_abs]
+    norm_smul]
   exact mul_lt_mul_iff_right₀ (norm_pos_iff.2 hc)
+
+/-- The affine map `y ↦ x + c • y` pulls the closed ball of radius `‖c‖ * r` about `x`
+back to the closed ball of radius `r` about `0`. -/
+@[simp]
+theorem preimage_const_add_smul_closedBall (x : E) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
+    ((fun y : E ↦ x + c • y) ⁻¹' Metric.closedBall x (‖c‖ * r)) =
+      Metric.closedBall 0 r := by
+  ext y
+  simp only [Set.mem_preimage, Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left,
+    sub_zero, norm_smul]
+  exact mul_le_mul_iff_right₀ (norm_pos_iff.2 hc)
+
+/-- The affine map `y ↦ x + c • y` pulls the sphere of radius `‖c‖ * r` about `x`
+back to the sphere of radius `r` about `0`. -/
+@[simp]
+theorem preimage_const_add_smul_sphere (x : E) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
+    ((fun y : E ↦ x + c • y) ⁻¹' Metric.sphere x (‖c‖ * r)) = Metric.sphere 0 r := by
+  ext y
+  simp only [Set.mem_preimage, Metric.mem_sphere, dist_eq_norm, add_sub_cancel_left, sub_zero,
+    norm_smul]
+  constructor
+  · exact mul_left_cancel₀ (norm_pos_iff.2 hc).ne'
+  · exact congrArg ((· * ·) ‖c‖)
 
 end Preimage
 
