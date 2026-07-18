@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.Semigroups.Generator
+public import TauCeti.Analysis.Semigroups.Generator.Basic
 public import TauCeti.Analysis.Semigroups.ExponentialShift
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.MeasureTheory.Integral.ExpDecay
