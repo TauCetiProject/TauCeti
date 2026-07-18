@@ -88,13 +88,13 @@ lemma Hom.toOverHom_mk' {A B : AbelianVariety K} (f : A.toOver ⟶ B.toOver)
         (one_f := one_f) (mul_f := mul_f))
 
 /-- A homomorphism of abelian varieties preserves the unit section. -/
-@[simp, reassoc]
+@[reassoc]
 lemma Hom.one_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     η[A.toOver] ≫ Hom.toOverHom f = η[B.toOver] :=
   IsMonHom.one_hom f.hom.hom.hom.hom
 
 /-- A homomorphism of abelian varieties preserves multiplication. -/
-@[simp, reassoc]
+@[reassoc]
 lemma Hom.mul_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     μ[A.toOver] ≫ Hom.toOverHom f =
       (Hom.toOverHom f ⊗ₘ Hom.toOverHom f) ≫ μ[B.toOver] :=
