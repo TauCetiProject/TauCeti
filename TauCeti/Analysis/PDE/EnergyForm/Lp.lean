@@ -73,25 +73,6 @@ theorem energyFormLp_apply (μ : Measure X) (A : Matrix n n ℝ)
       ∫ x, energyIntegrand A b c (U x) (V x) ∂μ := by
   exact ContinuousLinearMap.lpPairing_eq_integral _ _ _
 
-/-- The Dirichlet energy form pairs the gradient components of two `L²` jets. -/
-theorem energyFormLp_one_zero_zero_apply (μ : Measure X)
-    (U V : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
-    energyFormLp μ (1 : Matrix n n ℝ) 0 0 U V =
-      ∫ x, (V x).2 ⬝ᵥ (U x).2 ∂μ := by
-  rw [energyFormLp_apply]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-  exact energyIntegrand_one_zero_zero_apply (U x) (V x)
-
-/-- The diagonal of the Dirichlet `L²` energy form is the integral of the squared gradient
-norm. -/
-theorem energyFormLp_one_zero_zero_self (μ : Measure X)
-    (U : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
-    energyFormLp μ (1 : Matrix n n ℝ) 0 0 U U =
-      ∫ x, ‖(U x).2‖ ^ 2 ∂μ := by
-  rw [energyFormLp_apply]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-  exact energyIntegrand_one_zero_zero_self (U x)
-
 /-- The shifted-Laplacian energy form is the sum of the gradient pairing and the mass
 pairing. -/
 theorem energyFormLp_one_zero_mass_apply (μ : Measure X) (c : ℝ)
@@ -102,6 +83,14 @@ theorem energyFormLp_one_zero_mass_apply (μ : Measure X) (c : ℝ)
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
   exact energyIntegrand_one_zero_mass_apply c (U x) (V x)
 
+/-- The Dirichlet energy form pairs the gradient components of two `L²` jets. -/
+theorem energyFormLp_one_zero_zero_apply (μ : Measure X)
+    (U V : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
+    energyFormLp μ (1 : Matrix n n ℝ) 0 0 U V =
+      ∫ x, (V x).2 ⬝ᵥ (U x).2 ∂μ := by
+  rw [energyFormLp_one_zero_mass_apply]
+  simp
+
 /-- The diagonal of the shifted-Laplacian `L²` energy form is the integral of the squared
 gradient norm plus the mass density. -/
 theorem energyFormLp_one_zero_mass_self (μ : Measure X) (c : ℝ)
@@ -111,6 +100,15 @@ theorem energyFormLp_one_zero_mass_self (μ : Measure X) (c : ℝ)
   rw [energyFormLp_apply]
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
   exact energyIntegrand_one_zero_mass_self c (U x)
+
+/-- The diagonal of the Dirichlet `L²` energy form is the integral of the squared gradient
+norm. -/
+theorem energyFormLp_one_zero_zero_self (μ : Measure X)
+    (U : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
+    energyFormLp μ (1 : Matrix n n ℝ) 0 0 U U =
+      ∫ x, ‖(U x).2‖ ^ 2 ∂μ := by
+  rw [energyFormLp_one_zero_mass_self]
+  simp
 
 /-- Replacing the principal coefficient by its symmetric part does not change the diagonal
 `L²` energy form. -/
