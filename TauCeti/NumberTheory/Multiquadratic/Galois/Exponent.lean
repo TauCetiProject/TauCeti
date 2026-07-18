@@ -31,6 +31,8 @@ invariant it refines — an exponent-`2` abelian group is exactly an `𝔽₂`-v
   beyond the radicand equations.
 * `TauCeti.Multiquadratic.aut_nontrivial`: under square-class independence over a nonempty index
   type, `Gal(M/K)` is nontrivial.
+* `TauCeti.Multiquadratic.aut_exponent_eq_two_of_nontrivial`: a nontrivial `Gal(M/K)` has exponent
+  exactly two.
 * `TauCeti.Multiquadratic.aut_exponent_eq_two`: under those hypotheses,
   `Monoid.exponent (Gal(M/K)) = 2`.
 
@@ -67,15 +69,22 @@ theorem aut_nontrivial [Finite ι] [NeZero (2 : K)] [Nonempty ι]
     Nontrivial (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :=
   (galoisGroupEquiv hroot hindep).toEquiv.nontrivial
 
-/-- **The Galois group of a nontrivial multiquadratic field has exponent exactly two.** -/
-theorem aut_exponent_eq_two [Finite ι] [NeZero (2 : K)] [Nonempty ι]
-    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
-    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
+/-- **A nontrivial multiquadratic Galois group has exponent exactly two.** -/
+theorem aut_exponent_eq_two_of_nontrivial
+    [Nontrivial (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root))]
+    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i)) :
     Monoid.exponent (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) = 2 := by
-  haveI := aut_nontrivial hroot hindep
   rcases (Nat.dvd_prime Nat.prime_two).mp (aut_exponent_dvd_two hroot) with h | h
   · rw [Monoid.exp_eq_one_iff] at h
     exact absurd h (not_subsingleton _)
   · exact h
+
+/-- **The Galois group of a nonempty family of independent radicands has exponent exactly two.** -/
+theorem aut_exponent_eq_two [Finite ι] [NeZero (2 : K)] [Nonempty ι]
+    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
+    Monoid.exponent (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) = 2 := by
+  letI := aut_nontrivial hroot hindep
+  exact aut_exponent_eq_two_of_nontrivial hroot
 
 end TauCeti.Multiquadratic
