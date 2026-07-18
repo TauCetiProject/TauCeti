@@ -51,6 +51,51 @@ namespace TauCeti
 
 open Polynomial Complex
 
+/-- Derivative of the entire function `z ↦ exp (x·z - z²/2)`: its value at `z` times `x - z`. -/
+private theorem hasDerivAt_cexp_quadratic (x z : ℂ) :
+    HasDerivAt (fun w : ℂ => Complex.exp (x * w - w ^ 2 / 2))
+      (Complex.exp (x * z - z ^ 2 / 2) * (x - z)) z := by
+  have hu : HasDerivAt (fun w : ℂ => x * w - w ^ 2 / 2) (x - z) z := by
+    have h1 : HasDerivAt (fun w : ℂ => x * w) (x * 1) z :=
+      (hasDerivAt_id z).const_mul _
+    have h2 := (hasDerivAt_pow 2 z).div_const (2 : ℂ)
+    have hv : x * 1 - ((2 : ℕ) : ℂ) * z ^ (2 - 1) / 2 = x - z := by
+      have he : (2 : ℕ) - 1 = 1 := rfl
+      rw [he, pow_one]
+      push_cast
+      ring
+    have h3 := h1.sub h2
+    rw [hv] at h3
+    exact h3
+  exact hu.cexp
+
+/-- Closed form for the iterated derivatives of `z ↦ exp (x·z - z²/2)`: the `n`-th derivative at
+`z` is `Hₙ(x - z)` times the function value, proved by induction on `n` from the defining recursion
+`hermite (n + 1) = X · hermite n - derivative (hermite n)`. -/
+private theorem iteratedDeriv_cexp_quadratic (x : ℂ) (n : ℕ) (z : ℂ) :
+    iteratedDeriv n (fun w : ℂ => Complex.exp (x * w - w ^ 2 / 2)) z
+      = aeval (x - z) (hermite n) * Complex.exp (x * z - z ^ 2 / 2) := by
+  induction n generalizing z with
+  | zero => simp [iteratedDeriv_zero, hermite_zero]
+  | succ n ih =>
+    have hfun : iteratedDeriv n (fun w : ℂ => Complex.exp (x * w - w ^ 2 / 2))
+        = fun z : ℂ => aeval (x - z) (hermite n) * Complex.exp (x * z - z ^ 2 / 2) :=
+      funext ih
+    have hP : HasDerivAt (fun z : ℂ => aeval (x - z) (hermite n))
+        (-aeval (x - z) (derivative (hermite n))) z := by
+      have h1 : HasDerivAt (fun w : ℂ => x - w) (-1) z := by
+        simpa using (hasDerivAt_id z).const_sub x
+      have h3 := ((hermite n).hasDerivAt_aeval (x - z)).comp z h1
+      simpa [Function.comp_def, mul_neg_one] using h3
+    have hHD : HasDerivAt (iteratedDeriv n (fun w : ℂ => Complex.exp (x * w - w ^ 2 / 2)))
+        (-aeval (x - z) (derivative (hermite n)) * Complex.exp (x * z - z ^ 2 / 2)
+          + aeval (x - z) (hermite n) * (Complex.exp (x * z - z ^ 2 / 2) * (x - z))) z := by
+      rw [hfun]
+      exact hP.mul (hasDerivAt_cexp_quadratic x z)
+    rw [iteratedDeriv_succ, hHD.deriv, hermite_succ]
+    simp only [map_sub, map_mul, aeval_X]
+    ring
+
 /-- **Exponential generating function of the probabilists' Hermite polynomials, summable form.**
 For all complex `x` and `t`, the family `Hₙ(x) · tⁿ / n!` is summable with sum
 `exp (x · t - t² / 2)`, where `Hₙ = Polynomial.hermite n`.
@@ -63,56 +108,14 @@ theorem hermite_hasSum_generating_function (x t : ℂ) :
       (Complex.exp (x * t - t ^ 2 / 2)) := by
   -- The entire function `f z = exp (x·z - z²/2)` on the complex plane.
   set f : ℂ → ℂ := fun z => Complex.exp (x * z - z ^ 2 / 2) with hf_def
-  -- Its derivative at every point: `f' z = f z · (x - z)`.
-  have hu : ∀ z : ℂ, HasDerivAt (fun w : ℂ => x * w - w ^ 2 / 2) (x - z) z := by
-    intro z
-    have h1 : HasDerivAt (fun w : ℂ => x * w) (x * 1) z :=
-      (hasDerivAt_id z).const_mul _
-    have h2 := (hasDerivAt_pow 2 z).div_const (2 : ℂ)
-    have hv : x * 1 - ((2 : ℕ) : ℂ) * z ^ (2 - 1) / 2 = x - z := by
-      have he : (2 : ℕ) - 1 = 1 := rfl
-      rw [he, pow_one]
-      push_cast
-      ring
-    have h3 := h1.sub h2
-    rw [hv] at h3
-    exact h3
-  have hderiv_f : ∀ z : ℂ, HasDerivAt f (f z * (x - z)) z := by
-    intro z
-    rw [hf_def]
-    exact (hu z).cexp
   have hf_diff : Differentiable ℂ f := by
     rw [hf_def]
-    exact fun z => ((hu z).cexp).differentiableAt
-  -- Closed form for the iterated derivatives, by induction on `n`.
-  have key : ∀ (n : ℕ) (z : ℂ),
-      iteratedDeriv n f z = aeval (x - z) (hermite n) * f z := by
-    intro n
-    induction n with
-    | zero => intro z; simp [iteratedDeriv_zero, hermite_zero]
-    | succ n ih =>
-      intro z
-      have hfun : iteratedDeriv n f = fun z : ℂ => aeval (x - z) (hermite n) * f z :=
-        funext ih
-      have hP : HasDerivAt (fun z : ℂ => aeval (x - z) (hermite n))
-          (-aeval (x - z) (derivative (hermite n))) z := by
-        have h1 : HasDerivAt (fun w : ℂ => x - w) (-1) z := by
-          simpa using (hasDerivAt_id z).const_sub x
-        have h3 := ((hermite n).hasDerivAt_aeval (x - z)).comp z h1
-        simpa [Function.comp_def, mul_neg_one] using h3
-      have hHD : HasDerivAt (iteratedDeriv n f)
-          (-aeval (x - z) (derivative (hermite n)) * f z
-            + aeval (x - z) (hermite n) * (f z * (x - z))) z := by
-        rw [hfun]
-        exact hP.mul (hderiv_f z)
-      rw [iteratedDeriv_succ, hHD.deriv, hermite_succ]
-      simp only [map_sub, map_mul, aeval_X]
-      ring
-  -- Evaluating at `z = 0` gives `iteratedDeriv n f 0 = Hₙ(x)`.
+    exact fun z => (hasDerivAt_cexp_quadratic x z).differentiableAt
+  -- Evaluating the iterated-derivative closed form at `z = 0` gives `iteratedDeriv n f 0 = Hₙ(x)`.
   have hval : ∀ n : ℕ, iteratedDeriv n f 0 = aeval x (hermite n) := by
     intro n
-    rw [key n 0]
-    simp [hf_def]
+    rw [hf_def, iteratedDeriv_cexp_quadratic]
+    simp
   -- `f` equals its Taylor series about `0`; specialize at `t`.
   have htaylor := hasSum_taylorSeries_of_entire hf_diff 0 t
   -- Rewrite the Taylor terms into the generating-function terms.
