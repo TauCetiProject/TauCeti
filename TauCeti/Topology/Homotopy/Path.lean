@@ -70,13 +70,14 @@ construction is open. -/
 theorem isOpen_iff_preimage_mk {x₀ x₁ : X} {S : Set (Path.Homotopic.Quotient x₀ x₁)} :
     IsOpen S ↔ IsOpen ((Path.Homotopic.Quotient.mk : Path x₀ x₁ →
       Path.Homotopic.Quotient x₀ x₁) ⁻¹' S) :=
+  -- `Iff.rfl` is valid because `instTopologicalSpace` above is by definition the quotient
+  -- topology (`inferInstanceAs`), so `IsOpen S` unfolds to openness of the `mk`-preimage.
   Iff.rfl
 
 /-- In the path-homotopy quotient, concatenating adjacent subpaths of `p` gives the larger
 subpath from the first endpoint to the last endpoint. -/
 @[simp]
-theorem subpath_trans {x y : X} (p : Path x y)
-    (a b c : unitInterval) (_hab : a ≤ b) (_hbc : b ≤ c) :
+theorem subpath_trans {x y : X} (p : Path x y) (a b c : unitInterval) :
     trans (mk (p.subpath a b)) (mk (p.subpath b c)) =
       mk (p.subpath a c) := by
   simp only [← mk_trans, eq]
@@ -128,11 +129,13 @@ variable {x₀ x₁ : X}
 /-- Casting the reflexivity class at `x` along `h : y = x` gives the reflexivity class at `y`. -/
 @[simp, grind =]
 theorem refl_cast {x y : X} (h : y = x) : (refl x).cast h h = refl y := by
+  -- After `cases h` the cast is along `rfl`, and `Quotient.cast` on a literal `refl` class
+  -- reduces definitionally, so `rfl` closes the goal.
   cases h; rfl
 
 /-- If `trans γ (symm γ') = refl`, then `γ = γ'`.
-This is the quotient analogue of `a * b⁻¹ = 1 → a = b`. -/
-theorem of_trans_symm {γ γ' : Homotopic.Quotient x₀ x₁}
+This is the quotient analogue of `eq_of_div_eq_one : a / b = 1 → a = b`. -/
+theorem eq_of_trans_symm {γ γ' : Homotopic.Quotient x₀ x₁}
     (h : trans γ (symm γ') = refl x₀) : γ = γ' := by
   induction γ using Quotient.ind with | mk γ =>
   induction γ' using Quotient.ind with | mk γ' =>

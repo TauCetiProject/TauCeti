@@ -442,14 +442,10 @@ theorem Path.paste_segment_homotopies {x y y' : X} {n : ℕ}
     simp only [γ_aux, mk_trans, mk_cast]
     -- Decompose γ|[0, i+1] = γ|[0, i] · γ|[i, i+1]
     rw [← Path.Homotopic.Quotient.subpath_trans γ
-      (part.t 0) (part.t i.castSucc) (part.t i.succ)
-      (part.mono (Fin.zero_le i.castSucc))
-      (part.mono i.castSucc_lt_succ.le)]
+      (part.t 0) (part.t i.castSucc) (part.t i.succ)]
     -- Decompose γ'|[i, last n] = γ'|[i, i+1] · γ'|[i+1, last n]
     rw [← Path.Homotopic.Quotient.subpath_trans γ'
-      (part.t i.castSucc) (part.t i.succ) (part.t (Fin.last n))
-      (part.mono i.castSucc_lt_succ.le)
-      (part.mono (Fin.le_last i.succ))]
+      (part.t i.castSucc) (part.t i.succ) (part.t (Fin.last n))]
     -- Right-associate everything so rectangle_with_suffix can fire
     simp only [trans_assoc]
     -- Now apply the rectangle homotopy with suffix

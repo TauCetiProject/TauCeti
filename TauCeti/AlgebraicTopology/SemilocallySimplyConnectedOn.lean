@@ -147,27 +147,12 @@ to lie inside `U`. -/
 public def IsPathHomotopyTrivial (U : Set X) : Prop :=
   ∀ ⦃a b : X⦄ (p q : Path a b), range p ⊆ U → range q ⊆ U → Path.Homotopic p q
 
-/-- Unfold `IsPathHomotopyTrivial U` as the assertion that any two same-endpoint paths whose
-ranges lie in `U` are homotopic in the ambient space `X`. -/
-public theorem isPathHomotopyTrivial_iff {U : Set X} :
-    IsPathHomotopyTrivial U ↔
-      ∀ ⦃a b : X⦄ (p q : Path a b), range p ⊆ U → range q ⊆ U → Path.Homotopic p q :=
-  Iff.rfl
-
 /-- Apply path-homotopy triviality of `U` to compare two same-endpoint paths in `X` whose
 ranges both lie in `U`. -/
 public theorem IsPathHomotopyTrivial.apply {U : Set X} (hU : IsPathHomotopyTrivial U)
     ⦃a b : X⦄ (p q : Path a b) (hp : range p ⊆ U) (hq : range q ⊆ U) :
     Path.Homotopic p q :=
   hU p q hp hq
-
-/-- Package the ambient homotopy comparison property for all same-endpoint paths with ranges in
-`U` as `IsPathHomotopyTrivial U`. -/
-public theorem IsPathHomotopyTrivial.mk {U : Set X}
-    (hU : ∀ ⦃a b : X⦄ (p q : Path a b), range p ⊆ U → range q ⊆ U →
-      Path.Homotopic p q) :
-    IsPathHomotopyTrivial U :=
-  hU
 
 /-- Set-level characterization of `SemilocallySimplyConnectedOn`: every point of `s` has an
 open neighborhood in which every loop is nullhomotopic in the ambient space. -/
