@@ -112,6 +112,37 @@ theorem energyFormLp_one_zero_mass_self (μ : Measure X) (c : ℝ)
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
   exact energyIntegrand_one_zero_mass_self c (U x)
 
+/-- Replacing the principal coefficient by its symmetric part does not change the diagonal
+`L²` energy form. -/
+@[simp]
+theorem energyFormLp_coefficientSymmetricPart_self (μ : Measure X) (A : Matrix n n ℝ)
+    (b : EuclideanSpace ℝ n) (c : ℝ)
+    (U : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
+    energyFormLp μ (coefficientSymmetricPart A) b c U U = energyFormLp μ A b c U U := by
+  rw [energyFormLp_apply, energyFormLp_apply]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  exact energyIntegrand_coefficientSymmetricPart_self A b c (U x)
+
+/-- The symmetric-part zero-drift `L²` energy form is the average of the original form and
+its transpose. -/
+theorem energyFormLp_coefficientSymmetricPart_zero_drift_apply (μ : Measure X)
+    (A : Matrix n n ℝ) (c : ℝ) (U V : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
+    energyFormLp μ (coefficientSymmetricPart A) 0 c U V =
+      (energyFormLp μ A 0 c U V + energyFormLp μ A 0 c V U) / 2 := by
+  rw [energyFormLp_apply, energyFormLp_apply, energyFormLp_apply]
+  have hUV : Integrable (fun x => energyIntegrand A 0 c (U x) (V x)) μ :=
+    memLp_one_iff_integrable.mp
+      ((energyIntegrand A 0 c).memLp_of_bilin 1 (Lp.memLp U) (Lp.memLp V))
+  have hVU : Integrable (fun x => energyIntegrand A 0 c (V x) (U x)) μ :=
+    memLp_one_iff_integrable.mp
+      ((energyIntegrand A 0 c).memLp_of_bilin 1 (Lp.memLp V) (Lp.memLp U))
+  rw [show (fun x => energyIntegrand (coefficientSymmetricPart A) 0 c (U x) (V x)) =
+      fun x => (energyIntegrand A 0 c (U x) (V x) +
+        energyIntegrand A 0 c (V x) (U x)) / 2 by
+    funext x
+    exact energyIntegrand_coefficientSymmetricPart_zero_drift_apply A c (U x) (V x)]
+  rw [integral_div, integral_add hUV hVU]
+
 /-- Transposing the principal coefficient swaps the two arguments of a zero-drift `L²` energy
 form. -/
 theorem energyFormLp_zero_drift_transpose_apply (μ : Measure X) (A : Matrix n n ℝ) (c : ℝ)
