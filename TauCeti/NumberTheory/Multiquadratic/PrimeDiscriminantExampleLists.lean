@@ -14,8 +14,9 @@ The multiquadratic roadmap's genus-field worked examples use the prime-discrimin
 a neutral home for the Legendre-character, degree, and Galois worked examples, together with
 the arithmetic witness bundle (prime-discriminant, injectivity, and parity facts) for the
 `[-4, -3, -7]` list reused by the `ℚ(√-21)` degree and Galois examples. The complex square
-root witnesses those degree and Galois examples also need live in
-`TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminantExampleRoots`, so the purely
+root witnesses those degree and Galois examples also need, together with the degree and
+Galois worked examples themselves, live in
+`TauCeti.NumberTheory.Multiquadratic.MinusTwentyOneExamples`, so the purely
 integer-valued Legendre-character examples do not depend on `Complex`/`Real.sqrt`.
 -/
 

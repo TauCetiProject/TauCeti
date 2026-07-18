@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup
 public import TauCeti.Algebra.AlgebraicGroup.HopfMap
 
@@ -67,12 +66,6 @@ variable {R : Type u} {A : Type v} {G : Type w} {G' : Type w'} {G'' : Type w''}
 variable [CommSemiring R] [CommSemiring A] [Algebra R A]
 variable [CommGroup G] [CommGroup G'] [CommGroup G'']
 
-@[simp]
-private theorem mapDomainBialgHom_single_one (φ : G →* G') (g : G) :
-    MonoidAlgebra.mapDomainBialgHom R φ (MonoidAlgebra.single g (1 : R)) =
-      MonoidAlgebra.single (φ g) 1 := by
-  rw [MonoidAlgebra.mapDomainBialgHom_apply, MonoidAlgebra.mapDomain_single]
-
 /-- **The diagonalizable group is contravariant in the abelian group.** A group homomorphism
 `φ : G →* G'` induces, by pre-composition with the bialgebra map `R[G] →ₐc[R] R[G']`, a
 homomorphism of convolution groups of points `D(G')(A) → D(G)(A)`. -/
@@ -125,7 +118,9 @@ theorem charOfPoint_comp (φ : G →* G') (f : MonoidAlgebra R G' →ₐ[R] A) :
       (charOfPoint f).comp φ := by
   ext g
   rw [charOfPoint_apply_coe, AlgHom.comp_apply, MonoidHom.comp_apply, charOfPoint_apply_coe,
-    BialgHom.coe_toAlgHom (MonoidAlgebra.mapDomainBialgHom R φ), mapDomainBialgHom_single_one]
+    BialgHom.coe_toAlgHom (MonoidAlgebra.mapDomainBialgHom R φ),
+    MonoidAlgebra.mapDomainBialgHom, _root_.BialgHom.ofAlgHom_apply,
+    MonoidAlgebra.mapDomainAlgHom_apply, MonoidAlgebra.mapDomain_single]
 
 /-- **The points homomorphism is precomposition of characters.** Under the identification of
 points of `D(G)` with characters of `G`, the homomorphism `pointsMap φ` induced by
@@ -133,6 +128,18 @@ points of `D(G)` with characters of `G`, the homomorphism `pointsMap φ` induced
 theorem pointsMulEquiv_pointsMap (φ : G →* G') (f : WithConv (MonoidAlgebra R G' →ₐ[R] A)) :
     pointsMulEquiv (pointsMap (A := A) φ f) = (pointsMulEquiv f).comp φ := by
   rw [pointsMap_apply, pointsMulEquiv_apply, ofConv_toConv, pointsMulEquiv_apply, charOfPoint_comp]
+
+/-- If `φ` is surjective, then the induced contravariant map on diagonalizable-group points is
+injective. Under the character identification this is injectivity of precomposition by a
+surjective homomorphism. -/
+theorem pointsMap_injective (φ : G →* G') (hφ : Function.Surjective φ) :
+    Function.Injective (pointsMap (R := R) (A := A) φ) := by
+  intro f g hfg
+  apply (pointsMulEquiv (R := R) (A := A) (G := G')).injective
+  have hchar : (pointsMulEquiv f).comp φ = (pointsMulEquiv g).comp φ := by
+    rw [← pointsMulEquiv_pointsMap, ← pointsMulEquiv_pointsMap, hfg]
+  exact DFunLike.coe_injective
+    (hφ.injective_comp_right (funext fun x => DFunLike.congr_fun hchar x))
 
 /-- Mapping the point attached to a character is precomposition of that character by `φ`. -/
 theorem pointsMap_pointsMulEquiv_symm_apply (φ : G →* G') (χ : G' →* Aˣ) :

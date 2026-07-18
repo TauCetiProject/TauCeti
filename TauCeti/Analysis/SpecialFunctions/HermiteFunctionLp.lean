@@ -28,7 +28,8 @@ open MeasureTheory Polynomial
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
-private lemma inner_algebraMap_algebraMap (a b : ℝ) :
+/-- The inner product of two real scalar casts is the scalar cast of their product. -/
+lemma inner_algebraMap_algebraMap (a b : ℝ) :
     inner 𝕜 ((algebraMap ℝ 𝕜) a) ((algebraMap ℝ 𝕜) b) =
       (algebraMap ℝ 𝕜) (a * b) := by
   simp [RCLike.inner_apply, RCLike.conj_ofReal, map_mul, mul_comm]

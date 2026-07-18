@@ -4,6 +4,7 @@ public import TauCeti.Probability.Exchangeability.Basic
 public import Mathlib.Order.Fin.Basic
 public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
+public import Mathlib.Probability.IdentDistrib
 import TauCeti.Probability.Exchangeability.PermutationExtension
 import TauCeti.Probability.Exchangeability.ExchangeableAtMonotone
 import Mathlib.Order.Fin.Tuple
@@ -35,7 +36,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory
+open MeasureTheory ProbabilityTheory
 
 namespace TauCeti
 
@@ -61,6 +62,52 @@ theorem Contractable.map_pair {μ : Measure Ω} {X : ℕ → Ω → α} (h : Con
     {i j : ℕ} (hij : i < j) :
     blockLaw μ X ![i, j] = prefixLaw μ X 2 :=
   h.map (strictMono_vecEmpty.vecCons hij)
+
+/-- **Finite blocks of a contractable process are identically distributed.** For a contractable
+process `X`, any two strictly increasing finite coordinate selections have the same joint law. -/
+theorem Contractable.identDistrib_block {μ : Measure Ω} {X : ℕ → Ω → α}
+    (hX : Contractable μ X) {m : ℕ} {k l : Fin m → ℕ} (hk : StrictMono k) (hl : StrictMono l)
+    (hk_meas : ∀ r, AEMeasurable (X (k r)) μ)
+    (hl_meas : ∀ r, AEMeasurable (X (l r)) μ) :
+    IdentDistrib (fun ω r => X (k r) ω) (fun ω r => X (l r) ω) μ μ where
+  aemeasurable_fst := aemeasurable_pi_lambda _ hk_meas
+  aemeasurable_snd := aemeasurable_pi_lambda _ hl_meas
+  map_eq := by
+    simpa [blockLaw_def] using (hX.map hk).trans (hX.map hl).symm
+
+/-- **Coordinates of a contractable process are identically distributed.** For a contractable
+process `X`, any two a.e. measurable coordinates `X i` and `X j` have the same law. -/
+theorem Contractable.identDistrib_coord {μ : Measure Ω} {X : ℕ → Ω → α} (hX : Contractable μ X)
+    {i j : ℕ} (hi_meas : AEMeasurable (X i) μ) (hj_meas : AEMeasurable (X j) μ) :
+    IdentDistrib (X i) (X j) μ μ := by
+  have hblock := hX.identDistrib_block
+    (Subsingleton.strictMono (fun _ : Fin 1 => i))
+    (Subsingleton.strictMono (fun _ : Fin 1 => j)) (fun _ => hi_meas) (fun _ => hj_meas)
+  have hcomp := hblock.comp (measurable_pi_apply (0 : Fin 1))
+  convert hcomp using 1 <;> funext ω <;> simp [Function.comp]
+
+/-- **Increasing pairs of a contractable process are identically distributed.** For a
+contractable process `X`, if the four selected coordinates are a.e. measurable and `i < j`,
+`k < l`, then `(X i, X j)` has the same joint law as `(X k, X l)`. -/
+theorem Contractable.identDistrib_pair {μ : Measure Ω} {X : ℕ → Ω → α} (hX : Contractable μ X)
+    {i j k l : ℕ} (hi_meas : AEMeasurable (X i) μ) (hj_meas : AEMeasurable (X j) μ)
+    (hk_meas : AEMeasurable (X k) μ) (hl_meas : AEMeasurable (X l) μ)
+    (hij : i < j) (hkl : k < l) :
+    IdentDistrib (fun ω => (X i ω, X j ω)) (fun ω => (X k ω, X l ω)) μ μ := by
+  have hblock := hX.identDistrib_block (strictMono_vecEmpty.vecCons hij)
+    (strictMono_vecEmpty.vecCons hkl)
+    (fun r => by
+      fin_cases r
+      · simpa [Matrix.cons_val_zero] using hi_meas
+      · simpa [Matrix.cons_val_one] using hj_meas)
+    (fun r => by
+      fin_cases r
+      · simpa [Matrix.cons_val_zero] using hk_meas
+      · simpa [Matrix.cons_val_one] using hl_meas)
+  have hcomp := hblock.comp
+    ((measurable_pi_apply (0 : Fin 2)).prodMk (measurable_pi_apply (1 : Fin 2)))
+  convert hcomp using 1 <;> funext ω <;>
+    simp [Function.comp, Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- Contractability is preserved by passing to a strictly increasing subsequence. -/
 theorem Contractable.comp {μ : Measure Ω} {X : ℕ → Ω → α} (h : Contractable μ X)

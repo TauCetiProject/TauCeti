@@ -20,6 +20,10 @@ These lemmas are part of the ReductiveGroups roadmap Layer 0 base-change target:
 convolution group structure on points, the functor-of-points dictionary needs base change to
 behave naturally in both the value algebra and the coordinate Hopf algebra.
 
+Worked examples of base-changed groups can combine these generic lemmas with the corresponding
+unbased points naturality calculation, avoiding duplicate example-specific wrappers around the
+same base-change argument.
+
 ## Main declarations
 
 * `TauCeti.AlgHom.mapValue_baseChangePointsMulEquiv`: base change of points commutes with

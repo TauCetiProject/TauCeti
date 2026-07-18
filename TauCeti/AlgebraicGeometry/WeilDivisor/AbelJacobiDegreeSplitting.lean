@@ -98,57 +98,6 @@ lemma classGroupAddEquivPicZeroProdInt_symm_weightedAbelJacobiClass (w : X → �
   rw [← S.classGroupAddEquivPicZeroProdInt_divisorClass_ofPoint w h hx₀ x]
   simp
 
-/-! ### Unweighted specialization -/
-
-/-- In the unweighted specialization, correcting the degree of `[x]` by `x₀` gives the ambient
-class of the unweighted Abel-Jacobi class. -/
-lemma degreeCorrection_divisorClass_ofPoint_unweighted (h : S.IsUnweightedDegreeZero)
-    (x₀ x : X) :
-    S.degreeCorrection (fun _ : X => (1 : ℤ)) h x₀ (S.divisorClass (ofPoint x)) =
-      (S.unweightedAbelJacobiClass h x₀ x : S.ClassGroup) := by
-  simpa [unweightedAbelJacobiClass] using
-    S.degreeCorrection_divisorClass_ofPoint (fun _ : X => (1 : ℤ)) h (x₀ := x₀) rfl x
-
-/-- Under the unweighted splitting `Cl(X) ≃+ Pic⁰ × ℤ`, the class of `[x]` has `Pic⁰`
-component the unweighted Abel-Jacobi class of `x`, and degree component `1`. -/
-lemma classGroupAddEquivUnweightedPicZeroProdInt_divisorClass_ofPoint
-    (h : S.IsUnweightedDegreeZero) (x₀ x : X) :
-    S.classGroupAddEquivUnweightedPicZeroProdInt h x₀ (S.divisorClass (ofPoint x)) =
-      (S.unweightedAbelJacobiClass h x₀ x, 1) := by
-  rw [classGroupAddEquivUnweightedPicZeroProdInt_apply]
-  refine Prod.ext (Subtype.ext ?_) ?_
-  · exact S.degreeCorrection_divisorClass_ofPoint_unweighted h x₀ x
-  · rw [unweightedDegreeClass_divisorClass, degree_ofPoint]
-
-/-- Under the unweighted splitting, a coerced unweighted Abel-Jacobi class has degree zero and
-`Pic⁰` component itself. -/
-lemma classGroupAddEquivUnweightedPicZeroProdInt_coe_unweightedAbelJacobiClass
-    (h : S.IsUnweightedDegreeZero) (x₀ x : X) :
-    S.classGroupAddEquivUnweightedPicZeroProdInt h x₀
-        (S.unweightedAbelJacobiClass h x₀ x : S.ClassGroup) =
-      (S.unweightedAbelJacobiClass h x₀ x, 0) :=
-  S.classGroupAddEquivUnweightedPicZeroProdInt_coe_unweightedPicZero h x₀
-    (S.unweightedAbelJacobiClass h x₀ x)
-
-/-- The point difference `[x] - [x₀]` maps to the unweighted Abel-Jacobi class and degree `0`
-under the unweighted splitting `Cl(X) ≃+ Pic⁰ × ℤ`. -/
-lemma classGroupAddEquivUnweightedPicZeroProdInt_divisorClass_pointDifference
-    (h : S.IsUnweightedDegreeZero) (x₀ x : X) :
-    S.classGroupAddEquivUnweightedPicZeroProdInt h x₀ (S.divisorClass (pointDifference x x₀)) =
-      (S.unweightedAbelJacobiClass h x₀ x, 0) := by
-  rw [← S.coe_unweightedAbelJacobiClass h x₀ x,
-    S.classGroupAddEquivUnweightedPicZeroProdInt_coe_unweightedAbelJacobiClass h x₀ x]
-
-/-- The inverse unweighted splitting reconstructs the point class `[x]` from its Abel-Jacobi
-component and degree `1`. -/
-lemma classGroupAddEquivUnweightedPicZeroProdInt_symm_unweightedAbelJacobiClass
-    (h : S.IsUnweightedDegreeZero) (x₀ x : X) :
-    (S.classGroupAddEquivUnweightedPicZeroProdInt h x₀).symm
-        (S.unweightedAbelJacobiClass h x₀ x, 1) =
-      S.divisorClass (ofPoint x) := by
-  rw [← S.classGroupAddEquivUnweightedPicZeroProdInt_divisorClass_ofPoint h x₀ x]
-  simp
-
 end OrderSystem
 
 end WeilDivisor

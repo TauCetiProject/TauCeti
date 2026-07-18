@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Topology.Order.Compact
 
@@ -62,6 +63,10 @@ versus `MeromorphicOn` (on a set).
   existence form).
 * `HasCauchyPVAt.translate`, `CauchyPVExistsAt.translate`, `cauchyPVAt_translate` — simultaneous
   translation of the curve, point, and integrand preserves the principal value.
+* `HasCauchyPVAt.const_mul_curve`, `CauchyPVExistsAt.const_mul_curve`,
+  `cauchyPVAt_const_mul_curve` — simultaneous nonzero scaling of the curve and point, with the
+  integrand rescaled by `z ↦ c⁻¹ * f (c⁻¹ * z)`, preserves the principal value; the value form
+  needs no existence hypothesis.
 * `HasCauchyPVAt.symm`, `CauchyPVExistsAt.symm`, `cauchyPVAt_symm` — reversing the interval
   orientation negates the single-point principal value.
 * `HasCauchyPVAt.concat` — the principal values on `[a, b]` and `[b, c]` add
@@ -130,6 +135,30 @@ theorem cauchyPVExistsAt_iff {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z
 theorem CauchyPVExistsAt.intro {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ} {L : ℂ}
     (h : HasCauchyPVAt γ a b f z₀ L) : CauchyPVExistsAt γ a b f z₀ :=
   ⟨L, h⟩
+
+/-- **The `ε`-truncated integrand is interval-integrable from a bound off the ball**: whenever
+`f ∘ γ` is bounded by `M` at distance `> ε` from `z₀` and the truncated integrand is
+a.e.-strongly measurable, the truncated integrand is dominated by `M · ‖deriv γ‖`. -/
+theorem intervalIntegrable_truncated_mul_deriv {γ : ℝ → ℂ} {f : ℂ → ℂ} {z₀ : ℂ}
+    {a b M ε : ℝ}
+    (hderiv_int : IntervalIntegrable (fun t => deriv γ t) MeasureTheory.volume a b)
+    (h_aesm : MeasureTheory.AEStronglyMeasurable
+      (fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0)
+      (MeasureTheory.volume.restrict (Set.uIoc a b)))
+    (h_bd : ∀ t : ℝ, ε < ‖γ t - z₀‖ → ‖f (γ t)‖ ≤ M) :
+    IntervalIntegrable (fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0)
+      MeasureTheory.volume a b := by
+  refine (hderiv_int.norm.const_mul M).mono_fun h_aesm
+    (Filter.Eventually.of_forall fun t => ?_)
+  -- β-reduce the two sides of the a.e. bound
+  change ‖if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0‖ ≤ ‖M * ‖deriv γ t‖‖
+  by_cases h_far : ‖γ t - z₀‖ > ε
+  · rw [if_pos h_far, norm_mul]
+    calc ‖f (γ t)‖ * ‖deriv γ t‖
+        ≤ M * ‖deriv γ t‖ := mul_le_mul_of_nonneg_right (h_bd t h_far) (norm_nonneg _)
+      _ ≤ ‖M * ‖deriv γ t‖‖ := le_abs_self _
+  · rw [if_neg h_far, norm_zero]
+    positivity
 
 /-- Constructor for `HasCauchyPVAt` from its two clauses — eventual integrability of the excised
 integrand and convergence of the excised integrals — without unfolding the definition. -/
@@ -403,6 +432,100 @@ theorem cauchyPVAt_translate {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z
   ext ε
   refine intervalIntegral.integral_congr fun t _ => ?_
   simp [add_sub_add_right_eq_sub, add_sub_cancel_right, deriv_add_const]
+
+/-- Pointwise identity behind the scaling lemmas: multiplying the curve and excision point by a
+nonzero `c` and rescaling the integrand by `z ↦ c⁻¹ * f (c⁻¹ * z)` turns the scaled truncated
+integrand at radius `ε` into the original truncated integrand at radius `ε / ‖c‖`. The rescaling
+factor `c⁻¹` cancels the derivative factor `c`, and the excision radius rescales by `‖c‖`. Shared by
+`HasCauchyPVAt.const_mul_curve` and `cauchyPVAt_const_mul_curve`. -/
+private theorem truncated_const_mul_curve_eq {γ : ℝ → ℂ} {f : ℂ → ℂ} {z₀ c : ℂ} (hc : c ≠ 0)
+    (ε t : ℝ) :
+    (if ‖c * γ t - c * z₀‖ > ε then
+        (fun z => c⁻¹ * f (c⁻¹ * z)) (c * γ t) * deriv (fun t => c * γ t) t else 0)
+      = if ‖γ t - z₀‖ > ε / ‖c‖ then f (γ t) * deriv γ t else 0 := by
+  by_cases hεt : ‖γ t - z₀‖ > ε / ‖c‖
+  · have hscaled : ‖c * γ t - c * z₀‖ > ε := by
+      rw [← mul_sub, norm_mul]
+      have hmul := mul_lt_mul_of_pos_right hεt (norm_pos_iff.mpr hc)
+      have hmul' : ε < ‖γ t - z₀‖ * ‖c‖ := by
+        simpa [div_mul_cancel₀ _ (norm_ne_zero_iff.mpr hc)] using hmul
+      simpa [mul_comm] using hmul'
+    rw [if_pos hscaled, if_pos hεt, deriv_const_mul_field]
+    simp only [inv_mul_cancel_left₀ hc]
+    rw [mul_mul_mul_comm, inv_mul_cancel₀ hc, one_mul]
+  · have hscaled : ¬ ‖c * γ t - c * z₀‖ > ε := by
+      rw [← mul_sub, norm_mul, not_lt]
+      rw [not_lt] at hεt
+      have hmul := mul_le_mul_of_nonneg_right hεt (norm_nonneg c)
+      rwa [div_mul_cancel₀ _ (norm_ne_zero_iff.mpr hc), mul_comm] at hmul
+    rw [if_neg hscaled, if_neg hεt]
+
+/-- Simultaneously scaling the curve and the excision point by a nonzero complex number `c`
+preserves a single-point Cauchy principal value, provided the integrand is rescaled by
+`z ↦ c⁻¹ * f (c⁻¹ * z)`: the excision radius rescales by `‖c‖` and, after this rescaling, the two
+truncated integrands agree along the scaled curve. -/
+theorem HasCauchyPVAt.const_mul_curve {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ L : ℂ}
+    (h : HasCauchyPVAt γ a b f z₀ L) {c : ℂ} (hc : c ≠ 0) :
+    HasCauchyPVAt (fun t => c * γ t) a b (fun z => c⁻¹ * f (c⁻¹ * z)) (c * z₀) L := by
+  have hscale : Tendsto (fun ε : ℝ => ε / ‖c‖) (𝓝[>] (0 : ℝ)) (𝓝[>] (0 : ℝ)) := by
+    simpa [div_eq_mul_inv] using
+      Filter.TendstoNhdsWithinIoi.mul_const (b := ‖c‖⁻¹) (c := 0)
+        (inv_pos.mpr (norm_pos_iff.mpr hc)) (tendsto_id (x := 𝓝[>] (0 : ℝ)))
+  refine HasCauchyPVAt.intro ?_ ?_
+  · filter_upwards [hscale.eventually h.eventually_intervalIntegrable] with ε hε
+    exact (intervalIntegrable_congr fun t _ => truncated_const_mul_curve_eq hc ε t).mpr hε
+  · refine h.tendsto.comp hscale |>.congr' ?_
+    filter_upwards with ε
+    exact intervalIntegral.integral_congr fun t _ => (truncated_const_mul_curve_eq hc ε t).symm
+
+/-- Existence form of `HasCauchyPVAt.const_mul_curve`: nonzero scaling of the curve and excision
+point preserves existence of a single-point Cauchy principal value. -/
+theorem CauchyPVExistsAt.const_mul_curve {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
+    (h : CauchyPVExistsAt γ a b f z₀) {c : ℂ} (hc : c ≠ 0) :
+    CauchyPVExistsAt (fun t => c * γ t) a b (fun z => c⁻¹ * f (c⁻¹ * z)) (c * z₀) :=
+  let ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
+  CauchyPVExistsAt.intro (hL.const_mul_curve hc)
+
+/-- Reindexing a `limUnder` by a self-map of the source filter that fixes it leaves the value
+unchanged: if `Filter.map φ F = F`, then `limUnder F (g ∘ φ) = limUnder F g`, even when the limit
+does not exist. -/
+private theorem limUnder_comp_of_map_eq {α : Type*} {β : Type*} [TopologicalSpace β] [Nonempty β]
+    {F : Filter α} {φ : α → α} (hφ : Filter.map φ F = F) (g : α → β) :
+    Filter.limUnder F (g ∘ φ) = Filter.limUnder F g := by
+  unfold Filter.limUnder
+  rw [← Filter.map_map, hφ]
+
+/-- Value form of `HasCauchyPVAt.const_mul_curve`: simultaneous nonzero scaling of the curve and the
+excision point preserves the raw single-point Cauchy principal *value*, with no existence
+hypothesis. Scaling only reindexes the excision radius by the order-isomorphism `ε ↦ ε / ‖c‖`, which
+fixes the filter `𝓝[>] 0`, so the underlying `limUnder` is unchanged even when it does not
+converge. -/
+theorem cauchyPVAt_const_mul_curve {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ c : ℂ} (hc : c ≠ 0) :
+    cauchyPVAt (fun t => c * γ t) a b (fun z => c⁻¹ * f (c⁻¹ * z)) (c * z₀)
+      = cauchyPVAt γ a b f z₀ := by
+  have hmap : Filter.map (fun ε : ℝ => ε / ‖c‖) (𝓝[>] (0 : ℝ)) = 𝓝[>] (0 : ℝ) := by
+    have hx : (0 : ℝ) < ‖c‖⁻¹ := inv_pos.mpr (norm_pos_iff.mpr hc)
+    have hcne : ‖c‖ ≠ 0 := norm_ne_zero_iff.mpr hc
+    have hsurj : Function.Surjective (fun x : ℝ => ‖c‖⁻¹ * x) := fun y =>
+      ⟨‖c‖ * y, by simpa using inv_mul_cancel_left₀ hcne y⟩
+    have hfun : (fun ε : ℝ => ε / ‖c‖) = fun ε => ‖c‖⁻¹ * ε := funext fun ε => div_eq_inv_mul ε ‖c‖
+    rw [hfun]
+    conv_lhs => rw [← comap_mulLeft_nhdsGT_zero hx]
+    exact Filter.map_comap_of_surjective hsurj _
+  have hbodyeq : (fun ε : ℝ => ∫ t in a..b, if ‖c * γ t - c * z₀‖ > ε then
+        (fun z => c⁻¹ * f (c⁻¹ * z)) (c * γ t) * deriv (fun t => c * γ t) t else 0)
+      = (fun ε' : ℝ => ∫ t in a..b, if ‖γ t - z₀‖ > ε' then f (γ t) * deriv γ t else 0)
+          ∘ (fun ε => ε / ‖c‖) :=
+    funext fun ε =>
+      intervalIntegral.integral_congr fun t _ => truncated_const_mul_curve_eq hc ε t
+  calc cauchyPVAt (fun t => c * γ t) a b (fun z => c⁻¹ * f (c⁻¹ * z)) (c * z₀)
+      = Filter.limUnder (𝓝[>] (0 : ℝ))
+          ((fun ε' : ℝ => ∫ t in a..b, if ‖γ t - z₀‖ > ε' then f (γ t) * deriv γ t else 0)
+            ∘ (fun ε => ε / ‖c‖)) := congrArg (Filter.limUnder (𝓝[>] (0 : ℝ))) hbodyeq
+    _ = Filter.limUnder (𝓝[>] (0 : ℝ))
+          (fun ε' : ℝ => ∫ t in a..b, if ‖γ t - z₀‖ > ε' then f (γ t) * deriv γ t else 0) :=
+        limUnder_comp_of_map_eq hmap _
+    _ = cauchyPVAt γ a b f z₀ := rfl
 
 /-- Reversing the interval orientation negates a single-point Cauchy principal value. -/
 theorem HasCauchyPVAt.symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ L : ℂ}

@@ -35,9 +35,10 @@ the finite-type coordinate-Hopf-algebra category.
 
 ## References
 
-The quotient Hopf algebra construction follows `TauCeti.Algebra.HopfAlgebra.Quotient`,
-which cites Sweedler, *Hopf Algebras*, Chapter 4, and Waterhouse, *Introduction to Affine
-Group Schemes*, §16. The finite-type descent is Mathlib's
+The quotient Hopf algebra construction is Mathlib's
+(`Mathlib.RingTheory.HopfAlgebra.Quotient`), applied through the instances of
+`TauCeti.Algebra.HopfAlgebra.HopfIdeal`; see Sweedler, *Hopf Algebras*, Chapter 4, and
+Waterhouse, *Introduction to Affine Group Schemes*, §16. The finite-type descent is Mathlib's
 `Algebra.FiniteType.quotient`.
 -/
 

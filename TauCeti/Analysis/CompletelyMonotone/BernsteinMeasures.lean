@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.CompletelyMonotone.Closure
 public import TauCeti.Analysis.CompletelyMonotone.Integral
 
@@ -623,10 +624,9 @@ private lemma integral_chafaiDensity_one_eq (f : ℝ → ℝ) (hcm : IsCompletel
     ∫ t in (0 : ℝ)..T, chafaiDensity f 1 t = f 0 - f T := by
   have h1 : ∫ t in (0 : ℝ)..T, chafaiDensity f 1 t =
       ∫ t in (0 : ℝ)..T, -iteratedDerivWithin 1 f (Ici 0) t :=
-    intervalIntegral.integral_congr_ae
-      (Filter.Eventually.of_forall fun t _ => chafaiDensity_one t)
-  rw [h1, ← hcm.integral_neg_iteratedDerivWithin_one_Icc_eq_Ici T hT.le,
-    hcm.integral_neg_iteratedDerivWithin_one_Icc_zero_left T hT.le]
+    intervalIntegral.integral_congr_ae (Filter.Eventually.of_forall fun t _ => chafaiDensity_one t)
+  rw [h1]
+  exact IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm le_rfl hT.le
 
 private lemma integral_chafaiDensity_le_sub (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (j : ℕ) (hj : 1 ≤ j) (T : ℝ) (hT : 0 < T) :
@@ -1166,24 +1166,6 @@ private lemma ibp_kernel_integrableOn (f : ℝ → ℝ) (hcm : IsCompletelyMonot
       _ = (-1 : ℝ) ^ k / ↑(k - 1).factorial * t ^ (k - 1) *
           iteratedDerivWithin k f (Ici 0) t := by field_simp
 
-private lemma integral_neg_iteratedDerivWithin_one_Ici_eq_Icc
-    (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
-    {x T : ℝ} (hx : 0 ≤ x) (hxT : x < T) :
-    (∫ t in x..T, -iteratedDerivWithin 1 f (Ici 0) t) =
-      ∫ t in x..T, -iteratedDerivWithin 1 f (Icc x T) t := by
-  apply intervalIntegral.integral_congr_ae
-  apply ae_of_all
-  intro t ht
-  rw [uIoc_of_le hxT.le] at ht
-  have ht_pos : 0 < t := lt_of_le_of_lt hx ht.1
-  have hcda : ContDiffAt ℝ (↑1 : WithTop ℕ∞) f t :=
-    (hcm.contDiffOn.of_le (nat_le_top 1)).contDiffAt (Ici_mem_nhds ht_pos)
-  congr 1
-  rw [iteratedDerivWithin_eq_iteratedDeriv
-      (uniqueDiffOn_Icc hxT) hcda (Ioc_subset_Icc_self ht),
-    iteratedDerivWithin_eq_iteratedDeriv
-      (uniqueDiffOn_Ici 0) hcda (mem_Ici.mpr ht_pos.le)]
-
 private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (n : ℕ) (hn : 1 ≤ n) (x : ℝ) (hx : 0 ≤ x)
     (L : ℝ) (hL : Tendsto f atTop (nhds L)) :
@@ -1215,11 +1197,9 @@ private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone 
       refine Tendsto.congr' ?_ (Tendsto.sub tendsto_const_nhds hL)
       filter_upwards [eventually_gt_atTop (max x 1)] with T hT
       have hxT : x < T := lt_of_le_of_lt (le_max_left x 1) hT
-      rw [integral_neg_iteratedDerivWithin_one_Ici_eq_Icc f hcm hx hxT]
-      exact hcm.integral_neg_iteratedDerivWithin_one_Icc x T hx hxT.le
-    · -- Inductive step `n = k+1`: integrate by parts once (`ibp_finite_interval`); the boundary
-      -- term vanishes in the limit (`boundary_term_decay`), leaving the order-`k` integral, which
-      -- the induction hypothesis identifies with `f x - L`.
+      exact
+        (IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm hx hxT.le).symm
+    · -- Inductive step `n = k+1`: integrate by parts once and pass to the limit.
       have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
       have ih_applied := ih hk1
       simp only [show k + 1 - 1 = k by omega]

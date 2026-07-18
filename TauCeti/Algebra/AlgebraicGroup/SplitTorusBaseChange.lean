@@ -21,7 +21,7 @@ The equivalence is the specialization of
 `DiagonalizableGroup.baseChangePointsMulEquiv` to the free abelian character group, followed
 by `freeAbelianCharEquiv`. The pointwise API reads a base-changed point on the standard
 coordinate characters `1 ⊗ single (ofAdd (single i 1)) 1`, records the inverse evaluation,
-and proves naturality in the value algebra.
+and gives the finite-rank specialization.
 
 This advances the ReductiveGroups roadmap, Layer 0 ("Base change. `K ⊗[k] A` as a Hopf
 algebra over `K`") and Layer 4 ("Tori: split ... the character lattice `X*(T)`").
@@ -34,9 +34,6 @@ algebra over `K`") and Layer 4 ("Tori: split ... the character lattice `X*(T)`")
   the base-changed standard coordinate generator.
 * `TauCeti.SplitTorus.baseChangePointsMulEquiv_symm_apply_single_one`: the inverse equivalence
   takes each standard coordinate generator to the chosen coordinate.
-* `TauCeti.SplitTorus.baseChangePointsMulEquiv_mapValue`: the equivalence is natural in the
-  value algebra.
-
 ## References
 
 The base-change step is Tau Ceti's `DiagonalizableGroup.baseChangePointsMulEquiv`, and the
@@ -102,31 +99,6 @@ theorem baseChangePointsMulEquiv_symm_apply_single_one (c : σ → Aˣ) (i : σ)
         (1 ⊗ₜ[k] MonoidAlgebra.single (Multiplicative.ofAdd (Finsupp.single i 1)) (1 : k)) =
       (c i : A) := by
   rw [baseChangePointsMulEquiv_symm_apply_tmul_single]
-  simp
-
-variable {B : Type*} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower k K B]
-
-/-- The base-changed split-torus points equivalence is natural in the value algebra:
-post-composing a point with a `K`-algebra map sends each coordinate through the induced map on
-unit groups. -/
-theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
-    (f : WithConv (K ⊗[k] MonoidAlgebra k (Multiplicative (σ →₀ ℤ)) →ₐ[K] A)) (i : σ) :
-    baseChangePointsMulEquiv
-        (AlgHom.mapValue (H := K ⊗[k] MonoidAlgebra k (Multiplicative (σ →₀ ℤ))) φ f) i =
-      Units.map φ.toMonoidHom (baseChangePointsMulEquiv f i) := by
-  simp only [baseChangePointsMulEquiv, MulEquiv.trans_apply,
-    DiagonalizableGroup.baseChangePointsMulEquiv_mapValue, freeAbelianCharEquiv_comp]
-
-/-- Naturality of the inverse base-changed split-torus points equivalence in the value
-algebra. -/
-theorem mapValue_baseChangePointsMulEquiv_symm_apply (φ : A →ₐ[K] B) (c : σ → Aˣ) :
-    AlgHom.mapValue (H := K ⊗[k] MonoidAlgebra k (Multiplicative (σ →₀ ℤ))) φ
-        ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (σ := σ)).symm c) =
-      (baseChangePointsMulEquiv (k := k) (K := K) (A := B) (σ := σ)).symm
-        (fun i => Units.map φ.toMonoidHom (c i)) := by
-  apply (baseChangePointsMulEquiv (k := k) (K := K) (A := B) (σ := σ)).injective
-  funext i
-  rw [baseChangePointsMulEquiv_mapValue]
   simp
 
 /-- The base-changed rank-`n` split torus has `A`-points `Fin n → Aˣ = (Aˣ)ⁿ`. -/

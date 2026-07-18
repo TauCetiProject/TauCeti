@@ -226,9 +226,10 @@ lemma norm_energyIntegrand_apply_le_of_bounds_on (hLam : 0 ≤ Lam)
     ‖energyIntegrand (a x) (b x) (c x) U V‖ ≤ (Lam + beta + gamma) * ‖U‖ * ‖V‖ :=
   norm_energyIntegrand_apply_le_of_bounds hLam (ha hx) (hb hx) (hc hx) U V
 
-/-- The operator norm of the jet form is at most `Λ + β + γ`. This is the boundedness
-hypothesis of Lax--Milgram, with the constant explicit in the ellipticity, drift, and mass
-bounds. -/
+/-- The operator norm of the pointwise jet form is at most `Λ + β + γ`.
+
+This finite-dimensional estimate is consumed after integration to prove boundedness of the
+Sobolev-space energy form; it is not itself the Lax--Milgram boundedness hypothesis. -/
 lemma opNorm_energyIntegrand_le_of_bounds (hLam : 0 ≤ Lam)
     {A : Matrix n n ℝ} {b₀ : EuclideanSpace ℝ n} {c₀ : ℝ}
     (ha : ∀ η ξ : EuclideanSpace ℝ n, |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)

@@ -81,41 +81,6 @@ lemma weightedAbelJacobiDivisorClass_ofFinset (w : X → ℤ) (h : S.IsWeightedD
   refine Finset.sum_congr rfl fun x hx => ?_
   rw [S.weightedAbelJacobiDivisorClass_ofPoint w h hx₀ x]
 
-/-! ### Unweighted finite effective divisors -/
-
-/-- The unweighted Abel-Jacobi sum of a divisor from finitely supported natural multiplicities is
-the finite sum of the point Abel-Jacobi classes with those multiplicities. -/
-@[simp]
-lemma unweightedAbelJacobiDivisorClass_ofFinsupp (h : S.IsUnweightedDegreeZero)
-    (x₀ : X) (m : X →₀ ℕ) :
-    S.unweightedAbelJacobiDivisorClass h x₀ (ofFinsupp m) =
-      ∑ x ∈ m.support, (m x : ℤ) • S.unweightedAbelJacobiClass h x₀ x := by
-  rw [ofFinsupp_eq_sum, map_sum]
-  refine Finset.sum_congr rfl fun x hx => ?_
-  rw [map_zsmul, S.unweightedAbelJacobiDivisorClass_ofPoint h x₀ x]
-
-/-- The unweighted Abel-Jacobi sum of a finite-set divisor with multiplicities is the finite sum
-of the point Abel-Jacobi classes with those multiplicities. -/
-@[simp]
-lemma unweightedAbelJacobiDivisorClass_ofFinsetWithMultiplicity
-    (h : S.IsUnweightedDegreeZero) (x₀ : X) (s : Finset X) (m : X → ℕ) :
-    S.unweightedAbelJacobiDivisorClass h x₀ (ofFinsetWithMultiplicity s m) =
-      ∑ x ∈ s, (m x : ℤ) • S.unweightedAbelJacobiClass h x₀ x := by
-  rw [ofFinsetWithMultiplicity_eq_sum, map_sum]
-  refine Finset.sum_congr rfl fun x hx => ?_
-  rw [map_zsmul, S.unweightedAbelJacobiDivisorClass_ofPoint h x₀ x]
-
-/-- The unweighted Abel-Jacobi sum of a coefficient-one finite-set divisor is the sum of the
-point Abel-Jacobi classes over the finite set. -/
-@[simp]
-lemma unweightedAbelJacobiDivisorClass_ofFinset (h : S.IsUnweightedDegreeZero)
-    (x₀ : X) (s : Finset X) :
-    S.unweightedAbelJacobiDivisorClass h x₀ (ofFinset s) =
-      ∑ x ∈ s, S.unweightedAbelJacobiClass h x₀ x := by
-  rw [ofFinset_eq_sum, map_sum]
-  refine Finset.sum_congr rfl fun x hx => ?_
-  rw [S.unweightedAbelJacobiDivisorClass_ofPoint h x₀ x]
-
 end OrderSystem
 
 end WeilDivisor

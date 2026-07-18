@@ -32,50 +32,25 @@ namespace TauCeti.Semigroups
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 
-/-- The integral averages `(1/t) • ∫_{(0,t]} g u du` of a function continuous on
-`[0, ∞)` tend to `g 0` as `t → 0⁺`. -/
-private theorem tendsto_average_Ioc_zero_of_continuousOn_Ici
-    {g : ℝ → X} (hg : ContinuousOn g (Set.Ici 0)) :
+/-- The integral averages `(1/t) • ∫_{(0,t]} g u du` of a function that is locally strongly
+measurable and continuous at `0` from the right tend to `g 0` as `t → 0⁺`. -/
+private theorem tendsto_average_Ioc_zero_of_stronglyMeasurableAtFilter_continuousWithinAt_Ioi
+    {g : ℝ → X}
+    (hmeas : StronglyMeasurableAtFilter g (nhdsWithin (0 : ℝ) (Set.Ioi 0)) volume)
+    (hg0 : ContinuousWithinAt g (Set.Ioi 0) 0) :
     Filter.Tendsto
       (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, g u)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds (g 0)) := by
-  set g' : ℝ → X := fun t => if 0 ≤ t then g t else g 0 with hg'_def
-  have hg'_cont : Filter.Tendsto g' (nhds 0) (nhds (g 0)) := by
-    rw [← nhdsLT_sup_nhdsGE (0 : ℝ)]
-    apply Filter.Tendsto.sup
-    · exact (tendsto_const_nhds (x := g 0)).congr' (by
-        filter_upwards [self_mem_nhdsWithin] with t (ht : t < 0)
-        simp only [g', if_neg (not_le.mpr ht)])
-    · exact (hg 0 (by simp)).congr' (by
-        filter_upwards [self_mem_nhdsWithin] with t (ht : 0 ≤ t)
-        simp only [g', if_pos ht])
-  have hg'_eq : ∀ t, 0 < t →
-      ∫ u in Set.Ioc 0 t, g' u = ∫ u in Set.Ioc 0 t, g u := by
-    intro t ht
-    apply MeasureTheory.setIntegral_congr_fun measurableSet_Ioc
-    intro u hu
-    simp [hg'_def, hu.1.le]
-  have hg'_continuous : Continuous g' := by
-    have hg'_pw : g' = Set.piecewise (Set.Ici 0) g (fun _ => g 0) := rfl
-    rw [hg'_pw]
-    apply continuous_piecewise
-    · intro t ht
-      have := frontier_Ici_subset (a := (0 : ℝ)) ht
-      simp only [Set.mem_singleton_iff] at this
-      subst this
-      simp
-    · rwa [closure_Ici]
-    · exact continuousOn_const
-  have h_ftc : HasDerivAt (fun u => ∫ t in (0 : ℝ)..u, g' t) (g 0) 0 :=
-    intervalIntegral.integral_hasDerivAt_of_tendsto_ae_right
-      IntervalIntegrable.refl
-      (hg'_continuous.stronglyMeasurableAtFilter volume (nhds 0))
-      (hg'_cont.mono_left inf_le_left)
-  have h_slope := h_ftc.tendsto_slope_zero_right
-  simp only [zero_add, intervalIntegral.integral_same, sub_zero] at h_slope
-  exact h_slope.congr' (by
-    filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-    rw [one_div, intervalIntegral.integral_of_le (le_of_lt ht), hg'_eq t ht])
+  have h_ftc :
+      HasDerivWithinAt (fun u => ∫ t in (0 : ℝ)..u, g t) (g 0) (Set.Ioi 0) 0 :=
+    (intervalIntegral.integral_hasDerivWithinAt_right IntervalIntegrable.refl hmeas
+      hg0).Ioi_of_Ici
+  have h_slope :=
+    (hasDerivWithinAt_iff_tendsto_slope' (by simp : (0 : ℝ) ∉ Set.Ioi 0)).mp h_ftc
+  refine h_slope.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
+  rw [slope_def_module, sub_zero, intervalIntegral.integral_same, sub_zero,
+    intervalIntegral.integral_of_le ht.le, one_div]
 
 /-! ## The Infinitesimal Generator -/
 
@@ -193,6 +168,25 @@ theorem StronglyContinuousSemigroup.generator_eq_of_tendsto
       exact hx⟩ = y :=
   tendsto_nhds_unique (S.generator_tendsto ⟨x, hx⟩) h
 
+omit [CompleteSpace X] in
+/-- If every generator difference quotient converges to `L x` for a linear operator `L`, then
+the generator domain is the whole space and the generator is `L` as a total `LinearPMap`. -/
+theorem StronglyContinuousSemigroup.generator_eq_toPMap_top_of_forall_tendsto
+    (S : StronglyContinuousSemigroup X) (L : X →ₗ[ℝ] X)
+    (h : ∀ x, Filter.Tendsto (fun t => (1 / t) • (S.realOperator t x - x))
+      (nhdsWithin 0 (Set.Ioi 0)) (nhds (L x))) :
+    S.domain = ⊤ ∧ S.generator = L.toPMap ⊤ := by
+  have hmem : ∀ x, x ∈ S.domain := fun x => (S.mem_domain_iff_tendsto x).mpr ⟨L x, h x⟩
+  have hdomain : S.domain = ⊤ := by
+    ext x
+    simp [hmem x]
+  refine ⟨hdomain, ?_⟩
+  refine LinearPMap.ext ?_ ?_
+  · rw [S.generator_domain, hdomain, LinearMap.toPMap_domain]
+  · intro x _ _
+    rw [LinearMap.toPMap_apply]
+    exact S.generator_eq_of_tendsto (hmem x) (h x)
+
 
 
 /-- The integral average `(1/t) • ∫_{(0,t]} S(u)x du` of the orbit tends to `x` as `t → 0⁺`. -/
@@ -201,8 +195,12 @@ theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
     Filter.Tendsto
       (fun t => (1 / t) • ∫ u in Set.Ioc 0 t, S.realOperator u x)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds x) := by
-  have h := tendsto_average_Ioc_zero_of_continuousOn_Ici
-    (g := fun u => S.realOperator u x) (fun u hu => S.realOperator_continuousWithinAt x u hu)
+  have h_cont_Ioi : ContinuousOn (fun u => S.realOperator u x) (Set.Ioi 0) :=
+    (S.realOperator_continuousOn_Ici x).mono Set.Ioi_subset_Ici_self
+  have h := tendsto_average_Ioc_zero_of_stronglyMeasurableAtFilter_continuousWithinAt_Ioi
+    (g := fun u => S.realOperator u x)
+    (h_cont_Ioi.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Ioi 0)
+    ((S.realOperator_continuousWithinAt x 0 le_rfl).mono Set.Ioi_subset_Ici_self)
   simpa using h
 
 private theorem StronglyContinuousSemigroup.intervalIntegrable_orbit

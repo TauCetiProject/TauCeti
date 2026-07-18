@@ -48,7 +48,7 @@ variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
 /-- A surjective covering map is an open quotient map. -/
 theorem IsCoveringMap.isOpenQuotientMap (hp : IsCoveringMap p)
     (hsurj : Function.Surjective p) : IsOpenQuotientMap p :=
-  ⟨hsurj, hp.continuous, hp.isOpenMap⟩
+  .of_isOpenMap_isQuotientMap hp.isOpenMap (hp.isQuotientMap hsurj)
 
 namespace Deck
 

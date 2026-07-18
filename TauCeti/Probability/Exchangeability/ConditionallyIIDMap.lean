@@ -69,8 +69,8 @@ theorem ConditionallyIIDWith.map_values {μ : Measure Ω} {X : ℕ → Ω → α
       measurable_pi_lambda _ fun i => hf.comp (measurable_pi_apply i)
     have hg : AEMeasurable
         (fun ω => (ProbabilityMeasure.pi fun _ : Fin m => ν ω).toMeasure) μ :=
-      MeasureTheory.aemeasurable_probabilityMeasure_pi_const_toMeasure_of_measurable ν
-        h.measurable_directing
+      MeasureTheory.aemeasurable_probabilityMeasure_pi_toMeasure_of_measurable (fun _ : Fin m => ν)
+        (fun _ => h.measurable_directing)
     calc
       blockLaw μ (fun i ω => f (X i ω)) k
           = (blockLaw μ X k).map fun x : Fin m → α => fun i => f (x i) :=
@@ -94,6 +94,36 @@ theorem ConditionallyIID.map_values {μ : Measure Ω} {X : ℕ → Ω → α}
     ConditionallyIID μ (fun i ω => f (X i ω)) := by
   obtain ⟨ν, hν⟩ := h.exists_directing
   exact ConditionallyIID.of_directing (hν.map_values hf hX)
+
+/-- **Transfer of conditional i.i.d.-ness along the path law.** If the coordinate process on path
+space is conditionally i.i.d. under `pathLaw μ X`, then `X` is conditionally i.i.d. under `μ`. -/
+theorem conditionallyIID_of_conditionallyIID_pathLaw {μ : Measure Ω} {X : ℕ → Ω → α}
+    (hX_meas : ∀ n, Measurable (X n))
+    (h : ConditionallyIID (pathLaw μ X) fun n p => p n) :
+    ConditionallyIID μ X := by
+  obtain ⟨ν, hν⟩ := h.exists_directing
+  have hφ : Measurable (fun ω => fun i => X i ω : Ω → ℕ → α) := measurable_pi_lambda _ hX_meas
+  refine ConditionallyIID.of_directing
+    (ConditionallyIIDWith.intro (hν.measurable_directing.comp hφ) ?_)
+  intro m k hk
+  have hcoord : Measurable (fun p : ℕ → α => fun i : Fin m => p (k i)) :=
+    measurable_pi_lambda _ fun i => measurable_pi_apply (k i)
+  have hg : Measurable
+      (fun p : ℕ → α => (ProbabilityMeasure.pi fun _ : Fin m => ν p).toMeasure) :=
+    TauCeti.MeasureTheory.measurable_probabilityMeasure_pi_const_toMeasure ν
+      hν.measurable_directing
+  calc blockLaw μ X k
+      = blockLaw (pathLaw μ X) (fun n p => p n) k := by
+          simp only [blockLaw_def, pathLaw_def]
+          rw [Measure.map_map hcoord hφ]
+          rfl
+    _ = (pathLaw μ X).bind fun p => (ProbabilityMeasure.pi fun _ : Fin m => ν p).toMeasure :=
+          hν.map k hk
+    _ = μ.bind fun ω =>
+          (ProbabilityMeasure.pi fun _ : Fin m => ν (fun i => X i ω)).toMeasure := by
+          simp only [pathLaw_def, Measure.bind]
+          rw [Measure.map_map hg hφ]
+          rfl
 
 end Probability
 

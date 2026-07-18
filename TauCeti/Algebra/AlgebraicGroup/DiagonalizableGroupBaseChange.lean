@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.BaseChangeNaturality
+public import TauCeti.Algebra.AlgebraicGroup.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupFunctoriality
 
 /-!
@@ -20,8 +20,8 @@ The construction is the composition of two existing Tau Ceti equivalences:
 `AlgHom.baseChangePointsMulEquiv`, which identifies points of `K ⊗[k] k[G]` with
 `k`-algebra maps out of `k[G]`, and `DiagonalizableGroup.pointsMulEquiv`, which identifies
 those maps with characters. The lemmas here spell out the values on the group-like generators
-`1 ⊗ single g 1`, the inverse map, naturality in the value algebra, and compatibility with
-the contravariant functoriality in `G`.
+`1 ⊗ single g 1`, the inverse map, and compatibility with the contravariant functoriality
+in `G`.
 
 This advances the ReductiveGroups roadmap, Layer 0 ("Base change. `K ⊗[k] A` as a Hopf
 algebra over `K`") and Layer 4 ("Diagonalizable groups and groups of multiplicative type:
@@ -33,8 +33,6 @@ algebra over `K`") and Layer 4 ("Diagonalizable groups and groups of multiplicat
   from base-changed points of `D(G)` to the character group `G →* Aˣ`.
 * `TauCeti.DiagonalizableGroup.baseChangePointsMulEquiv_apply_coe`: the equivalence reads a
   point by evaluating it on `1 ⊗ single g 1`.
-* `TauCeti.DiagonalizableGroup.baseChangePointsMulEquiv_mapValue`: the equivalence is
-  natural in the value algebra.
 * `TauCeti.DiagonalizableGroup.baseChangePointsMulEquiv_mapDomain`: under a homomorphism
   `G →* G'`, the base-changed points map is precomposition of characters.
 
@@ -116,29 +114,6 @@ theorem baseChangePointsMulEquiv_symm_apply_single_one (χ : G →* Aˣ) (g : G)
   rw [baseChangePointsMulEquiv_symm_apply_tmul_single]
   simp
 
-variable {B : Type*} [CommSemiring B] [Algebra K B] [Algebra k B] [IsScalarTower k K B]
-
-/-- The base-changed diagonalizable-points equivalence is natural in the value algebra. -/
-theorem baseChangePointsMulEquiv_mapValue (φ : A →ₐ[K] B)
-    (f : WithConv (K ⊗[k] MonoidAlgebra k G →ₐ[K] A)) :
-    baseChangePointsMulEquiv
-        (AlgHom.mapValue (H := K ⊗[k] MonoidAlgebra k G) φ f) =
-      (Units.map φ.toMonoidHom).comp
-        (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (G := G) f) := by
-  ext g
-  simp [Units.coe_map]
-
-/-- Naturality of the inverse base-changed diagonalizable-points equivalence in the value
-algebra. -/
-theorem mapValue_baseChangePointsMulEquiv_symm_apply (φ : A →ₐ[K] B) (χ : G →* Aˣ) :
-    AlgHom.mapValue (H := K ⊗[k] MonoidAlgebra k G) φ
-        ((baseChangePointsMulEquiv (k := k) (K := K) (A := A) (G := G)).symm χ) =
-      (baseChangePointsMulEquiv (k := k) (K := K) (A := B) (G := G)).symm
-        ((Units.map φ.toMonoidHom).comp χ) := by
-  apply (baseChangePointsMulEquiv (k := k) (K := K) (A := B) (G := G)).injective
-  rw [baseChangePointsMulEquiv_mapValue]
-  simp
-
 section MapDomain
 
 variable {G' : Type*} [CommGroup G']
@@ -155,7 +130,8 @@ theorem baseChangePointsMulEquiv_mapDomain (φ : G →* G')
   ext g
   simp only [baseChangePointsMulEquiv_apply_coe, MonoidHom.comp_apply,
     AlgHom.mapDomain_apply_apply, _root_.Bialgebra.TensorProduct.map_tmul,
-    _root_.BialgHom.id_apply, MonoidAlgebra.mapDomainBialgHom_apply,
+    _root_.BialgHom.id_apply, MonoidAlgebra.mapDomainBialgHom,
+    _root_.BialgHom.ofAlgHom_apply, MonoidAlgebra.mapDomainAlgHom_apply,
     MonoidAlgebra.mapDomain_single]
 
 /-- Mapping the base-changed point attached to a character is precomposition of that character

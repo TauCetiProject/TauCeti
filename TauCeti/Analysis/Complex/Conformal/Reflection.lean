@@ -6,6 +6,8 @@ module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Star
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.ReImTopology
+public import Mathlib.Topology.Piecewise
 
 /-!
 # Conjugation and holomorphic domains
@@ -22,7 +24,10 @@ It also names the standard real-axis Schwarz-reflection extension
 upper and lower half-planes and the conjugation symmetry forced by real boundary values.
 The closed upper branch is intentionally exposed through the pointwise simplifier
 `schwarzReflection_of_im_nonneg`, with subset-level wrappers for branch agreement and
-differentiability transfer.
+differentiability transfer.  The continuity lemmas record the topological gluing input for
+the later Morera-based reflection theorem: the reflected branch is continuous on reflected
+sets, and the explicit Schwarz-reflection extension is continuous across the real axis when
+the boundary values are real.
 The private semilinear within-set helper adapts the proof pattern of Mathlib's
 `HasFDerivAt.comp_semilinear`.
 -/
@@ -97,6 +102,19 @@ lemma conj_schwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
   rw [schwarzReflection_of_im_neg (f := f) hz, starRingEnd_self_apply]
 
 /--
+At a real-axis point where `f` has a real value, `f` commutes with conjugation:
+`f z = conj (f (conj z))`.
+-/
+private lemma apply_eq_conj_apply_conj_of_im_zero_of_apply_im_zero
+    {z : ℂ} (hz : z.im = 0) (hreal : (f z).im = 0) :
+    f z = (starRingEnd ℂ) (f ((starRingEnd ℂ) z)) := by
+  have hzconj : (starRingEnd ℂ) z = z := by
+    rw [starRingEnd_apply, Complex.star_def, Complex.conj_eq_iff_im]
+    exact hz
+  rw [hzconj]
+  exact (Complex.conj_eq_iff_im.mpr hreal).symm
+
+/--
 The Schwarz-reflection extension is conjugation-symmetric when the original function has real
 value at the real-axis point under consideration.
 -/
@@ -114,12 +132,9 @@ lemma schwarzReflection_conj
   · rw [schwarzReflection_of_im_zero (f := f) hzero]
     have hconj_im : ((starRingEnd ℂ) z).im = 0 := by
       rw [starRingEnd_apply, Complex.star_def, Complex.conj_im, hzero, neg_zero]
-    rw [schwarzReflection_of_im_zero (f := f) hconj_im]
-    have hzconj : (starRingEnd ℂ) z = z := by
-      rw [starRingEnd_apply, Complex.star_def, Complex.conj_eq_iff_im]
-      exact hzero
-    rw [hzconj]
-    exact (Complex.conj_eq_iff_im.mpr (hreal hzero)).symm
+    rw [schwarzReflection_of_im_zero (f := f) hconj_im,
+      apply_eq_conj_apply_conj_of_im_zero_of_apply_im_zero (f := f) hzero (hreal hzero),
+      starRingEnd_self_apply]
   · rw [schwarzReflection_conj_of_im_pos (f := f) hpos]
     rw [schwarzReflection_of_im_nonneg (f := f) hpos.le]
 
@@ -184,6 +199,137 @@ lemma image_conj_inter_im_neg_of_symmetric {Ω : Set ℂ}
     · rw [Set.mem_setOf_eq, starRingEnd_apply, Complex.star_def, Complex.conj_im]
       exact neg_neg_of_pos hzim
     · rw [starRingEnd_self_apply]
+
+/--
+Conjugating both source and target preserves continuity on reflected sets.
+-/
+lemma continuousOn_conj_conj (hf : ContinuousOn f S) :
+    ContinuousOn (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
+      ((starRingEnd ℂ) '' S) := by
+  have hmaps : MapsTo (starRingEnd ℂ) ((starRingEnd ℂ) '' S) S := by
+    rintro w ⟨x, hx, rfl⟩
+    rwa [starRingEnd_self_apply]
+  simpa only [Function.comp_def, starRingEnd_apply] using
+    (hf.comp Complex.continuous_conj.continuousOn hmaps).star
+
+/--
+Conjugating both source and target preserves continuity on reflected sets, in both directions.
+-/
+@[simp]
+lemma continuousOn_conj_conj_iff :
+    ContinuousOn (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
+        ((starRingEnd ℂ) '' S) ↔
+      ContinuousOn f S := by
+  constructor
+  · intro h
+    have htwice :=
+      continuousOn_conj_conj
+        (S := (starRingEnd ℂ) '' S)
+        (f := fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) h
+    simpa [Function.Involutive.image_eq_preimage_symm
+      (starRingEnd_self_apply : Function.Involutive (starRingEnd ℂ)), Set.preimage_preimage,
+      Function.comp_def] using htwice
+  · exact continuousOn_conj_conj
+
+/--
+On any subset of the closed upper half-plane, the explicit Schwarz-reflection extension is
+continuous whenever the original function is.
+-/
+lemma continuousOn_schwarzReflection_of_subset_im_nonneg
+    (hS : S ⊆ {z : ℂ | 0 ≤ z.im}) (hf : ContinuousOn f S) :
+    ContinuousOn (schwarzReflection f) S :=
+  hf.congr fun _ hz => eqOn_schwarzReflection_of_subset_im_nonneg (f := f) hS hz
+
+/--
+If a domain is closed under conjugation and `f` is continuous on its upper half-plane
+part, then the reflected branch `z ↦ conj (f (conj z))` is continuous on the lower
+half-plane part.
+-/
+lemma continuousOn_conj_conj_inter_im_neg_of_symmetric {Ω : Set ℂ}
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
+    (hf : ContinuousOn f (Ω ∩ {z | 0 < z.im})) :
+    ContinuousOn (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
+      (Ω ∩ {z | z.im < 0}) := by
+  simpa [image_conj_inter_im_pos_of_symmetric hΩ] using
+    continuousOn_conj_conj (S := Ω ∩ {z | 0 < z.im}) (f := f) hf
+
+/--
+On the lower half-plane part of a domain closed under conjugation, the explicit Schwarz
+reflection extension is continuous whenever the original function is continuous on the
+upper half-plane part.
+-/
+lemma continuousOn_schwarzReflection_inter_im_neg_of_symmetric {Ω : Set ℂ}
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
+    (hf : ContinuousOn f (Ω ∩ {z | 0 < z.im})) :
+    ContinuousOn (schwarzReflection f) (Ω ∩ {z | z.im < 0}) := by
+  intro z hz
+  exact ((continuousOn_conj_conj_inter_im_neg_of_symmetric
+    (f := f) hΩ hf) z hz).congr
+      (fun w hw => schwarzReflection_of_im_neg (f := f) hw.2)
+      (schwarzReflection_of_im_neg (f := f) hz.2)
+
+/--
+For a domain closed under conjugation, conjugation carries the closed upper half-plane part of
+the domain to its closed lower half-plane part.
+-/
+lemma image_conj_inter_im_nonneg_of_symmetric {Ω : Set ℂ}
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) :
+    (starRingEnd ℂ) '' (Ω ∩ {z | 0 ≤ z.im}) = Ω ∩ {z | z.im ≤ 0} := by
+  ext w
+  simp only [Set.mem_image, Set.mem_inter_iff, Set.mem_setOf_eq]
+  constructor
+  · rintro ⟨x, ⟨hxΩ, hxim⟩, rfl⟩
+    refine ⟨hΩ hxΩ, ?_⟩
+    rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
+    exact neg_nonpos.mpr hxim
+  · rintro ⟨hwΩ, hwim⟩
+    refine ⟨(starRingEnd ℂ) w, ⟨hΩ hwΩ, ?_⟩, ?_⟩
+    · rw [starRingEnd_apply, Complex.star_def, Complex.conj_im]
+      exact neg_nonneg.mpr hwim
+    · rw [starRingEnd_self_apply]
+
+/--
+If a domain `Ω` is closed under conjugation, `f` is continuous on its closed upper half-plane
+part, and `f` takes real values at the real-axis points of `Ω`, then the explicit
+Schwarz-reflection extension is continuous on `Ω`.
+-/
+lemma continuousOn_schwarzReflection_of_symmetric {Ω : Set ℂ}
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
+    (hf : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
+    (hreal : ∀ z ∈ Ω, z.im = 0 → (f z).im = 0) :
+    ContinuousOn (schwarzReflection f) Ω := by
+  have hUclosed : IsClosed {z : ℂ | 0 ≤ z.im} :=
+    isClosed_Ici.preimage Complex.continuous_im
+  have hlower : ContinuousOn (fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z)))
+      (Ω ∩ {z : ℂ | z.im ≤ 0}) := by
+    rw [← image_conj_inter_im_nonneg_of_symmetric hΩ]
+    exact continuousOn_conj_conj (S := Ω ∩ {z : ℂ | 0 ≤ z.im}) (f := f) hf
+  have hpiece :
+      ContinuousOn (fun z : ℂ =>
+        if 0 ≤ z.im then f z else (starRingEnd ℂ) (f ((starRingEnd ℂ) z))) Ω := by
+    refine ContinuousOn.if ?_ ?_ ?_
+    · intro z hz
+      rw [Set.mem_inter_iff, Complex.frontier_setOf_le_im, Set.mem_setOf_eq] at hz
+      exact apply_eq_conj_apply_conj_of_im_zero_of_apply_im_zero (f := f) hz.2
+        (hreal z hz.1 hz.2)
+    · rwa [hUclosed.closure_eq]
+    · simp only [not_le]
+      rw [Complex.closure_setOf_im_lt]
+      exact hlower
+  exact hpiece.congr fun z _ => schwarzReflection_def f z
+
+/--
+If `f` is continuous on the closed upper half-plane and takes real values on the real axis,
+then its explicit Schwarz-reflection extension is continuous on the plane.
+-/
+lemma continuous_schwarzReflection
+    (hf : ContinuousOn f {z : ℂ | 0 ≤ z.im})
+    (hreal : ∀ z : ℂ, z.im = 0 → (f z).im = 0) :
+    Continuous (schwarzReflection f) := by
+  rw [← continuousOn_univ]
+  refine continuousOn_schwarzReflection_of_symmetric (Ω := Set.univ)
+    (Set.mapsTo_univ _ _) ?_ (fun z _ => hreal z)
+  rwa [Set.univ_inter]
 
 private lemma starRingEnd_eq_starL (z : ℂ) :
     (starRingEnd ℂ) z = (starL ℂ : ℂ ≃L⋆[ℂ] ℂ) z := by

@@ -6,6 +6,9 @@ module
 
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import TauCeti.NumberTheory.EffectiveBounds.IdealCount
+public import TauCeti.Algebra.Group.ElementaryTwoQuotient
+import TauCeti.NumberTheory.EffectiveBounds.Discriminant
+import TauCeti.NumberTheory.EffectiveBounds.UnitSquares
 
 /-!
 # An effective class-number bound
@@ -25,16 +28,31 @@ classes inject into the ideals of norm `≤ √|d_F|`, of which there are at mos
 * `TauCeti.NumberField.classNumber_le_of_abs_discr_le_of_finrank_le`: the monotone
   corollary from separate discriminant and degree bounds.
 
+The remaining declarations package this bound with the unit-square index bound
+`TauCeti.NumberField.units_sq_index_le`. The `classNumber_mul_units_sq_index_le` family records
+the product estimate `h_F · [O_F^× : (O_F^×)²] ≤ |d_F| · 8^[F:ℚ]` (and the same for the
+elementary-2 quotient), and the quadratic square-root specializations
+`classNumber_le_of_sq_intCast`, `classNumber_le_natAbs_of_sq_intCast`, and
+`classNumber_mul_units_sq_index_le_natAbs_of_sq_intCast` compose these with the quadratic
+discriminant bound `TauCeti.NumberField.abs_discr_le_of_sq_intCast` to turn a square-root model
+`x² = a ∈ ℤ` of a quadratic field directly into `h_K ≤ 64·|a|` and
+`h_K · [O_K^× : (O_K^×)²] ≤ 256·|a|`. These are the closed forms the roadmap's `ℚ(√-5)` worked
+example needs.
+
 ## Provenance
 
-Migrated from
+The general class-number estimate was migrated from
 [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the
 formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture.
+The product and quadratic specializations are local corollaries combining that estimate with the
+migrated discriminant and unit-square bounds.
 -/
 
 public section
 
-open _root_.NumberField
+open scoped NumberField
+
+open Module _root_.NumberField
 
 namespace TauCeti.NumberField
 
@@ -142,5 +160,218 @@ theorem classNumber_le_nat_of_abs_discr_le (F : Type*) [Field F] [NumberField F]
     (hD : |NumberField.discr F| ≤ D) :
     NumberField.classNumber F ≤ D * 4 ^ Module.finrank ℚ F :=
   classNumber_le_nat_of_abs_discr_le_of_finrank_le F hD le_rfl
+
+/-! ### Product bounds for class groups and unit-square quotients -/
+
+private lemma abs_discr_le_natAbs (F : Type*) [Field F] [NumberField F] :
+    |NumberField.discr F| ≤ (NumberField.discr F).natAbs := by
+  rw [Int.abs_eq_natAbs]
+
+private lemma four_pow_mul_two_pow (n : ℕ) : 4 ^ n * 2 ^ n = 8 ^ n := by
+  rw [← mul_pow]
+  norm_num
+
+/-- **Class-number/unit-square product bound.** For a number field `F`, the product of its class
+number and the index of squares in its unit group is at most `|d_F| * 8^[F:ℚ]`. -/
+theorem classNumber_mul_units_sq_index_le (F : Type*) [Field F] [NumberField F] :
+    NumberField.classNumber F * (Subgroup.square (𝓞 F)ˣ).index ≤
+      (NumberField.discr F).natAbs * 8 ^ finrank ℚ F := by
+  have hclass :
+      NumberField.classNumber F ≤ (NumberField.discr F).natAbs * 4 ^ finrank ℚ F :=
+    classNumber_le_nat_of_abs_discr_le F (abs_discr_le_natAbs F)
+  have hunits : (Subgroup.square (𝓞 F)ˣ).index ≤ 2 ^ finrank ℚ F :=
+    units_sq_index_le F
+  calc
+    NumberField.classNumber F * (Subgroup.square (𝓞 F)ˣ).index
+        ≤ ((NumberField.discr F).natAbs * 4 ^ finrank ℚ F) * 2 ^ finrank ℚ F :=
+          Nat.mul_le_mul hclass hunits
+    _ = (NumberField.discr F).natAbs * 8 ^ finrank ℚ F := by
+      rw [mul_assoc, four_pow_mul_two_pow]
+
+/-- Monotone form of `TauCeti.NumberField.classNumber_mul_units_sq_index_le`: if `|d_F| ≤ D`
+and `[F : ℚ] ≤ n`, then
+`h_F * [O_F^× : (O_F^×)^2] ≤ D * 8^n`. -/
+theorem classNumber_mul_units_sq_index_le_of_abs_discr_le_of_finrank_le
+    (F : Type*) [Field F] [NumberField F] {D n : ℕ}
+    (hD : |NumberField.discr F| ≤ D) (hn : finrank ℚ F ≤ n) :
+    NumberField.classNumber F * (Subgroup.square (𝓞 F)ˣ).index ≤ D * 8 ^ n := by
+  have hclass : NumberField.classNumber F ≤ D * 4 ^ n :=
+    classNumber_le_nat_of_abs_discr_le_of_finrank_le F hD hn
+  have hunits : (Subgroup.square (𝓞 F)ˣ).index ≤ 2 ^ n :=
+    units_sq_index_le_of_finrank_le F hn
+  calc
+    NumberField.classNumber F * (Subgroup.square (𝓞 F)ˣ).index
+        ≤ (D * 4 ^ n) * 2 ^ n := Nat.mul_le_mul hclass hunits
+    _ = D * 8 ^ n := by
+      rw [mul_assoc, four_pow_mul_two_pow]
+
+/-- If `|d_F| ≤ D`, then
+`h_F * [O_F^× : (O_F^×)^2] ≤ D * 8^[F:ℚ]`. -/
+theorem classNumber_mul_units_sq_index_le_of_abs_discr_le
+    (F : Type*) [Field F] [NumberField F] {D : ℕ}
+    (hD : |NumberField.discr F| ≤ D) :
+    NumberField.classNumber F * (Subgroup.square (𝓞 F)ˣ).index ≤
+      D * 8 ^ finrank ℚ F :=
+  classNumber_mul_units_sq_index_le_of_abs_discr_le_of_finrank_le F hD le_rfl
+
+/-- If `[F : ℚ] ≤ n`, then
+`h_F * [O_F^× : (O_F^×)^2] ≤ |d_F| * 8^n`. -/
+theorem classNumber_mul_units_sq_index_le_of_finrank_le
+    (F : Type*) [Field F] [NumberField F] {n : ℕ} (hn : finrank ℚ F ≤ n) :
+    NumberField.classNumber F * (Subgroup.square (𝓞 F)ˣ).index ≤
+      (NumberField.discr F).natAbs * 8 ^ n :=
+  classNumber_mul_units_sq_index_le_of_abs_discr_le_of_finrank_le F
+    (abs_discr_le_natAbs F) hn
+
+/-- The same product bound expressed using the elementary-2 quotient of units:
+`h_F * #(O_F^×/(O_F^×)^2) ≤ |d_F| * 8^[F:ℚ]`. -/
+theorem classNumber_mul_card_units_elementaryTwoQuotient_le
+    (F : Type*) [Field F] [NumberField F] :
+    NumberField.classNumber F * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤
+      (NumberField.discr F).natAbs * 8 ^ finrank ℚ F := by
+  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square]
+  exact classNumber_mul_units_sq_index_le F
+
+/-- Monotone elementary-2 quotient form: if `|d_F| ≤ D` and `[F : ℚ] ≤ n`, then
+`h_F * #(O_F^×/(O_F^×)^2) ≤ D * 8^n`. -/
+theorem classNumber_mul_card_units_elementaryTwoQuotient_le_of_abs_discr_le_of_finrank_le
+    (F : Type*) [Field F] [NumberField F] {D n : ℕ}
+    (hD : |NumberField.discr F| ≤ D) (hn : finrank ℚ F ≤ n) :
+    NumberField.classNumber F * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤
+      D * 8 ^ n := by
+  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square]
+  exact classNumber_mul_units_sq_index_le_of_abs_discr_le_of_finrank_le F hD hn
+
+/-- If `|d_F| ≤ D`, then
+`h_F * #(O_F^×/(O_F^×)^2) ≤ D * 8^[F:ℚ]`. -/
+theorem classNumber_mul_card_units_elementaryTwoQuotient_le_of_abs_discr_le
+    (F : Type*) [Field F] [NumberField F] {D : ℕ}
+    (hD : |NumberField.discr F| ≤ D) :
+    NumberField.classNumber F * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤
+      D * 8 ^ finrank ℚ F := by
+  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square]
+  exact classNumber_mul_units_sq_index_le_of_abs_discr_le F hD
+
+/-- If `[F : ℚ] ≤ n`, then
+`h_F * #(O_F^×/(O_F^×)^2) ≤ |d_F| * 8^n`. -/
+theorem classNumber_mul_card_units_elementaryTwoQuotient_le_of_finrank_le
+    (F : Type*) [Field F] [NumberField F] {n : ℕ} (hn : finrank ℚ F ≤ n) :
+    NumberField.classNumber F * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) ≤
+      (NumberField.discr F).natAbs * 8 ^ n := by
+  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square]
+  exact classNumber_mul_units_sq_index_le_of_finrank_le F hn
+
+/-! ### Quadratic square-root specializations
+
+For a quadratic number field `K = ℚ(x)` presented by an algebraic-integer square root
+`x² = a ∈ ℤ` with `x ∉ ℚ`, the quadratic discriminant bound
+`TauCeti.NumberField.abs_discr_le_of_sq_intCast` gives `|d_K| ≤ 4·|a|`, and composing it with the
+bounds above yields the closed forms `h_K ≤ 64·|a|` and
+`h_K · [O_K^× : (O_K^×)²] ≤ 256·|a|`. -/
+
+private lemma intCast_four_mul_natAbs (a : ℤ) :
+    ((4 * a.natAbs : ℕ) : ℤ) = 4 * |a| := by
+  rw [Nat.cast_mul, Int.abs_eq_natAbs]
+  norm_num
+
+private lemma four_mul_natAbs_mul_four_sq (a : ℤ) :
+    4 * a.natAbs * 4 ^ 2 = 64 * a.natAbs := by
+  omega
+
+private lemma four_mul_natAbs_mul_eight_sq (a : ℤ) :
+    4 * a.natAbs * 8 ^ 2 = 256 * a.natAbs := by
+  omega
+
+/-- **Quadratic square-root class-number bound.** If `K` is a quadratic number field
+generated by an algebraic integer `x` with `x² = a ∈ ℤ` and `x ∉ ℚ`, then
+`h_K ≤ 64·|a|`. This is the specialization of the general effective class-number bound
+using the square-root discriminant estimate `|d_K| ≤ 4·|a|` and `[K : ℚ] = 2`. -/
+theorem classNumber_le_of_sq_intCast {K : Type*} [Field K] [NumberField K]
+    {x : K} {a : ℤ} (hfin : finrank ℚ K = 2)
+    (hx2 : x ^ 2 = algebraMap ℤ K a) (hx : x ∉ (algebraMap ℚ K).range) :
+    (NumberField.classNumber K : ℝ) ≤ 64 * |(a : ℝ)| := by
+  have hD : |(NumberField.discr K : ℝ)| ≤ 4 * |(a : ℝ)| := by
+    exact_mod_cast abs_discr_le_int_of_sq_intCast hfin hx2 hx
+  have hclass :
+      (NumberField.classNumber K : ℝ) ≤ (4 * |(a : ℝ)|) * 4 ^ 2 :=
+    classNumber_le_of_abs_discr_le_of_finrank_le K hD (le_of_eq hfin)
+  nlinarith [hclass]
+
+/-- Natural-number form of `TauCeti.NumberField.classNumber_le_of_sq_intCast`:
+for a quadratic number field generated by an algebraic integer square root `x² = a`,
+`h_K ≤ 64 * a.natAbs`. -/
+theorem classNumber_le_natAbs_of_sq_intCast {K : Type*} [Field K] [NumberField K]
+    {x : K} {a : ℤ} (hfin : finrank ℚ K = 2)
+    (hx2 : x ^ 2 = algebraMap ℤ K a) (hx : x ∉ (algebraMap ℚ K).range) :
+    NumberField.classNumber K ≤ 64 * a.natAbs := by
+  have hD : |NumberField.discr K| ≤ (4 * a.natAbs : ℕ) := by
+    rw [intCast_four_mul_natAbs]
+    exact abs_discr_le_int_of_sq_intCast hfin hx2 hx
+  have hclass :=
+    classNumber_le_nat_of_abs_discr_le_of_finrank_le K hD (le_of_eq hfin)
+  rw [← four_mul_natAbs_mul_four_sq]
+  exact hclass
+
+/-- A version of `TauCeti.NumberField.classNumber_le_of_sq_intCast` with a separate
+natural-number bound for `|a|`. -/
+theorem classNumber_le_of_sq_intCast_of_natAbs_le {K : Type*} [Field K] [NumberField K]
+    {x : K} {a : ℤ} {A : ℕ} (hfin : finrank ℚ K = 2)
+    (hx2 : x ^ 2 = algebraMap ℤ K a) (hx : x ∉ (algebraMap ℚ K).range)
+    (hA : a.natAbs ≤ A) :
+    NumberField.classNumber K ≤ 64 * A :=
+  (classNumber_le_natAbs_of_sq_intCast hfin hx2 hx).trans (Nat.mul_le_mul_left 64 hA)
+
+/-- **Quadratic square-root class-number/unit-square product bound.** If `K` is a quadratic
+number field generated by an algebraic integer `x` with `x² = a ∈ ℤ` and `x ∉ ℚ`, then
+`h_K * [O_K^× : (O_K^×)^2] ≤ 256 * |a|`. This is the specialization of the general product
+bound using `|d_K| ≤ 4 * |a|` and `[K : ℚ] = 2`. -/
+theorem classNumber_mul_units_sq_index_le_natAbs_of_sq_intCast
+    {K : Type*} [Field K] [NumberField K] {x : K} {a : ℤ}
+    (hfin : finrank ℚ K = 2) (hx2 : x ^ 2 = algebraMap ℤ K a)
+    (hx : x ∉ (algebraMap ℚ K).range) :
+    NumberField.classNumber K * (Subgroup.square (𝓞 K)ˣ).index ≤ 256 * a.natAbs := by
+  have hD : |NumberField.discr K| ≤ (4 * a.natAbs : ℕ) := by
+    rw [intCast_four_mul_natAbs]
+    exact abs_discr_le_int_of_sq_intCast hfin hx2 hx
+  have hprod :=
+    classNumber_mul_units_sq_index_le_of_abs_discr_le_of_finrank_le K hD (le_of_eq hfin)
+  rw [← four_mul_natAbs_mul_eight_sq]
+  exact hprod
+
+/-- A version of
+`TauCeti.NumberField.classNumber_mul_units_sq_index_le_natAbs_of_sq_intCast` with a separate
+natural-number bound for `|a|`. -/
+theorem classNumber_mul_units_sq_index_le_of_sq_intCast_of_natAbs_le
+    {K : Type*} [Field K] [NumberField K] {x : K} {a : ℤ} {A : ℕ}
+    (hfin : finrank ℚ K = 2) (hx2 : x ^ 2 = algebraMap ℤ K a)
+    (hx : x ∉ (algebraMap ℚ K).range) (hA : a.natAbs ≤ A) :
+    NumberField.classNumber K * (Subgroup.square (𝓞 K)ˣ).index ≤ 256 * A :=
+  (classNumber_mul_units_sq_index_le_natAbs_of_sq_intCast hfin hx2 hx).trans
+    (Nat.mul_le_mul_left 256 hA)
+
+/-- **Quadratic square-root elementary-2 quotient product bound.** If `K` is a quadratic number
+field generated by an algebraic integer `x` with `x² = a ∈ ℤ` and `x ∉ ℚ`, then
+`h_K * #(O_K^×/(O_K^×)^2) ≤ 256 * |a|`. This is the elementary-2 quotient form of
+`TauCeti.NumberField.classNumber_mul_units_sq_index_le_natAbs_of_sq_intCast`. -/
+theorem classNumber_mul_card_units_elementaryTwoQuotient_le_natAbs_of_sq_intCast
+    {K : Type*} [Field K] [NumberField K] {x : K} {a : ℤ}
+    (hfin : finrank ℚ K = 2) (hx2 : x ^ 2 = algebraMap ℤ K a)
+    (hx : x ∉ (algebraMap ℚ K).range) :
+    NumberField.classNumber K * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 K)ˣ) ≤
+      256 * a.natAbs := by
+  rw [TauCeti.card_elementaryTwoQuotient_eq_index_square]
+  exact classNumber_mul_units_sq_index_le_natAbs_of_sq_intCast hfin hx2 hx
+
+/-- A version of
+`TauCeti.NumberField.classNumber_mul_card_units_elementaryTwoQuotient_le_natAbs_of_sq_intCast`
+with a separate natural-number bound for `|a|`. -/
+theorem classNumber_mul_card_units_elementaryTwoQuotient_le_of_sq_intCast_of_natAbs_le
+    {K : Type*} [Field K] [NumberField K] {x : K} {a : ℤ} {A : ℕ}
+    (hfin : finrank ℚ K = 2) (hx2 : x ^ 2 = algebraMap ℤ K a)
+    (hx : x ∉ (algebraMap ℚ K).range) (hA : a.natAbs ≤ A) :
+    NumberField.classNumber K * Nat.card (TauCeti.ElementaryTwoQuotient (𝓞 K)ˣ) ≤
+      256 * A :=
+  (classNumber_mul_card_units_elementaryTwoQuotient_le_natAbs_of_sq_intCast hfin hx2 hx).trans
+    (Nat.mul_le_mul_left 256 hA)
 
 end TauCeti.NumberField

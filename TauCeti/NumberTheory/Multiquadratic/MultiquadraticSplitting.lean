@@ -92,8 +92,8 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
   let R : ι → 𝓞 K := ringGen d r hr
   rw [ncard_primesOver_eq_finrank_iff K p] at hsplit
   have hfQ : finrank (ℤ ⧸ span {(p : ℤ)}) (𝓞 K ⧸ Q) = 1 := by
-    rw [← Ideal.inertiaDeg_algebraMap (p := span {(p : ℤ)}) (P := Q),
-      Ideal.inertiaDeg_eq_inertiaDeg',
+    rw [← Ideal.inertiaDeg'_algebraMap (p := span {(p : ℤ)}) (P := Q),
+      Ideal.inertiaDeg'_eq_inertiaDeg,
       ← Ideal.inertiaDegIn_eq_inertiaDeg (span {(p : ℤ)}) Q (K ≃ₐ[ℚ] K)]
     exact hsplit.2
   letI fld : Field (ℤ ⧸ span {(p : ℤ)}) := Ideal.Quotient.field _
@@ -171,7 +171,8 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
       have h2a : (p : ℤ) ∣ a ^ 2 := dvd_pow hd (by norm_num)
       have h3 := dvd_sub h2a hpa
       -- `a² - (a² - d i) = d i`, so `p ∣ d i`, contradicting `hcop_i`.
-      rwa [show a ^ 2 - (a ^ 2 - d i) = d i by ring] at h3)
+      have hdiff : a ^ 2 - (a ^ 2 - d i) = d i := by ring
+      rwa [hdiff] at h3)
     set A : 𝓞 K := algebraMap ℤ (𝓞 K) a with hAdef
     -- `(R i - A)(R i + A) = d i - a² ∈ Q`, so one factor lies in the prime `Q`.
     have hAsq : A ^ 2 = algebraMap ℤ (𝓞 K) (a ^ 2) := by rw [hAdef, ← map_pow]
@@ -195,18 +196,22 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
         rw [smul_sub, hsR, hsA] at h1
         have hs := Q.add_mem hca h1
         -- Adding the factor `R i - A` and its image `-R i - A` cancels `R i`, leaving `-(2 A)`.
-        rw [show (R i - A) + (-R i - A) = -(2 * A) by ring] at hs
+        have hsum : (R i - A) + (-R i - A) = -(2 * A) := by ring
+        rw [hsum] at hs
         exact neg_mem_iff.mp hs
       · have h1 : σ • (R i + A) ∈ Q := hmapQ _ hca
         rw [smul_add, hsR, hsA] at h1
         have hs := Q.add_mem hca h1
         -- Adding the factor `R i + A` and its image `-R i + A` cancels `R i`, leaving `2 A`.
-        rw [show (R i + A) + (-R i + A) = 2 * A by ring] at hs
+        have hsum : (R i + A) + (-R i + A) = 2 * A := by ring
+        rw [hsum] at hs
         exact hs
     -- `2 A = algebraMap (2 a) ∈ Q` forces `p ∣ 2 a`, hence (as `p` is odd) `p ∣ a` — absurd.
     have h2a : algebraMap ℤ (𝓞 K) (2 * a) ∈ Q := by
       -- `algebraMap ℤ (𝓞 K) 2` is the numeral `2` in `𝓞 K`, so `2 A = algebraMap (2 a)`.
-      rw [map_mul, show algebraMap ℤ (𝓞 K) 2 = 2 by norm_num, ← hAdef]; exact h2A
+      have halg_two : algebraMap ℤ (𝓞 K) 2 = 2 := by norm_num
+      rw [map_mul, halg_two, ← hAdef]
+      exact h2A
     have hpint : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
     rcases hpint.dvd_mul.mp ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h2a) with h2 | ha
     · exact hodd ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp (by exact_mod_cast h2))

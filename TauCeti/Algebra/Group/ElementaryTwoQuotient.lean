@@ -83,6 +83,14 @@ def elementaryTwoQuotientMkAdd : Additive G →+ ElementaryTwoQuotient G :=
 def elementaryTwoQuotientMk (g : G) : ElementaryTwoQuotient G :=
   elementaryTwoQuotientMkAdd (Additive.ofMul g)
 
+/-- The class map `G → G/G²` is the quotient map of the `ModN` model: the class of `g` is the image
+of `Additive.ofMul g` under the quotient by the doubling submodule. This exposes the `ModN`
+representative so downstream files can match `G/G²` against Mathlib's quotient-by-range API. -/
+theorem elementaryTwoQuotientMk_eq_mkQ (g : G) :
+    elementaryTwoQuotientMk g = Submodule.Quotient.mk (Additive.ofMul g) := by
+  rw [elementaryTwoQuotientMk, elementaryTwoQuotientMkAdd, ModN.mkQ]
+  rfl
+
 /-- An element of `Additive G` lies in the doubling submodule `range (lsmul ℤ _ 2)` iff its
 multiplicative form is a square. This is the shared core relating the `ModN`/`lsmul` model of the
 quotient to the multiplicative subgroup of squares, used both by the zero-characterization and by

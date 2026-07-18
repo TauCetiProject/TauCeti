@@ -106,6 +106,17 @@ theorem isNullHomologous_iff {γ : ℝ → ℂ} {a b : ℝ} {Ω : Set ℂ} :
     IsNullHomologous γ a b Ω ↔ ∀ w ∉ Ω, windingNumber γ a b w = 0 :=
   Iff.rfl
 
+/-- **Integrability of the index integrand for a point off the curve.** If `γ` is continuous on
+`Set.uIcc a b` and avoids `w` there (so `(γ · - w)⁻¹` is continuous) and `deriv γ` is
+interval-integrable, then `(γ t - w)⁻¹ * deriv γ t` is interval-integrable, being a continuous
+factor times an integrable one. -/
+theorem intervalIntegrable_inv_sub_mul_deriv {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ}
+    (hγ_cont : ContinuousOn γ (Set.uIcc a b)) (hoff : ∀ t ∈ Set.uIcc a b, γ t ≠ w)
+    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) MeasureTheory.volume a b) :
+    IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) MeasureTheory.volume a b :=
+  hderiv_int.continuousOn_mul ((hγ_cont.sub continuousOn_const).inv₀
+    fun t ht ↦ sub_ne_zero.mpr (hoff t ht))
+
 /-- If `γ` is continuous on `[a, b]`, avoids `z₀` there, and the index integrand is
 interval-integrable, the generalized winding number is the ordinary index integral: the principal
 value collapses to `(2πi)⁻¹ · ∮_γ dz/(z − z₀)`. -/

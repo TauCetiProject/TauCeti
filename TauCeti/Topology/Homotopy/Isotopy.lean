@@ -17,16 +17,30 @@ homotopy from the identity of `Y` whose level-preserving total map `I × Y → I
 homeomorphism. These are the point-set foundations that the geometric-topology roadmap
 (`TauCetiRoadmap/GeometricTopology`) asks for once, in full generality, before specialising.
 The definitions follow Burde--Zieschang, *Knots*, Chapter 1, Definitions 1.1 and 1.2,
-generalized to this continuous topological setting. Later knot-equivalence foundations are
-intended to specialize this continuous relation to smooth embeddings `S¹ ↪ M`; the same
-notion also underlies locally flat isotopy, diffeotopies, and concordance.
+generalized to this continuous topological setting. The non-ambient relation is the general
+point-set notion of isotopy; later knot-equivalence foundations should use ambient isotopy,
+specialized as needed to smooth embeddings `S¹ ↪ M`. Later geometric-topology foundations
+specialize these isotopy and ambient-isotopy notions as appropriate for locally flat isotopy,
+diffeotopies, and concordance.
+
+## A warning: non-ambient isotopy is degenerate for knots
+
+The non-ambient relation `Isotopy`/`Isotopic` is *not* the right equivalence for classical knot
+theory. It records a moving embedded image, but it need not extend to a motion of the ambient
+space and therefore need not preserve knot complements. *Ambient* isotopy is the relation with
+knot-theoretic content: an ambient isotopy induces a homeomorphism of complements, so knot
+invariants must be built on `AmbientIsotopy` and the `AmbientIsotopic` equivalence from
+`TauCeti.Topology.Homotopy.AmbientIsotopic`, not on `Isotopy`/`Isotopic`. See
+Burde--Zieschang, *Knots*, Chapter 1 §A, where ambient isotopy (Definition 1.2) is introduced
+after the naive isotopy of Definition 1.1.
 
 ## Main definitions
 
 * `TauCeti.Isotopy f₀ f₁`: a homotopy from `f₀` to `f₁` whose total level-preserving map is a
   topological embedding.
 * `TauCeti.Isotopic f₀ f₁`: the proposition that such an isotopy exists. This is the reusable
-  relation downstream knot-equivalence and ambient-isotopy layers traffic in.
+  general non-ambient relation; knot-equivalence layers should instead use `AmbientIsotopic` from
+  `TauCeti.Topology.Homotopy.AmbientIsotopic`.
 * `TauCeti.AmbientIsotopy Y`: a homotopy of `Y` from the identity whose total
   level-preserving map is a homeomorphism.
 * `TauCeti.AmbientIsotopy.trans` / `TauCeti.AmbientIsotopy.symm`: the composition and inverse of
@@ -125,7 +139,12 @@ private theorem isInducing_restrict_of_embedding {Z W A : Type*} [TopologicalSpa
   rwa [Function.comp_assoc, Homeomorph.self_comp_symm, Function.comp_id] at h2
 
 /-- An **isotopy** between `f₀ f₁ : C(X, Y)` is a homotopy whose level-preserving total map
-`I × X → I × Y` is a topological embedding. -/
+`I × X → I × Y` is a topological embedding.
+
+As an equivalence this non-ambient relation is too coarse for classical knot theory: it need not
+extend to a motion of the ambient space and therefore need not preserve knot complements. Use
+`AmbientIsotopy`/`AmbientIsotopic` for knot equivalence; see the module docstring and the
+Burde--Zieschang reference. -/
 structure Isotopy (f₀ f₁ : C(X, Y)) extends Homotopy f₀ f₁ where
   /-- the level-preserving total map of an isotopy is a topological embedding -/
   isEmbedding_total' : IsEmbedding fun p : I × X => (p.1, toFun p)
@@ -348,7 +367,10 @@ instance instHomotopyLike : HomotopyLike (Isotopy f₀ f₁) f₀ f₁ where
 
 end Isotopy
 
-/-- Two maps `f₀ f₁ : C(X, Y)` are **isotopic** if there is an isotopy between them. -/
+/-- Two maps `f₀ f₁ : C(X, Y)` are **isotopic** if there is an isotopy between them.
+
+Warning: for classical knot theory this non-ambient relation is too coarse: it need not preserve
+knot complements, so knot invariants must be built on `AmbientIsotopic`, not on `Isotopic`. -/
 @[expose] def Isotopic (f₀ f₁ : C(X, Y)) : Prop :=
   Nonempty (Isotopy f₀ f₁)
 

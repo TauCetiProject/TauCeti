@@ -21,7 +21,7 @@ lower-order pointwise forms:
 
 Boundedness of the coefficients is not given its own predicate: following Mathlib, a result
 that needs a bound states it inline, as `∀ x ∈ Ω, ‖b x‖ ≤ β`, and the energy-form estimates in
-`TauCeti.Analysis.PDE.EnergyForm` and `TauCeti.Analysis.PDE.CoerciveEnergy` take their bounds
+`TauCeti.Analysis.PDE.EnergyForm` and `TauCeti.Analysis.PDE.EnergyLowerBounds` take their bounds
 in that shape.
 
 ## Main declarations

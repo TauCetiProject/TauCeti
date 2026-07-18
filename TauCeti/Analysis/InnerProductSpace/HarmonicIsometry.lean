@@ -44,23 +44,6 @@ variable
   {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [InnerProductSpace ℝ E']
-  [FiniteDimensional ℝ E'] [NormedSpace ℝ F] in
-/-- Precomposition by a homeomorphism transports vanishing in a neighbourhood: `g ∘ h` vanishes
-near `x` iff `g` vanishes near `h x`. -/
-private theorem eventuallyEq_zero_comp_homeomorph_iff (h : E ≃ₜ E') (g : E' → F) (x : E) :
-    (g ∘ h =ᶠ[𝓝 x] 0) ↔ (g =ᶠ[𝓝 (h x)] 0) := by
-  rw [← h.map_nhds_eq x]
-  constructor
-  · intro hyp
-    refine Filter.eventually_map.mpr ?_
-    filter_upwards [hyp] with y hy
-    simpa using hy
-  · intro hyp
-    have hyp' := Filter.eventually_map.mp hyp
-    filter_upwards [hyp'] with y hy
-    simpa using hy
-
 /-- **Harmonicity is invariant under isometric changes of variable.** For a linear isometry
 equivalence `l`, the function `f ∘ l` is harmonic at `x` iff `f` is harmonic at `l x`. -/
 theorem harmonicAt_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') {f : E' → F}
@@ -70,8 +53,17 @@ theorem harmonicAt_comp_linearIsometryEquiv_right_iff (l : E ≃ₗᵢ[ℝ] E') 
     simpa using this
   have hlap : (Δ (f ∘ l) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (l x)] 0) := by
     rw [laplacian_comp_linearIsometryEquiv_right l f]
-    have := eventuallyEq_zero_comp_homeomorph_iff l.toHomeomorph (Δ f) x
-    rwa [LinearIsometryEquiv.coe_toHomeomorph] at this
+    -- View precomposition by `l` as precomposition by the homeomorphism `l.toHomeomorph`
+    -- (definitionally the same map) so `map_nhds_eq` can transport the neighbourhood filter.
+    change (Δ f ∘ l.toHomeomorph =ᶠ[𝓝 x] 0) ↔
+      (Δ f =ᶠ[𝓝 (l.toHomeomorph x)] 0)
+    rw [← l.toHomeomorph.map_nhds_eq x]
+    -- `Filter.eventuallyEq_map` reads `g =ᶠ[map h l] g' ↔ g ∘ h =ᶠ[l] g' ∘ h`; write the zero
+    -- side as `0 ∘ l.toHomeomorph` (definitionally `0`) to land in that shape.
+    change (Δ f ∘ l.toHomeomorph =ᶠ[𝓝 x] (0 : E' → F) ∘ l.toHomeomorph) ↔
+      (Δ f =ᶠ[Filter.map l.toHomeomorph (𝓝 x)] (0 : E' → F))
+    exact (Filter.eventuallyEq_map (f := 𝓝 x) (m := l.toHomeomorph) (f₁ := Δ f)
+      (f₂ := (0 : E' → F))).symm
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 
 /-- **Harmonicity is invariant under translation.** The function `y ↦ f (y + a)` is harmonic
@@ -92,8 +84,18 @@ theorem harmonicAt_comp_add_right_iff {f : E → F} {x a : E} :
       exact h.comp x hψ
   have hlap : (Δ (fun y ↦ f (y + a)) =ᶠ[𝓝 x] 0) ↔ (Δ f =ᶠ[𝓝 (x + a)] 0) := by
     rw [laplacian_comp_add_right f a]
-    have := eventuallyEq_zero_comp_homeomorph_iff (Homeomorph.addRight a) (Δ f) x
-    simpa [Function.comp_def] using this
+    -- Rephrase translation as precomposition with the homeomorphism `Homeomorph.addRight a`
+    -- (definitionally the same map) so `map_nhds_eq` can transport the neighbourhood filter.
+    change ((fun y : E ↦ Δ f (y + a)) =ᶠ[𝓝 x] 0) ↔
+      (Δ f =ᶠ[𝓝 ((Homeomorph.addRight a) x)] 0)
+    rw [← (Homeomorph.addRight a).map_nhds_eq x]
+    -- Match `Filter.eventuallyEq_map` (`g =ᶠ[map h l] g' ↔ g ∘ h =ᶠ[l] g' ∘ h`) by writing the
+    -- zero side as `0 ∘ addRight a` (definitionally `0`).
+    change (Δ f ∘ Homeomorph.addRight a =ᶠ[𝓝 x]
+        (0 : E → F) ∘ Homeomorph.addRight a) ↔
+      (Δ f =ᶠ[Filter.map (Homeomorph.addRight a) (𝓝 x)] (0 : E → F))
+    exact (Filter.eventuallyEq_map (f := 𝓝 x) (m := Homeomorph.addRight a) (f₁ := Δ f)
+      (f₂ := (0 : E → F))).symm
   exact ⟨fun hf ↦ ⟨hcd.1 hf.1, hlap.1 hf.2⟩, fun hf ↦ ⟨hcd.2 hf.1, hlap.2 hf.2⟩⟩
 
 /-- **Harmonicity is invariant under affine isometries.** For an affine isometry equivalence

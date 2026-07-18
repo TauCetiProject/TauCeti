@@ -97,18 +97,7 @@ theorem expShift_realOperator_of_nonneg (S : StronglyContinuousSemigroup X)
     (lambda t : ℝ) (ht : 0 ≤ t) :
     (S.expShift lambda).realOperator t = Real.exp (-(lambda * t)) • S.realOperator t := by
   have ht_coe : ((t.toNNReal : ℝ) = t) := Real.coe_toNNReal t ht
-  calc
-    (S.expShift lambda).realOperator t
-        = (S.expShift lambda).realOperator (t.toNNReal : ℝ) := by rw [ht_coe]
-    _ = (S.expShift lambda) t.toNNReal := by rw [realOperator_coe]
-    _ = Real.exp (-(lambda * (t.toNNReal : ℝ))) • S t.toNNReal := by
-        rw [expShift_apply]
-    _ = Real.exp (-(lambda * t)) • S.realOperator t := by
-        have hS : S.realOperator t = S t.toNNReal := by
-          calc
-            S.realOperator t = S.realOperator (t.toNNReal : ℝ) := by rw [ht_coe]
-            _ = S t.toNNReal := by rw [realOperator_coe]
-        rw [ht_coe, hS]
+  rw [← ht_coe, realOperator_coe, realOperator_coe, expShift_apply]
 
 omit [CompleteSpace X] in
 /-- Pointwise real-time form of the shifted operator at nonnegative times. -/

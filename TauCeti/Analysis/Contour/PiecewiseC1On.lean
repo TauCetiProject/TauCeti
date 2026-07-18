@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 
 /-!
 # Piecewise `C¹` curves on an interval
@@ -39,12 +41,23 @@ prerequisite for the homology Cauchy theorem and the generalized residue theorem
   introduce the predicate from, and eliminate it to, a finite breakpoint witness.
 * `Contour.IsPiecewiseC1On.mono` — restrict the regularity to a subinterval `[[c, d]] ⊆ [[a, b]]`.
 * `Contour.isPiecewiseC1On_comm`, `Contour.IsPiecewiseC1On.symm` — endpoint-swap invariance.
+* `Contour.IsPiecewiseC1On.exists_finset_differentiableAt`,
+  `Contour.IsPiecewiseC1On.exists_countable_differentiableAt` — differentiability off a finite
+  (hence countable) set, in the exact shapes the raw contour-integral lemmas consume.
+* `Contour.IsPiecewiseC1On.eventually_differentiableAt` (and its `_right`/`_left` one-sided
+  corollaries) — eventual differentiability near an interior parameter.
+* `Contour.IsPiecewiseC1On.intervalIntegrable_deriv` — the derivative is interval-integrable on
+  `a..b`, glued across the breakpoints from the `C¹` pieces.
 
 ## Provenance
 
 Adapted from the regularity fields of the `PiecewiseC1PathOn` structure in the AINTLIB
 `LeanModularForms` development, re-expressed as a predicate on a raw function `γ : ℝ → ℂ` per the
-roadmap's function-based contour design rather than as a bundled path type.
+roadmap's function-based contour design rather than as a bundled path type. The piece-level
+integrability of the derivative and its gluing across the breakpoints
+(`IsPiecewiseC1On.intervalIntegrable_deriv`) follow `ClosedPwC1Curve.deriv_intervalIntegrable_piece`
+and `ClosedPwC1Curve.deriv_extend_intervalIntegrable` in the same development's
+`PaperPwC1Immersion.lean`, restated for the raw curve.
 -/
 
 public section
@@ -53,7 +66,7 @@ noncomputable section
 
 namespace TauCeti.Contour
 
-open Set
+open Filter MeasureTheory Set Topology
 
 variable {γ : ℝ → ℂ} {a b : ℝ}
 
@@ -134,5 +147,140 @@ theorem isPiecewiseC1On_comm : IsPiecewiseC1On γ a b ↔ IsPiecewiseC1On γ b a
 /-- Piecewise-`C¹` regularity is invariant under swapping the endpoints of the interval. -/
 theorem IsPiecewiseC1On.symm (h : IsPiecewiseC1On γ a b) : IsPiecewiseC1On γ b a :=
   isPiecewiseC1On_comm.mp h
+
+/-- Around any non-breakpoint interior parameter there is a closed subinterval of `[[a, b]]` with
+`t` in its interior and interior disjoint from the breakpoints, so the piecewise-`C¹` clause
+applies to it. -/
+private theorem exists_Icc_mem_avoiding {p : Finset ℝ} {t : ℝ}
+    (ht : t ∈ Ioo (min a b) (max a b)) (htp : t ∉ (↑p : Set ℝ)) :
+    ∃ c d : ℝ, t ∈ Ioo c d ∧ Icc c d ⊆ uIcc a b ∧ Disjoint (↑p : Set ℝ) (Ioo c d) := by
+  have hopen : IsOpen (Ioo (min a b) (max a b) \ ↑p) :=
+    isOpen_Ioo.sdiff p.finite_toSet.isClosed
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hopen t ⟨ht, htp⟩
+  rw [Real.ball_eq_Ioo] at hball
+  refine ⟨t - ε / 2, t + ε / 2, by constructor <;> linarith, fun x hx => ?_, ?_⟩
+  · have hxs := hball (show x ∈ Ioo (t - ε) (t + ε) from ⟨by linarith [hx.1], by linarith [hx.2]⟩)
+    exact Icc_min_max.subset (Ioo_subset_Icc_self hxs.1)
+  · rw [Set.disjoint_right]
+    intro x hx
+    exact (hball (show x ∈ Ioo (t - ε) (t + ε) from
+      ⟨by linarith [hx.1], by linarith [hx.2]⟩)).2
+
+/-- **Differentiability off a finite set.** A piecewise-`C¹` curve is differentiable at every
+interior parameter outside a finite set — the breakpoints. -/
+theorem IsPiecewiseC1On.exists_finset_differentiableAt (h : IsPiecewiseC1On γ a b) :
+    ∃ p : Finset ℝ,
+      ∀ t ∈ Ioo (min a b) (max a b) \ (↑p : Set ℝ), DifferentiableAt ℝ γ t := by
+  obtain ⟨p, -, hC1⟩ := h.exists_breakpoints
+  refine ⟨p, fun t ht => ?_⟩
+  obtain ⟨c, d, htcd, hsub, hdisj⟩ := exists_Icc_mem_avoiding ht.1 ht.2
+  exact ((hC1 c d hsub hdisj).differentiableOn one_ne_zero).differentiableAt
+    (Icc_mem_nhds htcd.1 htcd.2)
+
+/-- **Differentiability off a countable set.** A piecewise-`C¹` curve is differentiable at every
+interior parameter outside a countable set — the breakpoints. This is the exact regularity shape
+consumed by the raw contour-integral development (Dixon's argument and the winding-number
+machinery). -/
+theorem IsPiecewiseC1On.exists_countable_differentiableAt (h : IsPiecewiseC1On γ a b) :
+    ∃ P : Set ℝ, P.Countable ∧
+      ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t :=
+  let ⟨p, hp⟩ := h.exists_finset_differentiableAt
+  ⟨↑p, p.countable_toSet, hp⟩
+
+/-- **Eventual differentiability near an interior parameter**, on any within-filter avoiding
+the parameter itself. -/
+theorem IsPiecewiseC1On.eventually_differentiableAt (h : IsPiecewiseC1On γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) {u : Set ℝ} (hu : t₀ ∉ u) :
+    ∀ᶠ t in 𝓝[u] t₀, DifferentiableAt ℝ γ t := by
+  obtain ⟨p, hp⟩ := h.exists_finset_differentiableAt
+  have hcl : IsClosed ((↑p \ {t₀} : Set ℝ)) := (p.finite_toSet.subset sdiff_subset).isClosed
+  filter_upwards [nhdsWithin_le_nhds (hcl.isOpen_compl.mem_nhds (by simp)),
+    nhdsWithin_le_nhds (isOpen_Ioo.mem_nhds ht₀), self_mem_nhdsWithin] with t htc htIoo htu
+  exact hp t ⟨htIoo, fun htp => htc ⟨htp, fun h_eq => hu (h_eq ▸ htu)⟩⟩
+
+/-- Eventual differentiability from the right at an interior parameter. -/
+theorem IsPiecewiseC1On.eventually_differentiableAt_right (h : IsPiecewiseC1On γ a b)
+    {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) :
+    ∀ᶠ t in 𝓝[>] t₀, DifferentiableAt ℝ γ t :=
+  h.eventually_differentiableAt ht₀ self_notMem_Ioi
+
+/-- Eventual differentiability from the left at an interior parameter. -/
+theorem IsPiecewiseC1On.eventually_differentiableAt_left (h : IsPiecewiseC1On γ a b)
+    {t₀ : ℝ} (ht₀ : t₀ ∈ Ioo (min a b) (max a b)) :
+    ∀ᶠ t in 𝓝[<] t₀, DifferentiableAt ℝ γ t :=
+  h.eventually_differentiableAt ht₀ self_notMem_Iio
+
+/-- The derivative of a curve that is `C¹` on `[c, d]` is interval-integrable on `c..d`: the
+within-interval derivative is continuous on the compact piece, and agrees with `deriv` on the
+interior, hence almost everywhere. -/
+private theorem intervalIntegrable_deriv_of_contDiffOn {c d : ℝ} (hcd : c ≤ d)
+    (hC1 : ContDiffOn ℝ 1 γ (Icc c d)) :
+    IntervalIntegrable (fun t ↦ deriv γ t) volume c d := by
+  rcases eq_or_lt_of_le hcd with rfl | hlt
+  · exact IntervalIntegrable.refl
+  have hdw : ContinuousOn (derivWithin γ (Icc c d)) (Icc c d) :=
+    hC1.continuousOn_derivWithin (uniqueDiffOn_Icc hlt) le_rfl
+  have hint : IntervalIntegrable (derivWithin γ (Icc c d)) volume c d :=
+    (hdw.mono (uIcc_of_le hcd).le).intervalIntegrable
+  rw [intervalIntegrable_iff] at hint ⊢
+  refine hint.congr ?_
+  rw [uIoc_of_le hcd, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
+  filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
+  exact derivWithin_of_mem_nhds (Icc_mem_nhds hx.1 hx.2)
+
+/-- Gluing step for `IsPiecewiseC1On.intervalIntegrable_deriv`: interval-integrability of the
+derivative on any subinterval `[c, d] ⊆ [[a, b]]`, by induction on the number of breakpoints
+strictly inside `(c, d)`, splitting off the largest one. -/
+private theorem intervalIntegrable_deriv_aux {p : Finset ℝ}
+    (hC1 : ∀ c d : ℝ, Icc c d ⊆ uIcc a b → Disjoint (↑p : Set ℝ) (Ioo c d) →
+      ContDiffOn ℝ 1 γ (Icc c d)) :
+    ∀ n (c d : ℝ), (p.filter (· ∈ Ioo c d)).card ≤ n → c ≤ d → Icc c d ⊆ uIcc a b →
+      IntervalIntegrable (fun t ↦ deriv γ t) volume c d := by
+  have hdisj : ∀ {c d : ℝ}, p.filter (· ∈ Ioo c d) = ∅ → Disjoint (↑p : Set ℝ) (Ioo c d) :=
+    fun he => Set.disjoint_left.mpr fun x hxp hx =>
+      Finset.notMem_empty x (he ▸ Finset.mem_filter.mpr ⟨Finset.mem_coe.mp hxp, hx⟩)
+  intro n
+  induction n with
+  | zero =>
+    intro c d hcard hcd hsub
+    have he : p.filter (· ∈ Ioo c d) = ∅ := Finset.card_eq_zero.mp (Nat.le_zero.mp hcard)
+    exact intervalIntegrable_deriv_of_contDiffOn hcd (hC1 c d hsub (hdisj he))
+  | succ n ih =>
+    intro c d hcard hcd hsub
+    rcases (p.filter (· ∈ Ioo c d)).eq_empty_or_nonempty with he | hne
+    · exact intervalIntegrable_deriv_of_contDiffOn hcd (hC1 c d hsub (hdisj he))
+    set m := (p.filter (· ∈ Ioo c d)).max' hne with hm_def
+    obtain ⟨hmp, hm⟩ := Finset.mem_filter.mp ((p.filter (· ∈ Ioo c d)).max'_mem hne)
+    have hssub : p.filter (· ∈ Ioo c m) ⊂ p.filter (· ∈ Ioo c d) :=
+      (Finset.ssubset_iff_of_subset (Finset.monotone_filter_right _ fun x _ hx =>
+          ⟨hx.1, hx.2.trans hm.2⟩)).mpr
+        ⟨m, Finset.mem_filter.mpr ⟨hmp, hm⟩, fun hmem =>
+          (Finset.mem_filter.mp hmem).2.2.false⟩
+    have h₁ : IntervalIntegrable (fun t ↦ deriv γ t) volume c m :=
+      ih c m (Nat.le_of_lt_succ ((Finset.card_lt_card hssub).trans_le hcard)) hm.1.le
+        ((Icc_subset_Icc le_rfl hm.2.le).trans hsub)
+    have h₂ : IntervalIntegrable (fun t ↦ deriv γ t) volume m d := by
+      refine intervalIntegrable_deriv_of_contDiffOn hm.2.le
+        (hC1 m d ((Icc_subset_Icc hm.1.le le_rfl).trans hsub) (Set.disjoint_left.mpr ?_))
+      intro x hxp hx
+      exact absurd ((p.filter (· ∈ Ioo c d)).le_max' x
+          (Finset.mem_filter.mpr ⟨Finset.mem_coe.mp hxp, hm.1.trans hx.1, hx.2⟩))
+        (not_le.mpr hx.1)
+    exact h₁.trans h₂
+
+/-- **Interval-integrability of the derivative.** The derivative of a piecewise-`C¹` curve is
+interval-integrable on `a..b`: on each piece the within-derivative is continuous on a compact
+interval and agrees with `deriv` almost everywhere, and the pieces glue across the finitely many
+breakpoints. This discharges the `hderiv_int` hypothesis of the raw contour-integral lemmas. -/
+theorem IsPiecewiseC1On.intervalIntegrable_deriv (h : IsPiecewiseC1On γ a b) :
+    IntervalIntegrable (fun t ↦ deriv γ t) volume a b := by
+  obtain ⟨p, -, hC1⟩ := h.exists_breakpoints
+  have key := intervalIntegrable_deriv_aux hC1 (p.filter (· ∈ Ioo (min a b) (max a b))).card
+    (min a b) (max a b) le_rfl min_le_max Icc_min_max.subset
+  rcases le_total a b with hab | hab
+  · simpa [min_eq_left hab, max_eq_right hab] using key
+  · have key' : IntervalIntegrable (fun t ↦ deriv γ t) volume b a := by
+      simpa [min_eq_right hab, max_eq_left hab] using key
+    exact key'.symm
 
 end TauCeti.Contour
