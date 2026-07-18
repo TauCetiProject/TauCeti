@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.Semigroups.Generator
+public import TauCeti.Analysis.Semigroups.Generator.Basic
 import Mathlib.Analysis.Calculus.Deriv.Slope
 
 /-!
@@ -55,6 +55,26 @@ theorem realOperator_derivWithin_zero (S : StronglyContinuousSemigroup X)
     derivWithin (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici 0) 0 =
       S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩ :=
   (S.realOperator_hasDerivWithinAt_zero x).derivWithin (uniqueDiffWithinAt_Ici 0)
+
+/-- The orbit has right derivative `y` at zero exactly when its initial vector belongs to the
+generator domain and the generator value is `y`. -/
+theorem realOperator_hasDerivWithinAt_zero_iff (S : StronglyContinuousSemigroup X)
+    (x y : X) :
+    HasDerivWithinAt (fun s : ℝ => S.realOperator s x) y (Set.Ici 0) 0 ↔
+      ∃ hx : x ∈ S.domain,
+        S.generator ⟨x, by rw [S.generator_domain]; exact hx⟩ = y := by
+  constructor
+  · intro h
+    rw [hasDerivWithinAt_iff_tendsto_slope] at h
+    unfold slope at h
+    have ht : Filter.Tendsto (fun t => (1 / t) • (S.realOperator t x - x))
+        (nhdsWithin 0 (Set.Ioi 0)) (nhds y) := by
+      simpa [S.realOperator_zero_apply] using h
+    have hx : x ∈ S.domain := (S.mem_domain_iff_tendsto x).2 ⟨y, ht⟩
+    exact ⟨hx, S.generator_eq_of_tendsto hx ht⟩
+  · rintro ⟨hx, hxy⟩
+    rw [← hxy]
+    exact S.realOperator_hasDerivWithinAt_zero ⟨x, hx⟩
 
 /-- A vector belongs to the generator domain exactly when its orbit is right-differentiable
 at time zero. -/

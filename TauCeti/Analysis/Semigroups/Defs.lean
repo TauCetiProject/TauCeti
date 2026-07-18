@@ -6,8 +6,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Resolvent
 public import TauCeti.Analysis.Semigroups.BoundedGenerator
-public import TauCeti.Analysis.Semigroups.OrbitDerivative
-public import TauCeti.Analysis.Semigroups.Generator.Invariance
+public import TauCeti.Analysis.Semigroups.Generator
 
 /-!
 # Strongly continuous semigroups
