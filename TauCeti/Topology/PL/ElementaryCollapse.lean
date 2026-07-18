@@ -117,12 +117,10 @@ theorem eraseFreePair_le {σ τ : Finset ι} (h : IsFreePair K σ τ) :
   intro ω hω
   exact (mem_eraseFreePair (K := K) h).mp hω |>.1
 
-@[simp]
 theorem lower_not_mem_eraseFreePair {σ τ : Finset ι} (h : IsFreePair K σ τ) :
     σ ∉ eraseFreePair K h := by
   simp
 
-@[simp]
 theorem upper_not_mem_eraseFreePair {σ τ : Finset ι} (h : IsFreePair K σ τ) :
     τ ∉ eraseFreePair K h := by
   simp
