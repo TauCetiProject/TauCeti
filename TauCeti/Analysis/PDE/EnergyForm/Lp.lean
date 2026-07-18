@@ -146,7 +146,6 @@ theorem energyFormLp_one_zero_mass_comm (μ : Measure X) (c : ℝ)
   energyFormLp_zero_drift_comm_of_isSymm isSymm_one μ c U V
 
 /-- The shifted-Laplacian `L²` energy form is equal to its flip. -/
-@[simp]
 theorem energyFormLp_one_zero_mass_flip_eq (μ : Measure X) (c : ℝ) :
     (energyFormLp μ (1 : Matrix n n ℝ) 0 c).flip =
       energyFormLp μ (1 : Matrix n n ℝ) 0 c :=
