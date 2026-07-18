@@ -40,7 +40,7 @@ complex differentiable everywhere, Mathlib's `Complex.hasSum_taylorSeries_of_ent
 its Taylor series about `0` at every point, which is exactly the summability statement of the
 generating function at an arbitrary complex `t`.
 
-The primary statement is the complex `HasSum` form `TauCeti.hermite_hasSum_generating_function`,
+The primary statement is the complex `HasSum` form `TauCeti.hasSum_hermite_generating_function`,
 which is where the analytic content actually lives; the real `tsum` form
 `TauCeti.hermite_generating_function` (the roadmap target A1) follows from it by casting `ℝ → ℂ`.
 -/
@@ -103,7 +103,7 @@ For all complex `x` and `t`, the family `Hₙ(x) · tⁿ / n!` is summable with 
 This is the analytic heart of the identity: it carries the summability that the `tsum` form
 `hermite_generating_function` discards, and it holds over all of `ℂ` (the real case is a
 specialization by casting). -/
-theorem hermite_hasSum_generating_function (x t : ℂ) :
+theorem hasSum_hermite_generating_function (x t : ℂ) :
     HasSum (fun n : ℕ => aeval x (hermite n) * t ^ n / (n.factorial : ℂ))
       (Complex.exp (x * t - t ^ 2 / 2)) := by
   -- The entire function `f z = exp (x·z - z²/2)` on the complex plane.
@@ -135,7 +135,7 @@ theorem hermite_hasSum_generating_function (x t : ℂ) :
 and `t`,
 `∑' n, Hₙ(x) · tⁿ / n! = exp (x · t - t² / 2)`,
 where `Hₙ = Polynomial.hermite n`. This is target **A1** of the `OrthogonalL2Bases` roadmap; it is
-the real specialization of `hermite_hasSum_generating_function`. -/
+the real specialization of `hasSum_hermite_generating_function`. -/
 theorem hermite_generating_function (x t : ℝ) :
     ∑' n : ℕ, aeval x (hermite n) * t ^ n / (n.factorial : ℝ)
       = Real.exp (x * t - t ^ 2 / 2) := by
@@ -164,7 +164,7 @@ theorem hermite_generating_function (x t : ℝ) :
       push_cast
       ring
     simp only [hterm, hexp]
-    exact hermite_hasSum_generating_function (x : ℂ) (t : ℂ)
+    exact hasSum_hermite_generating_function (x : ℂ) (t : ℂ)
   exact hsum.tsum_eq
 
 end TauCeti
