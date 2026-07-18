@@ -6,6 +6,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Resolvent
 public import TauCeti.Analysis.Semigroups.BoundedGenerator
+public import TauCeti.Analysis.Semigroups.Generator.Invariance
 
 /-!
 # Strongly continuous semigroups
@@ -17,4 +18,3 @@ Laplace-transform resolvent API.
 Ported and adapted (Apache 2.0) from `mrdouglasny/hille-yosida`; references include
 Engel--Nagel, Linares, Pazy, Hille, and Yosida.
 -/
-
