@@ -181,8 +181,8 @@ def run_pr(repo: str, pr: int, apply: bool) -> int:
 
 
 def run_tree_dry_run() -> int:
-    """Treat every existing file as freshly added: the whole-tree false-positive
-    surface, checked in as a reviewable snapshot (regenerate with this flag)."""
+    """Treat every existing file as freshly added: the whole-tree candidate
+    surface, for ad hoc audits of the heuristic against the current tree."""
     tree = _local_tree()
     n = 0
     for f in sorted(tree):
