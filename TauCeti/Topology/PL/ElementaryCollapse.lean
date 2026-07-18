@@ -16,8 +16,8 @@ collapse track in layer 11 of the geometric-topology roadmap.
 
 Following Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 3, the pair
 `(σ, τ)` is free when `σ` is a proper face of `τ` and every face containing `σ` is either `σ` or
-`τ`.  The usual codimension-one condition is recorded separately; uniqueness already suffices to
-prove that deleting the pair leaves a simplicial complex.
+`τ`.  The usual codimension-one condition is expressed by Mathlib's finset cover relation;
+uniqueness already suffices to prove that deleting the pair leaves a simplicial complex.
 
 `PreAbstractSimplicialComplex` is intentional here.  Mathlib's `AbstractSimplicialComplex ι`
 contains every singleton of the fixed ambient vertex type `ι`, so deleting a free vertex would
@@ -68,17 +68,6 @@ theorem upper_maximal (h : IsFreePair K σ τ) {ω : Finset ι} (hω : ω ∈ K)
   · exact (h.lower_ssubset_upper.not_subset hτω).elim
   · exact h_eq
 
-/-- A free pair in which the upper face has one additional vertex is a classical elementary
-collapse pair. -/
-def IsCodimensionOne (_h : IsFreePair K σ τ) : Prop :=
-  τ.card = σ.card + 1
-
-/-- A codimension-one free pair has a unique vertex in its upper-minus-lower difference. -/
-theorem card_sdiff_eq_one [DecidableEq ι] (h : IsFreePair K σ τ) (hcodim : h.IsCodimensionOne) :
-    (τ \ σ).card = 1 := by
-  rw [Finset.card_sdiff_of_subset h.lower_ssubset_upper.subset, hcodim]
-  omega
-
 end IsFreePair
 
 theorem mem_deletion_of_isFreePair {σ τ ω : Finset ι} (h : IsFreePair K σ τ) :
@@ -95,7 +84,7 @@ theorem mem_deletion_of_isFreePair {σ τ ω : Finset ι} (h : IsFreePair K σ �
 /-- One complex elementarily collapses to another when the latter is obtained by deleting a
 codimension-one free pair. -/
 def ElementaryCollapsesTo (L : _root_.PreAbstractSimplicialComplex ι) : Prop :=
-  ∃ (σ τ : Finset ι) (h : IsFreePair K σ τ), h.IsCodimensionOne ∧ L = deletion K σ
+  ∃ (σ τ : Finset ι) (_h : IsFreePair K σ τ), σ ⋖ τ ∧ L = deletion K σ
 
 namespace ElementaryCollapsesTo
 
@@ -117,7 +106,7 @@ theorem lt (h : ElementaryCollapsesTo K L) : L < K := by
 /-- Membership in the result of an elementary collapse is membership in the original complex
 away from the selected free pair. -/
 theorem exists_pair (h : ElementaryCollapsesTo K L) :
-    ∃ (σ τ : Finset ι) (hfree : IsFreePair K σ τ), hfree.IsCodimensionOne ∧
+    ∃ (σ τ : Finset ι) (_hfree : IsFreePair K σ τ), σ ⋖ τ ∧
       ∀ ω, ω ∈ L ↔ ω ∈ K ∧ ω ≠ σ ∧ ω ≠ τ := by
   obtain ⟨σ, τ, hfree, hcodim, rfl⟩ := h
   exact ⟨σ, τ, hfree, hcodim, fun ω => by
