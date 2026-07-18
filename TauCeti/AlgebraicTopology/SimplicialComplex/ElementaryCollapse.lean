@@ -57,10 +57,6 @@ namespace IsFreePair
 
 variable {K} {σ τ : Finset ι}
 
-/-- The two members of a free pair are distinct. -/
-theorem lower_ne_upper (h : IsFreePair K σ τ) : σ ≠ τ :=
-  h.lower_ssubset_upper.ne
-
 /-- The upper face of a free pair is maximal in the complex. -/
 theorem upper_maximal (h : IsFreePair K σ τ) {ω : Finset ι} (hω : ω ∈ K) (hτω : τ ⊆ ω) :
     ω = τ := by
@@ -97,12 +93,6 @@ theorem mem_deletion_of_isFreePair {σ τ ω : Finset ι} (h : IsFreePair K σ �
 free pair. -/
 def ElementaryCollapsesTo (L : _root_.PreAbstractSimplicialComplex ι) : Prop :=
   ∃ (σ τ : Finset ι), IsFreePair K σ τ ∧ L = deletion K σ
-
-/-- Characterization of an elementary collapse by its free pair. -/
-theorem elementaryCollapsesTo_iff {L : _root_.PreAbstractSimplicialComplex ι} :
-    ElementaryCollapsesTo K L ↔
-      ∃ (σ τ : Finset ι), IsFreePair K σ τ ∧ L = deletion K σ :=
-  Iff.rfl
 
 namespace ElementaryCollapsesTo
 
