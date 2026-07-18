@@ -40,6 +40,33 @@ open InnerProductSpace Laplacian Topology RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
+/-- The `ε → 0` limit of a perturbation estimate: if `a ≤ m + ε * C` for every `ε > 0`, with a
+nonnegative constant `C`, then `a ≤ m`. This packages the endgame of the perturbation arguments in
+the weak maximum principles. -/
+theorem le_of_forall_pos_mul_le {a m C : ℝ} (hC : 0 ≤ C) (h : ∀ ε : ℝ, 0 < ε → a ≤ m + ε * C) :
+    a ≤ m := by
+  rcases eq_or_lt_of_le hC with hC0 | hCpos
+  · have := h 1 one_pos
+    rw [← hC0] at this
+    simpa using this
+  · refine le_of_forall_pos_le_add fun δ hδ => ?_
+    have hk := h (δ / C) (by positivity)
+    have : δ / C * C = δ := by field_simp
+    linarith
+
+/-- The Laplacian of the perturbation `f + ε‖·‖²` at a point where `f` is `C²`: it exceeds `Δ f` by
+the contribution `ε * (2 * dim E)` of the strictly convex term `ε‖·‖²`. This is the computation the
+bare-Laplacian and the `-Δ + c` weak maximum principles both run on the perturbed function. -/
+theorem laplacian_add_const_smul_norm_sq {f : E → ℝ} {x : E} (ε : ℝ) (hf : ContDiffAt ℝ 2 f x) :
+    Δ (fun y : E => f y + ε • ‖y‖ ^ 2) x = Δ f x + ε * (2 * (Module.finrank ℝ E : ℝ)) := by
+  have hεsq : ContDiffAt ℝ 2 (fun z : E => ε • ‖z‖ ^ 2) x :=
+    ((contDiff_norm_sq ℝ).contDiffAt).const_smul ε
+  have hadd : Δ (fun y : E => f y + ε • ‖y‖ ^ 2) x
+      = Δ f x + Δ (fun z : E => ε • ‖z‖ ^ 2) x := hf.laplacian_add hεsq
+  have hsmul : Δ (fun z : E => ε • ‖z‖ ^ 2) x = ε • Δ (fun z : E => ‖z‖ ^ 2) x :=
+    laplacian_smul ε (contDiff_norm_sq ℝ).contDiffAt
+  rw [hadd, hsmul, laplacian_norm_sq, smul_eq_mul]
+
 section Nontrivial
 
 variable [Nontrivial E]
@@ -69,14 +96,7 @@ theorem le_of_laplacian_nonneg_le_frontier {K : Set E} (hK : IsCompact K) {f : E
       fun y hy => (hcd hy).add (hεsq y)
     have hglap : ∀ ⦃y⦄, y ∈ interior K → 0 < Δ (fun y : E => f y + ε • ‖y‖ ^ 2) y := by
       intro y hy
-      have hadd : Δ (fun y : E => f y + ε • ‖y‖ ^ 2) y
-          = Δ f y + Δ (fun z : E => ε • ‖z‖ ^ 2) y := (hcd hy).laplacian_add (hεsq y)
-      have hsmul : Δ (fun z : E => ε • ‖z‖ ^ 2) y = ε • Δ (fun z : E => ‖z‖ ^ 2) y :=
-        laplacian_smul ε (contDiff_norm_sq ℝ).contDiffAt
-      have hΔ : Δ (fun y : E => f y + ε • ‖y‖ ^ 2) y
-          = Δ f y + ε * (2 * (Module.finrank ℝ E : ℝ)) := by
-        rw [hadd, hsmul, laplacian_norm_sq, smul_eq_mul]
-      rw [hΔ]
+      rw [laplacian_add_const_smul_norm_sq ε (hcd hy)]
       have hpos : 0 < ε * (2 * (Module.finrank ℝ E : ℝ)) := mul_pos hε (mul_pos two_pos hfrpos)
       linarith [hlap hy]
     -- Strict boundary maximum principle applied to the perturbed function.
@@ -90,14 +110,7 @@ theorem le_of_laplacian_nonneg_le_frontier {K : Set E} (hK : IsCompact K) {f : E
     have := mul_nonneg hε.le (sq_nonneg ‖x‖)
     linarith [hbdry hzfr]
   -- Let `ε → 0`.
-  rcases eq_or_lt_of_le hCnonneg with hC0 | hCpos
-  · have := key 1 one_pos
-    rw [← hC0] at this
-    simpa using this
-  · refine le_of_forall_pos_le_add fun δ hδ => ?_
-    have hk := key (δ / C) (by positivity)
-    have : δ / C * C = δ := by field_simp
-    linarith
+  exact le_of_forall_pos_mul_le hCnonneg key
 
 /-- **Weak minimum principle for superharmonic functions.**
 
