@@ -47,7 +47,8 @@ the stabilization factor `W = 𝔽 ⊕ 𝔽` predicted by `GH̃(G) ≅ GĤ(L) �
 ## Main results
 
 * `TauCeti.GridDiagram.fullyBlockedHomology_mk_eq_iff`: two cycles are homologous exactly when
-  their difference is a boundary.
+  their difference is a boundary, and `TauCeti.GridDiagram.fullyBlockedHomology_mk_eq_zero_iff`:
+  a class vanishes exactly when a representing cycle is a boundary.
 * `TauCeti.GridDiagram.natCard_fullyBlockedHomology_of_le_two` and
   `TauCeti.GridDiagram.finrank_fullyBlockedHomology_of_le_two`: the small-grid cardinality
   `2 ^ n!` and dimension `n!`.
@@ -78,6 +79,14 @@ the differential squares to zero (`fullyBlockedBoundaries_le_cycles`). -/
 noncomputable def fullyBlockedBoundariesInCycles : Submodule (ZMod 2) G.fullyBlockedCycles :=
   G.fullyBlockedBoundaries.submoduleOf G.fullyBlockedCycles
 
+/-- A cycle lies in `fullyBlockedBoundariesInCycles` exactly when it is a fully blocked boundary,
+letting membership be established without unfolding `submoduleOf`. -/
+theorem mem_fullyBlockedBoundariesInCycles (x : G.fullyBlockedCycles) :
+    x ∈ G.fullyBlockedBoundariesInCycles ↔
+      (x : GridChain (ZMod 2) n) ∈ G.fullyBlockedBoundaries := by
+  rw [fullyBlockedBoundariesInCycles, Submodule.submoduleOf, Submodule.mem_comap]
+  rfl
+
 /-- The fully blocked grid homology: the cycles of the fully blocked differential modulo the
 boundaries that lie inside them.
 
@@ -97,6 +106,13 @@ theorem fullyBlockedHomology_mk_eq_iff (a b : G.fullyBlockedCycles) :
   rw [Submodule.Quotient.eq, fullyBlockedBoundariesInCycles, Submodule.submoduleOf,
     Submodule.mem_comap]
   simp
+
+/-- A fully blocked homology class is zero exactly when a representing cycle is a boundary,
+letting classes be shown trivial without unfolding `submoduleOf`. -/
+theorem fullyBlockedHomology_mk_eq_zero_iff (a : G.fullyBlockedCycles) :
+    (Submodule.Quotient.mk a : G.fullyBlockedHomology) = 0 ↔
+      (a : GridChain (ZMod 2) n) ∈ G.fullyBlockedBoundaries := by
+  rw [Submodule.Quotient.mk_eq_zero, mem_fullyBlockedBoundariesInCycles]
 
 /-- On grids of size at most two the fully blocked differential vanishes, so the homology is the
 whole chain module: cycles are everything and the only boundary is zero. -/
@@ -121,14 +137,14 @@ theorem finrank_fullyBlockedHomology_of_le_two (hn : n ≤ 2) :
   rw [(G.fullyBlockedHomologyEquivChainOfLeTwo hn).finrank_eq, Module.finrank_finsupp_self,
     GridState.card]
 
-/-- The `2 × 2` unknot grid has a four-element fully blocked homology. -/
+/-- Every `2 × 2` grid has a four-element fully blocked homology. -/
 theorem natCard_fullyBlockedHomology_of_two (G : GridDiagram 2) :
     Nat.card G.fullyBlockedHomology = 4 := by
   rw [G.natCard_fullyBlockedHomology_of_le_two le_rfl]
   decide
 
-/-- The `2 × 2` unknot grid has a two-dimensional fully blocked homology, the rank of the
-stabilization factor `W = 𝔽 ⊕ 𝔽`. -/
+/-- Every `2 × 2` grid has a two-dimensional fully blocked homology, the rank of the
+stabilization factor `W = 𝔽 ⊕ 𝔽` predicted for the unknot. -/
 theorem finrank_fullyBlockedHomology_of_two (G : GridDiagram 2) :
     Module.finrank (ZMod 2) G.fullyBlockedHomology = 2 := by
   rw [G.finrank_fullyBlockedHomology_of_le_two le_rfl]
