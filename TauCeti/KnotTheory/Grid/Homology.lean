@@ -81,6 +81,7 @@ noncomputable def fullyBlockedBoundariesInCycles : Submodule (ZMod 2) G.fullyBlo
 
 /-- A cycle lies in `fullyBlockedBoundariesInCycles` exactly when it is a fully blocked boundary,
 letting membership be established without unfolding `submoduleOf`. -/
+@[simp]
 theorem mem_fullyBlockedBoundariesInCycles (x : G.fullyBlockedCycles) :
     x ∈ G.fullyBlockedBoundariesInCycles ↔
       (x : GridChain (ZMod 2) n) ∈ G.fullyBlockedBoundaries := by
