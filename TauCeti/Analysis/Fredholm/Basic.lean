@@ -71,15 +71,18 @@ structure IsFredholm (T : E →L[𝕜] F) : Prop where
 /-- The **index** of a continuous linear map, `dim ker T − dim coker T`, defined as the index of
 the underlying linear map. For non-Fredholm operators the value is junk, matching the convention of
 `LinearMap.index`. -/
-@[expose] noncomputable def index (T : E →L[𝕜] F) : ℤ := (T : E →ₗ[𝕜] F).index
+noncomputable def index (T : E →L[𝕜] F) : ℤ := (T : E →ₗ[𝕜] F).index
 
-lemma index_def (T : E →L[𝕜] F) : index T = (T : E →ₗ[𝕜] F).index := rfl
+/-- The Fredholm index unfolds to the algebraic `LinearMap.index` of the underlying linear map.
+Internal bridge to the reused Mathlib API; the public characteristic equation is
+`index_eq_finrank_sub`. -/
+private lemma index_def (T : E →L[𝕜] F) : index T = (T : E →ₗ[𝕜] F).index := rfl
 
 /-- The index is `dim ker T − dim coker T`. -/
 lemma index_eq_finrank_sub (T : E →L[𝕜] F) :
     index T = (finrank 𝕜 (LinearMap.ker (T : E →ₗ[𝕜] F)) : ℤ) -
-      finrank 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) :=
-  LinearMap.index_eq_finrank_sub
+      finrank 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) := by
+  rw [index_def]; exact LinearMap.index_eq_finrank_sub
 
 /-- The identity operator has index `0`. -/
 @[simp] lemma index_id : index (ContinuousLinearMap.id 𝕜 E) = 0 := by
