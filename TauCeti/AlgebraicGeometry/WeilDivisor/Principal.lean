@@ -212,6 +212,14 @@ abbrev ClassGroup : Type _ :=
 noncomputable def divisorClass : WeilDivisor X →+ S.ClassGroup :=
   QuotientAddGroup.mk' S.principalSubgroup
 
+/-- The divisor-class map is the canonical additive quotient projection
+`WeilDivisor X → Cl(X)`. This is the definitional equation, exposed so that downstream files can
+rewrite between `divisorClass` and `QuotientAddGroup.mk'`. -/
+lemma divisorClass_eq_mk' (D : WeilDivisor X) :
+    S.divisorClass D = QuotientAddGroup.mk' S.principalSubgroup D := by
+  unfold OrderSystem.divisorClass
+  rfl
+
 lemma divisorClass_surjective : Function.Surjective S.divisorClass :=
   QuotientAddGroup.mk'_surjective S.principalSubgroup
 

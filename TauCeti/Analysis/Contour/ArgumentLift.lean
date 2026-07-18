@@ -34,6 +34,8 @@ API does not expose.
   on `[a, b]`, for a curve continuous there and avoiding `w`, plus a monotone partition witness.
 * `TauCeti.Contour.segRatio` and its evaluation lemmas — the segment-ratio building block used to
   assemble the index integral downstream.
+* `TauCeti.Contour.div_norm_eq_exp_arg_mul_I` — the unit direction of a nonzero complex number
+  in polar form, shared with the sector-resonance bridges.
 
 ## Provenance
 
@@ -276,15 +278,19 @@ private theorem continuousOn_im_log_segRatio {γ : ℝ → ℂ} {a b : ℝ}
   exact (continuousOn_segRatio hγ hsj hsjp1 h_le).clog
     fun t _ ↦ segRatio_mem_slitPlane hρ_pos h_dist_lb h_unif hsj hsjp1 h_le h_mesh t
 
-/-! ### Helper: `exp(I · Im(log z)) = z / ‖z‖` -/
+/-! ### The unit direction in polar form -/
+
+/-- **A nonzero complex number over its norm is the exponential of its argument**:
+`w / ↑‖w‖ = exp(arg w · I)`. -/
+theorem div_norm_eq_exp_arg_mul_I {w : ℂ} (hw : w ≠ 0) :
+    w / (‖w‖ : ℂ) = Complex.exp ((Complex.arg w : ℂ) * Complex.I) := by
+  rw [div_eq_iff (Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr hw)), mul_comm]
+  exact (Complex.norm_mul_exp_arg_mul_I w).symm
 
 /-- For a nonzero complex number `z`, `exp(I · Im(log z)) = z / ↑‖z‖`. -/
 private lemma exp_I_log_im_eq_div_norm {z : ℂ} (hz : z ≠ 0) :
     Complex.exp (Complex.I * ((Complex.log z).im : ℂ)) = z / (‖z‖ : ℂ) := by
-  have hz' : (‖z‖ : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr hz)
-  rw [eq_div_iff hz', Complex.log_im, mul_comm Complex.I (Complex.arg z : ℂ)]
-  conv_rhs => rw [← Complex.norm_mul_exp_arg_mul_I z]
-  ring
+  rw [Complex.log_im, mul_comm, ← div_norm_eq_exp_arg_mul_I hz]
 
 /-! ### Polar form of a product -/
 
