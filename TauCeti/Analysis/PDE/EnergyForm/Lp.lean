@@ -118,13 +118,11 @@ theorem energyFormLp_one_zero_mass_self (μ : Measure X) (c : ℝ)
 theorem energyFormLp_coefficientSymmetricPart_self (μ : Measure X) (A : Matrix n n ℝ)
     (b : EuclideanSpace ℝ n) (c : ℝ)
     (U : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
-    (∫ x, (U x).2 ⬝ᵥ (coefficientSymmetricPart A).mulVec (U x).2 +
-        inner ℝ b (U x).2 * (U x).1 + c * (U x).1 * (U x).1 ∂μ) =
+    energyFormLp μ (coefficientSymmetricPart A) b c U U =
       energyFormLp μ A b c U U := by
-  rw [energyFormLp_apply]
+  rw [energyFormLp_apply, energyFormLp_apply]
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-  simpa only [energyIntegrand_apply, matrixBilinearForm_apply, driftForm_apply, massForm_apply]
-    using energyIntegrand_coefficientSymmetricPart_self A b c (U x)
+  exact energyIntegrand_coefficientSymmetricPart_self A b c (U x)
 
 /-- The symmetric-part zero-drift `L²` energy form is the average of the original form and
 its transpose. -/
@@ -171,6 +169,21 @@ theorem energyFormLp_zero_drift_flip_eq_of_isSymm {A : Matrix n n ℝ} (hA : A.I
     (energyFormLp μ A 0 c).flip = energyFormLp μ A 0 c := by
   ext U V
   exact energyFormLp_zero_drift_comm_of_isSymm hA μ c V U
+
+/-- The symmetric-part zero-drift `L²` energy form is symmetric. -/
+theorem energyFormLp_coefficientSymmetricPart_zero_drift_comm (μ : Measure X)
+    (A : Matrix n n ℝ) (c : ℝ) (U V : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
+    energyFormLp μ (coefficientSymmetricPart A) 0 c U V =
+      energyFormLp μ (coefficientSymmetricPart A) 0 c V U :=
+  energyFormLp_zero_drift_comm_of_isSymm (coefficientSymmetricPart_isSymm A) μ c U V
+
+/-- The symmetric-part zero-drift `L²` energy form is equal to its flip. -/
+@[simp]
+theorem energyFormLp_coefficientSymmetricPart_zero_drift_flip_eq (μ : Measure X)
+    (A : Matrix n n ℝ) (c : ℝ) :
+    (energyFormLp μ (coefficientSymmetricPart A) 0 c).flip =
+      energyFormLp μ (coefficientSymmetricPart A) 0 c :=
+  energyFormLp_zero_drift_flip_eq_of_isSymm (coefficientSymmetricPart_isSymm A) μ c
 
 /-- The shifted-Laplacian `L²` energy form is symmetric. -/
 theorem energyFormLp_one_zero_mass_comm (μ : Measure X) (c : ℝ)
