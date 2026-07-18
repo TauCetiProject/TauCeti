@@ -98,6 +98,11 @@ namespace ElementaryCollapsesTo
 
 variable {K L : _root_.PreAbstractSimplicialComplex ι}
 
+/-- A free pair determines an elementary collapse to its deletion. -/
+theorem of_isFreePair {σ τ : Finset ι} (hfree : IsFreePair K σ τ)
+    (hL : L = deletion K σ) : ElementaryCollapsesTo K L :=
+  ⟨σ, τ, hfree, hL⟩
+
 /-- An elementary collapse produces a subcomplex. -/
 theorem le (h : ElementaryCollapsesTo K L) : L ≤ K := by
   obtain ⟨σ, τ, hfree, rfl⟩ := h
