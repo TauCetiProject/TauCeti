@@ -4,8 +4,8 @@
     python3 scripts/test_structure_nudge.py
 
 Covers the tokenizer spec (acronyms, digits, single letters, lowercase-first
-names) and the pair-rule detector: two files sharing a CamelCase prefix are
-already a directory, in either order (extension added beside an anchor, anchor
+names) and the pair-rule detector: two files sharing a CamelCase prefix should
+be a directory, in either order (extension added beside an anchor, anchor
 added beside extensions, or a second extension). The whole-tree surface lives
 in `structure_nudge_snapshot.txt` (regenerate with `--tree-dry-run`), reviewed
 by humans rather than asserted here, since the tree moves daily.

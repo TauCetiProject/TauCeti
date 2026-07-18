@@ -6,7 +6,7 @@ prefixes of its basename and report, as one advisory PR comment:
 
 * an existing subdirectory the file could join (``Dir/Prefix/`` already exists);
 * any sibling sharing a CamelCase prefix with it, at token boundaries: two files
-  sharing a prefix are already a directory, so ``Dir/Prefix.lean`` plus
+  sharing a prefix should be a directory, so ``Dir/Prefix.lean`` plus
   ``Dir/PrefixBar.lean`` triggers, in either order, as do two extensions. Per
   the placement guidance, the same PR creates ``Dir/Prefix/``, with
   ``Prefix.lean`` becoming ``Prefix/Basic.lean`` (or ``Prefix/Defs.lean`` when
@@ -100,7 +100,7 @@ def render_comment(head_sha: str, findings: dict[str, list[dict]]) -> str:
     lines = [MARKER, f"**Structure nudge** (advisory; analyzed head `{head_sha}`)", ""]
     lines.append(
         "This never blocks anything. It flags added files that belong in a topic "
-        "subdirectory: two files sharing a CamelCase prefix are already a directory.")
+        "subdirectory: two files sharing a CamelCase prefix should be a directory.")
     lines.append("")
     for path, cands in sorted(findings.items()):
         lines.append(f"* `{path}`")
