@@ -29,6 +29,13 @@ namespace TauCeti
 variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
 variable {A : Type*} [TopologicalSpace A]
 
+/-- Mapping a loop class represented by a path is represented by mapping that path. -/
+theorem FundamentalGroup.map_fromPath {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) (base : X)
+    (q : Path base base) :
+    _root_.FundamentalGroup.map f base (_root_.FundamentalGroup.fromPath ⟦q⟧) =
+      _root_.FundamentalGroup.fromPath ⟦q.map f.continuous⟧ := by
+  rfl
+
 /-- If the source fundamental group is subsingleton, the range of any induced map from it is
 trivial. -/
 @[simp]
