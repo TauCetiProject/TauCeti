@@ -83,9 +83,19 @@ theorem realOperator_generator_map (S : StronglyContinuousSemigroup X) {s : ℝ}
       rw [S.generator_domain]
       exact S.realOperator_mem_domain hs x.property⟩ =
       S.realOperator s (S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩) := by
-  apply S.generator_eq_of_tendsto (S.realOperator_mem_domain hs x.property)
-  rw [← Real.coe_toNNReal s hs, S.realOperator_coe]
-  exact S.tendsto_genQuot_apply s.toNNReal (S.generator_tendsto x)
+  have hop : S.realOperator s = S s.toNNReal := by
+    rw [← S.realOperator_coe, Real.coe_toNNReal s hs]
+  calc
+    _ = S.generator ⟨S s.toNNReal x, by
+        rw [S.generator_domain]
+        exact S.map_mem_domain s.toNNReal x.property⟩ := by
+      apply congrArg S.generator
+      apply Subtype.ext
+      exact congrArg (fun f : X →L[ℝ] X => f x) hop
+    _ = S s.toNNReal (S.generator ⟨x, by
+        rw [S.generator_domain]
+        exact x.property⟩) := S.generator_map s.toNNReal x
+    _ = _ := by rw [← hop]
 
 end StronglyContinuousSemigroup
 
