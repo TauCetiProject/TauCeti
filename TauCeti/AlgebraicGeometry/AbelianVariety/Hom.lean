@@ -98,20 +98,20 @@ lemma Hom.toOverHom_mk' {A B : AbelianVariety K} (f : A.toOver ⟶ B.toOver)
         (one_f := one_f) (mul_f := mul_f))
 
 /-- A homomorphism of abelian varieties preserves the unit section. -/
-@[simp, reassoc]
+@[reassoc]
 lemma Hom.one_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     η[A.toOver] ≫ Hom.toOverHom f = η[B.toOver] :=
   IsMonHom.one_hom f.hom.hom.hom.hom
 
 /-- A homomorphism of abelian varieties preserves multiplication. -/
-@[simp, reassoc]
+@[reassoc]
 lemma Hom.mul_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     μ[A.toOver] ≫ Hom.toOverHom f =
       (Hom.toOverHom f ⊗ₘ Hom.toOverHom f) ≫ μ[B.toOver] :=
   IsMonHom.mul_hom f.hom.hom.hom.hom
 
 /-- A homomorphism of abelian varieties preserves inverses. -/
-@[simp, reassoc]
+@[reassoc]
 lemma Hom.inv_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     ι[A.toOver] ≫ Hom.toOverHom f = Hom.toOverHom f ≫ ι[B.toOver] :=
   GrpObj.inv_hom f.hom.hom.hom.hom
@@ -143,7 +143,7 @@ lemma Hom.toSchemeHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C
 
 /-- The underlying scheme morphism of an abelian-variety homomorphism commutes with the structure
 morphisms to `Spec K`. -/
-@[simp, reassoc]
+@[reassoc]
 lemma Hom.toSchemeHom_comp_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     Hom.toSchemeHom f ≫ B.toOver.hom = A.toOver.hom :=
   (Hom.toOverHom f).w
