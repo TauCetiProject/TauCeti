@@ -27,7 +27,6 @@ pre-complex type.
 ## Main definitions
 
 * `PreAbstractSimplicialComplex.IsFreePair`: a face and its unique proper coface.
-* `PreAbstractSimplicialComplex.eraseFreePair`: the complex obtained by deleting a free pair.
 * `PreAbstractSimplicialComplex.ElementaryCollapsesTo`: the relation of one elementary collapse.
 -/
 
@@ -82,15 +81,10 @@ theorem card_sdiff_eq_one [DecidableEq ι] (h : IsFreePair K σ τ) (hcodim : h.
 
 end IsFreePair
 
-/-- Delete the two faces in a free pair. -/
-def eraseFreePair {σ τ : Finset ι} (_h : IsFreePair K σ τ) :
-    _root_.PreAbstractSimplicialComplex ι :=
-  deletion K σ
-
 @[simp]
-theorem mem_eraseFreePair {σ τ ω : Finset ι} (h : IsFreePair K σ τ) :
-    ω ∈ eraseFreePair K h ↔ ω ∈ K ∧ ω ≠ σ ∧ ω ≠ τ := by
-  rw [eraseFreePair, mem_deletion]
+theorem mem_deletion_of_isFreePair {σ τ ω : Finset ι} (h : IsFreePair K σ τ) :
+    ω ∈ deletion K σ ↔ ω ∈ K ∧ ω ≠ σ ∧ ω ≠ τ := by
+  rw [mem_deletion]
   constructor
   · rintro ⟨hω, hσ⟩
     exact ⟨hω, fun hωσ => hσ hωσ.ge, fun hωτ => hσ (hωτ ▸ h.lower_ssubset_upper.subset)⟩
@@ -100,23 +94,10 @@ theorem mem_eraseFreePair {σ τ ω : Finset ι} (h : IsFreePair K σ τ) :
     · exact hωσ rfl
     · exact hωτ rfl
 
-/-- Deleting a free pair only removes faces. -/
-theorem eraseFreePair_le {σ τ : Finset ι} (h : IsFreePair K σ τ) :
-    eraseFreePair K h ≤ K :=
-  deletion_le
-
-theorem lower_not_mem_eraseFreePair {σ τ : Finset ι} (h : IsFreePair K σ τ) :
-    σ ∉ eraseFreePair K h := by
-  simp
-
-theorem upper_not_mem_eraseFreePair {σ τ : Finset ι} (h : IsFreePair K σ τ) :
-    τ ∉ eraseFreePair K h := by
-  simp
-
 /-- One complex elementarily collapses to another when the latter is obtained by deleting a
 codimension-one free pair. -/
 def ElementaryCollapsesTo (L : _root_.PreAbstractSimplicialComplex ι) : Prop :=
-  ∃ (σ τ : Finset ι) (h : IsFreePair K σ τ), h.IsCodimensionOne ∧ L = eraseFreePair K h
+  ∃ (σ τ : Finset ι) (h : IsFreePair K σ τ), h.IsCodimensionOne ∧ L = deletion K σ
 
 namespace ElementaryCollapsesTo
 
@@ -125,15 +106,15 @@ variable {K L : _root_.PreAbstractSimplicialComplex ι}
 /-- An elementary collapse produces a subcomplex. -/
 theorem le (h : ElementaryCollapsesTo K L) : L ≤ K := by
   obtain ⟨σ, τ, hfree, _, rfl⟩ := h
-  exact eraseFreePair_le K hfree
+  exact deletion_le
 
 /-- An elementary collapse is strict: its lower free face is lost. -/
 theorem lt (h : ElementaryCollapsesTo K L) : L < K := by
   refine lt_of_le_of_ne h.le ?_
   obtain ⟨σ, τ, hfree, _, rfl⟩ := h
   intro h_eq
-  have : σ ∈ eraseFreePair K hfree := h_eq.symm ▸ hfree.lower_mem
-  exact (lower_not_mem_eraseFreePair K hfree) this
+  have : σ ∈ deletion K σ := h_eq.symm ▸ hfree.lower_mem
+  exact (mem_deletion.mp this).2 Finset.Subset.rfl
 
 /-- Membership in the result of an elementary collapse is membership in the original complex
 away from the selected free pair. -/
@@ -141,7 +122,7 @@ theorem exists_pair (h : ElementaryCollapsesTo K L) :
     ∃ (σ τ : Finset ι) (hfree : IsFreePair K σ τ), hfree.IsCodimensionOne ∧
       ∀ ω, ω ∈ L ↔ ω ∈ K ∧ ω ≠ σ ∧ ω ≠ τ := by
   obtain ⟨σ, τ, hfree, hcodim, rfl⟩ := h
-  exact ⟨σ, τ, hfree, hcodim, fun ω => mem_eraseFreePair K hfree⟩
+  exact ⟨σ, τ, hfree, hcodim, fun ω => mem_deletion_of_isFreePair K hfree⟩
 
 end ElementaryCollapsesTo
 
