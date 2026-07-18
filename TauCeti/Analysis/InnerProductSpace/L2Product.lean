@@ -11,7 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Prod
 /-!
 # Pointwise products of `L²` functions on a product measure
 
-For an `L²(μ)` function `f` and an `L²(ν)` function `g` on σ-finite measures, the pointwise
+For an `L²(μ)` function `f` and an `L²(ν)` function `g` on s-finite measures, the pointwise
 product `(x, y) ↦ f x * g y` belongs to `L²(μ ⊗ ν)`, and the assignment factors the inner product
 as a tensor:
 `⟪f₁ ⊗ g₁, f₂ ⊗ g₂⟫ = ⟪f₁, f₂⟫ * ⟪g₁, g₂⟫`.
