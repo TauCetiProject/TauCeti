@@ -7,7 +7,7 @@ public import TauCeti.Probability.Exchangeability.PathSpace.ProcessShift
 import Mathlib.MeasureTheory.MeasurableSpace.Prod
 public import Mathlib.Probability.Independence.Conditional
 import TauCeti.Probability.Independence.Conditional
-import TauCeti.Probability.Process.Tail
+import TauCeti.Probability.Process.Tail.Basic
 
 /-!
 # Prefix-deletion conditional-expectation identity (Kallenberg 1.3 input)

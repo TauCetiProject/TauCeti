@@ -6,7 +6,7 @@ module
 
 public import Mathlib.RingTheory.Coalgebra.GroupLike
 public import Mathlib.RingTheory.Finiteness.Basic
-public import TauCeti.Algebra.Coalgebra.Subcoalgebra
+public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Basic
 
 /-!
 # Subcoalgebras spanned by group-like elements

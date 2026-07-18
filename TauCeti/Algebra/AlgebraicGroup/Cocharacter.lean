@@ -4,14 +4,14 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupFunctoriality
+public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Functoriality
 
 /-!
 # Characters, cocharacters, and their pairing for the diagonalizable group
 
-`TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup` computes the functor of points of the
+`TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Basic` computes the functor of points of the
 diagonalizable group `D(M) = Spec R[M]`, and
-`TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupFunctoriality` records its contravariant
+`TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Functoriality` records its contravariant
 functoriality `DiagonalizableGroup.pointsMap`. This file uses that functoriality to build the
 **character lattice `X*(D(M))`, the cocharacter lattice `X_*(D(M))`, and their pairing**
 into the endomorphism lattice of the multiplicative group, all realized on the functor of points.
@@ -51,7 +51,7 @@ perfect pairing: the input to root data").
 ## References
 
 The contravariant points functoriality `DiagonalizableGroup.pointsMap` is Tau Ceti's
-`TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroupFunctoriality`. The one-generator universal
+`TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Functoriality`. The one-generator universal
 property `zpowersHom : α ≃ (Multiplicative ℤ →* α)` and the induced `MonoidHom.apply_mint` are
 Mathlib's (`Mathlib.Data.Int.Cast.Lemmas`). This realizes the character/cocharacter pairing of
 the Tau Ceti reductive-groups roadmap (Layer 4).

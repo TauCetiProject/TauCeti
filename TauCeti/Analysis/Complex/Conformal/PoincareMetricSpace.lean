@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.HyperbolicTriangle
-public import TauCeti.Analysis.Complex.Conformal.UnitDiscAutomorphism
+public import TauCeti.Analysis.Complex.Conformal.Hyperbolic.Triangle
+public import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Basic
 public import Mathlib.Topology.MetricSpace.Isometry
 
 /-!

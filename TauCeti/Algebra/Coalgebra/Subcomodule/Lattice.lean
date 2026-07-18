@@ -6,7 +6,7 @@ module
 
 public import Mathlib.LinearAlgebra.DFinsupp
 public import Mathlib.RingTheory.Finiteness.Basic
-public import TauCeti.Algebra.Coalgebra.Subcomodule
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
 /-!
 # Joins of subcomodules

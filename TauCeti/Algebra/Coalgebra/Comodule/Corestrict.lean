@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.RingTheory.Coalgebra.Hom
-public import TauCeti.Algebra.Coalgebra.ComoduleCat
+public import TauCeti.Algebra.Coalgebra.Comodule.Cat
 
 /-!
 # Corestriction of comodules along a coalgebra morphism

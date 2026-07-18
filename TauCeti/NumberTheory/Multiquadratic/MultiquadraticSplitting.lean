@@ -8,7 +8,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 public import Mathlib.LinearAlgebra.Dimension.DivisionRing
 public import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
-public import TauCeti.NumberTheory.Multiquadratic.Galois
+public import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
 public import TauCeti.NumberTheory.NumberField.SplitsCompletely
 
 /-!

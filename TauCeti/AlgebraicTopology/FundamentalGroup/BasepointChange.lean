@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.FundamentalGroup
-public import TauCeti.Algebra.Group.NormalizerQuotientConjugation
+public import TauCeti.Algebra.Group.NormalizerQuotient.Conjugation
 
 /-!
 # Basepoint change for fundamental-group subgroups

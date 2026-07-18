@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Data.Finsupp.Indicator
-public import TauCeti.AlgebraicGeometry.WeilDivisor
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
 
 /-!
 # Finite sums of point divisors

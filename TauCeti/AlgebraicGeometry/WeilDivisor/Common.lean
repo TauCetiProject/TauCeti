@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor.FixedDegreeSubtraction
+public import TauCeti.AlgebraicGeometry.WeilDivisor.FixedDegree.Subtraction
 
 /-!
 # Common parts of fixed-degree effective Weil divisors

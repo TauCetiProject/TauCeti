@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.Complex
 # Trace-form diagonalisation for square-root bases
 
 The effective discriminant bound `|d_K| ≤ |disc b|` (already in
-`TauCeti/NumberTheory/EffectiveBounds/Discriminant.lean`) is only useful once one can
+`TauCeti/NumberTheory/EffectiveBounds/Discriminant/Basic.lean`) is only useful once one can
 *evaluate* `disc b` on a concrete basis. The cheapest bases of a quadratic field are the
 square-root bases `{1, x}` with `x² ∈ K`, and on those the trace form is diagonal when
 `x ∉ K`: the off-diagonal entry `Tr(1 · x) = Tr x` vanishes because a non-base-field

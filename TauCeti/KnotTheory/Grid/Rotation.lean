@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Data.Fin.Rev
-public import TauCeti.KnotTheory.Grid.Diagram
+public import TauCeti.KnotTheory.Grid.Diagram.Basic
 
 /-!
 # The half-turn rotation of grid states and diagrams
@@ -20,8 +20,8 @@ and a grid diagram to a grid diagram.
 
 Only the basic state/diagram operation and its point-set lemmas live here, parallel to where
 `transpose` is developed; the invariance of the `J`-function under coordinate reversal is in
-`TauCeti.KnotTheory.Grid.JFunction`, and the resulting grading invariance is in
-`TauCeti.KnotTheory.Grid.Gradings` and `TauCeti.KnotTheory.Grid.GradingInteger`.
+`TauCeti.KnotTheory.Grid.JFunction.Basic`, and the resulting grading invariance is in
+`TauCeti.KnotTheory.Grid.Gradings` and `TauCeti.KnotTheory.Grid.Grading.Integer`.
 
 ## Main definitions
 

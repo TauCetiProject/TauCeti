@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-import TauCeti.AlgebraicTopology.FundamentalGroup
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import Mathlib.Topology.Homotopy.Lifting
 
 /-!
@@ -39,8 +39,8 @@ separately identifies `H` as a subgroup of the image of `p_*`.
 This builds directly on Junyan Xu's covering-space lifting and monodromy API in
 `Mathlib.Topology.Homotopy.Lifting`. The subgroup lifting criterion is a thin wrapper around
 Mathlib's `IsCoveringMap.existsUnique_continuousMap_lifts_of_range_le`, and uses the
-trivial-source fundamental-group range lemmas from `TauCeti.AlgebraicTopology.FundamentalGroup`.
--/
+trivial-source fundamental-group range lemmas from
+`TauCeti.AlgebraicTopology.FundamentalGroup.Basic`. -/
 
 public section
 

@@ -7,14 +7,14 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
-public import TauCeti.Analysis.Contour.CauchyPrincipalValue
+public import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 public import TauCeti.Analysis.Contour.PwC1ImmersionOn
 import TauCeti.Analysis.Calculus.OneSidedDerivLimit
-import TauCeti.Analysis.Contour.ChordQuotientAsymptotics
-import TauCeti.Analysis.Contour.CrossingFiniteness
-import TauCeti.Analysis.Contour.CrossingPVAggregation
-import TauCeti.Analysis.Contour.CrossingWindows
-import TauCeti.Analysis.Contour.PerWindowCPV
+import TauCeti.Analysis.Contour.Chord.QuotientAsymptotics
+import TauCeti.Analysis.Contour.Crossing.Finiteness
+import TauCeti.Analysis.Contour.Crossing.PVAggregation
+import TauCeti.Analysis.Contour.Crossing.Windows
+import TauCeti.Analysis.Contour.PerWindow.CPV
 import TauCeti.Analysis.Contour.PiecewiseC1On
 
 /-!

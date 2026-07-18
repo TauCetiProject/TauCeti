@@ -12,7 +12,7 @@ block-product factorisation:
   merged path-space shift `(shift α)^[m]` of the process's path.
 
 The `processCons` / `processTail` operations on sequence-valued random variables, together with
-their σ-algebra-contraction lemmas, live in `TauCeti.Probability.Process.Tail`.
+their σ-algebra-contraction lemmas, live in `TauCeti.Probability.Process.Tail.Basic`.
 
 Its exported API is the `@[simp]` coordinate equation `processShift_apply` and the bridges to the
 path shift: `processShift_eq_shift_iterate` (composition) and `map_processShift` (measure level).

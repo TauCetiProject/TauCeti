@@ -8,7 +8,7 @@ public import Mathlib.Data.Real.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
-public import TauCeti.LinearAlgebra.ComplexLinearPart
+public import TauCeti.LinearAlgebra.Complex.LinearPart
 
 /-!
 # Almost complex structures and compatible symplectic forms

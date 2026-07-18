@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.WeilDivisor
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
 public import Mathlib.Algebra.Order.Group.PosPart
 public import Mathlib.Order.Preorder.Finsupp
 
@@ -12,7 +12,7 @@ public import Mathlib.Order.Preorder.Finsupp
 # The order on Weil divisors and the positive/negative part decomposition
 
 This file continues the Jacobian roadmap's Layer A formal Weil divisor API
-(`TauCeti.AlgebraicGeometry.WeilDivisor`) by recording the lattice-ordered-group structure of
+(`TauCeti.AlgebraicGeometry.WeilDivisor.Basic`) by recording the lattice-ordered-group structure of
 formal divisors and the canonical decomposition of a divisor into its effective positive and
 negative parts.
 

@@ -7,7 +7,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 public import TauCeti.AlgebraicTopology.NotSimplyConnected
-public import TauCeti.AlgebraicTopology.UniversalCover.CircleFundamentalGroup
+public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 
 /-!
 # The fundamental group of the complex unit circle is `ℤ`

@@ -5,13 +5,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.GroupTheory.QuotientGroup.Basic
-public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 
 /-!
 # The degree-zero divisor quotient model of abstract `Pic⁰`
 
 This file adds a small Layer A bridge for the Jacobian roadmap.  The file
-`TauCeti.AlgebraicGeometry.WeilDivisor.Principal` defines the abstract divisor class group
+`TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic` defines the abstract divisor class group
 `Cl(X)` of an order system and defines `Pic⁰` as the kernel of the descended weighted degree on
 `Cl(X)`.  Classically, the same group is also described as degree-zero divisors modulo
 principal divisors.  This file identifies those two descriptions.

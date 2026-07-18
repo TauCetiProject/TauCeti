@@ -1,7 +1,7 @@
 module
 
 public import TauCeti.Probability.Exchangeability.FiniteMarginals
-public import TauCeti.Probability.Exchangeability.PathSpace.Law
+public import TauCeti.Probability.Exchangeability.PathSpace.Law.Basic
 
 /-!
 # Contractable laws on path space
@@ -15,7 +15,7 @@ factorization and path-space dynamics.
 This is the contractability analogue of `ExchangeableLaw`. It realizes the Exchangeability
 roadmap's Layer 0 request for the characterization of contractability by strictly increasing
 maps `ℕ → ℕ`, with finite-dimensional marginal consequences. The process-level ↔ path-law
-bridges live in `TauCeti.Probability.Exchangeability.PathSpace.LawBridge`, which imports this
+bridges live in `TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge`, which imports this
 file and `Contractability`; no Mathlib infrastructure is vendored.
 -/
 

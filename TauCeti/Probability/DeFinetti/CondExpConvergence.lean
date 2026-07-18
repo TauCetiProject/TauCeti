@@ -2,7 +2,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.ConditionalExpectation
 public import TauCeti.Probability.Exchangeability.Contractability
-public import TauCeti.Probability.Process.Tail
+public import TauCeti.Probability.Process.Tail.Basic
 
 /-!
 # Conditional law of a contractable coordinate given the tail

@@ -7,13 +7,13 @@ module
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Tactic.FinCases
-public import TauCeti.KnotTheory.Grid.Diagram
+public import TauCeti.KnotTheory.Grid.Diagram.Basic
 
 /-!
 # Cardinality of grid states
 
 This file records the finite size of the generator set for an `n × n` grid complex. A grid state
-is encoded in `TauCeti.KnotTheory.Grid.Diagram` as a permutation graph on the columns, so the
+is encoded in `TauCeti.KnotTheory.Grid.Diagram.Basic` as a permutation graph on the columns, so the
 set of grid states is equivalent to `Equiv.Perm (Fin n)` and has cardinality `n!`.
 
 The statements here are deliberately about the generator set only. They are the counting API
