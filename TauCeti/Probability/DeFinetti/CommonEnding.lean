@@ -1,6 +1,6 @@
 module
 
-public import TauCeti.Probability.Exchangeability.ConditionallyIID
+public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
 
 /-!
 # The rectangle common ending for de Finetti

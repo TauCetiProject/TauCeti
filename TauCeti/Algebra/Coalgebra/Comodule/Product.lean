@@ -6,7 +6,7 @@ module
 
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.TensorProduct.Prod
-public import TauCeti.Algebra.Coalgebra.ComoduleCat
+public import TauCeti.Algebra.Coalgebra.Comodule.Cat
 
 /-!
 # Products of comodules

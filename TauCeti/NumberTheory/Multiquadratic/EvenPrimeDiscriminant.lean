@@ -14,7 +14,7 @@ import Mathlib.Tactic.NormNum.IsSquare
 
 The genus-field layer of the multiquadratic roadmap uses the prime discriminants dividing a
 quadratic discriminant. The odd-prime normalization `p*` is developed in
-`TauCeti.NumberTheory.Multiquadratic.PrimeDiscriminant`; this file records the complementary
+`TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic`; this file records the complementary
 2-adic list:
 
 * `-4`, represented by the squarefree radicand `-1`;

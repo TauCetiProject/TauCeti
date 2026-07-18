@@ -7,7 +7,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Defs
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
-public import TauCeti.Geometry.Symplectic.ComplexModule
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 
 /-!
 # The Hermitian inner product of a compatible pair

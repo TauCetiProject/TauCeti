@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicTopology.FundamentalGroupProduct
-public import TauCeti.AlgebraicTopology.UniversalCover.CircleFundamentalGroup
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Product
+public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 
 /-!
 # The fundamental group of a torus

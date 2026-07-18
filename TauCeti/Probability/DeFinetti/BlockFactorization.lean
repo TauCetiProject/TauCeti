@@ -1,18 +1,18 @@
 module
 
-public import TauCeti.Probability.DeFinetti.DirectingMeasureCoord
+public import TauCeti.Probability.DeFinetti.DirectingMeasure.Coord
 public import TauCeti.Probability.Exchangeability.Cylinder
 public import TauCeti.Probability.Exchangeability.Contractability
-public import TauCeti.Probability.Exchangeability.ConditionallyIID
-public import TauCeti.Probability.DeFinetti.DirectingMeasure
+public import TauCeti.Probability.Exchangeability.ConditionallyIID.Basic
+public import TauCeti.Probability.DeFinetti.DirectingMeasure.Basic
 public import Mathlib.Probability.Independence.Conditional
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 -- Non-public: used only inside proofs — the merged tail factorization
 -- `condExp_blockIndicatorProd_tailProcess_ae_eq_prod`, the path-law transfer and contractability
 -- bridges, and `Tuple.sort` (the injective-selection reduction).
 import TauCeti.Probability.DeFinetti.TailFactorization
-import TauCeti.Probability.Exchangeability.ConditionallyIIDMap
-import TauCeti.Probability.Exchangeability.PathSpace.LawBridge
+import TauCeti.Probability.Exchangeability.ConditionallyIID.Map
+import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
 import Mathlib.Data.Fin.Tuple.Sort
 
 /-!

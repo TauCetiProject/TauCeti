@@ -6,8 +6,8 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import TauCeti.Algebra.Bialgebra.Quotient
-public import TauCeti.Algebra.HopfAlgebra
-public import TauCeti.Algebra.HopfAlgebra.HopfIdeal
+public import TauCeti.Algebra.HopfAlgebra.Basic
+public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 
 /-!
 # Kernels of Hopf algebra morphisms

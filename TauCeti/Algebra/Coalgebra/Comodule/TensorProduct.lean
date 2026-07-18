@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.RingTheory.Bialgebra.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule
+public import TauCeti.Algebra.Coalgebra.Comodule.Basic
 
 /-!
 # The tensor-product coaction map for comodules over a bialgebra

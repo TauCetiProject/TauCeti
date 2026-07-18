@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.Bochner.CharFunPositiveDefinite
+public import TauCeti.Analysis.Bochner.CharFun.PositiveDefinite
 public import TauCeti.Analysis.PositiveDefinite.FourierAtom
 public import TauCeti.Analysis.PositiveDefinite.Pullback
 

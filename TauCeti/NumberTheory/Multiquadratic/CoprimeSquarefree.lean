@@ -19,7 +19,7 @@ multiquadratic field degree `2ⁿ` once its radicands are **square-class indepen
 subset product of them is a square. The genus theory the roadmap targets works with the rational
 field `ℚ(√d₁, …, √dₙ)` for **squarefree integers** `dᵢ`, where the radicands range over composite
 and negative values (`ℚ(√-3, √-7)`, `ℚ(√6, √35)`), not just the distinct primes already handled in
-`TauCeti.NumberTheory.Multiquadratic.PrimeRadicands`.
+`TauCeti.NumberTheory.Multiquadratic.Prime.Radicands`.
 
 This file supplies square-class independence in that setting: a family of **pairwise coprime,
 squarefree, non-unit** integers is square-class independent. The argument is the same one that

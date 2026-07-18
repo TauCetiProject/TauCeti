@@ -6,7 +6,7 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.GroupAction.Transitive
-public import TauCeti.Algebra.Group.NormalizerQuotient
+public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
 public import TauCeti.Data.Setoid.Basic
 
 /-!

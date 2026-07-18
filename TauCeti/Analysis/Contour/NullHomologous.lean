@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.Analysis.Contour.WindingNumber
+public import TauCeti.Analysis.Contour.Winding.Number.Basic
 
 /-!
 # Basic API for null-homologous contours

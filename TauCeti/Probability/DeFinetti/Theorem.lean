@@ -3,7 +3,7 @@ module
 public import TauCeti.Probability.DeFinetti.BlockFactorization
 -- Non-public: used only inside proofs — the Layer-0 bridges from conditional i.i.d. back to
 -- exchangeability and contractability.
-import TauCeti.Probability.Exchangeability.ConditionallyIIDImplications
+import TauCeti.Probability.Exchangeability.ConditionallyIID.Implications
 
 /-!
 # The de Finetti–Ryll-Nardzewski equivalences

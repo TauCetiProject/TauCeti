@@ -6,7 +6,7 @@ module
 
 public import Mathlib.RingTheory.Bialgebra.Convolution
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
-public import TauCeti.Algebra.HopfAlgebra
+public import TauCeti.Algebra.HopfAlgebra.Basic
 
 /-!
 # Convolution groups of algebra homomorphisms out of a Hopf algebra

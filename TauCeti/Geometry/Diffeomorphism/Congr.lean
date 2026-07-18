@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Group
-public import TauCeti.Topology.Algebra.HomeomorphCongr
+public import TauCeti.Topology.Algebra.Homeomorph.Congr
 
 /-!
 # Transporting the self-diffeomorphism group along a diffeomorphism
@@ -40,7 +40,7 @@ for the naturality statement.
   a diffeomorphism `e : M ≃ₘ^n⟮I, J⟯ N`.
 
 The analogous self-homeomorphism-group isomorphism `TauCeti.Homeomorph.homeoCongr`, the target of
-the forgetful naturality below, lives in `TauCeti.Topology.Algebra.HomeomorphCongr`.
+the forgetful naturality below, lives in `TauCeti.Topology.Algebra.Homeomorph.Congr`.
 
 ## Main results
 
