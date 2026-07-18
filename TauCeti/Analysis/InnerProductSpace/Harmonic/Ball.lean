@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Dilation
-public import Mathlib.Analysis.Normed.Affine.AddTorsor
 
 /-!
 # Ball and sphere normalizations for harmonic functions
@@ -116,8 +115,7 @@ theorem preimage_const_add_smul_ball {E : Type*} [SeminormedAddCommGroup E] [Mod
 theorem const_add_smul_mem_ball_unit_iff {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
     [NormSMulClass ℝ E] (y : E) {r : ℝ} (hr : 0 < r) :
     ‖r • y‖ < r ↔ y ∈ Metric.ball 0 1 := by
-  simpa [DilationEquiv.smulTorsor_apply, Real.norm_of_nonneg hr.le] using
-    Set.ext_iff.mp (DilationEquiv.smulTorsor_preimage_ball (c := (0 : E)) hr.ne') y
+  simpa [Real.norm_of_nonneg hr.le] using const_add_smul_mem_ball_iff y hr.ne' 1
 
 /-- Positive-radius affine normalization of membership in a closed ball to the unit closed ball. -/
 @[simp]
