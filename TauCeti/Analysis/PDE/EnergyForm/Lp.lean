@@ -118,10 +118,13 @@ theorem energyFormLp_one_zero_mass_self (μ : Measure X) (c : ℝ)
 theorem energyFormLp_coefficientSymmetricPart_self (μ : Measure X) (A : Matrix n n ℝ)
     (b : EuclideanSpace ℝ n) (c : ℝ)
     (U : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
-    energyFormLp μ (coefficientSymmetricPart A) b c U U = energyFormLp μ A b c U U := by
-  rw [energyFormLp_apply, energyFormLp_apply]
+    (∫ x, (U x).2 ⬝ᵥ (coefficientSymmetricPart A).mulVec (U x).2 +
+        inner ℝ b (U x).2 * (U x).1 + c * (U x).1 * (U x).1 ∂μ) =
+      energyFormLp μ A b c U U := by
+  rw [energyFormLp_apply]
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-  exact energyIntegrand_coefficientSymmetricPart_self A b c (U x)
+  simpa only [energyIntegrand_apply, matrixBilinearForm_apply, driftForm_apply, massForm_apply]
+    using energyIntegrand_coefficientSymmetricPart_self A b c (U x)
 
 /-- The symmetric-part zero-drift `L²` energy form is the average of the original form and
 its transpose. -/
