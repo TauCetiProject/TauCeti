@@ -193,97 +193,11 @@ private theorem endpoint_deformTerminal {u v : X} (γ : BasedPath x₀) (hu : en
   rw [hone]
   simp [δ.extend_one]
 
-end BasedPath
-
-namespace Path
-
-public theorem truncateOfLE_range_subset_preimage {a b : X} (γ : Path a b) {t₀ t₁ : ℝ}
-    (h : t₀ ≤ t₁) {U : Set X} (hU : Set.Icc t₀ t₁ ⊆ γ.extend ⁻¹' U) :
-    Set.range (γ.truncateOfLE h) ⊆ U := by
-  rintro _ ⟨s, rfl⟩
-  dsimp [truncateOfLE, truncate]
-  apply hU
-  constructor
-  · exact le_min (le_max_right _ _) h
-  · exact min_le_right _ _
-
-/-- The family of initial segments of `γ : Path a b`: at parameter `t : I`, the path
-`s ↦ γ.extend (min s t)` from `a` to `γ t` (`initialSegmentFamily_apply`). At `t = 0` this is
-the constant path at `a` (`initialSegmentFamily_zero`); at `t = 1` it is `γ` itself, up to a
-trivial right-endpoint cast (`initialSegmentFamily_one`). The property consumers actually need
-is joint continuity in `(t, s)`, recorded as `continuous_initialSegmentFamily_uncurry` and used
-to build the rung homotopy in `joinedIn_preimage_of_append`. -/
-public noncomputable def initialSegmentFamily {a b : X} (γ : Path a b) (t : I) :
-    Path a (γ t) :=
-  (γ.truncate 0 t).cast (by rw [min_eq_left t.2.1, γ.extend_zero]) (γ.extend_apply t.2).symm
-
-public theorem continuous_initialSegmentFamily_uncurry {a b : X} (γ : Path a b) :
-    Continuous ↿(initialSegmentFamily γ) := by
-  have htrunc : Continuous (fun ts : I × I ↦ γ.truncate 0 ts.1 ts.2 : I × I → X) := by
-    let key : I × I → ℝ × ℝ × I := fun ts ↦ (0, ts.1, ts.2)
-    have hkey : Continuous key := by fun_prop
-    simpa [key] using! γ.truncate_continuous_family.comp hkey
-  simpa [initialSegmentFamily] using! htrunc
-
-@[simp] public theorem initialSegmentFamily_apply {a b : X} (γ : Path a b) (t s : I) :
-    initialSegmentFamily γ t s = γ.extend (min (s : ℝ) t) := by
-  simp [initialSegmentFamily, Path.truncate, max_eq_left s.2.1]
-
-@[simp] public theorem initialSegmentFamily_zero {a b : X} (γ : Path a b) :
-    initialSegmentFamily γ 0 = (Path.refl a).cast rfl (by simp) := by
-  ext s
-  simp [initialSegmentFamily_apply, γ.extend_zero, Path.refl, min_eq_right s.2.1]
-
-@[simp] public theorem initialSegmentFamily_one {a b : X} (γ : Path a b) :
-    initialSegmentFamily γ 1 = γ.cast rfl (by simp) := by
-  ext s
-  simp [initialSegmentFamily_apply, min_eq_left s.2.2, γ.extend_apply s.2]
-
-end Path
-
-namespace BasedPath
-
-/-- The family of initial segments of a based path, defined as
-`ofPath (γ.toPath.initialSegmentFamily t)`. At `t = 0` this is the constant based path at `x₀`;
-at `t = 1` it is `γ` itself. Joint continuity in `t` is `continuous_initialSegmentFamily`. -/
--- This wrapper is exposed for the same reason as `append`: exported endpoint and `toPath`
--- normal forms need its body to align the endpoint-indexed path types.
-@[expose] public noncomputable def initialSegmentFamily {x₀ : X} (γ : BasedPath x₀) (t : I) :
-    BasedPath x₀ :=
-  ofPath (γ.toPath.initialSegmentFamily t)
-
-@[simp] public theorem initialSegmentFamily_zero {x₀ : X} (γ : BasedPath x₀) :
-    γ.initialSegmentFamily 0 = ofPath (Path.refl x₀) := by
-  simp [initialSegmentFamily, Path.initialSegmentFamily_zero]
-
-@[simp] public theorem initialSegmentFamily_one {x₀ : X} (γ : BasedPath x₀) :
-    γ.initialSegmentFamily 1 = γ := by
-  rw [initialSegmentFamily, Path.initialSegmentFamily_one, ofPath_cast, ofPath_toPath_self]
-
-@[simp] public theorem toPath_initialSegmentFamily {x₀ : X} (γ : BasedPath x₀) (t : I) :
-    (γ.initialSegmentFamily t).toPath =
-      (γ.toPath.initialSegmentFamily t).cast rfl (γ.toPath.initialSegmentFamily t).target := by
-  -- The wrapper is endpoint-indexed, so expose its definitional `ofPath` value before using
-  -- the public `toPath_ofPath` normal form.
-  change (ofPath (γ.toPath.initialSegmentFamily t)).toPath =
-    (γ.toPath.initialSegmentFamily t).cast rfl (γ.toPath.initialSegmentFamily t).target
-  exact toPath_ofPath (γ.toPath.initialSegmentFamily t)
-
-@[simp] public theorem endpoint_initialSegmentFamily {x₀ : X} (γ : BasedPath x₀) (t : I) :
-    endpoint (γ.initialSegmentFamily t) = γ.1 t := by
-  simp [initialSegmentFamily]
-
-public theorem continuous_initialSegmentFamily {x₀ : X} (γ : BasedPath x₀) :
-    Continuous γ.initialSegmentFamily := by
-  refine Continuous.subtype_mk ?_ _
-  refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
-  simpa only using! γ.toPath.continuous_initialSegmentFamily_uncurry
-
 /-- Appending a fixed terminal path's initial-segment family to a fixed based path is jointly
 continuous in the family parameter. This packages the boilerplate for using
 `Path.trans_continuous_family` to lift `append γ ∘ Path.initialSegmentFamily δ` to a continuous
 map `I → BasedPath x₀`. -/
-public theorem continuous_append_initialSegmentFamily {x₀ z : X}
+private theorem continuous_append_initialSegmentFamily {x₀ z : X}
     (γ : BasedPath x₀) (δ : Path (endpoint γ) z) :
     Continuous fun t : I ↦ γ.append (Path.initialSegmentFamily δ t) := by
   apply Continuous.subtype_mk
@@ -896,7 +810,7 @@ public theorem toPath_homotopic_of_joinedIn_pathHomotopyTrivial
 /-- Path components of `endpoint ⁻¹' U` are invariant under endpoint-preserving homotopy:
 if `p ≃ q` are homotopic paths from `x₀` to `y ∈ U`, then the based paths `ofPath p` and
 `ofPath q` lie in the same path component of `endpoint ⁻¹' U`. -/
-public theorem pathComponent_preimage_saturated
+public theorem pathComponentIn_ofPath_eq_of_homotopic
     {U : Set X} {y : X} (hy : y ∈ U)
     {p q : Path x₀ y} (h : Path.Homotopic p q) :
     pathComponentIn (endpoint (x₀ := x₀) ⁻¹' U) (ofPath p) =
