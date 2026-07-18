@@ -22,7 +22,8 @@ by a continuous bilinear map.
 
 Variable coefficients will require the corresponding multiplication-operator construction.
 The constant-coefficient form here already includes the Dirichlet and shifted-Laplacian models
-and is directly consumable by Mathlib's Lax--Milgram API.
+and has the bounded-bilinear-map shape needed for a later Lax--Milgram application, after
+restriction to the intended Hilbert/Sobolev space and a proof of coercivity.
 
 ## Main declarations
 
@@ -30,8 +31,10 @@ and is directly consumable by Mathlib's Lax--Milgram API.
 * `TauCeti.PDE.energyFormLp_apply`: its characterization as an integral.
 * `TauCeti.PDE.energyFormLp_one_zero_zero_apply` and
   `TauCeti.PDE.energyFormLp_one_zero_mass_apply`: the Dirichlet and shifted-Laplacian formulas.
-* `TauCeti.PDE.energyFormLp_zero_drift_comm_of_isSymm`: symmetry when the principal matrix is
-  symmetric and the drift vanishes.
+* `TauCeti.PDE.energyFormLp_one_zero_zero_self` and
+  `TauCeti.PDE.energyFormLp_one_zero_mass_self`: their diagonal formulas.
+* `TauCeti.PDE.energyFormLp_zero_drift_flip_eq_of_isSymm`: bundled symmetry when the principal
+  matrix is symmetric and the drift vanishes.
 -/
 
 public section
@@ -77,7 +80,17 @@ theorem energyFormLp_one_zero_zero_apply (μ : Measure X)
       ∫ x, (V x).2 ⬝ᵥ (U x).2 ∂μ := by
   rw [energyFormLp_apply]
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-  simp
+  exact energyIntegrand_one_zero_zero_apply (U x) (V x)
+
+/-- The diagonal of the Dirichlet `L²` energy form is the integral of the squared gradient
+norm. -/
+theorem energyFormLp_one_zero_zero_self (μ : Measure X)
+    (U : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
+    energyFormLp μ (1 : Matrix n n ℝ) 0 0 U U =
+      ∫ x, ‖(U x).2‖ ^ 2 ∂μ := by
+  rw [energyFormLp_apply]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  exact energyIntegrand_one_zero_zero_self (U x)
 
 /-- The shifted-Laplacian energy form is the sum of the gradient pairing and the mass
 pairing. -/
@@ -87,7 +100,17 @@ theorem energyFormLp_one_zero_mass_apply (μ : Measure X) (c : ℝ)
       ∫ x, ((V x).2 ⬝ᵥ (U x).2 + c * (U x).1 * (V x).1) ∂μ := by
   rw [energyFormLp_apply]
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
-  simp
+  exact energyIntegrand_one_zero_mass_apply c (U x) (V x)
+
+/-- The diagonal of the shifted-Laplacian `L²` energy form is the integral of the squared
+gradient norm plus the mass density. -/
+theorem energyFormLp_one_zero_mass_self (μ : Measure X) (c : ℝ)
+    (U : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
+    energyFormLp μ (1 : Matrix n n ℝ) 0 c U U =
+      ∫ x, (‖(U x).2‖ ^ 2 + c * (U x).1 ^ 2) ∂μ := by
+  rw [energyFormLp_apply]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
+  exact energyIntegrand_one_zero_mass_self c (U x)
 
 /-- Transposing the principal coefficient swaps the two arguments of a zero-drift `L²` energy
 form. -/
@@ -106,12 +129,28 @@ theorem energyFormLp_zero_drift_comm_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSy
   refine integral_congr_ae (Filter.Eventually.of_forall fun x => ?_)
   exact energyIntegrand_zero_drift_comm_of_isSymm hA c (U x) (V x)
 
+/-- A symmetric principal coefficient makes the zero-drift `L²` energy form equal to its
+flip. -/
+@[simp]
+theorem energyFormLp_zero_drift_flip_eq_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm)
+    (μ : Measure X) (c : ℝ) :
+    (energyFormLp μ A 0 c).flip = energyFormLp μ A 0 c := by
+  ext U V
+  exact energyFormLp_zero_drift_comm_of_isSymm hA μ c V U
+
 /-- The shifted-Laplacian `L²` energy form is symmetric. -/
 theorem energyFormLp_one_zero_mass_comm (μ : Measure X) (c : ℝ)
     (U V : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
     energyFormLp μ (1 : Matrix n n ℝ) 0 c U V =
       energyFormLp μ (1 : Matrix n n ℝ) 0 c V U :=
   energyFormLp_zero_drift_comm_of_isSymm isSymm_one μ c U V
+
+/-- The shifted-Laplacian `L²` energy form is equal to its flip. -/
+@[simp]
+theorem energyFormLp_one_zero_mass_flip_eq (μ : Measure X) (c : ℝ) :
+    (energyFormLp μ (1 : Matrix n n ℝ) 0 c).flip =
+      energyFormLp μ (1 : Matrix n n ℝ) 0 c :=
+  energyFormLp_zero_drift_flip_eq_of_isSymm isSymm_one μ c
 
 end PDE
 
