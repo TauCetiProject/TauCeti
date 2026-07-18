@@ -42,70 +42,57 @@ variable {K : Type u} [Field K]
 
 noncomputable section
 
-/-- A homomorphism of abelian varieties over `K`: a morphism over `Spec K` preserving the group
-law. Preservation of inverses follows from preservation of the unit and multiplication. -/
-@[ext]
-structure Hom (A B : AbelianVariety K) where
-  /-- The underlying morphism of group schemes over `Spec K`. -/
-  hom : A.toOver ⟶ B.toOver
-  [isMonHom_hom : IsMonHom hom]
+/-- The group object over `Spec K` underlying an abelian variety. -/
+@[expose]
+def toGrp (A : AbelianVariety K) : Grp (Over (Spec (.of K))) :=
+  ⟨A.toOver⟩
 
-attribute [instance] Hom.isMonHom_hom
+/-- Abelian varieties over a fixed field form a category with group-scheme homomorphisms. -/
+noncomputable instance : Category (AbelianVariety K) :=
+  inferInstanceAs (Category (InducedCategory _ toGrp))
 
 /-- Construct a homomorphism of abelian varieties from a morphism over `Spec K` and proofs that it
 preserves the unit and multiplication. -/
 def Hom.mk' {A B : AbelianVariety K} (f : A.toOver ⟶ B.toOver)
     (one_f : η[A.toOver] ≫ f = η[B.toOver] := by cat_disch)
-    (mul_f : μ[A.toOver] ≫ f = (f ⊗ₘ f) ≫ μ[B.toOver] := by cat_disch) : A.Hom B :=
-  haveI : IsMonHom f := ⟨one_f, mul_f⟩
-  ⟨f⟩
+    (mul_f : μ[A.toOver] ≫ f = (f ⊗ₘ f) ≫ μ[B.toOver] := by cat_disch) : A ⟶ B :=
+  InducedCategory.homMk (Grp.homMk'' f one_f mul_f)
 
-/-- The identity homomorphism of an abelian variety. -/
-@[expose]
-noncomputable def Hom.id (A : AbelianVariety K) : A.Hom A :=
-  ⟨𝟙 A.toOver⟩
-
-/-- Composition of homomorphisms of abelian varieties. -/
-@[expose]
-noncomputable def Hom.comp {A B C : AbelianVariety K} (f : A.Hom B) (g : B.Hom C) : A.Hom C :=
-  ⟨f.hom ≫ g.hom⟩
-
-/-- Abelian varieties over a fixed field form a category with group-scheme homomorphisms. -/
-noncomputable instance : Category (AbelianVariety K) where
-  Hom := Hom
-  id := Hom.id
-  comp := Hom.comp
+/-- The underlying morphism of group schemes over `Spec K`. -/
+abbrev Hom.toOverHom {A B : AbelianVariety K} (f : A ⟶ B) : A.toOver ⟶ B.toOver :=
+  f.hom.hom.hom
 
 @[simp]
-lemma id_hom (A : AbelianVariety K) : (CategoryStruct.id A : A.Hom A).hom = 𝟙 A.toOver :=
-  rfl
+lemma id_hom (A : AbelianVariety K) : Hom.toOverHom (CategoryStruct.id A) = 𝟙 A.toOver :=
+  Grp.id_hom_hom _
 
 @[simp, reassoc]
 lemma comp_hom {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C) :
-    (f ≫ g).hom = f.hom ≫ g.hom :=
-  rfl
+    Hom.toOverHom (f ≫ g) = Hom.toOverHom f ≫ Hom.toOverHom g :=
+  Grp.comp_hom_hom _ _
 
 /-- A homomorphism of abelian varieties preserves the unit section. -/
 @[reassoc]
 lemma Hom.one_hom {A B : AbelianVariety K} (f : A ⟶ B) :
-    η[A.toOver] ≫ f.hom = η[B.toOver] :=
-  IsMonHom.one_hom f.hom
+    η[A.toOver] ≫ Hom.toOverHom f = η[B.toOver] :=
+  IsMonHom.one_hom f.hom.hom.hom
 
 /-- A homomorphism of abelian varieties preserves multiplication. -/
 @[reassoc]
 lemma Hom.mul_hom {A B : AbelianVariety K} (f : A ⟶ B) :
-    μ[A.toOver] ≫ f.hom = (f.hom ⊗ₘ f.hom) ≫ μ[B.toOver] :=
-  IsMonHom.mul_hom f.hom
+    μ[A.toOver] ≫ Hom.toOverHom f =
+      (Hom.toOverHom f ⊗ₘ Hom.toOverHom f) ≫ μ[B.toOver] :=
+  IsMonHom.mul_hom f.hom.hom.hom
 
 /-- A homomorphism of abelian varieties preserves inverses. -/
 @[reassoc]
 lemma Hom.inv_hom {A B : AbelianVariety K} (f : A ⟶ B) :
-    ι[A.toOver] ≫ f.hom = f.hom ≫ ι[B.toOver] :=
-  GrpObj.inv_hom f.hom
+    ι[A.toOver] ≫ Hom.toOverHom f = Hom.toOverHom f ≫ ι[B.toOver] :=
+  GrpObj.inv_hom f.hom.hom.hom
 
 /-- The underlying morphism between the schemes of two abelian varieties. -/
 abbrev Hom.toSchemeHom {A B : AbelianVariety K} (f : A ⟶ B) : A.toScheme ⟶ B.toScheme :=
-  f.hom.left
+  (Hom.toOverHom f).left
 
 @[simp]
 lemma Hom.toSchemeHom_id (A : AbelianVariety K) :
@@ -114,21 +101,22 @@ lemma Hom.toSchemeHom_id (A : AbelianVariety K) :
 
 @[simp, reassoc]
 lemma Hom.toSchemeHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C) :
-    (f ≫ g).toSchemeHom = f.toSchemeHom ≫ g.toSchemeHom :=
+    Hom.toSchemeHom (f ≫ g) = Hom.toSchemeHom f ≫ Hom.toSchemeHom g :=
   rfl
 
 /-- The underlying scheme morphism of an abelian-variety homomorphism commutes with the structure
 morphisms to `Spec K`. -/
 @[reassoc]
 lemma Hom.toSchemeHom_comp_hom {A B : AbelianVariety K} (f : A ⟶ B) :
-    f.toSchemeHom ≫ B.toOver.hom = A.toOver.hom :=
-  f.hom.w
+    Hom.toSchemeHom f ≫ B.toOver.hom = A.toOver.hom :=
+  (Hom.toOverHom f).w
 
 /-- Two homomorphisms of abelian varieties are equal when their underlying scheme morphisms are
 equal. -/
 lemma Hom.ext_toSchemeHom {A B : AbelianVariety K} {f g : A ⟶ B}
-    (h : f.toSchemeHom = g.toSchemeHom) : f = g := by
-  apply Hom.ext
+    (h : Hom.toSchemeHom f = Hom.toSchemeHom g) : f = g := by
+  apply InducedCategory.hom_ext
+  apply Grp.hom_ext
   exact Over.OverMorphism.ext h
 
 end
