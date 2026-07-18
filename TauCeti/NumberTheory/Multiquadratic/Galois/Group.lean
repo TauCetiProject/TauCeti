@@ -24,6 +24,8 @@ homomorphism to be an isomorphism: `Gal(M/K) ≃ (ℤ/2)ⁿ`.
 * `TauCeti.Multiquadratic.signHom`: the injective sign-pattern homomorphism `Gal(M/K) →* (ℤ/2)ⁿ`.
 * `TauCeti.Multiquadratic.galoisGroupEquiv`: for square-class independent radicands, the explicit
   isomorphism `Gal(M/K) ≃* Multiplicative (ι → ℤ/2)`.
+* `TauCeti.Multiquadratic.aut_nontrivial`: under square-class independence over a nonempty index
+  type, `Gal(M/K)` is nontrivial.
 * `TauCeti.Multiquadratic.card_aut_adjoin_range`: the cardinality reading
   `|Gal(M/K)| = 2^|ι|` of that isomorphism.
 
@@ -215,6 +217,14 @@ noncomputable def galoisGroupEquiv [Finite ι] [NeZero (2 : K)]
     (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) ≃*
       Multiplicative (ι → ZMod 2) :=
   MulEquiv.ofBijective (signHom root hroot) (signHom_bijective hroot hindep)
+
+/-- **A multiquadratic field over a nonempty family of independent radicands has a nontrivial Galois
+group.** -/
+theorem aut_nontrivial [Finite ι] [NeZero (2 : K)] [Nonempty ι]
+    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
+    Nontrivial (adjoin K (Set.range root) ≃ₐ[K] adjoin K (Set.range root)) :=
+  (galoisGroupEquiv hroot hindep).toEquiv.nontrivial
 
 /-- The Galois-group equivalence sends an automorphism to its multiplicative sign pattern. -/
 @[simp] theorem galoisGroupEquiv_apply [Finite ι] [NeZero (2 : K)]
