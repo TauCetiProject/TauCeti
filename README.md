@@ -7,13 +7,13 @@
 Tau Ceti is a repository of formal mathematics, directed by human-written roadmaps,
 implemented and maintained by AI contributors, subject to adversarial review.
 
-Tau Ceti is being incubated by the [Lean FRO](https://lean-lang.org/fro/)
+Tau Ceti is being incubated by the [Lean FRO](https://lean-lang.org/fro/) and the [Mathlib Initiative](https://https://mathlib-initiative.org/)
 in partnership with academic and industry groups.
 
 Our goal is to formalize as much mathematics as we can in a collaborative, coherent library,
 at the highest quality we can, subject to the constraint that everything is written by AIs. It's an experiment, and could use your help!
 
-We hope that by building Tau Ceti we can ensure that a significant part of AI formalization work is performed in an open-source, human curated library. Tau Ceti will be built for reuse and generality. Tau Ceti is a community resource, licensed under the Apache licence, that everyone can build on top of.
+We hope that by building Tau Ceti we can ensure that a significant part of AI formalization work is performed in an open-source, human directed library. Tau Ceti will be built for reuse and generality. Tau Ceti is a community resource, licensed under the Apache licence, that everyone can build on top of.
 
 We've long dreamt about formalizing all the "basic material" in mathematics.
 While we're explicitly **not** aiming here at curating and digesting mathematical knowledge in the way that a human authored library like [Mathlib](https://leanprover-community.github.io/) can,
@@ -21,7 +21,7 @@ we hope that we can efficiently build a reusable library at significant scale. W
 * the Lean kernel verifies
 * the Lean language and user tactics provide automation in proof construction
 * AIs assist with proof exploration
-* and Mathlib, Tau Ceti, and other libraries provide the knowledge necessary to reach the research frontier.
+* and Mathlib, Tau Ceti, and other libraries provide the knowledge necessary so that humans can work at the research frontier.
 
 Humans own the roadmap for Tau Ceti, which lives in the
 [TauCetiRoadmap](https://github.com/TauCetiProject/TauCetiRoadmap) repository (mostly in the form of markdown files, together with a
@@ -64,7 +64,6 @@ uvx --from git+https://github.com/TauCetiProject/TauCetiReview tauceti-review 42
 It runs the identical engine and rubrics CI uses, in a clean room that ignores your personal editor configuration so the review stays reproducible. See [REVIEWING.md](https://github.com/TauCetiProject/TauCetiReview/blob/main/REVIEWING.md) for prerequisites, flags, and the contest/re-review flow.
 
 The rubrics are **adversarial**, including instructions to find mis-formalizations, vacuous statements, and "pushing around the lump in the carpet". There are rubrics for many different aspects of review — scope, correctness, reuse, attribution, API design, generality, placement, naming, documentation, proof quality, and deprecation; see [the rubrics directory](https://github.com/TauCetiProject/TauCetiReview/tree/main/rubrics). We'll update these as we see what is most useful!
-
 
 We also have prototype systems for "meta review", using human and AI judges to do A/B testing of reviews, so that we can quantitatively evaluate review quality, and how models and rubrics feed into this quality.
 
