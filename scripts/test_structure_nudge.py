@@ -122,7 +122,7 @@ class TestCandidates(unittest.TestCase):
         body = sn.render_comment("abc123", findings)
         self.assertIn(sn.MARKER, body)
         self.assertIn("never blocks", body)
-        self.assertIn("restructure as you add", body)
+        self.assertIn("preliminary PR", body)
         # The comment names the family directory but never a path for the
         # added file itself (that choice stays with the author).
         self.assertNotIn("Foo/D", body)
