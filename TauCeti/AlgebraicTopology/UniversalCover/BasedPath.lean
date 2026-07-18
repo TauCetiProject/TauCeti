@@ -286,7 +286,7 @@ theorem exists_deformTerminal_mem_basicNeighborhood
     · have hat : a < (t : ℝ) := lt_of_not_ge hta
       by_cases htb : (t : ℝ) ≤ b
       · have hrange : Set.range (terminalTail γ rfl a (by linarith)) ⊆ W := by
-          apply Path.truncateOfLE_range_subset_preimage (h := ha1)
+          apply Path.truncateOfLE_range_subset (h := ha1)
           intro s hs
           have hs01 : s ∈ (Set.Icc 0 1 : Set ℝ) := ⟨le_trans ha0 hs.1, hs.2⟩
           simp only [Set.mem_preimage]

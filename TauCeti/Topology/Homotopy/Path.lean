@@ -53,7 +53,7 @@ theorem map_codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val)
 
 /-- If the extended path stays inside `U` throughout `[t₀, t₁]`, then the truncated subpath has
 range in `U`. -/
-theorem truncateOfLE_range_subset_preimage {a b : X} (γ : Path a b) {t₀ t₁ : ℝ}
+theorem truncateOfLE_range_subset {a b : X} (γ : Path a b) {t₀ t₁ : ℝ}
     (h : t₀ ≤ t₁) {U : Set X} (hU : Set.Icc t₀ t₁ ⊆ γ.extend ⁻¹' U) :
     Set.range (γ.truncateOfLE h) ⊆ U := by
   rintro _ ⟨s, rfl⟩
