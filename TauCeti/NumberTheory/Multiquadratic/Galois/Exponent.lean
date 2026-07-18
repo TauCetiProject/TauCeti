@@ -22,7 +22,7 @@ nontrivial — the case square-class independence over a nonempty index type gua
 This is the explicit "exponent-`2`" half of the multiquadratic roadmap's Layer-0 Galois milestone
 (`TauCetiRoadmap/Multiquadratic/README.md`, "the `IsGalois` and exponent-2 / abelian facts are the
 easy half"). The full `Gal(M/K) ≃ (ℤ/2)ⁿ` isomorphism is
-`TauCeti.NumberTheory.Multiquadratic.GaloisGroup`; the exponent reading here is the coarse
+`TauCeti.NumberTheory.Multiquadratic.Galois.Group`; the exponent reading here is the coarse
 invariant it refines — an exponent-`2` abelian group is exactly an `𝔽₂`-vector space.
 
 ## Main results
