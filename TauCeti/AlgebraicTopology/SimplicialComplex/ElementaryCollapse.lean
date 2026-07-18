@@ -68,6 +68,16 @@ theorem upper_maximal (h : IsFreePair K σ τ) {ω : Finset ι} (hω : ω ∈ K)
   · exact (h.lower_ssubset_upper.not_subset hτω).elim
   · exact h_eq
 
+/-- The lower face of a free pair has codimension one in the upper face. -/
+theorem covBy (h : IsFreePair K σ τ) : σ ⋖ τ := by
+  refine ⟨h.lower_ssubset_upper, fun ω hσω hωτ => ?_⟩
+  have hω : ω ∈ K :=
+    (K.isRelLowerSet_faces h.upper_mem).2 hωτ.le
+      ((K.isRelLowerSet_faces h.lower_mem).1.mono hσω.le)
+  rcases h.eq_lower_or_eq_upper hω hσω.le with rfl | rfl
+  · exact hσω.false
+  · exact hωτ.false
+
 end IsFreePair
 
 /-- Deleting the lower face of a free pair retains exactly the original faces other than the
@@ -84,14 +94,14 @@ theorem mem_deletion_of_isFreePair {σ τ ω : Finset ι} (h : IsFreePair K σ �
     · exact hωτ rfl
 
 /-- One complex elementarily collapses to another when the latter is obtained by deleting a
-codimension-one free pair. -/
+free pair. -/
 def ElementaryCollapsesTo (L : _root_.PreAbstractSimplicialComplex ι) : Prop :=
-  ∃ (σ τ : Finset ι) (_h : IsFreePair K σ τ), σ ⋖ τ ∧ L = deletion K σ
+  ∃ (σ τ : Finset ι), IsFreePair K σ τ ∧ L = deletion K σ
 
-/-- Characterization of an elementary collapse by its codimension-one free pair. -/
+/-- Characterization of an elementary collapse by its free pair. -/
 theorem elementaryCollapsesTo_iff {L : _root_.PreAbstractSimplicialComplex ι} :
     ElementaryCollapsesTo K L ↔
-      ∃ (σ τ : Finset ι) (_h : IsFreePair K σ τ), σ ⋖ τ ∧ L = deletion K σ :=
+      ∃ (σ τ : Finset ι), IsFreePair K σ τ ∧ L = deletion K σ :=
   Iff.rfl
 
 namespace ElementaryCollapsesTo
@@ -100,13 +110,13 @@ variable {K L : _root_.PreAbstractSimplicialComplex ι}
 
 /-- An elementary collapse produces a subcomplex. -/
 theorem le (h : ElementaryCollapsesTo K L) : L ≤ K := by
-  obtain ⟨σ, τ, hfree, _, rfl⟩ := h
+  obtain ⟨σ, τ, hfree, rfl⟩ := h
   exact deletion_le
 
 /-- An elementary collapse is strict: its lower free face is lost. -/
 theorem lt (h : ElementaryCollapsesTo K L) : L < K := by
   refine lt_of_le_of_ne h.le ?_
-  obtain ⟨σ, τ, hfree, _, rfl⟩ := h
+  obtain ⟨σ, τ, hfree, rfl⟩ := h
   intro h_eq
   have : σ ∈ deletion K σ := h_eq.symm ▸ hfree.lower_mem
   exact (mem_deletion.mp this).2 Finset.Subset.rfl
@@ -116,8 +126,8 @@ away from the selected free pair. -/
 theorem exists_pair (h : ElementaryCollapsesTo K L) :
     ∃ (σ τ : Finset ι) (_hfree : IsFreePair K σ τ), σ ⋖ τ ∧
       ∀ ω, ω ∈ L ↔ ω ∈ K ∧ ω ≠ σ ∧ ω ≠ τ := by
-  obtain ⟨σ, τ, hfree, hcodim, rfl⟩ := h
-  exact ⟨σ, τ, hfree, hcodim, fun ω => by
+  obtain ⟨σ, τ, hfree, rfl⟩ := h
+  exact ⟨σ, τ, hfree, hfree.covBy, fun ω => by
     simpa only [mem_deletion] using mem_deletion_of_isFreePair K hfree⟩
 
 end ElementaryCollapsesTo
