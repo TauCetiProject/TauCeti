@@ -11,8 +11,7 @@ prefixes of its basename and report, as one advisory PR comment:
   by itself, since anchor-beside-extensions is the repo's blessed convention).
   Per the placement guidance, the expected response is a preliminary PR that
   relocates the family into its subdirectory, with the new file then added
-  there; the flat addition is right only when an open PR still imports the old
-  module names (noted on the tracking issue).
+  there.
 
 This check is advisory by construction: findings exit ``0``, every failure is
 downgraded to a ``::warning::`` annotation and exit ``0``, and the workflow step
@@ -117,9 +116,7 @@ def render_comment(head_sha: str, findings: dict[str, list[dict]]) -> str:
                           f"prefix (e.g. {ex}); per the placement guidance, relocate "
                           f"first: a preliminary PR moving the family into "
                           f"`{c['dir']}/{c['prefix']}/` (keep any anchor in place, imports "
-                          "only), then add this file there, unless an open PR still "
-                          "imports the old module names, in which case keep the flat name "
-                          "and note the family on the tracking issue")
+                          "only), then add this file there")
             lines.append(f"  * `{c['prefix']}`: " + "; ".join(ev) + ".")
     lines.append("")
     lines.append(f"Context and the current relocation queue: {TRACKING_ISSUE}.")
