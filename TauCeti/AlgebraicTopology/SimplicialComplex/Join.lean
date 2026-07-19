@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Data.Finset.Sum
-public import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 
 /-!
 # Joins of abstract simplicial complexes
@@ -117,14 +117,6 @@ end PreAbstractSimplicialComplex
 namespace AbstractSimplicialComplex
 
 variable {α β : Type*}
-
-/-- A finite set is a face of the underlying precomplex exactly when it is a face of the abstract
-simplicial complex itself. This is the single place where the two `SetLike` instances are
-identified. -/
-@[simp]
-theorem mem_toPreAbstractSimplicialComplex {ι : Type*} {K : AbstractSimplicialComplex ι}
-    {σ : Finset ι} : σ ∈ K.toPreAbstractSimplicialComplex ↔ σ ∈ K :=
-  Iff.rfl
 
 /-- The join of two abstract simplicial complexes, with vertices in the disjoint sum. -/
 def join (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β) :
