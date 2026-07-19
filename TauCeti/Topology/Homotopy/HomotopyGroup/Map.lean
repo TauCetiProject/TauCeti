@@ -56,7 +56,8 @@ theorem map_continuousMap_const (y : Y) (p : Ω^ N X x) :
     map (ContinuousMap.const X y) rfl p = (_root_.GenLoop.const : Ω^ N Y y) := by
   apply _root_.GenLoop.ext
   intro t
-  rfl
+  rw [map_apply]
+  exact _root_.GenLoop.const_apply.symm
 
 @[simp]
 theorem map_id (p : Ω^ N X x) :
