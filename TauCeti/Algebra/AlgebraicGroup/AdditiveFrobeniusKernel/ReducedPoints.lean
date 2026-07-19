@@ -23,7 +23,7 @@ numbers, are required to detect it.
 
 The proofs use the description of the functor of points in
 `TauCeti.Algebra.AlgebraicGroup.AdditiveFrobeniusKernel.Basic` and Mathlib's
-`IsNilpotent.eq_zero` for reduced rings.
+`eq_zero_of_pow_eq_zero` for reduced rings.
 
 This develops the worked example `αₚ` in the Tau Ceti reductive-groups roadmap
 (`ReductiveGroups/README.md` in TauCetiRoadmap), whose standing hypotheses require the
@@ -54,7 +54,7 @@ variable {A : Type v} [CommRing A] [Algebra R A]
 
 /-- An element of the `p`-nilpotent subgroup of a reduced algebra is the identity of the
 ambient additive group. -/
-theorem coe_eq_one_of_isReduced [IsReduced A]
+private theorem coe_eq_one_of_isReduced [IsReduced A]
     (a : pNilpotent (R := R) p (A := A)) : (a : Multiplicative A) = 1 := by
   apply Multiplicative.toAdd.injective
   simpa using eq_zero_of_pow_eq_zero
@@ -67,12 +67,6 @@ theorem pNilpotent_eq_bot_of_isReduced [IsReduced A] :
   rw [Subgroup.eq_bot_iff_forall]
   intro a ha
   exact coe_eq_one_of_isReduced p ⟨a, ha⟩
-
-/-- The `p`-nilpotent subgroup of a reduced algebra is a subsingleton. -/
-theorem subsingleton_pNilpotent_of_isReduced [IsReduced A] :
-    Subsingleton (pNilpotent (R := R) p (A := A)) := by
-  rw [pNilpotent_eq_bot_of_isReduced p]
-  infer_instance
 
 /-- Every point of `αₚ` over a reduced algebra maps to the identity element of the additive
 group under the canonical inclusion. -/
@@ -89,16 +83,11 @@ theorem points_eq_one_of_isReduced [IsReduced A]
   apply pointsHom_injective (R := R) p (A := A)
   rw [pointsHom_eq_one_of_isReduced, map_one]
 
-/-- The convolution group of `αₚ`-points over a reduced algebra is a subsingleton. -/
-theorem subsingleton_points_of_isReduced [IsReduced A] :
-    Subsingleton (WithConv (CoordinateRing (R := R) p →ₐ[R] A)) :=
-  ⟨fun F G ↦ (points_eq_one_of_isReduced p F).trans
-    (points_eq_one_of_isReduced p G).symm⟩
-
 /-- The convolution group of `αₚ`-points over a reduced algebra has a unique element. -/
 noncomputable instance instUniquePointsOfIsReduced [IsReduced A] :
     Unique (WithConv (CoordinateRing (R := R) p →ₐ[R] A)) :=
-  @Unique.mk' _ ⟨1⟩ (subsingleton_points_of_isReduced p)
+  @Unique.mk' _ ⟨1⟩ ⟨fun F G ↦ (points_eq_one_of_isReduced p F).trans
+    (points_eq_one_of_isReduced p G).symm⟩
 
 /-- Over a reduced algebra, the functor of points of `αₚ` is canonically isomorphic to the
 trivial group. -/
