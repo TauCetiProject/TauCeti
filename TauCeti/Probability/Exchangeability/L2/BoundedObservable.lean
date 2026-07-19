@@ -14,8 +14,8 @@ contractable process therefore has the uniform covariance structure established 
 
 The result discharges the worked-example check in
 `TauCetiRoadmap/Exchangeability/README.md`, "In the real-valued L² lane, bounded observables give
-`MemLp 2` automatically."  The proof uses Mathlib's `MemLp.of_bound`; no material from
-`cameronfreer/exchangeability` is used.
+`MemLp 2` automatically."  Credit for the reused material goes to Mathlib's `MemLp.of_bound` and
+to the Tau Ceti covariance and map APIs; no material from `cameronfreer/exchangeability` is used.
 -/
 
 public section
@@ -42,8 +42,8 @@ theorem memLp_comp_process_of_bound {μ : Measure Ω} [IsFiniteMeasure μ]
     (ae_of_all μ fun ω => hf_bound (X i ω))
 
 /-- A bounded real-valued observable of a contractable process has uniform means, variances, and
-off-diagonal covariances.  This is `contractable_covariance_structure` with its coordinatewise
-`L²` hypothesis discharged by boundedness. -/
+off-diagonal covariances: the means agree across all coordinates, so do the variances, and every
+covariance of two distinct coordinates takes the same value. -/
 theorem Contractable.covariance_structure_map_values_of_bound {μ : Measure Ω}
     [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX_contractable : Contractable μ X)
     (hX_meas : ∀ i, AEMeasurable (X i) μ) {f : α → ℝ} (hf : Measurable f)
