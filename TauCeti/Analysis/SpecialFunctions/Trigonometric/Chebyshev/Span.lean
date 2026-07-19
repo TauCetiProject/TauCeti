@@ -7,7 +7,6 @@ Authors: Codex
 -/
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Moments
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Measure
-public import TauCeti.MeasureTheory.Function.PolynomialMemLp
 import TauCeti.RingTheory.Polynomial.Chebyshev.Basis
 
 /-!
