@@ -61,7 +61,7 @@ private theorem mulEquiv_mk_fractionRing (f : R ≃+* S)
 /-- `ClassGroup.mulEquiv f` sends the class of a unit fractional ideal `I` to the class of its
 image under `FractionalIdeal.ringEquivOfRingEquiv f`. This is independent of the chosen fraction
 fields. -/
-@[simp] theorem mulEquiv_mk {K L : Type*} [Field K] [Field L] [Algebra R K]
+theorem mulEquiv_mk {K L : Type*} [Field K] [Field L] [Algebra R K]
     [Algebra S L] [IsFractionRing R K] [IsFractionRing S L] (f : R ≃+* S)
     (I : (FractionalIdeal R⁰ K)ˣ) :
     ClassGroup.mulEquiv f (ClassGroup.mk K I) =
