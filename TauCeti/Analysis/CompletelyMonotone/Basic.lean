@@ -292,6 +292,18 @@ lemma neg_one_pow_mul_iteratedDeriv_nonneg (hf : IsCompletelyMonotoneOnIoi f) (n
 lemma nonneg (hf : IsCompletelyMonotoneOnIoi f) {t : ℝ} (ht : 0 < t) : 0 ≤ f t := by
   simpa [iteratedDeriv_zero] using hf.neg_one_pow_mul_iteratedDeriv_nonneg 0 ht
 
+/-- A function completely monotone on `(0, ∞)` that is continuous within `[0, ∞)` at the origin
+is nonnegative on all of `[0, ∞)`: nonnegativity on `(0, ∞)` passes to the boundary point `0` in
+the limit. -/
+lemma nonneg_of_continuousWithinAt (hf : IsCompletelyMonotoneOnIoi f)
+    (hcont : ContinuousWithinAt f (Ici 0) 0) {t : ℝ} (ht : 0 ≤ t) : 0 ≤ f t := by
+  rcases ht.lt_or_eq with h | h
+  · exact hf.nonneg h
+  · subst h
+    have htends : Filter.Tendsto f (𝓝[>] (0 : ℝ)) (nhds (f 0)) :=
+      hcont.tendsto.mono_left (nhdsWithin_mono _ Ioi_subset_Ici_self)
+    exact ge_of_tendsto htends (eventually_mem_nhdsWithin.mono fun x hx => hf.nonneg hx)
+
 /-- The derivative of a completely monotone function on `(0, ∞)` is nonpositive there. -/
 @[grind =>]
 lemma deriv_nonpos (hf : IsCompletelyMonotoneOnIoi f) {t : ℝ} (ht : 0 < t) :
