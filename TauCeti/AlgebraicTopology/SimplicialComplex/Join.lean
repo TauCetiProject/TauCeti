@@ -118,6 +118,14 @@ namespace AbstractSimplicialComplex
 
 variable {α β : Type*}
 
+/-- A finite set is a face of the underlying precomplex exactly when it is a face of the abstract
+simplicial complex itself. This is the single place where the two `SetLike` instances are
+identified. -/
+@[simp]
+theorem mem_toPreAbstractSimplicialComplex {ι : Type*} {K : AbstractSimplicialComplex ι}
+    {σ : Finset ι} : σ ∈ K.toPreAbstractSimplicialComplex ↔ σ ∈ K :=
+  Iff.rfl
+
 /-- The join of two abstract simplicial complexes, with vertices in the disjoint sum. -/
 def join (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β) :
     AbstractSimplicialComplex (α ⊕ β) :=
@@ -146,8 +154,7 @@ right projection face conditions. -/
 theorem mem_join_iff {σ : Finset (α ⊕ β)} :
     σ ∈ join K L ↔ σ.Nonempty ∧
       (σ.toLeft = ∅ ∨ σ.toLeft ∈ K) ∧ (σ.toRight = ∅ ∨ σ.toRight ∈ L) := by
-  change σ ∈ (join K L).toPreAbstractSimplicialComplex ↔ _
-  rw [join_toPreAbstractSimplicialComplex]
+  simp only [← mem_toPreAbstractSimplicialComplex, join_toPreAbstractSimplicialComplex]
   exact PreAbstractSimplicialComplex.mem_join_iff
 
 /-- A disjoint union is a face of the abstract join exactly when it is nonempty and each
@@ -155,29 +162,25 @@ nonempty component is a face of its original complex. -/
 theorem disjSum_mem_join_iff {s : Finset α} {t : Finset β} :
     s.disjSum t ∈ join K L ↔
       (s.Nonempty ∨ t.Nonempty) ∧ (s = ∅ ∨ s ∈ K) ∧ (t = ∅ ∨ t ∈ L) := by
-  change s.disjSum t ∈ (join K L).toPreAbstractSimplicialComplex ↔ _
-  rw [join_toPreAbstractSimplicialComplex]
+  simp only [← mem_toPreAbstractSimplicialComplex, join_toPreAbstractSimplicialComplex]
   exact PreAbstractSimplicialComplex.disjSum_mem_join_iff
 
 /-- A left face, tagged into the sum type, is a face of the join. -/
 theorem map_inl_mem_join {s : Finset α} (hs : s ∈ K) :
     s.map (Embedding.inl : α ↪ α ⊕ β) ∈ join K L := by
-  change s.map (Embedding.inl : α ↪ α ⊕ β) ∈ (join K L).toPreAbstractSimplicialComplex
-  rw [join_toPreAbstractSimplicialComplex]
+  rw [← mem_toPreAbstractSimplicialComplex, join_toPreAbstractSimplicialComplex]
   exact PreAbstractSimplicialComplex.map_inl_mem_join hs
 
 /-- A right face, tagged into the sum type, is a face of the join. -/
 theorem map_inr_mem_join {t : Finset β} (ht : t ∈ L) :
     t.map (Embedding.inr : β ↪ α ⊕ β) ∈ join K L := by
-  change t.map (Embedding.inr : β ↪ α ⊕ β) ∈ (join K L).toPreAbstractSimplicialComplex
-  rw [join_toPreAbstractSimplicialComplex]
+  rw [← mem_toPreAbstractSimplicialComplex, join_toPreAbstractSimplicialComplex]
   exact PreAbstractSimplicialComplex.map_inr_mem_join ht
 
 /-- The disjoint union of faces is a face of the join. -/
 theorem disjSum_mem_join {s : Finset α} {t : Finset β} (hs : s ∈ K) (ht : t ∈ L) :
     s.disjSum t ∈ join K L := by
-  change s.disjSum t ∈ (join K L).toPreAbstractSimplicialComplex
-  rw [join_toPreAbstractSimplicialComplex]
+  rw [← mem_toPreAbstractSimplicialComplex, join_toPreAbstractSimplicialComplex]
   exact PreAbstractSimplicialComplex.disjSum_mem_join hs ht
 
 /-- Join is monotone in both abstract simplicial complexes. -/
