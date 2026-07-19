@@ -51,7 +51,6 @@ def point (v : ι) : _root_.PreAbstractSimplicialComplex ι where
 theorem mem_point {v : ι} {σ : Finset ι} : σ ∈ point v ↔ σ = {v} := Iff.rfl
 
 /-- A singleton is a face of `point v` exactly when it is the singleton at `v`. -/
-@[simp]
 theorem singleton_mem_point {v w : ι} : {w} ∈ point v ↔ w = v := by
   rw [mem_point, Finset.singleton_inj]
 
