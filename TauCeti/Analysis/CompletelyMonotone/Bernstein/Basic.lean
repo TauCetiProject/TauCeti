@@ -67,6 +67,14 @@ def IsBernsteinFunction (f : ℝ → ℝ) : Prop :=
   ContinuousOn f (Ici 0) ∧ ContDiffOn ℝ ∞ f (Ioi 0) ∧
     (∀ t : ℝ, 0 ≤ t → 0 ≤ f t) ∧ IsCompletelyMonotoneOnIoi (deriv f)
 
+/-- A function is Bernstein exactly when it is continuous and nonnegative on `[0, ∞)`, smooth
+on `(0, ∞)`, and has completely monotone derivative there. -/
+theorem isBernsteinFunction_iff {f : ℝ → ℝ} :
+    IsBernsteinFunction f ↔
+      ContinuousOn f (Ici 0) ∧ ContDiffOn ℝ ∞ f (Ioi 0) ∧
+        (∀ t : ℝ, 0 ≤ t → 0 ≤ f t) ∧ IsCompletelyMonotoneOnIoi (deriv f) :=
+  Iff.rfl
+
 namespace IsBernsteinFunction
 
 variable {f g : ℝ → ℝ}
