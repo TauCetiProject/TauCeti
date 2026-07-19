@@ -54,27 +54,6 @@ theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
   · exact mul_left_cancel₀ (norm_pos_iff.2 hc).ne'
   · exact congrArg ((· * ·) ‖c‖)
 
-/-- Membership form of `preimage_smul_vadd_ball_norm`. -/
-@[simp]
-theorem norm_smul_lt_mul_norm_iff_mem_ball (y : E) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
-    ‖c • y‖ < ‖c‖ * r ↔ y ∈ Metric.ball 0 r := by
-  simpa only [Set.mem_preimage, Metric.mem_ball, vadd_eq_add, add_zero, dist_zero_right] using
-    Set.ext_iff.mp (preimage_smul_vadd_ball_norm (E := E) (P := E) 0 hc r) y
-
-/-- Membership form of `preimage_smul_vadd_closedBall`. -/
-@[simp]
-theorem norm_smul_le_mul_norm_iff_mem_closedBall (y : E) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
-    ‖c • y‖ ≤ ‖c‖ * r ↔ y ∈ Metric.closedBall 0 r := by
-  simpa only [Set.mem_preimage, Metric.mem_closedBall, vadd_eq_add, add_zero, dist_zero_right] using
-    Set.ext_iff.mp (preimage_smul_vadd_closedBall (E := E) (P := E) 0 hc r) y
-
-/-- Membership form of `preimage_smul_vadd_sphere`. -/
-@[simp]
-theorem norm_smul_eq_mul_norm_iff_mem_sphere (y : E) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
-    ‖c • y‖ = ‖c‖ * r ↔ y ∈ Metric.sphere 0 r := by
-  simpa only [Set.mem_preimage, Metric.mem_sphere, vadd_eq_add, add_zero, dist_zero_right] using
-    Set.ext_iff.mp (preimage_smul_vadd_sphere (E := E) (P := E) 0 hc r) y
-
 end Preimage
 
 /-- The real-scalar vector-space form of `preimage_smul_vadd_ball_norm`. -/
