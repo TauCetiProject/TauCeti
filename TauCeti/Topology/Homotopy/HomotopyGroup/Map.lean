@@ -13,7 +13,8 @@ Mathlib defines the generalized loop space `Ω^ N X x` and the quotient
 `HomotopyGroup N X x`, but it does not yet provide the map induced by a based continuous
 map. This file supplies that small API: postcomposition sends generalized loops based at
 `x` to generalized loops based at `y`, descends to homotopy classes, respects identity and
-composition, and is a monoid homomorphism in positive dimensions.
+composition, handles constant maps and subsingleton targets, and is a monoid homomorphism in
+positive dimensions.
 
 This is a prerequisite for the higher-homotopy API requested in the Tau Ceti universal-covers
 roadmap, Stage 3 item 9, before proving that a covering map induces isomorphisms on
@@ -48,6 +49,14 @@ theorem map_const (f : C(X, Y)) (hf : f x = y) :
   apply _root_.GenLoop.ext
   intro t
   simp [hf]
+
+/-- Postcomposition by a constant continuous map gives the constant generalized loop. -/
+@[simp]
+theorem map_continuousMap_const (y : Y) (p : Ω^ N X x) :
+    map (ContinuousMap.const X y) rfl p = (_root_.GenLoop.const : Ω^ N Y y) := by
+  apply _root_.GenLoop.ext
+  intro t
+  rfl
 
 @[simp]
 theorem map_id (p : Ω^ N X x) :
@@ -106,6 +115,36 @@ theorem map_mk (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) :
     map f hf (⟦p⟧ : HomotopyGroup N X x) = ⟦GenLoop.map f hf p⟧ :=
   rfl
 
+/-- A constant continuous map sends every homotopy class to the class of the constant
+generalized loop. This statement also covers dimension zero, where the target need not carry
+the positive-dimensional group structure. -/
+@[simp]
+theorem map_continuousMap_const_apply (y : Y) (a : HomotopyGroup N X x) :
+    map (x := x) (ContinuousMap.const X y) rfl a =
+      (⟦(_root_.GenLoop.const : Ω^ N Y y)⟧ : HomotopyGroup N Y y) := by
+  refine Quotient.inductionOn a ?_
+  intro p
+  rw [map_mk, GenLoop.map_continuousMap_const]
+  rfl
+
+/-- A based map into a subsingleton space induces the same map as the constant map at the
+target basepoint. -/
+theorem map_eq_continuousMap_const_of_subsingleton [Subsingleton Y]
+    (f : C(X, Y)) (hf : f x = y) :
+    map (N := N) f hf = map (x := x) (ContinuousMap.const X y) rfl := by
+  have h : f = ContinuousMap.const X y := Subsingleton.elim _ _
+  subst f
+  rfl
+
+/-- A based map into a subsingleton space sends every homotopy class to the class of the
+constant generalized loop. -/
+@[simp]
+theorem map_apply_of_subsingleton [Subsingleton Y] (f : C(X, Y)) (hf : f x = y)
+    (a : HomotopyGroup N X x) :
+    map (N := N) f hf a =
+      (⟦(_root_.GenLoop.const : Ω^ N Y y)⟧ : HomotopyGroup N Y y) := by
+  rw [map_eq_continuousMap_const_of_subsingleton, map_continuousMap_const_apply]
+
 /-- Identity law: the map induced by the identity continuous map is the identity on homotopy
 classes. -/
 @[simp]
@@ -159,6 +198,24 @@ theorem mapHom_apply [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
     (a : HomotopyGroup N X x) :
     mapHom f hf a = map f hf a :=
   rfl
+
+/-- In positive dimensions, a constant continuous map induces the trivial homomorphism on
+homotopy groups. -/
+@[simp]
+theorem mapHom_continuousMap_const [DecidableEq N] [Nonempty N] (y : Y) :
+    mapHom (N := N) (x := x) (ContinuousMap.const X y) rfl = 1 := by
+  ext a
+  rw [mapHom_apply, map_continuousMap_const_apply]
+  exact _root_.HomotopyGroup.one_def.symm
+
+/-- A based map into a subsingleton space induces the trivial homomorphism on every
+positive-dimensional homotopy group. -/
+@[simp]
+theorem mapHom_eq_one_of_subsingleton [DecidableEq N] [Nonempty N] [Subsingleton Y]
+    (f : C(X, Y)) (hf : f x = y) : mapHom (N := N) f hf = 1 := by
+  have h : f = ContinuousMap.const X y := Subsingleton.elim _ _
+  subst f
+  exact mapHom_continuousMap_const (x := x) y
 
 /-- Identity law for the bundled homomorphism: the induced monoid homomorphism of the identity
 continuous map is the identity homomorphism. -/
