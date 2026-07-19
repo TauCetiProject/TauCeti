@@ -33,8 +33,10 @@ negation involution `a⋆ = -a`. Rescaling the argument by `√(2c)` turns `exp 
 * `TauCeti.isPositiveDefiniteKernel_cexp_neg_mul_sq_norm`: the involution-free kernel form,
   `(a, b) ↦ exp (-c‖a - b‖²)` is a positive-definite kernel.
 * `TauCeti.continuous_cexp_neg_mul_sq_norm`: `a ↦ exp (-c‖a‖²)` is continuous.
-* `TauCeti.isPositiveDefinite_cexp_neg_sq_norm`: the `c = 1` acceptance example
-  `a ↦ exp (-‖a‖²)`.
+* `TauCeti.isPositiveDefinite_cexp_neg_sq_norm`: the positive-definiteness half of the Gaussian
+  acceptance example (`c = 1`), `a ↦ exp (-‖a‖²)`.
+* `TauCeti.isPositiveDefiniteKernel_cexp_neg_sq_norm`: the involution-free kernel form of the
+  `c = 1` acceptance example, `(a, b) ↦ exp (-‖a - b‖²)`.
 
 ## References
 
@@ -106,10 +108,19 @@ theorem isPositiveDefiniteKernel_cexp_neg_mul_sq_norm {c : ℝ} (hc : 0 ≤ c) :
   rw [heq]
   exact hscaled
 
-/-- The Gaussian acceptance example: `a ↦ exp (-‖a‖²)` is positive definite. -/
+/-- The positive-definiteness half of the Gaussian acceptance example (`c = 1`):
+`a ↦ exp (-‖a‖²)` is positive definite under the negation involution. -/
 theorem isPositiveDefinite_cexp_neg_sq_norm [StarAddMonoid V] (hstar : ∀ x : V, star x = -x) :
     IsPositiveDefinite fun a : V => Complex.exp (-(‖a‖ ^ 2 : ℝ)) := by
   simpa only [one_mul] using
     isPositiveDefinite_cexp_neg_mul_sq_norm hstar (V := V) (c := 1) zero_le_one
+
+/-- The involution-free kernel form of the Gaussian acceptance example (`c = 1`):
+`(a, b) ↦ exp (-‖a - b‖²)` is a positive-definite kernel. Unlike
+`isPositiveDefinite_cexp_neg_sq_norm`, this requires no choice of involution on `V`. -/
+theorem isPositiveDefiniteKernel_cexp_neg_sq_norm :
+    IsPositiveDefiniteKernel fun a b : V => Complex.exp (-(‖a - b‖ ^ 2 : ℝ)) := by
+  simpa only [one_mul] using
+    isPositiveDefiniteKernel_cexp_neg_mul_sq_norm (V := V) (c := 1) zero_le_one
 
 end TauCeti
