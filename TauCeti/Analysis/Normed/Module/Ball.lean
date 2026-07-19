@@ -11,8 +11,7 @@ public import Mathlib.Analysis.Normed.Module.Basic
 # Affine normalizations of metric balls and spheres
 
 This file records how the affine map `y ↦ c • y +ᵥ x` pulls metric balls, closed balls, and
-spheres back to their corresponding sets centered at zero. It also provides a real-scalar
-specialization for the open ball.
+spheres back to their corresponding sets centered at zero.
 -/
 
 public section
@@ -55,12 +54,5 @@ theorem preimage_smul_vadd_sphere (x : P) {c : 𝕜} (hc : c ≠ 0) (r : ℝ) :
   · exact congrArg ((· * ·) ‖c‖)
 
 end Preimage
-
-/-- The real-scalar vector-space form of `preimage_smul_vadd_ball_norm`. -/
-@[simp]
-theorem preimage_const_add_smul_ball {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
-    [NormSMulClass ℝ E] (x : E) {c : ℝ} (hc : c ≠ 0) (r : ℝ) :
-    ((fun y : E ↦ x + c • y) ⁻¹' Metric.ball x (|c| * r)) = Metric.ball 0 r := by
-  simpa [Real.norm_eq_abs, add_comm] using preimage_smul_vadd_ball_norm x hc r
 
 end TauCeti
