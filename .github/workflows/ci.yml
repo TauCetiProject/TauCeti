@@ -25,6 +25,17 @@ jobs:
             exit 1
           fi
 
+      # No-set_option guard. `set_option` is an escape hatch (it can raise maxHeartbeats,
+      # silence linters, bump maxRecDepth, ...), so TauCeti/ source may not use it. Like the
+      # import guard it is a textual scan that needs no elaboration, so it runs trusted and
+      # outside the sandbox.
+      - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
+        run: |
+          if grep -rIn '^set_option ' TauCeti/ TauCeti.lean; then
+            echo "::error::TauCeti/ and TauCeti.lean may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"
+            exit 1
+          fi
+
       # No aggregator check: the root TauCeti.lean is intentionally empty and imports nothing.
       # The build globs every TauCeti/ module directly, so nothing depends on a root that
       # re-exports the library.
