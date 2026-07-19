@@ -47,7 +47,7 @@ theorem harmonicOnNhd_comp_const_add_smul_ball_radius_iff (x : E) {c : ℝ} (hc 
     (r : ℝ) {f : E → F} :
     HarmonicOnNhd (fun y ↦ f (x + c • y)) (Metric.ball 0 r) ↔
       HarmonicOnNhd f (Metric.ball x (‖c‖ * r)) := by
-  rw [← preimage_const_add_smul_ball_norm x hc r]
+  rw [← preimage_smul_vadd_ball_norm x hc r]
   simpa only [vadd_eq_add, add_comm] using
     harmonicOnNhd_comp_const_add_smul_iff x hc (f := f) (s := Metric.ball x (‖c‖ * r))
 
