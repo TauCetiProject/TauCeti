@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Rotation
 # Classification of holomorphic automorphisms of the complex unit disc
 
 This file completes the classification of the holomorphic automorphisms of the open unit disc.
-If `f` and `g` are mutually inverse holomorphic self-maps of the disc, then on the disc
+If `f` has a holomorphic left inverse `g` and vanishes at `g 0`, then on the disc
 
 `f z = u * (z - a) / (1 - conj a * z)`
 
@@ -35,34 +35,10 @@ open scoped ComplexConjugate
 
 variable {f g : ℂ → ℂ}
 
-private noncomputable abbrev discMoebiusFormula (a z : ℂ) : ℂ :=
-  (z - a) / (1 - (starRingEnd ℂ) a * z)
-
-private lemma differentiableOn_discMoebiusFormula {a : ℂ} (ha : ‖a‖ < 1) :
-    DifferentiableOn ℂ (discMoebiusFormula a) (ball (0 : ℂ) 1) := by
-  simpa only [discMoebiusFormula] using
-    differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one ha
-
-private lemma mapsTo_ball_discMoebiusFormula {a : ℂ} (ha : ‖a‖ < 1) :
-    MapsTo (discMoebiusFormula a) (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-  simpa only [discMoebiusFormula] using
-    mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one ha
-
-private lemma leftInvOn_discMoebiusFormula {a : ℂ} (ha : ‖a‖ < 1) :
-    LeftInvOn (discMoebiusFormula (-a)) (discMoebiusFormula a) (ball (0 : ℂ) 1) := by
-  simpa only [discMoebiusFormula] using
-    leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one ha
-
-private lemma rightInvOn_discMoebiusFormula {a : ℂ} (ha : ‖a‖ < 1) :
-    RightInvOn (discMoebiusFormula (-a)) (discMoebiusFormula a) (ball (0 : ℂ) 1) := by
-  simpa only [discMoebiusFormula, neg_neg] using
-    leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one (a := -a) (by simpa using ha)
-
 /--
-**Classification of holomorphic disc automorphisms.** Mutually inverse holomorphic self-maps
-`f` and `g` of the open unit disc have the standard form
-`f z = u * (z - a) / (1 - conj a * z)` on the disc, where the center is `a = g 0` and the
-rotation factor `u` lies on the unit circle.
+**Classification of holomorphic disc automorphisms.** A holomorphic self-map `f` of the open
+unit disc with a holomorphic left inverse `g` has the standard form, provided `f (g 0) = 0`.
+Its center is `g 0`, and its rotation factor lies on the unit circle.
 -/
 theorem exists_eqOn_unitDiscStandardAutomorphismFormula
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
@@ -70,49 +46,52 @@ theorem exists_eqOn_unitDiscStandardAutomorphismFormula
     (hfmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
     (hgmaps : MapsTo g (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
     (hgf : LeftInvOn g f (ball (0 : ℂ) 1))
-    (hfg : LeftInvOn f g (ball (0 : ℂ) 1)) :
+    (hfg0 : f (g 0) = 0) :
     ∃ (u : Circle) (a : Complex.UnitDisc), (a : ℂ) = g 0 ∧
-      EqOn f (fun z => (u : ℂ) *
-        ((z - (a : ℂ)) / (1 - (starRingEnd ℂ) (a : ℂ) * z)))
-        (ball (0 : ℂ) 1) := by
+      ∀ z : Complex.UnitDisc, f z = (unitDiscStandardAutomorphismEquiv u a z : ℂ) := by
   have hzero : (0 : ℂ) ∈ ball (0 : ℂ) 1 := by
     rw [mem_ball_zero_iff]
     norm_num
   have ha_mem : g 0 ∈ ball (0 : ℂ) 1 := hgmaps hzero
   have ha : ‖g 0‖ < 1 := by simpa [mem_ball_zero_iff] using ha_mem
-  have hfa : f (g 0) = 0 := hfg hzero
-  let F : ℂ → ℂ := f ∘ discMoebiusFormula (-(g 0))
-  let G : ℂ → ℂ := discMoebiusFormula (g 0) ∘ g
+  let F : ℂ → ℂ := f ∘ fun z =>
+    (z - (-(g 0))) / (1 - (starRingEnd ℂ) (-(g 0)) * z)
+  let G : ℂ → ℂ := (fun z =>
+    (z - g 0) / (1 - (starRingEnd ℂ) (g 0) * z)) ∘ g
   have hneg : ‖-(g 0)‖ < 1 := by simpa using ha
   have hFdiff : DifferentiableOn ℂ F (ball (0 : ℂ) 1) :=
-    hf.comp (differentiableOn_discMoebiusFormula hneg)
-      (mapsTo_ball_discMoebiusFormula hneg)
+    hf.comp (differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one hneg)
+      (mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one hneg)
   have hGdiff : DifferentiableOn ℂ G (ball (0 : ℂ) 1) :=
-    (differentiableOn_discMoebiusFormula ha).comp hg hgmaps
+    (differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one ha).comp hg hgmaps
   have hFmaps : MapsTo F (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) :=
-    hfmaps.comp (mapsTo_ball_discMoebiusFormula hneg)
+    hfmaps.comp (mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one hneg)
   have hGmaps : MapsTo G (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) :=
-    (mapsTo_ball_discMoebiusFormula ha).comp hgmaps
+    (mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one ha).comp hgmaps
   have hGF : LeftInvOn G F (ball (0 : ℂ) 1) := by
     intro z hz
-    rw [show G (F z) = discMoebiusFormula (g 0) (g (f (discMoebiusFormula (-(g 0)) z))) by
-      rfl]
-    rw [hgf ((mapsTo_ball_discMoebiusFormula hneg) hz)]
-    exact rightInvOn_discMoebiusFormula ha hz
+    simp only [F, G, Function.comp_apply]
+    rw [hgf ((mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one hneg) hz)]
+    simpa only [neg_neg] using
+      leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one (a := -(g 0)) hneg hz
   have hFzero : F 0 = 0 := by
-    rw [show F 0 = f (discMoebiusFormula (-(g 0)) 0) by rfl,
-      discMoebiusFormula]
-    simpa [ha.ne] using hfa
+    simp only [F, Function.comp_apply]
+    simpa [ha.ne] using hfg0
   obtain ⟨u, hu, hFu⟩ :=
     exists_eqOn_const_mul_of_leftInvOn_ball_of_map_zero hFdiff hGdiff hFmaps hGmaps hGF hFzero
   refine ⟨⟨u, by simpa [Submonoid.unitSphere] using hu⟩,
-    Complex.UnitDisc.mk (g 0) ha, Complex.UnitDisc.coe_mk _ _, fun z hz => ?_⟩
-  have hMz : discMoebiusFormula (g 0) z ∈ ball (0 : ℂ) 1 :=
-    mapsTo_ball_discMoebiusFormula ha hz
+    Complex.UnitDisc.mk (g 0) ha, Complex.UnitDisc.coe_mk _ _, fun z => ?_⟩
+  have hz : (z : ℂ) ∈ ball (0 : ℂ) 1 := by
+    simpa [mem_ball_zero_iff] using z.norm_lt_one
+  have hMz : ((z : ℂ) - g 0) / (1 - (starRingEnd ℂ) (g 0) * (z : ℂ)) ∈
+      ball (0 : ℂ) 1 := mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one ha hz
   have hF := hFu hMz
-  rw [show F (discMoebiusFormula (g 0) z) =
-      f (discMoebiusFormula (-(g 0)) (discMoebiusFormula (g 0) z)) by rfl,
-    leftInvOn_discMoebiusFormula ha hz] at hF
-  simpa only [discMoebiusFormula, Complex.UnitDisc.coe_mk] using hF
+  simp only [F, Function.comp_apply] at hF
+  have hInv := leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one ha hz
+  -- Beta-reduce the two scalar Moebius formulas so the inverse equality rewrites `hF`.
+  dsimp only at hInv
+  rw [hInv] at hF
+  rw [coe_unitDiscStandardAutomorphismEquiv_apply]
+  simpa only [Complex.UnitDisc.coe_mk] using hF
 
 end TauCeti
