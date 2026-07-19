@@ -40,7 +40,7 @@ variable {f g : ℂ → ℂ}
 unit disc with a holomorphic two-sided inverse `g` has the standard form. Its center is `g 0`,
 and its rotation factor lies on the unit circle.
 -/
-theorem exists_eqOn_unitDiscStandardAutomorphismFormula
+theorem exists_forall_unitDisc_eq_unitDiscStandardAutomorphismEquiv
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
     (hg : DifferentiableOn ℂ g (ball (0 : ℂ) 1))
     (hfmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
