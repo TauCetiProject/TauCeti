@@ -62,6 +62,7 @@ theorem exists_forall_unitDisc_eq_unitDiscStandardAutomorphismEquiv
   have hneg : ‖-(g 0)‖ < 1 := by simpa using ha
   have hFdata : DifferentiableOn ℂ F (ball (0 : ℂ) 1) ∧
       MapsTo F (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) ∧ F 0 = 0 := by
+    -- The target factor is centered at `f (g 0) = 0`, so it simplifies to the identity.
     simpa [F, hfg0, Function.comp_def] using
       differentiableOn_and_mapsTo_ball_and_apply_zero_schwarzPickConjugate hf hfmaps ha
   obtain ⟨hFdiff, hFmaps, hFzero⟩ := hFdata
@@ -77,7 +78,7 @@ theorem exists_forall_unitDisc_eq_unitDiscStandardAutomorphismEquiv
       leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one (a := -(g 0)) hneg hz
   obtain ⟨u, hu, hFu⟩ :=
     exists_eqOn_const_mul_of_leftInvOn_ball_of_map_zero hFdiff hGdiff hFmaps hGmaps hGF hFzero
-  refine ⟨⟨u, by simpa [Submonoid.unitSphere] using hu⟩,
+  refine ⟨⟨u, mem_sphere_zero_iff_norm.mpr hu⟩,
     Complex.UnitDisc.mk (g 0) ha, Complex.UnitDisc.coe_mk _ _, fun z => ?_⟩
   have hz : (z : ℂ) ∈ ball (0 : ℂ) 1 := by
     simpa [mem_ball_zero_iff] using z.norm_lt_one
