@@ -53,8 +53,7 @@ noncomputable def polynomialEvalChebyshevLp :
     rw [← MemLp.toLp_const_smul]
     apply MemLp.toLp_congr
     exact Filter.Eventually.of_forall fun x => by
-      change Polynomial.eval x (a • q) = a * Polynomial.eval x q
-      rw [Polynomial.smul_eq_C_mul, Polynomial.eval_C_mul]
+      simp [Polynomial.smul_eq_C_mul]
 
 /-- The `L²` representative of a polynomial evaluation is the expected pointwise evaluation. -/
 lemma coeFn_polynomialEvalChebyshevLp (q : Polynomial ℝ) :
@@ -74,9 +73,7 @@ lemma polynomialEvalChebyshevLp_T (n : ℕ) :
   rw [hT, hsmul]
   simp only [Pi.smul_apply, smul_eq_mul]
   rw [hnorm]
-  change (T ℝ n).eval x =
-    Real.sqrt (chebyshevTNormSq n) * normalizedChebyshevT n x
-  rw [normalizedChebyshevT_def]
+  simp only [Algebra.algebraMap_self_apply, normalizedChebyshevT_def]
   field_simp [Real.sqrt_ne_zero'.mpr (chebyshevTNormSq_pos n)]
 
 /-- Every real polynomial evaluation in `L²(measureT)` belongs to the linear span of the
