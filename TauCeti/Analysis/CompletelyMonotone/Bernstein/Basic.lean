@@ -41,8 +41,8 @@ nonnegative scalar multiples, and the basic catalogue — constants, the identit
   `[0, ∞)`.
 * `TauCeti.IsBernsteinFunction.congr`: the property depends only on the values on `[0, ∞)`.
 * `TauCeti.IsBernsteinFunction.add`, `TauCeti.IsBernsteinFunction.smul`,
-  `TauCeti.IsBernsteinFunction.sum`: closure under sums, nonnegative scalar multiples, and finite
-  sums.
+  `TauCeti.IsBernsteinFunction.const_add`, `TauCeti.IsBernsteinFunction.sum`: closure under sums,
+  nonnegative scalar multiples, adding a nonnegative constant, and finite sums.
 * `TauCeti.isBernsteinFunction_const`, `TauCeti.isBernsteinFunction_id`,
   `TauCeti.isBernsteinFunction_affine`, `TauCeti.isBernsteinFunction_one_sub_exp_neg_mul`: the
   basic examples.
@@ -177,6 +177,11 @@ theorem isBernsteinFunction_zero : IsBernsteinFunction (fun _ : ℝ => (0 : ℝ)
   isBernsteinFunction_const le_rfl
 
 namespace IsBernsteinFunction
+
+/-- Adding a nonnegative constant to a Bernstein function again gives a Bernstein function. -/
+theorem const_add {f : ℝ → ℝ} (hf : IsBernsteinFunction f) {c : ℝ} (hc : 0 ≤ c) :
+    IsBernsteinFunction (fun t => c + f t) :=
+  ((isBernsteinFunction_const hc).add hf).congr fun _ _ => by simp [Pi.add_apply]
 
 /-- Bernstein functions are closed under finite sums. -/
 theorem sum {ι : Type*} {s : Finset ι} {f : ι → ℝ → ℝ}
