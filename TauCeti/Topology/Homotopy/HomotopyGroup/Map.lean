@@ -138,7 +138,7 @@ theorem map_continuousMap_const_apply (y : Y) (hy : (ContinuousMap.const X y) x 
   refine Quotient.inductionOn a ?_
   intro p
   rw [map_mk]
-  congr 1
+  exact congrArg _ (GenLoop.map_continuousMap_const y p)
 
 /-- A based map into a subsingleton space induces the same map as the constant map at the
 target basepoint. -/
@@ -171,8 +171,11 @@ theorem map_continuousMap_const_apply_eq_one [DecidableEq N] [Nonempty N]
   (map_continuousMap_const_apply y hy a).trans _root_.HomotopyGroup.one_def.symm
 
 /-- In positive dimensions, a based map into a subsingleton space sends every homotopy class
-to the identity. -/
-@[simp 1100]
+to the identity.
+
+This is not a `simp` lemma: the positive-dimensional normal form is already reached by
+`map_apply_of_subsingleton` followed by `mk_const_eq_one`, so a separate composite `= 1` rule
+would be redundant. It is kept as an explicit rewrite. -/
 theorem map_apply_eq_one_of_subsingleton [DecidableEq N] [Nonempty N] [Subsingleton Y]
     (f : C(X, Y)) (hf : f x = y) (a : HomotopyGroup N X x) :
     map (N := N) f hf a = 1 :=
