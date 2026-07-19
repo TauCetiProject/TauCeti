@@ -128,7 +128,7 @@ theorem realOperator_hasDerivWithinAt (S : StronglyContinuousSemigroup X)
 
 /-- At every nonnegative time, the right derivative of the orbit is the semigroup operator
 applied to the generator. -/
-theorem realOperator_hasDerivWithinAt_eq_map_generator
+theorem realOperator_hasDerivWithinAt_map_generator
     (S : StronglyContinuousSemigroup X) (x : S.domain) {t : ℝ} (ht : 0 ≤ t) :
     HasDerivWithinAt (fun s : ℝ => S.realOperator s (x : X))
       (S.realOperator t (S.generator ⟨x, by
@@ -145,13 +145,14 @@ theorem realOperator_differentiableWithinAt (S : StronglyContinuousSemigroup X)
 
 /-- The right derivative of the orbit at a nonnegative time is the semigroup operator applied
 to the generator. -/
+@[simp]
 theorem realOperator_derivWithin (S : StronglyContinuousSemigroup X)
     (x : S.domain) {t : ℝ} (ht : 0 ≤ t) :
     derivWithin (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici t) t =
       S.realOperator t (S.generator ⟨x, by
         rw [S.generator_domain]
         exact x.property⟩) :=
-  (S.realOperator_hasDerivWithinAt_eq_map_generator x ht).derivWithin
+  (S.realOperator_hasDerivWithinAt_map_generator x ht).derivWithin
     (uniqueDiffWithinAt_Ici t)
 
 end StronglyContinuousSemigroup
