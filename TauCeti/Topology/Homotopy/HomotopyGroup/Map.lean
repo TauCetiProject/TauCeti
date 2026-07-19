@@ -106,6 +106,14 @@ namespace HomotopyGroup
 variable {N X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
   {x : X} {y : Y} {z : Z}
 
+/-- In positive dimensions, the class of the constant generalized loop is the identity element.
+This is `HomotopyGroup.one_def` oriented towards `1`, so that `1` is the simp normal form for
+the constant-map results below. -/
+@[simp]
+theorem mk_const_eq_one [DecidableEq N] [Nonempty N] :
+    (⟦(_root_.GenLoop.const : Ω^ N X x)⟧ : HomotopyGroup N X x) = (1 : HomotopyGroup N X x) :=
+  _root_.HomotopyGroup.one_def.symm
+
 /-- The map on homotopy classes induced by a based continuous map. -/
 @[expose] def map (f : C(X, Y)) (hf : f x = y) :
     HomotopyGroup N X x → HomotopyGroup N Y y :=
