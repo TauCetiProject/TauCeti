@@ -17,8 +17,7 @@ then
 `t ↦ ∫ x in 0..t, f x` for `t ≥ 0`
 
 is a Bernstein function. Its derivative on `(0, ∞)` is `f`, so complete monotonicity of the
-derivative is inherited directly from `f`. Shifting by a nonnegative constant preserves the
-Bernstein property through the general closure lemma `TauCeti.IsBernsteinFunction.const_add`.
+derivative is inherited directly from `f`.
 
 The primitive is packaged as `TauCeti.halfLinePrimitive` (in
 `TauCeti.Analysis.Calculus.HalfLinePrimitive`), which integrates `f (max x 0)` so that the
