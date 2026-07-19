@@ -119,7 +119,6 @@ theorem map_mk (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) :
 /-- A constant continuous map sends every homotopy class to the class of the constant
 generalized loop. This statement also covers dimension zero, where the target need not carry
 the positive-dimensional group structure. -/
-@[simp]
 theorem map_continuousMap_const_apply (y : Y) (a : HomotopyGroup N X x) :
     map (x := x) (ContinuousMap.const X y) rfl a =
       (⟦(_root_.GenLoop.const : Ω^ N Y y)⟧ : HomotopyGroup N Y y) := by
@@ -139,12 +138,27 @@ theorem map_eq_continuousMap_const_of_subsingleton [Subsingleton Y]
 
 /-- A based map into a subsingleton space sends every homotopy class to the class of the
 constant generalized loop. -/
-@[simp]
 theorem map_apply_of_subsingleton [Subsingleton Y] (f : C(X, Y)) (hf : f x = y)
     (a : HomotopyGroup N X x) :
     map (N := N) f hf a =
       (⟦(_root_.GenLoop.const : Ω^ N Y y)⟧ : HomotopyGroup N Y y) := by
   rw [map_eq_continuousMap_const_of_subsingleton, map_continuousMap_const_apply]
+
+/-- In positive dimensions, a constant continuous map sends every homotopy class to the
+identity. -/
+@[simp]
+theorem map_continuousMap_const_apply_eq_one [DecidableEq N] [Nonempty N]
+    (y : Y) (a : HomotopyGroup N X x) :
+    map (x := x) (ContinuousMap.const X y) rfl a = 1 :=
+  (map_continuousMap_const_apply y a).trans _root_.HomotopyGroup.one_def.symm
+
+/-- In positive dimensions, a based map into a subsingleton space sends every homotopy class
+to the identity. -/
+@[simp]
+theorem map_apply_eq_one_of_subsingleton [DecidableEq N] [Nonempty N] [Subsingleton Y]
+    (f : C(X, Y)) (hf : f x = y) (a : HomotopyGroup N X x) :
+    map (N := N) f hf a = 1 :=
+  (map_apply_of_subsingleton f hf a).trans _root_.HomotopyGroup.one_def.symm
 
 /-- Identity law: the map induced by the identity continuous map is the identity on homotopy
 classes. -/
