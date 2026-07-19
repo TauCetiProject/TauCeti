@@ -27,6 +27,8 @@ identify the Gram entries.
   any star-preserving additive homomorphism, stated using Mathlib's homomorphism classes.
 * `TauCeti.IsPositiveDefinite.comp_addMonoidHom`: the same statement for an explicit
   `AddMonoidHom` plus a star-preservation hypothesis.
+* `TauCeti.IsPositiveDefinite.comp_smul`: rescaling the argument by a scalar preserves
+  positive-definiteness when the involution is negation.
 * `TauCeti.IsPositiveDefinite.of_comp_surjective` and
   `TauCeti.IsPositiveDefinite.comp_iff_of_surjective`: descent and equivalence for surjective
   star-preserving additive homomorphisms.
@@ -68,6 +70,13 @@ theorem comp_addMonoidHom (hF : IsPositiveDefinite F) (φ : N →+ M)
     IsPositiveDefinite (fun x : N => F (φ x)) := by
   intro n c v
   simpa [map_add, hstar] using hF n c (fun i => φ (v i))
+
+/-- Rescaling the argument by a scalar preserves positive-definiteness, whenever the involution
+on the domain is negation: if `F` is positive definite then so is `x ↦ F (r • x)`. -/
+theorem comp_smul {G : Type*} [AddGroup G] [StarAddMonoid G] {R : Type*} [DistribSMul R G]
+    {F : G → ℂ} (hF : IsPositiveDefinite F) (hstar : ∀ x : G, star x = -x) (r : R) :
+    IsPositiveDefinite fun x : G => F (r • x) :=
+  hF.comp_addMonoidHom (DistribSMul.toAddMonoidHom G r) fun x => by simp [hstar, smul_neg]
 
 /-- Positive-definiteness descends along a surjective star-preserving additive homomorphism:
 if `F ∘ φ` is positive definite and every point of the codomain is in the range of `φ`, then

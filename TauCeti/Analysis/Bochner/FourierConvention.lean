@@ -73,8 +73,7 @@ theorem fourierConventionCharFun_isPositiveDefinite_of_star_eq_neg [StarAddMonoi
     (hstar : ∀ x : W, star x = -x) :
     IsPositiveDefinite (fun a : W => ∫ q, fourierAtom a q ∂ν) := by
   have hchar : IsPositiveDefinite fun a : W => MeasureTheory.charFun ν ((-2 * Real.pi) • a) :=
-    (charFun_isPositiveDefinite_of_star_eq_neg (μ := ν) hstar).comp_addMonoidHom
-      (DistribSMul.toAddMonoidHom W (-2 * Real.pi)) (fun a => by simp [hstar])
+    (charFun_isPositiveDefinite_of_star_eq_neg (μ := ν) hstar).comp_smul hstar (-2 * Real.pi)
   convert hchar using 1
   ext a
   exact integral_fourierAtom_eq_charFun_neg_two_pi_smul (μ := ν) a
