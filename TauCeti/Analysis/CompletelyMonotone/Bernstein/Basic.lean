@@ -39,6 +39,7 @@ nonnegative scalar multiples, and the basic catalogue — constants, the identit
   `TauCeti.IsBernsteinFunction.monotoneOn`, `TauCeti.IsBernsteinFunction.concaveOn`: a Bernstein
   function is nonnegative, has nonnegative derivative, is nondecreasing, and is concave on
   `[0, ∞)`.
+* `TauCeti.IsBernsteinFunction.congr`: the property depends only on the values on `[0, ∞)`.
 * `TauCeti.IsBernsteinFunction.add`, `TauCeti.IsBernsteinFunction.smul`,
   `TauCeti.IsBernsteinFunction.sum`: closure under sums, nonnegative scalar multiples, and finite
   sums.
@@ -68,7 +69,8 @@ def IsBernsteinFunction (f : ℝ → ℝ) : Prop :=
     (∀ t : ℝ, 0 ≤ t → 0 ≤ f t) ∧ IsCompletelyMonotoneOnIoi (deriv f)
 
 /-- A function is Bernstein exactly when it is continuous and nonnegative on `[0, ∞)`, smooth
-on `(0, ∞)`, and has completely monotone derivative there. -/
+on `(0, ∞)`, and has completely monotone derivative there. The body of `IsBernsteinFunction` is
+not `@[expose]`d, so this is how downstream files build the predicate from its four clauses. -/
 theorem isBernsteinFunction_iff {f : ℝ → ℝ} :
     IsBernsteinFunction f ↔
       ContinuousOn f (Ici 0) ∧ ContDiffOn ℝ ∞ f (Ioi 0) ∧
@@ -122,6 +124,17 @@ lemma concaveOn (hf : IsBernsteinFunction f) : ConcaveOn ℝ (Ici 0) f := by
   rw [interior_Ici] at hx
   simpa [Function.iterate_succ, Function.iterate_zero, Function.comp_def] using
     hf.deriv_isCompletelyMonotoneOnIoi.deriv_nonpos hx
+
+/-- Being a Bernstein function depends only on the values on `[0, ∞)`. -/
+theorem congr (hf : IsBernsteinFunction f) (h : Set.EqOn g f (Ici 0)) :
+    IsBernsteinFunction g := by
+  have hIoi : Set.EqOn g f (Ioi 0) := h.mono Ioi_subset_Ici_self
+  have hderiv : Set.EqOn (deriv g) (deriv f) (Ioi 0) := fun x hx =>
+    (hIoi.eventuallyEq_of_mem (isOpen_Ioi.mem_nhds hx)).deriv_eq
+  refine ⟨hf.continuousOn.congr h, hf.contDiffOn.congr fun x hx => hIoi hx, fun t ht => ?_, ?_⟩
+  · rw [h ht]
+    exact hf.nonneg ht
+  · exact hf.deriv_isCompletelyMonotoneOnIoi.congr hderiv
 
 /-- Bernstein functions are closed under addition. -/
 theorem add (hf : IsBernsteinFunction f) (hg : IsBernsteinFunction g) :
