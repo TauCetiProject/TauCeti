@@ -83,6 +83,7 @@ theorem mem_join_iff {σ : Finset (α ⊕ β)} :
 
 /-- A disjoint union is a face of the join exactly when it is nonempty and each nonempty
 component is a face of its original complex. -/
+@[simp]
 theorem disjSum_mem_join_iff {s : Finset α} {t : Finset β} :
     s.disjSum t ∈ join K L ↔
       (s.Nonempty ∨ t.Nonempty) ∧ (s = ∅ ∨ s ∈ K) ∧ (t = ∅ ∨ t ∈ L) := by
@@ -159,6 +160,7 @@ theorem mem_join_iff {σ : Finset (α ⊕ β)} :
 
 /-- A disjoint union is a face of the abstract join exactly when it is nonempty and each
 nonempty component is a face of its original complex. -/
+@[simp]
 theorem disjSum_mem_join_iff {s : Finset α} {t : Finset β} :
     s.disjSum t ∈ join K L ↔
       (s.Nonempty ∨ t.Nonempty) ∧ (s = ∅ ∨ s ∈ K) ∧ (t = ∅ ∨ t ∈ L) := by
