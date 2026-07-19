@@ -82,6 +82,8 @@ lemma Hom.toOverHom_mk' {A B : AbelianVariety K} (f : A.toOver ⟶ B.toOver)
     (mul_f : μ[A.toOver] ≫ f = (f ⊗ₘ f) ≫ μ[B.toOver] := by cat_disch) :
     Hom.toOverHom (Hom.mk' f one_f mul_f) = f :=
   by
+    -- `Hom.mk'` is wrapped by two induced categories; reduce those wrappers here so that all
+    -- clients can use this projection lemma without depending on their definitional equality.
     change (Grp.homMk'' (A := Grp.mk A.toOver) (B := Grp.mk B.toOver)
       f one_f mul_f).hom.hom = f
     exact Grp.homMk''_hom_hom (A := Grp.mk A.toOver) (B := Grp.mk B.toOver) f one_f mul_f
@@ -132,7 +134,7 @@ lemma Hom.toSchemeHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C
 
 /-- The underlying scheme morphism of an abelian-variety homomorphism commutes with the structure
 morphisms to `Spec K`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma Hom.toSchemeHom_comp_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     Hom.toSchemeHom f ≫ B.toOver.hom = A.toOver.hom :=
   (Hom.toOverHom f).w
