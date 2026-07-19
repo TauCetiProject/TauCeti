@@ -88,24 +88,36 @@ lemma Hom.toOverHom_mk' {A B : AbelianVariety K} (f : A.toOver ⟶ B.toOver)
       f one_f mul_f).hom.hom = f
     exact Grp.homMk''_hom_hom (A := Grp.mk A.toOver) (B := Grp.mk B.toOver) f one_f mul_f
 
+/-- `toOverHom` is the iterated underlying-morphism projection of the wrappers stacking up to
+`A ⟶ B`: two induced categories, `CommGrp` and `Grp`. This is `rfl` because `inducedFunctor` and
+`CommGrp.forget` both act as the identity on the underlying morphism, so this lemma is the single
+place recording that definitional equality; other proofs should go through it rather than unfolding
+the wrappers again. -/
+lemma Hom.toOverHom_def {A B : AbelianVariety K} (f : A ⟶ B) :
+    Hom.toOverHom f = f.hom.hom.hom.hom :=
+  rfl
+
 /-- A homomorphism of abelian varieties preserves the unit section. -/
 @[reassoc (attr := simp)]
 lemma Hom.one_hom {A B : AbelianVariety K} (f : A ⟶ B) :
-    η[A.toOver] ≫ Hom.toOverHom f = η[B.toOver] :=
-  IsMonHom.one_hom f.hom.hom.hom.hom
+    η[A.toOver] ≫ Hom.toOverHom f = η[B.toOver] := by
+  rw [Hom.toOverHom_def]
+  exact IsMonHom.one_hom _
 
 /-- A homomorphism of abelian varieties preserves multiplication. -/
 @[reassoc (attr := simp)]
 lemma Hom.mul_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     μ[A.toOver] ≫ Hom.toOverHom f =
-      (Hom.toOverHom f ⊗ₘ Hom.toOverHom f) ≫ μ[B.toOver] :=
-  IsMonHom.mul_hom f.hom.hom.hom.hom
+      (Hom.toOverHom f ⊗ₘ Hom.toOverHom f) ≫ μ[B.toOver] := by
+  rw [Hom.toOverHom_def]
+  exact IsMonHom.mul_hom _
 
 /-- A homomorphism of abelian varieties preserves inverses. -/
 @[reassoc (attr := simp)]
 lemma Hom.inv_hom {A B : AbelianVariety K} (f : A ⟶ B) :
-    ι[A.toOver] ≫ Hom.toOverHom f = Hom.toOverHom f ≫ ι[B.toOver] :=
-  GrpObj.inv_hom f.hom.hom.hom.hom
+    ι[A.toOver] ≫ Hom.toOverHom f = Hom.toOverHom f ≫ ι[B.toOver] := by
+  rw [Hom.toOverHom_def]
+  exact GrpObj.inv_hom _
 
 /-- The underlying morphism between the schemes of two abelian varieties. -/
 abbrev Hom.toSchemeHom {A B : AbelianVariety K} (f : A ⟶ B) : A.toScheme ⟶ B.toScheme :=
@@ -145,6 +157,7 @@ equal. -/
 @[ext]
 lemma Hom.ext {A B : AbelianVariety K} {f g : A ⟶ B}
     (h : Hom.toSchemeHom f = Hom.toSchemeHom g) : f = g := by
+  simp only [Hom.toSchemeHom, Hom.toOverHom_def] at h
   apply InducedCategory.hom_ext
   apply CommGrp.hom_ext
   exact Over.OverMorphism.ext h
