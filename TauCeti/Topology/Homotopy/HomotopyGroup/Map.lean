@@ -221,17 +221,15 @@ homotopy groups. -/
 theorem mapHom_continuousMap_const_eq_one [DecidableEq N] [Nonempty N] (y : Y) :
     mapHom (N := N) (x := x) (ContinuousMap.const X y) rfl = 1 := by
   ext a
-  rw [mapHom_apply, map_continuousMap_const_apply]
-  exact _root_.HomotopyGroup.one_def.symm
+  exact map_continuousMap_const_apply_eq_one (x := x) y a
 
 /-- A based map into a subsingleton space induces the trivial homomorphism on every
 positive-dimensional homotopy group. -/
 @[simp]
 theorem mapHom_eq_one_of_subsingleton [DecidableEq N] [Nonempty N] [Subsingleton Y]
     (f : C(X, Y)) (hf : f x = y) : mapHom (N := N) f hf = 1 := by
-  have h : f = ContinuousMap.const X y := Subsingleton.elim _ _
-  subst f
-  exact mapHom_continuousMap_const_eq_one (x := x) y
+  ext a
+  exact map_apply_eq_one_of_subsingleton f hf a
 
 /-- Identity law for the bundled homomorphism: the induced monoid homomorphism of the identity
 continuous map is the identity homomorphism. -/
