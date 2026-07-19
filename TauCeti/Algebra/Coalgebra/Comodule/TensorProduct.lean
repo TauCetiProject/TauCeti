@@ -42,7 +42,7 @@ resolution non-confluent.
   comodule morphisms.
 * `TauCeti.Comodule.lTensor_comp_tensorCombine`: an algebra homomorphism on the coefficients
   passes through the combining map.
-* `TauCeti.Comodule.tensorCoact_coassoc` and `TauCeti.Comodule.tensorCoact_lTensor_counit`:
+* `TauCeti.Comodule.tensorCoact_coassoc` and `TauCeti.Comodule.tensorCoact_counit`:
   the two comodule laws for the diagonal coaction.
 * `TauCeti.Comodule.tensor`: the right `C`-comodule structure on `M ⊗[R] N`.
 * `TauCeti.Comodule.Hom.tensorMap`: the tensor product of two comodule morphisms, with
@@ -328,7 +328,7 @@ theorem tensorCoact_coassoc :
 /-- The diagonal coaction on `M ⊗[R] N` satisfies the counit law: the counit of `C` is an
 algebra homomorphism, so it turns the product of the two coefficients into the product of
 their counits, which is `1`. -/
-theorem tensorCoact_lTensor_counit :
+theorem tensorCoact_counit :
     Coalgebra.counit.lTensor (M ⊗[R] N) ∘ₗ
         tensorCoact (R := R) (C := C) (M := M) (N := N) =
       (TensorProduct.mk R (M ⊗[R] N) R).flip 1 := by
@@ -357,7 +357,7 @@ resolution non-confluent. Select it explicitly, or register it as a local instan
 noncomputable def tensor : Comodule R C (M ⊗[R] N) where
   coact := tensorCoact
   coassoc := tensorCoact_coassoc
-  lTensor_counit_comp_coact := tensorCoact_lTensor_counit
+  lTensor_counit_comp_coact := tensorCoact_counit
 
 -- Register `tensor` as a local instance for the rest of this file, so that the diagonal
 -- comodule on `M ⊗[R] N` resolves automatically instead of being threaded through every
@@ -370,17 +370,6 @@ theorem tensor_coact :
     coact (R := R) (C := C) (M := M ⊗[R] N) =
       tensorCoact (R := R) (C := C) (M := M) (N := N) :=
   rfl
-
-/-- The coaction of the tensor-product comodule on a simple tensor combines the two
-component coactions: `m ⊗ n ↦ (m₀ ⊗ n₀) ⊗ m₁ n₁`.
-
-This is not a `simp` lemma: `tensor_coact` followed by `tensorCoact_tmul` already rewrites
-it. -/
-theorem tensor_coact_tmul (m : M) (n : N) :
-    coact (R := R) (C := C) (M := M ⊗[R] N) (m ⊗ₜ[R] n) =
-      tensorCombine (R := R) (C := C) (M := M) (N := N)
-        (coact (R := R) (C := C) (M := M) m ⊗ₜ[R] coact (R := R) (C := C) (M := N) n) :=
-  tensorCoact_tmul m n
 
 namespace Hom
 
@@ -417,14 +406,11 @@ theorem tensorMap_tmul (f : Hom R C M M') (g : Hom R C N N') (m : M) (n : N) :
     tensorMap f g (m ⊗ₜ[R] n) = f m ⊗ₜ[R] g n :=
   rfl
 
-/-- The tensor product of two identity morphisms is the identity morphism.
-
-This is not a `simp` lemma: the bundled categorical identity `ComoduleCat.ofHom_id` rewrites
-the left-hand side first. -/
+/-- The tensor product of two identity morphisms is the identity morphism. -/
+@[simp]
 theorem tensorMap_id : tensorMap (id R C M) (id R C N) = id R C (M ⊗[R] N) := by
   refine Comodule.Hom.ext fun x => ?_
-  rw [tensorMap_apply, show (id R C M).toLinearMap = LinearMap.id from rfl,
-    show (id R C N).toLinearMap = LinearMap.id from rfl, TensorProduct.map_id]
+  rw [tensorMap_apply, id_toLinearMap, id_toLinearMap, TensorProduct.map_id]
   rfl
 
 variable {M'' : Type*} {N'' : Type*}
@@ -432,14 +418,13 @@ variable [AddCommMonoid M''] [Module R M''] [Comodule R C M'']
 variable [AddCommMonoid N''] [Module R N''] [Comodule R C N'']
 
 /-- The tensor product of morphisms is compatible with composition. -/
+@[simp]
 theorem tensorMap_comp (f : Hom R C M M') (f' : Hom R C M' M'')
     (g : Hom R C N N') (g' : Hom R C N' N'') :
     tensorMap (f'.comp f) (g'.comp g) = (tensorMap f' g').comp (tensorMap f g) := by
   refine Comodule.Hom.ext fun x => ?_
   rw [Comodule.Hom.comp_apply, tensorMap_apply, tensorMap_apply, tensorMap_apply,
-    show (f'.comp f).toLinearMap = f'.toLinearMap ∘ₗ f.toLinearMap from rfl,
-    show (g'.comp g).toLinearMap = g'.toLinearMap ∘ₗ g.toLinearMap from rfl,
-    TensorProduct.map_comp, LinearMap.comp_apply]
+    comp_toLinearMap, comp_toLinearMap, TensorProduct.map_comp, LinearMap.comp_apply]
 
 end Hom
 
