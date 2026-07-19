@@ -74,6 +74,17 @@ lemma Hom.toOverHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C) 
     Hom.toOverHom (f ≫ g) = Hom.toOverHom f ≫ Hom.toOverHom g :=
   (Hom.toOverFunctor).map_comp f g
 
+/-- `toOverHom` is definitionally the iterated underlying-morphism projection through the two
+induced categories, `CommGrp`, and `Grp`. -/
+private lemma Hom.toOverHom_def {A B : AbelianVariety K} (f : A ⟶ B) :
+    Hom.toOverHom f = f.hom.hom.hom.hom :=
+  rfl
+
+/-- The underlying morphism of an abelian-variety homomorphism preserves the group-object
+structure. -/
+instance {A B : AbelianVariety K} (f : A ⟶ B) : IsMonHom (Hom.toOverHom f) :=
+  inferInstanceAs (IsMonHom (f.hom.hom.hom.hom))
+
 /-- The underlying morphism over `Spec K` of a homomorphism built by `Hom.mk'` is the supplied
 morphism. -/
 @[simp]
@@ -82,20 +93,8 @@ lemma Hom.toOverHom_mk' {A B : AbelianVariety K} (f : A.toOver ⟶ B.toOver)
     (mul_f : μ[A.toOver] ≫ f = (f ⊗ₘ f) ≫ μ[B.toOver] := by cat_disch) :
     Hom.toOverHom (Hom.mk' f one_f mul_f) = f :=
   by
-    -- `Hom.mk'` is wrapped by two induced categories; reduce those wrappers here so that all
-    -- clients can use this projection lemma without depending on their definitional equality.
-    change (Grp.homMk'' (A := Grp.mk A.toOver) (B := Grp.mk B.toOver)
-      f one_f mul_f).hom.hom = f
+    rw [Hom.toOverHom_def]
     exact Grp.homMk''_hom_hom (A := Grp.mk A.toOver) (B := Grp.mk B.toOver) f one_f mul_f
-
-/-- `toOverHom` is the iterated underlying-morphism projection of the wrappers stacking up to
-`A ⟶ B`: two induced categories, `CommGrp` and `Grp`. This is `rfl` because `inducedFunctor` and
-`CommGrp.forget` both act as the identity on the underlying morphism, so this lemma is the single
-place recording that definitional equality; other proofs should go through it rather than unfolding
-the wrappers again. -/
-lemma Hom.toOverHom_def {A B : AbelianVariety K} (f : A ⟶ B) :
-    Hom.toOverHom f = f.hom.hom.hom.hom :=
-  rfl
 
 /-- A homomorphism of abelian varieties preserves the unit section. -/
 @[reassoc (attr := simp)]
