@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Star
+public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Complex.ReImTopology
 public import Mathlib.Topology.Piecewise
@@ -450,5 +451,79 @@ lemma differentiableOn_schwarzReflection_inter_im_neg_of_symmetric {Ω : Set ℂ
     (f := f) hΩ hf) z hz).congr
       (fun w hw => schwarzReflection_of_im_neg (f := f) hw.2)
       (schwarzReflection_of_im_neg (f := f) hz.2)
+
+/-- Away from the real axis, the Schwarz-reflection extension is holomorphic on a
+conjugation-symmetric domain whenever the original function is holomorphic on its upper
+half-plane part. -/
+lemma differentiableOn_schwarzReflection_inter_im_ne_zero_of_symmetric {Ω : Set ℂ}
+    (hΩopen : IsOpen Ω) (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
+    (hf : DifferentiableOn ℂ f (Ω ∩ {z | 0 < z.im})) :
+    DifferentiableOn ℂ (schwarzReflection f) (Ω ∩ {z | z.im ≠ 0}) := by
+  have hupper : DifferentiableOn ℂ (schwarzReflection f) (Ω ∩ {z | 0 < z.im}) :=
+    differentiableOn_schwarzReflection_of_subset_im_nonneg (f := f)
+      (fun z hz => by
+        change 0 ≤ z.im
+        exact hz.2.le) hf
+  have hlower := differentiableOn_schwarzReflection_inter_im_neg_of_symmetric
+    (f := f) hΩ hf
+  rw [show Ω ∩ {z : ℂ | z.im ≠ 0} =
+      (Ω ∩ {z | 0 < z.im}) ∪ (Ω ∩ {z | z.im < 0}) by
+    ext z
+    simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_union]
+    constructor
+    · rintro ⟨hzΩ, hz⟩
+      rcases lt_or_gt_of_ne hz with hzneg | hzpos
+      · exact Or.inr ⟨hzΩ, hzneg⟩
+      · exact Or.inl ⟨hzΩ, hzpos⟩
+    · rintro (⟨hzΩ, hzpos⟩ | ⟨hzΩ, hzneg⟩)
+      · exact ⟨hzΩ, ne_of_gt hzpos⟩
+      · exact ⟨hzΩ, ne_of_lt hzneg⟩]
+  exact hupper.union_of_isOpen hlower
+    (hΩopen.inter (isOpen_lt continuous_const Complex.continuous_im))
+    (hΩopen.inter (isOpen_lt Complex.continuous_im continuous_const))
+
+/-- At a point in the open upper half-plane, the Schwarz-reflection extension has the same
+derivative as the original function. -/
+lemma hasDerivAt_schwarzReflection_of_im_pos {z f' : ℂ} (hz : 0 < z.im)
+    (hf : HasDerivAt f f' z) :
+    HasDerivAt (schwarzReflection f) f' z :=
+  hf.congr_of_eventuallyEq
+    (mem_of_superset ((isOpen_lt continuous_const Complex.continuous_im).mem_nhds hz)
+      fun _ hw => schwarzReflection_of_im_nonneg (f := f) hw.le)
+
+/-- At a point in the open lower half-plane, the derivative of the Schwarz-reflection
+extension is the conjugate of the derivative of `f` at the conjugate point. -/
+lemma hasDerivAt_schwarzReflection_of_im_neg {z f' : ℂ} (hz : z.im < 0)
+    (hf : HasDerivAt f f' ((starRingEnd ℂ) z)) :
+    HasDerivAt (schwarzReflection f) ((starRingEnd ℂ) f') z := by
+  have hreflected : HasDerivAt
+      (fun w : ℂ => (starRingEnd ℂ) (f ((starRingEnd ℂ) w)))
+      ((starRingEnd ℂ) f') z := by
+    simpa [Function.comp_def] using hf.conj_conj
+  exact hreflected.congr_of_eventuallyEq
+    (mem_of_superset ((isOpen_lt Complex.continuous_im continuous_const).mem_nhds hz)
+      fun w hw => schwarzReflection_of_im_neg (f := f) hw)
+
+/-- On the open upper half-plane, the derivative of the Schwarz-reflection extension agrees
+with the derivative of the original function. -/
+lemma deriv_schwarzReflection_of_im_pos {z : ℂ} (hz : 0 < z.im) :
+    deriv (schwarzReflection f) z = deriv f z := by
+  exact Filter.EventuallyEq.deriv_eq <|
+    mem_of_superset ((isOpen_lt continuous_const Complex.continuous_im).mem_nhds hz)
+      fun w hw => schwarzReflection_of_im_nonneg (f := f) hw.le
+
+/-- On the open lower half-plane, the derivative of the Schwarz-reflection extension is the
+conjugate of the derivative of the original function at the conjugate point. -/
+lemma deriv_schwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
+    deriv (schwarzReflection f) z =
+      (starRingEnd ℂ) (deriv f ((starRingEnd ℂ) z)) := by
+  calc
+    deriv (schwarzReflection f) z =
+        deriv (fun w : ℂ => (starRingEnd ℂ) (f ((starRingEnd ℂ) w))) z :=
+      Filter.EventuallyEq.deriv_eq <|
+        mem_of_superset ((isOpen_lt Complex.continuous_im continuous_const).mem_nhds hz)
+          fun w hw => schwarzReflection_of_im_neg (f := f) hw
+    _ = (starRingEnd ℂ) (deriv f ((starRingEnd ℂ) z)) := by
+      simpa only [Function.comp_def] using congrFun deriv_conj_conj z
 
 end TauCeti
