@@ -45,7 +45,8 @@ variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
 /-- `ClassGroup.mulEquiv f` sends the class of a unit fractional ideal `I` to the class of its
 image under `FractionalIdeal.ringEquivOfRingEquiv f`. This is the characteristic computation of the
 induced map on ideal classes; the functorial laws below are corollaries. -/
-@[simp high] theorem mulEquiv_mk (f : R ≃+* S) (I : (FractionalIdeal R⁰ (FractionRing R))ˣ) :
+private theorem mulEquiv_mk_fractionRing (f : R ≃+* S)
+    (I : (FractionalIdeal R⁰ (FractionRing R))ˣ) :
     ClassGroup.mulEquiv f (ClassGroup.mk (FractionRing R) I) =
       ClassGroup.mk (FractionRing S)
         (Units.mapEquiv (FractionalIdeal.ringEquivOfRingEquiv
@@ -57,13 +58,65 @@ induced map on ideal classes; the functorial laws below are corollaries. -/
   apply Units.ext
   simp [FractionalIdeal.canonicalEquiv_self]
 
+/-- `ClassGroup.mulEquiv f` sends the class of a unit fractional ideal `I` to the class of its
+image under `FractionalIdeal.ringEquivOfRingEquiv f`. This is independent of the chosen fraction
+fields. -/
+@[simp high] theorem mulEquiv_mk {K L : Type*} [Field K] [Field L] [Algebra R K]
+    [Algebra S L] [IsFractionRing R K] [IsFractionRing S L] (f : R ≃+* S)
+    (I : (FractionalIdeal R⁰ K)ˣ) :
+    ClassGroup.mulEquiv f (ClassGroup.mk K I) =
+      ClassGroup.mk L
+        (Units.mapEquiv (FractionalIdeal.ringEquivOfRingEquiv K L f) I) := by
+  rw [← ClassGroup.mk_canonicalEquiv (K := K) (FractionRing R) I,
+    mulEquiv_mk_fractionRing]
+  rw [← ClassGroup.mk_canonicalEquiv (K := FractionRing S) L]
+  congr 1
+  apply Units.ext
+  simp only [Units.coe_mapEquiv, Units.coe_map]
+  rw [FractionalIdeal.canonicalEquiv, FractionalIdeal.canonicalEquiv]
+  letI : RingHomInvPair (f : R →+* S) f.symm := RingHomInvPair.of_ringEquiv f
+  letI : RingHomInvPair (f.symm : S →+* R) f := RingHomInvPair.of_ringEquiv f.symm
+  letI : RingHomInvPair (RingEquiv.refl R : R →+* R) (RingEquiv.refl R).symm :=
+    RingHomInvPair.of_ringEquiv (RingEquiv.refl R)
+  letI : RingHomInvPair ((RingEquiv.refl R).symm : R →+* R) (RingEquiv.refl R) :=
+    RingHomInvPair.of_ringEquiv (RingEquiv.refl R).symm
+  letI : RingHomInvPair (RingEquiv.refl S : S →+* S) (RingEquiv.refl S).symm :=
+    RingHomInvPair.of_ringEquiv (RingEquiv.refl S)
+  letI : RingHomInvPair ((RingEquiv.refl S).symm : S →+* S) (RingEquiv.refl S) :=
+    RingHomInvPair.of_ringEquiv (RingEquiv.refl S).symm
+  letI : RingHomCompTriple (RingEquiv.refl R : R →+* R) (f : R →+* S) (f : R →+* S) :=
+    ⟨by ext; rfl⟩
+  letI : RingHomCompTriple (f : R →+* S) (RingEquiv.refl S : S →+* S) (f : R →+* S) :=
+    ⟨by ext; rfl⟩
+  letI : RingHomCompTriple (f.symm : S →+* R) ((RingEquiv.refl R).symm : R →+* R)
+      (f.symm : S →+* R) :=
+    ⟨by ext; rfl⟩
+  letI : RingHomCompTriple ((RingEquiv.refl S).symm : S →+* S) (f.symm : S →+* R)
+      (f.symm : S →+* R) :=
+    ⟨by ext; rfl⟩
+  letI : RingHomSurjective (f : R →+* S) := ⟨f.surjective⟩
+  apply FractionalIdeal.coeToSubmodule_injective
+  change Submodule.map
+      (IsFractionRing.semilinearEquivOfRingEquiv (FractionRing S) L (RingEquiv.refl S)).toLinearMap
+      (Submodule.map
+        (IsFractionRing.semilinearEquivOfRingEquiv (FractionRing R) (FractionRing S) f).toLinearMap
+        (Submodule.map
+          (IsFractionRing.semilinearEquivOfRingEquiv K (FractionRing R)
+            (RingEquiv.refl R)).toLinearMap I.val.val)) =
+    Submodule.map (IsFractionRing.semilinearEquivOfRingEquiv K L f).toLinearMap I.val.val
+  rw [← Submodule.map_comp, ← Submodule.map_comp]
+  congr 1
+  ext x
+  simp [IsFractionRing.semilinearEquivOfRingEquiv, IsLocalization.map_map]
+
 /-- The identity ring equivalence induces the identity class-group equivalence. -/
 @[simp] theorem mulEquiv_refl :
     ClassGroup.mulEquiv (RingEquiv.refl R) = MulEquiv.refl (ClassGroup R) := by
   apply MulEquiv.ext
   intro x
   refine ClassGroup.induction (FractionRing R) (fun I => ?_) x
-  rw [MulEquiv.refl_apply, mulEquiv_mk, FractionalIdeal.ringEquivOfRingEquiv_refl]
+  rw [MulEquiv.refl_apply, mulEquiv_mk (K := FractionRing R) (L := FractionRing R),
+    FractionalIdeal.ringEquivOfRingEquiv_refl]
   apply congrArg (ClassGroup.mk (FractionRing R))
   apply Units.ext
   simp
@@ -76,24 +129,22 @@ equivalences. -/
   apply MulEquiv.ext
   intro x
   refine ClassGroup.induction (FractionRing R) (fun I => ?_) x
-  rw [MulEquiv.trans_apply, mulEquiv_mk, mulEquiv_mk, mulEquiv_mk]
+  rw [MulEquiv.trans_apply,
+    mulEquiv_mk (K := FractionRing R) (L := FractionRing T),
+    mulEquiv_mk (K := FractionRing R) (L := FractionRing S),
+    mulEquiv_mk (K := FractionRing S) (L := FractionRing T)]
   apply congrArg (ClassGroup.mk (FractionRing T))
   apply Units.ext
   simpa using FractionalIdeal.ringEquivOfRingEquiv_trans_apply
     (FractionRing R) (FractionRing S) (FractionRing T) f g I
 
-/-- Pointwise form of `ClassGroup.mulEquiv_trans`. Like `ClassGroup.mulEquiv_symm_apply'` below,
-it is deliberately not a `simp` lemma: the `@[simps!]` attribute on Mathlib's
-`ClassGroup.mulEquiv` provides a `simp` lemma `ClassGroup.mulEquiv_apply` that already rewrites
-this left-hand side into the underlying quotient construction. -/
-theorem mulEquiv_trans_apply (f : R ≃+* S) (g : S ≃+* T) (x : ClassGroup R) :
+/-- Pointwise form of `ClassGroup.mulEquiv_trans`. -/
+@[simp] theorem mulEquiv_trans_apply (f : R ≃+* S) (g : S ≃+* T) (x : ClassGroup R) :
     ClassGroup.mulEquiv (f.trans g) x = ClassGroup.mulEquiv g (ClassGroup.mulEquiv f x) :=
   DFunLike.congr_fun (mulEquiv_trans f g) x
 
-/-- Pointwise form of `ClassGroup.mulEquiv_refl`. Like `ClassGroup.mulEquiv_trans_apply`, it is
-deliberately not a `simp` lemma: the `@[simps!]` attribute on Mathlib's `ClassGroup.mulEquiv`
-provides a `simp` lemma `ClassGroup.mulEquiv_apply` that already owns this left-hand side. -/
-theorem mulEquiv_refl_apply (x : ClassGroup R) :
+/-- Pointwise form of `ClassGroup.mulEquiv_refl`. -/
+@[simp] theorem mulEquiv_refl_apply (x : ClassGroup R) :
     ClassGroup.mulEquiv (RingEquiv.refl R) x = x :=
   DFunLike.congr_fun mulEquiv_refl x
 
@@ -108,11 +159,8 @@ theorem mulEquiv_refl_apply (x : ClassGroup R) :
   rw [f.symm_trans_self, mulEquiv_refl] at h
   exact h
 
-/-- Pointwise form of `ClassGroup.mulEquiv_symm`. It is deliberately not a `simp` lemma: the
-`@[simps!]` attribute on Mathlib's `ClassGroup.mulEquiv` already provides a `simp` lemma
-`ClassGroup.mulEquiv_symm_apply` with the same left-hand side, unfolding it into the underlying
-quotient construction instead. -/
-theorem mulEquiv_symm_apply' (f : R ≃+* S) (x : ClassGroup S) :
+/-- Pointwise form of `ClassGroup.mulEquiv_symm`. -/
+@[simp] theorem mulEquiv_symm_apply' (f : R ≃+* S) (x : ClassGroup S) :
     (ClassGroup.mulEquiv f).symm x = ClassGroup.mulEquiv f.symm x :=
   DFunLike.congr_fun (mulEquiv_symm f) x
 
@@ -120,14 +168,15 @@ theorem mulEquiv_symm_apply' (f : R ≃+* S) (x : ClassGroup S) :
 `(R ≃+* R) →* MulAut (ClassGroup R)`. This is the object the roadmap's Galois action on ideal
 classes transports along; it is the class-group analogue of
 `IsFractionRing.ringEquivOfRingEquivHom`. -/
-@[expose] noncomputable def mulEquivHom : (R ≃+* R) →* MulAut (ClassGroup R) where
+noncomputable def mulEquivHom : (R ≃+* R) →* MulAut (ClassGroup R) where
   toFun := ClassGroup.mulEquiv
   map_one' := mulEquiv_refl
   map_mul' f g := mulEquiv_trans g f
 
 /-- `ClassGroup.mulEquivHom` acts as `ClassGroup.mulEquiv` on each ring automorphism. -/
 @[simp] theorem mulEquivHom_apply (f : R ≃+* R) :
-    mulEquivHom f = ClassGroup.mulEquiv f := rfl
+    mulEquivHom f = ClassGroup.mulEquiv f := by
+  simp [mulEquivHom]
 
 /-- An involutive ring equivalence induces an involution on the class group. This is the form
 used for quadratic conjugation; it is the pointwise specialization of `ClassGroup.mulEquivHom`
