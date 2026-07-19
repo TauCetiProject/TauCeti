@@ -32,7 +32,7 @@ The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear To
 ## Main results
 
 * `mem_join_iff`: membership is characterized by the two projected faces.
-* `mem_join_disjSum_iff`: a disjoint union is a face exactly when each nonempty component is.
+* `disjSum_mem_join_iff`: a disjoint union is a face exactly when each nonempty component is.
 * `join_mono`: join is monotone in both arguments.
 -/
 
@@ -83,7 +83,8 @@ theorem mem_join_iff {σ : Finset (α ⊕ β)} :
 
 /-- A disjoint union is a face of the join exactly when it is nonempty and each nonempty
 component is a face of its original complex. -/
-theorem mem_join_disjSum_iff {s : Finset α} {t : Finset β} :
+@[simp]
+theorem disjSum_mem_join_iff {s : Finset α} {t : Finset β} :
     s.disjSum t ∈ join K L ↔
       (s.Nonempty ∨ t.Nonempty) ∧ (s = ∅ ∨ s ∈ K) ∧ (t = ∅ ∨ t ∈ L) := by
   simp only [mem_join_iff, toLeft_disjSum, toRight_disjSum]
@@ -92,19 +93,19 @@ theorem mem_join_disjSum_iff {s : Finset α} {t : Finset β} :
 /-- A left face, tagged into the sum type, is a face of the join. -/
 theorem map_inl_mem_join {s : Finset α} (hs : s ∈ K) :
     s.map (Embedding.inl : α ↪ α ⊕ β) ∈ join K L := by
-  rw [← disjSum_empty, mem_join_disjSum_iff]
+  rw [← disjSum_empty, disjSum_mem_join_iff]
   exact ⟨Or.inl (K.isRelLowerSet_faces hs).1, Or.inr hs, Or.inl rfl⟩
 
 /-- A right face, tagged into the sum type, is a face of the join. -/
 theorem map_inr_mem_join {t : Finset β} (ht : t ∈ L) :
     t.map (Embedding.inr : β ↪ α ⊕ β) ∈ join K L := by
-  rw [← empty_disjSum, mem_join_disjSum_iff]
+  rw [← empty_disjSum, disjSum_mem_join_iff]
   exact ⟨Or.inr (L.isRelLowerSet_faces ht).1, Or.inl rfl, Or.inr ht⟩
 
 /-- The disjoint union of a left face and a right face is a face of the join. -/
 theorem disjSum_mem_join {s : Finset α} {t : Finset β} (hs : s ∈ K) (ht : t ∈ L) :
     s.disjSum t ∈ join K L := by
-  rw [mem_join_disjSum_iff]
+  rw [disjSum_mem_join_iff]
   exact ⟨Or.inl (K.isRelLowerSet_faces hs).1, Or.inr hs, Or.inr ht⟩
 
 /-- Join is monotone in both complexes. -/
@@ -131,40 +132,62 @@ def join (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β) :
 
 variable {K K' : AbstractSimplicialComplex α} {L L' : AbstractSimplicialComplex β}
 
+/-- Forgetting that the join contains every singleton recovers the underlying precomplex join. -/
+@[simp]
+theorem join_toPreAbstractSimplicialComplex :
+    (join K L).toPreAbstractSimplicialComplex =
+      PreAbstractSimplicialComplex.join K.toPreAbstractSimplicialComplex
+        L.toPreAbstractSimplicialComplex := by
+  ext σ
+  rfl
+
 /-- Membership in an abstract join is equivalent to nonemptiness together with the left and
 right projection face conditions. -/
 @[simp]
 theorem mem_join_iff {σ : Finset (α ⊕ β)} :
     σ ∈ join K L ↔ σ.Nonempty ∧
-      (σ.toLeft = ∅ ∨ σ.toLeft ∈ K) ∧ (σ.toRight = ∅ ∨ σ.toRight ∈ L) :=
-  Iff.rfl
+      (σ.toLeft = ∅ ∨ σ.toLeft ∈ K) ∧ (σ.toRight = ∅ ∨ σ.toRight ∈ L) := by
+  change σ ∈ (join K L).toPreAbstractSimplicialComplex ↔ _
+  rw [join_toPreAbstractSimplicialComplex]
+  exact PreAbstractSimplicialComplex.mem_join_iff
 
 /-- A disjoint union is a face of the abstract join exactly when it is nonempty and each
 nonempty component is a face of its original complex. -/
-theorem mem_join_disjSum_iff {s : Finset α} {t : Finset β} :
+@[simp]
+theorem disjSum_mem_join_iff {s : Finset α} {t : Finset β} :
     s.disjSum t ∈ join K L ↔
-      (s.Nonempty ∨ t.Nonempty) ∧ (s = ∅ ∨ s ∈ K) ∧ (t = ∅ ∨ t ∈ L) :=
-  PreAbstractSimplicialComplex.mem_join_disjSum_iff
+      (s.Nonempty ∨ t.Nonempty) ∧ (s = ∅ ∨ s ∈ K) ∧ (t = ∅ ∨ t ∈ L) := by
+  change s.disjSum t ∈ (join K L).toPreAbstractSimplicialComplex ↔ _
+  rw [join_toPreAbstractSimplicialComplex]
+  exact PreAbstractSimplicialComplex.disjSum_mem_join_iff
 
 /-- A left face, tagged into the sum type, is a face of the join. -/
 theorem map_inl_mem_join {s : Finset α} (hs : s ∈ K) :
-    s.map (Embedding.inl : α ↪ α ⊕ β) ∈ join K L :=
-  PreAbstractSimplicialComplex.map_inl_mem_join hs
+    s.map (Embedding.inl : α ↪ α ⊕ β) ∈ join K L := by
+  change s.map (Embedding.inl : α ↪ α ⊕ β) ∈ (join K L).toPreAbstractSimplicialComplex
+  rw [join_toPreAbstractSimplicialComplex]
+  exact PreAbstractSimplicialComplex.map_inl_mem_join hs
 
 /-- A right face, tagged into the sum type, is a face of the join. -/
 theorem map_inr_mem_join {t : Finset β} (ht : t ∈ L) :
-    t.map (Embedding.inr : β ↪ α ⊕ β) ∈ join K L :=
-  PreAbstractSimplicialComplex.map_inr_mem_join ht
+    t.map (Embedding.inr : β ↪ α ⊕ β) ∈ join K L := by
+  change t.map (Embedding.inr : β ↪ α ⊕ β) ∈ (join K L).toPreAbstractSimplicialComplex
+  rw [join_toPreAbstractSimplicialComplex]
+  exact PreAbstractSimplicialComplex.map_inr_mem_join ht
 
 /-- The disjoint union of faces is a face of the join. -/
 theorem disjSum_mem_join {s : Finset α} {t : Finset β} (hs : s ∈ K) (ht : t ∈ L) :
-    s.disjSum t ∈ join K L :=
-  PreAbstractSimplicialComplex.disjSum_mem_join hs ht
+    s.disjSum t ∈ join K L := by
+  change s.disjSum t ∈ (join K L).toPreAbstractSimplicialComplex
+  rw [join_toPreAbstractSimplicialComplex]
+  exact PreAbstractSimplicialComplex.disjSum_mem_join hs ht
 
 /-- Join is monotone in both abstract simplicial complexes. -/
 theorem join_mono (hK : K ≤ K') (hL : L ≤ L') :
-    join K L ≤ join K' L' :=
-  PreAbstractSimplicialComplex.join_mono hK hL
+    join K L ≤ join K' L' := by
+  rw [← AbstractSimplicialComplex.toPreAbstractSimplicialComplex_le_iff]
+  rw [join_toPreAbstractSimplicialComplex, join_toPreAbstractSimplicialComplex]
+  exact PreAbstractSimplicialComplex.join_mono hK hL
 
 end AbstractSimplicialComplex
 
