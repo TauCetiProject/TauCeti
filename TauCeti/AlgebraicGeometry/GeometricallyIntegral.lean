@@ -7,13 +7,12 @@ module
 public import Mathlib.AlgebraicGeometry.Geometrically.Integral
 
 /-!
-# Identity morphisms are geometrically integral
+# Isomorphisms are geometrically integral
 
 Mathlib's `GeometricallyIntegral` API records stability of geometric integrality under base
-change, but has no instance for identity morphisms. This file fills that gap with
-`TauCeti.AlgebraicGeometry.geometricallyIntegral_id`: the identity morphism of any scheme is
-geometrically integral, because every base change of `𝟙 X` along `Spec κ → X` (with `κ` a field)
-is an isomorphism onto `Spec κ`, which is integral.
+change, but has no instance for isomorphisms. This file fills that gap with
+`TauCeti.AlgebraicGeometry.geometricallyIntegral_of_isIso`: every isomorphism of schemes, in
+particular every identity morphism, is geometrically integral.
 
 It is used as the geometric-integrality input for the trivial group scheme in
 `TauCeti.AlgebraicGeometry.AbelianVariety.Trivial`.
@@ -29,16 +28,17 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- The identity morphism of any scheme is geometrically integral: every base change of `𝟙 X` along
-`Spec κ → X` (with `κ` a field) is an isomorphism onto `Spec κ`, which is integral.
+/-- Every isomorphism of schemes is geometrically integral.
 
 This fills a small gap in Mathlib's `GeometricallyIntegral` API, which records stability under base
-change but no instance for identities. -/
-theorem geometricallyIntegral_id (X : Scheme.{u}) : GeometricallyIntegral (𝟙 X) := by
+change but no instance for isomorphisms (in particular none for identity morphisms). -/
+instance (priority := low) geometricallyIntegral_of_isIso {X Y : Scheme.{u}} (f : X ⟶ Y) [IsIso f] :
+    GeometricallyIntegral f := by
   rw [GeometricallyIntegral.eq_geometrically]
   intro κ _ y Z fst snd h
+  -- every base change of `f` along `Spec κ → Y` is again an isomorphism, and `Spec κ` is integral
   have hiso : IsIso snd :=
-    (isomorphisms Scheme).of_isPullback h (isomorphisms.infer_property (𝟙 X))
+    (isomorphisms Scheme).of_isPullback h (isomorphisms.infer_property f)
   exact IsIntegral.of_isIso (inv snd)
 
 end AlgebraicGeometry
