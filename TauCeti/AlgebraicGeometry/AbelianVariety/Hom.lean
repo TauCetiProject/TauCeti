@@ -134,7 +134,8 @@ lemma Hom.toSchemeHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C
 
 /-- The underlying scheme morphism of an abelian-variety homomorphism commutes with the structure
 morphisms to `Spec K`. -/
-@[reassoc (attr := simp)]
+-- Not `@[simp]`: `CategoryTheory.Over.w` is already a simp lemma and discharges this goal.
+@[reassoc]
 lemma Hom.toSchemeHom_comp_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     Hom.toSchemeHom f ≫ B.toOver.hom = A.toOver.hom :=
   (Hom.toOverHom f).w
