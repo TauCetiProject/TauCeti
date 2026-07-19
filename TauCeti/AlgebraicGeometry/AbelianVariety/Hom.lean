@@ -83,7 +83,7 @@ private lemma Hom.toOverHom_def {A B : AbelianVariety K} (f : A ⟶ B) :
 /-- The underlying morphism of an abelian-variety homomorphism preserves the group-object
 structure. -/
 instance {A B : AbelianVariety K} (f : A ⟶ B) : IsMonHom (Hom.toOverHom f) :=
-  inferInstanceAs (IsMonHom (f.hom.hom.hom.hom))
+  Hom.toOverHom_def f ▸ inferInstance
 
 /-- The underlying morphism over `Spec K` of a homomorphism built by `Hom.mk'` is the supplied
 morphism. -/
