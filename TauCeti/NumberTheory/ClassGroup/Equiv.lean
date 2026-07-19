@@ -11,8 +11,7 @@ public import Mathlib.RingTheory.ClassGroup.Basic
 
 Mathlib defines `ClassGroup.mulEquiv f`, the multiplicative equivalence on ideal class groups
 induced by a ring equivalence `f : R ≃+* S`. This file supplies its basic functorial API: the
-induced map respects identity, composition, and inverses, and its value on the class of a nonzero
-integral ideal is represented by the transported ideal.
+induced map respects identity, composition, and inverses.
 
 This is a prerequisite for the genus-field layer of the multiquadratic roadmap. For a quadratic
 field, conjugation is a ring automorphism of its ring of integers; the roadmap's proof that
@@ -25,8 +24,8 @@ compute it on ideal classes.
 * `ClassGroup.mulEquiv_trans`: induced equivalences respect composition.
 * `ClassGroup.mulEquiv_symm`: the inverse induced equivalence comes from the inverse ring
   equivalence.
-* `ClassGroup.mulEquiv_apply_apply_of_trans_eq_refl`: an involutive ring equivalence acts
-  involutively on the class group.
+* `ClassGroup.mulEquiv_involutive`: an involutive ring equivalence acts involutively on the class
+  group.
 -/
 
 public section
@@ -41,7 +40,7 @@ variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
     ClassGroup.mulEquiv (RingEquiv.refl R) = MulEquiv.refl (ClassGroup R) := by
   apply MulEquiv.ext
   intro x
-  change ClassGroup.mulEquiv (RingEquiv.refl R) x = x
+  simp only [MulEquiv.refl_apply]
   refine ClassGroup.induction (FractionRing R) (fun I => ?_) x
   rw [ClassGroup.mulEquiv_apply]
   apply (ClassGroup.equiv (FractionRing R)).injective
@@ -65,6 +64,11 @@ theorem mulEquiv_trans (f : R ≃+* S) (g : S ≃+* T) :
     FractionalIdeal.ringEquivOfRingEquiv_trans_apply
       (FractionRing R) (FractionRing S) (FractionRing T) f g I
 
+/-- Pointwise form of `ClassGroup.mulEquiv_trans`. -/
+@[simp] theorem mulEquiv_trans_apply (f : R ≃+* S) (g : S ≃+* T) (x : ClassGroup R) :
+    ClassGroup.mulEquiv (f.trans g) x = ClassGroup.mulEquiv g (ClassGroup.mulEquiv f x) :=
+  DFunLike.congr_fun (mulEquiv_trans f g) x
+
 /-- The inverse of the class-group equivalence induced by `f` is induced by `f.symm`. -/
 theorem mulEquiv_symm (f : R ≃+* S) :
     (ClassGroup.mulEquiv f).symm = ClassGroup.mulEquiv f.symm := by
@@ -76,13 +80,21 @@ theorem mulEquiv_symm (f : R ≃+* S) :
   rw [f.symm_trans_self, mulEquiv_refl] at h
   exact h
 
+/-- Pointwise form of `ClassGroup.mulEquiv_symm`. It is deliberately not a `simp` lemma: the
+`@[simps!]` attribute on Mathlib's `ClassGroup.mulEquiv` already provides a `simp` lemma
+`ClassGroup.mulEquiv_symm_apply` with the same left-hand side, unfolding it into the underlying
+quotient construction instead. -/
+theorem mulEquiv_symm_apply' (f : R ≃+* S) (x : ClassGroup S) :
+    (ClassGroup.mulEquiv f).symm x = ClassGroup.mulEquiv f.symm x :=
+  DFunLike.congr_fun (mulEquiv_symm f) x
+
 /-- An involutive ring equivalence induces an involution on the class group. This is the form
 used for quadratic conjugation. -/
-theorem mulEquiv_apply_apply_of_trans_eq_refl (f : R ≃+* R)
-    (hf : f.trans f = RingEquiv.refl R) (x : ClassGroup R) :
-    ClassGroup.mulEquiv f (ClassGroup.mulEquiv f x) = x := by
+theorem mulEquiv_involutive {f : R ≃+* R} (hf : Function.Involutive f) :
+    Function.Involutive (ClassGroup.mulEquiv f) := fun x => by
+  have hff : f.trans f = RingEquiv.refl R := RingEquiv.ext hf
   have h := DFunLike.congr_fun (mulEquiv_trans f f) x
-  rw [hf, mulEquiv_refl] at h
+  rw [hff, mulEquiv_refl] at h
   exact h.symm
 
 end ClassGroup
