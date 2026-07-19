@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Analysis.Calculus.FDeriv.Star
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Complex.ReImTopology
@@ -456,31 +455,34 @@ lemma differentiableOn_schwarzReflection_inter_im_neg_of_symmetric {Ω : Set ℂ
 conjugation-symmetric domain whenever the original function is holomorphic on its upper
 half-plane part. -/
 lemma differentiableOn_schwarzReflection_inter_im_ne_zero_of_symmetric {Ω : Set ℂ}
-    (hΩopen : IsOpen Ω) (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
+    (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
     (hf : DifferentiableOn ℂ f (Ω ∩ {z | 0 < z.im})) :
     DifferentiableOn ℂ (schwarzReflection f) (Ω ∩ {z | z.im ≠ 0}) := by
   have hupper : DifferentiableOn ℂ (schwarzReflection f) (Ω ∩ {z | 0 < z.im}) :=
     differentiableOn_schwarzReflection_of_subset_im_nonneg (f := f)
-      (fun z hz => by
-        change 0 ≤ z.im
-        exact hz.2.le) hf
+      (fun _ hz => by simpa using hz.2.le) hf
   have hlower := differentiableOn_schwarzReflection_inter_im_neg_of_symmetric
     (f := f) hΩ hf
-  rw [show Ω ∩ {z : ℂ | z.im ≠ 0} =
-      (Ω ∩ {z | 0 < z.im}) ∪ (Ω ∩ {z | z.im < 0}) by
-    ext z
-    simp only [Set.mem_inter_iff, Set.mem_setOf_eq, Set.mem_union]
+  intro z hz
+  rcases lt_or_gt_of_ne hz.2 with hzneg | hzpos
+  · apply (differentiableWithinAt_congr_set ?_).mp (hlower z ⟨hz.1, hzneg⟩)
+    filter_upwards [
+      (isOpen_lt Complex.continuous_im continuous_const).mem_nhds hzneg] with w hw
+    apply propext
     constructor
-    · rintro ⟨hzΩ, hz⟩
-      rcases lt_or_gt_of_ne hz with hzneg | hzpos
-      · exact Or.inr ⟨hzΩ, hzneg⟩
-      · exact Or.inl ⟨hzΩ, hzpos⟩
-    · rintro (⟨hzΩ, hzpos⟩ | ⟨hzΩ, hzneg⟩)
-      · exact ⟨hzΩ, ne_of_gt hzpos⟩
-      · exact ⟨hzΩ, ne_of_lt hzneg⟩]
-  exact hupper.union_of_isOpen hlower
-    (hΩopen.inter (isOpen_lt continuous_const Complex.continuous_im))
-    (hΩopen.inter (isOpen_lt Complex.continuous_im continuous_const))
+    · rintro ⟨hwΩ, _⟩
+      exact ⟨hwΩ, ne_of_lt hw⟩
+    · rintro ⟨hwΩ, _⟩
+      exact ⟨hwΩ, hw⟩
+  · apply (differentiableWithinAt_congr_set ?_).mp (hupper z ⟨hz.1, hzpos⟩)
+    filter_upwards [
+      (isOpen_lt continuous_const Complex.continuous_im).mem_nhds hzpos] with w hw
+    apply propext
+    constructor
+    · rintro ⟨hwΩ, _⟩
+      exact ⟨hwΩ, ne_of_gt hw⟩
+    · rintro ⟨hwΩ, _⟩
+      exact ⟨hwΩ, hw⟩
 
 /-- At a point in the open upper half-plane, the Schwarz-reflection extension has the same
 derivative as the original function. -/
@@ -506,7 +508,7 @@ lemma hasDerivAt_schwarzReflection_of_im_neg {z f' : ℂ} (hz : z.im < 0)
 
 /-- On the open upper half-plane, the derivative of the Schwarz-reflection extension agrees
 with the derivative of the original function. -/
-lemma deriv_schwarzReflection_of_im_pos {z : ℂ} (hz : 0 < z.im) :
+@[simp] lemma deriv_schwarzReflection_of_im_pos {z : ℂ} (hz : 0 < z.im) :
     deriv (schwarzReflection f) z = deriv f z := by
   exact Filter.EventuallyEq.deriv_eq <|
     mem_of_superset ((isOpen_lt continuous_const Complex.continuous_im).mem_nhds hz)
@@ -514,7 +516,7 @@ lemma deriv_schwarzReflection_of_im_pos {z : ℂ} (hz : 0 < z.im) :
 
 /-- On the open lower half-plane, the derivative of the Schwarz-reflection extension is the
 conjugate of the derivative of the original function at the conjugate point. -/
-lemma deriv_schwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
+@[simp] lemma deriv_schwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
     deriv (schwarzReflection f) z =
       (starRingEnd ℂ) (deriv f ((starRingEnd ℂ) z)) := by
   calc
