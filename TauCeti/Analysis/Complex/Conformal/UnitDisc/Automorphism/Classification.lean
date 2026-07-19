@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.UnitDisc.Automorphism.Rotation
 # Classification of holomorphic automorphisms of the complex unit disc
 
 This file completes the classification of the holomorphic automorphisms of the open unit disc.
-If `f` has a holomorphic left inverse `g` and vanishes at `g 0`, then on the disc
+If `f` has a holomorphic two-sided inverse `g`, then on the disc
 
 `f z = u * (z - a) / (1 - conj a * z)`
 
@@ -37,8 +37,8 @@ variable {f g : ℂ → ℂ}
 
 /--
 **Classification of holomorphic disc automorphisms.** A holomorphic self-map `f` of the open
-unit disc with a holomorphic left inverse `g` has the standard form, provided `f (g 0) = 0`.
-Its center is `g 0`, and its rotation factor lies on the unit circle.
+unit disc with a holomorphic two-sided inverse `g` has the standard form. Its center is `g 0`,
+and its rotation factor lies on the unit circle.
 -/
 theorem exists_eqOn_unitDiscStandardAutomorphismFormula
     (hf : DifferentiableOn ℂ f (ball (0 : ℂ) 1))
@@ -46,12 +46,13 @@ theorem exists_eqOn_unitDiscStandardAutomorphismFormula
     (hfmaps : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
     (hgmaps : MapsTo g (ball (0 : ℂ) 1) (ball (0 : ℂ) 1))
     (hgf : LeftInvOn g f (ball (0 : ℂ) 1))
-    (hfg0 : f (g 0) = 0) :
+    (hfg : RightInvOn g f (ball (0 : ℂ) 1)) :
     ∃ (u : Circle) (a : Complex.UnitDisc), (a : ℂ) = g 0 ∧
       ∀ z : Complex.UnitDisc, f z = (unitDiscStandardAutomorphismEquiv u a z : ℂ) := by
   have hzero : (0 : ℂ) ∈ ball (0 : ℂ) 1 := by
     rw [mem_ball_zero_iff]
     norm_num
+  have hfg0 : f (g 0) = 0 := hfg hzero
   have ha_mem : g 0 ∈ ball (0 : ℂ) 1 := hgmaps hzero
   have ha : ‖g 0‖ < 1 := by simpa [mem_ball_zero_iff] using ha_mem
   let F : ℂ → ℂ := f ∘ fun z =>
