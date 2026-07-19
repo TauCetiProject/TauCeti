@@ -75,6 +75,11 @@ theorem mulEquiv_mk {K L : Type*} [Field K] [Field L] [Algebra R K]
   apply Units.ext
   simp only [Units.coe_mapEquiv, Units.coe_map]
   rw [FractionalIdeal.canonicalEquiv, FractionalIdeal.canonicalEquiv]
+  -- Each `FractionalIdeal.canonicalEquiv`/`ringEquivOfRingEquiv` factor is built from
+  -- `IsLocalization.map`, whose semilinear packaging (`semilinearEquivOfRingEquiv`) demands
+  -- `RingHomInvPair`/`RingHomCompTriple`/`RingHomSurjective` instances for the ring maps and their
+  -- refl-composites. Mathlib does not have these in scope for `RingEquiv.refl`/`f` combinations, so
+  -- we supply them locally to let the coercions and `IsLocalization.map_map` below elaborate.
   letI : RingHomInvPair (f : R →+* S) f.symm := RingHomInvPair.of_ringEquiv f
   letI : RingHomInvPair (f.symm : S →+* R) f := RingHomInvPair.of_ringEquiv f.symm
   letI : RingHomInvPair (RingEquiv.refl R : R →+* R) (RingEquiv.refl R).symm :=
@@ -97,6 +102,11 @@ theorem mulEquiv_mk {K L : Type*} [Field K] [Field L] [Algebra R K]
     ⟨by ext; rfl⟩
   letI : RingHomSurjective (f : R →+* S) := ⟨f.surjective⟩
   apply FractionalIdeal.coeToSubmodule_injective
+  -- Both sides are `Submodule.map`s of `I` by the underlying `semilinearEquivOfRingEquiv` maps:
+  -- the left is the three-step canonical composite `K → FractionRing R → FractionRing S → L`, the
+  -- right the direct map `K → L`. There is no Mathlib lemma exposing the `canonicalEquiv` composite
+  -- in this `Submodule.map` form, but the two coincide definitionally, so we restate the goal with
+  -- `change` and then collapse the composite via `Submodule.map_comp` and `IsLocalization.map_map`.
   change Submodule.map
       (IsFractionRing.semilinearEquivOfRingEquiv (FractionRing S) L (RingEquiv.refl S)).toLinearMap
       (Submodule.map
