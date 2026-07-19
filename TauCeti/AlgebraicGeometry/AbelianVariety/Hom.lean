@@ -65,12 +65,11 @@ abbrev Hom.toOverHom {A B : AbelianVariety K} (f : A ⟶ B) : A.toOver ⟶ B.toO
   (Hom.toOverFunctor).map f
 
 /-- `toOverHom` sends the identity homomorphism to the identity over `Spec K`. -/
-@[simp]
 lemma Hom.toOverHom_id (A : AbelianVariety K) : Hom.toOverHom (𝟙 A) = 𝟙 A.toOver :=
   (Hom.toOverFunctor).map_id A
 
 /-- `toOverHom` sends composition to composition over `Spec K`. -/
-@[simp, reassoc]
+@[reassoc]
 lemma Hom.toOverHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C) :
     Hom.toOverHom (f ≫ g) = Hom.toOverHom f ≫ Hom.toOverHom g :=
   (Hom.toOverFunctor).map_comp f g
@@ -133,7 +132,7 @@ lemma Hom.toSchemeHom_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C
 
 /-- The underlying scheme morphism of an abelian-variety homomorphism commutes with the structure
 morphisms to `Spec K`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma Hom.toSchemeHom_comp_hom {A B : AbelianVariety K} (f : A ⟶ B) :
     Hom.toSchemeHom f ≫ B.toOver.hom = A.toOver.hom :=
   (Hom.toOverHom f).w
