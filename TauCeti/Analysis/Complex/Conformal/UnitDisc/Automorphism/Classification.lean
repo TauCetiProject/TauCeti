@@ -59,13 +59,13 @@ theorem exists_eqOn_unitDiscStandardAutomorphismFormula
   let G : ℂ → ℂ := (fun z =>
     (z - g 0) / (1 - (starRingEnd ℂ) (g 0) * z)) ∘ g
   have hneg : ‖-(g 0)‖ < 1 := by simpa using ha
-  have hFdiff : DifferentiableOn ℂ F (ball (0 : ℂ) 1) :=
-    hf.comp (differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one hneg)
-      (mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one hneg)
+  have hFdata : DifferentiableOn ℂ F (ball (0 : ℂ) 1) ∧
+      MapsTo F (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) ∧ F 0 = 0 := by
+    simpa [F, hfg0, Function.comp_def] using
+      differentiableOn_and_mapsTo_ball_and_apply_zero_schwarzPickConjugate hf hfmaps ha
+  obtain ⟨hFdiff, hFmaps, hFzero⟩ := hFdata
   have hGdiff : DifferentiableOn ℂ G (ball (0 : ℂ) 1) :=
     (differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one ha).comp hg hgmaps
-  have hFmaps : MapsTo F (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) :=
-    hfmaps.comp (mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one hneg)
   have hGmaps : MapsTo G (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) :=
     (mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one ha).comp hgmaps
   have hGF : LeftInvOn G F (ball (0 : ℂ) 1) := by
@@ -74,9 +74,6 @@ theorem exists_eqOn_unitDiscStandardAutomorphismFormula
     rw [hgf ((mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one hneg) hz)]
     simpa only [neg_neg] using
       leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one (a := -(g 0)) hneg hz
-  have hFzero : F 0 = 0 := by
-    simp only [F, Function.comp_apply]
-    simpa [ha.ne] using hfg0
   obtain ⟨u, hu, hFu⟩ :=
     exists_eqOn_const_mul_of_leftInvOn_ball_of_map_zero hFdiff hGdiff hFmaps hGmaps hGF hFzero
   refine ⟨⟨u, by simpa [Submonoid.unitSphere] using hu⟩,
