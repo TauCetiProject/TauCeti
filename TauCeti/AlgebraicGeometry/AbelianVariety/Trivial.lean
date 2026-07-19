@@ -13,8 +13,8 @@ public import Mathlib.RingTheory.KrullDimension.Field
 
 This file adds the **trivial abelian variety** over a field `K`: the terminal object `Spec K`,
 carrying the unique (trivial) group-scheme structure. It is the zero-dimensional abelian variety,
-the zero object of the category of abelian varieties over `K`, and the target of the constant map
-from any abelian variety.
+the terminal object of the category of abelian varieties over `K`, and the target of the constant
+map from any abelian variety.
 
 Building it exercises the bundled `AbelianVariety` interface of
 `TauCeti.AlgebraicGeometry.AbelianVariety.Basic` on its smallest example:
@@ -29,7 +29,7 @@ Building it exercises the bundled `AbelianVariety` interface of
 
 This advances `TauCetiRoadmap/JacobianChallenge/README.md`, Layer E ("Abelian variety = smooth,
 proper, geometrically connected group scheme over `k`; basic API, `dim`"), giving the theory its
-zero object and dimension-zero example. No external mathematics is vendored; the proofs reuse
+terminal object and dimension-zero example. No external mathematics is vendored; the proofs reuse
 Mathlib's monoidal-unit group object (`GrpObj.instTensorUnit`), the `IsProper` and
 `GeometricallyIntegral` morphism-property API, `PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim`,
 and Tau Ceti's `AbelianVariety` and `AbelianVariety.Hom` interface.
@@ -50,30 +50,34 @@ variable (K : Type u) [Field K]
 
 namespace AbelianVariety
 
-/-- The **trivial abelian variety** over `K`: the terminal scheme `Spec K` with the group structure
-of the monoidal unit of `Over (Spec K)`. Its structure morphism to `Spec K` is the identity
-(`Over.tensorUnit_hom`), which is proper and (by `geometricallyIntegral_of_isIso`) geometrically
-integral. -/
-@[expose] noncomputable def trivial : AbelianVariety K where
-  toOver := 𝟙_ (Over (Spec (.of K)))
-  grpObj := inferInstance
-  isProper := by rw [Over.tensorUnit_hom]; exact inferInstanceAs (IsProper (𝟙 _))
-  geometricallyIntegral := by
-    rw [Over.tensorUnit_hom]; exact inferInstanceAs (GeometricallyIntegral (𝟙 _))
+/-- The **trivial abelian variety** over `K`: the scheme `Spec K`, structural morphism the
+identity, with the group structure of the monoidal unit of `Over (Spec K)`. -/
+@[expose] noncomputable def trivial : AbelianVariety K :=
+  haveI : IsProper (𝟙_ (Over (Spec (.of K)))).hom := by
+    rw [Over.tensorUnit_hom]
+    -- `infer_instance` fails on the post-`rw` goal (the failed synthesis attempt on the
+    -- pre-`rw` goal is cached); `inferInstanceAs` re-elaborates the type and succeeds.
+    exact inferInstanceAs (IsProper (𝟙 _))
+  haveI : GeometricallyIntegral (𝟙_ (Over (Spec (.of K)))).hom := by
+    rw [Over.tensorUnit_hom]
+    -- as above: `inferInstanceAs` re-elaborates the type, which `infer_instance` does not.
+    exact inferInstanceAs (GeometricallyIntegral (𝟙 _))
+  ofGeometricallyIntegral (𝟙_ (Over (Spec (.of K))))
 
 @[simp]
 lemma trivial_toOver : (trivial K).toOver = 𝟙_ (Over (Spec (.of K))) := rfl
 
-/-- The underlying scheme of the trivial abelian variety is `Spec K`. -/
+/-- The structure morphism of the trivial abelian variety is the identity of `Spec K`. -/
 @[simp]
-lemma trivial_toScheme : (trivial K).toScheme = Spec (.of K) := by
-  simp [toScheme, trivial_toOver, Over.tensorUnit_left]
+lemma trivial_hom : (trivial K).toOver.hom = 𝟙 (Spec (.of K)) := Over.tensorUnit_hom
 
 /-- The trivial abelian variety is zero-dimensional: the topological Krull dimension of `Spec K` is
 `ringKrullDim K = 0` for a field `K`. -/
 @[simp]
 lemma trivial_dim : (trivial K).dim = 0 := by
-  rw [dim_def, trivial_toScheme, ← ringKrullDim_eq_zero_of_field K,
+  have h : (trivial K).toScheme = Spec (.of K) := by
+    simp [toScheme, trivial_toOver, Over.tensorUnit_left]
+  rw [dim_def, h, ← ringKrullDim_eq_zero_of_field K,
     ← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim K]
   -- the topological space of `Spec (.of K)` is `PrimeSpectrum K` (`Scheme.Spec_carrier`)
   rfl
@@ -93,6 +97,12 @@ lemma toOverHom_toTrivial (A : AbelianVariety K) :
     toOverHom (toTrivial A) = toUnit A.toOver :=
   toOverHom_mk' _
 
+/-- The scheme morphism underlying `toTrivial` is the left component of the terminal projection. -/
+@[simp]
+lemma toSchemeHom_toTrivial (A : AbelianVariety K) :
+    toSchemeHom (toTrivial A) = (toUnit A.toOver).left :=
+  toSchemeHom_mk' _
+
 end Hom
 
 /-- Any homomorphism to the trivial abelian variety is the constant map `toTrivial`. -/
@@ -110,7 +120,7 @@ noncomputable instance uniqueHomToTrivial (A : AbelianVariety K) : Unique (A ⟶
 /-- The trivial abelian variety is a terminal object of the category of abelian varieties over `K`:
 every abelian variety has a unique homomorphism to it. -/
 noncomputable def isTerminalTrivial : Limits.IsTerminal (trivial K) :=
-  Limits.IsTerminal.ofUniqueHom toTrivial fun _ m => eq_toTrivial m
+  Limits.IsTerminal.ofUnique _
 
 end AbelianVariety
 
