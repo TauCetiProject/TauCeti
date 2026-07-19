@@ -85,7 +85,7 @@ variable [DecidableEq N]
 
 /-- The path in `I^N` dragging every coordinate other than `i₀` to `0`, while holding the
 `i₀`-coordinate fixed at `y i₀`. Its endpoint is supported on `i₀`. -/
-@[expose] def cubeCollapseComplement (i₀ : N) (y : I^N) :
+private def cubeCollapseComplement (i₀ : N) (y : I^N) :
     Path y (Function.update (0 : I^N) i₀ (y i₀)) where
   toFun t := Function.update (fun j => pathTowardZero (y j) t) i₀ (y i₀)
   continuous_toFun :=
@@ -98,13 +98,13 @@ variable [DecidableEq N]
     rfl
 
 @[simp]
-theorem cubeCollapseComplement_apply (i₀ : N) (y : I^N) (t : I) :
+private theorem cubeCollapseComplement_apply (i₀ : N) (y : I^N) (t : I) :
     cubeCollapseComplement i₀ y t
       = Function.update (fun j => pathTowardZero (y j) t) i₀ (y i₀) := rfl
 
 /-- The path in `I^N` dragging the `i₀`-coordinate from `a` to `0`, with every other
 coordinate held at `0`. It runs from the point supported on `i₀` back to the corner `0`. -/
-@[expose] def cubeCollapseCoord (i₀ : N) (a : I) : Path (Function.update (0 : I^N) i₀ a) 0 where
+private def cubeCollapseCoord (i₀ : N) (a : I) : Path (Function.update (0 : I^N) i₀ a) 0 where
   toFun t := Function.update (0 : I^N) i₀ (pathTowardZero a t)
   continuous_toFun := continuous_const.update i₀ (pathTowardZero a).continuous
   source' := by simp only [Path.source]
@@ -113,7 +113,7 @@ coordinate held at `0`. It runs from the point supported on `i₀` back to the c
     exact Function.update_eq_self i₀ (0 : I^N)
 
 @[simp]
-theorem cubeCollapseCoord_apply (i₀ : N) (a t : I) :
+private theorem cubeCollapseCoord_apply (i₀ : N) (a t : I) :
     cubeCollapseCoord i₀ a t = Function.update (0 : I^N) i₀ (pathTowardZero a t) := rfl
 
 end Paths
