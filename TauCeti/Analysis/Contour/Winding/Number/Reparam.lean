@@ -13,13 +13,15 @@ public import TauCeti.Analysis.Contour.NullHomologous
 
 Precomposing a curve `γ` with a `C¹` change of parameter `φ` leaves the generalized winding number
 of Hungerbühler–Wasem (Def 2.1) about a point off the curve unchanged, the parameter interval
-`[[c, d]]` being replaced by `[[φ c, φ d]]`; null-homology in an ambient set transports the same
+`[[a, b]]` being replaced by `[[φ a, φ b]]`; null-homology in an ambient set transports the same
 way. These are consequences of the reparametrization invariance of the contour integral proved in
-`TauCeti/Analysis/Contour/Curve/Reparam.lean`.
+`TauCeti/Analysis/Contour/Curve/Reparam.lean`. As there, "`C¹`" is shorthand for ambient pointwise
+`HasDerivAt`/`DifferentiableAt` data, and the curve is asked to be `C¹` with no breakpoints — the
+piecewise-`C¹` case is a separate increment.
 
-As there, the regularity hypotheses are placed on the swept image `φ '' [[c, d]]` rather than on
-`[[φ c, φ d]]`: `φ` is not assumed monotone, and `intermediate_value_uIcc` gives
-`[[φ c, φ d]] ⊆ φ '' [[c, d]]`, so hypotheses on the image also cover the reparametrized interval.
+As there, the regularity hypotheses on `γ` are placed on the swept image `φ '' [[a, b]]` rather than
+on `[[φ a, φ b]]`: `φ` is not assumed monotone, and `intermediate_value_uIcc` gives
+`[[φ a, φ b]] ⊆ φ '' [[a, b]]`, so hypotheses on the image also cover the reparametrized interval.
 
 Only the off-curve case is treated: when `z₀` lies on the curve the winding number is a Cauchy
 principal value, whose symmetric excision windows are themselves reparametrized, and transporting
@@ -29,7 +31,7 @@ them is a separate argument. This is the case that the roadmap's cycle bookkeepi
 
 * `TauCeti.Contour.windingNumber_comp_reparam` — the generalized winding number about a point off
   the curve is unchanged by a `C¹` reparametrization.
-* `TauCeti.Contour.windingNumber_comp_reparam_affine` — the affine special case `φ t = α * t + β`.
+* `TauCeti.Contour.windingNumber_comp_mul_add` — the affine special case `φ t = r * t + s`.
 * `TauCeti.Contour.IsNullHomologous.comp_reparam` — null-homology transports along a `C¹`
   reparametrization of a curve lying in the ambient set.
 
@@ -56,38 +58,40 @@ open MeasureTheory
 
 namespace TauCeti.Contour
 
-variable {γ : ℝ → ℂ} {φ φ' : ℝ → ℝ} {c d : ℝ} {z₀ : ℂ} {Ω : Set ℂ}
+variable {γ : ℝ → ℂ} {φ φ' : ℝ → ℝ} {a b : ℝ} {z₀ : ℂ} {Ω : Set ℂ}
 
 /-- **Reparametrization invariance of the generalized winding number** (HW Def 2.1), for a point
-`z₀` off the curve. A `C¹` change of parameter `φ` leaves the winding number unchanged, the
-parameter interval `[[c, d]]` being replaced by `[[φ c, φ d]]`.
+`z₀` off the curve. Precomposing with a change of parameter `φ` that has an ambient derivative
+`φ' t` at each `t ∈ [[a, b]]`, with `φ'` continuous, leaves the winding number unchanged, the
+parameter interval `[[a, b]]` being replaced by `[[φ a, φ b]]`.
 
-All hypotheses are stated on the swept image `φ '' [[c, d]]`, which contains `[[φ c, φ d]]` by the
-intermediate value theorem, so `φ` need not be monotone. Off-curve is essential: on the curve the
-winding number is a principal value, whose excision windows are themselves reparametrized. -/
+The hypotheses on `γ` are stated on the swept image `φ '' [[a, b]]`, which contains `[[φ a, φ b]]`
+by the intermediate value theorem, so `φ` need not be monotone. Off-curve is essential: on the
+curve the winding number is a principal value, whose excision windows are themselves
+reparametrized. -/
 theorem windingNumber_comp_reparam
-    (hφ : ∀ t ∈ Set.uIcc c d, HasDerivAt φ (φ' t) t)
-    (hφ' : ContinuousOn φ' (Set.uIcc c d))
-    (hγ : ∀ u ∈ φ '' Set.uIcc c d, DifferentiableAt ℝ γ u)
-    (hγ' : ContinuousOn (deriv γ) (φ '' Set.uIcc c d))
-    (havoid : ∀ u ∈ φ '' Set.uIcc c d, γ u ≠ z₀) :
-    windingNumber (γ ∘ φ) c d z₀ = windingNumber γ (φ c) (φ d) z₀ := by
-  have hφcont : ContinuousOn φ (Set.uIcc c d) :=
+    (hφ : ∀ t ∈ Set.uIcc a b, HasDerivAt φ (φ' t) t)
+    (hφ' : ContinuousOn φ' (Set.uIcc a b))
+    (hγ : ∀ u ∈ φ '' Set.uIcc a b, DifferentiableAt ℝ γ u)
+    (hγ' : ContinuousOn (deriv γ) (φ '' Set.uIcc a b))
+    (havoid : ∀ u ∈ φ '' Set.uIcc a b, γ u ≠ z₀) :
+    windingNumber (γ ∘ φ) a b z₀ = windingNumber γ (φ a) (φ b) z₀ := by
+  have hφcont : ContinuousOn φ (Set.uIcc a b) :=
     fun t ht => (hφ t ht).continuousAt.continuousWithinAt
-  have hγcont : ContinuousOn γ (φ '' Set.uIcc c d) :=
+  have hγcont : ContinuousOn γ (φ '' Set.uIcc a b) :=
     fun u hu => (hγ u hu).continuousAt.continuousWithinAt
-  have hsub : Set.uIcc (φ c) (φ d) ⊆ φ '' Set.uIcc c d := intermediate_value_uIcc hφcont
-  have hmaps : Set.MapsTo φ (Set.uIcc c d) (φ '' Set.uIcc c d) := Set.mapsTo_image φ _
+  have hsub : Set.uIcc (φ a) (φ b) ⊆ φ '' Set.uIcc a b := intermediate_value_uIcc hφcont
+  have hmaps : Set.MapsTo φ (Set.uIcc a b) (φ '' Set.uIcc a b) := Set.mapsTo_image φ _
   -- the kernel `(· - z₀)⁻¹` is continuous along the curve, since `γ` avoids `z₀`
-  have hker : ContinuousOn (fun z : ℂ => (z - z₀)⁻¹) (γ '' (φ '' Set.uIcc c d)) := by
+  have hker : ContinuousOn (fun z : ℂ => (z - z₀)⁻¹) (γ '' (φ '' Set.uIcc a b)) := by
     refine (continuousOn_id.sub continuousOn_const).inv₀ ?_
     rintro _ ⟨u, hu, rfl⟩
     exact sub_ne_zero.mpr (havoid u hu)
   -- the index integrand along the reparametrized curve is continuous, hence integrable
-  have hderivcont : ContinuousOn (deriv (γ ∘ φ)) (Set.uIcc c d) :=
-    ContinuousOn.congr (hφ'.smul (hγ'.comp hφcont hmaps)) (eqOn_deriv_comp_reparam hφ hγ)
-  have hcompcont : ContinuousOn (γ ∘ φ) (Set.uIcc c d) := hγcont.comp hφcont hmaps
-  have hcompavoid : ∀ t ∈ Set.uIcc c d, (γ ∘ φ) t ≠ z₀ := fun t ht => havoid (φ t) ⟨t, ht, rfl⟩
+  have hderivcont : ContinuousOn (deriv (γ ∘ φ)) (Set.uIcc a b) :=
+    continuousOn_deriv_comp_reparam hφ hφ' hγ hγ'
+  have hcompcont : ContinuousOn (γ ∘ φ) (Set.uIcc a b) := hγcont.comp hφcont hmaps
+  have hcompavoid : ∀ t ∈ Set.uIcc a b, (γ ∘ φ) t ≠ z₀ := fun t ht => havoid (φ t) ⟨t, ht, rfl⟩
   rw [windingNumber_eq_integral_of_avoidance hcompcont hcompavoid
       (intervalIntegrable_inv_sub_mul_deriv hcompcont hcompavoid hderivcont.intervalIntegrable),
     windingNumber_eq_integral_of_avoidance (hγcont.mono hsub)
@@ -97,46 +101,47 @@ theorem windingNumber_comp_reparam
   congr 1
   -- both index integrands are the contour integrand of the kernel `(· - z₀)⁻¹`, with the two
   -- factors in the opposite order
-  have hL : ∫ t in c..d, ((γ ∘ φ) t - z₀)⁻¹ * deriv (γ ∘ φ) t
-      = ∫ t in c..d, deriv (γ ∘ φ) t • ((γ ∘ φ) t - z₀)⁻¹ :=
+  have hL : ∫ t in a..b, ((γ ∘ φ) t - z₀)⁻¹ * deriv (γ ∘ φ) t
+      = ∫ t in a..b, deriv (γ ∘ φ) t • ((γ ∘ φ) t - z₀)⁻¹ :=
     intervalIntegral.integral_congr fun t _ => by rw [smul_eq_mul, mul_comm]
-  have hR : ∫ u in φ c..φ d, (γ u - z₀)⁻¹ * deriv γ u
-      = ∫ u in φ c..φ d, deriv γ u • (γ u - z₀)⁻¹ :=
+  have hR : ∫ u in φ a..φ b, (γ u - z₀)⁻¹ * deriv γ u
+      = ∫ u in φ a..φ b, deriv γ u • (γ u - z₀)⁻¹ :=
     intervalIntegral.integral_congr fun u _ => by rw [smul_eq_mul, mul_comm]
   rw [hL, hR]
   exact integral_deriv_smul_comp_reparam (f := fun z : ℂ => (z - z₀)⁻¹) hφ hφ' hγ hγ' hker
 
 /-- The affine special case of `windingNumber_comp_reparam`: precomposing a curve with
-`t ↦ α * t + β` moves the parameter interval to `[[α * c + β, α * d + β]]` and leaves the winding
+`t ↦ r * t + s` moves the parameter interval to `[[r * a + s, r * b + s]]` and leaves the winding
 number about an off-curve point unchanged. Unlike the general statement this needs no separate
-continuity hypothesis on the parameter speed, the derivative being the constant `α`. -/
-theorem windingNumber_comp_reparam_affine {α β : ℝ}
-    (hγ : ∀ u ∈ Set.uIcc (α * c + β) (α * d + β), DifferentiableAt ℝ γ u)
-    (hγ' : ContinuousOn (deriv γ) (Set.uIcc (α * c + β) (α * d + β)))
-    (havoid : ∀ u ∈ Set.uIcc (α * c + β) (α * d + β), γ u ≠ z₀) :
-    windingNumber (γ ∘ fun t => α * t + β) c d z₀
-      = windingNumber γ (α * c + β) (α * d + β) z₀ := by
-  have himg : (fun t => α * t + β) '' Set.uIcc c d = Set.uIcc (α * c + β) (α * d + β) := by
-    rw [show (fun t : ℝ => α * t + β) = (fun x => x + β) ∘ (α * ·) from funext fun _ => rfl,
+continuity hypothesis on the parameter speed, the derivative being the constant `r`. -/
+theorem windingNumber_comp_mul_add {r s : ℝ}
+    (hγ : ∀ u ∈ Set.uIcc (r * a + s) (r * b + s), DifferentiableAt ℝ γ u)
+    (hγ' : ContinuousOn (deriv γ) (Set.uIcc (r * a + s) (r * b + s)))
+    (havoid : ∀ u ∈ Set.uIcc (r * a + s) (r * b + s), γ u ≠ z₀) :
+    windingNumber (γ ∘ fun t => r * t + s) a b z₀
+      = windingNumber γ (r * a + s) (r * b + s) z₀ := by
+  have himg : (fun t => r * t + s) '' Set.uIcc a b = Set.uIcc (r * a + s) (r * b + s) := by
+    rw [show (fun t : ℝ => r * t + s) = (fun x => x + s) ∘ (r * ·) from funext fun _ => rfl,
       Set.image_comp, Set.image_const_mul_uIcc, Set.image_add_const_uIcc]
-  refine windingNumber_comp_reparam (φ' := fun _ => α)
-    (fun t _ => by simpa using ((hasDerivAt_id t).const_mul α).add_const β)
+  refine windingNumber_comp_reparam (φ' := fun _ => r)
+    (fun t _ => by simpa using ((hasDerivAt_id t).const_mul r).add_const s)
     continuousOn_const ?_ ?_ ?_ <;> rw [himg]
   exacts [hγ, hγ', havoid]
 
 /-- **Null-homology transports along a reparametrization.** If a curve lies in `Ω` and is
-null-homologous there, then so is any `C¹` reparametrization of it. -/
+null-homologous there, then so is its precomposition with any change of parameter `φ` that has an
+ambient derivative `φ' t` at each `t ∈ [[a, b]]`, with `φ'` continuous. -/
 theorem IsNullHomologous.comp_reparam
-    (h : IsNullHomologous γ (φ c) (φ d) Ω)
-    (hφ : ∀ t ∈ Set.uIcc c d, HasDerivAt φ (φ' t) t)
-    (hφ' : ContinuousOn φ' (Set.uIcc c d))
-    (hγ : ∀ u ∈ φ '' Set.uIcc c d, DifferentiableAt ℝ γ u)
-    (hγ' : ContinuousOn (deriv γ) (φ '' Set.uIcc c d))
-    (hγΩ : ∀ u ∈ φ '' Set.uIcc c d, γ u ∈ Ω) :
-    IsNullHomologous (γ ∘ φ) c d Ω := by
+    (h : IsNullHomologous γ (φ a) (φ b) Ω)
+    (hφ : ∀ t ∈ Set.uIcc a b, HasDerivAt φ (φ' t) t)
+    (hφ' : ContinuousOn φ' (Set.uIcc a b))
+    (hγ : ∀ u ∈ φ '' Set.uIcc a b, DifferentiableAt ℝ γ u)
+    (hγ' : ContinuousOn (deriv γ) (φ '' Set.uIcc a b))
+    (hγΩ : ∀ u ∈ φ '' Set.uIcc a b, γ u ∈ Ω) :
+    IsNullHomologous (γ ∘ φ) a b Ω := by
   rw [isNullHomologous_iff] at h ⊢
   intro z hz
-  have havoid : ∀ u ∈ φ '' Set.uIcc c d, γ u ≠ z := by
+  have havoid : ∀ u ∈ φ '' Set.uIcc a b, γ u ≠ z := by
     intro u hu huz
     exact hz (huz ▸ hγΩ u hu)
   rw [windingNumber_comp_reparam (φ' := φ') hφ hφ' hγ hγ' havoid]

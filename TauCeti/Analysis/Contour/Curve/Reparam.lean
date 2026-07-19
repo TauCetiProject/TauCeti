@@ -12,8 +12,8 @@ public import Mathlib.Analysis.Complex.Basic
 # Reparametrization invariance of the contour integral
 
 A contour integral `∫ t in a..b, deriv γ t • f (γ t)` is unchanged when the curve `γ` is
-precomposed with a `C¹` change of parameter `φ`, the parameter interval `[[c, d]]` being replaced
-by `[[φ c, φ d]]`. This file proves that invariance, together with the chain rule for the
+precomposed with a `C¹` change of parameter `φ`, the parameter interval `[[a, b]]` being replaced
+by `[[φ a, φ b]]`. This file proves that invariance, together with the chain rule for the
 reparametrized curve that it rests on.
 
 The proof is the interval-integral change-of-variables formula
@@ -21,22 +21,30 @@ The proof is the interval-integral change-of-variables formula
 `g u = deriv γ u • f (γ u)`, together with the chain rule
 `deriv (γ ∘ φ) t = φ' t • deriv γ (φ t)`.
 
-Two design points are worth flagging.
+Three design points are worth flagging.
 
-* The regularity hypotheses are placed on the **image** `φ '' [[c, d]]`, not on `[[φ c, φ d]]`.
+* Regularity is asked for as **ambient** pointwise derivatives, not `ContDiffOn`: `φ` satisfies
+  `HasDerivAt φ (φ' t) t` at each `t ∈ [[a, b]]` and `γ` satisfies `DifferentiableAt ℝ γ` on the
+  image, both two-sided in the ambient sense rather than merely within the set. This matches the
+  global `deriv γ` of the roadmap's raw-function curve layer, which the chain rule identifying
+  `deriv (γ ∘ φ)` needs pointwise. "`C¹`" in the docstrings below is shorthand for exactly this
+  data.
+* The regularity hypotheses are placed on the **image** `φ '' [[a, b]]`, not on `[[φ a, φ b]]`.
   This is the honest domain: `φ` is not assumed monotone, so the composite curve may sweep past the
-  endpoints `φ c`, `φ d` and back. The intermediate value theorem
-  (`intermediate_value_uIcc`) supplies `[[φ c, φ d]] ⊆ φ '' [[c, d]]`, so the hypotheses on the
+  endpoints `φ a`, `φ b` and back. The intermediate value theorem
+  (`intermediate_value_uIcc`) supplies `[[φ a, φ b]] ⊆ φ '' [[a, b]]`, so the hypotheses on the
   image also cover the reparametrized interval, and no monotonicity is needed anywhere.
-* `deriv γ` is the *global* derivative, matching the raw-function design of the roadmap's curve
-  layer. Differentiability of `γ` on the image is therefore an explicit hypothesis rather than a
-  consequence of continuity, since the chain rule identifying `deriv (γ ∘ φ)` needs it pointwise.
+* The curve `γ` is asked to be `C¹` with no breakpoints, one level above the piecewise-`C¹` class of
+  the roadmap's curve layer. The piecewise case — split `[[a, b]]` at the preimages of the finitely
+  many breakpoints and reassemble — is a separate increment, as is the on-curve principal-value
+  case in the winding-number file.
 
 ## Main results
 
-* `TauCeti.Contour.deriv_comp_reparam` — the chain rule for a reparametrized curve, in the
-  `deriv` form used by the contour integrand.
-* `TauCeti.Contour.eqOn_deriv_comp_reparam` — its set-level form on `[[c, d]]`.
+* `TauCeti.Contour.eqOn_deriv_comp_reparam` — the chain rule for a reparametrized curve on
+  `[[a, b]]`, in the `deriv` form used by the contour integrand.
+* `TauCeti.Contour.continuousOn_deriv_comp_reparam` — continuity of `deriv (γ ∘ φ)` on `[[a, b]]`,
+  the regularity every consumer of the reparametrized contour integrand needs for integrability.
 * `TauCeti.Contour.integral_deriv_smul_comp_reparam` — reparametrization invariance of the contour
   integral `∫ t in a..b, deriv γ t • f (γ t)`.
 
@@ -55,48 +63,64 @@ noncomputable section
 
 namespace TauCeti.Contour
 
-variable {γ : ℝ → ℂ} {φ φ' : ℝ → ℝ} {c d : ℝ} {f : ℂ → ℂ}
+variable {γ : ℝ → ℂ} {φ φ' : ℝ → ℝ} {a b : ℝ} {f : ℂ → ℂ}
 
-/-- **Chain rule for a reparametrized curve**, in `deriv` form: the derivative of `γ ∘ φ` is the
-speed of the parameter change times the derivative of the curve. This is the identity that turns
-the contour integrand of `γ ∘ φ` into the change-of-variables integrand `φ' • (g ∘ φ)`. -/
-theorem deriv_comp_reparam {t : ℝ} (hφ : HasDerivAt φ (φ' t) t)
+/-- Chain rule for a reparametrized curve, in `deriv` form:
+`deriv (γ ∘ φ) t = φ' t • deriv γ (φ t)`. A one-step restatement of Mathlib's `HasDerivAt.scomp`,
+kept private as the internal step behind the set-level `eqOn_deriv_comp_reparam`. -/
+private theorem deriv_comp_reparam {t : ℝ} (hφ : HasDerivAt φ (φ' t) t)
     (hγ : DifferentiableAt ℝ γ (φ t)) :
     deriv (γ ∘ φ) t = φ' t • deriv γ (φ t) :=
   (hγ.hasDerivAt.scomp t hφ).deriv
 
 section Regularity
 
-variable (hφ : ∀ t ∈ Set.uIcc c d, HasDerivAt φ (φ' t) t)
-  (hγ : ∀ u ∈ φ '' Set.uIcc c d, DifferentiableAt ℝ γ u)
+variable (hφ : ∀ t ∈ Set.uIcc a b, HasDerivAt φ (φ' t) t)
+  (hγ : ∀ u ∈ φ '' Set.uIcc a b, DifferentiableAt ℝ γ u)
 
 include hφ hγ
 
-/-- On `[[c, d]]`, the derivative of the reparametrized curve is `φ' • (deriv γ ∘ φ)`. The
-set-level form of `deriv_comp_reparam`, packaged for `ContinuousOn` and integral congruences. -/
+/-- On `[[a, b]]`, the derivative of the reparametrized curve is `φ' • (deriv γ ∘ φ)`. This is the
+set-level chain rule, packaged for `ContinuousOn` and integral congruences. Here `φ` has an ambient
+derivative `φ' t` at each `t ∈ [[a, b]]` and `γ` is ambient-differentiable on the swept image. -/
 theorem eqOn_deriv_comp_reparam :
-    Set.EqOn (deriv (γ ∘ φ)) (fun t => φ' t • deriv γ (φ t)) (Set.uIcc c d) :=
+    Set.EqOn (deriv (γ ∘ φ)) (fun t => φ' t • deriv γ (φ t)) (Set.uIcc a b) :=
   fun t ht => deriv_comp_reparam (hφ t ht) (hγ (φ t) ⟨t, ht, rfl⟩)
 
 end Regularity
 
-/-- **Reparametrization invariance of the contour integral.** If `φ` is `C¹` on `[[c, d]]`, the
-curve `γ` is `C¹` on the swept image `φ '' [[c, d]]`, and `f` is continuous on the image of the
-curve, then integrating `f` along the reparametrized curve `γ ∘ φ` over `[[c, d]]` gives the same
-value as integrating along `γ` over `[[φ c, φ d]]`. -/
+/-- Continuity of the derivative of the reparametrized curve on `[[a, b]]`, the regularity every
+consumer of the reparametrized contour integrand needs for integrability. As elsewhere, `φ` has an
+ambient derivative `φ' t` at each `t ∈ [[a, b]]` with `φ'` continuous there, and `γ` is
+ambient-differentiable with continuous derivative on the swept image `φ '' [[a, b]]`. -/
+theorem continuousOn_deriv_comp_reparam
+    (hφ : ∀ t ∈ Set.uIcc a b, HasDerivAt φ (φ' t) t)
+    (hφ' : ContinuousOn φ' (Set.uIcc a b))
+    (hγ : ∀ u ∈ φ '' Set.uIcc a b, DifferentiableAt ℝ γ u)
+    (hγ' : ContinuousOn (deriv γ) (φ '' Set.uIcc a b)) :
+    ContinuousOn (deriv (γ ∘ φ)) (Set.uIcc a b) := by
+  have hφcont : ContinuousOn φ (Set.uIcc a b) :=
+    fun t ht => (hφ t ht).continuousAt.continuousWithinAt
+  exact (hφ'.smul (hγ'.comp hφcont (Set.mapsTo_image φ _))).congr (eqOn_deriv_comp_reparam hφ hγ)
+
+/-- **Reparametrization invariance of the contour integral.** If `φ` has an ambient derivative
+`φ' t` at each `t ∈ [[a, b]]` with `φ'` continuous there, `γ` is ambient-differentiable with
+continuous derivative on the swept image `φ '' [[a, b]]`, and `f` is continuous on the image of the
+curve, then integrating `f` along the reparametrized curve `γ ∘ φ` over `[[a, b]]` gives the same
+value as integrating along `γ` over `[[φ a, φ b]]`. -/
 theorem integral_deriv_smul_comp_reparam
-    (hφ : ∀ t ∈ Set.uIcc c d, HasDerivAt φ (φ' t) t)
-    (hφ' : ContinuousOn φ' (Set.uIcc c d))
-    (hγ : ∀ u ∈ φ '' Set.uIcc c d, DifferentiableAt ℝ γ u)
-    (hγ' : ContinuousOn (deriv γ) (φ '' Set.uIcc c d))
-    (hf : ContinuousOn f (γ '' (φ '' Set.uIcc c d))) :
-    ∫ t in c..d, deriv (γ ∘ φ) t • f ((γ ∘ φ) t) = ∫ u in φ c..φ d, deriv γ u • f (γ u) := by
-  have hγcont : ContinuousOn γ (φ '' Set.uIcc c d) :=
+    (hφ : ∀ t ∈ Set.uIcc a b, HasDerivAt φ (φ' t) t)
+    (hφ' : ContinuousOn φ' (Set.uIcc a b))
+    (hγ : ∀ u ∈ φ '' Set.uIcc a b, DifferentiableAt ℝ γ u)
+    (hγ' : ContinuousOn (deriv γ) (φ '' Set.uIcc a b))
+    (hf : ContinuousOn f (γ '' (φ '' Set.uIcc a b))) :
+    ∫ t in a..b, deriv (γ ∘ φ) t • f ((γ ∘ φ) t) = ∫ u in φ a..φ b, deriv γ u • f (γ u) := by
+  have hγcont : ContinuousOn γ (φ '' Set.uIcc a b) :=
     fun u hu => (hγ u hu).continuousAt.continuousWithinAt
-  have hgcont : ContinuousOn (fun u => deriv γ u • f (γ u)) (φ '' Set.uIcc c d) :=
+  have hgcont : ContinuousOn (fun u => deriv γ u • f (γ u)) (φ '' Set.uIcc a b) :=
     hγ'.smul (hf.comp hγcont (Set.mapsTo_image γ _))
   have hcongr : Set.EqOn (fun t => deriv (γ ∘ φ) t • f ((γ ∘ φ) t))
-      (fun t => φ' t • ((fun u => deriv γ u • f (γ u)) ∘ φ) t) (Set.uIcc c d) := by
+      (fun t => φ' t • ((fun u => deriv γ u • f (γ u)) ∘ φ) t) (Set.uIcc a b) := by
     intro t ht
     simp only [Function.comp_apply, eqOn_deriv_comp_reparam hφ hγ ht, smul_assoc]
   rw [intervalIntegral.integral_congr hcongr]
