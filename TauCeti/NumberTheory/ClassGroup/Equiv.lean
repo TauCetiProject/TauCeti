@@ -61,7 +61,7 @@ private theorem mulEquiv_mk_fractionRing (f : R ≃+* S)
 /-- `ClassGroup.mulEquiv f` sends the class of a unit fractional ideal `I` to the class of its
 image under `FractionalIdeal.ringEquivOfRingEquiv f`. This is independent of the chosen fraction
 fields. -/
-@[simp high] theorem mulEquiv_mk {K L : Type*} [Field K] [Field L] [Algebra R K]
+theorem mulEquiv_mk {K L : Type*} [Field K] [Field L] [Algebra R K]
     [Algebra S L] [IsFractionRing R K] [IsFractionRing S L] (f : R ≃+* S)
     (I : (FractionalIdeal R⁰ K)ˣ) :
     ClassGroup.mulEquiv f (ClassGroup.mk K I) =
@@ -138,13 +138,15 @@ equivalences. -/
   simpa using FractionalIdeal.ringEquivOfRingEquiv_trans_apply
     (FractionRing R) (FractionRing S) (FractionRing T) f g I
 
-/-- Pointwise form of `ClassGroup.mulEquiv_trans`. -/
-@[simp] theorem mulEquiv_trans_apply (f : R ≃+* S) (g : S ≃+* T) (x : ClassGroup R) :
+/-- Pointwise form of `ClassGroup.mulEquiv_trans`. This is not a simp lemma because
+`ClassGroup.mulEquiv_apply` already rewrites its left-hand side. -/
+theorem mulEquiv_trans_apply (f : R ≃+* S) (g : S ≃+* T) (x : ClassGroup R) :
     ClassGroup.mulEquiv (f.trans g) x = ClassGroup.mulEquiv g (ClassGroup.mulEquiv f x) :=
   DFunLike.congr_fun (mulEquiv_trans f g) x
 
-/-- Pointwise form of `ClassGroup.mulEquiv_refl`. -/
-@[simp] theorem mulEquiv_refl_apply (x : ClassGroup R) :
+/-- Pointwise form of `ClassGroup.mulEquiv_refl`. This is not a simp lemma because
+`ClassGroup.mulEquiv_refl` already proves the bundled normal form. -/
+theorem mulEquiv_refl_apply (x : ClassGroup R) :
     ClassGroup.mulEquiv (RingEquiv.refl R) x = x :=
   DFunLike.congr_fun mulEquiv_refl x
 
@@ -159,8 +161,9 @@ equivalences. -/
   rw [f.symm_trans_self, mulEquiv_refl] at h
   exact h
 
-/-- Pointwise form of `ClassGroup.mulEquiv_symm`. -/
-@[simp] theorem mulEquiv_symm_apply' (f : R ≃+* S) (x : ClassGroup S) :
+/-- Pointwise form of `ClassGroup.mulEquiv_symm`. This is not a simp lemma because
+`ClassGroup.mulEquiv_apply` already rewrites its left-hand side. -/
+theorem mulEquiv_symm_apply' (f : R ≃+* S) (x : ClassGroup S) :
     (ClassGroup.mulEquiv f).symm x = ClassGroup.mulEquiv f.symm x :=
   DFunLike.congr_fun (mulEquiv_symm f) x
 
