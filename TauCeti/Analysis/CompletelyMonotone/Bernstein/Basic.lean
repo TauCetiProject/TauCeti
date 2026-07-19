@@ -39,9 +39,10 @@ nonnegative scalar multiples, and the basic catalogue — constants, the identit
   `TauCeti.IsBernsteinFunction.monotoneOn`, `TauCeti.IsBernsteinFunction.concaveOn`: a Bernstein
   function is nonnegative, has nonnegative derivative, is nondecreasing, and is concave on
   `[0, ∞)`.
+* `TauCeti.IsBernsteinFunction.congr`: the property depends only on the values on `[0, ∞)`.
 * `TauCeti.IsBernsteinFunction.add`, `TauCeti.IsBernsteinFunction.smul`,
-  `TauCeti.IsBernsteinFunction.sum`: closure under sums, nonnegative scalar multiples, and finite
-  sums.
+  `TauCeti.IsBernsteinFunction.const_add`, `TauCeti.IsBernsteinFunction.sum`: closure under sums,
+  nonnegative scalar multiples, adding a nonnegative constant, and finite sums.
 * `TauCeti.isBernsteinFunction_const`, `TauCeti.isBernsteinFunction_id`,
   `TauCeti.isBernsteinFunction_affine`, `TauCeti.isBernsteinFunction_one_sub_exp_neg_mul`: the
   basic examples.
@@ -66,6 +67,15 @@ such as the right derivative of `sqrt` at `0`. -/
 def IsBernsteinFunction (f : ℝ → ℝ) : Prop :=
   ContinuousOn f (Ici 0) ∧ ContDiffOn ℝ ∞ f (Ioi 0) ∧
     (∀ t : ℝ, 0 ≤ t → 0 ≤ f t) ∧ IsCompletelyMonotoneOnIoi (deriv f)
+
+/-- A function is Bernstein exactly when it is continuous and nonnegative on `[0, ∞)`, smooth
+on `(0, ∞)`, and has completely monotone derivative there. The body of `IsBernsteinFunction` is
+not `@[expose]`d, so this is how downstream files build the predicate from its four clauses. -/
+theorem isBernsteinFunction_iff {f : ℝ → ℝ} :
+    IsBernsteinFunction f ↔
+      ContinuousOn f (Ici 0) ∧ ContDiffOn ℝ ∞ f (Ioi 0) ∧
+        (∀ t : ℝ, 0 ≤ t → 0 ≤ f t) ∧ IsCompletelyMonotoneOnIoi (deriv f) :=
+  Iff.rfl
 
 namespace IsBernsteinFunction
 
@@ -115,6 +125,17 @@ lemma concaveOn (hf : IsBernsteinFunction f) : ConcaveOn ℝ (Ici 0) f := by
   simpa [Function.iterate_succ, Function.iterate_zero, Function.comp_def] using
     hf.deriv_isCompletelyMonotoneOnIoi.deriv_nonpos hx
 
+/-- Being a Bernstein function depends only on the values on `[0, ∞)`. -/
+theorem congr (hf : IsBernsteinFunction f) (h : Set.EqOn g f (Ici 0)) :
+    IsBernsteinFunction g := by
+  have hIoi : Set.EqOn g f (Ioi 0) := h.mono Ioi_subset_Ici_self
+  have hderiv : Set.EqOn (deriv g) (deriv f) (Ioi 0) := fun x hx =>
+    (hIoi.eventuallyEq_of_mem (isOpen_Ioi.mem_nhds hx)).deriv_eq
+  refine ⟨hf.continuousOn.congr h, hf.contDiffOn.congr fun x hx => hIoi hx, fun t ht => ?_, ?_⟩
+  · rw [h ht]
+    exact hf.nonneg ht
+  · exact hf.deriv_isCompletelyMonotoneOnIoi.congr hderiv
+
 /-- Bernstein functions are closed under addition. -/
 theorem add (hf : IsBernsteinFunction f) (hg : IsBernsteinFunction g) :
     IsBernsteinFunction (f + g) := by
@@ -156,6 +177,11 @@ theorem isBernsteinFunction_zero : IsBernsteinFunction (fun _ : ℝ => (0 : ℝ)
   isBernsteinFunction_const le_rfl
 
 namespace IsBernsteinFunction
+
+/-- Adding a nonnegative constant to a Bernstein function again gives a Bernstein function. -/
+theorem const_add {f : ℝ → ℝ} (hf : IsBernsteinFunction f) {c : ℝ} (hc : 0 ≤ c) :
+    IsBernsteinFunction (fun t => c + f t) :=
+  ((isBernsteinFunction_const hc).add hf).congr fun _ _ => by simp [Pi.add_apply]
 
 /-- Bernstein functions are closed under finite sums. -/
 theorem sum {ι : Type*} {s : Finset ι} {f : ι → ℝ → ℝ}
