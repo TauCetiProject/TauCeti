@@ -36,15 +36,26 @@ the measures coincide.  The proof stays inside Mathlib's `ProbabilityTheory.comp
 * `ProbabilityTheory.complexMGF_id_mul_I` turns the imaginary-axis values into `charFun`, and
   `MeasureTheory.Measure.ext_of_charFun` concludes.
 
+The strip-propagation core of `charFun_eq_of_forall_integral_pow_eq` adapts Mathlib's
+`ProbabilityTheory.eqOn_complexMGF_of_mgf'` (`Mathlib/Probability/Moments/ComplexMGF.lean`): it
+reuses the same analyticity strip and the same
+`convex_integrableExpSet.interior.…linear_preimage Complex.reLm |>.isPreconnected`
+identity-principle idiom.  That file's `## TODO` note ("once we know that equal `mgf` implies equal
+distributions …")
+records the determinacy fact as an open gap in Mathlib; the results here complete it for finite
+measures via the polynomial-moment route.
+
 ## Main declarations
 
 * `TauCeti.charFun_eq_of_forall_integral_pow_eq`: matching moments (and finite exponential moments
   near `0`) give equal characteristic functions.
-* `TauCeti.measure_eq_of_forall_integral_pow_eq`: matching moments determine a finite measure on
+* `TauCeti.Measure.ext_of_forall_integral_pow_eq`: matching moments determine a finite measure on
   `ℝ`.
-* `TauCeti.measure_eq_of_forall_integral_pow_eq_of_forall_integrable_exp`: the same conclusion from
-  the roadmap's exponential-moment hypothesis `∀ a ≥ 0, Integrable (fun x => exp (a * |x|)) μ`,
-  which forces every exponential moment finite (hence the strip is the whole plane).
+* `TauCeti.Measure.ext_of_forall_integral_pow_eq_of_exists_integrable_exp`: the same conclusion from
+  the roadmap's exponential-moment hypothesis `∃ a > 0, Integrable (fun x => exp (a * |x|)) μ`,
+  which already puts `0` in the interior of the integrability strip.  This is the form the
+  completeness argument consumes: the hypothesis holds for Gaussian decay and automatically for
+  compactly supported measures.
 -/
 
 public section
@@ -125,42 +136,44 @@ theorem charFun_eq_of_forall_integral_pow_eq
 /-- **Moment determinacy for finite measures on `ℝ`.** A finite measure on `ℝ` with finite
 exponential moments near `0` is determined by its polynomial moments `∫ xⁿ`.  Combines
 `charFun_eq_of_forall_integral_pow_eq` with `MeasureTheory.Measure.ext_of_charFun`. -/
-theorem measure_eq_of_forall_integral_pow_eq [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+theorem Measure.ext_of_forall_integral_pow_eq [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ))
     (hν : (0 : ℝ) ∈ interior (integrableExpSet id ν))
     (hmom : ∀ n, ∫ x, x ^ n ∂μ = ∫ x, x ^ n ∂ν) :
     μ = ν :=
   Measure.ext_of_charFun (charFun_eq_of_forall_integral_pow_eq hμ hν hmom)
 
-/-- If every exponential moment `∫ e^{a|x|} dμ` is finite, then `0` lies in the interior of the
-integrability set `integrableExpSet id μ` (indeed the set is all of `ℝ`): the exponential
-`e^{tx}` is dominated by `e^{|t| · |x|}`. -/
-lemma zero_mem_interior_integrableExpSet_id_of_forall_integrable_exp
-    (h : ∀ a : ℝ, 0 ≤ a → Integrable (fun x => Real.exp (a * |x|)) μ) :
+/-- If `∫ e^{a|x|} dμ` is finite for a single `a > 0`, then `0` lies in the interior of the
+integrability set `integrableExpSet id μ`: for `|t| ≤ a` the exponential `e^{tx}` is dominated by
+`e^{a|x|}`, so the open interval `(-a, a)` is contained in `integrableExpSet id μ`. -/
+private lemma zero_mem_interior_integrableExpSet_id_of_exists_integrable_exp
+    (h : ∃ a : ℝ, 0 < a ∧ Integrable (fun x => Real.exp (a * |x|)) μ) :
     (0 : ℝ) ∈ interior (integrableExpSet id μ) := by
-  have huniv : integrableExpSet id μ = Set.univ := by
-    ext t
-    simp only [Set.mem_univ, iff_true, integrableExpSet, Set.mem_setOf_eq, id_eq]
-    refine (h |t| (abs_nonneg t)).mono'
-      ((Real.continuous_exp.comp (continuous_const.mul continuous_id)).aestronglyMeasurable) ?_
-    filter_upwards with x
-    rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
-    exact Real.exp_le_exp.mpr ((le_abs_self _).trans_eq (abs_mul t x))
-  rw [huniv, interior_univ]
-  exact Set.mem_univ _
+  obtain ⟨a, ha, hint⟩ := h
+  refine mem_interior.mpr ⟨Set.Ioo (-a) a, ?_, isOpen_Ioo, Set.mem_Ioo.mpr ⟨neg_lt_zero.mpr ha, ha⟩⟩
+  intro t ht
+  simp only [integrableExpSet, Set.mem_setOf_eq, id_eq]
+  refine hint.mono'
+    ((Real.continuous_exp.comp (continuous_const.mul continuous_id)).aestronglyMeasurable) ?_
+  filter_upwards with x
+  rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+  refine Real.exp_le_exp.mpr ?_
+  calc t * x ≤ |t * x| := le_abs_self _
+    _ = |t| * |x| := abs_mul t x
+    _ ≤ a * |x| := mul_le_mul_of_nonneg_right (abs_lt.mpr ht).le (abs_nonneg x)
 
 /-- **Moment determinacy, exponential-moment form (the roadmap's B1 hypothesis).** A finite measure
-on `ℝ` all of whose exponential moments `∫ e^{a|x|} dμ` are finite is determined by its polynomial
-moments.  This is the form the completeness argument consumes: the hypothesis holds for Gaussian
-decay and automatically for compactly supported measures. -/
-theorem measure_eq_of_forall_integral_pow_eq_of_forall_integrable_exp
+on `ℝ` for which some exponential moment `∫ e^{a|x|} dμ` with `a > 0` is finite is determined by its
+polynomial moments.  This is the form the completeness argument consumes: the hypothesis holds for
+Gaussian decay and automatically for compactly supported measures. -/
+theorem Measure.ext_of_forall_integral_pow_eq_of_exists_integrable_exp
     [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    (hμ : ∀ a : ℝ, 0 ≤ a → Integrable (fun x => Real.exp (a * |x|)) μ)
-    (hν : ∀ a : ℝ, 0 ≤ a → Integrable (fun x => Real.exp (a * |x|)) ν)
+    (hμ : ∃ a : ℝ, 0 < a ∧ Integrable (fun x => Real.exp (a * |x|)) μ)
+    (hν : ∃ a : ℝ, 0 < a ∧ Integrable (fun x => Real.exp (a * |x|)) ν)
     (hmom : ∀ n, ∫ x, x ^ n ∂μ = ∫ x, x ^ n ∂ν) :
     μ = ν :=
-  measure_eq_of_forall_integral_pow_eq
-    (zero_mem_interior_integrableExpSet_id_of_forall_integrable_exp hμ)
-    (zero_mem_interior_integrableExpSet_id_of_forall_integrable_exp hν) hmom
+  Measure.ext_of_forall_integral_pow_eq
+    (zero_mem_interior_integrableExpSet_id_of_exists_integrable_exp hμ)
+    (zero_mem_interior_integrableExpSet_id_of_exists_integrable_exp hν) hmom
 
 end TauCeti
