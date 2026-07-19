@@ -21,8 +21,10 @@ compute it on ideal classes.
 
 ## Main results
 
-* `ClassGroup.mulEquiv_mk`: the value of the induced equivalence on the class of a unit fractional
-  ideal is the class of the transported ideal.
+* `ClassGroup.mulEquiv_mk_fractionRing`: the `simp`-usable computation of the induced equivalence on
+  the class of a unit fractional ideal over the canonical fraction field.
+* `ClassGroup.mulEquiv_mk`: the same computation over arbitrary fraction fields, as an `rw`-form
+  with the target fraction field explicit.
 * `ClassGroup.mulEquiv_refl`: the identity ring equivalence induces the identity on class groups.
 * `ClassGroup.mulEquiv_trans`: induced equivalences respect composition.
 * `ClassGroup.mulEquiv_symm`: the inverse induced equivalence comes from the inverse ring
@@ -44,8 +46,10 @@ variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
 
 /-- `ClassGroup.mulEquiv f` sends the class of a unit fractional ideal `I` to the class of its
 image under `FractionalIdeal.ringEquivOfRingEquiv f`. This is the characteristic computation of the
-induced map on ideal classes; the functorial laws below are corollaries. -/
-private theorem mulEquiv_mk_fractionRing (f : R ≃+* S)
+induced map on ideal classes; the functorial laws below are corollaries. Its fully-determined
+left-hand side makes it the `simp`-usable form; `mulEquiv_mk` is the general `rw`-form over
+arbitrary fraction fields. -/
+@[simp high] theorem mulEquiv_mk_fractionRing (f : R ≃+* S)
     (I : (FractionalIdeal R⁰ (FractionRing R))ˣ) :
     ClassGroup.mulEquiv f (ClassGroup.mk (FractionRing R) I) =
       ClassGroup.mk (FractionRing S)
@@ -73,7 +77,7 @@ private theorem canonicalEquiv_eq_ringEquivOfRingEquiv (K K' : Type*) [Field K] 
 /-- `ClassGroup.mulEquiv f` sends the class of a unit fractional ideal `I` to the class of its
 image under `FractionalIdeal.ringEquivOfRingEquiv f`. This is independent of the chosen fraction
 fields. -/
-theorem mulEquiv_mk {K L : Type*} [Field K] [Field L] [Algebra R K]
+theorem mulEquiv_mk {K : Type*} (L : Type*) [Field K] [Field L] [Algebra R K]
     [Algebra S L] [IsFractionRing R K] [IsFractionRing S L] (f : R ≃+* S)
     (I : (FractionalIdeal R⁰ K)ˣ) :
     ClassGroup.mulEquiv f (ClassGroup.mk K I) =
