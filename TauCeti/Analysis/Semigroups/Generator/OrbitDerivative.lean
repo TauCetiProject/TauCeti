@@ -4,15 +4,16 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.Semigroups.Generator.Basic
+public import TauCeti.Analysis.Semigroups.Generator.Invariance
 import Mathlib.Analysis.Calculus.Deriv.Slope
 
 /-!
 # Differentiability of semigroup orbits
 
 This file characterizes membership in the infinitesimal generator domain by right
-differentiability of the orbit at zero, and identifies the right derivative there with the
-generator.
+differentiability of the orbit at zero. For a vector in the generator domain, it then computes
+the right derivative at every nonnegative time in the equivalent forms `A (S t x)` and
+`S t (A x)`.
 
 ## References
 
@@ -93,6 +94,66 @@ theorem mem_domain_iff_differentiableWithinAt_realOperator_zero
     rw [hasDerivWithinAt_iff_tendsto_slope] at hy'
     unfold slope at hy'
     simpa [S.realOperator_zero_apply] using hy'
+
+/-! ## Right derivatives at nonnegative times -/
+
+/-- At every nonnegative time, the right derivative of the orbit of a generator-domain vector
+is the generator evaluated on the evolved vector. -/
+theorem realOperator_hasDerivWithinAt (S : StronglyContinuousSemigroup X)
+    (x : S.domain) {t : ℝ} (ht : 0 ≤ t) :
+    HasDerivWithinAt (fun s : ℝ => S.realOperator s (x : X))
+      (S.generator ⟨S.realOperator t x, by
+        rw [S.generator_domain]
+        exact S.realOperator_mem_domain ht x.property⟩) (Set.Ici t) t := by
+  let y : S.domain := ⟨S.realOperator t x, S.realOperator_mem_domain ht x.property⟩
+  have htranslate : HasDerivWithinAt (fun s : ℝ => S.realOperator (s - t) (y : X))
+      (S.generator ⟨y, by rw [S.generator_domain]; exact y.property⟩) (Set.Ici t) t := by
+    have hinner : HasDerivWithinAt (fun s : ℝ => s - t) 1 (Set.Ici t) t := by
+      simpa using (hasDerivWithinAt_id t (Set.Ici t)).sub_const t
+    have hmaps : Set.MapsTo (fun s : ℝ => s - t) (Set.Ici t) (Set.Ici 0) := by
+      intro s hs
+      simpa only [Set.mem_Ici, sub_nonneg] using hs
+    have hcomp :=
+      (S.realOperator_hasDerivWithinAt_zero y).scomp_of_eq t hinner hmaps (by ring)
+    exact (hcomp.congr (fun _ _ => rfl) rfl).congr_deriv (one_smul ℝ _)
+  refine htranslate.congr (fun s hs => ?_) ?_
+  · have hst : 0 ≤ s - t := sub_nonneg.mpr hs
+    calc
+      S.realOperator s x = S.realOperator ((s - t) + t) x := by ring_nf
+      _ = S.realOperator (s - t) (S.realOperator t x) := by
+        rw [S.realOperator_add _ _ hst ht]
+        rfl
+      _ = S.realOperator (s - t) y := rfl
+  · simp only [sub_self, S.realOperator_zero_apply, y]
+
+/-- At every nonnegative time, the right derivative of the orbit is the semigroup operator
+applied to the generator. -/
+theorem realOperator_hasDerivWithinAt_eq_map_generator
+    (S : StronglyContinuousSemigroup X) (x : S.domain) {t : ℝ} (ht : 0 ≤ t) :
+    HasDerivWithinAt (fun s : ℝ => S.realOperator s (x : X))
+      (S.realOperator t (S.generator ⟨x, by
+        rw [S.generator_domain]
+        exact x.property⟩)) (Set.Ici t) t := by
+  rw [← S.realOperator_generator_map ht x]
+  exact S.realOperator_hasDerivWithinAt x ht
+
+/-- The orbit of a generator-domain vector is right-differentiable at every nonnegative time. -/
+theorem realOperator_differentiableWithinAt (S : StronglyContinuousSemigroup X)
+    (x : S.domain) {t : ℝ} (ht : 0 ≤ t) :
+    DifferentiableWithinAt ℝ (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici t) t :=
+  (S.realOperator_hasDerivWithinAt x ht).differentiableWithinAt
+
+/-- The right derivative of the orbit at a nonnegative time is the semigroup operator applied
+to the generator. -/
+@[simp]
+theorem realOperator_derivWithin (S : StronglyContinuousSemigroup X)
+    (x : S.domain) {t : ℝ} (ht : 0 ≤ t) :
+    derivWithin (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici t) t =
+      S.realOperator t (S.generator ⟨x, by
+        rw [S.generator_domain]
+        exact x.property⟩) :=
+  (S.realOperator_hasDerivWithinAt_eq_map_generator x ht).derivWithin
+    (uniqueDiffWithinAt_Ici t)
 
 end StronglyContinuousSemigroup
 
