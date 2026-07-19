@@ -211,7 +211,7 @@ theorem mapHom_apply [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
 /-- In positive dimensions, a constant continuous map induces the trivial homomorphism on
 homotopy groups. -/
 @[simp]
-theorem mapHom_continuousMap_const [DecidableEq N] [Nonempty N] (y : Y) :
+theorem mapHom_continuousMap_const_eq_one [DecidableEq N] [Nonempty N] (y : Y) :
     mapHom (N := N) (x := x) (ContinuousMap.const X y) rfl = 1 := by
   ext a
   rw [mapHom_apply, map_continuousMap_const_apply]
@@ -224,7 +224,7 @@ theorem mapHom_eq_one_of_subsingleton [DecidableEq N] [Nonempty N] [Subsingleton
     (f : C(X, Y)) (hf : f x = y) : mapHom (N := N) f hf = 1 := by
   have h : f = ContinuousMap.const X y := Subsingleton.elim _ _
   subst f
-  exact mapHom_continuousMap_const (x := x) y
+  exact mapHom_continuousMap_const_eq_one (x := x) y
 
 /-- Identity law for the bundled homomorphism: the induced monoid homomorphism of the identity
 continuous map is the identity homomorphism. -/
