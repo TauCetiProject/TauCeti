@@ -46,22 +46,6 @@ namespace TauCeti
 
 open MeasureTheory Polynomial.Chebyshev
 
-/-- Evaluate a real polynomial and, casting into any `[RCLike 𝕜]` scalar field, regard the result
-as an element of `L²(Polynomial.Chebyshev.measureT)`.
-
-The map is well-defined because every polynomial has finite second moment for the Chebyshev
-measure. -/
-noncomputable def polynomialEvalChebyshevLp (𝕜 : Type*) [RCLike 𝕜] :
-    Polynomial ℝ →ₗ[ℝ] Lp 𝕜 2 Polynomial.Chebyshev.measureT :=
-  polynomialEvalLp 𝕜 integrable_pow_measureT
-
-/-- The `L²` representative of a polynomial evaluation is the expected scalar-cast pointwise
-evaluation. -/
-lemma coeFn_polynomialEvalChebyshevLp (𝕜 : Type*) [RCLike 𝕜] (q : Polynomial ℝ) :
-    ⇑(polynomialEvalChebyshevLp 𝕜 q) =ᵐ[Polynomial.Chebyshev.measureT]
-      fun x => (algebraMap ℝ 𝕜) (q.eval x) :=
-  coeFn_polynomialEvalLp 𝕜 integrable_pow_measureT q
-
 /-- Under the polynomial-evaluation map, the `n`th Chebyshev polynomial is the square root of its
 squared norm times the normalized `n`th Chebyshev mode. -/
 lemma polynomialEvalChebyshevLp_T (𝕜 : Type*) [RCLike 𝕜] (n : ℕ) :
