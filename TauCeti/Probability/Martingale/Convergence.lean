@@ -28,8 +28,6 @@ result (`Martingale/AntitoneLimit.lean`) all feed into `tendsto_ae_condExp_iInf`
   `L¹`, i.e. `eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) 1 μ → 0`. This is the follow-up Layer-4
   target and the form most downstream analytic uses want; it mirrors Mathlib's upward
   `MeasureTheory.tendsto_eLpNorm_condExp`.
-- `tendsto_integral_norm_condExp_iInf`: the same L¹ statement written as convergence of the
-  concrete `L¹` distance `∫ ω, ‖μ[f | 𝔽 n] ω - μ[f | ⨅ n, 𝔽 n] ω‖ ∂μ → 0`.
 
 ## References
 
@@ -143,28 +141,5 @@ theorem tendsto_eLpNorm_condExp_iInf
     (memLp_one_iff_integrable.2 integrable_condExp)
     (h_f_int.uniformIntegrable_condExp h_le).unifIntegrable
     (tendsto_ae_condExp_iInf h_filtration h_le0 f h_f_int)
-
-/-- **Conditional expectation converges in `L¹` along a decreasing filtration**, phrased as
-convergence of the concrete `L¹` distance `∫ ω, ‖μ[f | 𝔽ₙ] ω - μ[f | ⨅ₙ 𝔽ₙ] ω‖ ∂μ` to `0`. This
-is `tendsto_eLpNorm_condExp_iInf` rewritten through `∫ ‖g‖ = (eLpNorm g 1 μ).toReal`. -/
-theorem tendsto_integral_norm_condExp_iInf
-    [IsFiniteMeasure μ]
-    {𝔽 : ℕ → MeasurableSpace Ω}
-    (h_filtration : Antitone 𝔽)
-    (h_le0 : 𝔽 0 ≤ (inferInstance : MeasurableSpace Ω))
-    (f : Ω → ℝ) (h_f_int : Integrable f μ) :
-    Tendsto (fun n => ∫ ω, ‖μ[f | 𝔽 n] ω - μ[f | ⨅ n, 𝔽 n] ω‖ ∂μ) atTop (𝓝 0) := by
-  have h_int : ∀ n, Integrable (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) μ :=
-    fun _ => integrable_condExp.sub integrable_condExp
-  have h_eq : ∀ n, ∫ ω, ‖μ[f | 𝔽 n] ω - μ[f | ⨅ n, 𝔽 n] ω‖ ∂μ
-      = (eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) 1 μ).toReal := by
-    intro n
-    have hpi : ∫ ω, ‖μ[f | 𝔽 n] ω - μ[f | ⨅ n, 𝔽 n] ω‖ ∂μ
-        = ∫ ω, ‖(μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) ω‖ ∂μ := rfl
-    rw [hpi, integral_norm_eq_lintegral_enorm (h_int n).aestronglyMeasurable,
-      eLpNorm_one_eq_lintegral_enorm]
-  simp_rw [h_eq]
-  simpa [Function.comp_def] using (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
-    (tendsto_eLpNorm_condExp_iInf h_filtration h_le0 f h_f_int)
 
 end MeasureTheory
