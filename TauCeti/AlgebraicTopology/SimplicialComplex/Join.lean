@@ -44,7 +44,7 @@ open Finset Function Sum
 
 namespace PreAbstractSimplicialComplex
 
-variable {α β : Type*} [DecidableEq α] [DecidableEq β]
+variable {α β : Type*}
 
 /-- The join of two pre-abstract simplicial complexes, on the disjoint sum of their vertex types.
 A nonempty finite set is a face when each of its nonempty left and right projections is a face of
@@ -73,6 +73,8 @@ def join (K : PreAbstractSimplicialComplex α) (L : PreAbstractSimplicialComplex
 
 variable {K K' : PreAbstractSimplicialComplex α} {L L' : PreAbstractSimplicialComplex β}
 
+/-- Membership in a precomplex join is equivalent to nonemptiness together with the left and
+right projection face conditions. -/
 @[simp]
 theorem mem_join_iff {σ : Finset (α ⊕ β)} :
     σ ∈ join K L ↔ σ.Nonempty ∧
@@ -89,13 +91,13 @@ theorem mem_join_disjSum_iff {s : Finset α} {t : Finset β} :
 
 /-- A left face, tagged into the sum type, is a face of the join. -/
 theorem map_inl_mem_join {s : Finset α} (hs : s ∈ K) :
-    s.map Embedding.inl ∈ join K L := by
+    s.map (Embedding.inl : α ↪ α ⊕ β) ∈ join K L := by
   rw [← disjSum_empty, mem_join_disjSum_iff]
   exact ⟨Or.inl (K.isRelLowerSet_faces hs).1, Or.inr hs, Or.inl rfl⟩
 
 /-- A right face, tagged into the sum type, is a face of the join. -/
 theorem map_inr_mem_join {t : Finset β} (ht : t ∈ L) :
-    t.map Embedding.inr ∈ join K L := by
+    t.map (Embedding.inr : β ↪ α ⊕ β) ∈ join K L := by
   rw [← empty_disjSum, mem_join_disjSum_iff]
   exact ⟨Or.inr (L.isRelLowerSet_faces ht).1, Or.inl rfl, Or.inr ht⟩
 
@@ -114,7 +116,7 @@ end PreAbstractSimplicialComplex
 
 namespace AbstractSimplicialComplex
 
-variable {α β : Type*} [DecidableEq α] [DecidableEq β]
+variable {α β : Type*}
 
 /-- The join of two abstract simplicial complexes, with vertices in the disjoint sum. -/
 def join (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β) :
@@ -129,16 +131,30 @@ def join (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β) :
 
 variable {K K' : AbstractSimplicialComplex α} {L L' : AbstractSimplicialComplex β}
 
+/-- Membership in an abstract join is equivalent to nonemptiness together with the left and
+right projection face conditions. -/
 @[simp]
 theorem mem_join_iff {σ : Finset (α ⊕ β)} :
     σ ∈ join K L ↔ σ.Nonempty ∧
       (σ.toLeft = ∅ ∨ σ.toLeft ∈ K) ∧ (σ.toRight = ∅ ∨ σ.toRight ∈ L) :=
   Iff.rfl
 
+/-- A disjoint union is a face of the abstract join exactly when it is nonempty and each
+nonempty component is a face of its original complex. -/
 theorem mem_join_disjSum_iff {s : Finset α} {t : Finset β} :
     s.disjSum t ∈ join K L ↔
       (s.Nonempty ∨ t.Nonempty) ∧ (s = ∅ ∨ s ∈ K) ∧ (t = ∅ ∨ t ∈ L) :=
   PreAbstractSimplicialComplex.mem_join_disjSum_iff
+
+/-- A left face, tagged into the sum type, is a face of the join. -/
+theorem map_inl_mem_join {s : Finset α} (hs : s ∈ K) :
+    s.map (Embedding.inl : α ↪ α ⊕ β) ∈ join K L :=
+  PreAbstractSimplicialComplex.map_inl_mem_join hs
+
+/-- A right face, tagged into the sum type, is a face of the join. -/
+theorem map_inr_mem_join {t : Finset β} (ht : t ∈ L) :
+    t.map (Embedding.inr : β ↪ α ⊕ β) ∈ join K L :=
+  PreAbstractSimplicialComplex.map_inr_mem_join ht
 
 /-- The disjoint union of faces is a face of the join. -/
 theorem disjSum_mem_join {s : Finset α} {t : Finset β} (hs : s ∈ K) (ht : t ∈ L) :
