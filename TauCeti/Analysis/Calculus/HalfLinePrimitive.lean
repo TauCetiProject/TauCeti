@@ -69,10 +69,11 @@ theorem halfLinePrimitive_eq_integral_of_nonneg (ht : 0 ≤ t) :
 /-- On the nonpositive half-line, `halfLinePrimitive` is the linear extension `t ↦ t * f 0`. -/
 theorem halfLinePrimitive_of_nonpos (ht : t ≤ 0) : halfLinePrimitive f t = t * f 0 := by
   rw [halfLinePrimitive_def]
-  rw [show (∫ x in (0 : ℝ)..t, f (max x 0)) = ∫ _ in (0 : ℝ)..t, f 0 from
-    intervalIntegral.integral_congr fun x hx => by
+  have hconst : (∫ x in (0 : ℝ)..t, f (max x 0)) = ∫ _ in (0 : ℝ)..t, f 0 :=
+    intervalIntegral.integral_congr fun x hx ↦ by
       simp only [uIcc_of_ge ht] at hx
-      simp only [max_eq_right hx.2]]
+      simp only [max_eq_right hx.2]
+  rw [hconst]
   simp
 
 /-- The value of `halfLinePrimitive f` at the origin is `0`. -/
