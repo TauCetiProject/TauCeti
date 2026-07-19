@@ -265,6 +265,17 @@ jobs:
             echo "::error::TauCeti/ must not import TauCetiRoadmap or TauCetiReview"; exit 1
           fi
 
+      # No-set_option guard. `set_option` is an escape hatch (it can raise maxHeartbeats,
+      # silence linters, bump maxRecDepth, ...), so the overlaid TauCeti/ may not use it. Like
+      # the import guard it is a textual scan that needs no elaboration, so it runs trusted (on
+      # the overlaid base/TauCeti/) outside the landrun sandbox.
+      - name: No-set_option guard (TauCeti/ and TauCeti.lean use no set_option)
+        if: ${{ env.INFRA != '1' }}
+        run: |
+          if grep -rIn '^set_option ' base/TauCeti/ base/TauCeti.lean; then
+            echo "::error::TauCeti/ may not use set_option (it can weaken maxHeartbeats, linters, maxRecDepth, ...); remove it"; exit 1
+          fi
+
       - name: Install elan (trusted)
         if: ${{ env.INFRA != '1' }}
         run: |
