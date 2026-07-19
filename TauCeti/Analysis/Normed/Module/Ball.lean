@@ -11,8 +11,8 @@ public import Mathlib.Analysis.Normed.Module.Basic
 # Affine normalizations of metric balls and spheres
 
 This file records how the affine map `y ↦ c • y +ᵥ x` pulls metric balls, closed balls, and
-spheres back to their corresponding sets centered at zero. It also provides membership forms and
-a real-scalar specialization.
+spheres back to their corresponding sets centered at zero. It also provides a real-scalar
+specialization for the open ball.
 -/
 
 public section
