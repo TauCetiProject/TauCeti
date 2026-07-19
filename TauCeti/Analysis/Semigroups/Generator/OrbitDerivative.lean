@@ -145,7 +145,7 @@ theorem realOperator_differentiableWithinAt (S : StronglyContinuousSemigroup X)
 
 /-- The right derivative of an orbit at a nonnegative time is the generator evaluated on the
 evolved vector, provided that vector belongs to the generator domain. -/
-theorem realOperator_derivWithin_generator (S : StronglyContinuousSemigroup X)
+theorem realOperator_derivWithin (S : StronglyContinuousSemigroup X)
     {x : X} {t : ℝ} (ht : 0 ≤ t) (hxt : S.realOperator t x ∈ S.domain) :
     derivWithin (fun s : ℝ => S.realOperator s x) (Set.Ici t) t =
       S.generator ⟨S.realOperator t x, by rw [S.generator_domain]; exact hxt⟩ :=
@@ -153,7 +153,7 @@ theorem realOperator_derivWithin_generator (S : StronglyContinuousSemigroup X)
 
 /-- The right derivative of the orbit at a nonnegative time is the semigroup operator applied
 to the generator. -/
-theorem realOperator_derivWithin (S : StronglyContinuousSemigroup X)
+theorem realOperator_derivWithin_map_generator (S : StronglyContinuousSemigroup X)
     (x : S.domain) {t : ℝ} (ht : 0 ≤ t) :
     derivWithin (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici t) t =
       S.realOperator t (S.generator ⟨x, by
