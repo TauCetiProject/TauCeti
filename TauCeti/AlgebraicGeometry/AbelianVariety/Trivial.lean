@@ -54,23 +54,26 @@ namespace AbelianVariety
 of the monoidal unit of `Over (Spec K)`. Its structure morphism to `Spec K` is the identity
 (`Over.tensorUnit_hom`), which is proper and (by `geometricallyIntegral_of_isIso`) geometrically
 integral. -/
-@[expose] noncomputable def trivial : AbelianVariety K :=
-  haveI : IsProper (𝟙_ (Over (Spec (.of K)))).hom := by
-    rw [Over.tensorUnit_hom]; exact inferInstanceAs (IsProper (𝟙 _))
-  haveI : GeometricallyIntegral (𝟙_ (Over (Spec (.of K)))).hom := by
+@[expose] noncomputable def trivial : AbelianVariety K where
+  toOver := 𝟙_ (Over (Spec (.of K)))
+  grpObj := inferInstance
+  isProper := by rw [Over.tensorUnit_hom]; exact inferInstanceAs (IsProper (𝟙 _))
+  geometricallyIntegral := by
     rw [Over.tensorUnit_hom]; exact inferInstanceAs (GeometricallyIntegral (𝟙 _))
-  ofGeometricallyIntegral (𝟙_ (Over (Spec (.of K))))
 
 @[simp]
 lemma trivial_toOver : (trivial K).toOver = 𝟙_ (Over (Spec (.of K))) := rfl
+
+/-- The underlying scheme of the trivial abelian variety is `Spec K`. -/
+@[simp]
+lemma trivial_toScheme : (trivial K).toScheme = Spec (.of K) := by
+  simp [toScheme, trivial_toOver, Over.tensorUnit_left]
 
 /-- The trivial abelian variety is zero-dimensional: the topological Krull dimension of `Spec K` is
 `ringKrullDim K = 0` for a field `K`. -/
 @[simp]
 lemma trivial_dim : (trivial K).dim = 0 := by
-  have h : (trivial K).toScheme = Spec (.of K) := by
-    simp [toScheme, trivial_toOver, Over.tensorUnit_left]
-  rw [dim_def, h, ← ringKrullDim_eq_zero_of_field K,
+  rw [dim_def, trivial_toScheme, ← ringKrullDim_eq_zero_of_field K,
     ← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim K]
   -- the topological space of `Spec (.of K)` is `PrimeSpectrum K` (`Scheme.Spec_carrier`)
   rfl
