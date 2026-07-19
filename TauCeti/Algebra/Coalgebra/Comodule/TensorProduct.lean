@@ -406,8 +406,12 @@ theorem tensorMap_tmul (f : Hom R C M M') (g : Hom R C N N') (m : M) (n : N) :
     tensorMap f g (m ⊗ₜ[R] n) = f m ⊗ₜ[R] g n :=
   rfl
 
-/-- The tensor product of two identity morphisms is the identity morphism. -/
-@[simp]
+/-- The tensor product of two identity morphisms is the identity morphism.
+
+This is not a `simp` lemma: its left-hand side is not in `simp`-normal form, because the `@[simp]`
+lemma `ComoduleCat.ofHom_id` rewrites each `Comodule.Hom.id R C _` to the categorical identity
+`𝟙 (ComoduleCat.of R C _)`. (Contrast `cofreeMap_id`, whose left-hand side `cofreeMap LinearMap.id`
+carries no bare `Comodule.Hom.id` and so stays normal.) -/
 theorem tensorMap_id : tensorMap (id R C M) (id R C N) = id R C (M ⊗[R] N) := by
   refine Comodule.Hom.ext fun x => ?_
   rw [tensorMap_apply, id_toLinearMap, id_toLinearMap, TensorProduct.map_id]
