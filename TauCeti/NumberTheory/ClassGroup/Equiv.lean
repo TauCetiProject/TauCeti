@@ -64,8 +64,11 @@ theorem mulEquiv_trans (f : R ≃+* S) (g : S ≃+* T) :
     FractionalIdeal.ringEquivOfRingEquiv_trans_apply
       (FractionRing R) (FractionRing S) (FractionRing T) f g I
 
-/-- Pointwise form of `ClassGroup.mulEquiv_trans`. -/
-@[simp] theorem mulEquiv_trans_apply (f : R ≃+* S) (g : S ≃+* T) (x : ClassGroup R) :
+/-- Pointwise form of `ClassGroup.mulEquiv_trans`. Like `ClassGroup.mulEquiv_symm_apply'` below,
+it is deliberately not a `simp` lemma: the `@[simps!]` attribute on Mathlib's
+`ClassGroup.mulEquiv` provides a `simp` lemma `ClassGroup.mulEquiv_apply` that already rewrites
+this left-hand side into the underlying quotient construction. -/
+theorem mulEquiv_trans_apply (f : R ≃+* S) (g : S ≃+* T) (x : ClassGroup R) :
     ClassGroup.mulEquiv (f.trans g) x = ClassGroup.mulEquiv g (ClassGroup.mulEquiv f x) :=
   DFunLike.congr_fun (mulEquiv_trans f g) x
 
