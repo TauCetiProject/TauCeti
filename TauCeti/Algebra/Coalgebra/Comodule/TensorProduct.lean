@@ -26,7 +26,7 @@ the counit of `C` are *algebra* homomorphisms, hence commute with the multiplica
 `lTensor_comp_tensorCombine`, and instantiating it at `Bialgebra.comulAlgHom` and
 `Bialgebra.counitAlgHom` supplies the coefficient half of each law; the remaining half is the
 coefficient-free reassociation bookkeeping in
-`assoc_comp_rTensor_tensorCombine_comp_tensorCombine`.
+`assoc_comp_tensorCombine_rTensor_comp_tensorCombine`.
 
 Following `Comodule.cofree`, `Comodule.tensor` is not a global instance: an `R`-module can
 carry many coactions, so a global instance on a tensor product would make `Comodule`
@@ -251,7 +251,7 @@ then combining once over `C ⊗[R] C`.
 
 This is pure bookkeeping about `tensorCombine` — it uses no coalgebra structure — and it is
 what turns the coassociativity of the two factors into the coassociativity of `tensorCoact`. -/
-theorem assoc_comp_rTensor_tensorCombine_comp_tensorCombine :
+theorem assoc_comp_tensorCombine_rTensor_comp_tensorCombine :
     TensorProduct.assoc R (M ⊗[R] N) C C ∘ₗ
         (tensorCombine (R := R) (C := C) (M := M) (N := N)).rTensor C ∘ₗ
           tensorCombine (R := R) (C := C) (M := M ⊗[R] C) (N := N ⊗[R] C) =
@@ -317,7 +317,7 @@ theorem tensorCoact_coassoc :
   have h1 := LinearMap.congr_fun hnat
     (coact (R := R) (C := C) (M := M) m ⊗ₜ[R] coact (R := R) (C := C) (M := N) n)
   have h2 := LinearMap.congr_fun
-    (assoc_comp_rTensor_tensorCombine_comp_tensorCombine (R := R) (C := C) (M := M) (N := N))
+    (assoc_comp_tensorCombine_rTensor_comp_tensorCombine (R := R) (C := C) (M := M) (N := N))
     ((coact (R := R) (C := C) (M := M)).rTensor C (coact (R := R) (C := C) (M := M) m) ⊗ₜ[R]
       (coact (R := R) (C := C) (M := N)).rTensor C (coact (R := R) (C := C) (M := N) n))
   have h3 := LinearMap.congr_fun hslot
