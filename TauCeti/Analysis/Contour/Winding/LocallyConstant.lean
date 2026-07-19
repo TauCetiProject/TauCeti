@@ -117,7 +117,7 @@ theorem exists_ball_windingNumber_zero {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} 
   have hlc := isLocallyConstant_windingNumber_of_closed hclosed hP hγ_cont hγ_diff hderiv_int
   obtain ⟨V, hV_open, hwV, hV_const⟩ := hlc.exists_open ⟨w, hoff⟩
   have hVℂ : IsOpen (Subtype.val '' V) :=
-    (isOpen_offCurve_of_continuousOn hγ_cont).isOpenMap_subtype_val V hV_open
+    (isOpen_setOf_avoidance hγ_cont).isOpenMap_subtype_val V hV_open
   obtain ⟨ε₂, hε₂, hball₂⟩ := Metric.isOpen_iff.mp hVℂ w ⟨⟨w, hoff⟩, hwV, rfl⟩
   refine ⟨min ε₁ ε₂, lt_min hε₁ hε₂, fun w' hw' ↦ ⟨fun t ht ↦ ?_, ?_⟩⟩
   · exact sub_ne_zero.mp (norm_pos_iff.mp (lt_of_lt_of_le hε₁

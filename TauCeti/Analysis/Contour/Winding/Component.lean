@@ -20,18 +20,17 @@ set, with interval-integrable derivative, the generalized winding number
 `fun w ↦ windingNumber γ a b w` is locally constant on the complement of the curve
 (`isLocallyConstant_windingNumber_of_closed`). Locally constant functions are constant on
 preconnected sets, so the winding number takes a single value on each connected component of the
-complement (`windingNumber_eq_of_subset_offCurve_of_isPreconnected`). On the **unbounded** component
-it is that far-field value, which `windingNumber_eventually_zero_cocompact` pins to `0`
-(`windingNumber_eq_zero_of_subset_offCurve_of_isPreconnected_of_unbounded`). These are the two
-Layer-0 geometric facts the roadmap
-records for a point off the curve — the winding number is a locally constant integer,
-homotopy-invariant within a component, and `0` on the unbounded component.
+complement (`windingNumber_eq_of_avoidance_of_isPreconnected`). On the **unbounded** component it is
+that far-field value, which `windingNumber_eventually_zero_cocompact` pins to `0`
+(`windingNumber_eq_zero_of_avoidance_of_isPreconnected_of_unbounded`). These are the two Layer-0
+geometric facts the roadmap records for a point off the curve — the winding number is a locally
+constant integer, homotopy-invariant within a component, and `0` on the unbounded component.
 
 ## Main results
 
-* `TauCeti.Contour.windingNumber_eq_of_subset_offCurve_of_isPreconnected` — the winding number
-  agrees at any two points of a preconnected set that avoids the curve.
-* `TauCeti.Contour.windingNumber_eq_zero_of_subset_offCurve_of_isPreconnected_of_unbounded` — the
+* `TauCeti.Contour.windingNumber_eq_of_avoidance_of_isPreconnected` — the winding number agrees at
+  any two points of a preconnected set that avoids the curve.
+* `TauCeti.Contour.windingNumber_eq_zero_of_avoidance_of_isPreconnected_of_unbounded` — the
   winding number vanishes on a preconnected unbounded set that avoids the curve (the unbounded
   component).
 
@@ -62,7 +61,7 @@ derivative), if `S` avoids the curve and is preconnected, then the generalized w
 the same value at any two points of `S`. In particular it is constant on each connected component of
 the complement of the curve — the homotopy-invariance-within-a-component form of the Layer-0 fact
 that the winding number off the curve is locally constant. -/
-theorem windingNumber_eq_of_subset_offCurve_of_isPreconnected {S : Set ℂ}
+theorem windingNumber_eq_of_avoidance_of_isPreconnected {S : Set ℂ}
     (hclosed : γ a = γ b) (hP : P.Countable) (hγ_cont : ContinuousOn γ (uIcc a b))
     (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
@@ -78,7 +77,7 @@ theorem windingNumber_eq_of_subset_offCurve_of_isPreconnected {S : Set ℂ}
   have hTconn : IsPreconnected
       (Subtype.val ⁻¹' S : Set {w : ℂ // ∀ t ∈ uIcc a b, γ t ≠ w}) :=
     hSconn.preimage_of_isOpenMap Subtype.val_injective
-      (isOpen_offCurve_of_continuousOn hγ_cont).isOpenMap_subtype_val hrange
+      (isOpen_setOf_avoidance hγ_cont).isOpenMap_subtype_val hrange
   exact hlc.apply_eq_of_isPreconnected hTconn
     (x := ⟨w₁, hSoff hw₁⟩) (y := ⟨w₂, hSoff hw₂⟩) hw₁ hw₂
 
@@ -89,7 +88,7 @@ winding number is `0` throughout `S`. Applied to the (necessarily unbounded) ext
 component of the complement, this is the Layer-0 fact that the winding number is `0` on the
 unbounded component: constancy pins the value across the component, and it must equal the far-field
 value, which the cocompact eventual-zero statement forces to be `0`. -/
-theorem windingNumber_eq_zero_of_subset_offCurve_of_isPreconnected_of_unbounded {S : Set ℂ}
+theorem windingNumber_eq_zero_of_avoidance_of_isPreconnected_of_unbounded {S : Set ℂ}
     (hclosed : γ a = γ b) (hP : P.Countable) (hγ_cont : ContinuousOn γ (uIcc a b))
     (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
     (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
@@ -105,7 +104,7 @@ theorem windingNumber_eq_zero_of_subset_offCurve_of_isPreconnected_of_unbounded 
     by_contra hcon
     exact hSunb <| hK.isBounded.subset fun x hxS ↦ hKsub fun hgood ↦ hcon ⟨x, hxS, hgood⟩
   obtain ⟨w', hw'S, _, hw'zero⟩ := hex
-  rw [windingNumber_eq_of_subset_offCurve_of_isPreconnected hclosed hP hγ_cont hγ_diff hderiv_int
+  rw [windingNumber_eq_of_avoidance_of_isPreconnected hclosed hP hγ_cont hγ_diff hderiv_int
     hSoff hSconn hw hw'S, hw'zero]
 
 end TauCeti.Contour
