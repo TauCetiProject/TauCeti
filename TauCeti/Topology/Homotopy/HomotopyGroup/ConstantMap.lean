@@ -58,11 +58,21 @@ theorem map_const_continuousMap_apply (y : Y) (a : HomotopyGroup N X x) :
 
 /-- A based map into a subsingleton space induces the same map as the constant map at the
 target basepoint. -/
-theorem map_eq_const_of_subsingleton [Subsingleton Y] (f : C(X, Y)) (hf : f x = y) :
+theorem map_eq_const_continuousMap_of_subsingleton [Subsingleton Y]
+    (f : C(X, Y)) (hf : f x = y) :
     map (N := N) f hf = map (x := x) (ContinuousMap.const X y) rfl := by
   have h : f = ContinuousMap.const X y := Subsingleton.elim _ _
   subst f
   rfl
+
+/-- A based map into a subsingleton space sends every homotopy class to the class of the
+constant generalized loop. -/
+@[simp]
+theorem map_apply_of_subsingleton [Subsingleton Y] (f : C(X, Y)) (hf : f x = y)
+    (a : HomotopyGroup N X x) :
+    map (N := N) f hf a =
+      (⟦(_root_.GenLoop.const : Ω^ N Y y)⟧ : HomotopyGroup N Y y) := by
+  rw [map_eq_const_continuousMap_of_subsingleton, map_const_continuousMap_apply]
 
 /-- In positive dimensions, a constant continuous map induces the trivial homomorphism on
 homotopy groups. -/
