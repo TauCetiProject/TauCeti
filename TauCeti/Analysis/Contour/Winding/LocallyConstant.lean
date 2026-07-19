@@ -44,16 +44,6 @@ open scoped Topology
 
 namespace TauCeti.Contour
 
-/-- The set of points avoided by a curve continuous on `Set.uIcc a b` is open. -/
-theorem isOpen_offCurve_of_continuousOn {γ : ℝ → ℂ} {a b : ℝ}
-    (hγ_cont : ContinuousOn γ (uIcc a b)) :
-    IsOpen {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} := by
-  have hset : {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} = (γ '' uIcc a b)ᶜ := by
-    ext z
-    simp only [Set.mem_setOf_eq, Set.mem_compl_iff, Set.mem_image, not_exists, not_and, ne_eq]
-  rw [hset]
-  exact (isCompact_uIcc.image_of_continuousOn hγ_cont).isClosed.isOpen_compl
-
 /-- **The winding number is locally constant off a closed curve.** Let `γ` be a closed curve
 (`γ a = γ b`), differentiable off a countable set `P`, continuous on `Set.uIcc a b`, with
 interval-integrable derivative. Then, as a function of the point ranging over the complement of the

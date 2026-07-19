@@ -19,6 +19,8 @@ a uniform positive lower bound `ρ` on `‖γ t - w‖` over `[a, b]`.
 
 ## Main results
 
+* `TauCeti.Contour.isOpen_offCurve_of_continuousOn` — the set of points avoided by a continuous
+  curve is open.
 * `TauCeti.Contour.exists_curve_dist_lower_bound` — the uniform positive distance lower bound.
 * `TauCeti.Contour.exists_ball_dist_curve_lower_bound` — the same lower bound made uniform over a
   whole ball of points around the avoided point.
@@ -37,6 +39,16 @@ public section
 open Set
 
 namespace TauCeti.Contour
+
+/-- The set of points avoided by a curve continuous on `Set.uIcc a b` is open. -/
+theorem isOpen_offCurve_of_continuousOn {γ : ℝ → ℂ} {a b : ℝ}
+    (hγ_cont : ContinuousOn γ (uIcc a b)) :
+    IsOpen {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} := by
+  have hset : {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} = (γ '' uIcc a b)ᶜ := by
+    ext z
+    simp only [Set.mem_setOf_eq, Set.mem_compl_iff, Set.mem_image, not_exists, not_and, ne_eq]
+  rw [hset]
+  exact (isCompact_uIcc.image_of_continuousOn hγ_cont).isClosed.isOpen_compl
 
 /-- **Uniform positive distance from an avoided point to a curve.** If `γ` is continuous on the
 interval with endpoints `a`, `b` and avoids `w` there, then there is `ρ > 0` with `ρ ≤ ‖γ t - w‖`
