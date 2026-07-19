@@ -4,8 +4,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.Holder
-public import TauCeti.Analysis.PDE.EnergyForm.Basic
+public import TauCeti.Analysis.PDE.SymmetricEnergy
+public import TauCeti.MeasureTheory.Function.LpBilinearForm
 
 /-!
 # Variable-coefficient energy forms on `L²` jets
@@ -28,9 +28,6 @@ integrability proofs at each use site.
 
 ## Main declarations
 
-* `TauCeti.PDE.lpBilinearForm`: integrate an `L∞` field of bilinear forms against two `L²`
-  functions.
-* `TauCeti.PDE.lpBilinearForm_apply`: its integral characterization.
 * `TauCeti.PDE.energyFormLpVariable`: the variable-coefficient divergence-form energy form.
 * `TauCeti.PDE.energyFormLpVariable_apply`: its characterization by the expected energy
   integral.
@@ -49,44 +46,7 @@ namespace PDE
 
 open ENNReal MeasureTheory
 
-variable {X J : Type*} [MeasurableSpace X]
-variable [NormedAddCommGroup J] [NormedSpace ℝ J]
-
-/-- The continuous bilinear form obtained by integrating an essentially bounded field of
-continuous bilinear forms against two square-integrable functions.
-
-This is the abstract functional-analytic construction underlying variable-coefficient energy
-forms. -/
-noncomputable def lpBilinearForm (μ : Measure X)
-    (B : Lp (J →L[ℝ] J →L[ℝ] ℝ) ⊤ μ) :
-    Lp J 2 μ →L[ℝ] Lp J 2 μ →L[ℝ] ℝ :=
-  ((ContinuousLinearMap.apply ℝ ℝ (E := J)).flip.lpPairing μ 2 2).comp
-    (((ContinuousLinearMap.apply ℝ (J →L[ℝ] ℝ) (E := J)).flip.holderL
-      μ ⊤ 2 2) B)
-
-/-- The `L∞`-coefficient bilinear form is the integral of its pointwise action. -/
-@[simp]
-theorem lpBilinearForm_apply (μ : Measure X) (B : Lp (J →L[ℝ] J →L[ℝ] ℝ) ⊤ μ)
-    (U V : Lp J 2 μ) :
-    lpBilinearForm μ B U V = ∫ x, B x (U x) (V x) ∂μ := by
-  rw [lpBilinearForm, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.lpPairing_eq_integral]
-  apply integral_congr_ae
-  filter_upwards
-      [((ContinuousLinearMap.apply ℝ (J →L[ℝ] ℝ)
-        (E := J)).flip.coeFn_holder (r := 2) B U)] with x hx
-  simp [hx]
-
-/-- Replacing an `L∞` coefficient field by an almost-everywhere equal field does not change
-the associated bilinear form. -/
-theorem lpBilinearForm_congr_ae {μ : Measure X}
-    {B B' : Lp (J →L[ℝ] J →L[ℝ] ℝ) ⊤ μ} (hB : B =ᵐ[μ] B') :
-    lpBilinearForm μ B = lpBilinearForm μ B' := by
-  ext U V
-  rw [lpBilinearForm_apply, lpBilinearForm_apply]
-  apply integral_congr_ae
-  filter_upwards [hB] with x hx
-  rw [hx]
+variable {X : Type*} [MeasurableSpace X]
 
 section Energy
 
@@ -145,6 +105,82 @@ theorem energyFormLpVariable_congr_ae {μ : Measure X}
   apply integral_congr_ae
   filter_upwards [ha, hb, hc] with x hax hbx hcx
   rw [hax, hbx, hcx]
+
+/-- Transposing the principal coefficient swaps the arguments of a variable zero-drift energy
+form. -/
+theorem energyFormLpVariable_zero_drift_transpose_apply (μ : Measure X)
+    (a : X → Matrix n n ℝ) (c : X → ℝ)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x)ᵀ 0 (c x)) ⊤ μ)
+    (hcoeff' : MemLp (fun x => energyIntegrand (a x) 0 (c x)) ⊤ μ)
+    (U V : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
+    energyFormLpVariable μ (fun x => (a x)ᵀ) (fun _ => 0) c hcoeff U V =
+      energyFormLpVariable μ a (fun _ => 0) c hcoeff' V U := by
+  rw [energyFormLpVariable_apply, energyFormLpVariable_apply]
+  apply integral_congr_ae
+  exact Filter.Eventually.of_forall fun x =>
+    energyIntegrand_zero_drift_transpose_apply (a x) (c x) (U x) (V x)
+
+/-- An a.e. symmetric principal coefficient gives a symmetric variable zero-drift energy
+form. -/
+theorem energyFormLpVariable_zero_drift_comm_of_isSymm_ae {μ : Measure X}
+    {a : X → Matrix n n ℝ} (ha : ∀ᵐ x ∂μ, (a x).IsSymm) (c : X → ℝ)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 (c x)) ⊤ μ)
+    (U V : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
+    energyFormLpVariable μ a (fun _ => 0) c hcoeff U V =
+      energyFormLpVariable μ a (fun _ => 0) c hcoeff V U := by
+  rw [energyFormLpVariable_apply, energyFormLpVariable_apply]
+  apply integral_congr_ae
+  filter_upwards [ha] with x hx
+  exact energyIntegrand_zero_drift_comm_of_isSymm hx (c x) (U x) (V x)
+
+/-- An a.e. symmetric principal coefficient makes the variable zero-drift energy form equal
+to its flip. -/
+@[simp]
+theorem energyFormLpVariable_zero_drift_flip_eq_of_isSymm_ae {μ : Measure X}
+    {a : X → Matrix n n ℝ} (ha : ∀ᵐ x ∂μ, (a x).IsSymm) (c : X → ℝ)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 (c x)) ⊤ μ) :
+    (energyFormLpVariable μ a (fun _ => 0) c hcoeff).flip =
+      energyFormLpVariable μ a (fun _ => 0) c hcoeff := by
+  ext U V
+  exact energyFormLpVariable_zero_drift_comm_of_isSymm_ae ha c hcoeff V U
+
+/-- Replacing the principal coefficient by its symmetric part does not change the diagonal
+variable energy form. -/
+theorem energyFormLpVariable_coefficientSymmetricPart_self (μ : Measure X)
+    (a : X → Matrix n n ℝ) (b : X → EuclideanSpace ℝ n) (c : X → ℝ)
+    (hcoeff : MemLp (fun x => energyIntegrand (coefficientSymmetricPart (a x))
+      (b x) (c x)) ⊤ μ)
+    (hcoeff' : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ μ)
+    (U : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
+    energyFormLpVariable μ (fun x => coefficientSymmetricPart (a x)) b c hcoeff U U =
+      energyFormLpVariable μ a b c hcoeff' U U := by
+  rw [energyFormLpVariable_apply, energyFormLpVariable_apply]
+  apply integral_congr_ae
+  exact Filter.Eventually.of_forall fun x =>
+    energyIntegrand_coefficientSymmetricPart_self (a x) (b x) (c x) (U x)
+
+/-- The symmetric-part variable zero-drift energy form is the average of the original form and
+its transpose. -/
+theorem energyFormLpVariable_coefficientSymmetricPart_zero_drift_apply (μ : Measure X)
+    (a : X → Matrix n n ℝ) (c : X → ℝ)
+    (hsymm : MemLp (fun x => energyIntegrand (coefficientSymmetricPart (a x)) 0
+      (c x)) ⊤ μ)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 (c x)) ⊤ μ)
+    (U V : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
+    energyFormLpVariable μ (fun x => coefficientSymmetricPart (a x))
+        (fun _ => 0) c hsymm U V =
+      (energyFormLpVariable μ a (fun _ => 0) c hcoeff U V +
+        energyFormLpVariable μ a (fun _ => 0) c hcoeff V U) / 2 := by
+  rw [energyFormLpVariable_apply, energyFormLpVariable_apply,
+    energyFormLpVariable_apply]
+  have hUV : Integrable (fun x => energyIntegrand (a x) 0 (c x) (U x) (V x)) μ :=
+    integrable_bilinear_apply_of_memLp hcoeff U V
+  have hVU : Integrable (fun x => energyIntegrand (a x) 0 (c x) (V x) (U x)) μ :=
+    integrable_bilinear_apply_of_memLp hcoeff V U
+  rw [← integral_add hUV hVU, ← integral_div]
+  apply integral_congr_ae
+  exact Filter.Eventually.of_forall fun x =>
+    energyIntegrand_coefficientSymmetricPart_zero_drift_apply (a x) (c x) (U x) (V x)
 
 end Energy
 
