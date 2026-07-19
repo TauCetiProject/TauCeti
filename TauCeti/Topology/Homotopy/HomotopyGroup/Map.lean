@@ -50,8 +50,11 @@ theorem map_const (f : C(X, Y)) (hf : f x = y) :
   intro t
   simp [hf]
 
-/-- Postcomposition by a constant continuous map gives the constant generalized loop. -/
-@[simp]
+/-- Postcomposition by a constant continuous map gives the constant generalized loop.
+
+This is not a `simp` lemma: baking the basepoint proof `rfl` into the statement forces the
+target basepoint to be `(ContinuousMap.const X y) x` rather than `y`, so `simp` cannot close
+even its own statement. Use it as an explicit rewrite. -/
 theorem map_continuousMap_const (y : Y) (p : Ω^ N X x) :
     map (ContinuousMap.const X y) rfl p = (_root_.GenLoop.const : Ω^ N Y y) := by
   apply _root_.GenLoop.ext
@@ -157,8 +160,11 @@ theorem map_apply_of_subsingleton [Subsingleton Y] (f : C(X, Y)) (hf : f x = y)
   exact map_continuousMap_const_apply y _ a
 
 /-- In positive dimensions, a constant continuous map sends every homotopy class to the
-identity. -/
-@[simp 1100]
+identity.
+
+This is not a `simp` lemma: the positive-dimensional normal form is already reached by
+`map_continuousMap_const_apply` followed by `mk_const_eq_one`, so a separate `⟦const⟧`-keyed
+`= 1` rule would be redundant. It is kept as an explicit rewrite. -/
 theorem map_continuousMap_const_apply_eq_one [DecidableEq N] [Nonempty N]
     (y : Y) (hy : (ContinuousMap.const X y) x = y) (a : HomotopyGroup N X x) :
     map (x := x) (ContinuousMap.const X y) hy a = 1 :=
@@ -228,8 +234,11 @@ theorem mapHom_apply [DecidableEq N] [Nonempty N] (f : C(X, Y)) (hf : f x = y)
   rfl
 
 /-- In positive dimensions, a constant continuous map induces the trivial homomorphism on
-homotopy groups. -/
-@[simp]
+homotopy groups.
+
+This is not a `simp` lemma: baking the basepoint proof `rfl` into the statement forces the
+target basepoint to be `(ContinuousMap.const X y) x` rather than `y`, so `simp` cannot close
+even its own statement. Use it as an explicit rewrite. -/
 theorem mapHom_continuousMap_const_eq_one [DecidableEq N] [Nonempty N] (y : Y) :
     mapHom (N := N) (x := x) (ContinuousMap.const X y) rfl = 1 := by
   ext a
