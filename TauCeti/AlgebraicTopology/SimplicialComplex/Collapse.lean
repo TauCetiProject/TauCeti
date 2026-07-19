@@ -54,6 +54,11 @@ theorem mem_point {v : ι} {σ : Finset ι} : σ ∈ point v ↔ σ = {v} := Iff
 theorem singleton_mem_point {v w : ι} : {w} ∈ point v ↔ w = v := by
   rw [mem_point, Finset.singleton_inj]
 
+/-- The one-vertex complex at `v` is a subcomplex of `K` exactly when `{v}` is a face of `K`. -/
+theorem point_le_iff {v : ι} {K : _root_.PreAbstractSimplicialComplex ι} :
+    point v ≤ K ↔ ({v} : Finset ι) ∈ K :=
+  Set.singleton_subset_iff
+
 /-- The one-vertex complex at `v` is nonempty. -/
 theorem point_ne_bot (v : ι) : point v ≠ ⊥ := by
   intro h
@@ -85,7 +90,7 @@ theorem refl (K : _root_.PreAbstractSimplicialComplex ι) : CollapsesTo K K :=
   Relation.ReflTransGen.refl
 
 /-- An elementary collapse is a collapse of length one. -/
-theorem elementary (h : ElementaryCollapsesTo K L) : CollapsesTo K L :=
+theorem single (h : ElementaryCollapsesTo K L) : CollapsesTo K L :=
   Relation.ReflTransGen.single h
 
 /-- Collapse is transitive by concatenating finite collapse sequences. -/
@@ -107,7 +112,7 @@ theorem le (h : CollapsesTo K L) : L ≤ K := by
   | refl => exact le_rfl
   | tail hKL hLP ih => exact hLP.le.trans ih
 
-/-- A collapse to the same complex cannot begin with an elementary collapse. -/
+/-- If `K` collapses to a complex `L` that contains `K`, then `K` and `L` are equal. -/
 theorem eq_of_le (h : CollapsesTo K L) (hKL : K ≤ L) : K = L :=
   le_antisymm hKL h.le
 
@@ -151,20 +156,20 @@ theorem of_collapsesTo (hKL : CollapsesTo K L) (hL : Collapsible L) : Collapsibl
 /-- If `K` elementarily collapses to a collapsible complex, then `K` is collapsible. -/
 theorem of_elementaryCollapsesTo (hKL : ElementaryCollapsesTo K L) (hL : Collapsible L) :
     Collapsible K :=
-  of_collapsesTo (CollapsesTo.elementary hKL) hL
+  of_collapsesTo (CollapsesTo.single hKL) hL
 
 /-- A collapsible complex is nonempty. -/
 theorem ne_bot (h : Collapsible K) : K ≠ ⊥ := by
   obtain ⟨v, hv⟩ := h
   intro hK
-  have : PreAbstractSimplicialComplex.point v ≤
-      (⊥ : _root_.PreAbstractSimplicialComplex ι) := hK ▸ hv.le
-  exact PreAbstractSimplicialComplex.point_ne_bot v (le_bot_iff.mp this)
+  have : ({v} : Finset ι) ∈ (⊥ : _root_.PreAbstractSimplicialComplex ι) :=
+    point_le_iff.mp (hK ▸ hv.le)
+  exact this.elim
 
 /-- A collapsible complex contains its terminal vertex as a face. -/
 theorem exists_vertex (h : Collapsible K) : ∃ v : ι, ({v} : Finset ι) ∈ K := by
   obtain ⟨v, hv⟩ := h
-  exact ⟨v, hv.le (mem_point.mpr rfl)⟩
+  exact ⟨v, point_le_iff.mp hv.le⟩
 
 end Collapsible
 
