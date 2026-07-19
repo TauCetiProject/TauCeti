@@ -58,6 +58,18 @@ private theorem mulEquiv_mk_fractionRing (f : R ≃+* S)
   apply Units.ext
   simp [FractionalIdeal.canonicalEquiv_self]
 
+/-- The canonical equivalence between the fractional ideals of two fraction fields of `R` is
+transport along the identity ring equivalence. This lets a change of fraction field and a transport
+along a ring equivalence be composed by `FractionalIdeal.ringEquivOfRingEquiv_trans_apply`. -/
+private theorem canonicalEquiv_eq_ringEquivOfRingEquiv (K K' : Type*) [Field K] [Field K']
+    [Algebra R K] [Algebra R K'] [IsFractionRing R K] [IsFractionRing R K'] :
+    FractionalIdeal.canonicalEquiv R⁰ K K' =
+      FractionalIdeal.ringEquivOfRingEquiv K K' (RingEquiv.refl R) := by
+  ext I x
+  simp only [FractionalIdeal.ringEquivOfRingEquiv_apply, FractionalIdeal.val_eq_coe,
+    ← FractionalIdeal.mem_coe]
+  simp [IsFractionRing.semilinearEquivOfRingEquiv, IsFractionRing.ringEquivOfRingEquiv]
+
 /-- `ClassGroup.mulEquiv f` sends the class of a unit fractional ideal `I` to the class of its
 image under `FractionalIdeal.ringEquivOfRingEquiv f`. This is independent of the chosen fraction
 fields. -/
@@ -72,52 +84,20 @@ theorem mulEquiv_mk {K L : Type*} [Field K] [Field L] [Algebra R K]
   rw [← ClassGroup.mk_canonicalEquiv (K := FractionRing S) L]
   congr 1
   apply Units.ext
-  simp only [Units.coe_mapEquiv, Units.coe_map]
-  rw [FractionalIdeal.canonicalEquiv, FractionalIdeal.canonicalEquiv]
-  -- Each `FractionalIdeal.canonicalEquiv`/`ringEquivOfRingEquiv` factor is built from
-  -- `IsLocalization.map`, whose semilinear packaging (`semilinearEquivOfRingEquiv`) demands
-  -- `RingHomInvPair`/`RingHomCompTriple`/`RingHomSurjective` instances for the ring maps and their
-  -- refl-composites. Mathlib does not have these in scope for `RingEquiv.refl`/`f` combinations, so
-  -- we supply them locally to let the coercions and `IsLocalization.map_map` below elaborate.
-  letI : RingHomInvPair (f : R →+* S) f.symm := RingHomInvPair.of_ringEquiv f
-  letI : RingHomInvPair (f.symm : S →+* R) f := RingHomInvPair.of_ringEquiv f.symm
-  letI : RingHomInvPair (RingEquiv.refl R : R →+* R) (RingEquiv.refl R).symm :=
-    RingHomInvPair.of_ringEquiv (RingEquiv.refl R)
-  letI : RingHomInvPair ((RingEquiv.refl R).symm : R →+* R) (RingEquiv.refl R) :=
-    RingHomInvPair.of_ringEquiv (RingEquiv.refl R).symm
-  letI : RingHomInvPair (RingEquiv.refl S : S →+* S) (RingEquiv.refl S).symm :=
-    RingHomInvPair.of_ringEquiv (RingEquiv.refl S)
-  letI : RingHomInvPair ((RingEquiv.refl S).symm : S →+* S) (RingEquiv.refl S) :=
-    RingHomInvPair.of_ringEquiv (RingEquiv.refl S).symm
-  letI : RingHomCompTriple (RingEquiv.refl R : R →+* R) (f : R →+* S) (f : R →+* S) :=
-    ⟨by ext; rfl⟩
-  letI : RingHomCompTriple (f : R →+* S) (RingEquiv.refl S : S →+* S) (f : R →+* S) :=
-    ⟨by ext; rfl⟩
-  letI : RingHomCompTriple (f.symm : S →+* R) ((RingEquiv.refl R).symm : R →+* R)
-      (f.symm : S →+* R) :=
-    ⟨by ext; rfl⟩
-  letI : RingHomCompTriple ((RingEquiv.refl S).symm : S →+* S) (f.symm : S →+* R)
-      (f.symm : S →+* R) :=
-    ⟨by ext; rfl⟩
-  letI : RingHomSurjective (f : R →+* S) := ⟨f.surjective⟩
-  apply FractionalIdeal.coeToSubmodule_injective
-  -- Both sides are `Submodule.map`s of `I` by the underlying `semilinearEquivOfRingEquiv` maps:
-  -- the left is the three-step canonical composite `K → FractionRing R → FractionRing S → L`, the
-  -- right the direct map `K → L`. There is no Mathlib lemma exposing the `canonicalEquiv` composite
-  -- in this `Submodule.map` form, but the two coincide definitionally, so we restate the goal with
-  -- `change` and then collapse the composite via `Submodule.map_comp` and `IsLocalization.map_map`.
-  change Submodule.map
-      (IsFractionRing.semilinearEquivOfRingEquiv (FractionRing S) L (RingEquiv.refl S)).toLinearMap
-      (Submodule.map
-        (IsFractionRing.semilinearEquivOfRingEquiv (FractionRing R) (FractionRing S) f).toLinearMap
-        (Submodule.map
-          (IsFractionRing.semilinearEquivOfRingEquiv K (FractionRing R)
-            (RingEquiv.refl R)).toLinearMap I.val.val)) =
-    Submodule.map (IsFractionRing.semilinearEquivOfRingEquiv K L f).toLinearMap I.val.val
-  rw [← Submodule.map_comp, ← Submodule.map_comp]
-  congr 1
-  ext x
-  simp [IsFractionRing.semilinearEquivOfRingEquiv, IsLocalization.map_map]
+  -- Both sides are two-step transports of `I` along ring equivalences: the left changes fraction
+  -- field over `R` and then applies `f`, the right applies `f` and then changes fraction field
+  -- over `S`. Rewriting the change-of-fraction-field steps as transports along `RingEquiv.refl`
+  -- collapses both composites to the single transport along `f`.
+  have key (J : FractionalIdeal R⁰ K) :
+      FractionalIdeal.ringEquivOfRingEquiv (FractionRing S) L (RingEquiv.refl S)
+          (FractionalIdeal.ringEquivOfRingEquiv (FractionRing R) (FractionRing S) f
+            (FractionalIdeal.ringEquivOfRingEquiv K (FractionRing R) (RingEquiv.refl R) J)) =
+        FractionalIdeal.ringEquivOfRingEquiv K L f J := by
+    have hf : ((RingEquiv.refl R).trans f).trans (RingEquiv.refl S) = f := by ext; rfl
+    rw [← FractionalIdeal.ringEquivOfRingEquiv_trans_apply K (FractionRing R) (FractionRing S),
+      ← FractionalIdeal.ringEquivOfRingEquiv_trans_apply K (FractionRing S) L, hf]
+  simpa only [Units.coe_mapEquiv, Units.coe_map, canonicalEquiv_eq_ringEquivOfRingEquiv,
+    MonoidHom.coe_coe, RingEquiv.coe_toMulEquiv] using key I
 
 /-- The identity ring equivalence induces the identity class-group equivalence. -/
 @[simp] theorem mulEquiv_refl :
