@@ -40,13 +40,13 @@ variable {f : ℝ → ℝ} {t : ℝ}
 
 /-- The primitive of `f` on the nonnegative half-line. The `max` canonically extends the
 integrand to negative arguments; on `[0, ∞)` this is `∫₀ᵗ f`. -/
-@[expose] noncomputable def halfLinePrimitive (f : ℝ → ℝ) (t : ℝ) : ℝ :=
+noncomputable def halfLinePrimitive (f : ℝ → ℝ) (t : ℝ) : ℝ :=
   ∫ x in (0 : ℝ)..t, f (max x 0)
 
 /-- The unconditional defining equation of `halfLinePrimitive`, usable in downstream files where
 the body of the definition is not available. -/
 theorem halfLinePrimitive_def (f : ℝ → ℝ) (t : ℝ) :
-    halfLinePrimitive f t = ∫ x in (0 : ℝ)..t, f (max x 0) := rfl
+    halfLinePrimitive f t = ∫ x in (0 : ℝ)..t, f (max x 0) := by rfl
 
 /-- If `f` is continuous on `[0, ∞)`, then its extension `x ↦ f (max x 0)` is continuous on all
 of `ℝ`. -/
