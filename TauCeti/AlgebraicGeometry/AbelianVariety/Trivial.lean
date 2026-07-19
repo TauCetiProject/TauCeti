@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom
+public import TauCeti.AlgebraicGeometry.GeometricallyIntegral
 public import Mathlib.RingTheory.KrullDimension.Field
 
 /-!
@@ -19,13 +20,9 @@ Building it exercises the bundled `AbelianVariety` interface of
 `TauCeti.AlgebraicGeometry.AbelianVariety.Basic` on its smallest example and provides two of the
 roadmap's acceptance-style sanity checks at the bottom of the dimension tower:
 
-* `TauCeti.AlgebraicGeometry.geometricallyIntegral_id`: the identity morphism of any scheme is
-  geometrically integral (its geometric fibres are `Spec` of a field, hence integral). This is the
-  geometric-integrality hypothesis for the trivial group scheme, and a small gap in Mathlib's
-  `GeometricallyIntegral` API on its own.
 * `AbelianVariety.trivial K`: the trivial abelian variety, with underlying scheme `Spec K` and the
   group structure of the monoidal unit of `Over (Spec K)`.
-* `AbelianVariety.dim_trivial`: its dimension is `0`, computed through the topological Krull
+* `AbelianVariety.trivial_dim`: its dimension is `0`, computed through the topological Krull
   dimension of `Spec K` and `ringKrullDim K = 0` for a field. This is the base case of the
   roadmap's `dim (Jac X) = genus X` acceptance check.
 * `AbelianVariety.isTerminalTrivial`: it is a terminal object of the category of abelian varieties
@@ -51,20 +48,6 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- The identity morphism of any scheme is geometrically integral: every base change of `𝟙 X` along
-`Spec κ → X` (with `κ` a field) is an isomorphism onto `Spec κ`, which is integral.
-
-This is the geometric-integrality input for the trivial group scheme, and fills a small gap in
-Mathlib's `GeometricallyIntegral` API, which records stability under base change but no instance for
-identities. -/
-theorem geometricallyIntegral_id (X : Scheme.{u}) : GeometricallyIntegral (𝟙 X) := by
-  rw [GeometricallyIntegral.eq_geometrically]
-  intro κ _ y Z fst snd h
-  have hiso : IsIso snd :=
-    (isomorphisms Scheme).of_isPullback h (isomorphisms.infer_property (𝟙 X))
-  have : Nonempty Z := Nonempty.map (inv snd).base inferInstance
-  exact isIntegral_of_isOpenImmersion snd
-
 variable (K : Type u) [Field K]
 
 namespace AbelianVariety
@@ -82,16 +65,18 @@ is proper and (by `geometricallyIntegral_id`) geometrically integral. -/
 lemma trivial_toOver : (trivial K).toOver = 𝟙_ (Over (Spec (.of K))) := rfl
 
 @[simp]
-lemma trivial_toScheme : (trivial K).toScheme = Spec (.of K) := rfl
+lemma trivial_toScheme : (trivial K).toScheme = Spec (.of K) :=
+  (rfl)
 
 /-- The trivial abelian variety is zero-dimensional: the topological Krull dimension of `Spec K` is
 `ringKrullDim K = 0` for a field `K`. This is the base case of the roadmap's `dim (Jac X) = genus X`
 acceptance check. -/
-lemma dim_trivial : (trivial K).dim = 0 := by
-  rw [dim_def, trivial_toScheme]
-  show topologicalKrullDim (Spec (.of K)) = 0
-  rw [show topologicalKrullDim (Spec (.of K)) = topologicalKrullDim (PrimeSpectrum K) from rfl,
-    PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim, ringKrullDim_eq_zero_of_field]
+@[simp]
+lemma trivial_dim : (trivial K).dim = 0 := by
+  rw [dim_def, trivial_toScheme, ← ringKrullDim_eq_zero_of_field K,
+    ← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim K]
+  -- the topological space of `Spec (.of K)` is definitionally `PrimeSpectrum K`
+  rfl
 
 variable {K}
 
