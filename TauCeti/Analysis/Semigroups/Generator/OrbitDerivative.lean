@@ -51,7 +51,6 @@ theorem realOperator_differentiableWithinAt_zero (S : StronglyContinuousSemigrou
   (S.realOperator_hasDerivWithinAt_zero x).differentiableWithinAt
 
 /-- The right derivative at zero of the orbit of a generator-domain vector is its generator. -/
-@[simp]
 theorem realOperator_derivWithin_zero (S : StronglyContinuousSemigroup X)
     (x : S.domain) :
     derivWithin (fun s : ℝ => S.realOperator s (x : X)) (Set.Ici 0) 0 =
