@@ -5,9 +5,11 @@ Authors: Chris Birkbeck, Kim Morrison
 -/
 module
 
-public import TauCeti.Analysis.Contour.Winding.LocallyConstant
-public import TauCeti.Analysis.Contour.Winding.Vanishing
-import Mathlib.Topology.Connected.Basic
+public import TauCeti.Analysis.Contour.Winding.Number.Basic
+public import Mathlib.Topology.Bornology.Basic
+public import Mathlib.Topology.Connected.Basic
+import TauCeti.Analysis.Contour.Winding.LocallyConstant
+import TauCeti.Analysis.Contour.Winding.Vanishing
 
 /-!
 # The winding number is constant on off-curve components, and zero on the unbounded one
@@ -68,17 +70,12 @@ theorem windingNumber_eq_of_isPreconnected {S : Set ℂ}
   -- The off-curve set is open (the complement of the compact curve image), so `Subtype.val` from
   -- the subtype of off-curve points is an injective open map; transport preconnectedness of `S`
   -- along its preimage.
-  have hSopen : IsOpen {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} := by
-    have hset : {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} = (γ '' uIcc a b)ᶜ := by
-      ext z
-      simp only [Set.mem_setOf_eq, Set.mem_compl_iff, Set.mem_image, not_exists, not_and, ne_eq]
-    rw [hset]
-    exact (isCompact_uIcc.image_of_continuousOn hγ_cont).isClosed.isOpen_compl
   have hrange : S ⊆ Set.range (Subtype.val : {w : ℂ // ∀ t ∈ uIcc a b, γ t ≠ w} → ℂ) := by
     rw [Subtype.range_val_subtype]; exact hSoff
   have hTconn : IsPreconnected
       (Subtype.val ⁻¹' S : Set {w : ℂ // ∀ t ∈ uIcc a b, γ t ≠ w}) :=
-    hSconn.preimage_of_isOpenMap Subtype.val_injective hSopen.isOpenMap_subtype_val hrange
+    hSconn.preimage_of_isOpenMap Subtype.val_injective
+      (isOpen_offCurve_of_continuousOn hγ_cont).isOpenMap_subtype_val hrange
   exact hlc.apply_eq_of_isPreconnected hTconn
     (x := ⟨w₁, hSoff hw₁⟩) (y := ⟨w₂, hSoff hw₂⟩) hw₁ hw₂
 

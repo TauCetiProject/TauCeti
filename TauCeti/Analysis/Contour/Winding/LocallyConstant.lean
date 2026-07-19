@@ -44,6 +44,16 @@ open scoped Topology
 
 namespace TauCeti.Contour
 
+/-- The set of points avoided by a curve continuous on `Set.uIcc a b` is open. -/
+theorem isOpen_offCurve_of_continuousOn {γ : ℝ → ℂ} {a b : ℝ}
+    (hγ_cont : ContinuousOn γ (uIcc a b)) :
+    IsOpen {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} := by
+  have hset : {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} = (γ '' uIcc a b)ᶜ := by
+    ext z
+    simp only [Set.mem_setOf_eq, Set.mem_compl_iff, Set.mem_image, not_exists, not_and, ne_eq]
+  rw [hset]
+  exact (isCompact_uIcc.image_of_continuousOn hγ_cont).isClosed.isOpen_compl
+
 /-- **The winding number is locally constant off a closed curve.** Let `γ` be a closed curve
 (`γ a = γ b`), differentiable off a countable set `P`, continuous on `Set.uIcc a b`, with
 interval-integrable derivative. Then, as a function of the point ranging over the complement of the
@@ -112,18 +122,12 @@ theorem exists_ball_windingNumber_zero {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} 
     ∃ ε > 0, ∀ w' ∈ Metric.ball w ε,
       (∀ t ∈ uIcc a b, γ t ≠ w') ∧ windingNumber γ a b w' = 0 := by
   obtain ⟨ε₁, hε₁, h_dist⟩ := exists_ball_dist_curve_lower_bound hγ_cont hoff
-  -- The off-curve set is open: it is the complement of the compact curve image.
-  have hSopen : IsOpen {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} := by
-    have hset : {z : ℂ | ∀ t ∈ uIcc a b, γ t ≠ z} = (γ '' uIcc a b)ᶜ := by
-      ext z
-      simp only [Set.mem_setOf_eq, Set.mem_compl_iff, Set.mem_image, not_exists, not_and, ne_eq]
-    rw [hset]
-    exact (isCompact_uIcc.image_of_continuousOn hγ_cont).isClosed.isOpen_compl
   -- The winding number is locally constant off the curve, so it is `0` on a subtype-open set
   -- around `w`; push that set forward along the open inclusion to a `ℂ`-ball.
   have hlc := isLocallyConstant_windingNumber_of_closed hclosed hP hγ_cont hγ_diff hderiv_int
   obtain ⟨V, hV_open, hwV, hV_const⟩ := hlc.exists_open ⟨w, hoff⟩
-  have hVℂ : IsOpen (Subtype.val '' V) := hSopen.isOpenMap_subtype_val V hV_open
+  have hVℂ : IsOpen (Subtype.val '' V) :=
+    (isOpen_offCurve_of_continuousOn hγ_cont).isOpenMap_subtype_val V hV_open
   obtain ⟨ε₂, hε₂, hball₂⟩ := Metric.isOpen_iff.mp hVℂ w ⟨⟨w, hoff⟩, hwV, rfl⟩
   refine ⟨min ε₁ ε₂, lt_min hε₁ hε₂, fun w' hw' ↦ ⟨fun t ht ↦ ?_, ?_⟩⟩
   · exact sub_ne_zero.mp (norm_pos_iff.mp (lt_of_lt_of_le hε₁
