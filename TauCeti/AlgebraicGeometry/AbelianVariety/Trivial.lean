@@ -52,32 +52,31 @@ namespace AbelianVariety
 
 /-- The **trivial abelian variety** over `K`: the scheme `Spec K`, structural morphism the
 identity, with the group structure of the monoidal unit of `Over (Spec K)`. -/
-@[expose] noncomputable def trivial : AbelianVariety K :=
-  haveI : IsProper (𝟙_ (Over (Spec (.of K)))).hom := by
+@[expose] noncomputable def trivial : AbelianVariety K where
+  toOver := 𝟙_ (Over (Spec (.of K)))
+  grpObj := inferInstance
+  isProper := by
     rw [Over.tensorUnit_hom]
     -- `infer_instance` fails on the post-`rw` goal (the failed synthesis attempt on the
     -- pre-`rw` goal is cached); `inferInstanceAs` re-elaborates the type and succeeds.
     exact inferInstanceAs (IsProper (𝟙 _))
-  haveI : GeometricallyIntegral (𝟙_ (Over (Spec (.of K)))).hom := by
+  geometricallyIntegral := by
     rw [Over.tensorUnit_hom]
     -- as above: `inferInstanceAs` re-elaborates the type, which `infer_instance` does not.
     exact inferInstanceAs (GeometricallyIntegral (𝟙 _))
-  ofGeometricallyIntegral (𝟙_ (Over (Spec (.of K))))
 
 @[simp]
 lemma trivial_toOver : (trivial K).toOver = 𝟙_ (Over (Spec (.of K))) := rfl
 
-/-- The structure morphism of the trivial abelian variety is the identity of `Spec K`. -/
+/-- The underlying scheme of the trivial abelian variety is `Spec K`. -/
 @[simp]
-lemma trivial_hom : (trivial K).toOver.hom = 𝟙 (Spec (.of K)) := Over.tensorUnit_hom
+lemma trivial_toScheme : (trivial K).toScheme = Spec (.of K) := (rfl)
 
 /-- The trivial abelian variety is zero-dimensional: the topological Krull dimension of `Spec K` is
 `ringKrullDim K = 0` for a field `K`. -/
 @[simp]
 lemma trivial_dim : (trivial K).dim = 0 := by
-  have h : (trivial K).toScheme = Spec (.of K) := by
-    simp [toScheme, trivial_toOver, Over.tensorUnit_left]
-  rw [dim_def, h, ← ringKrullDim_eq_zero_of_field K,
+  rw [dim_def, trivial_toScheme, ← ringKrullDim_eq_zero_of_field K,
     ← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim K]
   -- the topological space of `Spec (.of K)` is `PrimeSpectrum K` (`Scheme.Spec_carrier`)
   rfl
@@ -96,12 +95,6 @@ namespace Hom
 lemma toOverHom_toTrivial (A : AbelianVariety K) :
     toOverHom (toTrivial A) = toUnit A.toOver :=
   toOverHom_mk' _
-
-/-- The scheme morphism underlying `toTrivial` is the left component of the terminal projection. -/
-@[simp]
-lemma toSchemeHom_toTrivial (A : AbelianVariety K) :
-    toSchemeHom (toTrivial A) = (toUnit A.toOver).left :=
-  toSchemeHom_mk' _
 
 end Hom
 
