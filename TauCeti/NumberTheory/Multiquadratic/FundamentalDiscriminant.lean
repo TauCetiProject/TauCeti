@@ -204,6 +204,26 @@ theorem isFundamentalDiscriminant_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDi
   · exact Or.inr ⟨2 * Q, by ring, Or.inl (by omega), hsf2⟩
   · exact Or.inr ⟨-(2 * Q), by ring, Or.inl (by omega), hsf2.neg⟩
 
+/-- The shared normalisation step of `isFundamentalDiscriminant_prod`: over a set `t` of prime
+discriminants, none of them even and with pairwise distinct values, each `D i` is
+`oddPrimeDiscriminant` of an odd prime, that odd-prime map is injective on `t`, and the product
+rewrites as a product of odd prime discriminants. Applied to both branches of the case split. -/
+private theorem prod_oddPrimeDiscriminant_natAbs_of_not_isEvenPrimeDiscriminant {D : ι → ℤ}
+    {t : Finset ι} (hD : ∀ i ∈ t, IsPrimeDiscriminant (D i))
+    (hev : ∀ i ∈ t, ¬ IsEvenPrimeDiscriminant (D i)) (hDinj : Set.InjOn D t) :
+    (∀ i ∈ t, ((D i).natAbs).Prime) ∧ (∀ i ∈ t, Odd (D i).natAbs) ∧
+      Set.InjOn (fun i => (D i).natAbs) t ∧
+      ∏ i ∈ t, D i = ∏ i ∈ t, oddPrimeDiscriminant (D i).natAbs := by
+  have hrepr : ∀ i ∈ t, D i = oddPrimeDiscriminant (D i).natAbs := fun i hi =>
+    (eq_oddPrimeDiscriminant_natAbs (hD i hi) (hev i hi)).2.2
+  refine ⟨fun i hi => (eq_oddPrimeDiscriminant_natAbs (hD i hi) (hev i hi)).1,
+    fun i hi => (eq_oddPrimeDiscriminant_natAbs (hD i hi) (hev i hi)).2.1, ?_,
+    Finset.prod_congr rfl hrepr⟩
+  intro i hi j hj hpij
+  apply hDinj hi hj
+  rw [hrepr i hi, hrepr j hj]
+  exact congrArg oddPrimeDiscriminant hpij
+
 /-- **A product of pairwise coprime prime discriminants is a fundamental discriminant.** This is
 the synthesis direction in full generality: a family `D : ι → ℤ` of prime discriminants, pairwise
 coprime, multiplies to a fundamental discriminant. Coprimality forces at most one even factor
@@ -230,39 +250,19 @@ theorem isFundamentalDiscriminant_prod {D : ι → ℤ} (hD : ∀ i ∈ s, IsPri
       simp [Int.isUnit_iff] at h2
     have hoddset : ∀ j ∈ s.erase i₀, ¬ IsEvenPrimeDiscriminant (D j) := fun j hj hevj =>
       Finset.ne_of_mem_erase hj (huniq j (Finset.mem_of_mem_erase hj) hevj)
-    have hrepr : ∀ j ∈ s.erase i₀, D j = oddPrimeDiscriminant (D j).natAbs := fun j hj =>
-      (eq_oddPrimeDiscriminant_natAbs (hD j (Finset.mem_of_mem_erase hj)) (hoddset j hj)).2.2
-    have hpprime : ∀ j ∈ s.erase i₀, ((D j).natAbs).Prime := fun j hj =>
-      (eq_oddPrimeDiscriminant_natAbs (hD j (Finset.mem_of_mem_erase hj)) (hoddset j hj)).1
-    have hpodd : ∀ j ∈ s.erase i₀, Odd (D j).natAbs := fun j hj =>
-      (eq_oddPrimeDiscriminant_natAbs (hD j (Finset.mem_of_mem_erase hj)) (hoddset j hj)).2.1
-    have hpinj : Set.InjOn (fun i => (D i).natAbs) (s.erase i₀) := by
-      intro i hi j hj hpij
-      apply hDinj (Finset.mem_of_mem_erase hi) (Finset.mem_of_mem_erase hj)
-      rw [hrepr i hi, hrepr j hj]
-      exact congrArg oddPrimeDiscriminant hpij
+    obtain ⟨hpprime, hpodd, hpinj, hproderase⟩ :=
+      prod_oddPrimeDiscriminant_natAbs_of_not_isEvenPrimeDiscriminant
+        (fun j hj => hD j (Finset.mem_of_mem_erase hj)) hoddset
+        (hDinj.mono (Finset.coe_subset.mpr (Finset.erase_subset i₀ s)))
     have hprod : ∏ i ∈ s, D i
         = D i₀ * ∏ i ∈ s.erase i₀, oddPrimeDiscriminant (D i).natAbs := by
-      rw [← Finset.mul_prod_erase s D hi₀]
-      congr 1
-      exact Finset.prod_congr rfl hrepr
+      rw [← Finset.mul_prod_erase s D hi₀, hproderase]
     rw [hprod]
     exact isFundamentalDiscriminant_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant
       (s := s.erase i₀) (p := fun i => (D i).natAbs) hev₀ hpprime hpodd hpinj
   · have hev' : ∀ j ∈ s, ¬ IsEvenPrimeDiscriminant (D j) := fun j hj hevj => hev ⟨j, hj, hevj⟩
-    have hrepr : ∀ j ∈ s, D j = oddPrimeDiscriminant (D j).natAbs := fun j hj =>
-      (eq_oddPrimeDiscriminant_natAbs (hD j hj) (hev' j hj)).2.2
-    have hpprime : ∀ j ∈ s, ((D j).natAbs).Prime := fun j hj =>
-      (eq_oddPrimeDiscriminant_natAbs (hD j hj) (hev' j hj)).1
-    have hpodd : ∀ j ∈ s, Odd (D j).natAbs := fun j hj =>
-      (eq_oddPrimeDiscriminant_natAbs (hD j hj) (hev' j hj)).2.1
-    have hpinj : Set.InjOn (fun i => (D i).natAbs) s := by
-      intro i hi j hj hpij
-      apply hDinj hi hj
-      rw [hrepr i hi, hrepr j hj]
-      exact congrArg oddPrimeDiscriminant hpij
-    have hprod : ∏ i ∈ s, D i = ∏ i ∈ s, oddPrimeDiscriminant (D i).natAbs :=
-      Finset.prod_congr rfl hrepr
+    obtain ⟨hpprime, hpodd, hpinj, hprod⟩ :=
+      prod_oddPrimeDiscriminant_natAbs_of_not_isEvenPrimeDiscriminant hD hev' hDinj
     rw [hprod]
     exact isFundamentalDiscriminant_prod_oddPrimeDiscriminant
       (p := fun i => (D i).natAbs) hpprime hpodd hpinj
