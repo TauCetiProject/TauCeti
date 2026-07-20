@@ -60,26 +60,17 @@ lemma condExp_blockIndicatorProd_tailProcess_ae_eq_prod
       μ[Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0 | tailProcess X] ω) := by
   classical
   -- Reverse-martingale convergence: `μ[f | tailFamily X (m+1)] → μ[f | tailProcess X]` a.e.
-  have hconv : ∀ f : Ω → ℝ, Integrable f μ → ∀ᵐ ω ∂μ,
+  have hconv : ∀ f : Ω → ℝ, ∀ᵐ ω ∂μ,
       Tendsto (fun m => μ[f | tailFamily X (m + 1)] ω) atTop
         (𝓝 (μ[f | tailProcess X] ω)) := by
-    intro f hf
-    -- `tendsto_ae_condExp_iInf` takes the index-0 bound `𝔽 0 ≤ m₀` (antitonicity supplies the rest)
-    -- and the integrability of `f`.
+    intro f
+    -- `tendsto_ae_condExp_iInf` takes the index-0 bound `𝔽 0 ≤ m₀`; antitonicity supplies the rest.
     have h := tendsto_ae_condExp_iInf (μ := μ) (tailFamily_antitone X)
-      (tailFamily_le_ambient 0 fun k _ => hX_meas k) f hf
+      (tailFamily_le_ambient 0 fun k _ => hX_meas k) f
     rw [← tailProcess_eq_iInf_tailFamily X] at h
     filter_upwards [h] with ω hω using hω.comp (tendsto_add_atTop_nat 1)
-  -- The integrands are bounded indicators, hence integrable under the finite measure.
-  have hint_coord : ∀ i : Fin r, Integrable (Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0) μ := by
-    intro i
-    have heq : (Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0)
-        = (X 0 ⁻¹' C i).indicator (fun _ => (1 : ℝ)) := by
-      ext ω; simp only [Function.comp_apply, Set.indicator, Set.mem_preimage]
-    rw [heq]; exact (integrable_const (1 : ℝ)).indicator ((hX_meas 0) (hC i))
   -- LHS converges to the tail conditional expectation of the block.
   have h_lhs := hconv (blockIndicatorProd X (fun i : Fin r => (i : ℕ)) C)
-    (integrable_blockIndicatorProd (fun i => (hX_meas _).aemeasurable) hC)
   -- RHS: the finite product of the convergent single-coordinate factors converges.
   have h_rhs : ∀ᵐ ω ∂μ,
       Tendsto (fun m => ∏ i : Fin r,
@@ -90,7 +81,7 @@ lemma condExp_blockIndicatorProd_tailProcess_ae_eq_prod
         Tendsto (fun m => μ[Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0
             | tailFamily X (m + 1)] ω) atTop
           (𝓝 (μ[Set.indicator (C i) (fun _ => (1 : ℝ)) ∘ X 0 | tailProcess X] ω)) :=
-      ae_all_iff.mpr fun i => hconv _ (hint_coord i)
+      ae_all_iff.mpr fun i => hconv _
     filter_upwards [hfac] with ω hω using tendsto_finsetProd _ fun i _ => hω i
   -- Equality of the two sequences at each finite level `m ≥ r`.
   have h_fact : ∀ᵐ ω ∂μ, ∀ m, r ≤ m →

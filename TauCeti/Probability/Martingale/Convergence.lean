@@ -20,10 +20,14 @@ result (`Martingale/AntitoneLimit.lean`) all feed into `tendsto_ae_condExp_iInf`
 
 ## Main results
 
-- `tendsto_ae_condExp_iInf`: Lévy's downward theorem — for antitone `𝔽` and integrable `f`, the
-  sequence `μ[f | 𝔽 n]` converges a.e. to `μ[f | ⨅ n, 𝔽 n]` (the reverse-martingale limit). This is
+- `tendsto_ae_condExp_iInf`: Lévy's downward theorem — for antitone `𝔽`, the sequence
+  `μ[f | 𝔽 n]` converges a.e. to `μ[f | ⨅ n, 𝔽 n]` (the reverse-martingale limit). This is
   the roadmap Layer-4 target, spelled in the Mathlib convergence-API grammar (conclusion-first)
   required by the naming convention.
+- `tendsto_eLpNorm_condExp_iInf`: the L¹ form of the same theorem — the convergence also holds in
+  `L¹`, i.e. `eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) 1 μ → 0`. This is the follow-up Layer-4
+  target and the form most downstream analytic uses want; it mirrors Mathlib's upward
+  `MeasureTheory.tendsto_eLpNorm_condExp`.
 
 ## References
 
@@ -49,21 +53,30 @@ namespace MeasureTheory
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
-/-- **Conditional expectation converges along a decreasing filtration (Lévy's downward theorem).**
+/-- Lévy's downward theorem, proving the almost-everywhere and `L¹` forms together.
 
-For a decreasing filtration `𝔽ₙ` and integrable `f`, the sequence `μ[f | 𝔽ₙ]` converges almost
-surely to `μ[f | ⨅ₙ 𝔽ₙ]` — the reverse-martingale (Lévy downward) limit. -/
-theorem tendsto_ae_condExp_iInf
+The `L¹` convergence is not an afterthought of the a.e. convergence: the Vitali step that upgrades
+a.e. convergence of the uniformly integrable family `μ[f | 𝔽ₙ]` to `L¹` convergence is what
+identifies the a.e. limit as `μ[f | ⨅ₙ 𝔽ₙ]` in the first place. Proving the two conclusions in one
+pass avoids running that step twice; the public `tendsto_ae_condExp_iInf` and
+`tendsto_eLpNorm_condExp_iInf` are its two projections. -/
+private theorem tendsto_ae_and_eLpNorm_condExp_iInf
     [IsFiniteMeasure μ]
     {𝔽 : ℕ → MeasurableSpace Ω}
     (h_filtration : Antitone 𝔽)
     (h_le0 : 𝔽 0 ≤ (inferInstance : MeasurableSpace Ω))
-    (f : Ω → ℝ) (h_f_int : Integrable f μ) :
-    ∀ᵐ ω ∂μ, Tendsto
-      (fun n => μ[f | 𝔽 n] ω)
-      atTop
-      (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) := by
+    (f : Ω → ℝ) :
+    (∀ᵐ ω ∂μ, Tendsto
+        (fun n => μ[f | 𝔽 n] ω)
+        atTop
+        (𝓝 (μ[f | ⨅ n, 𝔽 n] ω))) ∧
+      Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) 1 μ) atTop (𝓝 0) := by
   classical
+  -- No integrability hypothesis is needed: `condExp` vanishes on non-integrable arguments, so
+  -- every term of both sequences is `0` and both conclusions are trivial there.
+  by_cases h_f_int : Integrable f μ
+  swap
+  · simp [condExp_of_not_integrable h_f_int]
   -- Only `𝔽 0 ≤ m₀` is assumed; antitonicity upgrades it to `𝔽 n ≤ m₀` for every `n`.
   have h_le : ∀ n, 𝔽 n ≤ (inferInstance : MeasurableSpace Ω) :=
     fun n => (h_filtration (Nat.zero_le n)).trans h_le0
@@ -93,24 +106,66 @@ theorem tendsto_ae_condExp_iInf
     fun n => condExp_condExp_of_le (iInf_le 𝔽 n) (h_le n)
   have hiInf_le : (⨅ n, 𝔽 n) ≤ (inferInstance : MeasurableSpace Ω) :=
     le_trans (iInf_le 𝔽 0) (h_le 0)
-  set Xn : ℕ → Ω → ℝ := fun n => μ[f | 𝔽 n] with hXn_def
-  -- Rephrase the L¹ convergence with the `Xn` abbreviation.
-  have hL1_conv_Xn : Tendsto (fun n => eLpNorm (Xlim - Xn n) 1 μ) atTop (𝓝 0) := by
-    simpa [hXn_def, eLpNorm_sub_comm] using hL1_conv
+  -- Rephrase the L¹ convergence with the subtraction in the other order.
+  have hL1_conv' : Tendsto (fun n => eLpNorm (Xlim - μ[f | 𝔽 n]) 1 μ) atTop (𝓝 0) := by
+    simpa [eLpNorm_sub_comm] using hL1_conv
   -- Identify `μ[Xlim | ⨅ n, 𝔽 n]` with `μ[f | ⨅ n, 𝔽 n]` by L¹-continuity of conditional
   -- expectation (the tower property gives `μ[Xn n | ⨅ n, 𝔽 n] =ᵐ μ[f | ⨅ n, 𝔽 n]`).
   have hCE_eqY : μ[Xlim | ⨅ n, 𝔽 n] =ᵐ[μ] μ[f | ⨅ n, 𝔽 n] :=
     condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm hXlimint
-      (fun _ => integrable_condExp) h_tower hL1_conv_Xn
+      (fun _ => integrable_condExp) h_tower hL1_conv'
   -- `Xlim` is `AEStronglyMeasurable[⨅ n, 𝔽 n]` (a.e. limit of `⨅ n, 𝔽 n`-measurable functions), so
   -- `μ[Xlim | ⨅ n, 𝔽 n] =ᵐ Xlim`; combined with `hCE_eqY` this identifies `μ[f | ⨅ n, 𝔽 n]`.
   have hXlim_eq : μ[f | ⨅ n, 𝔽 n] =ᵐ[μ] Xlim := by
     have hXlim_condExp_self : μ[Xlim | ⨅ n, 𝔽 n] =ᵐ[μ] Xlim :=
       condExp_of_aestronglyMeasurable' hiInf_le hXlim_iInf_meas hXlimint
     exact hCE_eqY.symm.trans hXlim_condExp_self
-  -- Combine `h_tendsto : μ[f | 𝔽 n] → Xlim` with `hXlim_eq : μ[f | ⨅ n, 𝔽 n] =ᵐ Xlim`.
-  filter_upwards [h_tendsto, hXlim_eq] with ω h_tend h_eq
-  rw [h_eq]
-  exact h_tend
+  refine ⟨?_, ?_⟩
+  · -- Combine `h_tendsto : μ[f | 𝔽 n] → Xlim` with `hXlim_eq : μ[f | ⨅ n, 𝔽 n] =ᵐ Xlim`.
+    filter_upwards [h_tendsto, hXlim_eq] with ω h_tend h_eq
+    rw [h_eq]
+    exact h_tend
+  · -- Transport the L¹ convergence `μ[f | 𝔽 n] → Xlim` along `hXlim_eq`.
+    have h_eLp : ∀ n, eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) 1 μ
+        = eLpNorm (μ[f | 𝔽 n] - Xlim) 1 μ := fun n =>
+      eLpNorm_congr_ae (by filter_upwards [hXlim_eq] with ω h_eq using by simp [h_eq])
+    simpa only [h_eLp] using hL1_conv
+
+/-- **Conditional expectation converges along a decreasing filtration (Lévy's downward theorem).**
+
+For a decreasing filtration `𝔽ₙ`, the sequence `μ[f | 𝔽ₙ]` converges almost surely to
+`μ[f | ⨅ₙ 𝔽ₙ]` — the reverse-martingale (Lévy downward) limit. As in Mathlib's upward
+`MeasureTheory.tendsto_ae_condExp`, no integrability hypothesis is needed: `condExp` vanishes on
+non-integrable arguments, so the statement is trivial there. -/
+theorem tendsto_ae_condExp_iInf
+    [IsFiniteMeasure μ]
+    {𝔽 : ℕ → MeasurableSpace Ω}
+    (h_filtration : Antitone 𝔽)
+    (h_le0 : 𝔽 0 ≤ (inferInstance : MeasurableSpace Ω))
+    (f : Ω → ℝ) :
+    ∀ᵐ ω ∂μ, Tendsto
+      (fun n => μ[f | 𝔽 n] ω)
+      atTop
+      (𝓝 (μ[f | ⨅ n, 𝔽 n] ω)) :=
+  (tendsto_ae_and_eLpNorm_condExp_iInf h_filtration h_le0 f).1
+
+/-- **Conditional expectation converges in `L¹` along a decreasing filtration (Lévy's downward
+theorem, `L¹` form).**
+
+For a decreasing filtration `𝔽ₙ`, the sequence `μ[f | 𝔽ₙ]` converges in `L¹` to `μ[f | ⨅ₙ 𝔽ₙ]`.
+This upgrades the almost-everywhere statement `tendsto_ae_condExp_iInf`: the conditional
+expectations `μ[f | 𝔽ₙ]` of a fixed integrable function form a uniformly integrable family, so
+their a.e. convergence is convergence in `L¹` by Vitali's theorem. As in Mathlib's upward
+`MeasureTheory.tendsto_eLpNorm_condExp`, which this is the downward analogue of, no integrability
+hypothesis is needed: `condExp` vanishes on non-integrable arguments, so the statement is trivial
+there. -/
+theorem tendsto_eLpNorm_condExp_iInf
+    [IsFiniteMeasure μ]
+    {𝔽 : ℕ → MeasurableSpace Ω}
+    (h_filtration : Antitone 𝔽)
+    (h_le0 : 𝔽 0 ≤ (inferInstance : MeasurableSpace Ω))
+    (f : Ω → ℝ) :
+    Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) 1 μ) atTop (𝓝 0) :=
+  (tendsto_ae_and_eLpNorm_condExp_iInf h_filtration h_le0 f).2
 
 end MeasureTheory
