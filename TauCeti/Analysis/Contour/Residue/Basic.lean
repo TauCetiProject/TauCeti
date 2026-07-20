@@ -205,6 +205,68 @@ private lemma iteratedDeriv_pow_sub_mul_div_factorial {z₀ : ℂ} (p i : ℕ) {
   rw [hleib, div_eq_div_iff hfac_pi hfac_i]
   linear_combination iteratedDeriv i h z₀ * hid
 
+/-- The pole case of `residue_eq_of_eventuallyEq_zpow_smul`: when `meromorphicOrderAt f z₀ < 0`,
+reduce to `residue_eq_of_order_lt_zero` at the true order and shift the Taylor coefficient back to
+the presentation factor `g`. -/
+private theorem residue_eq_of_eventuallyEq_zpow_smul_of_order_lt_zero {f g : ℂ → ℂ} {z₀ : ℂ} {n : ℤ}
+    (hg : AnalyticAt ℂ g z₀) (hfg : f =ᶠ[𝓝[≠] z₀] fun z => (z - z₀) ^ n • g z)
+    (hf : MeromorphicAt f z₀)
+    (hord_eq : meromorphicOrderAt f z₀ = (n : WithTop ℤ) + meromorphicOrderAt g z₀)
+    (ha : meromorphicOrderAt f z₀ < 0) :
+    residue f z₀ = iteratedDeriv (-1 - n).toNat g z₀ / ((-1 - n).toNat.factorial : ℂ) := by
+  have hle : (n : WithTop ℤ) ≤ meromorphicOrderAt f z₀ :=
+    hord_eq ▸ le_add_of_nonneg_right hg.meromorphicOrderAt_nonneg
+  obtain ⟨g₀, hg₀_an, hg₀_ne, hf_eq⟩ := (meromorphicOrderAt_ne_top_iff hf).1 (ne_top_of_lt ha)
+  set a := (meromorphicOrderAt f z₀).untop₀ with ha_def
+  have hcoe : (a : WithTop ℤ) = meromorphicOrderAt f z₀ :=
+    WithTop.coe_untop₀_of_ne_top (ne_top_of_lt ha)
+  have ha_lt : a < 0 := by rw [← WithTop.coe_lt_coe, hcoe]; exact_mod_cast ha
+  have hna : n ≤ a := by rw [← WithTop.coe_le_coe, hcoe]; exact hle
+  rw [residue_eq_of_order_lt_zero ha_lt hg₀_an hg₀_ne hf_eq]
+  have hg_eqNE : g =ᶠ[𝓝[≠] z₀] fun z => (z - z₀) ^ (a - n).toNat • g₀ z := by
+    filter_upwards [hfg, hf_eq, self_mem_nhdsWithin] with z hz1 hz2 hz3
+    have hzne : z - z₀ ≠ 0 := sub_ne_zero.mpr hz3
+    have heq : (z - z₀) ^ n • g z = (z - z₀) ^ a • g₀ z := hz1.symm.trans hz2
+    rw [smul_eq_mul, smul_eq_mul] at heq
+    rw [smul_eq_mul]
+    have h2 : (z - z₀) ^ a = (z - z₀) ^ n * (z - z₀) ^ (a - n).toNat := by
+      rw [← zpow_natCast (z - z₀) (a - n).toNat, ← zpow_add₀ hzne, Int.toNat_of_nonneg (by omega)]
+      congr 1; omega
+    rw [h2, mul_assoc] at heq
+    exact mul_left_cancel₀ (zpow_ne_zero n hzne) heq
+  have hana : AnalyticAt ℂ (fun z => (z - z₀) ^ (a - n).toNat • g₀ z) z₀ := by
+    simp only [smul_eq_mul]
+    exact ((analyticAt_id.sub analyticAt_const).pow _).mul hg₀_an
+  have hg_eq : g =ᶠ[𝓝 z₀] fun z => (z - z₀) ^ (a - n).toNat • g₀ z :=
+    (hg.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hana.continuousAt).1 hg_eqNE
+  have hsum : (a - n).toNat + (-1 - a).toNat = (-1 - n).toNat := by omega
+  rw [hg_eq.iteratedDeriv_eq (-1 - n).toNat]
+  simp only [smul_eq_mul]
+  rw [← hsum, iteratedDeriv_pow_sub_mul_div_factorial (a - n).toNat (-1 - a).toNat hg₀_an]
+
+/-- The pole-free case of `residue_eq_of_eventuallyEq_zpow_smul`: when
+`meromorphicOrderAt f z₀ ≥ 0`, `f` is analytic (residue `0`) and `g` vanishes to order
+`> -1 - n`, so the Taylor coefficient on the right is `0` as well. -/
+private theorem residue_eq_of_eventuallyEq_zpow_smul_of_order_nonneg {f g : ℂ → ℂ} {z₀ : ℂ} {n : ℤ}
+    (hn : n ≤ -1) (hg : AnalyticAt ℂ g z₀)
+    (hord_eq : meromorphicOrderAt f z₀ = (n : WithTop ℤ) + meromorphicOrderAt g z₀)
+    (ha : meromorphicOrderAt f z₀ ≥ 0) :
+    residue f z₀ = iteratedDeriv (-1 - n).toNat g z₀ / ((-1 - n).toNat.factorial : ℂ) := by
+  rw [residue_eq_zero_of_meromorphicOrderAt_nonneg ha]
+  have hvanish : iteratedDeriv (-1 - n).toNat g z₀ = 0 := by
+    refine (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hg).1 ?_ _ (Nat.lt_succ_self _)
+    rcases eq_or_ne (analyticOrderAt g z₀) ⊤ with htop | htop
+    · rw [htop]; exact le_top
+    · lift analyticOrderAt g z₀ to ℕ using htop with m hm
+      rw [Nat.cast_le]
+      have hcompute : meromorphicOrderAt g z₀ = ((m : ℤ) : WithTop ℤ) := by
+        rw [hg.meromorphicOrderAt_eq, ← hm]; simp
+      have h0 : (0 : WithTop ℤ) ≤ (n : WithTop ℤ) + ((m : ℤ) : WithTop ℤ) := by
+        rw [← hcompute, ← hord_eq]; exact ha
+      rw [← WithTop.coe_add, ← WithTop.coe_zero, WithTop.coe_le_coe] at h0
+      omega
+  rw [hvanish, zero_div]
+
 /-- **Generalized characteristic value of the residue.** If `f z = (z − z₀) ^ n • g z` near `z₀` (on
 the punctured neighborhood) with `g` analytic at `z₀` and `n ≤ −1`, then the residue is the Taylor
 coefficient `iteratedDeriv (−1 − n) g z₀ / (−1 − n)!`. Unlike `residue_eq_of_order_lt_zero` this
@@ -223,51 +285,8 @@ theorem residue_eq_of_eventuallyEq_zpow_smul {f g : ℂ → ℂ} {z₀ : ℂ} {n
     rw [meromorphicOrderAt_congr hfg, hsmul,
       meromorphicOrderAt_smul (by fun_prop) hg.meromorphicAt, meromorphicOrderAt_zpow_id_sub_const]
   rcases lt_or_ge (meromorphicOrderAt f z₀) 0 with ha | ha
-  · -- Pole: reduce to `residue_eq_of_order_lt_zero` at the true order, then shift back to `g`.
-    have hle : (n : WithTop ℤ) ≤ meromorphicOrderAt f z₀ :=
-      hord_eq ▸ le_add_of_nonneg_right hg.meromorphicOrderAt_nonneg
-    obtain ⟨g₀, hg₀_an, hg₀_ne, hf_eq⟩ := (meromorphicOrderAt_ne_top_iff hf).1 (ne_top_of_lt ha)
-    set a := (meromorphicOrderAt f z₀).untop₀ with ha_def
-    have hcoe : (a : WithTop ℤ) = meromorphicOrderAt f z₀ :=
-      WithTop.coe_untop₀_of_ne_top (ne_top_of_lt ha)
-    have ha_lt : a < 0 := by rw [← WithTop.coe_lt_coe, hcoe]; exact_mod_cast ha
-    have hna : n ≤ a := by rw [← WithTop.coe_le_coe, hcoe]; exact hle
-    rw [residue_eq_of_order_lt_zero ha_lt hg₀_an hg₀_ne hf_eq]
-    have hg_eqNE : g =ᶠ[𝓝[≠] z₀] fun z => (z - z₀) ^ (a - n).toNat • g₀ z := by
-      filter_upwards [hfg, hf_eq, self_mem_nhdsWithin] with z hz1 hz2 hz3
-      have hzne : z - z₀ ≠ 0 := sub_ne_zero.mpr hz3
-      have heq : (z - z₀) ^ n • g z = (z - z₀) ^ a • g₀ z := hz1.symm.trans hz2
-      rw [smul_eq_mul, smul_eq_mul] at heq
-      rw [smul_eq_mul]
-      have h2 : (z - z₀) ^ a = (z - z₀) ^ n * (z - z₀) ^ (a - n).toNat := by
-        rw [← zpow_natCast (z - z₀) (a - n).toNat, ← zpow_add₀ hzne, Int.toNat_of_nonneg (by omega)]
-        congr 1; omega
-      rw [h2, mul_assoc] at heq
-      exact mul_left_cancel₀ (zpow_ne_zero n hzne) heq
-    have hana : AnalyticAt ℂ (fun z => (z - z₀) ^ (a - n).toNat • g₀ z) z₀ := by
-      simp only [smul_eq_mul]
-      exact ((analyticAt_id.sub analyticAt_const).pow _).mul hg₀_an
-    have hg_eq : g =ᶠ[𝓝 z₀] fun z => (z - z₀) ^ (a - n).toNat • g₀ z :=
-      (hg.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hana.continuousAt).1 hg_eqNE
-    have hsum : (a - n).toNat + (-1 - a).toNat = (-1 - n).toNat := by omega
-    rw [hg_eq.iteratedDeriv_eq (-1 - n).toNat]
-    simp only [smul_eq_mul]
-    rw [← hsum, iteratedDeriv_pow_sub_mul_div_factorial (a - n).toNat (-1 - a).toNat hg₀_an]
-  · -- No pole: `f` is analytic (residue `0`) and `g` vanishes to order `> −1 − n` (right side `0`).
-    rw [residue_eq_zero_of_meromorphicOrderAt_nonneg ha]
-    have hvanish : iteratedDeriv (-1 - n).toNat g z₀ = 0 := by
-      refine (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hg).1 ?_ _ (Nat.lt_succ_self _)
-      rcases eq_or_ne (analyticOrderAt g z₀) ⊤ with htop | htop
-      · rw [htop]; exact le_top
-      · lift analyticOrderAt g z₀ to ℕ using htop with m hm
-        rw [Nat.cast_le]
-        have hcompute : meromorphicOrderAt g z₀ = ((m : ℤ) : WithTop ℤ) := by
-          rw [hg.meromorphicOrderAt_eq, ← hm]; simp
-        have h0 : (0 : WithTop ℤ) ≤ (n : WithTop ℤ) + ((m : ℤ) : WithTop ℤ) := by
-          rw [← hcompute, ← hord_eq]; exact ha
-        rw [← WithTop.coe_add, ← WithTop.coe_zero, WithTop.coe_le_coe] at h0
-        omega
-    rw [hvanish, zero_div]
+  · exact residue_eq_of_eventuallyEq_zpow_smul_of_order_lt_zero hg hfg hf hord_eq ha
+  · exact residue_eq_of_eventuallyEq_zpow_smul_of_order_nonneg hn hg hord_eq ha
 
 /-- Any meromorphic `f` admits an analytic presentation `f z = (z − z₀) ^ m • φ z` near `z₀` at any
 exponent `m` at or below its meromorphic order (padding the reduced presentation with a nonnegative
