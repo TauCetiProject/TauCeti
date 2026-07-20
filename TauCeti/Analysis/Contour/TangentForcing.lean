@@ -111,9 +111,10 @@ private theorem abs_im_mul_conj_div_mul_le_of_sub_smul {γ : ℝ → ℂ} {t₀ 
         ‖γ t - γ t₀ - (t - t₀) • L‖ := by
         rw [add_div, mul_div_assoc, div_self hv_pos.ne', mul_one]
 
-/-- The ε-crux of the forcing argument: from the flatness deviation being `o(‖γ t - γ t₀‖ ^ n)`
-and a right derivative `L`, the normalized tangent value `|Im(L * conj v)| / ‖v‖` is below every
-positive `ε`; combined with nonnegativity this forces it to `0`. -/
+/-- The ε-bound at the heart of the forcing argument: under the little-o flatness deviation
+`o(‖γ t - γ t₀‖ ^ n)` and a right derivative `L`, the normalized tangent value
+`|Im(L * conj v)| / ‖v‖` is bounded by the given positive `ε`. (The zero-forcing conclusion
+`Im(L · conj v) = 0` is drawn by the caller `im_mul_conj_eq_zero_of_flat_right`.) -/
 private theorem abs_im_mul_conj_div_le_of_isLittleO {γ : ℝ → ℂ} {t₀ : ℝ} {v L : ℂ} {n : ℕ}
     (hv : v ≠ 0) (hn : 1 ≤ n)
     (h_dev : (fun t => |((γ t - γ t₀) * star v).im| / ‖v‖) =o[𝓝[>] t₀]
