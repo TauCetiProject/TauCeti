@@ -5,10 +5,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.LinearAlgebra.Dimension.Finrank
-public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
-public import TauCeti.LinearAlgebra.TotallyReal
+public import TauCeti.LinearAlgebra.TotallyReal.Finrank
 
 /-!
 # Lagrangian subspaces of a tame pair are maximal totally real
@@ -81,11 +80,6 @@ theorem IsIsotropic.disjoint_map_of_tames (h : ω.IsIsotropic L) (htame : ω.Tam
   rw [← hJyx, hy0]
   simp
 
-/-- The `J`-image of a subspace has the same dimension, since `J` is a linear isomorphism. -/
-private theorem finrank_map_toLinearMap (L : Submodule ℝ V) :
-    finrank ℝ (L.map J.toLinearMap) = finrank ℝ L :=
-  LinearEquiv.finrank_map_eq J.linearEquiv L
-
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ V]
@@ -95,11 +89,9 @@ variable [FiniteDimensional ℝ V]
 
 Note that only taming is required, not the full compatibility of `(ω, J)`. -/
 theorem IsLagrangian.isMaximalTotallyReal_of_tames (hL : ω.IsLagrangian L) (htame : ω.Tames J) :
-    IsMaximalTotallyReal J.toLinearMap L := by
-  have hdim : finrank ℝ V ≤ finrank ℝ L + finrank ℝ (L.map J.toLinearMap) := by
-    rw [finrank_map_toLinearMap, ← two_mul, hL.two_mul_finrank]
-  exact (Submodule.isCompl_iff_disjoint L (L.map J.toLinearMap) hdim).mpr
-    (hL.isIsotropic.disjoint_map_of_tames htame)
+    IsMaximalTotallyReal J.toLinearMap L :=
+  IsTotallyReal.isMaximalTotallyReal (hL.isIsotropic.disjoint_map_of_tames htame) J.injective
+    hL.two_mul_finrank
 
 /-- A Lagrangian subspace of a compatible pair on a finite-dimensional space is maximal totally
 real. -/
