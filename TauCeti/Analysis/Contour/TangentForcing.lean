@@ -43,6 +43,112 @@ namespace TauCeti.Contour
 
 open Asymptotics Filter Set Topology
 
+/-- Near `t₀`, the curve's displacement grows at most linearly along the right derivative:
+for `n ≥ 1`, if `γ` has right derivative `L` at `t₀`, then eventually as `t → t₀⁺` one has
+`‖γ t - γ t₀‖ ^ n ≤ (‖L‖ + 1) ^ n * (t - t₀)`. -/
+private theorem eventually_norm_sub_pow_le_of_hasDerivWithinAt {γ : ℝ → ℂ} {t₀ : ℝ} {L : ℂ} {n : ℕ}
+    (hn : 1 ≤ n) (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) :
+    ∀ᶠ t in 𝓝[>] t₀, ‖γ t - γ t₀‖ ^ n ≤ (‖L‖ + 1) ^ n * (t - t₀) := by
+  have herr : (fun t => γ t - γ t₀ - (t - t₀) • L) =o[𝓝[>] t₀] (fun t => t - t₀) :=
+    hasDerivWithinAt_iff_isLittleO.mp h_deriv
+  have h_growth : ∀ᶠ t in 𝓝[>] t₀, ‖γ t - γ t₀‖ ≤ (‖L‖ + 1) * (t - t₀) := by
+    filter_upwards [herr.bound one_pos, self_mem_nhdsWithin] with t hb ht
+    have ht' : 0 < t - t₀ := sub_pos.mpr ht
+    have h1 : ‖γ t - γ t₀‖ ≤ ‖(t - t₀) • L‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := by
+      simpa using norm_add_le ((t - t₀) • L) (γ t - γ t₀ - (t - t₀) • L)
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos ht'] at h1
+    rw [Real.norm_eq_abs, abs_of_pos ht'] at hb
+    calc ‖γ t - γ t₀‖ ≤ (t - t₀) * ‖L‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := h1
+      _ ≤ (t - t₀) * ‖L‖ + 1 * (t - t₀) := by linarith
+      _ = (‖L‖ + 1) * (t - t₀) := by ring
+  have h_small : ∀ᶠ t in 𝓝[>] t₀, t - t₀ ≤ 1 := by
+    filter_upwards [eventually_nhdsWithin_of_eventually_nhds
+      (eventually_le_nhds (by linarith : t₀ < t₀ + 1))] with t ht
+    linarith
+  filter_upwards [h_growth, h_small, self_mem_nhdsWithin] with t hg hs ht
+  have ht' : 0 < t - t₀ := sub_pos.mpr ht
+  calc ‖γ t - γ t₀‖ ^ n ≤ ((‖L‖ + 1) * (t - t₀)) ^ n := by gcongr
+    _ = (‖L‖ + 1) ^ n * (t - t₀) ^ n := by rw [mul_pow]
+    _ ≤ (‖L‖ + 1) ^ n * (t - t₀) := by
+        gcongr
+        exact pow_le_of_le_one ht'.le hs (by omega : n ≠ 0)
+
+/-- The seminorm-triangle estimate behind the forcing bound: writing the tangent step
+`(t - t₀) • L` as the chord `γ t - γ t₀` minus the first-order error, the tangent's
+`|Im(· * conj v)| / ‖v‖` value is bounded by the chord's plus the error norm. -/
+private theorem abs_im_mul_conj_div_mul_le_of_sub_smul {γ : ℝ → ℂ} {t₀ : ℝ} {v L : ℂ} {t : ℝ}
+    (hv : v ≠ 0) (ht' : 0 < t - t₀) :
+    |(L * starRingEnd ℂ v).im| / ‖v‖ * (t - t₀) ≤
+      |((γ t - γ t₀) * star v).im| / ‖v‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := by
+  have hv_pos : 0 < ‖v‖ := norm_pos_iff.mpr hv
+  set c : ℝ := |(L * starRingEnd ℂ v).im| / ‖v‖ with hc_def
+  have h_split : ((t - t₀ : ℝ) • L) * starRingEnd ℂ v =
+      (γ t - γ t₀) * star v - (γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v := by
+    rw [Complex.star_def]
+    ring
+  have h_im : |(((t - t₀ : ℝ) • L) * starRingEnd ℂ v).im| ≤
+      |((γ t - γ t₀) * star v).im| + ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖ := by
+    rw [h_split, Complex.sub_im]
+    refine (abs_sub _ _).trans ?_
+    gcongr
+    calc |((γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v).im|
+        ≤ ‖(γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v‖ :=
+          Complex.abs_im_le_norm _
+      _ = ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖ := by
+          rw [norm_mul, RCLike.norm_conj]
+  have hc_mul : c * ‖v‖ = |(L * starRingEnd ℂ v).im| := by
+    rw [hc_def]
+    field_simp
+  have h_lhs : |(((t - t₀ : ℝ) • L) * starRingEnd ℂ v).im| = (t - t₀) * (c * ‖v‖) := by
+    rw [Complex.real_smul, mul_assoc]
+    simp only [Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero]
+    rw [abs_mul, abs_of_pos ht', hc_mul, Complex.mul_im]
+  rw [h_lhs] at h_im
+  calc c * (t - t₀) = (t - t₀) * (c * ‖v‖) / ‖v‖ := by field_simp
+    _ ≤ (|((γ t - γ t₀) * star v).im| +
+        ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖) / ‖v‖ := by gcongr
+    _ = |((γ t - γ t₀) * star v).im| / ‖v‖ +
+        ‖γ t - γ t₀ - (t - t₀) • L‖ := by
+        rw [add_div, mul_div_assoc, div_self hv_pos.ne', mul_one]
+
+/-- The ε-crux of the forcing argument: from the flatness deviation being `o(‖γ t - γ t₀‖ ^ n)`
+and a right derivative `L`, the normalized tangent value `|Im(L * conj v)| / ‖v‖` is below every
+positive `ε`; combined with nonnegativity this forces it to `0`. -/
+private theorem abs_im_mul_conj_div_le_of_isLittleO {γ : ℝ → ℂ} {t₀ : ℝ} {v L : ℂ} {n : ℕ}
+    (hv : v ≠ 0) (hn : 1 ≤ n)
+    (h_dev : (fun t => |((γ t - γ t₀) * star v).im| / ‖v‖) =o[𝓝[>] t₀]
+      fun t => ‖γ t - γ t₀‖ ^ n)
+    (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) {ε : ℝ} (hε : 0 < ε) :
+    |(L * starRingEnd ℂ v).im| / ‖v‖ ≤ ε := by
+  set c : ℝ := |(L * starRingEnd ℂ v).im| / ‖v‖ with hc_def
+  have herr : (fun t => γ t - γ t₀ - (t - t₀) • L) =o[𝓝[>] t₀] (fun t => t - t₀) :=
+    hasDerivWithinAt_iff_isLittleO.mp h_deriv
+  have h_pow := eventually_norm_sub_pow_le_of_hasDerivWithinAt hn h_deriv
+  set ε' : ℝ := ε / (2 * (‖L‖ + 1) ^ n) with hε'_def
+  have hε' : 0 < ε' := by positivity
+  have h_dev_bound := (isLittleO_iff.mp h_dev) hε'
+  have h_err_bound := (isLittleO_iff.mp herr) (c := ε / 2) (by positivity)
+  have h_all : ∀ᶠ t in 𝓝[>] t₀, c * (t - t₀) ≤ ε * (t - t₀) := by
+    filter_upwards [h_dev_bound, h_err_bound, h_pow, self_mem_nhdsWithin] with t hd he hp ht
+    have ht' : 0 < t - t₀ := sub_pos.mpr ht
+    have h_tri := abs_im_mul_conj_div_mul_le_of_sub_smul (γ := γ) (L := L) hv ht'
+    rw [Real.norm_eq_abs, abs_of_pos ht'] at he
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)] at hd
+    have hd' : |((γ t - γ t₀) * star v).im| / ‖v‖ ≤ ε' * ((‖L‖ + 1) ^ n * (t - t₀)) := by
+      calc |((γ t - γ t₀) * star v).im| / ‖v‖ ≤ ε' * ‖γ t - γ t₀‖ ^ n := by
+            simpa [Real.norm_eq_abs, abs_of_nonneg (pow_nonneg (norm_nonneg _) n)] using hd
+        _ ≤ ε' * ((‖L‖ + 1) ^ n * (t - t₀)) := by gcongr
+    have hε'_eq : ε' * (‖L‖ + 1) ^ n = ε / 2 := by
+      rw [hε'_def]
+      field_simp
+    calc c * (t - t₀) ≤ |((γ t - γ t₀) * star v).im| / ‖v‖ +
+          ‖γ t - γ t₀ - (t - t₀) • L‖ := h_tri
+      _ ≤ ε' * ((‖L‖ + 1) ^ n * (t - t₀)) + ε / 2 * (t - t₀) := by
+          gcongr
+      _ = ε * (t - t₀) := by rw [← mul_assoc, hε'_eq]; ring
+  obtain ⟨t, hct, ht⟩ := (h_all.and self_mem_nhdsWithin).exists
+  exact le_of_mul_le_mul_right hct (sub_pos.mpr ht)
+
 /-- The forcing core (right side): a flatness deviation bound of order `n ≥ 1` against `v ≠ 0`,
 together with a right derivative `L`, forces `Im(L · conj v) = 0` — the flatness direction and
 the tangent are colinear. -/
@@ -55,91 +161,8 @@ private theorem im_mul_conj_eq_zero_of_flat_right {γ : ℝ → ℂ} {t₀ : ℝ
   have hv_pos : 0 < ‖v‖ := norm_pos_iff.mpr hv
   set c : ℝ := |(L * starRingEnd ℂ v).im| / ‖v‖ with hc_def
   have hc_nonneg : 0 ≤ c := by positivity
-  -- it suffices that c ≤ ε for every ε > 0
-  have hc_le : ∀ ε : ℝ, 0 < ε → c ≤ ε := by
-    intro ε hε
-    have herr : (fun t => γ t - γ t₀ - (t - t₀) • L) =o[𝓝[>] t₀] (fun t => t - t₀) :=
-      hasDerivWithinAt_iff_isLittleO.mp h_deriv
-    -- ‖γ t - γ t₀‖ ≤ (‖L‖ + 1) * (t - t₀) eventually
-    have h_growth : ∀ᶠ t in 𝓝[>] t₀, ‖γ t - γ t₀‖ ≤ (‖L‖ + 1) * (t - t₀) := by
-      filter_upwards [herr.bound one_pos, self_mem_nhdsWithin] with t hb ht
-      have ht' : 0 < t - t₀ := sub_pos.mpr ht
-      have h1 : ‖γ t - γ t₀‖ ≤ ‖(t - t₀) • L‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := by
-        simpa using norm_add_le ((t - t₀) • L) (γ t - γ t₀ - (t - t₀) • L)
-      rw [norm_smul, Real.norm_eq_abs, abs_of_pos ht'] at h1
-      rw [Real.norm_eq_abs, abs_of_pos ht'] at hb
-      calc ‖γ t - γ t₀‖ ≤ (t - t₀) * ‖L‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := h1
-        _ ≤ (t - t₀) * ‖L‖ + 1 * (t - t₀) := by linarith
-        _ = (‖L‖ + 1) * (t - t₀) := by ring
-    -- ‖γ t - γ t₀‖ ^ n ≤ C * (t - t₀) eventually, C := (‖L‖ + 1) ^ n
-    have h_pow : ∀ᶠ t in 𝓝[>] t₀, ‖γ t - γ t₀‖ ^ n ≤ (‖L‖ + 1) ^ n * (t - t₀) := by
-      have h_small : ∀ᶠ t in 𝓝[>] t₀, t - t₀ ≤ 1 := by
-        filter_upwards [eventually_nhdsWithin_of_eventually_nhds
-          (eventually_le_nhds (by linarith : t₀ < t₀ + 1))] with t ht
-        linarith
-      filter_upwards [h_growth, h_small, self_mem_nhdsWithin] with t hg hs ht
-      have ht' : 0 < t - t₀ := sub_pos.mpr ht
-      calc ‖γ t - γ t₀‖ ^ n ≤ ((‖L‖ + 1) * (t - t₀)) ^ n := by gcongr
-        _ = (‖L‖ + 1) ^ n * (t - t₀) ^ n := by rw [mul_pow]
-        _ ≤ (‖L‖ + 1) ^ n * (t - t₀) := by
-            gcongr
-            exact pow_le_of_le_one ht'.le hs (by omega : n ≠ 0)
-    -- combine: c * (t - t₀) ≤ dev + ‖err‖ ≤ small * (t - t₀) eventually
-    set ε' : ℝ := ε / (2 * (‖L‖ + 1) ^ n) with hε'_def
-    have hε' : 0 < ε' := by positivity
-    have h_dev_bound := (isLittleO_iff.mp h_dev) hε'
-    have h_err_bound := (isLittleO_iff.mp herr) (c := ε / 2) (by positivity)
-    have h_all : ∀ᶠ t in 𝓝[>] t₀, c * (t - t₀) ≤ ε * (t - t₀) := by
-      filter_upwards [h_dev_bound, h_err_bound, h_pow, self_mem_nhdsWithin]
-        with t hd he hp ht
-      have ht' : 0 < t - t₀ := sub_pos.mpr ht
-      -- seminorm triangle: |Im((t-t₀)L · conj v)| ≤ |Im((γΔ)conj v)| + ‖err‖·‖v‖
-      have h_tri : c * (t - t₀) ≤
-          |((γ t - γ t₀) * star v).im| / ‖v‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := by
-        have h_split : ((t - t₀ : ℝ) • L) * starRingEnd ℂ v =
-            (γ t - γ t₀) * star v - (γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v := by
-          rw [Complex.star_def]
-          ring
-        have h_im : |(((t - t₀ : ℝ) • L) * starRingEnd ℂ v).im| ≤
-            |((γ t - γ t₀) * star v).im| + ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖ := by
-          rw [h_split, Complex.sub_im]
-          refine (abs_sub _ _).trans ?_
-          gcongr
-          calc |((γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v).im|
-              ≤ ‖(γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v‖ :=
-                Complex.abs_im_le_norm _
-            _ = ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖ := by
-                rw [norm_mul, RCLike.norm_conj]
-        have hc_mul : c * ‖v‖ = |(L * starRingEnd ℂ v).im| := by
-          rw [hc_def]
-          field_simp
-        have h_lhs : |(((t - t₀ : ℝ) • L) * starRingEnd ℂ v).im| = (t - t₀) * (c * ‖v‖) := by
-          rw [Complex.real_smul, mul_assoc]
-          simp only [Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero]
-          rw [abs_mul, abs_of_pos ht', hc_mul, Complex.mul_im]
-        rw [h_lhs] at h_im
-        calc c * (t - t₀) = (t - t₀) * (c * ‖v‖) / ‖v‖ := by field_simp
-          _ ≤ (|((γ t - γ t₀) * star v).im| +
-              ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖) / ‖v‖ := by gcongr
-          _ = |((γ t - γ t₀) * star v).im| / ‖v‖ +
-              ‖γ t - γ t₀ - (t - t₀) • L‖ := by
-              rw [add_div, mul_div_assoc, div_self hv_pos.ne', mul_one]
-      rw [Real.norm_eq_abs, abs_of_pos ht'] at he
-      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)] at hd
-      have hd' : |((γ t - γ t₀) * star v).im| / ‖v‖ ≤ ε' * ((‖L‖ + 1) ^ n * (t - t₀)) := by
-        calc |((γ t - γ t₀) * star v).im| / ‖v‖ ≤ ε' * ‖γ t - γ t₀‖ ^ n := by
-              simpa [Real.norm_eq_abs, abs_of_nonneg (pow_nonneg (norm_nonneg _) n)] using hd
-          _ ≤ ε' * ((‖L‖ + 1) ^ n * (t - t₀)) := by gcongr
-      have hε'_eq : ε' * (‖L‖ + 1) ^ n = ε / 2 := by
-        rw [hε'_def]
-        field_simp
-      calc c * (t - t₀) ≤ |((γ t - γ t₀) * star v).im| / ‖v‖ +
-            ‖γ t - γ t₀ - (t - t₀) • L‖ := h_tri
-        _ ≤ ε' * ((‖L‖ + 1) ^ n * (t - t₀)) + ε / 2 * (t - t₀) := by
-            gcongr
-        _ = ε * (t - t₀) := by rw [← mul_assoc, hε'_eq]; ring
-    obtain ⟨t, hct, ht⟩ := (h_all.and self_mem_nhdsWithin).exists
-    exact le_of_mul_le_mul_right hct (sub_pos.mpr ht)
+  have hc_le : ∀ ε : ℝ, 0 < ε → c ≤ ε :=
+    fun ε hε => abs_im_mul_conj_div_le_of_isLittleO hv hn h_dev h_deriv hε
   rcases eq_or_lt_of_le hc_nonneg with h0 | hpos
   · have h' : |(L * starRingEnd ℂ v).im| / ‖v‖ = 0 := by rw [← hc_def, ← h0]
     exact abs_eq_zero.mp ((div_eq_zero_iff.mp h').resolve_right hv_pos.ne')
