@@ -1,0 +1,284 @@
+name: pr-profile
+
+# Advisory heartbeat profile for a PR's TauCeti/ changes. Posts (and updates) a
+# sticky PR comment; it NEVER blocks merge and posts no commit status. The
+# metric is Mathlib's `countHeartbeats` linter (in `maxHeartbeats` units),
+# which is deterministic and machine-independent, so a base -> head comparison
+# is meaningful. New files get an absolute count; modified files get a
+# base -> head comparison and are flagged when a refactor makes a file at least
+# 1.5x more expensive to elaborate (see scripts/profile/render.py).
+#
+# Trust model mirrors pr-build.yml: this is a base-branch-defined workflow
+# (pull_request_target / issue_comment / workflow_dispatch all take the base
+# definition), it overlays ONLY the PR's TauCeti/ sources onto a trusted base
+# checkout, and it elaborates that untrusted code solely under landrun (offline,
+# no secrets or token in reach). The GITHUB_TOKEN is never passed into the
+# sandbox; the sticky comment is posted by the trusted step AFTER the sandbox
+# has exited, reading only the rendered Markdown the sandbox left behind. The
+# measurement and render scripts come from the trusted base (scripts/ is never
+# overlaid from the PR), so a PR cannot alter how it is measured.
+#
+# Cost control: to avoid re-profiling on every push, this runs on PR open, on a
+# `/profile` comment from the PR author or a collaborator, and on manual
+# dispatch. It builds only the changed modules and their dependency cones, not
+# the whole library.
+
+on:
+  pull_request_target:
+    types: [opened]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr: { description: "PR number to profile", required: true, type: string }
+
+permissions:
+  contents: read
+  pull-requests: write
+
+# Route non-`/profile` comment events (e.g. `/review`) into a unique per-run
+# group so they cannot cancel an in-flight profile before the job `if` below
+# short-circuits them; real triggers share the per-PR group.
+concurrency:
+  group: >-
+    ${{
+      (github.event_name == 'pull_request_target' ||
+       github.event_name == 'workflow_dispatch' ||
+       (github.event_name == 'issue_comment' &&
+        startsWith(github.event.comment.body, '/profile')))
+      && format('pr-profile-{0}',
+           github.event.pull_request.number ||
+           github.event.issue.number ||
+           inputs.pr)
+      || format('pr-profile-noop-{0}', github.run_id)
+    }}
+  cancel-in-progress: true
+
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    # Fresh PR or manual dispatch: always. Comment: only `/profile` on a PR from
+    # the PR author or someone with write access — the same code-execution
+    # surface as the auto-profile on `opened`, just re-triggered by a trusted
+    # user, so it adds no new trust.
+    if: >-
+      github.event_name == 'pull_request_target' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request != null &&
+       startsWith(github.event.comment.body, '/profile') &&
+       (github.event.comment.user.login == github.event.issue.user.login ||
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)))
+    env:
+      LANDRUN_SHA256: 645178e3239cd33760560834e50efea0864183a2a8a82faf199760dffee6dd71
+      LANDRUN_VER: v0.1.14
+    steps:
+      # --- Trusted setup: no PR code runs until the landrun measurement phase.
+      - name: Resolve PR head and base
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          case "${{ github.event_name }}" in
+            pull_request_target)
+              NUM='${{ github.event.pull_request.number }}'
+              SHA='${{ github.event.pull_request.head.sha }}'
+              HEAD_REPO='${{ github.event.pull_request.head.repo.full_name }}'
+              BASE_REF='${{ github.event.pull_request.base.ref }}'
+              ;;
+            issue_comment)  NUM='${{ github.event.issue.number }}' ;;
+            workflow_dispatch) NUM='${{ inputs.pr }}' ;;
+          esac
+          if [ "${{ github.event_name }}" != "pull_request_target" ]; then
+            read -r SHA HEAD_REPO BASE_REF < <(gh api "repos/$REPO/pulls/$NUM" \
+              --jq '"\(.head.sha) \(.head.repo.full_name) \(.base.ref)"')
+          fi
+          {
+            echo "num=$NUM"
+            echo "sha=$SHA"
+            echo "head_repo=$HEAD_REPO"
+            echo "base_ref=$BASE_REF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Profiling PR #$NUM @ $SHA from $HEAD_REPO (base $BASE_REF)"
+
+      - name: List added and modified TauCeti/ Lean files (trusted GitHub file list)
+        id: files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUM: ${{ steps.pr.outputs.num }}
+        run: |
+          set -euo pipefail
+          # From the trusted API file list, keep only .lean files under TauCeti/
+          # (plus the root TauCeti.lean). `added`/`copied` count as new; anything
+          # else that still exists at base counts as modified. Paths outside
+          # TauCeti/ are ignored here: only TauCeti/ is overlaid and profiled.
+          json=$(gh api --paginate "repos/$REPO/pulls/$NUM/files" \
+            --jq '.[] | select((.filename | endswith(".lean")) and
+                               ((.filename | startswith("TauCeti/")) or .filename == "TauCeti.lean"))
+                      | "\(.status)\t\(.filename)"')
+          added=$(printf '%s\n' "$json" | awk -F'\t' '$1=="added" || $1=="copied" {print $2}' | tr '\n' ' ')
+          modified=$(printf '%s\n' "$json" | awk -F'\t' '$1=="modified" || $1=="renamed" || $1=="changed" {print $2}' | tr '\n' ' ')
+          echo "added=$added" >> "$GITHUB_OUTPUT"
+          echo "modified=$modified" >> "$GITHUB_OUTPUT"
+          if [ -z "${added// }" ] && [ -z "${modified// }" ]; then
+            echo "none=1" >> "$GITHUB_OUTPUT"
+            echo "No TauCeti/ Lean files changed; nothing to profile."
+          else
+            echo "added: $added"
+            echo "modified: $modified"
+          fi
+
+      - name: Checkout base (trusted)
+        if: ${{ steps.files.outputs.none != '1' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.base_ref }}
+          path: base
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Checkout PR head (untrusted, no credentials)
+        if: ${{ steps.files.outputs.none != '1' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr.outputs.head_repo }}
+          ref: ${{ steps.pr.outputs.sha }}
+          path: pr
+          persist-credentials: false
+
+      - name: Overlay PR TauCeti/ and root TauCeti.lean onto the trusted base (reject symlinks)
+        if: ${{ steps.files.outputs.none != '1' }}
+        run: |
+          set -euo pipefail
+          if find pr/TauCeti -type l -print | grep -q .; then
+            echo "::error::symlinks are not allowed under TauCeti/"; exit 1
+          fi
+          test -d pr/TauCeti && test ! -L pr/TauCeti
+          rm -rf base/TauCeti
+          cp -a pr/TauCeti base/TauCeti
+          if [ -e pr/TauCeti.lean ]; then
+            test ! -L pr/TauCeti.lean || { echo "::error::TauCeti.lean must not be a symlink"; exit 1; }
+            cp -a pr/TauCeti.lean base/TauCeti.lean
+          fi
+
+      # Prepare the measurement inputs OUTSIDE the sandbox (no Lean runs here):
+      # the head source is the overlaid working-tree file; the base source comes
+      # from `git show` of the base tip. Both are written under base/.lake (the
+      # sandbox's only writable mount) so the landrun measurement can read them.
+      - name: Prepare measurement sources
+        id: prep
+        if: ${{ steps.files.outputs.none != '1' }}
+        env:
+          ADDED: ${{ steps.files.outputs.added }}
+          MODIFIED: ${{ steps.files.outputs.modified }}
+        run: |
+          set -euo pipefail
+          PREP="$PWD/base/.lake/tmp/profile"
+          rm -rf "$PREP"
+          mkdir -p "$PREP/src/added" "$PREP/src/base" "$PREP/src/head"
+          : > "$PREP/manifest.tsv"
+          modules=""
+          i=0
+          for path in $ADDED; do
+            slug=$(printf 'a%03d' "$i"); i=$((i + 1))
+            cp "base/$path" "$PREP/src/added/$slug.lean"
+            printf 'added\t%s\t%s\n' "$slug" "$path" >> "$PREP/manifest.tsv"
+            modules="$modules $(printf '%s' "$path" | sed -e 's/\.lean$//' -e 's#/#.#g')"
+          done
+          j=0
+          for path in $MODIFIED; do
+            slug=$(printf 'm%03d' "$j"); j=$((j + 1))
+            cp "base/$path" "$PREP/src/head/$slug.lean"
+            # base source; if it does not exist at base (should not for a
+            # modified file) the comparison for it is simply skipped.
+            git -C base show "HEAD:$path" > "$PREP/src/base/$slug.lean" 2>/dev/null \
+              || rm -f "$PREP/src/base/$slug.lean"
+            printf 'modified\t%s\t%s\n' "$slug" "$path" >> "$PREP/manifest.tsv"
+            modules="$modules $(printf '%s' "$path" | sed -e 's/\.lean$//' -e 's#/#.#g')"
+          done
+          echo "modules=${modules# }" >> "$GITHUB_OUTPUT"
+          echo "Prepared $(grep -c . "$PREP/manifest.tsv") file(s); build targets:${modules}"
+
+      - name: Install elan (trusted)
+        if: ${{ steps.files.outputs.none != '1' }}
+        run: |
+          curl -sSfL https://elan.lean-lang.org/elan-init.sh -o elan-init.sh
+          chmod +x elan-init.sh && ./elan-init.sh -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Install landrun (pinned + checksum) and self-test (fail closed)
+        if: ${{ steps.files.outputs.none != '1' }}
+        run: |
+          set -euo pipefail
+          curl -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/Zouuup/landrun/releases/download/${LANDRUN_VER}/landrun-linux-amd64" -o landrun
+          echo "${LANDRUN_SHA256}  landrun" | sha256sum -c -
+          mkdir -p "$HOME/.local/bin"; install -m 0755 landrun "$HOME/.local/bin/landrun"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.local/bin:$PATH"
+          landrun --version || true
+          set +e
+          landrun --rox /usr --rox /etc --rw /dev/null -- bash -c 'echo ok' >/dev/null 2>&1; ok=$?
+          landrun --rox /usr --rox /etc --rw /dev/null -- bash -c 'echo x > /etc/landrun-probe' >/dev/null 2>&1; wr=$?
+          landrun --rox /usr --rox /etc --rw /dev/null -- bash -c 'echo x > /dev/shm/landrun-probe' >/dev/null 2>&1; shm=$?
+          landrun --rox /usr --rox /etc --rw /dev/null -- bash -c 'curl -sS --max-time 8 https://example.com >/dev/null' >/dev/null 2>&1; net=$?
+          set -e
+          echo "self-test: run=$ok write=$wr shm=$shm net=$net (nonzero = denied for w/shm/net)"
+          if [ $ok -ne 0 ] || [ $wr -eq 0 ] || [ $shm -eq 0 ] || [ $net -eq 0 ]; then
+            echo "::error::landrun not enforcing (run=$ok write=$wr shm=$shm net=$net); refusing to run PR code"; exit 1
+          fi
+
+      - name: Fetch Mathlib oleans (network, no token; no PR code)
+        if: ${{ steps.files.outputs.none != '1' }}
+        run: ( cd base && lake exe cache get ) && mkdir -p base/.lake/tmp
+
+      # Build the changed modules (their dependency cones) and measure every
+      # prepared source, entirely under landrun: offline, writes confined to
+      # base/.lake, and with no token in the passed --env list. This is the only
+      # phase that runs the PR's Lean code. Building is tolerant (|| true) so a
+      # file that fails to compile still yields a profile for the rest; the
+      # per-file measurement (scripts/profile/measure.sh) is tolerant too.
+      - name: Build changed modules and measure heartbeats (landrun, offline)
+        if: ${{ steps.files.outputs.none != '1' }}
+        env:
+          LAKE_NO_CACHE: "true"
+          MODULES: ${{ steps.prep.outputs.modules }}
+        run: |
+          export PATH="$HOME/.local/bin:$HOME/.elan/bin:$PATH"
+          landrun --rox /usr --rox /etc \
+            --rw /dev/null --rox /dev/zero --rox /dev/urandom --rox /dev/random \
+            --rox "$HOME/.elan" --rox "$PWD/base" --rw "$PWD/base/.lake" \
+            --env PATH --env HOME --env CI --env LAKE_NO_CACHE --env MODULES \
+            -- bash -euxo pipefail -c 'cd base && lake build $MODULES || true; exec bash scripts/profile/measure.sh .lake/tmp/profile'
+
+      - name: Render the profile comment (trusted; sandbox has exited)
+        id: render
+        if: ${{ steps.files.outputs.none != '1' }}
+        env:
+          PREP: ${{ github.workspace }}/base/.lake/tmp/profile
+          OUTPUT: ${{ github.workspace }}/profile.md
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python3 base/scripts/profile/render.py
+
+      - name: Post or update the sticky profile comment
+        if: ${{ steps.files.outputs.none != '1' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUM: ${{ steps.pr.outputs.num }}
+        run: |
+          set -euo pipefail
+          marker="<!-- proof-profile-comment -->"
+          existing=$(gh api "repos/$REPO/issues/$NUM/comments" --paginate \
+            --jq "[.[] | select(.body | startswith(\"$marker\"))] | first | .id // empty")
+          if [ -n "$existing" ]; then
+            jq -n --rawfile body profile.md '{body: $body}' \
+              | gh api -X PATCH "repos/$REPO/issues/comments/$existing" --input -
+            echo "Updated comment $existing on PR #$NUM."
+          else
+            gh pr comment "$NUM" --repo "$REPO" --body-file profile.md
+            echo "Posted profile comment on PR #$NUM."
+          fi
