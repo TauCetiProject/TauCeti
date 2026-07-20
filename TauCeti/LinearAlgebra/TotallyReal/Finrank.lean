@@ -100,12 +100,6 @@ theorem IsTotallyReal.isMaximalTotallyReal_iff_two_mul_finrank_eq (hL : IsTotall
     IsMaximalTotallyReal J L ↔ 2 * finrank R L = finrank R E :=
   ⟨fun h => h.two_mul_finrank_eq hJ, fun h => hL.isMaximalTotallyReal hJ h⟩
 
-/-- A totally real subspace of an odd-dimensional space is never maximal totally real; indeed
-no maximal totally real subspace exists there. -/
-theorem not_isMaximalTotallyReal_of_odd_finrank (hJ : Function.Injective J)
-    (h : Odd (finrank R E)) : ¬ IsMaximalTotallyReal J L :=
-  fun hL => (Nat.not_odd_iff_even.2 (hL.even_finrank hJ)) h
-
 end DivisionRing
 
 end TauCeti
