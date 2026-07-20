@@ -13,8 +13,9 @@ public import TauCeti.LinearAlgebra.TotallyReal.Finrank
 # Lagrangian subspaces of a tame pair are maximal totally real
 
 The analytic Heegaard Floer roadmap keeps *totally real* and *Lagrangian* as separate named
-hypotheses (a totally real subspace `L` is one complementary to its `J`-image, `V = L ⊕ JL`; a
-Lagrangian subspace is one equal to its symplectic complement, `L^ω = L`), because the two play
+hypotheses (a totally real subspace `L` is one disjoint from its `J`-image, `L ⊓ JL = ⊥`, and a
+maximal totally real one is moreover complementary, `V = L ⊕ JL`; a Lagrangian subspace is one
+equal to its symplectic complement, `L^ω = L`), because the two play
 different roles downstream: totally real boundary conditions for the Cauchy--Riemann operator and
 the tori `T_α`, `T_β` in `Sym^g(Σ)` (Lane F4), Lagrangian boundary conditions for exact Lagrangian
 Floer homology (Lane F3). They are nevertheless tightly linked: on a finite-dimensional space, as

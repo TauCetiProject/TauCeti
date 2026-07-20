@@ -44,21 +44,6 @@ open Module
 
 variable {R E : Type*}
 
-namespace Submodule
-
-variable [DivisionRing R] [AddCommGroup E] [Module R E]
-
-/-- An injective endomorphism preserves the dimension of a submodule.
-
-This is a local helper for the finrank statements below; it is `private` because it is a thin
-wrapper around `Submodule.equivMapOfInjective` and not part of the totally real subspace API
-surface. -/
-private theorem finrank_map_of_injective {J : E →ₗ[R] E} (hJ : Function.Injective J)
-    (L : Submodule R E) : finrank R (L.map J) = finrank R L :=
-  ((Submodule.equivMapOfInjective J hJ L).finrank_eq).symm
-
-end Submodule
-
 section DivisionRing
 
 variable [DivisionRing R] [AddCommGroup E] [Module R E] [FiniteDimensional R E]
@@ -69,12 +54,8 @@ namespace IsTotallyReal
 /-- A totally real subspace has at most half the dimension of the ambient space. -/
 theorem two_mul_finrank_le (hL : IsTotallyReal J L) (hJ : Function.Injective J) :
     2 * finrank R L ≤ finrank R E := by
-  have hsum : finrank R (L ⊔ L.map J : Submodule R E) + finrank R (L ⊓ L.map J : Submodule R E)
-      = finrank R L + finrank R (L.map J) :=
-    Submodule.finrank_sup_add_finrank_inf_eq L (L.map J)
-  rw [hL.inf_eq_bot, finrank_bot, add_zero, Submodule.finrank_map_of_injective hJ] at hsum
-  have hle : finrank R (L ⊔ L.map J : Submodule R E) ≤ finrank R E :=
-    Submodule.finrank_le _
+  have h := Submodule.finrank_add_finrank_le_of_disjoint hL.disjoint
+  rw [((Submodule.equivMapOfInjective J hJ L).finrank_eq).symm] at h
   omega
 
 /-- A totally real subspace of exactly half the ambient dimension is maximal totally real: the
@@ -83,7 +64,7 @@ theorem isMaximalTotallyReal (hL : IsTotallyReal J L) (hJ : Function.Injective J
     (hdim : 2 * finrank R L = finrank R E) : IsMaximalTotallyReal J L := by
   rw [isMaximalTotallyReal_iff]
   refine (Submodule.isCompl_iff_disjoint L (L.map J) ?_).2 hL.disjoint
-  rw [Submodule.finrank_map_of_injective hJ]
+  rw [((Submodule.equivMapOfInjective J hJ L).finrank_eq).symm]
   omega
 
 end IsTotallyReal
@@ -95,7 +76,7 @@ theorem two_mul_finrank_eq (hL : IsMaximalTotallyReal J L) (hJ : Function.Inject
     2 * finrank R L = finrank R E := by
   have h : finrank R L + finrank R (L.map J) = finrank R E :=
     Submodule.finrank_add_eq_of_isCompl hL.isCompl
-  rw [Submodule.finrank_map_of_injective hJ] at h
+  rw [((Submodule.equivMapOfInjective J hJ L).finrank_eq).symm] at h
   omega
 
 /-- The ambient space of a maximal totally real subspace is even-dimensional. -/
