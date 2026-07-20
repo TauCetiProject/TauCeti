@@ -19,8 +19,10 @@ It is the extensionality step shared by the multiquadratic Layer 1 arguments: th
 law shows a decomposition-group element fixes every generator `√dᵢ` and concludes it is
 trivial, and the Frobenius computation concludes the same when every Legendre symbol is `1`.
 
-## Main result
+## Main results
 
+* `TauCeti.IntermediateField.algEquiv_ext_of_adjoin_eq_top`: two automorphisms agreeing on a
+  generating set are equal.
 * `TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top`: an automorphism fixing each
   element of a generating set is `1`.
 -/
@@ -29,20 +31,29 @@ public section
 
 namespace TauCeti.IntermediateField
 
-/-- An `F`-algebra automorphism of `E` that fixes every element of a set generating `E` over
-`F` is the identity. -/
-theorem algEquiv_eq_one_of_adjoin_eq_top {F E : Type*} [Field F] [Field E] [Algebra F E]
-    {s : Set E} (htop : IntermediateField.adjoin F s = ⊤)
-    {σ : E ≃ₐ[F] E} (hfix : ∀ x ∈ s, σ x = x) : σ = 1 := by
+variable {F E : Type*} [Field F] [Field E] [Algebra F E] {s : Set E}
+
+/-- **Two automorphisms agreeing on a generating set are equal.** If `s` generates `E` over `F`
+(`IntermediateField.adjoin F s = ⊤`) and `σ, τ` agree on every element of `s`, then `σ = τ`.
+This is the whole-field, two-map counterpart of Mathlib's
+`IntermediateField.algHom_ext_of_eq_adjoin`. -/
+theorem algEquiv_ext_of_adjoin_eq_top (htop : IntermediateField.adjoin F s = ⊤)
+    {σ τ : E ≃ₐ[F] E} (h : ∀ x ∈ s, σ x = τ x) : σ = τ := by
   refine AlgEquiv.ext fun y => ?_
-  rw [AlgEquiv.one_apply]
   have hy : y ∈ (⊤ : IntermediateField F E) := IntermediateField.mem_top
   rw [← htop] at hy
   induction hy using IntermediateField.adjoin_induction with
-  | mem z hz => exact hfix z hz
-  | algebraMap q => exact σ.commutes q
-  | add a b _ _ ha hb => rw [map_add, ha, hb]
-  | inv a _ ha => rw [map_inv₀, ha]
-  | mul a b _ _ ha hb => rw [map_mul, ha, hb]
+  | mem z hz => exact h z hz
+  | algebraMap q => rw [AlgEquiv.commutes, AlgEquiv.commutes]
+  | add a b _ _ ha hb => rw [map_add, map_add, ha, hb]
+  | inv a _ ha => rw [map_inv₀, map_inv₀, ha]
+  | mul a b _ _ ha hb => rw [map_mul, map_mul, ha, hb]
+
+/-- An `F`-algebra automorphism of `E` that fixes every element of a set generating `E` over
+`F` is the identity. This is `TauCeti.IntermediateField.algEquiv_ext_of_adjoin_eq_top` against
+the identity. -/
+theorem algEquiv_eq_one_of_adjoin_eq_top (htop : IntermediateField.adjoin F s = ⊤)
+    {σ : E ≃ₐ[F] E} (hfix : ∀ x ∈ s, σ x = x) : σ = 1 :=
+  algEquiv_ext_of_adjoin_eq_top htop (σ := σ) (τ := 1) (by simpa using hfix)
 
 end TauCeti.IntermediateField

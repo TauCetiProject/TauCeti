@@ -23,14 +23,14 @@ file supplies the second, finer form. An arithmetic Frobenius exists at every pr
 
 `σ (r i) = legendreSym p (d i) • r i`
 
-(`TauCeti.NumberField.exists_isArithFrobAt_multiquadratic`, combining the existence and
-square-root lemmas of `TauCeti.NumberTheory.NumberField.Frobenius`), and the Frobenius is
-trivial iff every symbol is `1` (`isArithFrobAt_multiquadratic_eq_one_iff`). Because an
-automorphism of a multiquadratic field is determined by its signs on the generators
-(`TauCeti.Multiquadratic.signPattern_injective`), these generator-wise signs determine the
-Frobenius completely; the resulting sign-vector description under the identification
-`Gal(K/ℚ) ≅ (ℤ/2)ⁿ` of `TauCeti.Multiquadratic.galoisGroupEquiv` follows by combining the two,
-which this file does not carry out.
+(`TauCeti.NumberField.exists_isArithFrobAt_multiquadratic`), and the Frobenius is trivial iff
+every symbol is `1` (`isArithFrobAt_multiquadratic_eq_one_iff`). The resulting sign-vector
+description under the identification `Gal(K/ℚ) ≅ (ℤ/2)ⁿ` of
+`TauCeti.Multiquadratic.galoisGroupEquiv` is then a composition, not a further theorem: feeding
+the generator action `σ (r i) = legendreSym p (d i) • r i` into the bridge
+`TauCeti.Multiquadratic.signPattern_eq_ite_of_zsmul_gen` gives
+`signPattern root σ i = if legendreSym p (d i) = 1 then 0 else 1`, which `galoisGroupEquiv_apply`
+packages as the vector `((d₁/p), …, (dₙ/p))`.
 
 ## Main results
 
@@ -66,47 +66,28 @@ theorem isArithFrobAt_multiquadratic_eq_one_iff (d : ι → ℤ) (r : ι → K)
     σ = 1 ↔ ∀ i, legendreSym p (d i) = 1 := by
   constructor
   · rintro rfl i
-    -- The identity fixes `r i`, so the symbol cannot be `-1`: that would force `r i = -r i`.
-    have hfix : r i = legendreSym p (d i) • r i := by
-      simpa using isArithFrobAt_apply_sqrt hodd (hcop i) (hr i) Q hσ
-    have hdne : d i ≠ 0 := by
-      intro h0
-      exact hcop i (by simp [h0])
-    rcases legendreSym.eq_one_or_neg_one p (a := d i) (by
-        rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hcop i) with h1 | h1
-    · exact h1
-    · exfalso
-      rw [h1, neg_smul, one_smul] at hfix
-      exact TauCeti.Multiquadratic.ne_neg_of_sq_eq_algebraMap
-        (show r i ^ 2 = algebraMap ℚ K ((d i : ℚ)) by rw [hr i]; simp)
-        (by exact_mod_cast hdne) hfix
+    exact (isArithFrobAt_apply_sqrt_eq_self_iff hodd (hcop i) (hr i) Q hσ).mp
+      (AlgEquiv.one_apply (r i))
   · intro hqr
-    -- `σ` fixes each generator, and the generators generate `K` over `ℚ`.
     refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_
     rintro x ⟨i, rfl⟩
-    rw [isArithFrobAt_apply_sqrt hodd (hcop i) (hr i) Q hσ, hqr i, one_smul]
+    exact (isArithFrobAt_apply_sqrt_eq_self_iff hodd (hcop i) (hr i) Q hσ).mpr (hqr i)
 
-/-- **The Frobenius of a multiquadratic field acts by the Legendre sign pattern.** For
-`K = ℚ(√d₁, …, √dₙ)` generated over `ℚ` by the square roots `r i` of the integers `d i`, an
-odd prime `p` with `p ∤ d i` for all `i`, and any prime `Q` of `𝓞 K` above `p`, there is an
-arithmetic Frobenius `σ ∈ Gal(K/ℚ)` at `Q`, and it sends each generator to the corresponding
-Legendre multiple: `σ (r i) = legendreSym p (d i) • r i`. This is the roadmap's Frobenius form
-of the multiquadratic splitting law, generator by generator. -/
-theorem exists_isArithFrobAt_multiquadratic [Finite ι] (d : ι → ℤ) (r : ι → K)
+/-- **The Frobenius of a multiquadratic field acts on each generator by a Legendre symbol.**
+For a Galois number field `K` with elements `r i` satisfying `r i ² = d i ∈ ℤ`, an odd prime
+`p` with `p ∤ d i` for all `i`, and any prime `Q` of `𝓞 K` above `p`, there is an arithmetic
+Frobenius `σ ∈ Gal(K/ℚ)` at `Q`, and it sends each generator to the corresponding Legendre
+multiple: `σ (r i) = legendreSym p (d i) • r i`. This is the generator-wise Frobenius input of
+the multiquadratic splitting law; the sign-vector description under `galoisGroupEquiv` is not
+formed here (see the module docstring). The `IsGalois ℚ K` hypothesis holds in particular when
+the `r i` generate `K`, via `TauCeti.Multiquadratic.isGalois_of_adjoin_eq_top`. -/
+theorem exists_isArithFrobAt_multiquadratic [IsGalois ℚ K] (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
-    (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)
     (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})] :
     ∃ σ : K ≃ₐ[ℚ] K, IsArithFrobAt ℤ σ Q ∧
       ∀ i, σ (r i) = legendreSym p (d i) • r i := by
-  -- `K` is Galois over `ℚ`: transport the multiquadratic `isGalois` along `htop`.
-  have hr' : ∀ i, r i ^ 2 = algebraMap ℚ K ((d i : ℚ)) := by
-    intro i; rw [hr i]; simp
-  haveI : IsGalois ℚ K := by
-    have hg := TauCeti.Multiquadratic.isGalois (K := ℚ) (L := K) (d := fun i => (d i : ℚ)) hr'
-    rw [htop] at hg
-    exact isGalois_iff_isGalois_top.mp hg
-  obtain ⟨σ, hσ⟩ := exists_isArithFrobAt (p := p) Q
+  obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_of_liesOver (p := p) Q
   exact ⟨σ, hσ, fun i => isArithFrobAt_apply_sqrt hodd (hcop i) (hr i) Q hσ⟩
 
 end TauCeti.NumberField
