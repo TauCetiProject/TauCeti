@@ -45,26 +45,6 @@ open scoped Function
 
 namespace TauCeti.Multiquadratic
 
-/-- A squarefree integer other than `1` is not a rational square. If `(n : ℚ)` were a square then
-`n = a * a` for some integer `a`; squarefreeness forces `a` to be a unit, so `n = 1`. -/
-private theorem not_isSquare_intCast_of_squarefree_of_ne_one {n : ℤ}
-    (hsf : Squarefree n) (hne : n ≠ 1) : ¬ IsSquare ((n : ℤ) : ℚ) := by
-  rw [Rat.isSquare_intCast_iff]
-  rintro ⟨a, ha⟩
-  have hu : IsUnit a := hsf a (ha ▸ dvd_rfl)
-  rcases Int.isUnit_iff.mp hu with rfl | rfl <;> simp_all
-
-/-- Dividing a rational square by `4` leaves a rational square. -/
-private theorem isSquare_of_isSquare_four_mul {q : ℚ} (h : IsSquare ((4 : ℚ) * q)) :
-    IsSquare q := by
-  have h4 : IsSquare (4 : ℚ) := ⟨2, by norm_num⟩
-  simpa using h.div h4
-
-/-- The negative of a squarefree integer is squarefree. -/
-private theorem Squarefree.int_neg {n : ℤ} (hn : Squarefree n) : Squarefree (-n) := by
-  rw [← Int.squarefree_natAbs, Int.natAbs_neg, Int.squarefree_natAbs]
-  exact hn
-
 /-- Products over odd prime-discriminant radicands, with no `-4` radicand, are not `-1`. -/
 private theorem prod_primeDiscriminantRadicands_ne_neg_one {ι : Type*} {D : ι → ℤ}
     (hD : ∀ i, IsPrimeDiscriminant (D i)) {S : Finset ι}
@@ -217,7 +197,7 @@ theorem not_isSquare_prod_primeDiscriminantRadicands {ι : Type*} (D : ι → �
       exact prod_primeDiscriminantRadicands_ne_neg_one hD
         (fun i hi => hno4S i (Finset.mem_of_mem_erase (Finset.mem_of_mem_erase hi))) hP
     have hnot_negP : ¬ IsSquare (((-P : ℤ) : ℚ)) :=
-      not_isSquare_intCast_of_squarefree_of_ne_one (Squarefree.int_neg hsfP) hne_negP
+      not_isSquare_intCast_of_squarefree_of_ne_one hsfP.neg hne_negP
     intro hsquare
     apply hnot_negP
     refine isSquare_of_isSquare_four_mul ?_
