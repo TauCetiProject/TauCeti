@@ -54,7 +54,10 @@ names around it. The cardinality identity is still expressed through the squarin
   the subgroup of squares.
 * `TauCeti.card_elementaryTwoQuotient_eq_card_twoTorsion`: `|G/G²| = |{g | g² = 1}|`.
 * `TauCeti.twoRank` and `TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank`: the 2-rank, with
-  `|G/G²| = 2 ^ twoRank`.
+  `|G/G²| = 2 ^ twoRank`, and `TauCeti.twoRank_eq_of_card_elementaryTwoQuotient_eq_two_pow` its
+  inversion (`|G/G²| = 2 ^ n → twoRank G = n`).
+* `TauCeti.card_elementaryTwoQuotient_of_odd_card` and `TauCeti.twoRank_of_odd_card`: a group of
+  odd order has a single square class.
 * `TauCeti.card_elementaryTwoQuotient_dvd_card` and
   `TauCeti.two_pow_twoRank_dvd_card`: the quotient cardinality and its rank form divide `|G|`.
 -/
@@ -319,11 +322,29 @@ theorem card_elementaryTwoQuotient_eq_two_pow_twoRank
 /-- Reading the 2-rank off a cardinality computation: if `G/G²` has `2 ^ n` elements, the 2-rank
 of `G` is `n`. This is the inversion of
 `TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank` used to convert each concrete counting
-result into its rank form. -/
-theorem twoRank_eq_of_card_eq_two_pow [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)]
+result into its rank form. The hypothesis already forces `G/G²` to be a finite `ZMod 2`-module,
+so no finiteness instance need be supplied. -/
+theorem twoRank_eq_of_card_elementaryTwoQuotient_eq_two_pow
     {n : ℕ} (h : Nat.card (ElementaryTwoQuotient G) = 2 ^ n) : twoRank G = n := by
+  have : Finite (ElementaryTwoQuotient G) := Nat.finite_of_card_ne_zero (by simp [h])
   rw [card_elementaryTwoQuotient_eq_two_pow_twoRank] at h
   exact Nat.pow_right_injective le_rfl h
+
+/-- **A group of odd order has a single square class.** For a finite commutative group of odd
+order, squaring is bijective (the exponent `2` is coprime to `|G|`), so `G/G²` is trivial. This
+is the odd-order half of the 2-rank computation — the even case genuinely needs more structure
+(a cyclic factor); this half holds for any commutative group. -/
+theorem card_elementaryTwoQuotient_of_odd_card (h : Odd (Nat.card G)) :
+    Nat.card (ElementaryTwoQuotient G) = 1 := by
+  rw [card_elementaryTwoQuotient_eq_index_square, square_eq_powMonoidHom_two_range]
+  have hbij : Function.Surjective (powMonoidHom 2 : G →* G) :=
+    (Nat.Coprime.pow_left_bijective (Nat.coprime_two_right.mpr h)).surjective
+  rw [MonoidHom.range_eq_top.mpr hbij, Subgroup.index_top]
+
+/-- A group of odd order has 2-rank zero. -/
+theorem twoRank_of_odd_card (h : Odd (Nat.card G)) : twoRank G = 0 :=
+  twoRank_eq_of_card_elementaryTwoQuotient_eq_two_pow G
+    ((card_elementaryTwoQuotient_of_odd_card G h).trans (pow_zero 2).symm)
 
 /-- The cardinality of the maximal elementary-2 quotient of a commutative group divides the group
 cardinality. -/
