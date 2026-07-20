@@ -54,14 +54,14 @@ variable {K : Type*} [Field K] [NumberField K] {ι : Type*}
 /-- **A multiquadratic Frobenius is trivial iff every radicand is a residue.** Let
 `K = ℚ(√d₁, …, √dₙ)` be generated over `ℚ` by the square roots `r i` of the integers `d i`,
 let `p` be an odd prime with `p ∤ d i` for all `i`, and let `σ` be an arithmetic Frobenius at
-a prime `Q` of `𝓞 K` above `p`. Then `σ = 1` iff every `d i` is a quadratic residue mod `p`.
+an ideal `Q` of `𝓞 K` above `p`. Then `σ = 1` iff every `d i` is a quadratic residue mod `p`.
 Combined with the splitting law, this is the Frobenius-theoretic reading of complete
 splitting. -/
 theorem isArithFrobAt_multiquadratic_eq_one_iff (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤)
     (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)
-    (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
+    (Q : Ideal (𝓞 K)) [Q.LiesOver (span {(p : ℤ)})]
     {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
     σ = 1 ↔ ∀ i, legendreSym p (d i) = 1 := by
   constructor
@@ -69,24 +69,17 @@ theorem isArithFrobAt_multiquadratic_eq_one_iff (d : ι → ℤ) (r : ι → K)
     -- The identity fixes `r i`, so the symbol cannot be `-1`: that would force `r i = -r i`.
     have hfix : r i = legendreSym p (d i) • r i := by
       simpa using isArithFrobAt_apply_sqrt hodd (hcop i) (hr i) Q hσ
-    have hne : r i ≠ 0 := by
+    have hdne : d i ≠ 0 := by
       intro h0
-      apply hcop i
-      have hzero : algebraMap ℤ K (d i) = 0 := by rw [← hr i, h0]; ring
-      have hdi : d i = 0 := by
-        rw [eq_intCast] at hzero
-        exact_mod_cast hzero
-      simp [hdi]
+      exact hcop i (by simp [h0])
     rcases legendreSym.eq_one_or_neg_one p (a := d i) (by
         rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hcop i) with h1 | h1
     · exact h1
     · exfalso
       rw [h1, neg_smul, one_smul] at hfix
-      apply hne
-      have h2 : (2 : K) * r i = 0 := by linear_combination hfix
-      rcases mul_eq_zero.mp h2 with h | h
-      · exact absurd h two_ne_zero
-      · exact h
+      exact TauCeti.Multiquadratic.ne_neg_of_sq_eq_algebraMap
+        (show r i ^ 2 = algebraMap ℚ K ((d i : ℚ)) by rw [hr i]; simp)
+        (by exact_mod_cast hdne) hfix
   · intro hqr
     -- `σ` fixes each generator, and the generators generate `K` over `ℚ`.
     refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_

@@ -7,11 +7,12 @@ module
 public import Mathlib.Data.ZMod.QuotientRing
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import Mathlib.RingTheory.Frobenius
+import TauCeti.RingTheory.Ideal.LiesOver
 
 /-!
 # The Frobenius acts on square roots by the Legendre symbol
 
-Let `S` be a commutative domain, `Q` a prime of `S` lying over the rational prime `p ≠ 2`, and
+Let `S` be a commutative domain, `Q` an ideal of `S` lying over the rational prime `p ≠ 2`, and
 `φ` an arithmetic Frobenius at `Q` (`AlgHom.IsArithFrobAt`, so `φ y ≡ y ^ p (mod Q)` for all
 `y`). If `x ∈ S` is a square root of an integer `d` with `p ∤ d`, then
 
@@ -40,13 +41,6 @@ open Ideal
 
 namespace TauCeti
 
-/-- An ideal of a `ℤ`-algebra lying over the integer ideal `(a)` meets `ℤ` exactly in the
-multiples of `a`: `algebraMap ℤ S m ∈ Q ↔ a ∣ m`. -/
-theorem algebraMap_int_mem_iff_dvd_of_liesOver {S : Type*} [CommRing S] {a : ℤ}
-    (Q : Ideal S) [Q.LiesOver (span {a})] (m : ℤ) :
-    algebraMap ℤ S m ∈ Q ↔ a ∣ m :=
-  (Ideal.mem_of_liesOver Q (span {a}) m).symm.trans Ideal.mem_span_singleton
-
 variable {S : Type*} [CommRing S] [IsDomain S] {Q : Ideal S}
   {p : ℕ} [Fact p.Prime] {d : ℤ} {x : S}
 
@@ -60,12 +54,13 @@ private theorem natCard_quotient_under (Q : Ideal S) [Q.LiesOver (span {(p : ℤ
   simp
 
 /-- **An arithmetic Frobenius acts on square roots by the Legendre symbol.** Let `S` be a
-domain, `Q` a prime of `S` over the odd rational prime `p`, and `φ : S →ₐ[ℤ] S` an arithmetic
+domain, `Q` an ideal of `S` over the odd rational prime `p`, and `φ : S →ₐ[ℤ] S` an arithmetic
 Frobenius at `Q`. If `x² = d` for an integer `d` not divisible by `p`, then
 `φ x = legendreSym p d • x`: the Frobenius fixes `√d` when `d` is a quadratic residue mod `p`
-and negates it otherwise. -/
+and negates it otherwise. (Primality of `Q` is not needed: the sign separation comes from `S`
+being a domain and `Q ∩ ℤ = (p)`.) -/
 theorem AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.IsArithFrobAt Q)
-    [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})] (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
+    [Q.LiesOver (span {(p : ℤ)})] (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
     (hx : x ^ 2 = algebraMap ℤ S d) :
     φ x = legendreSym p d • x := by
   have hp2 : p % 2 = 1 := Nat.odd_iff.mp ((Fact.out : p.Prime).odd_of_ne_two hodd)
@@ -141,13 +136,14 @@ theorem AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.IsArithFr
     · rw [hflip, h1, neg_smul, one_smul]
 
 /-- **A Frobenius element acts on square roots by the Legendre symbol**, group-action form: if
-`σ : G` is an arithmetic Frobenius at a prime `Q` over the odd prime `p` and `x² = d` with
+`σ : G` is an arithmetic Frobenius at an ideal `Q` over the odd prime `p` and `x² = d` with
 `p ∤ d`, then `σ • x = legendreSym p d • x`. -/
 theorem IsArithFrobAt.smul_sqrt {G : Type*} [Group G] [MulSemiringAction G S]
     [SMulCommClass G ℤ S] {σ : G} (H : _root_.IsArithFrobAt ℤ σ Q)
-    [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})] (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
+    [Q.LiesOver (span {(p : ℤ)})] (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
     (hx : x ^ 2 = algebraMap ℤ S d) :
-    σ • x = legendreSym p d • x :=
-  TauCeti.AlgHom.IsArithFrobAt.apply_sqrt H hodd hd hx
+    σ • x = legendreSym p d • x := by
+  simpa only [MulSemiringAction.toAlgHom_apply] using
+    TauCeti.AlgHom.IsArithFrobAt.apply_sqrt H hodd hd hx
 
 end TauCeti

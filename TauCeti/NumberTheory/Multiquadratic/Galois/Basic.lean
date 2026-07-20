@@ -115,6 +115,23 @@ theorem aut_gen_eq_self_or_eq_neg (hroot : ∀ i, root i ^ 2 = algebraMap K L (d
     rw [← map_pow, gen_sq hroot, AlgEquiv.commutes, ← gen_sq hroot]
   exact sq_eq_sq_iff_eq_or_eq_neg.mp h1
 
+/-- **A square root of a nonzero base element is not its own negation.** If `x² = c` with
+`c ≠ 0` in the base field (of characteristic different from `2`), then `x ≠ -x`: otherwise
+`2x = 0` would force `x = 0` and hence `c = 0`. This is the ambient-field content of
+`TauCeti.Multiquadratic.gen_ne_neg`, stated for reuse by the Frobenius computation. -/
+theorem ne_neg_of_sq_eq_algebraMap [NeZero (2 : K)] {x : L} {c : K}
+    (hx : x ^ 2 = algebraMap K L c) (hc : c ≠ 0) : x ≠ -x := by
+  intro h
+  have h2L : (2 : L) ≠ 0 := by
+    rw [← map_ofNat (algebraMap K L) 2]
+    exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective K L)).mpr two_ne_zero
+  have hx0 : x = 0 := by
+    have h2 : (2 : L) * x = 0 := by rw [two_mul]; nth_rewrite 1 [h]; rw [neg_add_cancel]
+    exact (mul_eq_zero.mp h2).resolve_left h2L
+  apply hc
+  have hh : algebraMap K L c = 0 := by rw [← hx, hx0]; ring
+  exact (map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective K L)).mp hh
+
 omit [Finite ι] in
 /-- A generator is not equal to its own negation when the radicand is nonzero. -/
 theorem gen_ne_neg [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
@@ -122,16 +139,7 @@ theorem gen_ne_neg [NeZero (2 : K)] (hroot : ∀ i, root i ^ 2 = algebraMap K L 
     gen (K := K) root i ≠ -gen root i := by
   intro h
   have hcoe : root i = -root i := by simpa using congrArg Subtype.val h
-  have h2L : (2 : L) ≠ 0 := by
-    rw [← map_ofNat (algebraMap K L) 2]
-    exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective K L)).mpr two_ne_zero
-  have hr0 : root i = 0 := by
-    have h2 : (2 : L) * root i = 0 := by rw [two_mul]; nth_rewrite 1 [hcoe]; rw [neg_add_cancel]
-    exact (mul_eq_zero.mp h2).resolve_left h2L
-  have hd0 : d i = 0 := by
-    have hh : algebraMap K L (d i) = 0 := by rw [← hroot i, hr0]; ring
-    exact (map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective K L)).mp hh
-  exact hd hd0
+  exact ne_neg_of_sq_eq_algebraMap (hroot i) hd hcoe
 
 /-- `∏ᵢ (X² - dᵢ)` is nonzero. -/
 private theorem definingPolynomial_ne_zero : definingPolynomial d ≠ 0 := by

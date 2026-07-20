@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
 public import TauCeti.NumberTheory.NumberField.SplitsCompletely
 import TauCeti.FieldTheory.IntermediateField.AdjoinEqTop
-import TauCeti.NumberTheory.LegendreSymbol.Frobenius
+import TauCeti.RingTheory.Ideal.LiesOver
 import TauCeti.NumberTheory.NumberField.IntegralSqrt
 
 /-!
@@ -38,26 +38,6 @@ public section
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The generator `r i`, as an element of the ring of integers `𝓞 K`: the shared square-root
-packaging `TauCeti.NumberField.integralSqrt`, specialized to the family. -/
-private noncomputable def ringGen {ι : Type*} (d : ι → ℤ) (r : ι → K)
-    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) : 𝓞 K :=
-  integralSqrt (hr i)
-
-omit [NumberField K] in
-/-- Under `𝓞 K ↪ K`, `ringGen d r hr i` maps to the generator `r i`. -/
-private theorem algebraMap_ringGen {ι : Type*} (d : ι → ℤ) (r : ι → K)
-    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) :
-    algebraMap (𝓞 K) K (ringGen d r hr i) = r i :=
-  algebraMap_integralSqrt (hr i)
-
-omit [NumberField K] in
-/-- `ringGen` squares to the radicand `d i` in `𝓞 K`. -/
-private theorem ringGen_sq {ι : Type*} (d : ι → ℤ) (r : ι → K)
-    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) :
-    ringGen d r hr i ^ 2 = algebraMap ℤ (𝓞 K) (d i) :=
-  integralSqrt_sq (hr i)
-
 /-- Forward direction (pointwise): for `K` Galois over `ℚ`, if `p` splits completely
 (`#{primes over p} = [K : ℚ]`) and `p ∤ d i`, then `d i` is a quadratic residue mod `p`. -/
 private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (d : ι → ℤ)
@@ -74,7 +54,7 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
       ((Ideal.span_singleton_prime hpne).mpr (Nat.prime_iff_prime_int.mp Fact.out))
       (by simpa [Ideal.span_singleton_eq_bot] using hpne)
   haveI : Q.IsMaximal := Ideal.IsMaximal.of_liesOver_isMaximal Q (span {(p : ℤ)})
-  let R : ι → 𝓞 K := ringGen d r hr
+  let R : ι → 𝓞 K := fun i => integralSqrt (hr i)
   rw [ncard_primesOver_eq_finrank_iff K p] at hsplit
   have hfQ : finrank (ℤ ⧸ span {(p : ℤ)}) (𝓞 K ⧸ Q) = 1 := by
     rw [← Ideal.inertiaDeg'_algebraMap (p := span {(p : ℤ)}) (P := Q),
@@ -101,7 +81,7 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
     rw [← algebraMap_int_mem_iff_dvd_of_liesOver Q]
     have hfac : algebraMap ℤ (𝓞 K) (a ^ 2 - d i) =
         (algebraMap ℤ (𝓞 K) a - R i) * (algebraMap ℤ (𝓞 K) a + R i) := by
-      rw [map_sub, map_pow, ← ringGen_sq d r hr i]; ring
+      rw [map_sub, map_pow, ← integralSqrt_sq (hr i)]; ring
     rw [hfac]
     exact Ideal.mul_mem_right _ _ hdiff
   rw [legendreSym.eq_one_iff p (by rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hcop_i)]
@@ -123,18 +103,11 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
   -- `p ∤ a`.
   have hr' : ∀ i, r i ^ 2 = algebraMap ℚ K ((d i : ℚ)) := by
     intro i; rw [hr i]; simp
-  let R : ι → 𝓞 K := ringGen d r hr
-  -- The Galois action on `𝓞 K` is the restriction of the action on `K`: it agrees with
-  -- `galRestrict ℤ ℚ K (𝓞 K) σ` (both restrict `σ` and are pinned by injectivity of the algebra
-  -- map), so compatibility is `algebraMap_galRestrict_apply`.
-  have hgal : ∀ x : 𝓞 K, galRestrict ℤ ℚ K (𝓞 K) σ x = σ • x := fun x => by
-    apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-    rw [algebraMap_galRestrict_apply (A := ℤ) σ x]
-    -- The remaining equality is the definitional agreement between the integral-closure action
-    -- `σ • x = ⟨σ • (x : K), _⟩` and `σ` acting on `K`; `integralClosure.coe_smul` names it.
-    exact (integralClosure.coe_smul σ x).symm
-  have hact : ∀ x : 𝓞 K, algebraMap (𝓞 K) K (σ • x) = σ (algebraMap (𝓞 K) K x) := fun x => by
-    rw [← hgal x, algebraMap_galRestrict_apply (A := ℤ) σ x]
+  let R : ι → 𝓞 K := fun i => integralSqrt (hr i)
+  -- The Galois action on `𝓞 K` is the restriction of the action on `K`
+  -- (`TauCeti.NumberField.algebraMap_smul`).
+  have hact : ∀ x : 𝓞 K, algebraMap (𝓞 K) K (σ • x) = σ (algebraMap (𝓞 K) K x) :=
+    fun x => algebraMap_smul σ x
   have hstab : σ • Q = Q := mem_stabilizer_iff.mp hσ
   have hmapQ : ∀ x ∈ Q, σ • x ∈ Q := by
     intro x hx; rw [← hstab]; exact Ideal.smul_mem_pointwise_smul σ x Q hx
@@ -163,13 +136,13 @@ private theorem decompositionGroup_fixes_gen {ι : Type*} (d : ι → ℤ) (r : 
     have hAsq : A ^ 2 = algebraMap ℤ (𝓞 K) (a ^ 2) := by rw [hAdef, ← map_pow]
     have heq : (R i - A) * (R i + A) = algebraMap ℤ (𝓞 K) (d i - a ^ 2) := by
       have h1 : (R i - A) * (R i + A) = R i ^ 2 - A ^ 2 := by ring
-      rw [h1, ringGen_sq d r hr i, hAsq, ← map_sub]
+      rw [h1, integralSqrt_sq (hr i), hAsq, ← map_sub]
     have hfacQ : (R i - A) * (R i + A) ∈ Q := by
       rw [heq]; exact (algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr (dvd_sub_comm.mp hpa)
     -- `σ` sends `R i ↦ -R i` and fixes the integer `A`.
     have hsR : σ • R i = - R i := by
       apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-      rw [hact, map_neg, algebraMap_ringGen, hflip]
+      rw [hact, map_neg, algebraMap_integralSqrt, hflip]
     have hsA : σ • A = A := by
       apply FaithfulSMul.algebraMap_injective (𝓞 K) K
       rw [hact, hAdef, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K,
