@@ -105,6 +105,13 @@ theorem tangentDeviation_real_smul (c : ℝ) (w L : ℂ) :
       smul_eq_mul, mul_div_assoc]
   simp only [tangentDeviation, hopc, smul_sub]
 
+/-- The `simp`-normal companion of `tangentDeviation_real_smul`: `simp` normalizes the real smul
+`c • w` to `↑c * w`, so this is the form that fires for `simp`-driven automation. -/
+@[simp]
+theorem tangentDeviation_ofReal_mul (c : ℝ) (w L : ℂ) :
+    tangentDeviation ((c : ℂ) * w) L = (c : ℂ) * tangentDeviation w L := by
+  simpa only [Complex.real_smul] using tangentDeviation_real_smul c w L
+
 /-- The norm of the orthogonal deviation is the distance from `w` to the line `ℝ • L`:
 `‖tangentDeviation w L‖ = |Im(w · conj L)| / ‖L‖` — the quantity `Contour.FlatOfOrder` bounds. -/
 theorem norm_tangentDeviation {L : ℂ} (hL : L ≠ 0) (w : ℂ) :
