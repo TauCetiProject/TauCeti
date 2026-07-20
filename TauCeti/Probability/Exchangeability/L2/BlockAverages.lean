@@ -11,8 +11,8 @@ standard-Borel de Finetti route"), building the "two-window L² bounds for block
 milestone (`l2_bound_two_windows_uniform`) on top of the uniform covariance structure of a
 contractable L² sequence (`contractable_covariance_structure`).
 
-For a real-valued process `X : ℕ → Ω → ℝ` and an injective finite selection `k : Fin n → ℕ`,
-the *block average* `blockAverage X k = n⁻¹ • ∑ i, X (k i)` is the empirical mean of the block
+For a real-valued process `X : ℕ → Ω → ℝ` and a finite selection `k : Fin n → ℕ`, the
+*block average* `blockAverage X k = n⁻¹ • ∑ i, X (k i)` is the empirical mean of the block
 `(X (k i))ᵢ`. When `X` is contractable with `L²` coordinates, its second-moment structure is
 uniform: all coordinate variances agree and all off-diagonal covariances agree
 (`contractable_covariance_structure`). Writing `v = Var[X 0]` and `c = cov[X 0, X 1]`, this
@@ -23,17 +23,22 @@ Var[blockAverage X k] = (v - c) / n + c,
 ```
 
 and any two blocks over *disjoint* index sets to have covariance exactly `c`. Consequently two
-disjoint block averages of equal length `n` differ, in `L²`, by an amount that vanishes like
-`1 / n`:
+disjoint block averages of lengths `n` and `m` satisfy
 
 ```text
-Var[blockAverage X k - blockAverage X k'] = 2 (v - c) / n,
+Var[blockAverage X k - blockAverage X k'] = (v - c) / n + (v - c) / m,
 ```
 
 and, since contractability makes the two averages share the common mean `μ[X 0]`, this is the
-squared `L²` distance `∫ (blockAverage X k - blockAverage X k')² dμ` itself. This two-window
-bound is the analytic engine that later drives the L² convergence of block averages toward the
-directing measure.
+squared `L²` distance `∫ (blockAverage X k - blockAverage X k')² dμ` itself. The squared
+distance vanishes like `1 / n + 1 / m` (equivalently, the `L²` norm like `n^(-1/2)` for equal
+windows), which is the analytic engine that later drives the `L²` convergence of the observables
+`blockAverage X k` toward their common conditional mean, the intermediate real-valued step
+before the roadmap's determining-class argument identifies the directing random measure.
+
+The elementary L² route to de Finetti's theorem formalised here is the one presented in
+Kallenberg, *Probabilistic Symmetries and Invariance Principles* (Springer, 2005), Chapter 1
+(around Theorem 1.1); the Lean identities below were derived independently.
 
 The covariance/variance bilinearity (`ProbabilityTheory.covariance_sum_sum`,
 `variance_sum`, `covariance_smul_left`, `variance_const_mul`) and the integral manipulations are
@@ -123,41 +128,43 @@ theorem Contractable.integral_blockAverage (hX : Contractable μ X)
     inv_mul_cancel₀ hne, one_mul]
 
 /-- **The covariance of two disjoint block averages of a contractable L² sequence.** Two block
-averages over selections `k, k' : Fin n → ℕ` with disjoint ranges (`0 < n`) have
-covariance exactly the common off-diagonal covariance `c = cov[X 0, X 1]`. -/
-theorem Contractable.covariance_blockAverage_disjoint [IsFiniteMeasure μ] (hX : Contractable μ X)
-    (hX_L2 : ∀ n, MemLp (X n) 2 μ) {n : ℕ} (hn : 0 < n) {k k' : Fin n → ℕ}
-    (hdisj : ∀ i j, k i ≠ k' j) :
+averages over selections `k : Fin n → ℕ` and `k' : Fin m → ℕ` with disjoint ranges
+(`0 < n`, `0 < m`) have covariance exactly the common off-diagonal covariance `c = cov[X 0, X 1]`,
+regardless of the two block lengths. -/
+theorem Contractable.covariance_blockAverage_of_disjoint [IsFiniteMeasure μ] (hX : Contractable μ X)
+    (hX_L2 : ∀ n, MemLp (X n) 2 μ) {n m : ℕ} (hn : 0 < n) (hm : 0 < m) {k : Fin n → ℕ}
+    {k' : Fin m → ℕ} (hdisj : ∀ i j, k i ≠ k' j) :
     cov[blockAverage X k, blockAverage X k'; μ] = cov[X 0, X 1; μ] := by
-  have hmeas : ∀ m, AEMeasurable (X m) μ := fun m => (hX_L2 m).aestronglyMeasurable.aemeasurable
+  have hmeas : ∀ p, AEMeasurable (X p) μ := fun p => (hX_L2 p).aestronglyMeasurable.aemeasurable
   have hne : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
+  have hne' : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hm.ne'
   rw [blockAverage, blockAverage, covariance_smul_left, covariance_smul_right,
     covariance_sum_sum (fun i => hX_L2 (k i)) (fun j => hX_L2 (k' j))]
   simp_rw [fun i j => hX.covariance_eq_of_ne (hmeas (k i)) (hmeas (k' j)) (hmeas 0) (hmeas 1)
     (hdisj i j) (by norm_num : (0 : ℕ) ≠ 1)]
-  rw [Finset.sum_const, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
-    nsmul_eq_mul]
+  rw [Finset.sum_const, Finset.sum_const]
+  simp only [Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
   field_simp
 
 /-- **The two-window L² bound for block averages.** For a contractable real-valued process with
-`L²` coordinates, two block averages over injective selections `k, k' : Fin n → ℕ` of the same
-length with disjoint ranges (`0 < n`) satisfy
+`L²` coordinates, two block averages over injective selections `k : Fin n → ℕ` and
+`k' : Fin m → ℕ` with disjoint ranges (`0 < n`, `0 < m`) satisfy
 
 ```text
-Var[blockAverage X k - blockAverage X k'] = 2 (v - c) / n,
+Var[blockAverage X k - blockAverage X k'] = (v - c) / n + (v - c) / m,
 ```
 
-where `v = Var[X 0]` and `c = cov[X 0, X 1]`. The bound vanishes like `1 / n`, which is the
-analytic core of the L² route to de Finetti's theorem. -/
+where `v = Var[X 0]` and `c = cov[X 0, X 1]`. The bound vanishes as the block lengths grow, which
+is the analytic core of the L² route to de Finetti's theorem. -/
 theorem Contractable.variance_blockAverage_sub_of_disjoint [IsFiniteMeasure μ]
-    (hX : Contractable μ X) (hX_L2 : ∀ n, MemLp (X n) 2 μ) {n : ℕ} (hn : 0 < n) {k k' : Fin n → ℕ}
+    (hX : Contractable μ X) (hX_L2 : ∀ n, MemLp (X n) 2 μ) {n m : ℕ} (hn : 0 < n) (hm : 0 < m)
+    {k : Fin n → ℕ} {k' : Fin m → ℕ}
     (hk : Function.Injective k) (hk' : Function.Injective k') (hdisj : ∀ i j, k i ≠ k' j) :
-    Var[blockAverage X k - blockAverage X k'; μ] = 2 * (Var[X 0; μ] - cov[X 0, X 1; μ]) / n := by
+    Var[blockAverage X k - blockAverage X k'; μ]
+      = (Var[X 0; μ] - cov[X 0, X 1; μ]) / n + (Var[X 0; μ] - cov[X 0, X 1; μ]) / m := by
   rw [variance_sub (memLp_blockAverage hX_L2 k) (memLp_blockAverage hX_L2 k'),
-    hX.variance_blockAverage hX_L2 hn hk, hX.variance_blockAverage hX_L2 hn hk',
-    hX.covariance_blockAverage_disjoint hX_L2 hn hdisj]
-  have hne : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  field_simp
+    hX.variance_blockAverage hX_L2 hn hk, hX.variance_blockAverage hX_L2 hm hk',
+    hX.covariance_blockAverage_of_disjoint hX_L2 hn hm hdisj]
   ring
 
 /-- **The two-window L² distance for block averages.** Since two disjoint block averages of a
@@ -165,28 +172,28 @@ contractable process share the common mean `μ[X 0]`, the two-window variance bo
 squared `L²` distance between them:
 
 ```text
-∫ (blockAverage X k - blockAverage X k')² dμ = 2 (v - c) / n.
+∫ (blockAverage X k - blockAverage X k')² dμ = (v - c) / n + (v - c) / m.
 ```
 -/
-theorem integral_sq_blockAverage_sub_of_disjoint [IsFiniteMeasure μ] (hX : Contractable μ X)
-    (hX_L2 : ∀ n, MemLp (X n) 2 μ) {n : ℕ} (hn : 0 < n) {k k' : Fin n → ℕ}
+theorem Contractable.integral_sq_blockAverage_sub_of_disjoint [IsFiniteMeasure μ]
+    (hX : Contractable μ X) (hX_L2 : ∀ n, MemLp (X n) 2 μ) {n m : ℕ} (hn : 0 < n) (hm : 0 < m)
+    {k : Fin n → ℕ} {k' : Fin m → ℕ}
     (hk : Function.Injective k) (hk' : Function.Injective k') (hdisj : ∀ i j, k i ≠ k' j) :
     ∫ ω, (blockAverage X k ω - blockAverage X k' ω) ^ 2 ∂μ
-      = 2 * (Var[X 0; μ] - cov[X 0, X 1; μ]) / n := by
+      = (Var[X 0; μ] - cov[X 0, X 1; μ]) / n + (Var[X 0; μ] - cov[X 0, X 1; μ]) / m := by
   have hmean : μ[blockAverage X k - blockAverage X k'] = 0 := by
     simp only [Pi.sub_apply]
     rw [integral_sub ((memLp_blockAverage hX_L2 k).integrable one_le_two)
       ((memLp_blockAverage hX_L2 k').integrable one_le_two),
-      hX.integral_blockAverage (fun m => (hX_L2 m).integrable one_le_two) hn (k := k),
-      hX.integral_blockAverage (fun m => (hX_L2 m).integrable one_le_two) hn (k := k'),
+      hX.integral_blockAverage (fun j => (hX_L2 j).integrable one_le_two) hn (k := k),
+      hX.integral_blockAverage (fun j => (hX_L2 j).integrable one_le_two) hm (k := k'),
       sub_self]
   have hae : AEMeasurable (blockAverage X k - blockAverage X k') μ :=
     ((memLp_blockAverage hX_L2 k).sub
       (memLp_blockAverage hX_L2 k')).aestronglyMeasurable.aemeasurable
-  have hvar := variance_eq_integral (μ := μ) (X := blockAverage X k - blockAverage X k') hae
-  rw [hmean] at hvar
-  simp only [Pi.sub_apply, sub_zero] at hvar
-  rw [← hvar, hX.variance_blockAverage_sub_of_disjoint hX_L2 hn hk hk' hdisj]
+  rw [← hX.variance_blockAverage_sub_of_disjoint hX_L2 hn hm hk hk' hdisj,
+    variance_of_integral_eq_zero hae hmean]
+  simp [Pi.sub_apply]
 
 end Probability
 
