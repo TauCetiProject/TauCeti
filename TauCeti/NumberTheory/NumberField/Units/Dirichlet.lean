@@ -19,7 +19,7 @@ This file packages that unique decomposition as a multiplicative equivalence
 exhibiting the unit group as the product of its (finite cyclic) torsion subgroup and a free
 abelian group of Dirichlet rank. This structural form is what downstream counting arguments
 consume — for instance the exact number of unit square classes in
-`TauCeti.NumberTheory.NumberField.UnitsElementaryTwoQuotient`.
+`TauCeti.NumberTheory.NumberField.Units.ElementaryTwoQuotient`.
 
 ## Main results
 

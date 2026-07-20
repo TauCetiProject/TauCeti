@@ -23,11 +23,10 @@ index of the squares.
 
 This is the cheap, self-contained upstream bound consumed by the effective class-number
 estimates. Its sharpening to the exact value `[O_F^× : (O_F^×)²] = 2^(rank F + 1)` (from
-Dirichlet's unit theorem via `TauCeti.NumberField.card_units_elementaryTwoQuotient`) is the
-downstream refinement `TauCeti.NumberField.units_sq_index_eq` in
-`TauCeti.NumberTheory.EffectiveBounds.UnitSquares.Equality`, kept separate — mirroring the
-`Discriminant/Basic` + `Discriminant/Equality` pair — so this bound does not depend on the
-structural-Dirichlet and elementary-2-quotient machinery the exact value needs.
+Dirichlet's unit theorem) is `TauCeti.NumberField.units_sq_index_eq`, in the unit-square-class
+file `TauCeti.NumberTheory.NumberField.Units.ElementaryTwoQuotient`, kept separate so this bound
+does not depend on the structural-Dirichlet and elementary-2-quotient machinery the exact value
+needs.
 
 ## Main results
 

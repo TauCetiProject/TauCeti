@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Group.ElementaryTwoQuotient.Prod
 public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 
 /-!
-# The exact number of square classes in the unit group of a number field
+# The square classes of the unit group of a number field
 
 For a number field `F`, Dirichlet's unit theorem decomposes the unit group of its ring of
 integers as the product of its torsion subgroup (finite cyclic of even order, as it contains
@@ -19,13 +19,13 @@ integers as the product of its torsion subgroup (finite cyclic of even order, as
 `TauCeti.NumberTheory.NumberField.Units.Dirichlet`. Counting square classes in each factor gives
 the exact number of unit square classes of genus theory:
 
-`|𝓞 F^× / (𝓞 F^×)²| = 2 ^ (rank F + 1)`.
+`|𝓞 F^× / (𝓞 F^×)²| = 2 ^ (rank F + 1)`,
 
-This is the unit-square-class input of Layer 2 of the multiquadratic roadmap, feeding the
-ambiguous-class-number formula and the genus-field 2-rank computation. Its reading as the exact
-subgroup index `[𝓞 F^× : (𝓞 F^×)²] = 2 ^ (rank F + 1)` — sharpening the bound
-`TauCeti.NumberField.units_sq_index_le` — lives with that bound, in
-`TauCeti.NumberTheory.EffectiveBounds.UnitSquares.Equality`.
+equivalently the exact subgroup index `[𝓞 F^× : (𝓞 F^×)²] = 2 ^ (rank F + 1)`, which sharpens the
+degree bound `TauCeti.NumberField.units_sq_index_le` of
+`TauCeti.NumberTheory.EffectiveBounds.UnitSquares.Basic`. This is the unit-square-class input of
+Layer 2 of the multiquadratic roadmap, feeding the ambiguous-class-number formula and the
+genus-field 2-rank computation.
 
 The counting combines the cyclic and free square-class computations of
 `TauCeti.Algebra.Group.ElementaryTwoQuotient.Cyclic` and
@@ -37,6 +37,8 @@ The counting combines the cyclic and free square-class computations of
 * `TauCeti.NumberField.card_units_elementaryTwoQuotient`:
   `|𝓞 F^× / (𝓞 F^×)²| = 2 ^ (rank F + 1)`.
 * `TauCeti.NumberField.twoRank_units`: the 2-rank of the unit group is `rank F + 1`.
+* `TauCeti.NumberField.units_sq_index_eq`: `[𝓞 F^× : (𝓞 F^×)²] = 2 ^ (rank F + 1)`.
+* `TauCeti.NumberField.units_sq_index_rat_eq_two`: over `ℚ` the index is exactly `2`.
 -/
 
 public section
@@ -75,5 +77,21 @@ instance : Finite (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) :=
 theorem twoRank_units : TauCeti.twoRank (𝓞 F)ˣ = rank F + 1 :=
   TauCeti.twoRank_eq_of_card_elementaryTwoQuotient_eq_two_pow _
     (card_units_elementaryTwoQuotient F)
+
+/-- **The exact unit-square index of genus theory.** For a number field `F`,
+`[𝓞 F^× : (𝓞 F^×)²] = 2 ^ (rank F + 1)`. This is the subgroup-index reading of
+`TauCeti.NumberField.card_units_elementaryTwoQuotient`; it sharpens the degree bound
+`TauCeti.NumberField.units_sq_index_le` to an equality. -/
+theorem units_sq_index_eq :
+    (Subgroup.square (𝓞 F)ˣ).index = 2 ^ (rank F + 1) := by
+  rw [← TauCeti.card_elementaryTwoQuotient_eq_index_square, card_units_elementaryTwoQuotient]
+
+/-- Over `ℚ` the unit rank is zero (there is a single infinite place), so the square subgroup of
+`(𝓞 ℚ)ˣ` has index exactly `2` (the square classes of `±1`). This sharpens
+`TauCeti.NumberField.units_sq_index_rat_le_two` and keeps the exact index formula honest in the
+smallest case. -/
+theorem units_sq_index_rat_eq_two : (Subgroup.square (𝓞 ℚ)ˣ).index = 2 := by
+  have hrank : rank ℚ = 0 := by rw [rank, Fintype.card_unique]
+  rw [units_sq_index_eq, hrank, pow_one]
 
 end TauCeti.NumberField
