@@ -41,7 +41,8 @@ the falling factorial at a negative argument is packaged in the private lemma
 * `TauCeti.isCompletelyMonotone_rpow_neg_const_add`: for `a > 0` and `s ≥ 0`, the resolvent-power
   kernel `t ↦ (a + t)^{-s}` is completely monotone on the closed half-line `[0, ∞)`.
 * `TauCeti.isCompletelyMonotone_one_add_rpow_neg`: the `a = 1` case `t ↦ (1 + t)^{-s}`, whose
-  representing measure is the Gamma distribution.
+  representing measure is the Gamma distribution with shape `s` for `s > 0` (and the Dirac mass `δ₀`
+  at `s = 0`).
 
 ## References
 
@@ -111,9 +112,10 @@ theorem isCompletelyMonotone_rpow_neg_const_add {a s : ℝ} (ha : 0 < a) (hs : 0
     (Real.rpow_pos_of_pos htpos _).le
 
 /-- The roadmap acceptance example generalised in the exponent: for `s ≥ 0` the kernel
-`t ↦ (1 + t)^{-s}` is completely monotone. Its representing measure under Bernstein's theorem is
-the Gamma distribution with shape `s`; the case `s = 1` is `t ↦ 1/(1 + t)` with the exponential
-distribution `e^{-x} dx`. -/
+`t ↦ (1 + t)^{-s}` is completely monotone. For `s > 0` its representing measure under Bernstein's
+theorem is the Gamma distribution with shape `s`, and the case `s = 1` is `t ↦ 1/(1 + t)` with the
+exponential distribution `e^{-x} dx`; at the endpoint `s = 0` the kernel is the constant `1`, whose
+representing measure is the Dirac mass `δ₀`. -/
 theorem isCompletelyMonotone_one_add_rpow_neg {s : ℝ} (hs : 0 ≤ s) :
     IsCompletelyMonotone (fun t => (1 + t) ^ (-s)) :=
   isCompletelyMonotone_rpow_neg_const_add one_pos hs
