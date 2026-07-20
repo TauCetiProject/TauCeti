@@ -70,6 +70,13 @@ theorem mono (hL : IsTotallyReal J L) {L' : Submodule R E} (h : L' ≤ L) :
     IsTotallyReal J L' :=
   hL.disjoint.mono h (Submodule.map_mono h)
 
+/-- Products of totally real submodules are totally real for `LinearMap.prodMap`. -/
+theorem prod {K : F →ₗ[R] F} {M : Submodule R F} (hL : IsTotallyReal J L)
+    (hM : IsTotallyReal K M) :
+    IsTotallyReal (LinearMap.prodMap J K) (L.prod M) := by
+  rw [isTotallyReal_iff, LinearMap.prodMap_map_prod, disjoint_iff, Submodule.prod_inf_prod,
+    hL.inf_eq_bot, hM.inf_eq_bot, Submodule.prod_bot]
+
 end IsTotallyReal
 
 namespace IsCompl
@@ -211,6 +218,16 @@ theorem image (hL : IsTotallyReal J L) (hJ : J.comp J = -LinearMap.id) :
     IsTotallyReal J (L.map J) := by
   rw [isTotallyReal_iff, map_map_eq hJ]
   exact hL.disjoint.symm
+
+/-- Under `J² = -1`, `L` is totally real if and only if its image `J(L)` is totally real. -/
+theorem image_iff (hJ : J.comp J = -LinearMap.id) :
+    IsTotallyReal J (L.map J) ↔ IsTotallyReal J L := by
+  constructor
+  · intro h
+    have h' := h.image hJ
+    rwa [map_map_eq hJ] at h'
+  · intro h
+    exact h.image hJ
 
 end IsTotallyReal
 
