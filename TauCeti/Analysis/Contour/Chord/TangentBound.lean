@@ -67,6 +67,51 @@ private def orthogonalProjectionComplex (w L : ℂ) : ℂ :=
 def tangentDeviation (w L : ℂ) : ℂ :=
   w - orthogonalProjectionComplex w L
 
+/-- `tangentDeviation` is additive in its vector argument. -/
+@[simp]
+theorem tangentDeviation_add (a b L : ℂ) :
+    tangentDeviation (a + b) L = tangentDeviation a L + tangentDeviation b L := by
+  simp only [tangentDeviation, orthogonalProjectionComplex, add_mul, Complex.add_re, add_div,
+    add_smul]
+  abel
+
+/-- `tangentDeviation` sends the zero vector to `0`. -/
+@[simp]
+theorem tangentDeviation_zero (L : ℂ) : tangentDeviation 0 L = 0 := by
+  simp [tangentDeviation, orthogonalProjectionComplex]
+
+/-- `tangentDeviation` respects subtraction in its vector argument. -/
+@[simp]
+theorem tangentDeviation_sub (a b L : ℂ) :
+    tangentDeviation (a - b) L = tangentDeviation a L - tangentDeviation b L := by
+  simp only [tangentDeviation, orthogonalProjectionComplex, sub_mul, Complex.sub_re, sub_div,
+    sub_smul]
+  abel
+
+/-- `tangentDeviation` negates in its vector argument. -/
+@[simp]
+theorem tangentDeviation_neg (w L : ℂ) :
+    tangentDeviation (-w) L = -tangentDeviation w L := by
+  simp only [tangentDeviation, orthogonalProjectionComplex, neg_mul, Complex.neg_re, neg_div,
+    neg_smul]
+  abel
+
+/-- `tangentDeviation` is homogeneous over real scalars in its vector argument. (Not `@[simp]`:
+`simp` normalizes the real smul `c • w` to `↑c * w`, so this left-hand side never fires.) -/
+theorem tangentDeviation_real_smul (c : ℝ) (w L : ℂ) :
+    tangentDeviation (c • w) L = c • tangentDeviation w L := by
+  have hopc : orthogonalProjectionComplex (c • w) L = c • orthogonalProjectionComplex w L := by
+    simp only [orthogonalProjectionComplex, smul_smul, smul_mul_assoc, Complex.smul_re,
+      smul_eq_mul, mul_div_assoc]
+  simp only [tangentDeviation, hopc, smul_sub]
+
+/-- The `simp`-normal companion of `tangentDeviation_real_smul`: `simp` normalizes the real smul
+`c • w` to `↑c * w`, so this is the form that fires for `simp`-driven automation. -/
+@[simp]
+theorem tangentDeviation_ofReal_mul (c : ℝ) (w L : ℂ) :
+    tangentDeviation ((c : ℂ) * w) L = (c : ℂ) * tangentDeviation w L := by
+  simpa only [Complex.real_smul] using tangentDeviation_real_smul c w L
+
 /-- The norm of the orthogonal deviation is the distance from `w` to the line `ℝ • L`:
 `‖tangentDeviation w L‖ = |Im(w · conj L)| / ‖L‖` — the quantity `Contour.FlatOfOrder` bounds. -/
 theorem norm_tangentDeviation {L : ℂ} (hL : L ≠ 0) (w : ℂ) :

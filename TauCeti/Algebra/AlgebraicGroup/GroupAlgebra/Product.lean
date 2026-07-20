@@ -127,12 +127,14 @@ theorem prodPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
   apply Prod.ext
   · apply WithConv.ofConv_injective
     apply MonoidAlgebra.algHom_ext
-    intro g
-    simp
+    · intro g
+      simp
+    · ext
   · apply WithConv.ofConv_injective
     apply MonoidAlgebra.algHom_ext
-    intro h
-    simp
+    · intro h
+      simp
+    · ext
 
 end MonoidAlgebra
 

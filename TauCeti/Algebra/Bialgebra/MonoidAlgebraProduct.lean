@@ -114,25 +114,23 @@ private noncomputable def prodTensorAlgEquiv :
   AlgEquiv.ofAlgHom (prodTensorAlgHom R) (tensorProdAlgHom R)
     (by
       apply Algebra.TensorProduct.ext
-      -- Newer Mathlib's `algHom_ext` also emits a `single 1` side goal, closed by `ext`; older
-      -- Mathlib does not, so guard it with `try`.
       · apply MonoidAlgebra.algHom_ext
         · intro g
           simp only [AlgHom.comp_apply, AlgHom.id_apply, Algebra.TensorProduct.includeLeft_apply]
           rw [one_def, tensorProdAlgHom_tmul_single, prodTensorAlgHom_single]
-        try ext
+        · ext
       · apply MonoidAlgebra.algHom_ext
         · intro h
           simp only [AlgHom.coe_restrictScalars', AlgHom.comp_apply, AlgHom.id_apply,
             Algebra.TensorProduct.includeRight_apply]
           rw [one_def, tensorProdAlgHom_tmul_single, prodTensorAlgHom_single]
-        try ext)
+        · ext)
     (by
       apply MonoidAlgebra.algHom_ext
       · rintro ⟨g, h⟩
         rw [AlgHom.comp_apply, prodTensorAlgHom_single, tensorProdAlgHom_tmul_single,
           AlgHom.id_apply]
-      try ext)
+      · ext)
 
 @[simp]
 private theorem prodTensorAlgEquiv_single (g : G) (h : H) :
@@ -153,12 +151,12 @@ noncomputable def prodTensorBialgEquiv :
       apply MonoidAlgebra.algHom_ext
       · rintro ⟨g, h⟩
         simp
-      try ext)
+      · ext)
     (by
       apply MonoidAlgebra.algHom_ext
       · rintro ⟨g, h⟩
         simp
-      try ext)
+      · ext)
 
 /-- The forward product bialgebra equivalence sends the generator indexed by `(g, h)` to the
 pure tensor of the two factor generators. -/

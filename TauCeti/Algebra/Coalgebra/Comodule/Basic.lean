@@ -190,6 +190,16 @@ variable (R C M) in
       _ = coact (R := R) (C := C) (M := P) (g (f m)) := by
           rw [map_coact_apply f, map_coact_apply g]
 
+/-- The underlying linear map of the identity morphism is the identity linear map. -/
+@[simp]
+theorem id_toLinearMap : (id R C M).toLinearMap = LinearMap.id := rfl
+
+/-- The underlying linear map of a composition is the composition of the underlying linear
+maps. -/
+@[simp]
+theorem comp_toLinearMap (g : Hom R C N P) (f : Hom R C M N) :
+    (g.comp f).toLinearMap = g.toLinearMap ∘ₗ f.toLinearMap := rfl
+
 @[simp]
 theorem id_comp (f : Hom R C M N) : comp (id R C N) f = f := by
   ext m

@@ -122,9 +122,7 @@ theorem point_unitOfPoint (f : R[T;T⁻¹] →ₐ[R] A) :
     -- `single_eq_C_mul_T` rather than relying on the bare definitional unfolding of `T`.
     rw [LaurentPolynomial.single_eq_C_mul_T, map_one, one_mul, point_T]
     exact point_unitOfPoint_single (R := R) (A := A) f n
-  -- Newer Mathlib's `algHom_ext` also emits a `single 0` side goal, closed by `ext`; older
-  -- Mathlib does not, so guard it with `try`.
-  try ext
+  · ext
 
 /-- Algebra maps out of `R[T;T⁻¹]` are the same as units of the value algebra. -/
 @[expose] noncomputable def pointEquiv : (R[T;T⁻¹] →ₐ[R] A) ≃ Aˣ where
