@@ -245,8 +245,8 @@ private theorem residue_eq_of_eventuallyEq_zpow_smul_of_order_lt_zero {f g : ℂ
   rw [← hsum, iteratedDeriv_pow_sub_mul_div_factorial (a - n).toNat (-1 - a).toNat hg₀_an]
 
 /-- The pole-free case of `residue_eq_of_eventuallyEq_zpow_smul`: when
-`meromorphicOrderAt f z₀ ≥ 0`, `f` is analytic (residue `0`) and `g` vanishes to order
-`> -1 - n`, so the Taylor coefficient on the right is `0` as well. -/
+`meromorphicOrderAt f z₀ ≥ 0`, `f` has no pole so its residue is `0`, and `g` vanishes to
+order `> -1 - n`, so the Taylor coefficient on the right is `0` as well. -/
 private theorem residue_eq_of_eventuallyEq_zpow_smul_of_order_nonneg {f g : ℂ → ℂ} {z₀ : ℂ} {n : ℤ}
     (hn : n ≤ -1) (hg : AnalyticAt ℂ g z₀)
     (hord_eq : meromorphicOrderAt f z₀ = (n : WithTop ℤ) + meromorphicOrderAt g z₀)
