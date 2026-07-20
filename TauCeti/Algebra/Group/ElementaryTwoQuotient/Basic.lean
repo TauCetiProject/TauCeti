@@ -316,6 +316,15 @@ theorem card_elementaryTwoQuotient_eq_two_pow_twoRank
     Nat.card (ElementaryTwoQuotient G) = 2 ^ twoRank G := by
   rw [twoRank, Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod]
 
+/-- Reading the 2-rank off a cardinality computation: if `G/G²` has `2 ^ n` elements, the 2-rank
+of `G` is `n`. This is the inversion of
+`TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank` used to convert each concrete counting
+result into its rank form. -/
+theorem twoRank_eq_of_card_eq_two_pow [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)]
+    {n : ℕ} (h : Nat.card (ElementaryTwoQuotient G) = 2 ^ n) : twoRank G = n := by
+  rw [card_elementaryTwoQuotient_eq_two_pow_twoRank] at h
+  exact Nat.pow_right_injective le_rfl h
+
 /-- The cardinality of the maximal elementary-2 quotient of a commutative group divides the group
 cardinality. -/
 theorem card_elementaryTwoQuotient_dvd_card :

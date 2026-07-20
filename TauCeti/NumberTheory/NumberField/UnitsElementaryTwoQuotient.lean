@@ -17,15 +17,15 @@ public import TauCeti.Algebra.Group.ElementaryTwoQuotient.Prod
 For a number field `F`, Dirichlet's unit theorem decomposes the unit group of its ring of
 integers as the product of its torsion subgroup (finite cyclic of even order, as it contains
 `-1`) and a free abelian group of rank `NumberField.Units.rank F`. Counting square classes in
-each factor gives the exact unit-square index of genus theory:
+each factor gives the exact number of unit square classes of genus theory:
 
-`[𝓞 F^× : (𝓞 F^×)²] = 2 ^ (rank F + 1)`.
+`|𝓞 F^× / (𝓞 F^×)²| = 2 ^ (rank F + 1)`.
 
-This sharpens the inequality `TauCeti.NumberField.units_sq_index_le`
-(`[𝓞 F^× : (𝓞 F^×)²] ≤ 2 ^ [F : ℚ]`) of
-`TauCeti.NumberTheory.EffectiveBounds.UnitSquares.Basic` to an equality in terms of the unit
-rank; it is the unit-square-class input of Layer 2 of the multiquadratic roadmap, feeding the
-ambiguous-class-number formula and the genus-field 2-rank computation.
+This is the unit-square-class input of Layer 2 of the multiquadratic roadmap, feeding the
+ambiguous-class-number formula and the genus-field 2-rank computation. Its reading as the exact
+subgroup index `[𝓞 F^× : (𝓞 F^×)²] = 2 ^ (rank F + 1)` — sharpening the bound
+`TauCeti.NumberField.units_sq_index_le` — lives with that bound, in
+`TauCeti.NumberTheory.EffectiveBounds.UnitSquares.Equality`.
 
 The structural content is the multiplicative equivalence
 `(𝓞 F)ˣ ≃* torsion F × Multiplicative (Fin (rank F) → ℤ)` packaging Mathlib's
@@ -40,9 +40,7 @@ square-class computations of `TauCeti.Algebra.Group.ElementaryTwoQuotient.Cyclic
   its torsion subgroup and the free abelian group on the fundamental system.
 * `TauCeti.NumberField.card_units_elementaryTwoQuotient`:
   `|𝓞 F^× / (𝓞 F^×)²| = 2 ^ (rank F + 1)`.
-* `TauCeti.NumberField.units_sq_index_eq`: `[𝓞 F^× : (𝓞 F^×)²] = 2 ^ (rank F + 1)`.
 * `TauCeti.NumberField.twoRank_units`: the 2-rank of the unit group is `rank F + 1`.
-* `TauCeti.NumberField.units_sq_index_rat`: over `ℚ` the index is exactly `2`.
 -/
 
 public section
@@ -67,8 +65,8 @@ private noncomputable def torsionProdMultiplicativeToUnits :
 private theorem torsionProdMultiplicativeToUnits_apply
     (ζ : torsion F) (e : Multiplicative (Fin (rank F) → ℤ)) :
     torsionProdMultiplicativeToUnits F (ζ, e) =
-      (ζ : (𝓞 F)ˣ) * ∏ i, fundSystem F i ^ Multiplicative.toAdd e i :=
-  rfl
+      (ζ : (𝓞 F)ˣ) * ∏ i, fundSystem F i ^ Multiplicative.toAdd e i := by
+  simp [torsionProdMultiplicativeToUnits, MonoidHom.coprod_apply]
 
 /-- Dirichlet's unit theorem in its unique-decomposition form says exactly that realizing a pair
 (root of unity, exponent vector) as a unit is bijective. -/
@@ -83,7 +81,7 @@ private theorem torsionProdMultiplicativeToUnits_bijective :
     have h2 : (ζ', Multiplicative.toAdd e') = p :=
       huniq (ζ', Multiplicative.toAdd e')
         (h.trans (torsionProdMultiplicativeToUnits_apply F ζ' e'))
-    obtain ⟨hζ, he⟩ := Prod.mk.injEq .. ▸ h1.trans h2.symm
+    obtain ⟨hζ, he⟩ := Prod.mk.inj (h1.trans h2.symm)
     exact Prod.ext hζ (Multiplicative.toAdd.injective he)
   · intro x
     obtain ⟨⟨ζ, v⟩, hx, -⟩ := exist_unique_eq_mul_prod F x
@@ -122,24 +120,8 @@ theorem card_units_elementaryTwoQuotient :
 instance : Finite (TauCeti.ElementaryTwoQuotient (𝓞 F)ˣ) :=
   Nat.finite_of_card_ne_zero (by simp [card_units_elementaryTwoQuotient])
 
-/-- **The exact unit-square index of genus theory.** For a number field `F`,
-`[𝓞 F^× : (𝓞 F^×)²] = 2 ^ (rank F + 1)`. This sharpens the bound
-`TauCeti.NumberField.units_sq_index_le` to an equality. -/
-theorem units_sq_index_eq :
-    (Subgroup.square (𝓞 F)ˣ).index = 2 ^ (rank F + 1) := by
-  rw [← TauCeti.card_elementaryTwoQuotient_eq_index_square, card_units_elementaryTwoQuotient]
-
 /-- The 2-rank of the unit group of a number field is `rank F + 1`. -/
-theorem twoRank_units : TauCeti.twoRank (𝓞 F)ˣ = rank F + 1 := by
-  have hcard := card_units_elementaryTwoQuotient F
-  rw [TauCeti.card_elementaryTwoQuotient_eq_two_pow_twoRank] at hcard
-  exact Nat.pow_right_injective le_rfl hcard
-
-/-- Over `ℚ` the unit rank is zero, so the square subgroup of `(𝓞 ℚ)ˣ` has index exactly `2`
-(the square classes of `±1`). This sharpens `TauCeti.NumberField.units_sq_index_rat_le_two` and
-keeps the exact index formula honest in the smallest case. -/
-theorem units_sq_index_rat : (Subgroup.square (𝓞 ℚ)ˣ).index = 2 := by
-  have hrank : rank ℚ = 0 := by simp [rank]
-  rw [units_sq_index_eq, hrank, pow_one]
+theorem twoRank_units : TauCeti.twoRank (𝓞 F)ˣ = rank F + 1 :=
+  TauCeti.twoRank_eq_of_card_eq_two_pow _ (card_units_elementaryTwoQuotient F)
 
 end TauCeti.NumberField

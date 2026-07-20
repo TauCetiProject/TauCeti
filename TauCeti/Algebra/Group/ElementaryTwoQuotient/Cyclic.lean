@@ -63,15 +63,13 @@ theorem card_elementaryTwoQuotient_of_isCyclic_of_odd (h : Odd (Nat.card G)) :
   exact h.coprime_two_right
 
 /-- A finite cyclic group of even order has 2-rank one. -/
-theorem twoRank_of_isCyclic_of_even (h : Even (Nat.card G)) : twoRank G = 1 := by
-  have hcard := card_elementaryTwoQuotient_of_isCyclic_of_even G h
-  rw [card_elementaryTwoQuotient_eq_two_pow_twoRank, ← pow_one 2] at hcard
-  exact Nat.pow_right_injective le_rfl hcard
+theorem twoRank_of_isCyclic_of_even (h : Even (Nat.card G)) : twoRank G = 1 :=
+  twoRank_eq_of_card_eq_two_pow G
+    ((card_elementaryTwoQuotient_of_isCyclic_of_even G h).trans (pow_one 2).symm)
 
 /-- A finite cyclic group of odd order has 2-rank zero. -/
-theorem twoRank_of_isCyclic_of_odd (h : Odd (Nat.card G)) : twoRank G = 0 := by
-  have hcard := card_elementaryTwoQuotient_of_isCyclic_of_odd G h
-  rw [card_elementaryTwoQuotient_eq_two_pow_twoRank, ← pow_zero 2] at hcard
-  exact Nat.pow_right_injective le_rfl hcard
+theorem twoRank_of_isCyclic_of_odd (h : Odd (Nat.card G)) : twoRank G = 0 :=
+  twoRank_eq_of_card_eq_two_pow G
+    ((card_elementaryTwoQuotient_of_isCyclic_of_odd G h).trans (pow_zero 2).symm)
 
 end TauCeti

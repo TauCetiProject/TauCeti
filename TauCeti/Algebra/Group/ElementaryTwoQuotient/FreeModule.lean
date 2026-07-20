@@ -29,7 +29,8 @@ with `A`.
 ## Main results
 
 * `TauCeti.card_elementaryTwoQuotient_multiplicative`:
-  `|Multiplicative A / (Multiplicative A)²| = 2 ^ finrank ℤ A`.
+  `|Multiplicative A / (Multiplicative A)²| = 2 ^ finrank ℤ A`, with the corresponding
+  `Finite` instance (the group itself is infinite, so the generic instance does not apply).
 * `TauCeti.twoRank_multiplicative`: the 2-rank of `Multiplicative A` is `finrank ℤ A`.
 -/
 
@@ -74,13 +75,16 @@ theorem card_elementaryTwoQuotient_multiplicative :
             (map_range_lsmul_two_additiveMultiplicative A)).toEquiv
     _ = 2 ^ Module.finrank ℤ A := ModN.natCard_eq A 2
 
+/-- The elementary-2 quotient of a finite-rank free abelian group is finite (although the group
+itself is infinite for positive rank, so the generic finiteness instance does not apply). This
+is the instance letting consumers combine the free factor with the `twoRank`-level product and
+divisibility lemmas. -/
+instance : Finite (ElementaryTwoQuotient (Multiplicative A)) :=
+  Nat.finite_of_card_ne_zero (by simp [card_elementaryTwoQuotient_multiplicative])
+
 /-- The 2-rank of a finite-rank free abelian group is its rank:
 `twoRank (Multiplicative A) = finrank ℤ A`. -/
-theorem twoRank_multiplicative : twoRank (Multiplicative A) = Module.finrank ℤ A := by
-  have hcard := card_elementaryTwoQuotient_multiplicative A
-  have : Finite (ElementaryTwoQuotient (Multiplicative A)) :=
-    Nat.finite_of_card_ne_zero (by simp [hcard])
-  rw [card_elementaryTwoQuotient_eq_two_pow_twoRank] at hcard
-  exact Nat.pow_right_injective le_rfl hcard
+theorem twoRank_multiplicative : twoRank (Multiplicative A) = Module.finrank ℤ A :=
+  twoRank_eq_of_card_eq_two_pow _ (card_elementaryTwoQuotient_multiplicative A)
 
 end TauCeti
