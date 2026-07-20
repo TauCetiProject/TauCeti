@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.NumberTheory.NumberField.Basic
+import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
 
 /-!
 # Square roots of integers as algebraic integers
@@ -12,7 +13,9 @@ public import Mathlib.NumberTheory.NumberField.Basic
 An element `x` of a field `K` with `x² = d` for an integer `d` is a root of the monic
 `X² - d`, hence integral over `ℤ`; this file packages such an `x` as an element
 `TauCeti.NumberField.integralSqrt hx` of the ring of integers `𝓞 K`, together with its two
-defining identities (its image in `K` is `x`, and it squares to `d` in `𝓞 K`).
+defining identities (its image in `K` is `x`, and it squares to `d` in `𝓞 K`). It also
+records the compatibility `TauCeti.NumberField.algebraMap_smul` between the Galois action on
+`𝓞 K` and the action on `K`, the bridge for moving such identities between the two rings.
 
 This is the shared square-root packaging used by the multiquadratic Layer 1 files: the
 splitting law (`TauCeti.NumberTheory.Multiquadratic.MultiquadraticSplitting`) moves the
@@ -25,6 +28,8 @@ which lives on `𝓞 K`, to a square root.
 * `TauCeti.NumberField.isIntegral_of_sq_intCast`: a square root of an integer is integral.
 * `TauCeti.NumberField.integralSqrt`: the packaging in `𝓞 K`, with
   `TauCeti.NumberField.algebraMap_integralSqrt` and `TauCeti.NumberField.integralSqrt_sq`.
+* `TauCeti.NumberField.algebraMap_smul`: the Galois action on `𝓞 K` is the restriction of
+  the action on `K`.
 -/
 
 public section
@@ -57,5 +62,16 @@ theorem integralSqrt_sq (hx : x ^ 2 = algebraMap ℤ K d) :
   apply FaithfulSMul.algebraMap_injective (𝓞 K) K
   rw [map_pow, algebraMap_integralSqrt, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
   exact hx
+
+/-- The Galois action on `𝓞 K` is the restriction of the action on `K`: it agrees with
+`galRestrict ℤ ℚ K (𝓞 K) σ` (both restrict `σ`, and they are pinned by injectivity of the
+algebra map), so the compatibility is `algebraMap_galRestrict_apply`. -/
+theorem algebraMap_smul [NumberField K] (σ : K ≃ₐ[ℚ] K) (y : 𝓞 K) :
+    algebraMap (𝓞 K) K (σ • y) = σ (algebraMap (𝓞 K) K y) := by
+  have hgal : galRestrict ℤ ℚ K (𝓞 K) σ y = σ • y := by
+    apply FaithfulSMul.algebraMap_injective (𝓞 K) K
+    rw [algebraMap_galRestrict_apply (A := ℤ) σ y]
+    exact (integralClosure.coe_smul σ y).symm
+  rw [← hgal, algebraMap_galRestrict_apply (A := ℤ) σ y]
 
 end TauCeti.NumberField
