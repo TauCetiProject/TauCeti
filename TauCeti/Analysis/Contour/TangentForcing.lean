@@ -80,36 +80,18 @@ private theorem abs_im_mul_conj_div_mul_le_of_sub_smul {γ : ℝ → ℂ} {t₀ 
     (hv : v ≠ 0) (ht' : 0 < t - t₀) :
     |(L * starRingEnd ℂ v).im| / ‖v‖ * (t - t₀) ≤
       |((γ t - γ t₀) * star v).im| / ‖v‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := by
-  have hv_pos : 0 < ‖v‖ := norm_pos_iff.mpr hv
-  set c : ℝ := |(L * starRingEnd ℂ v).im| / ‖v‖ with hc_def
-  have h_split : ((t - t₀ : ℝ) • L) * starRingEnd ℂ v =
-      (γ t - γ t₀) * star v - (γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v := by
-    rw [Complex.star_def]
-    ring
-  have h_im : |(((t - t₀ : ℝ) • L) * starRingEnd ℂ v).im| ≤
-      |((γ t - γ t₀) * star v).im| + ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖ := by
-    rw [h_split, Complex.sub_im]
-    refine (abs_sub _ _).trans ?_
-    gcongr
-    calc |((γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v).im|
-        ≤ ‖(γ t - γ t₀ - (t - t₀) • L) * starRingEnd ℂ v‖ :=
-          Complex.abs_im_le_norm _
-      _ = ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖ := by
-          rw [norm_mul, RCLike.norm_conj]
-  have hc_mul : c * ‖v‖ = |(L * starRingEnd ℂ v).im| := by
-    rw [hc_def]
-    field_simp
-  have h_lhs : |(((t - t₀ : ℝ) • L) * starRingEnd ℂ v).im| = (t - t₀) * (c * ‖v‖) := by
-    rw [Complex.real_smul, mul_assoc]
-    simp only [Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul, add_zero]
-    rw [abs_mul, abs_of_pos ht', hc_mul, Complex.mul_im]
-  rw [h_lhs] at h_im
-  calc c * (t - t₀) = (t - t₀) * (c * ‖v‖) / ‖v‖ := by field_simp
-    _ ≤ (|((γ t - γ t₀) * star v).im| +
-        ‖γ t - γ t₀ - (t - t₀) • L‖ * ‖v‖) / ‖v‖ := by gcongr
-    _ = |((γ t - γ t₀) * star v).im| / ‖v‖ +
-        ‖γ t - γ t₀ - (t - t₀) • L‖ := by
-        rw [add_div, mul_div_assoc, div_self hv_pos.ne', mul_one]
+  rw [Complex.star_def, ← norm_tangentDeviation hv, ← norm_tangentDeviation hv]
+  have hstep : ‖tangentDeviation L v‖ * (t - t₀) =
+      ‖tangentDeviation ((t - t₀) • L) v‖ := by
+    rw [tangentDeviation_real_smul, norm_smul, Real.norm_of_nonneg ht'.le]; ring
+  have hdev : tangentDeviation ((t - t₀) • L) v =
+      tangentDeviation (γ t - γ t₀) v - tangentDeviation (γ t - γ t₀ - (t - t₀) • L) v :=
+    (congrArg (tangentDeviation · v) (by abel : ((t - t₀) • L : ℂ) =
+      (γ t - γ t₀) - (γ t - γ t₀ - (t - t₀) • L))).trans (tangentDeviation_sub _ _ _)
+  rw [hstep, hdev]
+  refine (norm_sub_le _ _).trans ?_
+  gcongr
+  exact norm_tangentDeviation_le hv _
 
 /-- The ε-bound at the heart of the forcing argument: under the little-o flatness deviation
 `o(‖γ t - γ t₀‖ ^ n)` and a right derivative `L`, the normalized tangent value

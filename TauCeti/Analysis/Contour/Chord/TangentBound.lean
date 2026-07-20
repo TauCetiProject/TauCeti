@@ -67,6 +67,21 @@ private def orthogonalProjectionComplex (w L : ℂ) : ℂ :=
 def tangentDeviation (w L : ℂ) : ℂ :=
   w - orthogonalProjectionComplex w L
 
+/-- `tangentDeviation` is additive in its vector argument. -/
+theorem tangentDeviation_sub (a b L : ℂ) :
+    tangentDeviation (a - b) L = tangentDeviation a L - tangentDeviation b L := by
+  simp only [tangentDeviation, orthogonalProjectionComplex, sub_mul, Complex.sub_re, sub_div,
+    sub_smul]
+  abel
+
+/-- `tangentDeviation` is homogeneous over real scalars in its vector argument. -/
+theorem tangentDeviation_real_smul (c : ℝ) (w L : ℂ) :
+    tangentDeviation (c • w) L = c • tangentDeviation w L := by
+  have hopc : orthogonalProjectionComplex (c • w) L = c • orthogonalProjectionComplex w L := by
+    simp only [orthogonalProjectionComplex, smul_smul, smul_mul_assoc, Complex.smul_re,
+      smul_eq_mul, mul_div_assoc]
+  simp only [tangentDeviation, hopc, smul_sub]
+
 /-- The norm of the orthogonal deviation is the distance from `w` to the line `ℝ • L`:
 `‖tangentDeviation w L‖ = |Im(w · conj L)| / ‖L‖` — the quantity `Contour.FlatOfOrder` bounds. -/
 theorem norm_tangentDeviation {L : ℂ} (hL : L ≠ 0) (w : ℂ) :
