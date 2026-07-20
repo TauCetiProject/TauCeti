@@ -68,6 +68,7 @@ def tangentDeviation (w L : ℂ) : ℂ :=
   w - orthogonalProjectionComplex w L
 
 /-- `tangentDeviation` is additive in its vector argument. -/
+@[simp]
 theorem tangentDeviation_add (a b L : ℂ) :
     tangentDeviation (a + b) L = tangentDeviation a L + tangentDeviation b L := by
   simp only [tangentDeviation, orthogonalProjectionComplex, add_mul, Complex.add_re, add_div,
@@ -75,10 +76,12 @@ theorem tangentDeviation_add (a b L : ℂ) :
   abel
 
 /-- `tangentDeviation` sends the zero vector to `0`. -/
+@[simp]
 theorem tangentDeviation_zero (L : ℂ) : tangentDeviation 0 L = 0 := by
   simp [tangentDeviation, orthogonalProjectionComplex]
 
 /-- `tangentDeviation` respects subtraction in its vector argument. -/
+@[simp]
 theorem tangentDeviation_sub (a b L : ℂ) :
     tangentDeviation (a - b) L = tangentDeviation a L - tangentDeviation b L := by
   simp only [tangentDeviation, orthogonalProjectionComplex, sub_mul, Complex.sub_re, sub_div,
@@ -86,6 +89,7 @@ theorem tangentDeviation_sub (a b L : ℂ) :
   abel
 
 /-- `tangentDeviation` negates in its vector argument. -/
+@[simp]
 theorem tangentDeviation_neg (w L : ℂ) :
     tangentDeviation (-w) L = -tangentDeviation w L := by
   simp only [tangentDeviation, orthogonalProjectionComplex, neg_mul, Complex.neg_re, neg_div,
@@ -93,6 +97,7 @@ theorem tangentDeviation_neg (w L : ℂ) :
   abel
 
 /-- `tangentDeviation` is homogeneous over real scalars in its vector argument. -/
+@[simp]
 theorem tangentDeviation_real_smul (c : ℝ) (w L : ℂ) :
     tangentDeviation (c • w) L = c • tangentDeviation w L := by
   have hopc : orthogonalProjectionComplex (c • w) L = c • orthogonalProjectionComplex w L := by
