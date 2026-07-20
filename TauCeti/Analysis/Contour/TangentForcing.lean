@@ -44,32 +44,23 @@ namespace TauCeti.Contour
 open Asymptotics Filter Set Topology
 
 /-- Near `t₀`, the curve's displacement grows at most linearly along the right derivative:
-for `n ≥ 1`, if `γ` has right derivative `L` at `t₀`, then eventually as `t → t₀⁺` one has
-`‖γ t - γ t₀‖ ^ n ≤ (‖L‖ + 1) ^ n * (t - t₀)`. -/
+for `n ≥ 1`, if `γ` has right derivative `L` at `t₀`, then there is a constant `C > 0` such that
+eventually as `t → t₀⁺` one has `‖γ t - γ t₀‖ ^ n ≤ C * (t - t₀)`. -/
 private theorem eventually_norm_sub_pow_le_of_hasDerivWithinAt {γ : ℝ → ℂ} {t₀ : ℝ} {L : ℂ} {n : ℕ}
     (hn : 1 ≤ n) (h_deriv : HasDerivWithinAt γ L (Ioi t₀) t₀) :
-    ∀ᶠ t in 𝓝[>] t₀, ‖γ t - γ t₀‖ ^ n ≤ (‖L‖ + 1) ^ n * (t - t₀) := by
-  have herr : (fun t => γ t - γ t₀ - (t - t₀) • L) =o[𝓝[>] t₀] (fun t => t - t₀) :=
-    hasDerivWithinAt_iff_isLittleO.mp h_deriv
-  have h_growth : ∀ᶠ t in 𝓝[>] t₀, ‖γ t - γ t₀‖ ≤ (‖L‖ + 1) * (t - t₀) := by
-    filter_upwards [herr.bound one_pos, self_mem_nhdsWithin] with t hb ht
-    have ht' : 0 < t - t₀ := sub_pos.mpr ht
-    have h1 : ‖γ t - γ t₀‖ ≤ ‖(t - t₀) • L‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := by
-      simpa using norm_add_le ((t - t₀) • L) (γ t - γ t₀ - (t - t₀) • L)
-    rw [norm_smul, Real.norm_eq_abs, abs_of_pos ht'] at h1
-    rw [Real.norm_eq_abs, abs_of_pos ht'] at hb
-    calc ‖γ t - γ t₀‖ ≤ (t - t₀) * ‖L‖ + ‖γ t - γ t₀ - (t - t₀) • L‖ := h1
-      _ ≤ (t - t₀) * ‖L‖ + 1 * (t - t₀) := by linarith
-      _ = (‖L‖ + 1) * (t - t₀) := by ring
+    ∃ C : ℝ, 0 < C ∧ ∀ᶠ t in 𝓝[>] t₀, ‖γ t - γ t₀‖ ^ n ≤ C * (t - t₀) := by
+  obtain ⟨c, hc, hbound⟩ := (h_deriv.hasFDerivWithinAt.isBigO_sub).exists_pos
+  refine ⟨c ^ n, by positivity, ?_⟩
   have h_small : ∀ᶠ t in 𝓝[>] t₀, t - t₀ ≤ 1 := by
     filter_upwards [eventually_nhdsWithin_of_eventually_nhds
       (eventually_le_nhds (by linarith : t₀ < t₀ + 1))] with t ht
     linarith
-  filter_upwards [h_growth, h_small, self_mem_nhdsWithin] with t hg hs ht
+  filter_upwards [hbound.bound, h_small, self_mem_nhdsWithin] with t hb hs ht
   have ht' : 0 < t - t₀ := sub_pos.mpr ht
-  calc ‖γ t - γ t₀‖ ^ n ≤ ((‖L‖ + 1) * (t - t₀)) ^ n := by gcongr
-    _ = (‖L‖ + 1) ^ n * (t - t₀) ^ n := by rw [mul_pow]
-    _ ≤ (‖L‖ + 1) ^ n * (t - t₀) := by
+  rw [Real.norm_of_nonneg ht'.le] at hb
+  calc ‖γ t - γ t₀‖ ^ n ≤ (c * (t - t₀)) ^ n := by gcongr
+    _ = c ^ n * (t - t₀) ^ n := by rw [mul_pow]
+    _ ≤ c ^ n * (t - t₀) := by
         gcongr
         exact pow_le_of_le_one ht'.le hs (by omega : n ≠ 0)
 
@@ -106,8 +97,8 @@ private theorem abs_im_mul_conj_div_le_of_isLittleO {γ : ℝ → ℂ} {t₀ : �
   set c : ℝ := |(L * starRingEnd ℂ v).im| / ‖v‖ with hc_def
   have herr : (fun t => γ t - γ t₀ - (t - t₀) • L) =o[𝓝[>] t₀] (fun t => t - t₀) :=
     hasDerivWithinAt_iff_isLittleO.mp h_deriv
-  have h_pow := eventually_norm_sub_pow_le_of_hasDerivWithinAt hn h_deriv
-  set ε' : ℝ := ε / (2 * (‖L‖ + 1) ^ n) with hε'_def
+  obtain ⟨C, hC, h_pow⟩ := eventually_norm_sub_pow_le_of_hasDerivWithinAt hn h_deriv
+  set ε' : ℝ := ε / (2 * C) with hε'_def
   have hε' : 0 < ε' := by positivity
   have h_dev_bound := (isLittleO_iff.mp h_dev) hε'
   have h_err_bound := (isLittleO_iff.mp herr) (c := ε / 2) (by positivity)
@@ -117,16 +108,16 @@ private theorem abs_im_mul_conj_div_le_of_isLittleO {γ : ℝ → ℂ} {t₀ : �
     have h_tri := abs_im_mul_conj_div_mul_le_of_sub_smul (γ := γ) (L := L) hv ht'
     rw [Real.norm_eq_abs, abs_of_pos ht'] at he
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)] at hd
-    have hd' : |((γ t - γ t₀) * star v).im| / ‖v‖ ≤ ε' * ((‖L‖ + 1) ^ n * (t - t₀)) := by
+    have hd' : |((γ t - γ t₀) * star v).im| / ‖v‖ ≤ ε' * (C * (t - t₀)) := by
       calc |((γ t - γ t₀) * star v).im| / ‖v‖ ≤ ε' * ‖γ t - γ t₀‖ ^ n := by
             simpa [Real.norm_eq_abs, abs_of_nonneg (pow_nonneg (norm_nonneg _) n)] using hd
-        _ ≤ ε' * ((‖L‖ + 1) ^ n * (t - t₀)) := by gcongr
-    have hε'_eq : ε' * (‖L‖ + 1) ^ n = ε / 2 := by
+        _ ≤ ε' * (C * (t - t₀)) := by gcongr
+    have hε'_eq : ε' * C = ε / 2 := by
       rw [hε'_def]
       field_simp
     calc c * (t - t₀) ≤ |((γ t - γ t₀) * star v).im| / ‖v‖ +
           ‖γ t - γ t₀ - (t - t₀) • L‖ := h_tri
-      _ ≤ ε' * ((‖L‖ + 1) ^ n * (t - t₀)) + ε / 2 * (t - t₀) := by
+      _ ≤ ε' * (C * (t - t₀)) + ε / 2 * (t - t₀) := by
           gcongr
       _ = ε * (t - t₀) := by rw [← mul_assoc, hε'_eq]; ring
   obtain ⟨t, hct, ht⟩ := (h_all.and self_mem_nhdsWithin).exists
