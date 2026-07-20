@@ -50,27 +50,35 @@ variable (K : Type u) [Field K]
 
 namespace AbelianVariety
 
+/-- The structural morphism of the monoidal unit of `Over (Spec K)` is the identity, hence
+proper. -/
+instance isProperTensorUnitHom : IsProper (𝟙_ (Over (Spec (.of K)))).hom := by
+  rw [Over.tensorUnit_hom]
+  -- `infer_instance` fails on the post-`rw` goal (the failed synthesis attempt on the
+  -- pre-`rw` goal is cached); `inferInstanceAs` re-elaborates the type and succeeds.
+  exact inferInstanceAs (IsProper (𝟙 _))
+
+/-- The structural morphism of the monoidal unit of `Over (Spec K)` is the identity, hence
+geometrically integral. -/
+instance geometricallyIntegralTensorUnitHom :
+    GeometricallyIntegral (𝟙_ (Over (Spec (.of K)))).hom := by
+  rw [Over.tensorUnit_hom]
+  -- as above: `inferInstanceAs` re-elaborates the type, which `infer_instance` does not.
+  exact inferInstanceAs (GeometricallyIntegral (𝟙 _))
+
 /-- The **trivial abelian variety** over `K`: the scheme `Spec K`, structural morphism the
 identity, with the group structure of the monoidal unit of `Over (Spec K)`. -/
-@[expose] noncomputable def trivial : AbelianVariety K where
-  toOver := 𝟙_ (Over (Spec (.of K)))
-  grpObj := inferInstance
-  isProper := by
-    rw [Over.tensorUnit_hom]
-    -- `infer_instance` fails on the post-`rw` goal (the failed synthesis attempt on the
-    -- pre-`rw` goal is cached); `inferInstanceAs` re-elaborates the type and succeeds.
-    exact inferInstanceAs (IsProper (𝟙 _))
-  geometricallyIntegral := by
-    rw [Over.tensorUnit_hom]
-    -- as above: `inferInstanceAs` re-elaborates the type, which `infer_instance` does not.
-    exact inferInstanceAs (GeometricallyIntegral (𝟙 _))
+noncomputable def trivial : AbelianVariety K :=
+  ofGeometricallyIntegral (𝟙_ (Over (Spec (.of K))))
 
 @[simp]
-lemma trivial_toOver : (trivial K).toOver = 𝟙_ (Over (Spec (.of K))) := rfl
+lemma trivial_toOver : (trivial K).toOver = 𝟙_ (Over (Spec (.of K))) :=
+  ofGeometricallyIntegral_toOver _
 
 /-- The underlying scheme of the trivial abelian variety is `Spec K`. -/
 @[simp]
-lemma trivial_toScheme : (trivial K).toScheme = Spec (.of K) := (rfl)
+lemma trivial_toScheme : (trivial K).toScheme = Spec (.of K) := by
+  simp only [toScheme, trivial_toOver, Over.tensorUnit_left]
 
 /-- The trivial abelian variety is zero-dimensional: the topological Krull dimension of `Spec K` is
 `ringKrullDim K = 0` for a field `K`. -/
@@ -81,29 +89,33 @@ lemma trivial_dim : (trivial K).dim = 0 := by
   -- the topological space of `Spec (.of K)` is `PrimeSpectrum K` (`Scheme.Spec_carrier`)
   rfl
 
+/-- The scheme over `Spec K` underlying the trivial abelian variety is terminal: it is the monoidal
+unit of `Over (Spec K)`. -/
+noncomputable def isTerminalTrivialToOver : IsTerminal (trivial K).toOver :=
+  isTerminalTensorUnit.ofIso (eqToIso (trivial_toOver K).symm)
+
 variable {K}
 
 /-- The unique homomorphism from an abelian variety `A` to the trivial abelian variety: the constant
 map to the origin, underlain by the terminal projection `A.toScheme → Spec K`. -/
 noncomputable def toTrivial (A : AbelianVariety K) : A ⟶ trivial K :=
-  Hom.mk' (toUnit A.toOver)
+  Hom.mk' ((isTerminalTrivialToOver K).from A.toOver)
+    ((isTerminalTrivialToOver K).hom_ext _ _) ((isTerminalTrivialToOver K).hom_ext _ _)
 
 namespace Hom
 
-/-- The morphism over `Spec K` underlying `toTrivial` is the terminal projection to the unit. -/
+/-- The morphism over `Spec K` underlying `toTrivial` is the terminal projection. -/
 @[simp]
 lemma toOverHom_toTrivial (A : AbelianVariety K) :
-    toOverHom (toTrivial A) = toUnit A.toOver :=
-  toOverHom_mk' _
+    toOverHom (toTrivial A) = (isTerminalTrivialToOver K).from A.toOver :=
+  toOverHom_mk' _ _ _
 
 end Hom
 
 /-- Any homomorphism to the trivial abelian variety is the constant map `toTrivial`. -/
 lemma eq_toTrivial {A : AbelianVariety K} (m : A ⟶ trivial K) : m = toTrivial A :=
   Hom.ext <| congrArg Over.Hom.left <|
-    (isTerminalTensorUnit (C := Over (Spec (.of K)))).hom_ext
-      (Hom.toOverHom m : A.toOver ⟶ 𝟙_ (Over (Spec (.of K))))
-      (Hom.toOverHom (toTrivial A))
+    (isTerminalTrivialToOver K).hom_ext (Hom.toOverHom m) (Hom.toOverHom (toTrivial A))
 
 /-- Homomorphisms into the trivial abelian variety are unique: it is a terminal object. -/
 noncomputable instance uniqueHomToTrivial (A : AbelianVariety K) : Unique (A ⟶ trivial K) where
