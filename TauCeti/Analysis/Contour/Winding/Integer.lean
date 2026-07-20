@@ -35,6 +35,42 @@ open scoped Interval
 
 namespace TauCeti.Contour
 
+/-- The lifted argument sum at the left endpoint `a` is `0`: every partition node satisfies
+`a ≤ s j`, so each segment ratio at `a` is `1` and its logarithm's imaginary part is `0`. -/
+private lemma sum_im_log_segRatio_left_eq_zero {γ : ℝ → ℂ} {w : ℂ} {a : ℝ} {N : ℕ} {s : ℕ → ℝ}
+    (hs_zero : s 0 = a) (hs_mono : Monotone s) (hs_avoid : ∀ j < N, γ (s j) - w ≠ 0) :
+    (∑ j ∈ Finset.range N, (Complex.log (segRatio γ w (s j) (s (j + 1)) a)).im) = 0 := by
+  refine Finset.sum_eq_zero fun j hj ↦ ?_
+  rw [Finset.mem_range] at hj
+  have ha_le : a ≤ s j := by rw [← hs_zero]; exact hs_mono (Nat.zero_le j)
+  rw [segRatio_eq_one_of_le ha_le (hs_avoid j hj), Complex.log_one, Complex.zero_im]
+
+/-- At the right endpoint `b` the lifted argument sum equals the endpoint-ratio sum: every partition
+segment lies to the left of `b`, so each segment ratio evaluated at `b` is the full endpoint ratio
+`(γ (s (j + 1)) - w) / (γ (s j) - w)`. -/
+private lemma sum_im_log_segRatio_right_eq_sum_im_log_endpoint_div {γ : ℝ → ℂ} {w : ℂ} {b : ℝ}
+    {N : ℕ} {s : ℕ → ℝ} (hs_N : s N = b) (hs_mono : Monotone s) :
+    (∑ j ∈ Finset.range N, (Complex.log (segRatio γ w (s j) (s (j + 1)) b)).im)
+      = ∑ j ∈ Finset.range N, (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).im := by
+  refine Finset.sum_congr rfl fun j hj ↦ ?_
+  rw [Finset.mem_range] at hj
+  have hb_ge : s (j + 1) ≤ b := by rw [← hs_N]; exact hs_mono hj
+  rw [segRatio_eq_endpoint_div_of_le (hs_mono (Nat.le_succ j)) hb_ge]
+
+/-- Two polar forms of the same nonzero point `u`, with real arguments `Ea` and `Eb`, force
+`exp (I · (Eb - Ea)) = 1`. -/
+private lemma exp_I_mul_ofReal_sub_eq_one_of_polar_eq {u : ℂ} {Ea Eb : ℝ} (hu : u ≠ 0)
+    (hla : u = (‖u‖ : ℂ) * Complex.exp (Complex.I * (Ea : ℂ)))
+    (hlb : u = (‖u‖ : ℂ) * Complex.exp (Complex.I * (Eb : ℂ))) :
+    Complex.exp (Complex.I * ((Eb - Ea : ℝ) : ℂ)) = 1 := by
+  -- Cancel the common modulus `‖u‖ ≠ 0` from the two polar forms, then use `exp` periodicity.
+  have hnorm_ne : (‖u‖ : ℂ) ≠ 0 := by
+    rw [ne_eq, Complex.ofReal_eq_zero, norm_eq_zero]; exact hu
+  have hEab : Complex.exp (Complex.I * (Ea : ℂ)) = Complex.exp (Complex.I * (Eb : ℂ)) :=
+    mul_left_cancel₀ hnorm_ne (hla.symm.trans hlb)
+  rw [Complex.ofReal_sub, mul_sub]
+  exact Complex.exp_eq_exp_iff_exp_sub_eq_one.mp hEab.symm
+
 /-- The nonnegative-orientation (`a ≤ b`) case of `exists_int_windingNumber_of_closed`: under the
 same continuity, differentiability-off-a-countable-set, avoidance, and interval-integrability
 assumptions on `[a, b]`, the winding number of the closed curve `γ` about `w` is an integer. The
@@ -46,57 +82,33 @@ private theorem exists_int_windingNumber_of_closed_of_le {γ : ℝ → ℂ} {w :
     (h_avoid : ∀ t ∈ Icc a b, γ t ≠ w)
     (h_int : IntervalIntegrable (fun t ↦ (γ t - w)⁻¹ * deriv γ t) volume a b) :
     ∃ n : ℤ, windingNumber γ a b w = n := by
-  -- The argument lift gives a monotone partition with per-segment slit-plane bounds and, at each
-  -- `t`, the polar form `γ t - w = ‖γ t - w‖ · exp (I · θ t)` with `θ t = arg (γ a - w) + (sum)`.
+  -- The argument lift gives a monotone partition `s` and a polar form of `γ t - w` at each `t`.
   obtain ⟨N, s, _, hs_zero, hs_N, hs_mono, _, hs_avoid, h_slit, _, h_lift⟩ :=
     exists_continuousOn_arg_lift_with_partition hab hγ_cont h_avoid
-  have hla := h_lift a (left_mem_Icc.mpr hab)
-  have hlb := h_lift b (right_mem_Icc.mpr hab)
-  -- Split the index integral into a modulus increment plus `I` times the argument-sum.
+  -- Split the index integral into a modulus increment plus `I` times the endpoint-ratio arg-sum.
   have hint := integral_inv_sub_mul_deriv_eq_log_norm_add_I_mul_sum_log_im hP hs_zero hs_N hs_mono
     hγ_cont hγ_diff h_slit h_int
-  have hnorm_ne : (‖γ a - w‖ : ℂ) ≠ 0 := by
-    rw [ne_eq, Complex.ofReal_eq_zero, norm_eq_zero, sub_eq_zero]
-    exact h_avoid a (left_mem_Icc.mpr hab)
-  -- Endpoint values of the argument sum: at `a` every segment ratio is `1` (sum `= 0`), and at `b`
-  -- every segment ratio is the full endpoint ratio (sum `=` the decomposition's sum).
-  have hsa : (∑ j ∈ Finset.range N,
-      (Complex.log (segRatio γ w (s j) (s (j + 1)) a)).im) = 0 := by
-    refine Finset.sum_eq_zero fun j hj ↦ ?_
-    rw [Finset.mem_range] at hj
-    have ha_le : a ≤ s j := by rw [← hs_zero]; exact hs_mono (Nat.zero_le j)
-    rw [segRatio_eq_one_of_le ha_le (hs_avoid j hj.le), Complex.log_one, Complex.zero_im]
-  have hsb_eq : (∑ j ∈ Finset.range N,
-        (Complex.log (segRatio γ w (s j) (s (j + 1)) b)).im)
-      = ∑ j ∈ Finset.range N,
-        (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).im := by
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rw [Finset.mem_range] at hj
-    have hb_ge : s (j + 1) ≤ b := by rw [← hs_N]; exact hs_mono hj
-    rw [segRatio_eq_endpoint_div_of_le (hs_mono (Nat.le_succ j)) hb_ge]
-  -- Abbreviate the segment sums and the lifted endpoint arguments `θ a = Ea`, `θ b = Eb`.
-  set Se : ℝ := ∑ j ∈ Finset.range N,
-    (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).im with hSe_def
+  -- Closedness `γ a = γ b` makes the two lifted endpoints polar forms of the same point `γ a - w`.
+  have hla := h_lift a (left_mem_Icc.mpr hab)
+  have hlb := h_lift b (right_mem_Icc.mpr hab)
+  rw [← hclosed] at hlb
   set Sa : ℝ := ∑ j ∈ Finset.range N,
     (Complex.log (segRatio γ w (s j) (s (j + 1)) a)).im with hSa_def
   set Sb : ℝ := ∑ j ∈ Finset.range N,
     (Complex.log (segRatio γ w (s j) (s (j + 1)) b)).im with hSb_def
-  set Ea : ℝ := Complex.arg (γ a - w) + Sa with hEa_def
-  set Eb : ℝ := Complex.arg (γ a - w) + Sb with hEb_def
-  -- Closedness `γ a = γ b` equates the two polar forms, so the lifted exponentials agree; hence,
-  -- since `Eb - Ea = Se`, exponential periodicity gives `exp (I · Se) = 1`.
-  have hEab : Complex.exp (Complex.I * (Ea : ℂ)) = Complex.exp (Complex.I * (Eb : ℂ)) := by
-    refine mul_left_cancel₀ hnorm_ne ?_
-    calc (‖γ a - w‖ : ℂ) * Complex.exp (Complex.I * (Ea : ℂ))
-        = γ a - w := hla.symm
-      _ = γ b - w := by rw [hclosed]
-      _ = (‖γ b - w‖ : ℂ) * Complex.exp (Complex.I * (Eb : ℂ)) := hlb
-      _ = (‖γ a - w‖ : ℂ) * Complex.exp (Complex.I * (Eb : ℂ)) := by rw [← hclosed]
-  have hEdiff : Eb - Ea = Se := by rw [hEb_def, hEa_def, hsb_eq, hsa]; ring
+  set Se : ℝ := ∑ j ∈ Finset.range N,
+    (Complex.log ((γ (s (j + 1)) - w) / (γ (s j) - w))).im with hSe_def
+  -- The lifted argument increment collapses to `Se`: zero at `a` (left), full sum at `b` (right).
+  have hEdiff : (Complex.arg (γ a - w) + Sb) - (Complex.arg (γ a - w) + Sa) = Se := by
+    rw [hSa_def, hSb_def, hSe_def,
+      sum_im_log_segRatio_left_eq_zero hs_zero hs_mono (fun j hj => hs_avoid j hj.le),
+      sum_im_log_segRatio_right_eq_sum_im_log_endpoint_div hs_N hs_mono]
+    ring
+  -- The two polar forms of the same nonzero point `γ a - w` force `exp (I · Se) = 1`.
   have hexp_one : Complex.exp (Complex.I * (Se : ℂ)) = 1 := by
-    have h1 : Complex.I * (Se : ℂ) = Complex.I * (Eb : ℂ) - Complex.I * (Ea : ℂ) := by
-      rw [← mul_sub, ← Complex.ofReal_sub, hEdiff]
-    rw [h1, Complex.exp_sub, hEab, div_self (Complex.exp_ne_zero _)]
+    have h := exp_I_mul_ofReal_sub_eq_one_of_polar_eq
+      (sub_ne_zero.mpr (h_avoid a (left_mem_Icc.mpr hab))) hla hlb
+    rwa [hEdiff] at h
   -- So `I · Se = n · (2π i)` for some integer `n`, and closedness kills the modulus increment,
   -- leaving `∫ = I · Se`. Converting through the avoidance form of `windingNumber` reads off `n`.
   obtain ⟨n, hn⟩ := Complex.exp_eq_one_iff.mp hexp_one
