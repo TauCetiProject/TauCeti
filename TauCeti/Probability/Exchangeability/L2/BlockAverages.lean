@@ -111,7 +111,7 @@ theorem Contractable.variance_blockAverage [IsFiniteMeasure μ] (hX : Contractab
 
 /-- **The mean of a block average of a contractable process.** A block average over any
 selection of length `0 < n` has the common coordinate mean `μ[X 0]`. -/
-theorem Contractable.integral_blockAverage [IsFiniteMeasure μ] (hX : Contractable μ X)
+theorem Contractable.integral_blockAverage (hX : Contractable μ X)
     (hint : ∀ n, Integrable (X n) μ) {n : ℕ} (hn : 0 < n) {k : Fin n → ℕ} :
     μ[blockAverage X k] = μ[X 0] := by
   have hmeas : ∀ m, AEMeasurable (X m) μ := fun m => (hint m).aemeasurable
@@ -149,8 +149,8 @@ Var[blockAverage X k - blockAverage X k'] = 2 (v - c) / n,
 
 where `v = Var[X 0]` and `c = cov[X 0, X 1]`. The bound vanishes like `1 / n`, which is the
 analytic core of the L² route to de Finetti's theorem. -/
-theorem l2_bound_two_windows_uniform [IsFiniteMeasure μ] (hX : Contractable μ X)
-    (hX_L2 : ∀ n, MemLp (X n) 2 μ) {n : ℕ} (hn : 0 < n) {k k' : Fin n → ℕ}
+theorem Contractable.variance_blockAverage_sub_of_disjoint [IsFiniteMeasure μ]
+    (hX : Contractable μ X) (hX_L2 : ∀ n, MemLp (X n) 2 μ) {n : ℕ} (hn : 0 < n) {k k' : Fin n → ℕ}
     (hk : Function.Injective k) (hk' : Function.Injective k') (hdisj : ∀ i j, k i ≠ k' j) :
     Var[blockAverage X k - blockAverage X k'; μ] = 2 * (Var[X 0; μ] - cov[X 0, X 1; μ]) / n := by
   rw [variance_sub (memLp_blockAverage hX_L2 k) (memLp_blockAverage hX_L2 k'),
@@ -186,7 +186,7 @@ theorem integral_sq_blockAverage_sub_of_disjoint [IsFiniteMeasure μ] (hX : Cont
   have hvar := variance_eq_integral (μ := μ) (X := blockAverage X k - blockAverage X k') hae
   rw [hmean] at hvar
   simp only [Pi.sub_apply, sub_zero] at hvar
-  rw [← hvar, l2_bound_two_windows_uniform hX hX_L2 hn hk hk' hdisj]
+  rw [← hvar, hX.variance_blockAverage_sub_of_disjoint hX_L2 hn hk hk' hdisj]
 
 end Probability
 
