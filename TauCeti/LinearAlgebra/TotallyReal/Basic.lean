@@ -31,7 +31,7 @@ variable [AddCommMonoid E] [Module R E]
 variable [AddCommMonoid F] [Module R F]
 
 /-- A submodule is totally real with respect to `J` if it is disjoint from its `J`-image. -/
-@[expose] def IsTotallyReal (J : E →ₗ[R] E) (L : Submodule R E) : Prop :=
+def IsTotallyReal (J : E →ₗ[R] E) (L : Submodule R E) : Prop :=
   Disjoint L (L.map J)
 
 /-- The totally real predicate unfolds to disjointness of `L` and its `J`-image. -/

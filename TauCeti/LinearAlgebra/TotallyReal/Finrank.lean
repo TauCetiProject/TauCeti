@@ -27,10 +27,6 @@ is automatic when `J² = -1`.
 
 ## Main declarations
 
-* `TauCeti.LinearMap.injective_of_comp_self_eq_neg_id`: an endomorphism with `J² = -1` is
-  injective.
-* `TauCeti.Submodule.finrank_map_of_injective`: an injective endomorphism preserves the dimension
-  of a submodule.
 * `TauCeti.IsTotallyReal.two_mul_finrank_le`: a totally real subspace satisfies
   `2 * finrank R L ≤ finrank R E`.
 * `TauCeti.IsMaximalTotallyReal.two_mul_finrank_eq`: a maximal totally real subspace satisfies
@@ -48,28 +44,16 @@ open Module
 
 variable {R E : Type*}
 
-namespace LinearMap
-
-variable [Ring R] [AddCommGroup E] [Module R E]
-
-/-- An endomorphism squaring to `-1` is injective: `-J` is a left inverse of it. -/
-theorem injective_of_comp_self_eq_neg_id {J : E →ₗ[R] E} (hJ : J.comp J = -LinearMap.id) :
-    Function.Injective J := by
-  have hJ' : ∀ x : E, J (J x) = -x := fun x => by
-    simpa using congrArg (fun f : E →ₗ[R] E => f x) hJ
-  intro x y hxy
-  have h : J (J x) = J (J y) := congrArg J hxy
-  rw [hJ' x, hJ' y] at h
-  exact neg_injective h
-
-end LinearMap
-
 namespace Submodule
 
 variable [DivisionRing R] [AddCommGroup E] [Module R E]
 
-/-- An injective endomorphism preserves the dimension of a submodule. -/
-theorem finrank_map_of_injective {J : E →ₗ[R] E} (hJ : Function.Injective J)
+/-- An injective endomorphism preserves the dimension of a submodule.
+
+This is a local helper for the finrank statements below; it is `private` because it is a thin
+wrapper around `Submodule.equivMapOfInjective` and not part of the totally real subspace API
+surface. -/
+private theorem finrank_map_of_injective {J : E →ₗ[R] E} (hJ : Function.Injective J)
     (L : Submodule R E) : finrank R (L.map J) = finrank R L :=
   ((Submodule.equivMapOfInjective J hJ L).finrank_eq).symm
 

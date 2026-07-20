@@ -90,7 +90,8 @@ variable [FiniteDimensional ℝ V]
 Note that only taming is required, not the full compatibility of `(ω, J)`. -/
 theorem IsLagrangian.isMaximalTotallyReal_of_tames (hL : ω.IsLagrangian L) (htame : ω.Tames J) :
     IsMaximalTotallyReal J.toLinearMap L :=
-  IsTotallyReal.isMaximalTotallyReal (hL.isIsotropic.disjoint_map_of_tames htame) J.injective
+  IsTotallyReal.isMaximalTotallyReal
+    ((isTotallyReal_iff _ _).2 (hL.isIsotropic.disjoint_map_of_tames htame)) J.injective
     hL.two_mul_finrank
 
 /-- A Lagrangian subspace of a compatible pair on a finite-dimensional space is maximal totally
