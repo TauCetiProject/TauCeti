@@ -96,8 +96,8 @@ theorem tangentDeviation_neg (w L : ℂ) :
     neg_smul]
   abel
 
-/-- `tangentDeviation` is homogeneous over real scalars in its vector argument. -/
-@[simp]
+/-- `tangentDeviation` is homogeneous over real scalars in its vector argument. (Not `@[simp]`:
+`simp` normalizes the real smul `c • w` to `↑c * w`, so this left-hand side never fires.) -/
 theorem tangentDeviation_real_smul (c : ℝ) (w L : ℂ) :
     tangentDeviation (c • w) L = c • tangentDeviation w L := by
   have hopc : orthogonalProjectionComplex (c • w) L = c • orthogonalProjectionComplex w L := by
