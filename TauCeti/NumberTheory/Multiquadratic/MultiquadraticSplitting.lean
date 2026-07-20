@@ -10,6 +10,9 @@ public import Mathlib.LinearAlgebra.Dimension.DivisionRing
 public import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
 public import TauCeti.NumberTheory.NumberField.SplitsCompletely
+import TauCeti.FieldTheory.IntermediateField.AdjoinEqTop
+import TauCeti.NumberTheory.LegendreSymbol.Frobenius
+import TauCeti.NumberTheory.NumberField.IntegralSqrt
 
 /-!
 # The prime-splitting law for a multiquadratic field
@@ -35,43 +38,25 @@ public section
 
 variable {K : Type*} [Field K] [NumberField K]
 
-omit [NumberField K] in
-/-- Each generator `r i` is integral over `ℤ`. -/
-private theorem mq_isIntegral_gen {ι : Type*} (d : ι → ℤ) (r : ι → K)
-    (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) : IsIntegral ℤ (r i) :=
-  -- `r i` is a root of the monic `X² - d i`.
-  ⟨X ^ 2 - C (d i), monic_X_pow_sub_C (d i) (by norm_num), by
-    rw [eval₂_sub, eval₂_X_pow, eval₂_C, hr i, sub_self]⟩
-
-/-- The generator `r i`, as an element of the ring of integers `𝓞 K`. -/
+/-- The generator `r i`, as an element of the ring of integers `𝓞 K`: the shared square-root
+packaging `TauCeti.NumberField.integralSqrt`, specialized to the family. -/
 private noncomputable def ringGen {ι : Type*} (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) : 𝓞 K :=
-  ⟨r i, mq_isIntegral_gen d r hr i⟩
+  integralSqrt (hr i)
 
 omit [NumberField K] in
 /-- Under `𝓞 K ↪ K`, `ringGen d r hr i` maps to the generator `r i`. -/
 private theorem algebraMap_ringGen {ι : Type*} (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) :
     algebraMap (𝓞 K) K (ringGen d r hr i) = r i :=
-  -- `ringGen d r hr i = ⟨r i, _⟩`, so its image is the definitional coercion back to `K`
-  -- (cf. `RingOfIntegers.coe_mk`).
-  rfl
+  algebraMap_integralSqrt (hr i)
 
 omit [NumberField K] in
 /-- `ringGen` squares to the radicand `d i` in `𝓞 K`. -/
 private theorem ringGen_sq {ι : Type*} (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i)) (i : ι) :
-    ringGen d r hr i ^ 2 = algebraMap ℤ (𝓞 K) (d i) := by
-  apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-  rw [map_pow, algebraMap_ringGen, hr i, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
-
-omit [NumberField K] in
-/-- For an ideal `Q` lying over the integer ideal `(a)`, an integer `m` maps into `Q` under
-`algebraMap ℤ (𝓞 K)` iff `a ∣ m`. -/
-private theorem algebraMap_int_mem_iff_dvd_of_liesOver {a : ℤ}
-    (Q : Ideal (𝓞 K)) [Q.LiesOver (span {a})] (m : ℤ) :
-    algebraMap ℤ (𝓞 K) m ∈ Q ↔ a ∣ m :=
-  (Ideal.mem_of_liesOver Q (span {a}) m).symm.trans Ideal.mem_span_singleton
+    ringGen d r hr i ^ 2 = algebraMap ℤ (𝓞 K) (d i) :=
+  integralSqrt_sq (hr i)
 
 /-- Forward direction (pointwise): for `K` Galois over `ℚ`, if `p` splits completely
 (`#{primes over p} = [K : ℚ]`) and `p ∤ d i`, then `d i` is a quadratic residue mod `p`. -/
@@ -231,19 +216,12 @@ private theorem stabilizer_eq_bot_of_forall_legendreSym_eq_one {ι : Type*} (d :
   intro σ hσ
   rw [Subgroup.mem_bot]
   -- Each `σ` in the stabilizer fixes every generator `r i`, and these generate `K = ℚ(rᵢ)`,
-  -- so `σ = 1` by an adjoin induction.
+  -- so `σ = 1`.
   have hfix : ∀ i, σ (r i) = r i :=
     fun i => decompositionGroup_fixes_gen d r hr hodd (hcop i) (hqr i) Q hσ
-  refine AlgEquiv.ext fun x => ?_
-  rw [AlgEquiv.one_apply]
-  have hx : x ∈ (⊤ : IntermediateField ℚ K) := IntermediateField.mem_top
-  rw [← htop] at hx
-  induction hx using IntermediateField.adjoin_induction with
-  | mem y hy => obtain ⟨i, rfl⟩ := hy; exact hfix i
-  | algebraMap q => exact AlgEquiv.commutes σ q
-  | add a b _ _ ha hb => rw [map_add, ha, hb]
-  | inv a _ ha => rw [map_inv₀, ha]
-  | mul a b _ _ ha hb => rw [map_mul, ha, hb]
+  refine TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top htop ?_
+  rintro x ⟨i, rfl⟩
+  exact hfix i
 
 /-- **The multiquadratic splitting law.** For `K = ℚ(√d₁, …, √dₙ)` generated over `ℚ` by square
 roots `r i` of integers `d i`, and an odd prime `p` dividing none of the `d i`, `p` splits

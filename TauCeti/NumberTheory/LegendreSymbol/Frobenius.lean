@@ -21,8 +21,10 @@ Indeed `φ x ≡ x ^ p = (x²)^((p-1)/2) · x = d^((p-1)/2) · x ≡ (d/p) · x 
 criterion, while `(φ x)² = x²` forces `φ x = ± x` on the nose; the two signs are separated
 modulo `Q` because `2x ∈ Q` would force `p ∣ 4d`. This is the local input for the Frobenius
 form of the multiquadratic splitting law (Layer 1 of the multiquadratic roadmap): the Frobenius
-of `ℚ(√d₁, …, √dₙ)` at `p` is the sign vector `((d₁/p), …, (dₙ/p))` on the generators, which
-`TauCeti.NumberTheory.Multiquadratic.Frobenius` derives from this file.
+of `ℚ(√d₁, …, √dₙ)` at `p` acts on each generator by the sign `(dᵢ/p)`.
+`TauCeti.NumberTheory.NumberField.Frobenius` transports this computation to the Galois group of
+a number field, and `TauCeti.NumberTheory.Multiquadratic.Frobenius` applies it to the
+multiquadratic generators.
 
 ## Main results
 
@@ -38,14 +40,15 @@ open Ideal
 
 namespace TauCeti
 
+/-- An ideal of a `ℤ`-algebra lying over the integer ideal `(a)` meets `ℤ` exactly in the
+multiples of `a`: `algebraMap ℤ S m ∈ Q ↔ a ∣ m`. -/
+theorem algebraMap_int_mem_iff_dvd_of_liesOver {S : Type*} [CommRing S] {a : ℤ}
+    (Q : Ideal S) [Q.LiesOver (span {a})] (m : ℤ) :
+    algebraMap ℤ S m ∈ Q ↔ a ∣ m :=
+  (Ideal.mem_of_liesOver Q (span {a}) m).symm.trans Ideal.mem_span_singleton
+
 variable {S : Type*} [CommRing S] [IsDomain S] {Q : Ideal S}
   {p : ℕ} [Fact p.Prime] {d : ℤ} {x : S}
-
-omit [IsDomain S] [Fact p.Prime] in
-/-- An ideal lying over `(p)` meets `ℤ` exactly in the multiples of `p`. -/
-private theorem algebraMap_int_mem_iff_dvd (Q : Ideal S) [Q.LiesOver (span {(p : ℤ)})]
-    (m : ℤ) : algebraMap ℤ S m ∈ Q ↔ (p : ℤ) ∣ m :=
-  (Ideal.mem_of_liesOver Q (span {(p : ℤ)}) m).symm.trans Ideal.mem_span_singleton
 
 omit [IsDomain S] [Fact p.Prime] in
 /-- The residue cardinality entering `AlgHom.IsArithFrobAt` over the rational prime `p` is `p`
@@ -86,7 +89,7 @@ theorem AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.IsArithFr
           algebraMap ℤ S (d ^ (p / 2) - legendreSym p d) * x := by
         simp only [map_sub, sub_mul, zsmul_eq_mul, eq_intCast]
       rw [hfactor]
-      exact Q.mul_mem_right x ((algebraMap_int_mem_iff_dvd Q _).mpr heuler)
+      exact Q.mul_mem_right x ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr heuler)
     have hsum := Q.add_mem hcong hstep
     rw [hxp] at hsum
     rwa [sub_add_sub_cancel] at hsum
@@ -109,7 +112,7 @@ theorem AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.IsArithFr
       rw [hsq4]
       exact Q.mul_mem_right _ hmem
     have hpint : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
-    rcases hpint.dvd_mul.mp ((algebraMap_int_mem_iff_dvd Q _).mp h4d) with h4 | hdd
+    rcases hpint.dvd_mul.mp ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h4d) with h4 | hdd
     · -- `p ∣ 4` forces `p = 2`, excluded.
       have hp4 : p ∣ 4 := by exact_mod_cast h4
       have h22 : p ∣ 2 ^ 2 := by simpa using hp4
