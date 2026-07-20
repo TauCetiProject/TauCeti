@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminants
-import Mathlib.Tactic.NormNum.Prime
 
 /-!
 # Fundamental discriminants
@@ -35,8 +34,8 @@ arbitrary pairwise-coprime family of prime discriminants.
 The definition of a fundamental discriminant and the fact that products of prime discriminants
 are fundamental are classical; see Cox, *Primes of the Form x² + ny²*, and Lemmermeyer,
 *Reciprocity Laws*, following the same prime-discriminant convention as the sibling files in this
-directory. The `-20` and `-84` worked examples below discharge acceptance criteria from the
-`Worked examples` section of `TauCetiRoadmap/Multiquadratic/README.md`.
+directory. The `-20` and `-84` worked examples of the `Worked examples` section of
+`TauCetiRoadmap/Multiquadratic/README.md` are discharged in `FundamentalDiscriminant/Examples.lean`.
 
 ## Main definitions and results
 
@@ -144,16 +143,13 @@ section Products
 
 variable {ι : Type*} {s : Finset ι} {p : ι → ℕ}
 
-/-- A product of odd prime discriminants is congruent to `1` modulo `4`: each factor is, and the
-residue `1` is closed under multiplication modulo `4`. No distinctness of the primes is needed
-for this. -/
+/-- A product of odd prime discriminants is congruent to `1` modulo `4`. No distinctness of the
+underlying primes is needed. -/
 theorem prod_oddPrimeDiscriminant_mod_four_eq_one (hodd : ∀ i ∈ s, Odd (p i)) :
     (∏ i ∈ s, oddPrimeDiscriminant (p i)) % 4 = 1 := by
-  refine Finset.prod_induction _ (fun n => n % 4 = 1) (fun a b ha hb => ?_) (by norm_num)
-    fun i hi => oddPrimeDiscriminant_mod_four_eq_one (hodd i hi)
-  have hmul : a * b % 4 = a % 4 * (b % 4) % 4 := Int.mul_emod a b 4
-  rw [ha, hb] at hmul
-  simpa using hmul
+  rw [Finset.prod_int_mod,
+    Finset.prod_congr rfl fun i hi => oddPrimeDiscriminant_mod_four_eq_one (hodd i hi)]
+  simp
 
 /-- A product of odd prime discriminants is odd. -/
 theorem odd_prod_oddPrimeDiscriminant (hodd : ∀ i ∈ s, Odd (p i)) :
@@ -162,8 +158,7 @@ theorem odd_prod_oddPrimeDiscriminant (hodd : ∀ i ∈ s, Odd (p i)) :
   have h := prod_oddPrimeDiscriminant_mod_four_eq_one hodd
   omega
 
-/-- A product of odd prime discriminants at pairwise distinct primes is squarefree: the factors
-are distinct primes of `ℤ` up to sign, hence pairwise relatively prime, and each is squarefree. -/
+/-- A product of odd prime discriminants at pairwise distinct primes is squarefree. -/
 theorem squarefree_prod_oddPrimeDiscriminant (hp : ∀ i ∈ s, (p i).Prime)
     (hinj : Set.InjOn p s) :
     Squarefree (∏ i ∈ s, oddPrimeDiscriminant (p i)) := by
@@ -188,15 +183,14 @@ theorem isFundamentalDiscriminant_prod_oddPrimeDiscriminant (hp : ∀ i ∈ s, (
 discriminant**, provided the underlying odd primes are pairwise distinct. Together with
 `isFundamentalDiscriminant_prod_oddPrimeDiscriminant` this covers every product of pairwise
 coprime prime discriminants, since two even prime discriminants are never coprime; see
-`isFundamentalDiscriminant_prod` for the assembled statement.
-
-The `2`-adic bookkeeping is the content: writing `Q` for the odd product, we have `Q ≡ 1 (mod 4)`,
-and the three even cases produce `4 * (-Q)`, `4 * (2 * Q)` and `4 * (-(2 * Q))`, whose inner
-factors are `3`, `2` and `2` modulo `4` respectively. -/
+`isFundamentalDiscriminant_prod` for the assembled statement. -/
 theorem isFundamentalDiscriminant_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant {e : ℤ}
     (he : IsEvenPrimeDiscriminant e) (hp : ∀ i ∈ s, (p i).Prime) (hodd : ∀ i ∈ s, Odd (p i))
     (hinj : Set.InjOn p s) :
     IsFundamentalDiscriminant (e * ∏ i ∈ s, oddPrimeDiscriminant (p i)) := by
+  -- Writing `Q` for the odd product, `Q ≡ 1 (mod 4)`, and the three even cases produce
+  -- `4 * (-Q)`, `4 * (2 * Q)` and `4 * (-(2 * Q))`, whose inner factors are `3`, `2` and `2`
+  -- modulo `4` respectively.
   set Q : ℤ := ∏ i ∈ s, oddPrimeDiscriminant (p i)
   have hQ4 : Q % 4 = 1 := prod_oddPrimeDiscriminant_mod_four_eq_one hodd
   have hQsf : Squarefree Q := squarefree_prod_oddPrimeDiscriminant hp hinj
@@ -282,43 +276,9 @@ theorem IsFundamentalDiscriminant.not_isSquare_rat {D : ℤ} (hD : IsFundamental
   rcases hD with ⟨-, hsf⟩ | ⟨m, rfl, hm4, hmsf⟩
   · exact not_isSquare_intCast_of_squarefree_of_ne_one hsf h1
   · have hm1 : m ≠ 1 := by rcases hm4 with h | h <;> omega
-    rw [show ((4 * m : ℤ) : ℚ) = 4 * ((m : ℤ) : ℚ) by push_cast; ring]
+    have hcast : ((4 * m : ℤ) : ℚ) = 4 * ((m : ℤ) : ℚ) := by push_cast; ring
+    rw [hcast]
     exact fun h => not_isSquare_intCast_of_squarefree_of_ne_one hmsf hm1
-      (isSquare_of_isSquare_four_mul h)
-
-section Examples
-
-/-- **Worked example.** `-20`, the discriminant of `ℚ(√-5)`, is a fundamental discriminant: it is
-the product of the prime discriminants `-4` and `5`, whose square roots generate the genus field
-`ℚ(√-1, √5)`. This is an acceptance criterion from the `Worked examples` section of
-`TauCetiRoadmap/Multiquadratic/README.md`. -/
-theorem isFundamentalDiscriminant_neg_twenty : IsFundamentalDiscriminant (-20) := by
-  have h := isFundamentalDiscriminant_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant
-    isEvenPrimeDiscriminant_neg_four (s := ({5} : Finset ℕ)) (p := id)
-    (by intro i hi; simp only [Finset.mem_singleton] at hi; subst hi; norm_num)
-    (by intro i hi; simp only [Finset.mem_singleton] at hi; subst hi; exact Nat.odd_iff.mpr rfl)
-    (by simp)
-  have h5 : oddPrimeDiscriminant 5 = 5 := oddPrimeDiscriminant_of_mod_four_eq_one (by norm_num)
-  have hval : (-4 : ℤ) * ∏ i ∈ ({5} : Finset ℕ), oddPrimeDiscriminant (id i) = -20 := by
-    rw [Finset.prod_singleton, id_eq, h5]; norm_num
-  rwa [hval] at h
-
-/-- **Worked example.** `-84`, the discriminant of `ℚ(√-21)`, is a fundamental discriminant: it is
-the product of the prime discriminants `-4`, `-3` and `-7`, whose square roots generate the genus
-field `ℚ(√-1, √-3, √-7)`. This is an acceptance criterion from the `Worked examples` section of
-`TauCetiRoadmap/Multiquadratic/README.md`. -/
-theorem isFundamentalDiscriminant_neg_eightyfour : IsFundamentalDiscriminant (-84) := by
-  have h := isFundamentalDiscriminant_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant
-    isEvenPrimeDiscriminant_neg_four (s := ({3, 7} : Finset ℕ)) (p := id)
-    (by intro i hi; fin_cases hi <;> norm_num)
-    (by intro i hi; fin_cases hi <;> exact Nat.odd_iff.mpr rfl)
-    (by intro i hi j hj hij; simpa using hij)
-  have h3 : oddPrimeDiscriminant 3 = -3 := oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num)
-  have h7 : oddPrimeDiscriminant 7 = -7 := oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num)
-  have hval : (-4 : ℤ) * ∏ i ∈ ({3, 7} : Finset ℕ), oddPrimeDiscriminant (id i) = -84 := by
-    rw [Finset.prod_pair (by norm_num : (3 : ℕ) ≠ 7), id_eq, id_eq, h3, h7]; norm_num
-  rwa [hval] at h
-
-end Examples
+      (by simpa using h.div (⟨2, by norm_num⟩ : IsSquare (4 : ℚ)))
 
 end TauCeti.Multiquadratic

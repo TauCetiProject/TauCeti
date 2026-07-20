@@ -20,7 +20,6 @@ does not provide directly, used across the multiquadratic development.
 * `Squarefree.neg`: negation preserves squarefreeness in any ring with distributive negation.
 * `not_isSquare_intCast_of_squarefree_of_ne_one`: a squarefree integer other than `1` is not a
   rational square.
-* `isSquare_of_isSquare_four_mul`: dividing a rational square by `4` leaves a rational square.
 -/
 
 public section
@@ -36,17 +35,10 @@ theorem Squarefree.neg {R : Type*} [Monoid R] [HasDistribNeg R] {n : R}
     (hn : Squarefree n) : Squarefree (-n) :=
   ((Associated.refl n).neg_left).squarefree_iff.mpr hn
 
-/-- A squarefree integer other than `1` is not a rational square. If `(n : ℚ)` were a square then
-`n = a * a` for some integer `a`; squarefreeness forces `a` to be a unit, so `n = 1`. -/
+/-- A squarefree integer other than `1` is not a rational square. -/
 theorem not_isSquare_intCast_of_squarefree_of_ne_one {n : ℤ}
     (hsf : Squarefree n) (hne : n ≠ 1) : ¬ IsSquare ((n : ℤ) : ℚ) := by
   rw [Rat.isSquare_intCast_iff]
   rintro ⟨a, ha⟩
   have hu : IsUnit a := hsf a (ha ▸ dvd_rfl)
   rcases Int.isUnit_iff.mp hu with rfl | rfl <;> simp_all
-
-/-- Dividing a rational square by `4` leaves a rational square. -/
-theorem isSquare_of_isSquare_four_mul {q : ℚ} (h : IsSquare ((4 : ℚ) * q)) :
-    IsSquare q := by
-  have h4 : IsSquare (4 : ℚ) := ⟨2, by norm_num⟩
-  simpa using h.div h4

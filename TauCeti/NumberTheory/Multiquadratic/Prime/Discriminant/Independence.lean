@@ -199,11 +199,13 @@ theorem not_isSquare_prod_primeDiscriminantRadicands {ι : Type*} (D : ι → �
     have hnot_negP : ¬ IsSquare (((-P : ℤ) : ℚ)) :=
       not_isSquare_intCast_of_squarefree_of_ne_one hsfP.neg hne_negP
     intro hsquare
-    apply hnot_negP
-    refine isSquare_of_isSquare_four_mul ?_
-    convert hsquare using 1
-    rw [← Int.cast_prod, hprod_int]
-    norm_num
+    have hfour : IsSquare (4 * ((-P : ℤ) : ℚ)) := by
+      convert hsquare using 1
+      rw [← Int.cast_prod, hprod_int]
+      norm_num
+    have hdiv := hfour.div (⟨2, by norm_num⟩ : IsSquare (4 : ℚ))
+    rw [mul_div_cancel_left₀ _ (by norm_num : (4 : ℚ) ≠ 0)] at hdiv
+    exact hnot_negP hdiv
   · refine not_isSquare_prod_primeDiscriminantRadicands_of_pairwise_isCoprime hD ?_
       (prod_primeDiscriminantRadicands_ne_one_of_nonempty hD hinj hS)
     intro i hi j hj hij
