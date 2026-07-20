@@ -115,19 +115,22 @@ private noncomputable def prodTensorAlgEquiv :
     (by
       apply Algebra.TensorProduct.ext
       · apply MonoidAlgebra.algHom_ext
-        intro g
-        simp only [AlgHom.comp_apply, AlgHom.id_apply, Algebra.TensorProduct.includeLeft_apply]
-        rw [one_def, tensorProdAlgHom_tmul_single, prodTensorAlgHom_single]
+        · intro g
+          simp only [AlgHom.comp_apply, AlgHom.id_apply, Algebra.TensorProduct.includeLeft_apply]
+          rw [one_def, tensorProdAlgHom_tmul_single, prodTensorAlgHom_single]
+        · ext
       · apply MonoidAlgebra.algHom_ext
-        intro h
-        simp only [AlgHom.coe_restrictScalars', AlgHom.comp_apply, AlgHom.id_apply,
-          Algebra.TensorProduct.includeRight_apply]
-        rw [one_def, tensorProdAlgHom_tmul_single, prodTensorAlgHom_single])
+        · intro h
+          simp only [AlgHom.coe_restrictScalars', AlgHom.comp_apply, AlgHom.id_apply,
+            Algebra.TensorProduct.includeRight_apply]
+          rw [one_def, tensorProdAlgHom_tmul_single, prodTensorAlgHom_single]
+        · ext)
     (by
       apply MonoidAlgebra.algHom_ext
-      rintro ⟨g, h⟩
-      rw [AlgHom.comp_apply, prodTensorAlgHom_single, tensorProdAlgHom_tmul_single,
-        AlgHom.id_apply])
+      · rintro ⟨g, h⟩
+        rw [AlgHom.comp_apply, prodTensorAlgHom_single, tensorProdAlgHom_tmul_single,
+          AlgHom.id_apply]
+      · ext)
 
 @[simp]
 private theorem prodTensorAlgEquiv_single (g : G) (h : H) :
@@ -146,12 +149,14 @@ noncomputable def prodTensorBialgEquiv :
   BialgEquiv.ofAlgEquiv (prodTensorAlgEquiv R)
     (by
       apply MonoidAlgebra.algHom_ext
-      rintro ⟨g, h⟩
-      simp)
+      · rintro ⟨g, h⟩
+        simp
+      · ext)
     (by
       apply MonoidAlgebra.algHom_ext
-      rintro ⟨g, h⟩
-      simp)
+      · rintro ⟨g, h⟩
+        simp
+      · ext)
 
 /-- The forward product bialgebra equivalence sends the generator indexed by `(g, h)` to the
 pure tensor of the two factor generators. -/

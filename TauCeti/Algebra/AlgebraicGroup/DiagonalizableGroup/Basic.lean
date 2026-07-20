@@ -121,8 +121,9 @@ theorem charOfPoint_point (χ : G →* Aˣ) :
 theorem point_charOfPoint (f : MonoidAlgebra R G →ₐ[R] A) :
     point (R := R) (charOfPoint f) = f := by
   apply MonoidAlgebra.algHom_ext
-  intro g
-  rw [point_single_one, charOfPoint_apply_coe]
+  · intro g
+    rw [point_single_one, charOfPoint_apply_coe]
+  · ext
 
 /-- Algebra maps out of `R[G]` are the same as characters `G →* Aˣ` of `G`. -/
 @[expose] noncomputable def pointEquiv : (MonoidAlgebra R G →ₐ[R] A) ≃ (G →* Aˣ) :=
