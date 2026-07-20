@@ -944,6 +944,64 @@ private lemma normalized_iteratedDerivWithin_nonneg_antitone (f : ℝ → ℝ)
         simpa [pow_succ, mul_assoc] using hsign
       linarith
 
+/-- Pointwise lower bound for the density on `Icc (T/2) T`: at each such point `t`,
+`chafaiDensity f k` is at least the constant `(1/(k-1)!)·(T/2)^(k-1)·h T`. -/
+private lemma chafaiDensity_ge_const_on_Icc (f : ℝ → ℝ) (k : ℕ) (h : ℝ → ℝ)
+    (T : ℝ) (hhT_nonneg : 0 ≤ h T) {t : ℝ} (ht : t ∈ Icc (T / 2) T) (hT_le_ht : h T ≤ h t)
+    (h_density_eq_t :
+      chafaiDensity f k t = (1 / ↑((k - 1).factorial)) * t ^ (k - 1) * h t) :
+    (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T ≤ chafaiDensity f k t := by
+  -- `0 ≤ T/2` follows from the membership hypothesis `T/2 ≤ t ≤ T`.
+  have hT_nonneg : 0 ≤ T := by have := ht.1.trans ht.2; linarith
+  -- Combine the power monotonicity `(T/2)^(k-1) ≤ t^(k-1)` with the pointwise bound `h T ≤ h t`.
+  have hhalf_nonneg : 0 ≤ T / 2 := by linarith
+  have ht_nonneg : 0 ≤ t := le_trans hhalf_nonneg ht.1
+  have hpow : (T / 2) ^ (k - 1) ≤ t ^ (k - 1) := pow_le_pow_left₀ hhalf_nonneg ht.1 _
+  have hcoeff_nonneg : (0 : ℝ) ≤ 1 / ↑((k - 1).factorial) := by positivity
+  have hright_nonneg : 0 ≤ (1 / ↑((k - 1).factorial)) * t ^ (k - 1) :=
+    mul_nonneg hcoeff_nonneg (pow_nonneg ht_nonneg _)
+  rw [h_density_eq_t]
+  calc
+    (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T
+        ≤ ((1 / ↑((k - 1).factorial)) * t ^ (k - 1)) * h T := by
+          simpa [mul_assoc] using
+            mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hpow hcoeff_nonneg) hhT_nonneg
+    _ ≤ ((1 / ↑((k - 1).factorial)) * t ^ (k - 1)) * h t :=
+          mul_le_mul_of_nonneg_left hT_le_ht hright_nonneg
+
+/-- Interval-integral form of the tail lower bound: integrating the pointwise bound
+`chafaiDensity_ge_const_on_Icc` over `[T/2, T]` gives
+`(1/(k-1)!)·(T/2)^k·h T ≤ ∫ t in T/2..T, chafaiDensity f k t`. -/
+private lemma const_le_intervalIntegral_chafaiDensity (f : ℝ → ℝ) (k : ℕ) (hk : k ≠ 0)
+    (h : ℝ → ℝ) (h_antitone : AntitoneOn h (Ici 0)) (T : ℝ) (hT_nonneg : 0 ≤ T)
+    (h_density_eq :
+      ∀ t ∈ Icc (T / 2) T,
+        chafaiDensity f k t = (1 / ↑((k - 1).factorial)) * t ^ (k - 1) * h t)
+    (hdens_int : IntervalIntegrable (chafaiDensity f k) volume (T / 2) T)
+    (hhT_nonneg : 0 ≤ h T) :
+    (1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T ≤
+      ∫ t in T / 2..T, chafaiDensity f k t := by
+  have hconst_int :
+      IntervalIntegrable (fun _ : ℝ =>
+        (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T) volume (T / 2) T :=
+    intervalIntegrable_const
+  -- Integrate the pointwise bound `chafaiDensity_ge_const_on_Icc` directly over `[T/2, T]`.
+  have hmono_int :=
+    intervalIntegral.integral_mono_on (by linarith) hconst_int hdens_int
+      (fun t ht => chafaiDensity_ge_const_on_Icc f k h T hhT_nonneg ht
+        (h_antitone (le_trans (by linarith : (0 : ℝ) ≤ T / 2) ht.1) hT_nonneg ht.2)
+        (h_density_eq t ht))
+  have hlen : T - T / 2 = T / 2 := by ring
+  rw [intervalIntegral.integral_const, smul_eq_mul, hlen] at hmono_int
+  -- Recombine `(T/2)·(T/2)^(k-1) = (T/2)^k` (uses `k ≠ 0`), as a named algebraic equality.
+  have hpow : (T / 2) ^ (k - 1) * (T / 2) = (T / 2) ^ k := by
+    rw [← pow_succ, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hk)]
+  have hconst_eq :
+      T / 2 * ((1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T) =
+        (1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T := by
+    rw [← hpow]; ring
+  rwa [hconst_eq] at hmono_int
+
 /-- Boundary-term tail estimate factored out of `boundary_term_decay`: `(T-x)^k · h T` is
 eventually squeezed by a multiple of the vanishing density tail `∫_{Ioi (T/2)}`. -/
 private lemma density_tail_lower_bound_eventually (f : ℝ → ℝ)
@@ -962,105 +1020,34 @@ private lemma density_tail_lower_bound_eventually (f : ℝ → ℝ)
   filter_upwards [eventually_gt_atTop (max (2 * x) 2)] with T hT
   have hT2 : (2 : ℝ) < T := lt_of_le_of_lt (le_max_right (2 * x) 2) hT
   have hTpos : 0 < T := by linarith
-  have hxT : x < T := by
-    have h2xT : 2 * x < T := lt_of_le_of_lt (le_max_left (2 * x) 2) hT
-    linarith
-  have hTx_nonneg : 0 ≤ T - x := sub_nonneg.mpr hxT.le
-  have hT_nonneg : 0 ≤ T := hTpos.le
-  have hhalf_nonneg : 0 ≤ T / 2 := by positivity
-  have hhT_nonneg : 0 ≤ h T := h_nonneg T hT_nonneg
+  have hTx_nonneg : 0 ≤ T - x := by linarith [lt_of_le_of_lt (le_max_left (2 * x) 2) hT]
+  have hhalf_nonneg : 0 ≤ T / 2 := by linarith
+  have hhT_nonneg : 0 ≤ h T := h_nonneg T hTpos.le
   have h_interval_le :
-      ∫ t in T / 2..T, chafaiDensity f k t ≤
-        ∫ t in Ioi (T / 2), chafaiDensity f k t := by
+      ∫ t in T / 2..T, chafaiDensity f k t ≤ ∫ t in Ioi (T / 2), chafaiDensity f k t := by
     rw [intervalIntegral.integral_of_le (by linarith)]
-    apply setIntegral_mono_set (hint_density.mono_set (Ioi_subset_Ioi hhalf_nonneg))
-    · exact (ae_restrict_mem measurableSet_Ioi).mono fun t ht =>
+    exact setIntegral_mono_set (hint_density.mono_set (Ioi_subset_Ioi hhalf_nonneg))
+      ((ae_restrict_mem measurableSet_Ioi).mono fun t ht =>
         chafaiDensity_nonneg (lt_of_le_of_lt hhalf_nonneg ht).le
-          (hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg k
-            (lt_of_le_of_lt hhalf_nonneg ht).le)
-    · exact ae_of_all _ fun t ht => Ioc_subset_Ioi_self ht
-  have h_const_le :
-      (1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T ≤
-        ∫ t in T / 2..T, chafaiDensity f k t := by
-    have hmono :
-        ∀ᵐ t ∂(volume.restrict (Icc (T / 2) T)),
-          (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T ≤
-            chafaiDensity f k t := by
-      filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
-      have ht_nonneg : 0 ≤ t := le_trans hhalf_nonneg ht.1
-      have ht_pos : 0 < t := lt_of_lt_of_le (by positivity : 0 < T / 2) ht.1
-      have hpow : (T / 2) ^ (k - 1) ≤ t ^ (k - 1) :=
-        pow_le_pow_left₀ hhalf_nonneg ht.1 _
-      have hh_le : h T ≤ h t :=
-        h_antitone ht_nonneg hT_nonneg ht.2
-      have hmul :
-          (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T ≤
-            (1 / ↑((k - 1).factorial)) * t ^ (k - 1) * h t := by
-        have hcoeff_nonneg : 0 ≤ (1 / ↑((k - 1).factorial) : ℝ) := by positivity
-        have hright_nonneg : 0 ≤ (1 / ↑((k - 1).factorial)) * t ^ (k - 1) :=
-          mul_nonneg hcoeff_nonneg (pow_nonneg ht_nonneg _)
-        calc
-          (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T
-              ≤ ((1 / ↑((k - 1).factorial)) * t ^ (k - 1)) * h T := by
-                simpa [mul_assoc] using
-                  mul_le_mul_of_nonneg_right
-                    (mul_le_mul_of_nonneg_left hpow hcoeff_nonneg)
-                    hhT_nonneg
-          _ ≤ ((1 / ↑((k - 1).factorial)) * t ^ (k - 1)) * h t :=
-                mul_le_mul_of_nonneg_left hh_le hright_nonneg
-      simpa [h_density_eq t] using hmul
-    have hconst_int :
-        IntervalIntegrable (fun _ : ℝ =>
-          (1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T) volume (T / 2) T :=
-      intervalIntegrable_const
-    have hIcc_subset : Icc (T / 2) T ⊆ Ici 0 := by
-      intro t ht
-      exact le_trans hhalf_nonneg ht.1
-    have hdens_int : IntervalIntegrable (chafaiDensity f k) volume (T / 2) T :=
-      (hcont_density.mono hIcc_subset).intervalIntegrable_of_Icc (by linarith)
-    have hmono_int :=
-      intervalIntegral.integral_mono_ae_restrict (μ := volume) (a := T / 2) (b := T)
-        (hab := by linarith) hconst_int hdens_int hmono
-    rw [intervalIntegral.integral_const] at hmono_int
-    have hhalf_eq : (T - T / 2) = T / 2 := by ring
-    rw [hhalf_eq] at hmono_int
-    rw [smul_eq_mul] at hmono_int
-    have hconst_eq :
-        T / 2 * ((1 / ↑((k - 1).factorial)) * (T / 2) ^ (k - 1) * h T) =
-          (1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T := by
-      have hk_succ : k = (k - 1) + 1 := by omega
-      rw [hk_succ]
-      ring_nf
-      have hnat : 1 + (k - 1) - 1 = k - 1 := by omega
-      simp [hnat]
-    rw [hconst_eq] at hmono_int
-    exact hmono_int
+          (hcm.neg_one_pow_mul_iteratedDerivWithin_nonneg k (lt_of_le_of_lt hhalf_nonneg ht).le))
+      (ae_of_all _ fun _ ht => Ioc_subset_Ioi_self ht)
   have hhalf_le :
-      (T / 2) ^ k * h T ≤
-        ↑((k - 1).factorial) * ∫ t in Ioi (T / 2), chafaiDensity f k t := by
-    have hfact_pos : (0 : ℝ) < ↑((k - 1).factorial) :=
-      Nat.cast_pos.mpr (Nat.factorial_pos _)
-    have haux := le_trans h_const_le h_interval_le
-    have hmul := mul_le_mul_of_nonneg_left haux hfact_pos.le
-    have hleft_eq :
-        ↑((k - 1).factorial) *
-            ((1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T) =
-          (T / 2) ^ k * h T := by
-      field_simp [hfact_pos.ne']
-    rw [hleft_eq] at hmul
-    exact hmul
-  have hpow_le : (T - x) ^ k ≤ T ^ k :=
-    pow_le_pow_left₀ hTx_nonneg (by linarith) _
-  have hTk_eq : T ^ k * h T = (2 : ℝ) ^ k * ((T / 2) ^ k * h T) := by
-    calc
-      T ^ k * h T = ((2 : ℝ) * (T / 2)) ^ k * h T := by congr 1; field_simp
-      _ = (2 : ℝ) ^ k * ((T / 2) ^ k * h T) := by rw [mul_pow]; ring
+      (T / 2) ^ k * h T ≤ ↑((k - 1).factorial) * ∫ t in Ioi (T / 2), chafaiDensity f k t := by
+    have hfact_pos : (0 : ℝ) < ↑((k - 1).factorial) := Nat.cast_pos.mpr (Nat.factorial_pos _)
+    have hIcc_subset : Icc (T / 2) T ⊆ Ici 0 := fun t ht => le_trans hhalf_nonneg ht.1
+    have hmul := mul_le_mul_of_nonneg_left
+      ((const_le_intervalIntegral_chafaiDensity f k hk h h_antitone T hTpos.le
+        (fun t _ => h_density_eq t)
+        ((hcont_density.mono hIcc_subset).intervalIntegrable_of_Icc (by linarith))
+        hhT_nonneg).trans h_interval_le) hfact_pos.le
+    have hfact_cancel :
+        ↑((k - 1).factorial) * ((1 / ↑((k - 1).factorial)) * (T / 2) ^ k * h T) =
+          (T / 2) ^ k * h T := by field_simp
+    rwa [hfact_cancel] at hmul
   calc
-    (T - x) ^ k * h T ≤ T ^ k * h T := by gcongr
-    _ = (2 : ℝ) ^ k * ((T / 2) ^ k * h T) := hTk_eq
-    _ ≤ (2 : ℝ) ^ k *
-        (↑((k - 1).factorial) * ∫ t in Ioi (T / 2), chafaiDensity f k t) := by
-          gcongr
+    (T - x) ^ k * h T ≤ T ^ k * h T := by gcongr; linarith
+    _ = (2 : ℝ) ^ k * ((T / 2) ^ k * h T) := by rw [div_pow]; field_simp
+    _ ≤ (2 : ℝ) ^ k * (↑((k - 1).factorial) * ∫ t in Ioi (T / 2), chafaiDensity f k t) := by gcongr
     _ = ((2 : ℝ) ^ k * ↑((k - 1).factorial)) *
           ∫ t in Ioi (T / 2), chafaiDensity f k t := by ring
 
