@@ -109,13 +109,12 @@ theorem Contractable.variance_blockAverage [IsFiniteMeasure μ] (hX : Contractab
   field_simp
   ring
 
-/-- **The mean of a block average of a contractable process.** A block average over any injective
+/-- **The mean of a block average of a contractable process.** A block average over any
 selection of length `0 < n` has the common coordinate mean `μ[X 0]`. -/
 theorem Contractable.integral_blockAverage [IsFiniteMeasure μ] (hX : Contractable μ X)
-    (hX_L2 : ∀ n, MemLp (X n) 2 μ) {n : ℕ} (hn : 0 < n) {k : Fin n → ℕ} :
+    (hint : ∀ n, Integrable (X n) μ) {n : ℕ} (hn : 0 < n) {k : Fin n → ℕ} :
     μ[blockAverage X k] = μ[X 0] := by
-  have hint : ∀ m, Integrable (X m) μ := fun m => (hX_L2 m).integrable one_le_two
-  have hmeas : ∀ m, AEMeasurable (X m) μ := fun m => (hX_L2 m).aestronglyMeasurable.aemeasurable
+  have hmeas : ∀ m, AEMeasurable (X m) μ := fun m => (hint m).aemeasurable
   have hne : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
   simp_rw [blockAverage_apply]
   rw [integral_const_mul, integral_finsetSum _ (fun i _ => hint (k i))]
@@ -124,7 +123,7 @@ theorem Contractable.integral_blockAverage [IsFiniteMeasure μ] (hX : Contractab
     inv_mul_cancel₀ hne, one_mul]
 
 /-- **The covariance of two disjoint block averages of a contractable L² sequence.** Two block
-averages over injective selections `k, k' : Fin n → ℕ` with disjoint ranges (`0 < n`) have
+averages over selections `k, k' : Fin n → ℕ` with disjoint ranges (`0 < n`) have
 covariance exactly the common off-diagonal covariance `c = cov[X 0, X 1]`. -/
 theorem Contractable.covariance_blockAverage_disjoint [IsFiniteMeasure μ] (hX : Contractable μ X)
     (hX_L2 : ∀ n, MemLp (X n) 2 μ) {n : ℕ} (hn : 0 < n) {k k' : Fin n → ℕ}
@@ -178,7 +177,8 @@ theorem integral_sq_blockAverage_sub_of_disjoint [IsFiniteMeasure μ] (hX : Cont
     simp only [Pi.sub_apply]
     rw [integral_sub ((memLp_blockAverage hX_L2 k).integrable one_le_two)
       ((memLp_blockAverage hX_L2 k').integrable one_le_two),
-      hX.integral_blockAverage hX_L2 hn (k := k), hX.integral_blockAverage hX_L2 hn (k := k'),
+      hX.integral_blockAverage (fun m => (hX_L2 m).integrable one_le_two) hn (k := k),
+      hX.integral_blockAverage (fun m => (hX_L2 m).integrable one_le_two) hn (k := k'),
       sub_self]
   have hae : AEMeasurable (blockAverage X k - blockAverage X k') μ :=
     ((memLp_blockAverage hX_L2 k).sub
