@@ -205,15 +205,16 @@ private lemma iteratedDeriv_pow_sub_mul_div_factorial {z₀ : ℂ} (p i : ℕ) {
   rw [hleib, div_eq_div_iff hfac_pi hfac_i]
   linear_combination iteratedDeriv i h z₀ * hid
 
-/-- The pole case of `residue_eq_of_eventuallyEq_zpow_smul`: when `meromorphicOrderAt f z₀ < 0`,
-reduce to `residue_eq_of_order_lt_zero` at the true order and shift the Taylor coefficient back to
-the presentation factor `g`. -/
+/-- The pole case (`meromorphicOrderAt f z₀ < 0`) of `residue_eq_of_eventuallyEq_zpow_smul`: the
+residue of `f` at `z₀` equals the Taylor coefficient
+`iteratedDeriv (-1 - n) g z₀ / (-1 - n)!` of the presentation factor `g`. -/
 private theorem residue_eq_of_eventuallyEq_zpow_smul_of_order_lt_zero {f g : ℂ → ℂ} {z₀ : ℂ} {n : ℤ}
     (hg : AnalyticAt ℂ g z₀) (hfg : f =ᶠ[𝓝[≠] z₀] fun z => (z - z₀) ^ n • g z)
     (hf : MeromorphicAt f z₀)
     (hord_eq : meromorphicOrderAt f z₀ = (n : WithTop ℤ) + meromorphicOrderAt g z₀)
     (ha : meromorphicOrderAt f z₀ < 0) :
     residue f z₀ = iteratedDeriv (-1 - n).toNat g z₀ / ((-1 - n).toNat.factorial : ℂ) := by
+  -- Reduce to `residue_eq_of_order_lt_zero` at the true order, then shift back to `g`.
   have hle : (n : WithTop ℤ) ≤ meromorphicOrderAt f z₀ :=
     hord_eq ▸ le_add_of_nonneg_right hg.meromorphicOrderAt_nonneg
   obtain ⟨g₀, hg₀_an, hg₀_ne, hf_eq⟩ := (meromorphicOrderAt_ne_top_iff hf).1 (ne_top_of_lt ha)
