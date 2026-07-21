@@ -5,8 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Algebra.Squarefree.Basic
-public import Mathlib.Algebra.Ring.Associated
-public import Mathlib.Data.Rat.Lemmas
+import Mathlib.Algebra.Ring.Associated
+import Mathlib.Data.Rat.Lemmas
 
 /-!
 # Squarefree elements and rational squares

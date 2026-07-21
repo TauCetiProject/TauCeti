@@ -28,14 +28,16 @@ discriminants can only be fundamental if at most one factor is even. The two com
 below therefore split along exactly that line: a product of odd prime discriminants at pairwise
 distinct primes, and such a product multiplied by one even prime discriminant. Every product of
 pairwise coprime prime discriminants is of one of these two shapes, and the general theorem
-`isFundamentalDiscriminant_prod` assembles the two cases into a single statement about an
-arbitrary pairwise-coprime family of prime discriminants.
+`isFundamentalDiscriminant_prod` assembles the two cases for distinct prime discriminants with at
+most one even value; `isFundamentalDiscriminant_prod_of_pairwise_isCoprime` gives the
+pairwise-coprime specialization.
 
 The definition of a fundamental discriminant and the fact that products of prime discriminants
 are fundamental are classical; see Cox, *Primes of the Form x² + ny²*, and Lemmermeyer,
 *Reciprocity Laws*, following the same prime-discriminant convention as the sibling files in this
 directory. The `-20` and `-84` worked examples of the `Worked examples` section of
-`TauCetiRoadmap/Multiquadratic/README.md` are discharged in `FundamentalDiscriminant/Examples.lean`.
+`TauCetiRoadmap/Multiquadratic/README.md` have their fundamental-discriminant component established
+in `FundamentalDiscriminant/Examples.lean`; their class-group and genus-field claims are later work.
 
 ## Main definitions and results
 
@@ -43,8 +45,10 @@ directory. The `-20` and `-84` worked examples of the `Worked examples` section 
   condition.
 * `TauCeti.Multiquadratic.IsPrimeDiscriminant.isFundamentalDiscriminant`: every prime
   discriminant is a fundamental discriminant.
-* `TauCeti.Multiquadratic.isFundamentalDiscriminant_prod`: a product of pairwise coprime prime
-  discriminants is a fundamental discriminant.
+* `TauCeti.Multiquadratic.isFundamentalDiscriminant_prod`: a product of distinct prime
+  discriminants with at most one even value is a fundamental discriminant.
+* `TauCeti.Multiquadratic.isFundamentalDiscriminant_prod_of_pairwise_isCoprime`: the
+  pairwise-coprime specialization.
 * `TauCeti.Multiquadratic.isFundamentalDiscriminant_prod_oddPrimeDiscriminant` and its even-factor
   companion `..._of_isEvenPrimeDiscriminant`: the two shape-specific component theorems that
   `isFundamentalDiscriminant_prod` assembles.
@@ -104,7 +108,7 @@ theorem IsFundamentalDiscriminant.squarefree_div_four {D : ℤ}
 
 /-- The second branch accessor: for a fundamental discriminant divisible by `4`, the quotient
 `D / 4` is `2` or `3` modulo `4`. -/
-theorem IsFundamentalDiscriminant.div_four_mod_four {D : ℤ}
+theorem IsFundamentalDiscriminant.div_four_mod_four_eq_two_or_three {D : ℤ}
     (hD : IsFundamentalDiscriminant D) (h : D % 4 = 0) : D / 4 % 4 = 2 ∨ D / 4 % 4 = 3 := by
   rcases hD with ⟨h4, -⟩ | ⟨m, rfl, hm4, -⟩
   · exact absurd h4 (by omega)
@@ -224,30 +228,19 @@ private theorem prod_oddPrimeDiscriminant_natAbs_of_not_isEvenPrimeDiscriminant 
   rw [hrepr i hi, hrepr j hj]
   exact congrArg oddPrimeDiscriminant hpij
 
-/-- **A product of pairwise coprime prime discriminants is a fundamental discriminant.** This is
-the synthesis direction in full generality: a family `D : ι → ℤ` of prime discriminants, pairwise
-coprime, multiplies to a fundamental discriminant. Coprimality forces at most one even factor
-(the three even prime discriminants all share the divisor `2`), so the product normalises to one
-of the two shapes handled above. `IsPrimeDiscriminant.isFundamentalDiscriminant` is the
-singleton case. -/
+/-- **A product of distinct prime discriminants with at most one even value is a fundamental
+discriminant.** -/
 theorem isFundamentalDiscriminant_prod {D : ι → ℤ} (hD : ∀ i ∈ s, IsPrimeDiscriminant (D i))
-    (hcop : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → IsCoprime (D i) (D j)) :
+    (hDinj : Set.InjOn D s)
+    (heven : ∀ i ∈ s, ∀ j ∈ s, IsEvenPrimeDiscriminant (D i) →
+      IsEvenPrimeDiscriminant (D j) → D i = D j) :
     IsFundamentalDiscriminant (∏ i ∈ s, D i) := by
   classical
-  have hDinj : Set.InjOn D s := by
-    intro i hi j hj hij
-    by_contra hne
-    exact (hD i hi).not_isUnit
-      ((hcop i hi j hj hne).isUnit_of_dvd' dvd_rfl ⟨1, by rw [mul_one]; exact hij.symm⟩)
   by_cases hev : ∃ i ∈ s, IsEvenPrimeDiscriminant (D i)
   · obtain ⟨i₀, hi₀, hev₀⟩ := hev
     have huniq : ∀ j ∈ s, IsEvenPrimeDiscriminant (D j) → j = i₀ := by
       intro j hj hevj
-      by_contra hji
-      have h2i : (2 : ℤ) ∣ D i₀ := by rcases hev₀ with h | h | h <;> rw [h] <;> norm_num
-      have h2j : (2 : ℤ) ∣ D j := by rcases hevj with h | h | h <;> rw [h] <;> norm_num
-      have h2 : IsUnit (2 : ℤ) := (hcop j hj i₀ hi₀ hji).isUnit_of_dvd' h2j h2i
-      simp [Int.isUnit_iff] at h2
+      exact hDinj hj hi₀ (heven j hj i₀ hi₀ hevj hev₀)
     have hoddset : ∀ j ∈ s.erase i₀, ¬ IsEvenPrimeDiscriminant (D j) := fun j hj hevj =>
       Finset.ne_of_mem_erase hj (huniq j (Finset.mem_of_mem_erase hj) hevj)
     obtain ⟨hpprime, hpodd, hpinj, hproderase⟩ :=
@@ -266,6 +259,24 @@ theorem isFundamentalDiscriminant_prod {D : ι → ℤ} (hD : ∀ i ∈ s, IsPri
     rw [hprod]
     exact isFundamentalDiscriminant_prod_oddPrimeDiscriminant
       (p := fun i => (D i).natAbs) hpprime hpodd hpinj
+
+/-- A product of pairwise coprime prime discriminants is a fundamental discriminant. -/
+theorem isFundamentalDiscriminant_prod_of_pairwise_isCoprime {D : ι → ℤ}
+    (hD : ∀ i ∈ s, IsPrimeDiscriminant (D i))
+    (hcop : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → IsCoprime (D i) (D j)) :
+    IsFundamentalDiscriminant (∏ i ∈ s, D i) := by
+  apply isFundamentalDiscriminant_prod hD
+  · intro i hi j hj hij
+    by_contra hne
+    exact (hD i hi).not_isUnit
+      ((hcop i hi j hj hne).isUnit_of_dvd' dvd_rfl ⟨1, by rw [mul_one]; exact hij.symm⟩)
+  · intro i hi j hj hevi hevj
+    by_cases hij : i = j
+    · exact congrArg D hij
+    · have h2i : (2 : ℤ) ∣ D i := by rcases hevi with h | h | h <;> rw [h] <;> norm_num
+      have h2j : (2 : ℤ) ∣ D j := by rcases hevj with h | h | h <;> rw [h] <;> norm_num
+      have h2 : IsUnit (2 : ℤ) := (hcop i hi j hj hij).isUnit_of_dvd' h2i h2j
+      simp [Int.isUnit_iff] at h2
 
 end Products
 

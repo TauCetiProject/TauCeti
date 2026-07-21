@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant
+public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Basic
 import Mathlib.Tactic.NormNum.Prime
 
 /-!
@@ -12,10 +12,11 @@ import Mathlib.Tactic.NormNum.Prime
 
 The multiquadratic roadmap's `Worked examples` section (`TauCetiRoadmap/Multiquadratic/README.md`)
 lists `ℚ(√-5)`, with discriminant `-20` and genus field `ℚ(√-1, √5)`, and `ℚ(√-21)`, with
-discriminant `-84` and genus field `ℚ(√-1, √-3, √-7)`. This file discharges the corresponding
-acceptance criteria: each discriminant is derived as a product of prime discriminants through
+discriminant `-84` and genus field `ℚ(√-1, √-3, √-7)`. This file establishes the
+fundamental-discriminant component of those examples: each discriminant is derived as a product
+of prime discriminants through
 `isFundamentalDiscriminant_mul_prod_oddPrimeDiscriminant_of_isEvenPrimeDiscriminant`, rather than
-by unfolding the definition.
+by unfolding the definition. The class-group and genus-field claims remain for later work.
 
 ## Main results
 
