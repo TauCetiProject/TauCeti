@@ -26,7 +26,7 @@ preserves the unit and multiplication.
 
 public section
 
-open CategoryTheory MonoidalCategory AlgebraicGeometry MonObj
+open CategoryTheory AlgebraicGeometry
 open scoped CategoryTheory.Obj
 
 namespace TauCeti
@@ -48,16 +48,7 @@ monoidal structure on pullback ensures that it is again a group-scheme homomorph
 noncomputable def Hom.baseChange {A B : AbelianVariety K} (f : A ⟶ B)
     (L : Type u) [Field L] [Algebra K L] : A.baseChange L ⟶ B.baseChange L := by
   let F := Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))
-  letI : MonObj (F.obj A.toOver) := Functor.monObjObj (F := F) A.toOver
-  letI : MonObj (F.obj B.toOver) := Functor.monObjObj (F := F) B.toOver
-  letI : IsMonHom (F.map (Hom.toOverHom f)) :=
-    Functor.map.instIsMonHom (F := F) A.toOver B.toOver (Hom.toOverHom f)
-  refine Hom.mk' (F.map (Hom.toOverHom f)) ?_ ?_
-  · change η[F.obj A.toOver] ≫ F.map (Hom.toOverHom f) = η[F.obj B.toOver]
-    exact IsMonHom.one_hom _
-  · change μ[F.obj A.toOver] ≫ F.map (Hom.toOverHom f) =
-      (F.map (Hom.toOverHom f) ⊗ₘ F.map (Hom.toOverHom f)) ≫ μ[F.obj B.toOver]
-    exact IsMonHom.mul_hom _
+  exact InducedCategory.homMk (F.mapCommGrp.map f.hom)
 
 /-- The underlying morphism over `Spec L` of a base-changed homomorphism is the pullback of its
 underlying morphism over `Spec K`. -/
@@ -67,32 +58,22 @@ lemma Hom.toOverHom_baseChange {A B : AbelianVariety K} (f : A ⟶ B)
     Hom.toOverHom (Hom.baseChange f L) =
       (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map
         (Hom.toOverHom f) := by
-  exact Hom.toOverHom_mk' (A := A.baseChange L) (B := B.baseChange L) _ _ _
+  rfl
 
 /-- Base change preserves identity homomorphisms. -/
 @[simp]
 lemma Hom.baseChange_id (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
     Hom.baseChange (𝟙 A) L = 𝟙 (A.baseChange L) := by
-  apply Hom.ext
-  rw [Hom.toSchemeHom_id]
-  have h : Hom.toOverHom (Hom.baseChange (𝟙 A) L) = 𝟙 (A.baseChange L).toOver := by
-    rw [Hom.toOverHom_baseChange, Hom.toOverHom_id]
-    exact (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map_id A.toOver
-  exact congrArg Over.Hom.left h
+  exact InducedCategory.hom_ext ((Over.pullback
+    (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map_id (CommGrp.mk A.toOver))
 
 /-- Base change preserves composition of homomorphisms. -/
 @[simp]
 lemma Hom.baseChange_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C)
     (L : Type u) [Field L] [Algebra K L] :
     Hom.baseChange (f ≫ g) L = Hom.baseChange f L ≫ Hom.baseChange g L := by
-  apply Hom.ext
-  rw [Hom.toSchemeHom_comp]
-  have h : Hom.toOverHom (Hom.baseChange (f ≫ g) L) =
-      Hom.toOverHom (Hom.baseChange f L) ≫ Hom.toOverHom (Hom.baseChange g L) := by
-    rw [Hom.toOverHom_baseChange, Hom.toOverHom_comp, Functor.map_comp,
-      Hom.toOverHom_baseChange, Hom.toOverHom_baseChange]
-    rfl
-  exact congrArg Over.Hom.left h
+  exact InducedCategory.hom_ext ((Over.pullback
+    (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map_comp f.hom g.hom)
 
 /-- Extension of the base field defines a functor between the categories of abelian varieties.
 -/
