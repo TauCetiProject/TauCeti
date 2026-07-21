@@ -93,7 +93,7 @@ theorem finrank_eq_complexFinrank_of_isMaximalTotallyReal [FiniteDimensional ℝ
     {J : AlmostComplexStructure V} {L : Submodule ℝ V}
     (hL : IsMaximalTotallyReal J.toLinearMap L) :
     Module.finrank ℝ L = J.complexFinrank := by
-  have h := hL.two_mul_finrank_eq J.injective
+  have h := hL.two_mul_finrank_eq (J.injective.comp L.subtype_injective)
   have h' := J.finrank_real_eq_two_mul_complexFinrank
   omega
 
