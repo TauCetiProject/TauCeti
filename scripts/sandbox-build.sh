@@ -21,7 +21,21 @@ export TMPDIR="$PWD/.lake/tmp"
 
 # Build the overlaid TauCeti/ against the trusted base config. landrun keeps this
 # offline and confines writes to base/.lake.
-lake build
+#
+# The build must be SILENT, the way Mathlib requires: a clean elaboration prints only Lake's
+# progress. Any Lean `info:` or `warning:` diagnostic in the output — a stray `#check`/`#eval`, a
+# `simp?`/`ring_nf?`-style "Try this: …" suggestion, or a linter warning — means the overlaid
+# TauCeti/ is not clean, so fail on it here. (A compile `error:` already fails `lake build` below via
+# pipefail; this catches the non-fatal diagnostics that otherwise slip through green and, worse, can
+# masquerade in the log as the failure when some LATER check is the real one.) We capture the build
+# output and scan it: `info:`/`warning:` at line start or in the `<file>:<line>:<col>: warning:` form.
+# Lake's per-module markers (`✔`/`ℹ`/`⚠ [n/m] …`) are not diagnostics and do not match.
+build_log="$TMPDIR/lake-build.log"
+lake build 2>&1 | tee "$build_log"
+if grep -nE '(^|[[:space:]])(warning|info): ' "$build_log"; then
+  echo "::error::build is not silent — the lines above are Lean warning/info diagnostics; a clean build must emit none. Remove the stray #check/#eval, apply or delete the suggested rewrite, or fix the warning."
+  exit 1
+fi
 
 # Axiom audit: inspect the built environment and reject any axiom outside
 # {propext, Classical.choice, Quot.sound} — catching sorry, native_decide, and
