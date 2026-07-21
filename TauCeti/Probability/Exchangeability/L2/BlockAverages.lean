@@ -55,6 +55,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Finset
+open scoped BigOperators
 
 namespace TauCeti
 
@@ -65,18 +66,27 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : ℕ → Ω →
 /-- The **block average** of a real-valued process `X` over a finite selection `k : Fin n → ℕ`:
 the empirical mean `n⁻¹ • ∑ i, X (k i)` of the block `(X (k i))ᵢ`. -/
 def blockAverage (X : ℕ → Ω → ℝ) {n : ℕ} (k : Fin n → ℕ) : Ω → ℝ :=
-  (n : ℝ)⁻¹ • ∑ i, X (k i)
+  𝔼 i, X (k i)
 
 omit [MeasurableSpace Ω] in
 @[simp]
 theorem blockAverage_apply {n : ℕ} (k : Fin n → ℕ) (ω : Ω) :
     blockAverage X k ω = (n : ℝ)⁻¹ * ∑ i, X (k i) ω := by
-  simp [blockAverage, Finset.sum_apply]
+  rw [blockAverage, Finset.expect_apply, Fintype.expect_eq_sum_div_card]
+  simp [div_eq_inv_mul]
+
+omit [MeasurableSpace Ω] in
+/-- A block average as a real-scaled finite sum. -/
+theorem blockAverage_eq_sum {n : ℕ} (k : Fin n → ℕ) :
+    blockAverage X k = (n : ℝ)⁻¹ • ∑ i, X (k i) := by
+  ext ω
+  simp
 
 /-- A block average of `L²` coordinates is itself `L²`. -/
 theorem memLp_blockAverage {n : ℕ} (k : Fin n → ℕ) (hX_L2 : ∀ i, MemLp (X (k i)) 2 μ) :
-    MemLp (blockAverage X k) 2 μ :=
-  (memLp_finsetSum' _ fun i _ => hX_L2 i).const_smul _
+    MemLp (blockAverage X k) 2 μ := by
+  rw [blockAverage_eq_sum]
+  exact (memLp_finsetSum' _ fun i _ => hX_L2 i).const_smul _
 
 /-- The double sum of block covariances splits along the diagonal into the common variance and
 the common off-diagonal covariance of a contractable `L²` sequence. -/
@@ -109,7 +119,7 @@ theorem Contractable.variance_blockAverage [IsFiniteMeasure μ] (hX : Contractab
     Var[blockAverage X k; μ] = (Var[X 0; μ] - cov[X 0, X 1; μ]) / n + cov[X 0, X 1; μ] := by
   have hmeas : ∀ m, AEMeasurable (X m) μ := fun m => (hX_L2 m).aestronglyMeasurable.aemeasurable
   have hne : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  rw [blockAverage, variance_smul, variance_sum (fun i => hX_L2 (k i)),
+  rw [blockAverage_eq_sum, variance_smul, variance_sum (fun i => hX_L2 (k i)),
     sum_sum_cov_eq hX hmeas hk]
   field_simp
   ring
@@ -138,7 +148,7 @@ theorem Contractable.covariance_blockAverage_of_disjoint [IsFiniteMeasure μ] (h
   have hmeas : ∀ p, AEMeasurable (X p) μ := fun p => (hX_L2 p).aestronglyMeasurable.aemeasurable
   have hne : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
   have hne' : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hm.ne'
-  rw [blockAverage, blockAverage, covariance_smul_left, covariance_smul_right,
+  rw [blockAverage_eq_sum, blockAverage_eq_sum, covariance_smul_left, covariance_smul_right,
     covariance_sum_sum (fun i => hX_L2 (k i)) (fun j => hX_L2 (k' j))]
   simp_rw [fun i j => hX.covariance_eq_of_ne (hmeas (k i)) (hmeas (k' j)) (hmeas 0) (hmeas 1)
     (hdisj i j) (by norm_num : (0 : ℕ) ≠ 1)]
