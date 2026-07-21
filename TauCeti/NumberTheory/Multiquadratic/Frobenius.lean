@@ -4,8 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Basic
-public import Mathlib.RingTheory.Frobenius
 public import TauCeti.NumberTheory.NumberField.Frobenius
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Group
 import TauCeti.FieldTheory.IntermediateField.AdjoinEqTop
@@ -111,8 +109,10 @@ open TauCeti.Multiquadratic
 
 variable {L : Type*} [Field L] [NumberField L] {root : ι → L} {d : ι → ℤ}
 
-/-- The integer defining equation `root i ² = d i` recast with base field `ℚ`. -/
-theorem root_sq_algebraMap_rat (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i)) (i : ι) :
+/-- The integer defining equation `root i ² = d i` recast with base field `ℚ`. Only characteristic
+zero is needed (for the `ℤ → ℚ → L` scalar tower). -/
+private theorem root_sq_algebraMap_rat {L : Type*} [Field L] [CharZero L] {root : ι → L}
+    {d : ι → ℤ} (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i)) (i : ι) :
     root i ^ 2 = algebraMap ℚ L (d i : ℚ) := by
   rw [hroot i, IsScalarTower.algebraMap_apply ℤ ℚ L]; simp
 
@@ -159,7 +159,8 @@ theorem galoisGroupEquiv_frobenius [Finite ι]
     {σ : ↥(IntermediateField.adjoin ℚ (Set.range root)) ≃ₐ[ℚ]
         ↥(IntermediateField.adjoin ℚ (Set.range root))}
     (hσ : IsArithFrobAt ℤ σ Q) :
-    galoisGroupEquiv (root_sq_algebraMap_rat hroot) hindep σ =
+    galoisGroupEquiv
+        (fun i => by rw [hroot i, IsScalarTower.algebraMap_apply ℤ ℚ L]; simp) hindep σ =
       Multiplicative.ofAdd (fun i => if legendreSym p (d i) = 1 then 0 else 1) := by
   rw [galoisGroupEquiv_apply]
   congr 1

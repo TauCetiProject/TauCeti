@@ -33,21 +33,28 @@ namespace TauCeti.IntermediateField
 
 variable {F E : Type*} [Field F] [Field E] [Algebra F E] {s : Set E}
 
-/-- **Two automorphisms agreeing on a generating set are equal.** If `s` generates `E` over `F`
-(`IntermediateField.adjoin F s = ⊤`) and `σ, τ` agree on every element of `s`, then `σ = τ`.
-This is the whole-field, two-map counterpart of Mathlib's
-`IntermediateField.algHom_ext_of_eq_adjoin`. -/
-theorem algEquiv_ext_of_adjoin_eq_top (htop : IntermediateField.adjoin F s = ⊤)
-    {σ τ : E ≃ₐ[F] E} (h : ∀ x ∈ s, σ x = τ x) : σ = τ := by
-  refine AlgEquiv.ext fun y => ?_
+/-- **Two algebra homomorphisms agreeing on a generating set are equal.** If `s` generates `E`
+over `F` (`IntermediateField.adjoin F s = ⊤`) and `F`-algebra maps `σ, τ : E →ₐ[F] E₂` (into a
+field `E₂`) agree on every element of `s`, then `σ = τ`. This is the whole-field, two-map
+counterpart of Mathlib's `IntermediateField.algHom_ext_of_eq_adjoin`. -/
+theorem algHom_ext_of_adjoin_eq_top {E₂ : Type*} [Field E₂] [Algebra F E₂]
+    (htop : IntermediateField.adjoin F s = ⊤)
+    {σ τ : E →ₐ[F] E₂} (h : ∀ x ∈ s, σ x = τ x) : σ = τ := by
+  refine AlgHom.ext fun y => ?_
   have hy : y ∈ (⊤ : IntermediateField F E) := IntermediateField.mem_top
   rw [← htop] at hy
   induction hy using IntermediateField.adjoin_induction with
   | mem z hz => exact h z hz
-  | algebraMap q => rw [AlgEquiv.commutes, AlgEquiv.commutes]
+  | algebraMap q => rw [AlgHom.commutes, AlgHom.commutes]
   | add a b _ _ ha hb => rw [map_add, map_add, ha, hb]
   | inv a _ ha => rw [map_inv₀, map_inv₀, ha]
   | mul a b _ _ ha hb => rw [map_mul, map_mul, ha, hb]
+
+/-- Two `F`-algebra automorphisms of `E` agreeing on a generating set are equal. -/
+theorem algEquiv_ext_of_adjoin_eq_top (htop : IntermediateField.adjoin F s = ⊤)
+    {σ τ : E ≃ₐ[F] E} (h : ∀ x ∈ s, σ x = τ x) : σ = τ :=
+  AlgEquiv.ext (AlgHom.ext_iff.mp
+    (algHom_ext_of_adjoin_eq_top (E₂ := E) htop (σ := σ.toAlgHom) (τ := τ.toAlgHom) h))
 
 /-- An `F`-algebra automorphism of `E` that fixes every element of a set generating `E` over
 `F` is the identity. This is `TauCeti.IntermediateField.algEquiv_ext_of_adjoin_eq_top` against

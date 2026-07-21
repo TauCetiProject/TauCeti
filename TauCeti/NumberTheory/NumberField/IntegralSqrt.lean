@@ -33,12 +33,13 @@ open scoped NumberField
 
 namespace TauCeti.NumberField
 
-variable {K : Type*} [Field K] {x : K} {d : ℤ}
-
-/-- A square root of an integer is an algebraic integer: its square is the image of an integer,
-which is integral over `ℤ`. -/
-theorem isIntegral_of_sq_eq_intCast (hx : x ^ 2 = algebraMap ℤ K d) : IsIntegral ℤ x :=
+/-- A square root of an integer is integral over `ℤ`: its square is the image of an integer,
+which is integral, so the element is too. Stated for any commutative `ℤ`-algebra. -/
+theorem isIntegral_of_sq_eq_intCast {A : Type*} [CommRing A] [Algebra ℤ A] {x : A} {d : ℤ}
+    (hx : x ^ 2 = algebraMap ℤ A d) : IsIntegral ℤ x :=
   IsIntegral.of_pow two_pos (hx ▸ isIntegral_algebraMap)
+
+variable {K : Type*} [Field K] {x : K} {d : ℤ}
 
 /-- A square root `x` of an integer `d`, packaged as an element of the ring of integers. -/
 noncomputable def integralSqrt (hx : x ^ 2 = algebraMap ℤ K d) : 𝓞 K :=
@@ -50,7 +51,7 @@ noncomputable def integralSqrt (hx : x ^ 2 = algebraMap ℤ K d) : 𝓞 K :=
   NumberField.RingOfIntegers.map_mk x _
 
 /-- `TauCeti.NumberField.integralSqrt hx` squares to the radicand `d` in `𝓞 K`. -/
-theorem integralSqrt_sq (hx : x ^ 2 = algebraMap ℤ K d) :
+@[simp] theorem integralSqrt_sq (hx : x ^ 2 = algebraMap ℤ K d) :
     integralSqrt hx ^ 2 = algebraMap ℤ (𝓞 K) d := by
   apply FaithfulSMul.algebraMap_injective (𝓞 K) K
   rw [map_pow, algebraMap_integralSqrt, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]

@@ -85,9 +85,10 @@ theorem AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.IsArithFr
     (hx : x ^ 2 = algebraMap ℤ S d) :
     φ x = legendreSym p d • x := by
   have hp2 : p % 2 = 1 := Nat.odd_iff.mp ((Fact.out : p.Prime).odd_of_ne_two hodd)
-  -- `x ^ p = d ^ (p / 2) · x` exactly, since `x² = d` and `p = 2·(p/2) + 1`.
+  -- `p` is odd, so `p = 2·(p/2) + 1`; hence `x ^ p = (x²)^(p/2) · x = d^(p/2) · x`.
+  have hp : p = 2 * (p / 2) + 1 := by omega
   have hxp : x ^ p = algebraMap ℤ S (d ^ (p / 2)) * x := by
-    conv_lhs => rw [show p = 2 * (p / 2) + 1 by omega]
+    conv_lhs => rw [hp]
     rw [pow_succ, pow_mul, hx, ← map_pow]
   -- Euler's criterion: `p ∣ d ^ (p / 2) - legendreSym p d`.
   have heuler : (p : ℤ) ∣ d ^ (p / 2) - legendreSym p d := by

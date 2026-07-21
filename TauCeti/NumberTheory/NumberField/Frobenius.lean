@@ -5,12 +5,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.NumberTheory.NumberField.Ideal.Basic
-public import Mathlib.RingTheory.Frobenius
 public import TauCeti.NumberTheory.LegendreSymbol.Frobenius
 public import TauCeti.NumberTheory.NumberField.IntegralSqrt
 import TauCeti.FieldTheory.NeNeg
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
-import TauCeti.RingTheory.Ideal.LiesOver
 
 /-!
 # Frobenius elements of a Galois number field and their action on square roots
@@ -55,17 +53,6 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K] {p : ℕ} [Fact p.Prime]
 
-/-- A prime of `𝓞 K` lying over the rational prime `p` is nonzero: it contains the image of
-`p ≠ 0`. -/
-theorem ne_bot_of_liesOver {p : ℕ} [Fact p.Prime] (Q : Ideal (𝓞 K))
-    [Q.LiesOver (span {(p : ℤ)})] : Q ≠ ⊥ := by
-  intro h0
-  have hp : algebraMap ℤ (𝓞 K) p ∈ Q :=
-    (algebraMap_int_mem_iff_dvd_of_liesOver Q (p : ℤ)).mpr dvd_rfl
-  rw [h0, Ideal.mem_bot] at hp
-  exact (Fact.out : p.Prime).ne_zero (by
-    exact_mod_cast FaithfulSMul.algebraMap_injective ℤ (𝓞 K) (hp.trans (map_zero _).symm))
-
 /-- **Frobenius elements exist.** For a Galois number field `K/ℚ` and a *nonzero* prime `Q` of
 `𝓞 K`, some `σ ∈ Gal(K/ℚ)` is an arithmetic Frobenius at `Q`. This is Mathlib's
 `IsArithFrobAt.exists_of_isInvariant` with the number-field side conditions discharged (a
@@ -79,8 +66,10 @@ theorem exists_isArithFrobAt [IsGalois ℚ K] (Q : Ideal (𝓞 K)) [Q.IsPrime] (
 `Q` is presented by a `LiesOver` instance rather than a nonvanishing hypothesis. -/
 theorem exists_isArithFrobAt_of_liesOver [IsGalois ℚ K] {p : ℕ} [Fact p.Prime]
     (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})] :
-    ∃ σ : K ≃ₐ[ℚ] K, IsArithFrobAt ℤ σ Q :=
-  exists_isArithFrobAt Q (ne_bot_of_liesOver (p := p) Q)
+    ∃ σ : K ≃ₐ[ℚ] K, IsArithFrobAt ℤ σ Q := by
+  have hp : (span {(p : ℤ)} : Ideal ℤ) ≠ ⊥ := by
+    rw [Ne, Ideal.span_singleton_eq_bot]; exact_mod_cast (Fact.out : p.Prime).ne_zero
+  exact exists_isArithFrobAt Q (Ideal.ne_bot_of_liesOver_of_ne_bot hp Q)
 
 /-- **A Frobenius acts on square roots by the Legendre symbol.** Let `K` be a number field,
 `p` an odd prime, and `σ ∈ Gal(K/ℚ)` an arithmetic Frobenius at an ideal `Q` of `𝓞 K` above
