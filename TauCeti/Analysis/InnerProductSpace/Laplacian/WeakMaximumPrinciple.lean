@@ -54,6 +54,26 @@ theorem le_of_forall_pos_mul_le {a m C : ℝ} (hC : 0 ≤ C) (h : ∀ ε : ℝ, 
     have : δ / C * C = δ := by field_simp
     linarith
 
+omit [FiniteDimensional ℝ E] in
+/-- If every upper bound for a continuous function on the frontier of a nonempty compact set is
+also an upper bound on the whole set, then the function attains a maximum on the frontier. -/
+theorem exists_mem_frontier_isMaxOn_of_le_frontier {K : Set E} (hK : IsCompact K)
+    [Nontrivial E] (hne : K.Nonempty) {f : E → ℝ} (hcont : ContinuousOn f K)
+    (hbound : ∀ {m : ℝ}, (∀ ⦃x⦄, x ∈ frontier K → f x ≤ m) →
+      ∀ ⦃x⦄, x ∈ K → f x ≤ m) :
+    ∃ x ∈ frontier K, IsMaxOn f K x := by
+  have hfrsub : frontier K ⊆ K := hK.isClosed.frontier_subset
+  have hfrcompact : IsCompact (frontier K) := hK.of_isClosed_subset isClosed_frontier hfrsub
+  have hfrne : (frontier K).Nonempty := by
+    rw [Set.nonempty_iff_ne_empty]
+    intro hempty
+    rcases frontier_eq_empty_iff.mp hempty with h | h
+    · exact hne.ne_empty h
+    · exact noncompact_univ E (h ▸ hK)
+  obtain ⟨z, hzfr, hzmax⟩ := hfrcompact.exists_isMaxOn hfrne (hcont.mono hfrsub)
+  refine ⟨z, hzfr, isMaxOn_iff.mpr fun y hyK => ?_⟩
+  exact hbound (fun w hw => isMaxOn_iff.mp hzmax w hw) hyK
+
 /-- The Laplacian of the perturbation `f + ε‖·‖²` at a point where `f` is `C²`: it exceeds `Δ f` by
 the contribution `ε * (2 * dim E)` of the strictly convex term `ε‖·‖²`. This is the computation the
 bare-Laplacian and the `-Δ + c` weak maximum principles both run on the perturbed function. -/
@@ -139,18 +159,8 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_nonneg {K : Set E} (hK : IsComp
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hlap : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ Δ f x) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  have hfrsub : frontier K ⊆ K := hK.isClosed.frontier_subset
-  have hfrcompact : IsCompact (frontier K) := hK.of_isClosed_subset isClosed_frontier hfrsub
-  have hfrne : (frontier K).Nonempty := by
-    rw [Set.nonempty_iff_ne_empty]
-    intro hempty
-    rcases frontier_eq_empty_iff.mp hempty with h | h
-    · exact hne.ne_empty h
-    · exact noncompact_univ E (h ▸ hK)
-  obtain ⟨z, hzfr, hzmax⟩ := hfrcompact.exists_isMaxOn hfrne (hcont.mono hfrsub)
-  refine ⟨z, hzfr, isMaxOn_iff.mpr fun y hyK => ?_⟩
-  exact le_of_laplacian_nonneg_le_frontier hK hcont hcd hlap
-    (fun w hw => isMaxOn_iff.mp hzmax w hw) hyK
+  exact exists_mem_frontier_isMaxOn_of_le_frontier hK hne hcont fun hbdry =>
+    le_of_laplacian_nonneg_le_frontier hK hcont hcd hlap hbdry
 
 /-- A superharmonic (`Δ f ≤ 0`) continuous function on a nonempty compact set in a nontrivial
 finite-dimensional real inner product space attains a minimum on the frontier. -/

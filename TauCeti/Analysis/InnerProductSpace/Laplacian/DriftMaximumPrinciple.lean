@@ -4,8 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Calculus
-public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
 
@@ -33,6 +31,9 @@ The two ingredients, both classical:
   `w = exp (α ⟪u, ·⟫)` for a unit vector `u` and `α = β + 1` gives
   `Δ w + ⟪b, ∇w⟫ = α (α + ⟪u, b⟫) w > 0`, because `⟪u, b x⟫ ≥ -‖b x‖ ≥ -β`; letting the
   perturbation vanish recovers the borderline `0 ≤ Δ u + fderiv ℝ u (b)` case.
+
+The exponential-barrier argument follows the weak maximum principle proof in
+Gilbarg--Trudinger, *Elliptic Partial Differential Equations of Second Order*, Chapter 3.
 
 ## Main declarations
 
@@ -75,7 +76,7 @@ private theorem hasFDerivAt_exp_inner (α : ℝ) (u x : E) :
   exact (Real.hasDerivAt_exp (α * ⟪u, x⟫)).comp_hasFDerivAt x h2
 
 /-- The directional derivative of the exponential barrier `y ↦ exp (α ⟪u, y⟫)`. -/
-theorem fderiv_exp_inner_apply (α : ℝ) (u x v : E) :
+@[simp] theorem fderiv_exp_inner_apply (α : ℝ) (u x v : E) :
     fderiv ℝ (fun y : E => Real.exp (α * ⟪u, y⟫)) x v
       = Real.exp (α * ⟪u, x⟫) * (α * ⟪u, v⟫) := by
   rw [(hasFDerivAt_exp_inner α u x).fderiv]
@@ -90,7 +91,7 @@ variable [FiniteDimensional ℝ E]
 a linear form: the second directional derivative along an orthonormal basis vector `eᵢ`
 contributes `α² ⟪u, eᵢ⟫²`, and these sum to `α² ‖u‖²`. This is the barrier for the weak
 maximum principle with drift. -/
-theorem laplacian_exp_inner (α : ℝ) (u x : E) :
+@[simp] theorem laplacian_exp_inner (α : ℝ) (u x : E) :
     Δ (fun y : E => Real.exp (α * ⟪u, y⟫)) x
       = α ^ 2 * ‖u‖ ^ 2 * Real.exp (α * ⟪u, x⟫) := by
   set w : E → ℝ := fun y => Real.exp (α * ⟪u, y⟫) with hw
@@ -110,9 +111,8 @@ theorem laplacian_exp_inner (α : ℝ) (u x : E) :
     simp only [ContinuousLinearMap.smulRight_apply, smul_apply, innerSL_apply_apply, smul_eq_mul,
       Matrix.cons_val_zero, Matrix.cons_val_one]
     ring
-  rw [show Δ w x = ∑ i, iteratedFDeriv ℝ 2 w x
-      ![(stdOrthonormalBasis ℝ E) i, (stdOrthonormalBasis ℝ E) i] from
-    congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis w (stdOrthonormalBasis ℝ E)) x]
+  rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis w
+    (stdOrthonormalBasis ℝ E)) x]
   calc ∑ i, iteratedFDeriv ℝ 2 w x
         ![(stdOrthonormalBasis ℝ E) i, (stdOrthonormalBasis ℝ E) i]
       = ∑ i, α ^ 2 * ⟪u, (stdOrthonormalBasis ℝ E) i⟫ ^ 2 * Real.exp (α * ⟪u, x⟫) :=
@@ -156,10 +156,8 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos {K : Set E} (hK 
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hpos : ∀ ⦃x⦄, x ∈ interior K → 0 < Δ f x + fderiv ℝ f x (b x)) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  obtain ⟨x, hxK, hxmax⟩ := hK.exists_isMaxOn hne hcont
-  refine ⟨x, ⟨subset_closure hxK, fun hxint => ?_⟩, hxmax⟩
-  exact not_isLocalMax_of_laplacian_add_fderiv_pos (hcd hxint) (hpos hxint)
-    (hxmax.isLocalMax (mem_interior_iff_mem_nhds.mp hxint))
+  exact exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax hK hne hcont
+    fun {_} hx => not_isLocalMax_of_laplacian_add_fderiv_pos (hcd hx) (hpos hx)
 
 /-- **Strict boundary minimum principle for `Δ + b·∇`.** The dual of
 `exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos`. -/
@@ -168,10 +166,8 @@ theorem exists_mem_frontier_isMinOn_of_laplacian_add_fderiv_neg {K : Set E} (hK 
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hneg : ∀ ⦃x⦄, x ∈ interior K → Δ f x + fderiv ℝ f x (b x) < 0) :
     ∃ x ∈ frontier K, IsMinOn f K x := by
-  obtain ⟨x, hxK, hxmin⟩ := hK.exists_isMinOn hne hcont
-  refine ⟨x, ⟨subset_closure hxK, fun hxint => ?_⟩, hxmin⟩
-  exact not_isLocalMin_of_laplacian_add_fderiv_neg (hcd hxint) (hneg hxint)
-    (hxmin.isLocalMin (mem_interior_iff_mem_nhds.mp hxint))
+  exact exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin hK hne hcont
+    fun {_} hx => not_isLocalMin_of_laplacian_add_fderiv_neg (hcd hx) (hneg hx)
 
 section Nontrivial
 
@@ -291,6 +287,49 @@ theorem ge_of_laplacian_add_fderiv_nonpos_ge_frontier {K : Set E} (hK : IsCompac
   simp only [Pi.neg_apply] at hle
   linarith
 
+/-- **Comparison principle for `Δ + b·∇`.** Two functions acted on by the same bounded drift
+are ordered on a compact set if their operator values and frontier values are ordered. -/
+theorem le_of_laplacian_add_fderiv_le_laplacian_add_fderiv_of_le_frontier {K : Set E}
+    (hK : IsCompact K) {f g : E → ℝ} {b : E → E} {β : ℝ}
+    (hfcont : ContinuousOn f K) (hgcont : ContinuousOn g K)
+    (hfcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hgcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 g x)
+    (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β)
+    (hL : ∀ ⦃x⦄, x ∈ interior K →
+      Δ g x + fderiv ℝ g x (b x) ≤ Δ f x + fderiv ℝ f x (b x))
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → f x ≤ g x) :
+    ∀ ⦃x⦄, x ∈ K → f x ≤ g x := by
+  intro x hx
+  have h := le_of_laplacian_add_fderiv_nonneg_le_frontier (f := f - g) (b := b) (β := β)
+    (m := 0) hK (hfcont.sub hgcont) (fun y hy => (hfcd hy).sub (hgcd hy)) hb
+    (fun y hy => by
+      have hfd : DifferentiableAt ℝ f y := (hfcd hy).differentiableAt (by norm_num)
+      have hgd : DifferentiableAt ℝ g y := (hgcd hy).differentiableAt (by norm_num)
+      rw [(hfcd hy).laplacian_sub (hgcd hy), fderiv_sub hfd hgd]
+      simp only [sub_apply]
+      linarith [hL hy])
+    (fun y hy => sub_nonpos.mpr (hbdry hy)) hx
+  exact sub_nonpos.mp h
+
+/-- **Uniqueness principle for `Δ + b·∇`.** Functions with equal operator values for the same
+bounded drift and equal frontier data agree throughout the compact set. -/
+theorem eqOn_of_laplacian_add_fderiv_eq_of_eqOn_frontier {K : Set E} (hK : IsCompact K)
+    {f g : E → ℝ} {b : E → E} {β : ℝ} (hfcont : ContinuousOn f K)
+    (hgcont : ContinuousOn g K)
+    (hfcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hgcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 g x)
+    (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β)
+    (hL : ∀ ⦃x⦄, x ∈ interior K →
+      Δ f x + fderiv ℝ f x (b x) = Δ g x + fderiv ℝ g x (b x))
+    (hbdry : Set.EqOn f g (frontier K)) :
+    Set.EqOn f g K := by
+  intro x hx
+  apply le_antisymm
+  · exact le_of_laplacian_add_fderiv_le_laplacian_add_fderiv_of_le_frontier hK hfcont hgcont
+      hfcd hgcd hb (fun y hy => (hL hy).ge) (fun y hy => (hbdry hy).le) hx
+  · exact le_of_laplacian_add_fderiv_le_laplacian_add_fderiv_of_le_frontier hK hgcont hfcont
+      hgcd hfcd hb (fun y hy => (hL hy).le) (fun y hy => (hbdry hy).ge) hx
+
 /-- The `∃`-form of the weak maximum principle for `Δ + b·∇`: a subsolution with bounded drift
 on a nonempty compact set attains a maximum on the frontier. -/
 theorem exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_nonneg {K : Set E} (hK : IsCompact K)
@@ -299,18 +338,8 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_nonneg {K : Set E} (
     (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β)
     (hlap : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ Δ f x + fderiv ℝ f x (b x)) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  have hfrsub : frontier K ⊆ K := hK.isClosed.frontier_subset
-  have hfrcompact : IsCompact (frontier K) := hK.of_isClosed_subset isClosed_frontier hfrsub
-  have hfrne : (frontier K).Nonempty := by
-    rw [Set.nonempty_iff_ne_empty]
-    intro hempty
-    rcases frontier_eq_empty_iff.mp hempty with h | h
-    · exact hne.ne_empty h
-    · exact noncompact_univ E (h ▸ hK)
-  obtain ⟨z, hzfr, hzmax⟩ := hfrcompact.exists_isMaxOn hfrne (hcont.mono hfrsub)
-  refine ⟨z, hzfr, isMaxOn_iff.mpr fun y hyK => ?_⟩
-  exact le_of_laplacian_add_fderiv_nonneg_le_frontier hK hcont hcd hb hlap
-    (fun w hw => isMaxOn_iff.mp hzmax w hw) hyK
+  exact exists_mem_frontier_isMaxOn_of_le_frontier hK hne hcont fun hbdry =>
+    le_of_laplacian_add_fderiv_nonneg_le_frontier hK hcont hcd hb hlap hbdry
 
 /-- The `∃`-form of the weak minimum principle for `Δ + b·∇`: a supersolution with bounded
 drift on a nonempty compact set attains a minimum on the frontier. -/
@@ -320,18 +349,12 @@ theorem exists_mem_frontier_isMinOn_of_laplacian_add_fderiv_nonpos {K : Set E} (
     (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β)
     (hlap : ∀ ⦃x⦄, x ∈ interior K → Δ f x + fderiv ℝ f x (b x) ≤ 0) :
     ∃ x ∈ frontier K, IsMinOn f K x := by
-  have hfrsub : frontier K ⊆ K := hK.isClosed.frontier_subset
-  have hfrcompact : IsCompact (frontier K) := hK.of_isClosed_subset isClosed_frontier hfrsub
-  have hfrne : (frontier K).Nonempty := by
-    rw [Set.nonempty_iff_ne_empty]
-    intro hempty
-    rcases frontier_eq_empty_iff.mp hempty with h | h
-    · exact hne.ne_empty h
-    · exact noncompact_univ E (h ▸ hK)
-  obtain ⟨z, hzfr, hzmin⟩ := hfrcompact.exists_isMinOn hfrne (hcont.mono hfrsub)
+  obtain ⟨z, hzfr, hzmax⟩ := exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_nonneg
+    hK hne hcont.neg (fun y hy => (hcd hy).neg) hb (fun y hy => by
+      rw [congrFun laplacian_neg y, Pi.neg_apply, fderiv_neg, neg_apply]
+      linarith [hlap hy])
   refine ⟨z, hzfr, isMinOn_iff.mpr fun y hyK => ?_⟩
-  exact ge_of_laplacian_add_fderiv_nonpos_ge_frontier hK hcont hcd hb hlap
-    (fun w hw => isMinOn_iff.mp hzmin w hw) hyK
+  simpa using neg_le_neg (isMaxOn_iff.mp hzmax y hyK)
 
 end Nontrivial
 
