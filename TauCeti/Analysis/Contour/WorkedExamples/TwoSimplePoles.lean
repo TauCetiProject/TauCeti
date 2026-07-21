@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Contour.Residue.Theorem
+public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.Analysis.Contour.Residue.SimplePole
 
 /-!
@@ -39,57 +39,70 @@ namespace TauCeti.Contour
 
 /-- The rational function with prescribed principal parts `A / (z - s₁)` and
 `B / (z - s₂)`. -/
-def twoSimplePoles (A B s₁ s₂ : ℂ) (z : ℂ) : ℂ :=
+@[expose] def twoPrincipalParts (A B s₁ s₂ : ℂ) (z : ℂ) : ℂ :=
   A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹
 
-/-- Away from its two designated points, `twoSimplePoles` is analytic. -/
-theorem analyticAt_twoSimplePoles {A B s₁ s₂ z : ℂ} (hz₁ : z ≠ s₁) (hz₂ : z ≠ s₂) :
-    AnalyticAt ℂ (twoSimplePoles A B s₁ s₂) z := by
+/-- The value of `twoPrincipalParts` at a point. -/
+@[simp]
+theorem twoPrincipalParts_apply (A B s₁ s₂ z : ℂ) :
+    twoPrincipalParts A B s₁ s₂ z = A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹ := rfl
+
+/-- Away from its two designated points, `twoPrincipalParts` is analytic. -/
+theorem analyticAt_twoPrincipalParts {A B s₁ s₂ z : ℂ} (hz₁ : z ≠ s₁) (hz₂ : z ≠ s₂) :
+    AnalyticAt ℂ (twoPrincipalParts A B s₁ s₂) z := by
   exact (analyticAt_const.mul ((analyticAt_id.sub analyticAt_const).inv
     (sub_ne_zero.2 hz₁))).add (analyticAt_const.mul
       ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 hz₂)))
 
-/-- The function `twoSimplePoles` is meromorphic everywhere. -/
-theorem meromorphicAt_twoSimplePoles (A B s₁ s₂ z : ℂ) :
-    MeromorphicAt (twoSimplePoles A B s₁ s₂) z := by
+/-- The function `twoPrincipalParts` is meromorphic everywhere. -/
+theorem meromorphicAt_twoPrincipalParts (A B s₁ s₂ z : ℂ) :
+    MeromorphicAt (twoPrincipalParts A B s₁ s₂) z := by
   exact (analyticAt_const.meromorphicAt.mul
     ((analyticAt_id.sub analyticAt_const).meromorphicAt.inv)).add
       (analyticAt_const.meromorphicAt.mul
         ((analyticAt_id.sub analyticAt_const).meromorphicAt.inv))
 
-/-- At the first of two distinct designated points, the residue of `twoSimplePoles` is the first
+/-- At the first of two distinct designated points, the residue of `twoPrincipalParts` is the first
 coefficient. -/
 @[simp]
-theorem residue_twoSimplePoles_left {A B s₁ s₂ : ℂ} (h : s₁ ≠ s₂) :
-    residue (twoSimplePoles A B s₁ s₂) s₁ = A := by
-  unfold twoSimplePoles
+theorem residue_twoPrincipalParts_left {A B s₁ s₂ : ℂ} (h : s₁ ≠ s₂) :
+    residue (twoPrincipalParts A B s₁ s₂) s₁ = A := by
+  rw [show twoPrincipalParts A B s₁ s₂ =
+    (fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹) from
+      funext fun z => twoPrincipalParts_apply A B s₁ s₂ z]
   have hf₁ : MeromorphicAt (fun z => A * (z - s₁)⁻¹) s₁ :=
     analyticAt_const.meromorphicAt.mul (meromorphicAt_sub_inv s₁)
   have hf₂ : MeromorphicAt (fun z => B * (z - s₂)⁻¹) s₁ :=
     analyticAt_const.meromorphicAt.mul
       ((analyticAt_id.sub analyticAt_const).meromorphicAt.inv)
-  rw [show (fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹) =
-    (fun z => A * (z - s₁)⁻¹) + (fun z => B * (z - s₂)⁻¹) by rfl]
-  rw [residue_add hf₁ hf₂, residue_const_mul_sub_inv,
+  have hadd : (fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹) =
+      (fun z => A * (z - s₁)⁻¹) + (fun z => B * (z - s₂)⁻¹) := by
+    funext z
+    rw [Pi.add_apply]
+  rw [hadd, residue_add hf₁ hf₂, residue_const_mul_sub_inv,
     residue_eq_zero_of_analyticAt]
   · simp
   · exact analyticAt_const.mul
       ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 h))
 
-/-- At the second of two distinct designated points, the residue of `twoSimplePoles` is the second
-coefficient. -/
+/-- At the second of two distinct designated points, the residue of `twoPrincipalParts` is the
+second coefficient. -/
 @[simp]
-theorem residue_twoSimplePoles_right {A B s₁ s₂ : ℂ} (h : s₁ ≠ s₂) :
-    residue (twoSimplePoles A B s₁ s₂) s₂ = B := by
-  unfold twoSimplePoles
+theorem residue_twoPrincipalParts_right {A B s₁ s₂ : ℂ} (h : s₁ ≠ s₂) :
+    residue (twoPrincipalParts A B s₁ s₂) s₂ = B := by
+  rw [show twoPrincipalParts A B s₁ s₂ =
+    (fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹) from
+      funext fun z => twoPrincipalParts_apply A B s₁ s₂ z]
   have hf₁ : MeromorphicAt (fun z => A * (z - s₁)⁻¹) s₂ :=
     analyticAt_const.meromorphicAt.mul
       ((analyticAt_id.sub analyticAt_const).meromorphicAt.inv)
   have hf₂ : MeromorphicAt (fun z => B * (z - s₂)⁻¹) s₂ :=
     analyticAt_const.meromorphicAt.mul (meromorphicAt_sub_inv s₂)
-  rw [show (fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹) =
-    (fun z => A * (z - s₁)⁻¹) + (fun z => B * (z - s₂)⁻¹) by rfl]
-  rw [residue_add hf₁ hf₂, residue_const_mul_sub_inv,
+  have hadd : (fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹) =
+      (fun z => A * (z - s₁)⁻¹) + (fun z => B * (z - s₂)⁻¹) := by
+    funext z
+    rw [Pi.add_apply]
+  rw [hadd, residue_add hf₁ hf₂, residue_const_mul_sub_inv,
     residue_eq_zero_of_analyticAt, zero_add]
   exact analyticAt_const.mul
     ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 h.symm))
@@ -98,25 +111,23 @@ theorem residue_twoSimplePoles_right {A B s₁ s₂ : ℂ} (h : s₁ ≠ s₂) :
 private theorem circleIntegrable_const_mul_sub_inv {A c s : ℂ} {R : ℝ} (hs : s ∈ ball c R) :
     CircleIntegrable (fun z => A * (z - s)⁻¹) c R := by
   have hR : 0 < R := pos_of_mem_ball hs
-  apply ContinuousOn.circleIntegrable hR.le
-  have hne : ∀ z ∈ sphere c R, z - s ≠ 0 := by
-    intro z hz
-    exact sub_ne_zero.2 fun h => by
-      subst z
-      exact (ne_of_lt (mem_ball.1 hs)) (mem_sphere.1 hz)
-  exact continuousOn_const.mul
-    ((continuousOn_id.sub (continuousOn_const : ContinuousOn (fun _ : ℂ => s) (sphere c R))).inv₀
-      hne)
+  apply CircleIntegrable.const_fun_smul (a := A)
+  rw [circleIntegrable_sub_inv_iff]
+  right
+  rw [abs_of_pos hR]
+  exact fun hsp => (ne_of_lt (mem_ball.1 hs)) (mem_sphere.1 hsp)
 
 /-- **Two-pole circle integral.** If `s₁` and `s₂` lie strictly inside the circle `C(c, R)`, then
 the integral of `A / (z - s₁) + B / (z - s₂)` around that circle is `2πi (A + B)`.  Together with
-`residue_twoSimplePoles_left` and `residue_twoSimplePoles_right`, this is the roadmap's worked
+`residue_twoPrincipalParts_left` and `residue_twoPrincipalParts_right`, this is the roadmap's worked
 example of the classical residue theorem with two simple poles. -/
-theorem circleIntegral_twoSimplePoles {A B c s₁ s₂ : ℂ} {R : ℝ}
+theorem circleIntegral_twoPrincipalParts {A B c s₁ s₂ : ℂ} {R : ℝ}
     (hs₁ : s₁ ∈ ball c R) (hs₂ : s₂ ∈ ball c R) :
-    circleIntegral (twoSimplePoles A B s₁ s₂) c R =
+    circleIntegral (twoPrincipalParts A B s₁ s₂) c R =
       2 * (Real.pi : ℂ) * Complex.I * (A + B) := by
-  unfold twoSimplePoles
+  rw [show twoPrincipalParts A B s₁ s₂ =
+    (fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹) from
+      funext fun z => twoPrincipalParts_apply A B s₁ s₂ z]
   rw [circleIntegral.integral_add (circleIntegrable_const_mul_sub_inv hs₁)
     (circleIntegrable_const_mul_sub_inv hs₂), circleIntegral.integral_const_mul,
     circleIntegral.integral_const_mul, circleIntegral.integral_sub_inv_of_mem_ball hs₁,
@@ -125,13 +136,14 @@ theorem circleIntegral_twoSimplePoles {A B c s₁ s₂ : ℂ} {R : ℝ}
 
 /-- The two-pole calculation in residue-theorem form: for distinct points inside the circle, the
 integral is `2πi` times the sum of the two residues. -/
-theorem circleIntegral_twoSimplePoles_eq_residue_sum {A B c s₁ s₂ : ℂ} {R : ℝ}
+theorem circleIntegral_twoPrincipalParts_eq_residue_sum {A B c s₁ s₂ : ℂ} {R : ℝ}
     (hs : s₁ ≠ s₂) (hs₁ : s₁ ∈ ball c R) (hs₂ : s₂ ∈ ball c R) :
-    circleIntegral (twoSimplePoles A B s₁ s₂) c R =
+    circleIntegral (twoPrincipalParts A B s₁ s₂) c R =
       2 * (Real.pi : ℂ) * Complex.I *
-        (residue (twoSimplePoles A B s₁ s₂) s₁ + residue (twoSimplePoles A B s₁ s₂) s₂) := by
-  rw [circleIntegral_twoSimplePoles hs₁ hs₂, residue_twoSimplePoles_left hs,
-    residue_twoSimplePoles_right hs]
+        (residue (twoPrincipalParts A B s₁ s₂) s₁ +
+          residue (twoPrincipalParts A B s₁ s₂) s₂) := by
+  rw [circleIntegral_twoPrincipalParts hs₁ hs₂, residue_twoPrincipalParts_left hs,
+    residue_twoPrincipalParts_right hs]
 
 end TauCeti.Contour
 
