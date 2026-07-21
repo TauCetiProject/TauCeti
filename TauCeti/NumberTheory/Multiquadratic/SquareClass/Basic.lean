@@ -172,78 +172,53 @@ theorem squareClass_of_sq_mem (d : ℕ → K) (root : ℕ → L)
           exact (sqrtTower (K := K) root n).algebraMap_mem (d n)
         obtain ⟨a, b, ha, hb, heq⟩ :=
           TauCeti.IntermediateField.exists_add_mul_of_mem_sup_adjoin_sq hx2 hmem
-        have hsq :
-            algebraMap K L r =
-              a ^ 2 + b ^ 2 * algebraMap K L (d n) + 2 * a * b * root n := by
-          calc
-            algebraMap K L r = y ^ 2 := hy.symm
-            _ = (a + b * root n) ^ 2 := by rw [heq]
-            _ = a ^ 2 + b ^ 2 * algebraMap K L (d n) + 2 * a * b * root n := by
-              rw [← hroot n]
-              ring
-        have hcross_eq :
-            2 * a * b * root n =
-              algebraMap K L r - a ^ 2 - b ^ 2 * algebraMap K L (d n) := by
-          rw [hsq]
-          ring
-        have hcross_mem : 2 * a * b * root n ∈ sqrtTower (K := K) root n := by
-          rw [hcross_eq]
-          exact sub_mem
-            (sub_mem ((sqrtTower (K := K) root n).algebraMap_mem r) (pow_mem ha 2))
-            (mul_mem (pow_mem hb 2) ((sqrtTower (K := K) root n).algebraMap_mem (d n)))
-        by_cases hab : a * b = 0
-        · rcases mul_eq_zero.mp hab with ha0 | hb0
-          · have hy_mul_mem : y * root n ∈ sqrtTower (K := K) root n := by
-              have hy_mul_eq : y * root n = b * algebraMap K L (d n) := by
-                calc
-                  y * root n = (b * root n) * root n := by rw [heq, ha0, zero_add]
-                  _ = b * (root n ^ 2) := by ring
-                  _ = b * algebraMap K L (d n) := by rw [hroot n]
-              rw [hy_mul_eq]
-              exact mul_mem hb ((sqrtTower (K := K) root n).algebraMap_mem (d n))
-            have hy_mul_sq : (y * root n) ^ 2 = algebraMap K L (r * d n) := by
-              rw [map_mul, ← hy, ← hroot n]
-              ring
-            obtain ⟨T, s, hT, hmul⟩ := ih (r * d n) (y * root n) hy_mul_sq hy_mul_mem
-            have hnT : n ∉ T := fun hn => Nat.lt_irrefl n (hT hn)
-            refine ⟨insert n T, s / d n, ?_, ?_⟩
-            · intro j hj
-              rw [Finset.mem_coe, Finset.mem_insert] at hj
-              rw [Set.mem_Iio]
-              rcases hj with rfl | hj
-              · omega
-              · exact Nat.lt_trans (hT hj) n.lt_succ_self
-            · have hdn0 : d n ≠ 0 := by
-                intro hdn
-                apply hnext
-                have hroot_zero : root n = 0 := by
-                  apply eq_zero_of_pow_eq_zero
-                  rw [hroot n, hdn, map_zero]
-                rw [hroot_zero]
-                exact zero_mem _
-              rw [Finset.prod_insert hnT]
+        -- `(a + b·root n)² = y² = algebraMap K L r ∈ sqrtTower`, while `root n ∉ sqrtTower`; hence
+        -- the cross-term coefficient vanishes (`Quadratic.mul_eq_zero_of_add_mul_sq_mem`).
+        have hab_mem : (a + b * root n) ^ 2 ∈ sqrtTower (K := K) root n := by
+          rw [← heq, hy]
+          exact (sqrtTower (K := K) root n).algebraMap_mem r
+        have hab : a * b = 0 :=
+          TauCeti.IntermediateField.mul_eq_zero_of_add_mul_sq_mem hx2 hnext ha hb hab_mem
+        rcases mul_eq_zero.mp hab with ha0 | hb0
+        · have hy_mul_mem : y * root n ∈ sqrtTower (K := K) root n := by
+            have hy_mul_eq : y * root n = b * algebraMap K L (d n) := by
               calc
-                r = (r * d n) / d n := by field_simp [hdn0]
-                _ = (s ^ 2 * ∏ j ∈ T, d j) / d n := by rw [hmul]
-                _ = (s / d n) ^ 2 * (d n * ∏ j ∈ T, d j) := by
-                  field_simp [hdn0]
-          · have hy_mem : y ∈ sqrtTower (K := K) root n := by
-              rw [heq, hb0, zero_mul, add_zero]
-              exact ha
-            obtain ⟨T, s, hT, hres⟩ := ih r y hy hy_mem
-            exact ⟨T, s, hT.trans (Set.Iio_subset_Iio n.le_succ), hres⟩
-        · have hcoef_mem : 2 * a * b ∈ sqrtTower (K := K) root n :=
-            mul_mem (mul_mem ((sqrtTower (K := K) root n).natCast_mem 2) ha) hb
-          have hcoef_ne : 2 * a * b ≠ 0 := by
-            have h2ab : (2 : L) * (a * b) ≠ 0 := mul_ne_zero (NeZero.ne (2 : L)) hab
-            simpa [mul_assoc] using h2ab
-          have hroot_mem : root n ∈ sqrtTower (K := K) root n := by
-            have hmem' := mul_mem (inv_mem hcoef_mem) hcross_mem
-            have hEq : (2 * a * b)⁻¹ * (2 * a * b * root n) = root n := by
-              rw [← mul_assoc, inv_mul_cancel₀ hcoef_ne, one_mul]
-            rw [← hEq]
-            exact hmem'
-          exact (hnext hroot_mem).elim
+                y * root n = (b * root n) * root n := by rw [heq, ha0, zero_add]
+                _ = b * (root n ^ 2) := by ring
+                _ = b * algebraMap K L (d n) := by rw [hroot n]
+            rw [hy_mul_eq]
+            exact mul_mem hb ((sqrtTower (K := K) root n).algebraMap_mem (d n))
+          have hy_mul_sq : (y * root n) ^ 2 = algebraMap K L (r * d n) := by
+            rw [map_mul, ← hy, ← hroot n]
+            ring
+          obtain ⟨T, s, hT, hmul⟩ := ih (r * d n) (y * root n) hy_mul_sq hy_mul_mem
+          have hnT : n ∉ T := fun hn => Nat.lt_irrefl n (hT hn)
+          refine ⟨insert n T, s / d n, ?_, ?_⟩
+          · intro j hj
+            rw [Finset.mem_coe, Finset.mem_insert] at hj
+            rw [Set.mem_Iio]
+            rcases hj with rfl | hj
+            · omega
+            · exact Nat.lt_trans (hT hj) n.lt_succ_self
+          · have hdn0 : d n ≠ 0 := by
+              intro hdn
+              apply hnext
+              have hroot_zero : root n = 0 := by
+                apply eq_zero_of_pow_eq_zero
+                rw [hroot n, hdn, map_zero]
+              rw [hroot_zero]
+              exact zero_mem _
+            rw [Finset.prod_insert hnT]
+            calc
+              r = (r * d n) / d n := by field_simp [hdn0]
+              _ = (s ^ 2 * ∏ j ∈ T, d j) / d n := by rw [hmul]
+              _ = (s / d n) ^ 2 * (d n * ∏ j ∈ T, d j) := by
+                field_simp [hdn0]
+        · have hy_mem : y ∈ sqrtTower (K := K) root n := by
+            rw [heq, hb0, zero_mul, add_zero]
+            exact ha
+          obtain ⟨T, s, hT, hres⟩ := ih r y hy hy_mem
+          exact ⟨T, s, hT.trans (Set.Iio_subset_Iio n.le_succ), hres⟩
 
 /-- **Finite-index square-class descent.** If `y² = r` over `K` and
 `y ∈ K(root i | i : Fin n)`, where `root i` is a chosen square root of `d i`, then `r`
