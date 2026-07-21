@@ -7,9 +7,9 @@ module
 public import Mathlib.NumberTheory.NumberField.Ideal.Basic
 public import Mathlib.RingTheory.Frobenius
 public import TauCeti.NumberTheory.LegendreSymbol.Frobenius
-public import TauCeti.NumberTheory.NumberField.GaloisAction
 public import TauCeti.NumberTheory.NumberField.IntegralSqrt
 import TauCeti.FieldTheory.NeNeg
+import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import TauCeti.RingTheory.Ideal.LiesOver
 
 /-!
@@ -29,7 +29,7 @@ services on top of Mathlib's `RingTheory/Frobenius.lean`:
 * **the square-root action** — for `p` odd and `x ∈ K` with `x² = d ∈ ℤ`, `p ∤ d`, a
   Frobenius at any ideal `Q` over `p` satisfies `σ x = legendreSym p d • x`, transporting the
   `𝓞 K`-level computation `TauCeti.AlgHom.IsArithFrobAt.apply_sqrt` along the Galois action
-  on the ring of integers (`TauCeti.NumberField.algebraMap_aut_smul`), with the `σ x = x`
+  on the ring of integers (via `integralClosure.coe_smul`), with the `σ x = x`
   characterization read off from it.
 
 `TauCeti.NumberTheory.Multiquadratic.Frobenius` combines the two to describe the Frobenius of
@@ -98,7 +98,14 @@ theorem isArithFrobAt_apply_sqrt (hodd : p ≠ 2) {d : ℤ} (hd : ¬ (p : ℤ) �
   have hsmul : σ • integralSqrt hx = legendreSym p d • integralSqrt hx :=
     TauCeti.IsArithFrobAt.smul_sqrt hσ hodd hd (integralSqrt_sq hx)
   have hcoe := congrArg (algebraMap (𝓞 K) K) hsmul
-  rw [map_zsmul, algebraMap_integralSqrt, algebraMap_aut_smul] at hcoe
+  -- `algebraMap` intertwines the Galois actions on `𝓞 K` and `K` (`integralClosure.coe_smul`).
+  have hbridge : algebraMap (𝓞 K) K (σ • integralSqrt hx) =
+      σ (algebraMap (𝓞 K) K (integralSqrt hx)) := by
+    have hc : algebraMap (𝓞 K) K (σ • integralSqrt hx) =
+        σ • algebraMap (𝓞 K) K (integralSqrt hx) :=
+      integralClosure.coe_smul σ (integralSqrt hx)
+    rw [hc, AlgEquiv.smul_def]
+  rw [map_zsmul, algebraMap_integralSqrt, hbridge] at hcoe
   rwa [algebraMap_integralSqrt] at hcoe
 
 /-- **A Frobenius fixes `√d` iff `d` is a quadratic residue mod `p`.** Under the hypotheses of
@@ -120,7 +127,8 @@ theorem isArithFrobAt_apply_sqrt_eq_self_iff (hodd : p ≠ 2) {d : ℤ} (hd : ¬
   constructor
   · intro hfix
     rw [hfix] at happ
-    rcases legendreSym.eq_one_or_neg_one p (TauCeti.intCast_ne_zero_of_not_dvd hd) with h1 | h1
+    rcases legendreSym.eq_one_or_neg_one p
+        (by rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hd) with h1 | h1
     · exact h1
     · rw [h1, neg_smul, one_smul] at happ
       exact absurd happ (TauCeti.ne_neg_of_ne_zero (by norm_num) hxne)

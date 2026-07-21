@@ -141,7 +141,8 @@ theorem signPattern_frobenius (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i
   have haction : σ (gen root i) = legendreSym p (d i) • gen root i :=
     isArithFrobAt_apply_sqrt hodd (hcop i) hgensq Q hσ
   exact signPattern_eq_ite_of_zsmul_gen (root_sq_algebraMap_rat hroot) σ
-    (legendreSym.eq_one_or_neg_one p (TauCeti.intCast_ne_zero_of_not_dvd (hcop i)))
+    (legendreSym.eq_one_or_neg_one p
+      (by rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hcop i))
     (by exact_mod_cast hd0) haction
 
 /-- **The Frobenius of a multiquadratic field is the Legendre sign vector.** Under square-class

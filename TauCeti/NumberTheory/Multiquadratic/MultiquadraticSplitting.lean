@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 public import Mathlib.LinearAlgebra.Dimension.DivisionRing
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
 public import TauCeti.NumberTheory.NumberField.SplitsCompletely
+import TauCeti.RingTheory.Ideal.LiesOver
 
 /-!
 # The prime-splitting law for a multiquadratic field
@@ -62,14 +63,6 @@ private theorem ringGen_sq (d : ℤ) (r : K)
     ringGen d r hr ^ 2 = algebraMap ℤ (𝓞 K) d := by
   apply FaithfulSMul.algebraMap_injective (𝓞 K) K
   rw [map_pow, algebraMap_ringGen, hr, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
-
-omit [NumberField K] in
-/-- For an ideal `Q` lying over the integer ideal `(a)`, an integer `m` maps into `Q` under
-`algebraMap ℤ (𝓞 K)` iff `a ∣ m`. -/
-private theorem algebraMap_int_mem_iff_dvd_of_liesOver {a : ℤ}
-    (Q : Ideal (𝓞 K)) [Q.LiesOver (span {a})] (m : ℤ) :
-    algebraMap ℤ (𝓞 K) m ∈ Q ↔ a ∣ m :=
-  (Ideal.mem_of_liesOver Q (span {a}) m).symm.trans Ideal.mem_span_singleton
 
 /-- Forward direction (pointwise): for `K` Galois over `ℚ`, if `p` splits completely
 (`#{primes over p} = [K : ℚ]`) and `p ∤ d i`, then `d i` is a quadratic residue mod `p`. -/

@@ -47,12 +47,6 @@ namespace TauCeti
 
 variable {S : Type*} [CommRing S] {p : ℕ} [Fact p.Prime] {d : ℤ}
 
-/-- A nonzero-residue rephrasing: an integer not divisible by `p` has nonzero image in
-`ZMod p`. -/
-theorem intCast_ne_zero_of_not_dvd {n : ℕ} {a : ℤ} (ha : ¬ (n : ℤ) ∣ a) :
-    (a : ZMod n) ≠ 0 := by
-  rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact ha
-
 omit [Fact p.Prime] in
 /-- The residue cardinality entering `AlgHom.IsArithFrobAt` over the rational prime `p` is `p`
 itself: for `Q` lying over `(p)`, `Nat.card (ℤ ⧸ Q ∩ ℤ) = p`. -/
@@ -120,7 +114,7 @@ theorem AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.IsArithFr
     · exact Or.inl (sub_eq_zero.mp h)
     · exact Or.inr (eq_neg_of_add_eq_zero_left h)
   -- The target `legendreSym p d • x` is likewise `x` or `-x`, since the symbol is `±1`.
-  have hdz : (d : ZMod p) ≠ 0 := intCast_ne_zero_of_not_dvd hd
+  have hdz : (d : ZMod p) ≠ 0 := by rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hd
   have hgoal : legendreSym p d • x = x ∨ legendreSym p d • x = -x := by
     rcases legendreSym.eq_one_or_neg_one p hdz with h1 | h1
     · exact Or.inl (by rw [h1, one_smul])
