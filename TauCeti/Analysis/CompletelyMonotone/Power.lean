@@ -6,7 +6,6 @@ module
 
 public import TauCeti.Analysis.CompletelyMonotone.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
 # Negative real powers are completely monotone
