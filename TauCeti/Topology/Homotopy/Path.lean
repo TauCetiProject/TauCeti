@@ -165,6 +165,26 @@ theorem of_trans_symm {γ γ' : Path x₀ x₁}
   (hcomp h (.refl γ')) |>.trans <|
   refl_trans γ'
 
+/-- Right cancellation in the fundamental groupoid: if `γ.trans e` and `δ.trans e` are homotopic,
+then `γ` and `δ` are homotopic. This is the path-homotopy analogue of `a * c = b * c → a = b`. -/
+theorem trans_right_cancel {x₀ x₁ x₂ : X} {γ δ : Path x₀ x₁} {e : Path x₁ x₂}
+    (h : (γ.trans e).Homotopic (δ.trans e)) : γ.Homotopic δ := by
+  have hγ : ((γ.trans e).trans e.symm).Homotopic γ :=
+    (trans_assoc γ e e.symm).trans (trans_right_of_nullhomotopic (trans_symm e))
+  have hδ : ((δ.trans e).trans e.symm).Homotopic δ :=
+    (trans_assoc δ e e.symm).trans (trans_right_of_nullhomotopic (trans_symm e))
+  exact hγ.symm.trans ((h.hcomp (refl e.symm)).trans hδ)
+
+/-- Left cancellation in the fundamental groupoid: if `e.trans γ` and `e.trans δ` are homotopic,
+then `γ` and `δ` are homotopic. This is the path-homotopy analogue of `c * a = c * b → a = b`. -/
+theorem trans_left_cancel {x₀ x₁ x₂ : X} {e : Path x₀ x₁} {γ δ : Path x₁ x₂}
+    (h : (e.trans γ).Homotopic (e.trans δ)) : γ.Homotopic δ := by
+  have hγ : (e.symm.trans (e.trans γ)).Homotopic γ :=
+    (trans_assoc e.symm e γ).symm.trans (trans_left_of_nullhomotopic (symm_trans e))
+  have hδ : (e.symm.trans (e.trans δ)).Homotopic δ :=
+    (trans_assoc e.symm e δ).symm.trans (trans_left_of_nullhomotopic (symm_trans e))
+  exact hγ.symm.trans (((refl e.symm).hcomp h).trans hδ)
+
 namespace Quotient
 variable {x₀ x₁ : X}
 
