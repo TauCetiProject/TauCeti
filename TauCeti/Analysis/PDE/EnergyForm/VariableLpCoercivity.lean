@@ -47,6 +47,7 @@ open scoped InnerProductSpace
 
 variable {X n : Type*} [MeasurableSpace X] [Fintype n]
 
+/-- A local classical decidable equality instance for the finite index type. -/
 noncomputable local instance variableLpCoercivityDecidableEq : DecidableEq n := Classical.decEq n
 
 private lemma integral_const_mul_norm_sq_eq (μ : Measure X) (C : ℝ)
