@@ -4,9 +4,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.PDE.EnergyForm.VariableLp
+public import TauCeti.Analysis.PDE.EnergyForm.VariableLp.Basic
 public import TauCeti.Analysis.PDE.Uniform.EllipticEnergy
-public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Coercivity of variable-coefficient energy forms on `L²` jets
@@ -27,8 +27,8 @@ and this estimate back along its value-gradient map before applying Lax--Milgram
 
 ## Main declarations
 
-* `TauCeti.PDE.lower_bound_energyFormLpVariable_self`: integration of a pointwise diagonal
-  lower bound.
+* `TauCeti.PDE.const_mul_norm_mul_norm_le_energyFormLpVariable_self`: integration of a
+  pointwise diagonal lower bound.
 * `TauCeti.PDE.isCoercive_energyFormLpVariable`: coercivity from a positive pointwise constant.
 * `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyFormLpVariable`: coercivity from uniform
   ellipticity and lower-order coefficient bounds.
@@ -65,7 +65,7 @@ private lemma integral_const_mul_norm_sq_eq (μ : Measure X) (C : ℝ)
 
 /-- A uniform pointwise diagonal lower bound integrates to the same lower bound for the
 variable-coefficient `L²` energy form. -/
-theorem lower_bound_energyFormLpVariable_self (μ : Measure X)
+theorem const_mul_norm_mul_norm_le_energyFormLpVariable_self (μ : Measure X)
     (a : X → Matrix n n ℝ) (b : X → EuclideanSpace ℝ n) (c : X → ℝ)
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ μ)
     {C : ℝ} (hlower : ∀ᵐ x ∂μ, ∀ U : ℝ × EuclideanSpace ℝ n,
@@ -78,19 +78,6 @@ theorem lower_bound_energyFormLpVariable_self (μ : Measure X)
   · filter_upwards [hlower] with x hx
     exact hx (U x)
 
-/-- A nonnegative pointwise energy density gives a nonnegative variable-coefficient `L²`
-energy form on the diagonal. -/
-theorem energyFormLpVariable_self_nonneg (μ : Measure X)
-    (a : X → Matrix n n ℝ) (b : X → EuclideanSpace ℝ n) (c : X → ℝ)
-    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ μ)
-    (hnonneg : ∀ᵐ x ∂μ, ∀ U : ℝ × EuclideanSpace ℝ n,
-      0 ≤ energyIntegrand (a x) (b x) (c x) U U)
-    (U : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
-    0 ≤ energyFormLpVariable μ a b c hcoeff U U := by
-  have h := lower_bound_energyFormLpVariable_self μ a b c hcoeff (C := 0)
-    (by simpa using hnonneg) U
-  simpa using h
-
 /-- A positive uniform pointwise diagonal lower bound makes the variable-coefficient `L²`
 energy form coercive. -/
 theorem isCoercive_energyFormLpVariable (μ : Measure X)
@@ -99,7 +86,7 @@ theorem isCoercive_energyFormLpVariable (μ : Measure X)
     {C : ℝ} (hC : 0 < C) (hlower : ∀ᵐ x ∂μ, ∀ U : ℝ × EuclideanSpace ℝ n,
       C * ‖U‖ ^ 2 ≤ energyIntegrand (a x) (b x) (c x) U U) :
     IsCoercive (energyFormLpVariable μ a b c hcoeff) :=
-  ⟨C, hC, lower_bound_energyFormLpVariable_self μ a b c hcoeff hlower⟩
+  ⟨C, hC, const_mul_norm_mul_norm_le_energyFormLpVariable_self μ a b c hcoeff hlower⟩
 
 namespace UniformlyEllipticOn
 
@@ -109,30 +96,43 @@ variable {lam Lam beta mass : ℝ}
 
 /-- Uniform ellipticity, a drift bound, and a mass floor give the explicit diagonal lower
 bound for the variable-coefficient `L²` energy form. -/
-theorem lower_bound_energyFormLpVariable_self (μ : Measure X)
+theorem min_diagonal_lower_bound_mul_norm_sq_le_energyFormLpVariable_self (μ : Measure X)
     (h : UniformlyEllipticOn Ω a lam Lam) (hΩ : ∀ᵐ x ∂μ, x ∈ Ω)
     (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mass ≤ c x)
-    (hmass : beta ^ 2 / (2 * lam) ≤ mass)
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ μ)
     (U : Lp (ℝ × EuclideanSpace ℝ n) 2 μ) :
     min (lam / 2) (mass - beta ^ 2 / (2 * lam)) * ‖U‖ * ‖U‖ ≤
       energyFormLpVariable μ a b c hcoeff U U := by
-  apply PDE.lower_bound_energyFormLpVariable_self μ a b c hcoeff
+  apply PDE.const_mul_norm_mul_norm_le_energyFormLpVariable_self μ a b c hcoeff
   filter_upwards [hΩ, hb, hc] with x hx hbx hcx
   intro V
-  exact h.min_diagonal_lower_bound_mul_norm_sq_le_energyIntegrand_self hx hbx hcx hmass V
+  have hdiag :
+      min (lam / 2) (mass - beta ^ 2 / (2 * lam)) * ‖V‖ ^ 2 ≤
+        lam / 2 * ‖V.2‖ ^ 2 + (mass - beta ^ 2 / (2 * lam)) * V.1 ^ 2 := by
+    rw [Prod.norm_def, max_def]
+    split_ifs with hV
+    · have hVsq : V.1 ^ 2 ≤ ‖V.2‖ ^ 2 := by
+        have habs : |V.1| ≤ ‖V.2‖ := by simpa [Real.norm_eq_abs] using hV
+        rw [← sq_abs]
+        nlinarith [abs_nonneg V.1, norm_nonneg V.2]
+      nlinarith [min_le_left (lam / 2) (mass - beta ^ 2 / (2 * lam)),
+        min_le_right (lam / 2) (mass - beta ^ 2 / (2 * lam)), h.pos.le,
+        sq_nonneg ‖V.2‖, sq_nonneg V.1]
+    · rw [Real.norm_eq_abs, sq_abs]
+      nlinarith [min_le_right (lam / 2) (mass - beta ^ 2 / (2 * lam)), h.pos.le,
+        sq_nonneg ‖V.2‖, sq_nonneg V.1]
+  exact hdiag.trans (h.garding_energyIntegrand_self_of_mass_lower_bound hx hbx hcx V)
 
 /-- The variable-coefficient `L²` energy form is coercive when uniform ellipticity and the
 mass floor make the explicit Gårding constant positive. -/
 theorem isCoercive_energyFormLpVariable (μ : Measure X)
     (h : UniformlyEllipticOn Ω a lam Lam) (hΩ : ∀ᵐ x ∂μ, x ∈ Ω)
     (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ beta) (hc : ∀ᵐ x ∂μ, mass ≤ c x)
-    (hmass : beta ^ 2 / (2 * lam) ≤ mass)
     (hpos : 0 < min (lam / 2) (mass - beta ^ 2 / (2 * lam)))
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ μ) :
     IsCoercive (energyFormLpVariable μ a b c hcoeff) := by
   refine ⟨min (lam / 2) (mass - beta ^ 2 / (2 * lam)), hpos, ?_⟩
-  exact lower_bound_energyFormLpVariable_self μ h hΩ hb hc hmass hcoeff
+  exact min_diagonal_lower_bound_mul_norm_sq_le_energyFormLpVariable_self μ h hΩ hb hc hcoeff
 
 end UniformlyEllipticOn
 
