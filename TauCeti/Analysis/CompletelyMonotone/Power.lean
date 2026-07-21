@@ -27,8 +27,9 @@ Two consequences:
 * shifted by `a > 0`, the resolvent-power kernel `t ↦ (a + t)^{-s}` is completely monotone up
   to and including the boundary point `0` (its derivatives stay finite there), so it is a
   member of the closed-half-line class governed by Bernstein's theorem. The special case `a = 1`,
-  `t ↦ (1 + t)^{-s}`, has the Gamma distribution as its representing measure and generalises the
-  roadmap acceptance example `t ↦ 1/(1 + t)` (`s = 1`).
+  `t ↦ (1 + t)^{-s}`, has the Gamma distribution as its representing measure for `s > 0`, and
+  the Dirac mass `δ₀` for `s = 0`; it generalises the roadmap acceptance example
+  `t ↦ 1/(1 + t)` (`s = 1`).
 
 The iterated derivative of `y ↦ y^s` is Mathlib's `Real.iter_deriv_rpow_const`, and the sign of
 the falling factorial at a negative argument is packaged in the private lemma
