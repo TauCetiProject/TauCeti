@@ -58,15 +58,16 @@ underlying morphism over `Spec K`. -/
 lemma Hom.toOverHom_baseChange {A B : AbelianVariety K} (f : A ⟶ B)
     (L : Type u) [Field L] [Algebra K L] :
     Hom.toOverHom (Hom.baseChange f L) =
-      (CommGrp.forget _).map
-        (eqToHom (baseChange_toCommGrp A L) ≫
-          (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map f.hom ≫
-          eqToHom (baseChange_toCommGrp B L).symm) := by
+      eqToHom (baseChange_toOver A L) ≫
+        (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map
+          (Hom.toOverHom f) ≫
+        eqToHom (baseChange_toOver B L).symm := by
   change (CommGrp.forget _).map
       (eqToHom (baseChange_toCommGrp A L) ≫
         (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map f.hom ≫
         eqToHom (baseChange_toCommGrp B L).symm) = _
-  simp
+  simp only [Functor.map_comp, eqToHom_map]
+  rfl
 
 /-- Base change preserves identity homomorphisms. -/
 @[simp]
