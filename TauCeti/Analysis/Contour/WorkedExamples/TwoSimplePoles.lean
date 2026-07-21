@@ -39,13 +39,19 @@ namespace TauCeti.Contour
 
 /-- The rational function with prescribed principal parts `A / (z - s₁)` and
 `B / (z - s₂)`. -/
-@[expose] def twoPrincipalParts (A B s₁ s₂ : ℂ) (z : ℂ) : ℂ :=
+def twoPrincipalParts (A B s₁ s₂ : ℂ) (z : ℂ) : ℂ :=
   A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹
 
 /-- The value of `twoPrincipalParts` at a point. -/
 @[simp]
 theorem twoPrincipalParts_apply (A B s₁ s₂ z : ℂ) :
-    twoPrincipalParts A B s₁ s₂ z = A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹ := rfl
+    twoPrincipalParts A B s₁ s₂ z = A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹ :=
+  twoPrincipalParts.eq_1 A B s₁ s₂ z
+
+/-- The function-level defining equation for `twoPrincipalParts`. -/
+theorem twoPrincipalParts_eq (A B s₁ s₂ : ℂ) :
+    twoPrincipalParts A B s₁ s₂ = fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹ :=
+  funext fun z => twoPrincipalParts_apply A B s₁ s₂ z
 
 /-- Away from its two designated points, `twoPrincipalParts` is analytic. -/
 theorem analyticAt_twoPrincipalParts {A B s₁ s₂ z : ℂ} (hz₁ : z ≠ s₁) (hz₂ : z ≠ s₂) :
@@ -67,9 +73,7 @@ coefficient. -/
 @[simp]
 theorem residue_twoPrincipalParts_left {A B s₁ s₂ : ℂ} (h : s₁ ≠ s₂) :
     residue (twoPrincipalParts A B s₁ s₂) s₁ = A := by
-  rw [show twoPrincipalParts A B s₁ s₂ =
-    (fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹) from
-      funext fun z => twoPrincipalParts_apply A B s₁ s₂ z]
+  rw [twoPrincipalParts_eq]
   have hf₁ : MeromorphicAt (fun z => A * (z - s₁)⁻¹) s₁ :=
     analyticAt_const.meromorphicAt.mul (meromorphicAt_sub_inv s₁)
   have hf₂ : MeromorphicAt (fun z => B * (z - s₂)⁻¹) s₁ :=
@@ -90,9 +94,7 @@ second coefficient. -/
 @[simp]
 theorem residue_twoPrincipalParts_right {A B s₁ s₂ : ℂ} (h : s₁ ≠ s₂) :
     residue (twoPrincipalParts A B s₁ s₂) s₂ = B := by
-  rw [show twoPrincipalParts A B s₁ s₂ =
-    (fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹) from
-      funext fun z => twoPrincipalParts_apply A B s₁ s₂ z]
+  rw [twoPrincipalParts_eq]
   have hf₁ : MeromorphicAt (fun z => A * (z - s₁)⁻¹) s₂ :=
     analyticAt_const.meromorphicAt.mul
       ((analyticAt_id.sub analyticAt_const).meromorphicAt.inv)
@@ -125,9 +127,7 @@ theorem circleIntegral_twoPrincipalParts {A B c s₁ s₂ : ℂ} {R : ℝ}
     (hs₁ : s₁ ∈ ball c R) (hs₂ : s₂ ∈ ball c R) :
     circleIntegral (twoPrincipalParts A B s₁ s₂) c R =
       2 * (Real.pi : ℂ) * Complex.I * (A + B) := by
-  rw [show twoPrincipalParts A B s₁ s₂ =
-    (fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹) from
-      funext fun z => twoPrincipalParts_apply A B s₁ s₂ z]
+  rw [twoPrincipalParts_eq]
   rw [circleIntegral.integral_add (circleIntegrable_const_mul_sub_inv hs₁)
     (circleIntegrable_const_mul_sub_inv hs₂), circleIntegral.integral_const_mul,
     circleIntegral.integral_const_mul, circleIntegral.integral_sub_inv_of_mem_ball hs₁,
