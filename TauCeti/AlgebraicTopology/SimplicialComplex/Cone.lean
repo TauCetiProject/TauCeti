@@ -50,7 +50,7 @@ variable {α : Type*}
 
 /-- The cone on a pre-abstract simplicial complex, defined as its join with the full complex on
 the one-point type `PUnit`. -/
-@[expose] public def cone (K : PreAbstractSimplicialComplex α) :
+public def cone (K : PreAbstractSimplicialComplex α) :
     PreAbstractSimplicialComplex (α ⊕ PUnit) :=
   join K ⊤
 
@@ -71,22 +71,44 @@ theorem mem_cone_iff {σ : Finset (α ⊕ PUnit)} :
     · exact Or.inl hright
     · exact Or.inr (Finset.nonempty_iff_ne_empty.mpr hright)
 
+/-- A finite set tagged into the left summand is a face of the cone exactly when it is a face of
+the base complex. -/
+@[simp]
+theorem map_inl_mem_cone_iff {s : Finset α} :
+    s.map (Embedding.inl : α ↪ α ⊕ PUnit) ∈ cone K ↔ s ∈ K := by
+  rw [← disjSum_empty, cone, disjSum_mem_join_iff]
+  constructor
+  · rintro ⟨_, hs | hs, _⟩
+    · simp_all
+    · exact hs
+  · exact fun hs => ⟨Or.inl (K.isRelLowerSet_faces hs).1, Or.inr hs, Or.inl rfl⟩
+
 /-- Every face of the base complex, tagged into the left summand, is a face of its cone. -/
 theorem map_inl_mem_cone {s : Finset α} (hs : s ∈ K) :
     s.map (Embedding.inl : α ↪ α ⊕ PUnit) ∈ cone K :=
-  map_inl_mem_join hs
+  map_inl_mem_cone_iff.mpr hs
 
 /-- The cone apex is a face. -/
 theorem apex_mem_cone : ({Sum.inr PUnit.unit} : Finset (α ⊕ PUnit)) ∈ cone K := by
   simpa [cone] using
     (map_inr_mem_join (K := K) (L := (⊤ : PreAbstractSimplicialComplex PUnit))
-      (show ({PUnit.unit} : Finset PUnit).Nonempty from Finset.singleton_nonempty _))
+      (Finset.singleton_nonempty PUnit.unit))
+
+/-- Adjoining the apex gives a face of the cone exactly when the base is empty or a face of the
+base complex. -/
+@[simp]
+theorem disjSum_singleton_mem_cone_iff {s : Finset α} :
+    s.disjSum {PUnit.unit} ∈ cone K ↔ s = ∅ ∨ s ∈ K := by
+  rw [cone, disjSum_mem_join_iff]
+  constructor
+  · exact fun h => h.2.1
+  · exact fun hs => ⟨Or.inr (Finset.singleton_nonempty PUnit.unit), hs,
+      Or.inr (Finset.singleton_nonempty PUnit.unit)⟩
 
 /-- Adjoining the apex to a face of the base produces a face of the cone. -/
 theorem disjSum_singleton_mem_cone {s : Finset α} (hs : s ∈ K) :
-    s.disjSum {PUnit.unit} ∈ cone K := by
-  exact disjSum_mem_join hs (show ({PUnit.unit} : Finset PUnit).Nonempty from
-    Finset.singleton_nonempty _)
+    s.disjSum {PUnit.unit} ∈ cone K :=
+  disjSum_singleton_mem_cone_iff.mpr (Or.inr hs)
 
 /-- Coning is monotone in the base complex. -/
 theorem cone_mono (h : K ≤ L) : cone K ≤ cone L :=
@@ -100,7 +122,7 @@ variable {α : Type*}
 
 /-- The cone on an abstract simplicial complex, defined as its join with the full complex on the
 one-point type `PUnit`. -/
-@[expose] public def cone (K : AbstractSimplicialComplex α) :
+public def cone (K : AbstractSimplicialComplex α) :
     AbstractSimplicialComplex (α ⊕ PUnit) :=
   join K ⊤
 
@@ -120,28 +142,38 @@ either empty or a face of the base complex. -/
 @[simp]
 theorem mem_cone_iff {σ : Finset (α ⊕ PUnit)} :
     σ ∈ cone K ↔ σ.Nonempty ∧ (σ.toLeft = ∅ ∨ σ.toLeft ∈ K) := by
-  rw [cone, mem_join_iff]
-  constructor
-  · exact fun h => ⟨h.1, h.2.1⟩
-  · rintro ⟨hσ, hleft⟩
-    refine ⟨hσ, hleft, ?_⟩
-    by_cases hright : σ.toRight = ∅
-    · exact Or.inl hright
-    · exact Or.inr (show σ.toRight.Nonempty from Finset.nonempty_iff_ne_empty.mpr hright)
+  simp only [← mem_toPreAbstractSimplicialComplex, cone_toPreAbstractSimplicialComplex]
+  exact PreAbstractSimplicialComplex.mem_cone_iff
+
+/-- A finite set tagged into the left summand is a face of the cone exactly when it is a face of
+the base complex. -/
+@[simp]
+theorem map_inl_mem_cone_iff {s : Finset α} :
+    s.map (Embedding.inl : α ↪ α ⊕ PUnit) ∈ cone K ↔ s ∈ K := by
+  simp only [← mem_toPreAbstractSimplicialComplex, cone_toPreAbstractSimplicialComplex]
+  exact PreAbstractSimplicialComplex.map_inl_mem_cone_iff
 
 /-- Every face of the base complex, tagged into the left summand, is a face of its cone. -/
 theorem map_inl_mem_cone {s : Finset α} (hs : s ∈ K) :
     s.map (Embedding.inl : α ↪ α ⊕ PUnit) ∈ cone K :=
-  map_inl_mem_join hs
+  map_inl_mem_cone_iff.mpr hs
 
 /-- The cone apex is a face. -/
 theorem apex_mem_cone : ({Sum.inr PUnit.unit} : Finset (α ⊕ PUnit)) ∈ cone K := by
   exact (cone K).singleton_mem (Sum.inr PUnit.unit)
 
+/-- Adjoining the apex gives a face of the cone exactly when the base is empty or a face of the
+base complex. -/
+@[simp]
+theorem disjSum_singleton_mem_cone_iff {s : Finset α} :
+    s.disjSum {PUnit.unit} ∈ cone K ↔ s = ∅ ∨ s ∈ K := by
+  simp only [← mem_toPreAbstractSimplicialComplex, cone_toPreAbstractSimplicialComplex]
+  exact PreAbstractSimplicialComplex.disjSum_singleton_mem_cone_iff
+
 /-- Adjoining the apex to a face of the base produces a face of the cone. -/
 theorem disjSum_singleton_mem_cone {s : Finset α} (hs : s ∈ K) :
-    s.disjSum {PUnit.unit} ∈ cone K := by
-  exact disjSum_mem_join hs ((⊤ : AbstractSimplicialComplex PUnit).singleton_mem PUnit.unit)
+    s.disjSum {PUnit.unit} ∈ cone K :=
+  disjSum_singleton_mem_cone_iff.mpr (Or.inr hs)
 
 /-- Coning is monotone in the base complex. -/
 theorem cone_mono (h : K ≤ L) : cone K ≤ cone L :=

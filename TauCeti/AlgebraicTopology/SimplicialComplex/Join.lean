@@ -49,7 +49,7 @@ variable {α β : Type*}
 /-- The join of two pre-abstract simplicial complexes, on the disjoint sum of their vertex types.
 A nonempty finite set is a face when each of its nonempty left and right projections is a face of
 the corresponding complex. -/
-@[expose] public def join (K : PreAbstractSimplicialComplex α)
+public def join (K : PreAbstractSimplicialComplex α)
     (L : PreAbstractSimplicialComplex β) :
     PreAbstractSimplicialComplex (α ⊕ β) where
   faces := {σ | σ.Nonempty ∧
@@ -120,7 +120,7 @@ namespace AbstractSimplicialComplex
 variable {α β : Type*}
 
 /-- The join of two abstract simplicial complexes, with vertices in the disjoint sum. -/
-@[expose] public def join (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β) :
+public def join (K : AbstractSimplicialComplex α) (L : AbstractSimplicialComplex β) :
     AbstractSimplicialComplex (α ⊕ β) :=
   PreAbstractSimplicialComplex.toAbstractSimplicialComplex
     (α ⊕ β)
