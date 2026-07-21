@@ -64,17 +64,14 @@ theorem mem_simplexBoundary : σ ∈ simplexBoundary V ↔ σ.Nonempty ∧ σ �
   Iff.rfl
 
 /-- The spanning vertex set is a face of its simplex exactly when it is nonempty. -/
-@[simp]
 theorem self_mem_simplex : V ∈ simplex V ↔ V.Nonempty := by
   simp
 
 /-- The spanning vertex set is not a face of its own boundary. -/
-@[simp]
 theorem self_notMem_simplexBoundary : V ∉ simplexBoundary V := by
   simp
 
 /-- A vertex belongs to the spanning set exactly when its singleton is a face of the simplex. -/
-@[simp]
 theorem singleton_mem_simplex {v : ι} : {v} ∈ simplex V ↔ v ∈ V := by
   simp
 
