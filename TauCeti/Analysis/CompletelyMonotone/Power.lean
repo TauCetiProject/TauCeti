@@ -40,7 +40,7 @@ the falling factorial at a negative argument is packaged in the private lemma
   on the open half-line `(0, ∞)`.
 * `TauCeti.isCompletelyMonotone_rpow_neg_const_add`: for `a > 0` and `s ≥ 0`, the resolvent-power
   kernel `t ↦ (a + t)^{-s}` is completely monotone on the closed half-line `[0, ∞)`.
-* `TauCeti.isCompletelyMonotone_one_add_rpow_neg`: the `a = 1` case `t ↦ (1 + t)^{-s}`, whose
+* `TauCeti.isCompletelyMonotone_rpow_neg_one_add`: the `a = 1` case `t ↦ (1 + t)^{-s}`, whose
   representing measure is the Gamma distribution with shape `s` for `s > 0` (and the Dirac mass `δ₀`
   at `s = 0`).
 
@@ -62,20 +62,10 @@ namespace TauCeti
 `s(s+1)⋯(s+n-1)`. This is the sign bookkeeping behind complete monotonicity of `t ↦ t^{-s}`. -/
 private lemma neg_one_pow_mul_descPochhammer_neg_nonneg {s : ℝ} (hs : 0 ≤ s) (n : ℕ) :
     0 ≤ (-1 : ℝ) ^ n * (descPochhammer ℝ n).eval (-s) := by
-  rw [descPochhammer_eval_eq_prod_range]
-  have hrw : (∏ j ∈ Finset.range n, (-s - (j : ℝ)))
-      = (-1) ^ n * ∏ j ∈ Finset.range n, (s + (j : ℝ)) := by
-    rw [show (∏ j ∈ Finset.range n, (-s - (j : ℝ)))
-          = ∏ j ∈ Finset.range n, ((-1 : ℝ) * (s + (j : ℝ))) from
-        Finset.prod_congr rfl fun j _ => by ring,
-      Finset.prod_mul_distrib, Finset.prod_const, Finset.card_range]
-  rw [hrw]
-  have hP : 0 ≤ ∏ j ∈ Finset.range n, (s + (j : ℝ)) :=
-    Finset.prod_nonneg fun j _ => add_nonneg hs (Nat.cast_nonneg j)
-  have hsq : (-1 : ℝ) ^ n * ((-1) ^ n * ∏ j ∈ Finset.range n, (s + (j : ℝ)))
-      = ((-1 : ℝ) ^ n) ^ 2 * ∏ j ∈ Finset.range n, (s + (j : ℝ)) := by ring
-  rw [hsq]
-  exact mul_nonneg (sq_nonneg _) hP
+  rw [← ascPochhammer_eval_neg_eq_descPochhammer ℝ (-s) n, neg_neg]
+  obtain rfl | hs := hs.eq_or_lt
+  · by_cases hn : n = 0 <;> simp [hn]
+  · exact (ascPochhammer_pos n s hs).le
 
 /-- For `s ≥ 0`, the negative power `t ↦ t^{-s}` is completely monotone on the open half-line
 `(0, ∞)`. The case `s = 1` is `t ↦ 1/t`, whose representing measure is (infinite) Lebesgue
@@ -116,7 +106,7 @@ theorem isCompletelyMonotone_rpow_neg_const_add {a s : ℝ} (ha : 0 < a) (hs : 0
 theorem is the Gamma distribution with shape `s`, and the case `s = 1` is `t ↦ 1/(1 + t)` with the
 exponential distribution `e^{-x} dx`; at the endpoint `s = 0` the kernel is the constant `1`, whose
 representing measure is the Dirac mass `δ₀`. -/
-theorem isCompletelyMonotone_one_add_rpow_neg {s : ℝ} (hs : 0 ≤ s) :
+theorem isCompletelyMonotone_rpow_neg_one_add {s : ℝ} (hs : 0 ≤ s) :
     IsCompletelyMonotone (fun t => (1 + t) ^ (-s)) :=
   isCompletelyMonotone_rpow_neg_const_add one_pos hs
 
