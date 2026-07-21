@@ -212,6 +212,13 @@ jobs:
           ref: ${{ steps.pr.outputs.sha }}
           path: pr
           persist-credentials: false
+          # actions/checkout now refuses to fetch fork PR code under
+          # pull_request_target unless this opt-in is set. Fetching the fork's
+          # sources is exactly this workflow's job; it is safe here because the
+          # checkout carries no credentials (persist-credentials: false) and the
+          # fork's code is only ever executed under landrun below (offline, no
+          # token in reach), never in the trusted context this guard warns about.
+          allow-unsafe-pr-checkout: true
 
       # For a Lake-pin PR, validate it is a safe forward bump BEFORE overlaying its
       # pins or building. The validator and the BASE config it judges against are the
