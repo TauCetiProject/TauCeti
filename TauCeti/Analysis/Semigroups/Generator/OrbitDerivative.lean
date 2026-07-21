@@ -140,9 +140,7 @@ theorem realOperator_hasDerivWithinAt_map_generator
 
 /-! ## Derivatives within the nonnegative half-line -/
 
-/-- A generator-domain orbit equals its initial value plus the integral of the orbit of its
-generator. -/
-theorem realOperator_eq_add_integral_map_generator (S : StronglyContinuousSemigroup X)
+private theorem realOperator_eq_add_integral_map_generator (S : StronglyContinuousSemigroup X)
     [CompleteSpace X] (x : S.domain) {s : ℝ} (hs : 0 ≤ s) :
     S.realOperator s (x : X) = (x : X) + ∫ u in (0 : ℝ)..s,
       S.realOperator u (S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩) := by
@@ -178,10 +176,10 @@ theorem realOperator_eq_add_integral_map_generator (S : StronglyContinuousSemigr
     have hint := intervalIntegral.integral_hasDerivWithinAt_right
       (s := Set.Ici u) (t := Set.Ioi u) huit hmeas
       (hcont.mono (fun v hv => hu.1.trans hv.le))
-    change HasDerivWithinAt (fun v => (x : X) + ∫ w in (0 : ℝ)..v,
-      S.realOperator w z) (S.realOperator u z) (Set.Ici u) u
     have h := (hasDerivWithinAt_const u (Set.Ici u) (x : X)).add hint
-    exact h.congr (fun _ _ => rfl) rfl |>.congr_deriv (zero_add _)
+    convert h.congr (fun _ _ => rfl) rfl |>.congr_deriv (zero_add _) using 1
+    funext v
+    rfl
   · exact (S.realOperator_continuousOn_Ici x).mono Set.Icc_subset_Ici_self
   · intro u hu
     exact continuousWithinAt_const.add
@@ -219,10 +217,10 @@ theorem realOperator_hasDerivWithinAt_Ici (S : StronglyContinuousSemigroup X)
     have hmeas := ContinuousOn.stronglyMeasurableAtFilter (μ := MeasureTheory.volume)
       isOpen_Ioi ((S.realOperator_continuousOn_Ici z).mono Set.Ioi_subset_Ici_self) t ht
     have hint := intervalIntegral.integral_hasDerivAt_right hzint hmeas hcont
-    change HasDerivWithinAt (fun s => (x : X) + ∫ v in (0 : ℝ)..s,
-      S.realOperator v z) (S.realOperator t z) (Set.Ici 0) t
     have h := ((hasDerivAt_const t (x : X)).add hint).hasDerivWithinAt (s := Set.Ici 0)
-    exact h.congr (fun _ _ => rfl) rfl |>.congr_deriv (zero_add _)
+    convert h.congr (fun _ _ => rfl) rfl |>.congr_deriv (zero_add _) using 1
+    funext s
+    rfl
   -- Finally transfer the derivative from `g` back to the orbit and commute the generator.
   rw [S.realOperator_generator_map ht.le x]
   exact hg.congr (fun s hs => horbit s hs) (horbit t ht.le)

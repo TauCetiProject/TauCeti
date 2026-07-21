@@ -50,13 +50,6 @@ def IsClassicalSolution (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ → X) : Prop :=
   u 0 = x ∧ ∀ t : ℝ, 0 ≤ t → ∃ hut : u t ∈ A.domain,
     HasDerivWithinAt u (A ⟨u t, hut⟩) (Set.Ici 0) t
 
-/-- Construct a classical solution from its initial value and differential equation. -/
-theorem IsClassicalSolution.mk {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
-    (hzero : u 0 = x) (hderiv : ∀ t : ℝ, 0 ≤ t → ∃ hut : u t ∈ A.domain,
-      HasDerivWithinAt u (A ⟨u t, hut⟩) (Set.Ici 0) t) :
-    IsClassicalSolution A x u :=
-  ⟨hzero, hderiv⟩
-
 /-- A classical solution takes its prescribed initial value at time zero. -/
 theorem IsClassicalSolution.apply_zero {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsClassicalSolution A x u) : u 0 = x :=
@@ -88,13 +81,6 @@ def IsMildSolution [CompleteSpace X] (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ →
   ContinuousOn u (Set.Ici 0) ∧ u 0 = x ∧
     ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Set.Ioc 0 t, u s) ∈ A.domain,
       A ⟨∫ s in Set.Ioc 0 t, u s, hut⟩ = u t - x
-
-/-- Construct a mild solution from continuity, its initial value, and the integrated equation. -/
-theorem IsMildSolution.mk [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
-    (hcont : ContinuousOn u (Set.Ici 0)) (hzero : u 0 = x)
-    (hmap : ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Set.Ioc 0 t, u s) ∈ A.domain,
-      A ⟨∫ s in Set.Ioc 0 t, u s, hut⟩ = u t - x) : IsMildSolution A x u :=
-  ⟨hcont, hzero, hmap⟩
 
 /-- A mild solution is continuous on the nonnegative half-line. -/
 theorem IsMildSolution.continuousOn [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
