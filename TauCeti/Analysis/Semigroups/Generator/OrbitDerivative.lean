@@ -145,49 +145,17 @@ private theorem realOperator_eq_add_integral_map_generator (S : StronglyContinuo
     S.realOperator s (x : X) = (x : X) + ∫ u in (0 : ℝ)..s,
       S.realOperator u (S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩) := by
   let z : X := S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩
-  let g : ℝ → X := fun v => (x : X) + ∫ u in (0 : ℝ)..v, S.realOperator u z
-  let b := s + 1
-  have hb : 0 < b := by dsimp [b]; linarith
-  have hzcont : ContinuousOn (fun u : ℝ => S.realOperator u z) (Set.Icc 0 b) :=
-    (S.realOperator_continuousOn_Ici z).mono Set.Icc_subset_Ici_self
-  have hzint : IntervalIntegrable (fun u : ℝ => S.realOperator u z) MeasureTheory.volume 0 b :=
-    (by simpa [Set.uIcc_of_le hb.le] using hzcont :
-      ContinuousOn (fun u : ℝ => S.realOperator u z) (Set.uIcc 0 b)).intervalIntegrable
-  apply eq_of_has_deriv_right_eq
-      (f := fun u : ℝ => S.realOperator u (x : X))
-      (g := g) (f' := fun u => S.realOperator u z) (a := 0) (b := b)
-  · intro u hu
-    simpa [z] using S.realOperator_hasDerivWithinAt_map_generator x hu.1
-  · intro u hu
-    have hcont := S.realOperator_continuousWithinAt z u hu.1
-    have hmeas : StronglyMeasurableAtFilter (fun v : ℝ => S.realOperator v z)
-        (nhdsWithin u (Set.Ioi u)) MeasureTheory.volume := by
-      have hae : MeasureTheory.AEStronglyMeasurable (fun v : ℝ => S.realOperator v z)
-          (MeasureTheory.volume.restrict (Set.Ioi u)) :=
-        ((S.realOperator_continuousOn_Ici z).mono (by
-          intro v hv
-          exact hu.1.trans hv.le)).aestronglyMeasurable measurableSet_Ioi
-      exact AEStronglyMeasurable.stronglyMeasurableAtFilter_of_mem hae self_mem_nhdsWithin
-    have huit : IntervalIntegrable (fun v : ℝ => S.realOperator v z)
-        MeasureTheory.volume 0 u := by
-      apply ContinuousOn.intervalIntegrable
-      simpa [Set.uIcc_of_le hu.1] using
-        (S.realOperator_continuousOn_Ici z).mono (fun _ hv => hv.1)
-    have hint := intervalIntegral.integral_hasDerivWithinAt_right
-      (s := Set.Ici u) (t := Set.Ioi u) huit hmeas
-      (hcont.mono (fun v hv => hu.1.trans hv.le))
-    have h := (hasDerivWithinAt_const u (Set.Ici u) (x : X)).add hint
-    convert h.congr (fun _ _ => rfl) rfl |>.congr_deriv (zero_add _) using 1
-    funext v
-    rfl
-  · exact (S.realOperator_continuousOn_Ici x).mono Set.Icc_subset_Ici_self
-  · intro u hu
-    exact continuousWithinAt_const.add
-      (intervalIntegral.continuousWithinAt_primitive
-        (MeasureTheory.NullSingletonClass.measure_singleton u)
-        (by simpa [max_eq_right hb.le] using hzint))
-  · simp [g]
-  · exact ⟨hs, by dsimp [b]; linarith⟩
+  have hzint : IntervalIntegrable (fun u : ℝ => S.realOperator u z)
+      MeasureTheory.volume 0 s := by
+    apply ContinuousOn.intervalIntegrable
+    simpa [Set.uIcc_of_le hs] using
+      (S.realOperator_continuousOn_Ici z).mono (fun _ hu => hu.1)
+  have hftc := intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le hs
+    ((S.realOperator_continuousOn_Ici x).mono Set.Icc_subset_Ici_self)
+    (fun u hu => (S.realOperator_hasDerivWithinAt_map_generator x hu.1.le).mono
+      Set.Ioi_subset_Ici_self) hzint
+  rw [hftc, S.realOperator_zero_apply]
+  abel
 
 /-- On the nonnegative half-line, the orbit of a generator-domain vector has derivative equal
 to the generator evaluated on the evolved vector. At positive times this is a two-sided
