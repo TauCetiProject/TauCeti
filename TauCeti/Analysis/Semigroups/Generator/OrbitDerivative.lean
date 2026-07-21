@@ -7,15 +7,15 @@ module
 public import TauCeti.Analysis.Semigroups.Generator.Invariance
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
 # Differentiability of semigroup orbits
 
 This file characterizes membership in the infinitesimal generator domain by right
-differentiability of the orbit at zero. For a vector in the generator domain, it then computes
-the right derivative at every nonnegative time in the equivalent forms `A (S t x)` and
-`S t (A x)`.
+differentiability of the orbit at zero. For a vector in the generator domain, it computes the
+right derivative at every nonnegative time in the equivalent forms `A (S t x)` and `S t (A x)`.
+It also proves that a generator-domain orbit has a derivative within the whole nonnegative
+half-line, hence a two-sided derivative at positive times.
 
 ## References
 
@@ -138,6 +138,8 @@ theorem realOperator_hasDerivWithinAt_map_generator
   rw [← S.realOperator_generator_map ht x]
   exact S.realOperator_hasDerivWithinAt ht (S.realOperator_mem_domain ht x.property)
 
+/-! ## Derivatives within the nonnegative half-line -/
+
 /-- On the nonnegative half-line, the orbit of a generator-domain vector has derivative equal
 to the generator evaluated on the evolved vector. At positive times this is a two-sided
 derivative; only the derivative at zero is one-sided. -/
@@ -149,13 +151,7 @@ theorem realOperator_hasDerivWithinAt_Ici (S : StronglyContinuousSemigroup X)
         exact S.realOperator_mem_domain ht x.property⟩) (Set.Ici 0) t := by
   let z : X := S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩
   let g : ℝ → X := fun s => (x : X) + ∫ u in (0 : ℝ)..s, S.realOperator u z
-  have hzmeas : StronglyMeasurableAtFilter (fun u : ℝ => S.realOperator u z)
-      (nhdsWithin t (Set.Ici 0)) MeasureTheory.volume := by
-    have hae : MeasureTheory.AEStronglyMeasurable (fun u : ℝ => S.realOperator u z)
-        (MeasureTheory.volume.restrict (Set.Ici 0)) :=
-      (S.realOperator_continuousOn_Ici z).aestronglyMeasurable measurableSet_Ici
-    exact AEStronglyMeasurable.stronglyMeasurableAtFilter_of_mem hae
-      self_mem_nhdsWithin
+  -- First identify the orbit with the integral primitive `g` by equality of right derivatives.
   have horbit : ∀ s : ℝ, 0 ≤ s → S.realOperator s (x : X) = g s := by
     intro s hs
     let b := s + 1
@@ -191,6 +187,7 @@ theorem realOperator_hasDerivWithinAt_Ici (S : StronglyContinuousSemigroup X)
       have hint := intervalIntegral.integral_hasDerivWithinAt_right
         (s := Set.Ici u) (t := Set.Ioi u)
         huit hmeas (hcont.mono (by intro v hv; exact hu.1.trans hv.le))
+      -- Unfolding `g` exposes the constant plus primitive required by the calculus lemmas.
       change HasDerivWithinAt (fun s => (x : X) + ∫ v in (0 : ℝ)..s,
         S.realOperator v z) (S.realOperator u z) (Set.Ici u) u
       have h := (hasDerivWithinAt_const u (Set.Ici u) (x : X)).add hint
@@ -203,6 +200,7 @@ theorem realOperator_hasDerivWithinAt_Ici (S : StronglyContinuousSemigroup X)
           (by simpa [max_eq_right hb.le] using hzint))
     · simp [g]
     · exact ⟨hs, by dsimp [b]; linarith⟩
+  -- Next differentiate the primitive on `Ici 0`, treating its endpoint separately.
   have hg : HasDerivWithinAt g (S.realOperator t z) (Set.Ici 0) t := by
     have hzint : IntervalIntegrable (fun u : ℝ => S.realOperator u z)
         MeasureTheory.volume 0 t := by
@@ -226,6 +224,7 @@ theorem realOperator_hasDerivWithinAt_Ici (S : StronglyContinuousSemigroup X)
         (hcont.mono Set.Ioi_subset_Ici_self)
       simp only [S.realOperator_zero_apply] at hint
       rw [S.realOperator_zero_apply]
+      -- Unfolding `g` exposes the constant plus primitive required by the calculus lemmas.
       change HasDerivWithinAt (fun s => (x : X) + ∫ v in (0 : ℝ)..s,
         S.realOperator v z) z (Set.Ici 0) 0
       have h := (hasDerivWithinAt_const 0 (Set.Ici 0) (x : X)).add hint
@@ -235,11 +234,13 @@ theorem realOperator_hasDerivWithinAt_Ici (S : StronglyContinuousSemigroup X)
         isOpen_Ioi ((S.realOperator_continuousOn_Ici z).mono Set.Ioi_subset_Ici_self) t ht
       have hint := intervalIntegral.integral_hasDerivAt_right hzint
         hmeas hcont
+      -- Unfolding `g` exposes the constant plus primitive required by the calculus lemmas.
       change HasDerivWithinAt (fun s => (x : X) + ∫ v in (0 : ℝ)..s,
         S.realOperator v z) (S.realOperator t z) (Set.Ici 0) t
       have h := ((hasDerivAt_const t (x : X)).add hint).hasDerivWithinAt
         (s := Set.Ici 0)
       exact h.congr (fun _ _ => rfl) rfl |>.congr_deriv (zero_add _)
+  -- Finally transfer the derivative from `g` back to the orbit and commute the generator.
   rw [S.realOperator_generator_map ht x]
   exact hg.congr (fun s hs => horbit s hs) (horbit t ht)
 

@@ -50,14 +50,6 @@ def IsClassicalSolution (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ → X) : Prop :=
   u 0 = x ∧ ∀ t : ℝ, 0 ≤ t → ∃ hut : u t ∈ A.domain,
     HasDerivWithinAt u (A ⟨u t, hut⟩) (Set.Ici 0) t
 
-/-- Characterization of a classical solution by its initial value, domain membership, and
-derivative equation on the nonnegative half-line. -/
-theorem isClassicalSolution_iff {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
-    IsClassicalSolution A x u ↔
-      u 0 = x ∧ ∀ t : ℝ, 0 ≤ t → ∃ hut : u t ∈ A.domain,
-        HasDerivWithinAt u (A ⟨u t, hut⟩) (Set.Ici 0) t :=
-  Iff.rfl
-
 /-- A classical solution takes its prescribed initial value at time zero. -/
 theorem IsClassicalSolution.apply_zero {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsClassicalSolution A x u) : u 0 = x :=
@@ -76,6 +68,12 @@ theorem IsClassicalSolution.hasDerivWithinAt {A : X →ₗ.[ℝ] X} {x : X} {u :
   obtain ⟨hut, hderiv⟩ := hu.2 t ht
   simpa only [Submodule.coe_mk] using hderiv
 
+/-- A classical solution is continuous on the nonnegative half-line. -/
+theorem IsClassicalSolution.continuousOn {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
+    (hu : IsClassicalSolution A x u) : ContinuousOn u (Set.Ici 0) := by
+  intro t ht
+  exact (hu.hasDerivWithinAt ht).continuousWithinAt
+
 /-- A mild solution of `u' = A u`, `u(0) = x`, on `[0, ∞)`.  The integral is pointwise
 Bochner integration in `X`.  Requiring the integral to lie in the domain makes the expression
 `A (∫ s in (0, t], u s)` meaningful for an unbounded operator. -/
@@ -83,15 +81,6 @@ def IsMildSolution [CompleteSpace X] (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ →
   ContinuousOn u (Set.Ici 0) ∧ u 0 = x ∧
     ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Set.Ioc 0 t, u s) ∈ A.domain,
       A ⟨∫ s in Set.Ioc 0 t, u s, hut⟩ = u t - x
-
-/-- Characterization of a mild solution by continuity, its initial value, and the integrated
-Cauchy equation. -/
-theorem isMildSolution_iff [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
-    IsMildSolution A x u ↔
-      ContinuousOn u (Set.Ici 0) ∧ u 0 = x ∧
-        ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Set.Ioc 0 t, u s) ∈ A.domain,
-          A ⟨∫ s in Set.Ioc 0 t, u s, hut⟩ = u t - x :=
-  Iff.rfl
 
 /-- A mild solution is continuous on the nonnegative half-line. -/
 theorem IsMildSolution.continuousOn [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
