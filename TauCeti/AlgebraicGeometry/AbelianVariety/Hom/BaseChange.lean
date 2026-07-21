@@ -48,7 +48,9 @@ monoidal structure on pullback ensures that it is again a group-scheme homomorph
 noncomputable def Hom.baseChange {A B : AbelianVariety K} (f : A ⟶ B)
     (L : Type u) [Field L] [Algebra K L] : A.baseChange L ⟶ B.baseChange L := by
   let F := Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))
-  exact InducedCategory.homMk (F.mapCommGrp.map f.hom)
+  exact InducedCategory.homMk
+    (eqToHom (baseChange_toCommGrp A L) ≫ F.mapCommGrp.map f.hom ≫
+      eqToHom (baseChange_toCommGrp B L).symm)
 
 /-- The underlying morphism over `Spec L` of a base-changed homomorphism is the pullback of its
 underlying morphism over `Spec K`. -/
@@ -56,28 +58,47 @@ underlying morphism over `Spec K`. -/
 lemma Hom.toOverHom_baseChange {A B : AbelianVariety K} (f : A ⟶ B)
     (L : Type u) [Field L] [Algebra K L] :
     Hom.toOverHom (Hom.baseChange f L) =
-      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map
-        (Hom.toOverHom f) := by
-  rfl
+      (CommGrp.forget _).map
+        (eqToHom (baseChange_toCommGrp A L) ≫
+          (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map f.hom ≫
+          eqToHom (baseChange_toCommGrp B L).symm) := by
+  change (CommGrp.forget _).map
+      (eqToHom (baseChange_toCommGrp A L) ≫
+        (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map f.hom ≫
+        eqToHom (baseChange_toCommGrp B L).symm) = _
+  simp
 
 /-- Base change preserves identity homomorphisms. -/
 @[simp]
 lemma Hom.baseChange_id (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
     Hom.baseChange (𝟙 A) L = 𝟙 (A.baseChange L) := by
-  exact InducedCategory.hom_ext ((Over.pullback
-    (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map_id (CommGrp.mk A.toOver))
+  apply InducedCategory.hom_ext
+  change eqToHom (baseChange_toCommGrp A L) ≫
+      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map
+        (𝟙 (CommGrp.mk A.toOver)) ≫
+      eqToHom (baseChange_toCommGrp A L).symm = 𝟙 (CommGrp.mk (A.baseChange L).toOver)
+  simp
 
 /-- Base change preserves composition of homomorphisms. -/
 @[simp]
 lemma Hom.baseChange_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C)
     (L : Type u) [Field L] [Algebra K L] :
     Hom.baseChange (f ≫ g) L = Hom.baseChange f L ≫ Hom.baseChange g L := by
-  exact InducedCategory.hom_ext ((Over.pullback
-    (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map_comp f.hom g.hom)
+  apply InducedCategory.hom_ext
+  change eqToHom (baseChange_toCommGrp A L) ≫
+      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map
+        (f.hom ≫ g.hom) ≫ eqToHom (baseChange_toCommGrp C L).symm =
+    (eqToHom (baseChange_toCommGrp A L) ≫
+      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map f.hom ≫
+      eqToHom (baseChange_toCommGrp B L).symm) ≫
+    (eqToHom (baseChange_toCommGrp B L) ≫
+      (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map g.hom ≫
+      eqToHom (baseChange_toCommGrp C L).symm)
+  simp [Category.assoc]
 
 /-- Extension of the base field defines a functor between the categories of abelian varieties.
 -/
-@[expose] noncomputable def baseChangeFunctor (L : Type u) [Field L] [Algebra K L] :
+noncomputable def baseChangeFunctor (L : Type u) [Field L] [Algebra K L] :
     AbelianVariety K ⥤ AbelianVariety L where
   obj A := A.baseChange L
   map f := Hom.baseChange f L
@@ -88,13 +109,15 @@ lemma Hom.baseChange_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C)
 lemma baseChangeFunctor_obj (L : Type u) [Field L] [Algebra K L]
     (A : AbelianVariety K) :
     (baseChangeFunctor L).obj A = A.baseChange L :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma baseChangeFunctor_map {A B : AbelianVariety K} (L : Type u) [Field L] [Algebra K L]
     (f : A ⟶ B) :
-    (baseChangeFunctor L).map f = Hom.baseChange f L :=
-  rfl
+    (baseChangeFunctor L).map f =
+      eqToHom (baseChangeFunctor_obj L A) ≫ Hom.baseChange f L ≫
+        eqToHom (baseChangeFunctor_obj L B).symm :=
+  (rfl)
 
 end
 
