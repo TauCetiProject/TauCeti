@@ -53,9 +53,25 @@ theorem twoPrincipalParts_eq (A B s₁ s₂ : ℂ) :
     twoPrincipalParts A B s₁ s₂ = fun z => A * (z - s₁)⁻¹ + B * (z - s₂)⁻¹ :=
   funext fun z => twoPrincipalParts_apply A B s₁ s₂ z
 
-/-- Away from its two designated points, `twoPrincipalParts` is analytic. -/
-theorem analyticAt_twoPrincipalParts {A B s₁ s₂ z : ℂ} (hz₁ : z ≠ s₁) (hz₂ : z ≠ s₂) :
+/-- `twoPrincipalParts` is analytic where each nonzero principal part is away from its designated
+point. -/
+theorem analyticAt_twoPrincipalParts {A B s₁ s₂ z : ℂ} (hz₁ : A = 0 ∨ z ≠ s₁)
+    (hz₂ : B = 0 ∨ z ≠ s₂) :
     AnalyticAt ℂ (twoPrincipalParts A B s₁ s₂) z := by
+  rcases hz₁ with rfl | hz₁
+  · rcases hz₂ with rfl | hz₂
+    · rw [twoPrincipalParts_eq]
+      simp only [zero_mul, zero_add]
+      exact analyticAt_const
+    · rw [twoPrincipalParts_eq]
+      simp only [zero_mul, zero_add]
+      exact analyticAt_const.mul
+        ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 hz₂))
+  rcases hz₂ with rfl | hz₂
+  · rw [twoPrincipalParts_eq]
+    simp only [zero_mul, add_zero]
+    exact analyticAt_const.mul
+      ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 hz₁))
   exact (analyticAt_const.mul ((analyticAt_id.sub analyticAt_const).inv
     (sub_ne_zero.2 hz₁))).add (analyticAt_const.mul
       ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 hz₂)))
@@ -68,11 +84,13 @@ theorem meromorphicAt_twoPrincipalParts (A B s₁ s₂ z : ℂ) :
       (analyticAt_const.meromorphicAt.mul
         ((analyticAt_id.sub analyticAt_const).meromorphicAt.inv))
 
-/-- At the first of two distinct designated points, the residue of `twoPrincipalParts` is the first
-coefficient. -/
+/-- At the first designated point, the residue of `twoPrincipalParts` is the first coefficient if
+the other principal part vanishes or is designated at a distinct point. -/
 @[simp]
-theorem residue_twoPrincipalParts_left {A B s₁ s₂ : ℂ} (h : s₁ ≠ s₂) :
+theorem residue_twoPrincipalParts_left {A B s₁ s₂ : ℂ} (h : B = 0 ∨ s₁ ≠ s₂) :
     residue (twoPrincipalParts A B s₁ s₂) s₁ = A := by
+  rcases h with rfl | h
+  · simp [twoPrincipalParts_eq]
   rw [twoPrincipalParts_eq]
   have hf₁ : MeromorphicAt (fun z => A * (z - s₁)⁻¹) s₁ :=
     analyticAt_const.meromorphicAt.mul (meromorphicAt_sub_inv s₁)
@@ -89,11 +107,13 @@ theorem residue_twoPrincipalParts_left {A B s₁ s₂ : ℂ} (h : s₁ ≠ s₂)
   · exact analyticAt_const.mul
       ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 h))
 
-/-- At the second of two distinct designated points, the residue of `twoPrincipalParts` is the
-second coefficient. -/
+/-- At the second designated point, the residue of `twoPrincipalParts` is the second coefficient if
+the other principal part vanishes or is designated at a distinct point. -/
 @[simp]
-theorem residue_twoPrincipalParts_right {A B s₁ s₂ : ℂ} (h : s₁ ≠ s₂) :
+theorem residue_twoPrincipalParts_right {A B s₁ s₂ : ℂ} (h : A = 0 ∨ s₁ ≠ s₂) :
     residue (twoPrincipalParts A B s₁ s₂) s₂ = B := by
+  rcases h with rfl | h
+  · simp [twoPrincipalParts_eq]
   rw [twoPrincipalParts_eq]
   have hf₁ : MeromorphicAt (fun z => A * (z - s₁)⁻¹) s₂ :=
     analyticAt_const.meromorphicAt.mul
@@ -142,8 +162,8 @@ theorem circleIntegral_twoPrincipalParts_eq_residue_sum {A B c s₁ s₂ : ℂ} 
       2 * (Real.pi : ℂ) * Complex.I *
         (residue (twoPrincipalParts A B s₁ s₂) s₁ +
           residue (twoPrincipalParts A B s₁ s₂) s₂) := by
-  rw [circleIntegral_twoPrincipalParts hs₁ hs₂, residue_twoPrincipalParts_left hs,
-    residue_twoPrincipalParts_right hs]
+  rw [circleIntegral_twoPrincipalParts hs₁ hs₂, residue_twoPrincipalParts_left (Or.inr hs),
+    residue_twoPrincipalParts_right (Or.inr hs)]
 
 end TauCeti.Contour
 
