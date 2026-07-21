@@ -150,7 +150,7 @@ independence of the `dᵢ` (so `TauCeti.Multiquadratic.galoisGroupEquiv` is the 
 `Gal(M/ℚ) ≅ (ℤ/2)ⁿ`), an arithmetic Frobenius `σ` at a prime `Q` above the odd prime `p ∤ dᵢ`
 maps to the vector of Legendre symbols `i ↦ (dᵢ/p)`. This is the roadmap's Layer 1 Frobenius
 statement. -/
-@[simp] theorem galoisGroupEquiv_frobenius [Finite ι]
+theorem galoisGroupEquiv_frobenius [Finite ι]
     (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
     (p : ℕ) [Fact p.Prime] (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)
