@@ -74,9 +74,9 @@ theorem blockAverage_apply {n : ℕ} (k : Fin n → ℕ) (ω : Ω) :
   simp [blockAverage, Finset.sum_apply]
 
 /-- A block average of `L²` coordinates is itself `L²`. -/
-theorem memLp_blockAverage (hX_L2 : ∀ n, MemLp (X n) 2 μ) {n : ℕ} (k : Fin n → ℕ) :
+theorem memLp_blockAverage {n : ℕ} (k : Fin n → ℕ) (hX_L2 : ∀ i, MemLp (X (k i)) 2 μ) :
     MemLp (blockAverage X k) 2 μ :=
-  (memLp_finsetSum' _ fun i _ => hX_L2 (k i)).const_smul _
+  (memLp_finsetSum' _ fun i _ => hX_L2 i).const_smul _
 
 /-- The double sum of block covariances splits along the diagonal into the common variance and
 the common off-diagonal covariance of a contractable `L²` sequence. -/
@@ -117,13 +117,13 @@ theorem Contractable.variance_blockAverage [IsFiniteMeasure μ] (hX : Contractab
 /-- **The mean of a block average of a contractable process.** A block average over any
 selection of length `0 < n` has the common coordinate mean `μ[X 0]`. -/
 theorem Contractable.integral_blockAverage (hX : Contractable μ X)
-    (hint : ∀ n, Integrable (X n) μ) {n : ℕ} (hn : 0 < n) {k : Fin n → ℕ} :
+    (hint0 : Integrable (X 0) μ) {n : ℕ} (hn : 0 < n) {k : Fin n → ℕ}
+    (hint : ∀ i, Integrable (X (k i)) μ) :
     μ[blockAverage X k] = μ[X 0] := by
-  have hmeas : ∀ m, AEMeasurable (X m) μ := fun m => (hint m).aemeasurable
   have hne : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
   simp_rw [blockAverage_apply]
-  rw [integral_const_mul, integral_finsetSum _ (fun i _ => hint (k i))]
-  simp_rw [fun i => hX.integral_coord_eq (hmeas (k i)) (hmeas 0)]
+  rw [integral_const_mul, integral_finsetSum _ (fun i _ => hint i)]
+  simp_rw [fun i => hX.integral_coord_eq (hint i).aemeasurable hint0.aemeasurable]
   rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← mul_assoc,
     inv_mul_cancel₀ hne, one_mul]
 
@@ -162,7 +162,8 @@ theorem Contractable.variance_blockAverage_sub_of_disjoint [IsFiniteMeasure μ]
     (hk : Function.Injective k) (hk' : Function.Injective k') (hdisj : ∀ i j, k i ≠ k' j) :
     Var[blockAverage X k - blockAverage X k'; μ]
       = (Var[X 0; μ] - cov[X 0, X 1; μ]) / n + (Var[X 0; μ] - cov[X 0, X 1; μ]) / m := by
-  rw [variance_sub (memLp_blockAverage hX_L2 k) (memLp_blockAverage hX_L2 k'),
+  rw [variance_sub (memLp_blockAverage k fun i => hX_L2 (k i))
+      (memLp_blockAverage k' fun i => hX_L2 (k' i)),
     hX.variance_blockAverage hX_L2 hn hk, hX.variance_blockAverage hX_L2 hm hk',
     hX.covariance_blockAverage_of_disjoint hX_L2 hn hm hdisj]
   ring
@@ -183,14 +184,16 @@ theorem Contractable.integral_sq_blockAverage_sub_of_disjoint [IsFiniteMeasure �
       = (Var[X 0; μ] - cov[X 0, X 1; μ]) / n + (Var[X 0; μ] - cov[X 0, X 1; μ]) / m := by
   have hmean : μ[blockAverage X k - blockAverage X k'] = 0 := by
     simp only [Pi.sub_apply]
-    rw [integral_sub ((memLp_blockAverage hX_L2 k).integrable one_le_two)
-      ((memLp_blockAverage hX_L2 k').integrable one_le_two),
-      hX.integral_blockAverage (fun j => (hX_L2 j).integrable one_le_two) hn (k := k),
-      hX.integral_blockAverage (fun j => (hX_L2 j).integrable one_le_two) hm (k := k'),
+    rw [integral_sub ((memLp_blockAverage k fun i => hX_L2 (k i)).integrable one_le_two)
+      ((memLp_blockAverage k' fun i => hX_L2 (k' i)).integrable one_le_two),
+      hX.integral_blockAverage ((hX_L2 0).integrable one_le_two) hn
+        (fun i => (hX_L2 (k i)).integrable one_le_two),
+      hX.integral_blockAverage ((hX_L2 0).integrable one_le_two) hm
+        (fun i => (hX_L2 (k' i)).integrable one_le_two),
       sub_self]
   have hae : AEMeasurable (blockAverage X k - blockAverage X k') μ :=
-    ((memLp_blockAverage hX_L2 k).sub
-      (memLp_blockAverage hX_L2 k')).aestronglyMeasurable.aemeasurable
+    ((memLp_blockAverage k fun i => hX_L2 (k i)).sub
+      (memLp_blockAverage k' fun i => hX_L2 (k' i))).aestronglyMeasurable.aemeasurable
   rw [← hX.variance_blockAverage_sub_of_disjoint hX_L2 hn hm hk hk' hdisj,
     variance_of_integral_eq_zero hae hmean]
   simp [Pi.sub_apply]
