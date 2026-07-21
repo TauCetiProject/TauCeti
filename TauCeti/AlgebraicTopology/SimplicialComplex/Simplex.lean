@@ -123,17 +123,24 @@ theorem simplexBoundary_singleton (v : ι) : simplexBoundary {v} = ⊥ := by
     exact hσ.1.ne_empty (Finset.ssubset_singleton_iff.mp hσ.2)
   · exact False.elim
 
-/-- The simplex on a nonempty spanning set is contained in a complex exactly when that spanning
-set is a face of the complex. -/
-theorem simplex_le_iff (hV : V.Nonempty) : simplex V ≤ K ↔ V ∈ K := by
+/-- The simplex on `V` is contained in a complex exactly when `V` is a face of the complex
+whenever `V` is nonempty.  For `V = ∅` the simplex is `⊥`, so it is contained in every complex. -/
+theorem simplex_le_iff : simplex V ≤ K ↔ (V.Nonempty → V ∈ K) := by
   constructor
-  · exact fun h => h (self_mem_simplex.mpr hV)
-  · exact fun hVₖ _ hσ => (K.isRelLowerSet_faces hVₖ).2 hσ.2 hσ.1
+  · exact fun h hV => h (self_mem_simplex.mpr hV)
+  · intro h σ hσ
+    obtain ⟨x, hx⟩ := hσ.1
+    exact (K.isRelLowerSet_faces (h ⟨x, hσ.2 hx⟩)).2 hσ.2 hσ.1
 
-/-- Simplices are ordered exactly when their spanning vertex sets are ordered, provided the
-smaller spanning set is nonempty. -/
-theorem simplex_le_simplex_iff (hV : V.Nonempty) : simplex V ≤ simplex W ↔ V ⊆ W := by
-  simpa [mem_simplex, hV] using (simplex_le_iff (K := simplex W) hV)
+/-- Simplices are ordered exactly when their spanning vertex sets are ordered. -/
+theorem simplex_le_simplex_iff : simplex V ≤ simplex W ↔ V ⊆ W := by
+  rw [simplex_le_iff]
+  constructor
+  · intro h
+    rcases V.eq_empty_or_nonempty with rfl | hV
+    · exact Finset.empty_subset W
+    · exact (mem_simplex.mp (h hV)).2
+  · exact fun h hV => mem_simplex.mpr ⟨hV, h⟩
 
 /-- Enlarging the spanning vertex set enlarges the simplex. -/
 theorem simplex_mono (h : V ⊆ W) : simplex V ≤ simplex W :=
@@ -145,13 +152,14 @@ theorem simplexBoundary_mono (h : V ⊆ W) : simplexBoundary V ≤ simplexBounda
   refine ⟨hσ.1, ?_⟩
   exact hσ.2.trans_le h
 
-/-- Every face of a simplex other than its maximal face lies in the boundary. -/
+/-- A face of a simplex lies in its boundary exactly when it is not the whole spanning set. -/
 theorem mem_simplexBoundary_iff_mem_simplex_ne :
     σ ∈ simplexBoundary V ↔ σ ∈ simplex V ∧ σ ≠ V := by
   simp only [mem_simplexBoundary, mem_simplex, Finset.ssubset_iff_subset_ne]
   tauto
 
-/-- The faces of a simplex split into its boundary faces and its unique maximal face. -/
+/-- The faces of a simplex are its boundary faces together with the spanning set itself, the
+latter only when the spanning set is nonempty. -/
 theorem mem_simplex_iff_mem_simplexBoundary_or_eq :
     σ ∈ simplex V ↔ σ ∈ simplexBoundary V ∨ V.Nonempty ∧ σ = V := by
   rw [mem_simplexBoundary_iff_mem_simplex_ne]

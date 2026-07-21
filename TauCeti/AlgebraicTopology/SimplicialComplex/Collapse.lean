@@ -5,6 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.ElementaryCollapse
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex
 
 /-!
 # Simplicial collapse
@@ -74,6 +75,18 @@ theorem point_inj {v w : ι} : point v = point w ↔ v = w := by
     have : ({v} : Finset ι) ∈ point w := h ▸ (mem_point.mpr rfl : ({v} : Finset ι) ∈ point v)
     exact singleton_mem_point.mp this
   · exact fun h => h ▸ rfl
+
+/-- The abstract simplex spanned by a single vertex is the one-vertex complex at that vertex. -/
+@[simp]
+theorem simplex_singleton (v : ι) : simplex {v} = point v := by
+  refine SetLike.ext fun σ => ?_
+  rw [mem_simplex, mem_point, Finset.subset_singleton_iff]
+  constructor
+  · rintro ⟨hne, rfl | rfl⟩
+    · exact absurd rfl hne.ne_empty
+    · rfl
+  · rintro rfl
+    exact ⟨Finset.singleton_nonempty v, Or.inr rfl⟩
 
 /-- `K` collapses to `L` when a finite, possibly empty, sequence of elementary collapses takes
 `K` to `L`. -/
