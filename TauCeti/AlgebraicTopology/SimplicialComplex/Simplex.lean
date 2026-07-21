@@ -49,7 +49,7 @@ def simplexBoundary (V : Finset ι) : _root_.PreAbstractSimplicialComplex ι whe
     rintro σ ⟨hσ, hσV⟩
     refine ⟨hσ, fun _ hτσ hτ => ⟨hτ, hτσ.trans_ssubset hσV⟩⟩
 
-variable {V W σ : Finset ι}
+variable {K : _root_.PreAbstractSimplicialComplex ι} {V W σ : Finset ι}
 
 /-- A finite set is a face of a simplex exactly when it is nonempty and contained in the
 spanning vertex set. -/
@@ -77,7 +77,7 @@ theorem singleton_mem_simplex {v : ι} : {v} ∈ simplex V ↔ v ∈ V := by
 
 /-- A singleton is a boundary face exactly when its vertex belongs to a spanning set containing
 at least one other vertex. -/
-theorem singleton_mem_simplexBoundary_iff {v : ι} :
+theorem singleton_mem_simplexBoundary {v : ι} :
     {v} ∈ simplexBoundary V ↔ v ∈ V ∧ V ≠ {v} := by
   simp only [mem_simplexBoundary, Finset.singleton_nonempty, true_and]
   rw [Finset.ssubset_iff_subset_ne, Finset.singleton_subset_iff]
@@ -89,7 +89,7 @@ theorem singleton_mem_simplexBoundary_iff {v : ι} :
 theorem simplexBoundary_le_simplex : simplexBoundary V ≤ simplex V :=
   fun _ hσ => ⟨hσ.1, hσ.2.subset⟩
 
-/-- A nonempty simplex boundary is a strict subcomplex of its simplex. -/
+/-- The boundary of a simplex with nonempty spanning set is a strict subcomplex of the simplex. -/
 theorem simplexBoundary_lt_simplex (hV : V.Nonempty) : simplexBoundary V < simplex V := by
   refine lt_of_le_of_ne simplexBoundary_le_simplex ?_
   intro h
@@ -123,13 +123,17 @@ theorem simplexBoundary_singleton (v : ι) : simplexBoundary {v} = ⊥ := by
     exact hσ.1.ne_empty (Finset.ssubset_singleton_iff.mp hσ.2)
   · exact False.elim
 
+/-- The simplex on a nonempty spanning set is contained in a complex exactly when that spanning
+set is a face of the complex. -/
+theorem simplex_le_iff (hV : V.Nonempty) : simplex V ≤ K ↔ V ∈ K := by
+  constructor
+  · exact fun h => h (self_mem_simplex.mpr hV)
+  · exact fun hVₖ _ hσ => (K.isRelLowerSet_faces hVₖ).2 hσ.2 hσ.1
+
 /-- Simplices are ordered exactly when their spanning vertex sets are ordered, provided the
 smaller spanning set is nonempty. -/
 theorem simplex_le_simplex_iff (hV : V.Nonempty) : simplex V ≤ simplex W ↔ V ⊆ W := by
-  constructor
-  · intro h
-    exact (mem_simplex.mp (h (self_mem_simplex.mpr hV))).2
-  · exact fun h _ hσ => ⟨hσ.1, hσ.2.trans h⟩
+  simpa [mem_simplex, hV] using (simplex_le_iff (K := simplex W) hV)
 
 /-- Enlarging the spanning vertex set enlarges the simplex. -/
 theorem simplex_mono (h : V ⊆ W) : simplex V ≤ simplex W :=
@@ -148,7 +152,7 @@ theorem mem_simplexBoundary_iff_mem_simplex_ne :
   tauto
 
 /-- The faces of a simplex split into its boundary faces and its unique maximal face. -/
-theorem mem_simplex_iff_mem_boundary_or_eq :
+theorem mem_simplex_iff_mem_simplexBoundary_or_eq :
     σ ∈ simplex V ↔ σ ∈ simplexBoundary V ∨ V.Nonempty ∧ σ = V := by
   rw [mem_simplexBoundary_iff_mem_simplex_ne]
   constructor
