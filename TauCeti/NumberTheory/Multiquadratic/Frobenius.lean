@@ -80,7 +80,7 @@ Frobenius `σ ∈ Gal(K/ℚ)` at `Q`, and it sends each generator to the corresp
 multiple: `σ (r i) = legendreSym p (d i) • r i`. This is the generator-wise Frobenius input of
 the multiquadratic splitting law; the sign-vector description under `galoisGroupEquiv` is not
 formed here (see the module docstring). The `IsGalois ℚ K` hypothesis holds in particular when
-the `r i` generate `K`, via `TauCeti.Multiquadratic.isGalois_of_adjoin_eq_top`. -/
+the `r i` generate `K` (`TauCeti.Multiquadratic.isGalois` transported along `adjoin ℚ … = ⊤`). -/
 theorem exists_isArithFrobAt_multiquadratic [IsGalois ℚ K] (d : ι → ℤ) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℤ K (d i))
     (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)

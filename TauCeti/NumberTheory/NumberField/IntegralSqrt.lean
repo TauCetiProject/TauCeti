@@ -12,8 +12,7 @@ public import Mathlib.NumberTheory.NumberField.Basic
 An element `x` of a field `K` with `x² = d` for an integer `d` is integral over `ℤ` (its square
 is an integer, which is integral); this file packages such an `x` as an element
 `TauCeti.NumberField.integralSqrt hx` of the ring of integers `𝓞 K`, together with its two
-defining identities (its image in `K` is `x`, and it squares to `d` in `𝓞 K`), and the recasting
-of the defining equation over `ℚ`.
+defining identities: its image in `K` is `x`, and it squares to `d` in `𝓞 K`.
 
 This is the shared square-root packaging used by the multiquadratic Layer 1 files: the
 splitting law (`TauCeti.NumberTheory.Multiquadratic.MultiquadraticSplitting`) moves the
@@ -26,7 +25,6 @@ which lives on `𝓞 K`, to a square root.
 * `TauCeti.NumberField.isIntegral_of_sq_eq_intCast`: a square root of an integer is integral.
 * `TauCeti.NumberField.integralSqrt`: the packaging in `𝓞 K`, with
   `TauCeti.NumberField.algebraMap_integralSqrt` and `TauCeti.NumberField.integralSqrt_sq`.
-* `TauCeti.NumberField.sq_eq_algebraMap_rat`: the defining equation `x² = d` recast over `ℚ`.
 -/
 
 public section
@@ -57,11 +55,5 @@ theorem integralSqrt_sq (hx : x ^ 2 = algebraMap ℤ K d) :
   apply FaithfulSMul.algebraMap_injective (𝓞 K) K
   rw [map_pow, algebraMap_integralSqrt, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
   exact hx
-
-/-- The defining equation `x² = d ∈ ℤ` recast over `ℚ`: `x² = (d : ℚ)`. This is the form the
-Galois-theoretic arguments want, where the base field is `ℚ`. -/
-theorem sq_eq_algebraMap_rat [NumberField K] (hx : x ^ 2 = algebraMap ℤ K d) :
-    x ^ 2 = algebraMap ℚ K (d : ℚ) := by
-  rw [hx]; simp
 
 end TauCeti.NumberField
