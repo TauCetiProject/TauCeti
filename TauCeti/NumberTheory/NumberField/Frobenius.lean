@@ -7,7 +7,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Ideal.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.Frobenius
 public import TauCeti.NumberTheory.NumberField.IntegralSqrt
-import TauCeti.FieldTheory.NeNeg
+import TauCeti.Algebra.NeNeg
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 
 /-!

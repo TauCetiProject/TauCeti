@@ -8,7 +8,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.Normal.Basic
 public import Mathlib.FieldTheory.SeparableClosure
 public import Mathlib.GroupTheory.Exponent
-import TauCeti.FieldTheory.NeNeg
+import TauCeti.Algebra.NeNeg
 
 /-!
 # A multiquadratic field is Galois

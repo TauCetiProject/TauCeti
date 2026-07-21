@@ -12,8 +12,8 @@ public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 If a set `s` generates a field extension `E/F` (`IntermediateField.adjoin F s = ⊤`), then an
 `F`-algebra automorphism of `E` fixing every element of `s` is the identity. This is the
 whole-field counterpart of Mathlib's `IntermediateField.algHom_ext_of_eq_adjoin` (which
-compares homomorphisms out of the *subfield* `adjoin F s`), proved by the same adjoin
-induction.
+compares homomorphisms out of the *subfield* `adjoin F s`), obtained from it by transporting
+along `adjoin F s ≃ₐ[F] E` rather than repeating the adjoin induction.
 
 It is the extensionality step shared by the multiquadratic Layer 1 arguments: the splitting
 law shows a decomposition-group element fixes every generator `√dᵢ` and concludes it is
@@ -40,15 +40,15 @@ counterpart of Mathlib's `IntermediateField.algHom_ext_of_eq_adjoin`. -/
 theorem algHom_ext_of_adjoin_eq_top {E₂ : Type*} [Field E₂] [Algebra F E₂]
     (htop : IntermediateField.adjoin F s = ⊤)
     {σ τ : E →ₐ[F] E₂} (h : ∀ x ∈ s, σ x = τ x) : σ = τ := by
+  -- Transport `σ`, `τ` along `adjoin F s ≃ E` and compare on the subfield with Mathlib's
+  -- `algHom_ext_of_eq_adjoin`, which is the adjoin induction we would otherwise repeat.
+  let e : IntermediateField.adjoin F s ≃ₐ[F] E :=
+    (IntermediateField.equivOfEq htop).trans IntermediateField.topEquiv
+  have key : σ.comp e.toAlgHom = τ.comp e.toAlgHom :=
+    IntermediateField.adjoin_algHom_ext F fun x hx => h x hx
   refine AlgHom.ext fun y => ?_
-  have hy : y ∈ (⊤ : IntermediateField F E) := IntermediateField.mem_top
-  rw [← htop] at hy
-  induction hy using IntermediateField.adjoin_induction with
-  | mem z hz => exact h z hz
-  | algebraMap q => rw [AlgHom.commutes, AlgHom.commutes]
-  | add a b _ _ ha hb => rw [map_add, map_add, ha, hb]
-  | inv a _ ha => rw [map_inv₀, map_inv₀, ha]
-  | mul a b _ _ ha hb => rw [map_mul, map_mul, ha, hb]
+  obtain ⟨z, rfl⟩ := e.surjective y
+  exact AlgHom.congr_fun key z
 
 /-- Two `F`-algebra automorphisms of `E` agreeing on a generating set are equal. -/
 theorem algEquiv_ext_of_adjoin_eq_top (htop : IntermediateField.adjoin F s = ⊤)

@@ -123,7 +123,7 @@ pattern is `0` when `dᵢ` is a quadratic residue mod `p` and `1` otherwise. -/
 theorem signPattern_frobenius (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i))
     (p : ℕ) [Fact p.Prime] (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)
     (Q : Ideal (𝓞 ↥(IntermediateField.adjoin ℚ (Set.range root))))
-    [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
+    [Q.LiesOver (span {(p : ℤ)})]
     {σ : ↥(IntermediateField.adjoin ℚ (Set.range root)) ≃ₐ[ℚ]
         ↥(IntermediateField.adjoin ℚ (Set.range root))}
     (hσ : IsArithFrobAt ℤ σ Q) (i : ι) :
@@ -150,12 +150,12 @@ independence of the `dᵢ` (so `TauCeti.Multiquadratic.galoisGroupEquiv` is the 
 `Gal(M/ℚ) ≅ (ℤ/2)ⁿ`), an arithmetic Frobenius `σ` at a prime `Q` above the odd prime `p ∤ dᵢ`
 maps to the vector of Legendre symbols `i ↦ (dᵢ/p)`. This is the roadmap's Layer 1 Frobenius
 statement. -/
-theorem galoisGroupEquiv_frobenius [Finite ι]
+@[simp] theorem galoisGroupEquiv_frobenius [Finite ι]
     (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
     (p : ℕ) [Fact p.Prime] (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)
     (Q : Ideal (𝓞 ↥(IntermediateField.adjoin ℚ (Set.range root))))
-    [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
+    [Q.LiesOver (span {(p : ℤ)})]
     {σ : ↥(IntermediateField.adjoin ℚ (Set.range root)) ≃ₐ[ℚ]
         ↥(IntermediateField.adjoin ℚ (Set.range root))}
     (hσ : IsArithFrobAt ℤ σ Q) :

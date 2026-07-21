@@ -30,9 +30,6 @@ multiquadratic generators.
 
 ## Main results
 
-* `TauCeti.natCard_quotient_under` and `TauCeti.AlgHom.IsArithFrobAt.sub_pow_mem`: the base
-  Frobenius congruence `φ y - y ^ p ∈ Q` for `Q` over `(p)`, with the `σ • y` form
-  `TauCeti.IsArithFrobAt.smul_sub_pow_mem`.
 * `TauCeti.AlgHom.IsArithFrobAt.apply_sqrt`: `φ x = legendreSym p d • x` for an arithmetic
   Frobenius `φ : S →ₐ[ℤ] S` at `Q` and `x² = d`.
 * `TauCeti.IsArithFrobAt.smul_sqrt`: the same for a Frobenius element `σ` of a monoid acting
@@ -49,28 +46,21 @@ variable {S : Type*} [CommRing S] {p : ℕ} [Fact p.Prime] {d : ℤ}
 
 omit [Fact p.Prime] in
 /-- The residue cardinality entering `AlgHom.IsArithFrobAt` over the rational prime `p` is `p`
-itself: for `Q` lying over `(p)`, `Nat.card (ℤ ⧸ Q ∩ ℤ) = p`. -/
-theorem natCard_quotient_under (Q : Ideal S) [Q.LiesOver (span {(p : ℤ)})] :
+itself: for `Q` lying over `(p)`, `Nat.card (ℤ ⧸ Q ∩ ℤ) = p`. Internal plumbing for
+`apply_sqrt`. -/
+private theorem natCard_quotient_under (Q : Ideal S) [Q.LiesOver (span {(p : ℤ)})] :
     Nat.card (ℤ ⧸ Q.under ℤ) = p := by
   rw [← Ideal.LiesOver.over (P := Q) (p := span {(p : ℤ)})]
   exact Int.card_ideal_quot p
 
 omit [Fact p.Prime] in
-/-- **The base Frobenius congruence over a rational prime.** For an arithmetic Frobenius
-`φ : S →ₐ[ℤ] S` at an ideal `Q` lying over `(p)`, `φ y ≡ y ^ p (mod Q)` for all `y` — the
-exponent is `p`, the cardinality of the base residue ring `ℤ ⧸ Q ∩ ℤ`. -/
-theorem AlgHom.IsArithFrobAt.sub_pow_mem {φ : S →ₐ[ℤ] S} (H : φ.IsArithFrobAt Q)
+/-- The base Frobenius congruence over a rational prime: for an arithmetic Frobenius
+`φ : S →ₐ[ℤ] S` at an ideal `Q` lying over `(p)`, `φ y ≡ y ^ p (mod Q)`, the exponent being `p`,
+the cardinality of the base residue ring `ℤ ⧸ Q ∩ ℤ`. Internal plumbing for `apply_sqrt`. -/
+private theorem AlgHom.IsArithFrobAt.sub_pow_mem {φ : S →ₐ[ℤ] S} (H : φ.IsArithFrobAt Q)
     [Q.LiesOver (span {(p : ℤ)})] (y : S) : φ y - y ^ p ∈ Q := by
   have h := H y
   rwa [natCard_quotient_under (p := p) Q] at h
-
-omit [Fact p.Prime] in
-/-- The `σ • y` form of the base Frobenius congruence for a Frobenius element `σ` of a monoid
-acting on `S`: `σ • y ≡ y ^ p (mod Q)`. -/
-theorem IsArithFrobAt.smul_sub_pow_mem {M : Type*} [Monoid M] [MulSemiringAction M S]
-    [SMulCommClass M ℤ S] {σ : M} {Q : Ideal S} (H : _root_.IsArithFrobAt ℤ σ Q)
-    [Q.LiesOver (span {(p : ℤ)})] (y : S) : σ • y - y ^ p ∈ Q :=
-  AlgHom.IsArithFrobAt.sub_pow_mem H y
 
 variable [IsDomain S] {Q : Ideal S} {x : S}
 
