@@ -14,6 +14,11 @@ name: Stuck-automation alerts
 # open. Only a persistent Zulip config break (bad key, forbidden bot, not
 # subscribed) fails the run — if we cannot post, the emergency channel itself is
 # down and that must be loud (mirrors zulip-healthcheck.yml).
+#
+# Known limitation: a watchdog cannot fully watch itself — if THIS workflow's own
+# cron stops firing (GitHub 60-day disable, org-level pause), it cannot alert on
+# its own silence. That gap is best closed by an external check (e.g. teaching
+# zulip-healthcheck.yml to assert stuck-alerts ran recently); left as a follow-up.
 
 on:
   schedule:
@@ -30,12 +35,15 @@ permissions:
 
 concurrency:
   group: stuck-alerts
-  cancel-in-progress: true
+  # Don't cancel a run mid-post: cancelling while it is editing/sending Zulip
+  # messages could leave the topic half-reconciled. timeout-minutes bounds a hung run.
+  cancel-in-progress: false
 
 jobs:
   stuck-alerts:
     if: github.repository == 'TauCetiProject/TauCeti'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
