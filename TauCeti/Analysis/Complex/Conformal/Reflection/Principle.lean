@@ -166,14 +166,13 @@ theorem differentiableOn_schwarzReflection_of_symmetric {Ω : Set ℂ}
 the closed upper part, holomorphic on the open upper part, and real on the real axis extends to a
 function holomorphic on all of `Ω` that agrees with `f` on the closed upper part and satisfies the
 reflection symmetry `F (conj z) = conj (F z)`. The explicit witness is `schwarzReflection f`. -/
-theorem exists_differentiableOn_eqOn_conj_schwarzReflection {Ω : Set ℂ}
-    (hΩopen : IsOpen Ω) (hsymm : ∀ z, z ∈ Ω ↔ (starRingEnd ℂ) z ∈ Ω)
+theorem exists_differentiableOn_eqOn_conj_of_symmetric {Ω : Set ℂ}
+    (hΩopen : IsOpen Ω) (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω)
     (hcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
     (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < z.im}))
     (hreal : ∀ z ∈ Ω, z.im = 0 → (f z).im = 0) :
     ∃ F : ℂ → ℂ, DifferentiableOn ℂ F Ω ∧ Set.EqOn F f (Ω ∩ {z : ℂ | 0 ≤ z.im}) ∧
       ∀ z ∈ Ω, F ((starRingEnd ℂ) z) = (starRingEnd ℂ) (F z) := by
-  have hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω := fun z hz => (hsymm z).mp hz
   refine ⟨schwarzReflection f, differentiableOn_schwarzReflection_of_symmetric hΩopen hΩ hcont
     hholo hreal, ?_, ?_⟩
   · exact eqOn_schwarzReflection_of_subset_im_nonneg fun _ hz => hz.2
