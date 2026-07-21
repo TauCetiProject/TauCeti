@@ -45,18 +45,8 @@ private theorem tendsto_exp_neg_smul_realOperator_atTop (S : StronglyContinuousS
   refine squeeze_zero' (g := fun t : ℝ =>
       (M * ‖(x : X)‖) * Real.exp (-((lambda - omega) * t)))
     (Filter.Eventually.of_forall fun _ => norm_nonneg _) ?_ ?_
-  · filter_upwards [Filter.eventually_ge_atTop (0 : ℝ)] with t ht
-    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
-    calc
-      Real.exp (-(lambda * t)) * ‖S.realOperator t (x : X)‖
-          ≤ Real.exp (-(lambda * t)) * (M * Real.exp (omega * t) * ‖(x : X)‖) := by
-            gcongr
-            exact le_trans (ContinuousLinearMap.le_opNorm _ _)
-              (by gcongr; exact hb.bound t ht)
-      _ = (M * ‖(x : X)‖) * Real.exp (-((lambda - omega) * t)) := by
-            have he : -((lambda - omega) * t) = -(lambda * t) + omega * t := by ring
-            rw [he, Real.exp_add]
-            ring
+  · filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with t ht
+    simpa only [neg_mul] using S.norm_resolvent_integrand_le hb lambda (x : X) ht
   · have hrate : Filter.Tendsto (fun t : ℝ => (lambda - omega) * t)
         Filter.atTop Filter.atTop :=
       Filter.tendsto_id.const_mul_atTop (sub_pos.mpr hlambda)
@@ -153,71 +143,91 @@ theorem resolventLeftInv (S : StronglyContinuousSemigroup X) {omega M : ℝ}
   rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioi (fun t _ => hpoint t)]
   rw [MeasureTheory.integral_neg, h_integral, neg_neg]
 
-/-- The resolvent identity
-`R(lambda) - R(mu) = (mu - lambda) R(lambda) R(mu)` for two parameters above the same growth
-exponent. -/
-theorem resolvent_sub_resolvent (S : StronglyContinuousSemigroup X) {omega M : ℝ}
+/-- Pointwise form of the resolvent identity
+`R(lambda) - R(mu) = (mu - lambda) R(lambda) R(mu)`. -/
+theorem resolvent_sub_resolvent_apply (S : StronglyContinuousSemigroup X)
+    {omegaLambda MLambda omegaMu MMu : ℝ}
     [CompleteSpace X]
-    (hb : S.HasGrowthBound omega M) (lambda mu : ℝ)
-    (hlambda : omega < lambda) (hmu : omega < mu) (x : X) :
-    S.resolvent hb lambda hlambda x - S.resolvent hb mu hmu x =
-      (mu - lambda) • S.resolvent hb lambda hlambda (S.resolvent hb mu hmu x) := by
+    (hbLambda : S.HasGrowthBound omegaLambda MLambda)
+    (hbMu : S.HasGrowthBound omegaMu MMu) (lambda mu : ℝ)
+    (hlambda : omegaLambda < lambda) (hmu : omegaMu < mu) (x : X) :
+    S.resolvent hbLambda lambda hlambda x - S.resolvent hbMu mu hmu x =
+      (mu - lambda) •
+        S.resolvent hbLambda lambda hlambda (S.resolvent hbMu mu hmu x) := by
   let y : S.domain :=
-    ⟨S.resolvent hb mu hmu x, S.resolvent_mem_domain hb mu hmu x⟩
-  have hleft := S.resolventLeftInv hb lambda hlambda y
-  have hright := S.resolventRightInv hb mu hmu x
+    ⟨S.resolvent hbMu mu hmu x, S.resolvent_mem_domain hbMu mu hmu x⟩
+  have hleft := S.resolventLeftInv hbLambda lambda hlambda y
+  have hright := S.resolventRightInv hbMu mu hmu x
   simp only [y] at hleft
-  have hleft' : lambda • S.resolvent hb lambda hlambda (S.resolvent hb mu hmu x) -
-      S.resolvent hb lambda hlambda
-        (S.generator ⟨S.resolvent hb mu hmu x, by
+  have hleft' : lambda • S.resolvent hbLambda lambda hlambda (S.resolvent hbMu mu hmu x) -
+      S.resolvent hbLambda lambda hlambda
+        (S.generator ⟨S.resolvent hbMu mu hmu x, by
           rw [S.generator_domain]
-          exact S.resolvent_mem_domain hb mu hmu x⟩) = S.resolvent hb mu hmu x := by
+          exact S.resolvent_mem_domain hbMu mu hmu x⟩) = S.resolvent hbMu mu hmu x := by
     simpa only [map_sub, map_smul] using hleft
   calc
-    _ = S.resolvent hb lambda hlambda
-          (mu • S.resolvent hb mu hmu x -
-            S.generator ⟨S.resolvent hb mu hmu x, by
+    _ = S.resolvent hbLambda lambda hlambda
+          (mu • S.resolvent hbMu mu hmu x -
+            S.generator ⟨S.resolvent hbMu mu hmu x, by
               rw [S.generator_domain]
-              exact S.resolvent_mem_domain hb mu hmu x⟩) -
-          S.resolvent hb mu hmu x := by rw [hright]
+              exact S.resolvent_mem_domain hbMu mu hmu x⟩) -
+          S.resolvent hbMu mu hmu x := by rw [hright]
     _ = _ := by
       simp only [map_sub, map_smul]
       calc
         _ = (mu - lambda) •
-              S.resolvent hb lambda hlambda (S.resolvent hb mu hmu x) +
-            (lambda • S.resolvent hb lambda hlambda (S.resolvent hb mu hmu x) -
-              S.resolvent hb lambda hlambda
-                (S.generator ⟨S.resolvent hb mu hmu x, by
+              S.resolvent hbLambda lambda hlambda (S.resolvent hbMu mu hmu x) +
+            (lambda • S.resolvent hbLambda lambda hlambda (S.resolvent hbMu mu hmu x) -
+              S.resolvent hbLambda lambda hlambda
+                (S.generator ⟨S.resolvent hbMu mu hmu x, by
                   rw [S.generator_domain]
-                  exact S.resolvent_mem_domain hb mu hmu x⟩) -
-              S.resolvent hb mu hmu x) := by module
+                  exact S.resolvent_mem_domain hbMu mu hmu x⟩) -
+              S.resolvent hbMu mu hmu x) := by module
         _ = _ := by rw [hleft']; simp
 
-/-- Resolvents at two parameters above a common growth exponent commute. -/
-theorem resolvent_comm (S : StronglyContinuousSemigroup X) {omega M : ℝ}
+/-- The resolvent identity
+`R(lambda) - R(mu) = (mu - lambda) R(lambda) R(mu)` as an equality of continuous linear maps. -/
+theorem resolvent_sub_resolvent (S : StronglyContinuousSemigroup X)
+    {omegaLambda MLambda omegaMu MMu : ℝ} [CompleteSpace X]
+    (hbLambda : S.HasGrowthBound omegaLambda MLambda)
+    (hbMu : S.HasGrowthBound omegaMu MMu) (lambda mu : ℝ)
+    (hlambda : omegaLambda < lambda) (hmu : omegaMu < mu) :
+    S.resolvent hbLambda lambda hlambda - S.resolvent hbMu mu hmu =
+      (mu - lambda) •
+        (S.resolvent hbLambda lambda hlambda ∘L S.resolvent hbMu mu hmu) := by
+  ext x
+  exact S.resolvent_sub_resolvent_apply hbLambda hbMu lambda mu hlambda hmu x
+
+/-- Resolvents at two admissible parameters commute. -/
+theorem resolvent_comm (S : StronglyContinuousSemigroup X)
+    {omegaLambda MLambda omegaMu MMu : ℝ}
     [CompleteSpace X]
-    (hb : S.HasGrowthBound omega M) (lambda mu : ℝ)
-    (hlambda : omega < lambda) (hmu : omega < mu) :
-    S.resolvent hb lambda hlambda ∘L S.resolvent hb mu hmu =
-      S.resolvent hb mu hmu ∘L S.resolvent hb lambda hlambda := by
+    (hbLambda : S.HasGrowthBound omegaLambda MLambda)
+    (hbMu : S.HasGrowthBound omegaMu MMu) (lambda mu : ℝ)
+    (hlambda : omegaLambda < lambda) (hmu : omegaMu < mu) :
+    S.resolvent hbLambda lambda hlambda ∘L S.resolvent hbMu mu hmu =
+      S.resolvent hbMu mu hmu ∘L S.resolvent hbLambda lambda hlambda := by
   ext x
   by_cases h : lambda = mu
   · subst mu
-    rfl
-  · have h1 := S.resolvent_sub_resolvent hb lambda mu hlambda hmu x
-    have h2 := S.resolvent_sub_resolvent hb mu lambda hmu hlambda x
+    have heq : S.resolvent hbLambda lambda hlambda = S.resolvent hbMu lambda hmu := by
+      ext z
+      rw [S.resolvent_apply hbLambda, S.resolvent_apply hbMu]
+    rw [heq]
+  · have h1 := S.resolvent_sub_resolvent_apply hbLambda hbMu lambda mu hlambda hmu x
+    have h2 := S.resolvent_sub_resolvent_apply hbMu hbLambda mu lambda hmu hlambda x
     simp only [ContinuousLinearMap.comp_apply] at ⊢
-    have h2' : S.resolvent hb lambda hlambda x - S.resolvent hb mu hmu x =
+    have h2' : S.resolvent hbLambda lambda hlambda x - S.resolvent hbMu mu hmu x =
         (mu - lambda) •
-          S.resolvent hb mu hmu (S.resolvent hb lambda hlambda x) := by
+          S.resolvent hbMu mu hmu (S.resolvent hbLambda lambda hlambda x) := by
       calc
-        _ = -(S.resolvent hb mu hmu x - S.resolvent hb lambda hlambda x) := by abel
+        _ = -(S.resolvent hbMu mu hmu x - S.resolvent hbLambda lambda hlambda x) := by abel
         _ = -((lambda - mu) •
-            S.resolvent hb mu hmu (S.resolvent hb lambda hlambda x)) := by rw [h2]
+            S.resolvent hbMu mu hmu (S.resolvent hbLambda lambda hlambda x)) := by rw [h2]
         _ = _ := by module
     have hz : (mu - lambda) •
-        (S.resolvent hb lambda hlambda (S.resolvent hb mu hmu x) -
-          S.resolvent hb mu hmu (S.resolvent hb lambda hlambda x)) = 0 := by
+        (S.resolvent hbLambda lambda hlambda (S.resolvent hbMu mu hmu x) -
+          S.resolvent hbMu mu hmu (S.resolvent hbLambda lambda hlambda x)) = 0 := by
       rw [h1] at h2'
       rw [smul_sub, h2', sub_self]
     rcases (smul_eq_zero.mp hz) with hzero | hzero
@@ -225,6 +235,65 @@ theorem resolvent_comm (S : StronglyContinuousSemigroup X) {omega M : ℝ}
     · exact sub_eq_zero.mp hzero
 
 end StronglyContinuousSemigroup
+
+namespace ContractionSemigroup
+
+private theorem resolvent_eq_stronglyContinuousSemigroup_resolvent
+    (S : ContractionSemigroup X) [CompleteSpace X] (lambda : ℝ) (hlambda : 0 < lambda) :
+    S.resolvent lambda hlambda =
+      S.toStronglyContinuousSemigroup.resolvent S.hasGrowthBound lambda
+        (by simpa using hlambda) := by
+  ext x
+  rw [S.resolvent_apply, S.toStronglyContinuousSemigroup.resolvent_apply]
+
+/-- The contraction resolvent is a left inverse to `lambda • I - A` on the generator domain. -/
+theorem resolventLeftInv (S : ContractionSemigroup X) [CompleteSpace X]
+    (lambda : ℝ) (hlambda : 0 < lambda) (x : S.toStronglyContinuousSemigroup.domain) :
+    S.resolvent lambda hlambda
+        (lambda • (x : X) - S.toStronglyContinuousSemigroup.generator
+          ⟨x, by rw [StronglyContinuousSemigroup.generator_domain]; exact x.property⟩) = x :=
+  by
+    rw [S.resolvent_eq_stronglyContinuousSemigroup_resolvent]
+    exact S.toStronglyContinuousSemigroup.resolventLeftInv S.hasGrowthBound lambda
+      (by simpa using hlambda) x
+
+/-- The resolvent identity for a contraction semigroup. -/
+theorem resolvent_sub_resolvent (S : ContractionSemigroup X) [CompleteSpace X]
+    (lambda mu : ℝ) (hlambda : 0 < lambda) (hmu : 0 < mu) :
+    S.resolvent lambda hlambda - S.resolvent mu hmu =
+      (mu - lambda) • (S.resolvent lambda hlambda ∘L S.resolvent mu hmu) :=
+  by
+    rw [S.resolvent_eq_stronglyContinuousSemigroup_resolvent,
+      S.resolvent_eq_stronglyContinuousSemigroup_resolvent]
+    exact S.toStronglyContinuousSemigroup.resolvent_sub_resolvent
+      S.hasGrowthBound S.hasGrowthBound lambda mu
+      (by simpa using hlambda) (by simpa using hmu)
+
+/-- Pointwise form of the resolvent identity for a contraction semigroup. -/
+theorem resolvent_sub_resolvent_apply (S : ContractionSemigroup X) [CompleteSpace X]
+    (lambda mu : ℝ) (hlambda : 0 < lambda) (hmu : 0 < mu) (x : X) :
+    S.resolvent lambda hlambda x - S.resolvent mu hmu x =
+      (mu - lambda) • S.resolvent lambda hlambda (S.resolvent mu hmu x) :=
+  by
+    rw [S.resolvent_eq_stronglyContinuousSemigroup_resolvent,
+      S.resolvent_eq_stronglyContinuousSemigroup_resolvent]
+    exact S.toStronglyContinuousSemigroup.resolvent_sub_resolvent_apply
+      S.hasGrowthBound S.hasGrowthBound lambda mu
+      (by simpa using hlambda) (by simpa using hmu) x
+
+/-- Resolvents of a contraction semigroup commute. -/
+theorem resolvent_comm (S : ContractionSemigroup X) [CompleteSpace X]
+    (lambda mu : ℝ) (hlambda : 0 < lambda) (hmu : 0 < mu) :
+    S.resolvent lambda hlambda ∘L S.resolvent mu hmu =
+      S.resolvent mu hmu ∘L S.resolvent lambda hlambda :=
+  by
+    rw [S.resolvent_eq_stronglyContinuousSemigroup_resolvent,
+      S.resolvent_eq_stronglyContinuousSemigroup_resolvent]
+    exact S.toStronglyContinuousSemigroup.resolvent_comm
+      S.hasGrowthBound S.hasGrowthBound lambda mu
+      (by simpa using hlambda) (by simpa using hmu)
+
+end ContractionSemigroup
 
 end TauCeti.Semigroups
 

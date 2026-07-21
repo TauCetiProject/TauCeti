@@ -41,7 +41,7 @@ open MeasureTheory
 omit [CompleteSpace X] in
 /-- The growth-bound estimate for the Laplace-transform integrand:
 `‖e^{-λt} S(t) x‖ ≤ M ‖x‖ e^{-(λ-ω)t}` for `t > 0`. -/
-private lemma StronglyContinuousSemigroup.norm_resolvent_integrand_le
+lemma StronglyContinuousSemigroup.norm_resolvent_integrand_le
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (lambda : ℝ) (x : X) {t : ℝ} (ht : 0 < t) :
     ‖Real.exp (-(lambda * t)) • S.realOperator t x‖ ≤
