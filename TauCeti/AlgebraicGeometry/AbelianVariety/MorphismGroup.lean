@@ -23,9 +23,8 @@ Jacobian this pointwise product is the tensor product of line bundles.
 
 * `AbelianVariety.Hom.instCommGroup`: the commutative group structure on `A ⟶ B`
   (a `scoped instance`);
-* `AbelianVariety.Hom.grpEquiv` / `AbelianVariety.Hom.grpMulEquiv`: the identification of `A ⟶ B`
-  with homomorphisms of the underlying commutative group objects, as an `Equiv` and as a
-  multiplicative equivalence;
+* `AbelianVariety.Hom.grpMulEquiv`: the identification of `A ⟶ B` with homomorphisms of the
+  underlying commutative group objects as a multiplicative equivalence;
 * `AbelianVariety.Hom.toOverHom_mul`, `toOverHom_one`, `toOverHom_inv`, `toOverHom_div`: the
   underlying morphism over `Spec K` is a homomorphism of these groups;
 * `AbelianVariety.Hom.mul_comp` and `AbelianVariety.Hom.comp_mul`: composition is bimultiplicative,
@@ -58,107 +57,84 @@ open scoped CategoryTheory.MonObj
 
 noncomputable section
 
-/-- A homomorphism of abelian varieties, viewed as a homomorphism of the underlying commutative
-group objects over `Spec K`. -/
-def Hom.grpEquiv (A B : AbelianVariety K) :
-    (A ⟶ B) ≃ ((CommGrp.mk A.toOver).toGrp ⟶ (CommGrp.mk B.toOver).toGrp) :=
-  InducedCategory.homEquiv.trans InducedCategory.homEquiv
+namespace Hom
 
 /-- Homomorphisms of abelian varieties over `K` form a commutative group under the pointwise group
 law of the target, transported from Mathlib's group structure on morphisms into a commutative group
 object. -/
-scoped instance Hom.instCommGroup (A B : AbelianVariety K) : CommGroup (A ⟶ B) :=
-  (Hom.grpEquiv A B).commGroup
+scoped instance instCommGroup (A B : AbelianVariety K) : CommGroup (A ⟶ B) :=
+  (InducedCategory.homEquiv.trans InducedCategory.homEquiv).commGroup
 
 variable {A B : AbelianVariety K}
 
-lemma Hom.grpEquiv_apply (f : A ⟶ B) :
-    Hom.grpEquiv A B f = f.hom.hom := by
-  unfold Hom.grpEquiv; rfl
-
-lemma Hom.grpEquiv_mul (f g : A ⟶ B) :
-    Hom.grpEquiv A B (f * g) = Hom.grpEquiv A B f * Hom.grpEquiv A B g :=
-  (Hom.grpEquiv A B).apply_symm_apply _
-
-lemma Hom.grpEquiv_one :
-    Hom.grpEquiv A B (1 : A ⟶ B) = 1 :=
-  (Hom.grpEquiv A B).apply_symm_apply _
-
-lemma Hom.grpEquiv_inv (f : A ⟶ B) :
-    Hom.grpEquiv A B f⁻¹ = (Hom.grpEquiv A B f)⁻¹ :=
-  (Hom.grpEquiv A B).apply_symm_apply _
-
-lemma Hom.grpEquiv_div (f g : A ⟶ B) :
-    Hom.grpEquiv A B (f / g) = Hom.grpEquiv A B f / Hom.grpEquiv A B g :=
-  (Hom.grpEquiv A B).apply_symm_apply _
-
 /-- Identifying a homomorphism of abelian varieties with its underlying homomorphism of commutative
 group objects is a group isomorphism onto the latter's group of homomorphisms. -/
-def Hom.grpMulEquiv (A B : AbelianVariety K) :
+def grpMulEquiv (A B : AbelianVariety K) :
     (A ⟶ B) ≃* ((CommGrp.mk A.toOver).toGrp ⟶ (CommGrp.mk B.toOver).toGrp) where
-  __ := Hom.grpEquiv A B
-  map_mul' := Hom.grpEquiv_mul
+  __ := InducedCategory.homEquiv.trans InducedCategory.homEquiv
+  map_mul' := fun _ _ ↦
+    (InducedCategory.homEquiv.trans InducedCategory.homEquiv).apply_symm_apply _
 
-@[simp] lemma Hom.grpMulEquiv_apply (f : A ⟶ B) :
-    Hom.grpMulEquiv A B f = f.hom.hom := by
-  rw [show (Hom.grpMulEquiv A B f) = Hom.grpEquiv A B f from rfl, Hom.grpEquiv_apply]
+@[simp] lemma grpMulEquiv_apply (f : A ⟶ B) :
+    grpMulEquiv A B f = f.hom.hom := by
+  unfold grpMulEquiv
+  rfl
 
 /-- The underlying morphism over `Spec K` of a homomorphism of abelian varieties is the underlying
 morphism of the corresponding commutative-group-object homomorphism. -/
-lemma Hom.toOverHom_eq_grpEquiv (f : A ⟶ B) :
-    Hom.toOverHom f = (Hom.grpEquiv A B f).hom.hom := by
-  rw [Hom.grpEquiv_apply]; simp [Hom.toOverHom, Hom.toOverFunctor]
+private lemma toOverHom_eq_grpMulEquiv (f : A ⟶ B) :
+    toOverHom f = (grpMulEquiv A B f).hom.hom := by
+  rw [grpMulEquiv_apply]
+  simp [toOverHom, toOverFunctor]
 
 /-- The underlying morphism over `Spec K` sends the product of two homomorphisms to the pointwise
 product. -/
-@[simp] lemma Hom.toOverHom_mul (f g : A ⟶ B) :
-    Hom.toOverHom (f * g) = Hom.toOverHom f * Hom.toOverHom g := by
-  rw [Hom.toOverHom_eq_grpEquiv, Hom.toOverHom_eq_grpEquiv, Hom.toOverHom_eq_grpEquiv,
-    Hom.grpEquiv_mul]
+@[simp] lemma toOverHom_mul (f g : A ⟶ B) :
+    toOverHom (f * g) = toOverHom f * toOverHom g := by
+  rw [toOverHom_eq_grpMulEquiv, toOverHom_eq_grpMulEquiv,
+    toOverHom_eq_grpMulEquiv, map_mul]
   simp only [Grp.Hom.hom_mul, Mon.Hom.hom_mul]
 
 /-- The underlying morphism over `Spec K` sends the identity of the group of homomorphisms to the
 identity element `toUnit A.toOver ≫ η[B.toOver]` (the constant homomorphism through the unit
 section). -/
-@[simp] lemma Hom.toOverHom_one :
-    Hom.toOverHom (1 : A ⟶ B) = 1 := by
-  rw [Hom.toOverHom_eq_grpEquiv, Hom.grpEquiv_one]
+@[simp] lemma toOverHom_one :
+    toOverHom (1 : A ⟶ B) = 1 := by
+  rw [toOverHom_eq_grpMulEquiv, map_one]
   simp only [Grp.Hom.hom_one, Mon.Hom.hom_one]
 
 /-- The underlying morphism over `Spec K` sends the inverse of a homomorphism to the pointwise
 inverse. -/
-@[simp] lemma Hom.toOverHom_inv (f : A ⟶ B) :
-    Hom.toOverHom f⁻¹ = (Hom.toOverHom f)⁻¹ := by
-  rw [Hom.toOverHom_eq_grpEquiv, Hom.toOverHom_eq_grpEquiv, Hom.grpEquiv_inv]
+@[simp] lemma toOverHom_inv (f : A ⟶ B) :
+    toOverHom f⁻¹ = (toOverHom f)⁻¹ := by
+  rw [toOverHom_eq_grpMulEquiv, toOverHom_eq_grpMulEquiv, map_inv]
   simp only [Grp.Hom.hom_hom_inv]
 
 /-- The underlying morphism over `Spec K` sends the quotient of two homomorphisms to the pointwise
 quotient. -/
-@[simp] lemma Hom.toOverHom_div (f g : A ⟶ B) :
-    Hom.toOverHom (f / g) = Hom.toOverHom f / Hom.toOverHom g := by
-  rw [Hom.toOverHom_eq_grpEquiv, Hom.toOverHom_eq_grpEquiv, Hom.toOverHom_eq_grpEquiv,
-    Hom.grpEquiv_div]
+@[simp] lemma toOverHom_div (f g : A ⟶ B) :
+    toOverHom (f / g) = toOverHom f / toOverHom g := by
+  rw [toOverHom_eq_grpMulEquiv, toOverHom_eq_grpMulEquiv,
+    toOverHom_eq_grpMulEquiv, map_div]
   simp only [Grp.Hom.hom_hom_div]
-
-lemma Hom.toOverHom_injective (A B : AbelianVariety K) :
-    Function.Injective (Hom.toOverHom : (A ⟶ B) → _) := fun _ _ h =>
-  Hom.ext (congrArg Over.Hom.left h)
 
 /-! ### Bilinearity of composition -/
 
 /-- Composition of homomorphisms of abelian varieties distributes over the pointwise product on the
 right: post-composition by a homomorphism is multiplicative. -/
-@[reassoc] lemma Hom.mul_comp {A B C : AbelianVariety K} (f g : A ⟶ B) (h : B ⟶ C) :
+@[reassoc] lemma mul_comp {A B C : AbelianVariety K} (f g : A ⟶ B) (h : B ⟶ C) :
     (f * g) ≫ h = f ≫ h * g ≫ h := by
-  apply Hom.toOverHom_injective
+  apply Hom.toOverFunctor.map_injective
   simp only [Hom.toOverHom_comp, Hom.toOverHom_mul, MonObj.mul_comp]
 
 /-- Composition of homomorphisms of abelian varieties distributes over the pointwise product on the
 left: pre-composition by a homomorphism is multiplicative. -/
-@[reassoc] lemma Hom.comp_mul {A B C : AbelianVariety K} (f : A ⟶ B) (g h : B ⟶ C) :
+@[reassoc] lemma comp_mul {A B C : AbelianVariety K} (f : A ⟶ B) (g h : B ⟶ C) :
     f ≫ (g * h) = f ≫ g * f ≫ h := by
-  apply Hom.toOverHom_injective
+  apply Hom.toOverFunctor.map_injective
   simp only [Hom.toOverHom_comp, Hom.toOverHom_mul, MonObj.comp_mul]
+
+end Hom
 
 end
 
