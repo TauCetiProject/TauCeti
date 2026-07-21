@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.Data.ZMod.QuotientRing
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import Mathlib.RingTheory.Frobenius
 public import Mathlib.RingTheory.Ideal.Int

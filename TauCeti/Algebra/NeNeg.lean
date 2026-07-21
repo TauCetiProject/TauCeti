@@ -10,9 +10,9 @@ public import Mathlib.Algebra.Ring.Basic
 /-!
 # A nonzero element is not its own negation away from characteristic two
 
-In a domain where `2 ≠ 0`, a nonzero element `x` differs from `-x`: otherwise `2 x = 0` would
-force `x = 0`. This is the elementary characteristic-`≠ 2` fact behind separating the two square
-roots `±√d` of a nonzero radicand.
+In a ring without zero divisors where `2 ≠ 0`, a nonzero element `x` differs from `-x`:
+otherwise `2 x = 0` would force `x = 0`. This is the elementary characteristic-`≠ 2` fact behind
+separating the two square roots `±√d` of a nonzero radicand.
 
 ## Main result
 
@@ -23,8 +23,9 @@ public section
 
 namespace TauCeti
 
-/-- In a domain with `2 ≠ 0`, a nonzero element is not equal to its own negation. -/
-theorem ne_neg_of_ne_zero {L : Type*} [CommRing L] [IsDomain L] (h2 : (2 : L) ≠ 0) {x : L}
+/-- In a ring without zero divisors where `2 ≠ 0`, a nonzero element is not equal to its own
+negation. -/
+theorem ne_neg_of_ne_zero {L : Type*} [Ring L] [NoZeroDivisors L] (h2 : (2 : L) ≠ 0) {x : L}
     (hx : x ≠ 0) : x ≠ -x := by
   intro h
   apply hx
