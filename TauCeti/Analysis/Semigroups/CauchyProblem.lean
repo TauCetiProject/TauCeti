@@ -79,14 +79,14 @@ theorem IsClassicalSolution.hasDerivWithinAt {A : X →ₗ.[ℝ] X} {x : X} {u :
 /-- A mild solution of `u' = A u`, `u(0) = x`, on `[0, ∞)`.  The integral is pointwise
 Bochner integration in `X`.  Requiring the integral to lie in the domain makes the expression
 `A (∫ s in (0, t], u s)` meaningful for an unbounded operator. -/
-def IsMildSolution (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ → X) : Prop :=
+def IsMildSolution [CompleteSpace X] (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ → X) : Prop :=
   ContinuousOn u (Set.Ici 0) ∧ u 0 = x ∧
     ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Set.Ioc 0 t, u s) ∈ A.domain,
       A ⟨∫ s in Set.Ioc 0 t, u s, hut⟩ = u t - x
 
 /-- Characterization of a mild solution by continuity, its initial value, and the integrated
 Cauchy equation. -/
-theorem isMildSolution_iff {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
+theorem isMildSolution_iff [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
     IsMildSolution A x u ↔
       ContinuousOn u (Set.Ici 0) ∧ u 0 = x ∧
         ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Set.Ioc 0 t, u s) ∈ A.domain,
@@ -94,23 +94,24 @@ theorem isMildSolution_iff {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
   Iff.rfl
 
 /-- A mild solution is continuous on the nonnegative half-line. -/
-theorem IsMildSolution.continuousOn {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
+theorem IsMildSolution.continuousOn [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsMildSolution A x u) : ContinuousOn u (Set.Ici 0) :=
   hu.1
 
 /-- A mild solution takes its prescribed initial value at time zero. -/
-theorem IsMildSolution.apply_zero {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
+theorem IsMildSolution.apply_zero [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsMildSolution A x u) : u 0 = x :=
   hu.2.1
 
 /-- The time integral of a mild solution belongs to the operator domain. -/
-theorem IsMildSolution.integral_mem_domain {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
+theorem IsMildSolution.integral_mem_domain [CompleteSpace X]
+    {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsMildSolution A x u) {t : ℝ} (ht : 0 ≤ t) :
     (∫ s in Set.Ioc 0 t, u s) ∈ A.domain :=
   (hu.2.2 t ht).choose
 
 /-- The integrated Cauchy equation satisfied by a mild solution. -/
-theorem IsMildSolution.map_integral {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
+theorem IsMildSolution.map_integral [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsMildSolution A x u) {t : ℝ} (ht : 0 ≤ t) :
     A ⟨∫ s in Set.Ioc 0 t, u s, hu.integral_mem_domain ht⟩ = u t - x := by
   obtain ⟨hut, hmap⟩ := hu.2.2 t ht
