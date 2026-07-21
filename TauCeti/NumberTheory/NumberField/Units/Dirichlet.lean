@@ -87,4 +87,15 @@ the root of unity times the product of powers of fundamental units. -/
   rw [unitsMulEquivTorsionProdMultiplicative, MulEquiv.symm_symm]
   exact torsionProdMultiplicativeToUnits_apply F ζ e
 
+/-- The forward map of `TauCeti.NumberField.unitsMulEquivTorsionProdMultiplicative` reads off the
+Dirichlet decomposition: a unit presented as a root of unity `ζ` times a product of powers of the
+fundamental system is sent to the pair `(ζ, e)`. -/
+@[simp] theorem unitsMulEquivTorsionProdMultiplicative_apply
+    (ζ : torsion F) (e : Fin (rank F) → ℤ) :
+    unitsMulEquivTorsionProdMultiplicative F
+        ((ζ : (𝓞 F)ˣ) * ∏ i, fundSystem F i ^ e i) = (ζ, Multiplicative.ofAdd e) := by
+  rw [unitsMulEquivTorsionProdMultiplicative, MulEquiv.symm_apply_eq, MulEquiv.ofBijective_apply,
+    torsionProdMultiplicativeToUnits_apply]
+  simp
+
 end TauCeti.NumberField
