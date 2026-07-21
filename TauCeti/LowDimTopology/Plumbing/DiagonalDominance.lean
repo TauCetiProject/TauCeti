@@ -4,6 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+import Mathlib.Combinatorics.SimpleGraph.LapMatrix
 public import TauCeti.LowDimTopology.Plumbing.NegativeDefinite
 
 /-!
@@ -36,9 +37,6 @@ Seifert-fibred examples — without any per-graph square completion.
 
 ## Main results
 
-* `TauCeti.PlumbingGraph.isNegativeDefinite_of_forall_intersectionForm_self_neg`: a plumbing whose
-  intersection form is strictly negative on every nonzero lattice vector is negative definite (the
-  converse of `IsNegativeDefinite.intersectionForm_self_neg`).
 * `TauCeti.PlumbingGraph.intersectionForm_self_le_weight_add_degree`: the diagonal-dominance upper
   bound `x · x ≤ ∑ i, (weight i + degree i) · (x i)²`.
 * `TauCeti.PlumbingGraph.isNegativeDefinite_of_degree_lt_neg_weight`: strict diagonal dominance
@@ -63,87 +61,27 @@ namespace PlumbingGraph
 
 variable {V : Type*} [DecidableEq V] [Fintype V] (P : PlumbingGraph V)
 
-/-- A plumbing whose intersection form is strictly negative on every nonzero lattice vector is
-negative definite: the negated intersection matrix is symmetric, and its self-pairing
-`star x ⬝ᵥ (-A *ᵥ x)` equals `- (x · x)`, which the hypothesis makes positive. This is the
-converse of `IsNegativeDefinite.intersectionForm_self_neg`, packaging the square-completion step
-of `a2Plumbing_isNegativeDefinite` once and for all. -/
-theorem isNegativeDefinite_of_forall_intersectionForm_self_neg
-    (h : ∀ x : V → ℤ, x ≠ 0 → P.intersectionForm x x < 0) : P.IsNegativeDefinite := by
-  rw [isNegativeDefinite_iff, Matrix.posDef_iff_dotProduct_mulVec]
-  refine ⟨(Matrix.isHermitian_iff_isSymm.mpr P.intersectionMatrix_isSymm).neg, fun x hx => ?_⟩
-  have hconv : star x ⬝ᵥ ((-P.intersectionMatrix) *ᵥ x) = -P.intersectionForm x x := by
-    rw [Matrix.neg_mulVec, dotProduct_neg, star_trivial, P.intersectionForm_apply,
-      ← Matrix.toBilin'_apply P.intersectionMatrix x x, Matrix.toBilin'_apply']
-  rw [hconv]
-  linarith [h x hx]
-
-omit [DecidableEq V] in
-/-- The `i`-th row of the adjacency indicator sums, over all columns, to the degree of `i`: the
-number of `j` with `Adj i j` is `degree i`. -/
-private theorem sum_ite_adj_one (i : V) :
-    (∑ j, if P.toSimpleGraph.Adj i j then (1 : ℤ) else 0) = P.toSimpleGraph.degree i := by
-  rw [Finset.sum_boole]
-  rw [← SimpleGraph.card_neighborFinset_eq_degree, SimpleGraph.neighborFinset_eq_filter]
-
 omit [DecidableEq V] in
 /-- The adjacency cross-term sum of the intersection form is bounded above by the degree-weighted
 sum of squares: applying `2 (x i)(x j) ≤ (x i)² + (x j)²` on each edge and summing over the two
 endpoints turns each edge into a diagonal contribution to both of its endpoints. -/
-theorem sum_adj_mul_le_degree_mul_sq (x : V → ℤ) :
+private theorem sum_adj_mul_le_degree_mul_sq (x : V → ℤ) :
     (∑ i, ∑ j, if P.toSimpleGraph.Adj i j then x i * x j else 0) ≤
       ∑ i, (P.toSimpleGraph.degree i : ℤ) * x i ^ 2 := by
-  -- Double the edge sum and bound each edge term by the sum of the two endpoint squares.
-  have hdouble :
-      2 * (∑ i, ∑ j, if P.toSimpleGraph.Adj i j then x i * x j else 0) ≤
-        ∑ i, ∑ j, if P.toSimpleGraph.Adj i j then x i ^ 2 + x j ^ 2 else 0 := by
-    rw [Finset.mul_sum]
-    refine Finset.sum_le_sum fun i _ => ?_
-    rw [Finset.mul_sum]
-    refine Finset.sum_le_sum fun j _ => ?_
-    rw [mul_ite, mul_zero]
-    split_ifs with hadj
-    · have := two_mul_le_add_sq (x i) (x j)
-      linarith
-    · rfl
-  -- The endpoint-square sum splits into two equal halves, each the degree-weighted sum of squares.
-  have hsplit :
-      (∑ i, ∑ j, if P.toSimpleGraph.Adj i j then x i ^ 2 + x j ^ 2 else 0) =
-        2 * ∑ i, (P.toSimpleGraph.degree i : ℤ) * x i ^ 2 := by
-    have hterm : ∀ i j, (if P.toSimpleGraph.Adj i j then x i ^ 2 + x j ^ 2 else 0) =
-        (if P.toSimpleGraph.Adj i j then x i ^ 2 else 0) +
-          (if P.toSimpleGraph.Adj i j then x j ^ 2 else 0) := by
-      intro i j; split_ifs <;> ring
-    simp_rw [hterm, Finset.sum_add_distrib]
-    have hfirst :
-        (∑ i, ∑ j, if P.toSimpleGraph.Adj i j then x i ^ 2 else 0) =
-          ∑ i, (P.toSimpleGraph.degree i : ℤ) * x i ^ 2 := by
-      refine Finset.sum_congr rfl fun i _ => ?_
-      have hrow :
-          (∑ j, if P.toSimpleGraph.Adj i j then x i ^ 2 else 0) =
-            (∑ j, if P.toSimpleGraph.Adj i j then (1 : ℤ) else 0) * x i ^ 2 := by
-        rw [Finset.sum_mul]
-        refine Finset.sum_congr rfl fun j _ => ?_
-        split_ifs <;> ring
-      rw [hrow, P.sum_ite_adj_one i]
-    have hsecond :
-        (∑ i, ∑ j, if P.toSimpleGraph.Adj i j then x j ^ 2 else 0) =
-          ∑ i, (P.toSimpleGraph.degree i : ℤ) * x i ^ 2 := by
-      rw [Finset.sum_comm]
-      refine Finset.sum_congr rfl fun j _ => ?_
-      have hrow :
-          (∑ i, if P.toSimpleGraph.Adj i j then x j ^ 2 else 0) =
-            (∑ i, if P.toSimpleGraph.Adj j i then (1 : ℤ) else 0) * x j ^ 2 := by
-        rw [Finset.sum_mul]
-        refine Finset.sum_congr rfl fun i _ => ?_
-        by_cases h : P.toSimpleGraph.Adj i j
-        · rw [if_pos h, if_pos ((P.toSimpleGraph.adj_comm i j).mp h)]; ring
-        · rw [if_neg h, if_neg (fun hji => h ((P.toSimpleGraph.adj_comm i j).mpr hji))]; ring
-      rw [hrow, P.sum_ite_adj_one j]
-    rw [hfirst, hsecond]
-    ring
-  rw [hsplit] at hdouble
-  linarith
+  classical
+  let y : V → ℚ := fun i => x i
+  have hlap := (SimpleGraph.posSemidef_lapMatrix ℚ P.toSimpleGraph).dotProduct_mulVec_nonneg y
+  rw [star_trivial, SimpleGraph.lapMatrix, Matrix.sub_mulVec, dotProduct_sub,
+    SimpleGraph.dotProduct_mulVec_degMatrix,
+    SimpleGraph.dotProduct_mulVec_adjMatrix] at hlap
+  rw [sub_nonneg] at hlap
+  dsimp [y] at hlap
+  simp only [pow_two]
+  have hlap' :
+      (∑ i, ∑ j, if P.toSimpleGraph.Adj i j then (x i : ℚ) * x j else 0) ≤
+        ∑ i, (P.toSimpleGraph.degree i : ℚ) * ((x i : ℚ) * x i) := by
+    simpa only [mul_assoc] using hlap
+  exact_mod_cast hlap'
 
 /-- The diagonal-dominance upper bound on the intersection form: the self-pairing is at most the
 sum, over spheres, of `(weight i + degree i)` times `(x i)²`. This is the quadratic-form estimate
@@ -170,7 +108,8 @@ a sum of nonpositive terms; picking a coordinate where `x` is nonzero makes that
 negative. -/
 theorem isNegativeDefinite_of_degree_lt_neg_weight
     (h : ∀ i, (P.toSimpleGraph.degree i : ℤ) < -P.weight i) : P.IsNegativeDefinite := by
-  refine P.isNegativeDefinite_of_forall_intersectionForm_self_neg fun x hx => ?_
+  rw [P.isNegativeDefinite_iff_forall_intersectionForm_self_neg]
+  intro x hx
   refine lt_of_le_of_lt (P.intersectionForm_self_le_weight_add_degree x) ?_
   -- Every coefficient is strictly negative, so every summand is nonpositive.
   have hcoeff : ∀ i, P.weight i + (P.toSimpleGraph.degree i : ℤ) < 0 := fun i => by
@@ -207,18 +146,21 @@ end PlumbingGraph
 complete graph `K₃`, so every vertex has degree `2`, and `2 < 3`. A self-validating instance of
 the diagonal-dominance criterion whose graph carries edges (so the adjacency bound is genuinely
 used), where hand square-completion would be more laborious than for `A₂`. -/
-def triangleMinusThree : PlumbingGraph (Fin 3) where
+private def triangleMinusThreePlumbing : PlumbingGraph (Fin 3) where
   toSimpleGraph := ⊤
   decidableAdj := inferInstance
   weight := fun _ => -3
 
-example : triangleMinusThree.IsNegativeDefinite := by
-  refine triangleMinusThree.isNegativeDefinite_of_degree_lt_neg_weight fun i => ?_
-  have hdeg : triangleMinusThree.toSimpleGraph.degree i = 2 := by
-    change (⊤ : SimpleGraph (Fin 3)).degree i = 2
-    rw [SimpleGraph.IsRegularOfDegree.top i]
-    simp
-  have hw : triangleMinusThree.weight i = -3 := rfl
+private theorem triangleMinusThreePlumbing_degree (i : Fin 3) :
+    triangleMinusThreePlumbing.toSimpleGraph.degree i = 2 := by
+  change (⊤ : SimpleGraph (Fin 3)).degree i = 2
+  rw [SimpleGraph.IsRegularOfDegree.top i]
+  simp
+
+example : triangleMinusThreePlumbing.IsNegativeDefinite := by
+  refine triangleMinusThreePlumbing.isNegativeDefinite_of_degree_lt_neg_weight fun i => ?_
+  have hdeg := triangleMinusThreePlumbing_degree i
+  have hw : triangleMinusThreePlumbing.weight i = -3 := rfl
   rw [hdeg, hw]
   norm_num
 

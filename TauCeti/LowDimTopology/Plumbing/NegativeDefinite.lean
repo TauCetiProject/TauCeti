@@ -29,6 +29,8 @@ be negative definite.
 
 * `TauCeti.PlumbingGraph.IsNegativeDefinite.intersectionForm_self_neg`: the intersection form is
   strictly negative on every nonzero lattice vector.
+* `TauCeti.PlumbingGraph.isNegativeDefinite_iff_forall_intersectionForm_self_neg`: this strict
+  self-pairing inequality characterizes negative-definiteness.
 * `TauCeti.PlumbingGraph.IsNegativeDefinite.intersectionForm_self_nonpos`: the self-pairing is
   always nonpositive.
 * `TauCeti.PlumbingGraph.IsNegativeDefinite.intersectionForm_self_eq_zero_iff`: the self-pairing
@@ -69,6 +71,19 @@ theorem IsNegativeDefinite.intersectionForm_self_neg (h : P.IsNegativeDefinite) 
   rw [P.intersectionForm_apply]
   rw [← Matrix.toBilin'_apply' P.intersectionMatrix x x, Matrix.toBilin'_apply] at hpos
   linarith
+
+/-- A plumbing is negative definite exactly when its intersection-form self-pairing is strictly
+negative on every nonzero lattice vector. -/
+theorem isNegativeDefinite_iff_forall_intersectionForm_self_neg :
+    P.IsNegativeDefinite ↔ ∀ x : V → ℤ, x ≠ 0 → P.intersectionForm x x < 0 := by
+  refine ⟨fun h x hx => h.intersectionForm_self_neg hx, fun h => ?_⟩
+  rw [isNegativeDefinite_iff, Matrix.posDef_iff_dotProduct_mulVec]
+  refine ⟨(Matrix.isHermitian_iff_isSymm.mpr P.intersectionMatrix_isSymm).neg, fun x hx => ?_⟩
+  have hconv : star x ⬝ᵥ ((-P.intersectionMatrix) *ᵥ x) = -P.intersectionForm x x := by
+    rw [Matrix.neg_mulVec, dotProduct_neg, star_trivial, P.intersectionForm_apply,
+      ← Matrix.toBilin'_apply P.intersectionMatrix x x, Matrix.toBilin'_apply']
+  rw [hconv]
+  linarith [h x hx]
 
 /-- On a negative-definite plumbing the intersection form self-pairing is always nonpositive: it
 is strictly negative away from the origin and zero at it. -/
