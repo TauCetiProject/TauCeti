@@ -129,6 +129,14 @@ We intend to move to a system where review agents' inference costs are covered b
 
 Finally, we understand that participating in AI-assisted mathematics research requires the ability to pay for inference costs, potentially adding a further barrier to entry on top of the existing societal/financial privilege implicit in holding a research position. We're not sure how to respond to this. Possibilities include advocacy for public and private funding, advocacy for capability limitations, and technical capability work on open weight models and cheaper models. Each of these are difficult, have potential adverse effects, and unknown consequences. We hope that everyone involved in Tau Ceti will think hard about these questions, and contribute to meaningful and beneficial solutions.
 
+## Documentation
+
+Generated API documentation for every declaration in Tau Ceti, hyperlinked into its Mathlib
+dependencies, is published at
+[taucetiproject.github.io/TauCeti/docs](https://taucetiproject.github.io/TauCeti/docs/). It is
+rebuilt daily from `main` with [`doc-gen4`](https://github.com/leanprover/doc-gen4), alongside
+the [project website](https://taucetiproject.github.io/TauCeti/).
+
 ## Building
 
 ```bash
