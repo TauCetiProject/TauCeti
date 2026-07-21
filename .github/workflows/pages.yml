@@ -66,6 +66,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      # doc-gen4 renders the whole Mathlib import closure, so this job needs more headroom
+      # than the runner's default free space (the Verso examples project and the docs project
+      # each carry their own Mathlib oleans). Reclaim preinstalled toolchains we never use.
+      # Deliberately leaves /opt/hostedtoolcache's Python and Node in place (used below).
+      - name: Free up runner disk space
+        working-directory: ${{ github.workspace }}
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /opt/hostedtoolcache/CodeQL /usr/local/share/boost || true
+          df -h /
+
       - name: Clone the roadmap repository (full history, for its chart)
         working-directory: ${{ github.workspace }}
         run: git clone --quiet https://github.com/TauCetiProject/TauCetiRoadmap.git /tmp/roadmap
