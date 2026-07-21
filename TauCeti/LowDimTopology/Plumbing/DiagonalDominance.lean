@@ -153,7 +153,7 @@ private def triangleMinusThreePlumbing : PlumbingGraph (Fin 3) where
 
 private theorem triangleMinusThreePlumbing_degree (i : Fin 3) :
     triangleMinusThreePlumbing.toSimpleGraph.degree i = 2 := by
-  change (⊤ : SimpleGraph (Fin 3)).degree i = 2
+  unfold triangleMinusThreePlumbing
   rw [SimpleGraph.IsRegularOfDegree.top i]
   simp
 

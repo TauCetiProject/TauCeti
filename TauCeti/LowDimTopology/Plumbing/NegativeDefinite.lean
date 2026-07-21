@@ -144,20 +144,14 @@ matrix `!![2, -1; -1, 2]`, whose quadratic form `2x₀² - 2x₀x₁ + 2x₁² =
 positive on every nonzero integer vector. A self-validating instance of the negative-definite
 hypothesis used in Lane L. -/
 theorem a2Plumbing_isNegativeDefinite : a2Plumbing.IsNegativeDefinite := by
-  rw [PlumbingGraph.isNegativeDefinite_iff, Matrix.posDef_iff_dotProduct_mulVec]
-  refine ⟨(Matrix.isHermitian_iff_isSymm.mpr a2Plumbing.intersectionMatrix_isSymm).neg,
-    fun x hx => ?_⟩
-  have hconv : star x ⬝ᵥ ((-a2Plumbing.intersectionMatrix) *ᵥ x)
-      = -a2Plumbing.intersectionForm x x := by
-    rw [Matrix.neg_mulVec, dotProduct_neg, star_trivial]
-    rw [a2Plumbing.intersectionForm_apply,
-      ← Matrix.toBilin'_apply a2Plumbing.intersectionMatrix x x, Matrix.toBilin'_apply']
+  rw [PlumbingGraph.isNegativeDefinite_iff_forall_intersectionForm_self_neg]
+  intro x hx
   have hIF : a2Plumbing.intersectionForm x x
       = -2 * x 0 ^ 2 + 2 * (x 0 * x 1) - 2 * x 1 ^ 2 := by
     rw [a2Plumbing.intersectionForm_apply, a2Plumbing_intersectionMatrix]
     simp [Fin.sum_univ_two]
     ring
-  rw [hconv, hIF]
+  rw [hIF]
   have hx2 : x 0 ≠ 0 ∨ x 1 ≠ 0 := by
     by_contra hcon
     rw [not_or, not_not, not_not] at hcon
