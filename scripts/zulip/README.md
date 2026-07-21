@@ -36,6 +36,30 @@ Three workflows drive it:
   schedule (every 6h) that runs `check` to probe the credentials, so a broken
   key is caught even during quiet periods with no PR activity.
 
+## Stuck-automation alerts (Tau Ceti > "Stuck PRs")
+
+[`stuck_alerts.py`](stuck_alerts.py), driven by
+[`stuck-alerts.yml`](../../.github/workflows/stuck-alerts.yml) hourly, posts to a
+second topic — **Stuck PRs** — whenever Tau Ceti's own automation wedges and
+cannot recover on its own. It reuses this directory's Zulip client (pointed at
+the topic via `ZULIP_TOPIC`) and is idempotent the same way: one bot message per
+active alert, tagged with a hidden `<!--stuck:v1 <key>-->` marker, edited to a
+✅ checkmark when the situation clears and never re-posted while it persists.
+
+This is an **emergency channel, not a help queue.** Every alert means a piece of
+infrastructure needs fixing so the wedge cannot recur — not that a human should
+hand-hold one PR. It fires on: a red, stale last-known-good bump PR; a mathlib pin
+that has stopped advancing; an in-scope, fully-green PR the merge path never
+merged; an open `Review stuck: PR #…` issue; a scheduled workflow that is disabled
+or overdue; `main` gone red; and a long-open mathlib-incompatibility issue. It
+**deliberately does not** alert on normal backlog (a PR awaiting its first review
+verdict, changes-requested nobody addressed, open roadmap issues) — the module
+docstring lists the full catalogue and the reasoning.
+
+Run `python3 scripts/zulip/stuck_alerts.py --dry-run` (with `gh` authenticated) to
+print the alerts it would post without touching Zulip. Its run goes red only on a
+persistent Zulip config break, exactly like the healthcheck.
+
 ## One-time setup
 
 1. **Create a dedicated Zulip bot** (Zulip → Settings → Bots → Add a new bot,
