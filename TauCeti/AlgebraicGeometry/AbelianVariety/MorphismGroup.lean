@@ -122,17 +122,29 @@ quotient. -/
 
 /-- Composition of homomorphisms of abelian varieties distributes over the pointwise product on the
 right: post-composition by a homomorphism is multiplicative. -/
-@[reassoc] lemma mul_comp {A B C : AbelianVariety K} (f g : A ⟶ B) (h : B ⟶ C) :
+@[simp, reassoc] lemma mul_comp {A B C : AbelianVariety K} (f g : A ⟶ B) (h : B ⟶ C) :
     (f * g) ≫ h = f ≫ h * g ≫ h := by
   apply Hom.toOverFunctor.map_injective
   simp only [Hom.toOverHom_comp, Hom.toOverHom_mul, MonObj.mul_comp]
 
 /-- Composition of homomorphisms of abelian varieties distributes over the pointwise product on the
 left: pre-composition by a homomorphism is multiplicative. -/
-@[reassoc] lemma comp_mul {A B C : AbelianVariety K} (f : A ⟶ B) (g h : B ⟶ C) :
+@[simp, reassoc] lemma comp_mul {A B C : AbelianVariety K} (f : A ⟶ B) (g h : B ⟶ C) :
     f ≫ (g * h) = f ≫ g * f ≫ h := by
   apply Hom.toOverFunctor.map_injective
   simp only [Hom.toOverHom_comp, Hom.toOverHom_mul, MonObj.comp_mul]
+
+/-- Post-composition sends the identity element of a homomorphism group to the identity element. -/
+@[simp] lemma one_comp {A B C : AbelianVariety K} (h : B ⟶ C) :
+    (1 : A ⟶ B) ≫ h = 1 := by
+  apply Hom.toOverFunctor.map_injective
+  simp only [Hom.toOverHom_comp, Hom.toOverHom_one, MonObj.one_comp]
+
+/-- Pre-composition sends the identity element of a homomorphism group to the identity element. -/
+@[simp] lemma comp_one {A B C : AbelianVariety K} (f : A ⟶ B) :
+    f ≫ (1 : B ⟶ C) = 1 := by
+  apply Hom.toOverFunctor.map_injective
+  simp only [Hom.toOverHom_comp, Hom.toOverHom_one, MonObj.comp_one]
 
 end Hom
 
