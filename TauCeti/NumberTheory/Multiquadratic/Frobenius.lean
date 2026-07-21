@@ -7,8 +7,8 @@ module
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.Frobenius
 public import TauCeti.NumberTheory.NumberField.Frobenius
+public import TauCeti.NumberTheory.Multiquadratic.Galois.Group
 import TauCeti.FieldTheory.IntermediateField.AdjoinEqTop
-import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
 
 /-!
 # The Frobenius acts on multiquadratic generators by Legendre symbols
@@ -24,13 +24,17 @@ file supplies the second, finer form. An arithmetic Frobenius exists at every pr
 `σ (r i) = legendreSym p (d i) • r i`
 
 (`TauCeti.NumberField.exists_isArithFrobAt_multiquadratic`), and the Frobenius is trivial iff
-every symbol is `1` (`isArithFrobAt_multiquadratic_eq_one_iff`). The resulting sign-vector
-description under the identification `Gal(K/ℚ) ≅ (ℤ/2)ⁿ` of
-`TauCeti.Multiquadratic.galoisGroupEquiv` is then a composition, not a further theorem: feeding
-the generator action `σ (r i) = legendreSym p (d i) • r i` into the bridge
-`TauCeti.Multiquadratic.signPattern_eq_ite_of_zsmul_gen` gives
-`signPattern root σ i = if legendreSym p (d i) = 1 then 0 else 1`, which `galoisGroupEquiv_apply`
-packages as the vector `((d₁/p), …, (dₙ/p))`.
+every symbol is `1` (`isArithFrobAt_multiquadratic_eq_one_iff`).
+
+The roadmap's actual sign-vector statement — the Frobenius equals `((d₁/p), …, (dₙ/p))` under
+the identification `Gal ≅ (ℤ/2)ⁿ` — is then proved for the multiquadratic field taken as the
+intermediate field `M = ℚ(√dᵢ : i) = adjoin ℚ (Set.range root)` itself, where
+`TauCeti.Multiquadratic.galoisGroupEquiv` lives (its automorphisms are of `M`, not of an
+abstract `K`). For a Frobenius `σ` on `M` at a prime over `p`,
+`TauCeti.NumberField.signPattern_frobenius` gives each coordinate
+`signPattern root σ i = if legendreSym p (d i) = 1 then 0 else 1`, and
+`TauCeti.NumberField.galoisGroupEquiv_frobenius` packages this as
+`galoisGroupEquiv σ = ((d₁/p), …, (dₙ/p))`.
 
 ## Main results
 
@@ -38,6 +42,9 @@ packages as the vector `((d₁/p), …, (dₙ/p))`.
   is a Frobenius, and it sends each generator `r i` to `legendreSym p (d i) • r i`.
 * `TauCeti.NumberField.isArithFrobAt_multiquadratic_eq_one_iff`: a Frobenius at `Q` is the
   identity iff every `d i` is a quadratic residue mod `p`.
+* `TauCeti.NumberField.signPattern_frobenius` and
+  `TauCeti.NumberField.galoisGroupEquiv_frobenius`: the Frobenius sign pattern on the
+  multiquadratic field is the Legendre vector `((d₁/p), …, (dₙ/p))` under `Gal ≅ (ℤ/2)ⁿ`.
 -/
 
 public section
@@ -89,5 +96,75 @@ theorem exists_isArithFrobAt_multiquadratic [IsGalois ℚ K] (d : ι → ℤ) (r
       ∀ i, σ (r i) = legendreSym p (d i) • r i := by
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt_of_liesOver (p := p) Q
   exact ⟨σ, hσ, fun i => isArithFrobAt_apply_sqrt hodd (hcop i) (hr i) Q hσ⟩
+
+/-! ### The Frobenius as a sign vector under `Gal ≅ (ℤ/2)ⁿ`
+
+The `signPattern`/`galoisGroupEquiv` API of `TauCeti.NumberTheory.Multiquadratic.Galois.Group`
+is stated for automorphisms of the intermediate field `M = adjoin ℚ (Set.range root)`. To match
+the roadmap's `Gal(K/ℚ) ≅ (ℤ/2)ⁿ` Frobenius-vector statement we take that intermediate field
+(a number field, `NumberField.of_intermediateField`) as the multiquadratic field itself, and
+compute the Frobenius sign pattern there. -/
+
+section SignVector
+
+open TauCeti.Multiquadratic
+
+variable {L : Type*} [Field L] [NumberField L] {root : ι → L} {d : ι → ℤ}
+
+/-- The integer defining equation `root i ² = d i` recast with base field `ℚ`. -/
+theorem root_sq_algebraMap_rat (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i)) (i : ι) :
+    root i ^ 2 = algebraMap ℚ L (d i : ℚ) := by
+  rw [hroot i, IsScalarTower.algebraMap_apply ℤ ℚ L]; simp
+
+/-- **The Frobenius sign pattern of a multiquadratic field is the Legendre encoding.** For the
+multiquadratic field `M = ℚ(√dᵢ : i) = adjoin ℚ (Set.range root)`, an odd prime `p ∤ dᵢ`, and an
+arithmetic Frobenius `σ` on `M` at a prime `Q` above `p`, the `i`-th coordinate of the sign
+pattern is `0` when `dᵢ` is a quadratic residue mod `p` and `1` otherwise. -/
+theorem signPattern_frobenius (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i))
+    (p : ℕ) [Fact p.Prime] (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)
+    (Q : Ideal (𝓞 ↥(IntermediateField.adjoin ℚ (Set.range root))))
+    [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
+    {σ : ↥(IntermediateField.adjoin ℚ (Set.range root)) ≃ₐ[ℚ]
+        ↥(IntermediateField.adjoin ℚ (Set.range root))}
+    (hσ : IsArithFrobAt ℤ σ Q) (i : ι) :
+    signPattern root σ i = if legendreSym p (d i) = 1 then 0 else 1 := by
+  -- `gen root i`, an element of `M = adjoin ℚ (Set.range root)`, squares to `d i` in `𝓞 M`.
+  have hcast : algebraMap ℤ ↥(IntermediateField.adjoin ℚ (Set.range root)) (d i) =
+      algebraMap ℚ ↥(IntermediateField.adjoin ℚ (Set.range root)) (d i : ℚ) := by
+    rw [IsScalarTower.algebraMap_apply ℤ ℚ ↥(IntermediateField.adjoin ℚ (Set.range root))]; simp
+  have hgensq : gen root i ^ 2 =
+      algebraMap ℤ ↥(IntermediateField.adjoin ℚ (Set.range root)) (d i) := by
+    rw [hcast]; exact gen_sq (root_sq_algebraMap_rat hroot) i
+  have hd0 : d i ≠ 0 := fun h => hcop i (h ▸ dvd_zero _)
+  -- The Frobenius acts on that generator by the Legendre symbol; feed it to the sign-pattern
+  -- bridge of `Galois.Group`.
+  have haction : σ (gen root i) = legendreSym p (d i) • gen root i :=
+    isArithFrobAt_apply_sqrt hodd (hcop i) hgensq Q hσ
+  exact signPattern_eq_ite_of_zsmul_gen (root_sq_algebraMap_rat hroot) σ
+    (legendreSym.eq_one_or_neg_one p (TauCeti.intCast_ne_zero_of_not_dvd (hcop i)))
+    (by exact_mod_cast hd0) haction
+
+/-- **The Frobenius of a multiquadratic field is the Legendre sign vector.** Under square-class
+independence of the `dᵢ` (so `TauCeti.Multiquadratic.galoisGroupEquiv` is the identification
+`Gal(M/ℚ) ≅ (ℤ/2)ⁿ`), an arithmetic Frobenius `σ` at a prime `Q` above the odd prime `p ∤ dᵢ`
+maps to the vector of Legendre symbols `i ↦ (dᵢ/p)`. This is the roadmap's Layer 1 Frobenius
+statement. -/
+theorem galoisGroupEquiv_frobenius [Finite ι]
+    (hroot : ∀ i, root i ^ 2 = algebraMap ℤ L (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, (d i : ℚ)))
+    (p : ℕ) [Fact p.Prime] (hodd : p ≠ 2) (hcop : ∀ i, ¬ (p : ℤ) ∣ d i)
+    (Q : Ideal (𝓞 ↥(IntermediateField.adjoin ℚ (Set.range root))))
+    [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})]
+    {σ : ↥(IntermediateField.adjoin ℚ (Set.range root)) ≃ₐ[ℚ]
+        ↥(IntermediateField.adjoin ℚ (Set.range root))}
+    (hσ : IsArithFrobAt ℤ σ Q) :
+    galoisGroupEquiv (root_sq_algebraMap_rat hroot) hindep σ =
+      Multiplicative.ofAdd (fun i => if legendreSym p (d i) = 1 then 0 else 1) := by
+  rw [galoisGroupEquiv_apply]
+  congr 1
+  funext i
+  exact signPattern_frobenius hroot p hodd hcop Q hσ i
+
+end SignVector
 
 end TauCeti.NumberField
