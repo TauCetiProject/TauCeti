@@ -10,9 +10,9 @@ public import TauCeti.Analysis.Semigroups.Generator.OrbitDerivative
 # The abstract Cauchy problem for a semigroup generator
 
 This file introduces classical and mild solutions of the autonomous abstract Cauchy problem
-`u' = A u`, `u(0) = x` on the nonnegative half-line.  Since the time domain has a boundary and
-a one-parameter semigroup has no negative-time operators, the classical formulation uses the
-right derivative at every time.  A mild solution instead asks for continuity and the integrated
+`u' = A u`, `u(0) = x` on the nonnegative half-line.  The classical formulation uses the
+derivative within the whole nonnegative half-line, which is two-sided at positive times and
+right-sided at zero.  A mild solution instead asks for continuity and the integrated
 identity
 
 `A (integral u on (0, t]) = u t - x`.
@@ -27,7 +27,7 @@ for Linear Evolution Equations*, Section II.6.
 
 ## Main declarations
 
-* `IsClassicalSolution`: right-classical solutions on `[0, ∞)`.
+* `IsClassicalSolution`: classical solutions on `[0, ∞)`.
 * `IsMildSolution`: mild solutions in integrated form.
 * `StronglyContinuousSemigroup.isClassicalSolution_orbit`: generator-domain orbits are
   classical solutions.
@@ -44,20 +44,18 @@ namespace TauCeti.Semigroups
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
-/-- A right-classical solution of `u' = A u`, `u(0) = x`, on `[0, ∞)`.  Its values belong
-to the domain of `A`, and at every nonnegative time its right derivative is `A (u t)`.
-Using a right derivative is the natural one-sided formulation for a semigroup indexed by
-nonnegative time. -/
+/-- A classical solution of `u' = A u`, `u(0) = x`, on `[0, ∞)`. Its values belong to the
+domain of `A`, and its derivative within `[0, ∞)` is `A (u t)` at every nonnegative time. -/
 def IsClassicalSolution (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ → X) : Prop :=
   u 0 = x ∧ ∀ t : ℝ, 0 ≤ t → ∃ hut : u t ∈ A.domain,
-    HasDerivWithinAt u (A ⟨u t, hut⟩) (Set.Ici t) t
+    HasDerivWithinAt u (A ⟨u t, hut⟩) (Set.Ici 0) t
 
 /-- Characterization of a classical solution by its initial value, domain membership, and
-right-derivative equation. -/
+derivative equation on the nonnegative half-line. -/
 theorem isClassicalSolution_iff {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
     IsClassicalSolution A x u ↔
       u 0 = x ∧ ∀ t : ℝ, 0 ≤ t → ∃ hut : u t ∈ A.domain,
-        HasDerivWithinAt u (A ⟨u t, hut⟩) (Set.Ici t) t :=
+        HasDerivWithinAt u (A ⟨u t, hut⟩) (Set.Ici 0) t :=
   Iff.rfl
 
 /-- A classical solution takes its prescribed initial value at time zero. -/
@@ -70,10 +68,11 @@ theorem IsClassicalSolution.mem_domain {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ �
     (hu : IsClassicalSolution A x u) {t : ℝ} (ht : 0 ≤ t) : u t ∈ A.domain :=
   (hu.2 t ht).choose
 
-/-- The right derivative of a classical solution is the operator applied to its value. -/
+/-- The derivative within the nonnegative half-line of a classical solution is the operator
+applied to its value. -/
 theorem IsClassicalSolution.hasDerivWithinAt {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsClassicalSolution A x u) {t : ℝ} (ht : 0 ≤ t) :
-    HasDerivWithinAt u (A ⟨u t, hu.mem_domain ht⟩) (Set.Ici t) t := by
+    HasDerivWithinAt u (A ⟨u t, hu.mem_domain ht⟩) (Set.Ici 0) t := by
   obtain ⟨hut, hderiv⟩ := hu.2 t ht
   simpa only [Submodule.coe_mk] using hderiv
 
@@ -121,7 +120,6 @@ namespace StronglyContinuousSemigroup
 
 variable [CompleteSpace X]
 
-omit [CompleteSpace X] in
 /-- The orbit of a generator-domain vector is a classical solution of the abstract Cauchy
 problem for the generator. -/
 theorem isClassicalSolution_orbit (S : StronglyContinuousSemigroup X) (x : S.domain) :
@@ -131,8 +129,7 @@ theorem isClassicalSolution_orbit (S : StronglyContinuousSemigroup X) (x : S.dom
     rw [S.generator_domain]
     exact S.realOperator_mem_domain ht x.property
   refine ⟨hut, ?_⟩
-  simpa only [Submodule.coe_mk] using S.realOperator_hasDerivWithinAt ht
-    (S.realOperator_mem_domain ht x.property)
+  simpa only [Submodule.coe_mk] using S.realOperator_hasDerivWithinAt_Ici x ht
 
 /-- Every orbit is a mild solution of the abstract Cauchy problem for the generator. -/
 theorem isMildSolution_orbit (S : StronglyContinuousSemigroup X) (x : X) :
