@@ -74,6 +74,7 @@ theorem IsNegativeDefinite.intersectionForm_self_neg (h : P.IsNegativeDefinite) 
 
 /-- A plumbing is negative definite exactly when its intersection-form self-pairing is strictly
 negative on every nonzero lattice vector. -/
+@[grind =]
 theorem isNegativeDefinite_iff_forall_intersectionForm_self_neg :
     P.IsNegativeDefinite ↔ ∀ x : V → ℤ, x ≠ 0 → P.intersectionForm x x < 0 := by
   refine ⟨fun h x hx => h.intersectionForm_self_neg hx, fun h => ?_⟩

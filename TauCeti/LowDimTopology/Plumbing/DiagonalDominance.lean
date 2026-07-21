@@ -126,19 +126,7 @@ theorem isNegativeDefinite_of_degree_lt_neg_weight
   have hstrict : (P.weight i₀ + (P.toSimpleGraph.degree i₀ : ℤ)) * x i₀ ^ 2 < 0 := by
     have hc := hcoeff i₀
     nlinarith [hc, hsq]
-  have hsplit :
-      ∑ i, (P.weight i + (P.toSimpleGraph.degree i : ℤ)) * x i ^ 2 =
-        (P.weight i₀ + (P.toSimpleGraph.degree i₀ : ℤ)) * x i₀ ^ 2 +
-          ∑ i ∈ Finset.univ.erase i₀,
-            (P.weight i + (P.toSimpleGraph.degree i : ℤ)) * x i ^ 2 :=
-    (Finset.add_sum_erase Finset.univ
-      (fun i => (P.weight i + (P.toSimpleGraph.degree i : ℤ)) * x i ^ 2)
-      (Finset.mem_univ i₀)).symm
-  have hrest : ∑ i ∈ Finset.univ.erase i₀,
-      (P.weight i + (P.toSimpleGraph.degree i : ℤ)) * x i ^ 2 ≤ 0 :=
-    Finset.sum_nonpos fun i _ => hnonpos i (Finset.mem_univ i)
-  rw [hsplit]
-  linarith
+  exact Finset.sum_neg' hnonpos ⟨i₀, Finset.mem_univ i₀, hstrict⟩
 
 end PlumbingGraph
 
