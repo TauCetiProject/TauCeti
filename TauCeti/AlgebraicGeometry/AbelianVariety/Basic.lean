@@ -183,7 +183,7 @@ Properness and geometric integrality are stable under base change, and the monoi
 functor carries the group-object structure (`Functor.grpObjObj`), so the result is again an
 abelian variety. This realizes the roadmap's base-change compatibility of the Jacobian at the
 level of abelian varieties. -/
-noncomputable def baseChange (A : AbelianVariety K) (L : Type u) [Field L]
+@[expose] noncomputable def baseChange (A : AbelianVariety K) (L : Type u) [Field L]
     [Algebra K L] : AbelianVariety L where
   toOver := (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj A.toOver
   grpObj := Functor.grpObjObj
