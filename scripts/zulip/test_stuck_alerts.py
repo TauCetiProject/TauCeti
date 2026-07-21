@@ -63,6 +63,15 @@ class GhStreamTest(unittest.TestCase):
         zp.gh_api = lambda path, jq=None, paginate=False: "\n"
         self.assertEqual(sa.gh_stream("/x", jq=".[]"), [])
 
+    def test_gh_lines_returns_raw_strings_not_json(self):
+        # `.[].filename` emits bare filenames; gh_lines must NOT json.loads them
+        # (json.loads("TauCeti/Foo.lean") would raise) -- the bug that broke
+        # stranded-pr when it used gh_stream here.
+        self.addCleanup(setattr, zp, "gh_api", zp.gh_api)
+        zp.gh_api = lambda path, jq=None, paginate=False: "TauCeti/Foo.lean\nlean-toolchain\n"
+        self.assertEqual(sa.gh_lines("/x", jq=".[].filename"),
+                         ["TauCeti/Foo.lean", "lean-toolchain"])
+
 
 class FailClosedTest(unittest.TestCase):
     def test_failing_detector_records_prefix_and_keeps_others(self):

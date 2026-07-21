@@ -171,6 +171,13 @@ def gh_scalar(path, jq, paginate=False):
     return zp.gh_api(path, jq=jq, paginate=paginate).strip()
 
 
+def gh_lines(path, jq, paginate=True):
+    """List of raw (non-JSON) string lines from a jq that emits bare strings, e.g.
+    `.[].filename`. Unlike gh_stream this does NOT json.loads each line (a bare
+    filename is not valid JSON)."""
+    return [ln for ln in zp.gh_api(path, jq=jq, paginate=paginate).splitlines() if ln.strip()]
+
+
 def newest_status(head, context):
     """(state, updated_at) of the newest commit status for `context`, else (None, None).
 
@@ -285,8 +292,9 @@ def detect_stranded_prs():
         # TauCetiReview ledger is a possible future hardening.
         if zp.review_emoji(zp.scoreboard_meta(pr["number"]), head) != "check":
             continue
-        files = gh_stream(f"/repos/{REPO}/pulls/{pr['number']}/files?per_page=300",
-                          jq='.[].filename')
+        # Filenames are bare strings, not JSON -- gh_lines, not gh_stream.
+        files = gh_lines(f"/repos/{REPO}/pulls/{pr['number']}/files?per_page=300",
+                         jq='.[].filename')
         if not files:
             continue
         allowed_roots = {"TauCeti.lean", "lake-manifest.json", "lean-toolchain"}
@@ -295,10 +303,11 @@ def detect_stranded_prs():
             continue  # a human-owned path legitimately does not auto-merge
         if touches_pin and newest_status(head, "bump-guard")[0] != "success":
             continue
-        # A conflicting / non-mergeable PR is not being wrongly withheld by the
-        # machinery; only alert when GitHub itself does not say it cannot merge.
-        mergeable = gh_scalar(f"/repos/{REPO}/pulls/{pr['number']}", jq='.mergeable // "null"')
-        if mergeable == "false":
+        # Only alert when GitHub positively says the PR CAN merge. `.mergeable` is
+        # true|false|null; do NOT use jq `//` (it maps false->the default too). A
+        # conflicting PR (false) is not being wrongly withheld; an as-yet-uncomputed
+        # PR (null) we skip this run and recheck next hour (a real strand persists).
+        if gh_scalar(f"/repos/{REPO}/pulls/{pr['number']}", jq='.mergeable') != "true":
             continue
         out.append({
             "key": f"stranded-pr/{pr['number']}",
@@ -321,7 +330,7 @@ def detect_review_stuck():
     issues = gh_stream(
         f"/repos/{REPO}/issues?state=open&per_page=100",
         jq='.[] | select(.pull_request == null) '
-           '| select(.title | test("^Review stuck: PR #[0-9]+")) | {number}')
+           '| select(.title | test("^Review stuck: PR #[0-9]+$")) | {number}')
     return [{
         "key": f"review-stuck/{i['number']}",
         "title": "Review engine self-flagged a PR it cannot resolve",
@@ -337,35 +346,39 @@ def detect_review_stuck():
 def detect_dead_schedulers():
     out = []
     for wf, (name, max_hours) in SCHEDULERS.items():
-        meta = gh_obj(f"/repos/{REPO}/actions/workflows/{wf}",
-                      jq='{state: (.state // ""), found: true}')
-        if not meta or not meta.get("found"):
-            out.append(_sched_alert(wf, name,
-                f"`{wf}` was not found via the Actions API (renamed or deleted?).",
-                "Restore the workflow (or update this watchdog's SCHEDULERS list)."))
-            continue
-        if meta.get("state") and meta["state"] != "active":
-            out.append(_sched_alert(wf, name,
-                f"`{wf}` is `{meta['state']}` (GitHub disables a cron after 60 days of "
-                f"repo inactivity, or on repeated failure).",
-                f"Re-enable it (`gh workflow enable {wf}`) and fix the underlying cause."))
-            continue
-        # Only SCHEDULED runs prove the cron fires; a workflow_dispatch or push run
-        # (e.g. pages.yml on a web/ change) must not make a dead schedule look alive.
-        last = gh_scalar(
-            f"/repos/{REPO}/actions/workflows/{wf}/runs?event=schedule&per_page=1",
-            jq='.workflow_runs[0].created_at // ""')
-        if not last:
-            out.append(_sched_alert(wf, name,
-                f"`{wf}` has no scheduled run on record.",
-                "Confirm the cron is configured and firing."))
-            continue
-        if hours_since(last) >= max_hours:
-            out.append(_sched_alert(wf, name,
-                f"`{wf}`'s last scheduled run was over {max_hours}h ago (its cadence "
-                f"+ slack); the schedule has stopped firing.",
-                "Check the Actions tab for a dispatch error or an org-level disable."))
+        try:
+            out.extend(_check_scheduler(wf, name, max_hours))
+        except Exception as exc:
+            # A transient error on one workflow (or an ambiguous 404) must not abort
+            # the whole detector -- that would mark ALL schedulers "unknown" and skip
+            # the ones that are genuinely stalled. Log and move on.
+            zp.log(f"scheduler check for {wf} failed (non-fatal): {exc}")
     return out
+
+
+def _check_scheduler(wf, name, max_hours):
+    meta = gh_obj(f"/repos/{REPO}/actions/workflows/{wf}",
+                  jq='{state: (.state // "")}')
+    state = meta.get("state") if meta else ""
+    if state and state != "active":
+        return [_sched_alert(wf, name,
+            f"`{wf}` is `{state}` (GitHub disables a cron after 60 days of repo "
+            f"inactivity, or on repeated failure).",
+            f"Re-enable it (`gh workflow enable {wf}`) and fix the underlying cause.")]
+    # Only SCHEDULED runs prove the cron fires; a workflow_dispatch or push run
+    # (e.g. pages.yml on a web/ change) must not make a dead schedule look alive.
+    last = gh_scalar(
+        f"/repos/{REPO}/actions/workflows/{wf}/runs?event=schedule&per_page=1",
+        jq='.workflow_runs[0].created_at // ""')
+    if not last:
+        return [_sched_alert(wf, name, f"`{wf}` has no scheduled run on record.",
+                             "Confirm the cron is configured and firing.")]
+    if hours_since(last) >= max_hours:
+        return [_sched_alert(wf, name,
+            f"`{wf}`'s last scheduled run was over {max_hours}h ago (its cadence + "
+            f"slack); the schedule has stopped firing.",
+            "Check the Actions tab for a dispatch error or an org-level disable.")]
+    return []
 
 
 def _sched_alert(wf, name, problem, fix):
