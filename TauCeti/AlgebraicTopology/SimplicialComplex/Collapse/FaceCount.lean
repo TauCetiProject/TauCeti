@@ -25,6 +25,7 @@ Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 3.
 
 * `ElementaryCollapsesTo.encard_faces_add_two`: the face counts before and after an elementary
   collapse differ by two.
+* `CollapsesTo.encard_faces_le`: an arbitrary collapse can only decrease the face cardinality.
 -/
 
 public section
@@ -87,6 +88,15 @@ theorem ncard_faces_mod_two (h : ElementaryCollapsesTo K L) (hK : K.faces.Finite
 end ElementaryCollapsesTo
 
 namespace CollapsesTo
+
+/-- A collapse can only decrease the face cardinality. -/
+theorem encard_faces_le (h : CollapsesTo K L) : L.faces.encard ≤ K.faces.encard :=
+  Set.encard_mono h.le
+
+/-- A collapse of a finite complex can only decrease its number of faces. -/
+theorem ncard_faces_le (h : CollapsesTo K L) (hK : K.faces.Finite) :
+    Set.ncard L.faces ≤ Set.ncard K.faces :=
+  Set.ncard_le_ncard h.le hK
 
 /-- A collapse of a finite complex preserves the parity of its number of faces. -/
 theorem ncard_faces_mod_two (h : CollapsesTo K L) (hK : K.faces.Finite) :
