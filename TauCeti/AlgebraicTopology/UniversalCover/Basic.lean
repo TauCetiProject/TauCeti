@@ -74,7 +74,7 @@ namespace UniversalCover
 variable {x₀ x : X}
 
 /-- The quotient map from based paths to endpoint/path-homotopy classes. -/
-@[expose] def ofBasedPath (x₀ : X) (α : BasedPath x₀) : UniversalCover x₀ :=
+def ofBasedPath (x₀ : X) (α : BasedPath x₀) : UniversalCover x₀ :=
   mk (BasedPath.endpoint α) (Path.Homotopic.Quotient.mk α.toPath)
 
 /-- The topology on `UniversalCover x₀` as the quotient topology coinduced from the compact-open
@@ -112,7 +112,7 @@ theorem isQuotientMap_ofBasedPath (x₀ : X) : IsQuotientMap (ofBasedPath x₀) 
 @[simp]
 theorem proj_ofBasedPath (x₀ : X) (γ : BasedPath x₀) :
     proj (ofBasedPath x₀ γ) = BasedPath.endpoint γ :=
-  rfl
+  (rfl)
 
 /-- Equal images under `ofBasedPath` have equal endpoints. -/
 theorem endpoint_eq_of_ofBasedPath_eq {α β : BasedPath x₀}
@@ -216,7 +216,7 @@ theorem sheet_subset_proj_preimage (U : Set X) (hxU : x ∈ U)
 /-- Two based paths with equal `ofBasedPath` images lie in the same path component of any
 endpoint preimage of a set containing their common endpoint. This expresses saturation under
 the quotient map `ofBasedPath`. -/
-theorem pathComponent_preimage_eq_of_ofBasedPath_eq
+private theorem pathComponent_preimage_eq_of_ofBasedPath_eq
     {U : Set X} {α β : BasedPath x₀}
     (hα_end : BasedPath.endpoint α ∈ U)
     (hαβ : ofBasedPath x₀ α = ofBasedPath x₀ β) :
@@ -228,7 +228,7 @@ theorem pathComponent_preimage_eq_of_ofBasedPath_eq
     (toPath_homotopic_of_ofBasedPath_eq hαβ)
 
 /-- Membership in a based-path component is preserved under equality in the universal cover. -/
-theorem mem_basedPathComponent_of_ofBasedPath_eq {U : Set X} {y : X} {p : Path x₀ y}
+private theorem mem_basedPathComponent_of_ofBasedPath_eq {U : Set X} {y : X} {p : Path x₀ y}
     {α β : BasedPath x₀} (hβ : β ∈ basedPathComponent U p)
     (hαβ : ofBasedPath x₀ α = ofBasedPath x₀ β) :
     α ∈ basedPathComponent U p := by
