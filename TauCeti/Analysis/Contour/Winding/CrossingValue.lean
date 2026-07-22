@@ -121,8 +121,9 @@ theorem tendsto_realWindingIntegrand_at_crossing {α : Type*} {l : Filter α}
   let q : α → ℂ := fun i ↦ (γ (t i) - γ t₀) / ((τ i : ℝ) : ℂ)
   let r : α → ℂ := fun i ↦ (q i - L) / ((τ i : ℝ) : ℂ)
   let d : α → ℂ := fun i ↦ (deriv γ (t i) - L) / ((τ i : ℝ) : ℂ)
-  change Tendsto r l (𝓝 (A / 2)) at hpos₂
-  change Tendsto d l (𝓝 A) at hvel
+  -- `r`, `d` are `hpos₂`, `hvel` with `s = γ t₀` and `τ = t - t₀` folded into the wrappers.
+  have hr : Tendsto r l (𝓝 (A / 2)) := by simpa only [r, q, τ] using hpos₂
+  have hd : Tendsto d l (𝓝 A) := by simpa only [d, τ] using hvel
   have hτ : ∀ᶠ i in l, τ i ≠ 0 := ht.mono fun i hi ↦ sub_ne_zero.mpr hi
   have hqr : ∀ᶠ i in l, q i - L = ((τ i : ℝ) : ℂ) * r i := hτ.mono fun i hi ↦ by
     simp only [r]
@@ -131,11 +132,11 @@ theorem tendsto_realWindingIntegrand_at_crossing {α : Type*} {l : Filter α}
     simpa only [τ, sub_self] using htend.sub_const t₀
   have hq : Tendsto q l (𝓝 L) := by
     have hmul : Tendsto (fun i ↦ ((τ i : ℝ) : ℂ) * r i) l (𝓝 0) := by
-      convert ((Complex.continuous_ofReal.tendsto 0).comp hτ_zero).mul hpos₂ using 1 <;> simp
+      convert ((Complex.continuous_ofReal.tendsto 0).comp hτ_zero).mul hr using 1 <;> simp
     have hadd := hmul.add_const L
     simpa only [zero_add] using hadd.congr' (hqr.mono fun i hi ↦ by
       rw [← hi, sub_add_cancel])
-  have hmain := tendsto_realWindingIntegrand_mul_add hL hq hpos₂ hvel hqr hτ
+  have hmain := tendsto_realWindingIntegrand_mul_add hL hq hr hd hqr hτ
   apply hmain.congr'
   filter_upwards [hτ] with i hi
   have hiℂ : ((τ i : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hi

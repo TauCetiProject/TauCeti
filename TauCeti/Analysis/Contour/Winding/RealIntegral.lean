@@ -54,29 +54,33 @@ open scoped Interval
 namespace TauCeti.Contour
 
 /-- The real winding integrand `(x ẏ - y ẋ) / (x² + y²)` for a position `z = x + iy`
-and velocity `v = ẋ + iẏ`. It is defined to be `0` at `z = 0`, following division in `ℝ`. -/
-@[expose] public noncomputable def realWindingIntegrand (z v : ℂ) : ℝ :=
-  (z.re * v.im - z.im * v.re) / Complex.normSq z
-
-/-- The coordinate formula for the real winding integrand. -/
-@[simp] theorem realWindingIntegrand_def (z v : ℂ) :
-    realWindingIntegrand z v =
-      (z.re * v.im - z.im * v.re) / Complex.normSq z := rfl
+and velocity `v = ẋ + iẏ`. It is defined as the imaginary part `(z⁻¹ * v).im` of the complex
+winding integrand (`realWindingIntegrand_eq_im_inv_mul`); in particular it is `0` at `z = 0`. -/
+public noncomputable def realWindingIntegrand (z v : ℂ) : ℝ := (z⁻¹ * v).im
 
 /-- The real winding integrand is the imaginary part of the complex winding integrand. -/
 theorem realWindingIntegrand_eq_im_inv_mul (z v : ℂ) :
     realWindingIntegrand z v = (z⁻¹ * v).im := by
-  rw [realWindingIntegrand, inv_mul_eq_div, Complex.div_im]
+  rw [realWindingIntegrand]
+
+/-- The coordinate formula for the real winding integrand. -/
+@[simp] theorem realWindingIntegrand_def (z v : ℂ) :
+    realWindingIntegrand z v =
+      (z.re * v.im - z.im * v.re) / Complex.normSq z := by
+  rw [realWindingIntegrand_eq_im_inv_mul, inv_mul_eq_div, Complex.div_im]
   ring
 
-/-- Scaling position and velocity by the same nonzero real parameter leaves the real winding
+/-- Scaling position and velocity by the same nonzero complex parameter leaves the real winding
 integrand unchanged. -/
-theorem realWindingIntegrand_ofReal_mul_ofReal_mul {c : ℝ} (hc : c ≠ 0) (z v : ℂ) :
-    realWindingIntegrand ((c : ℂ) * z) ((c : ℂ) * v) = realWindingIntegrand z v := by
-  simp only [realWindingIntegrand_def, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
-    Complex.ofReal_im, zero_mul, add_zero, Complex.normSq_mul, Complex.normSq_ofReal]
-  field_simp
-  ring
+theorem realWindingIntegrand_mul_left_mul_left {c : ℂ} (hc : c ≠ 0) (z v : ℂ) :
+    realWindingIntegrand (c * z) (c * v) = realWindingIntegrand z v := by
+  have hcs : Complex.normSq c ≠ 0 := Complex.normSq_eq_zero.not.mpr hc
+  have hnum : (c * z).re * (c * v).im - (c * z).im * (c * v).re
+      = Complex.normSq c * (z.re * v.im - z.im * v.re) := by
+    simp only [Complex.mul_re, Complex.mul_im, Complex.normSq_apply]
+    ring
+  rw [realWindingIntegrand_def, realWindingIntegrand_def, Complex.normSq_mul, hnum,
+    mul_div_mul_left _ _ hcs]
 
 /-- **The real bounded-integrand formula for the winding number** (Hungerbühler–Wasem Prop 2.3,
 off-curve case). For a curve `γ` on the oriented interval with endpoints `a`, `b` that returns to
@@ -127,7 +131,8 @@ theorem windingNumber_eq_real_integral_of_closed {γ : ℝ → ℂ} {w : ℂ} {a
           / Complex.normSq (γ t - w)) = 2 * Real.pi * (n : ℝ) := by
     have hpt : ∀ t, ((γ t - w).re * (deriv γ t).im - (γ t - w).im * (deriv γ t).re)
         / Complex.normSq (γ t - w) = ((γ t - w)⁻¹ * deriv γ t).im :=
-      fun t ↦ realWindingIntegrand_eq_im_inv_mul (γ t - w) (deriv γ t)
+      fun t ↦ (realWindingIntegrand_def (γ t - w) (deriv γ t)).symm.trans
+        (realWindingIntegrand_eq_im_inv_mul (γ t - w) (deriv γ t))
     simp_rw [hpt, ← RCLike.im_to_complex]
     rw [intervalIntegral_im h_int, RCLike.im_to_complex, him]
   -- Assemble: `n_w(γ) = n = (1 / 2π) · (2π · n)`.
