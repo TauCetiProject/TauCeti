@@ -54,27 +54,35 @@ theorem twoPrincipalParts_eq (A B s₁ s₂ : ℂ) :
   funext fun z => twoPrincipalParts_apply A B s₁ s₂ z
 
 /-- `twoPrincipalParts` is analytic where each nonzero principal part is away from its designated
-point. -/
-theorem analyticAt_twoPrincipalParts {A B s₁ s₂ z : ℂ} (hz₁ : A = 0 ∨ z ≠ s₁)
-    (hz₂ : B = 0 ∨ z ≠ s₂) :
+point, or where coincident principal parts cancel. -/
+theorem analyticAt_twoPrincipalParts {A B s₁ s₂ z : ℂ}
+    (h : ((A = 0 ∨ z ≠ s₁) ∧ (B = 0 ∨ z ≠ s₂)) ∨
+      (s₁ = s₂ ∧ A + B = 0)) :
     AnalyticAt ℂ (twoPrincipalParts A B s₁ s₂) z := by
-  rcases hz₁ with rfl | hz₁
-  · rcases hz₂ with rfl | hz₂
+  rcases h with ⟨hz₁, hz₂⟩ | ⟨rfl, hAB⟩
+  · rcases hz₁ with rfl | hz₁
+    · rcases hz₂ with rfl | hz₂
+      · rw [twoPrincipalParts_eq]
+        simp only [zero_mul, zero_add]
+        exact analyticAt_const
+      · rw [twoPrincipalParts_eq]
+        simp only [zero_mul, zero_add]
+        exact analyticAt_const.mul
+          ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 hz₂))
+    rcases hz₂ with rfl | hz₂
     · rw [twoPrincipalParts_eq]
-      simp only [zero_mul, zero_add]
-      exact analyticAt_const
-    · rw [twoPrincipalParts_eq]
-      simp only [zero_mul, zero_add]
+      simp only [zero_mul, add_zero]
       exact analyticAt_const.mul
-        ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 hz₂))
-  rcases hz₂ with rfl | hz₂
-  · rw [twoPrincipalParts_eq]
-    simp only [zero_mul, add_zero]
-    exact analyticAt_const.mul
-      ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 hz₁))
-  exact (analyticAt_const.mul ((analyticAt_id.sub analyticAt_const).inv
-    (sub_ne_zero.2 hz₁))).add (analyticAt_const.mul
-      ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 hz₂)))
+        ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 hz₁))
+    exact (analyticAt_const.mul ((analyticAt_id.sub analyticAt_const).inv
+      (sub_ne_zero.2 hz₁))).add (analyticAt_const.mul
+        ((analyticAt_id.sub analyticAt_const).inv (sub_ne_zero.2 hz₂)))
+  rw [twoPrincipalParts_eq]
+  have heq : (fun w : ℂ => A * (w - s₁)⁻¹ + B * (w - s₁)⁻¹) = fun _ => 0 := by
+    funext w
+    rw [← add_mul, hAB, zero_mul]
+  rw [heq]
+  exact analyticAt_const
 
 /-- The function `twoPrincipalParts` is meromorphic everywhere. -/
 theorem meromorphicAt_twoPrincipalParts (A B s₁ s₂ z : ℂ) :
@@ -139,25 +147,42 @@ private theorem circleIntegrable_const_mul_sub_inv {A c s : ℂ} {R : ℝ} (hs :
   rw [abs_of_pos hR]
   exact fun hsp => (ne_of_lt (mem_ball.1 hs)) (mem_sphere.1 hsp)
 
-/-- **Two-pole circle integral.** If `s₁` and `s₂` lie strictly inside the circle `C(c, R)`, then
-the integral of `A / (z - s₁) + B / (z - s₂)` around that circle is `2πi (A + B)`.  Together with
+/-- **Two-pole circle integral.** If the designated point of each nonzero principal part lies
+strictly inside the circle `C(c, R)`, then the integral of `A / (z - s₁) + B / (z - s₂)` around
+that circle is `2πi (A + B)`.  Together with
 `residue_twoPrincipalParts_left` and `residue_twoPrincipalParts_right`, this is the roadmap's worked
 example of the classical residue theorem with two simple poles. -/
 theorem circleIntegral_twoPrincipalParts {A B c s₁ s₂ : ℂ} {R : ℝ}
-    (hs₁ : s₁ ∈ ball c R) (hs₂ : s₂ ∈ ball c R) :
+    (hs₁ : A = 0 ∨ s₁ ∈ ball c R) (hs₂ : B = 0 ∨ s₂ ∈ ball c R) :
     circleIntegral (twoPrincipalParts A B s₁ s₂) c R =
       2 * (Real.pi : ℂ) * Complex.I * (A + B) := by
-  rw [twoPrincipalParts_eq]
-  rw [circleIntegral.integral_add (circleIntegrable_const_mul_sub_inv hs₁)
-    (circleIntegrable_const_mul_sub_inv hs₂), circleIntegral.integral_const_mul,
-    circleIntegral.integral_const_mul, circleIntegral.integral_sub_inv_of_mem_ball hs₁,
+  rcases hs₁ with rfl | hs₁
+  · rcases hs₂ with rfl | hs₂
+    · rw [twoPrincipalParts_eq]
+      simp only [zero_mul, zero_add]
+      simp [circleIntegral]
+    · rw [twoPrincipalParts_eq]
+      simp only [zero_mul, zero_add, circleIntegral.integral_const_mul,
+        circleIntegral.integral_sub_inv_of_mem_ball hs₂]
+      ring
+  rcases hs₂ with rfl | hs₂
+  · rw [twoPrincipalParts_eq]
+    simp only [zero_mul, add_zero, circleIntegral.integral_const_mul,
+      circleIntegral.integral_sub_inv_of_mem_ball hs₁]
+    ring
+  rw [twoPrincipalParts_eq, circleIntegral.integral_add
+    (circleIntegrable_const_mul_sub_inv hs₁) (circleIntegrable_const_mul_sub_inv hs₂),
+    circleIntegral.integral_const_mul, circleIntegral.integral_const_mul,
+    circleIntegral.integral_sub_inv_of_mem_ball hs₁,
     circleIntegral.integral_sub_inv_of_mem_ball hs₂]
   ring
 
-/-- The two-pole calculation in residue-theorem form: for distinct points inside the circle, the
-integral is `2πi` times the sum of the two residues. -/
+/-- The two-pole calculation in residue-theorem form: for distinct designated points, with the
+point of each nonzero principal part inside the circle, the integral is `2πi` times the sum of the
+two residues. -/
 theorem circleIntegral_twoPrincipalParts_eq_residue_sum {A B c s₁ s₂ : ℂ} {R : ℝ}
-    (hs : s₁ ≠ s₂) (hs₁ : s₁ ∈ ball c R) (hs₂ : s₂ ∈ ball c R) :
+    (hs : s₁ ≠ s₂) (hs₁ : A = 0 ∨ s₁ ∈ ball c R)
+    (hs₂ : B = 0 ∨ s₂ ∈ ball c R) :
     circleIntegral (twoPrincipalParts A B s₁ s₂) c R =
       2 * (Real.pi : ℂ) * Complex.I *
         (residue (twoPrincipalParts A B s₁ s₂) s₁ +
