@@ -35,7 +35,7 @@ the quotient topology coming from the compact-open based-path space.
 * `UniversalCover.toPath_homotopic_of_ofBasedPath_eq` and
   `UniversalCover.ofBasedPath_eq_of_homotopic_toPath`: equality in the universal cover is
   equivalent to endpoint-preserving path homotopy of representatives.
-* `UniversalCover.proj_surjOn_sheet`, `UniversalCover.sheet_pairwise_disjoint`,
+* `UniversalCover.proj_surjOn_sheet`, `UniversalCover.pairwise_disjoint_sheet`,
   `UniversalCover.sheet_exhaustive`, `UniversalCover.proj_injOn_sheet`: structure of the sheet
   decomposition over a good neighborhood `U`.
 
@@ -304,7 +304,7 @@ theorem proj_surjOn_sheet
 
 /-- Sheets over the same good neighborhood, indexed by `Path.Homotopic.Quotient`, are pairwise
 disjoint. -/
-theorem sheet_pairwise_disjoint
+theorem pairwise_disjoint_sheet
     {U : Set X} (hU_slsc : IsPathHomotopyTrivial U) (hxU : x ∈ U) :
     Pairwise fun (q₁ q₂ : Path.Homotopic.Quotient x₀ x) ↦
       Disjoint (sheet U hxU q₁) (sheet U hxU q₂) := by
