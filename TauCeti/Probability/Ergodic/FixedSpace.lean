@@ -85,8 +85,7 @@ variable {Ω 𝕜 E : Type*} [MeasurableSpace Ω] [NormedRing 𝕜]
   [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {μ : Measure Ω}
 
-/-- The fixed space as the equality locus of the continuous composition operator and identity. -/
-theorem fixedSpace_eq_eqLocus (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
+private theorem fixedSpace_eq_eqLocus (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
     fixedSpace (𝕜 := 𝕜) (E := E) (p := p) T hT =
       (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap.toLinearMap.eqLocus
         (1 : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap := by
