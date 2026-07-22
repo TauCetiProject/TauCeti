@@ -114,6 +114,16 @@ theorem rangeProdCokerComplementEquiv_apply
     hT.rangeProdCokerComplementEquiv x = (x.1 : F) + x.2 :=
   Submodule.prodEquivOfIsTopCompl_apply hT.isTopCompl_range_cokerComplement x
 
+omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] [CompleteSpace F] in
+@[simp]
+theorem rangeProdCokerComplementEquiv_symm_apply (x : F) :
+    hT.rangeProdCokerComplementEquiv.symm x =
+      ((LinearMap.range (T : E →ₗ[𝕜] F)).projectionOntoL hT.cokerComplement
+        hT.isTopCompl_range_cokerComplement x,
+      hT.cokerComplement.projectionOntoL (LinearMap.range (T : E →ₗ[𝕜] F))
+        hT.isTopCompl_range_cokerComplement.symm x) :=
+  Submodule.prodEquivOfIsTopCompl_symm_apply hT.isTopCompl_range_cokerComplement x
+
 /-- The domain is continuously linearly equivalent to the product of the kernel and a chosen
 kernel complement. -/
 noncomputable def kerProdComplementEquiv :
@@ -126,6 +136,16 @@ theorem kerProdComplementEquiv_apply
     (x : LinearMap.ker (T : E →ₗ[𝕜] F) × hT.kerComplement) :
     hT.kerProdComplementEquiv x = (x.1 : E) + x.2 :=
   Submodule.prodEquivOfIsTopCompl_apply hT.isTopCompl_ker_kerComplement x
+
+omit [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
+@[simp]
+theorem kerProdComplementEquiv_symm_apply (x : E) :
+    hT.kerProdComplementEquiv.symm x =
+      ((LinearMap.ker (T : E →ₗ[𝕜] F)).projectionOntoL hT.kerComplement
+        hT.isTopCompl_ker_kerComplement x,
+      hT.kerComplement.projectionOntoL (LinearMap.ker (T : E →ₗ[𝕜] F))
+        hT.isTopCompl_ker_kerComplement.symm x) :=
+  Submodule.prodEquivOfIsTopCompl_symm_apply hT.isTopCompl_ker_kerComplement x
 
 /-- A Fredholm operator restricts to a continuous linear equivalence from its chosen kernel
 complement onto its range. -/
@@ -155,6 +175,14 @@ omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] [CompleteSpace F] in
 theorem cokerEquivComplement_symm_apply (x : hT.cokerComplement) :
     hT.cokerEquivComplement.symm x = (LinearMap.range (T : E →ₗ[𝕜] F)).mkQ x :=
   Submodule.quotientEquivOfIsTopCompl_symm_apply hT.isTopCompl_range_cokerComplement x
+
+omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] [CompleteSpace F] in
+@[simp]
+theorem cokerEquivComplement_apply_mk (x : F) :
+    hT.cokerEquivComplement ((LinearMap.range (T : E →ₗ[𝕜] F)).mkQ x) =
+      hT.cokerComplement.projectionOnto (LinearMap.range (T : E →ₗ[𝕜] F))
+        hT.isTopCompl_range_cokerComplement.isCompl.symm x :=
+  Submodule.quotientEquivOfIsTopCompl_apply_mk hT.isTopCompl_range_cokerComplement x
 
 noncomputable instance finiteDimensional_cokerComplement :
     FiniteDimensional 𝕜 hT.cokerComplement := by
