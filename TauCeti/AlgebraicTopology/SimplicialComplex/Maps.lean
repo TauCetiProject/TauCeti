@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Basic
 
 This file bundles simplicial maps between pre-abstract simplicial complexes. A simplicial map is
 a map of vertices which sends every face to a face. The file supplies the identity, composition,
-restriction to subcomplexes, and corestriction to a larger complex, together with the connection
+restriction to subcomplexes, and extension to a larger complex, together with the connection
 to Mathlib's image complex `PreAbstractSimplicialComplex.map`.
 
 These maps are basic infrastructure for subdivision and geometric realization in the geometric
@@ -62,11 +62,8 @@ theorem map_face (f : SimplicialMap K L) {σ : Finset α} (hσ : σ ∈ K) :
 /-- A vertex map is simplicial exactly when its image complex is a subcomplex of the codomain. -/
 theorem map_le_iff (f : α → β) :
     K.map f ≤ L ↔ ∀ ⦃σ : Finset α⦄, σ ∈ K → σ.image f ∈ L := by
-  constructor
-  · intro h σ hσ
-    exact h ⟨σ, hσ, rfl⟩
-  · rintro h τ ⟨σ, hσ, rfl⟩
-    exact h hσ
+  change (fun σ : Finset α ↦ σ.image f) '' K.faces ⊆ L.faces ↔ _
+  exact Set.image_subset_iff
 
 /-- Construct a simplicial map from containment of the image complex in the codomain. -/
 def ofMapLE (f : α → β) (h : K.map f ≤ L) : SimplicialMap K L where
@@ -112,16 +109,19 @@ theorem comp_apply (g : SimplicialMap L P) (f : SimplicialMap K L) (x : α) :
     g.comp f x = g (f x) :=
   (rfl)
 
+/-- Composing a simplicial map on the right with the identity leaves it unchanged. -/
 @[simp]
 theorem comp_id [DecidableEq α] (f : SimplicialMap K L) : f.comp (id K) = f := by
   apply DFunLike.coe_injective
   rw [coe_comp, coe_id, Function.comp_id]
 
+/-- Composing a simplicial map on the left with the identity leaves it unchanged. -/
 @[simp]
 theorem id_comp (f : SimplicialMap K L) : (id L).comp f = f := by
   apply DFunLike.coe_injective
   rw [coe_comp, coe_id, Function.id_comp]
 
+/-- Composition of simplicial maps is associative. -/
 @[simp]
 theorem comp_assoc [DecidableEq δ] (h : SimplicialMap P P') (g : SimplicialMap L P)
     (f : SimplicialMap K L) : (h.comp g).comp f = h.comp (g.comp f) := by
@@ -139,13 +139,13 @@ theorem coe_domainRestrict (f : SimplicialMap K L) (h : K' ≤ K) :
   (rfl)
 
 /-- Regard a simplicial map as landing in a larger complex. -/
-def codomainRestrict (f : SimplicialMap K L) (h : L ≤ L') : SimplicialMap K L' where
+def codomainExtend (f : SimplicialMap K L) (h : L ≤ L') : SimplicialMap K L' where
   toFun := f
   map_face' := fun _ hσ ↦ h (f.map_face hσ)
 
 @[simp]
-theorem coe_codomainRestrict (f : SimplicialMap K L) (h : L ≤ L') :
-    ⇑(f.codomainRestrict h) = f :=
+theorem coe_codomainExtend (f : SimplicialMap K L) (h : L ≤ L') :
+    ⇑(f.codomainExtend h) = f :=
   (rfl)
 
 /-- Every vertex map is simplicial into its image complex. -/
