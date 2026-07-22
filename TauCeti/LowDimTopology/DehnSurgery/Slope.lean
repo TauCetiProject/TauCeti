@@ -4,11 +4,15 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.Rat.Lemmas
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.RingTheory.Int.Basic
 public import Mathlib.Topology.Compactification.OnePoint.Basic
+public import Mathlib.Topology.Instances.AddCircle.Real
 
 /-!
 # Slopes on a framed boundary torus
@@ -31,7 +35,8 @@ objects kept **distinct**: the sign-quotient `Slope` (basis-free) and the `ℚ �
 sign in an abstract `ℤ`-module `M`, and every framing-dependent notion — `meridian`, `longitude`,
 `value`, and the bijection `slopeEquiv` — is a field/operation of `TauCeti.FramedBoundaryTorus`,
 carrying its own ordered basis. Identifying `H₁(T; ℤ)` with the boundary torus of a genuine link
-complement is later layer-5 work that consumes this arithmetic.
+complement is now expressed through `BoundaryTorus.firstHomology`; constructing that boundary torus
+from the complement is later layer-5 work that consumes this arithmetic.
 
 Primitivity of `v : M` is expressed basis-freely: `v` is primitive when some `ℤ`-linear functional
 `M →ₗ[ℤ] ℤ` sends it to `1` (equivalently, `v` extends to a basis). Over the standard lattice
@@ -46,8 +51,10 @@ the `ℚ ∪ {∞}` bijection through any framing's coordinate isomorphism.
 * `TauCeti.slopeValue v`: the value `p / q ∈ ℚ ∪ {∞}` of a class `v = (p, q) : ℤ × ℤ`, being `∞`
   when `q = 0`.
 * `TauCeti.slopeEquivStd`: the bijection `Slope (ℤ × ℤ) ≃ ℚ ∪ {∞}` for the standard lattice.
-* `TauCeti.FramedBoundaryTorus`: a boundary torus with an ordered meridian-longitude basis of its
-  homology.
+* `TauCeti.BoundaryTorus`: a topological space homeomorphic to the standard two-torus.
+* `TauCeti.BoundaryTorus.firstHomology`: its degree-one singular homology with integer coefficients.
+* `TauCeti.FramedBoundaryTorus`: a boundary torus with an ordered meridian-longitude basis of that
+  homology group.
 * `TauCeti.FramedBoundaryTorus.meridian` / `.longitude`: the slopes `(1, 0)` and `(0, 1)` of the
   framing.
 * `TauCeti.FramedBoundaryTorus.value`: the framing-dependent `ℚ ∪ {∞}` value of a slope.
@@ -74,7 +81,7 @@ namespace TauCeti
 
 /-! ### Primitive classes and the basis-free slope type -/
 
-variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module ℤ M] [Module ℤ N]
 
 /-- A homology class `v : M` on a boundary torus is **primitive** when some `ℤ`-linear functional
 `M →ₗ[ℤ] ℤ` sends it to `1`; equivalently, `v` extends to a basis, so it is not a proper multiple of
@@ -99,7 +106,7 @@ theorem isPrimitive_congr (φ : M ≃ₗ[ℤ] N) {v : M} : IsPrimitive (φ v) �
 
 /-- Two primitive classes represent the same slope when they agree up to sign. This is an
 equivalence relation on primitive classes. -/
-def slopeSetoid (M : Type*) [AddCommGroup M] : Setoid {v : M // IsPrimitive v} where
+def slopeSetoid (M : Type*) [AddCommGroup M] [Module ℤ M] : Setoid {v : M // IsPrimitive v} where
   r a b := a.1 = b.1 ∨ a.1 = -b.1
   iseqv :=
     { refl := fun _ => Or.inl rfl
@@ -114,7 +121,8 @@ def slopeSetoid (M : Type*) [AddCommGroup M] : Setoid {v : M // IsPrimitive v} w
 /-- A **slope** on a boundary torus with homology `M`: a primitive homology class taken modulo the
 sign action, i.e. an unoriented essential simple closed curve up to isotopy. This is basis-free — it
 refers only to the abstract module `M`, not to any choice of meridian-longitude basis. -/
-@[expose] def Slope (M : Type*) [AddCommGroup M] : Type _ := Quotient (slopeSetoid M)
+@[expose] def Slope (M : Type*) [AddCommGroup M] [Module ℤ M] : Type _ :=
+  Quotient (slopeSetoid M)
 
 namespace Slope
 
@@ -287,27 +295,48 @@ theorem slopeEquivStd_apply (s : Slope (ℤ × ℤ)) : slopeEquivStd s = slopeVa
 @[simp]
 theorem slopeEquivStd_symm_apply (x : OnePoint ℚ) : slopeEquivStd.symm x = slopeOfValue x := rfl
 
-/-! ### The framed boundary torus
+/-! ### Boundary tori and framings
 
 A framing supplies the coordinate isomorphism `H₁(T; ℤ) ≃ ℤ × ℤ` that turns the basis-free `Slope`
 into the `ℚ ∪ {∞}` parametrisation. The homology object and the ordered meridian-longitude basis are
 carried explicitly, keeping the basis-dependent notions (`meridian`, `longitude`, `value`,
 `slopeEquiv`) genuinely parametrised by the framing rather than globally canonical. -/
 
-/-- A **framed boundary torus**: the homology group `H₁(T; ℤ)` of a boundary torus (an abstract
-rank-two free `ℤ`-module `H`) together with an ordered meridian-longitude basis `(μ, λ) = (basis 0,
-basis 1)`. The framing is exactly this ordered basis; it is what identifies `H` with `ℤ × ℤ` and so
+/-- A **boundary torus** is a topological space equipped with a homeomorphism to the standard
+two-torus. Its first homology, rather than an unrelated abstract lattice, is the carrier on which
+slopes are defined. -/
+structure BoundaryTorus where
+  /-- The underlying topological space. -/
+  carrier : Type
+  [topologicalSpace : TopologicalSpace carrier]
+  /-- An identification of the boundary component with the standard two-torus. -/
+  parametrization : carrier ≃ₜ UnitAddTorus (Fin 2)
+
+namespace BoundaryTorus
+
+attribute [instance] BoundaryTorus.topologicalSpace
+
+/-- The first singular homology of a boundary torus with integer coefficients. -/
+abbrev firstHomology (T : BoundaryTorus) : Type :=
+  ((AlgebraicTopology.singularHomologyFunctor (ModuleCat ℤ) 1).obj (ModuleCat.of ℤ ℤ)).obj
+    (TopCat.of T.carrier)
+
+end BoundaryTorus
+
+/-- A **framed boundary torus**: a boundary torus together with an ordered
+meridian-longitude basis `(μ, λ) = (basis 0, basis 1)` of its actual singular homology group.
+The framing is exactly this ordered basis; it is what identifies `H₁(T; ℤ)` with `ℤ × ℤ` and so
 what the `ℚ ∪ {∞}` parametrisation depends on. -/
 structure FramedBoundaryTorus where
-  /-- The homology group `H₁(T; ℤ)` of the boundary torus. -/
-  H : Type*
-  [addCommGroup : AddCommGroup H]
+  /-- The boundary torus being framed. -/
+  torus : BoundaryTorus
   /-- The ordered meridian-longitude basis `(μ, λ)` framing the torus. -/
-  basis : Basis (Fin 2) ℤ H
+  basis : Basis (Fin 2) ℤ torus.firstHomology
 
 namespace FramedBoundaryTorus
 
-attribute [instance] FramedBoundaryTorus.addCommGroup
+/-- The first singular homology group of the underlying boundary torus. -/
+abbrev H (T : FramedBoundaryTorus) := T.torus.firstHomology
 
 variable (T : FramedBoundaryTorus)
 
