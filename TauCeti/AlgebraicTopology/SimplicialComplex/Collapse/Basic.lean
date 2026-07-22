@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.ElementaryCollapse
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 
 /-!
 # Simplicial collapse
