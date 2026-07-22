@@ -263,10 +263,8 @@ theorem HasCauchyPVAt.zero {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} :
     HasCauchyPVAt γ a b (fun _ => 0) z₀ 0 := by
   refine ⟨?_, ?_⟩
   · filter_upwards with ε
-    simp only [zero_mul, ite_self]
-    exact intervalIntegrable_const
-  · simp only [zero_mul, ite_self, intervalIntegral.integral_zero]
-    exact tendsto_const_nhds
+    simpa only [zero_mul, ite_self] using intervalIntegrable_const
+  · simpa only [zero_mul, ite_self, intervalIntegral.integral_zero] using tendsto_const_nhds
 
 /-- The value form of `HasCauchyPVAt.zero`: the principal value of the zero integrand is `0`. -/
 @[simp]
