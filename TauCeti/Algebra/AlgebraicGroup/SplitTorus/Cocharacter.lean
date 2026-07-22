@@ -7,9 +7,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Basic
 public import Mathlib.Algebra.Group.Equiv.TypeTags
-public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
-public import Mathlib.LinearAlgebra.Finsupp.LSum
 public import Mathlib.RingTheory.Finiteness.Finsupp
 
 /-!
@@ -126,7 +124,7 @@ theorem cocharEquiv_mul (ψ φ : Multiplicative (σ →₀ ℤ) →* Multiplicat
 `cocharEquiv`, identifying `Additive (Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ)` (the
 cocharacter group with its natural additive structure) with `σ → ℤ` as an `AddEquiv`. This
 carries the algebraic compatibility that `cocharEquiv` reads off pointwise (`cocharEquiv_one`,
-`cocharEquiv_mul`), so it transports the free-`ℤ`-module structure. -/
+`cocharEquiv_mul`), so it transports the natural `ℤ`-module structure. -/
 noncomputable def cocharAddEquiv :
     Additive (Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ) ≃+ (σ → ℤ) :=
   (MulEquiv.toAdditive freeAbelianCharEquiv).trans <|
@@ -192,12 +190,11 @@ This is the split-torus perfect pairing that is the input to root data. (For arb
 pairing stays non-degenerate in each slot — `eq_zero_of_forall_pairing_eq_zero`,
 `eq_one_of_forall_pairing_eq_zero` — while perfectness is proved only in finite rank.) -/
 instance instIsPerfPair [Finite σ] : (dotPairing (σ := σ)).IsPerfPair := by
-  have hbij : Function.Bijective ⇑(dotPairing (σ := σ)).flip := by
-    rw [dotPairing_flip]
-    simpa using (Finsupp.llift ℤ ℤ ℤ σ).bijective
-  have hp : (dotPairing (σ := σ)).flip.IsPerfPair := .of_bijective _ hbij
-  have hp' := hp.flip
-  rwa [LinearMap.flip_flip] at hp'
+  -- `dotPairing` is the flip of the linear equivalence `Finsupp.llift`, so it is perfect by
+  -- Mathlib's `LinearEquiv.instIsPerfPair` (for the reflexive finite free module `σ →₀ ℤ`) and
+  -- `LinearMap.flip.instIsPerfPair`.
+  unfold dotPairing
+  infer_instance
 
 /-- **The split-torus character–cocharacter pairing on the genuine lattices.** The dot-product
 pairing `dotPairing`, with its coordinate model `σ → ℤ` of the cocharacter lattice transported
@@ -212,6 +209,7 @@ noncomputable def latticePairing :
 
 /-- `latticePairing` evaluated on a cocharacter is the character–cocharacter pairing, the dot
 product `⟨ofAdd m, ψ⟩ = ∑ᵢ mᵢ · cocharEquiv ψ i`. -/
+@[simp]
 theorem latticePairing_ofMul (m : σ →₀ ℤ)
     (ψ : Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ) :
     latticePairing m (Additive.ofMul ψ) =
