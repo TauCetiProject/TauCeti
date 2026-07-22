@@ -68,18 +68,6 @@ theorem circleReflectionConjugate_zero_target_radius (c : ℂ) (r : ℝ) (d : �
   funext z
   simp
 
-/-- A circle-reflection conjugate with zero source radius is differentiable on every set. -/
-theorem differentiableOn_circleReflectionConjugate_zero_source_radius (c d : ℂ) (s : ℝ)
-    (f : ℂ → ℂ) (S : Set ℂ) :
-    DifferentiableOn ℂ (circleReflectionConjugate c 0 d s f) S := by
-  simp
-
-/-- A circle-reflection conjugate with zero target radius is differentiable on every set. -/
-theorem differentiableOn_circleReflectionConjugate_zero_target_radius (c : ℂ) (r : ℝ)
-    (d : ℂ) (f : ℂ → ℂ) (S : Set ℂ) :
-    DifferentiableOn ℂ (circleReflectionConjugate c r d 0 f) S := by
-  simp
-
 /-- The circle-reflection conjugate agrees with the original map on the source circle when the
 map sends the source circle into the target circle. -/
 theorem circleReflectionConjugate_eqOn_sphere (c : ℂ) (r : ℝ) (d : ℂ) (s : ℝ)
