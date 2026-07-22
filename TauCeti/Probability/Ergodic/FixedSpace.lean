@@ -39,8 +39,8 @@ abbrev fixedSpace (T : Ω → Ω) (hT : MeasurePreserving T μ μ) : Submodule �
 /-- Membership in `fixedSpace` means invariance under the composition operator. -/
 @[simp]
 theorem mem_fixedSpace_iff {T : Ω → Ω} (hT : MeasurePreserving T μ μ) (g : Lp 𝕜 2 μ) :
-    g ∈ fixedSpace T hT ↔ Lp.compMeasurePreserving T hT g = g := by
-  change (Lp.compMeasurePreservingₗᵢ 𝕜 T hT) g = g ↔ _
+    (Lp.compMeasurePreservingₗᵢ 𝕜 T hT) g = g ↔
+      Lp.compMeasurePreserving T hT g = g := by
   rfl
 
 /-- A fixed `L²` observable is represented by a function invariant under `T` almost
@@ -56,6 +56,7 @@ to `fixedSpace`. -/
 theorem mem_fixedSpace_of_comp_ae_eq {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
     {g : Lp 𝕜 2 μ} (hg : (g : Ω → 𝕜) ∘ T =ᵐ[μ] g) :
     g ∈ fixedSpace T hT := by
+  change (Lp.compMeasurePreservingₗᵢ 𝕜 T hT) g = g
   rw [mem_fixedSpace_iff]
   apply Lp.ext
   exact (Lp.coeFn_compMeasurePreserving g hT).trans hg
@@ -72,6 +73,7 @@ theorem fixedSpace_id :
     fixedSpace (μ := μ) (𝕜 := 𝕜) id (MeasurePreserving.id μ) = ⊤ := by
   rw [eq_top_iff]
   intro g _
+  change (Lp.compMeasurePreservingₗᵢ 𝕜 id (MeasurePreserving.id μ)) g = g
   rw [mem_fixedSpace_iff]
   exact Lp.compMeasurePreserving_id_apply g
 
@@ -79,6 +81,7 @@ theorem fixedSpace_id :
 theorem mem_fixedSpace_iterate {T : Ω → Ω} (hT : MeasurePreserving T μ μ)
     {g : Lp 𝕜 2 μ} (hg : g ∈ fixedSpace T hT) (n : ℕ) :
     g ∈ fixedSpace (T^[n]) (hT.iterate n) := by
+  change (Lp.compMeasurePreservingₗᵢ 𝕜 (T^[n]) (hT.iterate n)) g = g
   rw [mem_fixedSpace_iff, ← Lp.compMeasurePreserving_iterate]
   exact IsFixedPt.iterate (mem_fixedSpace_iff hT g |>.mp hg) n
 
