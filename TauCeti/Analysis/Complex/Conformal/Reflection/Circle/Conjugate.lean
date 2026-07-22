@@ -87,12 +87,11 @@ private lemma differentiableOn_circleReflectionCoord {c : ℂ} {r : ℝ} {S : Se
 /-- Conjugating a holomorphic map by source and target circle reflections is holomorphic away
 from the inversion centres.
 
-Both circle radii are assumed nonzero. The set `S` is mapped into the original holomorphy domain
-`Ω` by source reflection. The first nonincidence hypothesis removes the pole of the source
-inversion; the second removes the pole of the target inversion. -/
+The set `S` is mapped into the original holomorphy domain `Ω` by source reflection. The first
+nonincidence hypothesis removes the pole of the source inversion; the second removes the pole of
+the target inversion. Zero radii are supported. -/
 theorem differentiableOn_circleReflectionConjugate {c : ℂ} {r : ℝ} {d : ℂ} {s : ℝ}
-    {f : ℂ → ℂ} {Ω S : Set ℂ} (_ : r ≠ 0) (_ : s ≠ 0)
-    (hf : DifferentiableOn ℂ f Ω)
+    {f : ℂ → ℂ} {Ω S : Set ℂ} (hf : DifferentiableOn ℂ f Ω)
     (hmap : MapsTo (inversion c r) S Ω) (hc : c ∉ S)
     (hd : ∀ z ∈ S, f (inversion c r z) ≠ d) :
     DifferentiableOn ℂ (circleReflectionConjugate c r d s f) S := by
