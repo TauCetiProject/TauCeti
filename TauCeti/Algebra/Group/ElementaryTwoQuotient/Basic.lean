@@ -48,6 +48,10 @@ names around it. The cardinality identity is still expressed through the squarin
   universal property for maps out of `G/G²`, inherited from `ModN.liftEquiv`.
 * `TauCeti.elementaryTwoQuotientMap` and `TauCeti.elementaryTwoQuotientCongr`: transport along
   homomorphisms and equivalences of commutative groups.
+* `TauCeti.elementaryTwoQuotientMap_apply_eq_self_of_isSquare_div`,
+  `TauCeti.elementaryTwoQuotientMap_apply_eq_self_of_apply_eq_inv`, and
+  `TauCeti.elementaryTwoQuotientCongr_apply_eq_self_of_apply_eq_inv`: inversion acts trivially on
+  the elementary-2 quotient.
 * `TauCeti.elementaryTwoQuotientEquivSquareQuotient`: the equivalence between Mathlib's `ModN`
   model and the quotient by the additive form of `G²`.
 * `TauCeti.card_elementaryTwoQuotient_eq_index_square`: the quotient cardinality as the index of
@@ -178,6 +182,14 @@ theorem elementaryTwoQuotientMk_eq_iff (g h : G) :
     elementaryTwoQuotientMk g = elementaryTwoQuotientMk h ↔ IsSquare (g / h) := by
   rw [← elementaryTwoQuotientMk_eq_zero_iff, elementaryTwoQuotientMk_div, sub_eq_zero]
 
+/-- Negation is the identity on the elementary-2 quotient. Equivalently, every square class has
+additive order at most two. -/
+@[simp] theorem elementaryTwoQuotient_neg_eq_self (x : ElementaryTwoQuotient G) : -x = x := by
+  rw [neg_eq_iff_add_eq_zero, ← two_smul ℕ,
+    ← Nat.cast_smul_eq_nsmul (R := ZMod 2)]
+  have htwo : ((2 : ℕ) : ZMod 2) = 0 := ZMod.natCast_self 2
+  rw [htwo, zero_smul]
+
 variable {H : Type*} [CommGroup H]
 
 /-- A homomorphism of commutative groups induces a `ZMod 2`-linear map on maximal elementary-2
@@ -215,6 +227,26 @@ noncomputable def elementaryTwoQuotientMap (f : G →* H) :
     elementaryTwoQuotientMap (MonoidHom.id G) x = x := by
   obtain ⟨g, rfl⟩ := elementaryTwoQuotientMk_surjective (G := G) x
   simp
+
+/-- A group endomorphism induces the identity on the maximal elementary-2 quotient if it sends
+each element to the same square class. -/
+theorem elementaryTwoQuotientMap_apply_eq_self_of_isSquare_div (f : G →* G)
+    (hf : ∀ g, IsSquare (f g / g)) (x : ElementaryTwoQuotient G) :
+    elementaryTwoQuotientMap f x = x := by
+  obtain ⟨g, rfl⟩ := elementaryTwoQuotientMk_surjective (G := G) x
+  rw [elementaryTwoQuotientMap_mk]
+  exact (elementaryTwoQuotientMk_eq_iff _ _).2 (hf g)
+
+/-- A group endomorphism that acts pointwise by inversion induces the identity on the maximal
+elementary-2 quotient. This is the abstract step used when quadratic conjugation acts on an ideal
+class group by inversion. -/
+theorem elementaryTwoQuotientMap_apply_eq_self_of_apply_eq_inv (f : G →* G)
+    (hf : ∀ g, f g = g⁻¹) (x : ElementaryTwoQuotient G) :
+    elementaryTwoQuotientMap f x = x := by
+  apply elementaryTwoQuotientMap_apply_eq_self_of_isSquare_div f _ x
+  intro g
+  refine ⟨g⁻¹, ?_⟩
+  rw [hf, div_eq_mul_inv]
 
 variable {K : Type*} [CommGroup K]
 
@@ -261,6 +293,14 @@ noncomputable def elementaryTwoQuotientCongr (e : G ≃* H) :
     elementaryTwoQuotientCongr (e.trans e') x =
       elementaryTwoQuotientCongr e' (elementaryTwoQuotientCongr e x) :=
   elementaryTwoQuotientMap_comp_apply e.toMonoidHom e'.toMonoidHom x
+
+/-- A multiplicative automorphism that acts pointwise by inversion induces the identity on the
+maximal elementary-2 quotient. In genus theory this applies to the action of quadratic
+conjugation on `Cl(K)/Cl(K)²`. -/
+theorem elementaryTwoQuotientCongr_apply_eq_self_of_apply_eq_inv (e : G ≃* G)
+    (he : ∀ g, e g = g⁻¹) (x : ElementaryTwoQuotient G) :
+    elementaryTwoQuotientCongr e x = x :=
+  elementaryTwoQuotientMap_apply_eq_self_of_apply_eq_inv e.toMonoidHom he x
 
 variable (G)
 
