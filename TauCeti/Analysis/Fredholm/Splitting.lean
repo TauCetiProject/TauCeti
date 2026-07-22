@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.Fredholm.Basic
-public import Mathlib.Analysis.LocallyConvex.HahnBanach
+import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import Mathlib.Analysis.Normed.Module.Complemented
 
 /-!
@@ -70,10 +70,12 @@ theorem closedComplemented_range (hT : _root_.TauCeti.IsFredholm T) :
   exact Submodule.ClosedComplemented.of_finiteDimensional_quotient
     (_root_.TauCeti.IsFredholm.isClosed_range hT)
 
+omit [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
 /-- A chosen closed complement to the kernel of a Fredholm operator. -/
 noncomputable def kerComplement : Submodule 𝕜 E :=
   hT.closedComplemented_ker.complement
 
+omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] [CompleteSpace F] in
 /-- A chosen finite-dimensional complement to the range of a Fredholm operator. It represents
 the cokernel inside the codomain. -/
 noncomputable def cokerComplement : Submodule 𝕜 F :=
@@ -101,6 +103,7 @@ omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] [CompleteSpace F] in
 theorem isClosed_cokerComplement : IsClosed (hT.cokerComplement : Set F) :=
   hT.closedComplemented_range.isClosed_complement
 
+omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] [CompleteSpace F] in
 /-- The codomain is continuously linearly equivalent to the product of the range and a chosen
 cokernel representative. -/
 noncomputable def rangeProdCokerComplementEquiv :
@@ -124,6 +127,7 @@ theorem rangeProdCokerComplementEquiv_symm_apply (x : F) :
         hT.isTopCompl_range_cokerComplement.symm x) :=
   Submodule.prodEquivOfIsTopCompl_symm_apply hT.isTopCompl_range_cokerComplement x
 
+omit [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
 /-- The domain is continuously linearly equivalent to the product of the kernel and a chosen
 kernel complement. -/
 noncomputable def kerProdComplementEquiv :
@@ -167,8 +171,9 @@ theorem kerComplementEquivRange_apply (x : hT.kerComplement) :
   letI : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] F)) :=
     (_root_.TauCeti.IsFredholm.isClosed_range hT).completeSpace_coe
   rw [kerComplementEquivRange, LinearEquiv.coeFn_toContinuousLinearEquivOfContinuous]
-  rfl
+  exact LinearMap.kerComplementEquivRange_apply_coe _ _ x
 
+omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] [CompleteSpace F] in
 /-- The cokernel of a Fredholm operator is continuously linearly equivalent to its chosen
 complement in the codomain. -/
 noncomputable def cokerEquivComplement :
@@ -189,6 +194,7 @@ theorem cokerEquivComplement_apply_mk (x : F) :
         hT.isTopCompl_range_cokerComplement.isCompl.symm x :=
   Submodule.quotientEquivOfIsTopCompl_apply_mk hT.isTopCompl_range_cokerComplement x
 
+omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] [CompleteSpace F] in
 noncomputable instance finiteDimensional_cokerComplement :
     FiniteDimensional 𝕜 hT.cokerComplement := by
   letI := _root_.TauCeti.IsFredholm.finiteDimensional_coker hT
