@@ -120,31 +120,39 @@ variable {ι : Type*}
 
 /-- The **dimension** of an abstract simplicial complex, defined through its underlying precomplex.
 -/
-@[expose]
 noncomputable def dimension (K : AbstractSimplicialComplex ι) : WithBot ℕ∞ :=
   PreAbstractSimplicialComplex.dimension K.toPreAbstractSimplicialComplex
+
+private theorem dimension_toPreAbstractSimplicialComplex_private
+    (K : AbstractSimplicialComplex ι) :
+    PreAbstractSimplicialComplex.dimension K.toPreAbstractSimplicialComplex = dimension K :=
+  rfl
 
 /-- The dimension of an abstract complex agrees with the dimension of its underlying precomplex. -/
 @[simp]
 theorem dimension_toPreAbstractSimplicialComplex (K : AbstractSimplicialComplex ι) :
     PreAbstractSimplicialComplex.dimension K.toPreAbstractSimplicialComplex = dimension K :=
-  rfl
+  dimension_toPreAbstractSimplicialComplex_private K
 
 variable {K L : AbstractSimplicialComplex ι} {σ : Finset ι}
 
 /-- The dimension of any face bounds the dimension of the complex. -/
 theorem le_dimension (hσ : σ ∈ K) : ((σ.card - 1 : ℕ) : WithBot ℕ∞) ≤ dimension K :=
-  PreAbstractSimplicialComplex.le_dimension hσ
+  PreAbstractSimplicialComplex.le_dimension (mem_toPreAbstractSimplicialComplex.mpr hσ)
 
 /-- The dimension of an abstract complex is bounded by `n` exactly when every face's dimension is.
 -/
 theorem dimension_le_iff {n : WithBot ℕ∞} :
     dimension K ≤ n ↔ ∀ σ ∈ K, ((σ.card - 1 : ℕ) : WithBot ℕ∞) ≤ n :=
-  PreAbstractSimplicialComplex.dimension_le_iff
+  by
+    simp only [← mem_toPreAbstractSimplicialComplex]
+    exact PreAbstractSimplicialComplex.dimension_le_iff
 
 /-- Dimension is monotone in the abstract complex. -/
 theorem dimension_mono (h : K ≤ L) : dimension K ≤ dimension L :=
-  PreAbstractSimplicialComplex.dimension_mono h
+  PreAbstractSimplicialComplex.dimension_mono
+    ((_root_.AbstractSimplicialComplex.toPreAbstractSimplicialComplex_le_iff
+      (K := K) (L := L)).mpr h)
 
 end AbstractSimplicialComplex
 
