@@ -65,8 +65,11 @@ theorem coe_circleReflectionHomeomorph_apply (c : ℂ) (r : ℝ) (hr : r ≠ 0)
 @[simp]
 theorem circleReflectionHomeomorph_symm (c : ℂ) (r : ℝ) (hr : r ≠ 0) :
     (circleReflectionHomeomorph c r hr).symm = circleReflectionHomeomorph c r hr := by
-  ext z
-  rfl
+  apply Homeomorph.ext
+  intro z
+  apply (circleReflectionHomeomorph c r hr).injective
+  rw [(circleReflectionHomeomorph c r hr).apply_symm_apply]
+  exact Subtype.ext (inversion_inversion c hr z).symm
 
 /-- Inversion in a positive-radius circle sends a point into its open ball exactly when the
 original point is in the exterior of its closed ball. -/
