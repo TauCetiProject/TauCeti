@@ -46,7 +46,16 @@ private theorem tendsto_exp_neg_smul_realOperator_atTop (S : StronglyContinuousS
       (M * ‖(x : X)‖) * Real.exp (-((lambda - omega) * t)))
     (Filter.Eventually.of_forall fun _ => norm_nonneg _) ?_ ?_
   · filter_upwards [Filter.eventually_gt_atTop (0 : ℝ)] with t ht
-    simpa only [neg_mul] using S.norm_resolvent_integrand_le hb lambda (x : X) ht
+    rw [norm_smul, Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+    calc Real.exp (-(lambda * t)) * ‖S.realOperator t (x : X)‖
+        ≤ Real.exp (-(lambda * t)) * (M * Real.exp (omega * t) * ‖(x : X)‖) := by
+          gcongr
+          exact le_trans (ContinuousLinearMap.le_opNorm _ _)
+            (by gcongr; exact hb.bound t ht.le)
+      _ = M * ‖(x : X)‖ * Real.exp (-((lambda - omega) * t)) := by
+          rw [show -((lambda - omega) * t) = -(lambda * t) + omega * t by ring,
+            Real.exp_add]
+          ring
   · have hrate : Filter.Tendsto (fun t : ℝ => (lambda - omega) * t)
         Filter.atTop Filter.atTop :=
       Filter.tendsto_id.const_mul_atTop (sub_pos.mpr hlambda)
