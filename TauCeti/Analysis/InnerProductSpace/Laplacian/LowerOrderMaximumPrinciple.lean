@@ -83,56 +83,14 @@ theorem le_of_mul_le_laplacian_add_fderiv_le_frontier {K : Set E} (hK : IsCompac
       have hLgnonpos : Δ g z + fderiv ℝ g z (b z) ≤ 0 := by
         rw [hloc.fderiv_eq_zero]
         simpa using laplacian_nonpos_of_isLocalMax hgcd hloc
-      have hαpos : 0 < α := by
-        have hβ0 : 0 ≤ β := (norm_nonneg (b z)).trans (hb hzint)
-        dsimp [α]
-        linarith
-      have hinner : -β ≤ ⟪u, b z⟫ := by
-        have h := (abs_le.mp (abs_real_inner_le_norm u (b z))).1
-        rw [hu, one_mul] at h
-        exact (neg_le_neg (hb hzint)).trans h
       have hLwpos : 0 < Δ w z + fderiv ℝ w z (b z) := by
-        have hwlap : Δ w z = α ^ 2 * ‖u‖ ^ 2 * Real.exp (α * ⟪u, z⟫) := by
-          simp only [w]
-          exact laplacian_exp_inner α u z
-        have hwderiv : fderiv ℝ w z (b z) =
-            Real.exp (α * ⟪u, z⟫) * (α * ⟪u, b z⟫) := by
-          simp only [w]
-          exact fderiv_exp_inner_apply α u z (b z)
-        have hLw : Δ w z + fderiv ℝ w z (b z) =
-            α * (α + ⟪u, b z⟫) * Real.exp (α * ⟪u, z⟫) := by
-          rw [hwlap, hwderiv, hu]
-          ring
-        rw [hLw]
-        have : 0 < α + ⟪u, b z⟫ := by
-          dsimp [α]
-          linarith
-        positivity
+        simpa only [w, α] using
+          laplacian_add_fderiv_exp_inner_pos_of_norm_le hu (hb hzint) z
       have hLg : Δ g z + fderiv ℝ g z (b z) =
           (Δ f z + fderiv ℝ f z (b z)) +
             ε * (Δ w z + fderiv ℝ w z (b z)) := by
-        have hfd : DifferentiableAt ℝ f z := (hcd hzint).differentiableAt (by norm_num)
-        have hwd : DifferentiableAt ℝ w z := hwcd.differentiable (by norm_num) z
-        have hΔ : Δ g z = Δ f z + ε * Δ w z := by
-          have hg : g = fun y => f y + ε • w y := by simp only [g]
-          have hadd : Δ (fun y => f y + ε • w y) z =
-              Δ f z + Δ (fun y => ε • w y) z :=
-            (hcd hzint).laplacian_add (hwcd.contDiffAt.const_smul ε)
-          have hsmul : Δ (fun y => ε • w y) z = ε • Δ w z :=
-            laplacian_smul ε hwcd.contDiffAt
-          rw [hg, hadd, hsmul, smul_eq_mul]
-        have hderiv : fderiv ℝ g z (b z) =
-            fderiv ℝ f z (b z) + ε * fderiv ℝ w z (b z) := by
-          have hg : g = fun y => f y + ε • w y := by simp only [g]
-          have hadd : fderiv ℝ (fun y => f y + ε • w y) z =
-              fderiv ℝ f z + fderiv ℝ (fun y => ε • w y) z :=
-            fderiv_add hfd (hwd.const_smul ε)
-          have hsmul : fderiv ℝ (fun y => ε • w y) z = ε • fderiv ℝ w z :=
-            fderiv_const_smul hwd ε
-          rw [hg, hadd, hsmul]
-          simp only [add_apply, smul_apply, smul_eq_mul]
-        rw [hΔ, hderiv]
-        ring
+        simpa only [g] using laplacian_add_fderiv_add_const_smul f w (b z) ε z
+          (hcd hzint) hwcd.contDiffAt
       have hLf0 : 0 ≤ Δ f z + fderiv ℝ f z (b z) :=
         (mul_nonneg (hc hzint) hfz0).trans (hsub hzint)
       rw [hLg] at hLgnonpos
