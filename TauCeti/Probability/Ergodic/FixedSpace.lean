@@ -28,13 +28,11 @@ variable {p : ℝ≥0∞} {μ : Measure Ω}
 @[simp]
 theorem mem_fixedSubmodule_iff_comp_ae_eq_self {T : Ω → Ω}
     (hT : MeasurePreserving T μ μ) (g : Lp E p μ) :
-    g ∈ (Lp.compMeasurePreservingₗ 𝕜 T hT).fixedSubmodule ↔
+    Lp.compMeasurePreserving T hT g = g ↔
       (g : Ω → E) ∘ T =ᵐ[μ] g := by
-  rw [LinearMap.mem_fixedSubmodule_iff]
   constructor
   · intro hg
-    have hcomp : Lp.compMeasurePreserving T hT g = g := hg
-    simpa only [hcomp] using (Lp.coeFn_compMeasurePreserving g hT).symm
+    simpa only [hg] using (Lp.coeFn_compMeasurePreserving g hT).symm
   · intro hg
     apply Lp.ext
     exact (Lp.coeFn_compMeasurePreserving g hT).trans hg
