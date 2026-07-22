@@ -32,6 +32,7 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 multiplicativity law enjoyed by deterministic Koopman operators.  Positivity is stated separately
 because it depends on the order of the chosen codomain. -/
 structure DeterministicMarkovOperator (Ω : Type*) [MeasurableSpace Ω] (μ : Measure Ω) where
+  /-- The underlying additive operator on measurable-function germs. -/
   toAddMonoidHom : (Ω →ₘ[μ] ℝ) →+ (Ω →ₘ[μ] ℝ)
   map_one' : toAddMonoidHom 1 = 1
   map_mul' : ∀ g h, toAddMonoidHom (g * h) = toAddMonoidHom g * toAddMonoidHom h
