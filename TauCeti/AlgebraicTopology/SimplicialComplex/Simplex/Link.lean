@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 This file computes the closed star, link, and deletion constructions on the standard abstract
 simplex and its boundary.  These formulas are the standard-model calculations used by the
 recursive link condition for combinatorial manifolds in layer 11 of the geometric-topology
-roadmap.  In particular, the link of a face in a simplex is the simplex on the complementary
+roadmap.  In particular, the link of a subset in a simplex is the simplex on the complementary
 vertices, while the link in the boundary is the boundary of that complementary simplex.
 
 The constructions use `PreAbstractSimplicialComplex`, since taking a link changes the vertices
@@ -22,10 +22,10 @@ Chapter 2.
 
 ## Main results
 
-* `closedStar_simplex`: the closed star of a simplex face is the whole simplex.
-* `link_simplex`: the link of a simplex face is the simplex on its complementary vertices.
-* `deletion_simplex_self`: deleting the top face leaves the simplex boundary.
-* `link_simplexBoundary`: the link of a boundary face is the boundary on its complementary
+* `closedStar_simplex`: the closed star of a subset is the whole simplex.
+* `link_simplex`: the link of a subset is the simplex on its complementary vertices.
+* `deletion_simplex_self`: deleting the full vertex set leaves the simplex boundary.
+* `link_simplexBoundary`: the link of a subset is the boundary on its complementary
   vertices.
 -/
 
@@ -67,20 +67,21 @@ theorem link_simplex (hσ : σ ⊆ V) : link (simplex V) σ = simplex (V \ σ) :
     exact ⟨hρ, hdis, (hρ.mono subset_union_left), union_subset hρV' hσ⟩
 
 omit [DecidableEq ι] in
-/-- Deleting the top face from a simplex leaves exactly its boundary. -/
+/-- Deleting the full vertex set from a simplex leaves exactly its boundary. -/
 @[simp]
 theorem deletion_simplex_self : deletion (simplex V) V = simplexBoundary V := by
   apply SetLike.ext
   intro ρ
-  rw [mem_deletion, mem_simplex, mem_simplexBoundary]
+  rw [mem_deletion, mem_simplexBoundary_iff_mem_simplex_ne]
   constructor
-  · rintro ⟨⟨hρ, hρV⟩, hVρ⟩
-    exact ⟨hρ, Finset.ssubset_iff_subset_ne.mpr ⟨hρV, fun h => hVρ h.symm.subset⟩⟩
+  · rintro ⟨hρ, hVρ⟩
+    exact ⟨hρ, fun hρV => hVρ hρV.symm.subset⟩
   · rintro ⟨hρ, hρV⟩
-    exact ⟨⟨hρ, hρV.subset⟩, fun hVρ => hρV.not_subset hVρ⟩
+    exact ⟨hρ, fun hVρ => hρV (Subset.antisymm (mem_simplex.mp hρ).2 hVρ)⟩
 
 /-- A set `ρ` lies in the closed star of `σ` in the boundary of the simplex on `V` exactly when
 `ρ` is nonempty and `ρ ∪ σ` is a proper subset of `V`. -/
+@[simp]
 theorem mem_closedStar_simplexBoundary {ρ : Finset ι} :
     ρ ∈ closedStar (simplexBoundary V) σ ↔ ρ.Nonempty ∧ ρ ∪ σ ⊂ V := by
   rw [mem_closedStar, mem_simplexBoundary]
@@ -112,7 +113,7 @@ theorem link_simplexBoundary (hσ : σ ⊆ V) :
     apply hρdiff.ne
     rw [← hρσeq, union_sdiff_cancel_right hdis]
 
-/-- The link of the top face in its simplex is empty.  (`simp` also proves this via
+/-- The link of the full vertex set in its simplex is empty.  (`simp` also proves this via
 `link_simplex`; the named form is kept for convenience.) -/
 theorem link_simplex_self : link (simplex V) V = ⊥ := by
   rw [link_simplex Subset.rfl, sdiff_self, bot_eq_empty]
