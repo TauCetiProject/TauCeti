@@ -31,12 +31,6 @@ transformation. -/
 def fixedSpace (T : Ω → Ω) (hT : MeasurePreserving T μ μ) : Submodule 𝕜 (Lp E p μ) :=
   (Lp.compMeasurePreservingₗ 𝕜 T hT).fixedSubmodule
 
-/-- The fixed space is the fixed submodule of the composition operator. -/
-theorem fixedSpace_def (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
-    fixedSpace (𝕜 := 𝕜) (E := E) (p := p) T hT =
-      (Lp.compMeasurePreservingₗ 𝕜 T hT).fixedSubmodule := by
-  rw [fixedSpace]
-
 private theorem compMeasurePreservingₗ_apply (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
     (g : Lp E p μ) :
     Lp.compMeasurePreservingₗ 𝕜 T hT g = Lp.compMeasurePreserving T hT g := by
@@ -47,7 +41,7 @@ private theorem compMeasurePreservingₗ_apply (T : Ω → Ω) (hT : MeasurePres
 @[simp]
 theorem mem_fixedSpace_iff {T : Ω → Ω} (hT : MeasurePreserving T μ μ) (g : Lp E p μ) :
     g ∈ fixedSpace (𝕜 := 𝕜) T hT ↔ Lp.compMeasurePreserving T hT g = g := by
-  rw [fixedSpace_def, LinearMap.mem_fixedSubmodule_iff]
+  rw [fixedSpace, LinearMap.mem_fixedSubmodule_iff]
   rw [compMeasurePreservingₗ_apply]
 
 /-- Characterization of fixed points of the `Lᵖ` composition isometry using representatives. -/
@@ -91,31 +85,25 @@ variable {Ω 𝕜 E : Type*} [MeasurableSpace Ω] [NormedRing 𝕜]
   [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {μ : Measure Ω}
 
-private theorem compMeasurePreservingₗᵢ_eq_one_iff
+private theorem compMeasurePreservingₗᵢ_toLinearMap_apply
     (T : Ω → Ω) (hT : MeasurePreserving T μ μ) (g : Lp E p μ) :
     (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap.toLinearMap g =
-        (1 : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap g ↔
-      Lp.compMeasurePreserving T hT g = g := by
-  rw [show
-    (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap.toLinearMap g =
-        Lp.compMeasurePreserving T hT g by
-      rw [show
-        (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap.toLinearMap g =
-            Lp.compMeasurePreservingₗᵢ 𝕜 T hT g from
-          (congrFun (LinearMap.coe_coe
-            (f := (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap)) g).trans
-            (congrFun (LinearIsometry.coe_toContinuousLinearMap _) g)]
-      exact compMeasurePreservingₗ_apply T hT g]
-  rw [show (1 : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap g = g from
-    (congrFun (LinearMap.coe_coe (f := (1 : Lp E p μ →L[𝕜] Lp E p μ))) g).trans
-      (one_apply_eq_self g)]
+      Lp.compMeasurePreserving T hT g := by
+  change Lp.compMeasurePreservingₗᵢ 𝕜 T hT g = Lp.compMeasurePreserving T hT g
+  rw [show Lp.compMeasurePreservingₗᵢ 𝕜 T hT g =
+      Lp.compMeasurePreservingₗ 𝕜 T hT g from
+    congrFun (LinearIsometry.coe_toLinearMap _) g]
+  exact compMeasurePreservingₗ_apply T hT g
 
 private theorem fixedSpace_eq_eqLocus (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
     fixedSpace (𝕜 := 𝕜) (E := E) (p := p) T hT =
       (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap.toLinearMap.eqLocus
         (1 : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap := by
   ext g
-  rw [mem_fixedSpace_iff, LinearMap.mem_eqLocus, compMeasurePreservingₗᵢ_eq_one_iff]
+  rw [mem_fixedSpace_iff, LinearMap.mem_eqLocus, compMeasurePreservingₗᵢ_toLinearMap_apply]
+  rw [show (1 : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap g = g from
+    congrFun (LinearMap.coe_coe (f := (1 : Lp E p μ →L[𝕜] Lp E p μ))) g |>.trans
+      (one_apply_eq_self g)]
 
 /-- The fixed space is closed in `Lᵖ`. -/
 theorem isClosed_fixedSpace (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
@@ -124,7 +112,7 @@ theorem isClosed_fixedSpace (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
   exact (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap.isClosed_eqLocus
     (1 : Lp E p μ →L[𝕜] Lp E p μ)
 
-variable [CompleteSpace E]
+variable [CompleteSpace (Lp E p μ)]
 
 instance fixedSpace.completeSpace (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
     CompleteSpace (fixedSpace (𝕜 := 𝕜) (E := E) (p := p) T hT) := by
