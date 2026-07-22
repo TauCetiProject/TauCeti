@@ -40,9 +40,12 @@ PR). They are created on first use, so setup needs no manual label creation.
 transient overlay on the `awaiting-review` slot. `labels.py` preserves it while
 the derived state is still `awaiting-review`, and clears it on any real
 transition: a new commit (→ `awaiting-CI`), a posted scoreboard (→
-`awaiting-author` / `ready-to-merge`), or a merge (→ no label). So even if the
-worker crashes mid-review and never clears its own label, the next status event
-converges the PR back to a single label.
+`awaiting-author` / `ready-to-merge`), or a merge (→ no label). Because the CI
+never derives this label, a worker that crashes mid-review is *not* self-healed
+by reconciliation: while the PR sits in `awaiting-review` the stale overlay
+persists until one of those transitions clears it. Clearing it promptly is the
+worker's own responsibility; `labels.py` only guarantees the single-label
+invariant.
 
 [`pr-labels.yml`](../../.github/workflows/pr-labels.yml) drives it on the same
 signals the Zulip mirror uses: `pull_request_target`

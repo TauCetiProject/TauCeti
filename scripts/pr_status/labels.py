@@ -24,8 +24,14 @@ transient overlay on the `awaiting-review` slot. This sink treats it accordingly
     the slot conceptually, but we don't clobber the worker's finer signal); and
   * any *real* transition clears it -- a new commit moves the PR to `awaiting-CI`,
     a posted scoreboard moves it to `awaiting-author`/`ready-to-merge`, a merge
-    strips all labels. So even if the worker crashes mid-review and never clears
-    its own label, the next status event converges the PR back to one label.
+    strips all labels.
+
+This sink never *derives* `review-in-progress`, so it cannot on its own detect a
+worker that crashed mid-review: while the PR genuinely sits in `awaiting-review`
+the overlay is preserved, and a stale `review-in-progress` therefore persists
+until one of those transitions moves the derived slot. Clearing the overlay
+promptly on a crash is the worker's responsibility; this sink only guarantees the
+"exactly one status label" invariant, not the freshness of the worker's overlay.
 
 A terminal PR (merged or closed) carries no status label: reconcile removes all
 five.
