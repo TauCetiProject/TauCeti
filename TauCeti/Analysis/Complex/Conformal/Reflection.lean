@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
-public import TauCeti.Analysis.Complex.Conformal.Reflection.Circle
+public import TauCeti.Analysis.Complex.Conformal.Reflection.Circle.Conjugate
 
 /-!
 # Schwarz reflection

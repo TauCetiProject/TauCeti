@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
-public import TauCeti.Analysis.Complex.Conformal.Reflection.Circle
+public import TauCeti.Analysis.Complex.Conformal.Reflection.Circle.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
 
 /-!
@@ -21,7 +21,7 @@ The main result, `differentiableOn_circleReflectionConjugate`, proves this holom
 an arbitrary set. The proof reduces circle inversion to conjugation followed by a holomorphic
 fractional-linear coordinate, then uses the conjugation-composition lemma from
 `Reflection/Basic.lean`. The accompanying involution theorem records that applying the operation
-again with source and target interchanged recovers the original map when both radii are nonzero.
+again recovers the original map when both radii are nonzero.
 
 This is a prerequisite for the circle case of layer L4 in the conformal-mapping roadmap: Schwarz
 reflection "across an analytic arc / circle by Möbius reduction". The construction follows the
@@ -47,12 +47,13 @@ noncomputable def circleReflectionConjugate (c : ℂ) (r : ℝ) (d : ℂ) (s : �
   inversion d s (f (inversion c r z))
 
 /-- The circle-reflection conjugate is the composite of the two inversions and the map. -/
+@[simp]
 lemma circleReflectionConjugate_apply (c : ℂ) (r : ℝ) (d : ℂ) (s : ℝ)
     (f : ℂ → ℂ) (z : ℂ) :
     circleReflectionConjugate c r d s f z = inversion d s (f (inversion c r z)) :=
   (rfl)
 
-/-- Conjugating twice, with source and target circles interchanged, recovers the original map. -/
+/-- Applying the same circle-reflection conjugation twice recovers the original map. -/
 @[simp]
 theorem circleReflectionConjugate_circleReflectionConjugate (c : ℂ) {r : ℝ} (d : ℂ)
     {s : ℝ} (hr : r ≠ 0) (hs : s ≠ 0) (f : ℂ → ℂ) :
@@ -86,11 +87,12 @@ private lemma differentiableOn_circleReflectionCoord {c : ℂ} {r : ℝ} {S : Se
 /-- Conjugating a holomorphic map by source and target circle reflections is holomorphic away
 from the inversion centres.
 
-The set `S` is mapped into the original holomorphy domain `Ω` by source reflection. The first
-nonincidence hypothesis removes the pole of the source inversion; the second removes the pole of
-the target inversion. -/
+Both circle radii are assumed nonzero. The set `S` is mapped into the original holomorphy domain
+`Ω` by source reflection. The first nonincidence hypothesis removes the pole of the source
+inversion; the second removes the pole of the target inversion. -/
 theorem differentiableOn_circleReflectionConjugate {c : ℂ} {r : ℝ} {d : ℂ} {s : ℝ}
-    {f : ℂ → ℂ} {Ω S : Set ℂ} (hf : DifferentiableOn ℂ f Ω)
+    {f : ℂ → ℂ} {Ω S : Set ℂ} (_ : r ≠ 0) (_ : s ≠ 0)
+    (hf : DifferentiableOn ℂ f Ω)
     (hmap : MapsTo (inversion c r) S Ω) (hc : c ∉ S)
     (hd : ∀ z ∈ S, f (inversion c r z) ≠ d) :
     DifferentiableOn ℂ (circleReflectionConjugate c r d s f) S := by
