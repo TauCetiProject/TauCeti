@@ -56,12 +56,6 @@ theorem compMeasurePreserving_eq_self_iff {T : Ω → Ω}
     apply Lp.ext
     exact (Lp.coeFn_compMeasurePreserving g hT).trans hg
 
-/-- Fixed-space membership characterized by almost-everywhere invariance of representatives. -/
-theorem mem_fixedSpace_iff_comp_ae_eq_self {T : Ω → Ω}
-    (hT : MeasurePreserving T μ μ) (g : Lp E p μ) :
-    g ∈ fixedSpace (𝕜 := 𝕜) T hT ↔ (g : Ω → E) ∘ T =ᵐ[μ] g := by
-  rw [mem_fixedSpace_iff, compMeasurePreserving_eq_self_iff]
-
 /-- The fixed space of the identity transformation is all of `Lᵖ`. -/
 @[simp]
 theorem fixedSpace_id :
@@ -89,11 +83,13 @@ private theorem compMeasurePreservingₗᵢ_toLinearMap_apply
     (T : Ω → Ω) (hT : MeasurePreserving T μ μ) (g : Lp E p μ) :
     (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap.toLinearMap g =
       Lp.compMeasurePreserving T hT g := by
-  change Lp.compMeasurePreservingₗᵢ 𝕜 T hT g = Lp.compMeasurePreserving T hT g
-  rw [show Lp.compMeasurePreservingₗᵢ 𝕜 T hT g =
-      Lp.compMeasurePreservingₗ 𝕜 T hT g from
-    congrFun (LinearIsometry.coe_toLinearMap _) g]
-  exact compMeasurePreservingₗ_apply T hT g
+  calc
+    _ = Lp.compMeasurePreservingₗᵢ 𝕜 T hT g :=
+      congrFun (LinearMap.coe_coe (f :=
+        (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap.toLinearMap)) g
+    _ = Lp.compMeasurePreservingₗ 𝕜 T hT g :=
+      congrFun (LinearIsometry.coe_toLinearMap _) g
+    _ = Lp.compMeasurePreserving T hT g := compMeasurePreservingₗ_apply T hT g
 
 private theorem fixedSpace_eq_eqLocus (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
     fixedSpace (𝕜 := 𝕜) (E := E) (p := p) T hT =
@@ -101,9 +97,12 @@ private theorem fixedSpace_eq_eqLocus (T : Ω → Ω) (hT : MeasurePreserving T 
         (1 : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap := by
   ext g
   rw [mem_fixedSpace_iff, LinearMap.mem_eqLocus, compMeasurePreservingₗᵢ_toLinearMap_apply]
-  rw [show (1 : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap g = g from
-    congrFun (LinearMap.coe_coe (f := (1 : Lp E p μ →L[𝕜] Lp E p μ))) g |>.trans
-      (one_apply_eq_self g)]
+  have h_one : (1 : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap g = g := by
+    calc
+      _ = (1 : Lp E p μ →L[𝕜] Lp E p μ) g := congrFun (LinearMap.coe_coe (f :=
+        (1 : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap)) g
+      _ = g := one_apply_eq_self g
+  rw [h_one]
 
 /-- The fixed space is closed in `Lᵖ`. -/
 theorem isClosed_fixedSpace (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
