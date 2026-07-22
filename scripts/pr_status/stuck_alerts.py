@@ -179,20 +179,10 @@ def gh_lines(path, jq, paginate=True):
     return [ln for ln in core.gh_api(path, jq=jq, paginate=paginate).splitlines() if ln.strip()]
 
 
-def newest_status(head, context):
-    """(state, updated_at) of the newest commit status for `context`, else (None, None).
-
-    per_page=100 so a burst of unrelated status events cannot push `build` /
-    `bump-guard` off the first page and hide it.
-    """
-    row = gh_obj(
-        f"/repos/{REPO}/commits/{head}/statuses?per_page=100",
-        jq=f'[.[] | select(.context == "{context}")] | sort_by(.updated_at)'
-           ' | last | {state: (.state // ""), updated_at: (.updated_at // "")}',
-    )
-    if not row or not row.get("state"):
-        return None, None
-    return row["state"], row.get("updated_at") or None
+# (state, updated_at) of the newest commit status for a context, shared with the
+# `core` derivation (per_page=100 there so a status burst cannot hide `build` /
+# `bump-guard`); alias so this module's detectors read as before.
+newest_status = core.newest_status
 
 
 # ----- detectors --------------------------------------------------------------

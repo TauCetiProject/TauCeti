@@ -93,12 +93,28 @@ def scoreboard_meta(pr):
         return {}
 
 
+def newest_status(head, context):
+    """(state, updated_at) of the newest commit status for `context`, else (None, None).
+
+    per_page=100 so a burst of unrelated status events cannot push the wanted
+    context (e.g. `build` / `bump-guard`) off the first page and hide it.
+    """
+    out = gh_api(
+        f"/repos/{REPO}/commits/{head}/statuses?per_page=100",
+        jq=f'[.[] | select(.context == "{context}")] | sort_by(.updated_at)'
+           ' | last | {state: (.state // ""), updated_at: (.updated_at // "")}',
+    ).strip()
+    if not out:
+        return None, None
+    row = json.loads(out.splitlines()[0])
+    if not row.get("state"):
+        return None, None
+    return row["state"], row.get("updated_at") or None
+
+
 def ci_status(head):
     """'running' | 'success' | 'failure' | None from the `build` commit status."""
-    state = gh_api(
-        f"/repos/{REPO}/commits/{head}/statuses",
-        jq='[.[] | select(.context == "build")] | sort_by(.updated_at) | last | .state // ""',
-    ).strip()
+    state, _ = newest_status(head, "build")
     if state == "pending":
         return "running"
     if state == "success":

@@ -18,7 +18,8 @@ disagree:
 | `core.derive` | `labels.py` (one label) | `zulip.py` (two reaction groups) |
 | --- | --- | --- |
 | lifecycle `merged` / `closed` | *(no label)* | `:merge:` / `:closed-pr:` |
-| ci `running` / not reported | `awaiting-CI` | 🟡 `yellow` |
+| ci `running` | `awaiting-CI` | 🟡 `yellow` |
+| ci not reported | `awaiting-CI` | *(no CI reaction)* |
 | ci `failure` | `awaiting-author` | 🔴 `red_circle` |
 | ci `success`, review `none`/`running` | `awaiting-review` | 🟢 + 👀/▶️ |
 | ci `success`, review `changes` | `awaiting-author` | 🟢 + ✍️ `writing` |
