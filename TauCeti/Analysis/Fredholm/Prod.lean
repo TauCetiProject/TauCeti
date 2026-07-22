@@ -21,8 +21,6 @@ cokernel of a product submodule and the product of the two cokernels.
 ## Main declarations
 
 * `TauCeti.IsFredholm.prodMap`: a product of Fredholm operators is Fredholm.
-* `TauCeti.ContinuousLinearMap.index_prodMap_of_finiteDimensional`: the index is additive under
-  products when the kernels and cokernels are finite-dimensional.
 * `TauCeti.ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
 -/
 
@@ -99,7 +97,7 @@ namespace ContinuousLinearMap
 
 /-- The index is additive under Cartesian products when both kernels and cokernels are finite
 dimensional. -/
-lemma index_prodMap_of_finiteDimensional (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
+private lemma index_prodMap_of_finiteDimensional (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
     [FiniteDimensional K (LinearMap.ker (T : E₁ →ₗ[K] F₁))]
     [FiniteDimensional K (LinearMap.ker (S : E₂ →ₗ[K] F₂))]
     [FiniteDimensional K (F₁ ⧸ LinearMap.range (T : E₁ →ₗ[K] F₁))]
