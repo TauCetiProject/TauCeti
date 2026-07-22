@@ -45,17 +45,8 @@ private theorem norm_inv_smul_lt_one (A : X →L[ℝ] X) {lambda : ℝ}
   rw [norm_smul, Real.norm_eq_abs, abs_inv]
   exact (inv_mul_lt_one₀ (lt_of_le_of_lt (norm_nonneg A) hlambda)).2 hlambda
 
-private theorem sub_mul_inv_smul_tsum_pow (A : X →L[ℝ] X) {lambda : ℝ}
-    (hlambda : ‖A‖ < |lambda|) :
-    lambda⁻¹ • ((lambda • 1 - A) * ∑' n : ℕ, (lambda⁻¹ • A) ^ n) = 1 := by
-  have hlambda_ne : lambda ≠ 0 := abs_pos.mp (lt_of_le_of_lt (norm_nonneg A) hlambda)
-  have hfactor : lambda • (1 - lambda⁻¹ • A) = lambda • 1 - A := by
-    simp only [smul_sub, smul_smul, mul_inv_cancel₀ hlambda_ne, one_smul]
-  rw [← Algebra.mul_smul_comm]
-  rw [← hfactor, smul_mul_smul, mul_inv_cancel₀ hlambda_ne, one_smul,
-    mul_neg_geom_series (lambda⁻¹ • A) (norm_inv_smul_lt_one A hlambda)]
-
-private theorem inv_smul_tsum_pow_mul_sub (A : X →L[ℝ] X) {lambda : ℝ}
+/-- The Neumann series for `λI - A` is a left inverse when `‖A‖ < |λ|`. -/
+theorem inv_smul_tsum_pow_mul_sub (A : X →L[ℝ] X) {lambda : ℝ}
     (hlambda : ‖A‖ < |lambda|) :
     lambda⁻¹ • ((∑' n : ℕ, (lambda⁻¹ • A) ^ n) * (lambda • 1 - A)) = 1 := by
   have hlambda_ne : lambda ≠ 0 := abs_pos.mp (lt_of_le_of_lt (norm_nonneg A) hlambda)
