@@ -73,11 +73,6 @@ namespace UniversalCover
 
 variable {x₀ x : X}
 
-/-- Two `mk` values with the same endpoint are equal iff their homotopy classes are equal. -/
-theorem mk_inj {x : X} {q₁ q₂ : Path.Homotopic.Quotient x₀ x} :
-    mk x q₁ = mk x q₂ ↔ q₁ = q₂ := by
-  simp [UniversalCover.mk.injEq]
-
 /-- The quotient map from based paths to endpoint/path-homotopy classes. -/
 @[expose] def ofBasedPath (x₀ : X) (α : BasedPath x₀) : UniversalCover x₀ :=
   mk (BasedPath.endpoint α) (Path.Homotopic.Quotient.mk α.toPath)
