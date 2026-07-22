@@ -16,10 +16,12 @@ one even value is a fundamental discriminant. This file supplies the **analysis*
 converse existence statement: every fundamental discriminant `D` is a product of a finite set of
 prime discriminants, at most one of which is even.
 
-This is the piece the genus-field layer needs to attach a *family* of prime discriminants to a
-quadratic field `ℚ(√d)`: with the family in hand, the square-class independence and degree
-theorems of `Multiquadratic/Prime/Discriminant/Independence.lean` present the genus field as a
-multiquadratic field of degree `2ᵗ`.
+This is a prerequisite for the genus-field layer, which attaches a *family* of prime discriminants
+to a quadratic field `ℚ(√d)`: the square-class independence and degree theorems of
+`Multiquadratic/Prime/Discriminant/Independence.lean` apply to such a family, giving a
+degree-`2ᵗ` multiquadratic compositum. Turning that compositum into the genus field — defining the
+genus field and identifying it with this compositum — is later work; this file only supplies the
+factorization the family comes from.
 
 The engine is `prod_oddPrimeDiscriminant_primeFactors_eq`: for an odd squarefree `x ≡ 1 (mod 4)`,
 the product of the odd prime discriminants `p*` over the prime factors `p` of `x` is `x` itself.
@@ -49,14 +51,6 @@ private lemma eq_of_natAbs_eq_of_mod_four_eq_one {x y : ℤ} (h : x.natAbs = y.n
   · exact h1
   · omega
 
-/-- Every prime factor of an odd natural number is odd. -/
-private lemma odd_of_mem_primeFactors_of_odd {n : ℕ} (hn : Odd n) {p : ℕ}
-    (hp : p ∈ n.primeFactors) : Odd p := by
-  rcases (Nat.prime_of_mem_primeFactors hp).eq_two_or_odd' with h2 | hodd
-  · exact absurd (h2 ▸ Nat.dvd_of_mem_primeFactors hp)
-      (Nat.two_dvd_ne_zero.mpr (Nat.odd_iff.mp hn))
-  · exact hodd
-
 /-- **The odd prime discriminants recover the odd `≡ 1 (mod 4)` part.** For an odd squarefree
 integer `x ≡ 1 (mod 4)`, the product of the odd prime discriminants `p*` over the prime factors
 `p` of `x` equals `x`. -/
@@ -74,7 +68,7 @@ private lemma prod_oddPrimeDiscriminant_primeFactors_eq {x : ℤ} (hsf : Squaref
       _ = x.natAbs := Nat.prod_primeFactors_of_squarefree hsfn
   have hmod4 : (∏ p ∈ x.natAbs.primeFactors, oddPrimeDiscriminant p) % 4 = 1 :=
     prod_oddPrimeDiscriminant_mod_four_eq_one
-      (fun p hp => odd_of_mem_primeFactors_of_odd hoddn hp)
+      (fun p hp => Odd.of_dvd_nat hoddn (Nat.dvd_of_mem_primeFactors hp))
   exact eq_of_natAbs_eq_of_mod_four_eq_one hnat hmod4 hmod
 
 /-- The image family `{p* : p ∣ n}` of odd prime discriminants over the prime factors of an odd
@@ -89,12 +83,34 @@ private lemma oddPrimeDiscriminant_image_prod {n : ℕ} (hn : Odd n) :
   · rw [Finset.mem_image] at hP
     obtain ⟨p, hp, rfl⟩ := hP
     have hpp := Nat.prime_of_mem_primeFactors hp
-    have hpo := odd_of_mem_primeFactors_of_odd hn hp
+    have hpo := Odd.of_dvd_nat hn (Nat.dvd_of_mem_primeFactors hp)
     exact ⟨isPrimeDiscriminant_oddPrimeDiscriminant hpp hpo,
       not_isEvenPrimeDiscriminant_oddPrimeDiscriminant hpo⟩
   · refine Finset.prod_image fun p _ q _ h => ?_
     have : (oddPrimeDiscriminant p).natAbs = (oddPrimeDiscriminant q).natAbs := by rw [h]
     simpa only [oddPrimeDiscriminant_natAbs] using this
+
+/-- Prepend one even prime discriminant `e` to the odd-prime-discriminant image family of an odd
+`n`, packaged as a finset of prime discriminants with `e` the unique even member and product `D`.
+This is the shared body of the three even-discriminant branches of the main theorem. -/
+private lemma exists_finset_insert_evenPrimeDiscriminant {D e : ℤ} {n : ℕ} (hn : Odd n)
+    (hePD : IsPrimeDiscriminant e) (heE : IsEvenPrimeDiscriminant e)
+    (hprod : e * ∏ p ∈ n.primeFactors, oddPrimeDiscriminant p = D) :
+    ∃ s : Finset ℤ, (∀ P ∈ s, IsPrimeDiscriminant P) ∧
+      (∀ P ∈ s, ∀ Q ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) ∧
+      ∏ P ∈ s, P = D := by
+  obtain ⟨himg, hprodimg⟩ := oddPrimeDiscriminant_image_prod hn
+  have hne : e ∉ n.primeFactors.image oddPrimeDiscriminant := fun hmem => (himg _ hmem).2 heE
+  refine ⟨insert e (n.primeFactors.image oddPrimeDiscriminant), ?_, ?_, ?_⟩
+  · intro P hP
+    rcases Finset.mem_insert.mp hP with rfl | hP
+    · exact hePD
+    · exact (himg P hP).1
+  · intro P hP Q hQ hPe hQe
+    have hPeq : P = e := (Finset.mem_insert.mp hP).resolve_right fun h => (himg P h).2 hPe
+    have hQeq : Q = e := (Finset.mem_insert.mp hQ).resolve_right fun h => (himg Q h).2 hQe
+    rw [hPeq, hQeq]
+  · rw [Finset.prod_insert hne, hprodimg]; exact hprod
 
 /-- **Analysis half of the prime-discriminant correspondence.** Every fundamental discriminant
 `D` is a product of a finite set of prime discriminants, at most one of which is even. This is the
@@ -117,68 +133,22 @@ theorem IsFundamentalDiscriminant.exists_finset_primeDiscriminant {D : ℤ}
       have hkodd : Odd k := Int.odd_iff.mpr (by omega)
       have hksf : Squarefree k := hsf.squarefree_of_dvd ⟨2, by omega⟩
       have hD8 : D = 8 * k := by omega
-      obtain ⟨himg, hprodimg⟩ := oddPrimeDiscriminant_image_prod (Int.natAbs_odd.mpr hkodd)
       rcases (by omega : k % 4 = 1 ∨ k % 4 = 3) with hk1 | hk3
-      · -- `k ≡ 1 (mod 4)`: even factor `8`; the odd product is `k`.
-        have hcore : ∏ p ∈ k.natAbs.primeFactors, oddPrimeDiscriminant p = k :=
-          prod_oddPrimeDiscriminant_primeFactors_eq hksf hkodd hk1
-        refine ⟨insert 8 (k.natAbs.primeFactors.image oddPrimeDiscriminant), ?_, ?_, ?_⟩
-        · intro P hP
-          rcases Finset.mem_insert.mp hP with rfl | hP
-          · exact isPrimeDiscriminant_eight
-          · exact (himg P hP).1
-        · intro P hP Q hQ hPe hQe
-          rcases Finset.mem_insert.mp hP with rfl | hP <;>
-            rcases Finset.mem_insert.mp hQ with rfl | hQ
-          · rfl
-          · exact absurd hQe (himg Q hQ).2
-          · exact absurd hPe (himg P hP).2
-          · exact absurd hPe (himg P hP).2
-        · have hne : (8 : ℤ) ∉ k.natAbs.primeFactors.image oddPrimeDiscriminant :=
-            fun hmem => (himg _ hmem).2 (by simp)
-          rw [Finset.prod_insert hne, hprodimg, hcore]; omega
-      · -- `k ≡ 3 (mod 4)`: even factor `-8`; the odd product is `-k`.
-        have hcore : ∏ p ∈ (-k).natAbs.primeFactors, oddPrimeDiscriminant p = -k :=
-          prod_oddPrimeDiscriminant_primeFactors_eq hksf.neg hkodd.neg (by omega)
-        have hnatabs : (-k).natAbs = k.natAbs := Int.natAbs_neg k
-        rw [hnatabs] at hcore
-        refine ⟨insert (-8) (k.natAbs.primeFactors.image oddPrimeDiscriminant), ?_, ?_, ?_⟩
-        · intro P hP
-          rcases Finset.mem_insert.mp hP with rfl | hP
-          · exact isPrimeDiscriminant_neg_eight
-          · exact (himg P hP).1
-        · intro P hP Q hQ hPe hQe
-          rcases Finset.mem_insert.mp hP with rfl | hP <;>
-            rcases Finset.mem_insert.mp hQ with rfl | hQ
-          · rfl
-          · exact absurd hQe (himg Q hQ).2
-          · exact absurd hPe (himg P hP).2
-          · exact absurd hPe (himg P hP).2
-        · have hne : (-8 : ℤ) ∉ k.natAbs.primeFactors.image oddPrimeDiscriminant :=
-            fun hmem => (himg _ hmem).2 (by simp)
-          rw [Finset.prod_insert hne, hprodimg, hcore]; omega
-    · -- `m ≡ 3 (mod 4)`, `m` odd: even factor `-4`; the odd product is `-m`.
+      · -- `k ≡ 1 (mod 4)`: even factor `8`, odd product `k`.
+        have hcore := prod_oddPrimeDiscriminant_primeFactors_eq hksf hkodd hk1
+        exact exists_finset_insert_evenPrimeDiscriminant (Int.natAbs_odd.mpr hkodd)
+          isPrimeDiscriminant_eight (by simp) (by rw [hcore]; omega)
+      · -- `k ≡ 3 (mod 4)`: even factor `-8`, odd product `-k`.
+        have hcore := prod_oddPrimeDiscriminant_primeFactors_eq hksf.neg hkodd.neg (by omega)
+        rw [Int.natAbs_neg] at hcore
+        exact exists_finset_insert_evenPrimeDiscriminant (Int.natAbs_odd.mpr hkodd)
+          isPrimeDiscriminant_neg_eight (by simp) (by rw [hcore]; omega)
+    · -- `m ≡ 3 (mod 4)`, `m` odd: even factor `-4`, odd product `-m`.
       have hmodd : Odd m := Int.odd_iff.mpr (by omega)
-      obtain ⟨himg, hprodimg⟩ := oddPrimeDiscriminant_image_prod (Int.natAbs_odd.mpr hmodd)
-      have hcore : ∏ p ∈ (-m).natAbs.primeFactors, oddPrimeDiscriminant p = -m :=
-        prod_oddPrimeDiscriminant_primeFactors_eq hsf.neg hmodd.neg (by omega)
-      have hnatabs : (-m).natAbs = m.natAbs := Int.natAbs_neg m
-      rw [hnatabs] at hcore
-      refine ⟨insert (-4) (m.natAbs.primeFactors.image oddPrimeDiscriminant), ?_, ?_, ?_⟩
-      · intro P hP
-        rcases Finset.mem_insert.mp hP with rfl | hP
-        · exact isPrimeDiscriminant_neg_four
-        · exact (himg P hP).1
-      · intro P hP Q hQ hPe hQe
-        rcases Finset.mem_insert.mp hP with rfl | hP <;>
-          rcases Finset.mem_insert.mp hQ with rfl | hQ
-        · rfl
-        · exact absurd hQe (himg Q hQ).2
-        · exact absurd hPe (himg P hP).2
-        · exact absurd hPe (himg P hP).2
-      · have hne : (-4 : ℤ) ∉ m.natAbs.primeFactors.image oddPrimeDiscriminant :=
-          fun hmem => (himg _ hmem).2 (by simp)
-        rw [Finset.prod_insert hne, hprodimg, hcore]; omega
+      have hcore := prod_oddPrimeDiscriminant_primeFactors_eq hsf.neg hmodd.neg (by omega)
+      rw [Int.natAbs_neg] at hcore
+      exact exists_finset_insert_evenPrimeDiscriminant (Int.natAbs_odd.mpr hmodd)
+        isPrimeDiscriminant_neg_four (by simp) (by rw [hcore]; omega)
   · -- `D ≡ 1 (mod 4)`, `D` odd squarefree: no even factor.
     have hsf : Squarefree D := hD.squarefree_of_mod_four_eq_one h1
     have hodd : Odd D := Int.odd_iff.mpr (by omega)
