@@ -49,8 +49,8 @@ noncomputable def Hom.baseChange {A B : AbelianVariety K} (f : A ⟶ B)
     (L : Type u) [Field L] [Algebra K L] : A.baseChange L ⟶ B.baseChange L := by
   let F := Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))
   exact InducedCategory.homMk
-    (eqToHom (baseChange_toCommGrp A L) ≫ F.mapCommGrp.map f.hom ≫
-      eqToHom (baseChange_toCommGrp B L).symm)
+    (eqToHom (commGrpMk_baseChange_toOver A L) ≫ F.mapCommGrp.map f.hom ≫
+      eqToHom (commGrpMk_baseChange_toOver B L).symm)
 
 /-- The underlying morphism over `Spec L` of a base-changed homomorphism is the pullback of its
 underlying morphism over `Spec K`. -/
@@ -62,22 +62,38 @@ lemma Hom.toOverHom_baseChange {A B : AbelianVariety K} (f : A ⟶ B)
         (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map
           (Hom.toOverHom f) ≫
         eqToHom (baseChange_toOver B L).symm := by
+  -- No public rewrite lemma exposes both induced-category and `CommGrp.forget` wrappers;
+  -- `change` displays the morphism supplied to `InducedCategory.homMk`.
   change (CommGrp.forget _).map
-      (eqToHom (baseChange_toCommGrp A L) ≫
+      (eqToHom (commGrpMk_baseChange_toOver A L) ≫
         (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map f.hom ≫
-        eqToHom (baseChange_toCommGrp B L).symm) = _
+        eqToHom (commGrpMk_baseChange_toOver B L).symm) = _
   simp only [Functor.map_comp, eqToHom_map]
   rfl
+
+/-- The underlying scheme morphism of a base-changed homomorphism is the left component of the
+pulled-back morphism in the `Over` category. -/
+@[simp]
+lemma Hom.toSchemeHom_baseChange {A B : AbelianVariety K} (f : A ⟶ B)
+    (L : Type u) [Field L] [Algebra K L] :
+    Hom.toSchemeHom (Hom.baseChange f L) =
+      (eqToHom (baseChange_toOver A L) ≫
+        (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map
+          (Hom.toOverHom f) ≫
+        eqToHom (baseChange_toOver B L).symm).left :=
+  congrArg Over.Hom.left (Hom.toOverHom_baseChange f L)
 
 /-- Base change preserves identity homomorphisms. -/
 @[simp]
 lemma Hom.baseChange_id (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
     Hom.baseChange (𝟙 A) L = 𝟙 (A.baseChange L) := by
   apply InducedCategory.hom_ext
-  change eqToHom (baseChange_toCommGrp A L) ≫
+  -- `InducedCategory.hom_ext` leaves bundled `CommGrp` morphisms; `change` displays the
+  -- morphism supplied by `Hom.baseChange`, for which the functor identity law applies.
+  change eqToHom (commGrpMk_baseChange_toOver A L) ≫
       (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map
         (𝟙 (CommGrp.mk A.toOver)) ≫
-      eqToHom (baseChange_toCommGrp A L).symm = 𝟙 (CommGrp.mk (A.baseChange L).toOver)
+      eqToHom (commGrpMk_baseChange_toOver A L).symm = 𝟙 (CommGrp.mk (A.baseChange L).toOver)
   simp
 
 /-- Base change preserves composition of homomorphisms. -/
@@ -86,15 +102,17 @@ lemma Hom.baseChange_comp {A B C : AbelianVariety K} (f : A ⟶ B) (g : B ⟶ C)
     (L : Type u) [Field L] [Algebra K L] :
     Hom.baseChange (f ≫ g) L = Hom.baseChange f L ≫ Hom.baseChange g L := by
   apply InducedCategory.hom_ext
-  change eqToHom (baseChange_toCommGrp A L) ≫
+  -- As above, this exposes the bundled morphisms supplied to `InducedCategory.homMk`, so the
+  -- functor composition law and cancellation of the transport isomorphisms can be used.
+  change eqToHom (commGrpMk_baseChange_toOver A L) ≫
       (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map
-        (f.hom ≫ g.hom) ≫ eqToHom (baseChange_toCommGrp C L).symm =
-    (eqToHom (baseChange_toCommGrp A L) ≫
+        (f.hom ≫ g.hom) ≫ eqToHom (commGrpMk_baseChange_toOver C L).symm =
+    (eqToHom (commGrpMk_baseChange_toOver A L) ≫
       (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map f.hom ≫
-      eqToHom (baseChange_toCommGrp B L).symm) ≫
-    (eqToHom (baseChange_toCommGrp B L) ≫
+      eqToHom (commGrpMk_baseChange_toOver B L).symm) ≫
+    (eqToHom (commGrpMk_baseChange_toOver B L) ≫
       (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.map g.hom ≫
-      eqToHom (baseChange_toCommGrp C L).symm)
+      eqToHom (commGrpMk_baseChange_toOver C L).symm)
   simp [Category.assoc]
 
 /-- Extension of the base field defines a functor between the categories of abelian varieties.

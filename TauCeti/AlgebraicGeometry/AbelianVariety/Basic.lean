@@ -201,14 +201,14 @@ lemma baseChange_toOver (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K
       (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj A.toOver :=
   (rfl)
 
-/-- The bundled commutative group object of a base change is obtained by applying pullback. -/
-lemma baseChange_toCommGrp (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
+/-- Bundling the underlying `Over` object of a base change with `CommGrp.mk` gives the
+commutative group object obtained by applying pullback. -/
+lemma commGrpMk_baseChange_toOver (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L] :
     CommGrp.mk (A.baseChange L).toOver =
       (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap K L)))).mapCommGrp.obj
-        (CommGrp.mk A.toOver) :=
-  by
-    unfold baseChange
-    rfl
+        (CommGrp.mk A.toOver) := by
+  unfold baseChange
+  rfl
 
 /-- The unit of a base-changed abelian variety is the pullback of the original unit, with the
 monoidal comparison for `Over.pullback`. -/
