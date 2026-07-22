@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Join
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Basic
 public import TauCeti.AlgebraicTopology.SimplicialComplex.LinkStar
 
 /-!
@@ -77,11 +77,11 @@ private theorem toRight_union_disjSum (u : Finset (α ⊕ β)) :
 /-- The link of a face in a join is the join of its component links.  Since pre-abstract
 simplicial complexes omit the empty face, each component of the chosen face is allowed either to
 be empty or to be a face of its factor. -/
+@[simp]
 theorem link_join (hs : s = ∅ ∨ s ∈ K) (ht : t = ∅ ∨ t ∈ L) :
     link (join K L) (s.disjSum t) = join (link K s) (link L t) := by
   apply SetLike.ext
   intro u
-  change u ∈ link (join K L) (s.disjSum t) ↔ u ∈ join (link K s) (link L t)
   constructor
   · intro hu
     obtain ⟨hu, hdis, hunion⟩ := mem_link.mp hu
@@ -121,12 +121,14 @@ theorem link_join (hs : s = ∅ ∨ s ∈ K) (ht : t = ∅ ∨ t ∈ L) :
 
 /-- The link of a face lying in the left factor of a join is its link in that factor joined with
 the entire right factor. -/
+@[simp]
 theorem link_join_map_inl (hs : s ∈ K) :
     link (join K L) (s.map (Embedding.inl : α ↪ α ⊕ β)) = join (link K s) L := by
   rw [← disjSum_empty, link_join (Or.inr hs) (Or.inl rfl), link_empty]
 
 /-- The link of a face lying in the right factor of a join is the entire left factor joined with
 its link in the right factor. -/
+@[simp]
 theorem link_join_map_inr (ht : t ∈ L) :
     link (join K L) (t.map (Embedding.inr : β ↪ α ⊕ β)) = join K (link L t) := by
   rw [← empty_disjSum, link_join (Or.inl rfl) (Or.inr ht), link_empty]
