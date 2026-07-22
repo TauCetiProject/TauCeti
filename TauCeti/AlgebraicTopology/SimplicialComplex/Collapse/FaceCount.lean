@@ -11,8 +11,9 @@ public import Mathlib.Data.Set.Card
 # Face counts under simplicial collapse
 
 An elementary simplicial collapse removes exactly its free face and unique coface.  This file
-turns that description into numerical control of finite complexes: every elementary collapse
-decreases the number of faces by two, while an arbitrary collapse can only decrease it.
+turns that description into cardinality control: every elementary collapse removes two faces,
+while an arbitrary collapse can only decrease the face cardinality.  For finite complexes this
+also gives subtraction, strictness, and parity results for natural-valued face counts.
 
 These facts are basic bookkeeping for the collapse track in layer 11 of the geometric-topology
 roadmap.  In particular, they provide a termination measure for finite collapse arguments and
@@ -22,9 +23,9 @@ Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 3.
 
 ## Main results
 
-* `ElementaryCollapsesTo.ncard_faces_add_two`: the face counts before and after an elementary
+* `ElementaryCollapsesTo.encard_faces_add_two`: the face counts before and after an elementary
   collapse differ by two.
-* `CollapsesTo.ncard_faces_le`: a finite collapse cannot increase the number of faces.
+* `CollapsesTo.encard_faces_le`: a collapse cannot increase the number of faces.
 -/
 
 public section
@@ -38,29 +39,33 @@ variable {ι : Type*}
 
 namespace ElementaryCollapsesTo
 
-/-- The set of faces after an elementary collapse is finite whenever the original face set is
-finite. -/
-theorem finite_faces (h : ElementaryCollapsesTo K L) (hK : K.faces.Finite) :
-    L.faces.Finite :=
-  hK.subset h.le
-
-/-- An elementary collapse of a finite complex removes exactly two faces. -/
-theorem ncard_faces_add_two (h : ElementaryCollapsesTo K L) (hK : K.faces.Finite) :
-    Set.ncard L.faces + 2 = Set.ncard K.faces := by
+/-- An elementary collapse removes exactly two faces. -/
+theorem encard_faces_add_two (h : ElementaryCollapsesTo K L) :
+    L.faces.encard + 2 = K.faces.encard := by
   obtain ⟨σ, τ, hfree, hστ, hmem⟩ := h.exists_pair
   have hpair : ({σ, τ} : Set (Finset ι)) ⊆ K.faces := by
     rw [Set.pair_subset_iff]
     exact ⟨hfree.lower_mem, hfree.upper_mem⟩
   have hfaces : L.faces = K.faces \ {σ, τ} := by
     ext ω
+    -- `faces` is the set-valued view of a complex, so this exposes its definitional membership
+    -- before rewriting membership in the pair as two inequalities.
     change (ω ∈ L ↔ ω ∈ K ∧ ω ∉ ({σ, τ} : Set (Finset ι)))
     simpa only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or] using hmem ω
   rw [hfaces]
   calc
-    Set.ncard (K.faces \ {σ, τ}) + 2 =
-        Set.ncard (K.faces \ {σ, τ}) + Set.ncard ({σ, τ} : Set (Finset ι)) := by
-          rw [Set.ncard_pair hστ.ne]
-    _ = Set.ncard K.faces := Set.ncard_sdiff_add_ncard_of_subset hpair hK
+    (K.faces \ {σ, τ}).encard + 2 =
+        (K.faces \ {σ, τ}).encard + ({σ, τ} : Set (Finset ι)).encard := by
+          rw [Set.encard_pair hστ.ne]
+    _ = K.faces.encard := Set.encard_sdiff_add_encard_of_subset hpair
+
+/-- An elementary collapse of a finite complex removes exactly two faces. -/
+theorem ncard_faces_add_two (h : ElementaryCollapsesTo K L) (hK : K.faces.Finite) :
+    Set.ncard L.faces + 2 = Set.ncard K.faces := by
+  have hL : L.faces.Finite := hK.subset h.le
+  rw [← ENat.coe_inj]
+  simpa only [← hK.cast_ncard_eq, ← hL.cast_ncard_eq, Nat.cast_add, Nat.cast_ofNat] using
+    h.encard_faces_add_two
 
 /-- The face count after an elementary collapse is the original face count minus two. -/
 theorem ncard_faces_eq_sub_two (h : ElementaryCollapsesTo K L) (hK : K.faces.Finite) :
@@ -84,15 +89,25 @@ end ElementaryCollapsesTo
 
 namespace CollapsesTo
 
+/-- A collapse cannot increase the cardinality of the face set. -/
+theorem encard_faces_le (h : CollapsesTo K L) : L.faces.encard ≤ K.faces.encard :=
+  Set.encard_le_encard h.le
+
 /-- A collapse of a finite complex cannot increase its number of faces. -/
 theorem ncard_faces_le (h : CollapsesTo K L) (hK : K.faces.Finite) :
-    Set.ncard L.faces ≤ Set.ncard K.faces :=
-  Set.ncard_le_ncard h.le hK
+    Set.ncard L.faces ≤ Set.ncard K.faces := by
+  have hL : L.faces.Finite := hK.subset h.le
+  rw [← ENat.coe_le_coe]
+  simpa only [← hK.cast_ncard_eq, ← hL.cast_ncard_eq] using h.encard_faces_le
 
-/-- The endpoint of a collapse of a finite complex again has finitely many faces. -/
-theorem finite_faces (h : CollapsesTo K L) (hK : K.faces.Finite) :
-    L.faces.Finite :=
-  hK.subset h.le
+/-- A collapse of a finite complex preserves the parity of its number of faces. -/
+theorem ncard_faces_mod_two (h : CollapsesTo K L) (hK : K.faces.Finite) :
+    Set.ncard L.faces % 2 = Set.ncard K.faces % 2 := by
+  exact (h.property_of_elementaryCollapsesTo
+    (p := fun M => M.faces.Finite ∧ Set.ncard M.faces % 2 = Set.ncard K.faces % 2)
+    (fun {_ _} hAB ⟨hA, hparity⟩ =>
+      ⟨hA.subset hAB.le, (hAB.ncard_faces_mod_two hA).trans hparity⟩)
+    ⟨hK, rfl⟩).2
 
 end CollapsesTo
 

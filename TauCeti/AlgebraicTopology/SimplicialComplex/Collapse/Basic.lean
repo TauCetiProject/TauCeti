@@ -147,6 +147,15 @@ theorem property_of_antitone {p : _root_.PreAbstractSimplicialComplex ι → Pro
     (hp : ∀ ⦃A B⦄, A ≤ B → p B → p A) (h : CollapsesTo K L) (hK : p K) : p L :=
   hp h.le hK
 
+/-- A property preserved by each elementary collapse is preserved by a collapse sequence. -/
+theorem property_of_elementaryCollapsesTo
+    {p : _root_.PreAbstractSimplicialComplex ι → Prop}
+    (hp : ∀ ⦃A B⦄, ElementaryCollapsesTo A B → p A → p B)
+    (h : CollapsesTo K L) (hK : p K) : p L := by
+  induction h with
+  | refl => exact hK
+  | tail hAB hBC ih => exact hp hBC ih
+
 end CollapsesTo
 
 /-- A simplicial complex is collapsible when it collapses to a one-vertex complex. -/
