@@ -50,13 +50,14 @@ theorem fundamentalDiscriminant_eq_self_or_four_mul (d : ℤ) :
   · exact Or.inl (fundamentalDiscriminant_of_mod_four_eq_one h)
   · exact Or.inr (fundamentalDiscriminant_of_mod_four_ne_one h)
 
-/-- `fundamentalDiscriminant d = c² * d` for some `c ∈ {1, 2}`: it differs from `d` by a square,
-so `ℚ(√(fundamentalDiscriminant d)) = ℚ(√d)`. -/
+/-- `fundamentalDiscriminant d = c² * d` for some `c ∈ {1, 2}`: it differs from `d` by a nonzero
+square, so `ℚ(√(fundamentalDiscriminant d)) = ℚ(√d)`. The `c = 1 ∨ c = 2` restriction is part of
+the statement, so the multiplier is genuinely a unit-or-`2` square (not the vacuous `c = 0`). -/
 theorem exists_sq_mul_eq_fundamentalDiscriminant (d : ℤ) :
-    ∃ c : ℤ, fundamentalDiscriminant d = c ^ 2 * d := by
+    ∃ c : ℤ, (c = 1 ∨ c = 2) ∧ fundamentalDiscriminant d = c ^ 2 * d := by
   rcases fundamentalDiscriminant_eq_self_or_four_mul d with h | h
-  · exact ⟨1, by rw [h]; ring⟩
-  · exact ⟨2, by rw [h]; ring⟩
+  · exact ⟨1, Or.inl rfl, by rw [h]; ring⟩
+  · exact ⟨2, Or.inr rfl, by rw [h]; ring⟩
 
 /-- **The fundamental discriminant of a squarefree integer is a fundamental discriminant.** When
 `d ≡ 1 (mod 4)` the value is `d` itself (`≡ 1 (mod 4)`, squarefree); otherwise `d ≡ 2` or
