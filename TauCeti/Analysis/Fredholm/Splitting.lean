@@ -179,7 +179,7 @@ theorem cokerEquivComplement_symm_apply (x : hT.cokerComplement) :
 omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] [CompleteSpace F] in
 @[simp]
 theorem cokerEquivComplement_apply_mk (x : F) :
-    hT.cokerEquivComplement ((LinearMap.range (T : E →ₗ[𝕜] F)).mkQ x) =
+    hT.cokerEquivComplement (Submodule.Quotient.mk x) =
       hT.cokerComplement.projectionOnto (LinearMap.range (T : E →ₗ[𝕜] F))
         hT.isTopCompl_range_cokerComplement.isCompl.symm x :=
   Submodule.quotientEquivOfIsTopCompl_apply_mk hT.isTopCompl_range_cokerComplement x
