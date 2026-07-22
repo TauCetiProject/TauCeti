@@ -6,15 +6,15 @@ public import Mathlib.MeasureTheory.Function.AEEqFun
 # The Koopman Markov operator on measurable-function germs
 
 This file supplies the algebraic part of the generic Koopman lane in the Exchangeability roadmap.
-For a measure-preserving endomorphism `T`, composition `g ↦ g ∘ T` is bundled as an additive
+For a measure-preserving endomorphism `T`, composition `g ↦ g ∘ T` is bundled as a real-linear
 operator on almost-everywhere measurable real-valued functions.  It preserves one and
 multiplication, is positive and monotone, and its powers are composition with the corresponding
 iterates of `T`.
 
 Mathlib already provides the underlying operation as `AEEqFun.compMeasurePreserving`, as well as
-a norm-preserving additive composition map on `Lᵖ`, which is an isometry when `1 ≤ p`.  Unlike a
-Koopman operator is multiplicative.  The later `L∞` API can restrict this operator to essentially
-bounded germs.
+a norm-preserving additive composition map on `Lᵖ`, which is an isometry when `1 ≤ p`.  Unlike
+that `Lᵖ` composition map, the Koopman operator here is also multiplicative.  The later `L∞` API
+can restrict this operator to essentially bounded germs.
 -/
 
 public section
@@ -37,10 +37,12 @@ def koopmanMarkov (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
   toFun := fun g => g.compMeasurePreserving T hT
   map_add' := by
     intro g h
-    exact AEEqFun.induction_on₂ g h fun _ _ _ _ => rfl
+    exact AEEqFun.induction_on₂ g h fun _ _ _ _ => by
+      simp only [AEEqFun.compMeasurePreserving_mk, AEEqFun.mk_add_mk]; rfl
   map_smul' := by
     intro c g
-    exact AEEqFun.induction_on g fun _ _ => rfl
+    exact AEEqFun.induction_on g fun _ _ => by
+      simp only [RingHom.id_apply, AEEqFun.compMeasurePreserving_mk, AEEqFun.smul_mk]; rfl
 
 /-- A representative of `koopmanMarkov T hT g` is almost everywhere `g ∘ T`. -/
 theorem coeFn_koopmanMarkov (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
@@ -52,6 +54,8 @@ theorem coeFn_koopmanMarkov (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
 @[simp]
 theorem koopmanMarkov_one (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
     koopmanMarkov T hT 1 = 1 := by
+  simp only [koopmanMarkov, LinearMap.coe_mk, AddHom.coe_mk, AEEqFun.one_def,
+    AEEqFun.compMeasurePreserving_mk]
   rfl
 
 /-- The Koopman Markov operator preserves products. -/
@@ -59,7 +63,9 @@ theorem koopmanMarkov_one (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
 theorem koopmanMarkov_mul (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
     (g h : Ω →ₘ[μ] ℝ) :
     koopmanMarkov T hT (g * h) = koopmanMarkov T hT g * koopmanMarkov T hT h := by
-  exact AEEqFun.induction_on₂ g h fun _ _ _ _ => rfl
+  exact AEEqFun.induction_on₂ g h fun _ _ _ _ => by
+    simp only [koopmanMarkov, LinearMap.coe_mk, AddHom.coe_mk, AEEqFun.mk_mul_mk,
+      AEEqFun.compMeasurePreserving_mk]; rfl
 
 /-- The deterministic Koopman Markov operator is positive. -/
 theorem koopmanMarkov_nonneg (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
@@ -118,8 +124,8 @@ theorem koopmanMarkov_eq_self_iff (T : Ω → Ω) (hT : MeasurePreserving T μ �
     koopmanMarkov T hT g = g ↔ g ∘ T =ᵐ[μ] g := by
   constructor
   · intro h
-    exact (coeFn_koopmanMarkov T hT g).symm.trans (Filter.EventuallyEq.rfl.trans
-      (Filter.Eventually.of_forall fun ω => congrArg (fun q : Ω →ₘ[μ] ℝ => q ω) h))
+    exact (coeFn_koopmanMarkov T hT g).symm.trans
+      (Filter.Eventually.of_forall fun ω => congrArg (fun q : Ω →ₘ[μ] ℝ => q ω) h)
   · intro h
     exact AEEqFun.ext ((coeFn_koopmanMarkov T hT g).trans h)
 
