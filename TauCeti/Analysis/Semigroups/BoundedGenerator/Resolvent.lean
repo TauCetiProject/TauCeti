@@ -39,36 +39,31 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X
 
 namespace StronglyContinuousSemigroup
 
-/-- The powers in the Neumann series for `λI - A` are summable when `‖A‖ < |λ|`. -/
-theorem summable_inv_smul_pow (A : X →L[ℝ] X) {lambda : ℝ} (hlambda : ‖A‖ < |lambda|) :
-    Summable (fun n : ℕ ↦ (lambda⁻¹ • A) ^ n) := by
-  apply summable_geometric_of_norm_lt_one
+omit [CompleteSpace X] in
+private theorem norm_inv_smul_lt_one (A : X →L[ℝ] X) {lambda : ℝ}
+    (hlambda : ‖A‖ < |lambda|) : ‖lambda⁻¹ • A‖ < 1 := by
   rw [norm_smul, Real.norm_eq_abs, abs_inv]
   exact (inv_mul_lt_one₀ (lt_of_le_of_lt (norm_nonneg A) hlambda)).2 hlambda
 
-/-- The Neumann-series resolvent is a right inverse of `λI - A`. -/
-@[simp] theorem sub_mul_inv_smul_tsum_pow (A : X →L[ℝ] X) {lambda : ℝ}
+private theorem sub_mul_inv_smul_tsum_pow (A : X →L[ℝ] X) {lambda : ℝ}
     (hlambda : ‖A‖ < |lambda|) :
     lambda⁻¹ • ((lambda • 1 - A) * ∑' n : ℕ, (lambda⁻¹ • A) ^ n) = 1 := by
   have hlambda_ne : lambda ≠ 0 := abs_pos.mp (lt_of_le_of_lt (norm_nonneg A) hlambda)
-  have hs := summable_inv_smul_pow A hlambda
   have hfactor : lambda • (1 - lambda⁻¹ • A) = lambda • 1 - A := by
     simp only [smul_sub, smul_smul, mul_inv_cancel₀ hlambda_ne, one_smul]
   rw [← Algebra.mul_smul_comm]
   rw [← hfactor, smul_mul_smul, mul_inv_cancel₀ hlambda_ne, one_smul,
-    hs.one_sub_mul_tsum_pow]
+    mul_neg_geom_series (lambda⁻¹ • A) (norm_inv_smul_lt_one A hlambda)]
 
-/-- The Neumann-series resolvent is a left inverse of `λI - A`. -/
-@[simp] theorem inv_smul_tsum_pow_mul_sub (A : X →L[ℝ] X) {lambda : ℝ}
+private theorem inv_smul_tsum_pow_mul_sub (A : X →L[ℝ] X) {lambda : ℝ}
     (hlambda : ‖A‖ < |lambda|) :
     lambda⁻¹ • ((∑' n : ℕ, (lambda⁻¹ • A) ^ n) * (lambda • 1 - A)) = 1 := by
   have hlambda_ne : lambda ≠ 0 := abs_pos.mp (lt_of_le_of_lt (norm_nonneg A) hlambda)
-  have hs := summable_inv_smul_pow A hlambda
   have hfactor : lambda • (1 - lambda⁻¹ • A) = lambda • 1 - A := by
     simp only [smul_sub, smul_smul, mul_inv_cancel₀ hlambda_ne, one_smul]
   rw [← Algebra.smul_mul_assoc]
   rw [← hfactor, smul_mul_smul, inv_mul_cancel₀ hlambda_ne, one_smul,
-    hs.tsum_pow_mul_one_sub]
+    geom_series_mul_neg (lambda⁻¹ • A) (norm_inv_smul_lt_one A hlambda)]
 
 /-- For `λ > ‖A‖`, the Laplace-transform resolvent of `t ↦ exp (tA)` is the Neumann series
 `λ⁻¹ ∑' n, (λ⁻¹ A)ⁿ`. -/
