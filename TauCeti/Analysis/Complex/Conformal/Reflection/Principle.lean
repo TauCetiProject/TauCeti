@@ -70,6 +70,87 @@ private lemma boundaryIntegral_eq_zero_off_axis {Ω : Set ℂ} {F : ℂ → ℂ}
     · rw [Ioo_min_max] at hp; exact uIoo_subset_uIcc_self hp.2
   · exact fun h0 => haxis (h0 ▸ hp.2)
 
+/-- A rectangle with a horizontal edge *on* the real axis — one of its imaginary coordinates is `0`
+— has a vanishing boundary integral. This is `boundaryIntegral_eq_zero_off_axis` in the case where
+the axis meets an edge rather than being avoided outright: an endpoint at `0` still keeps `0` out of
+the *open* imaginary interior. It is the form applied to the two axis-bounded halves of a straddling
+rectangle. -/
+private lemma boundaryIntegral_eq_zero_of_edge_on_axis {Ω : Set ℂ} {F : ℂ → ℂ}
+    (hFcont : ContinuousOn F Ω)
+    (hFdiff : DifferentiableOn ℂ F (Ω ∩ {z : ℂ | z.im ≠ 0}))
+    {z w : ℂ} (hsub : Complex.Rectangle z w ⊆ Ω) (haxis : z.im = 0 ∨ w.im = 0) :
+    ((∫ x : ℝ in z.re..w.re, F (x + z.im * I)) - (∫ x : ℝ in z.re..w.re, F (x + w.im * I)) +
+        I • (∫ y : ℝ in z.im..w.im, F (w.re + y * I)) -
+        I • (∫ y : ℝ in z.im..w.im, F (z.re + y * I))) = 0 := by
+  refine boundaryIntegral_eq_zero_off_axis hFcont hFdiff hsub fun hm => ?_
+  -- One imaginary coordinate being `0` puts `0` on the boundary of the imaginary interval, not
+  -- inside its open interior `Ioo (min …) (max …)`.
+  rcases haxis with h | h <;> rw [h] at hm
+  · rcases le_total (0 : ℝ) w.im with hw | hw
+    · rw [min_eq_left hw] at hm; exact lt_irrefl (0 : ℝ) hm.1
+    · rw [max_eq_left hw] at hm; exact lt_irrefl (0 : ℝ) hm.2
+  · rcases le_total z.im 0 with hz | hz
+    · rw [max_eq_right hz] at hm; exact lt_irrefl (0 : ℝ) hm.2
+    · rw [min_eq_right hz] at hm; exact lt_irrefl (0 : ℝ) hm.1
+
+/-- The integral of `F` along a vertical edge of the rectangle — the edge with fixed real part `a`
+— splits at the real axis: the interval integral over `[[z.im, w.im]]` equals the sum of the
+integrals over `z.im → 0` and `0 → w.im`, whenever `F` is continuous on a domain `Ω` containing the
+rectangle and `0` lies in the imaginary range `[[z.im, w.im]]`. This is the edge-splitting step
+used to recombine the two halves of a straddling rectangle. -/
+private lemma vertical_edge_split_at_zero {Ω : Set ℂ} {F : ℂ → ℂ}
+    (hFcont : ContinuousOn F Ω) {z w : ℂ} (hsub : Complex.Rectangle z w ⊆ Ω)
+    (h0mem : (0 : ℝ) ∈ [[z.im, w.im]]) {a : ℝ} (ha : a ∈ [[z.re, w.re]]) :
+    (∫ y : ℝ in z.im..w.im, F (↑a + ↑y * I)) =
+      (∫ y : ℝ in z.im..(0 : ℝ), F (↑a + ↑y * I)) +
+        ∫ y : ℝ in (0 : ℝ)..w.im, F (↑a + ↑y * I) := by
+  -- `F` is continuous along the edge, hence interval-integrable on the parts below and above `0`.
+  have contV : ContinuousOn (fun t : ℝ => F (↑a + ↑t * I)) [[z.im, w.im]] :=
+    hFcont.comp (by fun_prop) fun t ht => hsub (by
+      rw [Complex.Rectangle, Complex.mem_reProdIm]
+      exact ⟨by simpa using ha, by simpa using ht⟩)
+  refine (integral_add_adjacent_intervals ?_ ?_).symm
+  · exact (contV.mono (uIcc_subset_uIcc left_mem_uIcc h0mem)).intervalIntegrable
+  · exact (contV.mono (uIcc_subset_uIcc h0mem right_mem_uIcc)).intervalIntegrable
+
+/-- A rectangle that *straddles* the real axis — `0` lies strictly inside its imaginary range — has
+a vanishing boundary integral: split it at the axis into a lower and an upper half, each an
+axis-bounded rectangle handled by `boundaryIntegral_eq_zero_of_edge_on_axis`, and recombine, the
+shared axis edge cancelling. Same hypotheses as `boundaryIntegral_eq_zero_off_axis`, but with `0`
+in the open imaginary interior instead of outside it. -/
+private lemma boundaryIntegral_eq_zero_of_straddling {Ω : Set ℂ} {F : ℂ → ℂ}
+    (hFcont : ContinuousOn F Ω)
+    (hFdiff : DifferentiableOn ℂ F (Ω ∩ {z : ℂ | z.im ≠ 0}))
+    {z w : ℂ} (hsub : Complex.Rectangle z w ⊆ Ω)
+    (hstr : (0 : ℝ) ∈ Set.Ioo (min z.im w.im) (max z.im w.im)) :
+    ((∫ x : ℝ in z.re..w.re, F (x + z.im * I)) - (∫ x : ℝ in z.re..w.re, F (x + w.im * I)) +
+        I • (∫ y : ℝ in z.im..w.im, F (w.re + y * I)) -
+        I • (∫ y : ℝ in z.im..w.im, F (z.re + y * I))) = 0 := by
+  have h0mem : (0 : ℝ) ∈ [[z.im, w.im]] := by
+    rw [← Icc_min_max]; exact Ioo_subset_Icc_self hstr
+  -- Split each vertical edge at the axis into its part below and its part above.
+  have splitVw := vertical_edge_split_at_zero hFcont hsub h0mem right_mem_uIcc
+  have splitVz := vertical_edge_split_at_zero hFcont hsub h0mem left_mem_uIcc
+  -- The lower half `[z, ↑w.re]` and the upper half `[↑z.re, w]`, each bounded by the axis.
+  have hsubR1 : Complex.Rectangle z (↑w.re : ℂ) ⊆ Ω := by
+    refine fun p hp => hsub ?_
+    rw [Complex.Rectangle, Complex.mem_reProdIm] at hp ⊢
+    simp only [Complex.ofReal_re, Complex.ofReal_im] at hp
+    exact ⟨hp.1, uIcc_subset_uIcc left_mem_uIcc h0mem hp.2⟩
+  have hsubR2 : Complex.Rectangle (↑z.re : ℂ) w ⊆ Ω := by
+    refine fun p hp => hsub ?_
+    rw [Complex.Rectangle, Complex.mem_reProdIm] at hp ⊢
+    simp only [Complex.ofReal_re, Complex.ofReal_im] at hp
+    exact ⟨hp.1, uIcc_subset_uIcc h0mem right_mem_uIcc hp.2⟩
+  have R1 := boundaryIntegral_eq_zero_of_edge_on_axis hFcont hFdiff hsubR1
+    (Or.inr (Complex.ofReal_im w.re))
+  have R2 := boundaryIntegral_eq_zero_of_edge_on_axis hFcont hFdiff hsubR2
+    (Or.inl (Complex.ofReal_im z.re))
+  simp only [Complex.ofReal_re, Complex.ofReal_im] at R1 R2
+  rw [splitVw, splitVz, smul_add, smul_add]
+  simp only [smul_eq_mul] at R1 R2 ⊢
+  linear_combination R1 + R2
+
 /-- **Schwarz reflection principle (real axis).** On a conjugation-symmetric open set `Ω`, if `f`
 is continuous on the closed upper part, holomorphic on the open upper part, and real-valued on
 the real axis of `Ω`, then the explicit reflection extension `schwarzReflection f` is holomorphic
@@ -93,73 +174,8 @@ theorem differentiableOn_schwarzReflection_of_symmetric {Ω : Set ℂ}
   intro z w hsub
   rw [← add_eq_zero_iff_eq_neg, wedgeIntegral_add_wedgeIntegral_eq]
   by_cases hstr : (0 : ℝ) ∈ Set.Ioo (min z.im w.im) (max z.im w.im)
-  · -- Straddling rectangle: split at the axis into an upper and a lower half.
-    have h0mem : (0 : ℝ) ∈ [[z.im, w.im]] := by
-      rw [← Icc_min_max]; exact Ioo_subset_Icc_self hstr
-    -- Every axis-parallel segment of the rectangle lies in `Ω`.
-    have segMem : ∀ a : ℝ, a ∈ [[z.re, w.re]] → ∀ t : ℝ, t ∈ [[z.im, w.im]] →
-        (↑a + ↑t * I : ℂ) ∈ Ω := by
-      intro a ha t ht
-      refine hsub ?_
-      rw [Complex.Rectangle, Complex.mem_reProdIm]
-      refine ⟨?_, ?_⟩
-      · have hre : (↑a + ↑t * I : ℂ).re = a := by simp
-        rw [hre]; exact ha
-      · have him : (↑a + ↑t * I : ℂ).im = t := by simp
-        rw [him]; exact ht
-    have contV : ∀ a : ℝ, a ∈ [[z.re, w.re]] →
-        ContinuousOn (fun t : ℝ => F (↑a + ↑t * I)) [[z.im, w.im]] := by
-      intro a ha
-      exact hFcont.comp (by fun_prop) (fun t ht => segMem a ha t ht)
-    -- Interval integrability of the vertical edges on each half.
-    have iVw_lo : IntervalIntegrable (fun t : ℝ => F (↑w.re + ↑t * I)) volume z.im 0 :=
-      ((contV w.re right_mem_uIcc).mono (uIcc_subset_uIcc left_mem_uIcc h0mem)).intervalIntegrable
-    have iVw_hi : IntervalIntegrable (fun t : ℝ => F (↑w.re + ↑t * I)) volume 0 w.im :=
-      ((contV w.re right_mem_uIcc).mono (uIcc_subset_uIcc h0mem right_mem_uIcc)).intervalIntegrable
-    have iVz_lo : IntervalIntegrable (fun t : ℝ => F (↑z.re + ↑t * I)) volume z.im 0 :=
-      ((contV z.re left_mem_uIcc).mono (uIcc_subset_uIcc left_mem_uIcc h0mem)).intervalIntegrable
-    have iVz_hi : IntervalIntegrable (fun t : ℝ => F (↑z.re + ↑t * I)) volume 0 w.im :=
-      ((contV z.re left_mem_uIcc).mono (uIcc_subset_uIcc h0mem right_mem_uIcc)).intervalIntegrable
-    have splitVw : (∫ y : ℝ in z.im..w.im, F (↑w.re + ↑y * I)) =
-        (∫ y : ℝ in z.im..(0 : ℝ), F (↑w.re + ↑y * I)) +
-          ∫ y : ℝ in (0 : ℝ)..w.im, F (↑w.re + ↑y * I) :=
-      (integral_add_adjacent_intervals iVw_lo iVw_hi).symm
-    have splitVz : (∫ y : ℝ in z.im..w.im, F (↑z.re + ↑y * I)) =
-        (∫ y : ℝ in z.im..(0 : ℝ), F (↑z.re + ↑y * I)) +
-          ∫ y : ℝ in (0 : ℝ)..w.im, F (↑z.re + ↑y * I) :=
-      (integral_add_adjacent_intervals iVz_lo iVz_hi).symm
-    -- The lower half: rectangle from `z` to `↑w.re` (real part `w.re`, imaginary part `0`).
-    have hsubR1 : Complex.Rectangle z (↑w.re : ℂ) ⊆ Ω := by
-      refine fun p hp => hsub ?_
-      rw [Complex.Rectangle, Complex.mem_reProdIm] at hp ⊢
-      simp only [Complex.ofReal_re, Complex.ofReal_im] at hp
-      exact ⟨hp.1, uIcc_subset_uIcc left_mem_uIcc h0mem hp.2⟩
-    have haxisR1 : (0 : ℝ) ∉ Set.Ioo (min z.im (↑w.re : ℂ).im) (max z.im (↑w.re : ℂ).im) := by
-      simp only [Complex.ofReal_im]
-      intro hm
-      rcases le_total z.im 0 with h | h
-      · rw [max_eq_right h] at hm; exact lt_irrefl (0 : ℝ) hm.2
-      · rw [min_eq_right h] at hm; exact lt_irrefl (0 : ℝ) hm.1
-    have R1 := boundaryIntegral_eq_zero_off_axis hFcont hFdiff hsubR1 haxisR1
-    -- The upper half: rectangle from `↑z.re` to `w`.
-    have hsubR2 : Complex.Rectangle (↑z.re : ℂ) w ⊆ Ω := by
-      refine fun p hp => hsub ?_
-      rw [Complex.Rectangle, Complex.mem_reProdIm] at hp ⊢
-      simp only [Complex.ofReal_re, Complex.ofReal_im] at hp
-      exact ⟨hp.1, uIcc_subset_uIcc h0mem right_mem_uIcc hp.2⟩
-    have haxisR2 : (0 : ℝ) ∉ Set.Ioo (min (↑z.re : ℂ).im w.im) (max (↑z.re : ℂ).im w.im) := by
-      simp only [Complex.ofReal_im]
-      intro hm
-      rcases le_total (0 : ℝ) w.im with h | h
-      · rw [min_eq_left h] at hm; exact lt_irrefl (0 : ℝ) hm.1
-      · rw [max_eq_left h] at hm; exact lt_irrefl (0 : ℝ) hm.2
-    have R2 := boundaryIntegral_eq_zero_off_axis hFcont hFdiff hsubR2 haxisR2
-    simp only [Complex.ofReal_re, Complex.ofReal_im] at R1 R2
-    rw [splitVw, splitVz, smul_add, smul_add]
-    simp only [smul_eq_mul] at R1 R2 ⊢
-    linear_combination R1 + R2
-  · -- Non-straddling rectangle: its interior already avoids the axis.
-    exact boundaryIntegral_eq_zero_off_axis hFcont hFdiff hsub hstr
+  · exact boundaryIntegral_eq_zero_of_straddling hFcont hFdiff hsub hstr
+  · exact boundaryIntegral_eq_zero_off_axis hFcont hFdiff hsub hstr
 
 /-- **Schwarz reflection principle**, packaged existential form (the L4 milestone of
 `ConformalMapping/Suggested.lean`). On a conjugation-symmetric open `Ω`, a function continuous on

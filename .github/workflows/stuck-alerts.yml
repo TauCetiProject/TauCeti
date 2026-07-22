@@ -5,7 +5,7 @@ name: Stuck-automation alerts
 # cross a breaking change, a green PR the merge machinery never merged, a
 # scheduled job that stopped firing, main gone red, an unresolved mathlib
 # incompatibility. Every alert means "go FIX THE INFRASTRUCTURE", not "a human
-# please hand-hold one PR" — see scripts/zulip/stuck_alerts.py for the full
+# please hand-hold one PR" — see scripts/pr_status/stuck_alerts.py for the full
 # contract and the list of states deliberately NOT alerted (normal backlog).
 #
 # The alerts live in Zulip and are idempotent (one message per active alert,
@@ -47,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: scripts/zulip
+          sparse-checkout: scripts/pr_status
       - name: Reconcile stuck-automation alerts
         # No continue-on-error: a broken Zulip integration must go red here too.
         env:
@@ -57,4 +57,4 @@ jobs:
           ZULIP_SITE: https://leanprover.zulipchat.com
           ZULIP_CHANNEL: Tau Ceti
           ZULIP_TOPIC: Stuck PRs
-        run: python3 scripts/zulip/stuck_alerts.py
+        run: python3 scripts/pr_status/stuck_alerts.py
