@@ -173,6 +173,52 @@ section Nontrivial
 
 variable [Nontrivial E]
 
+omit [Nontrivial E] in
+/-- The normalized exponential barrier for a drift bounded by `β` is a strict subsolution of
+`Δ + b·∇`. -/
+theorem laplacian_add_fderiv_exp_inner_pos_of_norm_le {u b : E} {β : ℝ}
+    (hu : ‖u‖ = 1) (hb : ‖b‖ ≤ β) (x : E) :
+    0 < Δ (fun y => Real.exp ((β + 1) * ⟪u, y⟫)) x +
+      fderiv ℝ (fun y => Real.exp ((β + 1) * ⟪u, y⟫)) x b := by
+  have hβ0 : 0 ≤ β := (norm_nonneg b).trans hb
+  have hinner : -β ≤ ⟪u, b⟫ := by
+    have h := (abs_le.mp (abs_real_inner_le_norm u b)).1
+    rw [hu, one_mul] at h
+    exact (neg_le_neg hb).trans h
+  have hL : Δ (fun y => Real.exp ((β + 1) * ⟪u, y⟫)) x +
+      fderiv ℝ (fun y => Real.exp ((β + 1) * ⟪u, y⟫)) x b =
+        (β + 1) * (β + 1 + ⟪u, b⟫) * Real.exp ((β + 1) * ⟪u, x⟫) := by
+    rw [laplacian_exp_inner, fderiv_exp_inner_apply, hu]
+    ring
+  rw [hL]
+  have : 0 < β + 1 + ⟪u, b⟫ := by linarith
+  positivity
+
+omit [Nontrivial E] in
+/-- The operator `Δ + b·∇` is linear under addition of a constant multiple. -/
+theorem laplacian_add_fderiv_add_const_smul (f w : E → ℝ) (b : E) (ε : ℝ) (x : E)
+    (hf : ContDiffAt ℝ 2 f x) (hw : ContDiffAt ℝ 2 w x) :
+    Δ (fun y => f y + ε • w y) x + fderiv ℝ (fun y => f y + ε • w y) x b =
+      (Δ f x + fderiv ℝ f x b) + ε * (Δ w x + fderiv ℝ w x b) := by
+  have hfd : DifferentiableAt ℝ f x := hf.differentiableAt (by norm_num)
+  have hwd : DifferentiableAt ℝ w x := hw.differentiableAt (by norm_num)
+  have hΔ : Δ (fun y => f y + ε • w y) x = Δ f x + ε * Δ w x := by
+    have hadd : Δ (fun y => f y + ε • w y) x =
+        Δ f x + Δ (fun y => ε • w y) x := hf.laplacian_add (hw.const_smul ε)
+    have hsmul : Δ (fun y => ε • w y) x = ε • Δ w x := laplacian_smul ε hw
+    rw [hadd, hsmul, smul_eq_mul]
+  have hderiv : fderiv ℝ (fun y => f y + ε • w y) x b =
+      fderiv ℝ f x b + ε * fderiv ℝ w x b := by
+    have hadd : fderiv ℝ (fun y => f y + ε • w y) x =
+        fderiv ℝ f x + fderiv ℝ (fun y => ε • w y) x :=
+      fderiv_add hfd (hwd.const_smul ε)
+    have hsmul : fderiv ℝ (fun y => ε • w y) x = ε • fderiv ℝ w x :=
+      fderiv_const_smul hwd ε
+    rw [hadd, hsmul]
+    simp only [add_apply, smul_apply, smul_eq_mul]
+  rw [hΔ, hderiv]
+  ring
+
 /-- **Weak maximum principle for `Δ + b·∇` with bounded drift.**
 
 Let `K` be compact. If `f` is continuous on `K`, is `C²` on `interior K`, the drift field is
@@ -214,41 +260,14 @@ theorem le_of_laplacian_add_fderiv_nonneg_le_frontier {K : Set E} (hK : IsCompac
     -- The perturbed function is a strict subsolution of `Δ + b·∇`.
     have hgpos : ∀ ⦃y⦄, y ∈ interior K → 0 < Δ g y + fderiv ℝ g y (b y) := by
       intro y hy
-      have hΔ : Δ g y = Δ f y + ε * Δ w y := by
-        have hadd : Δ (fun z => f z + ε • w z) y = Δ f y + Δ (fun z => ε • w z) y :=
-          (hcd hy).laplacian_add ((hwcd y).const_smul ε)
-        have hsmul : Δ (fun z => ε • w z) y = ε • Δ w y := laplacian_smul ε (hwcd y)
-        rw [hgdef, hadd, hsmul, smul_eq_mul]
-      have hfd : fderiv ℝ g y (b y) = fderiv ℝ f y (b y) + ε * fderiv ℝ w y (b y) := by
-        have hd : DifferentiableAt ℝ f y := (hcd hy).differentiableAt (by norm_num)
-        have hdw : DifferentiableAt ℝ w y := (hwcd y).differentiableAt (by norm_num)
-        have hadd : fderiv ℝ (fun z => f z + ε • w z) y
-            = fderiv ℝ f y + fderiv ℝ (fun z => ε • w z) y := fderiv_add hd (hdw.const_smul ε)
-        have hsmul : fderiv ℝ (fun z => ε • w z) y = ε • fderiv ℝ w y := fderiv_const_smul hdw ε
-        rw [hgdef, hadd, hsmul]
-        simp only [add_apply, smul_apply, smul_eq_mul]
       -- The barrier's operator value is strictly positive.
-      have hbylb : -β ≤ ⟪u, b y⟫ := by
-        have h := (abs_le.mp (abs_real_inner_le_norm u (b y))).1
-        rw [hunorm, one_mul] at h
-        exact le_trans (neg_le_neg (hb hy)) h
-      have hαpos : 0 < α := by
-        have := le_trans (norm_nonneg (b y)) (hb hy)
-        rw [hαdef]; linarith
       have hLwpos : 0 < Δ w y + fderiv ℝ w y (b y) := by
-        have hLw : Δ w y + fderiv ℝ w y (b y)
-            = α * (α + ⟪u, b y⟫) * Real.exp (α * ⟪u, y⟫) := by
-          have e1 : Δ w y = α ^ 2 * ‖u‖ ^ 2 * Real.exp (α * ⟪u, y⟫) := by
-            rw [hwdef]; exact laplacian_exp_inner α u y
-          have e2 : fderiv ℝ w y (b y) = Real.exp (α * ⟪u, y⟫) * (α * ⟪u, b y⟫) := by
-            rw [hwdef]; exact fderiv_exp_inner_apply α u y (b y)
-          rw [e1, e2, hunorm]; ring
-        rw [hLw]
-        have : 0 < α + ⟪u, b y⟫ := by rw [hαdef]; linarith
-        positivity
+        rw [hwdef, hαdef]
+        exact laplacian_add_fderiv_exp_inner_pos_of_norm_le hunorm (hb hy) y
       have hcomb : Δ g y + fderiv ℝ g y (b y)
           = (Δ f y + fderiv ℝ f y (b y)) + ε * (Δ w y + fderiv ℝ w y (b y)) := by
-        rw [hΔ, hfd]; ring
+        rw [hgdef]
+        exact laplacian_add_fderiv_add_const_smul f w (b y) ε y (hcd hy) (hwcd y)
       rw [hcomb]
       have := mul_pos hε hLwpos
       linarith [hlap hy]
