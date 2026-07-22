@@ -37,10 +37,10 @@ namespace TauCeti.Multiquadratic
 field `ℚ(√d)` for squarefree `d`, namely `d` when `d ≡ 1 (mod 4)` and `4 * d` otherwise. -/
 def fundamentalDiscriminant (d : ℤ) : ℤ := if d % 4 = 1 then d else 4 * d
 
-theorem fundamentalDiscriminant_of_mod_four_eq_one {d : ℤ} (hd : d % 4 = 1) :
+@[simp] theorem fundamentalDiscriminant_of_mod_four_eq_one {d : ℤ} (hd : d % 4 = 1) :
     fundamentalDiscriminant d = d := if_pos hd
 
-theorem fundamentalDiscriminant_of_mod_four_ne_one {d : ℤ} (hd : d % 4 ≠ 1) :
+@[simp] theorem fundamentalDiscriminant_of_mod_four_ne_one {d : ℤ} (hd : d % 4 ≠ 1) :
     fundamentalDiscriminant d = 4 * d := if_neg hd
 
 /-- `fundamentalDiscriminant d` is `d` or `4 * d`. -/
