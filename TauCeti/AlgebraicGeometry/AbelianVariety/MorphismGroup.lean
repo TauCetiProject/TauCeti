@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom
+public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.Basic
 
 /-!
 # The group of homomorphisms of abelian varieties
