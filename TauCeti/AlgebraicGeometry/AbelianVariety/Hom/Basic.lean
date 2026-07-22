@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Basic
-public import Mathlib.CategoryTheory.Monoidal.CommGrp_
 
 /-!
 # Homomorphisms of abelian varieties
