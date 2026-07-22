@@ -46,16 +46,21 @@ theorem mem_fixedSpace_iff {T : Ω → Ω} (hT : MeasurePreserving T μ μ) (g :
 
 /-- Characterization of fixed points of the `Lᵖ` composition isometry using representatives. -/
 @[simp]
-theorem mem_fixedSpace_iff_comp_ae_eq_self {T : Ω → Ω}
+theorem compMeasurePreserving_eq_self_iff {T : Ω → Ω}
     (hT : MeasurePreserving T μ μ) (g : Lp E p μ) :
-    g ∈ fixedSpace (𝕜 := 𝕜) T hT ↔ (g : Ω → E) ∘ T =ᵐ[μ] g := by
-  rw [mem_fixedSpace_iff]
+    Lp.compMeasurePreserving T hT g = g ↔ (g : Ω → E) ∘ T =ᵐ[μ] g := by
   constructor
   · intro hg
     simpa only [hg] using (Lp.coeFn_compMeasurePreserving g hT).symm
   · intro hg
     apply Lp.ext
     exact (Lp.coeFn_compMeasurePreserving g hT).trans hg
+
+/-- Fixed-space membership characterized by almost-everywhere invariance of representatives. -/
+theorem mem_fixedSpace_iff_comp_ae_eq_self {T : Ω → Ω}
+    (hT : MeasurePreserving T μ μ) (g : Lp E p μ) :
+    g ∈ fixedSpace (𝕜 := 𝕜) T hT ↔ (g : Ω → E) ∘ T =ᵐ[μ] g := by
+  rw [mem_fixedSpace_iff, compMeasurePreserving_eq_self_iff]
 
 /-- The fixed space of the identity transformation is all of `Lᵖ`. -/
 @[simp]
