@@ -66,8 +66,7 @@ private noncomputable def quotientProdEquiv (p : Submodule K F₁) (q : Submodul
       (Submodule.ker_liftQ_eq_bot (p.prod q) f hker.ge hker.le)
   · rintro ⟨⟨x⟩, ⟨y⟩⟩
     refine ⟨(p.prod q).mkQ (x, y), ?_⟩
-    dsimp [g]
-    simp only [f, LinearMap.prodMap_apply, Submodule.mkQ_apply,
+    simp only [g, Submodule.mkQ_apply, Submodule.liftQ_apply, f, LinearMap.prodMap_apply,
       Submodule.Quotient.quot_mk_eq_mk]
 
 /-- The cokernel of a product submodule has dimension equal to the sum of the dimensions of the
