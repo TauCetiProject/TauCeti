@@ -63,8 +63,11 @@ theorem map_face (f : SimplicialMap K L) {σ : Finset α} (hσ : σ ∈ K) :
 /-- A vertex map is simplicial exactly when its image complex is a subcomplex of the codomain. -/
 theorem map_le_iff (f : α → β) :
     K.map f ≤ L ↔ ∀ ⦃σ : Finset α⦄, σ ∈ K → σ.image f ∈ L := by
-  change (fun σ : Finset α ↦ σ.image f) '' K.faces ⊆ L.faces ↔ _
-  exact Set.image_subset_iff
+  constructor
+  · intro h σ hσ
+    exact h ⟨σ, hσ, rfl⟩
+  · rintro h _ ⟨σ, hσ, rfl⟩
+    exact h hσ
 
 /-- Construct a simplicial map from containment of the image complex in the codomain. -/
 def ofMapLE (f : α → β) (h : K.map f ≤ L) : SimplicialMap K L where
@@ -150,11 +153,11 @@ theorem coe_codomainExtend (f : SimplicialMap K L) (h : L ≤ L') :
   (rfl)
 
 /-- Every vertex map is simplicial into its image complex. -/
-def toMap (K : PreAbstractSimplicialComplex α) (f : α → β) : SimplicialMap K (K.map f) :=
+def toImage (K : PreAbstractSimplicialComplex α) (f : α → β) : SimplicialMap K (K.map f) :=
   ofMapLE f le_rfl
 
 @[simp]
-theorem coe_toMap (K : PreAbstractSimplicialComplex α) (f : α → β) : ⇑(toMap K f) = f :=
+theorem coe_toImage (K : PreAbstractSimplicialComplex α) (f : α → β) : ⇑(toImage K f) = f :=
   (rfl)
 
 /-- The inclusion of a subcomplex, acting as the identity on the ambient vertex type. -/
