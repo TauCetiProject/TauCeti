@@ -6,6 +6,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.BoundedGenerator.Basic
 public import TauCeti.Analysis.Semigroups.Resolvent
+import Mathlib.Analysis.Normed.Algebra.Spectrum
 
 /-!
 # Resolvent of a bounded generator
@@ -90,15 +91,6 @@ private theorem inv_smul_tsum_pow_mul_sub (A : X →L[ℝ] X) {lambda : ℝ}
     _ = lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n := by rw [hright, mul_one]
   exact hseries
 
-private theorem sub_mul_inv_smul_tsum_pow (A : X →L[ℝ] X) {lambda : ℝ}
-    (hlambda : ‖A‖ < |lambda|) :
-    (lambda • 1 - A) * (lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n) = 1 := by
-  have hlambda_ne : lambda ≠ 0 := abs_pos.mp (lt_of_le_of_lt (norm_nonneg A) hlambda)
-  have hfactor : lambda • (1 - lambda⁻¹ • A) = lambda • 1 - A := by
-    simp only [smul_sub, smul_smul, mul_inv_cancel₀ hlambda_ne, one_smul]
-  rw [← hfactor, smul_mul_smul, mul_inv_cancel₀ hlambda_ne, one_smul,
-    mul_neg_geom_series (lambda⁻¹ • A) (norm_inv_smul_lt_one A hlambda)]
-
 /-- For `λ > ‖A‖`, the Laplace-transform resolvent of `t ↦ exp (tA)` agrees with
 Mathlib's Banach-algebra resolvent of `A`. -/
 theorem ofBounded_resolvent_eq_resolvent (A : X →L[ℝ] X) {lambda : ℝ}
@@ -108,11 +100,12 @@ theorem ofBounded_resolvent_eq_resolvent (A : X →L[ℝ] X) {lambda : ℝ}
   have hlambda_pos : 0 < lambda := lt_of_le_of_lt (norm_nonneg A) hlambda
   have hlambda_abs : ‖A‖ < |lambda| := by simpa [abs_of_pos hlambda_pos] using hlambda
   let S := lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n
-  have hright : (lambda • 1 - A) * S = 1 := sub_mul_inv_smul_tsum_pow A hlambda_abs
   have hleft : S * (lambda • 1 - A) = 1 := by
     simpa [S, Algebra.smul_mul_assoc] using inv_smul_tsum_pow_mul_sub A hlambda_abs
-  have hmem : lambda ∈ resolventSet ℝ A :=
-    spectrum.mem_resolventSet_of_left_right_inverse hright hleft
+  have hmem : lambda ∈ resolventSet ℝ A := spectrum.mem_resolventSet_of_norm_lt_mul <|
+    lt_of_le_of_lt
+      (mul_le_mul_of_nonneg_left ContinuousLinearMap.norm_id_le (norm_nonneg A))
+      (by simpa [Real.norm_eq_abs] using hlambda_abs)
   rw [ofBounded_resolvent_eq_inv_smul_tsum_pow A hlambda, spectrum.resolvent_eq hmem]
   exact left_inv_eq_right_inv hleft hmem.unit.val_inv
 
