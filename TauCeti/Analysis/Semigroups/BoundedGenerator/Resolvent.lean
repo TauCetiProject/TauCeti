@@ -39,13 +39,6 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X
 
 namespace StronglyContinuousSemigroup
 
-/-- The geometric power series in `λ⁻¹ • A` is summable when `‖A‖ < λ`. -/
-theorem summable_pow_inv_smul_of_norm_lt (A : X →L[ℝ] X) {lambda : ℝ}
-    (hlambda : ‖A‖ < lambda) : Summable fun n : ℕ => (lambda⁻¹ • A) ^ n := by
-  apply summable_geometric_of_norm_lt_one
-  rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (lt_of_le_of_lt (norm_nonneg A) hlambda)]
-  exact (inv_mul_lt_one₀ (lt_of_le_of_lt (norm_nonneg A) hlambda)).2 hlambda
-
 /-- The Neumann-series resolvent is a right inverse of `λI - A`. -/
 @[simp] theorem sub_mul_inv_smul_tsum_pow (A : X →L[ℝ] X) {lambda : ℝ}
     (hlambda : ‖A‖ < lambda) :
@@ -76,7 +69,7 @@ theorem summable_pow_inv_smul_of_norm_lt (A : X →L[ℝ] X) {lambda : ℝ}
 
 /-- For `λ > ‖A‖`, the Laplace-transform resolvent of `t ↦ exp (tA)` is the Neumann series
 `λ⁻¹ ∑' n, (λ⁻¹ A)ⁿ`. -/
-theorem ofBounded_resolvent_eq_boundedGeneratorResolvent (A : X →L[ℝ] X) {lambda : ℝ}
+theorem ofBounded_resolvent_eq_inv_smul_tsum_pow (A : X →L[ℝ] X) {lambda : ℝ}
     (hlambda : ‖A‖ < lambda) :
     (ofBounded A).resolvent (ofBounded_hasGrowthBound A) lambda hlambda =
       lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n := by
