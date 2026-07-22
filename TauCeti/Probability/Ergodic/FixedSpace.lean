@@ -37,7 +37,6 @@ abbrev fixedSpace (T : Ω → Ω) (hT : MeasurePreserving T μ μ) : Submodule �
   (compMeasurePreservingL2 T hT).eqLocus 1
 
 /-- Membership in `fixedSpace` means invariance under the composition operator. -/
-@[simp]
 theorem mem_fixedSpace_iff {T : Ω → Ω} (hT : MeasurePreserving T μ μ) (g : Lp 𝕜 2 μ) :
     g ∈ fixedSpace T hT ↔ Lp.compMeasurePreserving T hT g = g := by
   rfl
