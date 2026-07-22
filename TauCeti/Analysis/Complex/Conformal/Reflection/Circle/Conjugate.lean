@@ -53,6 +53,41 @@ lemma circleReflectionConjugate_apply (c : ℂ) (r : ℝ) (d : ℂ) (s : ℝ)
     circleReflectionConjugate c r d s f z = inversion d s (f (inversion c r z)) :=
   (rfl)
 
+/-- With zero source radius, the circle-reflection conjugate is constant. -/
+@[simp]
+theorem circleReflectionConjugate_zero_source_radius (c d : ℂ) (s : ℝ)
+    (f : ℂ → ℂ) :
+    circleReflectionConjugate c 0 d s f = fun _ => inversion d s (f c) := by
+  funext z
+  simp
+
+/-- With zero target radius, the circle-reflection conjugate is constant. -/
+@[simp]
+theorem circleReflectionConjugate_zero_target_radius (c : ℂ) (r : ℝ) (d : ℂ)
+    (f : ℂ → ℂ) : circleReflectionConjugate c r d 0 f = fun _ => d := by
+  funext z
+  simp
+
+/-- A circle-reflection conjugate with zero source radius is differentiable on every set. -/
+theorem differentiableOn_circleReflectionConjugate_zero_source_radius (c d : ℂ) (s : ℝ)
+    (f : ℂ → ℂ) (S : Set ℂ) :
+    DifferentiableOn ℂ (circleReflectionConjugate c 0 d s f) S := by
+  simp
+
+/-- A circle-reflection conjugate with zero target radius is differentiable on every set. -/
+theorem differentiableOn_circleReflectionConjugate_zero_target_radius (c : ℂ) (r : ℝ)
+    (d : ℂ) (f : ℂ → ℂ) (S : Set ℂ) :
+    DifferentiableOn ℂ (circleReflectionConjugate c r d 0 f) S := by
+  simp
+
+/-- The circle-reflection conjugate agrees with the original map on the source circle when the
+map sends the source circle into the target circle. -/
+theorem circleReflectionConjugate_eqOn_sphere (c : ℂ) (r : ℝ) (d : ℂ) (s : ℝ)
+    (f : ℂ → ℂ) (hmap : MapsTo f (Metric.sphere c r) (Metric.sphere d s)) :
+    EqOn (circleReflectionConjugate c r d s f) f (Metric.sphere c r) := by
+  intro z hz
+  simp [inversion_of_mem_sphere hz, inversion_of_mem_sphere (hmap hz)]
+
 /-- Applying the same circle-reflection conjugation twice recovers the original map. -/
 @[simp]
 theorem circleReflectionConjugate_circleReflectionConjugate (c : ℂ) {r : ℝ} (d : ℂ)
@@ -87,11 +122,12 @@ private lemma differentiableOn_circleReflectionCoord {c : ℂ} {r : ℝ} {S : Se
 /-- Conjugating a holomorphic map by source and target circle reflections is holomorphic away
 from the inversion centres.
 
-The set `S` is mapped into the original holomorphy domain `Ω` by source reflection. The first
-nonincidence hypothesis removes the pole of the source inversion; the second removes the pole of
-the target inversion. Zero radii are supported. -/
+The set `S` is mapped into the original holomorphy domain `Ω` by source reflection. The radii are
+nonzero, and the two nonincidence hypotheses remove the poles of the source and target
+inversions. -/
 theorem differentiableOn_circleReflectionConjugate {c : ℂ} {r : ℝ} {d : ℂ} {s : ℝ}
-    {f : ℂ → ℂ} {Ω S : Set ℂ} (hf : DifferentiableOn ℂ f Ω)
+    {f : ℂ → ℂ} {Ω S : Set ℂ} (_hr : r ≠ 0) (_hs : s ≠ 0)
+    (hf : DifferentiableOn ℂ f Ω)
     (hmap : MapsTo (inversion c r) S Ω) (hc : c ∉ S)
     (hd : ∀ z ∈ S, f (inversion c r z) ≠ d) :
     DifferentiableOn ℂ (circleReflectionConjugate c r d s f) S := by
