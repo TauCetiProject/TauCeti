@@ -42,6 +42,13 @@ Humans can raise issues against the code, and leave implementation (and review) 
 - **[TauCetiReview](https://github.com/TauCetiProject/TauCetiReview)** — the review rubrics and
   the machinery that runs review.
 
+## Relationship to Lean Pool
+
+Tau Ceti and [Lean Pool](https://github.com/Vilin97/lean-pool) are complementary. Lean Pool is
+an arXiv/AfP-like archive of independent formalization projects, whether human- or AI-written.
+Tau Ceti is an integrated, AI-built mathematical library whose contents follow human-audited
+roadmaps and undergo review for coherence, reuse, and compatibility with Mathlib.
+
 ## Review
 
 Review is entirely driven by AIs. These operate according to a fixed open source rubric. Humans write the rubric, and update it as the project evolves.
