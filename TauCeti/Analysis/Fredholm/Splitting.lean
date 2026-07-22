@@ -163,6 +163,10 @@ omit [CompleteSpace 𝕜] in
 @[simp]
 theorem kerComplementEquivRange_apply (x : hT.kerComplement) :
     (hT.kerComplementEquivRange x : F) = T x := by
+  letI : CompleteSpace hT.kerComplement := hT.isClosed_kerComplement.completeSpace_coe
+  letI : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] F)) :=
+    (_root_.TauCeti.IsFredholm.isClosed_range hT).completeSpace_coe
+  rw [kerComplementEquivRange, LinearEquiv.coeFn_toContinuousLinearEquivOfContinuous]
   rfl
 
 /-- The cokernel of a Fredholm operator is continuously linearly equivalent to its chosen
