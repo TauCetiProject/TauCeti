@@ -34,8 +34,8 @@ open scoped NumberField
 namespace TauCeti.NumberField
 
 /-- A square root of an integer is integral over `ℤ`: its square is the image of an integer,
-which is integral, so the element is too. Stated for any commutative `ℤ`-algebra. -/
-theorem isIntegral_of_sq_eq_intCast {A : Type*} [CommRing A] [Algebra ℤ A] {x : A} {d : ℤ}
+which is integral, so the element is too. Stated for any `ℤ`-algebra (possibly noncommutative). -/
+theorem isIntegral_of_sq_eq_intCast {A : Type*} [Ring A] [Algebra ℤ A] {x : A} {d : ℤ}
     (hx : x ^ 2 = algebraMap ℤ A d) : IsIntegral ℤ x :=
   IsIntegral.of_pow two_pos (hx ▸ isIntegral_algebraMap)
 

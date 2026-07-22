@@ -34,10 +34,10 @@ namespace TauCeti.IntermediateField
 variable {F E : Type*} [Field F] [Field E] [Algebra F E] {s : Set E}
 
 /-- **Two algebra homomorphisms agreeing on a generating set are equal.** If `s` generates `E`
-over `F` (`IntermediateField.adjoin F s = ⊤`) and `F`-algebra maps `σ, τ : E →ₐ[F] E₂` (into a
-field `E₂`) agree on every element of `s`, then `σ = τ`. This is the whole-field, two-map
+over `F` (`IntermediateField.adjoin F s = ⊤`) and `F`-algebra maps `σ, τ : E →ₐ[F] E₂` (into any
+semiring `E₂`) agree on every element of `s`, then `σ = τ`. This is the whole-field, two-map
 counterpart of Mathlib's `IntermediateField.algHom_ext_of_eq_adjoin`. -/
-theorem algHom_ext_of_adjoin_eq_top {E₂ : Type*} [Field E₂] [Algebra F E₂]
+theorem algHom_ext_of_adjoin_eq_top {E₂ : Type*} [Semiring E₂] [Algebra F E₂]
     (htop : IntermediateField.adjoin F s = ⊤)
     {σ τ : E →ₐ[F] E₂} (h : ∀ x ∈ s, σ x = τ x) : σ = τ := by
   -- Transport `σ`, `τ` along `adjoin F s ≃ E` and compare on the subfield with Mathlib's
