@@ -84,6 +84,7 @@ theorem dimension_bot : dimension (⊥ : PreAbstractSimplicialComplex ι) = ⊥ 
   exact fun _ hσ => hσ.elim
 
 /-- Only the void complex has dimension `⊥`: any face contributes a nonnegative dimension. -/
+@[simp]
 theorem dimension_eq_bot_iff : dimension K = ⊥ ↔ K = ⊥ := by
   refine ⟨fun h => eq_bot_iff.mpr fun σ hσ => ?_, fun h => h ▸ dimension_bot⟩
   have hle := le_dimension hσ
@@ -91,6 +92,7 @@ theorem dimension_eq_bot_iff : dimension K = ⊥ ↔ K = ⊥ := by
   exact absurd (le_bot_iff.mp hle) (WithBot.natCast_ne_bot _)
 
 /-- The dimension of the standard simplex on a nonempty vertex set `V` is `V.card - 1`. -/
+@[simp]
 theorem dimension_simplex {V : Finset ι} (hV : V.Nonempty) :
     dimension (simplex V) = ((V.card - 1 : ℕ) : WithBot ℕ∞) := by
   refine le_antisymm (dimension_le_iff.mpr fun σ hσ => ?_) (le_dimension (self_mem_simplex.mpr hV))
@@ -98,6 +100,7 @@ theorem dimension_simplex {V : Finset ι} (hV : V.Nonempty) :
 
 /-- The dimension of the boundary of the standard simplex on a vertex set `V` with at least two
 vertices is `V.card - 2`. -/
+@[simp]
 theorem dimension_simplexBoundary {V : Finset ι} (hV : 1 < V.card) :
     dimension (simplexBoundary V) = ((V.card - 2 : ℕ) : WithBot ℕ∞) := by
   refine le_antisymm (dimension_le_iff.mpr fun σ hσ => ?_) ?_
@@ -119,20 +122,19 @@ namespace AbstractSimplicialComplex
 variable {ι : Type*}
 
 /-- The **dimension** of an abstract simplicial complex, defined through its underlying precomplex.
--/
+
+Marked `@[expose]` so the exported bridging lemma `dimension_toPreAbstractSimplicialComplex` below
+can be proved by `rfl`: unlike `join` (a structure whose projection reduces on its own), this is a
+value-producing `def`, so an exported `rfl` must be allowed to unfold it. -/
+@[expose]
 noncomputable def dimension (K : AbstractSimplicialComplex ι) : WithBot ℕ∞ :=
   PreAbstractSimplicialComplex.dimension K.toPreAbstractSimplicialComplex
-
-private theorem dimension_toPreAbstractSimplicialComplex_private
-    (K : AbstractSimplicialComplex ι) :
-    PreAbstractSimplicialComplex.dimension K.toPreAbstractSimplicialComplex = dimension K :=
-  rfl
 
 /-- The dimension of an abstract complex agrees with the dimension of its underlying precomplex. -/
 @[simp]
 theorem dimension_toPreAbstractSimplicialComplex (K : AbstractSimplicialComplex ι) :
     PreAbstractSimplicialComplex.dimension K.toPreAbstractSimplicialComplex = dimension K :=
-  dimension_toPreAbstractSimplicialComplex_private K
+  rfl
 
 variable {K L : AbstractSimplicialComplex ι} {σ : Finset ι}
 
