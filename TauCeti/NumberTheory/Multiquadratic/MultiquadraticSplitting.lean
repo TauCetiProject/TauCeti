@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Dimension.FreeAndStrongRankCondition
 public import Mathlib.LinearAlgebra.Dimension.DivisionRing
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Basic
 public import TauCeti.NumberTheory.NumberField.SplitsCompletely
+import TauCeti.RingTheory.Ideal.LiesOver
+import TauCeti.NumberTheory.NumberField.IntegralSqrt
 
 /-!
 # The prime-splitting law for a multiquadratic field
@@ -34,43 +36,6 @@ public section
 
 variable {K : Type*} [Field K] [NumberField K]
 
-omit [NumberField K] in
-/-- The generator `r` is integral over `ℤ`. -/
-private theorem mq_isIntegral_gen (d : ℤ) (r : K)
-    (hr : r ^ 2 = algebraMap ℤ K d) : IsIntegral ℤ r :=
-  -- `r² = algebraMap d` is integral, so `r` is too.
-  IsIntegral.of_pow (n := 2) (by norm_num) (hr ▸ isIntegral_algebraMap)
-
-/-- The generator `r`, as an element of the ring of integers `𝓞 K`. -/
-private noncomputable def ringGen (d : ℤ) (r : K)
-    (hr : r ^ 2 = algebraMap ℤ K d) : 𝓞 K :=
-  ⟨r, mq_isIntegral_gen d r hr⟩
-
-omit [NumberField K] in
-/-- Under `𝓞 K ↪ K`, `ringGen d r hr` maps to the generator `r`. -/
-private theorem algebraMap_ringGen (d : ℤ) (r : K)
-    (hr : r ^ 2 = algebraMap ℤ K d) :
-    algebraMap (𝓞 K) K (ringGen d r hr) = r :=
-  -- `ringGen d r hr = ⟨r, _⟩`, so its image is the definitional coercion back to `K`
-  -- (cf. `RingOfIntegers.coe_mk`).
-  rfl
-
-omit [NumberField K] in
-/-- `ringGen` squares to the radicand `d` in `𝓞 K`. -/
-private theorem ringGen_sq (d : ℤ) (r : K)
-    (hr : r ^ 2 = algebraMap ℤ K d) :
-    ringGen d r hr ^ 2 = algebraMap ℤ (𝓞 K) d := by
-  apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-  rw [map_pow, algebraMap_ringGen, hr, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K]
-
-omit [NumberField K] in
-/-- For an ideal `Q` lying over the integer ideal `(a)`, an integer `m` maps into `Q` under
-`algebraMap ℤ (𝓞 K)` iff `a ∣ m`. -/
-private theorem algebraMap_int_mem_iff_dvd_of_liesOver {a : ℤ}
-    (Q : Ideal (𝓞 K)) [Q.LiesOver (span {a})] (m : ℤ) :
-    algebraMap ℤ (𝓞 K) m ∈ Q ↔ a ∣ m :=
-  (Ideal.mem_of_liesOver Q (span {a}) m).symm.trans Ideal.mem_span_singleton
-
 /-- Forward direction (pointwise): for `K` Galois over `ℚ`, if `p` splits completely
 (`#{primes over p} = [K : ℚ]`) and `p ∤ d i`, then `d i` is a quadratic residue mod `p`. -/
 private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (d : ι → ℤ)
@@ -87,7 +52,7 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
       ((Ideal.span_singleton_prime hpne).mpr (Nat.prime_iff_prime_int.mp Fact.out))
       (by simpa [Ideal.span_singleton_eq_bot] using hpne)
   haveI : Q.IsMaximal := Ideal.IsMaximal.of_liesOver_isMaximal Q (span {(p : ℤ)})
-  let R : 𝓞 K := ringGen (d i) (r i) (hr i)
+  let R : 𝓞 K := integralSqrt (hr i)
   rw [ncard_primesOver_eq_finrank_iff K p] at hsplit
   have hfQ : finrank (ℤ ⧸ span {(p : ℤ)}) (𝓞 K ⧸ Q) = 1 := by
     rw [← Ideal.inertiaDeg'_algebraMap (p := span {(p : ℤ)}) (P := Q),
@@ -114,7 +79,7 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
     rw [← algebraMap_int_mem_iff_dvd_of_liesOver Q]
     have hfac : algebraMap ℤ (𝓞 K) (a ^ 2 - d i) =
         (algebraMap ℤ (𝓞 K) a - R) * (algebraMap ℤ (𝓞 K) a + R) := by
-      rw [map_sub, map_pow, ← ringGen_sq (d i) (r i) (hr i)]; ring
+      rw [map_sub, map_pow, ← integralSqrt_sq (hr i)]; ring
     rw [hfac]
     exact Ideal.mul_mem_right _ _ hdiff
   rw [legendreSym.eq_one_iff p (by rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hcop_i)]
@@ -152,7 +117,7 @@ private theorem map_ne_neg_of_legendreSym_eq_one (d : ℤ) (r : K)
     {σ : K ≃ₐ[ℚ] K} (hσ : σ ∈ stabilizer (K ≃ₐ[ℚ] K) Q) : σ r ≠ - r := by
   intro hflip
   obtain ⟨a, hpa, hpa'⟩ := exists_dvd_sq_sub_and_not_dvd_of_legendreSym_eq_one p hqr
-  let R : 𝓞 K := ringGen d r hr
+  let R : 𝓞 K := integralSqrt hr
   -- `algebraMap` intertwines the Galois action on `𝓞 K` with that on `K` (used for `hsR`/`hsA`).
   have hbridge (x : 𝓞 K) : algebraMap (𝓞 K) K (σ • x) = σ (algebraMap (𝓞 K) K x) := by
     have hcoe : algebraMap (𝓞 K) K (σ • x) = σ • algebraMap (𝓞 K) K x :=
@@ -165,13 +130,13 @@ private theorem map_ne_neg_of_legendreSym_eq_one (d : ℤ) (r : K)
   have hAsq : A ^ 2 = algebraMap ℤ (𝓞 K) (a ^ 2) := by rw [hAdef, ← map_pow]
   have heq : (R - A) * (R + A) = algebraMap ℤ (𝓞 K) (d - a ^ 2) := by
     have h1 : (R - A) * (R + A) = R ^ 2 - A ^ 2 := by ring
-    rw [h1, ringGen_sq d r hr, hAsq, ← map_sub]
+    rw [h1, integralSqrt_sq hr, hAsq, ← map_sub]
   have hfacQ : (R - A) * (R + A) ∈ Q := by
     rw [heq]; exact (algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr (dvd_sub_comm.mp hpa)
   -- `σ` sends `R ↦ -R` and fixes the integer `A`.
   have hsR : σ • R = - R := by
     apply FaithfulSMul.algebraMap_injective (𝓞 K) K
-    rw [hbridge R, map_neg, algebraMap_ringGen, hflip]
+    rw [hbridge R, map_neg, algebraMap_integralSqrt, hflip]
   have hsA : σ • A = A := by
     apply FaithfulSMul.algebraMap_injective (𝓞 K) K
     rw [hbridge A, hAdef, ← IsScalarTower.algebraMap_apply ℤ (𝓞 K) K,
