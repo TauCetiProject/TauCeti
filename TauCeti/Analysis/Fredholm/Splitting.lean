@@ -152,6 +152,7 @@ complement onto its range. -/
 noncomputable def kerComplementEquivRange :
     hT.kerComplement ≃L[𝕜] LinearMap.range (T : E →ₗ[𝕜] F) := by
   letI : CompleteSpace hT.kerComplement := hT.isClosed_kerComplement.completeSpace_coe
+  -- `toContinuousLinearEquivOfContinuous` requires both sides to be complete.
   letI : CompleteSpace (LinearMap.range (T : E →ₗ[𝕜] F)) :=
     (_root_.TauCeti.IsFredholm.isClosed_range hT).completeSpace_coe
   exact (LinearMap.kerComplementEquivRange (T : E →ₗ[𝕜] F)
