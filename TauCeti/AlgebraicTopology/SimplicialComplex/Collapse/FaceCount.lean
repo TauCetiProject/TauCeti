@@ -22,8 +22,6 @@ Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 3.
 
 ## Main results
 
-* `ElementaryCollapsesTo.faces_eq_sdiff_pair`: an elementary collapse deletes precisely two
-  faces.
 * `ElementaryCollapsesTo.ncard_faces_add_two`: the face counts before and after an elementary
   collapse differ by two.
 * `CollapsesTo.ncard_faces_le`: a finite collapse cannot increase the number of faces.
@@ -40,16 +38,6 @@ variable {ι : Type*}
 
 namespace ElementaryCollapsesTo
 
-/-- The faces removed by an elementary collapse are exactly its free face and its unique
-coface. -/
-theorem faces_eq_sdiff_pair (h : ElementaryCollapsesTo K L) :
-    ∃ σ τ : Finset ι, σ ≠ τ ∧ σ ∈ K ∧ τ ∈ K ∧ L.faces = K.faces \ {σ, τ} := by
-  obtain ⟨σ, τ, hfree, hcov, hmem⟩ := h.exists_pair
-  refine ⟨σ, τ, hcov.ne, hfree.lower_mem, hfree.upper_mem, ?_⟩
-  ext ω
-  change (ω ∈ L ↔ ω ∈ K ∧ ω ∉ ({σ, τ} : Set (Finset ι)))
-  simpa only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or] using hmem ω
-
 /-- The set of faces after an elementary collapse is finite whenever the original face set is
 finite. -/
 theorem finite_faces (h : ElementaryCollapsesTo K L) (hK : K.faces.Finite) :
@@ -59,15 +47,19 @@ theorem finite_faces (h : ElementaryCollapsesTo K L) (hK : K.faces.Finite) :
 /-- An elementary collapse of a finite complex removes exactly two faces. -/
 theorem ncard_faces_add_two (h : ElementaryCollapsesTo K L) (hK : K.faces.Finite) :
     Set.ncard L.faces + 2 = Set.ncard K.faces := by
-  obtain ⟨σ, τ, hστ, hσ, hτ, hfaces⟩ := h.faces_eq_sdiff_pair
+  obtain ⟨σ, τ, hfree, hστ, hmem⟩ := h.exists_pair
   have hpair : ({σ, τ} : Set (Finset ι)) ⊆ K.faces := by
     rw [Set.pair_subset_iff]
-    exact ⟨hσ, hτ⟩
+    exact ⟨hfree.lower_mem, hfree.upper_mem⟩
+  have hfaces : L.faces = K.faces \ {σ, τ} := by
+    ext ω
+    change (ω ∈ L ↔ ω ∈ K ∧ ω ∉ ({σ, τ} : Set (Finset ι)))
+    simpa only [Set.mem_insert_iff, Set.mem_singleton_iff, not_or] using hmem ω
   rw [hfaces]
   calc
     Set.ncard (K.faces \ {σ, τ}) + 2 =
         Set.ncard (K.faces \ {σ, τ}) + Set.ncard ({σ, τ} : Set (Finset ι)) := by
-          rw [Set.ncard_pair hστ]
+          rw [Set.ncard_pair hστ.ne]
     _ = Set.ncard K.faces := Set.ncard_sdiff_add_ncard_of_subset hpair hK
 
 /-- The face count after an elementary collapse is the original face count minus two. -/
