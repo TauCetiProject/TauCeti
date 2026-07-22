@@ -182,14 +182,6 @@ theorem elementaryTwoQuotientMk_eq_iff (g h : G) :
     elementaryTwoQuotientMk g = elementaryTwoQuotientMk h ↔ IsSquare (g / h) := by
   rw [← elementaryTwoQuotientMk_eq_zero_iff, elementaryTwoQuotientMk_div, sub_eq_zero]
 
-/-- Negation is the identity on the elementary-2 quotient. Equivalently, every square class has
-additive order at most two. -/
-@[simp] theorem elementaryTwoQuotient_neg_eq_self (x : ElementaryTwoQuotient G) : -x = x := by
-  rw [neg_eq_iff_add_eq_zero, ← two_smul ℕ,
-    ← Nat.cast_smul_eq_nsmul (R := ZMod 2)]
-  have htwo : ((2 : ℕ) : ZMod 2) = 0 := ZMod.natCast_self 2
-  rw [htwo, zero_smul]
-
 variable {H : Type*} [CommGroup H]
 
 /-- A homomorphism of commutative groups induces a `ZMod 2`-linear map on maximal elementary-2
