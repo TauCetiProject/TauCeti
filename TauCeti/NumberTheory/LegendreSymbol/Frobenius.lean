@@ -63,6 +63,56 @@ private theorem AlgHom.IsArithFrobAt.sub_pow_mem {φ : S →ₐ[ℤ] S} (H : φ.
 
 variable [IsDomain S] {Q : Ideal S} {x : S}
 
+omit [IsDomain S] in
+/-- The **Frobenius congruence for a square root, refined by Euler's criterion**: for an
+arithmetic Frobenius `φ : S →ₐ[ℤ] S` at `Q` lying over the odd rational prime `p`, if
+`x² = d` then `φ x ≡ legendreSym p d • x (mod Q)`. Internal step of `apply_sqrt`. -/
+private theorem AlgHom.IsArithFrobAt.sub_legendreSym_smul_mem {φ : S →ₐ[ℤ] S}
+    (H : φ.IsArithFrobAt Q) [Q.LiesOver (span {(p : ℤ)})] (hodd : p ≠ 2)
+    (hx : x ^ 2 = algebraMap ℤ S d) : φ x - legendreSym p d • x ∈ Q := by
+  -- `p` is odd, so `p = 2·(p/2) + 1`; hence `x ^ p = (x²)^(p/2) · x = d^(p/2) · x`.
+  have hp : p = 2 * (p / 2) + 1 := by
+    have := Nat.odd_iff.mp ((Fact.out : p.Prime).odd_of_ne_two hodd); omega
+  have hxp : x ^ p = algebraMap ℤ S (d ^ (p / 2)) * x := by
+    conv_lhs => rw [hp]
+    rw [pow_succ, pow_mul, hx, ← map_pow]
+  -- Euler's criterion: `p ∣ d ^ (p / 2) - legendreSym p d`.
+  have heuler : (p : ℤ) ∣ d ^ (p / 2) - legendreSym p d := by
+    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
+    push_cast
+    exact sub_eq_zero.mpr (legendreSym.eq_pow p d).symm
+  -- Scaling Euler by `x`: `d^(p/2) · x ≡ legendreSym p d • x (mod Q)`.
+  have hstep : algebraMap ℤ S (d ^ (p / 2)) * x - legendreSym p d • x ∈ Q := by
+    have hfactor : algebraMap ℤ S (d ^ (p / 2)) * x - legendreSym p d • x =
+        algebraMap ℤ S (d ^ (p / 2) - legendreSym p d) * x := by
+      simp only [map_sub, sub_mul, zsmul_eq_mul, eq_intCast]
+    rw [hfactor]
+    exact Q.mul_mem_right x ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr heuler)
+  -- Combine with the base congruence `φ x ≡ x ^ p (mod Q)`.
+  have hsum := Q.add_mem (AlgHom.IsArithFrobAt.sub_pow_mem (p := p) H x) hstep
+  rw [hxp] at hsum
+  rwa [sub_add_sub_cancel] at hsum
+
+omit [IsDomain S] in
+/-- The two square roots of `d` are **distinct modulo `Q`**: if `x² = d`, the prime `p` is odd
+and `p ∤ d`, and `Q` lies over `(p)`, then `x + x ∉ Q`. (Otherwise `(x + x)² = 4d ∈ Q` would
+give `p ∣ 4d`, forcing `p = 2` or `p ∣ d`.) Internal step of `apply_sqrt`. -/
+private theorem add_self_notMem (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
+    [Q.LiesOver (span {(p : ℤ)})] (hx : x ^ 2 = algebraMap ℤ S d) : x + x ∉ Q := by
+  intro hmem
+  -- `(x + x)² = 4d`, so `4d ∈ Q`, whence `p ∣ 4d` since `Q ∩ ℤ = (p)`.
+  have h4d : algebraMap ℤ S (4 * d) ∈ Q := by
+    have hsq4 : algebraMap ℤ S (4 * d) = (x + x) * (x + x) := by
+      rw [map_mul, ← hx, eq_intCast]; push_cast; ring
+    rw [hsq4]; exact Q.mul_mem_right _ hmem
+  rcases (Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).dvd_mul.mp
+      ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h4d) with h4 | hdd
+  · -- `p ∣ 4 = 2²` forces `p = 2`, excluded.
+    have h22 : p ∣ 2 ^ 2 := by simpa using (by exact_mod_cast h4 : p ∣ 4)
+    exact hodd ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp
+      ((Fact.out : p.Prime).dvd_of_dvd_pow h22))
+  · exact hd hdd
+
 /-- **An arithmetic Frobenius acts on square roots by the Legendre symbol.** Let `S` be a
 domain, `Q` an ideal of `S` over the odd rational prime `p`, and `φ : S →ₐ[ℤ] S` an arithmetic
 Frobenius at `Q`. If `x² = d` for an integer `d` not divisible by `p`, then
@@ -73,57 +123,18 @@ theorem AlgHom.IsArithFrobAt.apply_sqrt {φ : S →ₐ[ℤ] S} (H : φ.IsArithFr
     [Q.LiesOver (span {(p : ℤ)})] (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
     (hx : x ^ 2 = algebraMap ℤ S d) :
     φ x = legendreSym p d • x := by
-  have hp2 : p % 2 = 1 := Nat.odd_iff.mp ((Fact.out : p.Prime).odd_of_ne_two hodd)
-  -- `p` is odd, so `p = 2·(p/2) + 1`; hence `x ^ p = (x²)^(p/2) · x = d^(p/2) · x`.
-  have hp : p = 2 * (p / 2) + 1 := by omega
-  have hxp : x ^ p = algebraMap ℤ S (d ^ (p / 2)) * x := by
-    conv_lhs => rw [hp]
-    rw [pow_succ, pow_mul, hx, ← map_pow]
-  -- Euler's criterion: `p ∣ d ^ (p / 2) - legendreSym p d`.
-  have heuler : (p : ℤ) ∣ d ^ (p / 2) - legendreSym p d := by
-    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
-    push_cast
-    exact sub_eq_zero.mpr (legendreSym.eq_pow p d).symm
-  -- Combining the base congruence `φ x ≡ x ^ p` with Euler: `φ x ≡ legendreSym p d • x (mod Q)`.
-  have hkey : φ x - legendreSym p d • x ∈ Q := by
-    have hstep : algebraMap ℤ S (d ^ (p / 2)) * x - legendreSym p d • x ∈ Q := by
-      have hfactor : algebraMap ℤ S (d ^ (p / 2)) * x - legendreSym p d • x =
-          algebraMap ℤ S (d ^ (p / 2) - legendreSym p d) * x := by
-        simp only [map_sub, sub_mul, zsmul_eq_mul, eq_intCast]
-      rw [hfactor]
-      exact Q.mul_mem_right x ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mpr heuler)
-    have hsum := Q.add_mem (AlgHom.IsArithFrobAt.sub_pow_mem (p := p) H x) hstep
-    rw [hxp] at hsum
-    rwa [sub_add_sub_cancel] at hsum
-  -- `(φ x)² = x²`, so `φ x` is `x` or `-x` on the nose.
-  have hpm : φ x = x ∨ φ x = -x := by
-    have hsq : (φ x - x) * (φ x + x) = 0 := by
-      have hexp : (φ x - x) * (φ x + x) = φ (x ^ 2) - x ^ 2 := by rw [map_pow]; ring
-      rw [hexp, hx, AlgHom.commutes, sub_self]
-    rcases mul_eq_zero.mp hsq with h | h
-    · exact Or.inl (sub_eq_zero.mp h)
-    · exact Or.inr (eq_neg_of_add_eq_zero_left h)
+  -- `φ x ≡ legendreSym p d • x (mod Q)` by the Frobenius congruence refined via Euler.
+  have hkey : φ x - legendreSym p d • x ∈ Q :=
+    AlgHom.IsArithFrobAt.sub_legendreSym_smul_mem H hodd hx
+  -- `(φ x)² = x²`, so in the domain `S` the value `φ x` is `x` or `-x` on the nose.
+  have hpm : φ x = x ∨ φ x = -x :=
+    sq_eq_sq_iff_eq_or_eq_neg.mp (by rw [← map_pow, hx, AlgHom.commutes])
   -- The target `legendreSym p d • x` is likewise `x` or `-x`, since the symbol is `±1`.
-  have hdz : (d : ZMod p) ≠ 0 := by rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hd
-  have hgoal : legendreSym p d • x = x ∨ legendreSym p d • x = -x := by
-    rcases legendreSym.eq_one_or_neg_one p hdz with h1 | h1
-    · exact Or.inl (by rw [h1, one_smul])
-    · exact Or.inr (by rw [h1, neg_smul, one_smul])
-  -- When the two signs agree the goal is immediate; when they disagree `x + x ∈ Q`, but that
-  -- would give `p ∣ 4d`, contradicting `p` odd and `p ∤ d`.
-  have hsep : x + x ∉ Q := by
-    intro hmem
-    have h4d : algebraMap ℤ S (4 * d) ∈ Q := by
-      have hsq4 : algebraMap ℤ S (4 * d) = (x + x) * (x + x) := by
-        rw [map_mul, ← hx, eq_intCast]; push_cast; ring
-      rw [hsq4]; exact Q.mul_mem_right _ hmem
-    rcases (Nat.prime_iff_prime_int.mp (Fact.out : p.Prime)).dvd_mul.mp
-        ((algebraMap_int_mem_iff_dvd_of_liesOver Q _).mp h4d) with h4 | hdd
-    · -- `p ∣ 4` forces `p = 2`, excluded.
-      have h22 : p ∣ 2 ^ 2 := by simpa using (by exact_mod_cast h4 : p ∣ 4)
-      exact hodd ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp
-        ((Fact.out : p.Prime).dvd_of_dvd_pow h22))
-    · exact hd hdd
+  have hgoal : legendreSym p d • x = x ∨ legendreSym p d • x = -x :=
+    (legendreSym.eq_one_or_neg_one p (by rwa [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd])).imp
+      (fun h ↦ by rw [h, one_smul]) (fun h ↦ by rw [h, neg_smul, one_smul])
+  -- When both signs agree the goal is immediate; when they disagree `x + x ∈ Q`, excluded.
+  have hsep : x + x ∉ Q := add_self_notMem hodd hd hx
   rcases hpm with hx' | hx' <;> rcases hgoal with hg | hg
   · rw [hx', hg]
   · rw [hx', hg, sub_neg_eq_add] at hkey; exact absurd hkey hsep
