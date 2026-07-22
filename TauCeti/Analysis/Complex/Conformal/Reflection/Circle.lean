@@ -137,8 +137,7 @@ theorem circleReflectionEquiv_symm (c : ℂ) (r : ℝ) (hr : r ≠ 0) :
 /-- Every point on a circle is fixed by reflection in that circle. -/
 @[simp]
 theorem circleReflection_eq_self_of_mem_sphere {c z : ℂ} {r : ℝ}
-    (hz : z ∈ sphere c r) : circleReflection c r z = z := by
-  rw [mem_sphere, dist_eq] at hz
+    (hz : ‖z - c‖ = r) : circleReflection c r z = z := by
   have hr : 0 ≤ r := hz ▸ norm_nonneg (z - c)
   rcases hr.eq_or_lt with rfl | hr
   · have : z = c := sub_eq_zero.mp (norm_eq_zero.mp hz)
