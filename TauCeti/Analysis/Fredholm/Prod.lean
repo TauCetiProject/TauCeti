@@ -21,6 +21,8 @@ cokernel of a product submodule and the product of the two cokernels.
 ## Main declarations
 
 * `TauCeti.IsFredholm.prodMap`: a product of Fredholm operators is Fredholm.
+* `TauCeti.ContinuousLinearMap.index_prodMap_of_finiteDimensional`: the index is additive under
+  products when the kernels and cokernels are finite-dimensional.
 * `TauCeti.ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
 -/
 
@@ -64,9 +66,9 @@ private noncomputable def quotientProdEquiv (p : Submodule K F₁) (q : Submodul
       (Submodule.ker_liftQ_eq_bot (p.prod q) f hker.ge hker.le)
   · rintro ⟨⟨x⟩, ⟨y⟩⟩
     refine ⟨(p.prod q).mkQ (x, y), ?_⟩
-    change (((p.prod q).liftQ f hker.ge).comp (p.prod q).mkQ) (x, y) = _
-    rw [(p.prod q).liftQ_mkQ, LinearMap.prodMap_apply]
-    rfl
+    dsimp [g]
+    simp only [f, LinearMap.prodMap_apply, Submodule.mkQ_apply,
+      Submodule.Quotient.quot_mk_eq_mk]
 
 /-- The cokernel of a product submodule has dimension equal to the sum of the dimensions of the
 two cokernels. -/
@@ -79,12 +81,6 @@ end Submodule
 
 variable {T : E₁ →L[K] F₁} {S : E₂ →L[K] F₂}
 
-/-- The underlying linear map of the Cartesian product of two continuous linear maps is the
-Cartesian product of their underlying linear maps. -/
-private lemma coe_prodMap :
-    ((T.prodMap S : E₁ × E₂ →L[K] F₁ × F₂) : E₁ × E₂ →ₗ[K] F₁ × F₂) =
-      (T : E₁ →ₗ[K] F₁).prodMap (S : E₂ →ₗ[K] F₂) := rfl
-
 /-- The Cartesian product of two Fredholm operators is Fredholm. -/
 lemma IsFredholm.prodMap (hT : IsFredholm T) (hS : IsFredholm S) :
     IsFredholm (T.prodMap S) := by
@@ -93,25 +89,25 @@ lemma IsFredholm.prodMap (hT : IsFredholm T) (hS : IsFredholm S) :
   haveI := hT.finiteDimensional_coker
   haveI := hS.finiteDimensional_coker
   refine ⟨?_, ?_, ?_⟩
-  · rw [coe_prodMap, LinearMap.ker_prodMap]
+  · rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.ker_prodMap]
     exact (Submodule.prodSubtypeEquiv _ _).symm.finiteDimensional
-  · rw [coe_prodMap, LinearMap.range_prodMap]
+  · rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.range_prodMap]
     exact hT.isClosed_range.prod hS.isClosed_range
-  · rw [coe_prodMap, LinearMap.range_prodMap]
+  · rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.range_prodMap]
     exact (Submodule.quotientProdEquiv _ _).symm.finiteDimensional
 
 namespace ContinuousLinearMap
 
 /-- The index is additive under Cartesian products when both kernels and cokernels are finite
 dimensional. -/
-private lemma index_prodMap_of_finiteDimensional (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
+lemma index_prodMap_of_finiteDimensional (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
     [FiniteDimensional K (LinearMap.ker (T : E₁ →ₗ[K] F₁))]
     [FiniteDimensional K (LinearMap.ker (S : E₂ →ₗ[K] F₂))]
     [FiniteDimensional K (F₁ ⧸ LinearMap.range (T : E₁ →ₗ[K] F₁))]
     [FiniteDimensional K (F₂ ⧸ LinearMap.range (S : E₂ →ₗ[K] F₂))] :
     index (T.prodMap S) = index T + index S := by
   simp only [index_eq_finrank_sub]
-  rw [coe_prodMap, LinearMap.ker_prodMap, LinearMap.range_prodMap]
+  rw [ContinuousLinearMap.coe_prodMap T S, LinearMap.ker_prodMap, LinearMap.range_prodMap]
   simp only [(Submodule.prodSubtypeEquiv _ _).finrank_eq,
     Submodule.finrank_quotient_prod, finrank_prod]
   omega
