@@ -49,26 +49,28 @@ theorem summable_pow_inv_smul_of_norm_lt (A : X →L[ℝ] X) {lambda : ℝ}
 /-- The Neumann-series resolvent is a right inverse of `λI - A`. -/
 @[simp] theorem sub_mul_inv_smul_tsum_pow (A : X →L[ℝ] X) {lambda : ℝ}
     (hlambda : ‖A‖ < lambda) :
-    (lambda • 1 - A) * (lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n) = 1 := by
+    lambda⁻¹ • ((lambda • 1 - A) * ∑' n : ℕ, (lambda⁻¹ • A) ^ n) = 1 := by
   have hlambda_pos : 0 < lambda := lt_of_le_of_lt (norm_nonneg A) hlambda
   have hnorm : ‖lambda⁻¹ • A‖ < 1 := by
     rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hlambda_pos]
     exact (inv_mul_lt_one₀ hlambda_pos).2 hlambda
   have hfactor : lambda • (1 - lambda⁻¹ • A) = lambda • 1 - A := by
     simp only [smul_sub, smul_smul, mul_inv_cancel₀ hlambda_pos.ne', one_smul]
+  rw [← Algebra.mul_smul_comm]
   rw [← hfactor, smul_mul_smul, mul_inv_cancel₀ hlambda_pos.ne', one_smul,
     mul_neg_geom_series _ hnorm]
 
 /-- The Neumann-series resolvent is a left inverse of `λI - A`. -/
 @[simp] theorem inv_smul_tsum_pow_mul_sub (A : X →L[ℝ] X) {lambda : ℝ}
     (hlambda : ‖A‖ < lambda) :
-    (lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n) * (lambda • 1 - A) = 1 := by
+    lambda⁻¹ • ((∑' n : ℕ, (lambda⁻¹ • A) ^ n) * (lambda • 1 - A)) = 1 := by
   have hlambda_pos : 0 < lambda := lt_of_le_of_lt (norm_nonneg A) hlambda
   have hnorm : ‖lambda⁻¹ • A‖ < 1 := by
     rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hlambda_pos]
     exact (inv_mul_lt_one₀ hlambda_pos).2 hlambda
   have hfactor : lambda • (1 - lambda⁻¹ • A) = lambda • 1 - A := by
     simp only [smul_sub, smul_smul, mul_inv_cancel₀ hlambda_pos.ne', one_smul]
+  rw [← Algebra.smul_mul_assoc]
   rw [← hfactor, smul_mul_smul, inv_mul_cancel₀ hlambda_pos.ne', one_smul,
     geom_series_mul_neg _ hnorm]
 
@@ -99,7 +101,7 @@ theorem ofBounded_resolvent_eq_boundedGeneratorResolvent (A : X →L[ℝ] X) {la
   have hseries : R = lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n := by calc
     R = 1 * R := (one_mul R).symm
     _ = ((lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n) * (lambda • 1 - A)) * R := by
-      rw [inv_smul_tsum_pow_mul_sub A hlambda]
+      rw [Algebra.smul_mul_assoc, inv_smul_tsum_pow_mul_sub A hlambda]
     _ = (lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n) * ((lambda • 1 - A) * R) :=
       mul_assoc _ _ _
     _ = lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n := by rw [hright, mul_one]
