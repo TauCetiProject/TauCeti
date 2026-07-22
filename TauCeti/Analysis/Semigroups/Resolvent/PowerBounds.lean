@@ -50,8 +50,8 @@ theorem resolvent_pow_norm_le (S : ContractionSemigroup X) (lambda : ℝ) (hlamb
 theorem norm_resolvent_pow_apply_le (S : ContractionSemigroup X) (lambda : ℝ)
     (hlambda : 0 < lambda) (n : ℕ) (x : X) :
     ‖(S.resolvent lambda hlambda ^ n) x‖ ≤ (1 / lambda) ^ n * ‖x‖ := by
-  exact (ContinuousLinearMap.le_opNorm _ x).trans
-    (mul_le_mul_of_nonneg_right (S.resolvent_pow_norm_le lambda hlambda n) (norm_nonneg x))
+  exact (S.resolvent lambda hlambda ^ n).le_of_opNorm_le
+    (S.resolvent_pow_norm_le lambda hlambda n) x
 
 /-- Every power of the scaled contraction resolvent `lambda R(lambda)` has norm at most one. -/
 theorem norm_smul_resolvent_pow_le_one (S : ContractionSemigroup X) (lambda : ℝ)
@@ -69,14 +69,8 @@ theorem norm_smul_resolvent_pow_le_one (S : ContractionSemigroup X) (lambda : �
 theorem norm_smul_resolvent_pow_apply_le (S : ContractionSemigroup X) (lambda : ℝ)
     (hlambda : 0 < lambda) (n : ℕ) (x : X) :
     ‖((lambda • S.resolvent lambda hlambda) ^ n) x‖ ≤ ‖x‖ := by
-  calc
-    ‖((lambda • S.resolvent lambda hlambda) ^ n) x‖
-        ≤ ‖(lambda • S.resolvent lambda hlambda) ^ n‖ * ‖x‖ :=
-          ContinuousLinearMap.le_opNorm _ x
-    _ ≤ 1 * ‖x‖ := by
-      gcongr
-      exact S.norm_smul_resolvent_pow_le_one lambda hlambda n
-    _ = ‖x‖ := one_mul _
+  simpa using ((lambda • S.resolvent lambda hlambda) ^ n).le_of_opNorm_le
+    (S.norm_smul_resolvent_pow_le_one lambda hlambda n) x
 
 end ContractionSemigroup
 
