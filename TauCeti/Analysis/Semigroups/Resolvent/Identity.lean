@@ -53,8 +53,8 @@ private theorem tendsto_exp_neg_smul_realOperator_atTop (S : StronglyContinuousS
           exact le_trans (ContinuousLinearMap.le_opNorm _ _)
             (by gcongr; exact hb.bound t ht.le)
       _ = M * ‖(x : X)‖ * Real.exp (-((lambda - omega) * t)) := by
-          rw [show -((lambda - omega) * t) = -(lambda * t) + omega * t by ring,
-            Real.exp_add]
+          ring_nf
+          rw [Real.exp_add]
           ring
   · have hrate : Filter.Tendsto (fun t : ℝ => (lambda - omega) * t)
         Filter.atTop Filter.atTop :=
@@ -93,7 +93,7 @@ private theorem hasDerivWithinAt_exp_neg_smul_realOperator
 
 /-- The Laplace-transform resolvent is a left inverse to `lambda • I - A` on the generator
 domain: `R(lambda) (lambda x - A x) = x`. -/
-theorem resolventLeftInv (S : StronglyContinuousSemigroup X) {omega M : ℝ}
+@[simp] theorem resolventLeftInv (S : StronglyContinuousSemigroup X) {omega M : ℝ}
     [CompleteSpace X]
     (hb : S.HasGrowthBound omega M) (lambda : ℝ) (hlambda : omega < lambda)
     (x : S.domain) :
@@ -256,7 +256,7 @@ private theorem resolvent_eq_stronglyContinuousSemigroup_resolvent
   rw [S.resolvent_apply, S.toStronglyContinuousSemigroup.resolvent_apply]
 
 /-- The contraction resolvent is a left inverse to `lambda • I - A` on the generator domain. -/
-theorem resolventLeftInv (S : ContractionSemigroup X) [CompleteSpace X]
+@[simp] theorem resolventLeftInv (S : ContractionSemigroup X) [CompleteSpace X]
     (lambda : ℝ) (hlambda : 0 < lambda) (x : S.toStronglyContinuousSemigroup.domain) :
     S.resolvent lambda hlambda
         (lambda • (x : X) - S.toStronglyContinuousSemigroup.generator
