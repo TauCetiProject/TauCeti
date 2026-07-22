@@ -6,6 +6,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Basic
+public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+public import Mathlib.LinearAlgebra.Finsupp.LSum
+public import Mathlib.RingTheory.Finiteness.Finsupp
 
 /-!
 # The character–cocharacter perfect pairing of a split torus
@@ -25,14 +28,19 @@ the arbitrary-rank case, the **split torus** `T = D(Multiplicative (σ →₀ �
   `⟨ofAdd m, ψ⟩ = ∑ᵢ mᵢ · cocharEquiv ψ i`, so that `X*(T) × X_*(T) → ℤ` is the canonical
   evaluation pairing between `σ →₀ ℤ` and `σ → ℤ`. It is realized on the group as the
   corresponding power endomorphism of `𝔾ₘ` (`SplitTorus.charPoints_comp_cocharPoints_ofAdd`).
-* The pairing is **perfect**: `SplitTorus.pairing_eq_zero_left` and
-  `SplitTorus.pairing_eq_zero_right` are its non-degeneracy in each slot — a character pairing
+* The pairing is **non-degenerate** in each slot for arbitrary `σ`:
+  `SplitTorus.pairing_eq_zero_left` and `SplitTorus.pairing_eq_zero_right` — a character pairing
   to `0` against every cocharacter is trivial, and vice versa.
+* For a **finite-rank** split torus (`Finite σ`) the pairing is genuinely **perfect**:
+  `SplitTorus.instIsPerfPair` gives Mathlib's `LinearMap.IsPerfPair` for the dot-product
+  bilinear map `SplitTorus.dotPairing`, i.e. both induced maps to the `ℤ`-duals are
+  isomorphisms. (For infinite `σ` the pairing stays non-degenerate but is *not* perfect: `X*(T)`
+  is then not reflexive, and `D(Multiplicative (σ →₀ ℤ))` is not a finite-type torus.)
 
 This advances the reductive-groups roadmap (`ReductiveGroups/README.md` in TauCetiRoadmap),
 Layer 4: "Tori: split ... the **character lattice `X*(T)`** and **cocharacter lattice
 `X_*(T)`** with their **perfect pairing**: the input to root data", extending the rank-`1`
-pairing of `DiagonalizableGroup.pairing_ofAdd` to the split torus of arbitrary rank.
+pairing of `DiagonalizableGroup.pairing_ofAdd` to the finite-rank split torus.
 
 ## Main declarations
 
@@ -43,7 +51,10 @@ pairing of `DiagonalizableGroup.pairing_ofAdd` to the split torus of arbitrary r
 * `TauCeti.SplitTorus.charPoints_comp_cocharPoints_ofAdd`: the dot-product pairing is realized
   on points as the corresponding power endomorphism of `𝔾ₘ`.
 * `TauCeti.SplitTorus.pairing_eq_zero_left`, `TauCeti.SplitTorus.pairing_eq_zero_right`: the
-  pairing is perfect (non-degenerate in each slot).
+  pairing is non-degenerate in each slot, for arbitrary `σ`.
+* `TauCeti.SplitTorus.dotPairing`: the pairing as a `ℤ`-bilinear map between `X*(T) = σ →₀ ℤ`
+  and `X_*(T) = σ → ℤ`, with `TauCeti.SplitTorus.instIsPerfPair` proving it perfect
+  (`LinearMap.IsPerfPair`) for a finite-rank split torus (`Finite σ`).
 
 ## References
 
@@ -51,8 +62,10 @@ The abstract diagonalizable-group character–cocharacter pairing is Tau Ceti's
 `TauCeti.Algebra.AlgebraicGroup.Cocharacter`, and the free-abelian-group character
 identification `TauCeti.freeAbelianCharEquiv` is `TauCeti.Algebra.Group.FreeAbelianCharacter`.
 The dot-product form reuses Mathlib's `Finsupp.linearCombination` and the additive/multiplicative
-type-tag adjunction `AddMonoidHom.toMultiplicative`. This realizes the split-torus perfect
-pairing of the Tau Ceti reductive-groups roadmap (Layer 4).
+type-tag adjunction `AddMonoidHom.toMultiplicative`; the bilinear packaging `dotPairing` and its
+perfectness use Mathlib's free-forgetful adjunction `Finsupp.llift` and `LinearMap.IsPerfPair`.
+This realizes the finite-rank split-torus perfect pairing of the Tau Ceti reductive-groups
+roadmap (Layer 4).
 -/
 
 public section
@@ -107,6 +120,48 @@ theorem pairing_ofAdd_eq (ψ : Multiplicative (σ →₀ ℤ) →* Multiplicativ
   rw [hm, hL]
   simp [Finsupp.linearCombination_apply]
 
+/-- **The split-torus character–cocharacter pairing as a `ℤ`-bilinear map.** On the character
+lattice `X*(T) = σ →₀ ℤ` and the cocharacter lattice `X_*(T) = σ → ℤ` (via `cocharEquiv`) the
+pairing is the evaluation/dot product `⟨m, v⟩ = ∑ᵢ mᵢ vᵢ`, packaged from Mathlib's
+`Finsupp.llift`. It agrees with the character–cocharacter pairing of
+`TauCeti.Algebra.AlgebraicGroup.Cocharacter` through `cocharEquiv` (`pairing_eq_dotPairing`). -/
+noncomputable def dotPairing : (σ →₀ ℤ) →ₗ[ℤ] (σ → ℤ) →ₗ[ℤ] ℤ :=
+  (Finsupp.llift ℤ ℤ ℤ σ).toLinearMap.flip
+
+@[simp]
+theorem dotPairing_apply (m : σ →₀ ℤ) (v : σ → ℤ) :
+    dotPairing m v = m.sum fun i c => c * v i := by
+  simp only [dotPairing, LinearMap.flip_apply, LinearEquiv.coe_coe, Finsupp.llift_apply,
+    Finsupp.lift_apply, smul_eq_mul]
+
+/-- The flip of `dotPairing` is Mathlib's free-forgetful adjunction equivalence
+`Finsupp.llift`, identifying the cocharacter lattice `σ → ℤ` with the `ℤ`-dual of `σ →₀ ℤ`. -/
+theorem dotPairing_flip :
+    (dotPairing (σ := σ)).flip = (Finsupp.llift ℤ ℤ ℤ σ).toLinearMap :=
+  LinearMap.flip_flip _
+
+/-- **The dot-product pairing computes the character–cocharacter pairing.** For a character
+`ofAdd m` and a cocharacter `ψ` (with coordinates `cocharEquiv ψ`), the pairing
+`⟨ofAdd m, ψ⟩` of `TauCeti.Algebra.AlgebraicGroup.Cocharacter` is `dotPairing m (cocharEquiv ψ)`. -/
+theorem pairing_eq_dotPairing (ψ : Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ) (m : σ →₀ ℤ) :
+    DiagonalizableGroup.pairing (Multiplicative.ofAdd m) ψ = dotPairing m (cocharEquiv ψ) := by
+  rw [pairing_ofAdd_eq, dotPairing_apply]
+
+/-- **The split-torus character–cocharacter pairing is perfect (finite rank).** For a
+finite-rank split torus (`Finite σ`), the dot-product pairing `dotPairing` between the character
+lattice `X*(T) = σ →₀ ℤ` and the cocharacter lattice `X_*(T) = σ → ℤ` is a perfect pairing in the
+sense of Mathlib's `LinearMap.IsPerfPair`: both induced maps to the `ℤ`-duals are isomorphisms.
+This is the split-torus perfect pairing that is the input to root data. (For infinite `σ` the
+pairing is still non-degenerate in each slot — `pairing_eq_zero_left`, `pairing_eq_zero_right` —
+but not perfect, as `σ →₀ ℤ` is then not reflexive.) -/
+instance instIsPerfPair [Finite σ] : (dotPairing (σ := σ)).IsPerfPair := by
+  have hbij : Function.Bijective ⇑(dotPairing (σ := σ)).flip := by
+    rw [dotPairing_flip]
+    simpa using (Finsupp.llift ℤ ℤ ℤ σ).bijective
+  have hp : (dotPairing (σ := σ)).flip.IsPerfPair := .of_bijective _ hbij
+  have hp' := hp.flip
+  rwa [LinearMap.flip_flip] at hp'
+
 variable {R : Type u} {A : Type v} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
 /-- **The dot-product pairing is realized on points as a power endomorphism of `𝔾ₘ`.**
@@ -121,8 +176,8 @@ theorem charPoints_comp_cocharPoints_ofAdd
   rw [DiagonalizableGroup.charPoints_comp_cocharPoints, pairing_ofAdd_eq]
 
 /-- **Left non-degeneracy of the split-torus pairing.** A character `ofAdd m` pairing to `0`
-against every cocharacter is trivial: `m = 0`. Together with `pairing_eq_zero_right` this is
-the perfectness of the character–cocharacter pairing. -/
+against every cocharacter is trivial: `m = 0`. This holds for arbitrary `σ`; for finite `σ` the
+pairing is moreover perfect (`instIsPerfPair`). -/
 theorem pairing_eq_zero_left {m : σ →₀ ℤ}
     (h : ∀ ψ : Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ,
       DiagonalizableGroup.pairing (Multiplicative.ofAdd m) ψ = 0) :
@@ -134,8 +189,8 @@ theorem pairing_eq_zero_left {m : σ →₀ ℤ}
   simpa [AddMonoidHom.coe_toMultiplicative] using hj
 
 /-- **Right non-degeneracy of the split-torus pairing.** A cocharacter `ψ` pairing to `0`
-against every character is trivial: `ψ = 1`. Together with `pairing_eq_zero_left` this is the
-perfectness of the character–cocharacter pairing. -/
+against every character is trivial: `ψ = 1`. This holds for arbitrary `σ`; for finite `σ` the
+pairing is moreover perfect (`instIsPerfPair`). -/
 theorem pairing_eq_zero_right {ψ : Multiplicative (σ →₀ ℤ) →* Multiplicative ℤ}
     (h : ∀ m : σ →₀ ℤ, DiagonalizableGroup.pairing (Multiplicative.ofAdd m) ψ = 0) :
     ψ = 1 := by
