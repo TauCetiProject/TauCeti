@@ -29,9 +29,9 @@ for Linear Evolution Equations*, Section II.6.
 
 * `IsClassicalSolution`: classical solutions on `[0, ∞)`.
 * `IsMildSolution`: mild solutions in integrated form.
-* `StronglyContinuousSemigroup.isClassicalSolution_orbit`: generator-domain orbits are
+* `StronglyContinuousSemigroup.isClassicalSolution_realOperator`: generator-domain orbits are
   classical solutions.
-* `StronglyContinuousSemigroup.isMildSolution_orbit`: all orbits are mild solutions.
+* `StronglyContinuousSemigroup.isMildSolution_realOperator`: all orbits are mild solutions.
 -/
 
 public section
@@ -54,6 +54,13 @@ def IsClassicalSolution (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ → X) : Prop :=
 theorem IsClassicalSolution.apply_zero {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsClassicalSolution A x u) : u 0 = x :=
   hu.1
+
+/-- Characterization of a classical solution by its initial value and differential equation. -/
+theorem isClassicalSolution_iff {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
+    IsClassicalSolution A x u ↔
+      u 0 = x ∧ ∀ t : ℝ, 0 ≤ t → ∃ hut : u t ∈ A.domain,
+        HasDerivWithinAt u (A ⟨u t, hut⟩) (Set.Ici 0) t :=
+  Iff.rfl
 
 /-- Every value of a classical solution at nonnegative time belongs to the operator domain. -/
 theorem IsClassicalSolution.mem_domain {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
@@ -92,6 +99,13 @@ theorem IsMildSolution.apply_zero [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : 
     (hu : IsMildSolution A x u) : u 0 = x :=
   hu.2.1
 
+/-- Characterization of a mild solution by continuity and its integrated Cauchy equation. -/
+theorem isMildSolution_iff [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
+    IsMildSolution A x u ↔ ContinuousOn u (Set.Ici 0) ∧ u 0 = x ∧
+      ∀ t : ℝ, 0 ≤ t → ∃ hut : (∫ s in Set.Ioc 0 t, u s) ∈ A.domain,
+        A ⟨∫ s in Set.Ioc 0 t, u s, hut⟩ = u t - x :=
+  Iff.rfl
+
 /-- The time integral of a mild solution belongs to the operator domain. -/
 theorem IsMildSolution.integral_mem_domain [CompleteSpace X]
     {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
@@ -100,7 +114,8 @@ theorem IsMildSolution.integral_mem_domain [CompleteSpace X]
   (hu.2.2 t ht).choose
 
 /-- The integrated Cauchy equation satisfied by a mild solution. -/
-theorem IsMildSolution.map_integral [CompleteSpace X] {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
+theorem IsMildSolution.map_integral_eq_sub [CompleteSpace X]
+    {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsMildSolution A x u) {t : ℝ} (ht : 0 ≤ t) :
     A ⟨∫ s in Set.Ioc 0 t, u s, hu.integral_mem_domain ht⟩ = u t - x := by
   obtain ⟨hut, hmap⟩ := hu.2.2 t ht
@@ -112,8 +127,9 @@ variable [CompleteSpace X]
 
 /-- The orbit of a generator-domain vector is a classical solution of the abstract Cauchy
 problem for the generator. -/
-theorem isClassicalSolution_orbit (S : StronglyContinuousSemigroup X) (x : S.domain) :
+theorem isClassicalSolution_realOperator (S : StronglyContinuousSemigroup X) (x : S.domain) :
     IsClassicalSolution S.generator (x : X) (fun t => S.realOperator t x) := by
+  rw [isClassicalSolution_iff]
   refine ⟨S.realOperator_zero_apply x, fun t ht => ?_⟩
   let hut : S.realOperator t (x : X) ∈ S.generator.domain := by
     rw [S.generator_domain]
@@ -122,8 +138,9 @@ theorem isClassicalSolution_orbit (S : StronglyContinuousSemigroup X) (x : S.dom
   simpa only [Submodule.coe_mk] using S.realOperator_hasDerivWithinAt_Ici x ht
 
 /-- Every orbit is a mild solution of the abstract Cauchy problem for the generator. -/
-theorem isMildSolution_orbit (S : StronglyContinuousSemigroup X) (x : X) :
+theorem isMildSolution_realOperator (S : StronglyContinuousSemigroup X) (x : X) :
     IsMildSolution S.generator x (fun t => S.realOperator t x) := by
+  rw [isMildSolution_iff]
   refine ⟨S.realOperator_continuousOn_Ici x, S.realOperator_zero_apply x, fun t ht => ?_⟩
   rcases ht.eq_or_lt with rfl | ht
   · refine ⟨?_, ?_⟩
