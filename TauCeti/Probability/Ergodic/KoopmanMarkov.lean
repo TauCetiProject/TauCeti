@@ -67,21 +67,6 @@ theorem koopmanMarkov_mul (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
     simp only [koopmanMarkov, LinearMap.coe_mk, AddHom.coe_mk, AEEqFun.mk_mul_mk,
       AEEqFun.compMeasurePreserving_mk]; rfl
 
-/-- The deterministic Koopman Markov operator is positive. -/
-theorem koopmanMarkov_nonneg (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
-    {g : Ω →ₘ[μ] ℝ} (hg : 0 ≤ g) :
-    0 ≤ koopmanMarkov T hT g := by
-  rw [← AEEqFun.coeFn_le] at hg ⊢
-  have hgT := hT.quasiMeasurePreserving.tendsto_ae hg
-  have hzeroT := hT.quasiMeasurePreserving.tendsto_ae
-    (AEEqFun.coeFn_zero (α := Ω) (β := ℝ) (μ := μ))
-  filter_upwards [hgT, hzeroT, coeFn_koopmanMarkov T hT g,
-    AEEqFun.coeFn_zero (α := Ω) (β := ℝ) (μ := μ)] with ω hgω hzeroT hcomp hzero
-  -- Expose the AEEqFun zero representative at `T ω` so `hzeroT` can rewrite it.
-  change (0 : Ω →ₘ[μ] ℝ) (T ω) = (0 : ℝ) at hzeroT
-  rw [hzero, hcomp, Function.comp_apply, Pi.zero_apply, ← hzeroT]
-  exact hgω
-
 /-- The deterministic Koopman Markov operator is monotone. -/
 theorem koopmanMarkov_monotone (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
     Monotone (koopmanMarkov T hT) := by
@@ -91,6 +76,13 @@ theorem koopmanMarkov_monotone (T : Ω → Ω) (hT : MeasurePreserving T μ μ) 
   filter_upwards [hghT, coeFn_koopmanMarkov T hT g, coeFn_koopmanMarkov T hT h]
     with ω hghω hg hh
   simpa [Function.comp_apply, hg, hh] using hghω
+
+/-- The deterministic Koopman Markov operator is positive. -/
+theorem koopmanMarkov_nonneg (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
+    {g : Ω →ₘ[μ] ℝ} (hg : 0 ≤ g) :
+    0 ≤ koopmanMarkov T hT g := by
+  have h := koopmanMarkov_monotone T hT hg
+  rwa [map_zero] at h
 
 /-- The Koopman Markov operator of the identity transformation acts as the identity. -/
 @[simp]
