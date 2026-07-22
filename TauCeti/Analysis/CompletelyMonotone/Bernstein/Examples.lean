@@ -25,9 +25,10 @@ exponent of a well-known subordinator:
   `TauCeti.isCompletelyMonotoneOnIoi_rpow_neg`;
 * the **logarithm** `t ↦ log(1 + t)` (the Gamma subordinator), whose derivative `(1 + t)^{-1}`
   is completely monotone by `TauCeti.isCompletelyMonotone_one_div_one_add`;
-* the **saturating ramp** `t ↦ t / (1 + t)` (the Pareto/Mittag-Leffler exponent), which equals
-  `1 - (1 + t)^{-1}` and whose derivative `(1 + t)^{-2}` is completely monotone as a square of
-  the resolvent kernel `TauCeti.isCompletelyMonotone_inv_const_add`.
+* the **saturating ramp** `t ↦ t / (1 + t)` (the Laplace exponent of a rate-one compound Poisson
+  subordinator with exponential jumps), which equals `1 - (1 + t)^{-1}` and whose derivative
+  `(1 + t)^{-2}` is completely monotone as a square of the resolvent kernel
+  `TauCeti.isCompletelyMonotone_inv_const_add`.
 
 Each proof is the same three-step recipe: check continuity and nonnegativity on `[0, ∞)` and
 smoothness on `(0, ∞)` directly, compute the ordinary derivative on `(0, ∞)`, and transport the
