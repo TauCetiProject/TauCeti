@@ -36,16 +36,19 @@ namespace TauCeti.Multiquadratic
 
 /-- The **fundamental discriminant** attached to an integer `d`: the discriminant of the quadratic
 field `ℚ(√d)` for squarefree `d`, namely `d` when `d ≡ 1 (mod 4)` and `4 * d` otherwise. -/
-@[expose] def fundamentalDiscriminant (d : ℤ) : ℤ := if d % 4 = 1 then d else 4 * d
-
-theorem fundamentalDiscriminant_def (d : ℤ) :
-    fundamentalDiscriminant d = if d % 4 = 1 then d else 4 * d := rfl
+def fundamentalDiscriminant (d : ℤ) : ℤ := if d % 4 = 1 then d else 4 * d
 
 @[simp] theorem fundamentalDiscriminant_of_mod_four_eq_one {d : ℤ} (hd : d % 4 = 1) :
     fundamentalDiscriminant d = d := if_pos hd
 
 @[simp] theorem fundamentalDiscriminant_of_mod_four_ne_one {d : ℤ} (hd : d % 4 ≠ 1) :
     fundamentalDiscriminant d = 4 * d := if_neg hd
+
+theorem fundamentalDiscriminant_def (d : ℤ) :
+    fundamentalDiscriminant d = if d % 4 = 1 then d else 4 * d := by
+  by_cases h : d % 4 = 1
+  · rw [if_pos h]; exact fundamentalDiscriminant_of_mod_four_eq_one h
+  · rw [if_neg h]; exact fundamentalDiscriminant_of_mod_four_ne_one h
 
 /-- `fundamentalDiscriminant d` is `d` or `4 * d`. Implementation helper for
 `exists_sq_mul_eq_fundamentalDiscriminant`. -/
