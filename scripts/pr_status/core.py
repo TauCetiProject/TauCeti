@@ -32,7 +32,9 @@ import time
 REPO = os.environ.get("GH_REPO", "TauCetiProject/TauCeti")
 
 SCOREBOARD_MARKER = "<!--tauceti-scoreboard-->"
-_META_RE = re.compile(r"<!--tauceti-meta:v1 (.*)-->")
+# Greedy `\{.*\}` (with re.S) so a meta object with a nested `"states": {...}` is captured whole: a
+# lazy `\{.*?\}` would stop at the first inner `}` and mis-parse it. `\s+`/`\s*` tolerate any spacing.
+_META_RE = re.compile(r"<!--tauceti-meta:v1\s+(\{.*\})\s*-->", re.S)
 # The engine's in-flight marker: `<!--tauceti-review-in-progress {json}-->`, carrying a `head` and an
 # `expires_at` (epoch seconds) so a crashed reviewer self-clears. The format is owned by the review
 # engine; we parse only those two fields (mirrors the worker's de-contention read).

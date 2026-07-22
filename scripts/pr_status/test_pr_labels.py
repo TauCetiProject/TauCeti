@@ -57,6 +57,25 @@ class ReviewState(unittest.TestCase):
         self.assertEqual(self.rs({"head_sha": self.HEAD, "runs": []}), "running")
 
 
+class ScoreboardMeta(unittest.TestCase):
+    def test_parses_meta_with_nested_states(self):
+        # Regression: a lazy `\{.*?\}` truncated at the first inner `}` and dropped the whole meta.
+        body = ('<!--tauceti-scoreboard-->\n'
+                '<!--tauceti-meta:v1 {"head_sha":"H","states":{"correctness":"blocking_block",'
+                '"reuse":"green"},"full_rounds":2}--> trailing text')
+        meta = core.scoreboard_meta_from([{"body": body, "updated": "2026-01-01"}])
+        self.assertEqual(meta.get("states", {}).get("correctness"), "blocking_block")
+        self.assertEqual(meta.get("full_rounds"), 2)
+
+    def test_newest_trusted_comment_wins(self):
+        old = {"body": '<!--tauceti-scoreboard--><!--tauceti-meta:v1 {"n":1}-->', "updated": "2026-01-01"}
+        new = {"body": '<!--tauceti-scoreboard--><!--tauceti-meta:v1 {"n":2}-->', "updated": "2026-02-01"}
+        self.assertEqual(core.scoreboard_meta_from([old, new]).get("n"), 2)
+
+    def test_no_marker_is_empty(self):
+        self.assertEqual(core.scoreboard_meta_from([{"body": "hi", "updated": "x"}]), {})
+
+
 class InProgress(unittest.TestCase):
     HEAD = "H" * 40
     NOW = 1_700_000_000
