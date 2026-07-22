@@ -39,7 +39,7 @@ complement is now expressed through `BoundaryTorus.firstHomology`; constructing 
 from the complement is later layer-5 work that consumes this arithmetic.
 
 Primitivity of `v : M` is expressed basis-freely: `v` is primitive when some `ℤ`-linear functional
-`M →ₗ[ℤ] ℤ` sends it to `1` (equivalently, `v` extends to a basis). Over the standard lattice
+`M →ₗ[ℤ] ℤ` sends it to `1`, so `v` splits off a copy of `ℤ`. Over the standard lattice
 `ℤ × ℤ` this is exactly coprimality of the two coordinates, and that concrete arithmetic supplies
 the `ℚ ∪ {∞}` bijection through any framing's coordinate isomorphism.
 
@@ -84,8 +84,7 @@ namespace TauCeti
 variable {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Module ℤ M] [Module ℤ N]
 
 /-- A homology class `v : M` on a boundary torus is **primitive** when some `ℤ`-linear functional
-`M →ₗ[ℤ] ℤ` sends it to `1`; equivalently, `v` extends to a basis, so it is not a proper multiple of
-another class and is represented by an unoriented essential simple closed curve. Over the standard
+`M →ₗ[ℤ] ℤ` sends it to `1`, so the span of `v` splits off a copy of `ℤ`. Over the standard
 lattice `ℤ × ℤ` this is coprimality of the two coordinates (`TauCeti.isPrimitive_prod_iff`). The
 definition mentions no basis, so it is preserved by every `ℤ`-linear equivalence
 (`TauCeti.isPrimitive_congr`). -/
@@ -118,6 +117,12 @@ def slopeSetoid (M : Type*) [AddCommGroup M] [Module ℤ M] : Setoid {v : M // I
         · exact Or.inr (by rw [hab, hbc])
         · exact Or.inl (by rw [hab, hbc, neg_neg]) }
 
+/-- Characterization of the relation defining slopes: representatives agree up to sign. -/
+@[simp]
+theorem slopeSetoid_rel {a b : {v : M // IsPrimitive v}} :
+    slopeSetoid M a b ↔ a.1 = b.1 ∨ a.1 = -b.1 :=
+  Iff.rfl
+
 /-- A **slope** on a boundary torus with homology `M`: a primitive homology class taken modulo the
 sign action, i.e. an unoriented essential simple closed curve up to isotopy. This is basis-free — it
 refers only to the abstract module `M`, not to any choice of meridian-longitude basis. -/
@@ -133,8 +138,16 @@ theorem mk_eq_mk {v w : M} (hv : IsPrimitive v) (hw : IsPrimitive w)
     (h : v = w ∨ v = -w) : mk v hv = mk w hw :=
   Quotient.sound h
 
+/-- Two primitive representatives define the same slope exactly when they agree up to sign. -/
+@[simp]
+theorem mk_eq_mk_iff {v w : M} (hv : IsPrimitive v) (hw : IsPrimitive w) :
+    mk v hv = mk w hw ↔ v = w ∨ v = -w := by
+  constructor
+  · exact Quotient.exact
+  · exact mk_eq_mk hv hw
+
 @[elab_as_elim]
-theorem inductionOn {C : Slope M → Prop} (s : Slope M)
+theorem induction_on {C : Slope M → Prop} (s : Slope M)
     (h : ∀ (v : M) (hv : IsPrimitive v), C (mk v hv)) : C s :=
   Quotient.inductionOn s fun v => h v.1 v.2
 
@@ -147,6 +160,7 @@ isomorphism uses this to carry a slope to the standard lattice. -/
       left_inv := fun v => Subtype.ext (φ.symm_apply_apply v.1)
       right_inv := fun w => Subtype.ext (φ.apply_symm_apply w.1) }
     fun a b => by
+      -- By `slopeSetoid_rel`, transport must preserve precisely equality up to sign.
       change (a.1 = b.1 ∨ a.1 = -b.1) ↔ (φ a.1 = φ b.1 ∨ φ a.1 = -φ b.1)
       constructor
       · rintro (h | h)
@@ -207,6 +221,7 @@ def slopeValue (v : ℤ × ℤ) : OnePoint ℚ :=
 @[simp]
 theorem slopeValue_of_snd_eq_zero {v : ℤ × ℤ} (hq : v.2 = 0) : slopeValue v = ∞ := if_pos hq
 
+@[simp]
 theorem slopeValue_of_snd_ne_zero {v : ℤ × ℤ} (hq : v.2 ≠ 0) :
     slopeValue v = ((v.1 : ℚ) / (v.2 : ℚ) : ℚ) := if_neg hq
 
@@ -220,15 +235,15 @@ theorem slopeValue_neg (v : ℤ × ℤ) : slopeValue (-v) = slopeValue v := by
     rw [neg_div_neg_eq]
 
 /-- The `ℚ ∪ {∞}` value of a standard-lattice slope, the ratio of its coordinates. -/
-@[expose] def slopeValueLift : Slope (ℤ × ℤ) → OnePoint ℚ :=
+@[expose] def Slope.value : Slope (ℤ × ℤ) → OnePoint ℚ :=
   Quotient.lift (fun v => slopeValue v.1) fun _ _ h => by
     rcases h with h | h
     · rw [h]
     · rw [h, slopeValue_neg]
 
 @[simp]
-theorem slopeValueLift_mk (v : ℤ × ℤ) (h : IsPrimitive v) :
-    slopeValueLift (Slope.mk v h) = slopeValue v := rfl
+theorem Slope.value_mk (v : ℤ × ℤ) (h : IsPrimitive v) :
+    Slope.value (Slope.mk v h) = slopeValue v := rfl
 
 /-- The primitive class attached to a value in `ℚ ∪ {∞}`: the meridian `(1, 0)` for `∞`, and the
 reduced fraction `(r.num, r.den)` for a rational `r`. -/
@@ -243,17 +258,17 @@ theorem slopeOfValue_infty : slopeOfValue ∞ = Slope.mk (1, 0) isPrimitive_prod
 theorem slopeOfValue_coe (r : ℚ) :
     slopeOfValue (r : OnePoint ℚ) = Slope.mk (r.num, (r.den : ℤ)) (isPrimitive_num_den r) := rfl
 
-theorem slopeOfValue_value (s : Slope (ℤ × ℤ)) : slopeOfValue (slopeValueLift s) = s := by
-  induction s using Slope.inductionOn with
+theorem slopeOfValue_value (s : Slope (ℤ × ℤ)) : slopeOfValue (Slope.value s) = s := by
+  induction s using Slope.induction_on with
   | h v hv =>
     obtain ⟨p, q⟩ := v
     by_cases hq : q = 0
     · subst hq
-      rw [slopeValueLift_mk, slopeValue_of_snd_eq_zero rfl, slopeOfValue_infty]
+      rw [Slope.value_mk, slopeValue_of_snd_eq_zero rfl, slopeOfValue_infty]
       rcases isPrimitive_prod_fst_eq_of_snd_eq_zero hv rfl with hp | hp <;> subst hp
       · rfl
       · exact Slope.mk_eq_mk _ _ (Or.inr rfl)
-    · rw [slopeValueLift_mk, slopeValue_of_snd_ne_zero hq, slopeOfValue_coe]
+    · rw [Slope.value_mk, slopeValue_of_snd_ne_zero hq, slopeOfValue_coe]
       have hcop : Nat.Coprime p.natAbs q.natAbs :=
         Int.isCoprime_iff_nat_coprime.mp (isPrimitive_prod_iff.mp hv)
       rcases lt_or_gt_of_ne hq with hqneg | hqpos
@@ -271,12 +286,12 @@ theorem slopeOfValue_value (s : Slope (ℤ × ℤ)) : slopeOfValue (slopeValueLi
         refine Slope.mk_eq_mk _ _ (Or.inl ?_)
         rw [Rat.num_div_eq_of_coprime hqpos hcop, Rat.den_div_eq_of_coprime hqpos hcop]
 
-theorem value_slopeOfValue (x : OnePoint ℚ) : slopeValueLift (slopeOfValue x) = x := by
+theorem value_slopeOfValue (x : OnePoint ℚ) : Slope.value (slopeOfValue x) = x := by
   induction x with
-  | infty => rw [slopeOfValue_infty, slopeValueLift_mk, slopeValue_of_snd_eq_zero rfl]
+  | infty => rw [slopeOfValue_infty, Slope.value_mk, slopeValue_of_snd_eq_zero rfl]
   | coe r =>
     have hd : ((r.den : ℤ)) ≠ 0 := Int.natCast_ne_zero.mpr r.den_ne_zero
-    rw [slopeOfValue_coe, slopeValueLift_mk, slopeValue_of_snd_ne_zero hd,
+    rw [slopeOfValue_coe, Slope.value_mk, slopeValue_of_snd_ne_zero hd,
       Int.cast_natCast, Rat.num_div_den]
 
 /-- **The standard slope parametrisation.** For the standard lattice `ℤ × ℤ`, primitive homology
@@ -284,13 +299,13 @@ classes modulo sign biject with `ℚ ∪ {∞}`: a reduced fraction `p / q` corr
 class `(p, q)`, with `∞` the meridian `(1, 0)`. A framing produces the corresponding bijection on
 any boundary torus through its coordinate isomorphism (`TauCeti.FramedBoundaryTorus.slopeEquiv`). -/
 @[expose] def slopeEquivStd : Slope (ℤ × ℤ) ≃ OnePoint ℚ where
-  toFun := slopeValueLift
+  toFun := Slope.value
   invFun := slopeOfValue
   left_inv := slopeOfValue_value
   right_inv := value_slopeOfValue
 
 @[simp]
-theorem slopeEquivStd_apply (s : Slope (ℤ × ℤ)) : slopeEquivStd s = slopeValueLift s := rfl
+theorem slopeEquivStd_apply (s : Slope (ℤ × ℤ)) : slopeEquivStd s = Slope.value s := rfl
 
 @[simp]
 theorem slopeEquivStd_symm_apply (x : OnePoint ℚ) : slopeEquivStd.symm x = slopeOfValue x := rfl
@@ -310,7 +325,7 @@ structure BoundaryTorus where
   carrier : Type
   [topologicalSpace : TopologicalSpace carrier]
   /-- An identification of the boundary component with the standard two-torus. -/
-  parametrization : carrier ≃ₜ UnitAddTorus (Fin 2)
+  parametrization : Nonempty (carrier ≃ₜ UnitAddTorus (Fin 2))
 
 namespace BoundaryTorus
 
@@ -346,9 +361,11 @@ basis-dependent. -/
 @[expose] noncomputable def coord : T.H ≃ₗ[ℤ] ℤ × ℤ :=
   T.basis.equivFun ≪≫ₗ LinearEquiv.finTwoArrow ℤ ℤ
 
+@[simp]
 theorem coord_basis_zero : T.coord (T.basis 0) = (1, 0) := by
   simp [coord, LinearEquiv.finTwoArrow_apply]
 
+@[simp]
 theorem coord_basis_one : T.coord (T.basis 1) = (0, 1) := by
   simp [coord, LinearEquiv.finTwoArrow_apply]
 
@@ -368,7 +385,7 @@ noncomputable def longitude : Slope T.H := Slope.mk (T.basis 1) T.isPrimitive_ba
 Different framings give different values, which is why this is an operation of the framing rather
 than of the basis-free `Slope`. -/
 @[expose] noncomputable def value (s : Slope T.H) : OnePoint ℚ :=
-  slopeValueLift (Slope.congr T.coord s)
+  Slope.value (Slope.congr T.coord s)
 
 /-- **The framed slope parametrisation.** A framing makes primitive homology classes modulo sign
 biject with `ℚ ∪ {∞}`, a reduced fraction `p / q` corresponding to the class with
@@ -379,16 +396,18 @@ biject with `ℚ ∪ {∞}`, a reduced fraction `p / q` corresponding to the cla
 @[simp]
 theorem slopeEquiv_apply (s : Slope T.H) : T.slopeEquiv s = T.value s := rfl
 
+/-- The framed meridian has slope value `∞`. -/
 @[simp]
 theorem value_meridian : T.value T.meridian = ∞ := by
   unfold value meridian
-  rw [Slope.congr_mk, slopeValueLift_mk, T.coord_basis_zero]
+  rw [Slope.congr_mk, Slope.value_mk, T.coord_basis_zero]
   exact slopeValue_of_snd_eq_zero rfl
 
+/-- The framed longitude has slope value `0`. -/
 @[simp]
 theorem value_longitude : T.value T.longitude = (0 : ℚ) := by
   unfold value longitude
-  rw [Slope.congr_mk, slopeValueLift_mk, T.coord_basis_one, slopeValue_of_snd_ne_zero one_ne_zero]
+  rw [Slope.congr_mk, Slope.value_mk, T.coord_basis_one, slopeValue_of_snd_ne_zero one_ne_zero]
   norm_num
 
 end FramedBoundaryTorus
