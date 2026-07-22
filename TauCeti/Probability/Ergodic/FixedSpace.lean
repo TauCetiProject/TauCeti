@@ -39,7 +39,9 @@ theorem fixedSpace_def (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
 
 private theorem compMeasurePreservingₗ_apply (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
     (g : Lp E p μ) :
-    Lp.compMeasurePreservingₗ 𝕜 T hT g = Lp.compMeasurePreserving T hT g := rfl
+    Lp.compMeasurePreservingₗ 𝕜 T hT g = Lp.compMeasurePreserving T hT g := by
+  rw [Lp.compMeasurePreservingₗ_apply]
+  exact congrFun (AddHom.toFun_eq_coe (Lp.compMeasurePreserving T hT).toAddHom) g
 
 /-- Membership in the fixed space means being fixed by the composition operator. -/
 @[simp]
@@ -94,7 +96,19 @@ private theorem compMeasurePreservingₗᵢ_eq_one_iff
     (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap.toLinearMap g =
         (1 : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap g ↔
       Lp.compMeasurePreserving T hT g = g := by
-  rfl
+  rw [show
+    (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap.toLinearMap g =
+        Lp.compMeasurePreserving T hT g by
+      rw [show
+        (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap.toLinearMap g =
+            Lp.compMeasurePreservingₗᵢ 𝕜 T hT g from
+          (congrFun (LinearMap.coe_coe
+            (f := (Lp.compMeasurePreservingₗᵢ 𝕜 T hT).toContinuousLinearMap)) g).trans
+            (congrFun (LinearIsometry.coe_toContinuousLinearMap _) g)]
+      exact compMeasurePreservingₗ_apply T hT g]
+  rw [show (1 : Lp E p μ →L[𝕜] Lp E p μ).toLinearMap g = g from
+    (congrFun (LinearMap.coe_coe (f := (1 : Lp E p μ →L[𝕜] Lp E p μ))) g).trans
+      (one_apply_eq_self g)]
 
 private theorem fixedSpace_eq_eqLocus (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
     fixedSpace (𝕜 := 𝕜) (E := E) (p := p) T hT =
