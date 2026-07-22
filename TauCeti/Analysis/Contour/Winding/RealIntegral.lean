@@ -58,10 +58,24 @@ and velocity `v = ẋ + iẏ`. It is defined to be `0` at `z = 0`, following div
 @[expose] public noncomputable def realWindingIntegrand (z v : ℂ) : ℝ :=
   (z.re * v.im - z.im * v.re) / Complex.normSq z
 
+/-- The coordinate formula for the real winding integrand. -/
+@[simp] theorem realWindingIntegrand_def (z v : ℂ) :
+    realWindingIntegrand z v =
+      (z.re * v.im - z.im * v.re) / Complex.normSq z := rfl
+
 /-- The real winding integrand is the imaginary part of the complex winding integrand. -/
 theorem realWindingIntegrand_eq_im_inv_mul (z v : ℂ) :
     realWindingIntegrand z v = (z⁻¹ * v).im := by
   rw [realWindingIntegrand, inv_mul_eq_div, Complex.div_im]
+  ring
+
+/-- Scaling position and velocity by the same nonzero real parameter leaves the real winding
+integrand unchanged. -/
+theorem realWindingIntegrand_ofReal_mul_ofReal_mul {c : ℝ} (hc : c ≠ 0) (z v : ℂ) :
+    realWindingIntegrand ((c : ℂ) * z) ((c : ℂ) * v) = realWindingIntegrand z v := by
+  simp only [realWindingIntegrand_def, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
+    Complex.ofReal_im, zero_mul, add_zero, Complex.normSq_mul, Complex.normSq_ofReal]
+  field_simp
   ring
 
 /-- **The real bounded-integrand formula for the winding number** (Hungerbühler–Wasem Prop 2.3,

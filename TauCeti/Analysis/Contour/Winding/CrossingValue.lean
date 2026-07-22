@@ -8,32 +8,25 @@ module
 public import TauCeti.Analysis.Contour.Winding.RealIntegral
 
 /-!
-# The real winding integrand at a smooth crossing
+# The real winding integrand at a crossing
 
 This file proves the local crossing-value calculation in Hungerbühler–Wasem Proposition 2.3.
-For a twice differentiable plane curve `γ` passing through `s` at `t₀`, the apparently singular
-real winding integrand
+For a plane curve `γ` passing through `s` at `t₀` whose chord and velocity have the stated filter
+expansions, the apparently singular real winding integrand
 
 `(x ẏ - y ẋ) / (x² + y²)`, where `x + iy = γ - s`,
 
-tends to
+tends to `(L.re * A.im - L.im * A.re) / (2 * ‖L‖²)`, where `L` and `A` are the coefficients
+in those expansions.
 
-`(ẋ ÿ - ẏ ẍ) / (2 (ẋ² + ẏ²))`.
+The theorem is stated using two Peano expansions, independently of any particular
+second-derivative API.
 
-The theorem is stated using the two Peano expansions it actually needs. This keeps it independent
-of any particular second-derivative API and lets clients obtain the hypotheses from `C²`, strict
-second derivative, or Taylor estimates. The intermediate theorem isolates the algebraic limit and
-is useful whenever the chord and velocity expansions come from different regularity packages.
-
-Mathlib has no signed-curvature API for plane curves. Accordingly, as prescribed by the contour
-integration roadmap, the answer is given by the explicit coordinate formula. It is one half of
-signed curvature times speed.
+As prescribed by the contour integration roadmap, the answer is given by an explicit coordinate
+formula.
 
 ## Main results
 
-* `Contour.realWindingIntegrand` is the real integrand of Hungerbühler–Wasem Proposition 2.3.
-* `Contour.tendsto_realWindingIntegrand_mul_add` is the algebraic limit for second-order chord
-  and first-order velocity expansions.
 * `Contour.tendsto_realWindingIntegrand_at_crossing` gives the crossing value for a curve.
 
 ## References
@@ -50,22 +43,13 @@ namespace TauCeti.Contour
 
 open Complex Filter Topology
 
-/-- Scaling position and velocity by the same nonzero real parameter leaves the real winding
-integrand unchanged. -/
-theorem realWindingIntegrand_ofReal_mul {c : ℝ} (hc : c ≠ 0) (z v : ℂ) :
-    realWindingIntegrand ((c : ℂ) * z) ((c : ℂ) * v) = realWindingIntegrand z v := by
-  simp only [realWindingIntegrand, Complex.mul_re, Complex.mul_im, Complex.ofReal_re,
-    Complex.ofReal_im, zero_mul, add_zero, Complex.normSq_mul, Complex.normSq_ofReal]
-  field_simp
-  ring
-
-/-- Algebraic form of the smooth-crossing limit. If `q → L`, `(q - L) / τ → A/2`, and
+/-- Algebraic form of the crossing limit. If `q → L`, `(q - L) / τ → A/2`, and
 `d → A`, then the real winding integrand of position `τq` and velocity `L + τd` tends to
 `(L.re * A.im - L.im * A.re) / (2‖L‖²)`.
 
 The hypotheses are precisely the normalized second-order position expansion and first-order
 velocity expansion. -/
-theorem tendsto_realWindingIntegrand_mul_add {α : Type*} {l : Filter α}
+private theorem tendsto_realWindingIntegrand_mul_add {α : Type*} {l : Filter α}
     {τ : α → ℝ} {q r d : α → ℂ} {L A : ℂ} (hL : L ≠ 0)
     (hq : Tendsto q l (𝓝 L)) (hr : Tendsto r l (𝓝 (A / 2)))
     (hd : Tendsto d l (𝓝 A))
@@ -95,7 +79,7 @@ theorem tendsto_realWindingIntegrand_mul_add {α : Type*} {l : Filter α}
   convert hdiv.congr' ?_ using 1
   · ring_nf
   filter_upwards [hqr, hτ, hq_ne] with i hqi hτi hqi_ne
-  rw [realWindingIntegrand]
+  rw [realWindingIntegrand_def]
   simp only [Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
     add_zero, Complex.add_re, Complex.add_im, Complex.normSq_mul, Complex.normSq_ofReal]
   have hτsq : τ i ^ 2 ≠ 0 := pow_ne_zero _ hτi
@@ -114,17 +98,16 @@ theorem tendsto_realWindingIntegrand_mul_add {α : Type*} {l : Filter α}
   field_simp [hτi, Complex.normSq_eq_zero.not.mpr hqi_ne]
   ring
 
-/-- **Hungerbühler–Wasem Proposition 2.3, crossing value.** At a regular crossing
-`γ t₀ = s`, a second-order chord expansion with acceleration `A` and the matching first-order
-velocity expansion imply
+/-- **Hungerbühler–Wasem Proposition 2.3, crossing value.** At a crossing `γ t₀ = s`,
+a normalized second-order chord expansion with coefficients `L` and `A`, together with the
+matching first-order velocity expansion, implies
 
-`(x ẏ - y ẋ) / (x² + y²) → (ẋ ÿ - ẏ ẍ) / (2 (ẋ² + ẏ²))`.
+`(x ẏ - y ẋ) / (x² + y²) → (L.re * A.im - L.im * A.re) / (2 * ‖L‖²)`.
 
-This is the explicit form of one half of signed curvature times speed. -/
+The conclusion refers only to the coefficients in the assumed filter expansions. -/
 theorem tendsto_realWindingIntegrand_at_crossing {α : Type*} {l : Filter α}
     {t : α → ℝ} {t₀ : ℝ} {γ : ℝ → ℂ} {s L A : ℂ} (hL : L ≠ 0)
     (htend : Tendsto t l (𝓝 t₀)) (hcross : γ t₀ = s)
-    (hpos : Tendsto (fun i ↦ ((γ (t i) - s) / (((t i - t₀ : ℝ) : ℂ)))) l (𝓝 L))
     (hpos₂ : Tendsto (fun i ↦
       (((γ (t i) - s) / (((t i - t₀ : ℝ) : ℂ))) - L) /
         (((t i - t₀ : ℝ) : ℂ))) l (𝓝 (A / 2)))
@@ -134,24 +117,32 @@ theorem tendsto_realWindingIntegrand_at_crossing {α : Type*} {l : Filter α}
     Tendsto (fun i ↦ realWindingIntegrand (γ (t i) - s) (deriv γ (t i))) l
       (𝓝 ((L.re * A.im - L.im * A.re) / (2 * Complex.normSq L))) := by
   subst s
-  have hpos' := tendsto_snd.comp (Tendsto.prodMk htend hpos)
-  change Tendsto (fun i ↦ (γ (t i) - γ t₀) / (((t i - t₀ : ℝ) : ℂ))) l (𝓝 L) at hpos'
   let τ : α → ℝ := fun i ↦ t i - t₀
   let q : α → ℂ := fun i ↦ (γ (t i) - γ t₀) / ((τ i : ℝ) : ℂ)
   let r : α → ℂ := fun i ↦ (q i - L) / ((τ i : ℝ) : ℂ)
   let d : α → ℂ := fun i ↦ (deriv γ (t i) - L) / ((τ i : ℝ) : ℂ)
+  change Tendsto r l (𝓝 (A / 2)) at hpos₂
+  change Tendsto d l (𝓝 A) at hvel
   have hτ : ∀ᶠ i in l, τ i ≠ 0 := ht.mono fun i hi ↦ sub_ne_zero.mpr hi
   have hqr : ∀ᶠ i in l, q i - L = ((τ i : ℝ) : ℂ) * r i := hτ.mono fun i hi ↦ by
     simp only [r]
     field_simp [Complex.ofReal_ne_zero.mpr hi]
-  have hmain := tendsto_realWindingIntegrand_mul_add hL hpos' hpos₂ hvel hqr hτ
+  have hτ_zero : Tendsto τ l (𝓝 0) := by
+    simpa only [τ, sub_self] using htend.sub_const t₀
+  have hq : Tendsto q l (𝓝 L) := by
+    have hmul : Tendsto (fun i ↦ ((τ i : ℝ) : ℂ) * r i) l (𝓝 0) := by
+      convert ((Complex.continuous_ofReal.tendsto 0).comp hτ_zero).mul hpos₂ using 1 <;> simp
+    have hadd := hmul.add_const L
+    simpa only [zero_add] using hadd.congr' (hqr.mono fun i hi ↦ by
+      rw [← hi, sub_add_cancel])
+  have hmain := tendsto_realWindingIntegrand_mul_add hL hq hpos₂ hvel hqr hτ
   apply hmain.congr'
   filter_upwards [hτ] with i hi
   have hiℂ : ((τ i : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hi
   congr 1
-  · simp only [τ] at hiℂ ⊢
+  · simp only [q, τ] at hiℂ ⊢
     field_simp [hiℂ]
-  · simp only [τ] at hiℂ ⊢
+  · simp only [d, τ] at hiℂ ⊢
     field_simp [hiℂ]
     ring
 
