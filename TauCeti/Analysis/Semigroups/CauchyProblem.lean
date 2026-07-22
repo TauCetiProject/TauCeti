@@ -45,35 +45,39 @@ namespace TauCeti.Semigroups
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-- A classical solution of `u' = A u`, `u(0) = x`, on `[0, ∞)`. Its values belong to the
-domain of `A`, and its derivative within `[0, ∞)` is `A (u t)` at every nonnegative time. -/
+domain of `A`, and it has a continuous derivative within `[0, ∞)` equal to `A (u t)`. -/
 def IsClassicalSolution (A : X →ₗ.[ℝ] X) (x : X) (u : ℝ → X) : Prop :=
-  u 0 = x ∧ ∀ t : ℝ, 0 ≤ t → ∃ hut : u t ∈ A.domain,
-    HasDerivWithinAt u (A ⟨u t, hut⟩) (Set.Ici 0) t
+  u 0 = x ∧ ∃ u' : ℝ → X, ContinuousOn u' (Set.Ici 0) ∧
+    ∀ t : ℝ, 0 ≤ t → ∃ hut : u t ∈ A.domain,
+      HasDerivWithinAt u (u' t) (Set.Ici 0) t ∧ u' t = A ⟨u t, hut⟩
 
 /-- A classical solution takes its prescribed initial value at time zero. -/
 theorem IsClassicalSolution.apply_zero {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsClassicalSolution A x u) : u 0 = x :=
   hu.1
 
-/-- Characterization of a classical solution by its initial value and differential equation. -/
+/-- Characterization of a classical solution by its initial value and continuously
+differentiable equation. -/
 theorem isClassicalSolution_iff {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X} :
     IsClassicalSolution A x u ↔
-      u 0 = x ∧ ∀ t : ℝ, 0 ≤ t → ∃ hut : u t ∈ A.domain,
-        HasDerivWithinAt u (A ⟨u t, hut⟩) (Set.Ici 0) t :=
+      u 0 = x ∧ ∃ u' : ℝ → X, ContinuousOn u' (Set.Ici 0) ∧
+        ∀ t : ℝ, 0 ≤ t → ∃ hut : u t ∈ A.domain,
+          HasDerivWithinAt u (u' t) (Set.Ici 0) t ∧ u' t = A ⟨u t, hut⟩ :=
   Iff.rfl
 
 /-- Every value of a classical solution at nonnegative time belongs to the operator domain. -/
 theorem IsClassicalSolution.mem_domain {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsClassicalSolution A x u) {t : ℝ} (ht : 0 ≤ t) : u t ∈ A.domain :=
-  (hu.2 t ht).choose
+  (hu.2.choose_spec.2 t ht).choose
 
 /-- The derivative within the nonnegative half-line of a classical solution is the operator
 applied to its value. -/
 theorem IsClassicalSolution.hasDerivWithinAt {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
     (hu : IsClassicalSolution A x u) {t : ℝ} (ht : 0 ≤ t) :
     HasDerivWithinAt u (A ⟨u t, hu.mem_domain ht⟩) (Set.Ici 0) t := by
-  obtain ⟨hut, hderiv⟩ := hu.2 t ht
-  simpa only [Submodule.coe_mk] using hderiv
+  obtain ⟨hut, hderiv, heq⟩ := hu.2.choose_spec.2 t ht
+  rw [← heq]
+  simpa only using hderiv
 
 /-- A classical solution is continuous on the nonnegative half-line. -/
 theorem IsClassicalSolution.continuousOn {A : X →ₗ.[ℝ] X} {x : X} {u : ℝ → X}
@@ -130,12 +134,18 @@ problem for the generator. -/
 theorem isClassicalSolution_realOperator (S : StronglyContinuousSemigroup X) (x : S.domain) :
     IsClassicalSolution S.generator (x : X) (fun t => S.realOperator t x) := by
   rw [isClassicalSolution_iff]
-  refine ⟨S.realOperator_zero_apply x, fun t ht => ?_⟩
+  let z : X := S.generator ⟨x, by rw [S.generator_domain]; exact x.property⟩
+  refine ⟨S.realOperator_zero_apply x, fun t => S.realOperator t z,
+    S.realOperator_continuousOn_Ici z, fun t ht => ?_⟩
   let hut : S.realOperator t (x : X) ∈ S.generator.domain := by
     rw [S.generator_domain]
     exact S.realOperator_mem_domain ht x.property
   refine ⟨hut, ?_⟩
-  simpa only [Submodule.coe_mk] using S.realOperator_hasDerivWithinAt_Ici x ht
+  refine ⟨?_, ?_⟩
+  · dsimp only [z]
+    rw [← S.realOperator_generator_map ht x]
+    simpa only [Submodule.coe_mk] using S.realOperator_hasDerivWithinAt_Ici x ht
+  · simpa only [z, hut] using (S.realOperator_generator_map ht x).symm
 
 /-- Every orbit is a mild solution of the abstract Cauchy problem for the generator. -/
 theorem isMildSolution_realOperator (S : StronglyContinuousSemigroup X) (x : X) :
