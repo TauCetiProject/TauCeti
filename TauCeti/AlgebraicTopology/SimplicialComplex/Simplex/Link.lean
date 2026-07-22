@@ -40,7 +40,8 @@ namespace PreAbstractSimplicialComplex
 variable {ι : Type*} [DecidableEq ι]
 variable {V σ : Finset ι}
 
-/-- The closed star of a face in a simplex is the entire simplex. -/
+/-- The closed star of any subset `σ ⊆ V` in the simplex on `V` is the entire simplex. -/
+@[simp]
 theorem closedStar_simplex (hσ : σ ⊆ V) : closedStar (simplex V) σ = simplex V := by
   apply SetLike.ext
   intro ρ
@@ -49,8 +50,9 @@ theorem closedStar_simplex (hσ : σ ⊆ V) : closedStar (simplex V) σ = simple
   · exact fun h => ⟨h.1, subset_union_left.trans h.2.2⟩
   · exact fun h => ⟨h.1, h.1.mono subset_union_left, union_subset h.2 hσ⟩
 
-/-- The link of a face `σ` in the simplex on `V` is the simplex on the vertices of `V` not in
-`σ`. -/
+/-- The link of any subset `σ ⊆ V` in the simplex on `V` is the simplex on the vertices of `V`
+not in `σ`. -/
+@[simp]
 theorem link_simplex (hσ : σ ⊆ V) : link (simplex V) σ = simplex (V \ σ) := by
   apply SetLike.ext
   intro ρ
@@ -61,8 +63,7 @@ theorem link_simplex (hσ : σ ⊆ V) : link (simplex V) σ = simplex (V \ σ) :
     exact hdis
   · rintro ⟨hρ, hρV⟩
     have hρV' : ρ ⊆ V := hρV.trans sdiff_subset
-    have hdis : Disjoint ρ σ := Finset.disjoint_left.mpr fun x hxρ hxσ =>
-      (Finset.mem_sdiff.mp (hρV hxρ)).2 hxσ
+    have hdis : Disjoint ρ σ := disjoint_sdiff_self_left.mono_left hρV
     exact ⟨hρ, hdis, (hρ.mono subset_union_left), union_subset hρV' hσ⟩
 
 omit [DecidableEq ι] in
@@ -87,8 +88,9 @@ theorem mem_closedStar_simplexBoundary {ρ : Finset ι} :
   · exact fun h => ⟨h.1, h.2.2⟩
   · exact fun h => ⟨h.1, h.1.mono subset_union_left, h.2⟩
 
-/-- The link of a face in a simplex boundary is the simplex boundary on the complementary
-vertices. -/
+/-- The link of any subset `σ ⊆ V` in the boundary of the simplex on `V` is the boundary of the
+simplex on the complementary vertices. -/
+@[simp]
 theorem link_simplexBoundary (hσ : σ ⊆ V) :
     link (simplexBoundary V) σ = simplexBoundary (V \ σ) := by
   apply SetLike.ext
@@ -103,23 +105,22 @@ theorem link_simplexBoundary (hσ : σ ⊆ V) :
     rw [hρeq, sdiff_union_of_subset hσ]
   · rintro ⟨hρ, hρdiff⟩
     have hρV : ρ ⊆ V := hρdiff.subset.trans sdiff_subset
-    have hdis : Disjoint ρ σ := Finset.disjoint_left.mpr fun x hxρ hxσ =>
-      (mem_sdiff.mp (hρdiff.subset hxρ)).2 hxσ
+    have hdis : Disjoint ρ σ := disjoint_sdiff_self_left.mono_left hρdiff.subset
     refine ⟨hρ, hdis, hρ.mono subset_union_left, ?_⟩
     refine Finset.ssubset_iff_subset_ne.mpr ⟨union_subset hρV hσ, ?_⟩
     intro hρσeq
     apply hρdiff.ne
     rw [← hρσeq, union_sdiff_cancel_right hdis]
 
-/-- The link of the top face in its simplex is empty. -/
-@[simp]
+/-- The link of the top face in its simplex is empty.  (`simp` also proves this via
+`link_simplex`; the named form is kept for convenience.) -/
 theorem link_simplex_self : link (simplex V) V = ⊥ := by
   rw [link_simplex Subset.rfl, sdiff_self, bot_eq_empty]
   exact simplex_empty
 
-/-- The link of the top face in its simplex boundary is empty.  The statement also covers the
-empty spanning set. -/
-@[simp]
+/-- The link of the full vertex set `V` in the boundary of the simplex on `V` is empty (note `V`
+itself is not a face of that boundary).  The statement also covers the empty spanning set.
+(`simp` also proves this via `link_simplexBoundary`; the named form is kept for convenience.) -/
 theorem link_simplexBoundary_self : link (simplexBoundary V) V = ⊥ := by
   rw [link_simplexBoundary Subset.rfl, sdiff_self, bot_eq_empty]
   exact simplexBoundary_empty
