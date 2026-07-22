@@ -22,7 +22,8 @@ from the squarefree radicand `d`.
 
 ## Main definitions and results
 
-* `TauCeti.Multiquadratic.fundamentalDiscriminant`: `d` if `d ≡ 1 (mod 4)`, else `4 * d`.
+* `TauCeti.Multiquadratic.fundamentalDiscriminant`: `d` if `d ≡ 1 (mod 4)`, else `4 * d`, with its
+  defining equation `fundamentalDiscriminant_def`.
 * `TauCeti.Multiquadratic.isFundamentalDiscriminant_fundamentalDiscriminant`: for squarefree `d`,
   its fundamental discriminant is a fundamental discriminant.
 * `TauCeti.Multiquadratic.exists_sq_mul_eq_fundamentalDiscriminant`: it equals `c² * d` for some
@@ -35,7 +36,10 @@ namespace TauCeti.Multiquadratic
 
 /-- The **fundamental discriminant** attached to an integer `d`: the discriminant of the quadratic
 field `ℚ(√d)` for squarefree `d`, namely `d` when `d ≡ 1 (mod 4)` and `4 * d` otherwise. -/
-def fundamentalDiscriminant (d : ℤ) : ℤ := if d % 4 = 1 then d else 4 * d
+@[expose] def fundamentalDiscriminant (d : ℤ) : ℤ := if d % 4 = 1 then d else 4 * d
+
+theorem fundamentalDiscriminant_def (d : ℤ) :
+    fundamentalDiscriminant d = if d % 4 = 1 then d else 4 * d := rfl
 
 @[simp] theorem fundamentalDiscriminant_of_mod_four_eq_one {d : ℤ} (hd : d % 4 = 1) :
     fundamentalDiscriminant d = d := if_pos hd
@@ -43,18 +47,20 @@ def fundamentalDiscriminant (d : ℤ) : ℤ := if d % 4 = 1 then d else 4 * d
 @[simp] theorem fundamentalDiscriminant_of_mod_four_ne_one {d : ℤ} (hd : d % 4 ≠ 1) :
     fundamentalDiscriminant d = 4 * d := if_neg hd
 
-/-- `fundamentalDiscriminant d` is `d` or `4 * d`. -/
-theorem fundamentalDiscriminant_eq_self_or_four_mul (d : ℤ) :
+/-- `fundamentalDiscriminant d` is `d` or `4 * d`. Implementation helper for
+`exists_sq_mul_eq_fundamentalDiscriminant`. -/
+private theorem fundamentalDiscriminant_eq_self_or_four_mul (d : ℤ) :
     fundamentalDiscriminant d = d ∨ fundamentalDiscriminant d = 4 * d := by
   by_cases h : d % 4 = 1
   · exact Or.inl (fundamentalDiscriminant_of_mod_four_eq_one h)
   · exact Or.inr (fundamentalDiscriminant_of_mod_four_ne_one h)
 
-/-- `fundamentalDiscriminant d = c² * d` for some `c ∈ {1, 2}`: it differs from `d` by a nonzero
-square, so `ℚ(√(fundamentalDiscriminant d)) = ℚ(√d)`. The `c = 1 ∨ c = 2` restriction is part of
-the statement, so the multiplier is genuinely a unit-or-`2` square (not the vacuous `c = 0`). -/
+/-- `c² * d = fundamentalDiscriminant d` for some `c ∈ {1, 2}`: the fundamental discriminant
+differs from `d` by a nonzero square, so `ℚ(√(fundamentalDiscriminant d)) = ℚ(√d)`. The
+`c = 1 ∨ c = 2` restriction is part of the statement, so the multiplier is genuinely a
+unit-or-`2` square (not the vacuous `c = 0`). -/
 theorem exists_sq_mul_eq_fundamentalDiscriminant (d : ℤ) :
-    ∃ c : ℤ, (c = 1 ∨ c = 2) ∧ fundamentalDiscriminant d = c ^ 2 * d := by
+    ∃ c : ℤ, (c = 1 ∨ c = 2) ∧ c ^ 2 * d = fundamentalDiscriminant d := by
   rcases fundamentalDiscriminant_eq_self_or_four_mul d with h | h
   · exact ⟨1, Or.inl rfl, by rw [h]; ring⟩
   · exact ⟨2, Or.inr rfl, by rw [h]; ring⟩
