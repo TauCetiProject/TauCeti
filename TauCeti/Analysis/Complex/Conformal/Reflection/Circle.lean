@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
+public import Mathlib.Analysis.Complex.ReImTopology
 
 /-!
 # Reflection in a circle
@@ -27,8 +27,8 @@ open scoped ComplexConjugate
 
 /-- Reflection in the circle with centre `c` and radius `r`.
 
-At the centre the division-by-zero convention gives the value `c`; the involution law therefore
-holds on its natural domain, the complement of the centre. -/
+At the centre the division-by-zero convention gives the value `c`; for nonzero radius the
+involution law therefore holds on its natural domain, the complement of the centre. -/
 noncomputable def circleReflection (c : ℂ) (r : ℝ) (z : ℂ) : ℂ :=
   c + (r : ℂ) ^ 2 / (starRingEnd ℂ) (z - c)
 
@@ -76,6 +76,7 @@ theorem norm_circleReflection_sub_center (c : ℂ) (r : ℝ) (z : ℂ) :
   simpa [dist_eq] using dist_circleReflection_center c r z
 
 /-- Reflection in a nondegenerate circle is an involution away from its centre. -/
+@[simp]
 theorem circleReflection_circleReflection {c : ℂ} {r : ℝ} (hr : r ≠ 0)
     {z : ℂ} (hz : z ≠ c) :
     circleReflection c r (circleReflection c r z) = z := by
@@ -105,32 +106,44 @@ theorem mapsTo_circleReflection_compl_singleton {c : ℂ} {r : ℝ} (hr : r ≠ 
   rw [Set.mem_compl_iff, Set.mem_singleton_iff] at hz ⊢
   exact (circleReflection_eq_center_iff hr z).not.mpr hz
 
+/-- Circle reflection as a self-map of the punctured plane. -/
+noncomputable def circleReflectionSubtype (c : ℂ) (r : ℝ) (hr : r ≠ 0) :
+    ({c}ᶜ : Set ℂ) → ({c}ᶜ : Set ℂ) :=
+  fun z ↦ ⟨circleReflection c r z, mapsTo_circleReflection_compl_singleton hr z.2⟩
+
+/-- Circle reflection on the punctured plane is involutive. -/
+theorem circleReflectionSubtype_involutive (c : ℂ) (r : ℝ) (hr : r ≠ 0) :
+    Function.Involutive (circleReflectionSubtype c r hr) :=
+  fun z ↦ Subtype.ext (circleReflection_circleReflection hr z.2)
+
 /-- Reflection in a nondegenerate circle is a self-equivalence of the punctured plane. -/
 noncomputable def circleReflectionEquiv (c : ℂ) (r : ℝ) (hr : r ≠ 0) :
-    ({c}ᶜ : Set ℂ) ≃ ({c}ᶜ : Set ℂ) where
-  toFun z := ⟨circleReflection c r z, mapsTo_circleReflection_compl_singleton hr z.2⟩
-  invFun z := ⟨circleReflection c r z, mapsTo_circleReflection_compl_singleton hr z.2⟩
-  left_inv z := Subtype.ext (circleReflection_circleReflection hr z.2)
-  right_inv z := Subtype.ext (circleReflection_circleReflection hr z.2)
+    ({c}ᶜ : Set ℂ) ≃ ({c}ᶜ : Set ℂ) :=
+  (circleReflectionSubtype_involutive c r hr).toPerm (circleReflectionSubtype c r hr)
 
 /-- The punctured-plane equivalence acts by circle reflection. -/
 @[simp]
 theorem coe_circleReflectionEquiv_apply (c : ℂ) (r : ℝ) (hr : r ≠ 0)
     (z : ({c}ᶜ : Set ℂ)) :
     (circleReflectionEquiv c r hr z : ℂ) = circleReflection c r z := by
-  simp [circleReflectionEquiv]
+  rfl
 
 /-- The punctured-plane circle-reflection equivalence is its own inverse. -/
 @[simp]
 theorem circleReflectionEquiv_symm (c : ℂ) (r : ℝ) (hr : r ≠ 0) :
     (circleReflectionEquiv c r hr).symm = circleReflectionEquiv c r hr := by
-  ext z
-  simp [circleReflectionEquiv]
+  exact (circleReflectionSubtype_involutive c r hr).toPerm_symm
 
-/-- Every point on a positive-radius circle is fixed by reflection in that circle. -/
+/-- Every point on a circle is fixed by reflection in that circle. -/
+@[simp]
 theorem circleReflection_eq_self_of_mem_sphere {c z : ℂ} {r : ℝ}
-    (hr : 0 < r) (hz : z ∈ sphere c r) : circleReflection c r z = z := by
+    (hz : z ∈ sphere c r) : circleReflection c r z = z := by
   rw [mem_sphere, dist_eq] at hz
+  have hr : 0 ≤ r := hz ▸ norm_nonneg (z - c)
+  rcases hr.eq_or_lt with rfl | hr
+  · have : z = c := sub_eq_zero.mp (norm_eq_zero.mp hz)
+    subst z
+    exact circleReflection_center c 0
   have hz0 : z - c ≠ 0 := by
     intro hzc
     have : z = c := sub_eq_zero.mp hzc
@@ -143,8 +156,8 @@ theorem circleReflection_eq_self_of_mem_sphere {c z : ℂ} {r : ℝ}
   rw [div_eq_iff hden]
   rw [mul_conj, ← ofReal_pow, Complex.ofReal_inj, Complex.normSq_eq_norm_sq, hz]
 
-/-- Reflection in a positive-radius circle sends its open ball to the exterior of its closed
-ball. -/
+/-- Reflection in a positive-radius circle sends its punctured open ball to the exterior of its
+closed ball. -/
 theorem circleReflection_mem_ball_iff {c z : ℂ} {r : ℝ} (hr : 0 < r) (hz : z ≠ c) :
     circleReflection c r z ∈ ball c r ↔ r < dist z c := by
   rw [mem_ball, dist_circleReflection_center, div_lt_iff₀ (dist_pos.mpr hz)]
@@ -152,14 +165,8 @@ theorem circleReflection_mem_ball_iff {c z : ℂ} {r : ℝ} (hr : 0 < r) (hz : z
   · nlinarith [mul_pos hr (dist_pos.mpr hz)]
   · nlinarith [mul_pos hr (dist_pos.mpr hz)]
 
-/-- Reflection in a positive-radius circle sends the exterior of its closed ball to its open
-ball. -/
-theorem circleReflection_dist_lt_iff {c z : ℂ} {r : ℝ} (hr : 0 < r) (hz : z ≠ c) :
-    dist (circleReflection c r z) c < r ↔ r < dist z c := by
-  simpa [mem_ball] using circleReflection_mem_ball_iff hr hz
-
 /-- Reflection in a positive-radius circle sends the punctured open ball to the exterior of the
-open ball. -/
+closed ball. -/
 theorem dist_lt_circleReflection_iff {c z : ℂ} {r : ℝ} (hr : 0 < r) (hz : z ≠ c) :
     r < dist (circleReflection c r z) c ↔ dist z c < r := by
   rw [dist_circleReflection_center, lt_div_iff₀ (dist_pos.mpr hz)]
@@ -170,7 +177,7 @@ theorem dist_lt_circleReflection_iff {c z : ℂ} {r : ℝ} (hr : 0 < r) (hz : z 
 /-- Circle reflection is continuous away from the centre. -/
 theorem continuousAt_circleReflection {c z : ℂ} {r : ℝ} (hz : z ≠ c) :
     ContinuousAt (circleReflection c r) z := by
-  change ContinuousAt (fun w => c + (r : ℂ) ^ 2 / (starRingEnd ℂ) (w - c)) z
+  unfold circleReflection
   exact continuousAt_const.add (continuousAt_const.div₀
     (Complex.continuous_conj.continuousAt.comp (continuousAt_id.sub continuousAt_const))
     ((map_ne_zero (starRingEnd ℂ)).mpr (sub_ne_zero.mpr hz)))
@@ -180,5 +187,32 @@ theorem continuousOn_circleReflection (c : ℂ) (r : ℝ) :
     ContinuousOn (circleReflection c r) ({c}ᶜ : Set ℂ) := by
   intro z hz
   exact continuousAt_circleReflection (Set.mem_compl_singleton_iff.mp hz) |>.continuousWithinAt
+
+/-- Reflection in a nondegenerate circle is a self-homeomorphism of the punctured plane. -/
+noncomputable def circleReflectionHomeomorph (c : ℂ) (r : ℝ) (hr : r ≠ 0) :
+    ({c}ᶜ : Set ℂ) ≃ₜ ({c}ᶜ : Set ℂ) where
+  toEquiv := circleReflectionEquiv c r hr
+  continuous_toFun := (continuousOn_circleReflection c r).restrict.subtype_mk _
+  continuous_invFun := by
+    have h := (continuousOn_circleReflection c r).restrict.subtype_mk
+      (fun z ↦ mapsTo_circleReflection_compl_singleton hr z.2)
+    rw [show (circleReflectionEquiv c r hr).invFun = circleReflectionSubtype c r hr by
+      funext z
+      exact Equiv.congr_fun (circleReflectionEquiv_symm c r hr) z]
+    exact h
+
+/-- The punctured-plane homeomorphism acts by circle reflection. -/
+@[simp]
+theorem coe_circleReflectionHomeomorph_apply (c : ℂ) (r : ℝ) (hr : r ≠ 0)
+    (z : ({c}ᶜ : Set ℂ)) :
+    (circleReflectionHomeomorph c r hr z : ℂ) = circleReflection c r z := by
+  simp [circleReflectionHomeomorph]
+
+/-- The punctured-plane circle-reflection homeomorphism is its own inverse. -/
+@[simp]
+theorem circleReflectionHomeomorph_symm (c : ℂ) (r : ℝ) (hr : r ≠ 0) :
+    (circleReflectionHomeomorph c r hr).symm = circleReflectionHomeomorph c r hr := by
+  apply Homeomorph.toEquiv_injective
+  exact circleReflectionEquiv_symm c r hr
 
 end TauCeti
