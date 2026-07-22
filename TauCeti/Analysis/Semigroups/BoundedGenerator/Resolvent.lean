@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.Semigroups.BoundedGenerator.Basic
-public import TauCeti.Analysis.Semigroups.Resolvent
+public import TauCeti.Analysis.Semigroups.Resolvent.Basic
 import Mathlib.Analysis.Normed.Algebra.Spectrum
 
 /-!
