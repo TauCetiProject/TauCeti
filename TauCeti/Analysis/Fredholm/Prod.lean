@@ -100,7 +100,22 @@ lemma IsFredholm.prodMap (hT : IsFredholm T) (hS : IsFredholm S) :
 
 namespace ContinuousLinearMap
 
+/-- The index is additive under Cartesian products when both kernels and cokernels are finite
+dimensional. -/
+lemma index_prodMap_of_finiteDimensional (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
+    [FiniteDimensional K (LinearMap.ker (T : E₁ →ₗ[K] F₁))]
+    [FiniteDimensional K (LinearMap.ker (S : E₂ →ₗ[K] F₂))]
+    [FiniteDimensional K (F₁ ⧸ LinearMap.range (T : E₁ →ₗ[K] F₁))]
+    [FiniteDimensional K (F₂ ⧸ LinearMap.range (S : E₂ →ₗ[K] F₂))] :
+    index (T.prodMap S) = index T + index S := by
+  rw [index_eq_finrank_sub, index_eq_finrank_sub, index_eq_finrank_sub, coe_prodMap,
+    LinearMap.ker_prodMap, LinearMap.range_prodMap,
+    (Submodule.prodSubtypeEquiv _ _).finrank_eq,
+    Submodule.finrank_quotient_prod, finrank_prod]
+  omega
+
 /-- The Fredholm index is additive under Cartesian products of Fredholm operators. -/
+@[simp]
 lemma index_prodMap (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
     (hT : IsFredholm T) (hS : IsFredholm S) :
     index (T.prodMap S) = index T + index S := by
@@ -108,11 +123,7 @@ lemma index_prodMap (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
   letI := hS.finiteDimensional_ker
   letI := hT.finiteDimensional_coker
   letI := hS.finiteDimensional_coker
-  rw [index_eq_finrank_sub, index_eq_finrank_sub, index_eq_finrank_sub, coe_prodMap,
-    LinearMap.ker_prodMap, LinearMap.range_prodMap,
-    (Submodule.prodSubtypeEquiv _ _).finrank_eq,
-    Submodule.finrank_quotient_prod, finrank_prod]
-  omega
+  exact index_prodMap_of_finiteDimensional T S
 
 end ContinuousLinearMap
 
