@@ -4,7 +4,7 @@
 Focus on the failure modes that would make it silently wrong rather than merely
 noisy: fail-open resolution, multi-page JSON parsing, marker-injection safety, and
 recurrence visibility. Pure logic only -- GitHub and Zulip are faked, so no network
-or `gh` is needed. Run: python3 scripts/zulip/test_stuck_alerts.py
+or `gh` is needed. Run: python3 scripts/pr_status/test_stuck_alerts.py
 """
 
 import os
@@ -14,7 +14,8 @@ os.environ.setdefault("ZULIP_CHANNEL", "Tau Ceti")
 os.environ.setdefault("ZULIP_TOPIC", "Stuck PRs")
 
 import stuck_alerts as sa  # noqa: E402
-import zulip_pr_status as zp  # noqa: E402
+import core  # noqa: E402
+import zulip as zp  # noqa: E402
 
 
 class FakeZulip:
@@ -53,22 +54,22 @@ class GhStreamTest(unittest.TestCase):
         # `gh --paginate --jq '.[] | {..}'` concatenates per-page streams: three
         # objects over two "pages". A single json.loads would choke on line 2+.
         pages = '{"number": 1}\n{"number": 2}\n{"number": 3}\n'
-        self.addCleanup(setattr, zp, "gh_api", zp.gh_api)
-        zp.gh_api = lambda path, jq=None, paginate=False: pages
+        self.addCleanup(setattr, zp, "gh_api", core.gh_api)
+        core.gh_api = lambda path, jq=None, paginate=False: pages
         got = sa.gh_stream("/x", jq=".[] | {number}")
         self.assertEqual([r["number"] for r in got], [1, 2, 3])
 
     def test_empty_output_is_empty_list(self):
-        self.addCleanup(setattr, zp, "gh_api", zp.gh_api)
-        zp.gh_api = lambda path, jq=None, paginate=False: "\n"
+        self.addCleanup(setattr, zp, "gh_api", core.gh_api)
+        core.gh_api = lambda path, jq=None, paginate=False: "\n"
         self.assertEqual(sa.gh_stream("/x", jq=".[]"), [])
 
     def test_gh_lines_returns_raw_strings_not_json(self):
         # `.[].filename` emits bare filenames; gh_lines must NOT json.loads them
         # (json.loads("TauCeti/Foo.lean") would raise) -- the bug that broke
         # stranded-pr when it used gh_stream here.
-        self.addCleanup(setattr, zp, "gh_api", zp.gh_api)
-        zp.gh_api = lambda path, jq=None, paginate=False: "TauCeti/Foo.lean\nlean-toolchain\n"
+        self.addCleanup(setattr, zp, "gh_api", core.gh_api)
+        core.gh_api = lambda path, jq=None, paginate=False: "TauCeti/Foo.lean\nlean-toolchain\n"
         self.assertEqual(sa.gh_lines("/x", jq=".[].filename"),
                          ["TauCeti/Foo.lean", "lean-toolchain"])
 

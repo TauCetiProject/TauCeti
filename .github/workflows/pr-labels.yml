@@ -1,0 +1,141 @@
+name: PR status labels
+
+# Keep exactly one status label on every open PR, so the PR list shows at a
+# glance where each PR sits in the pipeline:
+#
+#   awaiting-CI         CI has not yet reported on the latest commit
+#   awaiting-review     CI is green; waiting for review verdicts
+#   review-in-progress  a review agent is actively reviewing (best-effort; set by
+#                       the worker, NOT here -- this workflow only preserves it
+#                       while the derived slot is awaiting-review, and clears it
+#                       on any real transition)
+#   awaiting-author     the build failed or a review requested changes
+#   ready-to-merge      CI green and every rubric approved
+#
+# The four CI-owned labels are derived by scripts/pr_status/labels.py from the
+# same GitHub truth the Zulip mirror uses (core.derive): PR state, the `build`
+# commit status, and the canonical <!--tauceti-scoreboard--> comment's meta JSON.
+# reconcile is idempotent and convergent, so the trigger only decides *when* to
+# refresh; a forged scoreboard comment can only TRIGGER a re-derive (from the
+# trusted, author-association-checked ledger), never supply a verdict.
+#
+# Runs on pull_request_target so it can label fork PRs, but it NEVER checks out
+# or executes PR head code: it reads only PR metadata through the API and runs
+# the trusted base-branch script under a GitHub App token (the default
+# GITHUB_TOKEN is read-only for fork pull_request_target).
+
+on:
+  # New commit / open / reopen / close -> awaiting-CI, or strip labels on close.
+  pull_request_target:
+    types: [opened, reopened, synchronize, closed]
+  # Build started (awaiting-CI) or finished (awaiting-author / review / ready).
+  workflow_run:
+    workflows: ["pr-build"]
+    types: [requested, completed]
+  # A review scoreboard was posted or edited -> awaiting-author / ready-to-merge.
+  issue_comment:
+    types: [created, edited]
+  # Manual re-sync / backfill of a single PR.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "PR number to reconcile"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# Serialize reconciles for one PR so two events can't interleave a label
+# add/remove. workflow_run only knows the head sha at group-eval time, so it
+# keys separately; a cross-group race still self-heals because reconcile is
+# convergent. Don't cancel: each run reconciles fresh truth and we want the last
+# word, not a dropped one.
+concurrency:
+  group: pr-labels-${{ github.event.pull_request.number || github.event.issue.number || github.event.inputs.pr || github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  label:
+    # Only same-repo; and for the loose triggers, only the relevant events: a
+    # pr-build run for a pull_request_target build, or a PR comment carrying the
+    # scoreboard marker (an over-trigger is a cheap idempotent no-op).
+    if: >
+      github.repository == 'TauCetiProject/TauCeti' && (
+        github.event_name == 'pull_request_target'
+        || github.event_name == 'workflow_dispatch'
+        || (github.event_name == 'workflow_run'
+            && github.event.workflow_run.event == 'pull_request_target')
+        || (github.event_name == 'issue_comment'
+            && github.event.issue.pull_request != null
+            && contains(github.event.comment.body, 'tauceti-scoreboard'))
+      )
+    runs-on: ubuntu-latest
+    steps:
+      # A GitHub App token, as in roadmap-label.yml: it can write labels on a fork
+      # PR, which the default GITHUB_TOKEN cannot under fork pull_request_target.
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+
+      - name: Resolve PR number and CI override
+        id: r
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
+          EVENT: ${{ github.event_name }}
+          WF_ACTION: ${{ github.event.action }}
+          WF_HEAD: ${{ github.event.workflow_run.head_sha }}
+          WF_PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          INPUT_PR: ${{ github.event.inputs.pr }}
+        run: |
+          set -euo pipefail
+          case "$EVENT" in
+            pull_request_target) pr="$PR_NUMBER" ;;
+            issue_comment)       pr="$ISSUE_NUMBER" ;;
+            workflow_dispatch)   pr="$INPUT_PR" ;;
+            workflow_run)
+              pr="$WF_PR"
+              if [ -z "$pr" ]; then
+                pr=$(gh api "repos/$REPO/commits/$WF_HEAD/pulls" --jq '.[0].number // empty')
+              fi
+              # pr-build posts the `build` commit status only at the end, so on
+              # its "requested" event paint awaiting-CI explicitly rather than
+              # reading a not-yet-posted status.
+              if [ "$WF_ACTION" = "requested" ]; then echo "ci=running" >> "$GITHUB_OUTPUT"; fi
+              ;;
+          esac
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+
+      # The trusted base checkout: the labels script that runs is the one on the
+      # target branch, never the version proposed by the PR.
+      - uses: actions/checkout@v4
+        if: steps.r.outputs.pr != ''
+        with:
+          sparse-checkout: scripts/pr_status
+          persist-credentials: false
+
+      - name: Reconcile status label
+        if: steps.r.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          # Fast-path the PR's state from the event payload (no /pulls API call),
+          # like the Zulip lifecycle workflow. Only pull_request_target carries a
+          # pull_request object; other events leave these empty and the script
+          # falls back to the REST API. The title is not used by the label sink.
+          PR_STATE: ${{ github.event.pull_request.state }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          CI_OVERRIDE: ${{ steps.r.outputs.ci }}
+        run: |
+          set -euo pipefail
+          ARGS=""
+          if [ -n "${CI_OVERRIDE:-}" ]; then ARGS="--ci $CI_OVERRIDE"; fi
+          python3 scripts/pr_status/labels.py reconcile "${{ steps.r.outputs.pr }}" $ARGS

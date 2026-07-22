@@ -43,7 +43,7 @@ these would cheapen the topic and train people to ignore it):
     these after STALE_DAYS;
   * open roadmap / help-wanted issues -- that IS the ask-the-humans queue.
 
-Idempotent, like zulip_pr_status.py: exactly one bot-owned message per active
+Idempotent, like zulip.py: exactly one bot-owned message per active
 alert key, tagged with a hidden `<!--stuck:v1 <key>-->` marker on its LAST line.
 Each run reconciles the topic against live GitHub state:
   * a NEW alert posts a message (the only event that notifies watchers);
@@ -64,7 +64,7 @@ cleanly is resolved.
 Run status mirrors the healthcheck philosophy: the ALERTS are the signal, not the
 run's red/green, so a run that checks and posts exits 0 even with ten alerts open.
 Only a persistent Zulip CONFIG break (bad key, forbidden bot, not subscribed --
-verified up front via zulip_pr_status.check) fails the run loudly: if we cannot
+verified up front via zulip.check) fails the run loudly: if we cannot
 post, the emergency channel itself is down, and that must not be silent.
 
 Usage:
@@ -79,7 +79,7 @@ Environment:
     GH_TOKEN / GITHUB_TOKEN                  used by `gh` for the GitHub API
 
 Only python3's standard library and an authenticated `gh` CLI are required. The
-Zulip client, credential handling, and sanitizer are reused from zulip_pr_status.py
+Zulip client, credential handling, and sanitizer are reused from zulip.py
 (same package dir); pointing that client at a different topic is the module's own
 documented mechanism: ZULIP_TOPIC (set to "Stuck PRs" by the workflow) is read at
 import, so send/find target this topic.
@@ -94,11 +94,12 @@ import sys
 
 # Reuse the proven Zulip client + helpers. Because ZULIP_TOPIC is read at import
 # time, the workflow sets it to "Stuck PRs" and every send/narrow below targets
-# this topic without any change to zulip_pr_status.py.
+# this topic without any change to zulip.py.
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import zulip_pr_status as zp  # noqa: E402
+import core  # noqa: E402
+import zulip as zp  # noqa: E402
 
-REPO = zp.REPO
+REPO = core.REPO
 LKG_BRANCH = "hopscotch/lkg-bump"  # keep in sync with update.yml's LKG_BRANCH
 
 # Keys we generate use only this alphabet; the marker is anchored to the final
@@ -154,13 +155,13 @@ def hours_since(s):
 
 def gh_stream(path, jq, paginate=True):
     """Parsed list from a jq that emits one JSON value per line (e.g. `.[] | {…}`)."""
-    out = zp.gh_api(path, jq=jq, paginate=paginate)
+    out = core.gh_api(path, jq=jq, paginate=paginate)
     return [json.loads(ln) for ln in out.splitlines() if ln.strip()]
 
 
 def gh_obj(path, jq):
     """Single parsed JSON value from a jq that yields one object, or None."""
-    out = zp.gh_api(path, jq=jq).strip()
+    out = core.gh_api(path, jq=jq).strip()
     if not out:
         return None
     return json.loads(out.splitlines()[0])
@@ -168,14 +169,14 @@ def gh_obj(path, jq):
 
 def gh_scalar(path, jq, paginate=False):
     """Raw stripped string from a jq that yields a scalar (never json.loads it)."""
-    return zp.gh_api(path, jq=jq, paginate=paginate).strip()
+    return core.gh_api(path, jq=jq, paginate=paginate).strip()
 
 
 def gh_lines(path, jq, paginate=True):
     """List of raw (non-JSON) string lines from a jq that emits bare strings, e.g.
     `.[].filename`. Unlike gh_stream this does NOT json.loads each line (a bare
     filename is not valid JSON)."""
-    return [ln for ln in zp.gh_api(path, jq=jq, paginate=paginate).splitlines() if ln.strip()]
+    return [ln for ln in core.gh_api(path, jq=jq, paginate=paginate).splitlines() if ln.strip()]
 
 
 def newest_status(head, context):
@@ -290,7 +291,7 @@ def detect_stranded_prs():
         # is best-effort and can lag. The mergeable + in-scope + quiet-window guards
         # below keep the false-emergency rate low; a fully authoritative read of the
         # TauCetiReview ledger is a possible future hardening.
-        if zp.review_emoji(zp.scoreboard_meta(pr["number"]), head) != "check":
+        if core.review_state(core.scoreboard_meta(pr["number"]), head) != "approved":
             continue
         # Filenames are bare strings, not JSON -- gh_lines, not gh_stream.
         files = gh_lines(f"/repos/{REPO}/pulls/{pr['number']}/files?per_page=300",
