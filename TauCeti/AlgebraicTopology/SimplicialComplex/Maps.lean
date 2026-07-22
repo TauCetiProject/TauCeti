@@ -62,12 +62,8 @@ theorem map_face (f : SimplicialMap K L) {σ : Finset α} (hσ : σ ∈ K) :
 
 /-- A vertex map is simplicial exactly when its image complex is a subcomplex of the codomain. -/
 theorem map_le_iff (f : α → β) :
-    K.map f ≤ L ↔ ∀ ⦃σ : Finset α⦄, σ ∈ K → σ.image f ∈ L := by
-  constructor
-  · intro h σ hσ
-    exact h ⟨σ, hσ, rfl⟩
-  · rintro h _ ⟨σ, hσ, rfl⟩
-    exact h hσ
+    K.map f ≤ L ↔ ∀ ⦃σ : Finset α⦄, σ ∈ K → σ.image f ∈ L :=
+  Set.image_subset_iff
 
 /-- Construct a simplicial map from containment of the image complex in the codomain. -/
 def ofMapLE (f : α → β) (h : K.map f ≤ L) : SimplicialMap K L where
