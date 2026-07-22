@@ -71,8 +71,8 @@ theorem circleReflectionHomeomorph_symm (c : ℂ) (r : ℝ) (hr : r ≠ 0) :
 original point is in the exterior of its closed ball. -/
 @[simp]
 theorem inversion_mem_ball_iff {c z : ℂ} {r : ℝ} (hr : 0 < r) (hz : z ≠ c) :
-    inversion c r z ∈ ball c r ↔ r < dist z c := by
-  rw [mem_ball, dist_inversion_center, div_lt_iff₀ (dist_pos.mpr hz)]
+    dist (inversion c r z) c < r ↔ r < dist z c := by
+  rw [dist_inversion_center, div_lt_iff₀ (dist_pos.mpr hz)]
   constructor <;> intro h
   · nlinarith [mul_pos hr (dist_pos.mpr hz)]
   · nlinarith [mul_pos hr (dist_pos.mpr hz)]
