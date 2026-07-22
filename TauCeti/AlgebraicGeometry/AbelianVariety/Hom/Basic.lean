@@ -161,6 +161,11 @@ lemma Hom.ext {A B : AbelianVariety K} {f g : A ⟶ B}
   apply CommGrp.hom_ext
   exact Over.OverMorphism.ext h
 
+/-- Forgetting an abelian-variety homomorphism to its underlying morphism over `Spec K` is
+faithful. -/
+instance : (Hom.toOverFunctor (K := K)).Faithful where
+  map_injective h := Hom.ext (congrArg Over.Hom.left h)
+
 end
 
 end AbelianVariety

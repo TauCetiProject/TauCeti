@@ -117,9 +117,7 @@ theorem windingNumber_circleMap_eq_one_of_dist_lt {c w : ℂ} {R : ℝ} (hw : di
   have havoid : ∀ θ, circleMap c R θ ≠ w := fun θ => circleMap_ne_mem_ball (mem_ball.mpr hw) θ
   rw [windingNumber_circleMap_eq_circleIntegral havoid,
     circleIntegral.integral_sub_inv_of_mem_ball (mem_ball.mpr hw)]
-  have h2pi : (2 * (Real.pi : ℂ) * Complex.I) ≠ 0 := by
-    simp [Real.pi_ne_zero, Complex.I_ne_zero]
-  exact inv_mul_cancel₀ h2pi
+  exact inv_mul_cancel₀ Complex.two_pi_I_ne_zero
 
 /-- **`n_c(circle) = 1`** — the closed-curve normalization at the centre. The generalized winding
 number of the counterclockwise circle `circleMap c R` (`R ≠ 0`) over `[0, 2π]` about its centre `c`
