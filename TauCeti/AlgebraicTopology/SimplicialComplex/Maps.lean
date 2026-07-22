@@ -10,9 +10,9 @@ public import Mathlib.AlgebraicTopology.SimplicialComplex.Basic
 # Maps of abstract simplicial complexes
 
 This file bundles simplicial maps between pre-abstract simplicial complexes. A simplicial map is
-a map of vertices which sends every face to a face. The file supplies the identity, composition,
-restriction to subcomplexes, and extension to a larger complex, together with the connection
-to Mathlib's image complex `PreAbstractSimplicialComplex.map`.
+a map of ambient vertex types which sends every face to a face. The file supplies the identity,
+composition, restriction to subcomplexes, and extension to a larger complex, together with the
+connection to Mathlib's image complex `PreAbstractSimplicialComplex.map`.
 
 These maps are basic infrastructure for subdivision and geometric realization in the geometric
 topology roadmap. We work with `PreAbstractSimplicialComplex`, since constructions such as links
@@ -31,12 +31,12 @@ variable {L L' : PreAbstractSimplicialComplex β}
 variable {P : PreAbstractSimplicialComplex γ}
 variable {P' : PreAbstractSimplicialComplex δ}
 
-/-- A simplicial map between pre-abstract simplicial complexes is a map of vertices which sends
-faces to faces. -/
+/-- A simplicial map between pre-abstract simplicial complexes is a map of their ambient vertex
+types which sends faces to faces. -/
 @[ext]
 structure SimplicialMap (K : PreAbstractSimplicialComplex α)
     (L : PreAbstractSimplicialComplex β) where
-  /-- The map on vertices. -/
+  /-- The map on the ambient vertex types. -/
   toFun : α → β
   /-- The image of every face is a face. -/
   map_face' : ∀ ⦃σ : Finset α⦄, σ ∈ K → σ.image toFun ∈ L
