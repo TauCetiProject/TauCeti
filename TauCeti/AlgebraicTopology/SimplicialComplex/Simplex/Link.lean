@@ -67,6 +67,7 @@ theorem link_simplex (hσ : σ ⊆ V) : link (simplex V) σ = simplex (V \ σ) :
 
 omit [DecidableEq ι] in
 /-- Deleting the top face from a simplex leaves exactly its boundary. -/
+@[simp]
 theorem deletion_simplex_self : deletion (simplex V) V = simplexBoundary V := by
   apply SetLike.ext
   intro ρ
@@ -77,9 +78,8 @@ theorem deletion_simplex_self : deletion (simplex V) V = simplexBoundary V := by
   · rintro ⟨hρ, hρV⟩
     exact ⟨⟨hρ, hρV.subset⟩, fun hVρ => hρV.not_subset hVρ⟩
 
-/-- The closed star of a proper face in the boundary of a simplex consists of the nonempty
-faces whose union with the selected face is still proper.  Equivalently, it is the part of the
-simplex boundary supported away from no entire complementary face. -/
+/-- A set `ρ` lies in the closed star of `σ` in the boundary of the simplex on `V` exactly when
+`ρ` is nonempty and `ρ ∪ σ` is a proper subset of `V`. -/
 theorem mem_closedStar_simplexBoundary {ρ : Finset ι} :
     ρ ∈ closedStar (simplexBoundary V) σ ↔ ρ.Nonempty ∧ ρ ∪ σ ⊂ V := by
   rw [mem_closedStar, mem_simplexBoundary]
@@ -98,13 +98,9 @@ theorem link_simplexBoundary (hσ : σ ⊆ V) :
   · rintro ⟨hρ, hdis, -, hρσ⟩
     refine ⟨hρ, Finset.ssubset_iff_subset_ne.mpr ⟨subset_sdiff.mpr
       ⟨subset_union_left.trans hρσ.subset, hdis⟩, ?_⟩⟩
-    · intro hρeq
-      apply hρσ.ne
-      apply Subset.antisymm hρσ.subset
-      intro x hxV
-      by_cases hxσ : x ∈ σ
-      · exact mem_union_right ρ hxσ
-      · exact mem_union_left σ (hρeq ▸ mem_sdiff.mpr ⟨hxV, hxσ⟩)
+    intro hρeq
+    apply hρσ.ne
+    rw [hρeq, sdiff_union_of_subset hσ]
   · rintro ⟨hρ, hρdiff⟩
     have hρV : ρ ⊆ V := hρdiff.subset.trans sdiff_subset
     have hdis : Disjoint ρ σ := Finset.disjoint_left.mpr fun x hxρ hxσ =>
@@ -113,25 +109,19 @@ theorem link_simplexBoundary (hσ : σ ⊆ V) :
     refine Finset.ssubset_iff_subset_ne.mpr ⟨union_subset hρV hσ, ?_⟩
     intro hρσeq
     apply hρdiff.ne
-    apply Subset.antisymm hρdiff.subset
-    intro x hx
-    have hxV : x ∈ V := (mem_sdiff.mp hx).1
-    have hxρσ : x ∈ ρ ∪ σ := hρσeq ▸ hxV
-    exact (mem_union.mp hxρσ).resolve_right (mem_sdiff.mp hx).2
+    rw [← hρσeq, union_sdiff_cancel_right hdis]
 
 /-- The link of the top face in its simplex is empty. -/
 @[simp]
 theorem link_simplex_self : link (simplex V) V = ⊥ := by
-  rw [link_simplex Subset.rfl, sdiff_self]
-  change simplex (∅ : Finset ι) = ⊥
+  rw [link_simplex Subset.rfl, sdiff_self, bot_eq_empty]
   exact simplex_empty
 
 /-- The link of the top face in its simplex boundary is empty.  The statement also covers the
 empty spanning set. -/
 @[simp]
 theorem link_simplexBoundary_self : link (simplexBoundary V) V = ⊥ := by
-  rw [link_simplexBoundary Subset.rfl, sdiff_self]
-  change simplexBoundary (∅ : Finset ι) = ⊥
+  rw [link_simplexBoundary Subset.rfl, sdiff_self, bot_eq_empty]
   exact simplexBoundary_empty
 
 end PreAbstractSimplicialComplex
