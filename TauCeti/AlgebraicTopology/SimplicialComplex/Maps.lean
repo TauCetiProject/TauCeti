@@ -55,6 +55,7 @@ theorem coe_mk (f : α → β) (hf) : ⇑(SimplicialMap.mk f hf : SimplicialMap 
   (rfl)
 
 /-- A simplicial map sends a face to a face. -/
+@[grind =>]
 theorem map_face (f : SimplicialMap K L) {σ : Finset α} (hσ : σ ∈ K) :
     σ.image f ∈ L :=
   f.map_face' hσ
@@ -149,20 +150,16 @@ theorem coe_codomainExtend (f : SimplicialMap K L) (h : L ≤ L') :
   (rfl)
 
 /-- Every vertex map is simplicial into its image complex. -/
-def toMap (K : PreAbstractSimplicialComplex α) (f : α → β) : SimplicialMap K (K.map f) where
-  toFun := f
-  map_face' := fun σ hσ ↦ ⟨σ, hσ, rfl⟩
+def toMap (K : PreAbstractSimplicialComplex α) (f : α → β) : SimplicialMap K (K.map f) :=
+  ofMapLE f le_rfl
 
 @[simp]
 theorem coe_toMap (K : PreAbstractSimplicialComplex α) (f : α → β) : ⇑(toMap K f) = f :=
   (rfl)
 
 /-- The inclusion of a subcomplex, acting as the identity on the ambient vertex type. -/
-def inclusion [DecidableEq α] (h : K ≤ K') : SimplicialMap K K' where
-  toFun := _root_.id
-  map_face' := fun _ hσ ↦ by
-    simp only [Finset.image_id]
-    exact h hσ
+def inclusion [DecidableEq α] (h : K ≤ K') : SimplicialMap K K' :=
+  (id K).codomainExtend h
 
 @[simp]
 theorem coe_inclusion [DecidableEq α] (h : K ≤ K') : ⇑(inclusion h) = _root_.id :=
