@@ -6,14 +6,15 @@ public import Mathlib.MeasureTheory.Function.AEEqFun
 # The Koopman Markov operator on measurable-function germs
 
 This file supplies the algebraic part of the generic Koopman lane in the Exchangeability roadmap.
-For a measure-preserving endomorphism `T`, composition `g ↦ g ∘ T` is bundled as an additive,
-unital, multiplicative operator on almost-everywhere measurable real-valued functions.  It is
-positive and monotone, and its powers are composition with the corresponding iterates of `T`.
+For a measure-preserving endomorphism `T`, composition `g ↦ g ∘ T` is bundled as an additive
+operator on almost-everywhere measurable real-valued functions.  It preserves one and
+multiplication, is positive and monotone, and its powers are composition with the corresponding
+iterates of `T`.
 
 Mathlib already provides the underlying operation as `AEEqFun.compMeasurePreserving`, as well as
-the isometric linear operator on every `Lᵖ`.  The bundle here records the extra deterministic
-Markov-operator structure: unlike a general positive unital operator, a Koopman operator is
-multiplicative.  The later `L∞` API can restrict this operator to essentially bounded germs.
+the isometric linear operator on every `Lᵖ`.  Unlike a general positive unital operator, a
+Koopman operator is multiplicative.  The later `L∞` API can restrict this operator to essentially
+bounded germs.
 -/
 
 public section
@@ -28,56 +29,18 @@ namespace Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
-/-- A positive-unital candidate operator on measurable real-valued germs, with the additional
-multiplicativity law enjoyed by deterministic Koopman operators.  Positivity is stated separately
-because it depends on the order of the chosen codomain. -/
-structure DeterministicMarkovOperator (Ω : Type*) [MeasurableSpace Ω] (μ : Measure Ω) where
-  /-- The underlying additive operator on measurable-function germs. -/
-  toAddMonoidHom : (Ω →ₘ[μ] ℝ) →+ (Ω →ₘ[μ] ℝ)
-  map_one' : toAddMonoidHom 1 = 1
-  map_mul' : ∀ g h, toAddMonoidHom (g * h) = toAddMonoidHom g * toAddMonoidHom h
-
-instance : CoeFun (DeterministicMarkovOperator Ω μ) fun _ =>
-    (Ω →ₘ[μ] ℝ) → (Ω →ₘ[μ] ℝ) :=
-  ⟨fun K => K.toAddMonoidHom⟩
-
-@[ext]
-theorem DeterministicMarkovOperator.ext {K L : DeterministicMarkovOperator Ω μ}
-    (h : ∀ g, K g = L g) : K = L := by
-  cases K
-  cases L
-  simp only [mk.injEq]
-  apply AddMonoidHom.ext
-  exact h
-
-theorem DeterministicMarkovOperator.map_one (K : DeterministicMarkovOperator Ω μ) : K 1 = 1 :=
-  K.map_one'
-
-theorem DeterministicMarkovOperator.map_mul (K : DeterministicMarkovOperator Ω μ)
-    (g h : Ω →ₘ[μ] ℝ) : K (g * h) = K g * K h :=
-  K.map_mul' g h
-
 /-- The deterministic Koopman Markov operator associated to a measure-preserving endomorphism.
 
-It acts on measurable-function germs by precomposition.  The bundle records additivity,
-preservation of constants, and the multiplicativity special to deterministic Markov operators. -/
+It acts on measurable-function germs by precomposition and is bundled as an additive operator. -/
 def koopmanMarkov (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
-    DeterministicMarkovOperator Ω μ where
-  toAddMonoidHom :=
-    { toFun := fun g => g.compMeasurePreserving T hT
-      map_zero' := by
-        rfl
-      map_add' := by
-        intro g h
-        change (g + h).compMeasurePreserving T hT =
-          g.compMeasurePreserving T hT + h.compMeasurePreserving T hT
-        exact AEEqFun.induction_on₂ g h fun _ _ _ _ => rfl }
-  map_one' := by
-    change (1 : Ω →ₘ[μ] ℝ).compMeasurePreserving T hT = 1
+    (Ω →ₘ[μ] ℝ) →+ (Ω →ₘ[μ] ℝ) where
+  toFun := fun g => g.compMeasurePreserving T hT
+  map_zero' := by
     rfl
-  map_mul' g h := by
-    change (g * h).compMeasurePreserving T hT =
-      g.compMeasurePreserving T hT * h.compMeasurePreserving T hT
+  map_add' := by
+    intro g h
+    change (g + h).compMeasurePreserving T hT =
+      g.compMeasurePreserving T hT + h.compMeasurePreserving T hT
     exact AEEqFun.induction_on₂ g h fun _ _ _ _ => rfl
 
 /-- A representative of `koopmanMarkov T hT g` is almost everywhere `g ∘ T`. -/
@@ -90,21 +53,23 @@ theorem coe_koopmanMarkov_ae (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
 /-- The Koopman Markov operator preserves the constant function `1`. -/
 @[simp]
 theorem koopmanMarkov_one (T : Ω → Ω) (hT : MeasurePreserving T μ μ) :
-    koopmanMarkov T hT 1 = 1 :=
-  (koopmanMarkov T hT).map_one
+    koopmanMarkov T hT 1 = 1 := by
+  change (1 : Ω →ₘ[μ] ℝ).compMeasurePreserving T hT = 1
+  rfl
 
 /-- The Koopman Markov operator preserves products. -/
 @[simp]
 theorem koopmanMarkov_mul (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
     (g h : Ω →ₘ[μ] ℝ) :
-    koopmanMarkov T hT (g * h) = koopmanMarkov T hT g * koopmanMarkov T hT h :=
-  (koopmanMarkov T hT).map_mul g h
+    koopmanMarkov T hT (g * h) = koopmanMarkov T hT g * koopmanMarkov T hT h := by
+  change (g * h).compMeasurePreserving T hT =
+    g.compMeasurePreserving T hT * h.compMeasurePreserving T hT
+  exact AEEqFun.induction_on₂ g h fun _ _ _ _ => rfl
 
 /-- The deterministic Koopman Markov operator is positive. -/
 theorem koopmanMarkov_nonneg (T : Ω → Ω) (hT : MeasurePreserving T μ μ)
     {g : Ω →ₘ[μ] ℝ} (hg : 0 ≤ g) :
     0 ≤ koopmanMarkov T hT g := by
-  change (0 : Ω →ₘ[μ] ℝ) ≤ (koopmanMarkov T hT).toAddMonoidHom g
   rw [← AEEqFun.coeFn_le] at hg ⊢
   have hgT := hT.quasiMeasurePreserving.tendsto_ae hg
   have hzeroT := hT.quasiMeasurePreserving.tendsto_ae
