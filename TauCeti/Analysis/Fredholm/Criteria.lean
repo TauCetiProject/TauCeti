@@ -12,22 +12,16 @@ public import TauCeti.Analysis.Fredholm.Basic
 This file gives streamlined Fredholm criteria when an operator is already known to be injective
 or surjective. A surjective continuous linear map is Fredholm exactly when its kernel is finite
 dimensional. Dually, an injective continuous linear map with closed range is Fredholm exactly when
-its cokernel is finite dimensional. The Fredholm index then reduces to the dimension of the one
-remaining defect space.
+its cokernel is finite dimensional.
 
 These criteria are the elementary endpoints of the finite-dimensional reductions used throughout
-Fredholm theory. In particular, a surjective linearization in a transversality argument has index
-equal to the dimension of its kernel.
+Fredholm theory.
 
 ## Main declarations
 
 * `TauCeti.isFredholm_iff_finiteDimensional_ker_of_surjective`: the surjective criterion.
 * `TauCeti.isFredholm_iff_finiteDimensional_coker_of_injective`: the injective closed-range
   criterion.
-* `TauCeti.ContinuousLinearMap.index_eq_finrank_ker_of_surjective`: the index of a surjective
-  Fredholm operator.
-* `TauCeti.ContinuousLinearMap.index_eq_neg_finrank_coker_of_injective`: the index of an injective
-  Fredholm operator.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix
 A.1.
@@ -91,41 +85,13 @@ lemma isFredholm_iff_finiteDimensional_coker_of_injective (hT : Function.Injecti
 
 namespace ContinuousLinearMap
 
-/-- The index of a surjective operator with finite-dimensional kernel is the dimension of its
-kernel. -/
-lemma index_eq_finrank_ker_of_surjective (T : E →L[K] F) (hT : Function.Surjective T)
-    [FiniteDimensional K (LinearMap.ker (T : E →ₗ[K] F))] :
-    index T = finrank K (LinearMap.ker (T : E →ₗ[K] F)) := by
-  rw [index_eq_finrank_sub, LinearMap.range_eq_top.mpr hT]
-  simp [Module.finrank_eq_zero_of_subsingleton]
-
-/-- A surjective Fredholm operator has index equal to the dimension of its kernel. -/
-lemma index_eq_finrank_ker (hFredholm : IsFredholm T) (hT : Function.Surjective T) :
-    index T = finrank K (LinearMap.ker (T : E →ₗ[K] F)) := by
-  letI := hFredholm.finiteDimensional_ker
-  exact index_eq_finrank_ker_of_surjective T hT
-
-/-- The index of an injective operator with finite-dimensional cokernel is the negative of the
-dimension of its cokernel. -/
-lemma index_eq_neg_finrank_coker_of_injective (T : E →L[K] F) (hT : Function.Injective T)
-    [FiniteDimensional K (F ⧸ LinearMap.range (T : E →ₗ[K] F))] :
-    index T = -(finrank K (F ⧸ LinearMap.range (T : E →ₗ[K] F)) : ℤ) := by
-  rw [index_eq_finrank_sub, LinearMap.ker_eq_bot.mpr hT]
-  simp
-
-/-- An injective Fredholm operator has index equal to the negative of the dimension of its
-cokernel. -/
-lemma index_eq_neg_finrank_coker (hFredholm : IsFredholm T) (hT : Function.Injective T) :
-    index T = -(finrank K (F ⧸ LinearMap.range (T : E →ₗ[K] F)) : ℤ) := by
-  letI := hFredholm.finiteDimensional_coker
-  exact index_eq_neg_finrank_coker_of_injective T hT
-
 /-- A bijective continuous linear map has Fredholm index zero. This formulation applies directly
 when bijectivity is known before a continuous inverse has been bundled. -/
 lemma index_eq_zero_of_bijective (T : E →L[K] F) (hT : Function.Bijective T) : index T = 0 := by
-  rw [index_eq_finrank_sub, LinearMap.ker_eq_bot.mpr hT.injective,
-    LinearMap.range_eq_top.mpr hT.surjective]
-  simp [Module.finrank_eq_zero_of_subsingleton]
+  rw [index_eq_finrank_sub, ← LinearMap.index_eq_finrank_sub,
+    LinearMap.index_of_surjective hT.surjective,
+    LinearMap.ker_eq_bot.mpr hT.injective, finrank_bot]
+  norm_num
 
 end ContinuousLinearMap
 
