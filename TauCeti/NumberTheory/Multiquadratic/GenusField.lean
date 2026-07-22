@@ -5,8 +5,9 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
-public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Factorization
-public import TauCeti.NumberTheory.Multiquadratic.QuadraticSubfield
+public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Factorization
+import TauCeti.NumberTheory.Multiquadratic.QuadraticSubfield
 
 /-!
 # A square root of the radicand in the prime-discriminant compositum
@@ -35,8 +36,9 @@ classical; see D. A. Cox, *Primes of the Form x² + ny²*, and F. Lemmermeyer, *
 * `TauCeti.Multiquadratic.exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq`: for a finset of
   prime discriminants whose product is `fundamentalDiscriminant d`, the compositum of the roots of
   their radicands contains an element squaring to `d`.
-* `TauCeti.Multiquadratic.exists_factorization_mem_adjoin_sq_of_squarefree`: for squarefree `d`,
-  the prime-discriminant factorization of `fundamentalDiscriminant d` exists and its radicand
+* `TauCeti.Multiquadratic.exists_finset_primeDiscriminant_and_exists_mem_adjoin_sq_eq_of_squarefree`
+  packages that with the factorization: for squarefree `d`, the prime-discriminant factorization of
+  `fundamentalDiscriminant d` exists (with its at-most-one-even property) and its radicand
   compositum contains an element squaring to `d`.
 -/
 
@@ -97,7 +99,9 @@ theorem exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq {d : ℤ} {s : Fins
   -- Scale by `a⁻¹` to land a square root of `d`.
   have ha_inv_sq : a⁻¹ ^ 2 * a ^ 2 = 1 := by rw [← mul_pow, inv_mul_cancel₀ hane, one_pow]
   refine ⟨algebraMap ℚ L a⁻¹ * x0, mul_mem (IntermediateField.algebraMap_mem _ _) hx0mem, ?_⟩
-  rw [mul_pow, hx0sq, hRa, map_mul, ← map_pow, ← mul_assoc, ← map_mul, ha_inv_sq, map_one, one_mul]
+  rw [mul_pow, hx0sq, hRa, ← map_pow, ← map_mul]
+  congr 1
+  rw [← mul_assoc, ha_inv_sq, one_mul]
 
 /-- **The prime-discriminant compositum of a squarefree radicand contains a square root of `d`.**
 For squarefree `d`, the fundamental discriminant `fundamentalDiscriminant d` factors into a finite
@@ -105,14 +109,17 @@ set `s` of prime discriminants, and for any roots of their radicands the composi
 element squaring to `d`. This packages `exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq` with
 the factorization `IsFundamentalDiscriminant.exists_finset_primeDiscriminant`, so callers need only
 supply `d` squarefree. -/
-theorem exists_factorization_mem_adjoin_sq_of_squarefree {d : ℤ} (hd : Squarefree d) :
-    ∃ s : Finset ℤ, (∀ P ∈ s, IsPrimeDiscriminant P) ∧ ∏ P ∈ s, P = fundamentalDiscriminant d ∧
+theorem exists_finset_primeDiscriminant_and_exists_mem_adjoin_sq_eq_of_squarefree {d : ℤ}
+    (hd : Squarefree d) :
+    ∃ s : Finset ℤ, (∀ P ∈ s, IsPrimeDiscriminant P) ∧
+      (∀ P ∈ s, ∀ Q ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) ∧
+      ∏ P ∈ s, P = fundamentalDiscriminant d ∧
       ∀ {L : Type*} [Field L] [Algebra ℚ L] (root : {P // P ∈ s} → L),
         (∀ P, root P ^ 2 = algebraMap ℚ L ((primeDiscriminantRadicand P.val : ℤ) : ℚ)) →
           ∃ x ∈ IntermediateField.adjoin ℚ (Set.range root), x ^ 2 = algebraMap ℚ L ((d : ℤ) : ℚ) :=
-  have ⟨s, hs, _, hprod⟩ :=
+  have ⟨s, hs, hev, hprod⟩ :=
     (isFundamentalDiscriminant_fundamentalDiscriminant hd).exists_finset_primeDiscriminant
-  ⟨s, hs, hprod, fun root hroot =>
+  ⟨s, hs, hev, hprod, fun root hroot =>
     exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq hs hprod root hroot⟩
 
 end TauCeti.Multiquadratic
