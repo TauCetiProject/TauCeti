@@ -65,12 +65,13 @@ theorem coe_circleReflectionHomeomorph_apply (c : ℂ) (r : ℝ) (hr : r ≠ 0)
 @[simp]
 theorem circleReflectionHomeomorph_symm (c : ℂ) (r : ℝ) (hr : r ≠ 0) :
     (circleReflectionHomeomorph c r hr).symm = circleReflectionHomeomorph c r hr := by
+  ext z
   rfl
 
 /-- Inversion in a positive-radius circle sends a point into its open ball exactly when the
 original point is in the exterior of its closed ball. -/
 @[simp]
-theorem inversion_mem_ball_iff {c z : ℂ} {r : ℝ} (hr : 0 < r) (hz : z ≠ c) :
+theorem dist_inversion_center_lt_iff {c z : ℂ} {r : ℝ} (hr : 0 < r) (hz : z ≠ c) :
     dist (inversion c r z) c < r ↔ r < dist z c := by
   rw [dist_inversion_center, div_lt_iff₀ (dist_pos.mpr hz)]
   constructor <;> intro h
@@ -80,7 +81,7 @@ theorem inversion_mem_ball_iff {c z : ℂ} {r : ℝ} (hr : 0 < r) (hz : z ≠ c)
 /-- Inversion in a positive-radius circle sends a point outside its closed ball exactly when the
 original point is in its open ball. -/
 @[simp]
-theorem dist_lt_inversion_iff {c z : ℂ} {r : ℝ} (hr : 0 < r) (hz : z ≠ c) :
+theorem lt_dist_inversion_center_iff {c z : ℂ} {r : ℝ} (hr : 0 < r) (hz : z ≠ c) :
     r < dist (inversion c r z) c ↔ dist z c < r := by
   rw [dist_inversion_center, lt_div_iff₀ (dist_pos.mpr hz)]
   constructor <;> intro h
