@@ -91,32 +91,15 @@ theorem inv_smul_tsum_pow_mul_sub (A : X →L[ℝ] X) {lambda : ℝ}
     _ = lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n := by rw [hright, mul_one]
   exact hseries
 
-/-- The Neumann series for `λI - A` is a right inverse when `‖A‖ < λ`. -/
+/-- The Neumann series for `λI - A` is a right inverse when `‖A‖ < |λ|`. -/
 theorem sub_mul_inv_smul_tsum_pow (A : X →L[ℝ] X) {lambda : ℝ}
-    (hlambda : ‖A‖ < lambda) :
+    (hlambda : ‖A‖ < |lambda|) :
     (lambda • 1 - A) * (lambda⁻¹ • ∑' n : ℕ, (lambda⁻¹ • A) ^ n) = 1 := by
-  have hlambda_ne : lambda ≠ 0 := ne_of_gt (lt_of_le_of_lt (norm_nonneg A) hlambda)
-  rw [← ofBounded_resolvent_eq_inv_smul_tsum_pow A hlambda]
-  ext x
-  have h := (ofBounded A).resolventRightInv
-    (ofBounded_hasGrowthBound A) lambda hlambda x
-  have hgen :
-      (ofBounded A).generator
-          ⟨(ofBounded A).resolvent (ofBounded_hasGrowthBound A) lambda hlambda x, by
-            rw [generator_domain]
-            exact (ofBounded A).resolvent_mem_domain
-              (ofBounded_hasGrowthBound A) lambda hlambda x⟩ =
-        A ((ofBounded A).resolvent (ofBounded_hasGrowthBound A) lambda hlambda x) := by
-    simpa using (LinearPMap.ext_iff.mp (ofBounded_generator A)).2
-      (x := (ofBounded A).resolvent (ofBounded_hasGrowthBound A) lambda hlambda x)
-      (hf := by
-        rw [generator_domain]
-        exact (ofBounded A).resolvent_mem_domain
-          (ofBounded_hasGrowthBound A) lambda hlambda x)
-      (hg := Submodule.mem_top)
-  rw [hgen] at h
-  simpa [smul_sub, smul_smul, mul_inv_cancel₀ hlambda_ne,
-    inv_mul_cancel₀ hlambda_ne] using h
+  have hlambda_ne : lambda ≠ 0 := abs_pos.mp (lt_of_le_of_lt (norm_nonneg A) hlambda)
+  have hfactor : lambda • (1 - lambda⁻¹ • A) = lambda • 1 - A := by
+    simp only [smul_sub, smul_smul, mul_inv_cancel₀ hlambda_ne, one_smul]
+  rw [← hfactor, smul_mul_smul, mul_inv_cancel₀ hlambda_ne, one_smul,
+    mul_neg_geom_series (lambda⁻¹ • A) (norm_inv_smul_lt_one A hlambda)]
 
 end StronglyContinuousSemigroup
 
