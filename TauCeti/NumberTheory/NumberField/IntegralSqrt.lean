@@ -22,7 +22,6 @@ which lives on `𝓞 K`, to a square root.
 
 ## Main definitions and results
 
-* `TauCeti.NumberField.isIntegral_of_sq_eq_intCast`: a square root of an integer is integral.
 * `TauCeti.NumberField.integralSqrt`: the packaging in `𝓞 K`, with
   `TauCeti.NumberField.algebraMap_integralSqrt` and `TauCeti.NumberField.integralSqrt_sq`.
 -/
@@ -33,17 +32,12 @@ open scoped NumberField
 
 namespace TauCeti.NumberField
 
-/-- A square root of an integer is integral over `ℤ`: its square is the image of an integer,
-which is integral, so the element is too. Stated for any `ℤ`-algebra (possibly noncommutative). -/
-theorem isIntegral_of_sq_eq_intCast {A : Type*} [Ring A] [Algebra ℤ A] {x : A} {d : ℤ}
-    (hx : x ^ 2 = algebraMap ℤ A d) : IsIntegral ℤ x :=
-  IsIntegral.of_pow two_pos (hx ▸ isIntegral_algebraMap)
-
 variable {K : Type*} [Field K] {x : K} {d : ℤ}
 
-/-- A square root `x` of an integer `d`, packaged as an element of the ring of integers. -/
+/-- A square root `x` of an integer `d`, packaged as an element of the ring of integers: since
+`x ^ 2 = d` is the image of an integer, it is integral over `ℤ` (`IsIntegral.of_pow`). -/
 noncomputable def integralSqrt (hx : x ^ 2 = algebraMap ℤ K d) : 𝓞 K :=
-  ⟨x, isIntegral_of_sq_eq_intCast hx⟩
+  ⟨x, IsIntegral.of_pow two_pos (hx ▸ isIntegral_algebraMap)⟩
 
 /-- Under `𝓞 K ↪ K`, `TauCeti.NumberField.integralSqrt hx` maps back to `x`. -/
 @[simp] theorem algebraMap_integralSqrt (hx : x ^ 2 = algebraMap ℤ K d) :

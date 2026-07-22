@@ -7,7 +7,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Ideal.Basic
 public import TauCeti.NumberTheory.LegendreSymbol.Frobenius
 public import TauCeti.NumberTheory.NumberField.IntegralSqrt
-import TauCeti.Algebra.NeNeg
+import Mathlib.Algebra.CharP.Basic
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 
 /-!
@@ -120,7 +120,8 @@ theorem isArithFrobAt_apply_sqrt_eq_self_iff (hodd : p ≠ 2) {d : ℤ} (hd : ¬
         (by rw [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]; exact hd) with h1 | h1
     · exact h1
     · rw [h1, neg_smul, one_smul] at happ
-      exact absurd happ (TauCeti.ne_neg_of_ne_zero (by norm_num) hxne)
+      have hchar : ringChar K ≠ 2 := by rw [ringChar.eq_zero]; norm_num
+      exact absurd ((Ring.eq_self_iff_eq_zero_of_char_ne_two hchar).mp happ.symm) hxne
   · intro h1
     rw [happ, h1, one_smul]
 
