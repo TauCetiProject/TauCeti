@@ -5,7 +5,6 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 
 /-!

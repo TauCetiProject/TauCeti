@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Winding.Integrand
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 
 /-!
 # The real winding integrand at a crossing
