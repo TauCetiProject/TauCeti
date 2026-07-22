@@ -57,17 +57,13 @@ theorem norm_resolvent_pow_apply_le (S : ContractionSemigroup X) (lambda : ℝ)
 theorem norm_smul_resolvent_pow_le_one (S : ContractionSemigroup X) (lambda : ℝ)
     (hlambda : 0 < lambda) (n : ℕ) :
     ‖(lambda • S.resolvent lambda hlambda) ^ n‖ ≤ 1 := by
-  cases n with
-  | zero => exact ContinuousLinearMap.norm_id_le
-  | succ n =>
-      refine (norm_pow_le' _ n.succ_pos).trans ?_
-      rw [norm_smul, Real.norm_eq_abs, abs_of_pos hlambda]
-      calc
-        (lambda * ‖S.resolvent lambda hlambda‖) ^ (n + 1)
-            ≤ (lambda * (1 / lambda)) ^ (n + 1) := by
-              gcongr
-              exact S.resolvent_norm_le lambda hlambda
-        _ = 1 := by rw [one_div, mul_inv_cancel₀ hlambda.ne', one_pow]
+  rw [smul_pow, norm_smul, Real.norm_eq_abs, abs_of_nonneg (pow_nonneg hlambda.le n)]
+  calc
+    lambda ^ n * ‖S.resolvent lambda hlambda ^ n‖
+        ≤ lambda ^ n * (1 / lambda) ^ n := by
+          gcongr
+          exact S.resolvent_pow_norm_le lambda hlambda n
+    _ = 1 := by rw [← mul_pow, one_div, mul_inv_cancel₀ hlambda.ne', one_pow]
 
 /-- Pointwise form of the power bound for the scaled contraction resolvent. -/
 theorem norm_smul_resolvent_pow_apply_le (S : ContractionSemigroup X) (lambda : ℝ)
