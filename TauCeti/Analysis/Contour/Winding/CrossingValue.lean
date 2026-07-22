@@ -136,6 +136,7 @@ velocity expansion imply
 This is the explicit form of one half of signed curvature times speed. -/
 theorem tendsto_realWindingIntegrand_at_crossing {α : Type*} {l : Filter α}
     {t : α → ℝ} {t₀ : ℝ} {γ : ℝ → ℂ} {s L A : ℂ} (hL : L ≠ 0)
+    (htend : Tendsto t l (𝓝 t₀)) (hcross : γ t₀ = s)
     (hpos : Tendsto (fun i ↦ ((γ (t i) - s) / (((t i - t₀ : ℝ) : ℂ)))) l (𝓝 L))
     (hpos₂ : Tendsto (fun i ↦
       (((γ (t i) - s) / (((t i - t₀ : ℝ) : ℂ))) - L) /
@@ -145,15 +146,18 @@ theorem tendsto_realWindingIntegrand_at_crossing {α : Type*} {l : Filter α}
     (ht : ∀ᶠ i in l, t i ≠ t₀) :
     Tendsto (fun i ↦ realWindingIntegrand (γ (t i) - s) (deriv γ (t i))) l
       (𝓝 ((L.re * A.im - L.im * A.re) / (2 * Complex.normSq L))) := by
+  subst s
+  have hpos' := tendsto_snd.comp (Tendsto.prodMk htend hpos)
+  change Tendsto (fun i ↦ (γ (t i) - γ t₀) / (((t i - t₀ : ℝ) : ℂ))) l (𝓝 L) at hpos'
   let τ : α → ℝ := fun i ↦ t i - t₀
-  let q : α → ℂ := fun i ↦ (γ (t i) - s) / ((τ i : ℝ) : ℂ)
+  let q : α → ℂ := fun i ↦ (γ (t i) - γ t₀) / ((τ i : ℝ) : ℂ)
   let r : α → ℂ := fun i ↦ (q i - L) / ((τ i : ℝ) : ℂ)
   let d : α → ℂ := fun i ↦ (deriv γ (t i) - L) / ((τ i : ℝ) : ℂ)
   have hτ : ∀ᶠ i in l, τ i ≠ 0 := ht.mono fun i hi ↦ sub_ne_zero.mpr hi
   have hqr : ∀ᶠ i in l, q i - L = ((τ i : ℝ) : ℂ) * r i := hτ.mono fun i hi ↦ by
     simp only [r]
     field_simp [Complex.ofReal_ne_zero.mpr hi]
-  have hmain := tendsto_realWindingIntegrand_mul_add hL hpos hpos₂ hvel hqr hτ
+  have hmain := tendsto_realWindingIntegrand_mul_add hL hpos' hpos₂ hvel hqr hτ
   apply hmain.congr'
   filter_upwards [hτ] with i hi
   have hiℂ : ((τ i : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hi
