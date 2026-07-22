@@ -50,19 +50,6 @@ namespace TauCeti.Contour
 
 open Complex Filter Topology
 
-/-- The real winding integrand `(x ẏ - y ẋ) / (x² + y²)` for a position `z = x + iy`
-and velocity `v = ẋ + iẏ`. It is defined to be `0` at `z = 0`, following division in `ℝ`;
-the crossing theorem below supplies its canonical continuous extension along a regular `C²`
-curve. -/
-def realWindingIntegrand (z v : ℂ) : ℝ :=
-  (z.re * v.im - z.im * v.re) / Complex.normSq z
-
-/-- The real winding integrand is the imaginary part of the complex winding integrand. -/
-theorem realWindingIntegrand_eq_im_inv_mul (z v : ℂ) :
-    realWindingIntegrand z v = (z⁻¹ * v).im := by
-  rw [realWindingIntegrand, inv_mul_eq_div, Complex.div_im]
-  ring
-
 /-- Scaling position and velocity by the same nonzero real parameter leaves the real winding
 integrand unchanged. -/
 theorem realWindingIntegrand_ofReal_mul {c : ℝ} (hc : c ≠ 0) (z v : ℂ) :
