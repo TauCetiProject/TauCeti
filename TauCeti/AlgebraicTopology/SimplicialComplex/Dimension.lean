@@ -5,7 +5,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Data.ENat.Lattice
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 
 /-!
 # The dimension of an abstract simplicial complex
