@@ -110,25 +110,35 @@ private lemma differentiableOn_circleReflectionCoord {c : ℂ} {r : ℝ} {S : Se
 /-- Conjugating a holomorphic map by source and target circle reflections is holomorphic away
 from the inversion centres.
 
-The set `S` is mapped into the original holomorphy domain `Ω` by source reflection. The two
-nonincidence hypotheses remove the poles of the source and target inversions. -/
+When both radii are nonzero, the set `S` is mapped into the original holomorphy domain `Ω` by
+source reflection, and the two nonincidence hypotheses remove the poles of the source and target
+inversions. These hypotheses are unnecessary when either radius is zero, since the conjugate is
+then constant. -/
 theorem differentiableOn_circleReflectionConjugate {c : ℂ} {r : ℝ} {d : ℂ} {s : ℝ}
-    {f : ℂ → ℂ} {Ω S : Set ℂ} (hf : DifferentiableOn ℂ f Ω)
-    (hmap : MapsTo (inversion c r) S Ω) (hc : c ∉ S)
-    (hd : ∀ z ∈ S, f (inversion c r z) ≠ d) :
+    {f : ℂ → ℂ} {Ω S : Set ℂ}
+    (hf : r ≠ 0 ∧ s ≠ 0 → DifferentiableOn ℂ f Ω)
+    (hmap : r ≠ 0 ∧ s ≠ 0 → MapsTo (inversion c r) S Ω)
+    (hc : r ≠ 0 ∧ s ≠ 0 → c ∉ S)
+    (hd : r ≠ 0 ∧ s ≠ 0 → ∀ z ∈ S, f (inversion c r z) ≠ d) :
     DifferentiableOn ℂ (circleReflectionConjugate c r d s f) S := by
+  by_cases hr : r = 0
+  · simp [hr]
+  by_cases hs : s = 0
+  · simp [hs]
+  have hrs : r ≠ 0 ∧ s ≠ 0 := ⟨hr, hs⟩
   let q := circleReflectionCoord c r
   let g := fun z => (starRingEnd ℂ) (f ((starRingEnd ℂ) z))
-  have hg : DifferentiableOn ℂ g ((starRingEnd ℂ) '' Ω) := differentiableOn_conj_conj hf
-  have hq : DifferentiableOn ℂ q S := differentiableOn_circleReflectionCoord hc
+  have hg : DifferentiableOn ℂ g ((starRingEnd ℂ) '' Ω) :=
+    differentiableOn_conj_conj (hf hrs)
+  have hq : DifferentiableOn ℂ q S := differentiableOn_circleReflectionCoord (hc hrs)
   have hqmap : MapsTo q S ((starRingEnd ℂ) '' Ω) := by
     intro z hz
-    refine ⟨inversion c r z, hmap hz, ?_⟩
+    refine ⟨inversion c r z, hmap hrs hz, ?_⟩
     simpa [q] using (congrArg (starRingEnd ℂ) (conj_circleReflectionCoord c r z)).symm
   have hcomp : DifferentiableOn ℂ (g ∘ q) S := hg.comp hq hqmap
   have hden : ∀ z ∈ S, g (q z) - (starRingEnd ℂ) d ≠ 0 := by
     intro z hz hzero
-    apply hd z hz
+    apply hd hrs z hz
     apply (starRingEnd ℂ).injective
     simpa [g, q, sub_eq_zero, conj_circleReflectionCoord] using hzero
   have hformula : EqOn (circleReflectionConjugate c r d s f)
