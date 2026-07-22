@@ -6,7 +6,6 @@ module
 
 public import TauCeti.Analysis.Semigroups.Generator.Invariance
 import Mathlib.Analysis.Calculus.Deriv.Slope
-import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Differentiability of semigroup orbits
