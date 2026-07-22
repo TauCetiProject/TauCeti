@@ -81,7 +81,6 @@ theorem deletion_simplex_self : deletion (simplex V) V = simplexBoundary V := by
 
 /-- A set `ρ` lies in the closed star of `σ` in the boundary of the simplex on `V` exactly when
 `ρ` is nonempty and `ρ ∪ σ` is a proper subset of `V`. -/
-@[simp]
 theorem mem_closedStar_simplexBoundary {ρ : Finset ι} :
     ρ ∈ closedStar (simplexBoundary V) σ ↔ ρ.Nonempty ∧ ρ ∪ σ ⊂ V := by
   rw [mem_closedStar, mem_simplexBoundary]
