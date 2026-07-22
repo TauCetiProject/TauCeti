@@ -79,7 +79,7 @@ private theorem tendsto_realWindingIntegrand_mul_add {α : Type*} {l : Filter α
   convert hdiv.congr' ?_ using 1
   · ring_nf
   filter_upwards [hqr, hτ, hq_ne] with i hqi hτi hqi_ne
-  rw [realWindingIntegrand_def]
+  rw [realWindingIntegrand_eq_div]
   simp only [Complex.mul_re, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im, zero_mul,
     add_zero, Complex.add_re, Complex.add_im, Complex.normSq_mul, Complex.normSq_ofReal]
   have hτsq : τ i ^ 2 ≠ 0 := pow_ne_zero _ hτi
