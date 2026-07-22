@@ -14,8 +14,9 @@ operator `-Δ - b·∇ + c`, a nonnegative zeroth-order coefficient and a bounde
 weak maximum principle.  The sign condition on `c` and the nonnegativity of the frontier bound are
 explicit, as required for the standard estimate `sup u ≤ sup (u⁺|∂Ω)`.
 
-The proof perturbs a subsolution by the positive exponential barrier already used for the drift
-maximum principle.  At a positive interior maximum of the perturbation, its derivative vanishes
+Following Gilbarg--Trudinger, *Elliptic Partial Differential Equations of Second Order*, Chapter 3,
+the proof adapts the weak-principle argument from `DriftMaximumPrinciple`: it perturbs a subsolution
+by the same positive exponential barrier. At a positive interior maximum, its derivative vanishes
 and its Laplacian is nonpositive, while the subsolution inequality, `c ≥ 0`, and strict positivity
 of the barrier give the opposite strict inequality.
 
@@ -23,9 +24,12 @@ of the barrier give the opposite strict inequality.
 
 * `TauCeti.le_of_mul_le_laplacian_add_fderiv_le_frontier`: the weak maximum principle for
   `-Δ - b·∇ + c`.
-* `TauCeti.le_of_lowerOrder_le_of_le_frontier`: the corresponding comparison principle.
-* `TauCeti.eqOn_of_lowerOrder_eq_of_eqOn_frontier`: Dirichlet uniqueness for equal operator
-  values.
+* `TauCeti.ge_of_laplacian_add_fderiv_le_mul_ge_frontier` and
+  `TauCeti.abs_le_of_laplacian_add_fderiv_eq_mul_abs_le_frontier`: its lower and two-sided forms.
+* `TauCeti.le_of_laplacian_add_fderiv_sub_mul_le_laplacian_add_fderiv_sub_mul_of_le_frontier`:
+  the corresponding comparison principle.
+* `TauCeti.eqOn_of_laplacian_add_fderiv_sub_mul_eq_of_eqOn_frontier`: Dirichlet uniqueness for
+  equal operator values.
 -/
 
 public section
@@ -88,12 +92,16 @@ theorem le_of_mul_le_laplacian_add_fderiv_le_frontier {K : Set E} (hK : IsCompac
         rw [hu, one_mul] at h
         exact (neg_le_neg (hb hzint)).trans h
       have hLwpos : 0 < Δ w z + fderiv ℝ w z (b z) := by
+        have hwlap : Δ w z = α ^ 2 * ‖u‖ ^ 2 * Real.exp (α * ⟪u, z⟫) := by
+          simp only [w]
+          exact laplacian_exp_inner α u z
+        have hwderiv : fderiv ℝ w z (b z) =
+            Real.exp (α * ⟪u, z⟫) * (α * ⟪u, b z⟫) := by
+          simp only [w]
+          exact fderiv_exp_inner_apply α u z (b z)
         have hLw : Δ w z + fderiv ℝ w z (b z) =
             α * (α + ⟪u, b z⟫) * Real.exp (α * ⟪u, z⟫) := by
-          rw [show Δ w z = α ^ 2 * ‖u‖ ^ 2 * Real.exp (α * ⟪u, z⟫) by
-                exact laplacian_exp_inner α u z,
-            show fderiv ℝ w z (b z) = Real.exp (α * ⟪u, z⟫) * (α * ⟪u, b z⟫) by
-                exact fderiv_exp_inner_apply α u z (b z), hu]
+          rw [hwlap, hwderiv, hu]
           ring
         rw [hLw]
         have : 0 < α + ⟪u, b z⟫ := by
@@ -106,20 +114,22 @@ theorem le_of_mul_le_laplacian_add_fderiv_le_frontier {K : Set E} (hK : IsCompac
         have hfd : DifferentiableAt ℝ f z := (hcd hzint).differentiableAt (by norm_num)
         have hwd : DifferentiableAt ℝ w z := hwcd.differentiable (by norm_num) z
         have hΔ : Δ g z = Δ f z + ε * Δ w z := by
+          have hg : g = fun y => f y + ε • w y := by simp only [g]
           have hadd : Δ (fun y => f y + ε • w y) z =
               Δ f z + Δ (fun y => ε • w y) z :=
             (hcd hzint).laplacian_add (hwcd.contDiffAt.const_smul ε)
           have hsmul : Δ (fun y => ε • w y) z = ε • Δ w z :=
             laplacian_smul ε hwcd.contDiffAt
-          rw [show g = fun y => f y + ε • w y from rfl, hadd, hsmul, smul_eq_mul]
+          rw [hg, hadd, hsmul, smul_eq_mul]
         have hderiv : fderiv ℝ g z (b z) =
             fderiv ℝ f z (b z) + ε * fderiv ℝ w z (b z) := by
+          have hg : g = fun y => f y + ε • w y := by simp only [g]
           have hadd : fderiv ℝ (fun y => f y + ε • w y) z =
               fderiv ℝ f z + fderiv ℝ (fun y => ε • w y) z :=
             fderiv_add hfd (hwd.const_smul ε)
           have hsmul : fderiv ℝ (fun y => ε • w y) z = ε • fderiv ℝ w z :=
             fderiv_const_smul hwd ε
-          rw [show g = fun y => f y + ε • w y from rfl, hadd, hsmul]
+          rw [hg, hadd, hsmul]
           simp only [add_apply, smul_apply, smul_eq_mul]
         rw [hΔ, hderiv]
         ring
@@ -134,10 +144,52 @@ theorem le_of_mul_le_laplacian_add_fderiv_le_frontier {K : Set E} (hK : IsCompac
     mul_le_mul_of_nonneg_left (hC (Set.mem_image_of_mem w hzK)) hε.le
   nlinarith [mul_nonneg hε.le (hwpos x).le]
 
+/-- **Weak minimum principle for `-Δ - b·∇ + c`.** This is the negation-dual of
+`le_of_mul_le_laplacian_add_fderiv_le_frontier`. -/
+theorem ge_of_laplacian_add_fderiv_le_mul_ge_frontier {K : Set E} (hK : IsCompact K)
+    {c f : E → ℝ} {b : E → E} {β m : ℝ} (hm : m ≤ 0) (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hc : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ c x)
+    (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β)
+    (hsuper : ∀ ⦃x⦄, x ∈ interior K →
+      Δ f x + fderiv ℝ f x (b x) ≤ c x * f x)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → m ≤ f x) :
+    ∀ ⦃x⦄, x ∈ K → m ≤ f x := by
+  intro x hx
+  have h := le_of_mul_le_laplacian_add_fderiv_le_frontier (c := c) (f := -f) (b := b)
+    (β := β) (m := -m) hK (neg_nonneg.mpr hm) hcont.neg
+    (fun y hy => (hcd hy).neg) hc hb (fun y hy => by
+      have h1 : Δ (-f) y = -Δ f y := by rw [congrFun laplacian_neg y, Pi.neg_apply]
+      have h2 : fderiv ℝ (-f) y (b y) = -fderiv ℝ f y (b y) := by
+        rw [fderiv_neg, neg_apply]
+      rw [h1, h2, Pi.neg_apply, mul_neg]
+      linarith [hsuper hy]) (fun y hy => by simpa using neg_le_neg (hbdry hy)) hx
+  simpa using neg_le_neg h
+
+/-- A solution of `-Δ f - b·∇f + c f = 0` is bounded in absolute value by every
+nonnegative bound for its absolute value on the frontier. -/
+theorem abs_le_of_laplacian_add_fderiv_eq_mul_abs_le_frontier {K : Set E} (hK : IsCompact K)
+    {c f : E → ℝ} {b : E → E} {β M : ℝ} (hM : 0 ≤ M) (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hc : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ c x)
+    (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β)
+    (hsol : ∀ ⦃x⦄, x ∈ interior K →
+      Δ f x + fderiv ℝ f x (b x) = c x * f x)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) :
+    ∀ ⦃x⦄, x ∈ K → |f x| ≤ M := by
+  intro x hx
+  rw [abs_le]
+  constructor
+  · exact ge_of_laplacian_add_fderiv_le_mul_ge_frontier hK (neg_nonpos.mpr hM) hcont hcd hc hb
+      (fun y hy => (hsol hy).le) (fun y hy => (abs_le.mp (hbdry hy)).1) hx
+  · exact le_of_mul_le_laplacian_add_fderiv_le_frontier hK hM hcont hcd hc hb
+      (fun y hy => (hsol hy).ge) (fun y hy => (abs_le.mp (hbdry hy)).2) hx
+
 /-- **Comparison principle for `-Δ - b·∇ + c`.** Functions acted on by the same lower-order
 coefficients are ordered on a compact set when their operator values and frontier values are
 ordered. -/
-theorem le_of_lowerOrder_le_of_le_frontier {K : Set E} (hK : IsCompact K) {c f g : E → ℝ}
+theorem le_of_laplacian_add_fderiv_sub_mul_le_laplacian_add_fderiv_sub_mul_of_le_frontier
+    {K : Set E} (hK : IsCompact K) {c f g : E → ℝ}
     {b : E → E} {β : ℝ} (hfcont : ContinuousOn f K) (hgcont : ContinuousOn g K)
     (hfcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hgcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 g x)
@@ -160,7 +212,7 @@ theorem le_of_lowerOrder_le_of_le_frontier {K : Set E} (hK : IsCompact K) {c f g
 
 /-- **Dirichlet uniqueness for `-Δ - b·∇ + c`.** Equal operator values and equal frontier data
 force two functions to agree throughout the compact set. -/
-theorem eqOn_of_lowerOrder_eq_of_eqOn_frontier {K : Set E} (hK : IsCompact K)
+theorem eqOn_of_laplacian_add_fderiv_sub_mul_eq_of_eqOn_frontier {K : Set E} (hK : IsCompact K)
     {c f g : E → ℝ} {b : E → E} {β : ℝ} (hfcont : ContinuousOn f K)
     (hgcont : ContinuousOn g K)
     (hfcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
@@ -173,9 +225,11 @@ theorem eqOn_of_lowerOrder_eq_of_eqOn_frontier {K : Set E} (hK : IsCompact K)
     (hbdry : Set.EqOn f g (frontier K)) : Set.EqOn f g K := by
   intro x hx
   apply le_antisymm
-  · exact le_of_lowerOrder_le_of_le_frontier hK hfcont hgcont hfcd hgcd hc hb
+  · exact le_of_laplacian_add_fderiv_sub_mul_le_laplacian_add_fderiv_sub_mul_of_le_frontier
+      hK hfcont hgcont hfcd hgcd hc hb
       (fun y hy => (hL hy).ge) (fun y hy => (hbdry hy).le) hx
-  · exact le_of_lowerOrder_le_of_le_frontier hK hgcont hfcont hgcd hfcd hc hb
+  · exact le_of_laplacian_add_fderiv_sub_mul_le_laplacian_add_fderiv_sub_mul_of_le_frontier
+      hK hgcont hfcont hgcd hfcd hc hb
       (fun y hy => (hL hy).le) (fun y hy => (hbdry hy).ge) hx
 
 end TauCeti
