@@ -219,6 +219,49 @@ theorem laplacian_add_fderiv_add_const_smul (f w : E → ℝ) (b : E) (ε : ℝ)
   rw [hΔ, hderiv]
   ring
 
+omit [Nontrivial E] in
+/-- **Weak maximum principle via a strict-subsolution barrier.** Let `K` be compact and `f`
+continuous on `K` and `C²` on `interior K`. If `f` is a subsolution of `Δ + b·∇` there
+(`0 ≤ Δ f + fderiv ℝ f (b)`) that is bounded by `m` on `frontier K`, and `w` is a barrier —
+continuous on `K` and a `C²` *strict* subsolution on `interior K` (`0 < Δ w + fderiv ℝ w (b)`) —
+then `f ≤ m` throughout `K`. -/
+private theorem le_of_strict_subsolution_barrier {K : Set E} (hK : IsCompact K)
+    {f w : E → ℝ} {b : E → E} {m : ℝ} (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hlap : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ Δ f x + fderiv ℝ f x (b x))
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → f x ≤ m)
+    (hwcont : ContinuousOn w K) (hwcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 w x)
+    (hwlap : ∀ ⦃x⦄, x ∈ interior K → 0 < Δ w x + fderiv ℝ w x (b x)) :
+    ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
+  intro x hxK
+  -- `w` is bounded above by some `C` on the compact set `K`; perturbing `f` to `f + ε w`
+  -- makes it a strict subsolution, so `f x ≤ m + ε (C - w x)`, and letting `ε → 0` gives `f x ≤ m`.
+  obtain ⟨C, hCub⟩ := hK.bddAbove_image (f := w) hwcont
+  have hxC : w x ≤ C := hCub (Set.mem_image_of_mem w hxK)
+  have key : ∀ ε : ℝ, 0 < ε → f x ≤ m + ε * (C - w x) := by
+    intro ε hε
+    set g : E → ℝ := fun y => f y + ε • w y with hgdef
+    have hgcont : ContinuousOn g K := hcont.add (hwcont.const_smul ε)
+    have hgcd : ∀ ⦃y⦄, y ∈ interior K → ContDiffAt ℝ 2 g y :=
+      fun y hy => (hcd hy).add ((hwcd hy).const_smul ε)
+    -- The perturbed function is a strict subsolution of `Δ + b·∇`.
+    have hgpos : ∀ ⦃y⦄, y ∈ interior K → 0 < Δ g y + fderiv ℝ g y (b y) := by
+      intro y hy
+      rw [hgdef, laplacian_add_fderiv_add_const_smul f w (b y) ε y (hcd hy) (hwcd hy)]
+      linarith [mul_pos hε (hwlap hy), hlap hy]
+    -- Its maximum over `K` is attained on the frontier.
+    obtain ⟨z, hzfr, hzmax⟩ :=
+      exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos hK ⟨x, hxK⟩ hgcont hgcd hgpos
+    have hzK : z ∈ K := hK.isClosed.frontier_subset hzfr
+    have hgx : g x = f x + ε * w x := by rw [hgdef]; simp [smul_eq_mul]
+    have hgz : g z = f z + ε * w z := by rw [hgdef]; simp [smul_eq_mul]
+    have hxle : f x + ε * w x ≤ f z + ε * w z := by rw [← hgx, ← hgz]; exact hzmax hxK
+    have hzC : ε * w z ≤ ε * C :=
+      mul_le_mul_of_nonneg_left (hCub (Set.mem_image_of_mem w hzK)) hε.le
+    have hexp : ε * (C - w x) = ε * C - ε * w x := by ring
+    linarith [hbdry hzfr]
+  exact le_of_forall_pos_mul_le (sub_nonneg.mpr hxC) key
+
 /-- **Weak maximum principle for `Δ + b·∇` with bounded drift.**
 
 Let `K` be compact. If `f` is continuous on `K`, is `C²` on `interior K`, the drift field is
@@ -231,58 +274,20 @@ theorem le_of_laplacian_add_fderiv_nonneg_le_frontier {K : Set E} (hK : IsCompac
     (hlap : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ Δ f x + fderiv ℝ f x (b x))
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → f x ≤ m) :
     ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
-  intro x hxK
-  -- A unit vector `u` for the exponential barrier direction.
+  -- Barrier: a unit vector `u` and `w = exp ((β + 1) ⟪u, ·⟫)`, which is a nonnegative `C²`
+  -- strict subsolution of `Δ + b·∇` by `laplacian_add_fderiv_exp_inner_pos_of_norm_le`.
   obtain ⟨v₀, hv₀⟩ := exists_ne (0 : E)
-  set u : E := (‖v₀‖⁻¹ : ℝ) • v₀ with hudef
+  set u : E := (‖v₀‖⁻¹ : ℝ) • v₀
   have hunorm : ‖u‖ = 1 := norm_smul_inv_norm hv₀
-  -- The barrier `w = exp (α ⟪u, ·⟫)` with `α = β + 1`.
-  set α : ℝ := β + 1 with hαdef
-  set w : E → ℝ := fun y => Real.exp (α * ⟪u, y⟫) with hwdef
-  have hwpos : ∀ y, 0 < w y := fun y => Real.exp_pos _
+  set w : E → ℝ := fun y => Real.exp ((β + 1) * ⟪u, y⟫) with hwdef
   have hwCD : ContDiff ℝ 2 w := by
     rw [hwdef]
     have hinner : ContDiff ℝ 2 (fun z : E => (⟪u, z⟫ : ℝ)) := by
       simpa only [coe_innerSL_apply] using (innerSL ℝ u).contDiff
-    exact (by simpa only [smul_eq_mul] using hinner.const_smul α : ContDiff ℝ 2 _).exp
-  have hwcont : Continuous w := hwCD.continuous
-  have hwcd : ∀ y, ContDiffAt ℝ 2 w y := fun y => hwCD.contDiffAt
-  -- `w` is bounded above by `C ≥ 0` on the compact set `K`.
-  obtain ⟨C, hCub⟩ := hK.bddAbove_image (f := w) hwcont.continuousOn
-  have hCnonneg : 0 ≤ C := le_trans (hwpos x).le (hCub (Set.mem_image_of_mem w hxK))
-  -- Perturbation estimate: `f x ≤ m + ε C` for every `ε > 0`.
-  have key : ∀ ε : ℝ, 0 < ε → f x ≤ m + ε * C := by
-    intro ε hε
-    set g : E → ℝ := fun y => f y + ε • w y with hgdef
-    have hgcont : ContinuousOn g K := hcont.add (hwcont.continuousOn.const_smul ε)
-    have hgcd : ∀ ⦃y⦄, y ∈ interior K → ContDiffAt ℝ 2 g y :=
-      fun y hy => (hcd hy).add ((hwcd y).const_smul ε)
-    -- The perturbed function is a strict subsolution of `Δ + b·∇`.
-    have hgpos : ∀ ⦃y⦄, y ∈ interior K → 0 < Δ g y + fderiv ℝ g y (b y) := by
-      intro y hy
-      -- The barrier's operator value is strictly positive.
-      have hLwpos : 0 < Δ w y + fderiv ℝ w y (b y) := by
-        rw [hwdef, hαdef]
-        exact laplacian_add_fderiv_exp_inner_pos_of_norm_le hunorm (hb hy) y
-      have hcomb : Δ g y + fderiv ℝ g y (b y)
-          = (Δ f y + fderiv ℝ f y (b y)) + ε * (Δ w y + fderiv ℝ w y (b y)) := by
-        rw [hgdef]
-        exact laplacian_add_fderiv_add_const_smul f w (b y) ε y (hcd hy) (hwcd y)
-      rw [hcomb]
-      have := mul_pos hε hLwpos
-      linarith [hlap hy]
-    -- Apply the strict boundary maximum principle to the perturbed function.
-    obtain ⟨z, hzfr, hzmax⟩ :=
-      exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos hK ⟨x, hxK⟩ hgcont hgcd hgpos
-    have hzK : z ∈ K := hK.isClosed.frontier_subset hzfr
-    have hgx : g x = f x + ε * w x := by rw [hgdef]; simp [smul_eq_mul]
-    have hgz : g z = f z + ε * w z := by rw [hgdef]; simp [smul_eq_mul]
-    have hxle : f x + ε * w x ≤ f z + ε * w z := by rw [← hgx, ← hgz]; exact hzmax hxK
-    have hzC : ε * w z ≤ ε * C :=
-      mul_le_mul_of_nonneg_left (hCub (Set.mem_image_of_mem w hzK)) hε.le
-    have hwxnn : 0 ≤ ε * w x := mul_nonneg hε.le (hwpos x).le
-    linarith [hbdry hzfr]
-  exact le_of_forall_pos_mul_le hCnonneg key
+    exact (by simpa only [smul_eq_mul] using hinner.const_smul (β + 1) : ContDiff ℝ 2 _).exp
+  exact le_of_strict_subsolution_barrier hK hcont hcd hlap hbdry hwCD.continuous.continuousOn
+    (fun _ _ => hwCD.contDiffAt)
+    fun y hy => laplacian_add_fderiv_exp_inner_pos_of_norm_le hunorm (hb hy) y
 
 /-- **Weak minimum principle for `Δ + b·∇` with bounded drift.** The dual of
 `le_of_laplacian_add_fderiv_nonneg_le_frontier` for supersolutions
