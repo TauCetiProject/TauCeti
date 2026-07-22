@@ -113,7 +113,7 @@ theorem dimension_simplexBoundary {V : Finset ι} (hV : 1 < V.card) :
       rw [Finset.ssubset_iff_subset_ne]
       exact ⟨hWV, fun h => by rw [h] at hWcard; omega⟩
     have hle := le_dimension hWmem
-    rwa [hWcard, show V.card - 1 - 1 = V.card - 2 from by omega] at hle
+    rwa [hWcard, Nat.sub_sub] at hle
 
 end PreAbstractSimplicialComplex
 
@@ -121,12 +121,8 @@ namespace AbstractSimplicialComplex
 
 variable {ι : Type*}
 
-/-- The **dimension** of an abstract simplicial complex, defined through its underlying precomplex.
-
-Marked `@[expose]` so the exported bridging lemma `dimension_toPreAbstractSimplicialComplex` below
-can be proved by `rfl`: unlike `join` (a structure whose projection reduces on its own), this is a
-value-producing `def`, so an exported `rfl` must be allowed to unfold it. -/
-@[expose]
+/-- The **dimension** of an abstract simplicial complex, defined through its underlying
+precomplex. -/
 noncomputable def dimension (K : AbstractSimplicialComplex ι) : WithBot ℕ∞ :=
   PreAbstractSimplicialComplex.dimension K.toPreAbstractSimplicialComplex
 
@@ -134,7 +130,7 @@ noncomputable def dimension (K : AbstractSimplicialComplex ι) : WithBot ℕ∞ 
 @[simp]
 theorem dimension_toPreAbstractSimplicialComplex (K : AbstractSimplicialComplex ι) :
     PreAbstractSimplicialComplex.dimension K.toPreAbstractSimplicialComplex = dimension K :=
-  rfl
+  (rfl)
 
 variable {K L : AbstractSimplicialComplex ι} {σ : Finset ι}
 
