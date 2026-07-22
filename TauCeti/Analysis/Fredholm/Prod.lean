@@ -5,7 +5,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import TauCeti.Analysis.Fredholm.Basic
-public import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
 # Products of Fredholm operators
@@ -64,7 +63,10 @@ private noncomputable def quotientProdEquiv (p : Submodule K F₁) (q : Submodul
   · exact LinearMap.ker_eq_bot.mp
       (Submodule.ker_liftQ_eq_bot (p.prod q) f hker.ge hker.le)
   · rintro ⟨⟨x⟩, ⟨y⟩⟩
-    exact ⟨(p.prod q).mkQ (x, y), rfl⟩
+    refine ⟨(p.prod q).mkQ (x, y), ?_⟩
+    change (((p.prod q).liftQ f hker.ge).comp (p.prod q).mkQ) (x, y) = _
+    rw [(p.prod q).liftQ_mkQ, LinearMap.prodMap_apply]
+    rfl
 
 /-- The cokernel of a product submodule has dimension equal to the sum of the dimensions of the
 two cokernels. -/
@@ -102,15 +104,15 @@ namespace ContinuousLinearMap
 
 /-- The index is additive under Cartesian products when both kernels and cokernels are finite
 dimensional. -/
-lemma index_prodMap_of_finiteDimensional (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
+private lemma index_prodMap_of_finiteDimensional (T : E₁ →L[K] F₁) (S : E₂ →L[K] F₂)
     [FiniteDimensional K (LinearMap.ker (T : E₁ →ₗ[K] F₁))]
     [FiniteDimensional K (LinearMap.ker (S : E₂ →ₗ[K] F₂))]
     [FiniteDimensional K (F₁ ⧸ LinearMap.range (T : E₁ →ₗ[K] F₁))]
     [FiniteDimensional K (F₂ ⧸ LinearMap.range (S : E₂ →ₗ[K] F₂))] :
     index (T.prodMap S) = index T + index S := by
-  rw [index_eq_finrank_sub, index_eq_finrank_sub, index_eq_finrank_sub, coe_prodMap,
-    LinearMap.ker_prodMap, LinearMap.range_prodMap,
-    (Submodule.prodSubtypeEquiv _ _).finrank_eq,
+  simp only [index_eq_finrank_sub]
+  rw [coe_prodMap, LinearMap.ker_prodMap, LinearMap.range_prodMap]
+  simp only [(Submodule.prodSubtypeEquiv _ _).finrank_eq,
     Submodule.finrank_quotient_prod, finrank_prod]
   omega
 
