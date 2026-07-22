@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Contour.Winding.RealIntegral
+public import TauCeti.Analysis.Contour.Winding.Integrand
 
 /-!
 # The real winding integrand at a crossing
