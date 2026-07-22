@@ -253,8 +253,12 @@ def set_group(z, message, bot_id, group, desired):
 
 def reconcile(z, pr, create, ci_override):
     bot_id = z.my_user_id()
-    status = core.derive(pr, ci_override)
-    content = pr_message_content(pr, status["title"])
+    # Read only the PR's own metadata first and find-or-create the durable message from its title,
+    # BEFORE the fallible CI/scoreboard reads. Otherwise a transient GitHub hiccup during those reads
+    # would abort the sole --create run and the PR would stay absent from Zulip indefinitely (later
+    # events don't pass --create). Passing this state into derive() reads the PR just once.
+    st = core.pr_state(pr)
+    content = pr_message_content(pr, st["title"])
     message = find_message(z, pr, bot_id)
     if message is None:
         if not create:
@@ -268,6 +272,7 @@ def reconcile(z, pr, create, ci_override):
         log(f"updating content of message {message['id']} for PR #{pr}")
         z.update_message(message["id"], content)
 
+    status = core.derive(pr, ci_override, state=st)
     rev = {"merged": "merge", "closed": "closed-pr"}.get(status["lifecycle"])
     if rev is None:  # open PR: render the review state
         rev = REVIEW_EMOJI[status["review"]]

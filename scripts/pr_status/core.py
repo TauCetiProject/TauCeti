@@ -3,14 +3,20 @@
 
 This is the single place that reads what a PR's status *is* -- its lifecycle
 (open / merged / closed), its `build` CI state, and its review state (from the
-canonical `<!--tauceti-scoreboard-->` comment's meta JSON). Every status *sink*
-imports it and renders that one truth its own way:
+canonical `<!--tauceti-scoreboard-->` comment's meta JSON), plus whether a review
+is in flight right now (from the engine's `<!--tauceti-review-in-progress-->`
+marker). Every status *sink* imports it and renders that one truth its own way:
 
   * zulip.py   -> two independent groups of emoji reactions on the PR's message
   * labels.py  -> exactly one of the five status labels on the PR itself
 
 Keeping the derivation here means the two sinks can never disagree about what a
 PR's state is: they read the same `derive()` and only differ in how they show it.
+
+Everything here reads only trusted GitHub data. The two review signals -- the
+scoreboard meta and the in-progress marker -- are taken only from comments by a
+repo-associated author (OWNER/MEMBER/COLLABORATOR), so a fork PR author cannot
+forge review state. Both are extracted from ONE comment fetch.
 
 The module is a pure library -- importing it has no side effects, writes nothing,
 and needs only python3's standard library plus an authenticated `gh` CLI (via
@@ -21,8 +27,17 @@ import json
 import os
 import re
 import subprocess
+import time
 
 REPO = os.environ.get("GH_REPO", "TauCetiProject/TauCeti")
+
+SCOREBOARD_MARKER = "<!--tauceti-scoreboard-->"
+_META_RE = re.compile(r"<!--tauceti-meta:v1 (.*)-->")
+# The engine's in-flight marker: `<!--tauceti-review-in-progress {json}-->`, carrying a `head` and an
+# `expires_at` (epoch seconds) so a crashed reviewer self-clears. The format is owned by the review
+# engine; we parse only those two fields (mirrors the worker's de-contention read).
+_INPROGRESS_RE = re.compile(r"<!--tauceti-review-in-progress (.*?)-->", re.S)
+_TRUSTED_ASSOC = ("OWNER", "MEMBER", "COLLABORATOR")
 
 
 # ----- GitHub truth (via the gh CLI, authenticated by GH_TOKEN) ---------------
@@ -67,30 +82,68 @@ def pr_state(pr):
     }
 
 
-def scoreboard_meta(pr):
-    """The newest trusted scoreboard comment's meta JSON ({} if none).
-
-    Trust mirrors round.sh: the <!--tauceti-scoreboard--> marker AND an author
-    with repo association (OWNER/MEMBER/COLLABORATOR), so a random external
-    comment cannot forge review state. Paginates so the canonical comment is
-    found even on long PRs.
-    """
-    body = gh_api(
+def trusted_comments(pr):
+    """Issue comments authored by a repo-associated account (OWNER/MEMBER/COLLABORATOR), as
+    `[{'body','updated'}]`. One paginated fetch, reused for both review signals below, so an
+    untrusted fork-PR comment can never forge review state. The jq emits one compact object per
+    line (valid JSONL across any number of pages)."""
+    out = gh_api(
         f"/repos/{REPO}/issues/{pr}/comments?per_page=100",
-        jq='[.[] | select(.body|contains("<!--tauceti-scoreboard-->"))'
-           ' | select(.author_association|IN("OWNER","MEMBER","COLLABORATOR"))]'
-           ' | sort_by(.updated_at) | last | .body // ""',
+        jq='.[] | select(.author_association|IN("OWNER","MEMBER","COLLABORATOR"))'
+           ' | {body: .body, updated: .updated_at}',
         paginate=True,
     )
-    # With --paginate the jq runs per page, so take the last non-empty body.
-    body = next((ln for ln in reversed(body.splitlines()) if ln.strip()), "")
-    m = re.search(r"<!--tauceti-meta:v1 (.*)-->", body)
+    rows = []
+    for ln in out.splitlines():
+        ln = ln.strip()
+        if not ln:
+            continue
+        try:
+            rows.append(json.loads(ln))
+        except json.JSONDecodeError:
+            pass
+    return rows
+
+
+def scoreboard_meta_from(comments):
+    """The newest scoreboard comment's meta JSON ({} if none), from a trusted-comment list."""
+    best = None
+    for c in comments:
+        if SCOREBOARD_MARKER in (c.get("body") or ""):
+            if best is None or (c.get("updated") or "") >= (best.get("updated") or ""):
+                best = c
+    if best is None:
+        return {}
+    m = _META_RE.search(best.get("body") or "")
     if not m:
         return {}
     try:
         return json.loads(m.group(1))
     except json.JSONDecodeError:
         return {}
+
+
+def scoreboard_meta(pr):
+    """Convenience: the scoreboard meta for a PR (fetches trusted comments itself)."""
+    return scoreboard_meta_from(trusted_comments(pr))
+
+
+def inprogress_from(comments, head, now):
+    """True iff some trusted comment carries an UNEXPIRED in-progress marker for exactly `head`.
+
+    Head-exact (a new push is a new review unit, not covered by an old marker) and TTL-bounded
+    (a crashed reviewer's marker self-clears once `expires_at` passes), mirroring the engine's own
+    de-contention read. A malformed or non-matching marker is ignored."""
+    for c in comments:
+        for m in _INPROGRESS_RE.finditer(c.get("body") or ""):
+            try:
+                d = json.loads(m.group(1))
+            except json.JSONDecodeError:
+                continue
+            exp = d.get("expires_at")
+            if isinstance(exp, int) and exp > now and d.get("head") == head:
+                return True
+    return False
 
 
 def newest_status(head, context):
@@ -127,44 +180,59 @@ def ci_status(head):
 def review_state(meta, head):
     """Map the scoreboard meta at the current head to a sink-agnostic review state.
 
-    Mirrors round.sh's review_all_green / ledger_blocking: a verdict is blocking
-    if it is neither "approve" nor "error"; a round is all-green iff it ran and
-    every rubric approved. State not at the current head (a fix landed since the
-    last review) reads as "running, green so far".
+    The authoritative signal is the durable per-rubric `states` map, NOT the latest round's `runs`:
+    a reply/partial round re-runs only some rubrics, so `runs` can show an approve for one rubric
+    while another is still blocking in `states`. This mirrors the worker's `ledger_blocking` and the
+    signal CI's merge close reads, so they agree. `runs` is used only as a fallback for a legacy
+    scoreboard with no `states` map. State not at the current head (a fix landed since the last
+    review) reads as "running, green so far".
 
         "none"     nothing posted yet          (Zulip 👀 / label awaiting-review)
-        "running"  mid-round, or behind HEAD    (Zulip ▶️ / label awaiting-review)
-        "changes"  at HEAD, a blocking verdict  (Zulip ✍️ / label awaiting-author)
+        "running"  behind HEAD, or undecided    (Zulip ▶️ / label awaiting-review)
+        "changes"  at HEAD, a blocking rubric   (Zulip ✍️ / label awaiting-author)
         "approved" at HEAD, every rubric green  (Zulip ✔️ / label ready-to-merge)
     """
     if not meta:
         return "none"
-    runs = meta.get("runs") or []
-    at_head = meta.get("head_sha") == head
-    if at_head and runs:
-        if any(r.get("verdict") not in ("approve", "error") for r in runs):
+    if str(meta.get("head_sha") or "") != head:
+        return "running"
+    states = meta.get("states") or {}
+    if states:
+        # A rubric blocks unless it is green or stale (a carried-forward approval), per ledger_blocking.
+        if any(v not in ("green", "stale") for v in states.values()):
             return "changes"
-        if all(r.get("verdict") == "approve" for r in runs):
+        # Ready only when every rubric is freshly green (conservative: a stale/carried state waits).
+        if all(v == "green" for v in states.values()):
             return "approved"
+        return "running"
+    runs = meta.get("runs") or []
+    if not runs:
+        return "running"
+    if any(r.get("verdict") not in ("approve", "error") for r in runs):
+        return "changes"
+    if all(r.get("verdict") == "approve" for r in runs):
+        return "approved"
     return "running"
 
 
-def derive(pr, ci_override=None):
+def derive(pr, ci_override=None, state=None, now=None):
     """The canonical status of a PR, as a dict:
 
         {"lifecycle": "open"|"merged"|"closed",
          "ci":        "running"|"success"|"failure"|None,   # None => not reported
          "review":    "none"|"running"|"changes"|"approved"|None,
+         "review_inprogress": bool,                          # a live in-progress marker at HEAD
          "head":      "<sha>", "title": "<title>"}
 
-    `ci` and `review` are only meaningful while the PR is open; on a merged/closed
-    PR they are None (a sink shows a terminal state and clears the rest).
+    `ci`, `review`, and `review_inprogress` are only meaningful while the PR is open; on a
+    merged/closed PR they are None/False (a sink shows a terminal state and clears the rest).
 
-    `ci_override` (one of running|success|failure|none|None) forces the CI state
-    instead of reading the `build` commit status, for the pr-build "requested"
-    event, which fires before that status is posted and passes "running".
+    `ci_override` (running|success|failure|none|None) forces the CI state instead of reading the
+    `build` commit status. `state` lets a caller pass a pre-fetched pr_state() so the PR is read
+    once (a Zulip sink creates its message from the title BEFORE these fallible reads). `now`
+    (epoch seconds) is the clock for the in-progress TTL; defaults to the wall clock.
     """
-    st = pr_state(pr)
+    st = state if state is not None else pr_state(pr)
     if st["merged"]:
         lifecycle = "merged"
     elif st["state"] == "closed":
@@ -175,17 +243,21 @@ def derive(pr, ci_override=None):
     if lifecycle != "open":
         ci = None
         review = None
+        inprogress = False
     else:
         if ci_override is not None:
             ci = None if ci_override == "none" else ci_override
         else:
             ci = ci_status(st["head"])
-        review = review_state(scoreboard_meta(pr), st["head"])
+        comments = trusted_comments(pr)
+        review = review_state(scoreboard_meta_from(comments), st["head"])
+        inprogress = inprogress_from(comments, st["head"], int(time.time()) if now is None else now)
 
     return {
         "lifecycle": lifecycle,
         "ci": ci,
         "review": review,
+        "review_inprogress": inprogress,
         "head": st["head"],
         "title": st["title"],
     }

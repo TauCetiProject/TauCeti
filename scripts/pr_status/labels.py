@@ -6,42 +6,29 @@ list, where a PR is in the pipeline:
 
     awaiting-CI         CI has not yet reported on the latest commit
     awaiting-review     CI is green; waiting for review verdicts
-    review-in-progress  a review agent is actively reviewing (best-effort)
+    review-in-progress  a review is running on this exact commit right now
     awaiting-author     the build failed or a review requested changes
     ready-to-merge      CI green and every rubric approved
 
-This sink derives four of them from the PR's status (core.derive) and sets that
-one, removing any other status label so the "exactly one" invariant holds. It is
-idempotent and convergent: every reconcile reads GitHub truth afresh and drives
-the label set to the single correct value, so a transient race between two events
-self-heals on the next reconcile.
+All five are derived here from the PR's status (core.derive) and this sink is the
+SOLE writer of them, so the "exactly one" invariant is CI's alone to keep -- it
+never depends on any worker or review harness behaving a particular way. reconcile
+is idempotent and convergent: it reads GitHub truth afresh and drives the label
+set to the single correct value.
 
-`review-in-progress` is the one label this sink never *derives*. The worker
-(kim-em/TauCetiWorker) sets it best-effort while it is actively reviewing, as a
-transient overlay on the `awaiting-review` slot. This sink treats it accordingly:
-
-  * it is preserved while the derived state is `awaiting-review` (CI still owns
-    the slot conceptually, but we don't clobber the worker's finer signal); and
-  * any *real* transition clears it -- a new commit moves the PR to `awaiting-CI`,
-    a posted scoreboard moves it to `awaiting-author`/`ready-to-merge`, a merge
-    strips all labels.
-
-This sink never *derives* `review-in-progress`, so it cannot on its own detect a
-worker that crashed mid-review: while the PR genuinely sits in `awaiting-review`
-the overlay is preserved, and a stale `review-in-progress` therefore persists
-until one of those transitions moves the derived slot. Clearing the overlay
-promptly on a crash is the worker's responsibility; this sink only guarantees the
-"exactly one status label" invariant, not the freshness of the worker's overlay.
-
-A terminal PR (merged or closed) carries no status label: reconcile removes all
-five.
+`review-in-progress` is derived from the review engine's in-flight marker
+(core.inprogress_from), treated as an optional, documented signal that any review
+harness MAY post: a live (unexpired, head-exact) marker while the PR is otherwise
+`awaiting-review` shows `review-in-progress`. A harness that posts no marker simply
+leaves the PR at `awaiting-review` during review -- graceful, never wrong -- and
+the marker's TTL means a crashed review self-heals (the hourly sweep clears it even
+with no other event). A terminal PR (merged/closed) carries no status label.
 
 Usage:
     labels.py reconcile <pr_number> [--ci STATE]
 
-`--ci STATE` (running|success|failure|none) forces the CI state instead of
-reading the `build` commit status, for the pr-build "requested" event (which
-fires before that status is posted and passes "running").
+`--ci STATE` (running|success|failure|none) forces the CI state instead of reading
+the `build` commit status; used only by the backfill/tests.
 
 Environment:
     GH_REPO                   default "TauCetiProject/TauCeti"
@@ -57,18 +44,16 @@ import core
 
 REPO = core.REPO
 
-# label -> (hex color, description). Created on first use, like the roadmap
-# labels, so setting this up needs no manual label creation.
+# label -> (hex color, description). Created on first use, like the roadmap labels, so setting this
+# up needs no manual label creation.
 LABELS = {
     "awaiting-CI":        ("fbca04", "CI has not yet reported on the latest commit"),
     "awaiting-review":    ("1d76db", "CI is green; waiting for review verdicts"),
-    "review-in-progress": ("a371f7", "A review agent is actively reviewing (best-effort, set by the worker)"),
+    "review-in-progress": ("a371f7", "A review is running on this exact commit right now"),
     "awaiting-author":    ("d93f0b", "The build failed or a review requested changes; author action needed"),
     "ready-to-merge":     ("0e8a16", "CI green and every rubric approved; ready to merge"),
 }
 STATUS_LABELS = list(LABELS)
-# The label the worker owns; this sink preserves but never derives it.
-WORKER_LABEL = "review-in-progress"
 
 
 def log(msg):
@@ -76,17 +61,16 @@ def log(msg):
 
 
 def derived_label(status):
-    """The one CI-owned status label for `status`, or None if the PR is terminal.
+    """The one status label for `status`, or None if the PR is terminal (merged/closed).
 
-    `review-in-progress` is never returned here -- it is the worker's overlay,
-    applied in reconcile(). Precedence:
-
-        PR merged/closed                 -> None (no status label)
-        CI not reported yet / running    -> awaiting-CI
-        CI failed                        -> awaiting-author
-        CI green, review requested chgs  -> awaiting-author
-        CI green, every rubric approved  -> ready-to-merge
-        CI green, review pending/stale   -> awaiting-review
+    Precedence:
+        PR merged/closed                       -> None (no status label)
+        CI not reported yet / running          -> awaiting-CI
+        CI failed                              -> awaiting-author
+        CI green, review requested changes     -> awaiting-author
+        CI green, every rubric approved        -> ready-to-merge
+        CI green, review pending + live marker -> review-in-progress
+        CI green, review pending, no marker    -> awaiting-review
     """
     if status["lifecycle"] != "open":
         return None
@@ -101,22 +85,16 @@ def derived_label(status):
         return "awaiting-author"
     if review == "approved":
         return "ready-to-merge"
-    return "awaiting-review"  # "none" or "running": CI green, no verdict yet
+    # review pending ("none" or "running"): a live in-flight marker upgrades to review-in-progress.
+    if status.get("review_inprogress"):
+        return "review-in-progress"
+    return "awaiting-review"
 
 
 # ----- GitHub label writes (via gh; core.gh_api handles reads) ----------------
 
-def _gh(args, tolerate_codes=()):
-    """Run `gh api ARGS`; tolerate expected idempotent failures (a 404 removing
-    an absent label, a 422 creating an existing one) so reconcile stays green on
-    the normal no-op paths, and raise on anything genuinely wrong."""
-    out = subprocess.run(["gh", "api", *args], capture_output=True, text=True)
-    if out.returncode != 0:
-        stderr = out.stderr.strip()
-        if any(str(c) in stderr for c in tolerate_codes):
-            return out
-        raise RuntimeError(f"gh api {' '.join(args)} failed: {stderr}")
-    return out
+def _run(args):
+    return subprocess.run(["gh", "api", *args], capture_output=True, text=True)
 
 
 def current_status_labels(pr):
@@ -129,47 +107,45 @@ def current_status_labels(pr):
 
 
 def ensure_label(name):
-    """Create the label if it does not exist yet (idempotent)."""
-    probe = subprocess.run(
-        ["gh", "api", f"/repos/{REPO}/labels/{name}"],
-        capture_output=True, text=True,
-    )
+    """Create the label if it does not exist yet (idempotent). Only a clear 404 on the probe means
+    'absent, create it'; any other probe failure is left alone (the add may still succeed, and we do
+    not want to mask a token/permission error as a missing label)."""
+    probe = _run([f"/repos/{REPO}/labels/{name}"])
     if probe.returncode == 0:
         return
+    if "404" not in probe.stderr:
+        return
     color, description = LABELS[name]
-    _gh([
+    create = _run([
         "--method", "POST", f"/repos/{REPO}/labels",
-        "-f", f"name={name}", "-f", f"color={color}",
-        "-f", f"description={description}",
-    ], tolerate_codes=(422,))  # 422 == already exists (a concurrent create won)
+        "-f", f"name={name}", "-f", f"color={color}", "-f", f"description={description}",
+    ])
+    # A concurrent create (422 already_exists) is fine; anything else is a real error.
+    if create.returncode != 0 and "already_exists" not in create.stderr:
+        raise RuntimeError(f"gh api create label {name} failed: {create.stderr.strip()}")
 
 
 def add_label(pr, name):
     ensure_label(name)
-    _gh([
-        "--method", "POST", f"/repos/{REPO}/issues/{pr}/labels",
-        "-f", f"labels[]={name}",
-    ])
+    r = _run(["--method", "POST", f"/repos/{REPO}/issues/{pr}/labels", "-f", f"labels[]={name}"])
+    if r.returncode != 0:
+        raise RuntimeError(f"gh api add label {name} failed: {r.stderr.strip()}")
     log(f"added {name}")
 
 
 def remove_label(pr, name):
-    _gh([
-        "--method", "DELETE", f"/repos/{REPO}/issues/{pr}/labels/{name}",
-    ], tolerate_codes=(404,))  # already gone == the end state we want
+    r = _run(["--method", "DELETE", f"/repos/{REPO}/issues/{pr}/labels/{name}"])
+    # A label already gone (the label is not on the issue) is the end state we want. GitHub answers a
+    # DELETE of an unattached label with 404 "Label does not exist"; tolerate exactly that.
+    if r.returncode != 0 and not ("404" in r.stderr and "does not exist" in r.stderr):
+        raise RuntimeError(f"gh api remove label {name} failed: {r.stderr.strip()}")
     log(f"removed {name}")
 
 
-def reconcile(pr, ci_override):
+def reconcile(pr, ci_override=None):
     status = core.derive(pr, ci_override)
-    target = derived_label(status)          # a CI-owned label, or None (terminal)
+    desired = derived_label(status)          # one of STATUS_LABELS, or None (terminal)
     current = set(current_status_labels(pr))
-
-    # Overlay: don't clobber the worker's `review-in-progress` while the derived
-    # slot is still `awaiting-review`; in every other state it must clear.
-    desired = target
-    if target == "awaiting-review" and WORKER_LABEL in current:
-        desired = WORKER_LABEL
 
     for name in current:
         if name != desired:
@@ -177,8 +153,8 @@ def reconcile(pr, ci_override):
     if desired is not None and desired not in current:
         add_label(pr, desired)
 
-    log(f"PR #{pr}: lifecycle={status['lifecycle']} ci={status['ci']} "
-        f"review={status['review']} -> label={desired or '(none)'}")
+    log(f"PR #{pr}: lifecycle={status['lifecycle']} ci={status['ci']} review={status['review']} "
+        f"inprogress={status['review_inprogress']} -> label={desired or '(none)'}")
 
 
 def main(argv):
