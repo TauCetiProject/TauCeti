@@ -1,6 +1,6 @@
 module
 
-public import Mathlib.MeasureTheory.Function.LpSpace.Complete
+public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.LinearAlgebra.FixedSubmodule
 
 /-!
