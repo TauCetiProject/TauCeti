@@ -6,6 +6,10 @@ Authors: Kim Morrison
 module
 
 public import Mathlib.Topology.Subpath
+public import Mathlib.Topology.Homotopy.Contractible
+-- Private: `Path.Homotopic.map_trans_evalAt` is used only in the proof of
+-- `map_nullhomotopic_of_nullhomotopic` below, so this import is not re-exported.
+import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 
 /-!
 # Path homotopy helpers
@@ -184,6 +188,18 @@ theorem trans_left_cancel {x₀ x₁ x₂ : X} {e : Path x₀ x₁} {γ δ : Pat
   have hδ : (e.symm.trans (e.trans δ)).Homotopic δ :=
     (trans_assoc e.symm e δ).symm.trans (trans_left_of_nullhomotopic (symm_trans e))
   exact hγ.symm.trans (((refl e.symm).hcomp h).trans hδ)
+
+/-- The image of a based loop under a null-homotopic continuous map is null-homotopic in the
+target: a map homotopic to a constant collapses every loop to the constant loop. -/
+theorem map_nullhomotopic_of_nullhomotopic {Y : Type*} [TopologicalSpace Y] {f : C(X, Y)}
+    (hf : f.Nullhomotopic) {a : X} (γ : Path a a) :
+    (γ.map (map_continuous f)).Homotopic (Path.refl (f a)) := by
+  obtain ⟨c, ⟨F⟩⟩ := hf
+  have key := Path.Homotopic.map_trans_evalAt F γ
+  have hconst : γ.map (map_continuous (ContinuousMap.const X c)) = Path.refl c := by ext t; rfl
+  rw [hconst] at key
+  exact Path.Homotopic.trans_right_cancel
+    ((key.trans (Path.Homotopic.trans_refl _)).trans (Path.Homotopic.refl_trans _).symm)
 
 namespace Quotient
 variable {x₀ x₁ : X}

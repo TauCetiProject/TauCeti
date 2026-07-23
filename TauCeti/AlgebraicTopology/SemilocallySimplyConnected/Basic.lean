@@ -8,8 +8,9 @@ public import Mathlib.AlgebraicTopology.FundamentalGroupoid.InducedMaps
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Homotopy.LocallyContractible
 public import Mathlib.Topology.Homotopy.Product
--- Private: `Path.Homotopic.trans_right_cancel` and `Path.map_codRestrict` are used only in
--- private proofs below, so this import is not re-exported.
+-- Private: `Path.codRestrict`, `Path.map_codRestrict`, and
+-- `Path.Homotopic.map_nullhomotopic_of_nullhomotopic` are used only in private proofs below,
+-- so this import is not re-exported.
 import TauCeti.Topology.Homotopy.Path
 
 /-!
@@ -116,18 +117,6 @@ theorem SemilocallySimplyConnectedSpace.of_forall_exists_mem_nhds_isSimplyConnec
     obtain ⟨F, -⟩ :=
       (isSimplyConnected_iff_exists_homotopy_refl_forall_mem.mp hsc).2 x γ hγ
     exact ⟨F⟩
-
-/-- The image of a based loop under a null-homotopic continuous map is null-homotopic in the
-target: a map homotopic to a constant collapses every loop to the constant loop. -/
-private theorem Path.Homotopic.map_nullhomotopic_of_nullhomotopic {f : C(X, Y)}
-    (hf : f.Nullhomotopic) {a : X} (γ : Path a a) :
-    (γ.map (map_continuous f)).Homotopic (Path.refl (f a)) := by
-  obtain ⟨c, ⟨F⟩⟩ := hf
-  have key := Path.Homotopic.map_trans_evalAt F γ
-  have hconst : γ.map (map_continuous (ContinuousMap.const X c)) = Path.refl c := by ext t; rfl
-  rw [hconst] at key
-  exact Path.Homotopic.trans_right_cancel
-    ((key.trans (Path.Homotopic.trans_refl _)).trans (Path.Homotopic.refl_trans _).symm)
 
 /-- A locally contractible space (each neighbourhood of a point contains a smaller neighbourhood
 whose inclusion into the larger one is null-homotopic) is semilocally simply connected. A based
