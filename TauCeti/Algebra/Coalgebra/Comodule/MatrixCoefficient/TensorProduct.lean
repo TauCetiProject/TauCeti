@@ -23,9 +23,8 @@ coefficients: the coefficient of the product functional `φ ⊗ ψ` on a decompo
 
 Here `φ ⊗ ψ` is the functional on `M ⊗[R] N` given by Mathlib's `TensorProduct.dualDistrib`,
 `m ⊗ n ↦ φ m · ψ n`. This multiplicativity is the algebra-side reflection of the monoidal
-(tensor-product) structure on comodules, and it is what makes the matrix coefficients of a
-tensor product close up under multiplication: the products of coefficients of `M` and of `N`
-are again coefficients of `M ⊗[R] N`, so the coefficient submodules multiply into the
+(tensor-product) structure on comodules: multiplying one coefficient of `M` by one coefficient
+of `N` produces a coefficient of `M ⊗[R] N`, so the coefficient submodules multiply into the
 coefficient submodule of the tensor product.
 
 This is Layer 1 infrastructure for the reductive-groups roadmap (`ReductiveGroups/README.md`
@@ -104,6 +103,7 @@ private theorem lid_map_dualDistrib_tensorCombine (φ : M →ₗ[R] R) (ψ : N �
 coaction on `M ⊗[R] N`, the matrix coefficient of the product functional
 `TensorProduct.dualDistrib R M N (φ ⊗ₜ ψ)` (which sends `m ⊗ n ↦ φ m · ψ n`) evaluated at
 `m ⊗ n` is the product of the matrix coefficients of `φ` at `m` and of `ψ` at `n`. -/
+@[simp]
 theorem matrixCoefficient_tensor (φ : M →ₗ[R] R) (ψ : N →ₗ[R] R) (m : M) (n : N) :
     matrixCoefficient (R := R) (C := C) (M := M ⊗[R] N)
         (TensorProduct.dualDistrib R M N (φ ⊗ₜ[R] ψ)) (m ⊗ₜ[R] n) =
