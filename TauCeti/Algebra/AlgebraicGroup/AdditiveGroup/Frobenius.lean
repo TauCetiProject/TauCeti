@@ -13,9 +13,10 @@ public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 /-!
 # The Frobenius endomorphism of the additive group
 
-Over a base ring `R` of exponential characteristic `p`, the additive group `𝔾ₐ = Spec R[x]`
-(here `x = ι R R 1` in `SymmetricAlgebra R R`) carries the **Frobenius endomorphism**
-`F : 𝔾ₐ → 𝔾ₐ`, which on every commutative `R`-algebra `A` raises a point to its `p`-th power,
+Over a base commutative semiring `R` of exponential characteristic `p`, the additive group
+`𝔾ₐ = Spec R[x]` (here `x = ι R R 1` in `SymmetricAlgebra R R`) carries the **Frobenius
+endomorphism** `F : 𝔾ₐ → 𝔾ₐ`, which on every commutative `R`-algebra `A` raises a point to its
+`p`-th power,
 `a ↦ aᵖ`. This is a homomorphism of group functors precisely because of the freshman's dream:
 raising to the `p`-th power is additive in exponential characteristic `p`. Contravariantly it is
 induced by the bialgebra endomorphism of the coordinate Hopf algebra `R[x]` sending the primitive
@@ -59,7 +60,7 @@ namespace AdditiveGroup
 
 universe u v w
 
-variable (R : Type u) [CommRing R] (p : ℕ)
+variable (R : Type u) [CommSemiring R] (p : ℕ)
 
 /-- The coordinate `R`-algebra endomorphism of `R[x] = SymmetricAlgebra R R` sending the generator
 `x = ι R R 1` to `xᵖ`. It underlies the Frobenius endomorphism of the additive group `𝔾ₐ`. -/
@@ -112,8 +113,7 @@ noncomputable def frobeniusBialgHom :
     (by
       apply SymmetricAlgebra.algHom_ext
       apply LinearMap.ext_ring
-      haveI := expChar_tensorSquare R p
-      simp [frobeniusAlgHom_ι_one, add_pow_expChar, Algebra.TensorProduct.tmul_pow])
+      simp [frobeniusAlgHom_ι_one, comul_ι_pow R p, comul_ι])
 
 @[simp]
 theorem frobeniusBialgHom_ι (r : R) :
@@ -124,7 +124,7 @@ theorem frobeniusBialgHom_ι_one :
     frobeniusBialgHom R p (ι R R 1) = (ι R R 1) ^ p :=
   frobeniusAlgHom_ι_one R p
 
-variable {A : Type v} [CommRing A] [Algebra R A]
+variable {A : Type v} [CommSemiring A] [Algebra R A]
 
 /-- **The Frobenius endomorphism of `𝔾ₐ`, on the functor of points.** For every commutative
 `R`-algebra `A` it is the homomorphism of the convolution group of points induced (contravariantly)
@@ -144,11 +144,10 @@ simp-normal form. -/
 theorem toAdd_gaPointsMulEquiv_frobeniusEnd (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     Multiplicative.toAdd (gaPointsMulEquiv (frobeniusEnd R p F)) =
       Multiplicative.toAdd (gaPointsMulEquiv F) ^ p := by
-  rw [toAdd_gaPointsMulEquiv, frobeniusEnd, AlgHom.mapDomain_apply, ofConv_toConv,
-    AlgHom.comp_apply, BialgHom.coe_toAlgHom, frobeniusBialgHom_ι_one, map_pow,
-    toAdd_gaPointsMulEquiv]
+  simp only [toAdd_gaPointsMulEquiv, frobeniusEnd, AlgHom.mapDomain_apply,
+    AlgHom.comp_apply, BialgHom.coe_toAlgHom, frobeniusBialgHom_ι_one, map_pow]
 
-variable {B : Type w} [CommRing B] [Algebra R B]
+variable {B : Type w} [CommSemiring B] [Algebra R B]
 
 /-- **Naturality in the value algebra.** The Frobenius endomorphism of `𝔾ₐ` commutes with the
 value-algebra functoriality `AlgHom.mapValue`. -/

@@ -5,11 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.Algebra.DualNumber
-public import Mathlib.RingTheory.Bialgebra.TensorProduct
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Frobenius
-public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 
 /-!

@@ -42,6 +42,7 @@ subgroup schemes" with their kernels.
 
 * `TauCeti.AlphaP.inclusion`: the inclusion `αₚ ↪ 𝔾ₐ` on points, the contravariant image of the
   quotient map `R[x] ↠ R[x]/(xᵖ)`.
+* `TauCeti.AlphaP.inclusion_injective`: the inclusion `αₚ ↪ 𝔾ₐ` is injective on points.
 * `TauCeti.AlphaP.mapValue_inclusion`: the inclusion `αₚ ↪ 𝔾ₐ` is natural in the value algebra.
 * `TauCeti.AlphaP.frobeniusEnd_comp_inclusion`: the Frobenius endomorphism annihilates `αₚ`.
 * `TauCeti.AlphaP.mem_range_inclusion_iff`: a `𝔾ₐ`-point lies in the image of `αₚ` iff the
@@ -92,9 +93,17 @@ and evaluate at the generator. -/
 theorem gaPointsMulEquiv_inclusion (F : WithConv (CoordinateRing (R := R) p →ₐ[R] A)) :
     AdditiveGroup.gaPointsMulEquiv (inclusion p F) = pointsHom p F := by
   apply Multiplicative.toAdd.injective
-  rw [AdditiveGroup.toAdd_gaPointsMulEquiv, inclusion, AlgHom.mapDomain_apply,
-    ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+  simp only [AdditiveGroup.toAdd_gaPointsMulEquiv, inclusion, AlgHom.mapDomain_apply,
+    AlgHom.comp_apply, BialgHom.coe_toAlgHom,
     Bialgebra.Quotient.mkBialgHom_apply, toAdd_pointsHom]
+
+/-- **The inclusion `αₚ ↪ 𝔾ₐ` is injective on the functor of points.** It agrees through
+`TauCeti.AdditiveGroup.gaPointsMulEquiv` with the injective underlying-element map
+`TauCeti.AlphaP.pointsHom`, so distinct `αₚ`-points include to distinct `𝔾ₐ`-points. -/
+theorem inclusion_injective : Function.Injective (inclusion (R := R) (A := A) p) := by
+  intro F F' h
+  apply pointsHom_injective (R := R) p (A := A)
+  rw [← gaPointsMulEquiv_inclusion, ← gaPointsMulEquiv_inclusion, h]
 
 variable {B : Type w} [CommRing B] [Algebra R B]
 
@@ -104,10 +113,8 @@ theorem mapValue_inclusion (χ : A →ₐ[R] B) :
     (inclusion (R := R) (A := B) p).comp
         (AlgHom.mapValue (H := CoordinateRing (R := R) p) χ) =
       (AlgHom.mapValue (H := SymmetricAlgebra R R) χ).comp (inclusion (R := R) (A := A) p) := by
-  refine MonoidHom.ext fun f => ?_
-  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, inclusion, inclusion, AlgHom.mapDomain_apply,
-    AlgHom.mapValue_apply, AlgHom.mapDomain_apply, AlgHom.mapValue_apply, toConv_ofConv,
-    toConv_ofConv, AlgHom.comp_assoc]
+  rw [inclusion, inclusion]
+  exact AlgHom.mapValue_mapDomain _ χ
 
 /-- **The Frobenius endomorphism annihilates `αₚ`.** Composing the Frobenius endomorphism of `𝔾ₐ`
 after the inclusion `αₚ ↪ 𝔾ₐ` is the trivial homomorphism of group functors: every `αₚ`-point maps
