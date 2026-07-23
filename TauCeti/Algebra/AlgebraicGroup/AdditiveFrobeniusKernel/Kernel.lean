@@ -10,28 +10,27 @@ public import TauCeti.Algebra.AlgebraicGroup.AdditiveFrobeniusKernel.Basic
 # `αₚ` is the kernel of the Frobenius endomorphism of the additive group
 
 Over a base ring `R` of prime characteristic `p`, the additive group `𝔾ₐ = Spec R[x]` (here
-`x = ι R R 1` in `SymmetricAlgebra R R`) carries the **Frobenius endomorphism** `F : 𝔾ₐ → 𝔾ₐ`,
-which on every commutative `R`-algebra `A` raises a point to its `p`-th power, `a ↦ aᵖ`. This is a
-homomorphism of group functors precisely because of the freshman's dream: raising to the `p`-th
-power is additive in characteristic `p`. Contravariantly it is induced by the bialgebra
-endomorphism of the coordinate Hopf algebra `R[x]` sending the primitive generator `x` to `xᵖ`
-(again primitive in characteristic `p`, `Δ(xᵖ) = xᵖ ⊗ 1 + 1 ⊗ xᵖ`).
+`x = ι R R 1` in `SymmetricAlgebra R R`) carries the **Frobenius endomorphism** `F : 𝔾ₐ → 𝔾ₐ`
+(`TauCeti.AdditiveGroup.frobeniusEnd`, of
+`TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Frobenius`), which on every commutative `R`-algebra
+`A` raises a point to its `p`-th power, `a ↦ aᵖ`.
 
 `TauCeti.Algebra.AlgebraicGroup.AdditiveFrobeniusKernel.Basic` builds the Frobenius kernel group
 scheme `αₚ = Spec R[x]/(xᵖ)` and identifies its functor of points with the `p`-nilpotent elements
-of the additive group. This file makes the Frobenius endomorphism itself explicit on the functor
-of points and proves that `αₚ` is exactly its kernel: as subgroups of the group of `𝔾ₐ`-points,
-the image of the inclusion `αₚ ↪ 𝔾ₐ` equals the kernel of the Frobenius endomorphism. This
-realizes `αₚ = ker(𝔾ₐ --a ↦ aᵖ--> 𝔾ₐ)` on the functor of points, the additive companion of the
+of the additive group. This file exhibits the inclusion `αₚ ↪ 𝔾ₐ` on the functor of points and
+proves that `αₚ` is exactly the kernel of the Frobenius endomorphism: as subgroups of the group of
+`𝔾ₐ`-points, the image of the inclusion `αₚ ↪ 𝔾ₐ` equals the kernel of the Frobenius endomorphism.
+This realizes `αₚ = ker(𝔾ₐ --a ↦ aᵖ--> 𝔾ₐ)` on the functor of points, the additive companion of the
 identification of `μ_n` with the kernel of the `n`th power endomorphism of `𝔾ₘ`
 (`TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Kernel`).
 
 The mechanism is the worked-example points dictionary. A point of `𝔾ₐ = Spec R[x]` reads off the
 element `F(x) : A` (`TauCeti.AdditiveGroup.gaPointsMulEquiv`); the Frobenius endomorphism raises
-that element to the `p`-th power (`AdditiveGroup.toAdd_gaPointsMulEquiv_frobeniusEnd`), while an
-included `αₚ`-point reads off a `p`-nilpotent element (`aᵖ = 0`), whose `p`-th power vanishes.
-Conversely a `𝔾ₐ`-point read off as an element `a` with `aᵖ = 0` is a `p`-nilpotent element,
-hence the image of the `αₚ`-point attached to it (`TauCeti.AlphaP.mem_range_pointsHom_iff`).
+that element to the `p`-th power (`TauCeti.AdditiveGroup.toAdd_gaPointsMulEquiv_frobeniusEnd`),
+while an included `αₚ`-point reads off a `p`-nilpotent element (`aᵖ = 0`), whose `p`-th power
+vanishes. Conversely a `𝔾ₐ`-point read off as an element `a` with `aᵖ = 0` is a `p`-nilpotent
+element, hence the image of the `αₚ`-point attached to it
+(`TauCeti.AlphaP.mem_range_pointsHom_iff`).
 
 This is a worked-example check for the reductive-groups roadmap
 (`ReductiveGroups/README.md` in TauCetiRoadmap): the standing hypotheses flag `αₚ` as one of the
@@ -41,14 +40,9 @@ subgroup schemes" with their kernels.
 
 ## Main declarations
 
-* `TauCeti.AdditiveGroup.frobeniusBialgHom`: the Frobenius bialgebra endomorphism `x ↦ xᵖ` of the
-  coordinate Hopf algebra `R[x]` of `𝔾ₐ`, in prime characteristic `p`.
-* `TauCeti.AdditiveGroup.frobeniusEnd`: the Frobenius endomorphism of `𝔾ₐ` on the functor of
-  points, the contravariant image of `frobeniusBialgHom`.
-* `TauCeti.AdditiveGroup.toAdd_gaPointsMulEquiv_frobeniusEnd`: the Frobenius endomorphism acts as
-  `a ↦ aᵖ` on points.
 * `TauCeti.AlphaP.inclusion`: the inclusion `αₚ ↪ 𝔾ₐ` on points, the contravariant image of the
   quotient map `R[x] ↠ R[x]/(xᵖ)`.
+* `TauCeti.AlphaP.mapValue_inclusion`: the inclusion `αₚ ↪ 𝔾ₐ` is natural in the value algebra.
 * `TauCeti.AlphaP.frobeniusEnd_comp_inclusion`: the Frobenius endomorphism annihilates `αₚ`.
 * `TauCeti.AlphaP.mem_range_inclusion_iff`: a `𝔾ₐ`-point lies in the image of `αₚ` iff the
   Frobenius endomorphism kills it.
@@ -57,13 +51,13 @@ subgroup schemes" with their kernels.
 
 ## References
 
-The Frobenius kernel `αₚ` and its `p`-nilpotent functor of points are Tau Ceti's
-`TauCeti.Algebra.AlgebraicGroup.AdditiveFrobeniusKernel.Basic`; the additive-group points
-dictionary `TauCeti.AdditiveGroup.gaPointsMulEquiv` and the coordinate-Hopf-algebra functoriality
-`TauCeti.AlgHom.mapDomain` are Tau Ceti's. The freshman's dream `add_pow_char`, the
-symmetric-algebra bialgebra structure, and the bialgebra-hom constructor `BialgHom.ofAlgHom` are
-Mathlib's. This realizes `αₚ = ker(Frobenius)` on the functor of points, the additive companion
-of `TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Kernel`.
+The Frobenius endomorphism `TauCeti.AdditiveGroup.frobeniusEnd` of `𝔾ₐ` is Tau Ceti's
+`TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Frobenius`; the Frobenius kernel `αₚ` and its
+`p`-nilpotent functor of points are `TauCeti.Algebra.AlgebraicGroup.AdditiveFrobeniusKernel.Basic`.
+The additive-group points dictionary `TauCeti.AdditiveGroup.gaPointsMulEquiv` and the
+coordinate-Hopf-algebra functoriality `TauCeti.AlgHom.mapDomain` (with its naturality
+`TauCeti.AlgHom.mapValue_mapDomain`) are Tau Ceti's. This realizes `αₚ = ker(Frobenius)` on the
+functor of points, the additive companion of `TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Kernel`.
 -/
 
 public section
@@ -73,105 +67,7 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u v
-
-namespace AdditiveGroup
-
-/-! ### The Frobenius endomorphism of `𝔾ₐ` -/
-
-variable (R : Type u) [CommRing R] (p : ℕ) [Fact p.Prime] [CharP R p]
-
-/-- The coordinate `R`-algebra endomorphism of `R[x] = SymmetricAlgebra R R` sending the generator
-`x = ι R R 1` to `xᵖ`. It underlies the Frobenius endomorphism of the additive group `𝔾ₐ`. -/
-@[expose] noncomputable def frobeniusAlgHom :
-    SymmetricAlgebra R R →ₐ[R] SymmetricAlgebra R R :=
-  SymmetricAlgebra.lift (LinearMap.toSpanSingleton R (SymmetricAlgebra R R) ((ι R R 1) ^ p))
-
-omit [Fact p.Prime] [CharP R p] in
-@[simp]
-theorem frobeniusAlgHom_ι (r : R) :
-    frobeniusAlgHom R p (ι R R r) = r • (ι R R 1) ^ p := by
-  rw [frobeniusAlgHom, SymmetricAlgebra.lift_ι_apply, LinearMap.toSpanSingleton_apply]
-
-omit [Fact p.Prime] [CharP R p] in
-theorem frobeniusAlgHom_ι_one :
-    frobeniusAlgHom R p (ι R R 1) = (ι R R 1) ^ p := by
-  rw [frobeniusAlgHom_ι, one_smul]
-
-omit [Fact p.Prime] in
-/-- The tensor-square ring of the additive-group Hopf algebra has characteristic `p`: the
-structure map `R → R[x] ⊗ R[x]` is a section of the counit, hence injective. -/
-private theorem charP_tensorSquare :
-    CharP (SymmetricAlgebra R R ⊗[R] SymmetricAlgebra R R) p :=
-  charP_of_injective_algebraMap
-    (Function.LeftInverse.injective (g := Coalgebra.counit (R := R))
-      fun r => Bialgebra.counit_algebraMap r) p
-
-/-- **The Frobenius power `xᵖ` is primitive.** In characteristic `p` the comultiplication of `xᵖ`
-is `xᵖ ⊗ 1 + 1 ⊗ xᵖ`, by the freshman's dream applied to the primitive generator `x`. -/
-private theorem comul_ι_pow :
-    Coalgebra.comul (R := R) ((ι R R 1 : SymmetricAlgebra R R) ^ p) =
-      ((ι R R 1 : SymmetricAlgebra R R) ^ p) ⊗ₜ[R] 1 +
-        1 ⊗ₜ[R] ((ι R R 1 : SymmetricAlgebra R R) ^ p) := by
-  haveI := charP_tensorSquare R p
-  rw [Bialgebra.comul_pow, comul_ι, add_pow_char, Algebra.TensorProduct.tmul_pow,
-    Algebra.TensorProduct.tmul_pow, one_pow]
-
-/-- **The Frobenius bialgebra endomorphism `x ↦ xᵖ` of the coordinate Hopf algebra of `𝔾ₐ`.** In
-prime characteristic `p` the generator `x` is primitive, hence so is `xᵖ`
-(`Δ(xᵖ) = xᵖ ⊗ 1 + 1 ⊗ xᵖ` by the freshman's dream), and the counit still vanishes on `xᵖ`, so
-the algebra endomorphism `x ↦ xᵖ` is a bialgebra endomorphism. It induces the Frobenius
-endomorphism of `𝔾ₐ` on the functor of points. -/
-@[expose] noncomputable def frobeniusBialgHom :
-    SymmetricAlgebra R R →ₐc[R] SymmetricAlgebra R R :=
-  BialgHom.ofAlgHom (frobeniusAlgHom R p)
-    (by
-      apply SymmetricAlgebra.algHom_ext
-      apply LinearMap.ext_ring
-      change Coalgebra.counit (R := R) (frobeniusAlgHom R p (ι R R 1)) =
-          Coalgebra.counit (R := R) (ι R R 1)
-      rw [frobeniusAlgHom_ι_one, Bialgebra.counit_pow, counit_ι,
-        zero_pow (Fact.out (p := p.Prime)).ne_zero])
-    (by
-      apply SymmetricAlgebra.algHom_ext
-      apply LinearMap.ext_ring
-      change (Algebra.TensorProduct.map (frobeniusAlgHom R p) (frobeniusAlgHom R p))
-            (Coalgebra.comul (R := R) (ι R R 1)) =
-          Coalgebra.comul (R := R) (frobeniusAlgHom R p (ι R R 1))
-      rw [frobeniusAlgHom_ι_one, comul_ι_pow, comul_ι, map_add,
-        Algebra.TensorProduct.map_tmul, Algebra.TensorProduct.map_tmul, frobeniusAlgHom_ι_one]
-      simp only [map_one])
-
-@[simp]
-theorem frobeniusBialgHom_ι (r : R) :
-    frobeniusBialgHom R p (ι R R r) = r • (ι R R 1) ^ p :=
-  frobeniusAlgHom_ι R p r
-
-theorem frobeniusBialgHom_ι_one :
-    frobeniusBialgHom R p (ι R R 1) = (ι R R 1) ^ p :=
-  frobeniusAlgHom_ι_one R p
-
-variable {A : Type v} [CommRing A] [Algebra R A]
-
-/-- **The Frobenius endomorphism of `𝔾ₐ`, on the functor of points.** For every commutative
-`R`-algebra `A` it is the homomorphism of the convolution group of points induced (contravariantly)
-by the Frobenius bialgebra endomorphism `x ↦ xᵖ`; on points it raises a point to its `p`-th power,
-`a ↦ aᵖ`. -/
-@[expose] noncomputable def frobeniusEnd :
-    WithConv (SymmetricAlgebra R R →ₐ[R] A) →* WithConv (SymmetricAlgebra R R →ₐ[R] A) :=
-  AlgHom.mapDomain (frobeniusBialgHom R p)
-
-/-- **The Frobenius endomorphism acts as `a ↦ aᵖ` on points.** Reading a `𝔾ₐ`-point off on the
-generator `x = ι 1`, the Frobenius endomorphism raises the resulting element of `A` to its `p`-th
-power. -/
-theorem toAdd_gaPointsMulEquiv_frobeniusEnd (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
-    Multiplicative.toAdd (gaPointsMulEquiv (frobeniusEnd R p F)) =
-      Multiplicative.toAdd (gaPointsMulEquiv F) ^ p := by
-  rw [toAdd_gaPointsMulEquiv, frobeniusEnd, AlgHom.mapDomain_apply, ofConv_toConv,
-    AlgHom.comp_apply, BialgHom.coe_toAlgHom, frobeniusBialgHom_ι_one, map_pow,
-    toAdd_gaPointsMulEquiv]
-
-end AdditiveGroup
+universe u v w
 
 /-! ### `αₚ` as the kernel of the Frobenius endomorphism -/
 
@@ -184,16 +80,34 @@ variable {A : Type v} [CommRing A] [Algebra R A]
 groups of points induced (contravariantly) by the quotient bialgebra map `R[x] ↠ R[x]/(xᵖ)`, i.e.
 pre-composition of a point of `αₚ` with the quotient map. It agrees with the underlying-element map
 `TauCeti.AlphaP.pointsHom` through `TauCeti.AdditiveGroup.gaPointsMulEquiv`. -/
-@[expose] noncomputable def inclusion :
+noncomputable def inclusion :
     WithConv (CoordinateRing (R := R) p →ₐ[R] A) →*
       WithConv (SymmetricAlgebra R R →ₐ[R] A) :=
   AlgHom.mapDomain (Bialgebra.Quotient.mkBialgHom (hopfIdeal (R := R) p).toIdeal)
 
 /-- Reading an included `αₚ`-point off as an element of the additive group is the underlying-element
-map `TauCeti.AlphaP.pointsHom`. -/
+map `TauCeti.AlphaP.pointsHom`: both pre-compose the point with the quotient map `R[x] ↠ R[x]/(xᵖ)`
+and evaluate at the generator. -/
+@[simp]
 theorem gaPointsMulEquiv_inclusion (F : WithConv (CoordinateRing (R := R) p →ₐ[R] A)) :
-    AdditiveGroup.gaPointsMulEquiv (inclusion p F) = pointsHom p F :=
-  rfl
+    AdditiveGroup.gaPointsMulEquiv (inclusion p F) = pointsHom p F := by
+  apply Multiplicative.toAdd.injective
+  rw [AdditiveGroup.toAdd_gaPointsMulEquiv, inclusion, AlgHom.mapDomain_apply,
+    ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
+    Bialgebra.Quotient.mkBialgHom_apply, toAdd_pointsHom]
+
+variable {B : Type w} [CommRing B] [Algebra R B]
+
+/-- **Naturality in the value algebra.** The inclusion `αₚ ↪ 𝔾ₐ` commutes with the value-algebra
+functoriality `AlgHom.mapValue`. -/
+theorem mapValue_inclusion (χ : A →ₐ[R] B) :
+    (inclusion (R := R) (A := B) p).comp
+        (AlgHom.mapValue (H := CoordinateRing (R := R) p) χ) =
+      (AlgHom.mapValue (H := SymmetricAlgebra R R) χ).comp (inclusion (R := R) (A := A) p) := by
+  refine MonoidHom.ext fun f => ?_
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, inclusion, inclusion, AlgHom.mapDomain_apply,
+    AlgHom.mapValue_apply, AlgHom.mapDomain_apply, AlgHom.mapValue_apply, toConv_ofConv,
+    toConv_ofConv, AlgHom.comp_assoc]
 
 /-- **The Frobenius endomorphism annihilates `αₚ`.** Composing the Frobenius endomorphism of `𝔾ₐ`
 after the inclusion `αₚ ↪ 𝔾ₐ` is the trivial homomorphism of group functors: every `αₚ`-point maps
