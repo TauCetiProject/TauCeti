@@ -141,6 +141,19 @@ private theorem sqrtTower_sup_adjoin_eq_of_mem (root : ℕ → L) {n : ℕ}
   rw [sup_eq_left]
   exact IntermediateField.adjoin_le_iff.mpr (by simpa using hroot)
 
+/-- Square-class reconstruction across one tower level: from `r * dₙ = s² * ∏_T dⱼ` with
+`dₙ ≠ 0` and `n ∉ T`, the radicand `r` equals `(s / dₙ)²` times the product over `insert n T`. -/
+private theorem eq_sq_mul_prod_insert_of_mul_radicand {d : ℕ → K} {n : ℕ} {r s : K}
+    {T : Finset ℕ} (hnT : n ∉ T) (hdn : d n ≠ 0)
+    (hmul : r * d n = s ^ 2 * ∏ j ∈ T, d j) :
+    r = (s / d n) ^ 2 * ∏ j ∈ insert n T, d j := by
+  rw [Finset.prod_insert hnT]
+  -- `r = (r * dₙ) / dₙ = (s² * ∏_T) / dₙ = (s / dₙ)² * (dₙ * ∏_T)`.
+  calc
+    r = r * d n / d n := by field_simp
+    _ = s ^ 2 * (∏ j ∈ T, d j) / d n := by rw [hmul]
+    _ = (s / d n) ^ 2 * (d n * ∏ j ∈ T, d j) := by field_simp
+
 /-- **Square-class descent.** In characteristic not two, if `y² = r` over `K` and
 `y ∈ K(root₀, …, rootₙ₋₁)`, where `root j` is a chosen square root of `d j`, then `r` is a
 square times a subset product of the `d j` with `j < n`. -/
@@ -208,12 +221,7 @@ theorem squareClass_of_sq_mem (d : ℕ → K) (root : ℕ → L)
                 rw [hroot n, hdn, map_zero]
               rw [hroot_zero]
               exact zero_mem _
-            rw [Finset.prod_insert hnT]
-            calc
-              r = (r * d n) / d n := by field_simp [hdn0]
-              _ = (s ^ 2 * ∏ j ∈ T, d j) / d n := by rw [hmul]
-              _ = (s / d n) ^ 2 * (d n * ∏ j ∈ T, d j) := by
-                field_simp [hdn0]
+            exact eq_sq_mul_prod_insert_of_mul_radicand hnT hdn0 hmul
         · have hy_mem : y ∈ sqrtTower (K := K) root n := by
             rw [heq, hb0, zero_mul, add_zero]
             exact ha
