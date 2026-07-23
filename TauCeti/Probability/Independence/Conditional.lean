@@ -233,7 +233,7 @@ theorem condExp_indicator_sup_eq_of_condIndep {Ω : Type*} {mΩ : MeasurableSpac
 
 The pair-law/L² machinery below is generic conditional-expectation infrastructure: its hypotheses
 mention only measurable maps, equality of pair laws, and the σ-algebra ordering `σ(W) ≤ σ(W')` —
-never contractability.  The two support lemmas stay `private`; the contraction-independence
+never contractability.  The four support lemmas stay `private`; the contraction-independence
 conclusion is public so the de Finetti prefix-deletion file can reuse it across the module boundary.
 -/
 
@@ -248,6 +248,50 @@ private lemma marginal_law_eq_of_pair_law (X : Ω → α) (W W' : Ω → γ)
   have h := congrArg (Measure.map (Prod.snd : α × γ → γ)) h_law
   rwa [Measure.map_map measurable_snd (hX.prodMk hW),
     Measure.map_map measurable_snd (hX.prodMk hW')] at h
+
+/-- If the pair laws agree, `(X, W) =ᵈ (X, W')`, the indicator of `X ⁻¹' A` has the same integral
+over `W ⁻¹' B` as over `W' ⁻¹' B`. -/
+private lemma setIntegral_indicator_preimage_eq_of_pair_law
+    (X : Ω → α) (W W' : Ω → γ)
+    (hX : Measurable X) (hW : Measurable W) (hW' : Measurable W')
+    (h_law : Measure.map (fun ω => (X ω, W ω)) μ = Measure.map (fun ω => (X ω, W' ω)) μ)
+    {A : Set α} (hA : MeasurableSet A) {B : Set γ} (hB : MeasurableSet B) :
+    ∫ ω in W ⁻¹' B, (X ⁻¹' A).indicator (fun _ => (1 : ℝ)) ω ∂μ
+      = ∫ ω in W' ⁻¹' B, (X ⁻¹' A).indicator (fun _ => (1 : ℝ)) ω ∂μ := by
+  rw [setIntegral_indicator (hX hA), setIntegral_indicator (hX hA),
+    setIntegral_const, setIntegral_const]
+  congr 1
+  rw [Set.inter_comm (W ⁻¹' B), Set.inter_comm (W' ⁻¹' B)]
+  rw [← Set.mk_preimage_prod X W, ← Set.mk_preimage_prod X W']
+  have h_meas1 : μ ((fun ω => (X ω, W ω)) ⁻¹' (A ×ˢ B))
+      = (Measure.map (fun ω => (X ω, W ω)) μ) (A ×ˢ B) :=
+    (Measure.map_apply (hX.prodMk hW) (hA.prod hB)).symm
+  have h_meas2 : μ ((fun ω => (X ω, W' ω)) ⁻¹' (A ×ˢ B))
+      = (Measure.map (fun ω => (X ω, W' ω)) μ) (A ×ˢ B) :=
+    (Measure.map_apply (hX.prodMk hW') (hA.prod hB)).symm
+  simp only [Measure.real, ENNReal.toReal_eq_toReal_iff]
+  left
+  rw [h_meas1, h_meas2, h_law]
+
+/-- Set-integral of a Doob–Dynkin factor: if `g ∘ W` represents `μ[φ | comap W]`, the integral of
+`g` over `B` against `Measure.map W μ` equals the integral of `φ` over `W ⁻¹' B`. -/
+private lemma setIntegral_map_eq_setIntegral_preimage_of_condExp_comp
+    {W : Ω → γ} (hW : Measurable W) [SigmaFinite (μ.trim (measurable_iff_comap_le.mp hW))]
+    {g : γ → ℝ} (hg : AEStronglyMeasurable g (Measure.map W μ))
+    {φ : Ω → ℝ} (hφ_int : Integrable φ μ)
+    (hg_eq : μ[φ | MeasurableSpace.comap W inferInstance] = g ∘ W)
+    {B : Set γ} (hB : MeasurableSet B) :
+    ∫ y in B, g y ∂(Measure.map W μ) = ∫ ω in W ⁻¹' B, φ ω ∂μ := by
+  have hmW_le : MeasurableSpace.comap W inferInstance ≤ ‹MeasurableSpace Ω› :=
+    measurable_iff_comap_le.mp hW
+  calc ∫ y in B, g y ∂(Measure.map W μ)
+      = ∫ ω in W ⁻¹' B, g (W ω) ∂μ :=
+          setIntegral_map hB hg hW.aemeasurable
+    _ = ∫ ω in W ⁻¹' B, μ[φ | MeasurableSpace.comap W inferInstance] ω ∂μ :=
+          setIntegral_congr_fun (hW hB) fun ω _ => (congrFun hg_eq ω).symm
+    _ = ∫ ω in W ⁻¹' B, φ ω ∂μ :=
+          setIntegral_condExp hmW_le hφ_int
+            (MeasurableSpace.measurableSet_comap.mpr ⟨B, hB, rfl⟩)
 
 /-- Helper for Kallenberg 1.3: the square-integrals of the two conditional expectations agree. -/
 private lemma integral_sq_condExp_eq_of_pair_law [IsFiniteMeasure μ]
@@ -268,10 +312,6 @@ private lemma integral_sq_condExp_eq_of_pair_law [IsFiniteMeasure μ]
   let φ : Ω → ℝ := (X ⁻¹' A).indicator (fun _ => (1 : ℝ))
   let μ₁ : Ω → ℝ := μ[φ | MeasurableSpace.comap W inferInstance]
   let μ₂ : Ω → ℝ := μ[φ | MeasurableSpace.comap W' inferInstance]
-  have hmW_le : MeasurableSpace.comap W inferInstance ≤ ‹MeasurableSpace Ω› :=
-    measurable_iff_comap_le.mp hW
-  have hmW'_le : MeasurableSpace.comap W' inferInstance ≤ ‹MeasurableSpace Ω› :=
-    measurable_iff_comap_le.mp hW'
   have hφ_int : Integrable φ μ := Integrable.indicator (integrable_const 1) (hX hA)
   -- Doob–Dynkin factorisation `μ₁ = g₁ ∘ W`, `μ₂ = g₂ ∘ W'`.
   have hμ₁_sm : StronglyMeasurable[MeasurableSpace.comap W inferInstance] μ₁ :=
@@ -283,54 +323,23 @@ private lemma integral_sq_condExp_eq_of_pair_law [IsFiniteMeasure μ]
   have hg₁_int : Integrable g₁ (Measure.map W μ) := by
     have h : Integrable (g₁ ∘ W) μ := by rw [← hμ₁_eq]; exact integrable_condExp
     exact (integrable_map_measure hg₁_sm.aestronglyMeasurable hW.aemeasurable).mpr h
-  have hg₂_int : Integrable g₂ (Measure.map W' μ) := by
+  have hg₂_int' : Integrable g₂ (Measure.map W μ) := by
+    rw [hρ_eq]
     have h : Integrable (g₂ ∘ W') μ := by rw [← hμ₂_eq]; exact integrable_condExp
     exact (integrable_map_measure hg₂_sm.aestronglyMeasurable hW'.aemeasurable).mpr h
-  have hg₂_int' : Integrable g₂ (Measure.map W μ) := by rw [hρ_eq]; exact hg₂_int
   -- `g₁ = g₂` a.e. on `ρ`, via the set-integral characterisation and the pair law.
   have hg_eq : g₁ =ᵐ[Measure.map W μ] g₂ := by
     refine Integrable.ae_eq_of_forall_setIntegral_eq g₁ g₂ hg₁_int hg₂_int' fun B hB _ => ?_
-    have h1 : ∫ y in B, g₁ y ∂(Measure.map W μ) = ∫ ω in W ⁻¹' B, φ ω ∂μ := by
-      calc ∫ y in B, g₁ y ∂(Measure.map W μ)
-          = ∫ y, g₁ y ∂((μ.restrict (W ⁻¹' B)).map W) := by rw [Measure.restrict_map hW hB]
-        _ = ∫ ω in W ⁻¹' B, g₁ (W ω) ∂μ :=
-              integral_map hW.aemeasurable.restrict hg₁_sm.aestronglyMeasurable
-        _ = ∫ ω in W ⁻¹' B, μ₁ ω ∂μ :=
-              setIntegral_congr_fun (hW hB) fun ω _ => (congrFun hμ₁_eq ω).symm
-        _ = ∫ ω in W ⁻¹' B, φ ω ∂μ :=
-              setIntegral_condExp hmW_le hφ_int
-                (MeasurableSpace.measurableSet_comap.mpr ⟨B, hB, rfl⟩)
-    have h2 : ∫ y in B, g₂ y ∂(Measure.map W μ) = ∫ ω in W' ⁻¹' B, φ ω ∂μ := by
-      rw [hρ_eq]
-      calc ∫ y in B, g₂ y ∂(Measure.map W' μ)
-          = ∫ y, g₂ y ∂((μ.restrict (W' ⁻¹' B)).map W') := by rw [Measure.restrict_map hW' hB]
-        _ = ∫ ω in W' ⁻¹' B, g₂ (W' ω) ∂μ :=
-              integral_map hW'.aemeasurable.restrict hg₂_sm.aestronglyMeasurable
-        _ = ∫ ω in W' ⁻¹' B, μ₂ ω ∂μ :=
-              setIntegral_congr_fun (hW' hB) fun ω _ => (congrFun hμ₂_eq ω).symm
-        _ = ∫ ω in W' ⁻¹' B, φ ω ∂μ :=
-              setIntegral_condExp hmW'_le hφ_int
-                (MeasurableSpace.measurableSet_comap.mpr ⟨B, hB, rfl⟩)
-    have h3 : ∫ ω in W ⁻¹' B, φ ω ∂μ = ∫ ω in W' ⁻¹' B, φ ω ∂μ := by
-      rw [setIntegral_indicator (hX hA), setIntegral_indicator (hX hA),
-        setIntegral_const, setIntegral_const]
-      congr 1
-      rw [Set.inter_comm (W ⁻¹' B), Set.inter_comm (W' ⁻¹' B)]
-      have heq1 : (X ⁻¹' A) ∩ (W ⁻¹' B) = (fun ω => (X ω, W ω)) ⁻¹' (A ×ˢ B) := by
-        ext ω; simp [Set.mem_prod]
-      have heq2 : (X ⁻¹' A) ∩ (W' ⁻¹' B) = (fun ω => (X ω, W' ω)) ⁻¹' (A ×ˢ B) := by
-        ext ω; simp [Set.mem_prod]
-      rw [heq1, heq2]
-      have h_meas1 : μ ((fun ω => (X ω, W ω)) ⁻¹' (A ×ˢ B))
-          = (Measure.map (fun ω => (X ω, W ω)) μ) (A ×ˢ B) :=
-        (Measure.map_apply (hX.prodMk hW) (hA.prod hB)).symm
-      have h_meas2 : μ ((fun ω => (X ω, W' ω)) ⁻¹' (A ×ˢ B))
-          = (Measure.map (fun ω => (X ω, W' ω)) μ) (A ×ˢ B) :=
-        (Measure.map_apply (hX.prodMk hW') (hA.prod hB)).symm
-      simp only [Measure.real, ENNReal.toReal_eq_toReal_iff]
-      left
-      rw [h_meas1, h_meas2, h_law]
-    rw [h1, h3, ← h2]
+    calc ∫ y in B, g₁ y ∂(Measure.map W μ)
+        = ∫ ω in W ⁻¹' B, φ ω ∂μ :=
+          setIntegral_map_eq_setIntegral_preimage_of_condExp_comp hW hg₁_sm.aestronglyMeasurable
+            hφ_int hμ₁_eq hB
+      _ = ∫ ω in W' ⁻¹' B, φ ω ∂μ :=
+          setIntegral_indicator_preimage_eq_of_pair_law X W W' hX hW hW' h_law hA hB
+      _ = ∫ y in B, g₂ y ∂(Measure.map W μ) := by
+          rw [hρ_eq]
+          exact (setIntegral_map_eq_setIntegral_preimage_of_condExp_comp
+            hW' hg₂_sm.aestronglyMeasurable hφ_int hμ₂_eq hB).symm
   -- Push the square through `integral_map` on both sides.
   calc ∫ ω, μ₁ ω * μ₁ ω ∂μ
       = ∫ ω, (g₁ (W ω)) ^ 2 ∂μ := by
