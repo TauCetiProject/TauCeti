@@ -140,8 +140,7 @@ def IsCommutation (G G' : GridDiagram n) : Prop :=
 /-- The elementary grid commutation relation is symmetric. -/
 theorem isCommutation_comm {G G' : GridDiagram n} :
     IsCommutation G G' ↔ IsCommutation G' G := by
-  change (IsRowCommutation G G' ∨ IsColumnCommutation G G') ↔
-    IsRowCommutation G' G ∨ IsColumnCommutation G' G
+  unfold IsCommutation
   rw [isRowCommutation_comm,
     isColumnCommutation_comm]
 
@@ -150,9 +149,7 @@ column moves. -/
 @[simp]
 theorem isCommutation_transpose (G G' : GridDiagram n) :
     IsCommutation G.transpose G'.transpose ↔ IsCommutation G G' := by
-  change (IsRowCommutation G.transpose G'.transpose ∨
-    IsColumnCommutation G.transpose G'.transpose) ↔
-      IsRowCommutation G G' ∨ IsColumnCommutation G G'
+  unfold IsCommutation
   rw [isRowCommutation_transpose, isColumnCommutation_transpose, or_comm]
 
 end GridDiagram
