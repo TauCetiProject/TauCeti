@@ -168,12 +168,6 @@ theorem dotPairing_apply (m : σ →₀ ℤ) (v : σ → ℤ) :
   simp only [dotPairing, LinearMap.flip_apply, LinearEquiv.coe_coe, Finsupp.llift_apply,
     Finsupp.lift_apply, smul_eq_mul]
 
-/-- The flip of `dotPairing` is Mathlib's free-forgetful adjunction equivalence
-`Finsupp.llift`, identifying the cocharacter lattice `σ → ℤ` with the `ℤ`-dual of `σ →₀ ℤ`. -/
-theorem dotPairing_flip :
-    (dotPairing (σ := σ)).flip = (Finsupp.llift ℤ ℤ ℤ σ).toLinearMap :=
-  LinearMap.flip_flip _
-
 /-- **The dot-product pairing computes the character–cocharacter pairing.** For a character
 `ofAdd m` and a cocharacter `ψ` (with coordinates `cocharEquiv ψ`), the pairing
 `⟨ofAdd m, ψ⟩` of `TauCeti.Algebra.AlgebraicGroup.Cocharacter` is `dotPairing m (cocharEquiv ψ)`. -/
