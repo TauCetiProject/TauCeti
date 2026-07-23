@@ -164,7 +164,6 @@ by the Frobenius bialgebra endomorphism `x ↦ xᵖ`; on points it raises a poin
 /-- **The Frobenius endomorphism acts as `a ↦ aᵖ` on points.** Reading a `𝔾ₐ`-point off on the
 generator `x = ι 1`, the Frobenius endomorphism raises the resulting element of `A` to its `p`-th
 power. -/
-@[simp]
 theorem toAdd_gaPointsMulEquiv_frobeniusEnd (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     Multiplicative.toAdd (gaPointsMulEquiv (frobeniusEnd R p F)) =
       Multiplicative.toAdd (gaPointsMulEquiv F) ^ p := by
