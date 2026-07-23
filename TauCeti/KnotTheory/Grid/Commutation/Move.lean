@@ -60,14 +60,6 @@ def IsColumnCommutation (G G' : GridDiagram n) : Prop :=
     ColumnsNoninterleaving G a (finRotate n a) ∧
       G' = G.swapColumns a (finRotate n a)
 
-/-- The witness form of an elementary column commutation. -/
-theorem isColumnCommutation_iff (G G' : GridDiagram n) :
-    IsColumnCommutation G G' ↔
-      ∃ a : Fin n, a ≠ finRotate n a ∧
-        ColumnsNoninterleaving G a (finRotate n a) ∧
-          G' = G.swapColumns a (finRotate n a) :=
-  Iff.rfl
-
 /-- Swapping a cyclically adjacent non-interleaving pair of columns is a column commutation. -/
 theorem isColumnCommutation_swapColumns (G : GridDiagram n) (a : Fin n)
     (ha : a ≠ finRotate n a) (hG : ColumnsNoninterleaving G a (finRotate n a)) :
@@ -94,14 +86,6 @@ def IsRowCommutation (G G' : GridDiagram n) : Prop :=
     RowsNoninterleaving G a (finRotate n a) ∧
       G' = G.swapRows a (finRotate n a)
 
-/-- The witness form of an elementary row commutation. -/
-theorem isRowCommutation_iff (G G' : GridDiagram n) :
-    IsRowCommutation G G' ↔
-      ∃ a : Fin n, a ≠ finRotate n a ∧
-        RowsNoninterleaving G a (finRotate n a) ∧
-          G' = G.swapRows a (finRotate n a) :=
-  Iff.rfl
-
 /-- Swapping a cyclically adjacent non-interleaving pair of rows is a row commutation. -/
 theorem isRowCommutation_swapRows (G : GridDiagram n) (a : Fin n)
     (ha : a ≠ finRotate n a) (hG : RowsNoninterleaving G a (finRotate n a)) :
@@ -120,6 +104,7 @@ theorem isRowCommutation_comm {G G' : GridDiagram n} :
     simpa [rowsNoninterleaving_comm] using hnon
 
 /-- Diagonal reflection turns a row commutation into a column commutation. -/
+@[simp]
 theorem isRowCommutation_transpose (G G' : GridDiagram n) :
     IsRowCommutation G.transpose G'.transpose ↔ IsColumnCommutation G G' := by
   constructor
@@ -134,6 +119,7 @@ theorem isRowCommutation_transpose (G G' : GridDiagram n) :
     · simpa using congrArg GridDiagram.transpose hswap
 
 /-- Diagonal reflection turns a column commutation into a row commutation. -/
+@[simp]
 theorem isColumnCommutation_transpose (G G' : GridDiagram n) :
     IsColumnCommutation G.transpose G'.transpose ↔ IsRowCommutation G G' := by
   constructor
@@ -151,16 +137,12 @@ theorem isColumnCommutation_transpose (G G' : GridDiagram n) :
 def IsCommutation (G G' : GridDiagram n) : Prop :=
   IsRowCommutation G G' ∨ IsColumnCommutation G G'
 
-/-- A commutation is either an elementary row commutation or an elementary column
-commutation. -/
-theorem isCommutation_iff (G G' : GridDiagram n) :
-    IsCommutation G G' ↔ IsRowCommutation G G' ∨ IsColumnCommutation G G' :=
-  Iff.rfl
-
 /-- The elementary grid commutation relation is symmetric. -/
 theorem isCommutation_comm {G G' : GridDiagram n} :
     IsCommutation G G' ↔ IsCommutation G' G := by
-  rw [isCommutation_iff, isCommutation_iff, isRowCommutation_comm,
+  change (IsRowCommutation G G' ∨ IsColumnCommutation G G') ↔
+    IsRowCommutation G' G ∨ IsColumnCommutation G' G
+  rw [isRowCommutation_comm,
     isColumnCommutation_comm]
 
 /-- Diagonal reflection preserves the elementary commutation relation, exchanging row and
@@ -168,8 +150,10 @@ column moves. -/
 @[simp]
 theorem isCommutation_transpose (G G' : GridDiagram n) :
     IsCommutation G.transpose G'.transpose ↔ IsCommutation G G' := by
-  rw [isCommutation_iff, isCommutation_iff, isRowCommutation_transpose,
-    isColumnCommutation_transpose, or_comm]
+  change (IsRowCommutation G.transpose G'.transpose ∨
+    IsColumnCommutation G.transpose G'.transpose) ↔
+      IsRowCommutation G G' ∨ IsColumnCommutation G G'
+  rw [isRowCommutation_transpose, isColumnCommutation_transpose, or_comm]
 
 end GridDiagram
 
