@@ -1153,81 +1153,99 @@ private lemma ibp_kernel_integrableOn (f : ℝ → ℝ) (hcm : IsCompletelyMonot
       _ = (-1 : ℝ) ^ k / ↑(k - 1).factorial * t ^ (k - 1) *
           iteratedDerivWithin k f (Ici 0) t := by field_simp
 
+/-- Order-one case of `chafai_repeated_ibp`: the tail integral of `-f'`, the negated first
+iterated derivative, over `(x, ∞)` recovers `f x - L`. -/
+private lemma chafai_repeated_ibp_one (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
+    (x : ℝ) (hx : 0 ≤ x) (L : ℝ) (hL : Tendsto f atTop (nhds L)) :
+    ∫ t in Ioi x, (-1 : ℝ) ^ 1 / ↑(1 - 1).factorial *
+      (t - x) ^ (1 - 1) *
+      iteratedDerivWithin 1 f (Ici 0) t = f x - L := by
+  have hsimpl :
+      (fun t => (-1 : ℝ) ^ 1 / ↑(1 - 1).factorial *
+        (t - x) ^ (1 - 1) *
+        iteratedDerivWithin 1 f (Ici 0) t) =
+      (fun t => -iteratedDerivWithin 1 f (Ici 0) t) := by
+    ext t
+    simp
+  rw [hsimpl]
+  have hintx : IntegrableOn (fun t => -iteratedDerivWithin 1 f (Ici 0) t) (Ioi x) :=
+    hcm.neg_iteratedDerivWithin_one_integrableOn.mono_set (Ioi_subset_Ioi hx)
+  refine tendsto_nhds_unique
+    (intervalIntegral_tendsto_integral_Ioi x hintx tendsto_id) ?_
+  simp only [id]
+  refine Tendsto.congr' ?_ (Tendsto.sub tendsto_const_nhds hL)
+  filter_upwards [eventually_gt_atTop (max x 1)] with T hT
+  have hxT : x < T := lt_of_le_of_lt (le_max_left x 1) hT
+  exact
+    (IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm hx hxT.le).symm
+
+/-- Successor case of `chafai_repeated_ibp`: given the order-`k` tail-integral identity
+`ih_applied`, the order-`(k + 1)` tail integral likewise recovers `f x - L`. -/
+private lemma chafai_repeated_ibp_succ_of (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
+    (k : ℕ) (hk : k ≠ 0) (x : ℝ) (hx : 0 ≤ x)
+    (L : ℝ) (hL : Tendsto f atTop (nhds L))
+    (ih_applied : ∫ t in Ioi x, (-1 : ℝ) ^ k / ↑(k - 1).factorial *
+      (t - x) ^ (k - 1) *
+      iteratedDerivWithin k f (Ici 0) t = f x - L) :
+    ∫ t in Ioi x, (-1 : ℝ) ^ (k + 1) / ↑(k + 1 - 1).factorial *
+      (t - x) ^ (k + 1 - 1) *
+      iteratedDerivWithin (k + 1) f (Ici 0) t = f x - L := by
+  have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
+  simp only [show k + 1 - 1 = k by omega]
+  have hintk := ibp_kernel_integrableOn f hcm k hk1 x hx L hL
+  have hintkp1 := ibp_kernel_integrableOn f hcm (k + 1) (by omega) x hx L hL
+  simp only [show k + 1 - 1 = k by omega] at hintkp1
+  have hibp := fun T (hT : x < T) => ibp_finite_interval f hcm k hk x T hx hT
+  have hbdry := boundary_term_decay f hcm k hk x hx L hL
+  have htend_k : Tendsto (fun T => ∫ t in x..T,
+      (-1 : ℝ) ^ k / ↑(k - 1).factorial * (t - x) ^ (k - 1) *
+      iteratedDerivWithin k f (Ici 0) t) atTop (nhds (f x - L)) := by
+    rw [← ih_applied]
+    exact intervalIntegral_tendsto_integral_Ioi x hintk tendsto_id
+  have hsign : ∀ T, ∫ t in x..T,
+      (-1 : ℝ) ^ (k + 1) / ↑(k - 1).factorial * (t - x) ^ (k - 1) *
+      iteratedDerivWithin k f (Ici 0) t =
+      -(∫ t in x..T, (-1 : ℝ) ^ k / ↑(k - 1).factorial * (t - x) ^ (k - 1) *
+      iteratedDerivWithin k f (Ici 0) t) := by
+    intro T
+    rw [← intervalIntegral.integral_neg]
+    apply intervalIntegral.integral_congr_ae
+    apply ae_of_all
+    intro t _
+    have : (-1 : ℝ) ^ (k + 1) = (-1) ^ k * (-1) := pow_succ (-1) k
+    rw [this]
+    ring
+  have htend_sum : Tendsto (fun T =>
+      (-1 : ℝ) ^ (k + 1) / ↑k.factorial * (T - x) ^ k *
+        iteratedDerivWithin k f (Ici 0) T +
+      ∫ t in x..T, (-1 : ℝ) ^ k / ↑(k - 1).factorial * (t - x) ^ (k - 1) *
+        iteratedDerivWithin k f (Ici 0) t) atTop (nhds (f x - L)) := by
+    simpa [zero_add] using hbdry.add htend_k
+  have htend_via_ibp : Tendsto (fun T => ∫ t in x..T,
+      (-1 : ℝ) ^ (k + 1) / ↑k.factorial * (t - x) ^ k *
+      iteratedDerivWithin (k + 1) f (Ici 0) t) atTop (nhds (f x - L)) :=
+    Tendsto.congr' ((eventually_gt_atTop x).mono fun T hxT => by
+      have := hibp T hxT
+      linarith [hsign T]) htend_sum
+  exact tendsto_nhds_unique
+    ((intervalIntegral_tendsto_integral_Ioi x hintkp1 tendsto_id).congr
+      (fun T => by simp [id])) htend_via_ibp
+
 private lemma chafai_repeated_ibp (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
     (n : ℕ) (hn : 1 ≤ n) (x : ℝ) (hx : 0 ≤ x)
     (L : ℝ) (hL : Tendsto f atTop (nhds L)) :
     ∫ t in Ioi x, (-1 : ℝ) ^ n / ↑(n - 1).factorial *
       (t - x) ^ (n - 1) *
       iteratedDerivWithin n f (Ici 0) t = f x - L := by
-  -- Induction on `n`. Base case `n = 1`: the integral is `∫ -f'` on `(x, ∞)`, which equals
-  -- `f x - L` by the FTC and `f → L`. Inductive step: one integration by parts lowers the order
-  -- from `k+1` to `k`; the boundary term decays, and the interior term is the `k`-th case.
+  -- Induction on `n`: the `n = 1` base is `chafai_repeated_ibp_one`; the step (one integration
+  -- by parts, lowering the order `k + 1 → k`) is `chafai_repeated_ibp_succ_of`.
   induction n with
   | zero => omega
   | succ k ih =>
     by_cases hk : k = 0
-    · -- Base case `n = 1`: reduce to `∫ (x,∞) -f' = f x - L` via the fundamental theorem.
-      subst hk
-      have hsimpl :
-          (fun t => (-1 : ℝ) ^ (0 + 1) / ↑(0 + 1 - 1).factorial *
-            (t - x) ^ (0 + 1 - 1) *
-            iteratedDerivWithin (0 + 1) f (Ici 0) t) =
-          (fun t => -iteratedDerivWithin 1 f (Ici 0) t) := by
-        ext t
-        simp
-      rw [hsimpl]
-      have hintx : IntegrableOn (fun t => -iteratedDerivWithin 1 f (Ici 0) t) (Ioi x) :=
-        hcm.neg_iteratedDerivWithin_one_integrableOn.mono_set (Ioi_subset_Ioi hx)
-      refine tendsto_nhds_unique
-        (intervalIntegral_tendsto_integral_Ioi x hintx tendsto_id) ?_
-      simp only [id]
-      refine Tendsto.congr' ?_ (Tendsto.sub tendsto_const_nhds hL)
-      filter_upwards [eventually_gt_atTop (max x 1)] with T hT
-      have hxT : x < T := lt_of_le_of_lt (le_max_left x 1) hT
-      exact
-        (IsCompletelyMonotone.integral_neg_iteratedDerivWithin_one_Ici_eq_sub hcm hx hxT.le).symm
-    · -- Inductive step `n = k+1`: integrate by parts once and pass to the limit.
-      have hk1 : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
-      have ih_applied := ih hk1
-      simp only [show k + 1 - 1 = k by omega]
-      have hintk := ibp_kernel_integrableOn f hcm k hk1 x hx L hL
-      have hintkp1 := ibp_kernel_integrableOn f hcm (k + 1) (by omega) x hx L hL
-      simp only [show k + 1 - 1 = k by omega] at hintkp1
-      have hibp := fun T (hT : x < T) => ibp_finite_interval f hcm k hk x T hx hT
-      have hbdry := boundary_term_decay f hcm k hk x hx L hL
-      have htend_k : Tendsto (fun T => ∫ t in x..T,
-          (-1 : ℝ) ^ k / ↑(k - 1).factorial * (t - x) ^ (k - 1) *
-          iteratedDerivWithin k f (Ici 0) t) atTop (nhds (f x - L)) := by
-        rw [← ih_applied]
-        exact intervalIntegral_tendsto_integral_Ioi x hintk tendsto_id
-      have hsign : ∀ T, ∫ t in x..T,
-          (-1 : ℝ) ^ (k + 1) / ↑(k - 1).factorial * (t - x) ^ (k - 1) *
-          iteratedDerivWithin k f (Ici 0) t =
-          -(∫ t in x..T, (-1 : ℝ) ^ k / ↑(k - 1).factorial * (t - x) ^ (k - 1) *
-          iteratedDerivWithin k f (Ici 0) t) := by
-        intro T
-        rw [← intervalIntegral.integral_neg]
-        apply intervalIntegral.integral_congr_ae
-        apply ae_of_all
-        intro t _
-        have : (-1 : ℝ) ^ (k + 1) = (-1) ^ k * (-1) := pow_succ (-1) k
-        rw [this]
-        ring
-      have htend_sum : Tendsto (fun T =>
-          (-1 : ℝ) ^ (k + 1) / ↑k.factorial * (T - x) ^ k *
-            iteratedDerivWithin k f (Ici 0) T +
-          ∫ t in x..T, (-1 : ℝ) ^ k / ↑(k - 1).factorial * (t - x) ^ (k - 1) *
-            iteratedDerivWithin k f (Ici 0) t) atTop (nhds (f x - L)) := by
-        simpa [zero_add] using hbdry.add htend_k
-      have htend_via_ibp : Tendsto (fun T => ∫ t in x..T,
-          (-1 : ℝ) ^ (k + 1) / ↑k.factorial * (t - x) ^ k *
-          iteratedDerivWithin (k + 1) f (Ici 0) t) atTop (nhds (f x - L)) :=
-        Tendsto.congr' ((eventually_gt_atTop x).mono fun T hxT => by
-          have := hibp T hxT
-          linarith [hsign T]) htend_sum
-      exact tendsto_nhds_unique
-        ((intervalIntegral_tendsto_integral_Ioi x hintkp1 tendsto_id).congr
-          (fun T => by simp [id])) htend_via_ibp
+    · subst hk
+      exact chafai_repeated_ibp_one f hcm x hx L hL
+    · exact chafai_repeated_ibp_succ_of f hcm k hk x hx L hL (ih (Nat.one_le_iff_ne_zero.mpr hk))
 
 /-- **Chafaï reconstruction identity** for the nonconstant part. -/
 lemma chafaiRescaled_integral_bernsteinKernel_eq_sub_tendsto_atTop
