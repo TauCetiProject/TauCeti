@@ -46,6 +46,11 @@ singularity there. -/
 def planarNewtonianKernel (z : ℂ) : ℝ :=
   -(2 * Real.pi)⁻¹ * Real.log ‖z‖
 
+/-- The defining formula for the planar Newtonian kernel. -/
+theorem planarNewtonianKernel_def (z : ℂ) :
+    planarNewtonianKernel z = -(2 * Real.pi)⁻¹ * Real.log ‖z‖ := by
+  rw [planarNewtonianKernel]
+
 @[simp]
 theorem planarNewtonianKernel_zero : planarNewtonianKernel 0 = 0 := by
   simp [planarNewtonianKernel]
@@ -72,20 +77,6 @@ theorem planarNewtonianKernel_sub_comm (z a : ℂ) :
     planarNewtonianKernel (z - a) = planarNewtonianKernel (a - z) := by
   rw [← neg_sub a z, planarNewtonianKernel_neg]
 
-/-- The logarithmic Newtonian kernel is harmonic at every point away from its pole at `0`. -/
-theorem harmonicAt_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
-    HarmonicAt planarNewtonianKernel z := by
-  have hlog : HarmonicAt (fun w : ℂ ↦ Real.log ‖w‖) z :=
-    analyticAt_id.harmonicAt_log_norm hz
-  change HarmonicAt ((-(2 * Real.pi)⁻¹ : ℝ) • fun w : ℂ ↦ Real.log ‖w‖) z
-  exact hlog.const_smul
-
-/-- The planar Newtonian kernel is harmonic on the punctured plane. -/
-theorem harmonicOnNhd_planarNewtonianKernel :
-    HarmonicOnNhd planarNewtonianKernel ({0}ᶜ : Set ℂ) := by
-  intro z hz
-  exact harmonicAt_planarNewtonianKernel (Set.mem_compl_singleton_iff.mp hz)
-
 /-- The translated kernel `z ↦ G(z - a)` is harmonic at every point other than its pole `a`. -/
 theorem harmonicAt_planarNewtonianKernel_sub {z a : ℂ} (hza : z ≠ a) :
     HarmonicAt (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z := by
@@ -93,8 +84,25 @@ theorem harmonicAt_planarNewtonianKernel_sub {z a : ℂ} (hza : z ≠ a) :
   have hne : z - a ≠ 0 := sub_ne_zero.mpr hza
   have hlog : HarmonicAt (fun w : ℂ ↦ Real.log ‖w - a‖) z :=
     hana.harmonicAt_log_norm hne
-  change HarmonicAt ((-(2 * Real.pi)⁻¹ : ℝ) • fun w : ℂ ↦ Real.log ‖w - a‖) z
+  have hkernel :
+      (fun w : ℂ ↦ planarNewtonianKernel (w - a)) =
+        (-(2 * Real.pi)⁻¹ : ℝ) • fun w : ℂ ↦ Real.log ‖w - a‖ := by
+    funext w
+    simp only [planarNewtonianKernel_def, Pi.smul_apply, smul_eq_mul]
+  rw [hkernel]
   exact hlog.const_smul
+
+/-- The logarithmic Newtonian kernel is harmonic at every point away from its pole at `0`. -/
+theorem harmonicAt_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
+    HarmonicAt planarNewtonianKernel z := by
+  simpa only [sub_zero] using
+    (harmonicAt_planarNewtonianKernel_sub (z := z) (a := 0) hz)
+
+/-- The planar Newtonian kernel is harmonic on the punctured plane. -/
+theorem harmonicOnNhd_planarNewtonianKernel :
+    HarmonicOnNhd planarNewtonianKernel ({0}ᶜ : Set ℂ) := by
+  intro z hz
+  exact harmonicAt_planarNewtonianKernel (Set.mem_compl_singleton_iff.mp hz)
 
 /-- A planar Newtonian kernel with pole `a` is harmonic on the complement of that pole. -/
 theorem harmonicOnNhd_planarNewtonianKernel_sub (a : ℂ) :
