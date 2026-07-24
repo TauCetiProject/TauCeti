@@ -19,8 +19,9 @@ Concretely, a continuous linear map `T : E →L[𝕜] F` between complete normed
 `F ⧸ range T` is finite dimensional already has closed range. The proof is a clean application of
 the Banach open mapping theorem: choosing a finite-dimensional algebraic complement `N` of
 `range T`, the auxiliary map `Φ(x, n) = T x + n` from `E × N` is a continuous linear surjection
-between Banach spaces, hence a quotient map, and `range T = Φ '' (E × {0})` is the image of the
-closed set `Φ ⁻¹' range T`, so it is closed.
+between Banach spaces, hence a quotient map. Its preimage `Φ ⁻¹' range T = E × {0}` is closed, and
+a quotient map carries the closed-set characterization that a set is closed exactly when its
+preimage is, so `range T` is closed.
 
 This upgrades the Fredholm predicate of `TauCeti.Analysis.Fredholm.Basic`: over Banach spaces a
 Fredholm operator is *exactly* a continuous linear map with finite-dimensional kernel and cokernel,
