@@ -355,6 +355,38 @@ private lemma integral_sq_condExp_eq_of_pair_law [IsFiniteMeasure μ]
         refine integral_congr_ae (.of_forall fun ω => ?_)
         simp only [hμ₂_eq, Function.comp_apply, pow_two]
 
+/-- Two real functions with equal integrals of their squares (`∫ g₁² = ∫ g₂²`) and matching cross
+integral (`∫ g₂ g₁ = ∫ g₁²`) are a.e. equal: the `L²` distance polarises to
+`∫ (g₂ - g₁)² = ∫ g₂² - 2 ∫ g₂ g₁ + ∫ g₁² = 0`. The products `g₁²`, `g₂²`, `g₂ g₁` are assumed
+integrable. -/
+private lemma ae_eq_of_integral_sq_eq_of_integral_mul_eq {Ω : Type*} {mΩ : MeasurableSpace Ω}
+    {μ : Measure Ω} {g₁ g₂ : Ω → ℝ}
+    (hg₁sq : Integrable (fun ω => g₁ ω * g₁ ω) μ)
+    (hg₂sq : Integrable (fun ω => g₂ ω * g₂ ω) μ)
+    (hg₂g₁ : Integrable (fun ω => g₂ ω * g₁ ω) μ)
+    (h_cross : ∫ ω, g₂ ω * g₁ ω ∂μ = ∫ ω, g₁ ω * g₁ ω ∂μ)
+    (h_sq : ∫ ω, g₁ ω * g₁ ω ∂μ = ∫ ω, g₂ ω * g₂ ω ∂μ) :
+    g₁ =ᵐ[μ] g₂ := by
+  have h_L2_zero : ∫ ω, (g₂ ω - g₁ ω) ^ 2 ∂μ = 0 := by
+    have h_expand : ∀ᵐ ω ∂μ,
+        (g₂ ω - g₁ ω) ^ 2 = g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω) + g₁ ω * g₁ ω := by
+      filter_upwards with ω; ring
+    have hc2_int : Integrable (fun ω => 2 * (g₂ ω * g₁ ω)) μ := hg₂g₁.const_mul 2
+    have hsub_int : Integrable (fun ω => g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω)) μ := hg₂sq.sub hc2_int
+    have h1 : ∫ ω, (g₂ ω - g₁ ω) ^ 2 ∂μ =
+        ∫ ω, g₂ ω * g₂ ω ∂μ - 2 * ∫ ω, g₂ ω * g₁ ω ∂μ + ∫ ω, g₁ ω * g₁ ω ∂μ := by
+      rw [integral_congr_ae h_expand, integral_add hsub_int hg₁sq,
+        integral_sub hg₂sq hc2_int, integral_const_mul]
+    rw [h1, h_cross, h_sq]; ring
+  have h_sq_int : Integrable (fun ω => (g₂ ω - g₁ ω) ^ 2) μ := by
+    have h_eq : (fun ω => (g₂ ω - g₁ ω) ^ 2)
+        = fun ω => g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω) + g₁ ω * g₁ ω := by funext ω; ring
+    rw [h_eq]; exact (hg₂sq.sub (hg₂g₁.const_mul 2)).add hg₁sq
+  have h_diff_zero : ∀ᵐ ω ∂μ, (g₂ ω - g₁ ω) ^ 2 = 0 :=
+    (integral_eq_zero_iff_of_nonneg_ae (ae_of_all μ fun ω => sq_nonneg _) h_sq_int).mp h_L2_zero
+  filter_upwards [h_diff_zero] with ω hω
+  nlinarith [sq_nonneg (g₂ ω - g₁ ω)]
+
 /-- **Kallenberg Lemma 1.3 (contraction-independence).** If `(X, W) =ᵈ (X, W')` and
 `σ(W) ≤ σ(W')` (so `W` is a contraction of `W'`), then conditioning the indicator of `X` on the
 finer `σ(W')` equals conditioning on the coarser `σ(W)`, almost everywhere. -/
@@ -416,34 +448,9 @@ theorem condExp_indicator_eq_of_law_eq_of_comap_le [IsFiniteMeasure μ]
       _ = ∫ ω, μ₁ ω * μ₁ ω ∂μ := by
           refine integral_congr_ae ?_; filter_upwards [h_tower] with ω hω; rw [hω]
   have h_sq_eq : ∫ ω, μ₁ ω * μ₁ ω ∂μ = ∫ ω, μ₂ ω * μ₂ ω ∂μ := h_sq_eq_raw
-  -- `∫ (μ₂ - μ₁)² = 0`.
-  have h_L2_zero : ∫ ω, (μ₂ ω - μ₁ ω) ^ 2 ∂μ = 0 := by
-    have h_expand : ∀ᵐ ω ∂μ,
-        (μ₂ ω - μ₁ ω) ^ 2 = μ₂ ω * μ₂ ω - 2 * (μ₂ ω * μ₁ ω) + μ₁ ω * μ₁ ω := by
-      filter_upwards with ω; ring
-    have hc2_int : Integrable (fun ω => 2 * (μ₂ ω * μ₁ ω)) μ := hμ₂μ₁_int.const_mul 2
-    have hsub_int : Integrable (fun ω => μ₂ ω * μ₂ ω - 2 * (μ₂ ω * μ₁ ω)) μ := hμ₂sq_int.sub hc2_int
-    have h1 : ∫ ω, (μ₂ ω - μ₁ ω) ^ 2 ∂μ =
-        ∫ ω, μ₂ ω * μ₂ ω ∂μ - 2 * ∫ ω, μ₂ ω * μ₁ ω ∂μ + ∫ ω, μ₁ ω * μ₁ ω ∂μ := by
-      rw [integral_congr_ae h_expand, integral_add hsub_int hμ₁sq_int,
-        integral_sub hμ₂sq_int hc2_int, integral_const_mul]
-    rw [h1, h_cross, h_sq_eq]; ring
-  have h_diff_zero : ∀ᵐ ω ∂μ, (μ₂ ω - μ₁ ω) ^ 2 = 0 := by
-    have h_diff_int : Integrable (μ₂ - μ₁) μ := hμ₂_int.sub hμ₁_int
-    have h_diff_bound : ∀ᵐ ω ∂μ, ‖(μ₂ - μ₁) ω‖ ≤ 2 := by
-      filter_upwards [hμ₁_bound, hμ₂_bound] with ω h₁ h₂
-      rw [Real.norm_eq_abs, abs_le] at h₁ h₂
-      simp only [Pi.sub_apply]
-      rw [Real.norm_eq_abs, abs_le]; constructor <;> linarith [h₁.1, h₁.2, h₂.1, h₂.2]
-    have h_sq_int : Integrable (fun ω => (μ₂ ω - μ₁ ω) ^ 2) μ := by
-      have h_sq_eq_mul : (fun ω => (μ₂ ω - μ₁ ω) ^ 2)
-          = fun ω => (μ₂ - μ₁) ω * (μ₂ - μ₁) ω := by funext ω; simp only [Pi.sub_apply]; ring
-      rw [h_sq_eq_mul]
-      exact h_diff_int.bdd_mul h_diff_int.aestronglyMeasurable h_diff_bound
-    exact (integral_eq_zero_iff_of_nonneg_ae (ae_of_all μ fun ω => sq_nonneg _) h_sq_int).mp
-      h_L2_zero
-  filter_upwards [h_diff_zero] with ω hω
-  nlinarith [sq_nonneg (μ₂ ω - μ₁ ω)]
+  -- `μ₁ =ᵐ μ₂` from the polarisation `∫ (μ₂ - μ₁)² = ∫ μ₂² - 2 ∫ μ₂ μ₁ + ∫ μ₁² = 0`.
+  exact (ae_eq_of_integral_sq_eq_of_integral_mul_eq hμ₁sq_int hμ₂sq_int hμ₂μ₁_int
+    h_cross h_sq_eq).symm
 
 end Probability
 
