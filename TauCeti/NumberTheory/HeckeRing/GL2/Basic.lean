@@ -84,6 +84,15 @@ the two can carry the attribute, and `heckeTScalar_of_pos` is the one that reduc
 diagonal element. -/
 lemma heckeTScalar_def (c : ℕ) : heckeTScalar c = heckeTDiag c c := (rfl)
 
+/-- `T(0, 0) = 0`: the scalar operator of `0` is zero, since the divisor-pair conditions fail.
+
+Together with `heckeTScalar_of_pos` this covers the whole `ℕ`-valued interface, so consumers
+never need to unfold through `heckeTScalar_def`. -/
+@[simp]
+lemma heckeTScalar_zero : heckeTScalar 0 = 0 := by
+  rw [heckeTScalar_def]
+  exact heckeTDiag_eq_zero (by simp)
+
 /-- The scalar operator of a positive `c` is the constant diagonal element.
 
 Deliberately not `@[simp]`, although an earlier api-design round asked for it. Tagging this
