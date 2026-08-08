@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.HeckeRing.Degree
 public import TauCeti.NumberTheory.HeckeRing.GL2.Basic
 public import TauCeti.NumberTheory.HeckeRing.GL2.DiagonalCosetDegree
+public import TauCeti.NumberTheory.HeckeRing.GL2.Degree
 
 /-!
 # The `GL₂` multiplication table: telescoping identities
@@ -384,37 +385,21 @@ private lemma mulSupport_pp_subset (k : ℕ)
   exact mulSupport_pp_case_split p hp k a h_det h_dvd
 
 include hp in
-/-- The degree of `T(1, pʲ)` is `p^(j-1)(p+1)` for `j ≥ 1`. -/
+/-- The degree of `T(1, pʲ)` is `p^(j-1)(p+1)` for `j ≥ 1` — the `i = 0` case of
+`degree_diagCoset_prime_pow`. -/
 private lemma degree_diagCoset_one_prime_pow (j : ℕ) (hj : 0 < j) :
-    (diagCoset (![1, p ^ j] : Fin 2 → ℕ)).degree = p ^ (j - 1) * (p + 1) :=
-  degree_diagCoset_of_ratio_eq_prime_pow p hp _
-    (isDvdChain_iff.mpr fun i j' hij ↦ by
-      fin_cases i <;> fin_cases j' <;> first | exact absurd hij (by decide) | simp)
-    j hj (by simp)
+    (diagCoset (![1, p ^ j] : Fin 2 → ℕ)).degree = p ^ (j - 1) * (p + 1) := by
+  simpa using degree_diagCoset_prime_pow p hp 0 j hj
 
 include hp in
-/-- The degree of `T(p, pᵏ)` is `p^(k-2)(p+1)` for `k ≥ 2`. -/
+/-- The degree of `T(p, pᵏ)` is `p^(k-2)(p+1)` for `k ≥ 2` — the `i = 1` case of
+`degree_diagCoset_prime_pow`. -/
 private lemma degree_diagCoset_p_prime_pow (k : ℕ) (hk2 : 2 ≤ k) :
     (diagCoset (![p, p ^ k] : Fin 2 → ℕ)).degree = p ^ (k - 2) * (p + 1) := by
-  have h := degree_diagCoset_of_ratio_eq_prime_pow p hp (![p, p ^ k] : Fin 2 → ℕ)
-    (isDvdChain_iff.mpr fun i j' hij ↦ by
-      fin_cases i <;> fin_cases j' <;>
-        first
-        | exact absurd hij (by decide)
-        | simp [dvd_pow_self p (show k ≠ 0 by omega)])
-    (k - 1) (by omega)
-    -- the ratio is stated as a `Nat` division; `change` puts it in the closed form
-    -- the arithmetic lemma below proves, which `rw` cannot reach through `/`
-    (by change p ^ k / p = p ^ (k - 1)
-        have hsplit : p ^ k = p ^ (k - 1) * p := by
-          rw [← pow_succ]
-          congr 1
-          omega
-        rw [hsplit, Nat.mul_div_cancel _ hp.pos])
-  rwa [show k - 1 - 1 = k - 2 by omega] at h
+  have h := degree_diagCoset_prime_pow p hp 1 (k - 1) (by omega)
+  rw [show 1 + (k - 1) = k by omega, pow_one] at h
+  rw [h, show k - 1 - 1 = k - 2 by omega]
 
-omit hp in
-/-- The degree of the scalar coset `T(p, p)` is `1`. -/
 private lemma degree_diagCoset_p_p : (diagCoset (![p, p ^ 1] : Fin 2 → ℕ)).degree = 1 := by
   have hconst : (![p, p ^ 1] : Fin 2 → ℕ) = fun _ ↦ p := by
     funext i
