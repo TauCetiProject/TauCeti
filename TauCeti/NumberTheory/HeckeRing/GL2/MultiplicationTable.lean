@@ -43,19 +43,22 @@ namespace HeckeRing.GL2
 
 variable (p : ℕ) (hp : p.Prime)
 
-include hp in
-/-- The index shift: `T(p,p) · T(pʲ, p^d) = T(p^(j+1), p^(d+1))` for `j ≤ d`. -/
-lemma heckeTScalar_mul_heckeTDiag_prime_pow (j d : ℕ) (hjd : j ≤ d) :
+/-- The index shift: `T(p,p) · T(pʲ, p^d) = T(p^(j+1), p^(d+1))` for `j ≤ d`.
+
+Needs only `0 < p`, not primality: the argument is the scalar-multiplication rule for diagonal
+Hecke elements, which never inspects the factorization of `p`. -/
+@[simp]
+lemma heckeTScalar_mul_heckeTDiag_prime_pow (hp0 : 0 < p) (j d : ℕ) (hjd : j ≤ d) :
     heckeTScalar p * heckeTDiag (p ^ j) (p ^ d) =
       heckeTDiag (p ^ (j + 1)) (p ^ (d + 1)) := by
-  rw [heckeTDiag_of_pos (pow_pos hp.pos j) (pow_pos hp.pos d) (Nat.pow_dvd_pow p hjd),
-    heckeTDiag_of_pos (pow_pos hp.pos (j + 1)) (pow_pos hp.pos (d + 1))
+  rw [heckeTDiag_of_pos (pow_pos hp0 j) (pow_pos hp0 d) (Nat.pow_dvd_pow p hjd),
+    heckeTDiag_of_pos (pow_pos hp0 (j + 1)) (pow_pos hp0 (d + 1))
       (Nat.pow_dvd_pow p (by omega)),
     HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution 2)
       (transposeAntiInvolution_onHeckeCoset_eq_self 2),
-    heckeTScalar_of_pos hp.pos,
+    heckeTScalar_of_pos hp0,
     diagElem_mul_const 2 ![p ^ j, p ^ d]
-      (fun i ↦ by fin_cases i <;> exact pow_pos hp.pos _) p hp.pos]
+      (fun i ↦ by fin_cases i <;> exact pow_pos hp0 _) p hp0]
   exact congrArg diagElem (funext fun i ↦ by fin_cases i <;> simp [Pi.mul_apply, pow_succ])
 
 include hp in
@@ -73,7 +76,7 @@ theorem heckeTDiag_one_prime_pow_eq (k : ℕ) (hk : 2 ≤ k) :
       heckeTDiag (p ^ (j + 1)) (p ^ (k - (j + 1))) := fun j hj ↦ by
     rw [Finset.mem_range] at hj
     have harith : k - 2 - j + 1 = k - (j + 1) := by omega
-    rw [heckeTScalar_mul_heckeTDiag_prime_pow p hp j (k - 2 - j) (by omega), harith]
+    rw [heckeTScalar_mul_heckeTDiag_prime_pow p hp.pos j (k - 2 - j) (by omega), harith]
   rw [Finset.sum_congr rfl shift,
     show Finset.range ((k - 2) / 2 + 1) = Finset.range (k / 2) from by congr 1; omega,
     Finset.sum_range_succ']
