@@ -29,7 +29,10 @@ converge because `Â` is complete, and their sums exhibit the element as a combi
 
 * `TauCeti.Huber.PairOfDefinition.completionRingOfDefinition` and
   `TauCeti.Huber.PairOfDefinition.completionIdeal`: the ring and the ideal of definition of `Â`.
-* `TauCeti.Huber.PairOfDefinition.completionIdealImage`: the closure in `Â` of the image of `Iⁿ`.
+* `TauCeti.Huber.PairOfDefinition.completionIdealImage`: the closure in `Â` of the image of `Iⁿ`,
+  and `TauCeti.Huber.PairOfDefinition.completionIdealImageIdeal`, the ideal of `Â₀` it cuts out.
+* `TauCeti.Huber.PairOfDefinition.toCompletionRingOfDefinition`: the completion map restricted to
+  `A₀` and corestricted to `Â₀`.
 * `TauCeti.Huber.PairOfDefinition.completion`: the pair of definition of `Â` they assemble into.
 
 ## Main results
@@ -158,10 +161,7 @@ theorem completionIdealImage_le (P : PairOfDefinition A) (n : ℕ) :
   exact z.2
 
 /-- Wedhorn Remark 6.8: the closures of the images of the powers of the ideal of definition are a
-neighbourhood basis of zero in the completion.
-
-Cofinality uses that `Â` is a regular space, so a neighbourhood of zero contains a closed one,
-whose preimage in `A` then contains some `Iⁿ`. -/
+neighbourhood basis of zero in the completion. -/
 theorem hasBasis_nhds_zero_completion (P : PairOfDefinition A) :
     (𝓝 (0 : Completion A)).HasBasis (fun _ : ℕ ↦ True)
       fun n ↦ (P.completionIdealImage n : Set (Completion A)) := by
@@ -290,8 +290,7 @@ private theorem exists_sub_sum_mem (P : PairOfDefinition A) {n : ℕ}
     exact (P.completionIdealImage (n + k + 1)).neg_mem hwV
   · exact ⟨0, fun _ ↦ Ideal.zero_mem _, fun h ↦ absurd h hx⟩
 
-/-- Partial sums whose `k`-th term lies in the image of `Iᵏ` are a Cauchy sequence in `Â`: past
-the `j`-th term every increment stays inside the subgroup `completionIdealImage j`. -/
+/-- Partial sums whose `k`-th term lies in the image of `Iᵏ` are a Cauchy sequence in `Â`. -/
 private theorem cauchySeq_sum_coe (P : PairOfDefinition A) (d : ℕ → A)
     (hd : ∀ k, d k ∈ P.idealImage k) :
     CauchySeq fun m ↦ ∑ k ∈ Finset.range m, ((d k : A) : Completion A) := by
@@ -310,9 +309,8 @@ private theorem cauchySeq_sum_coe (P : PairOfDefinition A) (d : ℕ → A)
   rw [sub_sub_sub_cancel_right] at h
   exact h
 
-/-- Iterating `exists_sub_sum_mem` along an element `x` of the closure of the image of `Iⁿ`:
-coefficients `d k z ∈ Iᵏ` and errors `u k` in the closure of the image of `Iⁿ⁺ᵏ` with
-`x - u m = ∑_{z ∈ G} z * ∑_{k < m} d k z`. -/
+/-- For an element `x` of the closure of the image of `Iⁿ`, coefficients `d k z ∈ Iᵏ` and errors
+`u k` in the closure of the image of `Iⁿ⁺ᵏ` satisfying `x - u m = ∑_{z ∈ G} z * ∑_{k < m} d k z`. -/
 private theorem exists_approx_seq (P : PairOfDefinition A) {n : ℕ}
     (G : Finset P.ringOfDefinition) (hG : Ideal.span (G : Set P.ringOfDefinition) = P.ideal ^ n)
     {x : Completion A} (hx : x ∈ P.completionIdealImage n) :
