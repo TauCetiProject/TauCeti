@@ -34,7 +34,7 @@ converge because `Â` is complete, and their sums exhibit the element as a combi
 
 ## Main results
 
-* `TauCeti.Huber.isOpen_topologicalClosure_map_coeRingHom`: the closure of the image of an open
+* `TauCeti.Huber.isOpen_closure_image_coe`: the closure of the image of an open
   subring of `A` is open in `Â`.
 * `TauCeti.Huber.PairOfDefinition.hasBasis_nhds_zero_completion`: the closures of the images of
   the powers `Iⁿ` are a neighbourhood basis of zero in `Â`.
@@ -94,20 +94,12 @@ end SpanMul
 
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
 
-/-- The closure in `Â` of the image of an open additive subgroup of `A` is open: it is a subgroup,
-and it is a neighbourhood of zero because `A → Â` is dense inducing. -/
-private theorem isOpen_closure_image_coe {G : AddSubgroup A} (hG : IsOpen (G : Set A)) :
+/-- The closure in `Â` of the image of an open additive subgroup of `A` is open. -/
+theorem isOpen_closure_image_coe {G : AddSubgroup A} (hG : IsOpen (G : Set A)) :
     IsOpen (closure (((↑) : A → Completion A) '' (G : Set A))) := by
   have hmem := Completion.isDenseInducing_coe.closure_image_mem_nhds (hG.mem_nhds G.zero_mem)
   rw [Completion.coe_zero] at hmem
   exact AddSubgroup.isOpen_of_mem_nhds ((G.map Completion.toCompl).topologicalClosure) hmem
-
-/-- The closure in `Â` of the image of an open subring of `A` is an open subring. This is the
-first step of Wedhorn Remark 6.8: it produces the ring of definition of the completion. -/
-theorem isOpen_topologicalClosure_map_coeRingHom {S : Subring A} (hS : IsOpen (S : Set A)) :
-    IsOpen (((S.map (Completion.coeRingHom)).topologicalClosure :
-      Subring (Completion A)) : Set (Completion A)) :=
-  isOpen_closure_image_coe (G := S.toAddSubgroup) hS
 
 namespace PairOfDefinition
 
@@ -119,7 +111,7 @@ noncomputable def completionRingOfDefinition (P : PairOfDefinition A) :
 /-- The ring of definition of the completion is open. -/
 theorem isOpen_completionRingOfDefinition (P : PairOfDefinition A) :
     IsOpen (P.completionRingOfDefinition : Set (Completion A)) :=
-  isOpen_topologicalClosure_map_coeRingHom P.isOpen_ringOfDefinition
+  isOpen_closure_image_coe (G := P.ringOfDefinition.toAddSubgroup) P.isOpen_ringOfDefinition
 
 /-- The closure in `Â` of the image of `Iⁿ`, as an additive subgroup. These closures are the
 neighbourhood basis of zero of the completion, and they turn out to be the powers of the ideal of
