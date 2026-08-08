@@ -88,18 +88,20 @@ Every double coset in the support of the product `T(1,p) · T(1,pᵏ)` is `T(1, 
 `T(p, pᵏ)`: the determinant balances to `p^(k+1)`, and the first invariant factor divides
 `p` because the conjugated middle matrix stays integral. -/
 
-/-- The **matrix** determinant of a mapped `SL₂` element is `1`.
+/-- The **matrix** determinant of a mapped `SL₂` element is `1`, as a one-line citation of
+Mathlib's `Matrix.SpecialLinearGroup.det_mapGL`.
 
-Not a restatement of Mathlib's `det_mapGL`, which is about the **unit** determinant
-`(mapGL S g).det : Sˣ`; the goals here are about `(↑(mapGL ℚ S)).det : ℚ`, the determinant of
-the underlying matrix. Bridging the two with
-`Matrix.GeneralLinearGroup.val_det_apply` (in either direction) does not close them, and four
-of the call sites use this in term position (`exact … SL_i₀`), where no `simp`-set substitution
-applies. Its sibling `mapGL_val` *was* a redundant restatement and has been removed. -/
+`det_mapGL` is about the *unit* determinant `(mapGL S g).det : Sˣ`, while every goal here is
+about `(↑(mapGL ℚ S)).det : ℚ`. Pushing the former through `Units.val` and simplifying with
+`GeneralLinearGroup.val_det_apply` bridges the two, which is exactly this proof — so this is a
+coercion-shape restatement, not an independent derivation.
+
+It is kept rather than inlined only because one use is inside a `simp only` set, where a
+tactic block cannot go. -/
 private lemma mapGL_val_det (S : SpecialLinearGroup (Fin 2) ℤ) :
     (mapGL ℚ S).val.det = 1 := by
-  rw [mapGL_coe_matrix]
-  exact_mod_cast (SpecialLinearGroup.map (algebraMap ℤ ℚ) S).prop
+  simpa only [Matrix.GeneralLinearGroup.val_det_apply, Units.val_one] using
+    congrArg Units.val (Matrix.SpecialLinearGroup.det_mapGL (S := ℚ) S)
 
 private lemma matrix_isolate_middle (L_ℤ M R_ℤ D : Matrix (Fin 2) (Fin 2) ℤ)
     (hLadj : L_ℤ.adjugate * L_ℤ = 1) (hRadj : R_ℤ * R_ℤ.adjugate = 1)
