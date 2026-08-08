@@ -31,15 +31,16 @@ Chris Birkbeck).
 ## Main definitions
 
 * `HeckeRing.GLn.primePowDiag`: the `p`-power diagonal `i ↦ p ^ e i`.
-* `HeckeRing.GLn.diagFactorization`: the entrywise `p`-adic valuation of a diagonal, i.e.
-  `Nat.factorization` applied in each coordinate.
+* `HeckeRing.GLn.diagFactorizationAt`: the entrywise `p`-adic valuation of a diagonal — the
+  full `Nat.factorization` evaluated at the single prime `p` in each coordinate, hence the
+  `At` suffix; it is a `Fin n → ℕ`, not a finitely supported factorization.
 * `HeckeRing.GLn.diagOrdCompl`: the entrywise `p`-free part of a diagonal, i.e. `ordCompl[p]`
   applied in each coordinate.
 * `HeckeRing.GLn.pLocalSubring`: the `p`-local Hecke subring `R_p`.
 
 ## Main results
 
-* `HeckeRing.GLn.diagElem_split_prime`: `T(a) = T(p-part) · T(p-free part)`.
+* `HeckeRing.GLn.diagElem_eq_primePowDiag_mul_diagOrdCompl`: `T(a) = T(p-part) · T(p-free part)`.
 
 ## References
 
@@ -76,18 +77,18 @@ lemma isDvdChain_primePowDiag (p : ℕ) (e : Fin n → ℕ) (hmono : Monotone e)
   isDvdChain_iff.mpr fun _ _ hij ↦ Nat.pow_dvd_pow p (hmono hij)
 
 /-- The entrywise `p`-adic valuation of a diagonal. -/
-def diagFactorization (p : ℕ) (a : Fin n → ℕ) : Fin n → ℕ :=
+def diagFactorizationAt (p : ℕ) (a : Fin n → ℕ) : Fin n → ℕ :=
   fun i ↦ (a i).factorization p
 
-/-- Defining equation for the sealed `diagFactorization`. -/
+/-- Defining equation for the sealed `diagFactorizationAt`. -/
 @[simp]
-lemma diagFactorization_apply (p : ℕ) (a : Fin n → ℕ) (i : Fin n) :
-    diagFactorization n p a i = (a i).factorization p := (rfl)
+lemma diagFactorizationAt_apply (p : ℕ) (a : Fin n → ℕ) (i : Fin n) :
+    diagFactorizationAt n p a i = (a i).factorization p := (rfl)
 
 /-- The `p`-component of a divisibility chain is monotone. -/
-lemma diagFactorization_monotone (a : Fin n → ℕ)
+lemma diagFactorizationAt_monotone (a : Fin n → ℕ)
     (ha_pos : ∀ i, 0 < a i) (ha : IsDvdChain a) (p : ℕ) :
-    Monotone (diagFactorization n p a) := fun i j hij ↦
+    Monotone (diagFactorizationAt n p a) := fun i j hij ↦
   (Nat.factorization_le_iff_dvd (ha_pos i).ne' (ha_pos j).ne').mpr
     (isDvdChain_iff.mp ha hij) p
 
@@ -117,18 +118,18 @@ lemma isDvdChain_diagOrdCompl (p : ℕ) (a : Fin n → ℕ) (ha : IsDvdChain a) 
 /-- The pointwise product of the `p`-part and the `p`-free part recovers the diagonal. -/
 @[simp]
 lemma primePowDiag_mul_diagOrdCompl (p : ℕ) (a : Fin n → ℕ) :
-    primePowDiag n p (diagFactorization n p a) * diagOrdCompl n p a = a :=
+    primePowDiag n p (diagFactorizationAt n p a) * diagOrdCompl n p a = a :=
   funext fun i ↦ Nat.ordProj_mul_ordCompl_eq_self (a i) p
 
 /-- The `p`-part and `p`-free-part determinants are coprime. -/
 lemma coprime_prod_primePowDiag_diagOrdCompl (p : ℕ) (hp : p.Prime)
     (a : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i) :
-    Nat.Coprime (∏ i, primePowDiag n p (diagFactorization n p a) i)
+    Nat.Coprime (∏ i, primePowDiag n p (diagFactorizationAt n p a) i)
       (∏ i, diagOrdCompl n p a i) := by
-  rw [show (∏ i, primePowDiag n p (diagFactorization n p a) i)
-        = p ^ ∑ i, diagFactorization n p a i by
+  rw [show (∏ i, primePowDiag n p (diagFactorizationAt n p a) i)
+        = p ^ ∑ i, diagFactorizationAt n p a i by
     simpa only [primePowDiag_apply] using
-      Finset.prod_pow_eq_pow_sum Finset.univ (diagFactorization n p a) p]
+      Finset.prod_pow_eq_pow_sum Finset.univ (diagFactorizationAt n p a) p]
   exact (Nat.Coprime.prod_right fun i _ ↦ Nat.coprime_ordCompl hp (ha_pos i).ne').pow_left _
 
 end DiagOrdCompl
@@ -139,10 +140,10 @@ variable [NeZero n]
 positive entries factors into its `p`-power component and its `p`-free component, for any
 prime `p`. The positivity hypothesis is essential, not cosmetic: without it `natDiagGL` takes
 its junk value and the two factors need not multiply back to `T(a)`. -/
-theorem diagElem_split_prime (a : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i) (p : ℕ)
+theorem diagElem_eq_primePowDiag_mul_diagOrdCompl (a : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i) (p : ℕ)
     (hp : p.Prime) :
     diagElem a =
-      diagElem (primePowDiag n p (diagFactorization n p a)) * diagElem (diagOrdCompl n p a) := by
+      diagElem (primePowDiag n p (diagFactorizationAt n p a)) * diagElem (diagOrdCompl n p a) := by
   conv_lhs => rw [← primePowDiag_mul_diagOrdCompl n p a]
   exact (diagElem_mul_of_coprime n _ _ (primePowDiag_pos n p hp.pos _)
       (diagOrdCompl_pos n p a ha_pos)
