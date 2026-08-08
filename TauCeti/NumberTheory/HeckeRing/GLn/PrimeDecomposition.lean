@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GLn.CoprimeMul
+public import TauCeti.NumberTheory.HeckeRing.GLn.TransposeAntiInvolution
 
 import Mathlib.Data.Nat.Factorization.Basic
 
