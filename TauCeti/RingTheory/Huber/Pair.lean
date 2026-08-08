@@ -50,7 +50,7 @@ explicit data rather than a typeclass, and the selection of results follows AINT
   `projects/AdicSpaces/Adic spaces/AffinoidRings.lean`.
 -/
 
-@[expose] public section
+public section
 
 open Filter Topology
 
@@ -114,14 +114,17 @@ structure Hom [IsHuberRing A] [IsHuberRing B] (S : Pair A) (T : Pair B) where
 variable {C : Type*} [CommRing C] [TopologicalSpace C] [IsTopologicalRing C]
 variable [IsHuberRing A] [IsHuberRing B] [IsHuberRing C]
 
-/-- The identity morphism of a Huber pair. -/
-def Hom.id (S : Pair A) : Hom S S where
+/-- The identity morphism of a Huber pair. Exposed so that `Hom.toRingHom_id` can state its
+underlying ring homomorphism. -/
+@[expose] def Hom.id (S : Pair A) : Hom S S where
   toRingHom := RingHom.id A
   continuous_toRingHom := continuous_id
   map_mem_plus _ ha := ha
 
-/-- Morphisms of Huber pairs compose. -/
-def Hom.comp {S : Pair A} {T : Pair B} {U : Pair C} (g : Hom T U) (f : Hom S T) : Hom S U where
+/-- Morphisms of Huber pairs compose. Exposed so that `Hom.toRingHom_comp` can state the
+underlying ring homomorphism. -/
+@[expose] def Hom.comp {S : Pair A} {T : Pair B} {U : Pair C} (g : Hom T U) (f : Hom S T) :
+    Hom S U where
   toRingHom := g.toRingHom.comp f.toRingHom
   continuous_toRingHom := g.continuous_toRingHom.comp f.continuous_toRingHom
   map_mem_plus _ ha := g.map_mem_plus _ (f.map_mem_plus _ ha)
