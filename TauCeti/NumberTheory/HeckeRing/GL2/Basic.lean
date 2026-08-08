@@ -33,7 +33,8 @@ Chris Birkbeck).
 * `HeckeRing.GL2.heckeT_one`: `T(1) = 1`.
 * `HeckeRing.GL2.heckeT_prime`: `T(p) = T(1, p)` for prime `p`.
 * `HeckeRing.GL2.heckeTDiag_mul_of_coprime`: `T(a,da) · T(b,db) = T(ab, da·db)` for
-  coprime determinants.
+  coprime determinants, both operators being basis elements (`0 < da`, `0 < db`, `a ∣ da`,
+  `b ∣ db`).
 * `HeckeRing.GL2.heckeT_mul_coprime`: `T(m) · T(n) = T(mn)` for coprime `m`, `n`.
 
 ## References
@@ -140,7 +141,11 @@ lemma heckeT_primePow_expansion (hp : p.Prime) (k : ℕ) :
     (not_le_of_gt (Nat.pow_lt_pow_right hp.one_lt (by omega)))
 
 /-- **Coprime multiplicativity** (Shimura, Proposition 3.16 in the `GL₂` notation):
-`T(a, da) · T(b, db) = T(ab, da·db)` when the determinants `a·da` and `b·db` are coprime. -/
+`T(a, da) · T(b, db) = T(ab, da·db)` when the determinants `a·da` and `b·db` are coprime.
+
+Coprimality is not the only hypothesis: both operators must be genuine basis elements, so
+`da` and `db` are positive and `a ∣ da`, `b ∣ db`. Positivity of `a` and `b` is *not* assumed
+— it follows, a divisor of a positive number being positive. -/
 lemma heckeTDiag_mul_of_coprime (a b da db : ℕ) (hda : 0 < da)
     (hdb : 0 < db) (hdva : a ∣ da) (hdvb : b ∣ db)
     (hcop : Nat.Coprime (a * da) (b * db)) :
