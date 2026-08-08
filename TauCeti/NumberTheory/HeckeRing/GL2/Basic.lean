@@ -58,12 +58,18 @@ noncomputable def heckeTDiag (a d : ℕ) : IntegralHeckeRing 2 :=
 lemma heckeTDiag_def (a d : ℕ) :
     heckeTDiag a d = if 0 < a ∧ 0 < d ∧ a ∣ d then diagElem ![a, d] else 0 := (rfl)
 
-/-- `T(a, d)` is the diagonal Hecke element when the divisor-pair conditions hold. -/
+/-- `T(a, d)` is the diagonal Hecke element when the divisor-pair conditions hold.
+
+Deliberately not `@[simp]`: it rewrites *past* `heckeTDiag_one_one`. With this tagged,
+`heckeTDiag 1 1` normalises to `diagElem ![1, 1]` rather than to `1`, and it stops there —
+`diagElem_one` is stated for `fun _ ↦ 1`, which `![1, 1]` does not match syntactically. The
+identity normal form `T(1, 1) = 1` is the more useful one, so this stays a cited lemma. -/
 lemma heckeTDiag_of_pos {a d : ℕ} (ha : 0 < a) (hd : 0 < d) (h : a ∣ d) :
     heckeTDiag a d = diagElem ![a, d] :=
   if_pos ⟨ha, hd, h⟩
 
 /-- `T(a, d)` is zero when the divisor-pair conditions fail. -/
+@[simp]
 lemma heckeTDiag_eq_zero {a d : ℕ} (h : ¬(0 < a ∧ 0 < d ∧ a ∣ d)) : heckeTDiag a d = 0 :=
   if_neg h
 
@@ -71,10 +77,16 @@ lemma heckeTDiag_eq_zero {a d : ℕ} (h : ¬(0 < a ∧ 0 < d ∧ a ∣ d)) : hec
 noncomputable def heckeTScalar (c : ℕ) : IntegralHeckeRing 2 :=
   heckeTDiag c c
 
-/-- The defining equation of `heckeTScalar`. -/
+/-- The defining equation of `heckeTScalar`.
+
+Deliberately not `@[simp]`: unfolding `heckeTScalar c` to `heckeTDiag c c` would leave the
+left-hand side of `heckeTScalar_of_pos` in non-normal form, which `simpNF` rejects. Only one of
+the two can carry the attribute, and `heckeTScalar_of_pos` is the one that reduces to a
+diagonal element. -/
 lemma heckeTScalar_def (c : ℕ) : heckeTScalar c = heckeTDiag c c := (rfl)
 
 /-- The scalar operator of a positive `c` is the constant diagonal element. -/
+@[simp]
 lemma heckeTScalar_of_pos {c : ℕ} (hc : 0 < c) :
     heckeTScalar c = diagElem (fun _ : Fin 2 ↦ c) := by
   rw [heckeTScalar, heckeTDiag_of_pos hc hc dvd_rfl]
@@ -101,6 +113,7 @@ lemma heckeT_def (m : ℕ+) :
   exact heckeTDiag_one_one
 
 /-- For a prime `p`, the summed operator collapses: `T(p) = T(1, p)`. -/
+@[simp]
 lemma heckeT_prime (p : ℕ) (hp : p.Prime) : heckeT ⟨p, hp.pos⟩ = heckeTDiag 1 p := by
   -- `heckeT` is sealed (`public section`, no `@[expose]`), so `rw`/`simp` cannot unfold it;
   -- `change` states the defeq divisor-pair sum directly
