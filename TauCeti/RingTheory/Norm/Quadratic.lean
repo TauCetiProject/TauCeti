@@ -14,12 +14,13 @@ public import TauCeti.FieldTheory.Galois.Basic
 For a separable quadratic extension `L/K` the trace and norm are the two elementary symmetric
 functions of the pair `{x, σx}`, where `σ` is the nontrivial automorphism: `tr x = x + σx` and
 `N x = x · σx` (`algebraMap_trace_eq_add`, `algebraMap_norm_eq_mul`). Everything else here is a
-consequence, except `trace_algebraMap_add_algebraMap_mul`, which needs no separability at all —
-`K`-linearity of the trace and `tr(b) = [L : K]·b = 2b` suffice:
+consequence, except the two evaluations of `b + aθ`, which need no separability at all:
 
-* `trace_algebraMap_add_algebraMap_mul` (no separability) and
-  `norm_algebraMap_add_algebraMap_mul` evaluate the trace and norm of `b + aθ`, which is how a
-  statement about one generator transfers to another;
+* `trace_algebraMap_add_algebraMap_mul` and `norm_algebraMap_add_algebraMap_mul` evaluate the
+  trace and norm of `b + aθ` over any quadratic extension, separable or not — the first by
+  `K`-linearity of the trace, the second from the `2 × 2` identity
+  `det (b • 1 + a • M) = b² + ab · tr M + a² · det M`. This is how a statement about one
+  generator transfers to another;
 * `discrim_ne_zero`: for `θ` outside `K`, the discriminant `t² - 4n` of its minimal polynomial
   `X² - tX + n` is nonzero, since it equals `(θ - σθ)²` and `σ` moves `θ`.
 
@@ -56,6 +57,26 @@ theorem trace_algebraMap_add_algebraMap_mul (a b : K) (θ : L) :
   simp only [nsmul_eq_mul, Nat.cast_ofNat]
   ring
 
+/-- The norm of `b + aθ` in a quadratic extension is `b² + ab·tr(θ) + a²·N(θ)`. Separability is
+not needed: in any `K`-basis of `L`, multiplication by `b + aθ` has matrix `b • 1 + a • M` where
+`M` is the matrix of multiplication by `θ`, and for a `2 × 2` matrix
+`det (b • 1 + a • M) = b² + ab · tr M + a² · det M`. -/
+theorem norm_algebraMap_add_algebraMap_mul (a b : K) (θ : L) :
+    Algebra.norm K (algebraMap K L b + algebraMap K L a * θ)
+      = b ^ 2 + a * b * Algebra.trace K L θ + a ^ 2 * Algebra.norm K θ := by
+  classical
+  let bs : Module.Basis (Fin 2) K L :=
+    Module.finBasisOfFinrankEq K L (finrank_eq_two K L)
+  have key : Algebra.leftMulMatrix bs (algebraMap K L b + algebraMap K L a * θ)
+      = b • (1 : Matrix (Fin 2) (Fin 2) K) + a • Algebra.leftMulMatrix bs θ := by
+    rw [map_add, map_mul, AlgHom.commutes, AlgHom.commutes, Algebra.algebraMap_eq_smul_one,
+      Algebra.smul_def]
+    simp [Algebra.smul_def]
+  rw [Algebra.norm_eq_matrix_det bs, Algebra.trace_eq_matrix_trace bs,
+    Algebra.norm_eq_matrix_det bs, key]
+  simp [Matrix.det_fin_two, Matrix.trace_fin_two]
+  ring
+
 variable [Algebra.IsSeparable K L]
 
 /-- In a separable quadratic extension, the trace of `x` is `x + σx`, where `σ` is the
@@ -73,16 +94,6 @@ theorem algebraMap_norm_eq_mul {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) (x : L) :
   classical
   rw [Algebra.norm_eq_prod_automorphisms, univ_algEquiv K L hσ, Finset.prod_pair (Ne.symm hσ)]
   simp
-
-/-- The norm of `b + aθ` in a separable quadratic extension is `b² + ab·tr(θ) + a²·N(θ)`. -/
-theorem norm_algebraMap_add_algebraMap_mul (a b : K) (θ : L) :
-    Algebra.norm K (algebraMap K L b + algebraMap K L a * θ)
-      = b ^ 2 + a * b * Algebra.trace K L θ + a ^ 2 * Algebra.norm K θ := by
-  obtain ⟨σ, hσ⟩ := exists_algEquiv_ne_one K L
-  apply FaithfulSMul.algebraMap_injective K L
-  simp only [map_add, map_mul, map_pow, algebraMap_trace_eq_add K L hσ,
-    algebraMap_norm_eq_mul K L hσ, AlgEquiv.commutes]
-  ring
 
 /-- If `θ` generates a separable quadratic extension of `K` — that is, lies outside `K` — and
 `t`, `n` denote its trace and norm, so that `θ² = tθ - n`, then the discriminant `t² - 4n` of
