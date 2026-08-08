@@ -24,7 +24,7 @@ and the resulting isomorphism are in `PolynomialRing/Injective.lean`.
 
 * `HeckeRing.GLn.heckeGen k` — the `k`-th generator `T(1, …, 1, p, …, p)`, with `k + 1` entries
   equal to `p`.
-* `HeckeRing.GLn.ppowWeight` — the weight of a `p`-power diagonal (the sum of exponents).
+* `HeckeRing.GLn.primePowWeight` — the weight of a `p`-power diagonal (the sum of exponents).
 * `HeckeRing.GLn.evalHom` — evaluation of `ℤ[X₁, …, Xₙ]` at the generators.
 
 ## Main results
@@ -91,11 +91,11 @@ lemma isDvdChain_heckeGenDiag (k : Fin n) : IsDvdChain (heckeGenDiag n p k) := b
   split_ifs <;> first | rfl | exact one_dvd _ | omega
 
 /-- The heckeGen diagonal has p-power entries (each entry is 1 = p^0 or p = p^1). -/
-lemma heckeGenDiag_eq_ppowDiag (k : Fin n) :
+lemma heckeGenDiag_eq_primePowDiag (k : Fin n) :
     heckeGenDiag n p k =
-    ppowDiag n p (fun i ↦ if (i : ℕ) < n - 1 - (k : ℕ) then 0 else 1) := by
+    primePowDiag n p (fun i ↦ if (i : ℕ) < n - 1 - (k : ℕ) then 0 else 1) := by
   funext i
-  simp only [heckeGenDiag_apply, ppowDiag_apply]
+  simp only [heckeGenDiag_apply, primePowDiag_apply]
   split_ifs <;> simp
 
 /-- The exponent function for heckeGen is monotone. -/
@@ -120,10 +120,10 @@ omit hp in
 /-- Each generator lies in the `p`-local subsemiring `R_p`. -/
 lemma heckeGen_mem_pLocalSubring (k : Fin n) : heckeGen n p k ∈ pLocalSubring n p := by
   have h_eq : heckeGen n p k =
-      diagElem (ppowDiag n p (fun i ↦ if (i : ℕ) < n - 1 - (k : ℕ) then 0 else 1)) :=
-    congrArg diagElem (heckeGenDiag_eq_ppowDiag n p k)
+      diagElem (primePowDiag n p (fun i ↦ if (i : ℕ) < n - 1 - (k : ℕ) then 0 else 1)) :=
+    congrArg diagElem (heckeGenDiag_eq_primePowDiag n p k)
   rw [h_eq]
-  exact diagElem_ppowDiag_mem_pLocalSubring n p _ (heckeGen_exp_monotone n k)
+  exact diagElem_primePowDiag_mem_pLocalSubring n p _ (heckeGen_exp_monotone n k)
 
 omit hp
 
@@ -132,7 +132,7 @@ end TGen
 section Weight
 
 /-- Weight of a p-power diagonal: the sum of all exponents. -/
-def ppowWeight (e : Fin n → ℕ) : ℕ := ∑ i, e i
+def primePowWeight (e : Fin n → ℕ) : ℕ := ∑ i, e i
 
 end Weight
 
@@ -207,7 +207,7 @@ private lemma heckeTScalar_mem_range (p : ℕ) (hp : p.Prime) :
   rw [← heckeGen_one_eq_heckeTScalar p hp]; exact X_one_mem_range p
 
 /-- `heckeT(p^k)` lies in the range of the evaluation homomorphism, for all `k`. -/
-lemma heckeT_ppow_in_range (p : ℕ) (hp : p.Prime) (k : ℕ) :
+lemma heckeT_primePow_in_range (p : ℕ) (hp : p.Prime) (k : ℕ) :
     heckeT ⟨p ^ k, pow_pos hp.pos k⟩ ∈ (evalHom 2 p).range := by
   induction k using Nat.strongRecOn with
   | ind k ih =>
@@ -220,7 +220,7 @@ lemma heckeT_ppow_in_range (p : ℕ) (hp : p.Prime) (k : ℕ) :
       congr 1; exact Subtype.ext (pow_one p)
     rw [h1, heckeT_prime_eq_heckeGen_zero p hp]; exact X_zero_mem_range p
   | k + 2 =>
-    have h_rec := heckeT_ppow_recurrence p hp (k + 1) (by omega)
+    have h_rec := heckeT_primePow_recurrence p hp (k + 1) (by omega)
     rw [show k + 1 - 1 = k from by omega, show k + 1 + 1 = k + 2 from by omega] at h_rec
     rw [h_rec, heckeT_prime_eq_heckeGen_zero p hp]
     exact (evalHom 2 p).range.sub_mem
@@ -229,45 +229,45 @@ lemma heckeT_ppow_in_range (p : ℕ) (hp : p.Prime) (k : ℕ) :
         ((evalHom 2 p).range.mul_mem (heckeTScalar_mem_range p hp) (ih k (by omega))) (p : ℤ))
 
 /-- `heckeTDiag(1, p^k)` lies in the range of the evaluation homomorphism. -/
-lemma heckeTDiag_one_ppow_in_range (p : ℕ) (hp : p.Prime) (k : ℕ) :
+lemma heckeTDiag_one_primePow_in_range (p : ℕ) (hp : p.Prime) (k : ℕ) :
     heckeTDiag 1 (p ^ k) ∈ (evalHom 2 p).range := by
   match k with
   | 0 => simp only [pow_zero, heckeTDiag_one_one]; exact (evalHom 2 p).range.one_mem
   | 1 => rw [pow_one, ← heckeGen_zero_eq_heckeTDiag p hp]; exact X_zero_mem_range p
   | k + 2 =>
-    rw [heckeTDiag_one_ppow_eq p hp (k + 2) (by omega), show k + 2 - 2 = k from by omega]
-    exact (evalHom 2 p).range.sub_mem (heckeT_ppow_in_range p hp (k + 2))
-      ((evalHom 2 p).range.mul_mem (heckeTScalar_mem_range p hp) (heckeT_ppow_in_range p hp k))
+    rw [heckeTDiag_one_primePow_eq p hp (k + 2) (by omega), show k + 2 - 2 = k from by omega]
+    exact (evalHom 2 p).range.sub_mem (heckeT_primePow_in_range p hp (k + 2))
+      ((evalHom 2 p).range.mul_mem (heckeTScalar_mem_range p hp) (heckeT_primePow_in_range p hp k))
 
-/-- `diagElem (ppowDiag 2 p e)` is in the evalHom range when `e` is monotone. -/
-lemma diagElem_ppow_in_range (p : ℕ) (hp : p.Prime) (e : Fin 2 → ℕ) (hmono : Monotone e) :
-    diagElem (ppowDiag 2 p e) ∈ (evalHom 2 p).range := by
+/-- `diagElem (primePowDiag 2 p e)` is in the evalHom range when `e` is monotone. -/
+lemma diagElem_primePow_in_range (p : ℕ) (hp : p.Prime) (e : Fin 2 → ℕ) (hmono : Monotone e) :
+    diagElem (primePowDiag 2 p e) ∈ (evalHom 2 p).range := by
   by_cases he0 : e 0 = 0
-  · have h_eq : ppowDiag 2 p e = ![1, p ^ (e 1)] := by
-      funext i; simp only [ppowDiag_apply]; fin_cases i <;> simp [he0]
+  · have h_eq : primePowDiag 2 p e = ![1, p ^ (e 1)] := by
+      funext i; simp only [primePowDiag_apply]; fin_cases i <;> simp [he0]
     rw [congrArg diagElem h_eq,
       ← heckeTDiag_of_pos Nat.one_pos (pow_pos hp.pos _) (one_dvd _)]
-    exact heckeTDiag_one_ppow_in_range p hp (e 1)
+    exact heckeTDiag_one_primePow_in_range p hp (e 1)
   · have h_le : e 0 ≤ e 1 := hmono (Fin.zero_le _)
-    have h_eq : ppowDiag 2 p e = (fun _ ↦ p ^ (e 0)) * ppowDiag 2 p ![0, e 1 - e 0] := by
+    have h_eq : primePowDiag 2 p e = (fun _ ↦ p ^ (e 0)) * primePowDiag 2 p ![0, e 1 - e 0] := by
       funext i
-      simp only [ppowDiag_apply, Pi.mul_apply]
+      simp only [primePowDiag_apply, Pi.mul_apply]
       fin_cases i
       · simp
       · -- the second entry splits as `p ^ e 0 * p ^ (e 1 - e 0)` since `e 0 ≤ e 1`
         change p ^ e 1 = p ^ e 0 * p ^ (e 1 - e 0)
         rw [← pow_add, Nat.add_sub_cancel' h_le]
     rw [congrArg diagElem h_eq,
-      ← diagElem_const_mul 2 (p ^ (e 0)) (pow_pos hp.pos _) (ppowDiag 2 p ![0, e 1 - e 0])
-        (ppowDiag_pos 2 p hp _)]
+      ← diagElem_const_mul 2 (p ^ (e 0)) (pow_pos hp.pos _) (primePowDiag 2 p ![0, e 1 - e 0])
+        (primePowDiag_pos 2 p hp _)]
     apply (evalHom 2 p).range.mul_mem
     · rw [← heckeTScalar_pow p hp.pos (e 0), ← heckeGen_one_eq_heckeTScalar p hp]
       exact (evalHom 2 p).range.pow_mem (X_one_mem_range p) _
-    · have h2 : ppowDiag 2 p ![0, e 1 - e 0] = ![1, p ^ (e 1 - e 0)] := by
-        funext i; simp only [ppowDiag_apply]; fin_cases i <;> simp
+    · have h2 : primePowDiag 2 p ![0, e 1 - e 0] = ![1, p ^ (e 1 - e 0)] := by
+        funext i; simp only [primePowDiag_apply]; fin_cases i <;> simp
       rw [congrArg diagElem h2,
         ← heckeTDiag_of_pos Nat.one_pos (pow_pos hp.pos _) (one_dvd _)]
-      exact heckeTDiag_one_ppow_in_range p hp (e 1 - e 0)
+      exact heckeTDiag_one_primePow_in_range p hp (e 1 - e 0)
 
 /-- Surjectivity of `evalHom` at n=2: every element of `pLocalSubring 2 p` is in the range
     of the evaluation homomorphism `ℤ[X₁, X₂] → IntegralHeckeRing 2`. -/
@@ -278,7 +278,7 @@ theorem heckeGen_generates_pLocalSubring_two (p : ℕ) (hp : p.Prime) :
   apply Subring.closure_le.mpr _ hf
   intro x hx
   obtain ⟨e, hmono, rfl⟩ := hx
-  exact diagElem_ppow_in_range p hp e hmono
+  exact diagElem_primePow_in_range p hp e hmono
 
 end HeckeRing.GLn.Surj
 
@@ -294,9 +294,9 @@ theorem heckeGen_generates_pLocalSubring_one (p : ℕ) (hp : p.Prime) :
   apply Subring.closure_le.mpr _ hf
   intro x hx
   obtain ⟨e, _hmono, rfl⟩ := hx
-  have he : ppowDiag 1 p e = fun _ ↦ p ^ (e 0) := by
+  have he : primePowDiag 1 p e = fun _ ↦ p ^ (e 0) := by
     funext i
-    simp only [ppowDiag_apply]
+    simp only [primePowDiag_apply]
     congr 1
     exact congr_arg e (Subsingleton.elim i 0)
   rw [congrArg diagElem he, ← diagElem_const_pow 1 p hp.pos (e 0),
