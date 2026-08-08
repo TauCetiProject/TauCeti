@@ -32,11 +32,22 @@ explicit.
   every ring of integral elements.
 * `TauCeti.Huber.Pair.discrete`: a discrete ring is a Huber pair with `A⁺ = A`, so the
   definitions above are not vacuous.
-* `TauCeti.Huber.Pair.Hom.id`, `TauCeti.Huber.Pair.Hom.comp`: morphisms of Huber pairs compose.
+* `TauCeti.Huber.Pair.Hom.id`, `TauCeti.Huber.Pair.Hom.comp`: morphisms of Huber pairs compose,
+  associatively and unitally (`TauCeti.Huber.Pair.Hom.comp_assoc`,
+  `TauCeti.Huber.Pair.Hom.id_comp`, `TauCeti.Huber.Pair.Hom.comp_id`).
+
+## Provenance
+
+The shape of these declarations follows the roadmap's own prototype in
+`TauCetiRoadmap/AdicSpaces/Suggested.lean`, which fixes the design choice that the plus ring is
+explicit data rather than a typeclass, and the selection of results follows AINTLIB's
+`AffinoidRings.lean`; neither's proofs were used.
 
 ## References
 
-* [Wedhorn, *Adic Spaces*][wedhorn_adic], Definition 7.1 and Remark 7.2.
+* [Wedhorn, *Adic Spaces*][wedhorn_adic], Definition 7.14 and Remark 7.15.
+* [AINTLIB](https://github.com/CBirkbeck/AINTLIB), branch `dev/adic-spaces`,
+  `projects/AdicSpaces/Adic spaces/AffinoidRings.lean`.
 -/
 
 @[expose] public section
@@ -58,19 +69,25 @@ structure IsRingOfIntegralElements [NonarchimedeanRing A] (Aplus : Subring A) : 
   le_powerBoundedSubring : Aplus ≤ powerBoundedSubring A
 
 omit [IsTopologicalRing A] in
-/-- Wedhorn: an open integrally closed subring contains every topologically nilpotent element,
-so `A°° ⊆ A⁺` for every ring of integral elements.
+/-- Wedhorn: an open integrally closed subring contains every topologically nilpotent element.
 
-The powers of a topologically nilpotent `a` eventually land in `A⁺`, which is a neighbourhood of
-zero; from `aⁿ ∈ A⁺` with `n` positive, `a` is integral over `A⁺` and integral closedness
-finishes. -/
-theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [NonarchimedeanRing A]
-    {Aplus : Subring A} (h : IsRingOfIntegralElements Aplus) {a : A}
+The powers of a topologically nilpotent `a` eventually land in the subring, which is a
+neighbourhood of zero; from `aⁿ` in it with `n` positive, `a` is integral over it and integral
+closedness finishes. Neither power-boundedness nor a nonarchimedean topology plays any part, so
+this is stated for an arbitrary open integrally closed subring. -/
+theorem mem_of_isTopologicallyNilpotent_of_isIntegrallyClosed {Aplus : Subring A}
+    (hopen : IsOpen (Aplus : Set A)) (hclosed : ∀ x : A, IsIntegral Aplus x → x ∈ Aplus) {a : A}
     (ha : IsTopologicallyNilpotent a) : a ∈ Aplus := by
   obtain ⟨n, hmem, hn⟩ :=
-    ((ha.eventually_mem (h.isOpen.mem_nhds Aplus.zero_mem)).and (eventually_gt_atTop 0)).exists
-  exact h.isIntegrallyClosed a
-    (IsIntegral.of_pow hn (isIntegral_algebraMap (x := (⟨a ^ n, hmem⟩ : Aplus))))
+    ((ha.eventually_mem (hopen.mem_nhds Aplus.zero_mem)).and (eventually_gt_atTop 0)).exists
+  exact hclosed a (IsIntegral.of_pow hn (isIntegral_algebraMap (x := (⟨a ^ n, hmem⟩ : Aplus))))
+
+omit [IsTopologicalRing A] in
+/-- `A°° ⊆ A⁺` for every ring of integral elements. -/
+theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [NonarchimedeanRing A]
+    {Aplus : Subring A} (h : IsRingOfIntegralElements Aplus) {a : A}
+    (ha : IsTopologicallyNilpotent a) : a ∈ Aplus :=
+  mem_of_isTopologicallyNilpotent_of_isIntegrallyClosed h.isOpen h.isIntegrallyClosed ha
 
 variable (A) in
 /-- A *Huber pair* `(A, A⁺)`: a Huber ring together with a ring of integral elements. Only the
@@ -115,6 +132,25 @@ theorem Hom.toRingHom_id (S : Pair A) : (Hom.id S).toRingHom = RingHom.id A := r
 @[simp]
 theorem Hom.toRingHom_comp {S : Pair A} {T : Pair B} {U : Pair C} (g : Hom T U) (f : Hom S T) :
     (g.comp f).toRingHom = g.toRingHom.comp f.toRingHom := rfl
+
+@[ext]
+theorem Hom.ext {S : Pair A} {T : Pair B} {f g : Hom S T}
+    (h : f.toRingHom = g.toRingHom) : f = g := by
+  cases f; cases g; congr
+
+/-- Composition of morphisms of Huber pairs is associative. -/
+theorem Hom.comp_assoc {D : Type*} [CommRing D] [TopologicalSpace D] [IsTopologicalRing D]
+    [IsHuberRing D] {S : Pair A} {T : Pair B} {U : Pair C} {V : Pair D}
+    (h : Hom U V) (g : Hom T U) (f : Hom S T) : (h.comp g).comp f = h.comp (g.comp f) := by
+  ext; rfl
+
+@[simp]
+theorem Hom.id_comp {S : Pair A} {T : Pair B} (f : Hom S T) : (Hom.id T).comp f = f := by
+  ext; rfl
+
+@[simp]
+theorem Hom.comp_id {S : Pair A} {T : Pair B} (f : Hom S T) : f.comp (Hom.id S) = f := by
+  ext; rfl
 
 variable (A) in
 /-- A discrete ring is a Huber pair with `A⁺ = A`: every element is power-bounded, the whole
