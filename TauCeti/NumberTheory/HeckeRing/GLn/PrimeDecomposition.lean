@@ -174,6 +174,7 @@ lemma diagElem_primePowDiag_mem_pLocalSubring (p : ℕ) (e : Fin n → ℕ)
 every monotone `p`-power generator. This is the elimination form — `pLocalSubring` is a
 `Subring.closure`, so proving a map or an inclusion out of it should go through this rather
 than unfolding the closure and manipulating the generating set by hand. -/
+@[simp]
 lemma pLocalSubring_le_iff (p : ℕ) (S : Subring (IntegralHeckeRing n)) :
     pLocalSubring n p ≤ S ↔
       ∀ e : Fin n → ℕ, Monotone e → diagElem (primePowDiag n p e) ∈ S := by
