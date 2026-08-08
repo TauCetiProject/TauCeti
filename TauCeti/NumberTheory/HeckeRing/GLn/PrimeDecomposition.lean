@@ -113,20 +113,13 @@ lemma primePowDiag_mul_removePrime (p : ℕ) (a : Fin n → ℕ) :
     primePowDiag n p (pComponent n p a) * removePrime n p a = a :=
   funext fun i ↦ Nat.ordProj_mul_ordCompl_eq_self (a i) p
 
-/-- The determinant of a `p`-power diagonal is a power of `p`.
-
-Not a `simp` lemma: `primePowDiag_apply` already rewrites the left-hand side to
-`∏ i, p ^ e i`, so tagging this one would leave it in non-normal form. It is stated for
-explicit citation, and `Finset.prod_pow_eq_pow_sum` finishes from the reduced product. -/
-lemma prod_primePowDiag (p : ℕ) (e : Fin n → ℕ) :
-    ∏ i, primePowDiag n p e i = p ^ (∑ i, e i) := by
-  simp [primePowDiag, Finset.prod_pow_eq_pow_sum]
-
 /-- The `p`-part and `p`-free-part determinants are coprime. -/
 lemma coprime_prod_primePowDiag_removePrime (p : ℕ) (hp : p.Prime)
     (a : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i) :
     Nat.Coprime (∏ i, primePowDiag n p (pComponent n p a) i) (∏ i, removePrime n p a i) := by
-  rw [prod_primePowDiag]
+  rw [show (∏ i, primePowDiag n p (pComponent n p a) i) = p ^ ∑ i, pComponent n p a i by
+    simpa only [primePowDiag_apply] using
+      Finset.prod_pow_eq_pow_sum Finset.univ (pComponent n p a) p]
   exact (Nat.Coprime.prod_right fun i _ ↦ Nat.coprime_ordCompl hp (ha_pos i).ne').pow_left _
 
 end RemovePrime
