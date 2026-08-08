@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 -/
 module
 
-public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.RingTheory.Huber.Basic
 
 /-!
@@ -21,8 +21,8 @@ explicit.
 
 ## Main definitions
 
-* `TauCeti.Huber.IsRingOfIntegralElements`: `A⁺` is open, integrally closed in `A`, and
-  contained in `A°`.
+* `TauCeti.Huber.IsRingOfIntegralElements`: `A⁺` is open, integrally closed in `A` in the
+  sense of Mathlib's `IsIntegrallyClosedIn`, and contained in `A°`.
 * `TauCeti.Huber.Pair`: a Huber pair, that is, a choice of `A⁺`.
 * `TauCeti.Huber.Pair.Hom`: a continuous ring homomorphism carrying `A⁺` into `B⁺`.
 
@@ -64,7 +64,7 @@ structure IsRingOfIntegralElements [NonarchimedeanRing A] (Aplus : Subring A) : 
   /-- `A⁺` is open in `A`. -/
   isOpen : IsOpen (Aplus : Set A)
   /-- `A⁺` is integrally closed in `A`. -/
-  isIntegrallyClosed : ∀ x : A, IsIntegral Aplus x → x ∈ Aplus
+  isIntegrallyClosedIn : IsIntegrallyClosedIn Aplus A
   /-- Every element of `A⁺` is power-bounded. -/
   le_powerBoundedSubring : Aplus ≤ powerBoundedSubring A
 
@@ -75,19 +75,25 @@ The powers of a topologically nilpotent `a` eventually land in the subring, whic
 neighbourhood of zero; from `aⁿ` in it with `n` positive, `a` is integral over it and integral
 closedness finishes. Neither power-boundedness nor a nonarchimedean topology plays any part, so
 this is stated for an arbitrary open integrally closed subring. -/
-theorem mem_of_isTopologicallyNilpotent_of_isIntegrallyClosed {Aplus : Subring A}
-    (hopen : IsOpen (Aplus : Set A)) (hclosed : ∀ x : A, IsIntegral Aplus x → x ∈ Aplus) {a : A}
+theorem mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn {Aplus : Subring A}
+    (hopen : IsOpen (Aplus : Set A)) [IsIntegrallyClosedIn Aplus A] {a : A}
     (ha : IsTopologicallyNilpotent a) : a ∈ Aplus := by
   obtain ⟨n, hmem, hn⟩ :=
     ((ha.eventually_mem (hopen.mem_nhds Aplus.zero_mem)).and (eventually_gt_atTop 0)).exists
-  exact hclosed a (IsIntegral.of_pow hn (isIntegral_algebraMap (x := (⟨a ^ n, hmem⟩ : Aplus))))
+  have hpow : IsIntegral Aplus (a ^ n) :=
+    isIntegral_algebraMap (R := Aplus) (x := (⟨a ^ n, hmem⟩ : Aplus))
+  obtain ⟨y, hy⟩ :=
+    (IsIntegralClosure.isIntegral_iff (R := Aplus) (A := Aplus) (B := A)).mp
+      (IsIntegral.of_pow hn hpow)
+  exact hy ▸ y.2
 
 omit [IsTopologicalRing A] in
 /-- `A°° ⊆ A⁺` for every ring of integral elements. -/
 theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [NonarchimedeanRing A]
     {Aplus : Subring A} (h : IsRingOfIntegralElements Aplus) {a : A}
     (ha : IsTopologicallyNilpotent a) : a ∈ Aplus :=
-  mem_of_isTopologicallyNilpotent_of_isIntegrallyClosed h.isOpen h.isIntegrallyClosed ha
+  have := h.isIntegrallyClosedIn
+  mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn h.isOpen ha
 
 variable (A) in
 /-- A *Huber pair* `(A, A⁺)`: a Huber ring together with a ring of integral elements. Only the
@@ -163,7 +169,8 @@ def discrete [DiscreteTopology A] : Pair A where
   plus := ⊤
   isRingOfIntegralElements :=
     { isOpen := by simp
-      isIntegrallyClosed := fun _ _ ↦ trivial
+      isIntegrallyClosedIn :=
+        isIntegrallyClosedIn_iff.mpr ⟨Subtype.val_injective, fun _ ↦ ⟨⟨_, trivial⟩, rfl⟩⟩
       le_powerBoundedSubring := by simp }
 
 end Pair
