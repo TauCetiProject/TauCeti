@@ -5,6 +5,8 @@ Released under Apache 2.0 license as described in the file LICENSE.
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
+public import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
+public import TauCeti.RingTheory.Norm.Quadratic
 
 /-!
 # The quadratic twist of a Weierstrass curve: definition and invariants
@@ -248,6 +250,40 @@ theorem isElliptic_quadraticTwistOf [E.IsElliptic] (hD : t ^ 2 - 4 * n ≠ 0) :
   (E.isElliptic_quadraticTwistOf_iff t n).mpr ⟨isUnit_iff_ne_zero.mpr hD, ‹E.IsElliptic›⟩
 
 end Field
+
+section QuadraticTwistBy
+
+open Algebra.IsQuadraticExtension
+
+variable {K : Type*} [Field K] {L : Type*} [Field L] [Algebra K L] (E : WeierstrassCurve K)
+
+/-- The quadratic twist of `E` by an element `θ` of an extension `L/K`: the twist
+`quadraticTwistOf` by the trace and norm of `θ`. When `L/K` is separable quadratic and `θ`
+generates it — that is, `θ ∉ K` — this is *the* quadratic twist of `E` by `L/K`, the choice of
+generator mattering only up to isomorphism over `K` (`exists_smul_quadraticTwistBy_eq`). -/
+noncomputable def quadraticTwistBy (θ : L) : WeierstrassCurve K :=
+  E.quadraticTwistOf (Algebra.trace K L θ) (Algebra.norm K θ)
+
+variable [Algebra.IsQuadraticExtension K L] [Algebra.IsSeparable K L]
+
+/-- The twist of an elliptic curve by a generator of a separable quadratic extension is
+elliptic: the discriminant `t² - 4n` of the generator's minimal polynomial is nonzero. -/
+theorem isElliptic_quadraticTwistBy [E.IsElliptic] {θ : L}
+    (hθ : θ ∉ Set.range (algebraMap K L)) : (E.quadraticTwistBy θ).IsElliptic :=
+  E.isElliptic_quadraticTwistOf _ _ (discrim_ne_zero K L hθ)
+
+/-- The quadratic twist by a generator `θ` of a separable quadratic extension `L/K` depends on
+the choice of `θ` only up to isomorphism over `K`: all generators give isomorphic twists. This
+is what makes `quadraticTwist` well posed. -/
+theorem exists_smul_quadraticTwistBy_eq {θ θ' : L} (hθ : θ ∉ Set.range (algebraMap K L))
+    (hθ' : θ' ∉ Set.range (algebraMap K L)) :
+    ∃ C : VariableChange K, C • E.quadraticTwistBy θ = E.quadraticTwistBy θ' := by
+  obtain ⟨a, b, ha, rfl⟩ := exists_eq_algebraMap_add_algebraMap_mul K L hθ hθ'
+  simp only [quadraticTwistBy, trace_algebraMap_add_algebraMap_mul K L a b θ,
+    norm_algebraMap_add_algebraMap_mul K L a b θ]
+  exact E.exists_smul_quadraticTwistOf_eq _ _ b (isUnit_iff_ne_zero.mpr ha)
+
+end QuadraticTwistBy
 
 end WeierstrassCurve
 

@@ -60,6 +60,22 @@ theorem mem_range_algebraMap_of_apply_eq {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {
   · exact AlgEquiv.one_apply x
   · exact hx
 
+/-- A separable quadratic extension has a nontrivial automorphism. -/
+theorem exists_algEquiv_ne_one : ∃ σ : L ≃ₐ[K] L, σ ≠ 1 :=
+  ((Nat.card_eq_two_iff' 1).mp (card_algEquiv_eq_two K L)).exists
+
+/-- The automorphism group of a separable quadratic extension consists of the identity and one
+nontrivial element. -/
+theorem univ_algEquiv [DecidableEq (L ≃ₐ[K] L)] {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) :
+    (Finset.univ : Finset (L ≃ₐ[K] L)) = {1, σ} :=
+  (Finset.eq_univ_of_forall fun φ ↦ by simpa using algEquiv_eq_one_or_eq K L hσ φ).symm
+
+/-- The nontrivial automorphism of a separable quadratic extension moves every element lying
+outside the base field: the contrapositive of `mem_range_algebraMap_of_apply_eq`. -/
+theorem algEquiv_apply_ne {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {x : L}
+    (hx : x ∉ Set.range (algebraMap K L)) : σ x ≠ x :=
+  fun heq ↦ hx (mem_range_algebraMap_of_apply_eq K L hσ heq)
+
 end Algebra.IsQuadraticExtension
 
 end
