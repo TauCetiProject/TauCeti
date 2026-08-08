@@ -181,8 +181,9 @@ def powerBounded : Pair A where
   plus := powerBoundedSubring A
   isRingOfIntegralElements :=
     { isOpen := isOpen_powerBoundedSubring A
-      isIntegrallyClosed := fun _ hx ↦
-        mem_powerBoundedSubring.mpr (isPowerBounded_of_isIntegral hx)
+      isIntegrallyClosedIn := isIntegrallyClosedIn_iff.mpr
+        ⟨Subtype.val_injective, fun hx ↦
+          ⟨⟨_, mem_powerBoundedSubring.mpr (isPowerBounded_of_isIntegral hx)⟩, rfl⟩⟩
       le_powerBoundedSubring := le_rfl }
 
 end Pair
