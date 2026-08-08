@@ -113,8 +113,11 @@ lemma primePowDiag_mul_removePrime (p : ℕ) (a : Fin n → ℕ) :
     primePowDiag n p (pComponent n p a) * removePrime n p a = a :=
   funext fun i ↦ Nat.ordProj_mul_ordCompl_eq_self (a i) p
 
-/-- The determinant of a `p`-power diagonal is a power of `p`. -/
-@[simp]
+/-- The determinant of a `p`-power diagonal is a power of `p`.
+
+Not a `simp` lemma: `primePowDiag_apply` already rewrites the left-hand side to
+`∏ i, p ^ e i`, so tagging this one would leave it in non-normal form. It is stated for
+explicit citation, and `Finset.prod_pow_eq_pow_sum` finishes from the reduced product. -/
 lemma prod_primePowDiag (p : ℕ) (e : Fin n → ℕ) :
     ∏ i, primePowDiag n p e i = p ^ (∑ i, e i) := by
   simp [primePowDiag, Finset.prod_pow_eq_pow_sum]
