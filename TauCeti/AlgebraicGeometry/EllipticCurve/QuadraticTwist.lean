@@ -273,7 +273,7 @@ noncomputable def quadraticTwistBy (θ : L) : WeierstrassCurve K :=
 
 /-- The defining equation of `quadraticTwistBy`, exported so that consumers need not unfold the
 definition: the twist by `θ` is the `(t, n)`-twist by the trace and norm of `θ`. -/
-lemma quadraticTwistBy_def (θ : L) :
+@[simp] lemma quadraticTwistBy_def (θ : L) :
     E.quadraticTwistBy θ = E.quadraticTwistOf (Algebra.trace K L θ) (Algebra.norm K θ) := by
   simp only [quadraticTwistBy]
 
