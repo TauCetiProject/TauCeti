@@ -150,6 +150,7 @@ theorem coe_mem_completionIdealImage (P : PairOfDefinition A) {n : ℕ} {a : A}
 theorem completionIdealImage_anti (P : PairOfDefinition A) {m n : ℕ} (h : m ≤ n) :
     P.completionIdealImage n ≤ P.completionIdealImage m := by
   refine fun x hx ↦ closure_mono (Set.image_mono ?_) hx
+  rw [P.coe_idealImage, P.coe_idealImage]
   exact Set.image_mono fun z hz ↦ Ideal.pow_le_pow_right h hz
 
 /-- The closure of the image of `Iⁿ` lies in the ring of definition of the completion. -/
@@ -157,6 +158,7 @@ theorem completionIdealImage_le (P : PairOfDefinition A) (n : ℕ) :
     (P.completionIdealImage n : Set (Completion A))
       ⊆ (P.completionRingOfDefinition : Set (Completion A)) := by
   refine closure_mono (Set.image_mono ?_)
+  rw [P.coe_idealImage]
   rintro _ ⟨z, -, rfl⟩
   exact z.2
 
@@ -192,7 +194,7 @@ theorem mul_mem_completionIdealImage (P : PairOfDefinition A) {n : ℕ} {t y : C
       image_closure_subset_closure_image (by fun_prop) ⟨t, ht, rfl⟩
     refine closure_mono ?_ h1
     rintro _ ⟨_, ⟨s, hs, rfl⟩, rfl⟩
-    exact ⟨s * (b : A), ⟨⟨s, hs⟩ * b, Ideal.mul_mem_left _ _ hb, rfl⟩,
+    exact ⟨s * (b : A), (P.mem_idealImage n).mpr ⟨⟨s, hs⟩ * b, Ideal.mul_mem_left _ _ hb, rfl⟩,
       Completion.coe_mul s (b : A)⟩
   have h2 : t * y ∈ closure ((fun u : Completion A ↦ t * u) ''
       (((↑) : A → Completion A) '' (P.idealImage n : Set A))) :=
@@ -243,7 +245,7 @@ private theorem completionIdeal_pow_le (P : PairOfDefinition A) (n : ℕ) :
     P.completionIdeal ^ n ≤ P.completionIdealImageIdeal n := by
   rw [completionIdeal, ← Ideal.map_pow, Ideal.map_le_iff_le_comap]
   intro x hx
-  exact P.coe_mem_completionIdealImage (a := (x : A)) ⟨x, hx, rfl⟩
+  exact P.coe_mem_completionIdealImage (a := (x : A)) ((P.mem_idealImage n).mpr ⟨x, hx, rfl⟩)
 
 /-- A finite `A₀`-combination of elements of `A₀` maps to the corresponding combination in `Â`. -/
 private theorem coe_sum_mul (P : PairOfDefinition A) (G : Finset P.ringOfDefinition)
@@ -354,7 +356,7 @@ private theorem completionIdealImageIdeal_le (P : PairOfDefinition A) (n : ℕ) 
   obtain ⟨d, u, hd, huK, hpartial⟩ := P.exists_approx_seq G hG hy
   have hcauchy : ∀ z : P.ringOfDefinition, CauchySeq fun m ↦ ∑ k ∈ Finset.range m,
       ((d k z : A) : Completion A) :=
-    fun z ↦ P.cauchySeq_sum_coe _ fun k ↦ ⟨d k z, hd k z, rfl⟩
+    fun z ↦ P.cauchySeq_sum_coe _ fun k ↦ (P.mem_idealImage k).mpr ⟨d k z, hd k z, rfl⟩
   choose L hL using fun z ↦ cauchySeq_tendsto_of_complete (hcauchy z)
   have hLmem : ∀ z, L z ∈ P.completionRingOfDefinition := fun z ↦
     (Subring.isClosed_topologicalClosure _).mem_of_tendsto (hL z) (.of_forall fun m ↦
@@ -421,9 +423,10 @@ instance IsHuberRing.completion [IsHuberRing A] : IsHuberRing (Completion A) :=
 pseudouniformiser being one. -/
 instance IsTateRing.completion [IsTateRing A] : IsTateRing (Completion A) where
   exists_isPseudoUniformizer := by
-    obtain ⟨a, ha, hnil⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
-    exact ⟨(a : Completion A), ha.map Completion.coeRingHom,
-      hnil.map Completion.continuous_coeRingHom⟩
+    obtain ⟨a, ha⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+    exact ⟨(a : Completion A), isPseudoUniformizer_iff.mpr
+      ⟨ha.isUnit.map Completion.coeRingHom,
+        ha.isTopologicallyNilpotent.map Completion.continuous_coeRingHom⟩⟩
 
 section Ker
 
