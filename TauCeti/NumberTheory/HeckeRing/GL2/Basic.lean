@@ -204,8 +204,6 @@ lemma heckeTDiag_mul_of_coprime (a b da db : ℕ)
     congrArg diagElem (funext fun i ↦ by fin_cases i <;> simp [Pi.mul_apply])
   rw [← hprod]
   exact diagElem_mul_of_coprime 2 ![a, da] ![b, db]
-    (fun i ↦ by fin_cases i <;> simp [ha, hda])
-    (fun i ↦ by fin_cases i <;> simp [hb, hdb])
     (by simpa [Fin.prod_univ_two] using hcop)
 
 open scoped Pointwise in
