@@ -87,14 +87,14 @@ Every double coset in the support of the product `T(1,p) · T(1,pᵏ)` is `T(1, 
 `T(p, pᵏ)`: the determinant balances to `p^(k+1)`, and the first invariant factor divides
 `p` because the conjugated middle matrix stays integral. -/
 
-/-- `mapGL_coe_matrix` at the `.val` coercion. It states the same fact, but with the
-`GL`-unit coercion already reduced to a plain matrix; the simp set below needs that form,
-and `mapGL_coe_matrix` alone leaves a `mod_cast` obligation it cannot discharge. -/
-private lemma mapGL_val (S : SpecialLinearGroup (Fin 2) ℤ) :
-    ((mapGL ℚ S : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) =
-      S.val.map (algebraMap ℤ ℚ) :=
-  mapGL_coe_matrix S
+/-- The **matrix** determinant of a mapped `SL₂` element is `1`.
 
+Not a restatement of Mathlib's `det_mapGL`, which is about the **unit** determinant
+`(mapGL S g).det : Sˣ`; the goals here are about `(↑(mapGL ℚ S)).det : ℚ`, the determinant of
+the underlying matrix. Bridging the two with
+`Matrix.GeneralLinearGroup.val_det_apply` (in either direction) does not close them, and four
+of the call sites use this in term position (`exact … SL_i₀`), where no `simp`-set substitution
+applies. Its sibling `mapGL_val` *was* a redundant restatement and has been removed. -/
 private lemma mapGL_val_det (S : SpecialLinearGroup (Fin 2) ℤ) :
     (mapGL ℚ S).val.det = 1 := by
   rw [mapGL_coe_matrix]
@@ -189,8 +189,9 @@ private lemma mulSupport_pp_dvd_p_aux (p : ℕ) (hp : p.Prime)
     ext i j
     have h := congr_arg (fun g : GL (Fin 2) ℚ ↦ (↑g : Matrix (Fin 2) (Fin 2) ℚ) i j) h_gl
     simp only [natDiagGL_coe 2 _ ha_pos, natDiagGL_coe 2 _ h1p, natDiagGL_coe 2 _ h1pk,
-      Matrix.diagonal_apply, Units.val_mul, mapGL_val, Matrix.mul_apply,
-      Matrix.map_apply, algebraMap_int_eq, Int.coe_castRingHom] at h
+      Matrix.diagonal_apply, Units.val_mul, mapGL_coe_matrix, Matrix.mul_apply,
+      map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply, algebraMap_int_eq,
+      Int.coe_castRingHom] at h
     simp only [Matrix.diagonal_apply, Matrix.mul_apply]
     exact_mod_cast h
   exact first_invariant_dvd_p_of_product p S_mid a hdiv L' R' k h_int
