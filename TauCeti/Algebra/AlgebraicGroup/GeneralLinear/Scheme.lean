@@ -6,6 +6,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
+public import TauCeti.AlgebraicGeometry.AffineGroupScheme.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 
 /-!
@@ -35,6 +36,8 @@ lie in the same universe, so this file uses that same-universe setting.
 ## Main declarations
 
 * `TauCeti.GeneralLinear.groupScheme`: the general linear group scheme over `Spec R`.
+* `TauCeti.GeneralLinear.groupSchemeMap`: the group-scheme morphism induced by a morphism from
+  the coordinate Hopf algebra of `GLₙ`.
 * `TauCeti.GeneralLinear.groupSchemeSpecIso`: its canonical raw-coordinate presentation.
 * `TauCeti.GeneralLinear.groupSchemeMulSourceIso`: the tensor-coordinate presentation of the
   multiplication source.
@@ -103,6 +106,46 @@ lemma groupScheme_X_left :
       Spec (CommRingCat.of (coordinateHopfAlgebra R n)) := by
   simpa only [groupScheme] using
     hopfSpec_obj_X_left R (coordinateHopfAlgebra R n)
+
+/-- A morphism from the coordinate Hopf algebra of `GLₙ` induces, contravariantly, a morphism
+from the represented affine group scheme to `GLₙ`. -/
+noncomputable def groupSchemeMap {A : _root_.CommHopfAlgCat (CommRingCat.of R)}
+    (f : coordinateHopfAlgebra R n ⟶ A) :
+    (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op A) ⟶ groupScheme R n :=
+  (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op ≫
+    eqToHom (groupScheme_eq_hopfSpec R n).symm
+
+/-- Under the canonical spectrum presentations, the underlying scheme morphism of
+`groupSchemeMap f` is induced by the coordinate Hopf-algebra morphism `f`.
+
+This is a heterogeneous equality because replacing the opaque source and target group schemes
+by their spectrum presentations changes the endpoint types of the morphism. -/
+lemma groupSchemeMap_hom_left {A : _root_.CommHopfAlgCat (CommRingCat.of R)}
+    (f : coordinateHopfAlgebra R n ⟶ A) :
+    (groupSchemeMap R n f).hom.hom.left ≍
+      Spec.map (CommRingCat.ofHom f.hom.toAlgHom.toRingHom) := by
+  unfold groupSchemeMap
+  rw [comp_hom_hom_left, eqToHom_hom_hom_left, comp_eqToHom_heq_iff]
+  exact heq_of_eq (hopfSpec_map_hom_hom_left R f)
+
+/-- The group-scheme morphism induced by a Hopf-algebra morphism is a closed immersion exactly
+when that Hopf-algebra morphism is surjective. -/
+lemma isClosedImmersion_groupSchemeMap_iff
+    {A : _root_.CommHopfAlgCat (CommRingCat.of R)}
+    (f : coordinateHopfAlgebra R n ⟶ A) :
+    IsClosedImmersion (groupSchemeMap R n f).hom.hom.left ↔ Function.Surjective f.hom := by
+  let c := ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op).hom.hom.left
+  let e := (eqToHom (groupScheme_eq_hopfSpec R n).symm).hom.hom.left
+  have he : IsIso e :=
+    isIso_hom_hom_left_eqToHom (groupScheme_eq_hopfSpec R n).symm
+  rw [groupSchemeMap, comp_hom_hom_left]
+  -- The preceding computation lemma exposes the composite; this `change` only folds its two
+  -- components to keep the categorical cancellation statement readable.
+  change IsClosedImmersion (c ≫ e) ↔ _
+  rw [
+    @MorphismProperty.cancel_right_of_respectsIso
+      Scheme _ @IsClosedImmersion inferInstance _ _ _ c e he,
+    CommHopfAlgCat.isClosedImmersion_hopfSpec_map_iff]
 
 /-- The scheme underlying the general linear group scheme is canonically isomorphic to the
 spectrum of the determinant localization. -/
