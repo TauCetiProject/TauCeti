@@ -84,8 +84,13 @@ the two can carry the attribute, and `heckeTScalar_of_pos` is the one that reduc
 diagonal element. -/
 lemma heckeTScalar_def (c : ℕ) : heckeTScalar c = heckeTDiag c c := (rfl)
 
-/-- The scalar operator of a positive `c` is the constant diagonal element. -/
-@[simp]
+/-- The scalar operator of a positive `c` is the constant diagonal element.
+
+Deliberately not `@[simp]`, although an earlier api-design round asked for it. Tagging this
+unfolds every `heckeTScalar p` to `diagElem (fun _ ↦ p)`, which leaves the left-hand side of
+`heckeTScalar_mul_heckeTDiag_prime_pow` non-normal — `simpNF` rejects that, and the index shift
+is the rule worth keeping: it collapses `T(p,p) · T(pʲ, p^d)` to a single `heckeTDiag`, the
+normal form the GL₂ multiplication table works in. This stays an explicit citation. -/
 lemma heckeTScalar_of_pos {c : ℕ} (hc : 0 < c) :
     heckeTScalar c = diagElem (fun _ : Fin 2 ↦ c) := by
   rw [heckeTScalar, heckeTDiag_of_pos hc hc dvd_rfl]
