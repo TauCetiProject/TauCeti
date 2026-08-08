@@ -16,6 +16,10 @@ The first multiplication identity of Shimura's Theorem 3.24 for the `GL₂` Heck
 `T(1, pᵏ) = T(pᵏ) − T(p,p) · T(p^(k−2))` for `k ≥ 2`, by telescoping the divisor-pair
 expansion of `T(pᵏ)` against the index shift `T(p,p) · T(pʲ, p^d) = T(p^(j+1), p^(d+1))`.
 
+The file also proves `heckeT_prime_mul_heckeTDiag`, Shimura's Theorem 3.24(5):
+`T(p) · T(1, pᵏ) = T(1, p^(k+1)) + m · T(p, pᵏ)`, with multiplicity `m = p + 1` at
+`k = 1` and `m = p` for `k ≥ 2`.
+
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GL2/MultiplicationTable.lean`](https://github.com/CBirkbeck/AINTLIB),
 Chris Birkbeck), first section.
@@ -83,16 +87,18 @@ Every double coset in the support of the product `T(1,p) · T(1,pᵏ)` is `T(1, 
 `T(p, pᵏ)`: the determinant balances to `p^(k+1)`, and the first invariant factor divides
 `p` because the conjugated middle matrix stays integral. -/
 
+/-- `mapGL_coe_matrix` at the `.val` coercion. It states the same fact, but with the
+`GL`-unit coercion already reduced to a plain matrix; the simp set below needs that form,
+and `mapGL_coe_matrix` alone leaves a `mod_cast` obligation it cannot discharge. -/
+private lemma mapGL_val (S : SpecialLinearGroup (Fin 2) ℤ) :
+    ((mapGL ℚ S : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) =
+      S.val.map (algebraMap ℤ ℚ) :=
+  mapGL_coe_matrix S
+
 private lemma mapGL_val_det (S : SpecialLinearGroup (Fin 2) ℤ) :
     (mapGL ℚ S).val.det = 1 := by
   rw [mapGL_coe_matrix]
   exact_mod_cast (SpecialLinearGroup.map (algebraMap ℤ ℚ) S).prop
-
-private lemma mapGL_val (S : SpecialLinearGroup (Fin 2) ℤ) :
-    ((mapGL ℚ S : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) =
-      S.val.map (algebraMap ℤ ℚ) := by
-  rw [mapGL_coe_matrix]
-  rfl
 
 private lemma matrix_isolate_middle (L_ℤ M R_ℤ D : Matrix (Fin 2) (Fin 2) ℤ)
     (hLadj : L_ℤ.adjugate * L_ℤ = 1) (hRadj : R_ℤ * R_ℤ.adjugate = 1)
@@ -230,6 +236,8 @@ private lemma mulSupport_pp_case_split (p : ℕ) (hp : p.Prime) (k : ℕ) (a : F
     ext i
     fin_cases i
     · exact ha0_p
+    -- `a 1` and the goal's coordinate projection are the same term up to defeq;
+    -- no rewrite exposes it, so state the coordinate directly
     · change a 1 = p ^ k
       have h1 : p * a 1 = p ^ (k + 1) := by rwa [ha0_p] at h_det_prod
       refine Nat.eq_of_mul_eq_mul_left hp.pos ?_
@@ -388,6 +396,8 @@ private lemma degree_diagCoset_p_ppow (k : ℕ) (hk2 : 2 ≤ k) :
         | exact absurd hij (by decide)
         | simp [dvd_pow_self p (show k ≠ 0 by omega)])
     (k - 1) (by omega)
+    -- the ratio is stated as a `Nat` division; `change` puts it in the closed form
+    -- the arithmetic lemma below proves, which `rw` cannot reach through `/`
     (by change p ^ k / p = p ^ (k - 1)
         have hsplit : p ^ k = p ^ (k - 1) * p := by
           rw [← pow_succ]
