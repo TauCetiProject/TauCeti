@@ -29,12 +29,12 @@ Chris Birkbeck).
 
 ## Main results
 
-* `HeckeRing.GL2.heckeTDiag_one_one`: `T(1, 1) = 1`.
+* `HeckeRing.GL2.heckeTDiag_one_one`: `T(1, 1) = 1`, with `heckeTScalar_one` its scalar form.
 * `HeckeRing.GL2.heckeT_one`: `T(1) = 1`.
 * `HeckeRing.GL2.heckeT_prime`: `T(p) = T(1, p)` for prime `p`.
 * `HeckeRing.GL2.heckeTDiag_mul_of_coprime`: `T(a,da) · T(b,db) = T(ab, da·db)` for
   coprime determinants — coprimality alone, the zero-extension covering the rest.
-* `HeckeRing.GL2.heckeT_mul_coprime`: `T(m) · T(n) = T(mn)` for coprime `m`, `n`.
+* `HeckeRing.GL2.heckeT_mul_of_coprime`: `T(m) · T(n) = T(mn)` for coprime `m`, `n`.
 
 ## References
 
@@ -57,12 +57,11 @@ noncomputable def heckeTDiag (a d : ℕ) : IntegralHeckeRing 2 :=
 lemma heckeTDiag_def (a d : ℕ) :
     heckeTDiag a d = if 0 < a ∧ 0 < d ∧ a ∣ d then diagElem ![a, d] else 0 := (rfl)
 
-/-- `T(a, d)` is the diagonal Hecke element when the divisor-pair conditions hold.
-
-Deliberately not `@[simp]`: it rewrites *past* `heckeTDiag_one_one`. With this tagged,
-`heckeTDiag 1 1` normalises to `diagElem ![1, 1]` rather than to `1`, and it stops there —
-`diagElem_one` is stated for `fun _ ↦ 1`, which `![1, 1]` does not match syntactically. The
-identity normal form `T(1, 1) = 1` is the more useful one, so this stays a cited lemma. -/
+/-- `T(a, d)` is the diagonal Hecke element when the divisor-pair conditions hold. -/
+-- Deliberately not `@[simp]`: it rewrites *past* `heckeTDiag_one_one`. With this tagged,
+-- `heckeTDiag 1 1` normalises to `diagElem ![1, 1]` rather than to `1`, and it stops there —
+-- `diagElem_one` is stated for `fun _ ↦ 1`, which `![1, 1]` does not match syntactically. The
+-- identity normal form `T(1, 1) = 1` is the more useful one, so this stays a cited lemma.
 lemma heckeTDiag_of_pos {a d : ℕ} (ha : 0 < a) (hd : 0 < d) (h : a ∣ d) :
     heckeTDiag a d = diagElem ![a, d] :=
   if_pos ⟨ha, hd, h⟩
@@ -76,12 +75,11 @@ lemma heckeTDiag_eq_zero {a d : ℕ} (h : ¬(0 < a ∧ 0 < d ∧ a ∣ d)) : hec
 noncomputable def heckeTScalar (c : ℕ) : IntegralHeckeRing 2 :=
   heckeTDiag c c
 
-/-- The defining equation of `heckeTScalar`.
-
-Deliberately not `@[simp]`: unfolding `heckeTScalar c` to `heckeTDiag c c` would leave the
-left-hand side of `heckeTScalar_of_pos` in non-normal form, which `simpNF` rejects. Only one of
-the two can carry the attribute, and `heckeTScalar_of_pos` is the one that reduces to a
-diagonal element. -/
+/-- The defining equation of `heckeTScalar`. -/
+-- Deliberately not `@[simp]`: unfolding `heckeTScalar c` to `heckeTDiag c c` would leave the
+-- left-hand side of `heckeTScalar_of_pos` in non-normal form, which `simpNF` rejects. Only one
+-- of the two can carry the attribute, and `heckeTScalar_of_pos` is the one that reduces to a
+-- diagonal element.
 lemma heckeTScalar_def (c : ℕ) : heckeTScalar c = heckeTDiag c c := (rfl)
 
 /-- `T(0, 0) = 0`: the scalar operator of `0` is zero, since the divisor-pair conditions fail.
@@ -93,13 +91,12 @@ lemma heckeTScalar_zero : heckeTScalar 0 = 0 := by
   rw [heckeTScalar_def]
   exact heckeTDiag_eq_zero (by simp)
 
-/-- The scalar operator of a positive `c` is the constant diagonal element.
-
-Deliberately not `@[simp]`, although an earlier api-design round asked for it. Tagging this
-unfolds every `heckeTScalar p` to `diagElem (fun _ ↦ p)`, which leaves the left-hand side of
-`heckeTScalar_mul_heckeTDiag_prime_pow` non-normal — `simpNF` rejects that, and the index shift
-is the rule worth keeping: it collapses `T(p,p) · T(pʲ, p^d)` to a single `heckeTDiag`, the
-normal form the GL₂ multiplication table works in. This stays an explicit citation. -/
+/-- The scalar operator of a positive `c` is the constant diagonal element. -/
+-- Deliberately not `@[simp]`, although an earlier api-design round asked for it. Tagging this
+-- unfolds every `heckeTScalar p` to `diagElem (fun _ ↦ p)`, which leaves the left-hand side of
+-- `heckeTScalar_mul_heckeTDiag_prime_pow` non-normal — `simpNF` rejects that, and the index
+-- shift is the rule worth keeping: it collapses `T(p,p) · T(pʲ, p^d)` to a single
+-- `heckeTDiag`, the normal form the GL₂ multiplication table works in.
 lemma heckeTScalar_of_pos {c : ℕ} (hc : 0 < c) :
     heckeTScalar c = diagElem (fun _ : Fin 2 ↦ c) := by
   rw [heckeTScalar, heckeTDiag_of_pos hc hc dvd_rfl]
@@ -110,6 +107,13 @@ lemma heckeTScalar_of_pos {c : ℕ} (hc : 0 < c) :
   rw [heckeTDiag_of_pos one_pos one_pos dvd_rfl,
     show ![1, 1] = (fun _ : Fin 2 ↦ 1) from funext fun i ↦ by fin_cases i <;> rfl]
   exact diagElem_one
+
+/-- `T(1, 1) = 1` in scalar form: the scalar operator of `1` is the identity. Together with
+`heckeTScalar_zero` and `heckeTScalar_of_pos` this closes the `ℕ`-valued interface at its
+canonical input. -/
+@[simp] lemma heckeTScalar_one : heckeTScalar 1 = 1 := by
+  rw [heckeTScalar_def]
+  exact heckeTDiag_one_one
 
 /-- Shimura's summed Hecke operator: `T(m) = ∑_{a ∣ m} T(a, m / a)`. -/
 noncomputable def heckeT (m : ℕ+) : IntegralHeckeRing 2 :=
@@ -209,7 +213,7 @@ lemma heckeTDiag_mul_of_coprime (a b da db : ℕ)
 open scoped Pointwise in
 /-- **Shimura, Theorem 3.24(3a)** — coprime multiplicativity: `T(m) · T(n) = T(mn)` when
 `m` and `n` are coprime. -/
-theorem heckeT_mul_coprime (m n : ℕ+) (hcop : Nat.Coprime (m : ℕ) (n : ℕ)) :
+theorem heckeT_mul_of_coprime (m n : ℕ+) (hcop : Nat.Coprime (m : ℕ) (n : ℕ)) :
     heckeT m * heckeT n = heckeT (m * n) := by
   simp only [heckeT_def, PNat.mul_coe]
   -- `Finset` pointwise multiplication is by definition the image of the product set,
