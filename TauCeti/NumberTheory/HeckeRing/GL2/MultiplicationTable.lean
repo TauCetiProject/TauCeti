@@ -18,7 +18,8 @@ expansion of `T(pᵏ)` against the index shift `T(p,p) · T(pʲ, p^d) = T(p^(j+1
 
 The file also proves `heckeT_prime_mul_heckeTDiag`, Shimura's Theorem 3.24(5):
 `T(p) · T(1, pᵏ) = T(1, p^(k+1)) + m · T(p, pᵏ)`, with multiplicity `m = p + 1` at
-`k = 1` and `m = p` for `k ≥ 2`.
+`k = 1` and `m = p` otherwise. No positivity hypothesis on `k` is needed: at `k = 0` the
+identity reads `T(p) = T(1, p)`, since `T(1,1) = 1` and `T(p,1) = 0` for prime `p`.
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GL2/MultiplicationTable.lean`](https://github.com/CBirkbeck/AINTLIB),
@@ -569,10 +570,15 @@ private lemma multiplicity_values (k : ℕ) (hk : 0 < k) :
 include hp in
 /-- **Shimura, Theorem 3.24(5)**: `T(p) · T(1, pᵏ) = T(1, p^(k+1)) + m · T(p, pᵏ)`, where
 the multiplicity `m` is `p + 1` for `k = 1` and `p` for `k ≥ 2`. -/
-theorem heckeT_prime_mul_heckeTDiag (k : ℕ) (hk : 0 < k) :
+theorem heckeT_prime_mul_heckeTDiag (k : ℕ) :
     heckeT ⟨p, hp.pos⟩ * heckeTDiag 1 (p ^ k) =
       heckeTDiag 1 (p ^ (k + 1)) +
         (if k = 1 then ((p : ℤ) + 1) else (p : ℤ)) • heckeTDiag p (p ^ k) := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · -- `T(p) · T(1,1) = T(p) = T(1,p)`, and `T(p,1) = 0` because `p ∤ 1`
+    have hp1 : heckeTDiag p 1 = 0 :=
+      heckeTDiag_eq_zero fun h ↦ hp.ne_one (Nat.dvd_one.mp h.2.2)
+    simp [heckeT_prime p hp, hp1]
   classical
   obtain ⟨hm1, hm2⟩ := multiplicity_values p hp k hk
   have hne := diagCoset_one_prime_pow_succ_ne p hp k hk
