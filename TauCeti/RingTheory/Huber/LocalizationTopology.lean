@@ -135,11 +135,6 @@ theorem locNhd_antitone (P : PairOfDefinition A) (T : Finset A) (s : A) :
     Antitone (locNhd P T s) :=
   fun _ _ h ↦ AddSubgroup.map_mono (Submodule.toAddSubgroup_mono (Ideal.pow_le_pow_right h))
 
-/-- `0 ∈ locNhd n` for all `n`. -/
-theorem zero_mem_locNhd (P : PairOfDefinition A) (T : Finset A) (s : A)
-    (n : ℕ) : (0 : Localization.Away s) ∈ locNhd P T s n :=
-  ⟨0, (locIdeal P T s ^ n).zero_mem, map_zero _⟩
-
 /-- The preimage of `locNhd n` under the subtype embedding equals `locIdeal^n`. -/
 theorem locNhd_preimage_eq_locIdeal_pow (P : PairOfDefinition A) (T : Finset A)
     (s : A) (n : ℕ) :
@@ -151,11 +146,6 @@ theorem locNhd_preimage_eq_locIdeal_pow (P : PairOfDefinition A) (T : Finset A)
     exact (Subtype.val_injective heq) ▸ hd'
   · intro hd
     exact ⟨d, hd, rfl⟩
-
-/-- The ideal of definition `J` is finitely generated. -/
-theorem locIdeal_fg (P : PairOfDefinition A) (T : Finset A) (s : A) :
-    (locIdeal P T s).FG :=
-  P.fg_idealOfDefinition.map _
 
 /-- Products of the `n`-th neighbourhood land in the `n`-th neighbourhood: this is the
 multiplicative half of the subgroup basis. -/
