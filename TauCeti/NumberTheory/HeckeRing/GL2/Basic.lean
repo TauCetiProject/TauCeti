@@ -33,8 +33,7 @@ Chris Birkbeck).
 * `HeckeRing.GL2.heckeT_one`: `T(1) = 1`.
 * `HeckeRing.GL2.heckeT_prime`: `T(p) = T(1, p)` for prime `p`.
 * `HeckeRing.GL2.heckeTDiag_mul_of_coprime`: `T(a,da) · T(b,db) = T(ab, da·db)` for
-  coprime determinants, both operators being basis elements (`0 < da`, `0 < db`, `a ∣ da`,
-  `b ∣ db`).
+  coprime determinants — coprimality alone, the zero-extension covering the rest.
 * `HeckeRing.GL2.heckeT_mul_coprime`: `T(m) · T(n) = T(mn)` for coprime `m`, `n`.
 
 ## References
@@ -156,15 +155,33 @@ lemma heckeT_prime_pow_expansion (hp : p.Prime) (k : ℕ) :
 /-- **Coprime multiplicativity** (Shimura, Proposition 3.16 in the `GL₂` notation):
 `T(a, da) · T(b, db) = T(ab, da·db)` when the determinants `a·da` and `b·db` are coprime.
 
-Coprimality is not the only hypothesis: both operators must be genuine basis elements, so
-`da` and `db` are positive and `a ∣ da`, `b ∣ db`. Positivity of `a` and `b` is *not* assumed
-— it follows, a divisor of a positive number being positive. -/
-lemma heckeTDiag_mul_of_coprime (a b da db : ℕ) (hda : 0 < da)
-    (hdb : 0 < db) (hdva : a ∣ da) (hdvb : b ∣ db)
+Coprimality is the *only* hypothesis. No positivity or divisor-pair condition is needed,
+because `heckeTDiag` is zero-extended and coprimality propagates that zero: if `T(a, da)`
+fails to be a basis element then so does `T(ab, da·db)`, since `a` is coprime to `db`, so
+`a ∣ ab ∣ da·db` would force `a ∣ da`. Both sides are then `0`. -/
+lemma heckeTDiag_mul_of_coprime (a b da db : ℕ)
     (hcop : Nat.Coprime (a * da) (b * db)) :
     heckeTDiag a da * heckeTDiag b db = heckeTDiag (a * b) (da * db) := by
-  -- positivity of the left entries is forced: a divisor of a positive number is positive
-  have ha : 0 < a := Nat.pos_of_dvd_of_pos hdva hda
+  -- Coprimality alone suffices: if either factor fails to be a basis element it is zero, and
+  -- coprimality then forces the product to be zero too (see `hzero`).
+  have hzero : ∀ x y u v : ℕ, Nat.Coprime (x * u) (y * v) →
+      ¬(0 < x ∧ 0 < u ∧ x ∣ u) → ¬(0 < x * y ∧ 0 < u * v ∧ x * y ∣ u * v) := by
+    rintro x y u v hc hbad ⟨hxy, huv, hdvd⟩
+    refine hbad ⟨Nat.pos_of_ne_zero fun h ↦ by simp [h] at hxy,
+      Nat.pos_of_ne_zero fun h ↦ by simp [h] at huv, ?_⟩
+    -- `x` is coprime to `v`, and `x ∣ x * y ∣ u * v`, so `x ∣ u`
+    exact (Nat.Coprime.dvd_of_dvd_mul_right
+      ((hc.coprime_dvd_left (dvd_mul_right x u)).coprime_dvd_right (dvd_mul_left v y))
+      ((dvd_mul_right x y).trans hdvd))
+  by_cases h1 : 0 < a ∧ 0 < da ∧ a ∣ da
+  swap
+  · rw [heckeTDiag_eq_zero h1, zero_mul, heckeTDiag_eq_zero (hzero a b da db hcop h1)]
+  by_cases h2 : 0 < b ∧ 0 < db ∧ b ∣ db
+  swap
+  · rw [heckeTDiag_eq_zero h2, mul_zero,
+      heckeTDiag_eq_zero (by simpa [Nat.mul_comm] using hzero b a db da hcop.symm h2)]
+  obtain ⟨ha, hda, hdva⟩ := h1
+  obtain ⟨hb, hdb, hdvb⟩ := h2
   have hb : 0 < b := Nat.pos_of_dvd_of_pos hdvb hdb
   rw [heckeTDiag_of_pos ha hda hdva, heckeTDiag_of_pos hb hdb hdvb,
     heckeTDiag_of_pos (Nat.mul_pos ha hb) (Nat.mul_pos hda hdb) (Nat.mul_dvd_mul hdva hdvb)]
@@ -192,33 +209,9 @@ theorem heckeT_mul_coprime (m n : ℕ+) (hcop : Nat.Coprime (m : ℕ) (n : ℕ))
   refine Finset.sum_congr rfl fun q hq ↦ ?_
   obtain ⟨a, b⟩ := q
   simp only [Finset.mem_product, Nat.mem_divisors] at hq
-  have ha_pos : 0 < a := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hq
-  have hb_pos : 0 < b := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hq
   rw [(Nat.div_mul_div_comm hq.1.1 hq.2.1).symm]
-  by_cases hca : a ∣ (m : ℕ) / a
-  · by_cases hcb : b ∣ (n : ℕ) / b
-    · refine heckeTDiag_mul_of_coprime a b _ _
-        (Nat.div_pos (Nat.le_of_dvd (by omega) hq.1.1) ha_pos)
-        (Nat.div_pos (Nat.le_of_dvd (by omega) hq.2.1) hb_pos) hca hcb ?_
-      rwa [Nat.mul_div_cancel' hq.1.1, Nat.mul_div_cancel' hq.2.1]
-    · rw [show heckeTDiag b ((n : ℕ) / b) = 0 from
-        heckeTDiag_eq_zero (by push Not; intro _ _; exact hcb), mul_zero]
-      symm
-      refine heckeTDiag_eq_zero ?_
-      push Not
-      intro _ _ hdvd
-      exact absurd (((hcop.symm.coprime_dvd_left hq.2.1).coprime_dvd_right
-        (Nat.div_dvd_of_dvd hq.1.1)).dvd_of_dvd_mul_left
-        (dvd_trans (dvd_mul_left b a) hdvd)) hcb
-  · rw [show heckeTDiag a ((m : ℕ) / a) = 0 from
-      heckeTDiag_eq_zero (by push Not; intro _ _; exact hca), zero_mul]
-    symm
-    refine heckeTDiag_eq_zero ?_
-    push Not
-    intro _ _ hdvd
-    exact absurd (((hcop.coprime_dvd_left hq.1.1).coprime_dvd_right
-      (Nat.div_dvd_of_dvd hq.2.1)).dvd_of_dvd_mul_right
-      (dvd_trans (dvd_mul_right a b) hdvd)) hca
+  refine heckeTDiag_mul_of_coprime a b _ _ ?_
+  rwa [Nat.mul_div_cancel' hq.1.1, Nat.mul_div_cancel' hq.2.1]
 
 end Structural
 
