@@ -130,24 +130,23 @@ theorem IsRestricted.finite_coeff_notMem {k : ℕ} {A : Type*} [Ring A]
   have := (tendsto_nhds.mp (isRestricted_iff.mp hf)) _ W.isOpen (SetLike.mem_coe.mpr W.zero_mem)
   rwa [Filter.mem_cofinite] at this
 
-/-- The neighbourhood of `0` used to control a coefficient convolution: inside the open
-subgroup `W`, and small enough that multiplying by any of finitely many fixed coefficients
-lands in `V`. Openness of `V` and `W` plus continuity of multiplication is all this needs. -/
-private theorem inter_preimage_mul_mem_nhds {A : Type*} [Ring A] [TopologicalSpace A]
-    [ContinuousMul A] {ι : Type*} (V W : OpenAddSubgroup A) (S₁ S₂ : Finset ι)
-    (c₁ c₂ : ι → A) :
-    ((W : Set A) ∩ (⋂ a ∈ S₁, (fun x => c₁ a * x) ⁻¹' (V : Set A))
-        ∩ (⋂ b ∈ S₂, (fun x => x * c₂ b) ⁻¹' (V : Set A))) ∈ nhds (0 : A) := by
-  refine Filter.inter_mem (Filter.inter_mem ?_ ?_) ?_
-  · exact W.isOpen.mem_nhds W.zero_mem
+/-- **A neighbourhood of `0` small enough that multiplying it by any of finitely many prescribed
+elements, on either side, lands in a prescribed neighbourhood `U` of `0`.** *Separate* continuity
+of multiplication is all this needs. -/
+private theorem exists_mem_nhds_zero_forall_mul_mem {A : Type*} [TopologicalSpace A]
+    [MulZeroClass A] [SeparatelyContinuousMul A] {ι : Type*} {U : Set A} (hU : U ∈ nhds (0 : A))
+    (S₁ S₂ : Finset ι) (c₁ c₂ : ι → A) :
+    ∃ T ∈ nhds (0 : A), (∀ a ∈ S₁, ∀ y ∈ T, c₁ a * y ∈ U) ∧
+      ∀ b ∈ S₂, ∀ x ∈ T, x * c₂ b ∈ U := by
+  refine ⟨(⋂ a ∈ S₁, (fun x => c₁ a * x) ⁻¹' U) ∩ (⋂ b ∈ S₂, (fun x => x * c₂ b) ⁻¹' U),
+    Filter.inter_mem ?_ ?_, fun a ha y hy => Set.mem_iInter₂.mp hy.1 a ha,
+    fun b hb x hx => Set.mem_iInter₂.mp hx.2 b hb⟩
   · apply (Filter.biInter_finset_mem _).mpr
     intro a _
-    exact (continuous_const_mul _).continuousAt.preimage_mem_nhds
-      (by simpa using V.isOpen.mem_nhds V.zero_mem)
+    exact (continuous_const_mul _).continuousAt.preimage_mem_nhds (by simpa using hU)
   · apply (Filter.biInter_finset_mem _).mpr
     intro b _
-    exact (continuous_mul_const _).continuousAt.preimage_mem_nhds
-      (by simpa using V.isOpen.mem_nhds V.zero_mem)
+    exact (continuous_mul_const _).continuousAt.preimage_mem_nhds (by simpa using hU)
 
 /-- The "bad" indices contributed by one side of a coefficient convolution form a finite set:
 for each `a` in a finite `S`, only finitely many `n` have `c (n - a) ∉ T`, and `n ↦ n - a` is
@@ -213,22 +212,9 @@ theorem IsRestricted.mul {k : ℕ} {A : Type*} [Ring A] [TopologicalSpace A]
   set Sg := {s | MvPowerSeries.coeff s g ∉ (W : Set A)}
   have hSf : Sf.Finite := hf.finite_coeff_notMem W
   have hSg : Sg.Finite := hg.finite_coeff_notMem W
-  set T := (W : Set A) ∩
-    (⋂ a ∈ hSf.toFinset,
-      (fun x => MvPowerSeries.coeff a f * x) ⁻¹' (V : Set A)) ∩
-    (⋂ b ∈ hSg.toFinset,
-      (fun x => x * MvPowerSeries.coeff b g) ⁻¹' (V : Set A))
-  have hT_nhds : T ∈ nhds (0 : A) :=
-    inter_preimage_mul_mem_nhds V W hSf.toFinset hSg.toFinset
+  obtain ⟨T, hT_nhds, hT_left, hT_right⟩ :=
+    exists_mem_nhds_zero_forall_mul_mem (V.isOpen.mem_nhds V.zero_mem) hSf.toFinset hSg.toFinset
       (fun a => MvPowerSeries.coeff a f) (fun b => MvPowerSeries.coeff b g)
-  have hT_left : ∀ a ∈ hSf.toFinset, ∀ y ∈ T,
-      MvPowerSeries.coeff a f * y ∈ (V : Set A) := by
-    intro a ha y hy
-    exact (Set.mem_iInter₂.mp hy.1.2 a ha : _)
-  have hT_right : ∀ b ∈ hSg.toFinset, ∀ x ∈ T,
-      x * MvPowerSeries.coeff b g ∈ (V : Set A) := by
-    intro b hb x hx
-    exact (Set.mem_iInter₂.mp hx.2 b hb : _)
   have hgT : {s | MvPowerSeries.coeff s g ∉ T}.Finite :=
     (Filter.mem_cofinite.mp (isRestricted_iff.mp hg hT_nhds)).subset (fun s hs => hs)
   have hfT : {s | MvPowerSeries.coeff s f ∉ T}.Finite :=
