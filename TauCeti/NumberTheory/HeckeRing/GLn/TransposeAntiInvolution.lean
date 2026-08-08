@@ -121,14 +121,14 @@ transposition fixes diagonal matrices. -/
 /-- **Shimura's Proposition 3.8 for `GL_n`**: the Hecke ring of `GL_n` over any commutative
 semiring is commutative, transposition being an anti-involution that fixes every double
 coset. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 noncomputable def commSemiringHeckeRing (R : Type*) [CommSemiring R] :
     CommSemiring (𝕋 (posDetInt n) (SLnZ n) R) :=
   commSemiringOfAntiInvolution R (transposeAntiInvolution n)
     (transposeAntiInvolution_onHeckeCoset_eq_self n)
 
 /-- The integral Hecke ring of `GL_n` is commutative. -/
-@[instance_reducible]
+@[expose, instance_reducible]
 noncomputable def commSemiringIntegralHeckeRing : CommSemiring (IntegralHeckeRing n) :=
   commSemiringHeckeRing n ℤ
 
