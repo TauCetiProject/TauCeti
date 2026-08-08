@@ -15,9 +15,14 @@ import Mathlib.Data.Nat.Factorization.Basic
 /-!
 # Prime decomposition of diagonal Hecke operators
 
-The `p`-adic decomposition of the diagonal Hecke operators: every `T(a₁,...,aₙ)` splits off
-its `p`-power part, `T(a) = T(p-part) · T(p-free part)`, by the coprime product theorem, and
-the `p`-power operators generate the `p`-local Hecke subring `R_p` (Shimura's `R_p`).
+The `p`-adic decomposition of the diagonal Hecke operators: every `T(a₁,...,aₙ)` with
+entrywise positive `a` splits off its `p`-power part,
+`T(a) = T(p-part) · T(p-free part)`, by the coprime product theorem. Positivity is required
+throughout — `natDiagGL` takes its junk value on a tuple with a zero entry.
+
+The `p`-power operators whose exponent vector is *monotone* generate the `p`-local Hecke
+subring `R_p` (Shimura's `R_p`); monotonicity is what makes the exponent vector a divisibility
+chain, hence a canonical diagonal.
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GLn/PrimeDecomposition.lean`](https://github.com/CBirkbeck/AINTLIB),
@@ -26,8 +31,10 @@ Chris Birkbeck).
 ## Main definitions
 
 * `HeckeRing.GLn.primePowDiag`: the `p`-power diagonal `i ↦ p ^ e i`.
-* `HeckeRing.GLn.pComponent`: the entrywise `p`-adic valuation of a diagonal.
-* `HeckeRing.GLn.removePrime`: the entrywise `p`-free part of a diagonal.
+* `HeckeRing.GLn.diagFactorization`: the entrywise `p`-adic valuation of a diagonal, i.e.
+  `Nat.factorization` applied in each coordinate.
+* `HeckeRing.GLn.diagOrdCompl`: the entrywise `p`-free part of a diagonal, i.e. `ordCompl[p]`
+  applied in each coordinate.
 * `HeckeRing.GLn.pLocalSubring`: the `p`-local Hecke subring `R_p`.
 
 ## Main results
@@ -69,76 +76,82 @@ lemma isDvdChain_primePowDiag (p : ℕ) (e : Fin n → ℕ) (hmono : Monotone e)
   isDvdChain_iff.mpr fun _ _ hij ↦ Nat.pow_dvd_pow p (hmono hij)
 
 /-- The entrywise `p`-adic valuation of a diagonal. -/
-def pComponent (p : ℕ) (a : Fin n → ℕ) : Fin n → ℕ :=
+def diagFactorization (p : ℕ) (a : Fin n → ℕ) : Fin n → ℕ :=
   fun i ↦ (a i).factorization p
 
-/-- Defining equation for the sealed `pComponent`. -/
+/-- Defining equation for the sealed `diagFactorization`. -/
 @[simp]
-lemma pComponent_apply (p : ℕ) (a : Fin n → ℕ) (i : Fin n) :
-    pComponent n p a i = (a i).factorization p := (rfl)
+lemma diagFactorization_apply (p : ℕ) (a : Fin n → ℕ) (i : Fin n) :
+    diagFactorization n p a i = (a i).factorization p := (rfl)
 
 /-- The `p`-component of a divisibility chain is monotone. -/
-lemma pComponent_monotone (a : Fin n → ℕ)
+lemma diagFactorization_monotone (a : Fin n → ℕ)
     (ha_pos : ∀ i, 0 < a i) (ha : IsDvdChain a) (p : ℕ) :
-    Monotone (pComponent n p a) := fun i j hij ↦
+    Monotone (diagFactorization n p a) := fun i j hij ↦
   (Nat.factorization_le_iff_dvd (ha_pos i).ne' (ha_pos j).ne').mpr
     (isDvdChain_iff.mp ha hij) p
 
 end PPow
 
-section RemovePrime
+section DiagOrdCompl
 
 /-- The entrywise `p`-free part of a diagonal: `a i ↦ a i / p ^ (v_p (a i))`. -/
-noncomputable def removePrime (p : ℕ) (a : Fin n → ℕ) : Fin n → ℕ :=
+noncomputable def diagOrdCompl (p : ℕ) (a : Fin n → ℕ) : Fin n → ℕ :=
   fun i ↦ ordCompl[p] (a i)
 
-/-- Defining equation for the sealed `removePrime`. -/
+/-- Defining equation for the sealed `diagOrdCompl`. -/
 @[simp]
-lemma removePrime_apply (p : ℕ) (a : Fin n → ℕ) (i : Fin n) :
-    removePrime n p a i = ordCompl[p] (a i) := (rfl)
+lemma diagOrdCompl_apply (p : ℕ) (a : Fin n → ℕ) (i : Fin n) :
+    diagOrdCompl n p a i = ordCompl[p] (a i) := (rfl)
 
-lemma removePrime_pos (p : ℕ) (a : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i) :
-    ∀ i, 0 < removePrime n p a i :=
+lemma diagOrdCompl_pos (p : ℕ) (a : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i) :
+    ∀ i, 0 < diagOrdCompl n p a i :=
   fun i ↦ Nat.ordCompl_pos p (ha_pos i).ne'
 
 /-- The `p`-free part preserves divisibility chains. -/
-lemma isDvdChain_removePrime (p : ℕ) (a : Fin n → ℕ) (ha : IsDvdChain a) :
-    IsDvdChain (removePrime n p a) := by
+lemma isDvdChain_diagOrdCompl (p : ℕ) (a : Fin n → ℕ) (ha : IsDvdChain a) :
+    IsDvdChain (diagOrdCompl n p a) := by
   exact isDvdChain_iff.mpr fun i j hij ↦
     Nat.ordCompl_dvd_ordCompl_of_dvd (isDvdChain_iff.mp ha hij) p
 
 /-- The pointwise product of the `p`-part and the `p`-free part recovers the diagonal. -/
 @[simp]
-lemma primePowDiag_mul_removePrime (p : ℕ) (a : Fin n → ℕ) :
-    primePowDiag n p (pComponent n p a) * removePrime n p a = a :=
+lemma primePowDiag_mul_diagOrdCompl (p : ℕ) (a : Fin n → ℕ) :
+    primePowDiag n p (diagFactorization n p a) * diagOrdCompl n p a = a :=
   funext fun i ↦ Nat.ordProj_mul_ordCompl_eq_self (a i) p
 
 /-- The `p`-part and `p`-free-part determinants are coprime. -/
-lemma coprime_prod_primePowDiag_removePrime (p : ℕ) (hp : p.Prime)
+lemma coprime_prod_primePowDiag_diagOrdCompl (p : ℕ) (hp : p.Prime)
     (a : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i) :
-    Nat.Coprime (∏ i, primePowDiag n p (pComponent n p a) i) (∏ i, removePrime n p a i) := by
-  rw [show (∏ i, primePowDiag n p (pComponent n p a) i) = p ^ ∑ i, pComponent n p a i by
+    Nat.Coprime (∏ i, primePowDiag n p (diagFactorization n p a) i)
+      (∏ i, diagOrdCompl n p a i) := by
+  rw [show (∏ i, primePowDiag n p (diagFactorization n p a) i)
+        = p ^ ∑ i, diagFactorization n p a i by
     simpa only [primePowDiag_apply] using
-      Finset.prod_pow_eq_pow_sum Finset.univ (pComponent n p a) p]
+      Finset.prod_pow_eq_pow_sum Finset.univ (diagFactorization n p a) p]
   exact (Nat.Coprime.prod_right fun i _ ↦ Nat.coprime_ordCompl hp (ha_pos i).ne').pow_left _
 
-end RemovePrime
+end DiagOrdCompl
 
 variable [NeZero n]
 
-/-- **Binary prime splitting** (Shimura, §3.2): every diagonal Hecke operator factors into
-its `p`-power component and its `p`-free component, for any prime `p`. -/
+/-- **Binary prime splitting** (Shimura, §3.2): every diagonal Hecke operator with entrywise
+positive entries factors into its `p`-power component and its `p`-free component, for any
+prime `p`. The positivity hypothesis is essential, not cosmetic: without it `natDiagGL` takes
+its junk value and the two factors need not multiply back to `T(a)`. -/
 theorem diagElem_split_prime (a : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i) (p : ℕ)
     (hp : p.Prime) :
     diagElem a =
-      diagElem (primePowDiag n p (pComponent n p a)) * diagElem (removePrime n p a) := by
-  conv_lhs => rw [← primePowDiag_mul_removePrime n p a]
+      diagElem (primePowDiag n p (diagFactorization n p a)) * diagElem (diagOrdCompl n p a) := by
+  conv_lhs => rw [← primePowDiag_mul_diagOrdCompl n p a]
   exact (diagElem_mul_of_coprime n _ _ (primePowDiag_pos n p hp.pos _)
-      (removePrime_pos n p a ha_pos)
-    (coprime_prod_primePowDiag_removePrime n p hp a ha_pos)).symm
+      (diagOrdCompl_pos n p a ha_pos)
+    (coprime_prod_primePowDiag_diagOrdCompl n p hp a ha_pos)).symm
 
-/-- The `p`-local Hecke subring `R_p`: generated by the diagonal Hecke operators with
-`p`-power entries (Shimura's `R_p`). -/
+/-- The `p`-local Hecke subring `R_p`: generated by the diagonal Hecke operators
+`T(p^e₁,...,p^eₙ)` whose exponent vector `e` is **monotone** (Shimura's `R_p`). Monotonicity
+is part of the generating set, not an afterthought: it is exactly the condition making the
+entries a divisibility chain, so each generator names a canonical double coset. -/
 noncomputable def pLocalSubring (p : ℕ) : Subring (IntegralHeckeRing n) :=
   Subring.closure
     {f | ∃ (e : Fin n → ℕ) (_ : Monotone e), f = diagElem (primePowDiag n p e)}
@@ -148,9 +161,20 @@ lemma pLocalSubring_def (p : ℕ) :
     pLocalSubring n p = Subring.closure
       {f | ∃ (e : Fin n → ℕ) (_ : Monotone e), f = diagElem (primePowDiag n p e)} := (rfl)
 
-/-- A diagonal Hecke operator with `p`-power entries lies in `R_p`. -/
+/-- A diagonal Hecke operator with `p`-power entries lies in `R_p`, provided its exponent
+vector is monotone — that is the generating set of `pLocalSubring`. -/
 lemma diagElem_primePowDiag_mem_pLocalSubring (p : ℕ) (e : Fin n → ℕ)
     (hmono : Monotone e) : diagElem (primePowDiag n p e) ∈ pLocalSubring n p :=
   Subring.subset_closure ⟨e, hmono, rfl⟩
+
+/-- **The universal property of `R_p`**: a subring contains `R_p` exactly when it contains
+every monotone `p`-power generator. This is the elimination form — `pLocalSubring` is a
+`Subring.closure`, so proving a map or an inclusion out of it should go through this rather
+than unfolding the closure and manipulating the generating set by hand. -/
+lemma pLocalSubring_le_iff (p : ℕ) (S : Subring (IntegralHeckeRing n)) :
+    pLocalSubring n p ≤ S ↔
+      ∀ e : Fin n → ℕ, Monotone e → diagElem (primePowDiag n p e) ∈ S := by
+  rw [pLocalSubring_def, Subring.closure_le]
+  exact ⟨fun h e he ↦ h ⟨e, he, rfl⟩, fun h _ ⟨e, he, hf⟩ ↦ hf ▸ h e he⟩
 
 end HeckeRing.GLn
