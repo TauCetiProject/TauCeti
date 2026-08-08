@@ -19,7 +19,8 @@ order to *choose* and *change* a generator:
 quadratic extension differ by `θ' = b + aθ` with `a ≠ 0`, so a statement proved for one generator
 transfers to every other. This is what makes a construction defined by "pick any `θ ∈ L ∖ K`"
 well posed up to the ambiguity that `b + aθ` describes.
-`linearIndependent_one_of_notMem_range_algebraMap` is the linear-algebra step behind it.
+`linearIndependent_one_of_notMem_range_algebraMap` is the linear-algebra step behind it, and
+needs only a nontrivial ring over `K`, not a field.
 
 These are consumed by the extension quadratic twist in
 `TauCeti/AlgebraicGeometry/EllipticCurve/QuadraticTwist.lean`, which advances
@@ -36,16 +37,17 @@ results the twist consumes are ported; the rest of the source file — which res
 
 public section
 
-variable (K L : Type*) [Field K] [Field L] [Algebra K L]
+variable (K L : Type*) [Field K]
 
 /-- `1` and any element lying outside the base field are linearly independent over the base
-field. -/
-theorem linearIndependent_one_of_notMem_range_algebraMap {θ : L}
-    (hθ : θ ∉ Set.range (algebraMap K L)) : LinearIndependent K ![(1 : L), θ] :=
+field. The ambient algebra need not be a field — only a nontrivial ring, since the argument
+is just that `θ` is not a `K`-multiple of `1`. -/
+theorem linearIndependent_one_of_notMem_range_algebraMap [Ring L] [Nontrivial L] [Algebra K L]
+    {θ : L} (hθ : θ ∉ Set.range (algebraMap K L)) : LinearIndependent K ![(1 : L), θ] :=
   (LinearIndependent.pair_iff' one_ne_zero).mpr fun a ha ↦
     hθ ⟨a, by rwa [Algebra.algebraMap_eq_smul_one]⟩
 
-variable [Algebra.IsQuadraticExtension K L]
+variable [Field L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
 
 namespace Algebra.IsQuadraticExtension
 
