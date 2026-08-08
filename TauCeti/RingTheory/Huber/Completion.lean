@@ -58,19 +58,6 @@ section SpanMul
 
 variable {R : Type*} [CommRing R]
 
-/-- The `K`-linear combinations of a fixed finite family `G`, as an ideal of `R`. -/
-private def sumIdeal (G : Finset R) (K : Ideal R) : Ideal R where
-  carrier := {b | ∃ c : R → R, (∀ z, c z ∈ K) ∧ ∑ z ∈ G, z * c z = b}
-  add_mem' := by
-    rintro _ _ ⟨c₁, hc₁, rfl⟩ ⟨c₂, hc₂, rfl⟩
-    exact ⟨c₁ + c₂, fun z ↦ K.add_mem (hc₁ z) (hc₂ z), by
-      simp [mul_add, Finset.sum_add_distrib]⟩
-  zero_mem' := ⟨0, fun _ ↦ K.zero_mem, by simp⟩
-  smul_mem' r := by
-    rintro _ ⟨c, hc, rfl⟩
-    exact ⟨fun z ↦ r * c z, fun z ↦ K.mul_mem_left _ (hc z), by
-      simp [Finset.mul_sum, mul_left_comm, smul_eq_mul]⟩
-
 /-- An element of `(G) * K` is a `K`-linear combination of the finite family `G`.
 
 This is where finite generation of the ideal of definition enters the proof of Wedhorn Remark
@@ -80,15 +67,17 @@ private theorem exists_sum_eq_of_mem_span_mul (G : Finset R) (K : Ideal R) {b : 
     (hb : b ∈ Ideal.span (G : Set R) * K) :
     ∃ c : R → R, (∀ z, c z ∈ K) ∧ ∑ z ∈ G, z * c z = b := by
   classical
-  suffices h : Ideal.span (G : Set R) * K ≤ sumIdeal G K from h hb
-  refine Ideal.mul_le.mpr fun u hu v hv ↦ ?_
-  induction hu using Submodule.span_induction with
-  | mem z hz => exact ⟨fun w ↦ if w = z then v else 0, fun w ↦ by
-      by_cases h : w = z <;> simp [h, hv, K.zero_mem], by
-        simp [mul_ite, Finset.mem_coe.mp hz]⟩
-  | zero => rw [zero_mul]; exact (sumIdeal G K).zero_mem
-  | add p q _ _ hp hq => rw [add_mul]; exact (sumIdeal G K).add_mem hp hq
-  | smul a p _ hp => rw [smul_eq_mul, mul_assoc]; exact (sumIdeal G K).mul_mem_left a hp
+  -- Present `(G) * K` as `K • span (id '' G)`, so that the coefficients are handed to us.
+  rw [mul_comm, ← Ideal.smul_eq_mul, ← Set.image_id (G : Set R)] at hb
+  obtain ⟨a, ha, rfl⟩ := (Submodule.mem_ideal_smul_span_iff_exists_sum' _ _ _ _).mp hb
+  -- Extend the coefficients from `G` to all of `R` by zero.
+  refine ⟨fun z ↦ if h : z ∈ G then a ⟨z, h⟩ else 0, fun z ↦ ?_, ?_⟩
+  · dsimp only
+    split_ifs
+    exacts [ha _, K.zero_mem]
+  · rw [Finsupp.sum_fintype _ _ (by simp),
+      ← Finset.sum_finset_coe (fun z ↦ z * if h : z ∈ G then a ⟨z, h⟩ else 0) G]
+    exact Finset.sum_congr rfl fun i _ ↦ by simp [Finset.mem_coe.mp i.2, mul_comm]
 
 end SpanMul
 
