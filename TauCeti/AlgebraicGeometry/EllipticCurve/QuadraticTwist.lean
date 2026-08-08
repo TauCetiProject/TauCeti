@@ -35,11 +35,18 @@ change of variables, again over any commutative ring in which the relevant param
 * `WeierstrassCurve.exists_smul_eq_quadraticTwistOf_quadraticTwistOf`,
   `WeierstrassCurve.exists_smul_quadraticTwistOf_eq`: the double twist is isomorphic to the
   original curve, and changing the generator moves the twist by a change of variables.
+* `WeierstrassCurve.quadraticTwistBy`: the twist by an element `θ` of an extension `L/K`, namely
+  the `(t, n)`-twist by the trace and norm of `θ`, with defining equation `quadraticTwistBy_def`.
+* `WeierstrassCurve.isElliptic_quadraticTwistBy`,
+  `WeierstrassCurve.exists_smul_quadraticTwistBy_eq`: for `θ` generating a separable quadratic
+  `L/K` the twist is elliptic, and changing the generator moves it by a change of variables —
+  which is what makes the twist by the extension well posed.
 
-These are the `quadraticTwistOf` seeds of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 5
-(twists), pinned in that roadmap's `Suggested.lean`; the extension twist `quadraticTwist E L`
-by a separable quadratic extension, the point isomorphism, and the split-multiplicative-
-reduction theorem are later milestones of the same layer and build on this file.
+These are the `quadraticTwistOf` and `quadraticTwistBy` seeds of
+`TauCetiRoadmap/EllipticCurves/README.md` §Layer 5 (twists), pinned in that roadmap's
+`Suggested.lean`. The roadmap's `quadraticTwist E L` — the twist by an arbitrarily chosen
+generator — together with the point isomorphism and the split-multiplicative-reduction theorem
+are later milestones of the same layer and build on this file.
 
 Adapted from the FLT project's quadratic-twist development (`ImperialCollegeLondon/FLT`,
 `FLT/KnownIn1980s/EllipticCurves/QuadraticTwists/QuadraticTwists.lean` at the roadmap's pin
@@ -264,13 +271,19 @@ generator mattering only up to isomorphism over `K` (`exists_smul_quadraticTwist
 noncomputable def quadraticTwistBy (θ : L) : WeierstrassCurve K :=
   E.quadraticTwistOf (Algebra.trace K L θ) (Algebra.norm K θ)
 
+/-- The defining equation of `quadraticTwistBy`, exported so that consumers need not unfold the
+definition: the twist by `θ` is the `(t, n)`-twist by the trace and norm of `θ`. -/
+lemma quadraticTwistBy_def (θ : L) :
+    E.quadraticTwistBy θ = E.quadraticTwistOf (Algebra.trace K L θ) (Algebra.norm K θ) := by
+  simp only [quadraticTwistBy]
+
 variable [Algebra.IsQuadraticExtension K L] [Algebra.IsSeparable K L]
 
 /-- The twist of an elliptic curve by a generator of a separable quadratic extension is
 elliptic: the discriminant `t² - 4n` of the generator's minimal polynomial is nonzero. -/
 theorem isElliptic_quadraticTwistBy [E.IsElliptic] {θ : L}
     (hθ : θ ∉ Set.range (algebraMap K L)) : (E.quadraticTwistBy θ).IsElliptic :=
-  E.isElliptic_quadraticTwistOf _ _ (discrim_ne_zero K L hθ)
+  E.quadraticTwistBy_def θ ▸ E.isElliptic_quadraticTwistOf _ _ (discrim_ne_zero K L hθ)
 
 /-- The quadratic twist by a generator `θ` of a separable quadratic extension `L/K` depends on
 the choice of `θ` only up to isomorphism over `K`: all generators give isomorphic twists. This
@@ -279,7 +292,7 @@ theorem exists_smul_quadraticTwistBy_eq {θ θ' : L} (hθ : θ ∉ Set.range (al
     (hθ' : θ' ∉ Set.range (algebraMap K L)) :
     ∃ C : VariableChange K, C • E.quadraticTwistBy θ = E.quadraticTwistBy θ' := by
   obtain ⟨a, b, ha, rfl⟩ := exists_eq_algebraMap_add_algebraMap_mul K L hθ hθ'
-  simp only [quadraticTwistBy, trace_algebraMap_add_algebraMap_mul K L a b θ,
+  simp only [quadraticTwistBy_def, trace_algebraMap_add_algebraMap_mul K L a b θ,
     norm_algebraMap_add_algebraMap_mul K L a b θ]
   exact E.exists_smul_quadraticTwistOf_eq _ _ b (isUnit_iff_ne_zero.mpr ha)
 

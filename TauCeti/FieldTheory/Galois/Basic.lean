@@ -21,14 +21,16 @@ automorphisms and `IsGalois.mem_range_algebraMap_iff_fixed` characterises the ba
 
 These are the descent inputs for the quadratic-twist layer of
 `TauCetiRoadmap/EllipticCurves/README.md` (§Layer 5), consumed by
-`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisDescent.lean`.
+`TauCeti/AlgebraicGeometry/EllipticCurve/GaloisDescent.lean` and by
+`TauCeti/RingTheory/Norm/Quadratic.lean`, which expresses the trace and norm of a
+separable quadratic extension through its nontrivial automorphism.
 
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 `FLT/Mathlib/FieldTheory/Galois/Basic.lean` at the roadmap's pin `bc2fe8ff7396`, FLT PR #1088,
 Apache 2.0). That file's own header reads `Authors: Kevin Buzzard, Claude`; following this
 repository's convention for adapted material, the upstream authorship is credited here rather
-than in the copyright header. Only the three results the descent file consumes are ported; the
-rest of the source file is deferred to the Tau Ceti PRs that consume it.
+than in the copyright header. Only the results consumed downstream are ported; the rest of
+the source file is deferred to the Tau Ceti PRs that consume it.
 -/
 
 public section
@@ -69,12 +71,6 @@ nontrivial element. -/
 theorem univ_algEquiv [DecidableEq (L ≃ₐ[K] L)] {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) :
     (Finset.univ : Finset (L ≃ₐ[K] L)) = {1, σ} :=
   (Finset.eq_univ_of_forall fun φ ↦ by simpa using algEquiv_eq_one_or_eq K L hσ φ).symm
-
-/-- The nontrivial automorphism of a separable quadratic extension moves every element lying
-outside the base field: the contrapositive of `mem_range_algebraMap_of_apply_eq`. -/
-theorem algEquiv_apply_ne {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {x : L}
-    (hx : x ∉ Set.range (algebraMap K L)) : σ x ≠ x :=
-  fun heq ↦ hx (mem_range_algebraMap_of_apply_eq K L hσ heq)
 
 end Algebra.IsQuadraticExtension
 
