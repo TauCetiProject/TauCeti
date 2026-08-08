@@ -118,6 +118,95 @@ Three event-driven workflows drive it:
   schedule (every 6h) that runs `check` to probe the credentials, so a broken
   key is caught even during quiet periods with no PR activity.
 
+## Measuring merge conflicts
+
+GitHub reports only the *current* value of a PR's `mergeable`, and its timeline
+records nothing when a PR starts conflicting. So "how long do conflicts last here"
+is not a question you can look up — there is no log to read.
+
+[`conflict_stats.py`](conflict_stats.py) reconstructs it. A PR conflicts because
+main moved and stops because someone pushed, and answering "how long, and who
+fixed it" needs three things git cannot give you: which shas were ever the PR's
+head, when GitHub received them, and who pushed them. A commit is not a head
+(several travel in one push), its committer date is when it was *written*, and its
+committer field is free text rather than an account.
+
+All three come from the **push ledger**: `pr-build` runs on `pull_request_target`
+for every open, reopen, and synchronize, so one run exists per head *transition* —
+the head the PR was opened with, and every head pushed over it — carrying the sha,
+the account behind it, and the time GitHub received it. Not every run is a push:
+the opening run's sha reached the branch earlier and unrecorded, since a push to a
+fork's branch triggers nothing here. It still dates the head, which is what the
+replay needs from it. `main`'s first-parent history supplies the bases, from
+git. For each head the tool
+binary-searches those bases with `git merge-tree` — starting from the base already
+in effect, so a PR born conflicting is not missed — for the first that will not
+merge cleanly. An episode ends at a head that is *clean* when it appeared, so
+successive conflicting heads stay one conflict; a PR closed or merged while still
+conflicting is censored rather than counted as a fast resolution.
+
+An episode also ends with nobody pushing, if main moves to a commit the *unchanged*
+head merges cleanly with. That is the outcome `main-cleared`, and it is searched
+for on every run: while a conflict is open, each later base in the epoch is tried
+in turn, so where an episode ends never rests on the monotonicity the onset search
+assumes. It has never happened here — the same scan run over every epoch rather
+than only the conflicting ones is 41,790 merges over 9,647 epochs, 184 of them
+conflicting, and no epoch has a clean base after a conflicting one — but that is a
+fact about this history, not a theorem about the next one.
+
+Closing a PR and reopening it does not end an episode — nothing there resolves the
+conflict — but the time it spent closed is discounted from the duration, since
+nobody could have merged it then, and `closed_seconds` on each row records how
+much. That has to come from the timeline: GitHub *clears* `closedAt` on reopen, so
+the list read cannot tell a reopened PR from one that never closed. Of the 33 PRs
+reopened here, all but one are now closed or merged, and most of the closures are
+the review bot pulsing a PR shut and open again a second later.
+
+```bash
+python3 scripts/pr_status/conflict_stats.py --ledger-cache /tmp/ledger.json --json episodes.json
+python3 scripts/pr_status/conflict_stats.py --exhaustive   # no monotonicity assumption
+```
+
+The ledger costs ~100 API reads (the runs listing caps at 1000 per query whatever
+`total_count` says, so it is fetched in date slices that halve on hitting the cap);
+`--ledger-cache` memoises it. That file is a snapshot rather than the ledger, so it
+records the span it covers and a later run reads the time since and merges it in —
+read back whole, a cache from this morning would report a conflict fixed at lunch
+as still open. A force-pushed head is recorded there but unreachable
+from `refs/pull/N/head`, so the replay fetches those objects by sha — 1282 of 9477
+here, and ignoring them cost 36 episodes and over half the author-returns.
+
+Provenance is reported per PR and has four values: `recorded` (every recorded push
+replayable), `partial` (some heads unfetchable, or a hole in the ledger over that
+PR's lifetime, so episodes may be truncated), `inferred` (no ledger coverage —
+heads from commit dates, actors unknown), and `skipped`. A PR whose recorded heads
+are *all* unfetchable is `partial`, not `inferred`: it falls back to commit dates
+like an uncovered PR, but the ledger did cover it, and only `partial` says the
+record was lost rather than never taken. A slice of the runs
+listing that fails or still caps at its smallest span returns fewer pushes and
+looks exactly like a quiet week, so those spans are carried alongside the ledger
+and every PR alive during one is downgraded to `partial`; a cache file that does
+not record them is rejected rather than read as hole-free. The same rule covers
+the timeline read: a failure gives `closed_seconds: null` rather than a zero
+discount, and the report counts those rows as upper bounds.
+
+Resolutions are bucketed as the author continuing, the author returning,
+*someone else entirely*, or unattributed, and each episode records the measured
+gap, so checking that a conclusion is not an artefact of one `--session-gap` costs
+a re-read of the JSON rather than a re-run. The gap runs back to that same actor's
+previous appearance on the PR, which for one fixed shortly after it opened is them
+*opening* it rather than an earlier push. That is still the author present at that
+moment, so it counts — dropping it would leave no earlier event and file an author
+who never left under `return` — and `gap_from` records which it was, per row and
+as a count in the report.
+
+An earlier draft of this file claimed every error ran one way and the output was a
+lower bound. That was wrong and is worth stating so nobody revives it: on the
+inferred path an intermediate conflicting commit invents an episode, an error in
+the other direction. Quote the ledger-covered numbers, treat a run with a large
+inferred population as softer, and note that the unresolved tail needs no
+reconstruction at all — it matches GitHub's live `CONFLICTING` list.
+
 ## Stuck-automation alerts (Tau Ceti > "Stuck PRs")
 
 [`stuck_alerts.py`](stuck_alerts.py), driven by
