@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GLn.PrimeDecomposition
+public import TauCeti.NumberTheory.HeckeRing.GLn.ScalarMul
 
 import Mathlib.Data.Finset.NatDivisors
 
@@ -182,8 +183,8 @@ theorem heckeT_mul_coprime (m n : ℕ+) (hcop : Nat.Coprime (m : ℕ) (n : ℕ))
         (Nat.div_pos (Nat.le_of_dvd (by omega) hq.1.1) ha_pos)
         (Nat.div_pos (Nat.le_of_dvd (by omega) hq.2.1) hb_pos) hca hcb ?_
       rwa [Nat.mul_div_cancel' hq.1.1, Nat.mul_div_cancel' hq.2.1]
-    · rw [heckeTDiag_eq_zero (by push Not; intro _ _; exact hcb), mul_zero
-        (heckeTDiag a ((m : ℕ) / a))]
+    · rw [show heckeTDiag b ((n : ℕ) / b) = 0 from
+        heckeTDiag_eq_zero (by push Not; intro _ _; exact hcb), mul_zero]
       symm
       refine heckeTDiag_eq_zero ?_
       push Not
@@ -191,7 +192,8 @@ theorem heckeT_mul_coprime (m n : ℕ+) (hcop : Nat.Coprime (m : ℕ) (n : ℕ))
       exact absurd (((hcop.symm.coprime_dvd_left hq.2.1).coprime_dvd_right
         (Nat.div_dvd_of_dvd hq.1.1)).dvd_of_dvd_mul_left
         (dvd_trans (dvd_mul_left b a) hdvd)) hcb
-  · rw [heckeTDiag_eq_zero (by push Not; intro _ _; exact hca), zero_mul]
+  · rw [show heckeTDiag a ((m : ℕ) / a) = 0 from
+      heckeTDiag_eq_zero (by push Not; intro _ _; exact hca), zero_mul]
     symm
     refine heckeTDiag_eq_zero ?_
     push Not
