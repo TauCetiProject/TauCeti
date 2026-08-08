@@ -168,6 +168,13 @@ the generating function of the semistandard Young tableaux of shape `μ` in the 
 noncomputable def diagramSchurPoly : MvPolynomial (Fin N) R :=
   ∑ T : BoundedSSYT N μ, monomial (BoundedSSYT.weight T) 1
 
+/-- The defining sum of a Schur polynomial, one weight monomial per bounded tableau of the
+shape.  The definition is not exposed across module boundaries, so this restatement is the only
+way a downstream module can rewrite with it. -/
+theorem diagramSchurPoly_eq_sum :
+    diagramSchurPoly N R μ = ∑ T : BoundedSSYT N μ, monomial (BoundedSSYT.weight T) 1 :=
+  (rfl)
+
 variable {N R μ}
 
 /-- **The coefficients of a Schur polynomial are the Kostka numbers**: the coefficient of `x^d` in
@@ -331,6 +338,14 @@ not matter, `s_μ` being symmetric, but symmetry is not proved here. -/
 noncomputable def schurPoly (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R] {n : ℕ}
     (μ : n.Partition) : MvPolynomial σ R :=
   rename (Fintype.equivFin σ).symm (diagramSchurPoly (Fintype.card σ) R (diagramOf μ))
+
+/-- The Schur polynomial of a partition is the Schur polynomial of its Young diagram, renamed
+along the chosen ordering of the alphabet.  The definition is not exposed across module
+boundaries, so this restatement is the only way a downstream module can rewrite with it. -/
+theorem schurPoly_eq_rename (μ : n.Partition) :
+    schurPoly σ R μ
+      = rename (Fintype.equivFin σ).symm (diagramSchurPoly (Fintype.card σ) R (diagramOf μ)) :=
+  (rfl)
 
 /-- The exponent vector on the alphabet `σ` recording the parts of `ν`, read through the ordering
 `Fintype.equivFin σ`: the image of `TauCeti.rowLenWeight` of the Young diagram of `ν`. -/
