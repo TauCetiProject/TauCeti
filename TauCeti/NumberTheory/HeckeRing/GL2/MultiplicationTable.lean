@@ -26,7 +26,7 @@ Chris Birkbeck), first section.
 
 ## Main results
 
-* `HeckeRing.GL2.heckeTDiag_one_primePow_eq`: `T(1, pᵏ) = T(pᵏ) − T(p,p) · T(p^(k−2))`.
+* `HeckeRing.GL2.heckeTDiag_one_prime_pow_eq`: `T(1, pᵏ) = T(pᵏ) − T(p,p) · T(p^(k−2))`.
 
 ## References
 
@@ -44,7 +44,7 @@ variable (p : ℕ) (hp : p.Prime)
 
 include hp in
 /-- The index shift: `T(p,p) · T(pʲ, p^d) = T(p^(j+1), p^(d+1))` for `j ≤ d`. -/
-lemma heckeTScalar_mul_heckeTDiag_primePow (j d : ℕ) (hjd : j ≤ d) :
+lemma heckeTScalar_mul_heckeTDiag_prime_pow (j d : ℕ) (hjd : j ≤ d) :
     heckeTScalar p * heckeTDiag (p ^ j) (p ^ d) =
       heckeTDiag (p ^ (j + 1)) (p ^ (d + 1)) := by
   rw [heckeTDiag_of_pos (pow_pos hp.pos j) (pow_pos hp.pos d) (Nat.pow_dvd_pow p hjd),
@@ -60,19 +60,19 @@ lemma heckeTScalar_mul_heckeTDiag_primePow (j d : ℕ) (hjd : j ≤ d) :
 include hp in
 /-- **Shimura, Theorem 3.24(2)**: `T(1, pᵏ) = T(pᵏ) − T(p,p) · T(p^(k−2))` for `k ≥ 2`:
 the divisor-pair expansion of `T(pᵏ)` telescopes against the index shift. -/
-theorem heckeTDiag_one_primePow_eq (k : ℕ) (hk : 2 ≤ k) :
+theorem heckeTDiag_one_prime_pow_eq (k : ℕ) (hk : 2 ≤ k) :
     heckeTDiag 1 (p ^ k) = heckeT ⟨p ^ k, pow_pos hp.pos k⟩ -
       heckeTScalar p * heckeT ⟨p ^ (k - 2), pow_pos hp.pos (k - 2)⟩ := by
   suffices h : heckeTDiag 1 (p ^ k) +
       heckeTScalar p * heckeT ⟨p ^ (k - 2), pow_pos hp.pos (k - 2)⟩ =
       heckeT ⟨p ^ k, pow_pos hp.pos k⟩ from eq_sub_iff_add_eq.mpr h
-  rw [heckeT_primePow_expansion p hp k, heckeT_primePow_expansion p hp (k - 2), Finset.mul_sum]
+  rw [heckeT_prime_pow_expansion p hp k, heckeT_prime_pow_expansion p hp (k - 2), Finset.mul_sum]
   have shift : ∀ j ∈ Finset.range ((k - 2) / 2 + 1),
       heckeTScalar p * heckeTDiag (p ^ j) (p ^ (k - 2 - j)) =
       heckeTDiag (p ^ (j + 1)) (p ^ (k - (j + 1))) := fun j hj ↦ by
     rw [Finset.mem_range] at hj
     have harith : k - 2 - j + 1 = k - (j + 1) := by omega
-    rw [heckeTScalar_mul_heckeTDiag_primePow p hp j (k - 2 - j) (by omega), harith]
+    rw [heckeTScalar_mul_heckeTDiag_prime_pow p hp j (k - 2 - j) (by omega), harith]
   rw [Finset.sum_congr rfl shift,
     show Finset.range ((k - 2) / 2 + 1) = Finset.range (k / 2) from by congr 1; omega,
     Finset.sum_range_succ']
@@ -378,7 +378,7 @@ private lemma mulSupport_pp_subset (k : ℕ)
 
 include hp in
 /-- The degree of `T(1, pʲ)` is `p^(j-1)(p+1)` for `j ≥ 1`. -/
-private lemma degree_diagCoset_one_primePow (j : ℕ) (hj : 0 < j) :
+private lemma degree_diagCoset_one_prime_pow (j : ℕ) (hj : 0 < j) :
     (diagCoset (![1, p ^ j] : Fin 2 → ℕ)).degree = p ^ (j - 1) * (p + 1) :=
   degree_diagCoset_of_ratio_eq_prime_pow p hp _
     (isDvdChain_iff.mpr fun i j' hij ↦ by
@@ -387,7 +387,7 @@ private lemma degree_diagCoset_one_primePow (j : ℕ) (hj : 0 < j) :
 
 include hp in
 /-- The degree of `T(p, pᵏ)` is `p^(k-2)(p+1)` for `k ≥ 2`. -/
-private lemma degree_diagCoset_p_primePow (k : ℕ) (hk2 : 2 ≤ k) :
+private lemma degree_diagCoset_p_prime_pow (k : ℕ) (hk2 : 2 ≤ k) :
     (diagCoset (![p, p ^ k] : Fin 2 → ℕ)).degree = p ^ (k - 2) * (p + 1) := by
   have h := degree_diagCoset_of_ratio_eq_prime_pow p hp (![p, p ^ k] : Fin 2 → ℕ)
     (isDvdChain_iff.mpr fun i j' hij ↦ by
@@ -417,7 +417,7 @@ private lemma degree_diagCoset_p_p : (diagCoset (![p, p ^ 1] : Fin 2 → ℕ)).d
 
 include hp in
 /-- The two support cosets are distinct: their invariant factors differ at the top. -/
-private lemma diagCoset_one_primePow_succ_ne (k : ℕ) (hk : 0 < k) :
+private lemma diagCoset_one_prime_pow_succ_ne (k : ℕ) (hk : 0 < k) :
     diagCoset (![1, p ^ (k + 1)] : Fin 2 → ℕ) ≠ diagCoset (![p, p ^ k] : Fin 2 → ℕ) := by
   intro heq
   have ha := eq_of_diagCoset_eq
@@ -468,7 +468,7 @@ private lemma m1_eq_one_and_m2_eq_of_eq_one (P m1 m2 : ℤ) (hP : 2 ≤ P)
 
 include hp in
 /-- The diagonal elements multiply as expected: `diag(1, p) · diag(1, pᵏ) = diag(1, p^(k+1))`. -/
-private lemma natDiagGL_one_p_mul_one_primePow (k : ℕ) :
+private lemma natDiagGL_one_p_mul_one_prime_pow (k : ℕ) :
     natDiagGL 2 (![1, p]) * natDiagGL 2 (![1, p ^ k]) = natDiagGL 2 (![1, p ^ (k + 1)]) := by
   rw [natDiagGL_mul 2 _ _ (fun i ↦ by fin_cases i <;> simp [hp.pos])
     (fun i ↦ by fin_cases i <;> simp [pow_pos hp.pos k])]
@@ -478,7 +478,7 @@ private lemma natDiagGL_one_p_mul_one_primePow (k : ℕ) :
 include hp in
 /-- `T(1, p^(k+1))` genuinely occurs in `T(1,p) · T(1,pᵏ)`: its representative is the product
 of the two representatives, up to `SL₂(ℤ)` factors on either side. -/
-private lemma multiplicity_one_primePow_succ_pos (k : ℕ) :
+private lemma multiplicity_one_prime_pow_succ_pos (k : ℕ) :
     0 < multiplicity (SLnZ 2) (SLnZ 2) (SLnZ 2)
       (((diagCoset ![1, p]).rep : GL (Fin 2) ℚ))
       (((diagCoset ![1, p ^ k]).rep : GL (Fin 2) ℚ))
@@ -494,7 +494,7 @@ private lemma multiplicity_one_primePow_succ_pos (k : ℕ) :
       R₁⁻¹ * L₂⁻¹,
       (SLnZ 2).mul_mem ((SLnZ 2).inv_mem hR₁) ((SLnZ 2).inv_mem hL₂), rfl⟩,
     R₂⁻¹ * R, (SLnZ 2).mul_mem ((SLnZ 2).inv_mem hR₂) hR, ?_⟩
-  rw [hD, hD1, hD2, ← natDiagGL_one_p_mul_one_primePow p hp k]
+  rw [hD, hD1, hD2, ← natDiagGL_one_p_mul_one_prime_pow p hp k]
   group
 
 include hp in
@@ -519,7 +519,7 @@ private lemma multiplicity_values (k : ℕ) (hk : 0 < k) :
     (((diagCoset ![1, p]).rep : GL (Fin 2) ℚ))
     (((diagCoset ![1, p ^ k]).rep : GL (Fin 2) ℚ))
     (((diagCoset ![p, p ^ k]).rep : GL (Fin 2) ℚ)) with hm2_def
-  have h_ne := diagCoset_one_primePow_succ_ne p hp k hk
+  have h_ne := diagCoset_one_prime_pow_succ_ne p hp k hk
   have h_zero : ∀ A : HeckeCoset (posDetInt 2) (SLnZ 2) (SLnZ 2),
       A ≠ diagCoset ![1, p ^ (k + 1)] → A ≠ diagCoset ![p, p ^ k] →
       multiplicity (SLnZ 2) (SLnZ 2) (SLnZ 2)
@@ -532,11 +532,11 @@ private lemma multiplicity_values (k : ℕ) (hk : 0 < k) :
     (diagCoset ![1, p ^ (k + 1)]) (diagCoset ![p, p ^ k]) h_ne h_zero
   rw [← hm1_def, ← hm2_def] at h_deg
   rw [show (diagCoset (![1, p] : Fin 2 → ℕ)).degree = p ^ 0 * (p + 1) by
-      simpa using degree_diagCoset_one_primePow p hp 1 one_pos,
-    degree_diagCoset_one_primePow p hp k hk,
+      simpa using degree_diagCoset_one_prime_pow p hp 1 one_pos,
+    degree_diagCoset_one_prime_pow p hp k hk,
     show (diagCoset (![1, p ^ (k + 1)] : Fin 2 → ℕ)).degree = p ^ k * (p + 1) by
-      simpa using degree_diagCoset_one_primePow p hp (k + 1) (by omega)] at h_deg
-  have hm1_pos : 0 < m1 := multiplicity_one_primePow_succ_pos p hp k
+      simpa using degree_diagCoset_one_prime_pow p hp (k + 1) (by omega)] at h_deg
+  have hm1_pos : 0 < m1 := multiplicity_one_prime_pow_succ_pos p hp k
   have hp2 : (2 : ℤ) ≤ (p : ℤ) := by exact_mod_cast hp.two_le
   by_cases hk1 : k = 1
   · subst hk1
@@ -552,7 +552,7 @@ private lemma multiplicity_values (k : ℕ) (hk : 0 < k) :
     simp only [ite_true]
     exact ⟨by exact_mod_cast h1, by exact_mod_cast h2⟩
   · have hk2 : 2 ≤ k := by omega
-    rw [degree_diagCoset_p_primePow p hp k hk2] at h_deg
+    rw [degree_diagCoset_p_prime_pow p hp k hk2] at h_deg
     have h_degZ : (m1 : ℤ) * ((p : ℤ) ^ k * ((p : ℤ) + 1)) +
         (m2 : ℤ) * ((p : ℤ) ^ (k - 2) * ((p : ℤ) + 1)) =
         ((p : ℤ) + 1) * ((p : ℤ) ^ (k - 1) * ((p : ℤ) + 1)) := by
@@ -574,7 +574,7 @@ theorem heckeT_prime_mul_heckeTDiag (k : ℕ) (hk : 0 < k) :
         (if k = 1 then ((p : ℤ) + 1) else (p : ℤ)) • heckeTDiag p (p ^ k) := by
   classical
   obtain ⟨hm1, hm2⟩ := multiplicity_values p hp k hk
-  have hne := diagCoset_one_primePow_succ_ne p hp k hk
+  have hne := diagCoset_one_prime_pow_succ_ne p hp k hk
   have hzero : ∀ A : HeckeCoset (posDetInt 2) (SLnZ 2) (SLnZ 2),
       A ≠ diagCoset ![1, p ^ (k + 1)] → A ≠ diagCoset ![p, p ^ k] →
       multiplicity (SLnZ 2) (SLnZ 2) (SLnZ 2)
