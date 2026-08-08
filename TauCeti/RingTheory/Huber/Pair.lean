@@ -30,6 +30,7 @@ explicit.
 
 * `TauCeti.Huber.IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent`: `A°° ⊆ A⁺` for
   every ring of integral elements.
+* `TauCeti.Huber.Pair.powerBounded`: `A⁺ = A°` is a ring of integral elements, the largest one.
 * `TauCeti.Huber.Pair.discrete`: a discrete ring is a Huber pair with `A⁺ = A`, so the
   definitions above are not vacuous.
 * `TauCeti.Huber.Pair.Hom.id`, `TauCeti.Huber.Pair.Hom.comp`: morphisms of Huber pairs compose,
@@ -172,6 +173,17 @@ def discrete [DiscreteTopology A] : Pair A where
       isIntegrallyClosedIn :=
         isIntegrallyClosedIn_iff.mpr ⟨Subtype.val_injective, fun _ ↦ ⟨⟨_, trivial⟩, rfl⟩⟩
       le_powerBoundedSubring := by simp }
+
+/-- The Huber pair with `A⁺ = A°`. This is a ring of integral elements
+because `A°` is open (`TauCeti.Huber.isOpen_powerBoundedSubring`) and integrally closed in `A`
+(`TauCeti.Huber.isPowerBounded_of_isIntegral`, Wedhorn Proposition 5.30(4)). -/
+def powerBounded : Pair A where
+  plus := powerBoundedSubring A
+  isRingOfIntegralElements :=
+    { isOpen := isOpen_powerBoundedSubring A
+      isIntegrallyClosed := fun _ hx ↦
+        mem_powerBoundedSubring.mpr (isPowerBounded_of_isIntegral hx)
+      le_powerBoundedSubring := le_rfl }
 
 end Pair
 
