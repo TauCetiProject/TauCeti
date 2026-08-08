@@ -30,7 +30,10 @@ Wedhorn's *Adic Spaces*.
 * `locNhd_mul_subset` and `locNhd_leftMul`: The two multiplicative compatibilities the subgroup
   basis needs.
 * `locBasis`: The neighborhoods form a `RingSubgroupsBasis`, so they are the zero-neighbourhood
-  basis of a ring topology on `Aₛ`.
+  basis of a ring topology on `Aₛ`, namely `locTopology`.
+* `continuous_lift_locTopology`: the universal property of that topology — a ring homomorphism
+  out of `Aₛ` is continuous once its restriction along `algebraMap` is continuous and the
+  fractions `t/s` go to power-bounded elements.
 
 ## Provenance
 
@@ -48,7 +51,7 @@ changes are:
 * [C. Birkbeck, *AINTLIB*](https://github.com/CBirkbeck/AINTLIB), branch `dev/adic-spaces`
 -/
 
-open Pointwise
+open Pointwise Topology
 
 namespace TauCeti.Huber
 
@@ -293,6 +296,136 @@ images of the powers of the ideal of definition of `D = A₀[t₁/s, …, tₙ/s
     (hopen : ∃ N : ℕ, ∀ b ∈ P.ideal ^ N, divByS ((b : A)) s ∈ locSubring P T s) :
     TopologicalSpace (Localization.Away s) :=
   (locBasis P T s hopen).topology
+
+/-! ### The universal property -/
+
+/-- A ring homomorphism out of `Aₛ` is continuous for the localisation topology as soon as its
+restriction along `algebraMap` is continuous and the fractions `t/s` are sent to power-bounded
+elements. Both hypotheses are needed: continuity of `f ∘ algebraMap` alone does not bound the
+image of `D`, which is generated over `A₀` by exactly those fractions.
+
+The argument reduces to showing `f (D · Iᵐ) ⊆ W` for a suitable `m`, which is proved by
+induction on the finite set `T`, adjoining one fraction at a time and absorbing its powers into
+a nested chain of open subgroups supplied by power-boundedness. -/
+theorem continuous_lift_locTopology {B : Type*} [CommRing B] [TopologicalSpace B]
+    [NonarchimedeanRing B] [IsTopologicalRing A]
+    (P : PairOfDefinition A) (T : Finset A) (s : A)
+    (hopen : ∃ N : ℕ, ∀ b ∈ P.ideal ^ N, divByS ((b : A)) s ∈ locSubring P T s)
+    (f : Localization.Away s →+* B)
+    (hf : Continuous (f.comp (algebraMap A (Localization.Away s))))
+    (hpow : ∀ t ∈ T, IsPowerBounded (f (divByS t s))) :
+    @Continuous _ _ (locTopology P T s hopen) _ f := by
+  classical
+  set S₀ : Subring (Localization.Away s) := P.ringOfDefinition.map
+    (algebraMap A (Localization.Away s)) with hS₀
+  -- Along `algebraMap`, some power of the ideal of definition lands in any given open subgroup.
+  have hbase : ∀ G : OpenAddSubgroup B, ∃ m : ℕ, ∀ x ∈ S₀,
+      ∀ b ∈ P.ideal ^ m, f (x * algebraMap A (Localization.Away s) (b : A)) ∈ (G : Set B) := by
+    intro G
+    obtain ⟨m, hm⟩ : ∃ m : ℕ, ∀ b ∈ P.ideal ^ m,
+        f (algebraMap A (Localization.Away s) (b : A)) ∈ (G : Set B) := by
+      have hcont : Filter.Tendsto (f.comp (algebraMap A (Localization.Away s)))
+          (𝓝 0) (𝓝 0) := by
+        rw [← map_zero (f.comp (algebraMap A (Localization.Away s)))]
+        exact hf.continuousAt
+      obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp
+        (hcont (G.isOpen.mem_nhds G.zero_mem))
+      exact ⟨n, fun b hb ↦ hn ((P.mem_idealImage n).mpr ⟨b, hb, rfl⟩)⟩
+    refine ⟨m, ?_⟩
+    rintro _ ⟨a₀, ha₀, rfl⟩ b hb
+    rw [← map_mul (algebraMap A (Localization.Away s))]
+    exact hm ⟨(a₀ : A) * (b : A), P.ringOfDefinition.mul_mem ha₀ b.property⟩
+      (Ideal.mul_mem_left _ ⟨a₀, ha₀⟩ hb)
+  -- The same, with `A₀` replaced by all of `D`; this is where power-boundedness enters.
+  have hfull : ∀ G : OpenAddSubgroup B, ∃ m : ℕ, ∀ x ∈ locSubring P T s,
+      ∀ b ∈ P.ideal ^ m, f (x * algebraMap A (Localization.Away s) (b : A)) ∈ (G : Set B) := by
+    suffices haux : ∀ U : Finset A, (∀ t ∈ U, IsPowerBounded (f (divByS t s))) →
+        ∀ G : OpenAddSubgroup B, ∃ m : ℕ, ∀ x ∈ locSubring P U s,
+          ∀ b ∈ P.ideal ^ m,
+            f (x * algebraMap A (Localization.Away s) (b : A)) ∈ (G : Set B) from haux T hpow
+    intro U
+    induction U using Finset.induction with
+    | empty =>
+      intro _ G
+      obtain ⟨m, hm⟩ := hbase G
+      have hempty : locSubring P ∅ s = S₀ := by
+        unfold locSubring
+        simp only [Set.range_eq_empty, Set.union_empty]
+        rw [hS₀, ← Subring.coe_map]
+        exact Subring.closure_eq _
+      exact ⟨m, fun x hx b hb ↦ hm x (hempty ▸ hx) b hb⟩
+    | insert t U' ht ih =>
+      intro hpowU G
+      have hinsert_le : locSubring P (insert t U') s ≤
+          Subring.closure ((locSubring P U' s : Set (Localization.Away s)) ∪ {divByS t s}) := by
+        unfold locSubring
+        refine Subring.closure_le.mpr ?_
+        rintro x (⟨a₀, ha₀, rfl⟩ | ⟨⟨t', ht'⟩, rfl⟩)
+        · exact Subring.subset_closure (.inl (Subring.subset_closure (.inl ⟨a₀, ha₀, rfl⟩)))
+        · simp only [Finset.mem_insert] at ht'
+          rcases ht' with rfl | ht'U
+          · exact Subring.subset_closure (.inr rfl)
+          · exact Subring.subset_closure
+              (.inl (Subring.subset_closure (.inr ⟨⟨t', ht'U⟩, rfl⟩)))
+      obtain ⟨V, hV, hzV⟩ := isBounded_iff.mp (isPowerBounded_iff.mp
+        (hpowU t (Finset.mem_insert_self t U'))) (G : Set B) (G.isOpen.mem_nhds G.zero_mem)
+      obtain ⟨W, hWV⟩ := NonarchimedeanAddGroup.is_nonarchimedean V hV
+      obtain ⟨m, hm⟩ := ih (fun t' ht' ↦ hpowU t' (Finset.mem_insert_of_mem ht')) W
+      refine ⟨m, fun x hx b hb ↦ ?_⟩
+      -- Write `x` as a polynomial in `t/s` with coefficients in the smaller subring.
+      have hx_adj : x ∈ Algebra.adjoin (locSubring P U' s)
+          ({divByS t s} : Set (Localization.Away s)) := by
+        have h_le : Subring.closure
+            ((locSubring P U' s : Set (Localization.Away s)) ∪ {divByS t s}) ≤
+              (Algebra.adjoin (locSubring P U' s)
+                ({divByS t s} : Set (Localization.Away s))).toSubring := by
+          rw [Subring.closure_le]
+          rintro w (hw | rfl)
+          · exact Subalgebra.algebraMap_mem _ (⟨w, hw⟩ : locSubring P U' s)
+          · exact Algebra.subset_adjoin rfl
+        exact h_le (hinsert_le hx)
+      rw [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hx_adj
+      obtain ⟨p, hp⟩ := hx_adj
+      rw [← hp, Polynomial.aeval_eq_sum_range, Finset.sum_mul, map_sum]
+      refine G.toAddSubgroup.sum_mem fun i _ ↦ ?_
+      rw [Algebra.smul_def, Algebra.algebraMap_ofSubsemiring_apply,
+        show ((p.coeff i : Localization.Away s) * divByS t s ^ i) *
+              algebraMap A (Localization.Away s) (b : A) =
+            ((p.coeff i : Localization.Away s) *
+              algebraMap A (Localization.Away s) (b : A)) * divByS t s ^ i from by ring,
+        map_mul, map_pow]
+      exact hzV (Set.mul_mem_mul (hWV (hm _ (p.coeff i).property b hb)) ⟨i, rfl⟩)
+  let _ : TopologicalSpace (Localization.Away s) := locTopology P T s hopen
+  have : IsTopologicalRing (Localization.Away s) :=
+    (locBasis P T s hopen).toRingFilterBasis.isTopologicalRing
+  refine continuous_of_continuousAt_zero f.toAddMonoidHom ?_
+  rw [ContinuousAt, map_zero, Filter.tendsto_def]
+  intro V hV
+  obtain ⟨W, hWV⟩ := NonarchimedeanAddGroup.is_nonarchimedean V hV
+  obtain ⟨m, hm⟩ := hfull W
+  refine Filter.mem_of_superset
+    ((locBasis P T s hopen).hasBasis_nhds_zero.mem_iff.mpr ⟨m, trivial, le_refl _⟩) ?_
+  rintro _ ⟨d, hd, rfl⟩
+  refine hWV ?_
+  rw [locIdeal, ← Ideal.map_pow] at hd
+  suffices h : ∀ r : locSubring P T s,
+      f ((locSubring P T s).subtype (r * d)) ∈ (W : Set B) by
+    simpa using h 1
+  refine Submodule.span_induction (p := fun d _ ↦ ∀ r : locSubring P T s,
+    f ((locSubring P T s).subtype (r * d)) ∈ (W : Set B)) ?_ ?_ ?_ ?_ hd
+  · rintro _ ⟨b, hb, rfl⟩ r
+    exact hm r.val r.property b hb
+  · intro r
+    simp
+  · intro d₁ d₂ _ _ h₁ h₂ r
+    rw [show (locSubring P T s).subtype (r * (d₁ + d₂)) =
+      (locSubring P T s).subtype (r * d₁) + (locSubring P T s).subtype (r * d₂) by
+        simp [mul_add], map_add]
+    exact W.toAddSubgroup.add_mem (h₁ r) (h₂ r)
+  · intro c d _ hd r
+    rw [show (locSubring P T s).subtype (r * c • d) =
+      (locSubring P T s).subtype ((r * c) * d) by congr 1; rw [smul_eq_mul, mul_assoc]]
+    exact hd (r * c)
 
 end
 
