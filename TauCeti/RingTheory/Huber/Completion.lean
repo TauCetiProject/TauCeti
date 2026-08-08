@@ -226,7 +226,7 @@ noncomputable def toCompletionRingOfDefinition (P : PairOfDefinition A) :
     Subring.le_topologicalClosure _ ⟨x, x.2, rfl⟩
 
 /-- The corestricted completion map agrees with the completion map on `A₀`. -/
-@[simp] theorem coe_toCompletionRingOfDefinition (P : PairOfDefinition A)
+@[simp] theorem toCompletionRingOfDefinition_apply (P : PairOfDefinition A)
     (x : P.ringOfDefinition) : (P.toCompletionRingOfDefinition x : Completion A) = (x : A) :=
   (rfl)
 
