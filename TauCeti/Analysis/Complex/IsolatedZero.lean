@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Complex.Basic
 /-!
 # Estimates near an isolated zero
 
-A lower bound on a circle around a point at whose centre the function has its only zero, and two
+A lower bound on a circle around a point at whose centre the function has its only zero and two
 ways of concluding that the analytic order at a point is finite.
 
 The first two are the standing hypotheses of every Rouché comparison made on such a disc: both
