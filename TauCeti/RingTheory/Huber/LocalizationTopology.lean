@@ -120,7 +120,7 @@ noncomputable def algebraMapD (P : PairOfDefinition A) (T : Finset A)
 /-- The ideal of definition `J = I · D` in `D`. -/
 noncomputable def locIdeal (P : PairOfDefinition A) (T : Finset A)
     (s : A) : Ideal (locSubring P T s) :=
-  Ideal.map (algebraMapD P T s) P.ideal
+  Ideal.map (algebraMapD P T s) P.idealOfDefinition
 
 /-! ### The neighborhood basis -/
 
@@ -155,7 +155,7 @@ theorem locNhd_preimage_eq_locIdeal_pow (P : PairOfDefinition A) (T : Finset A)
 /-- The ideal of definition `J` is finitely generated. -/
 theorem locIdeal_fg (P : PairOfDefinition A) (T : Finset A) (s : A) :
     (locIdeal P T s).FG :=
-  P.fg_ideal.map _
+  P.fg_idealOfDefinition.map _
 
 /-- Products of the `n`-th neighbourhood land in the `n`-th neighbourhood: this is the
 multiplicative half of the subgroup basis. -/
@@ -169,10 +169,11 @@ theorem locNhd_mul_subset (P : PairOfDefinition A) (T : Finset A) (s : A) (i : �
 /-- Multiplying `1/s` by an element of `Jᴺ` lands back in `D`, once `N` is large enough that
 `b/s ∈ D` for every `b ∈ Iᴺ`. -/
 private theorem locNhd_invS_mem (P : PairOfDefinition A) (T : Finset A) (s : A) (N : ℕ)
-    (hN : ∀ b : P.ringOfDefinition, b ∈ P.ideal ^ N → divByS (↑b : A) s ∈ locSubring P T s)
+    (hN : ∀ b : P.ringOfDefinition,
+      b ∈ P.idealOfDefinition ^ N → divByS (↑b : A) s ∈ locSubring P T s)
     {d : locSubring P T s} (hd : d ∈ locIdeal P T s ^ N) :
     divByS 1 s * ↑d ∈ locSubring P T s := by
-  rw [locIdeal, ← Ideal.map_pow, ← Ideal.span_eq (P.ideal ^ N), Ideal.map_span] at hd
+  rw [locIdeal, ← Ideal.map_pow, ← Ideal.span_eq (P.idealOfDefinition ^ N), Ideal.map_span] at hd
   refine Submodule.span_induction (p := fun d _ ↦ divByS 1 s * ↑d ∈ locSubring P T s)
     ?_ ?_ ?_ ?_ hd
   · rintro d ⟨b, hb, rfl⟩
@@ -195,7 +196,8 @@ private theorem locNhd_invS_mem (P : PairOfDefinition A) (T : Finset A) (s : A) 
 /-- Multiplying `1/s` by an element of `locNhd (n + N)` lands in `locNhd n`, once `N` is large
 enough that `b/s ∈ D` for every `b ∈ Iᴺ`. -/
 private theorem locNhd_invS_step (P : PairOfDefinition A) (T : Finset A) (s : A) (N : ℕ)
-    (hN : ∀ b : P.ringOfDefinition, b ∈ P.ideal ^ N → divByS (↑b : A) s ∈ locSubring P T s)
+    (hN : ∀ b : P.ringOfDefinition,
+      b ∈ P.idealOfDefinition ^ N → divByS (↑b : A) s ∈ locSubring P T s)
     (n : ℕ) (y : Localization.Away s) (hy : y ∈ locNhd P T s (n + N)) :
     divByS 1 s * y ∈ locNhd P T s n := by
   obtain ⟨d, hd, rfl⟩ := hy
@@ -224,7 +226,7 @@ private theorem locNhd_algMap_step [IsTopologicalRing A] (P : PairOfDefinition A
   rintro y ⟨d, hd, rfl⟩
   -- `locNhd` is an image, so `y` is literally the coercion of the witness `d`
   change algebraMap A (Localization.Away s) a * ↑d ∈ locNhd P T s i
-  rw [locIdeal, ← Ideal.map_pow, ← Ideal.span_eq (P.ideal ^ m₀), Ideal.map_span] at hd
+  rw [locIdeal, ← Ideal.map_pow, ← Ideal.span_eq (P.idealOfDefinition ^ m₀), Ideal.map_span] at hd
   refine Submodule.span_induction (p := fun d _ ↦
     algebraMap A (Localization.Away s) a * ↑d ∈ locNhd P T s i) ?_ ?_ ?_ ?_ hd
   · rintro d ⟨b, hb, rfl⟩
@@ -248,7 +250,7 @@ private theorem locNhd_algMap_step [IsTopologicalRing A] (P : PairOfDefinition A
 /-- **Left multiplication is continuous** for the localization topology: multiplication by a
 fixed `x` pulls some neighbourhood `locNhd j` back inside `locNhd i`. -/
 theorem locNhd_leftMul [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A) (s : A)
-    (hopen : ∃ N : ℕ, ∀ b : P.ringOfDefinition, b ∈ P.ideal ^ N →
+    (hopen : ∃ N : ℕ, ∀ b : P.ringOfDefinition, b ∈ P.idealOfDefinition ^ N →
       divByS (↑b : A) s ∈ locSubring P T s)
     (x : Localization.Away s) (i : ℕ) :
     ∃ j, (locNhd P T s j : Set (Localization.Away s)) ⊆
@@ -279,7 +281,7 @@ theorem locNhd_leftMul [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finse
 /-- The `RingSubgroupsBasis` underlying the localization topology on `Aₛ`: the images of the
 powers `Jⁿ` are a basis of neighbourhoods of zero compatible with the ring structure. -/
 theorem locBasis [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A) (s : A)
-    (hopen : ∃ N : ℕ, ∀ b : P.ringOfDefinition, b ∈ P.ideal ^ N →
+    (hopen : ∃ N : ℕ, ∀ b : P.ringOfDefinition, b ∈ P.idealOfDefinition ^ N →
       divByS (↑b : A) s ∈ locSubring P T s) :
     RingSubgroupsBasis (locNhd P T s) :=
   .of_comm _
@@ -293,7 +295,7 @@ theorem locBasis [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A) (
 images of the powers of the ideal of definition of `D = A₀[t₁/s, …, tₙ/s]`. -/
 @[reducible] noncomputable def locTopology [IsTopologicalRing A] (P : PairOfDefinition A)
     (T : Finset A) (s : A)
-    (hopen : ∃ N : ℕ, ∀ b ∈ P.ideal ^ N, divByS ((b : A)) s ∈ locSubring P T s) :
+    (hopen : ∃ N : ℕ, ∀ b ∈ P.idealOfDefinition ^ N, divByS ((b : A)) s ∈ locSubring P T s) :
     TopologicalSpace (Localization.Away s) :=
   (locBasis P T s hopen).topology
 
@@ -310,7 +312,7 @@ a nested chain of open subgroups supplied by power-boundedness. -/
 theorem continuous_lift_locTopology {B : Type*} [CommRing B] [TopologicalSpace B]
     [NonarchimedeanRing B] [IsTopologicalRing A]
     (P : PairOfDefinition A) (T : Finset A) (s : A)
-    (hopen : ∃ N : ℕ, ∀ b ∈ P.ideal ^ N, divByS ((b : A)) s ∈ locSubring P T s)
+    (hopen : ∃ N : ℕ, ∀ b ∈ P.idealOfDefinition ^ N, divByS ((b : A)) s ∈ locSubring P T s)
     (f : Localization.Away s →+* B)
     (hf : Continuous (f.comp (algebraMap A (Localization.Away s))))
     (hpow : ∀ t ∈ T, IsPowerBounded (f (divByS t s))) :
@@ -320,9 +322,10 @@ theorem continuous_lift_locTopology {B : Type*} [CommRing B] [TopologicalSpace B
     (algebraMap A (Localization.Away s)) with hS₀
   -- Along `algebraMap`, some power of the ideal of definition lands in any given open subgroup.
   have hbase : ∀ G : OpenAddSubgroup B, ∃ m : ℕ, ∀ x ∈ S₀,
-      ∀ b ∈ P.ideal ^ m, f (x * algebraMap A (Localization.Away s) (b : A)) ∈ (G : Set B) := by
+      ∀ b ∈ P.idealOfDefinition ^ m,
+        f (x * algebraMap A (Localization.Away s) (b : A)) ∈ (G : Set B) := by
     intro G
-    obtain ⟨m, hm⟩ : ∃ m : ℕ, ∀ b ∈ P.ideal ^ m,
+    obtain ⟨m, hm⟩ : ∃ m : ℕ, ∀ b ∈ P.idealOfDefinition ^ m,
         f (algebraMap A (Localization.Away s) (b : A)) ∈ (G : Set B) := by
       have hcont : Filter.Tendsto (f.comp (algebraMap A (Localization.Away s)))
           (𝓝 0) (𝓝 0) := by
@@ -338,10 +341,11 @@ theorem continuous_lift_locTopology {B : Type*} [CommRing B] [TopologicalSpace B
       (Ideal.mul_mem_left _ ⟨a₀, ha₀⟩ hb)
   -- The same, with `A₀` replaced by all of `D`; this is where power-boundedness enters.
   have hfull : ∀ G : OpenAddSubgroup B, ∃ m : ℕ, ∀ x ∈ locSubring P T s,
-      ∀ b ∈ P.ideal ^ m, f (x * algebraMap A (Localization.Away s) (b : A)) ∈ (G : Set B) := by
+      ∀ b ∈ P.idealOfDefinition ^ m,
+        f (x * algebraMap A (Localization.Away s) (b : A)) ∈ (G : Set B) := by
     suffices haux : ∀ U : Finset A, (∀ t ∈ U, IsPowerBounded (f (divByS t s))) →
         ∀ G : OpenAddSubgroup B, ∃ m : ℕ, ∀ x ∈ locSubring P U s,
-          ∀ b ∈ P.ideal ^ m,
+          ∀ b ∈ P.idealOfDefinition ^ m,
             f (x * algebraMap A (Localization.Away s) (b : A)) ∈ (G : Set B) from haux T hpow
     intro U
     induction U using Finset.induction with
