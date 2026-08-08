@@ -37,7 +37,7 @@ Wedhorn's *Adic Spaces*.
 
 ## Provenance
 
-This is a port of AINTLIB's `LocalizationTopology.lean` (branch `dev/adic-spaces`). The main
+This is a port of AINTLIB's `LocalizationTopology.lean`, at commit `d9f2fbbb`. The main
 changes are:
 - Adapted `PairOfDefinition` field names to TauCeti conventions
   (`A₀`→`ringOfDefinition`, `I`→`ideal`, etc.)
@@ -48,7 +48,7 @@ changes are:
 ## References
 
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition and Definition 5.51, §8.1
-* [C. Birkbeck, *AINTLIB*](https://github.com/CBirkbeck/AINTLIB), branch `dev/adic-spaces`
+* [C. Birkbeck, *AINTLIB*](https://github.com/CBirkbeck/AINTLIB), commit `d9f2fbbb`
 -/
 
 open Pointwise Topology
