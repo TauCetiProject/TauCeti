@@ -53,7 +53,7 @@ theorem trace_algebraMap_add_algebraMap_mul (a b : K) (θ : L) :
       = a * Algebra.trace K L θ + 2 * b := by
   rw [map_add, Algebra.trace_algebraMap, ← Algebra.smul_def, map_smul,
     Algebra.IsQuadraticExtension.finrank_eq_two]
-  simp [nsmul_eq_mul]
+  simp only [nsmul_eq_mul, Nat.cast_ofNat]
   ring
 
 variable [Algebra.IsSeparable K L]

@@ -287,7 +287,7 @@ theorem isElliptic_quadraticTwistBy [E.IsElliptic] {θ : L}
 
 /-- The quadratic twist by a generator `θ` of a separable quadratic extension `L/K` depends on
 the choice of `θ` only up to isomorphism over `K`: all generators give isomorphic twists. This
-is what makes `quadraticTwist` well posed. -/
+is what will make the twist by the extension itself well posed. -/
 theorem exists_smul_quadraticTwistBy_eq {θ θ' : L} (hθ : θ ∉ Set.range (algebraMap K L))
     (hθ' : θ' ∉ Set.range (algebraMap K L)) :
     ∃ C : VariableChange K, C • E.quadraticTwistBy θ = E.quadraticTwistBy θ' := by
