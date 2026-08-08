@@ -126,7 +126,7 @@ lemma heckeTScalar_pow (hp : 0 < p) (i : ℕ) :
 
 /-- Expansion of `T(pᵏ)`: only the divisor pairs `(pⁱ, p^(k-i))` with `i ≤ k - i`
 contribute. -/
-lemma heckeT_primePow_expansion (hp : p.Prime) (k : ℕ) :
+lemma heckeT_prime_pow_expansion (hp : p.Prime) (k : ℕ) :
     heckeT ⟨p ^ k, pow_pos hp.pos k⟩ =
       ∑ i ∈ Finset.range (k / 2 + 1), heckeTDiag (p ^ i) (p ^ (k - i)) := by
   -- `heckeT` is sealed (`public section`, no `@[expose]`), so `rw`/`simp` cannot unfold it;
