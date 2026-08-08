@@ -6,9 +6,8 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GLn.CoprimeMul
--- supplies the `NonAssocRing (IntegralHeckeRing n)` instance used by `pLocalSubring` below;
--- `CoprimeMul` no longer re-exports it
-public import TauCeti.NumberTheory.HeckeRing.GLn.TransposeAntiInvolution
+-- supplies the `Ring (IntegralHeckeRing n)` instance that `Subring` needs for `pLocalSubring`
+public import TauCeti.NumberTheory.HeckeRing.Associativity
 
 import Mathlib.Data.Nat.Factorization.Basic
 
@@ -126,10 +125,13 @@ lemma coprime_prod_primePowDiag_diagOrdCompl (p : ℕ) (hp : p.Prime)
     (a : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i) :
     Nat.Coprime (∏ i, primePowDiag n p (diagFactorizationAt n p a) i)
       (∏ i, diagOrdCompl n p a i) := by
-  rw [show (∏ i, primePowDiag n p (diagFactorizationAt n p a) i)
-        = p ^ ∑ i, diagFactorizationAt n p a i by
+  -- the `p`-part determinant is a single power of `p`; `primePowDiag_apply` exposes the
+  -- entries as `p ^ e i`, after which the product-to-power identity applies verbatim
+  have hprod : (∏ i, primePowDiag n p (diagFactorizationAt n p a) i)
+      = p ^ ∑ i, diagFactorizationAt n p a i := by
     simpa only [primePowDiag_apply] using
-      Finset.prod_pow_eq_pow_sum Finset.univ (diagFactorizationAt n p a) p]
+      Finset.prod_pow_eq_pow_sum Finset.univ (diagFactorizationAt n p a) p
+  rw [hprod]
   exact (Nat.Coprime.prod_right fun i _ ↦ Nat.coprime_ordCompl hp (ha_pos i).ne').pow_left _
 
 end DiagOrdCompl
