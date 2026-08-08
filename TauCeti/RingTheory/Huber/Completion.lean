@@ -81,14 +81,21 @@ private theorem exists_sum_eq_of_mem_span_mul (G : Finset R) (K : Ideal R) {b : 
 
 end SpanMul
 
-variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+section AddGroup
 
-/-- The closure in `Â` of the image of an open additive subgroup of `A` is open. -/
+variable {A : Type*} [AddCommGroup A] [UniformSpace A] [IsUniformAddGroup A]
+
+/-- The closure in the completion of the image of an open additive subgroup is open. Only the
+additive structure is involved. -/
 theorem isOpen_closure_image_coe {G : AddSubgroup A} (hG : IsOpen (G : Set A)) :
     IsOpen (closure (((↑) : A → Completion A) '' (G : Set A))) := by
   have hmem := Completion.isDenseInducing_coe.closure_image_mem_nhds (hG.mem_nhds G.zero_mem)
   rw [Completion.coe_zero] at hmem
   exact AddSubgroup.isOpen_of_mem_nhds ((G.map Completion.toCompl).topologicalClosure) hmem
+
+end AddGroup
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
 
 namespace PairOfDefinition
 
@@ -420,9 +427,11 @@ instance IsTateRing.completion [IsTateRing A] : IsTateRing (Completion A) where
     exact ⟨(a : Completion A), ha.map Completion.coeRingHom,
       hnil.map Completion.continuous_coeRingHom⟩
 
-/-- The kernel of the completion map `A → Â` is the closure of the zero ideal: two elements of `A`
-have the same image in `Â` exactly when they are topologically indistinguishable. In particular
-the completion map is injective precisely when `A` is separated. -/
+section Ker
+
+variable {A : Type*} [Ring A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
+
+/-- The kernel of the completion map `A → Â` is the closure of the zero ideal. -/
 theorem ker_coeRingHom :
     RingHom.ker (Completion.coeRingHom : A →+* Completion A) = (⊥ : Ideal A).closure := by
   ext x
@@ -433,5 +442,7 @@ theorem ker_coeRingHom :
     _ ↔ Inseparable x (0 : A) := Completion.isDenseInducing_coe.isInducing.inseparable_iff
     _ ↔ x - 0 ∈ closure ({0} : Set A) := addGroup_inseparable_iff
     _ ↔ x ∈ closure ((⊥ : Ideal A) : Set A) := by rw [sub_zero]; simp
+
+end Ker
 
 end TauCeti.Huber
