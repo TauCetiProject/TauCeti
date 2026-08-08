@@ -6,11 +6,10 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
--- Non-public: `BoundedContinuousFunction.integrable` supplies integrability of the bounded
--- kernels against a finite measure.
-import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 import TauCeti.Analysis.CompletelyMonotone.Closure
 public import TauCeti.Analysis.CompletelyMonotone.Integral
+-- Non-public: the bundled Laplace kernel and its integrability.
+import TauCeti.Analysis.CompletelyMonotone.Laplace.Kernel
 
 /-!
 # Approximating measures for Bernstein's theorem
@@ -37,14 +36,12 @@ These build on the `IsCompletelyMonotone` API in `CompletelyMonotone/Basic.lean`
   `TauCeti.bernsteinKernel_nonneg`, `TauCeti.bernsteinKernel_le_one`,
   `TauCeti.bernsteinKernelBoundedContinuous`,
   `TauCeti.bernsteinKernelBoundedContinuous_apply`,
-  `TauCeti.laplaceKernelBoundedContinuous`,
-  `TauCeti.laplaceKernelBoundedContinuous_apply`,
   `TauCeti.bernsteinKernel_tendsto`: the rescaled Laplace kernel, its bundled
-  bounded-continuous `p`-dependence on the nonnegative half-line, and its bundled pointwise
-  limit `e^{-xp}`.
-* `TauCeti.integrable_exp_neg_mul`, `TauCeti.integral_exp_neg_mul_add_smul_dirac_zero`: the
-  Laplace kernel is integrable against any finite measure on `ℝ≥0`, and adjoining an atom
-  `c • δ₀` adds exactly `c` to the transform, the kernel being `1` at `0`.
+  bounded-continuous `p`-dependence on the nonnegative half-line, and its pointwise limit
+  `e^{-xp}` (bundled as `TauCeti.laplaceKernelBoundedContinuous` in
+  `CompletelyMonotone/Laplace/Kernel.lean`).
+* `TauCeti.integral_exp_neg_mul_add_smul_dirac_zero`: adjoining an atom `c • δ₀` adds exactly
+  `c` to the transform, the kernel being `1` at `0`.
 * `TauCeti.chafaiRescaled`, `TauCeti.chafaiRescaled_mass_eq`: the `ℝ≥0`-valued pushed-forward
   measures and mass preservation.
 * `TauCeti.chafaiRescaled_integral_bernsteinKernel`,
@@ -263,37 +260,6 @@ noncomputable def bernsteinKernelBoundedContinuous (n : ℕ) {x : ℝ} (hx : 0 �
 lemma bernsteinKernelBoundedContinuous_apply (n : ℕ) {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
     bernsteinKernelBoundedContinuous n hx p = bernsteinKernel n x (p : ℝ) := by
   rw [bernsteinKernelBoundedContinuous]; rfl
-
-/-- The limiting Laplace kernel as a bundled bounded continuous test function of the
-nonnegative variable `p`, for fixed nonnegative `x`. -/
-noncomputable def laplaceKernelBoundedContinuous {x : ℝ} (hx : 0 ≤ x) : ℝ≥0 →ᵇ ℝ where
-  toFun := fun p => Real.exp (-(x * (p : ℝ)))
-  continuous_toFun := Real.continuous_exp.comp ((continuous_const.mul continuous_subtype_val).neg)
-  map_bounded' :=
-    ⟨1, fun p q => by
-      rw [Real.dist_eq]
-      have hp0 : 0 < Real.exp (-(x * (p : ℝ))) := Real.exp_pos _
-      have hp1 : Real.exp (-(x * (p : ℝ))) ≤ 1 := by
-        rw [Real.exp_le_one_iff]
-        exact neg_nonpos.mpr (mul_nonneg hx p.2)
-      have hq0 : 0 < Real.exp (-(x * (q : ℝ))) := Real.exp_pos _
-      have hq1 : Real.exp (-(x * (q : ℝ))) ≤ 1 := by
-        rw [Real.exp_le_one_iff]
-        exact neg_nonpos.mpr (mul_nonneg hx q.2)
-      exact abs_sub_le_iff.mpr ⟨by linarith, by linarith⟩⟩
-
-/-- The bundled limiting Laplace kernel evaluates to the usual exponential kernel on `ℝ≥0`. -/
-@[simp]
-lemma laplaceKernelBoundedContinuous_apply {x : ℝ} (hx : 0 ≤ x) (p : ℝ≥0) :
-    laplaceKernelBoundedContinuous hx p = Real.exp (-(x * (p : ℝ))) := by
-  rw [laplaceKernelBoundedContinuous]; rfl
-
-/-- **The Laplace kernel is integrable against a finite measure.** For `0 ≤ x` the kernel
-`p ↦ e^{-xp}` is bounded and continuous on `ℝ≥0`, hence integrable against any finite measure. -/
-lemma integrable_exp_neg_mul (μ : Measure ℝ≥0) [IsFiniteMeasure μ] {x : ℝ} (hx : 0 ≤ x) :
-    Integrable (fun p : ℝ≥0 => Real.exp (-(x * (p : ℝ)))) μ := by
-  have h := (laplaceKernelBoundedContinuous hx).integrable μ
-  rwa [funext (laplaceKernelBoundedContinuous_apply hx)] at h
 
 /-- **An atom at `0` shifts the Laplace transform by its mass.** The kernel takes the value `1` at
 `p = 0`, so adjoining `c • δ₀` to a finite measure adds exactly `c`. -/
@@ -657,7 +623,7 @@ private lemma integral_chafaiDensity_le_tendsto_sub (f : ℝ → ℝ)
     (hL : Tendsto f atTop (nhds L)) (T : ℝ) (hT : 0 < T) :
     ∫ t in (0 : ℝ)..T, chafaiDensity f n t ≤ f 0 - L := by
   linarith [integral_chafaiDensity_le_sub f hcm n hn T hT,
-    hcm.le_of_tendsto_atTop hL hT.le]
+    (IsCompletelyMonotoneOnIci.of_isCompletelyMonotone hcm).le_of_tendsto_atTop hL hT.le]
 
 private lemma chafaiDensity_integrableOn_Ioi_of_tendsto (f : ℝ → ℝ)
     (hcm : IsCompletelyMonotone f) (n : ℕ) (hn : 1 ≤ n) (L : ℝ) (hL : Tendsto f atTop (nhds L)) :
@@ -731,7 +697,8 @@ lemma chafaiMeasure_finite_mass (f : ℝ → ℝ) (hcm : IsCompletelyMonotone f)
       ∀ n,
         IsFiniteMeasure (chafaiMeasure f n) ∧
         (chafaiMeasure f n) univ ≤ ENNReal.ofReal (f 0 - L) := by
-  obtain ⟨L, hL, hL_nn⟩ := hcm.exists_nonneg_tendsto_atTop
+  obtain ⟨L, hL, hL_nn⟩ :=
+    (IsCompletelyMonotoneOnIci.of_isCompletelyMonotone hcm).exists_nonneg_tendsto_atTop
   exact ⟨L, hL, hL_nn, fun n => chafaiMeasure_finite_mass_of_tendsto f hcm n L hL⟩
 
 /-- **Natural rescaled total mass bound**: for a completely monotone `f`, the rescaled
@@ -788,7 +755,8 @@ lemma chafaiRescaled_prokhorov_mass_bound (f : ℝ → ℝ) (hcm : IsCompletelyM
         IsFiniteMeasure (chafaiRescaled f n) ∧
         (chafaiRescaled f n) univ ≤ (C : ENNReal) := by
   obtain ⟨L, hL, hL_nn, hfinite⟩ := chafaiRescaled_finite_mass f hcm
-  have hL_le : L ≤ f 0 := hcm.le_of_tendsto_atTop hL le_rfl
+  have hL_le : L ≤ f 0 :=
+    (IsCompletelyMonotoneOnIci.of_isCompletelyMonotone hcm).le_of_tendsto_atTop hL le_rfl
   let C : ℝ≥0 := ⟨f 0 - L, sub_nonneg.mpr hL_le⟩
   refine ⟨L, C, hL, hL_nn, rfl, fun n => ?_⟩
   refine ⟨(hfinite n).1, ?_⟩
