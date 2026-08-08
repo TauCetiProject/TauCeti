@@ -158,28 +158,6 @@ lemma heckeTDiag_mul_of_coprime (a b da db : ℕ) (hda : 0 < da)
     (fun i ↦ by fin_cases i <;> simp [hb, hdb])
     (by simpa [Fin.prod_univ_two] using hcop)
 
-private lemma heckeTDiag_mul_eq_zero_left {a da : ℕ} (h : ¬(0 < a ∧ 0 < da ∧ a ∣ da))
-    (x : IntegralHeckeRing 2) : heckeTDiag a da * x = 0 := by
-  rw [heckeTDiag_eq_zero h, zero_mul]
-
-private lemma heckeTDiag_mul_eq_zero_right {b db : ℕ} (h : ¬(0 < b ∧ 0 < db ∧ b ∣ db))
-    (x : IntegralHeckeRing 2) : x * heckeTDiag b db = 0 := by
-  rw [heckeTDiag_eq_zero h, mul_zero]
-
-/-- Multiplying divisor pairs is injective on the divisors of coprime numbers. -/
-private lemma mul_injOn_coprime_divisors (m n : ℕ) (hcop : Nat.Coprime m n) :
-    Set.InjOn (fun q : ℕ × ℕ ↦ q.1 * q.2) (↑(m.divisors ×ˢ n.divisors)) := by
-  rintro ⟨a₁, b₁⟩ h₁ ⟨a₂, b₂⟩ h₂ heq
-  simp only [Finset.mem_coe, Finset.mem_product, Nat.mem_divisors] at h₁ h₂
-  simp only at heq
-  have haeq : a₁ = a₂ := Nat.dvd_antisymm
-    (((hcop.coprime_dvd_left h₁.1.1).coprime_dvd_right h₂.2.1).dvd_of_dvd_mul_right
-      (heq ▸ dvd_mul_right a₁ b₁))
-    (((hcop.coprime_dvd_left h₂.1.1).coprime_dvd_right h₁.2.1).dvd_of_dvd_mul_right
-      (heq ▸ dvd_mul_right a₂ b₂))
-  have ha_pos : 0 < a₁ := Nat.pos_of_ne_zero fun h ↦ by simp [h] at h₁
-  exact Prod.ext haeq (Nat.eq_of_mul_eq_mul_left ha_pos (haeq ▸ heq))
-
 open scoped Pointwise in
 /-- **Shimura, Theorem 3.24(3a)** — coprime multiplicativity: `T(m) · T(n) = T(mn)` when
 `m` and `n` are coprime. -/
@@ -191,7 +169,7 @@ theorem heckeT_mul_coprime (m n : ℕ+) (hcop : Nat.Coprime (m : ℕ) (n : ℕ))
   rw [Finset.sum_mul_sum, Nat.divisors_mul,
     show ((m : ℕ).divisors * (n : ℕ).divisors) =
       ((m : ℕ).divisors ×ˢ (n : ℕ).divisors).image (fun q ↦ q.1 * q.2) from rfl,
-    Finset.sum_image (mul_injOn_coprime_divisors _ _ hcop), ← Finset.sum_product']
+    Finset.sum_image hcop.mul_injOn_divisors, ← Finset.sum_product']
   refine Finset.sum_congr rfl fun q hq ↦ ?_
   obtain ⟨a, b⟩ := q
   simp only [Finset.mem_product, Nat.mem_divisors] at hq
@@ -204,7 +182,7 @@ theorem heckeT_mul_coprime (m n : ℕ+) (hcop : Nat.Coprime (m : ℕ) (n : ℕ))
         (Nat.div_pos (Nat.le_of_dvd (by omega) hq.1.1) ha_pos)
         (Nat.div_pos (Nat.le_of_dvd (by omega) hq.2.1) hb_pos) hca hcb ?_
       rwa [Nat.mul_div_cancel' hq.1.1, Nat.mul_div_cancel' hq.2.1]
-    · rw [heckeTDiag_mul_eq_zero_right (by push Not; intro _ _; exact hcb)
+    · rw [heckeTDiag_eq_zero (by push Not; intro _ _; exact hcb), mul_zero
         (heckeTDiag a ((m : ℕ) / a))]
       symm
       refine heckeTDiag_eq_zero ?_
@@ -213,7 +191,7 @@ theorem heckeT_mul_coprime (m n : ℕ+) (hcop : Nat.Coprime (m : ℕ) (n : ℕ))
       exact absurd (((hcop.symm.coprime_dvd_left hq.2.1).coprime_dvd_right
         (Nat.div_dvd_of_dvd hq.1.1)).dvd_of_dvd_mul_left
         (dvd_trans (dvd_mul_left b a) hdvd)) hcb
-  · rw [heckeTDiag_mul_eq_zero_left (by push Not; intro _ _; exact hca)]
+  · rw [heckeTDiag_eq_zero (by push Not; intro _ _; exact hca), zero_mul]
     symm
     refine heckeTDiag_eq_zero ?_
     push Not
