@@ -125,7 +125,7 @@ theorem coe_mem_completionIdealImage (P : PairOfDefinition A) {n : ℕ} {a : A}
   subset_closure ⟨a, ha, rfl⟩
 
 /-- The closures of the images of the `Iⁿ` decrease with `n`. -/
-theorem completionIdealImage_mono (P : PairOfDefinition A) {m n : ℕ} (h : m ≤ n) :
+theorem completionIdealImage_anti (P : PairOfDefinition A) {m n : ℕ} (h : m ≤ n) :
     P.completionIdealImage n ≤ P.completionIdealImage m := by
   refine fun x hx ↦ closure_mono (Set.image_mono ?_) hx
   exact Set.image_mono fun z hz ↦ Ideal.pow_le_pow_right h hz
@@ -275,7 +275,7 @@ private theorem cauchySeq_sum_coe (P : PairOfDefinition A) (d : ℕ → A)
     | succ m hjm ih =>
         rw [Finset.sum_range_succ, add_sub_right_comm]
         exact (P.completionIdealImage j).add_mem ih
-          (P.completionIdealImage_mono hjm (P.coe_mem_completionIdealImage (hd m)))
+          (P.completionIdealImage_anti hjm (P.coe_mem_completionIdealImage (hd m)))
   refine P.hasBasis_nhds_zero_completion.uniformity_of_nhds_zero.cauchySeq_iff.mpr fun j _ ↦ ?_
   refine ⟨j, fun m hm p hp ↦ ?_⟩
   have h := (P.completionIdealImage j).sub_mem (hsub j p hp) (hsub j m hm)
@@ -337,7 +337,7 @@ private theorem completionIdealImageIdeal_le (P : PairOfDefinition A) (n : ℕ) 
   have hulim : Tendsto u atTop (𝓝 0) := by
     refine P.hasBasis_nhds_zero_completion.tendsto_right_iff.mpr fun j _ ↦ ?_
     filter_upwards [eventually_ge_atTop j] with k hk
-    exact P.completionIdealImage_mono (hk.trans (Nat.le_add_left k n)) (huK k)
+    exact P.completionIdealImage_anti (hk.trans (Nat.le_add_left k n)) (huK k)
   have hyeq : (y : Completion A) = ∑ z ∈ G, ((z : A) : Completion A) * L z := by
     have h := tendsto_nhds_unique
       (((tendsto_const_nhds (x := (y : Completion A))).sub hulim).congr hpartial)
