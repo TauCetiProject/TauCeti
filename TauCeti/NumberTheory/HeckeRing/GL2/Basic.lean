@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.NumberTheory.HeckeRing.GLn.PrimeDecomposition
+public import TauCeti.NumberTheory.HeckeRing.GLn.CoprimeMul
 public import TauCeti.NumberTheory.HeckeRing.GLn.ScalarMul
 
 import Mathlib.Data.Finset.NatDivisors
