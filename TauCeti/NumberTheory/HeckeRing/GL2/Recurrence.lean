@@ -52,12 +52,13 @@ namespace HeckeRing.GL2
 variable (p : ℕ) (hp : p.Prime)
 
 omit hp in
-include hp in
 /-- `T(p, pᵏ) = T(p,p) · T(1, p^(k−1))` for `k ≥ 1`: the index shift at the bottom of the
-divisor pair. -/
-lemma heckeTDiag_p_prime_pow_eq (k : ℕ) (hk : 0 < k) :
+divisor pair.
+
+Like the index shift it specializes, this needs only `0 < p`; primality plays no role. -/
+lemma heckeTDiag_p_prime_pow_eq (hp0 : 0 < p) (k : ℕ) (hk : 0 < k) :
     heckeTDiag p (p ^ k) = heckeTScalar p * heckeTDiag 1 (p ^ (k - 1)) := by
-  have h0 := heckeTScalar_mul_heckeTDiag_prime_pow p hp 0 (k - 1) (Nat.zero_le _)
+  have h0 := heckeTScalar_mul_heckeTDiag_prime_pow p hp0 0 (k - 1) (Nat.zero_le _)
   rw [show k - 1 + 1 = k from Nat.succ_pred_eq_of_pos hk] at h0
   simpa [pow_zero, zero_add, pow_one] using h0.symm
 
@@ -96,7 +97,7 @@ private lemma heckeT_prime_pow_recurrence_step (k : ℕ) (hk_pos : 0 < k)
       heckeT ⟨p, hp.pos⟩ * heckeT ⟨p ^ (k + 2), pow_pos hp.pos (k + 2)⟩ -
         (p : ℤ) • (heckeTScalar p * heckeT ⟨p ^ (k + 1), pow_pos hp.pos (k + 1)⟩) := by
   have h5 := heckeT_prime_mul_heckeTDiag p hp (k + 2)
-  rw [heckeTDiag_p_prime_pow_eq p hp (k + 2) (by omega)] at h5
+  rw [heckeTDiag_p_prime_pow_eq p hp.pos (k + 2) (by omega)] at h5
   have h2 := heckeTDiag_one_prime_pow_eq p hp (k + 2 + 1) (by omega)
   conv at h2 => rhs; rw [show (k + 2 + 1) - 2 = k + 1 by omega]
   rw [h2] at h5
@@ -157,7 +158,7 @@ theorem heckeT_prime_pow_recurrence : ∀ k : ℕ, 0 < k →
   | _ k ih =>
   intro hk
   have h5 := heckeT_prime_mul_heckeTDiag p hp k
-  rw [heckeTDiag_p_prime_pow_eq p hp k hk] at h5
+  rw [heckeTDiag_p_prime_pow_eq p hp.pos k hk] at h5
   have h2 := heckeTDiag_one_prime_pow_eq p hp (k + 1) (by omega)
   conv at h2 => rhs; rw [show (k + 1) - 2 = k - 1 by omega]
   rw [h2] at h5
