@@ -420,7 +420,7 @@ theorem mul_comm_of_antiInvolution [CommSemiring R] (ι : HeckeAntiInvolution Δ
 anti-involution fixes every double coset (Proposition 3.8 of [Shimura][shimura1971]). Not an
 instance: the anti-involution is data supplied per application (for `GL₂` it is the
 transpose). -/
-@[instance_reducible]
+@[expose, instance_reducible]
 noncomputable def commSemiringOfAntiInvolution [CommSemiring R] (ι : HeckeAntiInvolution Δ H)
     (h_fix : ∀ D : HeckeCoset Δ H H, ι.onHeckeCoset D = D) : CommSemiring (𝕋 Δ H R) :=
   { instSemiringHeckeRing R with
