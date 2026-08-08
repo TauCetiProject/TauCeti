@@ -85,11 +85,11 @@ section RemovePrime
 
 /-- The entrywise `p`-free part of a diagonal: `a i ↦ a i / p ^ (v_p (a i))`. -/
 noncomputable def removePrime (p : ℕ) (a : Fin n → ℕ) : Fin n → ℕ :=
-  fun i ↦ a i / p ^ ((a i).factorization p)
+  fun i ↦ ordCompl[p] (a i)
 
 /-- Defining equation for the sealed `removePrime`. -/
 lemma removePrime_apply (p : ℕ) (a : Fin n → ℕ) (i : Fin n) :
-    removePrime n p a i = a i / p ^ ((a i).factorization p) := (rfl)
+    removePrime n p a i = ordCompl[p] (a i) := (rfl)
 
 lemma removePrime_pos (p : ℕ) (a : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i) :
     ∀ i, 0 < removePrime n p a i :=
@@ -98,10 +98,8 @@ lemma removePrime_pos (p : ℕ) (a : Fin n → ℕ) (ha_pos : ∀ i, 0 < a i) :
 /-- The `p`-free part preserves divisibility chains. -/
 lemma isDvdChain_removePrime (p : ℕ) (a : Fin n → ℕ) (ha : IsDvdChain a) :
     IsDvdChain (removePrime n p a) := by
-  refine isDvdChain_iff.mpr fun i j hij ↦ ?_
-  obtain ⟨k, hk⟩ := isDvdChain_iff.mp ha hij
-  simp only [removePrime, hk, Nat.ordCompl_mul]
-  exact dvd_mul_right _ _
+  exact isDvdChain_iff.mpr fun i j hij ↦
+    Nat.ordCompl_dvd_ordCompl_of_dvd (isDvdChain_iff.mp ha hij) p
 
 /-- The pointwise product of the `p`-part and the `p`-free part recovers the diagonal. -/
 @[simp]
