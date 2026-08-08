@@ -95,7 +95,7 @@ private lemma heckeT_prime_pow_recurrence_step (k : ℕ) (hk_pos : 0 < k)
     heckeT ⟨p ^ (k + 2 + 1), pow_pos hp.pos (k + 2 + 1)⟩ =
       heckeT ⟨p, hp.pos⟩ * heckeT ⟨p ^ (k + 2), pow_pos hp.pos (k + 2)⟩ -
         (p : ℤ) • (heckeTScalar p * heckeT ⟨p ^ (k + 1), pow_pos hp.pos (k + 1)⟩) := by
-  have h5 := heckeT_prime_mul_heckeTDiag p hp (k + 2) (by omega)
+  have h5 := heckeT_prime_mul_heckeTDiag p hp (k + 2)
   rw [heckeTDiag_p_prime_pow_eq p hp (k + 2) (by omega)] at h5
   have h2 := heckeTDiag_one_prime_pow_eq p hp (k + 2 + 1) (by omega)
   conv at h2 => rhs; rw [show (k + 2 + 1) - 2 = k + 1 by omega]
@@ -156,7 +156,7 @@ theorem heckeT_prime_pow_recurrence : ∀ k : ℕ, 0 < k →
   induction k using Nat.strongRecOn with
   | _ k ih =>
   intro hk
-  have h5 := heckeT_prime_mul_heckeTDiag p hp k hk
+  have h5 := heckeT_prime_mul_heckeTDiag p hp k
   rw [heckeTDiag_p_prime_pow_eq p hp k hk] at h5
   have h2 := heckeTDiag_one_prime_pow_eq p hp (k + 1) (by omega)
   conv at h2 => rhs; rw [show (k + 1) - 2 = k - 1 by omega]
