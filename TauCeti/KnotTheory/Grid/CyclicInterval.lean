@@ -12,9 +12,11 @@ public import Mathlib.Order.Circular.ZMod
 /-!
 # Complementary cyclic intervals in finite grids
 
-This file records finite-set bookkeeping for the clockwise open cyclic intervals used by
+This file records finite-set bookkeeping for the clockwise cyclic intervals used by
 toroidal grid rectangles. For distinct endpoints `a` and `b`, the two arcs `cIoo a b` and
-`cIoo b a` are disjoint and together contain exactly the points other than `a` and `b`.
+`cIoo b a` are disjoint and together contain exactly the points other than `a` and `b`. The
+half-open interval `cIco a b` adjoins the initial endpoint; it names the squares between two
+grid lines, each square by its initial line.
 
 These lemmas are deliberately stated at the one-dimensional `Fin n` level. Rectangle-pair
 arguments for the grid differential can then apply them independently in the column and row
@@ -22,6 +24,8 @@ directions before taking products.
 
 ## Main results
 
+* `TauCeti.Grid.cIco` and `TauCeti.Grid.mem_cIco`: the clockwise half-open cyclic interval
+  naming the squares between two grid lines.
 * `TauCeti.Grid.disjoint_cIoo_swap`: opposite open arcs are disjoint.
 * `TauCeti.Grid.mem_cIoo_or_mem_cIoo_swap_iff`: a point lies in one opposite arc exactly when
   it is not an endpoint.
@@ -35,10 +39,11 @@ directions before taking products.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/HeegaardFloer/README.md`, Lane G.3, "The
-complexes and `∂² = 0`", where the annular cases in the juxtaposition proof use the fact that
-the two complementary cyclic intervals partition the non-endpoint columns or rows. The
-terminology follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane
+G.3, "The complexes and `∂² = 0`", where the annular cases in the juxtaposition proof use the
+fact that the two complementary cyclic intervals partition the non-endpoint columns or rows.
+The terminology follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
+Chapter 3.
 -/
 
 public section
@@ -117,6 +122,34 @@ theorem right_notMem_cIoo (a b : Fin n) : b ∉ cIoo a b := by
     cases hinside with
     | inl hlt => exact hab hlt
     | inr hlt => exact Nat.lt_irrefl b.val hlt
+
+/-- The clockwise half-open cyclic interval from `a` to `b` in `Fin n`: the initial endpoint
+together with the open cyclic interval. The interval from a point to itself is empty.
+
+Where `cIoo a b` names the grid points strictly between two grid lines, `cIco a b` names the
+squares between them: the square between the lines `c` and `c + 1` is named by its initial
+line `c`, so the squares between the lines `a` and `b` are named by `a` and the lines strictly
+between. -/
+noncomputable def cIco (a b : Fin n) : Finset (Fin n) :=
+  if a = b then ∅ else insert a (cIoo a b)
+
+/-- The half-open cyclic interval from a point to itself is empty. -/
+@[simp]
+theorem cIco_self (a : Fin n) : cIco a a = ∅ := by
+  simp [cIco]
+
+/-- Membership in a clockwise half-open cyclic interval: the endpoints are distinct, and the
+point is the initial endpoint or lies strictly between. -/
+@[simp]
+theorem mem_cIco {a b x : Fin n} : x ∈ cIco a b ↔ a ≠ b ∧ (x = a ∨ x ∈ cIoo a b) := by
+  rw [cIco]
+  by_cases h : a = b <;> simp [h]
+
+/-- The initial endpoint belongs to its half-open cyclic interval when the endpoints are
+distinct. -/
+theorem left_mem_cIco {a b : Fin n} (h : a ≠ b) : a ∈ cIco a b := by
+  rw [mem_cIco]
+  exact ⟨h, Or.inl rfl⟩
 
 /-- Two oriented cyclic intervals have non-interleaving endpoint pairs.
 
