@@ -8,11 +8,12 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
+public import Mathlib.RingTheory.RootsOfUnity.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.ZMod.Units
 
 /-!
-# Special linear groups: surjectivity of reduction, the centre, and the image of `-I`
+# Special linear groups: surjectivity of reduction, centers, and the image of `-I`
 
 The natural reduction map `SL₂(ℤ) → SL₂(ℤ/dℤ)` is surjective (strong approximation for
 `SL₂`; Shimura §1.6, Serre Ch. VII), and the base-change map `SL(n, R) → GL(n, S)` sends
@@ -21,6 +22,9 @@ The natural reduction map `SL₂(ℤ) → SL₂(ℤ/dℤ)` is surjective (strong
 The third result pins down `±I` itself, which is what the base-change statement moves around:
 over a commutative ring without zero divisors the centre of `SL₂` is exactly `{±I}`, the
 scalar form Mathlib gives having no other square roots of `1` to offer.
+
+The general positive-size center is identified with the corresponding roots-of-unity group by
+specializing Mathlib's finite-index-type equivalence to `Fin n`.
 
 The surjectivity is ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck). Prerequisite for the
@@ -31,6 +35,8 @@ diamond operators of the ModularForms roadmap (Layer 0), where it realizes every
 
 * `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`: strong approximation for `SL₂`.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
+* `Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin`: the center of `SL(Fin n, A)` is
+  `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`: the centre of `SL₂` is
   `{±I}` when `R` has no zero divisors.
 * `Matrix.SpecialLinearGroup.finite_center` and
@@ -57,6 +63,37 @@ open Matrix
 variable {d : ℕ}
 
 namespace Matrix.SpecialLinearGroup
+
+/-- For `0 < n`, the center of `SL(Fin n, A)` is the group of `n`th roots of unity. -/
+noncomputable def centerMulEquivRootsOfUnityFin (n : ℕ) (hn : 0 < n)
+    (A : Type*) [CommRing A] :
+    Subgroup.center (SpecialLinearGroup (Fin n) A) ≃* rootsOfUnity n A :=
+  (center_equiv_rootsOfUnity' (R := A) (⟨0, hn⟩ : Fin n)).trans <|
+    MulEquiv.subgroupCongr <| by rw [Fintype.card_fin]
+
+/-- The center equivalence reads off the upper-left entry of a central matrix. -/
+@[simp]
+theorem coe_centerMulEquivRootsOfUnityFin_apply (n : ℕ) (hn : 0 < n)
+    (A : Type*) [CommRing A] (c : Subgroup.center (SpecialLinearGroup (Fin n) A)) :
+    (((centerMulEquivRootsOfUnityFin n hn A c : rootsOfUnity n A) : Aˣ) : A) =
+      ((c : SpecialLinearGroup (Fin n) A) : Matrix (Fin n) (Fin n) A)
+        (⟨0, hn⟩ : Fin n) ⟨0, hn⟩ := by
+  simp [centerMulEquivRootsOfUnityFin, center_equiv_rootsOfUnity'_apply]
+
+/-- The inverse center equivalence sends a root of unity to its scalar matrix. -/
+@[simp]
+theorem coe_centerMulEquivRootsOfUnityFin_symm_apply (n : ℕ) (hn : 0 < n)
+    (A : Type*) [CommRing A] (ζ : rootsOfUnity n A) :
+    (((centerMulEquivRootsOfUnityFin n hn A).symm ζ :
+        SpecialLinearGroup (Fin n) A) : Matrix (Fin n) (Fin n) A) =
+      Matrix.scalar (Fin n) ((ζ : Aˣ) : A) := by
+  rw [← scalar_eq_coe_self_center
+    ((centerMulEquivRootsOfUnityFin n hn A).symm ζ) (⟨0, hn⟩ : Fin n)]
+  congr 1
+  have h := congrArg (fun ξ : rootsOfUnity n A ↦ ((ξ : Aˣ) : A))
+    ((centerMulEquivRootsOfUnityFin n hn A).apply_symm_apply ζ)
+  rw [coe_centerMulEquivRootsOfUnityFin_apply] at h
+  exact h
 
 /-- `-I` maps to `-I` under `SL(n, R) → GL(n, S)`. -/
 @[simp]
