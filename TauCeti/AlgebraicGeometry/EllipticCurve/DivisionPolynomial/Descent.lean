@@ -25,11 +25,11 @@ equation carries integrality from `x` to `y`.
 
 ## Main results
 
-* `TauCeti.WeierstrassCurve.eval_mul_ΨSq_eq_eval_Φ_of_zsmul`: the coordinate identity
+* `TauCeti.WeierstrassCurve.mul_eval_ΨSq_eq_eval_Φ_of_zsmul`: the coordinate identity
   `x' · ΨSqₙ(x) = Φₙ(x)` relating `P` and `n • P`, over a field.
-* `TauCeti.WeierstrassCurve.isInteger_of_zsmul_isInteger`: **the descent step.** Over a UFD with
-  fraction field `K`, if `n • P = P'` and `P'` has integral `x`-coordinate, both coordinates of
-  `P` are integral.
+* `WeierstrassCurve.isInteger_of_zsmul_isInteger`: **the descent step.** Over an integrally
+  closed `R` with fraction field `K`, if `n • P = P'` and `P'` has integral `x`-coordinate, both
+  coordinates of `P` are integral.
 
 ## Roadmap
 
@@ -52,10 +52,15 @@ already carries the latter as `Integral.lean`'s `isInteger_of_mul_eval_ΨSq_eq_e
 docstring notes that "no point, and no multiple, occurs in this statement", i.e. it is exactly the
 point-free half. The composition is inlined here rather than given a name.
 
-Two adaptations. `curveK R K W` is `W.map (algebraMap R K)`, which is `rfl`-equal to Mathlib's
+Three adaptations. `curveK R K W` is `W.map (algebraMap R K)`, which is `rfl`-equal to Mathlib's
 `W.baseChange K`; this file uses `baseChange`, matching `Integral.lean` and `Integrality.lean`.
 The source's `hn : n ≠ 0`, `hn_R : (n : R) ≠ 0` and `_hy'` hypotheses are dropped — none is used
 by the proof once the integral-root step is delegated, and `_hy'` is unused upstream too.
+
+**The base ring is generalised.** The source assumes a UFD; no factorisation argument occurs
+anywhere in these two proofs, so `[IsIntegrallyClosed R]` suffices — and `[IsDomain R]` turns out
+to be unnecessary as well, which `unusedSectionVars` reported once the UFD hypothesis was removed.
+The descent step therefore holds over any integrally closed base with a fraction field.
 -/
 
 public section
@@ -73,7 +78,7 @@ variable {F : Type*} [Field F] [DecidableEq F] (E : WeierstrassCurve F)
 `zsmul_eq_smulEval` presents `n • P` as the Jacobian class of `(φₙ : ωₙ : ψₙ)` evaluated at `P`;
 comparing that with the affine representative `(x' : y' : 1)` and reading off the `X`-coordinate
 gives the identity, after rewriting `φₙ` and `ψₙ²` into their univariate forms `Φₙ` and `ΨSqₙ`. -/
-theorem eval_mul_ΨSq_eq_eval_Φ_of_zsmul {x y : F} (hns : E.toAffine.Nonsingular x y)
+theorem mul_eval_ΨSq_eq_eval_Φ_of_zsmul {x y : F} (hns : E.toAffine.Nonsingular x y)
     {x' y' : F} (hns' : E.toAffine.Nonsingular x' y') {n : ℤ}
     (hnP : n • (Affine.Point.some _ _ hns) = Affine.Point.some _ _ hns') :
     x' * (E.ΨSq n).eval x = (E.Φ n).eval x := by
@@ -84,9 +89,11 @@ theorem eval_mul_ΨSq_eq_eval_Φ_of_zsmul {x y : F} (hns : E.toAffine.Nonsingula
     simpa using h
   have hsmul := zsmul_eq_smulEval E hns n
   -- `≈` on `Fin 3 → F` is the Jacobian equivalence, so its `HasEquiv` instance must be in scope.
+  -- The two triples represent the same Jacobian point, so they differ by a unit scalar.
   open Jacobian in
-  have hX := Jacobian.X_eq_of_equiv (show smulEval E x y n ≈ ![x', y', 1] by
-    rw [Jacobian.Point.ext_iff, hsmul] at hJac; exact Quotient.exact hJac)
+  have hequiv : smulEval E x y n ≈ ![x', y', 1] := by
+    rw [Jacobian.Point.ext_iff, hsmul] at hJac; exact Quotient.exact hJac
+  have hX := Jacobian.X_eq_of_equiv hequiv
   simp only [smulEval, Function.comp, Matrix.cons_val_zero, Matrix.cons_val_two,
     Matrix.head_cons, Matrix.tail_cons] at hX
   norm_num at hX
@@ -96,7 +103,7 @@ theorem eval_mul_ΨSq_eq_eval_Φ_of_zsmul {x y : F} (hns : E.toAffine.Nonsingula
   rw [hΨSq] at hX
   exact hX.symm
 
-variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
+variable {R : Type*} [CommRing R] [IsIntegrallyClosed R]
 variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsFractionRing R K]
 variable (W : WeierstrassCurve R)
 
@@ -111,7 +118,7 @@ theorem isInteger_of_zsmul_isInteger {x y : K}
     (hnP : n • (Affine.Point.some _ _ hns) = Affine.Point.some _ _ hns')
     (hx' : IsLocalization.IsInteger R x') :
     IsLocalization.IsInteger R x ∧ IsLocalization.IsInteger R y :=
-  have hid := eval_mul_ΨSq_eq_eval_Φ_of_zsmul (W.baseChange K) hns hns' hnP
+  have hid := mul_eval_ΨSq_eq_eval_Φ_of_zsmul (W.baseChange K) hns hns' hnP
   have hx := isInteger_of_mul_eval_ΨSq_eq_eval_Φ W n hx' hid
   ⟨hx, isInteger_y_of_equation_of_isInteger_x W hns.left hx⟩
 
