@@ -62,13 +62,11 @@ public section
 
 open Polynomial
 
-namespace TauCeti
-
 namespace WeierstrassCurve
 
-open _root_.WeierstrassCurve
+open TauCeti.WeierstrassCurve
 
-variable {F : Type*} [Field F] [DecidableEq F] (E : _root_.WeierstrassCurve F)
+variable {F : Type*} [Field F] [DecidableEq F] (E : WeierstrassCurve F)
 
 /-- **The `x`-coordinates of `P` and `n • P` satisfy `x' · ΨSqₙ(x) = Φₙ(x)`.**
 
@@ -100,7 +98,7 @@ theorem eval_mul_ΨSq_eq_eval_Φ_of_zsmul {x y : F} (hns : E.toAffine.Nonsingula
 
 variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
 variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsFractionRing R K]
-variable (W : _root_.WeierstrassCurve R)
+variable (W : WeierstrassCurve R)
 
 /-- **Integrality descends along multiplication by `n`.** If `n • P = P'` and `P'` has integral
 `x`-coordinate, then both coordinates of `P` are integral.
@@ -118,5 +116,3 @@ theorem isInteger_of_zsmul_isInteger {x y : K}
   ⟨hx, isInteger_y_of_equation_of_isInteger_x W hns.left hx⟩
 
 end WeierstrassCurve
-
-end TauCeti
