@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Algebra
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Universal
 
 /-!
@@ -203,8 +204,9 @@ One prerequisite is **strengthened rather than transcribed**, in
 
 `eq_of_sub_negY_eq` is the first consumer of `(2 : Universal.Field) ≠ 0`. No instance is added for
 it: Mathlib's `charZero` for a fraction ring carries `CharZero Universal.Field` from
-`CharZero Universal.Ring`, and `EllipticCurve/Universal.lean` imports `Algebra/CharP/Algebra.lean`
-so that it is in scope.
+`CharZero Universal.Ring`. This file imports `Mathlib/Algebra/CharP/Algebra.lean` for that
+derivation — it is the consumer, so the import belongs here rather than in
+`EllipticCurve/Universal.lean`.
 
 One statement is restated. The source's `zsmul_point_ne` (`:416`) is the pairwise form
 `m ≠ n → m • point ≠ n • point`; here it is `zsmul_point_injective`, the equivalent
