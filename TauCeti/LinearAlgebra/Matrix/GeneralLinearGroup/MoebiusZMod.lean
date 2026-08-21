@@ -60,10 +60,13 @@ lemmas come straight from Mathlib's `smul_some_eq_ite` / `smul_infty_eq_ite`.
   quotient where the denominator does not vanish, and the image of `∞` at the single index where
   it does.
 
-Uniqueness of the pole is not stated here. That exactly one residue solves `c * i + a = 0` in
-`ZMod n` for a unit `c` mentions no matrix, so it belongs with the generic `ZMod` arithmetic
-rather than in this file; a Möbius consumer instantiates it at `a := M 0 0` and `c := M 1 0`,
-and wrapping that instantiation in a matrix-level restatement would add no content.
+Uniqueness of the pole is not stated here. That exactly one residue solves `n ∣ a + i * c` for a
+unit `c` — equivalently `c * i + a = 0` in `ZMod n` — mentions no matrix, so it lives in
+`TauCeti.Data.ZMod.DvdAddMul` as `TauCeti.existsUnique_dvd_add_mul`, whose coefficients are
+integers, and its `ZMod` face `TauCeti.existsUnique_mul_natCast_add_eq_zero`, whose coefficients
+are residues. A Möbius consumer instantiates the first at `a := M 0 0` and `c := M 1 0`, or the
+second at their images in `ZMod p` — which is the form the entries already appear in here.
+Wrapping either instantiation in a matrix-level restatement would add no content.
 The two evaluation lemmas above are the elimination API for `moebiusFin`: its body is sealed
 across the module boundary, so `unfold` is not available to a consumer, and the equation they are
 proved from is private scaffold rather than public surface.
@@ -78,8 +81,8 @@ The statement being realised is AINTLIB's `moebiusFin` / `moebiusFin_injective`
 `2baa76f742bdb4fb8ee323fabba41203bd390e08`, lines 124-242, Apache-2.0, Chris Birkbeck).
 
 The two pole lemmas AINTLIB also states are not here: being arithmetic in `ZMod p` with no matrix
-or determinant in sight, they belong with the generic `ZMod` arithmetic and are not part of this
-refactor.
+or determinant in sight, they live in `TauCeti.Data.ZMod.DvdAddMul`, which carries their
+provenance.
 
 `ZMod.finEquiv_apply` and `ZMod.finEquiv_symm_apply_val` (in `TauCeti/Data/ZMod/FinEquiv.lean`)
 have no AINTLIB counterpart either: the source writes its reindexing directly in `ZMod p` and so
@@ -192,13 +195,8 @@ private lemma natCast_moebiusFin (M : Matrix (Fin 2) (Fin 2) ℤ)
       Equiv.removeNone (MulAction.toPerm
         (moebiusGL (M.map (Int.cast : ℤ → ZMod p)) (det_map_ne_zero M h)) :
           Equiv.Perm (OnePoint (ZMod p))) (((b : ℕ) : ZMod p)) := by
-  -- Both sides go into `ZMod.finEquiv` form before `simp`. An explicit `simp only` chain would
-  -- be preferable, but after `Equiv.permCongr_apply` the goal carries `(ZMod.finEquiv p).symm.symm`
-  -- — `moebiusFin` is built from `(ZMod.finEquiv p).toEquiv.symm`, so that double symm is on the
-  -- `Equiv`, not the `RingEquiv` — and neither `Equiv.symm_symm` nor `RingEquiv.symm_symm`
-  -- discharges it inside `simp only`. Until a lemma set closes it, this route stays.
-  rw [← ZMod.finEquiv_apply, ← ZMod.finEquiv_apply]
   simp [moebiusFin, Equiv.permCongr_apply]
+
 /-- **The reindexing off the pole.** Where the denominator does not vanish, the index goes to the
 affine Möbius value, read in `ZMod p` through the natural cast of its index. -/
 @[simp]
