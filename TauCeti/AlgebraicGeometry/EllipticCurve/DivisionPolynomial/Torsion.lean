@@ -32,8 +32,10 @@ Mathlib's `leadingCoeff_preΨ` (`= n`), `leadingCoeff_preΨ₄` (`= 2`) and `lea
 * `WeierstrassCurve.evalEval_ψ_eq_zero_of_zsmul_eq_zero`: over a field, `n • P = 0`
   forces `ψₙ(x, y) = 0`. This is the consumer of `zsmul_eq_smulEval` that the whole
   division-polynomial development was built for.
-* `WeierstrassCurve.isInteger_of_odd_prime_torsion_of_squarefree`: **the headline.** For
-  an odd prime `p` with `(p : R)` squarefree, a `p`-torsion point has both coordinates in `R`.
+* `WeierstrassCurve.isInteger_of_odd_torsion_of_squarefree`: **the headline.** For an **odd** `n`
+  with `(n : R)` squarefree, an `n`-torsion point has both coordinates in `R`. The odd-prime case
+  the Nagell–Lutz route quotes is the specialisation `n = p`; primality is not used.
+  `WeierstrassCurve.isInteger_x_of_odd_torsion_of_squarefree` is the `x`-coordinate half.
 * `WeierstrassCurve.isInteger_of_order_four_of_squarefree`: the order-four case, with
   `(2 : R)` squarefree.
 * `WeierstrassCurve.den_dvd_four_of_order_two`: order two is the genuine exception — the
@@ -74,8 +76,10 @@ both components while declining the wrapper, so the composition is inlined at it
 `evalEval_ψ_eq_zero_of_zsmul_eq_zero` drops the source's `[DecidableEq F]`, which TauCeti's
 `zsmul_eq_smulEval` does not require. Finally the names are restated to describe their
 conclusions: `x_isInteger_of_odd_prime_torsion_squarefree` →
-`isInteger_x_of_odd_prime_torsion_of_squarefree`, `prime_order_integrality_squarefree` →
-`isInteger_of_odd_prime_torsion_of_squarefree`, `integrality_of_order_four_squarefree` →
+`isInteger_x_of_odd_torsion_of_squarefree`, `prime_order_integrality_squarefree` →
+`isInteger_of_odd_torsion_of_squarefree` (both **generalised**: the source assumes an odd prime,
+but primality is used there only to rule out `n = 2`, so these hold for any odd index and cover
+odd composite torsion), `integrality_of_order_four_squarefree` →
 `isInteger_of_order_four_of_squarefree`, `den_dvd_of_order_two` → `den_dvd_four_of_order_two`,
 `two_nsmul_eq_zero_of_ψ₂_eq_zero` → `two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero`.
 -/
