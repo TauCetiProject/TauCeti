@@ -30,7 +30,7 @@ Mathlib's `leadingCoeff_preΨ` (`= n`), `leadingCoeff_preΨ₄` (`= 2`) and `lea
 ## Main results
 
 * `WeierstrassCurve.evalEval_ψ_eq_zero_of_zsmul_eq_zero`: over a field, `n • P = 0`
-  forces `ψₙ(x, y) = 0`. This is the consumer of `zsmul_eq_smulEval` that the whole
+  forces `ψₙ(x, y) = 0`. This is the consumer of `zsmul_point_eq_smulEval` that the whole
   division-polynomial development was built for.
 * `WeierstrassCurve.isInteger_of_odd_torsion_of_squarefree`: **the headline.** For an **odd** `n`
   with `(n : R)` squarefree, an `n`-torsion point has both coordinates in `R`. The odd-prime case
@@ -74,7 +74,7 @@ The source's `evalEval_ψ_odd` (`EvalBridge.lean:62`) is likewise not ported: it
 composite `(evalEval_ψ_eq_evalEval_Ψ …).trans (evalEval_Ψ_odd …)`, and this repository carries
 both components while declining the wrapper, so the composition is inlined at its one call site.
 `evalEval_ψ_eq_zero_of_zsmul_eq_zero` drops the source's `[DecidableEq F]`, which TauCeti's
-`zsmul_eq_smulEval` does not require. Finally the names are restated to describe their
+`zsmul_point_eq_smulEval` does not require. Finally the names are restated to describe their
 conclusions: `x_isInteger_of_odd_prime_torsion_squarefree` →
 `isInteger_x_of_odd_torsion_of_squarefree`, `prime_order_integrality_squarefree` →
 `isInteger_of_odd_torsion_of_squarefree` (both **generalised**: the source assumes an odd prime,
@@ -97,14 +97,14 @@ variable {F : Type*} [Field F] (E : WeierstrassCurve F)
 /-- **A torsion point is a root of its division polynomial.** If `n • P = 0` in the Jacobian
 point group, then `ψₙ` vanishes at `P`.
 
-This is where `zsmul_eq_smulEval` is consumed: it identifies `n • P` with the class of
+This is where `zsmul_point_eq_smulEval` is consumed: it identifies `n • P` with the class of
 `(φₙ(x,y) : ωₙ(x,y) : ψₙ(x,y))`, and a Jacobian class is the point at infinity exactly when its
 `Z`-coordinate vanishes. -/
 theorem evalEval_ψ_eq_zero_of_zsmul_eq_zero {x y : F}
     (hns : E.toAffine.Nonsingular x y) (n : ℤ)
     (htors : n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0) :
     (E.ψ n).evalEval x y = 0 := by
-  have heval := zsmul_eq_smulEval E hns n
+  have heval := zsmul_point_eq_smulEval E hns n
   have hzero := Jacobian.Point.zero_point (W' := E.toJacobian)
   rw [Jacobian.Point.ext_iff] at htors
   rw [heval, hzero] at htors
