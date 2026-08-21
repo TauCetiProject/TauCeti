@@ -17,7 +17,7 @@ If `n • P` has integral coordinates then so does `P`. This is the descent step
 Nagell–Lutz argument: it lets an integrality claim about a torsion point be pulled back from a
 multiple where it is easier to establish.
 
-The mechanism is one identity between the two `x`-coordinates. `zsmul_eq_smulEval` gives the
+The mechanism is one identity between the two `x`-coordinates. `zsmul_point_eq_smulEval` gives the
 Jacobian coordinates of `n • P` as `(φₙ : ωₙ : ψₙ)` evaluated at `P`, and comparing that with the
 affine representative of `n • P` yields `x' · ΨSqₙ(x) = Φₙ(x)`. That exhibits `x` as a root of the
 **monic** polynomial `Φₙ − C x' · ΨSqₙ`, so integral closure places `x` in `R`, and the curve
@@ -86,9 +86,10 @@ variable {F : Type*} [Field F] [DecidableEq F] (E : WeierstrassCurve F)
 
 /-- **The `x`-coordinates of `P` and `n • P` satisfy `x' · ΨSqₙ(x) = Φₙ(x)`.**
 
-`zsmul_eq_smulEval` presents `n • P` as the Jacobian class of `(φₙ : ωₙ : ψₙ)` evaluated at `P`;
-comparing that with the affine representative `(x' : y' : 1)` and reading off the `X`-coordinate
-gives the identity, after rewriting `φₙ` and `ψₙ²` into their univariate forms `Φₙ` and `ΨSqₙ`. -/
+`zsmul_point_eq_smulEval` presents `n • P` as the Jacobian class of `(φₙ : ωₙ : ψₙ)` evaluated
+at `P`; comparing that with the affine representative `(x' : y' : 1)` and reading off the
+`X`-coordinate gives the identity, after rewriting `φₙ` and `ψₙ²` into their univariate forms
+`Φₙ` and `ΨSqₙ`. -/
 theorem mul_eval_ΨSq_eq_eval_Φ_of_zsmul {x y : F} (hns : E.toAffine.Nonsingular x y)
     {x' y' : F} (hns' : E.toAffine.Nonsingular x' y') {n : ℤ}
     (hnP : n • (Affine.Point.some _ _ hns) = Affine.Point.some _ _ hns') :
@@ -98,7 +99,7 @@ theorem mul_eval_ΨSq_eq_eval_Φ_of_zsmul {x y : F} (hns : E.toAffine.Nonsingula
     have h := congrArg (Jacobian.Point.toAffineAddEquiv E).symm hnP
     rw [map_zsmul] at h
     simpa using h
-  have hsmul := zsmul_eq_smulEval E hns n
+  have hsmul := zsmul_point_eq_smulEval E hns n
   -- `≈` on `Fin 3 → F` is the Jacobian equivalence, so its `HasEquiv` instance must be in scope.
   -- The two triples represent the same Jacobian point, so they differ by a unit scalar.
   open Jacobian in
