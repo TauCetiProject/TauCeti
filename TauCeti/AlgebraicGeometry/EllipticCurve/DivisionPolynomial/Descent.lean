@@ -25,7 +25,7 @@ equation carries integrality from `x` to `y`.
 
 ## Main results
 
-* `TauCeti.WeierstrassCurve.mul_eval_ΨSq_eq_eval_Φ_of_zsmul`: the coordinate identity
+* `WeierstrassCurve.mul_eval_ΨSq_eq_eval_Φ_of_zsmul`: the coordinate identity
   `x' · ΨSqₙ(x) = Φₙ(x)` relating `P` and `n • P`, over a field.
 * `WeierstrassCurve.isInteger_of_zsmul_isInteger`: **the descent step.** Over an integrally
   closed `R` with fraction field `K`, if `n • P = P'` and `P'` has integral `x`-coordinate, both
