@@ -171,10 +171,15 @@ omit [DecidableEq K] in
 /-- **Order two is the exception, and its denominator divides `4`.** A two-torsion point need not
 have integral coordinates; `ψ₂` vanishing forces `Ψ₂Sq` to vanish at `x`, and that polynomial's
 leading coefficient is `4`. -/
-theorem den_dvd_four_of_order_two (h4_ne : (4 : R) ≠ 0) {x y : K}
+theorem den_dvd_four_of_order_two {x y : K}
     (hns : (W.baseChange K).toAffine.Nonsingular x y)
     (h2 : (2 : ℤ) • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0) :
     (IsFractionRing.den R x : R) ∣ (4 : R) := by
+  -- In characteristic dividing `4` the statement is `_ ∣ 0`; the rational-root argument is only
+  -- needed when `Ψ₂Sq` actually has leading coefficient `4`.
+  rcases eq_or_ne (4 : R) 0 with h4 | h4_ne
+  · rw [h4]
+    exact dvd_zero _
   have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns 2 h2
   rw [WeierstrassCurve.ψ_two] at hψ
   have hΨ_zero : (W.baseChange K).Ψ₂Sq.eval x = 0 := by
