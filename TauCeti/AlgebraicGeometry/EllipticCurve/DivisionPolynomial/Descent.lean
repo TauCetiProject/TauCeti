@@ -27,8 +27,8 @@ equation carries integrality from `x` to `y`.
 
 * `WeierstrassCurve.mul_eval_ΨSq_eq_eval_Φ_of_zsmul`: the coordinate identity
   `x' · ΨSqₙ(x) = Φₙ(x)` relating `P` and `n • P`, over a field.
-* `WeierstrassCurve.isInteger_of_zsmul_isInteger`: **the descent step.** Over an integrally
-  closed `R` with fraction field `K`, if `n • P = P'` and `P'` has integral `x`-coordinate, both
+* `WeierstrassCurve.isInteger_of_zsmul_isInteger`: **the descent step.** Over a base `R`
+  integrally closed in `K`, if `n • P = P'` and `P'` has integral `x`-coordinate, both
   coordinates of `P` are integral.
 
 ## Roadmap
@@ -57,10 +57,21 @@ Three adaptations. `curveK R K W` is `W.map (algebraMap R K)`, which is `rfl`-eq
 The source's `hn : n ≠ 0`, `hn_R : (n : R) ≠ 0` and `_hy'` hypotheses are dropped — none is used
 by the proof once the integral-root step is delegated, and `_hy'` is unused upstream too.
 
-**The base ring is generalised.** The source assumes a UFD; no factorisation argument occurs
-anywhere in these two proofs, so `[IsIntegrallyClosed R]` suffices — and `[IsDomain R]` turns out
-to be unnecessary as well, which `unusedSectionVars` reported once the UFD hypothesis was removed.
-The descent step therefore holds over any integrally closed base with a fraction field.
+**The base ring is generalised, and `K` need not be its fraction field.** The source assumes a
+UFD; no factorisation argument occurs anywhere in these two proofs, so integral closedness alone
+suffices, and `[IsDomain R]` turns out to be unnecessary as well — `unusedSectionVars` reported it
+once the UFD hypothesis was removed. Integral closedness is then asked for *relative to `K`*, as
+`[IsIntegrallyClosedIn R K]`, rather than as `[IsIntegrallyClosed R] [IsFractionRing R K]`: this is
+the hypothesis `Integral.lean`'s `isInteger_of_mul_eval_ΨSq_eq_eval_Φ` already takes, and it is
+strictly weaker, since the pair implies it (`isIntegrallyClosed_iff_isIntegrallyClosedIn`) but says
+more besides. The `y`-coordinate step consequently calls `Integrality.lean`'s
+`isIntegral_y_of_equation_of_isIntegral_x` directly instead of its `IsInteger` wrapper
+`isInteger_y_of_equation_of_isInteger_x`, which is stated over a fraction field.
+
+`[DecidableEq K]` is **not** removable: `n • P` is `zsmul` for Mathlib's `AddCommGroup W.Point`
+instance, which is declared under `[DecidableEq F]` because affine addition is defined by cases.
+The instance is needed to *state* both theorems, so a `classical` inside the proofs cannot supply
+it.
 -/
 
 public section
@@ -103,8 +114,8 @@ theorem mul_eval_ΨSq_eq_eval_Φ_of_zsmul {x y : F} (hns : E.toAffine.Nonsingula
   rw [hΨSq] at hX
   exact hX.symm
 
-variable {R : Type*} [CommRing R] [IsIntegrallyClosed R]
-variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsFractionRing R K]
+variable {R : Type*} [CommRing R]
+variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsIntegrallyClosedIn R K]
 variable (W : WeierstrassCurve R)
 
 /-- **Integrality descends along multiplication by `n`.** If `n • P = P'` and `P'` has integral
@@ -117,9 +128,12 @@ theorem isInteger_of_zsmul_isInteger {x y : K}
     {x' y' : K} (hns' : (W.baseChange K).toAffine.Nonsingular x' y')
     (hnP : n • (Affine.Point.some _ _ hns) = Affine.Point.some _ _ hns')
     (hx' : IsLocalization.IsInteger R x') :
-    IsLocalization.IsInteger R x ∧ IsLocalization.IsInteger R y :=
+    IsLocalization.IsInteger R x ∧ IsLocalization.IsInteger R y := by
   have hid := mul_eval_ΨSq_eq_eval_Φ_of_zsmul (W.baseChange K) hns hns' hnP
   have hx := isInteger_of_mul_eval_ΨSq_eq_eval_Φ W n hx' hid
-  ⟨hx, isInteger_y_of_equation_of_isInteger_x W hns.left hx⟩
+  refine ⟨hx, ?_⟩
+  obtain ⟨x₀, hx₀⟩ := hx
+  exact RingHom.mem_rangeS.mpr (IsIntegrallyClosedIn.isIntegral_iff.mp
+    (isIntegral_y_of_equation_of_isIntegral_x W hns.left (hx₀ ▸ isIntegral_algebraMap)))
 
 end WeierstrassCurve
