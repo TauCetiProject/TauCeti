@@ -11,11 +11,14 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Integrality
 
 /-!
-# Torsion points of a Weierstrass curve have integral coordinates
+# Integrality of odd-order and order-four torsion, under a squarefree hypothesis
 
 The Nagell–Lutz statement is that a torsion point of an integral Weierstrass model has integral
-coordinates. This file proves the cases that a squarefree hypothesis makes accessible, over an
-arbitrary unique factorisation domain `R` with fraction field `K` rather than only over `ℤ/ℚ`.
+coordinates. **This file does not prove that.** It proves the cases a squarefree hypothesis makes
+accessible — odd order `n` with `(n : R)` squarefree, and order four with `(2 : R)` squarefree —
+over an arbitrary unique factorisation domain `R` with fraction field `K` rather than only over
+`ℤ/ℚ`. Order two is genuinely excluded: such a point need not be integral, and what is proved
+instead is the denominator bound `den(x) ∣ 4`.
 
 The bridge from the group law to polynomials is `evalEval_ψ_eq_zero_of_zsmul_eq_zero`: if
 `n • P = 0` then `ψₙ` vanishes at `P`. That turns a torsion hypothesis into a polynomial root,
@@ -105,47 +108,61 @@ theorem evalEval_ψ_eq_zero_of_zsmul_eq_zero {x y : F}
   rw [heval, hzero] at htors
   exact (Jacobian.Z_eq_zero_of_equiv (Quotient.exact htors)).mpr rfl
 
+/-- If `ψ₂` vanishes at `(x, y)` then `2 • P = 0`: the point equals its own negation, so adding
+it to itself lands at infinity. Field-local — no base ring is involved. -/
+theorem two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero [DecidableEq F] {x y : F}
+    (hns : E.toAffine.Nonsingular x y) (hψ : E.ψ₂.evalEval x y = 0) :
+    (2 : ℕ) • (Affine.Point.some _ _ hns) = 0 := by
+  rw [_root_.WeierstrassCurve.ψ₂, Affine.evalEval_polynomialY] at hψ
+  have hy : y = E.toAffine.negY x y := by simp only [Affine.negY]; linear_combination hψ
+  rw [two_nsmul]
+  exact Affine.Point.add_self_of_Y_eq hy
+
 variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
 variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsFractionRing R K]
 variable (W : _root_.WeierstrassCurve R)
 
 omit [DecidableEq K] in
-/-- For an odd prime `p` with `(p : R)` squarefree, a `p`-torsion point has integral
+/-- For an **odd** `n` with `(n : R)` squarefree, an `n`-torsion point has integral
 `x`-coordinate.
 
-`ψₚ` vanishes at the point; for odd `p` that value is `preΨₚ` evaluated at `x` alone, whose
-leading coefficient is `p` — squarefree by hypothesis, which is what the rational-root argument
-in `Integrality.lean` needs. -/
-theorem isInteger_x_of_odd_prime_torsion_of_squarefree {x y : K}
+`ψₙ` vanishes at the point; for odd `n` that value is `preΨₙ` evaluated at `x` alone, whose
+leading coefficient is `n` — squarefree by hypothesis, which is what the rational-root argument
+in `Integrality.lean` needs.
+
+Oddness is the only arithmetic input: the source states this for an odd prime, but primality is
+used there solely to rule out `n = 2`, so odd composite torsion is covered by the same proof. -/
+theorem isInteger_x_of_odd_torsion_of_squarefree {x y : K}
     (hns : (W.baseChange K).toAffine.Nonsingular x y)
-    {p : ℕ} (hp : p.Prime) (hodd : p ≠ 2)
-    (htors : (p : ℤ) • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
-    (hsf : Squarefree (p : R)) : IsLocalization.IsInteger R x := by
-  have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns (p : ℤ) htors
-  have hodd_int : ¬Even (p : ℤ) := by rwa [Int.even_coe_nat, hp.even_iff]
+    {n : ℕ} (hodd : ¬Even (n : ℤ))
+    (htors : (n : ℤ) • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
+    (hsf : Squarefree (n : R)) : IsLocalization.IsInteger R x := by
+  have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns (n : ℤ) htors
+  have hodd_int : ¬Even (n : ℤ) := hodd
   -- The source's `evalEval_ψ_odd` is this composition; only its two halves are ported here.
-  rw [(evalEval_ψ_eq_evalEval_Ψ (W.baseChange K) hns.left (p : ℤ)).trans
-    (evalEval_Ψ_odd (W.baseChange K) (p : ℤ) hodd_int)] at hψ
-  have hmap : (W.baseChange K).preΨ (p : ℤ) = (W.preΨ (p : ℤ)).map (algebraMap R K) :=
+  rw [(evalEval_ψ_eq_evalEval_Ψ (W.baseChange K) hns.left (n : ℤ)).trans
+    (evalEval_Ψ_odd (W.baseChange K) (n : ℤ) hodd_int)] at hψ
+  have hmap : (W.baseChange K).preΨ (n : ℤ) = (W.preΨ (n : ℤ)).map (algebraMap R K) :=
     _root_.WeierstrassCurve.map_preΨ ..
   rw [hmap, eval_map] at hψ
-  change aeval x (W.preΨ (p : ℤ)) = 0 at hψ
-  have hsf_lc : Squarefree (W.preΨ (p : ℤ)).leadingCoeff := by
-    have hp_R_ne : ((p : ℤ) : R) ≠ 0 := by rw [Int.cast_natCast]; exact hsf.ne_zero
-    rw [W.leadingCoeff_preΨ hp_R_ne]
+  rw [← aeval_def] at hψ
+  have hsf_lc : Squarefree (W.preΨ (n : ℤ)).leadingCoeff := by
+    have hn_R_ne : ((n : ℤ) : R) ≠ 0 := by rw [Int.cast_natCast]; exact hsf.ne_zero
+    rw [W.leadingCoeff_preΨ hn_R_ne]
     simpa [hodd_int, Int.cast_natCast] using hsf
   exact isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff W hns.left hψ hsf_lc
 
 omit [DecidableEq K] in
-/-- **Odd prime order torsion is integral.** If `(p : R)` is squarefree and `P` is killed by an
-odd prime `p`, both coordinates of `P` lie in `R`. -/
-theorem isInteger_of_odd_prime_torsion_of_squarefree {x y : K}
+/-- **Odd torsion is integral.** If `(n : R)` is squarefree and `P` is killed by an odd `n`, both
+coordinates of `P` lie in `R`. Specialises to the odd-prime statement the Nagell–Lutz route
+quotes, but needs only oddness. -/
+theorem isInteger_of_odd_torsion_of_squarefree {x y : K}
     (hns : (W.baseChange K).toAffine.Nonsingular x y)
-    {p : ℕ} (hp : p.Prime) (hodd : p ≠ 2)
-    (htors : (p : ℤ) • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
-    (hsf : Squarefree (p : R)) :
+    {n : ℕ} (hodd : ¬Even (n : ℤ))
+    (htors : (n : ℤ) • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
+    (hsf : Squarefree (n : R)) :
     IsLocalization.IsInteger R x ∧ IsLocalization.IsInteger R y :=
-  have hx := isInteger_x_of_odd_prime_torsion_of_squarefree W hns hp hodd htors hsf
+  have hx := isInteger_x_of_odd_torsion_of_squarefree W hns hodd htors hsf
   ⟨hx, isInteger_y_of_equation_of_isInteger_x W hns.left hx⟩
 
 omit [DecidableEq K] in
@@ -166,22 +183,9 @@ theorem den_dvd_four_of_order_two (h4_ne : (4 : R) ≠ 0) {x y : K}
   have hmap : (W.baseChange K).Ψ₂Sq = W.Ψ₂Sq.map (algebraMap R K) :=
     _root_.WeierstrassCurve.map_Ψ₂Sq ..
   rw [hmap, eval_map] at hΨ_zero
-  change aeval x W.Ψ₂Sq = 0 at hΨ_zero
+  rw [← aeval_def] at hΨ_zero
   have hdvd := den_dvd_of_is_root hΨ_zero
   rwa [W.leadingCoeff_Ψ₂Sq h4_ne] at hdvd
-
-omit [IsDomain R] [UniqueFactorizationMonoid R] [IsFractionRing R K] in
-/-- If `ψ₂` vanishes at `(x, y)` then `2 • P = 0` in the affine group: the point equals its own
-negation, so adding it to itself lands at infinity. -/
-theorem two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero {x y : K}
-    (hns : (W.baseChange K).toAffine.Nonsingular x y)
-    (hψ : (W.baseChange K).ψ₂.evalEval x y = 0) :
-    (2 : ℕ) • (Affine.Point.some _ _ hns) = 0 := by
-  rw [_root_.WeierstrassCurve.ψ₂, Affine.evalEval_polynomialY] at hψ
-  rw [two_nsmul]
-  apply Affine.Point.add_of_Y_eq (h₁ := hns) (h₂ := hns) rfl
-  simp only [Affine.negY]
-  linear_combination hψ
 
 /-- **An order-four point is integral when `(2 : R)` is squarefree.** `ψ₄` factors as
 `preΨ₄ * ψ₂`; the second factor vanishing would make the point two-torsion, which `h2ne` excludes,
@@ -199,12 +203,12 @@ theorem isInteger_of_order_four_of_squarefree {x y : K}
   · have hmap : (W.baseChange K).preΨ₄ = W.preΨ₄.map (algebraMap R K) :=
       _root_.WeierstrassCurve.map_preΨ₄ ..
     rw [hmap, eval_map] at hpreΨ
-    change aeval x W.preΨ₄ = 0 at hpreΨ
+    rw [← aeval_def] at hpreΨ
     have hsf_lc : Squarefree W.preΨ₄.leadingCoeff := by
       rw [W.leadingCoeff_preΨ₄ hsf.ne_zero]; exact hsf
     have hx := isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff W hns.left hpreΨ hsf_lc
     exact ⟨hx, isInteger_y_of_equation_of_isInteger_x W hns.left hx⟩
-  · exact absurd (two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero W hns hψ₂) h2ne
+  · exact absurd (two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero (W.baseChange K) hns hψ₂) h2ne
 
 end WeierstrassCurve
 
