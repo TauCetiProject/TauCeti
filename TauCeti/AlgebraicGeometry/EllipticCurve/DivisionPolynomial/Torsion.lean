@@ -29,16 +29,16 @@ Mathlib's `leadingCoeff_preΨ` (`= n`), `leadingCoeff_preΨ₄` (`= 2`) and `lea
 
 ## Main results
 
-* `TauCeti.WeierstrassCurve.evalEval_ψ_eq_zero_of_zsmul_eq_zero`: over a field, `n • P = 0`
+* `WeierstrassCurve.evalEval_ψ_eq_zero_of_zsmul_eq_zero`: over a field, `n • P = 0`
   forces `ψₙ(x, y) = 0`. This is the consumer of `zsmul_eq_smulEval` that the whole
   division-polynomial development was built for.
-* `TauCeti.WeierstrassCurve.isInteger_of_odd_prime_torsion_of_squarefree`: **the headline.** For
+* `WeierstrassCurve.isInteger_of_odd_prime_torsion_of_squarefree`: **the headline.** For
   an odd prime `p` with `(p : R)` squarefree, a `p`-torsion point has both coordinates in `R`.
-* `TauCeti.WeierstrassCurve.isInteger_of_order_four_of_squarefree`: the order-four case, with
+* `WeierstrassCurve.isInteger_of_order_four_of_squarefree`: the order-four case, with
   `(2 : R)` squarefree.
-* `TauCeti.WeierstrassCurve.den_dvd_four_of_order_two`: order two is the genuine exception — the
+* `WeierstrassCurve.den_dvd_four_of_order_two`: order two is the genuine exception — the
   coordinates need not be integral, but the denominator of `x` divides `4`.
-* `TauCeti.WeierstrassCurve.two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero`: the converse direction at
+* `WeierstrassCurve.two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero`: the converse direction at
   `n = 2`, which is what separates the order-four case from the order-two one.
 
 ## Roadmap
@@ -84,13 +84,11 @@ public section
 
 open Polynomial
 
-namespace TauCeti
-
 namespace WeierstrassCurve
 
-open _root_.WeierstrassCurve
+open TauCeti.WeierstrassCurve
 
-variable {F : Type*} [Field F] (E : _root_.WeierstrassCurve F)
+variable {F : Type*} [Field F] (E : WeierstrassCurve F)
 
 /-- **A torsion point is a root of its division polynomial.** If `n • P = 0` in the Jacobian
 point group, then `ψₙ` vanishes at `P`.
@@ -113,14 +111,14 @@ it to itself lands at infinity. Field-local — no base ring is involved. -/
 theorem two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero [DecidableEq F] {x y : F}
     (hns : E.toAffine.Nonsingular x y) (hψ : E.ψ₂.evalEval x y = 0) :
     (2 : ℕ) • (Affine.Point.some _ _ hns) = 0 := by
-  rw [_root_.WeierstrassCurve.ψ₂, Affine.evalEval_polynomialY] at hψ
+  rw [WeierstrassCurve.ψ₂, Affine.evalEval_polynomialY] at hψ
   have hy : y = E.toAffine.negY x y := by simp only [Affine.negY]; linear_combination hψ
   rw [two_nsmul]
   exact Affine.Point.add_self_of_Y_eq hy
 
 variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
 variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsFractionRing R K]
-variable (W : _root_.WeierstrassCurve R)
+variable (W : WeierstrassCurve R)
 
 omit [DecidableEq K] in
 /-- For an **odd** `n` with `(n : R)` squarefree, an `n`-torsion point has integral
@@ -143,7 +141,7 @@ theorem isInteger_x_of_odd_torsion_of_squarefree {x y : K}
   rw [(evalEval_ψ_eq_evalEval_Ψ (W.baseChange K) hns.left (n : ℤ)).trans
     (evalEval_Ψ_odd (W.baseChange K) (n : ℤ) hodd_int)] at hψ
   have hmap : (W.baseChange K).preΨ (n : ℤ) = (W.preΨ (n : ℤ)).map (algebraMap R K) :=
-    _root_.WeierstrassCurve.map_preΨ ..
+    WeierstrassCurve.map_preΨ ..
   rw [hmap, eval_map] at hψ
   rw [← aeval_def] at hψ
   have hsf_lc : Squarefree (W.preΨ (n : ℤ)).leadingCoeff := by
@@ -174,14 +172,14 @@ theorem den_dvd_four_of_order_two (h4_ne : (4 : R) ≠ 0) {x y : K}
     (h2 : (2 : ℤ) • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0) :
     (IsFractionRing.den R x : R) ∣ (4 : R) := by
   have hψ := evalEval_ψ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns 2 h2
-  rw [_root_.WeierstrassCurve.ψ_two] at hψ
+  rw [WeierstrassCurve.ψ_two] at hψ
   have hΨ_zero : (W.baseChange K).Ψ₂Sq.eval x = 0 := by
     have h := evalEval_eq_of_mk_eq (W.baseChange K).toAffine hns.left
       (Affine.CoordinateRing.mk_ψ₂_sq (W := W.baseChange K))
     rw [evalEval_pow, hψ, zero_pow two_ne_zero, evalEval_C] at h
     linear_combination -h
   have hmap : (W.baseChange K).Ψ₂Sq = W.Ψ₂Sq.map (algebraMap R K) :=
-    _root_.WeierstrassCurve.map_Ψ₂Sq ..
+    WeierstrassCurve.map_Ψ₂Sq ..
   rw [hmap, eval_map] at hΨ_zero
   rw [← aeval_def] at hΨ_zero
   have hdvd := den_dvd_of_is_root hΨ_zero
@@ -197,11 +195,11 @@ theorem isInteger_of_order_four_of_squarefree {x y : K}
     (hsf : Squarefree (2 : R)) :
     IsLocalization.IsInteger R x ∧ IsLocalization.IsInteger R y := by
   have hψ₄ := evalEval_ψ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns 4 h4
-  rw [_root_.WeierstrassCurve.ψ_four] at hψ₄
+  rw [WeierstrassCurve.ψ_four] at hψ₄
   simp only [evalEval_mul, evalEval_C] at hψ₄
   rcases mul_eq_zero.mp hψ₄ with hpreΨ | hψ₂
   · have hmap : (W.baseChange K).preΨ₄ = W.preΨ₄.map (algebraMap R K) :=
-      _root_.WeierstrassCurve.map_preΨ₄ ..
+      WeierstrassCurve.map_preΨ₄ ..
     rw [hmap, eval_map] at hpreΨ
     rw [← aeval_def] at hpreΨ
     have hsf_lc : Squarefree W.preΨ₄.leadingCoeff := by
@@ -211,5 +209,3 @@ theorem isInteger_of_order_four_of_squarefree {x y : K}
   · exact absurd (two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero (W.baseChange K) hns hψ₂) h2ne
 
 end WeierstrassCurve
-
-end TauCeti
