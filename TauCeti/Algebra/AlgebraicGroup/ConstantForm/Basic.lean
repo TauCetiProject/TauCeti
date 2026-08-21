@@ -361,30 +361,6 @@ noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=
   CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R n)
     (definingHopfIdeal R n C)
 
-/-- The quotient coordinate morphism from `O(GL n)` to the coordinate Hopf algebra of the
-subgroup scheme preserving `C`. -/
-noncomputable def coordinateMap :
-    GeneralLinear.coordinateHopfAlgebra R n ⟶ coordinateHopfAlgebra R n C :=
-  CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra R n)
-    (definingHopfIdeal R n C)
-
-/-- The coordinate morphism sends an ambient coordinate to its quotient class. -/
-theorem coordinateMap_apply (h : GeneralLinear.coordinateHopfAlgebra R n) :
-    (coordinateMap R n C).hom h =
-      Ideal.Quotient.mkₐ R (definingHopfIdeal R n C).toIdeal h := by
-  unfold coordinateMap
-  exact CommHopfAlgCat.mkQuotient_apply
-    (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n C) h
-
-/-- Every defining relation vanishes in the quotient coordinate Hopf algebra. -/
-@[simp]
-theorem coordinateMap_relationMatrix (i j : Fin n) :
-    (coordinateMap R n C).hom (relationMatrix R n C i j) = 0 := by
-  rw [coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk]
-  exact Ideal.Quotient.eq_zero_iff_mem.mpr
-    (definingHopfIdeal_toIdeal R n C ▸
-      Ideal.subset_span (relationMatrix_mem_relationSet R n C i j))
-
 /-! ### The group scheme and its closed immersion -/
 
 /-- The subgroup scheme of `GL n` preserving `C`. -/
@@ -427,22 +403,6 @@ instance isClosedImmersion_inclusion :
       _ _ @AlgebraicGeometry.IsClosedImmersion inferInstance _ _ _ c e₂ he₂).2 hc
   rw [inclusion_hom_left]
   exact hc₂
-
-/-- The quotient coordinate Hopf algebra, bundled with its finite-type property. -/
-noncomputable def finiteTypeCoordinateHopfAlgebra : FiniteTypeCommHopfAlgCat R :=
-  FiniteTypeCommHopfAlgCat.quotient
-    (⟨GeneralLinear.coordinateHopfAlgebra R n, by
-      rw [← GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj]
-      exact (GeneralLinear.finiteTypeCoordinateHopfAlgebra R n).property⟩ :
-      FiniteTypeCommHopfAlgCat R)
-    (definingHopfIdeal R n C)
-
-/-- The finite-type package has the quotient coordinate Hopf algebra as its underlying
-object. -/
-@[simp]
-theorem finiteTypeCoordinateHopfAlgebra_obj :
-    (finiteTypeCoordinateHopfAlgebra R n C).obj = coordinateHopfAlgebra R n C := by
-  rw [finiteTypeCoordinateHopfAlgebra]
 
 /-- The structural morphism of the subgroup scheme preserving `C` is locally of finite type. -/
 instance locallyOfFiniteType_groupScheme :
