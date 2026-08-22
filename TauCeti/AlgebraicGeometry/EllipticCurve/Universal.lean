@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Jacobian.Point
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 
@@ -93,12 +94,12 @@ inside the `ZSMul.lean` proofs that need it, which this repository's unexposed `
 impossible; the `CharZero Universal.Ring` instance **replaces** the source's `Poly.two_ne_zero` and
 `Field.two_ne_zero` rather than porting them, and carries the field case with it — Mathlib derives
 `CharZero Universal.Field` from it through `IsFractionRing.charZero`, so no second instance is
-declared. That derivation needs `Mathlib.Algebra.CharP.Algebra`, which is imported by
-`DivisionPolynomial/ZSMul.lean` where `(2 : Universal.Field) ≠ 0` is actually used, rather than
-here — this file itself needs only the ring instance. And the equation lemmas for the opaque
-definitions (`polyToField_apply`, `Affine.point_def`, `Jacobian.point_def`, `pointedCurve_Δ`)
-exist because this repository's module system leaves definition bodies unexposed.
-
+declared. That derivation is why `Mathlib.Algebra.CharP.Algebra` is imported: without it
+`(2 : Universal.Field) ≠ 0`, which the division-polynomial addition formulas need, does not
+synthesize. And
+the equation lemmas for the opaque definitions
+(`polyToField_apply`, `Affine.point_def`, `Jacobian.point_def`, `pointedCurve_Δ`) exist because
+this repository's module system leaves definition bodies unexposed.
 That file's header reads `Authors: Junyan Xu`; following this repository's convention for adapted
 material, the upstream authorship is credited here rather than in the copyright header.
 
