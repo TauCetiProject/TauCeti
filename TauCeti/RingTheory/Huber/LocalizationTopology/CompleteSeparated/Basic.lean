@@ -109,6 +109,21 @@ theorem completionLocObj_obj [IsTopologicalRing A] (P : PairOfDefinition A) (T :
   let _ := isTopologicalRing_locUniformSpace P T s S hden
   exact CompleteSeparatedTopCommRingCat.of_obj _
 
+/-- `A⟨T/s⟩` is a nonarchimedean ring, through `isHuberRing_completion_locTopology` and the
+global `IsHuberRing.toNonarchimedeanRing`. Stated on the carrier of the bundled object, which is
+what
+a consumer forming `powerBoundedSubring ↥(completionLocObj …)` — the integral structure
+presheaf — needs to synthesize. -/
+instance (P : PairOfDefinition A) (T : Finset A) (s : A) (S : Type u) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) [IsTopologicalRing A] :
+    NonarchimedeanRing ↥(completionLocObj P T s S hden) := by
+  let _ := locUniformSpace P T s S hden
+  let _ := isUniformAddGroup_locUniformSpace P T s S hden
+  let _ := isTopologicalRing_locUniformSpace P T s S hden
+  let _ := isHuberRing_completion_locTopology P T s S hden
+  rw [completionLocObj_obj P T s S hden]
+  exact inferInstanceAs (NonarchimedeanRing (UniformSpace.Completion S))
+
 /-! ### Comparison morphisms between presentationwise objects -/
 
 /-- A continuous ring homomorphism between two completed localisations, as a morphism between
