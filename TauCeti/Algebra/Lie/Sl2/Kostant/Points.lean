@@ -106,7 +106,7 @@ theorem map_kostantRootSubgroupParam_eq_transvectionUnit (A : Type) [CommRing A]
       TauCeti.transvectionUnit (i := i) (j := i.rev) (by fin_cases i <;> decide)
         (Multiplicative.toAdd t) := by
   rw [basisMatrix_kostantRootSubgroupParam e h ρ (integralLattice 1).toAddSubgroup
-      (kostantForm_apply_mem_integralLattice 1) isNilpotent_repEnveloping_root b A i t,
+      (kostantForm_apply_mem_integralLattice 1) i (isNilpotent_repEnveloping_root i) b A t,
     kostantRootSubgroupMatrix_eq_transvectionUnit]
 
 /-- Every standard rank-one transvection belongs to the matrix image of the Kostant elementary
