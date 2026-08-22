@@ -38,7 +38,7 @@ Mathlib's `leadingCoeff_preΨ` (`= n`), `leadingCoeff_preΨ₄` (`= 2`) and `lea
   `(2 : R)` squarefree.
 * `WeierstrassCurve.den_dvd_four_of_order_two`: order two is the genuine exception — the
   coordinates need not be integral, but the denominator of `x` divides `4`.
-* `WeierstrassCurve.two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero`: the converse direction at
+* `WeierstrassCurve.two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero`: the converse direction at
   `n = 2`, which is what separates the order-four case from the order-two one.
 
 ## Roadmap
@@ -82,7 +82,8 @@ conclusions: `x_isInteger_of_odd_prime_torsion_squarefree` →
 but primality is used there only to rule out `n = 2`, so these hold for any odd index and cover
 odd composite torsion), `integrality_of_order_four_squarefree` →
 `isInteger_of_order_four_of_squarefree`, `den_dvd_of_order_two` → `den_dvd_four_of_order_two`,
-`two_nsmul_eq_zero_of_ψ₂_eq_zero` → `two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero`.
+`two_nsmul_eq_zero_of_ψ₂_eq_zero` → `two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero`, restated for
+the Jacobian point so that the order-four theorem needs no `[DecidableEq K]`.
 -/
 
 public section
@@ -96,14 +97,23 @@ open TauCeti.WeierstrassCurve
 variable {F : Type*} [Field F] (E : WeierstrassCurve F)
 
 /-- If `ψ₂` vanishes at `(x, y)` then `2 • P = 0`: the point equals its own negation, so adding
-it to itself lands at infinity. Field-local — no base ring is involved. -/
-theorem two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero [DecidableEq F] {x y : F}
+it to itself lands at infinity. Field-local — no base ring is involved.
+
+Stated for the Jacobian point, matching the rest of the torsion API and
+`evalEval_ψ_eq_zero_of_zsmul_eq_zero`. The affine group law is defined by cases and so needs
+`DecidableEq`, but only inside the proof, where `classical` supplies it; the statement does not. -/
+theorem two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero {x y : F}
     (hns : E.toAffine.Nonsingular x y) (hψ : E.ψ₂.evalEval x y = 0) :
-    (2 : ℕ) • (Affine.Point.some _ _ hns) = 0 := by
+    (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) = 0 := by
+  classical
   rw [WeierstrassCurve.ψ₂, Affine.evalEval_polynomialY] at hψ
   have hy : y = E.toAffine.negY x y := by simp only [Affine.negY]; linear_combination hψ
-  rw [two_nsmul]
-  exact Affine.Point.add_self_of_Y_eq hy
+  have haff : (2 : ℕ) • (Affine.Point.some _ _ hns) = 0 := by
+    rw [two_nsmul]; exact Affine.Point.add_self_of_Y_eq hy
+  have h := congrArg (Jacobian.Point.toAffineAddEquiv E).symm haff
+  rw [map_nsmul, map_zero] at h
+  rw [← natCast_zsmul] at h
+  exact_mod_cast h
 
 variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
 variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsFractionRing R K]
@@ -179,13 +189,14 @@ theorem den_dvd_four_of_order_two {x y : K}
   have hdvd := den_dvd_of_is_root hΨ_zero
   rwa [W.leadingCoeff_Ψ₂Sq h4_ne] at hdvd
 
+omit [DecidableEq K] in
 /-- **An order-four point is integral when `(2 : R)` is squarefree.** `ψ₄` factors as
 `preΨ₄ * ψ₂`; the second factor vanishing would make the point two-torsion, which `h2ne` excludes,
 so the first does, and `preΨ₄` has leading coefficient `2`. -/
 theorem isInteger_of_order_four_of_squarefree {x y : K}
     (hns : (W.baseChange K).toAffine.Nonsingular x y)
     (h4 : (4 : ℤ) • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0)
-    (h2ne : (2 : ℕ) • (Affine.Point.some _ _ hns) ≠ 0)
+    (h2ne : (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) ≠ 0)
     (hsf : Squarefree (2 : R)) :
     IsLocalization.IsInteger R x ∧ IsLocalization.IsInteger R y := by
   have hψ₄ := evalEval_ψ_eq_zero_of_zsmul_eq_zero (W.baseChange K) hns 4 h4
@@ -200,6 +211,6 @@ theorem isInteger_of_order_four_of_squarefree {x y : K}
       rw [W.leadingCoeff_preΨ₄ hsf.ne_zero]; exact hsf
     have hx := isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff W hns.left hpreΨ hsf_lc
     exact ⟨hx, isInteger_y_of_equation_of_isInteger_x W hns.left hx⟩
-  · exact absurd (two_nsmul_eq_zero_of_evalEval_ψ₂_eq_zero (W.baseChange K) hns hψ₂) h2ne
+  · exact absurd (two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero (W.baseChange K) hns hψ₂) h2ne
 
 end WeierstrassCurve
