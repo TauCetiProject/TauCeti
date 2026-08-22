@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Universal
 
 /-!
-# Coordinates of scalar multiplication on the universal curve
+# Coordinates of scalar multiplication through the division polynomials
 
 The Nagell–Lutz route expresses `n • (X, Y)` on the universal curve through the division
 polynomials: the affine `X`-coordinate is `φₙ/ψₙ²` and the `Y`-coordinate is `ωₙ/ψₙ³`, as
@@ -592,6 +592,13 @@ abbrev smulRing (n : ℤ) : Fin 3 → Universal.Ring := AdjoinRoot.mk _ ∘ smul
 /-- The three families of division polynomials as elements of the universal field. -/
 abbrev smulField (n : ℤ) : Fin 3 → Universal.Field := polyToField ∘ smulPoly n
 
+/-- **The `Z` coordinate of `smulField n` is `ψₙ`.** `smulField` is `polyToField ∘ ![φ, ω, ψ]`,
+so this is `comp_fin3` followed by the third component of `fin3_def_ext` — a rewrite route for a
+projection that would otherwise be discharged by definitional reduction. -/
+lemma smulField_Z (n : ℤ) : smulField n (2 : Fin 3) = polyToField (curve.ψ n) := by
+  rw [smulField, comp_fin3]
+  exact (fin3_def_ext ..).2.2
+
 /-- `smulField` is `smulRing` pushed into the field of fractions, coordinate by coordinate. -/
 @[simp]
 lemma algebraMap_comp_smulRing (n : ℤ) : algebraMap _ _ ∘ smulRing n = smulField n := by
@@ -629,4 +636,323 @@ theorem zsmul_point_eq_smulField : (n • Jacobian.point).point = ⟦smulField n
     simp [-polyToField_apply, Universal.Affine.smulX_def, Universal.Affine.smulY_def, hψ,
       inv_mul_eq_div]
 
+/-- `smulPoly` at `0` is the triple `(1, 1, 0)`. -/
+@[simp] lemma smulPoly_zero : smulPoly 0 = ![1, 1, 0] := by simp [smulPoly]
+
+/-- `smulField` at `0` is the triple `(1 : 1 : 0)`, the point at infinity. -/
+@[simp] lemma smulField_zero : smulField 0 = ![1, 1, 0] := by
+  simp [smulField, smulPoly_zero, comp_fin3]
+
+/-- **The `Z`-coordinate of Mathlib's Jacobian doubling formula at `(φₙ, ωₙ, ψₙ)` is `ψ₂ₙ`** —
+already in the polynomial ring, with no reduction modulo the Weierstrass polynomial. -/
+-- `dblZ` is `Z * (Y - negY)`, which at this triple is `ψₙ * (2ωₙ + a₁φₙψₙ + a₃ψₙ³)`; `ω_spec`
+-- names the second factor `ψc n` and `ψ_mul_ψc` multiplies the two into `ψ₂ₙ`. `ω_spec` is stated
+-- with `CC curve.aᵢ` and `negY_eq` produces `curvePoly.aᵢ`; the two agree definitionally, so the
+-- certificate is taken at the ascribed type rather than rewritten across.
+lemma dblZ_smulPoly : dblZ curvePoly (smulPoly n) = curve.ψ (2 * n) := by
+  have key : 2 * curve.ω n + curvePoly.a₁ * curve.φ n * curve.ψ n
+      + curvePoly.a₃ * curve.ψ n ^ 3 = curve.ψc n := curve.ω_spec n
+  rw [← ψ_mul_ψc, ← key]
+  simp only [dblZ, smulPoly, negY_eq, fin3_def_ext]
+  ring
+
+/-- The triple `(φₙ : ωₙ : ψₙ)` is a nonsingular Jacobian point representative of the universal
+curve, for every `n` — it represents `n • (X, Y)`, which is a point of the curve. -/
+lemma nonsingular_smulField : Nonsingular pointedCurve (smulField n) := by
+  rw [← nonsingularLift_iff]
+  simpa only [zsmul_point_eq_smulField] using (n • Jacobian.point).nonsingular
+
+/-- **Mathlib's Jacobian doubling formula sends `(φₙ : ωₙ : ψₙ)` to `(φ₂ₙ : ω₂ₙ : ψ₂ₙ)`**, as an
+equality of triples and not merely of the points they represent. -/
+-- At `n = 0` the triple is `(1, 1, 0)` and `dblXYZ_of_Z_eq_zero` applies. Otherwise both sides
+-- have `Z`-coordinate `ψ₂ₙ ≠ 0` (`dblZ_smulPoly`), so `equiv_iff_eq_of_Z_eq` upgrades an equality
+-- of point classes to one of triples, and the two classes agree because both represent
+-- `(2 * n) • (X, Y)`.
+lemma dblXYZ_smulField : dblXYZ pointedCurve (smulField n) = smulField (2 * n) := by
+  obtain rfl | hn := eq_or_ne n 0
+  · rw [mul_zero, dblXYZ_of_Z_eq_zero nonsingular_smulField.1 (by simp), smulField_zero]
+    simp
+  refine (equiv_iff_eq_of_Z_eq ?_ (polyToField_ψ_ne_zero (mul_ne_zero two_ne_zero hn))).mp
+    (Quotient.exact ?_)
+  -- `equiv_iff_eq_of_Z_eq` compares two `Z` components; `dblXYZ_Z` rewrites the left one and
+  -- `smulField_Z` the right.
+  · rw [dblXYZ_Z, smulField_Z, ← dblZ_smulPoly, ← map_dblZ polyToField (smulPoly n)]
+    simp only [map_polyToField]
+  · have h2 : ((2 : ℤ) • (n • Jacobian.point)).point = ⟦dblXYZ pointedCurve (smulField n)⟧ := by
+      rw [two_zsmul, Point.add_point, zsmul_point_eq_smulField, addMap_eq, add_self]
+    exact h2.symm.trans <|
+      (congrArg Point.point (mul_zsmul Jacobian.point 2 n).symm).trans zsmul_point_eq_smulField
+
+/-- The doubling identity over the universal **ring**, where it is a statement about polynomials
+modulo the Weierstrass polynomial rather than about rational functions. -/
+-- `Universal.Ring` embeds in `Universal.Field`, so the field statement implies this one; the two
+-- sides are compared coordinatewise through `Function.Injective.comp_left`.
+lemma dblXYZ_smulRing : dblXYZ curveRing (smulRing n) = smulRing (2 * n) := by
+  refine (IsFractionRing.injective Universal.Ring Universal.Field).comp_left ?_
+  beta_reduce
+  rw [← map_dblXYZ]
+  simp only [algebraMap_comp_smulRing]
+  exact dblXYZ_smulField
+
+/-- **The `Z`-coordinate of Mathlib's Jacobian addition formula at `(φₘ, ωₘ, ψₘ)` and
+`(φₙ, ωₙ, ψₙ)` is `ψₙ₊ₘψₙ₋ₘ`**, again already in the polynomial ring. -/
+-- The certificate is the elliptic-sequence relation of the universal `ψ` family at `(n, m, 1)`.
+-- `linear_combination` is unavailable over `Poly`: instance search gives up on the triple-nested
+-- `(MvPolynomial Coeff ℤ)[X][Y]` and reports no `IsRightCancelAdd`, so the certificate is
+-- discharged through `sub_eq_zero` and `ring` instead.
+lemma addZ_smulPoly : addZ (smulPoly m) (smulPoly n) = curve.ψ (n + m) * curve.ψ (n - m) := by
+  have key := curve.isEllipticSequence_ψ n m 1
+  simp only [IsEllipticNet.rel, add_zero, ψ_one, mul_one] at key
+  symm
+  rw [← sub_eq_zero, ← key, addZ]
+  simp only [smulPoly, fin3_def_ext, WeierstrassCurve.φ]
+  ring
+
+/-- **Negating the index negates the middle coordinate**: `ω₋ₙ` is the `negY` of `(φₙ, ωₙ, ψₙ)`,
+up to sign. This is the `ω` parity rule read in Jacobian coordinates. -/
+lemma ω_neg_eq_neg_negY : curve.ω (-n) = -negY curvePoly (smulPoly n) := by
+  -- As in `dblZ_smulPoly`, `negY_eq` is taken at the ascribed type, `curvePoly.aᵢ` being
+  -- definitionally `CC curve.aᵢ`.
+  have hneg : negY curvePoly (smulPoly n)
+      = -curve.ω n - CC curve.a₁ * curve.φ n * curve.ψ n - CC curve.a₃ * curve.ψ n ^ 3 :=
+    negY_eq (W' := curvePoly) _ _ _
+  rw [hneg, ω_neg]
+  ring
+
+/-- **Negating the index negates the point**: the triple at `-n` is Mathlib's Jacobian negation of
+the triple at `n`, rescaled by `-1`. -/
+-- Coordinatewise, so that each coordinate's rule is visible: `φ_neg`, `ω_neg_eq_neg_negY`,
+-- `ψ_neg`. The `(-1)ᵏ` factors are cleared by `ring` rather than `simp`, because instance search
+-- finds no `HasDistribNeg Poly` and the sign simp set therefore does not fire here.
+@[simp] lemma smulPoly_neg : smulPoly (-n) = (-1 : Poly) • neg curvePoly (smulPoly n) := by
+  -- Each `change` names the `i`-th component of the two tuples, for the same reason as in
+  -- `ringEval_comp_smulRing`: `fin_cases` leaves the index as `⟨0, ⋯⟩`/`⟨1, ⋯⟩`/`⟨2, ⋯⟩`, whereas
+  -- `fin3_def_ext` and `Matrix.cons_val_two` match the numerals `0`/`1`/`2`. `Fin.mk_zero` and
+  -- `Fin.mk_one` bridge the first two indices, but Mathlib has no `Fin.mk_two`: at the third,
+  -- `rw [Matrix.cons_val_two]` fails with "did not find an occurrence of `Matrix.vecCons ?x ?u 2`"
+  -- and `simp only` reports the lemma unused, because the index is still `(fun i => i) ⟨2, ⋯⟩`.
+  -- `smulPoly` and `smul_fin3`/`neg` are `abbrev`-level, so the projection is definitional and
+  -- `change` states it rather than deriving it.
+  funext i
+  fin_cases i
+  · change curve.φ (-n) = (-1 : Poly) ^ 2 * curve.φ n
+    rw [φ_neg]; ring
+  · change curve.ω (-n) = (-1 : Poly) ^ 3 * negY curvePoly (smulPoly n)
+    rw [ω_neg_eq_neg_negY]; ring
+  · change curve.ψ (-n) = (-1 : Poly) * curve.ψ n
+    rw [ψ_neg]; ring
+
+/-- The negation rule over the universal ring. -/
+@[simp] lemma smulRing_neg :
+    smulRing (-n) = (-1 : Universal.Ring) • neg curveRing (smulRing n) := by
+  simp_rw [smulRing, smulPoly_neg, comp_smul, ← WeierstrassCurve.Jacobian.map_neg, map_neg,
+    map_one]
+  rfl
+
+/-- The negation rule over the universal field. -/
+-- Obtained from `smulRing_neg` rather than from `smulPoly_neg` directly: `algebraMap_comp_smulRing`
+-- lands the composite on `smulField` on the nose, where routing through `polyToField` would leave
+-- a `curvePoly.map polyToField` to discharge.
+@[simp] lemma smulField_neg :
+    smulField (-n) = (-1 : Universal.Field) • neg pointedCurve (smulField n) := by
+  rw [← algebraMap_comp_smulRing, smulRing_neg, comp_smul, ← WeierstrassCurve.Jacobian.map_neg,
+    algebraMap_comp_smulRing, map_neg, map_one]
+  rfl
+
+/-- **Mathlib's Jacobian addition formula at `(φₘ : ωₘ : ψₘ)` and `(φₙ : ωₙ : ψₙ)` returns
+`(φₙ₊ₘ : ωₙ₊ₘ : ψₙ₊ₘ)`, scaled by `ψₙ₋ₘ`.** The scaling is genuine: `addXYZ` is homogeneous, and
+the representative it produces is the canonical triple only up to that factor. -/
+-- Three cases. At `m = n` the formula degenerates to `(0, 0, 0)` and so does the right-hand side,
+-- since `ψ₀ = 0`. At `n = -m` the second triple is the negation of the first, so `addXYZ_neg`
+-- applies and both sides are the point at infinity scaled by `ψ₂ₘ`. Otherwise both sides have
+-- `Z`-coordinate `ψₙ₊ₘψₙ₋ₘ ≠ 0` and represent `(n + m) • (X, Y)`, exactly as in `dblXYZ_smulField`.
+lemma addXYZ_smulField :
+    addXYZ pointedCurve (smulField m) (smulField n) =
+      polyToField (curve.ψ (n - m)) • smulField (n + m) := by
+  obtain rfl | h := eq_or_ne m n
+  · rw [sub_self, ψ_zero, map_zero, addXYZ_self nonsingular_smulField.1, smul_fin3]
+    simp
+  obtain rfl | ne_neg := eq_or_ne n (-m)
+  · rw [← one_smul Universal.Field (smulField m), smulField_neg, neg_add_cancel, addXYZ_smul,
+      one_mul, neg_one_sq, addXYZ_neg nonsingular_smulField.1, one_smul,
+      show (-m - m : ℤ) = -(2 * m) by ring, ψ_neg, map_neg polyToField, ← dblZ_smulPoly,
+      ← map_dblZ polyToField (smulPoly m), smulField_zero]
+    simp only [map_polyToField]
+  refine (equiv_iff_eq_of_Z_eq ?_ ?_).mp (Quotient.exact ?_)
+  -- Same shape as `dblXYZ_smulField`, with a scaled right-hand side. Mathlib's Jacobian action is
+  -- *weighted* — `smul_fin3 : u • P = ![u ^ 2 * P x, u ^ 3 * P y, u * P z]` — so the `Z` component
+  -- takes a single factor of `u`, which is the third component of `smul_fin3_ext`.
+  · rw [addXYZ_Z,
+      (smul_fin3_ext (smulField (n + m)) (polyToField (curve.ψ (n - m)))).2.2, smulField_Z]
+    have hF := congrArg polyToField (addZ_smulPoly (m := m) (n := n))
+    simp only [addZ, smulPoly, smulField, Function.comp_def, fin3_def_ext, map_sub polyToField,
+      map_mul polyToField, map_pow polyToField] at hF ⊢
+    linear_combination hF
+  -- The nonvanishing side-goal is that same scaled projection, rewritten the same way.
+  · rw [(smul_fin3_ext (smulField (n + m)) (polyToField (curve.ψ (n - m)))).2.2, smulField_Z]
+    exact mul_ne_zero (polyToField_ψ_ne_zero (by omega)) (polyToField_ψ_ne_zero (by omega))
+  · have hne : ¬ smulField m ≈ smulField n := fun hequiv ↦ h <| zsmul_point_injective <|
+      Point.ext_iff.mpr <| by
+        rw [zsmul_point_eq_smulField, zsmul_point_eq_smulField]
+        exact Quotient.sound hequiv
+    have hadd : (m • Jacobian.point + n • Jacobian.point).point
+        = ⟦addXYZ pointedCurve (smulField m) (smulField n)⟧ := by
+      rw [Point.add_point, zsmul_point_eq_smulField, zsmul_point_eq_smulField, addMap_eq,
+        add_of_not_equiv hne]
+    rw [smul_eq _ (polyToField_ψ_ne_zero (sub_ne_zero_of_ne h.symm)).isUnit,
+      ← zsmul_point_eq_smulField, add_comm, add_zsmul, hadd]
+
+/-- The addition identity over the universal ring, by the same fraction-field injection as
+`dblXYZ_smulRing`. -/
+lemma addXYZ_smulRing :
+    addXYZ curveRing (smulRing m) (smulRing n) =
+      AdjoinRoot.mk curve.polynomial (curve.ψ (n - m)) • smulRing (n + m) := by
+  refine (IsFractionRing.injective Universal.Ring Universal.Field).comp_left ?_
+  beta_reduce
+  rw [← map_addXYZ, comp_smul, ← polyToField_apply]
+  simp only [algebraMap_comp_smulRing]
+  exact addXYZ_smulField
+
 end WeierstrassCurve.Universal.Jacobian
+
+namespace WeierstrassCurve
+
+open Universal WeierstrassCurve.Jacobian
+
+variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {x y : R}
+
+variable (x y) in
+/-- The division polynomials of `W` evaluated at a point `(x, y)`, as a Jacobian triple
+`(φₙ(x,y), ωₙ(x,y), ψₙ(x,y))`. The definition needs only a commutative ring. **Over a field**, and
+for a nonsingular `(x, y)`, these are the Jacobian coordinates of `n • (x, y)` — that reading is
+`zsmul_point_eq_smulEval` below, which assumes `[Field F]`, and it is not claimed over a
+general `R`. -/
+abbrev smulEval (n : ℤ) : Fin 3 → R := evalEval x y ∘ ![W.φ n, W.ω n, W.ψ n]
+
+/-- `smulEval` at `0` is `(1, 1, 0)`, the Jacobian triple of the point at infinity. -/
+@[simp] lemma smulEval_zero : smulEval W x y 0 = ![1, 1, 0] := by
+  simp [smulEval, comp_fin3, evalEval]
+
+/-- `smulEval` at `1` is `(x, y, 1)`: the point `(x, y)` itself, in Jacobian coordinates. -/
+@[simp] lemma smulEval_one : smulEval W x y 1 = ![x, y, 1] := by
+  simp [smulEval, comp_fin3, evalEval]
+
+variable {W} (eqn : Affine.Equation W x y)
+
+namespace Universal
+
+/-- **`smulEval` is the specialization of `smulRing`**: the universal triple `(φₙ, ωₙ, ψₙ)`,
+pushed along the homomorphism a point of `W` induces, is that point's evaluated triple. This is
+what turns each identity over `curveRing` into the same identity for `W` at `(x, y)`. -/
+@[simp] lemma ringEval_comp_smulRing (n : ℤ) :
+    ringEval eqn ∘ Jacobian.smulRing n = smulEval W x y n := by
+  -- Coordinatewise, each coordinate being `ringEval_mk` followed by the matching `evalEval_*`.
+  -- Each `change` names the `i`-th component of two `![_, _, _]` tuples; `smulRing` and `smulEval`
+  -- are `abbrev`s, so that projection is definitional. A rewrite cannot replace it here:
+  -- `fin_cases` leaves the index as `⟨0, ⋯⟩`/`⟨1, ⋯⟩`/`⟨2, ⋯⟩`, while Mathlib's projection lemmas
+  -- (`fin3_def_ext`, `Matrix.cons_val_two`) match the *numerals* `0`/`1`/`2`. `Fin.mk_zero` and
+  -- `Fin.mk_one` bridge the first two, but there is no `Fin.mk_two`: at the third,
+  -- `rw [Matrix.cons_val_two]` fails to find `Matrix.vecCons ?x ?u 2` and `simp only` reports the
+  -- lemma unused, the index still being `(fun i => i) ⟨2, ⋯⟩`.
+  funext i
+  fin_cases i
+  · change ringEval eqn (AdjoinRoot.mk _ (curve.φ n)) = (W.φ n).evalEval x y
+    rw [ringEval_mk, evalEval_φ]
+  · change ringEval eqn (AdjoinRoot.mk _ (curve.ω n)) = (W.ω n).evalEval x y
+    rw [ringEval_mk, evalEval_ω]
+  · change ringEval eqn (AdjoinRoot.mk _ (curve.ψ n)) = (W.ψ n).evalEval x y
+    rw [ringEval_mk, evalEval_ψ]
+
+end Universal
+
+include eqn in
+/-- **The doubling formula for a concrete curve**: `dblXYZ_smulRing` specialized along the point
+`(x, y)` of `W`. -/
+lemma dblXYZ_smulEval (n : ℤ) : dblXYZ W (smulEval W x y n) = smulEval W x y (2 * n) := by
+  simp_rw [← Universal.ringEval_comp_smulRing eqn, ← Jacobian.dblXYZ_smulRing, ← map_dblXYZ,
+    map_ringEval]
+
+include eqn in
+/-- **The addition formula for a concrete curve**: `addXYZ_smulRing` specialized along `(x, y)`,
+scaling factor and all. -/
+lemma addXYZ_smulEval (m n : ℤ) :
+    addXYZ W (smulEval W x y m) (smulEval W x y n) =
+      evalEval x y (W.ψ (n - m)) • smulEval W x y (n + m) := by
+  -- The scaling factor is a bare `ψ`, not a triple, so it needs the third coordinate of
+  -- `ringEval_comp_smulRing` on its own — `congr_fun … 2` is that projection. Kept as a local
+  -- `have` rather than a named lemma: this is its only use.
+  have hψ : ∀ k : ℤ, Universal.ringEval eqn (AdjoinRoot.mk _ (curve.ψ k)) = evalEval x y (W.ψ k) :=
+    fun k ↦ congr_fun (Universal.ringEval_comp_smulRing eqn k) 2
+  simp_rw [← Universal.ringEval_comp_smulRing eqn, ← hψ]
+  rw [← comp_smul, ← Jacobian.addXYZ_smulRing, ← map_addXYZ]
+  simp_rw [map_ringEval]
+
+end WeierstrassCurve
+
+namespace WeierstrassCurve
+
+open Universal WeierstrassCurve.Jacobian
+
+variable {F : Type*} [Field F] (W : WeierstrassCurve F)
+
+/-- **The integer multiples of a nonsingular rational point are given by the division
+polynomials.** For every `n`, the Jacobian coordinates of `n • (x, y)` on a Weierstrass curve over
+a field are `(φₙ(x,y) : ωₙ(x,y) : ψₙ(x,y))`.
+
+This is the theorem the whole universal development exists to prove. It holds for every curve over
+every field, with no hypothesis on `n` and none on the characteristic, because its ingredients do:
+the doubling, addition and negation identities the induction consumes are equalities in the
+universal coordinate ring `Universal.Ring` — polynomials in `A₁,⋯,A₆,X,Y` taken modulo the
+Weierstrass polynomial — and specialize along `ringEval` to any point on any curve. Only the
+third coordinates (`dblZ_smulPoly`, `addZ_smulPoly`) and the negation rule `smulPoly_neg` hold
+already over `Poly`, before that quotient. The theorem is then an induction over those identities,
+not a specialization of one of them. -/
+-- Even-odd strong induction on `n ≥ 0`, then `Int.negInduction` for the sign. The base cases
+-- `n = 0` and `n = 1` are `(1 : 1 : 0)` and `(x : y : 1)`. The even step writes `2 * (m + 1) • P`
+-- through Mathlib's `add_self` and `dblXYZ_smulEval`; the odd step writes
+-- `(m + 1) • P + (m + 2) • P` through `add_of_not_equiv` and `addXYZ_smulEval`. The two
+-- summands are distinct because their difference is `P`, which is a nonzero affine point — not
+-- because `P` is non-torsion, which this theorem does not assume. The negative case rescales by
+-- `-1`, which is `smulRing_neg` specialized along the point.
+theorem zsmul_point_eq_smulEval {x y : F} (h : Affine.Nonsingular W x y) (n : ℤ) :
+    (n • Point.fromAffine (Affine.Point.some _ _ h)).point = ⟦smulEval W x y n⟧ := by
+  induction n using Int.negInduction with
+  | nat n =>
+    refine n.strong_induction_on fun n ih ↦ ?_
+    obtain _ | _ | n := n
+    · rw [Nat.cast_zero, zero_smul, smulEval_zero]
+      rfl
+    · rw [Nat.cast_one, one_smul, smulEval_one]
+      rfl
+    obtain ⟨n, rfl | rfl⟩ := n.even_or_odd'
+    · rw [show (2 * n + 1 + 1 : ℕ) = 2 * (n + 1) by omega, Nat.cast_mul, mul_smul, natCast_zsmul,
+        two_nsmul, Point.add_point, ih _ (by omega), addMap_eq, add_self, dblXYZ_smulEval h.1]
+      rfl
+    · rw [show 2 * n + 1 + 1 + 1 = (n + 1) + (n + 1 + 1) by omega, Nat.cast_add, add_smul]
+      have hne : (↑(n + 1) : ℤ) • Point.fromAffine (Affine.Point.some _ _ h) ≠
+          (↑(n + 1 + 1) : ℤ) • Point.fromAffine (Affine.Point.some _ _ h) := by
+        rw [ne_comm, ← sub_ne_zero, ← sub_smul]
+        push_cast
+        simp only [add_sub_cancel_left, one_smul]
+        exact Point.fromAffine_some_ne_zero h
+      have hnequiv : ¬ (smulEval W x y ↑(n + 1) ≈ smulEval W x y ↑(n + 1 + 1)) := by
+        intro hequiv
+        refine hne (Point.ext_iff.mpr ?_)
+        rw [ih (n + 1) (by omega), ih (n + 1 + 1) (by omega)]
+        exact Quotient.sound hequiv
+      have hcast : ((n + 1 + 1 : ℕ) : ℤ) = ((n + 1 : ℕ) : ℤ) + 1 := by push_cast; ring
+      -- `addXYZ_smulEval` at the adjacent indices scales by `ψ` of the gap, which is `ψ 1 = 1`;
+      -- the three rewrites after it discharge that factor.
+      rw [Point.add_point, ih (n + 1) (by omega), ih (n + 1 + 1) (by omega), addMap_eq,
+        add_of_not_equiv hnequiv, hcast, addXYZ_smulEval h.1, add_sub_cancel_left,
+        WeierstrassCurve.ψ_one, Polynomial.evalEval_one, one_smul]
+      congrm(⟦W.smulEval x y ?_⟧)
+      ring
+  | neg ih n =>
+    simp_rw [_root_.neg_smul, Point.neg_point, ih n, eq_comm]
+    refine Quotient.sound ⟨-1, ?_⟩
+    simp_rw [← Universal.ringEval_comp_smulRing h.1, Jacobian.smulRing_neg, comp_smul,
+      ← WeierstrassCurve.Jacobian.map_neg, map_ringEval, map_neg, map_one]
+    rfl
+
+end WeierstrassCurve
