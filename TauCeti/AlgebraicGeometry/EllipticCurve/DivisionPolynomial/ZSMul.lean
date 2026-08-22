@@ -16,18 +16,14 @@ elements of `Universal.Field`. This file defines those two rational functions, `
 `smulY`, develops the `smulX` calculus — values at `0`, `1` and `2`, the offset `ψₙ₊₁ψₙ₋₁/ψₙ²`
 from the `X`-coordinate, evenness in `n`, nonvanishing, the difference `smulX m - smulX n` as a
 single quotient, and the separation statement `smulX m = smulX n ↔ m = n ∨ m = -n` — and then
-**proves the identification itself**: `exists_zsmul_point_eq_smulX_smulY` says that
-`(smulX n, smulY n)`
+**proves the identification itself**: `zsmul_point_eq_smulX_smulY` says that `(smulX n, smulY n)`
 really are the affine coordinates of `n • (X, Y)`, for every `n ≠ 0`. `smulY`'s own sign rule is
 here too: negating a nonzero index negates the point, so `smulY (-n)` is the `negY` of
 `(smulX n, smulY n)`.
 
 The middle of the file turns that calculus on the pair `(smulX 1, smulY 1)`, which is the
-distinguished point `(X, Y)` itself. For `n ≠ 0` the vertical gap
-`smulY n - negY (smulX n) (smulY n)` is `ψ₂ₙ/ψₙ⁴`, hence nonzero, so `smulY n` never equals the
-`negY` of its own pair. The quotient formula genuinely needs `n ≠ 0`, since `ψ₀ = 0` leaves it
-meaningless; `smulY_ne_negY` carries the same hypothesis because it is *derived* from that formula,
-not because it fails at `n = 0` — there it reads `0 ≠ -a₃`, which holds. At `n = 1` the gap
+distinguished point `(X, Y)` itself. The vertical gap `smulY n - negY (smulX n) (smulY n)` is
+`ψ₂ₙ/ψₙ⁴`, hence nonzero, so `smulY n` never equals the `negY` of its own pair; at `n = 1` the gap
 is `ψ₂`, which selects the tangent branch of Mathlib's `Affine.slope` and gives the tangent slope
 `slopeOne` the closed form `-Wₓ/ψ₂`. Feeding that slope to Mathlib's affine addition formula sends
 `(smulX 1, smulY 1)` to `(smulX 2, smulY 2)`: `addX … = smulX 2` and `addY … = smulY 2`. Those two
@@ -36,24 +32,10 @@ formulas relating the values at `n + m`, `n - m`, `n` and `m`, are its step.
 
 With the identification in hand the geometric consequences are immediate: the distinguished point
 is not torsion (`zsmul_point_ne_zero`), and `n ↦ n • point` is injective
-(`Jacobian.zsmul_point_injective`). Next comes the Jacobian form of the identification, where
+(`Jacobian.zsmul_point_injective`). The file closes with the Jacobian form of the identification,
+where
 the three division polynomials appear as honest homogeneous coordinates `(φₙ : ωₙ : ψₙ)` and the
 statement needs no hypothesis on `n` at all: at `n = 0` the triple is the point at infinity.
-
-That Jacobian form is what lets Mathlib's doubling and addition formulas be run on the triple
-directly. `dblXYZ_smulField` and `addXYZ_smulField` say that `dblXYZ` and `addXYZ` carry
-`(φₙ : ωₙ : ψₙ)` to `(φ₂ₙ : ω₂ₙ : ψ₂ₙ)` and `(φₘ : ωₘ : ψₘ)`, `(φₙ : ωₙ : ψₙ)` to
-`(φₙ₊ₘ : ωₙ₊ₘ : ψₙ₊ₘ)` scaled by `ψₙ₋ₘ` — as equalities of triples, not merely of the points they
-represent, which is what makes them usable as rewrite rules. Both descend to `Universal.Ring`,
-where they are identities between polynomials modulo the Weierstrass polynomial.
-
-The file closes by specializing. A point `(x, y)` on a curve `W` over any commutative ring induces
-`Universal.ringEval`, and `ringEval_comp_smulRing` says it carries the universal triple to
-`smulEval W x y n`, the division polynomials of `W` evaluated at `(x, y)`. The three identities
-above therefore hold for `W` at `(x, y)`, and feeding them to an even-odd induction proves
-**`zsmul_point_eq_smulEval`**: over a field, `n • (x, y)` has Jacobian coordinates
-`(φₙ(x,y) : ωₙ(x,y) : ψₙ(x,y))`, for every `n` and with no hypothesis on the characteristic. That
-is the statement the Nagell–Lutz layer consumes.
 
 ## Main definitions
 
@@ -63,8 +45,6 @@ is the statement the Nagell–Lutz layer consumes.
 * `WeierstrassCurve.Universal.Jacobian.smulPoly`, `.smulRing`, `.smulField`: the triple
   `(φₙ, ωₙ, ψₙ)` as a `Fin 3 → _`, over the polynomial ring, the universal ring and the
   universal field respectively.
-* `WeierstrassCurve.smulEval`: the same triple for a concrete curve `W`, evaluated at a point
-  `(x, y)` of the affine plane over any commutative ring.
 
 ## Main results
 
@@ -88,30 +68,14 @@ is the statement the Nagell–Lutz layer consumes.
 * `WeierstrassCurve.Universal.Affine.smulX_add`, `.smulY_add_sub_negY`: the chord formulas, giving
   `smulX (n + m)` and the vertical gap at `n + m` in terms of the values at `n`, `m` and `n - m`
   — the induction step.
-* `WeierstrassCurve.Universal.Affine.exists_zsmul_point_eq_smulX_smulY`: **the identification**. For
+* `WeierstrassCurve.Universal.Affine.zsmul_point_eq_smulX_smulY`: **the identification**. For
   `n ≠ 0` the pair `(smulX n, smulY n)` is nonsingular and `n • (X, Y)` is the affine point it
-  names.
+  names, the statement carrying that nonsingularity as its existential witness.
 * `WeierstrassCurve.Universal.Affine.zsmul_point_ne_zero`, `.Jacobian.zsmul_point_ne_zero`:
   the distinguished point is not torsion, in affine and in Jacobian coordinates; whence
   `Jacobian.zsmul_point_injective`, that `n ↦ n • point` is injective.
 * `WeierstrassCurve.Universal.Jacobian.zsmul_point_eq_smulField`: the Jacobian identification,
   `(n • point).point = ⟦(φₙ : ωₙ : ψₙ)⟧`, with no hypothesis on `n`.
-* `WeierstrassCurve.Universal.Jacobian.dblXYZ_smulField`, `.addXYZ_smulField`: Mathlib's Jacobian
-  doubling and addition formulas evaluated on the universal triples, as equalities of triples.
-  `.dblXYZ_smulRing` and `.addXYZ_smulRing` are the same over `Universal.Ring`.
-* `WeierstrassCurve.Universal.Jacobian.dblZ_smulPoly`, `.addZ_smulPoly`: the `Z`-coordinates of
-  those two formulas, `ψ₂ₙ` and `ψₙ₊ₘψₙ₋ₘ`, already in the polynomial ring — no reduction modulo
-  the Weierstrass polynomial is needed for the third coordinate.
-* `WeierstrassCurve.Universal.Jacobian.smulPoly_neg`, `.smulRing_neg`, `.smulField_neg`: negating
-  the index is Mathlib's Jacobian negation rescaled by `-1`; `ω_neg_eq_neg_negY` is the middle
-  coordinate's share of that, the `ω` parity rule in Jacobian form.
-* `WeierstrassCurve.Universal.ringEval_comp_smulRing`: `smulEval` is the specialization of
-  `smulRing` along the homomorphism a point of `W` induces — the bridge from the universal
-  identities to a concrete curve, and what `dblXYZ_smulEval` and `addXYZ_smulEval` are proved
-  through.
-* `WeierstrassCurve.zsmul_point_eq_smulEval`: **the headline**. Over a field, `n • (x, y)`
-  in Jacobian
-  coordinates is `(φₙ(x,y) : ωₙ(x,y) : ψₙ(x,y))`, for every nonsingular `(x, y)` and every `n`.
 
 ## Provenance
 
@@ -182,11 +146,12 @@ polynomial-level certificate as a `have` and map it with `congrArg polyToField`,
 `polyToField (C X)` into `algebraMap _ _ (AdjoinRoot.of _ X)` while leaving
 `polyToField curve.polynomialX` folded, and the two sides of the goal then share no atoms.
 
-The identification block below adds, at the same revision,
+The identification block below adds, at the same revision, `smulX_sub_sub_smulX_add` (`:196`),
 `smulX_add` (`:300`), `smulY_add_sub_negY` (`:324`), `eq_of_sub_negY_eq` (`:345`),
 `zsmul_point_eq_smulX_smulY` (`:353`),
 `Affine.zsmul_point_ne_zero` (`:398`), `Jacobian.zsmul_point_ne_zero` (`:411`),
-`Jacobian.zsmul_point_injective` (`:416`), `smulPoly`, `smulRing` and
+`Jacobian.zsmul_point_injective` (`:416`), `smulPoly`, `smulRing`
+and
 `smulField` (`:423`–`:427`), `algebraMap_comp_smulRing` (`:429`) and
 `Jacobian.zsmul_point_eq_smulField` (`:433`). The first three come from before the previous
 slice's range: they are the chord formulas, and the headline induction step cannot be stated
@@ -201,10 +166,10 @@ One prerequisite is **strengthened rather than transcribed**, in
 `isEllipticNet_normEDS` was already available, so the change is two tokens, and
 `smulX_sub_smulX`, the one existing call site, takes the `s = 0` instance.
 
-`eq_of_sub_negY_eq` is the first consumer of `(2 : Universal.Field) ≠ 0`. No instance is added for
-it: Mathlib's `charZero` for a fraction ring carries `CharZero Universal.Field` from
-`CharZero Universal.Ring`, and `EllipticCurve/Universal.lean` imports `Algebra/CharP/Algebra.lean`
-so that it is in scope.
+`eq_of_sub_negY_eq` is the first consumer of `(2 : Universal.Field) ≠ 0`. **No second instance is
+declared for it.** Mathlib's `IsFractionRing.charZero` derives `CharZero Universal.Field` from the
+`CharZero Universal.Ring` instance in `EllipticCurve/Universal.lean`; this file imports
+`Mathlib.Algebra.CharP.Algebra` so that derivation is in scope.
 
 One statement is restated. The source's `zsmul_point_ne` (`:416`) is the pairwise form
 `m ≠ n → m • point ≠ n • point`; here it is `zsmul_point_injective`, the equivalent
@@ -222,11 +187,12 @@ ascribed type so that its index cast is normalised **before** the pair is destru
 the nonsingularity witness mentions the cast, and no rewrite of the equation alone is
 type-correct. And the two chord formulas are stated without the source's cosmetic
 `let ψ₂ x y := y - negY x y` binder, which the source immediately removes again with `change`.
-And of the block's two candidate `@[simp]` lemmas only `algebraMap_comp_smulRing` carries the
-tag. `zsmul_point_eq_smulField` cannot: `Jacobian.point_def` and `Affine.point_def` are both
-`@[simp]`, so simpNF reports the left-hand side `(n • Jacobian.point).point` as not in normal
-form — it reduces to `(Point.fromAffine (Affine.Point.mk ⋯)).point` before the lemma could fire.
-It was tagged and rejected by a full `lint-env` run before being left untagged.
+And of the block's three candidate `@[simp]` lemmas only `algebraMap_comp_smulRing` carries the
+tag. `zsmul_point_eq_smulField` cannot: `Jacobian.point_def` and
+`Affine.point_def` are both `@[simp]`, so simpNF reports the left-hand sides
+`Jacobian.point.point` and `(n • Jacobian.point).point` as not in normal form — they reduce
+to `(Point.fromAffine (Affine.Point.mk ⋯)).point` before either lemma could fire. Both were
+tagged and rejected by a full `lint-env` run before being left untagged.
 
 Three declarations of the source's are not ported. Its `smulX_add_aux` (`:295`) and
 `smulY_add_sub_negY_aux` (`:317`) each package the residue of one `field_simp`; both residues
@@ -238,74 +204,13 @@ The source's `instance : AddGroup ((curve.baseChange Universal.Field).toAffine.P
 an `inferInstance` cache and is not needed, and neither is its second
 `attribute [local instance] Classical.propDecidable` (`:406`), for the reason already given.
 
-The final block below completes the port of the source file, adding, at the same revision,
-`dblZ_smulPoly` (`:446`), `nonsingular_smulField` (`:454`), `dblXYZ_smulField` (`:469`),
-`dblXYZ_smulRing` (`:480`), `addZ_smulPoly` (`:484`), `ω_neg_eq_neg_negY` (`:489`),
-`smulPoly_neg` (`:496`), `smulRing_neg` (`:499`), `smulField_neg` (`:502`), `smulPoly_zero` and
-`smulField_zero` (`:505`–`:506`), `addXYZ_smulField` (`:508`), `addXYZ_smulRing` (`:533`),
-then `smulEval` (`:560`), `ringEval_comp_smulRing` (`:566`), `dblXYZ_smulEval` (`:577`),
-`addXYZ_smulEval` (`:581`) and `zsmul_eq_smulEval` (`:599`). The three `₁`-suffixed
-adjacent-index lemmas (`:539`, `:546`, `:589`) are in the source's range but are **not** ported,
-for the reason given below.
-The two zero lemmas are moved ahead of `dblXYZ_smulField`, which uses `smulField_zero` to
-identify the `n = 0` triple; the source proves that case by unfolding `dblXYZ` instead.
-`ringEval_comp_smulRing` is placed in the `Universal` namespace rather than at
-`WeierstrassCurve` level as upstream, matching where `EllipticCurve/Universal.lean` keeps the rest
-of the `ringEval` API. The source's `curveRing_map_ringEval` is this repository's `map_ringEval`.
-The source's `ringEval_ψ` (`:572`) is **not ported**: it is the third coordinate of
-`ringEval_comp_smulRing`, used once, so it lives as a typed local `have` in `addXYZ_smulEval`
-rather than as public API.
-**None of the source's three `₁`-suffixed adjacent-index lemmas is ported** (`:539`, `:546`,
-`:589`). Each is its `addXYZ_smul{Field,Ring,Eval}` parent followed by `add_sub_cancel_left`,
-`ψ_one`, `map_one`/`evalEval_one` and `one_smul` — the scaling factor at adjacent indices is
-`ψ` of a gap of `1`. Only the `Eval` form ever had a consumer, and only one, so those four
-rewrites are appended to that call site's own `rw` chain instead; the intermediate
-specialisations earn nothing.
-
-**`point_point` (`:420`) is not ported at all, and the previous slice's copy of it is deleted
-here.** That slice predicted this block would supply a consumer; it does not. At `1c1c7466` the
-source's `point_point` occurs exactly once per copy — its own definition — so nothing consumes it
-upstream either, and it restates `Jacobian.point_def`, `Affine.point_def` and
-`Point.fromAffine_some` without adding content. `algebraMap_comp_smulRing` (`:429`), predicted
-alongside it, **is** consumed — cited four times
-across `dblXYZ_smulRing`, `addXYZ_smulRing` and `smulField_neg`. It is load-bearing rather than
-decorative: upstream `algebraMap _ _ ∘ smulRing n = smulField n` holds by `rfl`, and here it does
-not, `polyToField`'s body being unexposed.
-
-One prerequisite is added, in `EllipticCurve/Universal.lean`: `map_polyToField`, for the same
-reason. Upstream `curveField = curvePoly.map polyToField` definitionally, so a curve-dependent
-transport such as `map_dblZ` lands on `curveField` with no further step; here it lands on
-`curvePoly.map polyToField` and the identification has to be cited. Both proofs that cite it do so
-after `map_dblZ`. `map_addZ` is not in that class: `addZ` takes no curve argument, so its transport
-never mentions a mapped curve. `map_polyToField` carries `@[simp]`, as does
-`ringEval_comp_smulRing`: both are map-specialization normal forms, reducing a mapped universal
-object to the concrete one it names, and neither loops. `api-design` asked for both tags in round
-three, over an initial judgement here that two explicit call sites did not warrant the global
-surface; the normal-form reading is the better one, and a full `lint-env` confirms neither tag
-introduces a simpNF violation.
-
-Two of the source's proofs are replaced rather than transcribed, both because a tactic upstream
-relies on is unavailable over `Poly = ℤ[A₁,⋯,A₆][X][Y]`. Instance search gives up on that
-triple-nested polynomial ring — `IsRightCancelAdd Poly` and `HasDistribNeg Poly` both fail to
-synthesize in this import closure, while their two-level analogues succeed and raising
-`synthInstance.maxSize` does not help. So `addZ_smulPoly` discharges its elliptic-sequence
-certificate through `sub_eq_zero` and `ring` where the source uses `convert`, and `smulPoly_neg`
-is proved coordinatewise with `ring` where the source uses a single `simp` carrying
-`Odd.neg_pow`. `ring` itself works over `Poly`; it is the additive-cancellation and sign lemmas
-that are out of reach.
-
-`ringEval_comp_smulRing` is also proved differently. The source threads a nine-lemma `conv_rhs`
-chain that ends by unfolding `polyEval`; that definition's body is unexposed here. The proof
-instead runs coordinatewise through `ringEval_mk` and `evalEval_φ`/`evalEval_ω`/`evalEval_ψ`,
-which `DivisionPolynomial/Universal.lean` already carries — the source's own `:99`–`:106`, ported
-in an earlier slice and, before this proof, cited nowhere outside their own file.
-
-Finally the source's two private helpers in this range, `two_zsmul_point_eq_dblXYZ` (`:458`) and
-`add_point_of_ne_eq_addXYZ` (`:463`), are **not** ported as declarations. Each has exactly one
-call site and one instantiation, so each is inlined as a typed local `have` — `h2` in
-`dblXYZ_smulField` and `hadd` in `addXYZ_smulField` — which keeps both proofs inside the length
-cap. The source's `zsmul_point_ne`, which `add_point_of_ne_eq_addXYZ` consumes, is this file's
-`zsmul_point_injective`, so the distinctness side condition is discharged through injectivity.
+**Two of the source's declarations are not ported: `nonsingular_smulX_smulY` (`:394`) and
+`point_point` (`:420`).** The first is `(zsmul_point_eq_smulX_smulY hn).1` — a projection with no
+consumer here or downstream; the second restates `Jacobian.point_def`, `Affine.point_def` and
+`Point.fromAffine_some` without adding content, and at `1c1c7466` occurs exactly once per copy,
+its own definition. `algebraMap_comp_smulRing` (`:429`) **is** kept: the next slice cites it four
+times, and unlike upstream, where `algebraMap _ _ ∘ smulRing n = smulField n` is `rfl`, here it is
+not — `polyToField`'s body is unexposed.
 -/
 
 public section
@@ -320,14 +225,12 @@ namespace WeierstrassCurve.Universal.Affine
 variable {m n : ℤ}
 
 /-- The rational function `φₙ/ψₙ²` in the universal field. For `n ≠ 0` it is the affine
-`X`-coordinate of `n • (X, Y)` on the universal curve, by
-`exists_zsmul_point_eq_smulX_smulY` below. -/
+`X`-coordinate of `n • (X, Y)` on the universal curve, by `zsmul_point_eq_smulX_smulY` below. -/
 def smulX (n : ℤ) : Universal.Field :=
   polyToField (curve.φ n) / polyToField (curve.ψ n) ^ 2
 
 /-- The rational function `ωₙ/ψₙ³` in the universal field. For `n ≠ 0` it is the affine
-`Y`-coordinate of `n • (X, Y)` on the universal curve, by
-`exists_zsmul_point_eq_smulX_smulY` below. -/
+`Y`-coordinate of `n • (X, Y)` on the universal curve, by `zsmul_point_eq_smulX_smulY` below. -/
 def smulY (n : ℤ) : Universal.Field :=
   polyToField (curve.ω n) / polyToField (curve.ψ n) ^ 3
 
@@ -496,8 +399,7 @@ lemma addX_smul_one_smul_one :
   linear_combination hF
 
 /-- **The same for `addY`: it returns `smulY 2`.** Together with the previous lemma this is the
-`n = 2` base case of `exists_zsmul_point_eq_smulX_smulY` below, which is what makes
-`(smulX 2, smulY 2)`
+`n = 2` base case of `zsmul_point_eq_smulX_smulY` below, which is what makes `(smulX 2, smulY 2)`
 the coordinates of `2 • (X, Y)`. -/
 -- The certificate is `ω_def` at `2`: the reduced-invariant denominator is `1` and the
 -- complement's auxiliary term `0`, the multiples of the Weierstrass polynomial vanish,
@@ -519,12 +421,21 @@ lemma addY_smul_one_smul_one :
   field_simp
   ring
 
+/-- The difference `smulX (n - m) - smulX (n + m)` as a single quotient, with numerator
+`ψ₂ₙψ₂ₘ`: this is `smulX_sub_smulX` at the pair `(n - m, n + m)`, whose index sum and difference
+collapse to `2n` and `2m`. -/
+lemma smulX_sub_sub_smulX_add (add_ne : n + m ≠ 0) (sub_ne : n - m ≠ 0) :
+    smulX (n - m) - smulX (n + m) =
+      polyToField (curve.ψ (2 * n)) * polyToField (curve.ψ (2 * m)) /
+        (polyToField (curve.ψ (n + m)) * polyToField (curve.ψ (n - m))) ^ 2 := by
+  rw [smulX_sub_smulX sub_ne add_ne]
+  simp only [show n + m + (n - m) = 2 * n by ring, show n + m - (n - m) = 2 * m by ring]
+
 /-- **The addition formula for the `X`-coordinate.** `smulX (n + m)` is `smulX (n - m)` less the
 product of the two vertical gaps, divided by the square of the horizontal one — the classical
 chord construction, written in the `smulX`/`smulY` calculus. -/
--- Both sides become quotients of `ψ`'s once `smulY_sub_negY` and `smulX_sub_smulX` are applied
--- — the latter twice, the second time at the pair `(n - m, n + m)` whose index sum and difference
--- collapse to `2n` and `2m`, which is the local `hsub`. The identity is then pure field algebra.
+-- Both sides become quotients of `ψ`'s once `smulY_sub_negY`, `smulX_sub_smulX` and
+-- `smulX_sub_sub_smulX_add` are applied; the identity is then pure field algebra.
 lemma smulX_add (hm : m ≠ 0) (hn : n ≠ 0) (add_ne : n + m ≠ 0) (sub_ne : n - m ≠ 0) :
     smulX (n + m) = smulX (n - m) -
       (smulY n - pointedCurve.toAffine.negY (smulX n) (smulY n)) *
@@ -533,13 +444,8 @@ lemma smulX_add (hm : m ≠ 0) (hn : n ≠ 0) (add_ne : n + m ≠ 0) (sub_ne : n
   have hψn : polyToField (curve.ψ n) ≠ 0 := polyToField_ψ_ne_zero hn
   have hψa : polyToField (curve.ψ (n + m)) ≠ 0 := polyToField_ψ_ne_zero add_ne
   have hψs : polyToField (curve.ψ (n - m)) ≠ 0 := polyToField_ψ_ne_zero sub_ne
-  have hsub : smulX (n - m) - smulX (n + m) =
-      polyToField (curve.ψ (2 * n)) * polyToField (curve.ψ (2 * m)) /
-        (polyToField (curve.ψ (n + m)) * polyToField (curve.ψ (n - m))) ^ 2 := by
-    rw [smulX_sub_smulX sub_ne add_ne]
-    simp only [show n + m + (n - m) = 2 * n by ring, show n + m - (n - m) = 2 * m by ring]
   rw [eq_sub_iff_add_eq, ← eq_sub_iff_add_eq', smulY_sub_negY hm, smulY_sub_negY hn,
-    smulX_sub_smulX hm hn, hsub]
+    smulX_sub_smulX hm hn, smulX_sub_sub_smulX_add add_ne sub_ne]
   field_simp
 
 /-- **The addition formula for the vertical gap.** The gap at `n + m` is a difference of the gaps
@@ -595,7 +501,7 @@ curve, for every nonzero `n`. -/
 -- coordinates against Mathlib's chord formula: `smulX_add` against `addX_eq_addX_negY_sub`, and
 -- `smulY_add_sub_negY` against `addY_sub_negY_addY` — the latter determines `smulY` only through
 -- `z ↦ z - negY x z`, which `eq_of_sub_negY_eq` inverts.
-theorem exists_zsmul_point_eq_smulX_smulY : n ≠ 0 →
+theorem zsmul_point_eq_smulX_smulY : n ≠ 0 →
     ∃ h : Affine.Nonsingular pointedCurve.toAffine (smulX n) (smulY n),
       n • point = .some _ _ h := by
   induction n using Int.negInduction with
@@ -648,7 +554,7 @@ theorem exists_zsmul_point_eq_smulX_smulY : n ≠ 0 →
 /-- **The distinguished point `(X, Y)` on the universal curve is not torsion.** Every nonzero
 multiple of it has affine coordinates, so none of them is the point at infinity. -/
 lemma zsmul_point_ne_zero (h0 : n ≠ 0) : n • point ≠ 0 := by
-  obtain ⟨ns, eq⟩ := exists_zsmul_point_eq_smulX_smulY h0
+  obtain ⟨ns, eq⟩ := zsmul_point_eq_smulX_smulY h0
   rw [eq]
   exact Affine.Point.some_ne_zero ns
 
@@ -702,8 +608,7 @@ lemma algebraMap_comp_smulRing (n : ℤ) : algebraMap _ _ ∘ smulRing n = smulF
   fin_cases i <;> simp [Function.comp_def, polyToField_apply]
 
 /-- **The Jacobian coordinates of `n • (X, Y)` are `(φₙ : ωₙ : ψₙ)`.** The Jacobian form of
-`Affine.exists_zsmul_point_eq_smulX_smulY`: where the affine statement divides by `ψₙ²` and
-`ψₙ³`, the
+`Affine.zsmul_point_eq_smulX_smulY`: where the affine statement divides by `ψₙ²` and `ψₙ³`, the
 Jacobian one carries `ψₙ` as the third coordinate and holds for `n = 0` as well, the triple
 becoming `(1 : 1 : 0)`, the point at infinity.
 
@@ -718,7 +623,7 @@ theorem zsmul_point_eq_smulField : (n • Jacobian.point).point = ⟦smulField n
   obtain rfl | hn := eq_or_ne n 0
   · simp_rw [zero_zsmul, φ_zero, ω_zero, ψ_zero, map_zero, map_one]
     rfl
-  obtain ⟨ns, eq⟩ := Universal.Affine.exists_zsmul_point_eq_smulX_smulY hn
+  obtain ⟨ns, eq⟩ := Universal.Affine.zsmul_point_eq_smulX_smulY hn
   rw [Jacobian.point_def, ← Point.toAffineAddEquiv_symm_apply,
     ← map_zsmul (Point.toAffineAddEquiv _).symm, eq]
   have hψ : polyToField (curve.ψ n) ≠ 0 := polyToField_ψ_ne_zero hn

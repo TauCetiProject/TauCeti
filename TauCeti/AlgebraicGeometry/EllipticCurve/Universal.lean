@@ -96,10 +96,10 @@ impossible; the `CharZero Universal.Ring` instance **replaces** the source's `Po
 `CharZero Universal.Field` from it through `IsFractionRing.charZero`, so no second instance is
 declared. That derivation is why `Mathlib.Algebra.CharP.Algebra` is imported: without it
 `(2 : Universal.Field) ≠ 0`, which the division-polynomial addition formulas need, does not
-synthesize. And the equation lemmas for the opaque definitions (`polyToField_apply`,
-`Affine.point_def`, `Jacobian.point_def`, `pointedCurve_Δ`) exist because this repository's
-module system leaves definition bodies unexposed.
-
+synthesize. And
+the equation lemmas for the opaque definitions
+(`polyToField_apply`, `Affine.point_def`, `Jacobian.point_def`, `pointedCurve_Δ`) exist because
+this repository's module system leaves definition bodies unexposed.
 That file's header reads `Authors: Junyan Xu`; following this repository's convention for adapted
 material, the upstream authorship is credited here rather than in the copyright header.
 
