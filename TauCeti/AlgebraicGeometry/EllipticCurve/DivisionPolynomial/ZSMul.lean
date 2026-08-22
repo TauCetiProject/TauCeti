@@ -110,6 +110,8 @@ is the statement the Nagell–Lutz layer consumes.
   `smulRing` along the homomorphism a point of `W` induces — the bridge from the universal
   identities to a concrete curve, and what `dblXYZ_smulEval` and `addXYZ_smulEval` are proved
   through.
+* `WeierstrassCurve.evalEval_ψ_eq_zero_of_zsmul_eq_zero`: the immediate corollary — `n • P = 0`
+  forces `ψₙ(x, y) = 0`, which is what turns a torsion hypothesis into a polynomial root.
 * `WeierstrassCurve.zsmul_point_eq_smulEval`: **the headline**. Over a field, `n • (x, y)`
   in Jacobian
   coordinates is `(φₙ(x,y) : ωₙ(x,y) : ψₙ(x,y))`, for every nonsingular `(x, y)` and every `n`.
@@ -1051,5 +1053,21 @@ theorem zsmul_point_eq_smulEval {x y : F} (h : Affine.Nonsingular W x y) (n : �
     simp_rw [← Universal.ringEval_comp_smulRing h.1, Jacobian.smulRing_neg, comp_smul,
       ← WeierstrassCurve.Jacobian.map_neg, map_ringEval, map_neg, map_one]
     rfl
+
+/-- **A torsion point is a root of its division polynomial.** If `n • P = 0` in the Jacobian
+point group, then `ψₙ` vanishes at `P`.
+
+This is where `zsmul_point_eq_smulEval` is consumed: it identifies `n • P` with the class of
+`(φₙ(x,y) : ωₙ(x,y) : ψₙ(x,y))`, and a Jacobian class is the point at infinity exactly when its
+`Z`-coordinate vanishes. -/
+theorem evalEval_ψ_eq_zero_of_zsmul_eq_zero {x y : F}
+    (hns : W.toAffine.Nonsingular x y) (n : ℤ)
+    (htors : n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0) :
+    (W.ψ n).evalEval x y = 0 := by
+  have heval := zsmul_point_eq_smulEval W hns n
+  have hzero := Jacobian.Point.zero_point (W' := W.toJacobian)
+  rw [Jacobian.Point.ext_iff] at htors
+  rw [heval, hzero] at htors
+  exact (Jacobian.Z_eq_zero_of_equiv (Quotient.exact htors)).mpr rfl
 
 end WeierstrassCurve

@@ -20,7 +20,8 @@ over an arbitrary unique factorisation domain `R` with fraction field `K` rather
 `ℤ/ℚ`. Order two is genuinely excluded: such a point need not be integral, and what is proved
 instead is the denominator bound `den(x) ∣ 4`.
 
-The bridge from the group law to polynomials is `evalEval_ψ_eq_zero_of_zsmul_eq_zero`: if
+The bridge from the group law to polynomials is `ZSMul.lean`'s
+`evalEval_ψ_eq_zero_of_zsmul_eq_zero`: if
 `n • P = 0` then `ψₙ` vanishes at `P`. That turns a torsion hypothesis into a polynomial root,
 and the root feeds `isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff` from
 `EllipticCurve/Integrality.lean`, whose squarefree-leading-coefficient hypothesis is supplied by
@@ -29,9 +30,6 @@ Mathlib's `leadingCoeff_preΨ` (`= n`), `leadingCoeff_preΨ₄` (`= 2`) and `lea
 
 ## Main results
 
-* `WeierstrassCurve.evalEval_ψ_eq_zero_of_zsmul_eq_zero`: over a field, `n • P = 0`
-  forces `ψₙ(x, y) = 0`. This is the consumer of `zsmul_point_eq_smulEval` that the whole
-  division-polynomial development was built for.
 * `WeierstrassCurve.isInteger_of_odd_torsion_of_squarefree`: **the headline.** For an **odd** `n`
   with `(n : R)` squarefree, an `n`-torsion point has both coordinates in `R`. The odd-prime case
   the Nagell–Lutz route quotes is the specialisation `n = p`; primality is not used.
@@ -55,7 +53,7 @@ specialise to it.
 Ported from J. Xu and D. K. Angdinata's
 `projects/NagellLutz/LutzNagell/LutzNagellTheorem/PIDPrimeOrder.lean` in AINTLIB
 (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`):
-`evalEval_ψ_eq_zero_of_zsmul_eq_zero` (`:67`), `x_isInteger_of_odd_prime_torsion_squarefree`
+`x_isInteger_of_odd_prime_torsion_squarefree`
 (`:118`), `two_nsmul_eq_zero_of_ψ₂_eq_zero` (`:143`), `integrality_of_order_four_squarefree`
 (`:156`), `den_dvd_of_order_two` (`:183`) and `prime_order_integrality_squarefree` (`:205`). That
 file is byte-identical at `9fec8eba7652`, the revision the roadmap pins, so the citations hold at
@@ -73,7 +71,10 @@ Its companion `curveK_equation_iff` is then just `Affine.equation_iff` and is no
 The source's `evalEval_ψ_odd` (`EvalBridge.lean:62`) is likewise not ported: it is the one-line
 composite `(evalEval_ψ_eq_evalEval_Ψ …).trans (evalEval_Ψ_odd …)`, and this repository carries
 both components while declining the wrapper, so the composition is inlined at its one call site.
-`evalEval_ψ_eq_zero_of_zsmul_eq_zero` drops the source's `[DecidableEq F]`, which TauCeti's
+The source's `evalEval_ψ_eq_zero_of_zsmul_eq_zero` (`:67`) is ported, but **into `ZSMul.lean`**
+rather than here: it is a field-level corollary of `zsmul_point_eq_smulEval` with no UFD content,
+so placing it beside its own input keeps consumers of the scalar-multiplication bridge from having
+to import this file. It also drops the source's `[DecidableEq F]`, which TauCeti's
 `zsmul_point_eq_smulEval` does not require. Finally the names are restated to describe their
 conclusions: `x_isInteger_of_odd_prime_torsion_squarefree` →
 `isInteger_x_of_odd_torsion_of_squarefree`, `prime_order_integrality_squarefree` →
@@ -93,22 +94,6 @@ namespace WeierstrassCurve
 open TauCeti.WeierstrassCurve
 
 variable {F : Type*} [Field F] (E : WeierstrassCurve F)
-
-/-- **A torsion point is a root of its division polynomial.** If `n • P = 0` in the Jacobian
-point group, then `ψₙ` vanishes at `P`.
-
-This is where `zsmul_point_eq_smulEval` is consumed: it identifies `n • P` with the class of
-`(φₙ(x,y) : ωₙ(x,y) : ψₙ(x,y))`, and a Jacobian class is the point at infinity exactly when its
-`Z`-coordinate vanishes. -/
-theorem evalEval_ψ_eq_zero_of_zsmul_eq_zero {x y : F}
-    (hns : E.toAffine.Nonsingular x y) (n : ℤ)
-    (htors : n • (Jacobian.Point.fromAffine (Affine.Point.some _ _ hns)) = 0) :
-    (E.ψ n).evalEval x y = 0 := by
-  have heval := zsmul_point_eq_smulEval E hns n
-  have hzero := Jacobian.Point.zero_point (W' := E.toJacobian)
-  rw [Jacobian.Point.ext_iff] at htors
-  rw [heval, hzero] at htors
-  exact (Jacobian.Z_eq_zero_of_equiv (Quotient.exact htors)).mpr rfl
 
 /-- If `ψ₂` vanishes at `(x, y)` then `2 • P = 0`: the point equals its own negation, so adding
 it to itself lands at infinity. Field-local — no base ring is involved. -/
