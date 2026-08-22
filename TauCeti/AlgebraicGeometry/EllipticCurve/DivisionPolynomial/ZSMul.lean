@@ -77,6 +77,8 @@ statement needs no hypothesis on `n` at all: at `n = 0` the triple is the point 
   `Jacobian.zsmul_point_injective`, that `n ↦ n • point` is injective.
 * `WeierstrassCurve.Universal.Jacobian.zsmul_point_eq_smulField`: the Jacobian identification,
   `(n • point).point = ⟦(φₙ : ωₙ : ψₙ)⟧`, with no hypothesis on `n`.
+* `WeierstrassCurve.two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero`: the converse at `n = 2` — a
+  vanishing `ψ₂` at a nonsingular point forces `2 • P = 0`.
 
 ## Provenance
 
@@ -955,6 +957,25 @@ theorem zsmul_point_eq_smulEval {x y : F} (h : Affine.Nonsingular W x y) (n : �
     simp_rw [← Universal.ringEval_comp_smulRing h.1, Jacobian.smulRing_neg, comp_smul,
       ← WeierstrassCurve.Jacobian.map_neg, map_ringEval, map_neg, map_one]
     rfl
+
+/-- If `ψ₂` vanishes at `(x, y)` then `2 • P = 0`: the point equals its own negation, so adding
+it to itself lands at infinity. Field-local — no base ring is involved.
+
+Stated for the Jacobian point, matching the rest of the torsion API and
+`evalEval_ψ_eq_zero_of_zsmul_eq_zero`. The affine group law is defined by cases and so needs
+`DecidableEq`, but only inside the proof, where `classical` supplies it; the statement does not. -/
+theorem two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero {x y : F}
+    (hns : W.toAffine.Nonsingular x y) (hψ : W.ψ₂.evalEval x y = 0) :
+    (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) = 0 := by
+  classical
+  rw [WeierstrassCurve.ψ₂, Affine.evalEval_polynomialY] at hψ
+  have hy : y = W.toAffine.negY x y := by simp only [Affine.negY]; linear_combination hψ
+  have haff : (2 : ℕ) • (Affine.Point.some _ _ hns) = 0 := by
+    rw [two_nsmul]; exact Affine.Point.add_self_of_Y_eq hy
+  have h := congrArg (Jacobian.Point.toAffineAddEquiv W).symm haff
+  rw [map_nsmul, map_zero] at h
+  rw [← natCast_zsmul] at h
+  exact_mod_cast h
 
 /-- **A torsion point is a root of its division polynomial.** If `n • P = 0` in the Jacobian
 point group, then `ψₙ` vanishes at `P`.

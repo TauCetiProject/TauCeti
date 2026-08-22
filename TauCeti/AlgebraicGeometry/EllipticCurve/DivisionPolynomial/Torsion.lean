@@ -38,8 +38,6 @@ Mathlib's `leadingCoeff_preΨ` (`= n`), `leadingCoeff_preΨ₄` (`= 2`) and `lea
   `(2 : R)` squarefree.
 * `WeierstrassCurve.den_dvd_four_of_order_two`: order two is the genuine exception — the
   coordinates need not be integral, but the denominator of `x` divides `4`.
-* `WeierstrassCurve.two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero`: the converse direction at
-  `n = 2`, which is what separates the order-four case from the order-two one.
 
 ## Roadmap
 
@@ -83,7 +81,8 @@ but primality is used there only to rule out `n = 2`, so these hold for any odd 
 odd composite torsion), `integrality_of_order_four_squarefree` →
 `isInteger_of_order_four_of_squarefree`, `den_dvd_of_order_two` → `den_dvd_four_of_order_two`,
 `two_nsmul_eq_zero_of_ψ₂_eq_zero` → `two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero`, restated for
-the Jacobian point so that the order-four theorem needs no `[DecidableEq K]`.
+the Jacobian point so that the order-four theorem needs no `[DecidableEq K]`; that one carries no
+integrality content and lives in `DivisionPolynomial/ZSMul.lean`, which this file consumes.
 -/
 
 public section
@@ -96,24 +95,6 @@ open TauCeti.WeierstrassCurve
 
 variable {F : Type*} [Field F] (E : WeierstrassCurve F)
 
-/-- If `ψ₂` vanishes at `(x, y)` then `2 • P = 0`: the point equals its own negation, so adding
-it to itself lands at infinity. Field-local — no base ring is involved.
-
-Stated for the Jacobian point, matching the rest of the torsion API and
-`evalEval_ψ_eq_zero_of_zsmul_eq_zero`. The affine group law is defined by cases and so needs
-`DecidableEq`, but only inside the proof, where `classical` supplies it; the statement does not. -/
-theorem two_zsmul_eq_zero_of_evalEval_ψ₂_eq_zero {x y : F}
-    (hns : E.toAffine.Nonsingular x y) (hψ : E.ψ₂.evalEval x y = 0) :
-    (2 : ℤ) • Jacobian.Point.fromAffine (Affine.Point.some _ _ hns) = 0 := by
-  classical
-  rw [WeierstrassCurve.ψ₂, Affine.evalEval_polynomialY] at hψ
-  have hy : y = E.toAffine.negY x y := by simp only [Affine.negY]; linear_combination hψ
-  have haff : (2 : ℕ) • (Affine.Point.some _ _ hns) = 0 := by
-    rw [two_nsmul]; exact Affine.Point.add_self_of_Y_eq hy
-  have h := congrArg (Jacobian.Point.toAffineAddEquiv E).symm haff
-  rw [map_nsmul, map_zero] at h
-  rw [← natCast_zsmul] at h
-  exact_mod_cast h
 
 variable {R : Type*} [CommRing R] [IsDomain R] [UniqueFactorizationMonoid R]
 variable {K : Type*} [Field K] [DecidableEq K] [Algebra R K] [IsFractionRing R K]
