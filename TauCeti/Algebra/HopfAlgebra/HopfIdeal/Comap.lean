@@ -49,6 +49,8 @@ schemes in the affine Hopf-algebra dictionary.
   `TauCeti.HopfIdeal.comapOfSurjective_comapOfSurjective`: identity and composition laws.
 * `TauCeti.HopfIdeal.comapOfSurjective_bialgEquiv_symm_apply`: inverse-image cancellation for a
   bialgebra equivalence.
+* `TauCeti.HopfIdeal.comapOrderIso`: inverse image along a bialgebra equivalence as an order
+  isomorphism of Hopf ideals.
 
 ## References
 
@@ -282,6 +284,37 @@ theorem comapOfSurjective_bialgEquiv_symm_apply (I : HopfIdeal R H) (e : H ≃�
   rw [mem_comapOfSurjective, mem_comapOfSurjective]
   simp only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom,
     e.symm_apply_apply]
+
+/-- Inverse image along a bialgebra equivalence is an order isomorphism of Hopf ideals. -/
+noncomputable def comapOrderIso (e : H ≃ₐc[R] K) :
+    HopfIdeal R K ≃o HopfIdeal R H where
+  toFun I := I.comapOfSurjective e.toBialgHom (EquivLike.surjective e)
+  invFun I := I.comapOfSurjective e.symm.toBialgHom (EquivLike.surjective e.symm)
+  left_inv I := comapOfSurjective_bialgEquiv_symm_apply I e.symm
+  right_inv I := comapOfSurjective_bialgEquiv_symm_apply I e
+  map_rel_iff' := comapOfSurjective_le_comapOfSurjective_iff e.toBialgHom
+    (EquivLike.surjective e)
+
+/-- The forward map of `comapOrderIso` is inverse image along the equivalence. -/
+@[simp]
+theorem comapOrderIso_apply (e : H ≃ₐc[R] K) (I : HopfIdeal R K) :
+    comapOrderIso e I =
+      I.comapOfSurjective e.toBialgHom (EquivLike.surjective e) :=
+  (rfl)
+
+/-- The order isomorphism built from a bijective morphism acts by inverse image along the original
+morphism. -/
+theorem comapOrderIso_ofBijective_apply (f : H →ₐc[R] K) (hf : Function.Bijective f)
+    (I : HopfIdeal R K) :
+    comapOrderIso (BialgEquiv.ofBijective f hf) I = I.comapOfSurjective f hf.2 :=
+  (rfl)
+
+/-- The inverse map of `comapOrderIso` is inverse image along the inverse equivalence. -/
+@[simp]
+theorem comapOrderIso_symm_apply (e : H ≃ₐc[R] K) (I : HopfIdeal R H) :
+    (comapOrderIso e).symm I =
+      I.comapOfSurjective e.symm.toBialgHom (EquivLike.surjective e.symm) :=
+  (rfl)
 
 section Field
 
