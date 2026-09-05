@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Integral
+import TauCeti.MeasureTheory.Function.PosPart
 import Mathlib.MeasureTheory.Measure.FiniteMeasure
 
 /-!
@@ -476,65 +477,66 @@ theorem cutNorm_le_cutNormSigned (K : SymmKernel Ω μ) : cutNorm μ K ≤ cutNo
     (measurable_one.indicator hT) (indicator_one_mem_Icc_neg_one_one _)
       (indicator_one_mem_Icc_neg_one_one _)
 
+omit [MeasurableSpace Ω] in
+/-- The positive part of a `[-1,1]`-valued function is `[0,1]`-valued. -/
+private theorem posPart_mem_Icc {u : Ω → ℝ} (hu1 : ∀ x, u x ∈ Icc (-1 : ℝ) 1) (x : Ω) :
+    u⁺ x ∈ Icc (0 : ℝ) 1 :=
+  ⟨posPart_nonneg u x, by
+    rw [posPart_def, Pi.sup_apply, Pi.zero_apply]; exact sup_le (hu1 x).2 zero_le_one⟩
+
+omit [MeasurableSpace Ω] in
+/-- The negative part of a `[-1,1]`-valued function is `[0,1]`-valued. -/
+private theorem negPart_mem_Icc {u : Ω → ℝ} (hu1 : ∀ x, u x ∈ Icc (-1 : ℝ) 1) (x : Ω) :
+    u⁻ x ∈ Icc (0 : ℝ) 1 :=
+  ⟨negPart_nonneg u x, by
+    rw [negPart_def, Pi.sup_apply, Pi.zero_apply, Pi.neg_apply]
+    exact sup_le (by linarith [(hu1 x).1]) zero_le_one⟩
+
+omit [MeasurableSpace Ω] in
+/-- A `[0,1]`-valued function is `[-1,1]`-valued. -/
+private theorem mem_Icc_neg_one_one_of_mem_Icc_zero_one {w : Ω → ℝ}
+    (h : ∀ x, w x ∈ Icc (0 : ℝ) 1) (x : Ω) : w x ∈ Icc (-1 : ℝ) 1 :=
+  Set.Icc_subset_Icc (by norm_num) le_rfl (h x)
+
 /-- **Upper side of the factor sandwich.** Relaxing indicators to `[-1,1]`-valued test functions
 increases the cut norm by at most a factor of `4`. -/
 theorem cutNormSigned_le_four_mul_cutNorm (K : SymmKernel Ω μ) :
     cutNormSigned μ K ≤ 4 * cutNorm μ K := by
   refine cutNormSigned_le μ fun u v hu hv hu1 hv1 => ?_
-  let up := fun x => max (u x) 0
-  let un := fun x => max (-u x) 0
-  let vp := fun x => max (v x) 0
-  let vn := fun x => max (-v x) 0
-  have hupm : Measurable up := hu.max measurable_const
-  have hunm : Measurable un := hu.neg.max measurable_const
-  have hvpm : Measurable vp := hv.max measurable_const
-  have hvnm : Measurable vn := hv.neg.max measurable_const
-  have hup1 : ∀ x, up x ∈ Icc (0 : ℝ) 1 := fun x =>
-    ⟨le_max_right _ _, max_le (hu1 x).2 zero_le_one⟩
-  have hun1 : ∀ x, un x ∈ Icc (0 : ℝ) 1 := fun x =>
-    ⟨le_max_right _ _, max_le (by linarith [(hu1 x).1]) zero_le_one⟩
-  have hvp1 : ∀ x, vp x ∈ Icc (0 : ℝ) 1 := fun x =>
-    ⟨le_max_right _ _, max_le (hv1 x).2 zero_le_one⟩
-  have hvn1 : ∀ x, vn x ∈ Icc (0 : ℝ) 1 := fun x =>
-    ⟨le_max_right _ _, max_le (by linarith [(hv1 x).1]) zero_le_one⟩
-  have hup1' : ∀ x, up x ∈ Icc (-1 : ℝ) 1 := fun x =>
-    ⟨by linarith [(hup1 x).1], (hup1 x).2⟩
-  have hun1' : ∀ x, un x ∈ Icc (-1 : ℝ) 1 := fun x =>
-    ⟨by linarith [(hun1 x).1], (hun1 x).2⟩
-  have hvp1' : ∀ x, vp x ∈ Icc (-1 : ℝ) 1 := fun x =>
-    ⟨by linarith [(hvp1 x).1], (hvp1 x).2⟩
-  have hvn1' : ∀ x, vn x ∈ Icc (-1 : ℝ) 1 := fun x =>
-    ⟨by linarith [(hvn1 x).1], (hvn1 x).2⟩
-  have hu_eq : u = up - un := by
-    funext x
-    exact (max_zero_sub_max_neg_zero_eq_self (u x)).symm
-  have hv_eq : v = vp - vn := by
-    funext x
-    exact (max_zero_sub_max_neg_zero_eq_self (v x)).symm
-  have hu_sub1 : ∀ x, (up - un) x ∈ Icc (-1 : ℝ) 1 := by
-    rw [← hu_eq]
+  have hup := posPart_mem_Icc hu1
+  have hun := negPart_mem_Icc hu1
+  have hvp := posPart_mem_Icc hv1
+  have hvn := negPart_mem_Icc hv1
+  have hup' := mem_Icc_neg_one_one_of_mem_Icc_zero_one hup
+  have hun' := mem_Icc_neg_one_one_of_mem_Icc_zero_one hun
+  have hvp' := mem_Icc_neg_one_one_of_mem_Icc_zero_one hvp
+  have hvn' := mem_Icc_neg_one_one_of_mem_Icc_zero_one hvn
+  have hu_sub1 : ∀ x, (u⁺ - u⁻) x ∈ Icc (-1 : ℝ) 1 := by
+    rw [posPart_sub_negPart]
     exact hu1
-  have hpp := abs_testIntegral_le_cutNorm μ K hupm hvpm hup1 hvp1
-  have hmp := abs_testIntegral_le_cutNorm μ K hunm hvpm hun1 hvp1
-  have hpm := abs_testIntegral_le_cutNorm μ K hupm hvnm hup1 hvn1
-  have hmm := abs_testIntegral_le_cutNorm μ K hunm hvnm hun1 hvn1
-  rw [hu_eq, hv_eq,
+  have hpp := abs_testIntegral_le_cutNorm μ K hu.posPart hv.posPart hup hvp
+  have hmp := abs_testIntegral_le_cutNorm μ K hu.negPart hv.posPart hun hvp
+  have hpm := abs_testIntegral_le_cutNorm μ K hu.posPart hv.negPart hup hvn
+  have hmm := abs_testIntegral_le_cutNorm μ K hu.negPart hv.negPart hun hvn
+  rw [(posPart_sub_negPart u).symm, (posPart_sub_negPart v).symm,
     K.testIntegral_sub_right μ
-      (K.integrable_testIntegrand μ (hupm.sub hunm) hvpm hu_sub1 hvp1')
-      (K.integrable_testIntegrand μ (hupm.sub hunm) hvnm hu_sub1 hvn1'),
+      (K.integrable_testIntegrand μ (hu.posPart.sub hu.negPart) hv.posPart
+        hu_sub1 hvp')
+      (K.integrable_testIntegrand μ (hu.posPart.sub hu.negPart) hv.negPart
+        hu_sub1 hvn'),
     K.testIntegral_sub_left μ
-      (K.integrable_testIntegrand μ hupm hvpm hup1' hvp1')
-      (K.integrable_testIntegrand μ hunm hvpm hun1' hvp1'),
+      (K.integrable_testIntegrand μ hu.posPart hv.posPart hup' hvp')
+      (K.integrable_testIntegrand μ hu.negPart hv.posPart hun' hvp'),
     K.testIntegral_sub_left μ
-      (K.integrable_testIntegrand μ hupm hvnm hup1' hvn1')
-      (K.integrable_testIntegrand μ hunm hvnm hun1' hvn1')]
+      (K.integrable_testIntegrand μ hu.posPart hv.negPart hup' hvn')
+      (K.integrable_testIntegrand μ hu.negPart hv.negPart hun' hvn')]
   calc
-    |K.testIntegral μ up vp - K.testIntegral μ un vp -
-        (K.testIntegral μ up vn - K.testIntegral μ un vn)|
-        ≤ |K.testIntegral μ up vp - K.testIntegral μ un vp| +
-            |K.testIntegral μ up vn - K.testIntegral μ un vn| := abs_sub _ _
-    _ ≤ (|K.testIntegral μ up vp| + |K.testIntegral μ un vp|) +
-          (|K.testIntegral μ up vn| + |K.testIntegral μ un vn|) :=
+    |K.testIntegral μ u⁺ v⁺ - K.testIntegral μ u⁻ v⁺ -
+        (K.testIntegral μ u⁺ v⁻ - K.testIntegral μ u⁻ v⁻)|
+        ≤ |K.testIntegral μ u⁺ v⁺ - K.testIntegral μ u⁻ v⁺| +
+            |K.testIntegral μ u⁺ v⁻ - K.testIntegral μ u⁻ v⁻| := abs_sub _ _
+    _ ≤ (|K.testIntegral μ u⁺ v⁺| + |K.testIntegral μ u⁻ v⁺|) +
+          (|K.testIntegral μ u⁺ v⁻| + |K.testIntegral μ u⁻ v⁻|) :=
       add_le_add (abs_sub _ _) (abs_sub _ _)
     _ ≤ (cutNorm μ K + cutNorm μ K) + (cutNorm μ K + cutNorm μ K) :=
       add_le_add (add_le_add hpp hmp) (add_le_add hpm hmm)
