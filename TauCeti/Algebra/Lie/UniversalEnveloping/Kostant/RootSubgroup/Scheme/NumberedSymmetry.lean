@@ -142,6 +142,25 @@ theorem map_kostantNumberedSymmetryMatrix {A : Type v} {B : Type v'} [CommRing A
       (AddEquiv.baseChangeInvariantRestrictUnit (R := B) θ.toAddEquiv M hθM).val i j
   exact congrFun (congrFun hmatrix i) j
 
+/-- The matrix of a numbered symmetry satisfies every order relation satisfied by the underlying
+rational linear equivalence. -/
+theorem kostantNumberedSymmetryMatrix_pow_eq_one (A : Type v) [CommRing A] {m : ℕ}
+    (hm : ∀ x, (θ ^ m) x = x) :
+    kostantNumberedSymmetryMatrix M b θ hθM A ^ m = 1 := by
+  have hm' : ∀ x, (θ.toAddEquiv.toIntLinearEquiv ^ m) x = x := by
+    intro x
+    -- the integral-linear view of `θ` has the same underlying function as `θ` itself
+    rw [LinearEquiv.pow_apply, show ⇑(θ.toAddEquiv.toIntLinearEquiv) = ⇑θ from rfl,
+      ← LinearEquiv.pow_apply]
+    exact hm x
+  have hunit := AddEquiv.baseChangeInvariantRestrictUnit_pow_eq_one
+    (R := A) θ.toAddEquiv M hθM hm'
+  have hmatrix := congrArg
+    (Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMonoidHom) hunit
+  rw [map_pow, map_one] at hmatrix
+  rw [kostantNumberedSymmetryMatrix]
+  exact hmatrix
+
 /-- Conjugation by the numbered symmetry on the points of the general-linear coordinate
 Hopf algebra. -/
 private noncomputable def generalLinearPointsNumberedSymmetryMulEquiv (A : CommAlgCat.{0} ℤ) :
