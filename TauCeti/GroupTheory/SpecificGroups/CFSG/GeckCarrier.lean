@@ -48,6 +48,8 @@ connected one, that its weight torus is maximal, or that its point group is fini
 
 ## Main results
 
+* `TauCeti.ValidLieTypeIndex.geckRootSubgroup_eq_mk`: a root-subgroup point in the explicit shape
+  the pinned Geck carrier states its equations in.
 * `TauCeti.ValidLieTypeIndex.geckWeightTorus_conj_geckRootSubgroup_root_simpleIndex` and its
   negative-root counterpart: conjugation by a weight-torus point rescales the parameter of the
   numbered root subgroup at node `i` by the simple root `α_i` of the root datum
@@ -63,6 +65,14 @@ connected one, that its weight torus is maximal, or that its point group is fini
   `TauCeti.ValidLieTypeIndex.fixedField`.
 * `TauCeti.ValidLieTypeIndex.geckWeightTorus_mem_fixedSubgroup_geckFrobenius`: among those points
   are the weight-torus points all of whose coordinates lie in `𝔽_q`.
+* `TauCeti.ValidLieTypeIndex.geckFrobenius_pow`, together with
+  `TauCeti.ValidLieTypeIndex.coe_geckFrobenius_pow_apply`,
+  `TauCeti.ValidLieTypeIndex.geckFrobenius_pow_geckRootSubgroup` and
+  `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_geckFrobenius_pow_iff`: the `m`-th power of the
+  Frobenius is `Frob_(q ^ m)`, with the same three descriptions. Its fixed points are, for `0 < m`,
+  the points over the degree-`m` extension of the field of definition, and at `m = 0`, where the
+  power is the identity, all of the carrier. A graph-twisted Steinberg map is not a Frobenius but
+  has such a power, so this is the form the twisted branches read their own fixed points against.
 
 ## References
 
@@ -199,6 +209,17 @@ theorem geckWeightTorus_conj_geckRootSubgroup_neg_root_simpleIndex (i : Fin d.ra
   exact d.dynkinType.geckWeightTorusPoints_conj_geckRootSubgroupPoints_neg_root_simpleIndex
     d.dynkinType_valid i d.Closure s u
 
+/-- A root-subgroup point of the Geck point group, in the explicit shape the equations of the
+pinned Geck carrier are stated in one layer down. The body of `geckRootSubgroup` is not exposed,
+so this is the bridge to `TauCeti.DynkinType.geckRootSubgroupMatrix`. -/
+theorem geckRootSubgroup_eq_mk (i : Fin d.dynkinType.rank ⊕ Fin d.dynkinType.rank)
+    (u : Multiplicative d.Closure) :
+    d.geckRootSubgroup i u =
+      ⟨d.dynkinType.geckRootSubgroupMatrix d.dynkinType_valid i
+          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := d.Closure)).symm u),
+        d.dynkinType.geckRootSubgroupMatrix_mem_geckPoints d.dynkinType_valid d.Closure i _⟩ :=
+  Subtype.ext (d.coe_geckRootSubgroup i u)
+
 /-! ## The Frobenius endomorphism -/
 
 /-- **The `q`-power Frobenius endomorphism of the Geck point group**, for `q` the field order
@@ -281,6 +302,83 @@ theorem mem_fixedSubgroup_geckFrobenius_iff (g : GeckGroup d) :
     d.dynkinType.geckFrobenius_eq_self_iff d.dynkinType_valid _ _ _ g]
   simp only [mem_frobeniusFixedSubring, ValidLieTypeIndex.mem_fixedField,
     d.fieldOrder_eq_characteristic_pow]
+
+/-! ## The powers of the Frobenius
+
+The `m`-th power of the Frobenius in the endomorphism monoid of the carrier is the `q ^ m`-power
+Frobenius. For `0 < m` its fixed points are the points of the carrier over the degree-`m` extension
+of the field of definition; at the permitted value `m = 0` the power is the identity, its fixed
+subfield is the whole closure, and its fixed points are all of the carrier. The graph-twisted
+branches need exactly this: their Steinberg map is not the Frobenius, but a power of it is. -/
+
+/-- **The `m`-th power of the Frobenius is the Frobenius of the pinned Geck carrier at `m` times
+the exponent recorded by the index**, which is what makes it the `q ^ m`-power map rather than
+merely the Frobenius of a larger field. -/
+-- As in `TauCeti.DynkinType.geckFrobenius_pow`, `Monoid.End` is definitionally a bundled
+-- `MonoidHom`, and the `show` picks its composition monoid structure before the power is
+-- elaborated.
+theorem geckFrobenius_pow (m : ℕ) :
+    (show Monoid.End _ from d.geckFrobenius) ^ m =
+      d.dynkinType.geckFrobenius d.dynkinType_valid d.characteristic (d.fieldExponent * m)
+        d.Closure := by
+  rw [geckFrobenius_def, DynkinType.geckFrobenius_pow]
+
+/-- **The `m`-th power of the Frobenius sends a point to its image under the Frobenius at `m` times
+the exponent recorded by the index**, the pointwise form of `geckFrobenius_pow`. -/
+-- This is what reads a power of the sealed `geckFrobenius` at a point: the bundled equation
+-- `geckFrobenius_pow` cannot be rewritten underneath the application.
+theorem geckFrobenius_pow_apply (m : ℕ) (g : GeckGroup d) :
+    ((show Monoid.End _ from d.geckFrobenius) ^ m) g =
+      d.dynkinType.geckFrobenius d.dynkinType_valid d.characteristic (d.fieldExponent * m)
+        d.Closure g := by
+  rw [geckFrobenius_pow]
+  -- The two sides are the same monoid homomorphism applied at the same point, read once through
+  -- the endomorphism monoid and once as a bundled map.
+  rfl
+
+/-- **The `q ^ m`-power Frobenius raises every matrix entry to the `q ^ m`-th power.** -/
+@[simp]
+theorem coe_geckFrobenius_pow_apply (m : ℕ) (g : GeckGroup d)
+    (r c : Fin (d.dynkinType.geckDim d.dynkinType_valid)) :
+    ((((show Monoid.End _ from d.geckFrobenius) ^ m) g : Matrix.GeneralLinearGroup
+          (Fin (d.dynkinType.geckDim d.dynkinType_valid)) d.Closure) :
+        Matrix _ _ d.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup
+          (Fin (d.dynkinType.geckDim d.dynkinType_valid)) d.Closure) :
+        Matrix _ _ d.Closure) r c ^ d.fieldOrder ^ m := by
+  rw [d.geckFrobenius_pow_apply m g,
+    d.dynkinType.coe_geckFrobenius_apply d.dynkinType_valid _ _ _ g r c, pow_mul,
+    ← d.fieldOrder_eq_characteristic_pow]
+
+/-- **The `q ^ m`-power Frobenius raises the parameter of every numbered root subgroup to the
+`q ^ m`-th power.** -/
+@[simp]
+theorem geckFrobenius_pow_geckRootSubgroup (m : ℕ)
+    (i : Fin d.dynkinType.rank ⊕ Fin d.dynkinType.rank) (u : Multiplicative d.Closure) :
+    ((show Monoid.End _ from d.geckFrobenius) ^ m) (d.geckRootSubgroup i u) =
+      d.geckRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.fieldOrder ^ m)) := by
+  rw [d.geckFrobenius_pow_apply m _, d.fieldOrder_eq_characteristic_pow, ← pow_mul]
+  exact d.dynkinType.geckFrobenius_geckRootSubgroupPoints d.dynkinType_valid
+    d.characteristic (d.fieldExponent * m) d.Closure i u
+
+/-- **A point of the Geck point group is fixed by the `q ^ m`-power Frobenius exactly when all of
+its matrix entries lie in the subfield that Frobenius fixes.** For positive `m` that subfield is
+the degree-`m` extension of the field of definition and has `q ^ m` elements, by
+`TauCeti.card_frobeniusFixedSubfield`; at `m = 0` it is the whole closure and the statement is
+vacuous. -/
+-- As for `mem_fixedSubgroup_geckFrobenius_iff`, this is not a `simp` lemma: `simp` rewrites its
+-- left-hand side through `MonoidHom.mem_eqLocus`, and the `simpNF` linter rejects the annotation.
+theorem mem_fixedSubgroup_geckFrobenius_pow_iff (m : ℕ) (g : GeckGroup d) :
+    g ∈ fixedSubgroup ((show Monoid.End _ from d.geckFrobenius) ^ m) ↔
+      ∀ r c, ((g : Matrix.GeneralLinearGroup
+          (Fin (d.dynkinType.geckDim d.dynkinType_valid)) d.Closure) :
+        Matrix (Fin (d.dynkinType.geckDim d.dynkinType_valid))
+          (Fin (d.dynkinType.geckDim d.dynkinType_valid)) d.Closure) r c ∈
+        frobeniusFixedSubfield d.Closure d.characteristic (d.fieldExponent * m) := by
+  rw [geckFrobenius_pow, mem_fixedSubgroup,
+    d.dynkinType.geckFrobenius_eq_self_iff d.dynkinType_valid _ _ _ g]
+  simp only [mem_frobeniusFixedSubring, mem_frobeniusFixedSubfield]
 
 end
 
