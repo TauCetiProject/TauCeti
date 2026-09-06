@@ -24,8 +24,9 @@ exponential moments of order `t`, and computes its moment-generating function th
   `det (1 - (2 * t) • (Θ * S)) ^ (-1 / 2)`.
 
 The same results are stated for the standard Gaussian vector, in terms of the eigenvalues of the
-symmetric matrix, and for one and for finitely many independent standard Gaussian coordinates,
-where the quadratic form is a weighted sum of squares.
+symmetric matrix. The one-dimensional building blocks, the exponential moments of a weighted sum
+of squares of independent standard Gaussian coordinates, live in
+`TauCeti.Probability.Distributions.Gaussian.ChiSquared`.
 
 ## Main results
 
@@ -36,14 +37,11 @@ where the quadratic form is a weighted sum of squares.
   that domain, in terms of the sandwich `√S * Θ * √S` and, for positive-semidefinite `S`, of
   `Θ * S`;
 * `TauCeti.cgf_inner_toEuclideanLin_multivariateGaussian_sqrt` and
-  `TauCeti.cgf_inner_toEuclideanLin_multivariateGaussian` — the cumulant-generating function, the
-  real logarithm of the same values;
+  `TauCeti.cgf_inner_toEuclideanLin_multivariateGaussian` — the cumulant-generating function,
+  `-1 / 2` times the real logarithm of the same determinants;
 * `TauCeti.mem_integrableExpSet_inner_toEuclideanLin_stdGaussian_iff` and
   `TauCeti.mgf_inner_toEuclideanLin_stdGaussian` — the same results for the standard Gaussian,
-  in terms of the eigenvalues of the symmetric matrix;
-* `TauCeti.mgf_sum_mul_sq_pi_gaussianReal_eq_prod` — the moment-generating function of a
-  weighted sum of squares of independent standard Gaussian coordinates factors over the
-  coordinates, for every `t`.
+  in terms of the eigenvalues of the symmetric matrix.
 
 ## References
 
@@ -61,87 +59,6 @@ open scoped RealInnerProductSpace MatrixOrder Matrix.Norms.L2Operator
 
 namespace TauCeti
 
-/-! ### One standard Gaussian coordinate -/
-
-section scalar
-
-variable {w t : ℝ}
-
-/-- The exponential moment of order `t` of `w * x ^ 2` under the standard Gaussian is finite
-exactly when `2 * t * w < 1`. -/
-theorem mem_integrableExpSet_mul_sq_gaussianReal_iff (w t : ℝ) :
-    t ∈ integrableExpSet (fun x ↦ w * x ^ 2) (gaussianReal 0 1) ↔ 2 * t * w < 1 := by
-  have key : t ∈ integrableExpSet (fun x ↦ w * x ^ 2) (gaussianReal 0 1) ↔
-      t * w ∈ integrableExpSet id (Probability.chiSquaredMeasure 1) := by
-    simp only [integrableExpSet, Set.mem_ofPred_eq, id_eq]
-    rw [← Probability.gaussianReal_map_sq,
-      integrable_map_measure (by fun_prop) (by fun_prop), Function.comp_def]
-    simp only [mul_assoc]
-  rw [key, Probability.integrableExpSet_id_chiSquaredMeasure zero_lt_one, Set.mem_Iio]
-  constructor <;> intro h <;> linarith
-
-/-- The moment-generating function of `w * x ^ 2` under the standard Gaussian is
-`(1 - 2 * t * w) ^ (-1 / 2)` on its domain `2 * t * w < 1`. -/
-theorem mgf_mul_sq_gaussianReal (ht : 2 * t * w < 1) :
-    mgf (fun x ↦ w * x ^ 2) (gaussianReal 0 1) t = (1 - 2 * t * w) ^ (-1 / 2 : ℝ) := by
-  rw [mgf_const_mul, ← mgf_id_map (X := fun x : ℝ ↦ x ^ 2) (by fun_prop),
-    Probability.gaussianReal_map_sq,
-    Probability.mgf_id_chiSquaredMeasure zero_le_one (by linarith),
-    mul_comm w t, ← mul_assoc]
-  norm_num
-
-end scalar
-
-/-! ### Independent standard Gaussian coordinates -/
-
-section pi
-
-variable {ι : Type*} [Fintype ι] {w : ι → ℝ} {t : ℝ}
-
-/-- Under a product measure the exponential of a weighted sum of squares factors over the
-coordinates, so Fubini's theorem turns its integral into a product of one-dimensional
-moment-generating functions. No integrability hypothesis is needed: off the common domain both
-sides are zero. -/
-theorem mgf_sum_mul_sq_pi_gaussianReal_eq_prod (w : ι → ℝ) (t : ℝ) :
-    mgf (fun c : ι → ℝ ↦ ∑ j, w j * c j ^ 2)
-        (Measure.pi fun _ : ι ↦ gaussianReal 0 1) t =
-      ∏ j, mgf (fun u : ℝ ↦ w j * u ^ 2) (gaussianReal 0 1) t := by
-  simp only [mgf, Finset.mul_sum, Real.exp_sum]
-  exact integral_fintype_prod_eq_prod fun j (u : ℝ) ↦ Real.exp (t * (w j * u ^ 2))
-
-/-- The exponential moment of order `t` of the weighted sum of squares `∑ j, w j * c j ^ 2` of
-independent standard Gaussian coordinates is finite exactly when `2 * t * w j < 1` for every
-`j`. -/
-theorem mem_integrableExpSet_sum_mul_sq_pi_gaussianReal_iff (w : ι → ℝ) (t : ℝ) :
-    t ∈ integrableExpSet (fun c : ι → ℝ ↦ ∑ j, w j * c j ^ 2)
-        (Measure.pi fun _ : ι ↦ gaussianReal 0 1) ↔
-      ∀ j, 2 * t * w j < 1 := by
-  have hpos (j : ι) :
-      0 < mgf (fun u : ℝ ↦ w j * u ^ 2) (gaussianReal 0 1) t ↔ 2 * t * w j < 1 := by
-    rw [mgf_pos_iff]
-    exact mem_integrableExpSet_mul_sq_gaussianReal_iff (w j) t
-  have hmem : t ∈ integrableExpSet (fun c : ι → ℝ ↦ ∑ j, w j * c j ^ 2)
-      (Measure.pi fun _ : ι ↦ gaussianReal 0 1) ↔
-      0 < ∏ j, mgf (fun u : ℝ ↦ w j * u ^ 2) (gaussianReal 0 1) t := by
-    rw [← mgf_sum_mul_sq_pi_gaussianReal_eq_prod]
-    exact mgf_pos_iff.symm
-  rw [hmem]
-  refine ⟨fun h j ↦ (hpos j).1 (mgf_nonneg.lt_of_ne' fun hj ↦ ?_),
-    fun h ↦ Finset.prod_pos fun j _ ↦ (hpos j).2 (h j)⟩
-  exact absurd (Finset.prod_eq_zero (Finset.mem_univ j) hj) h.ne'
-
-/-- The moment-generating function of the weighted sum of squares `∑ j, w j * c j ^ 2` of
-independent standard Gaussian coordinates is `∏ j, (1 - 2 * t * w j) ^ (-1 / 2)` on its
-domain. -/
-theorem mgf_sum_mul_sq_pi_gaussianReal (ht : ∀ j, 2 * t * w j < 1) :
-    mgf (fun c : ι → ℝ ↦ ∑ j, w j * c j ^ 2)
-        (Measure.pi fun _ : ι ↦ gaussianReal 0 1) t =
-      ∏ j, (1 - 2 * t * w j) ^ (-1 / 2 : ℝ) := by
-  rw [mgf_sum_mul_sq_pi_gaussianReal_eq_prod]
-  exact Finset.prod_congr rfl fun j _ ↦ mgf_mul_sq_gaussianReal (ht j)
-
-end pi
-
 /-! ### The standard Gaussian vector -/
 
 section stdGaussian
@@ -157,12 +74,13 @@ theorem mem_integrableExpSet_inner_toEuclideanLin_stdGaussian_iff (t : ℝ) :
     t ∈ integrableExpSet (fun x ↦ ⟪x, B.toEuclideanLin x⟫)
         (stdGaussian (EuclideanSpace ℝ ι)) ↔
       ∀ j, 2 * t * hB.eigenvalues j < 1 := by
-  rw [← mem_integrableExpSet_sum_mul_sq_pi_gaussianReal_iff hB.eigenvalues t]
+  rw [← Probability.mem_integrableExpSet_sum_mul_sq_pi_gaussianReal_iff hB.eigenvalues t]
   simp only [integrableExpSet, Set.mem_ofPred_eq]
   rw [stdGaussian_eq_map_pi_orthonormalBasis hB.eigenvectorBasis,
     integrable_map_measure (by fun_prop) (Measurable.aemeasurable (by fun_prop)),
     Function.comp_def]
-  simp only [hB.inner_toEuclideanLin_sum_smul_eigenvectorBasis]
+  simp only [hB.inner_toEuclideanLin_sum_smul_eigenvectorBasis, RCLike.ofReal_real_eq_id, id_eq,
+    Real.norm_eq_abs, sq_abs]
 
 /-- The moment-generating function of the quadratic form of a real symmetric matrix `B` under
 the standard Gaussian vector is `∏ j, (1 - 2 * t * λ j) ^ (-1 / 2)` over the eigenvalues `λ j`
@@ -170,10 +88,11 @@ of `B`, on its domain. -/
 theorem mgf_inner_toEuclideanLin_stdGaussian (ht : ∀ j, 2 * t * hB.eigenvalues j < 1) :
     mgf (fun x ↦ ⟪x, B.toEuclideanLin x⟫) (stdGaussian (EuclideanSpace ℝ ι)) t =
       ∏ j, (1 - 2 * t * hB.eigenvalues j) ^ (-1 / 2 : ℝ) := by
-  rw [← mgf_sum_mul_sq_pi_gaussianReal ht,
+  rw [← Probability.mgf_sum_mul_sq_pi_gaussianReal ht,
     stdGaussian_eq_map_pi_orthonormalBasis hB.eigenvectorBasis,
     mgf_map (Measurable.aemeasurable (by fun_prop)) (by fun_prop), Function.comp_def]
-  simp only [hB.inner_toEuclideanLin_sum_smul_eigenvectorBasis]
+  simp only [hB.inner_toEuclideanLin_sum_smul_eigenvectorBasis, RCLike.ofReal_real_eq_id, id_eq,
+    Real.norm_eq_abs, sq_abs]
 
 end stdGaussian
 
@@ -198,12 +117,11 @@ theorem mem_integrableExpSet_inner_toEuclideanLin_multivariateGaussian_iff (S : 
   have hB := Matrix.isHermitian_sqrt_mul_mul_sqrt S hΘ
   rw [hB.posDef_one_sub_smul_iff,
     ← mem_integrableExpSet_inner_toEuclideanLin_stdGaussian_iff hB t,
-    multivariateGaussian_zero_eq_map_sqrt]
+    multivariateGaussian_zero_eq_map_stdGaussian_sqrt]
   simp only [integrableExpSet, Set.mem_ofPred_eq]
   rw [integrable_map_measure (by fun_prop) (Measurable.aemeasurable (by fun_prop)),
     Function.comp_def]
-  simp only [← ContinuousLinearMap.coe_coe, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
-    Matrix.inner_toEuclideanLin_toEuclideanLin, (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq]
+  simp only [Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin]
 
 /-- On its exponential-integrability domain, the moment-generating function of the quadratic
 form `x ↦ ⟪x, Θ x⟫` of a real symmetric matrix `Θ` under the centred multivariate Gaussian
@@ -214,22 +132,22 @@ theorem mgf_inner_toEuclideanLin_multivariateGaussian_sqrt (S : Matrix ι ι ℝ
       (1 - (2 * t) • (CFC.sqrt S * Θ * CFC.sqrt S)).det ^ (-1 / 2 : ℝ) := by
   have hB := Matrix.isHermitian_sqrt_mul_mul_sqrt S hΘ
   have ht' : ∀ j, 2 * t * hB.eigenvalues j < 1 := (hB.posDef_one_sub_smul_iff (2 * t)).1 ht
-  rw [multivariateGaussian_zero_eq_map_sqrt,
+  rw [multivariateGaussian_zero_eq_map_stdGaussian_sqrt,
     mgf_map (Measurable.aemeasurable (by fun_prop)) (by fun_prop), Function.comp_def]
-  simp only [← ContinuousLinearMap.coe_coe, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin,
-    Matrix.inner_toEuclideanLin_toEuclideanLin, (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).1.eq]
+  simp only [Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin]
+  have hdet := hB.det_one_sub_smul (2 * t)
+  simp only [RCLike.ofReal_real_eq_id, id_eq] at hdet
   rw [mgf_inner_toEuclideanLin_stdGaussian hB ht',
-    Real.finsetProd_rpow _ _ (fun j _ ↦ by linarith [ht' j]) _, ← hB.det_one_sub_smul (2 * t)]
+    Real.finsetProd_rpow _ _ (fun j _ ↦ by linarith [ht' j]) _, ← hdet]
 
 /-- On its exponential-integrability domain, the cumulant-generating function of the quadratic
 form `x ↦ ⟪x, Θ x⟫` of a real symmetric matrix `Θ` under the centred multivariate Gaussian
-with covariance `S` is the real logarithm of `det (1 - (2 * t) • (√S * Θ * √S)) ^ (-1 / 2)`,
-for every `S`. -/
+with covariance `S` is `-1 / 2 * log (det (1 - (2 * t) • (√S * Θ * √S)))`, for every `S`. -/
 theorem cgf_inner_toEuclideanLin_multivariateGaussian_sqrt (S : Matrix ι ι ℝ)
     (hΘ : Θ.IsHermitian) (ht : (1 - (2 * t) • (CFC.sqrt S * Θ * CFC.sqrt S)).PosDef) :
     cgf (fun x ↦ ⟪x, Θ.toEuclideanLin x⟫) (multivariateGaussian 0 S) t =
-      Real.log ((1 - (2 * t) • (CFC.sqrt S * Θ * CFC.sqrt S)).det ^ (-1 / 2 : ℝ)) := by
-  rw [cgf, mgf_inner_toEuclideanLin_multivariateGaussian_sqrt S hΘ ht]
+      -1 / 2 * Real.log (1 - (2 * t) • (CFC.sqrt S * Θ * CFC.sqrt S)).det := by
+  rw [cgf, mgf_inner_toEuclideanLin_multivariateGaussian_sqrt S hΘ ht, Real.log_rpow ht.det_pos]
 
 /-- On its exponential-integrability domain, the moment-generating function of the quadratic
 form `x ↦ ⟪x, Θ x⟫` of a real symmetric matrix `Θ` under the centred multivariate Gaussian
@@ -239,17 +157,17 @@ theorem mgf_inner_toEuclideanLin_multivariateGaussian (hS : S.PosSemidef) (hΘ :
     mgf (fun x ↦ ⟪x, Θ.toEuclideanLin x⟫) (multivariateGaussian 0 S) t =
       (1 - (2 * t) • (Θ * S)).det ^ (-1 / 2 : ℝ) := by
   rw [mgf_inner_toEuclideanLin_multivariateGaussian_sqrt S hΘ ht,
-    hS.det_one_sub_smul_sqrt_mul_mul_sqrt Θ (2 * t)]
+    hS.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul Θ (2 * t)]
 
 /-- On its exponential-integrability domain, the cumulant-generating function of the quadratic
 form `x ↦ ⟪x, Θ x⟫` of a real symmetric matrix `Θ` under the centred multivariate Gaussian
-with positive-semidefinite covariance `S` is the real logarithm of
-`det (1 - (2 * t) • (Θ * S)) ^ (-1 / 2)`. -/
+with positive-semidefinite covariance `S` is `-1 / 2 * log (det (1 - (2 * t) • (Θ * S)))`. -/
 theorem cgf_inner_toEuclideanLin_multivariateGaussian (hS : S.PosSemidef)
     (hΘ : Θ.IsHermitian) (ht : (1 - (2 * t) • (CFC.sqrt S * Θ * CFC.sqrt S)).PosDef) :
     cgf (fun x ↦ ⟪x, Θ.toEuclideanLin x⟫) (multivariateGaussian 0 S) t =
-      Real.log ((1 - (2 * t) • (Θ * S)).det ^ (-1 / 2 : ℝ)) := by
-  rw [cgf, mgf_inner_toEuclideanLin_multivariateGaussian hS hΘ ht]
+      -1 / 2 * Real.log (1 - (2 * t) • (Θ * S)).det := by
+  rw [cgf_inner_toEuclideanLin_multivariateGaussian_sqrt S hΘ ht,
+    hS.det_one_sub_smul_sqrt_mul_mul_sqrt_eq_det_one_sub_smul_mul Θ (2 * t)]
 
 end multivariateGaussian
 

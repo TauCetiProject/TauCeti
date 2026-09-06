@@ -20,8 +20,8 @@ under the square root of its covariance matrix.
 
 * `TauCeti.covMatrix_multivariateGaussian` recovers the covariance parameter of a multivariate
   Gaussian law.
-* `TauCeti.multivariateGaussian_zero_eq_map_sqrt` writes the centred law as an image of the
-  standard Gaussian.
+* `TauCeti.multivariateGaussian_zero_eq_map_stdGaussian_sqrt` writes the centred law as an image
+  of the standard Gaussian.
 
 ## References
 
@@ -52,7 +52,8 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
 
 /-- A centred multivariate Gaussian law is the image of the standard Gaussian under the square
 root of its covariance matrix. -/
-theorem multivariateGaussian_zero_eq_map_sqrt [Fintype ι] [DecidableEq ι] (S : Matrix ι ι ℝ) :
+theorem multivariateGaussian_zero_eq_map_stdGaussian_sqrt [Fintype ι] [DecidableEq ι]
+    (S : Matrix ι ι ℝ) :
     multivariateGaussian 0 S =
       (stdGaussian (EuclideanSpace ℝ ι)).map
         (Matrix.toEuclideanCLM (𝕜 := ℝ) (CFC.sqrt S)) := by
