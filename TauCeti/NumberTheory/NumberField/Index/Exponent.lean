@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Ideal.KummerDedekind
-public import Mathlib.RingTheory.Conductor
 public import TauCeti.NumberTheory.NumberField.Index.Discriminant
 import Mathlib.GroupTheory.Perm.Cycle.Type
 
@@ -32,7 +31,7 @@ discriminant of the minimal polynomial does not divide the conductor exponent.
 * `TauCeti.NumberField.IntegralPrimitiveElement.dvd_index_iff_dvd_exponent`: a prime divides the
   index exactly when it divides the conductor exponent.
 * `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_exponent_of_not_dvd_discr_minpoly`: a
-  prime not dividing `disc (minpoly ℤ θ)` does not divide the conductor exponent.
+  natural number not dividing `disc (minpoly ℤ θ)` does not divide the conductor exponent.
 
 ## References
 
@@ -60,15 +59,19 @@ namespace TauCeti.NumberField.IntegralPrimitiveElement
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- A multiple `n • b` vanishes in the quotient `𝓞 K / ℤ[θ]` exactly when `n * b` lies in the
+order `ℤ[θ]`. -/
+theorem nsmul_mkQ_eq_zero_iff (θ : IntegralPrimitiveElement K) (n : ℕ) (b : 𝓞 K) :
+    (n • θ.adjoin.toSubmodule.mkQ b : θ.Quotient) = 0 ↔ (n : 𝓞 K) * b ∈ θ.adjoin := by
+  rw [← map_nsmul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, Subalgebra.mem_toSubmodule,
+    nsmul_eq_mul]
+
 /-- The conductor exponent of `θ` divides the index `[𝓞 K : ℤ[θ]]`. -/
 theorem exponent_dvd_index (θ : IntegralPrimitiveElement K) : exponent θ.1 ∣ θ.index := by
   rw [exponent_dvd_iff, mem_conductor_iff]
   intro b
-  have h : (θ.index • θ.adjoin.toSubmodule.mkQ b : θ.Quotient) = 0 := by
-    rw [index_def]
-    exact card_nsmul_eq_zero'
-  rwa [← map_nsmul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero,
-    Subalgebra.mem_toSubmodule, adjoin_def, nsmul_eq_mul] at h
+  rw [← adjoin_def, ← nsmul_mkQ_eq_zero_iff, index_def]
+  exact card_nsmul_eq_zero'
 
 /-- A prime dividing the index `[𝓞 K : ℤ[θ]]` divides the conductor exponent of `θ`. -/
 theorem dvd_exponent_of_dvd_index (θ : IntegralPrimitiveElement K) {p : ℕ} [Fact p.Prime]
@@ -82,8 +85,7 @@ theorem dvd_exponent_of_dvd_index (θ : IntegralPrimitiveElement K) {p : ℕ} [F
   rw [AddMonoid.exponent_dvd_iff_forall_nsmul_eq_zero]
   intro g
   obtain ⟨b, rfl⟩ := Submodule.mkQ_surjective _ g
-  rw [← map_nsmul, nsmul_eq_mul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero,
-    Subalgebra.mem_toSubmodule, adjoin_def]
+  rw [nsmul_mkQ_eq_zero_iff, adjoin_def]
   exact mem_conductor_iff.mp ((exponent_dvd_iff θ.1).mp dvd_rfl) b
 
 /-- **Index and exponent have the same prime divisors.** A prime divides the index
@@ -92,14 +94,14 @@ theorem dvd_index_iff_dvd_exponent (θ : IntegralPrimitiveElement K) {p : ℕ} [
     p ∣ θ.index ↔ p ∣ exponent θ.1 :=
   ⟨θ.dvd_exponent_of_dvd_index, fun h => h.trans θ.exponent_dvd_index⟩
 
-/-- **The checkable Kummer–Dedekind hypothesis.** A prime not dividing the discriminant of
-`minpoly ℤ θ` does not divide the conductor exponent of `θ`. -/
+/-- **The checkable Kummer–Dedekind hypothesis.** A natural number not dividing the discriminant
+of `minpoly ℤ θ` does not divide the conductor exponent of `θ`. -/
 theorem not_dvd_exponent_of_not_dvd_discr_minpoly (θ : IntegralPrimitiveElement K) {p : ℕ}
-    [Fact p.Prime] (hp : ¬ (p : ℤ) ∣ (minpoly ℤ θ.1).discr) : ¬ p ∣ exponent θ.1 := by
+    (hp : ¬ (p : ℤ) ∣ (minpoly ℤ θ.1).discr) : ¬ p ∣ exponent θ.1 := by
   intro h
   apply hp
   rw [θ.discr_minpoly_eq_index_sq_mul_discr]
-  exact (dvd_pow (Int.natCast_dvd_natCast.mpr (θ.dvd_index_iff_dvd_exponent.mpr h))
+  exact (dvd_pow (Int.natCast_dvd_natCast.mpr (h.trans θ.exponent_dvd_index))
     two_ne_zero).mul_right _
 
 end TauCeti.NumberField.IntegralPrimitiveElement
