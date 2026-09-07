@@ -36,6 +36,8 @@ the Riemann–Roch identity.
 
 * `TauCeti.weilDifferentialDivisor`: **the divisor `(ω)` of a Weil differential** (Stichtenoth,
   Definition 1.5.11), the greatest divisor bounding it.
+* `TauCeti.canonicalClass`: **the canonical class** in the divisor class group, represented by
+  the divisor of any nonzero Weil differential.
 * `TauCeti.riemannRochSpaceEquivWeilDifferentialFiltration`: **the duality isomorphism**
   `L(W - D) ≃ Ω_F(D)`, `x ↦ x · ω` (Stichtenoth, Theorem 1.5.14).
 
@@ -54,6 +56,8 @@ the Riemann–Roch identity.
 * `TauCeti.weilDifferentialDivisor_repartitionDualMul`: **the transformation law**
   `(z · ω) = div z + (ω)` (Stichtenoth, Proposition 1.5.13), which is what makes the class of
   `(ω)` — the canonical class — independent of `ω`.
+* `TauCeti.divisorClass_weilDifferentialDivisor`: the divisor of every nonzero Weil differential
+  represents `TauCeti.canonicalClass`.
 * `TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff_mem_riemannRochSpace`: the
   membership `x · ω ∈ Ω_F(D) ↔ x ∈ L(W - D)` that carries the theorem.
 * `TauCeti.map_riemannRochSpace_repartitionDualMulRight` and
@@ -85,15 +89,38 @@ theorem mem_weilDifferentialFiltration_sup {D E : Divisor k F}
     {ω : Module.Dual k ↥(repartitionSpace k F)} (hD : ω ∈ weilDifferentialFiltration D)
     (hE : ω ∈ weilDifferentialFiltration E) :
     ω ∈ weilDifferentialFiltration (D ⊔ E) := by
-  refine mem_weilDifferentialFiltration_of_apply_eq_zero (fun a ha ↦ ?_) (fun a ha ↦
-    weilDifferentialFiltration_apply_eq_zero_of_mem_diagonalRepartitions hD a ha)
-  obtain ⟨x, hx, y, hy, hxy⟩ := Submodule.mem_sup.mp ((adeleFiltration_sup D E).le ha)
-  have hxA : x ∈ repartitionSpace k F := adeleFiltration_le_repartitionSpace D hx
-  have hyA : y ∈ repartitionSpace k F := adeleFiltration_le_repartitionSpace E hy
-  have hsplit : a = ⟨x, hxA⟩ + ⟨y, hyA⟩ := Subtype.ext hxy.symm
-  rw [hsplit, map_add]
-  simp [weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hD ⟨x, hxA⟩ hx,
-    weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hE ⟨y, hyA⟩ hy]
+  have hsub : submoduleOfAdeleFiltrationSupDiagonalRepartitions (D ⊔ E) =
+      submoduleOfAdeleFiltrationSupDiagonalRepartitions D ⊔
+        submoduleOfAdeleFiltrationSupDiagonalRepartitions E := by
+    have htrace (X : Submodule k (Place k F → F))
+        (hX : X ≤ repartitionSpace k F) :
+        (X ⊔ diagonalRepartitions k F).submoduleOf (repartitionSpace k F) =
+          X.submoduleOf (repartitionSpace k F) ⊔
+            (diagonalRepartitions k F).submoduleOf (repartitionSpace k F) := by
+      apply Submodule.map_injective_of_injective (repartitionSpace k F).subtype_injective
+      simp only [Submodule.submoduleOf, Submodule.map_comap_eq, Submodule.map_sup,
+        Submodule.range_subtype]
+      rw [inf_comm (repartitionSpace k F) (X ⊔ diagonalRepartitions k F),
+        inf_comm (repartitionSpace k F) X,
+        inf_comm (repartitionSpace k F) (diagonalRepartitions k F),
+        sup_inf_assoc_of_le _ hX, inf_eq_left.mpr hX]
+    rw [submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf (D ⊔ E),
+      submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf D,
+      submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf E,
+      adeleFiltration_sup,
+      htrace (adeleFiltration D ⊔ adeleFiltration E)
+        (sup_le (adeleFiltration_le_repartitionSpace D)
+          (adeleFiltration_le_repartitionSpace E)),
+      Submodule.submoduleOf_sup_of_le (adeleFiltration_le_repartitionSpace D)
+        (adeleFiltration_le_repartitionSpace E),
+      htrace (adeleFiltration D) (adeleFiltration_le_repartitionSpace D),
+      htrace (adeleFiltration E) (adeleFiltration_le_repartitionSpace E)]
+    ac_rfl
+  rw [weilDifferentialFiltration_eq_dualAnnihilator D] at hD
+  rw [weilDifferentialFiltration_eq_dualAnnihilator E] at hE
+  rw [weilDifferentialFiltration_eq_dualAnnihilator (D ⊔ E), hsub,
+    Submodule.dualAnnihilator_sup_eq]
+  exact ⟨hD, hE⟩
 
 /-! ### The divisor of a nonzero Weil differential -/
 
@@ -206,6 +233,54 @@ theorem weilDifferentialDivisor_repartitionDualMul (hF : IsFunctionField k F)
     rw [hcancel, Divisor.principal_inv, ← sub_eq_add_neg] at h
     rw [add_comm]
     exact sub_le_iff_le_add.mp (hW.2 h)
+
+/-- The divisors of any two nonzero Weil differentials have the same divisor class.  Indeed,
+one differential is a nonzero function multiple of the other, and the transformation law says
+that their divisors differ by the corresponding principal divisor. -/
+theorem divisorClass_weilDifferentialDivisor_eq (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω η : Module.Dual k ↥(repartitionSpace k F)}
+    (hωmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0)
+    (hηmem : η ∈ weilDifferentialSpace k F) (hη : η ≠ 0) :
+    (Place.orderSystem hF).divisorClass (weilDifferentialDivisor ω) =
+      (Place.orderSystem hF).divisorClass (weilDifferentialDivisor η) := by
+  obtain ⟨c, hc⟩ := exists_repartitionDualMul_eq hF hex hωmem hω hηmem
+  have hc0 : c ≠ 0 := fun hc0 ↦ hη (by
+    rw [← hc, hc0, map_zero]
+    rfl)
+  let z : Fˣ := Units.mk0 c hc0
+  symm
+  calc
+    (Place.orderSystem hF).divisorClass (weilDifferentialDivisor η) =
+        (Place.orderSystem hF).divisorClass
+          (weilDifferentialDivisor (repartitionDualMul hF (z : F) ω)) := by
+            rw [show (z : F) = c by rfl, hc]
+    _ = (Place.orderSystem hF).divisorClass
+          (Divisor.principal hF z + weilDifferentialDivisor ω) := by
+            rw [weilDifferentialDivisor_repartitionDualMul hF hex hωmem hω]
+    _ = (Place.orderSystem hF).divisorClass (weilDifferentialDivisor ω) := by
+            rw [map_add, (Divisor.divisorClass_eq_zero_iff hF).mpr ⟨z, rfl⟩, zero_add]
+
+open Classical in
+/-- **The canonical class** of an algebraic function field with exact constant field: the divisor
+class of a nonzero Weil differential.  Such a differential exists by
+`TauCeti.weilDifferentialSpace_ne_bot`, and
+`TauCeti.divisorClass_weilDifferentialDivisor` shows that the class is independent of the chosen
+differential. -/
+noncomputable def canonicalClass (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) : (Place.orderSystem hF).ClassGroup :=
+  (Place.orderSystem hF).divisorClass
+    (weilDifferentialDivisor
+      (((Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)).choose))
+
+/-- Every nonzero Weil differential represents the canonical class. -/
+theorem divisorClass_weilDifferentialDivisor (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) :
+    (Place.orderSystem hF).divisorClass (weilDifferentialDivisor ω) = canonicalClass hF hex := by
+  unfold canonicalClass
+  apply divisorClass_weilDifferentialDivisor_eq hF hex hmem hω
+  · exact ((Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)).choose_spec.1
+  · exact ((Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)).choose_spec.2
 
 /-! ### The Riemann–Roch theorem -/
 
