@@ -10,7 +10,7 @@ public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 public import Mathlib.RingTheory.Discriminant
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.FieldTheory.Trace
-import TauCeti.Algebra.Polynomial.MonicQuadratic
+import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
 
 /-!
@@ -78,7 +78,8 @@ theorem finrank_rat_eq_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
   rw [(PowerBasis.ofAdjoinEqTop' hint hgen).finrank,
     ← (PowerBasis.ofAdjoinEqTop' hint hgen).natDegree_minpoly, PowerBasis.ofAdjoinEqTop'_gen,
     minpoly.isIntegrallyClosed_eq_field_fractions' ℚ ω.isIntegral_coe, RingOfIntegers.minpoly_coe,
-    (minpoly.monic ω.isIntegral).natDegree_map, hmin, natDegree_X_sq_sub_X_add_C]
+    (minpoly.monic ω.isIntegral).natDegree_map, hmin]
+  simpa using (isMonicOfDegree_sub_add_two (R := ℤ) 1 c).natDegree_eq
 
 omit [NumberField K] in
 /-- The integral generator squares to the radicand: `θ² = d` in `𝓞 K`. -/
