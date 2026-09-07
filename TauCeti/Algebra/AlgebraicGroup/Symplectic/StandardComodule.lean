@@ -37,6 +37,10 @@ move that pair through all coordinates.
 
 * J. S. Milne, *Algebraic Groups* (2017), §§2.3 and 24.6.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
+* `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule`.
+
+The construction, faithfulness proof, point-action identification, and invariant-subspace
+stability argument adapt the corresponding special-linear standard-comodule development.
 
 This supplies the faithful simple representation used to prove the `Sp₂ₘ` worked example
 reductive in Layer 6 of the ReductiveGroups roadmap.
@@ -133,53 +137,25 @@ theorem piScalarRight_comp_endOfPoint
 
 end PointAction
 
-private theorem piScalarRight_comm_eq_rid
-    (t : (Fin (m + m) → R) ⊗[R] R) :
-    TensorProduct.piScalarRightHom R R R (Fin (m + m))
-        (TensorProduct.comm R (Fin (m + m) → R) R t) =
-      TensorProduct.rid R (Fin (m + m) → R) t := by
-  induction t using TensorProduct.induction_on with
-  | zero => simp
-  | tmul v r =>
-      ext i
-      simp [TensorProduct.piScalarRightHom_tmul, mul_comm]
-  | add x y hx hy => simpa only [map_add] using congrArg₂ (fun a b ↦ a + b) hx hy
-
 /-- **A subcomodule of the standard symplectic comodule is stable under every symplectic
 matrix.** -/
 theorem mulVec_mem (N : Subcomodule R (coordinateHopfAlgebra R m) (Fin (m + m) → R))
     (g : GLSymplecticFin m R) {w : Fin (m + m) → R} (hw : w ∈ N) :
     (g.1 : Matrix (Fin (m + m)) (Fin (m + m)) R) *ᵥ w ∈ N := by
   let q := (pointsMulEquiv (R := R) (A := R) m).symm g
-  have h :
-      TensorProduct.rid R (Fin (m + m) → R)
-          (LinearMap.lTensor (Fin (m + m) → R) q.ofConv.toLinearMap
-            ((standardComodule R m).coact w)) ∈ N :=
-    N.rid_lTensor_coact_mem q.ofConv.toLinearMap hw
-  rw [standardComodule_coact_eq_corestrictCoact R m] at h
-  rw [coordinateMap_def] at h
-  rw [CommHopfAlgCat.hom_mkQuotient] at h
-  rw [standardComodule_coact R m, LinearMap.comp_apply] at h
-  have hcoordinate :
-      (Bialgebra.Quotient.mkBialgHom
-          (R := R) (definingHopfIdeal R m).toIdeal).toCoalgHom.toLinearMap =
-        (Bialgebra.Quotient.mkBialgHom
-          (R := R) (definingHopfIdeal R m).toIdeal).toAlgHom.toLinearMap :=
-    (_root_.BialgHom.toAlgHom_toLinearMap
-      (Bialgebra.Quotient.mkBialgHom (R := R) (definingHopfIdeal R m).toIdeal)).symm
-  rw [hcoordinate] at h
-  have h' :
-      TensorProduct.piScalarRight R R R (Fin (m + m))
-          (Comodule.endOfPoint (Fin (m + m) → R) q.ofConv (1 ⊗ₜ[R] w)) ∈ N := by
-    simpa [coordinateMap_def, Comodule.endOfPoint_tmul, TensorProduct.piScalarRight_apply,
-      piScalarRight_comm_eq_rid, LinearMap.lTensor_def, TensorProduct.map_map] using h
-  have haction := DFunLike.congr_fun (piScalarRight_comp_endOfPoint R m q) (1 ⊗ₜ[R] w)
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.GeneralLinearGroup.toLin_apply,
-    Matrix.mulVecLin_apply] at haction
-  rw [haction] at h'
-  rw [MulEquiv.apply_symm_apply] at h'
-  simpa only [TensorProduct.piScalarRight_apply, TensorProduct.piScalarRightHom_tmul,
-    smul_eq_mul, mul_one] using h'
+  have h := Comodule.basePointsRepresentation_mem N q hw
+  rw [Comodule.basePointsRepresentation_corestrict (coordinateMap R m).hom q,
+    GeneralLinear.basePointsRepresentation_eq_mulVec] at h
+  have hpoint :
+      AlgHom.mapDomain (coordinateMap R m).hom q =
+        CommHopfAlgCat.quotientPointsHom
+          (GeneralLinear.coordinateHopfAlgebra R (m + m)) (definingHopfIdeal R m)
+          (CommAlgCat.of R R) q := by
+    rw [coordinateMap_def, AlgHom.mapDomain_apply,
+      CommHopfAlgCat.quotientPointsHom_apply]
+  rw [hpoint, ← GeneralLinear.pointsMulEquiv_apply, pointsMulEquiv_coe,
+    MulEquiv.apply_symm_apply] at h
+  exact h
 
 section Simple
 
