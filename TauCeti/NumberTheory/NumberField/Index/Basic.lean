@@ -32,6 +32,8 @@ invariances under translating the generator by an integer and negating it.
 
 * `TauCeti.NumberField.IntegralPrimitiveElement.finrank_adjoin`: `ℤ[θ]` has full rank in `𝓞 K`.
 * `TauCeti.NumberField.IntegralPrimitiveElement.index_pos`: the index is positive.
+* `TauCeti.NumberField.IntegralPrimitiveElement.index_eq_one_iff`: the index is `1` exactly when
+  `ℤ[θ]` is all of `𝓞 K`.
 * `TauCeti.NumberField.IntegralPrimitiveElement.index_addIntCast`: integer translation preserves
   the index.
 * `TauCeti.NumberField.IntegralPrimitiveElement.index_neg`: negation preserves the index.
@@ -108,6 +110,12 @@ instance finite_quotient (θ : IntegralPrimitiveElement K) : Finite θ.Quotient 
 theorem index_pos (θ : IntegralPrimitiveElement K) : 0 < θ.index := by
   rw [index, Submodule.cardQuot_apply]
   exact Nat.card_pos
+
+/-- The index of an integral primitive element `θ` is `1` exactly when the order `ℤ[θ]` is all of
+`𝓞 K`. -/
+@[simp]
+theorem index_eq_one_iff (θ : IntegralPrimitiveElement K) : θ.index = 1 ↔ θ.adjoin = ⊤ := by
+  rw [index, Submodule.cardQuot_eq_one_iff, Algebra.toSubmodule_eq_top]
 
 /-! ### Changing the generator -/
 
