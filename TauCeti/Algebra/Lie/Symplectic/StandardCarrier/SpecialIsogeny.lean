@@ -21,9 +21,8 @@ file transports that endomorphism from the symplectic group to the carrier.
 The transport is possible because the two point groups coincide:
 `TauCeti.SpStd.points_eq_GLSymplecticFin` identifies the carrier's points with the symplectic
 matrices over any field, so the special isogeny of `Sp₄` restricts to an endomorphism of the
-carrier rather than merely mapping it into a larger group. Nothing else is needed, and in
-particular no new matrix computation appears below: the four pinning equations and the square
-relation are the symplectic-group statements read through that identification.
+carrier rather than merely mapping it into a larger group. The four pinning equations and the
+square relation below are the symplectic-group statements read through that identification.
 
 ## Main definitions
 
@@ -42,8 +41,8 @@ relation are the symplectic-group statements read through that identification.
   root and the defining characteristic on a short one.
 * `TauCeti.SpStd.specialIsogeny_specialIsogeny`: the square relation, that the isogeny composed
   with itself is the Frobenius `TauCeti.SpStd.frobenius 1 2 1`, transported from the symplectic
-  group rather than recomputed, with `TauCeti.SpStd.specialIsogeny_comp_specialIsogeny` stating it
-  for the composite endomorphism itself.
+  group along the identification, with `TauCeti.SpStd.specialIsogeny_comp_specialIsogeny` stating
+  it for the composite endomorphism itself.
 
 ## What is not here
 
@@ -110,8 +109,7 @@ theorem coe_specialIsogeny_gl (g : points 1 K) :
   rw [specialIsogeny]
   simp [pointsMulEquivGLSymplecticFin]
 
-/-- The identification intertwines the two special isogenies, which is what lets the carrier
-inherit the symplectic group's square relation rather than recompute it. -/
+/-- The identification intertwines the two special isogenies. -/
 @[simp]
 theorem pointsMulEquivGLSymplecticFin_specialIsogeny (g : points 1 K) :
     pointsMulEquivGLSymplecticFin K (specialIsogeny K g) =
@@ -119,8 +117,7 @@ theorem pointsMulEquivGLSymplecticFin_specialIsogeny (g : points 1 K) :
   rw [specialIsogeny]
   simp
 
-/-- **The square of the carrier's special isogeny is the Frobenius**, transported from the
-symplectic group along the identification. -/
+/-- **The square of the carrier's special isogeny is the Frobenius.** -/
 @[simp]
 theorem specialIsogeny_specialIsogeny (g : points 1 K) :
     specialIsogeny K (specialIsogeny K g) = frobenius 1 2 1 K g := by
@@ -147,9 +144,9 @@ private theorem next_zero : next 1 0 zero_ne_last = 1 := Fin.ext (by rw [val_nex
 
 private theorem last_one : Fin.last 1 = (1 : Fin (1 + 1)) := rfl
 
-/-- The difference short-root element depends on its index pair only. Scaffolding for the two
-rank-two transports below, which name the successor node in one form and the numeral in the
-other. -/
+-- The two rank-two transports below name the successor node in one form and the numeral in the
+-- other, so they need the index pair of a difference short-root element to be all that matters.
+/-- The difference short-root element depends on its index pair only. -/
 private theorem differenceShortRootUnit_congr {m : ℕ} {R : Type*} [CommRing R] {i j i' j' : Fin m}
     (hij : i ≠ j) (hij' : i' ≠ j') (hi : i = i') (hj : j = j') (c : R) :
     GLSymplecticFin.differenceShortRootUnit hij c =
