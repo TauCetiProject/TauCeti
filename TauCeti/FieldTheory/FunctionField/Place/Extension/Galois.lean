@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Norm.Transitivity
 public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fundamental
+public import TauCeti.FieldTheory.IntermediateField.ScalarTower
 
 /-!
 # The Galois action on the places lying over a place
@@ -42,6 +43,8 @@ decomposition group, and is identified with Mathlib's `ValuationSubring.decompos
 
 ## Main results
 
+* `TauCeti.Place.restrictScalars_smul`: the automorphisms of `F'` over an intermediate field of
+  `F' / F` act on the places of `F' / k` through the action of the automorphisms over `F`.
 * `TauCeti.Place.restrict_smul`, `TauCeti.Place.ramificationIdx_smul` and
   `TauCeti.Place.relativeDegree_smul`: the action preserves the fibres of
   `TauCeti.Place.restrict` and the two invariants attached to a place of a fibre.
@@ -130,6 +133,11 @@ theorem integers_smul : (σ • P).integers = σ • P.integers := by
   ext x
   rw [mem_integers_smul_iff, ValuationSubring.mem_pointwise_smul_iff_inv_smul_mem]
   rfl
+
+/-- **The two actions on places agree**: restricting the scalars of an automorphism of `F'` over
+an intermediate field `E` down to `F` does not change the place it produces. -/
+theorem restrictScalars_smul (E : IntermediateField F F') (τ : F' ≃ₐ[E] F') (Q : Place k F') :
+    τ.restrictScalars F • Q = τ • Q := rfl
 
 /-- **The stabilizer of a place is the decomposition group** of its valuation ring
 (Stichtenoth, Definition 3.8.1). -/

@@ -27,7 +27,7 @@ out; the fixing subgroup of a subfield of finite degree is finite for the same r
 ## Main results
 
 * `Subgroup.fixedField_sup_eq_top_iff`
-* `IntermediateField.fixedField_map_conj`
+* `Subgroup.fixedField_map_conj`
 * `IntermediateField.fixingSubgroup_fixedField_of_finite`
 * `IntermediateField.finite_of_finiteDimensional_fixedField`
 * `IntermediateField.card_fixingSubgroup_le`
@@ -105,12 +105,21 @@ theorem card_fixingSubgroup_le (E : IntermediateField K M) [FiniteDimensional E 
   rw [Nat.card_congr (fixingSubgroupEquiv E).toEquiv, Nat.card_eq_fintype_card]
   exact AlgEquiv.card_le
 
+end IntermediateField
+
+namespace Subgroup
+
+variable {K M : Type*} [Field K] [Field M] [Algebra K M]
+
 /-- **The Galois correspondence is conjugation-equivariant.** The fixed field of the conjugate
-subgroup `σ H σ⁻¹` is the image under `σ` of the fixed field of `H`. -/
+subgroup `σ H σ⁻¹` is the image under `σ` of the fixed field of `H`.
+
+Stated in the `Subgroup` namespace, so that `H` — the first explicit argument, and the one
+`fixedField` is applied to — carries the dot notation. -/
 theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) :
     fixedField (H.map (MulAut.conj σ).toMonoidHom) = (fixedField H).map σ.toAlgHom := by
   ext x
-  simp only [mem_fixedField_iff, mem_map]
+  simp only [mem_fixedField_iff, IntermediateField.mem_map]
   constructor
   · intro h
     refine ⟨σ.symm x, fun g hg ↦ ?_, by simp⟩
@@ -119,4 +128,4 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
   · rintro ⟨y, hy, rfl⟩ g ⟨h, hh, rfl⟩
     simpa using congrArg σ (hy h hh)
 
-end IntermediateField
+end Subgroup

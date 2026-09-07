@@ -39,7 +39,8 @@ proved here.
 
 * `TauCeti.Place.decompositionField`: the subfield of `F'` fixed by the decomposition group of a
   place, an `IntermediateField F F'`, with `TauCeti.Place.mem_decompositionField_iff` for its
-  membership.
+  membership and `TauCeti.Place.fixingSubgroup_decompositionField` for the Galois correspondence
+  it sits in: its fixing subgroup is the decomposition group again.
 
 ## Main results
 
@@ -105,14 +106,6 @@ def decompositionField (P : Place k F') : IntermediateField F F' :=
 
 omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] [FiniteDimensional F F']
   [IsGalois F F'] in
-/-- The decomposition field of `P` is by definition the fixed field of the decomposition group
-of `P`. -/
-theorem decompositionField_def (P : Place k F') :
-    decompositionField F P = IntermediateField.fixedField (P.integers.decompositionSubgroup F) :=
-  (rfl)
-
-omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] [FiniteDimensional F F']
-  [IsGalois F F'] in
 /-- An element of `F'` lies in the decomposition field of `P` exactly when the decomposition
 group of `P` fixes it. -/
 @[simp]
@@ -120,11 +113,13 @@ theorem mem_decompositionField_iff (P : Place k F') (x : F') :
     x ∈ decompositionField F P ↔ ∀ σ ∈ P.integers.decompositionSubgroup F, σ x = x :=
   IntermediateField.mem_fixedField_iff _ x
 
-omit [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F'] in
-/-- **The two actions on places agree**: restricting the scalars of an automorphism of `F'` over
-an intermediate field `E` down to `F` does not change the place it produces. -/
-theorem restrictScalars_smul (E : IntermediateField F F') (τ : F' ≃ₐ[E] F') (Q : Place k F') :
-    τ.restrictScalars F • Q = τ • Q := rfl
+omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] [IsGalois F F'] in
+/-- **The Galois correspondence for the decomposition field**: the automorphisms of `F'` fixing
+the decomposition field of `P` pointwise are exactly the decomposition group of `P`. -/
+@[simp]
+theorem fixingSubgroup_decompositionField (P : Place k F') :
+    (decompositionField F P).fixingSubgroup = P.integers.decompositionSubgroup F :=
+  IntermediateField.fixingSubgroup_fixedField _
 
 omit [Algebra.IsIntegral F F'] [IsGalois F F'] in
 /-- An automorphism of `F'` over the decomposition field of `P`, read as an automorphism over
@@ -132,8 +127,7 @@ omit [Algebra.IsIntegral F F'] [IsGalois F F'] in
 theorem restrictScalars_smul_eq_self (P : Place k F') (τ : F' ≃ₐ[decompositionField F P] F') :
     τ.restrictScalars F • P = P := by
   refine MulAction.mem_stabilizer_iff.mp ?_
-  rw [stabilizer_eq_decompositionSubgroup,
-    ← IntermediateField.fixingSubgroup_fixedField (P.integers.decompositionSubgroup F)]
+  rw [stabilizer_eq_decompositionSubgroup, ← fixingSubgroup_decompositionField F P]
   exact (IntermediateField.mem_fixingSubgroup_iff _ _).mpr fun x hx ↦ τ.commutes ⟨x, hx⟩
 
 omit [Algebra.IsIntegral F F'] in
@@ -143,7 +137,7 @@ theorem eq_of_restrict_decompositionField_eq {P Q : Place k F'}
     (h : restrict k (decompositionField F P) Q = restrict k (decompositionField F P) P) :
     Q = P := by
   obtain ⟨τ, hτ⟩ := exists_smul_eq_of_restrict_eq (F := (decompositionField F P : Type v')) h
-  rw [← smul_left_cancel_iff (τ.restrictScalars F), restrictScalars_smul F _ τ Q, hτ,
+  rw [← smul_left_cancel_iff (τ.restrictScalars F), restrictScalars_smul _ τ Q, hτ,
     restrictScalars_smul_eq_self F P τ]
 
 omit [Algebra.IsIntegral F F'] in
@@ -161,8 +155,11 @@ theorem finrank_decompositionField (P : Place k F') :
   rw [decompositionField, IntermediateField.finrank_fixedField_eq_card,
     card_decompositionSubgroup]
 
-/-- **The ramification index and the relative degree are unchanged over the decomposition field**
-(Stichtenoth, Theorem 3.8.2), in the product form the fundamental identity supplies. -/
+/-- **The product `e · f` is the same over the decomposition field as over `F`** (Stichtenoth,
+Theorem 3.8.2): this is the form in which the fundamental identity over the decomposition field
+delivers it.  That each of the two factors is separately unchanged is
+`TauCeti.Place.ramificationIdx_decompositionField` and
+`TauCeti.Place.relativeDegree_decompositionField`. -/
 theorem ramificationIdx_mul_relativeDegree_decompositionField (P : Place k F') :
     ramificationIdx (decompositionField F P) P *
         relativeDegree k (decompositionField F P) P =
@@ -252,7 +249,7 @@ omit [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F'] in
 theorem decompositionField_smul (σ : F' ≃ₐ[F] F') (P : Place k F') :
     decompositionField F (σ • P) = (decompositionField F P).map σ.toAlgHom := by
   rw [decompositionField, decompositionSubgroup_integers_smul,
-    IntermediateField.fixedField_map_conj, decompositionField]
+    Subgroup.fixedField_map_conj, decompositionField]
 
 /-- **The degree of the decomposition field over `F`** (Stichtenoth, Theorem 3.8.2): it is the
 number of places of `F' / k` lying over the place below `P`. -/
@@ -272,8 +269,7 @@ theorem decompositionField_eq_top_iff_isSplitCompletely (P : Place k F') :
       IsSplitCompletely (k' := k) (F' := F') (restrict k F P) := by
   rw [isSplitCompletely_iff_decompositionSubgroup_eq_bot]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [← IntermediateField.fixingSubgroup_fixedField (P.integers.decompositionSubgroup F),
-      ← decompositionField, h, IntermediateField.fixingSubgroup_top]
+  · rw [← fixingSubgroup_decompositionField F P, h, IntermediateField.fixingSubgroup_top]
   · rw [decompositionField, h, IntermediateField.fixedField_bot]
 
 end Place
