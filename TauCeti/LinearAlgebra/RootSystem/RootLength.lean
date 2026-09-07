@@ -79,6 +79,8 @@ transposed matrix instead would make that identity false.
 * `TauCeti.DynkinType.exists_isLongSimpleRoot_iff`: a type has a long simple root exactly when it
   has a node at all and is not `B 1`; `TauCeti.DynkinType.exists_isLongSimpleRoot` is the corollary
   for a valid type.
+* `TauCeti.DynkinType.isLongSimpleRoot_congr`: the predicate transports along an equality of
+  diagrams.
 * `TauCeti.DynkinType.isLongSimpleRoot_C_iff_not_isLongSimpleRoot_B`: `Bₙ` and `Cₙ` carry the same
   diagram with the lengths exchanged.
 * `TauCeti.RootPairing.RootPositiveForm.rootLength_le_iff_pairingIn_le`: in any root pairing
@@ -280,6 +282,13 @@ instance : ∀ t : DynkinType, DecidablePred t.IsLongSimpleRoot
   | .C n => fun i ↦ inferInstanceAs (Decidable ((i : ℕ) + 1 = n))
   | .F4 => fun i ↦ inferInstanceAs (Decidable ((i : ℕ) < 2))
   | .G2 => fun i ↦ inferInstanceAs (Decidable ((i : ℕ) = 1))
+
+/-- **The long-root predicate transports along an equality of diagrams.** Transporting the
+statement together with its index type avoids dependent rewriting through `DynkinType.rank`. -/
+theorem isLongSimpleRoot_congr {t u : DynkinType} (h : t = u) (i : Fin t.rank) :
+    t.IsLongSimpleRoot i ↔ u.IsLongSimpleRoot (finCongr (congrArg DynkinType.rank h) i) := by
+  subst u
+  simp [finCongr_refl]
 
 @[simp] lemma isLongSimpleRoot_A (n : ℕ) : (A n).IsLongSimpleRoot = fun _ ↦ True := (rfl)
 @[simp] lemma isLongSimpleRoot_D (n : ℕ) : (D n).IsLongSimpleRoot = fun _ ↦ True := (rfl)

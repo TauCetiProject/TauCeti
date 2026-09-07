@@ -196,13 +196,6 @@ theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.1.Closure) 
     show (1 : Fin 2) = Fin.last 1 from rfl]
   exact SpStd.specialIsogeny_rootSubgroupPoints_inl_zero _ _
 
--- As for `TauCeti.SuzukiReeIndex.lengthPerm_lengthPerm`, transporting the statement together with
--- its index type avoids dependent rewriting through `DynkinType.rank`.
-private theorem isLongSimpleRoot_congr {t u : DynkinType} (h : t = u) (i : Fin t.rank) :
-    t.IsLongSimpleRoot i ↔ u.IsLongSimpleRoot (finCongr (congrArg DynkinType.rank h) i) := by
-  subst u
-  simp [finCongr_refl]
-
 /-- **The final carrier node is the long simple root.** The `B₂` diagram's long simple root is
 Bourbaki node zero, and `carrierNode` swaps the two numberings. -/
 private theorem carrierNode_eq_one_iff (i : Fin d.1.rank) :
@@ -213,7 +206,7 @@ private theorem carrierNode_eq_one_iff (i : Fin d.1.rank) :
   have hlong : d.1.dynkinType.IsLongSimpleRoot i ↔ (i : ℕ) = 0 := by
     obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
     simp only [ValidLieTypeIndex.dynkinType]
-    rw [isLongSimpleRoot_congr (LieTypeIndex.dynkinType_suzuki m)]
+    rw [DynkinType.isLongSimpleRoot_congr (LieTypeIndex.dynkinType_suzuki m)]
     simp only [DynkinType.isLongSimpleRoot_B, finCongr_apply, Fin.val_cast]
     omega
   exact hcarrier.trans hlong.symm
