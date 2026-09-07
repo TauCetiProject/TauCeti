@@ -18,7 +18,7 @@ period exactly when the original function is invariant under the corresponding t
 
 ## Main declarations
 
-* `TauCeti.neBot_nhdsWithin_upperHalfPlaneSet`.
+* `Real.nhdsWithin_upperHalfPlaneSet_neBot`.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 
 ## References
@@ -32,15 +32,15 @@ public section
 
 open Topology UpperHalfPlane
 
-namespace TauCeti
+namespace Real
 
 /-- Every real point is in the closure of the open upper half-plane, so limits along the
 half-plane at a real point are well posed. -/
-theorem neBot_nhdsWithin_upperHalfPlaneSet (x : ℝ) :
+theorem nhdsWithin_upperHalfPlaneSet_neBot (x : ℝ) :
     (𝓝[upperHalfPlaneSet] ((x : ℂ))).NeBot :=
   mem_closure_iff_nhdsWithin_neBot.mp (by simp [upperHalfPlaneSet])
 
-end TauCeti
+end Real
 
 namespace TauCeti.UpperHalfPlane
 
