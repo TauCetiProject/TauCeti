@@ -29,6 +29,9 @@ namespace NumberField.RingOfIntegers
 
 variable {K : Type*} [Field K] [NumberField K]
 
+-- This identification is stated, for integral primitive elements, in the human-authored
+-- specification `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`, Layer 3.2.
+
 /-- The minimal polynomial over `ℚ` of an algebraic integer `x`, viewed in `K`, is its minimal
 polynomial over `ℤ` with the coefficients cast to `ℚ`. -/
 theorem minpoly_rat_coe (x : 𝓞 K) :

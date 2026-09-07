@@ -44,6 +44,10 @@ namespace TauCeti.NumberField.IntegralPrimitiveElement
 
 variable {K : Type*} [Field K] [NumberField K]
 
+-- The power basis, its generator, and the discriminant comparison below follow the
+-- human-authored specification in `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`,
+-- Layer 3.2.
+
 /-- The power basis `1, θ, …, θ ^ (n - 1)` of `K` over `ℚ` attached to an integral primitive
 element `θ`, where `n = [K : ℚ]`. -/
 noncomputable def powerBasis (θ : IntegralPrimitiveElement K) : PowerBasis ℚ K :=
