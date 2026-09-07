@@ -79,9 +79,10 @@ the spin group scheme or the pinned simply connected Chevalley--Demazure group s
 * `TauCeti.TypeDSpinCarrier.schemePointsMulEquiv_graphAut_comp_carrierι`: on every algebra-valued
   point of the carrier, the automorphism of the carrier is the conjugation that the automorphism on
   points performs, so the two are the same action.
-* `TauCeti.TypeDSpinCarrier.graphAut_sq` and
-  `TauCeti.TypeDSpinCarrier.graphAutPoints_apply_apply`: the order relation `γ ^ 2 = 1`, on the
-  carrier and on points.
+* `TauCeti.TypeDSpinCarrier.graphAut_sq`,
+  `TauCeti.TypeDSpinCarrier.graphAut_hom_comp_self` and
+  `TauCeti.TypeDSpinCarrier.graphAutPoints_apply_apply`: the order relation `γ ^ 2 = 1`, in the
+  automorphism group of the carrier, as a composition of scheme morphisms, and on points.
 * `TauCeti.TypeDSpinCarrier.graphAutMatrix_mul_self`: the matrix implementing it squares to `-1`.
 * `TauCeti.TypeDSpinCarrier.pointsMap_comp_graphAutPoints`: the automorphism on points is natural
   in the value ring, so in particular it commutes with the Frobenius of
@@ -136,8 +137,8 @@ def graphRootPerm (hn : 2 ≤ n) : Equiv.Perm (Fin n ⊕ Fin n) :=
   Equiv.sumCongr (graphPermD n (by omega)) (graphPermD n (by omega))
 
 -- Deliberately not `@[simp]`: unfolding `graphRootPerm` to `Sum.map` erases it as a head symbol,
--- which takes `graphRootPerm_apply_apply` and `rootSubgroup_comp_graphAut_inv` below out of simp
--- normal form.
+-- which takes `graphRootPerm_inl`, `graphRootPerm_inr` and `graphRootPerm_apply_apply` below out
+-- of simp normal form.
 /-- The fork exchange acts on the numbered root generators by the same node permutation on each
 half of the numbering. -/
 theorem graphRootPerm_apply (hn : 2 ≤ n) (k : Fin n ⊕ Fin n) :
@@ -330,8 +331,11 @@ theorem rootSubgroup_comp_graphAut_hom (k : Fin n ⊕ Fin n) :
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, toralGraphAut, ← Category.assoc,
     kostantRootSubgroupToToral_comp_numberedSymmetryIso_hom]
 
+-- Deliberately not `@[simp]`: `graphAut_inv` below rewrites the inverse leg to the forward one, so
+-- this left-hand side is not in simp normal form; it is kept as the explicit inverse-direction
+-- reading of the pinning equation.
 /-- The inverse graph automorphism restores the original numbering of a pinned root subgroup. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem rootSubgroup_comp_graphAut_inv (k : Fin n ⊕ Fin n) :
     rootSubgroup n hn (graphRootPerm n (by omega) k) ≫ (graphAut n hn).inv =
       rootSubgroup n hn k := by
@@ -362,6 +366,24 @@ theorem graphAut_sq : graphAut n hn ^ 2 = 1 := by
     kostantToralNumberedSymmetryIso_pow_eq_one _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 2
       hrootIter (graphPermD_sq n (by omega))
   rw [graphAut, ← map_pow, htoral, map_one]
+
+/-- **The graph automorphism composed with itself is the identity** on the carrier: the
+morphism-level reading of `TauCeti.TypeDSpinCarrier.graphAut_sq`, in the shape a consumer
+composing scheme morphisms works in. -/
+@[reassoc (attr := simp)]
+theorem graphAut_hom_comp_self :
+    (graphAut n hn).hom ≫ (graphAut n hn).hom = 𝟙 (groupScheme n hn) := by
+  have h := graphAut_sq n hn
+  rw [pow_two] at h
+  -- `Aut` multiplication is reverse categorical composition, and its unit is `Iso.refl`, so the
+  -- forward legs of the two sides are already the two sides of the goal.
+  exact congrArg Iso.hom h
+
+/-- The inverse leg of the graph automorphism is its forward leg, since it is an involution. -/
+@[simp]
+theorem graphAut_inv : (graphAut n hn).inv = (graphAut n hn).hom := by
+  rw [← Category.id_comp (graphAut n hn).inv, ← graphAut_hom_comp_self n hn, Category.assoc,
+    (graphAut n hn).hom_inv_id, Category.comp_id]
 
 /-! ## The graph automorphism on matrix-valued points -/
 
