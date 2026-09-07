@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 public import TauCeti.NumberTheory.NumberField.Internal.QuadraticIntegralBasis
 public import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 public import Mathlib.NumberTheory.NumberField.Norm
+import TauCeti.Algebra.Polynomial.MonicQuadratic
 import TauCeti.RingTheory.Norm.Quadratic
 
 /-!
@@ -253,16 +254,6 @@ theorem minpoly_halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd4 : d % 4 = 1) 
   set ω := halfGen hmin hd4 with hω
   set c : ℤ := (1 - d) / 4 with hc
   have h4 : 4 * c = 1 - d := by omega
-  have hq : (X ^ 2 - X + C c : ℤ[X]) = X ^ 2 + (C (-1) * X + C c) := by
-    rw [map_neg, C_1]; ring
-  have hlt : (C (-1) * X + C c : ℤ[X]).natDegree < (X ^ 2 : ℤ[X]).natDegree := by
-    rw [natDegree_X_pow]
-    exact lt_of_le_of_lt natDegree_linear_le (by norm_num)
-  have hmonic : (X ^ 2 - X + C c : ℤ[X]).Monic := by
-    rw [hq]
-    exact (monic_X_pow 2).add_of_left (degree_lt_degree hlt)
-  have hdeg : (X ^ 2 - X + C c : ℤ[X]).natDegree = 2 := by
-    rw [hq, natDegree_add_eq_left_of_natDegree_lt hlt, natDegree_X_pow]
   have hint : IsIntegral ℤ ω := Algebra.IsIntegral.isIntegral ω
   -- `ω` is a root: `4(ω² - ω + c) = (1 + θ)² - 2(1 + θ) + 4c = θ² - d = 0` in `K`.
   have hroot : aeval ω (X ^ 2 - X + C c : ℤ[X]) = 0 := by
@@ -286,8 +277,9 @@ theorem minpoly_halfGen (hmin : minpoly ℤ θ = X ^ 2 - C d) (hd4 : d % 4 = 1) 
     rw [map_sub, map_mul, map_one, map_ofNat, map_intCast]
     linear_combination -2 * hnK
   have h2le : 2 ≤ (minpoly ℤ ω).natDegree := (minpoly.two_le_natDegree_iff hint).mpr hnotmem
-  exact (Polynomial.eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint) hmonic
-    (minpoly.isIntegrallyClosed_dvd hint hroot) (by rw [hdeg]; exact h2le)).symm
+  exact (Polynomial.eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint)
+    (monic_X_sq_sub_X_add_C c) (minpoly.isIntegrallyClosed_dvd hint hroot)
+    (by rw [natDegree_X_sq_sub_X_add_C]; exact h2le)).symm
 
 /-- **`𝓞 K = ℤ[ω]` for `d ≡ 1 (mod 4)`: coordinates.** Every algebraic integer is a `ℤ`-combination
 `k + l·ω` with `ω = (1+θ)/2`. Since `θ = 2ω - 1`, the half-integer coordinates `A/2, B/2` give
@@ -372,13 +364,8 @@ theorem adjoin_eq_top_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K}
     exact Subalgebra.smul_mem _ (add_mem hmem (one_mem _)) _
   -- `ω` is not a rational integer, so neither is `η`, whose minimal polynomial is then `X² - d`.
   have hωnot : ω ∉ (algebraMap ℤ (𝓞 K)).range := by
-    rw [← minpoly.two_le_natDegree_iff (Algebra.IsIntegral.isIntegral ω), hmin]
-    have hq : (X ^ 2 - X + C c : ℤ[X]) = X ^ 2 + (C (-1) * X + C c) := by
-      rw [map_neg, C_1]; ring
-    have hlt : (C (-1) * X + C c : ℤ[X]).natDegree < (X ^ 2 : ℤ[X]).natDegree := by
-      rw [natDegree_X_pow]
-      exact lt_of_le_of_lt natDegree_linear_le (by norm_num)
-    rw [hq, natDegree_add_eq_left_of_natDegree_lt hlt, natDegree_X_pow]
+    rw [← minpoly.two_le_natDegree_iff (Algebra.IsIntegral.isIntegral ω), hmin,
+      natDegree_X_sq_sub_X_add_C]
   have hηnot : η ∉ (algebraMap ℤ (𝓞 K)).range := by
     rintro ⟨n, hn⟩
     apply hωnot

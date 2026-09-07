@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 public import Mathlib.RingTheory.Discriminant
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.FieldTheory.Trace
+import TauCeti.Algebra.Polynomial.MonicQuadratic
 import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
 
 /-!
@@ -77,13 +78,7 @@ theorem finrank_rat_eq_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
   rw [(PowerBasis.ofAdjoinEqTop' hint hgen).finrank,
     ← (PowerBasis.ofAdjoinEqTop' hint hgen).natDegree_minpoly, PowerBasis.ofAdjoinEqTop'_gen,
     minpoly.isIntegrallyClosed_eq_field_fractions' ℚ ω.isIntegral_coe, RingOfIntegers.minpoly_coe,
-    (minpoly.monic ω.isIntegral).natDegree_map, hmin]
-  have hq : (X ^ 2 - X + C c : ℤ[X]) = X ^ 2 + (C (-1) * X + C c) := by
-    rw [map_neg, C_1]; ring
-  have hlt : (C (-1) * X + C c : ℤ[X]).natDegree < (X ^ 2 : ℤ[X]).natDegree := by
-    rw [natDegree_X_pow]
-    exact lt_of_le_of_lt natDegree_linear_le (by norm_num)
-  rw [hq, natDegree_add_eq_left_of_natDegree_lt hlt, natDegree_X_pow]
+    (minpoly.monic ω.isIntegral).natDegree_map, hmin, natDegree_X_sq_sub_X_add_C]
 
 omit [NumberField K] in
 /-- The integral generator squares to the radicand: `θ² = d` in `𝓞 K`. -/
