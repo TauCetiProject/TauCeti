@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.Coalgebra.Basic
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # Comodules over a coalgebra
@@ -124,6 +125,27 @@ theorem equivFinsuppOfBasisRight_apply {ι : Type*} [DecidableEq ι]
       tensorComponent (R := R) (M := M) (b.coord i) t := by
   rw [TensorProduct.equivFinsuppOfBasisRight_apply]
   rfl
+
+section Field
+
+variable {k : Type u} {D : Type v} {V : Type w}
+variable [Field k] [AddCommGroup D] [Module k D]
+variable [AddCommGroup V] [Module k V]
+
+/-- Equality of all contractions against the right factor detects equality in a tensor product
+over a field. -/
+theorem tensor_eq_of_forall_tensorComponent_eq {x y : V ⊗[k] D}
+    (h : ∀ φ : Module.Dual k D,
+      tensorComponent (R := k) (M := V) φ x = tensorComponent (R := k) (M := V) φ y) :
+    x = y := by
+  classical
+  let b := Module.Free.chooseBasis k D
+  apply (TensorProduct.equivFinsuppOfBasisRight b (M := V)).injective
+  ext i
+  rw [equivFinsuppOfBasisRight_apply, equivFinsuppOfBasisRight_apply]
+  exact h (b.coord i)
+
+end Field
 
 omit [Coalgebra R C] [Comodule R C M] in
 @[simp]

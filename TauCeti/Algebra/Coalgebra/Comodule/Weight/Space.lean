@@ -45,9 +45,6 @@ weight spaces form the finite set that the next step must show is permuted by th
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, Theorem 6.3.1.
-
-This supplies the finite weight-space package needed by Layer 5, "Lie--Kolchin; solvable groups",
-of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -121,20 +118,6 @@ end Semiring
 variable {k : Type u} {C : Type v} {M : Type w}
 variable [Field k] [AddCommGroup C] [Module k C] [Coalgebra k C]
 variable [AddCommGroup M] [Module k M] [Comodule k C M]
-
-omit [Coalgebra k C] [Comodule k C M] in
-/-- Equality of all contractions against the coalgebra factor detects equality in a tensor
-product over a field. -/
-private theorem tensor_eq_of_forall_tensorComponent_eq {x y : M ⊗[k] C}
-    (h : ∀ φ : Module.Dual k C,
-      tensorComponent (R := k) (M := M) φ x = tensorComponent (R := k) (M := M) φ y) :
-    x = y := by
-  classical
-  let b := Module.Free.chooseBasis k C
-  apply (TensorProduct.equivFinsuppOfBasisRight b (M := M)).injective
-  ext i
-  rw [equivFinsuppOfBasisRight_apply, equivFinsuppOfBasisRight_apply]
-  exact h (b.coord i)
 
 /-- A vector has weight `c` exactly when every component of its coaction has eigenvalue obtained
 by evaluating the component functional at `c`. -/
