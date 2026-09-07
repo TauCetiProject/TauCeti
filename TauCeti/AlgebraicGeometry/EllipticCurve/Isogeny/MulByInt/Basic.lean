@@ -371,10 +371,13 @@ theorem tautologicalPoint_mulByIntPullback [W.IsElliptic] {n : ℤ}
         (Jacobian.equiv_some_of_Z_ne_zero
           (P := ![phiFunctionField W n, omegaFunctionField W n, psiFunctionField W n]) hn))
   have hsmul : n • W.genericPoint = Affine.Point.some _ _ hns' := by
+    have hfromAffine (P : (W⁄W.FunctionField).toAffine.Point) :
+        Jacobian.Point.toAffineAddEquiv (W⁄W.FunctionField)
+            (Jacobian.Point.fromAffine P) = P :=
+      (Jacobian.Point.toAffineAddEquiv (W⁄W.FunctionField)).apply_symm_apply P
     have h := congrArg (Jacobian.Point.toAffineAddEquiv (W⁄W.FunctionField)) hJ
-    rw [map_zsmul] at h
-    simpa [genericPoint_eq_some, Jacobian.Point.fromAffine_some,
-      Jacobian.Point.toAffineLift_some] using h
+    rw [map_zsmul, hfromAffine, hfromAffine] at h
+    simpa only [genericPoint_eq_some] using h
   rw [hsmul]
   refine Point.eq_of_coords (CoordinatePullback.tautologicalPoint_ne_zero _)
     (Point.some_ne_zero _) ?_ ?_
