@@ -50,7 +50,9 @@ rank is additive.
 
 ## References
 
-See T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter I §2 and §5.
+* The `TauCetiRoadmap/QuadraticFormInvariants/README.md` Layer 0 section "The carrier for
+  isometry classes" and its accompanying `Suggested.lean` declaration skeleton.
+* T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter I §2 and §5.
 -/
 
 public section
@@ -66,13 +68,9 @@ variable {K : Type u} [Field K]
 /-! ### Diagonal presentations -/
 
 /-- A diagonal presentation: a rank `n` together with a tuple of units, read as the diagonal
-form `⟨w 0, …, w (n - 1)⟩`. This presentation, the setoid `TauCeti.regularFormSetoid` and the
-quotient `TauCeti.RegularFormClass` are the carrier design fixed by the human-authored
-`TauCetiRoadmap/QuadraticFormInvariants` roadmap, whose `README.md` and `Suggested.lean` spell out
-the three signatures used here. The presented form is regular under this file's standing hypothesis
-that `2` is invertible in `K` (`TauCeti.nondegenerate_presentedForm`); the definition itself asks
-only for a field, and in characteristic two the polar form of a weighted sum of squares vanishes,
-so the presented form need not be nondegenerate. -/
+form `⟨w 0, …, w (n - 1)⟩`. The presented form is regular when `2` is invertible in `K`
+(`TauCeti.nondegenerate_presentedForm`); in characteristic two its polar form vanishes, so it need
+not be nondegenerate. -/
 abbrev RegularFormPresentation (K : Type u) [Field K] : Type u := Σ n : ℕ, Fin n → Kˣ
 
 /-- The form presented by `(n, w)`, namely the weighted sum of squares with weights `w`. -/
