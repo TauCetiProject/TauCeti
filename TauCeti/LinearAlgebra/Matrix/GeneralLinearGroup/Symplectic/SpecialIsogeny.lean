@@ -249,20 +249,11 @@ theorem symplecticSpecialIsogeny_neg_jFin_mul_transpose_mul_jFin [CharP R 2]
 theorem symplecticSpecialIsogeny_mul_jFin_mul_transpose [CharP R 2]
     (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
     symplecticSpecialIsogeny g * JFin 2 R * (symplecticSpecialIsogeny g)ᵀ = JFin 2 R := by
-  -- The adjoint is the inverse, and an inverse of a symplectic matrix is symplectic. Both are
-  -- one-step consequences of `hg` and `JFin_mul_self` in these coordinates, and are used only
-  -- here, so they are `have`s rather than declarations restating Mathlib's `SymplecticGroup` API.
+  -- The symplectic adjoint is the inverse, and it is again symplectic; the second fact is
+  -- Mathlib's inverse-closure, transported once in `Symplectic.Basic`.
   have hgh : g * -(JFin 2 R * gᵀ * JFin 2 R) = 1 := by
     rw [mul_neg, ← mul_assoc, ← mul_assoc, hg, JFin_mul_self, neg_neg]
-  have hhg : -(JFin 2 R * gᵀ * JFin 2 R) * g = 1 := mul_eq_one_comm.mp hgh
-  have hh : -(JFin 2 R * gᵀ * JFin 2 R) * JFin 2 R * (-(JFin 2 R * gᵀ * JFin 2 R))ᵀ =
-      JFin 2 R := by
-    calc -(JFin 2 R * gᵀ * JFin 2 R) * JFin 2 R * (-(JFin 2 R * gᵀ * JFin 2 R))ᵀ
-        = -(JFin 2 R * gᵀ * JFin 2 R) * (g * JFin 2 R * gᵀ) *
-            (-(JFin 2 R * gᵀ * JFin 2 R))ᵀ := by rw [hg]
-      _ = -(JFin 2 R * gᵀ * JFin 2 R) * g * JFin 2 R *
-            (-(JFin 2 R * gᵀ * JFin 2 R) * g)ᵀ := by rw [Matrix.transpose_mul]; noncomm_ring
-      _ = JFin 2 R := by rw [hhg]; simp
+  have hh := neg_JFin_mul_transpose_mul_JFin_mul_JFin_mul_transpose (m := 2) hg
   have hmul : symplecticSpecialIsogeny g *
       symplecticSpecialIsogeny (-(JFin 2 R * gᵀ * JFin 2 R)) = 1 := by
     rw [← symplecticSpecialIsogeny_mul hg hh, hgh, symplecticSpecialIsogeny_one]
