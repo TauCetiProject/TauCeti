@@ -161,6 +161,22 @@ def RegularFormPresentation.append (p q : RegularFormPresentation K) :
 theorem RegularFormPresentation.fst_append (p q : RegularFormPresentation K) :
     (RegularFormPresentation.append p q).1 = p.1 + q.1 := (rfl)
 
+/-- Concatenation restricts to the first tuple on the initial coordinates. -/
+@[simp]
+theorem RegularFormPresentation.append_apply_castAdd (p q : RegularFormPresentation K)
+    (i : Fin p.1) :
+    (RegularFormPresentation.append p q).2
+      (Fin.cast (RegularFormPresentation.fst_append p q).symm (Fin.castAdd q.1 i)) = p.2 i := by
+  simp [RegularFormPresentation.append]
+
+/-- Concatenation restricts to the second tuple on the final coordinates. -/
+@[simp]
+theorem RegularFormPresentation.append_apply_natAdd (p q : RegularFormPresentation K)
+    (j : Fin q.1) :
+    (RegularFormPresentation.append p q).2
+      (Fin.cast (RegularFormPresentation.fst_append p q).symm (Fin.natAdd p.1 j)) = q.2 j := by
+  simp [RegularFormPresentation.append]
+
 /-- The value of an orthogonal product on the two halves of a concatenated coordinate vector. -/
 private theorem prod_apply_split {m n : ℕ} (w : Fin m → Kˣ) (v : Fin n → Kˣ)
     (x : Fin (m + n) → K) :
@@ -179,6 +195,41 @@ def presentedFormAppendIsometryEquiv (p q : RegularFormPresentation K) :
     (LinearEquiv.funCongrLeft K K (finSumFinEquiv (m := p.1) (n := q.1))).trans
       (LinearEquiv.sumArrowLequivProdArrow (Fin p.1) (Fin q.1) K K)
   map_app' x := prod_apply_split p.2 q.2 x
+
+/-- The forward map of `TauCeti.presentedFormAppendIsometryEquiv` splits the coordinates into
+the two concatenated halves. -/
+@[simp]
+theorem presentedFormAppendIsometryEquiv_apply (p q : RegularFormPresentation K)
+    (x : Fin (RegularFormPresentation.append p q).1 → K) :
+    presentedFormAppendIsometryEquiv p q x =
+      (fun i => x (Fin.cast (RegularFormPresentation.fst_append p q).symm
+        (Fin.castAdd q.1 i)),
+       fun j => x (Fin.cast (RegularFormPresentation.fst_append p q).symm
+        (Fin.natAdd p.1 j))) := by
+  rcases p with ⟨m, w⟩
+  rcases q with ⟨n, v⟩
+  simp only [RegularFormPresentation.append] at x ⊢
+  change ((LinearEquiv.funCongrLeft K K finSumFinEquiv).trans
+    (LinearEquiv.sumArrowLequivProdArrow (Fin m) (Fin n) K K)) x = _
+  ext <;> rfl
+
+/-- The inverse map of `TauCeti.presentedFormAppendIsometryEquiv` concatenates the two coordinate
+tuples. -/
+@[simp]
+theorem presentedFormAppendIsometryEquiv_invFun (p q : RegularFormPresentation K)
+    (x : (Fin p.1 → K) × (Fin q.1 → K)) :
+    (presentedFormAppendIsometryEquiv p q).invFun x =
+      Fin.append x.1 x.2 ∘ Fin.cast (RegularFormPresentation.fst_append p q) := by
+  rcases p with ⟨m, w⟩
+  rcases q with ⟨n, v⟩
+  simp only [RegularFormPresentation.append] at x ⊢
+  rcases x with ⟨x, y⟩
+  change (((LinearEquiv.funCongrLeft K K finSumFinEquiv).trans
+    (LinearEquiv.sumArrowLequivProdArrow (Fin m) (Fin n) K K)).symm (x, y)) = _
+  funext i
+  refine Fin.addCases (fun j => ?_) (fun j => ?_) i <;>
+    simp [LinearEquiv.trans_symm, LinearEquiv.funCongrLeft_symm,
+      LinearEquiv.funCongrLeft_apply]
 
 /-- The form presented by a concatenation is isometric to the orthogonal sum of the two
 presented forms. -/
