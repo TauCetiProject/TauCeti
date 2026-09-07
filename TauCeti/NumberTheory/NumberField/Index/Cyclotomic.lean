@@ -14,8 +14,8 @@ public import TauCeti.NumberTheory.NumberField.Index.Basic
 Let `K` be an `n`-th cyclotomic extension of `ℚ` and `ζ` a primitive `n`-th root of unity in `K`.
 Then `ζ` is an algebraic integer generating `K` over `ℚ`, hence an integral primitive element of
 `K`, and `𝓞 K = ℤ[ζ]` (Mathlib's `IsPrimitiveRoot.integralPowerBasis`), so its index
-`[𝓞 K : ℤ[ζ]]` is `1`. The fourth cyclotomic field `ℚ(i)` with `𝓞 K = ℤ[i]` is the worked
-example.
+`[𝓞 K : ℤ[ζ]]` is `1`. The case `n = 4` is the fourth cyclotomic field `ℚ(i)`, where `ℤ[i]` has
+index `1`.
 
 ## Main definitions
 
@@ -26,8 +26,6 @@ example.
 
 * `IsPrimitiveRoot.index_integralPrimitiveElement`: the index of a primitive root of unity is
   `1`.
-* `TauCeti.NumberField.index_integralPrimitiveElement_of_isPrimitiveRoot_four`: the worked
-  example `ℚ(i)`, where `ℤ[i]` has index `1`.
 
 ## References
 
@@ -52,7 +50,7 @@ noncomputable def integralPrimitiveElement [IsCyclotomicExtension {n} ℚ K]
 element, is the root of unity itself. -/
 @[simp]
 theorem coe_integralPrimitiveElement [IsCyclotomicExtension {n} ℚ K]
-    (hζ : IsPrimitiveRoot ζ n) : hζ.integralPrimitiveElement.1 = hζ.toInteger :=
+    (hζ : IsPrimitiveRoot ζ n) : (hζ.integralPrimitiveElement : 𝓞 K) = hζ.toInteger :=
   (rfl)
 
 /-- **The index of a primitive root of unity is `1`.** In an `n`-th cyclotomic extension `K` of
@@ -64,18 +62,3 @@ theorem index_integralPrimitiveElement [IsCyclotomicExtension {n} ℚ K]
   exact hζ.integralPowerBasis.adjoin_gen_eq_top
 
 end IsPrimitiveRoot
-
-namespace TauCeti.NumberField
-
-/-- **Worked example: `ℤ[i]` has index `1` in `𝓞 (ℚ(i))`.** For a primitive fourth root of unity
-`i` in the fourth cyclotomic field, the index of `ℤ[i]` in the ring of integers is `1`. -/
-theorem index_integralPrimitiveElement_of_isPrimitiveRoot_four {ζ : CyclotomicField 4 ℚ}
-    (hζ : IsPrimitiveRoot ζ 4) :
-    have : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
-      CyclotomicField.isCyclotomicExtension 4 ℚ
-    hζ.integralPrimitiveElement.index = 1 := by
-  have : IsCyclotomicExtension {4} ℚ (CyclotomicField 4 ℚ) :=
-    CyclotomicField.isCyclotomicExtension 4 ℚ
-  exact hζ.index_integralPrimitiveElement
-
-end TauCeti.NumberField

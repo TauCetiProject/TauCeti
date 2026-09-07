@@ -113,6 +113,7 @@ theorem index_pos (θ : IntegralPrimitiveElement K) : 0 < θ.index := by
 
 /-- The index of an integral primitive element `θ` is `1` exactly when `ℤ[θ]` is all of
 `𝓞 K`. -/
+@[simp]
 theorem index_eq_one_iff (θ : IntegralPrimitiveElement K) :
     θ.index = 1 ↔ Algebra.adjoin ℤ {θ.1} = ⊤ := by
   rw [index, Submodule.cardQuot_eq_one_iff, Algebra.toSubmodule_eq_top, adjoin_def]
