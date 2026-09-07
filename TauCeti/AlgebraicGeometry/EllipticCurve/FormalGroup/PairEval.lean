@@ -40,6 +40,8 @@ variables, so `MvPowerSeries.hasEval_of_finite_of_isTopologicallyNilpotent` appl
   inverse of the cubic's leading coefficient.
 * `WeierstrassCurve.formalAddEval_eq` : `F(t₁, t₂) = ι(t₃(t₁, t₂))`.
 * `WeierstrassCurve.formalAddEval_formalInverseEval` : `F(t, ι(t)) = 0`, the inverse law.
+* `WeierstrassCurve.formalAddEval_zero_right` and
+  `WeierstrassCurve.formalAddEval_zero_left` : the unit laws `F(t, 0) = t` and `F(0, t) = t`.
 * `WeierstrassCurve.formalAddEval_sub_add_mem` : `F(t₁, t₂) - (t₁ + t₂) ∈ I ^ (2 * k)` for
   parameters in `I ^ k`, so the group law is `t₁ + t₂` to first order, and
   `WeierstrassCurve.formalAddEval_mem` : each level `I ^ k` is therefore closed under the
@@ -67,6 +69,15 @@ Adapted from Michael Stoll's `EllipticCurves` project
 `eval_pair_subst_single`, `slopeEval_mul_sub`, `interceptEval_eq`, `slopeEval_mem`,
 `thirdRootEval_mem`, `thirdRootEval_relation`, `addEval_eq`, `addEval_sub_add_mem` and
 `addEval_iotaEval`.
+
+The unit laws `formalAddEval_zero_right` and `formalAddEval_zero_left` follow the same project's
+`EllipticCurves/Mathlib/Chabauty/FormalGroupLaw/Points.lean`, where they are the `zero_add` and
+`add_zero` fields of the `AddCommMonoid` instance on `FormalGroupLaw.Points`
+(`def Points _Φ := ι → maximalIdeal O`). That generic formal-group scaffolding is not ported
+here: Mathlib's `RingTheory/FormalGroup` supersedes it, and its `FormalGroup.Point` is a
+different object — series carrying `PowerSeries.HasSubst`, not elements of an ideal — so the
+laws are stated as standalone lemmas about `formalAddEval`, ideal-free and taking
+`PowerSeries.HasEval`.
 
 Four things are spelled differently here.
 
@@ -323,5 +334,56 @@ theorem formalAddEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O
   have := Ideal.add_mem _ (hle (W.formalAddEval_sub_add_mem hI hk₁ hk₂))
     (Ideal.add_mem _ hk₁ hk₂)
   simpa using this
+
+/-- **The right unit law at parameters**: `F(t, 0) = t`, so the origin's parameter is neutral for
+the group law read at parameters. -/
+@[simp]
+theorem formalAddEval_zero_right {t : O} (ht : PowerSeries.HasEval t) :
+    W.formalAddEval t 0 = t := by
+  have hfam : (fun s : Unit ⊕ Unit ↦ MvPowerSeries.eval₂ (RingHom.id O) (fun _ : Unit ↦ t)
+        ((Sum.elim MvPowerSeries.X (fun _ ↦ 0) :
+          Unit ⊕ Unit → MvPowerSeries Unit O) s)) =
+      Sum.elim (fun _ ↦ t) fun _ ↦ (0 : O) := by
+    funext s
+    rcases s with _ | _
+    · simp
+    · simpa using
+        MvPowerSeries.eval₂_C (φ := RingHom.id O) (a := fun _ : Unit ↦ t) (0 : O)
+  have hev : MvPowerSeries.HasEval fun s : Unit ⊕ Unit ↦
+      MvPowerSeries.aeval (PowerSeries.hasEval ht)
+        ((Sum.elim MvPowerSeries.X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit O) s) := by
+    simp only [MvPowerSeries.coe_aeval, Algebra.algebraMap_self, hfam]
+    exact hasEval_pair ht IsTopologicallyNilpotent.zero
+  have h := MvPowerSeries.aeval_subst
+    (MvPowerSeries.hasSubst_pair (q₁ := MvPowerSeries.X ()) (q₂ := 0) (by simp) (by simp))
+    (MvPowerSeries.continuous_aeval (PowerSeries.hasEval ht)) hev W.formalAdd
+  rw [W.subst_unitR_formalAdd] at h
+  simpa [formalAddEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self, hfam,
+    PowerSeries.X, MvPowerSeries.eval₂_X] using h.symm
+
+/-- **The left unit law at parameters**: `F(0, t) = t`. -/
+@[simp]
+theorem formalAddEval_zero_left {t : O} (ht : PowerSeries.HasEval t) :
+    W.formalAddEval 0 t = t := by
+  have hfam : (fun s : Unit ⊕ Unit ↦ MvPowerSeries.eval₂ (RingHom.id O) (fun _ : Unit ↦ t)
+        ((Sum.elim (fun _ ↦ 0) MvPowerSeries.X :
+          Unit ⊕ Unit → MvPowerSeries Unit O) s)) =
+      Sum.elim (fun _ ↦ (0 : O)) fun _ ↦ t := by
+    funext s
+    rcases s with _ | _
+    · simpa using
+        MvPowerSeries.eval₂_C (φ := RingHom.id O) (a := fun _ : Unit ↦ t) (0 : O)
+    · simp
+  have hev : MvPowerSeries.HasEval fun s : Unit ⊕ Unit ↦
+      MvPowerSeries.aeval (PowerSeries.hasEval ht)
+        ((Sum.elim (fun _ ↦ 0) MvPowerSeries.X : Unit ⊕ Unit → MvPowerSeries Unit O) s) := by
+    simp only [MvPowerSeries.coe_aeval, Algebra.algebraMap_self, hfam]
+    exact hasEval_pair IsTopologicallyNilpotent.zero ht
+  have h := MvPowerSeries.aeval_subst
+    (MvPowerSeries.hasSubst_pair (q₁ := 0) (q₂ := MvPowerSeries.X ()) (by simp) (by simp))
+    (MvPowerSeries.continuous_aeval (PowerSeries.hasEval ht)) hev W.formalAdd
+  rw [W.subst_unitL_formalAdd] at h
+  simpa [formalAddEval, MvPowerSeries.coe_aeval, Algebra.algebraMap_self, hfam,
+    PowerSeries.X, MvPowerSeries.eval₂_X] using h.symm
 
 end WeierstrassCurve

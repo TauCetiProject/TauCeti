@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.NumberTheory.NumberField.Minpoly
 
 /-!
 # The index of an integral primitive element
@@ -93,9 +94,8 @@ theorem finrank_adjoin (θ : IntegralPrimitiveElement K) :
     Module.finrank ℤ θ.adjoin = (minpoly ℤ θ.1).natDegree := by
       exact (Algebra.adjoin.powerBasis' θ.1.isIntegral).finrank
     _ = (minpoly ℚ (θ.1 : K)).natDegree := by
-      rw [← _root_.NumberField.RingOfIntegers.minpoly_coe θ.1,
-        minpoly.isIntegrallyClosed_eq_field_fractions' ℚ θ.1.isIntegral_coe,
-        (minpoly.monic θ.1.isIntegral_coe).natDegree_map]
+      rw [_root_.NumberField.RingOfIntegers.minpoly_rat_coe,
+        (minpoly.monic θ.1.isIntegral).natDegree_map]
     _ = Module.finrank ℚ K :=
       (Field.primitive_element_iff_minpoly_natDegree_eq ℚ (θ.1 : K)).mp hθ
     _ = Module.finrank ℤ (𝓞 K) := (_root_.NumberField.RingOfIntegers.rank K).symm
