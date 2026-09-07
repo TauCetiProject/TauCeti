@@ -189,6 +189,11 @@ theorem map_graphAutomorphismPoints_range_rootSubgroupPointsOfPair (hij : i ≠ 
   set σ : Multiplicative A ≃* Multiplicative A :=
     AddEquiv.toMultiplicative (AddAut.mulLeft ((-1 : Aˣ) ^ ((i : ℕ) + (j : ℕ) + 1)))
       with hσ
+  have hσ_apply (u : Multiplicative A) :
+      σ u = Multiplicative.ofAdd
+        ((-1 : A) ^ ((i : ℕ) + (j : ℕ) + 1) * Multiplicative.toAdd u) := by
+    rw [hσ]
+    rfl
   have hσrange : σ.toMonoidHom.range = ⊤ := MonoidHom.range_eq_top.mpr σ.surjective
   -- On the root subgroup at `ε_i - ε_j` the graph automorphism is that rescaling followed by the
   -- parametrization of the reversed root subgroup.
@@ -196,8 +201,8 @@ theorem map_graphAutomorphismPoints_range_rootSubgroupPointsOfPair (hij : i ≠ 
       (rootSubgroupPointsOfPair r (Fin.rev_injective.ne hij.symm)).comp σ.toMonoidHom :=
     MonoidHom.ext fun u => by
       rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-        graphAutomorphismPoints_rootSubgroupPointsOfPair, hσ]
-      rfl
+        graphAutomorphismPoints_rootSubgroupPointsOfPair]
+      exact congrArg (rootSubgroupPointsOfPair r (Fin.rev_injective.ne hij.symm)) (hσ_apply u).symm
   rw [MonoidHom.map_range, hcomp, MonoidHom.range_comp, hσrange, ← MonoidHom.range_eq_map]
 
 end GraphAutomorphism
