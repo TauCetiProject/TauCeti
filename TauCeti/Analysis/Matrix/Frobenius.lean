@@ -43,10 +43,7 @@ variable {m n : Type*} [Fintype m] [Fintype n]
 compatible with the Frobenius norm of `Matrix.frobeniusNormedAddCommGroup`. Not declared as a
 global instance because there are several natural choices of norm on matrices; it is available
 through `open scoped Matrix.Norms.Frobenius`. -/
--- `@[expose]` is required by the module system: inducing this structure onto a submodule, as
--- `TauCeti.symmetricMatrixInnerProductSpace` does, unifies the induced normed structure with
--- the submodule's own, which needs the body here.
-@[expose, instance_reducible]
+@[instance_reducible]
 def frobeniusInnerProductSpace :
     letI : NormedAddCommGroup (Matrix m n ℝ) := Matrix.frobeniusNormedAddCommGroup
     InnerProductSpace ℝ (Matrix m n ℝ) :=
@@ -77,7 +74,7 @@ open scoped Matrix.Norms.Frobenius
 
 /-- The Frobenius inner product is the sum of the entrywise products. -/
 theorem frobenius_inner_def (A B : Matrix m n ℝ) : ⟪A, B⟫ = ∑ i, ∑ j, A i j * B i j :=
-  rfl
+  (rfl)
 
 /-- The Frobenius inner product is the trace of `Aᵀ * B`. -/
 theorem frobenius_inner_eq_trace_transpose_mul (A B : Matrix m n ℝ) :

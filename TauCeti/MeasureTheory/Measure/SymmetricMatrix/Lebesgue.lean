@@ -28,7 +28,7 @@ have Frobenius norm `√2`, so Frobenius volume is `2 ^ (p * (p - 1) / 4)` times
   upper-triangular coordinates.
 * `TauCeti.measurePreserving_symmetricCoordinates_symm` — the coordinate reconstruction is
   measure preserving.
-* `TauCeti.isAddHaarMeasure_symmetricLebesgue` — `symmetricLebesgue p` is an additive Haar
+* `TauCeti.symmetricLebesgueIsAddHaarMeasure` — `symmetricLebesgue p` is an additive Haar
   measure, as required by Mathlib's Jacobian API.
 * `TauCeti.volume_symmetricMatrix_eq_smul_symmetricLebesgue` — comparison with the Frobenius
   volume.
@@ -67,7 +67,7 @@ theorem measurePreserving_symmetricCoordinates (p : ℕ) :
   rwa [MeasurableEquiv.symm_symm, symmetricCoordinatesMeasurableEquiv_coe] at h'
 
 /-- `symmetricLebesgue` is an additive Haar measure, as required by Mathlib's Jacobian API. -/
-instance isAddHaarMeasure_symmetricLebesgue (p : ℕ) :
+instance symmetricLebesgueIsAddHaarMeasure (p : ℕ) :
     (symmetricLebesgue p).IsAddHaarMeasure :=
   ContinuousLinearEquiv.isAddHaarMeasure_map (symmetricCoordinates p).symm volume
 
@@ -104,14 +104,14 @@ private theorem inner_symmetricBasis (p : ℕ)
   let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
   let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
   obtain ⟨⟨k, l⟩, hkl⟩ := kl
-  rw [Submodule.coe_inner, Matrix.frobenius_inner_def]
+  rw [selfAdjoint.coe_inner, Matrix.frobenius_inner_def]
   by_cases h : k = l
   · subst h
     rw [coe_symmetricBasis_diag, sum_mul_single]
     simp
   · rw [coe_symmetricBasis_offDiag p hkl h]
     simp only [Matrix.add_apply, mul_add, Finset.sum_add_distrib, sum_mul_single,
-      coe_apply_comm A l k]
+      selfAdjoint.coe_apply_comm A l k]
     rw [ite_eq_right h]
     ring
 

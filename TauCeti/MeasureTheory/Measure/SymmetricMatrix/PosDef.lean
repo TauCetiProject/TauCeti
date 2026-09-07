@@ -45,7 +45,7 @@ theorem isOpen_setOfPred_posDefMatrix (p : ℕ) :
     ext A
     simp only [Set.mem_ofPred_eq, Set.mem_preimage, Matrix.posDef_iff_dotProduct_mulVec]
     exact ⟨fun h x hx => by simpa using h.2 hx,
-      fun h => ⟨isHermitian_coe A, fun x hx => by simpa using h x hx⟩⟩
+      fun h => ⟨selfAdjoint.isHermitian_coe A, fun x hx => by simpa using h x hx⟩⟩
   rw [hpre]
   exact isOpen_setOfPred_dotProduct_mulVec_pos.preimage continuous_subtype_val
 

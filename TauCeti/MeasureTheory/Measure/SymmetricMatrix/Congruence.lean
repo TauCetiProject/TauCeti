@@ -58,7 +58,7 @@ def symmetricCongruenceLinearMap (M : Matrix (Fin p) (Fin p) ℝ) :
     (mulRightLinearMap (Fin p) ℝ Mᵀ ∘ₗ mulLeftLinearMap (Fin p) ℝ M ∘ₗ
       (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)).subtype)
     fun A => by
-      have h := Matrix.isHermitian_mul_mul_conjTranspose M (isHermitian_coe A)
+      have h := Matrix.isHermitian_mul_mul_conjTranspose M (selfAdjoint.isHermitian_coe A)
       rwa [Matrix.conjTranspose_eq_transpose_of_trivial] at h
 
 @[simp]
@@ -327,6 +327,22 @@ theorem symmetricCongruence_toLinearMap (C : Matrix.GeneralLinearGroup (Fin p) �
         selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) →ₗ[ℝ] _) =
       symmetricCongruenceLinearMap (C : Matrix (Fin p) (Fin p) ℝ) :=
   (rfl)
+
+/-- Congruence by the identity is the identity. -/
+@[simp]
+theorem symmetricCongruence_one :
+    symmetricCongruence (1 : Matrix.GeneralLinearGroup (Fin p) ℝ) =
+      ContinuousLinearEquiv.refl ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) := by
+  refine DFunLike.ext _ _ fun A => Subtype.ext ?_
+  simp
+
+/-- Congruence by a product is the composite of the two congruences, the right factor acting
+first. -/
+@[simp]
+theorem symmetricCongruence_mul (C D : Matrix.GeneralLinearGroup (Fin p) ℝ) :
+    symmetricCongruence (C * D) = (symmetricCongruence D).trans (symmetricCongruence C) := by
+  refine DFunLike.ext _ _ fun A => Subtype.ext ?_
+  simp [Matrix.transpose_mul, Matrix.mul_assoc]
 
 /-- Undoing congruence by `C` is congruence by `C⁻¹`. -/
 @[simp]

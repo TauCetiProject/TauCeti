@@ -41,11 +41,18 @@ subspace: `TauCeti.symmetricCoordinates` reads off the entries above the diagona
 * `TauCeti.card_upperTriangle` — there are `p * (p + 1) / 2` such positions.
 * `TauCeti.symmetricMatrixNormedAddCommGroup`, `TauCeti.symmetricMatrixInnerProductSpace` —
   the Frobenius structure on the symmetric subspace.
+* `selfAdjoint.coe_inner` — the subspace inner product is the ambient one on the coercions.
 * `TauCeti.symmetricCoordinates` — the continuous linear equivalence with `upperTriangle p → ℝ`.
 * `TauCeti.symmetricCoordinatesMeasurableEquiv` — its measurable-equivalence form.
 * `TauCeti.symmetricBasis` — the basis dual to the upper-triangular coordinates.
 * `TauCeti.finrank_symmetricMatrix` — the dimension is `p * (p + 1) / 2`.
-* `TauCeti.inner_symmetricMatrix_eq_trace_mul` — the Frobenius pairing is the trace pairing.
+* `selfAdjoint.inner_eq_trace_mul` — the Frobenius pairing is the trace pairing.
+
+## References
+
+* This module suite implements the symmetric-matrix carrier design of the
+  StandardDistributions roadmap (`StandardDistributions/README.md`, Layer 6, item 1, in the
+  TauCetiRoadmap repository, https://github.com/TauCetiProject/TauCetiRoadmap).
 -/
 
 public section
@@ -69,11 +76,11 @@ theorem card_upperTriangle (p : ℕ) : Fintype.card (upperTriangle p) = p * (p +
 
 /-! ### The Frobenius structure on the symmetric subspace
 
-The instances below install the Frobenius norm and inner product on the symmetric subspace by
-inducing them from the ambient (scoped) Frobenius instances. Because the Frobenius norm is
-definitionally compatible with the product topology and uniformity of `Matrix`, the induced
-structures agree definitionally with the subtype instances already present; the `example`
-blocks at the end of the section check this. -/
+The instances below install the Frobenius norm and inner product on the symmetric subspace: the
+norm is induced from the ambient (scoped) Frobenius instances, and the inner product pairs the
+underlying matrices. Because the Frobenius norm is definitionally compatible with the product
+topology and uniformity of `Matrix`, the induced structures agree definitionally with the subtype
+instances already present; the `example` blocks at the end of the section check this. -/
 
 section instances
 
@@ -91,8 +98,23 @@ instance symmetricMatrixNormedAddCommGroup :
 instance symmetricMatrixInnerProductSpace :
     InnerProductSpace ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
   letI : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
+  letI : NormedSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedSpace
   letI : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
-  Submodule.innerProductSpace _
+  { __ := (inferInstance : Module ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)))
+    norm_smul_le r A := norm_smul_le r (A : Matrix (Fin p) (Fin p) ℝ)
+    inner A B := ⟪(A : Matrix (Fin p) (Fin p) ℝ), (B : Matrix (Fin p) (Fin p) ℝ)⟫
+    norm_sq_eq_re_inner A :=
+      InnerProductSpace.norm_sq_eq_re_inner (𝕜 := ℝ) (A : Matrix (Fin p) (Fin p) ℝ)
+    conj_inner_symm A B :=
+      InnerProductSpace.conj_inner_symm (𝕜 := ℝ) (A : Matrix (Fin p) (Fin p) ℝ) ↑B
+    add_left A B C := by
+      rw [Submodule.coe_add]
+      exact InnerProductSpace.add_left (𝕜 := ℝ) (A : Matrix (Fin p) (Fin p) ℝ) ↑B ↑C
+    smul_left A B r := by
+      -- `InnerProductSpace.smul_left` phrases the ambient scalar action through the unexposed
+      -- body of `Matrix.frobeniusInnerProductSpace`, so expand the inner product instead.
+      rw [Submodule.coe_smul, Matrix.frobenius_inner_def, Matrix.frobenius_inner_def]
+      simp [Finset.mul_sum, mul_assoc] }
 
 instance symmetricMatrixIsUniformAddGroup :
     IsUniformAddGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
@@ -146,10 +168,29 @@ example :
 
 end instances
 
+end TauCeti
+
+/-! ### The inner product of the symmetric subspace -/
+
+namespace selfAdjoint
+
+open scoped Matrix.Norms.Frobenius
+
+/-- The inner product of the symmetric subspace is the Frobenius inner product of the underlying
+matrices. -/
+@[simp]
+theorem coe_inner {p : ℕ} (A B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    ⟪A, B⟫ = ⟪(A : Matrix (Fin p) (Fin p) ℝ), (B : Matrix (Fin p) (Fin p) ℝ)⟫ :=
+  (rfl)
+
+end selfAdjoint
+
 /-! ### Symmetry of the entries -/
 
+namespace selfAdjoint
+
 /-- An element of the symmetric subspace is a Hermitian matrix; over `ℝ` this says that it is
-symmetric, as spelled out by `TauCeti.coe_apply_comm`. -/
+symmetric, as spelled out by `selfAdjoint.coe_apply_comm`. -/
 theorem isHermitian_coe {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
     (A : Matrix (Fin p) (Fin p) ℝ).IsHermitian :=
   A.2
@@ -159,6 +200,10 @@ theorem coe_apply_comm {p : ℕ} (A : selfAdjoint.submodule ℝ (Matrix (Fin p) 
     (i j : Fin p) :
     (A : Matrix (Fin p) (Fin p) ℝ) i j = (A : Matrix (Fin p) (Fin p) ℝ) j i := by
   simpa using (isHermitian_coe A).apply j i
+
+end selfAdjoint
+
+namespace TauCeti
 
 /-! ### Upper-triangular coordinates -/
 
@@ -195,7 +240,7 @@ def symmetricCoordinates :
         by_cases h : i ≤ j
         · exact dite_eq_left h
         · rw [dite_eq_right h]
-          exact coe_apply_comm A j i
+          exact selfAdjoint.coe_apply_comm A j i
       right_inv x := by
         funext ij
         obtain ⟨⟨i, j⟩, hij⟩ := ij
@@ -309,16 +354,20 @@ theorem coe_symmetricBasis_offDiag {i j : Fin p} (hij : i ≤ j) (hne : i ≠ j)
 
 end coordinates
 
+end TauCeti
+
 /-! ### The trace pairing -/
+
+namespace selfAdjoint
 
 /-- On the symmetric subspace, the Frobenius inner product is the trace pairing. This makes
 `MeasureTheory.charFun` on the subspace use the same pairing as the Wishart trace statistics. -/
-theorem inner_symmetricMatrix_eq_trace_mul {p : ℕ}
+theorem inner_eq_trace_mul {p : ℕ}
     (A Θ : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
     ⟪A, Θ⟫ = ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace := by
   let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
   let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
-  rw [Submodule.coe_inner, Matrix.frobenius_inner_eq_trace_transpose_mul,
+  rw [coe_inner, Matrix.frobenius_inner_eq_trace_transpose_mul,
     (Matrix.isHermitian_iff_isSymm.1 (isHermitian_coe A)).eq, Matrix.trace_mul_comm]
 
-end TauCeti
+end selfAdjoint
