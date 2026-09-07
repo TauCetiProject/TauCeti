@@ -116,6 +116,7 @@ subgroup `σ H σ⁻¹` is the image under `σ` of the fixed field of `H`.
 
 Stated in the `Subgroup` namespace, so that `H` — the first explicit argument, and the one
 `fixedField` is applied to — carries the dot notation. -/
+@[simp]
 theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) :
     fixedField (H.map (MulAut.conj σ).toMonoidHom) = (fixedField H).map σ.toAlgHom := by
   ext x
@@ -128,7 +129,8 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
       simpa only [MulAut.conj_apply, AlgEquiv.mul_apply, AlgEquiv.coe_inv,
         AlgEquiv.apply_symm_apply] using hx)
   · rintro ⟨y, hy, rfl⟩ g ⟨h, hh, rfl⟩
-    change σ (h (σ.symm (σ y))) = σ y
-    simpa only [AlgEquiv.symm_apply_apply] using congrArg σ (hy h hh)
+    rw [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, AlgEquiv.mul_apply, AlgEquiv.mul_apply,
+      AlgEquiv.coe_inv, AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply]
+    exact congrArg σ (hy h hh)
 
 end Subgroup

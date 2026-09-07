@@ -119,8 +119,9 @@ theorem fixingSubgroup_decompositionField (P : Place k F') :
 
 omit [Algebra.IsIntegral F F'] [IsGalois F F'] in
 /-- An automorphism of `F'` over the decomposition field of `P`, read as an automorphism over
-`F`, fixes `P`.  The priority keeps this ahead of `TauCeti.Place.restrictScalars_smul`, which
-would otherwise rewrite the left-hand side to `τ • P` before this can close it. -/
+`F`, fixes `P`. -/
+-- The priority keeps this ahead of `TauCeti.Place.restrictScalars_smul`, which would otherwise
+-- rewrite the left-hand side to `τ • P` before this can close it.
 @[simp high]
 theorem restrictScalars_smul_eq_self (P : Place k F') (τ : F' ≃ₐ[decompositionField F P] F') :
     τ.restrictScalars F • P = P := by
@@ -236,6 +237,7 @@ theorem relativeDegree_decompositionField (P : Place k F') :
 omit [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F'] in
 /-- **The decomposition group of a conjugate place is the conjugate decomposition group**
 (Stichtenoth, Theorem 3.8.2). -/
+@[simp]
 theorem decompositionSubgroup_integers_smul (σ : F' ≃ₐ[F] F') (P : Place k F') :
     (σ • P).integers.decompositionSubgroup F =
       (P.integers.decompositionSubgroup F).map (MulAut.conj σ).toMonoidHom := by
@@ -245,6 +247,7 @@ theorem decompositionSubgroup_integers_smul (σ : F' ≃ₐ[F] F') (P : Place k 
 omit [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F'] in
 /-- **The decomposition field of a conjugate place is the image of the decomposition field**
 (Stichtenoth, Theorem 3.8.2). -/
+@[simp]
 theorem decompositionField_smul (σ : F' ≃ₐ[F] F') (P : Place k F') :
     decompositionField F (σ • P) = (decompositionField F P).map σ.toAlgHom := by
   rw [decompositionField, decompositionSubgroup_integers_smul,
