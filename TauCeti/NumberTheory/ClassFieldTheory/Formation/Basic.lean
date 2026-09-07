@@ -113,8 +113,13 @@ disconnected topological group. In the arithmetic applications `G` is the Galois
 Galois extension and the module is the multiplicative group of the top field, read additively. The
 distinguished family of subgroups of the Artin–Tate definition is the family of open subgroups of
 `G`, which is why the levels below are indexed by `OpenSubgroup G`. -/
-abbrev Formation (G : Type) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-    [CompactSpace G] [TotallyDisconnectedSpace G] := SmoothDiscreteTopRep.{0, 0, 0} ℤ G
+-- The underlying category of smooth discrete objects makes sense over any topological monoid, so
+-- the three profinite hypotheses are mentioned nowhere in the body; they are named with a leading
+-- underscore, the convention for an argument that is deliberately unused there. They are kept
+-- because the theory below — finiteness of a layer's Galois group and the norm maps built from it
+-- — is stated only for a profinite `G`, so a formation should never be formed over anything else.
+abbrev Formation (G : Type) [Group G] [TopologicalSpace G] [_tg : IsTopologicalGroup G]
+    [_cs : CompactSpace G] [_td : TotallyDisconnectedSpace G] := SmoothDiscreteTopRep.{0, 0, 0} ℤ G
 
 namespace Formation
 
