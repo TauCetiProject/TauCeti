@@ -287,6 +287,70 @@ theorem JFin_submatrix :
   ext i j
   simp [JFin]
 
+/-- The transported alternating form squares to `-1`, which is Mathlib's `Matrix.J_squared` read
+through the reindexing. -/
+theorem JFin_mul_self : JFin m R * JFin m R = -1 := by
+  have h : ((JFin m R).submatrix finSumFinEquiv finSumFinEquiv) *
+      ((JFin m R).submatrix finSumFinEquiv finSumFinEquiv) = -1 := by
+    rw [JFin_submatrix]
+    exact Matrix.J_squared (Fin m) R
+  rw [Matrix.submatrix_mul_equiv] at h
+  have hone : ((-1 : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R).submatrix finSumFinEquiv.symm
+      finSumFinEquiv.symm) = (-1 : Matrix (Fin (m + m)) (Fin (m + m)) R) := by
+    ext a b
+    simp [Matrix.one_apply, finSumFinEquiv.symm.injective.eq_iff]
+  have h' := congrArg (fun M => M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) h
+  simpa [Matrix.submatrix_submatrix, hone] using h'
+
+variable {m R} in
+/-- A matrix preserving the transported alternating form is a symplectic matrix in Mathlib's
+sum-indexed coordinates. This is how a consumer reads off what the symplectic condition gives
+beyond the defining equation, rather than reproving it in `Fin (m + m)` coordinates. -/
+theorem submatrix_mem_symplecticGroup {g : Matrix (Fin (m + m)) (Fin (m + m)) R}
+    (hg : g * JFin m R * gᵀ = JFin m R) :
+    g.submatrix finSumFinEquiv finSumFinEquiv ∈ Matrix.symplecticGroup (Fin m) R := by
+  rw [SymplecticGroup.mem_iff, ← JFin_submatrix m (R := R), Matrix.transpose_submatrix,
+    Matrix.submatrix_mul_equiv, Matrix.submatrix_mul_equiv, hg]
+
+variable {m R} in
+/-- Conversely, a matrix that is symplectic in Mathlib's sum-indexed coordinates preserves the
+transported alternating form. -/
+theorem mul_JFin_mul_transpose_of_submatrix_mem_symplecticGroup
+    {g : Matrix (Fin (m + m)) (Fin (m + m)) R}
+    (hg : g.submatrix finSumFinEquiv finSumFinEquiv ∈ Matrix.symplecticGroup (Fin m) R) :
+    g * JFin m R * gᵀ = JFin m R := by
+  rw [SymplecticGroup.mem_iff, ← JFin_submatrix m (R := R), Matrix.transpose_submatrix,
+    Matrix.submatrix_mul_equiv, Matrix.submatrix_mul_equiv] at hg
+  have h' := congrArg (fun M => M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) hg
+  simpa only [Matrix.submatrix_submatrix, Equiv.self_comp_symm, Matrix.submatrix_id_id] using h'
+
+variable {m R} in
+/-- **The symplectic adjoint of a matrix preserving the transported alternating form preserves it
+too.** The adjoint is the inverse, and Mathlib's symplectic matrices are closed under
+inversion. -/
+theorem neg_JFin_mul_transpose_mul_JFin_mul_JFin_mul_transpose
+    {g : Matrix (Fin (m + m)) (Fin (m + m)) R} (hg : g * JFin m R * gᵀ = JFin m R) :
+    -(JFin m R * gᵀ * JFin m R) * JFin m R * (-(JFin m R * gᵀ * JFin m R))ᵀ = JFin m R := by
+  refine mul_JFin_mul_transpose_of_submatrix_mem_symplecticGroup ?_
+  have hinv := (⟨_, submatrix_mem_symplecticGroup hg⟩ :
+    Matrix.symplecticGroup (Fin m) R)⁻¹.2
+  rw [SymplecticGroup.coe_inv] at hinv
+  convert hinv using 2
+  rw [Matrix.submatrix_neg, Matrix.neg_mul, Matrix.neg_mul, Matrix.transpose_submatrix,
+    ← JFin_submatrix m (R := R), Matrix.submatrix_mul_equiv, Matrix.submatrix_mul_equiv]
+  rfl
+
+variable {m R} in
+/-- The column form of the symplectic condition, which is Mathlib's `SymplecticGroup.mem_iff'`
+read through the reindexing. -/
+theorem transpose_mul_JFin_mul_self {g : Matrix (Fin (m + m)) (Fin (m + m)) R}
+    (hg : g * JFin m R * gᵀ = JFin m R) : gᵀ * JFin m R * g = JFin m R := by
+  have h := SymplecticGroup.mem_iff'.mp (submatrix_mem_symplecticGroup hg)
+  rw [← JFin_submatrix m (R := R), Matrix.transpose_submatrix, Matrix.submatrix_mul_equiv,
+    Matrix.submatrix_mul_equiv] at h
+  have h' := congrArg (fun M => M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) h
+  simpa only [Matrix.submatrix_submatrix, Equiv.self_comp_symm, Matrix.submatrix_id_id] using h'
+
 /-- The symplectic subgroup of `GL (Fin (m + m)) R`: the pullback of `TauCeti.GLSymplectic`
 along the reindexing isomorphism. -/
 def GLSymplecticFin : Subgroup (GL (Fin (m + m)) R) :=
@@ -767,6 +831,15 @@ theorem negativeSumShortRootHom_apply {i j : Fin m} (hij : i ≠ j) (c : Multipl
       negativeSumShortRootUnit hij c.toAdd := by
   rw [negativeSumShortRootUnit]
   rw [ofAdd_toAdd]
+
+/-- **The difference short-root element depends only on its index pair.** Two proofs that the
+indices differ, and two spellings of the same indices, give the same element. -/
+theorem differenceShortRootUnit_congr {i j i' j' : Fin m} (hij : i ≠ j) (hij' : i' ≠ j')
+    (hi : i = i') (hj : j = j') (c : R) :
+    differenceShortRootUnit hij c = differenceShortRootUnit hij' c := by
+  subst hi
+  subst hj
+  rfl
 
 /-- The general-linear matrix underlying `x_{eᵢ-eⱼ}(c)` is its two-transvection formula. -/
 @[simp]
