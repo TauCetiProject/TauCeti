@@ -100,6 +100,28 @@ the spin group scheme or the pinned simply connected Chevalley--Demazure group s
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IV, for the numbering of the
   `Dₙ` diagram whose last two nodes the symmetry exchanges.
 
+## Roadmap
+
+Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`, pinned Chevalley--Demazure group schemes
+over `ℤ`, is the layer this file works in. Its **Pinnings** bullet says that a pinning "is what
+makes 'the' graph automorphism well defined, so it is data, not a property", and
+`TauCeti.TypeDSpinCarrier.graphAut` is that named automorphism for this carrier, well defined
+because the carrier's numbered root subgroups pin it. Its **Root subgroup maps** bullet asks for
+"the equations pinning them against the pinning", which are "part of the interface, not an
+implementation detail"; that equation is
+`TauCeti.TypeDSpinCarrier.rootSubgroup_comp_graphAut_hom`. Its **Points over an algebraically
+closed field**, "functorially in the field", is what
+`TauCeti.TypeDSpinCarrier.pointsMap_comp_graphAutPoints` serves, and is why `γ` commutes with the
+carrier's Frobenius. Everything of that layer this rests on is already built: the carrier itself,
+its numbered root subgroups, its represented weight torus, its base change and its `q`-power
+Frobenius, over `TauCeti.DynkinType.simplyConnectedRootDatum` of root systems Layer 6.
+
+Layer 9's separate **isomorphism theorem for pinned groups** is neither advanced nor consumed
+here: the automorphism is constructed and its pinning equations are proved directly, rather than
+lifted along that theorem from an automorphism of root data, and no uniqueness is claimed for it.
+The identification of this carrier with the pinned simply connected group scheme of type `Dₙ` is
+likewise a Layer 9 target that nothing below uses or asserts.
+
 What this feeds is the graph-twisted family `²Dₙ(q)`, whose Steinberg endomorphism is `γ ∘ Frob_q`
 for the `γ` built here and the `q`-power Frobenius of
 `TauCeti/Algebra/Lie/Orthogonal/TypeD/SpinCarrier/Frobenius.lean`, on the very carrier
