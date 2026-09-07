@@ -72,20 +72,16 @@ theorem exists_mem_Icc_mul_abs_sub_le_dist (p z w : ℂ) :
       rw [hexp, hnorm]
       linarith [hdiv]
     exact (abs_le_of_sq_le_sq' hsq (norm_nonneg _)).2
-  refine ⟨max 0 (min 1 s₀), ⟨le_max_left _ _, max_le zero_le_one (min_le_left _ _)⟩, ?_⟩
+  set c : ℝ := ↑(projIcc (0 : ℝ) 1 zero_le_one s₀)
+  refine ⟨c, (projIcc (0 : ℝ) 1 zero_le_one s₀).2, ?_⟩
   intro s hs
-  have hclamp : |s - max 0 (min 1 s₀)| ≤ |s - s₀| := by
-    rcases le_or_gt s₀ 0 with h | h
-    · rw [min_eq_right (h.trans zero_le_one), max_eq_left h, sub_zero,
-        abs_of_nonneg hs.1, abs_of_nonneg (by linarith [hs.1] : (0 : ℝ) ≤ s - s₀)]
-      linarith
-    rcases le_or_gt s₀ 1 with h' | h'
-    · rw [min_eq_right h', max_eq_right h.le]
-    · rw [min_eq_left h'.le, max_eq_right zero_le_one]
-      rw [abs_of_nonpos (by linarith [hs.2]), abs_of_nonpos (by linarith [hs.2])]
-      linarith
+  -- `projIcc` is a contraction, and it fixes the parameters already in `[0, 1]`
+  have hclamp : |s - c| ≤ |s - s₀| := by
+    have h := Set.abs_projIcc_sub_projIcc (a := (0 : ℝ)) (b := 1) (h := zero_le_one)
+      (c := s) (d := s₀)
+    rwa [projIcc_of_mem _ hs] at h
   have hseg : w + s • B - p = A + s • B := by rw [hA]; abel
-  calc ‖B‖ * |s - max 0 (min 1 s₀)| ≤ ‖B‖ * |s - s₀| :=
+  calc ‖B‖ * |s - c| ≤ ‖B‖ * |s - s₀| :=
         mul_le_mul_of_nonneg_left hclamp (norm_nonneg _)
     _ ≤ ‖A + s • B‖ := key s
     _ = dist (w + s • B) p := by rw [dist_eq_norm, hseg]
