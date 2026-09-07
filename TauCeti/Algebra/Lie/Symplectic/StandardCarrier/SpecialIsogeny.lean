@@ -50,14 +50,6 @@ finite or simple. The isogeny is built on the carrier alone, with no Lie-type in
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§12.3 and 13.4.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
-
-## Roadmap
-
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`, which lists the special isogenies in characteristics
-two and three among its targets. Its consumer is milestone `L2` of
-`TauCetiRoadmap/CFSGStatement/README.md`, which owns the selection of this isogeny for a
-`SuzukiReeIndex` and the odd power `τ ^ (2m+1)`; neither is taken here.
 -/
 public section
 
@@ -107,6 +99,7 @@ theorem coe_specialIsogeny_gl (g : points 1 K) :
   simp [pointsMulEquivGLSymplecticFin]
 
 /-- **The square of the carrier's special isogeny is the Frobenius.** -/
+@[simp]
 theorem specialIsogeny_specialIsogeny (g : points 1 K) :
     specialIsogeny K (specialIsogeny K g) = frobenius 1 2 1 K g := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
@@ -125,8 +118,10 @@ private theorem next_zero : next 1 0 zero_ne_last = 1 := Fin.ext (by rw [val_nex
 
 private theorem last_one : Fin.last 1 = (1 : Fin (1 + 1)) := rfl
 
-/-- The difference short-root element depends on its index pair only. -/
-theorem differenceShortRootUnit_congr {m : ℕ} {R : Type*} [CommRing R] {i j i' j' : Fin m}
+/-- The difference short-root element depends on its index pair only. Scaffolding for the two
+rank-two transports below, which name the successor node in one form and the numeral in the
+other. -/
+private theorem differenceShortRootUnit_congr {m : ℕ} {R : Type*} [CommRing R] {i j i' j' : Fin m}
     (hij : i ≠ j) (hij' : i' ≠ j') (hi : i = i') (hj : j = j') (c : R) :
     GLSymplecticFin.differenceShortRootUnit hij c =
       GLSymplecticFin.differenceShortRootUnit hij' c := by
@@ -157,6 +152,7 @@ private theorem longRootUnit_eq (t : K) :
   rfl
 
 /-- The isogeny carries the short simple root subgroup to the long one, squaring the parameter. -/
+@[simp]
 theorem specialIsogeny_rootSubgroupPoints_inl_zero (t : K) :
     specialIsogeny K (rootSubgroupPoints 1 (.inl 0) K (Multiplicative.ofAdd t)) =
       rootSubgroupPoints 1 (.inl (Fin.last 1)) K (Multiplicative.ofAdd (t ^ 2)) := by
@@ -169,6 +165,7 @@ theorem specialIsogeny_rootSubgroupPoints_inl_zero (t : K) :
   exact h.symm
 
 /-- The isogeny carries the long simple root subgroup to the short one, keeping the parameter. -/
+@[simp]
 theorem specialIsogeny_rootSubgroupPoints_inl_last (t : K) :
     specialIsogeny K (rootSubgroupPoints 1 (.inl (Fin.last 1)) K (Multiplicative.ofAdd t)) =
       rootSubgroupPoints 1 (.inl 0) K (Multiplicative.ofAdd t) := by
@@ -203,6 +200,7 @@ private theorem negLongRootUnit_eq (t : K) :
   rfl
 
 /-- The isogeny on the negative short simple root subgroup. -/
+@[simp]
 theorem specialIsogeny_rootSubgroupPoints_inr_zero (t : K) :
     specialIsogeny K (rootSubgroupPoints 1 (.inr 0) K (Multiplicative.ofAdd t)) =
       rootSubgroupPoints 1 (.inr (Fin.last 1)) K (Multiplicative.ofAdd (t ^ 2)) := by
@@ -215,6 +213,7 @@ theorem specialIsogeny_rootSubgroupPoints_inr_zero (t : K) :
   exact h.symm
 
 /-- The isogeny on the negative long simple root subgroup. -/
+@[simp]
 theorem specialIsogeny_rootSubgroupPoints_inr_last (t : K) :
     specialIsogeny K (rootSubgroupPoints 1 (.inr (Fin.last 1)) K (Multiplicative.ofAdd t)) =
       rootSubgroupPoints 1 (.inr 0) K (Multiplicative.ofAdd t) := by
