@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Discriminant
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.NumberTheory.NumberField.Index.Basic
 import Mathlib.RingTheory.Adjoin.PowerBasis
+import TauCeti.NumberTheory.NumberField.Minpoly
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
