@@ -378,7 +378,7 @@ one built away from a finite set of primes; its membership predicate is `Modulus
 noncomputable abbrev integralIdealsPrimeTo (𝔪 : Modulus K) : Submonoid (Ideal (𝓞 K)) :=
   NumberFieldArithmetic.integralIdealsAway (K := K) 𝔪.support
 
-theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
+@[simp] theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     I ∈ integralIdealsPrimeTo 𝔪 ↔ 𝔪.IsCoprimeTo I :=
   NumberFieldArithmetic.mem_integralIdealsAway_iff.trans Modulus.isCoprimeTo_iff.symm
 
