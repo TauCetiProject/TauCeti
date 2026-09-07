@@ -10,7 +10,6 @@ public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
-public import Mathlib.Topology.Algebra.MvPolynomial
 
 /-!
 # The zero locus of a nonzero multivariate polynomial is Lebesgue-null
@@ -21,6 +20,7 @@ polynomial conditions, such as nonsingularity, hold almost everywhere.
 
 ## Main declarations
 
+* `MvPolynomial.measurable_eval` — evaluation is measurable in the coordinates.
 * `MvPolynomial.measurableSet_setOfPred_eval_eq_zero` — the zero locus of an
   `MvPolynomial ι ℝ` is measurable in `ι → ℝ`.
 * `MvPolynomial.volume_setOfPred_eval_eq_zero` — the zero locus of a nonzero
@@ -35,11 +35,25 @@ open MeasureTheory
 
 namespace MvPolynomial
 
-/-- The zero locus of a multivariate real polynomial is measurable: polynomial evaluation is
-continuous, so the locus is closed. -/
-theorem measurableSet_setOfPred_eval_eq_zero {ι : Type*} [Countable ι]
-    (P : MvPolynomial ι ℝ) : MeasurableSet {x : ι → ℝ | MvPolynomial.eval x P = 0} :=
-  (isClosed_eq (MvPolynomial.continuous_eval P) continuous_const).measurableSet
+/-- Evaluating a multivariate real polynomial is measurable in the coordinates: a polynomial is
+built from finitely many coordinate projections by addition and multiplication. -/
+theorem measurable_eval {ι : Type*} (P : MvPolynomial ι ℝ) :
+    Measurable fun x : ι → ℝ => MvPolynomial.eval x P := by
+  induction P using MvPolynomial.induction_on with
+  | C a =>
+    simp only [MvPolynomial.eval_C]
+    exact measurable_const
+  | add P Q hP hQ =>
+    simp only [map_add]
+    exact hP.add hQ
+  | mul_X P i hP =>
+    simp only [map_mul, MvPolynomial.eval_X]
+    exact hP.mul (measurable_pi_apply i)
+
+/-- The zero locus of a multivariate real polynomial is measurable. -/
+theorem measurableSet_setOfPred_eval_eq_zero {ι : Type*} (P : MvPolynomial ι ℝ) :
+    MeasurableSet {x : ι → ℝ | MvPolynomial.eval x P = 0} :=
+  measurable_eval P (measurableSet_singleton 0)
 
 /-- The zero locus of a nonzero real polynomial in `n` variables is Lebesgue-null. -/
 private theorem volume_setOfPred_eval_eq_zero_fin :
