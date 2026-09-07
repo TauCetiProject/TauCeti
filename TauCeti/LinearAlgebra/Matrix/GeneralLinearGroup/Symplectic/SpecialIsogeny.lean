@@ -43,9 +43,9 @@ Multiplicativity is Cauchy--Binet, `Matrix.pairMinor_mul_fin_four`, which expand
 product over all six index pairs. Four of the six terms assemble the product of the two minor
 matrices; the other two involve the pairs `(0,2)` and `(1,3)` carrying the form. The symplectic
 condition makes those two minors cancel in pairs, once along rows and once along columns
-(`TauCeti.pairMinor_row` and `TauCeti.pairMinor_column`), and what is left of the two extra terms
-is `2` times a product of minors. That is the only place the hypothesis is used, and it is why the
-construction has no counterpart in odd characteristic.
+(`TauCeti.pairMinor_row_add_eq_neg_jFin` and `TauCeti.pairMinor_column_add_eq_neg_jFin`), and what
+is left of the two extra terms is `2` times a product of minors. That is the only place the
+hypothesis is used, and it is why the construction has no counterpart in odd characteristic.
 
 That `τ g` is again symplectic is deduced rather than computed: `τ` commutes with the symplectic
 adjoint `M ↦ -(J Mᵀ J)` in characteristic two, and for a symplectic `g` that adjoint is the
@@ -55,10 +55,10 @@ inverse, so `τ g` has `-(J (τ g)ᵀ J)` as an inverse, which is the symplectic
 
 `τ ^ 2 = Frob₂` is proved entrywise. Composing the minor formula with itself gives, in each of the
 sixteen entries, a quartic polynomial in the entries of `g`, and it equals the square of the
-corresponding entry modulo the symplectic condition. `TauCeti.pairMinor_row` reads that condition
-on minors, one equation for each row pair, and each of the sixteen entries needs three of those six
-equations together with `2 = 0`. The certificates are the explicit `linear_combination` terms
-below, so the proof is a check rather than a search.
+corresponding entry modulo the symplectic condition. `TauCeti.pairMinor_row_add_eq_neg_jFin` reads
+that condition on minors, one equation for each row pair, and each of the sixteen entries needs
+three of those six equations together with `2 = 0`. The certificates are the explicit
+`linear_combination` terms below, so the proof is a check rather than a search.
 
 Nothing here concerns fixed points, finiteness or simplicity, and the odd powers `τ ^ (2m+1)` that
 cut out the Suzuki groups are not taken. Two properties of `τ` are recorded, and each is proved
@@ -78,8 +78,9 @@ action determines an endomorphism over an arbitrary commutative ring.
 ## Main results
 
 * `Matrix.pairMinor_mul_fin_four`: Cauchy--Binet for `2 × 2` minors of a `4 × 4` product.
-* `TauCeti.pairMinor_row` and `TauCeti.pairMinor_column`: the symplectic condition read on
-  minors, along rows and along columns.
+* `TauCeti.pairMinor_row_add_eq_neg_jFin` and
+  `TauCeti.pairMinor_column_add_eq_neg_jFin`: the symplectic condition read on minors, along rows
+  and along columns.
 * `Matrix.symplecticSpecialIsogeny_mul`: multiplicativity on symplectic matrices in characteristic
   two.
 * `Matrix.symplecticSpecialIsogeny_mul_jFin_mul_transpose`: the image of a symplectic matrix is
@@ -134,7 +135,7 @@ variable {g : Matrix (Fin 4) (Fin 4) R}
 
 /-- **The symplectic condition, read on minors.** The two minors supported by the form on a fixed
 row pair sum to the corresponding entry of the form. -/
-theorem pairMinor_row (hg : g * JFin 2 R * gᵀ = JFin 2 R) (p : Fin 4 × Fin 4) :
+theorem pairMinor_row_add_eq_neg_jFin (hg : g * JFin 2 R * gᵀ = JFin 2 R) (p : Fin 4 × Fin 4) :
     pairMinor g p (0, 2) + pairMinor g p (1, 3) = -JFin 2 R p.1 p.2 := by
   have h := congrFun (congrFun hg p.1) p.2
   simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, jFin_two_eq,
@@ -143,7 +144,7 @@ theorem pairMinor_row (hg : g * JFin 2 R * gᵀ = JFin 2 R) (p : Fin 4 × Fin 4)
 
 /-- **The symplectic condition, read on minors along columns.** The two minors supported by the
 form on a fixed column pair sum to the corresponding entry of the form. -/
-theorem pairMinor_column (hg : g * JFin 2 R * gᵀ = JFin 2 R) (q : Fin 4 × Fin 4) :
+theorem pairMinor_column_add_eq_neg_jFin (hg : g * JFin 2 R * gᵀ = JFin 2 R) (q : Fin 4 × Fin 4) :
     pairMinor g (0, 2) q + pairMinor g (1, 3) q = -JFin 2 R q.1 q.2 := by
   have h := congrFun (congrFun (transpose_mul_JFin_mul_self (m := 2) hg) q.1) q.2
   simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, jFin_two_eq,
@@ -169,7 +170,7 @@ def specialIsogenyPair : Fin 4 → Fin 4 × Fin 4 := ![(0, 1), (0, 3), (2, 3), (
 
 /-- The `J`-supported pairs are exactly the two omitted ones. -/
 @[simp]
-theorem jFin_specialIsogenyPair (i : Fin 4) :
+theorem jFin_specialIsogenyPair_eq_zero (i : Fin 4) :
     JFin 2 R (specialIsogenyPair i).1 (specialIsogenyPair i).2 = 0 := by
   fin_cases i <;> simp [specialIsogenyPair, jFin_two_eq]
 
@@ -210,10 +211,10 @@ theorem symplecticSpecialIsogeny_mul [CharP R 2] {g h : Matrix (Fin 4) (Fin 4) R
     have := CharP.cast_eq_zero R 2
     simpa using this
   ext i j
-  have hgp := pairMinor_row hg (specialIsogenyPair i)
-  rw [jFin_specialIsogenyPair i, neg_zero] at hgp
-  have hhq := pairMinor_column hh (specialIsogenyPair j)
-  rw [jFin_specialIsogenyPair j, neg_zero] at hhq
+  have hgp := pairMinor_row_add_eq_neg_jFin hg (specialIsogenyPair i)
+  rw [jFin_specialIsogenyPair_eq_zero i, neg_zero] at hgp
+  have hhq := pairMinor_column_add_eq_neg_jFin hh (specialIsogenyPair j)
+  rw [jFin_specialIsogenyPair_eq_zero j, neg_zero] at hhq
   rw [symplecticSpecialIsogeny_apply, pairMinor_mul_fin_four, Matrix.mul_apply, Fin.sum_univ_four]
   simp only [symplecticSpecialIsogeny_apply, specialIsogenyPair_zero, specialIsogenyPair_one,
     specialIsogenyPair_two, specialIsogenyPair_three]
@@ -297,12 +298,12 @@ theorem symplecticSpecialIsogeny_symplecticSpecialIsogeny [CharP R 2]
     (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
     symplecticSpecialIsogeny (symplecticSpecialIsogeny g) = g.map (· ^ 2) := by
   have h2 : (2 : R) = 0 := CharTwo.two_eq_zero
-  have h01 := pairMinor_row hg (0, 1)
-  have h02 := pairMinor_row hg (0, 2)
-  have h03 := pairMinor_row hg (0, 3)
-  have h12 := pairMinor_row hg (1, 2)
-  have h13 := pairMinor_row hg (1, 3)
-  have h23 := pairMinor_row hg (2, 3)
+  have h01 := pairMinor_row_add_eq_neg_jFin hg (0, 1)
+  have h02 := pairMinor_row_add_eq_neg_jFin hg (0, 2)
+  have h03 := pairMinor_row_add_eq_neg_jFin hg (0, 3)
+  have h12 := pairMinor_row_add_eq_neg_jFin hg (1, 2)
+  have h13 := pairMinor_row_add_eq_neg_jFin hg (1, 3)
+  have h23 := pairMinor_row_add_eq_neg_jFin hg (2, 3)
   simp [jFin_two_eq, pairMinor_eq] at h01 h02 h03 h12 h13 h23
   ext i j
   fin_cases i <;> fin_cases j <;>
