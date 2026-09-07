@@ -61,9 +61,11 @@ equations together with `2 = 0`. The certificates are the explicit `linear_combi
 below, so the proof is a check rather than a search.
 
 Nothing here concerns fixed points, finiteness or simplicity, and the odd powers `τ ^ (2m+1)` that
-cut out the Suzuki groups are not taken. What identifies `τ` is its action on the simple root
-subgroups, raising the parameter of a short one to the second power and leaving that of a long one
-alone; the square relation is a consequence of that pinning rather than the definition.
+cut out the Suzuki groups are not taken. Two properties of `τ` are recorded, and each is proved
+directly from the minor formula: its action on the simple root subgroups, raising the parameter of
+a short one to the second power and leaving that of a long one alone, and the square relation. The
+square relation is not derived from the action on root subgroups, and nothing below shows that
+action determines an endomorphism over an arbitrary commutative ring.
 
 ## Main definitions
 
@@ -171,6 +173,14 @@ theorem jFin_specialIsogenyPair (i : Fin 4) :
     JFin 2 R (specialIsogenyPair i).1 (specialIsogenyPair i).2 = 0 := by
   fin_cases i <;> simp [specialIsogenyPair, jFin_two_eq]
 
+end TauCeti
+
+namespace Matrix
+
+open TauCeti
+
+variable {R : Type u} [CommRing R] {g : Matrix (Fin 4) (Fin 4) R}
+
 /-- The symplectic adjoint `-(J Mᵀ J)`, written out. -/
 theorem neg_jFin_mul_transpose_mul_jFin_eq (M : Matrix (Fin 4) (Fin 4) R) :
     -(JFin 2 R * Mᵀ * JFin 2 R) =
@@ -181,14 +191,6 @@ theorem neg_jFin_mul_transpose_mul_jFin_eq (M : Matrix (Fin 4) (Fin 4) R) :
   rw [jFin_two_eq]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_four, -Matrix.cons_mul]
-
-end TauCeti
-
-namespace Matrix
-
-open TauCeti
-
-variable {R : Type u} [CommRing R] {g : Matrix (Fin 4) (Fin 4) R}
 
 /-- The matrix of `2 × 2` minors on the four pairs. -/
 def symplecticSpecialIsogeny (g : Matrix (Fin 4) (Fin 4) R) : Matrix (Fin 4) (Fin 4) R :=
@@ -443,12 +445,10 @@ private theorem coe_differenceShortRootUnit_zero_one (t : R) :
           GLSymplecticFin 2 R) : GL (Fin (2 + 2)) R) :
         Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) =
       !![1, t, 0, 0; 0, 1, 0, 0; 0, 0, 1, 0; 0, 0, -t, 1] := by
-  rw [GLSymplecticFin.coe_differenceShortRootUnit, Units.val_mul, coe_transvectionUnit,
-    coe_transvectionUnit]
+  rw [GLSymplecticFin.coe_differenceShortRootUnit_eq_one_add_single_sub_single]
   ext a b
   fin_cases a <;> fin_cases b <;>
-    simp [Matrix.transvection, Matrix.single, Matrix.one_apply, Matrix.mul_apply,
-      Fin.sum_univ_four, fse_inl_zero, fse_inl_one, fse_inr_zero, fse_inr_one]
+    simp [Matrix.single, fse_inl_zero, fse_inl_one, fse_inr_zero, fse_inr_one]
 
 /-- The long simple root element `x_{2e₁}(t)` of `Sp₄`, written out. -/
 private theorem coe_positiveLongRootTransvectionUnit_one (t : R) :
@@ -502,12 +502,10 @@ private theorem coe_differenceShortRootUnit_one_zero (t : R) :
           GLSymplecticFin 2 R) : GL (Fin (2 + 2)) R) :
         Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) =
       !![1, 0, 0, 0; t, 1, 0, 0; 0, 0, 1, -t; 0, 0, 0, 1] := by
-  rw [GLSymplecticFin.coe_differenceShortRootUnit, Units.val_mul, coe_transvectionUnit,
-    coe_transvectionUnit]
+  rw [GLSymplecticFin.coe_differenceShortRootUnit_eq_one_add_single_sub_single]
   ext a b
   fin_cases a <;> fin_cases b <;>
-    simp [Matrix.transvection, Matrix.single, Matrix.one_apply, Matrix.mul_apply,
-      Fin.sum_univ_four, fse_inl_zero, fse_inl_one, fse_inr_zero, fse_inr_one]
+    simp [Matrix.single, fse_inl_zero, fse_inl_one, fse_inr_zero, fse_inr_one]
 
 /-- The long simple root element `x_{-2e₁}(t)` of `Sp₄`, written out. -/
 private theorem coe_negativeLongRootTransvectionUnit_one (t : R) :
