@@ -13,7 +13,7 @@ public import TauCeti.NumberTheory.NumberField.Index.Basic
 
 Let `K` be an `n`-th cyclotomic extension of `ℚ` and `ζ` a primitive `n`-th root of unity in `K`.
 Then `ζ` is an algebraic integer generating `K` over `ℚ`, hence an integral primitive element of
-`K`, and `𝓞 K = ℤ[ζ]` (Mathlib's `IsPrimitiveRoot.integralPowerBasis`), so its index
+`K`, and `𝓞 K = ℤ[ζ]` (Mathlib's `IsCyclotomicExtension.Rat.adjoin_singleton_eq_top`), so its index
 `[𝓞 K : ℤ[ζ]]` is `1`. The case `n = 4` is the fourth cyclotomic field `ℚ(i)`, where `ℤ[i]` has
 index `1`.
 
@@ -59,8 +59,7 @@ theorem coe_integralPrimitiveElement [IsCyclotomicExtension {n} ℚ K]
 theorem integralPrimitiveElement_index [IsCyclotomicExtension {n} ℚ K]
     (hζ : IsPrimitiveRoot ζ n) : hζ.integralPrimitiveElement.index = 1 := by
   rw [TauCeti.NumberField.IntegralPrimitiveElement.index_eq_one_iff,
-    TauCeti.NumberField.IntegralPrimitiveElement.adjoin_def, coe_integralPrimitiveElement,
-    ← hζ.integralPowerBasis_gen]
-  exact hζ.integralPowerBasis.adjoin_gen_eq_top
+    TauCeti.NumberField.IntegralPrimitiveElement.adjoin_def, coe_integralPrimitiveElement]
+  exact IsCyclotomicExtension.Rat.adjoin_singleton_eq_top hζ
 
 end IsPrimitiveRoot
