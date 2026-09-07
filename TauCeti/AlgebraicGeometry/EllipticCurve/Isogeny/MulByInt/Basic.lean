@@ -344,40 +344,35 @@ section TautologicalPoint
 
 open _root_.WeierstrassCurve.Affine
 
-/-- **The tautological point of `[n]` is `n` times the generic point.** The Jacobian triple
-`(φₙ : ωₙ : ψₙ)` at the generic point represents `n • ` the generic point, and dividing it
-through by `ψₙ` — which is what `[n]`'s two rational coordinates do — reads that class in affine
-coordinates. -/
+/-- **The tautological point of `[n]` is `n` times the generic point.** -/
 @[simp]
 theorem tautologicalPoint_mulByIntPullback [W.IsElliptic] {n : ℤ}
     (hn : psiFunctionField W n ≠ 0) :
     (mulByIntPullback W hn).tautologicalPoint = n • W.genericPoint := by
   have hns' : (W⁄W.FunctionField).toAffine.Nonsingular (mulByIntX W n) (mulByIntY W n) :=
     equation_iff_nonsingular.mp (equation_mulByInt W hn)
-  have htriple : smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n =
-      ![phiFunctionField W n, omegaFunctionField W n, psiFunctionField W n] := by
-    funext i
-    fin_cases i
-    · exact smulEval_genericPoint_X W n
-    · exact smulEval_genericPoint_Y W n
-    · exact smulEval_genericPoint_Z W n
-  have hJ : n • Jacobian.Point.fromAffine
+  have hnsEval : Jacobian.Nonsingular (W⁄W.FunctionField).toAffine.toJacobian
+      (smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n) := by
+    rw [← Jacobian.nonsingularLift_iff,
+      ← zsmul_point_eq_smulEval _ W.nonsingular_genericX_genericY n]
+    exact (n • Jacobian.Point.fromAffine
+      (Affine.Point.some _ _ W.nonsingular_genericX_genericY)).nonsingular
+  have hpoint : n • Jacobian.Point.fromAffine
         (Affine.Point.some _ _ W.nonsingular_genericX_genericY) =
-      Jacobian.Point.fromAffine (Affine.Point.some _ _ hns') := by
-    rw [Jacobian.Point.ext_iff,
-      zsmul_point_eq_smulEval (W⁄W.FunctionField) W.nonsingular_genericX_genericY n, htriple]
-    exact Quotient.sound (by
-      simpa [mulByIntX_def, mulByIntY_def] using
-        (Jacobian.equiv_some_of_Z_ne_zero
-          (P := ![phiFunctionField W n, omegaFunctionField W n, psiFunctionField W n]) hn))
+      (⟨(Jacobian.nonsingularLift_iff _).2 hnsEval⟩ :
+        (W⁄W.FunctionField).toAffine.toJacobian.Point) := by
+    rw [Jacobian.Point.ext_iff]
+    exact zsmul_point_eq_smulEval _ W.nonsingular_genericX_genericY n
+  have hZ : smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 2 ≠ 0 := by
+    rw [smulEval_genericPoint_Z]
+    exact hn
   have hsmul : n • W.genericPoint = Affine.Point.some _ _ hns' := by
-    have hfromAffine (P : (W⁄W.FunctionField).toAffine.Point) :
-        Jacobian.Point.toAffineAddEquiv (W⁄W.FunctionField)
-            (Jacobian.Point.fromAffine P) = P :=
-      (Jacobian.Point.toAffineAddEquiv (W⁄W.FunctionField)).apply_symm_apply P
-    have h := congrArg (Jacobian.Point.toAffineAddEquiv (W⁄W.FunctionField)) hJ
-    rw [map_zsmul, hfromAffine, hfromAffine] at h
-    simpa only [genericPoint_eq_some] using h
+    have h := congrArg (Jacobian.Point.toAffineAddEquiv (W⁄W.FunctionField)) hpoint
+    simp only [map_zsmul, Jacobian.Point.toAffineAddEquiv_apply] at h
+    rw [Jacobian.Point.fromAffine_some, Jacobian.Point.toAffineLift_some] at h
+    rw [Jacobian.Point.toAffineLift_of_Z_ne_zero hZ] at h
+    simpa only [genericPoint_eq_some, smulEval_genericPoint_X, smulEval_genericPoint_Y,
+      smulEval_genericPoint_Z, mulByIntX_def, mulByIntY_def] using h
   rw [hsmul]
   refine Point.eq_of_coords (CoordinatePullback.tautologicalPoint_ne_zero _)
     (Point.some_ne_zero _) ?_ ?_
@@ -394,9 +389,8 @@ namespace WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
 
-/-- **The generic point of an elliptic curve is not torsion.** Its `n`-th multiple is the
-tautological point of `[n]`, and a tautological point is an affine point, never the point at
-infinity. -/
+/-- **The generic point of an elliptic curve is not torsion:** every nonzero integer multiple is
+nonzero. -/
 theorem zsmul_genericPoint_ne_zero [W.IsElliptic] {n : ℤ} (hn : n ≠ 0) :
     n • W.genericPoint ≠ 0 := by
   rw [← TauCeti.Isogeny.tautologicalPoint_mulByIntPullback W

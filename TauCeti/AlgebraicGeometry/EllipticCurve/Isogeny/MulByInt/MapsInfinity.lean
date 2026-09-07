@@ -105,8 +105,7 @@ theorem mulByIntIsogeny_pullback [W.IsElliptic] {n : ℤ} (hn : psiFunctionField
     (mulByIntIsogeny W hn).pullback = mulByIntPullback W hn :=
   (rfl)
 
-/-- **The function-field map of `[n]` carries the generic point to `n • ` the generic point**,
-the generic point transported along a pullback being that pullback's tautological point. -/
+/-- **The function-field map of `[n]` carries the generic point to its `n`-th multiple.** -/
 @[simp]
 theorem map_genericPoint_mulByIntIsogeny [W.IsElliptic] {n : ℤ}
     (hn : psiFunctionField W n ≠ 0) :

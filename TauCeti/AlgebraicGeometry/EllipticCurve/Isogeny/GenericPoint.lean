@@ -52,10 +52,7 @@ namespace Isogeny
 
 variable [W₂.IsElliptic]
 
-/-- **The tautological point is the generic point transported along the pullback.** The
-coordinates of the tautological point of `φ` are the images of the generic coordinates of `W₂`
-under the function-field map `φ^*`, which is exactly what `Point.map` does to the generic
-point. -/
+/-- **The tautological point is the generic point transported along the pullback.** -/
 theorem tautologicalPoint_eq_map_genericPoint (φ : Isogeny W₁ W₂) :
     φ.pullback.tautologicalPoint = Point.map φ.fieldPullback (genericPoint W₂) := by
   refine Point.eq_of_coords (CoordinatePullback.tautologicalPoint_ne_zero _) ?_ ?_ ?_
@@ -69,9 +66,8 @@ theorem tautologicalPoint_eq_map_genericPoint (φ : Isogeny W₁ W₂) :
 variable [W₃.IsElliptic]
 
 omit [W₂.IsElliptic] in
-/-- **The tautological point of a composite**: transporting the tautological point of `ψ` along
-`φ^*` gives the tautological point of `ψ ∘ φ`. This is functoriality of `Point.map` read through
-the previous identification. -/
+/-- **The tautological point of a composite** is the tautological point of the outer isogeny
+transported along the function-field pullback of the inner isogeny. -/
 -- Not `@[simp]`: `Isogeny.comp_pullback` is itself `@[simp]`, so it rewrites this left-hand side
 -- to `(φ.fieldPullback.comp ψ.pullback).tautologicalPoint` before this rule could fire, and
 -- `simpNF` rejects the pair.

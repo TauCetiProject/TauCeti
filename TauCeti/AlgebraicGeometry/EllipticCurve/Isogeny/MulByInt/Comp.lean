@@ -61,7 +61,7 @@ namespace Isogeny
 
 variable [W.IsElliptic]
 
-/-- **`[1]` is the identity isogeny**, its tautological point being the generic point itself. -/
+/-- **`[1]` is the identity isogeny.** -/
 @[simp]
 theorem mulByIntIsogeny_one (h₁ : psiFunctionField W 1 ≠ 0) :
     mulByIntIsogeny W h₁ = Isogeny.id W :=
@@ -69,9 +69,7 @@ theorem mulByIntIsogeny_one (h₁ : psiFunctionField W 1 ≠ 0) :
     rw [mulByIntIsogeny_pullback, tautologicalPoint_mulByIntPullback, Isogeny.id_pullback,
       CoordinatePullback.tautologicalPoint_id, one_zsmul]))
 
-/-- **`[m] ∘ [n] = [m n]`.** Both sides are pullbacks with tautological point `(m n) • ` the
-generic point: on the left the composite transports `m • ` generic along `[n]`'s function-field
-map, which sends the generic point to `n • ` generic, and transport is additive. -/
+/-- **Multiplication isogenies compose:** `[m] ∘ [n] = [m n]`. -/
 @[simp]
 theorem mulByIntIsogeny_comp_mulByIntIsogeny {m n : ℤ}
     (hm : psiFunctionField W m ≠ 0) (hn : psiFunctionField W n ≠ 0)
@@ -90,8 +88,7 @@ theorem mulByIntIsogenyOfNeZero_comp_mulByIntIsogenyOfNeZero {m n : ℤ} (hm : m
       mulByIntIsogenyOfNeZero W (mul_ne_zero hm hn) :=
   mulByIntIsogeny_comp_mulByIntIsogeny W _ _ _
 
-/-- **`[-1]` is negation**, both having the negated generic point for tautological point. This is
-the identification that makes `[-n]` a case of `[m] ∘ [n] = [m n]`. -/
+/-- **`[-1]` is the negation isogeny.** -/
 @[simp]
 theorem mulByIntIsogeny_neg_one (h : psiFunctionField W (-1) ≠ 0) :
     mulByIntIsogeny W h = negIsogeny W :=
