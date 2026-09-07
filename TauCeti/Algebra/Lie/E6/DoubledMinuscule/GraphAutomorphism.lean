@@ -85,7 +85,7 @@ theorem graphRootPerm_inr (i : Fin 6) : graphRootPerm (.inr i) = .inr (graphPerm
   by simp [graphRootPerm]
 
 @[simp]
-theorem graphRootPerm_apply_apply (k : Fin 6 ⊕ Fin 6) :
+theorem graphRootPerm_graphRootPerm (k : Fin 6 ⊕ Fin 6) :
     graphRootPerm (graphRootPerm k) = k := by
   cases k <;> simp only [graphRootPerm_inl, graphRootPerm_inr]
   all_goals rw [← Equiv.Perm.mul_apply, ← pow_two, graphPermE6_sq, Equiv.Perm.one_apply]
@@ -488,7 +488,7 @@ theorem graphAutomorphism_sq : graphAutomorphism ^ 2 = 1 := by
   rw [graphAutomorphism, toralGraphAutomorphism]
   apply kostantToralNumberedSymmetryIso_pow_eq_one
   · funext k
-    exact graphRootPerm_apply_apply k
+    exact graphRootPerm_graphRootPerm k
   · exact graphPermE6_sq
 
 /-- Applying the graph automorphism twice is the identity on the doubled type-`E₆` carrier. -/
