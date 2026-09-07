@@ -101,6 +101,10 @@ open CategoryTheory Representation
 
 namespace TauCeti.ClassFieldTheory
 
+-- Provenance: the signatures of the two structures below, and of `level`, `rep`, `norm` and the
+-- cohomology carriers, follow the blueprint `Suggested.lean` of the Tau Ceti `ClassFieldTheory`
+-- roadmap (`TauCetiRoadmap/ClassFieldTheory/README.md` and `Suggested.lean`).
+
 attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
 /-! ### Formations and their levels -/
