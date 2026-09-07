@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
-public import TauCeti.Analysis.InnerProductSpace.SegmentDistIntegral
+public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SegmentDistIntegral
 
 /-!
 # The vertices of the Schwarz--Christoffel map
@@ -28,7 +28,7 @@ exponent `e j`, and the classical choice `e i = α i / π - 1` coming from an in
 `α i ∈ (0, 2 π)` satisfies `-1 < t` automatically; when several prevertices coincide their
 exponents add up, and `-1 < t` is then a genuine hypothesis on the sum.
 
-The quantitative heart is the segment estimate `TauCeti.integral_dist_rpow_segment_le`:
+The quantitative heart is the segment estimate `Complex.integral_dist_rpow_segment_le`:
 integrating `dist ⬝ p ^ u` along a segment of length `L` gives at most `2 / (u + 1) * L ^ (u + 1)`
 for `-1 < u ≤ 0`.  Fed into Mathlib's displacement bound
 `norm_sub_le_integral_of_norm_deriv_le_of_le` it turns into a Hölder bound
@@ -173,7 +173,7 @@ private theorem dist_schwarzChristoffelPrimitive_le (a e : ι → ℝ) (z₀ : U
     _ ≤ C * (2 / (u + 1) * ‖z - w‖ ^ (u + 1)) := by
         refine mul_le_mul_of_nonneg_left ?_ hC
         simpa only [Complex.real_smul] using
-          integral_dist_rpow_segment_le (p := p) (z := z) (w := w) hu hu0
+          Complex.integral_dist_rpow_segment_le (p := p) (z := z) (w := w) hu hu0
     _ = C * (2 / (u + 1)) * ‖z - w‖ ^ (u + 1) := by ring
 
 /-! ### Existence of the vertex -/

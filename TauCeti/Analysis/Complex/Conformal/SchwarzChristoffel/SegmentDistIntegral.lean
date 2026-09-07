@@ -12,8 +12,9 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 # Negative powers of the distance to a point, integrated along a segment
 
 A function with an algebraic singularity at a point `p` is still integrable along a segment
-passing arbitrarily close to `p`, provided the exponent is larger than `-1`.  This file proves
-the quantitative form of that statement in a real inner product space.
+passing arbitrarily close to `p`, provided the exponent is larger than `-1`. This file proves
+the quantitative form of that statement in `ℂ`, for use in the Schwarz--Christoffel boundary
+theory.
 
 The geometric input is that on the segment from `w` to `z`, parametrized by `[0, 1]`, the
 distance to `p` is at least the length of the segment times the distance of the parameter to a
@@ -24,9 +25,9 @@ the singularity contributes only the finite constant `2 / (u + 1)`.
 
 ## Main results
 
-* `TauCeti.exists_mem_Icc_mul_abs_sub_le_dist` -- the lower bound for the distance to `p` along
+* `Complex.exists_mem_Icc_mul_abs_sub_le_dist` -- the lower bound for the distance to `p` along
   a segment.
-* `TauCeti.integral_dist_rpow_segment_le` -- the arclength integral of `dist ⬝ p ^ u` along a
+* `Complex.integral_dist_rpow_segment_le` -- the arclength integral of `dist ⬝ p ^ u` along a
   segment of length `L` is at most `2 / (u + 1) * L ^ (u + 1)` when `-1 < u ≤ 0`.
 -/
 
@@ -34,21 +35,19 @@ public section
 
 open MeasureTheory RealInnerProductSpace Set
 
-namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+namespace Complex
 
 /-- On the segment from `w` to `z`, the distance to a point `p` is bounded below by the length of
 the segment times the distance of the parameter to a fixed parameter `c ∈ [0, 1]`.  Geometrically
 `c` is the foot of the perpendicular from `p`, clamped to the parameter interval. -/
-theorem exists_mem_Icc_mul_abs_sub_le_dist (p z w : E) :
+theorem exists_mem_Icc_mul_abs_sub_le_dist (p z w : ℂ) :
     ∃ c ∈ Icc (0 : ℝ) 1, ∀ s ∈ Icc (0 : ℝ) 1,
       ‖z - w‖ * |s - c| ≤ dist (w + s • (z - w)) p := by
   rcases eq_or_ne z w with rfl | hzw
   · exact ⟨0, ⟨le_rfl, zero_le_one⟩, fun s _ => by simp⟩
   have hL : (0 : ℝ) < ‖z - w‖ := norm_pos_iff.mpr (sub_ne_zero_of_ne hzw)
-  set A : E := w - p with hA
-  set B : E := z - w with hB
+  set A : ℂ := w - p with hA
+  set B : ℂ := z - w with hB
   set q : ℝ := ⟪A, B⟫ with hq
   set s₀ : ℝ := -q / ‖B‖ ^ 2 with hs₀
   have key : ∀ t : ℝ, ‖B‖ * |t - s₀| ≤ ‖A + t • B‖ := by
@@ -96,7 +95,7 @@ to `z`: the parameter integral over `[0, 1]` is multiplied by the length `‖z -
 The exponent range `-1 < u ≤ 0` is exactly the one in which the singularity of `dist ⬝ p ^ u` is
 integrable, and the bound `2 / (u + 1) * ‖z - w‖ ^ (u + 1)` is uniform in the position of `p`;
 in particular `p` is allowed to lie on the segment. -/
-theorem integral_dist_rpow_segment_le {p : E} {u : ℝ} (hu : -1 < u) (hu0 : u ≤ 0) {z w : E} :
+theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u ≤ 0) {z w : ℂ} :
     (∫ s in (0 : ℝ)..1, dist (w + s • (z - w)) p ^ u) * ‖z - w‖
       ≤ 2 / (u + 1) * ‖z - w‖ ^ (u + 1) := by
   have hu1 : (0 : ℝ) < u + 1 := by linarith
@@ -202,4 +201,4 @@ theorem integral_dist_rpow_segment_le {p : E} {u : ℝ} (hu : -1 < u) (hu0 : u �
         rw [Real.rpow_add hL, Real.rpow_one]
         ring
 
-end TauCeti
+end Complex
