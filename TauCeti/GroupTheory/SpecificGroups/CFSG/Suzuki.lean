@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
-public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB2
 
@@ -46,7 +45,6 @@ bookkeeping that remains of `L2` for this branch.
 
 * `TauCeti.SuzukiLieIndex.halfFrobenius`: the special isogeny of the ambient group.
 * `TauCeti.SuzukiLieIndex.steinberg`: its odd power `τ ^ (2m+1)`.
-* `TauCeti.SuzukiLieIndex.Group`: the candidate simple group of milestone `L3`.
 
 ## Main results
 
@@ -58,17 +56,12 @@ bookkeeping that remains of `L2` for this branch.
 * `TauCeti.SuzukiLieIndex.steinberg_steinberg`: the square of the Steinberg endomorphism is the
   `q`-power Frobenius.
 
-## The candidate group
-
-With the Steinberg map in hand the milestone `L3` recipe runs on this branch:
-`TauCeti.SuzukiLieIndex.Group` is the derived subgroup of its fixed points modulo the centre of
-that derived subgroup, and it carries a group instance.
-
 ## What is not here
 
-Nothing is proved finite, perfect or simple, the carrier is not claimed to be the pinned one
-milestone `L0` asks for, and Mathlib's separate `suzukiGroup` is not mentioned: relating the two is
-milestone `L4`.
+No fixed-point subgroup is formed, so no finite group appears: the milestone `L3` candidate is the
+derived subgroup of those fixed points modulo its centre, and that step is left to a follow-up.
+Nothing is proved finite, perfect or simple, and Mathlib's separate `suzukiGroup` is not
+mentioned.
 
 ## References
 
@@ -77,16 +70,6 @@ milestone `L4`.
 * *On the cohomology of the Ree groups and kernels of exceptional isogenies*,
   [arXiv:2108.06291](https://arxiv.org/abs/2108.06291), for the formulation `τ ^ 2 = Frob_p` and
   its odd powers.
-
-## Roadmap
-
-This advances milestone `L2`, "Suzuki--Ree Steinberg maps", of
-`TauCetiRoadmap/CFSGStatement/README.md`, on the Suzuki branch: that milestone owns "everything
-between that isogeny and a finite group", namely selecting the isogeny for a given index, checking
-that it is the one the roadmap's conventions describe, and taking the odd power. The isogeny itself
-is Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md` and is consumed rather than built here.
-The `²G₂` and `²F₄` branches, whose carriers need the characteristic-three and characteristic-two
-special isogenies of `G₂` and `F₄`, are untouched.
 -/
 public section
 
@@ -113,16 +96,6 @@ theorem halfFrobenius_def :
 theorem halfFrobenius_halfFrobenius (g : d.toRankTwoBLieIndex.AmbientGroup) :
     d.halfFrobenius (d.halfFrobenius g) = SpStd.frobenius 1 2 1 d.1.Closure g := by
   rw [halfFrobenius_def, SpStd.specialIsogeny_specialIsogeny]
-
-/-- The half-Frobenius as an element of the endomorphism monoid, where composition is the
-multiplication its odd powers are taken in. -/
-noncomputable def halfFrobeniusEnd : Monoid.End d.toRankTwoBLieIndex.AmbientGroup :=
-  d.halfFrobenius
-
-@[simp]
-theorem halfFrobeniusEnd_apply (g : d.toRankTwoBLieIndex.AmbientGroup) :
-    d.halfFrobeniusEnd g = d.halfFrobenius g :=
-  (rfl)
 
 private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.toRankTwoBLieIndex.AmbientGroup) :
     (⇑d.halfFrobenius)^[2 * k] g =
@@ -153,10 +126,13 @@ private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.toRankTwoBLieInde
 half-Frobenius, for `2m+1` the field exponent the index records. -/
 noncomputable def steinberg :
     d.toRankTwoBLieIndex.AmbientGroup →* d.toRankTwoBLieIndex.AmbientGroup :=
-  d.halfFrobeniusEnd ^ d.1.fieldExponent
+  HPow.hPow (α := Monoid.End d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius d.1.fieldExponent
 
 /-- The Steinberg endomorphism is the `fieldExponent`-th power of the half-Frobenius. -/
-theorem steinberg_def : d.steinberg = d.halfFrobeniusEnd ^ d.1.fieldExponent :=
+theorem steinberg_def :
+    d.steinberg =
+      HPow.hPow (α := Monoid.End d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius
+        d.1.fieldExponent :=
   (rfl)
 
 /-- The Steinberg endomorphism iterates the half-Frobenius `2m+1` times. -/
@@ -197,19 +173,5 @@ theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.1.Closure) 
     Equiv.apply_symm_apply, Equiv.apply_symm_apply, halfFrobenius_def,
     show (1 : Fin 2) = Fin.last 1 from rfl]
   exact SpStd.specialIsogeny_rootSubgroupPoints_inl_zero _ _
-
-/-! ## The classification candidate -/
-
-/-- **The candidate simple group of the Suzuki family `²B₂(2^(2m+1))`**: the derived subgroup of
-the fixed points of its Steinberg map, modulo the centre of that derived subgroup.
-
-This is the milestone `L3` recipe on the Suzuki branch, run on the rank-two type-`C` carrier.
-Nothing below asserts that it is finite, perfect, or simple, nor that the carrier is the pinned
-one milestone `L0` asks for, nor that it is Mathlib's `suzukiGroup`. -/
-noncomputable abbrev Group : Type := FixedPointCandidate d.steinberg
-
-/-- Milestone `L3` asks every valid branch to carry a group instance; the quotient construction
-supplies it. -/
-noncomputable example : _root_.Group d.Group := inferInstance
 
 end TauCeti.SuzukiLieIndex
