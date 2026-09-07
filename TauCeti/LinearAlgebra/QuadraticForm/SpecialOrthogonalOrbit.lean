@@ -57,7 +57,7 @@ private theorem exists_orthogonal_anisotropic (Q : QuadraticForm K V) (hQ : Q.No
     rw [htop, finrank_top] at hdim
     omega
   obtain ⟨z, hzorth, hzz⟩ :=
-    TauCeti.BilinForm.exists_mem_orthogonal_self_ne_zero B hB hBsymm W hWnondeg hWtop
+    LinearMap.BilinForm.exists_mem_orthogonal_self_ne_zero B hB hBsymm W hWnondeg hWtop
   refine ⟨z, ?_, ?_⟩
   · apply QuadraticMap.isOrtho_polarBilin.mp
     simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] using

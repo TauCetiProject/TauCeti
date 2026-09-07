@@ -70,7 +70,7 @@ section Field
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
 /-- A proper nondegenerate orthogonal complement contains a vector with nonzero self-pairing. -/
-theorem exists_mem_orthogonal_self_ne_zero
+theorem _root_.LinearMap.BilinForm.exists_mem_orthogonal_self_ne_zero
     [FiniteDimensional K V] [Invertible (2 : K)]
     (B : BilinForm K V) (hB : B.Nondegenerate)
     (hBsymm : B.IsSymm) (W : Submodule K V) (hW : (B.restrict W).Nondegenerate)

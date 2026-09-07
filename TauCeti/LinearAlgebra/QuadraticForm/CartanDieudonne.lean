@@ -60,7 +60,7 @@ private theorem exists_mem_subgroup_mul_eqOn_of_codim
         have hBsymm : B.IsSymm :=
           LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)
         obtain ⟨x, hxorth, hxx⟩ :=
-          TauCeti.BilinForm.exists_mem_orthogonal_self_ne_zero B hB hBsymm W hW htop
+          LinearMap.BilinForm.exists_mem_orthogonal_self_ne_zero B hB hBsymm W hW htop
         have hxQ : Q x ≠ 0 := by
           rwa [QuadraticMap.associated_eq_self_apply] at hxx
         let _ : Invertible (Q x) := (isUnit_iff_ne_zero.mpr hxQ).invertible
