@@ -82,9 +82,9 @@ no description of them is offered.
 
 ## References
 
-* `TauCetiRoadmap/CFSGStatement/README.md`, the human-authored blueprint that fixes the Steinberg
-  map and the attached group of each family, and its `Suggested.lean`, which states the two
-  equations identifying the upstream special isogeny.
+* `TauCetiRoadmap/CFSGStatement/README.md` and its `Suggested.lean`, which state the exponent
+  convention on the simple root subgroups, the relation `τ_X ^ 2 = Frob_p`, and the derived-subgroup
+  recipe for the attached group, all used here.
 * R. W. Carter, *Simple Groups of Lie Type*, §13.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
 * *On the cohomology of the Ree groups and kernels of exceptional isogenies*,
