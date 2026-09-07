@@ -232,13 +232,9 @@ theorem adeleFiltration_sup (D E : Divisor k F) :
     by_cases h : P.valuation (a P) ≤ WithZero.exp (D.coeff P)
     · simp [ha₁, h]
     · have hmax := mem_adeleFiltration_iff.mp ha P
-      rw [WeilDivisor.coeff_sup] at hmax
-      have hexp : WithZero.exp ((D.coeff P) ⊔ (E.coeff P)) =
-          WithZero.exp (D.coeff P) ⊔ WithZero.exp (E.coeff P) := by
-        rcases le_total (D.coeff P) (E.coeff P) with hle | hle
-        · rw [sup_eq_right.mpr hle, sup_eq_right.mpr (WithZero.exp_le_exp.mpr hle)]
-        · rw [sup_eq_left.mpr hle, sup_eq_left.mpr (WithZero.exp_le_exp.mpr hle)]
-      rw [hexp] at hmax
+      rw [WeilDivisor.coeff_sup,
+        Monotone.map_sup (fun _ _ hle ↦ WithZero.exp_le_exp.mpr hle) (D.coeff P) (E.coeff P)]
+        at hmax
       have : P.valuation (a P) ≤ WithZero.exp (E.coeff P) :=
         (le_sup_iff.mp hmax).resolve_left h
       simpa [ha₁, h] using this

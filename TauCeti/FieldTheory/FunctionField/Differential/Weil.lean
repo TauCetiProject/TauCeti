@@ -35,7 +35,8 @@ specialty, and are proved in `TauCeti/FieldTheory/FunctionField/Differential/Dim
 * `TauCeti.weilDifferentialSpaceMul` and `TauCeti.weilDifferentialSpaceModule`: its restriction
   to `Ω_F`, and the resulting `F`-vector space structure.
 * `TauCeti.repartitionDualMulRight`: that action with the linear form frozen, as the `k`-linear
-  map `F → Ω_F`, `x ↦ x · ω`.
+  map `F → Module.Dual k A_F`, `x ↦ x · ω`.  It restricts to a map `F → Ω_F` when `ω` is a Weil
+  differential, by `TauCeti.repartitionDualMul_mem_weilDifferentialSpace`.
 
 ## Main results
 
@@ -51,8 +52,8 @@ specialty, and are proved in `TauCeti/FieldTheory/FunctionField/Differential/Dim
   differs from a constant by one bounded by `D`.
 * `TauCeti.repartitionDualMul_inv_repartitionDualMul`: multiplying by a unit and then by its
   inverse restores the form, so the action of a nonzero function is invertible.
-* `TauCeti.repartitionDualMulRight_injective`: multiplication by a nonzero linear form is an
-  injective map `F → Ω_F`.
+* `TauCeti.repartitionDualMulRight_injective`: for a nonzero linear form `ω`, the map
+  `x ↦ x · ω` is injective.
 * `TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff`: for `z ∈ Fˣ`, a linear form
   lies in `Ω_F(D)` exactly when `z · ω` lies in `Ω_F(D + div z)`, so `Ω_F` is stable under the
   action (`TauCeti.repartitionDualMul_mem_weilDifferentialSpace`).
@@ -226,8 +227,10 @@ theorem repartitionDualMul_inv_repartitionDualMul (hF : IsFunctionField k F) {x 
   rw [← Module.End.mul_apply, ← map_mul, inv_mul_cancel₀ hx, map_one, Module.End.one_apply]
 
 /-- **Multiplication of a fixed linear form by a varying function**, as a `k`-linear map
-`F → Ω_F`: the map `x ↦ x · ω` obtained by freezing the second argument of
-`TauCeti.repartitionDualMul`.  For `ω ≠ 0` it is injective
+`F → Module.Dual k A_F`: the map `x ↦ x · ω` obtained by freezing the second argument of
+`TauCeti.repartitionDualMul`.  Here `ω` is an arbitrary `k`-linear form on `A_F`; when it is a
+Weil differential the map lands in `Ω_F`, by
+`TauCeti.repartitionDualMul_mem_weilDifferentialSpace`.  For `ω ≠ 0` it is injective
 (`TauCeti.repartitionDualMulRight_injective`), and Riemann–Roch is the computation of its image
 on a Riemann–Roch space. -/
 noncomputable def repartitionDualMulRight (hF : IsFunctionField k F)
@@ -241,7 +244,7 @@ theorem repartitionDualMulRight_apply (hF : IsFunctionField k F)
     repartitionDualMulRight hF ω x = repartitionDualMul hF x ω :=
   (rfl)
 
-/-- **Multiplication by a nonzero Weil differential is injective.** A function in the kernel is
+/-- **Multiplication by a nonzero linear form is injective.** A function in the kernel is
 either zero or a unit, and a unit can be cancelled by
 `TauCeti.repartitionDualMul_inv_repartitionDualMul`, forcing `ω = 0`. -/
 theorem repartitionDualMulRight_injective (hF : IsFunctionField k F)

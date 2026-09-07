@@ -34,6 +34,8 @@ the Riemann–Roch identity.
 
 ## Main definitions
 
+* `TauCeti.weilDifferentialDivisor`: **the divisor `(ω)` of a Weil differential** (Stichtenoth,
+  Definition 1.5.11), the greatest divisor bounding it.
 * `TauCeti.riemannRochSpaceEquivWeilDifferentialFiltration`: **the duality isomorphism**
   `L(W - D) ≃ Ω_F(D)`, `x ↦ x · ω` (Stichtenoth, Theorem 1.5.14).
 
@@ -46,8 +48,12 @@ the Riemann–Roch identity.
 * `TauCeti.exists_isGreatest_mem_weilDifferentialFiltration`: **the divisor of a nonzero Weil
   differential** — among the divisors bounding it there is a greatest (Stichtenoth,
   Proposition 1.5.11).
-* `TauCeti.mem_weilDifferentialFiltration_iff_le_of_isGreatest`: `ω ∈ Ω_F(D) ↔ D ≤ (ω)`, the
-  characteristic property of that divisor.
+* `TauCeti.mem_weilDifferentialFiltration_iff_le_of_isGreatest` and
+  `TauCeti.mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor`: `ω ∈ Ω_F(D) ↔ D ≤ (ω)`,
+  the characteristic property of that divisor.
+* `TauCeti.weilDifferentialDivisor_repartitionDualMul`: **the transformation law**
+  `(z · ω) = div z + (ω)` (Stichtenoth, Proposition 1.5.13), which is what makes the class of
+  `(ω)` — the canonical class — independent of `ω`.
 * `TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff_mem_riemannRochSpace`: the
   membership `x · ω ∈ Ω_F(D) ↔ x ∈ L(W - D)` that carries the theorem.
 * `TauCeti.map_riemannRochSpace_repartitionDualMulRight` and
@@ -62,7 +68,6 @@ the Riemann–Roch identity.
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Section I.5, in particular Proposition 1.5.11, Theorem 1.5.14 and Theorem 1.5.15.
-* [The algebraic curves roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/AlgebraicCurves/README.md).
 -/
 
 public section
@@ -140,6 +145,67 @@ theorem mem_weilDifferentialFiltration_iff_le_of_isGreatest
     (hW : IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W) (D : Divisor k F) :
     ω ∈ weilDifferentialFiltration D ↔ D ≤ W :=
   ⟨fun h ↦ hW.2 h, fun h ↦ weilDifferentialFiltration_antitone h hW.1⟩
+
+open Classical in
+/-- **The divisor `(ω)` of a Weil differential** (Stichtenoth, Definition 1.5.11): the greatest
+divisor bounding `ω` when there is one, and `0` otherwise.  For a nonzero Weil differential over
+an exact constant field the greatest divisor does exist, by
+`TauCeti.exists_isGreatest_mem_weilDifferentialFiltration`, and
+`TauCeti.isGreatest_weilDifferentialDivisor` identifies it with this one; the junk value in the
+remaining cases is what lets the divisor be a function of `ω` alone. -/
+noncomputable def weilDifferentialDivisor (ω : Module.Dual k ↥(repartitionSpace k F)) :
+    Divisor k F :=
+  if h : ∃ W : Divisor k F, IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W then
+    h.choose else 0
+
+/-- The divisor of a nonzero Weil differential is indeed the greatest divisor bounding it. -/
+theorem isGreatest_weilDifferentialDivisor (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) :
+    IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D}
+      (weilDifferentialDivisor ω) := by
+  have h := exists_isGreatest_mem_weilDifferentialFiltration hF hex hmem hω
+  rw [weilDifferentialDivisor, dite_eq_left h]
+  exact h.choose_spec
+
+/-- **The characteristic property of `(ω)`**: a nonzero Weil differential is bounded by `D`
+exactly when `D ≤ (ω)`. -/
+theorem mem_weilDifferentialFiltration_iff_le_weilDifferentialDivisor (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) (D : Divisor k F) :
+    ω ∈ weilDifferentialFiltration D ↔ D ≤ weilDifferentialDivisor ω :=
+  mem_weilDifferentialFiltration_iff_le_of_isGreatest
+    (isGreatest_weilDifferentialDivisor hF hex hmem hω) D
+
+/-- **The transformation law `(z · ω) = div z + (ω)`** (Stichtenoth, Proposition 1.5.13): the
+divisor of a Weil differential changes by a principal divisor when the differential is multiplied
+by a nonzero function, so the class of `(ω)` in the divisor class group — the canonical class —
+does not depend on `ω`.
+
+Multiplication translates the filtration by `div z`
+(`TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff`), so it carries the divisors
+bounding `ω` bijectively onto those bounding `z · ω`, hence greatest element to greatest
+element. -/
+theorem weilDifferentialDivisor_repartitionDualMul (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) (z : Fˣ) :
+    weilDifferentialDivisor (repartitionDualMul hF (z : F) ω) =
+      Divisor.principal hF z + weilDifferentialDivisor ω := by
+  have hW := isGreatest_weilDifferentialDivisor hF hex hmem hω
+  have hz0 : repartitionDualMul hF (z : F) ω ≠ 0 := fun h ↦ hω (by
+    rw [← repartitionDualMul_inv_repartitionDualMul hF (Units.ne_zero z) ω, h, map_zero])
+  refine (isGreatest_weilDifferentialDivisor hF hex
+    (repartitionDualMul_mem_weilDifferentialSpace hF _ hmem) hz0).unique ⟨?_, fun D hD ↦ ?_⟩
+  · have h := (repartitionDualMul_mem_weilDifferentialFiltration_iff hF z
+      (D := weilDifferentialDivisor ω) (ω := ω)).mpr hW.1
+    rwa [add_comm] at h
+  · have h := (repartitionDualMul_mem_weilDifferentialFiltration_iff hF z⁻¹
+      (D := D) (ω := repartitionDualMul hF (z : F) ω)).mpr hD
+    have hcancel : repartitionDualMul hF ((z⁻¹ : Fˣ) : F) (repartitionDualMul hF (z : F) ω) = ω :=
+      by simp
+    rw [hcancel, Divisor.principal_inv, ← sub_eq_add_neg] at h
+    rw [add_comm]
+    exact sub_le_iff_le_add.mp (hW.2 h)
 
 /-! ### The Riemann–Roch theorem -/
 
@@ -256,7 +322,8 @@ theorem exists_isRiemannRochDivisor (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) :
     ∃ W : Divisor k F, W.IsRiemannRochDivisor (genus k F) := by
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
-  obtain ⟨W, hW⟩ := exists_isGreatest_mem_weilDifferentialFiltration hF hex hωmem hω0
-  exact ⟨W, isRiemannRochDivisor_of_isGreatest_mem_weilDifferentialFiltration hF hex hω0 hW⟩
+  exact ⟨weilDifferentialDivisor ω,
+    isRiemannRochDivisor_of_isGreatest_mem_weilDifferentialFiltration hF hex hω0
+      (isGreatest_weilDifferentialDivisor hF hex hωmem hω0)⟩
 
 end TauCeti
