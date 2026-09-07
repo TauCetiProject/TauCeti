@@ -147,7 +147,8 @@ private theorem shortRootUnit_eq (t : K) :
     (show (0 : Fin (1 + 1)) ≠ 1 by decide) rfl next_zero t]
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin,
-    rootSubgroupPoints_inl_of_ne_last 1 0 zero_ne_last (Multiplicative.ofAdd t)]
+    rootSubgroupPoints_inl_of_ne_last_eq_differenceShortRootUnit 1 0 zero_ne_last
+      (Multiplicative.ofAdd t)]
   rfl
 
 omit [CharP K 2] in
@@ -158,7 +159,7 @@ private theorem longRootUnit_eq (t : K) :
   rw [← last_one]
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin,
-    rootSubgroupPoints_inl_last 1 (Multiplicative.ofAdd t)]
+    rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit 1 (Multiplicative.ofAdd t)]
   rfl
 
 /-- The isogeny carries the short simple root subgroup to the long one, squaring the parameter. -/
@@ -195,7 +196,8 @@ private theorem negShortRootUnit_eq (t : K) :
     (show (1 : Fin (1 + 1)) ≠ 0 by decide) next_zero rfl t]
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin,
-    rootSubgroupPoints_inr_of_ne_last 1 0 zero_ne_last (Multiplicative.ofAdd t)]
+    rootSubgroupPoints_inr_of_ne_last_eq_differenceShortRootUnit 1 0 zero_ne_last
+      (Multiplicative.ofAdd t)]
   rfl
 
 omit [CharP K 2] in
@@ -206,7 +208,7 @@ private theorem negLongRootUnit_eq (t : K) :
   rw [← last_one]
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin,
-    rootSubgroupPoints_inr_last 1 (Multiplicative.ofAdd t)]
+    rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit 1 (Multiplicative.ofAdd t)]
   rfl
 
 /-- The isogeny on the negative short simple root subgroup. -/
