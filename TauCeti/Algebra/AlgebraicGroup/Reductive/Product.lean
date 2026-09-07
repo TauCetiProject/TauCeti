@@ -199,10 +199,9 @@ theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
     have hi : (FiniteTypeCommHopfAlgCat.toBialgHom
         (FiniteTypeCommHopfAlgCat.includeLeft Hbar Kbar)).toAlgHom =
         Algebra.TensorProduct.includeLeft := by
-      apply AlgHom.ext
-      intro x
-      exact (FiniteTypeCommHopfAlgCat.includeLeft_apply Hbar Kbar x).trans
-        (Algebra.TensorProduct.includeLeft_apply x).symm
+      change (Bialgebra.TensorProduct.includeLeft (R := AlgebraicClosure k)
+        (H₁ := Hbar) (H₂ := Kbar)).toAlgHom = Algebra.TensorProduct.includeLeft
+      exact Bialgebra.TensorProduct.includeLeft_toAlgHom
     rw [hi] at h
     apply AlgHom.ext
     intro x
@@ -215,10 +214,9 @@ theorem tensorProduct (H K : FiniteTypeCommHopfAlgCat.{u, u} k)
     have hi : (FiniteTypeCommHopfAlgCat.toBialgHom
         (FiniteTypeCommHopfAlgCat.includeRight Hbar Kbar)).toAlgHom =
         Algebra.TensorProduct.includeRight := by
-      apply AlgHom.ext
-      intro x
-      exact (FiniteTypeCommHopfAlgCat.includeRight_apply Hbar Kbar x).trans
-        (Algebra.TensorProduct.includeRight_apply x).symm
+      change (Bialgebra.TensorProduct.includeRight (R := AlgebraicClosure k)
+        (H₁ := Hbar) (H₂ := Kbar)).toAlgHom = Algebra.TensorProduct.includeRight
+      exact Bialgebra.TensorProduct.includeRight_toAlgHom
     rw [hi] at h
     apply AlgHom.ext
     intro x
