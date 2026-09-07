@@ -19,10 +19,8 @@ O(GL₂ₘ) ⟶ O(Sp₂ₘ).
 ```
 
 The representation is faithful in every rank. Over a field it is simple whenever `m` is
-positive. The simplicity proof uses the explicit symplectic root elements: a long-root
-transvection extracts a coordinate basis vector from any nonzero vector in an invariant
-subspace, the opposite long root supplies its symplectic partner, and difference-root elements
-move that pair through all coordinates.
+positive. Its functor-of-points action is multiplication by the corresponding symplectic matrix,
+so every subcomodule is stable under symplectic matrices.
 
 ## Main declarations
 
@@ -37,13 +35,8 @@ move that pair through all coordinates.
 
 * J. S. Milne, *Algebraic Groups* (2017), §§2.3 and 24.6.
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
-* `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule`.
-
-The construction, faithfulness proof, point-action identification, and invariant-subspace
-stability argument adapt the corresponding special-linear standard-comodule development.
-
-This supplies the faithful simple representation used to prove the `Sp₂ₘ` worked example
-reductive in Layer 6 of the ReductiveGroups roadmap.
+* `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.StandardComodule`, for the parallel
+  corestriction, faithfulness, point-action, and subcomodule-stability arguments.
 -/
 
 public section
@@ -59,7 +52,7 @@ variable (R : Type u) [CommRing R] (m : ℕ)
 
 /-- The standard right comodule of the symplectic coordinate Hopf algebra, obtained by
 corestricting the standard `GL₂ₘ`-comodule along the symplectic quotient map. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def standardComodule :
     Comodule R (coordinateHopfAlgebra R m) (Fin (m + m) → R) :=
   let _ := GeneralLinear.standardComodule R (m + m)
@@ -69,29 +62,20 @@ attribute [local instance] GeneralLinear.standardComodule standardComodule
 
 /-- The standard symplectic coaction is the standard general-linear coaction followed by the
 quotient map on the coordinate factor. -/
-@[simp]
 theorem standardComodule_coact :
     let _ := GeneralLinear.standardComodule R (m + m)
-    Comodule.corestrictCoact
-        (R := R) (C := GeneralLinear.coordinateHopfAlgebra R (m + m))
-        (D := coordinateHopfAlgebra R m) (M := Fin (m + m) → R)
-        (Bialgebra.Quotient.mkBialgHom (R := R)
-          (definingHopfIdeal R m).toIdeal).toCoalgHom =
+    Comodule.coact (self := standardComodule R m) =
       TensorProduct.map LinearMap.id
           (Bialgebra.Quotient.mkBialgHom (R := R)
             (definingHopfIdeal R m).toIdeal).toLinearMap ∘ₗ
         GeneralLinear.standardCoact R (m + m) := by
+  rw [show Comodule.coact (self := standardComodule R m) =
+      Comodule.corestrictCoact (coordinateMap R m).hom.toCoalgHom from rfl,
+    coordinateMap_def, CommHopfAlgCat.hom_mkQuotient]
   apply LinearMap.ext
   intro v
   rw [Comodule.corestrictCoact_apply, LinearMap.comp_apply,
     GeneralLinear.standardComodule_coact]
-
-/-- The coaction bundled by `standardComodule` is its defining corestriction. -/
-@[simp]
-theorem standardComodule_coact_eq_corestrictCoact :
-    (standardComodule R m).coact =
-      Comodule.corestrictCoact (coordinateMap R m).hom.toCoalgHom :=
-  rfl
 
 /-- **The standard comodule of `Sp₂ₘ` is faithful.** -/
 theorem isFaithful_standardComodule :
