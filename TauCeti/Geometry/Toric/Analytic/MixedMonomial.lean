@@ -260,80 +260,6 @@ theorem prod_torusTorus {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
       (Matrix.fromBlocks A.torusTorus 0 0 B.torusTorus).submatrix
         finSumFinEquiv.symm finSumFinEquiv.symm := (rfl)
 
-private theorem prod_boundaryBoundary_apply₁₁ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin k₁') (j : Fin k₁) :
-    (A.prod B).boundaryBoundary (Fin.castAdd k₂' i) (Fin.castAdd k₂ j) =
-      A.boundaryBoundary i j := by
-  simp [prod]
-
-private theorem prod_boundaryBoundary_apply₁₂ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin k₁') (j : Fin k₂) :
-    (A.prod B).boundaryBoundary (Fin.castAdd k₂' i) (Fin.natAdd k₁ j) = 0 := by
-  simp [prod]
-
-private theorem prod_boundaryBoundary_apply₂₁ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin k₂') (j : Fin k₁) :
-    (A.prod B).boundaryBoundary (Fin.natAdd k₁' i) (Fin.castAdd k₂ j) = 0 := by
-  simp [prod]
-
-private theorem prod_boundaryBoundary_apply₂₂ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin k₂') (j : Fin k₂) :
-    (A.prod B).boundaryBoundary (Fin.natAdd k₁' i) (Fin.natAdd k₁ j) =
-      B.boundaryBoundary i j := by
-  simp [prod]
-
-private theorem prod_boundaryTorus_apply₁₁ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin k₁') (j : Fin l₁) :
-    (A.prod B).boundaryTorus (Fin.castAdd k₂' i) (Fin.castAdd l₂ j) = A.boundaryTorus i j := by
-  simp [prod]
-
-private theorem prod_boundaryTorus_apply₁₂ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin k₁') (j : Fin l₂) :
-    (A.prod B).boundaryTorus (Fin.castAdd k₂' i) (Fin.natAdd l₁ j) = 0 := by
-  simp [prod]
-
-private theorem prod_boundaryTorus_apply₂₁ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin k₂') (j : Fin l₁) :
-    (A.prod B).boundaryTorus (Fin.natAdd k₁' i) (Fin.castAdd l₂ j) = 0 := by
-  simp [prod]
-
-private theorem prod_boundaryTorus_apply₂₂ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin k₂') (j : Fin l₂) :
-    (A.prod B).boundaryTorus (Fin.natAdd k₁' i) (Fin.natAdd l₁ j) = B.boundaryTorus i j := by
-  simp [prod]
-
-private theorem prod_torusTorus_apply₁₁ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin l₁') (j : Fin l₁) :
-    (A.prod B).torusTorus (Fin.castAdd l₂' i) (Fin.castAdd l₂ j) = A.torusTorus i j := by
-  simp [prod]
-
-private theorem prod_torusTorus_apply₁₂ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin l₁') (j : Fin l₂) :
-    (A.prod B).torusTorus (Fin.castAdd l₂' i) (Fin.natAdd l₁ j) = 0 := by
-  simp [prod]
-
-private theorem prod_torusTorus_apply₂₁ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin l₂') (j : Fin l₁) :
-    (A.prod B).torusTorus (Fin.natAdd l₁' i) (Fin.castAdd l₂ j) = 0 := by
-  simp [prod]
-
-private theorem prod_torusTorus_apply₂₂ {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ}
-    (A : MixedExponent k₁ l₁ k₁' l₁') (B : MixedExponent k₂ l₂ k₂' l₂')
-    (i : Fin l₂') (j : Fin l₂) :
-    (A.prod B).torusTorus (Fin.natAdd l₁' i) (Fin.natAdd l₁ j) = B.torusTorus i j := by
-  simp [prod]
-
 end MixedExponent
 
 /-! ### Composition of mixed monomial maps -/
@@ -427,16 +353,11 @@ theorem mixedMonomialMap_prod {k₁ l₁ k₁' l₁' k₂ l₂ k₂' l₂' : ℕ
         mixedMonomialMap B (mixedChartProdHomeomorph z).2) := by
   ext i <;>
     simp only [mixedChartProdHomeomorph_apply, mixedMonomialMap_fst_apply,
-      mixedMonomialMap_snd_apply, Fin.prod_univ_add,
-      MixedExponent.prod_boundaryBoundary_apply₁₁,
-      MixedExponent.prod_boundaryBoundary_apply₁₂,
-      MixedExponent.prod_boundaryBoundary_apply₂₁,
-      MixedExponent.prod_boundaryBoundary_apply₂₂,
-      MixedExponent.prod_boundaryTorus_apply₁₁, MixedExponent.prod_boundaryTorus_apply₁₂,
-      MixedExponent.prod_boundaryTorus_apply₂₁, MixedExponent.prod_boundaryTorus_apply₂₂,
-      MixedExponent.prod_torusTorus_apply₁₁, MixedExponent.prod_torusTorus_apply₁₂,
-      MixedExponent.prod_torusTorus_apply₂₁, MixedExponent.prod_torusTorus_apply₂₂,
-      pow_zero, zpow_zero, prod_const_one, mul_one, one_mul]
+      mixedMonomialMap_snd_apply, Fin.prod_univ_add, MixedExponent.prod,
+      Matrix.submatrix_apply, finSumFinEquiv_symm_apply_castAdd,
+      finSumFinEquiv_symm_apply_natAdd, Matrix.fromBlocks_apply₁₁,
+      Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂,
+      Matrix.zero_apply, pow_zero, zpow_zero, prod_const_one, mul_one, one_mul]
 
 /-! ### Holomorphy -/
 
