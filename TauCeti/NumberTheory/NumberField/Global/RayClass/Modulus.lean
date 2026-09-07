@@ -100,12 +100,6 @@ infinite part of `𝔪` is contained in that of `𝔫`, so that the congruence c
 instance : Dvd (Modulus K) :=
   ⟨fun 𝔪 𝔫 ↦ 𝔪.finitePart ∣ 𝔫.finitePart ∧ 𝔪.infinitePart ⊆ 𝔫.infinitePart⟩
 
-/-- A modulus divides another exactly when its finite part divides the other's finite part and its
-infinite part is contained in the other's infinite part. -/
-@[simp] theorem dvd_iff {𝔪 𝔫 : Modulus K} :
-    𝔪 ∣ 𝔫 ↔ 𝔪.finitePart ∣ 𝔫.finitePart ∧ 𝔪.infinitePart ⊆ 𝔫.infinitePart :=
-  Iff.rfl
-
 @[refl]
 theorem dvd_refl (𝔪 : Modulus K) : 𝔪 ∣ 𝔪 := ⟨_root_.dvd_refl _, Finset.Subset.refl _⟩
 
@@ -378,7 +372,7 @@ one built away from a finite set of primes; its membership predicate is `Modulus
 noncomputable abbrev integralIdealsPrimeTo (𝔪 : Modulus K) : Submonoid (Ideal (𝓞 K)) :=
   NumberFieldArithmetic.integralIdealsAway (K := K) 𝔪.support
 
-theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
+@[simp] theorem Modulus.mem_integralIdealsPrimeTo {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     I ∈ integralIdealsPrimeTo 𝔪 ↔ 𝔪.IsCoprimeTo I :=
   NumberFieldArithmetic.mem_integralIdealsAway_iff.trans Modulus.isCoprimeTo_iff.symm
 
