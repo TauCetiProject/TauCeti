@@ -43,6 +43,9 @@ zero, because `ε` annihilates `S`. Hence `Extⁿ_A(S, S) ≅ k` as a `k`-module
 
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Cambridge Studies in Advanced
   Mathematics 38, Cambridge University Press (1994), Section 2.5 and Chapter 4.
+* The Tau Ceti `GrothendieckEulerForms` roadmap blueprint, `README.md`, section "The dual
+  numbers", which writes down the periodic resolution `⋯ ⟶ A --ε--> A --ε--> A ⟶ S ⟶ 0` and the
+  computation `Extⁿ_A(S, S) ≅ k` followed here.
 -/
 
 open CategoryTheory CategoryTheory.Abelian CategoryTheory.Limits TrivSqZeroExt DualNumber
@@ -367,6 +370,7 @@ theorem extDualNumberResidueEquiv_succ (n : ℕ)
   rw [extDualNumberResidueEquiv, LinearEquiv.trans_apply]
 
 /-- Over a field, every `Extⁿ(S, S)` of the residue field `S` of `k[ε]` is one-dimensional. -/
+@[simp]
 theorem finrank_ext_dualNumberResidue {k : Type u} [Field k] (n : ℕ) :
     Module.finrank k (Ext.{u} (dualNumberResidue k) (dualNumberResidue k) n) = 1 := by
   rw [(extDualNumberResidueEquiv k n).finrank_eq, Module.finrank_self]
