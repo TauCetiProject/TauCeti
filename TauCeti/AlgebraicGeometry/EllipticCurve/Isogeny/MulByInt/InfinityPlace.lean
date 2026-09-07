@@ -78,16 +78,9 @@ variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
 
 namespace Isogeny
 
--- The canonical `mk W (C p) = algebraMap _ _ p`, exposed in `Affine/CoordinateRing.lean` for
--- this use. It sits under TauCeti's own `WeierstrassCurve.Affine` root, not Mathlib's, so it is
--- opened by name rather than reached through the `Affine.` prefix used elsewhere here.
+-- `mk_C_eq_algebraMap` sits under TauCeti's own `WeierstrassCurve.Affine` root, not Mathlib's,
+-- so it is opened by name rather than reached through the `Affine.` prefix used elsewhere here.
 open TauCeti.WeierstrassCurve.Affine.CoordinateRing (mk_C_eq_algebraMap)
-
-/-- `Φₙ` at the generic point is the image of the univariate `Φₙ`. -/
-theorem phiFunctionField_eq_algebraMap (n : ℤ) :
-    phiFunctionField W n = algebraMap F[X] W.FunctionField (W.Φ n) := by
-  rw [phiFunctionField_def, Affine.CoordinateRing.mk_φ,
-    mk_C_eq_algebraMap, ← IsScalarTower.algebraMap_apply]
 
 /-- **`Φₙ` has a pole of order `2n²` at infinity.** Its degree is `n²` and it is nonzero for
 every `n`, both without any hypothesis on the characteristic. -/
@@ -143,10 +136,12 @@ theorem infinityPlace_mulByIntX {n : ℤ} (hnF : (n : F) ≠ 0) :
 at infinity of the `x`-coordinate. -/
 theorem infinityPlace_mulByIntX_eq_infinityPlace_genericX {n : ℤ} (hnF : (n : F) ≠ 0) :
     W.infinityPlace (mulByIntX W n) = W.infinityPlace (W.genericX) := by
-  -- `infinityPlace.X` is stated on the two-step `F[X] → CoordinateRing → FunctionField` image,
-  -- which is exactly `genericX_def`'s right-hand side; collapsing the tower first would destroy
-  -- the pattern it matches on.
-  rw [infinityPlace_mulByIntX W hnF, Affine.genericX_def, Affine.infinityPlace.X]
+  -- `genericX` is represented by `mk (C X)`, while `infinityPlace.X` is stated on the two-step
+  -- `F[X] → CoordinateRing → FunctionField` image.  Pass through the induced polynomial-algebra
+  -- map, then expand the scalar tower to recover the latter form.
+  rw [infinityPlace_mulByIntX W hnF, Affine.genericX_eq_algebraMap,
+    IsScalarTower.algebraMap_apply F[X] W.CoordinateRing W.FunctionField,
+    Affine.infinityPlace.X]
 
 end Isogeny
 

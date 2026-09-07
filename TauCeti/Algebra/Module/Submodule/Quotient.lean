@@ -5,13 +5,16 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.LinearAlgebra.Isomorphisms
+public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
 # Submodule intervals and quotients
 
 This file records the generic order correspondence between a submodule interval and submodules of
-the associated quotient.
+the associated quotient, and the identifications of *subquotients* `↥B ⧸ A` that a linear map
+induces when it is injective or surjective.
 
 ## Main declarations
 
@@ -19,6 +22,18 @@ the associated quotient.
   along the inclusion.
 * `TauCeti.iccOrderIsoQuotientOfMapEq`: the interval/quotient correspondence for a
   specified copy of the lower endpoint inside the upper endpoint.
+* `TauCeti.mapSubquotientEquivOfInjective`: an injective linear map identifies the subquotient of
+  the images of two submodules with the subquotient of the two submodules themselves.
+* `TauCeti.comapSubquotientEquivOfSurjective`: a surjective linear map identifies the subquotient
+  of the preimages of two submodules with the subquotient of the two submodules themselves.
+* `Submodule.quotientEquivPiZModOfBasis`: a quotient by a submodule with a specified diagonal
+  basis is a product of cyclic groups with the specified diagonal orders.
+
+## References
+
+The diagonal quotient construction follows Mathlib's
+`Submodule.quotientEquivPiSpan` and `Submodule.quotientEquivPiZMod`, with the bases and diagonal
+coefficients made explicit so an externally normalized Smith form can be retained.
 -/
 
 public section
@@ -98,5 +113,197 @@ theorem mem_iccOrderIsoQuotientOfMapEq_symm_apply_iff {p q : Submodule R M}
       ((iccOrderIsoQuotientOfMapEq r hr).symm Q) x).symm
 
 end QuotientInterval
+
+section Subquotient
+
+variable {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- An injective linear map carries the trace of `A` in `B` onto the trace of `A.map f` in
+`B.map f`, so it descends to the subquotients. -/
+theorem map_equivMapOfInjective_comap_subtype (f : M →ₗ[R] N) (hf : Function.Injective f)
+    (A B : Submodule R M) :
+    Submodule.map ((Submodule.equivMapOfInjective f hf B : ↥B ≃ₗ[R] ↥(B.map f)) :
+        ↥B →ₗ[R] ↥(B.map f)) (Submodule.comap B.subtype A)
+      = Submodule.comap (B.map f).subtype (A.map f) := by
+  refine Submodule.map_injective_of_injective (B.map f).injective_subtype ?_
+  have hcomp : (B.map f).subtype ∘ₗ
+      ((Submodule.equivMapOfInjective f hf B : ↥B ≃ₗ[R] ↥(B.map f)) : ↥B →ₗ[R] ↥(B.map f))
+        = f ∘ₗ B.subtype :=
+    LinearMap.ext fun x => Submodule.coe_equivMapOfInjective_apply f hf B x
+  rw [← Submodule.map_comp, hcomp, Submodule.map_comp, Submodule.map_comap_subtype,
+    Submodule.map_comap_subtype, Submodule.map_inf f hf]
+
+/-- **An injective linear map identifies subquotients.**  For arbitrary submodules `A`, `B` of `M`
+the subquotient cut out by the images `A.map f`, `B.map f` is the subquotient cut out by `A` and
+`B` themselves; for `A ≤ B` this reads `B.map f ⧸ A.map f ≃ₗ[R] B ⧸ A`. -/
+noncomputable def mapSubquotientEquivOfInjective (f : M →ₗ[R] N) (hf : Function.Injective f)
+    (A B : Submodule R M) :
+    (↥(B.map f) ⧸ Submodule.comap (B.map f).subtype (A.map f)) ≃ₗ[R]
+      (↥B ⧸ Submodule.comap B.subtype A) :=
+  (Submodule.Quotient.equiv _ _ (Submodule.equivMapOfInjective f hf B)
+    (map_equivMapOfInjective_comap_subtype f hf A B)).symm
+
+/-- `TauCeti.mapSubquotientEquivOfInjective` read on representatives: its inverse is induced by
+the restriction `Submodule.equivMapOfInjective` of `f` to `B`. -/
+@[simp]
+theorem mapSubquotientEquivOfInjective_symm_apply (f : M →ₗ[R] N) (hf : Function.Injective f)
+    (A B : Submodule R M) (x : ↥B) :
+    (mapSubquotientEquivOfInjective f hf A B).symm (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (Submodule.equivMapOfInjective f hf B x) := by
+  rw [mapSubquotientEquivOfInjective, LinearEquiv.symm_symm, Submodule.Quotient.equiv_apply,
+    Submodule.mapQ_apply, LinearEquiv.coe_coe]
+
+/-- `TauCeti.mapSubquotientEquivOfInjective` read on representatives, in the forward direction:
+it undoes the restriction `Submodule.equivMapOfInjective` of `f` to `B`. -/
+@[simp]
+theorem mapSubquotientEquivOfInjective_apply (f : M →ₗ[R] N) (hf : Function.Injective f)
+    (A B : Submodule R M) (x : ↥B) :
+    mapSubquotientEquivOfInjective f hf A B
+        (Submodule.Quotient.mk (Submodule.equivMapOfInjective f hf B x)) =
+      Submodule.Quotient.mk x := by
+  rw [← mapSubquotientEquivOfInjective_symm_apply f hf A B x,
+    LinearEquiv.apply_symm_apply]
+
+/-- The kernel of `x ↦ f x mod A`, on the preimage of `B`, is the trace of the preimage of `A`. -/
+theorem ker_mkQ_comp_submoduleComap (f : M →ₗ[R] N) (A B : Submodule R N) :
+    LinearMap.ker ((Submodule.comap B.subtype A).mkQ ∘ₗ f.submoduleComap B)
+      = Submodule.comap (B.comap f).subtype (A.comap f) := by
+  ext x
+  simp
+
+/-- **A surjective linear map identifies subquotients.**  For arbitrary submodules `A`, `B` of `N`
+the subquotient cut out by the preimages `A.comap f`, `B.comap f` is the subquotient cut out by `A`
+and `B` themselves; for `A ≤ B` this reads `B.comap f ⧸ A.comap f ≃ₗ[R] B ⧸ A`. -/
+noncomputable def comapSubquotientEquivOfSurjective (f : M →ₗ[R] N) (hf : Function.Surjective f)
+    (A B : Submodule R N) :
+    (↥(B.comap f) ⧸ Submodule.comap (B.comap f).subtype (A.comap f)) ≃ₗ[R]
+      (↥B ⧸ Submodule.comap B.subtype A) :=
+  (Submodule.quotEquivOfEq _ _ (ker_mkQ_comp_submoduleComap f A B).symm).trans
+    (LinearMap.quotKerEquivOfSurjective _
+      ((Submodule.mkQ_surjective _).comp
+        (LinearMap.submoduleComap_surjective_of_surjective f B hf)))
+
+/-- `TauCeti.comapSubquotientEquivOfSurjective` read on representatives: it is induced by the
+restriction `LinearMap.submoduleComap` of `f` to the preimage of `B`. -/
+@[simp]
+theorem comapSubquotientEquivOfSurjective_apply (f : M →ₗ[R] N) (hf : Function.Surjective f)
+    (A B : Submodule R N) (x : ↥(B.comap f)) :
+    comapSubquotientEquivOfSurjective f hf A B (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (f.submoduleComap B x) := by
+  rw [comapSubquotientEquivOfSurjective, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk, LinearMap.comp_apply, Submodule.mkQ_apply]
+
+/-- `TauCeti.comapSubquotientEquivOfSurjective` read on representatives, in the inverse direction:
+it undoes the restriction `LinearMap.submoduleComap` of `f` to the preimage of `B`. -/
+@[simp]
+theorem comapSubquotientEquivOfSurjective_symm_apply (f : M →ₗ[R] N) (hf : Function.Surjective f)
+    (A B : Submodule R N) (x : ↥(B.comap f)) :
+    (comapSubquotientEquivOfSurjective f hf A B).symm
+        (Submodule.Quotient.mk (f.submoduleComap B x)) = Submodule.Quotient.mk x := by
+  rw [← comapSubquotientEquivOfSurjective_apply f hf A B x,
+    LinearEquiv.symm_apply_apply]
+
+end Subquotient
+
+section DiagonalQuotient
+
+open Module
+
+variable {M ι : Type*} [AddCommGroup M] [Finite ι]
+
+/-- A submodule with a diagonal basis relative to an ambient basis is cut out by divisibility
+of the ambient coordinates. -/
+private theorem mem_iff_dvd_repr_of_diagonal_basis {N : Submodule ℤ M}
+    (b : Basis ι ℤ M) (bN : Basis ι ℤ N) {a : ι → ℤ}
+    (hdiag : ∀ i, (bN i : M) = a i • b i) (x : M) :
+    x ∈ N ↔ ∀ i, a i ∣ b.repr x i := by
+  let _ := Fintype.ofFinite ι
+  rw [bN.mem_submodule_iff' (x := x)]
+  simp_rw [hdiag]
+  have hrepr : ∀ (c : ι → ℤ) (i),
+      b.repr (∑ j, c j • a j • b j) i = a i * c i := by
+    intro c i
+    simp only [← mul_smul, b.repr_sum_self, mul_comm]
+  constructor
+  · rintro ⟨c, rfl⟩ i
+    exact ⟨c i, hrepr c i⟩
+  · rintro ha
+    choose c hc using ha
+    exact ⟨c, b.ext_elem fun i ↦ Eq.trans (hc i) (hrepr c i).symm⟩
+
+/-- The coordinate isomorphism of an ambient basis carries a submodule with a diagonal basis onto
+the product of the principal ideals generated by the diagonal coefficients. -/
+private theorem map_equivFun_eq_pi_span (N : Submodule ℤ M)
+    (b : Basis ι ℤ M) (bN : Basis ι ℤ N) (a : ι → ℤ)
+    (hdiag : ∀ i, (bN i : M) = a i • b i) :
+    Submodule.map (b.equivFun : M →ₗ[ℤ] ι → ℤ) N =
+      Submodule.pi Set.univ fun i ↦ Ideal.span ({a i} : Set ℤ) := by
+  let _ := Fintype.ofFinite ι
+  ext x
+  simp only [Submodule.mem_map, Submodule.mem_pi, mem_iff_dvd_repr_of_diagonal_basis b bN hdiag,
+    Set.mem_univ, Ideal.mem_span_singleton, forall_true_left, LinearEquiv.coe_coe,
+    Basis.equivFun_apply]
+  constructor
+  · rintro ⟨y, hy, rfl⟩ i
+    exact hy i
+  · rintro hdvd
+    refine ⟨∑ i, x i • b i, fun i ↦ ?_, ?_⟩
+    · rw [b.repr_sum_self x]
+      exact hdvd i
+    · exact b.repr_sum_self x
+
+private noncomputable def coordinateQuotientEquiv (N : Submodule ℤ M)
+    (b : Basis ι ℤ M) (bN : Basis ι ℤ N) (a : ι → ℤ)
+    (hdiag : ∀ i, (bN i : M) = a i • b i) :
+    M ⧸ N ≃+ ((ι → ℤ) ⧸ (Submodule.pi Set.univ fun i ↦ Ideal.span ({a i} : Set ℤ))) :=
+  (Submodule.Quotient.equiv N _ b.equivFun
+    (map_equivFun_eq_pi_span N b bN a hdiag)).toAddEquiv
+
+private theorem coordinateQuotientEquiv_mk (N : Submodule ℤ M)
+    (b : Basis ι ℤ M) (bN : Basis ι ℤ N) (a : ι → ℤ)
+    (hdiag : ∀ i, (bN i : M) = a i • b i) (x : M) :
+    coordinateQuotientEquiv N b bN a hdiag (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (b.equivFun x) :=
+  rfl
+
+private noncomputable def quotientPiZModEquiv (a : ι → ℤ) :
+    ((ι → ℤ) ⧸ (Submodule.pi Set.univ fun i ↦ Ideal.span ({a i} : Set ℤ))) ≃+
+      ∀ i, ZMod (a i).natAbs :=
+  letI : Fintype ι := Fintype.ofFinite ι
+  letI : DecidableEq ι := Classical.decEq ι
+  (Submodule.quotientPi fun i ↦ Ideal.span ({a i} : Set ℤ)).toAddEquiv.trans
+    (AddEquiv.piCongrRight fun i ↦ (Int.quotientSpanEquivZMod (a i) : _ ≃+ _))
+
+private theorem quotientPiZModEquiv_mk_apply (a : ι → ℤ) (x : ι → ℤ) (i : ι) :
+    quotientPiZModEquiv a (Submodule.Quotient.mk x) i =
+      ((x i : ℤ) : ZMod (a i).natAbs) :=
+  rfl
+
+/-- A quotient by a submodule with a specified diagonal basis is a product of cyclic groups.
+
+Unlike `Submodule.quotientEquivPiZMod`, this construction takes both bases and their diagonal
+coefficients as input. This lets a caller retain a normalized choice of Smith invariant factors
+rather than using the coefficients selected internally by Mathlib's basis-level Smith form. -/
+noncomputable def _root_.Submodule.quotientEquivPiZModOfBasis (N : Submodule ℤ M)
+    (b : Basis ι ℤ M) (bN : Basis ι ℤ N) (a : ι → ℤ)
+    (hdiag : ∀ i, (bN i : M) = a i • b i) :
+    M ⧸ N ≃+ ∀ i, ZMod (a i).natAbs :=
+  letI : Fintype ι := Fintype.ofFinite ι
+  letI : DecidableEq ι := Classical.decEq ι
+  (coordinateQuotientEquiv N b bN a hdiag).trans (quotientPiZModEquiv a)
+
+/-- The diagonal quotient equivalence sends a representative to its coordinates modulo the
+corresponding diagonal coefficients. -/
+@[simp]
+theorem _root_.Submodule.quotientEquivPiZModOfBasis_mk_apply (N : Submodule ℤ M)
+    (b : Basis ι ℤ M) (bN : Basis ι ℤ N) (a : ι → ℤ)
+    (hdiag : ∀ i, (bN i : M) = a i • b i) (x : M) (i : ι) :
+    N.quotientEquivPiZModOfBasis b bN a hdiag (Submodule.Quotient.mk x) i =
+      ((b.repr x i : ℤ) : ZMod (a i).natAbs) := by
+  rw [Submodule.quotientEquivPiZModOfBasis, AddEquiv.trans_apply,
+    coordinateQuotientEquiv_mk, quotientPiZModEquiv_mk_apply]
+  rfl
+
+end DiagonalQuotient
 
 end TauCeti

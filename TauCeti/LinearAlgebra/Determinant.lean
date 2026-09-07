@@ -9,10 +9,8 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 import TauCeti.LinearAlgebra.BilinearForm.Multilinear
 
-public section
-
 /-!
-# Determinant transformation laws
+# Determinant transformation laws, and determinants of updated rows
 
 Precomposing an alternating form of top degree with an endomorphism `φ` multiplies it by
 `LinearMap.det φ`, and — the direction that is actually used — a *nonzero* form merely known to be
@@ -28,6 +26,11 @@ here is that every top-degree alternating form is a multiple of `b.det`
 makes the converse available for a form supplied by something other than a basis, such as a
 pairing.
 
+The file also records one identity for the determinant of a matrix with one row replaced,
+alongside Mathlib's `Matrix.det_updateRow_add` and `Matrix.det_updateRow_smul`: Jacobi's formula
+in row form, that rescaling one row entry by entry along a fixed vector of factors and summing the
+results over the rows multiplies the determinant by the total of the factors.
+
 ## Main results
 
 * `AlternatingMap.eq_basis_det_smulRight`: `ω = b.det.smulRight (ω b)` for `ω` of top degree.
@@ -36,8 +39,11 @@ pairing.
   assuming `NoZeroSMulDivisors R N`.
 * `LinearMap.IsAlt.compl₁₂_self_eq_det_smul` and `LinearMap.det_eq_of_compl₁₂_self_eq_smul`: the
   same two statements for an alternating bilinear form on a module of rank two.
-* `TauCeti.Matrix.detRowAlternating_mulVec`: multiplication by a square matrix scales the
+* `Matrix.detRowAlternating_mulVec`: multiplication by a square matrix scales the
   standard-basis determinant form by the matrix determinant.
+* `Matrix.sum_det_updateRow_mul_row`: Jacobi's formula for a determinant, in row form.
+* `Matrix.det_mul_column_intCast`: scaling every row `i` of an integer matrix by `d i`
+  multiplies the determinant by `∏ i, d i`, over any commutative ring.
 
 ## Implementation notes
 
@@ -63,9 +69,11 @@ The four transformation and recovery laws are ported from the AINTLIB `HasseWeil
 (Apache-2.0), revision `513e83879e2f`, file `HasseWeil/WeilPairing/PairingDet.lean`, declarations
 `alternating_comp_eq_det_smul` and `det_eq_of_alternating_scaling`. The source states them over a
 field, for a scalar-valued form, evaluated at a basis, and proves the first by expanding `φ (b j)`
-in coordinates; none of that is reproduced here. `TauCeti.Matrix.detRowAlternating_mulVec` predates
+in coordinates; none of that is reproduced here. `Matrix.detRowAlternating_mulVec` predates
 that port and is not from the source.
 -/
+
+public section
 
 open Module
 
@@ -178,15 +186,16 @@ open Matrix
 
 universe u
 
-variable (k : Type u)
-
-namespace Matrix
+-- `k` is implicit so that `M` is the first explicit argument: that is what makes the name
+-- `Matrix.detRowAlternating_mulVec` usable as `M.detRowAlternating_mulVec`.
+variable {k : Type u}
 
 /-- Multiplication by a square matrix scales the standard-basis determinant form by its
 determinant. This is `AlternatingMap.compLinearMap_eq_det_smul` at `ω = (Pi.basisFun k ι).det`,
 in matrix vocabulary. -/
 @[simp]
-theorem detRowAlternating_mulVec [CommRing k] {ι : Type*} [Fintype ι] [DecidableEq ι]
+theorem _root_.Matrix.detRowAlternating_mulVec [CommRing k] {ι : Type*} [Fintype ι]
+    [DecidableEq ι]
     (M : Matrix ι ι k) (v : ι → ι → k) :
     Matrix.detRowAlternating (fun i => M *ᵥ v i) =
       M.det * Matrix.detRowAlternating v := by
@@ -196,6 +205,50 @@ theorem detRowAlternating_mulVec [CommRing k] {ι : Type*} [Fintype ι] [Decidab
     LinearMap.det_toLin'] using
     (Module.Basis.det_comp (Pi.basisFun k ι) (Matrix.toLin' M) v)
 
-end Matrix
-
 end TauCeti
+
+namespace Matrix
+
+/-- **Jacobi's formula for a determinant, in row form.**  Rescale one row of a matrix entry by
+entry along a fixed vector of factors, and sum the resulting determinants over the rows: the
+answer is the determinant multiplied by the total of the factors.
+
+Only the factor met on the diagonal of a permutation survives in each term of the Leibniz
+expansion, and summing over the rows meets each factor exactly once. -/
+theorem sum_det_updateRow_mul_row {ι : Type*} [DecidableEq ι] [Fintype ι] {R : Type*} [CommRing R]
+    (A : Matrix ι ι R) (d : ι → R) :
+    (∑ k, (A.updateRow k fun j => d j * A k j).det) = (∑ j, d j) * A.det := by
+  have key : ∀ k : ι, (A.updateRow k fun j => d j * A k j).det
+      = ∑ σ : Equiv.Perm ι,
+          ((Equiv.Perm.sign σ : ℤ) : R) * (d (σ⁻¹ k) * ∏ i, A (σ i) i) := by
+    intro k
+    rw [Matrix.det_apply']
+    refine Finset.sum_congr rfl fun σ _ => ?_
+    have hterm : ∀ i : ι, (A.updateRow k fun j => d j * A k j) (σ i) i
+        = (if i = σ⁻¹ k then d i else 1) * A (σ i) i := by
+      intro i
+      rcases eq_or_ne i (σ⁻¹ k) with rfl | h
+      · simp [Matrix.updateRow_apply]
+      · have hk : σ i ≠ k := fun hc => h (by rw [← hc]; simp)
+        rw [Matrix.updateRow_apply, ite_eq_right hk, ite_eq_right h, one_mul]
+    rw [Finset.prod_congr rfl fun i _ => hterm i, Finset.prod_mul_distrib,
+      Finset.prod_ite_eq' Finset.univ (σ⁻¹ k) d]
+    simp
+  rw [Finset.sum_congr rfl fun k _ => key k, Finset.sum_comm, Matrix.det_apply', Finset.mul_sum]
+  refine Finset.sum_congr rfl fun σ _ => ?_
+  rw [← Finset.mul_sum, ← Finset.sum_mul, Equiv.sum_comp (σ⁻¹ : Equiv.Perm ι) d]
+  ring
+
+/-- **The determinant of a scaled integer matrix.** Scaling every row `i` of an integer
+matrix `M` by `d i`, with the entries cast into a commutative ring `R`, multiplies the
+determinant by `∏ i, d i`. -/
+theorem det_mul_column_intCast {n : Type*} [Fintype n] [DecidableEq n]
+    {R : Type*} [CommRing R] (d : n → R) (M : Matrix n n ℤ) :
+    (Matrix.of fun i j ↦ d i * (M i j : R)).det = (∏ i, d i) * (M.det : R) := by
+  have hmap : (Matrix.of fun i j ↦ d i * (M i j : R))
+      = Matrix.of fun i j ↦ d i * M.map (fun x : ℤ ↦ (x : R)) i j := by
+    ext i j
+    simp
+  rw [hmap, Matrix.det_mul_column, ← Int.cast_det]
+
+end Matrix
