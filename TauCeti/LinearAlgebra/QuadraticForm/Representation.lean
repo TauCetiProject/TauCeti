@@ -91,24 +91,6 @@ theorem _root_.QuadraticMap.Represents.prod
   obtain ⟨w, hw⟩ := h₂
   exact ⟨(v, w), by simp [QuadraticMap.prod_apply, hv, hw]⟩
 
-/-- A value represented by the left factor is represented by the product with a zero right
-factor. -/
-theorem _root_.QuadraticMap.Represents.prod_left
-    {M₁ M₂ P : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid P]
-    [Module R M₁] [Module R M₂] [Module R P]
-    {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} {a : P}
-    (h : Represents Q₁ a) : Represents (Q₁.prod Q₂) a := by
-  simpa using h.prod (represents_zero Q₂)
-
-/-- A value represented by the right factor is represented by the product with a zero left
-factor. -/
-theorem _root_.QuadraticMap.Represents.prod_right
-    {M₁ M₂ P : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid P]
-    [Module R M₁] [Module R M₂] [Module R P]
-    {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} {b : P}
-    (h : Represents Q₂ b) : Represents (Q₁.prod Q₂) b := by
-  simpa using (represents_zero Q₁).prod h
-
 /-- Representing a value is preserved after multiplying it by the square of any scalar. -/
 theorem _root_.QuadraticMap.Represents.smul_mul_self
     {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
@@ -118,7 +100,7 @@ theorem _root_.QuadraticMap.Represents.smul_mul_self
   exact ⟨b • v, by rw [Q.map_smul, hv]⟩
 
 /-- Representation is invariant under multiplication by the square of a unit. -/
-theorem _root_.QuadraticMap.represents_smul_mul_self_iff
+@[simp] theorem _root_.QuadraticMap.represents_smul_mul_self_iff
     {M N : Type*} [AddCommMonoid M] [AddCommMonoid N]
     [Module R M] [Module R N] (Q : QuadraticMap R M N) (a : N) (b : Rˣ) :
     Represents Q (((b : R) * b) • a) ↔ Represents Q a := by
@@ -160,8 +142,14 @@ theorem _root_.QuadraticMap.represents_of_radical_eq_bot_of_not_anisotropic
   field_simp [hw'']
   ring
 
+/-- A nondegenerate quadratic form with a nonzero isotropic vector represents every scalar. -/
+theorem _root_.QuadraticMap.represents_of_nondegenerate_of_not_anisotropic
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hiso : ¬Q.Anisotropic) (a : K) :
+    Represents Q a :=
+  represents_of_radical_eq_bot_of_not_anisotropic Q hQ.radical_eq_bot hiso a
+
 /-- Multiplying a represented scalar by the square of a unit preserves representation. -/
-theorem _root_.QuadraticMap.represents_mul_sq_iff (Q : QuadraticMap R M R) (a : R)
+@[simp] theorem _root_.QuadraticMap.represents_mul_sq_iff (Q : QuadraticMap R M R) (a : R)
     (b : Rˣ) :
     Represents Q (a * (b : R) ^ 2) ↔ Represents Q a := by
   simpa [smul_eq_mul, pow_two, mul_comm] using
@@ -207,5 +195,13 @@ theorem _root_.QuadraticMap.mem_unitValueSet_iff_not_anisotropic_prod_of_radical
       refine ⟨t⁻¹ • v, ?_⟩
       rw [Q.map_smul, smul_eq_mul, hvQ]
       field_simp
+
+/-- For a nondegenerate form, a unit is represented exactly when adjoining its negative line
+makes the form isotropic. -/
+theorem _root_.QuadraticMap.mem_unitValueSet_iff_not_anisotropic_prod
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (a : Kˣ) :
+    a ∈ unitValueSet Q ↔
+      ¬(Q.prod ((-(a : K)) • (QuadraticMap.sq : QuadraticForm K K))).Anisotropic :=
+  mem_unitValueSet_iff_not_anisotropic_prod_of_radical_eq_bot Q hQ.radical_eq_bot a
 
 end TauCeti
