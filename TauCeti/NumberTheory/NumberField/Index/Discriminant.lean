@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import TauCeti.NumberTheory.NumberField.Index.PowerBasis
-import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
 import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 
@@ -19,10 +18,12 @@ polynomial of `θ` over `ℤ`, the index `[𝓞 K : ℤ[θ]]` and the discrimina
 
 `disc (minpoly ℤ θ) = [𝓞 K : ℤ[θ]]² · disc K`.
 
-Both sides are discriminants of `ℚ`-bases of `K`: the left one of the power basis
-`1, θ, …, θ ^ (n - 1)` (`discr_powerBasis_eq_minpoly_discr`), the right one of an integral basis
-of `𝓞 K`. The change-of-basis matrix between them has integer entries, and its determinant is
-`±[𝓞 K : ℤ[θ]]` (`Submodule.natAbs_det_basis_change`), which gives the formula.
+The formula compares the discriminants of two `ℚ`-bases of `K`: the power basis
+`1, θ, …, θ ^ (n - 1)`, whose discriminant is `disc (minpoly ℤ θ)`
+(`discr_powerBasis_eq_minpoly_discr`), and an integral basis of `𝓞 K`, whose discriminant is
+`disc K`. The change-of-basis matrix between them has integer entries, and its determinant is
+`±[𝓞 K : ℤ[θ]]` (`Submodule.natAbs_det_basis_change`); the square of that determinant is the
+factor relating the two discriminants.
 
 ## Main results
 
@@ -66,10 +67,13 @@ theorem discr_minpoly_eq_index_sq_mul_discr (θ : IntegralPrimitiveElement K) :
     have h := Submodule.natAbs_det_basis_change b
       (Subalgebra.toSubmodule (Algebra.adjoin ℤ ({θ.1} : Set (𝓞 K))))
       (pb.basis.map (Subalgebra.toSubmoduleEquiv _).symm)
+    -- `Subalgebra.toSubmoduleEquiv` is the identity on underlying elements
+    -- (`LinearEquiv.coe_ofEq_apply`), so the transported basis has the same coordinates in `𝓞 K`.
     have hcoe : (Subtype.val ∘ ⇑(pb.basis.map (Subalgebra.toSubmoduleEquiv _).symm)) = u := by
       funext i
-      simp only [Function.comp_apply, Basis.map_apply, hu]
-      rfl
+      simp only [Function.comp_apply, Basis.map_apply, hu, Subalgebra.toSubmoduleEquiv]
+      rw [LinearEquiv.ofEq_symm]
+      exact LinearEquiv.coe_ofEq_apply _ _
     rw [hcoe] at h
     exact h
   -- Over `ℚ`, the powers of `θ` are obtained from the integral basis by that matrix.
