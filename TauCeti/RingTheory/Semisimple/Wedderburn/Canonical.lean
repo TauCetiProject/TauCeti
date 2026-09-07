@@ -88,10 +88,10 @@ the base field.
 
 * `TauCeti.blockMultiplicity_eq_of_linearEquiv_fun`: a decomposition of the isotypic component as a
   power of `S` has exactly `blockMultiplicity R S` factors.
-* `TauCeti.exists_ringEquiv_pi_matrix_end_mulOpposite_blockMultiplicity`: **the canonical Wedderburn
-  presentation**, whose blocks are indexed by pairwise non-isomorphic simple left ideals, with the
-  size of a block the multiplicity of its module and its coefficient ring the block division ring of
-  that module.
+* `TauCeti.exists_ringEquiv_pi_matrix_end_mulOpposite_blockMultiplicity`:
+  **a Wedderburn presentation realizing the intrinsic block data**, whose blocks are indexed by
+  pairwise non-isomorphic simple left ideals, with the size of a block the multiplicity of its
+  module and its coefficient ring the block division ring of that module.
 * `TauCeti.WedderburnPresentation.exists_equiv_degree_eq_blockMultiplicity`: **the data of any
   Wedderburn presentation are the intrinsic data.**  After one permutation of its blocks, its
   degrees are the block multiplicities of pairwise non-isomorphic simple left ideals and its
