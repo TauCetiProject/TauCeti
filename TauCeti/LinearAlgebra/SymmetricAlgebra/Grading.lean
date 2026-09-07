@@ -33,7 +33,6 @@ compared with the total-degree pieces of a multivariate polynomial ring.
 
 * `gradedAlgebra`: the homogeneous pieces grade the symmetric algebra, so in particular they
   decompose it.
-* `isInternal_homogeneousSubmodule`: the decomposition as an internal direct sum.
 * `map_homogeneousSubmodule_equivMvPolynomial`: a basis-induced equivalence carries the degree
   `n` part of a symmetric algebra to the degree `n` part of a multivariate polynomial ring.
 * `SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff`: the degreewise form of that comparison.
@@ -51,33 +50,28 @@ universe u v w
 
 variable (R : Type u) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R M]
 
-/-- The generator map of a symmetric algebra, corestricted to the degree-one homogeneous piece and
-then included into the external direct sum of all of them. This is primarily an auxiliary
-construction used to provide `gradedAlgebra`. -/
-noncomputable def gradedι : M →ₗ[R] ⨁ n, homogeneousSubmodule R M n :=
+/-- A version of `SymmetricAlgebra.ι` that maps directly into the graded structure. This is
+primarily an auxiliary construction used to provide `gradedAlgebra`. -/
+noncomputable def GradedAlgebra.ι : M →ₗ[R] ⨁ n, homogeneousSubmodule R M n :=
   DirectSum.lof R ℕ (fun n ↦ homogeneousSubmodule R M n) 1 ∘ₗ
     (SymmetricAlgebra.ι R M).codRestrict _ fun m ↦ by
       simpa only [pow_one] using LinearMap.mem_range_self _ m
 
-/-- The defining formula for `gradedι`. -/
-theorem gradedι_apply (m : M) :
-    gradedι R M m = DirectSum.of (fun n ↦ homogeneousSubmodule R M n) 1
+/-- The defining formula for `GradedAlgebra.ι`. -/
+theorem GradedAlgebra.ι_apply (m : M) :
+    GradedAlgebra.ι R M m = DirectSum.of (fun n ↦ homogeneousSubmodule R M n) 1
       ⟨SymmetricAlgebra.ι R M m, by simpa only [pow_one] using LinearMap.mem_range_self _ m⟩ :=
   (rfl)
 
-/-- A symmetric algebra is graded by its homogeneous pieces. No freeness of `M` is needed: the
-external direct sum of the pieces is itself a commutative `R`-algebra, so the universal property
-turns the degree-one copy of the generator map into an algebra map splitting the recomposition map.
-
-This subsumes the canonical `DirectSum.Decomposition (homogeneousSubmodule R M)`, which it supplies
-by instance search, and makes the multiplicative API of a graded algebra available as well. -/
+/-- A symmetric algebra is graded by its homogeneous pieces, without a freeness assumption on `M`.
+This supplies both the canonical decomposition and the multiplicative graded-algebra API. -/
 noncomputable instance gradedAlgebra : GradedAlgebra (homogeneousSubmodule R M) :=
-  GradedAlgebra.ofAlgHom _ (SymmetricAlgebra.lift (gradedι R M))
+  GradedAlgebra.ofAlgHom _ (SymmetricAlgebra.lift (GradedAlgebra.ι R M))
     (by
       ext m
       simp only [LinearMap.coe_comp, LinearMap.coe_coe, AlgHom.coe_comp, Function.comp_apply,
-        SymmetricAlgebra.lift_ι_apply, gradedι_apply, DirectSum.coeAlgHom_of, AlgHom.coe_id,
-        id_eq])
+        SymmetricAlgebra.lift_ι_apply, GradedAlgebra.ι_apply, DirectSum.coeAlgHom_of,
+        AlgHom.coe_id, id_eq])
     -- A homogeneous element is a sum of products of `n` generators, so induction on the power
     -- reduces to the degree-one case.
     fun n x ↦ by
@@ -88,13 +82,9 @@ noncomputable instance gradedAlgebra : GradedAlgebra (homogeneousSubmodule R M) 
       | add x y i hx hy ihx ihy => rw [map_add, ihx, ihy, ← map_add]; rfl
       | mem_mul m hm i x hx ih =>
           obtain ⟨_, rfl⟩ := hm
-          rw [map_mul, ih, SymmetricAlgebra.lift_ι_apply, gradedι_apply, DirectSum.of_mul_of]
+          rw [map_mul, ih, SymmetricAlgebra.lift_ι_apply, GradedAlgebra.ι_apply,
+            DirectSum.of_mul_of]
           exact DirectSum.of_eq_of_gradedMonoid_eq (Sigma.subtype_ext (add_comm _ _) rfl)
-
-/-- The homogeneous pieces form an internal direct sum decomposition of the symmetric algebra. -/
-theorem isInternal_homogeneousSubmodule :
-    DirectSum.IsInternal (homogeneousSubmodule R M) :=
-  DirectSum.Decomposition.isInternal _
 
 /-- The algebra equivalence induced by a basis preserves homogeneous degree. -/
 @[simp]
