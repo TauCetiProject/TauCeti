@@ -18,22 +18,16 @@ Bourbaki-numbered Chevalley generators together with the weight torus of the sta
 point of the carrier preserves the standard alternating form. This file supplies the other: over a
 field the two point groups are equal.
 
-## What the proof uses
+## The numbered root subgroups
 
 Each numbered root generator squares to zero in the standard representation, so its divided-power
 exponential is `1 + u X` for `X` the integral matrix `TauCeti.SpStd.rootIntMatrix` of the
-generator. That matrix is computed here in the enumerated coordinate basis: at the final node it is
-the single matrix unit `E_{i,m+i}`, and at a nonfinal node it is the difference
-`E_{i,i+1} - E_{m+i+1,m+i}` of two units. Those are exactly the matrices of the symplectic group's
-own long-root transvection at the terminal coordinate and of its difference short-root element at
-an adjacent pair, so the carrier's four families of numbered root points *are* the corresponding
-elements of `TauCeti.GLSymplecticFin`.
-
-The rest is the generation theorem already available for the symplectic group,
-`TauCeti.GLSymplecticFin.eq_top_of_adjacent_of_long`, which says that both orientations of the
-adjacent difference roots together with one positive and one negative long-root subgroup generate
-`Sp_(2n+2)` over a field. Taking the terminal coordinate is what makes those the Bourbaki simple
-roots of type `C`, which is precisely the numbering the carrier carries.
+generator. In the enumerated coordinate basis that matrix is the single unit `E_{i,m+i}` at the
+final node and the difference `E_{i,i+1} - E_{m+i+1,m+i}` of two units at a nonfinal one. Those are
+the matrices of the symplectic group's long-root transvection at the terminal coordinate and of its
+difference short-root element at an adjacent pair, so the carrier's four families of numbered root
+points are the corresponding elements of `TauCeti.GLSymplecticFin`, and the terminal coordinate is
+what makes them the Bourbaki simple roots of type `C`.
 
 ## What is not proved
 
@@ -57,11 +51,6 @@ below asserts that the carrier is reductive, that its weight torus is maximal, t
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 11.3.
 * R. Steinberg, *Lectures on Chevalley Groups*, §3.
-
-## Roadmap
-
-This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 public section
 
