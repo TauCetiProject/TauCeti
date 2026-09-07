@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
+public import TauCeti.Algebra.Lie.GeneralLinear.Restriction
 public import Mathlib.Algebra.Lie.Semisimple.Defs
 import Mathlib.Algebra.Lie.Matrix
 import Mathlib.LinearAlgebra.ExteriorPower.Basis
@@ -40,6 +41,8 @@ makes the wedge of the first `d` standard basis vectors in `Kⁿ` a highest-weig
   generates the full exterior power.
 * `exteriorPower.isIrreducible_glLieModule`: over a field, the standard exterior-power
   representation is irreducible when `d ≤ Fintype.card ι`.
+* `exteriorPower.isIrreducible_slLieModule`: over an algebraically closed field of characteristic
+  zero, the restricted `slₙ` exterior-power representation is irreducible when `d ≤ n`.
 
 ## Roadmap context
 
@@ -723,6 +726,29 @@ theorem isIrreducible_glLieModule (d : ℕ) (h : d ≤ Fintype.card ι) :
   exact @isIrreducible_glLieModule_ordered K _ ι _ order d h
 
 end IrreducibilityUnordered
+
+section IrreducibilitySpecialLinear
+
+variable {K : Type*} [Field K] [CharZero K] [IsAlgClosed K]
+
+/-- Over an algebraically closed field of characteristic zero, restricting the standard
+general-linear action on an exterior power to `slₙ` remains irreducible. -/
+theorem isIrreducible_slLieModule (d n : ℕ) (h : d ≤ n) :
+    letI : LieRingModule (Matrix (Fin n) (Fin n) K) (⋀[K]^d (Fin n → K)) :=
+      glLieRingModule (K := K) (n := Fin n) d
+    letI : LieModule K (Matrix (Fin n) (Fin n) K) (⋀[K]^d (Fin n → K)) :=
+      glLieModule (K := K) (n := Fin n) d
+    letI : LieRingModule (LieAlgebra.SpecialLinear.sl (Fin n) K) (⋀[K]^d (Fin n → K)) :=
+      LieRingModule.compLieHom _ (LieAlgebra.SpecialLinear.sl (Fin n) K).incl
+    letI : LieModule K (LieAlgebra.SpecialLinear.sl (Fin n) K) (⋀[K]^d (Fin n → K)) :=
+      LieModule.compLieHom _ (LieAlgebra.SpecialLinear.sl (Fin n) K).incl
+    LieModule.IsIrreducible K (LieAlgebra.SpecialLinear.sl (Fin n) K)
+      (⋀[K]^d (Fin n → K)) := by
+  have hirr : LieModule.IsIrreducible K (Matrix (Fin n) (Fin n) K) (⋀[K]^d (Fin n → K)) :=
+    isIrreducible_glLieModule d (by simpa using h)
+  exact @TauCeti.isIrreducible_restrict_sl K _ _ _ n (⋀[K]^d (Fin n → K)) _ _ _ _ _ hirr
+
+end IrreducibilitySpecialLinear
 
 
 
