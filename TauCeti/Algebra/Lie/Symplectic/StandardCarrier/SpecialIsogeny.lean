@@ -69,6 +69,7 @@ noncomputable def pointsMulEquivGLSymplecticFin :
     points 1 K ≃* GLSymplecticFin 2 K :=
   MulEquiv.subgroupCongr (points_eq_GLSymplecticFin 1)
 
+/-- The symplectic element underlying a point of the carrier is that point. -/
 @[simp]
 theorem coe_pointsMulEquivGLSymplecticFin_apply (g : points 1 K) :
     ((pointsMulEquivGLSymplecticFin K g : GLSymplecticFin 2 K) :
@@ -163,7 +164,7 @@ private theorem shortRootUnit_eq (t : K) :
     (show (0 : Fin (1 + 1)) ≠ 1 by decide) rfl next_zero t]
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin_apply,
-    rootSubgroupPoints_inl_of_ne_last_eq_differenceShortRootUnit 1 0 zero_ne_last
+    rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last 1 0 zero_ne_last
       (Multiplicative.ofAdd t)]
   rfl
 
@@ -212,7 +213,7 @@ private theorem negShortRootUnit_eq (t : K) :
     (show (1 : Fin (1 + 1)) ≠ 0 by decide) next_zero rfl t]
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin_apply,
-    rootSubgroupPoints_inr_of_ne_last_eq_differenceShortRootUnit 1 0 zero_ne_last
+    rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last 1 0 zero_ne_last
       (Multiplicative.ofAdd t)]
   rfl
 
