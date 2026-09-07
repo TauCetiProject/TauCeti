@@ -11,8 +11,6 @@ public import Mathlib.NumberTheory.NumberField.Ideal.KummerDedekind
 public import Mathlib.RingTheory.Discriminant
 public import TauCeti.NumberTheory.NumberField.Quadratic.Basic
 public import TauCeti.NumberTheory.NumberField.SplitsCompletely
-import Mathlib.Algebra.CharP.Two
-import Mathlib.Algebra.Polynomial.SpecificDegree
 import TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 
@@ -38,10 +36,10 @@ the absolute norm of a prime of `𝓞 K`
 splitting law enters genus theory, where an ideal of norm `p` is what carries the prescribed
 values of the genus characters.
 
-The prime `2` is handled separately. For a generator `ω` of `K` with minimal polynomial
-`X² - X + c` over `ℤ` whose conductor exponent is odd, the number of primes of `𝓞 K` above `2` is
-read off from the reduction `X² + X + c` mod `2` of that polynomial: it is `X (X + 1)` when `c` is
-even and the irreducible `X² + X + 1` when `c` is odd. For `K = ℚ(√d)` with `d` squarefree and
+The prime `2` is handled separately, through the count of primes above `2` for a generator with
+minimal polynomial `X² - X + c` and odd conductor exponent
+(`NumberField.ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add`, in
+`TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind`). For `K = ℚ(√d)` with `d` squarefree and
 `d ≡ 1 (mod 4)`, the half-integer generator `(1 + θ)/2` (`halfGen`) has minimal polynomial
 `X² - X + (1 - d)/4` (`minpoly_halfGen`) and generates `𝓞 K` over `ℤ`
 (`adjoin_halfGen_eq_top_of_mod_four_eq_one`), so its conductor exponent is `1`, and `(1 - d)/4` is
@@ -53,11 +51,7 @@ divides its conductor exponent.
 * `NumberField.ncard_primesOver_quadratic_iff`: the quadratic splitting law at an odd prime.
 * `NumberField.exists_isPrime_and_absNorm_eq_of_legendreSym_eq_one`: an odd prime `p` with
   `legendreSym p d = 1` is the absolute norm of a prime ideal of `𝓞 K`.
-* `NumberField.card_monicFactorsMod_two_of_minpoly_eq_X_sq_sub_X_add`: the reduction mod `2` of
-  `X² - X + c` has `if 2 ∣ c then 2 else 1` monic irreducible factors.
-* `NumberField.ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add`: for a generator with minimal
-  polynomial `X² - X + c` and odd conductor exponent, the number of primes above `2` is
-  `if 2 ∣ c then 2 else 1`; `NumberField.ncard_primesOver_two_of_mod_four_eq_one` is the count
+* `NumberField.ncard_primesOver_two_of_mod_four_eq_one`: the number of primes above `2` is
   `if d % 8 = 1 then 2 else 1` for `ℚ(√d)` with `d` squarefree, `d ≡ 1 (mod 4)`, presented by
   `√d`, with the corollaries `NumberField.ncard_primesOver_two_eq_finrank_iff_of_mod_four_eq_one`
   (`2` splits iff `d ≡ 1 (mod 8)`) and
@@ -221,68 +215,6 @@ theorem exists_isPrime_and_absNorm_eq_of_legendreSym_eq_one {θ : 𝓞 K} {d : �
     @Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank K _ _ p _ 𝔮 h𝔮 hlo hsplit⟩
 
 /-! ### The prime `2` for `d ≡ 1 (mod 4)` -/
-
-omit [NumberField K] in
-/-- **The monic irreducible factors of `X² - X + c` modulo `2`.** For `ω` with minimal polynomial
-`X² - X + c` over `ℤ`, the reduction of that polynomial modulo `2` has two monic irreducible
-factors when `c` is even, since `X² + X = X (X + 1)` over `𝔽₂`, and one when `c` is odd, since
-`X² + X + 1` has no root in `𝔽₂`. -/
-theorem card_monicFactorsMod_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
-    (hmin : minpoly ℤ ω = X ^ 2 - X + C c) :
-    (monicFactorsMod ω 2).card = if 2 ∣ c then 2 else 1 := by
-  classical
-  have hmap : (minpoly ℤ ω).map (Int.castRingHom (ZMod 2)) = X ^ 2 + X + C (c : ZMod 2) := by
-    rw [hmin, Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X,
-      Polynomial.map_C, eq_intCast, sub_eq_add_neg, CharTwo.neg_eq]
-  simp only [monicFactorsMod, hmap]
-  by_cases hc : 2 ∣ c
-  · -- `c` is even: `X² + X = (X - 0)(X - 1)`, two distinct linear factors.
-    have hc0 : (c : ZMod 2) = 0 := by
-      rw [ZMod.intCast_zmod_eq_zero_iff_dvd]; omega
-    have hfac : (X ^ 2 + X + C (c : ZMod 2) : (ZMod 2)[X]) = (X - C 0) * (X - C 1) := by
-      rw [hc0, C_0, add_zero, sub_zero, C_1, CharTwo.sub_eq_add]; ring
-    have h0 : normalizedFactors (X - C (0 : ZMod 2)) = {X - C 0} := by
-      rw [normalizedFactors_irreducible (irreducible_X_sub_C _),
-        (monic_X_sub_C _).normalize_eq_self]
-    have h1 : normalizedFactors (X - C (1 : ZMod 2)) = {X - C 1} := by
-      rw [normalizedFactors_irreducible (irreducible_X_sub_C _),
-        (monic_X_sub_C _).normalize_eq_self]
-    have hne : (X - C (0 : ZMod 2) : (ZMod 2)[X]) ≠ X - C 1 := by
-      rw [Ne, sub_right_inj, C_inj]; exact zero_ne_one
-    rw [ite_eq_left hc, hfac, normalizedFactors_mul (X_sub_C_ne_zero 0) (X_sub_C_ne_zero 1),
-      h0, h1]
-    simp only [Multiset.toFinset_add, Multiset.toFinset_singleton, Finset.singleton_union]
-    exact Finset.card_pair hne
-  · -- `c` is odd: `X² + X + 1` has no root in `𝔽₂`, hence is irreducible.
-    have hc1 : (c : ZMod 2) = 1 := by
-      rw [← Int.cast_one, ZMod.intCast_eq_intCast_iff']; omega
-    rw [ite_eq_right hc, hc1, C_1]
-    have hq : (X ^ 2 + X + 1 : (ZMod 2)[X]) = X ^ 2 + (X + C 1) := by rw [C_1]; ring
-    have hlt : (X + C 1 : (ZMod 2)[X]).natDegree < (X ^ 2 : (ZMod 2)[X]).natDegree := by
-      rw [natDegree_X_add_C, natDegree_X_pow]; norm_num
-    have hdeg : (X ^ 2 + X + 1 : (ZMod 2)[X]).natDegree = 2 := by
-      rw [hq, natDegree_add_eq_left_of_natDegree_lt hlt, natDegree_X_pow]
-    have hirr : Irreducible (X ^ 2 + X + 1 : (ZMod 2)[X]) := by
-      refine irreducible_of_degree_le_three_of_not_isRoot (by rw [hdeg]; decide) fun x hx => ?_
-      rw [IsRoot.def, eval_add, eval_add, eval_pow, eval_X, eval_one, ZMod.pow_card] at hx
-      have h2 : (x + x + 1 : ZMod 2) = 1 := by
-        have : (2 : ZMod 2) = 0 := by decide
-        linear_combination x * this
-      rw [h2] at hx
-      exact one_ne_zero hx
-    rw [normalizedFactors_irreducible hirr, Multiset.toFinset_singleton, Finset.card_singleton]
-
-/-- **The number of primes above `2` for a generator with minimal polynomial `X² - X + c`.** Let
-`K` be generated over `ℚ` by an algebraic integer `ω` with minimal polynomial `X² - X + c` over
-`ℤ`, and suppose `2` does not divide the conductor exponent of `ω`. Then there are two primes of
-`𝓞 K` above `2` when `c` is even and one when `c` is odd. -/
-theorem ncard_primesOver_two_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K} {c : ℤ}
-    (hmin : minpoly ℤ ω = X ^ 2 - X + C c) (hexp : ¬ 2 ∣ exponent ω) :
-    (primesOver (span {(2 : ℤ)}) (𝓞 K)).ncard = if 2 ∣ c then 2 else 1 := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have h := ncard_primesOver_eq_card_monicFactorsMod ω hexp
-  rw [Nat.cast_ofNat] at h
-  rw [h, card_monicFactorsMod_two_of_minpoly_eq_X_sq_sub_X_add hmin]
 
 /-- **The number of primes above `2` for `d ≡ 1 (mod 4)`.** For `K = ℚ(√d)` with `d` squarefree
 and `d ≡ 1 (mod 4)`, there are two primes of `𝓞 K` above `2` when `d ≡ 1 (mod 8)` and one when
