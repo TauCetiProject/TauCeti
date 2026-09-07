@@ -35,7 +35,6 @@ noncomputable instance instMulActionRealCliffordSpinGroupZero (n : ℕ) :
   MulAction.compHom _ (spinToOrthogonal (realCliffordForm n 0))
 
 /-- The compact real Spin action is the usual vector action. -/
-@[simp]
 theorem realCliffordSpinGroupZero_smul_apply (n : ℕ)
     (s : realCliffordSpinGroupZero n) (x : Fin n → ℝ) :
     s • x = spinVectorAction (realCliffordForm n 0) s x := by
