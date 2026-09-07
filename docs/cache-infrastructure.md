@@ -51,10 +51,10 @@ wiring when the pinned cache tool drops the flag.
 
 ## Cloudflare account
 
-This table records the required destination. During the 2026 account migration,
-the live cache and repository variables remain on the older personal account
-until the destination copy has passed verification and the upload key is
-rotated in the same cutover.
+The 2026 account migration is complete. The live bucket, zone, custom domain,
+repository variables, and publisher credential are all in the dedicated
+TauCeti account. The source bucket in the personal account was deleted after
+anonymous reads and an exact trusted publication succeeded.
 
 | | |
 |---|---|
@@ -85,6 +85,20 @@ to sign them, so the read host must be public; only uploads use a key.
 Lake service names: `tauceti-public` for reads, `tauceti-r2` for uploads. Object keys are
 `artifacts/TauCetiProject/TauCeti/<hash>.art`, so the endpoint variables hold only the prefix and
 Lake appends the scope.
+
+## Publisher credential
+
+The GitHub Actions secret `LAKE_CACHE_KEY` contains the S3 access-key pair for
+the non-expiring Cloudflare token named **TauCeti Lake cache R2 publisher**.
+The token belongs to the `tauceti` account and is restricted to object
+read/write/list access in `tauceti-cache`; it has no bucket-administration,
+Worker, DNS, Registrar, or billing authority.
+
+When rotating it, create the replacement in the `tauceti` account, install the
+new `<ACCESS_KEY_ID>:<SECRET_ACCESS_KEY>` pair as `LAKE_CACHE_KEY`, and let an
+isolated `publish-lake-cache` job publish an exact revision before revoking the
+old token. Do not put the token value in a repository variable or expose it to
+the build job.
 
 ## Contributors
 
@@ -257,8 +271,9 @@ Analytics says how much of the 27M is still reaching the bucket.
 
 ## Related
 
-- `pr-build.yml` retries a partial fetch and discards the cache rather than handing it to the
-  offline sandbox. See the comment at that step for when part of it can be simplified.
+- `scripts/lake-cache-get.sh` keeps hash-verified artifacts while retrying only
+  missing downloads. If all three attempts remain incomplete, it discards the
+  partial cache rather than handing it to the offline sandbox.
 - https://github.com/leanprover/lean4/issues/14670, open: Lake fails a build over a cache miss it
   has already recovered from.
 - https://github.com/leanprover/lean4/pull/14651, merged: `lake cache get` exit status was

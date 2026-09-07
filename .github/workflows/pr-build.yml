@@ -623,10 +623,10 @@ jobs:
             echo "::notice::merge-group outputs will be staged for pre-landing publication"
           fi
 
-      # Restore TauCeti's own root-package oleans from the public Lake cache. The fetch logic
-      # (retry-from-empty, then fall back to no cache at all) lives in the workflow-pinned
-      # trusted script so ci.yml's post-merge build can restore the very same way; see its
-      # header for why a partial fetch must be discarded rather than kept.
+      # Restore TauCeti's own root-package oleans from the public Lake cache. The workflow-pinned
+      # trusted script retains hash-verified artifacts between attempts and retries only missing
+      # downloads. If all attempts remain incomplete, it discards the partial cache and falls
+      # back to no cache so ci.yml's post-merge build has the same final semantics.
       - name: Fetch TauCeti's own oleans from the Lake cache (network, no token; no PR code)
         if: ${{ env.INFRA != '1' && env.TAUCETI_CACHE_ENABLED == '1' }}
         env:

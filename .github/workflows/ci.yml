@@ -173,8 +173,8 @@ jobs:
           fi
 
       # Anonymous GETs from the PUBLIC read host, the same trusted, publisher-built data
-      # pr-build restores. The shared script discards a partial fetch rather than keeping it;
-      # see its header.
+      # pr-build restores. The shared script retains hash-verified artifacts between attempts,
+      # then discards the partial cache only if every attempt remains incomplete; see its header.
       #
       # What this does NOT establish: that a restored module matches what a compile of the
       # checked-out source would produce. Lake keys artifacts by an input hash that is a single
