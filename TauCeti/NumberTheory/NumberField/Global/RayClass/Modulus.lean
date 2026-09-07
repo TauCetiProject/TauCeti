@@ -91,12 +91,6 @@ variable {K : Type*} [Field K] [NumberField K]
 
 namespace Modulus
 
-omit [NumberField K] in
-/-- A height-one prime never divides the unit ideal. -/
-private theorem not_dvd_top (v : HeightOneSpectrum (𝓞 K)) :
-    ¬ v.asIdeal ∣ (⊤ : Ideal (𝓞 K)) :=
-  fun hv ↦ v.isPrime.ne_top (top_le_iff.mp (Ideal.le_of_dvd hv))
-
 theorem finitePart_ne_zero (𝔪 : Modulus K) : 𝔪.finitePart ≠ 0 := fun h ↦
   𝔪.finitePart_ne_bot (by rwa [Ideal.zero_eq_bot] at h)
 
@@ -105,6 +99,12 @@ infinite part of `𝔪` is contained in that of `𝔫`, so that the congruence c
 `𝔫` are the stronger ones. -/
 instance : Dvd (Modulus K) :=
   ⟨fun 𝔪 𝔫 ↦ 𝔪.finitePart ∣ 𝔫.finitePart ∧ 𝔪.infinitePart ⊆ 𝔫.infinitePart⟩
+
+/-- A modulus divides another exactly when its finite part divides the other's finite part and its
+infinite part is contained in the other's infinite part. -/
+@[simp] theorem dvd_iff {𝔪 𝔫 : Modulus K} :
+    𝔪 ∣ 𝔫 ↔ 𝔪.finitePart ∣ 𝔫.finitePart ∧ 𝔪.infinitePart ⊆ 𝔫.infinitePart :=
+  Iff.rfl
 
 @[refl]
 theorem dvd_refl (𝔪 : Modulus K) : 𝔪 ∣ 𝔪 := ⟨_root_.dvd_refl _, Finset.Subset.refl _⟩
@@ -165,7 +165,7 @@ def one (K : Type*) [Field K] [NumberField K] : Modulus K where
 @[simp] theorem support_one : (one K).support = ∅ := by
   ext v
   rw [mem_support_iff, one_finitePart]
-  simpa only [Finset.notMem_empty, iff_false] using not_dvd_top v
+  simpa only [Finset.notMem_empty, iff_false, ← Ideal.one_eq_top] using v.prime.not_dvd_one
 
 theorem one_dvd (𝔪 : Modulus K) : one K ∣ 𝔪 :=
   ⟨by rw [one_finitePart, ← Ideal.one_eq_top]; exact _root_.one_dvd _, by simp⟩
@@ -325,7 +325,8 @@ def unitsCongruenceSubgroup (𝔪 : Modulus K) : Subgroup (𝓞 K)ˣ :=
 /-- **The trivial modulus imposes no condition.**  Its finite part is the unit ideal, which no
 prime divides, and its infinite part is empty. -/
 @[simp] theorem isCongrOne_one (x : Kˣ) : IsCongrOne (Modulus.one K) x :=
-  ⟨fun v hv ↦ absurd (Modulus.one_finitePart (K := K) ▸ hv) (Modulus.not_dvd_top v),
+  ⟨fun v hv ↦ False.elim <| v.prime.not_dvd_one (by
+      simpa only [Modulus.one_finitePart, ← Ideal.one_eq_top] using hv),
     fun w hw ↦ absurd hw (by simp)⟩
 
 @[simp] theorem congruenceSubgroup_one : congruenceSubgroup (Modulus.one K) = ⊤ :=
