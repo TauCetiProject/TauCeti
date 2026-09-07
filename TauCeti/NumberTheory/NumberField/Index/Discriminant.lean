@@ -7,7 +7,10 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import TauCeti.NumberTheory.NumberField.Index.PowerBasis
+public import Mathlib.Data.ZMod.Basic
+import Mathlib.FieldTheory.Perfect
 import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
+import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
 # The index formula
@@ -28,6 +31,10 @@ factor relating the two discriminants.
 
 * `TauCeti.NumberField.IntegralPrimitiveElement.discr_minpoly_eq_index_sq_mul_discr`: the index
   formula `disc (minpoly ℤ θ) = [𝓞 K : ℤ[θ]]² · disc K`.
+* `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_of_not_dvd_discr_minpoly`: a
+  natural number not dividing `disc (minpoly ℤ θ)` does not divide the index.
+* `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_of_squarefree_map`: a prime modulo
+  which `minpoly ℤ θ` is squarefree does not divide the index.
 
 ## References
 
@@ -104,5 +111,28 @@ theorem discr_minpoly_eq_index_sq_mul_discr (θ : IntegralPrimitiveElement K) :
   rw [← eq_intCast (algebraMap ℤ ℚ), ← θ.discr_powerBasis_eq_minpoly_discr, hpow, hdiscr_u, ← hdet]
   push_cast
   rw [sq_abs]
+
+
+/-- A natural number not dividing the discriminant of `minpoly ℤ θ` does not divide the index
+`[𝓞 K : ℤ[θ]]`. -/
+theorem not_dvd_index_of_not_dvd_discr_minpoly (θ : IntegralPrimitiveElement K) {p : ℕ}
+    (hp : ¬ (p : ℤ) ∣ (minpoly ℤ θ.1).discr) : ¬ p ∣ θ.index := by
+  intro h
+  apply hp
+  rw [θ.discr_minpoly_eq_index_sq_mul_discr]
+  exact (dvd_pow (Int.natCast_dvd_natCast.mpr h) two_ne_zero).mul_right _
+
+-- The corollary is the squarefree case of Dedekind's criterion, Layer 3.7 of the human-authored
+-- roadmap `TauCetiRoadmap/NumberFieldArithmetic/README.md`.
+/-- **A prime modulo which the minimal polynomial is squarefree does not divide the index.**
+If `minpoly ℤ θ` is squarefree modulo the prime `p`, then its discriminant is nonzero modulo `p`,
+so `p` does not divide `[𝓞 K : ℤ[θ]]` by the index formula. -/
+theorem not_dvd_index_of_squarefree_map (θ : IntegralPrimitiveElement K) {p : ℕ} [Fact p.Prime]
+    (hsq : Squarefree ((minpoly ℤ θ.1).map (Int.castRingHom (ZMod p)))) : ¬ p ∣ θ.index := by
+  apply θ.not_dvd_index_of_not_dvd_discr_minpoly
+  rw [← ZMod.intCast_zmod_eq_zero_iff_dvd, ← eq_intCast (Int.castRingHom (ZMod p)),
+    ← (minpoly.monic θ.1.isIntegral).discr_map]
+  exact ((minpoly.monic θ.1.isIntegral).map _).discr_ne_zero_iff.mpr
+    (PerfectField.separable_iff_squarefree.mpr hsq)
 
 end TauCeti.NumberField.IntegralPrimitiveElement
