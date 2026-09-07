@@ -18,6 +18,9 @@ public import TauCeti.RingTheory.Norm.Units
 -- `Algebra.norm_ne_zero_iff`, `Module.natCard_eq_pow_finrank` and `Nat.card_units` are used only
 -- inside proofs, so downstream importers do not pay for them.
 import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
+-- Non-public: the order of `GL (Fin 2) F` over a finite field is used only inside the proof of
+-- `TauCeti.GL2NonSplitTorus.index_eq`.
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import Mathlib.RingTheory.Norm.Basic
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
@@ -68,7 +71,7 @@ choice, following the convention of
 ## Main results
 
 * `TauCeti.GL2NonSplitTorus.natCard_eq`: the torus has `q² - 1` elements over a finite field with
-  `q` elements.
+  `q` elements, and `TauCeti.GL2NonSplitTorus.index_eq`: its index is then `q (q - 1)`.
 * `TauCeti.GL2NonSplitTorus.conj_notMem_gl2Borel`: an element of the torus not coming from `F` has
   no conjugate in the Borel subgroup, and
   `TauCeti.GL2NonSplitTorus.exists_forall_conj_notMem_gl2Borel`: such an element exists, so the
@@ -193,6 +196,20 @@ theorem natCard_eq : Nat.card (GL2NonSplitTorus F E hE) = Nat.card F ^ 2 - 1 := 
   have := Module.finite_of_finrank_eq_succ (n := 1) hE
   rw [← Nat.card_congr (unitsEquiv hE).toEquiv, Nat.card_units,
     Module.natCard_eq_pow_finrank (K := F) (V := E), hE]
+
+/-- **The index of the non-split torus**: over a field with `q` elements the torus has `q² - 1`
+elements inside a group of order `(q² - 1) q (q - 1)`, so its index is `q (q - 1)`. It is the
+number of summands in a class function induced from the torus, and hence the dimension of a
+representation induced from a character of `Eˣ`. -/
+theorem index_eq [Fintype F] : (GL2NonSplitTorus F E hE).index =
+    Fintype.card F * (Fintype.card F - 1) := by
+  have hcard : Nat.card (GL2NonSplitTorus F E hE) = Fintype.card F ^ 2 - 1 := by
+    rw [natCard_eq hE, Nat.card_eq_fintype_card]
+  have hlt := Fintype.one_lt_card (α := F)
+  have hle : Fintype.card F ≤ Fintype.card F ^ 2 := Nat.le_self_pow two_ne_zero _
+  have h := Subgroup.card_mul_index (GL2NonSplitTorus F E hE)
+  rw [hcard, natCard_GL_fin_two_eq_sq_sub_one_mul] at h
+  exact Nat.eq_of_mul_eq_mul_left (show 0 < Fintype.card F ^ 2 - 1 by omega) h
 
 /-- The key computation behind non-splitness: for `x : E` outside `F`, the matrix of multiplication
 by `x` has no eigenvalue `a : F`. -/
