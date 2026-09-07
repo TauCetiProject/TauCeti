@@ -364,10 +364,11 @@ theorem adjoin_eq_top_of_minpoly_eq_X_sq_sub_X_add {ω : 𝓞 K}
     linear_combination 4 * hωsq - h4'
   have hgenη : Algebra.adjoin ℚ {(η : K)} = ⊤ := by
     rw [eq_top_iff, ← hgen, Algebra.adjoin_le_iff, Set.singleton_subset_iff]
-    have hmem : (η : K) ∈ Algebra.adjoin ℚ {(η : K)} := Algebra.subset_adjoin rfl
+    have hmem : algebraMap (𝓞 K) K η ∈ Algebra.adjoin ℚ {(η : K)} := Algebra.subset_adjoin rfl
     have hω : algebraMap (𝓞 K) K ω = (1 / 2 : ℚ) • (algebraMap (𝓞 K) K η + 1) := by
       rw [hηK, Algebra.smul_def, map_div₀, map_one, map_ofNat]; ring
-    rw [show (ω : K) = (1 / 2 : ℚ) • ((η : K) + 1) from hω]
+    -- The coercion `(ω : K)` is `algebraMap (𝓞 K) K ω`, in which form `hω` applies.
+    rw [RingOfIntegers.coe_eq_algebraMap ω, hω]
     exact Subalgebra.smul_mem _ (add_mem hmem (one_mem _)) _
   -- `ω` is not a rational integer, so neither is `η`, whose minimal polynomial is then `X² - d`.
   have hωnot : ω ∉ (algebraMap ℤ (𝓞 K)).range := by
