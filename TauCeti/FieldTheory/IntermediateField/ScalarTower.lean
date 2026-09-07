@@ -30,6 +30,6 @@ which is what an object of `L` defined over `k` needs in order to be restricted 
 instance instIsScalarTowerIntermediateField {k K L : Type*} [CommSemiring k] [Field K] [Field L]
     [Algebra k K] [Algebra k L] [Algebra K L] [IsScalarTower k K L]
     (E : IntermediateField K L) : IsScalarTower k E L :=
-  IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  Subalgebra.isScalarTower_mid E.toSubalgebra
 
 end TauCeti
