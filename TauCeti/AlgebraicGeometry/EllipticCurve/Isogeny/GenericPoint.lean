@@ -53,6 +53,7 @@ namespace Isogeny
 variable [W₂.IsElliptic]
 
 /-- **The tautological point is the generic point transported along the pullback.** -/
+@[simp]
 theorem tautologicalPoint_eq_map_genericPoint (φ : Isogeny W₁ W₂) :
     φ.pullback.tautologicalPoint = Point.map φ.fieldPullback (genericPoint W₂) := by
   refine Point.eq_of_coords (CoordinatePullback.tautologicalPoint_ne_zero _) ?_ ?_ ?_
