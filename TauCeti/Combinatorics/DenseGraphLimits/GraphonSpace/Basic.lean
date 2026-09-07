@@ -12,9 +12,8 @@ public import Mathlib.MeasureTheory.Constructions.UnitInterval
 # The metric space of graphons
 
 The coupling cut distance is a pseudometric on graphons over a fixed probability carrier.  This
-file equips the strict graphon type with that pseudometric and forms its separation quotient,
-identifying two representatives exactly when their cut distance is zero.  The quotient carries the
-resulting genuine metric.
+file forms the separation quotient of that pseudometric, identifying two representatives exactly
+when their cut distance is zero.  The quotient carries the resulting genuine metric.
 
 The quotient is fixed-carrier: `GraphonSpace Ω μ` contains graphons on `(Ω, μ)`.  Graphons on
 different carriers are still compared by the cross-carrier `cutDist`; they are not bundled into a
@@ -33,8 +32,6 @@ strict graphon type.
 
 ## Main results
 
-* `TauCeti.DenseGraphLimits.Graphon.dist_eq_cutDist` identifies the graphon distance with the
-  coupling cut distance;
 * `TauCeti.DenseGraphLimits.dist_graphonSpace_mk_mk` computes the quotient distance on
   representatives;
 * `TauCeti.DenseGraphLimits.graphonSpace_mk_eq_mk_iff` characterises equality of representatives.
@@ -59,20 +56,6 @@ namespace TauCeti
 namespace DenseGraphLimits
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsProbabilityMeasure μ]
-
-/-- The coupling cut distance gives strict graphons on one probability carrier a pseudometric.
-
-Distinct strict representatives can have distance zero, for example after a measure-preserving
-rearrangement, so this is intentionally not a `MetricSpace`. -/
-instance Graphon.instPseudoMetricSpace : PseudoMetricSpace (Graphon Ω μ) where
-  dist := cutDist
-  dist_self := cutDist_self
-  dist_comm := cutDist_comm
-  dist_triangle := cutDist_triangle
-
-/-- The distance between strict graphons on one carrier is their coupling cut distance. -/
-@[simp]
-theorem Graphon.dist_eq_cutDist (U W : Graphon Ω μ) : dist U W = cutDist U W := (rfl)
 
 /-- The fixed-carrier graphon space: strict graphons modulo vanishing cut distance. -/
 abbrev GraphonSpace (Ω : Type*) [MeasurableSpace Ω] (μ : Measure Ω) [IsProbabilityMeasure μ] :

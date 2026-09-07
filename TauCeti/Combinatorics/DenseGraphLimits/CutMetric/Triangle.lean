@@ -26,8 +26,8 @@ gluing argument applies, and stability of cut distance under cut-norm approximat
 replacement error.  This avoids imposing standard-Borel or atomlessness hypotheses on any of the
 three carriers.
 
-The triangle inequality is the final pseudometric law needed to form the metric quotient of
-graphons at cut distance zero.
+The triangle inequality is the last pseudometric law still missing, so this file also equips the
+strict graphons on a fixed probability carrier with the cut-distance pseudometric.
 
 ## Main results
 
@@ -35,6 +35,9 @@ graphons at cut distance zero.
   probability carriers.
 * `TauCeti.DenseGraphLimits.cutDist_comap_right` states that reading the right-hand graphon along
   a measure-preserving map leaves the cut distance unchanged.
+* `TauCeti.DenseGraphLimits.Graphon.instPseudoMetricSpace` is the cut-distance pseudometric on
+  strict graphons over one carrier, and
+  `TauCeti.DenseGraphLimits.Graphon.dist_eq_cutDist` identifies its distance with `cutDist`.
 
 ## References
 
@@ -241,6 +244,22 @@ theorem cutDist_comap_right {Ω₂' : Type*} [MeasurableSpace Ω₂'] {μ₂' : 
     cutDist U (W.comap f hf.measurable μ₂') ≤
         cutDist U W + cutDist W (W.comap f hf.measurable μ₂') := cutDist_triangle U W _
     _ = cutDist U W := by rw [hzero, add_zero]
+
+/-- The coupling cut distance gives strict graphons on one probability carrier a pseudometric.
+
+Distinct strict representatives can have distance zero, for example after a measure-preserving
+rearrangement, so this is intentionally not a `MetricSpace`. -/
+instance Graphon.instPseudoMetricSpace {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] : PseudoMetricSpace (Graphon Ω μ) where
+  dist := cutDist
+  dist_self := cutDist_self
+  dist_comm := cutDist_comm
+  dist_triangle := cutDist_triangle
+
+/-- The distance between strict graphons on one carrier is their coupling cut distance. -/
+@[simp]
+theorem Graphon.dist_eq_cutDist {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] (U W : Graphon Ω μ) : dist U W = cutDist U W := (rfl)
 
 end DenseGraphLimits
 
