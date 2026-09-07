@@ -5,9 +5,8 @@ Authors: Chris Birkbeck
 -/
 module
 
--- `ZMod.coe_int_isUnit_iff_isCoprime` is used only inside the proof below.
-import Mathlib.Data.ZMod.Units
 import TauCeti.Data.ZMod.Divisibility
+import TauCeti.Data.ZMod.Units
 
 /-!
 # Reduced integer solutions to linear congruences
@@ -34,8 +33,7 @@ lemma exists_nonneg_lt_and_dvd_mul_sub (a b : ℤ) (m : ℕ) (hm_pos : 0 < m)
     (ham : Int.gcd a m = 1) :
     ∃ r : ℤ, 0 ≤ r ∧ r < m ∧ (m : ℤ) ∣ a * r - b := by
   have : NeZero m := ⟨hm_pos.ne'⟩
-  have hunit : IsUnit ((a : ℤ) : ZMod m) := (ZMod.coe_int_isUnit_iff_isCoprime a m).mpr
-    (isCoprime_comm.mp (Int.isCoprime_iff_gcd_eq_one.mpr ham))
+  have hunit : IsUnit ((a : ℤ) : ZMod m) := Int.isUnit_intCast_iff_gcd_eq_one.mpr ham
   obtain ⟨r, hr⟩ := ZMod.exists_dvd_sub_val_mul m b a hunit
   refine ⟨(r.val : ℤ), Int.natCast_nonneg _, by exact_mod_cast r.val_lt, ?_⟩
   rw [← neg_sub, mul_comm]

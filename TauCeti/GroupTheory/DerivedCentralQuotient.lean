@@ -120,7 +120,7 @@ theorem card_dvd_card : Nat.card (DerivedCentralQuotient G) ∣ Nat.card G :=
 quotient. -/
 def lift {K : Type*} [Group K] (f : ↥(commutator G) →* K) (hf : Function.Surjective f)
     (hK : center K = ⊥) : DerivedCentralQuotient G →* K :=
-  QuotientGroup.lift _ f (TauCeti.MonoidHom.center_le_ker f hf hK)
+  QuotientGroup.lift _ f (MonoidHom.center_le_ker f hf hK)
 
 @[simp]
 theorem lift_mk {K : Type*} [Group K] (f : ↥(commutator G) →* K) (hf : Function.Surjective f)
@@ -141,7 +141,7 @@ the quotient sits between `[G, G]` and the centreless group it was mapped onto. 
 theorem lift_surjective {K : Type*} [Group K] (f : ↥(commutator G) →* K)
     (hf : Function.Surjective f) (hK : center K = ⊥) : Function.Surjective (lift f hf hK) :=
   QuotientGroup.lift_surjective_of_surjective _ f hf
-    (TauCeti.MonoidHom.center_le_ker f hf hK)
+    (MonoidHom.center_le_ker f hf hK)
 
 /-! ### The recipe on groups it has already succeeded on -/
 

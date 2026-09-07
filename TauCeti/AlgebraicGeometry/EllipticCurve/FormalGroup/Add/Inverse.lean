@@ -41,8 +41,12 @@ universal curve, and `map_specialize` then carries the conclusion to every `W` �
 it follows from `2 ≠ 0` by comparing linear coefficients.
 
 The pair `(z, ι(z))` enters as the substituted family `Sum.elim X (fun _ ↦ formalInverse W)`,
-written inline throughout, as `Add/Unit.lean` writes its own two families inline: it appears only
-in this file, and naming it would add a definition whose unfolding lemma every proof would carry.
+written inline throughout, as `Add/Unit.lean` writes its own two families inline: naming it would
+add a definition whose unfolding lemma every proof would carry. `FormalGroup/PairEval.lean` writes
+the same family inline for the same reason when it transports `subst_invPair_formalAdd` through
+evaluation, but takes `hasSubst_invPair` from here rather than rebuilding it — that witness is
+exported for exactly this transport, because `MvPowerSeries.aeval_subst` needs a `HasSubst` for
+the very family the two public `subst_invPair_*` results are stated about.
 
 ## References
 
@@ -81,7 +85,7 @@ variable {O : Type*} [CommRing O] (W : WeierstrassCurve O)
 
 /-- Substituting `z` for the first parameter and `ι(z)` for the second is a legitimate
 substitution: both series have vanishing constant coefficient. -/
-private theorem hasSubst_invPair :
+theorem hasSubst_invPair :
     HasSubst (Sum.elim X (fun _ ↦ formalInverse W) : Unit ⊕ Unit → MvPowerSeries Unit O) :=
   hasSubst_pair (constantCoeff_X ()) (constantCoeff_formalInverse W)
 
