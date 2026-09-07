@@ -64,7 +64,7 @@ it, and no Lebesgue-number consequence of this shape.
 * `TauCeti.IsUniformlyLocallyConnected.exists_isConnected_superset` — a small enough subset is
   enclosed in a small connected subset, at a rate independent of the subset.
 * `IsCompact.isUniformlyLocallyConnected_iff` — on a compact set the two notions agree.
-* `TauCeti.Convex.isUniformlyLocallyConnected` — a convex set in a real normed space is uniformly
+* `Convex.isUniformlyLocallyConnected` — a convex set in a real normed space is uniformly
   locally connected, with the joining segment as the connected set.
 * `TauCeti.isUniformlyLocallyConnected_image_of_isCompact` — a continuous image of a compact,
   locally connected set is uniformly locally connected.
@@ -193,7 +193,7 @@ joined by the segment between them, which stays in the set by convexity and, by
 first endpoint, so its points are pairwise within `ε`.
 
 This is the basic example, and the one the closed disc supplies in the conformal application. -/
-protected theorem Convex.isUniformlyLocallyConnected {E : Type*} [NormedAddCommGroup E]
+protected theorem _root_.Convex.isUniformlyLocallyConnected {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {t : Set E} (ht : Convex ℝ t) : IsUniformlyLocallyConnected t := by
   refine isUniformlyLocallyConnected_def.mpr fun ε hε => ⟨ε / 2, by linarith,
     fun a ha b hb hab => ⟨segment ℝ a b,
