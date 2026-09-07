@@ -15,9 +15,9 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 Artin and Tate describe a *formation* by a group `G`, a distinguished family of finite-index
 subgroups, and a `G`-module `A` each of whose elements is fixed by a sufficiently small member of
 the family. In the arithmetic applications the family is the family of open subgroups of a
-profinite Galois group and `A` is a discrete continuous module, so this file uses the equivalent
-topological formulation: a `Formation` is a smooth discrete topological representation of `G` over
-`ℤ`, and its `U`-**level** `A^U` is the submodule fixed by an open subgroup `U`.
+compact, totally disconnected Galois group and `A` is a discrete continuous module, so this file
+uses the topological formulation: a `Formation` is a smooth discrete topological representation
+of `G` over `ℤ`, and its `U`-**level** `A^U` is the submodule fixed by an open subgroup `U`.
 
 A **finite normal layer** is a pair of open subgroups `V ≤ U` with `V` normal in `U`. In field
 notation it is the layer `K/F` with `U = G_F` and `V = G_K`. Its Galois group `Γ = U ⧸ V` is
@@ -40,8 +40,8 @@ as `Kˣ` enters through an `Additive` adapter.
 
 ## Main definitions
 
-* `TauCeti.ClassFieldTheory.Formation`: a profinite group's smooth discrete integral coefficient
-  module.
+* `TauCeti.ClassFieldTheory.Formation`: a compact, totally disconnected topological group's
+  smooth discrete integral coefficient module.
 * `TauCeti.ClassFieldTheory.Formation.level`: the level `A^U` of an open subgroup.
 * `TauCeti.ClassFieldTheory.NormalLayer`: a finite normal layer `V ◁ U`.
 * `TauCeti.ClassFieldTheory.NormalLayer.Gal`, `degree`: the Galois group `U ⧸ V` and its order.
@@ -71,11 +71,9 @@ The coefficient module is built as `Representation.ofQuotient` of a
 restriction of `A` along `V ∩ U → U → G`, which is the same submodule of the ambient module but
 not the same term as `A^V`, and every later comparison would have to transport along that equality.
 
-The group `G` is profinite — a compact, totally disconnected topological group — and both
-`Formation` and `NormalLayer` carry those hypotheses. They are what makes the family of open
-subgroups the distinguished family of the Artin–Tate definition, with the open subgroups a
-neighbourhood basis of `1`, and what makes the Galois group of every layer finite, so that the
-`degree` of a layer is its genuine index and not the junk value `0` of an infinite quotient.
+Both `Formation` and `NormalLayer` assume that `G` is compact and totally disconnected.
+Compactness makes the Galois group of every layer finite, so that the `degree` of a layer is its
+genuine index and not the junk value `0` of an infinite quotient.
 
 Both the group and the coefficient module live in `Type`. Mathlib's `tateCohomology` asks for the
 finite group and the coefficient ring `ℤ` in one universe and for the coefficient module in that
@@ -109,11 +107,11 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 
 /-! ### Formations and their levels -/
 
-/-- A **formation**: a smooth discrete continuous integral representation of a profinite group.
-In the arithmetic applications `G` is the Galois group of a Galois extension and the module is the
-multiplicative group of the top field, read additively. The distinguished family of subgroups of
-the Artin–Tate definition is the family of open subgroups of `G`, which is why the levels below
-are indexed by `OpenSubgroup G`. -/
+/-- A **formation**: a smooth discrete continuous integral representation of a compact, totally
+disconnected topological group. In the arithmetic applications `G` is the Galois group of a
+Galois extension and the module is the multiplicative group of the top field, read additively. The
+distinguished family of subgroups of the Artin–Tate definition is the family of open subgroups of
+`G`, which is why the levels below are indexed by `OpenSubgroup G`. -/
 @[ext]
 structure Formation (G : Type) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
     [CompactSpace G] [TotallyDisconnectedSpace G] where
