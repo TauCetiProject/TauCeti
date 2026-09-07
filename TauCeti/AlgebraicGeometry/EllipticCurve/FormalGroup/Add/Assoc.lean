@@ -161,15 +161,6 @@ private theorem subst_formalW_subst_formalInverse {q : MvPowerSeries σ O}
     subst_formalInverse_formalW, ← PowerSeries.coe_substAlgHom hq]
   simp only [map_neg, map_mul]
 
-/-- The addition series read at a pair of variables again has vanishing constant coefficient, so
-it is itself a legitimate parameter — which is what lets the associativity argument feed one
-bracketed sum into another. -/
-private theorem constantCoeff_subst_pair_X_formalAdd {σ' : Type*} (s₁ s₂ : σ') :
-    constantCoeff (subst (Sum.elim (fun _ ↦ (X s₁ : MvPowerSeries σ' O)) (fun _ ↦ X s₂) :
-      Unit ⊕ Unit → MvPowerSeries σ' O) (formalAdd W)) = 0 :=
-  constantCoeff_subst_eq_zero (hasSubst_pair (constantCoeff_X _) (constantCoeff_X _))
-    (by rintro (j | j) <;> simp) (constantCoeff_formalAdd W)
-
 /-- Base change commutes with reading the addition series at a pair of variables: the variables
 are fixed by `MvPowerSeries.map`, so only `map_formalAdd` is doing any work. -/
 private theorem map_subst_pair_X_formalAdd {σ' S : Type*} [CommRing S] (φ : O →+* S)
@@ -656,9 +647,11 @@ private theorem assoc_formalAdd_universal :
     (fun _ ↦ X (Sum.inr (Sum.inr ()))) : Unit ⊕ Unit → MvPowerSeries (Unit ⊕ Unit ⊕ Unit) R)
     (formalAdd Universal.curve) with hF₂₃def
   have hF₁₂c : constantCoeff F₁₂ = 0 :=
-    constantCoeff_subst_pair_X_formalAdd Universal.curve _ _
+    constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
+        (constantCoeff_X _)
   have hF₂₃c : constantCoeff F₂₃ = 0 :=
-    constantCoeff_subst_pair_X_formalAdd Universal.curve _ _
+    constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
+        (constantCoeff_X _)
   have hχF₁₂ : subst χ F₁₂ = PowerSeries.X :=
     subst_subst_pair_formalAdd_eq_X Universal.curve hχ hc₁ hc₂ hχ1 hχ2
   have hχF₂₃ : subst χ F₂₃ = 0 :=
@@ -724,9 +717,11 @@ theorem formalAdd_assoc :
       (formalAdd W) := by
   have h := congrArg (MvPowerSeries.map W.specialize) assoc_formalAdd_universal
   rw [MvPowerSeries.map_subst (hasSubst_pair
-      (constantCoeff_subst_pair_X_formalAdd Universal.curve _ _) (constantCoeff_X _)),
+      (constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
+        (constantCoeff_X _)) (constantCoeff_X _)),
     MvPowerSeries.map_subst (hasSubst_pair (constantCoeff_X _)
-      (constantCoeff_subst_pair_X_formalAdd Universal.curve _ _)),
+      (constantCoeff_subst_pair_formalAdd Universal.curve (constantCoeff_X _)
+        (constantCoeff_X _))),
     ← map_formalAdd] at h
   refine .trans ?_ (.trans h ?_)
   all_goals
