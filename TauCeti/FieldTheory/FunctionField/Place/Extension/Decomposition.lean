@@ -119,8 +119,9 @@ theorem fixingSubgroup_decompositionField (P : Place k F') :
 
 omit [Algebra.IsIntegral F F'] [IsGalois F F'] in
 /-- An automorphism of `F'` over the decomposition field of `P`, read as an automorphism over
-`F`, fixes `P`. -/
-@[simp]
+`F`, fixes `P`.  The priority keeps this ahead of `TauCeti.Place.restrictScalars_smul`, which
+would otherwise rewrite the left-hand side to `τ • P` before this can close it. -/
+@[simp high]
 theorem restrictScalars_smul_eq_self (P : Place k F') (τ : F' ≃ₐ[decompositionField F P] F') :
     τ.restrictScalars F • P = P := by
   refine MulAction.mem_stabilizer_iff.mp ?_
