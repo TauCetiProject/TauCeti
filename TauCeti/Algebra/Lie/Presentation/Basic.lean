@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Free
+public import TauCeti.Algebra.Lie.Basic
 
 /-!
 # Presenting a Lie algebra by generators and relations
@@ -16,22 +17,22 @@ construction — the free Lie algebra with its universal property, and the `LieR
 structure on a quotient by a Lie ideal — but not the bridge between them, which is what a
 presentation is used for: a homomorphism out of the presented algebra is the same thing as a family
 of images satisfying the relations. The quotient universal property is provided by
-`TauCeti/Algebra/Lie/Quotient.lean`; this file supplies two further facts needed to apply it.
+`TauCeti/Algebra/Lie/Quotient.lean`; this file supplies two further facts needed to apply it, and
+leans on a third imported from `TauCeti/Algebra/Lie/Basic.lean`.
 
-First, a homomorphism transports an iterated adjoint action,
-`TauCeti.LieHom.map_ad_pow`. Relations of a presentation are frequently written as the vanishing of
-`(ad x) ^ n y` — Serre's relations for a Cartan matrix are the standard example — and such a
-relation says nothing about the presented algebra until it is known to be carried along by the map
-that checks it. The companion `TauCeti.ad_neg_pow_apply_eq_zero` transports such a vanishing result
-from `x` to `-x`.
+Relations of a presentation are frequently written as the vanishing of `(ad x) ^ n y` — Serre's
+relations for a Cartan matrix are the standard example — and such a relation says nothing about the
+presented algebra until it is known to be carried along by the map that checks it. That transport
+is `LieHom.map_ad_pow`, which lives in `TauCeti/Algebra/Lie/Basic.lean` and is imported here. The
+first fact supplied by this file is its companion `TauCeti.ad_neg_pow_apply_eq_zero`, which carries
+such a vanishing result from `x` to `-x`.
 
-Second, a free Lie algebra is generated, as a Lie subalgebra, by its generators:
+The second is that a free Lie algebra is generated, as a Lie subalgebra, by its generators:
 `TauCeti.FreeLieAlgebra.lieSpan_range_of_eq_top`. This is what makes the images of the generators
 generate the presented algebra, rather than merely determine maps out of it.
 
 ## Main results
 
-* `TauCeti.LieHom.map_ad_pow`: a homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
 * `TauCeti.ad_neg_pow_apply_eq_zero`: negating the element acting by `ad` preserves the vanishing of
   an iterated adjoint action.
 * `TauCeti.FreeLieAlgebra.lieSpan_range_of_eq_top`: the generators of a free Lie algebra generate it
@@ -48,24 +49,6 @@ of Layer 9 of `TauCetiRoadmap/ReductiveGroups/README.md`.
 public section
 
 namespace TauCeti
-
-namespace LieHom
-
-variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
-
-/-- A homomorphism of Lie algebras carries an iterated adjoint action to the iterated adjoint
-action of the image. Relations of the form `(ad x) ^ n y = 0`, such as Serre's, are transported
-along a homomorphism by this. -/
-@[simp]
-theorem map_ad_pow (f : L →ₗ⁅R⁆ L') (x : L) (n : ℕ) (y : L) :
-    f ((LieAlgebra.ad R L x ^ n) y) = (LieAlgebra.ad R L' (f x) ^ n) (f y) := by
-  induction n generalizing y with
-  | zero => simp
-  | succ n ih =>
-    simp only [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply] at ih ⊢
-    rw [ih, f.map_lie]
-
-end LieHom
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
