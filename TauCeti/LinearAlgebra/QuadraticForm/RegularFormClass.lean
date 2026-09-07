@@ -50,10 +50,11 @@ rank is additive.
 
 ## References
 
-* The `TauCetiRoadmap/QuadraticFormInvariants/README.md` Layer 0 section "The carrier for
-  isometry classes" and its accompanying `Suggested.lean` declaration skeleton.
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter I §2 and §5.
 -/
+
+-- The presentation-and-quotient design realised here, and the names of the declarations that
+-- carry it, follow the `TauCetiRoadmap/QuadraticFormInvariants` README and its `Suggested.lean`.
 
 public section
 
@@ -126,7 +127,6 @@ of characteristic two it is only the quotient of the diagonal presentations by i
 abbrev RegularFormClass (K : Type u) [Field K] : Type u := Quotient (regularFormSetoid K)
 
 /-- Two presentations have the same class exactly when they present isometric forms. -/
-@[simp]
 theorem RegularFormClass.mk_eq_mk_iff {p q : RegularFormPresentation K} :
     Quotient.mk (regularFormSetoid K) p = Quotient.mk (regularFormSetoid K) q ↔
       (presentedForm p).Equivalent (presentedForm q) :=
