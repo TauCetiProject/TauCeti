@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
 
 /-!
@@ -13,8 +12,9 @@ public import TauCeti.RingTheory.DedekindDomain.AdicCompletionExtension
 
 Let `L/K` be an extension of number fields, and let `w` be a finite place of `L` above a finite
 place `v` of `K`. The embedding `K → L` extends uniquely to a continuous map `K_v → L_w`.
-This file packages that map as the algebra homomorphism `completionAlgHom`, installs the algebra
-and topological scalar structures it induces, and proves its compatibility in towers.
+This file packages that map as the algebra homomorphism `completionAlgHom`, provides the algebra
+and topological scalar structures it induces in an opt-in scope, and proves its compatibility in
+towers.
 
 The underlying continuous ring homomorphism is
 `IsDedekindDomain.HeightOneSpectrum.adicCompletionExtension`. Packaging it over `K` is what makes
@@ -23,14 +23,17 @@ an unrelated algebra structure on `L_w` over `K_v`.
 
 ## Main definitions
 
-* `TauCeti.NumberField.completionAlgHom`: the canonical `K`-algebra homomorphism `K_v → L_w`.
-* `TauCeti.NumberField.completionAlgebra`: the induced algebra structure of `L_w` over `K_v`.
+* `IsDedekindDomain.HeightOneSpectrum.completionAlgHom`: the canonical `K`-algebra homomorphism
+  `K_v → L_w`.
+* `IsDedekindDomain.HeightOneSpectrum.completionAlgebra`: the induced algebra structure of `L_w`
+  over `K_v`, available by opening the `IsDedekindDomain.HeightOneSpectrum` scope.
 
 ## Main results
 
-* `TauCeti.NumberField.eq_completionAlgHom_of_continuous`: uniqueness among continuous ring
-  homomorphisms extending `K → L`.
-* `TauCeti.NumberField.completionAlgHom_comp`: compatibility in a tower of number fields.
+* `IsDedekindDomain.HeightOneSpectrum.eq_completionAlgHom_of_continuous`: uniqueness among
+  continuous ring homomorphisms extending `K → L`.
+* `IsDedekindDomain.HeightOneSpectrum.completionAlgHom_comp`: compatibility in a tower of number
+  fields.
 
 ## References
 
@@ -43,7 +46,7 @@ noncomputable section
 open IsDedekindDomain NumberField
 open scoped NumberField
 
-namespace TauCeti.NumberField
+namespace IsDedekindDomain.HeightOneSpectrum
 
 local notation "𝒪" => _root_.NumberField.RingOfIntegers
 
@@ -77,16 +80,19 @@ theorem eq_completionAlgHom_of_continuous {L : Type*} [Field L] [NumberField L] 
   v.eq_adicCompletionExtension_of_continuous K L w hf hcomp
 
 /-- The algebra structure on `L_w` over `K_v` induced by the canonical completion map. -/
-@[reducible]
-noncomputable instance completionAlgebra {L : Type*} [Field L] [NumberField L] [Algebra K L]
+@[reducible, scoped instance]
+noncomputable def completionAlgebra {L : Type*} [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
     [w.asIdeal.LiesOver v.asIdeal] :
     Algebra (v.adicCompletion K) (w.adicCompletion L) :=
   (completionAlgHom v w).toRingHom.toAlgebra
 
+open scoped IsDedekindDomain.HeightOneSpectrum
+
 /-- The global field, its completion, and the completion of an extension form a scalar tower for
 the canonical completion algebra. -/
-instance completionIsScalarTower {L : Type*} [Field L] [NumberField L] [Algebra K L]
+@[scoped instance]
+theorem completionIsScalarTower {L : Type*} [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
     [w.asIdeal.LiesOver v.asIdeal] :
     IsScalarTower K (v.adicCompletion K) (w.adicCompletion L) :=
@@ -94,7 +100,8 @@ instance completionIsScalarTower {L : Type*} [Field L] [NumberField L] [Algebra 
 
 /-- Scalar multiplication by `K_v` on `L_w` is continuous for the canonical completion
 algebra. -/
-instance completionContinuousSMul {L : Type*} [Field L] [NumberField L] [Algebra K L]
+@[scoped instance]
+theorem completionContinuousSMul {L : Type*} [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
     [w.asIdeal.LiesOver v.asIdeal] :
     ContinuousSMul (v.adicCompletion K) (w.adicCompletion L) :=
@@ -105,9 +112,12 @@ theorem completionAlgHom_comp {M L : Type*} [Field M] [NumberField M] [Algebra K
     [Field L] [NumberField L] [Algebra K L] [Algebra M L] [IsScalarTower K M L]
     (v : HeightOneSpectrum (𝒪 K)) (u : HeightOneSpectrum (𝒪 M))
     (w : HeightOneSpectrum (𝒪 L)) [u.asIdeal.LiesOver v.asIdeal]
-    [w.asIdeal.LiesOver u.asIdeal] [w.asIdeal.LiesOver v.asIdeal] :
+    [w.asIdeal.LiesOver u.asIdeal] :
+    letI : w.asIdeal.LiesOver v.asIdeal :=
+      Ideal.LiesOver.trans w.asIdeal u.asIdeal v.asIdeal
     (completionAlgHom u w).toRingHom.comp (completionAlgHom v u).toRingHom =
       (completionAlgHom v w).toRingHom := by
+  let _ : w.asIdeal.LiesOver v.asIdeal := Ideal.LiesOver.trans w.asIdeal u.asIdeal v.asIdeal
   apply eq_completionAlgHom_of_continuous v w
   · exact (continuous_completionAlgHom u w).comp (continuous_completionAlgHom v u)
   · intro x
@@ -118,4 +128,4 @@ theorem completionAlgHom_comp {M L : Type*} [Field M] [NumberField M] [Algebra K
       u.adicCompletionExtension_coe M L w (algebraMap K M x),
       IsScalarTower.algebraMap_apply K M L]
 
-end TauCeti.NumberField
+end IsDedekindDomain.HeightOneSpectrum
