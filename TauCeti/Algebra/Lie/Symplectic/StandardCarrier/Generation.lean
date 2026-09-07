@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.AlternatingForm
+public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.RootMatrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.TorusGeneration
 
 /-!
@@ -46,6 +46,11 @@ asserts that the carrier is reductive, that its weight torus is maximal, or that
   matrices, over every field.
 
 ## References
+
+The decisive input is formal rather than bibliographic: the generation theorem
+`TauCeti.GLSymplecticFin.eq_top_of_adjacent_of_long`, from
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/Symplectic/TorusGeneration.lean`, is what reduces
+the equality of point groups to the four root identifications below.
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 11.3.
 * R. Steinberg, *Lectures on Chevalley Groups*, §3.
@@ -98,7 +103,7 @@ theorem rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit (u : Mul
 -- Not `@[simp]`: `coe_rootSubgroupPoints` is already a simp lemma and rewrites this
 -- left-hand side first, so a simp normal form stated against `rootSubgroupPoints` is
 -- unreachable. Consumers rewrite with it by name.
-theorem rootSubgroupPoints_inl_of_ne_last_eq_differenceShortRootUnit (i : Fin (n + 1))
+theorem rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last (i : Fin (n + 1))
     (hi : i ≠ Fin.last n)
     (u : Multiplicative A) :
     (rootSubgroupPoints n (.inl i) A u :
@@ -119,7 +124,7 @@ theorem rootSubgroupPoints_inl_of_ne_last_eq_differenceShortRootUnit (i : Fin (n
 -- Not `@[simp]`: `coe_rootSubgroupPoints` is already a simp lemma and rewrites this
 -- left-hand side first, so a simp normal form stated against `rootSubgroupPoints` is
 -- unreachable. Consumers rewrite with it by name.
-theorem rootSubgroupPoints_inr_of_ne_last_eq_differenceShortRootUnit (i : Fin (n + 1))
+theorem rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last (i : Fin (n + 1))
     (hi : i ≠ Fin.last n)
     (u : Multiplicative A) :
     (rootSubgroupPoints n (.inr i) A u :
@@ -159,7 +164,7 @@ theorem points_eq_GLSymplecticFin : points n K = GLSymplecticFin (n + 1) K := by
         have hj : j = next n i hi := Fin.ext (by rw [val_next]; omega)
         subst hj
         have hmem := (rootSubgroupPoints n (.inl i) K (Multiplicative.ofAdd c)).2
-        rwa [rootSubgroupPoints_inl_of_ne_last_eq_differenceShortRootUnit n i hi
+        rwa [rootSubgroupPoints_inl_eq_differenceShortRootUnit_of_ne_last n i hi
           (Multiplicative.ofAdd c)] at hmem
       · have hj : j ≠ Fin.last n := by
           intro h
@@ -170,7 +175,7 @@ theorem points_eq_GLSymplecticFin : points n K = GLSymplecticFin (n + 1) K := by
         have hi : i = next n j hj := Fin.ext (by rw [val_next]; omega)
         subst hi
         have hmem := (rootSubgroupPoints n (.inr j) K (Multiplicative.ofAdd c)).2
-        rwa [rootSubgroupPoints_inr_of_ne_last_eq_differenceShortRootUnit n j hj
+        rwa [rootSubgroupPoints_inr_eq_differenceShortRootUnit_of_ne_last n j hj
           (Multiplicative.ofAdd c)] at hmem
     · intro c
       rw [Subgroup.mem_comap, Subgroup.coe_subtype]
