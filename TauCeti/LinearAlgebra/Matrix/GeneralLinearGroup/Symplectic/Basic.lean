@@ -777,6 +777,24 @@ theorem coe_differenceShortRootUnit {i j : Fin m} (hij : i ≠ j) (c : R) :
   simp [differenceShortRootUnit, differenceShortRootHom,
     commutingTransvectionPairHom_apply]
 
+/-- The matrix underlying `x_{eᵢ-eⱼ}(c)`, as the identity plus two matrix units. The two
+transvections of `coe_differenceShortRootUnit` commute and their product has no cross term, the
+column of the first and the row of the second being an upper and a lower coordinate. -/
+theorem coe_differenceShortRootUnit_eq_one_add_single_sub_single {i j : Fin m} (hij : i ≠ j)
+    (c : R) :
+    (((differenceShortRootUnit hij c : GLSymplecticFin m R) : GL (Fin (m + m)) R) :
+        Matrix (Fin (m + m)) (Fin (m + m)) R) =
+      1 + Matrix.single (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j)) c -
+        Matrix.single (finSumFinEquiv (Sum.inr j)) (finSumFinEquiv (Sum.inr i)) c := by
+  have hzero : Matrix.single (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inl j)) c *
+      Matrix.single (finSumFinEquiv (Sum.inr j)) (finSumFinEquiv (Sum.inr i)) (-c) = 0 := by
+    apply Matrix.single_mul_single_of_ne
+    exact finSumFinEquiv_inl_ne_inr _ _
+  rw [coe_differenceShortRootUnit, Units.val_mul, coe_transvectionUnit, coe_transvectionUnit,
+    Matrix.transvection, Matrix.transvection, add_mul, one_mul, mul_add, mul_one, hzero,
+    ← Matrix.single_neg]
+  abel
+
 /-- The general-linear matrix underlying `x_{eᵢ+eⱼ}(c)` is its two-transvection formula. -/
 @[simp]
 theorem coe_positiveSumShortRootUnit {i j : Fin m} (hij : i ≠ j) (c : R) :
