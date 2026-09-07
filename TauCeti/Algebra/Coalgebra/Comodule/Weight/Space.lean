@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Vector
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 
@@ -107,6 +108,28 @@ theorem hasNonzeroWeightVector_iff_exists_groupLikeWeightSpace_ne_bot :
     exact ⟨m, c.val, hm0, c.isGroupLikeElem_val, mem_groupLikeWeightSpace.mp hm⟩
 
 end Semiring
+
+section MonoidAlgebra
+
+variable {R : Type u} {G : Type v} {M : Type w}
+variable [CommSemiring R] [AddCommMonoid M] [Module R M]
+variable [Comodule R (MonoidAlgebra R G) M]
+
+/-- The generic group-like weight space at `single g 1` is the usual monoid-algebra weight
+space. -/
+@[simp]
+theorem groupLikeWeightSpace_single_one (g : G) :
+    groupLikeWeightSpace (M := M)
+        ⟨MonoidAlgebra.single g (1 : R),
+          by
+            constructor
+            · simp
+            · simp⟩ =
+      weightSpace R G M g := by
+  ext m
+  rw [mem_groupLikeWeightSpace, mem_weightSpace]
+
+end MonoidAlgebra
 
 variable {k : Type u} {C : Type v} {M : Type w}
 variable [Field k] [AddCommGroup C] [Module k C] [Coalgebra k C]
