@@ -42,7 +42,7 @@ Multiplicativity is Cauchy--Binet, `TauCeti.pairMinor_mul`, which expands a mino
 over all six index pairs. Four of the six terms assemble the product of the two minor matrices;
 the other two involve the pairs `(0,2)` and `(1,3)` carrying the form. The symplectic condition
 makes those two minors cancel in pairs, once along rows and once along columns
-(`TauCeti.pairMinor_row_eq_zero` and `TauCeti.pairMinor_column_eq_zero`), and what is left of the
+(`TauCeti.pairMinor_row` and `TauCeti.pairMinor_column_eq_zero`), and what is left of the
 two extra terms is `2` times a product of minors. That is the only place the hypothesis is used,
 and it is why the construction has no counterpart in odd characteristic.
 
@@ -74,6 +74,11 @@ consequence rather than the definition.
 ## Main results
 
 * `TauCeti.pairMinor_mul`: Cauchy--Binet for `2 × 2` minors of a `4 × 4` product.
+* `TauCeti.mem_symplecticGroup_submatrix`: a matrix preserving the transported form is symplectic
+  in Mathlib's sum-indexed coordinates, which is how everything the symplectic condition gives
+  beyond the two minor identities is read off rather than reproved.
+* `TauCeti.pairMinor_row` and `TauCeti.pairMinor_column_eq_zero`: the symplectic condition read on
+  minors, along rows and along columns.
 * `TauCeti.specialIsogenyMatrix_mul`: multiplicativity on symplectic matrices in characteristic
   two.
 * `TauCeti.specialIsogenyMatrix_mul_jFin_mul_transpose`: the image of a symplectic matrix is
@@ -168,26 +173,31 @@ theorem jFin_two_mul_self : JFin 2 R * JFin 2 R = -1 := by
 
 variable {g : Matrix (Fin 4) (Fin 4) R}
 
-/-- The column form of the symplectic condition. -/
+/-- A matrix preserving the transported alternating form is a symplectic matrix in Mathlib's
+sum-indexed coordinates. Everything this file needs from the symplectic condition beyond the two
+minor identities is read off through this reindexing rather than reproved. -/
+theorem mem_symplecticGroup_submatrix (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
+    g.submatrix finSumFinEquiv finSumFinEquiv ∈ Matrix.symplecticGroup (Fin 2) R := by
+  rw [SymplecticGroup.mem_iff, ← JFin_submatrix 2 (R := R), Matrix.transpose_submatrix,
+    Matrix.submatrix_mul_equiv, Matrix.submatrix_mul_equiv, hg]
+
+/-- The column form of the symplectic condition, which is Mathlib's `SymplecticGroup.mem_iff'`
+read through the reindexing. -/
 theorem transpose_mul_jFin_mul_self (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
     gᵀ * JFin 2 R * g = JFin 2 R := by
-  have hsq : JFin 2 R * JFin 2 R = -1 := jFin_two_mul_self
-  have hright : g * (-(JFin 2 R * gᵀ * JFin 2 R)) = 1 := by
-    rw [mul_neg, ← mul_assoc, ← mul_assoc, hg, hsq, neg_neg]
-  have hleft := mul_eq_one_comm.mp hright
-  calc gᵀ * JFin 2 R * g
-      = -(JFin 2 R * JFin 2 R) * (gᵀ * JFin 2 R * g) := by rw [hsq]; simp
-    _ = JFin 2 R * (-(JFin 2 R * gᵀ * JFin 2 R) * g) := by noncomm_ring
-    _ = JFin 2 R := by rw [hleft, mul_one]
+  have h := SymplecticGroup.mem_iff'.mp (mem_symplecticGroup_submatrix hg)
+  rw [← JFin_submatrix 2 (R := R), Matrix.transpose_submatrix, Matrix.submatrix_mul_equiv,
+    Matrix.submatrix_mul_equiv] at h
+  have h' := congrArg (fun M => M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) h
+  simpa only [Matrix.submatrix_submatrix, Equiv.self_comp_symm, Matrix.submatrix_id_id] using h'
 
-/-- The row identity: the two `J`-supported minors on a fixed row pair cancel. -/
-theorem pairMinor_row_eq_zero (hg : g * JFin 2 R * gᵀ = JFin 2 R)
-    (p : Fin 4 × Fin 4) (hp : JFin 2 R p.1 p.2 = 0) :
-    pairMinor g p (0, 2) + pairMinor g p (1, 3) = 0 := by
+/-- **The symplectic condition, read on minors.** The two minors supported by the form on a fixed
+row pair sum to the corresponding entry of the form. -/
+theorem pairMinor_row (hg : g * JFin 2 R * gᵀ = JFin 2 R) (p : Fin 4 × Fin 4) :
+    pairMinor g p (0, 2) + pairMinor g p (1, 3) = -JFin 2 R p.1 p.2 := by
   have h := congrFun (congrFun hg p.1) p.2
-  rw [hp] at h
-  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, jFin_two_eq] at h
-  simp only [pairMinor_eq]
+  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, jFin_two_eq,
+    pairMinor_eq] at h ⊢
   linear_combination -h
 
 /-- The column identity: the two `J`-supported minors on a fixed column pair cancel. -/
@@ -240,7 +250,8 @@ theorem specialIsogenyMatrix_mul [CharP R 2] {g h : Matrix (Fin 4) (Fin 4) R}
     have := CharP.cast_eq_zero R 2
     simpa using this
   ext i j
-  have hgp := pairMinor_row_eq_zero hg (specialIsogenyPair i) (jFin_specialIsogenyPair i)
+  have hgp := pairMinor_row hg (specialIsogenyPair i)
+  rw [jFin_specialIsogenyPair i, neg_zero] at hgp
   have hhq := pairMinor_column_eq_zero hh (specialIsogenyPair j) (jFin_specialIsogenyPair j)
   rw [specialIsogenyMatrix_apply, pairMinor_mul, Matrix.mul_apply, Fin.sum_univ_four]
   simp only [specialIsogenyMatrix_apply, specialIsogenyPair_zero, specialIsogenyPair_one,
@@ -250,24 +261,17 @@ theorem specialIsogenyMatrix_mul [CharP R 2] {g h : Matrix (Fin 4) (Fin 4) R}
     (pairMinor g (specialIsogenyPair i) (1, 3) *
       pairMinor h (1, 3) (specialIsogenyPair j)) * h2
 
-/-- A matrix preserving the transported alternating form has determinant one. -/
-theorem det_eq_one_of_mul_jFin (hg : g * JFin 2 R * gᵀ = JFin 2 R) : g.det = 1 := by
-  have hmem : g.submatrix finSumFinEquiv finSumFinEquiv ∈
-      Matrix.symplecticGroup (Fin 2) R := by
-    rw [SymplecticGroup.mem_iff, ← JFin_submatrix 2 (R := R), Matrix.transpose_submatrix,
-      Matrix.submatrix_mul_equiv, Matrix.submatrix_mul_equiv, hg]
-  have hdet := SymplecticGroup.det_eq_one hmem
-  rwa [Matrix.det_submatrix_equiv_self] at hdet
-
 /-! ### Compatibility with inversion -/
 
-/-- For a symplectic matrix, `-(J gᵀ J)` is a two-sided inverse. -/
-theorem mul_neg_jFin_mul_transpose_mul_jFin (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
+/-- For a symplectic matrix, `-(J gᵀ J)` is a two-sided inverse. Scaffolding for the symplectic
+form of the isogeny below, so it is private: it is a one-line consequence of the symplectic
+condition and `jFin_two_mul_self`, not an API surface. -/
+private theorem mul_neg_jFin_mul_transpose_mul_jFin (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
     g * -(JFin 2 R * gᵀ * JFin 2 R) = 1 := by
   rw [mul_neg, ← mul_assoc, ← mul_assoc, hg, jFin_two_mul_self, neg_neg]
 
-/-- The inverse of a symplectic matrix is symplectic. -/
-theorem neg_jFin_mul_transpose_mul_jFin_symplectic (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
+/-- The inverse of a symplectic matrix is symplectic. Scaffolding, as above. -/
+private theorem neg_jFin_mul_transpose_mul_jFin_symplectic (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
     -(JFin 2 R * gᵀ * JFin 2 R) * JFin 2 R * (-(JFin 2 R * gᵀ * JFin 2 R))ᵀ = JFin 2 R := by
   set h : Matrix (Fin 4) (Fin 4) R := -(JFin 2 R * gᵀ * JFin 2 R) with hdef
   have hgh : g * h = 1 := mul_neg_jFin_mul_transpose_mul_jFin hg
@@ -502,26 +506,17 @@ theorem specialIsogeny_negativeLongRootTransvectionUnit [CharP R 2] (t : R) :
 
 /-! ### The square of the special isogeny -/
 
-/-- The two form-supported minors on a fixed row pair sum to the corresponding entry of the
-form. This is the symplectic condition, read on minors. -/
-theorem pairMinor_row (hg : g * JFin 2 R * gᵀ = JFin 2 R) (a b : Fin 4) :
-    pairMinor g (a, b) (0, 2) + pairMinor g (a, b) (1, 3) = -JFin 2 R a b := by
-  have h := congrFun (congrFun hg a) b
-  simp [Matrix.mul_apply, Matrix.transpose_apply, Fin.sum_univ_four, jFin_two_eq,
-    pairMinor_eq] at h ⊢
-  linear_combination -h
-
 /-- **The square of the special isogeny is the Frobenius.** -/
 theorem specialIsogenyMatrix_specialIsogenyMatrix [CharP R 2]
     (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
     specialIsogenyMatrix (specialIsogenyMatrix g) = g.map (· ^ 2) := by
   have h2 : (2 : R) = 0 := CharTwo.two_eq_zero
-  have h01 := pairMinor_row hg 0 1
-  have h02 := pairMinor_row hg 0 2
-  have h03 := pairMinor_row hg 0 3
-  have h12 := pairMinor_row hg 1 2
-  have h13 := pairMinor_row hg 1 3
-  have h23 := pairMinor_row hg 2 3
+  have h01 := pairMinor_row hg (0, 1)
+  have h02 := pairMinor_row hg (0, 2)
+  have h03 := pairMinor_row hg (0, 3)
+  have h12 := pairMinor_row hg (1, 2)
+  have h13 := pairMinor_row hg (1, 3)
+  have h23 := pairMinor_row hg (2, 3)
   simp [jFin_two_eq, pairMinor_eq] at h01 h02 h03 h12 h13 h23
   ext i j
   fin_cases i <;> fin_cases j <;>
