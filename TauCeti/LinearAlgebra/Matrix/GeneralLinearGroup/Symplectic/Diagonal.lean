@@ -62,40 +62,32 @@ def diagonalCoordinates (t : Fin m → Rˣ) (k : Fin (m + m)) : Rˣ :=
   Sum.elim t (fun i ↦ (t i)⁻¹) (finSumFinEquiv.symm k)
 
 @[simp]
-theorem diagonalCoordinates_inl (t : Fin m → Rˣ) (i : Fin m) :
-    diagonalCoordinates t (finSumFinEquiv (.inl i)) = t i := by
-  rw [diagonalCoordinates, Equiv.symm_apply_apply]
-  rfl
-
-@[simp]
-theorem diagonalCoordinates_inr (t : Fin m → Rˣ) (i : Fin m) :
-    diagonalCoordinates t (finSumFinEquiv (.inr i)) = (t i)⁻¹ := by
-  rw [diagonalCoordinates, Equiv.symm_apply_apply]
-  rfl
-
-@[simp]
 theorem diagonalCoordinates_castAdd (t : Fin m → Rˣ) (i : Fin m) :
     diagonalCoordinates t (Fin.castAdd m i) = t i := by
-  simpa only [finSumFinEquiv_apply_left] using diagonalCoordinates_inl t i
+  rw [← finSumFinEquiv_apply_left, diagonalCoordinates, Equiv.symm_apply_apply]
+  rfl
 
 @[simp]
 theorem diagonalCoordinates_addNat (t : Fin m → Rˣ) (i : Fin m) :
     diagonalCoordinates t (i.addNat m) = (t i)⁻¹ := by
-  simpa only [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat] using
-    diagonalCoordinates_inr t i
+  rw [← Fin.natAdd_eq_addNat, ← finSumFinEquiv_apply_right, diagonalCoordinates,
+    Equiv.symm_apply_apply]
+  rfl
 
 private def diagonalCoordinatesHom : (Fin m → Rˣ) →* (Fin (m + m) → Rˣ) where
   toFun := diagonalCoordinates
   map_one' := by
     funext k
     obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective k
-    · simp only [diagonalCoordinates_inl, Pi.one_apply]
-    · simp only [diagonalCoordinates_inr, Pi.one_apply, inv_one]
+    · simp only [finSumFinEquiv_apply_left, diagonalCoordinates_castAdd, Pi.one_apply]
+    · simp only [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
+        diagonalCoordinates_addNat, Pi.one_apply, inv_one]
   map_mul' s t := by
     funext k
     obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective k
-    · simp only [diagonalCoordinates_inl, Pi.mul_apply]
-    · simp only [diagonalCoordinates_inr, Pi.mul_apply]
+    · simp only [finSumFinEquiv_apply_left, diagonalCoordinates_castAdd, Pi.mul_apply]
+    · simp only [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
+        diagonalCoordinates_addNat, Pi.mul_apply]
       simp [mul_comm]
 
 private theorem reindexGL_diagGL (t : Fin m → Rˣ) :
@@ -160,7 +152,7 @@ theorem diagonal_injective : Function.Injective (diagonal (m := m) (R := R)) := 
   rw [coe_diagonal, coe_diagonal] at h'
   have hc := diagGL_injective h'
   funext i
-  simpa only [diagonalCoordinates_inl] using
+  simpa only [finSumFinEquiv_apply_left, diagonalCoordinates_castAdd] using
     congrFun hc (finSumFinEquiv (.inl i))
 
 /-- The diagonal symplectic matrix commutes with change of coefficient ring. -/
@@ -177,9 +169,10 @@ theorem map_diagonal {S : Type*} [CommRing S] (f : R →+* S) (t : Fin m → Rˣ
   · subst j
     simp only [↓reduceIte]
     obtain ⟨k | k, rfl⟩ := finSumFinEquiv.surjective i
-    · simp only [diagonalCoordinates_inl]
+    · simp only [finSumFinEquiv_apply_left, diagonalCoordinates_castAdd]
       rfl
-    · simp only [diagonalCoordinates_inr]
+    · simp only [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
+        diagonalCoordinates_addNat]
       change f ((((t k)⁻¹ : Rˣ) : R)) = ((((Units.map f (t k))⁻¹ : Sˣ) : S))
       simp
   · simp only [hij, ↓reduceIte, map_zero]
