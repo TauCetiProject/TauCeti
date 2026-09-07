@@ -337,6 +337,9 @@ theorem adjoin_halfGen_eq_top_of_mod_four_eq_one (hmin : minpoly ℤ θ = X ^ 2 
   exact add_mem (zsmul_mem (one_mem _) k)
     (zsmul_mem (Algebra.subset_adjoin (Set.mem_singleton _)) l)
 
+-- This is the ring-of-integers half of the worked example "The dyadic quadratic law" of the
+-- human-authored roadmap `TauCetiRoadmap/NumberFieldArithmetic/README.md`.
+
 /-- **The ring of integers in the half-integer presentation.** Let `K` be generated over `ℚ` by
 an algebraic integer `ω` with minimal polynomial `X² - X + (1 - d)/4` over `ℤ`, where `d` is
 squarefree with `d ≡ 1 (mod 4)` — the presentation of `ℚ(√d)` by `ω = (1 + √d)/2`. Then
