@@ -187,13 +187,20 @@ theorem map_graphAutomorphismPoints_range_rootSubgroupPointsOfPair (hij : i ≠ 
         (rootSubgroupPointsOfPair r hij).range =
       (rootSubgroupPointsOfPair r (Fin.rev_injective.ne hij.symm)).range := by
   set σ : Multiplicative A ≃* Multiplicative A :=
-    AddEquiv.toMultiplicative (AddAut.mulLeft ((-1 : Aˣ) ^ ((i : ℕ) + (j : ℕ) + 1)))
+    AddEquiv.toMultiplicative
+      (Multiplicative.toAdd (AddAut.mulLeft ((-1 : Aˣ) ^ ((i : ℕ) + (j : ℕ) + 1))))
       with hσ
   have hσ_apply (u : Multiplicative A) :
       σ u = Multiplicative.ofAdd
         ((-1 : A) ^ ((i : ℕ) + (j : ℕ) + 1) * Multiplicative.toAdd u) := by
-    rw [hσ]
-    rfl
+    rw [hσ, AddEquiv.toMultiplicative_apply_apply,
+      AddMonoidHom.toMultiplicative_apply_apply, AddEquiv.coe_toAddMonoidHom]
+    rw [show
+      (Multiplicative.toAdd (AddAut.mulLeft ((-1 : Aˣ) ^ ((i : ℕ) + (j : ℕ) + 1))))
+          (Multiplicative.toAdd u) =
+        ((-1 : Aˣ) ^ ((i : ℕ) + (j : ℕ) + 1)) • Multiplicative.toAdd u from
+      AddAut.mulLeft_apply_apply _ _]
+    rw [Units.smul_def, Units.val_pow_eq_pow_val, Units.coe_neg_one, smul_eq_mul]
   have hσrange : σ.toMonoidHom.range = ⊤ := MonoidHom.range_eq_top.mpr σ.surjective
   -- On the root subgroup at `ε_i - ε_j` the graph automorphism is that rescaling followed by the
   -- parametrization of the reversed root subgroup.
