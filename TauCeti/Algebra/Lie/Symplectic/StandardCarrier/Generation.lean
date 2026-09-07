@@ -31,9 +31,10 @@ what makes them the Bourbaki simple roots of type `C`.
 
 ## What is not proved
 
-Only the point groups over a field are identified, and only as subgroups of `GL_(2n+2)`. Nothing
-below asserts that the carrier is reductive, that its weight torus is maximal, that the two group
-*schemes* agree, or anything at all over a base that is not a field.
+The identifications of the numbered root points hold over every commutative ring; it is the
+equality of the two point groups that needs a field, and it is asserted only there. Nothing below
+asserts that the carrier is reductive, that its weight torus is maximal, or that the two group
+*schemes* agree.
 
 ## Main results
 
@@ -168,21 +169,13 @@ theorem rootSubgroupPoints_inl_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last
       ((GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne
         (Multiplicative.toAdd u) : GLSymplecticFin (n + 1) A) :
           GL (Fin ((n + 1) + (n + 1))) A) := by
-  have hzero : Matrix.single (finSumFinEquiv (Sum.inl i))
-        (finSumFinEquiv (Sum.inl (next n i hi))) (Multiplicative.toAdd u) *
-      Matrix.single (finSumFinEquiv (Sum.inr (next n i hi))) (finSumFinEquiv (Sum.inr i))
-        (-Multiplicative.toAdd u) = 0 := by
-    apply Matrix.single_mul_single_of_ne
-    exact GLSymplecticFin.finSumFinEquiv_inl_ne_inr _ _
   apply Units.ext
   rw [coe_rootSubgroupPoints_eq_one_add_smul, rootIntMatrix_inl_of_ne_last n i hi,
-    GLSymplecticFin.coe_differenceShortRootUnit, Units.val_mul, coe_transvectionUnit,
-    coe_transvectionUnit, Matrix.transvection, Matrix.transvection, add_mul, one_mul,
-    mul_add, mul_one, hzero]
+    GLSymplecticFin.coe_differenceShortRootUnit_eq_one_add_single_sub_single]
   ext r s
   simp only [Matrix.add_apply, Matrix.sub_apply, Matrix.smul_apply, Matrix.map_apply,
-    Matrix.single_apply, Matrix.zero_apply, smul_eq_mul, Int.cast_ite, Int.cast_one,
-    Int.cast_zero, Int.cast_sub, mul_sub, mul_ite, mul_one, mul_zero]
+    Matrix.single_apply, smul_eq_mul, Int.cast_ite, Int.cast_one, Int.cast_zero, Int.cast_sub,
+    mul_sub, mul_ite, mul_one, mul_zero]
   split_ifs <;> ring
 
 /-- A nonfinal lowering point of the carrier is the opposite difference short-root element. -/
@@ -193,21 +186,13 @@ theorem rootSubgroupPoints_inr_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last
       ((GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne'
         (Multiplicative.toAdd u) : GLSymplecticFin (n + 1) A) :
           GL (Fin ((n + 1) + (n + 1))) A) := by
-  have hzero : Matrix.single (finSumFinEquiv (Sum.inl (next n i hi)))
-        (finSumFinEquiv (Sum.inl i)) (Multiplicative.toAdd u) *
-      Matrix.single (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inr (next n i hi)))
-        (-Multiplicative.toAdd u) = 0 := by
-    apply Matrix.single_mul_single_of_ne
-    exact GLSymplecticFin.finSumFinEquiv_inl_ne_inr _ _
   apply Units.ext
   rw [coe_rootSubgroupPoints_eq_one_add_smul, rootIntMatrix_inr_of_ne_last n i hi,
-    GLSymplecticFin.coe_differenceShortRootUnit, Units.val_mul, coe_transvectionUnit,
-    coe_transvectionUnit, Matrix.transvection, Matrix.transvection, add_mul, one_mul,
-    mul_add, mul_one, hzero]
+    GLSymplecticFin.coe_differenceShortRootUnit_eq_one_add_single_sub_single]
   ext r s
   simp only [Matrix.add_apply, Matrix.sub_apply, Matrix.smul_apply, Matrix.map_apply,
-    Matrix.single_apply, Matrix.zero_apply, smul_eq_mul, Int.cast_ite, Int.cast_one,
-    Int.cast_zero, Int.cast_sub, mul_sub, mul_ite, mul_one, mul_zero]
+    Matrix.single_apply, smul_eq_mul, Int.cast_ite, Int.cast_one, Int.cast_zero, Int.cast_sub,
+    mul_sub, mul_ite, mul_one, mul_zero]
   split_ifs <;> ring
 
 section Field
