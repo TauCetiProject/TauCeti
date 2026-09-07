@@ -60,7 +60,7 @@ as `Kˣ` enters through an `Additive` adapter.
 * `TauCeti.ClassFieldTheory.Formation.exists_mem_level`: every element of the coefficient module
   is fixed by an open subgroup.
 * `TauCeti.ClassFieldTheory.NormalLayer.groundLevelEquiv`: `(A^V)^{U/V} ≃ A^U`.
-* `TauCeti.ClassFieldTheory.NormalLayer.tateHZeroIsoNormQuotient`: degree-zero Tate cohomology
+* `TauCeti.ClassFieldTheory.NormalLayer.tateHZeroEquivNormQuotient`: degree-zero Tate cohomology
   of the layer is the norm quotient.
 
 ## Implementation notes
@@ -99,7 +99,8 @@ open CategoryTheory Representation
 
 namespace TauCeti.ClassFieldTheory
 
--- Provenance: the signatures of the two structures below, and of `level`, `rep`, `norm` and the
+-- Provenance: the signatures of the formation type and normal-layer structure below, and of
+-- `level`, `rep`, `norm` and the
 -- cohomology carriers, follow the blueprint `Suggested.lean` of the Tau Ceti `ClassFieldTheory`
 -- roadmap (`TauCetiRoadmap/ClassFieldTheory/README.md` and `Suggested.lean`).
 
@@ -112,19 +113,23 @@ disconnected topological group. In the arithmetic applications `G` is the Galois
 Galois extension and the module is the multiplicative group of the top field, read additively. The
 distinguished family of subgroups of the Artin–Tate definition is the family of open subgroups of
 `G`, which is why the levels below are indexed by `OpenSubgroup G`. -/
-@[ext]
-structure Formation (G : Type) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-    [CompactSpace G] [TotallyDisconnectedSpace G] where
-  /-- the coefficient module of the formation, a topological representation of `G` over `ℤ` -/
-  module : TopRep.{0} ℤ G
-  /-- the coefficient module is discrete with open point stabilizers, so that every element is
-  fixed by an open subgroup -/
-  smooth : IsSmoothDiscrete ℤ module
+abbrev Formation (G : Type) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+    [CompactSpace G] [TotallyDisconnectedSpace G] := SmoothDiscreteTopRep.{0, 0, 0} ℤ G
 
 namespace Formation
 
 variable {G : Type} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
   [TotallyDisconnectedSpace G] (F : Formation G)
+
+/-- The coefficient module of a formation, as a topological representation of `G` over `ℤ`. -/
+abbrev module : TopRep.{0} ℤ G := F.obj
+
+/-- The coefficient module is discrete with open point stabilizers. -/
+abbrev smooth : IsSmoothDiscrete ℤ F.module := F.property
+
+@[ext]
+theorem ext {F F' : Formation G} (h : F.module = F'.module) : F = F' :=
+  ObjectProperty.FullSubcategory.ext h
 
 /-- The coefficient module of a formation as a plain integral representation of `G`, forgetting
 its topology. The levels, the layer representations and all of their cohomology are taken of this
@@ -437,22 +442,21 @@ theorem map_groundLevelEquiv_submoduleOf :
 
 /-- **Degree-zero Tate cohomology of a finite normal layer is its norm quotient.** This is the
 low-degree identification that the Artin map of a class formation is read through. -/
-def tateHZeroIsoNormQuotient :
-    L.TateH F 0 ≅ ModuleCat.of ℤ (L.NormQuotient F) :=
-  TateCohomology.H0IsoNormQuotient (L.rep F) ≪≫
+def tateHZeroEquivNormQuotient : L.TateH F 0 ≃+ L.NormQuotient F :=
+  (TateCohomology.H0IsoNormQuotient (L.rep F) ≪≫
     (Submodule.Quotient.equiv _ _ (L.groundLevelEquiv F)
-      (L.map_groundLevelEquiv_submoduleOf F)).toModuleIso
+      (L.map_groundLevelEquiv_submoduleOf F)).toModuleIso).toLinearEquiv.toAddEquiv
 
 /-- The identification of degree-zero Tate cohomology with the norm quotient sends the class of an
 invariant to the class of the corresponding element of the ground level. -/
 @[simp]
-theorem tateHZeroIsoNormQuotient_hom_H0π (x : (L.rep F).ρ.invariants) :
-    (L.tateHZeroIsoNormQuotient F).hom (TateCohomology.H0π (L.rep F) x) =
+theorem tateHZeroEquivNormQuotient_H0π (x : (L.rep F).ρ.invariants) :
+    L.tateHZeroEquivNormQuotient F (TateCohomology.H0π (L.rep F) x) =
       L.normQuotientMk F (L.groundLevelEquiv F x) := by
   -- The elementwise form of the low-degree identification is bound as a hypothesis first, so
   -- that it is normalised to the application form the goal uses before it rewrites.
   have h := TateCohomology.H0π_comp_H0IsoNormQuotient_hom_apply (L.rep F) x
-  simp [tateHZeroIsoNormQuotient, normQuotientMk, h]
+  simp [tateHZeroEquivNormQuotient, normQuotientMk, h]
 
 end Norm
 
