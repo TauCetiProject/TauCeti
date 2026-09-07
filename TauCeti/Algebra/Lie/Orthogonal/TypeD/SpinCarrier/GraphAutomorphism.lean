@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.SpinCarrier.PointsFunctor
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.NumberedSymmetry
 public import TauCeti.CategoryTheory.Aut.Basic
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.D.SpinWeight
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.GraphAutomorphism
 
 /-!
@@ -130,9 +129,9 @@ variable (n : ℕ)
 
 /-! ## The fork exchange on the numbered generators and on the coordinate basis -/
 
-/-- The fork exchange on the numbered type-`Dₙ` root generators: the permutation
-`TauCeti.graphPermD` of the Bourbaki nodes, acting the same way on the raising and on the lowering
-half of the numbering. -/
+/-- The final-index swap on the numbered root generators: the permutation
+`TauCeti.graphPermD`, acting the same way on the raising and on the lowering half of the numbering.
+For `4 ≤ n`, this is the exchange of the two fork nodes of the type-`Dₙ` diagram. -/
 def graphRootPerm (hn : 2 ≤ n) : Equiv.Perm (Fin n ⊕ Fin n) :=
   Equiv.sumCongr (graphPermD n (by omega)) (graphPermD n (by omega))
 
@@ -147,8 +146,20 @@ theorem graphRootPerm_apply (hn : 2 ≤ n) (k : Fin n ⊕ Fin n) :
   rw [graphRootPerm]
   exact Equiv.sumCongr_apply _ _ k
 
-/-- **The fork exchange on the numbered root generators is an involution**, matching the
-involutivity of the fork exchange on the diagram. -/
+/-- The final-index swap on a raising root generator. -/
+@[simp]
+theorem graphRootPerm_inl (hn : 2 ≤ n) (i : Fin n) :
+    graphRootPerm n hn (.inl i) = .inl (graphPermD n (by omega) i) := by
+  rw [graphRootPerm_apply, Sum.map_inl]
+
+/-- The final-index swap on a lowering root generator. -/
+@[simp]
+theorem graphRootPerm_inr (hn : 2 ≤ n) (i : Fin n) :
+    graphRootPerm n hn (.inr i) = .inr (graphPermD n (by omega) i) := by
+  rw [graphRootPerm_apply, Sum.map_inr]
+
+/-- **The final-index swap on the numbered root generators is an involution.** For `4 ≤ n`,
+this matches the involutivity of the fork exchange on the type-`Dₙ` diagram. -/
 @[simp]
 theorem graphRootPerm_apply_apply (hn : 2 ≤ n) (k : Fin n ⊕ Fin n) :
     graphRootPerm n hn (graphRootPerm n hn k) = k := by
@@ -157,8 +168,8 @@ theorem graphRootPerm_apply_apply (hn : 2 ≤ n) (k : Fin n ⊕ Fin n) :
   | inl j => rw [Sum.map_inl, Sum.map_inl, graphPermD_apply_apply]
   | inr j => rw [Sum.map_inr, Sum.map_inr, graphPermD_apply_apply]
 
-/-- The involution of the spin coordinate basis realizing the fork exchange: it toggles the final
-sign of the sign set indexing a basis vector. -/
+/-- The involution of the spin coordinate basis that toggles the final sign of the sign set
+indexing a basis vector. For `4 ≤ n`, it realizes the fork exchange of type `Dₙ`. -/
 def graphBasisPerm (hn : 1 ≤ n) : Equiv.Perm (Fin (dimension n)) :=
   (Fintype.equivFin (Finset (Fin n))).permCongr (DynkinType.typeDSpinGraphPerm n (by omega))
 
@@ -230,9 +241,10 @@ theorem graphBasisScale_graphBasisPerm_mul (hn : 1 ≤ n) (i : Fin (dimension n)
 
 /-! ## The weight compatibility -/
 
-/-- **The final-sign toggle of the spin weights is equivariant for the fork exchange of the
-Bourbaki nodes.** This is the compatibility between the coordinate involution and the diagram
-symmetry that lets the graph operator descend to the carrier. -/
+/-- **The final-sign toggle of the spin weights is equivariant for the final-index swap.** For
+`4 ≤ n`, the latter is the exchange of the two fork nodes in the type-`Dₙ` diagram. This is the
+compatibility between the coordinate involution and the diagram symmetry that lets the graph
+operator descend to the carrier. -/
 theorem basisWeight_graphBasisPerm (hn : 2 ≤ n) (i : Fin (dimension n)) (k : Fin n) :
     basisWeight n (graphBasisPerm n (by omega) i) (graphPermD n (by omega) k) =
       basisWeight n i k := by
