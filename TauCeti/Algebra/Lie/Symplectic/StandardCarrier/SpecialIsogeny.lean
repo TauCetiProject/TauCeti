@@ -28,7 +28,9 @@ relation are the symplectic-group statements read through that identification.
 ## Main definitions
 
 * `TauCeti.SpStd.pointsMulEquivGLSymplecticFin`: the identification of the rank-two carrier's
-  points with the symplectic group.
+  points with the symplectic group. Both directions of it are read on the underlying
+  matrices by `TauCeti.SpStd.coe_pointsMulEquivGLSymplecticFin` and
+  `TauCeti.SpStd.coe_pointsMulEquivGLSymplecticFin_symm`, so no consumer unfolds it.
 * `TauCeti.SpStd.specialIsogeny`: the special isogeny of the carrier in characteristic two.
 
 ## Main results
@@ -70,6 +72,14 @@ noncomputable def pointsMulEquivGLSymplecticFin :
 theorem coe_pointsMulEquivGLSymplecticFin (g : points 1 K) :
     ((pointsMulEquivGLSymplecticFin K g : GLSymplecticFin 2 K) :
         GL (Fin (1 + 1 + (1 + 1))) K) = (g : GL (Fin (1 + 1 + (1 + 1))) K) := by
+  rw [pointsMulEquivGLSymplecticFin]
+  rfl
+
+/-- The points of the carrier underlying a symplectic element are that element. -/
+@[simp]
+theorem coe_pointsMulEquivGLSymplecticFin_symm (g : GLSymplecticFin 2 K) :
+    (((pointsMulEquivGLSymplecticFin K).symm g : points 1 K) :
+        GL (Fin (1 + 1 + (1 + 1))) K) = (g : GL (Fin (2 + 2)) K) := by
   rw [pointsMulEquivGLSymplecticFin]
   rfl
 
