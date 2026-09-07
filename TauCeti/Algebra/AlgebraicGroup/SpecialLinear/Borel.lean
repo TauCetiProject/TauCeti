@@ -18,12 +18,11 @@ The lower-left coordinate in `O(SL₂)` generates a Hopf ideal. Its quotient rep
 upper-triangular determinant-one matrices: over every commutative algebra `A`, the points cut
 out by this ideal identify with the existing subgroup `TauCeti.SL2Borel A`.
 
-Over a field, this closed subgroup is maximal among smooth closed subgroups having solvable
-geometric points. The proof uses reduced point separation over an algebraic closure and the
-abstract rank-one maximal-solvability theorem `TauCeti.SL2Borel.le_of_isSolvable_of_infinite`.
-This is the maximality input for proving that the standard upper-triangular subgroup scheme of
-`SL₂` is Borel; its smoothness, geometric connectedness, and base-change compatibility are
-separate coordinate-geometric inputs.
+Over a field, this closed subgroup is maximal among closed subgroups whose coordinate algebra is
+reduced and whose geometric points are solvable. In particular, it is maximal among smooth closed
+subgroups with solvable geometric points. This is the maximality input for proving that the
+standard upper-triangular subgroup scheme of `SL₂` is Borel; its smoothness, geometric
+connectedness, and base-change compatibility are separate coordinate-geometric inputs.
 
 ## Main declarations
 
@@ -33,16 +32,13 @@ separate coordinate-geometric inputs.
   precisely the matrices in `SL2Borel`.
 * `TauCeti.SpecialLinear.Borel.pointsMulEquiv`: the resulting equivalence from quotient Hopf
   points to `SL2Borel`.
-* `TauCeti.SpecialLinear.Borel.definingHopfIdeal_le_of_le_of_smooth_of_geometricallySolvable`:
-  maximality among smooth closed subgroups with solvable geometric points.
+* `TauCeti.SpecialLinear.Borel.definingHopfIdeal_le_of_le_of_geometricallySolvable`:
+  maximality among closed subgroups with reduced coordinate algebra and solvable geometric points.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Chapters 12 and 21.
 * R. W. Carter, *Simple Groups of Lie Type* (1972), Section 8.2.
-
-This advances the Borel-subgroup milestone in Layer 7 and the pinned type-`A₁` example in
-Layer 9 of the ReductiveGroups roadmap.
 -/
 
 public section
@@ -93,6 +89,14 @@ theorem coordinateMap_apply (h : SpecialLinear.coordinateHopfAlgebra R 2) :
     (coordinateMap R).hom h = Ideal.Quotient.mkₐ R (definingHopfIdeal R).toIdeal h :=
   CommHopfAlgCat.mkQuotient_apply
     (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R) h
+
+/-- The lower-left coordinate vanishes in the upper-triangular quotient coordinate algebra. -/
+@[simp↓]
+theorem coordinateMap_lowerLeftCoordinate :
+    (coordinateMap R).hom (lowerLeftCoordinate R) = 0 := by
+  rw [coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+  exact Ideal.Quotient.eq_zero_iff_mem.mpr
+    (definingHopfIdeal_toIdeal R ▸ Ideal.mem_span_singleton_self _)
 
 /-- The upper-triangular special-linear coordinate Hopf algebra is finite type. -/
 instance instAlgebraFiniteTypeCoordinateHopfAlgebra :
@@ -172,7 +176,7 @@ noncomputable def definingPointsSubgroupMulEquiv :
     · intro hg
       refine ⟨(SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).symm g,
         (mem_definingPointsSubgroup_iff R _).mpr ?_, ?_⟩
-      · simpa using hg
+      · simpa only [MulEquiv.apply_symm_apply] using hg
       · exact MulEquiv.apply_symm_apply _ g
 
 /-- The group of algebra-valued points of the upper-triangular special-linear coordinate Hopf
@@ -185,22 +189,97 @@ noncomputable def pointsMulEquiv :
       (CommAlgCat.of R A)).groupIsoToMulEquiv.trans
     (definingPointsSubgroupMulEquiv R)
 
+/-- Internally, the Borel point equivalence first forms the cut-out ambient subgroup point and
+then restricts the special-linear point equivalence to that subgroup. -/
+private theorem pointsMulEquiv_apply_eq
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R)
+      (CommAlgCat.of R A)) :
+    pointsMulEquiv (R := R) (A := A) f =
+      definingPointsSubgroupMulEquiv R
+        (((CommHopfAlgCat.quotientPointsSubgroupNatIso
+          (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)).app
+          (CommAlgCat.of R A)).hom f) :=
+  rfl
+
+private theorem coe_definingPointsSubgroupMulEquiv_apply
+    (g : CommHopfAlgCat.quotientPointsSubgroup
+      (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)
+      (CommAlgCat.of R A)) :
+    (definingPointsSubgroupMulEquiv R g : SL(2, A)) =
+      SpecialLinear.pointsMulEquiv (R := R) (A := A) 2 g.1 :=
+  Subgroup.coe_congrOfMapEq_apply _ _ g
+
+/-- Under the Borel and special-linear point equivalences, the quotient-point inclusion is the
+ordinary inclusion of the standard Borel into `SL₂`. -/
+@[simp]
+theorem pointsMulEquiv_coe
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R)
+      (CommAlgCat.of R A)) :
+    SpecialLinear.pointsMulEquiv (R := R) (A := A) 2
+        (CommHopfAlgCat.quotientPointsHom
+          (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)
+          (CommAlgCat.of R A) f) =
+      (pointsMulEquiv (R := R) (A := A) f : SL(2, A)) := by
+  have hcomponent := CommHopfAlgCat.quotientPointsSubgroupNatIso_hom_app_apply
+    (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)
+    (CommAlgCat.of R A) f
+  calc
+    _ = SpecialLinear.pointsMulEquiv (R := R) (A := A) 2
+          (((CommHopfAlgCat.quotientPointsSubgroupNatIso
+            (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)).app
+            (CommAlgCat.of R A)).hom f).1 :=
+      (congrArg
+        (fun g ↦ SpecialLinear.pointsMulEquiv (R := R) (A := A) 2 g.1) hcomponent).symm
+    _ = (definingPointsSubgroupMulEquiv R
+          (((CommHopfAlgCat.quotientPointsSubgroupNatIso
+            (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)).app
+            (CommAlgCat.of R A)).hom f) : SL(2, A)) :=
+      (coe_definingPointsSubgroupMulEquiv_apply R _).symm
+    _ = _ := congrArg (fun g : SL2Borel A ↦ (g : SL(2, A)))
+      (pointsMulEquiv_apply_eq R f).symm
+
+/-- The ambient point attached to a standard Borel matrix is the special-linear point attached
+to its ordinary inclusion. -/
+@[simp]
+theorem quotientPointsHom_pointsMulEquiv_symm (g : SL2Borel A) :
+    CommHopfAlgCat.quotientPointsHom
+        (SpecialLinear.coordinateHopfAlgebra R 2) (definingHopfIdeal R)
+        (CommAlgCat.of R A) ((pointsMulEquiv (R := R) (A := A)).symm g) =
+      (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).symm g.1 := by
+  apply (SpecialLinear.pointsMulEquiv (R := R) (A := A) 2).injective
+  rw [pointsMulEquiv_coe, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
+
+variable {B : Type*} [CommRing B] [Algebra R B]
+
+/-- The standard Borel point equivalence is natural in the value algebra. -/
+@[simp]
+theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R)
+      (CommAlgCat.of R A)) :
+    pointsMulEquiv (R := R) (A := B)
+        (WithConv.toConv (phi.comp f.ofConv)) =
+      SL2Borel.map phi.toRingHom (pointsMulEquiv (R := R) (A := A) f) := by
+  rw [← AlgHom.mapValue_apply]
+  apply Subtype.ext
+  rw [SL2Borel.coe_map, ← pointsMulEquiv_coe,
+    ← CommHopfAlgCat.mapValue_quotientPointsHom]
+  rw [SpecialLinear.pointsMulEquiv_mapValue, pointsMulEquiv_coe]
+
 end Points
 
 section Field
 
 variable {k : Type u} [Field k]
 
-/-- The standard upper-triangular Hopf ideal in `O(SL₂)` is maximal, in the reverse ideal
-order corresponding to inclusion of closed subgroups, among smooth closed subgroups with
-solvable geometric points. -/
-theorem definingHopfIdeal_le_of_le_of_smooth_of_geometricallySolvable
+/-- The standard upper-triangular Hopf ideal in `O(SL₂)` is maximal, in the reverse ideal order
+corresponding to inclusion of closed subgroups, among closed subgroups with reduced coordinate
+algebra and solvable geometric points. -/
+theorem definingHopfIdeal_le_of_le_of_geometricallySolvable
     (I : HopfIdeal k (SpecialLinear.coordinateHopfAlgebra k 2))
-    (hIsmooth : smoothCommHopfAlgProperty k
-      (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I))
+    [IsReduced (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I)]
+    (hIB : I ≤ definingHopfIdeal k)
     (hIsolvable : geometricallySolvablePointsCommHopfAlgProperty k
-      (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I))
-    (hIB : I ≤ definingHopfIdeal k) :
+      (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I)) :
     definingHopfIdeal k ≤ I := by
   let K := AlgebraicClosure k
   let H := SpecialLinear.coordinateHopfAlgebra k 2
@@ -212,9 +291,7 @@ theorem definingHopfIdeal_le_of_le_of_smooth_of_geometricallySolvable
     refine ⟨e.symm g, ?_, e.apply_symm_apply g⟩
     apply CommHopfAlgCat.quotientPointsSubgroup_le_of_le H hIB (CommAlgCat.of k K)
     apply (mem_definingPointsSubgroup_iff k _).mpr
-    change e (e.symm g) ∈ SL2Borel K
-    rw [e.apply_symm_apply]
-    exact hg
+    simpa only [e, MulEquiv.apply_symm_apply] using hg
   rw [geometricallySolvablePointsCommHopfAlgProperty_iff] at hIsolvable
   let _ : Group.IsSolvable
       (HopfAlgebra.points (R := k) (H := CommHopfAlgCat.quotient H I)
@@ -230,14 +307,28 @@ theorem definingHopfIdeal_le_of_le_of_smooth_of_geometricallySolvable
   let _ : Group.IsSolvable P :=
     Group.isSolvable_of_surjective (f := qToP.toMonoidHom) qToP.surjective
   have hPB : P ≤ SL2Borel K := SL2Borel.le_of_isSolvable_of_infinite P hBP
-  let _ : IsReduced (CommHopfAlgCat.quotient H I) :=
-    ((smoothCommHopfAlgProperty_iff_geometricallyReduced k
-      (CommHopfAlgCat.quotient H I)).mp hIsmooth).isReduced
   apply HopfIdeal.le_of_quotientPointsSubgroup_le (K := K)
   intro q hq
   apply (mem_definingPointsSubgroup_iff k q).mpr
   apply hPB
   exact ⟨q, hq, rfl⟩
+
+/-- The standard upper-triangular Hopf ideal in `O(SL₂)` is maximal, in the reverse ideal
+order corresponding to inclusion of closed subgroups, among smooth closed subgroups with
+solvable geometric points. -/
+theorem definingHopfIdeal_le_of_le_of_smooth_of_geometricallySolvable
+    (I : HopfIdeal k (SpecialLinear.coordinateHopfAlgebra k 2))
+    (hIB : I ≤ definingHopfIdeal k)
+    (hIsmooth : smoothCommHopfAlgProperty k
+      (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I))
+    (hIsolvable : geometricallySolvablePointsCommHopfAlgProperty k
+      (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I)) :
+    definingHopfIdeal k ≤ I := by
+  let _ : IsReduced
+      (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I) :=
+    ((smoothCommHopfAlgProperty_iff_geometricallyReduced k
+      (CommHopfAlgCat.quotient (SpecialLinear.coordinateHopfAlgebra k 2) I)).mp hIsmooth).isReduced
+  exact definingHopfIdeal_le_of_le_of_geometricallySolvable I hIB hIsolvable
 
 end Field
 

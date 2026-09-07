@@ -50,7 +50,7 @@ open scoped MatrixGroups
 
 namespace TauCeti
 
-universe u
+universe u v
 
 /-- The standard upper-triangular subgroup of `SL₂(R)`, obtained by pulling the
 upper-triangular subgroup of `GL₂(R)` back along the canonical inclusion. -/
@@ -76,6 +76,22 @@ theorem mem_iff {g : SL(2, R)} :
 theorem apply_one_zero (g : SL2Borel R) :
     (g : Matrix (Fin 2) (Fin 2) R) 1 0 = 0 :=
   mem_iff.mp g.2
+
+/-- Apply a ring homomorphism entrywise to an upper-triangular determinant-one matrix. -/
+@[expose]
+def map {S : Type v} [CommRing S] (phi : R →+* S) : SL2Borel R →* SL2Borel S :=
+  ((Matrix.SpecialLinearGroup.map phi).domRestrict (SL2Borel R)).codRestrict
+    (SL2Borel S) fun g ↦ by
+      rw [mem_iff]
+      change phi ((g : Matrix (Fin 2) (Fin 2) R) 1 0) = 0
+      rw [apply_one_zero, map_zero]
+
+/-- The special-linear matrix underlying an entrywise-mapped Borel element is the entrywise map
+of its underlying matrix. -/
+@[simp]
+theorem coe_map {S : Type v} [CommRing S] (phi : R →+* S) (g : SL2Borel R) :
+    (map phi g : SL(2, S)) = Matrix.SpecialLinearGroup.map phi g.1 :=
+  by simp only [map, MonoidHom.codRestrict_apply, MonoidHom.domRestrict_apply]
 
 /-- The canonical inclusion from the `SL₂` Borel to the `GL₂` Borel. -/
 def toGL2Borel : SL2Borel R →* GL2Borel R :=
