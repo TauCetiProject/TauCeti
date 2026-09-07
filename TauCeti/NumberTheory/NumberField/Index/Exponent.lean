@@ -58,13 +58,8 @@ namespace TauCeti.NumberField.IntegralPrimitiveElement
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- A multiple `n • b` vanishes in the quotient `𝓞 K / ℤ[θ]` exactly when `n * b` lies in the
-order `ℤ[θ]`. -/
-theorem nsmul_mkQ_eq_zero_iff (θ : IntegralPrimitiveElement K) (n : ℕ) (b : 𝓞 K) :
-    (n • θ.adjoin.toSubmodule.mkQ b : θ.Quotient) = 0 ↔ (n : 𝓞 K) * b ∈ θ.adjoin := by
-  rw [← map_nsmul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, Subalgebra.mem_toSubmodule,
-    nsmul_eq_mul]
-
+-- The comparison of the index with the conductor exponent follows the human-authored
+-- specification `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`, Layers 3.4–3.5.
 /-- The conductor exponent of `θ` divides the index `[𝓞 K : ℤ[θ]]`. -/
 theorem exponent_dvd_index (θ : IntegralPrimitiveElement K) : exponent θ.1 ∣ θ.index := by
   rw [exponent_dvd_iff, mem_conductor_iff]
