@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.SuzukiRee
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Suzuki.Ree
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB2
 
 /-!
@@ -15,7 +15,7 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB2
 The Steinberg endomorphism of `²B₂(2^(2m+1))` is not a Frobenius but an odd power of a
 half-Frobenius: the exceptional isogeny `τ` of the ambient group, which squares to the prime-field
 Frobenius, raised to the odd exponent `2m+1`. This file forms that map on the ambient group of a
-Suzuki index and proves the relation that characterizes it,
+Suzuki index and proves the required square relation,
 
 ```text
 steinberg (m) ^ 2 = Frob_(2 ^ (2m+1)).
@@ -62,7 +62,8 @@ and that numbering correspondence.
   `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup_long` and
   `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup_short` at the two carrier nodes.
 * `TauCeti.SuzukiLieIndex.steinberg_steinberg`: the square of the Steinberg endomorphism is the
-  `q`-power Frobenius.
+  `q`-power Frobenius, with `TauCeti.SuzukiLieIndex.steinberg_comp_steinberg` and
+  `TauCeti.SuzukiLieIndex.halfFrobenius_comp_halfFrobenius` for the composites themselves.
 
 ## What is not here
 
@@ -129,6 +130,13 @@ private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.toRankTwoBLieInde
       congr 1
       rw [pow_succ, hchar]
       ring
+
+/-- **The half-Frobenius squares to the prime-field Frobenius**, as an identity of monoid
+homomorphisms, so a consumer can rewrite the composite itself rather than each of its values. -/
+@[simp]
+theorem halfFrobenius_comp_halfFrobenius :
+    d.halfFrobenius.comp d.halfFrobenius = SpStd.frobenius 1 2 1 d.1.Closure :=
+  MonoidHom.ext d.halfFrobenius_halfFrobenius
 
 /-- **The Steinberg endomorphism of a Suzuki index**: the odd power `τ ^ (2m+1)` of the
 half-Frobenius, for `2m+1` the field exponent the index records. -/
@@ -258,5 +266,12 @@ theorem halfFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative 
   fin_cases c
   · simpa using d.halfFrobenius_simpleRootSubgroup_short u
   · simpa using d.halfFrobenius_simpleRootSubgroup_long u
+
+/-- **The square of the Steinberg endomorphism is the `q`-power Frobenius**, as an identity of
+monoid homomorphisms. -/
+@[simp]
+theorem steinberg_comp_steinberg :
+    d.steinberg.comp d.steinberg = d.toRankTwoBLieIndex.frobenius :=
+  MonoidHom.ext d.steinberg_steinberg
 
 end TauCeti.SuzukiLieIndex
