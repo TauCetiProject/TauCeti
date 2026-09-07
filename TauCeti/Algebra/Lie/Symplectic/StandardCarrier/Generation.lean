@@ -14,9 +14,9 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.TorusGe
 `TauCeti.SpStd.groupScheme n` is the explicit full-weight Chevalley carrier of type `C_(n+1)`, the
 smallest closed subgroup scheme of `GL_(2n+2)` containing the divided-power exponentials of the
 Bourbaki-numbered Chevalley generators together with the weight torus of the standard lattice.
-`TauCeti/Algebra/Lie/Symplectic/StandardCarrier/AlternatingForm.lean` proves that its points
-preserve the standard alternating form and records that the reverse inclusion "needs a generation
-theorem". This file supplies it: over a field the two point groups are equal.
+`TauCeti.SpStd.mem_GLSymplecticFin_of_mem_points` is the containment in one direction, that every
+point of the carrier preserves the standard alternating form. This file supplies the other: over a
+field the two point groups are equal.
 
 ## What the proof uses
 
@@ -61,11 +61,7 @@ below asserts that the carrier is reductive, that its weight torus is maximal, t
 ## Roadmap
 
 This advances Layer 9, "The Chevalley--Demazure construction", of
-`TauCetiRoadmap/ReductiveGroups/README.md`, closing on field points the gap that the type-`C`
-carrier's alternating-form file records as open. Its consumers are milestones `L0` and `L2` of
-`TauCetiRoadmap/CFSGStatement/README.md`: the rank-two member of this carrier is the ambient group
-of the two families on the `B₂` diagram, so an endomorphism of the symplectic group is now known to
-restrict to one of that ambient group.
+`TauCetiRoadmap/ReductiveGroups/README.md`.
 -/
 public section
 
@@ -175,19 +171,12 @@ theorem rootSubgroupPoints_inr_last (u : Multiplicative A) :
   ext r s
   simp [Matrix.transvection, Matrix.single_apply]
 
-/-- A nonfinal node differs from its successor. -/
-theorem ne_next (i : Fin (n + 1)) (hi : i ≠ Fin.last n) : i ≠ next n i hi := by
-  intro h
-  have := val_next n i hi
-  rw [← h] at this
-  omega
-
 /-- A nonfinal raising point of the carrier is the difference short-root element. -/
 theorem rootSubgroupPoints_inl_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last n)
     (u : Multiplicative A) :
     (rootSubgroupPoints n (.inl i) A u :
         Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
-      ((GLSymplecticFin.differenceShortRootUnit (ne_next n i hi)
+      ((GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne
         (Multiplicative.toAdd u) : GLSymplecticFin (n + 1) A) :
           GL (Fin ((n + 1) + (n + 1))) A) := by
   have hzero : Matrix.single (finSumFinEquiv (Sum.inl i))
@@ -212,7 +201,7 @@ theorem rootSubgroupPoints_inr_of_ne_last (i : Fin (n + 1)) (hi : i ≠ Fin.last
     (u : Multiplicative A) :
     (rootSubgroupPoints n (.inr i) A u :
         Matrix.GeneralLinearGroup (Fin ((n + 1) + (n + 1))) A) =
-      ((GLSymplecticFin.differenceShortRootUnit (ne_next n i hi).symm
+      ((GLSymplecticFin.differenceShortRootUnit (lt_next n i hi).ne'
         (Multiplicative.toAdd u) : GLSymplecticFin (n + 1) A) :
           GL (Fin ((n + 1) + (n + 1))) A) := by
   have hzero : Matrix.single (finSumFinEquiv (Sum.inl (next n i hi)))

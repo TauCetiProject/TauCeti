@@ -138,7 +138,7 @@ omit [CharP K 2] in
 private theorem shortRootUnit_eq (t : K) :
     pointsMulEquivGLSymplecticFin K (rootSubgroupPoints 1 (.inl 0) K (Multiplicative.ofAdd t)) =
       GLSymplecticFin.differenceShortRootUnit (show (0 : Fin (1 + 1)) ≠ 1 by decide) t := by
-  rw [← differenceShortRootUnit_congr (ne_next 1 0 zero_ne_last)
+  rw [← differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne
     (show (0 : Fin (1 + 1)) ≠ 1 by decide) rfl next_zero t]
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin,
@@ -184,7 +184,7 @@ omit [CharP K 2] in
 private theorem negShortRootUnit_eq (t : K) :
     pointsMulEquivGLSymplecticFin K (rootSubgroupPoints 1 (.inr 0) K (Multiplicative.ofAdd t)) =
       GLSymplecticFin.differenceShortRootUnit (show (1 : Fin (1 + 1)) ≠ 0 by decide) t := by
-  rw [← differenceShortRootUnit_congr (ne_next 1 0 zero_ne_last).symm
+  rw [← differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne'
     (show (1 : Fin (1 + 1)) ≠ 0 by decide) next_zero rfl t]
   apply Subtype.ext
   rw [coe_pointsMulEquivGLSymplecticFin,
