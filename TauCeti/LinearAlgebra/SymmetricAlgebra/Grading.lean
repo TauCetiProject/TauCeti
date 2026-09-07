@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.GradedAlgebra.Basic
-public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
 
 /-!
@@ -26,16 +24,12 @@ Directness comes from the universal property: the external direct sum of the hom
 again a commutative algebra, so sending a generator to its degree-one copy produces an algebra map
 splitting the recomposition map. No freeness of `M` is needed. This argument follows Mathlib's
 `TensorAlgebra.gradedAlgebra`, in `Mathlib/LinearAlgebra/TensorAlgebra/Grading.lean`, which grades
-the tensor algebra the same way. When `M` does carry a basis, the degree pieces are moreover
-compared with the total-degree pieces of a multivariate polynomial ring.
+the tensor algebra the same way.
 
 ## Main results
 
 * `gradedAlgebra`: the homogeneous pieces grade the symmetric algebra, so in particular they
   decompose it.
-* `map_homogeneousSubmodule_equivMvPolynomial`: a basis-induced equivalence carries the degree
-  `n` part of a symmetric algebra to the degree `n` part of a multivariate polynomial ring.
-* `SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff`: the degreewise form of that comparison.
 -/
 
 public section
@@ -46,7 +40,7 @@ open Module
 
 open scoped DirectSum
 
-universe u v w
+universe u v
 
 variable (R : Type u) (M : Type v) [CommSemiring R] [AddCommMonoid M] [Module R M]
 
@@ -85,31 +79,5 @@ noncomputable instance gradedAlgebra : GradedAlgebra (homogeneousSubmodule R M) 
           rw [map_mul, ih, SymmetricAlgebra.lift_ι_apply, GradedAlgebra.ι_apply,
             DirectSum.of_mul_of]
           exact DirectSum.of_eq_of_gradedMonoid_eq (Sigma.subtype_ext (add_comm _ _) rfl)
-
-/-- The algebra equivalence induced by a basis preserves homogeneous degree. -/
-@[simp]
-theorem map_homogeneousSubmodule_equivMvPolynomial {ι : Type w} (b : Basis ι R M) (n : ℕ) :
-    (homogeneousSubmodule R M n).map
-        (SymmetricAlgebra.equivMvPolynomial b).toLinearMap =
-      MvPolynomial.homogeneousSubmodule ι R n := by
-  rw [← MvPolynomial.homogeneousSubmodule_one_pow, ← AlgEquiv.toLinearEquiv_toLinearMap,
-    ← AlgEquiv.toAlgHom_toLinearMap,
-    Submodule.map_pow (LinearMap.range (SymmetricAlgebra.ι R M))
-      (SymmetricAlgebra.equivMvPolynomial b).toAlgHom n]
-  congr 1
-  rw [MvPolynomial.homogeneousSubmodule_one_eq_span_X, LinearMap.range_eq_map, ← b.span_eq,
-    Submodule.map_span, Submodule.map_span, ← Set.image_comp, ← Set.range_comp]
-  simp only [Function.comp_def, AlgHom.toLinearMap_apply, AlgEquiv.coe_toAlgHom,
-    SymmetricAlgebra.equivMvPolynomial_ι_apply]
-
-/-- An element of a symmetric algebra is homogeneous of degree `n` exactly when its image under
-the polynomial equivalence induced by a basis is. -/
-@[simp]
-theorem _root_.SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff {ι : Type w}
-    (b : Basis ι R M) (n : ℕ) (p : SymmetricAlgebra R M) :
-    (SymmetricAlgebra.equivMvPolynomial b p).IsHomogeneous n ↔ p ∈ homogeneousSubmodule R M n := by
-  rw [← MvPolynomial.mem_homogeneousSubmodule, ← map_homogeneousSubmodule_equivMvPolynomial R M b n,
-    Submodule.mem_map_equiv (e := (SymmetricAlgebra.equivMvPolynomial b).toLinearEquiv)]
-  simp
 
 end TauCeti.SymmetricAlgebra
