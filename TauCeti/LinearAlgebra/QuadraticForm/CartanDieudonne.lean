@@ -37,26 +37,6 @@ universe u v
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
   (Q : QuadraticForm K V)
 
-private theorem exists_mem_orthogonal_self_ne_zero
-    [FiniteDimensional K V] [Invertible (2 : K)]
-    (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
-    (hBsymm : B.IsSymm) (W : Submodule K V) (hW : (B.restrict W).Nondegenerate)
-    (hne : W ≠ ⊤) :
-    ∃ x : V, x ∈ B.orthogonal W ∧ B x x ≠ 0 := by
-  have horth_ne : B.orthogonal W ≠ ⊥ :=
-    mt (B.orthogonal_eq_bot_iff hBsymm.isRefl hW hB).mp hne
-  have hcomp : IsCompl W (B.orthogonal W) :=
-    B.isCompl_orthogonal_of_restrict_nondegenerate hBsymm.isRefl hW
-  have horth_nondegenerate : (B.restrict (B.orthogonal W)).Nondegenerate := by
-    rw [B.restrict_nondegenerate_iff_isCompl_orthogonal hBsymm.isRefl,
-      B.orthogonal_orthogonal hB hBsymm.isRefl W]
-    exact hcomp.symm
-  let _ : Nontrivial (B.orthogonal W) := Submodule.nontrivial_iff_ne_bot.mpr horth_ne
-  obtain ⟨x, hxx⟩ :=
-    LinearMap.BilinForm.exists_bilinForm_self_ne_zero horth_nondegenerate.ne_zero
-      (LinearMap.BilinForm.isSymm_iff.mp (hBsymm.restrict _))
-  exact ⟨x, x.2, hxx⟩
-
 private theorem exists_mem_subgroup_mul_eqOn_of_codim
     [FiniteDimensional K V] [Invertible (2 : K)]
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (n : ℕ)

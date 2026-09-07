@@ -14,9 +14,8 @@ public import TauCeti.LinearAlgebra.QuadraticForm.SpecialOrthogonalOrbit
 The compact real Spin group acts transitively on the unit level set of its positive-definite
 quadratic form in dimensions `n ≥ 2`. This is the algebraic input for its continuous sphere orbit.
 
-Roadmap: RepresentationTheory — SpinRepresentations Layer 7, “Connectivity of the compact spin
-group”. The construction follows Lawson–Michelsohn, *Spin Geometry* (1989), Chapter I, §2, and
-reuses the Clifford Spin action and special-orthogonal reflection APIs developed in TauCeti.
+The construction follows Lawson–Michelsohn, *Spin Geometry* (1989), Chapter I, §2, and reuses the
+Clifford Spin action and special-orthogonal reflection APIs developed in TauCeti.
 -/
 
 public section

@@ -14,9 +14,8 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 A nondegenerate special orthogonal group acts transitively on every nonzero quadratic level set in
 dimension at least two. This is the linear-algebra input for the compact real Spin orbit interface.
 
-Roadmap: RepresentationTheory — SpinRepresentations Layer 7, “Connectivity of the compact spin
-group”. The construction follows Lawson–Michelsohn, *Spin Geometry* (1989), Chapter I, §2, and
-uses TauCeti's quadratic-form reflection and special-orthogonal APIs.
+The construction follows Lawson–Michelsohn, *Spin Geometry* (1989), Chapter I, §2, and uses
+TauCeti's quadratic-form reflection and special-orthogonal APIs.
 -/
 
 public section
@@ -37,30 +36,33 @@ private theorem exists_orthogonal_anisotropic (Q : QuadraticForm K V) (hQ : Q.No
     ∃ z : V, Q.IsOrtho z y ∧ Q z ≠ 0 := by
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   let B : LinearMap.BilinForm K V := Q.polarBilin
-  let W : Submodule K V := B.orthogonal (K ∙ y)
+  let W : Submodule K V := K ∙ y
   have hB : B.Nondegenerate := (QuadraticMap.nondegenerate_polar_iff (Q := Q)).mpr hQ
   have hBsymm : B.IsSymm := ⟨fun x y => QuadraticMap.polar_comm Q x y⟩
   have hByy : B y y ≠ 0 := by
     simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,
       Nat.cast_ofNat] using mul_ne_zero (NeZero.ne (2 : K)) hy
-  have hWnondeg : (B.restrict W).Nondegenerate :=
-    B.restrict_nondegenerate_orthogonal_spanSingleton hB hBsymm.isRefl hByy
-  have hWrank : 0 < finrank K W := by
-    dsimp only [W]
-    rw [B.finrank_orthogonal hB]
-    rw [finrank_span_singleton (fun h => hy (by simp [h]))]
+  have hWnondeg : (B.restrict W).Nondegenerate := by
+    apply (B.restrict_nondegenerate_iff_isCompl_orthogonal hBsymm.isRefl).mpr
+    exact B.isCompl_span_singleton_orthogonal hByy
+  have hWtop : W ≠ ⊤ := by
+    intro htop
+    change K ∙ y = ⊤ at htop
+    have hy0 : y ≠ 0 := by
+      intro hy0
+      apply hy
+      rw [hy0, map_zero]
+    have hdim := finrank_span_singleton (K := K) (V := V) hy0
+    rw [htop, finrank_top] at hdim
     omega
-  let _ : Nontrivial W := Module.nontrivial_of_finrank_pos hWrank
-  obtain ⟨z, hz⟩ := LinearMap.BilinForm.exists_bilinForm_self_ne_zero
-    hWnondeg.ne_zero (LinearMap.BilinForm.isSymm_iff.mp (hBsymm.restrict W))
+  obtain ⟨z, hzorth, hzz⟩ :=
+    exists_mem_orthogonal_self_ne_zero B hB hBsymm W hWnondeg hWtop
   refine ⟨z, ?_, ?_⟩
   · apply QuadraticMap.isOrtho_polarBilin.mp
-    simpa only [B, W, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] using
-      z.2 y (Submodule.mem_span_singleton_self y)
-  · have hz' : B (z : V) (z : V) ≠ 0 := by
-      simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using hz
-    simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,
-      Nat.cast_ofNat, mul_ne_zero_iff_left (NeZero.ne (2 : K))] using hz'
+    simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] using
+      hzorth y (Submodule.mem_span_singleton_self y)
+  · simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,
+      Nat.cast_ofNat, mul_ne_zero_iff_left (NeZero.ne (2 : K))] using hzz
 
 private noncomputable def reflectionPairSpecialOrthogonal
     (Q : QuadraticForm K V) (u v : V) [Invertible (Q u)] [Invertible (Q v)] :
