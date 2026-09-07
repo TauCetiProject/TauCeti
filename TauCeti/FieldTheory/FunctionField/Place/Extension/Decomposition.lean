@@ -240,9 +240,10 @@ omit [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F'] in
 @[simp]
 theorem decompositionSubgroup_integers_smul (σ : F' ≃ₐ[F] F') (P : Place k F') :
     (σ • P).integers.decompositionSubgroup F =
-      (P.integers.decompositionSubgroup F).map (MulAut.conj σ).toMonoidHom := by
+      (P.integers.decompositionSubgroup F).map (MulAut.conj σ) := by
   rw [← stabilizer_eq_decompositionSubgroup, ← stabilizer_eq_decompositionSubgroup,
     MulAction.stabilizer_smul_eq_stabilizer_map_conj]
+  simp only [MulEquiv.toMonoidHom_eq_coe]
 
 omit [Algebra.IsIntegral F F'] [FiniteDimensional F F'] [IsGalois F F'] in
 /-- **The decomposition field of a conjugate place is the image of the decomposition field**

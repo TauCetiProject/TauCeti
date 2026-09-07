@@ -118,7 +118,7 @@ Stated in the `Subgroup` namespace, so that `H` — the first explicit argument,
 `fixedField` is applied to — carries the dot notation. -/
 @[simp]
 theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) :
-    fixedField (H.map (MulAut.conj σ).toMonoidHom) = (fixedField H).map σ.toAlgHom := by
+    fixedField (H.map (MulAut.conj σ)) = (fixedField H).map σ.toAlgHom := by
   ext x
   simp only [mem_fixedField_iff, IntermediateField.mem_map]
   constructor
@@ -129,8 +129,8 @@ theorem fixedField_map_conj (H : Subgroup (M ≃ₐ[K] M)) (σ : M ≃ₐ[K] M) 
       simpa only [MulAut.conj_apply, AlgEquiv.mul_apply, AlgEquiv.coe_inv,
         AlgEquiv.apply_symm_apply] using hx)
   · rintro ⟨y, hy, rfl⟩ g ⟨h, hh, rfl⟩
-    rw [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, AlgEquiv.mul_apply, AlgEquiv.mul_apply,
-      AlgEquiv.coe_inv, AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply]
+    change (σ * h * σ⁻¹) (σ y) = σ y
+    rw [AlgEquiv.mul_apply, AlgEquiv.mul_apply, AlgEquiv.coe_inv, AlgEquiv.symm_apply_apply]
     exact congrArg σ (hy h hh)
 
 end Subgroup
