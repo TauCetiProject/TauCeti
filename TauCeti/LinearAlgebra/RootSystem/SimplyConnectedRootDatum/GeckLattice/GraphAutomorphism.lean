@@ -454,11 +454,13 @@ theorem geckGraphAutPoints_pow_geckRootSubgroupPoints (hsigma : sigma ∈ t.diag
     (A : Type v) [CommRing A] (m : ℕ) (i : Fin t.rank ⊕ Fin t.rank) (u : Multiplicative A) :
     (t.geckGraphAutPoints ht hsigma A ^ m) (t.geckRootSubgroupPoints ht i A u) =
       t.geckRootSubgroupPoints ht ((diagramRootGeneratorPerm sigma ^ m) i) A u := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-      rw [pow_succ', MulAut.mul_apply, ih, geckGraphAutPoints_geckRootSubgroupPoints,
-        ← Equiv.Perm.mul_apply, ← pow_succ']
+  have hsemiconj : Function.Semiconj (fun j ↦ t.geckRootSubgroupPoints ht j A u)
+      (diagramRootGeneratorPerm sigma) (t.geckGraphAutPoints ht hsigma A) :=
+    fun j ↦ (t.geckGraphAutPoints_geckRootSubgroupPoints ht hsigma A j u).symm
+  change (MulAut.toPerm _ (t.geckGraphAutPoints ht hsigma A ^ m))
+      (t.geckRootSubgroupPoints ht i A u) = _
+  rw [map_pow]
+  exact (hsemiconj.iterate_right m i).symm
 
 /-- **The graph automorphism relabels the coordinates of a pinned weight-torus point** by the
 inverse of the diagram symmetry. -/

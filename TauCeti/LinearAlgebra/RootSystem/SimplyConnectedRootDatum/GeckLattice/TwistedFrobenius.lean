@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.End
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Frobenius
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GraphAutomorphism
 
@@ -253,14 +254,6 @@ theorem geckTwistedFrobenius_one :
 
 /-! ## Powers -/
 
-/-- The powers of an automorphism of a group, read in its endomorphism monoid. This is the only
-place the two monoid structures on a bundled automorphism have to be compared, so it stays local to
-this file. -/
-private theorem toMonoidHom_pow {G : Type*} [Group G] (f : MulAut G) :
-    ∀ m : ℕ, (show Monoid.End G from f.toMonoidHom) ^ m = (f ^ m).toMonoidHom
-  | 0 => rfl
-  | m + 1 => by rw [pow_succ, toMonoidHom_pow f m, pow_succ]; rfl
-
 /-- **The powers of the twisted Frobenius separate into a power of the graph automorphism and a
 Frobenius**: the `m`-th power of `γ ∘ Frob_q` is `γ ^ m ∘ Frob_(q ^ m)`.
 
@@ -278,7 +271,7 @@ theorem geckTwistedFrobenius_pow (m : ℕ) :
   have hmul : (show Monoid.End _ from t.geckTwistedFrobenius ht hsigma p k A) =
       (show Monoid.End _ from (t.geckGraphAutPoints ht hsigma A).toMonoidHom) *
         (show Monoid.End _ from t.geckFrobenius ht p k A) := rfl
-  rw [hmul, hcomm.mul_pow, toMonoidHom_pow, geckFrobenius_pow]
+  rw [hmul, hcomm.mul_pow, TauCeti.MulAut.toMonoidHom_pow, geckFrobenius_pow]
   -- The remaining goal is the same product read as a composition.
   rfl
 
@@ -307,7 +300,7 @@ theorem geckTwistedFrobenius_pow_eq_geckFrobenius_comp (m : ℕ) :
   have hcomm : Commute (show Monoid.End _ from (t.geckGraphAutPoints ht hsigma A).toMonoidHom)
       (show Monoid.End _ from t.geckFrobenius ht p (k * m) A) :=
     geckGraphAutPoints_comp_geckFrobenius ht hsigma p (k * m) A
-  rw [geckTwistedFrobenius_pow, ← toMonoidHom_pow]
+  rw [geckTwistedFrobenius_pow, ← TauCeti.MulAut.toMonoidHom_pow]
   exact (hcomm.pow_left m).eq
 
 /-- **The `m`-th power of the twisted Frobenius raises the parameter of a numbered Geck root
