@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Suzuki.Ree
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB2
 
@@ -57,6 +58,9 @@ and that numbering correspondence.
 
 * `TauCeti.SuzukiLieIndex.halfFrobenius_halfFrobenius`: the half-Frobenius squares to the
   prime-field Frobenius.
+* `TauCeti.SuzukiLieIndex.steinberg_simpleRootSubgroup`: the Steinberg map's own pinning equation
+  at every numbered simple root, exchanging the two roots and raising the parameter to
+  `p ^ m * exponent i`.
 * `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup`: the pinning equation at every
   numbered simple root, against the index's own length permutation and exponent, together with
   `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup_long` and
@@ -276,5 +280,37 @@ monoid homomorphisms. -/
 theorem steinberg_comp_steinberg :
     d.steinberg.comp d.steinberg = d.toRankTwoBLieIndex.frobenius :=
   MonoidHom.ext d.steinberg_steinberg
+
+/-- **The pinning equation of the Steinberg endomorphism at every numbered simple root.** It
+exchanges the two simple roots exactly as the half-Frobenius does, its odd power acting on the
+parameter by the remaining even power of the characteristic:
+
+```text
+steinberg (x_{α i}(t)) = x_{α (lengthPerm i)}(t ^ (p ^ m * exponent i)).
+```
+-/
+@[simp]
+theorem steinberg_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative d.1.Closure) :
+    d.steinberg (d.toRankTwoBLieIndex.simpleRootSubgroup i u) =
+      d.toRankTwoBLieIndex.simpleRootSubgroup
+          (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i)
+        (Multiplicative.ofAdd
+          (Multiplicative.toAdd u ^
+            (d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex *
+              SuzukiReeIndex.exponent d.toSuzukiReeIndex i))) := by
+  have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] :=
+    Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius d.1.fieldExponent
+  have hodd : d.1.fieldExponent = 2 * SuzukiReeIndex.halfExponent d.toSuzukiReeIndex + 1 :=
+    SuzukiReeIndex.fieldExponent_eq_two_mul_halfExponent_add_one d.toSuzukiReeIndex
+  have hexp : d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex *
+      SuzukiReeIndex.exponent d.toSuzukiReeIndex i =
+        SuzukiReeIndex.exponent d.toSuzukiReeIndex i *
+          d.1.characteristic ^ SuzukiReeIndex.halfExponent d.toSuzukiReeIndex :=
+    Nat.mul_comm _ _
+  rw [hpow, hodd, Function.iterate_succ_apply, d.halfFrobenius_simpleRootSubgroup i u,
+    d.halfFrobenius_iterate_two_mul, RankTwoBLieIndex.simpleRootSubgroup_def,
+    SpStd.frobenius_rootSubgroupPoints, ← RankTwoBLieIndex.simpleRootSubgroup_def, hexp]
+  congr 2
+  exact (pow_mul _ _ _).symm
 
 end TauCeti.SuzukiLieIndex
