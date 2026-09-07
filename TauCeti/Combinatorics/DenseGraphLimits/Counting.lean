@@ -65,12 +65,6 @@ no loss of constant. The outer integral is over a probability measure, so the bo
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — the forward counting lemma, its
-  cross-carrier coupling form, and the cut-distance form `abs_homDensity_sub_le_cutDist`; the
-  signatures follow
-  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`. The descent `homDensityOnSpace` to
-  `GraphonSpace`, weak regularity and total boundedness are separate targets and are not built
-  here.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Lemma 10.23.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Lemma 7.2.
