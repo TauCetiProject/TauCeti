@@ -296,12 +296,6 @@ namespace GLSymplecticFin
 
 variable {m R}
 
-/-- A `Fin`-indexed general-linear matrix is symplectic exactly when its reindexing to the two
-standard blocks is symplectic. -/
-theorem mem_iff_reindexGL {M : GL (Fin (m + m)) R} :
-    M ∈ GLSymplecticFin m R ↔ reindexGL m R M ∈ GLSymplectic (Fin m) R :=
-  Iff.rfl
-
 /-- Membership in the `Fin`-indexed symplectic subgroup is the defining condition
 `M J Mᵀ = J` against the transported alternating form. -/
 @[simp]

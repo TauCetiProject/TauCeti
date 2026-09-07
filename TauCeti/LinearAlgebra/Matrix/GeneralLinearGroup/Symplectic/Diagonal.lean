@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Levi
 
 /-!
 # The diagonal torus in the symplectic group
@@ -54,7 +54,11 @@ namespace TauCeti.GLSymplecticFin
 
 universe u
 
-variable {m : ℕ} {R : Type u} [CommRing R]
+variable {m : ℕ} {R : Type u}
+
+section Coordinates
+
+variable [Monoid R]
 
 /-- The diagonal entries of a standard symplectic torus element in `Fin (m + m)` coordinates:
 `t i` on the first block and `(t i)⁻¹` on the second. -/
@@ -74,110 +78,81 @@ theorem diagonalCoordinates_addNat (t : Fin m → Rˣ) (i : Fin m) :
     Equiv.symm_apply_apply]
   rfl
 
-private def diagonalCoordinatesHom : (Fin m → Rˣ) →* (Fin (m + m) → Rˣ) where
-  toFun := diagonalCoordinates
-  map_one' := by
-    funext k
-    obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective k
-    · simp only [finSumFinEquiv_apply_left, diagonalCoordinates_castAdd, Pi.one_apply]
-    · simp only [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
-        diagonalCoordinates_addNat, Pi.one_apply, inv_one]
-  map_mul' s t := by
-    funext k
-    obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective k
-    · simp only [finSumFinEquiv_apply_left, diagonalCoordinates_castAdd, Pi.mul_apply]
-    · simp only [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
-        diagonalCoordinates_addNat, Pi.mul_apply]
-      simp [mul_comm]
+end Coordinates
 
-private theorem reindexGL_diagGL (t : Fin m → Rˣ) :
-    reindexGL m R (diagGL (diagonalCoordinates t)) =
-      diagGL (Sum.elim t fun i ↦ (t i)⁻¹) := by
-  apply Matrix.GeneralLinearGroup.ext
-  intro i j
-  rw [coe_reindexGL]
-  cases i with
-  | inl i =>
-      cases j with
-      | inl j => simp [diagGL_apply, Matrix.diagonal_apply]
-      | inr j =>
-          have h : Fin.castAdd m i ≠ j.addNat m := by
-            simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-              Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr i j
-          simp [diagGL_apply, h]
-  | inr i =>
-      cases j with
-      | inl j =>
-          have h : i.addNat m ≠ Fin.castAdd m j := by
-            simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
-              Fin.natAdd_eq_addNat] using finSumFinEquiv_inr_ne_inl i j
-          simp [diagGL_apply, h]
-      | inr j => simp [diagGL_apply, Matrix.diagonal_apply]
+section Matrix
 
-private theorem diagonal_mem (t : Fin m → Rˣ) :
-    diagGL (diagonalCoordinates t) ∈ GLSymplecticFin m R := by
-  rw [mem_iff_reindexGL]
-  rw [reindexGL_diagGL]
-  rw [GLSymplectic.mem_iff_mem_symplecticGroup]
-  have hmatrix :
-      ((diagGL (Sum.elim t fun i ↦ (t i)⁻¹) : GL (Fin m ⊕ Fin m) R) :
-          Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) R) =
-        Matrix.fromBlocks (Matrix.diagonal fun i ↦ (t i : R)) 0 0
-          (Matrix.diagonal fun i ↦ (((t i)⁻¹ : Rˣ) : R)) := by
-    ext i j
-    cases i <;> cases j <;>
-      simp [diagGL_apply, Matrix.fromBlocks, Matrix.diagonal_apply]
-  rw [hmatrix]
-  apply GLSymplectic.fromBlocks_diagonal_mem
-  simp [Matrix.diagonal_mul_diagonal]
+variable [CommRing R]
 
 /-- **The diagonal split torus in the standard symplectic matrix group.** It sends `t` to the
 diagonal matrix with entries `t i` on the first block and `(t i)⁻¹` on the second. -/
-def diagonal : (Fin m → Rˣ) →* GLSymplecticFin m R :=
-  MonoidHom.codRestrict ((diagGL (k := R)).comp diagonalCoordinatesHom)
-    (GLSymplecticFin m R) diagonal_mem
+noncomputable def diagonal : (Fin m → Rˣ) →* GLSymplecticFin m R :=
+  leviHom.comp diagGL
 
 /-- The underlying general-linear matrix of a symplectic diagonal element. -/
 @[simp]
 theorem coe_diagonal (t : Fin m → Rˣ) :
     ((diagonal t : GLSymplecticFin m R) : GL (Fin (m + m)) R) =
-      diagGL (diagonalCoordinates t) :=
-  (rfl)
+      diagGL (diagonalCoordinates t) := by
+  rw [diagonal, MonoidHom.comp_apply]
+  apply Matrix.GeneralLinearGroup.ext
+  intro i j
+  rw [show ((((leviHom (diagGL t) : GLSymplecticFin m R) : GL (Fin (m + m)) R) :
+    Matrix (Fin (m + m)) (Fin (m + m)) R)) = _ from coe_leviHom (diagGL t)]
+  obtain ⟨i | i, rfl⟩ := finSumFinEquiv.surjective i
+  · obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j
+    · simp [diagGL_apply, Matrix.diagonal_apply, finSumFinEquiv_symm_apply_castAdd]
+    · have h : Fin.castAdd m i ≠ j.addNat m := by
+        simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
+          Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr i j
+      have hsymm : finSumFinEquiv.symm (j.addNat m) = Sum.inr j := by
+        rw [← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd]
+      simp [diagGL_apply, h, hsymm, finSumFinEquiv_symm_apply_castAdd]
+  · obtain ⟨j | j, rfl⟩ := finSumFinEquiv.surjective j
+    · have h : i.addNat m ≠ Fin.castAdd m j := by
+        simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
+          Fin.natAdd_eq_addNat] using finSumFinEquiv_inr_ne_inl i j
+      have hsymm : finSumFinEquiv.symm (i.addNat m) = Sum.inr i := by
+        rw [← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd]
+      simp [diagGL_apply, h, hsymm, finSumFinEquiv_symm_apply_castAdd]
+    · simp only [Matrix.submatrix_apply, Equiv.symm_apply_apply,
+        Matrix.fromBlocks_apply₂₂]
+      rw [show ((diagGL t)⁻¹ : GL (Fin m) R) = diagGL (fun i ↦ (t i)⁻¹) by
+        rw [← map_inv]
+        apply congrArg diagGL
+        funext k
+        rfl]
+      have hsymm : finSumFinEquiv.symm (i.addNat m) = Sum.inr i := by
+        rw [← Fin.natAdd_eq_addNat, finSumFinEquiv_symm_apply_natAdd]
+      by_cases hij : i = j
+      · subst j
+        simp [diagGL_apply, diagonalCoordinates, hsymm]
+      · have hji : j ≠ i := Ne.symm hij
+        simp [diagGL_apply, hij, hji]
 
 /-- The symplectic diagonal homomorphism is injective. -/
 theorem diagonal_injective : Function.Injective (diagonal (m := m) (R := R)) := by
-  intro s t h
-  have h' := congrArg (fun g : GLSymplecticFin m R ↦
-    (g : GL (Fin (m + m)) R)) h
-  rw [coe_diagonal, coe_diagonal] at h'
-  have hc := diagGL_injective h'
-  funext i
-  simpa only [finSumFinEquiv_apply_left, diagonalCoordinates_castAdd] using
-    congrFun hc (finSumFinEquiv (.inl i))
+  exact leviHom_injective.comp diagGL_injective
 
 /-- The diagonal symplectic matrix commutes with change of coefficient ring. -/
 @[simp]
 theorem map_diagonal {S : Type*} [CommRing S] (f : R →+* S) (t : Fin m → Rˣ) :
     GLSymplecticFin.map m R f (diagonal t) =
       diagonal (fun i ↦ Units.map f (t i)) := by
-  apply Subtype.ext
-  rw [GLSymplecticFin.coe_map, coe_diagonal, coe_diagonal]
+  rw [diagonal, diagonal, MonoidHom.comp_apply, MonoidHom.comp_apply, map_leviHom]
+  congr 1
   apply Matrix.GeneralLinearGroup.ext
   intro i j
-  simp only [Matrix.GeneralLinearGroup.map_apply, diagGL_coe, Matrix.diagonal_apply]
   by_cases hij : i = j
   · subst j
-    simp only [↓reduceIte]
-    obtain ⟨k | k, rfl⟩ := finSumFinEquiv.surjective i
-    · simp only [finSumFinEquiv_apply_left, diagonalCoordinates_castAdd]
-      rfl
-    · simp only [finSumFinEquiv_apply_right, Fin.natAdd_eq_addNat,
-        diagonalCoordinates_addNat]
-      change f ((((t k)⁻¹ : Rˣ) : R)) = ((((Units.map f (t k))⁻¹ : Sˣ) : S))
-      simp
-  · simp only [hij, ↓reduceIte, map_zero]
+    simp [Matrix.GeneralLinearGroup.map_apply, diagGL_apply]
+  · simp [Matrix.GeneralLinearGroup.map_apply, diagGL_apply, hij]
+
+end Matrix
 
 namespace RootSubgroupIndex
+
+variable [CommMonoid R]
 
 /-- The character of the standard symplectic diagonal torus belonging to a root. -/
 def character (root : RootSubgroupIndex m) : (Fin m → Rˣ) →* Rˣ :=
@@ -230,6 +205,10 @@ theorem character_negativeSum (i j : Fin m) (hij : i < j) (t : Fin m → Rˣ) :
 
 end RootSubgroupIndex
 
+section Matrix
+
+variable [CommRing R]
+
 private theorem conjugate_mul (d x y : GL (Fin (m + m)) R) :
     d * (x * y) * d⁻¹ = (d * x * d⁻¹) * (d * y * d⁻¹) := by
   simp [mul_assoc]
@@ -281,5 +260,7 @@ theorem diagonal_mul_rootSubgroup_mul_inv (root : RootSubgroupIndex m) (t : Fin 
       rw [conjugate_mul, diagGL_mul_transvectionUnit_mul_inv,
         diagGL_mul_transvectionUnit_mul_inv]
       congr 1 <;> simp <;> ring_nf
+
+end Matrix
 
 end TauCeti.GLSymplecticFin
