@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Frobenius
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.RootDatum
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Closure
 
@@ -17,6 +18,12 @@ the Kostant toral closure of the standard representation of `sp_(2n)` inside `GL
 This file attaches that carrier to a validated type-`C` index: the group of algebraic-closure-valued
 points of the carrier at the index's rank, its Bourbaki-numbered simple root subgroups, and the
 reading of their root characters in the type-`C` root datum the index names.
+
+The carrier also has a `q`-power Frobenius, where `q` is the field order recorded by the index.
+This file records its entrywise action and its equations on the numbered simple-root subgroups and
+the split weight torus. It is carrier-level input for the eventual type-`C` Steinberg map, not that
+map itself: the latter waits on the identification with the pinned simply connected
+Chevalley--Demazure group required by the roadmaps.
 
 The carrier is indexed by `n` in the spelling `C (n + 1)`, so a validated index of rank `r` uses
 the carrier at `TauCeti.TypeCLieIndex.carrierRank`, which is `r - 1`. That subtraction is harmless
@@ -37,7 +44,8 @@ acquires the swap of the two Bourbaki nodes.
 
 Nothing here asserts that the carrier is reductive, that its weight torus is maximal, that it is
 the symplectic group scheme or the pinned simply connected Chevalley--Demazure group scheme of type
-`Cₙ`, or that its point group is finite.
+`Cₙ`, or that its point group is finite. In particular, the Frobenius below is not used to define a
+classification candidate.
 
 ## Main declarations
 
@@ -47,10 +55,16 @@ the symplectic group scheme or the pinned simply connected Chevalley--Demazure g
   Bourbaki-numbered node, with
   `TauCeti.TypeCLieIndex.rootGeneratorWeight_carrierNode_eq_root_simpleIndex` identifying the
   character of that subgroup with the corresponding simple root of the type-`C` root datum.
+* `TauCeti.TypeCLieIndex.carrierFrobenius`: the carrier's `q`-power Frobenius, with
+  `TauCeti.TypeCLieIndex.carrierFrobenius_simpleRootSubgroup` and
+  `TauCeti.TypeCLieIndex.carrierFrobenius_weightTorusPoints` recording its action on the numbered
+  simple-root subgroups and split weight torus.
 
 ## References
 
 * R. W. Carter, *Simple Groups of Lie Type*, §§4.4 and 11.3.
+* R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, §1.17, for
+  the entrywise Frobenius action.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate III, for the numbering of the
   type-`C` diagram that the root subgroups below are indexed by.
 -/
@@ -151,6 +165,60 @@ theorem rootGeneratorWeight_carrierNode_eq_root_simpleIndex (i j : Fin d.1.rank)
   rw [SpStd.rootGeneratorWeight_inl]
   simp only [DynkinType.root_simpleIndex]
   rw [d.dynkinType_cartanMatrix_apply, d.cartanMatrix_C_carrierNode]
+
+/-! ## Frobenius on the carrier -/
+
+/-- **The `q`-power Frobenius of the standard symplectic carrier attached to a validated type-`C`
+index**, where `q` is the field order recorded by the index.
+
+This is the carrier-level map intended to underlie the type-`C` Steinberg endomorphism after the
+carrier is identified with the pinned simply connected Chevalley--Demazure group. It is deliberately
+not named `steinberg`, because no such identification is currently available. -/
+def carrierFrobenius : d.AmbientGroup →* d.AmbientGroup :=
+  SpStd.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure
+
+/-- The carrier Frobenius is the standard carrier's Frobenius at the exponent recorded by the
+index. This is its unfolding lemma; the definition itself stays sealed. -/
+theorem carrierFrobenius_def :
+    d.carrierFrobenius =
+      SpStd.frobenius d.carrierRank d.1.characteristic d.1.fieldExponent d.1.Closure :=
+  (rfl)
+
+/-- The carrier Frobenius raises every matrix entry to the field order recorded by the index. -/
+@[simp]
+theorem coe_carrierFrobenius_apply (g : d.AmbientGroup)
+    (r c : Fin (d.carrierRank + 1 + (d.carrierRank + 1))) :
+    ((d.carrierFrobenius g : Matrix.GeneralLinearGroup
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+        Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c =
+      ((g : Matrix.GeneralLinearGroup
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) :
+        Matrix (Fin (d.carrierRank + 1 + (d.carrierRank + 1)))
+          (Fin (d.carrierRank + 1 + (d.carrierRank + 1))) d.1.Closure) r c ^ d.1.fieldOrder := by
+  rw [carrierFrobenius_def, d.1.fieldOrder_eq_characteristic_pow]
+  exact SpStd.coe_frobenius_apply d.carrierRank _ _ _ g r c
+
+/-- **The carrier Frobenius fixes the numbering of a simple-root subgroup and raises its parameter
+to the `q`-th power.** -/
+@[simp]
+theorem carrierFrobenius_simpleRootSubgroup (i : Fin d.1.rank)
+    (u : Multiplicative d.1.Closure) :
+    d.carrierFrobenius (d.simpleRootSubgroup i u) =
+      d.simpleRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
+  rw [carrierFrobenius_def, simpleRootSubgroup_def, SpStd.frobenius_rootSubgroupPoints,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
+
+/-- **The carrier Frobenius raises every coordinate of the split weight torus to the `q`-th
+power.** -/
+@[simp]
+theorem carrierFrobenius_weightTorusPoints
+    (s : Fin (d.carrierRank + 1) → d.1.Closureˣ) :
+    d.carrierFrobenius (SpStd.weightTorusPoints d.carrierRank d.1.Closure s) =
+      SpStd.weightTorusPoints d.carrierRank d.1.Closure (s ^ d.1.fieldOrder) := by
+  rw [carrierFrobenius_def, SpStd.frobenius_weightTorusPoints,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
 
 end
 
