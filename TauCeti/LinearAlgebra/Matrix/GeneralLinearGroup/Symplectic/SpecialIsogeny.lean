@@ -81,7 +81,9 @@ consequence rather than the definition.
 * `TauCeti.specialIsogeny_differenceShortRootUnit` and
   `TauCeti.specialIsogeny_positiveLongRootTransvectionUnit`: the pinning equations
   `τ (x_{e₀-e₁}(t)) = x_{2e₁}(t²)` and `τ (x_{2e₁}(t)) = x_{e₀-e₁}(t)`, which exchange the two
-  root lengths with exponent two on the short root and one on the long root.
+  root lengths with exponent two on the short root and one on the long root, together with
+  `TauCeti.specialIsogeny_differenceShortRootUnit_one_zero` and
+  `TauCeti.specialIsogeny_negativeLongRootTransvectionUnit` on the two negative simple roots.
 * `TauCeti.specialIsogenyMatrix_specialIsogenyMatrix` and
   `TauCeti.specialIsogeny_specialIsogeny`: the square relation `τ ^ 2 = Frob₂`, on matrices
   and on the group.
@@ -434,6 +436,63 @@ theorem specialIsogeny_positiveLongRootTransvectionUnit [CharP R 2] (t : R) :
   apply Units.ext
   rw [coe_specialIsogeny, coe_differenceShortRootUnit_zero_one,
     coe_positiveLongRootTransvectionUnit_one]
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp only [specialIsogenyMatrix_apply, specialIsogenyPair_zero, specialIsogenyPair_one,
+      specialIsogenyPair_two, specialIsogenyPair_three, pairMinor_eq, of_apply, cons_val',
+      cons_val, cons_val_zero, cons_val_one, cons_val_fin_one, Fin.isValue, Fin.zero_eta,
+      Fin.mk_one, Fin.reduceFinMk] <;> ring1
+
+/-- The short simple root element `x_{e₁-e₀}(t)` of `Sp₄`, written out. -/
+theorem coe_differenceShortRootUnit_one_zero (t : R) :
+    (((GLSymplecticFin.differenceShortRootUnit (show (1 : Fin 2) ≠ 0 by decide) t :
+          GLSymplecticFin 2 R) : GL (Fin (2 + 2)) R) :
+        Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) =
+      !![1, 0, 0, 0; t, 1, 0, 0; 0, 0, 1, -t; 0, 0, 0, 1] := by
+  rw [GLSymplecticFin.coe_differenceShortRootUnit, Units.val_mul, coe_transvectionUnit,
+    coe_transvectionUnit]
+  ext a b
+  fin_cases a <;> fin_cases b <;>
+    simp [Matrix.transvection, Matrix.single, Matrix.one_apply, Matrix.mul_apply,
+      Fin.sum_univ_four, fse_inl_zero, fse_inl_one, fse_inr_zero, fse_inr_one]
+
+/-- The long simple root element `x_{-2e₁}(t)` of `Sp₄`, written out. -/
+theorem coe_negativeLongRootTransvectionUnit_one (t : R) :
+    (((GLSymplecticFin.negativeLongRootTransvectionUnit (1 : Fin 2) t : GLSymplecticFin 2 R) :
+        GL (Fin (2 + 2)) R) : Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) =
+      !![1, 0, 0, 0; 0, 1, 0, 0; 0, 0, 1, 0; 0, t, 0, 1] := by
+  rw [GLSymplecticFin.coe_negativeLongRootTransvectionUnit, coe_transvectionUnit]
+  ext a b
+  fin_cases a <;> fin_cases b <;>
+    simp [Matrix.transvection, Matrix.single, fse_inl_one, fse_inr_one]
+
+/-- The special isogeny on the negative short simple root subgroup:
+`τ (x_{e₁-e₀}(t)) = x_{-2e₁}(t²)`. -/
+theorem specialIsogeny_differenceShortRootUnit_one_zero [CharP R 2] (t : R) :
+    specialIsogeny
+        (GLSymplecticFin.differenceShortRootUnit (show (1 : Fin 2) ≠ 0 by decide) t) =
+      GLSymplecticFin.negativeLongRootTransvectionUnit 1 (t ^ 2) := by
+  apply Subtype.ext
+  apply Units.ext
+  rw [coe_specialIsogeny, coe_differenceShortRootUnit_one_zero,
+    coe_negativeLongRootTransvectionUnit_one]
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp only [specialIsogenyMatrix_apply, specialIsogenyPair_zero, specialIsogenyPair_one,
+      specialIsogenyPair_two, specialIsogenyPair_three, pairMinor_eq, of_apply, cons_val',
+      cons_val, cons_val_zero, cons_val_one, cons_val_fin_one, Fin.isValue, Fin.zero_eta,
+      Fin.mk_one, Fin.reduceFinMk] <;>
+    (first | ring1 | (rw [CharTwo.neg_eq]; ring1))
+
+/-- The special isogeny on the negative long simple root subgroup:
+`τ (x_{-2e₁}(t)) = x_{e₁-e₀}(t)`. -/
+theorem specialIsogeny_negativeLongRootTransvectionUnit [CharP R 2] (t : R) :
+    specialIsogeny (GLSymplecticFin.negativeLongRootTransvectionUnit 1 t) =
+      GLSymplecticFin.differenceShortRootUnit (show (1 : Fin 2) ≠ 0 by decide) t := by
+  apply Subtype.ext
+  apply Units.ext
+  rw [coe_specialIsogeny, coe_differenceShortRootUnit_one_zero,
+    coe_negativeLongRootTransvectionUnit_one]
   ext i j
   fin_cases i <;> fin_cases j <;>
     simp only [specialIsogenyMatrix_apply, specialIsogenyPair_zero, specialIsogenyPair_one,
