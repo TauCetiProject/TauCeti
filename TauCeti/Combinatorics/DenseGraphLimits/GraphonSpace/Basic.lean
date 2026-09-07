@@ -66,7 +66,7 @@ abbrev GraphonSpace (Ω : Type*) [MeasurableSpace Ω] (μ : Measure Ω) [IsProba
 @[simp]
 theorem dist_graphonSpace_mk_mk (U W : Graphon Ω μ) :
     dist (SeparationQuotient.mk U) (SeparationQuotient.mk W) = cutDist U W :=
-  SeparationQuotient.dist_mk U W
+  (SeparationQuotient.dist_mk U W).trans (Graphon.dist_eq_cutDist U W)
 
 /-- Two representatives determine the same point of graphon space exactly when their coupling cut
 distance vanishes. -/

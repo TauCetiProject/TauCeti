@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
@@ -65,8 +65,9 @@ no loss of constant. The outer integral is over a probability measure, so the bo
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — the forward counting lemma and its
-  cross-carrier coupling form; the signatures follow
+* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — the forward counting lemma, its
+  cross-carrier coupling form, and the cut-distance form `abs_homDensity_sub_le_cutDist`; the
+  signatures follow
   `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`. The descent `homDensityOnSpace` to
   `GraphonSpace`, weak regularity and total boundedness are separate targets and are not built
   here.
