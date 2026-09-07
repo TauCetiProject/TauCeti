@@ -10,15 +10,16 @@ public import TauCeti.RepresentationTheory.Quiver.Kronecker.EulerForm
 public import TauCeti.RepresentationTheory.Quiver.Kronecker.Representation
 public import TauCeti.RepresentationTheory.Quiver.Representation.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
-public import TauCeti.RepresentationTheory.Quiver.Representation.Indecomposable
 
 /-!
 # The line representations of the generalized Kronecker quiver
 
 Put the base field at both vertices of the generalized Kronecker quiver, let one distinguished
 arrow act by multiplication by a scalar `c` and every other arrow by the identity. This file
-builds that representation, `TauCeti.kroneckerLineRep`, and proves that the resulting family is
-made of pairwise non-isomorphic indecomposables:
+builds that representation, `TauCeti.kroneckerLineRep`. Every member of the family is
+indecomposable as soon as its scalar is nonzero or the quiver carries an arrow other than the
+distinguished one, and on a quiver carrying such a second arrow the family is pairwise
+non-isomorphic:
 
 `kroneckerLineRep k a₁ c ≅ kroneckerLineRep k a₁ d ↔ c = d`.
 
@@ -37,8 +38,7 @@ by a unit produces an isomorphic representation, so the classes are the points `
 projective line. Normalizing the non-distinguished arrows to the identity picks the chart
 `c₁ ≠ 0` and parametrizes it by `c = c₀ / c₁`. Neither the one class this omits -- the point at
 infinity, where the distinguished arrow acts by the identity and every other arrow by zero -- nor
-the exhaustiveness of the resulting list, is built here; a projective-line-indexed family and its
-classification are left to a later file.
+the exhaustiveness of the resulting list, is built here.
 
 The member at `c = 0` is the smallest Jordan block `TauCeti.kroneckerJordanRep k a₁ 0` of
 `TauCeti.RepresentationTheory.Quiver.Kronecker.FiniteRepType`, up to the identification of
@@ -55,17 +55,17 @@ them over any field at all.
 
 ## Main results
 
-* `TauCeti.indecomposable_kroneckerLineRep`: a line representation is indecomposable, as soon as
-  some arrow other than the distinguished one exists; its endomorphisms are recorded faithfully by
-  a single scalar.
-* `TauCeti.nonempty_kroneckerLineRep_iso_iff`: **two of them are isomorphic exactly when their
-  scalars agree.**
+* `TauCeti.indecomposable_kroneckerLineRep`: a line representation is indecomposable as soon as
+  its scalar is nonzero or some arrow other than the distinguished one exists; its endomorphisms
+  are recorded faithfully by a single scalar.
+* `TauCeti.nonempty_kroneckerLineRep_iso_iff`: **on a quiver carrying an arrow other than the
+  distinguished one, two of them are isomorphic exactly when their scalars agree.**
 * `TauCeti.dimVector_kroneckerLineRep`: every line representation has dimension vector `1` at
   both vertices.
-* `TauCeti.exists_indecomposable_dimVector_eq_not_nonempty_iso`: **outside Dynkin type the
-  dimension vector does not determine an indecomposable**: over every field, a generalized
-  Kronecker quiver with two distinct arrows carries two non-isomorphic finite-dimensional
-  indecomposables of the same dimension vector.
+* `TauCeti.exists_indecomposable_dimVector_eq_not_nonempty_iso`: **on a generalized Kronecker
+  quiver with two distinct arrows the dimension vector does not determine an indecomposable**:
+  over every field such a quiver carries two non-isomorphic finite-dimensional indecomposables of
+  the same dimension vector.
 * `TauCeti.titsForm_dimVector_kroneckerLineRep`: the Tits value of that common dimension vector is
   `2 - #arrows`, which is `1` only for the `A₂` quiver.
 
@@ -77,23 +77,10 @@ them over any field at all.
 objects only through its definition, so without it every statement below reading a component of a
 morphism as a linear map on `k` fails to elaborate.
 
-Indecomposability runs through `TauCeti.indecomposable_of_injective_of_isLocalRing` at the base
-field, as the Jordan blocks do at a truncated polynomial algebra, rather than through the brick
-criterion `TauCeti.indecomposable_of_finrank_end_eq_one`: recording an endomorphism by its scalar
-is the same work either way, and the local-ring route does not also ask for the endomorphism
-*space* to be identified with `k` as a module.
-
-The private scalar recording a morphism is defined for a morphism between two line
-representations with possibly different scalars, not only for an endomorphism: the isomorphism
-classification composes it along an isomorphism and its inverse, which are morphisms of that
-mixed shape.
-
 ## References
 
-This builds the affine chart of the `ℙ¹`-family of indecomposables of dimension vector `(1, 1)`
-named by the "Kronecker quiver" worked example of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`; the projective family
-itself is not supplied here. See Derksen--Weyman, *An Introduction to Quiver Representations*, and
+The affine chart of the `ℙ¹`-family of indecomposables of dimension vector `(1, 1)` of the
+Kronecker quiver. See Derksen--Weyman, *An Introduction to Quiver Representations*, and
 Assem--Simson--Skowroński, *Elements of the Representation Theory of Associative Algebras I*,
 Ch. VIII.
 -/
@@ -125,6 +112,21 @@ noncomputable def kroneckerLineRep (a₁ : A) (c : k) : QuiverRep k (Quiver.Kron
     fun a ↦ if a = a₁ then ModuleCat.ofHom (LinearMap.mulLeft k c) else 𝟙 _
 
 variable {a₀ a₁ : A} {c d : k}
+
+-- Not `@[simp]`: an `obj` lemma of this shape rewrites inside the implicit source and target
+-- arguments of `ModuleCat.Hom.hom`, taking the left-hand sides of the `_apply` lemmas below out of
+-- simp-normal form (`simpNF`).
+/-- The source vertex of a line representation carries the base field. -/
+theorem kroneckerLineRep_obj_src :
+    (kroneckerLineRep k a₁ c).obj (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)) =
+      ModuleCat.of k k :=
+  rfl
+
+/-- The target vertex of a line representation carries the base field. -/
+theorem kroneckerLineRep_obj_tgt :
+    (kroneckerLineRep k a₁ c).obj (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A)) =
+      ModuleCat.of k k :=
+  rfl
 
 -- Not `@[simp]`: this and `TauCeti.kroneckerLineRep_map_arrowPath_of_ne` rewrite inside the
 -- `ModuleCat.Hom.hom` of the two `_apply` lemmas below, taking those left-hand sides out of
@@ -230,66 +232,82 @@ private theorem app_tgt_eq_app_src (h : a₀ ≠ a₁)
     (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
     e.app (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A)) =
       e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)) := by
-  refine ModuleCat.hom_ext (LinearMap.ext fun (x : k) ↦ ?_)
-  have hnat : (e.app (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A))).hom
-        (((kroneckerLineRep k a₁ c).map (Quiver.Kronecker.arrowPath a₀)).hom x) =
-      ((kroneckerLineRep k a₁ d).map (Quiver.Kronecker.arrowPath a₀)).hom
-        ((e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A))).hom x) :=
-    congrArg (fun g ↦ (ModuleCat.Hom.hom g) x) (e.naturality (Quiver.Kronecker.arrowPath a₀))
-  rw [kroneckerLineRep_map_arrowPath_of_ne_apply h] at hnat
-  exact hnat.trans (kroneckerLineRep_map_arrowPath_of_ne_apply h _)
+  have hnat := kroneckerRep_hom_naturality e a₀
+  rw [ite_eq_right h, ite_eq_right h] at hnat
+  exact (Category.id_comp _).symm.trans (hnat.trans (Category.comp_id _))
 
-/-- **A morphism of line representations is determined by its component at the source vertex**: the
-component at the target agrees with it. -/
-private theorem lineApp_ext (h : a₀ ≠ a₁)
+/-- **Naturality along the distinguished arrow**: a morphism from the line at `c` to the line at
+`d` intertwines multiplication by `c` with multiplication by `d`. -/
+private theorem app_tgt_comp_mulLeft (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
+    ModuleCat.ofHom (LinearMap.mulLeft k c) ≫
+        e.app (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A)) =
+      e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)) ≫
+        ModuleCat.ofHom (LinearMap.mulLeft k d) := by
+  have hnat := kroneckerRep_hom_naturality e a₁
+  rwa [ite_eq_left rfl, ite_eq_left rfl] at hnat
+
+/-- **A morphism of line representations is determined by its component at the source vertex when
+the distinguished arrow acts invertibly**: naturality along that arrow computes the component at
+the target from the one at the source. -/
+private theorem app_tgt_ext_of_ne_zero (hc : c ≠ 0)
+    {e e' : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d}
+    (hsrc : e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)) =
+      e'.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A))) :
+    e.app (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A)) =
+      e'.app (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A)) := by
+  have hnat := app_tgt_comp_mulLeft e
+  rw [hsrc, ← app_tgt_comp_mulLeft e'] at hnat
+  refine ModuleCat.hom_ext (LinearMap.ext fun (y : k) ↦ ?_)
+  have hy : (ModuleCat.Hom.hom
+        (e.app (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A)))) (c * (c⁻¹ * y)) =
+      (ModuleCat.Hom.hom
+        (e'.app (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A)))) (c * (c⁻¹ * y)) :=
+    congrArg (fun g ↦ (ModuleCat.Hom.hom g) (c⁻¹ * y)) hnat
+  rwa [← mul_assoc, mul_inv_cancel₀ hc, one_mul] at hy
+
+/-- **A morphism of line representations is determined by its component at the source vertex**, as
+soon as the distinguished arrow acts invertibly or some other arrow exists. -/
+private theorem lineApp_ext (h : c ≠ 0 ∨ ∃ a : A, a ≠ a₁)
     {e e' : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d} (heq : lineApp e = lineApp e') :
     e = e' := by
   have hsrc : e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)) =
       e'.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A)) := ModuleCat.hom_ext heq
-  exact kroneckerRep_hom_ext hsrc
-    (by rw [app_tgt_eq_app_src h e, app_tgt_eq_app_src h e', hsrc])
+  refine kroneckerRep_hom_ext hsrc ?_
+  obtain hc | ⟨a, ha⟩ := h
+  · exact app_tgt_ext_of_ne_zero hc hsrc
+  · rw [app_tgt_eq_app_src ha e, app_tgt_eq_app_src ha e', hsrc]
 
-private theorem lineScalar_injective (h : a₀ ≠ a₁) :
+private theorem lineScalar_injective (h : c ≠ 0 ∨ ∃ a : A, a ≠ a₁) :
     Function.Injective
       (lineScalar : (kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) → k) := by
   intro e e' heq
-  refine lineApp_ext h (LinearMap.ext fun x ↦ ?_)
-  rw [lineApp_apply, lineApp_apply, heq]
-
-/-- **Naturality along the distinguished arrow**: a morphism from the line at `c` to the line at
-`d` intertwines multiplication by `c` with multiplication by `d`. -/
-private theorem lineApp_mul (h : a₀ ≠ a₁)
-    (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) (x : k) :
-    lineApp e (c * x) = d * lineApp e x := by
-  have hnat : (e.app (Quiver.Kronecker.tgt : Paths (Quiver.Kronecker A))).hom
-        (((kroneckerLineRep k a₁ c).map (Quiver.Kronecker.arrowPath a₁)).hom x) =
-      ((kroneckerLineRep k a₁ d).map (Quiver.Kronecker.arrowPath a₁)).hom
-        ((e.app (Quiver.Kronecker.src : Paths (Quiver.Kronecker A))).hom x) :=
-    congrArg (fun g ↦ (ModuleCat.Hom.hom g) x) (e.naturality (Quiver.Kronecker.arrowPath a₁))
-  rw [kroneckerLineRep_map_arrowPath_self_apply, app_tgt_eq_app_src h e] at hnat
-  rw [lineApp_eq]
-  exact hnat.trans (kroneckerLineRep_map_arrowPath_self_apply _)
+  rw [lineScalar_def, lineScalar_def] at heq
+  exact lineApp_ext h (LinearMap.ext_ring heq)
 
 /-- The scalars of the two lines agree on the scalar of any morphism between them. -/
 private theorem mul_lineScalar (h : a₀ ≠ a₁)
     (e : kroneckerLineRep k a₁ c ⟶ kroneckerLineRep k a₁ d) :
     c * lineScalar e = d * lineScalar e := by
-  have h1 := lineApp_mul h e 1
-  rw [mul_one, lineApp_apply, ← lineScalar_def] at h1
-  exact h1
+  have hnat := app_tgt_comp_mulLeft e
+  rw [app_tgt_eq_app_src h e] at hnat
+  have h1 : lineApp e (c * 1) = d * lineApp e 1 :=
+    congrArg (fun g ↦ (ModuleCat.Hom.hom g) 1) hnat
+  rwa [mul_one, lineApp_apply, ← lineScalar_def] at h1
 
 /-! ### Indecomposability and the classification -/
 
-/-- **A line representation is indecomposable, as soon as some arrow other than the distinguished
-one exists.** Its endomorphisms are recorded faithfully by their scalar in the base field, which is
-a local ring, so its only idempotent endomorphisms are `0` and the identity.
+/-- **A line representation is indecomposable as soon as its scalar is nonzero or some arrow other
+than the distinguished one exists.** Its endomorphisms are recorded faithfully by their scalar in
+the base field, which is a local ring, so its only idempotent endomorphisms are `0` and the
+identity.
 
-The second arrow is what forces the two components of an endomorphism to agree, and it is not an
-artefact: over the `A₂` quiver of a single arrow nothing relates the two components, and the line
-at `c = 0` is there the direct sum of the two vertex simples. That quiver has only the three
-isomorphism classes counted by `TauCeti.card_skeleton_indecomposable_kronecker`, with no room for
-a family. -/
-theorem indecomposable_kroneckerLineRep (h : a₀ ≠ a₁) :
+What forces the two components of an endomorphism to agree is either an arrow other than the
+distinguished one, acting as the identity on both, or the invertibility of the distinguished
+arrow. The hypothesis is not an artefact: over the `A₂` quiver of a single arrow acting by `c = 0`
+nothing relates the two components, and the line is there the direct sum of the two vertex
+simples. That quiver has only the three isomorphism classes counted by
+`TauCeti.card_skeleton_indecomposable_kronecker`, with no room for a family. -/
+theorem indecomposable_kroneckerLineRep (h : c ≠ 0 ∨ ∃ a : A, a ≠ a₁) :
     Indecomposable (kroneckerLineRep k a₁ c) :=
   indecomposable_of_injective_of_isLocalRing not_isZero_kroneckerLineRep lineScalar
     (lineScalar_injective h) lineScalar_zero lineScalar_id fun e ↦ lineScalar_comp e e
@@ -311,8 +329,8 @@ theorem nonempty_kroneckerLineRep_iso_iff (h : a₀ ≠ a₁) :
     Nonempty (kroneckerLineRep k a₁ c ≅ kroneckerLineRep k a₁ d) ↔ c = d :=
   ⟨eq_of_nonempty_kroneckerLineRep_iso h, by rintro rfl; exact ⟨Iso.refl _⟩⟩
 
-/-- **Outside Dynkin type the dimension vector does not determine an indecomposable.** Over every
-field, a generalized Kronecker quiver with two distinct arrows carries two non-isomorphic
+/-- **On a generalized Kronecker quiver with two distinct arrows the dimension vector does not
+determine an indecomposable.** Over every field such a quiver carries two non-isomorphic
 finite-dimensional indecomposable representations with the same dimension vector, the lines at the
 scalars `0` and `1`.
 
@@ -326,8 +344,8 @@ theorem exists_indecomposable_dimVector_eq_not_nonempty_iso (k : Type u) [Field 
         IsFinDim k (Quiver.Kronecker A) N ∧ Indecomposable N ∧
         dimVector M = dimVector N ∧ ¬ Nonempty (M ≅ N) :=
   ⟨kroneckerLineRep k a₁ 0, kroneckerLineRep k a₁ 1, isFinDim_kroneckerLineRep,
-    indecomposable_kroneckerLineRep h, isFinDim_kroneckerLineRep,
-    indecomposable_kroneckerLineRep h,
+    indecomposable_kroneckerLineRep (Or.inr ⟨a₀, h⟩), isFinDim_kroneckerLineRep,
+    indecomposable_kroneckerLineRep (Or.inr ⟨a₀, h⟩),
     funext fun w ↦ (dimVector_kroneckerLineRep w).trans (dimVector_kroneckerLineRep w).symm,
     fun hiso ↦ zero_ne_one (eq_of_nonempty_kroneckerLineRep_iso h hiso)⟩
 
