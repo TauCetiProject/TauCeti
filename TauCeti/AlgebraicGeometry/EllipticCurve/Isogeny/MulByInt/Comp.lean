@@ -77,7 +77,7 @@ theorem mulByIntIsogeny_comp_mulByIntIsogeny {m n : ℤ}
     (mulByIntIsogeny W hm).comp (mulByIntIsogeny W hn) = mulByIntIsogeny W hmn :=
   Isogeny.ext (CoordinatePullback.tautologicalPoint_injective (by
     rw [tautologicalPoint_comp, mulByIntIsogeny_pullback, tautologicalPoint_mulByIntPullback,
-      map_zsmul, map_genericPoint_mulByIntIsogeny, mulByIntIsogeny_pullback,
+      map_zsmul, map_mulByIntIsogeny_genericPoint, mulByIntIsogeny_pullback,
       tautologicalPoint_mulByIntPullback, smul_smul]))
 
 /-- **`[m] ∘ [n] = [m n]` for nonzero `m` and `n`**, the non-vanishing hypotheses discharged from

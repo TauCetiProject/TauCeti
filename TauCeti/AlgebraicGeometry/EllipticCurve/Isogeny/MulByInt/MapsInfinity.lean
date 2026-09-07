@@ -31,7 +31,7 @@ the pullback of the class of `X`.
 * `TauCeti.Isogeny.mapsInfinity_mulByIntPullback`: the pullback of `[n]` maps infinity to
   infinity.
 * `TauCeti.Isogeny.mulByIntIsogeny`: `[n]` as an `Isogeny W W`.
-* `TauCeti.Isogeny.map_genericPoint_mulByIntIsogeny`: the function-field map of `[n]` carries the
+* `TauCeti.Isogeny.map_mulByIntIsogeny_genericPoint`: the function-field map of `[n]` carries the
   generic point to `n • ` the generic point.
 
 ## References
@@ -107,7 +107,7 @@ theorem mulByIntIsogeny_pullback [W.IsElliptic] {n : ℤ} (hn : psiFunctionField
 
 /-- **The function-field map of `[n]` carries the generic point to its `n`-th multiple.** -/
 @[simp]
-theorem map_genericPoint_mulByIntIsogeny [W.IsElliptic] {n : ℤ}
+theorem map_mulByIntIsogeny_genericPoint [W.IsElliptic] {n : ℤ}
     (hn : psiFunctionField W n ≠ 0) :
     Point.map (mulByIntIsogeny W hn).fieldPullback W.genericPoint = n • W.genericPoint := by
   rw [← tautologicalPoint_eq_map_genericPoint, mulByIntIsogeny_pullback,
