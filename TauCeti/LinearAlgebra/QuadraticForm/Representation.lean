@@ -57,7 +57,7 @@ theorem _root_.QuadraticMap.mem_unitValueSet {Q : QuadraticMap R M R} {a : Rˣ} 
   Iff.rfl
 
 /-- Representation is preserved by an isometric equivalence of quadratic maps. -/
-@[simp] theorem _root_.QuadraticMap.IsometryEquiv.represents_iff
+theorem _root_.QuadraticMap.IsometryEquiv.represents_iff
     {M₁ M₂ N : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid N]
     [Module R M₁] [Module R M₂] [Module R N]
     {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
