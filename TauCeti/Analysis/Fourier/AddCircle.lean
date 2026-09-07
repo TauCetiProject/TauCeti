@@ -21,6 +21,11 @@ one-dimensional representations are pairwise inequivalent) and that it is **exha
 no other continuous characters). This file proves both, and packages them as an isomorphism of
 groups between `Multiplicative ℤ` and the Pontryagin dual of the circle group.
 
+Both halves need the period to be nondegenerate, and they need it to differing extents.
+Faithfulness holds as soon as `T ≠ 0`, and that hypothesis is carried explicitly. Exhaustiveness
+rests on Mathlib's Fourier analysis on `AddCircle T`, which is set up under `[Fact (0 < T)]`, so
+that instance is assumed for the classification results and for the isomorphism of groups.
+
 Faithfulness is elementary: two monomials already differ at the point `T / 2 / (m - n)`.
 Exhaustiveness is where analysis enters. A continuous character `χ` is in particular a nonzero
 continuous function, so some Fourier coefficient `fourierCoeff χ n` is nonzero — that is Mathlib's
@@ -35,8 +40,8 @@ automatic, and here it comes out as a corollary, since a continuous character *i
 monomial.
 
 `TauCeti/RepresentationTheory/Compact/Circle.lean` reads this classification for the circle group
-`Multiplicative (AddCircle T)`, where it says that the continuous representations of the circle on
-`ℂ` are exactly the Fourier ones.
+`Multiplicative (AddCircle T)` with `[Fact (0 < T)]`, where the group is compact and the statement
+becomes that the continuous representations of the circle on `ℂ` are exactly the Fourier ones.
 
 ## Main definitions
 
@@ -106,10 +111,13 @@ noncomputable def fourierAddChar (n : ℤ) : AddChar (AddCircle T) ℂ :=
 
 @[simp]
 theorem fourierAddChar_apply (n : ℤ) (x : AddCircle T) :
-    fourierAddChar n x = fourier n x := (rfl)
+    fourierAddChar n x = fourier n x := by
+  rw [fourierAddChar, MonoidHom.compAddChar_apply, Function.comp_apply,
+    AddChar.compAddMonoidHom_apply, toCircle_addChar, AddChar.coe_mk, fourier_apply]
+  rfl
 
 theorem continuous_fourierAddChar (n : ℤ) : Continuous (fourierAddChar (T := T) n) :=
-  (fourier n).continuous
+  (fourier n).continuous.congr fun x => (fourierAddChar_apply n x).symm
 
 /-- **The `n`-th Fourier monomial as an element of the Pontryagin dual of the circle group.** The
 circle group is `Multiplicative (AddCircle T)`, and this character sends `x` to
@@ -125,7 +133,9 @@ noncomputable def fourierPontryaginDual (n : ℤ) :
 
 @[simp]
 theorem coe_fourierPontryaginDual (n : ℤ) (x : Multiplicative (AddCircle T)) :
-    (fourierPontryaginDual n x : ℂ) = fourier n (Multiplicative.toAdd x) := (rfl)
+    (fourierPontryaginDual n x : ℂ) = fourier n (Multiplicative.toAdd x) := by
+  rw [fourier_apply]
+  rfl
 
 /-- Distinct indices give distinct elements of the Pontryagin dual: `TauCeti.fourier_injective`
 again. -/
@@ -172,7 +182,8 @@ only hypothesis: no unitarity is assumed, and none is needed. Together with
 theorem exists_fourierAddChar_eq (χ : AddChar (AddCircle T) ℂ) (hχ : Continuous χ) :
     ∃ n : ℤ, fourierAddChar n = χ := by
   have hcoeff : ∀ n : ℤ, fourierCoeff (⇑(⟨χ, hχ⟩ : C(AddCircle T, ℂ))) n
-      = ∫ x : AddCircle T, fourier (-n) x * χ x ∂haarAddCircle := fun _ => rfl
+      = ∫ x : AddCircle T, fourier (-n) x * χ x ∂haarAddCircle := fun _ => by
+    simp only [fourierCoeff, ContinuousMap.coe_mk, smul_eq_mul]
   have hFne : (⟨χ, hχ⟩ : C(AddCircle T, ℂ)) ≠ 0 := by
     intro h
     have hzero := DFunLike.congr_fun h (0 : AddCircle T)

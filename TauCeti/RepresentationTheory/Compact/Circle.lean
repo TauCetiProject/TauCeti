@@ -13,12 +13,14 @@ public import TauCeti.RepresentationTheory.LinearCharacter
 /-!
 # The circle group: Fourier monomials are its continuous representations on `ℂ`
 
-The circle `AddCircle T` is a compact abelian group. This file builds its continuous
-representations on `ℂ` from Mathlib's Fourier monomials, shows that they exhaust the
-representations carried by `ℂ`, and checks that the general compact-group theory, specialized to
-the circle, returns Mathlib's Fourier analysis on the nose. That every irreducible representation
-of a compact abelian group is one-dimensional — the theorem that would promote this to a
-classification of *all* irreducibles — is not proved here; see the implementation notes.
+For a positive period — the standing hypothesis `[Fact (0 < T)]`, which is what Mathlib's
+compactness instance and its Fourier analysis on `AddCircle T` both require — the circle
+`AddCircle T` is a compact abelian group. This file builds its continuous representations on `ℂ`
+from Mathlib's Fourier monomials, shows that they exhaust the representations carried by `ℂ`, and
+checks that the general compact-group theory, specialized to the circle, returns Mathlib's Fourier
+analysis on the nose. That every irreducible representation of a compact abelian group is
+one-dimensional — the theorem that would promote this to a classification of *all* irreducibles —
+is not proved here; see the implementation notes.
 
 Concretely, `fourierRep T n` is the continuous representation of the circle on `ℂ` in which the
 group element `x` acts by multiplication by `fourier n x`. It is one-dimensional, hence
@@ -167,13 +169,13 @@ theorem isIrreducible_fourierRep (n : ℤ) :
 
 /-- **The character of the `n`-th Fourier representation is `fourier n`.** A one-dimensional
 representation is its own character; this is `Representation.char_ofLinearCharacter` read through
-`TauCeti.toRepresentation_fourierRep`.
-
-The equation is stated between continuous maps rather than pointwise because that is the spelling
-`simp` can normalize with: `TauCeti.ContRepresentation.character_apply` is itself `@[simp]`, so a
-pointwise `character (fourierRep T n) _ x = _` is not in simp-normal form and `simpNF` rejects the
-tag on it, whereas the unapplied left-hand side is a subterm of the pointwise one and rewrites it
-too. This is how `TauCeti.SU2.character_symPowerModel` is stated for the same reason. -/
+`TauCeti.toRepresentation_fourierRep`. The equality is one of continuous maps, so it identifies the
+character of `fourierRep T n` with Mathlib's Fourier monomial as an element of
+`C(AddCircle T, ℂ)`, and every fact Mathlib proves about `fourier n` there — its continuity, its
+values, its `L²` norm — transfers to the character. -/
+-- Stated unapplied because `TauCeti.ContRepresentation.character_apply` is itself `@[simp]`, so
+-- `simpNF` rejects the tag on the pointwise form; the unapplied left-hand side is a subterm of the
+-- pointwise one and rewrites it too. `TauCeti.SU2.character_symPowerModel` is stated likewise.
 @[simp]
 theorem character_fourierRep (n : ℤ) :
     ContRepresentation.character (fourierRep T n) (continuous_fourierRep T n) = fourier n :=
