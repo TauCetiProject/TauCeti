@@ -188,14 +188,12 @@ theorem finrankEquiv_apply [Small.{v} k] (x : SplitK0 (FGModuleCat.{v} k)) :
     finrankEquiv k x = finrank k x :=
   AddEquiv.ofBijective_apply _ _ _
 
-@[simp]
 theorem finrankEquiv_of [Small.{v} k] (X : FGModuleCat.{v} k) :
     finrankEquiv k (of X) = Module.finrank k X :=
   finrank_of k X
 
 /-- The inverse dimension equivalence sends an integer to that multiple of the class of any
 one-dimensional space. -/
-@[simp]
 theorem finrankEquiv_symm_apply [Small.{v} k] (L : FGModuleCat.{v} k)
     (hL : Module.finrank k L = 1) (n : ℤ) : (finrankEquiv k).symm n = n • of L := by
   apply (finrankEquiv k).injective
@@ -267,14 +265,12 @@ theorem finrankEquiv_apply [Small.{v} k] (x : AbelianK0 (FGModuleCat.{v} k)) :
     finrankEquiv k x = finrank k x :=
   AddEquiv.ofBijective_apply _ _ _
 
-@[simp]
 theorem finrankEquiv_of [Small.{v} k] (X : FGModuleCat.{v} k) :
     finrankEquiv k (of X) = Module.finrank k X :=
   finrank_of k X
 
 /-- The inverse dimension equivalence sends an integer to that multiple of the class of any
 one-dimensional space. -/
-@[simp]
 theorem finrankEquiv_symm_apply [Small.{v} k] (L : FGModuleCat.{v} k)
     (hL : Module.finrank k L = 1) (n : ℤ) : (finrankEquiv k).symm n = n • of L := by
   apply (finrankEquiv k).injective
