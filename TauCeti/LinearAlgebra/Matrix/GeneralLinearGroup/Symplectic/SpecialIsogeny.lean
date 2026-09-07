@@ -30,8 +30,8 @@ The four bivectors `e₀∧e₁`, `e₀∧e₃`, `e₂∧e₃`, `e₁∧e₂` ar
 because they are exactly the coordinate bivectors on which the form vanishes, `ω` being supported
 on the other two. So no correction term is needed when passing to the quotient, and the matrix of
 the composite in that basis is simply the matrix of `2 × 2` minors of `g` on those four index
-pairs. That matrix is `Matrix.symplecticSpecialIsogeny`, and everything below is proved from the
-minor formula rather than from the exterior square, which is why no exterior power appears.
+pairs. That matrix is `Matrix.symplecticSpecialIsogeny`. The exterior square is the reason for
+the construction but is not itself used below, so no exterior power appears.
 
 The order of the four pairs is chosen so that the induced form is again the standard one: the
 first pairs with the third and the second with the fourth, matching
@@ -39,33 +39,18 @@ first pairs with the third and the second with the fourth, matching
 
 ## Where characteristic two enters
 
-Multiplicativity is Cauchy--Binet, `Matrix.pairMinor_mul_fin_four`, which expands a minor of a
-product over all six index pairs. Four of the six terms assemble the product of the two minor
-matrices; the other two involve the pairs `(0,2)` and `(1,3)` carrying the form. The symplectic
-condition makes those two minors cancel in pairs, once along rows and once along columns
-(`TauCeti.pairMinor_row_add_eq_neg_jFin` and `TauCeti.pairMinor_column_add_eq_neg_jFin`), and what
-is left of the two extra terms is `2` times a product of minors. That is the only place the
-hypothesis is used, and it is why the construction has no counterpart in odd characteristic.
-
-That `τ g` is again symplectic is deduced rather than computed: `τ` commutes with the symplectic
-adjoint `M ↦ -(J Mᵀ J)` in characteristic two, and for a symplectic `g` that adjoint is the
-inverse, so `τ g` has `-(J (τ g)ᵀ J)` as an inverse, which is the symplectic condition.
-
-## The square relation
-
-`τ ^ 2 = Frob₂` is proved entrywise. Composing the minor formula with itself gives, in each of the
-sixteen entries, a quartic polynomial in the entries of `g`, and it equals the square of the
-corresponding entry modulo the symplectic condition. `TauCeti.pairMinor_row_add_eq_neg_jFin` reads
-that condition on minors, one equation for each row pair, and each of the sixteen entries needs
-three of those six equations together with `2 = 0`. The certificates are the explicit
-`linear_combination` terms below, so the proof is a check rather than a search.
+Multiplicativity fails in odd characteristic. Expanding a minor of a product over the six index
+pairs, four terms assemble the product of the two minor matrices and the two carried by the pairs
+`(0,2)` and `(1,3)` leave `2` times a product of minors. Characteristic two is what kills that
+remainder, and it is the only place the hypothesis is used, so the construction has no counterpart
+in odd characteristic.
 
 Nothing here concerns fixed points, finiteness or simplicity, and the odd powers `τ ^ (2m+1)` that
-cut out the Suzuki groups are not taken. Two properties of `τ` are recorded, and each is proved
-directly from the minor formula: its action on the simple root subgroups, raising the parameter of
-a short one to the second power and leaving that of a long one alone, and the square relation. The
-square relation is not derived from the action on root subgroups, and nothing below shows that
-action determines an endomorphism over an arbitrary commutative ring.
+cut out the Suzuki groups are not taken. Two properties of `τ` are recorded independently of each
+other: its action on the simple root subgroups, raising the parameter of a short one to the second
+power and leaving that of a long one alone, and the square relation `τ ^ 2 = Frob₂`. Neither is
+derived from the other, and nothing below shows that the action on root subgroups determines an
+endomorphism over an arbitrary commutative ring.
 
 ## Main definitions
 
