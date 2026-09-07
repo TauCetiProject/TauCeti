@@ -8,6 +8,7 @@ module
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Central
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Scheme.Basic
+import TauCeti.Algebra.HopfAlgebra.Kernel
 
 /-!
 # The center of an affine group scheme
@@ -279,21 +280,10 @@ private theorem centerCoefficientIdeal_comul_mem {x : H}
   have hker : RingHom.ker (Algebra.TensorProduct.map q q).toRingHom =
       HopfIdeal.leftTensorIdeal (R := k) (H := H) I ⊔
         HopfIdeal.rightTensorIdeal (R := k) (H := H) I := by
-    have hqker_eq : RingHom.ker (q : H →+* Q) = I := Ideal.Quotient.mkₐ_ker k I
-    -- `map_ker` uses algebra-hom coercions while the tensor ideals store explicit ring homs.
-    change RingHom.ker (Algebra.TensorProduct.map q q) =
-      Ideal.map Algebra.TensorProduct.includeLeft.toRingHom I ⊔
-        Ideal.map Algebra.TensorProduct.includeRight.toRingHom I
-    calc
-      RingHom.ker (Algebra.TensorProduct.map q q) =
-          Ideal.map Algebra.TensorProduct.includeLeft (RingHom.ker (q : H →+* Q)) ⊔
-            Ideal.map Algebra.TensorProduct.includeRight (RingHom.ker (q : H →+* Q)) :=
-        Algebra.TensorProduct.map_ker (f := q) (g := q)
-          (Ideal.Quotient.mkₐ_surjective k I) (Ideal.Quotient.mkₐ_surjective k I)
-      _ = Ideal.map Algebra.TensorProduct.includeLeft.toRingHom I ⊔
-          Ideal.map Algebra.TensorProduct.includeRight.toRingHom I := by
-        rw [hqker_eq]
-        rfl
+    have hqker : RingHom.ker q = I := Ideal.Quotient.mkₐ_ker k I
+    simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
+      AlgHom.tensor_map_ker_eq_left_sup_right q q
+        (Ideal.Quotient.mkₐ_surjective k I) (Ideal.Quotient.mkₐ_surjective k I)
   rw [← hker, RingHom.mem_ker]
   exact hmapzero
 

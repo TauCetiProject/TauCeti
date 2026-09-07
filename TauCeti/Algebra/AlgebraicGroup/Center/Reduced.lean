@@ -39,8 +39,8 @@ thickening controls the original center.
   agree.
 * `TauCeti.CommHopfAlgCat.smooth_reducedCenterCoordinateRing`: over an algebraically closed
   field, a finite-type reduced center is smooth.
-* `TauCeti.CommHopfAlgCat.isNilpotent_reducedCenterKernel`: over a Noetherian center coordinate
-  ring, the thickening from the reduced center to the full center is nilpotent.
+* `TauCeti.CommHopfAlgCat.isNilpotent_reducedCenterReduction_toIdeal`: over a Noetherian center
+  coordinate ring, the thickening from the reduced center to the full center is nilpotent.
 
 ## References
 
@@ -164,7 +164,8 @@ theorem reducedCenterDefiningIdeal_le_of_isReduced_quotient (I : HopfIdeal k H)
 /-- If the center coordinate ring is Noetherian, the ideal removed from the center to form its
 reduction is nilpotent. This records that the reduced center and the full center differ by a
 nilpotent thickening. -/
-theorem isNilpotent_reducedCenterKernel [IsNoetherianRing (centerCoordinateRing H)] :
+theorem isNilpotent_reducedCenterReduction_toIdeal
+    [IsNoetherianRing (centerCoordinateRing H)] :
     IsNilpotent (HopfIdeal.reduction k (centerCoordinateRing H)).toIdeal := by
   rw [HopfIdeal.reduction_toIdeal]
   exact IsNoetherianRing.isNilpotent_nilradical (centerCoordinateRing H)

@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.IdentityComponent
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 import TauCeti.Algebra.AlgebraicGroup.Connected.Translation
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
+import TauCeti.Algebra.HopfAlgebra.Kernel
 import TauCeti.RingTheory.FiniteType.PointSeparation
 public import TauCeti.Topology.NoetherianSpace.ConnectedComponents
 import Mathlib.RingTheory.FiniteStability
@@ -181,17 +182,8 @@ private theorem comul_one_sub_connectedComponentIdempotent_mem
       exact Ideal.Quotient.mkₐ_ker k I
     -- Unfold the local tensor-square map abbreviation before tensor-product exactness rewrites it.
     change RingHom.ker (Algebra.TensorProduct.map q q) = _
-    have hleft :
-        I.map (Algebra.TensorProduct.includeLeft (R := k) (S := k) (A := H) (B := H)) =
-          HopfIdeal.leftTensorIdeal (R := k) (H := H) I := by
-      rw [HopfIdeal.leftTensorIdeal_def, AlgHom.toRingHom_eq_coe]
-      exact AlgHom.coe_ideal_map _ I
-    have hright :
-        I.map (Algebra.TensorProduct.includeRight (R := k) (A := H) (B := H)) =
-          HopfIdeal.rightTensorIdeal (R := k) (H := H) I := by
-      rw [HopfIdeal.rightTensorIdeal_def, AlgHom.toRingHom_eq_coe]
-      exact AlgHom.coe_ideal_map _ I
-    rw [Algebra.TensorProduct.map_ker (f := q) (g := q) hq hq, hqker, hleft, hright]
+    simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
+      AlgHom.tensor_map_ker_eq_left_sup_right q q hq hq
   rwa [hker_eq] at hker
 
 /-- The ideal cutting out the augmentation point's connected component is stable under
