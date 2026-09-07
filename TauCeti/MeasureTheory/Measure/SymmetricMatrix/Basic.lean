@@ -86,6 +86,9 @@ section instances
 
 variable (p : ℕ)
 
+/-- The symmetric subspace carries the Frobenius norm induced from the ambient matrices, with
+its metric rebuilt on the subtype uniformity so that the uniform and topological structures are
+the subtype ones on the nose. -/
 instance symmetricMatrixNormedAddCommGroup :
     NormedAddCommGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
   letI : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
@@ -95,6 +98,9 @@ instance symmetricMatrixNormedAddCommGroup :
   -- downstream instance search unifies the two syntactically rather than only up to `rfl`.
   { base with toMetricSpace := base.toMetricSpace.replaceUniformity rfl }
 
+/-- The symmetric subspace carries the Frobenius inner product `⟪A, B⟫ = ∑ i, ∑ j, A i j * B i j`
+of the underlying matrices, which is the pairing `TauCeti.symmetricLebesgue` is normalized
+against. -/
 instance symmetricMatrixInnerProductSpace :
     InnerProductSpace ℝ (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
   letI : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
@@ -178,6 +184,9 @@ open scoped Matrix.Norms.Frobenius
 
 /-- The inner product of the symmetric subspace is the Frobenius inner product of the underlying
 matrices. -/
+-- Mathlib's `Submodule.coe_inner` states this for the induced instance
+-- `Submodule.innerProductSpace`; `TauCeti.symmetricMatrixInnerProductSpace` is built directly, so
+-- that lemma does not apply to it.
 @[simp]
 theorem coe_inner {p : ℕ} (A B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
     ⟪A, B⟫ = ⟪(A : Matrix (Fin p) (Fin p) ℝ), (B : Matrix (Fin p) (Fin p) ℝ)⟫ :=
