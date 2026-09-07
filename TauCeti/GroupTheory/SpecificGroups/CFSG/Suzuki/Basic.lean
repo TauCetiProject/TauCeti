@@ -57,16 +57,16 @@ and that numbering correspondence.
 
 ## Main results
 
-* `TauCeti.SuzukiLieIndex.halfFrobenius_halfFrobenius`: the half-Frobenius squares to the
-  prime-field Frobenius.
 * `TauCeti.SuzukiLieIndex.steinberg_simpleRootSubgroup`: the Steinberg map's own pinning equation
   at every numbered simple root, exchanging the two roots and raising the parameter to
   `p ^ m * exponent i`.
 * `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup`: the pinning equation at every
   numbered simple root, against the index's own length permutation and exponent.
 * `TauCeti.SuzukiLieIndex.steinberg_steinberg`: the square of the Steinberg endomorphism is the
-  `q`-power Frobenius, with `TauCeti.SuzukiLieIndex.steinberg_comp_steinberg` and
-  `TauCeti.SuzukiLieIndex.halfFrobenius_comp_halfFrobenius` for the composites themselves.
+  `q`-power Frobenius, with `TauCeti.SuzukiLieIndex.steinberg_comp_steinberg` for the composite
+  itself. The half-Frobenius square relation is the carrier's
+  `TauCeti.SpStd.specialIsogeny_specialIsogeny`, reached through
+  `TauCeti.SuzukiLieIndex.halfFrobenius_def`.
 
 ## What is not here
 
@@ -105,27 +105,22 @@ theorem halfFrobenius_def :
     d.halfFrobenius = SpStd.specialIsogeny d.1.Closure :=
   (rfl)
 
-/-- **The half-Frobenius squares to the prime-field Frobenius.** -/
-@[simp]
-theorem halfFrobenius_halfFrobenius (g : d.toRankTwoBLieIndex.AmbientGroup) :
-    d.halfFrobenius (d.halfFrobenius g) = SpStd.frobenius 1 2 1 d.1.Closure g := by
-  rw [halfFrobenius_def, SpStd.specialIsogeny_specialIsogeny]
-
 private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.toRankTwoBLieIndex.AmbientGroup) :
     (⇑d.halfFrobenius)^[2 * k] g =
       SpStd.frobenius 1 (d.toRankTwoBLieIndex.1).characteristic k
         (d.toRankTwoBLieIndex.1).Closure g := by
-  -- The half-Frobenius squares to the one-step Frobenius, so an even iterate is an iterated
-  -- Frobenius. Only the last step descends to matrix entries, to identify the literal `2` of
-  -- `halfFrobenius_halfFrobenius` with the index's characteristic; that equation cannot be
-  -- rewritten at the exponent of `SpStd.frobenius`, whose instances depend on it.
+  -- The half-Frobenius is the carrier's special isogeny, which squares to the one-step Frobenius,
+  -- so an even iterate is an iterated Frobenius. Only the last step descends to matrix entries, to
+  -- identify the literal `2` of the carrier's square relation with the index's characteristic;
+  -- that equation cannot be rewritten at the exponent of `SpStd.frobenius`, whose instances
+  -- depend on it.
   have hchar : (d.toRankTwoBLieIndex.1).characteristic = 2 := d.characteristic_eq_two
   induction k generalizing g with
   | zero => simp [SpStd.frobenius_zero]
   | succ k ih =>
       have hsucc : 2 * (k + 1) = 2 * k + 1 + 1 := by ring
       rw [hsucc, Function.iterate_succ_apply', Function.iterate_succ_apply', ih,
-        halfFrobenius_halfFrobenius, SpStd.frobenius_add]
+        halfFrobenius_def, SpStd.specialIsogeny_specialIsogeny, SpStd.frobenius_add]
       apply Subtype.ext
       apply Units.ext
       ext a b
@@ -134,13 +129,6 @@ private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.toRankTwoBLieInde
       congr 1
       rw [pow_succ, hchar]
       ring
-
-/-- **The half-Frobenius squares to the prime-field Frobenius**, as an identity of monoid
-homomorphisms, so a consumer can rewrite the composite itself rather than each of its values. -/
-@[simp]
-theorem halfFrobenius_comp_halfFrobenius :
-    d.halfFrobenius.comp d.halfFrobenius = SpStd.frobenius 1 2 1 d.1.Closure :=
-  MonoidHom.ext d.halfFrobenius_halfFrobenius
 
 /-- **The Steinberg endomorphism of a Suzuki index**: the odd power `τ ^ (2m+1)` of the
 half-Frobenius, for `2m+1` the field exponent the index records. -/
