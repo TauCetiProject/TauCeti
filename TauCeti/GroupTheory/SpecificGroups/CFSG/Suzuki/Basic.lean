@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Suzuki.Ree
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB2
 
 /-!
@@ -117,22 +116,22 @@ private theorem halfFrobenius_iterate_two_mul (k : ℕ) (g : d.toRankTwoBLieInde
     (⇑d.halfFrobenius)^[2 * k] g =
       SpStd.frobenius 1 (d.toRankTwoBLieIndex.1).characteristic k
         (d.toRankTwoBLieIndex.1).Closure g := by
+  -- The half-Frobenius squares to the one-step Frobenius, so an even iterate is an iterated
+  -- Frobenius. Only the last step descends to matrix entries, to identify the literal `2` of
+  -- `halfFrobenius_halfFrobenius` with the index's characteristic; that equation cannot be
+  -- rewritten at the exponent of `SpStd.frobenius`, whose instances depend on it.
   have hchar : (d.toRankTwoBLieIndex.1).characteristic = 2 := d.characteristic_eq_two
   induction k generalizing g with
-  | zero =>
-      apply Subtype.ext
-      apply Units.ext
-      ext a b
-      rw [Nat.mul_zero, Function.iterate_zero_apply, SpStd.coe_frobenius_apply]
-      simp
+  | zero => simp [SpStd.frobenius_zero]
   | succ k ih =>
-      rw [show 2 * (k + 1) = 2 * k + 1 + 1 by ring, Function.iterate_succ_apply',
-        Function.iterate_succ_apply', ih, halfFrobenius_halfFrobenius]
+      have hsucc : 2 * (k + 1) = 2 * k + 1 + 1 := by ring
+      rw [hsucc, Function.iterate_succ_apply', Function.iterate_succ_apply', ih,
+        halfFrobenius_halfFrobenius, SpStd.frobenius_add]
       apply Subtype.ext
       apply Units.ext
       ext a b
-      rw [SpStd.coe_frobenius_apply, SpStd.coe_frobenius_apply, SpStd.coe_frobenius_apply,
-        ← pow_mul]
+      rw [SpStd.coe_frobenius_apply, SpStd.coe_frobenius_apply, MonoidHom.comp_apply,
+        SpStd.coe_frobenius_apply, SpStd.coe_frobenius_apply, ← pow_mul, ← pow_mul]
       congr 1
       rw [pow_succ, hchar]
       ring
@@ -164,35 +163,36 @@ theorem steinberg_steinberg (g : d.toRankTwoBLieIndex.AmbientGroup) :
     d.steinberg (d.steinberg g) = d.toRankTwoBLieIndex.frobenius g := by
   have hpow : ⇑d.steinberg = (⇑d.halfFrobenius)^[d.1.fieldExponent] :=
     Monoid.End.coe_pow (M := d.toRankTwoBLieIndex.AmbientGroup) d.halfFrobenius d.1.fieldExponent
-  rw [hpow, ← Function.iterate_add_apply,
-    show d.1.fieldExponent + d.1.fieldExponent = 2 * d.1.fieldExponent by ring,
-    halfFrobenius_iterate_two_mul, RankTwoBLieIndex.frobenius_def]
+  have hdouble : d.1.fieldExponent + d.1.fieldExponent = 2 * d.1.fieldExponent := by ring
+  rw [hpow, ← Function.iterate_add_apply, hdouble, halfFrobenius_iterate_two_mul,
+    RankTwoBLieIndex.frobenius_def]
+
+/-- The final node of the two-node carrier is the numeral one. -/
+private theorem one_eq_last : (1 : Fin 2) = Fin.last 1 := rfl
 
 /-- **The half-Frobenius carries the long simple root subgroup to the short one and keeps the
 parameter.** The long simple root of `B₂` is the one whose carrier node is the final one, and the
 exponent `1` here is the one the isogeny takes on a long simple root. -/
-@[simp]
-theorem halfFrobenius_simpleRootSubgroup_long (u : Multiplicative d.1.Closure) :
+private theorem halfFrobenius_simpleRootSubgroup_long (u : Multiplicative d.1.Closure) :
     d.halfFrobenius (d.toRankTwoBLieIndex.simpleRootSubgroup
         (d.toRankTwoBLieIndex.carrierNode.symm 1) u) =
       d.toRankTwoBLieIndex.simpleRootSubgroup (d.toRankTwoBLieIndex.carrierNode.symm 0) u := by
   rw [RankTwoBLieIndex.simpleRootSubgroup_def, RankTwoBLieIndex.simpleRootSubgroup_def,
     Equiv.apply_symm_apply, Equiv.apply_symm_apply, halfFrobenius_def,
-    show (1 : Fin 2) = Fin.last 1 from rfl]
+    one_eq_last]
   exact SpStd.specialIsogeny_rootSubgroupPoints_inl_last _ _
 
 /-- **The half-Frobenius carries the short simple root subgroup to the long one and squares the
 parameter.** The exponent two here is the defining characteristic, which is the one the isogeny
 takes on a short simple root. -/
-@[simp]
-theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.1.Closure) :
+private theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.1.Closure) :
     d.halfFrobenius (d.toRankTwoBLieIndex.simpleRootSubgroup
         (d.toRankTwoBLieIndex.carrierNode.symm 0) u) =
       d.toRankTwoBLieIndex.simpleRootSubgroup (d.toRankTwoBLieIndex.carrierNode.symm 1)
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ 2)) := by
   rw [RankTwoBLieIndex.simpleRootSubgroup_def, RankTwoBLieIndex.simpleRootSubgroup_def,
     Equiv.apply_symm_apply, Equiv.apply_symm_apply, halfFrobenius_def,
-    show (1 : Fin 2) = Fin.last 1 from rfl]
+    one_eq_last]
   exact SpStd.specialIsogeny_rootSubgroupPoints_inl_zero _ _
 
 /-- **The final carrier node is the long simple root.** The `B₂` diagram's long simple root is
