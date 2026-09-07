@@ -68,7 +68,7 @@ theorem finrank_realScalarExtension (w : {w : InfinitePlace K // w.IsReal}) :
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact Module.finrank_baseChange
 
-/-- Complex localization preserves the rank of a quadratic space. -/
+/-- Scalar extension to `ℂ` through a chosen embedding preserves the rank of a quadratic space. -/
 @[simp]
 theorem finrank_complexScalarExtension (w : InfinitePlace K) :
     Module.finrank ℂ (ComplexScalarExtension (V := V) w) = Module.finrank K V := by
@@ -102,9 +102,9 @@ def atRealPlace (Q : _root_.QuadraticForm K V)
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact Q.baseChange ℝ
 
-/-- The localization of a quadratic form at an infinite place using its chosen complex
-embedding. -/
-def atComplexPlace (Q : _root_.QuadraticForm K V) (w : InfinitePlace K) :
+/-- The scalar extension of a quadratic form through the chosen complex embedding of an
+infinite place. -/
+def atComplexEmbedding (Q : _root_.QuadraticForm K V) (w : InfinitePlace K) :
     _root_.QuadraticForm ℂ (TauCeti.ComplexScalarExtension (V := V) w) := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   letI : Algebra K ℂ := w.embedding.toAlgebra
@@ -132,15 +132,15 @@ theorem atRealPlace_tmul (w : {w : InfinitePlace K // w.IsReal}) (a : ℝ) (x : 
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   simp [atRealPlace, Algebra.smul_def, RingHom.algebraMap_toAlgebra, pow_two, mul_comm]
 
-/-- A complex localization evaluates on a pure tensor by applying the chosen complex embedding
-to the coefficient of the original form. -/
+/-- Scalar extension through a complex embedding evaluates on a pure tensor by applying the
+chosen embedding to the coefficient of the original form. -/
 @[simp]
-theorem atComplexPlace_tmul (w : InfinitePlace K) (a : ℂ) (x : V) :
+theorem atComplexEmbedding_tmul (w : InfinitePlace K) (a : ℂ) (x : V) :
     let _ : Algebra K ℂ := w.embedding.toAlgebra
-    atComplexPlace Q w (a ⊗ₜ x) = w.embedding (Q x) * a ^ 2 := by
+    atComplexEmbedding Q w (a ⊗ₜ x) = w.embedding (Q x) * a ^ 2 := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℂ := w.embedding.toAlgebra
-  simp [atComplexPlace, Algebra.smul_def, RingHom.algebraMap_toAlgebra, pow_two, mul_comm]
+  simp [atComplexEmbedding, Algebra.smul_def, RingHom.algebraMap_toAlgebra, pow_two, mul_comm]
 
 end Evaluation
 
@@ -228,42 +228,43 @@ theorem atRealPlace_smul (r : K) (Q : _root_.QuadraticForm K V)
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact QuadraticForm.baseChange_smul r Q
 
-/-- Complex localization sends the zero form to the zero form. -/
+/-- Scalar extension through a complex embedding sends the zero form to the zero form. -/
 @[simp]
-theorem atComplexPlace_zero (w : InfinitePlace K) :
-    atComplexPlace (0 : _root_.QuadraticForm K V) w = 0 := by
+theorem atComplexEmbedding_zero (w : InfinitePlace K) :
+    atComplexEmbedding (0 : _root_.QuadraticForm K V) w = 0 := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.baseChange_zero
 
-/-- Complex localization commutes with addition of forms. -/
+/-- Scalar extension through a complex embedding commutes with addition of forms. -/
 @[simp]
-theorem atComplexPlace_add (Q Q' : _root_.QuadraticForm K V) (w : InfinitePlace K) :
-    atComplexPlace (Q + Q') w = atComplexPlace Q w + atComplexPlace Q' w := by
+theorem atComplexEmbedding_add (Q Q' : _root_.QuadraticForm K V) (w : InfinitePlace K) :
+    atComplexEmbedding (Q + Q') w = atComplexEmbedding Q w + atComplexEmbedding Q' w := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.baseChange_add Q Q'
 
-/-- Complex localization commutes with negation of forms. -/
+/-- Scalar extension through a complex embedding commutes with negation of forms. -/
 @[simp]
-theorem atComplexPlace_neg (Q : _root_.QuadraticForm K V) (w : InfinitePlace K) :
-    atComplexPlace (-Q) w = -(atComplexPlace Q w) := by
+theorem atComplexEmbedding_neg (Q : _root_.QuadraticForm K V) (w : InfinitePlace K) :
+    atComplexEmbedding (-Q) w = -(atComplexEmbedding Q w) := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.baseChange_neg Q
 
-/-- Complex localization commutes with subtraction of forms. -/
+/-- Scalar extension through a complex embedding commutes with subtraction of forms. -/
 @[simp]
-theorem atComplexPlace_sub (Q Q' : _root_.QuadraticForm K V) (w : InfinitePlace K) :
-    atComplexPlace (Q - Q') w = atComplexPlace Q w - atComplexPlace Q' w := by
+theorem atComplexEmbedding_sub (Q Q' : _root_.QuadraticForm K V) (w : InfinitePlace K) :
+    atComplexEmbedding (Q - Q') w = atComplexEmbedding Q w - atComplexEmbedding Q' w := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.baseChange_sub Q Q'
 
-/-- Scaling before complex localization agrees with scaling by the chosen complex embedding. -/
+/-- Scaling before extension through a complex embedding agrees with scaling by that embedding. -/
 @[simp]
-theorem atComplexPlace_smul (r : K) (Q : _root_.QuadraticForm K V) (w : InfinitePlace K) :
-    atComplexPlace (r • Q) w = w.embedding r • atComplexPlace Q w := by
+theorem atComplexEmbedding_smul (r : K) (Q : _root_.QuadraticForm K V)
+    (w : InfinitePlace K) :
+    atComplexEmbedding (r • Q) w = w.embedding r • atComplexEmbedding Q w := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.baseChange_smul r Q
@@ -288,9 +289,9 @@ def Isometry.atRealPlace (f : Q →qᵢ R) (w : {w : InfinitePlace K // w.IsReal
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact QuadraticForm.Isometry.baseChange f ℝ
 
-/-- An isometry of global quadratic forms extends to every complex localization. -/
-def Isometry.atComplexPlace (f : Q →qᵢ R) (w : InfinitePlace K) :
-    atComplexPlace Q w →qᵢ atComplexPlace R w := by
+/-- An isometry of global quadratic forms extends through every chosen complex embedding. -/
+def Isometry.atComplexEmbedding (f : Q →qᵢ R) (w : InfinitePlace K) :
+    atComplexEmbedding Q w →qᵢ atComplexEmbedding R w := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   letI : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.Isometry.baseChange f ℂ
@@ -309,9 +310,9 @@ def IsometryEquiv.atRealPlace (f : Q.IsometryEquiv R)
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact QuadraticForm.IsometryEquiv.baseChange f ℝ
 
-/-- A global isometric equivalence extends to every complex localization. -/
-def IsometryEquiv.atComplexPlace (f : Q.IsometryEquiv R) (w : InfinitePlace K) :
-    (atComplexPlace Q w).IsometryEquiv (atComplexPlace R w) := by
+/-- A global isometric equivalence extends through every chosen complex embedding. -/
+def IsometryEquiv.atComplexEmbedding (f : Q.IsometryEquiv R) (w : InfinitePlace K) :
+    (atComplexEmbedding Q w).IsometryEquiv (atComplexEmbedding R w) := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   letI : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.IsometryEquiv.baseChange f ℂ
@@ -330,9 +331,10 @@ theorem Equivalent.atRealPlace (h : Q.Equivalent R)
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact QuadraticForm.Equivalent.baseChange h ℝ
 
-/-- Equivalent global quadratic forms remain equivalent at every complex place. -/
-theorem Equivalent.atComplexPlace (h : Q.Equivalent R) (w : InfinitePlace K) :
-    (atComplexPlace Q w).Equivalent (atComplexPlace R w) := by
+/-- Equivalent global quadratic forms remain equivalent after extension through every chosen
+complex embedding. -/
+theorem Equivalent.atComplexEmbedding (h : Q.Equivalent R) (w : InfinitePlace K) :
+    (atComplexEmbedding Q w).Equivalent (atComplexEmbedding R w) := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.Equivalent.baseChange h ℂ
@@ -356,12 +358,12 @@ def prodAtRealPlace (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact QuadraticForm.baseChangeProd Q R
 
-/-- The complex localization of an orthogonal sum is canonically isometric to the orthogonal sum
-of the complex localizations. -/
-def prodAtComplexPlace (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W)
+/-- Extension of an orthogonal sum through a complex embedding is canonically isometric to the
+orthogonal sum of the extensions. -/
+def prodAtComplexEmbedding (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W)
     (w : InfinitePlace K) :
-    (atComplexPlace (Q.prod R) w).IsometryEquiv
-      ((atComplexPlace Q w).prod (atComplexPlace R w)) := by
+    (atComplexEmbedding (Q.prod R) w).IsometryEquiv
+      ((atComplexEmbedding Q w).prod (atComplexEmbedding R w)) := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   letI : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.baseChangeProd Q R
@@ -385,10 +387,11 @@ theorem Nondegenerate.atRealPlace [FiniteDimensional K V] (hQ : Q.Nondegenerate)
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
   exact QuadraticForm.Nondegenerate.baseChange hQ
 
-/-- A regular quadratic form stays regular at every complex place. -/
-theorem Nondegenerate.atComplexPlace [FiniteDimensional K V]
+/-- A regular quadratic form stays regular after extension through every chosen complex
+embedding. -/
+theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
     (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
-    (atComplexPlace Q w).Nondegenerate := by
+    (atComplexEmbedding Q w).Nondegenerate := by
   let : Invertible (2 : K) := invertibleTwoOfInfinitePlace w
   let : Algebra K ℂ := w.embedding.toAlgebra
   exact QuadraticForm.Nondegenerate.baseChange hQ
