@@ -64,8 +64,6 @@ away from a finite set of primes.
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §1.
 * S. Lang, *Algebraic Number Theory*, Chapter VI, §1.
-* `GlobalNumberFields/Suggested.lean` in the Tau Ceti roadmap, whose moduli and ray class section
-  fixes the names and signatures followed here.
 -/
 
 public section
@@ -100,11 +98,20 @@ infinite part of `𝔪` is contained in that of `𝔫`, so that the congruence c
 instance : Dvd (Modulus K) :=
   ⟨fun 𝔪 𝔫 ↦ 𝔪.finitePart ∣ 𝔫.finitePart ∧ 𝔪.infinitePart ⊆ 𝔫.infinitePart⟩
 
+/-- **Divisibility of moduli is componentwise.**  This is the introduction and elimination rule for
+`𝔪 ∣ 𝔫`, so no proof of a divisibility statement, here or downstream, needs the
+`Dvd (Modulus K)` instance body. -/
+@[simp] theorem dvd_iff {𝔪 𝔫 : Modulus K} :
+    𝔪 ∣ 𝔫 ↔ 𝔪.finitePart ∣ 𝔫.finitePart ∧ 𝔪.infinitePart ⊆ 𝔫.infinitePart :=
+  Iff.rfl
+
 @[refl]
-theorem dvd_refl (𝔪 : Modulus K) : 𝔪 ∣ 𝔪 := ⟨_root_.dvd_refl _, Finset.Subset.refl _⟩
+theorem dvd_refl (𝔪 : Modulus K) : 𝔪 ∣ 𝔪 :=
+  dvd_iff.mpr ⟨_root_.dvd_refl _, Finset.Subset.refl _⟩
 
 theorem dvd_trans {𝔪 𝔫 𝔭 : Modulus K} (h₁ : 𝔪 ∣ 𝔫) (h₂ : 𝔫 ∣ 𝔭) : 𝔪 ∣ 𝔭 :=
-  ⟨h₁.1.trans h₂.1, h₁.2.trans h₂.2⟩
+  dvd_iff.mpr ⟨(dvd_iff.mp h₁).1.trans (dvd_iff.mp h₂).1,
+    (dvd_iff.mp h₁).2.trans (dvd_iff.mp h₂).2⟩
 
 /-- The **support** of a modulus: the finite set of height-one primes dividing its finite part. -/
 noncomputable def support (𝔪 : Modulus K) : Finset (HeightOneSpectrum (𝓞 K)) :=
@@ -120,7 +127,7 @@ theorem mem_support_iff (𝔪 : Modulus K) (v : HeightOneSpectrum (𝓞 K)) :
 
 /-- The support grows with the modulus. -/
 theorem support_mono {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) : 𝔪.support ⊆ 𝔫.support := fun v hv ↦
-  (mem_support_iff 𝔫 v).mpr (((mem_support_iff 𝔪 v).mp hv).trans h.1)
+  (mem_support_iff 𝔫 v).mpr (((mem_support_iff 𝔪 v).mp hv).trans (dvd_iff.mp h).1)
 
 /-- The **exponent** of a finite place in a modulus: the multiplicity of `v` in the factorization
 of the finite part. -/
@@ -142,7 +149,7 @@ theorem exponent_pos_of_mem_support {𝔪 : Modulus K} {v : HeightOneSpectrum (�
 theorem exponent_mono {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (v : HeightOneSpectrum (𝓞 K)) :
     𝔪.exponent v ≤ 𝔫.exponent v :=
   Associates.count_le_count_of_le (Associates.mk_ne_zero.mpr 𝔫.finitePart_ne_zero)
-    (Associates.irreducible_mk.mpr v.irreducible) (Associates.mk_le_mk_of_dvd h.1)
+    (Associates.irreducible_mk.mpr v.irreducible) (Associates.mk_le_mk_of_dvd (dvd_iff.mp h).1)
 
 /-- The **trivial modulus**: unit finite part and no real places.  It imposes no condition, so its
 ray class group is the ordinary class group. -/
@@ -162,7 +169,7 @@ def one (K : Type*) [Field K] [NumberField K] : Modulus K where
   simpa only [Finset.notMem_empty, iff_false, ← Ideal.one_eq_top] using v.prime.not_dvd_one
 
 theorem one_dvd (𝔪 : Modulus K) : one K ∣ 𝔪 :=
-  ⟨by rw [one_finitePart, ← Ideal.one_eq_top]; exact _root_.one_dvd _, by simp⟩
+  dvd_iff.mpr ⟨by rw [one_finitePart, ← Ideal.one_eq_top]; exact _root_.one_dvd _, by simp⟩
 
 end Modulus
 
@@ -238,8 +245,9 @@ theorem valuation_eq_one (hx : IsCongrOne 𝔪 x) {v : HeightOneSpectrum (𝓞 K
 modulus `𝔫` is congruent to one modulo every divisor `𝔪` of `𝔫`: the exponents can only have
 shrunk and fewer real places are constrained. -/
 theorem mono {𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) (hx : IsCongrOne 𝔫 x) : IsCongrOne 𝔪 x := by
-  refine ⟨fun v hv ↦ ?_, fun w hw ↦ hx.pos (h.2 hw)⟩
-  refine (hx.valuation_sub_one_le (hv.trans h.1)).trans (WithZero.exp_le_exp.mpr ?_)
+  refine ⟨fun v hv ↦ ?_, fun w hw ↦ hx.pos ((Modulus.dvd_iff.mp h).2 hw)⟩
+  refine (hx.valuation_sub_one_le (hv.trans (Modulus.dvd_iff.mp h).1)).trans
+    (WithZero.exp_le_exp.mpr ?_)
   exact neg_le_neg (Int.ofNat_le.mpr (Modulus.exponent_mono h v))
 
 end IsCongrOne

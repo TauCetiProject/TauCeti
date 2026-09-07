@@ -58,8 +58,6 @@ class group (`oneEquivClassGroup`).
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VI, §1.
 * S. Lang, *Algebraic Number Theory*, Chapter VI, §1.
-* `GlobalNumberFields/Suggested.lean` in the Tau Ceti roadmap, whose moduli and ray class section
-  fixes the names and signatures followed here.
 -/
 
 public section
