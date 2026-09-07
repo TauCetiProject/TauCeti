@@ -281,8 +281,11 @@ theorem rankOneWeylClass_eq_normalizerQuotientMk (A : Type u) [CommRing A] :
 /-- The Weyl class in the torus normalizer quotient has square one. -/
 @[simp]
 theorem rankOneWeylClass_sq (A : Type u) [CommRing A] :
-    rankOneWeylClass A ^ 2 = 1 := by
-  rw [rankOneWeylClass_eq_normalizerQuotientMk, ← map_pow]
+    (rankOneWeylNormalizerPoint A :
+      TauCeti.Subgroup.normalizerQuotient (rankOneCarrierTorusPoints A)) ^ 2 = 1 := by
+  change TauCeti.Subgroup.normalizerQuotientMk (rankOneCarrierTorusPoints A)
+      (rankOneWeylNormalizerPoint A) ^ 2 = 1
+  rw [← map_pow]
   apply (TauCeti.Subgroup.normalizerQuotientMk_eq_one_iff
     (rankOneCarrierTorusPoints A) ((rankOneWeylNormalizerPoint A) ^ 2)).mpr
   have hsquare : rankOneWeylPoint A ^ 2 ∈ rankOneCarrierTorusPoints A := by
@@ -316,7 +319,8 @@ theorem rankOneWeylClass_ne_one (A : Type u) [CommRing A] [Nontrivial A] :
 normalizer quotient. -/
 @[simp]
 theorem orderOf_rankOneWeylClass (A : Type u) [CommRing A] [Nontrivial A] :
-    orderOf (rankOneWeylClass A) = 2 :=
+    orderOf (rankOneWeylNormalizerPoint A :
+      TauCeti.Subgroup.normalizerQuotient (rankOneCarrierTorusPoints A)) = 2 :=
   orderOf_eq_prime (rankOneWeylClass_sq A) (rankOneWeylClass_ne_one A)
 
 end TauCeti.Sl2Std
