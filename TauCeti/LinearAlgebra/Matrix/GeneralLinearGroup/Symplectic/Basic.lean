@@ -832,6 +832,15 @@ theorem negativeSumShortRootHom_apply {i j : Fin m} (hij : i ≠ j) (c : Multipl
   rw [negativeSumShortRootUnit]
   rw [ofAdd_toAdd]
 
+/-- **The difference short-root element depends only on its index pair.** Two proofs that the
+indices differ, and two spellings of the same indices, give the same element. -/
+theorem differenceShortRootUnit_congr {i j i' j' : Fin m} (hij : i ≠ j) (hij' : i' ≠ j')
+    (hi : i = i') (hj : j = j') (c : R) :
+    differenceShortRootUnit hij c = differenceShortRootUnit hij' c := by
+  subst hi
+  subst hj
+  rfl
+
 /-- The general-linear matrix underlying `x_{eᵢ-eⱼ}(c)` is its two-transvection formula. -/
 @[simp]
 theorem coe_differenceShortRootUnit {i j : Fin m} (hij : i ≠ j) (c : R) :
