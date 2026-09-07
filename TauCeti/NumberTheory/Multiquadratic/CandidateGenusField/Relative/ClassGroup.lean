@@ -67,22 +67,9 @@ theorem card_aut_candidateGenusField_over_base_eq_card_narrowElementaryTwoQuotie
   rw [card_aut_candidateGenusField_over_base hd hnsq,
     NumberField.NarrowClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
     card_genusPrimeDiscriminants_eq_ncard_ramifiedPrimes
-      (minpoly_candidateGenusFieldBaseGen hd hnsq) (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd]
-  by_cases hd1 : 1 < d.natAbs
-  · rw [narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one (minpoly_candidateGenusFieldBaseGen hd hnsq)
-      (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd hd1]
-  · -- The remaining field is `ℚ(√-1)`, which is totally complex: its narrow and ordinary
-    -- `2`-ranks agree, and the imaginary `2`-rank formula applies.
-    have hne1 : d ≠ 1 := fun h => hnsq ⟨1, by rw [h]; norm_num⟩
-    have hneg : d < 0 := by
-      have := hd.ne_zero
-      omega
-    have : NumberField.IsTotallyComplex (candidateGenusFieldBase hd) :=
-      NumberField.isTotallyComplex_of_minpoly_eq_X_sq_sub_C_of_neg
-        (minpoly_candidateGenusFieldBaseGen hd hnsq) hneg
-    rw [NumberField.NarrowClassGroup.twoRank_eq_classGroupTwoRank,
-      twoRank_eq_ncard_ramifiedPrimes_sub_one (minpoly_candidateGenusFieldBaseGen hd hnsq)
-        (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd hneg]
+      (minpoly_candidateGenusFieldBaseGen hd hnsq) (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd,
+    narrowTwoRank_eq_ncard_ramifiedPrimes_sub_one (minpoly_candidateGenusFieldBaseGen hd hnsq)
+      (adjoin_candidateGenusFieldBaseGen_eq_top hd) hd]
 
 /-- **The relative candidate-genus-field Galois group and `Cl(K)/Cl(K)²` have equal order.** For an
 imaginary quadratic field `K = ℚ(√d)` (`d < 0` squarefree), `|Gal(K_gen/K)|` equals `|Cl(K)/Cl(K)²|`
