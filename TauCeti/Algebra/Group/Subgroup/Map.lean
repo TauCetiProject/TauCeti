@@ -35,7 +35,7 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   `f` is.
 * `TauCeti.Subgroup.map_center_le`: a surjective homomorphism carries central elements to central
   elements.
-* `TauCeti.MonoidHom.center_le_ker`: the centre lies in the kernel of a surjection onto a
+* `MonoidHom.center_le_ker`: the centre lies in the kernel of a surjection onto a
   centreless group.
 * `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
   subgroup onto the derived subgroup.
@@ -72,7 +72,7 @@ theorem Subgroup.map_center_eq_center (e : G ≃* H) :
   exact Subgroup.map_center_le (e.symm : H →* G) e.symm.surjective ⟨y, hy, rfl⟩
 
 /-- The centre of a group lies in the kernel of every surjection onto a centreless group. -/
-theorem MonoidHom.center_le_ker (f : G →* H) (hf : Function.Surjective f)
+theorem _root_.MonoidHom.center_le_ker (f : G →* H) (hf : Function.Surjective f)
     (hH : Subgroup.center H = ⊥) : Subgroup.center G ≤ f.ker := by
   intro x hx
   have hfx := Subgroup.map_center_le f hf ⟨x, hx, rfl⟩
