@@ -131,12 +131,20 @@ theorem jFin_two_eq : JFin 2 R = !![0, 0, -1, 0; 0, 0, 0, -1; 1, 0, 0, 0; 0, 1, 
   fin_cases i <;> fin_cases j <;>
     simp [e0, e1, e2, e3, Matrix.J, Matrix.fromBlocks]
 
-/-- The transported alternating form squares to `-1`. -/
+/-- The transported alternating form squares to `-1`, which is Mathlib's `Matrix.J_squared` read
+through the reindexing. -/
 theorem jFin_two_mul_self : JFin 2 R * JFin 2 R = -1 := by
-  rw [jFin_two_eq]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_four]
+  have h : ((JFin 2 R).submatrix finSumFinEquiv finSumFinEquiv) *
+      ((JFin 2 R).submatrix finSumFinEquiv finSumFinEquiv) = -1 := by
+    rw [JFin_submatrix]
+    exact Matrix.J_squared (Fin 2) R
+  rw [Matrix.submatrix_mul_equiv] at h
+  have hone : ((-1 : Matrix (Fin 2 ⊕ Fin 2) (Fin 2 ⊕ Fin 2) R).submatrix finSumFinEquiv.symm
+      finSumFinEquiv.symm) = (-1 : Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) := by
+    ext a b
+    simp [Matrix.one_apply, finSumFinEquiv.symm.injective.eq_iff]
+  have h' := congrArg (fun M => M.submatrix finSumFinEquiv.symm finSumFinEquiv.symm) h
+  simpa [Matrix.submatrix_submatrix, hone] using h'
 
 variable {g : Matrix (Fin 4) (Fin 4) R}
 
@@ -230,24 +238,6 @@ theorem specialIsogenyMatrix_mul [CharP R 2] {g h : Matrix (Fin 4) (Fin 4) R}
 
 /-! ### Compatibility with inversion -/
 
-/-- For a symplectic matrix, `-(J gᵀ J)` is a two-sided inverse. Scaffolding for the symplectic
-form of the isogeny below, so it is private: it is a one-line consequence of the symplectic
-condition and `jFin_two_mul_self`, not an API surface. -/
-private theorem mul_neg_jFin_mul_transpose_mul_jFin (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
-    g * -(JFin 2 R * gᵀ * JFin 2 R) = 1 := by
-  rw [mul_neg, ← mul_assoc, ← mul_assoc, hg, jFin_two_mul_self, neg_neg]
-
-/-- The inverse of a symplectic matrix is symplectic. Scaffolding, as above. -/
-private theorem neg_jFin_mul_transpose_mul_jFin_symplectic (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
-    -(JFin 2 R * gᵀ * JFin 2 R) * JFin 2 R * (-(JFin 2 R * gᵀ * JFin 2 R))ᵀ = JFin 2 R := by
-  set h : Matrix (Fin 4) (Fin 4) R := -(JFin 2 R * gᵀ * JFin 2 R) with hdef
-  have hgh : g * h = 1 := mul_neg_jFin_mul_transpose_mul_jFin hg
-  have hhg : h * g = 1 := mul_eq_one_comm.mp hgh
-  calc h * JFin 2 R * hᵀ
-      = h * (g * JFin 2 R * gᵀ) * hᵀ := by rw [hg]
-    _ = h * g * JFin 2 R * (h * g)ᵀ := by rw [Matrix.transpose_mul]; noncomm_ring
-    _ = JFin 2 R := by rw [hhg]; simp
-
 /-- The special isogeny fixes the identity. -/
 @[simp]
 theorem specialIsogenyMatrix_one :
@@ -284,8 +274,20 @@ theorem specialIsogenyMatrix_neg_jFin_mul_transpose_mul_jFin [CharP R 2]
 theorem specialIsogenyMatrix_mul_jFin_mul_transpose [CharP R 2]
     (hg : g * JFin 2 R * gᵀ = JFin 2 R) :
     specialIsogenyMatrix g * JFin 2 R * (specialIsogenyMatrix g)ᵀ = JFin 2 R := by
-  have hh := neg_jFin_mul_transpose_mul_jFin_symplectic hg
-  have hgh := mul_neg_jFin_mul_transpose_mul_jFin hg
+  -- The adjoint is the inverse, and an inverse of a symplectic matrix is symplectic. Both are
+  -- one-step consequences of `hg` and `jFin_two_mul_self` in these coordinates, and are used only
+  -- here, so they are `have`s rather than declarations restating Mathlib's `SymplecticGroup` API.
+  have hgh : g * -(JFin 2 R * gᵀ * JFin 2 R) = 1 := by
+    rw [mul_neg, ← mul_assoc, ← mul_assoc, hg, jFin_two_mul_self, neg_neg]
+  have hhg : -(JFin 2 R * gᵀ * JFin 2 R) * g = 1 := mul_eq_one_comm.mp hgh
+  have hh : -(JFin 2 R * gᵀ * JFin 2 R) * JFin 2 R * (-(JFin 2 R * gᵀ * JFin 2 R))ᵀ =
+      JFin 2 R := by
+    calc -(JFin 2 R * gᵀ * JFin 2 R) * JFin 2 R * (-(JFin 2 R * gᵀ * JFin 2 R))ᵀ
+        = -(JFin 2 R * gᵀ * JFin 2 R) * (g * JFin 2 R * gᵀ) *
+            (-(JFin 2 R * gᵀ * JFin 2 R))ᵀ := by rw [hg]
+      _ = -(JFin 2 R * gᵀ * JFin 2 R) * g * JFin 2 R *
+            (-(JFin 2 R * gᵀ * JFin 2 R) * g)ᵀ := by rw [Matrix.transpose_mul]; noncomm_ring
+      _ = JFin 2 R := by rw [hhg]; simp
   have hmul : specialIsogenyMatrix g *
       specialIsogenyMatrix (-(JFin 2 R * gᵀ * JFin 2 R)) = 1 := by
     rw [← specialIsogenyMatrix_mul hg hh, hgh, specialIsogenyMatrix_one]
