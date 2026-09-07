@@ -90,11 +90,10 @@ theorem exists_mem_Icc_mul_abs_sub_le_dist (p z w : ℂ) :
     _ ≤ ‖A + s • B‖ := key s
     _ = dist (w + s • B) p := by rw [dist_eq_norm, hseg]
 
-/-- The arclength integral of a negative power of the distance to `p` along the segment from `w`
-to `z`: the parameter integral over `[0, 1]` is multiplied by the length `‖z - w‖` of the segment.
-The exponent range `-1 < u ≤ 0` is exactly the one in which the singularity of `dist ⬝ p ^ u` is
-integrable, and the bound `2 / (u + 1) * ‖z - w‖ ^ (u + 1)` is uniform in the position of `p`;
-in particular `p` is allowed to lie on the segment. -/
+/-- The arclength integral of a nonpositive power of the distance to `p` along the segment from
+`w` to `z`: the parameter integral over `[0, 1]` is multiplied by the length `‖z - w‖` of the
+segment.  For `-1 < u ≤ 0`, the bound `2 / (u + 1) * ‖z - w‖ ^ (u + 1)` is uniform in the
+position of `p`; in particular `p` is allowed to lie on the segment. -/
 theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u ≤ 0) {z w : ℂ} :
     (∫ s in (0 : ℝ)..1, dist (w + s • (z - w)) p ^ u) * ‖z - w‖
       ≤ 2 / (u + 1) * ‖z - w‖ ^ (u + 1) := by
