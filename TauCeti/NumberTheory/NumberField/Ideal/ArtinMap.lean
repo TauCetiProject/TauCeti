@@ -186,13 +186,15 @@ noncomputable def artinHomAway : idealsAway (K := K) S →* (L ≃ₐ[K] L) :=
 /-- **The Artin map is the product of the local Artin automorphisms, with the multiplicities of
 the ideal as exponents.** The product is over all finite places of `K`, all but finitely many
 factors being trivial. It is taken in the commutative structure that `hab` itself supplies, so
-no bundled commutativity is asked of the caller. This is the defining equation of `MonoidHom.mk'`.
--/
+no bundled commutativity is asked of the caller. -/
 theorem artinHomAway_apply (I : idealsAway (K := K) S) :
     artinHomAway (L := L) hab S hur I =
       letI := isMulCommutative_galoisGroup_of_commute hab
       ∏ᶠ v : HeightOneSpectrum (𝓞 K), artinElementAway hab S hur v ^ FractionalIdeal.count K v
-        ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) := (rfl)
+        ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) :=
+  -- The defining equation of the `MonoidHom.mk'` that `artinHomAway` is built from: the `letI`
+  -- above is the same named instance term as the one in the definition, so this is `rfl`.
+  (rfl)
 
 /-- **The value of the Artin map at a prime outside `S` is its local Artin automorphism.** -/
 theorem artinHomAway_apply_eq_artinElementAway (I : idealsAway (K := K) S)
