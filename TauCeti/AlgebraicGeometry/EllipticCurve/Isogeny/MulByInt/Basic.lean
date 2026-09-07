@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.ZSMul
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.TautologicalPoint
 -- Both `ΨSq ≠ 0` lemmas are used only inside proofs below, so both imports are private:
 -- Mathlib's `ΨSq_ne_zero` for the characteristic-conditional discharge, and this repository's

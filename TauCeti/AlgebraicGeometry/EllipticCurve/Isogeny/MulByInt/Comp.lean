@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.GenericPoint
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.MapsInfinity
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Neg
 
@@ -16,9 +15,10 @@ On an elliptic curve `W`, the multiplication isogeny `[n]` is defined for those 
 division polynomial `ψₙ` does not vanish at the generic point — by
 `psiFunctionField_ne_zero_of_Δ_ne_zero`, every `n ≠ 0`. For such integers this file proves
 `[m] ∘ [n] = [m n]`, together with the degenerate cases `[1] = id` and `[-1] = negIsogeny`, and
-that `[m] = [n]` only if `m = n`. Each identity is recorded both with the `ψ`-nonvanishing
-hypotheses it needs and in the `mulByIntIsogenyOfNeZero` form a caller holding `m ≠ 0`, `n ≠ 0`
-can use directly.
+that `[m] = [n]` only if `m = n`. Each identity carries the `ψ`-nonvanishing hypotheses it needs;
+the two composition laws are recorded a second time in the `mulByIntIsogenyOfNeZero` form, where
+the hypothesis on the composite index — `m n`, resp. `-n` — is discharged from the discriminant
+instead of assumed.
 
 `[0]` is not among the isogenies compared: `ψ₀ = 0`, so `mulByIntIsogeny` is undefined there,
 and the distinctness statements range only over the integers at which `[·]` is defined.
@@ -28,17 +28,14 @@ Distinctness rests on the generic point of `W` having infinite order, as establi
 
 ## Main results
 
-* `TauCeti.Isogeny.mulByIntIsogeny_one` and `TauCeti.Isogeny.mulByIntIsogenyOfNeZero_one`: `[1]`
-  is the identity isogeny.
+* `TauCeti.Isogeny.mulByIntIsogeny_one`: `[1]` is the identity isogeny.
 * `TauCeti.Isogeny.mulByIntIsogeny_comp_mulByIntIsogeny` and
   `TauCeti.Isogeny.mulByIntIsogenyOfNeZero_comp_mulByIntIsogenyOfNeZero`: `[m] ∘ [n] = [m n]`.
-* `TauCeti.Isogeny.mulByIntIsogeny_neg_one` and
-  `TauCeti.Isogeny.mulByIntIsogenyOfNeZero_neg_one`: `[-1]` is `negIsogeny`.
+* `TauCeti.Isogeny.mulByIntIsogeny_neg_one`: `[-1]` is `negIsogeny`.
 * `TauCeti.Isogeny.negIsogeny_comp_mulByIntIsogeny` and
   `TauCeti.Isogeny.negIsogeny_comp_mulByIntIsogenyOfNeZero`: `[-n]` is `[n]` followed by
   negation, the case `m = -1` of the composition law.
-* `TauCeti.Isogeny.mulByIntIsogeny_inj` and `TauCeti.Isogeny.mulByIntIsogenyOfNeZero_inj`:
-  `[m] = [n]` exactly when `m = n`.
+* `TauCeti.Isogeny.mulByIntIsogeny_inj`: `[m] = [n]` exactly when `m = n`.
 
 ## References
 
@@ -72,16 +69,6 @@ theorem mulByIntIsogeny_one (h₁ : psiFunctionField W 1 ≠ 0) :
     rw [mulByIntIsogeny_pullback, tautologicalPoint_mulByIntPullback, Isogeny.id_pullback,
       CoordinatePullback.tautologicalPoint_id, one_zsmul]))
 
-/-- **`[1] = id` in the `mulByIntIsogenyOfNeZero` form**, the non-vanishing hypothesis
-discharged from the discriminant. -/
--- Not `@[simp]`: `mulByIntIsogenyOfNeZero` is an `abbrev`, so `simp` sees through it to the
--- unconditional `mulByIntIsogeny_one` and `simpNF` rejects the pair as duplicates. The two
--- composition lemmas below escape this only because their `mulByIntIsogeny` forms carry a side
--- condition `simp` cannot discharge.
-theorem mulByIntIsogenyOfNeZero_one : mulByIntIsogenyOfNeZero W (one_ne_zero (α := ℤ)) =
-    Isogeny.id W :=
-  mulByIntIsogeny_one W _
-
 /-- **`[m] ∘ [n] = [m n]`.** Both sides are pullbacks with tautological point `(m n) • ` the
 generic point: on the left the composite transports `m • ` generic along `[n]`'s function-field
 map, which sends the generic point to `n • ` generic, and transport is additive. -/
@@ -103,15 +90,6 @@ theorem mulByIntIsogenyOfNeZero_comp_mulByIntIsogenyOfNeZero {m n : ℤ} (hm : m
       mulByIntIsogenyOfNeZero W (mul_ne_zero hm hn) :=
   mulByIntIsogeny_comp_mulByIntIsogeny W _ _ _
 
-/-- **`[·]` depends only on the integer.** Two non-vanishing witnesses for equal integers name
-the same isogeny, by proof irrelevance. This is what transports the composition law between the
-index `(-1) * n` it produces and the index `-n`. -/
-theorem mulByIntIsogeny_congr {m n : ℤ} (hm : psiFunctionField W m ≠ 0)
-    (hn : psiFunctionField W n ≠ 0) (hmn : m = n) :
-    mulByIntIsogeny W hm = mulByIntIsogeny W hn := by
-  subst hmn
-  rfl
-
 /-- **`[-1]` is negation**, both having the negated generic point for tautological point. This is
 the identification that makes `[-n]` a case of `[m] ∘ [n] = [m n]`. -/
 @[simp]
@@ -120,13 +98,6 @@ theorem mulByIntIsogeny_neg_one (h : psiFunctionField W (-1) ≠ 0) :
   Isogeny.ext (CoordinatePullback.tautologicalPoint_injective (by
     rw [mulByIntIsogeny_pullback, tautologicalPoint_mulByIntPullback, negIsogeny_pullback,
       tautologicalPoint_negPullback, neg_one_zsmul]))
-
-/-- **`[-1] = negIsogeny` in the `mulByIntIsogenyOfNeZero` form**, the non-vanishing hypothesis
-discharged from the discriminant. -/
--- Not `@[simp]`, for the reason recorded at `mulByIntIsogenyOfNeZero_one`.
-theorem mulByIntIsogenyOfNeZero_neg_one :
-    mulByIntIsogenyOfNeZero W (neg_ne_zero.2 (one_ne_zero (α := ℤ))) = negIsogeny W :=
-  mulByIntIsogeny_neg_one W _
 
 /-- **`[-n]` is `[n]` followed by negation**: the case `m = -1` of `[m] ∘ [n] = [m n]`, read
 through `[-1] = negIsogeny`. -/
@@ -137,8 +108,15 @@ theorem negIsogeny_comp_mulByIntIsogeny {n : ℤ} (hn : psiFunctionField W n ≠
   have hone : psiFunctionField W (-1) ≠ 0 :=
     psiFunctionField_ne_zero_of_Δ_ne_zero W W.isUnit_Δ.ne_zero (neg_ne_zero.2 one_ne_zero)
   have hmul : psiFunctionField W (-1 * n) ≠ 0 := by rwa [neg_one_mul]
+  -- `[·]` depends only on the integer: at equal indices two non-vanishing witnesses name the
+  -- same isogeny, by proof irrelevance. This transports the composition law from the index
+  -- `(-1) * n` it produces to the index `-n`.
+  have hcongr : ∀ {k : ℤ} (hk : psiFunctionField W k ≠ 0), k = -n →
+      mulByIntIsogeny W hk = mulByIntIsogeny W hneg := by
+    rintro k hk rfl
+    rfl
   rw [← mulByIntIsogeny_neg_one W hone, mulByIntIsogeny_comp_mulByIntIsogeny W hone hn hmul]
-  exact mulByIntIsogeny_congr W hmul hneg (neg_one_mul n)
+  exact hcongr hmul (neg_one_mul n)
 
 /-- **`[-n]` is `[n]` followed by negation, for nonzero `n`**, the non-vanishing hypotheses
 discharged from the discriminant as in `mulByIntIsogenyOfNeZero`. -/
@@ -161,13 +139,6 @@ theorem mulByIntIsogeny_inj {m n : ℤ} (hm : psiFunctionField W m ≠ 0)
     exact _root_.WeierstrassCurve.Affine.zsmul_genericPoint_injective W hgen
   · rintro rfl
     rfl
-
-/-- **`[m] = [n]` exactly when `m = n`, for nonzero `m` and `n`**, the non-vanishing hypotheses
-discharged from the discriminant as in `mulByIntIsogenyOfNeZero`. -/
--- Not `@[simp]`, for the reason recorded at `mulByIntIsogenyOfNeZero_one`.
-theorem mulByIntIsogenyOfNeZero_inj {m n : ℤ} (hm : m ≠ 0) (hn : n ≠ 0) :
-    mulByIntIsogenyOfNeZero W hm = mulByIntIsogenyOfNeZero W hn ↔ m = n :=
-  mulByIntIsogeny_inj W _ _
 
 end Isogeny
 
