@@ -95,7 +95,7 @@ theorem exists_mem_Icc_mul_abs_sub_le_dist (p z w : E) :
 to `z`: the parameter integral over `[0, 1]` is multiplied by the length `‖z - w‖` of the segment.
 The exponent range `-1 < u ≤ 0` is exactly the one in which the singularity of `dist ⬝ p ^ u` is
 integrable, and the bound `2 / (u + 1) * ‖z - w‖ ^ (u + 1)` is uniform in the position of `p`;
-in particular `p` is allowed to lie on the segment, where the integrand blows up. -/
+in particular `p` is allowed to lie on the segment. -/
 theorem integral_dist_rpow_segment_le {p : E} {u : ℝ} (hu : -1 < u) (hu0 : u ≤ 0) {z w : E} :
     (∫ s in (0 : ℝ)..1, dist (w + s • (z - w)) p ^ u) * ‖z - w‖
       ≤ 2 / (u + 1) * ‖z - w‖ ^ (u + 1) := by

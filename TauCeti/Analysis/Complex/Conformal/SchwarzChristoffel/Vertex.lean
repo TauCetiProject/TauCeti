@@ -44,8 +44,6 @@ what forces the Cauchy criterion.
 
 * `TauCeti.exists_norm_schwarzChristoffelIntegrand_le` -- near a prevertex the integrand is
   dominated by a constant times the corresponding real power of the distance to it.
-* `TauCeti.exists_tendsto_schwarzChristoffelPrimitive` -- the Schwarz--Christoffel primitive has
-  a limit at a prevertex whose total turning exponent exceeds `-1`.
 * `TauCeti.tendsto_schwarzChristoffelPrimitive` -- that limit is `schwarzChristoffelVertex`.
 * `TauCeti.schwarzChristoffelVertex_congr` -- coincident prevertices carry the same vertex.
 * `TauCeti.schwarzChristoffelVertex_change_base` -- changing the base point translates every
@@ -186,7 +184,8 @@ family of pairwise distinct prevertices the hypothesis reads `-1 < e j`, which t
 exponents `e i = α i / π - 1` attached to interior angles `α i ∈ (0, 2 π)` always satisfy; when
 several prevertices coincide the hypothesis constrains their sum instead.  The limit is the
 boundary value the map takes at `a j`. -/
-theorem exists_tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : UpperHalfPlane) (j : ι)
+private theorem exists_tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) (j : ι)
     (he : -1 < ∑ i with a i = a j, e i) :
     ∃ v : ℂ, Tendsto (schwarzChristoffelPrimitive a e z₀)
       (𝓝[upperHalfPlaneSet] ((a j : ℂ))) (𝓝 v) := by
@@ -270,8 +269,8 @@ theorem exists_tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ) (z₀ : Up
     _ < ε := hρε
 
 /-- The **Schwarz--Christoffel vertex** attached to the prevertex `a j`: the boundary value at
-`a j` of the primitive normalized at `z₀`.  It is a genuine limit under the hypotheses of
-`TauCeti.exists_tendsto_schwarzChristoffelPrimitive`. -/
+`a j` of the primitive normalized at `z₀`.  It is a genuine limit when the total turning exponent
+at `a j` exceeds `-1`. -/
 def schwarzChristoffelVertex (a e : ι → ℝ) (z₀ : UpperHalfPlane) (j : ι) : ℂ :=
   limUnder (𝓝[upperHalfPlaneSet] ((a j : ℂ))) (schwarzChristoffelPrimitive a e z₀)
 
