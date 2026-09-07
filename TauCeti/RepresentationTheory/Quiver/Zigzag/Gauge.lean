@@ -23,7 +23,7 @@ Rescaling by a labelling `u` multiplies the backtrack along an edge by the *back
 therefore a function of the underlying unoriented edge. The parameter is changed by
 
 ```text
-(c ⬝ u)(h,h') = c(h,h') * scale(h') / scale(h),
+(c.gauge u).ratio h h' = c.ratio h h' * (backtrackScale u h' / backtrackScale u h),
 ```
 
 which is again reflexive, inverse-symmetric, and a multiplicative cocycle. Two parameters related
@@ -59,9 +59,8 @@ quotient, a gauge-trivial parameter presents the ordinary zigzag algebra.
 C. Couture, *Skew-Zigzag Algebras*, Section 4, https://arxiv.org/abs/1509.08405, which sets up the
 gauge relation on skew parameters and its cohomological classification.
 
-The proof pattern for the gauge isomorphism of relation quotients — rescaling the arrows, checking
-that it carries the relators of one presentation into the relation ideal of the other, and matching
-the two lifts — follows `TauCeti.RepresentationTheory.Quiver.Preprojective.Gauge`.
+The gauge isomorphism of relation quotients follows
+`TauCeti.RepresentationTheory.Quiver.Preprojective.Gauge`.
 -/
 
 public section
