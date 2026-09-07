@@ -43,9 +43,6 @@ are unavailable, and the flag induction of
 
 * J. C. Jantzen, *Representations of Algebraic Groups*, I.2.
 * T. A. Springer, *Linear Algebraic Groups*, §§2.4 and 6.3.
-
-This is a Layer 5 ingredient of the ReductiveGroups roadmap, for the "Lie--Kolchin; solvable
-groups" milestone.
 -/
 
 public section

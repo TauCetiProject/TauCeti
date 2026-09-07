@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.Coalgebra.Basic
-import Mathlib.LinearAlgebra.Basis.VectorSpace
+public import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Comodules over a coalgebra
@@ -107,53 +106,6 @@ theorem lTensor_counit_coact (m : M) :
 
 /-! ## Components selected by linear functionals -/
 
-/-- Apply a linear functional to the coalgebra factor of a tensor. -/
-noncomputable def tensorComponent (phi : C →ₗ[R] R) : M ⊗[R] C →ₗ[R] M :=
-  (TensorProduct.rid R M).toLinearMap ∘ₗ phi.lTensor M
-
-omit [Coalgebra R C] [Comodule R C M] in
-@[simp]
-theorem tensorComponent_tmul (phi : C →ₗ[R] R) (m : M) (c : C) :
-    tensorComponent (R := R) (M := M) phi (m ⊗ₜ[R] c) = phi c • m := by
-  simp [tensorComponent]
-
-omit [Coalgebra R C] [Comodule R C M] in
-/-- The coordinates of a tensor in a basis of its right factor are its tensor components. -/
-theorem equivFinsuppOfBasisRight_apply {ι : Type*} [DecidableEq ι]
-    (b : Module.Basis ι R C) (t : M ⊗[R] C) (i : ι) :
-    TensorProduct.equivFinsuppOfBasisRight b t i =
-      tensorComponent (R := R) (M := M) (b.coord i) t := by
-  rw [TensorProduct.equivFinsuppOfBasisRight_apply]
-  rfl
-
-section Free
-
-variable {k : Type u} {D : Type v} {V : Type w}
-variable [CommSemiring k] [AddCommMonoid D] [Module k D] [Module.Free k D]
-variable [AddCommMonoid V] [Module k V]
-
-/-- Equality of all contractions against the right factor detects equality in a tensor product
-over a commutative semiring when the right factor is free. -/
-theorem tensor_eq_of_forall_tensorComponent_eq {x y : V ⊗[k] D}
-    (h : ∀ φ : Module.Dual k D,
-      tensorComponent (R := k) (M := V) φ x = tensorComponent (R := k) (M := V) φ y) :
-    x = y := by
-  classical
-  let b := Module.Free.chooseBasis k D
-  apply (TensorProduct.equivFinsuppOfBasisRight b (M := V)).injective
-  ext i
-  rw [equivFinsuppOfBasisRight_apply, equivFinsuppOfBasisRight_apply]
-  exact h (b.coord i)
-
-end Free
-
-omit [Coalgebra R C] [Comodule R C M] in
-@[simp]
-theorem tensorComponent_zero :
-    tensorComponent (R := R) (M := M) (0 : C →ₗ[R] R) = 0 := by
-  refine TensorProduct.ext' fun m c => ?_
-  simp
-
 /-- Pair two linear functionals on the factors of a tensor square. -/
 noncomputable def pairCoeff (phi psi : C →ₗ[R] R) : C ⊗[R] C →ₗ[R] R :=
   (TensorProduct.rid R R).toLinearMap ∘ₗ TensorProduct.map phi psi
@@ -228,7 +180,9 @@ theorem tensorPairComponent_comp_lTensor_comul {phi psi theta : C →ₗ[R] R}
     (h : pairCoeff (R := R) phi psi ∘ₗ Coalgebra.comul = theta) :
     tensorPairComponent (R := R) (M := M) phi psi ∘ₗ Coalgebra.comul.lTensor M =
       tensorComponent (R := R) (M := M) theta := by
-  rw [tensorPairComponent, tensorComponent, LinearMap.comp_assoc, ← LinearMap.lTensor_comp, h]
+  rw [tensorPairComponent, LinearMap.comp_assoc, ← LinearMap.lTensor_comp, h]
+  refine TensorProduct.ext' fun m c ↦ ?_
+  simp
 
 variable (R C) in
 /-- The regular right comodule of a coalgebra over itself, with coaction given by the

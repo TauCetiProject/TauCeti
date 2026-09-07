@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Vector
+public import TauCeti.LinearAlgebra.TensorProduct.Basis
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 
 /-!
@@ -16,14 +16,15 @@ import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 
 Let `M` be a comodule over a coalgebra `C` over a commutative semiring. For a group-like element
 `c` of `C`, its weight space is the submodule of vectors whose coaction is `m ↦ m ⊗ c`. This
-file packages that submodule and its elementary functorial API. Over a field, it proves that the
-weight spaces belonging to distinct group-like elements are independent. Consequently a
-finite-dimensional comodule has only finitely many nonzero weight spaces.
+file packages that submodule and its elementary functorial API. Over a domain, when `C` is free
+and `M` is torsion-free, it proves that the weight spaces belonging to distinct group-like
+elements are independent. Consequently a Noetherian comodule has only finitely many nonzero
+weight spaces.
 
 The independence proof reads a coaction through all linear functionals on `C`. The `c`-weight
 space is the joint eigenspace of the component endomorphisms
 `Comodule.coactComponent φ`, with eigenvalue function `φ ↦ φ c`. Linear functionals separate
-points over a field, so distinct group-like elements give distinct joint eigenvalue functions.
+points when `C` is free, so distinct group-like elements give distinct joint eigenvalue functions.
 
 Unlike the weight decomposition for a monoid algebra, these weight spaces need not span an
 arbitrary comodule. Their finite nonzero support can be used to define permutation actions on
@@ -34,8 +35,9 @@ weights in Lie--Kolchin arguments.
 * `TauCeti.Comodule.groupLikeWeightSpace`: the weight space belonging to a group-like element.
 * `TauCeti.Comodule.iSupIndep_groupLikeWeightSpace`: distinct group-like weight spaces are
   independent.
-* `TauCeti.Comodule.finite_setOf_groupLikeWeightSpace_ne_bot`: a finite-dimensional comodule has
-  only finitely many nonzero group-like weight spaces.
+* `TauCeti.Comodule.finite_setOf_groupLikeWeightSpace_ne_bot`: a Noetherian comodule has only
+  finitely many nonzero group-like weight spaces.
+* `TauCeti.Comodule.NonzeroGroupLikeWeight`: the group-like elements with nonzero weight space.
 * `TauCeti.Comodule.natCard_nonzeroGroupLikeWeights_le_finrank`: the number of nonzero weight
   spaces is at most the dimension of the comodule.
 * `TauCeti.Comodule.hasNonzeroWeightVector_iff_exists_groupLikeWeightSpace_ne_bot`: nonzero weight
@@ -69,6 +71,12 @@ variable [AddCommMonoid N] [Module R N] [Comodule R C N]
 def groupLikeWeightSpace (c : GroupLike R C) : Submodule R M :=
   LinearMap.eqLocus (coact (R := R) (C := C) (M := M))
     ((TensorProduct.mk R M C).flip c.val)
+
+/-- The group-like elements whose weight space in a comodule is nonzero. -/
+abbrev NonzeroGroupLikeWeight (R : Type u) (C : Type v) (M : Type w)
+    [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M] :=
+  {c : GroupLike R C // groupLikeWeightSpace (M := M) c ≠ ⊥}
 
 /-- Membership in a group-like weight space is the corresponding coaction equation. -/
 @[simp]
@@ -109,30 +117,10 @@ theorem hasNonzeroWeightVector_iff_exists_groupLikeWeightSpace_ne_bot :
 
 end Semiring
 
-section MonoidAlgebra
-
-variable {R : Type u} {G : Type v} {M : Type w}
-variable [CommSemiring R] [AddCommMonoid M] [Module R M]
-variable [Comodule R (MonoidAlgebra R G) M]
-
-/-- The generic group-like weight space at `single g 1` is the usual monoid-algebra weight
-space. -/
-@[simp]
-theorem groupLikeWeightSpace_single_one (g : G) :
-    groupLikeWeightSpace (M := M)
-        ⟨MonoidAlgebra.single g (1 : R),
-          by
-            constructor
-            · simp
-            · simp⟩ =
-      weightSpace R G M g := by
-  ext m
-  rw [mem_groupLikeWeightSpace, mem_weightSpace]
-
-end MonoidAlgebra
+section Free
 
 variable {k : Type u} {C : Type v} {M : Type w}
-variable [Field k] [AddCommGroup C] [Module k C] [Coalgebra k C]
+variable [CommRing k] [AddCommGroup C] [Module k C] [Coalgebra k C] [Module.Free k C]
 variable [AddCommGroup M] [Module k M] [Comodule k C M]
 
 /-- A vector has weight `c` exactly when every component of its coaction has eigenvalue obtained
@@ -160,7 +148,17 @@ theorem groupLikeWeightSpace_eq_iInf_eigenspace (c : GroupLike k C) :
   rw [mem_groupLikeWeightSpace_iff_forall_coactComponent_eq_smul]
   simp only [Submodule.mem_iInf, Module.End.mem_eigenspace_iff]
 
-/-- The group-like weight spaces of a comodule over a field are supremum-independent. -/
+end Free
+
+section Domain
+
+variable {k : Type u} {C : Type v} {M : Type w}
+variable [CommRing k] [IsDomain k] [AddCommGroup C] [Module k C] [Coalgebra k C]
+variable [Module.Free k C] [AddCommGroup M] [Module k M] [Module.IsTorsionFree k M]
+variable [Comodule k C M]
+
+/-- The group-like weight spaces of a torsion-free comodule over a domain are
+supremum-independent. -/
 theorem iSupIndep_groupLikeWeightSpace :
     iSupIndep (groupLikeWeightSpace (M := M) : GroupLike k C → Submodule k M) := by
   have h := iSupIndep_iInf_eigenspace
@@ -190,22 +188,34 @@ theorem disjoint_groupLikeWeightSpace {c d : GroupLike k C} (hcd : c ≠ d) :
     Disjoint (groupLikeWeightSpace (M := M) c) (groupLikeWeightSpace (M := M) d) :=
   iSupIndep_groupLikeWeightSpace.pairwiseDisjoint hcd
 
-/-- A finite-dimensional comodule has only finitely many nonzero group-like weight spaces. -/
-theorem finite_setOf_groupLikeWeightSpace_ne_bot [FiniteDimensional k M] :
+/-- A Noetherian comodule has only finitely many nonzero group-like weight spaces. -/
+theorem finite_setOf_groupLikeWeightSpace_ne_bot [IsNoetherian k M] :
     {c : GroupLike k C | groupLikeWeightSpace (M := M) c ≠ ⊥}.Finite :=
   Submodule.finite_ne_bot_of_iSupIndep iSupIndep_groupLikeWeightSpace
+
+/-- The nonzero group-like weights of a Noetherian comodule form a finite type. -/
+noncomputable instance instFiniteNonzeroGroupLikeWeight [IsNoetherian k M] :
+    Finite (NonzeroGroupLikeWeight k C M) :=
+  finite_setOf_groupLikeWeightSpace_ne_bot.to_subtype
+
+end Domain
+
+section Field
+
+variable {k : Type u} {C : Type v} {M : Type w}
+variable [Field k] [AddCommGroup C] [Module k C] [Coalgebra k C]
+variable [AddCommGroup M] [Module k M] [Comodule k C M]
 
 /-- The number of nonzero group-like weight spaces of a finite-dimensional comodule is at most
 the dimension of the comodule. -/
 theorem natCard_nonzeroGroupLikeWeights_le_finrank [FiniteDimensional k M] :
-    Nat.card {c : GroupLike k C // groupLikeWeightSpace (M := M) c ≠ ⊥} ≤
-      Module.finrank k M := by
-  let _ : Fintype {c : GroupLike k C // groupLikeWeightSpace (M := M) c ≠ ⊥} :=
-    iSupIndep.fintypeNeBotOfFiniteDimensional (R := k) (M := M)
-      iSupIndep_groupLikeWeightSpace
+    Nat.card (NonzeroGroupLikeWeight k C M) ≤ Module.finrank k M := by
+  let _ : Fintype (NonzeroGroupLikeWeight k C M) := Fintype.ofFinite _
   rw [Nat.card_eq_fintype_card]
   exact iSupIndep.subtype_ne_bot_le_finrank (R := k) (M := M)
     iSupIndep_groupLikeWeightSpace
+
+end Field
 
 end
 
