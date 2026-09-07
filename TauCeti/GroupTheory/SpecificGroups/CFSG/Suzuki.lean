@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
+public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB2
 
@@ -45,6 +46,7 @@ bookkeeping that remains of `L2` for this branch.
 
 * `TauCeti.SuzukiLieIndex.halfFrobenius`: the special isogeny of the ambient group.
 * `TauCeti.SuzukiLieIndex.steinberg`: its odd power `τ ^ (2m+1)`.
+* `TauCeti.SuzukiLieIndex.Group`: the milestone `L3` candidate attached to that Steinberg map.
 
 ## Main results
 
@@ -58,10 +60,11 @@ bookkeeping that remains of `L2` for this branch.
 
 ## What is not here
 
-No fixed-point subgroup is formed, so no finite group appears: the milestone `L3` candidate is the
-derived subgroup of those fixed points modulo its centre, and that step is left to a follow-up.
-Nothing is proved finite, perfect or simple, and Mathlib's separate `suzukiGroup` is not
-mentioned.
+The candidate is named but not identified. Nothing is proved finite, perfect or simple, and
+Mathlib's separate `suzukiGroup` is not mentioned, so no comparison with it is claimed. The fixed
+points of an odd half-Frobenius power are not the `ℱ_q` points of the carrier, which is exactly why
+this branch is not an instance of the Frobenius machinery the untwisted families use; no
+description of them by matrix entries is offered here.
 
 ## References
 
@@ -173,5 +176,21 @@ theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.1.Closure) 
     Equiv.apply_symm_apply, Equiv.apply_symm_apply, halfFrobenius_def,
     show (1 : Fin 2) = Fin.last 1 from rfl]
   exact SpStd.specialIsogeny_rootSubgroupPoints_inl_zero _ _
+
+/-! ## The milestone L3 quotient -/
+
+/-- **The candidate simple group of a Suzuki index**: the derived subgroup of the fixed points of
+its Steinberg map, modulo the centre of that derived subgroup.
+
+This is the CFSG recipe on the `²B₂` branch, run on the rank-two type-`C` carrier rather than on
+the pinned group scheme milestone `L0` asks for. Because the Steinberg map is an odd power of the
+half-Frobenius rather than a Frobenius, its fixed points are a proper subgroup of the `ℱ_q` points
+of the carrier, and the quotient is the Suzuki group `²B₂(2 ^ (2m+1))` rather than a symplectic
+group. Nothing below asserts that, nor that the result is finite, perfect, or simple. -/
+abbrev Group : Type := FixedPointCandidate d.steinberg
+
+/-- Milestone L3 asks every valid branch to carry a group instance; the quotient construction
+supplies it. -/
+example : _root_.Group d.Group := inferInstance
 
 end TauCeti.SuzukiLieIndex
