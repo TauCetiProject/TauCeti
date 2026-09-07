@@ -289,6 +289,13 @@ theorem skewZigzagQuotientOneEquiv_skewZigzagMk (x : pathAlgebra k (DoubledQuive
     skewZigzagQuotientOneEquiv k G (skewZigzagMk k G 1 x) = zigzagMk k G x := by
   rw [skewZigzagMk_apply, skewZigzagQuotientOneEquiv, Ideal.quotientEquivAlgOfEq_mk, zigzagMk_apply]
 
+/-- The inverse comparison with the ordinary zigzag quotient sends the class of an element to its
+skew class at the constant parameter. -/
+@[simp]
+theorem skewZigzagQuotientOneEquiv_symm_zigzagMk (x : pathAlgebra k (DoubledQuiver G)) :
+    (skewZigzagQuotientOneEquiv k G).symm (zigzagMk k G x) = skewZigzagMk k G 1 x := by
+  rw [AlgEquiv.symm_apply_eq, skewZigzagQuotientOneEquiv_skewZigzagMk]
+
 end One
 
 end TauCeti

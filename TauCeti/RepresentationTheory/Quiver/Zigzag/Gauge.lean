@@ -265,9 +265,7 @@ variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
 
 /-- **Rescaling by a unit labelling carries the skew relators of a parameter into the relation ideal
 of its gauge transform**: a path relator is multiplied by its path weight, and the backtrack
-relator of a pair of incident edges is multiplied by the backtrack scale at the first of them.
-This is an implementation step for `TauCeti.skewZigzagQuotientGaugeEquiv`, which is the public
-API. -/
+relator of a pair of incident edges is multiplied by the backtrack scale at the first of them. -/
 private theorem skewZigzagMk_rescale_eq_zero (c c' : SkewZigzagParameter k G)
     (u : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ) (hc : c' = c.gauge u)
     {x : pathAlgebra k (DoubledQuiver G)} (hx : IsSkewZigzagRelator k G c x) :
@@ -289,9 +287,7 @@ private theorem skewZigzagMk_rescale_eq_zero (c c' : SkewZigzagParameter k G)
     rw [rescale_ofPath, map_smul,
       skewZigzagMk_ofPath_eq_zero_of_three_le k G (c.gauge u) y h3, smul_zero]
 
-/-- The map of skew relation quotients induced by an arrow rescaling. This is only one direction of
-`TauCeti.skewZigzagQuotientGaugeEquiv`, which is the public API; it is private so as not to
-duplicate it. -/
+/-- The map of skew relation quotients induced by an arrow rescaling. -/
 private noncomputable def skewZigzagQuotientRescaleHom (c c' : SkewZigzagParameter k G)
     (u : ∀ ⦃x y : DoubledQuiver G⦄, (x ⟶ y) → kˣ) (hc : c' = c.gauge u) :
     skewZigzagQuotient k G c →ₐ[k] skewZigzagQuotient k G c' :=
