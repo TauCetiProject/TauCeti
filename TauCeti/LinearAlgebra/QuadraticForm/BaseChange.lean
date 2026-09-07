@@ -29,7 +29,7 @@ noncomputable section
 
 open scoped TensorProduct
 
-namespace TauCeti.QuadraticForm
+namespace QuadraticForm
 
 universe uR uA uM uN
 
@@ -154,4 +154,4 @@ theorem Nondegenerate.baseChange [Invertible (2 : K)] [Invertible (2 : L)]
 
 end Field
 
-end TauCeti.QuadraticForm
+end QuadraticForm

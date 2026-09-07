@@ -28,7 +28,7 @@ noncomputable section
 open IsDedekindDomain NumberField NumberField.InfinitePlace
 open scoped TensorProduct
 
-namespace TauCeti.NumberField.QuadraticForm
+namespace QuadraticForm
 
 universe u v
 
@@ -106,39 +106,39 @@ variable (v : HeightOneSpectrum (𝓞 K))
 @[simp]
 theorem atFinitePlace_zero :
     atFinitePlace (0 : _root_.QuadraticForm K V) v = 0 :=
-  TauCeti.QuadraticForm.baseChange_zero
+  QuadraticForm.baseChange_zero
 
 /-- Finite localization commutes with addition of forms. -/
 @[simp]
 theorem atFinitePlace_add (Q Q' : _root_.QuadraticForm K V) :
     atFinitePlace (Q + Q') v = atFinitePlace Q v + atFinitePlace Q' v :=
-  TauCeti.QuadraticForm.baseChange_add Q Q'
+  QuadraticForm.baseChange_add Q Q'
 
 /-- Finite localization commutes with negation of forms. -/
 @[simp]
 theorem atFinitePlace_neg (Q : _root_.QuadraticForm K V) :
     atFinitePlace (-Q) v = -(atFinitePlace Q v) :=
-  TauCeti.QuadraticForm.baseChange_neg Q
+  QuadraticForm.baseChange_neg Q
 
 /-- Finite localization commutes with subtraction of forms. -/
 @[simp]
 theorem atFinitePlace_sub (Q Q' : _root_.QuadraticForm K V) :
     atFinitePlace (Q - Q') v = atFinitePlace Q v - atFinitePlace Q' v :=
-  TauCeti.QuadraticForm.baseChange_sub Q Q'
+  QuadraticForm.baseChange_sub Q Q'
 
 /-- Scaling before finite localization agrees with scaling by the image in the completion. -/
 @[simp]
 theorem atFinitePlace_smul (r : K) (Q : _root_.QuadraticForm K V) :
     atFinitePlace (r • Q) v =
       algebraMap K (v.adicCompletion K) r • atFinitePlace Q v :=
-  TauCeti.QuadraticForm.baseChange_smul r Q
+  QuadraticForm.baseChange_smul r Q
 
 /-- Real localization sends the zero form to the zero form. -/
 @[simp]
 theorem atRealPlace_zero (w : {w : InfinitePlace K // w.IsReal}) :
     atRealPlace (0 : _root_.QuadraticForm K V) w = 0 := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact TauCeti.QuadraticForm.baseChange_zero
+  exact QuadraticForm.baseChange_zero
 
 /-- Real localization commutes with addition of forms. -/
 @[simp]
@@ -146,7 +146,7 @@ theorem atRealPlace_add (Q Q' : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
     atRealPlace (Q + Q') w = atRealPlace Q w + atRealPlace Q' w := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact TauCeti.QuadraticForm.baseChange_add Q Q'
+  exact QuadraticForm.baseChange_add Q Q'
 
 /-- Real localization commutes with negation of forms. -/
 @[simp]
@@ -154,7 +154,7 @@ theorem atRealPlace_neg (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
     atRealPlace (-Q) w = -(atRealPlace Q w) := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact TauCeti.QuadraticForm.baseChange_neg Q
+  exact QuadraticForm.baseChange_neg Q
 
 /-- Real localization commutes with subtraction of forms. -/
 @[simp]
@@ -162,7 +162,7 @@ theorem atRealPlace_sub (Q Q' : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
     atRealPlace (Q - Q') w = atRealPlace Q w - atRealPlace Q' w := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact TauCeti.QuadraticForm.baseChange_sub Q Q'
+  exact QuadraticForm.baseChange_sub Q Q'
 
 /-- Scaling before real localization agrees with scaling by the corresponding real embedding. -/
 @[simp]
@@ -170,42 +170,42 @@ theorem atRealPlace_smul (r : K) (Q : _root_.QuadraticForm K V)
     (w : {w : InfinitePlace K // w.IsReal}) :
     atRealPlace (r • Q) w = embedding_of_isReal w.2 r • atRealPlace Q w := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact TauCeti.QuadraticForm.baseChange_smul r Q
+  exact QuadraticForm.baseChange_smul r Q
 
 /-- Complex localization sends the zero form to the zero form. -/
 @[simp]
 theorem atComplexPlace_zero (w : InfinitePlace K) :
     atComplexPlace (0 : _root_.QuadraticForm K V) w = 0 := by
   let : Algebra K ℂ := w.embedding.toAlgebra
-  exact TauCeti.QuadraticForm.baseChange_zero
+  exact QuadraticForm.baseChange_zero
 
 /-- Complex localization commutes with addition of forms. -/
 @[simp]
 theorem atComplexPlace_add (Q Q' : _root_.QuadraticForm K V) (w : InfinitePlace K) :
     atComplexPlace (Q + Q') w = atComplexPlace Q w + atComplexPlace Q' w := by
   let : Algebra K ℂ := w.embedding.toAlgebra
-  exact TauCeti.QuadraticForm.baseChange_add Q Q'
+  exact QuadraticForm.baseChange_add Q Q'
 
 /-- Complex localization commutes with negation of forms. -/
 @[simp]
 theorem atComplexPlace_neg (Q : _root_.QuadraticForm K V) (w : InfinitePlace K) :
     atComplexPlace (-Q) w = -(atComplexPlace Q w) := by
   let : Algebra K ℂ := w.embedding.toAlgebra
-  exact TauCeti.QuadraticForm.baseChange_neg Q
+  exact QuadraticForm.baseChange_neg Q
 
 /-- Complex localization commutes with subtraction of forms. -/
 @[simp]
 theorem atComplexPlace_sub (Q Q' : _root_.QuadraticForm K V) (w : InfinitePlace K) :
     atComplexPlace (Q - Q') w = atComplexPlace Q w - atComplexPlace Q' w := by
   let : Algebra K ℂ := w.embedding.toAlgebra
-  exact TauCeti.QuadraticForm.baseChange_sub Q Q'
+  exact QuadraticForm.baseChange_sub Q Q'
 
 /-- Scaling before complex localization agrees with scaling by the chosen complex embedding. -/
 @[simp]
 theorem atComplexPlace_smul (r : K) (Q : _root_.QuadraticForm K V) (w : InfinitePlace K) :
     atComplexPlace (r • Q) w = w.embedding r • atComplexPlace Q w := by
   let : Algebra K ℂ := w.embedding.toAlgebra
-  exact TauCeti.QuadraticForm.baseChange_smul r Q
+  exact QuadraticForm.baseChange_smul r Q
 
 end Operations
 
@@ -217,56 +217,56 @@ variable {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
 /-- An isometry of global quadratic forms extends to every finite localization. -/
 def Isometry.atFinitePlace (f : Q →qᵢ R) (v : HeightOneSpectrum (𝓞 K)) :
     atFinitePlace Q v →qᵢ atFinitePlace R v :=
-  TauCeti.QuadraticForm.Isometry.baseChange f (v.adicCompletion K)
+  QuadraticForm.Isometry.baseChange f (v.adicCompletion K)
 
 /-- An isometry of global quadratic forms extends to every real localization. -/
 def Isometry.atRealPlace (f : Q →qᵢ R) (w : {w : InfinitePlace K // w.IsReal}) :
     atRealPlace Q w →qᵢ atRealPlace R w := by
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact TauCeti.QuadraticForm.Isometry.baseChange f ℝ
+  exact QuadraticForm.Isometry.baseChange f ℝ
 
 /-- An isometry of global quadratic forms extends to every complex localization. -/
 def Isometry.atComplexPlace (f : Q →qᵢ R) (w : InfinitePlace K) :
     atComplexPlace Q w →qᵢ atComplexPlace R w := by
   letI : Algebra K ℂ := w.embedding.toAlgebra
-  exact TauCeti.QuadraticForm.Isometry.baseChange f ℂ
+  exact QuadraticForm.Isometry.baseChange f ℂ
 
 /-- A global isometric equivalence extends to every finite localization. -/
 def IsometryEquiv.atFinitePlace (f : Q.IsometryEquiv R)
     (v : HeightOneSpectrum (𝓞 K)) :
     (atFinitePlace Q v).IsometryEquiv (atFinitePlace R v) :=
-  TauCeti.QuadraticForm.IsometryEquiv.baseChange f (v.adicCompletion K)
+  QuadraticForm.IsometryEquiv.baseChange f (v.adicCompletion K)
 
 /-- A global isometric equivalence extends to every real localization. -/
 def IsometryEquiv.atRealPlace (f : Q.IsometryEquiv R)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (atRealPlace Q w).IsometryEquiv (atRealPlace R w) := by
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact TauCeti.QuadraticForm.IsometryEquiv.baseChange f ℝ
+  exact QuadraticForm.IsometryEquiv.baseChange f ℝ
 
 /-- A global isometric equivalence extends to every complex localization. -/
 def IsometryEquiv.atComplexPlace (f : Q.IsometryEquiv R) (w : InfinitePlace K) :
     (atComplexPlace Q w).IsometryEquiv (atComplexPlace R w) := by
   letI : Algebra K ℂ := w.embedding.toAlgebra
-  exact TauCeti.QuadraticForm.IsometryEquiv.baseChange f ℂ
+  exact QuadraticForm.IsometryEquiv.baseChange f ℂ
 
 /-- Equivalent global quadratic forms remain equivalent at every finite place. -/
 theorem Equivalent.atFinitePlace (h : Q.Equivalent R) (v : HeightOneSpectrum (𝓞 K)) :
     (atFinitePlace Q v).Equivalent (atFinitePlace R v) :=
-  TauCeti.QuadraticForm.Equivalent.baseChange h (v.adicCompletion K)
+  QuadraticForm.Equivalent.baseChange h (v.adicCompletion K)
 
 /-- Equivalent global quadratic forms remain equivalent at every real place. -/
 theorem Equivalent.atRealPlace (h : Q.Equivalent R)
     (w : {w : InfinitePlace K // w.IsReal}) :
     (atRealPlace Q w).Equivalent (atRealPlace R w) := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact TauCeti.QuadraticForm.Equivalent.baseChange h ℝ
+  exact QuadraticForm.Equivalent.baseChange h ℝ
 
 /-- Equivalent global quadratic forms remain equivalent at every complex place. -/
 theorem Equivalent.atComplexPlace (h : Q.Equivalent R) (w : InfinitePlace K) :
     (atComplexPlace Q w).Equivalent (atComplexPlace R w) := by
   let : Algebra K ℂ := w.embedding.toAlgebra
-  exact TauCeti.QuadraticForm.Equivalent.baseChange h ℂ
+  exact QuadraticForm.Equivalent.baseChange h ℂ
 
 /-- The finite localization of an orthogonal sum is canonically isometric to the orthogonal sum
 of the finite localizations. -/
@@ -274,7 +274,7 @@ def prodAtFinitePlace (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K
     (v : HeightOneSpectrum (𝓞 K)) :
     (atFinitePlace (Q.prod R) v).IsometryEquiv
       ((atFinitePlace Q v).prod (atFinitePlace R v)) :=
-  TauCeti.QuadraticForm.baseChangeProd Q R
+  QuadraticForm.baseChangeProd Q R
 
 /-- The real localization of an orthogonal sum is canonically isometric to the orthogonal sum of
 the real localizations. -/
@@ -283,7 +283,7 @@ def prodAtRealPlace (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W
     (atRealPlace (Q.prod R) w).IsometryEquiv
       ((atRealPlace Q w).prod (atRealPlace R w)) := by
   letI : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact TauCeti.QuadraticForm.baseChangeProd Q R
+  exact QuadraticForm.baseChangeProd Q R
 
 /-- The complex localization of an orthogonal sum is canonically isometric to the orthogonal sum
 of the complex localizations. -/
@@ -292,7 +292,7 @@ def prodAtComplexPlace (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm 
     (atComplexPlace (Q.prod R) w).IsometryEquiv
       ((atComplexPlace Q w).prod (atComplexPlace R w)) := by
   letI : Algebra K ℂ := w.embedding.toAlgebra
-  exact TauCeti.QuadraticForm.baseChangeProd Q R
+  exact QuadraticForm.baseChangeProd Q R
 
 end Isometries
 
@@ -301,7 +301,6 @@ section FiniteDimensional
 variable {Q : _root_.QuadraticForm K V}
 
 /-- Finite localization preserves the rank of a quadratic space. -/
-@[simp]
 theorem finrank_finiteScalarExtension (v : HeightOneSpectrum (𝓞 K)) :
     Module.finrank (v.adicCompletion K) (FiniteScalarExtension (V := V) v) =
       Module.finrank K V :=
@@ -332,21 +331,21 @@ theorem Nondegenerate.atFinitePlace [FiniteDimensional K V] (hQ : Q.Nondegenerat
       (map_ne_zero_iff (algebraMap K (v.adicCompletion K)) (RingHom.injective _)).mpr
         htwoK
   let : Invertible (2 : v.adicCompletion K) := invertibleOfNonzero htwo
-  exact TauCeti.QuadraticForm.Nondegenerate.baseChange hQ
+  exact QuadraticForm.Nondegenerate.baseChange hQ
 
 /-- A regular quadratic form stays regular at every real place. -/
 theorem Nondegenerate.atRealPlace [FiniteDimensional K V] (hQ : Q.Nondegenerate)
     (w : {w : InfinitePlace K // w.IsReal}) : (atRealPlace Q w).Nondegenerate := by
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  exact TauCeti.QuadraticForm.Nondegenerate.baseChange hQ
+  exact QuadraticForm.Nondegenerate.baseChange hQ
 
 /-- A regular quadratic form stays regular at every complex place. -/
 theorem Nondegenerate.atComplexPlace [FiniteDimensional K V]
     (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
     (atComplexPlace Q w).Nondegenerate := by
   let : Algebra K ℂ := w.embedding.toAlgebra
-  exact TauCeti.QuadraticForm.Nondegenerate.baseChange hQ
+  exact QuadraticForm.Nondegenerate.baseChange hQ
 
 end FiniteDimensional
 
-end TauCeti.NumberField.QuadraticForm
+end QuadraticForm
