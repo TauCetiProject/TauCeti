@@ -11,7 +11,6 @@ public import TauCeti.AlgebraicGeometry.AffineGroupScheme.FiniteType
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.GeometricallyReduced
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Smooth
 import Mathlib.Algebra.Field.ULift
-import Mathlib.RingTheory.Etale.Descent
 import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.BaseChange
 
 /-!
@@ -83,9 +82,8 @@ theorem smoothCommHopfAlgProperty_of_geometricallyReduced
     [Algebra.FiniteType k H]
     (hH : geometricallyReducedCommHopfAlgProperty k H) :
     smoothCommHopfAlgProperty k H := by
-  let K : Type (max u v) := AlgebraicClosure (ULift.{v} k)
-  let _ : Algebra k K := Algebra.compHom K (algebraMap k (ULift.{v} k))
-  let _ : IsScalarTower k (ULift.{v} k) K := IsScalarTower.of_algebraMap_eq' rfl
+  let K : Type (max u v) := ULift.{v} k
+  let eK : k ≃ₐ[k] K := (ULift.algEquiv (R := k) (A := k)).symm
   let HK := CommHopfAlgCat.baseChange (K := K) H
   have hHK : geometricallyReducedCommHopfAlgProperty K HK :=
     geometricallyReducedCommHopfAlgProperty.baseChange K hH
@@ -106,7 +104,18 @@ theorem smoothCommHopfAlgProperty_of_geometricallyReduced
     exact smooth_of_grpObj _
   rw [smoothCommHopfAlgProperty_iff] at hSmooth ⊢
   let _ : Algebra.Smooth K (K ⊗[k] H) := hSmooth
-  exact Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat K
+  have hMap : Function.Bijective (algebraMap k K) := by
+    have heK : (eK : k → K) = algebraMap k K := by
+      funext x
+      simpa using eK.commutes x
+    rw [← heK]
+    exact eK.bijective
+  let e : H ≃ₐ[k] (K ⊗[k] H) :=
+    AlgEquiv.ofBijective Algebra.TensorProduct.includeRight
+      (Algebra.TensorProduct.includeRight_bijective hMap)
+  let _ : Algebra.Smooth k K := Algebra.Smooth.of_equiv eK
+  let _ : Algebra.Smooth k (K ⊗[k] H) := Algebra.Smooth.comp k K _
+  exact Algebra.Smooth.of_equiv e.symm
 
 /-- For a finite-type commutative Hopf algebra over a field, smoothness is equivalent to geometric
 reducedness. -/

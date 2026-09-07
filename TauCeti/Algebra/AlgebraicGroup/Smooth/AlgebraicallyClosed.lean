@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 public import TauCeti.AlgebraicGeometry.Group.Smooth
 import Mathlib.Algebra.Field.ULift
-import Mathlib.RingTheory.Etale.Descent
 import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 
 /-!
@@ -107,7 +106,10 @@ theorem smoothCommHopfAlgProperty_of_isAlgClosed_of_isReduced
     exact AlgebraicGeometry.smooth_of_grpObj_of_isAlgClosed_of_isReduced _
   rw [smoothCommHopfAlgProperty_iff] at hSmooth ⊢
   let _ : Algebra.Smooth K (K ⊗[k] H) := hSmooth
-  exact Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat K
+  let eK : k ≃ₐ[k] K := AlgEquiv.ofBijective (Algebra.ofId k K) hMap
+  let _ : Algebra.Smooth k K := Algebra.Smooth.of_equiv eK
+  let _ : Algebra.Smooth k (K ⊗[k] H) := Algebra.Smooth.comp k K _
+  exact Algebra.Smooth.of_equiv e.symm
 
 /-- For a finite-type commutative Hopf algebra over an algebraically closed field, smoothness is
 equivalent to reducedness of its coordinate ring. -/
