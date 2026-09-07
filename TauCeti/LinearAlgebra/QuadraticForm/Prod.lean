@@ -38,17 +38,19 @@ def IsometryEquiv.prodAssoc (Q₁ : QuadraticMap R M₁ P) (Q₂ : QuadraticMap 
 
 /-- The forward map of `QuadraticMap.IsometryEquiv.prodAssoc`. -/
 @[simp]
-theorem IsometryEquiv.prodAssoc_toFun (Q₁ : QuadraticMap R M₁ P)
+theorem IsometryEquiv.prodAssoc_apply (Q₁ : QuadraticMap R M₁ P)
     (Q₂ : QuadraticMap R M₂ P) (Q₃ : QuadraticMap R M₃ P) (m : (M₁ × M₂) × M₃) :
     IsometryEquiv.prodAssoc Q₁ Q₂ Q₃ m = (m.1.1, m.1.2, m.2) := by
+  -- Expose the underlying linear equivalence so its public application lemma applies.
   change LinearEquiv.prodAssoc R M₁ M₂ M₃ m = _
   exact Equiv.prodAssoc_apply M₁ M₂ M₃ m
 
 /-- The inverse map of `QuadraticMap.IsometryEquiv.prodAssoc`. -/
 @[simp]
-theorem IsometryEquiv.prodAssoc_invFun (Q₁ : QuadraticMap R M₁ P)
+theorem IsometryEquiv.prodAssoc_symm_apply (Q₁ : QuadraticMap R M₁ P)
     (Q₂ : QuadraticMap R M₂ P) (Q₃ : QuadraticMap R M₃ P) (m : M₁ × M₂ × M₃) :
     (IsometryEquiv.prodAssoc Q₁ Q₂ Q₃).invFun m = ((m.1, m.2.1), m.2.2) := by
+  -- Expose the underlying linear equivalence so its public inverse application lemma applies.
   change (LinearEquiv.prodAssoc R M₁ M₂ M₃).symm m = _
   exact Equiv.prodAssoc_symm_apply M₁ M₂ M₃ m
 
@@ -61,17 +63,19 @@ def IsometryEquiv.uniqueProd [Unique M₁] (Q₁ : QuadraticMap R M₁ P) (Q₂ 
 
 /-- The forward map of `QuadraticMap.IsometryEquiv.uniqueProd`. -/
 @[simp]
-theorem IsometryEquiv.uniqueProd_toFun [Unique M₁] (Q₁ : QuadraticMap R M₁ P)
+theorem IsometryEquiv.uniqueProd_apply [Unique M₁] (Q₁ : QuadraticMap R M₁ P)
     (Q₂ : QuadraticMap R M₂ P) (m : M₁ × M₂) :
     IsometryEquiv.uniqueProd Q₁ Q₂ m = m.2 := by
+  -- Expose the underlying linear equivalence so its public application lemma applies.
   change LinearEquiv.uniqueProd (R := R) (M := M₂) (M₂ := M₁) m = _
   exact LinearEquiv.uniqueProd_apply m
 
 /-- The inverse map of `QuadraticMap.IsometryEquiv.uniqueProd`. -/
 @[simp]
-theorem IsometryEquiv.uniqueProd_invFun [Unique M₁] (Q₁ : QuadraticMap R M₁ P)
+theorem IsometryEquiv.uniqueProd_symm_apply [Unique M₁] (Q₁ : QuadraticMap R M₁ P)
     (Q₂ : QuadraticMap R M₂ P) (m : M₂) :
     (IsometryEquiv.uniqueProd Q₁ Q₂).invFun m = (default, m) := by
+  -- Expose the underlying linear equivalence so its public inverse application lemma applies.
   change (LinearEquiv.uniqueProd (R := R) (M := M₂) (M₂ := M₁)).symm m = _
   exact LinearEquiv.uniqueProd_symm_apply m
 

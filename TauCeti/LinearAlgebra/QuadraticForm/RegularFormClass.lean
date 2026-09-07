@@ -127,6 +127,7 @@ of characteristic two it is only the quotient of the diagonal presentations by i
 abbrev RegularFormClass (K : Type u) [Field K] : Type u := Quotient (regularFormSetoid K)
 
 /-- Two presentations have the same class exactly when they present isometric forms. -/
+@[simp]
 theorem RegularFormClass.mk_eq_mk_iff {p q : RegularFormPresentation K} :
     Quotient.mk (regularFormSetoid K) p = Quotient.mk (regularFormSetoid K) q ↔
       (presentedForm p).Equivalent (presentedForm q) :=
@@ -209,6 +210,7 @@ theorem presentedFormAppendIsometryEquiv_apply (p q : RegularFormPresentation K)
   rcases p with ⟨m, w⟩
   rcases q with ⟨n, v⟩
   simp only [RegularFormPresentation.append] at x ⊢
+  -- Expose the composite linear equivalence so its coordinate projections can be computed.
   change ((LinearEquiv.funCongrLeft K K finSumFinEquiv).trans
     (LinearEquiv.sumArrowLequivProdArrow (Fin m) (Fin n) K K)) x = _
   ext <;> rfl
@@ -216,7 +218,7 @@ theorem presentedFormAppendIsometryEquiv_apply (p q : RegularFormPresentation K)
 /-- The inverse map of `TauCeti.presentedFormAppendIsometryEquiv` concatenates the two coordinate
 tuples. -/
 @[simp]
-theorem presentedFormAppendIsometryEquiv_invFun (p q : RegularFormPresentation K)
+theorem presentedFormAppendIsometryEquiv_symm_apply (p q : RegularFormPresentation K)
     (x : (Fin p.1 → K) × (Fin q.1 → K)) :
     (presentedFormAppendIsometryEquiv p q).invFun x =
       Fin.append x.1 x.2 ∘ Fin.cast (RegularFormPresentation.fst_append p q) := by
@@ -224,6 +226,7 @@ theorem presentedFormAppendIsometryEquiv_invFun (p q : RegularFormPresentation K
   rcases q with ⟨n, v⟩
   simp only [RegularFormPresentation.append] at x ⊢
   rcases x with ⟨x, y⟩
+  -- Expose the inverse composite linear equivalence so its coordinate projections can be computed.
   change (((LinearEquiv.funCongrLeft K K finSumFinEquiv).trans
     (LinearEquiv.sumArrowLequivProdArrow (Fin m) (Fin n) K K)).symm (x, y)) = _
   funext i
@@ -383,6 +386,7 @@ theorem rank_formClass (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
   simpa using e.toLinearEquiv.finrank_eq.symm
 
 /-- The class of an orthogonal product is the sum of the classes. -/
+@[simp]
 theorem formClass_prod (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (R : QuadraticForm K W)
     (hR : R.Nondegenerate) :
     formClass (Q.prod R) (hQ.prod hR) = formClass Q hQ + formClass R hR := by
