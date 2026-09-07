@@ -291,9 +291,7 @@ for the Suzuki group `²B₂(2 ^ (2m+1))`. Nothing here identifies it with that 
 below asserts that it is finite, perfect, or simple. -/
 abbrev Group : Type := FixedPointCandidate d.steinberg
 
-/-- The quotient construction makes the attached group a group. The check is `noncomputable`
-because `steinberg` is, the special isogeny it is a power of being built from the identification of
-the carrier's points with the symplectic group. -/
+/-- The attached group carries a group structure. -/
 noncomputable example : _root_.Group d.Group := inferInstance
 
 end TauCeti.SuzukiLieIndex
