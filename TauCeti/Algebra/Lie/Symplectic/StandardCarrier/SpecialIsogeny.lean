@@ -29,8 +29,8 @@ relation are the symplectic-group statements read through that identification.
 
 * `TauCeti.SpStd.pointsMulEquivGLSymplecticFin`: the identification of the rank-two carrier's
   points with the symplectic group. Both directions of it are read on the underlying
-  matrices by `TauCeti.SpStd.coe_pointsMulEquivGLSymplecticFin` and
-  `TauCeti.SpStd.coe_pointsMulEquivGLSymplecticFin_symm`, so no consumer unfolds it.
+  matrices by `TauCeti.SpStd.coe_pointsMulEquivGLSymplecticFin_apply` and
+  `TauCeti.SpStd.coe_pointsMulEquivGLSymplecticFin_symm_apply`, so no consumer unfolds it.
 * `TauCeti.SpStd.specialIsogeny`: the special isogeny of the carrier in characteristic two.
 
 ## Main results
@@ -41,7 +41,9 @@ relation are the symplectic-group statements read through that identification.
   short one with the parameter unchanged, which is the exponent convention `1` on a long simple
   root and the defining characteristic on a short one.
 * `TauCeti.SpStd.specialIsogeny_specialIsogeny`: the square relation, that the isogeny composed
-  with itself is the Frobenius `TauCeti.SpStd.frobenius 1 2 1`.
+  with itself is the Frobenius `TauCeti.SpStd.frobenius 1 2 1`, transported from the symplectic
+  group rather than recomputed, with `TauCeti.SpStd.specialIsogeny_comp_specialIsogeny` stating it
+  for the composite endomorphism itself.
 
 ## What is not here
 
@@ -69,7 +71,7 @@ noncomputable def pointsMulEquivGLSymplecticFin :
   MulEquiv.subgroupCongr (points_eq_GLSymplecticFin 1)
 
 @[simp]
-theorem coe_pointsMulEquivGLSymplecticFin (g : points 1 K) :
+theorem coe_pointsMulEquivGLSymplecticFin_apply (g : points 1 K) :
     ((pointsMulEquivGLSymplecticFin K g : GLSymplecticFin 2 K) :
         GL (Fin (1 + 1 + (1 + 1))) K) = (g : GL (Fin (1 + 1 + (1 + 1))) K) := by
   rw [pointsMulEquivGLSymplecticFin]
@@ -77,7 +79,7 @@ theorem coe_pointsMulEquivGLSymplecticFin (g : points 1 K) :
 
 /-- The points of the carrier underlying a symplectic element are that element. -/
 @[simp]
-theorem coe_pointsMulEquivGLSymplecticFin_symm (g : GLSymplecticFin 2 K) :
+theorem coe_pointsMulEquivGLSymplecticFin_symm_apply (g : GLSymplecticFin 2 K) :
     (((pointsMulEquivGLSymplecticFin K).symm g : points 1 K) :
         GL (Fin (1 + 1 + (1 + 1))) K) = (g : GL (Fin (2 + 2)) K) := by
   rw [pointsMulEquivGLSymplecticFin]
@@ -108,19 +110,36 @@ theorem coe_specialIsogeny_gl (g : points 1 K) :
   rw [specialIsogeny]
   simp [pointsMulEquivGLSymplecticFin]
 
-/-- **The square of the carrier's special isogeny is the Frobenius.** -/
+/-- The identification intertwines the two special isogenies, which is what lets the carrier
+inherit the symplectic group's square relation rather than recompute it. -/
+@[simp]
+theorem pointsMulEquivGLSymplecticFin_specialIsogeny (g : points 1 K) :
+    pointsMulEquivGLSymplecticFin K (specialIsogeny K g) =
+      TauCeti.specialIsogeny (pointsMulEquivGLSymplecticFin K g) := by
+  rw [specialIsogeny]
+  simp
+
+/-- **The square of the carrier's special isogeny is the Frobenius**, transported from the
+symplectic group along the identification. -/
 @[simp]
 theorem specialIsogeny_specialIsogeny (g : points 1 K) :
     specialIsogeny K (specialIsogeny K g) = frobenius 1 2 1 K g := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
   apply Subtype.ext
   apply Units.ext
+  rw [coe_specialIsogeny_gl, pointsMulEquivGLSymplecticFin_specialIsogeny,
+    TauCeti.specialIsogeny_specialIsogeny, GLSymplecticFin.coe_map,
+    coe_pointsMulEquivGLSymplecticFin_apply]
   ext i j
-  rw [coe_specialIsogeny, coe_specialIsogeny,
-    Matrix.symplecticSpecialIsogeny_symplecticSpecialIsogeny
-      (GLSymplecticFin.mem_iff.mp (mem_GLSymplecticFin_of_mem_points 1 g.2)),
-    Matrix.map_apply, coe_frobenius_apply]
-  norm_num
+  rw [coe_frobenius_apply]
+  simp [frobenius_def]
+
+/-- **The square of the carrier's special isogeny is the Frobenius**, as an identity of monoid
+homomorphisms, so a consumer taking odd powers can rewrite the composite itself. -/
+@[simp]
+theorem specialIsogeny_comp_specialIsogeny :
+    (specialIsogeny K).comp (specialIsogeny K) = frobenius 1 2 1 K :=
+  MonoidHom.ext fun g => specialIsogeny_specialIsogeny K g
 
 private theorem zero_ne_last : (0 : Fin (1 + 1)) ≠ Fin.last 1 := by decide
 
@@ -146,7 +165,7 @@ private theorem shortRootUnit_eq (t : K) :
   rw [← differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne
     (show (0 : Fin (1 + 1)) ≠ 1 by decide) rfl next_zero t]
   apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inl_of_ne_last_eq_differenceShortRootUnit 1 0 zero_ne_last
       (Multiplicative.ofAdd t)]
   rfl
@@ -158,7 +177,7 @@ private theorem longRootUnit_eq (t : K) :
       GLSymplecticFin.positiveLongRootTransvectionUnit 1 t := by
   rw [← last_one]
   apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inl_last_eq_positiveLongRootTransvectionUnit 1 (Multiplicative.ofAdd t)]
   rfl
 
@@ -172,7 +191,7 @@ theorem specialIsogeny_rootSubgroupPoints_inl_zero (t : K) :
     TauCeti.specialIsogeny_differenceShortRootUnit]
   have h := congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
     (longRootUnit_eq K (t ^ 2))
-  rw [coe_pointsMulEquivGLSymplecticFin] at h
+  rw [coe_pointsMulEquivGLSymplecticFin_apply] at h
   exact h.symm
 
 /-- The isogeny carries the long simple root subgroup to the short one, keeping the parameter. -/
@@ -185,7 +204,7 @@ theorem specialIsogeny_rootSubgroupPoints_inl_last (t : K) :
     TauCeti.specialIsogeny_positiveLongRootTransvectionUnit]
   have h := congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
     (shortRootUnit_eq K t)
-  rw [coe_pointsMulEquivGLSymplecticFin] at h
+  rw [coe_pointsMulEquivGLSymplecticFin_apply] at h
   exact h.symm
 
 omit [CharP K 2] in
@@ -195,7 +214,7 @@ private theorem negShortRootUnit_eq (t : K) :
   rw [← differenceShortRootUnit_congr (lt_next 1 0 zero_ne_last).ne'
     (show (1 : Fin (1 + 1)) ≠ 0 by decide) next_zero rfl t]
   apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inr_of_ne_last_eq_differenceShortRootUnit 1 0 zero_ne_last
       (Multiplicative.ofAdd t)]
   rfl
@@ -207,7 +226,7 @@ private theorem negLongRootUnit_eq (t : K) :
       GLSymplecticFin.negativeLongRootTransvectionUnit 1 t := by
   rw [← last_one]
   apply Subtype.ext
-  rw [coe_pointsMulEquivGLSymplecticFin,
+  rw [coe_pointsMulEquivGLSymplecticFin_apply,
     rootSubgroupPoints_inr_last_eq_negativeLongRootTransvectionUnit 1 (Multiplicative.ofAdd t)]
   rfl
 
@@ -221,7 +240,7 @@ theorem specialIsogeny_rootSubgroupPoints_inr_zero (t : K) :
     TauCeti.specialIsogeny_differenceShortRootUnit_one_zero]
   have h := congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
     (negLongRootUnit_eq K (t ^ 2))
-  rw [coe_pointsMulEquivGLSymplecticFin] at h
+  rw [coe_pointsMulEquivGLSymplecticFin_apply] at h
   exact h.symm
 
 /-- The isogeny on the negative long simple root subgroup. -/
@@ -234,7 +253,7 @@ theorem specialIsogeny_rootSubgroupPoints_inr_last (t : K) :
     TauCeti.specialIsogeny_negativeLongRootTransvectionUnit]
   have h := congrArg (fun x : GLSymplecticFin 2 K => (x : GL (Fin (2 + 2)) K))
     (negShortRootUnit_eq K t)
-  rw [coe_pointsMulEquivGLSymplecticFin] at h
+  rw [coe_pointsMulEquivGLSymplecticFin_apply] at h
   exact h.symm
 
 end TauCeti.SpStd
