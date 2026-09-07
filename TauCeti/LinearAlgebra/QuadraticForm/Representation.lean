@@ -80,14 +80,34 @@ theorem _root_.QuadraticMap.Equivalent.unitValueSet_eq
   rw [mem_unitValueSet, mem_unitValueSet]
   exact e.represents_iff a
 
-/-- A value represented by one factor is represented by the product with any other factor. -/
+/-- A value represented by each factor is represented by their product. -/
 theorem _root_.QuadraticMap.Represents.prod
     {M₁ M₂ P : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid P]
     [Module R M₁] [Module R M₂] [Module R P]
-    {Q₁ : QuadraticMap R M₁ P} {a : P} (h : Represents Q₁ a)
-    (Q₂ : QuadraticMap R M₂ P) : Represents (Q₁.prod Q₂) a := by
-  obtain ⟨v, hv⟩ := h
-  exact ⟨(v, 0), by simp [QuadraticMap.prod_apply, hv]⟩
+    {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} {a b : P}
+    (h₁ : Represents Q₁ a) (h₂ : Represents Q₂ b) :
+    Represents (Q₁.prod Q₂) (a + b) := by
+  obtain ⟨v, hv⟩ := h₁
+  obtain ⟨w, hw⟩ := h₂
+  exact ⟨(v, w), by simp [QuadraticMap.prod_apply, hv, hw]⟩
+
+/-- A value represented by the left factor is represented by the product with a zero right
+factor. -/
+theorem _root_.QuadraticMap.Represents.prod_left
+    {M₁ M₂ P : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid P]
+    [Module R M₁] [Module R M₂] [Module R P]
+    {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} {a : P}
+    (h : Represents Q₁ a) : Represents (Q₁.prod Q₂) a := by
+  simpa using h.prod (represents_zero Q₂)
+
+/-- A value represented by the right factor is represented by the product with a zero left
+factor. -/
+theorem _root_.QuadraticMap.Represents.prod_right
+    {M₁ M₂ P : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid P]
+    [Module R M₁] [Module R M₂] [Module R P]
+    {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} {b : P}
+    (h : Represents Q₂ b) : Represents (Q₁.prod Q₂) b := by
+  simpa using (represents_zero Q₁).prod h
 
 /-- Representing a value is preserved after multiplying it by the square of any scalar. -/
 theorem _root_.QuadraticMap.Represents.smul_mul_self
