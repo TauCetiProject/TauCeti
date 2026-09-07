@@ -274,7 +274,9 @@ subgroup of the `ℱ_q` points of the carrier, and the quotient is `²B₂(2 ^ (
 symplectic group. Nothing here asserts that, nor that the result is finite, perfect, or simple. -/
 abbrev Group : Type := FixedPointCandidate d.steinberg
 
-/-- The quotient construction makes the attached group a group. -/
-example : _root_.Group d.Group := inferInstance
+/-- The quotient construction makes the attached group a group. The check is `noncomputable`
+because `steinberg` is, the special isogeny it is a power of being built from the identification of
+the carrier's points with the symplectic group. -/
+noncomputable example : _root_.Group d.Group := inferInstance
 
 end TauCeti.SuzukiLieIndex
