@@ -74,30 +74,10 @@ finite, perfect, simple, or isomorphic to `PSp_(2n)(q)`.
   the Steinberg endomorphism of an untwisted family and its entrywise action.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate III, for the numbering of the
   type-`C` diagram that the root subgroups below are indexed by.
-* The signatures realized here follow the human-authored formal skeleton
-  `TauCetiRoadmap/CFSGStatement/Suggested.lean`: the ambient group and the numbered simple root
-  subgroup, both taken on a validated-index subtype.
-
-## Roadmap
-
-Milestone L0 of `TauCetiRoadmap/CFSGStatement/README.md` asks for the points of the *pinned* simply
-connected Chevalley--Demazure group scheme of `TauCeti.DynkinType.simplyConnectedRootDatum` at the
-diagram the index names, with its root subgroups. **This file does not close L0 on the `C` branch,
-and the standard symplectic carrier is not offered as a substitute for that pinned group.** The
-pinned group scheme, its pinning, and any identification of a carrier with it are Layer 9 targets of
-`TauCetiRoadmap/ReductiveGroups/README.md` that the CFSG roadmap consumes rather than builds; none
-of them is proved of `TauCeti.SpStd.groupScheme` here or in the files this one imports. What this
-file supplies is the material that identification will be made against on the `C` branch: the
-branch's explicit carrier, its numbered simple root subgroups, their root characters read as the
-simple roots of the type-`C` root datum, the pinning equation `Frob_q (x_i(u)) = x_i(u ^ q)` of its
-`q`-power Frobenius, and the fixed-point recipe run on that Frobenius. Every one of them becomes a
-statement about `Cₙ(q)` along that identification, and not before. The counterparts on the branches
-already assembled are
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeA.lean`,
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeD.lean`,
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE6.lean` and
-`TauCeti/GroupTheory/SpecificGroups/CFSG/Unimodular.lean`.
 -/
+
+-- The signatures realized here follow the human-authored formal skeleton
+-- `TauCetiRoadmap/CFSGStatement/Suggested.lean`.
 
 public section
 
@@ -155,8 +135,8 @@ theorem cartanMatrix_C_carrierNode (i j : Fin d.1.rank) :
 /-- **The ambient group this file attaches to a validated type-`C` index**: the points of the
 explicit full-weight standard symplectic Chevalley carrier at the index's rank, over the algebraic
 closure of its prime field. No finiteness, reductivity, pinning or maximality statement is attached
-to it, and it is not claimed to be the pinned type-`Cₙ` group scheme's points that milestone L0 asks
-for, that identification being the Layer 9 target described in the module docstring. -/
+to it, and it is not claimed to be the points of the pinned simply connected group scheme of type
+`Cₙ`, no identification of the two carriers being proved. -/
 abbrev AmbientGroup : Type := SpStd.points d.carrierRank d.1.Closure
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the type-`C` diagram. It
@@ -165,9 +145,10 @@ def simpleRootSubgroup (i : Fin d.1.rank) :
     Multiplicative d.1.Closure →* d.AmbientGroup :=
   SpStd.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.1.Closure
 
+-- The equation through which the upstream root-subgroup API reaches `simpleRootSubgroup`, whose
+-- definition itself stays sealed.
 /-- The simple-root subgroup is the carrier's numbered raising subgroup at the corresponding
-carrier node. This is the equation through which the upstream root-subgroup API reaches
-`simpleRootSubgroup`, whose definition itself stays sealed. -/
+carrier node. -/
 theorem simpleRootSubgroup_def (i : Fin d.1.rank) :
     d.simpleRootSubgroup i =
       SpStd.rootSubgroupPoints d.carrierRank (.inl (d.carrierNode i)) d.1.Closure :=
