@@ -422,12 +422,10 @@ private theorem coe_differenceShortRootUnit_zero_one (t : R) :
           GLSymplecticFin 2 R) : GL (Fin (2 + 2)) R) :
         Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) =
       !![1, t, 0, 0; 0, 1, 0, 0; 0, 0, 1, 0; 0, 0, -t, 1] := by
-  rw [GLSymplecticFin.coe_differenceShortRootUnit, Units.val_mul, coe_transvectionUnit,
-    coe_transvectionUnit]
+  rw [GLSymplecticFin.coe_differenceShortRootUnit_eq_one_add_single_sub_single]
   ext a b
   fin_cases a <;> fin_cases b <;>
-    simp [Matrix.transvection, Matrix.single, Matrix.one_apply, Matrix.mul_apply,
-      Fin.sum_univ_four, fse_inl_zero, fse_inl_one, fse_inr_zero, fse_inr_one]
+    simp [Matrix.single, fse_inl_zero, fse_inl_one, fse_inr_zero, fse_inr_one]
 
 /-- The long simple root element `x_{2e₁}(t)` of `Sp₄`, written out. -/
 private theorem coe_positiveLongRootTransvectionUnit_one (t : R) :
@@ -481,12 +479,10 @@ private theorem coe_differenceShortRootUnit_one_zero (t : R) :
           GLSymplecticFin 2 R) : GL (Fin (2 + 2)) R) :
         Matrix (Fin (2 + 2)) (Fin (2 + 2)) R) =
       !![1, 0, 0, 0; t, 1, 0, 0; 0, 0, 1, -t; 0, 0, 0, 1] := by
-  rw [GLSymplecticFin.coe_differenceShortRootUnit, Units.val_mul, coe_transvectionUnit,
-    coe_transvectionUnit]
+  rw [GLSymplecticFin.coe_differenceShortRootUnit_eq_one_add_single_sub_single]
   ext a b
   fin_cases a <;> fin_cases b <;>
-    simp [Matrix.transvection, Matrix.single, Matrix.one_apply, Matrix.mul_apply,
-      Fin.sum_univ_four, fse_inl_zero, fse_inl_one, fse_inr_zero, fse_inr_one]
+    simp [Matrix.single, fse_inl_zero, fse_inl_one, fse_inr_zero, fse_inr_one]
 
 /-- The long simple root element `x_{-2e₁}(t)` of `Sp₄`, written out. -/
 private theorem coe_negativeLongRootTransvectionUnit_one (t : R) :
