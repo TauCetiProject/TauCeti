@@ -290,8 +290,7 @@ private noncomputable def firstBasisEmbedding (d : ℕ) (h : d ≤ Fintype.card 
 private theorem firstBasisEmbedding_apply (d : ℕ) (h : d ≤ Fintype.card ι) (l : Fin d) :
     firstBasisEmbedding d h l = Fintype.orderIsoFinOfCardEq ι rfl (Fin.castLE h l) := by
   rw [firstBasisEmbedding, RelEmbedding.trans_apply]
-  change (Fintype.orderIsoFinOfCardEq ι rfl) ((Fin.castLEOrderEmb h) l) = _
-  rw [Fin.castLEOrderEmb_apply]
+  simp only [Fin.castLEOrderEmb_apply, OrderIso.coe_toOrderEmbedding]
 
 private noncomputable def basisPath (d : ℕ) (h : d ≤ Fintype.card ι)
     (s : Set.powersetCard ι d) (k : ℕ) (l : Fin d) : ι :=
