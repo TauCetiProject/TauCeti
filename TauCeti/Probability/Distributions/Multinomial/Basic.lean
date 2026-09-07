@@ -36,8 +36,6 @@ numbers summing to one.
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 5,
-  **Multinomial distribution**.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley,
   1997, Chapter 35.
 -/
@@ -86,34 +84,45 @@ def multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) : Measure (ι → �
   ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k • Measure.dirac k
 
 open Classical in
-/-- The real multinomial masses on a fixed antidiagonal sum to one. -/
-theorem sum_multinomialWeightReal (n : ℕ) (p : StdSimplex NNReal ι) :
-    ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeightReal p.weights k = 1 := by
-  calc
-    _ = (∑ i ∈ Finset.univ, (p.weights i : ℝ)) ^ n := by
-      symm
-      simpa [multinomialWeightReal] using
-        (Finset.sum_pow_eq_sum_piAntidiag Finset.univ (fun i ↦ (p.weights i : ℝ)) n)
-    _ = 1 := by norm_cast; simp
+/-- The real multinomial weights on a fixed antidiagonal satisfy the multinomial theorem. -/
+theorem sum_multinomialWeightReal (n : ℕ) (w : ι → NNReal) :
+    ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeightReal w k =
+      (∑ i, (w i : ℝ)) ^ n := by
+  symm
+  simpa [multinomialWeightReal] using
+    (Finset.sum_pow_eq_sum_piAntidiag Finset.univ (fun i ↦ (w i : ℝ)) n)
 
 open Classical in
-/-- The `ℝ≥0∞`-valued multinomial weights on a fixed antidiagonal sum to one. -/
-theorem sum_multinomialWeight (n : ℕ) (p : StdSimplex NNReal ι) :
+/-- The real multinomial weights of a probability vector sum to one. -/
+theorem sum_multinomialWeightReal_eq_one (n : ℕ) (p : StdSimplex NNReal ι) :
+    ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeightReal p.weights k = 1 := by
+  rw [sum_multinomialWeightReal]
+  norm_cast
+  simp
+
+open Classical in
+/-- The `ℝ≥0∞`-valued multinomial weights satisfy the multinomial theorem. -/
+theorem sum_multinomialWeight (n : ℕ) (w : ι → NNReal) :
+    ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight w k =
+      (∑ i, (w i : ℝ≥0∞)) ^ n := by
+  symm
+  simpa [multinomialWeight] using
+    (Finset.sum_pow_eq_sum_piAntidiag Finset.univ (fun i ↦ (w i : ℝ≥0∞)) n)
+
+open Classical in
+/-- The `ℝ≥0∞`-valued multinomial weights of a probability vector sum to one. -/
+theorem sum_multinomialWeight_eq_one (n : ℕ) (p : StdSimplex NNReal ι) :
     ∑ k ∈ Finset.piAntidiag Finset.univ n, multinomialWeight p.weights k = 1 := by
-  calc
-    _ = (∑ i ∈ Finset.univ, (p.weights i : ℝ≥0∞)) ^ n := by
-      symm
-      simpa [multinomialWeight] using
-        (Finset.sum_pow_eq_sum_piAntidiag Finset.univ
-          (fun i ↦ (p.weights i : ℝ≥0∞)) n)
-    _ = 1 := by norm_cast; simp
+  rw [sum_multinomialWeight]
+  norm_cast
+  simp
 
 /-- The multinomial law is a probability measure. -/
 theorem isProbabilityMeasure_multinomialMeasure (n : ℕ) (p : StdSimplex NNReal ι) :
     IsProbabilityMeasure (multinomialMeasure n p) := by
   classical
   rw [isProbabilityMeasure_iff, multinomialMeasure, Measure.finsetSum_apply]
-  simpa using sum_multinomialWeight n p
+  simpa using sum_multinomialWeight_eq_one n p
 
 /-- With no trials, the multinomial law is concentrated at the zero count vector. -/
 @[simp]
@@ -216,7 +225,7 @@ theorem multinomialMeasure_sum_eq (n : ℕ) (p : StdSimplex NNReal ι) :
       intro k hk
       have hsum : ∑ i, k i = n := (Finset.mem_piAntidiag.mp hk).1
       simp [hsum]
-    _ = 1 := sum_multinomialWeight n p
+    _ = 1 := sum_multinomialWeight_eq_one n p
 
 /-- Every function is integrable against a multinomial law because the law has finite support. -/
 theorem integrable_multinomialMeasure {E : Type*} [NormedAddCommGroup E]
