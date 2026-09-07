@@ -36,6 +36,8 @@ numbers summing to one.
 
 ## References
 
+* Roadmap: `TauCetiRoadmap/StandardDistributions/README.md`, Layer 5, item 5,
+  **Multinomial distribution**.
 * N. L. Johnson, S. Kotz, N. Balakrishnan, *Discrete Multivariate Distributions*, Wiley,
   1997, Chapter 35.
 -/
