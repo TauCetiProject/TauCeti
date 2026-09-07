@@ -27,7 +27,8 @@ lattice the full weight lattice of the `E₇` root datum, which contains the roo
 two; the adjoint carrier spans the character lattice exactly in the types `E₈`, `F₄` and `G₂`,
 where the two lattices coincide.
 
-No Steinberg endomorphism is formed here, and no group of fixed points. Nothing below asserts that
+No Steinberg endomorphism is formed here, and no group of fixed points; those are in
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE7/Steinberg.lean`. Nothing below asserts that
 the carrier is reductive, that its weight torus is maximal, that it is the pinned simply connected
 Chevalley--Demazure group scheme of type `E₇`, or that any group named is finite, perfect or
 simple; none of those is proved of `TauCeti.E7Minuscule.groupScheme` here or in the files this one
