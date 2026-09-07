@@ -29,8 +29,9 @@ is taken of and compared with:
   defined because `V` is normal in `U`, and `V` acts on `A^V` trivially, so the action descends to
   `Γ`.
 * `groundLevelEquiv`, the identification `(A^V)^Γ = A^U` of the invariants of the coefficient
-  module with the ground level. Both are submodules of the ambient module of the formation, and
-  the identification does not move an element.
+  module with the ground level. Both sides are read inside `A^V` — the invariants of `Γ` and the
+  ground level comapped along `A^V ⊆ A` are the same submodule of `A^V` — so the identification
+  does not move an element of the ambient module.
 * `norm`, `normSubgroup` and `NormQuotient`: the norm `N_{U/V} : A^V → A^U`, its image, and the
   quotient `A^U / N_{U/V}(A^V)`.
 
@@ -109,6 +110,7 @@ In the arithmetic applications `G` is the Galois group of a Galois extension and
 multiplicative group of the top field, read additively. The distinguished family of subgroups of
 the Artin–Tate definition is the family of open subgroups of `G`, which is why the levels below
 are indexed by `OpenSubgroup G`. -/
+@[ext]
 structure Formation (G : Type) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
     [CompactSpace G] [TotallyDisconnectedSpace G] where
   /-- the coefficient module of the formation, a topological representation of `G` over `ℤ` -/
@@ -162,6 +164,7 @@ end Formation
 /-- A **finite normal layer** `V ◁ U` of open subgroups of `G`. In field notation this is the
 finite Galois layer `K/F` inside the extension `G` cuts out, with `U = G_F` the ground subgroup and
 `V = G_K` the top subgroup. -/
+@[ext]
 structure NormalLayer (G : Type) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
     [CompactSpace G] [TotallyDisconnectedSpace G] where
   /-- the ground subgroup `U`, cutting out the base field of the layer -/
@@ -196,29 +199,29 @@ theorem conj_mem_top {u : G} (hu : u ∈ L.ground) {v : G} (hv : v ∈ L.top) :
 subgroup. -/
 def degree : ℕ := L.relativeTop.index
 
+@[simp]
 theorem degree_eq_natCard_gal : L.degree = Nat.card L.Gal :=
   (rfl)
 
 /-- The layer `V ◁ ⊤` cut out by an open normal subgroup of `G`. These layers are the finite
 Galois extensions of the ground field of a formation on `G`. -/
-def ofOpenNormal (V : OpenSubgroup G) [V.toSubgroup.Normal] : NormalLayer G where
+def ofOpenNormal (V : OpenNormalSubgroup G) : NormalLayer G where
   ground := ⊤
-  top := V
+  top := V.toOpenSubgroup
   top_le_ground := le_top
   normal := Subgroup.normal_subgroupOf
 
 @[simp]
-theorem ground_ofOpenNormal (V : OpenSubgroup G) [V.toSubgroup.Normal] :
-    (ofOpenNormal V).ground = ⊤ :=
+theorem ground_ofOpenNormal (V : OpenNormalSubgroup G) : (ofOpenNormal V).ground = ⊤ :=
   (rfl)
 
 @[simp]
-theorem top_ofOpenNormal (V : OpenSubgroup G) [V.toSubgroup.Normal] :
-    (ofOpenNormal V).top = V :=
+theorem top_ofOpenNormal (V : OpenNormalSubgroup G) :
+    (ofOpenNormal V).top = V.toOpenSubgroup :=
   (rfl)
 
 /-- The Galois group of the layer `V ◁ ⊤` is the finite quotient `G ⧸ V`. -/
-def galOfOpenNormalEquiv (V : OpenSubgroup G) [V.toSubgroup.Normal] :
+def galOfOpenNormalEquiv (V : OpenNormalSubgroup G) :
     (ofOpenNormal V).Gal ≃* G ⧸ V.toSubgroup :=
   QuotientGroup.congr _ _ Subgroup.topEquiv <| by
     ext x
@@ -226,8 +229,7 @@ def galOfOpenNormalEquiv (V : OpenSubgroup G) [V.toSubgroup.Normal] :
     exact ⟨fun ⟨_, ha, h⟩ ↦ h ▸ ha, fun hx ↦ ⟨⟨x, trivial⟩, hx, rfl⟩⟩
 
 @[simp]
-theorem galOfOpenNormalEquiv_mk (V : OpenSubgroup G) [V.toSubgroup.Normal]
-    (u : (ofOpenNormal V).ground) :
+theorem galOfOpenNormalEquiv_mk (V : OpenNormalSubgroup G) (u : (ofOpenNormal V).ground) :
     galOfOpenNormalEquiv V (QuotientGroup.mk u) = QuotientGroup.mk (u : G) :=
   (rfl)
 
