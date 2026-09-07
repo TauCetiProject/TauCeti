@@ -18,11 +18,10 @@ constructs its reduction in Hopf coordinates. First quotient by the center ideal
 that coordinate algebra by its nilradical. Equivalently, the reduced center is cut out in the
 ambient coordinate algebra by the radical of the center ideal.
 
-The only additional input is reducedness of the tensor square of the reduced center coordinate
-algebra. This is the exact commutative-algebra condition needed to make the nilradical a Hopf
-ideal; it is kept explicit by `TauCeti.HopfIdeal.reduction`. The construction records both the
-nested quotient and the single ambient defining ideal, together with their canonical
-identification.
+Assuming the tensor square of the reduced center coordinate algebra is reduced, its nilradical
+forms a Hopf ideal; this sufficient commutative-algebra hypothesis is kept explicit by
+`TauCeti.HopfIdeal.reduction`. The construction records both the nested quotient and the single
+ambient defining ideal, together with their canonical identification.
 
 This is the reduced-center input for proving that the center of a semisimple affine group is
 finite. Semisimplicity trivializes the smooth connected identity component of this reduction;
@@ -108,11 +107,15 @@ theorem isReduced_reducedCenterCoordinateRing :
 @[simp]
 theorem reducedCenterDefiningIdeal_toIdeal :
     (reducedCenterDefiningIdeal H).toIdeal = (centerDefiningIdeal H).toIdeal.radical := by
+  have hcomap :
+      Ideal.comap ((mkQuotient H (centerDefiningIdeal H)).hom :
+        H →+* centerCoordinateRing H) ⊥ =
+        (centerDefiningIdeal H).toIdeal := by
+    ext x
+    rw [Ideal.mem_comap, Ideal.mem_bot]
+    exact mkQuotient_eq_zero_iff H (centerDefiningIdeal H) x
   rw [reducedCenterDefiningIdeal, HopfIdeal.comapOfSurjective_toIdeal,
-    HopfIdeal.reduction_toIdeal, nilradical, Ideal.comap_radical]
-  congr 1
-  rw [Ideal.zero_eq_bot, ← RingHom.ker_eq_comap_bot]
-  exact mkQuotient_ker H (centerDefiningIdeal H)
+    HopfIdeal.reduction_toIdeal, nilradical, Ideal.comap_radical, Ideal.zero_eq_bot, hcomap]
 
 /-- An element belongs to the reduced-center ideal exactly when it belongs to the radical of the
 center ideal. -/
@@ -148,6 +151,15 @@ theorem isReduced_quotient_reducedCenterDefiningIdeal :
     isReduced_reducedCenterCoordinateRing H
   exact isReduced_of_injective (quotientReducedCenterIso H).hom.hom.toAlgHom.toRingHom
     (ConcreteCategory.bijective_of_isIso (quotientReducedCenterIso H).hom).1
+
+/-- The reduced-center ideal is contained in every central Hopf ideal whose quotient is
+reduced. -/
+theorem reducedCenterDefiningIdeal_le_of_isReduced_quotient (I : HopfIdeal k H)
+    (hcenter : centerDefiningIdeal H ≤ I) [IsReduced (quotient H I)] :
+    reducedCenterDefiningIdeal H ≤ I := by
+  rw [← HopfIdeal.toIdeal_le_toIdeal, reducedCenterDefiningIdeal_toIdeal]
+  exact ((Ideal.isRadical_iff_quotient_reduced I.toIdeal).mpr inferInstance).radical_le_iff.mpr
+    (HopfIdeal.toIdeal_le_toIdeal.mpr hcenter)
 
 /-- If the center coordinate ring is Noetherian, the ideal removed from the center to form its
 reduction is nilpotent. This records that the reduced center and the full center differ by a

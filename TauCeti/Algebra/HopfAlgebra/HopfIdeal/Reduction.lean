@@ -14,19 +14,21 @@ public import TauCeti.Algebra.HopfAlgebra.Kernel
 Let `H` be a commutative Hopf algebra over a reduced commutative ring. Its nilradical is
 automatically stable under the counit and antipode. It is stable under comultiplication provided
 the tensor square of the reduced algebra is reduced: the image of a nilpotent element under
-comultiplication is nilpotent, hence vanishes in that tensor square. This packages the nilradical
-as a Hopf ideal under precisely that hypothesis.
+comultiplication is nilpotent, hence vanishes in that tensor square. Thus reducedness of this
+tensor square is a sufficient hypothesis for packaging the nilradical as a Hopf ideal.
 
-The tensor-square hypothesis is the algebraic condition needed for reduction to commute with a
-product. It holds, in particular, for finite-type algebras over a perfect field once the standard
-geometric-reducedness theorem is available. Keeping it explicit here separates the Hopf-algebra
-argument from that commutative-algebra input.
+The tensor-square hypothesis ensures that reduction commutes with the product used by the
+comultiplication. It holds, in particular, for finite-type algebras over a perfect field once the
+standard geometric-reducedness theorem is available. Keeping it explicit here separates the
+Hopf-algebra argument from that commutative-algebra input.
 
 ## Main declarations
 
 * `TauCeti.HopfIdeal.reduction`: the nilradical, packaged as a Hopf ideal.
 * `TauCeti.HopfIdeal.reduction_toIdeal`: its underlying ideal is the nilradical.
 * `TauCeti.HopfIdeal.mem_reduction`: membership is nilpotence.
+* `TauCeti.HopfIdeal.reduction_le_of_isReduced_quotient`: its minimality among Hopf ideals with
+  reduced quotient.
 
 ## References
 
@@ -69,21 +71,21 @@ private theorem nilradical_comul_mem
     (mem_nilradical.mp hx).map (Bialgebra.comulAlgHom R H)
   have hzero : Algebra.TensorProduct.map q q (Coalgebra.comul (R := R) x) = 0 :=
     isNilpotent_iff_eq_zero.mp (hnil.map (Algebra.TensorProduct.map q q))
-  have hmem : Coalgebra.comul (R := R) x ∈
-      RingHom.ker (Algebra.TensorProduct.map q q).toRingHom := by
-    rw [RingHom.mem_ker]
-    exact hzero
-  rw [AlgHom.toRingHom_eq_coe, RingHom.ker_coe_toRingHom] at hmem
-  rw [AlgHom.tensor_map_ker_eq_left_sup_right q
-    (Ideal.Quotient.mkₐ_surjective R (nilradical H))] at hmem
-  rw [← RingHom.ker_coe_toRingHom q, Ideal.Quotient.mkₐ_ker] at hmem
-  exact hmem
+  have hker : RingHom.ker (Algebra.TensorProduct.map q q).toRingHom =
+      leftTensorIdeal (R := R) (H := H) (nilradical H) ⊔
+        rightTensorIdeal (R := R) (H := H) (nilradical H) := by
+    have hqker : RingHom.ker q = nilradical H := Ideal.Quotient.mkₐ_ker R (nilradical H)
+    simpa only [AlgHom.ker_coe, AlgHom.toRingHom_eq_coe, hqker] using
+        AlgHom.tensor_map_ker_eq_left_sup_right q q
+          (Ideal.Quotient.mkₐ_surjective R (nilradical H))
+          (Ideal.Quotient.mkₐ_surjective R (nilradical H))
+  rw [← hker, RingHom.mem_ker]
+  exact hzero
 
 /-- The nilradical of a commutative Hopf algebra, as a Hopf ideal.
 
-The tensor square of the reduced algebra must be reduced. This is exactly what makes the
-comultiplication descend: a nilpotent element maps to a nilpotent element of that tensor square
-and therefore to zero. -/
+Assuming the tensor square of the reduced algebra is reduced, the comultiplication descends: a
+nilpotent element maps to a nilpotent element of that tensor square and therefore to zero. -/
 noncomputable def reduction
     [IsReduced ((H ⧸ nilradical H) ⊗[R] (H ⧸ nilradical H))] : HopfIdeal R H :=
   ofIdeal (nilradical H)
@@ -104,5 +106,14 @@ theorem mem_reduction
     [IsReduced ((H ⧸ nilradical H) ⊗[R] (H ⧸ nilradical H))] {x : H} :
     x ∈ reduction R H ↔ IsNilpotent x := by
   rw [← mem_toIdeal, reduction_toIdeal, mem_nilradical]
+
+/-- The reduction is contained in every Hopf ideal whose quotient is reduced. -/
+theorem reduction_le_of_isReduced_quotient
+    [IsReduced ((H ⧸ nilradical H) ⊗[R] (H ⧸ nilradical H))]
+    (I : HopfIdeal R H) [IsReduced (H ⧸ I.toIdeal)] :
+    reduction R H ≤ I := by
+  rw [← toIdeal_le_toIdeal, reduction_toIdeal, nilradical]
+  exact ((Ideal.isRadical_iff_quotient_reduced I.toIdeal).mpr inferInstance).radical_le_iff.mpr
+    bot_le
 
 end TauCeti.HopfIdeal
