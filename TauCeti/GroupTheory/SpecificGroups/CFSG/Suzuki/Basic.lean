@@ -64,9 +64,7 @@ and that numbering correspondence.
   at every numbered simple root, exchanging the two roots and raising the parameter to
   `p ^ m * exponent i`.
 * `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup`: the pinning equation at every
-  numbered simple root, against the index's own length permutation and exponent, together with
-  `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup_long` and
-  `TauCeti.SuzukiLieIndex.halfFrobenius_simpleRootSubgroup_short` at the two carrier nodes.
+  numbered simple root, against the index's own length permutation and exponent.
 * `TauCeti.SuzukiLieIndex.steinberg_steinberg`: the square of the Steinberg endomorphism is the
   `q`-power Frobenius, with `TauCeti.SuzukiLieIndex.steinberg_comp_steinberg` and
   `TauCeti.SuzukiLieIndex.halfFrobenius_comp_halfFrobenius` for the composites themselves.
@@ -81,9 +79,6 @@ no description of them is offered.
 
 ## References
 
-* `TauCetiRoadmap/CFSGStatement/README.md` and its `Suggested.lean`, which state the exponent
-  convention on the simple root subgroups, the relation `τ_X ^ 2 = Frob_p`, and the derived-subgroup
-  recipe for the attached group, all used here.
 * R. W. Carter, *Simple Groups of Lie Type*, §13.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
 * *On the cohomology of the Ree groups and kernels of exceptional isogenies*,
