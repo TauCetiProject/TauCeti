@@ -325,13 +325,13 @@ prime divides, and its infinite part is empty. -/
   ⟨fun v hv ↦ absurd (Modulus.one_finitePart (K := K) ▸ hv) (Modulus.not_dvd_top v),
     fun w hw ↦ absurd hw (by simp)⟩
 
-theorem congruenceSubgroup_one : congruenceSubgroup (Modulus.one K) = ⊤ :=
+@[simp] theorem congruenceSubgroup_one : congruenceSubgroup (Modulus.one K) = ⊤ :=
   Subgroup.eq_top_iff' _ |>.mpr fun x ↦ isCongrOne_one x
 
 /-- **Congruence to one modulo the narrow modulus is total positivity.**  The finite part of
 `narrowModulus K` is the unit ideal, so only the sign conditions survive, and they are imposed at
 every real place. -/
-theorem isCongrOne_narrowModulus_iff {x : Kˣ} :
+@[simp] theorem isCongrOne_narrowModulus_iff {x : Kˣ} :
     IsCongrOne (narrowModulus K) x ↔ IsTotallyPositive (x : K) := by
   refine ⟨fun hx ↦ isTotallyPositive_iff.mpr fun w hw ↦ hx.pos (w := ⟨w, hw⟩) (by simp),
     fun hx ↦ ⟨fun v hv ↦ ?_, fun w _ ↦ isTotallyPositive_iff.mp hx w w.2⟩⟩

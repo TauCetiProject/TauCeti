@@ -198,7 +198,7 @@ theorem classMap_comp_idealClass {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
 /-! ### The trivial modulus -/
 
 /-- Every invertible fractional ideal is prime to the trivial modulus. -/
-theorem idealsPrimeTo_one : idealsPrimeTo (Modulus.one K) = ⊤ :=
+@[simp] theorem idealsPrimeTo_one : idealsPrimeTo (Modulus.one K) = ⊤ :=
   Subgroup.eq_top_iff' _ |>.mpr fun _ ↦
     NumberFieldArithmetic.mem_idealsAway_iff.mpr fun _ hv ↦ absurd hv (by simp)
 
