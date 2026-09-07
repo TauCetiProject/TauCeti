@@ -244,7 +244,7 @@ theorem bruhatLE_one_iff : cs.BruhatLE w 1 ↔ w = 1 :=
 
 /-- **The Bruhat order as a partial order** on the Coxeter group. It is stated as data rather than
 as an instance: a Coxeter group carries no order of its own, and a second Coxeter system on the
-same group would give a different one. -/
+same group need not give the same one. -/
 @[instance_reducible]
 def bruhatPartialOrder : PartialOrder W where
   le := cs.BruhatLE
