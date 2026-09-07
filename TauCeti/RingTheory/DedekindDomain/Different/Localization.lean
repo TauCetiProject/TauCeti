@@ -106,7 +106,6 @@ private theorem exists_smul_mem_traceDual_of_mem_traceDual {x : L}
 
 omit [IsDomain R] [IsDomain Rₘ] [IsFractionRing Rₘ K] in
 /-- The trace dual of a finite algebra commutes with localization. -/
-@[simp]
 theorem span_traceDual_one_eq_traceDual_one :
     Submodule.span Sₘ (Submodule.traceDual R K (1 : Submodule S L) : Set L) =
       Submodule.traceDual Rₘ K (1 : Submodule Sₘ L) := by
@@ -182,9 +181,8 @@ variable [IsDomain S] [IsDomain Sₘ]
 
 omit [IsTorsionFree R S] [IsTorsionFree Rₘ Sₘ] in
 /-- The trace-dual fractional ideal commutes with localization. -/
-@[simp]
-theorem extendedHom'_dual_one_eq_dual_one :
-    FractionalIdeal.extendedHom' L
+theorem extended_dual_one_eq_dual_one :
+    FractionalIdeal.extended L
         (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
           (IsLocalization.injective Sₘ
             (show Algebra.algebraMapSubmonoid S M ≤ S⁰ from
@@ -198,11 +196,10 @@ theorem extendedHom'_dual_one_eq_dual_one :
   let h : S⁰ ≤ Submonoid.comap (algebraMap S Sₘ) Sₘ⁰ :=
     nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
       (IsLocalization.injective Sₘ hMS)
-  -- `extendedHom'` takes the inclusion proof explicitly, so proof irrelevance identifies the
+  -- `extended` takes the inclusion proof explicitly, so proof irrelevance identifies the
   -- canonical proof in the statement with the named proof `h` used throughout this proof.
-  change FractionalIdeal.extendedHom' L h
+  change FractionalIdeal.extended L h
       (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) = _
-  rw [FractionalIdeal.extendedHom'_apply]
   apply FractionalIdeal.coeToSubmodule_injective
   refine (FractionalIdeal.coe_extended_eq_span L h _).trans ?_
   have hmap : IsLocalization.map L (algebraMap S Sₘ) h = RingHom.id L := by
@@ -229,7 +226,6 @@ variable [IsDedekindDomain S] [IsDedekindDomain Sₘ]
 omit [IsTorsionFree R S] [IsTorsionFree Rₘ Sₘ] in
 include K L in
 /-- The different ideal commutes with localization. -/
-@[simp]
 theorem map_differentIdeal_eq_differentIdeal :
     let _ : IsTorsionFree R L := .trans_faithfulSMul R K L
     let _ : IsTorsionFree Rₘ L := .trans_faithfulSMul Rₘ K L
@@ -250,7 +246,8 @@ theorem map_differentIdeal_eq_differentIdeal :
     ← FractionalIdeal.extended_coeIdeal_eq_map (K := L) L h,
     ← FractionalIdeal.extendedHom'_apply]
   rw [coeIdeal_differentIdeal R K L S, coeIdeal_differentIdeal Rₘ K L Sₘ, map_inv₀,
-    extendedHom'_dual_one_eq_dual_one (R := R) (Rₘ := Rₘ) (S := S)
+    FractionalIdeal.extendedHom'_apply,
+    extended_dual_one_eq_dual_one (R := R) (Rₘ := Rₘ) (S := S)
       (Sₘ := Sₘ)
       (K := K) (L := L) (M := M) hM]
 
