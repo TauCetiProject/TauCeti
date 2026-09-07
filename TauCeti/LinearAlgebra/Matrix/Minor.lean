@@ -31,7 +31,10 @@ statement to be sign-correct.
 
 ## Main results
 
-* `Matrix.pairMinor_eq`: the minor written out as a difference of two products.
+* `Matrix.pairMinor_eq`: the minor written out as a difference of two products, with
+  `Matrix.pairMinor_self_left`, `Matrix.pairMinor_self_right`, `Matrix.pairMinor_swap_left`,
+  `Matrix.pairMinor_swap_right` and `Matrix.pairMinor_transpose` for its behaviour under repeated
+  indices, transposed pairs, and transposition.
 * `Matrix.pairMinor_map`: a ring morphism carries a minor to the minor of the mapped
   matrix.
 * `Matrix.pairMinor_mul`: Cauchy--Binet, expanding a minor of a product over the increasing pairs
@@ -55,6 +58,42 @@ theorem pairMinor_eq (g : Matrix m n R) (p : m × m) (q : n × n) :
     pairMinor g p q = g p.1 q.1 * g p.2 q.2 - g p.1 q.2 * g p.2 q.1 := by
   rw [pairMinor, Matrix.det_fin_two]
   simp
+
+/-- A minor with a repeated row index vanishes. -/
+@[simp]
+theorem pairMinor_self_left (g : Matrix m n R) (a : m) (q : n × n) :
+    pairMinor g (a, a) q = 0 := by
+  simp only [pairMinor_eq]
+  ring
+
+/-- A minor with a repeated column index vanishes. -/
+@[simp]
+theorem pairMinor_self_right (g : Matrix m n R) (p : m × m) (b : n) :
+    pairMinor g p (b, b) = 0 := by
+  simp only [pairMinor_eq]
+  ring
+
+-- The two swap lemmas are deliberately not `@[simp]`: each rewrites a minor to the negation of the
+-- minor on the transposed pair, which matches the same pattern again, so simp would not terminate.
+/-- Swapping the two row indices negates the minor. -/
+theorem pairMinor_swap_left (g : Matrix m n R) (a b : m) (q : n × n) :
+    pairMinor g (b, a) q = -pairMinor g (a, b) q := by
+  simp only [pairMinor_eq]
+  ring
+
+/-- Swapping the two column indices negates the minor. -/
+theorem pairMinor_swap_right (g : Matrix m n R) (p : m × m) (a b : n) :
+    pairMinor g p (b, a) = -pairMinor g p (a, b) := by
+  simp only [pairMinor_eq]
+  ring
+
+/-- A minor of the transpose is the minor of the matrix with the row and column pairs
+exchanged. -/
+@[simp]
+theorem pairMinor_transpose (g : Matrix m n R) (p : m × m) (q : n × n) :
+    pairMinor gᵀ q p = pairMinor g p q := by
+  simp [pairMinor_eq, Matrix.transpose_apply]
+  ring
 
 /-- A ring morphism carries a minor to the minor of the mapped matrix. -/
 @[simp]
