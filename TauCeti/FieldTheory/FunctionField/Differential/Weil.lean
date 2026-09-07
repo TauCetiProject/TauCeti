@@ -48,6 +48,8 @@ specialty, and are proved in `TauCeti/FieldTheory/FunctionField/Differential/Dim
 * `TauCeti.weilDifferentialFiltration_antitone` and `TauCeti.mem_weilDifferentialSpace_iff`: the
   filtration is antitone and directed, so a `k`-linear form is a Weil differential exactly when
   some single divisor bounds it.
+* `TauCeti.mem_weilDifferentialFiltration_sup`: a Weil differential bounded by `D` and by `E` is
+  bounded by their supremum `D ⊔ E`.
 * `TauCeti.weilDifferentialFiltration_eq_bot_iff`: `Ω_F(D) = 0` exactly when every repartition
   differs from a constant by one bounded by `D`.
 * `TauCeti.repartitionDualMul_inv_repartitionDualMul`: multiplying by a unit and then by its
@@ -151,6 +153,46 @@ theorem weilDifferentialFiltration_antitone :
     Antitone (weilDifferentialFiltration : Divisor k F →
       Submodule k (Module.Dual k ↥(repartitionSpace k F))) := fun _ _ h ↦
   Submodule.dualAnnihilator_anti (submoduleOfAdeleFiltrationSupDiagonalRepartitions_mono h)
+
+/-- **A Weil differential bounded by each of two divisors is bounded by their supremum.** By
+`TauCeti.adeleFiltration_sup` a repartition bounded by `D ⊔ E` is a sum of one bounded by `D` and
+one bounded by `E`, on both of which the differential already vanishes. -/
+theorem mem_weilDifferentialFiltration_sup {D E : Divisor k F}
+    {ω : Module.Dual k ↥(repartitionSpace k F)} (hD : ω ∈ weilDifferentialFiltration D)
+    (hE : ω ∈ weilDifferentialFiltration E) :
+    ω ∈ weilDifferentialFiltration (D ⊔ E) := by
+  have hsub : submoduleOfAdeleFiltrationSupDiagonalRepartitions (D ⊔ E) =
+      submoduleOfAdeleFiltrationSupDiagonalRepartitions D ⊔
+        submoduleOfAdeleFiltrationSupDiagonalRepartitions E := by
+    have htrace (X : Submodule k (Place k F → F))
+        (hX : X ≤ repartitionSpace k F) :
+        (X ⊔ diagonalRepartitions k F).submoduleOf (repartitionSpace k F) =
+          X.submoduleOf (repartitionSpace k F) ⊔
+            (diagonalRepartitions k F).submoduleOf (repartitionSpace k F) := by
+      apply Submodule.map_injective_of_injective (repartitionSpace k F).subtype_injective
+      simp only [Submodule.submoduleOf, Submodule.map_comap_eq, Submodule.map_sup,
+        Submodule.range_subtype]
+      rw [inf_comm (repartitionSpace k F) (X ⊔ diagonalRepartitions k F),
+        inf_comm (repartitionSpace k F) X,
+        inf_comm (repartitionSpace k F) (diagonalRepartitions k F),
+        sup_inf_assoc_of_le _ hX, inf_eq_left.mpr hX]
+    rw [submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf (D ⊔ E),
+      submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf D,
+      submoduleOfAdeleFiltrationSupDiagonalRepartitions_eq_submoduleOf E,
+      adeleFiltration_sup,
+      htrace (adeleFiltration D ⊔ adeleFiltration E)
+        (sup_le (adeleFiltration_le_repartitionSpace D)
+          (adeleFiltration_le_repartitionSpace E)),
+      Submodule.submoduleOf_sup_of_le (adeleFiltration_le_repartitionSpace D)
+        (adeleFiltration_le_repartitionSpace E),
+      htrace (adeleFiltration D) (adeleFiltration_le_repartitionSpace D),
+      htrace (adeleFiltration E) (adeleFiltration_le_repartitionSpace E)]
+    ac_rfl
+  rw [weilDifferentialFiltration_eq_dualAnnihilator D] at hD
+  rw [weilDifferentialFiltration_eq_dualAnnihilator E] at hE
+  rw [weilDifferentialFiltration_eq_dualAnnihilator (D ⊔ E), hsub,
+    Submodule.dualAnnihilator_sup_eq]
+  exact ⟨hD, hE⟩
 
 /-- **`Ω_F(D)` vanishes exactly when `A_F(D) + F` is everything**: the only `k`-linear form on
 `A_F` vanishing on `A_F(D) + F` is `0` precisely when every repartition already differs from a
