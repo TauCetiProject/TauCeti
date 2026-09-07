@@ -53,12 +53,6 @@ noncomputable def powerBasis (θ : IntegralPrimitiveElement K) : PowerBasis ℚ 
 theorem powerBasis_gen (θ : IntegralPrimitiveElement K) : θ.powerBasis.gen = (θ.1 : K) := by
   rw [powerBasis, PowerBasis.ofAdjoinEqTop_gen]
 
-/-- The power basis of an integral primitive element has dimension `[K : ℚ]`. -/
-@[simp]
-theorem powerBasis_dim (θ : IntegralPrimitiveElement K) :
-    θ.powerBasis.dim = Module.finrank ℚ K :=
-  θ.powerBasis.finrank.symm
-
 /-- **The discriminant of the power basis of an integral primitive element** is the polynomial
 discriminant of its minimal polynomial over `ℤ`, cast to `ℚ`. -/
 theorem discr_powerBasis_eq_minpoly_discr (θ : IntegralPrimitiveElement K) :
