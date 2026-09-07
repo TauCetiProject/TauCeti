@@ -58,15 +58,6 @@ def completionAlgHom {L : Type*} [Field L] [NumberField L] [Algebra K L]
   toRingHom := v.adicCompletionExtension K L w
   commutes' x := v.adicCompletionExtension_coe K L w x
 
-/-- The canonical completion map agrees with the given embedding `K → L` on `K`. -/
-@[simp]
-theorem completionAlgHom_algebraMap {L : Type*} [Field L] [NumberField L] [Algebra K L]
-    (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
-    [w.asIdeal.LiesOver v.asIdeal] (x : K) :
-    completionAlgHom v w (algebraMap K (v.adicCompletion K) x) =
-      algebraMap L (w.adicCompletion L) (algebraMap K L x) := by
-  exact (completionAlgHom v w).commutes x
-
 /-- The canonical map between completions is continuous. -/
 theorem continuous_completionAlgHom {L : Type*} [Field L] [NumberField L] [Algebra K L]
     (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
@@ -99,7 +90,7 @@ instance completionIsScalarTower {L : Type*} [Field L] [NumberField L] [Algebra 
     (v : HeightOneSpectrum (𝒪 K)) (w : HeightOneSpectrum (𝒪 L))
     [w.asIdeal.LiesOver v.asIdeal] :
     IsScalarTower K (v.adicCompletion K) (w.adicCompletion L) :=
-  IsScalarTower.of_algebraMap_eq fun x ↦ (completionAlgHom_algebraMap v w x).symm
+  IsScalarTower.of_algebraMap_eq fun x ↦ ((completionAlgHom v w).commutes x).symm
 
 /-- Scalar multiplication by `K_v` on `L_w` is continuous for the canonical completion
 algebra. -/
