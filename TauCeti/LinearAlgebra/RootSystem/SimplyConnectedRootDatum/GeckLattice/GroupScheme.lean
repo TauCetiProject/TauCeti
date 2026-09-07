@@ -513,9 +513,8 @@ theorem coe_geckRootSubgroupPoints (i : Fin t.rank ⊕ Fin t.rank)
 /-- **The two representations of a root-subgroup point of the carrier agree**: the point built
 directly from `TauCeti.DynkinType.geckRootSubgroupMatrix` and the value of
 `TauCeti.DynkinType.geckRootSubgroupPoints` at the same parameter are the same element of
-`TauCeti.DynkinType.geckPoints`. The pinning equations of the graph automorphism state a
-root-subgroup point in the first form, while the equations of the Frobenius state it in the second,
-so this is the bridge every proof crossing between them uses. -/
+`TauCeti.DynkinType.geckPoints`. This permits the graph-automorphism and Frobenius equations to be
+expressed in the same representation. -/
 theorem geckPoints_mk_geckRootSubgroupMatrix (i : Fin t.rank ⊕ Fin t.rank)
     (A : Type v) [CommRing A] (u : Multiplicative A) :
     (⟨t.geckRootSubgroupMatrix ht i ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm u),
