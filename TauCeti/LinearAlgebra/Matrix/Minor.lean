@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Minors on a pair of rows and a pair of columns
@@ -61,29 +62,6 @@ theorem pairMinor_map {S : Type*} [CommRing S] (f : R →+* S) (g : Matrix m n R
     (p : m × m) (q : n × n) : pairMinor (g.map f) p q = f (pairMinor g p q) := by
   simp [pairMinor_eq]
 
--- The summand is antisymmetric in its two middle indices and vanishes on the diagonal, so the
--- sum over all ordered pairs collapses to a sum over the increasing ones.
-private theorem sum_univ_prod_eq_sum_lt {l : Type*} [Fintype l] [LinearOrder l] {M : Type*}
-    [AddCommMonoid M] (F : l × l → M) (hdiag : ∀ a, F (a, a) = 0) :
-    ∑ ij : l × l, F ij =
-      ∑ ij ∈ {ij : l × l | ij.1 < ij.2}, (F ij + F ij.swap) := by
-  classical
-  have hswap : ∑ ij ∈ {ij : l × l | ij.2 < ij.1}, F ij =
-      ∑ ij ∈ {ij : l × l | ij.1 < ij.2}, F ij.swap :=
-    Finset.sum_nbij' (i := Prod.swap) (j := Prod.swap) (by simp) (by simp) (by simp) (by simp)
-      (by simp)
-  have hnot : ∑ ij ∈ {ij : l × l | ij.2 < ij.1}, F ij =
-      ∑ ij ∈ {ij : l × l | ¬ ij.1 < ij.2}, F ij := by
-    refine Finset.sum_subset ?_ ?_
-    · intro ij hij
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_lt] at hij ⊢
-      exact hij.le
-    · rintro ⟨a, b⟩ hmem hnotmem
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, not_lt] at hmem hnotmem
-      exact hdiag a ▸ congrArg (fun c => F (a, c)) (le_antisymm hnotmem hmem).symm
-  rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun ij : l × l => ij.1 < ij.2) F,
-    ← hnot, hswap, Finset.sum_add_distrib]
-
 /-- **Cauchy--Binet for `2 × 2` minors.** A minor of a product is the sum, over the increasing
 pairs of the middle index type, of the products of the corresponding minors of the two factors. -/
 theorem pairMinor_mul {l : Type*} [Fintype l] [LinearOrder l] (g : Matrix m l R)
@@ -96,7 +74,7 @@ theorem pairMinor_mul {l : Type*} [Fintype l] [LinearOrder l] (g : Matrix m l R)
     simp only [pairMinor_eq, Matrix.mul_apply, Finset.sum_mul_sum, ← Finset.sum_product',
       ← Finset.sum_sub_distrib]
     exact Finset.sum_congr rfl fun ij _ => by ring
-  rw [hsum, sum_univ_prod_eq_sum_lt _ fun a => by simp [pairMinor_eq]; ring]
+  rw [hsum, TauCeti.sum_univ_prod_eq_sum_lt_add_swap _ fun a => by simp [pairMinor_eq]; ring]
   exact Finset.sum_congr rfl fun ij _ => by simp [pairMinor_eq, Prod.swap]; ring
 
 
