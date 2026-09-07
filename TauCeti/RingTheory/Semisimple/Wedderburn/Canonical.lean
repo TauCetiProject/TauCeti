@@ -11,10 +11,11 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.SimpleModule.Isotypic
 public import TauCeti.RingTheory.Semisimple.Wedderburn.Presentation
 -- Non-public: used only inside proofs.  The endomorphism ring of a finite power of a module as a
--- matrix ring is what assembles the canonical presentation, Wedderburn--Artin supplies the
--- semisimplicity of endomorphism rings it rests on, `RegularIsotypicComponent` identifies the
--- blocks with all simple-module classes, and `TauCeti.wedderburn_blocks_unique` compares an
--- arbitrary presentation with the canonical one.
+-- matrix ring is what assembles a presentation realizing the intrinsic block data,
+-- Wedderburn--Artin supplies the semisimplicity of endomorphism rings it rests on,
+-- `RegularIsotypicComponent` identifies the blocks with all simple-module classes, and
+-- `TauCeti.wedderburn_blocks_unique` compares an arbitrary presentation with that intrinsic-data
+-- presentation.
 import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
@@ -48,7 +49,7 @@ isomorphism class of `S` (`TauCeti.blockMultiplicity_eq_of_linearEquiv`).  Takin
 than an exponent read off a chosen decomposition is what makes the definition choice-free;
 `TauCeti.blockMultiplicity_eq_of_linearEquiv_fun` recovers the exponent from any decomposition.
 
-## The canonical presentation
+## A presentation realizing the intrinsic block data
 
 Mathlib's `IsSemisimpleRing.exists_ringEquiv_pi_matrix_end_mulOpposite` already presents `R` with
 the intrinsic coefficient rings `(Module.End R (S i))ᵐᵒᵖ`, but its existential keeps no link
@@ -63,7 +64,7 @@ indexing the blocks to be pairwise non-isomorphic and exhaustive up to isomorphi
 `blockDivisionRing` and `blockMultiplicity` are defined for an arbitrary module `S`, exactly as
 Mathlib defines `isotypicComponent` itself, and simplicity is an assumption of the lemmas that need
 it rather than of the definitions.  Gating the definitions on `[IsSimpleModule R S]` would make
-the canonical presentation unstatable: the simplicity of the modules
+the intrinsic-data presentation unstatable: the simplicity of the modules
 `TauCeti.exists_ringEquiv_pi_matrix_end_mulOpposite_blockMultiplicity` produces is part of its own
 existential, so it is not available as an instance where the statement names their multiplicities.
 
@@ -99,7 +100,7 @@ the base field.
 
 ## References
 
-The assembly of the canonical presentation follows Mathlib's
+The assembly of a presentation realizing the intrinsic block data follows Mathlib's
 `IsSemisimpleModule.exists_end_algEquiv_pi_matrix_end` and
 `IsSemisimpleRing.exists_algEquiv_pi_matrix_end_mulOpposite`.  See T. Y. Lam, *A First Course in
 Noncommutative Rings*, GTM 131, §3, or C. W. Curtis and I. Reiner, *Representation Theory of Finite
@@ -179,14 +180,14 @@ theorem blockMultiplicity_pos [IsSemisimpleRing R] [IsSimpleModule R S] :
 
 end BlockData
 
-/-! ### The canonical Wedderburn presentation -/
+/-! ### A Wedderburn presentation realizing the intrinsic block data -/
 
 variable (R : Type u) [Ring R] [IsSemisimpleRing R]
 
-/-- **The canonical Wedderburn presentation of a semisimple ring.**  The blocks are indexed by
-pairwise non-isomorphic simple left ideals `S i` which exhaust all simple modules up to isomorphism;
-the coefficient ring of a block is the block division ring `blockDivisionRing R (S i)`, and its
-size is the multiplicity of `S i` in the regular module.
+/-- **A Wedderburn presentation realizing the intrinsic block data of a semisimple ring.**  The
+blocks are indexed by pairwise non-isomorphic simple left ideals `S i` which exhaust all simple
+modules up to isomorphism; the coefficient ring of a block is the block division ring
+`blockDivisionRing R (S i)`, and its size is the multiplicity of `S i` in the regular module.
 
 Mathlib's `IsSemisimpleRing.exists_ringEquiv_pi_matrix_end_mulOpposite` produces the same shape but
 forgets which block belongs to which simple module, so neither the identification of the sizes with
