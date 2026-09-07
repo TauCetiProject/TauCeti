@@ -154,6 +154,17 @@ theorem diagGL_injective {ι : Type*} [Fintype ι] [DecidableEq ι] :
   have := congrArg (fun g : GL ι k ↦ (g : Matrix ι ι k) i i) h
   simpa using this
 
+/-- An invertible diagonal matrix with distinct diagonal entries is not scalar. Like `diagGL`
+itself, this needs only a semiring; it is what supplies the non-scalarity — the regularity — of a
+diagonal matrix in size two. -/
+theorem notMem_range_scalar_diagGL {t : Fin 2 → kˣ} (ht : t 0 ≠ t 1) :
+    (diagGL t : Matrix (Fin 2) (Fin 2) k) ∉ Set.range (Matrix.scalar (Fin 2)) := by
+  rintro ⟨c, hc⟩
+  refine ht (Units.ext ?_)
+  have h0 : c = (t 0 : k) := by simpa using congrFun (congrFun hc 0) 0
+  have h1 : c = (t 1 : k) := by simpa using congrFun (congrFun hc 1) 1
+  rw [← h0, ← h1]
+
 /-- A general-linear element whose underlying matrix is the permutation matrix of `π` moves
 past a diagonal matrix by relabelling its diagonal entries along `π`. -/
 theorem mul_diagGL_of_coe_eq_permMatrix {ι : Type*} [Fintype ι] [DecidableEq ι]

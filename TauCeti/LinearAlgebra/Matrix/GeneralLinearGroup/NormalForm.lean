@@ -14,9 +14,6 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 -- `TauCeti.GL2NonSplitTorusHom` is the elliptic normal form and occurs in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
--- Non-public: the two facts that a diagonal and an elliptic element are not scalar are used only
--- in proofs, so downstream importers do not pay for the centralizer and counting API.
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Centralizer
 -- Non-public: the trace and the norm of a quadratic irrationality, and the existence of one over a
 -- finite field, are what pin the elliptic normal form; used in proofs only.
 import TauCeti.FieldTheory.Quadratic
@@ -45,11 +42,12 @@ forms in `TauCeti/RepresentationTheory/CharacterTable/GL2/CharacterValues.lean` 
 the character table of `GL₂(𝔽_q)`: a character is a class function, so a row is determined once the
 normal forms exhaust the classes.
 
-The two non-central split forms need no finiteness and no extension. Each is the same two-line
-check against `TauCeti.isConj_iff_of_notMem_range_scalar`: the normal form is not scalar, and its
-trace and determinant are the prescribed ones. What the roots of `X² - t X + d` are is the only
-thing that distinguishes them — two distinct roots give `diagGL`, a repeated root gives
-`jordanGL`.
+The two non-central split forms need no finiteness and no extension. Each is the same check
+against `TauCeti.isConj_iff_of_notMem_range_scalar`: the normal form is not scalar, and its trace
+and determinant are the prescribed ones. What the roots of `X² - t X + d` are is the only thing
+that distinguishes them — two distinct roots give `diagGL`, a repeated root gives `jordanGL` —
+and only in the repeated-root case need non-scalarness be assumed: a scalar matrix has a repeated
+root, so prescribing two distinct roots, or a root outside `F`, already rules it out.
 
 The elliptic case is the one that needs a quadratic extension, and it is where the finiteness of
 `F` enters. Multiplication by `x : E` has trace `Tr_{E/F} x` and determinant `N_{E/F} x`
@@ -68,16 +66,13 @@ proved here; `TauCeti.conjClassesGLFinTwoEquiv` already indexes the classes with
 
 * `TauCeti.isConj_diagGL_of_trace_of_det`, `TauCeti.isConj_jordanGL_one_of_trace_of_det` and
   `TauCeti.isConj_gl2NonSplitTorusHom_of_trace_of_det`: **the three non-central normal forms**, each
-  characterized by its trace and determinant among the non-scalar elements.
+  characterized by the roots of its characteristic polynomial, read off the trace and the
+  determinant.
 * `TauCeti.exists_isConj_normalForm`: **every element of `GL₂(F)`, for `F` finite with a degree-`2`
   extension `E`, is conjugate to one of the four normal forms.**
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The conjugacy classes (a build target)": the class representatives of the four
-  families, the deliverable this file supplies alongside the count
-  `TauCeti.card_conjClasses_GL2`.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 * J.-P. Serre, *Linear Representations of Finite Groups*, GTM 42 (1977), §5.2.
 -/
@@ -92,14 +87,22 @@ variable {F : Type*} [Field F]
 
 /-! ### The two split normal forms -/
 
-/-- **The split semisimple normal form.** A non-scalar element of `GL₂(F)` whose characteristic
-polynomial has the two *distinct* roots `a` and `b` is conjugate to `diagGL ![a, b]`. -/
-theorem isConj_diagGL_of_trace_of_det {g : GL (Fin 2) F}
-    (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2)))
-    {a b : Fˣ} (hab : a ≠ b)
+/-- **The split semisimple normal form.** An element of `GL₂(F)` whose characteristic polynomial
+has the two *distinct* roots `a` and `b` is conjugate to `diagGL ![a, b]`. Distinct roots already
+force the element to be non-scalar. -/
+theorem isConj_diagGL_of_trace_of_det {g : GL (Fin 2) F} {a b : Fˣ} (hab : a ≠ b)
     (htrace : (g : Matrix (Fin 2) (Fin 2) F).trace = (a : F) + b)
     (hdet : (g : Matrix (Fin 2) (Fin 2) F).det = (a : F) * b) :
     IsConj g (diagGL ![a, b]) := by
+  -- Distinct roots force non-scalarness: a scalar `c` has trace `c + c` and determinant `c * c`,
+  -- so `X² - (a + b) X + a b` would be `(X - c)²`, making `a` and `b` both equal to `c`.
+  have hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2)) := by
+    rintro ⟨c, hc⟩
+    rw [← hc, Matrix.scalar_apply, Matrix.trace_diagonal, Fin.sum_univ_two] at htrace
+    rw [← hc, Matrix.scalar_apply, Matrix.det_diagonal, Fin.prod_univ_two] at hdet
+    have hac : (a : F) = c :=
+      sub_eq_zero.1 (mul_self_eq_zero.1 (by linear_combination -(a : F) * htrace + hdet))
+    exact hab (Units.ext (by linear_combination htrace + 2 * hac))
   refine (isConj_iff_of_notMem_range_scalar hg
     (notMem_range_scalar_diagGL (t := ![a, b]) (by simpa using hab))).2 ⟨?_, ?_⟩
   · rw [htrace, diagGL_coe, Matrix.trace_diagonal, Fin.sum_univ_two]
@@ -126,16 +129,26 @@ section Elliptic
 
 variable {E : Type*} [Field E] [Algebra F E]
 
-/-- **The elliptic normal form.** A non-scalar element of `GL₂(F)` whose characteristic polynomial
+/-- **The elliptic normal form.** An element of `GL₂(F)` whose characteristic polynomial
 `X² - t X + d` is satisfied by an element `x` of a degree-`2` extension `E/F` lying outside `F` is
-conjugate to the element `x` of the non-split torus. -/
+conjugate to the element `x` of the non-split torus. A root outside `F` already forces the element
+to be non-scalar. -/
 theorem isConj_gl2NonSplitTorusHom_of_trace_of_det (hE : Module.finrank F E = 2)
-    {g : GL (Fin 2) F} (hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2)))
-    {x : Eˣ} (hx : (x : E) ∉ Set.range (algebraMap F E)) {t d : F}
+    {g : GL (Fin 2) F} {x : Eˣ} (hx : (x : E) ∉ Set.range (algebraMap F E)) {t d : F}
     (hx2 : (x : E) * x = algebraMap F E t * x - algebraMap F E d)
     (htrace : (g : Matrix (Fin 2) (Fin 2) F).trace = t)
     (hdet : (g : Matrix (Fin 2) (Fin 2) F).det = d) :
     IsConj g (GL2NonSplitTorusHom F E hE x) := by
+  -- A root outside `F` forces non-scalarness: were `g` the scalar `c`, then `t = c + c` and
+  -- `d = c * c`, so `x` would be the double root `algebraMap F E c`.
+  have hg : (g : Matrix (Fin 2) (Fin 2) F) ∉ Set.range (Matrix.scalar (Fin 2)) := by
+    rintro ⟨c, hc⟩
+    rw [← hc, Matrix.scalar_apply, Matrix.trace_diagonal, Fin.sum_univ_two] at htrace
+    rw [← hc, Matrix.scalar_apply, Matrix.det_diagonal, Fin.prod_univ_two] at hdet
+    subst htrace
+    subst hdet
+    rw [map_add, map_mul] at hx2
+    exact hx ⟨c, (sub_eq_zero.1 (mul_self_eq_zero.1 (by linear_combination hx2))).symm⟩
   refine (isConj_iff_of_notMem_range_scalar hg
     (GL2NonSplitTorus.notMem_range_scalar_gl2NonSplitTorusHom hE hx)).2 ⟨?_, ?_⟩
   · rw [htrace, GL2NonSplitTorus.trace_gl2NonSplitTorusHom,
@@ -187,7 +200,7 @@ theorem exists_isConj_normalForm [Finite F] (E : Type*) [Field E] [Algebra F E]
         linear_combination -hb - a * hab
     · refine Or.inr (Or.inl ⟨Units.mk0 a ha0, Units.mk0 (t - a) hb0, ?_, ?_⟩)
       · simpa [Units.ext_iff] using hab
-      · refine isConj_diagGL_of_trace_of_det hg (by simpa [Units.ext_iff] using hab) ?_ ?_
+      · refine isConj_diagGL_of_trace_of_det (by simpa [Units.ext_iff] using hab) ?_ ?_
         · simp only [Units.val_mk0]
           ring
         · simp only [Units.val_mk0]
@@ -207,7 +220,7 @@ theorem exists_isConj_normalForm [Finite F] (E : Type*) [Field E] [Algebra F E]
     -- read back through the coercion `Eˣ → E`, which is `Units.val_mk0`.
     refine Or.inr (Or.inr (Or.inr ⟨Units.mk0 x hx0, ?_, ?_⟩))
     · simpa only [Units.val_mk0] using hxF
-    · refine isConj_gl2NonSplitTorusHom_of_trace_of_det hE hg ?_ ?_ ht.symm hd.symm
+    · refine isConj_gl2NonSplitTorusHom_of_trace_of_det hE ?_ ?_ ht.symm hd.symm
       · simpa only [Units.val_mk0] using hxF
       · simpa only [Units.val_mk0] using hx2
 

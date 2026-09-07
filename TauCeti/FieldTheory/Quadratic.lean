@@ -35,6 +35,10 @@ which is the reading of the companion matrix its own docstring advertises. Since
 norm of `x` are the trace and the determinant of that matrix, and both are basis independent,
 `Tr_{E/F} x = t` and `N_{E/F} x = d`.
 
+These are what pin the elliptic normal form of `GL₂` in
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean`, where the quadratic is the
+characteristic polynomial of a matrix and `x` is the eigenvalue it acquires in `E`.
+
 Over a *finite* base field such an `x` always exists as soon as the quadratic has no root in `F`:
 the quadratic is then irreducible, so `AdjoinRoot` of it is a degree-`2` extension of `F`, and any
 two extensions of a finite field of the same degree are isomorphic
@@ -50,10 +54,6 @@ two extensions of a finite field of the same degree are isomorphic
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9, "The conjugacy classes (a build target)": these are the facts that pin the elliptic
-  normal form of `GL₂` in
-  `TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/NormalForm.lean`.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 -/
 
