@@ -41,6 +41,9 @@ strict graphon type.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Section 6.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Section 8.2.
+* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the fixed-carrier
+  `GraphonSpace` metric quotient and `GraphonSpaceI`. The signatures follow
+  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 -/
 
 public section

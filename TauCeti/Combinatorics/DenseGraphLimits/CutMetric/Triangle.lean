@@ -44,6 +44,9 @@ strict graphons on a fixed probability carrier with the cut-distance pseudometri
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Lemma 6.5.
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Section 8.2.
+* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the arbitrary-carrier triangle
+  inequality and the fixed-carrier pseudometric. The `cutDist_triangle` signature follows
+  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 -/
 
 public section

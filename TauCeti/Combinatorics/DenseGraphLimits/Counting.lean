@@ -5,10 +5,8 @@ Authors: Claude, Codex
 -/
 module
 
-public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Coupling
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Pullback
-public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.CutNorm
 public import TauCeti.MeasureTheory.Integral.Pi
 
 /-!
@@ -68,6 +66,9 @@ no loss of constant. The outer integral is over a probability measure, so the bo
 * L. Lovász, *Large Networks and Graph Limits*, AMS Colloquium Publications 60 (2012), Lemma 10.23.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), Lemma 7.2.
+* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 2 — the counting lemma and its
+  coupling and cut-distance forms. The signatures follow
+  `TauCetiRoadmap/DenseGraphLimits/Suggested.lean`.
 -/
 
 public section
