@@ -108,8 +108,6 @@ open Matrix
 
 namespace TauCeti
 
-open TauCeti.Matrix
-
 universe u
 
 variable {R : Type u} [CommRing R]
