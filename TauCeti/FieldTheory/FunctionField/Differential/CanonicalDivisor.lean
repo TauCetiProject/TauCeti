@@ -189,13 +189,14 @@ bounding `ω` bijectively onto those bounding `z · ω`, hence greatest element 
 element. -/
 theorem weilDifferentialDivisor_repartitionDualMul (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
-    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) (z : Fˣ)
-    (hzmem : repartitionDualMul hF (z : F) ω ∈ weilDifferentialSpace k F)
-    (hz : repartitionDualMul hF (z : F) ω ≠ 0) :
-    weilDifferentialDivisor hF hex hzmem hz =
+    (hmem : ω ∈ weilDifferentialSpace k F) (hω : ω ≠ 0) (z : Fˣ) :
+    weilDifferentialDivisor hF hex (repartitionDualMul_mem_weilDifferentialSpace hF (z : F) hmem)
+        (repartitionDualMul_ne_zero hF (Units.ne_zero z) hω) =
       Divisor.principal hF z + weilDifferentialDivisor hF hex hmem hω := by
   have hW := isGreatest_weilDifferentialDivisor hF hex hmem hω
-  refine (isGreatest_weilDifferentialDivisor hF hex hzmem hz).unique ⟨?_, fun D hD ↦ ?_⟩
+  refine (isGreatest_weilDifferentialDivisor hF hex
+    (repartitionDualMul_mem_weilDifferentialSpace hF (z : F) hmem)
+    (repartitionDualMul_ne_zero hF (Units.ne_zero z) hω)).unique ⟨?_, fun D hD ↦ ?_⟩
   · have h := (repartitionDualMul_mem_weilDifferentialFiltration_iff hF z
       (D := weilDifferentialDivisor hF hex hmem hω) (ω := ω)).mpr hW.1
     rwa [add_comm] at h
@@ -222,7 +223,7 @@ theorem divisorClass_weilDifferentialDivisor_eq (hF : IsFunctionField k F)
     rintro rfl
     exact hη (by simp)
   obtain ⟨z, rfl⟩ : ∃ z : Fˣ, (z : F) = c := ⟨Units.mk0 c hc0, rfl⟩
-  rw [weilDifferentialDivisor_repartitionDualMul hF hex hωmem hω z hηmem hη, map_add,
+  rw [weilDifferentialDivisor_repartitionDualMul hF hex hωmem hω z, map_add,
     (Divisor.divisorClass_eq_zero_iff hF).mpr ⟨z, rfl⟩, zero_add]
 
 /-- **The canonical class** of an algebraic function field with exact constant field: the divisor

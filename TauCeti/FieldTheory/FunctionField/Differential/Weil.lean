@@ -54,8 +54,9 @@ specialty, and are proved in `TauCeti/FieldTheory/FunctionField/Differential/Dim
   differs from a constant by one bounded by `D`.
 * `TauCeti.repartitionDualMul_inv_repartitionDualMul`: multiplying by a unit and then by its
   inverse restores the form, so the action of a nonzero function is invertible.
-* `TauCeti.repartitionDualMulRight_injective`: for a nonzero linear form `ω`, the map
-  `x ↦ x · ω` is injective.
+* `TauCeti.repartitionDualMulRight_injective` and `TauCeti.repartitionDualMul_ne_zero`: for a
+  nonzero linear form `ω`, the map `x ↦ x · ω` is injective, so `z · ω` is again nonzero for
+  `z ≠ 0`.
 * `TauCeti.repartitionDualMul_mem_weilDifferentialFiltration_iff`: for `z ∈ Fˣ`, a linear form
   lies in `Ω_F(D)` exactly when `z · ω` lies in `Ω_F(D + div z)`, so `Ω_F` is stable under the
   action (`TauCeti.repartitionDualMul_mem_weilDifferentialSpace`).
@@ -299,6 +300,14 @@ theorem repartitionDualMulRight_injective (hF : IsFunctionField k F)
   refine hω ?_
   rw [← repartitionDualMul_inv_repartitionDualMul hF (Units.ne_zero z) ω,
     ← repartitionDualMulRight_apply hF ω (z : F), hx, map_zero]
+
+/-- **A nonzero function times a nonzero linear form is nonzero**, by injectivity of
+`TauCeti.repartitionDualMulRight`. -/
+theorem repartitionDualMul_ne_zero (hF : IsFunctionField k F) {z : F} (hz : z ≠ 0)
+    {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0) :
+    repartitionDualMul hF z ω ≠ 0 := fun h ↦ hz <|
+  (injective_iff_map_eq_zero _).mp (repartitionDualMulRight_injective hF hω) z
+    (by rw [repartitionDualMulRight_apply, h])
 
 /-- **Multiplication translates the filtration by a principal divisor**: for a nonzero function
 `z`, a linear form is bounded by `D` exactly when `z · ω` is bounded by `D + div z`, exactly as
