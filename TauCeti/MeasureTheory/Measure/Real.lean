@@ -17,7 +17,7 @@ two complementary tails equal.
 
 ## Main result
 
-* `TauCeti.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
+* `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
   measures with the same pushforward after squaring are equal.
 -/
 
@@ -31,7 +31,7 @@ namespace MeasureTheory
 
 /-- Two reflection-invariant finite measures on `ℝ` are equal if their pushforwards under
 squaring are equal. -/
-theorem Measure.eq_of_map_sq_eq_of_map_neg_eq_self {μ ν : Measure ℝ}
+theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν : Measure ℝ)
     [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (hμneg : μ.map (fun x : ℝ ↦ -x) = μ) (hνneg : ν.map (fun x : ℝ ↦ -x) = ν)
     (hsq : μ.map (fun x : ℝ ↦ x ^ 2) = ν.map (fun x : ℝ ↦ x ^ 2)) :

@@ -172,7 +172,7 @@ theorem map_div_sqrt_chiSquaredMeasure {ν : ℝ} (hν : 0 < ν) :
       _ = (μ.map reflect).map ratio := by
         rw [Measure.map_map (by fun_prop) (by fun_prop)]
       _ = μ.map ratio := by rw [hμ_reflect]
-  exact TauCeti.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self hratio_reflect
+  exact (μ.map ratio).eq_of_map_sq_eq_of_map_neg_eq_self (studentTMeasure ν) hratio_reflect
     (studentTMeasure_map_neg ν) (hratio_sq_map.trans (studentTMeasure_map_sq hν).symm)
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {Z V : Ω → ℝ}
