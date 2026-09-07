@@ -60,7 +60,7 @@ as `Kˣ` enters through an `Additive` adapter.
 * `TauCeti.ClassFieldTheory.Formation.exists_mem_level`: every element of the coefficient module
   is fixed by an open subgroup.
 * `TauCeti.ClassFieldTheory.NormalLayer.groundLevelEquiv`: `(A^V)^{U/V} ≃ A^U`.
-* `TauCeti.ClassFieldTheory.NormalLayer.tateHZeroEquivNormQuotient`: degree-zero Tate cohomology
+* `TauCeti.ClassFieldTheory.NormalLayer.tateHZeroIsoNormQuotient`: degree-zero Tate cohomology
   of the layer is the norm quotient.
 
 ## Implementation notes
@@ -437,7 +437,7 @@ theorem map_groundLevelEquiv_submoduleOf :
 
 /-- **Degree-zero Tate cohomology of a finite normal layer is its norm quotient.** This is the
 low-degree identification that the Artin map of a class formation is read through. -/
-def tateHZeroEquivNormQuotient :
+def tateHZeroIsoNormQuotient :
     L.TateH F 0 ≅ ModuleCat.of ℤ (L.NormQuotient F) :=
   TateCohomology.H0IsoNormQuotient (L.rep F) ≪≫
     (Submodule.Quotient.equiv _ _ (L.groundLevelEquiv F)
@@ -446,13 +446,13 @@ def tateHZeroEquivNormQuotient :
 /-- The identification of degree-zero Tate cohomology with the norm quotient sends the class of an
 invariant to the class of the corresponding element of the ground level. -/
 @[simp]
-theorem tateHZeroEquivNormQuotient_hom_H0π (x : (L.rep F).ρ.invariants) :
-    (L.tateHZeroEquivNormQuotient F).hom (TateCohomology.H0π (L.rep F) x) =
+theorem tateHZeroIsoNormQuotient_hom_H0π (x : (L.rep F).ρ.invariants) :
+    (L.tateHZeroIsoNormQuotient F).hom (TateCohomology.H0π (L.rep F) x) =
       L.normQuotientMk F (L.groundLevelEquiv F x) := by
   -- The elementwise form of the low-degree identification is bound as a hypothesis first, so
   -- that it is normalised to the application form the goal uses before it rewrites.
   have h := TateCohomology.H0π_comp_H0IsoNormQuotient_hom_apply (L.rep F) x
-  simp [tateHZeroEquivNormQuotient, normQuotientMk, h]
+  simp [tateHZeroIsoNormQuotient, normQuotientMk, h]
 
 end Norm
 
