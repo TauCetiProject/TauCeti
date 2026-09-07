@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.SpecialIsogeny
+public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.HalfFrobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB2
 
@@ -45,6 +46,7 @@ bookkeeping that remains of `L2` for this branch.
 
 * `TauCeti.SuzukiLieIndex.halfFrobenius`: the special isogeny of the ambient group.
 * `TauCeti.SuzukiLieIndex.steinberg`: its odd power `τ ^ (2m+1)`.
+* `TauCeti.SuzukiLieIndex.Group`: the candidate simple group of milestone `L3`.
 
 ## Main results
 
@@ -56,12 +58,17 @@ bookkeeping that remains of `L2` for this branch.
 * `TauCeti.SuzukiLieIndex.steinberg_steinberg`: the square of the Steinberg endomorphism is the
   `q`-power Frobenius.
 
+## The candidate group
+
+With the Steinberg map in hand the milestone `L3` recipe runs on this branch:
+`TauCeti.SuzukiLieIndex.Group` is the derived subgroup of its fixed points modulo the centre of
+that derived subgroup, and it carries a group instance.
+
 ## What is not here
 
-No fixed-point subgroup is formed, so no finite group appears; the candidate
-`²B₂(2^(2m+1))` of milestone `L3` is the derived subgroup of those fixed points modulo its centre,
-and neither step is taken. Nothing is proved finite, perfect or simple, and Mathlib's separate
-`suzukiGroup` is not mentioned: relating the two is milestone `L4`.
+Nothing is proved finite, perfect or simple, the carrier is not claimed to be the pinned one
+milestone `L0` asks for, and Mathlib's separate `suzukiGroup` is not mentioned: relating the two is
+milestone `L4`.
 
 ## References
 
@@ -190,5 +197,19 @@ theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.1.Closure) 
     Equiv.apply_symm_apply, Equiv.apply_symm_apply, halfFrobenius_def,
     show (1 : Fin 2) = Fin.last 1 from rfl]
   exact SpStd.specialIsogeny_rootSubgroupPoints_inl_zero _ _
+
+/-! ## The classification candidate -/
+
+/-- **The candidate simple group of the Suzuki family `²B₂(2^(2m+1))`**: the derived subgroup of
+the fixed points of its Steinberg map, modulo the centre of that derived subgroup.
+
+This is the milestone `L3` recipe on the Suzuki branch, run on the rank-two type-`C` carrier.
+Nothing below asserts that it is finite, perfect, or simple, nor that the carrier is the pinned
+one milestone `L0` asks for, nor that it is Mathlib's `suzukiGroup`. -/
+noncomputable abbrev Group : Type := FixedPointCandidate d.steinberg
+
+/-- Milestone `L3` asks every valid branch to carry a group instance; the quotient construction
+supplies it. -/
+noncomputable example : _root_.Group d.Group := inferInstance
 
 end TauCeti.SuzukiLieIndex
