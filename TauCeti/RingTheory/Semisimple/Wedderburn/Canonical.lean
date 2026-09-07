@@ -134,7 +134,7 @@ module of `R`, defined as the length of the `S`-isotypic component of `R`.
 Over a semisimple ring the isotypic component is a finite direct sum of copies of `S`, so this is
 the number of summands; taking the length instead makes the definition independent of a chosen
 decomposition.  It is the size of the Wedderburn block of `S`. -/
-@[expose] noncomputable def blockMultiplicity : ℕ :=
+noncomputable def blockMultiplicity : ℕ :=
   (Module.length R (isotypicComponent R R S)).toNat
 
 variable {R S}
@@ -146,8 +146,10 @@ def blockDivisionRingEquiv {S' : Type w} [AddCommGroup S'] [Module R S']
   RingEquiv.op e.conjRingEquiv
 
 /-- The block multiplicity is the length of the corresponding isotypic component. -/
+-- The parentheses are Mathlib's spelling for a defining equation of an unexposed definition: a
+-- bare `rfl` is checked against the module's export boundary, where the body is opaque.
 theorem blockMultiplicity_def :
-    blockMultiplicity R S = (Module.length R (isotypicComponent R R S)).toNat := rfl
+    blockMultiplicity R S = (Module.length R (isotypicComponent R R S)).toNat := (rfl)
 
 /-- **The block multiplicity depends only on the isomorphism class**, since isomorphic modules have
 the same isotypic component. -/
