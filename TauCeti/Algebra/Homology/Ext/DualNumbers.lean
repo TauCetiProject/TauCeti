@@ -90,11 +90,14 @@ theorem dualNumberResidueEquiv_symm_apply (x : k) :
   (rfl)
 
 /-- The `k[ε]`-action on `k[ε]/(ε)` is multiplication by the constant term. -/
+-- This is a named rewrite lemma rather than a simp lemma: simp first reduces the restricted-scalar
+-- action on its left-hand side.
 theorem dualNumberResidueEquiv_smul (a : DualNumber k) (x : dualNumberResidue k) :
     dualNumberResidueEquiv k (a • x) = fst a * dualNumberResidueEquiv k x :=
   (rfl)
 
 /-- `ε` annihilates `k[ε]/(ε)`. -/
+-- Here too simp first reduces the restricted-scalar action, this time to the action of zero.
 theorem eps_smul_dualNumberResidue (x : dualNumberResidue k) : (ε : DualNumber k) • x = 0 :=
   (dualNumberResidueEquiv k).injective (by
     rw [dualNumberResidueEquiv_smul, fst_eps, zero_mul, map_zero])
@@ -106,6 +109,7 @@ noncomputable def dualNumberEpsSmul : dualNumberFree k ⟶ dualNumberFree k :=
   ModuleCat.ofHom (LinearMap.mulLeft (DualNumber k) (ε : DualNumber k))
 
 /-- Multiplication by `ε` acts on elements as multiplication by `ε`. -/
+-- This is already a simp consequence of `dualNumberEpsSmul_hom` and `LinearMap.mulLeft_apply`.
 theorem dualNumberEpsSmul_apply (x : DualNumber k) :
     (dualNumberEpsSmul k).hom x = ε * x :=
   (rfl)
@@ -297,6 +301,7 @@ theorem homDualNumberFreeEquiv_apply (f : dualNumberFree k ⟶ dualNumberResidue
   (rfl)
 
 /-- The quotient map is the element `1` of `Hom_A(A, S) ≅ k`. -/
+-- This is already a simp consequence of the two more general application lemmas above.
 theorem homDualNumberFreeEquiv_proj : homDualNumberFreeEquiv k (dualNumberProj k) = 1 := by
   rw [homDualNumberFreeEquiv_apply, dualNumberResidueEquiv_apply, dualNumberProj_apply, fst_one]
 
