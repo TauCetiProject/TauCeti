@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import TauCeti.NumberTheory.NumberField.Index.PowerBasis
-import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 import TauCeti.NumberTheory.NumberField.Discriminant.OfIntegralBasis
 
 /-!
